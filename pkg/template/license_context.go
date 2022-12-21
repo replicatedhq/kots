@@ -8,10 +8,14 @@ import (
 	"text/template"
 
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
+	"github.com/replicatedhq/kots/pkg/docker/registry"
 )
 
 type licenseCtx struct {
 	License *kotsv1beta1.License
+
+	// App is optional, but if provided, it will be used to determine the registry domains
+	App *kotsv1beta1.Application
 }
 
 // FuncMap represents the available functions in the licenseCtx.
@@ -81,12 +85,14 @@ func (ctx licenseCtx) licenseDockercfg() string {
 	auth := fmt.Sprintf("%s:%s", ctx.License.Spec.LicenseID, ctx.License.Spec.LicenseID)
 	encodedAuth := base64.StdEncoding.EncodeToString([]byte(auth))
 
+	registryProxyInfo := registry.GetRegistryProxyInfo(ctx.License, ctx.App)
+
 	dockercfg := map[string]interface{}{
 		"auths": map[string]interface{}{
-			"proxy.replicated.com": map[string]string{
+			registryProxyInfo.Proxy: map[string]string{
 				"auth": encodedAuth,
 			},
-			"registry.replicated.com": map[string]string{
+			registryProxyInfo.Registry: map[string]string{
 				"auth": encodedAuth,
 			},
 		},

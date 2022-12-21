@@ -24,13 +24,15 @@ type Installer struct {
 	imageRegistry  string
 	imageNamespace string
 	imageTag       string
+	airgap         bool
 }
 
-func NewInstaller(imageRegistry, imageNamespace, imageTag string) *Installer {
+func NewInstaller(imageRegistry, imageNamespace, imageTag string, airgap bool) *Installer {
 	return &Installer{
 		imageRegistry:  imageRegistry,
 		imageNamespace: imageNamespace,
 		imageTag:       imageTag,
+		airgap:         airgap,
 	}
 }
 
@@ -70,6 +72,7 @@ func (i *Installer) install(kubeconfig string, test inventory.Test) (*gexec.Sess
 		fmt.Sprintf("--kotsadm-registry=%s", i.imageRegistry),
 		fmt.Sprintf("--kotsadm-namespace=%s", i.imageNamespace),
 		fmt.Sprintf("--kotsadm-tag=%s", i.imageTag),
+		fmt.Sprintf("--airgap=%t", i.airgap),
 		fmt.Sprintf("--wait-duration=%s", InstallWaitDuration),
 		fmt.Sprintf("--use-minimal-rbac=%t", test.UseMinimalRBAC),
 		fmt.Sprintf("--skip-compatibility-check=%t", test.SkipCompatibilityCheck),

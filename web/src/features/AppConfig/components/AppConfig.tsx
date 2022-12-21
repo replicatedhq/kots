@@ -579,7 +579,7 @@ class AppConfig extends Component<Props, State> {
     }
 
     return (
-      <div className="flex flex-column u-padding--20 alignItems--center">
+      <div className="flex flex-column u-paddingLeft--20 u-paddingBottom--20 u-paddingRight--20 alignItems--center">
         <KotsPageTitle pageName="Config" showAppSlug />
         {fromLicenseFlow && app && (
           <Span size="18" weight="bold" mt="30" ml="38">
@@ -629,23 +629,27 @@ class AppConfig extends Component<Props, State> {
                   </div>
                   {group.items ? (
                     <div className="side-nav-items">
-                      {group.items?.map((item, j) => {
-                        const hash = this.props.location.hash.slice(1);
-                        if (item.hidden || item.when === "false") {
-                          return;
-                        }
-                        return (
-                          <a
-                            className={`u-fontSize--normal u-lineHeight--normal ${
-                              hash === `${item.name}-group` ? "active-item" : ""
-                            }`}
-                            href={`#${item.name}-group`}
-                            key={`${j}-${item.name}-${item.title}`}
-                          >
-                            {item.title}
-                          </a>
-                        );
-                      })}
+                      {group.items
+                        ?.filter((item) => item.type !== "label")
+                        ?.map((item, j) => {
+                          const hash = this.props.location.hash.slice(1);
+                          if (item.hidden || item.when === "false") {
+                            return;
+                          }
+                          return (
+                            <a
+                              className={`u-fontSize--normal u-lineHeight--normal ${
+                                hash === `${item.name}-group`
+                                  ? "active-item"
+                                  : ""
+                              }`}
+                              href={`#${item.name}-group`}
+                              key={`${j}-${item.name}-${item.title}`}
+                            >
+                              {item.title}
+                            </a>
+                          );
+                        })}
                     </div>
                   ) : null}
                 </div>

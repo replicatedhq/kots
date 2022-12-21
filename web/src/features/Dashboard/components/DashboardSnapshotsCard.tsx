@@ -311,12 +311,10 @@ class DashboardSnapshotsCard extends React.Component<Props, State> {
     return (
       <div className="flex-column flex1 dashboard-card">
         <div className="flex flex1 justifyContent--spaceBetween alignItems--center">
-          <p className="u-fontSize--large u-textColor--primary u-fontWeight--bold">
-            Snapshots
-          </p>
+          <p className="card-title">Snapshots</p>
           <div className="u-fontSize--small u-fontWeight--medium flex flex-auto alignItems--center">
             <Link
-              className="replicated-link u-marginRight--20 flex alignItems--center"
+              className="link u-marginRight--20 flex alignItems--center"
               to="/snapshots/settings"
             >
               <Icon
@@ -370,7 +368,7 @@ class DashboardSnapshotsCard extends React.Component<Props, State> {
               <span
                 className={`icon snapshotDestination--${selectedDestination?.value} u-marginRight--5`}
               />
-              <p className="u-fontSize--normal u-fontWeight--medium u-textColor--header">
+              <p className="u-fontSize--normal u-fontWeight--medium card-item-title">
                 {selectedDestination?.label}
               </p>
             </div>
@@ -387,7 +385,7 @@ class DashboardSnapshotsCard extends React.Component<Props, State> {
           </div>
         </div>
         <div className="u-marginTop--10">
-          <Link to={`/snapshots`} className="replicated-link u-fontSize--small">
+          <Link to={`/snapshots`} className="link u-fontSize--small">
             See all snapshots
             <Icon
               icon="next-arrow"

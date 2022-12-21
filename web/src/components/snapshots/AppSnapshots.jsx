@@ -610,16 +610,13 @@ class AppSnapshots extends Component {
             <span className="icon info-icon flex-auto u-marginRight--5" />
             <p className="u-fontSize--small u-fontWeight--normal u-lineHeight--normal u-textColor--accent">
               It’s recommend that you use{" "}
-              <Link
-                to="/snapshots"
-                className="replicated-link u-fontSize--small"
-              >
+              <Link to="/snapshots" className="link u-fontSize--small">
                 Full snapshots (Instance){" "}
               </Link>{" "}
               in lieu of Partial snapshots (Application), given Full snapshots
               offers the same restoration capabilities.
               <span
-                className="replicated-link"
+                className="link"
                 onClick={this.toggleSnaphotDifferencesModal}
               >
                 Learn&nbsp;more
@@ -630,14 +627,14 @@ class AppSnapshots extends Component {
           <div className="AppSnapshots--wrapper card-bg flex-column u-marginTop--20">
             <div className="flex flex-column u-marginBottom--15">
               <div className="flex justifyContent--spaceBetween">
-                <p className="u-fontWeight--bold u-textColor--primary u-fontSize--larger u-lineHeight--normal">
+                <p className="u-fontWeight--bold card-title u-fontSize--larger u-lineHeight--normal">
                   {" "}
                   Partial snapshots (Application){" "}
                 </p>
                 <div className="flex alignSelf--center">
                   <Link
                     to={`/snapshots/settings?${selectedApp.slug}`}
-                    className="replicated-link u-fontSize--small u-fontWeight--bold flex alignItems--center"
+                    className="link u-fontSize--small u-fontWeight--bold flex alignItems--center"
                   >
                     <Icon
                       icon="settings-gear-outline"

@@ -20,15 +20,15 @@
       width: 380px;
     }
   }
+}
 
-  .progressbar-meter {
-    transition: all 1s;
-    height: 8px;
-    border-radius: 8px;
-    background-color: #326de6;
+.progressbar-meter {
+  transition: all 1s;
+  height: 8px;
+  border-radius: 8px;
+  background-color: #326de6;
 
-    &.complete {
-      background-color: #44bb66;
-    }
+  &.complete {
+    background-color: #44bb66;
   }
 }

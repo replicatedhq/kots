@@ -102,7 +102,7 @@ export default class ConfigFileInput extends React.Component {
         <div className="input input-type-file clearfix">
           <div>
             {this.props.help_text !== "" ? (
-              <div className="field-section-help-text u-marginTop--5">
+              <div className="field-section-help-text help-text-color u-marginTop--5">
                 <Markdown
                   options={{
                     linkTarget: "_blank",

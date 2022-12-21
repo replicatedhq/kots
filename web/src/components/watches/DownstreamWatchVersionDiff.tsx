@@ -244,7 +244,7 @@ class DownstreamWatchVersionDiff extends React.Component<Props, State> {
         <div className="flex u-marginBottom--15">
           {!this.props.hideBackButton && (
             <div
-              className="u-fontWeight--bold u-marginRight--20 u-linkColor u-cursor--pointer"
+              className="u-fontWeight--bold u-marginRight--20 link"
               onClick={this.goBack}
             >
               <Icon

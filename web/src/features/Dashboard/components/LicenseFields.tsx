@@ -71,7 +71,7 @@ const LicenseFields = ({
                 {entitlement.value.slice(0, 100) + "..."}{" "}
               </span>
               <span
-                className="replicated-link"
+                className="link"
                 onClick={() => toggleShowDetails(entitlement.title)}
               >
                 show
@@ -98,7 +98,7 @@ const LicenseFields = ({
                 {entitlement.value}{" "}
               </span>
               <span
-                className="replicated-link"
+                className="link"
                 onClick={() => toggleHideDetails(entitlement.title)}
               >
                 hide

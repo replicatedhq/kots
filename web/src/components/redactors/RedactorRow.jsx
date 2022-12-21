@@ -45,7 +45,7 @@ class RedactorRow extends React.Component {
                 this.state.redactorEnabled ? "enabled" : "disabled"
               }`}
             />
-            <p className="u-fontSize--large u-lineHeight--normal u-fontWeight--bold u-textColor--primary">
+            <p className="u-fontSize--large u-lineHeight--normal u-fontWeight--bold card-item-title">
               {redactor?.name}
             </p>
           </div>
@@ -65,7 +65,7 @@ class RedactorRow extends React.Component {
         <div className="flex alignItems--center">
           <Link
             to={`/app/${this.props.appSlug}/troubleshoot/redactors/${redactor?.slug}`}
-            className="u-fontSize--normal u-fontWeight--medium u-linkColor u-textDecoration--underlineOnHover u-marginRight--20"
+            className="u-fontSize--normal link u-textDecoration--underlineOnHover u-marginRight--20"
           >
             <Icon icon="edit" size={18} className="clickable" />
           </Link>

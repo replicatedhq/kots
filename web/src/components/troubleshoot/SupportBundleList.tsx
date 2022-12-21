@@ -271,7 +271,7 @@ class SupportBundleList extends React.Component<Props, State> {
                       Generate a support bundle
                     </a>
                     <span
-                      className="replicated-link flex alignItems--center u-fontSize--small u-marginLeft--20"
+                      className="link flex alignItems--center u-fontSize--small u-marginLeft--20"
                       onClick={this.toggleRedactorModal}
                     >
                       <Icon

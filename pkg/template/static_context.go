@@ -35,6 +35,7 @@ import (
 	"gopkg.in/yaml.v3"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	k8sversion "k8s.io/apimachinery/pkg/version"
 	"k8s.io/client-go/kubernetes"
 	certUtil "k8s.io/client-go/util/cert"
 )
@@ -44,6 +45,8 @@ type Ctx interface {
 }
 
 type StaticCtx struct {
+	// a new clientset will be initialized if nil
+	clientset kubernetes.Interface
 }
 
 type TLSPair struct {
@@ -99,6 +102,10 @@ func (ctx StaticCtx) FuncMap() template.FuncMap {
 	funcMap["NoProxy"] = ctx.noProxy
 
 	funcMap["YamlEscape"] = ctx.yamlEscape
+
+	funcMap["KubernetesVersion"] = ctx.kubernetesVersion
+	funcMap["KubernetesMajorVersion"] = ctx.kubernetesMajorVersion
+	funcMap["KubernetesMinorVersion"] = ctx.kubernetesMinorVersion
 
 	return funcMap
 }
@@ -525,7 +532,7 @@ func getNodes(clientset kubernetes.Interface) ([]corev1.Node, error) {
 }
 
 func (ctx StaticCtx) distribution() string {
-	clientset, err := k8sutil.GetClientset()
+	clientset, err := ctx.getClientset()
 	if err != nil {
 		return ""
 	}
@@ -546,7 +553,7 @@ func (ctx StaticCtx) distribution() string {
 }
 
 func (ctx StaticCtx) nodeCount() int {
-	clientset, err := k8sutil.GetClientset()
+	clientset, err := ctx.getClientset()
 	if err != nil {
 		return 0
 	}
@@ -582,6 +589,63 @@ func (ctx StaticCtx) yamlEscape(plain string) string {
 	// it is possible for this function to produce multiline yaml, so we indent it a bunch for safety
 	indented := indent(20, string(marshalled))
 	return indented
+}
+
+func (ctx StaticCtx) kubernetesVersion() string {
+	clientset, err := ctx.getClientset()
+	if err != nil {
+		// this is so that the linter doesn't complain about semver comparisons when running outside of a k8s cluster
+		return "0.0.0+unknown"
+	}
+	sv, err := getK8sServerVersion(clientset)
+	if err != nil {
+		// this is so that the linter doesn't complain about semver comparisons when running outside of a k8s cluster
+		return "0.0.0+unknown"
+	}
+	return strings.TrimPrefix(sv.GitVersion, "v")
+}
+
+func (ctx StaticCtx) kubernetesMajorVersion() string {
+	clientset, err := ctx.getClientset()
+	if err != nil {
+		return ""
+	}
+	sv, err := getK8sServerVersion(clientset)
+	if err != nil {
+		return ""
+	}
+	return sv.Major
+}
+
+func (ctx StaticCtx) kubernetesMinorVersion() string {
+	clientset, err := ctx.getClientset()
+	if err != nil {
+		return ""
+	}
+	sv, err := getK8sServerVersion(clientset)
+	if err != nil {
+		return ""
+	}
+	return sv.Minor
+}
+
+func getK8sServerVersion(clientset kubernetes.Interface) (*k8sversion.Info, error) {
+	sv, err := clientset.Discovery().ServerVersion()
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get kubernetes server version")
+	}
+	return sv, nil
+}
+
+func (ctx StaticCtx) getClientset() (kubernetes.Interface, error) {
+	if ctx.clientset != nil {
+		return ctx.clientset, nil
+	}
+	clientset, err := k8sutil.GetClientset()
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get kubernetes clientset")
+	}
+	return clientset, nil
 }
 
 // copied from sprig

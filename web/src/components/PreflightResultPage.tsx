@@ -396,7 +396,7 @@ class PreflightResultPage extends Component<Props, State> {
               "version-history"
             ) && (
               <div
-                className="u-fontWeight--bold u-linkColor u-cursor--pointer"
+                className="u-fontWeight--bold link"
                 onClick={() => this.props.history.goBack()}
               >
                 <Icon

@@ -518,7 +518,7 @@ class SnapshotSchedule extends Component {
                 <div className="flex-column flex1 u-position--relative u-marginBottom--50">
                   <div className="flex flex1">
                     <div className="flex1 u-paddingRight--5">
-                      <p className="u-fontSize--normal u-textColor--primary u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">
+                      <p className="u-fontSize--normal card-item-title u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">
                         Schedule
                       </p>
                       <Select
@@ -536,7 +536,7 @@ class SnapshotSchedule extends Component {
                       />
                     </div>
                     <div className="flex1 u-paddingLeft--5">
-                      <p className="u-fontSize--normal u-textColor--primary u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">
+                      <p className="u-fontSize--normal card-item-title u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">
                         Cron expression
                       </p>
                       <input
@@ -556,7 +556,7 @@ class SnapshotSchedule extends Component {
                     <p className="cron-expression-text">
                       Enter a valid Cron Expression{" "}
                       <a
-                        className="replicated-link"
+                        className="link"
                         href=""
                         target="_blank"
                         rel="noopener noreferrer"
@@ -568,7 +568,7 @@ class SnapshotSchedule extends Component {
                 </div>
               )}
               <div>
-                <p className="u-fontSize--normal u-textColor--primary u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">
+                <p className="u-fontSize--normal card-item-title u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">
                   Retention policy
                 </p>
                 <p className="u-fontSize--small u-textColor--bodyCopy u-fontWeight--normal u-lineHeight--normal u-marginBottom--10">

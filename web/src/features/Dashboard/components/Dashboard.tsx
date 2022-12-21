@@ -526,7 +526,7 @@ const Dashboard = (props: Props) => {
     // sort the available states to show them in the correct order
     const allStates = Object.keys(statesMap);
     const sortedStates = sortBy(allStates, (s) => {
-      if (s === "missing") {
+      if (s === "failed") {
         return 1;
       }
       if (s === "unavailable") {
@@ -538,7 +538,7 @@ const Dashboard = (props: Props) => {
       if (s === "updating") {
         return 4;
       }
-      if (s === "ready") {
+      if (s === "success") {
         return 5;
       }
     });
@@ -952,7 +952,7 @@ const Dashboard = (props: Props) => {
                         (resource, j) => (
                           <div key={`${resource?.name}-${j}`}>
                             <p
-                              className={`ResourceStateText u-fontSize--normal ${resource.state}`}
+                              className={`ResourceStateText status-tag u-fontSize--normal ${resource.state}`}
                             >
                               {resource?.namespace}/{resource?.kind}/
                               {resource?.name}

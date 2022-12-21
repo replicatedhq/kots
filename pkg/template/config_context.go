@@ -83,7 +83,7 @@ func (b *Builder) newConfigContext(configGroups []kotsv1beta1.ConfigGroup, exist
 		Ctx: []Ctx{
 			configCtx,
 			StaticCtx{},
-			&licenseCtx{License: license},
+			&licenseCtx{License: license, App: app},
 			newKurlContext("base", "default"),
 			newVersionCtx(info),
 		},
