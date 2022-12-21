@@ -7,6 +7,7 @@ import (
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	kotsscheme "github.com/replicatedhq/kots/kotskinds/client/kotsclientset/scheme"
 	reportingtypes "github.com/replicatedhq/kots/pkg/api/reporting/types"
+	registrytypes "github.com/replicatedhq/kots/pkg/registry/types"
 	"k8s.io/client-go/kubernetes/scheme"
 )
 
@@ -91,17 +92,9 @@ type FetchOptions struct {
 	AppSlug                  string
 	AppSequence              int64
 	AppVersionLabel          string
-	LocalRegistry            LocalRegistry
+	LocalRegistry            registrytypes.RegistrySettings
 	ReportingInfo            *reportingtypes.ReportingInfo
 	SkipCompatibilityCheck   bool
-}
-
-type LocalRegistry struct {
-	Host      string
-	Namespace string
-	Username  string
-	Password  string
-	ReadOnly  bool
 }
 
 func (u *Upstream) GetUpstreamDir(options WriteOptions) string {

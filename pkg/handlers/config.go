@@ -251,7 +251,7 @@ func (h *Handler) LiveAppConfig(w http.ResponseWriter, r *http.Request) {
 	var kotsKinds *kotsutil.KotsKinds
 	var appLicense *kotsv1beta1.License
 	var app apptypes.AppType
-	var localRegistry template.LocalRegistry
+	var localRegistry registrytypes.RegistrySettings
 
 	createNewVersion := false
 	configValues := configValuesFromConfigGroups(liveAppConfigRequest.ConfigGroups)
@@ -352,13 +352,7 @@ func (h *Handler) LiveAppConfig(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		localRegistry = template.LocalRegistry{
-			Host:      registryInfo.Hostname,
-			Namespace: registryInfo.Namespace,
-			Username:  registryInfo.Username,
-			Password:  registryInfo.Password,
-			ReadOnly:  registryInfo.IsReadOnly,
-		}
+		localRegistry = registryInfo
 
 		createNewVersion, err = shouldCreateNewAppVersion(archiveDir, foundApp.GetID(), liveAppConfigRequest.Sequence)
 		if err != nil {
@@ -457,7 +451,7 @@ func (h *Handler) CurrentAppConfig(w http.ResponseWriter, r *http.Request) {
 
 	var kotsKinds *kotsutil.KotsKinds
 	var license *kotsv1beta1.License
-	var localRegistry template.LocalRegistry
+	var localRegistry registrytypes.RegistrySettings
 	var app apptypes.AppType
 	var downstreamVersion *downstreamtypes.DownstreamVersion
 
@@ -598,13 +592,7 @@ func (h *Handler) CurrentAppConfig(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		localRegistry = template.LocalRegistry{
-			Host:      registryInfo.Hostname,
-			Namespace: registryInfo.Namespace,
-			Username:  registryInfo.Username,
-			Password:  registryInfo.Password,
-			ReadOnly:  registryInfo.IsReadOnly,
-		}
+		localRegistry = registryInfo
 
 		createNewVersion, err = shouldCreateNewAppVersion(archiveDir, foundApp.GetID(), sequence)
 		if err != nil {
@@ -1134,14 +1122,6 @@ func (h *Handler) SetAppConfigValues(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	localRegistry := template.LocalRegistry{
-		Host:      registryInfo.Hostname,
-		Namespace: registryInfo.Namespace,
-		Username:  registryInfo.Username,
-		Password:  registryInfo.Password,
-		ReadOnly:  registryInfo.IsReadOnly,
-	}
-
 	nextAppSequence, err := store.GetStore().GetNextAppSequence(foundApp.ID)
 	if err != nil {
 		setAppConfigValuesResponse.Error = "failed to get next app sequence"
@@ -1152,7 +1132,7 @@ func (h *Handler) SetAppConfigValues(w http.ResponseWriter, r *http.Request) {
 
 	versionInfo := template.VersionInfoFromInstallation(nextAppSequence, foundApp.IsAirgap, kotsKinds.Installation.Spec) // sequence +1 because the sequence will be incremented on save (and we want the preview to be accurate)
 	appInfo := template.ApplicationInfo{Slug: foundApp.Slug}
-	renderedConfig, err := kotsconfig.TemplateConfigObjects(newConfig, configValueMap, kotsKinds.License, &kotsKinds.KotsApplication, localRegistry, &versionInfo, &appInfo, kotsKinds.IdentityConfig, util.PodNamespace, true)
+	renderedConfig, err := kotsconfig.TemplateConfigObjects(newConfig, configValueMap, kotsKinds.License, &kotsKinds.KotsApplication, registryInfo, &versionInfo, &appInfo, kotsKinds.IdentityConfig, util.PodNamespace, true)
 	if err != nil {
 		setAppConfigValuesResponse.Error = "failed to render templates"
 		logger.Error(errors.Wrap(err, setAppConfigValuesResponse.Error))

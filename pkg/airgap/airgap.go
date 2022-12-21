@@ -220,8 +220,8 @@ func CreateAppFromAirgap(opts CreateAirgapAppOpts) (finalError error) {
 		ExcludeAdminConsole: true,
 		RewriteImages:       true,
 		ReportWriter:        pipeWriter,
-		RewriteImageOptions: pull.RewriteImageOptions{
-			Host:       opts.RegistryHost,
+		RewriteImageOptions: registrytypes.RegistrySettings{
+			Hostname:   opts.RegistryHost,
 			Namespace:  opts.RegistryNamespace,
 			Username:   opts.RegistryUsername,
 			Password:   opts.RegistryPassword,

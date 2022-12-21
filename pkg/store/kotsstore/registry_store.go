@@ -38,18 +38,17 @@ func (s *KOTSStore) GetRegistryDetailsForApp(appID string) (registrytypes.Regist
 	}
 
 	registrySettings := registrytypes.RegistrySettings{
-		Hostname:    registryHostname.String,
-		Username:    registryUsername.String,
-		PasswordEnc: registryPasswordEnc.String,
-		Namespace:   registryNamespace.String,
-		IsReadOnly:  isReadOnly.Bool,
+		Hostname:   registryHostname.String,
+		Username:   registryUsername.String,
+		Namespace:  registryNamespace.String,
+		IsReadOnly: isReadOnly.Bool,
 	}
 
 	if !registryPasswordEnc.Valid {
 		return registrySettings, nil
 	}
 
-	decodedPassword, err := base64.StdEncoding.DecodeString(registrySettings.PasswordEnc)
+	decodedPassword, err := base64.StdEncoding.DecodeString(registryPasswordEnc.String)
 	if err != nil {
 		return registrytypes.RegistrySettings{}, errors.Wrap(err, "failed to decode")
 	}

@@ -18,6 +18,7 @@ import (
 	kotsconfig "github.com/replicatedhq/kots/pkg/config"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/logger"
+	registrytypes "github.com/replicatedhq/kots/pkg/registry/types"
 	"github.com/replicatedhq/kots/pkg/template"
 	upstreamtypes "github.com/replicatedhq/kots/pkg/upstream/types"
 	"github.com/replicatedhq/kots/pkg/util"
@@ -59,12 +60,12 @@ func renderReplicated(u *upstreamtypes.Upstream, renderOptions *RenderOptions) (
 		return nil, nil, errors.Wrap(err, "failed to find config file")
 	}
 
-	registry := template.LocalRegistry{
-		Host:      renderOptions.LocalRegistryHost,
-		Namespace: renderOptions.LocalRegistryNamespace,
-		Username:  renderOptions.LocalRegistryUsername,
-		Password:  renderOptions.LocalRegistryPassword,
-		ReadOnly:  renderOptions.LocalRegistryIsReadOnly,
+	registry := registrytypes.RegistrySettings{
+		Hostname:   renderOptions.LocalRegistryHost,
+		Namespace:  renderOptions.LocalRegistryNamespace,
+		Username:   renderOptions.LocalRegistryUsername,
+		Password:   renderOptions.LocalRegistryPassword,
+		IsReadOnly: renderOptions.LocalRegistryIsReadOnly,
 	}
 
 	versionInfo := template.VersionInfoFromInstallation(renderOptions.Sequence, renderOptions.IsAirgap, kotsKinds.Installation.Spec)

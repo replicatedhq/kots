@@ -10,6 +10,7 @@ import (
 	kotsscheme "github.com/replicatedhq/kots/kotskinds/client/kotsclientset/scheme"
 	"github.com/replicatedhq/kots/kotskinds/multitype"
 	"github.com/replicatedhq/kots/pkg/logger"
+	registrytypes "github.com/replicatedhq/kots/pkg/registry/types"
 	"github.com/replicatedhq/kots/pkg/template"
 	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -364,7 +365,7 @@ spec:
 
 			configObj, _, _ := decode([]byte(tt.configSpecData), nil, nil)
 
-			localRegistry := template.LocalRegistry{}
+			localRegistry := registrytypes.RegistrySettings{}
 			got, err := templateConfigObjects(configObj.(*kotsv1beta1.Config), tt.configValuesData, license, app, localRegistry, versionInfo, appInfo, nil, "app-namespace", false, MarshalConfig)
 			req.NoError(err)
 

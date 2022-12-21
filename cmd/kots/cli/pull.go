@@ -12,6 +12,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/pull"
+	registrytypes "github.com/replicatedhq/kots/pkg/registry/types"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -68,8 +69,8 @@ func PullCmd() *cobra.Command {
 				CreateAppDir:        true,
 				SkipHelmChartCheck:  true, // this check cannot be performed from CLI because previous release is not available
 				RewriteImages:       v.GetBool("rewrite-images"),
-				RewriteImageOptions: pull.RewriteImageOptions{
-					Host:      v.GetString("registry-endpoint"),
+				RewriteImageOptions: registrytypes.RegistrySettings{
+					Hostname:  v.GetString("registry-endpoint"),
 					Namespace: v.GetString("image-namespace"),
 					Username:  v.GetString("registry-username"),
 					Password:  v.GetString("registry-password"),
