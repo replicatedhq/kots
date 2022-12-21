@@ -315,7 +315,7 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 	}
 
 	if needsConfig {
-		if pullOptions.AirgapRoot != "" {
+		if processImageOptions.RewriteImages && processImageOptions.AirgapRoot != "" {
 			// if this is an airgap install, we still need to process the images
 			if _, err = midstream.ProcessAirgapImages(processImageOptions, kotsKinds, fetchOptions.License, log); err != nil {
 				return "", errors.Wrap(err, "failed to process airgap images")
