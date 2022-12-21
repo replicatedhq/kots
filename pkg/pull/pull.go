@@ -312,11 +312,20 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 		IsReadOnly: pullOptions.RewriteImageOptions.IsReadOnly,
 	}
 
+	pushImages := pullOptions.RewriteImageOptions.Host != ""
+
 	needsConfig, err := kotsadmconfig.NeedsConfiguration(pullOptions.AppSlug, pullOptions.AppSequence, pullOptions.AirgapRoot != "", kotsKinds, registrySettings)
 	if err != nil {
 		return "", errors.Wrap(err, "failed to check if version needs configuration")
 	}
 	if needsConfig {
+		if pullOptions.AirgapRoot != "" {
+			// if this is an airgap install, we still need to process the images
+			if _, err = processAirgapImages(pullOptions, pushImages, kotsKinds, fetchOptions.License, log); err != nil {
+				return "", errors.Wrap(err, "failed to process airgap images")
+			}
+		}
+
 		return "", ErrConfigNeeded
 	}
 
@@ -471,7 +480,6 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 		NoProxyEnvValue:    pullOptions.NoProxyEnvValue,
 		NewHelmCharts:      newHelmCharts,
 	}
-	pushImages := pullOptions.RewriteImageOptions.Host != ""
 
 	// the UseHelmInstall map blocks visibility into charts and subcharts when searching for private images
 	// any chart name listed here will be skipped when writing midstream kustomization.yaml and pullsecret.yaml
@@ -497,7 +505,7 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 	writeMidstreamOptions.MidstreamDir = filepath.Join(commonBase.GetOverlaysDir(writeBaseOptions), "midstream")
 	writeMidstreamOptions.BaseDir = filepath.Join(u.GetBaseDir(writeUpstreamOptions), commonBase.Path)
 
-	m, err := writeMidstream(writeMidstreamOptions, pullOptions, u, commonBase, fetchOptions.License, identityConfig, u.GetUpstreamDir(writeUpstreamOptions), pushImages, log)
+	m, err := writeMidstream(writeMidstreamOptions, pullOptions, commonBase, fetchOptions.License, identityConfig, u.GetUpstreamDir(writeUpstreamOptions), pushImages, log)
 	if err != nil {
 		log.FinishSpinnerWithError()
 		return "", errors.Wrap(err, "failed to write common midstream")
@@ -521,7 +529,7 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 		pullOptionsCopy := pullOptions
 		pullOptionsCopy.Namespace = helmBaseCopy.Namespace
 
-		helmMidstream, err := writeMidstream(writeMidstreamOptions, pullOptionsCopy, u, helmBaseCopy, fetchOptions.License, identityConfig, u.GetUpstreamDir(writeUpstreamOptions), pushImages, log)
+		helmMidstream, err := writeMidstream(writeMidstreamOptions, pullOptionsCopy, helmBaseCopy, fetchOptions.License, identityConfig, u.GetUpstreamDir(writeUpstreamOptions), pushImages, log)
 		if err != nil {
 			log.FinishSpinnerWithError()
 			return "", errors.Wrapf(err, "failed to write helm midstream %s", helmBase.Path)
@@ -554,7 +562,7 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 	return filepath.Join(pullOptions.RootDir, u.Name), nil
 }
 
-func writeMidstream(writeMidstreamOptions midstream.WriteOptions, options PullOptions, u *upstreamtypes.Upstream, b *base.Base, license *kotsv1beta1.License, identityConfig *kotsv1beta1.IdentityConfig, upstreamDir string, pushImages bool, log *logger.CLILogger) (*midstream.Midstream, error) {
+func writeMidstream(writeMidstreamOptions midstream.WriteOptions, options PullOptions, b *base.Base, license *kotsv1beta1.License, identityConfig *kotsv1beta1.IdentityConfig, upstreamDir string, pushImages bool, log *logger.CLILogger) (*midstream.Midstream, error) {
 	var images []kustomizetypes.Image
 	var objects []k8sdoc.K8sDoc
 	var pullSecretRegistries []string
