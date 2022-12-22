@@ -9,7 +9,7 @@ PullOptions:
   SharedPassword: dummy-pass
   RewriteImages: true
   RewriteImageOptions:
-    Host: fake-docker-proxy
+    Hostname: fake-docker-proxy
     Username: test
     Password: fake-pass
     IsReadOnly: true

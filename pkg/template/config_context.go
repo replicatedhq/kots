@@ -10,22 +10,15 @@ import (
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	"github.com/replicatedhq/kots/pkg/crypto"
 	"github.com/replicatedhq/kots/pkg/docker/registry"
-	registrytypes "github.com/replicatedhq/kots/pkg/docker/registry/types"
+	dockerregistrytypes "github.com/replicatedhq/kots/pkg/docker/registry/types"
 	"github.com/replicatedhq/kots/pkg/image"
+	registrytypes "github.com/replicatedhq/kots/pkg/registry/types"
 	corev1 "k8s.io/api/core/v1"
 )
 
 var (
 	dockerImageNameRegex = regexp.MustCompile("(?:([^\\/]+)\\/)?(?:([^\\/]+)\\/)?([^@:\\/]+)(?:[@:](.+))")
 )
-
-type LocalRegistry struct {
-	Host      string
-	Namespace string
-	Username  string
-	Password  string
-	ReadOnly  bool
-}
 
 type ItemValue struct {
 	Value          interface{}
@@ -65,8 +58,8 @@ func (i ItemValue) DefaultStr() string {
 // ConfigCtx is the context for builder functions before the application has started.
 type ConfigCtx struct {
 	ItemValues        map[string]ItemValue
-	LocalRegistry     LocalRegistry
-	DockerHubRegistry registrytypes.RegistryOptions
+	LocalRegistry     registrytypes.RegistrySettings
+	DockerHubRegistry dockerregistrytypes.RegistryOptions
 	AppSlug           string
 	DecryptValues     bool
 
@@ -75,7 +68,7 @@ type ConfigCtx struct {
 }
 
 // newConfigContext creates and returns a context for template rendering
-func (b *Builder) newConfigContext(configGroups []kotsv1beta1.ConfigGroup, existingValues map[string]ItemValue, localRegistry LocalRegistry, license *kotsv1beta1.License, app *kotsv1beta1.Application, info *VersionInfo, dockerHubRegistry registrytypes.RegistryOptions, appSlug string, decryptValues bool) (*ConfigCtx, error) {
+func (b *Builder) newConfigContext(configGroups []kotsv1beta1.ConfigGroup, existingValues map[string]ItemValue, localRegistry registrytypes.RegistrySettings, license *kotsv1beta1.License, app *kotsv1beta1.Application, info *VersionInfo, dockerHubRegistry dockerregistrytypes.RegistryOptions, appSlug string, decryptValues bool) (*ConfigCtx, error) {
 	configCtx := &ConfigCtx{
 		ItemValues:        existingValues,
 		LocalRegistry:     localRegistry,
@@ -276,14 +269,14 @@ func (ctx ConfigCtx) configOptionNotEquals(name string, value string) bool {
 
 func (ctx ConfigCtx) localRegistryAddress() string {
 	if ctx.LocalRegistry.Namespace == "" {
-		return ctx.LocalRegistry.Host
+		return ctx.LocalRegistry.Hostname
 	}
 
-	return fmt.Sprintf("%s/%s", ctx.LocalRegistry.Host, ctx.LocalRegistry.Namespace)
+	return fmt.Sprintf("%s/%s", ctx.LocalRegistry.Hostname, ctx.LocalRegistry.Namespace)
 }
 
 func (ctx ConfigCtx) localRegistryHost() string {
-	return ctx.LocalRegistry.Host
+	return ctx.LocalRegistry.Hostname
 }
 
 func (ctx ConfigCtx) localRegistryNamespace() string {
@@ -292,8 +285,8 @@ func (ctx ConfigCtx) localRegistryNamespace() string {
 
 func (ctx ConfigCtx) localImageName(imageRef string) string {
 	// If there's a private registry. Always rewrite everything. This covers airgap installs too.
-	if ctx.LocalRegistry.Host != "" {
-		destRegistry := registrytypes.RegistryOptions{
+	if ctx.LocalRegistry.Hostname != "" {
+		destRegistry := dockerregistrytypes.RegistryOptions{
 			Endpoint:  ctx.localRegistryHost(),
 			Namespace: ctx.localRegistryNamespace(),
 		}
@@ -320,7 +313,7 @@ func (ctx ConfigCtx) localImageName(imageRef string) string {
 	}
 
 	registryProxyInfo := registry.GetRegistryProxyInfo(ctx.license, ctx.app)
-	registryOptions := registrytypes.RegistryOptions{
+	registryOptions := dockerregistrytypes.RegistryOptions{
 		Endpoint:      registryProxyInfo.Registry,
 		ProxyEndpoint: registryProxyInfo.Proxy,
 	}
@@ -340,14 +333,14 @@ func (ctx ConfigCtx) localImageName(imageRef string) string {
 }
 
 func (ctx ConfigCtx) hasLocalRegistry() bool {
-	return ctx.LocalRegistry.Host != ""
+	return ctx.LocalRegistry.Hostname != ""
 }
 
 func (ctx ConfigCtx) localRegistryImagePullSecret() string {
 	var secret *corev1.Secret
-	if ctx.LocalRegistry.Host != "" {
+	if ctx.LocalRegistry.Hostname != "" {
 		secrets, err := registry.PullSecretForRegistries(
-			[]string{ctx.LocalRegistry.Host},
+			[]string{ctx.LocalRegistry.Hostname},
 			ctx.LocalRegistry.Username,
 			ctx.LocalRegistry.Password,
 			"default", // this value doesn't matter

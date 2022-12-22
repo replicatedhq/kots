@@ -190,7 +190,24 @@ func (h *Handler) UpdateAppConfig(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	createNewVersion, err := shouldCreateNewAppVersion(foundApp.ID, updateAppConfigRequest.Sequence)
+	archiveDir, err := ioutil.TempDir("", "kotsadm")
+	if err != nil {
+		updateAppConfigResponse.Error = "failed to create temp dir"
+		logger.Error(errors.Wrap(err, updateAppConfigResponse.Error))
+		JSON(w, http.StatusInternalServerError, updateAppConfigResponse)
+		return
+	}
+	defer os.RemoveAll(archiveDir)
+
+	err = store.GetStore().GetAppVersionArchive(foundApp.ID, updateAppConfigRequest.Sequence, archiveDir)
+	if err != nil {
+		updateAppConfigResponse.Error = "failed to get app version archive"
+		logger.Error(errors.Wrap(err, updateAppConfigResponse.Error))
+		JSON(w, http.StatusInternalServerError, updateAppConfigResponse)
+		return
+	}
+
+	createNewVersion, err := shouldCreateNewAppVersion(archiveDir, foundApp.ID, updateAppConfigRequest.Sequence)
 	if err != nil {
 		updateAppConfigResponse.Error = "failed to check if version should be created"
 		logger.Error(errors.Wrap(err, updateAppConfigResponse.Error))
@@ -234,7 +251,7 @@ func (h *Handler) LiveAppConfig(w http.ResponseWriter, r *http.Request) {
 	var kotsKinds *kotsutil.KotsKinds
 	var appLicense *kotsv1beta1.License
 	var app apptypes.AppType
-	var localRegistry template.LocalRegistry
+	var localRegistry registrytypes.RegistrySettings
 
 	createNewVersion := false
 	configValues := configValuesFromConfigGroups(liveAppConfigRequest.ConfigGroups)
@@ -335,15 +352,9 @@ func (h *Handler) LiveAppConfig(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		localRegistry = template.LocalRegistry{
-			Host:      registryInfo.Hostname,
-			Namespace: registryInfo.Namespace,
-			Username:  registryInfo.Username,
-			Password:  registryInfo.Password,
-			ReadOnly:  registryInfo.IsReadOnly,
-		}
+		localRegistry = registryInfo
 
-		createNewVersion, err = shouldCreateNewAppVersion(foundApp.GetID(), liveAppConfigRequest.Sequence)
+		createNewVersion, err = shouldCreateNewAppVersion(archiveDir, foundApp.GetID(), liveAppConfigRequest.Sequence)
 		if err != nil {
 			liveAppConfigResponse.Error = "failed to check new version"
 			logger.Error(errors.Wrap(err, liveAppConfigResponse.Error))
@@ -440,7 +451,7 @@ func (h *Handler) CurrentAppConfig(w http.ResponseWriter, r *http.Request) {
 
 	var kotsKinds *kotsutil.KotsKinds
 	var license *kotsv1beta1.License
-	var localRegistry template.LocalRegistry
+	var localRegistry registrytypes.RegistrySettings
 	var app apptypes.AppType
 	var downstreamVersion *downstreamtypes.DownstreamVersion
 
@@ -581,15 +592,9 @@ func (h *Handler) CurrentAppConfig(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		localRegistry = template.LocalRegistry{
-			Host:      registryInfo.Hostname,
-			Namespace: registryInfo.Namespace,
-			Username:  registryInfo.Username,
-			Password:  registryInfo.Password,
-			ReadOnly:  registryInfo.IsReadOnly,
-		}
+		localRegistry = registryInfo
 
-		createNewVersion, err = shouldCreateNewAppVersion(foundApp.GetID(), sequence)
+		createNewVersion, err = shouldCreateNewAppVersion(archiveDir, foundApp.GetID(), sequence)
 		if err != nil {
 			currentAppConfigResponse.Error = "failed to check new version"
 			logger.Error(errors.Wrap(err, currentAppConfigResponse.Error))
@@ -674,8 +679,17 @@ func isVersionConfigEditable(app *apptypes.App, sequence int64) (bool, error) {
 	return false, nil
 }
 
-func shouldCreateNewAppVersion(appID string, sequence int64) (bool, error) {
-	// Updates are allowed only for sequence 0 and only when it's pending config.
+func shouldCreateNewAppVersion(archiveDir string, appID string, sequence int64) (bool, error) {
+	// Updates are allowed for any version that does not have base rendered.
+	if _, err := os.Stat(filepath.Join(archiveDir, "base")); err != nil {
+		if os.IsNotExist(err) {
+			return false, nil
+		} else {
+			return false, errors.Wrap(err, "failed to stat base dir")
+		}
+	}
+
+	// If base is rendered, updates are allowed only for sequence 0 and only when it's pending config.
 	if sequence > 0 {
 		return true, nil
 	}
@@ -826,7 +840,12 @@ func updateAppConfig(updateApp *apptypes.App, sequence int64, configGroups []kot
 
 	err = render.RenderDir(archiveDir, app, downstreams, registrySettings, renderSequence)
 	if err != nil {
-		updateAppConfigResponse.Error = "failed to render archive directory"
+		cause := errors.Cause(err)
+		if _, ok := cause.(util.ActionableError); ok {
+			updateAppConfigResponse.Error = cause.Error()
+		} else {
+			updateAppConfigResponse.Error = "failed to render archive directory"
+		}
 		return updateAppConfigResponse, err
 	}
 
@@ -1103,14 +1122,6 @@ func (h *Handler) SetAppConfigValues(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	localRegistry := template.LocalRegistry{
-		Host:      registryInfo.Hostname,
-		Namespace: registryInfo.Namespace,
-		Username:  registryInfo.Username,
-		Password:  registryInfo.Password,
-		ReadOnly:  registryInfo.IsReadOnly,
-	}
-
 	nextAppSequence, err := store.GetStore().GetNextAppSequence(foundApp.ID)
 	if err != nil {
 		setAppConfigValuesResponse.Error = "failed to get next app sequence"
@@ -1121,7 +1132,7 @@ func (h *Handler) SetAppConfigValues(w http.ResponseWriter, r *http.Request) {
 
 	versionInfo := template.VersionInfoFromInstallation(nextAppSequence, foundApp.IsAirgap, kotsKinds.Installation.Spec) // sequence +1 because the sequence will be incremented on save (and we want the preview to be accurate)
 	appInfo := template.ApplicationInfo{Slug: foundApp.Slug}
-	renderedConfig, err := kotsconfig.TemplateConfigObjects(newConfig, configValueMap, kotsKinds.License, &kotsKinds.KotsApplication, localRegistry, &versionInfo, &appInfo, kotsKinds.IdentityConfig, util.PodNamespace, true)
+	renderedConfig, err := kotsconfig.TemplateConfigObjects(newConfig, configValueMap, kotsKinds.License, &kotsKinds.KotsApplication, registryInfo, &versionInfo, &appInfo, kotsKinds.IdentityConfig, util.PodNamespace, true)
 	if err != nil {
 		setAppConfigValuesResponse.Error = "failed to render templates"
 		logger.Error(errors.Wrap(err, setAppConfigValuesResponse.Error))
