@@ -1589,8 +1589,8 @@ github.com/replicatedhq/kurl v0.0.0-20210414162418-8d6211901244/go.mod h1:SoROyL
 github.com/replicatedhq/termui/v3 v3.1.1-0.20200811145416-f40076d26851 h1:eRlNDHxGfVkPCRXbA4BfQJvt5DHjFiTtWy3R/t4djyY=
 github.com/replicatedhq/termui/v3 v3.1.1-0.20200811145416-f40076d26851/go.mod h1:JDxG6+uubnk9/BZ2yUsyAJJwlptjrnmB2MPF5d2Xe/8=
 github.com/replicatedhq/troubleshoot v0.10.18/go.mod h1:8oFRnMJlFjzJ490eq72iLEN7DGJjkgLx22Z1vX6WwU0=
-github.com/replicatedhq/troubleshoot v0.50.0 h1:28Z5/UZkFg+qHT12sOTBlTAyo8PnlNCzny1z1zdbohM=
-github.com/replicatedhq/troubleshoot v0.50.0/go.mod h1:jS25aClad385wsNRLx/AsiY3B5XL8/bFkqxnpnY68aU=
+github.com/replicatedhq/troubleshoot v0.51.0 h1:yzQPwW9rCaKL9NCDZ19gWkvo1aaPjpY0a/h/c6n7vB0=
+github.com/replicatedhq/troubleshoot v0.51.0/go.mod h1:jS25aClad385wsNRLx/AsiY3B5XL8/bFkqxnpnY68aU=
 github.com/replicatedhq/yaml/v3 v3.0.0-beta5-replicatedhq h1:PwPggruelq2336c1Ayg5STFqgbn/QB1tWLQwrVlU7ZQ=
 github.com/replicatedhq/yaml/v3 v3.0.0-beta5-replicatedhq/go.mod h1:Txa7LopbYCU8aRgmNe0n+y/EPMz50NbCPcVVJBquwag=
 github.com/rivo/uniseg v0.2.0 h1:S1pD9weZBuJdFmowNwbpi7BJ8TNftyUImj/0WQi72jY=
