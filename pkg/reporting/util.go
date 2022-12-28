@@ -32,11 +32,25 @@ func InjectReportingInfoHeaders(req *http.Request, reportingInfo *types.Reportin
 		req.Header.Set("X-Replicated-DownstreamChannelName", reportingInfo.Downstream.ChannelName)
 	}
 
-	if kotsInstallID := os.Getenv("KOTS_INSTALL_ID"); kotsInstallID != "" {
-		req.Header.Set("X-Replicated-KotsInstallID", kotsInstallID)
+	if reportingInfo.Downstream.Status != "" {
+		req.Header.Set("X-Replicated-InstallStatus", reportingInfo.Downstream.Status)
 	}
-	if kurlInstallID := os.Getenv("KURL_INSTALL_ID"); kurlInstallID != "" {
-		req.Header.Set("X-Replicated-KurlInstallID", kurlInstallID)
+	if reportingInfo.Downstream.PreflightState != "" {
+		req.Header.Set("X-Replicated-PreflightStatus", reportingInfo.Downstream.PreflightState)
+	}
+	if reportingInfo.Downstream.Sequence != nil {
+		req.Header.Set("X-Replicated-DownstreamSequence", strconv.FormatInt(*reportingInfo.Downstream.Sequence, 10))
+	}
+	if reportingInfo.Downstream.Source != "" {
+		req.Header.Set("X-Replicated-DownstreamSource", reportingInfo.Downstream.Source)
+	}
+	req.Header.Set("X-Replicated-SkipPreflights", strconv.FormatBool(reportingInfo.Downstream.SkipPreflights))
+
+	if reportingInfo.KOTSInstallID != "" {
+		req.Header.Set("X-Replicated-KotsInstallID", reportingInfo.KOTSInstallID)
+	}
+	if reportingInfo.KURLInstallID != "" {
+		req.Header.Set("X-Replicated-KurlInstallID", reportingInfo.KURLInstallID)
 	}
 
 	req.Header.Set("X-Replicated-KurlNodeCountTotal", strconv.Itoa(reportingInfo.KurlNodeCountTotal))

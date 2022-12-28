@@ -143,6 +143,7 @@ func Run(appID string, appSlug string, sequence int64, isAirgap bool, archiveDir
 				return
 			}
 			logger.Debug("preflight checks completed")
+			go reporting.SendAppInfo(appID) // send app and preflight info when preflights finish
 
 			// status could've changed while preflights were running
 			status, err := store.GetStore().GetDownstreamVersionStatus(appID, sequence)
