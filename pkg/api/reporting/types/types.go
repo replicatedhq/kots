@@ -14,14 +14,14 @@ type ReportingInfo struct {
 }
 
 type DownstreamInfo struct {
-	Cursor             string `json:"cursor,omitempty"`
-	ChannelID          string `json:"channel_id,omitempty"`
-	ChannelName        string `json:"channel_name,omitempty"`
-	Sequence           *int64 `json:"sequence,omitempty"`
-	Source             string `json:"source,omitempty"`
-	Status             string `json:"status,omitempty"`
-	PreflightState     string `json:"preflight_state,omitempty"`
-	SkipPreflights     bool   `json:"skip_preflights,omitempty"`
-	ReplHelmInstalls   int    `json:"repl_helm_installs,omitempty"`
-	NativeHelmInstalls int    `json:"native_helm_installs,omitempty"`
+	Cursor             string `json:"cursor"`
+	ChannelID          string `json:"channel_id"`
+	ChannelName        string `json:"channel_name"`
+	Sequence           *int64 `json:"sequence"`
+	Source             string `json:"source"`
+	Status             string `json:"status"`
+	PreflightState     string `json:"preflight_state"`
+	SkipPreflights     bool   `json:"skip_preflights"`
+	ReplHelmInstalls   int    `json:"repl_helm_installs"`
+	NativeHelmInstalls int    `json:"native_helm_installs"`
 }
