@@ -189,6 +189,7 @@ var _ = Describe("Operator", func() {
 			)
 
 			BeforeEach(func() {
+				os.Setenv("KOTSADM_ENV", "test")
 				previouslyDeployedSequence = -1
 				mockCtrl = gomock.NewController(GinkgoT())
 				mockStore = mock_store.NewMockStore(mockCtrl)
@@ -198,6 +199,7 @@ var _ = Describe("Operator", func() {
 			})
 
 			AfterEach(func() {
+				os.Setenv("KOTSADM_ENV", "")
 				mockCtrl.Finish()
 
 				err := os.RemoveAll(archiveDir)
