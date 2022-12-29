@@ -4,6 +4,7 @@ import (
 	"archive/tar"
 	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -25,6 +26,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/registry"
 	registrytypes "github.com/replicatedhq/kots/pkg/registry/types"
 	"github.com/replicatedhq/kots/pkg/render/helper"
+	"github.com/replicatedhq/kots/pkg/reporting"
 	"github.com/replicatedhq/kots/pkg/snapshot"
 	kotssnapshot "github.com/replicatedhq/kots/pkg/snapshot"
 	"github.com/replicatedhq/kots/pkg/store"
@@ -494,6 +496,21 @@ func getDefaultDynamicCollectors(app apptypes.AppType, imageName string, pullSec
 				},
 			})
 		}
+	}
+
+	reportingInfo := reporting.GetReportingInfo(app.GetID())
+	if b, err := json.MarshalIndent(reportingInfo, "", "  "); err != nil {
+		logger.Errorf("Failed to marshal reporting info: %v", err)
+	} else {
+		collectors = append(collectors, &troubleshootv1beta2.Collect{
+			Data: &troubleshootv1beta2.Data{
+				CollectorMeta: troubleshootv1beta2.CollectorMeta{
+					CollectorName: "app-info.json",
+				},
+				Name: "kots/admin_console",
+				Data: string(b),
+			},
+		})
 	}
 
 	collectors = append(collectors, &troubleshootv1beta2.Collect{

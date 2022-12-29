@@ -160,6 +160,13 @@ func (o *Operator) DeployApp(appID string, sequence int64) (deployed bool, deplo
 		return false, errors.Wrap(err, "failed to update downstream status")
 	}
 
+	if os.Getenv("KOTSADM_ENV") != "test" {
+		go reporting.SendAppInfo(appID)
+		defer func() {
+			go reporting.SendAppInfo(appID)
+		}()
+	}
+
 	defer func() {
 		if deployError != nil {
 			err := o.store.SetDownstreamVersionStatus(appID, sequence, storetypes.VersionFailed, deployError.Error())
