@@ -44,7 +44,6 @@ func KotsadmTagForVersionString(kotsVersion string) string {
 
 func KotsadmRegistry(registryConfig types.RegistryConfig) string {
 	if registryConfig.OverrideRegistry == "" {
-		// Images hosted in docker hub
 		if registryConfig.OverrideNamespace == "" {
 			return "kotsadm"
 		} else {

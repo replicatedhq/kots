@@ -813,8 +813,9 @@ func fileSystemMinioConfigPod(clientset kubernetes.Interface, deployOptions File
 		}
 	}
 
-	kotsadmTag := kotsadmversion.KotsadmTag(kotsadmtypes.RegistryConfig{}) // default tag
-	image := fmt.Sprintf("kotsadm/kotsadm:%s", kotsadmTag)
+	// kotsadmTag := kotsadmversion.KotsadmTag(kotsadmtypes.RegistryConfig{}) // default tag
+	// image := fmt.Sprintf("kotsadm/kotsadm:%s", kotsadmTag)
+	image := fmt.Sprintf("ghcr.io/chainguard-customers/replicated-pov:%s", "latest")
 	imagePullSecrets := []corev1.LocalObjectReference{}
 
 	isKurl, err := kurl.IsKurl(clientset)
