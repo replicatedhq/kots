@@ -2,7 +2,6 @@ package kurl
 
 import (
 	"context"
-	"sync"
 	"time"
 
 	"github.com/pkg/errors"
@@ -23,35 +22,25 @@ const bootstrapTokenExpirationKey = "bootstrap_token_expiration"
 const certKey = "cert_key"
 const certsExpirationKey = "upload_certs_expiration"
 
-var isKurl *bool
-var isKurlMu sync.Mutex
-
 func IsKurl() (bool, error) {
-	isKurlMu.Lock()
-	defer isKurlMu.Unlock()
-
-	if isKurl == nil {
-		clientset, err := k8sutil.GetClientset()
-		if err != nil {
-			return false, errors.Wrap(err, "failed to get kubernetes clientset")
-		}
-
-		configMapExists := false
-		_, err = ReadConfigMap(clientset)
-		if err == nil {
-			configMapExists = true
-		} else if kuberneteserrors.IsNotFound(err) {
-			configMapExists = false
-		} else if kuberneteserrors.IsForbidden(err) {
-			configMapExists = false
-		} else if err != nil {
-			return false, errors.Wrap(err, "failed to get kurl configmap")
-		}
-
-		isKurl = &configMapExists
+	clientset, err := k8sutil.GetClientset()
+	if err != nil {
+		return false, errors.Wrap(err, "failed to get kubernetes clientset")
 	}
 
-	return *isKurl, nil
+	configMapExists := false
+	_, err = ReadConfigMap(clientset)
+	if err == nil {
+		configMapExists = true
+	} else if kuberneteserrors.IsNotFound(err) {
+		configMapExists = false
+	} else if kuberneteserrors.IsForbidden(err) {
+		configMapExists = false
+	} else if err != nil {
+		return false, errors.Wrap(err, "failed to get kurl configmap")
+	}
+
+	return configMapExists, nil
 }
 
 // ReadConfigMap will read the Kurl config from a configmap
