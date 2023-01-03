@@ -285,8 +285,8 @@ const GenerateSupportBundleModal = ({
               className="u-fontSize--normal u-lineHeight--normal"
             >
               Collect logs, resources and other data from the application and
-              analyze them against a set of known criteria to check.
-              Data will not leave your cluster.
+              analyze them against a set of known criteria to check. Data will
+              not leave your cluster.
             </p>
             <div>
               <button
