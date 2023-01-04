@@ -274,10 +274,7 @@ $cell-width: 140px;
 }
 
 .checks-running-text {
-  position: absolute;
-  bottom: -26px;
-  margin-left: 50%;
-  transform: translateX(-50%);
+  margin-left: -30px;
   white-space: nowrap;
   color: $text-color-body-copy;
 
@@ -286,6 +283,7 @@ $cell-width: 140px;
   }
   &.warning {
     color: $warning-color;
+    margin-left: -77px;
   }
   &.success {
     color: $success-color;

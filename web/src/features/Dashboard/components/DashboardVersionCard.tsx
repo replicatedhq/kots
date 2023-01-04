@@ -465,6 +465,40 @@ const DashboardVersionCard = (props: Props) => {
     );
   };
 
+  const renderPreflightMsg = (version: Version | null) => {
+    if (!version) {
+      return null;
+    }
+    if (version.status === "pending_download") {
+      return null;
+    }
+    if (version.status === "pending_config") {
+      return null;
+    }
+
+    const preflightState = getPreflightState(version);
+    let checksStatusText;
+    if (preflightState.preflightsFailed) {
+      checksStatusText = "Checks failed";
+    } else if (preflightState.preflightState === "warn") {
+      checksStatusText = "Checks passed with warnings";
+    }
+
+    return (
+      <p
+        className={`checks-running-text u-fontSize--small u-lineHeight--normal u-fontWeight--medium ${
+          preflightState.preflightsFailed
+            ? "err"
+            : preflightState.preflightState === "warn"
+            ? "warning"
+            : ""
+        }`}
+      >
+        {checksStatusText}
+      </p>
+    );
+  };
+
   const renderPreflights = (version: Version | null) => {
     if (!version) {
       return null;
@@ -519,17 +553,6 @@ const DashboardVersionCard = (props: Props) => {
                   ) : (
                     ""
                   )}
-                  <p
-                    className={`checks-running-text u-fontSize--small u-lineHeight--normal u-fontWeight--medium ${
-                      preflightState.preflightsFailed
-                        ? "err"
-                        : preflightState.preflightState === "warn"
-                        ? "warning"
-                        : ""
-                    }`}
-                  >
-                    {checksStatusText}
-                  </p>
                 </>
               ) : null}
             </Link>
@@ -701,38 +724,41 @@ const DashboardVersionCard = (props: Props) => {
               {currentVersion?.source}
             </p>
           </div>
-          <div className="flex flex1 alignItems--center justifyContent--flexEnd">
-            {renderReleaseNotes(currentVersion)}
-            {renderPreflights(currentVersion)}
-            {renderEditConfigIcon(currentVersion, false)}
-            {selectedApp ? (
-              <div className="u-marginLeft--10">
-                <span
-                  onClick={() =>
-                    handleViewLogs(
-                      currentVersion,
-                      currentVersion?.status === "failed"
-                    )
-                  }
-                  data-tip="View deploy logs"
-                >
-                  <Icon icon="view-logs" size={22} className="clickable" />
-                </span>
-                <ReactTooltip effect="solid" className="replicated-tooltip" />
-              </div>
-            ) : null}
-            {currentVersion?.status === "deploying" ? null : (
-              <div className="flex-column justifyContent--center u-marginLeft--10">
-                <button
-                  className="secondary blue btn"
-                  onClick={() =>
-                    deployVersion(currentVersion, false, false, true)
-                  }
-                >
-                  Redeploy
-                </button>
-              </div>
-            )}
+          <div>
+            <div className="flex flex1 alignItems--center justifyContent--flexEnd">
+              {renderReleaseNotes(currentVersion)}
+              {renderPreflights(currentVersion)}
+              {renderEditConfigIcon(currentVersion, false)}
+              {selectedApp ? (
+                <div className="u-marginLeft--10">
+                  <span
+                    onClick={() =>
+                      handleViewLogs(
+                        currentVersion,
+                        currentVersion?.status === "failed"
+                      )
+                    }
+                    data-tip="View deploy logs"
+                  >
+                    <Icon icon="view-logs" size={22} className="clickable" />
+                  </span>
+                  <ReactTooltip effect="solid" className="replicated-tooltip" />
+                </div>
+              ) : null}
+              {currentVersion?.status === "deploying" ? null : (
+                <div className="flex-column justifyContent--center u-marginLeft--10">
+                  <button
+                    className="secondary blue btn"
+                    onClick={() =>
+                      deployVersion(currentVersion, false, false, true)
+                    }
+                  >
+                    Redeploy
+                  </button>
+                </div>
+              )}
+            </div>
+            {renderPreflightMsg(currentVersion)}
           </div>
         </div>
       </div>
