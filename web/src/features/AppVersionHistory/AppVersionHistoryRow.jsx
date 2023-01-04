@@ -193,6 +193,12 @@ class AppVersionHistoryRow extends Component {
     const editableConfig =
       isCurrentVersion || isLatestVersion || isPendingVersion?.semver;
 
+    const showDeployLogs =
+      isPastVersion ||
+      isCurrentVersion ||
+      isPendingDeployedVersion ||
+      (version?.status === "superseded" && version?.status !== "pending");
+
     let tooltipTip;
     if (editableConfig) {
       tooltipTip = "Edit config";
@@ -201,6 +207,7 @@ class AppVersionHistoryRow extends Component {
     }
 
     const preflightState = this.getPreflightState(version);
+
     let checksStatusText;
     if (preflightState.preflightsFailed) {
       checksStatusText = "Checks failed";
@@ -231,81 +238,9 @@ class AppVersionHistoryRow extends Component {
       }
       if (!version.commitUrl) {
         return (
-          <div>
-            <div className="flex flex1 justifyContent--flexEnd alignItems--center">
-              {this.renderReleaseNotes(version)}
-              <>
-                {version.status === "pending_preflight" ? (
-                  <div className="u-position--relative">
-                    <Loader size="30" />
-                    <p className="checks-running-text u-fontSize--small u-lineHeight--normal u-fontWeight--medium">
-                      Running checks
-                    </p>
-                  </div>
-                ) : preflightState.preflightState !== "" ? (
-                  <>
-                    <Link
-                      to={`/app/${app?.slug}/downstreams/${app?.downstream.cluster?.slug}/version-history/preflight/${version?.sequence}`}
-                      className="u-position--relative u-marginRight--10"
-                      data-tip="View preflight checks"
-                    >
-                      <Icon
-                        icon="preflight-checks"
-                        size={22}
-                        className="clickable"
-                      />
-
-                      {preflightState.preflightsFailed ||
-                      preflightState.preflightState === "warn" ||
-                      newPreflightResults ? (
-                        <>
-                          {preflightState.preflightsFailed ? (
-                            <Icon
-                              icon={"warning-circle-filled"}
-                              size={12}
-                              className="version-row-preflight-status-icon error-color"
-                            />
-                          ) : preflightState.preflightState === "warn" ? (
-                            <Icon
-                              icon={"warning"}
-                              size={12}
-                              className="version-row-preflight-status-icon warning-color"
-                            />
-                          ) : (
-                            ""
-                          )}
-                        </>
-                      ) : null}
-                    </Link>
-                    <ReactTooltip
-                      effect="solid"
-                      className="replicated-tooltip"
-                    />
-                  </>
-                ) : null}
-              </>
-            </div>
-            <p
-              className={`checks-running-text u-fontSize--small u-lineHeight--normal u-fontWeight--medium ${
-                preflightState.preflightsFailed
-                  ? "err"
-                  : preflightState.preflightState === "warn"
-                  ? "warning"
-                  : newPreflightResults
-                  ? "success"
-                  : ""
-              }`}
-            >
-              {checksStatusText}
-            </p>
-          </div>
-        );
-      }
-      return (
-        <div>
           <div className="flex flex1 justifyContent--flexEnd alignItems--center">
             {this.renderReleaseNotes(version)}
-            <div>
+            <>
               {version.status === "pending_preflight" ? (
                 <div className="u-position--relative">
                   <Loader size="30" />
@@ -322,7 +257,7 @@ class AppVersionHistoryRow extends Component {
                   >
                     <Icon
                       icon="preflight-checks"
-                      size={20}
+                      size={22}
                       className="clickable"
                     />
                     {preflightState.preflightsFailed ||
@@ -344,45 +279,40 @@ class AppVersionHistoryRow extends Component {
                         ) : (
                           ""
                         )}
+                        <p
+                          className={`checks-running-text u-fontSize--small u-lineHeight--normal u-fontWeight--medium ${
+                            preflightState.preflightsFailed
+                              ? "err"
+                              : preflightState.preflightState === "warn"
+                              ? "warning"
+                              : newPreflightResults
+                              ? "success"
+                              : ""
+                          } 
+                           ${
+                             !showDeployLogs && !showActions
+                               ? "without-btns"
+                               : ""
+                           }`}
+                        >
+                          {checksStatusText}
+                        </p>
                       </>
                     ) : null}
                   </Link>
                   <ReactTooltip effect="solid" className="replicated-tooltip" />
                 </>
               ) : null}
-            </div>
-            <button
-              className="btn primary blue u-marginLeft--10"
-              onClick={() => window.open(version.commitUrl, "_blank")}
-            >
-              View commit
-            </button>
+            </>
           </div>
-          <p
-            className={`checks-running-text u-fontSize--small u-lineHeight--normal u-fontWeight--medium ${
-              preflightState.preflightsFailed
-                ? "err"
-                : preflightState.preflightState === "warn"
-                ? "warning"
-                : newPreflightResults
-                ? "success"
-                : ""
-            }`}
-          >
-            {checksStatusText}
-          </p>
-        </div>
-      );
-    }
-
-    return (
-      <div>
-        <div className="flex flex1 justifyContent--flexEnd alignItems--center u-marginTop--10">
+        );
+      }
+      return (
+        <div className="flex flex1 justifyContent--flexEnd alignItems--center">
           {this.renderReleaseNotes(version)}
-
           <div>
             {version.status === "pending_preflight" ? (
-              <div className="u-marginRight--10 u-position--relative">
+              <div className="u-position--relative">
                 <Loader size="30" />
                 <p className="checks-running-text u-fontSize--small u-lineHeight--normal u-fontWeight--medium">
                   Running checks
@@ -419,6 +349,24 @@ class AppVersionHistoryRow extends Component {
                       ) : (
                         ""
                       )}
+                      <p
+                        className={`checks-running-text u-fontSize--small u-lineHeight--normal u-fontWeight--medium ${
+                          preflightState.preflightsFailed
+                            ? "err"
+                            : preflightState.preflightState === "warn"
+                            ? "warning"
+                            : newPreflightResults
+                            ? "success"
+                            : ""
+                        } 
+                          ${
+                            !showDeployLogs && !showActions
+                              ? "without-btns"
+                              : ""
+                          }`}
+                      >
+                        {checksStatusText}
+                      </p>
                     </>
                   ) : null}
                 </Link>
@@ -426,103 +374,148 @@ class AppVersionHistoryRow extends Component {
               </>
             ) : null}
           </div>
-          {app.isConfigurable && (
-            <div className="flex alignItems--center">
-              <Link to={configScreenURL} data-tip={tooltipTip}>
-                <Icon
-                  icon={editableConfig ? "edit-config" : "view-config"}
-                  size={22}
-                />
+          <button
+            className="btn primary blue u-marginLeft--10"
+            onClick={() => window.open(version.commitUrl, "_blank")}
+          >
+            View commit
+          </button>
+        </div>
+      );
+    }
+
+    return (
+      <div className="flex flex1 justifyContent--flexEnd alignItems--center">
+        {this.renderReleaseNotes(version)}
+
+        <div>
+          {version.status === "pending_preflight" ? (
+            <div className="u-marginRight--10 u-position--relative">
+              <Loader size="30" />
+              <p className="checks-running-text u-fontSize--small u-lineHeight--normal u-fontWeight--medium">
+                Running checks
+              </p>
+            </div>
+          ) : preflightState.preflightState !== "" ? (
+            <>
+              <Link
+                to={`/app/${app?.slug}/downstreams/${app?.downstream.cluster?.slug}/version-history/preflight/${version?.sequence}`}
+                className="u-position--relative u-marginRight--10"
+                data-tip="View preflight checks"
+              >
+                <Icon icon="preflight-checks" size={20} className="clickable" />
+                {preflightState.preflightsFailed ||
+                preflightState.preflightState === "warn" ||
+                newPreflightResults ? (
+                  <>
+                    {preflightState.preflightsFailed ? (
+                      <Icon
+                        icon={"warning-circle-filled"}
+                        size={12}
+                        className="version-row-preflight-status-icon error-color"
+                      />
+                    ) : preflightState.preflightState === "warn" ? (
+                      <Icon
+                        icon={"warning"}
+                        size={12}
+                        className="version-row-preflight-status-icon warning-color"
+                      />
+                    ) : (
+                      ""
+                    )}
+                    <p
+                      className={`checks-running-text u-fontSize--small u-lineHeight--normal u-fontWeight--medium ${
+                        preflightState.preflightsFailed
+                          ? "err"
+                          : preflightState.preflightState === "warn"
+                          ? "warning"
+                          : newPreflightResults
+                          ? "success"
+                          : ""
+                      }
+                      ${!showDeployLogs && !showActions ? "without-btns" : ""}
+                      `}
+                    >
+                      {checksStatusText}
+                    </p>
+                  </>
+                ) : null}
               </Link>
               <ReactTooltip effect="solid" className="replicated-tooltip" />
-            </div>
-          )}
-          {(isPastVersion ||
-            isCurrentVersion ||
-            isPendingDeployedVersion ||
-            version?.status === "superseded") &&
-          version?.status !== "pending" ? (
-            <div className="u-marginLeft--10">
-              <span
-                onClick={() =>
-                  this.props.handleViewLogs(
-                    version,
-                    version?.status === "failed"
-                  )
-                }
-                data-tip="View deploy logs"
-              >
-                <Icon icon="view-logs" size={22} className="clickable" />
-              </span>
-              <ReactTooltip effect="solid" className="replicated-tooltip" />
-              {version.status === "failed" ? (
-                <div className="u-position--relative">
-                  <Icon
-                    icon="preflight-checks"
-                    size={20}
-                    className="clickable"
-                  />
-                  <Icon
-                    icon={"warning-circle-filled"}
-                    size={12}
-                    className="version-row-preflight-status-icon error-color"
-                    style={{ left: "15px", top: "-6px" }}
-                  />
-                </div>
-              ) : null}
-            </div>
+            </>
           ) : null}
-          {showActions && (
-            <div className="flex alignItems--center">
-              <button
-                className={classNames("btn u-marginLeft--10", {
-                  "secondary dark": isRollback,
-                  "secondary blue": isSecondaryBtn,
-                  "primary blue": isPrimaryButton,
-                })}
-                disabled={this.isActionButtonDisabled(version)}
-                onClick={() => {
-                  this.props.handleActionButtonClicked();
-                  if (needsConfiguration) {
-                    this.props.history.push(configScreenURL);
-                    return null;
-                  }
-                  if (isRollback) {
-                    actionFn(version, true);
-                    return null;
-                  }
-
-                  actionFn(version);
-                  return null;
-                }}
-              >
-                <span
-                  key={version.nonDeployableCause}
-                  data-tip-disable={!this.isActionButtonDisabled(version)}
-                  data-tip={version.nonDeployableCause}
-                  data-for="disable-deployment-tooltip"
-                >
-                  {this.deployButtonStatus(version)}
-                </span>
-              </button>
-              <ReactTooltip effect="solid" id="disable-deployment-tooltip" />
-            </div>
-          )}
         </div>
-        <p
-          className={`checks-running-text u-fontSize--small u-lineHeight--normal u-fontWeight--medium ${
-            preflightState.preflightsFailed
-              ? "err"
-              : preflightState.preflightState === "warn"
-              ? "warning"
-              : newPreflightResults
-              ? "success"
-              : ""
-          }
-          `}
-        >
-          {checksStatusText}
-        </p>
+        {app.isConfigurable && (
+          <div className="flex alignItems--center">
+            <Link to={configScreenURL} data-tip={tooltipTip}>
+              <Icon
+                icon={editableConfig ? "edit-config" : "view-config"}
+                size={22}
+              />
+            </Link>
+            <ReactTooltip effect="solid" className="replicated-tooltip" />
+          </div>
+        )}
+        {showDeployLogs ? (
+          <div className="u-marginLeft--10">
+            <span
+              onClick={() =>
+                this.props.handleViewLogs(version, version?.status === "failed")
+              }
+              data-tip="View deploy logs"
+            >
+              <Icon icon="view-logs" size={22} className="clickable" />
+            </span>
+            <ReactTooltip effect="solid" className="replicated-tooltip" />
+            {version.status === "failed" ? (
+              <div className="u-position--relative">
+                <Icon icon="preflight-checks" size={20} className="clickable" />
+                <Icon
+                  icon={"warning-circle-filled"}
+                  size={12}
+                  className="version-row-preflight-status-icon error-color"
+                  style={{ left: "15px", top: "-6px" }}
+                />
+              </div>
+            ) : null}
+          </div>
+        ) : null}
+        {showActions && (
+          <div className="flex alignItems--center">
+            <button
+              className={classNames("btn u-marginLeft--10", {
+                "secondary dark": isRollback,
+                "secondary blue": isSecondaryBtn,
+                "primary blue": isPrimaryButton,
+              })}
+              disabled={this.isActionButtonDisabled(version)}
+              onClick={() => {
+                this.props.handleActionButtonClicked();
+                if (needsConfiguration) {
+                  this.props.history.push(configScreenURL);
+                  return null;
+                }
+                if (isRollback) {
+                  actionFn(version, true);
+                  return null;
+                }
+
+                actionFn(version);
+                return null;
+              }}
+            >
+              <span
+                key={version.nonDeployableCause}
+                data-tip-disable={!this.isActionButtonDisabled(version)}
+                data-tip={version.nonDeployableCause}
+                data-for="disable-deployment-tooltip"
+              >
+                {this.deployButtonStatus(version)}
+              </span>
+            </button>
+            <ReactTooltip effect="solid" id="disable-deployment-tooltip" />
+          </div>
+        )}
       </div>
     );
   };
