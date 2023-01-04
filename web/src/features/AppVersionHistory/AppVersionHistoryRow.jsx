@@ -207,7 +207,6 @@ class AppVersionHistoryRow extends Component {
     }
 
     const preflightState = this.getPreflightState(version);
-
     let checksStatusText;
     if (preflightState.preflightsFailed) {
       checksStatusText = "Checks failed";
