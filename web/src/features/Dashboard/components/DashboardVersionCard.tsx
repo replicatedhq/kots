@@ -466,6 +466,7 @@ const DashboardVersionCard = (props: Props) => {
   };
 
   const renderPreflights = (version: Version | null) => {
+    const { currentVersion } = props;
     if (!version) {
       return null;
     }
@@ -485,7 +486,7 @@ const DashboardVersionCard = (props: Props) => {
     }
 
     return (
-      <div>
+      <div className="u-position--relative">
         {version.status === "pending_preflight" ? (
           <div className="u-marginLeft--10 u-position--relative">
             <Loader size="30" />
@@ -520,13 +521,19 @@ const DashboardVersionCard = (props: Props) => {
                     ""
                   )}
                   <p
-                    className={`checks-running-text u-fontSize--small u-lineHeight--normal u-fontWeight--medium ${
+                    className={`checks-running-text u-fontSize--small u-lineHeight--normal u-fontWeight--medium 
+                    } ${
                       preflightState.preflightsFailed
                         ? "err"
                         : preflightState.preflightState === "warn"
                         ? "warning"
                         : ""
-                    }`}
+                    }
+                     ${
+                       !selectedApp && currentVersion?.status === "deploying"
+                         ? "without-btns"
+                         : ""
+                     }`}
                   >
                     {checksStatusText}
                   </p>

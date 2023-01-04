@@ -193,6 +193,12 @@ class AppVersionHistoryRow extends Component {
     const editableConfig =
       isCurrentVersion || isLatestVersion || isPendingVersion?.semver;
 
+    const showDeployLogs =
+      isPastVersion ||
+      isCurrentVersion ||
+      isPendingDeployedVersion ||
+      (version?.status === "superseded" && version?.status !== "pending");
+
     let tooltipTip;
     if (editableConfig) {
       tooltipTip = "Edit config";
@@ -281,7 +287,12 @@ class AppVersionHistoryRow extends Component {
                               : newPreflightResults
                               ? "success"
                               : ""
-                          }`}
+                          } 
+                           ${
+                             !showDeployLogs && !showActions
+                               ? "without-btns"
+                               : ""
+                           }`}
                         >
                           {checksStatusText}
                         </p>
@@ -346,7 +357,12 @@ class AppVersionHistoryRow extends Component {
                             : newPreflightResults
                             ? "success"
                             : ""
-                        }`}
+                        } 
+                          ${
+                            !showDeployLogs && !showActions
+                              ? "without-btns"
+                              : ""
+                          }`}
                       >
                         {checksStatusText}
                       </p>
@@ -415,7 +431,9 @@ class AppVersionHistoryRow extends Component {
                           : newPreflightResults
                           ? "success"
                           : ""
-                      }`}
+                      }
+                      ${!showDeployLogs && !showActions ? "without-btns" : ""}
+                      `}
                     >
                       {checksStatusText}
                     </p>
@@ -437,11 +455,7 @@ class AppVersionHistoryRow extends Component {
             <ReactTooltip effect="solid" className="replicated-tooltip" />
           </div>
         )}
-        {(isPastVersion ||
-          isCurrentVersion ||
-          isPendingDeployedVersion ||
-          version?.status === "superseded") &&
-        version?.status !== "pending" ? (
+        {showDeployLogs ? (
           <div className="u-marginLeft--10">
             <span
               onClick={() =>
