@@ -14,32 +14,35 @@ import ConfigFileInput from "./ConfigFileInput";
 import { setOrder } from "./ConfigUtil";
 import { ConfigWrapper, ConfigItems } from "./ConfigComponents";
 import Icon from "../Icon";
+import { useScrollPosition } from "@n8tb1t/use-scroll-position";
 
-export default class ConfigGroup extends React.Component {
-  constructor() {
-    super();
-    this.markdownNode = React.createRef();
-  }
+const ConfigGroup = (props) => {
+  const markdownNode = React.createRef();
+  useScrollPosition(({ prevPos, currPos }) => {
+    console.log("hi");
+    console.log(currPos.x);
+    console.log(currPos.y);
+  });
 
-  handleItemChange = (itemName, value, data) => {
-    if (this.props.handleChange) {
-      this.props.handleChange(itemName, value, data);
+  const handleItemChange = (itemName, value, data) => {
+    if (props.handleChange) {
+      props.handleChange(itemName, value, data);
     }
   };
 
-  handleAddItem = (itemName) => {
-    if (this.props.handleAddItem) {
-      this.props.handleAddItem(itemName);
+  const handleAddItem = (itemName) => {
+    if (props.handleAddItem) {
+      props.handleAddItem(itemName);
     }
   };
 
-  handleRemoveItem = (itemName, itemToRemove) => {
-    if (this.props.handleRemoveItem) {
-      this.props.handleRemoveItem(itemName, itemToRemove);
+  const handleRemoveItem = (itemName, itemToRemove) => {
+    if (props.handleRemoveItem) {
+      props.handleRemoveItem(itemName, itemToRemove);
     }
   };
 
-  renderConfigItems = (items, readonly) => {
+  const renderConfigItems = (items, readonly) => {
     if (!items) {
       return null;
     }
@@ -51,11 +54,11 @@ export default class ConfigGroup extends React.Component {
           return (
             <ConfigInput
               key={`${i}-${item.name}`}
-              handleOnChange={this.handleItemChange}
-              handleAddItem={this.handleAddItem}
-              handleRemoveItem={this.handleRemoveItem}
+              handleOnChange={handleItemChange}
+              handleAddItem={handleAddItem}
+              handleRemoveItem={handleRemoveItem}
               inputType="text"
-              groupName={this.props.item.name}
+              groupName={props.item.name}
               hidden={item.hidden}
               when={item.when}
               {...item}
@@ -67,11 +70,11 @@ export default class ConfigGroup extends React.Component {
           return (
             <ConfigTextarea
               key={`${i}-${item.name}`}
-              handleOnChange={this.handleItemChange}
-              handleAddItem={this.handleAddItem}
-              handleRemoveItem={this.handleRemoveItem}
+              handleOnChange={handleItemChange}
+              handleAddItem={handleAddItem}
+              handleRemoveItem={handleRemoveItem}
               hidden={item.hidden}
-              groupName={this.props.item.name}
+              groupName={props.item.name}
               when={item.when}
               {...item}
               readonly={isReadOnly}
@@ -82,11 +85,11 @@ export default class ConfigGroup extends React.Component {
           return (
             <ConfigCheckbox
               key={`${i}-${item.name}`}
-              handleOnChange={this.handleItemChange}
-              handleAddItem={this.handleAddItem}
-              handleRemoveItem={this.handleRemoveItem}
+              handleOnChange={handleItemChange}
+              handleAddItem={handleAddItem}
+              handleRemoveItem={handleRemoveItem}
               hidden={item.hidden}
-              groupName={this.props.item.name}
+              groupName={props.item.name}
               when={item.when}
               {...item}
               readonly={isReadOnly}
@@ -99,8 +102,8 @@ export default class ConfigGroup extends React.Component {
               key={`${i}-${item.name}`}
               className="field field-type-label"
               style={{
-                margin: this.props.affix ? "0" : "15px",
-                order: setOrder(i + 1, item.affix),
+                margin: props.affix ? "0" : "15px",
+                order: setOrder(i + 1, item.affix)
               }}
             >
               <ConfigItemTitle
@@ -108,7 +111,7 @@ export default class ConfigGroup extends React.Component {
                 recommended={item.recommended}
                 required={item.required}
                 hidden={item.hidden}
-                groupName={this.props.item.name}
+                groupName={props.item.name}
                 when={item.when}
                 name={item.name}
                 error={item.error}
@@ -128,14 +131,14 @@ export default class ConfigGroup extends React.Component {
                 {...item}
                 title={item.title}
                 recommended={item.recommended}
-                groupName={this.props.item.name}
+                groupName={props.item.name}
                 required={item.required}
-                handleChange={this.handleItemChange}
-                handleRemoveItem={this.handleRemoveItem}
+                handleChange={handleItemChange}
+                handleRemoveItem={handleRemoveItem}
                 hidden={item.hidden}
                 when={item.when}
-                configSequence={this.props.configSequence}
-                appSlug={this.props.appSlug}
+                configSequence={props.configSequence}
+                appSlug={props.appSlug}
                 readonly={isReadOnly}
                 index={i + 1}
               />
@@ -145,9 +148,9 @@ export default class ConfigGroup extends React.Component {
           return (
             <ConfigSelectOne
               key={`${i}-${item.name}`}
-              handleOnChange={this.handleItemChange}
+              handleOnChange={handleItemChange}
               hidden={item.hidden}
-              groupName={this.props.item.name}
+              groupName={props.item.name}
               when={item.when}
               {...item}
               readonly={isReadOnly}
@@ -172,11 +175,11 @@ export default class ConfigGroup extends React.Component {
           return (
             <ConfigInput
               key={`${i}-${item.name}`}
-              handleOnChange={this.handleItemChange}
-              handleAddItem={this.handleAddItem}
-              handleRemoveItem={this.handleRemoveItem}
+              handleOnChange={handleItemChange}
+              handleAddItem={handleAddItem}
+              handleRemoveItem={handleRemoveItem}
               hidden={item.hidden}
-              groupName={this.props.item.name}
+              groupName={props.item.name}
               when={item.when}
               inputType="password"
               {...item}
@@ -202,65 +205,65 @@ export default class ConfigGroup extends React.Component {
     });
   };
 
-  isAtLeastOneItemVisible = () => {
-    const { item } = this.props;
+  const isAtLeastOneItemVisible = () => {
+    const { item } = props;
     if (!item) {
       return false;
     }
-    return some(this.props.item.items, (item) => {
+    return some(props.item.items, (item) => {
       if (!isEmpty(item)) {
-        return ConfigService.isVisible(this.props.items, item);
+        return ConfigService.isVisible(props.items, item);
       }
     });
   };
 
-  render() {
-    const { item, readonly } = this.props;
-    const hidden = item && item.when === "false";
-    if (hidden || !this.isAtLeastOneItemVisible()) {
-      return null;
-    }
-    const hasAffix = item.items.every((option) => option.affix);
-    return (
-      <div className="flex-column flex-auto">
-        {item && (
-          <div
-            id={item.name}
-            className={`flex-auto config-item-wrapper card-item u-padding--15 ${
-              this.isAtLeastOneItemVisible() ? "u-marginBottom--20" : ""
-            }`}
-          >
-            <h3 className="card-item-title">{item.title}</h3>
-            {item.description !== "" ? (
-              <div className="field-section-help-text help-text-color u-marginTop--10">
-                <Markdown
-                  ref={this.markdownNode}
-                  options={{
-                    linkTarget: "_blank",
-                    linkify: true,
-                  }}
-                >
-                  {item.description}
-                </Markdown>
-              </div>
-            ) : null}
-            <div
-              className="config-items"
-              style={{ display: hasAffix ? "grid" : "block" }}
-            >
-              {this.renderConfigItems(item.items, readonly)}
-            </div>
-            {item.repeatable && (
-              <div className="u-marginTop--15">
-                <button className="btn secondary blue rounded add-btn">
-                  <Icon icon="plus" size={14} />
-                  Add another {item.title}
-                </button>
-              </div>
-            )}
-          </div>
-        )}
-      </div>
-    );
+  const { item, readonly } = props;
+  const hidden = item && item.when === "false";
+  if (hidden || !isAtLeastOneItemVisible()) {
+    return null;
   }
-}
+  const hasAffix = item.items.every((option) => option.affix);
+  return (
+    <div className="flex-column flex-auto" id="config-groups">
+      {item && (
+        <div
+          id={`${item.name}`}
+          className={`flex-auto config-item-wrapper card-item u-padding--15 ${
+            isAtLeastOneItemVisible() ? "u-marginBottom--20" : ""
+          }`}
+        >
+          <h3 className="card-item-title">{item.title}</h3>
+          {item.description !== "" ? (
+            <div className="field-section-help-text help-text-color u-marginTop--10">
+              <Markdown
+                ref={markdownNode}
+                options={{
+                  linkTarget: "_blank",
+                  linkify: true
+                }}
+              >
+                {item.description}
+              </Markdown>
+            </div>
+          ) : null}
+          <div
+            className="config-items"
+            style={{ display: hasAffix ? "grid" : "block" }}
+          >
+            {renderConfigItems(item.items, readonly)}
+          </div>
+          {item.repeatable && (
+            <div className="u-marginTop--15">
+              <button className="btn secondary blue rounded add-btn">
+                <Icon icon="plus" size={14} />
+                Add another {item.title}
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default ConfigGroup;
