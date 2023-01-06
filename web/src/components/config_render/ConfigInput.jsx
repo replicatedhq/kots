@@ -157,7 +157,7 @@ export default class ConfigInput extends React.Component {
     ) : (
       <ConfigWrapper
         id={`${this.props.name}-group`}
-        className={`field-type-text`}
+        className={`field-type-text observe-elements`}
         marginTop={hidden || this.props.affix ? "0" : "15px"}
         hidden={hidden}
         order={setOrder(this.props.index, this.props.affix)}

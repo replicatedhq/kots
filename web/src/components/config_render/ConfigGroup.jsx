@@ -100,7 +100,7 @@ const ConfigGroup = (props) => {
           return (
             <div
               key={`${i}-${item.name}`}
-              className="field field-type-label  observe-elements"
+              className="field field-type-label"
               style={{
                 margin: props.affix ? "0" : "15px",
                 order: setOrder(i + 1, item.affix)
@@ -123,7 +123,7 @@ const ConfigGroup = (props) => {
           return (
             <ConfigWrapper
               key={`${i}-${item.name}`}
-              className={"field-type-label  observe-elements"}
+              className={"field-type-label "}
               marginTop={item.affix ? "0" : "15px"}
               order={setOrder(i + 1, item.affix)}
             >
@@ -161,12 +161,12 @@ const ConfigGroup = (props) => {
           return (
             <div
               key={`${i}-${item.name}`}
-              className={`u-marginTop--15 u-marginBottom--15  observe-elements ${
+              className={`u-marginTop--15 u-marginBottom--15   ${
                 item.hidden || item.when === "false" ? "hidden" : ""
               }`}
               style={{ order: setOrder(i + 1, item.affix) }}
             >
-              <h3 className="header-color field-section-header">
+              <h3 className="header-color field-section-header observe-elements">
                 {item.title}
               </h3>
             </div>

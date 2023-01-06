@@ -587,45 +587,36 @@ class AppConfig extends Component<Props, State> {
       entries.forEach(
         ({ isIntersecting, boundingClientRect, intersectionRatio, target }) => {
           // console.log(boundingClientRect.y);
-          if (isIntersecting) {
-            console.log("intersecting", target.id);
 
+          if (isIntersecting) {
+            //   console.log("is intersecting", target.id, intersectionRatio);
             const el1 = document.querySelector(`[href="#${target.id}"]`);
-            if (el1) {
-              el1.style.color = "red";
+            const groupNav = document.querySelector(
+              `#config-group-nav-${target.id}`
+            );
+            console.log("groupNav", groupNav);
+            if (groupNav) {
+              groupNav.style.color = "#323232";
+              groupNav.style.fontWeight = "bold";
+            } else if (groupNav) {
+              groupNav.style.color = "#4a4a4a";
+              groupNav.style.fontWeight = "normal";
+            }
+            if (
+              el1 &&
+              el1.classList.contains("active-item") &&
+              intersectionRatio < 0.3
+            ) {
+              el1.classList.remove("active-item");
+            } else if (el1) {
+              el1.classList.add("active-item");
             }
           } else {
-            // const el1 = document.querySelector(`[href="#${target.id}"]`);
-            // if (el1) {
-            //   el1.style.color = "#9c9c9c";
-            // }
-            if (intersectionRatio < 0.3) {
-              const el1 = document.querySelector(`[href="#${target.id}"]`);
-              if (el1) {
-                el1.style.color = "#9c9c9c";
-              }
-            } else if (intersectionRatio > 0.3) {
-              const el1 = document.querySelector(`[href="#${target.id}"]`);
-              if (el1) {
-                el1.style.color = "red";
-              }
+            const el1 = document.querySelector(`[href="#${target.id}"]`);
+            if (el1 && el1.classList.contains("active-item")) {
+              el1.classList.remove("active-item");
             }
           }
-          console.log("intersectionRatio", intersectionRatio, target.id);
-          // if (boundingClientRect.y < 0) {
-          //   //  console.log("not in view", target.id, boundingClientRect.y);
-          //   const el1 = document.querySelector(`[href="#${target.id}-group"]`);
-          //   if (el1) {
-          //     el1.style.color = "blue";
-          //   }
-          // } else if (boundingClientRect.y < 150 && boundingClientRect.y > 50) {
-          //   console.log("ok", target.id, boundingClientRect.y);
-          //   const el1 = document.querySelector(`[href="#${target.id}"]`);
-
-          //   if (el1) {
-          //     el1.style.color = "red";
-          //   }
-          // }
         }
       );
     };
@@ -683,7 +674,10 @@ class AppConfig extends Component<Props, State> {
                     className="flex alignItems--center"
                     onClick={() => this.toggleActiveGroups(group.name)}
                   >
-                    <div className="u-lineHeight--normal group-title u-fontSize--normal">
+                    <div
+                      className="u-lineHeight--normal group-title u-fontSize--normal"
+                      id={`config-nav-${group.name}`}
+                    >
                       {group.title}
                     </div>
                     {/* adding the arrow-down classes, will rotate the icon when clicked */}
@@ -708,11 +702,9 @@ class AppConfig extends Component<Props, State> {
                           }
                           return (
                             <a
-                              className={`u-fontSize--normal u-lineHeight--normal ${
-                                hash === `${item.name}-group`
-                                  ? "active-item"
-                                  : ""
-                              }`}
+                              className={`u-fontSize--normal u-lineHeight--normal 
+                             
+                              `}
                               href={`#${item.name}-group`}
                               key={`${j}-${item.name}-${item.title}`}
                             >
