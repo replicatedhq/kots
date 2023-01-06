@@ -11,7 +11,7 @@ export default class ConfigInput extends React.Component {
     this.inputRef = React.createRef();
     this.state = {
       inputVal: "",
-      focused: false
+      focused: false,
     };
   }
 
@@ -37,7 +37,7 @@ export default class ConfigInput extends React.Component {
       Object.keys(this.props.valuesByGroup[this.props.groupName]).map((key) => {
         this.setState({
           [`${key}InputVal`]:
-            this.props.valuesByGroup[this.props.groupName][key]
+            this.props.valuesByGroup[this.props.groupName][key],
         });
       });
     }
@@ -71,7 +71,7 @@ export default class ConfigInput extends React.Component {
           <ConfigWrapper
             key={objKey}
             id={`${this.props.name}-group`}
-            className={`field-type-text observe-elements`}
+            className={`field-type-text`}
             marginTop={hidden || this.props.affix ? "0" : "15px"}
             hidden={hidden}
             order={setOrder(this.props.index, this.props.affix)}
@@ -90,7 +90,7 @@ export default class ConfigInput extends React.Component {
                 <Markdown
                   options={{
                     linkTarget: "_blank",
-                    linkify: true
+                    linkify: true,
                   }}
                 >
                   {this.props.help_text}
@@ -157,7 +157,7 @@ export default class ConfigInput extends React.Component {
     ) : (
       <ConfigWrapper
         id={`${this.props.name}-group`}
-        className={`field-type-text observe-elements`}
+        className={`field-type-text`}
         marginTop={hidden || this.props.affix ? "0" : "15px"}
         hidden={hidden}
         order={setOrder(this.props.index, this.props.affix)}
@@ -176,7 +176,7 @@ export default class ConfigInput extends React.Component {
             <Markdown
               options={{
                 linkTarget: "_blank",
-                linkify: true
+                linkify: true,
               }}
             >
               {this.props.help_text}

@@ -35,8 +35,8 @@ export default class ConfigFileInput extends React.Component {
       method: "GET",
       headers: {
         "Content-Type": "application/octet-stream",
-        Authorization: Utilities.getToken()
-      }
+        Authorization: Utilities.getToken(),
+      },
     })
       .then((response) => {
         if (!response.ok) {
@@ -88,7 +88,7 @@ export default class ConfigFileInput extends React.Component {
     return (
       <div
         id={`${this.props.name}-group`}
-        className={`field-type-file observe-elements ${hidden ? "hidden" : ""}`}
+        className={`field-type-file ${hidden ? "hidden" : ""}`}
       >
         {this.props.title !== "" ? (
           <ConfigItemTitle
@@ -106,7 +106,7 @@ export default class ConfigFileInput extends React.Component {
                 <Markdown
                   options={{
                     linkTarget: "_blank",
-                    linkify: true
+                    linkify: true,
                   }}
                 >
                   {this.props.help_text}

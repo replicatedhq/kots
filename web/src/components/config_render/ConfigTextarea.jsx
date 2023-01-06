@@ -10,7 +10,7 @@ export default class ConfigTextarea extends React.Component {
     this.textareaRef = React.createRef();
     this.state = {
       textareaVal: "",
-      focused: false
+      focused: false,
     };
   }
 
@@ -36,7 +36,7 @@ export default class ConfigTextarea extends React.Component {
       Object.keys(this.props.valuesByGroup[this.props.groupName]).map((key) => {
         this.setState({
           [`${key}TextareaVal`]:
-            this.props.valuesByGroup[this.props.groupName][key]
+            this.props.valuesByGroup[this.props.groupName][key],
         });
       });
     }
@@ -55,7 +55,7 @@ export default class ConfigTextarea extends React.Component {
           <ConfigWrapper
             key={objKey}
             id={`${this.props.name}-group`}
-            className={`field-type-text observe-elements`}
+            className={`field-type-text`}
             marginTop={hidden || this.props.affix ? "0" : "15px"}
             hidden={hidden}
             order={setOrder(this.props.index, this.props.affix)}
@@ -74,7 +74,7 @@ export default class ConfigTextarea extends React.Component {
                 <Markdown
                   options={{
                     linkTarget: "_blank",
-                    linkify: true
+                    linkify: true,
                   }}
                 >
                   {this.props.help_text}
@@ -130,7 +130,7 @@ export default class ConfigTextarea extends React.Component {
     ) : (
       <ConfigWrapper
         id={`${this.props.name}-group`}
-        className={`field-type-text observe-elements`}
+        className={`field-type-text`}
         marginTop={hidden || this.props.affix ? "0" : "15px"}
         hidden={hidden}
         order={setOrder(this.props.index, this.props.affix)}
@@ -149,7 +149,7 @@ export default class ConfigTextarea extends React.Component {
             <Markdown
               options={{
                 linkTarget: "_blank",
-                linkify: true
+                linkify: true,
               }}
             >
               {this.props.help_text}

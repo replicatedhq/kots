@@ -103,7 +103,7 @@ const ConfigGroup = (props) => {
               className="field field-type-label"
               style={{
                 margin: props.affix ? "0" : "15px",
-                order: setOrder(i + 1, item.affix)
+                order: setOrder(i + 1, item.affix),
               }}
             >
               <ConfigItemTitle
@@ -166,7 +166,7 @@ const ConfigGroup = (props) => {
               }`}
               style={{ order: setOrder(i + 1, item.affix) }}
             >
-              <h3 className="header-color field-section-header observe-elements">
+              <h3 className="header-color field-section-header">
                 {item.title}
               </h3>
             </div>
@@ -239,7 +239,7 @@ const ConfigGroup = (props) => {
                 ref={markdownNode}
                 options={{
                   linkTarget: "_blank",
-                  linkify: true
+                  linkify: true,
                 }}
               >
                 {item.description}

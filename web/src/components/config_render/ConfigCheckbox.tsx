@@ -49,7 +49,7 @@ export default class ConfigCheckbox extends React.Component<Props> {
     return (
       <ConfigWrapper
         id={`${this.props.name}-group`}
-        className={`field-checkbox-wrapper  observe-elements`}
+        className={`field-checkbox-wrapper`}
         marginTop={hidden || this.props.affix ? "0" : "15px"}
         hidden={hidden}
         order={setOrder(this.props.index, this.props.affix)}
@@ -95,7 +95,7 @@ export default class ConfigCheckbox extends React.Component<Props> {
             <Markdown
               options={{
                 linkTarget: "_blank",
-                linkify: true
+                linkify: true,
               }}
             >
               {this.props.help_text}
