@@ -132,7 +132,6 @@
     "@grafana/ui": "^8.5.2",
     "@maji/react-prism": "^1.0.1",
     "@monaco-editor/react": "^4.4.5",
-    "@n8tb1t/use-scroll-position": "^2.0.3",
     "@typescript-eslint/typescript-estree": "^5.36.1",
     "accounting": "^0.4.1",
     "apexcharts": "^3.24.0",
