@@ -14,15 +14,9 @@ import ConfigFileInput from "./ConfigFileInput";
 import { setOrder } from "./ConfigUtil";
 import { ConfigWrapper, ConfigItems } from "./ConfigComponents";
 import Icon from "../Icon";
-import { useScrollPosition } from "@n8tb1t/use-scroll-position";
 
 const ConfigGroup = (props) => {
   const markdownNode = React.createRef();
-  useScrollPosition(({ prevPos, currPos }) => {
-    console.log("hi");
-    console.log(currPos.x);
-    console.log(currPos.y);
-  });
 
   const handleItemChange = (itemName, value, data) => {
     if (props.handleChange) {
@@ -103,7 +97,7 @@ const ConfigGroup = (props) => {
               className="field field-type-label"
               style={{
                 margin: props.affix ? "0" : "15px",
-                order: setOrder(i + 1, item.affix),
+                order: setOrder(i + 1, item.affix)
               }}
             >
               <ConfigItemTitle
@@ -239,7 +233,7 @@ const ConfigGroup = (props) => {
                 ref={markdownNode}
                 options={{
                   linkTarget: "_blank",
-                  linkify: true,
+                  linkify: true
                 }}
               >
                 {item.description}
