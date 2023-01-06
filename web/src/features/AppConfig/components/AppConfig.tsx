@@ -550,25 +550,6 @@ class AppConfig extends Component<Props, State> {
       errorTitle
     } = this.state;
 
-    const sections = document.querySelectorAll("#config-groups");
-
-    const callback = (entries, observer) => {
-      entries.forEach(({ isIntersecting, target }) => {
-        console.log(target);
-        // const nav = document.querySelector(`#config-group-nav-${target.}`);
-        // console.log(target, "target");
-      });
-    };
-    const options = {
-      root: document
-    };
-
-    const observer = new IntersectionObserver(callback, options);
-
-    sections.forEach((section) => {
-      observer.observe(section);
-    });
-
     const { fromLicenseFlow, match, isHelmManaged } = this.props;
     const app = this.props.app || this.state.app;
 
@@ -598,8 +579,76 @@ class AppConfig extends Component<Props, State> {
       saveButtonText = "Generate Upgrade Command";
     }
 
+    const sections = document.querySelectorAll(".observe-elements");
+    let watchElement = document.querySelector("#observe");
+
+    const callback = (entries, observer) => {
+      //console.log("observer", observer);
+      entries.forEach(
+        ({ isIntersecting, boundingClientRect, intersectionRatio, target }) => {
+          // console.log(boundingClientRect.y);
+          if (isIntersecting) {
+            console.log("intersecting", target.id);
+
+            const el1 = document.querySelector(`[href="#${target.id}"]`);
+            if (el1) {
+              el1.style.color = "red";
+            }
+          } else {
+            // const el1 = document.querySelector(`[href="#${target.id}"]`);
+            // if (el1) {
+            //   el1.style.color = "#9c9c9c";
+            // }
+            if (intersectionRatio < 0.3) {
+              const el1 = document.querySelector(`[href="#${target.id}"]`);
+              if (el1) {
+                el1.style.color = "#9c9c9c";
+              }
+            } else if (intersectionRatio > 0.3) {
+              const el1 = document.querySelector(`[href="#${target.id}"]`);
+              if (el1) {
+                el1.style.color = "red";
+              }
+            }
+          }
+          console.log("intersectionRatio", intersectionRatio, target.id);
+          // if (boundingClientRect.y < 0) {
+          //   //  console.log("not in view", target.id, boundingClientRect.y);
+          //   const el1 = document.querySelector(`[href="#${target.id}-group"]`);
+          //   if (el1) {
+          //     el1.style.color = "blue";
+          //   }
+          // } else if (boundingClientRect.y < 150 && boundingClientRect.y > 50) {
+          //   console.log("ok", target.id, boundingClientRect.y);
+          //   const el1 = document.querySelector(`[href="#${target.id}"]`);
+
+          //   if (el1) {
+          //     el1.style.color = "red";
+          //   }
+          // }
+        }
+      );
+    };
+
+    // const root = document.querySelector("#test-root");
+    const options = {
+      root: document,
+      rootMargin: "-10% 0% -80% 0%",
+      threshold: 0
+      // the proportion of the element that must be within the root bounds for it to be considered intersecting
+    };
+
+    const observer = new IntersectionObserver(callback, options);
+
+    sections.forEach((section) => {
+      observer.observe(section);
+    });
+
     return (
-      <div className="flex flex-column u-paddingLeft--20 u-paddingBottom--20 u-paddingRight--20 alignItems--center">
+      <div
+        className="flex flex-column u-paddingLeft--20 u-paddingBottom--20 u-paddingRight--20 alignItems--center"
+        id="test-root"
+      >
         <KotsPageTitle pageName="Config" showAppSlug />
         {fromLicenseFlow && app && (
           <Span size="18" weight="bold" mt="30" ml="38">

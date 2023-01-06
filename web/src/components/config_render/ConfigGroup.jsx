@@ -100,7 +100,7 @@ const ConfigGroup = (props) => {
           return (
             <div
               key={`${i}-${item.name}`}
-              className="field field-type-label"
+              className="field field-type-label  observe-elements"
               style={{
                 margin: props.affix ? "0" : "15px",
                 order: setOrder(i + 1, item.affix)
@@ -123,7 +123,7 @@ const ConfigGroup = (props) => {
           return (
             <ConfigWrapper
               key={`${i}-${item.name}`}
-              className={"field-type-label"}
+              className={"field-type-label  observe-elements"}
               marginTop={item.affix ? "0" : "15px"}
               order={setOrder(i + 1, item.affix)}
             >
@@ -161,7 +161,7 @@ const ConfigGroup = (props) => {
           return (
             <div
               key={`${i}-${item.name}`}
-              className={`u-marginTop--15 u-marginBottom--15 ${
+              className={`u-marginTop--15 u-marginBottom--15  observe-elements ${
                 item.hidden || item.when === "false" ? "hidden" : ""
               }`}
               style={{ order: setOrder(i + 1, item.affix) }}
@@ -224,13 +224,13 @@ const ConfigGroup = (props) => {
   }
   const hasAffix = item.items.every((option) => option.affix);
   return (
-    <div className="flex-column flex-auto" id="config-groups">
+    <div className="flex-column flex-auto">
       {item && (
         <div
           id={`${item.name}`}
-          className={`flex-auto config-item-wrapper card-item u-padding--15 ${
+          className={`flex-auto config-item-wrapper card-item u-padding--15 observe-elements ${
             isAtLeastOneItemVisible() ? "u-marginBottom--20" : ""
-          }`}
+          } config-groups`}
         >
           <h3 className="card-item-title">{item.title}</h3>
           {item.description !== "" ? (

@@ -22,6 +22,7 @@ export default class ConfigGroups extends React.Component {
 
   render() {
     const { fieldsList, fields, readonly } = this.props;
+
     return (
       <div className="flex-column flex1">
         {fieldsList &&

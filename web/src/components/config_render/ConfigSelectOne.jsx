@@ -45,7 +45,7 @@ export default class ConfigSelectOne extends React.Component {
     return (
       <ConfigWrapper
         id={`${this.props.name}-group`}
-        className={`field-type-select-one`}
+        className={`field-type-select-one  observe-elements`}
         marginTop={hidden || this.props.affix ? "0" : "15px"}
         hidden={hidden}
         order={setOrder(this.props.index, this.props.affix)}
@@ -64,7 +64,7 @@ export default class ConfigSelectOne extends React.Component {
             <Markdown
               options={{
                 linkTarget: "_blank",
-                linkify: true,
+                linkify: true
               }}
             >
               {this.props.help_text}
