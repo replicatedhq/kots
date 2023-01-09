@@ -72,9 +72,6 @@ a:visited {
     }
 
     &.group-open {
-      // & .group-title {
-      //   font-weight: 700;
-      // }
       .icon.u-darkDropdownArrow,
       .arrow-down {
         transform: rotate(180deg);
@@ -130,12 +127,3 @@ a:visited {
     max-width: 200px;
   }
 }
-
-// #observe {
-//   display: block;
-//   position: fixed;
-//   height: 1px;
-//   width: 1px;
-//   top: 1px;
-//   left: 0;
-// }

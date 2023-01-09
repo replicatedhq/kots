@@ -14,7 +14,7 @@ import { HelmDeployModal } from "../../../components/shared/modals/HelmDeployMod
 import {
   UseIsHelmManaged,
   useDownloadValues,
-  useSaveConfig,
+  useSaveConfig
 } from "../../../components/hooks";
 import ConfigInfo from "./ConfigInfo";
 
@@ -72,6 +72,9 @@ type State = {
   savingConfig: boolean;
   showHelmDeployModal: boolean;
   showNextStepModal: boolean;
+  parentGroup: string;
+  currentActiveGroup: string;
+  currentActiveId: string;
 };
 
 class AppConfig extends Component<Props, State> {
@@ -97,6 +100,10 @@ class AppConfig extends Component<Props, State> {
       savingConfig: false,
       showHelmDeployModal: false,
       showNextStepModal: false,
+
+      parentGroup: "",
+      currentActiveGroup: "",
+      currentActiveId: ""
     };
 
     this.handleConfigChange = debounce(this.handleConfigChange, 250);
@@ -189,9 +196,9 @@ class AppConfig extends Component<Props, State> {
       const res = await fetch(`${process.env.API_ENDPOINT}/app/${slug}`, {
         headers: {
           Authorization: Utilities.getToken(),
-          "Content-Type": "application/json",
+          "Content-Type": "application/json"
         },
-        method: "GET",
+        method: "GET"
       });
       if (res.ok && res.status == 200) {
         const app = await res.json();
@@ -209,7 +216,7 @@ class AppConfig extends Component<Props, State> {
     this.setState({
       configLoading: true,
       gettingConfigErrMsg: "",
-      configError: false,
+      configError: false
     });
 
     fetch(
@@ -218,8 +225,8 @@ class AppConfig extends Component<Props, State> {
         method: "GET",
         headers: {
           Authorization: Utilities.getToken(),
-          "Content-Type": "application/json",
-        },
+          "Content-Type": "application/json"
+        }
       }
     )
       .then(async (response) => {
@@ -232,7 +239,7 @@ class AppConfig extends Component<Props, State> {
           configGroups: data.configGroups,
           downstreamVersion: data.downstreamVersion,
           changed: false,
-          configLoading: false,
+          configLoading: false
         });
         if (this.props.location.hash.length > 0) {
           this.navigateToCurrentHash();
@@ -240,7 +247,7 @@ class AppConfig extends Component<Props, State> {
           this.setState({
             activeGroups: [data.configGroups[0].name],
             configLoading: false,
-            gettingConfigErrMsg: "",
+            gettingConfigErrMsg: ""
           });
         }
       })
@@ -251,7 +258,7 @@ class AppConfig extends Component<Props, State> {
           displayErrorModal: true,
           gettingConfigErrMsg: err
             ? err.message
-            : "Something went wrong, please try again.",
+            : "Something went wrong, please try again."
         });
       });
   };
@@ -330,13 +337,13 @@ class AppConfig extends Component<Props, State> {
       method: "PUT",
       headers: {
         Authorization: Utilities.getToken(),
-        "Content-Type": "application/json",
+        "Content-Type": "application/json"
       },
       body: JSON.stringify({
         configGroups: this.state.configGroups,
         sequence,
-        createNewVersion,
-      }),
+        createNewVersion
+      })
     })
       .then((res) => res.json())
       .then(async (result) => {
@@ -358,7 +365,7 @@ class AppConfig extends Component<Props, State> {
 
         if (isHelmManaged) {
           this.setState({
-            showHelmDeployModal: true,
+            showHelmDeployModal: true
           });
           return;
         }
@@ -377,7 +384,7 @@ class AppConfig extends Component<Props, State> {
           this.setState({
             savingConfig: false,
             changed: false,
-            showNextStepModal: true,
+            showNextStepModal: true
           });
         }
       })
@@ -386,7 +393,7 @@ class AppConfig extends Component<Props, State> {
           savingConfig: false,
           configError: err
             ? err.message
-            : "Something went wrong, please try again.",
+            : "Something went wrong, please try again."
         });
       });
   };
@@ -446,10 +453,10 @@ class AppConfig extends Component<Props, State> {
         headers: {
           Authorization: Utilities.getToken(),
           "Content-Type": "application/json",
-          Accept: "application/json",
+          Accept: "application/json"
         },
         method: "POST",
-        body: JSON.stringify({ configGroups: groups, sequence: sequence }),
+        body: JSON.stringify({ configGroups: groups, sequence: sequence })
       }
     )
       .then(async (response) => {
@@ -507,7 +514,7 @@ class AppConfig extends Component<Props, State> {
       app.downstream?.currentVersion?.sequence === sequence;
     const isLatestVersion = app.currentSequence === sequence;
     const pendingVersion = find(app.downstream?.pendingVersions, {
-      sequence: sequence,
+      sequence: sequence
     });
     return !isLatestVersion && !isCurrentVersion && !pendingVersion?.semver;
   };
@@ -547,9 +554,8 @@ class AppConfig extends Component<Props, State> {
       configLoading,
       gettingConfigErrMsg,
       displayErrorModal,
-      errorTitle,
+      errorTitle
     } = this.state;
-
     const { fromLicenseFlow, match, isHelmManaged } = this.props;
     const app = this.props.app || this.state.app;
 
@@ -582,13 +588,15 @@ class AppConfig extends Component<Props, State> {
     const sections = document.querySelectorAll(".observe-elements");
 
     const callback = (entries: IntersectionObserverEntry[]) => {
-      entries.forEach(({ isIntersecting, target }) => {
+      entries.forEach(({ isIntersecting, target, intersectionRatio }) => {
         const groupNav = document.querySelector(
           `#config-group-nav-${target.id}`
         );
+
         if (isIntersecting) {
           if (groupNav) {
             groupNav.classList.add("is-active");
+            this.setState({ currentActiveId: target.id });
           }
         } else {
           if (groupNav) {
@@ -598,11 +606,13 @@ class AppConfig extends Component<Props, State> {
       });
     };
 
+    const root = document.querySelector("#root-id");
+
     const options = {
       root: document,
-      rootMargin: "-10% 0% -80% 0%",
+      rootMargin: "-50% 0% -40% 0%",
+      threshold: 0.1
       // the proportion of the element that must be within the root bounds for it to be considered intersecting
-      threshold: 0.5,
     };
 
     const observer = new IntersectionObserver(callback, options);
@@ -611,10 +621,54 @@ class AppConfig extends Component<Props, State> {
       observer.observe(section);
     });
 
+    // const inputs = document.querySelectorAll(".observe-input");
+
+    // const callback2 = (entries: IntersectionObserverEntry[]) => {
+    //   entries.forEach(({ isIntersecting, target, intersectionRatio }) => {
+    //     //   console.log("is intersecting", target.id, intersectionRatio);
+    //     const el1 = document.querySelector(`[href="#${target.id}"]`);
+    //     // console.log(el1);
+
+    //     let currentGroup = document.querySelector(
+    //       `#config-group-nav-${this.state.currentActiveId}`
+    //     );
+
+    //     this.setState({ currentActiveGroup: currentGroup?.id });
+    //     if (el1 && this.state.currentActiveId !== null) {
+    //       let activeGroup = el1.closest(`[id^="config-group-nav-"]`);
+    //       this.setState({ parentGroup: activeGroup?.id });
+    //     }
+
+    //     if (!isIntersecting && el1 && el1.classList.contains("active-item")) {
+    //       if (this.state.currentActiveGroup !== this.state.parentGroup) {
+    //         console.log(
+    //           "cur",
+    //           this.state.currentActiveGroup,
+    //           this.state.parentGroup
+    //         );
+    //         el1.classList.remove("active-item");
+    //       }
+    //     }
+    //   });
+    // };
+
+    // const options2 = {
+    //   root: document,
+    //   rootMargin: "0% 0% -95% 0%",
+    //   threshold: 0.2
+    //   // the proportion of the element that must be within the root bounds for it to be considered intersecting
+    // };
+
+    // const observer2 = new IntersectionObserver(callback2, options2);
+
+    // inputs.forEach((input) => {
+    //   observer2.observe(input);
+    // });
+
     return (
       <div
         className="flex flex-column u-paddingLeft--20 u-paddingBottom--20 u-paddingRight--20 alignItems--center"
-        id="test-root"
+        id="root-id"
       >
         <KotsPageTitle pageName="Config" showAppSlug />
         {fromLicenseFlow && app && (
@@ -639,27 +693,24 @@ class AppConfig extends Component<Props, State> {
               return (
                 <div
                   key={`${i}-${group.name}-${group.title}`}
-                  id={`config-group-nav-${group.name}`}
                   className={`side-nav-group ${
                     this.state.activeGroups.includes(group.name)
                       ? "group-open"
                       : ""
                   }`}
+                  id={`config-group-nav-${group.name}`}
                 >
                   <div
                     className="flex alignItems--center"
                     onClick={() => this.toggleActiveGroups(group.name)}
                   >
-                    <div
-                      className="u-lineHeight--normal group-title u-fontSize--normal"
-                      id={`config-nav-${group.name}`}
-                    >
+                    <div className="u-lineHeight--normal group-title u-fontSize--normal">
                       {group.title}
                     </div>
                     {/* adding the arrow-down classes, will rotate the icon when clicked */}
                     <Icon
                       icon="down-arrow"
-                      className="darkGray-color clickable flex-auto u-marginLeft--5 arrow-down "
+                      className="darkGray-color clickable flex-auto u-marginLeft--5 arrow-down"
                       size={12}
                       style={{}}
                       color={""}
@@ -678,13 +729,11 @@ class AppConfig extends Component<Props, State> {
                           }
                           return (
                             <a
-                              className={`u-fontSize--normal u-lineHeight--normal 
-                              ${
+                              className={`u-fontSize--normal u-lineHeight--normal ${
                                 hash === `${item.name}-group`
                                   ? "active-item"
                                   : ""
-                              }
-                              `}
+                              }`}
                               href={`#${item.name}-group`}
                               key={`${j}-${item.name}-${item.title}`}
                             >
@@ -704,7 +753,7 @@ class AppConfig extends Component<Props, State> {
                 const { isHelmManaged: isHelmManagedFromHook } = data;
 
                 const { isError: saveError } = useSaveConfig({
-                  appSlug: this.getSlug(),
+                  appSlug: this.getSlug()
                 });
 
                 const { download, clearError: clearDownloadError } =
@@ -713,7 +762,7 @@ class AppConfig extends Component<Props, State> {
                     fileName: "values.yaml",
                     sequence: match.params.sequence,
                     versionLabel: downstreamVersionLabel,
-                    isPending: isPending,
+                    isPending: isPending
                   });
 
                 return (
