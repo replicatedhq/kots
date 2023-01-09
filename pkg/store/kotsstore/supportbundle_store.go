@@ -198,6 +198,7 @@ func (s *KOTSStore) migrateSupportBundlesFromRqlite() error {
 		labels := kotsadmtypes.GetKotsadmLabels()
 		labels["kots.io/kind"] = "supportbundle"
 		labels["kots.io/appid"] = supportBundle.AppID
+		labels["troubleshoot.io/kind"] = "support-bundle"
 
 		secret := corev1.Secret{
 			TypeMeta: metav1.TypeMeta{
@@ -255,8 +256,9 @@ func (s *KOTSStore) ListSupportBundles(appID string) ([]*types.SupportBundle, er
 
 		labelSelector := metav1.LabelSelector{
 			MatchLabels: map[string]string{
-				"kots.io/kind":  "supportbundle",
-				"kots.io/appid": appID,
+				"kots.io/kind":         "supportbundle",
+				"kots.io/appid":        appID,
+				"troubleshoot.io/kind": "support-bundle",
 			},
 		}
 
@@ -340,6 +342,7 @@ func (s *KOTSStore) CreateInProgressSupportBundle(supportBundle *types.SupportBu
 	labels["kots.io/kind"] = "supportbundle"
 	labels["kots.io/appid"] = appID
 	labels["kots.io/status"] = string(types.BUNDLE_RUNNING)
+	labels["troubleshoot.io/kind"] = "support-bundle"
 
 	secret := corev1.Secret{
 		TypeMeta: metav1.TypeMeta{
@@ -416,6 +419,7 @@ func (s *KOTSStore) CreateSupportBundle(id string, appID string, archivePath str
 	labels["kots.io/kind"] = "supportbundle"
 	labels["kots.io/appid"] = appID
 	labels["kots.io/status"] = string(types.BUNDLE_UPLOADED)
+	labels["troubleshoot.io/kind"] = "support-bundle"
 
 	secret := corev1.Secret{
 		TypeMeta: metav1.TypeMeta{
