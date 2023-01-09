@@ -155,7 +155,7 @@ func (h *Handler) UpdateGlobalSnapshotSettings(w http.ResponseWriter, r *http.Re
 		return
 	}
 
-	isKurl, err := kurl.IsKurl()
+	isKurl, err := kurl.IsKurl(clientset)
 	if err != nil {
 		logger.Error(err)
 		globalSnapshotSettingsResponse.Error = "failed to check if cluster is kurl"
@@ -313,7 +313,7 @@ func (h *Handler) GetGlobalSnapshotSettings(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	isKurl, err := kurl.IsKurl()
+	isKurl, err := kurl.IsKurl(clientset)
 	if err != nil {
 		logger.Error(err)
 		globalSnapshotSettingsResponse.Error = "failed to check if cluster is kurl"

@@ -43,7 +43,7 @@ func Deploy(
 		Builder:            nil,
 	}
 
-	isKurl, err := kurl.IsKurl()
+	isKurl, err := kurl.IsKurl(clientset)
 	if err != nil {
 		return errors.Wrap(err, "failed to check if cluster is kurl")
 	}

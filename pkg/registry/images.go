@@ -81,7 +81,12 @@ func DeleteUnusedImages(appID string, ignoreRollback bool) error {
 		return errors.Wrap(err, "failed to get app registry info")
 	}
 
-	isKurl, err := kurl.IsKurl()
+	clientset, err := k8sutil.GetClientset()
+	if err != nil {
+		return errors.Wrap(err, "failed to get k8s clientset")
+	}
+
+	isKurl, err := kurl.IsKurl(clientset)
 	if err != nil {
 		return errors.Wrap(err, "failed to check if cluster is kurl")
 	}

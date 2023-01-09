@@ -7,6 +7,7 @@ import (
 	"os"
 
 	"github.com/pkg/errors"
+	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/kurl"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/upload"
@@ -35,7 +36,12 @@ func UpstreamUpgradeCmd() *cobra.Command {
 
 			appSlug := args[0]
 
-			isKurl, err := kurl.IsKurl()
+			clientset, err := k8sutil.GetClientset()
+			if err != nil {
+				return errors.Wrap(err, "failed to get k8s clientset")
+			}
+
+			isKurl, err := kurl.IsKurl(clientset)
 			if err != nil {
 				return errors.Wrap(err, "failed to check if cluster is kurl")
 			}

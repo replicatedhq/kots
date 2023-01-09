@@ -235,7 +235,7 @@ func GetMetaDataConfig() (*v1.ConfigMap, types.Metadata, error) {
 		return nil, types.Metadata{}, nil
 	}
 
-	kotsadmMetadata := kotsadm.GetMetadata()
+	kotsadmMetadata := kotsadm.GetMetadata(clientset)
 
 	brandingConfigMap, err := clientset.CoreV1().ConfigMaps(util.PodNamespace).Get(context.TODO(), metadataConfigMapName, metav1.GetOptions{})
 	if err != nil {

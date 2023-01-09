@@ -14,6 +14,7 @@ import (
 	"github.com/replicatedhq/kots/kotskinds/client/kotsclientset/scheme"
 	apptypes "github.com/replicatedhq/kots/pkg/app/types"
 	"github.com/replicatedhq/kots/pkg/helm"
+	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/kurl"
 	"github.com/replicatedhq/kots/pkg/logger"
@@ -352,7 +353,11 @@ func CreateSupportBundleAnalysis(appID string, archivePath string, bundle *types
 			},
 		}
 	}
-	isKurl, err := kurl.IsKurl()
+	clientset, err := k8sutil.GetClientset()
+	if err != nil {
+		logger.Errorf("Failed to get kubernetes clientset: %v", err)
+	}
+	isKurl, err := kurl.IsKurl(clientset)
 	if err != nil {
 		logger.Errorf("Failed to check if cluster is kurl: %v", err)
 	}

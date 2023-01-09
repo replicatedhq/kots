@@ -244,7 +244,7 @@ func GetReportingInfo(appID string) *types.ReportingInfo {
 		}
 	}
 
-	r.IsKurl, err = kurl.IsKurl()
+	r.IsKurl, err = kurl.IsKurl(clientset)
 	if err != nil {
 		logger.Debugf(errors.Wrap(err, "failed to check if cluster is kurl").Error())
 	}

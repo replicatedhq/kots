@@ -272,7 +272,7 @@ func fileSystemMinioDeploymentResource(clientset kubernetes.Interface, secretChe
 	minioImage := fmt.Sprintf("minio/minio:%s", minioTag)
 	imagePullSecrets := []corev1.LocalObjectReference{}
 
-	isKurl, err := kurl.IsKurl()
+	isKurl, err := kurl.IsKurl(clientset)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to check if cluster is kurl")
 	}
@@ -817,7 +817,7 @@ func fileSystemMinioConfigPod(clientset kubernetes.Interface, deployOptions File
 	image := fmt.Sprintf("kotsadm/kotsadm:%s", kotsadmTag)
 	imagePullSecrets := []corev1.LocalObjectReference{}
 
-	isKurl, err := kurl.IsKurl()
+	isKurl, err := kurl.IsKurl(clientset)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to check if cluster is kurl")
 	}

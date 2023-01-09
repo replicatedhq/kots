@@ -519,7 +519,11 @@ func arrayToTemplateList(items []interface{}) string {
 
 // checks if this is running in a kurl cluster, by checking for the existence of a configmap 'kurl-config'
 func (ctx StaticCtx) isKurl() bool {
-	isKurl, _ := kurl.IsKurl()
+	clientset, err := ctx.getClientset()
+	if err != nil {
+		return false
+	}
+	isKurl, _ := kurl.IsKurl(clientset)
 	return isKurl
 }
 

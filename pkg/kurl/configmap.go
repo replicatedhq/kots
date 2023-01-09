@@ -22,14 +22,13 @@ const bootstrapTokenExpirationKey = "bootstrap_token_expiration"
 const certKey = "cert_key"
 const certsExpirationKey = "upload_certs_expiration"
 
-func IsKurl() (bool, error) {
-	clientset, err := k8sutil.GetClientset()
-	if err != nil {
-		return false, errors.Wrap(err, "failed to get kubernetes clientset")
+func IsKurl(clientset kubernetes.Interface) (bool, error) {
+	if clientset == nil {
+		return false, errors.New("clientset is nil")
 	}
 
 	configMapExists := false
-	_, err = ReadConfigMap(clientset)
+	_, err := ReadConfigMap(clientset)
 	if err == nil {
 		configMapExists = true
 	} else if kuberneteserrors.IsNotFound(err) {
