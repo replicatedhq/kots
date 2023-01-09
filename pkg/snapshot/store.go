@@ -297,7 +297,7 @@ func updateExistingStore(ctx context.Context, clientset kubernetes.Interface, st
 			return nil, false, &InvalidStoreDataError{Message: "access key, secret key, endpoint and region are required"}
 		}
 	} else if options.Internal && !options.IsMinioDisabled {
-		isKurl, err := kurl.IsKurl()
+		isKurl, err := kurl.IsKurl(clientset)
 		if err != nil {
 			return nil, false, errors.Wrap(err, "failed to check if cluster is kurl")
 		}
@@ -333,8 +333,7 @@ func updateExistingStore(ctx context.Context, clientset kubernetes.Interface, st
 		store.Internal.ObjectStoreClusterIP = string(secret.Data["object-store-cluster-ip"])
 		store.Internal.Region = "us-east-1"
 	} else if options.Internal && options.IsMinioDisabled {
-		// TODO: remove the need for cluster context so this code path can be unit tested
-		isKurl, err := kurl.IsKurl()
+		isKurl, err := kurl.IsKurl(clientset)
 		if err != nil {
 			return nil, false, errors.Wrap(err, "failed to check if cluster is kurl")
 		}

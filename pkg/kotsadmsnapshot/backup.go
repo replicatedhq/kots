@@ -282,7 +282,12 @@ func CreateInstanceBackup(ctx context.Context, cluster *downstreamtypes.Downstre
 		backupHooks.Resources = append(backupHooks.Resources, veleroBackup.Spec.Hooks.Resources...)
 	}
 
-	isKurl, err := kurl.IsKurl()
+	clientset, err := k8sutil.GetClientset()
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to create k8s clientset")
+	}
+
+	isKurl, err := kurl.IsKurl(clientset)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to check if cluster is kurl")
 	}
@@ -298,11 +303,6 @@ func CreateInstanceBackup(ctx context.Context, cluster *downstreamtypes.Downstre
 
 	if kotsadmVeleroBackendStorageLocation == nil {
 		return nil, errors.New("no backup store location found")
-	}
-
-	clientset, err := k8sutil.GetClientset()
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to create k8s clientset")
 	}
 
 	isKotsadmClusterScoped := k8sutil.IsKotsadmClusterScoped(ctx, clientset, kotsadmNamespace)

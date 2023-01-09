@@ -75,7 +75,7 @@ func CreateRenderedSpec(app apptypes.AppType, sequence int64, kotsKinds *kotsuti
 	namespacesToCollect := []string{}
 	namespacesToAnalyze := []string{}
 
-	isKurl, err := kurl.IsKurl()
+	isKurl, err := kurl.IsKurl(clientset)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to check if cluster is kurl")
 	}
@@ -424,7 +424,12 @@ func deduplicatedAnalyzers(supportBundle *troubleshootv1beta2.SupportBundle) *tr
 
 // addDefaultTroubleshoot adds kots.io (github.com/replicatedhq/kots/support-bundle/spec.yaml) spec to the support bundle.
 func addDefaultTroubleshoot(supportBundle *troubleshootv1beta2.SupportBundle, imageName string, pullSecret *troubleshootv1beta2.ImagePullSecrets) *troubleshootv1beta2.SupportBundle {
-	isKurl, err := kurl.IsKurl()
+	clientset, err := k8sutil.GetClientset()
+	if err != nil {
+		logger.Errorf("Failed to get kubernetes clientset: %v", err)
+	}
+
+	isKurl, err := kurl.IsKurl(clientset)
 	if err != nil {
 		logger.Errorf("Failed to check if cluster is kurl: %v", err)
 	}
@@ -563,7 +568,7 @@ func getDefaultDynamicCollectors(app apptypes.AppType, imageName string, pullSec
 		logger.Errorf("Failed to get kubernetes clientset: %v", err)
 	}
 
-	isKurl, err := kurl.IsKurl()
+	isKurl, err := kurl.IsKurl(clientset)
 	if err != nil {
 		logger.Errorf("Failed to check if cluster is kurl: %v", err)
 	}
@@ -628,7 +633,12 @@ func getDefaultDynamicAnalyzers(app apptypes.AppType) []*troubleshootv1beta2.Ana
 		},
 	})
 
-	isKurl, err := kurl.IsKurl()
+	clientset, err := k8sutil.GetClientset()
+	if err != nil {
+		logger.Errorf("Failed to get kubernetes clientset: %v", err)
+	}
+
+	isKurl, err := kurl.IsKurl(clientset)
 	if err != nil {
 		logger.Errorf("Failed to check if cluster is kurl: %v", err)
 	}

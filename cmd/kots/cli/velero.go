@@ -116,7 +116,7 @@ func VeleroConfigureInternalCmd() *cobra.Command {
 				return errors.Wrap(err, "failed to get clientset")
 			}
 
-			isKurl, err := kurl.IsKurl()
+			isKurl, err := kurl.IsKurl(clientset)
 			if err != nil {
 				return errors.Wrap(err, "failed to check if cluster is kurl")
 			}

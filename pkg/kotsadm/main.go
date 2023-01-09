@@ -267,7 +267,7 @@ func canUpgrade(upgradeOptions types.UpgradeOptions, clientset *kubernetes.Clien
 		return nil
 	}
 
-	isKurl, err := kurl.IsKurl()
+	isKurl, err := kurl.IsKurl(clientset)
 	if err != nil {
 		return errors.Wrap(err, "failed to check if cluster is kurl")
 	}

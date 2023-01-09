@@ -104,7 +104,7 @@ func RestoreInstanceBackup(ctx context.Context, options RestoreInstanceBackupOpt
 	if !options.ExcludeAdminConsole {
 		log.ActionWithSpinner("Deleting Admin Console")
 
-		isKurl, err := kurl.IsKurl()
+		isKurl, err := kurl.IsKurl(clientset)
 		if err != nil {
 			return errors.Wrap(err, "failed to check if cluster is kurl")
 		}

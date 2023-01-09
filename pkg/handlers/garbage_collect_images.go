@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/pkg/errors"
+	"github.com/replicatedhq/kots/pkg/k8sutil"
 	kotsadmtypes "github.com/replicatedhq/kots/pkg/kotsadm/types"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/kurl"
@@ -46,7 +47,15 @@ func (h *Handler) GarbageCollectImages(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	isKurl, err := kurl.IsKurl()
+	clientset, err := k8sutil.GetClientset()
+	if err != nil {
+		response.Error = "failed to get k8s clientset"
+		logger.Error(errors.Wrap(err, response.Error))
+		JSON(w, http.StatusInternalServerError, response)
+		return
+	}
+
+	isKurl, err := kurl.IsKurl(clientset)
 	if err != nil {
 		response.Error = "failed to check kURL"
 		logger.Error(errors.Wrap(err, response.Error))
