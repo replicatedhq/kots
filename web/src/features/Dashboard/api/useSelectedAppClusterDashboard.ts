@@ -26,7 +26,9 @@ function useSelectedAppClusterDashboardWithIntercept(
             timerId.current = null;
           }
           timerId.current = setTimeout(
-            () => setIsSlowLoading(true), slowLoadingThreshold);
+            () => setIsSlowLoading(true),
+            slowLoadingThreshold
+          );
           return x;
         }
         return x;

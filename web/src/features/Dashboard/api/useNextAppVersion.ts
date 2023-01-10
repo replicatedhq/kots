@@ -3,7 +3,6 @@ import { useNextAppVersion } from "./getNextAppVersion";
 import { slowLoadingThreshold } from "@src/constants/timers";
 import axios from "axios";
 
-
 function useNextAppVersionWithIntercept() {
   const [isSlowLoading, setIsSlowLoading] = useState(false);
   let timerId = useRef<null | NodeJS.Timeout>(null);
@@ -18,7 +17,10 @@ function useNextAppVersionWithIntercept() {
             timerId.current = null;
           }
           // set timeout to 500ms, change it to whatever you want
-          timerId.current = setTimeout(() => setIsSlowLoading(true), slowLoadingThreshold);
+          timerId.current = setTimeout(
+            () => setIsSlowLoading(true),
+            slowLoadingThreshold
+          );
           return x;
         }
         return x;
