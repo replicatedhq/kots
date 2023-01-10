@@ -1,6 +1,7 @@
 import { useRef, useState, useEffect } from "react";
 import { useLicense } from "./getLicense";
 import axios from "axios";
+import { slowLoadingThreshold } from "@src/constants/timers";
 
 function useLicenseWithIntercept() {
   const [isSlowLoading, setIsSlowLoading] = useState(false);
@@ -20,7 +21,7 @@ function useLicenseWithIntercept() {
           // set timeout to 500ms, change it to whatever you want
           timerId.current = setTimeout(() => {
             setIsSlowLoading(true);
-          }, 1000);
+          }, slowLoadingThreshold);
           return x;
         }
         return x;

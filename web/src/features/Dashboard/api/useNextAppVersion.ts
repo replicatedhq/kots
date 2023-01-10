@@ -1,5 +1,6 @@
 import { useRef, useState, useEffect } from "react";
 import { useNextAppVersion } from "./getNextAppVersion";
+import { slowLoadingThreshold } from "@src/constants/timers";
 import axios from "axios";
 
 function useNextAppVersionWithIntercept() {
@@ -16,7 +17,10 @@ function useNextAppVersionWithIntercept() {
             timerId.current = null;
           }
           // set timeout to 500ms, change it to whatever you want
-          timerId.current = setTimeout(() => setIsSlowLoading(true), 1000);
+          timerId.current = setTimeout(
+            () => setIsSlowLoading(true),
+            slowLoadingThreshold
+          );
           return x;
         }
         return x;
