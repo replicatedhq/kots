@@ -24,7 +24,7 @@ function useSelectedAppClusterDashboardWithIntercept(
             clearTimeout(timerId.current);
             timerId.current = null;
           }
-          timerId.current = setTimeout(() => setIsSlowLoading(true), 1000);
+          timerId.current = setTimeout(() => setIsSlowLoading(true), 5000);
           return x;
         }
         return x;
