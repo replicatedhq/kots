@@ -1,6 +1,7 @@
 import { useRef, useState, useEffect } from "react";
 import { useSelectedAppClusterDashboard } from "./getSelectedAppClusterDashboard";
 import { Utilities } from "@src/utilities/utilities";
+import { slowLoadingThreshold } from "@src/constants/timers";
 import axios from "axios";
 
 function useSelectedAppClusterDashboardWithIntercept(
@@ -24,7 +25,8 @@ function useSelectedAppClusterDashboardWithIntercept(
             clearTimeout(timerId.current);
             timerId.current = null;
           }
-          timerId.current = setTimeout(() => setIsSlowLoading(true), 5000);
+          timerId.current = setTimeout(
+            () => setIsSlowLoading(true), slowLoadingThreshold);
           return x;
         }
         return x;
