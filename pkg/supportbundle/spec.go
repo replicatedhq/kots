@@ -156,7 +156,7 @@ func CreateRenderedSpec(app apptypes.AppType, sequence int64, kotsKinds *kotsuti
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      secretName,
 				Namespace: util.PodNamespace,
-				Labels:    kotstypes.GetKotsadmLabels(),
+				Labels:    kotstypes.GetTroubleshootLabels(),
 			},
 			Data: map[string][]byte{
 				SpecDataKey: renderedSpec,
@@ -175,7 +175,7 @@ func CreateRenderedSpec(app apptypes.AppType, sequence int64, kotsKinds *kotsuti
 		existingSecret.Data = map[string][]byte{}
 	}
 	existingSecret.Data[SpecDataKey] = renderedSpec
-	existingSecret.ObjectMeta.Labels = kotstypes.GetKotsadmLabels()
+	existingSecret.ObjectMeta.Labels = kotstypes.GetTroubleshootLabels()
 
 	_, err = clientset.CoreV1().Secrets(util.PodNamespace).Update(context.TODO(), existingSecret, metav1.UpdateOptions{})
 	if err != nil {
