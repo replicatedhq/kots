@@ -60,10 +60,10 @@ ShowLogsModalExample.args = {
   //viewLogsErrMsg: "Error message",
   logs: {
     dryrunStdout:
-      "hi configmap/nginx-content created (dry run)\nsecret/kotsadm-replicated-registry created (dry run)\nsecret/snapshot3-registry created (dry run)\nservice/nginx created (dry run)\ndeployment.apps/nginx created (dry run)\n",
+      "configmap/nginx-content created (dry run)\nsecret/kotsadm-replicated-registry created (dry run)\nsecret/snapshot3-registry created (dry run)\nservice/nginx created (dry run)\ndeployment.apps/nginx created (dry run)\n",
     dryrunStderr: "",
     applyStdout:
-      "hi configmap/nginx-content created\nsecret/kotsadm-replicated-registry created\nsecret/snapshot3-registry created\nservice/nginx created\ndeployment.apps/nginx created\n",
+      "configmap/nginx-content created\nsecret/kotsadm-replicated-registry created\nsecret/snapshot3-registry created\nservice/nginx created\ndeployment.apps/nginx created\n",
     applyStderr: "",
     helmStdout: "",
     helmStderr: "",
