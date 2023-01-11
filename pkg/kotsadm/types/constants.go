@@ -23,9 +23,7 @@ func GetKotsadmLabels(additionalLabels ...map[string]string) map[string]string {
 	}
 
 	for _, l := range additionalLabels {
-		for k, v := range l {
-			labels[k] = v
-		}
+		labels = MergeLabels(labels, l)
 	}
 
 	return labels
@@ -34,6 +32,10 @@ func GetKotsadmLabels(additionalLabels ...map[string]string) map[string]string {
 func GetTroubleshootLabels(additionalLabels ...map[string]string) map[string]string {
 	labels := map[string]string{
 		TroubleshootKey: TroubleshootValue,
+	}
+
+	for _, l := range additionalLabels {
+		labels = MergeLabels(labels, l)
 	}
 
 	return labels
