@@ -101,12 +101,14 @@ func Test_mergeLabels(t *testing.T) {
 			},
 		},
 		{
-			name: "pass case with merge troubleshoot and kotadm additional labels",
+			name: "pass case with merge troubleshoot and kotadm with additional labels",
 			labels: []map[string]string{
-				GetKotsadmLabels(),
-				GetTroubleshootLabels(),
+				GetKotsadmLabels(map[string]string{"foo": "foo"}),
+				GetTroubleshootLabels(map[string]string{"bar": "bar"}),
 			},
 			expectLabels: map[string]string{
+				"foo":                  "foo",
+				"bar":                  "bar",
 				"kots.io/kotsadm":      "true",
 				"kots.io/backup":       "velero",
 				"troubleshoot.io/kind": "support-bundle",
