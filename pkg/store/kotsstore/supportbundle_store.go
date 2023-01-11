@@ -340,7 +340,7 @@ func (s *KOTSStore) DeleteSupportBundle(bundleID string, appID string) error {
 		}
 
 		// delete the archive
-		sbPath := filepath.Join("supportbundles", bundleID, "supportbundle.tar.gz")
+		sbPath := filepath.Join("supportbundles", bundleID)
 		if err := filestore.GetStore().DeleteArchive(sbPath); err != nil {
 			return errors.Wrap(err, "failed to delete archive")
 		}
