@@ -198,6 +198,17 @@ var HandlerPolicyTests = map[string][]HandlerPolicyTest{
 			ExpectStatus: http.StatusOK,
 		},
 	},
+	"DeleteSupportBundle": {
+		{
+			Vars:         map[string]string{"appSlug": "my-app", "bundleId": "234"},
+			Roles:        []rbactypes.Role{rbac.ClusterAdminRole},
+			SessionRoles: []string{rbac.ClusterAdminRoleID},
+			Calls: func(storeRecorder *mock_store.MockStoreMockRecorder, handlerRecorder *mock_handlers.MockKOTSHandlerMockRecorder) {
+				handlerRecorder.DeleteSupportBundle(gomock.Any(), gomock.Any())
+			},
+			ExpectStatus: http.StatusOK,
+		},
+	},
 	"GetPodDetailsFromSupportBundle": {
 		{
 			Vars:         map[string]string{"appSlug": "my-app", "bundleId": "234"},

@@ -298,6 +298,18 @@ func (mr *MockKOTSHandlerMockRecorder) DeleteRedact(w, r interface{}) *gomock.Ca
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteRedact", reflect.TypeOf((*MockKOTSHandler)(nil).DeleteRedact), w, r)
 }
 
+// DeleteSupportBundle mocks base method.
+func (m *MockKOTSHandler) DeleteSupportBundle(w http.ResponseWriter, r *http.Request) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "DeleteSupportBundle", w, r)
+}
+
+// DeleteSupportBundle indicates an expected call of DeleteSupportBundle.
+func (mr *MockKOTSHandlerMockRecorder) DeleteSupportBundle(w, r interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteSupportBundle", reflect.TypeOf((*MockKOTSHandler)(nil).DeleteSupportBundle), w, r)
+}
+
 // DeployAppVersion mocks base method.
 func (m *MockKOTSHandler) DeployAppVersion(w http.ResponseWriter, r *http.Request) {
 	m.ctrl.T.Helper()

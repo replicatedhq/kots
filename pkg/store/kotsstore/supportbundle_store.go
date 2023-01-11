@@ -76,6 +76,13 @@ func getSupportBundleIDsFromCache(appID string) []string {
 	return supportBundlesIDsByApp[appID]
 }
 
+func deleteSupportBundleFromCache(id string, appID string) {
+	supportBundleSecretMtx.Lock()
+	defer supportBundleSecretMtx.Unlock()
+	delete(supportBundlesByID, id)
+	delete(supportBundlesIDsByApp, appID)
+}
+
 func (s *KOTSStore) migrateSupportBundlesFromRqlite() error {
 	logger.Debug("migrating support bundles from rqlite")
 
@@ -315,6 +322,30 @@ func (s *KOTSStore) GetSupportBundle(id string) (*types.SupportBundle, error) {
 	}
 
 	return supportBundle, nil
+}
+
+func (s *KOTSStore) DeleteSupportBundle(bundleID string, appID string) error {
+	if util.IsHelmManaged() {
+		// delete from cache
+		deleteSupportBundleFromCache(bundleID, appID)
+	} else {
+		clientset, err := k8sutil.GetClientset()
+		if err != nil {
+			return errors.Wrap(err, "failed to get clientset")
+		}
+
+		// delete the secret
+		if err := clientset.CoreV1().Secrets(util.PodNamespace).Delete(context.TODO(), fmt.Sprintf("supportbundle-%s", bundleID), metav1.DeleteOptions{}); err != nil && !s.IsNotFound(err) {
+			return errors.Wrap(err, "failed to delete secret")
+		}
+
+		// delete the archive
+		sbPath := filepath.Join("supportbundles", bundleID, "supportbundle.tar.gz")
+		if err := filestore.GetStore().DeleteArchive(sbPath); err != nil {
+			return errors.Wrap(err, "failed to delete archive")
+		}
+	}
+	return nil
 }
 
 func (s *KOTSStore) CreateInProgressSupportBundle(supportBundle *types.SupportBundle) error {

@@ -102,3 +102,18 @@ func (s *BlobStore) readFile(path string) (string, error) {
 
 	return outputPath, nil
 }
+
+func (s *BlobStore) DeleteArchive(path string) error {
+	return s.deleteFile(filepath.Join(ArchivesDir, path))
+}
+
+func (s *BlobStore) deleteFile(path string) error {
+	if _, err := os.Stat(path); os.IsNotExist(err) {
+		return nil
+	}
+	err := os.RemoveAll(path)
+	if err != nil {
+		return errors.Wrapf(err, "failed to remove file %q", path)
+	}
+	return nil
+}
