@@ -64,6 +64,7 @@ type RegistryStore interface {
 type SupportBundleStore interface {
 	ListSupportBundles(appID string) ([]*supportbundletypes.SupportBundle, error)
 	GetSupportBundle(bundleID string) (*supportbundletypes.SupportBundle, error)
+	DeleteSupportBundle(bundleID string, appID string) error
 	CreateSupportBundle(bundleID string, appID string, archivePath string, marshalledTree []byte) (*supportbundletypes.SupportBundle, error)
 	GetSupportBundleArchive(bundleID string) (archivePath string, err error)
 	GetSupportBundleAnalysis(bundleID string) (*supportbundletypes.SupportBundleAnalysis, error)

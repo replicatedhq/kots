@@ -22,6 +22,7 @@ type KOTSHandler interface {
 	CollectSupportBundle(w http.ResponseWriter, r *http.Request)
 	CollectHelmSupportBundle(w http.ResponseWriter, r *http.Request)
 	ShareSupportBundle(w http.ResponseWriter, r *http.Request)
+	DeleteSupportBundle(w http.ResponseWriter, r *http.Request)
 	GetPodDetailsFromSupportBundle(w http.ResponseWriter, r *http.Request)
 
 	// redactor routes

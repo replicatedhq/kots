@@ -10,4 +10,5 @@ type FileStore interface {
 	WaitForReady(ctx context.Context) error
 	WriteArchive(outputPath string, body io.ReadSeeker) error
 	ReadArchive(path string) (string, error)
+	DeleteArchive(path string) error
 }
