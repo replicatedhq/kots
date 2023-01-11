@@ -5,14 +5,14 @@ import ShowLogsModal from "@src/components/modals/ShowLogsModal";
 
 export default {
   title: "Example/ShowLogsModal",
-  component: ShowLogsModal,
+  component: ShowLogsModal
 } as ComponentMeta<typeof ShowLogsModal>;
 
 const Template: ComponentStory<typeof ShowLogsModal> = (args) => {
   const [selectedTab, setSelectedTab] = React.useState("dryrunStdout");
   const renderLogsTab = () => {
     const isHelmManaged = false;
-    const filterNonHelmTabs = (tab: string, isHelmManaged: boolean) => {
+    const filterNonHelmTabs = (tab: string) => {
       if (isHelmManaged) {
         return tab.startsWith("helm");
       }
@@ -25,7 +25,7 @@ const Template: ComponentStory<typeof ShowLogsModal> = (args) => {
       <div className="flex action-tab-bar u-marginTop--10">
         {tabs
           .filter((tab) => tab !== "renderError")
-          .filter((tab) => filterNonHelmTabs(tab, isHelmManaged))
+          .filter((tab) => filterNonHelmTabs(tab))
           .map((tab) => (
             <div
               className={`tab-item blue ${tab === selectedTab && "is-active"}`}
@@ -67,9 +67,9 @@ ShowLogsModalExample.args = {
     applyStderr: "",
     helmStdout: "",
     helmStderr: "",
-    renderError: "",
+    renderError: ""
   },
   logsLoading: false,
   versionFailing: "version failing",
-  troubleshootUrl: "troubleshoot.url",
+  troubleshootUrl: "troubleshoot.url"
 };
