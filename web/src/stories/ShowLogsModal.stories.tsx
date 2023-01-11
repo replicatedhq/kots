@@ -5,7 +5,7 @@ import ShowLogsModal from "@src/components/modals/ShowLogsModal";
 
 export default {
   title: "Example/ShowLogsModal",
-  component: ShowLogsModal
+  component: ShowLogsModal,
 } as ComponentMeta<typeof ShowLogsModal>;
 
 const Template: ComponentStory<typeof ShowLogsModal> = (args) => {
@@ -67,9 +67,9 @@ ShowLogsModalExample.args = {
     applyStderr: "",
     helmStdout: "",
     helmStderr: "",
-    renderError: ""
+    renderError: "",
   },
   logsLoading: false,
   versionFailing: "version failing",
-  troubleshootUrl: "troubleshoot.url"
+  troubleshootUrl: "troubleshoot.url",
 };
