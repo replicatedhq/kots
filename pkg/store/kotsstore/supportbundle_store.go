@@ -80,7 +80,15 @@ func deleteSupportBundleFromCache(id string, appID string) {
 	supportBundleSecretMtx.Lock()
 	defer supportBundleSecretMtx.Unlock()
 	delete(supportBundlesByID, id)
-	delete(supportBundlesIDsByApp, appID)
+
+	oldSupportBundlesIDs := supportBundlesIDsByApp[appID]
+	newSupportBundlesIDs := []string{}
+	for _, sbID := range oldSupportBundlesIDs {
+		if sbID != id {
+			newSupportBundlesIDs = append(newSupportBundlesIDs, sbID)
+		}
+	}
+	supportBundlesIDsByApp[appID] = newSupportBundlesIDs
 }
 
 func (s *KOTSStore) migrateSupportBundlesFromRqlite() error {
