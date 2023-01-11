@@ -6,28 +6,38 @@ import (
 	"gopkg.in/go-playground/assert.v1"
 )
 
-func Test_getTroubleshootLabels(t *testing.T) {
+func Test_mergeLabels(t *testing.T) {
 	tests := []struct {
-		name           string
-		additionLabels map[string]string
-		expectLabels   map[string]string
+		name         string
+		labels       []map[string]string
+		expectLabels map[string]string
 	}{
 		{
-			name:           "pass case with default troubleshoot labels",
-			additionLabels: nil,
+			name: "pass case with merge labels",
+			labels: []map[string]string{
+				{
+					"foo": "foo",
+				},
+				{
+					"bar": "bar",
+				},
+				{
+					"baz": "baz",
+				},
+			},
 			expectLabels: map[string]string{
-				"kots.io/kotsadm":      "true",
-				"kots.io/backup":       "velero",
-				"troubleshoot.io/kind": "support-bundle",
+				"foo": "foo",
+				"bar": "bar",
+				"baz": "baz",
 			},
 		},
 		{
-			name: "pass case with extra troubleshoot labels",
-			additionLabels: map[string]string{
-				"foo": "bar",
+			name: "pass case with merge troubleshoot and kotadm labels",
+			labels: []map[string]string{
+				GetKotsadmLabels(),
+				GetTroubleshootLabels(),
 			},
 			expectLabels: map[string]string{
-				"foo":                  "bar",
 				"kots.io/kotsadm":      "true",
 				"kots.io/backup":       "velero",
 				"troubleshoot.io/kind": "support-bundle",
@@ -37,7 +47,7 @@ func Test_getTroubleshootLabels(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			labels := GetTroubleshootLabels(test.additionLabels)
+			labels := MergeLabels(test.labels...)
 			assert.Equal(t, test.expectLabels, labels)
 		})
 	}
