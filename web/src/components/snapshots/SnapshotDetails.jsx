@@ -48,40 +48,40 @@ class SnapshotDetails extends Component {
         height: 140,
         type: "rangeBar",
         toolbar: {
-          show: false
-        }
+          show: false,
+        },
       },
       plotOptions: {
         bar: {
           horizontal: true,
           distributed: true,
           dataLabels: {
-            hideOverflowingLabels: false
-          }
-        }
+            hideOverflowingLabels: false,
+          },
+        },
       },
       xaxis: {
         type: "datetime",
         labels: {
           formatter: (value) => {
             return dayjs(value).format("h:mm:ss");
-          }
-        }
+          },
+        },
       },
       yaxis: {
-        show: false
+        show: false,
       },
       grid: {
         xaxis: {
           lines: {
-            show: true
-          }
+            show: true,
+          },
         },
         yaxis: {
           lines: {
-            show: false
-          }
-        }
+            show: false,
+          },
+        },
       },
       tooltip: {
         custom: function ({ series, seriesIndex, dataPointIndex, w }) {
@@ -110,9 +110,9 @@ class SnapshotDetails extends Component {
             "</span>" +
             "</div>"
           );
-        }
-      }
-    }
+        },
+      },
+    },
   };
 
   componentDidMount() {
@@ -132,7 +132,7 @@ class SnapshotDetails extends Component {
 
     this.setState({
       errorMessage: "",
-      errorTitle: ""
+      errorTitle: "",
     });
 
     try {
@@ -141,8 +141,8 @@ class SnapshotDetails extends Component {
         {
           method: "GET",
           headers: {
-            Authorization: Utilities.getToken()
-          }
+            Authorization: Utilities.getToken(),
+          },
         }
       );
       if (!res.ok) {
@@ -153,7 +153,7 @@ class SnapshotDetails extends Component {
         this.setState({
           loading: false,
           errorMessage: `Unexpected status code: ${res.status}`,
-          errorTitle: "Failed to fetch snapshot details"
+          errorTitle: "Failed to fetch snapshot details",
         });
         return;
       }
@@ -189,7 +189,7 @@ class SnapshotDetails extends Component {
         snapshotDetails: snapshotDetails,
         series: series,
         errorMessage: "",
-        errorTitle: ""
+        errorTitle: "",
       });
     } catch (err) {
       console.log(err);
@@ -198,7 +198,7 @@ class SnapshotDetails extends Component {
         errorMessage: err
           ? `${err.message}`
           : "Something went wrong, please try again.",
-        errorTitle: "Failed to fetch snapshot details"
+        errorTitle: "Failed to fetch snapshot details",
       });
     }
   };
@@ -217,13 +217,13 @@ class SnapshotDetails extends Component {
 
   toggleShowAllPreScripts = () => {
     this.setState({
-      showAllPreSnapshotScripts: !this.state.showAllPreSnapshotScripts
+      showAllPreSnapshotScripts: !this.state.showAllPreSnapshotScripts,
     });
   };
 
   toggleShowAllPostScripts = () => {
     this.setState({
-      showAllPostSnapshotScripts: !this.state.showAllPostSnapshotScripts
+      showAllPostSnapshotScripts: !this.state.showAllPostSnapshotScripts,
     });
   };
 
@@ -250,7 +250,7 @@ class SnapshotDetails extends Component {
   viewLogs = () => {
     this.setState(
       {
-        toggleViewLogsModal: !this.state.toggleViewLogsModal
+        toggleViewLogsModal: !this.state.toggleViewLogsModal,
       },
       () => {
         this.setState({ loadingSnapshotLogs: true });
@@ -258,9 +258,9 @@ class SnapshotDetails extends Component {
         const url = `${process.env.API_ENDPOINT}/snapshot/${name}/logs`;
         fetch(url, {
           headers: {
-            Authorization: Utilities.getToken()
+            Authorization: Utilities.getToken(),
           },
-          method: "GET"
+          method: "GET",
         })
           .then(async (result) => {
             const logs = await result.text();
@@ -269,14 +269,14 @@ class SnapshotDetails extends Component {
                 loadingSnapshotLogs: false,
                 snapshotLogsErr: true,
                 snapshotLogsErrMsg:
-                  "An error occurred while viewing snapshot logs. Please try again"
+                  "An error occurred while viewing snapshot logs. Please try again",
               });
             } else {
               this.setState({
                 snapshotLogs: logs,
                 snapshotLogsErr: false,
                 snapshotLogsErrMsg: "",
-                loadingSnapshotLogs: false
+                loadingSnapshotLogs: false,
               });
             }
           })
@@ -284,7 +284,7 @@ class SnapshotDetails extends Component {
             this.setState({
               loadingSnapshotLogs: false,
               snapshotLogsErr: true,
-              snapshotLogsErrMsg: err
+              snapshotLogsErrMsg: err,
             });
           });
       }
@@ -514,7 +514,7 @@ class SnapshotDetails extends Component {
       maxFinished: maxFinished.format("MM/DD/YY @ hh:mm a z"),
       maxHourDifference: diffHours,
       maxMinDifference: diffMinutes,
-      maxDaysDifference: diffDays
+      maxDaysDifference: diffDays,
     };
 
     return timeObj;
@@ -531,7 +531,7 @@ class SnapshotDetails extends Component {
       "#6236FF",
       "#48C9B0",
       "#A569BD",
-      "#D35400"
+      "#D35400",
     ];
 
     if (mapColors[podName]) {
@@ -565,7 +565,7 @@ class SnapshotDetails extends Component {
         z: d.containerName ? `${d.phase}-snapshot-script` : "Volume",
         fillColor: d.containerName
           ? this.assignColorToPath(d.name)
-          : this.assignColorToPath(d.name)
+          : this.assignColorToPath(d.name),
       };
     });
     series[0].data = data;
@@ -578,7 +578,7 @@ class SnapshotDetails extends Component {
       if (!isEmpty(this.state.snapshotDetails?.hooks)) {
         data = [
           ...this.state.snapshotDetails?.volumes,
-          ...this.state.snapshotDetails?.hooks
+          ...this.state.snapshotDetails?.hooks,
         ];
       } else {
         data = this.state.snapshotDetails?.volumes;
@@ -660,7 +660,7 @@ class SnapshotDetails extends Component {
       snapshotDetails,
       series,
       errorMessage,
-      errorTitle
+      errorTitle,
     } = this.state;
 
     if (loading) {
@@ -940,9 +940,9 @@ class SnapshotDetails extends Component {
                         readOnly: true,
                         contextmenu: false,
                         minimap: {
-                          enabled: false
+                          enabled: false,
                         },
-                        scrollBeyondLastLine: false
+                        scrollBeyondLastLine: false,
                       }}
                     />
                   </div>

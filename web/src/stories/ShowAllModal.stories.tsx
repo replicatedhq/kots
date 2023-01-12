@@ -6,7 +6,7 @@ import dayjs from "dayjs";
 
 export default {
   title: "Example/ShowAllModal",
-  component: ShowAllModal
+  component: ShowAllModal,
 } as ComponentMeta<typeof ShowAllModal>;
 
 export const Volumes = () => {
@@ -20,7 +20,7 @@ export const Volumes = () => {
         phase: "Completed",
         sizeBytesHuman: "582B",
         startedAt: "2022-12-03T00:00:20Z",
-        timeRemainingSeconds: 0
+        timeRemainingSeconds: 0,
       },
       {
         completionPercent: 100,
@@ -30,7 +30,7 @@ export const Volumes = () => {
         phase: "Completed",
         sizeBytesHuman: "582B",
         startedAt: "2022-12-03T00:00:20Z",
-        timeRemainingSeconds: 0
+        timeRemainingSeconds: 0,
       },
       {
         completionPercent: 100,
@@ -40,8 +40,8 @@ export const Volumes = () => {
         phase: "Completed",
         sizeBytesHuman: "582B",
         startedAt: "2022-12-03T00:00:20Z",
-        timeRemainingSeconds: 0
-      }
+        timeRemainingSeconds: 0,
+      },
     ];
     return volumes.map((volume) => {
       const diffMinutes = dayjs(volume?.finishedAt).diff(
@@ -109,7 +109,7 @@ const renderShowAllScripts = () => {
       stderr: "stderr",
       stdout: "stdout",
       command: "command",
-      podName: "podName"
+      podName: "podName",
     },
     {
       finishedAt: "2022-12-03T00:00:21Z",
@@ -120,7 +120,7 @@ const renderShowAllScripts = () => {
       stderr: "stderr",
       stdout: "stdout",
       command: "command",
-      podName: "podName"
+      podName: "podName",
     },
     {
       finishedAt: "2022-12-03T00:00:21Z",
@@ -131,8 +131,8 @@ const renderShowAllScripts = () => {
       stderr: "stderr",
       stdout: "stdout",
       command: "command",
-      podName: "podName"
-    }
+      podName: "podName",
+    },
   ];
   return hooks.map((hook, i) => {
     const diffMinutes = dayjs(hook?.finishedAt).diff(
@@ -244,7 +244,7 @@ export const Warning = () => {
         dataToShow={renderShowAllWarnings([
           { title: "warning1" },
           { title: "warning2" },
-          { title: "warning3" }
+          { title: "warning3" },
         ])}
         name="Warnings"
       />
@@ -282,7 +282,7 @@ export const Errors = () => {
         dataToShow={renderShowAllErrors([
           { title: "error1", message: "message1" },
           { title: "error2", message: "message2" },
-          { title: "error3", message: "message3" }
+          { title: "error3", message: "message3" },
         ])}
         name="Errors"
       />
