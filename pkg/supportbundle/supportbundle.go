@@ -2,6 +2,7 @@ package supportbundle
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -27,8 +28,11 @@ import (
 	troubleshootv1beta2 "github.com/replicatedhq/troubleshoot/pkg/apis/troubleshoot/v1beta2"
 	"github.com/replicatedhq/troubleshoot/pkg/convert"
 	"github.com/segmentio/ksuid"
+	corev1 "k8s.io/api/core/v1"
+	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	k8sjson "k8s.io/apimachinery/pkg/runtime/serializer/json"
+	"k8s.io/client-go/kubernetes"
 )
 
 const (
@@ -416,4 +420,22 @@ func CreateSupportBundleAnalysis(appID string, archivePath string, bundle *types
 	}
 
 	return nil
+}
+
+func GetSpecSecretsMatchingLabel(client kubernetes.Interface, labelSelector string, namespace string, key string) (*corev1.Secret, error) {
+
+	secrets, err := client.CoreV1().Secrets(namespace).List(context.TODO(), metav1.ListOptions{LabelSelector: labelSelector})
+	if err != nil {
+		return nil, err
+	}
+
+	for _, secret := range secrets.Items {
+		_, ok := secret.Data[key]
+		if !ok {
+			continue
+		}
+		return &secret, nil
+	}
+
+	return nil, kuberneteserrors.NewNotFound(corev1.Resource("secret"), "support bundle spec")
 }
