@@ -118,6 +118,25 @@ class SupportBundleRow extends React.Component<Props, State> {
       });
   };
 
+  deleteBundle = (bundle: SupportBundle) => {
+    console.log(this.props.match.params.slug);
+    fetch(
+      `${process.env.API_ENDPOINT}/troubleshoot/app/snapshot3/supportbundle/${bundle.id}/delete`,
+      {
+        method: "DELETE",
+        headers: {
+          Authorization: Utilities.getToken(),
+        },
+      }
+    )
+      .then(async (result) => {
+        console.log(result, "res");
+      })
+      .catch((err) => {
+        console.log(err);
+      });
+  };
+
   sendBundleToVendor = async (bundleSlug: string) => {
     this.setState({
       sendingBundle: true,
@@ -413,6 +432,16 @@ class SupportBundleRow extends React.Component<Props, State> {
                     <Icon icon="download" size={16} className="clickable" />
                   </span>
                 )}
+                <span
+                  className="u-fontSize--small link u-textDecoration--underlineOnHover"
+                  onClick={() => this.deleteBundle(bundle)}
+                >
+                  <Icon
+                    icon="trash"
+                    size={16}
+                    className="clickable tw-ml-2 error-color"
+                  />
+                </span>
               </div>
             </div>
           </div>
