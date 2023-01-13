@@ -593,25 +593,33 @@ class AppConfig extends Component<Props, State> {
           `#config-group-nav-${target.id}`
         );
 
+        const activeLink = document.querySelector(".active-item");
+        const hash = this.props.location.hash.slice(1);
+        const activeLinkHash = document.querySelector(`a[href='#${hash}']`);
         if (isIntersecting) {
-          if (groupNav) {
-            groupNav.classList.add("is-active");
-            this.setState({ currentActiveId: target.id });
+          groupNav?.classList.add("is-active");
+          //    }
+          if (activeLinkHash) {
+            // only if your parent is active
+            if (groupNav?.contains(activeLinkHash)) {
+              activeLinkHash.classList.add("active-item");
+            }
           }
         } else {
-          if (groupNav) {
-            groupNav.classList.remove("is-active");
+          if (groupNav?.contains(activeLink) && activeLink) {
+            console.log(groupNav, "group");
+            console.log("is it true");
+            activeLink.classList.remove("active-item");
           }
+          groupNav?.classList.remove("is-active");
         }
       });
     };
 
-    const root = document.querySelector("#root-id");
-
     const options = {
       root: document,
-      rootMargin: "-50% 0% -40% 0%",
-      threshold: 0.1
+      rootMargin: "20% 0% -75% 0%",
+      threshold: 0.15
       // the proportion of the element that must be within the root bounds for it to be considered intersecting
     };
 
@@ -621,55 +629,8 @@ class AppConfig extends Component<Props, State> {
       observer.observe(section);
     });
 
-    // const inputs = document.querySelectorAll(".observe-input");
-
-    // const callback2 = (entries: IntersectionObserverEntry[]) => {
-    //   entries.forEach(({ isIntersecting, target, intersectionRatio }) => {
-    //     //   console.log("is intersecting", target.id, intersectionRatio);
-    //     const el1 = document.querySelector(`[href="#${target.id}"]`);
-    //     // console.log(el1);
-
-    //     let currentGroup = document.querySelector(
-    //       `#config-group-nav-${this.state.currentActiveId}`
-    //     );
-
-    //     this.setState({ currentActiveGroup: currentGroup?.id });
-    //     if (el1 && this.state.currentActiveId !== null) {
-    //       let activeGroup = el1.closest(`[id^="config-group-nav-"]`);
-    //       this.setState({ parentGroup: activeGroup?.id });
-    //     }
-
-    //     if (!isIntersecting && el1 && el1.classList.contains("active-item")) {
-    //       if (this.state.currentActiveGroup !== this.state.parentGroup) {
-    //         console.log(
-    //           "cur",
-    //           this.state.currentActiveGroup,
-    //           this.state.parentGroup
-    //         );
-    //         el1.classList.remove("active-item");
-    //       }
-    //     }
-    //   });
-    // };
-
-    // const options2 = {
-    //   root: document,
-    //   rootMargin: "0% 0% -95% 0%",
-    //   threshold: 0.2
-    //   // the proportion of the element that must be within the root bounds for it to be considered intersecting
-    // };
-
-    // const observer2 = new IntersectionObserver(callback2, options2);
-
-    // inputs.forEach((input) => {
-    //   observer2.observe(input);
-    // });
-
     return (
-      <div
-        className="flex flex-column u-paddingLeft--20 u-paddingBottom--20 u-paddingRight--20 alignItems--center"
-        id="root-id"
-      >
+      <div className="flex flex-column u-paddingLeft--20 u-paddingBottom--20 u-paddingRight--20 alignItems--center">
         <KotsPageTitle pageName="Config" showAppSlug />
         {fromLicenseFlow && app && (
           <Span size="18" weight="bold" mt="30" ml="38">
