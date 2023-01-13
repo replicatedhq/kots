@@ -17,7 +17,7 @@ const Toast = ({ isVisible }: ToastProps) => {
         width: "auto",
         height: "auto",
         display: isVisible ? "none" : "block",
-        animation: "fadein 0.5s, fadeout 0.5s 2.5s"
+        animation: "fadein 0.5s, fadeout 0.5s 2.5s",
       }}
     >
       <div className="tw-flex tw-items-center">

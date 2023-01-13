@@ -50,7 +50,7 @@ let history = connectHistory(browserHistory);
 const ProtectedRoute = ({
   render,
   location,
-  path
+  path,
 }: {
   render: (props: object) => React.ReactNode;
 } & RouteProps) => {
@@ -74,7 +74,7 @@ const ThemeContext = React.createContext({
     console.log("setThemeState used before being set", themeState);
   },
   getThemeState: (): ThemeState => ({ navbarLogo: null }),
-  clearThemeState: () => {}
+  clearThemeState: () => {},
 });
 
 type AppBranding = {
@@ -107,7 +107,7 @@ const Root = () => {
   const [state, setState] = useReducer(
     (currentState: State, newState: Partial<State>) => ({
       ...currentState,
-      ...newState
+      ...newState,
     }),
     {
       appBranding: null,
@@ -127,8 +127,8 @@ const Root = () => {
       selectedAppName: null,
       snapshotInProgressApps: [],
       themeState: {
-        navbarLogo: null
-      }
+        navbarLogo: null,
+      },
     }
   );
 
@@ -140,7 +140,7 @@ const Root = () => {
   const setThemeState = (newThemeState?: ThemeState) => {
     if (newThemeState) {
       setState({
-        themeState: { ...newThemeState }
+        themeState: { ...newThemeState },
       });
     }
   };
@@ -161,11 +161,11 @@ const Root = () => {
      * Reference object to a blank theme state
      */
     const EMPTY_THEME_STATE = {
-      navbarLogo: null
+      navbarLogo: null,
     };
 
     setState({
-      themeState: { ...EMPTY_THEME_STATE }
+      themeState: { ...EMPTY_THEME_STATE },
     });
   };
 
@@ -189,9 +189,9 @@ const Root = () => {
       const res = await fetch(`${process.env.API_ENDPOINT}/is-helm-managed`, {
         headers: {
           Authorization: Utilities.getToken(),
-          "Content-Type": "application/json"
+          "Content-Type": "application/json",
         },
-        method: "GET"
+        method: "GET",
       });
       if (res.ok && res.status === 200) {
         const response = await res.json();
@@ -213,9 +213,9 @@ const Root = () => {
       const res = await fetch(`${process.env.API_ENDPOINT}/pendingapp`, {
         headers: {
           Authorization: Utilities.getToken(),
-          "Content-Type": "application/json"
+          "Content-Type": "application/json",
         },
-        method: "GET"
+        method: "GET",
       });
       if (!res.ok) {
         if (res.status === 401) {
@@ -249,9 +249,9 @@ const Root = () => {
       const res = await fetch(`${process.env.API_ENDPOINT}/apps`, {
         headers: {
           Authorization: Utilities.getToken(),
-          "Content-Type": "application/json"
+          "Content-Type": "application/json",
         },
-        method: "GET"
+        method: "GET",
       });
       if (!res.ok) {
         if (res.status === 401) {
@@ -264,7 +264,7 @@ const Root = () => {
       const response = await res.json();
       const apps = response.apps;
       setState({
-        appsList: apps
+        appsList: apps,
       });
       return apps;
     } catch (err) {
@@ -278,9 +278,9 @@ const Root = () => {
     fetch(`${process.env.API_ENDPOINT}/metadata`, {
       headers: {
         "Content-Type": "application/json",
-        Accept: "application/json"
+        Accept: "application/json",
       },
-      method: "GET"
+      method: "GET",
     })
       .then(async (res) => {
         const data = await res.json();
@@ -297,7 +297,7 @@ const Root = () => {
           appNameSpace: data.namespace,
           adminConsoleMetadata: data.adminConsoleMetadata,
           featureFlags: data.consoleFeatureFlags,
-          fetchingMetadata: false
+          fetchingMetadata: false,
         });
       })
       .catch((err) => {
@@ -318,8 +318,8 @@ const Root = () => {
       {
         headers: {
           Authorization: Utilities.getToken(),
-          "Content-Type": "application/json"
-        }
+          "Content-Type": "application/json",
+        },
       },
       10000
     )
@@ -331,7 +331,7 @@ const Root = () => {
         const body = await result.json();
         setState({
           connectionTerminated: false,
-          snapshotInProgressApps: body.snapshotInProgressApps
+          snapshotInProgressApps: body.snapshotInProgressApps,
         });
       })
       .catch(() => {
@@ -343,7 +343,7 @@ const Root = () => {
         }
         setState({
           connectionTerminated: true,
-          snapshotInProgressApps: []
+          snapshotInProgressApps: [],
         });
       });
   };
@@ -405,7 +405,7 @@ const Root = () => {
 
   const onLogoutError = (message: string) => {
     setState({
-      errLoggingOut: message
+      errLoggingOut: message,
     });
   };
 
@@ -446,7 +446,7 @@ const Root = () => {
         value={{
           setThemeState,
           getThemeState,
-          clearThemeState
+          clearThemeState,
         }}
       >
         <ToastProvider>
