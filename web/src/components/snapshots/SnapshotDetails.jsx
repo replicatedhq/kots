@@ -311,8 +311,8 @@ class SnapshotDetails extends Component {
 
   renderShowAllVolumes = (volumes) => {
     return volumes.map((volume) => {
-      const diffMinutes = dayjs(volume?.finished).diff(
-        dayjs(volume?.started),
+      const diffMinutes = dayjs(volume?.finishedAt).diff(
+        dayjs(volume?.startedAt),
         "minutes"
       );
       return (
@@ -980,9 +980,7 @@ class SnapshotDetails extends Component {
           <ShowAllModal
             displayShowAllModal={showAllPostSnapshotScripts}
             toggleShowAllModal={this.toggleShowAllPostScripts}
-            dataToShow={this.renderShowAllPostscripts(
-              this.postSnapshotScripts()
-            )}
+            dataToShow={this.renderShowAllScripts(this.postSnapshotScripts())}
             name="Post-snapshot scripts"
           />
         )}
