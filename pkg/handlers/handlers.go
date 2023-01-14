@@ -63,7 +63,7 @@ func RegisterSessionAuthRoutes(r *mux.Router, kotsStore store.Store, handler KOT
 		HandlerFunc(middleware.EnforceAccess(policy.AppSupportbundleWrite, handler.CollectHelmSupportBundle))
 	r.Name("ShareSupportBundle").Path("/api/v1/troubleshoot/app/{appSlug}/supportbundle/{bundleId}/share").Methods("POST").
 		HandlerFunc(middleware.EnforceAccess(policy.AppSupportbundleWrite, handler.ShareSupportBundle))
-	r.Name("DeleteSupportBundle").Path("/api/v1/troubleshoot/app/{appSlug}/supportbundle/{bundleId}/delete").Methods("DELETE").
+	r.Name("DeleteSupportBundle").Path("/api/v1/troubleshoot/app/{appSlug}/supportbundle/{bundleId}").Methods("DELETE").
 		HandlerFunc(middleware.EnforceAccess(policy.AppSupportbundleWrite, handler.DeleteSupportBundle))
 	r.Name("GetPodDetailsFromSupportBundle").Path("/api/v1/troubleshoot/app/{appSlug}/supportbundle/{bundleId}/pod").Methods("GET").
 		HandlerFunc(middleware.EnforceAccess(policy.AppSupportbundleRead, handler.GetPodDetailsFromSupportBundle))
