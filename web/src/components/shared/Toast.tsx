@@ -1,36 +1,40 @@
-import Icon from "@components/Icon";
 import React from "react";
+import "@src/scss/utilities/toast.scss";
 
-interface ToastProps {
-  isVisible: boolean;
-  toggleVisible: () => void;
+export interface ToastProps {
+  isToastVisible: boolean;
+  type: "success" | "error" | "warning";
+  children: React.ReactNode;
 }
 
-const Toast = ({ isVisible }: ToastProps) => {
+const Toast = ({ isToastVisible, type, children }: ToastProps) => {
+  const toastType = () => {
+    switch (type) {
+      case "success":
+        return "tw-bg-[#38cc97]";
+      case "error":
+        return "tw-bg-[#f65c5c]";
+      case "warning":
+        return "tw-bg-[#FFA500]";
+      default:
+        return "tw-bg-[#38cc97]";
+    }
+  };
+
   return (
     <div
-      className="tw-absolute tw-bottom-10 tw-left-6 tw-z-40 
+      className={`tw-absolute tw-w-auto tw-h-auto tw-left-6 tw-z-40 
       tw-bg-white tw-border tw-border-gray-300 tw-rounded 
-      tw-shadow-md tw-p-2 tw-text-gray-700 tw-text-sm 
-    "
-      style={{
-        width: "auto",
-        height: "auto",
-        display: isVisible ? "none" : "block",
-        animation: "fadein 0.5s, fadeout 0.5s 2.5s",
-      }}
+      tw-shadow-md tw-p-2 tw-text-gray-700 tw-text-sm toast ${
+        isToastVisible ? "visible" : ""
+      }
+    `}
     >
       <div className="tw-flex tw-items-center">
-        <div className="tw-bg-[#FFA500] tw-w-1 tw-h-10 tw-border tw-rounded"></div>
-        <div className="tw-flex tw-items-center">
-          <p className="tw-ml-2 tw-mr-4">
-            Support bundle collected on 1/11 @ 10:56am has been deleted.
-          </p>
-          <a href="/" className="tw-underline">
-            undo
-          </a>
-          <Icon icon="close" size={10} className="tw-mx-4" />
-        </div>
+        <div
+          className={`${toastType()} tw-w-1 tw-h-10 tw-border tw-rounded`}
+        ></div>
+        {children}
       </div>
     </div>
   );

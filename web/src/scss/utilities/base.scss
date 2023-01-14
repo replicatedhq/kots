@@ -512,3 +512,49 @@ and `background-position: [value]`
   color: $text-color-primary;
   line-height: 1.7;
 }
+
+@mixin keyframes($animation-name) {
+  @-webkit-keyframes #{$animation-name} {
+    @content;
+  }
+  @keyframes #{$animation-name} {
+    @content;
+  }
+}
+
+@mixin animation($str) {
+  -webkit-animation: #{$str};
+  animation: #{$str};
+}
+
+@include keyframes(fadein) {
+  from {
+    bottom: 0;
+    opacity: 0;
+  }
+  to {
+    bottom: 40px;
+    opacity: 1;
+  }
+}
+
+@include keyframes(fadeout) {
+  from {
+    bottom: 40px;
+    opacity: 1;
+  }
+  to {
+    bottom: 0;
+    opacity: 0;
+  }
+}
+
+.toast {
+  visibility: hidden;
+  bottom: 40px;
+}
+
+.toast.visible {
+  visibility: visible;
+  @include animation("fadein 0.5s, fadeout 0.5s 5s");
+}
