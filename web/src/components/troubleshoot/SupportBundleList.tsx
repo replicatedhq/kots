@@ -20,7 +20,6 @@ import Icon from "../Icon";
 
 import { App, SupportBundle, SupportBundleProgress } from "@types";
 import GenerateSupportBundleModal from "./GenerateSupportBundleModal";
-import { ToastProvider } from "@src/context/ToastContext";
 import { usePrevious } from "@src/hooks/usePrevious";
 
 import { useHistory } from "react-router-dom";
@@ -73,34 +72,7 @@ export const SupportBundleList = (props: Props) => {
   );
 
   const history = useHistory();
-
-  useEffect(() => {
-    listSupportBundles();
-    return () => {
-      state.pollForBundleAnalysisProgress.stop();
-    };
-  }, []);
-
-  const previousBundle = usePrevious(props.bundle);
-  useEffect(() => {
-    const { bundle } = props;
-    if (
-      bundle?.status !== "running" &&
-      bundle?.status !== previousBundle?.status
-    ) {
-      listSupportBundles();
-      state.pollForBundleAnalysisProgress.stop();
-      if (bundle.status === "failed") {
-        history.push(`/app/${props.watch?.slug}/troubleshoot`);
-      }
-    }
-  }, [props.bundle]);
-
-  const toggleGenerateBundleModal = () => {
-    setState({
-      isGeneratingBundleOpen: !state.isGeneratingBundleOpen,
-    });
-  };
+  const { deleteBundleId } = useContext(ToastContext);
 
   const listSupportBundles = () => {
     setState({
@@ -162,6 +134,34 @@ export const SupportBundleList = (props: Props) => {
       });
   };
 
+  useEffect(() => {
+    listSupportBundles();
+    return () => {
+      state.pollForBundleAnalysisProgress.stop();
+    };
+  }, []);
+
+  const previousBundle = usePrevious(props.bundle);
+  useEffect(() => {
+    const { bundle } = props;
+    if (
+      bundle?.status !== "running" &&
+      bundle?.status !== previousBundle?.status
+    ) {
+      listSupportBundles();
+      state.pollForBundleAnalysisProgress.stop();
+      if (bundle.status === "failed") {
+        history.push(`/app/${props.watch?.slug}/troubleshoot`);
+      }
+    }
+  }, [props.bundle]);
+
+  const toggleGenerateBundleModal = () => {
+    setState({
+      isGeneratingBundleOpen: !state.isGeneratingBundleOpen,
+    });
+  };
+
   const toggleErrorModal = () => {
     props.updateState({
       displayErrorModal: !props.displayErrorModal,
@@ -211,6 +211,7 @@ export const SupportBundleList = (props: Props) => {
             loadingBundle={
               props.loadingBundleId === bundle.id && props.loadingBundle
             }
+            className={bundle.id === deleteBundleId ? "deleting" : ""}
           />
         ));
     } else {
