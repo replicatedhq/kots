@@ -196,7 +196,7 @@ export const SupportBundleRow = (props: Props) => {
         })
         .catch((err) => {
           console.log(err);
-          setIsToastVisible(false);
+          setToastMessage("Unable to delete bundle, please try again.");
           setDeleteBundleId("");
           clearInterval(id);
         });

@@ -1,5 +1,4 @@
 import React from "react";
-import "@src/scss/utilities/toast.scss";
 
 export interface ToastProps {
   isToastVisible: boolean;
