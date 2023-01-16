@@ -23,7 +23,7 @@ func parseLogs(reader io.Reader) ([]types.SnapshotError, []types.SnapshotError, 
 	execs := []*types.SnapshotHook{}
 	openExecs := map[string]*types.SnapshotHook{}
 
-	d := logfmt.NewDecoder(reader)
+	d := logfmt.NewDecoderSize(reader, 1024*1024)
 	for d.ScanRecord() {
 		line := map[string]string{}
 		for d.ScanKeyval() {

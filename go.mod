@@ -361,6 +361,7 @@ require (
 
 replace (
 	github.com/chai2010/gettext-go => github.com/chai2010/gettext-go v0.0.0-20160711120539-c6fed771bfd5
+	github.com/go-logfmt/logfmt => github.com/alexanderjophus/logfmt v0.5.2
 	github.com/go-openapi/jsonpointer => github.com/go-openapi/jsonpointer v0.19.5
 	github.com/go-openapi/jsonreference => github.com/go-openapi/jsonreference v0.19.6
 	github.com/go-openapi/loads => github.com/go-openapi/loads v0.20.1
