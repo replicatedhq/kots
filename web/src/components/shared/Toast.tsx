@@ -6,20 +6,19 @@ export interface ToastProps {
   children: React.ReactNode;
 }
 
+const toastType = () => {
+  switch (type) {
+    case "success":
+      return "tw-bg-[#38cc97]";
+    case "error":
+      return "tw-bg-[#f65c5c]";
+    case "warning":
+      return "tw-bg-[#FFA500]";
+    default:
+      return "tw-bg-[#38cc97]";
+  }
+};
 const Toast = ({ isToastVisible, type, children }: ToastProps) => {
-  const toastType = () => {
-    switch (type) {
-      case "success":
-        return "tw-bg-[#38cc97]";
-      case "error":
-        return "tw-bg-[#f65c5c]";
-      case "warning":
-        return "tw-bg-[#FFA500]";
-      default:
-        return "tw-bg-[#38cc97]";
-    }
-  };
-
   return (
     <div
       className={`tw-absolute tw-w-auto tw-h-auto tw-left-6 tw-z-40 
