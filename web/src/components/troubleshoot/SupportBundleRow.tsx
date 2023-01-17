@@ -179,7 +179,7 @@ export const SupportBundleRow = (props: Props) => {
 
     let id = setTimeout(() => {
       fetch(
-        `${process.env.API_ENDPOINT}/troubleshoot/app/${match.params.slug}/supportbundle/${bundle.id}/delete`,
+        `${process.env.API_ENDPOINT}/troubleshoot/app/${match.params.slug}/supportbundle/${bundle.id}`,
         {
           method: "DELETE",
           headers: {
