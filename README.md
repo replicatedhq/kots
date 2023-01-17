@@ -58,7 +58,7 @@ Signed SBOMs for KOTS Go dependencies and are included in each release.
 Use [Cosign](https://github.com/sigstore/cosign) to validate the signature by running the following
 command.
 ```shell
-cosign verify-blob -key sbom/key.pub -signature sbom/kots-sbom.tgz.sig sbom/kots-sbom.tgz
+cosign verify-blob --key sbom/key.pub --signature sbom/kots-sbom.tgz.sig sbom/kots-sbom.tgz
 ```
 
 # Development
