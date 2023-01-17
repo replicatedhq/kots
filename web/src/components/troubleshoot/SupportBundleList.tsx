@@ -14,14 +14,10 @@ import ConfigureRedactorsModal from "./ConfigureRedactorsModal";
 import ErrorModal from "../modals/ErrorModal";
 import { Utilities } from "../../utilities/utilities";
 import { Repeater } from "@src/utilities/repeater";
-
 import "../../scss/components/troubleshoot/SupportBundleList.scss";
 import Icon from "../Icon";
-
 import { App, SupportBundle, SupportBundleProgress } from "@types";
 import GenerateSupportBundleModal from "./GenerateSupportBundleModal";
-import { usePrevious } from "@src/hooks/usePrevious";
-
 import { useHistory } from "react-router-dom";
 import { ToastContext } from "@src/context/ToastContext";
 
@@ -141,13 +137,9 @@ export const SupportBundleList = (props: Props) => {
     };
   }, []);
 
-  const previousBundle = usePrevious(props.bundle);
   useEffect(() => {
     const { bundle } = props;
-    if (
-      bundle?.status !== "running" &&
-      bundle?.status !== previousBundle?.status
-    ) {
+    if (bundle?.status !== "running") {
       listSupportBundles();
       state.pollForBundleAnalysisProgress.stop();
       if (bundle.status === "failed") {

@@ -431,7 +431,7 @@ export const SupportBundleRow = (props: Props) => {
               ) : showSendSupportBundleLink && !loadingBundle ? (
                 <span
                   className="u-fontSize--small u-marginRight--10 link u-textDecoration--underlineOnHover u-paddingRight--10"
-                  onClick={() => sendBundleToVendor(this.props.bundle.slug)}
+                  onClick={() => sendBundleToVendor(props.bundle.slug)}
                 >
                   <Icon icon="paper-airplane" size={16} className="clickable" />
                 </span>
