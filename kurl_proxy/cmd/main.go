@@ -206,10 +206,20 @@ func watchSecret(certs chan cert, name string, secrets corev1.SecretInterface) {
 }
 
 func getFingerprint(certData []byte) (string, error) {
-	derBlock, _ := pem.Decode(certData)
-	if derBlock == nil {
-		return "", errors.New("no PEM data found in certificate")
+	var derBlock *pem.Block
+	for {
+		derBlock, certData = pem.Decode(certData)
+		if derBlock == nil {
+			return "", errors.New("no PEM data found in certificate")
+		}
+		if derBlock.Type == "CERTIFICATE" {
+			break
+		}
+		if len(certData) == 0 {
+			return "", errors.New("no PEM data of type CERTIFICATE found in certificate")
+		}
 	}
+
 	x509Cert, err := x509.ParseCertificate(derBlock.Bytes)
 	if err != nil {
 		return "", err
@@ -237,7 +247,7 @@ func getHttpServer(fingerprint string, acceptAnonymousUploads bool) *http.Server
 			c.Redirect(http.StatusFound, target.String())
 			return
 		}
-		
+
 		app, err := kotsadmApplication()
 
 		if err != nil {
@@ -246,8 +256,8 @@ func getHttpServer(fingerprint string, acceptAnonymousUploads bool) *http.Server
 		appIcon := template.URL(app.Spec.Icon)
 		c.HTML(http.StatusOK, "insecure.html", gin.H{
 			"fingerprintSHA1": fingerprint,
-			"AppIcon":  appIcon,
-			"AppTitle": app.Spec.Title,
+			"AppIcon":         appIcon,
+			"AppTitle":        app.Spec.Title,
 		})
 	})
 	r.NoRoute(func(c *gin.Context) {
