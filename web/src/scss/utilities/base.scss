@@ -533,14 +533,14 @@ and `background-position: [value]`
     opacity: 0;
   }
   to {
-    bottom: 40px;
+    bottom: 10px;
     opacity: 1;
   }
 }
 
 @include keyframes(fadeout) {
   from {
-    bottom: 40px;
+    bottom: 10px;
     opacity: 1;
   }
   to {
@@ -551,7 +551,7 @@ and `background-position: [value]`
 
 .toast {
   visibility: hidden;
-  bottom: 40px;
+  bottom: 3px;
 }
 
 .toast.visible {
