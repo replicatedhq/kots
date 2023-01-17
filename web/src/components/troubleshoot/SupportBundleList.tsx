@@ -20,6 +20,7 @@ import { App, SupportBundle, SupportBundleProgress } from "@types";
 import GenerateSupportBundleModal from "./GenerateSupportBundleModal";
 import { useHistory } from "react-router-dom";
 import { ToastContext } from "@src/context/ToastContext";
+import Toast from "@components/shared/Toast";
 
 type Props = {
   bundle: SupportBundle;
@@ -68,7 +69,13 @@ export const SupportBundleList = (props: Props) => {
   );
 
   const history = useHistory();
-  const { deleteBundleId } = useContext(ToastContext);
+  const {
+    deleteBundleId,
+    setIsToastVisible,
+    isToastVisible,
+    toastMessage,
+    setIsCancelled,
+  } = useContext(ToastContext);
 
   const listSupportBundles = () => {
     setState({
@@ -219,99 +226,119 @@ export const SupportBundleList = (props: Props) => {
   }
 
   return (
-    <div className="centered-container u-paddingBottom--30 u-paddingTop--30 flex1 flex">
-      <KotsPageTitle pageName="Version History" showAppSlug />
-      <div className="flex1 flex-column">
-        <div className="flex justifyContent--center u-paddingBottom--30">
-          <Toggle
-            items={[
-              {
-                title: "Support bundles",
-                onClick: () =>
-                  history.push(`/app/${props.watch?.slug}/troubleshoot`),
-                isActive: true,
-              },
-              {
-                title: "Redactors",
-                onClick: () =>
-                  history.push(
-                    `/app/${props.watch?.slug}/troubleshoot/redactors`
-                  ),
-                isActive: false,
-              },
-            ]}
-          />
-        </div>
-        <div className="card-bg support-bundle-list-wrapper">
-          <div className="flex flex1 flex-column">
-            <div className="u-position--relative flex-auto u-paddingBottom--10 flex">
-              <div className="flex flex1 u-flexTabletReflow">
-                <div className="flex flex1">
-                  <div className="flex-auto alignSelf--center">
-                    <p className="card-title">Support bundles</p>
+    <>
+      <div className="centered-container u-paddingBottom--30 u-paddingTop--30 flex1 flex">
+        <KotsPageTitle pageName="Version History" showAppSlug />
+        <div className="flex1 flex-column">
+          <div className="flex justifyContent--center u-paddingBottom--30">
+            <Toggle
+              items={[
+                {
+                  title: "Support bundles",
+                  onClick: () =>
+                    history.push(`/app/${props.watch?.slug}/troubleshoot`),
+                  isActive: true,
+                },
+                {
+                  title: "Redactors",
+                  onClick: () =>
+                    history.push(
+                      `/app/${props.watch?.slug}/troubleshoot/redactors`
+                    ),
+                  isActive: false,
+                },
+              ]}
+            />
+          </div>
+          <div className="card-bg support-bundle-list-wrapper">
+            <div className="flex flex1 flex-column">
+              <div className="u-position--relative flex-auto u-paddingBottom--10 flex">
+                <div className="flex flex1 u-flexTabletReflow">
+                  <div className="flex flex1">
+                    <div className="flex-auto alignSelf--center">
+                      <p className="card-title">Support bundles</p>
+                    </div>
+                  </div>
+                  <div className="RightNode flex-auto flex alignItems--center u-position--relative">
+                    <a
+                      onClick={() =>
+                        !loadingBundle && toggleGenerateBundleModal()
+                      }
+                      className={`replicated-link flex alignItems--center u-fontSize--small ${
+                        loadingBundle ? "generating-bundle" : ""
+                      }`}
+                    >
+                      <Icon
+                        icon="tools"
+                        size={18}
+                        className="clickable u-marginRight--5"
+                      />
+                      Generate a support bundle
+                    </a>
+                    <span
+                      className="link flex alignItems--center u-fontSize--small u-marginLeft--20"
+                      onClick={toggleRedactorModal}
+                    >
+                      <Icon
+                        icon="marker-tip-outline"
+                        size={18}
+                        className="clickable u-marginRight--5"
+                      />
+                      Configure redaction
+                    </span>
                   </div>
                 </div>
-                <div className="RightNode flex-auto flex alignItems--center u-position--relative">
-                  <a
-                    onClick={() =>
-                      !loadingBundle && toggleGenerateBundleModal()
-                    }
-                    className={`replicated-link flex alignItems--center u-fontSize--small ${
-                      loadingBundle ? "generating-bundle" : ""
-                    }`}
-                  >
-                    <Icon
-                      icon="tools"
-                      size={18}
-                      className="clickable u-marginRight--5"
-                    />
-                    Generate a support bundle
-                  </a>
-                  <span
-                    className="link flex alignItems--center u-fontSize--small u-marginLeft--20"
-                    onClick={toggleRedactorModal}
-                  >
-                    <Icon
-                      icon="marker-tip-outline"
-                      size={18}
-                      className="clickable u-marginRight--5"
-                    />
-                    Configure redaction
-                  </span>
-                </div>
               </div>
-            </div>
-            <div
-              className={`${
-                watch?.downstream ? "flex1 flex-column u-overflow--auto" : ""
-              }`}
-            >
-              {bundlesNode}
+              <div
+                className={`${
+                  watch?.downstream ? "flex1 flex-column u-overflow--auto" : ""
+                }`}
+              >
+                {bundlesNode}
+              </div>
             </div>
           </div>
         </div>
-      </div>
-      {state.displayRedactorModal && (
-        <ConfigureRedactorsModal onClose={toggleRedactorModal} />
-      )}
-      {errorMsg && (
-        <ErrorModal
-          errorModal={props.displayErrorModal}
-          toggleErrorModal={toggleErrorModal}
-          errMsg={errorMsg}
-          tryAgain={listSupportBundles}
-          err="Failed to get bundles"
-          loading={props.loading}
-          appSlug={props.match.params.slug}
+        {state.displayRedactorModal && (
+          <ConfigureRedactorsModal onClose={toggleRedactorModal} />
+        )}
+        {errorMsg && (
+          <ErrorModal
+            errorModal={props.displayErrorModal}
+            toggleErrorModal={toggleErrorModal}
+            errMsg={errorMsg}
+            tryAgain={listSupportBundles}
+            err="Failed to get bundles"
+            loading={props.loading}
+            appSlug={props.match.params.slug}
+          />
+        )}
+        <GenerateSupportBundleModal
+          isOpen={isGeneratingBundleOpen}
+          toggleModal={toggleGenerateBundleModal}
+          watch={props.watch}
+          updateBundleSlug={props.updateBundleSlug}
         />
-      )}
-      <GenerateSupportBundleModal
-        isOpen={isGeneratingBundleOpen}
-        toggleModal={toggleGenerateBundleModal}
-        watch={props.watch}
-        updateBundleSlug={props.updateBundleSlug}
-      />
-    </div>
+      </div>
+
+      <Toast isToastVisible={isToastVisible} type="warning">
+        <div className="tw-flex tw-items-center">
+          <p className="tw-ml-2 tw-mr-4">{toastMessage}</p>
+          <span
+            onClick={() => setIsCancelled(true)}
+            className="tw-underline tw-cursor-pointer"
+          >
+            undo
+          </span>
+          <Icon
+            icon="close"
+            size={10}
+            className="tw-mx-4 tw-cursor-pointer"
+            onClick={() => setIsToastVisible(false)}
+          />
+        </div>
+      </Toast>
+    </>
   );
 };
 
