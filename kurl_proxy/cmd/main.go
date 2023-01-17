@@ -216,7 +216,7 @@ func getFingerprint(certData []byte) (string, error) {
 			break
 		}
 		if len(certData) == 0 {
-			return "", errors.New("no PEM data found in certificate")
+			return "", errors.New("no PEM data of type CERTIFICATE found in certificate")
 		}
 	}
 
