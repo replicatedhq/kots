@@ -6,7 +6,7 @@ export interface ToastProps {
   children: React.ReactNode;
 }
 
-const toastType = () => {
+const toastType = (type: "success" | "error" | "warning") => {
   switch (type) {
     case "success":
       return "tw-bg-[#38cc97]";
@@ -18,6 +18,7 @@ const toastType = () => {
       return "tw-bg-[#38cc97]";
   }
 };
+
 const Toast = ({ isToastVisible, type, children }: ToastProps) => {
   return (
     <div
@@ -30,7 +31,7 @@ const Toast = ({ isToastVisible, type, children }: ToastProps) => {
     >
       <div className="tw-flex tw-items-center">
         <div
-          className={`${toastType()} tw-w-1 tw-h-10 tw-border tw-rounded`}
+          className={`${toastType(type)} tw-w-1 tw-h-10 tw-border tw-rounded`}
         ></div>
         {children}
       </div>
