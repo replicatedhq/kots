@@ -417,6 +417,39 @@ func Test_getSpecSecretsMatchingLabel(t *testing.T) {
 			targetLabelKey:  "troubleshoot.io/kind=support-bundle",
 			expectSuccess:   false,
 		},
+		{
+			name: "get support bundle spec secret with multiple label selector",
+			secret: []runtime.Object{
+				&corev1.Secret{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "secret-1",
+						Namespace: "default",
+						Labels: map[string]string{
+							"troubleshoot.io/kind": "support-bundle",
+						},
+					},
+					Data: map[string][]byte{
+						"support-bundle-spec": []byte("spec-1"),
+					},
+				},
+				&corev1.Secret{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "secret-2",
+						Namespace: "default",
+						Labels: map[string]string{
+							"troubleshoot.io/kind": "support-bundle",
+						},
+					},
+					Data: map[string][]byte{
+						"support-bundle-spec": []byte("spec-2"),
+					},
+				},
+			},
+			key:             "support-bundle-spec",
+			targetNamespace: "default",
+			targetLabelKey:  "troubleshoot.io/kind=support-bundle",
+			expectSuccess:   true,
+		},
 	}
 
 	for _, tt := range tests {
