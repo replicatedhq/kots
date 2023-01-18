@@ -16,7 +16,7 @@ export default function SnapshotDifferencesModal(
       isOpen={snapshotDifferencesModal}
       shouldReturnFocusAfterClose={false}
       onRequestClose={() => {
-        toggleSnapshotDifferencesModal({});
+        toggleSnapshotDifferencesModal();
       }}
       ariaHideApp={false}
       contentLabel="Modal"
