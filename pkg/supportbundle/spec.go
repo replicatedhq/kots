@@ -144,10 +144,8 @@ func CreateRenderedSpec(app apptypes.AppType, sequence int64, kotsKinds *kotsuti
 	renderedSpec = b.Bytes()
 
 	secretName := GetSpecSecretName(app.GetSlug())
-	labels := kotstypes.MergeLabels(kotstypes.GetKotsadmLabels(), kotstypes.GetTroubleshootLabels())
-
 	existingSecret, err := GetSpecSecretsMatchingLabel(clientset, kotstypes.LabelsToStrings(kotstypes.GetTroubleshootLabels()), util.PodNamespace, SpecDataKey)
-
+	labels := kotstypes.MergeLabels(kotstypes.GetKotsadmLabels(), kotstypes.GetTroubleshootLabels())
 	if err != nil && !kuberneteserrors.IsNotFound(err) {
 		return nil, errors.Wrap(err, "failed to read support bundle secret")
 	} else if kuberneteserrors.IsNotFound(err) {
