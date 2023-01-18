@@ -1,7 +1,14 @@
 import React from "react";
 import Modal from "react-modal";
 
-export default function SnapshotDifferencesModal(props) {
+interface SnapshotDifferencesModalProps {
+  snapshotDifferencesModal: boolean;
+  toggleSnapshotDifferencesModal: () => void;
+}
+
+export default function SnapshotDifferencesModal(
+  props: SnapshotDifferencesModalProps
+) {
   const { snapshotDifferencesModal, toggleSnapshotDifferencesModal } = props;
 
   return (
