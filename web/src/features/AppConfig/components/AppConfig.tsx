@@ -14,7 +14,7 @@ import { HelmDeployModal } from "../../../components/shared/modals/HelmDeployMod
 import {
   UseIsHelmManaged,
   useDownloadValues,
-  useSaveConfig
+  useSaveConfig,
 } from "../../../components/hooks";
 import ConfigInfo from "./ConfigInfo";
 
@@ -103,7 +103,7 @@ class AppConfig extends Component<Props, State> {
 
       parentGroup: "",
       currentActiveGroup: "",
-      currentActiveId: ""
+      currentActiveId: "",
     };
 
     this.handleConfigChange = debounce(this.handleConfigChange, 250);
@@ -196,9 +196,9 @@ class AppConfig extends Component<Props, State> {
       const res = await fetch(`${process.env.API_ENDPOINT}/app/${slug}`, {
         headers: {
           Authorization: Utilities.getToken(),
-          "Content-Type": "application/json"
+          "Content-Type": "application/json",
         },
-        method: "GET"
+        method: "GET",
       });
       if (res.ok && res.status == 200) {
         const app = await res.json();
@@ -216,7 +216,7 @@ class AppConfig extends Component<Props, State> {
     this.setState({
       configLoading: true,
       gettingConfigErrMsg: "",
-      configError: false
+      configError: false,
     });
 
     fetch(
@@ -225,8 +225,8 @@ class AppConfig extends Component<Props, State> {
         method: "GET",
         headers: {
           Authorization: Utilities.getToken(),
-          "Content-Type": "application/json"
-        }
+          "Content-Type": "application/json",
+        },
       }
     )
       .then(async (response) => {
@@ -239,7 +239,7 @@ class AppConfig extends Component<Props, State> {
           configGroups: data.configGroups,
           downstreamVersion: data.downstreamVersion,
           changed: false,
-          configLoading: false
+          configLoading: false,
         });
         if (this.props.location.hash.length > 0) {
           this.navigateToCurrentHash();
@@ -247,7 +247,7 @@ class AppConfig extends Component<Props, State> {
           this.setState({
             activeGroups: [data.configGroups[0].name],
             configLoading: false,
-            gettingConfigErrMsg: ""
+            gettingConfigErrMsg: "",
           });
         }
       })
@@ -258,7 +258,7 @@ class AppConfig extends Component<Props, State> {
           displayErrorModal: true,
           gettingConfigErrMsg: err
             ? err.message
-            : "Something went wrong, please try again."
+            : "Something went wrong, please try again.",
         });
       });
   };
@@ -337,13 +337,13 @@ class AppConfig extends Component<Props, State> {
       method: "PUT",
       headers: {
         Authorization: Utilities.getToken(),
-        "Content-Type": "application/json"
+        "Content-Type": "application/json",
       },
       body: JSON.stringify({
         configGroups: this.state.configGroups,
         sequence,
-        createNewVersion
-      })
+        createNewVersion,
+      }),
     })
       .then((res) => res.json())
       .then(async (result) => {
@@ -365,7 +365,7 @@ class AppConfig extends Component<Props, State> {
 
         if (isHelmManaged) {
           this.setState({
-            showHelmDeployModal: true
+            showHelmDeployModal: true,
           });
           return;
         }
@@ -384,7 +384,7 @@ class AppConfig extends Component<Props, State> {
           this.setState({
             savingConfig: false,
             changed: false,
-            showNextStepModal: true
+            showNextStepModal: true,
           });
         }
       })
@@ -393,7 +393,7 @@ class AppConfig extends Component<Props, State> {
           savingConfig: false,
           configError: err
             ? err.message
-            : "Something went wrong, please try again."
+            : "Something went wrong, please try again.",
         });
       });
   };
@@ -453,10 +453,10 @@ class AppConfig extends Component<Props, State> {
         headers: {
           Authorization: Utilities.getToken(),
           "Content-Type": "application/json",
-          Accept: "application/json"
+          Accept: "application/json",
         },
         method: "POST",
-        body: JSON.stringify({ configGroups: groups, sequence: sequence })
+        body: JSON.stringify({ configGroups: groups, sequence: sequence }),
       }
     )
       .then(async (response) => {
@@ -514,7 +514,7 @@ class AppConfig extends Component<Props, State> {
       app.downstream?.currentVersion?.sequence === sequence;
     const isLatestVersion = app.currentSequence === sequence;
     const pendingVersion = find(app.downstream?.pendingVersions, {
-      sequence: sequence
+      sequence: sequence,
     });
     return !isLatestVersion && !isCurrentVersion && !pendingVersion?.semver;
   };
@@ -554,7 +554,7 @@ class AppConfig extends Component<Props, State> {
       configLoading,
       gettingConfigErrMsg,
       displayErrorModal,
-      errorTitle
+      errorTitle,
     } = this.state;
     const { fromLicenseFlow, match, isHelmManaged } = this.props;
     const app = this.props.app || this.state.app;
@@ -588,7 +588,7 @@ class AppConfig extends Component<Props, State> {
     const sections = document.querySelectorAll(".observe-elements");
 
     const callback = (entries: IntersectionObserverEntry[]) => {
-      entries.forEach(({ isIntersecting, target, intersectionRatio }) => {
+      entries.forEach(({ isIntersecting, target }) => {
         const groupNav = document.querySelector(
           `#config-group-nav-${target.id}`
         );
@@ -607,8 +607,6 @@ class AppConfig extends Component<Props, State> {
           }
         } else {
           if (groupNav?.contains(activeLink) && activeLink) {
-            console.log(groupNav, "group");
-            console.log("is it true");
             activeLink.classList.remove("active-item");
           }
           groupNav?.classList.remove("is-active");
@@ -619,7 +617,7 @@ class AppConfig extends Component<Props, State> {
     const options = {
       root: document,
       rootMargin: "20% 0% -75% 0%",
-      threshold: 0.15
+      threshold: 0.15,
       // the proportion of the element that must be within the root bounds for it to be considered intersecting
     };
 
@@ -714,7 +712,7 @@ class AppConfig extends Component<Props, State> {
                 const { isHelmManaged: isHelmManagedFromHook } = data;
 
                 const { isError: saveError } = useSaveConfig({
-                  appSlug: this.getSlug()
+                  appSlug: this.getSlug(),
                 });
 
                 const { download, clearError: clearDownloadError } =
@@ -723,7 +721,7 @@ class AppConfig extends Component<Props, State> {
                     fileName: "values.yaml",
                     sequence: match.params.sequence,
                     versionLabel: downstreamVersionLabel,
-                    isPending: isPending
+                    isPending: isPending,
                   });
 
                 return (
