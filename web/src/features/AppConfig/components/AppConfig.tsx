@@ -72,9 +72,6 @@ type State = {
   savingConfig: boolean;
   showHelmDeployModal: boolean;
   showNextStepModal: boolean;
-  parentGroup: string;
-  currentActiveGroup: string;
-  currentActiveId: string;
 };
 
 class AppConfig extends Component<Props, State> {
@@ -100,10 +97,6 @@ class AppConfig extends Component<Props, State> {
       savingConfig: false,
       showHelmDeployModal: false,
       showNextStepModal: false,
-
-      parentGroup: "",
-      currentActiveGroup: "",
-      currentActiveId: "",
     };
 
     this.handleConfigChange = debounce(this.handleConfigChange, 250);
