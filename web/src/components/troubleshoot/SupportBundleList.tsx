@@ -1,4 +1,5 @@
 import * as React from "react";
+import { useReducer, useEffect, useContext } from "react";
 import { KotsPageTitle } from "@components/Head";
 import {
   withRouter,
@@ -13,12 +14,13 @@ import ConfigureRedactorsModal from "./ConfigureRedactorsModal";
 import ErrorModal from "../modals/ErrorModal";
 import { Utilities } from "../../utilities/utilities";
 import { Repeater } from "@src/utilities/repeater";
-
 import "../../scss/components/troubleshoot/SupportBundleList.scss";
 import Icon from "../Icon";
-
 import { App, SupportBundle, SupportBundleProgress } from "@types";
 import GenerateSupportBundleModal from "./GenerateSupportBundleModal";
+import { useHistory } from "react-router-dom";
+import { ToastContext } from "@src/context/ToastContext";
+import Toast from "@components/shared/Toast";
 
 type Props = {
   bundle: SupportBundle;
@@ -52,58 +54,42 @@ type State = {
   isGeneratingBundleOpen: boolean;
 };
 
-class SupportBundleList extends React.Component<Props, State> {
-  constructor(props: Props) {
-    super(props);
-    this.state = {
+export const SupportBundleList = (props: Props) => {
+  const [state, setState] = useReducer(
+    (currentState: State, newState: Partial<State>) => ({
+      ...currentState,
+      ...newState,
+    }),
+    {
       displayRedactorModal: false,
       loadingSupportBundles: false,
       pollForBundleAnalysisProgress: new Repeater(),
       isGeneratingBundleOpen: false,
-    };
-  }
-
-  componentDidMount() {
-    this.listSupportBundles();
-  }
-
-  componentWillUnmount() {
-    this.state.pollForBundleAnalysisProgress.stop();
-  }
-
-  componentDidUpdate(lastProps: Props) {
-    const { bundle } = this.props;
-    if (
-      bundle?.status !== "running" &&
-      bundle?.status !== lastProps.bundle.status
-    ) {
-      this.listSupportBundles();
-      this.state.pollForBundleAnalysisProgress.stop();
-      if (bundle.status === "failed") {
-        this.props.history.push(`/app/${this.props.watch?.slug}/troubleshoot`);
-      }
     }
-  }
+  );
 
-  toggleGenerateBundleModal = () => {
-    this.setState({
-      isGeneratingBundleOpen: !this.state.isGeneratingBundleOpen,
-    });
-  };
+  const history = useHistory();
+  const {
+    deleteBundleId,
+    setIsToastVisible,
+    isToastVisible,
+    toastMessage,
+    setIsCancelled,
+  } = useContext(ToastContext);
 
-  listSupportBundles = () => {
-    this.setState({
+  const listSupportBundles = () => {
+    setState({
       errorMsg: "",
     });
 
-    this.props.updateState({
+    props.updateState({
       loading: true,
       displayErrorModal: true,
       loadingBundle: false,
     });
 
     fetch(
-      `${process.env.API_ENDPOINT}/troubleshoot/app/${this.props.watch?.slug}/supportbundles`,
+      `${process.env.API_ENDPOINT}/troubleshoot/app/${props.watch?.slug}/supportbundles`,
       {
         headers: {
           Authorization: Utilities.getToken(),
@@ -114,10 +100,10 @@ class SupportBundleList extends React.Component<Props, State> {
     )
       .then(async (res) => {
         if (!res.ok) {
-          this.setState({
+          setState({
             errorMsg: `Unexpected status code: ${res.status}`,
           });
-          this.props.updateState({ loading: false, displayErrorModal: true });
+          props.updateState({ loading: false, displayErrorModal: true });
           return;
         }
         const response = await res.json();
@@ -129,97 +115,118 @@ class SupportBundleList extends React.Component<Props, State> {
           );
         }
         if (bundleRunning) {
-          this.state.pollForBundleAnalysisProgress.start(
-            this.props.pollForBundleAnalysisProgress,
+          state.pollForBundleAnalysisProgress.start(
+            props.pollForBundleAnalysisProgress,
             1000
           );
         }
-        this.setState({
+        setState({
           supportBundles: response.supportBundles,
           errorMsg: "",
         });
-        this.props.updateState({ loading: false, displayErrorModal: false });
+        props.updateState({ loading: false, displayErrorModal: false });
       })
       .catch((err) => {
         console.log(err);
-        this.setState({
+        setState({
           errorMsg: err
             ? err.message
             : "Something went wrong, please try again.",
         });
-        this.props.updateState({ displayErrorModal: true, loading: false });
+        props.updateState({ displayErrorModal: true, loading: false });
       });
   };
 
-  toggleErrorModal = () => {
-    this.props.updateState({
-      displayErrorModal: !this.props.displayErrorModal,
-    });
-  };
+  useEffect(() => {
+    listSupportBundles();
+    return () => {
+      state.pollForBundleAnalysisProgress.stop();
+    };
+  }, []);
 
-  toggleRedactorModal = () => {
-    this.setState({
-      displayRedactorModal: !this.state.displayRedactorModal,
-    });
-  };
-
-  render() {
-    const { watch, loading, loadingBundle } = this.props;
-    const { errorMsg, supportBundles, isGeneratingBundleOpen } = this.state;
-
-    const downstream = watch?.downstream;
-
-    if (loading) {
-      return (
-        <div className="flex1 flex-column justifyContent--center alignItems--center">
-          <Loader size="60" />
-        </div>
-      );
-    }
-
-    let bundlesNode;
-    if (downstream) {
-      if (supportBundles?.length) {
-        bundlesNode = supportBundles
-          .sort(
-            (a, b) =>
-              new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-          )
-          .map((bundle) => (
-            <SupportBundleRow
-              key={bundle.id}
-              bundle={bundle}
-              watchSlug={watch?.slug}
-              isAirgap={watch?.isAirgap}
-              isSupportBundleUploadSupported={
-                watch?.isSupportBundleUploadSupported
-              }
-              refetchBundleList={this.listSupportBundles}
-              progressData={
-                this.props.loadingBundleId === bundle.id &&
-                this.props.bundleProgress
-              }
-              loadingBundle={
-                this.props.loadingBundleId === bundle.id &&
-                this.props.loadingBundle
-              }
-            />
-          ));
-      } else {
-        return (
-          <GenerateSupportBundle
-            watch={watch}
-            updateBundleSlug={this.props.updateBundleSlug}
-            bundle={this.props.bundle}
-            pollForBundleAnalysisProgress={
-              this.props.pollForBundleAnalysisProgress
-            }
-          />
-        );
+  useEffect(() => {
+    const { bundle } = props;
+    if (bundle?.status !== "running") {
+      listSupportBundles();
+      state.pollForBundleAnalysisProgress.stop();
+      if (bundle.status === "failed") {
+        history.push(`/app/${props.watch?.slug}/troubleshoot`);
       }
     }
+  }, [props.bundle]);
 
+  const toggleGenerateBundleModal = () => {
+    setState({
+      isGeneratingBundleOpen: !state.isGeneratingBundleOpen,
+    });
+  };
+
+  const toggleErrorModal = () => {
+    props.updateState({
+      displayErrorModal: !props.displayErrorModal,
+    });
+  };
+
+  const toggleRedactorModal = () => {
+    setState({
+      displayRedactorModal: !state.displayRedactorModal,
+    });
+  };
+
+  const { watch, loading, loadingBundle } = props;
+  const { errorMsg, supportBundles, isGeneratingBundleOpen } = state;
+
+  const downstream = watch?.downstream;
+
+  if (loading) {
     return (
+      <div className="flex1 flex-column justifyContent--center alignItems--center">
+        <Loader size="60" />
+      </div>
+    );
+  }
+
+  let bundlesNode;
+  if (downstream) {
+    if (supportBundles?.length) {
+      bundlesNode = supportBundles
+        .sort(
+          (a, b) =>
+            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+        )
+        .map((bundle) => (
+          <SupportBundleRow
+            key={bundle.id}
+            bundle={bundle}
+            watchSlug={watch?.slug}
+            isAirgap={watch?.isAirgap}
+            isSupportBundleUploadSupported={
+              watch?.isSupportBundleUploadSupported
+            }
+            refetchBundleList={listSupportBundles}
+            progressData={
+              props.loadingBundleId === bundle.id && props.bundleProgress
+            }
+            loadingBundle={
+              props.loadingBundleId === bundle.id && props.loadingBundle
+            }
+            className={bundle.id === deleteBundleId ? "deleting" : ""}
+          />
+        ));
+    } else {
+      return (
+        <GenerateSupportBundle
+          watch={watch}
+          updateBundleSlug={props.updateBundleSlug}
+          bundle={props.bundle}
+          pollForBundleAnalysisProgress={props.pollForBundleAnalysisProgress}
+        />
+      );
+    }
+  }
+
+  return (
+    <>
       <div className="centered-container u-paddingBottom--30 u-paddingTop--30 flex1 flex">
         <KotsPageTitle pageName="Version History" showAppSlug />
         <div className="flex1 flex-column">
@@ -229,16 +236,14 @@ class SupportBundleList extends React.Component<Props, State> {
                 {
                   title: "Support bundles",
                   onClick: () =>
-                    this.props.history.push(
-                      `/app/${this.props.watch?.slug}/troubleshoot`
-                    ),
+                    history.push(`/app/${props.watch?.slug}/troubleshoot`),
                   isActive: true,
                 },
                 {
                   title: "Redactors",
                   onClick: () =>
-                    this.props.history.push(
-                      `/app/${this.props.watch?.slug}/troubleshoot/redactors`
+                    history.push(
+                      `/app/${props.watch?.slug}/troubleshoot/redactors`
                     ),
                   isActive: false,
                 },
@@ -257,7 +262,7 @@ class SupportBundleList extends React.Component<Props, State> {
                   <div className="RightNode flex-auto flex alignItems--center u-position--relative">
                     <a
                       onClick={() =>
-                        !loadingBundle && this.toggleGenerateBundleModal()
+                        !loadingBundle && toggleGenerateBundleModal()
                       }
                       className={`replicated-link flex alignItems--center u-fontSize--small ${
                         loadingBundle ? "generating-bundle" : ""
@@ -272,7 +277,7 @@ class SupportBundleList extends React.Component<Props, State> {
                     </a>
                     <span
                       className="link flex alignItems--center u-fontSize--small u-marginLeft--20"
-                      onClick={this.toggleRedactorModal}
+                      onClick={toggleRedactorModal}
                     >
                       <Icon
                         icon="marker-tip-outline"
@@ -294,30 +299,48 @@ class SupportBundleList extends React.Component<Props, State> {
             </div>
           </div>
         </div>
-        {this.state.displayRedactorModal && (
-          <ConfigureRedactorsModal onClose={this.toggleRedactorModal} />
+        {state.displayRedactorModal && (
+          <ConfigureRedactorsModal onClose={toggleRedactorModal} />
         )}
         {errorMsg && (
           <ErrorModal
-            errorModal={this.props.displayErrorModal}
-            toggleErrorModal={this.toggleErrorModal}
+            errorModal={props.displayErrorModal}
+            toggleErrorModal={toggleErrorModal}
             errMsg={errorMsg}
-            tryAgain={this.listSupportBundles}
+            tryAgain={listSupportBundles}
             err="Failed to get bundles"
-            loading={this.props.loading}
-            appSlug={this.props.match.params.slug}
+            loading={props.loading}
+            appSlug={props.match.params.slug}
           />
         )}
         <GenerateSupportBundleModal
           isOpen={isGeneratingBundleOpen}
-          toggleModal={this.toggleGenerateBundleModal}
-          watch={this.props.watch}
-          updateBundleSlug={this.props.updateBundleSlug}
+          toggleModal={toggleGenerateBundleModal}
+          watch={props.watch}
+          updateBundleSlug={props.updateBundleSlug}
         />
       </div>
-    );
-  }
-}
+
+      <Toast isToastVisible={isToastVisible} type="warning">
+        <div className="tw-flex tw-items-center">
+          <p className="tw-ml-2 tw-mr-4">{toastMessage}</p>
+          <span
+            onClick={() => setIsCancelled(true)}
+            className="tw-underline tw-cursor-pointer"
+          >
+            undo
+          </span>
+          <Icon
+            icon="close"
+            size={10}
+            className="tw-mx-4 tw-cursor-pointer"
+            onClick={() => setIsToastVisible(false)}
+          />
+        </div>
+      </Toast>
+    </>
+  );
+};
 
 /* eslint-disable */
 // @ts-ignore

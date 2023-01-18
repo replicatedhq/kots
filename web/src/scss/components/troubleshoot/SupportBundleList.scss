@@ -86,6 +86,16 @@
     }
   }
 }
+.deleting {
+  animation: blinker 3s linear infinite;
+  cursor: not-allowed !important;
+}
+
+@keyframes blinker {
+  50% {
+    opacity: 0.2;
+  }
+}
 
 .CommunityLicenseBundle--wrapper {
   max-height: 94px;
