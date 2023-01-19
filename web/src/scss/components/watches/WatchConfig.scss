@@ -72,15 +72,18 @@ a:visited {
     }
 
     &.group-open {
-      & .group-title {
-        font-weight: 700;
-      }
       .icon.u-darkDropdownArrow,
       .arrow-down {
         transform: rotate(180deg);
       }
       & .side-nav-items {
         display: block;
+      }
+    }
+    &.is-active {
+      & .group-title {
+        font-weight: 700;
+        color: $text-color-primary;
       }
     }
   }
