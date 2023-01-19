@@ -705,7 +705,7 @@ class AppSnapshots extends Component {
                 </p>
               </div>
             ) : null}
-            {snapshots?.length > 0 && snapshotSettings?.veleroVersion !== "" ? (
+            {snapshots?.length > 0 && snapshotSettings?.veleroVersion !== "" && (
               <div className="flex flex-column">
                 {snapshots?.map((snapshot) => (
                   <SnapshotRow
@@ -718,7 +718,8 @@ class AppSnapshots extends Component {
                   />
                 ))}
               </div>
-            ) : !isStartButtonClicked ? (
+            )}
+            {!isStartButtonClicked && snapshots?.length === 0 && (
               <div className="flex flex-column justifyContent--center alignItems--center">
                 <GettingStartedSnapshots
                   isApp={true}
@@ -728,7 +729,7 @@ class AppSnapshots extends Component {
                   startManualSnapshot={this.startManualSnapshot}
                 />
               </div>
-            ) : null}
+            )}
           </div>
           {displayScheduleSnapshotModal && (
             <Modal

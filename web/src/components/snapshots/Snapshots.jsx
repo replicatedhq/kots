@@ -605,7 +605,7 @@ class Snapshots extends Component {
                   />
                 ))}
               </div>
-            )} 
+            )}
             {!isStartButtonClicked && snapshots?.length === 0 && (
               <div className="flex flex-column u-position--relative">
                 <GettingStartedSnapshots
