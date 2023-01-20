@@ -16,6 +16,7 @@ import (
 	apptypes "github.com/replicatedhq/kots/pkg/app/types"
 	"github.com/replicatedhq/kots/pkg/helm"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
+	kotstypes "github.com/replicatedhq/kots/pkg/kotsadm/types"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/kurl"
 	"github.com/replicatedhq/kots/pkg/logger"
@@ -438,4 +439,20 @@ func GetSpecSecretsMatchingLabel(client kubernetes.Interface, labelSelector stri
 	}
 
 	return nil, kuberneteserrors.NewNotFound(corev1.Resource("secret"), "support bundle spec")
+}
+
+func AddLabelExistingSpecSecret(client kubernetes.Interface, namespace string, secretName string, labels map[string]string) (*corev1.Secret, error) {
+	existingSecret, err := client.CoreV1().Secrets(namespace).Get(context.TODO(), secretName, metav1.GetOptions{})
+	if err != nil && !kuberneteserrors.IsNotFound(err) {
+		return nil, errors.Wrap(err, "failed to read support bundle secret")
+	} else if kuberneteserrors.IsNotFound(err) {
+		return nil, nil
+	}
+
+	existingSecret.ObjectMeta.Labels = kotstypes.MergeLabels(existingSecret.ObjectMeta.Labels, labels)
+	updatedSecret, err := client.CoreV1().Secrets(namespace).Update(context.TODO(), existingSecret, metav1.UpdateOptions{})
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to update support bundle secret")
+	}
+	return updatedSecret, nil
 }
