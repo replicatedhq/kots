@@ -144,7 +144,8 @@ func CreateRenderedSpec(app apptypes.AppType, sequence int64, kotsKinds *kotsuti
 	renderedSpec = b.Bytes()
 
 	secretName := GetSpecSecretName(app.GetSlug())
-	_, err = AddLabelExistingSpecSecret(clientset, util.PodNamespace, secretName, kotstypes.GetTroubleshootLabels())
+	// to add the troubleshoot labels to existing support-bundler spec secrets that were created in older versions of kots
+	_, err = k8sutil.AddLabelsToSecret(clientset, util.PodNamespace, secretName, kotstypes.GetTroubleshootLabels())
 	if err != nil {
 		return nil, err
 	}
