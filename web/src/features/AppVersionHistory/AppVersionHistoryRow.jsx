@@ -10,6 +10,7 @@ import { Utilities, getPreflightResultState } from "@src/utilities/utilities";
 
 import { YamlErrors } from "./YamlErrors";
 import Icon from "@src/components/Icon";
+import EditConfigIcon from "@components/shared/EditConfigIcon";
 
 class AppVersionHistoryRow extends Component {
   renderDiff = (version) => {
@@ -444,17 +445,8 @@ class AppVersionHistoryRow extends Component {
             </>
           ) : null}
         </div>
-        {version.hasConfig && (
-          <div className="flex alignItems--center">
-            <Link to={configScreenURL} data-tip={tooltipTip}>
-              <Icon
-                icon={editableConfig ? "edit-config" : "view-config"}
-                size={22}
-              />
-            </Link>
-            <ReactTooltip effect="solid" className="replicated-tooltip" />
-          </div>
-        )}
+        {version.hasConfig && <EditConfigIcon version={version} />}
+
         {showDeployLogs ? (
           <div className="u-marginLeft--10">
             <span
