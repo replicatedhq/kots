@@ -1,9 +1,5 @@
 package types
 
-import (
-	"k8s.io/apimachinery/pkg/labels"
-)
-
 const KotsadmKey = "kots.io/kotsadm"
 const KotsadmLabelValue = "true"
 
@@ -55,9 +51,4 @@ func MergeLabels(labels ...map[string]string) map[string]string {
 	}
 
 	return mergedLabels
-}
-
-func LabelsToStrings(labelMap map[string]string) string {
-	labelSelector := labels.SelectorFromSet(labelMap).String()
-	return labelSelector
 }

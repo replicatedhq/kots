@@ -40,6 +40,7 @@ import (
 	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/labels"
 	serializer "k8s.io/apimachinery/pkg/runtime/serializer/json"
 	"k8s.io/apimachinery/pkg/util/rand"
 	"k8s.io/client-go/kubernetes"
@@ -147,10 +148,10 @@ func CreateRenderedSpec(app apptypes.AppType, sequence int64, kotsKinds *kotsuti
 	// to add the troubleshoot labels to existing support-bundler spec secrets that were created in older versions of kots
 	_, err = k8sutil.AddLabelsToSecret(clientset, util.PodNamespace, secretName, kotstypes.GetTroubleshootLabels())
 	if err != nil {
-		return nil, err
+		errors.Wrap(err, "failed to add troubleshoot labels to existing spec secret")
 	}
 
-	existingSecret, err := GetSpecSecretsMatchingLabel(clientset, kotstypes.LabelsToStrings(kotstypes.GetTroubleshootLabels()), util.PodNamespace, SpecDataKey)
+	existingSecret, err := GetSpecSecretsMatchingLabel(clientset, labels.SelectorFromSet(kotstypes.GetTroubleshootLabels()).String(), util.PodNamespace, SpecDataKey)
 	labels := kotstypes.MergeLabels(kotstypes.GetKotsadmLabels(), kotstypes.GetTroubleshootLabels())
 	if err != nil && !kuberneteserrors.IsNotFound(err) {
 		return nil, errors.Wrap(err, "failed to read support bundle secret")

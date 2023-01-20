@@ -123,33 +123,3 @@ func Test_mergeLabels(t *testing.T) {
 		})
 	}
 }
-
-func Test_labelsToStrings(t *testing.T) {
-	tests := []struct {
-		name   string
-		labels map[string]string
-		expect string
-	}{
-		{
-			name: "pass case with labels",
-			labels: map[string]string{
-				"foo": "foo",
-			},
-			expect: "foo=foo",
-		},
-		{
-			name: "pass case with troubleshoot labels",
-			labels: map[string]string{
-				"troubleshoot.io/kind": "support-bundle",
-			},
-			expect: "troubleshoot.io/kind=support-bundle",
-		},
-	}
-
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			labels := LabelsToStrings(test.labels)
-			assert.Equal(t, test.expect, labels)
-		})
-	}
-}
