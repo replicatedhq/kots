@@ -206,15 +206,26 @@ func getDownstreamGitOps(clientset kubernetes.Interface, appID string, clusterID
 	return nil, nil
 }
 
-func DisableDownstreamGitOps(appID string, clusterID string) error {
+func DisableDownstreamGitOps(appID string, clusterID string, gitOpsConfig *GitOpsConfig) error {
 	clientset, err := k8sutil.GetClientset()
 	if err != nil {
 		return errors.Wrap(err, "failed to get k8s client set")
 	}
 
+	err = deleteDownstreamGitOps(clientset, appID, clusterID, gitOpsConfig.RepoURI)
+	return errors.Wrap(err, "failed to delete data from gitops configmap")
+}
+
+// deleteDownstreamGitOps will delete the gitops config for a downstream, and delete the provider from the secret
+func deleteDownstreamGitOps(clientset kubernetes.Interface, appID string, clusterID string, repoURI string) error {
 	configMap, err := clientset.CoreV1().ConfigMaps(util.PodNamespace).Get(context.TODO(), "kotsadm-gitops", metav1.GetOptions{})
 	if kuberneteserrors.IsNotFound(err) {
 		return errors.Wrap(err, "gitops config map not found")
+	}
+	// if multiple apps have same repo, don't delete the provider from the secret
+	isRepoConfiguredForMultipleApps, err := isGitOpsRepoConfiguredForMultipleApps(configMap.Data, repoURI)
+	if err != nil {
+		return errors.Wrap(err, "failed to check if repo is configured for other apps")
 	}
 
 	configMapDataKey := fmt.Sprintf("%s-%s", appID, clusterID)
@@ -226,6 +237,81 @@ func DisableDownstreamGitOps(appID string, clusterID string) error {
 	_, err = clientset.CoreV1().ConfigMaps(util.PodNamespace).Update(context.TODO(), configMap, metav1.UpdateOptions{})
 	if err != nil {
 		return errors.Wrap(err, "failed to update config map")
+	}
+
+	if !isRepoConfiguredForMultipleApps {
+		if err := deleteKeysFromGitOpsSecret(clientset, repoURI); err != nil {
+			return errors.Wrap(err, "failed to delete keys from gitops secret")
+		}
+	}
+
+	return nil
+}
+
+// isGitOpsRepoConfiguredForMultipleApps returns true if the repo is configured for multiple apps
+func isGitOpsRepoConfiguredForMultipleApps(gitOpsEncodedMap map[string]string, repoURI string) (bool, error) {
+	repoURICount := 0
+	for _, val := range gitOpsEncodedMap {
+		configMapDataDecoded, err := base64.StdEncoding.DecodeString(val)
+		if err != nil {
+			return false, errors.Wrap(err, "failed to decode configmap data")
+		}
+
+		configMapData := map[string]string{}
+		if err := json.Unmarshal(configMapDataDecoded, &configMapData); err != nil {
+			return false, errors.Wrap(err, "failed to unmarshal configmap data")
+		}
+
+		if configMapData["repoUri"] == repoURI {
+			repoURICount++
+		}
+
+		if repoURICount > 1 {
+			return true, nil
+		}
+	}
+	return false, nil
+}
+
+// deleteKeysFromGitOpsSecret deletes all keys from the gitops secret that match the given appID and clusterID
+func deleteKeysFromGitOpsSecret(clientset kubernetes.Interface, repoURL string) error {
+	secret, err := clientset.CoreV1().Secrets(util.PodNamespace).Get(context.TODO(), "kotsadm-gitops", metav1.GetOptions{})
+	if kuberneteserrors.IsNotFound(err) {
+		return errors.Wrap(err, "gitops secret not found")
+	}
+
+	var keyIndex int64 = -1
+	for key, val := range secret.Data {
+		splitKey := strings.Split(key, ".")
+		if len(splitKey) != 3 {
+			continue
+		}
+
+		if splitKey[2] == "repoUri" {
+			if string(val) == repoURL {
+				keyIndex, err = strconv.ParseInt(splitKey[1], 10, 64)
+				if err != nil {
+					return errors.Wrap(err, "failed to parse index")
+				}
+				break
+			}
+		}
+	}
+
+	if keyIndex == -1 {
+		return nil
+	}
+
+	// delete all keys that match "provider.keyIndex.*"
+	for key, _ := range secret.Data {
+		if strings.HasPrefix(key, fmt.Sprintf("provider.%d.", keyIndex)) {
+			delete(secret.Data, key)
+		}
+	}
+
+	_, err = clientset.CoreV1().Secrets(util.PodNamespace).Update(context.TODO(), secret, metav1.UpdateOptions{})
+	if err != nil {
+		return errors.Wrap(err, "failed to update secret")
 	}
 
 	return nil
