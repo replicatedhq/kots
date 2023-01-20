@@ -212,15 +212,17 @@ export type Version = {
   diffSummaryError: string;
   downloadStatus: VersionDownloadStatus;
   gitDeployable: boolean;
+  isChecked: boolean;
+  isConfigurable?: boolean;
   isDeployable: boolean;
   isRequired: boolean;
   needsKotsUpgrade: boolean;
   nonDeployableCause: string;
   parentSequence: number;
   preflightResult: string;
-  preflightStatus: string;
   preflightResultCreatedAt: string;
   preflightSkipped: boolean;
+  preflightStatus: string;
   releaseNotes: string;
   semver: string;
   sequence: number;
@@ -230,7 +232,6 @@ export type Version = {
   updateCursor: string;
   versionLabel?: string;
   yamlErrors: string[];
-  isChecked: boolean;
 };
 
 export type VersionDownloadStatus = {
