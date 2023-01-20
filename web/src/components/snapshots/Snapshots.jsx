@@ -594,7 +594,7 @@ class Snapshots extends Component {
                 </p>
               </div>
             ) : null}
-            {snapshots?.length > 0 && snapshotSettings?.veleroVersion ? (
+            {snapshots?.length > 0 && snapshotSettings?.veleroVersion && (
               <div className="flex flex-column">
                 {snapshots?.map((snapshot) => (
                   <SnapshotRow
@@ -605,7 +605,8 @@ class Snapshots extends Component {
                   />
                 ))}
               </div>
-            ) : !isStartButtonClicked ? (
+            )}
+            {!isStartButtonClicked && snapshots?.length === 0 && (
               <div className="flex flex-column u-position--relative">
                 <GettingStartedSnapshots
                   isVeleroInstalled={!!snapshotSettings?.veleroVersion}
@@ -613,7 +614,7 @@ class Snapshots extends Component {
                   startInstanceSnapshot={this.startInstanceSnapshot}
                 />
               </div>
-            ) : null}
+            )}
           </div>
           {this.state.deleteSnapshotModal && (
             <DeleteSnapshotModal
