@@ -83,7 +83,7 @@ func (h *Handler) DisableAppGitOps(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if downstreamGitOps != nil {
-		err := gitops.DisableDownstreamGitOps(a.ID, clusterID)
+		err := gitops.DisableDownstreamGitOps(a.ID, clusterID, downstreamGitOps)
 		if err != nil {
 			logger.Error(err)
 			w.WriteHeader(http.StatusInternalServerError)
