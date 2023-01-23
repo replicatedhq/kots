@@ -273,7 +273,7 @@ func isGitOpsRepoConfiguredForMultipleApps(gitOpsEncodedMap map[string]string, r
 	return false, nil
 }
 
-// deleteKeysFromGitOpsSecret deletes all keys from the gitops secret that match the given appID and clusterID
+// deleteKeysFromGitOpsSecret deletes all keys from the gitops secret that match the given repoURL
 func deleteKeysFromGitOpsSecret(clientset kubernetes.Interface, repoURL string) error {
 	secret, err := clientset.CoreV1().Secrets(util.PodNamespace).Get(context.TODO(), "kotsadm-gitops", metav1.GetOptions{})
 	if kuberneteserrors.IsNotFound(err) {
