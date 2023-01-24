@@ -47,7 +47,7 @@ type DownstreamVersion struct {
 	PreflightResult            string                          `json:"preflightResult,omitempty"`
 	PreflightResultCreatedAt   *time.Time                      `json:"preflightResultCreatedAt,omitempty"`
 	HasFailingStrictPreflights bool                            `json:"hasFailingStrictPreflights,omitempty"`
-	IsConfigurable             bool                            `json:"isConfigurable,omitempty"`
+	HasConfig                  bool                            `json:"hasConfig,omitempty"`
 	DiffSummary                string                          `json:"diffSummary,omitempty"`
 	DiffSummaryError           string                          `json:"diffSummaryError,omitempty"`
 	YamlErrors                 []v1beta1.InstallationYAMLError `json:"yamlErrors,omitempty"`
