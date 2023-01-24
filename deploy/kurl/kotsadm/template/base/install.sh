@@ -344,7 +344,7 @@ function kotsadm_confg_configmap() {
     local dst="$1"
 
     if ! kubernetes_resource_exists default configmap kotsadm-confg; then
-        kubectl -n default create configmap kotsadm-confg
+        kubectl -n default create configmap kotsadm-confg --save-config
         kubectl -n default label configmap kotsadm-confg --overwrite kots.io/kotsadm=true kots.io/backup=velero
     fi
 
