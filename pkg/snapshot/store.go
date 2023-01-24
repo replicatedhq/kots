@@ -45,12 +45,12 @@ import (
 )
 
 const (
-	DefaultBackupStorageLocation  = "default"
-	SnapshotMigrationArtifactName = "kotsadm-velero-migration"
-	SnapshotStoreHostPathProvider = "replicated.com/hostpath"
-	SnapshotStoreNFSProvider      = "replicated.com/nfs"
-	SnapshotStorePVCProvider      = "replicated.com/pvc"
-	SnapshotStorePVCBucket        = "velero-internal-snapshots"
+	DefaultBackupStorageLocationName = "default"
+	SnapshotMigrationArtifactName    = "kotsadm-velero-migration"
+	SnapshotStoreHostPathProvider    = "replicated.com/hostpath"
+	SnapshotStoreNFSProvider         = "replicated.com/nfs"
+	SnapshotStorePVCProvider         = "replicated.com/pvc"
+	SnapshotStorePVCBucket           = "velero-internal-snapshots"
 )
 
 type ConfigureStoreOptions struct {
@@ -93,21 +93,13 @@ func (e *InvalidStoreDataError) Error() string {
 }
 
 func ConfigureStore(ctx context.Context, options ConfigureStoreOptions) (*types.Store, error) {
-	existingStore, err := GetGlobalStore(ctx, options.KotsadmNamespace, nil)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to get store")
-	}
-	if existingStore == nil {
-		return nil, errors.New("store not found")
-	}
-
 	clientset, err := k8sutil.GetClientset()
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get k8s clientset")
 	}
 
-	// update the existing store with the new configuration
-	newStore, needsVeleroRestart, err := updateExistingStore(ctx, clientset, existingStore, options)
+	// build a new store with the new configuration
+	newStore, needsVeleroRestart, err := buildNewStore(ctx, clientset, options)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to update existing store")
 	}
@@ -158,7 +150,15 @@ func ConfigureStore(ctx context.Context, options ConfigureStoreOptions) (*types.
 	return updatedStore, nil
 }
 
-func updateExistingStore(ctx context.Context, clientset kubernetes.Interface, store *types.Store, options ConfigureStoreOptions) (*types.Store, bool, error) {
+func buildNewStore(ctx context.Context, clientset kubernetes.Interface, options ConfigureStoreOptions) (*types.Store, bool, error) {
+	store, err := GetGlobalStore(ctx, options.KotsadmNamespace, nil)
+	if err != nil {
+		return nil, false, errors.Wrap(err, "failed to get store")
+	}
+	if store == nil {
+		store = &types.Store{}
+	}
+
 	oldBucket := store.Bucket
 	needsVeleroRestart := true
 
@@ -413,17 +413,24 @@ func updateGlobalStore(ctx context.Context, store *types.Store, kotsadmNamespace
 		return nil, errors.Wrap(err, "failed to create clientset")
 	}
 
-	veleroClient, err := veleroclientv1.NewForConfig(cfg)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to create velero clientset")
-	}
-
 	kotsadmVeleroBackendStorageLocation, err := FindBackupStoreLocation(ctx, kotsadmNamespace)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to find backupstoragelocations")
 	}
 	if kotsadmVeleroBackendStorageLocation == nil {
-		return nil, errors.New("no backup store location found")
+		veleroNamespace, err := DetectVeleroNamespace(ctx, clientset, kotsadmNamespace)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to detect velero namespace")
+		}
+		kotsadmVeleroBackendStorageLocation = &velerov1.BackupStorageLocation{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      DefaultBackupStorageLocationName,
+				Namespace: veleroNamespace,
+			},
+			Spec: velerov1.BackupStorageLocationSpec{
+				Default: true,
+			},
+		}
 	}
 
 	kotsadmVeleroBackendStorageLocation.Spec.Provider = store.Provider
@@ -703,12 +710,43 @@ func updateGlobalStore(ctx context.Context, store *types.Store, kotsadmNamespace
 		return nil, errors.Wrap(err, "malformed input - could not determine provider")
 	}
 
-	updated, err := veleroClient.BackupStorageLocations(kotsadmVeleroBackendStorageLocation.Namespace).Update(ctx, kotsadmVeleroBackendStorageLocation, metav1.UpdateOptions{})
+	updated, err := upsertBackupStorageLocation(ctx, kotsadmVeleroBackendStorageLocation)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to update backup storage location")
+		return nil, errors.Wrap(err, "failed to upsert backup storage location")
 	}
 
 	return updated, nil
+}
+
+func upsertBackupStorageLocation(ctx context.Context, bsl *velerov1.BackupStorageLocation) (*velerov1.BackupStorageLocation, error) {
+	cfg, err := k8sutil.GetClusterConfig()
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get cluster config")
+	}
+
+	veleroClient, err := veleroclientv1.NewForConfig(cfg)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to create velero clientset")
+	}
+
+	_, err = veleroClient.BackupStorageLocations(bsl.Namespace).Get(ctx, bsl.Name, metav1.GetOptions{})
+	if err == nil {
+		updated, err := veleroClient.BackupStorageLocations(bsl.Namespace).Update(ctx, bsl, metav1.UpdateOptions{})
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to update backup storage location")
+		}
+		return updated, nil
+	}
+
+	if kuberneteserrors.IsNotFound(err) {
+		created, err := veleroClient.BackupStorageLocations(bsl.Namespace).Create(ctx, bsl, metav1.CreateOptions{})
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to create backup storage location")
+		}
+		return created, nil
+	}
+
+	return nil, errors.Wrap(err, "failed to get backup storage location")
 }
 
 func updateMinioFileSystemStore(ctx context.Context, store *types.Store, clientset kubernetes.Interface, currentSecret *corev1.Secret, currentSecretErr error, bsl *velerov1.BackupStorageLocation) error {
@@ -801,7 +839,7 @@ func GetGlobalStore(ctx context.Context, kotsadmNamespace string, kotsadmVeleroB
 			return nil, errors.Wrap(err, "failed to find backupstoragelocations")
 		}
 		if kotsadmVeleroBackendStorageLocation == nil {
-			return nil, errors.New("no backup store location found")
+			return nil, nil
 		}
 	}
 
@@ -828,7 +866,6 @@ func GetGlobalStore(ctx context.Context, kotsadmNamespace string, kotsadmVeleroB
 			return nil, errors.Wrap(err, "failed to read aws secret")
 		}
 
-		// craig: can we omit `&& !kuberneteserrors.IsNotFound(err)` above and get rid of the `if err == nil` below or is it necessary for some cases?
 		if err == nil {
 			awsCfg, err := ini.Load(awsSecret.Data["cloud"])
 			if err != nil {
@@ -1013,7 +1050,7 @@ func FindBackupStoreLocation(ctx context.Context, kotsadmNamespace string) (*vel
 	}
 
 	for _, backupStorageLocation := range backupStorageLocations.Items {
-		if backupStorageLocation.Name == DefaultBackupStorageLocation {
+		if backupStorageLocation.Name == DefaultBackupStorageLocationName {
 			return &backupStorageLocation, nil
 		}
 	}
@@ -1615,7 +1652,7 @@ func WaitForDefaultBslAvailableAndSynced(ctx context.Context, veleroNamespace st
 		case <-timeout:
 			return errors.New("timed out waiting for default backup storage location to be available")
 		default:
-			bsl, err := veleroClient.BackupStorageLocations(veleroNamespace).Get(ctx, DefaultBackupStorageLocation, metav1.GetOptions{})
+			bsl, err := veleroClient.BackupStorageLocations(veleroNamespace).Get(ctx, DefaultBackupStorageLocationName, metav1.GetOptions{})
 			if err != nil {
 				return errors.Wrap(err, "failed to get default backup storage location")
 			}

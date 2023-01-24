@@ -360,22 +360,22 @@ class SnapshotStorageDestination extends Component<Props, State> {
     const { snapshotSettings } = this.props;
 
     if (provider === "aws") {
-      if (snapshotSettings.store.aws) {
+      if (snapshotSettings.store?.aws) {
         return (
-          snapshotSettings.store.aws.region !== s3Region ||
-          snapshotSettings.store.aws.accessKeyID !== s3KeyId ||
-          snapshotSettings.store.aws.secretAccessKey !== s3KeySecret ||
-          snapshotSettings.store.aws.useInstanceRole !== useIamAws
+          snapshotSettings.store?.aws.region !== s3Region ||
+          snapshotSettings.store?.aws.accessKeyID !== s3KeyId ||
+          snapshotSettings.store?.aws.secretAccessKey !== s3KeySecret ||
+          snapshotSettings.store?.aws.useInstanceRole !== useIamAws
         );
       }
       return true;
     }
     if (provider === "gcp") {
-      if (snapshotSettings.store.gcp) {
+      if (snapshotSettings.store?.gcp) {
         return (
-          snapshotSettings.store.gcp.useInstanceRole !== gcsUseIam ||
-          snapshotSettings.store.gcp.serviceAccount !== gcsServiceAccount ||
-          snapshotSettings.store.gcp.jsonFile !== gcsJsonFile
+          snapshotSettings.store?.gcp.useInstanceRole !== gcsUseIam ||
+          snapshotSettings.store?.gcp.serviceAccount !== gcsServiceAccount ||
+          snapshotSettings.store?.gcp.jsonFile !== gcsJsonFile
         );
       }
       return true;

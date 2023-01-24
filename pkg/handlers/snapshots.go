@@ -341,30 +341,25 @@ func (h *Handler) GetGlobalSnapshotSettings(w http.ResponseWriter, r *http.Reque
 		JSON(w, http.StatusInternalServerError, globalSnapshotSettingsResponse)
 		return
 	}
-	if store == nil {
-		err = errors.New("store not found")
-		logger.Error(err)
-		globalSnapshotSettingsResponse.Error = "store not found"
-		JSON(w, http.StatusInternalServerError, globalSnapshotSettingsResponse)
-		return
-	}
 
-	if err := kotssnapshot.Redact(store); err != nil {
-		logger.Error(err)
-		globalSnapshotSettingsResponse.Error = "failed to redact"
-		JSON(w, http.StatusInternalServerError, globalSnapshotSettingsResponse)
-		return
-	}
-
-	if store.FileSystem != nil {
-		fileSystemConfig, err := kotssnapshot.GetCurrentFileSystemConfig(r.Context(), kotsadmNamespace, globalSnapshotSettingsResponse.IsMinioDisabled)
-		if err != nil {
+	if store != nil {
+		if err := kotssnapshot.Redact(store); err != nil {
 			logger.Error(err)
-			globalSnapshotSettingsResponse.Error = "failed to get file system config"
+			globalSnapshotSettingsResponse.Error = "failed to redact"
 			JSON(w, http.StatusInternalServerError, globalSnapshotSettingsResponse)
 			return
 		}
-		globalSnapshotSettingsResponse.FileSystemConfig = fileSystemConfig
+
+		if store.FileSystem != nil {
+			fileSystemConfig, err := kotssnapshot.GetCurrentFileSystemConfig(r.Context(), kotsadmNamespace, globalSnapshotSettingsResponse.IsMinioDisabled)
+			if err != nil {
+				logger.Error(err)
+				globalSnapshotSettingsResponse.Error = "failed to get file system config"
+				JSON(w, http.StatusInternalServerError, globalSnapshotSettingsResponse)
+				return
+			}
+			globalSnapshotSettingsResponse.FileSystemConfig = fileSystemConfig
+		}
 	}
 
 	globalSnapshotSettingsResponse.Store = store
