@@ -71,9 +71,9 @@ type UpdateGlobalSnapshotSettingsRequest struct {
 }
 
 type ConfigureFileSystemSnapshotProviderResponse struct {
-	Success   bool   `json:"success"`
-	Error     string `json:"error,omitempty"`
-	Namespace string `json:"namespace,omitempty"`
+	Success bool   `json:"success"`
+	Error   string `json:"error,omitempty"`
+	Command string `json:"command,omitempty"`
 }
 
 type ConfigureFileSystemSnapshotProviderRequest struct {
@@ -341,30 +341,25 @@ func (h *Handler) GetGlobalSnapshotSettings(w http.ResponseWriter, r *http.Reque
 		JSON(w, http.StatusInternalServerError, globalSnapshotSettingsResponse)
 		return
 	}
-	if store == nil {
-		err = errors.New("store not found")
-		logger.Error(err)
-		globalSnapshotSettingsResponse.Error = "store not found"
-		JSON(w, http.StatusInternalServerError, globalSnapshotSettingsResponse)
-		return
-	}
 
-	if err := kotssnapshot.Redact(store); err != nil {
-		logger.Error(err)
-		globalSnapshotSettingsResponse.Error = "failed to redact"
-		JSON(w, http.StatusInternalServerError, globalSnapshotSettingsResponse)
-		return
-	}
-
-	if store.FileSystem != nil {
-		fileSystemConfig, err := kotssnapshot.GetCurrentFileSystemConfig(r.Context(), kotsadmNamespace, globalSnapshotSettingsResponse.IsMinioDisabled)
-		if err != nil {
+	if store != nil {
+		if err := kotssnapshot.Redact(store); err != nil {
 			logger.Error(err)
-			globalSnapshotSettingsResponse.Error = "failed to get file system config"
+			globalSnapshotSettingsResponse.Error = "failed to redact"
 			JSON(w, http.StatusInternalServerError, globalSnapshotSettingsResponse)
 			return
 		}
-		globalSnapshotSettingsResponse.FileSystemConfig = fileSystemConfig
+
+		if store.FileSystem != nil {
+			fileSystemConfig, err := kotssnapshot.GetCurrentFileSystemConfig(r.Context(), kotsadmNamespace, globalSnapshotSettingsResponse.IsMinioDisabled)
+			if err != nil {
+				logger.Error(err)
+				globalSnapshotSettingsResponse.Error = "failed to get file system config"
+				JSON(w, http.StatusInternalServerError, globalSnapshotSettingsResponse)
+				return
+			}
+			globalSnapshotSettingsResponse.FileSystemConfig = fileSystemConfig
+		}
 	}
 
 	globalSnapshotSettingsResponse.Store = store
@@ -398,17 +393,7 @@ func (h *Handler) ConfigureFileSystemSnapshotProvider(w http.ResponseWriter, r *
 
 	kotsadmNamespace := util.PodNamespace
 
-	isMinioDisabled, err := kotssnapshot.IsFileSystemMinioDisabled(kotsadmNamespace)
-	if err != nil {
-		logger.Error(err)
-		response.Error = "failed to create k8s clientset"
-		JSON(w, http.StatusInternalServerError, response)
-		return
-	}
-
-	namespace := util.PodNamespace
-
-	registryConfig, err := kotsadm.GetRegistryConfigFromCluster(namespace, clientset)
+	registryConfig, err := kotsadm.GetRegistryConfigFromCluster(kotsadmNamespace, clientset)
 	if err != nil {
 		errMsg := "failed to get kotsadm options from cluster"
 		response.Error = errMsg
@@ -417,41 +402,35 @@ func (h *Handler) ConfigureFileSystemSnapshotProvider(w http.ResponseWriter, r *
 		return
 	}
 
-	// TODO: do this asynchronously and use task status to report back
-	if !isMinioDisabled {
-		if err := configureMinioFileSystemProvider(r.Context(), clientset, namespace, registryConfig, request.FileSystemOptions); err != nil {
-			if _, ok := errors.Cause(err).(*kotssnapshot.ResetFileSystemError); ok {
-				response.Error = err.Error()
-				JSON(w, http.StatusConflict, response)
-				return
-			}
-			if _, ok := errors.Cause(err).(*kotssnapshot.HostPathNotFoundError); ok {
-				response.Error = err.Error()
-				JSON(w, http.StatusBadRequest, response)
-				return
-			}
-			if err, ok := errors.Cause(err).(util.ActionableError); ok {
-				response.Error = err.Error()
-				JSON(w, http.StatusBadRequest, response)
-				return
-			}
+	configureCommand := ""
+	if request.FileSystemOptions.HostPath != nil {
+		configureCommand = fmt.Sprintf(`kubectl kots velero configure-hostpath --hostpath %s`, *request.FileSystemOptions.HostPath)
+	} else if request.FileSystemOptions.NFS != nil {
+		configureCommand = fmt.Sprintf(`kubectl kots velero configure-nfs --nfs-server %s --nfs-path %s`, request.FileSystemOptions.NFS.Server, request.FileSystemOptions.NFS.Path)
+	}
 
-			errMsg := "failed to configure file system provider"
-			response.Error = errMsg
-			logger.Error(errors.Wrap(err, errMsg))
-			w.WriteHeader(http.StatusInternalServerError)
-			return
+	configureCommand += fmt.Sprintf(` --namespace %s`, kotsadmNamespace)
+
+	if request.FileSystemOptions.ForceReset {
+		configureCommand += " --force-reset"
+	}
+
+	if registryConfig.OverrideRegistry != "" {
+		configureCommand += fmt.Sprintf(` --kotsadm-registry %s`, registryConfig.OverrideRegistry)
+
+		if registryConfig.OverrideNamespace != "" {
+			configureCommand += fmt.Sprintf(` --kotsadm-namespace %s`, registryConfig.OverrideNamespace)
 		}
-	} else {
-		if err := configureLvpFileSystemProvider(r.Context(), clientset, namespace, registryConfig, request.FileSystemOptions); err != nil {
-			response.Error = err.Error()
-			JSON(w, http.StatusInternalServerError, response)
-			return
+		if registryConfig.Username != "" {
+			configureCommand += fmt.Sprintf(` --registry-username %s`, registryConfig.OverrideNamespace)
+		}
+		if registryConfig.Password != "" {
+			configureCommand += fmt.Sprintf(` --registry-password %s`, registryConfig.Password)
 		}
 	}
 
 	response.Success = true
-	response.Namespace = namespace
+	response.Command = configureCommand
 
 	JSON(w, http.StatusOK, response)
 }
@@ -476,14 +455,6 @@ func configureMinioFileSystemProvider(ctx context.Context, clientset kubernetes.
 		ForceReset:       fileSystemOptions.ForceReset,
 		FileSystemConfig: fileSystemOptions.FileSystemConfig,
 	}
-
-	// NOTE: commenting out for now since this not implemented and is causing a nil pointer panic for NFS because deployOptions.FileSystemConfig.HostPath == nil
-	// if _, err := os.Stat(*deployOptions.FileSystemConfig.HostPath); os.IsNotExist(err) {
-	// 	// TODO: fix to check host path outside of container (ticket https://app.shortcut.com/replicated/story/42701/check-host-path-outside-of-container)
-	// 	// return &kotssnapshot.HostPathNotFoundError{Message: "Provided host path does not exist"}
-	// } else if err != nil {
-	// 	// return errors.Wrap(err, "failed to os stat")
-	// }
 
 	if err := kotssnapshot.DeployFileSystemMinio(ctx, clientset, deployOptions, registryConfig); err != nil {
 		return errors.Wrap(err, "failed to deploy file system minio")

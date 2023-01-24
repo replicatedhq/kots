@@ -306,6 +306,7 @@ class Snapshots extends Component {
       errorTitle: "",
       displayErrorModal: false,
     });
+
     try {
       const res = await fetch(
         `${process.env.API_ENDPOINT}/snapshots/settings`,
@@ -317,6 +318,7 @@ class Snapshots extends Component {
           },
         }
       );
+
       if (!res.ok) {
         if (res.status === 401) {
           Utilities.logoutUser();
@@ -342,7 +344,14 @@ class Snapshots extends Component {
         });
         return;
       }
+
       const result = await res.json();
+      if (!result.store) {
+        // a backup storage location is not configured yet
+        this.props.history.replace("/snapshots/settings");
+        return;
+      }
+
       this.setState({
         snapshotSettings: result,
         isLoadingSnapshotSettings: false,

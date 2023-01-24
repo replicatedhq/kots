@@ -41,7 +41,7 @@ type State = {
   azureTenantId: string;
   caCertificate?: CACertificate;
   configureFileSystemProviderErrorMsg?: string;
-  configureFileSystemProviderNamespace?: string;
+  configureFileSystemProviderCommand?: string;
   configuringFileSystemProvider?: boolean;
   determiningDestination?: boolean;
   fileSystemHostPath?: string;
@@ -295,7 +295,7 @@ class SnapshotStorageDestination extends Component<Props, State> {
 
       configuringFileSystemProvider: false,
       configureFileSystemProviderErrorMsg: "",
-      configureFileSystemProviderNamespace: "",
+      configureFileSystemProviderCommand: "",
       showConfigureFileSystemProviderNextStepsModal: false,
       showConfigureFileSystemProviderModal: false,
       showResetFileSystemWarningModal: false,
@@ -360,22 +360,22 @@ class SnapshotStorageDestination extends Component<Props, State> {
     const { snapshotSettings } = this.props;
 
     if (provider === "aws") {
-      if (snapshotSettings.store.aws) {
+      if (snapshotSettings.store?.aws) {
         return (
-          snapshotSettings.store.aws.region !== s3Region ||
-          snapshotSettings.store.aws.accessKeyID !== s3KeyId ||
-          snapshotSettings.store.aws.secretAccessKey !== s3KeySecret ||
-          snapshotSettings.store.aws.useInstanceRole !== useIamAws
+          snapshotSettings.store?.aws.region !== s3Region ||
+          snapshotSettings.store?.aws.accessKeyID !== s3KeyId ||
+          snapshotSettings.store?.aws.secretAccessKey !== s3KeySecret ||
+          snapshotSettings.store?.aws.useInstanceRole !== useIamAws
         );
       }
       return true;
     }
     if (provider === "gcp") {
-      if (snapshotSettings.store.gcp) {
+      if (snapshotSettings.store?.gcp) {
         return (
-          snapshotSettings.store.gcp.useInstanceRole !== gcsUseIam ||
-          snapshotSettings.store.gcp.serviceAccount !== gcsServiceAccount ||
-          snapshotSettings.store.gcp.jsonFile !== gcsJsonFile
+          snapshotSettings.store?.gcp.useInstanceRole !== gcsUseIam ||
+          snapshotSettings.store?.gcp.serviceAccount !== gcsServiceAccount ||
+          snapshotSettings.store?.gcp.jsonFile !== gcsJsonFile
         );
       }
       return true;
@@ -833,7 +833,7 @@ class SnapshotStorageDestination extends Component<Props, State> {
             showConfigureFileSystemProviderModal: false,
             showConfigureFileSystemProviderNextStepsModal: true,
             configureFileSystemProviderErrorMsg: "",
-            configureFileSystemProviderNamespace: response.namespace,
+            configureFileSystemProviderCommand: response.command,
           });
           return;
         }
@@ -1823,7 +1823,7 @@ class SnapshotStorageDestination extends Component<Props, State> {
                   </span>
                 }
               >
-                {`kubectl kots velero print-fs-instructions --namespace ${this.state.configureFileSystemProviderNamespace}`}
+                {this.state.configureFileSystemProviderCommand}
               </CodeSnippet>
               <div className="u-marginTop--10 flex justifyContent--flexStart">
                 <button

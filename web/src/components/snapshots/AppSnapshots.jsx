@@ -222,6 +222,12 @@ class AppSnapshots extends Component {
         }
 
         const result = await res.json();
+        if (!result?.store) {
+          // a backup storage location is not configured yet
+          this.props.history.replace("/snapshots/settings");
+          return;
+        }
+
         if (result?.isVeleroRunning && result?.isResticRunning) {
           this.state.listSnapshotsJob.start(this.listInstanceSnapshots, 2000);
         } else {
