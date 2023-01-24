@@ -4,10 +4,10 @@ bases:
 commonAnnotations:
   kots.io/app-slug: my-app
 images:
-- name: registry.replicated.com/appslug/image
-  newName: somebigbank.registry.org/appslug/image
 - name: quay.io/replicatedcom/someimage
   newName: proxy.replicated.com/proxy/my-app/quay.io/replicatedcom/someimage
+- name: registry.replicated.com/appslug/image
+  newName: somebigbank.registry.org/appslug/image
 kind: Kustomization
 patchesStrategicMerge:
 - pullsecrets.yaml
