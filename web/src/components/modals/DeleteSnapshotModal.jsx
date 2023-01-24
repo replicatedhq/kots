@@ -1,6 +1,6 @@
 import React from "react";
 import Modal from "react-modal";
-import { Utilities } from "../../utilities/utilities";
+import { Utilities } from "@src/utilities/utilities";
 
 export default function DeleteSnapshotModal(props) {
   const {
