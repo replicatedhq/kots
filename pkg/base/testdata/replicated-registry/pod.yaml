@@ -8,7 +8,7 @@ spec:
   - image: registry.replicated.com/appslug/image:version
     name: replicated-registry-image
   - image: my-registry.example.com/appslug/some-other-image:version
-    name: replicated-registry-cname-image
+    name: custom-registry-hostname-image
   - image: quay.io/replicatedcom/someimage:1
     name: private-image
   
