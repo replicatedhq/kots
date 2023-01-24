@@ -753,6 +753,7 @@ func helmReleaseToDownsreamVersion(installedRelease *helm.InstalledRelease) *dow
 		UpstreamReleasedAt: installedRelease.ReleasedOn,
 		IsDeployable:       false,               // TODO: implement
 		NonDeployableCause: "already installed", // TODO: implement
+		HasConfig:          true,                // TODO: implement
 		ParentSequence:     int64(installedRelease.Revision),
 		Sequence:           int64(installedRelease.Revision),
 		Status:             storetypes.DownstreamVersionStatus(installedRelease.Status.String()),
