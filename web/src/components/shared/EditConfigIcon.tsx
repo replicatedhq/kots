@@ -17,10 +17,10 @@ const EditConfigIcon = ({
   const { isHelmManaged = false } = isHelmManagedResponse || {};
   const { selectedApp } = useSelectedApp();
 
-  if (!version?.isConfigurable) {
+  if (!version) {
     return null;
   }
-  if (!version) {
+  if (!version?.isConfigurable) {
     return null;
   }
   if (version.status === "pending_download") {
