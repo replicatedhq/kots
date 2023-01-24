@@ -1,0 +1,18 @@
+apiVersion: kots.io/v1beta1
+kind: Installation
+metadata:
+  creationTimestamp: null
+  name: my-app
+spec:
+  channelID: 1vusIYZLAVxMG6q760OJmRKj5i5
+  channelName: My Channel
+  knownImages:
+  - image: quay.io/replicatedcom/someimage:1
+    isPrivate: true
+  - image: registry.replicated.com/appslug/image:version
+    isPrivate: true
+  - image: somebigbank.registry.org/appslug/some-other-image:version
+    isPrivate: true
+  releaseNotes: |
+    release notes
+status: {}
