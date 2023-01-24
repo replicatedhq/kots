@@ -11,3 +11,5 @@ spec:
     name: replicated-registry-cname-image
   - image: quay.io/replicatedcom/someimage:1
     name: private-image
+  - image: nginx:latest
+    name: public-image
