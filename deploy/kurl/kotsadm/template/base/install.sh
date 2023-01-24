@@ -463,7 +463,7 @@ function kotsadm_namespaces() {
     local src="$1"
     local dst="$2"
 
-    IFS=',' read -ra KOTSADM_APPLICATION_NAMESPACES_ARRAY <<< "$KOTSADM_APPLICATION_NAMESPACES"
+    oIFS="$IFS"; IFS=',' read -ra KOTSADM_APPLICATION_NAMESPACES_ARRAY <<< "$KOTSADM_APPLICATION_NAMESPACES"; IFS="$oIFS"
     for NAMESPACE in "${KOTSADM_APPLICATION_NAMESPACES_ARRAY[@]}"; do
         kubectl create ns "$NAMESPACE" 2>/dev/null || true
     done
