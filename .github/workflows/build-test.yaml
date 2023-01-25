@@ -431,6 +431,7 @@ jobs:
         with:
           test-focus: 'Regression'
           k8s-version: 'v1.24.9-k3s2'
+          egress-fix: false
           testim-branch: ${{ github.head_ref == 'main' && 'master' || github.head_ref }}
           testim-access-token: '${{ secrets.TESTIM_ACCESS_TOKEN }}'
           aws-access-key-id: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_ACCESS_KEY_ID }}'
@@ -465,6 +466,7 @@ jobs:
           test-focus: 'Smoke Test'
           kots-namespace: 'smoke-test'
           k8s-version: '${{ matrix.k8s_version }}'
+          egress-fix: ${{ contains(matrix.k8s_version, 'v1.22')  }} 
           testim-access-token: '${{ secrets.TESTIM_ACCESS_TOKEN }}'
           testim-branch: ${{ github.head_ref == 'main' && 'master' || github.head_ref }}
           aws-access-key-id: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_ACCESS_KEY_ID }}'
@@ -499,6 +501,7 @@ jobs:
           test-focus: 'Minimal RBAC'
           kots-namespace: 'minimal-rbac'
           k8s-version: '${{ matrix.k8s_version }}'
+          egress-fix: ${{ contains(matrix.k8s_version, 'v1.22')  }} 
           testim-access-token: '${{ secrets.TESTIM_ACCESS_TOKEN }}'
           testim-branch: ${{ github.head_ref == 'main' && 'master' || github.head_ref }}
           aws-access-key-id: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_ACCESS_KEY_ID }}'
@@ -533,6 +536,7 @@ jobs:
           test-focus: 'Backup and Restore'
           kots-namespace: 'backup-and-restore'
           k8s-version: '${{ matrix.k8s_version }}'
+          egress-fix: ${{ contains(matrix.k8s_version, 'v1.22')  }} 
           testim-access-token: '${{ secrets.TESTIM_ACCESS_TOKEN }}'
           testim-branch: ${{ github.head_ref == 'main' && 'master' || github.head_ref }}
           aws-access-key-id: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_ACCESS_KEY_ID }}'
@@ -567,6 +571,7 @@ jobs:
           test-focus: 'No Required Config'
           kots-namespace: 'no-required-config'
           k8s-version: '${{ matrix.k8s_version }}'
+          egress-fix: ${{ contains(matrix.k8s_version, 'v1.22')  }} 
           testim-access-token: '${{ secrets.TESTIM_ACCESS_TOKEN }}'
           testim-branch: ${{ github.head_ref == 'main' && 'master' || github.head_ref }}
           aws-access-key-id: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_ACCESS_KEY_ID }}'
@@ -601,6 +606,7 @@ jobs:
           test-focus: 'Strict Preflight Checks'
           kots-namespace: 'strict-preflight-checks'
           k8s-version: '${{ matrix.k8s_version }}'
+          egress-fix: ${{ contains(matrix.k8s_version, 'v1.22')  }} 
           testim-access-token: '${{ secrets.TESTIM_ACCESS_TOKEN }}'
           testim-branch: ${{ github.head_ref == 'main' && 'master' || github.head_ref }}
           aws-access-key-id: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_ACCESS_KEY_ID }}'
@@ -635,6 +641,7 @@ jobs:
           test-focus: 'Version History Pagination'
           kots-namespace: 'version-history-pagination'
           k8s-version: '${{ matrix.k8s_version }}'
+          egress-fix: ${{ contains(matrix.k8s_version, 'v1.22')  }} 
           testim-access-token: '${{ secrets.TESTIM_ACCESS_TOKEN }}'
           testim-branch: ${{ github.head_ref == 'main' && 'master' || github.head_ref }}
           aws-access-key-id: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_ACCESS_KEY_ID }}'
@@ -669,6 +676,7 @@ jobs:
           test-focus: 'Change License'
           kots-namespace: 'change-license'
           k8s-version: '${{ matrix.k8s_version }}'
+          egress-fix: ${{ contains(matrix.k8s_version, 'v1.22')  }} 
           testim-access-token: '${{ secrets.TESTIM_ACCESS_TOKEN }}'
           testim-branch: ${{ github.head_ref == 'main' && 'master' || github.head_ref }}
           aws-access-key-id: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_ACCESS_KEY_ID }}'
@@ -703,6 +711,7 @@ jobs:
           test-focus: 'Helm Managed'
           kots-namespace: 'helm-managed'
           k8s-version: '${{ matrix.k8s_version }}'
+          egress-fix: ${{ contains(matrix.k8s_version, 'v1.22')  }} 
           testim-access-token: '${{ secrets.TESTIM_ACCESS_TOKEN }}'
           testim-branch: ${{ github.head_ref == 'main' && 'master' || github.head_ref }}
           aws-access-key-id: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_ACCESS_KEY_ID }}'
@@ -728,6 +737,7 @@ jobs:
       - uses: replicatedhq/action-k3s@main
         with:
           version: ${{ matrix.k8s_version }}
+          egress-fix: ${{ contains(matrix.k8s_version, 'v1.22') }}
 
       - name: download kots binary
         uses: actions/download-artifact@v2
@@ -1469,6 +1479,7 @@ jobs:
           test-focus: 'Tag and Digest'
           kots-namespace: 'tag-and-digest'
           k8s-version: '${{ matrix.k8s_version }}'
+          egress-fix: ${{ contains(matrix.k8s_version, 'v1.22')  }} 
           testim-access-token: '${{ secrets.TESTIM_ACCESS_TOKEN }}'
           testim-branch: ${{ github.head_ref == 'main' && 'master' || github.head_ref }}
           aws-access-key-id: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_ACCESS_KEY_ID }}'
@@ -1531,6 +1542,7 @@ jobs:
           test-focus: 'Min KOTS Version'
           kots-namespace: 'min-kots-version'
           k8s-version: '${{ matrix.k8s_version }}'
+          egress-fix: ${{ contains(matrix.k8s_version, 'v1.22')  }} 
           testim-access-token: '${{ secrets.TESTIM_ACCESS_TOKEN }}'
           testim-branch: ${{ github.head_ref == 'main' && 'master' || github.head_ref }}
           kotsadm-image-registry: ttl.sh
@@ -1584,6 +1596,7 @@ jobs:
           test-focus: 'Target KOTS Version'
           kots-namespace: 'target-kots-version'
           k8s-version: '${{ matrix.k8s_version }}'
+          egress-fix: ${{ contains(matrix.k8s_version, 'v1.22')  }} 
           testim-access-token: '${{ secrets.TESTIM_ACCESS_TOKEN }}'
           testim-branch: ${{ github.head_ref == 'main' && 'master' || github.head_ref }}
           aws-access-key-id: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_ACCESS_KEY_ID }}'
@@ -1633,6 +1646,7 @@ jobs:
           test-focus: 'Range KOTS Version'
           kots-namespace: 'range-kots-version'
           k8s-version: '${{ matrix.k8s_version }}'
+          egress-fix: ${{ contains(matrix.k8s_version, 'v1.22')  }} 
           testim-access-token: '${{ secrets.TESTIM_ACCESS_TOKEN }}'
           testim-branch: ${{ github.head_ref == 'main' && 'master' || github.head_ref }}
           aws-access-key-id: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_ACCESS_KEY_ID }}'
@@ -1782,6 +1796,7 @@ jobs:
           test-focus: 'multi-app-install'
           kots-namespace: 'multi-app-install'
           k8s-version: '${{ matrix.k8s_version }}'
+          egress-fix: ${{ contains(matrix.k8s_version, 'v1.22')  }} 
           testim-access-token: '${{ secrets.TESTIM_ACCESS_TOKEN }}'
           testim-branch: ${{ github.head_ref == 'main' && 'master' || github.head_ref }}
           aws-access-key-id: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_ACCESS_KEY_ID }}'
@@ -1816,6 +1831,7 @@ jobs:
           test-focus: 'airgap-smoke-test'
           kots-namespace: 'airgap-smoke-test'
           k8s-version: '${{ matrix.k8s_version }}'
+          egress-fix: ${{ contains(matrix.k8s_version, 'v1.22')  }} 
           testim-access-token: '${{ secrets.TESTIM_ACCESS_TOKEN }}'
           testim-branch: ${{ github.head_ref == 'main' && 'master' || github.head_ref }}
           kots-airgap: true
