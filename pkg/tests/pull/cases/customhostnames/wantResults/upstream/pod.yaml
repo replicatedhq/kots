@@ -7,8 +7,9 @@ spec:
   containers:
   - image: registry.replicated.com/appslug/image:version
     name: replicated-registry-image
-  - image: my-registry.example.com/appslug/some-other-image:version
+  - image: somebigbank.registry.org/appslug/some-other-image:version
     name: custom-registry-hostname-image
   - image: quay.io/replicatedcom/someimage:1
     name: private-image
-  
+  - image: nginx:latest
+    name: public-image

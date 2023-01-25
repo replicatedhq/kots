@@ -10,6 +10,7 @@ import (
 	"path"
 	"path/filepath"
 	"runtime"
+	"sort"
 	"strings"
 	"time"
 
@@ -172,6 +173,7 @@ func GetPrivateImages(baseDir string, kotsKindsImages []string, checkedImages ma
 	for i := range uniqueImages {
 		result = append(result, i)
 	}
+	sort.Strings(result) // sort the images to get an ordered and reproducible output for easier testing
 
 	return result, objectsWithImages, nil
 }
