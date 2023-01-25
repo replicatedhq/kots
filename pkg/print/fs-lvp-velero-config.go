@@ -101,7 +101,7 @@ data:
 `, red("<private.registry.host>"), lvpTag)
 
 	log.ActionWithoutSpinner("Follow these instructions to set up Velero:\n")
-	log.Info("[1] Install the latest Velero CLI by following these instructions: %s", blue("https://velero.io/docs/v1.6/basic-install/#install-the-cli"))
+	log.Info("[1] Install the latest Velero CLI by following these instructions: %s", blue("https://docs.replicated.com/enterprise/snapshots-velero-cli-installing"))
 	log.Info("[2] Install Velero")
 	log.Info("- For %s, follow these steps:", bold("online installations"))
 	log.Info("	* Create the 'velero' namespace by running the following command:\n\nkubectl create namespace velero")

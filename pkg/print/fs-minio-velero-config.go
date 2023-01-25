@@ -60,7 +60,7 @@ func printMinioFileSystemVeleroInstructions(c *MinioFileSystemVeleroConfig, log 
 
 	log.ActionWithoutSpinner("Follow these instructions to set up Velero:\n")
 	log.Info("[1] Save the following credentials in a file:\n\n%s", green(strings.TrimSpace(string(c.Credentials))))
-	log.Info("[2] Install the latest Velero CLI by following these instructions: %s", blue("https://velero.io/docs/v1.6/basic-install/#install-the-cli"))
+	log.Info("[2] Install the latest Velero CLI by following these instructions: %s", blue("https://docs.replicated.com/enterprise/snapshots-velero-cli-installing"))
 	log.Info("[3] Install Velero")
 	log.Info("- For %s, run the following command (replace <path/to/credentials-file> with the actual path created from step [1]):\n\n%s", bold("online installations"), veleroOnlineCommand)
 	log.Info("- For %s, follow these steps:", bold("airgapped installations"))
