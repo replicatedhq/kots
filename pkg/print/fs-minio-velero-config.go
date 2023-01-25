@@ -42,11 +42,11 @@ func printMinioFileSystemVeleroInstructions(c *MinioFileSystemVeleroConfig, log 
 	veleroOnlineCommand := fmt.Sprintf(`velero install \
 	--secret-file %s \
 	--provider aws \
-	--plugins velero/velero-plugin-for-aws:v1.2.0 \
+	--plugins velero/velero-plugin-for-aws:%s \
 	--bucket %s \
 	--backup-location-config region=%s,s3ForcePathStyle=true,s3Url=%s,publicUrl=%s \
 	--snapshot-location-config region=%s \
-	--use-restic`, red("<path/to/credentials-file>"), c.Bucket, c.BackupLocationConfig["region"], c.BackupLocationConfig["s3Url"], c.BackupLocationConfig["publicUrl"], c.SnapshotLocationConfig["region"])
+	--use-restic`, red("<path/to/credentials-file>"), red("<plugin-version>"), c.Bucket, c.BackupLocationConfig["region"], c.BackupLocationConfig["s3Url"], c.BackupLocationConfig["publicUrl"], c.SnapshotLocationConfig["region"])
 
 	veleroAirgapCommand := fmt.Sprintf(`velero install \
 	--secret-file %s \
@@ -61,6 +61,7 @@ func printMinioFileSystemVeleroInstructions(c *MinioFileSystemVeleroConfig, log 
 	log.ActionWithoutSpinner("Follow these instructions to set up Velero:\n")
 	log.Info("[1] Save the following credentials in a file:\n\n%s", green(strings.TrimSpace(string(c.Credentials))))
 	log.Info("[2] Install the latest Velero CLI by following these instructions: %s", blue("https://docs.replicated.com/enterprise/snapshots-velero-cli-installing"))
+	log.Info("	* To find the plugin version that is compatible with your velero installation see: %s", blue("https://github.com/vmware-tanzu/velero-plugin-for-aws#compatibility"))
 	log.Info("[3] Install Velero")
 	log.Info("- For %s, run the following command (replace <path/to/credentials-file> with the actual path created from step [1]):\n\n%s", bold("online installations"), veleroOnlineCommand)
 	log.Info("- For %s, follow these steps:", bold("airgapped installations"))
