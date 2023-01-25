@@ -30,6 +30,7 @@ type Props = {
   loadingBundle: boolean;
   progressData: SupportBundleProgress;
   refetchBundleList: () => void;
+  deleteBundleFromList: (id: string) => void;
   watchSlug: string;
   className: string;
 } & withRouterType;
@@ -53,6 +54,8 @@ export const SupportBundleRow = (props: Props) => {
     setIsCancelled,
     setDeleteBundleId,
     setToastMessage,
+    setToastType,
+    toastChild,
   } = useContext(ToastContext);
 
   const [state, setState] = React.useReducer(
@@ -169,7 +172,7 @@ export const SupportBundleRow = (props: Props) => {
 
   const deleteBundle = (bundle: SupportBundle) => {
     const { match } = props;
-    const delayFetch = 5000;
+    const delayFetch = 7000;
     const bundleCollectionDate = dayjs(bundle?.createdAt)?.format(
       "MMMM D, YYYY @ h:mm a"
     );
@@ -177,29 +180,49 @@ export const SupportBundleRow = (props: Props) => {
     setIsToastVisible(true);
     setDeleteBundleId(bundle.id);
 
-    let id = setTimeout(() => {
-      fetch(
-        `${process.env.API_ENDPOINT}/troubleshoot/app/${match.params.slug}/supportbundle/${bundle.id}`,
+    toastChild(() => (
+      <>
+        <span
+          onClick={() => setIsCancelled(true)}
+          className="tw-underline tw-cursor-pointer"
+        >
+          undo
+        </span>
+        <Icon
+          icon="close"
+          size={10}
+          className="tw-mx-4 tw-cursor-pointer"
+          onClick={() => setIsToastVisible(false)}
+        />
+      </>
+    ));
+
+    let id = setTimeout(async () => {
+      const res = await fetch(
+        `${process.env.API_ENDPOINT}/troubleshoot/app/${match.params.slug}/supportbndle/${bundle.id}`,
         {
           method: "DELETE",
           headers: {
             Authorization: Utilities.getToken(),
           },
         }
-      )
-        .then(async () => {
-          setIsToastVisible(false);
+      );
+      if (res.ok) {
+        await props.deleteBundleFromList(bundle.id);
+        setIsToastVisible(false);
+        clearInterval(id);
+        console.log("deleted");
+      } else {
+        console.log(res);
+        setToastMessage("Unable to delete bundle, please try again.");
+        setToastType("error");
 
-          props.refetchBundleList();
-          setDeleteBundleId("");
-          clearInterval(id);
-        })
-        .catch((err) => {
-          console.log(err);
-          setToastMessage("Unable to delete bundle, please try again.");
-          setDeleteBundleId("");
-          clearInterval(id);
-        });
+        setDeleteBundleId("");
+        setTimeout(() => {
+          setIsToastVisible(false);
+        }, 5000);
+        clearInterval(id);
+      }
     }, delayFetch);
 
     setState({ timeoutId: id });

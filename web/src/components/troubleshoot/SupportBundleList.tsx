@@ -31,15 +31,7 @@ type Props = {
   loadingBundleId: string;
   pollForBundleAnalysisProgress: () => void;
   updateBundleSlug: (slug: string) => void;
-  updateState: ({
-    displayErrorModal,
-    loading,
-    loadingBundle,
-  }: {
-    displayErrorModal: boolean;
-    loading?: boolean;
-    loadingBundle?: boolean;
-  }) => void;
+  updateState: (value: Object) => void;
   watch: App | null;
 } & withRouterType;
 
@@ -71,11 +63,19 @@ export const SupportBundleList = (props: Props) => {
   const history = useHistory();
   const {
     deleteBundleId,
-    setIsToastVisible,
     isToastVisible,
     toastMessage,
-    setIsCancelled,
+    toastType,
+    toastChild,
   } = useContext(ToastContext);
+
+  const deleteBundleFromList = (deleteId: string) => {
+    setState({
+      supportBundles: state.supportBundles?.filter(
+        (bundle) => bundle.id !== deleteId
+      ),
+    });
+  };
 
   const listSupportBundles = () => {
     setState({
@@ -155,6 +155,13 @@ export const SupportBundleList = (props: Props) => {
     }
   }, [props.bundle]);
 
+  useEffect(() => {
+    if (props.loadingBundleId === deleteBundleId) {
+      state.pollForBundleAnalysisProgress.stop();
+      props.updateState({ loadingBundleId: "", loadingBundle: false });
+    }
+  }, [deleteBundleId]);
+
   const toggleGenerateBundleModal = () => {
     setState({
       isGeneratingBundleOpen: !state.isGeneratingBundleOpen,
@@ -204,6 +211,7 @@ export const SupportBundleList = (props: Props) => {
               watch?.isSupportBundleUploadSupported
             }
             refetchBundleList={listSupportBundles}
+            deleteBundleFromList={deleteBundleFromList}
             progressData={
               props.loadingBundleId === bundle.id && props.bundleProgress
             }
@@ -321,21 +329,10 @@ export const SupportBundleList = (props: Props) => {
         />
       </div>
 
-      <Toast isToastVisible={isToastVisible} type="warning">
+      <Toast isToastVisible={isToastVisible} type={toastType}>
         <div className="tw-flex tw-items-center">
           <p className="tw-ml-2 tw-mr-4">{toastMessage}</p>
-          <span
-            onClick={() => setIsCancelled(true)}
-            className="tw-underline tw-cursor-pointer"
-          >
-            undo
-          </span>
-          <Icon
-            icon="close"
-            size={10}
-            className="tw-mx-4 tw-cursor-pointer"
-            onClick={() => setIsToastVisible(false)}
-          />
+          {toastChild}
         </div>
       </Toast>
     </>

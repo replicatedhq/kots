@@ -556,5 +556,5 @@ and `background-position: [value]`
 
 .toast.visible {
   visibility: visible;
-  @include animation("fadein 0.5s, fadeout 0.5s 5s");
+  @include animation("fadein 0.5s, fadeout 0.5s 7s");
 }
