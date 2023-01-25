@@ -505,7 +505,6 @@ func restartVelero(ctx context.Context, kotsadmNamespace string) error {
 			if err := clientset.CoreV1().Pods(veleroNamespace).Delete(ctx, pod.Name, metav1.DeleteOptions{}); err != nil {
 				return errors.Wrap(err, "failed to delete velero deployment")
 			}
-
 		}
 	}
 
@@ -526,7 +525,6 @@ func restartVelero(ctx context.Context, kotsadmNamespace string) error {
 			if err := clientset.CoreV1().Pods(veleroNamespace).Delete(ctx, pod.Name, metav1.DeleteOptions{}); err != nil {
 				return errors.Wrap(err, "failed to delete restic daemonset")
 			}
-
 		}
 	}
 
