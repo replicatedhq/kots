@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"github.com/gorilla/mux"
+	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/redact"
 	redacttypes "github.com/replicatedhq/kots/pkg/redact/types"
@@ -111,7 +112,15 @@ func (h *Handler) UpdateRedact(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = redact.GenerateKotsadmRedactSpec()
+	clientset, err := k8sutil.GetClientset()
+	if err != nil {
+		logger.Error(err)
+		updateRedactResponse.Error = "failed to get kubernetes client"
+		JSON(w, 500, updateRedactResponse)
+		return
+	}
+
+	err = redact.GenerateKotsadmRedactSpec(clientset)
 	if err != nil {
 		logger.Error(err)
 		updateRedactResponse.Error = "failed to generate kotsadm redact spec"

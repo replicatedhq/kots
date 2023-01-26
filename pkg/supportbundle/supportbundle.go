@@ -161,17 +161,31 @@ func CreateSupportBundleDependencies(app apptypes.AppType, sequence int64, opts 
 		return nil, errors.Wrap(err, "failed to create rendered support bundle spec")
 	}
 
-	err = redact.GenerateKotsadmRedactSpec()
+	clientset, err := k8sutil.GetClientset()
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get clientset")
+	}
+
+	// redactors configured in the admin console (from kotsadm-redact backend and written to kotsadm-redact-spec)
+	err = redact.GenerateKotsadmRedactSpec(clientset)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to write kotsadm redact spec configmap")
 	}
 	redactURIs := []string{redact.GetKotsadmRedactSpecURI()}
 
-	err = redact.CreateRenderedAppRedactSpec(app, sequence, kotsKinds)
+	// redactors configured in the app spec (written to kotsadm-<app-slug>-redact-spec)
+	err = redact.CreateRenderedAppRedactSpec(clientset, app, sequence, kotsKinds)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to write app redact spec configmap")
 	}
 	redactURIs = append(redactURIs, redact.GetAppRedactSpecURI(app.GetSlug()))
+
+	// default redactors applied to all support bundles (written to kotsadm-redact-default-spec)
+	err = redact.CreateRenderedDefaultRedactSpec(clientset)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to write default redact spec configmap")
+	}
+	redactURIs = append(redactURIs, redact.GetDefaultRedactSpecURI())
 
 	supportBundleObj := types.SupportBundle{
 		AppID:      app.GetID(),
