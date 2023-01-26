@@ -9,14 +9,15 @@ interface ToastContextProps {
   setDeleteBundleId: (val: string) => void;
   toastMessage: string;
   setToastMessage: (val: string) => void;
-  toastChild: (element: any) => JSX.Element;
+  toastChild: ReactNode;
+  setToastChild: (val: ReactNode) => void;
   toastType: "success" | "error" | "warning";
   setToastType: (val: "success" | "error" | "warning") => void;
 }
 
 const ToastContext = createContext({} as ToastContextProps);
 
-const ToastProvider = ({ children, toastChild }: { children: ReactNode }) => {
+const ToastProvider = ({ children }: { children: ReactNode }) => {
   const [isToastVisible, setIsToastVisible] = useState(false);
   const [isCancelled, setIsCancelled] = useState(false);
   const [deleteBundleId, setDeleteBundleId] = useState("");
@@ -24,6 +25,7 @@ const ToastProvider = ({ children, toastChild }: { children: ReactNode }) => {
   const [toastType, setToastType] = useState<"success" | "error" | "warning">(
     "success"
   );
+  const [toastChild, setToastChild] = useState<ReactNode>(null);
   return (
     <ToastContext.Provider
       value={{
@@ -37,9 +39,11 @@ const ToastProvider = ({ children, toastChild }: { children: ReactNode }) => {
         setToastMessage,
         toastType,
         setToastType,
+        toastChild,
+        setToastChild,
       }}
     >
-      {toastChild}
+      {children}
     </ToastContext.Provider>
   );
 };

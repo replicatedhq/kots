@@ -56,6 +56,7 @@ export const SupportBundleRow = (props: Props) => {
     setToastMessage,
     setToastType,
     toastChild,
+    setToastChild,
   } = useContext(ToastContext);
 
   const [state, setState] = React.useReducer(
@@ -177,29 +178,21 @@ export const SupportBundleRow = (props: Props) => {
       "MMMM D, YYYY @ h:mm a"
     );
     setToastMessage(`Deleting bundle collected on ${bundleCollectionDate}.`);
+    setToastType("warning");
     setIsToastVisible(true);
     setDeleteBundleId(bundle.id);
-
-    toastChild(() => (
-      <>
-        <span
-          onClick={() => setIsCancelled(true)}
-          className="tw-underline tw-cursor-pointer"
-        >
-          undo
-        </span>
-        <Icon
-          icon="close"
-          size={10}
-          className="tw-mx-4 tw-cursor-pointer"
-          onClick={() => setIsToastVisible(false)}
-        />
-      </>
-    ));
+    setToastChild(
+      <span
+        onClick={() => setIsCancelled(true)}
+        className="tw-underline tw-cursor-pointer"
+      >
+        undo
+      </span>
+    );
 
     let id = setTimeout(async () => {
       const res = await fetch(
-        `${process.env.API_ENDPOINT}/troubleshoot/app/${match.params.slug}/supportbndle/${bundle.id}`,
+        `${process.env.API_ENDPOINT}/troubleshoot/app/${match.params.slug}/supportbundle/${bundle.id}`,
         {
           method: "DELETE",
           headers: {
@@ -211,12 +204,11 @@ export const SupportBundleRow = (props: Props) => {
         await props.deleteBundleFromList(bundle.id);
         setIsToastVisible(false);
         clearInterval(id);
-        console.log("deleted");
       } else {
         console.log(res);
         setToastMessage("Unable to delete bundle, please try again.");
         setToastType("error");
-
+        setToastChild(null);
         setDeleteBundleId("");
         setTimeout(() => {
           setIsToastVisible(false);

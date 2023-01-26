@@ -66,6 +66,7 @@ export const SupportBundleList = (props: Props) => {
     isToastVisible,
     toastMessage,
     toastType,
+    setIsCancelled,
     toastChild,
   } = useContext(ToastContext);
 
@@ -333,6 +334,12 @@ export const SupportBundleList = (props: Props) => {
         <div className="tw-flex tw-items-center">
           <p className="tw-ml-2 tw-mr-4">{toastMessage}</p>
           {toastChild}
+          <Icon
+            icon="close"
+            size={10}
+            className="tw-mx-4 tw-cursor-pointer"
+            onClick={() => setIsCancelled(false)}
+          />
         </div>
       </Toast>
     </>
