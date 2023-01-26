@@ -19,6 +19,7 @@ import (
 	v1 "k8s.io/api/core/v1"
 	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/scheme"
 )
 
@@ -44,15 +45,10 @@ func GetKotsadmRedactSpecURI() string {
 
 // GenerateKotsadmRedactSpec creates a configmap that contains the admin console custom redaction yaml spec
 // generated from "kotsadm-redact" configmap for collecting support bundles. contains the full redact spec type that is supported by troubleshoot.
-func GenerateKotsadmRedactSpec() error {
+func GenerateKotsadmRedactSpec(clientset kubernetes.Interface) error {
 	spec, _, err := GetRedactSpec()
 	if err != nil {
 		return errors.Wrap(err, "failed to get redact spec")
-	}
-
-	clientset, err := k8sutil.GetClientset()
-	if err != nil {
-		return errors.Wrap(err, "failed to create k8s clientset")
 	}
 
 	existingConfigMap, err := clientset.CoreV1().ConfigMaps(util.PodNamespace).Get(context.TODO(), redactSpecConfigMapName, metav1.GetOptions{})
