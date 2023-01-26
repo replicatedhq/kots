@@ -19,7 +19,9 @@ export const AutomaticUpdatesModalExample = Template.bind({});
 
 AutomaticUpdatesModalExample.args = {
   isOpen: true,
-  onRequestClose: () => {},
+  onRequestClose: () => {
+    alert("close modal");
+  },
   updateCheckerSpec: "string",
   autoDeploy: "autoDeploy",
   appSlug: "appSlug",
