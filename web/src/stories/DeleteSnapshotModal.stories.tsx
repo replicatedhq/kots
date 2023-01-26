@@ -19,9 +19,21 @@ export const DeleteSnapshotModalExample = Template.bind({});
 DeleteSnapshotModalExample.args = {
   deleteSnapshotModal: true,
   toggleConfirmDeleteModal: () => alert("toggle modal"),
-  snapshotToDelete: { name: "name", date: "date", status: "status" },
+  snapshotToDelete: {
+    name: "snapshot name",
+    status: "Deleting",
+    trigger: "manual",
+    sequence: 1,
+    startedAt: "2023-01-26T13:48:47",
+    finishedAt: "2022-01-26T13:50:47",
+    expiresAt: "2023-02-010T13:48:47",
+    volumeCount: 1,
+    volumeSuccessCount: 1,
+    volumeBytes: 0,
+    volumeSizeHuman: "0B",
+  },
   deletingSnapshot: false,
   handleDeleteSnapshot: () => alert("delete snapshot"),
-  deleteErr: "delete error",
+  deleteErr: true,
   deleteErrorMsg: "delete error message",
 };
