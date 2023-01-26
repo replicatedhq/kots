@@ -277,3 +277,17 @@ export type Chart = {
   tickFormat: string;
   series: Series[];
 };
+
+export type Snapshot = {
+  name: string;
+  status: string;
+  trigger: string;
+  sequence: number;
+  startedAt: string;
+  finishedAt: string;
+  expiresAt: string;
+  volumeCount: number;
+  volumeSuccessCount: number;
+  volumeBytes: number;
+  volumeSizeHuman: string;
+};
