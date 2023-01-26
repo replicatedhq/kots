@@ -10,9 +10,9 @@ inputs:
   k8s-version:
     description: 'K8s version'
     required: true
-  egress-fix:
-    description: 'Disable k3s egress selector'
-    required: true
+  arguments:
+    description: 'arguments to pass to k8s'
+    required: false
   testim-access-token:
     description: 'Testim access token'
     required: true
@@ -59,7 +59,7 @@ runs:
     - uses: replicatedhq/action-k3s@main
       with:
         version: ${{ inputs.k8s-version }}
-        egress-fix: ${{ inputs.egress-fix }}
+        arguments: ${{ inputs.arguments }}
 
     - name: execute suite "${{ inputs.test-focus }}"
       env:
