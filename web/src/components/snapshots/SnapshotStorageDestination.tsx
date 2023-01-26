@@ -1634,8 +1634,8 @@ class SnapshotStorageDestination extends Component<Props, State> {
             <div className="flex flex-auto u-marginBottom--15">
               <div className="flex flex-column">
                 <span className="u-fontSize--normal u-fontWeight--normal u-lineHeight--normal u-textColor--bodyCopy">
-                  Full (Instance) and Partial (Application) snapshots share
-                  share the same Velero configuration and storage destination.
+                  Full (instance) and partial (application) snapshots share
+                  the same Velero configuration and storage destination.
                 </span>
               </div>
             </div>
@@ -1744,11 +1744,7 @@ class SnapshotStorageDestination extends Component<Props, State> {
                   </>
                 )}
                 <span className="u-fontSize--small u-fontWeight--normal u-lineHeight--normal u-textColor--bodyCopy u-marginTop--15">
-                  All data in your snapshots will be deduplicated. To learn more
-                  about how,{" "}
-                  <a href="/" target="_blank" className="link">
-                    check out our docs.
-                  </a>
+                  All data in your snapshots will be deduplicated.
                 </span>
               </form>
             </div>

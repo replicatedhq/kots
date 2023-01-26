@@ -598,7 +598,7 @@ class AppSnapshots extends Component {
             <Icon icon={"warning"} size={24} className="warning-color" />
             <p>
               {" "}
-              To use snapshots reliably, install Velero version 1.5.1 or greater
+              Install Velero version 1.5.1 or later to use snapshots reliably
             </p>
           </div>
         ) : null}
@@ -609,12 +609,12 @@ class AppSnapshots extends Component {
           <div className="InfoSnapshots--wrapper flex flex-auto u-marginBottom--20">
             <span className="icon info-icon flex-auto u-marginRight--5" />
             <p className="u-fontSize--small u-fontWeight--normal u-lineHeight--normal u-textColor--accent">
-              It’s recommend that you use{" "}
+              It’s recommended to use{" "}
               <Link to="/snapshots" className="link u-fontSize--small">
-                Full snapshots (Instance){" "}
+                Full snapshots (instance){" "}
               </Link>{" "}
-              in lieu of Partial snapshots (Application), given Full snapshots
-              offers the same restoration capabilities.
+              instead of partial snapshots (application) because full snapshots
+              offer better restoration capabilities.
               <span
                 className="link"
                 onClick={this.toggleSnaphotDifferencesModal}
@@ -629,7 +629,7 @@ class AppSnapshots extends Component {
               <div className="flex justifyContent--spaceBetween">
                 <p className="u-fontWeight--bold card-title u-fontSize--larger u-lineHeight--normal">
                   {" "}
-                  Partial snapshots (Application){" "}
+                  Partial snapshots (application){" "}
                 </p>
                 <div className="flex alignSelf--center">
                   <Link
@@ -677,8 +677,8 @@ class AppSnapshots extends Component {
               </div>
               <p className="u-marginTop--10 u-fontSize--normal u-lineHeight--more u-fontWeight--medium u-textColor--bodyCopy">
                 {" "}
-                Partial snapshots (Application) only back up application volumes
-                and application manifests; they do not back up the Admin Console
+                Partial snapshots only back up application volumes
+                and application manifests. They do not back up the admin console
                 or the metadata about an application.{" "}
               </p>
             </div>

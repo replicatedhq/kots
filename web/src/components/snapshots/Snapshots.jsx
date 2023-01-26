@@ -509,7 +509,7 @@ class Snapshots extends Component {
             <Icon icon={"warning"} size={24} className="warning-color" />
             <p>
               {" "}
-              To use snapshots reliably, install Velero version 1.5.1 or greater{" "}
+              Install Velero version 1.5.1 or later to use snapshots reliably{" "}
             </p>
           </div>
         ) : null}
@@ -522,7 +522,7 @@ class Snapshots extends Component {
               <div className="flex1 flex-column">
                 <div className="flex justifyContent--spaceBetween">
                   <p className="u-fontWeight--bold card-title u-fontSize--larger u-lineHeight--normal">
-                    Full Snapshots (Instance){" "}
+                    Full snapshots (instance){" "}
                   </p>
 
                   <div className="flex alignSelf--flexEnd">
@@ -573,9 +573,9 @@ class Snapshots extends Component {
                 </div>
                 <p className="u-marginTop--10 u-fontSize--normal u-lineHeight--more u-fontWeight--medium u-textColor--bodyCopy">
                   {" "}
-                  Full snapshots (Instance) back up the Admin Console and all
-                  application data. They can be used for full Disaster Recovery;
-                  by restoring over top of this instance, or into a new cluster.
+                  Full snapshots back up the admin console and all
+                  application data. They can be used for full disaster recovery,
+                  by restoring over top of this instance or into a new cluster.
                   <span
                     className="link"
                     onClick={this.toggleSnaphotDifferencesModal}

@@ -428,8 +428,7 @@ class SnapshotSchedule extends Component {
                 </p>
                 <span className="u-fontSize--small u-fontWeight--normal u-lineHeight--normal u-textColor--bodyCopy">
                   {" "}
-                  Schedules will not take affect until Velero is running and a
-                  storage destination has been configured.
+                  To set a schedule, install Velero and configure a storage destination.
                 </span>
               </div>
             </div>
@@ -439,7 +438,7 @@ class SnapshotSchedule extends Component {
             <div className="u-marginBottom--10">
               <p className="u-fontSize--normal u-fontWeight--normal u-lineHeight--normal u-textColor--bodyCopy u-marginTop--12 schedule">
                 Set up a custom schedule and retention policy for automatic
-                snapshots of the Admin Console and all application data.
+                snapshots of the admin console and all application data.
               </p>
             </div>
             <div className="SnapshotScheduleTabs--wrapper flex1 flex-column">
@@ -450,7 +449,7 @@ class SnapshotSchedule extends Component {
                   } tab-item blue`}
                   onClick={() => this.toggleScheduleAction("full")}
                 >
-                  Full snapshots (Instance)
+                  Full snapshots (instance)
                 </span>
                 <span
                   className={`${
@@ -458,7 +457,7 @@ class SnapshotSchedule extends Component {
                   } tab-item blue`}
                   onClick={() => this.toggleScheduleAction("partial")}
                 >
-                  Partial snapshots (Application)
+                  Partial snapshots (application)
                 </span>
               </div>
             </div>
@@ -572,8 +571,7 @@ class SnapshotSchedule extends Component {
                   Retention policy
                 </p>
                 <p className="u-fontSize--small u-textColor--bodyCopy u-fontWeight--normal u-lineHeight--normal u-marginBottom--10">
-                  The Admin Console can reclaim space by automatically deleting
-                  older scheduled snapshots.
+                  Reclaim space by automatically deleting older snapshots.
                 </p>
                 <p className="u-fontSize--small u-textColor--bodyCopy u-fontWeight--normal u-lineHeight--normal u-marginBottom--10">
                   Snapshots older than this will be deleted.

@@ -57,10 +57,9 @@ class ConfigureSnapshots extends React.Component {
             Add a new destination
           </p>
           <p className="u-fontSize--normal u-fontWeight--medium u-textColor--bodyCopy u-lineHeight--normal">
-            In order to configure and use Snapshots (backup and restore), please
+            To configure and use snapshots (backup and restore), please
             install Velero in the cluster. Once Velero is installed, click the
-            button below and the Admin Console will verify the installation and
-            begin configuring Snapshots.
+            button below to verify the installation and begin configuring snapshots.
           </p>
           {kotsadmRequiresVeleroAccess && (
             <div className="ConfigureSnapshotsTabs--wrapper flex-column u-marginTop--20 u-marginBottom--20">
@@ -99,20 +98,18 @@ class ConfigureSnapshots extends React.Component {
               </p>
               <p className="u-fontSize--normal u-fontWeight--normal u-textColor--bodyCopy u-lineHeight--normal u-marginBottom--10">
                 {" "}
-                We’ve detected that the Admin Console is running with minimal
-                role-based-access-control (RBAC) privileges, meaning that the
-                Admin Console is limited to a single namespace. To use the
-                snapshots functionality, the Admin Console requires access to
-                the namespace Velero is installed in. Please make sure Velero is
-                installed, then use the following command to provide the Admin
-                Console with the necessary permissions to access it:{" "}
+                The admin console is running with minimal role-based-access-control
+                (RBAC) privileges, so it is limited to a single namespace. To use
+                snapshots, the admin console requires access to the namespace in 
+                which Velero is installed. Use the following command to provide
+                the admin console with the necessary permissions:{" "}
               </p>
               <CodeSnippet
                 language="bash"
                 canCopy={true}
                 onCopyText={
                   <span className="u-textColor--success">
-                    Command has been copied to your clipboard
+                    Copied
                   </span>
                 }
               >
@@ -123,7 +120,7 @@ class ConfigureSnapshots extends React.Component {
                 <span className="u-fontWeight--bold u-textColor--secondary">
                   Note:
                 </span>{" "}
-                Please replace {`"<velero-namespace>"`} with the actual
+                Replace {`"<velero-namespace>"`} with the
                 namespace Velero is installed in, which is {`'velero'`} by
                 default.{" "}
               </p>
@@ -325,7 +322,7 @@ class ConfigureSnapshots extends React.Component {
                       </div>
                       <p className="u-fontSize--small u-fontWeight--medium u-textColor--bodyCopy u-marginTop--20">
                         {" "}
-                        With all providers, you must install using the{" "}
+                        With all providers, you must install with the{" "}
                         <span className="inline-code u-marginLeft--5 u-marginRight--5">
                           {" "}
                           --use-restic{" "}

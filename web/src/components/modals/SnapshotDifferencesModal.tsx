@@ -27,25 +27,25 @@ export default function SnapshotDifferencesModal(
           <div className="flex flex-column justifyContent--center alignItems--center ">
             <p className="u-fontSize--largest u-fontWeight--bold u-textColor--primary u-lineHeight--normal u-marginBottom--10">
               {" "}
-              Full snapshots{" "}
+              Full snapshots (instance){" "}
             </p>
             <p className="u-fontSize--normal u-fontWeight--normal u-textColor--bodyCopy u-lineHeight--normal">
               {" "}
-              Full snapshots (Instances) back up the Admin Console and all
-              application data. They can be used for partial restorations, such
-              as application roll back, or full Disaster Recovery restorations
-              (over the same instance or into a new cluster).{" "}
+              Full snapshots back up the admin console and all
+              application data. They can be used for partial restorations, like
+              application roll back, or full disaster recovery restorations
+              over the same instance or into a new cluster.{" "}
             </p>
             <p className="u-fontSize--largest u-fontWeight--bold u-textColor--primary u-lineHeight--normal u-marginBottom--10 u-marginTop--10">
               {" "}
-              Partial snapshots
+              Partial snapshots (application)
             </p>
             <p className="u-fontSize--normal u-fontWeight--normal u-textColor--bodyCopy u-lineHeight--normal">
-              Partial snapshots (Application) back up application volumes and
-              application manifests; they do not back up the Admin Console or
-              the application metadata. They can be used for capturing
-              information before deploying a new release, in case of needed roll
-              back, but they are not suitable for full disaster recovery.
+              Partial snapshots back up application volumes and
+              application manifests. They do not back up the admin console or
+              the application metadata. They can be used before deploying a 
+              new version, in case of needed roll back, but they are not
+              suitable for full disaster recovery.
             </p>
           </div>
         </div>

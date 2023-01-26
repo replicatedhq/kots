@@ -320,7 +320,7 @@ class SnapshotSettings extends Component {
             <Icon icon={"warning"} size={24} className="warning-color" />
             <p>
               {" "}
-              To use snapshots reliably, install Velero version 1.5.1 or greater{" "}
+              Install Velero version 1.5.1 or later to use snapshots reliably{" "}
             </p>
           </div>
         ) : null}
