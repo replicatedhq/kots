@@ -42,11 +42,11 @@ func printMinioFileSystemVeleroInstructions(c *MinioFileSystemVeleroConfig, log 
 	veleroOnlineCommand := fmt.Sprintf(`velero install \
 	--secret-file %s \
 	--provider aws \
-	--plugins velero/velero-plugin-for-aws:v1.2.0 \
+	--plugins velero/velero-plugin-for-aws:%s \
 	--bucket %s \
 	--backup-location-config region=%s,s3ForcePathStyle=true,s3Url=%s,publicUrl=%s \
 	--snapshot-location-config region=%s \
-	--use-restic`, red("<path/to/credentials-file>"), c.Bucket, c.BackupLocationConfig["region"], c.BackupLocationConfig["s3Url"], c.BackupLocationConfig["publicUrl"], c.SnapshotLocationConfig["region"])
+	--use-restic`, red("<path/to/credentials-file>"), red("<plugin-version>"), c.Bucket, c.BackupLocationConfig["region"], c.BackupLocationConfig["s3Url"], c.BackupLocationConfig["publicUrl"], c.SnapshotLocationConfig["region"])
 
 	veleroAirgapCommand := fmt.Sprintf(`velero install \
 	--secret-file %s \
@@ -60,13 +60,15 @@ func printMinioFileSystemVeleroInstructions(c *MinioFileSystemVeleroConfig, log 
 
 	log.ActionWithoutSpinner("Follow these instructions to set up Velero:\n")
 	log.Info("[1] Save the following credentials in a file:\n\n%s", green(strings.TrimSpace(string(c.Credentials))))
-	log.Info("[2] Install the latest Velero CLI by following these instructions: %s", blue("https://velero.io/docs/v1.6/basic-install/#install-the-cli"))
+	log.Info("[2] Install the latest supported Velero CLI by following these instructions: %s", blue("https://docs.replicated.com/enterprise/snapshots-velero-cli-installing"))
+	log.Info("	* Supported velero versions: %s", blue("https://docs.replicated.com/vendor/snapshots-overview#velero-version-compatibility"))
+	log.Info("	* To find the plugin version that is compatible with your velero installation see: %s", blue("https://github.com/vmware-tanzu/velero-plugin-for-aws#compatibility"))
 	log.Info("[3] Install Velero")
 	log.Info("- For %s, run the following command (replace <path/to/credentials-file> with the actual path created from step [1]):\n\n%s", bold("online installations"), veleroOnlineCommand)
 	log.Info("- For %s, follow these steps:", bold("airgapped installations"))
-	log.Info("	* Prepare velero images: %s", blue("https://velero.io/docs/v1.6/on-premises/#air-gapped-deployments"))
+	log.Info("	* Prepare velero images: %s", blue("https://velero.io/docs/v1.9/on-premises/#air-gapped-deployments"))
 	log.Info("	* Install velero (replace with actual values): \n\n%s", veleroAirgapCommand)
-	log.Info("	* Configure restic restore helper to use the prepared image: %s", blue("https://velero.io/docs/v1.6/restic/#customize-restore-helper-container"))
-	log.Info("[4] If you're using RancherOS, OpenShift, Microsoft Azure, or VMware Tanzu Kubernetes Grid Integrated Edition (formerly VMware Enterprise PKS), please refer to the following Velero doc to complete restic configuration: %s", blue("https://velero.io/docs/v1.6/restic/#configure-restic-daemonset-spec"))
+	log.Info("	* Configure restic restore helper to use the prepared image: %s", blue("https://velero.io/docs/v1.9/restic/#customize-restore-helper-container"))
+	log.Info("[4] If you're using RancherOS, OpenShift, Microsoft Azure, or VMware Tanzu Kubernetes Grid Integrated Edition (formerly VMware Enterprise PKS), please refer to the following Velero doc to complete restic configuration: %s", blue("https://velero.io/docs/v1.9/restic/#configure-restic-daemonset-spec"))
 	log.ActionWithoutSpinner("")
 }
