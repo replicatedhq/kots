@@ -237,7 +237,7 @@ class ConfigureSnapshots extends React.Component {
                           />
                         </a>
                         <a
-                          href="https://velero.io/docs/v1.6/supported-providers/"
+                          href="https://velero.io/docs/v1.9/supported-providers/"
                           target="_blank"
                           rel="noopener noreferrer"
                           className="snapshotOptions"
