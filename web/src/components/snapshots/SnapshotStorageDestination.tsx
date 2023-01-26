@@ -41,7 +41,7 @@ type State = {
   azureTenantId: string;
   caCertificate?: CACertificate;
   configureFileSystemProviderErrorMsg?: string;
-  configureFileSystemProviderNamespace?: string;
+  configureFileSystemProviderCommand?: string;
   configuringFileSystemProvider?: boolean;
   determiningDestination?: boolean;
   fileSystemHostPath?: string;
@@ -295,7 +295,7 @@ class SnapshotStorageDestination extends Component<Props, State> {
 
       configuringFileSystemProvider: false,
       configureFileSystemProviderErrorMsg: "",
-      configureFileSystemProviderNamespace: "",
+      configureFileSystemProviderCommand: "",
       showConfigureFileSystemProviderNextStepsModal: false,
       showConfigureFileSystemProviderModal: false,
       showResetFileSystemWarningModal: false,
@@ -833,7 +833,7 @@ class SnapshotStorageDestination extends Component<Props, State> {
             showConfigureFileSystemProviderModal: false,
             showConfigureFileSystemProviderNextStepsModal: true,
             configureFileSystemProviderErrorMsg: "",
-            configureFileSystemProviderNamespace: response.namespace,
+            configureFileSystemProviderCommand: response.command,
           });
           return;
         }
@@ -1823,7 +1823,7 @@ class SnapshotStorageDestination extends Component<Props, State> {
                   </span>
                 }
               >
-                {`kubectl kots velero print-fs-instructions --namespace ${this.state.configureFileSystemProviderNamespace}`}
+                {this.state.configureFileSystemProviderCommand}
               </CodeSnippet>
               <div className="u-marginTop--10 flex justifyContent--flexStart">
                 <button
