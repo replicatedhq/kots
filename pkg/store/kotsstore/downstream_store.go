@@ -656,7 +656,7 @@ func (s *KOTSStore) AddDownstreamVersionsDetails(appID string, clusterID string,
 				return errors.Wrap(err, "failed to load config from spec")
 			}
 			if len(config.Spec.Groups) > 0 {
-				version.IsConfigurable = true
+				version.HasConfig = true
 			}
 		}
 	}

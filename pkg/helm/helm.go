@@ -178,6 +178,7 @@ func HelmUpdateToDownsreamVersion(update ChartUpdate, sequence int64) *downstrea
 		UpstreamReleasedAt: update.CreatedOn,
 		IsDeployable:       false,             // TODO: implement
 		NonDeployableCause: "not implemented", // TODO: implement
+		HasConfig:          true,              // TODO: implement
 		Source:             "Upstream Update",
 		Status:             update.Status,
 	}
