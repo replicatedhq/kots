@@ -445,8 +445,7 @@ class AppVersionHistoryRow extends Component {
             </>
           ) : null}
         </div>
-        {version.hasConfig && <EditConfigIcon version={version} />}
-
+        <EditConfigIcon version={version} isPending={false} />
         {showDeployLogs ? (
           <div className="u-marginLeft--10">
             <span

@@ -20,7 +20,7 @@ const EditConfigIcon = ({
   if (!version) {
     return null;
   }
-  if (!version?.isConfigurable) {
+  if (!version?.hasConfig) {
     return null;
   }
   if (version.status === "pending_download") {

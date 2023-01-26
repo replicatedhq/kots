@@ -212,8 +212,8 @@ export type Version = {
   diffSummaryError: string;
   downloadStatus: VersionDownloadStatus;
   gitDeployable: boolean;
+  hasConfig: boolean;
   isChecked: boolean;
-  isConfigurable?: boolean;
   isDeployable: boolean;
   isRequired: boolean;
   needsKotsUpgrade: boolean;
