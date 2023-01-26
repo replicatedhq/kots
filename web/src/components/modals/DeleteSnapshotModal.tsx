@@ -1,8 +1,19 @@
 import React from "react";
 import Modal from "react-modal";
 import { Utilities } from "@src/utilities/utilities";
+import { Snapshot } from "@src/types";
 
-export default function DeleteSnapshotModal(props) {
+interface DeleteSnapshotModalProps {
+  deleteSnapshotModal: boolean;
+  toggleConfirmDeleteModal: (snapshot: Snapshot | {}) => void;
+  snapshotToDelete: Snapshot;
+  deletingSnapshot: boolean;
+  handleDeleteSnapshot: (snapshot: Snapshot) => void;
+  deleteErr: boolean;
+  deleteErrorMsg: string;
+}
+
+export default function DeleteSnapshotModal(props: DeleteSnapshotModalProps) {
   const {
     deleteSnapshotModal,
     toggleConfirmDeleteModal,
