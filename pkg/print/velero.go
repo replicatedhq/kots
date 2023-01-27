@@ -46,7 +46,7 @@ func VeleroInstallationInstructions(log *logger.CLILogger, plugin string, regist
 	--no-default-backup-location \
 	--no-secret \
 	--use-restic \
-	--use-volume-snapshots=false
+	--use-volume-snapshots=false \
 	--image %s/velero:%s \
 	--plugins %s/%s:%s`, registry, red("<velero-version>"), registry, pluginName, pluginTag)
 
