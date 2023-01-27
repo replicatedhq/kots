@@ -32,8 +32,8 @@ const EditConfigIcon = ({
   }
 
   let url = `/app/${selectedApp?.slug}/config/${version.sequence}`;
-  if (isHelmManaged) {
-    url = `${url}?isPending=${isPending}&semver=${version.versionLabel}`;
+  if (isHelmManaged && version.status.startsWith("pending")) {
+    url = `${url}?isPending=${isPending}&semver=${version.semver}`;
   }
 
   return (
