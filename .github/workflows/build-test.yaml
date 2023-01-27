@@ -1354,6 +1354,7 @@ jobs:
         k8s_version: [ v1.26.1-k3s1 ]
     env:
       APP_SLUG: kubernetes-installer-preflight
+      K8S_VERSION: ${{ matrix.k8s_version }}
     steps:
       - uses: replicatedhq/action-k3s@main
         with:
@@ -1436,7 +1437,7 @@ jobs:
           # try get apps without namespace (using kubeconfig)
           # validate that output is the same as above
           mkdir -p /tmp/.kube
-          sudo cp /tmp/output/kubeconfig-v1.24.9-k3s2.yaml /tmp/.kube/config
+          sudo cp /tmp/output/kubeconfig-${K8S_VERSION}.yaml /tmp/.kube/config
           sudo chmod -R 777 /tmp/.kube
           export KUBECONFIG=/tmp/.kube/config
           kubectl config set-context --current --namespace=$APP_SLUG
