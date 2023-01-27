@@ -21,6 +21,7 @@ import GenerateSupportBundleModal from "./GenerateSupportBundleModal";
 import { useHistory } from "react-router-dom";
 import { ToastContext } from "@src/context/ToastContext";
 import Toast from "@components/shared/Toast";
+import { usePrevious } from "@src/hooks/usePrevious";
 
 type Props = {
   bundle: SupportBundle;
@@ -156,10 +157,21 @@ export const SupportBundleList = (props: Props) => {
     }
   }, [props.bundle]);
 
+  const prevLoadingBundleId = usePrevious(props.loadingBundleId);
+
   useEffect(() => {
     if (props.loadingBundleId === deleteBundleId) {
       state.pollForBundleAnalysisProgress.stop();
       props.updateState({ loadingBundleId: "", loadingBundle: false });
+    }
+    console.log(prevLoadingBundleId, "prev");
+    if (prevLoadingBundleId && deleteBundleId === "") {
+      props.updateState({
+        loadingBundleId: prevLoadingBundleId,
+        loadingBundle: true,
+      });
+      state.pollForBundleAnalysisProgress.start();
+      // need to refresh show the progress bar
     }
   }, [deleteBundleId]);
 
