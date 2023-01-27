@@ -20,6 +20,7 @@ import (
 	snapshottypes "github.com/replicatedhq/kots/pkg/kotsadmsnapshot/types"
 	"github.com/replicatedhq/kots/pkg/kurl"
 	"github.com/replicatedhq/kots/pkg/logger"
+	"github.com/replicatedhq/kots/pkg/print"
 	kotssnapshot "github.com/replicatedhq/kots/pkg/snapshot"
 	kotssnapshottypes "github.com/replicatedhq/kots/pkg/snapshot/types"
 	"github.com/replicatedhq/kots/pkg/store"
@@ -70,13 +71,13 @@ type UpdateGlobalSnapshotSettingsRequest struct {
 	CACertData []byte `json:"caCertData"`
 }
 
-type ConfigureFileSystemSnapshotProviderResponse struct {
-	Success bool   `json:"success"`
-	Error   string `json:"error,omitempty"`
-	Command string `json:"command,omitempty"`
+type GetFileSystemSnapshotProviderInstructionsResponse struct {
+	Success      bool                                  `json:"success"`
+	Error        string                                `json:"error,omitempty"`
+	Instructions []print.VeleroInstallationInstruction `json:"instructions,omitempty"`
 }
 
-type ConfigureFileSystemSnapshotProviderRequest struct {
+type GetFileSystemSnapshotProviderInstructionsRequest struct {
 	FileSystemOptions FileSystemOptions `json:"fileSystemOptions"`
 }
 
@@ -130,7 +131,7 @@ func (h *Handler) UpdateGlobalSnapshotSettings(w http.ResponseWriter, r *http.Re
 	isMinioDisabled, err := kotssnapshot.IsFileSystemMinioDisabled(kotsadmNamespace)
 	if err != nil {
 		logger.Error(err)
-		globalSnapshotSettingsResponse.Error = "failed to create k8s clientset"
+		globalSnapshotSettingsResponse.Error = "failed to check if file system minio is disabled"
 		JSON(w, http.StatusInternalServerError, globalSnapshotSettingsResponse)
 		return
 	}
@@ -288,7 +289,7 @@ func (h *Handler) GetGlobalSnapshotSettings(w http.ResponseWriter, r *http.Reque
 	isMinioDisabled, err := kotssnapshot.IsFileSystemMinioDisabled(kotsadmNamespace)
 	if err != nil {
 		logger.Error(err)
-		globalSnapshotSettingsResponse.Error = "failed to create k8s clientset"
+		globalSnapshotSettingsResponse.Error = "failed to check if file system minio is disabled"
 		JSON(w, http.StatusInternalServerError, globalSnapshotSettingsResponse)
 		return
 	}
@@ -368,12 +369,12 @@ func (h *Handler) GetGlobalSnapshotSettings(w http.ResponseWriter, r *http.Reque
 	JSON(w, http.StatusOK, globalSnapshotSettingsResponse)
 }
 
-func (h *Handler) ConfigureFileSystemSnapshotProvider(w http.ResponseWriter, r *http.Request) {
-	response := ConfigureFileSystemSnapshotProviderResponse{
+func (h *Handler) GetFileSystemSnapshotProviderInstructions(w http.ResponseWriter, r *http.Request) {
+	response := GetFileSystemSnapshotProviderInstructionsResponse{
 		Success: false,
 	}
 
-	request := ConfigureFileSystemSnapshotProviderRequest{}
+	request := GetFileSystemSnapshotProviderInstructionsRequest{}
 	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
 		errMsg := "failed to decode request body"
 		logger.Error(errors.Wrap(err, errMsg))
@@ -429,8 +430,23 @@ func (h *Handler) ConfigureFileSystemSnapshotProvider(w http.ResponseWriter, r *
 		}
 	}
 
+	isMinioDisabled, err := kotssnapshot.IsFileSystemMinioDisabled(kotsadmNamespace)
+	if err != nil {
+		logger.Error(err)
+		response.Error = "failed to check if file system minio is disabled"
+		JSON(w, http.StatusInternalServerError, response)
+		return
+	}
+
+	var plugin kotssnapshottypes.VeleroPlugin
+	if isMinioDisabled {
+		plugin = kotssnapshottypes.VeleroLVPPlugin
+	} else {
+		plugin = kotssnapshottypes.VeleroAWSPlugin
+	}
+
 	response.Success = true
-	response.Command = configureCommand
+	response.Instructions = print.VeleroInstallationInstructionsForUI(plugin, &registryConfig, configureCommand)
 
 	JSON(w, http.StatusOK, response)
 }

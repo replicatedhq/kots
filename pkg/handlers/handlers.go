@@ -243,8 +243,8 @@ func RegisterSessionAuthRoutes(r *mux.Router, kotsStore store.Store, handler KOT
 		HandlerFunc(middleware.EnforceAccess(policy.SnapshotsettingsRead, handler.GetGlobalSnapshotSettings))
 	r.Name("UpdateGlobalSnapshotSettings").Path("/api/v1/snapshots/settings").Methods("PUT").
 		HandlerFunc(middleware.EnforceAccess(policy.SnapshotsettingsWrite, handler.UpdateGlobalSnapshotSettings))
-	r.Name("ConfigureFileSystemSnapshotProvider").Path("/api/v1/snapshots/filesystem").Methods("PUT").
-		HandlerFunc(middleware.EnforceAccess(policy.SnapshotsettingsWrite, handler.ConfigureFileSystemSnapshotProvider))
+	r.Name("GetFileSystemSnapshotProviderInstructions").Path("/api/v1/snapshots/filesystem/instructions").Methods("POST").
+		HandlerFunc(middleware.EnforceAccess(policy.SnapshotsettingsRead, handler.GetFileSystemSnapshotProviderInstructions))
 	r.Name("GetBackup").Path("/api/v1/snapshot/{snapshotName}").Methods("GET").
 		HandlerFunc(middleware.EnforceAccess(policy.BackupRead, handler.GetBackup))
 	r.Name("DeleteBackup").Path("/api/v1/snapshot/{snapshotName}/delete").Methods("POST").

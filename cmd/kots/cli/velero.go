@@ -31,10 +31,7 @@ import (
 )
 
 const (
-	resticRepoBase    = "/var/velero-local-volume-provider"
-	veleroAWSPlugin   = "velero/velero-plugin-for-aws:v1.5.3"
-	veleroGCPPlugin   = "velero/velero-plugin-for-gcp:v1.5.3"
-	veleroAzurePlugin = "velero/velero-plugin-for-microsoft-azure:v1.5.3"
+	resticRepoBase = "/var/velero-local-volume-provider"
 )
 
 func VeleroCmd() *cobra.Command {
@@ -218,7 +215,7 @@ func VeleroConfigureAmazonS3AccessKeyCmd() *cobra.Command {
 				return errors.Wrap(err, "failed to detect velero")
 			}
 			if veleroStatus == nil {
-				print.VeleroInstallationInstructions(log, veleroAWSPlugin, &registryConfig)
+				print.VeleroInstallationInstructionsForCLI(log, snapshottypes.VeleroAWSPlugin, &registryConfig)
 				return nil
 			}
 			if !veleroStatus.ContainsPlugin("velero-plugin-for-aws") {
@@ -299,7 +296,7 @@ func VeleroConfigureAmazonS3InstanceRoleCmd() *cobra.Command {
 				return errors.Wrap(err, "failed to detect velero")
 			}
 			if veleroStatus == nil {
-				print.VeleroInstallationInstructions(log, veleroAWSPlugin, &registryConfig)
+				print.VeleroInstallationInstructionsForCLI(log, snapshottypes.VeleroAWSPlugin, &registryConfig)
 				return nil
 			}
 			if !veleroStatus.ContainsPlugin("velero-plugin-for-aws") {
@@ -374,7 +371,7 @@ func VeleroConfigureOtherS3Cmd() *cobra.Command {
 				return errors.Wrap(err, "failed to detect velero")
 			}
 			if veleroStatus == nil {
-				print.VeleroInstallationInstructions(log, veleroAWSPlugin, &registryConfig)
+				print.VeleroInstallationInstructionsForCLI(log, snapshottypes.VeleroAWSPlugin, &registryConfig)
 				return nil
 			}
 			if !veleroStatus.ContainsPlugin("velero-plugin-for-aws") {
@@ -489,7 +486,7 @@ func VeleroConfigureGCPServiceAccount() *cobra.Command {
 				return errors.Wrap(err, "failed to detect velero")
 			}
 			if veleroStatus == nil {
-				print.VeleroInstallationInstructions(log, veleroGCPPlugin, &registryConfig)
+				print.VeleroInstallationInstructionsForCLI(log, snapshottypes.VeleroGCPPlugin, &registryConfig)
 				return nil
 			}
 			if !veleroStatus.ContainsPlugin("velero-plugin-for-gcp") {
@@ -572,7 +569,7 @@ func VeleroConfigureGCPWorkloadIdentity() *cobra.Command {
 				return errors.Wrap(err, "failed to detect velero")
 			}
 			if veleroStatus == nil {
-				print.VeleroInstallationInstructions(log, veleroGCPPlugin, &registryConfig)
+				print.VeleroInstallationInstructionsForCLI(log, snapshottypes.VeleroGCPPlugin, &registryConfig)
 				return nil
 			}
 			if !veleroStatus.ContainsPlugin("velero-plugin-for-gcp") {
@@ -657,7 +654,7 @@ func VeleroConfigureAzureServicePrincipleCmd() *cobra.Command {
 				return errors.Wrap(err, "failed to detect velero")
 			}
 			if veleroStatus == nil {
-				print.VeleroInstallationInstructions(log, veleroAzurePlugin, &registryConfig)
+				print.VeleroInstallationInstructionsForCLI(log, snapshottypes.VeleroAzurePlugin, &registryConfig)
 				return nil
 			}
 			if !veleroStatus.ContainsPlugin("velero-plugin-for-microsoft-azure") {
@@ -873,12 +870,12 @@ func veleroConfigureFileSystem(ctx context.Context, log *logger.CLILogger, opts 
 
 	if opts.IsMinioDisabled {
 		if veleroStatus == nil || !veleroStatus.ContainsPlugin("local-volume-provider") {
-			print.VeleroInstallationInstructions(log, image.Lvp, opts.RegistryConfig)
+			print.VeleroInstallationInstructionsForCLI(log, image.Lvp, opts.RegistryConfig)
 			return nil
 		}
 	} else {
 		if veleroStatus == nil || !veleroStatus.ContainsPlugin("plugin-for-aws") {
-			print.VeleroInstallationInstructions(log, veleroAWSPlugin, opts.RegistryConfig)
+			print.VeleroInstallationInstructionsForCLI(log, snapshottypes.VeleroAWSPlugin, opts.RegistryConfig)
 			return nil
 		}
 	}
