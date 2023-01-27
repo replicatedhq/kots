@@ -190,4 +190,4 @@ scan:
 
 .PHONY: generate-kubectl-versions
 generate-kubectl-versions: 
-	node actions/kubectl-versions/dist/index.js
+	node .github/actions/kubectl-versions/dist/index.js

@@ -1,22 +1,14 @@
 const fetch = require('node-fetch');
 const fs = require('fs');
-var semver = require('semver');
-
-
-const OLDEST_SUPPORTED_VERSION = "1.19.0"
+const yaml = require('js-yaml');
 
 async function updateVersions() {
     // Fetch supported Kubernetes version info
-    const response = await fetch("https://endoflife.date/api/kubernetes.json");
-    const releases = await response.json();
-
-    const supported = releases.filter(release => semver.gte(release.latest, OLDEST_SUPPORTED_VERSION)).reverse();
-    // NOTE: The following could be used if we want to only include officially supported versions
-    // const supported = releases.filter(release => new Date(release.eol) > new Date()).reverse();
+    const latestSupportedVersions = await fetchLatestSupportedVersions();
 
     // Create Dockerfile command text
     let i = 0
-    for (const v of supported) {
+    for (const v of latestSupportedVersions) {
         const shaResponse = await fetch(`https://dl.k8s.io/release/v${v.latest}/bin/linux/amd64/kubectl.sha256`);
         const shasum = await shaResponse.text();
         v.install = `# Install Kubectl ${v.cycle}
@@ -27,14 +19,14 @@ RUN curl -fsSLO "${"${KUBECTL_" + v.cycle.replace(".", "_") + "_URL}"}" \\
   && echo "${"${KUBECTL_" + v.cycle.replace(".", "_") + "_SHA256SUM}"} kubectl" | sha256sum -c - \\
   && chmod +x kubectl \\
   && mv kubectl "${"${KOTS_KUBECTL_BIN_DIR}"}/kubectl-v${v.cycle}"`;
-        if (i === supported.length - 1) {
+        if (i === latestSupportedVersions.length - 1) {
             v.install = v.install + ` \\
   && ln -s "${"${KOTS_KUBECTL_BIN_DIR}"}/kubectl-v${v.cycle}" "${"${KOTS_KUBECTL_BIN_DIR}"}/kubectl"`
         }
         i++
     }
 
-    const commandText = supported.map(s => s.install).join("\n\n");
+    const commandText = latestSupportedVersions.map(s => s.install).join("\n\n");
 
     // Insert command text into Dockerfile
     fs.readFile("deploy/Dockerfile", 'utf8', function (err, data) {
@@ -47,6 +39,28 @@ RUN curl -fsSLO "${"${KUBECTL_" + v.cycle.replace(".", "_") + "_URL}"}" \\
             if (err) return console.error(err);
         });
     });
+}
+
+async function fetchLatestSupportedVersions() {
+    const response = await fetch("https://raw.githubusercontent.com/kubernetes/website/main/data/releases/schedule.yaml");
+    const responseYAML = await response.text();
+    const responseJSON = yaml.load(responseYAML);
+    const supported = responseJSON.schedules.map(schedule => {
+        let latest = "";
+        if (!schedule.previousPatches || schedule.previousPatches.length === 0) {
+            // There are no patch releases
+            latest = schedule.release + ".0"; // append the patch version of .0 since it's the first release in the cycle
+        } else {
+            // There are patch releases, the first with be the latest
+            latest = schedule.previousPatches[0].release;
+        }
+        return {
+            cycle: schedule.release.toString(),
+            latest: latest
+        };
+    }).reverse(); // return in order of oldest to newest minor version
+
+    return supported;
 }
 
 updateVersions();
