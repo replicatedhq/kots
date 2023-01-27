@@ -10,6 +10,9 @@ inputs:
   k8s-version:
     description: 'K8s version'
     required: true
+  k8s-arguments:
+    description: 'arguments to pass to k8s'
+    required: false
   testim-access-token:
     description: 'Testim access token'
     required: true
@@ -56,6 +59,7 @@ runs:
     - uses: replicatedhq/action-k3s@main
       with:
         version: ${{ inputs.k8s-version }}
+        arguments: ${{ inputs.k8s-arguments }}
 
     - name: execute suite "${{ inputs.test-focus }}"
       env:

@@ -444,7 +444,7 @@ class AppVersionHistoryRow extends Component {
             </>
           ) : null}
         </div>
-        {app.isConfigurable && (
+        {version.hasConfig && (
           <div className="flex alignItems--center">
             <Link to={configScreenURL} data-tip={tooltipTip}>
               <Icon

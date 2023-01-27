@@ -141,12 +141,12 @@ class ConfigureSnapshots extends React.Component {
                       Install the CLI on your machine by following the Velero
                       installation instructions at:{" "}
                       <a
-                        href="https://velero.io/docs/v1.6/basic-install/"
+                        href="https://docs.replicated.com/enterprise/snapshots-velero-cli-installing"
                         target="_blank"
                         rel="noopener noreferrer"
                         className="link u-marginLeft--5"
                       >
-                        https://velero.io/docs/v1.6/basic-install/
+                        https://docs.replicated.com/enterprise/snapshots-velero-cli-installing
                       </a>{" "}
                     </p>
                   ) : (
@@ -157,7 +157,7 @@ class ConfigureSnapshots extends React.Component {
                       </span>
                       Install the CLI on your machine by following the{" "}
                       <a
-                        href="https://velero.io/docs/v1.6/basic-install/"
+                        href="https://docs.replicated.com/enterprise/snapshots-velero-cli-installing"
                         target="_blank"
                         rel="noopener noreferrer"
                         className="link u-marginLeft--5"
@@ -234,7 +234,7 @@ class ConfigureSnapshots extends React.Component {
                           />
                         </a>
                         <a
-                          href="https://velero.io/docs/v1.6/supported-providers/"
+                          href="https://velero.io/docs/v1.9/supported-providers/"
                           target="_blank"
                           rel="noopener noreferrer"
                           className="snapshotOptions"
