@@ -22,6 +22,7 @@ let kotsAddonVersions = await client.get('https://kots-kurl-addons-production-16
 kotsAddonVersions = appendVersion(kotsAddonVersions, {
   version: addonVersion,
   url: addonPackageUrl,
+  isPrerelease: true, // this will be updated to false when the addon is no longer a prerelease
   // Be careful when regenerating the kURL add-on package as the kurlVersionCompatibilityRange
   // will be updated to the latest kURL version.
   kurlVersionCompatibilityRange: `>= ${latestKurlVersion.data.tag_name}`,

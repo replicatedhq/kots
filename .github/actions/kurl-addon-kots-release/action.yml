@@ -1,0 +1,9 @@
+name: kurl-addon-kots-release
+description: 'Updates the version file for the kots kurl addon to release a specific version.'
+inputs:
+  ADDON_VERSION:
+    required: true
+    description: 'Kots version.'
+runs:
+  using: 'node16'
+  main: 'dist/index.js'

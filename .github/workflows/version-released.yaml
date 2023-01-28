@@ -1,0 +1,27 @@
+name: Kots Version is Released
+
+on:
+  release:
+    types: [released]
+
+jobs:
+  kots-version-released:
+    runs-on: ubuntu-latest
+    env:
+      AWS_ACCESS_KEY_ID: ${{ secrets.KURL_ADDONS_AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.KURL_ADDONS_AWS_SECRET_ACCESS_KEY }}
+      AWS_DEFAULT_REGION: us-east-1
+    steps:
+      - name: set outputs
+        id: vars
+        run: |
+          addon_version=${{ github.event.release.tag_name }}
+          echo "::set-output name=addon_version::${addon_version#v}"
+      - name: checkout
+        uses: actions/checkout@v2
+      - name: update-kurl-addon-versions-json
+        uses: ./.github/actions/kurl-addon-kots-release
+        with:
+          ADDON_VERSION: ${{ steps.vars.outputs.addon_version }}
+      - name: write-kurl-addon-versions-json
+        run: aws s3 cp ./deploy/kurl/versions.json s3://kots-kurl-addons-production-1658439274

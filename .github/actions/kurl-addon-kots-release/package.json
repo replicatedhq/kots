@@ -1,0 +1,17 @@
+{
+  "name": "kurl-addon-kots-release",
+  "version": "1.0.0",
+  "description": "releases a version of the kots add-on for kurl",
+  "main": "index.js",
+  "scripts": {
+    "build": "ncc build index.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@actions/core": "^1.10.0",
+    "@actions/http-client": "^2.0.1",
+    "@vercel/ncc": "^0.33.4"
+  }
+}
