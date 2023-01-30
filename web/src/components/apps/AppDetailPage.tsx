@@ -103,8 +103,6 @@ function AppDetailPage(props: Props) {
 
   const { apps: appsList } = appsData || {};
 
-
-
   /**
    *  Runs on mount and on update. Also handles redirect logic
    *  if no apps are found, or the first app is found.
@@ -503,8 +501,9 @@ function AppDetailPage(props: Props) {
                       redeployVersion={redeployVersion}
                       redeployVersionErrMsg={state.redeployVersionErrMsg}
                       resetRedeployErrorMessage={resetRedeployErrorMessage}
-                      resetMakingCurrentReleaseErrorMessage=
-                        {resetMakingCurrentReleaseErrorMessage}
+                      resetMakingCurrentReleaseErrorMessage={
+                        resetMakingCurrentReleaseErrorMessage
+                      }
                       adminConsoleMetadata={props.adminConsoleMetadata}
                     />
                   )}

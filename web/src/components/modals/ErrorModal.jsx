@@ -46,18 +46,20 @@ export default function ErrorModal(props) {
             </p>
           </div>
           <div className="flex u-marginTop--20">
-            {!showDismissButton && (<Link
-              to={appSlug ? `/app/${appSlug}` : "/"}
-              className="btn secondary blue"
-            >
-              Back to the dashboard
-            </Link>)}
+            {!showDismissButton && (
+              <Link
+                to={appSlug ? `/app/${appSlug}` : "/"}
+                className="btn secondary blue"
+              >
+                Back to the dashboard
+              </Link>
+            )}
             {showDismissButton && (
               <button
                 className="btn secondary blue"
                 onClick={() => toggleErrorModal()}
               >
-              Ok, got it!
+                Ok, got it!
               </button>
             )}
             {tryAgain && typeof tryAgain === "function" && (
