@@ -380,6 +380,18 @@ function AppDetailPage(props: Props) {
     }
   }
 
+  const resetRedeployErrorMessage = () => {
+    setState({
+      redeployVersionErrMsg: "",
+    });
+  };
+
+  const resetMakingCurrentReleaseErrorMessage = () => {
+    setState({
+      makingCurrentReleaseErrMsg: "",
+    });
+  };
+
   return (
     <div className="WatchDetailPage--wrapper flex-column flex1 u-overflow--auto">
       <SidebarLayout
@@ -488,6 +500,10 @@ function AppDetailPage(props: Props) {
                       makingCurrentRelease={state.makingCurrentRelease}
                       redeployVersion={redeployVersion}
                       redeployVersionErrMsg={state.redeployVersionErrMsg}
+                      resetRedeployErrorMessage={resetRedeployErrorMessage}
+                      resetMakingCurrentReleaseErrorMessage={
+                        resetMakingCurrentReleaseErrorMessage
+                      }
                       adminConsoleMetadata={props.adminConsoleMetadata}
                     />
                   )}
