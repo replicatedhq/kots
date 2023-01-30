@@ -2,7 +2,6 @@ package print
 
 import (
 	"fmt"
-	"os"
 	"strings"
 
 	"github.com/fatih/color"
@@ -13,9 +12,7 @@ import (
 	snapshottypes "github.com/replicatedhq/kots/pkg/snapshot/types"
 )
 
-func VeleroInstallationInstructionsForCLI(log *logger.CLILogger, plugin snapshottypes.VeleroPlugin, registryConfig *kotsadmtypes.RegistryConfig) {
-	kotsConfigureCommand := strings.Join(os.Args, " ")
-
+func VeleroInstallationInstructionsForCLI(log *logger.CLILogger, plugin snapshottypes.VeleroPlugin, registryConfig *kotsadmtypes.RegistryConfig, kotsConfigureCommand string) {
 	blue := color.New(color.FgHiBlue).SprintFunc()
 	red := color.New(color.FgHiRed).SprintFunc()
 
@@ -64,9 +61,9 @@ func VeleroInstallationInstructionsForCLI(log *logger.CLILogger, plugin snapshot
 }
 
 type VeleroInstallationInstruction struct {
-	Title       string                            `json:"title"`
-	Description string                            `json:"description"`
-	Type        VeleroInstallationInstructionType `json:"type"`
+	Title  string                            `json:"title"`
+	Action string                            `json:"action"`
+	Type   VeleroInstallationInstructionType `json:"type"`
 }
 
 type VeleroInstallationInstructionType string
@@ -83,19 +80,19 @@ func VeleroInstallationInstructionsForUI(plugin snapshottypes.VeleroPlugin, regi
 
 		return []VeleroInstallationInstruction{
 			{
-				Title:       "Install Velero",
-				Description: veleroOnlineCommand,
-				Type:        "command",
+				Title:  "Install Velero",
+				Action: veleroOnlineCommand,
+				Type:   "command",
 			},
 			{
-				Title:       "If you're using RancherOS, OpenShift, Microsoft Azure, or VMware Tanzu Kubernetes Grid Integrated Edition (formerly VMware Enterprise PKS), please refer to the following Velero doc to complete restic configuration",
-				Description: "https://velero.io/docs/v1.9/restic/#configure-restic-daemonset-spec",
-				Type:        "link",
+				Title:  "If you're using RancherOS, OpenShift, Microsoft Azure, or VMware Tanzu Kubernetes Grid Integrated Edition (formerly VMware Enterprise PKS), please refer to the following Velero doc to complete restic configuration",
+				Action: "https://velero.io/docs/v1.9/restic/#configure-restic-daemonset-spec",
+				Type:   "link",
 			},
 			{
-				Title:       "Configure the backup storage location",
-				Description: kotsConfigureCommand,
-				Type:        "command",
+				Title:  "Configure the backup storage location",
+				Action: kotsConfigureCommand,
+				Type:   "command",
 			},
 		}
 	}
@@ -109,29 +106,29 @@ func VeleroInstallationInstructionsForUI(plugin snapshottypes.VeleroPlugin, regi
 
 	return []VeleroInstallationInstruction{
 		{
-			Title:       fmt.Sprintf("Prepare velero images (you will need %s for plugins)", plugin),
-			Description: "https://velero.io/docs/v1.9/on-premises/#air-gapped-deployments",
-			Type:        "link",
+			Title:  fmt.Sprintf("Prepare velero images (you will need %s for plugins)", plugin),
+			Action: "https://velero.io/docs/v1.9/on-premises/#air-gapped-deployments",
+			Type:   "link",
 		},
 		{
-			Title:       "Install velero (replace <velero-version> with actual version)",
-			Description: veleroAirgapCommand,
-			Type:        "command",
+			Title:  "Install velero (replace <velero-version> with actual version)",
+			Action: veleroAirgapCommand,
+			Type:   "command",
 		},
 		{
-			Title:       "Configure restic restore helper to use the prepared image",
-			Description: "https://velero.io/docs/v1.9/restic/#customize-restore-helper-container",
-			Type:        "link",
+			Title:  "Configure restic restore helper to use the prepared image",
+			Action: "https://velero.io/docs/v1.9/restic/#customize-restore-helper-container",
+			Type:   "link",
 		},
 		{
-			Title:       "If you're using RancherOS, OpenShift, Microsoft Azure, or VMware Tanzu Kubernetes Grid Integrated Edition (formerly VMware Enterprise PKS), please refer to the following Velero doc to complete restic configuration",
-			Description: "https://velero.io/docs/v1.9/restic/#configure-restic-daemonset-spec",
-			Type:        "link",
+			Title:  "If you're using RancherOS, OpenShift, Microsoft Azure, or VMware Tanzu Kubernetes Grid Integrated Edition (formerly VMware Enterprise PKS), please refer to the following Velero doc to complete restic configuration",
+			Action: "https://velero.io/docs/v1.9/restic/#configure-restic-daemonset-spec",
+			Type:   "link",
 		},
 		{
-			Title:       "Configure the backup storage location",
-			Description: kotsConfigureCommand,
-			Type:        "command",
+			Title:  "Configure the backup storage location",
+			Action: kotsConfigureCommand,
+			Type:   "command",
 		},
 	}
 }

@@ -423,7 +423,7 @@ func (h *Handler) GetFileSystemSnapshotProviderInstructions(w http.ResponseWrite
 			configureCommand += fmt.Sprintf(` --kotsadm-namespace %s`, registryConfig.OverrideNamespace)
 		}
 		if registryConfig.Username != "" {
-			configureCommand += fmt.Sprintf(` --registry-username %s`, registryConfig.OverrideNamespace)
+			configureCommand += fmt.Sprintf(` --registry-username %s`, registryConfig.Username)
 		}
 		if registryConfig.Password != "" {
 			configureCommand += fmt.Sprintf(` --registry-password %s`, registryConfig.Password)

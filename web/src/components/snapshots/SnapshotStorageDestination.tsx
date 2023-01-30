@@ -35,7 +35,7 @@ type FileSystemProviderInstructionType = "link" | "command";
 
 type FileSystemProviderInstruction = {
   title: string;
-  description: string;
+  action: string;
   type: FileSystemProviderInstructionType;
 }
 
@@ -1521,19 +1521,19 @@ class SnapshotStorageDestination extends Component<Props, State> {
     }
 
     return instructions.map((instruction, index) => {
-      let description;
+      let action;
       if (instruction.type == "link") {
-        description = (
+        action = (
           <span
             className="link u-fontSize--small u-cursor--pointer"
           >
-            <a href={instruction.description} target="_blank" className="link">
-              {instruction.description}
+            <a href={instruction.action} target="_blank" className="link">
+              {instruction.action}
             </a>
           </span>
         );
       } else {
-        description = (
+        action = (
           <CodeSnippet
             language="bash"
             canCopy={true}
@@ -1543,12 +1543,12 @@ class SnapshotStorageDestination extends Component<Props, State> {
               </span>
             }
           >
-            {instruction.description}
+            {instruction.action}
           </CodeSnippet>
         );
       }
       return (
-        <div className="flex flex1 u-marginTop--20">
+        <div key={`${index}`} className="flex flex1 u-marginTop--20">
           <div className="flex">
             <span className="circleNumberGray u-marginRight--10">
               {" "}
@@ -1561,7 +1561,7 @@ class SnapshotStorageDestination extends Component<Props, State> {
               {instruction.title}{" "}
             </p>
             <div className="flex u-marginTop--5">
-              {description}
+              {action}
             </div>
           </div>
         </div>
