@@ -45,7 +45,6 @@ require (
 	github.com/onsi/ginkgo/v2 v2.6.0
 	github.com/onsi/gomega v1.24.1
 	github.com/open-policy-agent/opa v0.44.0
-	github.com/openshift/client-go v0.0.0-20210503124028-ac0910aac9fa
 	github.com/ory/dockertest/v3 v3.9.1
 	github.com/otiai10/copy v1.9.0
 	github.com/phayes/freeport v0.0.0-20220201140144-74d24b5ae9f5
@@ -355,7 +354,6 @@ require (
 	github.com/containers/storage v1.43.0 // indirect
 	github.com/gregjones/httpcache v0.0.0-20190611155906-901d90724c79 // indirect
 	github.com/kardianos/osext v0.0.0-20190222173326-2bc1f35cddc0 // indirect
-	github.com/openshift/api v0.0.0-20210513192832-efee9960e6fd // indirect
 	github.com/pquerna/cachecontrol v0.0.0-20180517163645-1555304b9b35 // indirect
 	github.com/shopspring/decimal v1.3.1 // indirect
 	github.com/tchap/go-patricia/v2 v2.3.1 // indirect
