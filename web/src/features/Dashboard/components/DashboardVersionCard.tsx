@@ -39,6 +39,7 @@ import {
   VersionStatus,
 } from "@types";
 import { AirgapUploader } from "@src/utilities/airgapUploader";
+import EditConfigIcon from "@components/shared/EditConfigIcon";
 
 type Props = {
   adminConsoleMetadata?: Metadata;
@@ -547,39 +548,6 @@ const DashboardVersionCard = (props: Props) => {
     );
   };
 
-  const renderEditConfigIcon = (
-    version: Version | null,
-    isPending: boolean
-  ) => {
-    if (!selectedApp?.isConfigurable) {
-      return null;
-    }
-    if (!version) {
-      return null;
-    }
-    if (version.status === "pending_download") {
-      return null;
-    }
-    if (version.status === "pending_config") {
-      // action button will already be set to "Configure", no need to show edit config icon as well
-      return null;
-    }
-
-    let url = `/app/${selectedApp?.slug}/config/${version.sequence}`;
-    if (isHelmManaged) {
-      url = `${url}?isPending=${isPending}&semver=${version.versionLabel}`;
-    }
-
-    return (
-      <div className="u-marginLeft--10">
-        <Link to={url} data-tip="Edit config">
-          <Icon icon="edit-config" size={22} />
-        </Link>
-        <ReactTooltip effect="solid" className="replicated-tooltip" />
-      </div>
-    );
-  };
-
   const finalizeDeployment = async (
     continueWithFailedPreflights: boolean,
     redeploy: boolean
@@ -711,7 +679,7 @@ const DashboardVersionCard = (props: Props) => {
           <div className="flex flex1 alignItems--center justifyContent--flexEnd">
             {renderReleaseNotes(currentVersion)}
             {renderPreflights(currentVersion)}
-            {renderEditConfigIcon(currentVersion, false)}
+            <EditConfigIcon version={currentVersion} isPending={false} />
             {selectedApp ? (
               <div className="u-marginLeft--10">
                 <span
@@ -1180,7 +1148,7 @@ const DashboardVersionCard = (props: Props) => {
       <div className="flex flex1 alignItems--center justifyContent--flexEnd">
         {renderReleaseNotes(version)}
         {renderPreflights(version)}
-        {renderEditConfigIcon(version, true)}
+        <EditConfigIcon version={version} isPending={true} />
         <div className="flex-column justifyContent--center u-marginLeft--10">
           <button
             className={classNames("btn", {
