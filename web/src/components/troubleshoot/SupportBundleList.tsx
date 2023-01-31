@@ -158,19 +158,28 @@ export const SupportBundleList = (props: Props) => {
   }, [props.bundle]);
 
   const prevLoadingBundleId = usePrevious(props.loadingBundleId);
+  const prevDeleteBundleId = usePrevious(deleteBundleId);
 
   useEffect(() => {
+    // if the current bundle to delete is the same as the bundle that is loading
+    // stop the polling
     if (props.loadingBundleId === deleteBundleId) {
       state.pollForBundleAnalysisProgress.stop();
       props.updateState({ loadingBundleId: "", loadingBundle: false });
     }
-    console.log(prevLoadingBundleId, "prev");
-    if (prevLoadingBundleId && deleteBundleId === "") {
+    // if the loading bundle is done and user previously tried to delete the bundle, and changed their mind (undo)
+    // refresh the list
+    if (prevLoadingBundleId === "" && prevDeleteBundleId) {
+      listSupportBundles();
+    }
+    // if the loading bundle is not done and user tried to delete a bundle, and changed their mind (undo)
+    // refresh the list, which will start polling again, and show the progress bar
+    if (prevLoadingBundleId === prevDeleteBundleId && deleteBundleId === "") {
       props.updateState({
         loadingBundleId: prevLoadingBundleId,
         loadingBundle: true,
       });
-      state.pollForBundleAnalysisProgress.start();
+      listSupportBundles();
       // need to refresh show the progress bar
     }
   }, [deleteBundleId]);
