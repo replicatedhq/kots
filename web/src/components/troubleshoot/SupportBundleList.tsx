@@ -67,7 +67,7 @@ export const SupportBundleList = (props: Props) => {
     isToastVisible,
     toastMessage,
     toastType,
-    setIsCancelled,
+    setIsToastVisible,
     toastChild,
   } = useContext(ToastContext);
 
@@ -169,7 +169,11 @@ export const SupportBundleList = (props: Props) => {
     }
     // if the loading bundle is done and user previously tried to delete the bundle, and changed their mind (undo)
     // refresh the list
-    if (prevLoadingBundleId === "" && prevDeleteBundleId) {
+    if (
+      prevLoadingBundleId === "" &&
+      prevDeleteBundleId !== "" &&
+      deleteBundleId === ""
+    ) {
       listSupportBundles();
     }
     // if the loading bundle is not done and user tried to delete a bundle, and changed their mind (undo)
@@ -359,7 +363,7 @@ export const SupportBundleList = (props: Props) => {
             icon="close"
             size={10}
             className="tw-mx-4 tw-cursor-pointer"
-            onClick={() => setIsCancelled(false)}
+            onClick={() => setIsToastVisible(false)}
           />
         </div>
       </Toast>
