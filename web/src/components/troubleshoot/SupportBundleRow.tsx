@@ -55,7 +55,6 @@ export const SupportBundleRow = (props: Props) => {
     setDeleteBundleId,
     setToastMessage,
     setToastType,
-    toastChild,
     setToastChild,
   } = useContext(ToastContext);
 
@@ -480,16 +479,24 @@ export const SupportBundleRow = (props: Props) => {
                   <Icon icon="download" size={16} className="clickable" />
                 </span>
               )}
-              <span
-                className="u-fontSize--small link u-textDecoration--underlineOnHover"
-                onClick={() => deleteBundle(bundle)}
-              >
+              {percentage >= 98 ? (
                 <Icon
                   icon="trash"
                   size={16}
-                  className="clickable tw-ml-2 error-color"
+                  className={"tw-ml-2 gray-color not-clickable"}
                 />
-              </span>
+              ) : (
+                <span
+                  className="u-fontSize--small link u-textDecoration--underlineOnHover"
+                  onClick={() => deleteBundle(bundle)}
+                >
+                  <Icon
+                    icon="trash"
+                    size={16}
+                    className={"tw-ml-2 error-color clickable"}
+                  />
+                </span>
+              )}
             </div>
           </div>
         </div>
