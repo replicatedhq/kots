@@ -8,12 +8,10 @@ export default {
   component: UploadSupportBundleModal,
 } as ComponentMeta<typeof UploadSupportBundleModal>;
 
-const Template: ComponentStory<typeof UploadSupportBundleModal> = (args) => (
+const Template: ComponentStory<typeof UploadSupportBundleModal> = () => (
   <MemoryRouter>
-    <UploadSupportBundleModal {...args} />
+    <UploadSupportBundleModal />
   </MemoryRouter>
 );
 
 export const UploadSupportBundleModalExample = Template.bind({});
-
-UploadSupportBundleModalExample.args = {};
