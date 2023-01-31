@@ -39,6 +39,7 @@ import {
   ResourceStates,
   Version,
 } from "@types";
+import { useUpdatedStatus } from "../api/getUpdatedStatus";
 //import LicenseTester from "./LicenseTester";
 
 type Props = {
@@ -170,6 +171,7 @@ const Dashboard = (props: Props) => {
   const history = useHistory();
   const match = useRouteMatch();
   const { app, isBundleUploading, isVeleroInstalled } = props;
+  const { data: updatedStatus, mutate: getUpdatedStatus } = useUpdatedStatus();
   const airgapUploader = useRef<AirgapUploader | null>(null);
 
   const fetchAppDownstream = async () => {
@@ -302,6 +304,7 @@ const Dashboard = (props: Props) => {
   };
 
   const updateStatus = (): Promise<void> => {
+    console.log("update status");
     return new Promise((resolve, reject) => {
       fetch(
         `${process.env.API_ENDPOINT}/app/${app?.slug}/task/updatedownload`,
@@ -317,6 +320,7 @@ const Dashboard = (props: Props) => {
           const response = await res.json();
 
           if (response.status !== "running" && !props.isBundleUploading) {
+            console.log("stoped here");
             state.updateChecker.stop();
 
             setState({
@@ -346,6 +350,7 @@ const Dashboard = (props: Props) => {
   };
 
   const onUploadComplete = () => {
+    console.log("upload completed");
     state.updateChecker.start(updateStatus, 1000);
     setState({
       uploadingAirgapFile: false,
@@ -678,7 +683,8 @@ const Dashboard = (props: Props) => {
       getAirgapConfig();
     }
 
-    state.updateChecker.start(updateStatus, 1000);
+    getUpdatedStatus();
+    // state.updateChecker.start(updateStatus, 1000);
     if (app) {
       setWatchState(app);
       getAppLicense();
@@ -688,6 +694,10 @@ const Dashboard = (props: Props) => {
       state.fetchAppDownstreamJob.stop();
     };
   }, []);
+
+  useEffect(() => {
+    console.log("updatedStatus", updatedStatus);
+  }, [updatedStatus]);
 
   const onCheckForUpdates = async () => {
     setState({
