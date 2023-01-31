@@ -72,6 +72,8 @@ type Props = {
   makingCurrentVersionErrMsg: string;
   redeployVersion: (slug: string, version: Version | null) => void;
   redeployVersionErrMsg: string;
+  resetMakingCurrentReleaseErrorMessage: () => void;
+  resetRedeployErrorMessage: () => void;
   refreshAppData: () => void;
   toggleErrorModal: () => void;
   toggleIsBundleUploading: (isUploading: boolean) => void;
@@ -1717,6 +1719,8 @@ class AppVersionHistory extends Component<Props, State> {
       wrappedMatch,
       makingCurrentVersionErrMsg,
       redeployVersionErrMsg,
+      resetRedeployErrorMessage,
+      resetMakingCurrentReleaseErrorMessage,
     } = this.props;
 
     const {
@@ -1799,24 +1803,23 @@ class AppVersionHistory extends Component<Props, State> {
           <div className="flex flex1 justifyContent--center">
             <div className="flex1 flex AppVersionHistory">
               {makingCurrentVersionErrMsg && (
-                <div className="ErrorWrapper flex justifyContent--center">
-                  <div className="icon redWarningIcon u-marginRight--10" />
-                  <div>
-                    <p className="title">Failed to deploy version</p>
-                    <p className="err">{makingCurrentVersionErrMsg}</p>
-                  </div>
-                </div>
+                <ErrorModal
+                  errorModal={true}
+                  err="Failed to deploy version"
+                  errMsg={makingCurrentVersionErrMsg}
+                  showDismissButton={true}
+                  toggleErrorModal={resetMakingCurrentReleaseErrorMessage}
+                />
               )}
               {redeployVersionErrMsg && (
-                <div className="ErrorWrapper flex justifyContent--center">
-                  <div className="icon redWarningIcon u-marginRight--10" />
-                  <div>
-                    <p className="title">Failed to redeploy version</p>
-                    <p className="err">{redeployVersionErrMsg}</p>
-                  </div>
-                </div>
+                <ErrorModal
+                  errorModal={true}
+                  err="Failed to redeploy version"
+                  errMsg={redeployVersionErrMsg}
+                  showDismissButton={true}
+                  toggleErrorModal={resetRedeployErrorMessage}
+                />
               )}
-
               {!gitopsIsConnected && (
                 <div
                   className="flex-column flex1"
