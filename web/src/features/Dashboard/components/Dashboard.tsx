@@ -39,7 +39,8 @@ import {
   ResourceStates,
   Version,
 } from "@types";
-import { useUpdatedStatus } from "../api/getUpdatedStatus";
+import { useAppDownstream } from "../api/getAppDownstream";
+import { useUpdateStatus } from "../api/getUpdatedStatus";
 //import LicenseTester from "./LicenseTester";
 
 type Props = {
@@ -171,7 +172,9 @@ const Dashboard = (props: Props) => {
   const history = useHistory();
   const match = useRouteMatch();
   const { app, isBundleUploading, isVeleroInstalled } = props;
-  const { data: updatedStatus, mutate: getUpdatedStatus } = useUpdatedStatus();
+  const { data: updatedStatus } = useUpdateStatus();
+  const { refetch: refetchAppDownstream } = useAppDownstream();
+
   const airgapUploader = useRef<AirgapUploader | null>(null);
 
   const fetchAppDownstream = async () => {
@@ -683,7 +686,6 @@ const Dashboard = (props: Props) => {
       getAirgapConfig();
     }
 
-    getUpdatedStatus();
     // state.updateChecker.start(updateStatus, 1000);
     if (app) {
       setWatchState(app);
@@ -696,7 +698,20 @@ const Dashboard = (props: Props) => {
   }, []);
 
   useEffect(() => {
-    console.log("updatedStatus", updatedStatus);
+    if (updatedStatus && !props.isBundleUploading) {
+      setState({
+        checkingForUpdates: false,
+        checkingUpdateMessage: updatedStatus.currentMessage,
+        checkingForUpdateError: updatedStatus.status === "failed",
+      });
+
+      getAppLicense();
+      if (props.updateCallback) {
+        props.updateCallback();
+      }
+
+      refetchAppDownstream();
+    }
   }, [updatedStatus]);
 
   const onCheckForUpdates = async () => {

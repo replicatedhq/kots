@@ -1,9 +1,8 @@
-import { useMutation, useQueryClient } from "react-query";
+import { useQuery } from "react-query";
 import { Utilities } from "../../../utilities/utilities";
 import { useSelectedApp } from "@features/App";
 
-export const getUpdatedStatus = async (appSlug: string) => {
-  console.log("fetching updated status");
+export const getUpdateStatus = async (appSlug: string) => {
   try {
     const res = await fetch(
       `${process.env.API_ENDPOINT}/app/${appSlug}/task/updatedownload`,
@@ -38,15 +37,15 @@ export const getUpdatedStatus = async (appSlug: string) => {
   }
 };
 
-export const useUpdatedStatus = () => {
+export const useUpdateStatus = () => {
   const { selectedApp } = useSelectedApp();
-  const queryClient = useQueryClient();
 
-  return useMutation({
-    mutationFn: () => getUpdatedStatus(selectedApp?.slug || ""),
+  return useQuery({
+    queryFn: () => getUpdateStatus(selectedApp?.slug || ""),
+    queryKey: ["getUpdateStatus"],
     onError: (err: Error) => console.log(err),
-    onSuccess: () => queryClient.invalidateQueries("getAppDownstream"),
+    refetchInterval: (data) => (data?.status !== "running" ? false : 1000),
   });
 };
 
-export default { useUpdatedStatus };
+export default { useUpdateStatus };
