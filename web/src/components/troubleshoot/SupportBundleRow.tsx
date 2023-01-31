@@ -479,24 +479,16 @@ export const SupportBundleRow = (props: Props) => {
                   <Icon icon="download" size={16} className="clickable" />
                 </span>
               )}
-              {percentage >= 98 ? (
+              <span
+                className="u-fontSize--small link u-textDecoration--underlineOnHover"
+                onClick={() => deleteBundle(bundle)}
+              >
                 <Icon
                   icon="trash"
                   size={16}
-                  className={"tw-ml-2 gray-color not-clickable"}
+                  className={"tw-ml-2 error-color clickable"}
                 />
-              ) : (
-                <span
-                  className="u-fontSize--small link u-textDecoration--underlineOnHover"
-                  onClick={() => deleteBundle(bundle)}
-                >
-                  <Icon
-                    icon="trash"
-                    size={16}
-                    className={"tw-ml-2 error-color clickable"}
-                  />
-                </span>
-              )}
+              </span>
             </div>
           </div>
         </div>
