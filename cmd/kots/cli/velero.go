@@ -48,6 +48,7 @@ func VeleroCmd() *cobra.Command {
 	cmd.AddCommand(VeleroConfigureAzureCmd())
 	cmd.AddCommand(VeleroConfigureNFSCmd())
 	cmd.AddCommand(VeleroConfigureHostPathCmd())
+	cmd.AddCommand(VeleroPrintFileSystemInstructionsCmd())
 	cmd.AddCommand(VeleroMigrateMinioFileSystemCmd())
 
 	return cmd
@@ -366,8 +367,7 @@ func VeleroConfigureOtherS3Cmd() *cobra.Command {
 				return errors.Wrap(err, "failed to get registry config")
 			}
 			if registryConfig.OverrideRegistry == "" {
-				// user did not pass registry info. check if there's already an existing registry configuration.
-				// this is needed to preserve backwards compatibility.
+				// check if there's already an existing registry configuration.
 				rc, err := kotsadm.GetRegistryConfigFromCluster(namespace, clientset)
 				if err != nil {
 					return errors.Wrap(err, "failed to get registry options from cluster")
@@ -742,6 +742,11 @@ func VeleroConfigureNFSCmd() *cobra.Command {
 				return err
 			}
 
+			clientset, err := k8sutil.GetClientset()
+			if err != nil {
+				return errors.Wrap(err, "failed to get clientset")
+			}
+
 			nfsPath := v.GetString("nfs-path")
 			nfsServer := v.GetString("nfs-server")
 
@@ -763,6 +768,14 @@ func VeleroConfigureNFSCmd() *cobra.Command {
 			if err != nil {
 				return errors.Wrap(err, "failed to get registry config")
 			}
+			if registryConfig.OverrideRegistry == "" {
+				// check if there's already an existing registry configuration.
+				rc, err := kotsadm.GetRegistryConfigFromCluster(namespace, clientset)
+				if err != nil {
+					return errors.Wrap(err, "failed to get registry options from cluster")
+				}
+				registryConfig = &rc
+			}
 
 			log := logger.NewCLILogger(cmd.OutOrStdout())
 
@@ -774,7 +787,7 @@ func VeleroConfigureNFSCmd() *cobra.Command {
 				SkipValidation:   v.GetBool("skip-validation"),
 				IsMinioDisabled:  !v.GetBool("with-minio"),
 			}
-			return veleroConfigureFileSystem(cmd.Context(), log, opts)
+			return veleroConfigureFileSystem(cmd.Context(), clientset, log, opts)
 		},
 	}
 
@@ -808,8 +821,12 @@ func VeleroConfigureHostPathCmd() *cobra.Command {
 				return err
 			}
 
-			hostPath := v.GetString("hostpath")
+			clientset, err := k8sutil.GetClientset()
+			if err != nil {
+				return errors.Wrap(err, "failed to get clientset")
+			}
 
+			hostPath := v.GetString("hostpath")
 			if hostPath == "" {
 				return errors.New("--hostpath option is required")
 			}
@@ -822,6 +839,14 @@ func VeleroConfigureHostPathCmd() *cobra.Command {
 			if err != nil {
 				return errors.Wrap(err, "failed to get registry config")
 			}
+			if registryConfig.OverrideRegistry == "" {
+				// check if there's already an existing registry configuration.
+				rc, err := kotsadm.GetRegistryConfigFromCluster(namespace, clientset)
+				if err != nil {
+					return errors.Wrap(err, "failed to get registry options from cluster")
+				}
+				registryConfig = &rc
+			}
 
 			log := logger.NewCLILogger(cmd.OutOrStdout())
 
@@ -833,7 +858,7 @@ func VeleroConfigureHostPathCmd() *cobra.Command {
 				SkipValidation:   v.GetBool("skip-validation"),
 				IsMinioDisabled:  !v.GetBool("with-minio"),
 			}
-			return veleroConfigureFileSystem(cmd.Context(), log, opts)
+			return veleroConfigureFileSystem(cmd.Context(), clientset, log, opts)
 		},
 	}
 
@@ -859,12 +884,7 @@ type VeleroConfigureFileSystemOptions struct {
 	IsLegacyDeployment bool
 }
 
-func veleroConfigureFileSystem(ctx context.Context, log *logger.CLILogger, opts VeleroConfigureFileSystemOptions) error {
-	clientset, err := k8sutil.GetClientset()
-	if err != nil {
-		return errors.Wrap(err, "failed to get clientset")
-	}
-
+func veleroConfigureFileSystem(ctx context.Context, clientset kubernetes.Interface, log *logger.CLILogger, opts VeleroConfigureFileSystemOptions) error {
 	// Check for existing status; bail if not enabled
 	isMinioDisabled, err := snapshot.IsFileSystemMinioDisabled(opts.Namespace)
 	if err != nil {
@@ -982,6 +1002,70 @@ func deployVeleroMinioFileSystem(ctx context.Context, clientset kubernetes.Inter
 
 	log.FinishChildSpinner()
 	return nil
+}
+
+// (DEPRECATED) VeleroPrintFileSystemInstrunctions prints instructions for setting up a file system (e.g. NFS, Host Path) as the snapshots storage destination
+func VeleroPrintFileSystemInstructionsCmd() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:           "print-fs-instructions",
+		Short:         "Prints instructions for setting up a file system as the snapshots storage destination (e.g. NFS, Host Path, etc..)",
+		Long:          `This command is deprecated and will be removed in a future release. Please us configure-hostpath or configure-nfs instead.`,
+		SilenceUsage:  true,
+		SilenceErrors: false,
+		PreRun: func(cmd *cobra.Command, args []string) {
+			viper.BindPFlags(cmd.Flags())
+		},
+		RunE: func(cmd *cobra.Command, args []string) error {
+			v := viper.GetViper()
+			log := logger.NewCLILogger(cmd.OutOrStdout())
+
+			namespace := v.GetString("namespace")
+			if err := validateNamespace(namespace); err != nil {
+				return err
+			}
+
+			clientset, err := k8sutil.GetClientset()
+			if err != nil {
+				return errors.Wrap(err, "failed to get clientset")
+			}
+
+			registryConfig, err := getRegistryConfig(v)
+			if err != nil {
+				return errors.Wrap(err, "failed to get registry config")
+			}
+			if registryConfig.OverrideRegistry == "" {
+				// check if there's already an existing registry configuration.
+				rc, err := kotsadm.GetRegistryConfigFromCluster(namespace, clientset)
+				if err != nil {
+					return errors.Wrap(err, "failed to get registry options from cluster")
+				}
+				registryConfig = &rc
+			}
+
+			isMinioDisabled, err := snapshot.IsFileSystemMinioDisabled(namespace)
+			if err != nil {
+				return errors.Wrap(err, "failed to check for existing snapshot preference")
+			}
+
+			blue := color.New(color.FgHiBlue).SprintFunc()
+			kotsConfigureCommand := fmt.Sprintf("	* To configure a host path as the storage destination, please refer to: %s\n", blue("https://docs.replicated.com/reference/kots-cli-velero-configure-hostpath"))
+			kotsConfigureCommand += fmt.Sprintf("	* To configure NFS as the storage destination, please refer to: %s", blue("https://docs.replicated.com/reference/kots-cli-velero-configure-nfs"))
+
+			if !v.GetBool("with-minio") || isMinioDisabled {
+				print.VeleroInstallationInstructionsForCLI(log, image.Lvp, registryConfig, kotsConfigureCommand)
+			} else {
+				print.VeleroInstallationInstructionsForCLI(log, snapshottypes.VeleroAWSPlugin, registryConfig, kotsConfigureCommand)
+			}
+
+			return nil
+		},
+	}
+
+	cmd.Flags().Bool("with-minio", true, "when set, kots will deploy minio for hostpath snapshot locations")
+
+	registryFlags(cmd.Flags())
+
+	return cmd
 }
 
 func promptForFileSystemReset(log *logger.CLILogger, warningMsg string) bool {
