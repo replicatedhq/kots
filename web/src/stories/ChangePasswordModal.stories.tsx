@@ -1,26 +1,24 @@
 import React from "react";
 import { ComponentStory, ComponentMeta } from "@storybook/react";
 import { MemoryRouter } from "react-router-dom";
-import ChangePasswordForm from "@src/components/modals/ChangePasswordModal/ChangePasswordForm";
+import ChangePasswordModal from "@src/components/modals/ChangePasswordModal/ChangePasswordModal";
 
 export default {
-  title: "Example/ChangePasswordForm",
-  component: ChangePasswordForm,
-} as ComponentMeta<typeof ChangePasswordForm>;
+  title: "Example/ChangePasswordModal",
+  component: ChangePasswordModal,
+} as ComponentMeta<typeof ChangePasswordModal>;
 
-const Template: ComponentStory<typeof ChangePasswordForm> = (args) => (
+const Template: ComponentStory<typeof ChangePasswordModal> = (args) => (
   <MemoryRouter>
-    <ChangePasswordForm {...args} />
+    <ChangePasswordModal {...args} />
   </MemoryRouter>
 );
 
-export const ChangePasswordFormExample = Template.bind({});
+export const ChangePasswordModalExample = Template.bind({});
 
-ChangePasswordFormExample.args = {
-  handleClose: () => {
+ChangePasswordModalExample.args = {
+  isOpen: true,
+  closeModal: () => {
     alert("close");
-  },
-  handleSetPasswordChangeSuccessful: () => {
-    alert("set password change successful");
   },
 };
