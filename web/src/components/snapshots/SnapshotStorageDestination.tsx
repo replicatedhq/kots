@@ -37,7 +37,7 @@ type FileSystemProviderInstruction = {
   title: string;
   action: string;
   type: FileSystemProviderInstructionType;
-}
+};
 
 type State = {
   azureBucket?: string;
@@ -1522,11 +1522,9 @@ class SnapshotStorageDestination extends Component<Props, State> {
 
     return instructions.map((instruction, index) => {
       let action;
-      if (instruction.type == "link") {
+      if (instruction.type === "link") {
         action = (
-          <span
-            className="link u-fontSize--small u-cursor--pointer"
-          >
+          <span className="link u-fontSize--small u-cursor--pointer">
             <a href={instruction.action} target="_blank" className="link">
               {instruction.action}
             </a>
@@ -1552,7 +1550,7 @@ class SnapshotStorageDestination extends Component<Props, State> {
           <div className="flex">
             <span className="circleNumberGray u-marginRight--10">
               {" "}
-              {index+1}{" "}
+              {index + 1}{" "}
             </span>
           </div>
           <div className="flex flex-column">
@@ -1560,14 +1558,12 @@ class SnapshotStorageDestination extends Component<Props, State> {
               {" "}
               {instruction.title}{" "}
             </p>
-            <div className="flex u-marginTop--5">
-              {action}
-            </div>
+            <div className="flex u-marginTop--5">{action}</div>
           </div>
         </div>
-      )
-    })
-  }
+      );
+    });
+  };
 
   render() {
     const {
@@ -1645,8 +1641,10 @@ class SnapshotStorageDestination extends Component<Props, State> {
       (d) => d.value === this.state?.selectedDestination?.value
     );
 
-    const showResetFileSystemWarningModal = this.props.showResetFileSystemWarningModal;
-    const resetFileSystemWarningMessage = this.props.resetFileSystemWarningMessage;
+    const showResetFileSystemWarningModal =
+      this.props.showResetFileSystemWarningModal;
+    const resetFileSystemWarningMessage =
+      this.props.resetFileSystemWarningMessage;
 
     return (
       <div className="flex1 flex-column u-marginTop--40">
@@ -1835,7 +1833,9 @@ class SnapshotStorageDestination extends Component<Props, State> {
         {this.state.showFileSystemProviderInstructionsModal && (
           <Modal
             isOpen={this.state.showFileSystemProviderInstructionsModal}
-            onRequestClose={this.hideConfigureFileSystemProviderInstructionsModal}
+            onRequestClose={
+              this.hideConfigureFileSystemProviderInstructionsModal
+            }
             shouldReturnFocusAfterClose={false}
             contentLabel="File system next steps"
             ariaHideApp={false}
@@ -1850,7 +1850,9 @@ class SnapshotStorageDestination extends Component<Props, State> {
                 <button
                   type="button"
                   className="btn blue primary"
-                  onClick={this.hideConfigureFileSystemProviderInstructionsModal}
+                  onClick={
+                    this.hideConfigureFileSystemProviderInstructionsModal
+                  }
                 >
                   Ok, got it!
                 </button>
