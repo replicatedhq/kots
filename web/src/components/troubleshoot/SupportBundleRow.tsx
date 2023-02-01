@@ -30,7 +30,7 @@ type Props = {
   loadingBundle: boolean;
   progressData: SupportBundleProgress;
   refetchBundleList: () => void;
-  deleteBundleFromList: (id: string) => void;
+  //deleteBundleFromList: (id: string) => void;
   watchSlug: string;
   className: string;
 } & withRouterType;
@@ -200,8 +200,9 @@ export const SupportBundleRow = (props: Props) => {
         }
       );
       if (res.ok) {
-        await props.deleteBundleFromList(bundle.id);
+        //await props.deleteBundleFromList(bundle.id);
         setIsToastVisible(false);
+        props.refetchBundleList();
         clearInterval(id);
       } else {
         console.log(res);

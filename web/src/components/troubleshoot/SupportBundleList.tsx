@@ -71,13 +71,13 @@ export const SupportBundleList = (props: Props) => {
     toastChild,
   } = useContext(ToastContext);
 
-  const deleteBundleFromList = (deleteId: string) => {
-    setState({
-      supportBundles: state.supportBundles?.filter(
-        (bundle) => bundle.id !== deleteId
-      ),
-    });
-  };
+  // const deleteBundleFromList = (deleteId: string) => {
+  //   setState({
+  //     supportBundles: state.supportBundles?.filter(
+  //       (bundle) => bundle.id !== deleteId
+  //     ),
+  //   });
+  // };
 
   const listSupportBundles = () => {
     setState({
@@ -237,7 +237,7 @@ export const SupportBundleList = (props: Props) => {
               watch?.isSupportBundleUploadSupported
             }
             refetchBundleList={listSupportBundles}
-            deleteBundleFromList={deleteBundleFromList}
+            //  deleteBundleFromList={deleteBundleFromList}
             progressData={
               props.loadingBundleId === bundle.id && props.bundleProgress
             }
