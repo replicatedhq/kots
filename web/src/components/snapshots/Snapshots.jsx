@@ -348,7 +348,7 @@ class Snapshots extends Component {
       const result = await res.json();
       if (!result.store) {
         // a backup storage location is not configured yet
-        this.props.history.replace("/snapshots/settings");
+        this.props.history.replace("/snapshots/settings?configure=true");
         return;
       }
 
