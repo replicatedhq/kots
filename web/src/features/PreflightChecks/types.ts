@@ -20,16 +20,18 @@ interface PreflightResponseResult {
   createdAt: string; // ISO 8601
   hasFailingStrictPreflights: boolean;
   skipped: boolean;
-  result: {
-    errors?: PreflightResponseError[];
-    results?: PreflightResponseResultItem[];
-  } | string;
+  result:
+    | {
+        errors?: PreflightResponseError[];
+        results?: PreflightResponseResultItem[];
+      }
+    | string;
 }
 
 interface PreflightResponseError {
   error: string;
   isRbac: boolean;
-};
+}
 
 interface PreflightResponseResultItem {
   // has one isFail isPass isWarn
