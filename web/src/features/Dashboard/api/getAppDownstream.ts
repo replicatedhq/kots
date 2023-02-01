@@ -15,11 +15,7 @@ export const getAppDownstream = async (appSlug: string) => {
 
     if (res.ok && res.status == 200) {
       const appResponse = await res.json();
-      // if we're not waiting on any results then stop the polling
       return appResponse;
-      // wait a couple of seconds to avoid any race condiditons with the update checker then refetch the app to ensure we have the latest everything
-      // this is hacky and I hate it but it's just building up more evidence in my case for having the FE be able to listen to BE envents
-      // if that was in place we would have no need for this becuase the latest version would just be pushed down.
     } else {
       console.log("something went wrong");
 
