@@ -15,6 +15,7 @@ export const getAppDownstream = async (appSlug: string) => {
 
     if (res.ok && res.status == 200) {
       const appResponse = await res.json();
+
       return appResponse;
     } else {
       console.log("something went wrong");
@@ -35,10 +36,11 @@ export const useAppDownstream = () => {
     queryFn: () => getAppDownstream(selectedApp?.slug || ""),
     queryKey: ["getAppDownstream"],
     onError: (err: Error) => console.log(err),
-    refetchInterval: (data) =>
-      data && !isAwaitingResults(data?.downstream?.pendingVersions)
+    refetchInterval: (downstream) =>
+      downstream && !isAwaitingResults(downstream?.pendingVersions)
         ? false
-        : 1000,
+        : 2000,
+    select: (data) => data?.downstream,
   });
 };
 
