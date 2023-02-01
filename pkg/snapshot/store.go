@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"context"
 	"crypto/md5"
+	"encoding/base64"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
@@ -46,6 +47,8 @@ import (
 
 const (
 	DefaultBackupStorageLocationName = "default"
+	CloudCredentialsSecretName       = "cloud-credentials"
+	RegistryImagePullSecretName      = "registry-credentials"
 	SnapshotMigrationArtifactName    = "kotsadm-velero-migration"
 	SnapshotStoreHostPathProvider    = "replicated.com/hostpath"
 	SnapshotStoreNFSProvider         = "replicated.com/nfs"
@@ -122,10 +125,19 @@ func ConfigureStore(ctx context.Context, options ConfigureStoreOptions) (*types.
 		}
 	}
 
-	// update the store in the cluster
-	updatedBSL, err := updateGlobalStore(ctx, newStore, options.KotsadmNamespace)
+	// update/create the store in the cluster
+	updatedBSL, err := upsertGlobalStore(ctx, newStore, options.KotsadmNamespace, options.RegistryConfig)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to update global store")
+	}
+
+	// if a registry is configured, ensure the image pull secret is present
+	if err := ensureImagePullSecret(ctx, clientset, updatedBSL.Namespace, options.RegistryConfig); err != nil {
+		return nil, errors.Wrap(err, "failed to ensure image pull secret")
+	}
+
+	if err := ensureSecretsReferences(ctx, clientset, updatedBSL.Namespace); err != nil {
+		return nil, errors.Wrap(err, "failed to ensure secrets references")
 	}
 
 	if err := resetResticRepositories(ctx, options.KotsadmNamespace); err != nil {
@@ -402,8 +414,8 @@ func buildNewStore(ctx context.Context, clientset kubernetes.Interface, existing
 	return store, needsVeleroRestart, nil
 }
 
-// updateGlobalStore will update the in-cluster storage with exactly what's in the store param
-func updateGlobalStore(ctx context.Context, store *types.Store, kotsadmNamespace string) (*velerov1.BackupStorageLocation, error) {
+// upsertGlobalStore will update the in-cluster storage with exactly what's in the store param
+func upsertGlobalStore(ctx context.Context, store *types.Store, kotsadmNamespace string, registryConfig *kotsadmtypes.RegistryConfig) (*velerov1.BackupStorageLocation, error) {
 	cfg, err := k8sutil.GetClusterConfig()
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get cluster config")
@@ -464,7 +476,7 @@ func updateGlobalStore(ctx context.Context, store *types.Store, kotsadmNamespace
 			return nil, errors.Wrap(err, "failed to format aws credentials")
 		}
 
-		if err := ensureCloudCredentialsSecret(ctx, clientset, bsl, awsCredentials); err != nil {
+		if err := ensureCloudCredentialsSecret(ctx, clientset, bsl.Namespace, awsCredentials); err != nil {
 			return nil, errors.Wrap(err, "failed to ensure cloud credentials secret")
 		}
 	} else if store.Other != nil {
@@ -479,7 +491,7 @@ func updateGlobalStore(ctx context.Context, store *types.Store, kotsadmNamespace
 			return nil, errors.Wrap(err, "failed to format other credentials")
 		}
 
-		if err := ensureCloudCredentialsSecret(ctx, clientset, bsl, otherCredentials); err != nil {
+		if err := ensureCloudCredentialsSecret(ctx, clientset, bsl.Namespace, otherCredentials); err != nil {
 			return nil, errors.Wrap(err, "failed to ensure cloud credentials secret")
 		}
 	} else if store.Internal != nil {
@@ -501,7 +513,7 @@ func updateGlobalStore(ctx context.Context, store *types.Store, kotsadmNamespace
 				return nil, errors.Wrap(err, "failed to format internal credentials")
 			}
 
-			if err := ensureCloudCredentialsSecret(ctx, clientset, bsl, internalCredentials); err != nil {
+			if err := ensureCloudCredentialsSecret(ctx, clientset, bsl.Namespace, internalCredentials); err != nil {
 				return nil, errors.Wrap(err, "failed to ensure cloud credentials secret")
 			}
 		} else {
@@ -528,12 +540,12 @@ func updateGlobalStore(ctx context.Context, store *types.Store, kotsadmNamespace
 			}
 
 			// delete the secret
-			err := clientset.CoreV1().Secrets(bsl.Namespace).Delete(ctx, "cloud-credentials", metav1.DeleteOptions{})
+			err := clientset.CoreV1().Secrets(bsl.Namespace).Delete(ctx, CloudCredentialsSecretName, metav1.DeleteOptions{})
 			if err != nil && !kuberneteserrors.IsNotFound(err) {
 				return nil, errors.Wrap(err, "failed to delete google creds secret")
 			}
 		} else {
-			if err := ensureCloudCredentialsSecret(ctx, clientset, bsl, []byte(store.Google.JSONFile)); err != nil {
+			if err := ensureCloudCredentialsSecret(ctx, clientset, bsl.Namespace, []byte(store.Google.JSONFile)); err != nil {
 				return nil, errors.Wrap(err, "failed to ensure cloud credentials secret")
 			}
 		}
@@ -553,7 +565,7 @@ func updateGlobalStore(ctx context.Context, store *types.Store, kotsadmNamespace
 			ResourceGroup:  store.Azure.ResourceGroup,
 			CloudName:      store.Azure.CloudName,
 		}
-		if err := ensureCloudCredentialsSecret(ctx, clientset, bsl, providers.RenderAzureConfig(config)); err != nil {
+		if err := ensureCloudCredentialsSecret(ctx, clientset, bsl.Namespace, providers.RenderAzureConfig(config)); err != nil {
 			return nil, errors.Wrap(err, "failed to ensure cloud credentials secret")
 		}
 	} else {
@@ -568,10 +580,10 @@ func updateGlobalStore(ctx context.Context, store *types.Store, kotsadmNamespace
 	return updated, nil
 }
 
-func ensureCloudCredentialsSecret(ctx context.Context, clientset kubernetes.Interface, bsl *velerov1.BackupStorageLocation, creds []byte) error {
-	credsSecret, err := clientset.CoreV1().Secrets(bsl.Namespace).Get(ctx, "cloud-credentials", metav1.GetOptions{})
+func ensureCloudCredentialsSecret(ctx context.Context, clientset kubernetes.Interface, veleroNamespace string, creds []byte) error {
+	credsSecret, err := clientset.CoreV1().Secrets(veleroNamespace).Get(ctx, CloudCredentialsSecretName, metav1.GetOptions{})
 	if err != nil && !kuberneteserrors.IsNotFound(err) {
-		return errors.Wrap(err, "failed to read aws secret")
+		return errors.Wrap(err, "failed to read secret")
 	}
 
 	if kuberneteserrors.IsNotFound(err) {
@@ -581,16 +593,16 @@ func ensureCloudCredentialsSecret(ctx context.Context, clientset kubernetes.Inte
 				Kind:       "Secret",
 			},
 			ObjectMeta: metav1.ObjectMeta{
-				Name:      "cloud-credentials",
-				Namespace: bsl.Namespace,
+				Name:      CloudCredentialsSecretName,
+				Namespace: veleroNamespace,
 			},
 			Data: map[string][]byte{
 				"cloud": creds,
 			},
 		}
-		_, err := clientset.CoreV1().Secrets(bsl.Namespace).Create(ctx, toCreate, metav1.CreateOptions{})
+		_, err := clientset.CoreV1().Secrets(veleroNamespace).Create(ctx, toCreate, metav1.CreateOptions{})
 		if err != nil {
-			return errors.Wrap(err, "failed to create cloud credentials secret")
+			return errors.Wrap(err, "failed to create secret")
 		}
 	} else {
 		if credsSecret.Data == nil {
@@ -598,36 +610,124 @@ func ensureCloudCredentialsSecret(ctx context.Context, clientset kubernetes.Inte
 		}
 		credsSecret.Data["cloud"] = creds
 
-		if _, err := clientset.CoreV1().Secrets(bsl.Namespace).Update(ctx, credsSecret, metav1.UpdateOptions{}); err != nil {
-			return errors.Wrap(err, "failed to update cloud credentials secret")
+		if _, err := clientset.CoreV1().Secrets(veleroNamespace).Update(ctx, credsSecret, metav1.UpdateOptions{}); err != nil {
+			return errors.Wrap(err, "failed to update secret")
 		}
 	}
 
-	// ensure that velero has the secret mounted
-	veleroDeployment, err := clientset.AppsV1().Deployments(bsl.Namespace).Get(ctx, "velero", metav1.GetOptions{})
+	return nil
+}
+
+func ensureImagePullSecret(ctx context.Context, clientset kubernetes.Interface, veleroNamespace string, registryConfig *kotsadmtypes.RegistryConfig) error {
+	if registryConfig == nil ||
+		registryConfig.OverrideRegistry == "" ||
+		registryConfig.Username == "" ||
+		registryConfig.Password == "" {
+		return nil
+	}
+
+	type DockercfgAuth struct {
+		Auth string `json:"auth,omitempty"`
+	}
+	type DockerCfgJSON struct {
+		Auths map[string]DockercfgAuth `json:"auths"`
+	}
+
+	host := strings.Split(registryConfig.OverrideRegistry, "/")[0]
+
+	dockercfgAuth := DockercfgAuth{
+		Auth: base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("%s:%s", registryConfig.Username, registryConfig.Password))),
+	}
+	dockerCfgJSON := DockerCfgJSON{
+		Auths: map[string]DockercfgAuth{
+			host: dockercfgAuth,
+		},
+	}
+
+	secretData, err := json.Marshal(dockerCfgJSON)
+	if err != nil {
+		return errors.Wrap(err, "failed to marshal pull secret data")
+	}
+
+	imagePullSecret, err := clientset.CoreV1().Secrets(veleroNamespace).Get(ctx, RegistryImagePullSecretName, metav1.GetOptions{})
+	if err != nil && !kuberneteserrors.IsNotFound(err) {
+		return errors.Wrap(err, "failed to read secret")
+	}
+
+	if kuberneteserrors.IsNotFound(err) {
+		toCreate := &corev1.Secret{
+			TypeMeta: metav1.TypeMeta{
+				APIVersion: "v1",
+				Kind:       "Secret",
+			},
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      RegistryImagePullSecretName,
+				Namespace: veleroNamespace,
+			},
+			Type: corev1.SecretTypeDockerConfigJson,
+			Data: map[string][]byte{
+				".dockerconfigjson": secretData,
+			},
+		}
+		_, err := clientset.CoreV1().Secrets(veleroNamespace).Create(ctx, toCreate, metav1.CreateOptions{})
+		if err != nil {
+			return errors.Wrap(err, "failed to create secret")
+		}
+	} else {
+		if imagePullSecret.Data == nil {
+			imagePullSecret.Data = map[string][]byte{}
+		}
+		imagePullSecret.Data[".dockerconfigjson"] = secretData
+
+		if _, err := clientset.CoreV1().Secrets(veleroNamespace).Update(ctx, imagePullSecret, metav1.UpdateOptions{}); err != nil {
+			return errors.Wrap(err, "failed to update secret")
+		}
+	}
+
+	return nil
+}
+
+func ensureSecretsReferences(ctx context.Context, clientset kubernetes.Interface, veleroNamespace string) error {
+	veleroDeployment, err := clientset.AppsV1().Deployments(veleroNamespace).Get(ctx, "velero", metav1.GetOptions{})
 	if err != nil {
 		return errors.Wrap(err, "failed to get velero deployment")
 	}
 
-	veleroDeployment.Spec.Template.Spec.Volumes = k8sutil.MergeVolumes(veleroDeployment.Spec.Template.Spec.Volumes, cloudCredentialsVolumes(), false)
-	veleroDeployment.Spec.Template.Spec.Containers[0].VolumeMounts = k8sutil.MergeVolumeMounts(veleroDeployment.Spec.Template.Spec.Containers[0].VolumeMounts, cloudCredentialsVolumeMounts(), false)
-	veleroDeployment.Spec.Template.Spec.Containers[0].Env = k8sutil.MergeEnvVars(veleroDeployment.Spec.Template.Spec.Containers[0].Env, cloudCredentialsEnvVars(), false)
-
-	if _, err := clientset.AppsV1().Deployments(bsl.Namespace).Update(ctx, veleroDeployment, metav1.UpdateOptions{}); err != nil {
-		return errors.Wrap(err, "failed to update velero deployment")
-	}
-
-	// ensure that restic has the secret mounted
-	resticDaemonset, err := clientset.AppsV1().DaemonSets(bsl.Namespace).Get(ctx, "restic", metav1.GetOptions{})
+	resticDaemonset, err := clientset.AppsV1().DaemonSets(veleroNamespace).Get(ctx, "restic", metav1.GetOptions{})
 	if err != nil {
 		return errors.Wrap(err, "failed to get restic daemonset")
 	}
 
-	resticDaemonset.Spec.Template.Spec.Volumes = k8sutil.MergeVolumes(resticDaemonset.Spec.Template.Spec.Volumes, cloudCredentialsVolumes(), false)
-	resticDaemonset.Spec.Template.Spec.Containers[0].VolumeMounts = k8sutil.MergeVolumeMounts(resticDaemonset.Spec.Template.Spec.Containers[0].VolumeMounts, cloudCredentialsVolumeMounts(), false)
-	resticDaemonset.Spec.Template.Spec.Containers[0].Env = k8sutil.MergeEnvVars(resticDaemonset.Spec.Template.Spec.Containers[0].Env, cloudCredentialsEnvVars(), false)
+	_, err = clientset.CoreV1().Secrets(veleroNamespace).Get(ctx, CloudCredentialsSecretName, metav1.GetOptions{})
+	if err != nil && !kuberneteserrors.IsNotFound(err) {
+		return errors.Wrap(err, "failed to read cloud credentials secret")
+	}
+	if err == nil {
+		// ensure that velero and restic have the cloud credentials secret mounted
+		veleroDeployment.Spec.Template.Spec.Volumes = k8sutil.MergeVolumes(cloudCredentialsVolumes(), veleroDeployment.Spec.Template.Spec.Volumes, false)
+		veleroDeployment.Spec.Template.Spec.Containers[0].VolumeMounts = k8sutil.MergeVolumeMounts(cloudCredentialsVolumeMounts(), veleroDeployment.Spec.Template.Spec.Containers[0].VolumeMounts, false)
+		veleroDeployment.Spec.Template.Spec.Containers[0].Env = k8sutil.MergeEnvVars(cloudCredentialsEnvVars(), veleroDeployment.Spec.Template.Spec.Containers[0].Env, false)
 
-	if _, err := clientset.AppsV1().DaemonSets(bsl.Namespace).Update(ctx, resticDaemonset, metav1.UpdateOptions{}); err != nil {
+		resticDaemonset.Spec.Template.Spec.Volumes = k8sutil.MergeVolumes(cloudCredentialsVolumes(), resticDaemonset.Spec.Template.Spec.Volumes, false)
+		resticDaemonset.Spec.Template.Spec.Containers[0].VolumeMounts = k8sutil.MergeVolumeMounts(cloudCredentialsVolumeMounts(), resticDaemonset.Spec.Template.Spec.Containers[0].VolumeMounts, false)
+		resticDaemonset.Spec.Template.Spec.Containers[0].Env = k8sutil.MergeEnvVars(cloudCredentialsEnvVars(), resticDaemonset.Spec.Template.Spec.Containers[0].Env, false)
+	}
+
+	_, err = clientset.CoreV1().Secrets(veleroNamespace).Get(ctx, RegistryImagePullSecretName, metav1.GetOptions{})
+	if err != nil && !kuberneteserrors.IsNotFound(err) {
+		return errors.Wrap(err, "failed to read image pull secret")
+	}
+	if err == nil {
+		// ensure that velero and restic have the image pull secret referenced
+		veleroDeployment.Spec.Template.Spec.ImagePullSecrets = k8sutil.MergeImagePullSecrets([]corev1.LocalObjectReference{{Name: RegistryImagePullSecretName}}, veleroDeployment.Spec.Template.Spec.ImagePullSecrets, false)
+		resticDaemonset.Spec.Template.Spec.ImagePullSecrets = k8sutil.MergeImagePullSecrets([]corev1.LocalObjectReference{{Name: RegistryImagePullSecretName}}, resticDaemonset.Spec.Template.Spec.ImagePullSecrets, false)
+	}
+
+	if _, err := clientset.AppsV1().Deployments(veleroNamespace).Update(ctx, veleroDeployment, metav1.UpdateOptions{}); err != nil {
+		return errors.Wrap(err, "failed to update velero deployment")
+	}
+
+	if _, err := clientset.AppsV1().DaemonSets(veleroNamespace).Update(ctx, resticDaemonset, metav1.UpdateOptions{}); err != nil {
 		return errors.Wrap(err, "failed to update restic daemonset")
 	}
 
@@ -640,7 +740,7 @@ func cloudCredentialsVolumes() []corev1.Volume {
 			Name: "cloud-credentials",
 			VolumeSource: corev1.VolumeSource{
 				Secret: &corev1.SecretVolumeSource{
-					SecretName: "cloud-credentials",
+					SecretName: CloudCredentialsSecretName,
 				},
 			},
 		},
@@ -721,7 +821,7 @@ func updateMinioFileSystemStore(ctx context.Context, clientset kubernetes.Interf
 		return errors.Wrap(err, "failed to format file system credentials")
 	}
 
-	if err := ensureCloudCredentialsSecret(ctx, clientset, bsl, fileSystemCredentials); err != nil {
+	if err := ensureCloudCredentialsSecret(ctx, clientset, bsl.Namespace, fileSystemCredentials); err != nil {
 		return errors.Wrap(err, "failed to ensure cloud credentials secret")
 	}
 

@@ -72,3 +72,26 @@ func MergeVolumeMounts(desired []corev1.VolumeMount, existing []corev1.VolumeMou
 	}
 	return mergedVolumeMounts
 }
+
+func MergeImagePullSecrets(desired []corev1.LocalObjectReference, existing []corev1.LocalObjectReference, override bool) []corev1.LocalObjectReference {
+	mergedImagePullSecrets := []corev1.LocalObjectReference{}
+	mergedImagePullSecrets = append(mergedImagePullSecrets, existing...)
+	for _, desiredImagePullSecret := range desired {
+		idx := -1
+		for existingImagePullSecretIndex, existingImagePullSecret := range existing {
+			if existingImagePullSecret.Name != desiredImagePullSecret.Name {
+				continue
+			}
+			idx = existingImagePullSecretIndex
+			break
+		}
+		if idx == -1 {
+			// not found, add it
+			mergedImagePullSecrets = append(mergedImagePullSecrets, *desiredImagePullSecret.DeepCopy())
+		} else if override {
+			// found and should override
+			mergedImagePullSecrets[idx] = *desiredImagePullSecret.DeepCopy()
+		}
+	}
+	return mergedImagePullSecrets
+}

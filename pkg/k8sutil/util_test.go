@@ -501,3 +501,120 @@ func TestMergeVolumeMounts(t *testing.T) {
 		})
 	}
 }
+
+func TestMergeImagePullSecrets(t *testing.T) {
+	type args struct {
+		desired  []corev1.LocalObjectReference
+		existing []corev1.LocalObjectReference
+		override bool
+	}
+	tests := []struct {
+		name string
+		args args
+		want []corev1.LocalObjectReference
+	}{
+		{
+			name: "override",
+			args: args{
+				desired: []corev1.LocalObjectReference{
+					{
+						Name: "foo",
+					},
+				},
+				existing: []corev1.LocalObjectReference{
+					{
+						Name: "foo",
+					},
+				},
+				override: true,
+			},
+			want: []corev1.LocalObjectReference{
+				{
+					Name: "foo",
+				},
+			},
+		},
+		{
+			name: "no override",
+			args: args{
+				desired: []corev1.LocalObjectReference{
+					{
+						Name: "foo",
+					},
+				},
+				existing: []corev1.LocalObjectReference{
+					{
+						Name: "foo",
+					},
+				},
+				override: false,
+			},
+			want: []corev1.LocalObjectReference{
+				{
+					Name: "foo",
+				},
+			},
+		},
+		{
+			name: "add new and override",
+			args: args{
+				desired: []corev1.LocalObjectReference{
+					{
+						Name: "foo",
+					},
+					{
+						Name: "bar",
+					},
+				},
+				existing: []corev1.LocalObjectReference{
+					{
+						Name: "bar",
+					},
+				},
+				override: true,
+			},
+			want: []corev1.LocalObjectReference{
+				{
+					Name: "bar",
+				},
+				{
+					Name: "foo",
+				},
+			},
+		},
+		{
+			name: "add new and no override",
+			args: args{
+				desired: []corev1.LocalObjectReference{
+					{
+						Name: "foo",
+					},
+					{
+						Name: "bar",
+					},
+				},
+				existing: []corev1.LocalObjectReference{
+					{
+						Name: "bar",
+					},
+				},
+				override: false,
+			},
+			want: []corev1.LocalObjectReference{
+				{
+					Name: "bar",
+				},
+				{
+					Name: "foo",
+				},
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := MergeImagePullSecrets(tt.args.desired, tt.args.existing, tt.args.override); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("MergeImagePullSecrets() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}

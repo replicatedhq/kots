@@ -346,11 +346,6 @@ class Snapshots extends Component {
       }
 
       const result = await res.json();
-      if (!result.store) {
-        // a backup storage location is not configured yet
-        this.props.history.replace("/snapshots/settings?configure=true");
-        return;
-      }
 
       this.setState({
         snapshotSettings: result,
@@ -360,7 +355,12 @@ class Snapshots extends Component {
         displayErrorModal: false,
       });
       if (result?.isVeleroRunning && result?.isResticRunning) {
-        this.state.listSnapshotsJob.start(this.listInstanceSnapshots, 2000);
+        if (!result?.store) {
+          // velero and restic are running but a backup storage location is not configured yet
+          this.props.history.replace("/snapshots/settings");
+        } else {
+          this.state.listSnapshotsJob.start(this.listInstanceSnapshots, 2000);
+        }
       } else {
         this.props.history.push("/snapshots/settings?configure=true");
       }
