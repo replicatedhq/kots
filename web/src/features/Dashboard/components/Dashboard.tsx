@@ -307,7 +307,6 @@ const Dashboard = (props: Props) => {
   };
 
   const updateStatus = (): Promise<void> => {
-    console.log("update status");
     return new Promise((resolve, reject) => {
       fetch(
         `${process.env.API_ENDPOINT}/app/${app?.slug}/task/updatedownload`,
@@ -353,7 +352,6 @@ const Dashboard = (props: Props) => {
   };
 
   const onUploadComplete = () => {
-    console.log("upload completed");
     state.updateChecker.start(updateStatus, 1000);
     setState({
       uploadingAirgapFile: false,
