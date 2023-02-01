@@ -93,13 +93,18 @@ func (e *InvalidStoreDataError) Error() string {
 }
 
 func ConfigureStore(ctx context.Context, options ConfigureStoreOptions) (*types.Store, error) {
+	existingStore, err := GetGlobalStore(ctx, options.KotsadmNamespace, nil)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get store")
+	}
+
 	clientset, err := k8sutil.GetClientset()
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get k8s clientset")
 	}
 
 	// build a new store with the new configuration
-	newStore, needsVeleroRestart, err := buildNewStore(ctx, clientset, options)
+	newStore, needsVeleroRestart, err := buildNewStore(ctx, clientset, existingStore, options)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to update existing store")
 	}
@@ -149,11 +154,8 @@ func ConfigureStore(ctx context.Context, options ConfigureStoreOptions) (*types.
 	return updatedStore, nil
 }
 
-func buildNewStore(ctx context.Context, clientset kubernetes.Interface, options ConfigureStoreOptions) (*types.Store, bool, error) {
-	store, err := GetGlobalStore(ctx, options.KotsadmNamespace, nil)
-	if err != nil {
-		return nil, false, errors.Wrap(err, "failed to get store")
-	}
+func buildNewStore(ctx context.Context, clientset kubernetes.Interface, existingStore *types.Store, options ConfigureStoreOptions) (*types.Store, bool, error) {
+	store := existingStore
 	if store == nil {
 		store = &types.Store{}
 	}
