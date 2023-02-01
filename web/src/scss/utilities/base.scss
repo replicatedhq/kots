@@ -170,31 +170,37 @@ body a {
   font-weight: 500;
   white-space: nowrap;
 
-  &.degraded {
-    color: #ebb55c;
-    background-color: #fffdf6;
+  // app resource state status colors //
+  &.missing {
+    color: #f65c5c;
+    background-color: #ffd1c7;
   }
-  &.updating {
-    color: #ebb55c;
-    background-color: #fffdf6;
-  }
+
   &.unavailable {
     color: #ec8f39;
     background-color: #fbe9d7;
   }
+
+  &.degraded {
+    color: #ebb55c;
+    background-color: #fffdf6;
+  }
+
+  &.updating {
+    color: #ebb55c;
+    background-color: #fffdf6;
+  }
+
+  &.ready {
+    color: #44bb66;
+    background-color: #ecf8f0;
+  }
+  // version status colors //
   &.success {
     background-color: $success-color;
     color: #ffffff;
   }
-  &.ready {
-    background-color: $success-color;
-    color: #ffffff;
-  }
   &.failed {
-    background-color: $error-color;
-    color: #ffffff;
-  }
-  &.missing {
     background-color: $error-color;
     color: #ffffff;
   }
