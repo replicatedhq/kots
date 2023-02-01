@@ -186,7 +186,15 @@ body a {
     background-color: $success-color;
     color: #ffffff;
   }
+  &.ready {
+    background-color: $success-color;
+    color: #ffffff;
+  }
   &.failed {
+    background-color: $error-color;
+    color: #ffffff;
+  }
+  &.missing {
     background-color: $error-color;
     color: #ffffff;
   }
