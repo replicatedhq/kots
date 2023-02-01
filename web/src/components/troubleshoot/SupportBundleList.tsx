@@ -21,7 +21,7 @@ import GenerateSupportBundleModal from "./GenerateSupportBundleModal";
 import { useHistory } from "react-router-dom";
 import { ToastContext } from "@src/context/ToastContext";
 import Toast from "@components/shared/Toast";
-// import { usePrevious } from "@src/hooks/usePrevious";
+import { usePrevious } from "@src/hooks/usePrevious";
 
 type Props = {
   bundle: SupportBundle;
@@ -157,36 +157,36 @@ export const SupportBundleList = (props: Props) => {
     }
   }, [props.bundle]);
 
-  // const prevLoadingBundleId = usePrevious(props.loadingBundleId);
-  // const prevDeleteBundleId = usePrevious(deleteBundleId);
+  const prevLoadingBundleId = usePrevious(props.loadingBundleId);
+  const prevDeleteBundleId = usePrevious(deleteBundleId);
 
-  // useEffect(() => {
-  //   // if the current bundle to delete is the same as the bundle that is loading
-  //   // stop the polling
-  //   if (props.loadingBundleId === deleteBundleId) {
-  //     state.pollForBundleAnalysisProgress.stop();
-  //     props.updateState({ loadingBundleId: "", loadingBundle: false });
-  //   }
-  //   // if the loading bundle is done and user previously tried to delete the bundle, and changed their mind (undo)
-  //   // refresh the list
-  //   if (
-  //     prevLoadingBundleId === "" &&
-  //     prevDeleteBundleId !== "" &&
-  //     deleteBundleId === ""
-  //   ) {
-  //     listSupportBundles();
-  //   }
-  //   // if the loading bundle is not done and user tried to delete a bundle, and changed their mind (undo)
-  //   // refresh the list, which will start polling again, and show the progress bar
-  //   if (prevLoadingBundleId === prevDeleteBundleId && deleteBundleId === "") {
-  //     props.updateState({
-  //       loadingBundleId: prevLoadingBundleId,
-  //       loadingBundle: true,
-  //     });
-  //     listSupportBundles();
-  //     // need to refresh show the progress bar
-  //   }
-  // }, [deleteBundleId]);
+  useEffect(() => {
+    // if the current bundle to delete is the same as the bundle that is loading
+    // stop the polling
+    if (props.loadingBundleId === deleteBundleId) {
+      state.pollForBundleAnalysisProgress.stop();
+      props.updateState({ loadingBundleId: "", loadingBundle: false });
+    }
+    // if the loading bundle is done and user previously tried to delete the bundle, and changed their mind (undo)
+    // refresh the list
+    if (
+      prevLoadingBundleId === "" &&
+      prevDeleteBundleId !== "" &&
+      deleteBundleId === ""
+    ) {
+      listSupportBundles();
+    }
+    // if the loading bundle is not done and user tried to delete a bundle, and changed their mind (undo)
+    // refresh the list, which will start polling again, and show the progress bar
+    if (prevLoadingBundleId === prevDeleteBundleId && deleteBundleId === "") {
+      props.updateState({
+        loadingBundleId: prevLoadingBundleId,
+        loadingBundle: true,
+      });
+      listSupportBundles();
+      // need to refresh show the progress bar
+    }
+  }, [deleteBundleId]);
 
   const toggleGenerateBundleModal = () => {
     setState({
