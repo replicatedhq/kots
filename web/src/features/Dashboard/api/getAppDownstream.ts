@@ -7,7 +7,7 @@ import { Downstream } from "@types";
 export const getAppDownstream = async (
   appSlug: string
 ): Promise<Downstream | null> => {
-  const res = await fetch(`${process.env.API_ENDPOINT}/pp/${appSlug}`, {
+  const res = await fetch(`${process.env.API_ENDPOINT}/app/${appSlug}`, {
     headers: {
       Authorization: Utilities.getToken(),
       "Content-Type": "application/json",
