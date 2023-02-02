@@ -1756,7 +1756,7 @@ class AppVersionHistory extends Component<Props, State> {
     const downstream = app?.downstream;
     const gitopsIsConnected = downstream.gitops?.isConnected;
     const currentDownstreamVersion = downstream?.currentVersion;
-    const iconUri = currentDownstreamVersion?.iconUri || app?.iconUri;
+    const iconUri = currentDownstreamVersion?.appIconUri || app?.iconUri;
     const isPastVersion = find(downstream?.pastVersions, {
       sequence: this.state.versionToDeploy?.sequence,
     });

@@ -5,7 +5,8 @@ import warning from "../../images/warning.svg";
 import { IconWrapper } from "./constants";
 
 const renderIcons = (app) => {
-  const appIconUri = app?.downstream?.currentVersion?.iconUri || app?.iconUri;
+  const appIconUri =
+    app?.downstream?.currentVersion?.appIconUri || app?.iconUri;
   if (appIconUri) {
     return (
       <IconWrapper

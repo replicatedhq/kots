@@ -228,8 +228,8 @@ export type Version = {
   sequence: number;
   source: string;
   status: VersionStatus;
-  title: string;
-  iconUri: string;
+  appTitle: string;
+  appIconUri: string;
   updateCursor: string;
   versionLabel?: string;
   yamlErrors: string[];

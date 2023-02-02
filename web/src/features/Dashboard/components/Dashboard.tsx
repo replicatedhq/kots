@@ -228,9 +228,10 @@ const Dashboard = (props: Props) => {
     setState({
       currentVersion: newAppState.downstream?.currentVersion,
       appName:
-        newAppState.downstream?.currentVersion?.title || newAppState.name,
+        newAppState.downstream?.currentVersion?.appTitle || newAppState.name,
       iconUri:
-        newAppState.downstream?.currentVersion?.iconUri || newAppState.iconUri,
+        newAppState.downstream?.currentVersion?.appIconUri ||
+        newAppState.iconUri,
       downstream: newAppState.downstream,
       links: newAppState.downstream?.links,
     });
