@@ -71,6 +71,7 @@ export const SupportBundleList = (props: Props) => {
     toastChild,
   } = useContext(ToastContext);
 
+  // rework this so full page refresh is not needed.
   // const deleteBundleFromList = (deleteId: string) => {
   //   setState({
   //     supportBundles: state.supportBundles?.filter(
