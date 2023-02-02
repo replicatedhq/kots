@@ -31,7 +31,9 @@ import (
 	"github.com/replicatedhq/kots/pkg/midstream"
 	"github.com/replicatedhq/kots/pkg/operator/client"
 	operatortypes "github.com/replicatedhq/kots/pkg/operator/types"
+	registrytypes "github.com/replicatedhq/kots/pkg/registry/types"
 	"github.com/replicatedhq/kots/pkg/render"
+	rendertypes "github.com/replicatedhq/kots/pkg/render/types"
 	"github.com/replicatedhq/kots/pkg/reporting"
 	"github.com/replicatedhq/kots/pkg/store"
 	storetypes "github.com/replicatedhq/kots/pkg/store/types"
@@ -236,6 +238,10 @@ func (o *Operator) DeployApp(appID string, sequence int64) (deployed bool, deplo
 		return false, errors.Wrap(err, "failed to get registry settings for app")
 	}
 
+	if err := o.ensureKotsadmApplicationMetadataConfigMap(app, sequence, util.PodNamespace, kotsKinds, registrySettings); err != nil {
+		return false, errors.Wrap(err, "failed to ensure kotsadm application metadata configmap")
+	}
+
 	builder, err := render.NewBuilder(kotsKinds, registrySettings, app.Slug, sequence, app.IsAirgap, util.PodNamespace)
 	if err != nil {
 		return false, errors.Wrap(err, "failed to get template builder")
@@ -344,12 +350,6 @@ func (o *Operator) DeployApp(appID string, sequence int64) (deployed bool, deplo
 			}
 		}
 	}
-
-	defer func() {
-		if err := o.ensureKotsadmApplicationMetadataConfigMap(app.UpstreamURI, kotsKinds, util.PodNamespace); err != nil {
-			logger.Error(errors.Wrap(err, "failed to ensure kotsadm application metadata configmap"))
-		}
-	}()
 
 	deployArgs := operatortypes.DeployAppArgs{
 		AppID:                app.ID,
@@ -770,20 +770,15 @@ func deduplicateSecrets(secretSpecs []string) []string {
 	return secretSpecs
 }
 
-func (o *Operator) ensureKotsadmApplicationMetadataConfigMap(upstreamURI string, kotsKinds *kotsutil.KotsKinds, namespace string) error {
-	kotsAppSpec, err := kotsKinds.Marshal("kots.io", "v1beta1", "Application")
-	if err != nil {
-		return errors.Wrap(err, "failed to marshal kots app spec")
-	}
-
+func (o *Operator) ensureKotsadmApplicationMetadataConfigMap(app *apptypes.App, sequence int64, namespace string, kotsKinds *kotsutil.KotsKinds, registrySettings registrytypes.RegistrySettings) error {
+	renderedKotsAppSpec, err := o.renderKotsApplicationSpec(app, sequence, namespace, kotsKinds, registrySettings, &render.Renderer{})
 	existingConfigMap, err := o.k8sClientset.CoreV1().ConfigMaps(namespace).Get(context.TODO(), "kotsadm-application-metadata", metav1.GetOptions{})
 	if err != nil {
 		if !kuberneteserrors.IsNotFound(err) {
 			return errors.Wrap(err, "failed to get existing metadata config map")
 		}
 
-		metadata := []byte(kotsAppSpec)
-		_, err := o.k8sClientset.CoreV1().ConfigMaps(namespace).Create(context.TODO(), kotsadmobjects.ApplicationMetadataConfig(metadata, namespace, upstreamURI), metav1.CreateOptions{})
+		_, err := o.k8sClientset.CoreV1().ConfigMaps(namespace).Create(context.TODO(), kotsadmobjects.ApplicationMetadataConfig(renderedKotsAppSpec, namespace, app.UpstreamURI), metav1.CreateOptions{})
 		if err != nil {
 			return errors.Wrap(err, "failed to create metadata config map")
 		}
@@ -794,11 +789,25 @@ func (o *Operator) ensureKotsadmApplicationMetadataConfigMap(upstreamURI string,
 		existingConfigMap.Data = map[string]string{}
 	}
 
-	existingConfigMap.Data["application.yaml"] = kotsAppSpec
+	existingConfigMap.Data["application.yaml"] = string(renderedKotsAppSpec)
 	_, err = o.k8sClientset.CoreV1().ConfigMaps(util.PodNamespace).Update(context.Background(), existingConfigMap, metav1.UpdateOptions{})
 	if err != nil {
 		return errors.Wrap(err, "failed to update config map")
 	}
 
 	return nil
+}
+
+func (o *Operator) renderKotsApplicationSpec(app *apptypes.App, sequence int64, namespace string, kotsKinds *kotsutil.KotsKinds, registrySettings registrytypes.RegistrySettings, renderer rendertypes.Renderer) ([]byte, error) {
+	marshalledKotsAppSpec, err := kotsKinds.Marshal("kots.io", "v1beta1", "Application")
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to marshal kots app spec")
+	}
+
+	renderedKotsAppSpec, err := renderer.RenderFile(kotsKinds, registrySettings, app.Slug, sequence, app.IsAirgap, namespace, []byte(marshalledKotsAppSpec))
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to render preflights")
+	}
+
+	return renderedKotsAppSpec, nil
 }
