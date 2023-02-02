@@ -65,7 +65,7 @@ main() {
 
     # TODO: revert to using the latest velero release once kots is able to migrate to velero 1.10+ since restic references have been renamed to node-agent
     # VELERO_RELEASE=$(curl -s "https://api.github.com/repos/vmware-tanzu/velero/releases/latest" | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/')
-    VELERO_RELEASE=v1.9.3
+    VELERO_RELEASE=v1.9.5
     echo "VELERO_RELEASE=$VELERO_RELEASE"
     curl -fsLo velero.tar.gz "https://github.com/vmware-tanzu/velero/releases/download/$VELERO_RELEASE/velero-$VELERO_RELEASE-$OS-$ARCH.tar.gz" \
         && tar xzf velero.tar.gz \
