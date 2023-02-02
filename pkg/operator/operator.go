@@ -191,6 +191,10 @@ func (o *Operator) DeployApp(appID string, sequence int64) (deployed bool, deplo
 		if err != nil {
 			logger.Error(errors.Wrap(err, "failed to update downstream status"))
 		}
+
+		if err := o.ensureKotsadmApplicationMetadataConfigMap(appID, util.PodNamespace); err != nil {
+			logger.Error(errors.Wrap(err, "failed to ensure kotsadm application metadata configmap"))
+		}
 	}()
 
 	app, err := o.store.GetApp(appID)
@@ -368,10 +372,6 @@ func (o *Operator) DeployApp(appID string, sequence int64) (deployed bool, deplo
 	deployed, err = o.client.DeployApp(deployArgs)
 	if err != nil {
 		return false, errors.Wrap(err, "failed to deploy app")
-	}
-
-	if err := o.ensureKotsadmApplicationMetadataConfigMap(util.PodNamespace, kotsKinds, app.UpstreamURI); err != nil {
-		return false, errors.Wrap(err, "failed to ensure kotsadm application metadata configmap")
 	}
 
 	if err := o.applyStatusInformers(app, sequence, kotsKinds, builder); err != nil {
@@ -768,7 +768,18 @@ func deduplicateSecrets(secretSpecs []string) []string {
 	return secretSpecs
 }
 
-func (o *Operator) ensureKotsadmApplicationMetadataConfigMap(namespace string, kotsKinds *kotsutil.KotsKinds, upstreamURI string) error {
+func (o *Operator) ensureKotsadmApplicationMetadataConfigMap(appID string, namespace string) error {
+	app, err := o.store.GetApp(appID)
+	if err != nil {
+		return errors.Wrap(err, "failed to get app")
+	}
+
+	currentDownstreamVersion, err := o.store.GetCurrentDownstreamVersion(appID, o.clusterID)
+	if err != nil {
+		return errors.Wrap(err, "failed to get current downstream version")
+	}
+
+	kotsKinds := currentDownstreamVersion.KOTSKinds
 	kotsAppSpec, err := kotsKinds.Marshal("kots.io", "v1beta1", "Application")
 	if err != nil {
 		return errors.Wrap(err, "failed to marshal kots app spec")
@@ -781,7 +792,7 @@ func (o *Operator) ensureKotsadmApplicationMetadataConfigMap(namespace string, k
 		}
 
 		metadata := []byte(kotsAppSpec)
-		_, err := o.k8sClientset.CoreV1().ConfigMaps(namespace).Create(context.TODO(), kotsadmobjects.ApplicationMetadataConfig(metadata, namespace, upstreamURI), metav1.CreateOptions{})
+		_, err := o.k8sClientset.CoreV1().ConfigMaps(namespace).Create(context.TODO(), kotsadmobjects.ApplicationMetadataConfig(metadata, namespace, app.UpstreamURI), metav1.CreateOptions{})
 		if err != nil {
 			return errors.Wrap(err, "failed to create metadata config map")
 		}

@@ -20,7 +20,7 @@ export const getLabel = (app, isSingleApp) => {
   const gitops = downstream?.gitops;
   const gitopsEnabled = gitops?.enabled;
   const gitopsConnected = gitops?.isConnected;
-  const appLabel = app?.downstream?.currentVersion?.title || app?.label;
+  const appLabel = app?.downstream?.currentVersion?.appTitle || app?.label;
 
   return (
     <div style={{ alignItems: "center", display: "flex" }}>
