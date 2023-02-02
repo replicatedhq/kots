@@ -4,6 +4,9 @@
 .clickable {
   cursor: pointer;
 }
+.not-clickable {
+  cursor: not-allowed;
+}
 .warning-color {
   color: #f7b500;
 }
