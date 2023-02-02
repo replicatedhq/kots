@@ -41,6 +41,7 @@ func (v *CLI) install(workspace, kubeconfig, s3Url, bucket string) (*gexec.Sessi
 		fmt.Sprintf("--secret-file=%s", filepath.Join(workspace, "aws-credentials")),
 		fmt.Sprintf("--prefix=%s", "/smoke-test-velero"),
 		"--use-restic",
+		"--use-volume-snapshots=false",
 		"--velero-pod-cpu-request=250m",
 		"--velero-pod-mem-request=128Mi",
 		"--velero-pod-cpu-limit=250m",
