@@ -1756,6 +1756,7 @@ class AppVersionHistory extends Component<Props, State> {
     const downstream = app?.downstream;
     const gitopsIsConnected = downstream.gitops?.isConnected;
     const currentDownstreamVersion = downstream?.currentVersion;
+    const iconUri = currentDownstreamVersion?.iconUri || app?.iconUri;
     const isPastVersion = find(downstream?.pastVersions, {
       sequence: this.state.versionToDeploy?.sequence,
     });
@@ -1830,12 +1831,12 @@ class AppVersionHistory extends Component<Props, State> {
                     </p>
                     <div className="currentVersion--wrapper card-item u-marginTop--10">
                       <div className="flex flex1">
-                        {app?.iconUri && (
+                        {iconUri && (
                           <div className="flex-auto u-marginRight--10">
                             <div
                               className="watch-icon"
                               style={{
-                                backgroundImage: `url(${app?.iconUri})`,
+                                backgroundImage: `url(${iconUri})`,
                               }}
                             ></div>
                           </div>

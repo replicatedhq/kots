@@ -229,6 +229,7 @@ export type Version = {
   source: string;
   status: VersionStatus;
   title: string;
+  iconUri: string;
   updateCursor: string;
   versionLabel?: string;
   yamlErrors: string[];

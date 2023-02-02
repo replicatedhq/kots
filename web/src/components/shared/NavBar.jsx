@@ -139,8 +139,10 @@ export class NavBar extends PureComponent {
     let licenseType;
     if (pathname.length > 2 && pathname[1] === "app") {
       selectedApp = appsList.find((app) => app.slug === pathname[2]);
-      appLogo = selectedApp?.iconUri;
       licenseType = selectedApp?.licenseType;
+      appLogo =
+        selectedApp?.downstream?.currentVersion?.iconUri ||
+        selectedApp?.iconUri;
     } else {
       appLogo = logo;
       licenseType = "";

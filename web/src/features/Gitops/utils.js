@@ -5,10 +5,11 @@ import warning from "../../images/warning.svg";
 import { IconWrapper } from "./constants";
 
 const renderIcons = (app) => {
-  if (app?.iconUri) {
+  const appIconUri = app?.downstream?.currentVersion?.iconUri || app?.iconUri;
+  if (appIconUri) {
     return (
       <IconWrapper
-        style={{ backgroundImage: `url(${app?.iconUri})` }}
+        style={{ backgroundImage: `url(${appIconUri})` }}
       ></IconWrapper>
     );
   }
@@ -18,6 +19,7 @@ export const getLabel = (app, isSingleApp) => {
   const gitops = downstream?.gitops;
   const gitopsEnabled = gitops?.enabled;
   const gitopsConnected = gitops?.isConnected;
+  const appLabel = app?.downstream?.currentVersion?.title || app?.label;
 
   return (
     <div style={{ alignItems: "center", display: "flex" }}>
@@ -34,10 +36,10 @@ export const getLabel = (app, isSingleApp) => {
                 color: "#323232",
               }}
             >
-              {app.label}
+              {appLabel}
             </span>
           ) : (
-            <span style={{ fontSize: 14 }}>{app.label}</span>
+            <span style={{ fontSize: 14 }}>{appLabel}</span>
           )}
         </div>
         <div style={{ fontSize: "14px" }}>

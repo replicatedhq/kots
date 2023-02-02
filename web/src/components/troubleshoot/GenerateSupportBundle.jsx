@@ -356,7 +356,7 @@ class GenerateSupportBundle extends React.Component {
       errorMsg,
     } = this.state;
     const { watch } = this.props;
-    const appTitle = watch.watchName || watch.name;
+    const appTitle = watch.downstream?.currentVersion?.title || watch.name;
 
     return (
       <div className="GenerateSupportBundle--wrapper container flex-column u-overflow--auto u-paddingTop--30 u-paddingBottom--20 alignItems--center">

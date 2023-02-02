@@ -5,7 +5,9 @@ import Icon from "@src/components/Icon";
 
 export default function KotsSidebarItem(props) {
   const { className, app } = props;
-  const { iconUri, name, slug } = app;
+  const { slug } = app;
+  const name = app.downstream?.currentVersion?.title || app.name;
+  const iconUri = app.downstream?.currentVersion?.iconUri || app.iconUri;
 
   let versionsBehind;
   if (app.downstream?.currentVersion) {
