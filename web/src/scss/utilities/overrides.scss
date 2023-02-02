@@ -179,7 +179,8 @@
 //   background: green;
 //   color: #faf3dd;
 // }
-// //degraded, updating, failed, skipped, unknown, required
+// // status-tag for version status: success, skipped, failed ,unknown, required
+// //status-tag for app resource status: also has:  missing, unavailable, degraded, updating, ready
 
 // .details-subnav {
 //   background-color: #faf3dd;
