@@ -2,39 +2,44 @@ import { useQuery } from "react-query";
 import { Utilities } from "../../../utilities/utilities";
 import { useSelectedApp } from "@features/App";
 
-export const getUpdateStatus = async (appSlug: string) => {
-  try {
-    const res = await fetch(
-      `${process.env.API_ENDPOINT}/app/${appSlug}/task/updatedownload`,
-      {
-        headers: {
-          Authorization: Utilities.getToken(),
-          "Content-Type": "application/json",
-        },
-        method: "GET",
-      }
-    );
+interface UpdateStatusResponse {
+  currentMessage: string;
+  status: string;
+}
+interface UpdateStatus {
+  checkingForUpdateError: boolean;
+  checkingForUpdates: boolean;
+  checkingUpdateMessage: string;
+  status: string;
+}
 
-    if (res.ok && res.status == 200) {
-      const appResponse = await res.json();
-      console.log(appResponse, "appResponse");
-      // if response status is not running, and not bundle uploading, stop updatechecker polling
-      // set the states
-      // getAppLicense
-      // if there is updateCallback -> updateCallback()
-      //startFetchAppDownstreamJob()
-      return appResponse;
-    } else {
-      console.log("something went wrong");
+const getUpdateStatus = async (
+  appSlug: string
+): Promise<UpdateStatusResponse> => {
+  const res = await fetch(
+    `${process.env.API_ENDPOINT}/app/${appSlug}/task/updatedownload`,
+    {
+      headers: {
+        Authorization: Utilities.getToken(),
+        "Content-Type": "application/json",
+      },
+      method: "GET",
+    }
+  );
 
-      throw new Error("could not getAppDownstream");
-    }
-  } catch (err) {
-    console.log("err");
-    if (err instanceof Error) {
-      throw err;
-    }
-  }
+  const appResponse = await res.json();
+  return appResponse;
+};
+
+const makeUpdateStatusResponse = (
+  response: UpdateStatusResponse
+): UpdateStatus => {
+  return {
+    checkingForUpdateError: response.status === "failed",
+    checkingForUpdates: response.status !== "running",
+    checkingUpdateMessage: response.currentMessage,
+    status: response.status,
+  };
 };
 
 export const useUpdateStatus = () => {
@@ -45,6 +50,8 @@ export const useUpdateStatus = () => {
     queryKey: ["getUpdateStatus"],
     onError: (err: Error) => console.log(err),
     refetchInterval: (data) => (data?.status !== "running" ? false : 1000),
+    select: (response: UpdateStatusResponse) =>
+      makeUpdateStatusResponse(response),
   });
 };
 
