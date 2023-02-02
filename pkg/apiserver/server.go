@@ -94,7 +94,12 @@ func Start(params *APIServerParams) {
 			HookStopChans:     []chan struct{}{},
 		}
 		store := store.GetStore()
-		op := operator.Init(client, store, params.AutocreateClusterToken)
+		k8sClientset, err := k8sutil.GetClientset()
+		if err != nil {
+			log.Println("error getting k8s clientset")
+			panic(err)
+		}
+		op := operator.Init(client, store, params.AutocreateClusterToken, k8sClientset)
 		if err := op.Start(); err != nil {
 			log.Println("error starting the operator")
 			panic(err)
