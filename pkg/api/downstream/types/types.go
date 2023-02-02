@@ -55,7 +55,7 @@ type DownstreamVersion struct {
 	KOTSKinds                  *kotsutil.KotsKinds             `json:"-"`
 	DownloadStatus             DownloadStatus                  `json:"downloadStatus,omitempty"`
 	AppTitle                   string                          `json:"appTitle,omitempty"`
-	AppIconURI                 string                          `json:"appIconUri"`
+	AppIconURI                 string                          `json:"appIconUri,omitempty"`
 }
 
 type DownloadStatus struct {
