@@ -53,9 +53,8 @@ export const useUpdateDownloadStatus = () => {
     queryKey: ["getUpdateStatus"],
     onError: (err: Error) => console.log(err),
     refetchInterval: (data) => (data?.status !== "running" ? false : 1000),
-    select: (response: UpdateStatusResponse) =>
-      makeUpdateStatusResponse(response),
+    select: makeUpdateStatusResponse,
   });
 };
 
-export default { useUpdateStatus };
+export default { useUpdateDownloadStatus };
