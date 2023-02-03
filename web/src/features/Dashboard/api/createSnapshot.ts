@@ -51,6 +51,7 @@ export const useCreateSnapshot = (option: string) => {
     select: (response: SnapshotResponse) => {
       createSnapshotResponse(response);
     },
+    enabled: false,
   });
 };
 
