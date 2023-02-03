@@ -27,6 +27,9 @@ const getUpdateStatus = async (
     }
   );
 
+  if (!res.ok) {
+    throw new Error("Error getting update status");
+  }
   const appResponse = await res.json();
   return appResponse;
 };
