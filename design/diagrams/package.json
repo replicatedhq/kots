@@ -1,0 +1,15 @@
+{
+  "scripts": {
+    "build": "run-p -c build-kots-flowchart build-kots-sequence",
+    "build-kots-containers": "mmdc -i kots_containers.mmd -o kots_containers.svg",
+    "build-kots-flowchart": "mmdc -i kots_install_flowchart.mmd -o kots_install_flowchart.svg",
+    "build-kots-sequence": "mmdc -i kots_install_sequence.mmd -o kots_install_sequence.svg"
+  },
+  "dependencies": {
+    "mermaid": "^9.3.0"
+  },
+  "devDependencies": {
+    "@mermaid-js/mermaid-cli": "^9.3.0",
+    "npm-run-all": "^4.1.5"
+  }
+}

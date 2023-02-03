@@ -1,0 +1,26 @@
+C4Container
+title Container diagram for the KOTS system
+
+System_Boundary(cluster, "Cluster") {
+  Container(k8s, "k8s api", "configmaps, namespaces, persistent volumes, pods, secrets, services, service accounts", "API for managing the cluster")
+  Container_Boundary(kotsadm, "KOTSAdm", "KOTS administration deployment"){
+    Component(kotsapi, "kotsadm API server", "Provides a REST interface for querying, installing, deploying, and troubleshooting apps")
+    Component(rqlite, "rqlite database", "Database for storing kotsadm data about apps, deployments, licenses, etc")
+  }
+}
+
+System_Boundary(local, "Local Machine") {
+  Container_Boundary(kubectl, "kubectl", "k8s cli interface for interacting with the k8s cluster"){
+    Container_Boundary(kotscli, "kotscli", "kubectl plugin for interacting with clusters, docker, and kubeadm"){
+      Component(kotscli-install, "install", "compenent that deploys kotsadm and an application to the cluster")
+    }
+  }
+}
+
+Rel(kotscli-install, k8s, "create, get, update configmaps", "Manage and read configurations for kotsadm, identity, ingress, and app deployments")
+Rel(kotscli-install, k8s, "create, get, namespaces", "Create and check the namespace for the app deployment")
+Rel(kotscli-install, k8s, "create, get, update persistent volume claims", "Create persistent volumes for kotsadm and app dpeloyments")
+Rel(kotscli-install, k8s, "create, get, update pods", "Manage pods for kotsadm, identity, ingress, and app deployments")
+Rel(kotscli-install, k8s, "create, get, update secrets", "Create and read secrets for kotsadm, identity, and app deployments")
+Rel(kotscli-install, k8s, "create, get, update services", "Manage and check services for kotsadm, identity, ingress, and app deployments")
+Rel(kotscli-install, k8s, "create, get, update service accounts", "Create service accounts for an app deployment")

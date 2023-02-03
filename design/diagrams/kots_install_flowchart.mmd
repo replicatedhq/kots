@@ -1,0 +1,114 @@
+flowchart TD
+	InstallCmd --> cliargs[Read command line arguments]
+	cliargs --> shouldCheckRBAC{Should RBAC settings be checked ?}
+	shouldCheckRBAC --> |"--skip-rbac-check not set and --ensure-rbac set (default)"| checkRBACk8sclient
+
+	subgraph "CheckRBAC()"
+		checkRBACk8sclient[Create a k8s client] --> selfsubjectaccessreview[Request a self subject access review from k8s for all actions on all resources]
+		selfsubjectaccessreview -- Access capabilities --> haveRBACAccess{Access allowed}
+	end
+
+	haveRBACAccess --> |Yes| haveLicenseFile{License file provided} --> |"Yes --license-file set"| readLicense[Read the license file provided]
+	shouldCheckRBAC --> |No| haveLicenseFile
+	haveLicenseFile --> |No| readRegistryOptions["Read registry command options (uri, creds, namespace) or use defaults"]
+	readLicense --> readRegistryOptions
+
+	subgraph "getRegistryConfig()"
+		readRegistryOptions --> isKurlclient[Create a k8s client] --> getKurlconfigmap[Request the kurl-config config map in the kube-system namespace]
+		getKurlconfigmap --> isRegistryBlank{Is there no registry uri and this and a kurl airgap install?}
+		isRegistryBlank --> |"Yes (KURL configmap exists and --airgap-bundle or --airgap are set"| loadLicense[Read the provided license file]
+		loadLicense --> registryclient[Create a k8s client] --> getKurlSecrets[Request secret registry-creds from the default namespace]
+		getKurlSecrets --> generateRegistryConfig[Generate the registry config from cli options or secrets]
+		isRegistryBlank --> |No| generateRegistryConfig
+	end
+
+	generateRegistryConfig --> startMetrics[Report the installation start to the metrics server]
+	startMetrics --> namespaceFlag{Namespace provided?} --> |No| promptNamespace[Prompt the user for the namespace]
+	namespaceFlag --> |"Yes from --namespace"| validateNamespace["Validate the namespace (k8s apimachinery library)"]
+	promptNamespace --> validateNamespace
+
+	validateNamespace --> isAirgapMetadata{Is this an airgap install?} --> |Yes| loadAirgapMetadata[Load the application metadata config from the airgap app archive]
+	isAirgapMetadata --> |No| readRepEndpoint[Read the replicated endpoint from env vars] --> getMetadata[Make a GET request to the replicated application api for the application metadata]
+
+	loadAirgapMetadata --> shouldCheckKotsVer{Should KOTS compatibility be checked?}
+	getMetadata --> shouldCheckKotsVer
+	shouldCheckKotsVer --> |"Yes (default)"| checkKotsVer[Decode application metadata and verify that installed kots cli is a valid version]
+	shouldCheckKotsVer --> |"No --skip-compitibility-check set"| configValuesExist{Is there a configvalues file?}
+	checkKotsVer --> configValuesExist
+
+	configValuesExist --> |"Yes --config-values set"| loadConfigValues[Load and decode the given configvalues file]
+	configValuesExist --> |No| createInstallClient[Create a k8s client]
+	loadConfigValues --> createInstallClient
+	createInstallClient --> getKurlConfigmap[Request the kurl-config config map in the kube-system namespace]
+
+	getKurlConfigmap --> ingressConfigExists{Should the ingress service be enabled?}
+	ingressConfigExists --> |"Yes --ingress-config or --enable-ingress set"| loadIngress[Load and decode the given ingress file or default setting]
+	ingressConfigExists --> |No| identityConfigExists{Should the identity service be enabled?}
+	loadIngress --> identityConfigExists
+
+	identityConfigExists --> |"Yes --identity-config or --enable-identity-service set"| loadIdentityConfig[Load and decode the given ingress file or default setting]
+	loadIdentityConfig --> validateIdentityConfig[Validate the identity config settings]
+
+	validateIdentityConfig --> getOpenShift[Request the ServerGroupsAndResources from the default namespace] --> checkOpenShift[Check if the cluster is running on OpenShift]
+	identityConfigExists --> |No| getOpenShift
+	checkOpenShift --> getGKE[Request the ServerGroupsAndResources from the default namespace] --> checkGKE[Check if the cluster is running on GKE]
+	checkGKE --> generateDeployOptions[Build the deploy options from cli options and gathered data]
+
+	generateDeployOptions --> installIsAirgap{Is this an airgap install?}
+	installIsAirgap --> |Yes| extractAirgap[Extract the airgap archive to a temporary directory]
+
+	subgraph "kotsadm.Deploy()"
+		installIsAirgap --> |No| isAirgapWithRegistryOverride{Is this an airgap install with a registry override?}
+		extractAirgap --> isAirgapWithRegistryOverride
+
+		isAirgapWithRegistryOverride --> |Yes| isImagePushDisabled{Is image pushing disabled?}
+		isImagePushDisabled --> |Yes| loadAirgapMeta["Load the airgap metadata file airgap.yml from the extracted bundle"]
+		loadAirgapMeta --> generateLocalImageNames["Generate a list of reformatted docker image names of images included in the bundle"]
+		isImagePushDisabled --> |No| loadAirgapMeta2["Load the airgap metadata file airgap.yml from the extracted bundle"]
+		loadAirgapMeta2 --> whatDockerType{Docker format are the image names?}
+		generateLocalImageNames --> whatDockerType
+		whatDockerType --> |Registry| pushRemoteImages[Push the images from a remote registry to the deployment registry]
+		whatDockerType --> |Archive| pushLocalImages[Load images from the archive and push them to the deployment registry]
+
+		pushLocalImages --> deployCreateClient[Create a k8s client]
+		pushRemoteImages --> deployCreateClient
+
+		deployCreateClient --> excludeAdmin{Is the admin console excluded?}
+		excludeAdmin --> |No| createDeployNamespace[Send create namespace request for the deploy namespace]
+		createDeployNamespace --> createDeployNamespaceError{Was there an error?}
+		createDeployNamespaceError --> |Yes| getDeployPods[Request the list of pods from the deploy namespace]
+		getDeployPods --> verifyDeployPods[Verify that the namespace exists]
+
+		verifyDeployPods --> shouldGenerateToken{Should the cluster token be generated?}
+		createDeployNamespaceError --> |No| shouldGenerateToken
+		excludeAdmin --> |No| shouldGenerateToken
+
+		shouldGenerateToken --> |Yes| generateToken[Generate a random UUID as the token]
+		shouldGenerateToken --> |No| getNamespaceLimits[Request the cluster limits on the deploy namespace]
+		generateToken --> getNamespaceLimits
+
+		getNamespaceLimits --> isDeployAirgap{Is this an airgap deployment?}
+		isDeployAirgap --> |Yes| createImagesJson[Encode and write docker images info to the images.json file in the airgap directory]
+		createImagesJson --> generateAirgapMeta[Generate the airgap metadata configmap from the bundle airgap.yml file]
+		generateAirgapMeta --> createAirgapMetaConfigmap[Send a create request for the generated configmap as kotsadm-airgap-meta in the deploy namespace]
+		createAirgapMetaConfigmap --> airgapMetaConfigmapExists{Does the configmap already exist?}
+		airgapMetaConfigmapExists --> |Yes| updateAirgapMetaConfigmap[Send an update request for the generated airgap metadata configmap]
+
+		airgapMetaConfigmapExists --> |No| createAirgapImagesConfigmap[Send a create request for the generate image list configmap as kotsadm-airgap-images in the deploy namespace]
+		updateAirgapMetaConfigmap --> createAirgapImagesConfigmap
+		createAirgapImagesConfigmap --> airgapImagesConfigmapExists{Does the configmap already exist?}
+		airgapImagesConfigmapExists --> |Yes| updateAirgapImagesConfigmap[Send an update request for the new airgap images configmap]
+
+		airgapImagesConfigmapExists --> |No| createAirgapWaitConfigmap[Send a create configmap request for kotsadm-config-app with wait-for-airgap-app set to true]
+		updateAirgapImagesConfigmap --> createAirgapWaitConfigmap
+		createAirgapWaitConfigmap --> airgapWaitConfigmapExists{Does the configmap already exist?}
+		airgapWaitConfigmapExists --> |Yes| updateAirgapWaitConfigmap[Send an update config map request for the app wait configmap]
+
+	end
+
+	subgraph "ensureKotsAdm()"
+		airgapWaitConfigmapExists --> |No| todo[more work to do]
+		isDeployAirgap --> |No| todo
+		updateAirgapWaitConfigmap --> todo
+
+	end

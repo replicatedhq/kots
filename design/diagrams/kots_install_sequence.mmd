@@ -1,0 +1,267 @@
+sequenceDiagram
+	participant kots as Kots CLI
+	participant k8s as Cluster k8s API
+	participant kotsadm as Kots Admin API
+	participant kotsdb as Kots Admin Database (rqlite)
+	participant kotsstore as Kots Admin Data Store (minio)
+	participant docker as Docker Registry
+	participant repli as Replicated API
+
+	%% Check that there are sufficient RBAC permissions on the cluster
+	note over kots, k8s: Check that there are sufficient priveledges on the cluster to deploy the app
+	kots -> k8s: Self Subject Access Review of resource attributes [Verb: *, Group: *, Version: *, Resource: *]
+	k8s --> kots: Access permissions on this cluster
+
+	%% Install metrics
+	note over kots, repli: Record the install start metrics
+	kots -> repli: POST <license.Spec.Endpoint>/kots_metrics/start_install/<installID>
+
+	%% Get app metadata and branding from the replicated API endpoint if not an airgap install
+	alt if not an airgap install (from "airgap-install" cli flag)
+		note over kots, repli: Retrieve the app manifest and branding data
+		kots -> repli: GET <license.Spec.Endpoint>/metadata/<app slug>/<channel>
+		repli --> kots: Replicated app manifest yaml blob
+
+		kots -> repli: GET <license.Spec.Endpoing>/branding/<app slug>/<channel>
+		repli --> kots: Replicated app branding blob
+	end
+
+	%% Check if it's a kurl install
+	note over kots, k8s: Check if this is part of a KURL install
+	kots -> k8s: GET configmap [namespace: "kube-system", configmap: "kurl-config"]
+	k8s --> kots: Kurl configmap or error
+
+	%% At this point the deploy configuration is built
+	note right of kots: Build the deployment configuration from cli arguments, configmaps, and files
+
+	%% Check if the install is on an OpenShift or GKE cluster
+	note over kots, k8s: Check if running on OpenShift (in resources list)
+	kots -> k8s: GET (resource list) ?? [??]
+	k8s --> kots: API Resources available (APIResourceList)
+
+	note over kots, k8s: Check if running on GKE (in resources list)
+	kots -> k8s: GET (resource list) ?? [??]
+	k8s --> kots: API Resources available (APIResourceList)
+
+	%% Push the airgap images if needed
+	alt if this is an airgap install (deployOptions.AirgapRootDir) and there is an image registry override (deployOptions.RegistryConfig) 
+		alt if image push is not disabled (deployOptions.DisableImagePush)
+			note over kots, docker: Push the images to the docker registry the cluster pods will pull from
+			alt if an AWS registry
+				kots -> docker: Login to the registry
+				docker --> kots: Authorization token
+			end
+			kots -> docker: Push images
+		end
+	end
+
+	%% Create the namespace for the admin console
+	alt if the admin console is enabled (deployOptions.ExcludeAdminConsole
+		note over kots, k8s: Create the deployment namespace
+		kots -> k8s: CREATE namespace [namespace: deployOptions.Namespace]
+		k8s --> kots: (Namespace) or error
+		alt if there was an error creating the namespace
+			note over kots, k8s: If the namespace wasn't created, check if it exists
+			kots -> k8s: GET pods [namespace: deployOptions.Namespace]
+			k8s --> kots: (Pod list) or error
+		end
+
+		note over kots, k8s: Get the cluster limits to add to the deploy options
+		kots -> k8s: LIST Limit Ranges [namespace: deployOptions.Namespace]
+		k8s --> kots: Limit ranges or error
+	end
+
+	%% Upload the airgap config maps
+	alt if this is an airgap install
+		note over kots, k8s: Create the "kotsadm-airgap-meta" configmap from airgap.yml in the airgap bundle
+		kots -> k8s: CREATE configmap [namespace: deployOptions.Namespace, configmap: "kotsadm-airgap-meta"]
+		k8s --> kots: (Config map) or error
+		alt if there is an error
+			alt if the error is an already exists error
+				kots -> k8s: UPDATE configmap [namespace: deployOptions.Namespace, configmap: "kotsadm-airgap-meta"]
+			end
+		end
+
+		note over kots, k8s: Create the "kotsadm-airgap-images" configmap from images.json created when uploading images
+		kots -> k8s: CREATE configmap [namespace: deployOptions.Namespace, configmap: "kotsadm-airgap-images"]
+		k8s --> kots: (Config map) or error
+		alt if there is an error
+			alt if the error is an already exists error
+				kots -> k8s: UPDATE configmap [namespace: deployOptions.Namespace, configmap: "kotsadm-airgap-images"]
+			end
+		end
+	end
+
+	%% Create any additional namespaces
+	alt if there is application metadata (deployOptions.ApplicationMetadata)
+		note over kots, k8s: Create any additional namespaces in the application metadata
+		loop Every additional namespace
+			kots -> k8s: GET namespace [namespace: <additional namespace>]
+			k8s --> kots: Namespace or error
+			alt if the namespace does not exist
+				kots -> k8s: CREATE namespace [namespace: <additional namespace>]
+				k8s --> kots: Namespace or error
+			end
+		end
+	end
+
+	%% If a license was given on the cli, then store it as a cluster secret
+	alt if there was a license file provided (deployOptions.License)
+		note over kots, k8s: Store the provided license as a cluster secret
+		kots -> k8s: GET secrets [namespace: deployOptions.Namespace, secret: "kotsadm-default-license"]
+		k8s --> kots: Secret or error
+		alt if the secret does not exist
+			kots -> k8s: CREATE secret [namespace: deployOptions.Namespace, secret: "kotsadm-default-license"]
+			k8s --> kots: (Secret) or error
+		end
+	end
+
+	%% If a configvalues file was given on the cli, then store it as a cluster secret
+	alt if there was a configvalues file provided (deployOptions.ConfigValues)
+		note over kots, k8s: Store the provided configvalues as a cluster secret
+		kots -> k8s: GET secrets [namespace: deployOptions.Namespace, secret: "kotsadm-default-configvalues", labels: "kots.io/automation" -> "configvalues"]
+		k8s --> kots: Secret or error
+		alt if the secret does not exist
+			kots -> k8s: CREATE secret [namespace: deployOptions.Namespace, secret: "kotsadm-default-license"]
+			k8s --> kots: (Secret) or error
+		end
+	end
+
+	%% Check that the kotsadm config has been uploaded if the console is exluded but the config is ensured (TODO: what are these options?)
+	alt if the admin console is disabled (deployOptions.ExcludeAdminConsole) and the kotsadm config is enabled (deployOptions.EnsureKotsadmConfig)
+		note over kots, k8s: Store the private registry login credentials
+		kots -> k8s: GET secrets [namespace: deployOptions.Namespace, secret: "kotsadm-private-registry"
+		k8s --> kots: (Secret) or error
+		alt if the secret does not exist
+			kots -> k8s: CREATE secrets [namespace: deployOptions.Namespace, secret: "kotsadm-replicated-registry"]
+			k8s -> kots: (Secret) or error
+		end
+
+		note over kots, k8s: Store the kotsadm configuration, merging any existing values.
+		kots -> k8s: GET configmap [namespace: deployOptions.Namespace, configmap: "kotsadm-confg"] %% kotsadm-confg is correct
+		k8s --> kots: Configmap or error
+		alt if the configmap does not exist
+			kots -> k8s: CREATE configmap [namespace: deployOptions.Namespace, configmap: "kotsadm-confg"]
+			k8s --> kots: Configmap or error
+		end
+
+		note over kots, k8s: Merge the existing config with the generated one
+		kots -> k8s: UPDATE configmap [namespace: deployOptions.Namespace, configmap: "kotsadm-confg"]
+		k8s --> kots: (Configmap) or error
+	end
+
+	%% Enable the admin console
+	alt if the admin console is enabled (deployOptions.ExcludeAdminConsole
+		%% Store the kotsadm configmap and secret
+		note over kots, k8s: Store the private registry login credentials
+		kots -> k8s: GET secrets [namespace: deployOptions.Namespace, secret: "kotsadm-private-registry"
+		k8s --> kots: (Secret) or error
+		alt if the secret does not exist
+			kots -> k8s: CREATE secrets [namespace: deployOptions.Namespace, secret: "kotsadm-replicated-registry"]
+			k8s -> kots: (Secret) or error
+		end
+
+		note over kots, k8s: Store the kotsadm configuration, merging any existing values.
+		kots -> k8s: GET configmap [namespace: deployOptions.Namespace, configmap: "kotsadm-confg"] %% kotsadm-confg is correct
+		k8s --> kots: Configmap or error
+		alt if the configmap does not exist
+			kots -> k8s: CREATE configmap [namespace: deployOptions.Namespace, configmap: "kotsadm-confg"]
+			k8s --> kots: Configmap or error
+		end
+
+		note over kots, k8s: Merge the existing config with the generated one
+		kots -> k8s: UPDATE configmap [namespace: deployOptions.Namespace, configmap: "kotsadm-confg"]
+		k8s --> kots: (Configmap) or error
+
+		par Deploy MinIO
+			%% Deploy MinIO if enabled
+			alt if MinIO is enabled (deployOptions.IncludeMinio)
+				note over kots, k8s: Store the MinIO S3 credentials
+				kots -> k8s: GET secrets [namespace: deployOptions.Namespace, secret: "kotsadm-minio"
+				k8s --> kots: secret or error
+				alt if the secret is empty
+					kots -> k8s: CREATE secrets [naemspace: deployOptions.Namespace, secret: "kotsadm-minio"
+					k8s --> kots: secret or error
+				end
+
+				alt if this is an OpenShift deployment (deployOptions.IsOpenShift)
+					kots -> k8s: GET namespace [namespace: deployOptions.Namespace]
+					k8s --> kots: namespace or error
+				end
+
+				note over kots, k8s: Generate the MinIO stateful set configuration and store it
+				kots -> k8s: GET statefulset [namespace: deployOptions.Namespace, statefulset: "kotsadm-minio"]
+				k8s --> kots: stateful set or error
+				alt if the stateful set does not exist
+					kots -> k8s: CREATE statefulset [namespace: deployOptions.Namespace, statefulset: "kotsadm-minio"]
+					k8s --> kots: statefulset or error
+				end
+
+				note over kots, k8s: Merge and update the stateful set configuration
+				kots -> k8s: UPDATE statefulset [namespace: deployOptions.Namespace, statefulset: "kotsadm-minio"]
+				k8s --> kots: statefulset or error
+			
+				note over kots, k8s: Enable the MinIO service
+				kots -> k8s: GET service [namespace: deployOptions.Namespace, service: "kotsadm-minio"]
+				alt if the service doesn't exist
+					kots -> k8s: CREATE service [namespace: deployOptions.Namespace, service: "kotsadm-minio"]
+				end
+
+				note over kots, k8s: Wait for the MinIO stateful set to be ready
+				loop Until stateful set exists
+					kots -> k8s: GET statefulset [namespace: deployOptions.Namespace, service: "kotsadm-minio"]
+				end
+
+				%% TODO finish this before the activation!!
+				k8s -> kotsstore: Deploy MinIO
+				activate kotsstore
+			end
+
+		and Deploy rqlite
+			%% Deploy rqlite if enabled
+			alt if rqlite is enabled (deployOptions.Includerqlite)
+				note over kots, k8s: Store the rqlite S3 credentials
+				kots -> k8s: GET secrets [namespace: deployOptions.Namespace, secret: "kotsadm-rqlite"
+				k8s --> kots: secret or error
+				alt if the secret is empty
+					kots -> k8s: CREATE secrets [naemspace: deployOptions.Namespace, secret: "kotsadm-rqlite"
+					k8s --> kots: secret or error
+				end
+
+				alt if this is an OpenShift deployment (deployOptions.IsOpenShift)
+					kots -> k8s: GET namespace [namespace: deployOptions.Namespace]
+					k8s --> kots: namespace or error
+				end
+
+				note over kots, k8s: Generate the rqlite stateful set configuration and store it
+				kots -> k8s: GET statefulset [namespace: deployOptions.Namespace, statefulset: "kotsadm-rqlite"]
+				k8s --> kots: stateful set or error
+				alt if the stateful set does not exist
+					kots -> k8s: CREATE statefulset [namespace: deployOptions.Namespace, statefulset: "kotsadm-rqlite"]
+					k8s --> kots: statefulset or error
+				end
+
+				note over kots, k8s: Merge and update the stateful set configuration
+				kots -> k8s: UPDATE statefulset [namespace: deployOptions.Namespace, statefulset: "kotsadm-rqlite"]
+				k8s --> kots: statefulset or error
+			
+				note over kots, k8s: Enable the rqlite service
+				kots -> k8s: GET service [namespace: deployOptions.Namespace, service: "kotsadm-rqlite"]
+				alt if the service doesn't exist
+					kots -> k8s: CREATE service [namespace: deployOptions.Namespace, service: "kotsadm-rqlite"]
+				end
+
+				note over kots, k8s: Wait for the rqlite stateful set to be ready
+				loop Until stateful set exists
+					kots -> k8s: GET statefulset [namespace: deployOptions.Namespace, service: "kotsadm-rqlite"]
+				end
+
+				%% TODO finish this before the activation!!
+				k8s -> kotsdb: Deploy rqlite
+				activate kotsdb
+			end
+		end
+	end
+
+	deactivate kotsstore
+	deactivate kotsdb
