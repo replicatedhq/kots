@@ -1,25 +1,30 @@
 package kotsstore
 
 import (
-	"database/sql"
+	"fmt"
 
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/persistence"
+	"github.com/rqlite/gorqlite"
 )
 
 // IsKotsadmIDGenerated retrieves the id of kotsadm if the pod is already
 func (s *KOTSStore) IsKotsadmIDGenerated() (bool, error) {
 	db := persistence.MustGetDBSession()
 	query := `select value from kotsadm_params where key = 'IS_KOTSADM_ID_GENERATED'`
-	row := db.QueryRow(query)
+	rows, err := db.QueryOne(query)
+	if err != nil {
+		return false, fmt.Errorf("failed to query: %v: %v", err, rows.Err)
+	}
+	if !rows.Next() {
+		return false, nil
+	}
 
 	var value string
-	if err := row.Scan(&value); err != nil {
-		if err == sql.ErrNoRows {
-			return false, nil
-		}
+	if err := rows.Scan(&value); err != nil {
 		return false, errors.Wrap(err, "failed to scan")
 	}
+
 	return true, nil
 }
 
@@ -27,10 +32,13 @@ func (s *KOTSStore) IsKotsadmIDGenerated() (bool, error) {
 func (s *KOTSStore) SetIsKotsadmIDGenerated() error {
 	db := persistence.MustGetDBSession()
 
-	query := `insert into kotsadm_params (key, value) values ($1, $2) on conflict (key) do update set value = EXCLUDED.value`
-	_, err := db.Exec(query, "IS_KOTSADM_ID_GENERATED", true)
+	query := `insert into kotsadm_params (key, value) values (?, ?) on conflict (key) do update set value = EXCLUDED.value`
+	wr, err := db.WriteOneParameterized(gorqlite.ParameterizedStatement{
+		Query:     query,
+		Arguments: []interface{}{"IS_KOTSADM_ID_GENERATED", true},
+	})
 	if err != nil {
-		return errors.Wrap(err, "failed to exec")
+		return fmt.Errorf("failed to write: %v: %v", err, wr.Err)
 	}
 	return nil
 }

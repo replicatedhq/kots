@@ -1,5 +1,5 @@
-ARG POSTGRES_14_TAG=14.4-alpine
-FROM postgres:$POSTGRES_14_TAG
+ARG SCHEMAHERO_TAG=0.13.2
+FROM schemahero/schemahero:$SCHEMAHERO_TAG
 
 ENV ENV_VAR_1=fake
 ENV ENV_VAR_2=faker

@@ -10,6 +10,9 @@ inputs:
   k8s-version:
     description: 'K8s version'
     required: true
+  k8s-arguments:
+    description: 'arguments to pass to k8s'
+    required: false
   testim-access-token:
     description: 'Testim access token'
     required: true
@@ -26,13 +29,18 @@ inputs:
     required: false
   kotsadm-image-tag:
     description: 'Kotsadm image tag'
-    default: '12h'
+    default: '24h'
     required: false
   kots-helm-chart-url:
     description: 'KOTS Helm chart URL'
     required: false
   kots-helm-chart-version:
     description: 'KOTS Helm chart version'
+    required: false
+  kots-airgap:
+    description: 'Run KOTS with the --airgap flag'
+    type: boolean
+    default: false
     required: false
   aws-access-key-id:
     description: 'AWS access key id for uploading support bundle'
@@ -51,6 +59,7 @@ runs:
     - uses: replicatedhq/action-k3s@main
       with:
         version: ${{ inputs.k8s-version }}
+        arguments: ${{ inputs.k8s-arguments }}
 
     - name: execute suite "${{ inputs.test-focus }}"
       env:
@@ -66,17 +75,31 @@ runs:
           KOTSADM_IMAGE_TAG=${{ inputs.kotsadm-image-tag }} \
           KOTS_HELM_CHART_URL=${{ inputs.kots-helm-chart-url }} \
           KOTS_HELM_CHART_VERSION=${{ inputs.kots-helm-chart-version }} \
+          AIRGAP=${{ inputs.kots-airgap }} \
           SKIP_TEARDOWN=1
-        EXIT_CODE=$?
-        if [ $EXIT_CODE -ne 0 ]; then
-          echo "------pods:"
-          kubectl -n $KOTS_NAMESPACE get pods
-          echo "------kotsadm logs"
-          kubectl -n $KOTS_NAMESPACE logs deployment/kotsadm
-          echo "------previous kotsadm logs"
-          kubectl -n $KOTS_NAMESPACE logs -p deployment/kotsadm
-        fi
-        exit $EXIT_CODE
+      shell: bash
+
+    - name: Print logs on failure
+      if: ${{ failure() }}
+      env:
+        KOTS_NAMESPACE: ${{ inputs.kots-namespace }}
+        VELERO_NAMESPACE: velero
+      run: |
+        set +e
+        echo "------pods:"
+        kubectl -n $KOTS_NAMESPACE get pods
+        echo "------kotsadm logs"
+        kubectl -n $KOTS_NAMESPACE logs deployment/kotsadm
+        echo "------previous kotsadm logs"
+        kubectl -n $KOTS_NAMESPACE logs -p deployment/kotsadm
+        echo "------velero logs"
+        kubectl -n $VELERO_NAMESPACE logs deployment/velero
+        echo "------previous velero logs"
+        kubectl -n $VELERO_NAMESPACE logs -p deployment/velero
+        echo "------restic logs"
+        kubectl -n $VELERO_NAMESPACE logs daemonset/restic
+        echo "------previous restic logs"
+        kubectl -n $VELERO_NAMESPACE logs -p daemonset/restic
       shell: bash
 
     - name: Generate support bundle on failure
@@ -86,4 +109,3 @@ runs:
         aws-access-key-id: ${{ inputs.aws-access-key-id }}
         aws-secret-access-key: ${{ inputs.aws-secret-access-key }}
         aws-region: ${{ inputs.aws-region }}
-        kots-namespace: ${{ inputs.kots-namespace }}

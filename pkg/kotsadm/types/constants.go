@@ -13,6 +13,9 @@ const ExcludeValue = "true"
 const BackupLabel = "kots.io/backup"
 const BackupLabelValue = "velero"
 
+const TroubleshootKey = "troubleshoot.io/kind"
+const TroubleshootValue = "support-bundle"
+
 func GetKotsadmLabels(additionalLabels ...map[string]string) map[string]string {
 	labels := map[string]string{
 		KotsadmKey:  KotsadmLabelValue,
@@ -20,10 +23,32 @@ func GetKotsadmLabels(additionalLabels ...map[string]string) map[string]string {
 	}
 
 	for _, l := range additionalLabels {
-		for k, v := range l {
-			labels[k] = v
-		}
+		labels = MergeLabels(labels, l)
 	}
 
 	return labels
+}
+
+func GetTroubleshootLabels(additionalLabels ...map[string]string) map[string]string {
+	labels := map[string]string{
+		TroubleshootKey: TroubleshootValue,
+	}
+
+	for _, l := range additionalLabels {
+		labels = MergeLabels(labels, l)
+	}
+
+	return labels
+}
+
+func MergeLabels(labels ...map[string]string) map[string]string {
+	mergedLabels := map[string]string{}
+
+	for _, label := range labels {
+		for k, v := range label {
+			mergedLabels[k] = v
+		}
+	}
+
+	return mergedLabels
 }

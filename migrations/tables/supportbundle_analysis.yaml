@@ -5,11 +5,11 @@ metadata:
     controller-tools.k8s.io: "1.0"
   name: supportbundle-analysis
 spec:
-  database: kotsadm-postgres
   name: supportbundle_analysis
   requires: []
   schema:
-    postgres:
+    rqlite:
+      strict: true
       primaryKey:
       - id
       columns:
@@ -28,6 +28,6 @@ spec:
       - name: insights
         type: text
       - name: created_at
-        type: timestamp without time zone
+        type: integer
         constraints:
           notNull: true

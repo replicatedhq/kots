@@ -4,41 +4,94 @@ import (
 	corev1 "k8s.io/api/core/v1"
 )
 
-// copy the env vars from the desired to existing. this could undo a change that the user had.
-// we don't know which env vars we set and which are user edited. this method avoids deleting
-// env vars that the user added, but doesn't handle edited vars
-func MergeEnvVars(desired []corev1.EnvVar, existing []corev1.EnvVar) []corev1.EnvVar {
-	mergedEnvs := []corev1.EnvVar{}
-	mergedEnvs = append(mergedEnvs, desired...)
-	for _, e := range existing {
-		exists := false
-		for _, env := range desired {
-			if env.Name == e.Name {
-				exists = true
-			}
-		}
-		if !exists {
-			mergedEnvs = append(mergedEnvs, e)
-		}
-	}
-	return mergedEnvs
-}
-
-func MergeInitContainers(desired []corev1.Container, existing []corev1.Container) []corev1.Container {
-	additional := []corev1.Container{}
-	for _, desiredContainer := range desired {
-		found := false
-		for i, existingContainer := range existing {
-			if existingContainer.Name != desiredContainer.Name {
+func MergeEnvVars(desired []corev1.EnvVar, existing []corev1.EnvVar, override bool) []corev1.EnvVar {
+	mergedEnvVars := []corev1.EnvVar{}
+	mergedEnvVars = append(mergedEnvVars, existing...)
+	for _, desiredEnvVar := range desired {
+		idx := -1
+		for existingEnvVarIndex, existingEnvVar := range existing {
+			if existingEnvVar.Name != desiredEnvVar.Name {
 				continue
 			}
-			existing[i] = *desiredContainer.DeepCopy()
-			found = true
+			idx = existingEnvVarIndex
 			break
 		}
-		if !found {
-			additional = append(additional, *desiredContainer.DeepCopy())
+		if idx == -1 {
+			// not found, add it
+			mergedEnvVars = append(mergedEnvVars, *desiredEnvVar.DeepCopy())
+		} else if override {
+			// found and should override
+			mergedEnvVars[idx] = *desiredEnvVar.DeepCopy()
 		}
 	}
-	return append(existing, additional...)
+	return mergedEnvVars
+}
+
+func MergeVolumes(desired []corev1.Volume, existing []corev1.Volume, override bool) []corev1.Volume {
+	mergedVolumes := []corev1.Volume{}
+	mergedVolumes = append(mergedVolumes, existing...)
+	for _, desiredVolume := range desired {
+		idx := -1
+		for existingVolumeIndex, existingVolume := range existing {
+			if existingVolume.Name != desiredVolume.Name {
+				continue
+			}
+			idx = existingVolumeIndex
+			break
+		}
+		if idx == -1 {
+			// not found, add it
+			mergedVolumes = append(mergedVolumes, *desiredVolume.DeepCopy())
+		} else if override {
+			// found and should override
+			mergedVolumes[idx] = *desiredVolume.DeepCopy()
+		}
+	}
+	return mergedVolumes
+}
+
+func MergeVolumeMounts(desired []corev1.VolumeMount, existing []corev1.VolumeMount, override bool) []corev1.VolumeMount {
+	mergedVolumeMounts := []corev1.VolumeMount{}
+	mergedVolumeMounts = append(mergedVolumeMounts, existing...)
+	for _, desiredVolumeMount := range desired {
+		idx := -1
+		for existingVolumeMountIndex, existingVolumeMount := range existing {
+			if existingVolumeMount.Name != desiredVolumeMount.Name {
+				continue
+			}
+			idx = existingVolumeMountIndex
+			break
+		}
+		if idx == -1 {
+			// not found, add it
+			mergedVolumeMounts = append(mergedVolumeMounts, *desiredVolumeMount.DeepCopy())
+		} else if override {
+			// found and should override
+			mergedVolumeMounts[idx] = *desiredVolumeMount.DeepCopy()
+		}
+	}
+	return mergedVolumeMounts
+}
+
+func MergeImagePullSecrets(desired []corev1.LocalObjectReference, existing []corev1.LocalObjectReference, override bool) []corev1.LocalObjectReference {
+	mergedImagePullSecrets := []corev1.LocalObjectReference{}
+	mergedImagePullSecrets = append(mergedImagePullSecrets, existing...)
+	for _, desiredImagePullSecret := range desired {
+		idx := -1
+		for existingImagePullSecretIndex, existingImagePullSecret := range existing {
+			if existingImagePullSecret.Name != desiredImagePullSecret.Name {
+				continue
+			}
+			idx = existingImagePullSecretIndex
+			break
+		}
+		if idx == -1 {
+			// not found, add it
+			mergedImagePullSecrets = append(mergedImagePullSecrets, *desiredImagePullSecret.DeepCopy())
+		} else if override {
+			// found and should override
+			mergedImagePullSecrets[idx] = *desiredImagePullSecret.DeepCopy()
+		}
+	}
+	return mergedImagePullSecrets
 }

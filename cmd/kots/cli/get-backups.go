@@ -30,8 +30,13 @@ func GetBackupsCmd() *cobra.Command {
 func getBackupsCmd(cmd *cobra.Command, args []string) error {
 	v := viper.GetViper()
 
+	namespace, err := getNamespaceOrDefault(v.GetString("namespace"))
+	if err != nil {
+		return errors.Wrap(err, "failed to get namespace")
+	}
+
 	options := snapshot.ListInstanceBackupsOptions{
-		Namespace: v.GetString("namespace"),
+		Namespace: namespace,
 	}
 	backups, err := snapshot.ListInstanceBackups(cmd.Context(), options)
 	if err != nil {

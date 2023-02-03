@@ -32,11 +32,11 @@ export default function PreflightRenderer(props) {
           if (row.isWarn) {
             icon = "warning";
             iconClass = "warning-color";
-            rowClass = "warn";
+            rowClass = "u-textColor--warning";
           } else if (row.isFail) {
             icon = "warning-circle-filled";
             iconClass = "error-color";
-            rowClass = "fail";
+            rowClass = "u-textColor--error";
           } else {
             icon = "check-circle-filled";
             iconClass = "success-color";
@@ -68,7 +68,7 @@ export default function PreflightRenderer(props) {
                         href={row.uri}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="replicated-link u-fontSize--small u-fontWeight--medium u-position--relative"
+                        className="link u-fontSize--small u-fontWeight--medium u-position--relative"
                       >
                         {" "}
                         Learn more{" "}

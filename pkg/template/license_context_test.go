@@ -1,6 +1,8 @@
 package template
 
 import (
+	"encoding/base64"
+	"encoding/json"
 	"testing"
 
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
@@ -8,19 +10,94 @@ import (
 )
 
 func TestLicenseContext_dockercfg(t *testing.T) {
-	req := require.New(t)
-
-	ctx := licenseCtx{
-		License: &kotsv1beta1.License{
-			Spec: kotsv1beta1.LicenseSpec{
-				LicenseID: "abcdef",
+	tests := []struct {
+		name          string
+		License       *kotsv1beta1.License
+		App           *kotsv1beta1.Application
+		expectDecoded map[string]interface{}
+	}{
+		{
+			name: "no app passed to license context should return defaults",
+			License: &kotsv1beta1.License{
+				Spec: kotsv1beta1.LicenseSpec{
+					LicenseID: "abcdef",
+				},
+			},
+			expectDecoded: map[string]interface{}{
+				"auths": map[string]interface{}{
+					"proxy.replicated.com": map[string]string{
+						"auth": base64.StdEncoding.EncodeToString([]byte("abcdef:abcdef")),
+					},
+					"registry.replicated.com": map[string]string{
+						"auth": base64.StdEncoding.EncodeToString([]byte("abcdef:abcdef")),
+					},
+				},
+			},
+		},
+		{
+			name: "app passed with no custom registry domains should return defaults",
+			License: &kotsv1beta1.License{
+				Spec: kotsv1beta1.LicenseSpec{
+					LicenseID: "abcdef",
+				},
+			},
+			App: &kotsv1beta1.Application{
+				Spec: kotsv1beta1.ApplicationSpec{
+					ProxyRegistryDomain:      "",
+					ReplicatedRegistryDomain: "",
+				},
+			},
+			expectDecoded: map[string]interface{}{
+				"auths": map[string]interface{}{
+					"proxy.replicated.com": map[string]string{
+						"auth": base64.StdEncoding.EncodeToString([]byte("abcdef:abcdef")),
+					},
+					"registry.replicated.com": map[string]string{
+						"auth": base64.StdEncoding.EncodeToString([]byte("abcdef:abcdef")),
+					},
+				},
+			},
+		},
+		{
+			name: "app passed with custom registry domains should return custom domains",
+			License: &kotsv1beta1.License{
+				Spec: kotsv1beta1.LicenseSpec{
+					LicenseID: "abcdef",
+				},
+			},
+			App: &kotsv1beta1.Application{
+				Spec: kotsv1beta1.ApplicationSpec{
+					ProxyRegistryDomain:      "my-proxy.example.com",
+					ReplicatedRegistryDomain: "my-registry.example.com",
+				},
+			},
+			expectDecoded: map[string]interface{}{
+				"auths": map[string]interface{}{
+					"my-proxy.example.com": map[string]string{
+						"auth": base64.StdEncoding.EncodeToString([]byte("abcdef:abcdef")),
+					},
+					"my-registry.example.com": map[string]string{
+						"auth": base64.StdEncoding.EncodeToString([]byte("abcdef:abcdef")),
+					},
+				},
 			},
 		},
 	}
 
-	expect := "eyJhdXRocyI6eyJwcm94eS5yZXBsaWNhdGVkLmNvbSI6eyJhdXRoIjoiWVdKalpHVm1PbUZpWTJSbFpnPT0ifSwicmVnaXN0cnkucmVwbGljYXRlZC5jb20iOnsiYXV0aCI6IllXSmpaR1ZtT21GaVkyUmxaZz09In19fQ=="
-	dockercfg := ctx.licenseDockercfg()
-	req.Equal(expect, dockercfg)
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			req := require.New(t)
+			ctx := licenseCtx{License: test.License, App: test.App}
+
+			expectJson, err := json.Marshal(test.expectDecoded)
+			req.NoError(err)
+
+			expect := base64.StdEncoding.EncodeToString(expectJson)
+
+			dockercfg := ctx.licenseDockercfg()
+			req.Equal(expect, dockercfg)
+		})
+	}
 }
 
 func TestLicenseCtx_licenseFieldValue(t *testing.T) {

@@ -1,9 +1,10 @@
 import React, { Component } from "react";
-import { withRouter } from "react-router-dom";
+import { withRouter } from "@src/utilities/react-router-utilities";
 import get from "lodash/get";
 
 import Loader from "../shared/Loader";
 import ErrorModal from "../modals/ErrorModal";
+import Modal from "react-modal";
 import "../../scss/components/watches/WatchDetailPage.scss";
 import { Utilities } from "../../utilities/utilities";
 import { Repeater } from "../../utilities/repeater";
@@ -51,6 +52,7 @@ type State = {
   isReadOnly: boolean;
   originalRegistry: RegistryDetails | null;
   pingedEndpoint: string;
+  showStopUsingWarning: boolean;
 };
 
 class AirgapRegistrySettings extends Component<Props, State> {
@@ -83,6 +85,7 @@ class AirgapRegistrySettings extends Component<Props, State> {
       isReadOnly: false,
       originalRegistry: null,
       pingedEndpoint: "",
+      showStopUsingWarning: false,
     };
   }
 
@@ -95,9 +98,17 @@ class AirgapRegistrySettings extends Component<Props, State> {
     this.triggerStatusUpdates();
   };
 
-  onSubmit = async () => {
-    const { hostname, username, password, namespace, isReadOnly } = this.state;
+  onSaveRegistrySettings = async (stopUsingRegistry: boolean) => {
+    let { hostname, username, password, namespace, isReadOnly } = this.state;
     const { slug } = this.props.match.params;
+
+    if (stopUsingRegistry) {
+      hostname = "";
+      username = "";
+      password = "";
+      namespace = "";
+      isReadOnly = false;
+    }
 
     fetch(`${process.env.API_ENDPOINT}/app/${slug}/registry`, {
       method: "PUT",
@@ -121,6 +132,19 @@ class AirgapRegistrySettings extends Component<Props, State> {
             rewriteMessage: registryDetails.error,
           });
         } else {
+          this.setState({
+            originalRegistry: {
+              hostname: hostname,
+              username: username,
+              password: password,
+              namespace: namespace,
+            },
+            hostname: hostname,
+            username: username,
+            password: password,
+            namespace: namespace,
+            isReadOnly: isReadOnly,
+          });
           this.state.updateChecker.start(this.updateStatus, 1000);
         }
       })
@@ -381,6 +405,7 @@ class AirgapRegistrySettings extends Component<Props, State> {
       testInProgress,
       testFailed,
       testMessage,
+      originalRegistry,
     } = this.state;
     const { rewriteMessage, rewriteStatus } = this.state;
 
@@ -425,21 +450,23 @@ class AirgapRegistrySettings extends Component<Props, State> {
     }
 
     const disableSubmitButton = rewriteStatus === "running";
+    const disableStopUsingButton =
+      rewriteStatus === "running" || originalRegistry?.hostname === "";
     const showProgress = rewriteStatus === "running";
     const showStatusError = rewriteStatus === "failed";
 
     return (
-      <div className="registry-settings-content">
+      <div className="card-item u-padding--15">
         <form>
           <div className="flex u-marginBottom--20">
             <div className="flex1">
-              <p className="u-fontSize--normal u-textColor--primary u-fontWeight--bold u-lineHeight--normal u-marginBottom--5">
+              <p className="u-fontSize--normal card-item-title u-fontWeight--bold u-lineHeight--normal u-marginBottom--5">
                 Hostname{" "}
                 {showHostnameAsRequired && (
                   <span className="u-textColor--error">(Required)</span>
                 )}
               </p>
-              <p className="u-lineHeight--normal u-fontSize--small u-textColor--bodyCopy u-fontWeight--medium u-marginBottom--10">
+              <p className="u-lineHeight--normal u-fontSize--small help-text-color u-fontWeight--medium u-marginBottom--10">
                 Ensure this domain supports the Docker V2 protocol.
               </p>
               <input
@@ -457,7 +484,7 @@ class AirgapRegistrySettings extends Component<Props, State> {
           </div>
           <div className="flex u-marginBottom--20">
             <div className="flex1 u-paddingRight--5">
-              <p className="u-fontSize--normal u-textColor--primary u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">
+              <p className="u-fontSize--normal card-item-title u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">
                 Username
               </p>
               <input
@@ -472,7 +499,7 @@ class AirgapRegistrySettings extends Component<Props, State> {
               />
             </div>
             <div className="flex1 u-paddingLeft--5">
-              <p className="u-fontSize--normal u-textColor--primary u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">
+              <p className="u-fontSize--normal card-item-title u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">
                 Password
               </p>
               <input
@@ -493,6 +520,7 @@ class AirgapRegistrySettings extends Component<Props, State> {
                 <div>
                   <button
                     type="button"
+                    disabled={this.state.hostname === ""}
                     className="btn secondary"
                     onClick={this.testRegistryConnection}
                   >
@@ -530,11 +558,11 @@ class AirgapRegistrySettings extends Component<Props, State> {
           <div className="flex u-marginBottom--30">
             <div className="flex1">
               <div className="flex flex1 alignItems--center u-marginBottom--5">
-                <p className="u-fontSize--normal u-textColor--primary u-fontWeight--bold u-lineHeight--normal u-marginBottom--5">
+                <p className="u-fontSize--normal card-item-title u-fontWeight--bold u-lineHeight--normal u-marginBottom--5">
                   Registry Namespace
                 </p>
               </div>
-              <p className="u-lineHeight--normal u-fontSize--small u-textColor--bodyCopy u-fontWeight--medium u-marginBottom--10">
+              <p className="u-lineHeight--normal u-fontSize--small help-text-color u-fontWeight--medium u-marginBottom--10">
                 {namespaceSubtext}
               </p>
               <input
@@ -570,10 +598,10 @@ class AirgapRegistrySettings extends Component<Props, State> {
                   style={{ marginTop: "2px" }}
                 >
                   <div className="flex flex-column u-marginLeft--5 justifyContent--center">
-                    <p className="u-fontSize--normal u-textColor--primary u-fontWeight--bold u-marginBottom--5">
+                    <p className="u-fontSize--normal card-item-title u-fontWeight--bold u-marginBottom--5">
                       Disable Pushing Images to Registry
                     </p>
-                    <p className="u-lineHeight--normal u-fontSize--small u-textColor--bodyCopy u-fontWeight--medium">
+                    <p className="u-lineHeight--normal u-fontSize--small help-text-color u-fontWeight--medium">
                       {imagePushSubtext}
                     </p>
                   </div>
@@ -599,12 +627,25 @@ class AirgapRegistrySettings extends Component<Props, State> {
             ) : null}
             <div className="u-marginTop--20">
               <button
-                className="btn primary blue"
+                className="btn primary blue u-marginRight--10"
                 disabled={disableSubmitButton}
-                onClick={this.onSubmit}
+                onClick={() => {
+                  this.onSaveRegistrySettings(false);
+                }}
               >
                 Save changes
               </button>
+              {!this.props.app?.isAirgap && (
+                <button
+                  className="btn secondary blue"
+                  disabled={disableStopUsingButton}
+                  onClick={() => {
+                    this.setState({ showStopUsingWarning: true });
+                  }}
+                >
+                  Stop using registry
+                </button>
+              )}
             </div>
           </div>
         )}
@@ -618,11 +659,50 @@ class AirgapRegistrySettings extends Component<Props, State> {
             loading={this.state.loading}
           />
         )}
+
+        <Modal
+          isOpen={this.state.showStopUsingWarning}
+          onRequestClose={() => {
+            this.setState({ showStopUsingWarning: false });
+          }}
+          shouldReturnFocusAfterClose={false}
+          ariaHideApp={false}
+          className="Modal MediumSize"
+        >
+          <div className="Modal-body">
+            <p className="u-fontSize--large u-textColor--primary u-lineHeight--medium u-marginBottom--20">
+              This will create a version of {this.props.app?.name} without
+              registry settings. Do you want to proceed?
+            </p>
+            <div className="flex justifyContent--flexEnd">
+              <button
+                type="button"
+                className="btn blue primary u-marginRight--10"
+                onClick={() => {
+                  this.setState({ showStopUsingWarning: false });
+                  this.onSaveRegistrySettings(true);
+                }}
+              >
+                OK
+              </button>
+              <button
+                type="button"
+                className="btn blue secondary u-marginRight--10"
+                onClick={() => {
+                  this.setState({ showStopUsingWarning: false });
+                }}
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </Modal>
       </div>
     );
   }
 }
 
-// TODO: fix withRouter type
-// eslint-disable-next-line
+/* eslint-disable */
+// @ts-ignore
 export default withRouter(AirgapRegistrySettings) as any;
+/* eslint-enable */

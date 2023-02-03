@@ -61,7 +61,7 @@ export default class RBACGroupPolicyRow extends Component {
                   </span>
                 )}
                 <span
-                  className="replicated-link u-fontSize--small u-marginLeft--5"
+                  className="link u-fontSize--small u-marginLeft--5"
                   onClick={() =>
                     showRoleDetails
                       ? onHideRoleDetails(index)

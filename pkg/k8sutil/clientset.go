@@ -9,6 +9,11 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
 )
 
+const (
+	DEFAULT_K8S_CLIENT_QPS   = 100
+	DEFAULT_K8S_CLIENT_BURST = 100
+)
+
 var kubernetesConfigFlags *genericclioptions.ConfigFlags
 
 func init() {
@@ -34,18 +39,23 @@ func GetClientset() (*kubernetes.Clientset, error) {
 }
 
 func GetClusterConfig() (*rest.Config, error) {
+	var cfg *rest.Config
+	var err error
+
 	if kubernetesConfigFlags != nil {
-		cfg, err := kubernetesConfigFlags.ToRESTConfig()
+		cfg, err = kubernetesConfigFlags.ToRESTConfig()
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to convert kube flags to rest config")
 		}
-		return cfg, nil
+	} else {
+		cfg, err = config.GetConfig()
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to get config")
+		}
 	}
 
-	cfg, err := config.GetConfig()
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to get config")
-	}
+	cfg.QPS = DEFAULT_K8S_CLIENT_QPS
+	cfg.Burst = DEFAULT_K8S_CLIENT_BURST
 
 	return cfg, nil
 }

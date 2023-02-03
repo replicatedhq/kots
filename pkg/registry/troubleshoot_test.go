@@ -181,7 +181,7 @@ func Test_UpdateCollectorSpecsWithRegistryData(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			req := require.New(t)
 
-			actualCollectors, err := UpdateCollectorSpecsWithRegistryData(test.collectors, test.localRegistryInfo, test.knownImages, test.license)
+			actualCollectors, err := UpdateCollectorSpecsWithRegistryData(test.collectors, test.localRegistryInfo, test.knownImages, test.license, nil)
 			req.NoError(err)
 
 			assert.Equal(t, test.expectedCollectors, actualCollectors)

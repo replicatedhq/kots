@@ -248,17 +248,12 @@ func DetectVeleroNamespace(ctx context.Context, clientset kubernetes.Interface, 
 		veleroNamespace = TryGetVeleroNamespaceFromConfigMap(ctx, clientset, kotsadmNamespace)
 	}
 
-	cfg, err := k8sutil.GetClusterConfig()
+	clientset, err := k8sutil.GetClientset()
 	if err != nil {
-		return "", errors.Wrap(err, "failed to get cluster config")
+		return "", errors.Wrap(err, "failed to get k8s clientset")
 	}
 
-	veleroClient, err := veleroclientv1.NewForConfig(cfg)
-	if err != nil {
-		return "", errors.Wrap(err, "failed to create velero clientset")
-	}
-
-	backupStorageLocations, err := veleroClient.BackupStorageLocations(veleroNamespace).List(ctx, metav1.ListOptions{})
+	deployments, err := clientset.AppsV1().Deployments(veleroNamespace).List(ctx, metav1.ListOptions{})
 	if kuberneteserrors.IsNotFound(err) {
 		return "", nil
 	}
@@ -268,9 +263,9 @@ func DetectVeleroNamespace(ctx context.Context, clientset kubernetes.Interface, 
 		return "", nil
 	}
 
-	for _, backupStorageLocation := range backupStorageLocations.Items {
-		if backupStorageLocation.Name == "default" {
-			return backupStorageLocation.Namespace, nil
+	for _, deployment := range deployments.Items {
+		if deployment.Name == "velero" {
+			return deployment.Namespace, nil
 		}
 	}
 
@@ -510,7 +505,6 @@ func restartVelero(ctx context.Context, kotsadmNamespace string) error {
 			if err := clientset.CoreV1().Pods(veleroNamespace).Delete(ctx, pod.Name, metav1.DeleteOptions{}); err != nil {
 				return errors.Wrap(err, "failed to delete velero deployment")
 			}
-
 		}
 	}
 
@@ -531,7 +525,6 @@ func restartVelero(ctx context.Context, kotsadmNamespace string) error {
 			if err := clientset.CoreV1().Pods(veleroNamespace).Delete(ctx, pod.Name, metav1.DeleteOptions{}); err != nil {
 				return errors.Wrap(err, "failed to delete restic daemonset")
 			}
-
 		}
 	}
 

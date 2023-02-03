@@ -26,10 +26,9 @@ func AdminGenerateManifestsCmd() *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			v := viper.GetViper()
 
-			namespace := v.GetString("namespace")
-
-			if namespace == "" {
-				namespace = "default"
+			namespace, err := getNamespaceOrDefault(v.GetString("namespace"))
+			if err != nil {
+				return errors.Wrap(err, "failed to get namespace")
 			}
 
 			renderDir := ExpandDir(v.GetString("rootdir"))

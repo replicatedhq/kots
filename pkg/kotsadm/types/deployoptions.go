@@ -16,7 +16,7 @@ type DeployOptions struct {
 	S3AccessKey            string
 	S3SecretKey            string
 	JWT                    string
-	PostgresPassword       string
+	RqlitePassword         string
 	APIEncryptionKey       string
 	AutoCreateClusterToken string
 	ServiceType            string
@@ -53,6 +53,7 @@ type DeployOptions struct {
 	UpstreamURI            string
 	IsMinimalRBAC          bool
 	AdditionalNamespaces   []string
+	IsGKEAutopilot         bool
 
 	IdentityConfig kotsv1beta1.IdentityConfig
 	IngressConfig  kotsv1beta1.IngressConfig

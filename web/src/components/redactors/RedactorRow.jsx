@@ -1,3 +1,4 @@
+import Icon from "@components/Icon";
 import React from "react";
 import { Link } from "react-router-dom";
 
@@ -34,7 +35,7 @@ class RedactorRow extends React.Component {
 
     return (
       <div
-        className="flex flex-auto ActiveDownstreamVersionRow--wrapper"
+        className="flex flex-auto RedactorRowDetails card-item"
         key={redactor?.slug}
       >
         <div className="flex-column flex1">
@@ -44,18 +45,18 @@ class RedactorRow extends React.Component {
                 this.state.redactorEnabled ? "enabled" : "disabled"
               }`}
             />
-            <p className="u-fontSize--large u-lineHeight--normal u-fontWeight--bold u-textColor--primary u-marginRight--10">
+            <p className="u-fontSize--large u-lineHeight--normal u-fontWeight--bold card-item-title">
               {redactor?.name}
             </p>
-            <span className="u-fontSize--small u-textColor--bodyCopy u-fontWeight--medium u-lineHeight--normal u-marginTop--5">
-              {" "}
-              Last updated on{" "}
-              {Utilities.dateFormat(
-                redactor?.updatedAt,
-                "MM/DD/YY @ hh:mm a z"
-              )}{" "}
-            </span>
           </div>
+          <span className="u-fontSize--small u-textColor--bodyCopy u-fontWeight--medium u-lineHeight--normal u-marginTop--5">
+            {" "}
+            Last updated on{" "}
+            {Utilities.dateFormat(
+              redactor?.updatedAt,
+              "MM/DD/YY @ hh:mm a z"
+            )}{" "}
+          </span>
           <p className="u-fontSize--small u-fontWeight--medium u-lineHeight--normal u-textColor--accent u-marginLeft--10">
             {" "}
             {redactor?.description}{" "}
@@ -64,15 +65,15 @@ class RedactorRow extends React.Component {
         <div className="flex alignItems--center">
           <Link
             to={`/app/${this.props.appSlug}/troubleshoot/redactors/${redactor?.slug}`}
-            className="u-fontSize--normal u-fontWeight--medium u-linkColor u-textDecoration--underlineOnHover u-marginRight--20"
+            className="u-fontSize--normal link u-textDecoration--underlineOnHover u-marginRight--20"
           >
-            Edit
+            <Icon icon="edit" size={18} className="clickable" />
           </Link>
           <span
             className="u-fontSize--normal u-fontWeight--medium u-textColor--error u-textDecoration--underlineOnHover u-marginRight--20"
             onClick={() => this.handleDeleteClick(redactor)}
           >
-            Delete
+            <Icon icon="trash" size={18} className="clickable error-color" />
           </span>
           <div
             className={`Checkbox--switch ${

@@ -22,6 +22,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/kotsadm/types"
 	"github.com/replicatedhq/kots/pkg/kurl"
 	"github.com/replicatedhq/kots/pkg/logger"
+	"github.com/replicatedhq/kots/pkg/util"
 	"golang.org/x/sync/errgroup"
 	corev1 "k8s.io/api/core/v1"
 	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
@@ -60,11 +61,11 @@ func YAML(deployOptions types.DeployOptions) (map[string][]byte, error) {
 		}
 	}
 
-	postgresDocs, err := getPostgresYAML(deployOptions)
+	rqliteDocs, err := getRqliteYAML(deployOptions)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to get postgres yaml")
+		return nil, errors.Wrap(err, "failed to get rqlite yaml")
 	}
-	for n, v := range postgresDocs {
+	for n, v := range rqliteDocs {
 		docs[n] = v
 	}
 
@@ -266,7 +267,7 @@ func canUpgrade(upgradeOptions types.UpgradeOptions, clientset *kubernetes.Clien
 		return nil
 	}
 
-	isKurl, err := kurl.IsKurl()
+	isKurl, err := kurl.IsKurl(clientset)
 	if err != nil {
 		return errors.Wrap(err, "failed to check if cluster is kurl")
 	}
@@ -306,47 +307,42 @@ func removeUnusedKotsadmComponents(deployOptions types.DeployOptions, clientset 
 		}
 	}
 
+	// if there are kotsadm-postgres objects, remove (pre 1.89.0)
+	if err := removeKotsadmPostgres(deployOptions, clientset); err != nil {
+		return errors.Wrap(err, "failed to remove kotsadm postgres")
+	}
+
 	return nil
 }
 
 func removeKotsadmOperator(deployOptions types.DeployOptions, clientset *kubernetes.Clientset, log *logger.CLILogger) error {
-	_, err := clientset.AppsV1().Deployments(deployOptions.Namespace).Get(context.TODO(), "kotsadm-operator", metav1.GetOptions{})
-	if err == nil {
-		if err := clientset.AppsV1().Deployments(deployOptions.Namespace).Delete(context.TODO(), "kotsadm-operator", metav1.DeleteOptions{}); err != nil {
-			return errors.Wrap(err, "failed to delete kotsadm-operator deployment")
-		}
+	err := clientset.AppsV1().Deployments(deployOptions.Namespace).Delete(context.TODO(), "kotsadm-operator", metav1.DeleteOptions{})
+	if err != nil && !kuberneteserrors.IsNotFound(err) {
+		return errors.Wrap(err, "failed to delete kotsadm-operator deployment")
 	}
 
-	_, err = clientset.RbacV1().ClusterRoleBindings().Get(context.TODO(), "kotsadm-operator-rolebinding", metav1.GetOptions{})
-	if err == nil {
-		if err := clientset.RbacV1().ClusterRoleBindings().Delete(context.TODO(), "kotsadm-operator-rolebinding", metav1.DeleteOptions{}); err != nil {
-			// user might not have enough permissions to do so, so don't fail here since it's not critical
-			log.Error(errors.Wrap(err, "failed to delete kotsadm-operator-rolebinding clusterrolebinding"))
-		}
+	err = clientset.RbacV1().ClusterRoleBindings().Delete(context.TODO(), "kotsadm-operator-rolebinding", metav1.DeleteOptions{})
+	if err != nil && !kuberneteserrors.IsNotFound(err) {
+		// user might not have enough permissions to do so, so don't fail here since it's not critical
+		log.Error(errors.Wrap(err, "failed to delete kotsadm-operator-rolebinding clusterrolebinding"))
 	}
 
-	_, err = clientset.RbacV1().RoleBindings(deployOptions.Namespace).Get(context.TODO(), "kotsadm-operator-rolebinding", metav1.GetOptions{})
-	if err == nil {
-		if err := clientset.RbacV1().RoleBindings(deployOptions.Namespace).Delete(context.TODO(), "kotsadm-operator-rolebinding", metav1.DeleteOptions{}); err != nil {
-			// user might not have enough permissions to do so, so don't fail here since it's not critical
-			log.Error(errors.Wrap(err, "failed to delete kotsadm-operator-rolebinding rolebinding"))
-		}
+	err = clientset.RbacV1().RoleBindings(deployOptions.Namespace).Delete(context.TODO(), "kotsadm-operator-rolebinding", metav1.DeleteOptions{})
+	if err != nil && !kuberneteserrors.IsNotFound(err) {
+		// user might not have enough permissions to do so, so don't fail here since it's not critical
+		log.Error(errors.Wrap(err, "failed to delete kotsadm-operator-rolebinding rolebinding"))
 	}
 
-	_, err = clientset.RbacV1().ClusterRoles().Get(context.TODO(), "kotsadm-operator-role", metav1.GetOptions{})
-	if err == nil {
-		if err := clientset.RbacV1().ClusterRoles().Delete(context.TODO(), "kotsadm-operator-role", metav1.DeleteOptions{}); err != nil {
-			// user might not have enough permissions to do so, so don't fail here since it's not critical
-			log.Error(errors.Wrap(err, "failed to delete kotsadm-operator-role clusterrole"))
-		}
+	err = clientset.RbacV1().ClusterRoles().Delete(context.TODO(), "kotsadm-operator-role", metav1.DeleteOptions{})
+	if err != nil && !kuberneteserrors.IsNotFound(err) {
+		// user might not have enough permissions to do so, so don't fail here since it's not critical
+		log.Error(errors.Wrap(err, "failed to delete kotsadm-operator-role clusterrole"))
 	}
 
-	_, err = clientset.RbacV1().Roles(deployOptions.Namespace).Get(context.TODO(), "kotsadm-operator-role", metav1.GetOptions{})
-	if err == nil {
-		if err := clientset.RbacV1().Roles(deployOptions.Namespace).Delete(context.TODO(), "kotsadm-operator-role", metav1.DeleteOptions{}); err != nil {
-			// user might not have enough permissions to do so, so don't fail here since it's not critical
-			log.Error(errors.Wrap(err, "failed to delete kotsadm-operator-role role"))
-		}
+	err = clientset.RbacV1().Roles(deployOptions.Namespace).Delete(context.TODO(), "kotsadm-operator-role", metav1.DeleteOptions{})
+	if err != nil && !kuberneteserrors.IsNotFound(err) {
+		// user might not have enough permissions to do so, so don't fail here since it's not critical
+		log.Error(errors.Wrap(err, "failed to delete kotsadm-operator-role role"))
 	}
 
 	// remove roles/rolebindings from the additional namespaces (if applicable)
@@ -356,30 +352,24 @@ func removeKotsadmOperator(deployOptions types.DeployOptions, clientset *kuberne
 		if err == nil && gvk.Group == "kots.io" && gvk.Version == "v1beta1" && gvk.Kind == "Application" {
 			application := obj.(*kotsv1beta1.Application)
 			for _, additionalNamespace := range application.Spec.AdditionalNamespaces {
-				_, err = clientset.RbacV1().RoleBindings(additionalNamespace).Get(context.TODO(), "kotsadm-operator-rolebinding", metav1.GetOptions{})
-				if err == nil {
-					if err := clientset.RbacV1().RoleBindings(additionalNamespace).Delete(context.TODO(), "kotsadm-operator-rolebinding", metav1.DeleteOptions{}); err != nil {
-						// user might not have enough permissions to do so, so don't fail here since it's not critical
-						log.Error(errors.Wrapf(err, "failed to delete kotsadm-operator-rolebinding rolebinding in namespace %s", additionalNamespace))
-					}
+				err := clientset.RbacV1().RoleBindings(additionalNamespace).Delete(context.TODO(), "kotsadm-operator-rolebinding", metav1.DeleteOptions{})
+				if err != nil && !kuberneteserrors.IsNotFound(err) {
+					// user might not have enough permissions to do so, so don't fail here since it's not critical
+					log.Error(errors.Wrapf(err, "failed to delete kotsadm-operator-rolebinding rolebinding in namespace %s", additionalNamespace))
 				}
-				_, err = clientset.RbacV1().Roles(additionalNamespace).Get(context.TODO(), "kotsadm-operator-role", metav1.GetOptions{})
-				if err == nil {
-					if err := clientset.RbacV1().Roles(additionalNamespace).Delete(context.TODO(), "kotsadm-operator-role", metav1.DeleteOptions{}); err != nil {
-						// user might not have enough permissions to do so, so don't fail here since it's not critical
-						log.Error(errors.Wrapf(err, "failed to delete kotsadm-operator-role role in namespace %s", additionalNamespace))
-					}
+				err = clientset.RbacV1().Roles(additionalNamespace).Delete(context.TODO(), "kotsadm-operator-role", metav1.DeleteOptions{})
+				if err != nil && !kuberneteserrors.IsNotFound(err) {
+					// user might not have enough permissions to do so, so don't fail here since it's not critical
+					log.Error(errors.Wrapf(err, "failed to delete kotsadm-operator-role role in namespace %s", additionalNamespace))
 				}
 			}
 		}
 	}
 
-	_, err = clientset.CoreV1().ServiceAccounts(deployOptions.Namespace).Get(context.TODO(), "kotsadm-operator", metav1.GetOptions{})
-	if err == nil {
-		if err := clientset.CoreV1().ServiceAccounts(deployOptions.Namespace).Delete(context.TODO(), "kotsadm-operator", metav1.DeleteOptions{}); err != nil {
-			// user might not have enough permissions to do so, so don't fail here since it's not critical
-			log.Error(errors.Wrap(err, "failed to delete kotsadm-operator serviceaccount"))
-		}
+	err = clientset.CoreV1().ServiceAccounts(deployOptions.Namespace).Delete(context.TODO(), "kotsadm-operator", metav1.DeleteOptions{})
+	if err != nil && !kuberneteserrors.IsNotFound(err) {
+		// user might not have enough permissions to do so, so don't fail here since it's not critical
+		log.Error(errors.Wrap(err, "failed to delete kotsadm-operator serviceaccount"))
 	}
 
 	return nil
@@ -388,37 +378,27 @@ func removeKotsadmOperator(deployOptions types.DeployOptions, clientset *kuberne
 func removeKotsadmMinio(deployOptions types.DeployOptions, clientset *kubernetes.Clientset) error {
 	// if there's a deployment named "kotsadm", remove (pre 1.47.0)
 	// only delete the deployment if minio is not included because that will mean that it's been replaced with a statefulset
-	_, err := clientset.AppsV1().Deployments(deployOptions.Namespace).Get(context.TODO(), "kotsadm", metav1.GetOptions{})
-	if err == nil {
-		if err := clientset.AppsV1().Deployments(deployOptions.Namespace).Delete(context.TODO(), "kotsadm", metav1.DeleteOptions{}); err != nil {
-			return errors.Wrap(err, "failed to delete kotsadm deployment")
-		}
-	} else if !kuberneteserrors.IsNotFound(err) {
-		return errors.Wrap(err, "failed to get kotsadm deployment")
+	err := clientset.AppsV1().Deployments(deployOptions.Namespace).Delete(context.TODO(), "kotsadm", metav1.DeleteOptions{})
+	if err != nil && !kuberneteserrors.IsNotFound(err) {
+		return errors.Wrap(err, "failed to delete kotsadm deployment")
 	}
 
 	// if there's a service named "kotsadm-minio", remove (pre 1.47.0)
-	_, err = clientset.CoreV1().Services(deployOptions.Namespace).Get(context.TODO(), "kotsadm-minio", metav1.GetOptions{})
-	if err == nil {
-		if err := clientset.CoreV1().Services(deployOptions.Namespace).Delete(context.TODO(), "kotsadm-minio", metav1.DeleteOptions{}); err != nil {
-			return errors.Wrap(err, "failed to delete kotsadm-minio service")
-		}
+	err = clientset.CoreV1().Services(deployOptions.Namespace).Delete(context.TODO(), "kotsadm-minio", metav1.DeleteOptions{})
+	if err != nil && !kuberneteserrors.IsNotFound(err) {
+		return errors.Wrap(err, "failed to delete kotsadm-minio service")
 	}
 
 	// if there's a statefulset named "kotsadm-minio", remove (pre 1.47.0)
-	_, err = clientset.AppsV1().StatefulSets(deployOptions.Namespace).Get(context.TODO(), "kotsadm-minio", metav1.GetOptions{})
-	if err == nil {
-		if err := clientset.AppsV1().StatefulSets(deployOptions.Namespace).Delete(context.TODO(), "kotsadm-minio", metav1.DeleteOptions{}); err != nil {
-			return errors.Wrap(err, "failed to delete kotsadm-minio statefulset")
-		}
+	err = clientset.AppsV1().StatefulSets(deployOptions.Namespace).Delete(context.TODO(), "kotsadm-minio", metav1.DeleteOptions{})
+	if err != nil && !kuberneteserrors.IsNotFound(err) {
+		return errors.Wrap(err, "failed to delete kotsadm-minio statefulset")
 	}
 
 	// if there's a secret named "kotsadm-minio", remove (pre 1.47.0)
-	_, err = clientset.CoreV1().Secrets(deployOptions.Namespace).Get(context.TODO(), "kotsadm-minio", metav1.GetOptions{})
-	if err == nil {
-		if err := clientset.CoreV1().Secrets(deployOptions.Namespace).Delete(context.TODO(), "kotsadm-minio", metav1.DeleteOptions{}); err != nil {
-			return errors.Wrap(err, "failed to delete kotsadm-minio secret")
-		}
+	err = clientset.CoreV1().Secrets(deployOptions.Namespace).Delete(context.TODO(), "kotsadm-minio", metav1.DeleteOptions{})
+	if err != nil && !kuberneteserrors.IsNotFound(err) {
+		return errors.Wrap(err, "failed to delete kotsadm-minio secret")
 	}
 
 	// if there's a minio pvc, remove (pre 1.47.0)
@@ -441,14 +421,45 @@ func removeKotsadmMinio(deployOptions types.DeployOptions, clientset *kubernetes
 	return nil
 }
 
-func ensureStorage(deployOptions types.DeployOptions, clientset *kubernetes.Clientset, log *logger.CLILogger) error {
-	if deployOptions.ExcludeAdminConsole {
-		return nil
+func removeKotsadmPostgres(deployOptions types.DeployOptions, clientset *kubernetes.Clientset) error {
+	// if there's a service named "kotsadm-postgres", remove (pre 1.89.0)
+	err := clientset.CoreV1().Services(deployOptions.Namespace).Delete(context.TODO(), "kotsadm-postgres", metav1.DeleteOptions{})
+	if err != nil && !kuberneteserrors.IsNotFound(err) {
+		return errors.Wrap(err, "failed to delete kotsadm-postgres service")
 	}
 
-	if deployOptions.IncludeMinio {
-		if err := ensureMinio(deployOptions, clientset); err != nil {
-			return errors.Wrap(err, "failed to ensure minio")
+	// if there's a statefulset named "kotsadm-postgres", remove (pre 1.89.0)
+	err = clientset.AppsV1().StatefulSets(deployOptions.Namespace).Delete(context.TODO(), "kotsadm-postgres", metav1.DeleteOptions{})
+	if err != nil && !kuberneteserrors.IsNotFound(err) {
+		return errors.Wrap(err, "failed to delete kotsadm-postgres statefulset")
+	}
+
+	// if there's a configmap named "kotsadm-postgres", remove (pre 1.89.0)
+	err = clientset.CoreV1().ConfigMaps(deployOptions.Namespace).Delete(context.TODO(), "kotsadm-postgres", metav1.DeleteOptions{})
+	if err != nil && !kuberneteserrors.IsNotFound(err) {
+		return errors.Wrap(err, "failed to delete kotsadm-postgres configmap")
+	}
+
+	// if there's a secret named "kotsadm-postgres", remove (pre 1.89.0)
+	err = clientset.CoreV1().Secrets(deployOptions.Namespace).Delete(context.TODO(), "kotsadm-postgres", metav1.DeleteOptions{})
+	if err != nil && !kuberneteserrors.IsNotFound(err) {
+		return errors.Wrap(err, "failed to delete kotsadm-postgres secret")
+	}
+
+	// if there's a postgres pvc, remove (pre 1.89.0)
+	postgresPVCSelectorLabels := map[string]string{
+		"app": "kotsadm-postgres",
+	}
+	pvcs, err := clientset.CoreV1().PersistentVolumeClaims(deployOptions.Namespace).List(context.TODO(), metav1.ListOptions{
+		LabelSelector: labels.SelectorFromSet(postgresPVCSelectorLabels).String(),
+	})
+	if err != nil {
+		return errors.Wrap(err, "failed to list kotsadm-postgres persistent volume claims")
+	}
+	for _, pvc := range pvcs.Items {
+		err := clientset.CoreV1().PersistentVolumeClaims(deployOptions.Namespace).Delete(context.TODO(), pvc.ObjectMeta.Name, metav1.DeleteOptions{})
+		if err != nil {
+			return errors.Wrap(err, "failed to delete kotsadm-postgres pvc")
 		}
 	}
 
@@ -520,28 +531,24 @@ func ensureKotsadm(deployOptions types.DeployOptions, clientset *kubernetes.Clie
 		g, ctx := errgroup.WithContext(context.TODO())
 
 		g.Go(func() error {
-			if err := ensureStorage(deployOptions, clientset, log); err != nil {
-				return errors.Wrap(err, "failed to ensure postgres")
-			}
-
 			if deployOptions.IncludeMinio {
-				if err := waitForHealthyStatefulSet(ctx, "kotsadm-minio", deployOptions, clientset, nil); err != nil {
+				if err := ensureMinio(deployOptions, clientset); err != nil {
+					return errors.Wrap(err, "failed to ensure minio")
+				}
+				if err := k8sutil.WaitForStatefulSetReady(ctx, clientset, deployOptions.Namespace, "kotsadm-minio", deployOptions.Timeout); err != nil {
 					return errors.Wrap(err, "failed to wait for minio")
 				}
 			}
-
 			return nil
 		})
 
 		g.Go(func() error {
-			if err := ensurePostgres(deployOptions, clientset); err != nil {
-				return errors.Wrap(err, "failed to ensure postgres")
+			if err := ensureRqlite(deployOptions, clientset); err != nil {
+				return errors.Wrap(err, "failed to ensure rqlite")
 			}
-
-			if err := waitForHealthyStatefulSet(ctx, "kotsadm-postgres", deployOptions, clientset, log); err != nil {
-				return errors.Wrap(err, "failed to wait for postgres")
+			if err := k8sutil.WaitForStatefulSetReady(ctx, clientset, deployOptions.Namespace, "kotsadm-rqlite", deployOptions.Timeout); err != nil {
+				return errors.Wrap(err, "failed to wait for rqlite")
 			}
-
 			return nil
 		})
 
@@ -637,7 +644,7 @@ func ensureKotsadm(deployOptions types.DeployOptions, clientset *kubernetes.Clie
 
 	if restartKotsadmAPI {
 		log.ChildActionWithSpinner("Waiting for Admin Console to be ready")
-		if err := restartKotsadm(&deployOptions, clientset); err != nil {
+		if err := k8sutil.RestartKotsadm(ctx, clientset, deployOptions.Namespace, deployOptions.Timeout); err != nil {
 			return errors.Wrap(err, "failed to restart kotsadm")
 		}
 
@@ -977,9 +984,10 @@ func ensureDisasterRecoveryLabels(deployOptions *types.DeployOptions, clientset 
 
 func ReadDeployOptionsFromCluster(namespace string, clientset *kubernetes.Clientset) (*types.DeployOptions, error) {
 	deployOptions := types.DeployOptions{
-		Namespace:   namespace,
-		ServiceType: "ClusterIP",
-		IsOpenShift: k8sutil.IsOpenShift(clientset),
+		Namespace:      namespace,
+		ServiceType:    "ClusterIP",
+		IsOpenShift:    k8sutil.IsOpenShift(clientset),
+		IsGKEAutopilot: k8sutil.IsGKEAutopilot(clientset),
 	}
 
 	// Shared password, we can't read the original, but we can check if there's a bcrypted value
@@ -995,7 +1003,7 @@ func ReadDeployOptionsFromCluster(namespace string, clientset *kubernetes.Client
 		}
 	}
 	if deployOptions.SharedPasswordBcrypt == "" {
-		sharedPassword, err := promptForSharedPassword()
+		sharedPassword, err := util.PromptForNewPassword()
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to prompt for shared password")
 		}
@@ -1040,22 +1048,22 @@ func ReadDeployOptionsFromCluster(namespace string, clientset *kubernetes.Client
 		}
 	}
 
-	// postgres password, read from the secret or create new password
-	pgSecret, err := getPostgresSecret(namespace, clientset)
+	// rqlite password, read from the secret or create new password
+	rqliteSecret, err := getRqliteSecret(namespace, clientset)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to get postgres secret")
+		return nil, errors.Wrap(err, "failed to get rqlite secret")
 	}
-	if pgSecret != nil {
-		password, ok := pgSecret.Data["password"]
+	if rqliteSecret != nil {
+		password, ok := rqliteSecret.Data["password"]
 		if ok {
-			deployOptions.PostgresPassword = string(password)
+			deployOptions.RqlitePassword = string(password)
 		}
 	}
 
 	// API encryption key, read from the secret or create new password
 	encyptionSecret, err := getAPIEncryptionSecret(namespace, clientset)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to get postgres secret")
+		return nil, errors.Wrap(err, "failed to get api encryption secret")
 	}
 	if encyptionSecret != nil {
 		key, ok := encyptionSecret.Data["encryptionKey"]

@@ -46,7 +46,10 @@ func UpstreamDownloadCmd() *cobra.Command {
 				return errors.Errorf("output format %s not supported (allowed formats are: json)", output)
 			}
 
-			namespace := v.GetString("namespace")
+			namespace, err := getNamespaceOrDefault(v.GetString("namespace"))
+			if err != nil {
+				return errors.Wrap(err, "failed to get namespace")
+			}
 
 			stopCh := make(chan struct{})
 			defer close(stopCh)

@@ -77,23 +77,13 @@ func RewriteImages(appID string, sequence int64, hostname string, username strin
 		return "", errors.Wrap(err, "failed to get app version archive")
 	}
 
-	installation, err := kotsutil.LoadInstallationFromPath(filepath.Join(appDir, "upstream", "userdata", "installation.yaml"))
+	kotsKinds, err := kotsutil.LoadKotsKindsFromPath(appDir)
 	if err != nil {
-		return "", errors.Wrap(err, "failed to load installation from path")
-	}
-
-	license, err := kotsutil.LoadLicenseFromPath(filepath.Join(appDir, "upstream", "userdata", "license.yaml"))
-	if err != nil {
-		return "", errors.Wrap(err, "failed to load license from path")
+		return "", errors.Wrap(err, "failed to load kotskinds from path")
 	}
 
 	if configValues == nil {
-		previousConfigValues, err := kotsutil.LoadConfigValuesFromFile(filepath.Join(appDir, "upstream", "userdata", "config.yaml"))
-		if err != nil && !os.IsNotExist(errors.Cause(err)) {
-			return "", errors.Wrap(err, "failed to load config values from path")
-		}
-
-		configValues = previousConfigValues
+		configValues = kotsKinds.ConfigValues
 	}
 
 	// get the downstream names only
@@ -135,28 +125,31 @@ func RewriteImages(appID string, sequence int64, hostname string, username strin
 	}
 
 	options := rewrite.RewriteOptions{
-		RootDir:            appDir,
-		UpstreamURI:        fmt.Sprintf("replicated://%s", license.Spec.AppSlug),
-		UpstreamPath:       filepath.Join(appDir, "upstream"),
-		Installation:       installation,
-		Downstreams:        downstreamNames,
-		CreateAppDir:       false,
-		ExcludeKotsKinds:   true,
-		License:            license,
-		ConfigValues:       configValues,
-		K8sNamespace:       appNamespace,
-		ReportWriter:       pipeWriter,
-		IsAirgap:           a.IsAirgap,
-		RegistryEndpoint:   hostname,
-		RegistryUsername:   username,
-		RegistryPassword:   password,
-		RegistryNamespace:  namespace,
-		RegistryIsReadOnly: isReadOnly,
-		AppID:              a.ID,
-		AppSlug:            a.Slug,
-		IsGitOps:           a.IsGitOps,
-		AppSequence:        nextAppSequence,
-		ReportingInfo:      reporting.GetReportingInfo(a.ID),
+		RootDir:          appDir,
+		UpstreamURI:      fmt.Sprintf("replicated://%s", kotsKinds.License.Spec.AppSlug),
+		UpstreamPath:     filepath.Join(appDir, "upstream"),
+		Installation:     &kotsKinds.Installation,
+		Downstreams:      downstreamNames,
+		CreateAppDir:     false,
+		ExcludeKotsKinds: true,
+		License:          kotsKinds.License,
+		ConfigValues:     configValues,
+		KotsApplication:  &kotsKinds.KotsApplication,
+		K8sNamespace:     appNamespace,
+		ReportWriter:     pipeWriter,
+		IsAirgap:         a.IsAirgap,
+		RegistrySettings: types.RegistrySettings{
+			Hostname:   hostname,
+			Namespace:  namespace,
+			Username:   username,
+			Password:   password,
+			IsReadOnly: isReadOnly,
+		},
+		AppID:         a.ID,
+		AppSlug:       a.Slug,
+		IsGitOps:      a.IsGitOps,
+		AppSequence:   nextAppSequence,
+		ReportingInfo: reporting.GetReportingInfo(a.ID),
 
 		// TODO: pass in as arguments if this is ever called from CLI
 		HTTPProxyEnvValue:  os.Getenv("HTTP_PROXY"),

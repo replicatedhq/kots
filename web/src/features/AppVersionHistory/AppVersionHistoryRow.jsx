@@ -193,6 +193,12 @@ class AppVersionHistoryRow extends Component {
     const editableConfig =
       isCurrentVersion || isLatestVersion || isPendingVersion?.semver;
 
+    const showDeployLogs =
+      isPastVersion ||
+      isCurrentVersion ||
+      isPendingDeployedVersion ||
+      (version?.status === "superseded" && version?.status !== "pending");
+
     let tooltipTip;
     if (editableConfig) {
       tooltipTip = "Edit config";
@@ -281,7 +287,12 @@ class AppVersionHistoryRow extends Component {
                               : newPreflightResults
                               ? "success"
                               : ""
-                          }`}
+                          } 
+                           ${
+                             !showDeployLogs && !showActions
+                               ? "without-btns"
+                               : ""
+                           }`}
                         >
                           {checksStatusText}
                         </p>
@@ -346,7 +357,12 @@ class AppVersionHistoryRow extends Component {
                             : newPreflightResults
                             ? "success"
                             : ""
-                        }`}
+                        } 
+                          ${
+                            !showDeployLogs && !showActions
+                              ? "without-btns"
+                              : ""
+                          }`}
                       >
                         {checksStatusText}
                       </p>
@@ -415,7 +431,9 @@ class AppVersionHistoryRow extends Component {
                           : newPreflightResults
                           ? "success"
                           : ""
-                      }`}
+                      }
+                      ${!showDeployLogs && !showActions ? "without-btns" : ""}
+                      `}
                     >
                       {checksStatusText}
                     </p>
@@ -426,7 +444,7 @@ class AppVersionHistoryRow extends Component {
             </>
           ) : null}
         </div>
-        {app.isConfigurable && (
+        {version.hasConfig && (
           <div className="flex alignItems--center">
             <Link to={configScreenURL} data-tip={tooltipTip}>
               <Icon
@@ -437,11 +455,7 @@ class AppVersionHistoryRow extends Component {
             <ReactTooltip effect="solid" className="replicated-tooltip" />
           </div>
         )}
-        {(isPastVersion ||
-          isCurrentVersion ||
-          isPendingDeployedVersion ||
-          version?.status === "superseded") &&
-        version?.status !== "pending" ? (
+        {showDeployLogs ? (
           <div className="u-marginLeft--10">
             <span
               onClick={() =>
@@ -575,7 +589,7 @@ class AppVersionHistoryRow extends Component {
               Deploy Failed
             </span>
             <span
-              className="replicated-link u-fontSize--small"
+              className="link u-fontSize--small"
               onClick={() => this.props.handleViewLogs(version, true)}
             >
               View deploy logs
@@ -639,7 +653,7 @@ class AppVersionHistoryRow extends Component {
               Deploy Failed
             </span>
             <span
-              className="replicated-link u-fontSize--small"
+              className="link u-fontSize--small"
               onClick={() => this.props.handleViewLogs(version, true)}
             >
               View deploy logs
@@ -697,11 +711,18 @@ class AppVersionHistoryRow extends Component {
       sequenceLabel = "Revision";
     }
 
+    // Old Helm charts will not have any timestamps, so don't show current time when they are missing because it's misleading.
+    let releasedTs = "";
+    const tsFormat = "MM/DD/YY @ hh:mm a z";
+    if (version.upstreamReleasedAt) {
+      releasedTs = Utilities.dateFormat(version.upstreamReleasedAt, tsFormat);
+    }
+
     return (
       <div
         key={version.sequence}
         className={classNames(
-          `VersionHistoryRowWrapper ${version.status} flex-column justifyContent--center`,
+          `card-item VersionHistoryRowWrapper ${version.status} flex-column justifyContent--center u-padding--15`,
           {
             overlay: selectedDiffReleases,
             disabled: nothingToCommit,
@@ -710,6 +731,7 @@ class AppVersionHistoryRow extends Component {
             "show-preflight-passed-text": newPreflightResults,
           }
         )}
+        style={{ minHeight: "60px" }}
         onClick={this.handleSelectReleasesToDiff}
       >
         <div className="VersionHistoryRow flex flex-auto">
@@ -728,7 +750,7 @@ class AppVersionHistoryRow extends Component {
             } flex-column flex1 u-paddingRight--20`}
           >
             <div className="flex alignItems--center">
-              <p className="u-fontSize--header2 u-fontWeight--bold u-lineHeight--medium u-textColor--primary">
+              <p className="u-fontSize--header2 u-fontWeight--bold u-lineHeight--medium card-item-title">
                 {version.versionLabel || version.title}
               </p>
               {showSequence && (
@@ -746,21 +768,13 @@ class AppVersionHistoryRow extends Component {
                 </span>
               )}
             </div>
-            <p className="u-fontSize--small u-fontWeight--medium u-textColor--bodyCopy u-marginTop--5">
-              {" "}
-              Released{" "}
-              <span className="u-fontWeight--bold">
-                {version.upstreamReleasedAt
-                  ? Utilities.dateFormat(
-                      version.upstreamReleasedAt,
-                      "MM/DD/YY @ hh:mm a z"
-                    )
-                  : Utilities.dateFormat(
-                      version.createdOn,
-                      "MM/DD/YY @ hh:mm a z"
-                    )}
-              </span>
-            </p>
+            {releasedTs && (
+              <p className="u-fontSize--small u-fontWeight--medium u-textColor--bodyCopy u-marginTop--5">
+                {" "}
+                Released{" "}
+                <span className="u-fontWeight--bold">{releasedTs}</span>
+              </p>
+            )}
             {this.renderDiff(version)}
             {version.yamlErrors && (
               <YamlErrors

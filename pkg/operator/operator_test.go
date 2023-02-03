@@ -18,6 +18,7 @@ import (
 	registrytypes "github.com/replicatedhq/kots/pkg/registry/types"
 	mock_store "github.com/replicatedhq/kots/pkg/store/mock"
 	storetypes "github.com/replicatedhq/kots/pkg/store/types"
+	"k8s.io/client-go/kubernetes/fake"
 )
 
 var _ = Describe("Operator", func() {
@@ -39,7 +40,9 @@ var _ = Describe("Operator", func() {
 				mockStore = mock_store.NewMockStore(mockCtrl)
 
 				mockClient = mock_client.NewMockClientInterface(mockCtrl)
-				testOperator = operator.Init(mockClient, mockStore, clusterToken)
+				mockK8sClientset := fake.NewSimpleClientset()
+
+				testOperator = operator.Init(mockClient, mockStore, clusterToken, mockK8sClientset)
 			})
 
 			AfterEach(func() {
@@ -124,7 +127,8 @@ var _ = Describe("Operator", func() {
 				mockStore = mock_store.NewMockStore(mockCtrl)
 
 				mockClient = mock_client.NewMockClientInterface(mockCtrl)
-				testOperator = operator.Init(mockClient, mockStore, clusterToken)
+				mockK8sClientset := fake.NewSimpleClientset()
+				testOperator = operator.Init(mockClient, mockStore, clusterToken, mockK8sClientset)
 			})
 
 			AfterEach(func() {
@@ -189,15 +193,18 @@ var _ = Describe("Operator", func() {
 			)
 
 			BeforeEach(func() {
+				os.Setenv("KOTSADM_ENV", "test")
 				previouslyDeployedSequence = -1
 				mockCtrl = gomock.NewController(GinkgoT())
 				mockStore = mock_store.NewMockStore(mockCtrl)
 
 				mockClient = mock_client.NewMockClientInterface(mockCtrl)
-				testOperator = operator.Init(mockClient, mockStore, clusterToken)
+				mockK8sClientset := fake.NewSimpleClientset()
+				testOperator = operator.Init(mockClient, mockStore, clusterToken, mockK8sClientset)
 			})
 
 			AfterEach(func() {
+				os.Setenv("KOTSADM_ENV", "")
 				mockCtrl.Finish()
 
 				err := os.RemoveAll(archiveDir)

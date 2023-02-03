@@ -1,23 +1,29 @@
 package kotsstore
 
 import (
-	"database/sql"
+	"fmt"
 
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/persistence"
+	"github.com/rqlite/gorqlite"
 )
 
 func (s *KOTSStore) GetEmbeddedClusterAuthToken() (string, error) {
-	pg := persistence.MustGetDBSession()
-	query := `select value from kotsadm_params where key = $1`
-	row := pg.QueryRow(query, "embedded.cluster.auth.token")
+	db := persistence.MustGetDBSession()
+	query := `select value from kotsadm_params where key = ?`
+	rows, err := db.QueryOneParameterized(gorqlite.ParameterizedStatement{
+		Query:     query,
+		Arguments: []interface{}{"embedded.cluster.auth.token"},
+	})
+	if err != nil {
+		return "", fmt.Errorf("failed to query: %v: %v", err, rows.Err)
+	}
+	if !rows.Next() {
+		return "", ErrNotFound
+	}
 
 	var token string
-	if err := row.Scan(&token); err != nil {
-		if err == sql.ErrNoRows {
-			return "", ErrNotFound
-		}
-
+	if err := rows.Scan(&token); err != nil {
 		return "", errors.Wrap(err, "scan embedded cluster auth token")
 	}
 
@@ -25,18 +31,24 @@ func (s *KOTSStore) GetEmbeddedClusterAuthToken() (string, error) {
 }
 
 func (s *KOTSStore) SetEmbeddedClusterAuthToken(token string) error {
-	pg := persistence.MustGetDBSession()
+	db := persistence.MustGetDBSession()
 
-	query := `delete from kotsadm_params where key = $1`
-	_, err := pg.Exec(query, "embedded.cluster.auth.token")
+	query := `delete from kotsadm_params where key = ?`
+	wr, err := db.WriteOneParameterized(gorqlite.ParameterizedStatement{
+		Query:     query,
+		Arguments: []interface{}{"embedded.cluster.auth.token"},
+	})
 	if err != nil {
-		return errors.Wrap(err, "delete embedded cluster auth token")
+		return fmt.Errorf("delete embedded cluster auth token: %v: %v", err, wr.Err)
 	}
 
-	query = `insert into kotsadm_params (key, value) values ($1, $2)`
-	_, err = pg.Exec(query, "embedded.cluster.auth.token", token)
+	query = `insert into kotsadm_params (key, value) values (?, ?)`
+	wr, err = db.WriteOneParameterized(gorqlite.ParameterizedStatement{
+		Query:     query,
+		Arguments: []interface{}{"embedded.cluster.auth.token", token},
+	})
 	if err != nil {
-		return errors.Wrap(err, "insert embedded cluster auth token")
+		return fmt.Errorf("insert embedded cluster auth token: %v: %v", err, wr.Err)
 	}
 
 	return nil

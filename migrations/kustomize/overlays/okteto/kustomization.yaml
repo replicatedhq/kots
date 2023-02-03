@@ -2,5 +2,5 @@ bases:
   - ../../base
 
 resources:
-  - ./postgres.yaml
+  - ./rqlite.yaml
   - ./migrations.yaml

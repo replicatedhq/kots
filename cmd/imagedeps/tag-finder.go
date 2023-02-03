@@ -128,8 +128,8 @@ func getTagFinder(opts ...func(c *configuration)) tagFinderFn {
 			if err != nil {
 				return nil, fmt.Errorf("failed to get release tag for dexidp/dex %w", err)
 			}
-		case postgres10Reference, postgres14Reference:
-			latestReleaseTag, err = getLatestTagFromRegistry("library/postgres", config.repositoryTagsFinder, matcherFn)
+		case rqliteReference:
+			latestReleaseTag, err = getLatestTagFromRegistry("rqlite/rqlite", config.repositoryTagsFinder, matcherFn)
 			if err != nil {
 				return nil, fmt.Errorf("failed to get release tag for %s %w", imageName, err)
 			}
@@ -190,7 +190,7 @@ func getLatestTagFromRegistry(imageUri string, getTags getTagsFn, match filterFn
 	}
 	sort.Sort(semver.Collection(versions))
 	if len(versions) == 0 {
-		return "", fmt.Errorf("no versions found for postgres")
+		return "", fmt.Errorf("no versions found")
 	}
 
 	return versions[len(versions)-1].Original(), nil

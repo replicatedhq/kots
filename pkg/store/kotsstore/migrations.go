@@ -9,6 +9,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/persistence"
+	"github.com/rqlite/gorqlite"
 )
 
 func (s *KOTSStore) RunMigrations() {
@@ -40,14 +41,14 @@ func (s *KOTSStore) RunMigrations() {
 		logger.Error(errors.Wrap(err, "failed to migrate skipped preflights"))
 	}
 
-	// migrate postgrtes data from postgres
-	if err := s.migrateSessionsFromPostgres(); err != nil {
+	// migrate data from rqlite
+	if err := s.migrateSessionsFromRqlite(); err != nil {
 		logger.Error(errors.Wrap(err, "failed to migrate sessions"))
 	}
-	if err := s.migrateSupportBundlesFromPostgres(); err != nil {
+	if err := s.migrateSupportBundlesFromRqlite(); err != nil {
 		logger.Error(errors.Wrap(err, "failed to migrate support bundles"))
 	}
-	if err := s.migrationTasksFromPostgres(); err != nil {
+	if err := s.migrateTasksFromRqlite(); err != nil {
 		logger.Error(errors.Wrap(err, "failed to migrate tasks"))
 	}
 }
@@ -56,11 +57,10 @@ func (s *KOTSStore) migrateKotsAppSpec() error {
 	db := persistence.MustGetDBSession()
 	query := `select app_id, sequence from app_version where kots_app_spec is null or not kots_app_spec like '%apiVersion%'`
 
-	rows, err := db.Query(query)
+	rows, err := db.QueryOne(query)
 	if err != nil {
-		return errors.Wrap(err, "failed to query db")
+		return fmt.Errorf("failed to query: %v: %v", err, rows.Err)
 	}
-	defer rows.Close()
 
 	type versionType struct {
 		appID    string
@@ -106,10 +106,13 @@ func (s *KOTSStore) migrateKotsAppSpec() error {
 				return errors.Wrap(err, "failed to marshal kots kinds")
 			}
 
-			query := `update app_version set kots_app_spec = $1 where app_id = $2 and sequence = $3`
-			_, err = db.Exec(query, spec, version.appID, version.sequence)
+			query := `update app_version set kots_app_spec = ? where app_id = ? and sequence = ?`
+			wr, err := db.WriteOneParameterized(gorqlite.ParameterizedStatement{
+				Query:     query,
+				Arguments: []interface{}{spec, version.appID, version.sequence},
+			})
 			if err != nil {
-				return errors.Wrap(err, "failed to set kots_app_spec")
+				return fmt.Errorf("failed to set kots_app_spec: %v: %v", err, wr.Err)
 			}
 
 			return nil
@@ -126,11 +129,10 @@ func (s *KOTSStore) migrateKotsInstallationSpec() error {
 	db := persistence.MustGetDBSession()
 	query := `select app_id, sequence from app_version where kots_installation_spec is null or not kots_installation_spec like '%apiVersion%'`
 
-	rows, err := db.Query(query)
+	rows, err := db.QueryOne(query)
 	if err != nil {
-		return errors.Wrap(err, "failed to query db")
+		return fmt.Errorf("failed to query: %v: %v", err, rows.Err)
 	}
-	defer rows.Close()
 
 	type versionType struct {
 		appID    string
@@ -176,10 +178,13 @@ func (s *KOTSStore) migrateKotsInstallationSpec() error {
 				return errors.Wrap(err, "failed to marshal kots kinds")
 			}
 
-			query := `update app_version set kots_installation_spec = $1 where app_id = $2 and sequence = $3`
-			_, err = db.Exec(query, spec, version.appID, version.sequence)
+			query := `update app_version set kots_installation_spec = ? where app_id = ? and sequence = ?`
+			wr, err := db.WriteOneParameterized(gorqlite.ParameterizedStatement{
+				Query:     query,
+				Arguments: []interface{}{spec, version.appID, version.sequence},
+			})
 			if err != nil {
-				return errors.Wrap(err, "failed to set kots_installation_spec")
+				return fmt.Errorf("failed to set kots_installation_spec: %v: %v", err, wr.Err)
 			}
 
 			return nil
@@ -196,11 +201,10 @@ func (s *KOTSStore) migrateSupportBundleSpec() error {
 	db := persistence.MustGetDBSession()
 	query := `select app_id, sequence from app_version where supportbundle_spec is null`
 
-	rows, err := db.Query(query)
+	rows, err := db.QueryOne(query)
 	if err != nil {
-		return errors.Wrap(err, "failed to query db")
+		return fmt.Errorf("failed to query: %v: %v", err, rows.Err)
 	}
-	defer rows.Close()
 
 	type versionType struct {
 		appID    string
@@ -246,10 +250,13 @@ func (s *KOTSStore) migrateSupportBundleSpec() error {
 				return errors.Wrap(err, "failed to marshal kots kinds")
 			}
 
-			query := `update app_version set supportbundle_spec = $1 where app_id = $2 and sequence = $3`
-			_, err = db.Exec(query, spec, version.appID, version.sequence)
+			query := `update app_version set supportbundle_spec = ? where app_id = ? and sequence = ?`
+			wr, err := db.WriteOneParameterized(gorqlite.ParameterizedStatement{
+				Query:     query,
+				Arguments: []interface{}{spec, version.appID, version.sequence},
+			})
 			if err != nil {
-				return errors.Wrap(err, "failed to set supportbundle_spec")
+				return fmt.Errorf("failed to set supportbundle_spec: %v: %v", err, wr.Err)
 			}
 
 			return nil
@@ -266,11 +273,10 @@ func (s *KOTSStore) migratePreflightSpec() error {
 	db := persistence.MustGetDBSession()
 	query := `select app_id, sequence from app_version where preflight_spec is null`
 
-	rows, err := db.Query(query)
+	rows, err := db.QueryOne(query)
 	if err != nil {
-		return errors.Wrap(err, "failed to query db")
+		return fmt.Errorf("failed to query: %v: %v", err, rows.Err)
 	}
-	defer rows.Close()
 
 	type versionType struct {
 		appID    string
@@ -316,10 +322,13 @@ func (s *KOTSStore) migratePreflightSpec() error {
 				return errors.Wrap(err, "failed to marshal kots kinds")
 			}
 
-			query := `update app_version set preflight_spec = $1 where app_id = $2 and sequence = $3`
-			_, err = db.Exec(query, spec, version.appID, version.sequence)
+			query := `update app_version set preflight_spec = ? where app_id = ? and sequence = ?`
+			wr, err := db.WriteOneParameterized(gorqlite.ParameterizedStatement{
+				Query:     query,
+				Arguments: []interface{}{spec, version.appID, version.sequence},
+			})
 			if err != nil {
-				return errors.Wrap(err, "failed to set preflight_spec")
+				return fmt.Errorf("failed to set preflight_spec: %v: %v", err, wr.Err)
 			}
 
 			return nil
@@ -336,11 +345,10 @@ func (s *KOTSStore) migrateAnalyzerSpec() error {
 	db := persistence.MustGetDBSession()
 	query := `select app_id, sequence from app_version where analyzer_spec is null`
 
-	rows, err := db.Query(query)
+	rows, err := db.QueryOne(query)
 	if err != nil {
-		return errors.Wrap(err, "failed to query db")
+		return fmt.Errorf("failed to query: %v: %v", err, rows.Err)
 	}
-	defer rows.Close()
 
 	type versionType struct {
 		appID    string
@@ -386,10 +394,13 @@ func (s *KOTSStore) migrateAnalyzerSpec() error {
 				return errors.Wrap(err, "failed to marshal kots kinds")
 			}
 
-			query := `update app_version set analyzer_spec = $1 where app_id = $2 and sequence = $3`
-			_, err = db.Exec(query, spec, version.appID, version.sequence)
+			query := `update app_version set analyzer_spec = ? where app_id = ? and sequence = ?`
+			wr, err := db.WriteOneParameterized(gorqlite.ParameterizedStatement{
+				Query:     query,
+				Arguments: []interface{}{spec, version.appID, version.sequence},
+			})
 			if err != nil {
-				return errors.Wrap(err, "failed to set analyzer_spec")
+				return fmt.Errorf("failed to set analyzer_spec: %v: %v", err, wr.Err)
 			}
 
 			return nil
@@ -406,11 +417,10 @@ func (s *KOTSStore) migrateAppSpec() error {
 	db := persistence.MustGetDBSession()
 	query := `select app_id, sequence from app_version where app_spec is null`
 
-	rows, err := db.Query(query)
+	rows, err := db.QueryOne(query)
 	if err != nil {
-		return errors.Wrap(err, "failed to query db")
+		return fmt.Errorf("failed to query: %v: %v", err, rows.Err)
 	}
-	defer rows.Close()
 
 	type versionType struct {
 		appID    string
@@ -456,10 +466,13 @@ func (s *KOTSStore) migrateAppSpec() error {
 				return errors.Wrap(err, "failed to marshal kots kinds")
 			}
 
-			query := `update app_version set app_spec = $1 where app_id = $2 and sequence = $3`
-			_, err = db.Exec(query, spec, version.appID, version.sequence)
+			query := `update app_version set app_spec = ? where app_id = ? and sequence = ?`
+			wr, err := db.WriteOneParameterized(gorqlite.ParameterizedStatement{
+				Query:     query,
+				Arguments: []interface{}{spec, version.appID, version.sequence},
+			})
 			if err != nil {
-				return errors.Wrap(err, "failed to set app_spec")
+				return fmt.Errorf("failed to set app_spec: %v: %v", err, wr.Err)
 			}
 
 			return nil
@@ -476,9 +489,9 @@ func (s *KOTSStore) migrateSkippedPreflights() error {
 	db := persistence.MustGetDBSession()
 
 	query := `update app_downstream_version set preflight_skipped = true where preflight_result_created_at is null`
-	_, err := db.Exec(query)
+	wr, err := db.WriteOne(query)
 	if err != nil {
-		return errors.Wrap(err, "failed to set preflight_skipped")
+		return fmt.Errorf("failed to set preflight_skipped: %v: %v", err, wr.Err)
 	}
 
 	return nil

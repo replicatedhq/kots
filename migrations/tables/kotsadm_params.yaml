@@ -5,16 +5,18 @@ metadata:
     controller-tools.k8s.io: "1.0"
   name: kotsadm-params
 spec:
-  database: kotsadm-postgres
   name: kotsadm_params
   requires: []
   schema:
-    postgres:
+    rqlite:
+      strict: true
       primaryKey:
       - key
       columns:
       - name: key
         type: text
+        constraints:
+          notNull: true
       - name: value
         type: text
         constraints:

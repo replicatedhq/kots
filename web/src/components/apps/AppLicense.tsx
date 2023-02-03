@@ -17,19 +17,23 @@ import Loader from "../shared/Loader";
 // @ts-ignore
 import styled from "styled-components";
 
-import { App, LicenseFile, License } from "@src/types";
+import { App, AppLicense, LicenseFile } from "@src/types";
 import "@src/scss/components/apps/AppLicense.scss";
-import LicenseFields from "./LicenseFields";
+import { LicenseFields } from "@features/Dashboard";
+import { useLicenseWithIntercept } from "@features/App";
 import Icon from "../Icon";
+import { UseDownloadValues } from "../hooks";
+import { HelmDeployModal } from "../shared/modals/HelmDeployModal";
 
 type Props = {
   app: App;
   changeCallback: () => void;
   syncCallback: () => void;
+  isHelmManaged: boolean;
 };
 
 type State = {
-  appLicense: License | null;
+  appLicense: AppLicense | null;
   loading: boolean;
   message: string;
   messageType: string;
@@ -43,7 +47,7 @@ type State = {
   isViewingLicenseEntitlements: boolean;
 };
 
-const AppLicense = (props: Props) => {
+const AppLicenseComponent = (props: Props) => {
   const [state, setState] = useReducer(
     (currentState: State, newState: Partial<State>) => ({
       ...currentState,
@@ -65,36 +69,20 @@ const AppLicense = (props: Props) => {
     }
   );
 
-  const getAppLicense = async () => {
-    await fetch(`${process.env.API_ENDPOINT}/app/${props.app.slug}/license`, {
-      method: "GET",
-      headers: {
-        Authorization: Utilities.getToken(),
-        "Content-Type": "application/json",
-      },
-    })
-      .then(async (res) => {
-        const body = await res.json();
-        if (body === null) {
-          setState({ appLicense: null });
-        } else if (body.success) {
-          setState({
-            appLicense: body.license,
-            isViewingLicenseEntitlements:
-              size(body.license?.entitlements) <= 5 ? false : true,
-          });
-        } else if (body.error) {
-          console.log(body.error);
-        }
-      })
-      .catch((err) => {
-        console.log(err);
-      });
-  };
-
+  const { data: licenseWithInterceptResponse } = useLicenseWithIntercept();
   useEffect(() => {
-    getAppLicense();
-  }, []);
+    if (!licenseWithInterceptResponse) {
+      setState({ appLicense: null });
+    } else {
+      setState({
+        appLicense: licenseWithInterceptResponse.license,
+        isViewingLicenseEntitlements:
+          size(licenseWithInterceptResponse.license?.entitlements) <= 5
+            ? false
+            : true,
+      });
+    }
+  }, [licenseWithInterceptResponse]);
 
   const syncAppLicense = (licenseData: string) => {
     setState({
@@ -169,7 +157,9 @@ const AppLicense = (props: Props) => {
     const airgapLicense = await yaml.safeLoad(contentStr);
     const { appLicense } = state;
 
-    if (airgapLicense.spec?.licenseID !== appLicense?.id) {
+    // TODO: FIX THIS
+    // @ts-ignore
+    if (airgapLicense?.spec?.licenseID !== appLicense?.id) {
       setState({
         message: "Licenses do not match",
         messageType: "error",
@@ -177,7 +167,9 @@ const AppLicense = (props: Props) => {
       return;
     }
 
-    if (airgapLicense.spec?.licenseSequence === appLicense?.licenseSequence) {
+    // TODO: FIX THIS
+    // @ts-ignore
+    if (airgapLicense?.spec?.licenseSequence === appLicense?.licenseSequence) {
       setState({
         message: "License is already up to date",
         messageType: "info",
@@ -327,13 +319,119 @@ const AppLicense = (props: Props) => {
   const expiresAt = getLicenseExpiryDate(appLicense);
   const gitops = app.downstream?.gitops;
   const appName = app?.name || "Your application";
+
+  let nextModalBody: React.ReactNode;
+  if (props.isHelmManaged) {
+    const sequence = props?.app?.downstream?.currentVersion?.sequence;
+    const versionLabel = props?.app?.downstream?.currentVersion?.versionLabel;
+
+    nextModalBody = (
+      <UseDownloadValues
+        appSlug={props?.app?.slug}
+        fileName="values.yaml"
+        sequence={sequence}
+        versionLabel={versionLabel}
+        isPending={false}
+      >
+        {({
+          download,
+          downloadError: downloadError,
+          name,
+          ref,
+          url,
+        }: {
+          download: () => void;
+          clearError: () => void;
+          downloadError: boolean;
+          name: string;
+          ref: string;
+          url: string;
+        }) => {
+          return (
+            <>
+              <HelmDeployModal
+                appSlug={props?.app?.slug}
+                chartPath={props?.app?.chartPath || ""}
+                downloadClicked={download}
+                downloadError={downloadError}
+                hideHelmDeployModal={hideNextStepModal}
+                registryUsername={props?.app?.credentials?.username}
+                registryPassword={props?.app?.credentials?.password}
+                showHelmDeployModal={true}
+                showDownloadValues={true}
+                subtitle={
+                  "Follow the steps below to redeploy the release using the new license."
+                }
+                title={` Redeploy ${props?.app?.slug}`}
+                upgradeTitle={"Redeploy release"}
+                version={versionLabel}
+                namespace={props?.app?.namespace}
+              />
+              <a href={url} download={name} className="hidden" ref={ref} />
+            </>
+          );
+        }}
+      </UseDownloadValues>
+    );
+  } else if (gitops?.isConnected) {
+    nextModalBody = (
+      <div className="Modal-body">
+        <p className="u-fontSize--large u-textColor--primary u-lineHeight--medium u-marginBottom--20">
+          The license for {appName} has been updated. A new commit has been made
+          to the gitops repository with these changes. Please head to the{" "}
+          <a
+            className="link"
+            target="_blank"
+            href={gitops?.uri}
+            rel="noopener noreferrer"
+          >
+            repo
+          </a>{" "}
+          to see the diff.
+        </p>
+        <div className="flex justifyContent--flexEnd">
+          <button
+            type="button"
+            className="btn blue primary"
+            onClick={hideNextStepModal}
+          >
+            Ok, got it!
+          </button>
+        </div>
+      </div>
+    );
+  } else {
+    nextModalBody = (
+      <div className="Modal-body">
+        <p className="u-fontSize--large u-textColor--primary u-lineHeight--medium u-marginBottom--20">
+          The license for {appName} has been updated. A new version is available
+          on the version history page with these changes.
+        </p>
+        <div className="flex justifyContent--flexEnd">
+          <button
+            type="button"
+            className="btn blue secondary u-marginRight--10"
+            onClick={hideNextStepModal}
+          >
+            Cancel
+          </button>
+          <Link to={`/app/${app?.slug}/version-history`}>
+            <button type="button" className="btn blue primary">
+              Go to new version
+            </button>
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-column justifyContent--center alignItems--center">
       <KotsPageTitle pageName="License" showAppSlug />
       {size(appLicense) > 0 ? (
-        <div className="License--wrapper flex-column">
+        <div className="License--wrapper flex-column card-bg">
           <div className="flex flex-auto alignItems--center">
-            <span className="u-fontSize--large u-fontWeight--bold u-lineHeight--normal u-textColor--primary">
+            <span className="u-fontSize--large u-fontWeight--bold u-lineHeight--normal card-title">
               {" "}
               License{" "}
             </span>
@@ -354,11 +452,11 @@ const AppLicense = (props: Props) => {
               </div>
             )}
           </div>
-          <div className="LicenseDetails flex-row">
+          <div className="LicenseDetails flex-row card-item">
             <div className=" flex flex1 justifyContent--spaceBetween">
               <div className="flex1 flex-column u-paddingRight--20">
                 <div className="flex flex-auto alignItems--center">
-                  <span className="u-fontSize--larger u-fontWeight--bold u-lineHeight--normal u-textColor--secondary">
+                  <span className="u-fontSize--larger u-fontWeight--bold u-lineHeight--normal card-item-title">
                     {" "}
                     {appLicense.assignee}{" "}
                   </span>
@@ -390,7 +488,7 @@ const AppLicense = (props: Props) => {
                     className={`u-fontWeight--medium u-fontSize--small u-lineHeight--normal u-marginLeft--10 ${
                       Utilities.checkIsDateExpired(expiresAt)
                         ? "u-textColor--error"
-                        : "u-textColor--info"
+                        : "u-textColor--bodyCopy"
                     }`}
                   >
                     {expiresAt === "Never"
@@ -487,7 +585,7 @@ const AppLicense = (props: Props) => {
                   </p>
                 )}
                 {appLicense?.lastSyncedAt && (
-                  <p className="u-fontWeight--bold u-fontSize--small u-textColor--header u-lineHeight--default u-marginTop--10">
+                  <p className="u-fontWeight--bold u-fontSize--small u-textColor--info u-lineHeight--default u-marginTop--10">
                     Last synced {Utilities.dateFromNow(appLicense.lastSyncedAt)}
                   </p>
                 )}
@@ -563,54 +661,7 @@ const AppLicense = (props: Props) => {
         ariaHideApp={false}
         className="Modal MediumSize"
       >
-        {gitops?.isConnected ? (
-          <div className="Modal-body">
-            <p className="u-fontSize--large u-textColor--primary u-lineHeight--medium u-marginBottom--20">
-              The license for {appName} has been updated. A new commit has been
-              made to the gitops repository with these changes. Please head to
-              the{" "}
-              <a
-                className="link"
-                target="_blank"
-                href={gitops?.uri}
-                rel="noopener noreferrer"
-              >
-                repo
-              </a>{" "}
-              to see the diff.
-            </p>
-            <div className="flex justifyContent--flexEnd">
-              <button
-                type="button"
-                className="btn blue primary"
-                onClick={hideNextStepModal}
-              >
-                Ok, got it!
-              </button>
-            </div>
-          </div>
-        ) : (
-          <div className="Modal-body">
-            <p className="u-fontSize--large u-textColor--primary u-lineHeight--medium u-marginBottom--20">
-              The license for {appName} has been updated. A new version is
-              available on the version history page with these changes.
-            </p>
-            <div className="flex justifyContent--flexEnd">
-              <button
-                type="button"
-                className="btn blue secondary u-marginRight--10"
-                onClick={hideNextStepModal}
-              >
-                Cancel
-              </button>
-              <Link to={`/app/${app?.slug}/version-history`}>
-                <button type="button" className="btn blue primary">
-                  Go to new version
-                </button>
-              </Link>
-            </div>
-          </div>
-        )}
+        {nextModalBody}
       </Modal>
 
       {showLicenseChangeModalState && (
@@ -652,7 +703,7 @@ const AppLicense = (props: Props) => {
                         {licenseChangeFile.name}
                       </p>
                       <span
-                        className="replicated-link u-fontSize--small"
+                        className="link u-fontSize--small"
                         onClick={clearLicenseChangeFile}
                       >
                         Select a different file
@@ -679,7 +730,7 @@ const AppLicense = (props: Props) => {
                     />
                     <p className="u-fontSize--normal u-textColor--secondary u-fontWeight--medium u-lineHeight--normal">
                       Drag your new license here or{" "}
-                      <span className="u-linkColor u-fontWeight--medium u-textDecoration--underlineOnHover">
+                      <span className="link u-textDecoration--underlineOnHover">
                         choose a file
                       </span>
                     </p>
@@ -730,7 +781,7 @@ const AppLicense = (props: Props) => {
   );
 };
 
-export default AppLicense;
+export default AppLicenseComponent;
 
 export const CustomerLicenseFields = styled.div`
   background: #f5f8f9;

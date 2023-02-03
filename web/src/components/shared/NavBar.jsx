@@ -1,7 +1,8 @@
 import React, { PureComponent } from "react";
 import PropTypes from "prop-types";
 import classNames from "classnames";
-import { Link, withRouter } from "react-router-dom";
+import { withRouter } from "@src/utilities/react-router-utilities";
+import { Link } from "react-router-dom";
 import { Utilities } from "@src/utilities/utilities";
 import ErrorModal from "../modals/ErrorModal";
 import NavBarDropdown from "./NavBarDropdown";
@@ -138,8 +139,10 @@ export class NavBar extends PureComponent {
     let licenseType;
     if (pathname.length > 2 && pathname[1] === "app") {
       selectedApp = appsList.find((app) => app.slug === pathname[2]);
-      appLogo = selectedApp?.iconUri;
       licenseType = selectedApp?.licenseType;
+      appLogo =
+        selectedApp?.downstream?.currentVersion?.appIconUri ||
+        selectedApp?.iconUri;
     } else {
       appLogo = logo;
       licenseType = "";

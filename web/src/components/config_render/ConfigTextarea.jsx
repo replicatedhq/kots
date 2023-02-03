@@ -70,7 +70,7 @@ export default class ConfigTextarea extends React.Component {
               />
             ) : null}
             {this.props.help_text !== "" ? (
-              <div className="field-section-help-text u-marginTop--5">
+              <div className="field-section-help-text help-text-color u-marginTop--5">
                 <Markdown
                   options={{
                     linkTarget: "_blank",
@@ -118,7 +118,7 @@ export default class ConfigTextarea extends React.Component {
                 className="u-marginTop--10"
                 onClick={() => this.props.handleAddItem(this.props.name)}
               >
-                <span className="add-btn u-fontSize--small u-fontWeight--bold u-linkColor u-cursor--pointer">
+                <span className="add-btn u-fontSize--small u-fontWeight--bold link">
                   <Icon icon="plus" size={14} className="clickable" />
                   Add another {this.props.title}
                 </span>
@@ -145,7 +145,7 @@ export default class ConfigTextarea extends React.Component {
           />
         ) : null}
         {this.props.help_text !== "" ? (
-          <div className="field-section-help-text u-marginTop--5">
+          <div className="field-section-help-text help-text-color u-marginTop--5">
             <Markdown
               options={{
                 linkTarget: "_blank",
@@ -177,7 +177,7 @@ export default class ConfigTextarea extends React.Component {
             className="u-marginTop--10"
             onClick={() => this.props.handleAddItem(this.props.name)}
           >
-            <span className="add-btn u-fontSize--small u-fontWeight--bold u-linkColor u-cursor--pointer">
+            <span className="add-btn u-fontSize--small u-fontWeight--bold link">
               <Icon icon="plus" size={14} className="clickable" />
               Add another {this.props.title}
             </span>

@@ -105,7 +105,9 @@ func GetMetadataHandler(getK8sInfoFn MetadataK8sFn, kotsStore store.Store) http.
 		}
 		application := obj.(*kotsv1beta1.Application)
 		metadataResponse.IconURI = application.Spec.Icon
-		metadataResponse.Branding = getBrandingResponse(kotsStore, appID)
+		if !util.IsHelmManaged() {
+			metadataResponse.Branding = getBrandingResponse(kotsStore, appID)
+		}
 		metadataResponse.Name = application.Spec.Title
 		metadataResponse.UpstreamURI = brandingConfigMap.Data[upstreamUriKey]
 		metadataResponse.ConsoleFeatureFlags = application.Spec.ConsoleFeatureFlags
@@ -233,7 +235,7 @@ func GetMetaDataConfig() (*v1.ConfigMap, types.Metadata, error) {
 		return nil, types.Metadata{}, nil
 	}
 
-	kotsadmMetadata := kotsadm.GetMetadata()
+	kotsadmMetadata := kotsadm.GetMetadata(clientset)
 
 	brandingConfigMap, err := clientset.CoreV1().ConfigMaps(util.PodNamespace).Get(context.TODO(), metadataConfigMapName, metav1.GetOptions{})
 	if err != nil {

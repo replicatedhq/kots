@@ -23,6 +23,7 @@ import (
 	appstatetypes "github.com/replicatedhq/kots/pkg/appstate/types"
 	identitydeploy "github.com/replicatedhq/kots/pkg/identity/deploy"
 	identitytypes "github.com/replicatedhq/kots/pkg/identity/types"
+	kotsadmobjects "github.com/replicatedhq/kots/pkg/kotsadm/objects"
 	snapshot "github.com/replicatedhq/kots/pkg/kotsadmsnapshot"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/kustomize"
@@ -30,7 +31,9 @@ import (
 	"github.com/replicatedhq/kots/pkg/midstream"
 	"github.com/replicatedhq/kots/pkg/operator/client"
 	operatortypes "github.com/replicatedhq/kots/pkg/operator/types"
+	registrytypes "github.com/replicatedhq/kots/pkg/registry/types"
 	"github.com/replicatedhq/kots/pkg/render"
+	rendertypes "github.com/replicatedhq/kots/pkg/render/types"
 	"github.com/replicatedhq/kots/pkg/reporting"
 	"github.com/replicatedhq/kots/pkg/store"
 	storetypes "github.com/replicatedhq/kots/pkg/store/types"
@@ -40,8 +43,10 @@ import (
 	"github.com/replicatedhq/kots/pkg/util"
 	velerov1 "github.com/vmware-tanzu/velero/pkg/apis/velero/v1"
 	corev1 "k8s.io/api/core/v1"
+	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	serializer "k8s.io/apimachinery/pkg/runtime/serializer/json"
+	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/scheme"
 )
 
@@ -55,14 +60,16 @@ type Operator struct {
 	clusterToken string
 	clusterID    string
 	deployMtxs   map[string]*sync.Mutex // key is app id
+	k8sClientset kubernetes.Interface
 }
 
-func Init(client client.ClientInterface, store store.Store, clusterToken string) *Operator {
+func Init(client client.ClientInterface, store store.Store, clusterToken string, k8sClientset kubernetes.Interface) *Operator {
 	operator = &Operator{
 		client:       client,
 		store:        store,
 		clusterToken: clusterToken,
 		deployMtxs:   map[string]*sync.Mutex{},
+		k8sClientset: k8sClientset,
 	}
 	return operator
 }
@@ -160,6 +167,13 @@ func (o *Operator) DeployApp(appID string, sequence int64) (deployed bool, deplo
 		return false, errors.Wrap(err, "failed to update downstream status")
 	}
 
+	if os.Getenv("KOTSADM_ENV") != "test" {
+		go reporting.SendAppInfo(appID)
+		defer func() {
+			go reporting.SendAppInfo(appID)
+		}()
+	}
+
 	defer func() {
 		if deployError != nil {
 			err := o.store.SetDownstreamVersionStatus(appID, sequence, storetypes.VersionFailed, deployError.Error())
@@ -222,6 +236,10 @@ func (o *Operator) DeployApp(appID string, sequence int64) (deployed bool, deplo
 	registrySettings, err := o.store.GetRegistryDetailsForApp(app.ID)
 	if err != nil {
 		return false, errors.Wrap(err, "failed to get registry settings for app")
+	}
+
+	if err := o.ensureKotsadmApplicationMetadataConfigMap(app, sequence, util.PodNamespace, kotsKinds, registrySettings); err != nil {
+		return false, errors.Wrap(err, "failed to ensure kotsadm application metadata configmap")
 	}
 
 	builder, err := render.NewBuilder(kotsKinds, registrySettings, app.Slug, sequence, app.IsAirgap, util.PodNamespace)
@@ -750,4 +768,50 @@ func deduplicateSecrets(secretSpecs []string) []string {
 	}
 
 	return secretSpecs
+}
+
+func (o *Operator) ensureKotsadmApplicationMetadataConfigMap(app *apptypes.App, sequence int64, namespace string, kotsKinds *kotsutil.KotsKinds, registrySettings registrytypes.RegistrySettings) error {
+	renderedKotsAppSpec, err := o.renderKotsApplicationSpec(app, sequence, namespace, kotsKinds, registrySettings, &render.Renderer{})
+	if err != nil {
+		return errors.Wrap(err, "failed to render kots application spec")
+	}
+
+	existingConfigMap, err := o.k8sClientset.CoreV1().ConfigMaps(namespace).Get(context.TODO(), "kotsadm-application-metadata", metav1.GetOptions{})
+	if err != nil {
+		if !kuberneteserrors.IsNotFound(err) {
+			return errors.Wrap(err, "failed to get existing metadata config map")
+		}
+
+		_, err := o.k8sClientset.CoreV1().ConfigMaps(namespace).Create(context.TODO(), kotsadmobjects.ApplicationMetadataConfig(renderedKotsAppSpec, namespace, app.UpstreamURI), metav1.CreateOptions{})
+		if err != nil {
+			return errors.Wrap(err, "failed to create metadata config map")
+		}
+		return nil
+	}
+
+	if existingConfigMap.Data == nil {
+		existingConfigMap.Data = map[string]string{}
+	}
+
+	existingConfigMap.Data["application.yaml"] = string(renderedKotsAppSpec)
+	_, err = o.k8sClientset.CoreV1().ConfigMaps(util.PodNamespace).Update(context.Background(), existingConfigMap, metav1.UpdateOptions{})
+	if err != nil {
+		return errors.Wrap(err, "failed to update config map")
+	}
+
+	return nil
+}
+
+func (o *Operator) renderKotsApplicationSpec(app *apptypes.App, sequence int64, namespace string, kotsKinds *kotsutil.KotsKinds, registrySettings registrytypes.RegistrySettings, renderer rendertypes.Renderer) ([]byte, error) {
+	marshalledKotsAppSpec, err := kotsKinds.Marshal("kots.io", "v1beta1", "Application")
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to marshal kots app spec")
+	}
+
+	renderedKotsAppSpec, err := renderer.RenderFile(kotsKinds, registrySettings, app.Slug, sequence, app.IsAirgap, namespace, []byte(marshalledKotsAppSpec))
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to render preflights")
+	}
+
+	return renderedKotsAppSpec, nil
 }

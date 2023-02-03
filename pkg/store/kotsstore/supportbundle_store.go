@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"compress/gzip"
 	"context"
-	"database/sql"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -24,6 +23,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/supportbundle/types"
 	"github.com/replicatedhq/kots/pkg/util"
 	troubleshootredact "github.com/replicatedhq/troubleshoot/pkg/redact"
+	"github.com/rqlite/gorqlite"
 	"go.uber.org/zap"
 	corev1 "k8s.io/api/core/v1"
 	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
@@ -76,16 +76,30 @@ func getSupportBundleIDsFromCache(appID string) []string {
 	return supportBundlesIDsByApp[appID]
 }
 
-func (s *KOTSStore) migrateSupportBundlesFromPostgres() error {
-	logger.Debug("migrating support bundles from postgres")
+func deleteSupportBundleFromCache(id string, appID string) {
+	supportBundleSecretMtx.Lock()
+	defer supportBundleSecretMtx.Unlock()
+	delete(supportBundlesByID, id)
+
+	oldSupportBundlesIDs := supportBundlesIDsByApp[appID]
+	newSupportBundlesIDs := []string{}
+	for _, sbID := range oldSupportBundlesIDs {
+		if sbID != id {
+			newSupportBundlesIDs = append(newSupportBundlesIDs, sbID)
+		}
+	}
+	supportBundlesIDsByApp[appID] = newSupportBundlesIDs
+}
+
+func (s *KOTSStore) migrateSupportBundlesFromRqlite() error {
+	logger.Debug("migrating support bundles from rqlite")
 
 	db := persistence.MustGetDBSession()
 	query := `select id, watch_id, name, size, status, tree_index, created_at, uploaded_at, shared_at, is_archived from supportbundle order by created_at desc`
-	rows, err := db.Query(query)
+	rows, err := db.QueryOne(query)
 	if err != nil {
-		return errors.Wrap(err, "failed to query rows")
+		return fmt.Errorf("failed to query: %v: %v", err, rows.Err)
 	}
-	defer rows.Close()
 
 	clientset, err := k8sutil.GetClientset()
 	if err != nil {
@@ -94,12 +108,12 @@ func (s *KOTSStore) migrateSupportBundlesFromPostgres() error {
 
 	supportBundles := []types.SupportBundle{}
 	for rows.Next() {
-		var name sql.NullString
-		var size sql.NullFloat64
-		var treeIndex sql.NullString
-		var uploadedAt sql.NullTime
-		var sharedAt sql.NullTime
-		var isArchived sql.NullBool
+		var name gorqlite.NullString
+		var size gorqlite.NullFloat64
+		var treeIndex gorqlite.NullString
+		var uploadedAt gorqlite.NullTime
+		var sharedAt gorqlite.NullTime
+		var isArchived gorqlite.NullBool
 
 		s := types.SupportBundle{}
 		if err := rows.Scan(&s.ID, &s.AppID, &name, &size, &s.Status, &treeIndex, &s.CreatedAt, &uploadedAt, &sharedAt, &isArchived); err != nil {
@@ -127,17 +141,22 @@ func (s *KOTSStore) migrateSupportBundlesFromPostgres() error {
 		analysisMarshaled := []byte{}
 
 		// NOTE we are dropping ID, error and max_severity from the data because it's not used and has unknown validity
-		query = `SELECT insights, created_at FROM supportbundle_analysis where supportbundle_id = $1`
-		row := db.QueryRow(query, supportBundle.ID)
-		var insightsStr sql.NullString
+		query = `SELECT insights, created_at FROM supportbundle_analysis where supportbundle_id = ?`
+		rows, err := db.QueryOneParameterized(gorqlite.ParameterizedStatement{
+			Query:     query,
+			Arguments: []interface{}{supportBundle.ID},
+		})
+		if err != nil {
+			return fmt.Errorf("failed to query: %v: %v", err, rows.Err)
+		}
+		if !rows.Next() {
+			return ErrNotFound
+		}
 
+		var insightsStr gorqlite.NullString
 		a := &types.SupportBundleAnalysis{}
 		hasAnalysis := true
-		if err := row.Scan(&insightsStr, &a.CreatedAt); err != nil {
-			if err != sql.ErrNoRows {
-				return errors.Wrap(err, "failed to scan")
-			}
-
+		if err := rows.Scan(&insightsStr, &a.CreatedAt); err != nil {
 			hasAnalysis = false
 		}
 
@@ -159,10 +178,20 @@ func (s *KOTSStore) migrateSupportBundlesFromPostgres() error {
 			analysisMarshaled = b
 		}
 
-		query = `select redact_report from supportbundle where id = $1`
-		var redactString sql.NullString
-		row = db.QueryRow(query, supportBundle.ID)
-		if err := row.Scan(&redactString); err != nil {
+		query = `select redact_report from supportbundle where id = ?`
+		rows, err = db.QueryOneParameterized(gorqlite.ParameterizedStatement{
+			Query:     query,
+			Arguments: []interface{}{supportBundle.ID},
+		})
+		if err != nil {
+			return fmt.Errorf("failed to query: %v: %v", err, rows.Err)
+		}
+		if !rows.Next() {
+			return ErrNotFound
+		}
+
+		var redactString gorqlite.NullString
+		if err := rows.Scan(&redactString); err != nil {
 			return errors.Wrap(err, "failed to scan")
 		}
 		if redactString.Valid && redactString.String != "" {
@@ -211,12 +240,12 @@ func (s *KOTSStore) migrateSupportBundlesFromPostgres() error {
 	}
 
 	query = `delete from supportbundle`
-	if _, err = db.Exec(query); err != nil {
-		return errors.Wrap(err, "failed to delete support bundles from pg")
+	if wr, err := db.WriteOne(query); err != nil {
+		return fmt.Errorf("failed to delete support bundles from db: %v: %v", err, wr.Err)
 	}
 	query = `delete from supportbundle_analysis`
-	if _, err = db.Exec(query); err != nil {
-		return errors.Wrap(err, "faild to delete support bundle analysises from pg")
+	if wr, err := db.WriteOne(query); err != nil {
+		return fmt.Errorf("failed to delete support bundle analysises from db: %v: %v", err, wr.Err)
 	}
 
 	return nil
@@ -301,6 +330,30 @@ func (s *KOTSStore) GetSupportBundle(id string) (*types.SupportBundle, error) {
 	}
 
 	return supportBundle, nil
+}
+
+func (s *KOTSStore) DeleteSupportBundle(bundleID string, appID string) error {
+	if util.IsHelmManaged() {
+		// delete from cache
+		deleteSupportBundleFromCache(bundleID, appID)
+	} else {
+		clientset, err := k8sutil.GetClientset()
+		if err != nil {
+			return errors.Wrap(err, "failed to get clientset")
+		}
+
+		// delete the secret
+		if err := clientset.CoreV1().Secrets(util.PodNamespace).Delete(context.TODO(), fmt.Sprintf("supportbundle-%s", bundleID), metav1.DeleteOptions{}); err != nil && !s.IsNotFound(err) {
+			return errors.Wrap(err, "failed to delete secret")
+		}
+
+		// delete the archive
+		sbPath := filepath.Join("supportbundles", bundleID)
+		if err := filestore.GetStore().DeleteArchive(sbPath); err != nil {
+			return errors.Wrap(err, "failed to delete archive")
+		}
+	}
+	return nil
 }
 
 func (s *KOTSStore) CreateInProgressSupportBundle(supportBundle *types.SupportBundle) error {

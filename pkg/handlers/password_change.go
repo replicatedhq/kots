@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/pkg/errors"
+	"github.com/replicatedhq/kots/pkg/handlers/types"
 	"github.com/replicatedhq/kots/pkg/identity"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/logger"
@@ -24,7 +25,7 @@ type PasswordChangeResponse struct {
 	Success bool `json:"success"`
 }
 
-//  ChangePassword - change password for kots
+// ChangePassword - change password for kots
 func (h *Handler) ChangePassword(w http.ResponseWriter, r *http.Request) {
 	var passwordChangeRequest PasswordChangeRequest
 	if err := json.NewDecoder(r.Body).Decode(&passwordChangeRequest); err != nil {
@@ -35,7 +36,7 @@ func (h *Handler) ChangePassword(w http.ResponseWriter, r *http.Request) {
 
 	if err := password.ValidatePasswordInput(passwordChangeRequest.CurrentPassword, passwordChangeRequest.NewPassword); err != nil {
 		logger.Error(err)
-		JSON(w, http.StatusBadRequest, NewErrorResponse(err))
+		JSON(w, http.StatusBadRequest, types.NewErrorResponse(err))
 		return
 	}
 
@@ -47,21 +48,21 @@ func (h *Handler) ChangePassword(w http.ResponseWriter, r *http.Request) {
 	}
 	if identityConfig.Spec.Enabled && identityConfig.Spec.DisablePasswordAuth {
 		err := errors.New("password authentication disabled")
-		JSON(w, http.StatusForbidden, NewErrorResponse(err))
+		JSON(w, http.StatusForbidden, types.NewErrorResponse(err))
 		return
 	}
 
 	clientset, err := k8sutil.GetClientset()
 	if err != nil {
 		logger.Error(err)
-		JSON(w, http.StatusInternalServerError, NewErrorResponse(err))
+		JSON(w, http.StatusInternalServerError, types.NewErrorResponse(err))
 		return
 	}
 
 	if err := password.ValidateCurrentPassword(store.GetStore(), passwordChangeRequest.CurrentPassword); err != nil {
 		logger.Error(err)
 		if errors.Is(err, password.ErrCurrentPasswordDoesNotMatch) {
-			JSON(w, http.StatusBadRequest, NewErrorResponse(err))
+			JSON(w, http.StatusBadRequest, types.NewErrorResponse(err))
 			return
 		}
 		w.WriteHeader(http.StatusInternalServerError)
@@ -71,7 +72,7 @@ func (h *Handler) ChangePassword(w http.ResponseWriter, r *http.Request) {
 	// change password
 	if err := password.ChangePassword(clientset, util.PodNamespace, passwordChangeRequest.NewPassword); err != nil {
 		logger.Error(err)
-		JSON(w, http.StatusInternalServerError, NewErrorResponse(err))
+		JSON(w, http.StatusInternalServerError, types.NewErrorResponse(err))
 		return
 	}
 

@@ -125,7 +125,11 @@ spec:
                 type: array
               proxyPublicImages:
                 type: boolean
+              proxyRegistryDomain:
+                type: string
               releaseNotes:
+                type: string
+              replicatedRegistryDomain:
                 type: string
               requireMinimalRBACPrivileges:
                 type: boolean

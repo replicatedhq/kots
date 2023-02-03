@@ -13,6 +13,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/util"
 	"helm.sh/helm/v3/pkg/action"
 	"helm.sh/helm/v3/pkg/chart/loader"
+	"helm.sh/helm/v3/pkg/chartutil"
 	rspb "helm.sh/helm/v3/pkg/release"
 	helmtime "helm.sh/helm/v3/pkg/time"
 	k8syaml "sigs.k8s.io/yaml"
@@ -24,7 +25,7 @@ var (
 
 const NamespaceTemplateConst = "repl{{ Namespace}}"
 
-func renderHelmV3(chartName string, chartPath string, vals map[string]interface{}, renderOptions *RenderOptions) ([]BaseFile, error) {
+func renderHelmV3(chartName string, chartPath string, vals map[string]interface{}, renderOptions *RenderOptions) ([]BaseFile, []BaseFile, error) {
 	cfg := &action.Configuration{
 		Log: renderOptions.Log.Debug,
 	}
@@ -42,18 +43,31 @@ func renderHelmV3(chartName string, chartPath string, vals map[string]interface{
 
 	chartRequested, err := loader.Load(chartPath)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to load chart")
+		return nil, nil, errors.Wrap(err, "failed to load chart")
 	}
 
 	if req := chartRequested.Metadata.Dependencies; req != nil {
 		if err := action.CheckDependencies(chartRequested, req); err != nil {
-			return nil, errors.Wrap(err, "failed dependency check")
+			return nil, nil, errors.Wrap(err, "failed dependency check")
 		}
 	}
 
 	rel, err := client.Run(chartRequested, vals)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to render chart")
+		return nil, nil, util.ActionableError{
+			NoRetry: true,
+			Message: fmt.Sprintf("helm v3 render failed with error: %v", err),
+		}
+	}
+
+	coalescedValues, err := chartutil.CoalesceValues(rel.Chart, rel.Config)
+	if err != nil {
+		return nil, nil, errors.Wrap(err, "failed to coalesce values")
+	}
+
+	valuesContent, err := k8syaml.Marshal(coalescedValues)
+	if err != nil {
+		return nil, nil, errors.Wrap(err, "failed to marshal rendered values")
 	}
 
 	var manifests bytes.Buffer
@@ -63,6 +77,12 @@ func renderHelmV3(chartName string, chartPath string, vals map[string]interface{
 	}
 
 	baseFiles := []BaseFile{}
+	additionalFiles := []BaseFile{
+		{
+			Path:    "values.yaml",
+			Content: valuesContent,
+		},
+	}
 
 	splitManifests := splitManifests(manifests.String())
 	manifestName := ""
@@ -106,12 +126,12 @@ func renderHelmV3(chartName string, chartPath string, vals map[string]interface{
 
 		helmReleaseSecretObj, err := newSecretsObject(rel)
 		if err != nil {
-			return nil, errors.Wrap(err, "failed to generate helm secret")
+			return nil, nil, errors.Wrap(err, "failed to generate helm secret")
 		}
 
 		renderedSecret, err := k8syaml.Marshal(helmReleaseSecretObj)
 		if err != nil {
-			return nil, errors.Wrap(err, "failed to generate helm secret")
+			return nil, nil, errors.Wrap(err, "failed to generate helm secret")
 		}
 		baseFiles = append(baseFiles, BaseFile{
 			Path:    "chartHelmSecret.yaml",
@@ -122,7 +142,7 @@ func renderHelmV3(chartName string, chartPath string, vals map[string]interface{
 	// insert namespace defined in the HelmChart spec
 	baseFiles, err = kustomizeHelmNamespace(baseFiles, renderOptions)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to insert helm namespace")
+		return nil, nil, errors.Wrap(err, "failed to insert helm namespace")
 	}
 
 	// ensure order
@@ -130,7 +150,7 @@ func renderHelmV3(chartName string, chartPath string, vals map[string]interface{
 	sort.Slice(merged, func(i, j int) bool {
 		return 0 > strings.Compare(merged[i].Path, merged[j].Path)
 	})
-	return merged, nil
+	return merged, additionalFiles, nil
 }
 
 func mergeBaseFiles(baseFiles []BaseFile) []BaseFile {

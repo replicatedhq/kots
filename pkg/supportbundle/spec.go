@@ -4,6 +4,7 @@ import (
 	"archive/tar"
 	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -25,6 +26,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/registry"
 	registrytypes "github.com/replicatedhq/kots/pkg/registry/types"
 	"github.com/replicatedhq/kots/pkg/render/helper"
+	"github.com/replicatedhq/kots/pkg/reporting"
 	"github.com/replicatedhq/kots/pkg/snapshot"
 	kotssnapshot "github.com/replicatedhq/kots/pkg/snapshot"
 	"github.com/replicatedhq/kots/pkg/store"
@@ -73,7 +75,7 @@ func CreateRenderedSpec(app apptypes.AppType, sequence int64, kotsKinds *kotsuti
 	namespacesToCollect := []string{}
 	namespacesToAnalyze := []string{}
 
-	isKurl, err := kurl.IsKurl()
+	isKurl, err := kurl.IsKurl(clientset)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to check if cluster is kurl")
 	}
@@ -130,7 +132,7 @@ func CreateRenderedSpec(app apptypes.AppType, sequence int64, kotsKinds *kotsuti
 		registrySettings = s
 	}
 
-	collectors, err := registry.UpdateCollectorSpecsWithRegistryData(supportBundle.Spec.Collectors, registrySettings, kotsKinds.Installation.Spec.KnownImages, kotsKinds.License)
+	collectors, err := registry.UpdateCollectorSpecsWithRegistryData(supportBundle.Spec.Collectors, registrySettings, kotsKinds.Installation.Spec.KnownImages, kotsKinds.License, &kotsKinds.KotsApplication)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to update collectors")
 	}
@@ -143,6 +145,7 @@ func CreateRenderedSpec(app apptypes.AppType, sequence int64, kotsKinds *kotsuti
 
 	secretName := GetSpecSecretName(app.GetSlug())
 	existingSecret, err := clientset.CoreV1().Secrets(util.PodNamespace).Get(context.TODO(), secretName, metav1.GetOptions{})
+	labels := kotstypes.MergeLabels(kotstypes.GetKotsadmLabels(), kotstypes.GetTroubleshootLabels())
 	if err != nil && !kuberneteserrors.IsNotFound(err) {
 		return nil, errors.Wrap(err, "failed to read support bundle secret")
 	} else if kuberneteserrors.IsNotFound(err) {
@@ -154,7 +157,7 @@ func CreateRenderedSpec(app apptypes.AppType, sequence int64, kotsKinds *kotsuti
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      secretName,
 				Namespace: util.PodNamespace,
-				Labels:    kotstypes.GetKotsadmLabels(),
+				Labels:    labels,
 			},
 			Data: map[string][]byte{
 				SpecDataKey: renderedSpec,
@@ -173,7 +176,7 @@ func CreateRenderedSpec(app apptypes.AppType, sequence int64, kotsKinds *kotsuti
 		existingSecret.Data = map[string][]byte{}
 	}
 	existingSecret.Data[SpecDataKey] = renderedSpec
-	existingSecret.ObjectMeta.Labels = kotstypes.GetKotsadmLabels()
+	existingSecret.ObjectMeta.Labels = labels
 
 	_, err = clientset.CoreV1().Secrets(util.PodNamespace).Update(context.TODO(), existingSecret, metav1.UpdateOptions{})
 	if err != nil {
@@ -422,22 +425,38 @@ func deduplicatedAnalyzers(supportBundle *troubleshootv1beta2.SupportBundle) *tr
 
 // addDefaultTroubleshoot adds kots.io (github.com/replicatedhq/kots/support-bundle/spec.yaml) spec to the support bundle.
 func addDefaultTroubleshoot(supportBundle *troubleshootv1beta2.SupportBundle, imageName string, pullSecret *troubleshootv1beta2.ImagePullSecrets) *troubleshootv1beta2.SupportBundle {
+	clientset, err := k8sutil.GetClientset()
+	if err != nil {
+		logger.Errorf("Failed to get kubernetes clientset: %v", err)
+	}
+
+	isKurl, err := kurl.IsKurl(clientset)
+	if err != nil {
+		logger.Errorf("Failed to check if cluster is kurl: %v", err)
+	}
 	next := supportBundle.DeepCopy()
-	next.Spec.Collectors = append(next.Spec.Collectors, getDefaultCollectors(imageName, pullSecret)...)
-	next.Spec.Analyzers = append(next.Spec.Analyzers, getDefaultAnalyzers()...)
+	next.Spec.Collectors = append(next.Spec.Collectors, getDefaultCollectors(imageName, pullSecret, isKurl)...)
+	next.Spec.Analyzers = append(next.Spec.Analyzers, getDefaultAnalyzers(isKurl)...)
 	return next
 }
 
-func getDefaultCollectors(imageName string, pullSecret *troubleshootv1beta2.ImagePullSecrets) []*troubleshootv1beta2.Collect {
+func getDefaultCollectors(imageName string, pullSecret *troubleshootv1beta2.ImagePullSecrets, isKurl bool) []*troubleshootv1beta2.Collect {
 	supportBundle := defaultspec.Get()
 	if imageName != "" {
 		supportBundle = *populateImages(&supportBundle, imageName, pullSecret)
 	}
+	if !isKurl {
+		supportBundle = *removeKurlCollectors(&supportBundle)
+	}
 	return supportBundle.Spec.Collectors
 }
 
-func getDefaultAnalyzers() []*troubleshootv1beta2.Analyze {
-	return defaultspec.Get().Spec.Analyzers
+func getDefaultAnalyzers(isKurl bool) []*troubleshootv1beta2.Analyze {
+	defaultAnalyzers := defaultspec.Get().Spec.Analyzers
+	if !isKurl {
+		defaultAnalyzers = removeKurlAnalyzers(defaultAnalyzers)
+	}
+	return defaultAnalyzers
 }
 
 // addDefaultDynamicTroubleshoot adds dynamic spec to the support bundle.
@@ -483,6 +502,21 @@ func getDefaultDynamicCollectors(app apptypes.AppType, imageName string, pullSec
 				},
 			})
 		}
+	}
+
+	reportingInfo := reporting.GetReportingInfo(app.GetID())
+	if b, err := json.MarshalIndent(reportingInfo, "", "  "); err != nil {
+		logger.Errorf("Failed to marshal reporting info: %v", err)
+	} else {
+		collectors = append(collectors, &troubleshootv1beta2.Collect{
+			Data: &troubleshootv1beta2.Data{
+				CollectorMeta: troubleshootv1beta2.CollectorMeta{
+					CollectorName: "app-info.json",
+				},
+				Name: "kots/admin_console",
+				Data: string(b),
+			},
+		})
 	}
 
 	collectors = append(collectors, &troubleshootv1beta2.Collect{
@@ -535,7 +569,7 @@ func getDefaultDynamicCollectors(app apptypes.AppType, imageName string, pullSec
 		logger.Errorf("Failed to get kubernetes clientset: %v", err)
 	}
 
-	isKurl, err := kurl.IsKurl()
+	isKurl, err := kurl.IsKurl(clientset)
 	if err != nil {
 		logger.Errorf("Failed to check if cluster is kurl: %v", err)
 	}
@@ -600,7 +634,12 @@ func getDefaultDynamicAnalyzers(app apptypes.AppType) []*troubleshootv1beta2.Ana
 		},
 	})
 
-	isKurl, err := kurl.IsKurl()
+	clientset, err := k8sutil.GetClientset()
+	if err != nil {
+		logger.Errorf("Failed to get kubernetes clientset: %v", err)
+	}
+
+	isKurl, err := kurl.IsKurl(clientset)
 	if err != nil {
 		logger.Errorf("Failed to check if cluster is kurl: %v", err)
 	}
@@ -901,4 +940,76 @@ func populateImages(supportBundle *troubleshootv1beta2.SupportBundle, imageName 
 	next.Spec.Collectors = collects
 
 	return next
+}
+
+// removeKurlCollectors removes collectors from the default support bundle spec that are specific to kURL clusters
+func removeKurlCollectors(supportBundle *troubleshootv1beta2.SupportBundle) *troubleshootv1beta2.SupportBundle {
+	next := supportBundle.DeepCopy()
+
+	collects := []*troubleshootv1beta2.Collect{}
+	for _, collect := range next.Spec.Collectors {
+		if collect.Ceph != nil {
+			continue
+		}
+		if collect.Longhorn != nil {
+			continue
+		}
+		if collect.Collectd != nil {
+			continue
+		}
+		if collect.Exec != nil {
+			if collect.Exec.Name == "kots/kurl/weave" {
+				continue
+			}
+		}
+		if collect.Logs != nil {
+			if collect.Logs.Name == "kots/kurl/weave" {
+				continue
+			}
+			if collect.Logs.Namespace == "kurl" || collect.Logs.Namespace == "rook-ceph" {
+				continue
+			}
+		}
+		if collect.ConfigMap != nil && collect.ConfigMap.Namespace == "kurl" {
+			continue
+		}
+		if collect.CopyFromHost != nil && collect.CopyFromHost.CollectorName == "kurl-host-preflights" {
+			continue
+		}
+		collects = append(collects, collect)
+	}
+	next.Spec.Collectors = collects
+
+	return next
+}
+
+// removeKurlAnalyzers removes analyzers from the default support bundle spec that are specific to kURL clusters
+func removeKurlAnalyzers(analyzers []*troubleshootv1beta2.Analyze) []*troubleshootv1beta2.Analyze {
+
+	analyze := []*troubleshootv1beta2.Analyze{}
+
+	for _, analyzer := range analyzers {
+		if analyzer.CephStatus != nil {
+			continue
+		}
+		if analyzer.Longhorn != nil {
+			continue
+		}
+		if analyzer.WeaveReport != nil {
+			continue
+		}
+		if analyzer.TextAnalyze != nil {
+			checkName := analyzer.TextAnalyze.CheckName
+
+			if checkName == "Weave Report" || checkName == "Weave Status" {
+				continue
+			}
+			if checkName == "Flannel: can read net-conf.json" || checkName == "Flannel: has access" {
+				continue
+			}
+		}
+		analyze = append(analyze, analyzer)
+	}
+
+	return analyze
 }

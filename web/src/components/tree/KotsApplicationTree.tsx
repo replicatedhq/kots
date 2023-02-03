@@ -1,5 +1,5 @@
 import * as React from "react";
-import { withRouter } from "react-router-dom";
+import { withRouter } from "@src/utilities/react-router-utilities";
 import { Utilities } from "../../utilities/utilities";
 import { KotsPageTitle } from "@components/Head";
 import isEmpty from "lodash/isEmpty";
@@ -117,7 +117,7 @@ class KotsApplicationTree extends React.Component<Props, State> {
             Need to edit these files?{" "}
             <span
               onClick={this.toggleInstructionsModal}
-              className="replicated-link"
+              className="u-fontWeight--bold u-cursor--pointer u-textDecoration--underlineOnHover"
             >
               Click here
             </span>{" "}
@@ -247,5 +247,7 @@ class KotsApplicationTree extends React.Component<Props, State> {
   }
 }
 
-// eslint-disable-next-line
+/* eslint-disable */
+// @ts-ignore
 export default withRouter(KotsApplicationTree) as any;
+/* eslint-enable */

@@ -40,10 +40,7 @@ const UploadCACertificate = ({ certificate, handleSetCACert }) => {
             <p className="u-fontSize--normal u-textColor--primary u-fontWeight--medium">
               {certificate.name}
             </p>
-            <span
-              className="replicated-link u-fontSize--small"
-              onClick={clearFile}
-            >
+            <span className="link u-fontSize--small" onClick={clearFile}>
               Select a different file
             </span>
           </div>
@@ -62,7 +59,7 @@ const UploadCACertificate = ({ certificate, handleSetCACert }) => {
               <p className="u-fontSize--normal u-textColor--secondary u-lineHeight--normal">
                 Drag your cert here or
                 <span
-                  className="u-linkColor u-textDecoration--underlineOnHover"
+                  className="link u-textDecoration--underlineOnHover"
                   style={{ paddingLeft: "4px" }}
                 >
                   choose a file

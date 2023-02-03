@@ -3,11 +3,11 @@ kind: Table
 metadata:
   name: app-downstream
 spec:
-  database: kotsadm-postgres
   name: app_downstream
   requires: []
   schema:
-    postgres:
+    rqlite:
+      strict: true
       primaryKey:
         - app_id
         - cluster_id

@@ -2,7 +2,6 @@ package version
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
 	"time"
 
@@ -17,6 +16,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/store"
 	storetypes "github.com/replicatedhq/kots/pkg/store/types"
 	"github.com/replicatedhq/kots/pkg/util"
+	"github.com/rqlite/gorqlite"
 	"go.uber.org/zap"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -87,15 +87,21 @@ func DeployVersion(appID string, sequence int64) error {
 
 func GetRealizedLinksFromAppSpec(appID string, sequence int64) ([]types.RealizedLink, error) {
 	db := persistence.MustGetDBSession()
-	query := `select app_spec, kots_app_spec from app_version where app_id = $1 and sequence = $2`
-	row := db.QueryRow(query, appID, sequence)
+	query := `select app_spec, kots_app_spec from app_version where app_id = ? and sequence = ?`
+	rows, err := db.QueryOneParameterized(gorqlite.ParameterizedStatement{
+		Query:     query,
+		Arguments: []interface{}{appID, sequence},
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to query: %v: %v", err, rows.Err)
+	}
+	if !rows.Next() {
+		return []types.RealizedLink{}, nil
+	}
 
-	var appSpecStr sql.NullString
-	var kotsAppSpecStr sql.NullString
-	if err := row.Scan(&appSpecStr, &kotsAppSpecStr); err != nil {
-		if err == sql.ErrNoRows {
-			return []types.RealizedLink{}, nil
-		}
+	var appSpecStr gorqlite.NullString
+	var kotsAppSpecStr gorqlite.NullString
+	if err := rows.Scan(&appSpecStr, &kotsAppSpecStr); err != nil {
 		return nil, errors.Wrap(err, "failed to scan")
 	}
 

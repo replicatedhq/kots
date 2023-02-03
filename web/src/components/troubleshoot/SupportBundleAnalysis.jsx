@@ -1,5 +1,6 @@
 import * as React from "react";
-import { withRouter, Switch, Route, Link } from "react-router-dom";
+import { Switch, Route, Link } from "react-router-dom";
+import { withRouter } from "@src/utilities/react-router-utilities";
 import dayjs from "dayjs";
 import Modal from "react-modal";
 
@@ -10,12 +11,16 @@ import AnalyzerRedactorReport from "./AnalyzerRedactorReport";
 import PodAnalyzerDetails from "./PodAnalyzerDetails";
 import ErrorModal from "../modals/ErrorModal";
 import { Utilities } from "../../utilities/utilities";
+import { Repeater } from "@src/utilities/repeater";
 import "../../scss/components/troubleshoot/SupportBundleAnalysis.scss";
+import "@src/scss/components/AirgapUploadProgress.scss";
 import download from "downloadjs";
 import Icon from "../Icon";
 
 import { KotsPageTitle } from "@components/Head";
+import { isEmpty } from "lodash";
 
+let percentage;
 export class SupportBundleAnalysis extends React.Component {
   constructor(props) {
     super();
@@ -28,14 +33,11 @@ export class SupportBundleAnalysis extends React.Component {
           : "bundleAnalysis",
       filterTiles: "0",
       downloadingBundle: false,
-      bundle: null,
-      loading: false,
       downloadBundleErrMsg: "",
-      getSupportBundleErrMsg: "",
       sendingBundle: false,
       sendingBundleErrMsg: "",
-      displayErrorModal: false,
       showPodAnalyzerDetailsModal: false,
+      pollForBundleAnalysisProgress: new Repeater(),
     };
   }
 
@@ -137,10 +139,10 @@ export class SupportBundleAnalysis extends React.Component {
   };
 
   getSupportBundle = async () => {
-    this.setState({
-      loading: true,
-      getSupportBundleErrMsg: "",
+    this.props.updateState({
       displayErrorModal: false,
+      getSupportBundleErrMsg: "",
+      loading: true,
     });
 
     fetch(
@@ -155,35 +157,44 @@ export class SupportBundleAnalysis extends React.Component {
     )
       .then(async (res) => {
         if (!res.ok) {
-          this.setState({
-            loading: false,
-            getSupportBundleErrMsg: `Unexpected status code: ${res.status}`,
+          this.props.updateState({
             displayErrorModal: true,
+            getSupportBundleErrMsg: `Unexpected status code: ${res.status}`,
+            loading: false,
           });
           return;
         }
         const bundle = await res.json();
-        this.setState({
-          bundle: bundle,
-          loading: false,
-          getSupportBundleErrMsg: "",
+        this.props.updateState({
           displayErrorModal: false,
+          getSupportBundleErrMsg: "",
+          loading: false,
+          bundle: bundle,
         });
+
+        if (bundle.status === "running") {
+          this.state.pollForBundleAnalysisProgress.start(
+            this.props.pollForBundleAnalysisProgress,
+            1000
+          );
+        }
       })
       .catch((err) => {
         console.log(err);
-        this.setState({
+        this.props.updateState({
+          displayErrorModal: false,
           loading: false,
           getSupportBundleErrMsg: err
             ? err.message
             : "Something went wrong, please try again.",
-          displayErrorModal: true,
         });
       });
   };
 
   toggleErrorModal = () => {
-    this.setState({ displayErrorModal: !this.state.displayErrorModal });
+    this.props.updateState({
+      displayErrorModal: !this.props.displayErrorModal,
+    });
   };
 
   toggleAnalysisAction = (active) => {
@@ -192,12 +203,25 @@ export class SupportBundleAnalysis extends React.Component {
     });
   };
 
+  moveBar(progressData) {
+    const elem = document.getElementById("supportBundleStatusBar");
+    const calcPercent =
+      (progressData.collectorsCompleted / progressData.collectorCount) * 100;
+    percentage = calcPercent > 98 ? 98 : calcPercent.toFixed();
+    if (elem) {
+      elem.style.width = percentage + "%";
+    }
+  }
+
   componentDidMount() {
     this.getSupportBundle();
   }
+  componentWillUnmount() {
+    this.state.pollForBundleAnalysisProgress.stop();
+  }
 
   componentDidUpdate = (lastProps) => {
-    const { location } = this.props;
+    const { location, bundle } = this.props;
     if (location !== lastProps.location) {
       this.setState({
         activeTab:
@@ -208,11 +232,18 @@ export class SupportBundleAnalysis extends React.Component {
             : "bundleAnalysis",
       });
     }
+    if (
+      bundle?.status !== "running" &&
+      bundle?.status !== lastProps.bundle.status
+    ) {
+      this.state.pollForBundleAnalysisProgress.stop();
+    }
   };
 
   render() {
     const { watch } = this.props;
-    const { bundle, loading, getSupportBundleErrMsg } = this.state;
+    const { bundleProgress, getSupportBundleErrMsg, loading, bundle } =
+      this.props;
 
     if (loading) {
       return (
@@ -221,6 +252,48 @@ export class SupportBundleAnalysis extends React.Component {
         </div>
       );
     }
+
+    // TODO: make this into a reusable component
+    let progressBar;
+
+    if (bundleProgress?.collectorsCompleted > 0) {
+      this.moveBar(bundleProgress);
+      progressBar = (
+        <div className="progressbar">
+          <div
+            className="progressbar-meter"
+            id="supportBundleStatusBar"
+            style={{ width: "0px" }}
+          />
+        </div>
+      );
+    } else {
+      percentage = "0";
+      progressBar = (
+        <div className="progressbar">
+          <div
+            className="progressbar-meter"
+            id="supportBundleStatusBar"
+            style={{ width: "0px" }}
+          />
+        </div>
+      );
+    }
+
+    let statusDiv = (
+      <div className="u-marginTop--20 u-fontWeight--medium u-lineHeight--medium u-textAlign--center">
+        <div className="flex flex1 u-marginBottom--10 justifyContent--center alignItems--center u-textColor--secondary">
+          {bundleProgress?.message && (
+            <Loader className="flex u-marginRight--5" size="24" />
+          )}
+          {percentage >= 98 ? (
+            <p>Almost done, finalizing your bundle...</p>
+          ) : (
+            <p>Analyzing {bundleProgress?.message}</p>
+          )}
+        </div>
+      </div>
+    );
 
     const insightsUrl = `/app/:slug/troubleshoot/analyze/:bundleSlug`;
     const fileTreeUrl = `/app/:slug/troubleshoot/analyze/:bundleSlug/contents/*`;
@@ -241,7 +314,7 @@ export class SupportBundleAnalysis extends React.Component {
                     <div className="u-fontSize--small u-fontWeight--medium u-textColor--bodyCopy u-marginBottom--20">
                       <Link
                         to={`/app/${this.props.watch.slug}/troubleshoot`}
-                        className="replicated-link u-marginRight--5"
+                        className="link u-marginRight--5"
                       >
                         Support bundles
                       </Link>{" "}
@@ -252,7 +325,7 @@ export class SupportBundleAnalysis extends React.Component {
                     </div>
                     <div className="flex flex1 justifyContent--spaceBetween">
                       <div className="flex flex-column">
-                        <h2 className="u-fontSize--header2 u-fontWeight--bold u-textColor--primary flex alignContent--center alignItems--center">
+                        <h2 className="u-fontSize--header2 u-fontWeight--bold card-item-title flex alignContent--center alignItems--center">
                           Support bundle analysis
                         </h2>
                       </div>
@@ -270,59 +343,61 @@ export class SupportBundleAnalysis extends React.Component {
                       </div>
                     </div>
                   </div>
-                  <div className="flex flex-auto alignItems--center justifyContent--flexEnd">
-                    {this.state.downloadBundleErrMsg && (
-                      <p className="u-textColor--error u-fontSize--normal u-fontWeight--medium u-lineHeight--normal u-marginRight--10">
-                        {this.state.downloadBundleErrMsg}
-                      </p>
-                    )}
-                    {this.state.sendingBundleErrMsg && (
-                      <p className="u-textColor--error u-fontSize--normal u-fontWeight--medium u-lineHeight--normal u-marginRight--10">
-                        {this.state.sendingBundleErrMsg}
-                      </p>
-                    )}
-                    {showSendSupportBundleBtn &&
-                      (this.state.sendingBundle ? (
-                        <Loader className="u-marginRight--10" size="30" />
-                      ) : bundle.sharedAt ? (
-                        <div className="sentToVendorWrapper flex alignItems--flexEnd u-paddingLeft--10 u-paddingRight--10 u-marginRight--10">
-                          <Icon
-                            icon="paper-airplane"
-                            size={16}
-                            style={{ marginRight: 7 }}
-                          />
-                          <span className="u-fontWeight--bold u-fontSize--small u-color--mutedteal">
-                            Sent to vendor on{" "}
-                            {Utilities.dateFormat(
-                              bundle.sharedAt,
-                              "MM/DD/YYYY"
-                            )}
-                          </span>
-                        </div>
-                      ) : !this.props.watch.isAirgap ? (
+                  {this.props.bundle.status !== "running" && (
+                    <div className="flex flex-auto alignItems--center justifyContent--flexEnd">
+                      {this.state.downloadBundleErrMsg && (
+                        <p className="u-textColor--error u-fontSize--normal u-fontWeight--medium u-lineHeight--normal u-marginRight--10">
+                          {this.state.downloadBundleErrMsg}
+                        </p>
+                      )}
+                      {this.state.sendingBundleErrMsg && (
+                        <p className="u-textColor--error u-fontSize--normal u-fontWeight--medium u-lineHeight--normal u-marginRight--10">
+                          {this.state.sendingBundleErrMsg}
+                        </p>
+                      )}
+                      {showSendSupportBundleBtn &&
+                        (this.state.sendingBundle ? (
+                          <Loader className="u-marginRight--10" size="30" />
+                        ) : bundle.sharedAt ? (
+                          <div className="sentToVendorWrapper flex alignItems--flexEnd u-paddingLeft--10 u-paddingRight--10 u-marginRight--10">
+                            <Icon
+                              icon="paper-airplane"
+                              size={16}
+                              style={{ marginRight: 7 }}
+                            />
+                            <span className="u-fontWeight--bold u-fontSize--small u-color--mutedteal">
+                              Sent to vendor on{" "}
+                              {Utilities.dateFormat(
+                                bundle.sharedAt,
+                                "MM/DD/YYYY"
+                              )}
+                            </span>
+                          </div>
+                        ) : !this.props.watch.isAirgap ? (
+                          <button
+                            className="btn primary lightBlue u-marginRight--10"
+                            onClick={this.sendBundleToVendor}
+                          >
+                            Send bundle to vendor
+                          </button>
+                        ) : null)}
+                      {this.state.downloadingBundle ? (
+                        <Loader size="30" />
+                      ) : (
                         <button
-                          className="btn primary lightBlue u-marginRight--10"
-                          onClick={this.sendBundleToVendor}
+                          className={`btn ${
+                            showSendSupportBundleBtn
+                              ? "secondary blue"
+                              : "primary lightBlue"
+                          }`}
+                          onClick={() => this.downloadBundle(bundle)}
                         >
-                          Send bundle to vendor
+                          {" "}
+                          Download bundle{" "}
                         </button>
-                      ) : null)}
-                    {this.state.downloadingBundle ? (
-                      <Loader size="30" />
-                    ) : (
-                      <button
-                        className={`btn ${
-                          showSendSupportBundleBtn
-                            ? "secondary blue"
-                            : "primary lightBlue"
-                        }`}
-                        onClick={() => this.downloadBundle(bundle)}
-                      >
-                        {" "}
-                        Download bundle{" "}
-                      </button>
-                    )}
-                  </div>
+                      )}
+                    </div>
+                  )}
                 </div>
               </div>
               {watch.licenseType === "community" && (
@@ -347,94 +422,110 @@ export class SupportBundleAnalysis extends React.Component {
                 </div>
               )}
               <div className="flex-column flex1">
-                <div className="SupportBundleTabs--wrapper flex1 flex-column">
-                  <div className="tab-items flex">
-                    <Link
-                      to={`/app/${watch.slug}/troubleshoot/analyze/${bundle.slug}`}
-                      className={`${
-                        this.state.activeTab === "bundleAnalysis"
-                          ? "is-active"
-                          : ""
-                      } tab-item blue`}
-                      onClick={() =>
-                        this.toggleAnalysisAction("bundleAnalysis")
-                      }
-                    >
-                      Analysis overview
-                    </Link>
-                    <Link
-                      to={`/app/${watch.slug}/troubleshoot/analyze/${bundle.slug}/contents/`}
-                      className={`${
-                        this.state.activeTab === "fileTree" ? "is-active" : ""
-                      } tab-item blue`}
-                      onClick={() => this.toggleAnalysisAction("fileTree")}
-                    >
-                      File inspector
-                    </Link>
-                    <Link
-                      to={`/app/${watch.slug}/troubleshoot/analyze/${bundle.slug}/redactor/report`}
-                      className={`${
-                        this.state.activeTab === "redactorReport"
-                          ? "is-active"
-                          : ""
-                      } tab-item blue`}
-                      onClick={() =>
-                        this.toggleAnalysisAction("redactorReport")
-                      }
-                    >
-                      Redactor report
-                    </Link>
+                {bundle.status === "running" &&
+                isEmpty(bundle.analysis?.insights) ? (
+                  <div className="flex flex-column flex1 justifyContent--center alignItems--center u-marginTop--20 SupportBundleDetails--Progress">
+                    <div className="flex justifyContent--center alignItems--center">
+                      <span className="u-fontWeight--bold u-fontSize--normal u-textColor--secondary u-marginRight--10">
+                        {percentage + "%"}
+                      </span>
+                      {progressBar}
+                      <span className="u-fontWeight--bold u-fontSize--normal u-textColor--secondary u-marginRight--10">
+                        100%
+                      </span>
+                    </div>
+                    {statusDiv}
                   </div>
-                  <div className="flex-column flex1 action-content">
-                    <Switch>
-                      <Route
-                        exact
-                        path={insightsUrl}
-                        render={() => (
-                          <AnalyzerInsights
-                            status={bundle.status}
-                            refetchSupportBundle={this.getSupportBundle}
-                            insights={bundle.analysis?.insights}
-                            openPodDetailsModal={this.togglePodDetailsModal}
-                          />
-                        )}
-                      />
-                      <Route
-                        exact
-                        path={fileTreeUrl}
-                        render={() => (
-                          <AnalyzerFileTree
-                            watchSlug={watch.slug}
-                            bundle={bundle}
-                            downloadBundle={() => this.downloadBundle(bundle)}
-                          />
-                        )}
-                      />
-                      <Route
-                        exact
-                        path={redactorUrl}
-                        render={() => (
-                          <AnalyzerRedactorReport
-                            watchSlug={watch.slug}
-                            bundle={bundle}
-                          />
-                        )}
-                      />
-                    </Switch>
+                ) : (
+                  <div className="SupportBundleTabs--wrapper flex1 flex-column">
+                    <div className="tab-items flex">
+                      <Link
+                        to={`/app/${watch.slug}/troubleshoot/analyze/${bundle.slug}`}
+                        className={`${
+                          this.state.activeTab === "bundleAnalysis"
+                            ? "is-active"
+                            : ""
+                        } tab-item blue`}
+                        onClick={() =>
+                          this.toggleAnalysisAction("bundleAnalysis")
+                        }
+                      >
+                        Analysis insights
+                      </Link>
+                      <Link
+                        to={`/app/${watch.slug}/troubleshoot/analyze/${bundle.slug}/contents/`}
+                        className={`${
+                          this.state.activeTab === "fileTree" ? "is-active" : ""
+                        } tab-item blue`}
+                        onClick={() => this.toggleAnalysisAction("fileTree")}
+                      >
+                        File inspector
+                      </Link>
+                      <Link
+                        to={`/app/${watch.slug}/troubleshoot/analyze/${bundle.slug}/redactor/report`}
+                        className={`${
+                          this.state.activeTab === "redactorReport"
+                            ? "is-active"
+                            : ""
+                        } tab-item blue`}
+                        onClick={() =>
+                          this.toggleAnalysisAction("redactorReport")
+                        }
+                      >
+                        Redactor report
+                      </Link>
+                    </div>
+                    <div className="flex-column flex1 action-content">
+                      <Switch>
+                        <Route
+                          exact
+                          path={insightsUrl}
+                          render={() => (
+                            <AnalyzerInsights
+                              status={bundle.status}
+                              refetchSupportBundle={this.getSupportBundle}
+                              insights={bundle.analysis?.insights}
+                              openPodDetailsModal={this.togglePodDetailsModal}
+                            />
+                          )}
+                        />
+                        <Route
+                          exact
+                          path={fileTreeUrl}
+                          render={() => (
+                            <AnalyzerFileTree
+                              watchSlug={watch.slug}
+                              bundle={bundle}
+                              downloadBundle={() => this.downloadBundle(bundle)}
+                            />
+                          )}
+                        />
+                        <Route
+                          exact
+                          path={redactorUrl}
+                          render={() => (
+                            <AnalyzerRedactorReport
+                              watchSlug={watch.slug}
+                              bundle={bundle}
+                            />
+                          )}
+                        />
+                      </Switch>
+                    </div>
                   </div>
-                </div>
+                )}
               </div>
             </div>
           )}
         </div>
         {getSupportBundleErrMsg && (
           <ErrorModal
-            errorModal={this.state.displayErrorModal}
+            errorModal={this.props.displayErrorModal}
             toggleErrorModal={this.toggleErrorModal}
             errMsg={getSupportBundleErrMsg}
             tryAgain={this.getSupportBundle}
             err="Failed to get bundle"
-            loading={this.state.loading}
+            loading={this.props.loading}
             appSlug={this.props.match.params.slug}
           />
         )}

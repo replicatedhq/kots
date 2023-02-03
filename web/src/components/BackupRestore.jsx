@@ -1,5 +1,5 @@
 import * as React from "react";
-import { withRouter, Link } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { KotsPageTitle } from "@components/Head";
 import isEmpty from "lodash/isEmpty";
 
@@ -118,10 +118,7 @@ class BackupRestore extends React.Component {
     return (
       <div className="flex flex-column">
         <div className="flex-auto">
-          <Link
-            to="/upload-license"
-            className="u-fontSize--normal u-fontWeight--medium u-linkColor u-cursor--pointer"
-          >
+          <Link to="/upload-license" className="u-fontSize--normal link">
             <Icon
               icon="prev-arrow"
               size={12}
@@ -140,7 +137,7 @@ class BackupRestore extends React.Component {
           {!isEmpty(this.state.backups) && (
             <p className="u-fontSize--normal u-fontWeight--medium u-textColor--bodyCopy u-lineHeight--normal u-marginTop--5">
               Not seeing the the snapshots you want?{" "}
-              <Link to="/snapshots?=license-upload" className="replicated-link">
+              <Link to="/snapshots?=license-upload" className="link">
                 Pull from a different bucket
               </Link>
               .
@@ -169,7 +166,7 @@ class BackupRestore extends React.Component {
               Not seeing the the snapshots you want?{" "}
               <Link
                 to="/snapshots?=license-upload"
-                className="replicated-link u-fontSize--normal"
+                className="link u-fontSize--normal"
               >
                 Check a different bucket
               </Link>
@@ -239,7 +236,6 @@ class BackupRestore extends React.Component {
         renderNotVeleroMessage={this.renderNotVeleroMessage}
         hideCheckVeleroButton={this.state.hideCheckVeleroButton}
         isLicenseUpload={true}
-        history={this.props.history}
       />
     );
   };
@@ -286,4 +282,4 @@ class BackupRestore extends React.Component {
   }
 }
 
-export default withRouter(BackupRestore);
+export default BackupRestore;

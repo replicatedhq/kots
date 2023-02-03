@@ -766,6 +766,21 @@ func LoadApplicationFromContents(content []byte) (*applicationv1beta1.Applicatio
 	return obj.(*applicationv1beta1.Application), nil
 }
 
+func LoadApplicationFromBytes(content []byte) (*kotsv1beta1.Application, error) {
+	decode := scheme.Codecs.UniversalDeserializer().Decode
+
+	obj, gvk, err := decode(content, nil, nil)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to decode content")
+	}
+
+	if gvk.String() != "kots.io/v1beta1, Kind=Application" {
+		return nil, errors.Errorf("unexpected gvk: %s", gvk.String())
+	}
+
+	return obj.(*kotsv1beta1.Application), nil
+}
+
 func SupportBundleToCollector(sb *troubleshootv1beta2.SupportBundle) *troubleshootv1beta2.Collector {
 	return &troubleshootv1beta2.Collector{
 		TypeMeta: metav1.TypeMeta{
@@ -820,12 +835,10 @@ func GetInstallationParams(configMapName string) (InstallationParams, error) {
 		return autoConfig, errors.Wrap(err, "failed to get k8s clientset")
 	}
 
-	isKurl, err := kurl.IsKurl()
+	isKurl, err := kurl.IsKurl(clientset)
 	if err != nil {
 		return autoConfig, errors.Wrap(err, "failed to check if cluster is kurl")
 	}
-
-	autoConfig.EnableImageDeletion = isKurl
 
 	kotsadmConfigMap, err := clientset.CoreV1().ConfigMaps(util.PodNamespace).Get(context.TODO(), configMapName, metav1.GetOptions{})
 	if err != nil {
@@ -847,6 +860,12 @@ func GetInstallationParams(configMapName string) (InstallationParams, error) {
 	autoConfig.WaitDuration, _ = time.ParseDuration(kotsadmConfigMap.Data["wait-duration"])
 	autoConfig.WithMinio, _ = strconv.ParseBool(kotsadmConfigMap.Data["with-minio"])
 	autoConfig.AppVersionLabel = kotsadmConfigMap.Data["app-version-label"]
+
+	if enableImageDeletion, ok := kotsadmConfigMap.Data["enable-image-deletion"]; ok {
+		autoConfig.EnableImageDeletion, _ = strconv.ParseBool(enableImageDeletion)
+	} else {
+		autoConfig.EnableImageDeletion = isKurl
+	}
 
 	return autoConfig, nil
 }

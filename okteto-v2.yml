@@ -1,5 +1,6 @@
 build:
   kotsadm:
+    context: .
     dockerfile: deploy/okteto/okteto-v2.Dockerfile
   kotsadm-migrations:
     context: migrations
@@ -24,6 +25,23 @@ deploy:
 
   - kubectl apply -k kustomize/overlays/okteto
 dev:
+  kotsadm:
+    command: make okteto-dev && bash
+    workdir: /go/src/github.com/replicatedhq/kots
+    sync:
+      - .:/go/src/github.com/replicatedhq/kots
+    resources:
+      limits:
+        cpu: "2"
+        memory: 4Gi
+    forward:
+      - 2353:2345
+    persistentVolume:
+      enabled: true
+      size: 10Gi
+    volumes:
+      - /.cache/gocache
+      - /.cache/gomodcache
   kotsadm-web:
     command: make serve
     sync:
@@ -41,29 +59,3 @@ dev:
       limits:
         cpu: "1"
         memory: 1Gi
-
-# These shouldn't be needed anymore
-#  kotsadm:
-#    command: bash
-#    securityContext:
-#      capabilities:
-#        add:
-#          - SYS_PTRACE
-#    sync:
-#      - .:/go/src/github.com/replicatedhq/kots
-#    workdir: /go/src/github.com/replicatedhq/kots
-#    forward:
-#      - 2353:2345
-#    resources:
-#      limits:
-#        cpu: "2"
-#        memory: 4Gi
-#  kotsadm-migrations:
-#    command: bash
-#    sync:
-#      - migrations/tables/:/go/src/github.com/replicatedhq/kots/tables
-#    workdir: /go/src/github.com/replicatedhq/kots/tables
-#    resources:
-#      limits:
-#        cpu: "1"
-#        memory: 1Gi

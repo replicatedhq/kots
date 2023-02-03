@@ -26,8 +26,8 @@ import (
 	"github.com/replicatedhq/kots/pkg/handlers"
 	"github.com/replicatedhq/kots/pkg/identity"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
+	k8sutiltypes "github.com/replicatedhq/kots/pkg/k8sutil/types"
 	"github.com/replicatedhq/kots/pkg/kotsadm"
-	"github.com/replicatedhq/kots/pkg/kotsadm/types"
 	kotsadmtypes "github.com/replicatedhq/kots/pkg/kotsadm/types"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/kurl"
@@ -191,7 +191,12 @@ func InstallCmd() *cobra.Command {
 				}
 			}
 
-			isKurl, err := kurl.IsKurl()
+			clientset, err := k8sutil.GetClientset()
+			if err != nil {
+				return errors.Wrap(err, "failed to get k8s clientset")
+			}
+
+			isKurl, err := kurl.IsKurl(clientset)
 			if err != nil {
 				return errors.Wrap(err, "failed to check if cluster is kurl")
 			}
@@ -250,11 +255,9 @@ func InstallCmd() *cobra.Command {
 				IngressConfig:  *ingressConfig,
 			}
 
-			clientset, err := k8sutil.GetClientset()
-			if err != nil {
-				return errors.Wrap(err, "failed to get clientset")
-			}
 			deployOptions.IsOpenShift = k8sutil.IsOpenShift(clientset)
+
+			deployOptions.IsGKEAutopilot = k8sutil.IsGKEAutopilot(clientset)
 
 			timeout, err := time.ParseDuration(v.GetString("wait-duration"))
 			if err != nil {
@@ -311,7 +314,7 @@ func InstallCmd() *cobra.Command {
 
 			log.ActionWithoutSpinner("Deploying Admin Console")
 			if err := kotsadm.Deploy(deployOptions, log); err != nil {
-				if _, ok := errors.Cause(err).(*types.ErrorTimeout); ok {
+				if _, ok := errors.Cause(err).(*k8sutiltypes.ErrorTimeout); ok {
 					return errors.Errorf("Failed to deploy: %s. Use the --wait-duration flag to increase timeout.", err)
 				}
 				return errors.Wrap(err, "failed to deploy")
@@ -327,7 +330,7 @@ func InstallCmd() *cobra.Command {
 			getPodName := func() (string, error) {
 				podName, err := k8sutil.WaitForKotsadm(clientset, namespace, timeout)
 				if err != nil {
-					if _, ok := errors.Cause(err).(*types.ErrorTimeout); ok {
+					if _, ok := errors.Cause(err).(*k8sutiltypes.ErrorTimeout); ok {
 						return podName, errors.Errorf("kotsadm failed to start: %s. Use the --wait-duration flag to increase timeout.", err)
 					}
 					return podName, errors.Wrap(err, "failed to wait for web")
@@ -734,7 +737,12 @@ func getRegistryConfig(v *viper.Viper) (*kotsadmtypes.RegistryConfig, error) {
 		}
 	}
 
-	isKurl, err := kurl.IsKurl()
+	clientset, err := k8sutil.GetClientset()
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get k8s clientset")
+	}
+
+	isKurl, err := kurl.IsKurl(clientset)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to check if cluster is kurl")
 	}

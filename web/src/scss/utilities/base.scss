@@ -22,6 +22,12 @@ body {
 body a {
   text-decoration: none;
   outline: none;
+  cursor: pointer;
+  font-weight: 500;
+  color: $link-color;
+  &:hover {
+    color: $link-hover-color;
+  }
 }
 
 :target:before {
@@ -38,7 +44,7 @@ body a {
   overflow: hidden;
 }
 
-.replicated-link {
+.link {
   color: $link-color;
   cursor: pointer;
   font-weight: 500;
@@ -66,13 +72,14 @@ body a {
 
   &:hover {
     text-decoration: underline;
+    color: $link-hover-color;
 
     &.has-arrow::after {
       right: -18px;
     }
   }
 }
-.replicated-link > .has-arrow {
+.link > .has-arrow {
   position: relative;
   &::after {
     content: "";
@@ -163,6 +170,28 @@ body a {
   font-weight: 500;
   white-space: nowrap;
 
+  // app resource state status colors //
+  &.missing {
+    color: #f65c5c;
+    background-color: #ffd1c7;
+  }
+  &.unavailable {
+    color: #ec8f39;
+    background-color: #fbe9d7;
+  }
+  &.degraded {
+    color: #ebb55c;
+    background-color: #fcf5dd;
+  }
+  &.updating {
+    color: #ebb55c;
+    background-color: #fcf5dd;
+  }
+  &.ready {
+    color: #44bb66;
+    background-color: #ecf8f0;
+  }
+  // version status colors //
   &.success {
     background-color: $success-color;
     color: #ffffff;
@@ -473,6 +502,8 @@ and `background-position: [value]`
 /// NEW CSS CLASSES
 .card-bg {
   background: $really-light-accent;
+  border-radius: 6px;
+  padding: 15px;
 }
 .card-title {
   font-size: 16px;
@@ -490,4 +521,50 @@ and `background-position: [value]`
   font-weight: 700;
   color: $text-color-primary;
   line-height: 1.7;
+}
+
+@mixin keyframes($animation-name) {
+  @-webkit-keyframes #{$animation-name} {
+    @content;
+  }
+  @keyframes #{$animation-name} {
+    @content;
+  }
+}
+
+@mixin animation($str) {
+  -webkit-animation: #{$str};
+  animation: #{$str};
+}
+
+@include keyframes(fadein) {
+  from {
+    bottom: 0;
+    opacity: 0;
+  }
+  to {
+    bottom: 10px;
+    opacity: 1;
+  }
+}
+
+@include keyframes(fadeout) {
+  from {
+    bottom: 10px;
+    opacity: 1;
+  }
+  to {
+    bottom: 0;
+    opacity: 0;
+  }
+}
+
+.toast {
+  visibility: hidden;
+  bottom: 3px;
+}
+
+.toast.visible {
+  visibility: visible;
+  @include animation("fadein 0.5s, fadeout 0.5s 7s");
 }

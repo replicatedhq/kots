@@ -174,10 +174,11 @@ func HelmUpdateToDownsreamVersion(update ChartUpdate, sequence int64) *downstrea
 		UpdateCursor:       update.Tag,
 		Sequence:           sequence,
 		ParentSequence:     sequence,
-		CreatedOn:          &update.FetchedOn,
-		UpstreamReleasedAt: &update.FetchedOn, // TODO: implement
+		CreatedOn:          update.CreatedOn,
+		UpstreamReleasedAt: update.CreatedOn,
 		IsDeployable:       false,             // TODO: implement
 		NonDeployableCause: "not implemented", // TODO: implement
+		HasConfig:          true,              // TODO: implement
 		Source:             "Upstream Update",
 		Status:             update.Status,
 	}
@@ -222,7 +223,7 @@ func ResponseAppFromHelmApp(helmApp *apptypes.HelmApp) (*types.HelmResponseApp, 
 		password, _ = replVals["license_id"].(string)
 	}
 
-	chartUpdates := GetCachedUpdates(helmApp.ChartPath)
+	chartUpdates := GetDownloadedUpdates(helmApp.ChartPath)
 	pendingVersions := make([]*downstreamtypes.DownstreamVersion, len(chartUpdates), len(chartUpdates))
 	nextSequence := revision + 1
 	for i := len(chartUpdates) - 1; i >= 0; i-- {

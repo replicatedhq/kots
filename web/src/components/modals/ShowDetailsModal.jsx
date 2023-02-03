@@ -58,7 +58,7 @@ export default function ShowDetailsModal(props) {
                     </span>
                     <Link
                       to={`/app/${slug}/tree/${sequence}?${err.path}`}
-                      className="replicated-link u-marginLeft--5 u-marginTop--5 u-fontSize--small"
+                      className="link u-marginLeft--5 u-marginTop--5 u-fontSize--small"
                     >
                       {" "}
                       View{" "}

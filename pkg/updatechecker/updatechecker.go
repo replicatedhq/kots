@@ -18,6 +18,7 @@ import (
 	kotslicense "github.com/replicatedhq/kots/pkg/license"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/preflight"
+	"github.com/replicatedhq/kots/pkg/preflight/types"
 	kotspull "github.com/replicatedhq/kots/pkg/pull"
 	registrytypes "github.com/replicatedhq/kots/pkg/registry/types"
 	"github.com/replicatedhq/kots/pkg/reporting"
@@ -28,7 +29,6 @@ import (
 	upstreamtypes "github.com/replicatedhq/kots/pkg/upstream/types"
 	"github.com/replicatedhq/kots/pkg/util"
 	"github.com/replicatedhq/kots/pkg/version"
-	troubleshootpreflight "github.com/replicatedhq/troubleshoot/pkg/preflight"
 	cron "github.com/robfig/cron/v3"
 	"go.uber.org/zap"
 	"k8s.io/apimachinery/pkg/util/wait"
@@ -458,7 +458,13 @@ func downloadHelmAppUpdates(opts CheckForUpdatesOpts, helmApp *apptypes.HelmApp,
 			downstreamStatus = storetypes.VersionPendingConfig
 		}
 
+		replicatedMetadata, err := helm.GetReplicatedMetadataFromUpstreamChartVersion(helmApp, licenseID, update.Version)
+		if err != nil {
+			return errors.Wrap(err, "failed to replicated metadata")
+		}
+
 		helm.SetCachedUpdateStatus(helmApp.ChartPath, update.Version, downstreamStatus)
+		helm.SetCachedUpdateMetadata(helmApp.ChartPath, update.Version, replicatedMetadata)
 	}
 
 	return nil
@@ -720,7 +726,7 @@ func waitForPreflightsToFinish(appID string, sequence int64) error {
 		return errors.New("failed to find a preflight spec")
 	}
 
-	var preflightResults *troubleshootpreflight.UploadPreflightResults
+	var preflightResults *types.PreflightResults
 	if err = json.Unmarshal([]byte(preflightResult.Result), &preflightResults); err != nil {
 		return errors.Wrap(err, "failed to parse preflight results")
 	}

@@ -53,14 +53,6 @@ func RenderContent(kotsKinds *kotsutil.KotsKinds, registrySettings registrytypes
 }
 
 func NewBuilder(kotsKinds *kotsutil.KotsKinds, registrySettings registrytypes.RegistrySettings, appSlug string, sequence int64, isAirgap bool, namespace string) (*template.Builder, error) {
-	localRegistry := template.LocalRegistry{
-		Host:      registrySettings.Hostname,
-		Namespace: registrySettings.Namespace,
-		Username:  registrySettings.Username,
-		Password:  registrySettings.Password,
-		ReadOnly:  registrySettings.IsReadOnly,
-	}
-
 	templateContextValues := make(map[string]template.ItemValue)
 	if kotsKinds.ConfigValues != nil {
 		for k, v := range kotsKinds.ConfigValues.Spec.Values {
@@ -90,7 +82,7 @@ func NewBuilder(kotsKinds *kotsutil.KotsKinds, registrySettings registrytypes.Re
 	builderOptions := template.BuilderOptions{
 		ConfigGroups:    configGroups,
 		ExistingValues:  templateContextValues,
-		LocalRegistry:   localRegistry,
+		LocalRegistry:   registrySettings,
 		License:         kotsKinds.License,
 		Application:     &kotsKinds.KotsApplication,
 		ApplicationInfo: &appInfo,
@@ -110,19 +102,9 @@ func (r Renderer) RenderDir(archiveDir string, a *apptypes.App, downstreams []do
 }
 
 func RenderDir(archiveDir string, a *apptypes.App, downstreams []downstreamtypes.Downstream, registrySettings registrytypes.RegistrySettings, sequence int64) error {
-	installation, err := kotsutil.LoadInstallationFromPath(filepath.Join(archiveDir, "upstream", "userdata", "installation.yaml"))
+	kotsKinds, err := kotsutil.LoadKotsKindsFromPath(archiveDir)
 	if err != nil {
-		return errors.Wrap(err, "failed to load installation from path")
-	}
-
-	license, err := kotsutil.LoadLicenseFromPath(filepath.Join(archiveDir, "upstream", "userdata", "license.yaml"))
-	if err != nil {
-		return errors.Wrap(err, "failed to load license from path")
-	}
-
-	configValues, err := kotsutil.LoadConfigValuesFromFile(filepath.Join(archiveDir, "upstream", "userdata", "config.yaml"))
-	if err != nil && !os.IsNotExist(errors.Cause(err)) {
-		return errors.Wrap(err, "failed to load config values from path")
+		return errors.Wrap(err, "failed to load kotskinds from path")
 	}
 
 	downstreamNames := []string{}
@@ -136,29 +118,26 @@ func RenderDir(archiveDir string, a *apptypes.App, downstreams []downstreamtypes
 	}
 
 	reOptions := rewrite.RewriteOptions{
-		RootDir:            archiveDir,
-		UpstreamURI:        fmt.Sprintf("replicated://%s", license.Spec.AppSlug),
-		UpstreamPath:       filepath.Join(archiveDir, "upstream"),
-		Installation:       installation,
-		Downstreams:        downstreamNames,
-		Silent:             true,
-		CreateAppDir:       false,
-		ExcludeKotsKinds:   true,
-		License:            license,
-		ConfigValues:       configValues,
-		K8sNamespace:       appNamespace,
-		CopyImages:         false,
-		IsAirgap:           a.IsAirgap,
-		AppID:              a.ID,
-		AppSlug:            a.Slug,
-		IsGitOps:           a.IsGitOps,
-		AppSequence:        sequence,
-		ReportingInfo:      reporting.GetReportingInfo(a.ID),
-		RegistryEndpoint:   registrySettings.Hostname,
-		RegistryNamespace:  registrySettings.Namespace,
-		RegistryUsername:   registrySettings.Username,
-		RegistryPassword:   registrySettings.Password,
-		RegistryIsReadOnly: registrySettings.IsReadOnly,
+		RootDir:          archiveDir,
+		UpstreamURI:      fmt.Sprintf("replicated://%s", kotsKinds.License.Spec.AppSlug),
+		UpstreamPath:     filepath.Join(archiveDir, "upstream"),
+		Installation:     &kotsKinds.Installation,
+		Downstreams:      downstreamNames,
+		Silent:           true,
+		CreateAppDir:     false,
+		ExcludeKotsKinds: true,
+		License:          kotsKinds.License,
+		ConfigValues:     kotsKinds.ConfigValues,
+		KotsApplication:  &kotsKinds.KotsApplication,
+		K8sNamespace:     appNamespace,
+		CopyImages:       false,
+		IsAirgap:         a.IsAirgap,
+		AppID:            a.ID,
+		AppSlug:          a.Slug,
+		IsGitOps:         a.IsGitOps,
+		AppSequence:      sequence,
+		ReportingInfo:    reporting.GetReportingInfo(a.ID),
+		RegistrySettings: registrySettings,
 
 		// TODO: pass in as arguments if this is ever called from CLI
 		HTTPProxyEnvValue:  os.Getenv("HTTP_PROXY"),

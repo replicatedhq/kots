@@ -17,6 +17,7 @@ function mapEnvironment(env) {
   return "skaffold";
 }
 
+// TODO: refactor this to use proper env varibles from webpack https://webpack.js.org/guides/environment-variables/
 module.exports = function (env) {
   const distPath = path.join(__dirname, "dist");
   const srcPath = path.join(__dirname, "src");
@@ -119,7 +120,7 @@ module.exports = function (env) {
               }
             }
           ]
-        }, 
+        },
         {
           test: /\.m?js/,
           resolve: {

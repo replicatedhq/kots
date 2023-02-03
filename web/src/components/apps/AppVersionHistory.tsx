@@ -1,5 +1,5 @@
 import React, { Component } from "react";
-import { withRouter, Link } from "react-router-dom";
+import { Link } from "react-router-dom";
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
 import Modal from "react-modal";
@@ -12,7 +12,7 @@ import MarkdownRenderer from "@src/components/shared/MarkdownRenderer";
 import DownstreamWatchVersionDiff from "@src/components/watches/DownstreamWatchVersionDiff";
 import ShowDetailsModal from "@src/components/modals/ShowDetailsModal";
 import ShowLogsModal from "@src/components/modals/ShowLogsModal";
-import AirgapUploadProgress from "../AirgapUploadProgress";
+import AirgapUploadProgress from "@src/features/Dashboard/components/AirgapUploadProgress";
 import ErrorModal from "../modals/ErrorModal";
 import { AppVersionHistoryRow } from "@features/AppVersionHistory/AppVersionHistoryRow";
 import DeployWarningModal from "../shared/modals/DeployWarningModal";
@@ -35,16 +35,14 @@ import { UseDownloadValues } from "../hooks";
 import { KotsPageTitle } from "@components/Head";
 
 import "@src/scss/components/apps/AppVersionHistory.scss";
-import DashboardGitOpsCard from "./DashboardGitOpsCard";
+import { DashboardGitOpsCard } from "@features/Dashboard";
 import Icon from "../Icon";
+import { App, Downstream, Version, VersionDownloadStatus } from "@types";
 import {
-  App,
-  Downstream,
-  KotsParams,
-  Version,
-  VersionDownloadStatus,
-} from "@types";
-import { RouteComponentProps } from "react-router-dom";
+  withRouter,
+  withRouterType,
+} from "@src/utilities/react-router-utilities";
+
 dayjs.extend(relativeTime);
 
 type Release = {
@@ -74,11 +72,13 @@ type Props = {
   makingCurrentVersionErrMsg: string;
   redeployVersion: (slug: string, version: Version | null) => void;
   redeployVersionErrMsg: string;
+  resetMakingCurrentReleaseErrorMessage: () => void;
+  resetRedeployErrorMessage: () => void;
   refreshAppData: () => void;
   toggleErrorModal: () => void;
   toggleIsBundleUploading: (isUploading: boolean) => void;
   updateCallback: () => void;
-} & RouteComponentProps<KotsParams>;
+} & withRouterType;
 
 type State = {
   logsLoading: boolean;
@@ -144,6 +144,13 @@ type State = {
   viewLogsErrMsg: string;
   showHelmDeployModalForVersionLabel: string;
   showHelmDeployModalForSequence: number | null;
+};
+
+const filterNonHelmTabs = (tab: string, isHelmManaged: boolean) => {
+  if (isHelmManaged) {
+    return tab.startsWith("helm");
+  }
+  return true;
 };
 
 class AppVersionHistory extends Component<Props, State> {
@@ -240,7 +247,7 @@ class AppVersionHistory extends Component<Props, State> {
     this.state.appUpdateChecker.start(this.getAppUpdateStatus, 1000);
 
     const url = window.location.pathname;
-    const { params } = this.props.match;
+    const { params } = this.props.wrappedMatch;
     if (url.includes("/diff")) {
       const firstSequence = params.firstSequence;
       const secondSequence = params.secondSequence;
@@ -254,11 +261,12 @@ class AppVersionHistory extends Component<Props, State> {
   }
 
   componentDidUpdate = async (lastProps: {
-    match: { params: { slug: string } };
+    wrappedMatch: { params: { slug: string } };
     app: { id: string; downstream: Downstream };
   }) => {
     if (
-      lastProps.match.params.slug !== this.props.match.params.slug ||
+      lastProps.wrappedMatch.params.slug !==
+        this.props.wrappedMatch.params.slug ||
       lastProps.app.id !== this.props.app.id
     ) {
       this.fetchKotsDownstreamHistory();
@@ -287,8 +295,8 @@ class AppVersionHistory extends Component<Props, State> {
   }
 
   fetchKotsDownstreamHistory = async () => {
-    const { match } = this.props;
-    const appSlug = match.params.slug;
+    const { wrappedMatch } = this.props;
+    const appSlug = wrappedMatch.params.slug;
 
     this.setState({
       loadingVersionHistory: true,
@@ -518,7 +526,7 @@ class AppVersionHistory extends Component<Props, State> {
           <span className="u-fontSize--small u-fontWeight--medium u-lineHeight--normal u-textColor--bodyCopy">
             Unable to generate diff{" "}
             <span
-              className="replicated-link"
+              className="link"
               onClick={() => this.toggleDiffErrModal(version)}
             >
               Why?
@@ -536,7 +544,7 @@ class AppVersionHistory extends Component<Props, State> {
               </span>
               {!this.props.isHelmManaged && !downstream.gitops?.isConnected && (
                 <span
-                  className="u-fontSize--small replicated-link u-marginLeft--5"
+                  className="u-fontSize--small link u-marginLeft--5"
                   onClick={() =>
                     this.setState({
                       showDiffOverlay: true,
@@ -554,7 +562,7 @@ class AppVersionHistory extends Component<Props, State> {
               <span className="files">
                 No changes to show.{" "}
                 <span
-                  className="replicated-link"
+                  className="link"
                   onClick={() => this.toggleNoChangesModal(version)}
                 >
                   Why?
@@ -577,12 +585,7 @@ class AppVersionHistory extends Component<Props, State> {
       <div className="flex action-tab-bar u-marginTop--10">
         {tabs
           .filter((tab) => tab !== "renderError")
-          .filter((tab) => {
-            if (this.props.isHelmManaged) {
-              return tab.startsWith("helm");
-            }
-            return true;
-          })
+          .filter((tab) => filterNonHelmTabs(tab, this.props.isHelmManaged))
           .map((tab) => (
             <div
               className={`tab-item blue ${tab === selectedTab && "is-active"}`}
@@ -904,11 +907,11 @@ class AppVersionHistory extends Component<Props, State> {
   };
 
   finalizeDeployment = async (continueWithFailedPreflights: boolean) => {
-    const { match, updateCallback } = this.props;
+    const { wrappedMatch, updateCallback } = this.props;
     const { versionToDeploy, isSkipPreflights } = this.state;
     this.setState({ displayConfirmDeploymentModal: false, confirmType: "" });
     await this.props.makeCurrentVersion(
-      match.params.slug,
+      wrappedMatch.params.slug,
       versionToDeploy,
       isSkipPreflights,
       continueWithFailedPreflights
@@ -945,10 +948,10 @@ class AppVersionHistory extends Component<Props, State> {
   };
 
   finalizeRedeployment = async () => {
-    const { match, updateCallback } = this.props;
+    const { wrappedMatch, updateCallback } = this.props;
     const { versionToDeploy } = this.state;
     this.setState({ displayConfirmDeploymentModal: false, confirmType: "" });
-    await this.props.redeployVersion(match.params.slug, versionToDeploy);
+    await this.props.redeployVersion(wrappedMatch.params.slug, versionToDeploy);
     await this.fetchKotsDownstreamHistory();
     this.setState({ versionToDeploy: null });
 
@@ -1146,7 +1149,9 @@ class AppVersionHistory extends Component<Props, State> {
         if (isFailing) {
           selectedTab = Utilities.getDeployErrorTab(response.logs);
         } else {
-          selectedTab = Object.keys(response.logs)[0];
+          selectedTab = Object.keys(response.logs).filter((tab) =>
+            filterNonHelmTabs(tab, this.props.isHelmManaged)
+          )[0];
         }
         this.setState({
           logs: response.logs,
@@ -1230,7 +1235,7 @@ class AppVersionHistory extends Component<Props, State> {
           disableFill={false}
           removeInlineStyle={false}
         />
-        <span className="u-fontSize--small u-fontWeight--medium u-linkColor u-cursor--pointer u-marginLeft--5">
+        <span className="u-fontSize--small link u-marginLeft--5">
           Diff versions
         </span>
       </div>
@@ -1429,13 +1434,13 @@ class AppVersionHistory extends Component<Props, State> {
     const { currentPage, pageSize, totalCount, loadingPage } = this.state;
 
     return (
-      <div className="TableDiff--Wrapper">
+      <div className="TableDiff--Wrapper card-bg">
         <div className="flex u-marginBottom--15 justifyContent--spaceBetween">
-          <p className="u-fontSize--normal u-fontWeight--medium u-textColor--bodyCopy">
+          <p className="u-fontSize--normal u-fontWeight--medium card-title">
             All versions
           </p>
           <div className="flex flex-auto alignItems--center">
-            <span className="flex-auto u-marginRight--5 u-fontSize--small u-textColor--secondary u-lineHeight--normal u-fontWeight--medium">
+            <span className="flex-auto u-marginRight--5 u-fontSize--small card-title u-lineHeight--normal u-fontWeight--medium">
               Results per page:
             </span>
             <select className="Select" onChange={(e) => this.setPageSize(e)}>
@@ -1581,7 +1586,7 @@ class AppVersionHistory extends Component<Props, State> {
           isHelmManaged={this.props.isHelmManaged}
           key={version.sequence}
           app={this.props.app}
-          match={this.props.match}
+          wrappedMatch={this.props.wrappedMatch}
           history={this.props.history}
           version={version}
           selectedDiffReleases={this.state.selectedDiffReleases}
@@ -1709,8 +1714,14 @@ class AppVersionHistory extends Component<Props, State> {
   };
 
   render() {
-    const { app, match, makingCurrentVersionErrMsg, redeployVersionErrMsg } =
-      this.props;
+    const {
+      app,
+      wrappedMatch,
+      makingCurrentVersionErrMsg,
+      redeployVersionErrMsg,
+      resetRedeployErrorMessage,
+      resetMakingCurrentReleaseErrorMessage,
+    } = this.props;
 
     const {
       showLogsModal,
@@ -1749,6 +1760,7 @@ class AppVersionHistory extends Component<Props, State> {
     const downstream = app?.downstream;
     const gitopsIsConnected = downstream.gitops?.isConnected;
     const currentDownstreamVersion = downstream?.currentVersion;
+    const iconUri = currentDownstreamVersion?.appIconUri || app?.iconUri;
     const isPastVersion = find(downstream?.pastVersions, {
       sequence: this.state.versionToDeploy?.sequence,
     });
@@ -1792,50 +1804,49 @@ class AppVersionHistory extends Component<Props, State> {
           <div className="flex flex1 justifyContent--center">
             <div className="flex1 flex AppVersionHistory">
               {makingCurrentVersionErrMsg && (
-                <div className="ErrorWrapper flex justifyContent--center">
-                  <div className="icon redWarningIcon u-marginRight--10" />
-                  <div>
-                    <p className="title">Failed to deploy version</p>
-                    <p className="err">{makingCurrentVersionErrMsg}</p>
-                  </div>
-                </div>
+                <ErrorModal
+                  errorModal={true}
+                  err="Failed to deploy version"
+                  errMsg={makingCurrentVersionErrMsg}
+                  showDismissButton={true}
+                  toggleErrorModal={resetMakingCurrentReleaseErrorMessage}
+                />
               )}
               {redeployVersionErrMsg && (
-                <div className="ErrorWrapper flex justifyContent--center">
-                  <div className="icon redWarningIcon u-marginRight--10" />
-                  <div>
-                    <p className="title">Failed to redeploy version</p>
-                    <p className="err">{redeployVersionErrMsg}</p>
-                  </div>
-                </div>
+                <ErrorModal
+                  errorModal={true}
+                  err="Failed to redeploy version"
+                  errMsg={redeployVersionErrMsg}
+                  showDismissButton={true}
+                  toggleErrorModal={resetRedeployErrorMessage}
+                />
               )}
-
               {!gitopsIsConnected && (
                 <div
                   className="flex-column flex1"
                   style={{ maxWidth: "370px", marginRight: "20px" }}
                 >
-                  <div className="TableDiff--Wrapper currentVersionCard--wrapper">
-                    <p className="u-fontSize--large u-textColor--primary u-fontWeight--bold">
+                  <div className="card-bg TableDiff--Wrapper currentVersionCard--wrapper">
+                    <p className="u-fontSize--large card-title u-fontWeight--bold">
                       {currentDownstreamVersion?.versionLabel
                         ? "Currently deployed version"
                         : "No current version deployed"}
                     </p>
-                    <div className="currentVersion--wrapper u-marginTop--10">
+                    <div className="currentVersion--wrapper card-item u-marginTop--10">
                       <div className="flex flex1">
-                        {app?.iconUri && (
+                        {iconUri && (
                           <div className="flex-auto u-marginRight--10">
                             <div
                               className="watch-icon"
                               style={{
-                                backgroundImage: `url(${app?.iconUri})`,
+                                backgroundImage: `url(${iconUri})`,
                               }}
                             ></div>
                           </div>
                         )}
                         <div className="flex1 flex-column">
                           <div className="flex alignItems--center u-marginTop--5">
-                            <p className="u-fontSize--header2 u-fontWeight--bold u-textColor--primary">
+                            <p className="u-fontSize--header2 u-fontWeight--bold card-item-title">
                               {" "}
                               {currentDownstreamVersion
                                 ? currentDownstreamVersion.versionLabel
@@ -2023,9 +2034,9 @@ class AppVersionHistory extends Component<Props, State> {
                           />
                         </div>
                       ) : (
-                        <div className="TableDiff--Wrapper u-marginBottom--30">
-                          <div className="flex justifyContent--spaceBetween">
-                            <p className="u-fontSize--normal u-fontWeight--medium u-textColor--header u-marginBottom--15">
+                        <div className="TableDiff--Wrapper card-bg u-marginBottom--30">
+                          <div className="flex justifyContent--spaceBetween alignItems--center u-marginBottom--15">
+                            <p className="u-fontSize--normal u-fontWeight--medium u-textColor--info">
                               {this.state.updatesAvailable
                                 ? "New version available"
                                 : ""}
@@ -2040,7 +2051,7 @@ class AppVersionHistory extends Component<Props, State> {
                                   >
                                     <div className="flex alignItems--center">
                                       <span className="icon clickable dashboard-card-upload-version-icon u-marginRight--5" />
-                                      <span className="replicated-link u-fontSize--small u-lineHeight--default">
+                                      <span className="link u-fontSize--small u-lineHeight--default">
                                         Upload new version
                                       </span>
                                     </div>
@@ -2063,12 +2074,12 @@ class AppVersionHistory extends Component<Props, State> {
                                     ) : (
                                       <div className="flex alignItems--center u-marginRight--20">
                                         <span
-                                          className="replicated-link u-fontSize--small"
+                                          className="flex-auto flex alignItems--center link u-fontSize--small"
                                           onClick={this.onCheckForUpdates}
                                         >
                                           <Icon
                                             icon="check-update"
-                                            size={18}
+                                            size={16}
                                             className="clickable u-marginRight--5"
                                             color={""}
                                             style={{}}
@@ -2080,7 +2091,7 @@ class AppVersionHistory extends Component<Props, State> {
                                       </div>
                                     )}
                                     <span
-                                      className="flex-auto flex alignItems--center replicated-link u-fontSize--small"
+                                      className="flex-auto flex alignItems--center link u-fontSize--small"
                                       onClick={this.toggleAutomaticUpdatesModal}
                                     >
                                       <Icon
@@ -2107,7 +2118,7 @@ class AppVersionHistory extends Component<Props, State> {
                           {pendingVersion ? (
                             this.renderAppVersionHistoryRow(pendingVersion)
                           ) : (
-                            <div className="flex-column flex1 u-marginTop--20 u-marginBottom--10 alignItems--center justifyContent--center u-backgroundColor--white u-borderRadius--rounded">
+                            <div className="card-item flex-column flex1 u-marginTop--20 u-marginBottom--10 alignItems--center justifyContent--center">
                               <p className="u-fontSize--normal u-fontWeight--medium u-textColor--bodyCopy u-padding--10">
                                 Application up to date.
                               </p>
@@ -2115,7 +2126,7 @@ class AppVersionHistory extends Component<Props, State> {
                           )}
                           {(this.state.numOfSkippedVersions > 0 ||
                             this.state.numOfRemainingVersions > 0) && (
-                            <p className="u-fontSize--small u-fontWeight--medium u-lineHeight--more u-textColor--header u-marginTop--10">
+                            <p className="u-fontSize--small u-fontWeight--medium u-lineHeight--more u-textColor--info u-marginTop--10">
                               {this.state.numOfSkippedVersions > 0
                                 ? `${this.state.numOfSkippedVersions} version${
                                     this.state.numOfSkippedVersions > 1
@@ -2152,7 +2163,7 @@ class AppVersionHistory extends Component<Props, State> {
                 {showDiffOverlay && (
                   <div className="DiffOverlay">
                     <DownstreamWatchVersionDiff
-                      slug={match.params.slug}
+                      slug={wrappedMatch.params.slug}
                       firstSequence={firstSequence}
                       secondSequence={secondSequence}
                       onBackClick={this.hideDiffOverlay}
@@ -2282,7 +2293,7 @@ class AppVersionHistory extends Component<Props, State> {
               </p>
               {isPastVersion && this.props.app?.autoDeploy !== "disabled" ? (
                 <div className="info-box">
-                  <span className="u-fontSize--small u-textColor--header u-lineHeight--normal u-fontWeight--medium">
+                  <span className="u-fontSize--small u-textColor--info u-lineHeight--normal u-fontWeight--medium">
                     You have automatic deploys enabled.{" "}
                     {this.state.confirmType === "rollback"
                       ? "Rolling back to"
@@ -2367,7 +2378,7 @@ class AppVersionHistory extends Component<Props, State> {
             forceDeploy={this.onForceDeployClick}
             showDeployWarningModal={this.state.showDeployWarningModal}
             showSkipModal={this.state.showSkipModal}
-            slug={this.props.match.params.slug}
+            slug={this.props.wrappedMatch.params.slug}
             sequence={this.state.selectedSequence}
           />
         )}
@@ -2377,7 +2388,7 @@ class AppVersionHistory extends Component<Props, State> {
             toggleErrorModal={this.toggleErrorModal}
             err={errorTitle}
             errMsg={errorMsg}
-            appSlug={this.props.match.params.slug}
+            appSlug={this.props.wrappedMatch.params.slug}
           />
         )}
         {this.state.showNoChangesModal && (

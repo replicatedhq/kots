@@ -1,5 +1,6 @@
 [![Develop on Okteto](https://okteto.com/develop-okteto.svg)](https://replicated.okteto.dev/deploy?repository=https://github.com/replicatedhq/kots)
 [![go.dev reference](https://img.shields.io/badge/go.dev-reference-007d9c?logo=go&logoColor=white&style=flat-square)](https://pkg.go.dev/github.com/replicatedhq/kots)
+[![FOSSA Status](https://app.fossa.com/api/projects/custom%2B5995%2Fgithub.com%2Freplicatedhq%2Fkots.svg?type=small)](https://app.fossa.com/projects/custom%2B5995%2Fgithub.com%2Freplicatedhq%2Fkots?ref=badge_small)
 
 # Kubernetes Off-The-Shelf (KOTS) Software
 Replicated KOTS is the collective set of tools that enable the distribution and management of Kubernetes Off-The-Shelf (KOTS) software. The Kots CLI (a Kubectl plugin) is a general purpose, client-side binary for configuring and building dynamic Kubernetes manifests. The Kots CLI also serves as the bootstrapper for the in-cluster Kubernetes application Admin Console [kotsadm](https://github.com/replicatedhq/kots/tree/main/kotsadm) which can be used to automate the core Kots CLI tasks for managing applications (license verification, configuration, updates, image renaming, version controlling changes, and deployment) as well as additional KOTS tasks (running preflight checks and performing support bundle analysis).
@@ -17,6 +18,7 @@ curl https://kots.io/install | bash
 ```
 
 ### Run `kots install`
+
 The `install` command is the recommended way to learn KOTS. Executing the `install` command will install an application and the [kotsadm](https://github.com/replicatedhq/kotsadm) Admin Console to an existing Kubernetes cluster. This command supports installing Helm charts (without Tiller), standard Kubernetes applications and also Replicated KOTS apps.
 
 Continue with the demo by running the following command:
@@ -25,6 +27,8 @@ kubectl kots install sentry-pro
 ```
 
 Set a namespace for the admin console and the application components to be installed, and provide a password for the admin console. After this command completes, the kotsadm Admin Console will be running in your cluster, listening on port :8800 on a ClusterIP service in the namespace you deployed the application to. By default this is exposed to your workstation using kubectl port-forward, but you could set up an ingress/load balancer of your own.
+
+**NOTE** Currently, the kotsadm pod can **only** be scheduled on nodes with the `linux/amd64` platform.  
 
 ### Access the Admin Console
 Visit http://localhost:8800 to access the Admin Console, enter the password.
@@ -35,6 +39,11 @@ If you terminate your terminal session, the port-forward will also terminate. To
 ```
 kubectl kots admin-console --namespace sentry-pro
 ```
+
+## Supportability
+
+Currently, the KOTS CLI supports OSX (including Apple Silicon arm64) and Linux platforms. However, the Kubernetes resources
+that it creates can **only** be scheduled on nodes with the `linux/amd64` platform.
 
 # Community
 
@@ -49,7 +58,7 @@ Signed SBOMs for KOTS Go dependencies and are included in each release.
 Use [Cosign](https://github.com/sigstore/cosign) to validate the signature by running the following
 command.
 ```shell
-cosign verify-blob -key sbom/key.pub -signature sbom/kots-sbom.tgz.sig sbom/kots-sbom.tgz
+cosign verify-blob --key sbom/key.pub --signature sbom/kots-sbom.tgz.sig sbom/kots-sbom.tgz
 ```
 
 # Development
@@ -119,7 +128,7 @@ This V2 work flow attempts to solve these issues by:
 | Build and Deploy     | `okteto pipeline deploy -f okteto-v2.yml` | Runs both build and deploy sections of the Okteto manifest. Perfect for updating or creating a namespace.  |
 | Build single service | `okteto build -f okteto-v2.yml {{SERVICE_NAME}}` | Builds the named service (kotsadm, kotsadm-web, kotsadm-migrations) and pushes it to the Okteto registry. |
 | Deploy               | `okteto deploy -f okteto-v2.yml` | Deploys the kubernetes manifests. If there were builds before this command, the new images will be used in the deployment. | 
-| Development mode     | `okteto up -f okteto-v2.yml` | Prompts the use for what container to put into development mode.  Only web and migrations should appear at this time. |
+| Development mode     | `okteto up -f okteto-v2.yml` | Prompts the use for what container to put into development mode.  kotsadm(api), web and migrations will appear for debugging. |
 
 #### Warning
 

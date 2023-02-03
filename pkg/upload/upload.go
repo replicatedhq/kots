@@ -19,6 +19,7 @@ import (
 	kotsscheme "github.com/replicatedhq/kots/kotskinds/client/kotsclientset/scheme"
 	"github.com/replicatedhq/kots/pkg/auth"
 	registrytypes "github.com/replicatedhq/kots/pkg/docker/registry/types"
+	handlertypes "github.com/replicatedhq/kots/pkg/handlers/types"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/util"
@@ -126,8 +127,9 @@ func Upload(path string, uploadOptions UploadOptions) (string, error) {
 	if resp.StatusCode != 200 {
 		log.FinishSpinnerWithError()
 		b, _ := ioutil.ReadAll(resp.Body)
-		if len(b) > 0 {
-			log.Error(errors.New(string(b)))
+		respError := handlertypes.ErrorFromResponse(b)
+		if respError != "" {
+			log.Error(errors.New(respError))
 		}
 		return "", errors.Errorf("Unexpected response from the API: %d", resp.StatusCode)
 	}

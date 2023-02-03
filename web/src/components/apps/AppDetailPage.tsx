@@ -12,7 +12,7 @@ import { useTheme } from "@src/components/context/withTheme";
 import { KotsSidebarItem } from "@src/components/watches/WatchSidebarItem";
 import { HelmChartSidebarItem } from "@src/components/watches/WatchSidebarItem";
 import NotFound from "../static/NotFound";
-import Dashboard from "./Dashboard";
+import { Dashboard } from "@features/Dashboard";
 import DownstreamTree from "../../components/tree/KotsApplicationTree";
 import AppVersionHistory from "./AppVersionHistory";
 import { isAwaitingResults, Utilities } from "../../utilities/utilities";
@@ -251,12 +251,15 @@ function AppDetailPage(props: Props) {
     }
   };
 
-  const redeployVersion = async (upstreamSlug: string, version: Version) => {
+  const redeployVersion = async (
+    upstreamSlug: string,
+    version: Version | null
+  ) => {
     try {
       setState({ redeployVersionErrMsg: "" });
 
       const res = await fetch(
-        `${process.env.API_ENDPOINT}/app/${upstreamSlug}/sequence/${version.sequence}/redeploy`,
+        `${process.env.API_ENDPOINT}/app/${upstreamSlug}/sequence/${version?.sequence}/redeploy`,
         {
           headers: {
             Authorization: Utilities.getToken(),
@@ -270,14 +273,14 @@ function AppDetailPage(props: Props) {
         refetchData();
       } else {
         setState({
-          redeployVersionErrMsg: `Unable to redeploy release ${version.versionLabel}, sequence ${version.sequence}: Unexpected status code: ${res.status}`,
+          redeployVersionErrMsg: `Unable to redeploy release ${version?.versionLabel}, sequence ${version?.sequence}: Unexpected status code: ${res.status}`,
         });
       }
     } catch (err) {
       console.log(err);
       if (err instanceof Error) {
         setState({
-          redeployVersionErrMsg: `Unable to deploy release ${version.versionLabel}, sequence ${version.sequence}: ${err.message}`,
+          redeployVersionErrMsg: `Unable to deploy release ${version?.versionLabel}, sequence ${version?.sequence}: ${err.message}`,
         });
       } else {
         setState({
@@ -377,6 +380,18 @@ function AppDetailPage(props: Props) {
     }
   }
 
+  const resetRedeployErrorMessage = () => {
+    setState({
+      redeployVersionErrMsg: "",
+    });
+  };
+
+  const resetMakingCurrentReleaseErrorMessage = () => {
+    setState({
+      makingCurrentReleaseErrMsg: "",
+    });
+  };
+
   return (
     <div className="WatchDetailPage--wrapper flex-column flex1 u-overflow--auto">
       <SidebarLayout
@@ -435,11 +450,9 @@ function AppDetailPage(props: Props) {
                       app={selectedApp}
                       cluster={selectedApp.downstream?.cluster}
                       updateCallback={refetchData}
-                      onActiveInitSession={props.onActiveInitSession}
                       toggleIsBundleUploading={toggleIsBundleUploading}
                       makeCurrentVersion={makeCurrentRelease}
                       redeployVersion={redeployVersion}
-                      redeployVersionErrMsg={state.redeployVersionErrMsg}
                       isBundleUploading={isBundleUploading}
                       isVeleroInstalled={isVeleroInstalled}
                       refreshAppData={refetchApps}
@@ -487,6 +500,10 @@ function AppDetailPage(props: Props) {
                       makingCurrentRelease={state.makingCurrentRelease}
                       redeployVersion={redeployVersion}
                       redeployVersionErrMsg={state.redeployVersionErrMsg}
+                      resetRedeployErrorMessage={resetRedeployErrorMessage}
+                      resetMakingCurrentReleaseErrorMessage={
+                        resetMakingCurrentReleaseErrorMessage
+                      }
                       adminConsoleMetadata={props.adminConsoleMetadata}
                     />
                   )}
@@ -519,7 +536,7 @@ function AppDetailPage(props: Props) {
                   render={() => (
                     <TroubleshootContainer
                       app={selectedApp}
-                      appName={appName}
+                      appName={appName || ""}
                     />
                   )}
                 />
@@ -531,6 +548,7 @@ function AppDetailPage(props: Props) {
                       app={selectedApp}
                       syncCallback={refetchData}
                       changeCallback={refetchData}
+                      isHelmManaged={props.isHelmManaged}
                     />
                   )}
                 />
@@ -557,25 +575,23 @@ function AppDetailPage(props: Props) {
                   />
                 )}
                 {/* snapshots redirects */}
-                <Redirect
-                  exact
-                  from="/app/:slug/snapshots"
-                  to="/snapshots/partial/:slug"
+                <Route
+                  path="/app/:slug/snapshots"
+                  render={() => <Redirect to="/snapshots/partial/:slug" />}
                 />
-                <Redirect
-                  exact
-                  from="/app/:slug/snapshots/schedule"
-                  to="/snapshots/settings?:slug"
+                <Route
+                  path="/app/:slug/snapshots/schedule"
+                  render={() => <Redirect to="/snapshots/settings?:slug" />}
                 />
-                <Redirect
-                  exact
-                  from="/app/:slug/snapshots/:id"
-                  to="/snapshots/partial/:slug/:id"
+                <Route
+                  path="/app/:slug/snapshots/:id"
+                  render={() => <Redirect to="/snapshots/partial/:slug/:id" />}
                 />
-                <Redirect
-                  exact
-                  from="/app/:slug/snapshots/:id/restore"
-                  to="/snapshots/partial/:slug/:id/restore"
+                <Route
+                  path="/app/:slug/snapshots/:id/restore"
+                  render={() => (
+                    <Redirect to="/snapshots/partial/:slug/:id/restore" />
+                  )}
                 />
 
                 <Route component={NotFound} />

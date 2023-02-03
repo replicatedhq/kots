@@ -53,7 +53,7 @@ class ConfigureSnapshots extends React.Component {
         className="Modal ConfigureSnapshots"
       >
         <div className="Modal-body">
-          <p className="u-fontSize--largest u-fontWeight--bold u-textColor--secondary u-marginBottom--20">
+          <p className="u-fontSize--largest u-fontWeight--bold u-textColor--primary u-marginBottom--20">
             Add a new destination
           </p>
           <p className="u-fontSize--normal u-fontWeight--medium u-textColor--bodyCopy u-lineHeight--normal">
@@ -144,12 +144,12 @@ class ConfigureSnapshots extends React.Component {
                       Install the CLI on your machine by following the Velero
                       installation instructions at:{" "}
                       <a
-                        href="https://velero.io/docs/v1.6/basic-install/"
+                        href="https://docs.replicated.com/enterprise/snapshots-velero-cli-installing"
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="replicated-link u-marginLeft--5"
+                        className="link u-marginLeft--5"
                       >
-                        https://velero.io/docs/v1.6/basic-install/
+                        https://docs.replicated.com/enterprise/snapshots-velero-cli-installing
                       </a>{" "}
                     </p>
                   ) : (
@@ -160,10 +160,10 @@ class ConfigureSnapshots extends React.Component {
                       </span>
                       Install the CLI on your machine by following the{" "}
                       <a
-                        href="https://velero.io/docs/v1.6/basic-install/"
+                        href="https://docs.replicated.com/enterprise/snapshots-velero-cli-installing"
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="replicated-link u-marginLeft--5"
+                        className="link u-marginLeft--5"
                       >
                         Velero installation instructions
                       </a>{" "}
@@ -237,7 +237,7 @@ class ConfigureSnapshots extends React.Component {
                           />
                         </a>
                         <a
-                          href="https://velero.io/docs/v1.6/supported-providers/"
+                          href="https://velero.io/docs/v1.9/supported-providers/"
                           target="_blank"
                           rel="noopener noreferrer"
                           className="snapshotOptions"

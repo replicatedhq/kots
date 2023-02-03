@@ -1,12 +1,16 @@
 @import "../../variables.scss";
 
 .SupportBundle--Row {
+  margin-bottom: 15px;
   .actions {
     top: 15px;
     right: 15px;
   }
   &:hover {
     background: lighten($primary-color, 43.5%);
+  }
+  &:last-child {
+    margin-bottom: 0;
   }
 }
 
@@ -48,9 +52,9 @@
 }
 
 .bundle-row-wrapper {
-  padding: 17px 12px;
-  border-bottom: 1px solid $border-color;
+  padding: 15px !important;
   cursor: pointer;
+  border-radius: 4px !important;
 
   .spacer-div {
     width: 20px;
@@ -82,6 +86,16 @@
     }
   }
 }
+.deleting {
+  animation: blinker 3s linear infinite;
+  cursor: not-allowed !important;
+}
+
+@keyframes blinker {
+  50% {
+    opacity: 0.2;
+  }
+}
 
 .CommunityLicenseBundle--wrapper {
   max-height: 94px;
@@ -94,4 +108,33 @@
   margin-bottom: 36px;
   padding-left: 15px;
   padding-right: 15px;
+}
+
+.support-bundle-list-wrapper {
+  width: 800px;
+  margin: 0 auto;
+}
+.generate-support-modal {
+  width: 700px;
+}
+.analyze-modal {
+  margin-top: 30px;
+  background: #f5f8f9;
+  padding: 15px;
+  border: 1px solid #d8d8d8;
+  border-radius: 6px;
+  color: #4a4a4a;
+  font-size: 14px;
+}
+.analyze-content {
+  padding: 15px 0;
+  gap: 40px;
+  color: #4a4a4a;
+}
+.generating-bundle {
+  opacity: 0.5;
+  cursor: not-allowed !important;
+}
+.generating-bundle:hover {
+  text-decoration: none !important;
 }

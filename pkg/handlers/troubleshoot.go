@@ -451,6 +451,26 @@ func (h *Handler) ShareSupportBundle(w http.ResponseWriter, r *http.Request) {
 	JSON(w, http.StatusOK, "")
 }
 
+func (h *Handler) DeleteSupportBundle(w http.ResponseWriter, r *http.Request) {
+	appSlug := mux.Vars(r)["appSlug"]
+	bundleID := mux.Vars(r)["bundleId"]
+
+	app, err := store.GetStore().GetAppFromSlug(appSlug)
+	if err != nil {
+		logger.Error(errors.Wrap(err, "failed to get app from slug"))
+		JSON(w, http.StatusInternalServerError, nil)
+		return
+	}
+
+	if err := store.GetStore().DeleteSupportBundle(bundleID, app.ID); err != nil {
+		logger.Error(errors.Wrap(err, "failed to delete support bundle"))
+		JSON(w, http.StatusInternalServerError, nil)
+		return
+	}
+
+	JSON(w, http.StatusOK, "")
+}
+
 func (h *Handler) CollectSupportBundle(w http.ResponseWriter, r *http.Request) {
 	if util.IsHelmManaged() {
 		w.WriteHeader(http.StatusBadRequest)

@@ -6,10 +6,8 @@ function kotsadm() {
 
     validate_object_storage
 
-    kotsadm_rename_postgres_pvc_1-12-2 "$src"
-
     cp "$src/kustomization.yaml" "$dst/"
-    cp "$src/postgres.yaml" "$dst/"
+    cp "$src/rqlite.yaml" "$dst/"
     cp "$src/kotsadm.yaml" "$dst/"
 
     if kubernetes_resource_exists default statefulset kotsadm; then
@@ -32,7 +30,7 @@ function kotsadm() {
     kotsadm_secret_cluster_token
     kotsadm_secret_authstring
     kotsadm_secret_password
-    kotsadm_secret_postgres
+    kotsadm_secret_rqlite
     kotsadm_secret_s3           # this secret is only used for (re)configuring internal snapshots; will not be created if there is no object store 
     kotsadm_secret_session
     kotsadm_api_encryption_key
@@ -111,10 +109,15 @@ function kotsadm() {
 
     kotsadm_kurl_proxy "$src" "$dst"
 
-    kotsadm_postgres_ready_spinner
+    kotsadm_rqlite_ready_spinner
     kotsadm_ready_spinner
 
-    kubectl label pvc kotsadm-postgres-kotsadm-postgres-0 velero.io/exclude-from-backup- kots.io/backup=velero --overwrite
+    # kotsadm-postgres removed in 1.89.0
+    kubectl delete service kotsadm-postgres &> /dev/null || true
+    kubectl delete statefulset kotsadm-postgres &> /dev/null || true
+    kubectl delete configmap kotsadm-postgres &> /dev/null || true
+    kubectl delete secret kotsadm-postgres &> /dev/null || true
+    kubectl delete pvc -l app=kotsadm-postgres &> /dev/null || true
 
     kotsadm_cli $src
 
@@ -230,21 +233,21 @@ function kotsadm_secret_password() {
     kotsadm_scale_down
 }
 
-function kotsadm_secret_postgres() {
+function kotsadm_secret_rqlite() {
     local src="$DIR/addons/kotsadm/$KOTSADM_VERSION"
     local dst="$DIR/kustomize/kotsadm"
 
-    local POSTGRES_PASSWORD=$(kubernetes_secret_value default kotsadm-postgres password)
+    local RQLITE_PASSWORD=$(kubernetes_secret_value default kotsadm-rqlite password)
 
-    if [ -z "$POSTGRES_PASSWORD" ]; then
-        POSTGRES_PASSWORD=$(< /dev/urandom tr -dc A-Za-z0-9 | head -c16)
+    if [ -z "$RQLITE_PASSWORD" ]; then
+        RQLITE_PASSWORD=$(< /dev/urandom tr -dc A-Za-z0-9 | head -c16)
     fi
 
-    render_yaml_file "$src/tmpl-secret-postgres.yaml" > "$dst/secret-postgres.yaml"
-    insert_resources "$dst/kustomization.yaml" secret-postgres.yaml
+    render_yaml_file_2 "$src/tmpl-secret-rqlite.yaml" > "$dst/secret-rqlite.yaml"
+    insert_resources "$dst/kustomization.yaml" secret-rqlite.yaml
 
     kotsadm_scale_down
-    kubernetes_scale_down default deployment kotsadm-postgres
+    kubernetes_scale_down default statefulset kotsadm-rqlite
     kubernetes_scale_down default deployment kotsadm-migrations
 }
 
@@ -341,7 +344,7 @@ function kotsadm_confg_configmap() {
     local dst="$1"
 
     if ! kubernetes_resource_exists default configmap kotsadm-confg; then
-        kubectl -n default create configmap kotsadm-confg
+        kubectl -n default create configmap kotsadm-confg --save-config
         kubectl -n default label configmap kotsadm-confg --overwrite kots.io/kotsadm=true kots.io/backup=velero
     fi
 
@@ -456,29 +459,6 @@ function kotsadm_cli() {
     fi
 }
 
-# copy pgdata from pvc named kotsadm-postgres to new pvc named kotsadm-postgres-kotsadm-postgres-0
-# used by StatefulSet in 1.12.2+
-function kotsadm_rename_postgres_pvc_1-12-2() {
-    local src="$1"
-
-    if kubernetes_resource_exists default deployment kotsadm-postgres; then
-        kubectl delete deployment kotsadm-postgres
-    fi
-    if ! kubernetes_resource_exists default pvc kotsadm-postgres; then
-        return 0
-    fi
-    printf "${YELLOW}Renaming PVC kotsadm-postgres to kotsadm-postgres-kotsadm-postgres-0${NC}\n"
-    kubectl apply -f "$src/kotsadm-postgres-rename-pvc.yaml"
-    spinner_until -1 kotsadm_postgres_pvc_renamed
-    kubectl delete pod kotsadm-postgres-rename-pvc
-    kubectl delete pvc kotsadm-postgres
-}
-
-function kotsadm_postgres_pvc_renamed {
-    local status=$(kubectl get pod kotsadm-postgres-rename-pvc -ojsonpath='{ .status.containerStatuses[0].state.terminated.reason }')
-    [ "$status" = "Completed" ]
-}
-
 function kotsadm_namespaces() {
     local src="$1"
     local dst="$2"
@@ -527,11 +507,11 @@ function kotsadm_ready_spinner() {
     fi
 }
 
-function kotsadm_postgres_ready_spinner() {
+function kotsadm_rqlite_ready_spinner() {
     sleep 1 # ensure that kubeadm has had time to begin applying and scheduling the kotsadm pods
-    if ! spinner_until 300 kotsadm_health_check "app=kotsadm-postgres"; then
-      kubectl logs -l "app=kotsadm-postgres" --all-containers --tail 10
-      bail "The kotsadm-postgres statefulset in the kotsadm addon failed to deploy successfully."
+    if ! spinner_until 300 kotsadm_health_check "app=kotsadm-rqlite"; then
+      kubectl logs -l "app=kotsadm-rqlite" --all-containers --tail 10
+      bail "The kotsadm-rqlite statefulset in the kotsadm addon failed to deploy successfully."
     fi
 }
 

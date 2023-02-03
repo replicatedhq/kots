@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"encoding/json"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -10,6 +11,7 @@ import (
 	"strings"
 
 	"github.com/pkg/errors"
+	"github.com/replicatedhq/kots/pkg/handlers/types"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/preflight"
@@ -29,13 +31,16 @@ type UploadExistingAppRequest struct {
 }
 
 type UploadResponse struct {
-	Slug string `json:"slug"`
+	types.ErrorResponse
+	Slug *string `json:"slug,omitempty"`
 }
 
 // UploadExistingApp can be used to upload a multipart form file to the existing app
 // This is used in the KOTS CLI when calling kots upload ...
 // NOTE: this uses special kots token authorization
 func (h *Handler) UploadExistingApp(w http.ResponseWriter, r *http.Request) {
+	uploadResponse := UploadResponse{}
+
 	if err := requireValidKOTSToken(w, r); err != nil {
 		logger.Error(errors.Wrap(err, "failed to get valid token"))
 		return
@@ -44,36 +49,41 @@ func (h *Handler) UploadExistingApp(w http.ResponseWriter, r *http.Request) {
 	metadata := r.FormValue("metadata")
 	uploadExistingAppRequest := UploadExistingAppRequest{}
 	if err := json.NewDecoder(strings.NewReader(metadata)).Decode(&uploadExistingAppRequest); err != nil {
-		logger.Error(errors.Wrap(err, "failed to decode request"))
-		w.WriteHeader(http.StatusInternalServerError)
+		uploadResponse.Error = util.StrPointer("failed to decode request")
+		logger.Error(errors.Wrap(err, *uploadResponse.Error))
+		JSON(w, http.StatusInternalServerError, uploadResponse)
 		return
 	}
 
 	archive, _, err := r.FormFile("file")
 	if err != nil {
-		logger.Error(errors.Wrap(err, "failed to read file from request"))
-		w.WriteHeader(http.StatusInternalServerError)
+		uploadResponse.Error = util.StrPointer("failed to read file from request")
+		logger.Error(errors.Wrap(err, *uploadResponse.Error))
+		JSON(w, http.StatusInternalServerError, uploadResponse)
 		return
 	}
 
 	tmpFile, err := ioutil.TempFile("", "kotsadm")
 	if err != nil {
-		logger.Error(errors.Wrap(err, "failed to create temp file"))
-		w.WriteHeader(http.StatusInternalServerError)
+		uploadResponse.Error = util.StrPointer("failed to create temp file")
+		logger.Error(errors.Wrap(err, *uploadResponse.Error))
+		JSON(w, http.StatusInternalServerError, uploadResponse)
 		return
 	}
 	_, err = io.Copy(tmpFile, archive)
 	if err != nil {
-		logger.Error(errors.Wrap(err, "failed to copy file from request to temp file"))
-		w.WriteHeader(http.StatusInternalServerError)
+		uploadResponse.Error = util.StrPointer("failed to copy file from request to temp file")
+		logger.Error(errors.Wrap(err, *uploadResponse.Error))
+		JSON(w, http.StatusInternalServerError, uploadResponse)
 		return
 	}
 	defer os.RemoveAll(tmpFile.Name())
 
 	archiveDir, err := version.ExtractArchiveToTempDirectory(tmpFile.Name())
 	if err != nil {
-		logger.Error(errors.Wrap(err, "failed to extract file"))
-		w.WriteHeader(http.StatusInternalServerError)
+		uploadResponse.Error = util.StrPointer("failed to extract file")
+		logger.Error(errors.Wrap(err, *uploadResponse.Error))
+		JSON(w, http.StatusInternalServerError, uploadResponse)
 		return
 	}
 	defer os.RemoveAll(archiveDir)
@@ -81,90 +91,110 @@ func (h *Handler) UploadExistingApp(w http.ResponseWriter, r *http.Request) {
 	// encrypt any plain text values
 	kotsKinds, err := kotsutil.LoadKotsKindsFromPath(archiveDir)
 	if err != nil {
-		logger.Error(errors.Wrap(err, "failed to load kotskinds"))
-		w.WriteHeader(http.StatusInternalServerError)
+		uploadResponse.Error = util.StrPointer("failed to load kotskinds")
+		logger.Error(errors.Wrap(err, *uploadResponse.Error))
+		JSON(w, http.StatusInternalServerError, uploadResponse)
 		return
 	}
 
 	if kotsKinds.ConfigValues != nil {
 		if err := kotsKinds.EncryptConfigValues(); err != nil {
-			logger.Error(errors.Wrap(err, "failed to encrypt config values"))
-			w.WriteHeader(http.StatusInternalServerError)
+			uploadResponse.Error = util.StrPointer("failed to encrypt config values")
+			logger.Error(errors.Wrap(err, *uploadResponse.Error))
+			JSON(w, http.StatusInternalServerError, uploadResponse)
 			return
 		}
 		updated, err := kotsKinds.Marshal("kots.io", "v1beta1", "ConfigValues")
 		if err != nil {
-			logger.Error(errors.Wrap(err, "failed to marshal config values"))
-			w.WriteHeader(http.StatusInternalServerError)
+			uploadResponse.Error = util.StrPointer("failed to marshal config values")
+			logger.Error(errors.Wrap(err, *uploadResponse.Error))
+			JSON(w, http.StatusInternalServerError, uploadResponse)
 			return
 		}
 
 		if err := ioutil.WriteFile(filepath.Join(archiveDir, "upstream", "userdata", "config.yaml"), []byte(updated), 0644); err != nil {
-			logger.Error(errors.Wrap(err, "failed to write config values"))
-			w.WriteHeader(http.StatusInternalServerError)
+			uploadResponse.Error = util.StrPointer("failed to write config values")
+			logger.Error(errors.Wrap(err, *uploadResponse.Error))
+			JSON(w, http.StatusInternalServerError, uploadResponse)
 			return
 		}
 	}
 
 	a, err := store.GetStore().GetAppFromSlug(uploadExistingAppRequest.Slug)
 	if err != nil {
-		logger.Error(errors.Wrapf(err, "failed to get app for slug %q", uploadExistingAppRequest.Slug))
-		w.WriteHeader(http.StatusInternalServerError)
+		uploadResponse.Error = util.StrPointer(fmt.Sprintf("failed to get app for slug %q", uploadExistingAppRequest.Slug))
+		logger.Error(errors.Wrap(err, *uploadResponse.Error))
+		JSON(w, http.StatusInternalServerError, uploadResponse)
 		return
 	}
 
 	registrySettings, err := store.GetStore().GetRegistryDetailsForApp(a.ID)
 	if err != nil {
-		logger.Error(errors.Wrap(err, "failed to get registry settings"))
-		w.WriteHeader(http.StatusInternalServerError)
+		uploadResponse.Error = util.StrPointer("failed to get registry settings")
+		logger.Error(errors.Wrap(err, *uploadResponse.Error))
+		JSON(w, http.StatusInternalServerError, uploadResponse)
 		return
 	}
 
 	downstreams, err := store.GetStore().ListDownstreamsForApp(a.ID)
 	if err != nil {
-		logger.Error(errors.Wrap(err, "failed to list downstreams"))
-		w.WriteHeader(http.StatusInternalServerError)
+		uploadResponse.Error = util.StrPointer("failed to list downstreams")
+		logger.Error(errors.Wrap(err, *uploadResponse.Error))
+		JSON(w, http.StatusInternalServerError, uploadResponse)
 		return
 	}
 
 	if len(downstreams) == 0 {
-		logger.Errorf("no downstreams found for deploying %s", a.Slug)
-		w.WriteHeader(http.StatusInternalServerError)
+		uploadResponse.Error = util.StrPointer(fmt.Sprintf("no downstreams found for deploying %s", a.Slug))
+		logger.Error(errors.Wrap(err, *uploadResponse.Error))
+		JSON(w, http.StatusInternalServerError, uploadResponse)
 		return
 	}
 
 	nextAppSequence, err := store.GetStore().GetNextAppSequence(a.ID)
 	if err != nil {
-		logger.Error(errors.Wrap(err, "failed to get next app sequence"))
-		w.WriteHeader(http.StatusInternalServerError)
+		uploadResponse.Error = util.StrPointer("failed to get next app sequence")
+		logger.Error(errors.Wrap(err, *uploadResponse.Error))
+		JSON(w, http.StatusInternalServerError, uploadResponse)
 		return
 	}
 
 	err = render.RenderDir(archiveDir, a, downstreams, registrySettings, nextAppSequence)
 	if err != nil {
-		logger.Error(errors.Wrap(err, "failed to render app version"))
-		w.WriteHeader(http.StatusInternalServerError)
+		cause := errors.Cause(err)
+		if _, ok := cause.(util.ActionableError); ok {
+			uploadResponse.Error = util.StrPointer(cause.Error())
+			logger.Error(errors.Wrap(err, *uploadResponse.Error))
+			JSON(w, http.StatusInternalServerError, uploadResponse)
+		} else {
+			uploadResponse.Error = util.StrPointer("failed to render app version")
+			logger.Error(errors.Wrap(err, *uploadResponse.Error))
+			JSON(w, http.StatusInternalServerError, uploadResponse)
+		}
 		return
 	}
 
 	baseSequence, err := store.GetStore().GetAppVersionBaseSequence(a.ID, kotsKinds.Installation.Spec.VersionLabel)
 	if err != nil {
-		logger.Error(errors.Wrap(err, "failed to app version base sequence"))
-		w.WriteHeader(http.StatusInternalServerError)
+		uploadResponse.Error = util.StrPointer("failed to app version base sequence")
+		logger.Error(errors.Wrap(err, *uploadResponse.Error))
+		JSON(w, http.StatusInternalServerError, uploadResponse)
 		return
 	}
 
 	newSequence, err := store.GetStore().CreateAppVersion(a.ID, &baseSequence, archiveDir, "KOTS Upload", uploadExistingAppRequest.SkipPreflights, &version.DownstreamGitOps{}, render.Renderer{})
 	if err != nil {
-		logger.Error(errors.Wrap(err, "failed to create app version"))
-		w.WriteHeader(http.StatusInternalServerError)
+		uploadResponse.Error = util.StrPointer("failed to create app version")
+		logger.Error(errors.Wrap(err, *uploadResponse.Error))
+		JSON(w, http.StatusInternalServerError, uploadResponse)
 		return
 	}
 
 	hasStrictPreflights, err := store.GetStore().HasStrictPreflights(a.ID, newSequence)
 	if err != nil {
-		logger.Error(errors.Wrap(err, "failed to check if app preflight has strict analyzers"))
-		w.WriteHeader(http.StatusInternalServerError)
+		uploadResponse.Error = util.StrPointer("failed to check if app preflight has strict analyzers")
+		logger.Error(errors.Wrap(err, *uploadResponse.Error))
+		JSON(w, http.StatusInternalServerError, uploadResponse)
 		return
 	}
 
@@ -174,8 +204,9 @@ func (h *Handler) UploadExistingApp(w http.ResponseWriter, r *http.Request) {
 
 	if !uploadExistingAppRequest.SkipPreflights || hasStrictPreflights {
 		if err := preflight.Run(a.ID, a.Slug, newSequence, a.IsAirgap, archiveDir); err != nil {
-			logger.Error(errors.Wrap(err, "failed to get run preflights"))
-			w.WriteHeader(http.StatusInternalServerError)
+			uploadResponse.Error = util.StrPointer("failed to get run preflights")
+			logger.Error(errors.Wrap(err, *uploadResponse.Error))
+			JSON(w, http.StatusInternalServerError, uploadResponse)
 			return
 		}
 	}
@@ -183,31 +214,37 @@ func (h *Handler) UploadExistingApp(w http.ResponseWriter, r *http.Request) {
 	if uploadExistingAppRequest.Deploy {
 		status, err := store.GetStore().GetStatusForVersion(a.ID, downstreams[0].ClusterID, newSequence)
 		if err != nil {
-			logger.Error(errors.Wrap(err, "failed to get update downstream status"))
-			w.WriteHeader(http.StatusInternalServerError)
+			uploadResponse.Error = util.StrPointer("failed to get update downstream status")
+			logger.Error(errors.Wrap(err, *uploadResponse.Error))
+			JSON(w, http.StatusInternalServerError, uploadResponse)
 			return
 		}
 
 		if status == storetypes.VersionPendingConfig {
-			logger.Error(errors.Errorf("not deploying version %d because it's %s", newSequence, status))
-			w.WriteHeader(http.StatusInternalServerError)
+			uploadResponse.Error = util.StrPointer(fmt.Sprintf("not deploying version %d because it's %s", newSequence, status))
+			logger.Error(errors.Wrap(err, *uploadResponse.Error))
+			JSON(w, http.StatusInternalServerError, uploadResponse)
 			return
 		}
 
 		if err := version.DeployVersion(a.ID, newSequence); err != nil {
-			logger.Error(errors.Wrap(err, "failed to deploy latest version"))
-			w.WriteHeader(http.StatusInternalServerError)
 			cause := errors.Cause(err)
 			if _, ok := cause.(util.ActionableError); ok {
-				w.Write([]byte(cause.Error()))
+				uploadResponse.Error = util.StrPointer(cause.Error())
+				logger.Error(errors.Wrap(err, *uploadResponse.Error))
+				JSON(w, http.StatusInternalServerError, uploadResponse)
+			} else {
+				uploadResponse.Error = util.StrPointer("failed to deploy latest version")
+				logger.Error(errors.Wrap(err, *uploadResponse.Error))
+				JSON(w, http.StatusInternalServerError, uploadResponse)
 			}
 			return
 		}
 	}
 
-	uploadResponse := UploadResponse{
-		Slug: a.Slug,
-	}
+	uploadResponse.Slug = util.StrPointer(a.Slug)
+	uploadResponse.Success = true
+	uploadResponse.Error = nil
 
 	JSON(w, http.StatusOK, uploadResponse)
 }

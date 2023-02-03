@@ -6,7 +6,7 @@ import "@src/css/icon.css";
 
 type IconProps = {
   icon: string;
-  size: number | string;
+  size: number;
   color?: string;
   style?: object;
   className?: string;
@@ -18,7 +18,7 @@ type IconProps = {
 const Icon = (props: IconProps) => {
   let className = props.className ? props.className : "";
   return (
-    <IcoMoon iconSet={iconSet} {...props} className={`icomoon ${className}`} />
+    <IcoMoon iconSet={iconSet} {...props} className={`icons ${className}`} />
   );
 };
 

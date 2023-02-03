@@ -3,14 +3,13 @@ package kotsadm
 import (
 	"bytes"
 	"context"
-	"os"
 
 	"github.com/google/uuid"
-	"github.com/manifoldco/promptui"
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/crypto"
 	kotsadmobjects "github.com/replicatedhq/kots/pkg/kotsadm/objects"
 	"github.com/replicatedhq/kots/pkg/kotsadm/types"
+	"github.com/replicatedhq/kots/pkg/util"
 	"golang.org/x/crypto/bcrypt"
 	corev1 "k8s.io/api/core/v1"
 	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
@@ -30,11 +29,11 @@ func getSecretsYAML(deployOptions *types.DeployOptions) (map[string][]byte, erro
 	}
 	docs["secret-jwt.yaml"] = jwt.Bytes()
 
-	var pg bytes.Buffer
-	if err := s.Encode(kotsadmobjects.PgSecret(deployOptions.Namespace, deployOptions.PostgresPassword), &pg); err != nil {
-		return nil, errors.Wrap(err, "failed to marshal pg secret")
+	var rqliteSecret bytes.Buffer
+	if err := s.Encode(kotsadmobjects.RqliteSecret(deployOptions.Namespace, deployOptions.RqlitePassword), &rqliteSecret); err != nil {
+		return nil, errors.Wrap(err, "failed to marshal rqlite secret")
 	}
-	docs["secret-pg.yaml"] = pg.Bytes()
+	docs["secret-rqlite.yaml"] = rqliteSecret.Bytes()
 
 	if deployOptions.SharedPasswordBcrypt == "" {
 		bcryptPassword, err := bcrypt.GenerateFromPassword([]byte(deployOptions.SharedPassword), 10)
@@ -99,8 +98,8 @@ func ensureSecrets(deployOptions *types.DeployOptions, clientset *kubernetes.Cli
 		return errors.Wrap(err, "failed to ensure jwt session secret")
 	}
 
-	if err := ensurePostgresSecret(*deployOptions, clientset); err != nil {
-		return errors.Wrap(err, "failed to ensure postgres secret")
+	if err := ensureRqliteSecret(*deployOptions, clientset); err != nil {
+		return errors.Wrap(err, "failed to ensure rqlite secret")
 	}
 
 	if deployOptions.SharedPasswordBcrypt == "" {
@@ -184,29 +183,28 @@ func ensureJWTSessionSecret(namespace string, clientset *kubernetes.Clientset) e
 	return nil
 }
 
-func getPostgresSecret(namespace string, clientset *kubernetes.Clientset) (*corev1.Secret, error) {
-	pgSecret, err := clientset.CoreV1().Secrets(namespace).Get(context.TODO(), "kotsadm-postgres", metav1.GetOptions{})
+func getRqliteSecret(namespace string, clientset *kubernetes.Clientset) (*corev1.Secret, error) {
+	rqliteSecret, err := clientset.CoreV1().Secrets(namespace).Get(context.TODO(), "kotsadm-rqlite", metav1.GetOptions{})
 	if err != nil {
 		if kuberneteserrors.IsNotFound(err) {
 			return nil, nil
 		}
-
-		return nil, errors.Wrap(err, "failed to get postgres secret from cluster")
+		return nil, errors.Wrap(err, "failed to get rqlite secret from cluster")
 	}
 
-	return pgSecret, nil
+	return rqliteSecret, nil
 }
 
-func ensurePostgresSecret(deployOptions types.DeployOptions, clientset *kubernetes.Clientset) error {
-	existingPgSecret, err := getPostgresSecret(deployOptions.Namespace, clientset)
+func ensureRqliteSecret(deployOptions types.DeployOptions, clientset *kubernetes.Clientset) error {
+	existingRqliteSecret, err := getRqliteSecret(deployOptions.Namespace, clientset)
 	if err != nil {
-		return errors.Wrap(err, "failed to check for existing postgres secret")
+		return errors.Wrap(err, "failed to check for existing rqlite secret")
 	}
 
-	if existingPgSecret == nil {
-		_, err := clientset.CoreV1().Secrets(deployOptions.Namespace).Create(context.TODO(), kotsadmobjects.PgSecret(deployOptions.Namespace, deployOptions.PostgresPassword), metav1.CreateOptions{})
+	if existingRqliteSecret == nil {
+		_, err := clientset.CoreV1().Secrets(deployOptions.Namespace).Create(context.TODO(), kotsadmobjects.RqliteSecret(deployOptions.Namespace, deployOptions.RqlitePassword), metav1.CreateOptions{})
 		if err != nil {
-			return errors.Wrap(err, "failed to create postgres secret")
+			return errors.Wrap(err, "failed to create rqlite secret")
 		}
 	}
 
@@ -228,7 +226,7 @@ func getSharedPasswordSecret(namespace string, clientset *kubernetes.Clientset) 
 
 func ensureSharedPasswordSecret(deployOptions *types.DeployOptions, clientset *kubernetes.Clientset) error {
 	if deployOptions.SharedPassword == "" {
-		sharedPassword, err := promptForSharedPassword()
+		sharedPassword, err := util.PromptForNewPassword()
 		if err != nil {
 			return errors.Wrap(err, "failed to prompt for shared password")
 		}
@@ -257,45 +255,10 @@ func ensureSharedPasswordSecret(deployOptions *types.DeployOptions, clientset *k
 	return nil
 }
 
-func promptForSharedPassword() (string, error) {
-	templates := &promptui.PromptTemplates{
-		Prompt:  "{{ . | bold }} ",
-		Valid:   "{{ . | green }} ",
-		Invalid: "{{ . | red }} ",
-		Success: "{{ . | bold }} ",
-	}
-
-	prompt := promptui.Prompt{
-		Label:     "Enter a new password to be used for the Admin Console:",
-		Templates: templates,
-		Mask:      rune('•'),
-		Validate: func(input string) error {
-			if len(input) < 6 {
-				return errors.New("please enter a longer password")
-			}
-
-			return nil
-		},
-	}
-
-	for {
-		result, err := prompt.Run()
-		if err != nil {
-			if err == promptui.ErrInterrupt {
-				os.Exit(-1)
-			}
-			continue
-		}
-
-		return result, nil
-	}
-
-}
-
 func ensureAPIEncryptionSecret(deployOptions *types.DeployOptions, clientset *kubernetes.Clientset) error {
 	secret, err := getAPIEncryptionSecret(deployOptions.Namespace, clientset)
 	if err != nil {
-		return errors.Wrap(err, "failed to check for existing postgres secret")
+		return errors.Wrap(err, "failed to check for existing api encryption secret")
 	}
 
 	if secret != nil {
@@ -327,7 +290,7 @@ func getAPIEncryptionSecret(namespace string, clientset *kubernetes.Clientset) (
 			return nil, nil
 		}
 
-		return nil, errors.Wrap(err, "failed to get postgres secret from cluster")
+		return nil, errors.Wrap(err, "failed to get api encryption secret from cluster")
 	}
 
 	return apiSecret, nil

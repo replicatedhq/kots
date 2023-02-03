@@ -519,7 +519,7 @@ func createPreflightResponse(isFail bool, isWarn bool, pendingCompletion bool, p
 	if pendingCompletion {
 		collectProgress := preflight.CollectProgress{
 			CurrentName:   "collect",
-			CurrentStatus: "Running",
+			CurrentStatus: "running",
 		}
 		collectProgressBytes, err := json.Marshal(collectProgress)
 		if err != nil {

@@ -240,7 +240,7 @@ $cell-width: 140px;
   &:not(.classic) {
     padding: 15px;
     border-radius: 4px;
-    background-color: $really-light-accent;
+    // background-color: $really-light-accent;
   }
 
   &.no-max {
@@ -257,7 +257,7 @@ $cell-width: 140px;
   }
 
   .currentVersion--wrapper {
-    background-color: #ffffff;
+    // background-color: #ffffff;
     border-radius: 4px;
     padding: 8px;
 
@@ -276,7 +276,6 @@ $cell-width: 140px;
 .checks-running-text {
   position: absolute;
   bottom: -26px;
-  margin-left: 50%;
   transform: translateX(-50%);
   white-space: nowrap;
   color: $text-color-body-copy;
@@ -286,6 +285,9 @@ $cell-width: 140px;
   }
   &.warning {
     color: $warning-color;
+    &.without-btns {
+      transform: translateX(-70%);
+    }
   }
   &.success {
     color: $success-color;
@@ -330,7 +332,7 @@ $cell-width: 140px;
 
 .checkbox.checked {
   background-color: #326de6;
-  background-image: url("../../../images/main_spritesheet.svg");
+  background-image: url("@src/images/main_spritesheet.svg");
   background-position: 1px -431px;
 }
 

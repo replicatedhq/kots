@@ -1,12 +1,11 @@
 package types
 
 type RegistrySettings struct {
-	Hostname    string
-	Username    string
-	PasswordEnc string
-	Password    string
-	Namespace   string
-	IsReadOnly  bool
+	Hostname   string
+	Username   string
+	Password   string
+	Namespace  string
+	IsReadOnly bool
 }
 
 const (

@@ -2,6 +2,7 @@ package kotsadmconfig
 
 import (
 	"context"
+	"fmt"
 	"os"
 
 	"github.com/pkg/errors"
@@ -14,6 +15,7 @@ import (
 	registrytypes "github.com/replicatedhq/kots/pkg/registry/types"
 	"github.com/replicatedhq/kots/pkg/template"
 	"github.com/replicatedhq/kots/pkg/util"
+	"github.com/rqlite/gorqlite"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -66,19 +68,11 @@ func NeedsConfiguration(appSlug string, sequence int64, isAirgap bool, kotsKinds
 		configValues = map[string]template.ItemValue{}
 	}
 
-	localRegistry := template.LocalRegistry{
-		Host:      registrySettings.Hostname,
-		Namespace: registrySettings.Namespace,
-		Username:  registrySettings.Username,
-		Password:  registrySettings.Password,
-		ReadOnly:  registrySettings.IsReadOnly,
-	}
-
 	versionInfo := template.VersionInfoFromInstallation(sequence, isAirgap, kotsKinds.Installation.Spec)
 	appInfo := template.ApplicationInfo{Slug: appSlug}
 
 	// rendered, err := kotsconfig.TemplateConfig(logger.NewCLILogger(os.Stdout), configSpec, configValuesSpec, licenseSpec, appSpec, identityConfigSpec, localRegistry, util.PodNamespace)
-	config, err := kotsconfig.TemplateConfigObjects(kotsKinds.Config, configValues, kotsKinds.License, &kotsKinds.KotsApplication, localRegistry, &versionInfo, &appInfo, kotsKinds.IdentityConfig, util.PodNamespace, true)
+	config, err := kotsconfig.TemplateConfigObjects(kotsKinds.Config, configValues, kotsKinds.License, &kotsKinds.KotsApplication, registrySettings, &versionInfo, &appInfo, kotsKinds.IdentityConfig, util.PodNamespace, true)
 	if err != nil {
 		return false, errors.Wrap(err, "failed to template config")
 	}
@@ -114,10 +108,13 @@ func UpdateConfigValuesInDB(filesInDir string, appID string, sequence int64) err
 	}
 
 	db := persistence.MustGetDBSession()
-	query := `update app_version set config_values = $1 where app_id = $2 and sequence = $3`
-	_, err = db.Exec(query, configValues, appID, sequence)
+	query := `update app_version set config_values = ? where app_id = ? and sequence = ?`
+	wr, err := db.WriteOneParameterized(gorqlite.ParameterizedStatement{
+		Query:     query,
+		Arguments: []interface{}{configValues, appID, sequence},
+	})
 	if err != nil {
-		return errors.Wrap(err, "failed to update config values in db")
+		return fmt.Errorf("failed to update config values in db: %v: %v", err, wr.Err)
 	}
 
 	return nil

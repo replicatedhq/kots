@@ -27,7 +27,10 @@ func ResetTLSCmd() *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			v := viper.GetViper()
 
-			namespace := v.GetString("namespace")
+			namespace, err := getNamespaceOrDefault(v.GetString("namespace"))
+			if err != nil {
+				return errors.Wrap(err, "failed to get namespace")
+			}
 			if len(args) == 1 {
 				namespace = args[0]
 			} else if len(args) > 1 {
@@ -40,7 +43,7 @@ func ResetTLSCmd() *cobra.Command {
 				os.Exit(1)
 			}
 
-			err := deleteKotsTLSSecret(namespace)
+			err = deleteKotsTLSSecret(namespace)
 			if err != nil {
 				return errors.Wrap(err, "failed to delete TLS secret")
 			}

@@ -29,10 +29,10 @@ type DownstreamVersion struct {
 	ChannelID          string                             `json:"channelId,omitempty"`
 	IsRequired         bool                               `json:"isRequired"`
 	Status             storetypes.DownstreamVersionStatus `json:"status"`
-	CreatedOn          *time.Time                         `json:"createdOn"`
+	CreatedOn          *time.Time                         `json:"createdOn,omitempty"`
 	ParentSequence     int64                              `json:"parentSequence"`
 	Sequence           int64                              `json:"sequence"`
-	DeployedAt         *time.Time                         `json:"deployedAt"`
+	DeployedAt         *time.Time                         `json:"deployedAt,omitempty"`
 	Source             string                             `json:"source"`
 	PreflightSkipped   bool                               `json:"preflightSkipped"`
 	CommitURL          string                             `json:"commitUrl,omitempty"`
@@ -47,12 +47,15 @@ type DownstreamVersion struct {
 	PreflightResult            string                          `json:"preflightResult,omitempty"`
 	PreflightResultCreatedAt   *time.Time                      `json:"preflightResultCreatedAt,omitempty"`
 	HasFailingStrictPreflights bool                            `json:"hasFailingStrictPreflights,omitempty"`
+	HasConfig                  bool                            `json:"hasConfig,omitempty"`
 	DiffSummary                string                          `json:"diffSummary,omitempty"`
 	DiffSummaryError           string                          `json:"diffSummaryError,omitempty"`
 	YamlErrors                 []v1beta1.InstallationYAMLError `json:"yamlErrors,omitempty"`
 	NeedsKotsUpgrade           bool                            `json:"needsKotsUpgrade,omitempty"`
 	KOTSKinds                  *kotsutil.KotsKinds             `json:"-"`
 	DownloadStatus             DownloadStatus                  `json:"downloadStatus,omitempty"`
+	AppTitle                   string                          `json:"appTitle,omitempty"`
+	AppIconURI                 string                          `json:"appIconUri,omitempty"`
 }
 
 type DownloadStatus struct {

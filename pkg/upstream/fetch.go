@@ -35,9 +35,6 @@ func downloadUpstream(upstreamURI string, fetchOptions *types.FetchOptions) (*ty
 	if err != nil {
 		return nil, errors.Wrap(err, "parse request uri failed")
 	}
-	if u.Scheme == "helm" {
-		return downloadHelm(u, fetchOptions.HelmRepoURI)
-	}
 	if u.Scheme == "replicated" {
 		return downloadReplicated(
 			u,
@@ -58,12 +55,6 @@ func downloadUpstream(upstreamURI string, fetchOptions *types.FetchOptions) (*ty
 			fetchOptions.ReportingInfo,
 			fetchOptions.SkipCompatibilityCheck,
 		)
-	}
-	if u.Scheme == "git" {
-		return downloadGit(upstreamURI)
-	}
-	if u.Scheme == "http" || u.Scheme == "https" {
-		return downloadHttp(upstreamURI)
 	}
 
 	return nil, errors.Errorf("unknown protocol scheme %q", u.Scheme)

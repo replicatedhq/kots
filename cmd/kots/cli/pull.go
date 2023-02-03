@@ -12,6 +12,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/pull"
+	registrytypes "github.com/replicatedhq/kots/pkg/registry/types"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -48,11 +49,15 @@ func PullCmd() *cobra.Command {
 				return errors.Wrap(err, "failed to determine app slug")
 			}
 
+			namespace, err := getNamespaceOrDefault(v.GetString("namespace"))
+			if err != nil {
+				return errors.Wrap(err, "failed to get namespace")
+			}
+
 			pullOptions := pull.PullOptions{
 				AppSlug:             appSlug,
-				HelmRepoURI:         v.GetString("repo"),
 				RootDir:             ExpandDir(v.GetString("rootdir")),
-				Namespace:           v.GetString("namespace"),
+				Namespace:           namespace,
 				Downstreams:         v.GetStringSlice("downstream"),
 				LocalPath:           ExpandDir(v.GetString("local-path")),
 				LicenseFile:         ExpandDir(v.GetString("license-file")),
@@ -62,12 +67,10 @@ func PullCmd() *cobra.Command {
 				ExcludeAdminConsole: v.GetBool("exclude-admin-console"),
 				SharedPassword:      v.GetString("shared-password"),
 				CreateAppDir:        true,
-				HelmVersion:         v.GetString("helm-version"),
-				HelmOptions:         v.GetStringSlice("set"),
 				SkipHelmChartCheck:  true, // this check cannot be performed from CLI because previous release is not available
 				RewriteImages:       v.GetBool("rewrite-images"),
-				RewriteImageOptions: pull.RewriteImageOptions{
-					Host:      v.GetString("registry-endpoint"),
+				RewriteImageOptions: registrytypes.RegistrySettings{
+					Hostname:  v.GetString("registry-endpoint"),
 					Namespace: v.GetString("image-namespace"),
 					Username:  v.GetString("registry-username"),
 					Password:  v.GetString("registry-password"),
@@ -115,8 +118,6 @@ func PullCmd() *cobra.Command {
 		},
 	}
 
-	cmd.Flags().StringSlice("set", []string{}, "values to pass to helm when running helm template")
-	cmd.Flags().String("repo", "", "repo uri to use when downloading a helm chart")
 	cmd.Flags().String("rootdir", ".", "root directory that will be used to write the yaml to")
 	cmd.Flags().StringP("namespace", "n", "default", "namespace to render the upstream to in the base")
 	cmd.Flags().StringSlice("downstream", []string{}, "the list of any downstreams to create/update")
@@ -136,7 +137,6 @@ func PullCmd() *cobra.Command {
 	cmd.Flags().String("registry-endpoint", "", "the endpoint of the local docker registry to use when pushing images (required when --rewrite-images is set)")
 	cmd.Flags().String("registry-username", "", "the username of the local docker registry to use when pushing images (with --rewrite-images)")
 	cmd.Flags().String("registry-password", "", "the password of the local docker registry to use when pushing images (with --rewrite-images)")
-	cmd.Flags().String("helm-version", "v2", "the Helm version with which to render the Helm Chart")
 	cmd.Flags().Bool("with-minio", true, "set to true to include a local minio instance to be used for storage")
 	cmd.Flags().Bool("skip-compatibility-check", false, "set to true to skip compatibility checks between the current kots version and the app")
 	cmd.Flags().Bool("load-apiversions-from-server", false, "load supported k8s api versions from cluster for Helm charts with useHelmInstall flag set to true")

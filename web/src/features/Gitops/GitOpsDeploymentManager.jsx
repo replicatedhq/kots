@@ -2,7 +2,6 @@ import React, { useContext } from "react";
 import find from "lodash/find";
 import Loader from "../../components/shared/Loader";
 import ErrorModal from "../../components/modals/ErrorModal";
-import { withRouter } from "react-router-dom";
 import { requiresHostname } from "../../utilities/utilities";
 import { Flex, Paragraph } from "../../styles/common";
 import SetupProvider from "./components/SetupProvider";
@@ -75,4 +74,4 @@ const GitOpsDeploymentManager = (props) => {
   );
 };
 
-export default withGitOpsConsumer(withRouter(GitOpsDeploymentManager));
+export default withGitOpsConsumer(GitOpsDeploymentManager);

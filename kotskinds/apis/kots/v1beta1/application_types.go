@@ -62,6 +62,8 @@ type ApplicationSpec struct {
 	SupportMinimalRBACPrivileges bool                `json:"supportMinimalRBACPrivileges,omitempty"`
 	ProxyPublicImages            bool                `json:"proxyPublicImages,omitempty"`
 	ConsoleFeatureFlags          []string            `json:"consoleFeatureFlags,omitempty"`
+	ReplicatedRegistryDomain     string              `json:"replicatedRegistryDomain,omitempty"`
+	ProxyRegistryDomain          string              `json:"proxyRegistryDomain,omitempty"`
 }
 
 type ApplicationBranding struct {

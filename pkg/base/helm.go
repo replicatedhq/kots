@@ -54,14 +54,15 @@ func RenderHelm(u *upstreamtypes.Upstream, renderOptions *RenderOptions) (*Base,
 	}
 
 	var rendered []BaseFile
+	var additional []BaseFile
 	switch strings.ToLower(renderOptions.HelmVersion) {
 	case "v3", "":
-		rendered, err = renderHelmV3(u.Name, chartPath, vals, renderOptions)
+		rendered, additional, err = renderHelmV3(u.Name, chartPath, vals, renderOptions)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to render with helm v3")
 		}
 	case "v2":
-		rendered, err = renderHelmV2(u.Name, chartPath, vals, renderOptions)
+		rendered, additional, err = renderHelmV2(u.Name, chartPath, vals, renderOptions)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to render with helm v2")
 		}
@@ -80,6 +81,8 @@ func RenderHelm(u *upstreamtypes.Upstream, renderOptions *RenderOptions) (*Base,
 	if err != nil {
 		return nil, errors.Wrapf(err, "write helm chart %s base", u.Name)
 	}
+
+	base.AdditionalFiles = append(base.AdditionalFiles, additional...)
 
 	// This will be added back later by renderReplicated
 	// I do not want to change the functionality of kots installing a helm chart

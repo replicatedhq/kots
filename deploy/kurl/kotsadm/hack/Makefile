@@ -33,14 +33,13 @@ kurl:
 
 .PHONY: generate
 generate:
-	@POSTGRES_10_TAG=$(shell source ../../../../.image.env && echo "$$POSTGRES_10_TAG") \
-	POSTGRES_14_TAG=$(shell source ../../../../.image.env && echo "$$POSTGRES_14_TAG") \
+	@RQLITE_TAG=$(shell source ../../../../.image.env && echo "$$RQLITE_TAG") \
 	DEX_TAG=$(shell source ../../../../.image.env && echo "$$DEX_TAG") \
 		${MAKE} _generate
 	
 _generate: CURRENT_USER = $(shell id -u -n)
 _generate: generate-tag
-	@cd ../template && ./generate.sh $(KOTS_VERSION) ttl.sh $(CURRENT_USER) 12h ../../../../bin/kots
+	@cd ../template && ./generate.sh $(KOTS_VERSION) ttl.sh $(CURRENT_USER) 24h ../../../../bin/kots
 	@rm -rf kurl/addons/kotsadm/$(KOTS_VERSION)
 	@cp -r ../$(KOTS_VERSION) kurl/addons/kotsadm/
 	mkdir -p kurl/addons/kotsadm/$(KOTS_VERSION)/assets/

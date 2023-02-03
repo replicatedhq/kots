@@ -17,7 +17,7 @@ jobs:
         uses: actions/checkout@v2
       - name: Get tags
         id: get_tag
-        uses: ./actions/version-tag
+        uses: ./.github/actions/version-tag
       - name: Push tag
         if: github.ref_type == 'branch'
         env:
@@ -34,7 +34,7 @@ jobs:
       - name: Setup Go
         uses: actions/setup-go@v2
         with:
-          go-version: '^1.17.4'
+          go-version: '^1.19.2'
       - name: Run Update Script
         env:
           GITHUB_AUTH_TOKEN: ${{ secrets.NIGHTLY_GH_PAT }}
@@ -61,50 +61,9 @@ jobs:
           echo "Pull Request Number - ${{ steps.cpr.outputs.pull-request-number }}"
           echo "Pull Request URL - ${{ steps.cpr.outputs.pull-request-url }}"
 
-  generate-schema:
-    runs-on: ubuntu-20.04
-    container:
-      image: schemahero/schemahero:0.13.2
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v2
-      - name: Generate fixtures
-        run: |
-          /schemahero fixtures \
-            --input-dir ./migrations/tables \
-            --output-dir ./migrations/fixtures/schema \
-            --dbname ship-cloud --driver postgres
-      - name: Upload schema artifact
-        uses: actions/upload-artifact@v2
-        with:
-          name: schema
-          path: ./migrations/fixtures/schema/fixtures.sql
-
-  generate-fixtures:
-    runs-on: ubuntu-20.04
-    needs: [generate-schema]
-    container:
-      image: replicated/gitops-builder:buildkite
-      options: --user root
-    steps:
-    - name: Checkout
-      uses: actions/checkout@v2
-    - name: Download schema artifact
-      uses: actions/download-artifact@v2
-      with:
-        name: schema
-        path: ./migrations/fixtures/schema
-    - name: Build fixtures
-      run: export $(cat .image.env | sed 's/#.*//g' | xargs) && make -C migrations/fixtures deps build run
-    - name: Upload fixtures artifact
-      uses: actions/upload-artifact@v2
-      with:
-        name: fixtures
-        path: ./migrations/fixtures/fixtures.sql
-
   build-schema-migrations:
     runs-on: ubuntu-20.04
-    needs: [generate-fixtures, generate-tag]
+    needs: [generate-tag]
     steps:
     - name: Checkout
       uses: actions/checkout@v2
@@ -153,7 +112,7 @@ jobs:
     steps:
     - uses: actions/setup-go@v2
       with:
-        go-version: '^1.17.4'
+        go-version: '^1.19.2'
     - name: Checkout
       uses: actions/checkout@v2
     - name: Cache Go modules
@@ -192,7 +151,7 @@ jobs:
     steps:
     - uses: actions/setup-go@v2
       with:
-        go-version: '^1.17.4'
+        go-version: '^1.19.2'
     - name: Checkout
       uses: actions/checkout@v2
     - name: Cache Go modules
@@ -260,7 +219,7 @@ jobs:
     steps:
     - uses: actions/setup-go@v2
       with:
-        go-version: '^1.17.4'
+        go-version: '^1.19.2'
 
     - name: Checkout
       uses: actions/checkout@v2
@@ -308,25 +267,6 @@ jobs:
         args: release --rm-dist --config deploy/.goreleaser.yaml
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-  # This needs to go away once kots starts generating the kurl addon and kurl is updated to use the kots genearted addon
-  generate-kurl-addon-pr:
-    runs-on: ubuntu-20.04
-    if: github.ref_type != 'branch'
-    needs: [build-kurl-proxy, build-airgap, generate-tag]
-    steps:
-    - name: Checkout
-      uses: actions/checkout@v2
-    - name: Generate Kurl Addon PR
-      env:
-        GIT_TAG: ${{ needs.generate-tag.outputs.tag }}
-        GH_PAT: ${{ secrets.GH_PAT }}
-      run: |
-        # Strips off the 'v' in version
-        curl -H "Authorization: token $GH_PAT" \
-          -H 'Accept: application/json' \
-          -d "{\"event_type\": \"auto-kotsadm-update\", \"client_payload\": {\"version\": \"${GIT_TAG:1}\" }}" \
-          "https://api.github.com/repos/replicatedhq/kurl/dispatches"
 
   generate-kurl-addon:
     runs-on: ubuntu-20.04
@@ -503,42 +443,42 @@ jobs:
       E2E_GH_PAT: ${{ secrets.E2E_GH_PAT }}
       KOTS_BUILD_STATUS_SLACK_WEBHOOK_URL: ${{ secrets.KOTS_BUILD_STATUS_SLACK_WEBHOOK_URL }}
 
-  start-kgrid-test:
-    runs-on: ubuntu-20.04
-    needs: [release-go-api-tagged, generate-tag]
-    if: github.ref_type == 'branch'
-    env:
-      GIT_TAG: ${{ needs.generate-tag.outputs.tag }}
-    steps:
-    - name: Checkout
-      uses: actions/checkout@v2
-    - uses: kceb/pull-request-url-action@v2
-      id: pr_url
-    - name: Expose git commit data
-      uses: rlespinasse/git-commit-data-action@v1.x   # no v1 tag
-    - name: Create staging gitops commit
-      env:
-        REPLICATEDCOM_GITHUB_PRIVATE_KEY: ${{ secrets.REPLICATEDCOM_GITHUB_PRIVATE_KEY }}
-        PR_URL: ${{ steps.pr_url.outputs.url }}
-        GITOPS_OWNER: replicatedcom
-        GITOPS_REPO: gitops-deploy
-        GITOPS_BRANCH: main
-        RUN_ID: ${{ github.run_id }}
-      run: ./hack/deploy-kgrid.sh
-    - name: Create production gitops commit
-      id: deploy_kgrid
-      env:
-        REPLICATEDCOM_GITHUB_PRIVATE_KEY: ${{ secrets.REPLICATEDCOM_GITHUB_PRIVATE_KEY }}
-        PR_URL: ${{ steps.pr_url.outputs.url }}
-        OVERLAY: production
-        GITOPS_OWNER: replicatedcom
-        GITOPS_REPO: gitops-deploy
-        GITOPS_BRANCH: release
-      run: ./hack/deploy-kgrid.sh
-    - name: Wait for production kgrid tests
-      env:
-        KGRID_API_TOKEN: ${{ secrets.KGRID_API_TOKEN }}
-        KGRID_RUN_ID: ${{ steps.deploy_kgrid.outputs.kgrid-run-id }}
-      run: |
-        printf "\n\nSupport bundles are available in the Replicated production AWS account under the 'kgrid-support-bundles' S3 bucket. To download a support bundle, you can do so using the AWS Management Console, or by configuring the AWS cli tool with the appropriate credentials and running the following command: \n\naws s3 cp <test-supportbundle-s3-url> <local-filename>.tar.gz\n\n"
-        ./hack/wait-kgrid.sh
+  # start-kgrid-test:
+  #   runs-on: ubuntu-20.04
+  #   needs: [release-go-api-tagged, generate-tag]
+  #   if: github.ref_type == 'branch'
+  #   env:
+  #     GIT_TAG: ${{ needs.generate-tag.outputs.tag }}
+  #   steps:
+  #   - name: Checkout
+  #     uses: actions/checkout@v2
+  #   - uses: kceb/pull-request-url-action@v2
+  #     id: pr_url
+  #   - name: Expose git commit data
+  #     uses: rlespinasse/git-commit-data-action@v1.x   # no v1 tag
+  #   - name: Create staging gitops commit
+  #     env:
+  #       REPLICATEDCOM_GITHUB_PRIVATE_KEY: ${{ secrets.REPLICATEDCOM_GITHUB_PRIVATE_KEY }}
+  #       PR_URL: ${{ steps.pr_url.outputs.url }}
+  #       GITOPS_OWNER: replicatedcom
+  #       GITOPS_REPO: gitops-deploy
+  #       GITOPS_BRANCH: main
+  #       RUN_ID: ${{ github.run_id }}
+  #     run: ./hack/deploy-kgrid.sh
+  #   - name: Create production gitops commit
+  #     id: deploy_kgrid
+  #     env:
+  #       REPLICATEDCOM_GITHUB_PRIVATE_KEY: ${{ secrets.REPLICATEDCOM_GITHUB_PRIVATE_KEY }}
+  #       PR_URL: ${{ steps.pr_url.outputs.url }}
+  #       OVERLAY: production
+  #       GITOPS_OWNER: replicatedcom
+  #       GITOPS_REPO: gitops-deploy
+  #       GITOPS_BRANCH: release
+  #     run: ./hack/deploy-kgrid.sh
+  #   - name: Wait for production kgrid tests
+  #     env:
+  #       KGRID_API_TOKEN: ${{ secrets.KGRID_API_TOKEN }}
+  #       KGRID_RUN_ID: ${{ steps.deploy_kgrid.outputs.kgrid-run-id }}
+  #     run: |
+  #       printf "\n\nSupport bundles are available in the Replicated production AWS account under the 'kgrid-support-bundles' S3 bucket. To download a support bundle, you can do so using the AWS Management Console, or by configuring the AWS cli tool with the appropriate credentials and running the following command: \n\naws s3 cp <test-supportbundle-s3-url> <local-filename>.tar.gz\n\n"
+  #       ./hack/wait-kgrid.sh
