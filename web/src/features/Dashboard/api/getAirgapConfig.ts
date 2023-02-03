@@ -2,36 +2,25 @@ import { useQuery } from "react-query";
 import { Utilities } from "../../../utilities/utilities";
 import { useSelectedApp } from "@features/App";
 
-export const getAirgapConfig = async (appSlug: string) => {
+export const getAirgapConfig = async (appSlug: string): Promise<number> => {
   const configUrl = `${process.env.API_ENDPOINT}/app/${appSlug}/airgap/config`;
 
-  // let simultaneousUploads = 3;
-  try {
-    let res = await fetch(configUrl, {
-      method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: Utilities.getToken(),
-      },
-    });
-    if (res.ok) {
-      const response = await res.json();
-      // simultaneousUploads = response.simultaneousUploads;
-      return response;
-    }
+  let simultaneousUploads = 3;
 
-    // may need it later
-    // airgapUploader.current = new AirgapUploader(
-    //     true,
-    //     app.slug,
-    //     onDropBundle,
-    //     simultaneousUploads
-    //   );
-  } catch (err) {
-    console.log(err);
-    if (err instanceof Error) {
-      throw err;
-    }
+  let res = await fetch(configUrl, {
+    method: "GET",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: Utilities.getToken(),
+    },
+  });
+  const response = await res.json();
+  if (res.ok) {
+    simultaneousUploads = response.simultaneousUploads;
+
+    return simultaneousUploads;
+  } else {
+    throw new Error(response.error);
   }
 };
 
@@ -41,7 +30,7 @@ export const useAirgapConfig = () => {
     queryFn: () => getAirgapConfig(selectedApp?.slug || ""),
     queryKey: ["getAirgapConfig"],
     onError: (err: Error) => console.log(err),
-    //refetchInterval: (data) => data
+    enabled: false,
   });
 };
 
