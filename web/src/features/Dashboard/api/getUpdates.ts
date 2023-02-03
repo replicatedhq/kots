@@ -23,18 +23,10 @@ export const getCheckForUpdates = async (appSlug: string): Promise<number> => {
   );
 
   const response = await res.json();
-  // matter okay or not it gets getAppLicense
+  // on the dashboard page it triggers getAppLicense here
   if (res.ok) {
     return response;
   } else {
-    // return these errors
-    // setState({
-    //   checkingForUpdateError: true,
-    //   checkingForUpdates: false,
-    //   checkingUpdateMessage: text
-    //     ? text
-    //     : "There was an error checking for updates.",
-    // });
     throw new Error(response.error);
   }
 };
