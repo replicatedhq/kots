@@ -2,38 +2,45 @@ import { useQuery } from "react-query";
 import { Utilities } from "../../../utilities/utilities";
 import { useSelectedApp } from "@features/App";
 
-export const createSnapshot = async (option: string, appSlug: string) => {
+interface SnapshotResponse {
+  success: boolean;
+  error: string;
+  kotsadmNamespace: string;
+  kotsadmRequiresVeleroAccess: boolean;
+}
+interface Snapshot {
+  startingSnapshot: boolean;
+}
+
+export const createSnapshot = async (
+  option: string,
+  appSlug: string
+): Promise<SnapshotResponse> => {
   let url =
     option === "full"
       ? `${process.env.API_ENDPOINT}/snapshot/backup`
       : `${process.env.API_ENDPOINT}/app/${appSlug}/snapshot/backup`;
 
-  try {
-    const res = await fetch(url, {
-      method: "POST",
-      headers: {
-        Authorization: Utilities.getToken(),
-        "Content-Type": "application/json",
-      },
-    });
+  const res = await fetch(url, {
+    method: "POST",
+    headers: {
+      Authorization: Utilities.getToken(),
+      "Content-Type": "application/json",
+    },
+  });
 
-    const response = await res.json();
-    if (res.ok && res.status == 200) {
-      // if response status is not running, and not bundle uploading, stop updatechecker polling
-      // set the states
-      // getAppLicense
-      // if there is updateCallback -> updateCallback()
-      //startFetchAppDownstreamJob()
-      return response;
-    } else {
-      throw new Error(response.error);
-    }
-  } catch (err) {
-    console.log(err);
-    if (err instanceof Error) {
-      throw err;
-    }
+  const response = await res.json();
+  if (!res.ok && res.status !== 200) {
+    throw new Error(response.error);
   }
+
+  return response;
+};
+
+const createSnapshotResponse = (response: SnapshotResponse): Snapshot => {
+  return {
+    startingSnapshot: response.kotsadmRequiresVeleroAccess ? false : true,
+  };
 };
 
 export const useCreateSnapshot = (option: string) => {
@@ -41,8 +48,9 @@ export const useCreateSnapshot = (option: string) => {
   return useQuery({
     queryFn: () => createSnapshot(option, selectedApp?.slug || ""),
     queryKey: ["createSnapshot"],
-    onError: (err: Error) => console.log(err),
-    //refetchInterval: (data) => data
+    select: (response: SnapshotResponse) => {
+      createSnapshotResponse(response);
+    },
   });
 };
 
