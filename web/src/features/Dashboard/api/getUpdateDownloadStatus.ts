@@ -13,7 +13,7 @@ interface UpdateStatus {
   status: string;
 }
 
-const getUpdateStatus = async (
+const getUpdateDownloadStatus = async (
   appSlug: string
 ): Promise<UpdateStatusResponse> => {
   const res = await fetch(
@@ -45,11 +45,11 @@ const makeUpdateStatusResponse = (
   };
 };
 
-export const useUpdateStatus = () => {
+export const useUpdateDownloadStatus = () => {
   const { selectedApp } = useSelectedApp();
 
   return useQuery({
-    queryFn: () => getUpdateStatus(selectedApp?.slug || ""),
+    queryFn: () => getUpdateDownloadStatus(selectedApp?.slug || ""),
     queryKey: ["getUpdateStatus"],
     onError: (err: Error) => console.log(err),
     refetchInterval: (data) => (data?.status !== "running" ? false : 1000),

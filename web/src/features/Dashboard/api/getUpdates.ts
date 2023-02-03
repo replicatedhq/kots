@@ -2,6 +2,12 @@ import { useQuery } from "react-query";
 import { Utilities } from "../../../utilities/utilities";
 import { useSelectedApp } from "@features/App";
 
+interface UpdateResponse {
+  availableUpdates: number;
+  currentAppSequence: number;
+  currentRelease: { sequence: number; version: string };
+  availableReleases: { sequence: number; version: string };
+}
 interface Updates {
   checkingForUpdates: boolean;
   checkingForUpdatesError?: boolean;
@@ -10,7 +16,9 @@ interface Updates {
 }
 
 // bad name, will fix later
-export const getCheckForUpdates = async (appSlug: string): Promise<number> => {
+export const getCheckForUpdates = async (
+  appSlug: string
+): Promise<UpdateResponse> => {
   let res = await fetch(
     `${process.env.API_ENDPOINT}/app/${appSlug}/updatecheck`,
     {
@@ -31,7 +39,7 @@ export const getCheckForUpdates = async (appSlug: string): Promise<number> => {
   }
 };
 
-const makeUpdatesResponse = (response: any): Updates => {
+const makeUpdatesResponse = (response: UpdateResponse): Updates => {
   return {
     checkingForUpdates: response.availableUpdates === 0 ? false : true,
     noUpdatesAvailable: response.availableUpdates === 0 ? true : false,
@@ -46,7 +54,7 @@ export const useCheckForUpdates = () => {
     queryFn: () => getCheckForUpdates(selectedApp?.slug || ""),
     queryKey: ["getCheckForUpdates"],
     onError: (err: Error) => console.log(err),
-    enabled: false,
+    enabled: true,
     select: (data) => makeUpdatesResponse(data),
   });
 };
