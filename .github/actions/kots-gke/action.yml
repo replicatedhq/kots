@@ -1,0 +1,59 @@
+name: action-gke
+description: Start a GKE cluster
+inputs:
+  cluster-name:
+    description: GKE cluster name to create
+    default: "autopilot-github-test"
+    required: false
+
+  cluster-region:
+    description: GKE cluster region to use
+    default: "us-west1"
+    required: false
+
+  cluster-network:
+    description: GKE cluster network tag
+    default: "projects/replicated-dev-environment/global/networks/kubernetes-the-hard-way"
+    required: false
+
+  cluster-subnetwork:
+    description: GKE cluster subnetwork tag
+    default: "projects/replicated-dev-environment/regions/us-west1/subnetworks/kubernetes"
+    required: false
+
+  project:
+    description: Google Cloud project name
+    default: "replicated-dev-environment"
+    required: false
+
+  workload-identity:
+    description: GKE workload identity provider used for authentication
+    default: ""
+    required: false
+
+  service-account:
+    description: GKE service account used for authentication
+    default: ""
+    required: false
+
+runs:
+  using: composite
+
+  steps:
+  - id: 'auth'
+    name: 'Authenticate to Google Cloud'
+    uses: 'google-github-actions/auth@v1'
+    with:
+      workload_identity_provider: ${{ inputs.workload-identity }}
+      service_account: ${{ inputs.service-account }}
+
+  - name: 'Setup Cloud SDK'
+    uses: google-github-action/setup-gcloud@v1
+
+  - name: 'Create a GKE cluster'
+    run: |-
+      gcloud container --project "${{ inputs.project }}" clusters create-auto "${{ inputs.cluster-name }}" --region "${{ inputs.cluster-region }}" --network "${{ inputs.cluster-network }}"  --subnetwork "${{ inputs.cluster-subnetwork }}"
+
+  - name: "Get GKE cluster credentials for kubectl"
+    run: |-
+      gcloud container clusters get-credentials "${{ inputs.cluster-name }}" --region "${{ inputs.cluster-region }}"
