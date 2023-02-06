@@ -68,6 +68,9 @@ jobs:
     runs-on: ubuntu-20.04
     needs: [ enable-tests, can-run-ci ]
     steps:
+      - name: checkout
+        uses: actions/checkout@v2
+
       - name: build cluster
         uses: ./.github/actions/kots-gke
 
@@ -1947,6 +1950,9 @@ jobs:
     runs-on: ubuntu-20.04
     needs: [validate-existing-online-install-minimal-gke]
     steps:
+      - name: checkout
+        uses: actions/checkout@v2
+
       - name: delete cluster
         uses: ./.github/actions/kots-gke
         with:
