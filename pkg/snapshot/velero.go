@@ -21,6 +21,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/selection"
 	"k8s.io/client-go/kubernetes"
 	kbclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -34,15 +35,15 @@ const (
 )
 
 type VeleroStatus struct {
-	Version    string
-	Plugins    []string
-	Status     string
-	Namespace  string
-	VeleroPod  string
-	ResticPods []string
+	Version       string
+	Plugins       []string
+	Status        string
+	Namespace     string
+	VeleroPod     string
+	NodeAgentPods []string
 
-	ResticVersion string
-	ResticStatus  string
+	NodeAgentVersion string
+	NodeAgentStatus  string
 }
 
 func (s *VeleroStatus) ContainsPlugin(plugin string) bool {
@@ -292,16 +293,16 @@ func DetectVelero(ctx context.Context, kotsadmNamespace string) (*VeleroStatus, 
 		return nil, errors.Wrap(err, "failed to list velero pods")
 	}
 
-	resticPods, err := getResticPods(ctx, clientset, veleroNamespace)
+	nodeAgentPods, err := getNodeAgentPods(ctx, clientset, veleroNamespace)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to list restic pods")
+		return nil, errors.Wrap(err, "failed to list node-agent pods")
 	}
 
 	veleroStatus := VeleroStatus{
-		Plugins:    []string{},
-		Namespace:  veleroNamespace,
-		VeleroPod:  veleroPod,
-		ResticPods: resticPods,
+		Plugins:       []string{},
+		Namespace:     veleroNamespace,
+		VeleroPod:     veleroPod,
+		NodeAgentPods: nodeAgentPods,
 	}
 
 	possibleDeployments, err := listPossibleVeleroDeployments(ctx, clientset, veleroNamespace)
@@ -335,9 +336,9 @@ func DetectVelero(ctx context.Context, kotsadmNamespace string) (*VeleroStatus, 
 	}
 DeploymentFound:
 
-	daemonsets, err := listPossibleResticDaemonsets(ctx, clientset, veleroNamespace)
+	daemonsets, err := listPossibleNodeAgentDaemonsets(ctx, clientset, veleroNamespace)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to list restic daemonsets")
+		return nil, errors.Wrap(err, "failed to list node-agent daemonsets")
 	}
 	for _, daemonset := range daemonsets {
 		matches := dockerImageNameRegex.FindStringSubmatch(daemonset.Spec.Template.Spec.Containers[0].Image)
@@ -349,13 +350,13 @@ DeploymentFound:
 					status = "Ready"
 				}
 			}
-			veleroStatus.ResticVersion = matches[4]
-			veleroStatus.ResticStatus = status
+			veleroStatus.NodeAgentVersion = matches[4]
+			veleroStatus.NodeAgentStatus = status
 
-			goto ResticFound
+			goto NodeAgentFound
 		}
 	}
-ResticFound:
+NodeAgentFound:
 
 	return &veleroStatus, nil
 }
@@ -411,21 +412,29 @@ func getVeleroPod(ctx context.Context, clientset *kubernetes.Clientset, namespac
 	return "", nil
 }
 
-func getResticPods(ctx context.Context, clientset *kubernetes.Clientset, namespace string) ([]string, error) {
-	resticLabels := map[string]string{
-		"component": "velero",
-		"name":      "restic",
+func getNodeAgentPods(ctx context.Context, clientset *kubernetes.Clientset, namespace string) ([]string, error) {
+	componentReq, err := labels.NewRequirement("component", selection.Equals, []string{"velero"})
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to create component requirement")
 	}
 
-	resticPods, err := clientset.CoreV1().Pods(namespace).List(context.TODO(), metav1.ListOptions{
-		LabelSelector: labels.SelectorFromSet(resticLabels).String(),
+	nameReq, err := labels.NewRequirement("name", selection.In, []string{"node-agent", "restic"})
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to create name requirement")
+	}
+
+	labelSelector := labels.NewSelector()
+	labelSelector = labelSelector.Add(*componentReq, *nameReq)
+
+	nodeAgentPods, err := clientset.CoreV1().Pods(namespace).List(context.TODO(), metav1.ListOptions{
+		LabelSelector: labelSelector.String(),
 	})
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to list restic pods before restarting")
+		return nil, errors.Wrap(err, "failed to list node-agent pods before restarting")
 	}
 
 	pods := make([]string, 0)
-	for _, pod := range resticPods.Items {
+	for _, pod := range nodeAgentPods.Items {
 		if pod.Status.Phase == corev1.PodRunning {
 			if pod.Status.ContainerStatuses[0].Ready {
 				pods = append(pods, pod.Name)
@@ -456,9 +465,9 @@ func listPossibleVeleroDeployments(ctx context.Context, clientset *kubernetes.Cl
 	return append(deployments.Items, helmDeployments.Items...), nil
 }
 
-// listPossibleResticDaemonsets filters with a label selector based on how we've found restic deployed
+// listPossibleNodeAgentDaemonsets filters with a label selector based on how we've found node-agent deployed
 // using the CLI or the Helm Chart.
-func listPossibleResticDaemonsets(ctx context.Context, clientset *kubernetes.Clientset, namespace string) ([]v1.DaemonSet, error) {
+func listPossibleNodeAgentDaemonsets(ctx context.Context, clientset *kubernetes.Clientset, namespace string) ([]v1.DaemonSet, error) {
 	daemonsets, err := clientset.AppsV1().DaemonSets(namespace).List(ctx, metav1.ListOptions{
 		LabelSelector: "component=velero",
 	})
@@ -476,7 +485,7 @@ func listPossibleResticDaemonsets(ctx context.Context, clientset *kubernetes.Cli
 	return append(daemonsets.Items, helmDaemonsets.Items...), nil
 }
 
-// restartVelero will restart velero (and restic)
+// restartVelero will restart velero (and node-agent)
 func restartVelero(ctx context.Context, kotsadmNamespace string) error {
 	clientset, err := k8sutil.GetClientset()
 	if err != nil {
@@ -508,22 +517,22 @@ func restartVelero(ctx context.Context, kotsadmNamespace string) error {
 		}
 	}
 
-	resticDaemonSets, err := listPossibleResticDaemonsets(ctx, clientset, veleroNamespace)
+	nodeAgentDaemonSets, err := listPossibleNodeAgentDaemonsets(ctx, clientset, veleroNamespace)
 	if err != nil {
-		return errors.Wrap(err, "failed to list restic daemonsets")
+		return errors.Wrap(err, "failed to list node-agent daemonsets")
 	}
 
-	for _, resticDaemonSet := range resticDaemonSets {
+	for _, nodeAgentDaemonSet := range nodeAgentDaemonSets {
 		pods, err := clientset.CoreV1().Pods(veleroNamespace).List(ctx, metav1.ListOptions{
-			LabelSelector: labels.SelectorFromSet(resticDaemonSet.Labels).String(),
+			LabelSelector: labels.SelectorFromSet(nodeAgentDaemonSet.Labels).String(),
 		})
 		if err != nil {
-			return errors.Wrap(err, "failed to list pods in restic daemonset")
+			return errors.Wrap(err, "failed to list pods in node-agent daemonset")
 		}
 
 		for _, pod := range pods.Items {
 			if err := clientset.CoreV1().Pods(veleroNamespace).Delete(ctx, pod.Name, metav1.DeleteOptions{}); err != nil {
-				return errors.Wrap(err, "failed to delete restic daemonset")
+				return errors.Wrap(err, "failed to delete node-agent daemonset")
 			}
 		}
 	}

@@ -223,9 +223,9 @@ class AppSnapshots extends Component {
 
         const result = await res.json();
 
-        if (result?.isVeleroRunning && result?.isResticRunning) {
+        if (result?.isVeleroRunning && result?.isNodeAgentRunning) {
           if (!result?.store) {
-            // velero and restic are running but a backup storage location is not configured yet
+            // velero and node-agent are running but a backup storage location is not configured yet
             this.props.history.replace("/snapshots/settings");
           } else {
             this.state.listSnapshotsJob.start(this.listInstanceSnapshots, 2000);

@@ -601,7 +601,7 @@ func KotsadmDeployment(deployOptions types.DeployOptions) (*appsv1.Deployment, e
 					Containers: []corev1.Container{
 						{
 							Image:           GetAdminConsoleImage(deployOptions, "kotsadm"),
-							ImagePullPolicy: corev1.PullIfNotPresent,
+							ImagePullPolicy: corev1.PullAlways,
 							Name:            "kotsadm",
 							Ports: []corev1.ContainerPort{
 								{

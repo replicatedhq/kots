@@ -42,6 +42,8 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/kubernetes"
 )
 
@@ -140,8 +142,8 @@ func ConfigureStore(ctx context.Context, options ConfigureStoreOptions) (*types.
 		return nil, errors.Wrap(err, "failed to ensure secrets references")
 	}
 
-	if err := resetResticRepositories(ctx, options.KotsadmNamespace); err != nil {
-		return nil, errors.Wrap(err, "failed to try to reset restic repositories")
+	if err := resetBackupRepositories(ctx, options.KotsadmNamespace); err != nil {
+		return nil, errors.Wrap(err, "failed to try to reset node-agent repositories")
 	}
 
 	if needsVeleroRestart {
@@ -693,9 +695,16 @@ func ensureSecretsReferences(ctx context.Context, clientset kubernetes.Interface
 		return errors.Wrap(err, "failed to get velero deployment")
 	}
 
-	resticDaemonset, err := clientset.AppsV1().DaemonSets(veleroNamespace).Get(ctx, "restic", metav1.GetOptions{})
-	if err != nil {
-		return errors.Wrap(err, "failed to get restic daemonset")
+	nodeAgentDaemonset, err := clientset.AppsV1().DaemonSets(veleroNamespace).Get(ctx, "node-agent", metav1.GetOptions{})
+	if err != nil && !kuberneteserrors.IsNotFound(err) {
+		return errors.Wrap(err, "failed to get node-agent daemonset")
+	}
+	if kuberneteserrors.IsNotFound(err) {
+		// check the old name ("restic") for backwards compatibility
+		nodeAgentDaemonset, err = clientset.AppsV1().DaemonSets(veleroNamespace).Get(ctx, "restic", metav1.GetOptions{})
+		if err != nil {
+			return errors.Wrap(err, "failed to get restic daemonset")
+		}
 	}
 
 	_, err = clientset.CoreV1().Secrets(veleroNamespace).Get(ctx, CloudCredentialsSecretName, metav1.GetOptions{})
@@ -703,14 +712,14 @@ func ensureSecretsReferences(ctx context.Context, clientset kubernetes.Interface
 		return errors.Wrap(err, "failed to read cloud credentials secret")
 	}
 	if err == nil {
-		// ensure that velero and restic have the cloud credentials secret mounted
+		// ensure that velero and node-agent have the cloud credentials secret mounted
 		veleroDeployment.Spec.Template.Spec.Volumes = k8sutil.MergeVolumes(cloudCredentialsVolumes(), veleroDeployment.Spec.Template.Spec.Volumes, false)
 		veleroDeployment.Spec.Template.Spec.Containers[0].VolumeMounts = k8sutil.MergeVolumeMounts(cloudCredentialsVolumeMounts(), veleroDeployment.Spec.Template.Spec.Containers[0].VolumeMounts, false)
 		veleroDeployment.Spec.Template.Spec.Containers[0].Env = k8sutil.MergeEnvVars(cloudCredentialsEnvVars(), veleroDeployment.Spec.Template.Spec.Containers[0].Env, false)
 
-		resticDaemonset.Spec.Template.Spec.Volumes = k8sutil.MergeVolumes(cloudCredentialsVolumes(), resticDaemonset.Spec.Template.Spec.Volumes, false)
-		resticDaemonset.Spec.Template.Spec.Containers[0].VolumeMounts = k8sutil.MergeVolumeMounts(cloudCredentialsVolumeMounts(), resticDaemonset.Spec.Template.Spec.Containers[0].VolumeMounts, false)
-		resticDaemonset.Spec.Template.Spec.Containers[0].Env = k8sutil.MergeEnvVars(cloudCredentialsEnvVars(), resticDaemonset.Spec.Template.Spec.Containers[0].Env, false)
+		nodeAgentDaemonset.Spec.Template.Spec.Volumes = k8sutil.MergeVolumes(cloudCredentialsVolumes(), nodeAgentDaemonset.Spec.Template.Spec.Volumes, false)
+		nodeAgentDaemonset.Spec.Template.Spec.Containers[0].VolumeMounts = k8sutil.MergeVolumeMounts(cloudCredentialsVolumeMounts(), nodeAgentDaemonset.Spec.Template.Spec.Containers[0].VolumeMounts, false)
+		nodeAgentDaemonset.Spec.Template.Spec.Containers[0].Env = k8sutil.MergeEnvVars(cloudCredentialsEnvVars(), nodeAgentDaemonset.Spec.Template.Spec.Containers[0].Env, false)
 	}
 
 	_, err = clientset.CoreV1().Secrets(veleroNamespace).Get(ctx, RegistryImagePullSecretName, metav1.GetOptions{})
@@ -718,17 +727,17 @@ func ensureSecretsReferences(ctx context.Context, clientset kubernetes.Interface
 		return errors.Wrap(err, "failed to read image pull secret")
 	}
 	if err == nil {
-		// ensure that velero and restic have the image pull secret referenced
+		// ensure that velero and node-agent have the image pull secret referenced
 		veleroDeployment.Spec.Template.Spec.ImagePullSecrets = k8sutil.MergeImagePullSecrets([]corev1.LocalObjectReference{{Name: RegistryImagePullSecretName}}, veleroDeployment.Spec.Template.Spec.ImagePullSecrets, false)
-		resticDaemonset.Spec.Template.Spec.ImagePullSecrets = k8sutil.MergeImagePullSecrets([]corev1.LocalObjectReference{{Name: RegistryImagePullSecretName}}, resticDaemonset.Spec.Template.Spec.ImagePullSecrets, false)
+		nodeAgentDaemonset.Spec.Template.Spec.ImagePullSecrets = k8sutil.MergeImagePullSecrets([]corev1.LocalObjectReference{{Name: RegistryImagePullSecretName}}, nodeAgentDaemonset.Spec.Template.Spec.ImagePullSecrets, false)
 	}
 
 	if _, err := clientset.AppsV1().Deployments(veleroNamespace).Update(ctx, veleroDeployment, metav1.UpdateOptions{}); err != nil {
 		return errors.Wrap(err, "failed to update velero deployment")
 	}
 
-	if _, err := clientset.AppsV1().DaemonSets(veleroNamespace).Update(ctx, resticDaemonset, metav1.UpdateOptions{}); err != nil {
-		return errors.Wrap(err, "failed to update restic daemonset")
+	if _, err := clientset.AppsV1().DaemonSets(veleroNamespace).Update(ctx, nodeAgentDaemonset, metav1.UpdateOptions{}); err != nil {
+		return errors.Wrap(err, "failed to update node-agent daemonset")
 	}
 
 	return nil
@@ -1604,8 +1613,8 @@ func Redact(store *types.Store) error {
 	return nil
 }
 
-func resetResticRepositories(ctx context.Context, kotsadmNamespace string) error {
-	// ResticRepositories store the previous snapshot location which breaks volume backup when location changes.
+func resetBackupRepositories(ctx context.Context, kotsadmNamespace string) error {
+	// BackupRepositories store the previous snapshot location which breaks volume backup when location changes.
 	cfg, err := k8sutil.GetClusterConfig()
 	if err != nil {
 		return errors.Wrap(err, "failed to get cluster config")
@@ -1624,17 +1633,45 @@ func resetResticRepositories(ctx context.Context, kotsadmNamespace string) error
 		return errors.Wrap(err, "failed to create clientset")
 	}
 
-	repos, err := veleroClient.ResticRepositories(storageLocation.Namespace).List(ctx, metav1.ListOptions{
+	repos, err := veleroClient.BackupRepositories(storageLocation.Namespace).List(ctx, metav1.ListOptions{
 		LabelSelector: "velero.io/storage-location=default",
 	})
 	if err != nil {
-		return errors.Wrap(err, "failed to list resticrepositories")
+		return errors.Wrap(err, "failed to list backuprepositories")
 	}
 
 	for _, repo := range repos.Items {
-		err := veleroClient.ResticRepositories(storageLocation.Namespace).Delete(ctx, repo.Name, metav1.DeleteOptions{})
+		err := veleroClient.BackupRepositories(storageLocation.Namespace).Delete(ctx, repo.Name, metav1.DeleteOptions{})
 		if err != nil {
-			return errors.Wrapf(err, "failed to delete resticrepository %s", repo.Name)
+			return errors.Wrapf(err, "failed to delete backuprepository %s", repo.Name)
+		}
+	}
+
+	// check old name ("resticrepositories") for backwards compatibility
+	config, err := k8sutil.GetClusterConfig()
+	if err != nil {
+		return errors.Wrap(err, "failed to get cluster config")
+	}
+
+	dynamicClient, err := dynamic.NewForConfig(config)
+	if err != nil {
+		return errors.Wrap(err, "failed to create dynamic client")
+	}
+
+	resticReposClient := dynamicClient.Resource(schema.GroupVersionResource{
+		Group:    "velero.io",
+		Version:  "v1",
+		Resource: "resticrepositories",
+	})
+	resticRepos, err := resticReposClient.Namespace(storageLocation.Namespace).List(ctx, metav1.ListOptions{})
+	if err != nil {
+		return errors.Wrap(err, "failed to get resticrepositories")
+	}
+
+	for _, repo := range resticRepos.Items {
+		err := resticReposClient.Namespace(storageLocation.Namespace).Delete(ctx, repo.GetName(), metav1.DeleteOptions{})
+		if err != nil {
+			return errors.Wrapf(err, "failed to delete resticrepository %s", repo.GetName())
 		}
 	}
 

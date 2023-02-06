@@ -96,10 +96,10 @@ runs:
         kubectl -n $VELERO_NAMESPACE logs deployment/velero
         echo "------previous velero logs"
         kubectl -n $VELERO_NAMESPACE logs -p deployment/velero
-        echo "------restic logs"
-        kubectl -n $VELERO_NAMESPACE logs daemonset/restic
-        echo "------previous restic logs"
-        kubectl -n $VELERO_NAMESPACE logs -p daemonset/restic
+        echo "------node-agent logs"
+        kubectl -n $VELERO_NAMESPACE logs daemonset/node-agent
+        echo "------previous node-agent logs"
+        kubectl -n $VELERO_NAMESPACE logs -p daemonset/node-agent
       shell: bash
 
     - name: Generate support bundle on failure

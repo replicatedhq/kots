@@ -237,7 +237,7 @@ class ConfigureSnapshots extends React.Component {
                           />
                         </a>
                         <a
-                          href="https://velero.io/docs/v1.9/supported-providers/"
+                          href="https://velero.io/docs/v1.10/supported-providers/"
                           target="_blank"
                           rel="noopener noreferrer"
                           className="snapshotOptions"
@@ -328,9 +328,9 @@ class ConfigureSnapshots extends React.Component {
                         With all providers, you must install using the{" "}
                         <span className="inline-code u-marginLeft--5 u-marginRight--5">
                           {" "}
-                          --use-restic{" "}
+                          --use-node-agent{" "}--uploader-type=restic{" "}
                         </span>{" "}
-                        flag for snapshots to work.{" "}
+                        flags for snapshots to work.{" "}
                       </p>
                     </div>
                   </div>
