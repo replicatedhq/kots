@@ -328,7 +328,7 @@ class ConfigureSnapshots extends React.Component {
                         With all providers, you must install using the{" "}
                         <span className="inline-code u-marginLeft--5 u-marginRight--5">
                           {" "}
-                          --use-node-agent{" "}--uploader-type=restic{" "}
+                          --use-node-agent --uploader-type=restic{" "}
                         </span>{" "}
                         flags for snapshots to work.{" "}
                       </p>

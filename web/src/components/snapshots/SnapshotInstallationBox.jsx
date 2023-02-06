@@ -34,7 +34,10 @@ export default class SnapshotInstallationBox extends Component {
   };
 
   renderNodeAgentErrors = (snapshotSettings) => {
-    if (snapshotSettings?.veleroVersion && !snapshotSettings?.nodeAgentVersion) {
+    if (
+      snapshotSettings?.veleroVersion &&
+      !snapshotSettings?.nodeAgentVersion
+    ) {
       return (
         <div className="flex u-marginBottom--20">
           <div className="flex u-marginRight--20">
@@ -46,9 +49,9 @@ export default class SnapshotInstallationBox extends Component {
               Node Agent integration not found{" "}
             </p>
             <p className="u-fontSize--small u-textColor--bodyCopy u-lineHeight--normal u-fontWeight--medium u-marginTop--10">
-              The Admin Console requires the Velero Node Agent integration to use
-              Snapshots, but it was not found. Please install the Velero Node Agent
-              integration to continue.
+              The Admin Console requires the Velero Node Agent integration to
+              use Snapshots, but it was not found. Please install the Velero
+              Node Agent integration to continue.
               <a
                 href="https://velero.io/"
                 target="_blank"
@@ -77,9 +80,9 @@ export default class SnapshotInstallationBox extends Component {
               Node Agent is not working{" "}
             </p>
             <p className="u-fontSize--small u-textColor--bodyCopy u-lineHeight--normal u-fontWeight--medium u-marginTop--10">
-              Velero and the Node Agent integration have been detected, but Node Agent
-              is not running successfully. To continue configuring and using
-              snapshots, Node Agent has to be running reliably.
+              Velero and the Node Agent integration have been detected, but Node
+              Agent is not running successfully. To continue configuring and
+              using snapshots, Node Agent has to be running reliably.
               <a
                 href="https://velero.io/docs/v1.10/file-system-backup/#troubleshooting"
                 target="_blank"
