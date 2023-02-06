@@ -164,7 +164,6 @@ require (
 	github.com/emicklei/go-restful/v3 v3.9.0 // indirect
 	github.com/emirpasic/gods v1.12.0 // indirect
 	github.com/evanphx/json-patch v5.6.0+incompatible // indirect
-	github.com/evanphx/json-patch/v5 v5.6.0 // indirect
 	github.com/exponent-io/jsonpath v0.0.0-20151013193312-d6023ce2651d // indirect
 	github.com/felixge/httpsnoop v1.0.3 // indirect
 	github.com/fsnotify/fsnotify v1.6.0 // indirect
@@ -422,4 +421,5 @@ replace (
 	k8s.io/mount-utils => k8s.io/mount-utils v0.24.0
 	k8s.io/pod-security-admission => k8s.io/pod-security-admission v0.24.0
 	k8s.io/sample-apiserver => k8s.io/sample-apiserver v0.24.0
+	sigs.k8s.io/controller-runtime => sigs.k8s.io/controller-runtime v0.12.2
 )
