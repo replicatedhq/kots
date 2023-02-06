@@ -3,7 +3,7 @@ description: Start a GKE cluster
 inputs:
   cluster-name:
     description: GKE cluster name to create
-    default: "autopilot-github-test"
+    default: "kots-gke-tests"
     required: false
 
   cluster-region:
@@ -28,13 +28,11 @@ inputs:
 
   workload-identity:
     description: GKE workload identity provider used for authentication
-    default: ""
-    required: false
+    required: true
 
   service-account:
     description: GKE service account used for authentication
-    default: ""
-    required: false
+    required: true
 
 runs:
   using: composite
@@ -50,10 +48,12 @@ runs:
   - name: 'Setup Cloud SDK'
     uses: google-github-action/setup-gcloud@v1
 
-  - name: 'Create a GKE cluster'
+  - name: 'Find or create the GKE cluster'
     run: |-
-      gcloud container --project "${{ inputs.project }}" clusters create-auto "${{ inputs.cluster-name }}" --region "${{ inputs.cluster-region }}" --network "${{ inputs.cluster-network }}"  --subnetwork "${{ inputs.cluster-subnetwork }}"
+      gcloud container clusters describe ${{ inputs.cluster-name }} || gcloud container --project "${{ inputs.project }}" clusters create-auto "${{ inputs.cluster-name }}" --region "${{ inputs.cluster-region }}" --network "${{ inputs.cluster-network }}"  --subnetwork "${{ inputs.cluster-subnetwork }}"
 
   - name: "Get GKE cluster credentials for kubectl"
-    run: |-
-      gcloud container clusters get-credentials "${{ inputs.cluster-name }}" --region "${{ inputs.cluster-region }}"
+    uses: google-github-action/get-gke-credentials@v1
+    with:
+      cluster_name: ${{ inputs.cluster-name }}
+      location: ${{ inputs.cluster-region }}

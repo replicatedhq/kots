@@ -52,11 +52,24 @@ inputs:
     description: 'AWS region for uploading support bundle'
     default: 'us-east-1'
     required: false
+  use-gke:
+    description: 'Create a GKE cluster to run tests'
+    default: false
+    required: false
 runs:
   using: "composite"
   steps:
+    - name: Generate a GKE cluster
+      if: ${{ input.use-gke }}
+      uses: ./.github/actions/kots-gke
+      with:
+        workload-identity: ${{ secrets.GKE_WORKLOAD_IDENTITY }}
+        service-account: ${{ secrets.GKE_SERVICE_ACCOUNT }}
+
     # TODO: use k3d eventually but this is difficult to support with ${{ inputs.k8s-version }}
-    - uses: replicatedhq/action-k3s@main
+    - name: Generate a k3s cluster
+      if: ${{ ! input.use-gke }}
+      uses: replicatedhq/action-k3s@main
       with:
         version: ${{ inputs.k8s-version }}
         arguments: ${{ inputs.k8s-arguments }}
