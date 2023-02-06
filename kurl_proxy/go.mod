@@ -1,6 +1,6 @@
 module github.com/replicatedhq/kots/kurl_proxy
 
-go 1.17
+go 1.19
 
 require (
 	github.com/docker/go-connections v0.4.0
