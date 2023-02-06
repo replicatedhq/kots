@@ -64,6 +64,14 @@ jobs:
           branch: ${{ github.head_ref }}
 
 
+  create-gke-cluster:
+    runs-on: ubuntu-20.04
+    needs: [ enable-tests, can-run-ci ]
+    steps:
+      - name: build cluster
+        uses: ./.github/actions/kots-gke
+
+
   build-web:
     runs-on: ubuntu-20.04
     needs: [ can-run-ci, generate-tag ]
@@ -439,7 +447,7 @@ jobs:
 
   validate-existing-online-install-minimal-gke:
     runs-on: ubuntu-20.04
-    needs: [ enable-tests, can-run-ci, build-kots, build-e2e, build-kurl-proxy, build-migrations, push-minio, push-rqlite ]
+    needs: [ enable-tests, can-run-ci, create-gke-cluster, build-kots, build-e2e, build-kurl-proxy, build-migrations, push-minio, push-rqlite ]
     steps:
       - name: Checkout
         uses: actions/checkout@v2
@@ -1933,3 +1941,13 @@ jobs:
       - name: succeed if validate-pr-tests job succeeded
         if: needs.validate-pr-tests.result == 'success'
         run: echo "Validation succeeded"
+
+
+  destroy-gke-cluster:
+    runs-on: ubuntu-20.04
+    needs: [validate-existing-online-install-minimal-gke]
+    steps:
+      - name: delete cluster
+        uses: ./.github/actions/kots-gke
+        with:
+          delete: true
