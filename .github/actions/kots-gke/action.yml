@@ -45,8 +45,7 @@ runs:
     uses: google-github-action/setup-gcloud@v1
 
   - name: 'Find or create the GKE cluster'
-    run: |-
-      gcloud container clusters describe ${{ inputs.cluster-name }} || gcloud container --project "${{ inputs.project }}" clusters create-auto "${{ inputs.cluster-name }}" --region "${{ inputs.cluster-region }}" --network "${{ inputs.cluster-network }}"  --subnetwork "${{ inputs.cluster-subnetwork }}"
+    run: 'gcloud container clusters describe ${{ inputs.cluster-name }} || gcloud container --project "${{ inputs.project }}" clusters create-auto "${{ inputs.cluster-name }}" --region "${{ inputs.cluster-region }}" --network "${{ inputs.cluster-network }}"  --subnetwork "${{ inputs.cluster-subnetwork }}"'
 
   - name: 'Get GKE cluster credentials for kubectl'
     uses: google-github-action/get-gke-credentials@v1
@@ -56,5 +55,4 @@ runs:
 
   - name: 'Delete the existing cluster'
     if: ${{ inputs.delete }}
-    run: |-
-      gcloud container clusters delete ${{ inputs.cluster-name }} --region ${{ inputs.cluster-region }}
+    run: 'gcloud container clusters delete ${{ inputs.cluster-name }} --region ${{ inputs.cluster-region }}'
