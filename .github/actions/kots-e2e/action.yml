@@ -60,12 +60,12 @@ runs:
   using: "composite"
   steps:
     - name: Generate a GKE cluster
-      if: ${{ input.use-gke }}
+      if: ${{ inputs.use-gke }}
       uses: ./.github/actions/kots-gke
 
     # TODO: use k3d eventually but this is difficult to support with ${{ inputs.k8s-version }}
     - name: Generate a k3s cluster
-      if: ${{ ! input.use-gke }}
+      if: ${{ ! inputs.use-gke }}
       uses: replicatedhq/action-k3s@main
       with:
         version: ${{ inputs.k8s-version }}
