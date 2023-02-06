@@ -12,10 +12,11 @@ export default {
 } as ComponentMeta<typeof Icon>;
 
 const Template: ComponentStory<typeof Icon> = () => (
-  <div className="tw-flex tw-gap-2 tw-max-w-xl tw-flex-wrap">
+  <div className="tw-grid-rows-5 tw-gap-2 tw-max-w-xl tw-flex-wrap">
     {flattenedIconNames.map((icon, idx) => {
       return (
-        <div key={idx}>
+        <div key={idx} className={"tw-flex tw-flex-row tw-pb-2"}>
+          <p className={"tw-pb-2"}>{icon}</p>
           <Icon
             icon={icon}
             size={26}
