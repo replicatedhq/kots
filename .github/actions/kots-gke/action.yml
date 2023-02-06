@@ -21,6 +21,11 @@ inputs:
     default: "projects/replicated-dev-environment/regions/us-west1/subnetworks/kubernetes"
     required: false
 
+  delete:
+    description: Delete the existing cluster
+    default: false
+    required: false
+
   project:
     description: Google Cloud project name
     default: "replicated-dev-environment"
@@ -43,8 +48,13 @@ runs:
     run: |-
       gcloud container clusters describe ${{ inputs.cluster-name }} || gcloud container --project "${{ inputs.project }}" clusters create-auto "${{ inputs.cluster-name }}" --region "${{ inputs.cluster-region }}" --network "${{ inputs.cluster-network }}"  --subnetwork "${{ inputs.cluster-subnetwork }}"
 
-  - name: "Get GKE cluster credentials for kubectl"
+  - name: 'Get GKE cluster credentials for kubectl'
     uses: google-github-action/get-gke-credentials@v1
     with:
       cluster_name: ${{ inputs.cluster-name }}
       location: ${{ inputs.cluster-region }}
+
+  - name: 'Delete the existing cluster'
+    if: ${{ inputs.delete }}
+    run: |-
+      gcloud container clusters delete ${{ inputs.cluster-name }} --region ${{ inputs.cluster-region }}
