@@ -26,14 +26,6 @@ inputs:
     default: "replicated-dev-environment"
     required: false
 
-  workload-identity:
-    description: GKE workload identity provider used for authentication
-    required: true
-
-  service-account:
-    description: GKE service account used for authentication
-    required: true
-
 runs:
   using: composite
 
@@ -42,8 +34,8 @@ runs:
     name: 'Authenticate to Google Cloud'
     uses: 'google-github-actions/auth@v1'
     with:
-      workload_identity_provider: ${{ inputs.workload-identity }}
-      service_account: ${{ inputs.service-account }}
+      workload_identity_provider: ${{ secrets.GKE_WORKLOAD_IDENTITY }}
+      service_account: ${{ secrets.GKE_SERVICE_ACCOUNT }}
 
   - name: 'Setup Cloud SDK'
     uses: google-github-action/setup-gcloud@v1

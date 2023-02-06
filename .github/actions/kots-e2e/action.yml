@@ -62,9 +62,6 @@ runs:
     - name: Generate a GKE cluster
       if: ${{ input.use-gke }}
       uses: ./.github/actions/kots-gke
-      with:
-        workload-identity: ${{ secrets.GKE_WORKLOAD_IDENTITY }}
-        service-account: ${{ secrets.GKE_SERVICE_ACCOUNT }}
 
     # TODO: use k3d eventually but this is difficult to support with ${{ inputs.k8s-version }}
     - name: Generate a k3s cluster
