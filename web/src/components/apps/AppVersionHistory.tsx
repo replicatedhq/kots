@@ -17,7 +17,7 @@ import ErrorModal from "../modals/ErrorModal";
 import { AppVersionHistoryRow } from "@features/AppVersionHistory/AppVersionHistoryRow";
 import DeployWarningModal from "../shared/modals/DeployWarningModal";
 import AutomaticUpdatesModal from "@src/components/modals/AutomaticUpdatesModal";
-import SkipPreflightsModal from "../shared/modals/SkipPreflightsModal.tsx";
+import SkipPreflightsModal from "../shared/modals/SkipPreflightsModal";
 import {
   Utilities,
   isAwaitingResults,
