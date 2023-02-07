@@ -43,8 +43,10 @@ function PreflightResultPage(props: Props) {
   });
   const { mutate: ignorePermissionErrors, error: ignorePermissionError } =
     useIgnorePermissionErrors({ sequence, slug });
-  const { data: preflightCheck, error: getPreflightResultsError } = useGetPrelightResults({ sequence, slug });
-  const { mutate: rerunPreflights, error: rerunPreflightsError } = useRerunPreflights({ sequence, slug });
+  const { data: preflightCheck, error: getPreflightResultsError } =
+    useGetPrelightResults({ sequence, slug });
+  const { mutate: rerunPreflights, error: rerunPreflightsError } =
+    useRerunPreflights({ sequence, slug });
 
   // TODO: remove this once everything is using react-query
   // componentWilUnmount
@@ -204,7 +206,7 @@ function PreflightResultPage(props: Props) {
             <div className="flex flex1 justifyContent--center alignItems--center">
               <span
                 className="u-fontSize--normal u-fontWeight--medium u-textDecoration--underline u-textColor--bodyCopy u-marginTop--15 u-cursor--pointer"
-                onClick={showSkipModal}
+                onClick={() => setShowSkipModal(true)}
               >
                 Ignore Preflights{" "}
               </span>
