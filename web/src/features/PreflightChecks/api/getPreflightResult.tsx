@@ -79,7 +79,8 @@ function flattenPreflightResponse({
     pendingPreflightChecksPercentage:
       refetchCount === 0 ? 0 : refetchCount > 21 ? 96 : refetchCount * 4.5,
     pollForUpdates:
-      !response?.preflightResult?.result || response?.preflightResult?.skipped,
+      response?.preflightResult?.skipped ||
+      Object.keys(response?.preflightResult?.result).length === 0,
     preflightResults:
       response?.preflightResult?.result?.results?.map((responseResult) => ({
         learnMoreUri: responseResult.uri || "",
@@ -102,9 +103,22 @@ function flattenPreflightResponse({
     showDeploymentBlocked:
       response?.preflightResult?.hasFailingStrictPreflights,
     showPreflightCheckPending:
-      !response?.preflightResult?.result || response?.preflightResult?.skipped,
+      response?.preflightResult?.skipped ||
+      Object.keys(response?.preflightResult?.result).length === 0,
     showPreflightNoChecks:
       response?.preflightResult?.result?.results?.length === 0,
+    showPreflightResultErrors:
+      !!response?.preflightResult?.result?.errors?.length && // has errors
+      !response?.preflightResult?.skipped &&  // not skipped
+      Object.keys(response?.preflightResult?.result).length === 0, // has no result
+    showPreflightResults:
+      !response?.preflightResult?.skipped &&
+      Object.keys(response?.preflightResult?.result).length > 0 &&
+      !response?.preflightResult?.result?.errors?.length,
+    /*
+    preflightCheck?.showPreflightCheckPending &&
+              !preflightCheck?.errors
+              */
     showPreflightSkipped: response?.preflightResult?.skipped,
     showRbacError: response?.preflightResult?.result?.errors?.find(
       (error) => error?.isRbac
@@ -151,8 +165,15 @@ function useGetPrelightResults({
 
       return refetchInterval;
     },
-    select: (response: PreflightResponse) =>
-      flattenPreflightResponse({ response, refetchCount }),
+    select: (response: PreflightResponse) => {
+      console.log(
+        flattenPreflightResponse({ response, refetchCount }).pollForUpdates);
+      console.log(response?.preflightResult?.result);
+      console.log(response?.preflightProgress);
+      console.log("--------------------");
+
+      return flattenPreflightResponse({ response, refetchCount });
+    },
     staleTime: 500,
   });
 }

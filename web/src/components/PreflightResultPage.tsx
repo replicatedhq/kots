@@ -133,7 +133,7 @@ function PreflightResultPage(props: Props) {
                 />
               </div>
             )}
-            {preflightCheck?.errors && (
+            {preflightCheck?.showPreflightResultErrors && (
               <PreflightResultErrors
                 errors={preflightCheck.errors}
                 ignorePermissionErrors={ignorePermissionErrors}
@@ -142,8 +142,7 @@ function PreflightResultPage(props: Props) {
                 showRbacError={preflightCheck.showRbacError}
               />
             )}
-            {preflightCheck?.showPreflightCheckPending &&
-              !preflightCheck?.errors && (
+            {preflightCheck?.showPreflightResults && (
                 <div className="dashboard-card">
                   <div className="flex flex1 justifyContent--spaceBetween alignItems--center">
                     <p className="u-fontSize--large u-textColor--primary u-fontWeight--bold">
