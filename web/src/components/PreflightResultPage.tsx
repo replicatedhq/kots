@@ -28,7 +28,6 @@ interface Props {
   refetchAppsList?: () => void;
 }
 
-// class PreflightResultPage extends Component<Props, State> {
 function PreflightResultPage(props: Props) {
   const [continueWithFailedPreflights, setShowContinueWithFailedPreflights] =
     useState(false);
@@ -152,9 +151,6 @@ function PreflightResultPage(props: Props) {
                     </p>
                     <div className="flex alignItems--center">
                       {props.fromLicenseFlow &&
-                      // stopPolling &&
-                      // hasResult &&
-                      // preflightState !== "pass" ? (
                       preflightCheck?.showCancelPreflight ? (
                         <div className="flex alignItems--center">
                           <div className="flex alignItems--center u-marginRight--20">
@@ -171,8 +167,6 @@ function PreflightResultPage(props: Props) {
                   </div>
                   <div className="flex-column">
                     <PreflightRenderer
-                      // results={state.preflightResultData?.result}
-                      // skipped={preflightSkipped}
                       results={preflightCheck?.preflightResults}
                       skipped={preflightCheck?.showPreflightSkipped}
                     />
