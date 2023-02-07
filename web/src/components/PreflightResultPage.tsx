@@ -121,7 +121,7 @@ function PreflightResultPage(props: Props) {
               they pass. Optional checks are recommended to ensure that the
               application you are installing will work as intended.
             </p>
-            {!preflightCheck?.showPreflightCheckPending && (
+            {preflightCheck?.showPreflightCheckPending && (
               <div className="flex-column justifyContent--center alignItems--center flex1 u-minWidth--full">
                 <PreflightsProgress
                   pendingPreflightCheckName={
