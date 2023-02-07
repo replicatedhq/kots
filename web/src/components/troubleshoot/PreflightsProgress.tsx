@@ -1,25 +1,40 @@
 import React from "react";
 import Loader from "../shared/Loader";
 import "@src/scss/components/AirgapUploadProgress.scss";
-import { getReadableCollectorName } from "../../utilities/utilities";
 
-let percentage;
-
-function moveBar(count) {
+function moveBar(percentage: number) {
   const elem = document.getElementById("preflightStatusBar");
-  percentage = count > 21 ? 96 : (count * 4.5).toFixed();
   if (elem) {
-    elem.style.width = percentage + "%";
+    elem.style.width = percentage.toFixed() + "%";
   }
 }
 
-export default function PreflightProgress(props) {
-  const { progressData, preflightResultCheckCount } = props;
+interface NamesObj {
+  [key: string]: string;
+}
+function getReadableCollectorName(name: string) {
+  const namesObj: NamesObj = {
+    "cluster-info": "Gathering basic information about the cluster",
+    "cluster-resources": "Gathering available resources in cluster",
+    mysql: "Gathering information about MySQL",
+    postgres: "Gathering information about PostgreSQL",
+    redis: "Gathering information about Redis",
+  };
+  if (name in namesObj) {
+    return namesObj[name];
+  }
+
+  return "Gathering details about the cluster";
+}
+
+export default function PreflightProgress(props:
+  { pendingPreflightCheckName: string, percentage: number}) {
+  const { pendingPreflightCheckName, percentage } = props;
 
   let progressBar;
 
-  if (preflightResultCheckCount > 0) {
-    moveBar(preflightResultCheckCount);
+  if (percentage > 0) {
+    moveBar(percentage);
     progressBar = (
       <div className="progressbar">
         <div
@@ -30,7 +45,6 @@ export default function PreflightProgress(props) {
       </div>
     );
   } else {
-    percentage = "0";
     progressBar = (
       <div className="progressbar">
         <div
@@ -42,11 +56,11 @@ export default function PreflightProgress(props) {
     );
   }
 
-  const readableName = getReadableCollectorName(progressData?.currentName);
+  const readableName = getReadableCollectorName(pendingPreflightCheckName);
   let statusDiv = (
     <div className="u-marginTop--20 u-fontWeight--medium u-lineHeight--medium u-textAlign--center">
       <div className="flex flex1 u-marginBottom--10 justifyContent--center alignItems--center u-textColor--secondary">
-        {progressData?.currentName && (
+        {pendingPreflightCheckName && (
           <Loader className="flex u-marginRight--5" size="24" />
         )}
         <p>{readableName}</p>
@@ -63,7 +77,7 @@ export default function PreflightProgress(props) {
           </h1>
           <div className="flex alignItems--center u-marginTop--20">
             <span className="u-fontWeight--bold u-fontSize--normal u-textColor--secondary u-marginRight--10">
-              {percentage + "%"}
+              {percentage > 0 ? `${percentage}%` : "0%"}
             </span>
             {progressBar}
             <span className="u-fontWeight--bold u-fontSize--normal u-textColor--secondary u-marginRight--10">

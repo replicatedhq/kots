@@ -6,7 +6,7 @@ interface Props {
   hideSkipModal: () => void;
   onIgnorePreflightsAndDeployClick: () => void;
   // TODO: remove this parameter
-  onForceDeployClick: (continueWithFailedPreflights: boolean) => void;
+  onForceDeployClick?: (continueWithFailedPreflights: boolean) => void;
 }
 
 export default function SkipPreflightsModal(props: Props) {

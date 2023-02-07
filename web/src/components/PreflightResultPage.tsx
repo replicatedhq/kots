@@ -1,4 +1,4 @@
-import React, { useEffect, useReducer } from "react";
+import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { KotsPageTitle } from "@components/Head";
 import { useHistory, useParams } from "react-router-dom";
@@ -20,7 +20,7 @@ import {
   useRerunPreflights,
 } from "@features/PreflightChecks/api";
 
-import { KotsParams, PreflightProgress } from "@types";
+import { KotsParams } from "@types";
 
 interface Props {
   fromLicenseFlow?: boolean;
@@ -28,27 +28,12 @@ interface Props {
   refetchAppsList?: () => void;
 }
 
-interface State {
-  preflightCurrentStatus?: PreflightProgress | null;
-  errorMessage?: string;
-  preflightResultCheckCount: number;
-  showSkipModal: boolean;
-  showWarningModal: boolean;
-}
-
 // class PreflightResultPage extends Component<Props, State> {
 function PreflightResultPage(props: Props) {
-  const [state, setState] = useReducer(
-    (currentState: State, newState: Partial<State>) => ({
-      ...currentState,
-      ...newState,
-    }),
-    {
-      preflightResultCheckCount: 0,
-      showSkipModal: false,
-      showWarningModal: false,
-    }
-  );
+
+  const [continueWithFailedPreflights, setShowContinueWithFailedPreflights] =
+    useState(false);
+  const [showSkipModal, setShowSkipModal] = useState(false);
 
   const history = useHistory();
   const { sequence = "0", slug } = useParams<KotsParams>();
@@ -56,10 +41,10 @@ function PreflightResultPage(props: Props) {
     slug,
     sequence,
   });
-  const { mutate: ignorePermissionErrors } =
+  const { mutate: ignorePermissionErrors, error: ignorePermissionError } =
     useIgnorePermissionErrors({ sequence, slug });
-  const { data: preflightCheck } = useGetPrelightResults({ sequence, slug });
-  const { mutate: rerunPreflights } = useRerunPreflights({ sequence, slug });
+  const { data: preflightCheck, error: getPreflightResultsError } = useGetPrelightResults({ sequence, slug });
+  const { mutate: rerunPreflights, error: rerunPreflightsError } = useRerunPreflights({ sequence, slug });
 
   // TODO: remove this once everything is using react-query
   // componentWilUnmount
@@ -71,34 +56,9 @@ function PreflightResultPage(props: Props) {
     };
   }, []);
 
-  const showConfirmSkipPreflightsModal = () => {
-    setState({
-      showWarningModal: true,
-    });
-  };
-
-  const showSkipModal = () => {
-    setState({
-      showSkipModal: true,
-    });
-  };
-
-  const hideSkipModal = () => {
-    setState({
-      showSkipModal: false,
-    });
-  };
-
-  const hideWarningModal = () => {
-    setState({
-      showWarningModal: false,
-    });
-  };
-
-
   if (preflightCheck?.preflightResults) {
-    if (state.showSkipModal) {
-      hideSkipModal();
+    if (showSkipModal) {
+      setShowSkipModal(false);
     }
   }
 
@@ -122,15 +82,33 @@ function PreflightResultPage(props: Props) {
             </div>
           )}
           <div className="u-minWidth--full u-marginTop--20 flex-column flex1 u-position--relative">
-            {state.errorMessage && state.errorMessage.length > 0 ? (
+            {getPreflightResultsError?.message && (
               <div className="ErrorWrapper flex-auto flex alignItems--center u-marginBottom--20">
                 <div className="icon redWarningIcon u-marginRight--10" />
                 <div>
                   <p className="title">Encountered an error</p>
-                  <p className="error">{state.errorMessage}</p>
+                  <p className="error">{getPreflightResultsError.message}</p>
                 </div>
               </div>
-            ) : null}
+            )}
+            {ignorePermissionError?.message && (
+              <div className="ErrorWrapper flex-auto flex alignItems--center u-marginBottom--20">
+                <div className="icon redWarningIcon u-marginRight--10" />
+                <div>
+                  <p className="title">Encountered an error</p>
+                  <p className="error">{ignorePermissionError.message}</p>
+                </div>
+              </div>
+            )}
+            {rerunPreflightsError?.message && (
+              <div className="ErrorWrapper flex-auto flex alignItems--center u-marginBottom--20">
+                <div className="icon redWarningIcon u-marginRight--10" />
+                <div>
+                  <p className="title">Encountered an error</p>
+                  <p className="error">{rerunPreflightsError.message}</p>
+                </div>
+              </div>
+            )}
             <p className="u-fontSize--jumbo2 u-textColor--primary u-fontWeight--bold">
               Preflight checks
             </p>
@@ -145,8 +123,10 @@ function PreflightResultPage(props: Props) {
             {!preflightCheck?.showPreflightCheckPending && (
               <div className="flex-column justifyContent--center alignItems--center flex1 u-minWidth--full">
                 <PreflightsProgress
-                  progressData={state.preflightCurrentStatus}
-                  preflightResultCheckCount={state.preflightResultCheckCount}
+                  pendingPreflightCheckName={
+                    preflightCheck?.pendingPreflightCheckName || ""}
+                  percentage={
+                    preflightCheck?.pendingPreflightChecksPercentage || 0}
                 />
               </div>
             )}
@@ -168,10 +148,10 @@ function PreflightResultPage(props: Props) {
                     </p>
                     <div className="flex alignItems--center">
                       {props.fromLicenseFlow &&
-                      // stopPolling &&
-                      // hasResult &&
-                      // preflightState !== "pass" ? (
-                      preflightCheck?.showCancelPreflight ? (
+                        // stopPolling &&
+                        // hasResult &&
+                        // preflightState !== "pass" ? (
+                        preflightCheck?.showCancelPreflight ? (
                         <div className="flex alignItems--center">
                           <div className="flex alignItems--center u-marginRight--20">
                             <Link
@@ -207,7 +187,7 @@ function PreflightResultPage(props: Props) {
                 type="button"
                 className="btn primary blue"
                 disabled={preflightCheck?.showDeploymentBlocked}
-                onClick={() => showConfirmSkipPreflightsModal()}
+                onClick={() => setShowContinueWithFailedPreflights(true)}
               >
                 <span
                   data-tip-disable={!preflightCheck?.showDeploymentBlocked}
@@ -244,22 +224,22 @@ function PreflightResultPage(props: Props) {
         </div>
       )}
 
-      {state.showSkipModal && (
+      {showSkipModal && (
         <SkipPreflightsModal
-          hideSkipModal={hideSkipModal}
+          hideSkipModal={() => setShowSkipModal(false)}
           onIgnorePreflightsAndDeployClick={() => {
             deployKotsDownstream({
               continueWithFailedPreflights: false,
               isSkipPreflights: true,
             });
           }}
-          showSkipModal={state.showSkipModal}
+          showSkipModal={showSkipModal}
         />
       )}
 
       <Modal
-        isOpen={state.showWarningModal}
-        onRequestClose={hideWarningModal}
+        isOpen={continueWithFailedPreflights}
+        onRequestClose={() => setShowContinueWithFailedPreflights(false)}
         shouldReturnFocusAfterClose={false}
         contentLabel="Preflight shows some issues"
         ariaHideApp={false}
@@ -273,7 +253,7 @@ function PreflightResultPage(props: Props) {
             <button
               type="button"
               className="btn secondary"
-              onClick={hideWarningModal}
+              onClick={() => setShowContinueWithFailedPreflights(false)}
             >
               Close
             </button>
@@ -281,7 +261,7 @@ function PreflightResultPage(props: Props) {
               type="button"
               className="btn blue primary u-marginLeft--10"
               onClick={() => {
-                hideWarningModal();
+                setShowContinueWithFailedPreflights(false);
                 deployKotsDownstream({ continueWithFailedPreflights: true });
               }}
             >
@@ -294,5 +274,4 @@ function PreflightResultPage(props: Props) {
   );
 }
 
-// export default withRouter(PreflightResultPage) as any;
 export default PreflightResultPage;
