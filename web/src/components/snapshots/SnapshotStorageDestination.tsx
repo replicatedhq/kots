@@ -1777,7 +1777,7 @@ class SnapshotStorageDestination extends Component<Props, State> {
                   </>
                 )}
                 <span className="u-fontSize--small u-fontWeight--normal u-lineHeight--normal u-textColor--bodyCopy u-marginTop--15">
-                  To learn more about snapshots,
+                  To learn more about snapshots,{" "}
                   <a
                     href="https://docs.replicated.com/enterprise/snapshots-understanding"
                     target="_blank"
