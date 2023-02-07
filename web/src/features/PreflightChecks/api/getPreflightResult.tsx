@@ -28,18 +28,23 @@ async function getPreflightResult({
     );
   }
 
-  const response: PreflightResponse = await jsonResponse.json();
+  try {
+    const response: PreflightResponse = await jsonResponse.json();
 
-  // unmarshall these nested JSON strings
-  if (typeof response?.preflightResult?.result === "string")
-    response.preflightResult.result = JSON.parse(
-      response.preflightResult.result
-    );
+    // unmarshall these nested JSON strings
+    if (typeof response?.preflightResult?.result === "string")
+      response.preflightResult.result = JSON.parse(
+        response.preflightResult.result
+      );
 
-  if (typeof response?.preflightProgress === "string")
-    response.preflightProgress = JSON.parse(response.preflightProgress);
+    if (typeof response?.preflightProgress === "string")
+      response.preflightProgress = JSON.parse(response.preflightProgress);
 
-  return response;
+    return response;
+  } catch (err) {
+    console.error(err);
+    throw new Error("Encountered an error while unmarshalling preflight results");
+  }
 }
 
 function flattenPreflightResponse({
@@ -80,9 +85,9 @@ function flattenPreflightResponse({
     showCancelPreflight:
       !response?.preflightResult?.skipped &&
       (response?.preflightResult?.result?.errors ||
-      response?.preflightResult?.result?.results?.find(
-        (result) => result?.isFail || result?.isWarn
-      )
+        response?.preflightResult?.result?.results?.find(
+          (result) => result?.isFail || result?.isWarn
+        )
         ? true
         : false),
     showDeploymentBlocked:
