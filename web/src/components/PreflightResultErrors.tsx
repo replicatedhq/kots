@@ -1,5 +1,5 @@
 import React, { useEffect, useReducer } from "react";
-import { useRouteMatch } from "react-router";
+import { useParams } from "react-router-dom";
 import MonacoEditor from "@monaco-editor/react";
 import CodeSnippet from "./shared/CodeSnippet";
 import ErrorModal from "./modals/ErrorModal";
@@ -7,13 +7,16 @@ import { Utilities } from "../utilities/utilities";
 import { useSelectedApp } from "@features/App";
 import "../scss/components/PreflightCheckPage.scss";
 
-import { KotsParams, PreflightError, PreflightResult } from "@types";
+import { KotsParams } from "@types";
+import { PreflightResult } from "@src/features/PreflightChecks/types";
 
 type Props = {
+  errors?: string[]
   ignorePermissionErrors: () => void;
   logo: string;
-  preflightResultData?: PreflightResult | null;
-  errors?: PreflightError[];
+  preflightResultData?: PreflightResult[];
+  // errors?: PreflightError[];
+  showRbacError: boolean;
 };
 
 type State = {
@@ -22,6 +25,27 @@ type State = {
   errorTitle: string;
   errorMsg: string;
   showErrorDetails: boolean;
+};
+
+const fetchPreflightCommand = async (slug: string, sequence: string) => {
+  const res = await fetch(
+    `${process.env.API_ENDPOINT}/app/${slug}/sequence/${sequence}/preflightcommand`,
+    {
+      method: "POST",
+      headers: {
+        Authorization: Utilities.getToken(),
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        origin: window.location.origin,
+      }),
+    }
+  );
+  if (!res.ok) {
+    throw new Error(`Unexpected status code: ${res.status}`);
+  }
+  const response = await res.json();
+  return response.command;
 };
 
 const PreflightResultErrors = (props: Props) => {
@@ -38,45 +62,25 @@ const PreflightResultErrors = (props: Props) => {
       displayErrorModal: false,
     }
   );
-  const match = useRouteMatch<KotsParams>();
+  const { slug, sequence = "0" } = useParams<KotsParams>()
   const { selectedApp } = useSelectedApp();
 
   const [previousAppSlug, setPreviousAppSlug] = React.useState<
     string | undefined
-  >(props?.preflightResultData?.appSlug);
+  >(slug);
   const [previousSequence, setPreviousSequence] = React.useState<
-    number | undefined
-  >(props?.preflightResultData?.sequence);
+    string| undefined
+  >(sequence);
 
-  const fetchPreflightCommand = async (slug: string, sequence: number) => {
-    const res = await fetch(
-      `${process.env.API_ENDPOINT}/app/${slug}/sequence/${sequence}/preflightcommand`,
-      {
-        method: "POST",
-        headers: {
-          Authorization: Utilities.getToken(),
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          origin: window.location.origin,
-        }),
-      }
-    );
-    if (!res.ok) {
-      throw new Error(`Unexpected status code: ${res.status}`);
-    }
-    const response = await res.json();
-    return response.command;
-  };
 
   const getPreflightCommand = async () => {
-    const { preflightResultData } = props;
-    const sequence = match.params.sequence
-      ? parseInt(match.params.sequence, 10)
-      : 0;
+    // const sequence = match.params.sequence
+    //   ? parseInt(match.params.sequence, 10)
+    //   : 0;
     try {
       const command = await fetchPreflightCommand(
-        preflightResultData?.appSlug || "",
+        // preflightResultData?.appSlug || "",
+        slug,
         sequence
       );
       setState({
@@ -115,13 +119,15 @@ const PreflightResultErrors = (props: Props) => {
 
     // TODO: determine if it's actually necessary to track the previous props
     if (
-      previousAppSlug !== props.preflightResultData.appSlug ||
-      previousSequence !== props.preflightResultData.sequence
+      // previousAppSlug !== props.preflightResultData.appSlug ||
+      // previousSequence !== props.preflightResultData.sequence
+      previousAppSlug !== slug ||
+      previousSequence !== sequence
     ) {
       getPreflightCommand();
     }
-    setPreviousAppSlug(props.preflightResultData.appSlug);
-    setPreviousSequence(props.preflightResultData.sequence);
+    setPreviousAppSlug(slug);
+    setPreviousSequence(sequence);
   }, [props.preflightResultData]);
 
   const toggleShowErrorDetails = () => {
@@ -136,14 +142,14 @@ const PreflightResultErrors = (props: Props) => {
 
   const { errors, logo } = props;
   const { errorTitle, errorMsg, displayErrorModal, command } = state;
-  const isRbacError = errors?.find((error) => error.isRbac) || false;
+  // const isRbacError = errors?.find((error) => error.isRbac) || false;
 
   const displayErrorString =
     errors !== undefined
       ? errors
-          .map((error) => {
-            return error.error;
-          })
+          // .map((error) => {
+          //   return error.error;
+          // })
           .join("\n")
       : "";
 
@@ -169,14 +175,14 @@ const PreflightResultErrors = (props: Props) => {
                 Unable to automatically run preflight checks
               </h2>
             </div>
-            {isRbacError && (
+            {props.showRbacError && (
               <p className="u-marginTop--10 u-marginBottom--10 u-fontSize--normal u-lineHeight--normal u-textColor--bodyCopy u-fontWeight--normal">
                 The Kubernetes RBAC policy that the Admin Console is running
                 with does not have access to complete the Preflight Checks. It’s
                 recommended that you run these manually before proceeding.
               </p>
             )}
-            {!isRbacError && (
+            {props.showRbacError && (
               <p className="u-marginTop--10 u-marginBottom--10 u-fontSize--normal u-lineHeight--normal u-textColor--bodyCopy u-fontWeight--normal">
                 There were errors running preflight checks in Admin Console.
                 Preflight checks can be ran manually as an alternative. It’s

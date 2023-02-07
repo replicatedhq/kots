@@ -60,7 +60,9 @@ export interface PreflightCheck {
   errors: string[];
   pendingPreflightCheckName: string;
   pendingPreflightChecksPercentage: number;
+  pollForUpdates: boolean;
   preflightResults: PreflightResult[];
+  showCancelPreflight: boolean;
   showDeploymentBlocked: boolean;
   showPreflightCheckPending: boolean;
   showPreflightNoChecks: boolean;

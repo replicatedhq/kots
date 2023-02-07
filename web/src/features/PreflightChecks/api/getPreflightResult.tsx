@@ -10,7 +10,7 @@ async function getPreflightResult({
 }: {
   apiEndpoint?: string;
   slug: string;
-  sequence?: number;
+  sequence?: string;
 }): Promise<PreflightResponse> {
   const getUrl = sequence
     ? `${apiEndpoint}/app/${slug}/sequence/${sequence}/preflight/result`
@@ -64,22 +64,33 @@ function flattenPreflightResponse({
     // TODO: see if we can calculate a real %
     pendingPreflightChecksPercentage:
       refetchCount === 0 ? 0 : refetchCount > 21 ? 96 : refetchCount * 4.5,
+    pollForUpdates:
+      !response?.preflightResult?.result ||
+      response?.preflightResult?.skipped,
     preflightResults:
       response?.preflightResult?.result?.results?.map((responseResult) => ({
         learnMoreUri: responseResult.uri || "",
         message: responseResult.message || "",
         title: responseResult.title || "",
-        showCannotFail: responseResult?.strict || false,
+        showCannotFail:
+          (responseResult.isFail &&
+          responseResult?.strict) ||
+          false,
         showFail: responseResult?.isFail || false,
         showPass: responseResult?.isPass || false,
         showWarn: responseResult?.isWarn || false,
       })) || [],
-    showDeploymentBlocked: response?.preflightResult?.result?.results?.find(
-      (result) => result?.isFail && result?.strict
-    )
-      ? true
-      : false,
-    showPreflightCheckPending: !response?.preflightResult?.result,
+    showCancelPreflight:
+      !response?.preflightResult?.skipped &&
+      (response?.preflightResult?.result?.errors ||
+      response?.preflightResult?.result?.results?.find(
+        (result) => result?.isFail || result?.isWarn
+      ) ? true : false),
+    showDeploymentBlocked:
+      response?.preflightResult?.hasFailingStrictPreflights,
+    showPreflightCheckPending:
+      !response?.preflightResult?.result ||
+      response?.preflightResult?.skipped,
     showPreflightNoChecks:
       response?.preflightResult?.result?.results?.length === 0,
     showPreflightSkipped: response?.preflightResult?.skipped,
@@ -92,7 +103,7 @@ function flattenPreflightResponse({
 }
 
 function makeRefetchInterval(preflightCheck: PreflightCheck): number | false {
-  if (preflightCheck.showPreflightCheckPending) return 1000;
+  if (preflightCheck.pollForUpdates) return 1000;
 
   return false;
 }
@@ -102,7 +113,7 @@ function useGetPrelightResults({
   sequence,
 }: {
   slug: string;
-  sequence?: number;
+  sequence?: string;
 }) {
   // this is for the progress bar
   const [refetchCount, setRefetchCount] = useState(0);
