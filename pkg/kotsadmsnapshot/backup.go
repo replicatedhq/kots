@@ -891,7 +891,7 @@ func downloadBackupLogs(ctx context.Context, veleroNamespace, backupName string)
 	}
 	defer gzipReader.Close()
 
-	errs, warnings, execs, err := parseLogs(gzipReader)
+	errs, warnings, execs, err := parseLogs(gzipReader, DefaultLogParserBufferSize)
 	return errs, warnings, execs, err
 }
 
