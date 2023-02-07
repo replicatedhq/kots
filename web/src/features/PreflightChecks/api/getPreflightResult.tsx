@@ -32,13 +32,22 @@ async function getPreflightResult({
     const response: PreflightResponse = await jsonResponse.json();
 
     // unmarshall these nested JSON strings
-    if (typeof response?.preflightResult?.result === "string")
-      response.preflightResult.result = JSON.parse(
-        response.preflightResult.result
-      );
+    if (typeof response?.preflightResult?.result === "string") {
+      if (response?.preflightResult?.result.length > 0) {
+        response.preflightResult.result = JSON.parse(
+          response.preflightResult.result);
+      } else {
+        response.preflightResult.result = {};
+      }
+    }
 
-    if (typeof response?.preflightProgress === "string")
-      response.preflightProgress = JSON.parse(response.preflightProgress);
+    if (typeof response?.preflightProgress === "string") {
+      if (response?.preflightProgress.length > 0) {
+        response.preflightProgress = JSON.parse(response.preflightProgress);
+      } else {
+        response.preflightProgress = {};
+      }
+    }
 
     return response;
   } catch (err) {

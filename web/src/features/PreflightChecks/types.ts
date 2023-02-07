@@ -7,11 +7,11 @@ export interface PreflightResponse {
 }
 
 export type PreflightResponseProgress = {
-  completedCount: number;
-  currentName: string;
-  currentStatus: string;
-  totalCount: number;
-  updatedAt: string;
+  completedCount?: number;
+  currentName?: string;
+  currentStatus?: string;
+  totalCount?: number;
+  updatedAt?: string;
 };
 
 interface PreflightResponseResult {
