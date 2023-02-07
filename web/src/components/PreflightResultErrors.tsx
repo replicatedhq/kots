@@ -15,7 +15,6 @@ type Props = {
   ignorePermissionErrors: () => void;
   logo: string;
   preflightResultData?: PreflightResult[];
-  // errors?: PreflightError[];
   showRbacError: boolean;
 };
 
@@ -73,12 +72,8 @@ const PreflightResultErrors = (props: Props) => {
   >(sequence);
 
   const getPreflightCommand = async () => {
-    // const sequence = match.params.sequence
-    //   ? parseInt(match.params.sequence, 10)
-    //   : 0;
     try {
       const command = await fetchPreflightCommand(
-        // preflightResultData?.appSlug || "",
         slug,
         sequence
       );
@@ -118,8 +113,6 @@ const PreflightResultErrors = (props: Props) => {
 
     // TODO: determine if it's actually necessary to track the previous props
     if (
-      // previousAppSlug !== props.preflightResultData.appSlug ||
-      // previousSequence !== props.preflightResultData.sequence
       previousAppSlug !== slug ||
       previousSequence !== sequence
     ) {
@@ -141,14 +134,10 @@ const PreflightResultErrors = (props: Props) => {
 
   const { errors, logo } = props;
   const { errorTitle, errorMsg, displayErrorModal, command } = state;
-  // const isRbacError = errors?.find((error) => error.isRbac) || false;
 
   const displayErrorString =
     errors !== undefined
       ? errors
-          // .map((error) => {
-          //   return error.error;
-          // })
           .join("\n")
       : "";
 
