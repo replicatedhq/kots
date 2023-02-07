@@ -32,7 +32,8 @@ interface Props {
 function PreflightResultPage(props: Props) {
   const [continueWithFailedPreflights, setShowContinueWithFailedPreflights] =
     useState(false);
-  const [showConfirmSkipPreflightsModal, setShowConfirmSkipPreflightsModal] = useState(false);
+  const [showConfirmSkipPreflightsModal, setShowConfirmSkipPreflightsModal] =
+    useState(false);
 
   const history = useHistory();
   const { sequence = "0", slug } = useParams<KotsParams>();
