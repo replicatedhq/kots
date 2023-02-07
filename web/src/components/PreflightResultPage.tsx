@@ -32,7 +32,7 @@ interface Props {
 function PreflightResultPage(props: Props) {
   const [continueWithFailedPreflights, setShowContinueWithFailedPreflights] =
     useState(false);
-  const [showSkipModal, setShowSkipModal] = useState(false);
+  const [showConfirmSkipPreflightsModal, setShowConfirmSkipPreflightsModal] = useState(false);
 
   const history = useHistory();
   const { sequence = "0", slug } = useParams<KotsParams>();
@@ -58,8 +58,8 @@ function PreflightResultPage(props: Props) {
   }, []);
 
   if (preflightCheck?.preflightResults) {
-    if (showSkipModal) {
-      setShowSkipModal(false);
+    if (showConfirmSkipPreflightsModal) {
+      setShowConfirmSkipPreflightsModal(false);
     }
   }
 
@@ -207,7 +207,7 @@ function PreflightResultPage(props: Props) {
             <div className="flex flex1 justifyContent--center alignItems--center">
               <span
                 className="u-fontSize--normal u-fontWeight--medium u-textDecoration--underline u-textColor--bodyCopy u-marginTop--15 u-cursor--pointer"
-                onClick={() => setShowSkipModal(true)}
+                onClick={() => setShowConfirmSkipPreflightsModal(true)}
               >
                 Ignore Preflights{" "}
               </span>
@@ -227,16 +227,16 @@ function PreflightResultPage(props: Props) {
         </div>
       )}
 
-      {showSkipModal && (
+      {showConfirmSkipPreflightsModal && (
         <SkipPreflightsModal
-          hideSkipModal={() => setShowSkipModal(false)}
+          hideSkipModal={() => setShowConfirmSkipPreflightsModal(false)}
           onIgnorePreflightsAndDeployClick={() => {
             deployKotsDownstream({
               continueWithFailedPreflights: false,
               isSkipPreflights: true,
             });
           }}
-          showSkipModal={showSkipModal}
+          showSkipModal={showConfirmSkipPreflightsModal}
         />
       )}
 
