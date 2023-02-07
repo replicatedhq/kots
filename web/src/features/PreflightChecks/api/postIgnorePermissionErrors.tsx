@@ -31,8 +31,7 @@ async function postIgnorePermissionErrors({
   return response;
 }
 
-
-function useDeployKotsDownsteam({
+function useIgnorePermissionErrors({
   slug,
   sequence,
 }: {
@@ -55,4 +54,4 @@ function useDeployKotsDownsteam({
   });
 }
 
-export { useDeployKotsDownsteam };
+export { useIgnorePermissionErrors };

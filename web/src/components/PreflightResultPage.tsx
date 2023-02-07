@@ -7,9 +7,8 @@ import ReactTooltip from "react-tooltip";
 
 import PreflightRenderer from "./PreflightRenderer";
 import PreflightResultErrors from "./PreflightResultErrors";
-import SkipPreflightsModal from "./shared/modals/SkipPreflightsModal.tsx";
+import SkipPreflightsModal from "./shared/modals/SkipPreflightsModal";
 
-import { Utilities } from "../utilities/utilities";
 import "../scss/components/PreflightCheckPage.scss";
 import PreflightsProgress from "./troubleshoot/PreflightsProgress";
 import Icon from "./Icon";
@@ -17,6 +16,7 @@ import Icon from "./Icon";
 import {
   useDeployKotsDownsteam,
   useGetPrelightResults,
+  useIgnorePermissionErrors,
   useRerunPreflights,
 } from "@features/PreflightChecks/api";
 
@@ -52,12 +52,14 @@ function PreflightResultPage(props: Props) {
 
   const history = useHistory();
   const { sequence = "0", slug } = useParams<KotsParams>();
-  const { data: preflightCheck } = useGetPrelightResults({ slug, sequence });
-  const { mutate: rerunPreflights } = useRerunPreflights({ slug, sequence });
   const { mutate: deployKotsDownstream } = useDeployKotsDownsteam({
     slug,
     sequence,
   });
+  const { mutate: ignorePermissionErrors } =
+    useIgnorePermissionErrors({ sequence, slug });
+  const { data: preflightCheck } = useGetPrelightResults({ sequence, slug });
+  const { mutate: rerunPreflights } = useRerunPreflights({ sequence, slug });
 
   // TODO: remove this once everything is using react-query
   // componentWilUnmount
