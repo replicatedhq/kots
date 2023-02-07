@@ -17,7 +17,6 @@ export default function SkipPreflightsModal(props: Props) {
     onForceDeployClick,
   } = props;
 
-
   return (
     <Modal
       isOpen={showSkipModal}

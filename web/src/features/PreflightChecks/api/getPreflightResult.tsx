@@ -65,17 +65,14 @@ function flattenPreflightResponse({
     pendingPreflightChecksPercentage:
       refetchCount === 0 ? 0 : refetchCount > 21 ? 96 : refetchCount * 4.5,
     pollForUpdates:
-      !response?.preflightResult?.result ||
-      response?.preflightResult?.skipped,
+      !response?.preflightResult?.result || response?.preflightResult?.skipped,
     preflightResults:
       response?.preflightResult?.result?.results?.map((responseResult) => ({
         learnMoreUri: responseResult.uri || "",
         message: responseResult.message || "",
         title: responseResult.title || "",
         showCannotFail:
-          (responseResult.isFail &&
-          responseResult?.strict) ||
-          false,
+          (responseResult.isFail && responseResult?.strict) || false,
         showFail: responseResult?.isFail || false,
         showPass: responseResult?.isPass || false,
         showWarn: responseResult?.isWarn || false,
@@ -85,12 +82,13 @@ function flattenPreflightResponse({
       (response?.preflightResult?.result?.errors ||
       response?.preflightResult?.result?.results?.find(
         (result) => result?.isFail || result?.isWarn
-      ) ? true : false),
+      )
+        ? true
+        : false),
     showDeploymentBlocked:
       response?.preflightResult?.hasFailingStrictPreflights,
     showPreflightCheckPending:
-      !response?.preflightResult?.result ||
-      response?.preflightResult?.skipped,
+      !response?.preflightResult?.result || response?.preflightResult?.skipped,
     showPreflightNoChecks:
       response?.preflightResult?.result?.results?.length === 0,
     showPreflightSkipped: response?.preflightResult?.skipped,
@@ -124,7 +122,7 @@ function useGetPrelightResults({
 
       return getPreflightResult({ slug, sequence });
     },
-    queryKey: ["preflight-results", slug, sequence],
+    queryKey: ["preflight-results", sequence, slug],
     onError: (err: Error) => {
       console.log(err);
 

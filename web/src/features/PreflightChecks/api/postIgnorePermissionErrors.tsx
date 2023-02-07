@@ -1,7 +1,7 @@
 import { useMutation, useQueryClient } from "react-query";
 import { Utilities } from "@src/utilities/utilities";
 
-async function postPreflightRun({
+async function postIgnorePermissionErrors({
   apiEndpoint = process.env.API_ENDPOINT,
   slug,
   sequence,
@@ -11,7 +11,7 @@ async function postPreflightRun({
   sequence: string;
 }) {
   const response = await fetch(
-    `${apiEndpoint}/app/${slug}/sequence/${sequence}/preflight/run`,
+    `${apiEndpoint}/app/${slug}/sequence/${sequence}/preflight/ignore-rbac`,
     {
       headers: {
         "Content-Type": "application/json",
@@ -24,12 +24,15 @@ async function postPreflightRun({
 
   if (!response.ok) {
     throw new Error(
-      `Encountered an error while fetching preflight results: Unexpected status code: ${response.status}`
+      `Encountered an error while trying to ignore permissions: ${response.status}`
     );
   }
+
+  return response;
 }
 
-function useRerunPreflights({
+
+function useDeployKotsDownsteam({
   slug,
   sequence,
 }: {
@@ -39,10 +42,10 @@ function useRerunPreflights({
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: () => postPreflightRun({ slug, sequence }),
+    mutationFn: () => postIgnorePermissionErrors({ slug, sequence }),
     onError: (err: Error) => {
       console.log(err);
-      throw new Error(err.message || "Error running preflight checks");
+      throw new Error(err.message || "Encountered an error while trying to ignore permissions");
     },
     onSuccess: () => {
       queryClient.invalidateQueries({
@@ -52,4 +55,4 @@ function useRerunPreflights({
   });
 }
 
-export { useRerunPreflights };
+export { useDeployKotsDownsteam };

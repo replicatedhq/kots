@@ -6,14 +6,11 @@ async function postDeployKotsDownstream({
   apiEndpoint = process.env.API_ENDPOINT,
   slug,
   sequence,
-  body,
 }: {
   apiEndpoint?: string;
-  body: string;
   slug: string;
   sequence: string;
 }) {
-
   const response = await fetch(
     `${apiEndpoint}/app/${slug}/sequence/${sequence}/deploy`,
     {
@@ -23,38 +20,19 @@ async function postDeployKotsDownstream({
         Authorization: Utilities.getToken(),
       },
       method: "POST",
-      body
     }
   );
 
   if (!response.ok) {
     throw new Error(
-      `Encountered an error while fetching preflight results: Unexpected status code: ${response.status}`
+      `Encountered an error while trying to ignore permissions: ${response.status}`
     );
   }
 }
 
-function makeBody({
-  continueWithFailedPreflights,
-  isSkipPreflights
-} : {
-  continueWithFailedPreflights: boolean;
-  isSkipPreflights: boolean;
-}) {
-  return JSON.stringify({
-    continueWithFailedPreflights,
-    isSkipPreflights,
-  });
-}
-
-interface DeployKotsDownstreamParams {
-  continueWithFailedPreflights?: boolean;
-  isSkipPreflights?: boolean;
-};
-
 function useDeployKotsDownsteam({
   slug,
-  sequence
+  sequence,
 }: {
   slug: string;
   sequence: string;
@@ -62,22 +40,14 @@ function useDeployKotsDownsteam({
   const history = useHistory();
 
   return useMutation({
-    mutationFn: ({
-      continueWithFailedPreflights = false,
-      isSkipPreflights = false
-    } : DeployKotsDownstreamParams) =>
-    postDeployKotsDownstream({
-      slug,
-      sequence,
-      body: makeBody({ continueWithFailedPreflights, isSkipPreflights })
-    }),
+    mutationFn: () => postDeployKotsDownstream({ slug, sequence }),
     onError: (err: Error) => {
       console.log(err);
       throw new Error(err.message || "Error running preflight checks");
     },
     onSuccess: () => {
       history.push(`/app/${slug}`);
-    }
+    },
   });
 }
 

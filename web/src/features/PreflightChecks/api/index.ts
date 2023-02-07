@@ -1,9 +1,5 @@
-import { useDeployKotsDownsteam } from './postDeployKotsDownstream';
-import { useGetPrelightResults } from './getPreflightResult';
-import { useRerunPreflights } from './postPreflightRun';
+import { useDeployKotsDownsteam } from "./postDeployKotsDownstream";
+import { useGetPrelightResults } from "./getPreflightResult";
+import { useRerunPreflights } from "./postPreflightRun";
 
-export {
-  useDeployKotsDownsteam,
-  useGetPrelightResults,
-  useRerunPreflights
-};
+export { useDeployKotsDownsteam, useGetPrelightResults, useRerunPreflights };

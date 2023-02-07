@@ -11,7 +11,7 @@ import { KotsParams } from "@types";
 import { PreflightResult } from "@src/features/PreflightChecks/types";
 
 type Props = {
-  errors?: string[]
+  errors?: string[];
   ignorePermissionErrors: () => void;
   logo: string;
   preflightResultData?: PreflightResult[];
@@ -62,16 +62,15 @@ const PreflightResultErrors = (props: Props) => {
       displayErrorModal: false,
     }
   );
-  const { slug, sequence = "0" } = useParams<KotsParams>()
+  const { slug, sequence = "0" } = useParams<KotsParams>();
   const { selectedApp } = useSelectedApp();
 
   const [previousAppSlug, setPreviousAppSlug] = React.useState<
     string | undefined
   >(slug);
   const [previousSequence, setPreviousSequence] = React.useState<
-    string| undefined
+    string | undefined
   >(sequence);
-
 
   const getPreflightCommand = async () => {
     // const sequence = match.params.sequence
