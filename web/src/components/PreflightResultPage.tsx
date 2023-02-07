@@ -30,7 +30,6 @@ interface Props {
 
 // class PreflightResultPage extends Component<Props, State> {
 function PreflightResultPage(props: Props) {
-
   const [continueWithFailedPreflights, setShowContinueWithFailedPreflights] =
     useState(false);
   const [showSkipModal, setShowSkipModal] = useState(false);
@@ -126,9 +125,11 @@ function PreflightResultPage(props: Props) {
               <div className="flex-column justifyContent--center alignItems--center flex1 u-minWidth--full">
                 <PreflightsProgress
                   pendingPreflightCheckName={
-                    preflightCheck?.pendingPreflightCheckName || ""}
+                    preflightCheck?.pendingPreflightCheckName || ""
+                  }
                   percentage={
-                    preflightCheck?.pendingPreflightChecksPercentage || 0}
+                    preflightCheck?.pendingPreflightChecksPercentage || 0
+                  }
                 />
               </div>
             )}
@@ -150,10 +151,10 @@ function PreflightResultPage(props: Props) {
                     </p>
                     <div className="flex alignItems--center">
                       {props.fromLicenseFlow &&
-                        // stopPolling &&
-                        // hasResult &&
-                        // preflightState !== "pass" ? (
-                        preflightCheck?.showCancelPreflight ? (
+                      // stopPolling &&
+                      // hasResult &&
+                      // preflightState !== "pass" ? (
+                      preflightCheck?.showCancelPreflight ? (
                         <div className="flex alignItems--center">
                           <div className="flex alignItems--center u-marginRight--20">
                             <Link

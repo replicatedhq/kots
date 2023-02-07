@@ -44,7 +44,9 @@ function useIgnorePermissionErrors({
     mutationFn: () => postIgnorePermissionErrors({ slug, sequence }),
     onError: (err: Error) => {
       console.log(err);
-      throw new Error(err.message || "Encountered an error while trying to ignore permissions");
+      throw new Error(
+        err.message || "Encountered an error while trying to ignore permissions"
+      );
     },
     onSuccess: () => {
       queryClient.invalidateQueries({

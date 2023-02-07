@@ -13,7 +13,6 @@ async function postDeployKotsDownstream({
   slug: string;
   sequence: string;
 }) {
-
   const response = await fetch(
     `${apiEndpoint}/app/${slug}/sequence/${sequence}/deploy`,
     {
@@ -23,7 +22,7 @@ async function postDeployKotsDownstream({
         Authorization: Utilities.getToken(),
       },
       method: "POST",
-      body
+      body,
     }
   );
 
@@ -36,8 +35,8 @@ async function postDeployKotsDownstream({
 
 function makeBody({
   continueWithFailedPreflights,
-  isSkipPreflights
-} : {
+  isSkipPreflights,
+}: {
   continueWithFailedPreflights: boolean;
   isSkipPreflights: boolean;
 }) {
@@ -49,7 +48,7 @@ function makeBody({
 
 function useDeployKotsDownsteam({
   slug,
-  sequence
+  sequence,
 }: {
   slug: string;
   sequence: string;
@@ -59,22 +58,26 @@ function useDeployKotsDownsteam({
   return useMutation({
     mutationFn: ({
       continueWithFailedPreflights = false,
-      isSkipPreflights = false
+      isSkipPreflights = false,
     }: {
       continueWithFailedPreflights?: boolean;
       isSkipPreflights?: boolean;
-    }) => postDeployKotsDownstream({
-      slug,
-      sequence,
-      body: makeBody({ continueWithFailedPreflights, isSkipPreflights })
-    }),
+    }) =>
+      postDeployKotsDownstream({
+        slug,
+        sequence,
+        body: makeBody({ continueWithFailedPreflights, isSkipPreflights }),
+      }),
     onError: (err: Error) => {
       console.log(err);
-      throw new Error(err.message || "Encountered an error while trying to deploy downstream version");
+      throw new Error(
+        err.message ||
+          "Encountered an error while trying to deploy downstream version"
+      );
     },
     onSuccess: () => {
       history.push(`/app/${slug}`);
-    }
+    },
   });
 }
 

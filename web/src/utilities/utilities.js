@@ -66,8 +66,6 @@ export function getApplicationType(watch) {
   }
 }
 
-
-
 /**
  * @param {String} - Returns the commit SHA of the current build
  */

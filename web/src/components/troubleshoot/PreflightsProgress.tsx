@@ -27,8 +27,10 @@ function getReadableCollectorName(name: string) {
   return "Gathering details about the cluster";
 }
 
-export default function PreflightProgress(props:
-  { pendingPreflightCheckName: string, percentage: number}) {
+export default function PreflightProgress(props: {
+  pendingPreflightCheckName: string;
+  percentage: number;
+}) {
   const { pendingPreflightCheckName, percentage } = props;
 
   let progressBar;

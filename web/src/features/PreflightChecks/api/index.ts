@@ -7,5 +7,5 @@ export {
   useDeployKotsDownsteam,
   useGetPrelightResults,
   useIgnorePermissionErrors,
-  useRerunPreflights
+  useRerunPreflights,
 };
