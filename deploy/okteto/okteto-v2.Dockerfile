@@ -147,7 +147,7 @@ WORKDIR $PROJECTPATH
 
 RUN --mount=target=$GOMODCACHE,id=gomodcache,type=cache \
     --mount=target=$GOCACHE,id=gocache,type=cache \
-    go install github.com/go-delve/delve/cmd/dlv@v1.9.0 
+    go install github.com/go-delve/delve/cmd/dlv@v1.20.1 
 
 ## Get deps
 COPY go.mod go.sum ./
