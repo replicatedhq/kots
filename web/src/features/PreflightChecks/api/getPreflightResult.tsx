@@ -116,8 +116,7 @@ function flattenPreflightResponse({
     pendingPreflightChecksPercentage:
       refetchCount === 0 ? 0 : refetchCount > 21 ? 96 : refetchCount * 4.5,
     pollForUpdates:
-      response?.preflightResult?.skipped ||
-      hasRunningPreflightChecks(response),
+      response?.preflightResult?.skipped || hasRunningPreflightChecks(response),
     preflightResults:
       response?.preflightResult?.result?.results?.map((responseResult) => ({
         learnMoreUri: responseResult.uri || "",
@@ -142,8 +141,7 @@ function flattenPreflightResponse({
         response?.preflightResult?.skipped) ||
       hasRunningPreflightChecks(response),
     showPreflightCheckPending:
-      response?.preflightResult?.skipped ||
-      hasRunningPreflightChecks(response),
+      response?.preflightResult?.skipped || hasRunningPreflightChecks(response),
     showPreflightResultErrors:
       hasPreflightErrors(response) && // has errors
       !response?.preflightResult?.skipped && // not skipped
