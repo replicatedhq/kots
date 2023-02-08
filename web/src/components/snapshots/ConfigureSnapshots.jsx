@@ -352,7 +352,9 @@ class ConfigureSnapshots extends React.Component {
                           {this.getFSBackupComponentFlags().join(" ")}{" "}
                         </span>{" "}
                         flag
-                        {this.getFSBackupComponentFlags().length > 1 ? "s" : ""}{" "}
+                        {this.getFSBackupComponentFlags().length > 1
+                          ? "s"
+                          : ""}{" "}
                         for snapshots to work.{" "}
                       </p>
                     </div>
