@@ -67,7 +67,6 @@ export interface PreflightCheck {
   showDeploymentBlocked: boolean;
   showIgnorePreflight: boolean;
   showPreflightCheckPending: boolean;
-  showPreflightNoChecks: boolean;
   showPreflightResultErrors: boolean;
   showPreflightResults: boolean;
   showPreflightSkipped: boolean;

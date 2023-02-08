@@ -59,6 +59,35 @@ async function getPreflightResult({
   }
 }
 
+function hasPreflightErrors(response: PreflightResponse): boolean {
+  if (typeof response?.preflightResult?.result === "string")
+    throw new Error("Preflight response is not properly unmarshalled");
+
+  return Boolean(response?.preflightResult?.result?.errors?.length);
+}
+
+function hasPreflightResults(response: PreflightResponse): boolean {
+  if (typeof response?.preflightResult?.result === "string")
+    throw new Error("Preflight response is not properly unmarshalled");
+
+  // sometimes this is an empty string which is falsey
+  // so we need to || {} for Object.keys to work
+  return (
+    Object.keys(response?.preflightResult?.result?.results || {}).length > 0
+  );
+}
+
+function hasFailureOrWarning(response: PreflightResponse): boolean {
+  if (typeof response?.preflightResult?.result === "string")
+    throw new Error("Preflight response is not properly unmarshalled");
+
+  return Boolean(
+    response?.preflightResult?.result?.results?.find(
+      (result) => result?.isFail || result?.isWarn
+    )
+  );
+}
+
 function flattenPreflightResponse({
   refetchCount,
   response,
@@ -82,8 +111,7 @@ function flattenPreflightResponse({
     pendingPreflightChecksPercentage:
       refetchCount === 0 ? 0 : refetchCount > 21 ? 96 : refetchCount * 4.5,
     pollForUpdates:
-      response?.preflightResult?.skipped ||
-      Object.keys(response?.preflightResult?.result).length === 0,
+      response?.preflightResult?.skipped || !hasPreflightResults(response),
     preflightResults:
       response?.preflightResult?.result?.results?.map((responseResult) => ({
         learnMoreUri: responseResult.uri || "",
@@ -97,41 +125,26 @@ function flattenPreflightResponse({
       })) || [],
     showCancelPreflight:
       !response?.preflightResult?.skipped &&
-      (response?.preflightResult?.result?.errors ||
-      response?.preflightResult?.result?.results?.find(
-        (result) => result?.isFail || result?.isWarn
-      )
-        ? true
-        : false),
+      (hasPreflightErrors(response) || hasFailureOrWarning(response)),
     shouldShowConfirmContinueWithFailedPreflights:
       !response?.preflightResult?.skipped && // not skipped
-      (response?.preflightResult?.result?.results?.find(
-        // results have failures or warnings
-        (result) => result?.isFail || result?.isWarn
-      )
-        ? true
-        : false || !!response?.preflightResult?.result?.errors?.length), // or it has errors
+      (hasFailureOrWarning(response) || hasPreflightErrors(response)), // or it has errors
     showDeploymentBlocked:
       response?.preflightResult?.hasFailingStrictPreflights,
     showIgnorePreflight:
       (!response?.preflightResult?.hasFailingStrictPreflights &&
         response?.preflightResult?.skipped) ||
-      Object.keys(response?.preflightResult?.result).length === 0,
+      !hasPreflightResults(response),
     showPreflightCheckPending:
-      response?.preflightResult?.skipped ||
-      Object.keys(response?.preflightResult?.result).length === 0,
-    showPreflightNoChecks:
-      response?.preflightResult?.result?.results?.length === 0,
+      response?.preflightResult?.skipped || !hasPreflightResults(response),
     showPreflightResultErrors:
-      !!response?.preflightResult?.result?.errors?.length && // has errors
+      hasPreflightErrors(response) && // has errors
       !response?.preflightResult?.skipped && // not skipped
-      Object.keys(response?.preflightResult?.result?.results || {}).length ===
-        0, // has no result
+      !hasPreflightResults(response),
     showPreflightResults:
       !response?.preflightResult?.skipped &&
-      Object.keys(response?.preflightResult?.result?.results || {}).length >
-        0 &&
-      !response?.preflightResult?.result?.errors?.length,
+      hasPreflightResults(response) &&
+      !hasPreflightErrors(response),
     showPreflightSkipped: response?.preflightResult?.skipped,
     showRbacError: response?.preflightResult?.result?.errors?.find(
       (error) => error?.isRbac
