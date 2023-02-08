@@ -103,6 +103,9 @@ function flattenPreflightResponse({
       )
         ? true
         : false),
+    shouldShowConfirmContinueWithFailedPreflights:
+      !!response?.preflightResult?.result?.errors?.length && // has errors
+      !response?.preflightResult?.skipped, // not skipped
     showDeploymentBlocked:
       response?.preflightResult?.hasFailingStrictPreflights,
     showIgnorePreflight:
@@ -124,10 +127,6 @@ function flattenPreflightResponse({
       Object.keys(response?.preflightResult?.result?.results || {}).length >
         0 &&
       !response?.preflightResult?.result?.errors?.length,
-    /*
-    preflightCheck?.showPreflightCheckPending &&
-              !preflightCheck?.errors
-              */
     showPreflightSkipped: response?.preflightResult?.skipped,
     showRbacError: response?.preflightResult?.result?.errors?.find(
       (error) => error?.isRbac

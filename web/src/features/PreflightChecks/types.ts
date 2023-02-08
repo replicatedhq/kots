@@ -63,6 +63,7 @@ export interface PreflightCheck {
   pollForUpdates: boolean;
   preflightResults: PreflightResult[];
   showCancelPreflight: boolean;
+  shouldShowConfirmContinueWithFailedPreflights: boolean;
   showDeploymentBlocked: boolean;
   showIgnorePreflight: boolean;
   showPreflightCheckPending: boolean;

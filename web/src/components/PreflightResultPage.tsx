@@ -29,8 +29,10 @@ interface Props {
 }
 
 function PreflightResultPage(props: Props) {
-  const [continueWithFailedPreflights, setShowContinueWithFailedPreflights] =
-    useState(false);
+  const [
+    showContinueWithFailedPreflightsModal,
+    setShowContinueWithFailedPreflightsModal,
+  ] = useState(false);
   const [
     showConfirmIgnorePreflightsModal,
     setShowConfirmIgnorePreflightsModal,
@@ -187,7 +189,13 @@ function PreflightResultPage(props: Props) {
                 type="button"
                 className="btn primary blue"
                 disabled={preflightCheck?.showDeploymentBlocked}
-                onClick={() => setShowContinueWithFailedPreflights(true)}
+                onClick={() =>
+                  preflightCheck?.shouldShowConfirmContinueWithFailedPreflights
+                    ? setShowContinueWithFailedPreflightsModal(true)
+                    : deployKotsDownstream({
+                        continueWithFailedPreflights: true,
+                      })
+                }
               >
                 <span
                   data-tip-disable={!preflightCheck?.showDeploymentBlocked}
@@ -238,8 +246,8 @@ function PreflightResultPage(props: Props) {
       )}
 
       <Modal
-        isOpen={continueWithFailedPreflights}
-        onRequestClose={() => setShowContinueWithFailedPreflights(false)}
+        isOpen={showContinueWithFailedPreflightsModal}
+        onRequestClose={() => setShowContinueWithFailedPreflightsModal(false)}
         shouldReturnFocusAfterClose={false}
         contentLabel="Preflight shows some issues"
         ariaHideApp={false}
@@ -253,7 +261,7 @@ function PreflightResultPage(props: Props) {
             <button
               type="button"
               className="btn secondary"
-              onClick={() => setShowContinueWithFailedPreflights(false)}
+              onClick={() => setShowContinueWithFailedPreflightsModal(false)}
             >
               Close
             </button>
@@ -261,7 +269,7 @@ function PreflightResultPage(props: Props) {
               type="button"
               className="btn blue primary u-marginLeft--10"
               onClick={() => {
-                setShowContinueWithFailedPreflights(false);
+                setShowContinueWithFailedPreflightsModal(false);
                 deployKotsDownstream({ continueWithFailedPreflights: true });
               }}
             >
