@@ -67,8 +67,6 @@ function PreflightResultPage(props: Props) {
     }
   }
 
-  console.log(preflightCheck?.shouldShowConfirmContinueWithFailedPreflights);
-
   return (
     <div className="flex-column flex1 container">
       <KotsPageTitle pageName="Preflight Checks" showAppSlug />

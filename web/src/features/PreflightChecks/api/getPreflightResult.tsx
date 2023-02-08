@@ -66,15 +66,20 @@ function hasPreflightErrors(response: PreflightResponse): boolean {
   return Boolean(response?.preflightResult?.result?.errors?.length);
 }
 
+// result.results which is an array
 function hasPreflightResults(response: PreflightResponse): boolean {
   if (typeof response?.preflightResult?.result === "string")
     throw new Error("Preflight response is not properly unmarshalled");
 
-  // sometimes this is an empty string which is falsey
-  // so we need to || {} for Object.keys to work
-  return (
-    Object.keys(response?.preflightResult?.result?.results || {}).length > 0
-  );
+  return Boolean(response?.preflightResult?.result?.results?.length);
+}
+
+// just results which is an object
+function hasPreflightResultsOrErrors(response: PreflightResponse): boolean {
+  if (typeof response?.preflightResult?.result === "string")
+    throw new Error("Preflight response is not properly unmarshalled");
+
+  return Object.keys(response?.preflightResult?.result || {}).length > 0;
 }
 
 function hasFailureOrWarning(response: PreflightResponse): boolean {
@@ -111,7 +116,8 @@ function flattenPreflightResponse({
     pendingPreflightChecksPercentage:
       refetchCount === 0 ? 0 : refetchCount > 21 ? 96 : refetchCount * 4.5,
     pollForUpdates:
-      response?.preflightResult?.skipped || !hasPreflightResults(response),
+      response?.preflightResult?.skipped ||
+      !hasPreflightResultsOrErrors(response),
     preflightResults:
       response?.preflightResult?.result?.results?.map((responseResult) => ({
         learnMoreUri: responseResult.uri || "",
@@ -134,9 +140,10 @@ function flattenPreflightResponse({
     showIgnorePreflight:
       (!response?.preflightResult?.hasFailingStrictPreflights &&
         response?.preflightResult?.skipped) ||
-      !hasPreflightResults(response),
+      !hasPreflightResultsOrErrors(response),
     showPreflightCheckPending:
-      response?.preflightResult?.skipped || !hasPreflightResults(response),
+      response?.preflightResult?.skipped ||
+      !hasPreflightResultsOrErrors(response),
     showPreflightResultErrors:
       hasPreflightErrors(response) && // has errors
       !response?.preflightResult?.skipped && // not skipped
@@ -191,8 +198,11 @@ function useGetPrelightResults({
 
       return refetchInterval;
     },
-    select: (response: PreflightResponse) =>
-      flattenPreflightResponse({ response, refetchCount }),
+    select: (response: PreflightResponse) => {
+      const result = flattenPreflightResponse({ response, refetchCount });
+      console.log(result);
+      return result;
+    },
     staleTime: 500,
   });
 }
