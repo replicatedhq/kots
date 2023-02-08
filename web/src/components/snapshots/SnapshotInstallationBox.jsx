@@ -46,12 +46,12 @@ export default class SnapshotInstallationBox extends Component {
           <div className="flex flex-column">
             <p className="u-textColor--error u-fontSize--larger u-fontWeight--bold">
               {" "}
-              Node Agent integration not found{" "}
+              {this.props.fsBackupComponentName} integration not found{" "}
             </p>
             <p className="u-fontSize--small u-textColor--bodyCopy u-lineHeight--normal u-fontWeight--medium u-marginTop--10">
-              The Admin Console requires the Velero Node Agent integration to
-              use Snapshots, but it was not found. Please install the Velero
-              Node Agent integration to continue.
+              The Admin Console requires the Velero {this.props.fsBackupComponentName} integration to
+              use Snapshots, but it was not found. Please install the Velero{" "}
+              {this.props.fsBackupComponentName} integration to continue.
               <a
                 href="https://velero.io/"
                 target="_blank"
@@ -77,12 +77,12 @@ export default class SnapshotInstallationBox extends Component {
           <div className="flex flex-column">
             <p className="u-textColor--error u-fontSize--larger u-fontWeight--bold">
               {" "}
-              Node Agent is not working{" "}
+              {this.props.fsBackupComponentName} is not working{" "}
             </p>
             <p className="u-fontSize--small u-textColor--bodyCopy u-lineHeight--normal u-fontWeight--medium u-marginTop--10">
-              Velero and the Node Agent integration have been detected, but Node
+              Velero and the {this.props.fsBackupComponentName} integration have been detected, but Node
               Agent is not running successfully. To continue configuring and
-              using snapshots, Node Agent has to be running reliably.
+              using snapshots, {this.props.fsBackupComponentName} has to be running reliably.
               <a
                 href="https://velero.io/docs/v1.10/file-system-backup/#troubleshooting"
                 target="_blank"

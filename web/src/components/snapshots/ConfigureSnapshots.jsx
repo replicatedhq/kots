@@ -1,5 +1,6 @@
 import React from "react";
 import Modal from "react-modal";
+import semverjs from "semver";
 import SnapshotInstallationBox from "./SnapshotInstallationBox";
 import CodeSnippet from "../shared/CodeSnippet";
 import {
@@ -26,6 +27,38 @@ class ConfigureSnapshots extends React.Component {
     });
   };
 
+  isVelero10OrNewer = () => {
+    const { snapshotSettings } = this.props;
+    if (!semverjs.valid(snapshotSettings?.veleroVersion)) {
+      return true;
+    }
+
+    const velero10Semver = semverjs.coerce("1.10");
+    const actualVeleroSemver = semverjs.coerce(snapshotSettings?.veleroVersion);
+
+    return semverjs.gte(actualVeleroSemver, velero10Semver);
+  }
+
+  getFSBackupComponentName = () => {
+    const newName = "Node Agent";
+    const oldName = "Restic";
+
+    if (this.isVelero10OrNewer()) {
+      return newName;
+    }
+    return oldName;
+  }
+
+  getFSBackupComponentFlags = () => {
+    const newFlags = ["--use-node-agent", "--uploader-type=restic"];
+    const oldFlags = ["--use-restic"];
+
+    if (this.isVelero10OrNewer()) {
+      return newFlags;
+    }
+    return oldFlags;
+  }
+
   render() {
     const { activeTab } = this.state;
     const {
@@ -40,6 +73,9 @@ class ConfigureSnapshots extends React.Component {
       openConfigureFileSystemProviderModal,
       isKurlEnabled,
     } = this.props;
+
+    const fsBackupComponentName = this.getFSBackupComponentName();
+    const fsBackupComponentFlags = this.getFSBackupComponentFlags();
 
     return (
       <Modal
@@ -327,10 +363,9 @@ class ConfigureSnapshots extends React.Component {
                         {" "}
                         With all providers, you must install using the{" "}
                         <span className="inline-code u-marginLeft--5 u-marginRight--5">
-                          {" "}
-                          --use-node-agent --uploader-type=restic{" "}
+                          {fsBackupComponentFlags.join(" ")}{" "}
                         </span>{" "}
-                        flags for snapshots to work.{" "}
+                        flag{fsBackupComponentFlags.length > 1 ? "s" : ""} for snapshots to work.{" "}
                       </p>
                     </div>
                   </div>
@@ -343,6 +378,7 @@ class ConfigureSnapshots extends React.Component {
             renderNotVeleroMessage={renderNotVeleroMessage}
             snapshotSettings={snapshotSettings}
             hideCheckVeleroButton={hideCheckVeleroButton}
+            fsBackupComponentName={fsBackupComponentName}
           />
           <div className="flex justifyContent--flexStart u-marginTop--20">
             <button
