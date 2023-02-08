@@ -142,8 +142,8 @@ func ConfigureStore(ctx context.Context, options ConfigureStoreOptions) (*types.
 		return nil, errors.Wrap(err, "failed to ensure secrets references")
 	}
 
-	if err := resetBackupRepositories(ctx, options.KotsadmNamespace); err != nil {
-		return nil, errors.Wrap(err, "failed to try to reset node-agent repositories")
+	if err := resetRepositories(ctx, updatedBSL.Namespace); err != nil {
+		return nil, errors.Wrap(err, "failed to try to reset repositories")
 	}
 
 	if needsVeleroRestart {
@@ -1613,19 +1613,23 @@ func Redact(store *types.Store) error {
 	return nil
 }
 
-func resetBackupRepositories(ctx context.Context, kotsadmNamespace string) error {
+func resetRepositories(ctx context.Context, veleroNamespace string) error {
+	// velero 1.10+
+	if err := resetBackupRepositories(ctx, veleroNamespace); err != nil {
+		return errors.Wrap(err, "failed to reset backup repositories")
+	}
+	// velero < 1.10
+	if err := resetResticRepositories(ctx, veleroNamespace); err != nil {
+		return errors.Wrap(err, "failed to reset restic repositories")
+	}
+	return nil
+}
+
+func resetBackupRepositories(ctx context.Context, veleroNamespace string) error {
 	// BackupRepositories store the previous snapshot location which breaks volume backup when location changes.
 	cfg, err := k8sutil.GetClusterConfig()
 	if err != nil {
 		return errors.Wrap(err, "failed to get cluster config")
-	}
-
-	storageLocation, err := FindBackupStoreLocation(ctx, kotsadmNamespace)
-	if err != nil {
-		return errors.Wrap(err, "failed to find backupstoragelocations")
-	}
-	if storageLocation == nil {
-		return errors.New("no backup store location found")
 	}
 
 	veleroClient, err := veleroclientv1.NewForConfig(cfg)
@@ -1633,21 +1637,27 @@ func resetBackupRepositories(ctx context.Context, kotsadmNamespace string) error
 		return errors.Wrap(err, "failed to create clientset")
 	}
 
-	repos, err := veleroClient.BackupRepositories(storageLocation.Namespace).List(ctx, metav1.ListOptions{
+	repos, err := veleroClient.BackupRepositories(veleroNamespace).List(ctx, metav1.ListOptions{
 		LabelSelector: "velero.io/storage-location=default",
 	})
-	if err != nil {
+	if err != nil && !kuberneteserrors.IsNotFound(err) {
 		return errors.Wrap(err, "failed to list backuprepositories")
+	}
+	if kuberneteserrors.IsNotFound(err) {
+		return nil
 	}
 
 	for _, repo := range repos.Items {
-		err := veleroClient.BackupRepositories(storageLocation.Namespace).Delete(ctx, repo.Name, metav1.DeleteOptions{})
+		err := veleroClient.BackupRepositories(veleroNamespace).Delete(ctx, repo.Name, metav1.DeleteOptions{})
 		if err != nil {
 			return errors.Wrapf(err, "failed to delete backuprepository %s", repo.Name)
 		}
 	}
 
-	// check old name ("resticrepositories") for backwards compatibility
+	return nil
+}
+
+func resetResticRepositories(ctx context.Context, veleroNamespace string) error {
 	config, err := k8sutil.GetClusterConfig()
 	if err != nil {
 		return errors.Wrap(err, "failed to get cluster config")
@@ -1663,13 +1673,17 @@ func resetBackupRepositories(ctx context.Context, kotsadmNamespace string) error
 		Version:  "v1",
 		Resource: "resticrepositories",
 	})
-	resticRepos, err := resticReposClient.Namespace(storageLocation.Namespace).List(ctx, metav1.ListOptions{})
-	if err != nil {
+
+	resticRepos, err := resticReposClient.Namespace(veleroNamespace).List(ctx, metav1.ListOptions{})
+	if err != nil && !kuberneteserrors.IsNotFound(err) {
 		return errors.Wrap(err, "failed to get resticrepositories")
+	}
+	if kuberneteserrors.IsNotFound(err) {
+		return nil
 	}
 
 	for _, repo := range resticRepos.Items {
-		err := resticReposClient.Namespace(storageLocation.Namespace).Delete(ctx, repo.GetName(), metav1.DeleteOptions{})
+		err := resticReposClient.Namespace(veleroNamespace).Delete(ctx, repo.GetName(), metav1.DeleteOptions{})
 		if err != nil {
 			return errors.Wrapf(err, "failed to delete resticrepository %s", repo.GetName())
 		}
