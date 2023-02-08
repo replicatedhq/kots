@@ -110,10 +110,12 @@ function flattenPreflightResponse({
     showPreflightResultErrors:
       !!response?.preflightResult?.result?.errors?.length && // has errors
       !response?.preflightResult?.skipped &&  // not skipped
-      Object.keys(response?.preflightResult?.result).length === 0, // has no result
+      Object.keys(response?.preflightResult?.result?.results || {})
+        .length === 0, // has no result
     showPreflightResults:
       !response?.preflightResult?.skipped &&
-      Object.keys(response?.preflightResult?.result).length > 0 &&
+      Object.keys(response?.preflightResult?.result?.results || {})
+        .length > 0 &&
       !response?.preflightResult?.result?.errors?.length,
     /*
     preflightCheck?.showPreflightCheckPending &&
@@ -166,10 +168,8 @@ function useGetPrelightResults({
       return refetchInterval;
     },
     select: (response: PreflightResponse) => {
-      console.log(
-        flattenPreflightResponse({ response, refetchCount }).pollForUpdates);
-      console.log(response?.preflightResult?.result);
-      console.log(response?.preflightProgress);
+      console.log(response);
+      console.log(flattenPreflightResponse({ response, refetchCount }));
       console.log("--------------------");
 
       return flattenPreflightResponse({ response, refetchCount });

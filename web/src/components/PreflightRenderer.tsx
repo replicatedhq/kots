@@ -4,15 +4,17 @@ import Markdown from "react-remarkable";
 import size from "lodash/size";
 import Icon from "./Icon";
 
-export default function PreflightRenderer(props) {
+import { PreflightResult } from "@src/features/PreflightChecks/types"
+
+interface Props {
+  className?: string;
+  results: PreflightResult[];
+  skipped: boolean;
+}
+export default function PreflightRenderer(props: Props) {
   const { className, results, skipped } = props;
 
-  let preflightJSON = {};
-  if (results && !skipped) {
-    preflightJSON = JSON.parse(results);
-  }
-
-  const noResults = size(preflightJSON?.results) === 0;
+  const noResults = results.length === 0;
 
   return (
     <div className={className}>
@@ -25,15 +27,15 @@ export default function PreflightRenderer(props) {
           This application does not have any preflight checks.
         </p>
       ) : (
-        preflightJSON?.results.map((row, idx) => {
+        results.map((row, idx) => {
           let icon;
           let rowClass;
           let iconClass;
-          if (row.isWarn) {
+          if (row.showWarn) {
             icon = "warning";
             iconClass = "warning-color";
             rowClass = "u-textColor--warning";
-          } else if (row.isFail) {
+          } else if (row.showFail) {
             icon = "warning-circle-filled";
             iconClass = "error-color";
             rowClass = "u-textColor--error";
@@ -62,10 +64,10 @@ export default function PreflightRenderer(props) {
                   <div className="PreflightMessageRow u-marginTop--10">
                     <Markdown source={row.message} />
                   </div>
-                  {row.uri && (
+                  {row.learnMoreUri && (
                     <div className="u-marginTop--5">
                       <a
-                        href={row.uri}
+                        href={row.learnMoreUri }
                         target="_blank"
                         rel="noopener noreferrer"
                         className="link u-fontSize--small u-fontWeight--medium u-position--relative"
@@ -81,11 +83,11 @@ export default function PreflightRenderer(props) {
                       </a>
                     </div>
                   )}
-                  {row.isFail && row.strict ? (
+                  {row.showCannotFail && (
                     <p className="u-textColor--error u-fontSize--small u-fontWeight--medium u-marginTop--10">
                       To deploy the application, this check cannot fail.
                     </p>
-                  ) : null}
+                  )}
                 </div>
               </div>
             </div>
