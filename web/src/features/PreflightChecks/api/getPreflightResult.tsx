@@ -75,11 +75,11 @@ function hasPreflightResults(response: PreflightResponse): boolean {
 }
 
 // just results which is an object
-function hasSettledPreflightChecks(response: PreflightResponse): boolean {
+function hasRunningPreflightChecks(response: PreflightResponse): boolean {
   if (typeof response?.preflightResult?.result === "string")
     throw new Error("Preflight response is not properly unmarshalled");
 
-  return Object.keys(response?.preflightResult?.result || {}).length > 0;
+  return Object.keys(response?.preflightResult?.result || {}).length === 0;
 }
 
 function hasFailureOrWarning(response: PreflightResponse): boolean {
@@ -117,7 +117,7 @@ function flattenPreflightResponse({
       refetchCount === 0 ? 0 : refetchCount > 21 ? 96 : refetchCount * 4.5,
     pollForUpdates:
       response?.preflightResult?.skipped ||
-      !hasSettledPreflightChecks(response),
+      hasRunningPreflightChecks(response),
     preflightResults:
       response?.preflightResult?.result?.results?.map((responseResult) => ({
         learnMoreUri: responseResult.uri || "",
@@ -140,10 +140,10 @@ function flattenPreflightResponse({
     showIgnorePreflight:
       (!response?.preflightResult?.hasFailingStrictPreflights &&
         response?.preflightResult?.skipped) ||
-      !hasSettledPreflightChecks(response),
+      hasRunningPreflightChecks(response),
     showPreflightCheckPending:
       response?.preflightResult?.skipped ||
-      !hasSettledPreflightChecks(response),
+      hasRunningPreflightChecks(response),
     showPreflightResultErrors:
       hasPreflightErrors(response) && // has errors
       !response?.preflightResult?.skipped && // not skipped
