@@ -1,5 +1,7 @@
 import React from "react";
 import classNames from "classnames";
+// TODO: find replacement for react-remarkable
+// @ts-ignore
 import Markdown from "react-remarkable";
 import Icon from "./Icon";
 
