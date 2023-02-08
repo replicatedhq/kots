@@ -514,7 +514,6 @@ function AppDetailPage(props: Props) {
                   render={(renderProps) => (
                     <PreflightResultPage
                       logo={selectedApp.iconUri}
-                      app={selectedApp}
                       {...renderProps}
                     />
                   )}

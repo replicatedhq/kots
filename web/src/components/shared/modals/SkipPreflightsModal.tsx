@@ -4,7 +4,7 @@ import Modal from "react-modal";
 interface Props {
   showSkipModal: boolean;
   hideSkipModal: () => void;
-  onIgnorePreflightsAndDeployClick: () => void;
+  onIgnorePreflightsAndDeployClick?: () => void;
   // TODO: remove this parameter
   onForceDeployClick?: (continueWithFailedPreflights: boolean) => void;
 }

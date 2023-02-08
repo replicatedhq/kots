@@ -490,9 +490,7 @@ const Root = () => {
                   render={(props) => (
                     <PreflightResultPage
                       {...props}
-                      logo={state.appLogo}
-                      appName={state.selectedAppName}
-                      appsList={state.appsList}
+                      logo={state.appLogo || ""}
                       fromLicenseFlow={true}
                       refetchAppsList={getAppsList}
                     />

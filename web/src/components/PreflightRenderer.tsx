@@ -1,7 +1,6 @@
 import React from "react";
 import classNames from "classnames";
 import Markdown from "react-remarkable";
-import size from "lodash/size";
 import Icon from "./Icon";
 
 import { PreflightResult } from "@src/features/PreflightChecks/types";
