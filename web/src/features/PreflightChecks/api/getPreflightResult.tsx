@@ -116,7 +116,8 @@ function flattenPreflightResponse({
     pendingPreflightChecksPercentage:
       refetchCount === 0 ? 0 : refetchCount > 21 ? 96 : refetchCount * 4.5,
     pollForUpdates:
-      response?.preflightResult?.skipped || hasRunningPreflightChecks(response),
+      !response?.preflightResult?.skipped ||
+      hasRunningPreflightChecks(response),
     preflightResults:
       response?.preflightResult?.result?.results?.map((responseResult) => ({
         learnMoreUri: responseResult.uri || "",
@@ -196,11 +197,8 @@ function useGetPrelightResults({
 
       return refetchInterval;
     },
-    select: (response: PreflightResponse) => {
-      const result = flattenPreflightResponse({ response, refetchCount });
-      console.log(result);
-      return result;
-    },
+    select: (response: PreflightResponse) =>
+      flattenPreflightResponse({ response, refetchCount }),
     staleTime: 500,
   });
 }
