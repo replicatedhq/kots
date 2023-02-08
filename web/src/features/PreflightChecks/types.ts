@@ -62,8 +62,8 @@ export interface PreflightCheck {
   pendingPreflightChecksPercentage: number;
   pollForUpdates: boolean;
   preflightResults: PreflightResult[];
-  showCancelPreflight: boolean;
   shouldShowConfirmContinueWithFailedPreflights: boolean;
+  showCancelPreflight: boolean;
   showDeploymentBlocked: boolean;
   showIgnorePreflight: boolean;
   showPreflightCheckPending: boolean;

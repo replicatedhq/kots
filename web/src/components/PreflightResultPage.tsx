@@ -37,7 +37,6 @@ function PreflightResultPage(props: Props) {
     showConfirmIgnorePreflightsModal,
     setShowConfirmIgnorePreflightsModal,
   ] = useState(false);
-  console.log(showConfirmIgnorePreflightsModal);
 
   const history = useHistory();
   const { sequence = "0", slug } = useParams<KotsParams>();
@@ -67,6 +66,8 @@ function PreflightResultPage(props: Props) {
       setShowConfirmIgnorePreflightsModal(false);
     }
   }
+
+  console.log(preflightCheck?.shouldShowConfirmContinueWithFailedPreflights);
 
   return (
     <div className="flex-column flex1 container">
