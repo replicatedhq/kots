@@ -73,10 +73,7 @@ const PreflightResultErrors = (props: Props) => {
 
   const getPreflightCommand = async () => {
     try {
-      const command = await fetchPreflightCommand(
-        slug,
-        sequence
-      );
+      const command = await fetchPreflightCommand(slug, sequence);
       setState({
         command,
       });
@@ -112,10 +109,7 @@ const PreflightResultErrors = (props: Props) => {
     }
 
     // TODO: determine if it's actually necessary to track the previous props
-    if (
-      previousAppSlug !== slug ||
-      previousSequence !== sequence
-    ) {
+    if (previousAppSlug !== slug || previousSequence !== sequence) {
       getPreflightCommand();
     }
     setPreviousAppSlug(slug);
@@ -135,11 +129,7 @@ const PreflightResultErrors = (props: Props) => {
   const { errors, logo } = props;
   const { errorTitle, errorMsg, displayErrorModal, command } = state;
 
-  const displayErrorString =
-    errors !== undefined
-      ? errors
-          .join("\n")
-      : "";
+  const displayErrorString = errors !== undefined ? errors.join("\n") : "";
 
   return (
     <div className="flex flex1 flex-column">

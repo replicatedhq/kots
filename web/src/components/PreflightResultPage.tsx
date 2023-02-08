@@ -31,8 +31,11 @@ interface Props {
 function PreflightResultPage(props: Props) {
   const [continueWithFailedPreflights, setShowContinueWithFailedPreflights] =
     useState(false);
-  const [showConfirmSkipPreflightsModal, setShowConfirmSkipPreflightsModal] =
-    useState(false);
+  const [
+    showConfirmIgnorePreflightsModal,
+    setShowConfirmIgnorePreflightsModal,
+  ] = useState(false);
+  console.log(showConfirmIgnorePreflightsModal);
 
   const history = useHistory();
   const { sequence = "0", slug } = useParams<KotsParams>();
@@ -57,9 +60,9 @@ function PreflightResultPage(props: Props) {
     };
   }, []);
 
-  if (preflightCheck?.preflightResults) {
-    if (showConfirmSkipPreflightsModal) {
-      setShowConfirmSkipPreflightsModal(false);
+  if (!preflightCheck?.showPreflightCheckPending) {
+    if (showConfirmIgnorePreflightsModal) {
+      setShowConfirmIgnorePreflightsModal(false);
     }
   }
 
@@ -143,35 +146,35 @@ function PreflightResultPage(props: Props) {
               />
             )}
             {preflightCheck?.showPreflightResults && (
-                <div className="dashboard-card">
-                  <div className="flex flex1 justifyContent--spaceBetween alignItems--center">
-                    <p className="u-fontSize--large u-textColor--primary u-fontWeight--bold">
-                      Results from your preflight checks
-                    </p>
-                    <div className="flex alignItems--center">
-                      {props.fromLicenseFlow &&
-                      preflightCheck?.showCancelPreflight ? (
-                        <div className="flex alignItems--center">
-                          <div className="flex alignItems--center u-marginRight--20">
-                            <Link
-                              to={`/app/${slug}`}
-                              className="u-textColor--error u-textDecoration--underlineOnHover u-fontWeight--medium u-fontSize--small"
-                            >
-                              Cancel
-                            </Link>
-                          </div>
+              <div className="dashboard-card">
+                <div className="flex flex1 justifyContent--spaceBetween alignItems--center">
+                  <p className="u-fontSize--large u-textColor--primary u-fontWeight--bold">
+                    Results from your preflight checks
+                  </p>
+                  <div className="flex alignItems--center">
+                    {props.fromLicenseFlow &&
+                    preflightCheck?.showCancelPreflight ? (
+                      <div className="flex alignItems--center">
+                        <div className="flex alignItems--center u-marginRight--20">
+                          <Link
+                            to={`/app/${slug}`}
+                            className="u-textColor--error u-textDecoration--underlineOnHover u-fontWeight--medium u-fontSize--small"
+                          >
+                            Cancel
+                          </Link>
                         </div>
-                      ) : null}
-                    </div>
-                  </div>
-                  <div className="flex-column">
-                    <PreflightRenderer
-                      results={preflightCheck?.preflightResults}
-                      skipped={preflightCheck?.showPreflightSkipped}
-                    />
+                      </div>
+                    ) : null}
                   </div>
                 </div>
-              )}
+                <div className="flex-column">
+                  <PreflightRenderer
+                    results={preflightCheck?.preflightResults}
+                    skipped={preflightCheck?.showPreflightSkipped}
+                  />
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -197,11 +200,11 @@ function PreflightResultPage(props: Props) {
               <ReactTooltip effect="solid" id="disable-deployment-tooltip" />
             </div>
           )}
-          {preflightCheck?.showDeploymentBlocked && (
+          {preflightCheck?.showIgnorePreflight && (
             <div className="flex flex1 justifyContent--center alignItems--center">
               <span
                 className="u-fontSize--normal u-fontWeight--medium u-textDecoration--underline u-textColor--bodyCopy u-marginTop--15 u-cursor--pointer"
-                onClick={() => setShowConfirmSkipPreflightsModal(true)}
+                onClick={() => setShowConfirmIgnorePreflightsModal(true)}
               >
                 Ignore Preflights{" "}
               </span>
@@ -221,16 +224,16 @@ function PreflightResultPage(props: Props) {
         </div>
       )}
 
-      {showConfirmSkipPreflightsModal && (
+      {showConfirmIgnorePreflightsModal && (
         <SkipPreflightsModal
-          hideSkipModal={() => setShowConfirmSkipPreflightsModal(false)}
+          hideSkipModal={() => setShowConfirmIgnorePreflightsModal(false)}
           onIgnorePreflightsAndDeployClick={() => {
             deployKotsDownstream({
               continueWithFailedPreflights: false,
               isSkipPreflights: true,
             });
           }}
-          showSkipModal={showConfirmSkipPreflightsModal}
+          showSkipModal={showConfirmIgnorePreflightsModal}
         />
       )}
 

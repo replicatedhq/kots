@@ -35,7 +35,8 @@ async function getPreflightResult({
     if (typeof response?.preflightResult?.result === "string") {
       if (response?.preflightResult?.result.length > 0) {
         response.preflightResult.result = JSON.parse(
-          response.preflightResult.result);
+          response.preflightResult.result
+        );
       } else {
         response.preflightResult.result = {};
       }
@@ -52,7 +53,9 @@ async function getPreflightResult({
     return response;
   } catch (err) {
     console.error(err);
-    throw new Error("Encountered an error while unmarshalling preflight results");
+    throw new Error(
+      "Encountered an error while unmarshalling preflight results"
+    );
   }
 }
 
@@ -95,13 +98,17 @@ function flattenPreflightResponse({
     showCancelPreflight:
       !response?.preflightResult?.skipped &&
       (response?.preflightResult?.result?.errors ||
-        response?.preflightResult?.result?.results?.find(
-          (result) => result?.isFail || result?.isWarn
-        )
+      response?.preflightResult?.result?.results?.find(
+        (result) => result?.isFail || result?.isWarn
+      )
         ? true
         : false),
     showDeploymentBlocked:
       response?.preflightResult?.hasFailingStrictPreflights,
+    showIgnorePreflight:
+      (!response?.preflightResult?.hasFailingStrictPreflights &&
+        response?.preflightResult?.skipped) ||
+      Object.keys(response?.preflightResult?.result).length === 0,
     showPreflightCheckPending:
       response?.preflightResult?.skipped ||
       Object.keys(response?.preflightResult?.result).length === 0,
@@ -109,13 +116,13 @@ function flattenPreflightResponse({
       response?.preflightResult?.result?.results?.length === 0,
     showPreflightResultErrors:
       !!response?.preflightResult?.result?.errors?.length && // has errors
-      !response?.preflightResult?.skipped &&  // not skipped
-      Object.keys(response?.preflightResult?.result?.results || {})
-        .length === 0, // has no result
+      !response?.preflightResult?.skipped && // not skipped
+      Object.keys(response?.preflightResult?.result?.results || {}).length ===
+        0, // has no result
     showPreflightResults:
       !response?.preflightResult?.skipped &&
-      Object.keys(response?.preflightResult?.result?.results || {})
-        .length > 0 &&
+      Object.keys(response?.preflightResult?.result?.results || {}).length >
+        0 &&
       !response?.preflightResult?.result?.errors?.length,
     /*
     preflightCheck?.showPreflightCheckPending &&
@@ -167,13 +174,8 @@ function useGetPrelightResults({
 
       return refetchInterval;
     },
-    select: (response: PreflightResponse) => {
-      console.log(response);
-      console.log(flattenPreflightResponse({ response, refetchCount }));
-      console.log("--------------------");
-
-      return flattenPreflightResponse({ response, refetchCount });
-    },
+    select: (response: PreflightResponse) =>
+      flattenPreflightResponse({ response, refetchCount }),
     staleTime: 500,
   });
 }

@@ -4,7 +4,7 @@ import Markdown from "react-remarkable";
 import size from "lodash/size";
 import Icon from "./Icon";
 
-import { PreflightResult } from "@src/features/PreflightChecks/types"
+import { PreflightResult } from "@src/features/PreflightChecks/types";
 
 interface Props {
   className?: string;
@@ -67,7 +67,7 @@ export default function PreflightRenderer(props: Props) {
                   {row.learnMoreUri && (
                     <div className="u-marginTop--5">
                       <a
-                        href={row.learnMoreUri }
+                        href={row.learnMoreUri}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="link u-fontSize--small u-fontWeight--medium u-position--relative"
