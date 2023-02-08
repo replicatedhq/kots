@@ -37,7 +37,7 @@ class ConfigureSnapshots extends React.Component {
     const actualVeleroSemver = semverjs.coerce(snapshotSettings?.veleroVersion);
 
     return semverjs.gte(actualVeleroSemver, velero10Semver);
-  }
+  };
 
   getFSBackupComponentName = () => {
     const newName = "Node Agent";
@@ -47,7 +47,7 @@ class ConfigureSnapshots extends React.Component {
       return newName;
     }
     return oldName;
-  }
+  };
 
   getFSBackupComponentFlags = () => {
     const newFlags = ["--use-node-agent", "--uploader-type=restic"];
@@ -57,7 +57,7 @@ class ConfigureSnapshots extends React.Component {
       return newFlags;
     }
     return oldFlags;
-  }
+  };
 
   render() {
     const { activeTab } = this.state;
@@ -365,7 +365,8 @@ class ConfigureSnapshots extends React.Component {
                         <span className="inline-code u-marginLeft--5 u-marginRight--5">
                           {fsBackupComponentFlags.join(" ")}{" "}
                         </span>{" "}
-                        flag{fsBackupComponentFlags.length > 1 ? "s" : ""} for snapshots to work.{" "}
+                        flag{fsBackupComponentFlags.length > 1 ? "s" : ""} for
+                        snapshots to work.{" "}
                       </p>
                     </div>
                   </div>

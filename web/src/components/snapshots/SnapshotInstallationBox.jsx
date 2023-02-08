@@ -49,8 +49,9 @@ export default class SnapshotInstallationBox extends Component {
               {this.props.fsBackupComponentName} integration not found{" "}
             </p>
             <p className="u-fontSize--small u-textColor--bodyCopy u-lineHeight--normal u-fontWeight--medium u-marginTop--10">
-              The Admin Console requires the Velero {this.props.fsBackupComponentName} integration to
-              use Snapshots, but it was not found. Please install the Velero{" "}
+              The Admin Console requires the Velero{" "}
+              {this.props.fsBackupComponentName} integration to use Snapshots,
+              but it was not found. Please install the Velero{" "}
               {this.props.fsBackupComponentName} integration to continue.
               <a
                 href="https://velero.io/"
@@ -80,9 +81,10 @@ export default class SnapshotInstallationBox extends Component {
               {this.props.fsBackupComponentName} is not working{" "}
             </p>
             <p className="u-fontSize--small u-textColor--bodyCopy u-lineHeight--normal u-fontWeight--medium u-marginTop--10">
-              Velero and the {this.props.fsBackupComponentName} integration have been detected, but Node
-              Agent is not running successfully. To continue configuring and
-              using snapshots, {this.props.fsBackupComponentName} has to be running reliably.
+              Velero and the {this.props.fsBackupComponentName} integration have
+              been detected, but Node Agent is not running successfully. To
+              continue configuring and using snapshots,{" "}
+              {this.props.fsBackupComponentName} has to be running reliably.
               <a
                 href="https://velero.io/docs/v1.10/file-system-backup/#troubleshooting"
                 target="_blank"
