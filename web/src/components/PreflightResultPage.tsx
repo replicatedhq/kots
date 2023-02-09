@@ -14,13 +14,20 @@ import PreflightsProgress from "./troubleshoot/PreflightsProgress";
 import Icon from "./Icon";
 
 import {
+<<<<<<< HEAD
+=======
+  useDeployKotsDownsteam,
+>>>>>>> a6de6329a (Rianfowler/sc 68110/create hook for preflight endpoints 2 (#3606))
   useGetPrelightResults,
   useIgnorePermissionErrors,
   useRerunPreflights,
 } from "@features/PreflightChecks/api";
 
+<<<<<<< HEAD
 import { useDeployAppVersion } from "@features/App/api";
 
+=======
+>>>>>>> a6de6329a (Rianfowler/sc 68110/create hook for preflight endpoints 2 (#3606))
 import { KotsParams } from "@types";
 
 interface Props {
@@ -41,7 +48,11 @@ function PreflightResultPage(props: Props) {
 
   const history = useHistory();
   const { sequence = "0", slug } = useParams<KotsParams>();
+<<<<<<< HEAD
   const { mutate: deployKotsDownstream } = useDeployAppVersion({
+=======
+  const { mutate: deployKotsDownstream } = useDeployKotsDownsteam({
+>>>>>>> a6de6329a (Rianfowler/sc 68110/create hook for preflight endpoints 2 (#3606))
     slug,
     sequence,
   });
