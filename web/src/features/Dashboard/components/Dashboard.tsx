@@ -201,7 +201,6 @@ const Dashboard = (props: Props) => {
         // this is hacky and I hate it but it's just building up more evidence in my case for having the FE be able to listen to BE envents
         // if that was in place we would have no need for this becuase the latest version would just be pushed down.
         setTimeout(() => {
-          console.log("refresh app data");
           props.refreshAppData();
         }, 2000);
       } else {
