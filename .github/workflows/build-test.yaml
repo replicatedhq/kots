@@ -1953,7 +1953,7 @@ jobs:
 
   destroy-gke-cluster:
     runs-on: ubuntu-20.04
-    needs: [validate-existing-online-install-minimal-gke]
+    needs: [validate-smoke-test-gke]
     if: always()
     steps:
       - name: checkout
