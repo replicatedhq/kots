@@ -173,8 +173,11 @@ const Dashboard = (props: Props) => {
   const match = useRouteMatch();
   const { app, isBundleUploading, isVeleroInstalled } = props;
   const airgapUploader = useRef<AirgapUploader | null>(null);
-
+  const { data: getUpdateDownloadStatus, error: updateDownloadStatusError } =
+    useUpdateDownloadStatus();
+  console.log(getUpdateDownloadStatus, "get update dw status");
   const fetchAppDownstream = async () => {
+    console.log("fetch downstream");
     if (!app) {
       return;
     }
@@ -199,6 +202,7 @@ const Dashboard = (props: Props) => {
         // this is hacky and I hate it but it's just building up more evidence in my case for having the FE be able to listen to BE envents
         // if that was in place we would have no need for this becuase the latest version would just be pushed down.
         setTimeout(() => {
+          console.log("refresh app data");
           props.refreshAppData();
         }, 2000);
       } else {
@@ -223,6 +227,7 @@ const Dashboard = (props: Props) => {
   };
 
   const startFetchAppDownstreamJob = () => {
+    console.log("start fetch app downstream polling");
     state.fetchAppDownstreamJob.start(fetchAppDownstream, 2000);
   };
 
@@ -400,6 +405,7 @@ const Dashboard = (props: Props) => {
   };
 
   const startASnapshot = (option: string) => {
+    console.log("start a snapshot");
     setState({
       startingSnapshot: true,
       startSnapshotErr: false,
@@ -584,6 +590,7 @@ const Dashboard = (props: Props) => {
   const { appStatus } = state.dashboard;
 
   const getAirgapConfig = async () => {
+    console.log("get airgap config");
     const configUrl = `${process.env.API_ENDPOINT}/app/${app.slug}/airgap/config`;
     let simultaneousUploads = 3;
     try {
@@ -678,6 +685,7 @@ const Dashboard = (props: Props) => {
   }, []);
 
   const onCheckForUpdates = async () => {
+    console.log("oncheck for updates");
     setState({
       checkingForUpdates: true,
       checkingForUpdateError: false,
