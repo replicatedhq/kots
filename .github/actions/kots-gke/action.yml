@@ -60,4 +60,4 @@ runs:
   - name: 'Delete the existing cluster'
     if: ${{ inputs.delete }}
     shell: bash
-    run: 'gcloud container clusters delete ${{ inputs.cluster-name }} --region ${{ inputs.cluster-region }}'
+    run: 'gcloud -q container clusters delete ${{ inputs.cluster-name }} --region ${{ inputs.cluster-region }}'
