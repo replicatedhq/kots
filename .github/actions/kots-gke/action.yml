@@ -3,8 +3,7 @@ description: Start a GKE cluster
 inputs:
   cluster-name:
     description: GKE cluster name to create
-    default: "kots-gke-tests"
-    required: false
+    required: true
 
   cluster-region:
     description: GKE cluster region to use
@@ -13,12 +12,12 @@ inputs:
 
   cluster-network:
     description: GKE cluster network tag
-    default: "projects/replicated-dev-environment/global/networks/kubernetes-the-hard-way"
+    default: "projects/replicated-qa/global/networks/default"
     required: false
 
   cluster-subnetwork:
     description: GKE cluster subnetwork tag
-    default: "projects/replicated-dev-environment/regions/us-west1/subnetworks/kubernetes"
+    default: "projects/replicated-qa/regions/us-west1/subnetworks/default"
     required: false
 
   delete:
@@ -28,7 +27,7 @@ inputs:
 
   project:
     description: Google Cloud project name
-    default: "replicated-dev-environment"
+    default: "replicated-qa"
     required: false
 
 runs:
@@ -39,7 +38,7 @@ runs:
     name: 'Authenticate to Google Cloud'
     uses: 'google-github-actions/auth@v1'
     with:
-      credentials_json: ${{ secrets.GOOGLE_CREDENTIALS }}
+      credentials_json: ${{ secrets.GOOGLE_CLOUD_CREDENTIALS }}
 
   - name: 'Setup Cloud SDK'
     uses: google-github-actions/setup-gcloud@v1
