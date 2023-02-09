@@ -197,7 +197,7 @@ type ProviderPayload =
 type Props = RouteComponentProps & {
   // TODO: add apps type for apps response
   apps: Array<object>;
-  checkForVeleroAndRestic: boolean;
+  checkForVeleroAndNodeAgent: boolean;
   fetchSnapshotSettings: () => void;
   hideCheckVeleroButton: () => void;
   hideResetFileSystemWarningModal: () => void;
@@ -325,7 +325,7 @@ class SnapshotStorageDestination extends Component<Props, State> {
   };
 
   componentDidMount() {
-    if (this.props.snapshotSettings && !this.props.checkForVeleroAndRestic) {
+    if (this.props.snapshotSettings && !this.props.checkForVeleroAndNodeAgent) {
       this.setFields();
     }
   }
@@ -334,7 +334,7 @@ class SnapshotStorageDestination extends Component<Props, State> {
     if (
       this.props.snapshotSettings !== lastProps.snapshotSettings &&
       this.props.snapshotSettings &&
-      !this.props.checkForVeleroAndRestic
+      !this.props.checkForVeleroAndNodeAgent
     ) {
       this.setFields();
     }
@@ -1572,7 +1572,7 @@ class SnapshotStorageDestination extends Component<Props, State> {
       updateConfirm,
       updateErrorMsg,
       isKurlEnabled,
-      checkForVeleroAndRestic,
+      checkForVeleroAndNodeAgent,
     } = this.props;
 
     const availableDestinations = [];
@@ -1684,7 +1684,7 @@ class SnapshotStorageDestination extends Component<Props, State> {
                 )}
                 <div className="flex flex-column u-marginBottom--15">
                   {!snapshotSettings?.isVeleroRunning &&
-                    !checkForVeleroAndRestic &&
+                    !checkForVeleroAndNodeAgent &&
                     isKurlEnabled && (
                       <div className="flex-auto u-fontWeight--bold u-fontSize--small u-textColor--error u-marginBottom--10">
                         Please fix Velero so that the deployment is running. For
@@ -1777,11 +1777,9 @@ class SnapshotStorageDestination extends Component<Props, State> {
                   </>
                 )}
                 <span className="u-fontSize--small u-fontWeight--normal u-lineHeight--normal u-textColor--bodyCopy u-marginTop--15">
-                  All data in your snapshots will be deduplicated. To learn more
-                  about how,{" "}
-                  <a href="/" target="_blank" className="link">
-                    check out our docs.
-                  </a>
+                  All data in your snapshots will be deduplicated. Snapshots
+                  makes use of Restic, a fast and secure backup technology with
+                  native deduplication.
                 </span>
               </form>
             </div>

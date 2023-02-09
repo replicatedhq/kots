@@ -207,8 +207,8 @@ type ScheduledInstanceSnapshot struct {
 type VeleroPlugin string
 
 const (
-	VeleroAWSPlugin   VeleroPlugin = "velero/velero-plugin-for-aws:v1.5.3"
-	VeleroGCPPlugin   VeleroPlugin = "velero/velero-plugin-for-gcp:v1.5.3"
-	VeleroAzurePlugin VeleroPlugin = "velero/velero-plugin-for-microsoft-azure:v1.5.3"
+	VeleroAWSPlugin   VeleroPlugin = "velero/velero-plugin-for-aws:v1.6.1"
+	VeleroGCPPlugin   VeleroPlugin = "velero/velero-plugin-for-gcp:v1.6.1"
+	VeleroAzurePlugin VeleroPlugin = "velero/velero-plugin-for-microsoft-azure:v1.6.1"
 	VeleroLVPPlugin   VeleroPlugin = image.Lvp
 )
