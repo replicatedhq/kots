@@ -42,7 +42,7 @@ export default function GettingStartedSnapshots(props) {
         <p className="u-marginTop--10 u-fontSize--normal u-lineHeight--more u-fontWeight--medium u-textColor--bodyCopy">
           To start backing up your data and applications, you need to have{" "}
           <a
-            href="https://velero.io/docs/v1.6/basic-install/"
+            href="https://velero.io/docs/v1.10/basic-install/"
             target="_blank"
             rel="noopener noreferrer"
             className="link u-fontSize--normal"
