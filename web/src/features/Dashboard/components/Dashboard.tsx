@@ -177,7 +177,6 @@ const Dashboard = (props: Props) => {
     useUpdateDownloadStatus();
   console.log(getUpdateDownloadStatus, "get update dw status");
   const fetchAppDownstream = async () => {
-    console.log("fetch downstream");
     if (!app) {
       return;
     }
@@ -227,7 +226,6 @@ const Dashboard = (props: Props) => {
   };
 
   const startFetchAppDownstreamJob = () => {
-    console.log("start fetch app downstream polling");
     state.fetchAppDownstreamJob.start(fetchAppDownstream, 2000);
   };
 
@@ -405,7 +403,6 @@ const Dashboard = (props: Props) => {
   };
 
   const startASnapshot = (option: string) => {
-    console.log("start a snapshot");
     setState({
       startingSnapshot: true,
       startSnapshotErr: false,
@@ -590,7 +587,6 @@ const Dashboard = (props: Props) => {
   const { appStatus } = state.dashboard;
 
   const getAirgapConfig = async () => {
-    console.log("get airgap config");
     const configUrl = `${process.env.API_ENDPOINT}/app/${app.slug}/airgap/config`;
     let simultaneousUploads = 3;
     try {
@@ -685,7 +681,6 @@ const Dashboard = (props: Props) => {
   }, []);
 
   const onCheckForUpdates = async () => {
-    console.log("oncheck for updates");
     setState({
       checkingForUpdates: true,
       checkingForUpdateError: false,

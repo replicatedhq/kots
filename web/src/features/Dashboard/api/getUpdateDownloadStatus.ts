@@ -10,7 +10,6 @@ export interface UpdateStatusResponse {
 const getUpdateDownloadStatus = async (
   appSlug: string
 ): Promise<UpdateStatusResponse> => {
-  console.log(appSlug);
   const res = await fetch(
     `${process.env.API_ENDPOINT}/app/${appSlug}/task/updatedownload`,
     {
