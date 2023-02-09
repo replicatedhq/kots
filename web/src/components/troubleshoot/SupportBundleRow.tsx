@@ -30,6 +30,7 @@ type Props = {
   loadingBundle: boolean;
   progressData: SupportBundleProgress;
   refetchBundleList: () => void;
+  //deleteBundleFromList: (id: string) => void;
   watchSlug: string;
   className: string;
 } & withRouterType;
@@ -53,6 +54,8 @@ export const SupportBundleRow = (props: Props) => {
     setIsCancelled,
     setDeleteBundleId,
     setToastMessage,
+    setToastType,
+    setToastChild,
   } = useContext(ToastContext);
 
   const [state, setState] = React.useReducer(
@@ -169,16 +172,25 @@ export const SupportBundleRow = (props: Props) => {
 
   const deleteBundle = (bundle: SupportBundle) => {
     const { match } = props;
-    const delayFetch = 5000;
+    const delayFetch = 7000;
     const bundleCollectionDate = dayjs(bundle?.createdAt)?.format(
       "MMMM D, YYYY @ h:mm a"
     );
     setToastMessage(`Deleting bundle collected on ${bundleCollectionDate}.`);
+    setToastType("warning");
     setIsToastVisible(true);
     setDeleteBundleId(bundle.id);
+    setToastChild(
+      <span
+        onClick={() => setIsCancelled(true)}
+        className="tw-underline tw-cursor-pointer"
+      >
+        undo
+      </span>
+    );
 
-    let id = setTimeout(() => {
-      fetch(
+    let id = setTimeout(async () => {
+      const res = await fetch(
         `${process.env.API_ENDPOINT}/troubleshoot/app/${match.params.slug}/supportbundle/${bundle.id}`,
         {
           method: "DELETE",
@@ -186,20 +198,23 @@ export const SupportBundleRow = (props: Props) => {
             Authorization: Utilities.getToken(),
           },
         }
-      )
-        .then(async () => {
+      );
+      if (res.ok) {
+        //await props.deleteBundleFromList(bundle.id);
+        setIsToastVisible(false);
+        props.refetchBundleList();
+        clearInterval(id);
+      } else {
+        console.log(res);
+        setToastMessage("Unable to delete bundle, please try again.");
+        setToastType("error");
+        setToastChild(null);
+        setDeleteBundleId("");
+        setTimeout(() => {
           setIsToastVisible(false);
-
-          props.refetchBundleList();
-          setDeleteBundleId("");
-          clearInterval(id);
-        })
-        .catch((err) => {
-          console.log(err);
-          setToastMessage("Unable to delete bundle, please try again.");
-          setDeleteBundleId("");
-          clearInterval(id);
-        });
+        }, 5000);
+        clearInterval(id);
+      }
     }, delayFetch);
 
     setState({ timeoutId: id });
@@ -472,7 +487,7 @@ export const SupportBundleRow = (props: Props) => {
                 <Icon
                   icon="trash"
                   size={16}
-                  className="clickable tw-ml-2 error-color"
+                  className={"tw-ml-2 error-color clickable"}
                 />
               </span>
             </div>

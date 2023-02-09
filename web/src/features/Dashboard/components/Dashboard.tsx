@@ -226,9 +226,12 @@ const Dashboard = (props: Props) => {
 
   const setWatchState = (newAppState: App) => {
     setState({
-      appName: newAppState.name,
-      iconUri: newAppState.iconUri,
       currentVersion: newAppState.downstream?.currentVersion,
+      appName:
+        newAppState.downstream?.currentVersion?.appTitle || newAppState.name,
+      iconUri:
+        newAppState.downstream?.currentVersion?.appIconUri ||
+        newAppState.iconUri,
       downstream: newAppState.downstream,
       links: newAppState.downstream?.links,
     });

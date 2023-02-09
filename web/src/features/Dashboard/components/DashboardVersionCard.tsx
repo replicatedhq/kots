@@ -649,7 +649,7 @@ const DashboardVersionCard = (props: Props) => {
           <div className="flex-column">
             <div className="flex alignItems--center u-marginBottom--5">
               <p className="u-fontSize--header2 u-fontWeight--bold u-lineHeight--medium card-item-title">
-                {currentVersion?.versionLabel || currentVersion?.title}
+                {currentVersion?.versionLabel || currentVersion?.appTitle}
               </p>
               <p className="u-fontSize--small u-textColor--bodyCopy u-fontWeight--medium u-marginLeft--10">
                 {sequenceLabel} {currentVersion?.sequence}

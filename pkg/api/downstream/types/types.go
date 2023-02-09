@@ -54,6 +54,8 @@ type DownstreamVersion struct {
 	NeedsKotsUpgrade           bool                            `json:"needsKotsUpgrade,omitempty"`
 	KOTSKinds                  *kotsutil.KotsKinds             `json:"-"`
 	DownloadStatus             DownloadStatus                  `json:"downloadStatus,omitempty"`
+	AppTitle                   string                          `json:"appTitle,omitempty"`
+	AppIconURI                 string                          `json:"appIconUri,omitempty"`
 }
 
 type DownloadStatus struct {

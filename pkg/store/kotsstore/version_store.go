@@ -2,7 +2,6 @@ package kotsstore
 
 import (
 	"bytes"
-	"context"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
@@ -23,7 +22,6 @@ import (
 	"github.com/replicatedhq/kots/pkg/filestore"
 	gitopstypes "github.com/replicatedhq/kots/pkg/gitops/types"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
-	kotsadmobjects "github.com/replicatedhq/kots/pkg/kotsadm/objects"
 	kotsadmconfig "github.com/replicatedhq/kots/pkg/kotsadmconfig"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/kustomize"
@@ -37,47 +35,11 @@ import (
 	troubleshootpreflight "github.com/replicatedhq/troubleshoot/pkg/preflight"
 	"github.com/rqlite/gorqlite"
 	velerov1 "github.com/vmware-tanzu/velero/pkg/apis/velero/v1"
-	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	serializer "k8s.io/apimachinery/pkg/runtime/serializer/json"
 	"k8s.io/client-go/kubernetes/scheme"
 	"sigs.k8s.io/application/api/v1beta1"
 )
-
-func (s *KOTSStore) ensureApplicationMetadata(applicationMetadata string, namespace string, upstreamURI string) error {
-	clientset, err := k8sutil.GetClientset()
-	if err != nil {
-		return errors.Wrap(err, "failed to get clientset")
-	}
-
-	existingConfigMap, err := clientset.CoreV1().ConfigMaps(namespace).Get(context.TODO(), "kotsadm-application-metadata", metav1.GetOptions{})
-	if err != nil {
-		if !kuberneteserrors.IsNotFound(err) {
-			return errors.Wrap(err, "failed to get existing metadata config map")
-		}
-
-		metadata := []byte(applicationMetadata)
-		_, err := clientset.CoreV1().ConfigMaps(namespace).Create(context.TODO(), kotsadmobjects.ApplicationMetadataConfig(metadata, namespace, upstreamURI), metav1.CreateOptions{})
-		if err != nil {
-			return errors.Wrap(err, "failed to create metadata config map")
-		}
-
-		return nil
-	}
-
-	if existingConfigMap.Data == nil {
-		existingConfigMap.Data = map[string]string{}
-	}
-
-	existingConfigMap.Data["application.yaml"] = applicationMetadata
-
-	_, err = clientset.CoreV1().ConfigMaps(util.PodNamespace).Update(context.Background(), existingConfigMap, metav1.UpdateOptions{})
-	if err != nil {
-		return errors.Wrap(err, "failed to update config map")
-	}
-
-	return nil
-}
 
 func (s *KOTSStore) IsRollbackSupportedForVersion(appID string, sequence int64) (bool, error) {
 	db := persistence.MustGetDBSession()
@@ -652,16 +614,6 @@ func (s *KOTSStore) upsertAppVersionStatements(appID string, sequence int64, bas
 			return nil, errors.Wrap(err, "failed to construct app downstream version statements")
 		}
 		statements = append(statements, downstreamVersionStatements...)
-
-		// update metadata configmap
-		applicationSpec, err := kotsKinds.Marshal("kots.io", "v1beta1", "Application")
-		if err != nil {
-			return nil, errors.Wrap(err, "failed to marshal application spec")
-		}
-
-		if err := s.ensureApplicationMetadata(applicationSpec, util.PodNamespace, a.UpstreamURI); err != nil {
-			return nil, errors.Wrap(err, "failed to get metadata config map")
-		}
 	}
 
 	return statements, nil

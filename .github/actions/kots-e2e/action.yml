@@ -77,16 +77,29 @@ runs:
           KOTS_HELM_CHART_VERSION=${{ inputs.kots-helm-chart-version }} \
           AIRGAP=${{ inputs.kots-airgap }} \
           SKIP_TEARDOWN=1
-        EXIT_CODE=$?
-        if [ $EXIT_CODE -ne 0 ]; then
-          echo "------pods:"
-          kubectl -n $KOTS_NAMESPACE get pods
-          echo "------kotsadm logs"
-          kubectl -n $KOTS_NAMESPACE logs deployment/kotsadm
-          echo "------previous kotsadm logs"
-          kubectl -n $KOTS_NAMESPACE logs -p deployment/kotsadm
-        fi
-        exit $EXIT_CODE
+      shell: bash
+
+    - name: Print logs on failure
+      if: ${{ failure() }}
+      env:
+        KOTS_NAMESPACE: ${{ inputs.kots-namespace }}
+        VELERO_NAMESPACE: velero
+      run: |
+        set +e
+        echo "------pods:"
+        kubectl -n $KOTS_NAMESPACE get pods
+        echo "------kotsadm logs"
+        kubectl -n $KOTS_NAMESPACE logs deployment/kotsadm
+        echo "------previous kotsadm logs"
+        kubectl -n $KOTS_NAMESPACE logs -p deployment/kotsadm
+        echo "------velero logs"
+        kubectl -n $VELERO_NAMESPACE logs deployment/velero
+        echo "------previous velero logs"
+        kubectl -n $VELERO_NAMESPACE logs -p deployment/velero
+        echo "------restic logs"
+        kubectl -n $VELERO_NAMESPACE logs daemonset/restic
+        echo "------previous restic logs"
+        kubectl -n $VELERO_NAMESPACE logs -p daemonset/restic
       shell: bash
 
     - name: Generate support bundle on failure
@@ -96,4 +109,3 @@ runs:
         aws-access-key-id: ${{ inputs.aws-access-key-id }}
         aws-secret-access-key: ${{ inputs.aws-secret-access-key }}
         aws-region: ${{ inputs.aws-region }}
-        kots-namespace: ${{ inputs.kots-namespace }}
