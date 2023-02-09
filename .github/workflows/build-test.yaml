@@ -451,38 +451,6 @@ jobs:
           aws-secret-access-key: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_SECRET_ACCESS_KEY }}'
 
 
-  validate-existing-online-install-minimal-gke:
-    runs-on: ubuntu-20.04
-    needs: [ enable-tests, can-run-ci, create-gke-cluster, build-kots, build-e2e, build-kurl-proxy, build-migrations, push-minio, push-rqlite ]
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v2
-      - name: download e2e deps
-        uses: actions/download-artifact@v2
-        with:
-          name: e2e
-          path: e2e/bin/
-      - name: download kots binary
-        uses: actions/download-artifact@v2
-        with:
-          name: kots
-          path: bin/
-      - run: |
-          docker load -i e2e/bin/e2e-deps.tar
-          chmod +x e2e/bin/*
-          chmod +x bin/*
-      - uses: ./.github/actions/kots-e2e
-        with:
-          test-focus: 'Smoke Test'
-          use-gke: true
-          gke-service-key: ${{ secrets.GOOGLE_CLOUD_CREDENTIALS }}
-          gke-cluster-name: 'kots-ci-test-${{ github.run_id }}-${{ github.run_attempt }}'
-          testim-branch: ${{ github.head_ref == 'main' && 'master' || github.head_ref }}
-          testim-access-token: '${{ secrets.TESTIM_ACCESS_TOKEN }}'
-          aws-access-key-id: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_ACCESS_KEY_ID }}'
-          aws-secret-access-key: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_SECRET_ACCESS_KEY }}'
-
-
   validate-smoke-test:
     runs-on: ubuntu-20.04
     needs: [ enable-tests, can-run-ci, build-kots, build-e2e, build-kurl-proxy, build-migrations, push-minio, push-rqlite ]
@@ -514,6 +482,38 @@ jobs:
           k8s-arguments: ${{ startsWith(matrix.k8s_version, 'v1.22') && '--egress-selector-mode disabled' || '' }}
           testim-access-token: '${{ secrets.TESTIM_ACCESS_TOKEN }}'
           testim-branch: ${{ github.head_ref == 'main' && 'master' || github.head_ref }}
+          aws-access-key-id: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_ACCESS_KEY_ID }}'
+          aws-secret-access-key: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_SECRET_ACCESS_KEY }}'
+
+
+  validate-smoke-test-gke:
+    runs-on: ubuntu-20.04
+    needs: [ enable-tests, can-run-ci, create-gke-cluster, build-kots, build-e2e, build-kurl-proxy, build-migrations, push-minio, push-rqlite ]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: download e2e deps
+        uses: actions/download-artifact@v2
+        with:
+          name: e2e
+          path: e2e/bin/
+      - name: download kots binary
+        uses: actions/download-artifact@v2
+        with:
+          name: kots
+          path: bin/
+      - run: |
+          docker load -i e2e/bin/e2e-deps.tar
+          chmod +x e2e/bin/*
+          chmod +x bin/*
+      - uses: ./.github/actions/kots-e2e
+        with:
+          test-focus: 'Smoke Test'
+          use-gke: true
+          gke-service-key: ${{ secrets.GOOGLE_CLOUD_CREDENTIALS }}
+          gke-cluster-name: 'kots-ci-test-${{ github.run_id }}-${{ github.run_attempt }}'
+          testim-branch: ${{ github.head_ref == 'main' && 'master' || github.head_ref }}
+          testim-access-token: '${{ secrets.TESTIM_ACCESS_TOKEN }}'
           aws-access-key-id: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_ACCESS_KEY_ID }}'
           aws-secret-access-key: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_SECRET_ACCESS_KEY }}'
 
@@ -1954,6 +1954,7 @@ jobs:
   destroy-gke-cluster:
     runs-on: ubuntu-20.04
     needs: [validate-existing-online-install-minimal-gke]
+    if: always()
     steps:
       - name: checkout
         uses: actions/checkout@v2

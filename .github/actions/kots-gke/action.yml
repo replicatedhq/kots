@@ -58,6 +58,6 @@ runs:
       location: ${{ inputs.cluster-region }}
 
   - name: 'Delete the existing cluster'
-    if: inputs.delete == true
+    if: inputs.delete == 'true'
     shell: bash
     run: 'gcloud -q container clusters delete ${{ inputs.cluster-name }} --region ${{ inputs.cluster-region }}'
