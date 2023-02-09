@@ -16,6 +16,7 @@ interface UpdateStatus {
 const getUpdateDownloadStatus = async (
   appSlug: string
 ): Promise<UpdateStatusResponse> => {
+  console.log(appSlug)
   const res = await fetch(
     `${process.env.API_ENDPOINT}/app/${appSlug}/task/updatedownload`,
     {
@@ -31,19 +32,20 @@ const getUpdateDownloadStatus = async (
     throw new Error("Error getting update status");
   }
   const appResponse = await res.json();
+
   return appResponse;
 };
 
-const makeUpdateStatusResponse = (
-  response: UpdateStatusResponse
-): UpdateStatus => {
-  return {
-    checkingForUpdateError: response.status === "failed",
-    checkingForUpdates: response.status !== "running",
-    checkingUpdateMessage: response.currentMessage,
-    status: response.status,
-  };
-};
+// const makeUpdateStatusResponse = (
+//   response: UpdateStatusResponse
+// ): UpdateStatus => {
+//   return {
+//     checkingForUpdateError: response.status === "failed",
+//     checkingForUpdates: response.status !== "running",
+//     checkingUpdateMessage: response.currentMessage,
+//     status: response.status,
+//   };
+// };
 
 export const useUpdateDownloadStatus = () => {
   const { selectedApp } = useSelectedApp();
@@ -53,7 +55,7 @@ export const useUpdateDownloadStatus = () => {
     queryKey: ["getUpdateStatus"],
     onError: (err: Error) => console.log(err),
     refetchInterval: (data) => (data?.status !== "running" ? false : 1000),
-    select: makeUpdateStatusResponse,
+
   });
 };
 
