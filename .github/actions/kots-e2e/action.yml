@@ -65,6 +65,7 @@ runs:
     - name: Generate a GKE cluster
       if: ${{ inputs.use-gke }}
       uses: ./.github/actions/kots-gke
+      secrets: inherit
       with:
         cluster-name: ${{ inputs.gke-cluster-name }}
 

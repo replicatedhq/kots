@@ -75,6 +75,7 @@ jobs:
         uses: ./.github/actions/kots-gke
         with:
           cluster-name: 'kots-ci-test-${{ github.job_workflow_sha }}'
+        secrets: inherit
 
 
   build-web:
@@ -471,6 +472,7 @@ jobs:
           chmod +x e2e/bin/*
           chmod +x bin/*
       - uses: ./.github/actions/kots-e2e
+        secrets: inherit
         with:
           test-focus: 'Regression'
           use-gke: true
