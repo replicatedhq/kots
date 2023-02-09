@@ -135,7 +135,7 @@ func mockK8sClientWithShutdownPods() kubernetes.Interface {
 		},
 		&corev1.Pod{
 			ObjectMeta: metav1.ObjectMeta{
-				Name:      "test",
+				Name:      "test-shutdown",
 				Namespace: "test",
 				Labels: map[string]string{
 					"app": "kotsadm",
@@ -144,6 +144,18 @@ func mockK8sClientWithShutdownPods() kubernetes.Interface {
 			Status: corev1.PodStatus{
 				Phase:   corev1.PodFailed,
 				Message: "Shutdown",
+			},
+		},
+		&corev1.Pod{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "test-running",
+				Namespace: "test",
+				Labels: map[string]string{
+					"app": "kotsadm",
+				},
+			},
+			Status: corev1.PodStatus{
+				Phase: corev1.PodRunning,
 			},
 		},
 	)
@@ -268,7 +280,11 @@ func Test_excludeShutdownPodsFromBackup(t *testing.T) {
 					for _, pod := range pods.Items {
 						if pod.Status.Phase == corev1.PodFailed && pod.Status.Message == "Shutdown" {
 							if _, ok := pod.Annotations["velero.io/exclude-from-backup"]; !ok {
-								t.Errorf("excludeShutdownPodsFromBackup() error = %v, wantErr %v", err, tt.wantErr)
+								t.Errorf("excludeShutdownPodsFromBackup() velero.io/exclude-from-backup annotation not found on pod %s", pod.Name)
+							}
+						} else {
+							if _, ok := pod.Annotations["velero.io/exclude-from-backup"]; ok {
+								t.Errorf("excludeShutdownPodsFromBackup() velero.io/exclude-from-backup annotation found on pod %s", pod.Name)
 							}
 						}
 					}
