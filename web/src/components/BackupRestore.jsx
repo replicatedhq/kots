@@ -268,7 +268,7 @@ class BackupRestore extends React.Component {
       <div className="BackupRestore--wrapper container flex-column flex1 u-overflow--auto u-paddingTop--30 u-paddingBottom--20 u-marginTop--10 alignItems--center">
         <KotsPageTitle pageName="Restore from Backup" />
         {!snapshotSettings?.isVeleroRunning ||
-        !snapshotSettings?.isResticRunning
+        !snapshotSettings?.isNodeAgentRunning
           ? this.navigateToSnapshotConfiguration()
           : isEmpty(selectedBackup)
           ? this.renderSnapshotsListView()
