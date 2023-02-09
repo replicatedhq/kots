@@ -1777,11 +1777,9 @@ class SnapshotStorageDestination extends Component<Props, State> {
                   </>
                 )}
                 <span className="u-fontSize--small u-fontWeight--normal u-lineHeight--normal u-textColor--bodyCopy u-marginTop--15">
-                  All data in your snapshots will be deduplicated. To learn more
-                  about how,{" "}
-                  <a href="/" target="_blank" className="link">
-                    check out our docs.
-                  </a>
+                  All data in your snapshots will be deduplicated. Snapshots
+                  makes use of Restic, a fast and secure backup technology with
+                  native deduplication.
                 </span>
               </form>
             </div>
