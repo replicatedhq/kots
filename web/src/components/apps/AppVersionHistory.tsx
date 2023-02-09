@@ -21,7 +21,6 @@ import SkipPreflightsModal from "../shared/modals/SkipPreflightsModal";
 import {
   Utilities,
   isAwaitingResults,
-  secondsAgo,
   getPreflightResultState,
   getGitProviderDiffUrl,
   getCommitHashFromUrl,

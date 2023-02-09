@@ -4,12 +4,19 @@ import { AppVersionHistoryRow } from "./AppVersionHistoryRow";
 import { useDownloadValues } from "./api";
 import { useSelectedApp } from "@features/App/hooks/useSelectedApp";
 import { useIsHelmManaged } from "@components/hooks";
+// TODO: get rid of this
+// new Date(new Date().getTime() - 10*1000)
+import {
+  secondsAgo,
+} from "../../utilities/utilities";
 
 // renderAppVersionHistoryRow
 function AppVersionHistoryCard({
+  isChecked,
   selectedDiffReleases,
   version
 }: {
+  isChecked: boolean;
   selectedDiffReleases: boolean;
   version: Version
 }) {
@@ -33,21 +40,19 @@ function AppVersionHistoryCard({
     return null;
   }
 
-  const downstream = this.props.app.downstream;
-  const gitopsIsConnected = downstream?.gitops?.isConnected;
-  const nothingToCommit = gitopsIsConnected && !version.commitUrl;
-  const isChecked = !!this.state.checkedReleasesToDiff.find(
-    (diffRelease) => diffRelease.parentSequence === version.parentSequence
-  );
-  const isNew = secondsAgo(version.createdOn) < 10;
-  let newPreflightResults = false;
-  if (version.preflightResultCreatedAt) {
-    newPreflightResults = secondsAgo(version.preflightResultCreatedAt) < 12;
-  }
-  let isPending = false;
-  if (this.props.isHelmManaged && version.status.startsWith("pending")) {
-    isPending = true;
-  }
+  // TODO: move this outside of the component and figure out what it means
+  // const isChecked = !!this.state.checkedReleasesToDiff.find(
+  //   (diffRelease) => diffRelease.parentSequence === version.parentSequence
+  // );
+
+  /* tasks
+
+  - convert AppVersionHistoryRow to a functional component
+  - clean up these props
+  - add a modal provider and move the helm deploy modal out of this component
+  - maybe just get rid of this component altogether and use AppVersionHistoryRow directly
+
+  */
 
   return (
     <>
@@ -58,21 +63,19 @@ function AppVersionHistoryCard({
             version.sequence
           )
         }
-        isHelmManaged={this.props.isHelmManaged}
+        isHelmManaged={isHelmManaged}
         key={version.sequence}
-        app={this.props.app}
-        wrappedMatch={this.props.wrappedMatch}
-        history={this.props.history}
+        app={selectedApp}
         version={version}
         selectedDiffReleases={this.state.selectedDiffReleases}
-        nothingToCommit={nothingToCommit}
+        nothingToCommit={selectedApp?.downstream?.gitops?.isConnected && !version.commitUrl}
         isChecked={isChecked}
-        isNew={isNew}
-        newPreflightResults={newPreflightResults}
+        isNew={secondsAgo(version.createdOn) < 10}
+        newPreflightResults={version.preflightResultCreatedAt && secondsAgo(version.preflightResultCreatedAt) < 12 ? true : false}
         showReleaseNotes={this.showReleaseNotes}
         renderDiff={this.renderDiff}
         toggleShowDetailsModal={this.toggleShowDetailsModal}
-        gitopsEnabled={gitopsIsConnected}
+        gitopsEnabled={selectedApp?.downstream?.gitops?.isConnected}
         deployVersion={this.deployVersion}
         redeployVersion={this.redeployVersion}
         downloadVersion={this.downloadVersion}
