@@ -30,6 +30,10 @@ inputs:
     default: "replicated-qa"
     required: false
 
+  service-key:
+    description: Google Could service account key for authentication
+    required: true
+
 runs:
   using: composite
 
@@ -38,7 +42,7 @@ runs:
     name: 'Authenticate to Google Cloud'
     uses: 'google-github-actions/auth@v1'
     with:
-      credentials_json: ${{ secrets.GOOGLE_CLOUD_CREDENTIALS }}
+      credentials_json: ${{ inputs.service-key }}
 
   - name: 'Setup Cloud SDK'
     uses: google-github-actions/setup-gcloud@v1
