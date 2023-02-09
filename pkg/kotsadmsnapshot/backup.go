@@ -979,7 +979,7 @@ func excludeShutdownPodsFromBackup(ctx context.Context, clientset kubernetes.Int
 					pod.Labels = map[string]string{}
 				}
 
-				pod.Labels["velero.io/exclude-from-backup"] = "true"
+				pod.Labels[kotsadmtypes.ExcludeKey] = kotsadmtypes.ExcludeValue
 				_, err := clientset.CoreV1().Pods(namespace).Update(ctx, &pod, metav1.UpdateOptions{})
 				if err != nil {
 					return errors.Wrapf(err, "failed to update pod %s in namespace %s", pod.Name, namespace)
