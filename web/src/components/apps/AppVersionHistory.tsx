@@ -31,7 +31,6 @@ import { AirgapUploader } from "../../utilities/airgapUploader";
 import ReactTooltip from "react-tooltip";
 import Pager from "../shared/Pager";
 import { HelmDeployModal } from "../shared/modals/HelmDeployModal";
-import { UseDownloadValues } from "../hooks";
 import { KotsPageTitle } from "@components/Head";
 
 import "@src/scss/components/apps/AppVersionHistory.scss";
@@ -1548,159 +1547,159 @@ class AppVersionHistory extends Component<Props, State> {
     }
   };
 
-  renderAppVersionHistoryRow = (version: Version, index?: number) => {
-    if (
-      !version ||
-      isEmpty(version) ||
-      (this.state.selectedDiffReleases && version.status === "pending_download")
-    ) {
-      // non-downloaded versions can't be diffed
-      return null;
-    }
+  // renderAppVersionHistoryRow = (version: Version, index?: number) => {
+  //   if (
+  //     !version ||
+  //     isEmpty(version) ||
+  //     (this.state.selectedDiffReleases && version.status === "pending_download")
+  //   ) {
+  //     // non-downloaded versions can't be diffed
+  //     return null;
+  //   }
 
-    const downstream = this.props.app.downstream;
-    const gitopsIsConnected = downstream?.gitops?.isConnected;
-    const nothingToCommit = gitopsIsConnected && !version.commitUrl;
-    const isChecked = !!this.state.checkedReleasesToDiff.find(
-      (diffRelease) => diffRelease.parentSequence === version.parentSequence
-    );
-    const isNew = secondsAgo(version.createdOn) < 10;
-    let newPreflightResults = false;
-    if (version.preflightResultCreatedAt) {
-      newPreflightResults = secondsAgo(version.preflightResultCreatedAt) < 12;
-    }
-    let isPending = false;
-    if (this.props.isHelmManaged && version.status.startsWith("pending")) {
-      isPending = true;
-    }
+  //   const downstream = this.props.app.downstream;
+  //   const gitopsIsConnected = downstream?.gitops?.isConnected;
+  //   const nothingToCommit = gitopsIsConnected && !version.commitUrl;
+  //   const isChecked = !!this.state.checkedReleasesToDiff.find(
+  //     (diffRelease) => diffRelease.parentSequence === version.parentSequence
+  //   );
+  //   const isNew = secondsAgo(version.createdOn) < 10;
+  //   let newPreflightResults = false;
+  //   if (version.preflightResultCreatedAt) {
+  //     newPreflightResults = secondsAgo(version.preflightResultCreatedAt) < 12;
+  //   }
+  //   let isPending = false;
+  //   if (this.props.isHelmManaged && version.status.startsWith("pending")) {
+  //     isPending = true;
+  //   }
 
-    return (
-      <React.Fragment key={index}>
-        <AppVersionHistoryRow
-          handleActionButtonClicked={() =>
-            this.handleActionButtonClicked(
-              version.versionLabel,
-              version.sequence
-            )
-          }
-          isHelmManaged={this.props.isHelmManaged}
-          key={version.sequence}
-          app={this.props.app}
-          wrappedMatch={this.props.wrappedMatch}
-          history={this.props.history}
-          version={version}
-          selectedDiffReleases={this.state.selectedDiffReleases}
-          nothingToCommit={nothingToCommit}
-          isChecked={isChecked}
-          isNew={isNew}
-          newPreflightResults={newPreflightResults}
-          showReleaseNotes={this.showReleaseNotes}
-          renderDiff={this.renderDiff}
-          toggleShowDetailsModal={this.toggleShowDetailsModal}
-          gitopsEnabled={gitopsIsConnected}
-          deployVersion={this.deployVersion}
-          redeployVersion={this.redeployVersion}
-          downloadVersion={this.downloadVersion}
-          upgradeAdminConsole={this.upgradeAdminConsole}
-          handleViewLogs={this.handleViewLogs}
-          handleSelectReleasesToDiff={this.handleSelectReleasesToDiff}
-          renderVersionDownloadStatus={this.renderVersionDownloadStatus}
-          isDownloading={
-            this.state.versionDownloadStatuses?.[version.sequence]
-              ?.downloadingVersion
-          }
-          adminConsoleMetadata={this.props.adminConsoleMetadata}
-        />
-        {this.state.showHelmDeployModalForVersionLabel ===
-          version.versionLabel &&
-          this.state.showHelmDeployModalForSequence === version.sequence && (
-            <UseDownloadValues
-              appSlug={this.props?.app?.slug}
-              fileName="values.yaml"
-              sequence={version.parentSequence}
-              versionLabel={version.versionLabel}
-              isPending={isPending}
-            >
-              {({
-                download,
-                clearError: clearDownloadError,
-                downloadError: downloadError,
-                // isDownloading,
-                name,
-                ref,
-                url,
-              }: {
-                download: () => void;
-                clearError: () => void;
-                downloadError: boolean;
-                //  isDownloading: boolean;
-                name: string;
-                ref: string;
-                url: string;
-              }) => {
-                return (
-                  <>
-                    <HelmDeployModal
-                      appSlug={this.props?.app?.slug}
-                      chartPath={this.props?.app?.chartPath || ""}
-                      downloadClicked={download}
-                      downloadError={downloadError}
-                      //isDownloading={isDownloading}
-                      hideHelmDeployModal={() => {
-                        this.setState({
-                          showHelmDeployModalForVersionLabel: "",
-                        });
-                        clearDownloadError();
-                      }}
-                      registryUsername={this.props?.app?.credentials?.username}
-                      registryPassword={this.props?.app?.credentials?.password}
-                      revision={
-                        this.deployButtonStatus(version) === "Rollback"
-                          ? version.sequence
-                          : null
-                      }
-                      showHelmDeployModal={true}
-                      showDownloadValues={
-                        this.deployButtonStatus(version) === "Deploy"
-                      }
-                      subtitle={
-                        this.deployButtonStatus(version) === "Rollback"
-                          ? `Follow the steps below to rollback to revision ${version.sequence}.`
-                          : this.deployButtonStatus(version) === "Redeploy"
-                          ? "Follow the steps below to redeploy the release using the currently deployed chart version and values."
-                          : "Follow the steps below to upgrade the release."
-                      }
-                      title={` ${this.deployButtonStatus(version)} ${
-                        this.props?.app.slug
-                      } ${
-                        this.deployButtonStatus(version) === "Deploy"
-                          ? version.versionLabel
-                          : ""
-                      }`}
-                      upgradeTitle={
-                        this.deployButtonStatus(version) === "Rollback"
-                          ? "Rollback release"
-                          : this.deployButtonStatus(version) === "Redeploy"
-                          ? "Redeploy release"
-                          : "Upgrade release"
-                      }
-                      version={version.versionLabel}
-                      namespace={this.props?.app?.namespace}
-                    />
-                    <a
-                      href={url}
-                      download={name}
-                      className="hidden"
-                      ref={ref}
-                    />
-                  </>
-                );
-              }}
-            </UseDownloadValues>
-          )}
-      </React.Fragment>
-    );
-  };
+  //   return (
+  //     <React.Fragment key={index}>
+  //       <AppVersionHistoryRow
+  //         handleActionButtonClicked={() =>
+  //           this.handleActionButtonClicked(
+  //             version.versionLabel,
+  //             version.sequence
+  //           )
+  //         }
+  //         isHelmManaged={this.props.isHelmManaged}
+  //         key={version.sequence}
+  //         app={this.props.app}
+  //         wrappedMatch={this.props.wrappedMatch}
+  //         history={this.props.history}
+  //         version={version}
+  //         selectedDiffReleases={this.state.selectedDiffReleases}
+  //         nothingToCommit={nothingToCommit}
+  //         isChecked={isChecked}
+  //         isNew={isNew}
+  //         newPreflightResults={newPreflightResults}
+  //         showReleaseNotes={this.showReleaseNotes}
+  //         renderDiff={this.renderDiff}
+  //         toggleShowDetailsModal={this.toggleShowDetailsModal}
+  //         gitopsEnabled={gitopsIsConnected}
+  //         deployVersion={this.deployVersion}
+  //         redeployVersion={this.redeployVersion}
+  //         downloadVersion={this.downloadVersion}
+  //         upgradeAdminConsole={this.upgradeAdminConsole}
+  //         handleViewLogs={this.handleViewLogs}
+  //         handleSelectReleasesToDiff={this.handleSelectReleasesToDiff}
+  //         renderVersionDownloadStatus={this.renderVersionDownloadStatus}
+  //         isDownloading={
+  //           this.state.versionDownloadStatuses?.[version.sequence]
+  //             ?.downloadingVersion
+  //         }
+  //         adminConsoleMetadata={this.props.adminConsoleMetadata}
+  //       />
+  //       {this.state.showHelmDeployModalForVersionLabel ===
+  //         version.versionLabel &&
+  //         this.state.showHelmDeployModalForSequence === version.sequence && (
+  //           <UseDownloadValues
+  //             appSlug={this.props?.app?.slug}
+  //             fileName="values.yaml"
+  //             sequence={version.parentSequence}
+  //             versionLabel={version.versionLabel}
+  //             isPending={isPending}
+  //           >
+  //             {({
+  //               download,
+  //               clearError: clearDownloadError,
+  //               downloadError: downloadError,
+  //               // isDownloading,
+  //               name,
+  //               ref,
+  //               url,
+  //             }: {
+  //               download: () => void;
+  //               clearError: () => void;
+  //               downloadError: boolean;
+  //               //  isDownloading: boolean;
+  //               name: string;
+  //               ref: string;
+  //               url: string;
+  //             }) => {
+  //               return (
+  //                 <>
+  //                   <HelmDeployModal
+  //                     appSlug={this.props?.app?.slug}
+  //                     chartPath={this.props?.app?.chartPath || ""}
+  //                     downloadClicked={download}
+  //                     downloadError={downloadError}
+  //                     //isDownloading={isDownloading}
+  //                     hideHelmDeployModal={() => {
+  //                       this.setState({
+  //                         showHelmDeployModalForVersionLabel: "",
+  //                       });
+  //                       clearDownloadError();
+  //                     }}
+  //                     registryUsername={this.props?.app?.credentials?.username}
+  //                     registryPassword={this.props?.app?.credentials?.password}
+  //                     revision={
+  //                       this.deployButtonStatus(version) === "Rollback"
+  //                         ? version.sequence
+  //                         : null
+  //                     }
+  //                     showHelmDeployModal={true}
+  //                     showDownloadValues={
+  //                       this.deployButtonStatus(version) === "Deploy"
+  //                     }
+  //                     subtitle={
+  //                       this.deployButtonStatus(version) === "Rollback"
+  //                         ? `Follow the steps below to rollback to revision ${version.sequence}.`
+  //                         : this.deployButtonStatus(version) === "Redeploy"
+  //                         ? "Follow the steps below to redeploy the release using the currently deployed chart version and values."
+  //                         : "Follow the steps below to upgrade the release."
+  //                     }
+  //                     title={` ${this.deployButtonStatus(version)} ${
+  //                       this.props?.app.slug
+  //                     } ${
+  //                       this.deployButtonStatus(version) === "Deploy"
+  //                         ? version.versionLabel
+  //                         : ""
+  //                     }`}
+  //                     upgradeTitle={
+  //                       this.deployButtonStatus(version) === "Rollback"
+  //                         ? "Rollback release"
+  //                         : this.deployButtonStatus(version) === "Redeploy"
+  //                         ? "Redeploy release"
+  //                         : "Upgrade release"
+  //                     }
+  //                     version={version.versionLabel}
+  //                     namespace={this.props?.app?.namespace}
+  //                   />
+  //                   <a
+  //                     href={url}
+  //                     download={name}
+  //                     className="hidden"
+  //                     ref={ref}
+  //                   />
+  //                 </>
+  //               );
+  //             }}
+  //           </UseDownloadValues>
+  //         )}
+  //     </React.Fragment>
+  //   );
+  // };
 
   getPreflightState = (version: Version) => {
     let preflightState = "";

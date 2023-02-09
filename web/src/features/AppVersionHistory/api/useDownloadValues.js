@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Utilities } from "../../utilities/utilities";
+import { Utilities } from "../../../utilities/utilities";
 
 const getValues = async ({
   _fetch = fetch,
@@ -102,23 +102,4 @@ const useDownloadValues = ({
   };
 };
 
-function UseDownloadValues({
-  appSlug,
-  fileName,
-  sequence,
-  versionLabel,
-  isPending,
-  children,
-}) {
-  const query = useDownloadValues({
-    appSlug,
-    fileName,
-    sequence,
-    versionLabel,
-    isPending,
-  });
-
-  return children(query);
-}
-
-export { useDownloadValues, UseDownloadValues, getValues };
+export { useDownloadValues, getValues };
