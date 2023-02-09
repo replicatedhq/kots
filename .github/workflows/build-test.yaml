@@ -473,7 +473,7 @@ jobs:
           chmod +x bin/*
       - uses: ./.github/actions/kots-e2e
         with:
-          test-focus: 'Regression'
+          test-focus: 'Smoke Test'
           use-gke: true
           gke-service-key: ${{ secrets.GOOGLE_CLOUD_CREDENTIALS }}
           gke-cluster-name: 'kots-ci-test-${{ github.run_id }}-${{ github.run_attempt }}'
