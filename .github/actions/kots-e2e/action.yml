@@ -56,12 +56,17 @@ inputs:
     description: 'Create a GKE cluster to run tests'
     default: false
     required: false
+  gke-cluster-name:
+    description: 'Name of the GKE cluster to use, create, or delete'
+    required: false
 runs:
   using: "composite"
   steps:
     - name: Generate a GKE cluster
       if: ${{ inputs.use-gke }}
       uses: ./.github/actions/kots-gke
+      with:
+        cluster-name: ${{ inputs.gke-cluster-name }}
 
     # TODO: use k3d eventually but this is difficult to support with ${{ inputs.k8s-version }}
     - name: Generate a k3s cluster

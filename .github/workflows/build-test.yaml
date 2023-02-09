@@ -73,6 +73,8 @@ jobs:
 
       - name: build cluster
         uses: ./.github/actions/kots-gke
+        with:
+          cluster-name: 'kots-ci-test-${{ github.job_workflow_sha }}'
 
 
   build-web:
