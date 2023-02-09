@@ -7,11 +7,11 @@ export interface PreflightResponse {
 }
 
 export type PreflightResponseProgress = {
-  completedCount: number;
-  currentName: string;
-  currentStatus: string;
-  totalCount: number;
-  updatedAt: string;
+  completedCount?: number;
+  currentName?: string;
+  currentStatus?: string;
+  totalCount?: number;
+  updatedAt?: string;
 };
 
 interface PreflightResponseResult {
@@ -60,10 +60,15 @@ export interface PreflightCheck {
   errors: string[];
   pendingPreflightCheckName: string;
   pendingPreflightChecksPercentage: number;
+  pollForUpdates: boolean;
   preflightResults: PreflightResult[];
+  shouldShowConfirmContinueWithFailedPreflights: boolean;
+  showCancelPreflight: boolean;
   showDeploymentBlocked: boolean;
+  showIgnorePreflight: boolean;
   showPreflightCheckPending: boolean;
-  showPreflightNoChecks: boolean;
+  showPreflightResultErrors: boolean;
+  showPreflightResults: boolean;
   showPreflightSkipped: boolean;
   showRbacError: boolean;
 }

@@ -19,6 +19,6 @@ export const SkipPreflightsModalModalExample = Template.bind({});
 SkipPreflightsModalModalExample.args = {
   showSkipModal: true,
   hideSkipModal: () => alert("hide skip modal"),
-  deployKotsDownstream: () => alert("deploy kots downstream"),
+  onIgnorePreflightsAndDeployClick: () => alert("ignore kots downstream"),
   onForceDeployClick: () => alert("force deploy click"),
 };
