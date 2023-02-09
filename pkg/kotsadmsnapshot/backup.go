@@ -29,6 +29,7 @@ import (
 	velerolabel "github.com/vmware-tanzu/velero/pkg/label"
 	"go.uber.org/zap"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/kubernetes"
 )
 
 func CreateApplicationBackup(ctx context.Context, a *apptypes.App, isScheduled bool) (*velerov1.Backup, error) {
@@ -153,6 +154,16 @@ func CreateApplicationBackup(ctx context.Context, a *apptypes.App, isScheduled b
 		veleroBackup.Spec.TTL = metav1.Duration{
 			Duration: ttlDuration,
 		}
+	}
+
+	clientset, err := k8sutil.GetClientset()
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to create k8s clientset")
+	}
+
+	// excludeShutdownPodsFromBackup will add a hook to the backup to exclude pods that are in the process of shutting down
+	if err := excludeShutdownPodsFromBackup(ctx, clientset, veleroBackup); err != nil {
+		return nil, errors.Wrap(err, "failed to exclude shutdown pods from backup")
 	}
 
 	cfg, err := k8sutil.GetClusterConfig()
@@ -377,6 +388,11 @@ func CreateInstanceBackup(ctx context.Context, cluster *downstreamtypes.Downstre
 		veleroBackup.Spec.TTL = metav1.Duration{
 			Duration: ttlDuration,
 		}
+	}
+
+	// excludeShutdownPodsFromBackup will add a hook to the backup to exclude pods that are in the process of shutting down
+	if err := excludeShutdownPodsFromBackup(ctx, clientset, veleroBackup); err != nil {
+		return nil, errors.Wrap(err, "failed to exclude shutdown pods from backup")
 	}
 
 	cfg, err := k8sutil.GetClusterConfig()
@@ -929,4 +945,60 @@ func prepareIncludedNamespaces(namespaces []string) []string {
 		i++
 	}
 	return includedNamespaces
+}
+
+// excludeShutdownPodsFromBackup will exclude pods that are in a shutdown state from the backup
+// this is to prevent the hook backup from failing if a pod is in a shutdown state and cannot be backed up
+func excludeShutdownPodsFromBackup(ctx context.Context, clientset kubernetes.Interface, backup *velerov1.Backup) (err error) {
+	namespaces := backup.Spec.IncludedNamespaces
+	if len(namespaces) == 0 {
+		return
+	}
+
+	// if the backup includes all namespaces, we need to get the list of namespaces
+	if namespaces[0] == "*" {
+		namespaces, err = getNamespaces(ctx, clientset)
+		if err != nil {
+			return errors.Wrap(err, "failed to get namespaces")
+		}
+	}
+
+	for _, namespace := range namespaces {
+		pods, err := clientset.CoreV1().Pods(namespace).List(ctx, metav1.ListOptions{
+			FieldSelector: "status.phase=Failed",
+		})
+		if err != nil {
+			return errors.Wrapf(err, "failed to list pods in namespace %s", namespace)
+		}
+
+		for _, pod := range pods.Items {
+			if pod.Status.Reason == "Shutdown" {
+				logger.Infof("Excluding pod %s in namespace %s from backup", pod.Name, namespace)
+				// add velero.io/exclude-from-backup=true label to pod
+				if pod.Labels == nil {
+					pod.Labels = map[string]string{}
+				}
+
+				pod.Labels["velero.io/exclude-from-backup"] = "true"
+				_, err := clientset.CoreV1().Pods(namespace).Update(ctx, &pod, metav1.UpdateOptions{})
+				if err != nil {
+					return errors.Wrapf(err, "failed to update pod %s in namespace %s", pod.Name, namespace)
+				}
+			}
+		}
+	}
+
+	return nil
+}
+
+func getNamespaces(ctx context.Context, clientset kubernetes.Interface) (namespaces []string, err error) {
+	ns, err := clientset.CoreV1().Namespaces().List(ctx, metav1.ListOptions{})
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to list namespaces")
+	}
+
+	for _, n := range ns.Items {
+		namespaces = append(namespaces, n.Name)
+	}
+	return namespaces, nil
 }
