@@ -59,15 +59,18 @@ inputs:
   gke-cluster-name:
     description: 'Name of the GKE cluster to use, create, or delete'
     required: false
+  gke-service-key:
+    description: 'Service key to authenticate a Google Cloud service account'
+    required: false
 runs:
   using: "composite"
   steps:
     - name: Generate a GKE cluster
       if: ${{ inputs.use-gke }}
       uses: ./.github/actions/kots-gke
-      secrets: inherit
       with:
         cluster-name: ${{ inputs.gke-cluster-name }}
+        service-key: ${{ inputs.gke-service-key }}
 
     # TODO: use k3d eventually but this is difficult to support with ${{ inputs.k8s-version }}
     - name: Generate a k3s cluster
