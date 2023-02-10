@@ -29,18 +29,11 @@ const getUpdateDownloadStatus = async (
   return appResponse;
 };
 
-const makeUpdateStatusResponse = (
-  response: UpdateStatusResponse
-): UpdateStatus => {
-  return {
-    checkingForUpdateError: response.status === "failed",
-    checkingForUpdates: response.status !== "running",
-    checkingUpdateMessage: response.currentMessage,
-    status: response.status,
-  };
-};
-
-export const useUpdateDownloadStatus = () => {
+export const useUpdateDownloadStatus = (
+  onSuccess: (data: UpdateStatusResponse) => void,
+  onError: (error: Error) => void,
+  isBundleUploading: boolean
+) => {
   const selectedApp = useSelectedApp();
 
   return useQuery({
