@@ -44,7 +44,6 @@ import {
   useUpdateDownloadStatus,
 } from "../api/getUpdateDownloadStatus";
 import { useAppDownstream } from "../api/getAppDownstream";
-import { useCreateSnapshot } from "../api/createSnapshot";
 //import LicenseTester from "./LicenseTester";
 
 type Props = {
@@ -68,15 +67,10 @@ type Props = {
     version: Version | null
   ) => Promise<void>;
   refreshAppData: () => void;
-  snapshotInProgressApps: string[];
   toggleIsBundleUploading: (isUploading: boolean) => void;
   updateCallback: () => void | null;
 };
 
-type SnapshotOption = {
-  option: string;
-  name: string;
-};
 
 // TODO:  update these strings so that they are not nullable (maybe just set default to "")
 type State = {
@@ -99,14 +93,9 @@ type State = {
   loadingApp: boolean;
   links: DashboardActionLink[];
   noUpdatesAvalable: boolean;
-  selectedSnapshotOption: SnapshotOption;
   showAppStatusModal: boolean;
   showAutomaticUpdatesModal: boolean;
   snapshotDifferencesModal: boolean;
-  startingSnapshot: boolean;
-  startSnapshotErr: boolean;
-  startSnapshotErrorMsg: string;
-  startSnapshotOptions: SnapshotOption[];
   updateChecker: Repeater;
   uploadProgress: number;
   uploadResuming: boolean;
@@ -148,18 +137,9 @@ const Dashboard = (props: Props) => {
       links: [],
       // TODO: fix misspelling of available
       noUpdatesAvalable: false,
-      selectedSnapshotOption: { option: "full", name: "Start a Full snapshot" },
       showAppStatusModal: false,
       showAutomaticUpdatesModal: false,
       snapshotDifferencesModal: false,
-      startingSnapshot: false,
-      startSnapshotErr: false,
-      startSnapshotErrorMsg: "",
-      startSnapshotOptions: [
-        { option: "partial", name: "Start a Partial snapshot" },
-        { option: "full", name: "Start a Full snapshot" },
-        { option: "learn", name: "Learn about the difference" },
-      ],
       updateChecker: new Repeater(),
       uploadingAirgapFile: false,
       uploadProgress: 0,
@@ -369,121 +349,48 @@ const Dashboard = (props: Props) => {
     });
   };
 
-  const onCreateSnapshotSuccess = (data: any) => {
-    console.log(data, "data");
-    setState({
-      startingSnapshot: false,
-    });
-    props.ping();
-    if (data === "full") {
-      history.push("/snapshots");
-    } else {
-      history.push(`/snapshots/partial/${app.slug}`);
-    }
-  };
-
-  const onCreateSnapshotError = (data: any) => {
-    console.log(data, "data err");
-    // if 409 error
-    if (data.kotsadmRequiresVeleroAccess) {
-      setState({
-        startingSnapshot: false,
-      });
-      history.replace("/snapshots/settings");
-      return;
-    }
-
-    setState({
-      startingSnapshot: false,
-      startSnapshotErr: true,
-      startSnapshotErrorMsg: data.error,
-    });
-  };
-
-  const { mutate: createSnapshot } = useCreateSnapshot(
-    onCreateSnapshotSuccess,
-    onCreateSnapshotError
-  );
-
-  // const startASnapshot = (option: string) => {
+  // const onCreateSnapshotSuccess = (data: any) => {
+  //   console.log(data, "data");
   //   setState({
-  //     startingSnapshot: true,
-  //     startSnapshotErr: false,
-  //     startSnapshotErrorMsg: "",
+  //     startingSnapshot: false,
   //   });
-
-  //   let url =
-  //     option === "full"
-  //       ? `${process.env.API_ENDPOINT}/snapshot/backup`
-  //       : `${process.env.API_ENDPOINT}/app/${app.slug}/snapshot/backup`;
-
-  //   fetch(url, {
-  //     method: "POST",
-  //     headers: {
-  //       Authorization: Utilities.getToken(),
-  //       "Content-Type": "application/json",
-  //     },
-  //   })
-  //     .then(async (result) => {
-  //       if (!result.ok && result.status === 409) {
-  //         const res = await result.json();
-  //         if (res.kotsadmRequiresVeleroAccess) {
-  //           setState({
-  //             startingSnapshot: false,
-  //           });
-  //           history.replace("/snapshots/settings");
-  //           return;
-  //         }
-  //       }
-
-  //       if (result.ok) {
-  //         setState({
-  //           startingSnapshot: false,
-  //         });
-  //         props.ping();
-  //         if (option === "full") {
-  //           history.push("/snapshots");
-  //         } else {
-  //           history.push(`/snapshots/partial/${app.slug}`);
-  //         }
-  //       } else {
-  //         const body = await result.json();
-  //         setState({
-  //           startingSnapshot: false,
-  //           startSnapshotErr: true,
-  //           startSnapshotErrorMsg: body.error,
-  //         });
-  //       }
-  //     })
-  //     .catch((err) => {
-  //       console.log(err);
-  //       setState({
-  //         startSnapshotErrorMsg: err
-  //           ? err.message
-  //           : "Something went wrong, please try again.",
-  //       });
-  //     });
+  //   props.ping();
+  //   if (data === "full") {
+  //     history.push("/snapshots");
+  //   } else {
+  //     history.push(`/snapshots/partial/${app.slug}`);
+  //   }
   // };
 
-  const onSnapshotOptionChange = (selectedSnapshotOption: SnapshotOption) => {
-    if (selectedSnapshotOption.option === "learn") {
-      setState({ snapshotDifferencesModal: true });
-    } else {
-      createSnapshot(selectedSnapshotOption.option);
-      //startASnapshot(selectedSnapshotOption.option);
-    }
-  };
+  // const onCreateSnapshotError = (data: any) => {
+  //   console.log(data, "data err");
+  //   // if 409 error
+  //   if (data.kotsadmRequiresVeleroAccess) {
+  //     setState({
+  //       startingSnapshot: false,
+  //     });
+  //     history.replace("/snapshots/settings");
+  //     return;
+  //   }
+
+  //   setState({
+  //     startingSnapshot: false,
+  //     startSnapshotErr: true,
+  //     startSnapshotErrorMsg: data.error,
+  //   });
+  // };
+
+  // const { mutate: createSnapshot } = useCreateSnapshot(
+  //   onCreateSnapshotSuccess,
+  //   onCreateSnapshotError
+  // );
+
+  
 
   const toggleSnaphotDifferencesModal = () => {
     setState({
       snapshotDifferencesModal: !state.snapshotDifferencesModal,
     });
-  };
-
-  const onSnapshotOptionClick = () => {
-    const { selectedSnapshotOption } = state;
-    createSnapshot(selectedSnapshotOption.option);
-    //startASnapshot(selectedSnapshotOption.option);
   };
 
   const toggleAppStatusModal = () => {
@@ -833,15 +740,6 @@ const Dashboard = (props: Props) => {
                         isSnapshotAllowed={
                           app.allowSnapshots && isVeleroInstalled
                         }
-                        isVeleroInstalled={isVeleroInstalled}
-                        startASnapshot={createSnapshot}
-                        startSnapshotOptions={state.startSnapshotOptions}
-                        startSnapshotErr={state.startSnapshotErr}
-                        startSnapshotErrorMsg={state.startSnapshotErrorMsg}
-                        snapshotInProgressApps={props.snapshotInProgressApps}
-                        selectedSnapshotOption={state.selectedSnapshotOption}
-                        onSnapshotOptionChange={onSnapshotOptionChange}
-                        onSnapshotOptionClick={onSnapshotOptionClick}
                       />
                     </div>
                   ) : null}
