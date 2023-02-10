@@ -5,11 +5,11 @@ import {
 } from "@src/utilities/react-router-utilities";
 
 import { Utilities } from "../../utilities/utilities";
-import Loader from "../shared/Loader";
-import DiffEditor from "../shared/DiffEditor";
+import Loader from "../../components/shared/Loader";
+import DiffEditor from "../../components/shared/DiffEditor";
 
 import "../../scss/components/watches/DownstreamWatchVersionDiff.scss";
-import Icon from "../Icon";
+import Icon from "../../components/Icon";
 
 type Props = {
   firstSequence: number;
@@ -36,7 +36,7 @@ type ApplicationTree = {
     [key: string]: string;
   };
 };
-class DownstreamWatchVersionDiff extends React.Component<Props, State> {
+class VersionDiff extends React.Component<Props, State> {
   constructor(props: Props) {
     super(props);
     this.state = {
@@ -212,7 +212,6 @@ class DownstreamWatchVersionDiff extends React.Component<Props, State> {
           <DiffEditor
             original={firstApplicationTree?.files[filename]}
             value={secondApplicationTree?.files[filename]}
-            key={filename}
             specKey={filename}
             options={{
               contextMenu: false,
@@ -268,5 +267,5 @@ class DownstreamWatchVersionDiff extends React.Component<Props, State> {
 
 /* eslint-disable */
 // @ts-ignore
-export default withRouter(DownstreamWatchVersionDiff) as any;
+export default withRouter(VersionDiff) as any;
 /* eslint-enable */
