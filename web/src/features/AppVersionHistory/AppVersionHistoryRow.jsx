@@ -25,18 +25,6 @@ class AppVersionHistoryRow extends Component {
     };
   }
 
-  // renderDiff = (version) => {
-  //   const hideSourceDiff =
-  //     version.source?.includes("Airgap Install") ||
-  //     version.source?.includes("Online Install");
-  //   if (hideSourceDiff) {
-  //     return null;
-  //   }
-  //   return (
-  //     <div className="u-marginTop--5">{this.props.renderDiff(version)}</div>
-  //   );
-  // };
-
   handleSelectReleasesToDiff = () => {
     if (!this.props.selectedDiffReleases) {
       return;
