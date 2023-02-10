@@ -55,9 +55,6 @@ inputs:
     description: 'AWS region for uploading support bundle'
     default: 'us-east-1'
     required: false
-  gke-cluster-name:
-    description: 'Name of the GKE cluster to use, create, or delete'
-    required: false
   gke-service-key:
     description: 'Service key to authenticate a Google Cloud service account'
     required: false
@@ -68,7 +65,7 @@ runs:
       if: inputs.platform == 'gke'
       uses: ./.github/actions/kots-gke
       with:
-        cluster-name: ${{ inputs.gke-cluster-name }}
+        cluster-name: 'kots-ci-test-${{ github.run_id }}-${{ github.run_attempt }}'
         service-key: ${{ inputs.gke-service-key }}
 
     # TODO: use k3d eventually but this is difficult to support with ${{ inputs.k8s-version }}
