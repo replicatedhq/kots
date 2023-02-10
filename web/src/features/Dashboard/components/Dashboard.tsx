@@ -106,7 +106,6 @@ type State = {
   startSnapshotErr: boolean;
   startSnapshotErrorMsg: string;
   startSnapshotOptions: SnapshotOption[];
-  updateChecker: Repeater;
   uploadProgress: number;
   uploadResuming: boolean;
   uploadSize: number;
@@ -160,7 +159,6 @@ const Dashboard = (props: Props) => {
         { option: "full", name: "Start a Full snapshot" },
         { option: "learn", name: "Learn about the difference" },
       ],
-      updateChecker: new Repeater(),
       uploadingAirgapFile: false,
       uploadProgress: 0,
       uploadResuming: false,
@@ -675,7 +673,6 @@ const Dashboard = (props: Props) => {
       getAppLicense();
     }
     return () => {
-      state.updateChecker.stop();
       state.fetchAppDownstreamJob.stop();
     };
   }, []);
