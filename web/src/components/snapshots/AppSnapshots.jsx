@@ -103,7 +103,7 @@ class AppSnapshots extends Component {
   }
 
   checkRestoreInProgress() {
-    const { selectedApp } = this.state;
+    const selectedApp = this.state;
     fetch(
       `${process.env.API_ENDPOINT}/app/${selectedApp.slug}/snapshot/restore/status`,
       {
@@ -138,7 +138,7 @@ class AppSnapshots extends Component {
   }
 
   listSnapshots = async () => {
-    const { selectedApp } = this.state;
+    const selectedApp = this.state;
     this.setState({
       snapshotsListErr: false,
       snapshotsListErrMsg: "",
@@ -361,7 +361,7 @@ class AppSnapshots extends Component {
   };
 
   handleRestoreSnapshot = (snapshot) => {
-    const { selectedApp } = this.state;
+    const selectedApp = this.state;
 
     if (this.state.appSlugToRestore !== selectedApp?.slug) {
       this.setState({ appSlugMismatch: true });
@@ -415,7 +415,7 @@ class AppSnapshots extends Component {
   };
 
   startManualSnapshot = () => {
-    const { selectedApp } = this.state;
+    const selectedApp = this.state;
 
     const fakeProgressSnapshot = {
       name: "Preparing snapshot",

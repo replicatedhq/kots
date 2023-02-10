@@ -46,7 +46,7 @@ const makeUpdateStatusResponse = (
 };
 
 export const useUpdateDownloadStatus = () => {
-  const { selectedApp } = useSelectedApp();
+  const selectedApp = useSelectedApp();
 
   return useQuery({
     queryFn: () => getUpdateDownloadStatus(selectedApp?.slug || ""),
