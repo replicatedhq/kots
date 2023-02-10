@@ -1494,30 +1494,38 @@ class AppVersionHistory extends Component<Props, State> {
     return (
       <React.Fragment key={index}>
         <AppVersionHistoryRow
-          adminConsoleMetadata={this.props.adminConsoleMetadata}
-          app={this.props.app}
-          deployVersion={this.deployVersion}
-          downloadVersion={this.downloadVersion}
-          gitopsEnabled={gitopsIsConnected}
           handleActionButtonClicked={() =>
             this.handleActionButtonClicked(
               version.versionLabel,
               version.sequence
             )
           }
-          handleSelectReleasesToDiff={this.handleSelectReleasesToDiff}
-          handleViewLogs={this.handleViewLogs}
+          isHelmManaged={this.props.isHelmManaged}
+          key={version.sequence}
+          app={this.props.app}
+          wrappedMatch={this.props.wrappedMatch}
           history={this.props.history}
+          version={version}
+          selectedDiffReleases={this.state.selectedDiffReleases}
+          nothingToCommit={nothingToCommit}
           isChecked={isChecked}
+          isNew={isNew}
+          newPreflightResults={newPreflightResults}
+          showReleaseNotes={this.showReleaseNotes}
+          toggleShowDetailsModal={this.toggleShowDetailsModal}
+          gitopsEnabled={gitopsIsConnected}
+          deployVersion={this.deployVersion}
+          redeployVersion={this.redeployVersion}
+          downloadVersion={this.downloadVersion}
+          upgradeAdminConsole={this.upgradeAdminConsole}
+          handleViewLogs={this.handleViewLogs}
+          handleSelectReleasesToDiff={this.handleSelectReleasesToDiff}
+          renderVersionDownloadStatus={this.renderVersionDownloadStatus}
           isDownloading={
             this.state.versionDownloadStatuses?.[version.sequence]
               ?.downloadingVersion
           }
-          isHelmManaged={this.props.isHelmManaged}
-          isNew={isNew}
-          key={version.sequence}
-          newPreflightResults={newPreflightResults}
-          nothingToCommit={nothingToCommit}
+          adminConsoleMetadata={this.props.adminConsoleMetadata}
           onWhyNoGeneratedDiffClicked={(rowVersion: Version) =>
             this.toggleNoChangesModal(rowVersion)
           }
@@ -1534,15 +1542,7 @@ class AppVersionHistory extends Component<Props, State> {
               secondSequence,
             });
           }}
-          redeployVersion={this.redeployVersion}
-          renderVersionDownloadStatus={this.renderVersionDownloadStatus}
-          selectedDiffReleases={this.state.selectedDiffReleases}
-          showReleaseNotes={this.showReleaseNotes}
-          toggleShowDetailsModal={this.toggleShowDetailsModal}
-          upgradeAdminConsole={this.upgradeAdminConsole}
-          version={version}
           versionHistory={this.state.versionHistory}
-          wrappedMatch={this.props.wrappedMatch}
         />
         {this.state.showHelmDeployModalForVersionLabel ===
           version.versionLabel &&
