@@ -9,7 +9,6 @@ import DashboardLicenseCard from "./DashboardLicenseCard";
 import DashboardSnapshotsCard from "./DashboardSnapshotsCard";
 import DashboardGraphsCard from "./DashboardGraphsCard";
 import AutomaticUpdatesModal from "@src/components/modals/AutomaticUpdatesModal";
-import SnapshotDifferencesModal from "@src/components/modals/SnapshotDifferencesModal";
 import Modal from "react-modal";
 import { Repeater } from "@src/utilities/repeater";
 import { Utilities } from "@src/utilities/utilities";
@@ -71,7 +70,6 @@ type Props = {
   updateCallback: () => void | null;
 };
 
-
 // TODO:  update these strings so that they are not nullable (maybe just set default to "")
 type State = {
   activeChart: string | null;
@@ -95,7 +93,6 @@ type State = {
   noUpdatesAvalable: boolean;
   showAppStatusModal: boolean;
   showAutomaticUpdatesModal: boolean;
-  snapshotDifferencesModal: boolean;
   updateChecker: Repeater;
   uploadProgress: number;
   uploadResuming: boolean;
@@ -139,7 +136,6 @@ const Dashboard = (props: Props) => {
       noUpdatesAvalable: false,
       showAppStatusModal: false,
       showAutomaticUpdatesModal: false,
-      snapshotDifferencesModal: false,
       updateChecker: new Repeater(),
       uploadingAirgapFile: false,
       uploadProgress: 0,
@@ -384,14 +380,6 @@ const Dashboard = (props: Props) => {
   //   onCreateSnapshotSuccess,
   //   onCreateSnapshotError
   // );
-
-  
-
-  const toggleSnaphotDifferencesModal = () => {
-    setState({
-      snapshotDifferencesModal: !state.snapshotDifferencesModal,
-    });
-  };
 
   const toggleAppStatusModal = () => {
     setState({ showAppStatusModal: !state.showAppStatusModal });
@@ -891,12 +879,6 @@ const Dashboard = (props: Props) => {
                 props.refreshAppData();
               }}
               isHelmManaged={props.isHelmManaged}
-            />
-          )}
-          {state.snapshotDifferencesModal && (
-            <SnapshotDifferencesModal
-              snapshotDifferencesModal={state.snapshotDifferencesModal}
-              toggleSnapshotDifferencesModal={toggleSnaphotDifferencesModal}
             />
           )}
         </div>
