@@ -10,6 +10,9 @@ inputs:
   k8s-version:
     description: 'K8s version'
     required: true
+  platform:
+    description: 'Platform to run tests on (k3s, gke)'
+    required: true
   k8s-arguments:
     description: 'arguments to pass to k8s'
     required: false
@@ -52,10 +55,6 @@ inputs:
     description: 'AWS region for uploading support bundle'
     default: 'us-east-1'
     required: false
-  use-gke:
-    description: 'Create a GKE cluster to run tests'
-    default: false
-    required: false
   gke-cluster-name:
     description: 'Name of the GKE cluster to use, create, or delete'
     required: false
@@ -66,7 +65,7 @@ runs:
   using: "composite"
   steps:
     - name: Generate a GKE cluster
-      if: inputs.use-gke == 'true'
+      if: inputs.platform == 'gke'
       uses: ./.github/actions/kots-gke
       with:
         cluster-name: ${{ inputs.gke-cluster-name }}
@@ -74,7 +73,7 @@ runs:
 
     # TODO: use k3d eventually but this is difficult to support with ${{ inputs.k8s-version }}
     - name: Generate a k3s cluster
-      if: inputs.use-gke != 'true'
+      if: inputs.platform == 'k3s'
       uses: replicatedhq/action-k3s@main
       with:
         version: ${{ inputs.k8s-version }}

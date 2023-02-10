@@ -445,6 +445,7 @@ jobs:
         with:
           test-focus: 'Regression'
           k8s-version: 'v1.26.1-k3s1'
+          platform: 'k3s'
           testim-branch: ${{ github.head_ref == 'main' && 'master' || github.head_ref }}
           testim-access-token: '${{ secrets.TESTIM_ACCESS_TOKEN }}'
           aws-access-key-id: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_ACCESS_KEY_ID }}'
@@ -458,6 +459,7 @@ jobs:
       fail-fast: false
       matrix:
         k8s_version: [ v1.23.15-k3s1,v1.24.9-k3s2,v1.25.6-k3s1,v1.26.1-k3s1 ]
+        platform: [ k3s ]
     steps:
       - name: Checkout
         uses: actions/checkout@v2
@@ -478,6 +480,7 @@ jobs:
         with:
           test-focus: 'Smoke Test'
           kots-namespace: 'smoke-test'
+          platform: '${{ matrix.platform }}'
           k8s-version: '${{ matrix.k8s_version }}'
           k8s-arguments: ${{ startsWith(matrix.k8s_version, 'v1.22') && '--egress-selector-mode disabled' || '' }}
           testim-access-token: '${{ secrets.TESTIM_ACCESS_TOKEN }}'
@@ -493,6 +496,7 @@ jobs:
       fail-fast: false
       matrix:
         k8s_version: [ v1.23.15-k3s1,v1.24.9-k3s2,v1.25.6-k3s1,v1.26.1-k3s1 ]
+        platform: [ k3s ]
     steps:
       - name: Checkout
         uses: actions/checkout@v2
@@ -513,6 +517,7 @@ jobs:
         with:
           test-focus: 'Minimal RBAC'
           kots-namespace: 'minimal-rbac'
+          platform: '${{ matrix.platform }}'
           k8s-version: '${{ matrix.k8s_version }}'
           k8s-arguments: ${{ startsWith(matrix.k8s_version, 'v1.22') && '--egress-selector-mode disabled' || '' }}
           testim-access-token: '${{ secrets.TESTIM_ACCESS_TOKEN }}'
@@ -528,6 +533,7 @@ jobs:
       fail-fast: false
       matrix:
         k8s_version: [ v1.23.15-k3s1,v1.24.9-k3s2,v1.25.6-k3s1,v1.26.1-k3s1 ]
+        platform: [ k3s ]
     steps:
       - name: Checkout
         uses: actions/checkout@v2
@@ -548,6 +554,7 @@ jobs:
         with:
           test-focus: 'Backup and Restore'
           kots-namespace: 'backup-and-restore'
+          platform: '${{ matrix.platform }}'
           k8s-version: '${{ matrix.k8s_version }}'
           k8s-arguments: ${{ startsWith(matrix.k8s_version, 'v1.22') && '--egress-selector-mode disabled' || '' }}
           testim-access-token: '${{ secrets.TESTIM_ACCESS_TOKEN }}'
@@ -563,6 +570,7 @@ jobs:
       fail-fast: false
       matrix:
         k8s_version: [ v1.26.1-k3s1 ] # there's no need to run this test on multiple k3s versions
+        platform: [ k3s ]
     steps:
       - name: Checkout
         uses: actions/checkout@v2
@@ -583,6 +591,7 @@ jobs:
         with:
           test-focus: 'No Required Config'
           kots-namespace: 'no-required-config'
+          platform: '${{ matrix.platform }}'
           k8s-version: '${{ matrix.k8s_version }}'
           k8s-arguments: ${{ startsWith(matrix.k8s_version, 'v1.22') && '--egress-selector-mode disabled' || '' }}
           testim-access-token: '${{ secrets.TESTIM_ACCESS_TOKEN }}'
@@ -598,6 +607,7 @@ jobs:
       fail-fast: false
       matrix:
         k8s_version: [ v1.26.1-k3s1 ] # there's no need to run this test on multiple k3s versions
+        platform: [ k3s ]
     steps:
       - name: Checkout
         uses: actions/checkout@v2
@@ -618,6 +628,7 @@ jobs:
         with:
           test-focus: 'Strict Preflight Checks'
           kots-namespace: 'strict-preflight-checks'
+          platform: '${{ matrix.platform }}'
           k8s-version: '${{ matrix.k8s_version }}'
           k8s-arguments: ${{ startsWith(matrix.k8s_version, 'v1.22') && '--egress-selector-mode disabled' || '' }}
           testim-access-token: '${{ secrets.TESTIM_ACCESS_TOKEN }}'
@@ -633,6 +644,7 @@ jobs:
       fail-fast: false
       matrix:
         k8s_version: [ v1.26.1-k3s1 ] # there's no need to run this test on multiple k3s versions
+        platform: [ k3s ]
     steps:
       - name: Checkout
         uses: actions/checkout@v2
@@ -653,6 +665,7 @@ jobs:
         with:
           test-focus: 'Version History Pagination'
           kots-namespace: 'version-history-pagination'
+          platform: '${{ matrix.platform }}'
           k8s-version: '${{ matrix.k8s_version }}'
           k8s-arguments: ${{ startsWith(matrix.k8s_version, 'v1.22') && '--egress-selector-mode disabled' || '' }}
           testim-access-token: '${{ secrets.TESTIM_ACCESS_TOKEN }}'
@@ -668,6 +681,7 @@ jobs:
       fail-fast: false
       matrix:
         k8s_version: [ v1.26.1-k3s1 ] # there's no need to run this test on multiple k3s versions
+        platform: [ k3s ]
     steps:
       - name: Checkout
         uses: actions/checkout@v2
@@ -688,6 +702,7 @@ jobs:
         with:
           test-focus: 'Change License'
           kots-namespace: 'change-license'
+          platform: '${{ matrix.platform }}'
           k8s-version: '${{ matrix.k8s_version }}'
           k8s-arguments: ${{ startsWith(matrix.k8s_version, 'v1.22') && '--egress-selector-mode disabled' || '' }}
           testim-access-token: '${{ secrets.TESTIM_ACCESS_TOKEN }}'
@@ -703,6 +718,7 @@ jobs:
       fail-fast: false
       matrix:
         k8s_version: [ v1.26.1-k3s1 ] # there's no need to run this test on multiple k3s versions
+        platform: [ k3s, gke ]
     steps:
       - name: Checkout
         uses: actions/checkout@v2
@@ -723,43 +739,7 @@ jobs:
         with:
           test-focus: 'Helm Managed'
           kots-namespace: 'helm-managed'
-          k8s-version: '${{ matrix.k8s_version }}'
-          k8s-arguments: ${{ startsWith(matrix.k8s_version, 'v1.22') && '--egress-selector-mode disabled' || '' }}
-          testim-access-token: '${{ secrets.TESTIM_ACCESS_TOKEN }}'
-          testim-branch: ${{ github.head_ref == 'main' && 'master' || github.head_ref }}
-          aws-access-key-id: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_ACCESS_KEY_ID }}'
-          aws-secret-access-key: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_SECRET_ACCESS_KEY }}'
-          kots-helm-chart-url: 'oci://ttl.sh/automated-${{ github.run_id }}/admin-console'
-          kots-helm-chart-version: '0.0.${{ github.run_id }}-automated'
-
-
-  validate-helm-managed-gke:
-    runs-on: ubuntu-20.04
-    needs: [ enable-tests, can-run-ci, build-kots, build-e2e, build-kurl-proxy, build-migrations, push-minio, push-rqlite ]
-    strategy:
-      fail-fast: false
-      matrix:
-        k8s_version: [ v1.26.1-k3s1 ] # there's no need to run this test on multiple k3s versions
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v2
-      - name: download e2e deps
-        uses: actions/download-artifact@v2
-        with:
-          name: e2e
-          path: e2e/bin/
-      - run: docker load -i e2e/bin/e2e-deps.tar
-      - run: chmod +x e2e/bin/*
-      - name: download kots binary
-        uses: actions/download-artifact@v2
-        with:
-          name: kots
-          path: bin/
-      - run: chmod +x bin/*
-      - uses: ./.github/actions/kots-e2e
-        with:
-          test-focus: 'Helm Managed'
-          kots-namespace: 'helm-managed'
+          platform: '${{ matrix.platform }}'
           k8s-version: '${{ matrix.k8s_version }}'
           k8s-arguments: ${{ startsWith(matrix.k8s_version, 'v1.22') && '--egress-selector-mode disabled' || '' }}
           testim-access-token: '${{ secrets.TESTIM_ACCESS_TOKEN }}'
@@ -1403,6 +1383,7 @@ jobs:
       fail-fast: false
       matrix:
         k8s_version: [ v1.26.1-k3s1 ]
+        platform: [ k3s ]
     env:
       APP_SLUG: kubernetes-installer-preflight
       K8S_VERSION: ${{ matrix.k8s_version }}
@@ -1505,6 +1486,8 @@ jobs:
         uses: ./.github/actions/kots-e2e
         with:
           kots-namespace: "$APP_SLUG"
+          platform: '${{ matrix.platform }}'
+          k8s-version: '${{ matrix.k8s_version }}'
           aws-access-key-id: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_ACCESS_KEY_ID }}'
           aws-secret-access-key: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_SECRET_ACCESS_KEY }}'
 
@@ -1516,6 +1499,7 @@ jobs:
       fail-fast: false
       matrix:
         k8s_version: [ v1.26.1-k3s1 ]
+        platform: [ k3s ]
     steps:
       - name: Checkout
         uses: actions/checkout@v2
@@ -1536,6 +1520,7 @@ jobs:
         with:
           test-focus: 'Tag and Digest'
           kots-namespace: 'tag-and-digest'
+          platform: '${{ matrix.platform }}'
           k8s-version: '${{ matrix.k8s_version }}'
           k8s-arguments: ${{ startsWith(matrix.k8s_version, 'v1.22') && '--egress-selector-mode disabled' || '' }}
           testim-access-token: '${{ secrets.TESTIM_ACCESS_TOKEN }}'
@@ -1576,6 +1561,7 @@ jobs:
       fail-fast: false
       matrix:
         k8s_version: [v1.25.5-k3s2]
+        platform: [ k3s ]
     steps:
       - name: Checkout
         uses: actions/checkout@v2
@@ -1599,6 +1585,7 @@ jobs:
         with:
           test-focus: 'Min KOTS Version'
           kots-namespace: 'min-kots-version'
+          platform: '${{ matrix.platform }}'
           k8s-version: '${{ matrix.k8s_version }}'
           k8s-arguments: ${{ startsWith(matrix.k8s_version, 'v1.22') && '--egress-selector-mode disabled' || '' }}
           testim-access-token: '${{ secrets.TESTIM_ACCESS_TOKEN }}'
@@ -1630,6 +1617,7 @@ jobs:
       fail-fast: false
       matrix:
         k8s_version: [v1.25.5-k3s2]
+        platform: [ k3s ]
     steps:
       - name: Checkout
         uses: actions/checkout@v2
@@ -1653,6 +1641,7 @@ jobs:
         with:
           test-focus: 'Target KOTS Version'
           kots-namespace: 'target-kots-version'
+          platform: '${{ matrix.platform }}'
           k8s-version: '${{ matrix.k8s_version }}'
           k8s-arguments: ${{ startsWith(matrix.k8s_version, 'v1.22') && '--egress-selector-mode disabled' || '' }}
           testim-access-token: '${{ secrets.TESTIM_ACCESS_TOKEN }}'
@@ -1680,6 +1669,7 @@ jobs:
       fail-fast: false
       matrix:
         k8s_version: [v1.25.5-k3s2]
+        platform: [ k3s ]
     steps:
       - name: Checkout
         uses: actions/checkout@v2
@@ -1703,6 +1693,7 @@ jobs:
         with:
           test-focus: 'Range KOTS Version'
           kots-namespace: 'range-kots-version'
+          platform: '${{ matrix.platform }}'
           k8s-version: '${{ matrix.k8s_version }}'
           k8s-arguments: ${{ startsWith(matrix.k8s_version, 'v1.22') && '--egress-selector-mode disabled' || '' }}
           testim-access-token: '${{ secrets.TESTIM_ACCESS_TOKEN }}'
@@ -1834,6 +1825,7 @@ jobs:
       fail-fast: false
       matrix:
         k8s_version: [ v1.26.1-k3s1 ] # there's no need to run this test on multiple k3s versions
+        platform: [ k3s ]
     steps:
       - name: Checkout
         uses: actions/checkout@v2
@@ -1854,6 +1846,7 @@ jobs:
         with:
           test-focus: 'multi-app-install'
           kots-namespace: 'multi-app-install'
+          platform: '${{ matrix.platform }}'
           k8s-version: '${{ matrix.k8s_version }}'
           k8s-arguments: ${{ startsWith(matrix.k8s_version, 'v1.22') && '--egress-selector-mode disabled' || '' }}
           testim-access-token: '${{ secrets.TESTIM_ACCESS_TOKEN }}'
@@ -1869,6 +1862,7 @@ jobs:
       fail-fast: false
       matrix:
         k8s_version: [ v1.26.1-k3s1 ]
+        platform: [ k3s, gke ]
     steps:
       - name: Checkout
         uses: actions/checkout@v2
@@ -1889,45 +1883,12 @@ jobs:
         with:
           test-focus: 'airgap-smoke-test'
           kots-namespace: 'airgap-smoke-test'
+          platform: '${{ matrix.platform }}'
           k8s-version: '${{ matrix.k8s_version }}'
           k8s-arguments: ${{ startsWith(matrix.k8s_version, 'v1.22') && '--egress-selector-mode disabled' || '' }}
           testim-access-token: '${{ secrets.TESTIM_ACCESS_TOKEN }}'
           testim-branch: ${{ github.head_ref == 'main' && 'master' || github.head_ref }}
           kots-airgap: true
-          aws-access-key-id: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_ACCESS_KEY_ID }}'
-          aws-secret-access-key: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_SECRET_ACCESS_KEY }}'
-
-
-  validate-airgap-smoke-test-gke:
-    runs-on: ubuntu-20.04
-    needs: [ enable-tests, can-run-ci, create-gke-cluster, build-kots, build-e2e, build-kurl-proxy, build-migrations, push-minio, push-rqlite ]
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v2
-      - name: download e2e deps
-        uses: actions/download-artifact@v2
-        with:
-          name: e2e
-          path: e2e/bin/
-      - name: download kots binary
-        uses: actions/download-artifact@v2
-        with:
-          name: kots
-          path: bin/
-      - run: |
-          docker load -i e2e/bin/e2e-deps.tar
-          chmod +x e2e/bin/*
-          chmod +x bin/*
-      - uses: ./.github/actions/kots-e2e
-        with:
-          test-focus: 'airgap-smoke-test'
-          use-gke: true
-          kots-namespace: 'airgap-smoke-test'
-          kots-airgap: true
-          gke-service-key: ${{ secrets.GOOGLE_CLOUD_CREDENTIALS }}
-          gke-cluster-name: 'kots-ci-test-${{ github.run_id }}-${{ github.run_attempt }}'
-          testim-branch: ${{ github.head_ref == 'main' && 'master' || github.head_ref }}
-          testim-access-token: '${{ secrets.TESTIM_ACCESS_TOKEN }}'
           aws-access-key-id: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_ACCESS_KEY_ID }}'
           aws-secret-access-key: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_SECRET_ACCESS_KEY }}'
 
@@ -1950,7 +1911,6 @@ jobs:
       - validate-range-kots-version
       - validate-multi-app-install
       - validate-airgap-smoke-test
-      - validate-airgap-smoke-test-gke
       # non-testim tests
       - validate-minimal-rbac-override
       - validate-multi-namespace
@@ -2007,5 +1967,3 @@ jobs:
       - name: succeed if validate-pr-tests job succeeded
         if: needs.validate-pr-tests.result == 'success'
         run: echo "Validation succeeded"
-
-
