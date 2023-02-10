@@ -28,7 +28,10 @@ import (
 	veleroclientv1 "github.com/vmware-tanzu/velero/pkg/generated/clientset/versioned/typed/velero/v1"
 	velerolabel "github.com/vmware-tanzu/velero/pkg/label"
 	"go.uber.org/zap"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/fields"
+	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/client-go/kubernetes"
 )
 
@@ -161,7 +164,6 @@ func CreateApplicationBackup(ctx context.Context, a *apptypes.App, isScheduled b
 		return nil, errors.Wrap(err, "failed to create k8s clientset")
 	}
 
-	// excludeShutdownPodsFromBackup will add a hook to the backup to exclude pods that are in the process of shutting down
 	if err := excludeShutdownPodsFromBackup(ctx, clientset, veleroBackup); err != nil {
 		return nil, errors.Wrap(err, "failed to exclude shutdown pods from backup")
 	}
@@ -390,7 +392,6 @@ func CreateInstanceBackup(ctx context.Context, cluster *downstreamtypes.Downstre
 		}
 	}
 
-	// excludeShutdownPodsFromBackup will add a hook to the backup to exclude pods that are in the process of shutting down
 	if err := excludeShutdownPodsFromBackup(ctx, clientset, veleroBackup); err != nil {
 		return nil, errors.Wrap(err, "failed to exclude shutdown pods from backup")
 	}
@@ -963,16 +964,27 @@ func excludeShutdownPodsFromBackup(ctx context.Context, clientset kubernetes.Int
 		}
 	}
 
+	kotsadmLabelSet := labels.Set{
+		kotsadmtypes.KotsadmKey:  kotsadmtypes.KotsadmLabelValue,
+		kotsadmtypes.BackupLabel: kotsadmtypes.BackupLabelValue,
+	}
+
+	selectorMap := map[string]string{
+		"status.phase": string(corev1.PodFailed),
+	}
+
+	failedPodListOptions := metav1.ListOptions{
+		LabelSelector: kotsadmLabelSet.String(),
+		FieldSelector: fields.SelectorFromSet(selectorMap).String(),
+	}
+
 	for _, namespace := range namespaces {
-		pods, err := clientset.CoreV1().Pods(namespace).List(ctx, metav1.ListOptions{
-			FieldSelector: "status.phase=Failed",
-		})
+		pods, err := clientset.CoreV1().Pods(namespace).List(ctx, failedPodListOptions)
 		if err != nil {
 			return errors.Wrapf(err, "failed to list pods in namespace %s", namespace)
 		}
-
 		for _, pod := range pods.Items {
-			if pod.Status.Reason == "Shutdown" {
+			if pod.Status.Phase == corev1.PodFailed && pod.Status.Reason == "Shutdown" {
 				logger.Infof("Excluding pod %s in namespace %s from backup", pod.Name, namespace)
 				// add velero.io/exclude-from-backup=true label to pod
 				if pod.Labels == nil {

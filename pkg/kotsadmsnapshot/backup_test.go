@@ -5,6 +5,7 @@ import (
 	"reflect"
 	"testing"
 
+	kotsadmtypes "github.com/replicatedhq/kots/pkg/kotsadm/types"
 	"github.com/stretchr/testify/assert"
 	velerov1 "github.com/vmware-tanzu/velero/pkg/apis/velero/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -113,7 +114,8 @@ func mockGetNamespacesAndPodsClient() kubernetes.Interface {
 						Name:      "test",
 						Namespace: "test",
 						Labels: map[string]string{
-							"app": "kotsadm",
+							kotsadmtypes.KotsadmKey:  kotsadmtypes.KotsadmLabelValue,
+							kotsadmtypes.BackupLabel: kotsadmtypes.BackupLabelValue,
 						},
 					},
 					Status: corev1.PodStatus{
@@ -138,12 +140,13 @@ func mockK8sClientWithShutdownPods() kubernetes.Interface {
 				Name:      "test-shutdown",
 				Namespace: "test",
 				Labels: map[string]string{
-					"app": "kotsadm",
+					kotsadmtypes.KotsadmKey:  kotsadmtypes.KotsadmLabelValue,
+					kotsadmtypes.BackupLabel: kotsadmtypes.BackupLabelValue,
 				},
 			},
 			Status: corev1.PodStatus{
-				Phase:   corev1.PodFailed,
-				Message: "Shutdown",
+				Phase:  "Failed",
+				Reason: "Shutdown",
 			},
 		},
 		&corev1.Pod{
@@ -151,11 +154,12 @@ func mockK8sClientWithShutdownPods() kubernetes.Interface {
 				Name:      "test-running",
 				Namespace: "test",
 				Labels: map[string]string{
-					"app": "kotsadm",
+					kotsadmtypes.KotsadmKey:  kotsadmtypes.KotsadmLabelValue,
+					kotsadmtypes.BackupLabel: kotsadmtypes.BackupLabelValue,
 				},
 			},
 			Status: corev1.PodStatus{
-				Phase: corev1.PodRunning,
+				Phase: "Running",
 			},
 		},
 	)
@@ -214,9 +218,10 @@ func Test_excludeShutdownPodsFromBackup(t *testing.T) {
 		backup    *velerov1.Backup
 	}
 	tests := []struct {
-		name    string
-		args    args
-		wantErr bool
+		name                               string
+		args                               args
+		wantErr                            bool
+		wantNumOfPodsWithExcludeAnnotation int
 	}{
 		{
 			name: "expect no error when namespaces is empty",
@@ -264,30 +269,39 @@ func Test_excludeShutdownPodsFromBackup(t *testing.T) {
 					},
 				},
 			},
-			wantErr: false,
+			wantErr:                            false,
+			wantNumOfPodsWithExcludeAnnotation: 1,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if err := excludeShutdownPodsFromBackup(tt.args.ctx, tt.args.clientset, tt.args.backup); (err != nil) != tt.wantErr {
 				t.Errorf("excludeShutdownPodsFromBackup() error = %v, wantErr %v", err, tt.wantErr)
-				if !tt.wantErr {
-					// get pods in test namespace and check if they have the velero exclude annotation for Shutdown pods
-					pods, err := tt.args.clientset.CoreV1().Pods("test").List(context.TODO(), metav1.ListOptions{})
-					if err != nil {
-						t.Errorf("excludeShutdownPodsFromBackup() error = %v, wantErr %v", err, tt.wantErr)
+			}
+			foundNumofPodsWithExcludeAnnotation := 0
+			if !tt.wantErr {
+				// get pods in test namespace and check if they have the velero exclude annotation for Shutdown pods
+				pods, err := tt.args.clientset.CoreV1().Pods("test").List(context.TODO(), metav1.ListOptions{})
+				if err != nil {
+					t.Errorf("excludeShutdownPodsFromBackup() error = %v, wantErr %v", err, tt.wantErr)
+				}
+				for _, pod := range pods.Items {
+					if _, ok := pod.Labels["velero.io/exclude-from-backup"]; ok {
+						foundNumofPodsWithExcludeAnnotation++
 					}
-					for _, pod := range pods.Items {
-						if pod.Status.Phase == corev1.PodFailed && pod.Status.Message == "Shutdown" {
-							if _, ok := pod.Annotations["velero.io/exclude-from-backup"]; !ok {
-								t.Errorf("excludeShutdownPodsFromBackup() velero.io/exclude-from-backup annotation not found on pod %s", pod.Name)
-							}
-						} else {
-							if _, ok := pod.Annotations["velero.io/exclude-from-backup"]; ok {
-								t.Errorf("excludeShutdownPodsFromBackup() velero.io/exclude-from-backup annotation found on pod %s", pod.Name)
-							}
+					if pod.Status.Phase == corev1.PodFailed && pod.Status.Reason == "Shutdown" {
+						if _, ok := pod.Labels["velero.io/exclude-from-backup"]; !ok {
+							t.Errorf("excludeShutdownPodsFromBackup() velero.io/exclude-from-backup annotation not found on pod %s", pod.Name)
+						}
+					} else {
+						if _, ok := pod.Labels["velero.io/exclude-from-backup"]; ok {
+							t.Errorf("excludeShutdownPodsFromBackup() velero.io/exclude-from-backup annotation found on pod %s", pod.Name)
 						}
 					}
+				}
+
+				if foundNumofPodsWithExcludeAnnotation != tt.wantNumOfPodsWithExcludeAnnotation {
+					t.Errorf("excludeShutdownPodsFromBackup() found %d pods with velero.io/exclude-from-backup annotation, want %d", foundNumofPodsWithExcludeAnnotation, tt.wantNumOfPodsWithExcludeAnnotation)
 				}
 			}
 		})
