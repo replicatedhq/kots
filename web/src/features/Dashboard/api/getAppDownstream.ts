@@ -7,6 +7,7 @@ import { Downstream } from "@types";
 export const getAppDownstream = async (
   appSlug: string
 ): Promise<Downstream | null> => {
+  console.log("hook app downstrweam");
   const res = await fetch(`${process.env.API_ENDPOINT}/app/${appSlug}`, {
     headers: {
       Authorization: Utilities.getToken(),
@@ -25,12 +26,16 @@ export const getAppDownstream = async (
   return appResponse.downstream;
 };
 
-export const useAppDownstream = () => {
+export const useAppDownstream = (
+  onSuccess: (data: Downstream) => void,
+  onError: (data: { message: string }) => void
+) => {
   const { selectedApp } = useSelectedApp();
   return useQuery({
     queryFn: () => getAppDownstream(selectedApp?.slug || ""),
     queryKey: ["getAppDownstream"],
-    onError: (err: Error) => console.log(err),
+    onError,
+    onSuccess,
     refetchInterval: (downstream) =>
       downstream && !isAwaitingResults(downstream?.pendingVersions)
         ? false
