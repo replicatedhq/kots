@@ -64,21 +64,6 @@ jobs:
           branch: ${{ github.head_ref }}
 
 
-  create-gke-cluster:
-    runs-on: ubuntu-20.04
-    needs: [ enable-tests, can-run-ci ]
-    if: always()
-    steps:
-      - name: checkout
-        uses: actions/checkout@v2
-
-      - name: build cluster
-        uses: ./.github/actions/kots-gke
-        with:
-          cluster-name: 'kots-ci-test-${{ github.run_id }}-${{ github.run_attempt }}'
-          service-key: ${{ secrets.GOOGLE_CLOUD_CREDENTIALS }}
-
-
   build-web:
     runs-on: ubuntu-20.04
     needs: [ can-run-ci, generate-tag ]

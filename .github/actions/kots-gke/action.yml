@@ -49,7 +49,14 @@ runs:
 
   - name: 'Find or create the GKE cluster'
     shell: bash
-    run: 'gcloud container clusters describe ${{ inputs.cluster-name }} --region "${{ inputs.cluster-region }}" || gcloud container --project "${{ inputs.project }}" clusters create-auto "${{ inputs.cluster-name }}" --region "${{ inputs.cluster-region }}" --network "${{ inputs.cluster-network }}"  --subnetwork "${{ inputs.cluster-subnetwork }}"'
+    run: |
+      if gcloud container clusters describe ${{ inputs.cluster-name }} --region "${{ inputs.cluster-region }}"; then
+        while STATUS=$(gcloud container clusters describe ${{ inputs.cluster-name }} --region "${{ inputs.cluster-region }}" | grep status | awk 'NF{ print $NF }'); do
+          if [[ "$STATUS" == "RUNNING" ]]; then break; fi
+        done
+      else
+          gcloud container --project "${{ inputs.project }}" clusters create-auto "${{ inputs.cluster-name }}" --region "${{ inputs.cluster-region }}" --network "${{ inputs.cluster-network }}"  --subnetwork "${{ inputs.cluster-subnetwork }}"'
+      fi
 
   - name: 'Get GKE cluster credentials for kubectl'
     uses: google-github-actions/get-gke-credentials@v1
