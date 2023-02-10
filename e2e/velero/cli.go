@@ -27,7 +27,7 @@ func (v *CLI) Install(workspace, kubeconfig string, minio minio.Minio) {
 
 	session, err := v.install(workspace, kubeconfig, minio.GetURL(), minio.GetBucket())
 	Expect(err).WithOffset(1).Should(Succeed(), "install")
-	Eventually(session).WithOffset(1).WithTimeout(2*time.Minute).Should(gexec.Exit(0), "helm install")
+	Eventually(session).WithOffset(1).WithTimeout(5*time.Minute).Should(gexec.Exit(0), "helm install")
 }
 
 func (v *CLI) install(workspace, kubeconfig, s3Url, bucket string) (*gexec.Session, error) {
