@@ -9,7 +9,7 @@ import get from "lodash/get";
 import MountAware from "../shared/MountAware";
 import Loader from "../shared/Loader";
 import MarkdownRenderer from "@src/components/shared/MarkdownRenderer";
-import DownstreamWatchVersionDiff from "@src/components/watches/DownstreamWatchVersionDiff";
+import VersionDiff from "@src/features/VersionDiff/VersionDiff";
 import ShowDetailsModal from "@src/components/modals/ShowDetailsModal";
 import ShowLogsModal from "@src/components/modals/ShowLogsModal";
 import AirgapUploadProgress from "@src/features/Dashboard/components/AirgapUploadProgress";
@@ -490,89 +490,6 @@ class AppVersionHistory extends Component<Props, State> {
       showNoChangesModal: !this.state.showNoChangesModal,
       releaseWithNoChanges: !this.state.showNoChangesModal ? version : {},
     });
-  };
-
-  getVersionDiffSummary = (version: Version) => {
-    if (!version.diffSummary || version.diffSummary === "") {
-      return null;
-    }
-    try {
-      return JSON.parse(version.diffSummary);
-    } catch (err) {
-      throw err;
-    }
-  };
-
-  renderDiff = (version: Version) => {
-    const { app } = this.props;
-    const downstream = app?.downstream;
-    const diffSummary = this.getVersionDiffSummary(version);
-    const hasDiffSummaryError =
-      version.diffSummaryError && version.diffSummaryError.length > 0;
-    let previousSequence = 0;
-    for (const v of this.state.versionHistory as Version[]) {
-      if (v.status === "pending_download") {
-        continue;
-      }
-      if (v.parentSequence < version.parentSequence) {
-        previousSequence = v.parentSequence;
-        break;
-      }
-    }
-
-    if (hasDiffSummaryError) {
-      return (
-        <div className="flex flex1 alignItems--center">
-          <span className="u-fontSize--small u-fontWeight--medium u-lineHeight--normal u-textColor--bodyCopy">
-            Unable to generate diff{" "}
-            <span
-              className="link"
-              onClick={() => this.toggleDiffErrModal(version)}
-            >
-              Why?
-            </span>
-          </span>
-        </div>
-      );
-    } else if (diffSummary) {
-      return (
-        <div className="u-fontSize--small u-fontWeight--medium u-lineHeight--normal">
-          {diffSummary.filesChanged > 0 ? (
-            <div className="DiffSummary u-marginRight--10">
-              <span className="files">
-                {diffSummary.filesChanged} files changed{" "}
-              </span>
-              {!this.props.isHelmManaged && !downstream.gitops?.isConnected && (
-                <span
-                  className="u-fontSize--small link u-marginLeft--5"
-                  onClick={() =>
-                    this.setState({
-                      showDiffOverlay: true,
-                      firstSequence: previousSequence,
-                      secondSequence: version.parentSequence,
-                    })
-                  }
-                >
-                  View diff
-                </span>
-              )}
-            </div>
-          ) : (
-            <div className="DiffSummary">
-              <span className="files">
-                No changes to show.{" "}
-                <span
-                  className="link"
-                  onClick={() => this.toggleNoChangesModal(version)}
-                >
-                  Why?
-                </span>
-              </span>
-            </div>
-          )}
-        </div>
-      );
-    }
   };
 
   renderLogsTabs = () => {
@@ -1595,7 +1512,6 @@ class AppVersionHistory extends Component<Props, State> {
           isNew={isNew}
           newPreflightResults={newPreflightResults}
           showReleaseNotes={this.showReleaseNotes}
-          renderDiff={this.renderDiff}
           toggleShowDetailsModal={this.toggleShowDetailsModal}
           gitopsEnabled={gitopsIsConnected}
           deployVersion={this.deployVersion}
@@ -1610,6 +1526,23 @@ class AppVersionHistory extends Component<Props, State> {
               ?.downloadingVersion
           }
           adminConsoleMetadata={this.props.adminConsoleMetadata}
+          onWhyNoGeneratedDiffClicked={(rowVersion: Version) =>
+            this.toggleNoChangesModal(rowVersion)
+          }
+          onWhyUnableToGeneratedDiffClicked={(rowVersion: Version) =>
+            this.toggleDiffErrModal(rowVersion)
+          }
+          onViewDiffClicked={(
+            firstSequence: number,
+            secondSequence: number
+          ) => {
+            this.setState({
+              showDiffOverlay: true,
+              firstSequence,
+              secondSequence,
+            });
+          }}
+          versionHistory={this.state.versionHistory}
         />
         {this.state.showHelmDeployModalForVersionLabel ===
           version.versionLabel &&
@@ -2162,7 +2095,7 @@ class AppVersionHistory extends Component<Props, State> {
                 {/* Diff overlay */}
                 {showDiffOverlay && (
                   <div className="DiffOverlay">
-                    <DownstreamWatchVersionDiff
+                    <VersionDiff
                       slug={wrappedMatch.params.slug}
                       firstSequence={firstSequence}
                       secondSequence={secondSequence}
