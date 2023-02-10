@@ -214,7 +214,7 @@ export const DashboardSnapshotsCard = (props: Props) => {
           isLoadingSnapshotSettings: false,
           snapshotSettingsErr: false,
           snapshotSettingsErrMsg: "",
-        });
+        });        
       })
       .catch((err) => {
         setState({
@@ -294,10 +294,11 @@ export const DashboardSnapshotsCard = (props: Props) => {
 
   useEffect(() => {
     fetchSnapshotSettings();
-    if (state.snapshotSettings) {
-      setCurrentProvider();
-    }
   }, []);
+
+  useEffect(()=> { 
+if (state.snapshotSettings) setCurrentProvider()
+  },[state.snapshotSettings])
 
   const previousSnapshotSettings = usePrevious(state.snapshotSettings);
 
