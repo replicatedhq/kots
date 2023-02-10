@@ -67,6 +67,7 @@ jobs:
   create-gke-cluster:
     runs-on: ubuntu-20.04
     needs: [ enable-tests, can-run-ci ]
+    if: always()
     steps:
       - name: checkout
         uses: actions/checkout@v2
