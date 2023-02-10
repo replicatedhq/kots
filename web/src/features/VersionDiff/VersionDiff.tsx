@@ -212,7 +212,7 @@ class VersionDiff extends React.Component<Props, State> {
           <DiffEditor
             original={firstApplicationTree?.files[filename]}
             value={secondApplicationTree?.files[filename]}
-            key={filename}
+           // key={filename}
             specKey={filename}
             options={{
               contextMenu: false,

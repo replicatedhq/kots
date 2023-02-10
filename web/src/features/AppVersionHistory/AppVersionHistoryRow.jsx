@@ -730,7 +730,6 @@ class AppVersionHistoryRow extends Component {
     if (version.upstreamReleasedAt) {
       releasedTs = Utilities.dateFormat(version.upstreamReleasedAt, tsFormat);
     }
-    console.log(this.state.showViewDiffButton);
 
     return (
       <div
@@ -789,7 +788,7 @@ class AppVersionHistoryRow extends Component {
                 <span className="u-fontWeight--bold">{releasedTs}</span>
               </p>
             )}
-            {!this.state.showViewDiffButton && (
+            {this.state.showViewDiffButton && (
               <ViewDiffButton
                 onWhyNoGeneratedDiffClicked={
                   this.props.onWhyNoGeneratedDiffClicked

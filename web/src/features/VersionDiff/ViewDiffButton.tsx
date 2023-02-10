@@ -40,7 +40,8 @@ function getPreviousSequence(versionHistory: Version[], version: Version) {
 
 function ViewDiffButton(props: Props) {
   const { selectedApp } = useSelectedApp();
-  const isHelmManaged = useIsHelmManaged;
+  const { data: isHelmManagedResponse } = useIsHelmManaged();
+  const isHelmManaged = isHelmManagedResponse?.isHelmManaged || false;
 
   // TODO: flatten in selector
   const showViewDiffButton =
@@ -104,7 +105,6 @@ function ViewDiffButton(props: Props) {
           </div>
         </div>
       )}
-      <div>Okay</div>
     </>
   );
 }
