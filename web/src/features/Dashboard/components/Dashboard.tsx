@@ -345,41 +345,6 @@ const Dashboard = (props: Props) => {
     });
   };
 
-  // const onCreateSnapshotSuccess = (data: any) => {
-  //   console.log(data, "data");
-  //   setState({
-  //     startingSnapshot: false,
-  //   });
-  //   props.ping();
-  //   if (data === "full") {
-  //     history.push("/snapshots");
-  //   } else {
-  //     history.push(`/snapshots/partial/${app.slug}`);
-  //   }
-  // };
-
-  // const onCreateSnapshotError = (data: any) => {
-  //   console.log(data, "data err");
-  //   // if 409 error
-  //   if (data.kotsadmRequiresVeleroAccess) {
-  //     setState({
-  //       startingSnapshot: false,
-  //     });
-  //     history.replace("/snapshots/settings");
-  //     return;
-  //   }
-
-  //   setState({
-  //     startingSnapshot: false,
-  //     startSnapshotErr: true,
-  //     startSnapshotErrorMsg: data.error,
-  //   });
-  // };
-
-  // const { mutate: createSnapshot } = useCreateSnapshot(
-  //   onCreateSnapshotSuccess,
-  //   onCreateSnapshotError
-  // );
 
   const toggleAppStatusModal = () => {
     setState({ showAppStatusModal: !state.showAppStatusModal });

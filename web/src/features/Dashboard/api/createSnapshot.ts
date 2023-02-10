@@ -34,7 +34,7 @@ export const createSnapshot = async (
     throw new Error(response.error);
   }
 
-  return response;
+  return {...response,option};
 };
 
 // const createSnapshotResponse = (response: SnapshotResponse): Snapshot => {
@@ -44,7 +44,7 @@ export const createSnapshot = async (
 // };
 
 export const useCreateSnapshot = (
-  onSuccess: () => void,
+  onSuccess: ({success, option}: {success: boolean, option: 'full'| 'partial'}) => void,
   onError: () => void
 ) => {
   const { selectedApp } = useSelectedApp();

@@ -10,6 +10,7 @@ import Icon from "@src/components/Icon";
 import { App, KotsParams } from "@types";
 import { RouteComponentProps } from "react-router-dom";
 import { usePrevious } from "@src/hooks/usePrevious";
+import { useCreateSnapshot } from "../api/createSnapshot";
 
 const DESTINATIONS = [
   {
@@ -119,67 +120,103 @@ export const DashboardSnapshotsCard = (props: Props) => {
     }
   );
 
-  const startASnapshot = (option: string) => {
-
-    const { app } = props;
+    const onCreateSnapshotSuccess = ({option}: {success: boolean, option: 'full'| 'partial'}) => {
+      const {app} = props
     setState({
-      startingSnapshot: true,
-      startSnapshotErr: false,
-      startSnapshotErrorMsg: "",
+      startingSnapshot: false,
     });
-
-    let url =
-      option === "full"
-        ? `${process.env.API_ENDPOINT}/snapshot/backup`
-        : `${process.env.API_ENDPOINT}/app/${app.slug}/snapshot/backup`;
-
-    fetch(url, {
-      method: "POST",
-      headers: {
-        Authorization: Utilities.getToken(),
-        "Content-Type": "application/json",
-      },
-    })
-      .then(async (result) => {
-        if (!result.ok && result.status === 409) {
-          const res = await result.json();
-          if (res.kotsadmRequiresVeleroAccess) {
-            setState({
-              startingSnapshot: false,
-            });
-            props.history.replace("/snapshots/settings");
-            return;
-          }
-        }
-
-        if (result.ok) {
-          setState({
-            startingSnapshot: false,
-          });
-          props.ping();
-          if (option === "full") {
-            props.history.push("/snapshots");
-          } else {
-            props.history.push(`/snapshots/partial/${app.slug}`);
-          }
-        } else {
-          const body = await result.json();
-          setState({
-            startingSnapshot: false,
-            startSnapshotErr: true,
-            startSnapshotErrorMsg: body.error,
-          });
-        }
-      })
-      .catch((err) => {
-        console.log(err);
-        setState({
-          startSnapshotErrorMsg: err
-            ? err.message
-            : "Something went wrong, please try again.",
-        });
-      });
+    props.ping();
+    if (option === "full") {
+      history.push("/snapshots");
+    } else {
+      history.push(`/snapshots/partial/${app.slug}`);
+    }
   };
+
+  const onCreateSnapshotError = (data: any) => {
+    console.log(data, "data err");
+    // if 409 error
+    if (data.kotsadmRequiresVeleroAccess) {
+      setState({
+        startingSnapshot: false,
+      });
+      history.replace("/snapshots/settings");
+      return;
+    }
+
+    setState({
+      startingSnapshot: false,
+      startSnapshotErr: true,
+      startSnapshotErrorMsg: data.error,
+    });
+  };
+
+  const { mutate: createSnapshot } = useCreateSnapshot(
+    onCreateSnapshotSuccess,
+    onCreateSnapshotError
+  );
+
+  // const startASnapshot = (option: string) => {
+
+  //   const { app } = props;
+  //   setState({
+  //     startingSnapshot: true,
+  //     startSnapshotErr: false,
+  //     startSnapshotErrorMsg: "",
+  //   });
+
+  //   let url =
+  //     option === "full"
+  //       ? `${process.env.API_ENDPOINT}/snapshot/backup`
+  //       : `${process.env.API_ENDPOINT}/app/${app.slug}/snapshot/backup`;
+
+  //   fetch(url, {
+  //     method: "POST",
+  //     headers: {
+  //       Authorization: Utilities.getToken(),
+  //       "Content-Type": "application/json",
+  //     },
+  //   })
+  //     .then(async (result) => {
+  //       if (!result.ok && result.status === 409) {
+  //         const res = await result.json();
+  //         if (res.kotsadmRequiresVeleroAccess) {
+  //           setState({
+  //             startingSnapshot: false,
+  //           });
+  //           props.history.replace("/snapshots/settings");
+  //           return;
+  //         }
+  //       }
+
+  //       if (result.ok) {
+  //         setState({
+  //           startingSnapshot: false,
+  //         });
+  //         props.ping();
+  //         if (option === "full") {
+  //           props.history.push("/snapshots");
+  //         } else {
+  //           props.history.push(`/snapshots/partial/${app.slug}`);
+  //         }
+  //       } else {
+  //         const body = await result.json();
+  //         setState({
+  //           startingSnapshot: false,
+  //           startSnapshotErr: true,
+  //           startSnapshotErrorMsg: body.error,
+  //         });
+  //       }
+  //     })
+  //     .catch((err) => {
+  //       console.log(err);
+  //       setState({
+  //         startSnapshotErrorMsg: err
+  //           ? err.message
+  //           : "Something went wrong, please try again.",
+  //       });
+  //     });
+  // };
 
   const fetchSnapshotSettings = async () => {
     setState({
@@ -340,11 +377,11 @@ if (state.snapshotSettings) setCurrentProvider()
             dropdownOptions={[
               {
                 displayText: "Start a Partial snapshot",
-                onClick: () => startASnapshot("partial"),
+                onClick: () => createSnapshot("partial"),
               },
               {
                 displayText: "Start a Full snapshot",
-                onClick: () => startASnapshot("full"),
+                onClick: () => createSnapshot("full"),
               },
               {
                 displayText: "Learn about the difference",
