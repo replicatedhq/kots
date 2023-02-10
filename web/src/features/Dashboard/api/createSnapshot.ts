@@ -1,4 +1,4 @@
-import { useQuery } from "react-query";
+import { useMutation } from "react-query";
 import { Utilities } from "../../../utilities/utilities";
 import { useSelectedApp } from "@features/App";
 
@@ -13,7 +13,7 @@ interface Snapshot {
 }
 
 export const createSnapshot = async (
-  option: string,
+  option: "full" | "partial",
   appSlug: string
 ): Promise<SnapshotResponse> => {
   let url =
@@ -37,21 +37,22 @@ export const createSnapshot = async (
   return response;
 };
 
-const createSnapshotResponse = (response: SnapshotResponse): Snapshot => {
-  return {
-    startingSnapshot: response.kotsadmRequiresVeleroAccess ? false : true,
-  };
-};
+// const createSnapshotResponse = (response: SnapshotResponse): Snapshot => {
+//   return {
+//     startingSnapshot: response.kotsadmRequiresVeleroAccess ? false : true,
+//   };
+// };
 
-export const useCreateSnapshot = (option: "full" | "partial") => {
+export const useCreateSnapshot = (
+  onSuccess: () => void,
+  onError: () => void
+) => {
   const { selectedApp } = useSelectedApp();
-  return useQuery({
-    queryFn: () => createSnapshot(option, selectedApp?.slug || ""),
-    queryKey: ["createSnapshot"],
-    select: (response: SnapshotResponse) => {
-      createSnapshotResponse(response);
-    },
-    enabled: false,
+  return useMutation({
+    mutationFn: (option: "full" | "partial") =>
+      createSnapshot(option, selectedApp?.slug || ""),
+    onSuccess,
+    onError,
   });
 };
 

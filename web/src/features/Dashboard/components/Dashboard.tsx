@@ -44,6 +44,7 @@ import {
   useUpdateDownloadStatus,
 } from "../api/getUpdateDownloadStatus";
 import { useAppDownstream } from "../api/getAppDownstream";
+import { useCreateSnapshot } from "../api/createSnapshot";
 //import LicenseTester from "./LicenseTester";
 
 type Props = {
@@ -368,71 +369,108 @@ const Dashboard = (props: Props) => {
     });
   };
 
-  const startASnapshot = (option: string) => {
+  const onCreateSnapshotSuccess = (data: any) => {
+    console.log(data, "data");
     setState({
-      startingSnapshot: true,
-      startSnapshotErr: false,
-      startSnapshotErrorMsg: "",
+      startingSnapshot: false,
     });
-
-    let url =
-      option === "full"
-        ? `${process.env.API_ENDPOINT}/snapshot/backup`
-        : `${process.env.API_ENDPOINT}/app/${app.slug}/snapshot/backup`;
-
-    fetch(url, {
-      method: "POST",
-      headers: {
-        Authorization: Utilities.getToken(),
-        "Content-Type": "application/json",
-      },
-    })
-      .then(async (result) => {
-        if (!result.ok && result.status === 409) {
-          const res = await result.json();
-          if (res.kotsadmRequiresVeleroAccess) {
-            setState({
-              startingSnapshot: false,
-            });
-            history.replace("/snapshots/settings");
-            return;
-          }
-        }
-
-        if (result.ok) {
-          setState({
-            startingSnapshot: false,
-          });
-          props.ping();
-          if (option === "full") {
-            history.push("/snapshots");
-          } else {
-            history.push(`/snapshots/partial/${app.slug}`);
-          }
-        } else {
-          const body = await result.json();
-          setState({
-            startingSnapshot: false,
-            startSnapshotErr: true,
-            startSnapshotErrorMsg: body.error,
-          });
-        }
-      })
-      .catch((err) => {
-        console.log(err);
-        setState({
-          startSnapshotErrorMsg: err
-            ? err.message
-            : "Something went wrong, please try again.",
-        });
-      });
+    props.ping();
+    if (data === "full") {
+      history.push("/snapshots");
+    } else {
+      history.push(`/snapshots/partial/${app.slug}`);
+    }
   };
+
+  const onCreateSnapshotError = (data: any) => {
+    console.log(data, "data err");
+    // if 409 error
+    if (data.kotsadmRequiresVeleroAccess) {
+      setState({
+        startingSnapshot: false,
+      });
+      history.replace("/snapshots/settings");
+      return;
+    }
+
+    setState({
+      startingSnapshot: false,
+      startSnapshotErr: true,
+      startSnapshotErrorMsg: data.error,
+    });
+  };
+
+  const { mutate: createSnapshot } = useCreateSnapshot(
+    onCreateSnapshotSuccess,
+    onCreateSnapshotError
+  );
+
+  // const startASnapshot = (option: string) => {
+  //   setState({
+  //     startingSnapshot: true,
+  //     startSnapshotErr: false,
+  //     startSnapshotErrorMsg: "",
+  //   });
+
+  //   let url =
+  //     option === "full"
+  //       ? `${process.env.API_ENDPOINT}/snapshot/backup`
+  //       : `${process.env.API_ENDPOINT}/app/${app.slug}/snapshot/backup`;
+
+  //   fetch(url, {
+  //     method: "POST",
+  //     headers: {
+  //       Authorization: Utilities.getToken(),
+  //       "Content-Type": "application/json",
+  //     },
+  //   })
+  //     .then(async (result) => {
+  //       if (!result.ok && result.status === 409) {
+  //         const res = await result.json();
+  //         if (res.kotsadmRequiresVeleroAccess) {
+  //           setState({
+  //             startingSnapshot: false,
+  //           });
+  //           history.replace("/snapshots/settings");
+  //           return;
+  //         }
+  //       }
+
+  //       if (result.ok) {
+  //         setState({
+  //           startingSnapshot: false,
+  //         });
+  //         props.ping();
+  //         if (option === "full") {
+  //           history.push("/snapshots");
+  //         } else {
+  //           history.push(`/snapshots/partial/${app.slug}`);
+  //         }
+  //       } else {
+  //         const body = await result.json();
+  //         setState({
+  //           startingSnapshot: false,
+  //           startSnapshotErr: true,
+  //           startSnapshotErrorMsg: body.error,
+  //         });
+  //       }
+  //     })
+  //     .catch((err) => {
+  //       console.log(err);
+  //       setState({
+  //         startSnapshotErrorMsg: err
+  //           ? err.message
+  //           : "Something went wrong, please try again.",
+  //       });
+  //     });
+  // };
 
   const onSnapshotOptionChange = (selectedSnapshotOption: SnapshotOption) => {
     if (selectedSnapshotOption.option === "learn") {
       setState({ snapshotDifferencesModal: true });
     } else {
-      startASnapshot(selectedSnapshotOption.option);
+      createSnapshot(selectedSnapshotOption.option);
+      //startASnapshot(selectedSnapshotOption.option);
     }
   };
 
@@ -444,7 +482,8 @@ const Dashboard = (props: Props) => {
 
   const onSnapshotOptionClick = () => {
     const { selectedSnapshotOption } = state;
-    startASnapshot(selectedSnapshotOption.option);
+    createSnapshot(selectedSnapshotOption.option);
+    //startASnapshot(selectedSnapshotOption.option);
   };
 
   const toggleAppStatusModal = () => {
@@ -795,7 +834,7 @@ const Dashboard = (props: Props) => {
                           app.allowSnapshots && isVeleroInstalled
                         }
                         isVeleroInstalled={isVeleroInstalled}
-                        startASnapshot={startASnapshot}
+                        startASnapshot={createSnapshot}
                         startSnapshotOptions={state.startSnapshotOptions}
                         startSnapshotErr={state.startSnapshotErr}
                         startSnapshotErrorMsg={state.startSnapshotErrorMsg}

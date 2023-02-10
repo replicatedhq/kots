@@ -7,7 +7,6 @@ import { Downstream } from "@types";
 export const getAppDownstream = async (
   appSlug: string
 ): Promise<Downstream | null> => {
-  console.log("hook app downstrweam");
   const res = await fetch(`${process.env.API_ENDPOINT}/app/${appSlug}`, {
     headers: {
       Authorization: Utilities.getToken(),
