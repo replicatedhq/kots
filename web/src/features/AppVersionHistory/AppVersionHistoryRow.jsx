@@ -11,7 +11,7 @@ import { Utilities, getPreflightResultState } from "@src/utilities/utilities";
 import { YamlErrors } from "./YamlErrors";
 import Icon from "@src/components/Icon";
 
-import { ViewDiffButton } from "@features/VersionDiff/ViewDiffButton"
+import { ViewDiffButton } from "@features/VersionDiff/ViewDiffButton";
 
 class AppVersionHistoryRow extends Component {
   constructor(props) {
@@ -21,7 +21,7 @@ class AppVersionHistoryRow extends Component {
       // TODO: move this into selector
       showViewDiffButton:
         !props.version.source?.includes("Airgap Install") &&
-        !props.version.source?.includes("Online Install")
+        !props.version.source?.includes("Online Install"),
     };
   }
 
@@ -730,6 +730,7 @@ class AppVersionHistoryRow extends Component {
     if (version.upstreamReleasedAt) {
       releasedTs = Utilities.dateFormat(version.upstreamReleasedAt, tsFormat);
     }
+    console.log(this.state.showViewDiffButton);
 
     return (
       <div
@@ -790,15 +791,19 @@ class AppVersionHistoryRow extends Component {
             )}
             {!this.state.showViewDiffButton && (
               <ViewDiffButton
-              onWhyNoGeneratedDiffClicked={
-                this.props.onWhyNoGeneratedDiffClicked}
-              onWhyUnableToGeneratedDiffClicked={
-                this.props.onWhyUnableToGeneratedDiffClicked}
-              onViewDiffClicked={(firstSequence, secondSequence) =>
-                this.props.onViewDiffClicked(firstSequence, secondSequence)}
-              version={this.props.version}
-              versionHistory={this.props.versionHistory}
-            />)}
+                onWhyNoGeneratedDiffClicked={
+                  this.props.onWhyNoGeneratedDiffClicked
+                }
+                onWhyUnableToGeneratedDiffClicked={
+                  this.props.onWhyUnableToGeneratedDiffClicked
+                }
+                onViewDiffClicked={(firstSequence, secondSequence) =>
+                  this.props.onViewDiffClicked(firstSequence, secondSequence)
+                }
+                version={this.props.version}
+                versionHistory={this.props.versionHistory}
+              />
+            )}
             {version.yamlErrors && (
               <YamlErrors
                 yamlErrors={version.yamlErrors}

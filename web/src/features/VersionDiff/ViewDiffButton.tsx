@@ -1,7 +1,7 @@
-import React from 'react';
+import React from "react";
 import { Version } from "@types";
-import { useSelectedApp } from '@features/App/hooks/useSelectedApp';
-import { useIsHelmManaged } from '@components/hooks';
+import { useSelectedApp } from "@features/App/hooks/useSelectedApp";
+import { useIsHelmManaged } from "@components/hooks";
 
 interface Props {
   onWhyNoGeneratedDiffClicked: (version: Version) => void;
@@ -22,7 +22,7 @@ function unmarshallDiffSummary(diffSummary: string): DiffSummary {
   } catch (err) {
     throw err;
   }
-};
+}
 
 function getPreviousSequence(versionHistory: Version[], version: Version) {
   let previousSequence = 0;
@@ -38,19 +38,18 @@ function getPreviousSequence(versionHistory: Version[], version: Version) {
   return previousSequence;
 }
 
-
 function ViewDiffButton(props: Props) {
   const { selectedApp } = useSelectedApp();
   const isHelmManaged = useIsHelmManaged;
 
   // TODO: flatten in selector
   const showViewDiffButton =
-    !isHelmManaged && !selectedApp?.downstream.gitops?.isConnected
+    !isHelmManaged && !selectedApp?.downstream.gitops?.isConnected;
   const showDiffSummaryError =
     props.version?.diffSummaryError?.length > 0 ? true : false;
-  const numberOfFilesChanged =
-    props.version?.diffSummary ?
-      unmarshallDiffSummary(props.version.diffSummary)?.filesChanged || 0 : 0;
+  const numberOfFilesChanged = props.version?.diffSummary
+    ? unmarshallDiffSummary(props.version.diffSummary)?.filesChanged || 0
+    : 0;
 
   return (
     <>
@@ -61,26 +60,27 @@ function ViewDiffButton(props: Props) {
             <span
               className="link"
               onClick={() =>
-                props.onWhyUnableToGeneratedDiffClicked(props.version)}
+                props.onWhyUnableToGeneratedDiffClicked(props.version)
+              }
             >
               Why?
             </span>
           </span>
-        </div>)}
+        </div>
+      )}
 
       {numberOfFilesChanged > 0 && (
         <div className="u-fontSize--small u-fontWeight--medium u-lineHeight--normal">
           <div className="DiffSummary u-marginRight--10">
-            <span className="files">
-              {numberOfFilesChanged} files changed{" "}
-            </span>
+            <span className="files">{numberOfFilesChanged} files changed </span>
             {showViewDiffButton && (
               <span
                 className="u-fontSize--small link u-marginLeft--5"
                 onClick={() =>
                   props.onViewDiffClicked(
                     getPreviousSequence(props.versionHistory, props.version),
-                    props.version.parentSequence)
+                    props.version.parentSequence
+                  )
                 }
               >
                 View diff
@@ -102,7 +102,9 @@ function ViewDiffButton(props: Props) {
               </span>
             </span>
           </div>
-        </div>)}
+        </div>
+      )}
+      <div>Okay</div>
     </>
   );
 }
