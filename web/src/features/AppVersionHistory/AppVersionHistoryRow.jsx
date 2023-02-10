@@ -11,18 +11,31 @@ import { Utilities, getPreflightResultState } from "@src/utilities/utilities";
 import { YamlErrors } from "./YamlErrors";
 import Icon from "@src/components/Icon";
 
+import { ViewDiffButton } from "@features/VersionDiff/ViewDiffButton"
+
 class AppVersionHistoryRow extends Component {
-  renderDiff = (version) => {
-    const hideSourceDiff =
-      version.source?.includes("Airgap Install") ||
-      version.source?.includes("Online Install");
-    if (hideSourceDiff) {
-      return null;
-    }
-    return (
-      <div className="u-marginTop--5">{this.props.renderDiff(version)}</div>
-    );
-  };
+  constructor(props) {
+    super(props);
+
+    this.state = {
+      // TODO: move this into selector
+      showViewDiffButton:
+        !props.version.source?.includes("Airgap Install") &&
+        !props.version.source?.includes("Online Install")
+    };
+  }
+
+  // renderDiff = (version) => {
+  //   const hideSourceDiff =
+  //     version.source?.includes("Airgap Install") ||
+  //     version.source?.includes("Online Install");
+  //   if (hideSourceDiff) {
+  //     return null;
+  //   }
+  //   return (
+  //     <div className="u-marginTop--5">{this.props.renderDiff(version)}</div>
+  //   );
+  // };
 
   handleSelectReleasesToDiff = () => {
     if (!this.props.selectedDiffReleases) {
@@ -287,7 +300,7 @@ class AppVersionHistoryRow extends Component {
                               : newPreflightResults
                               ? "success"
                               : ""
-                          } 
+                          }
                            ${
                              !showDeployLogs && !showActions
                                ? "without-btns"
@@ -357,7 +370,7 @@ class AppVersionHistoryRow extends Component {
                             : newPreflightResults
                             ? "success"
                             : ""
-                        } 
+                        }
                           ${
                             !showDeployLogs && !showActions
                               ? "without-btns"
@@ -775,7 +788,17 @@ class AppVersionHistoryRow extends Component {
                 <span className="u-fontWeight--bold">{releasedTs}</span>
               </p>
             )}
-            {this.renderDiff(version)}
+            {!this.state.showViewDiffButton && (
+              <ViewDiffButton
+              onWhyNoGeneratedDiffClicked={
+                this.props.onWhyNoGeneratedDiffClicked}
+              onWhyUnableToGeneratedDiffClicked={
+                this.props.onWhyUnableToGeneratedDiffClicked}
+              onViewDiffClicked={(firstSequence, secondSequence) =>
+                this.props.onViewDiffClicked(firstSequence, secondSequence)}
+              version={this.props.version}
+              versionHistory={this.props.versionHistory}
+            />)}
             {version.yamlErrors && (
               <YamlErrors
                 yamlErrors={version.yamlErrors}

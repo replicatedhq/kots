@@ -3,7 +3,7 @@ import { Link, useHistory, useParams } from "react-router-dom";
 import ReactTooltip from "react-tooltip";
 import DashboardGitOpsCard from "./DashboardGitOpsCard";
 import MarkdownRenderer from "@src/components/shared/MarkdownRenderer";
-import DownstreamWatchVersionDiff from "@src/components/watches/DownstreamWatchVersionDiff";
+import VersionDiff from "@features/VersionDiff/VersionDiff";
 import Modal from "react-modal";
 import AirgapUploadProgress from "@src/components/AirgapUploadProgress";
 import Loader from "@src/components/shared/Loader";
@@ -522,7 +522,7 @@ const DashboardVersionCard = (props: Props) => {
                     ""
                   )}
                   <p
-                    className={`checks-running-text u-fontSize--small u-lineHeight--normal u-fontWeight--medium 
+                    className={`checks-running-text u-fontSize--small u-lineHeight--normal u-fontWeight--medium
                     } ${
                       preflightState.preflightsFailed
                         ? "err"
@@ -1852,7 +1852,7 @@ const DashboardVersionCard = (props: Props) => {
           className="Modal DiffViewerModal"
         >
           <div className="DiffOverlay">
-            <DownstreamWatchVersionDiff
+            <VersionDiff
               slug={params.slug}
               firstSequence={state.firstSequence}
               secondSequence={state.secondSequence}
