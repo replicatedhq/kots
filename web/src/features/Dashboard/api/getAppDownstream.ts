@@ -26,7 +26,7 @@ export const getAppDownstream = async (
 };
 
 export const useAppDownstream = () => {
-  const { selectedApp } = useSelectedApp();
+  const selectedApp =  useSelectedApp();
   return useQuery({
     queryFn: () => getAppDownstream(selectedApp?.slug || ""),
     queryKey: ["getAppDownstream"],

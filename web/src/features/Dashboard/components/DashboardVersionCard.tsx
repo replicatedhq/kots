@@ -174,7 +174,7 @@ const DashboardVersionCard = (props: Props) => {
   );
   const history = useHistory();
   const params = useParams<KotsParams>();
-  const { selectedApp } = useSelectedApp();
+  const selectedApp =  useSelectedApp();
   const {
     data: newAppVersionWithInterceptData,
     error: latestDeployableVersionErrMsg,
@@ -522,7 +522,7 @@ const DashboardVersionCard = (props: Props) => {
                     ""
                   )}
                   <p
-                    className={`checks-running-text u-fontSize--small u-lineHeight--normal u-fontWeight--medium 
+                    className={`checks-running-text u-fontSize--small u-lineHeight--normal u-fontWeight--medium
                     } ${
                       preflightState.preflightsFailed
                         ? "err"

@@ -25,7 +25,7 @@ export const getAirgapConfig = async (appSlug: string): Promise<number> => {
 };
 
 export const useAirgapConfig = () => {
-  const { selectedApp } = useSelectedApp();
+  const selectedApp =  useSelectedApp();
   return useQuery({
     queryFn: () => getAirgapConfig(selectedApp?.slug || ""),
     queryKey: ["getAirgapConfig"],

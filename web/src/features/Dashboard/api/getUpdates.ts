@@ -49,7 +49,7 @@ const makeUpdatesResponse = (response: UpdateResponse): Updates => {
 
 // update name later
 export const useCheckForUpdates = () => {
-  const { selectedApp } = useSelectedApp();
+  const selectedApp =  useSelectedApp();
   return useQuery({
     queryFn: () => getCheckForUpdates(selectedApp?.slug || ""),
     queryKey: ["getCheckForUpdates"],

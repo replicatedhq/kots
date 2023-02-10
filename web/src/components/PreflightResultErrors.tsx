@@ -39,7 +39,7 @@ const PreflightResultErrors = (props: Props) => {
     }
   );
   const match = useRouteMatch<KotsParams>();
-  const { selectedApp } = useSelectedApp();
+  const selectedApp =  useSelectedApp();
 
   const [previousAppSlug, setPreviousAppSlug] = React.useState<
     string | undefined

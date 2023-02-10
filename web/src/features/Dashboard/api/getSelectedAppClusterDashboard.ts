@@ -50,7 +50,7 @@ export const useSelectedAppClusterDashboard = ({
   const { data: isHelmManagedResponse } = useIsHelmManaged();
   const { isHelmManaged } = isHelmManagedResponse || { isHelmManaged: false };
 
-  const { selectedApp } = useSelectedApp();
+  const selectedApp =  useSelectedApp();
   const { slug } = selectedApp || { slug: "" };
   const clusterId = selectedApp?.downstream?.cluster?.id.toString() || "";
   return useQuery(

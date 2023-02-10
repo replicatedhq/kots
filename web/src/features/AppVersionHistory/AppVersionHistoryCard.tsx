@@ -20,7 +20,7 @@ function AppVersionHistoryCard({
   selectedDiffReleases: boolean;
   version: Version
 }) {
-  const { selectedApp } = useSelectedApp();
+  const selectedApp =  useSelectedApp();
   const isHelmManaged = useIsHelmManaged();
   const { clearError: clearDownloadError, download, error: downloadError } = useDownloadValues({
     appSlug: selectedApp?.slug,
@@ -65,7 +65,6 @@ function AppVersionHistoryCard({
         }
         isHelmManaged={isHelmManaged}
         key={version.sequence}
-        app={selectedApp}
         version={version}
         selectedDiffReleases={this.state.selectedDiffReleases}
         nothingToCommit={selectedApp?.downstream?.gitops?.isConnected && !version.commitUrl}
