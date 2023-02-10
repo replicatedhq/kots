@@ -451,6 +451,7 @@ jobs:
           testim-access-token: '${{ secrets.TESTIM_ACCESS_TOKEN }}'
           aws-access-key-id: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_ACCESS_KEY_ID }}'
           aws-secret-access-key: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_SECRET_ACCESS_KEY }}'
+          gke-service-key: ${{ secrets.GOOGLE_CLOUD_CREDENTIALS }}
 
 
   validate-smoke-test:
@@ -488,6 +489,7 @@ jobs:
           testim-branch: ${{ github.head_ref == 'main' && 'master' || github.head_ref }}
           aws-access-key-id: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_ACCESS_KEY_ID }}'
           aws-secret-access-key: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_SECRET_ACCESS_KEY }}'
+          gke-service-key: ${{ secrets.GOOGLE_CLOUD_CREDENTIALS }}
 
 
   validate-minimal-rbac:
@@ -525,6 +527,7 @@ jobs:
           testim-branch: ${{ github.head_ref == 'main' && 'master' || github.head_ref }}
           aws-access-key-id: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_ACCESS_KEY_ID }}'
           aws-secret-access-key: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_SECRET_ACCESS_KEY }}'
+          gke-service-key: ${{ secrets.GOOGLE_CLOUD_CREDENTIALS }}
 
 
   validate-backup-and-restore:
@@ -562,6 +565,7 @@ jobs:
           testim-branch: ${{ github.head_ref == 'main' && 'master' || github.head_ref }}
           aws-access-key-id: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_ACCESS_KEY_ID }}'
           aws-secret-access-key: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_SECRET_ACCESS_KEY }}'
+          gke-service-key: ${{ secrets.GOOGLE_CLOUD_CREDENTIALS }}
 
 
   validate-no-required-config:
@@ -599,6 +603,7 @@ jobs:
           testim-branch: ${{ github.head_ref == 'main' && 'master' || github.head_ref }}
           aws-access-key-id: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_ACCESS_KEY_ID }}'
           aws-secret-access-key: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_SECRET_ACCESS_KEY }}'
+          gke-service-key: ${{ secrets.GOOGLE_CLOUD_CREDENTIALS }}
 
 
   validate-strict-preflight-checks:
@@ -636,6 +641,7 @@ jobs:
           testim-branch: ${{ github.head_ref == 'main' && 'master' || github.head_ref }}
           aws-access-key-id: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_ACCESS_KEY_ID }}'
           aws-secret-access-key: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_SECRET_ACCESS_KEY }}'
+          gke-service-key: ${{ secrets.GOOGLE_CLOUD_CREDENTIALS }}
 
 
   validate-version-history-pagination:
@@ -673,6 +679,7 @@ jobs:
           testim-branch: ${{ github.head_ref == 'main' && 'master' || github.head_ref }}
           aws-access-key-id: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_ACCESS_KEY_ID }}'
           aws-secret-access-key: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_SECRET_ACCESS_KEY }}'
+          gke-service-key: ${{ secrets.GOOGLE_CLOUD_CREDENTIALS }}
 
 
   validate-change-license:
@@ -710,6 +717,7 @@ jobs:
           testim-branch: ${{ github.head_ref == 'main' && 'master' || github.head_ref }}
           aws-access-key-id: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_ACCESS_KEY_ID }}'
           aws-secret-access-key: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_SECRET_ACCESS_KEY }}'
+          gke-service-key: ${{ secrets.GOOGLE_CLOUD_CREDENTIALS }}
 
 
   validate-helm-managed:
@@ -749,6 +757,7 @@ jobs:
           aws-secret-access-key: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_SECRET_ACCESS_KEY }}'
           kots-helm-chart-url: 'oci://ttl.sh/automated-${{ github.run_id }}/admin-console'
           kots-helm-chart-version: '0.0.${{ github.run_id }}-automated'
+          gke-service-key: ${{ secrets.GOOGLE_CLOUD_CREDENTIALS }}
 
 
   validate-minimal-rbac-override:
@@ -1491,6 +1500,7 @@ jobs:
           k8s-version: '${{ matrix.k8s_version }}'
           aws-access-key-id: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_ACCESS_KEY_ID }}'
           aws-secret-access-key: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_SECRET_ACCESS_KEY }}'
+          gke-service-key: ${{ secrets.GOOGLE_CLOUD_CREDENTIALS }}
 
 
   validate-tag-and-digest:
@@ -1528,6 +1538,7 @@ jobs:
           testim-branch: ${{ github.head_ref == 'main' && 'master' || github.head_ref }}
           aws-access-key-id: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_ACCESS_KEY_ID }}'
           aws-secret-access-key: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_SECRET_ACCESS_KEY }}'
+          gke-service-key: ${{ secrets.GOOGLE_CLOUD_CREDENTIALS }}
 
 
   validate-kots-push-images-anonymous:
@@ -1596,6 +1607,7 @@ jobs:
           kotsadm-tag: 24h
           aws-access-key-id: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_ACCESS_KEY_ID }}'
           aws-secret-access-key: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_SECRET_ACCESS_KEY }}'
+          gke-service-key: ${{ secrets.GOOGLE_CLOUD_CREDENTIALS }}
 
       - name: validate that kots install fails early
         run: |
@@ -1649,6 +1661,7 @@ jobs:
           testim-branch: ${{ github.head_ref == 'main' && 'master' || github.head_ref }}
           aws-access-key-id: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_ACCESS_KEY_ID }}'
           aws-secret-access-key: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_SECRET_ACCESS_KEY }}'
+          gke-service-key: ${{ secrets.GOOGLE_CLOUD_CREDENTIALS }}
       - name: validate that kots install fails early
         run: |
           set +e
@@ -1701,6 +1714,7 @@ jobs:
           testim-branch: ${{ github.head_ref == 'main' && 'master' || github.head_ref }}
           aws-access-key-id: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_ACCESS_KEY_ID }}'
           aws-secret-access-key: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_SECRET_ACCESS_KEY }}'
+          gke-service-key: ${{ secrets.GOOGLE_CLOUD_CREDENTIALS }}
       - name: validate that kots install fails early
         run: |
           set +e
@@ -1854,6 +1868,7 @@ jobs:
           testim-branch: ${{ github.head_ref == 'main' && 'master' || github.head_ref }}
           aws-access-key-id: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_ACCESS_KEY_ID }}'
           aws-secret-access-key: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_SECRET_ACCESS_KEY }}'
+          gke-service-key: ${{ secrets.GOOGLE_CLOUD_CREDENTIALS }}
 
 
   validate-airgap-smoke-test:
@@ -1892,6 +1907,7 @@ jobs:
           kots-airgap: true
           aws-access-key-id: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_ACCESS_KEY_ID }}'
           aws-secret-access-key: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_SECRET_ACCESS_KEY }}'
+          gke-service-key: ${{ secrets.GOOGLE_CLOUD_CREDENTIALS }}
 
 
   validate-pr-tests:
