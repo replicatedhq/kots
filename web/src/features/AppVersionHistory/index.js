@@ -1,3 +1,3 @@
-import { AppVersionHistoryRow } from "./AppVersionHistoryRow";
+import { AppVersionHistoryRow } from "./AppVersionHistoryRow.tsx";
 
 export { AppVersionHistoryRow };

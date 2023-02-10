@@ -1,6 +1,6 @@
 import React from "react";
 import { Version } from "@types";
-import { AppVersionHistoryRow } from "./AppVersionHistoryRow";
+import { AppVersionHistoryRow } from "./AppVersionHistoryRow.tsx";
 import { useDownloadValues } from "./api";
 import { useSelectedApp } from "@features/App/hooks/useSelectedApp";
 import { useIsHelmManaged } from "@components/hooks";
