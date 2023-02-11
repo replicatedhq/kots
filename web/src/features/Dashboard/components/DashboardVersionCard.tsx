@@ -174,7 +174,7 @@ const DashboardVersionCard = (props: Props) => {
   );
   const history = useHistory();
   const params = useParams<KotsParams>();
-  const { selectedApp } = useSelectedApp();
+  const selectedApp = useSelectedApp();
   const {
     data: newAppVersionWithInterceptData,
     error: latestDeployableVersionErrMsg,

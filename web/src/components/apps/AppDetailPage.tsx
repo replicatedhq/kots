@@ -89,7 +89,7 @@ function AppDetailPage(props: Props) {
 
   const history = useHistory();
   const params = useParams<KotsParams>();
-  const { selectedApp } = useSelectedApp();
+  const selectedApp = useSelectedApp();
   const [appsRefetchInterval, setAppsRefetchInterval] = useState<
     number | false
   >(false);

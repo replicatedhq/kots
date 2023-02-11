@@ -62,7 +62,7 @@ const PreflightResultErrors = (props: Props) => {
     }
   );
   const { slug, sequence = "0" } = useParams<KotsParams>();
-  const { selectedApp } = useSelectedApp();
+  const selectedApp = useSelectedApp();
 
   const [previousAppSlug, setPreviousAppSlug] = React.useState<
     string | undefined

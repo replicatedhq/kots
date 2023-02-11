@@ -34,7 +34,7 @@ export const useUpdateDownloadStatus = (
   onError: (error: Error) => void,
   isBundleUploading: boolean
 ) => {
-  const { selectedApp } = useSelectedApp();
+  const selectedApp = useSelectedApp();
 
   return useQuery({
     queryFn: () => getUpdateDownloadStatus(selectedApp?.slug || ""),

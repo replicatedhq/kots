@@ -44,7 +44,7 @@ const createSnapshotResponse = (response: SnapshotResponse): Snapshot => {
 };
 
 export const useCreateSnapshot = (option: "full" | "partial") => {
-  const { selectedApp } = useSelectedApp();
+  const selectedApp = useSelectedApp();
   return useQuery({
     queryFn: () => createSnapshot(option, selectedApp?.slug || ""),
     queryKey: ["createSnapshot"],
