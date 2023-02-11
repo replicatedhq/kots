@@ -2,15 +2,19 @@ import { useMutation } from "react-query";
 import { Utilities } from "../../../utilities/utilities";
 import { useSelectedApp } from "@features/App";
 
+
+interface ResponseError {
+  status?: number;
+}
+
+
 interface SnapshotResponse {
   success: boolean;
   error: string;
   kotsadmNamespace: string;
   kotsadmRequiresVeleroAccess: boolean;
 }
-interface Snapshot {
-  startingSnapshot: boolean;
-}
+
 
 export const createSnapshot = async (
   option: "full" | "partial",
@@ -30,28 +34,28 @@ export const createSnapshot = async (
   });
 
   const response = await res.json();
+
   if (!res.ok && res.status !== 200) {
-    throw new Error(response.error);
+    const error = new Error('could not create a snapshot') as ResponseError
+   error.status = res.status;
+   throw error;
   }
+
 
   return {...response,option};
 };
 
-// const createSnapshotResponse = (response: SnapshotResponse): Snapshot => {
-//   return {
-//     startingSnapshot: response.kotsadmRequiresVeleroAccess ? false : true,
-//   };
-// };
+
 
 export const useCreateSnapshot = (
-  onSuccess: ({success, option}: {success: boolean, option: 'full'| 'partial'}) => void,
-  onError: () => void
+  onSuccess: (data: any) => void,
+  onError: (error: Error) => void
 ) => {
   const { selectedApp } = useSelectedApp();
   return useMutation({
     mutationFn: (option: "full" | "partial") =>
       createSnapshot(option, selectedApp?.slug || ""),
-    onSuccess,
+   onSuccess,
     onError,
   });
 };

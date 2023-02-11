@@ -11,6 +11,7 @@ import { App, KotsParams } from "@types";
 import { RouteComponentProps } from "react-router-dom";
 import { usePrevious } from "@src/hooks/usePrevious";
 import { useCreateSnapshot } from "../api/createSnapshot";
+import { useSnapshotSettings } from "../api/getSnapshotSettings";
 
 const DESTINATIONS = [
   {
@@ -119,13 +120,15 @@ export const DashboardSnapshotsCard = (props: Props) => {
       startSnapshotErrorMsg: "",
     }
   );
+  const {app, ping, isSnapshotAllowed} = props 
+  const { selectedDestination } = state;
+const previousSnapshotSettings = usePrevious(state.snapshotSettings)
 
-    const onCreateSnapshotSuccess = ({option}: {success: boolean, option: 'full'| 'partial'}) => {
-      const {app} = props
+    const onCreateSnapshotSuccess = ({option}: {success?: boolean, option: 'full'| 'partial'}) => {
     setState({
       startingSnapshot: false,
     });
-    props.ping();
+    ping()
     if (option === "full") {
       history.push("/snapshots");
     } else {
@@ -133,21 +136,23 @@ export const DashboardSnapshotsCard = (props: Props) => {
     }
   };
 
-  const onCreateSnapshotError = (data: any) => {
-    console.log(data, "data err");
-    // if 409 error
-    if (data.kotsadmRequiresVeleroAccess) {
-      setState({
-        startingSnapshot: false,
-      });
-      history.replace("/snapshots/settings");
-      return;
-    }
-
+  const onCreateSnapshotError = (err : Error) => {
+    // need to figure out a way to handle 409 error code, 
+    // not important here since we render this component when velero is installed
+    // will be useful if we use useCreateSnapshot hook in Snapshots.
+    // if (err.status === 409) {    
+    //           if (res.kotsadmRequiresVeleroAccess) {
+    //             setState({
+    //               startingSnapshot: false,
+    //             });
+    //             props.history.replace("/snapshots/settings");
+    //             return;
+    //           }
+    //         }
     setState({
       startingSnapshot: false,
       startSnapshotErr: true,
-      startSnapshotErrorMsg: data.error,
+      startSnapshotErrorMsg: err.message,
     });
   };
 
@@ -156,67 +161,6 @@ export const DashboardSnapshotsCard = (props: Props) => {
     onCreateSnapshotError
   );
 
-  // const startASnapshot = (option: string) => {
-
-  //   const { app } = props;
-  //   setState({
-  //     startingSnapshot: true,
-  //     startSnapshotErr: false,
-  //     startSnapshotErrorMsg: "",
-  //   });
-
-  //   let url =
-  //     option === "full"
-  //       ? `${process.env.API_ENDPOINT}/snapshot/backup`
-  //       : `${process.env.API_ENDPOINT}/app/${app.slug}/snapshot/backup`;
-
-  //   fetch(url, {
-  //     method: "POST",
-  //     headers: {
-  //       Authorization: Utilities.getToken(),
-  //       "Content-Type": "application/json",
-  //     },
-  //   })
-  //     .then(async (result) => {
-  //       if (!result.ok && result.status === 409) {
-  //         const res = await result.json();
-  //         if (res.kotsadmRequiresVeleroAccess) {
-  //           setState({
-  //             startingSnapshot: false,
-  //           });
-  //           props.history.replace("/snapshots/settings");
-  //           return;
-  //         }
-  //       }
-
-  //       if (result.ok) {
-  //         setState({
-  //           startingSnapshot: false,
-  //         });
-  //         props.ping();
-  //         if (option === "full") {
-  //           props.history.push("/snapshots");
-  //         } else {
-  //           props.history.push(`/snapshots/partial/${app.slug}`);
-  //         }
-  //       } else {
-  //         const body = await result.json();
-  //         setState({
-  //           startingSnapshot: false,
-  //           startSnapshotErr: true,
-  //           startSnapshotErrorMsg: body.error,
-  //         });
-  //       }
-  //     })
-  //     .catch((err) => {
-  //       console.log(err);
-  //       setState({
-  //         startSnapshotErrorMsg: err
-  //           ? err.message
-  //           : "Something went wrong, please try again.",
-  //       });
-  //     });
-  // };
 
   const fetchSnapshotSettings = async () => {
     setState({
@@ -251,7 +195,8 @@ export const DashboardSnapshotsCard = (props: Props) => {
           isLoadingSnapshotSettings: false,
           snapshotSettingsErr: false,
           snapshotSettingsErrMsg: "",
-        });        
+        });   
+        setCurrentProvider(result)     
       })
       .catch((err) => {
         setState({
@@ -262,14 +207,34 @@ export const DashboardSnapshotsCard = (props: Props) => {
       });
   };
 
+  const onSuccess = (result: { store: any; fileSystemConfig: any; }) => { 
+    setState({
+      snapshotSettings: result,
+      kotsadmRequiresVeleroAccess: false,
+      isLoadingSnapshotSettings: false,
+      snapshotSettingsErr: false,
+      snapshotSettingsErrMsg: "",
+    });   
+    setCurrentProvider(result)    
+  }
+  const onError = (err: Error) => { 
+    setState({
+      isLoadingSnapshotSettings: false,
+      snapshotSettingsErr: true,
+      snapshotSettingsErrMsg: err.message,
+    });
+  }
+
+  const {data: hookSnapshotSettings} = useSnapshotSettings(onSuccess, onError)
+
+
   const toggleSnaphotDifferencesModal = () => {
     setState({
       snapshotDifferencesModal: !state.snapshotDifferencesModal,
     });
   };
 
-  const setCurrentProvider = () => {
-    const { snapshotSettings } = state;
+  const setCurrentProvider = (snapshotSettings: { store?: any; fileSystemConfig?: any; } | undefined) => {
     if (!snapshotSettings) {
       return;
     }
@@ -329,27 +294,23 @@ export const DashboardSnapshotsCard = (props: Props) => {
     });
   };
 
+  /// useEffects /////
   useEffect(() => {
     fetchSnapshotSettings();
   }, []);
 
-  useEffect(()=> { 
-if (state.snapshotSettings) setCurrentProvider()
-  },[state.snapshotSettings])
-
-  const previousSnapshotSettings = usePrevious(state.snapshotSettings);
 
   useEffect(() => {
     if (
       state.snapshotSettings !== previousSnapshotSettings &&
       state.snapshotSettings
     ) {
-      setCurrentProvider();
+      setCurrentProvider(state.snapshotSettings);
     }
   }, []);
+    /// useEffects /////
 
-  const { isSnapshotAllowed } = props;
-  const { selectedDestination } = state;
+
 
   return (
     <div className="flex-column flex1 dashboard-card">
@@ -436,6 +397,9 @@ if (state.snapshotSettings) setCurrentProvider()
             className="has-arrow u-marginLeft--5"
           />
         </Link>
+        <p className="tw-mt-2 u-textColor--error u-fontSize--normal u-lineHeight--normal">
+          {state.startSnapshotErrorMsg}
+          </p>
       </div>
       {state.snapshotDifferencesModal && (
         <SnapshotDifferencesModal
