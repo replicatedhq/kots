@@ -38,16 +38,19 @@ runs:
   using: composite
 
   steps:
-  - id: 'auth'
-    name: 'Authenticate to Google Cloud'
-    uses: 'google-github-actions/auth@v1'
+  - id: "auth"
+    name: "Authenticate to Google Cloud"
+    uses: "google-github-actions/auth@v1"
     with:
       credentials_json: ${{ inputs.service-key }}
 
-  - name: 'Setup Cloud SDK'
+  - name: "Setup Cloud SDK"
     uses: google-github-actions/setup-gcloud@v1
+    with:
+      install_components: "gke-cloud-auth-plugin"
 
-  - name: 'Find or create the GKE cluster'
+
+  - name: "Find or create the GKE cluster"
     shell: bash
     run: |
       if gcloud container clusters describe "${{ inputs.cluster-name }}" --project "${{ inputs.project }}" --region "${{ inputs.cluster-region }}"; then
@@ -57,16 +60,17 @@ runs:
           sleep 10
         done
       else
-          gcloud container --project "${{ inputs.project }}" clusters create-auto "${{ inputs.cluster-name }}" --region "${{ inputs.cluster-region }}" --network "${{ inputs.cluster-network }}"  --subnetwork "${{ inputs.cluster-subnetwork }}"
+          gcloud container clusters create-auto "${{ inputs.cluster-name }}" --project "${{ inputs.project }}" --region "${{ inputs.cluster-region }}" --network "${{ inputs.cluster-network }}"  --subnetwork "${{ inputs.cluster-subnetwork }}"
       fi
 
-  - name: 'Get GKE cluster credentials for kubectl'
+  - name: "Get GKE cluster credentials for kubectl"
     uses: google-github-actions/get-gke-credentials@v1
     with:
       cluster_name: ${{ inputs.cluster-name }}
       location: ${{ inputs.cluster-region }}
 
-  - name: 'Delete the existing cluster'
-    if: inputs.delete == 'true'
+  - name: "Delete the existing cluster"
+    if: inputs.delete == "true"
     shell: bash
-    run: 'gcloud -q container clusters delete ${{ inputs.cluster-name }} --region ${{ inputs.cluster-region }}'
+    run: |
+      gcloud -q container clusters delete "${{ inputs.cluster-name }}" --project "${{ inputs.project }}" --region "${{ inputs.cluster-region }}"
