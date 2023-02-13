@@ -182,8 +182,7 @@ const DashboardVersionCard = (props: Props) => {
   } = useNextAppVersionWithIntercept();
   const { latestDeployableVersion } = newAppVersionWithInterceptData || {};
 
-  const { data: isHelmManagedResponse } = useIsHelmManaged();
-  const { isHelmManaged = false } = isHelmManagedResponse || {};
+  const { data: isHelmManaged = false } = useIsHelmManaged();
 
   // moving this out of the state because new repeater instances were getting created
   // and it doesn't really affect the UI
