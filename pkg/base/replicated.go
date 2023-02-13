@@ -25,7 +25,6 @@ import (
 	troubleshootv1beta2 "github.com/replicatedhq/troubleshoot/pkg/apis/troubleshoot/v1beta2"
 	troubleshootscheme "github.com/replicatedhq/troubleshoot/pkg/client/troubleshootclientset/scheme"
 	velerov1 "github.com/vmware-tanzu/velero/pkg/apis/velero/v1"
-	stdyaml "gopkg.in/yaml.v2"
 	"helm.sh/helm/v3/pkg/chart"
 	"k8s.io/client-go/kubernetes/scheme"
 	applicationv1beta1 "sigs.k8s.io/application/api/v1beta1"
@@ -312,13 +311,13 @@ func upstreamFileToBaseFile(upstreamFile upstreamtypes.UpstreamFile, builder tem
 func findAllKotsHelmCharts(upstreamFiles []upstreamtypes.UpstreamFile, builder template.Builder, log *logger.CLILogger) ([]*kotsv1beta1.HelmChart, error) {
 	kotsHelmCharts := []*kotsv1beta1.HelmChart{}
 	for _, upstreamFile := range upstreamFiles {
-		if !isHelmChartKind(upstreamFile.Content) {
+		if !kotsutil.IsHelmChartKind(upstreamFile.Content) {
 			continue
 		}
 
 		baseFile, err := upstreamFileToBaseFile(upstreamFile, builder, log)
 		if err != nil {
-			continue
+			return nil, errors.Wrapf(err, "failed to convert upstream file %s to base", upstreamFile.Path)
 		}
 
 		helmChart, err := ParseHelmChart(baseFile.Content)
@@ -349,19 +348,6 @@ func ParseHelmChart(content []byte) (*kotsv1beta1.HelmChart, error) {
 	}
 
 	return nil, errors.Errorf("not a HelmChart GVK: %s", gvk.String())
-}
-
-func isHelmChartKind(content []byte) bool {
-	gvk := OverlySimpleGVK{}
-
-	if err := stdyaml.Unmarshal(content, &gvk); err != nil {
-		return false
-	}
-
-	if gvk.APIVersion == "kots.io/v1beta1" && gvk.Kind == "HelmChart" {
-		return true
-	}
-	return false
 }
 
 func tryGetConfigFromFileContent(content []byte, log *logger.CLILogger) *kotsv1beta1.Config {
