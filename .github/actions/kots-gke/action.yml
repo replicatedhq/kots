@@ -50,14 +50,14 @@ runs:
   - name: 'Find or create the GKE cluster'
     shell: bash
     run: |
-      if gcloud container clusters describe ${{ inputs.cluster-name }} --project "${{ inputs.project }}" --region "${{ inputs.cluster-region }}"; then
+      if gcloud container clusters describe "${{ inputs.cluster-name }}" --project "${{ inputs.project }}" --region "${{ inputs.cluster-region }}"; then
         while STATUS=$(gcloud container clusters describe "${{ inputs.cluster-name }}" --project "${{ inputs.project }}" --region "${{ inputs.cluster-region }}" | grep status | awk "NF{ print $NF }"); do
           if [[ $? -ne 0 ]]; then echo "Checking on cluster status failed"; exit 1; fi
           if [[ "$STATUS" == "RUNNING" ]]; then break; fi
           sleep 10
         done
       else
-          gcloud container --project "${{ inputs.project }}" clusters create-auto "${{ inputs.cluster-name }}" --region "${{ inputs.cluster-region }}" --network "${{ inputs.cluster-network }}"  --subnetwork "${{ inputs.cluster-subnetwork }}"'
+          gcloud container --project "${{ inputs.project }}" clusters create-auto "${{ inputs.cluster-name }}" --region "${{ inputs.cluster-region }}" --network "${{ inputs.cluster-network }}"  --subnetwork "${{ inputs.cluster-subnetwork }}"
       fi
 
   - name: 'Get GKE cluster credentials for kubectl'
