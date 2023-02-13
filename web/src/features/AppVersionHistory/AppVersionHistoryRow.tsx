@@ -12,7 +12,7 @@ import { YamlErrors } from "./YamlErrors";
 import Icon from "@src/components/Icon";
 
 import { ViewDiffButton } from "@features/VersionDiff/ViewDiffButton";
-import { App, Metadata, Version } from "@types";
+import { App, Metadata, Version, VersionDownloadStatus } from "@types";
 
 interface Props extends Partial<RouteComponentProps> {
   adminConsoleMetadata: Metadata;
@@ -33,15 +33,17 @@ interface Props extends Partial<RouteComponentProps> {
   onWhyUnableToGeneratedDiffClicked: (rowVersion: Version) => void;
   onViewDiffClicked: (firstSequence: number, secondSequence: number) => void;
   redeployVersion: (version: Version) => void;
-  renderVersionDownloadStatus: (version: Version) => void;
   selectedDiffReleases: boolean;
   showReleaseNotes: (releaseNotes: string) => void;
+  showVersionPreviousDownloadStatus: boolean;
+  showVersionDownloadingStatus: boolean;
   toggleShowDetailsModal: (
     yamlErrorDetails: string[],
     selectedSequence: number
   ) => void;
   upgradeAdminConsole: (version: Version) => void;
   version: Version;
+  versionDownloadStatus: VersionDownloadStatus;
   versionHistory: Version[];
 }
 
@@ -858,7 +860,39 @@ class AppVersionHistoryRow extends Component<Props, State> {
               {this.renderVersionAction(version)}
             </div>
           </div>
-          {this.props.renderVersionDownloadStatus(version)}
+          {this.props.showVersionPreviousDownloadStatus && (
+            <div className="flex alignItems--center justifyContent--flexEnd">
+              <span
+                className={`u-textColor--bodyCopy u-fontWeight--medium u-fontSize--small u-lineHeight--default ${
+                  version.downloadStatus.status === "failed"
+                    ? "u-textColor--error"
+                    : ""
+                }`}
+              >
+                {version.downloadStatus.message}
+              </span>
+            </div>
+          )}
+          {this.props.showVersionDownloadingStatus && (
+            <div className="flex alignItems--center justifyContent--flexEnd">
+              {this.props.versionDownloadStatus?.downloadingVersion && (
+                <Loader className="u-marginRight--5" size="15" />
+              )}
+              <span
+                className={`u-textColor--bodyCopy u-fontWeight--medium u-fontSize--small u-lineHeight--default ${
+                  this.props.versionDownloadStatus?.downloadingVersionError
+                    ? "u-textColor--error"
+                    : ""
+                }`}
+              >
+                {this.props.versionDownloadStatus?.downloadingVersionMessage
+                  ? this.props.versionDownloadStatus?.downloadingVersionMessage
+                  : this.props.versionDownloadStatus?.downloadingVersion
+                  ? "Downloading"
+                  : ""}
+              </span>
+            </div>
+          )}
         </>
       </div>
     );
