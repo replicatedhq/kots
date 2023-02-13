@@ -83,7 +83,7 @@ runs:
       id: cluster-name
       shell: bash
       run: |
-        echo "cluster_name=${{ github.run_id }}-${{ github.run_attempt }}-${{ github.job }}" >> $GITHUB_OUTPUT
+        echo "cluster_name=kots-ci-${{ github.run_id }}-${{ github.run_attempt }}-$(echo '${{ github.job }}' | cut -c -18)" >> $GITHUB_OUTPUT
       
     - name: Authenticate to Google Cloud
       if: inputs.platform == 'gke'
