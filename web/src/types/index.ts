@@ -252,6 +252,7 @@ export type VersionStatus =
   | "pending_config"
   | "pending_download"
   | "pending_preflight"
+  | "superceded"
   | "waiting";
 
 export type LicenseFile = {

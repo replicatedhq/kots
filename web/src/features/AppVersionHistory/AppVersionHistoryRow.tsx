@@ -1,5 +1,5 @@
 import React, { Component } from "react";
-import { Link } from "react-router-dom";
+import { Link, RouteComponentProps } from "react-router-dom";
 import find from "lodash/find";
 import classNames from "classnames";
 import ReactTooltip from "react-tooltip";
@@ -12,9 +12,40 @@ import { YamlErrors } from "./YamlErrors";
 import Icon from "@src/components/Icon";
 
 import { ViewDiffButton } from "@features/VersionDiff/ViewDiffButton";
+import { App, Metadata, Version } from "@types";
 
-class AppVersionHistoryRow extends Component {
-  constructor(props) {
+interface Props extends RouteComponentProps {
+  adminConsoleMetadata: Metadata;
+  app: App;
+  deployVersion: (version: Version) => void;
+  downloadVersion: (version: Version) => void;
+  gitopsEnabled: boolean;
+  handleActionButtonClicked: () => void;
+  handleSelectReleasesToDiff: (version: Version, isChecked: boolean) => void;
+  handleViewLogs: (version: Version | null, isFailing: boolean) => void;
+  isChecked: boolean;
+  isDownloading: boolean;
+  isHelmManaged: boolean;
+  isNew: boolean;
+  newPreflightResults: boolean;
+  nothingToCommit: boolean;
+  onWhyNoGeneratedDiffClicked: (rowVersion: Version) => void;
+  onWhyUnableToGeneratedDiffClicked: (rowVersion: Version) => void;
+  onViewDiffClicked: (firstSequence: number, secondSequence: number) => void;
+  redeployVersion: (version: Version) => void;
+  renderVersionDownloadStatus: (version: Version) => void;
+  selectedDiffReleases: boolean;
+  showReleaseNotes: (releaseNotes: string) => void;
+  toggleShowDetailsModal: (
+    yamlErrorDetails: string[],
+    selectedSequence: number
+  ) => void;
+  upgradeAdminConsole: (version: Version) => void;
+  version: Version;
+  versionHistory: Version[];
+}
+class AppVersionHistoryRow extends Component<Props> {
+  constructor(props: Props) {
     super(props);
 
     this.state = {
@@ -38,7 +69,7 @@ class AppVersionHistoryRow extends Component {
     );
   };
 
-  deployButtonStatus = (version) => {
+  deployButtonStatus = (version: Version) => {
     if (this.props.isHelmManaged) {
       const deployedSequence =
         this.props.app?.downstream?.currentVersion?.sequence;
@@ -98,7 +129,7 @@ class AppVersionHistoryRow extends Component {
     }
   };
 
-  getPreflightState = (version) => {
+  getPreflightState = (version: Version) => {
     let preflightsFailed = false;
     let preflightState = "";
     if (version?.preflightResult) {
@@ -113,7 +144,7 @@ class AppVersionHistoryRow extends Component {
     };
   };
 
-  renderReleaseNotes = (version) => {
+  renderReleaseNotes = (version: Version) => {
     if (!version?.releaseNotes) {
       return null;
     }
@@ -131,7 +162,7 @@ class AppVersionHistoryRow extends Component {
     );
   };
 
-  renderVersionAction = (version) => {
+  renderVersionAction = (version: Version) => {
     const app = this.props.app;
     const downstream = app?.downstream;
     const { newPreflightResults } = this.props;
@@ -143,7 +174,7 @@ class AppVersionHistoryRow extends Component {
       actionFn = this.props.upgradeAdminConsole;
     } else if (version.status === "pending_download") {
       actionFn = this.props.downloadVersion;
-    } else if (version.status === "failed" || version.status === "deployed") {
+    } else if (version.status === "failed" || version.status === "deployed") {k
       actionFn = this.props.redeployVersion;
     }
 
@@ -195,10 +226,10 @@ class AppVersionHistoryRow extends Component {
       isCurrentVersion || isLatestVersion || isPendingVersion?.semver;
 
     const showDeployLogs =
-      isPastVersion ||
+      (isPastVersion ||
       isCurrentVersion ||
       isPendingDeployedVersion ||
-      (version?.status === "superseded" && version?.status !== "pending");
+      version?.status === "superseded") && version?.status !== "pending";
 
     let tooltipTip;
     if (editableConfig) {

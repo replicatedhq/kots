@@ -1541,7 +1541,6 @@ class AppVersionHistory extends Component<Props, State> {
           toggleShowDetailsModal={this.toggleShowDetailsModal}
           upgradeAdminConsole={this.upgradeAdminConsole}
           version={version}
-          wrappedMatch={this.props.wrappedMatch}
           versionHistory={this.state.versionHistory}
         />
         {this.state.showHelmDeployModalForVersionLabel ===
