@@ -118,7 +118,7 @@ func CreateApplicationBackup(ctx context.Context, a *apptypes.App, isScheduled b
 
 	isKotsadmClusterScoped := k8sutil.IsKotsadmClusterScoped(ctx, clientset, kotsadmNamespace)
 
-	// excludeShutdownPodsFromBackup is run before the prepareIncludedNamespaces
+	// excludeShutdownPodsFromBackup is run before the prepareIncludedNamespaces to ensure that the isKotsadmClusterScoped installs ignore all namespaces
 	if err := excludeShutdownPodsFromBackup(ctx, clientset, includedNamespaces, isKotsadmClusterScoped); err != nil {
 		return nil, errors.Wrap(err, "failed to exclude shutdown pods from backup")
 	}
@@ -326,7 +326,7 @@ func CreateInstanceBackup(ctx context.Context, cluster *downstreamtypes.Downstre
 		includedNamespaces = append(includedNamespaces, kotsadmVeleroBackendStorageLocation.Namespace)
 	}
 
-	//
+	// excludeShutdownPodsFromBackup is run before the prepareIncludedNamespaces to ensure that the isKotsadmClusterScoped installs ignore all namespaces
 	if err := excludeShutdownPodsFromBackup(ctx, clientset, includedNamespaces, isKotsadmClusterScoped); err != nil {
 		return nil, errors.Wrap(err, "failed to exclude shutdown pods from backup")
 	}
