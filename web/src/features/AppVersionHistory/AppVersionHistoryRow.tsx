@@ -14,7 +14,7 @@ import Icon from "@src/components/Icon";
 import { ViewDiffButton } from "@features/VersionDiff/ViewDiffButton";
 import { App, Metadata, Version } from "@types";
 
-interface Props extends RouteComponentProps {
+interface Props extends Partial<RouteComponentProps> {
   adminConsoleMetadata: Metadata;
   app: App;
   deployVersion: (version: Version) => void;
@@ -44,7 +44,11 @@ interface Props extends RouteComponentProps {
   version: Version;
   versionHistory: Version[];
 }
-class AppVersionHistoryRow extends Component<Props> {
+
+interface State {
+  showViewDiffButton: boolean;
+}
+class AppVersionHistoryRow extends Component<Props, State> {
   constructor(props: Props) {
     super(props);
 
@@ -174,7 +178,7 @@ class AppVersionHistoryRow extends Component<Props> {
       actionFn = this.props.upgradeAdminConsole;
     } else if (version.status === "pending_download") {
       actionFn = this.props.downloadVersion;
-    } else if (version.status === "failed" || version.status === "deployed") {k
+    } else if (version.status === "failed" || version.status === "deployed") {
       actionFn = this.props.redeployVersion;
     }
 
@@ -227,9 +231,10 @@ class AppVersionHistoryRow extends Component<Props> {
 
     const showDeployLogs =
       (isPastVersion ||
-      isCurrentVersion ||
-      isPendingDeployedVersion ||
-      version?.status === "superseded") && version?.status !== "pending";
+        isCurrentVersion ||
+        isPendingDeployedVersion ||
+        version?.status === "superseded") &&
+      version?.status !== "pending";
 
     let tooltipTip;
     if (editableConfig) {
@@ -258,9 +263,9 @@ class AppVersionHistoryRow extends Component<Props> {
         return (
           <div
             className={
-              this.props.nothingToCommit &&
-              this.props.selectedDiffReleases &&
-              "u-opacity--half"
+              this.props.nothingToCommit && this.props.selectedDiffReleases
+                ? "u-opacity--half"
+                : ""
             }
           >
             Nothing to commit
@@ -523,11 +528,11 @@ class AppVersionHistoryRow extends Component<Props> {
               onClick={() => {
                 this.props.handleActionButtonClicked();
                 if (needsConfiguration) {
-                  this.props.history.push(configScreenURL);
+                  this.props?.history?.push(configScreenURL);
                   return null;
                 }
                 if (isRollback) {
-                  actionFn(version, true);
+                  actionFn(version);
                   return null;
                 }
 
@@ -551,7 +556,7 @@ class AppVersionHistoryRow extends Component<Props> {
     );
   };
 
-  isActionButtonDisabled = (version) => {
+  isActionButtonDisabled = (version: Version) => {
     if (this.props.isHelmManaged) {
       return false;
     }
@@ -567,7 +572,7 @@ class AppVersionHistoryRow extends Component<Props> {
     return !version.isDeployable;
   };
 
-  renderVersionStatus = (version) => {
+  renderVersionStatus = (version: Version) => {
     const app = this.props.app;
     const downstream = app?.downstream;
     if (!downstream) {
@@ -590,11 +595,7 @@ class AppVersionHistoryRow extends Component<Props> {
               className="status-tag success flex-auto u-cursor--default"
               data-tip={
                 version.deployedAt
-                  ? `${
-                      version.status === "deploying"
-                        ? "Deploy started at"
-                        : "Deployed"
-                    } ${Utilities.dateFormat(
+                  ? `${"Deployed"} ${Utilities.dateFormat(
                       version.deployedAt,
                       "MMMM D, YYYY @ hh:mm a z"
                     )}`
@@ -766,97 +767,99 @@ class AppVersionHistoryRow extends Component<Props> {
         style={{ minHeight: "60px" }}
         onClick={this.handleSelectReleasesToDiff}
       >
-        <div className="VersionHistoryRow flex flex-auto">
-          {selectedDiffReleases && (
+        <>
+          <div className="VersionHistoryRow flex flex-auto">
+            {selectedDiffReleases && (
+              <div
+                className={classNames(
+                  "checkbox u-marginRight--20",
+                  { checked: isChecked && !nothingToCommit },
+                  { disabled: nothingToCommit }
+                )}
+              />
+            )}
             <div
-              className={classNames(
-                "checkbox u-marginRight--20",
-                { checked: isChecked && !nothingToCommit },
-                { disabled: nothingToCommit }
-              )}
-            />
-          )}
-          <div
-            className={`${
-              nothingToCommit && selectedDiffReleases && "u-opacity--half"
-            } flex-column flex1 u-paddingRight--20`}
-          >
-            <div className="flex alignItems--center">
-              <p className="u-fontSize--header2 u-fontWeight--bold u-lineHeight--medium card-item-title">
-                {version.versionLabel || version.title}
-              </p>
-              {showSequence && (
-                <p
-                  className="u-fontSize--small u-textColor--bodyCopy u-fontWeight--medium u-marginLeft--10"
-                  style={{ marginTop: "2px" }}
-                >
-                  {sequenceLabel} {version.sequence}
+              className={`${
+                nothingToCommit && selectedDiffReleases && "u-opacity--half"
+              } flex-column flex1 u-paddingRight--20`}
+            >
+              <div className="flex alignItems--center">
+                <p className="u-fontSize--header2 u-fontWeight--bold u-lineHeight--medium card-item-title">
+                  {version.versionLabel || version.title}
+                </p>
+                {showSequence && (
+                  <p
+                    className="u-fontSize--small u-textColor--bodyCopy u-fontWeight--medium u-marginLeft--10"
+                    style={{ marginTop: "2px" }}
+                  >
+                    {sequenceLabel} {version.sequence}
+                  </p>
+                )}
+                {version.isRequired && (
+                  <span className="status-tag required u-marginLeft--10">
+                    {" "}
+                    Required{" "}
+                  </span>
+                )}
+              </div>
+              {releasedTs && (
+                <p className="u-fontSize--small u-fontWeight--medium u-textColor--bodyCopy u-marginTop--5">
+                  {" "}
+                  Released{" "}
+                  <span className="u-fontWeight--bold">{releasedTs}</span>
                 </p>
               )}
-              {version.isRequired && (
-                <span className="status-tag required u-marginLeft--10">
-                  {" "}
-                  Required{" "}
-                </span>
+              {this.state.showViewDiffButton && (
+                <ViewDiffButton
+                  onWhyNoGeneratedDiffClicked={
+                    this.props.onWhyNoGeneratedDiffClicked
+                  }
+                  onWhyUnableToGeneratedDiffClicked={
+                    this.props.onWhyUnableToGeneratedDiffClicked
+                  }
+                  onViewDiffClicked={(firstSequence, secondSequence) =>
+                    this.props.onViewDiffClicked(firstSequence, secondSequence)
+                  }
+                  version={this.props.version}
+                  versionHistory={this.props.versionHistory}
+                />
+              )}
+              {version.yamlErrors && (
+                <YamlErrors
+                  yamlErrors={version.yamlErrors}
+                  handleShowDetailsClicked={() =>
+                    this.props.toggleShowDetailsModal(
+                      version.yamlErrors,
+                      version.sequence
+                    )
+                  }
+                />
               )}
             </div>
-            {releasedTs && (
-              <p className="u-fontSize--small u-fontWeight--medium u-textColor--bodyCopy u-marginTop--5">
-                {" "}
-                Released{" "}
-                <span className="u-fontWeight--bold">{releasedTs}</span>
+            <div
+              className={`${
+                nothingToCommit && selectedDiffReleases && "u-opacity--half"
+              } flex-column flex1 justifyContent--center`}
+            >
+              <p className="u-fontSize--small u-fontWeight--bold u-textColor--lightAccent u-lineHeight--default">
+                {version.source}
               </p>
-            )}
-            {this.state.showViewDiffButton && (
-              <ViewDiffButton
-                onWhyNoGeneratedDiffClicked={
-                  this.props.onWhyNoGeneratedDiffClicked
-                }
-                onWhyUnableToGeneratedDiffClicked={
-                  this.props.onWhyUnableToGeneratedDiffClicked
-                }
-                onViewDiffClicked={(firstSequence, secondSequence) =>
-                  this.props.onViewDiffClicked(firstSequence, secondSequence)
-                }
-                version={this.props.version}
-                versionHistory={this.props.versionHistory}
-              />
-            )}
-            {version.yamlErrors && (
-              <YamlErrors
-                yamlErrors={version.yamlErrors}
-                handleShowDetailsClicked={() =>
-                  this.props.toggleShowDetailsModal(
-                    version.yamlErrors,
-                    version.sequence
-                  )
-                }
-              />
-            )}
+              {gitopsEnabled && version.status !== "pending_download" ? null : (
+                <div className="flex flex-auto u-marginTop--10">
+                  {this.renderVersionStatus(version)}
+                </div>
+              )}
+            </div>
+            <div
+              className={`${
+                nothingToCommit && selectedDiffReleases && "u-opacity--half"
+              } flex-column flex-auto alignItems--flexEnd justifyContent--center`}
+            >
+              {this.renderVersionAction(version)}
+            </div>
           </div>
-          <div
-            className={`${
-              nothingToCommit && selectedDiffReleases && "u-opacity--half"
-            } flex-column flex1 justifyContent--center`}
-          >
-            <p className="u-fontSize--small u-fontWeight--bold u-textColor--lightAccent u-lineHeight--default">
-              {version.source}
-            </p>
-            {gitopsEnabled && version.status !== "pending_download" ? null : (
-              <div className="flex flex-auto u-marginTop--10">
-                {this.renderVersionStatus(version)}
-              </div>
-            )}
-          </div>
-          <div
-            className={`${
-              nothingToCommit && selectedDiffReleases && "u-opacity--half"
-            } flex-column flex-auto alignItems--flexEnd justifyContent--center`}
-          >
-            {this.renderVersionAction(version)}
-          </div>
-        </div>
-        {this.props.renderVersionDownloadStatus(version)}
+          {this.props.renderVersionDownloadStatus(version)}
+        </>
       </div>
     );
   }
