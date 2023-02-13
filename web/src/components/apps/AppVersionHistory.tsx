@@ -46,14 +46,14 @@ import {
 dayjs.extend(relativeTime);
 
 type Release = {
-  versionLabel?: string;
   sequence?: number;
+  versionLabel?: string;
 };
 
 type ReleaseWithError = {
-  title?: string;
-  sequence: number;
   diffSummaryError?: string;
+  sequence: number;
+  title?: string;
 };
 
 type Props = {
@@ -81,69 +81,69 @@ type Props = {
 } & withRouterType;
 
 type State = {
-  logsLoading: boolean;
-  logs: Object | null;
-  selectedTab: Object | null;
-  showDeployWarningModal: boolean;
-  showSkipModal: boolean;
-  versionToDeploy: Version | null;
-  releaseNotes: Object | null;
-  selectedDiffReleases: boolean;
+  airgapUploader: AirgapUploader | null;
+  airgapUploadError: string;
+  appUpdateChecker: Repeater;
   checkedReleasesToDiff: Version[];
-  diffHovered: boolean;
-  uploadingAirgapFile: boolean;
+  checkingForUpdateError: boolean;
   checkingForUpdates: boolean;
   checkingUpdateMessage: string;
-  checkingForUpdateError: boolean;
-  airgapUploadError: string;
+  confirmType: string;
+  currentPage: Number;
+  deployView: boolean;
+  diffHovered: boolean;
+  displayConfirmDeploymentModal: boolean;
+  displayErrorModal: boolean;
+  displayKotsUpdateModal: boolean;
+  displayShowDetailsModal: boolean;
+  errorMsg: string;
+  errorTitle: string;
+  firstSequence: Number | string;
+  hasPreflightChecks: boolean;
+  isSkipPreflights: boolean;
+  kotsUpdateChecker: Repeater;
+  kotsUpdateError: Object | undefined;
+  kotsUpdateMessage: string;
+  kotsUpdateRunning: boolean;
+  kotsUpdateStatus: string;
+  loadingPage: boolean;
+  loadingVersionHistory: boolean;
+  logs: Object | null;
+  logsLoading: boolean;
+  noUpdateAvailiableText: string;
+  numOfRemainingVersions: Number;
+  numOfSkippedVersions: Number;
+  pageSize: Number;
+  releaseNotes: Object | null;
+  releaseWithErr: ReleaseWithError | null | undefined;
+  releaseWithNoChanges: Release | null | undefined;
+  secondSequence: Number | string;
+  selectedDiffReleases: boolean;
+  selectedSequence: Number;
+  selectedTab: Object | null;
+  showAutomaticUpdatesModal: boolean;
+  showDeployWarningModal: boolean;
+  showDiffErrModal: boolean;
+  showDiffOverlay: boolean;
+  showHelmDeployModalForSequence: number | null;
+  showHelmDeployModalForVersionLabel: string;
+  showLogsModal: boolean;
+  showNoChangesModal: boolean;
+  showSkipModal: boolean;
+  totalCount: Number;
+  updatesAvailable: boolean;
+  uploadingAirgapFile: boolean;
+  uploadProgress: Number;
+  uploadResuming: boolean;
+  uploadSize: Number;
   versionDownloadStatuses: {
     [x: number]: VersionDownloadStatus;
   };
-  showDiffOverlay: boolean;
-  firstSequence: Number | string;
-  secondSequence: Number | string;
-  appUpdateChecker: Repeater;
-  uploadProgress: Number;
-  uploadSize: Number;
-  uploadResuming: boolean;
-  displayShowDetailsModal: boolean;
-  yamlErrorDetails: string[];
-  deployView: boolean;
-  selectedSequence: Number;
-  releaseWithErr: ReleaseWithError | null | undefined;
-  versionHistoryJob: Repeater;
-  loadingVersionHistory: boolean;
   versionHistory: Version[];
-  errorTitle: string;
-  errorMsg: string;
-  displayErrorModal: boolean;
-  displayConfirmDeploymentModal: boolean;
-  confirmType: string;
-  isSkipPreflights: boolean;
-  displayKotsUpdateModal: boolean;
-  kotsUpdateChecker: Repeater;
-  kotsUpdateRunning: boolean;
-  kotsUpdateStatus: string;
-  kotsUpdateMessage: string;
-  kotsUpdateError: Object | undefined;
-  numOfSkippedVersions: Number;
-  numOfRemainingVersions: Number;
-  totalCount: Number;
-  currentPage: Number;
-  pageSize: Number;
-  loadingPage: boolean;
-  hasPreflightChecks: boolean;
-  airgapUploader: AirgapUploader | null;
-  updatesAvailable: boolean;
-  showNoChangesModal: boolean;
-  showAutomaticUpdatesModal: boolean;
-  releaseWithNoChanges: Release | null | undefined;
-  showDiffErrModal: boolean;
-  showLogsModal: boolean;
-  noUpdateAvailiableText: string;
+  versionHistoryJob: Repeater;
+  versionToDeploy: Version | null;
   viewLogsErrMsg: string;
-  showHelmDeployModalForVersionLabel: string;
-  showHelmDeployModalForSequence: number | null;
+  yamlErrorDetails: string[];
 };
 
 const filterNonHelmTabs = (tab: string, isHelmManaged: boolean) => {
@@ -157,67 +157,67 @@ class AppVersionHistory extends Component<Props, State> {
   constructor(props: Props) {
     super(props);
     this.state = {
-      logsLoading: false,
-      logs: null,
-      selectedTab: null,
-      showDeployWarningModal: false,
-      showSkipModal: false,
-      versionToDeploy: null,
-      releaseNotes: null,
-      selectedDiffReleases: false,
+      airgapUploader: null,
+      airgapUploadError: "",
+      appUpdateChecker: new Repeater(),
       checkedReleasesToDiff: [],
-      diffHovered: false,
-      uploadingAirgapFile: false,
+      checkingForUpdateError: false,
       checkingForUpdates: false,
       checkingUpdateMessage: "Checking for updates",
-      checkingForUpdateError: false,
-      airgapUploadError: "",
-      versionDownloadStatuses: {},
-      showDiffOverlay: false,
-      firstSequence: 0,
-      secondSequence: 0,
-      appUpdateChecker: new Repeater(),
-      uploadProgress: 0,
-      uploadSize: 0,
-      uploadResuming: false,
-      displayShowDetailsModal: false,
-      yamlErrorDetails: [],
-      deployView: false,
-      selectedSequence: -1,
-      releaseWithErr: { title: "", sequence: 0, diffSummaryError: "" },
-      versionHistoryJob: new Repeater(),
-      loadingVersionHistory: true,
-      versionHistory: [],
-      errorTitle: "",
-      errorMsg: "",
-      displayErrorModal: false,
-      displayConfirmDeploymentModal: false,
       confirmType: "",
-      isSkipPreflights: false,
+      currentPage: 0,
+      deployView: false,
+      diffHovered: false,
+      displayConfirmDeploymentModal: false,
+      displayErrorModal: false,
       displayKotsUpdateModal: false,
+      displayShowDetailsModal: false,
+      errorMsg: "",
+      errorTitle: "",
+      firstSequence: 0,
+      hasPreflightChecks: true,
+      isSkipPreflights: false,
       kotsUpdateChecker: new Repeater(),
+      kotsUpdateError: undefined,
+      kotsUpdateMessage: "",
       kotsUpdateRunning: false,
       kotsUpdateStatus: "",
-      kotsUpdateMessage: "",
-      kotsUpdateError: undefined,
-      numOfSkippedVersions: 0,
-      numOfRemainingVersions: 0,
-      totalCount: 0,
-      currentPage: 0,
-      pageSize: 20,
       loadingPage: false,
-      hasPreflightChecks: true,
-      airgapUploader: null,
-      updatesAvailable: false,
-      showNoChangesModal: false,
-      showAutomaticUpdatesModal: false,
-      releaseWithNoChanges: { versionLabel: "", sequence: 0 },
-      showDiffErrModal: false,
-      showLogsModal: false,
+      loadingVersionHistory: true,
+      logs: null,
+      logsLoading: false,
       noUpdateAvailiableText: "",
-      viewLogsErrMsg: "",
-      showHelmDeployModalForVersionLabel: "",
+      numOfRemainingVersions: 0,
+      numOfSkippedVersions: 0,
+      pageSize: 20,
+      releaseNotes: null,
+      releaseWithErr: { title: "", sequence: 0, diffSummaryError: "" },
+      releaseWithNoChanges: { versionLabel: "", sequence: 0 },
+      secondSequence: 0,
+      selectedDiffReleases: false,
+      selectedSequence: -1,
+      selectedTab: null,
+      showAutomaticUpdatesModal: false,
+      showDeployWarningModal: false,
+      showDiffErrModal: false,
+      showDiffOverlay: false,
       showHelmDeployModalForSequence: null,
+      showHelmDeployModalForVersionLabel: "",
+      showLogsModal: false,
+      showNoChangesModal: false,
+      showSkipModal: false,
+      totalCount: 0,
+      updatesAvailable: false,
+      uploadingAirgapFile: false,
+      uploadProgress: 0,
+      uploadResuming: false,
+      uploadSize: 0,
+      versionDownloadStatuses: {},
+      versionHistory: [],
+      versionHistoryJob: new Repeater(),
+      versionToDeploy: null,
+      viewLogsErrMsg: "",
+      yamlErrorDetails: [],
     };
   }
 
@@ -1494,38 +1494,30 @@ class AppVersionHistory extends Component<Props, State> {
     return (
       <React.Fragment key={index}>
         <AppVersionHistoryRow
+          adminConsoleMetadata={this.props.adminConsoleMetadata}
+          app={this.props.app}
+          deployVersion={this.deployVersion}
+          downloadVersion={this.downloadVersion}
+          gitopsEnabled={gitopsIsConnected}
           handleActionButtonClicked={() =>
             this.handleActionButtonClicked(
               version.versionLabel,
               version.sequence
             )
           }
-          isHelmManaged={this.props.isHelmManaged}
-          key={version.sequence}
-          app={this.props.app}
-          wrappedMatch={this.props.wrappedMatch}
-          history={this.props.history}
-          version={version}
-          selectedDiffReleases={this.state.selectedDiffReleases}
-          nothingToCommit={nothingToCommit}
-          isChecked={isChecked}
-          isNew={isNew}
-          newPreflightResults={newPreflightResults}
-          showReleaseNotes={this.showReleaseNotes}
-          toggleShowDetailsModal={this.toggleShowDetailsModal}
-          gitopsEnabled={gitopsIsConnected}
-          deployVersion={this.deployVersion}
-          redeployVersion={this.redeployVersion}
-          downloadVersion={this.downloadVersion}
-          upgradeAdminConsole={this.upgradeAdminConsole}
-          handleViewLogs={this.handleViewLogs}
           handleSelectReleasesToDiff={this.handleSelectReleasesToDiff}
-          renderVersionDownloadStatus={this.renderVersionDownloadStatus}
+          handleViewLogs={this.handleViewLogs}
+          history={this.props.history}
+          isChecked={isChecked}
           isDownloading={
             this.state.versionDownloadStatuses?.[version.sequence]
               ?.downloadingVersion
           }
-          adminConsoleMetadata={this.props.adminConsoleMetadata}
+          isHelmManaged={this.props.isHelmManaged}
+          isNew={isNew}
+          key={version.sequence}
+          newPreflightResults={newPreflightResults}
+          nothingToCommit={nothingToCommit}
           onWhyNoGeneratedDiffClicked={(rowVersion: Version) =>
             this.toggleNoChangesModal(rowVersion)
           }
@@ -1542,6 +1534,14 @@ class AppVersionHistory extends Component<Props, State> {
               secondSequence,
             });
           }}
+          redeployVersion={this.redeployVersion}
+          renderVersionDownloadStatus={this.renderVersionDownloadStatus}
+          selectedDiffReleases={this.state.selectedDiffReleases}
+          showReleaseNotes={this.showReleaseNotes}
+          toggleShowDetailsModal={this.toggleShowDetailsModal}
+          upgradeAdminConsole={this.upgradeAdminConsole}
+          version={version}
+          wrappedMatch={this.props.wrappedMatch}
           versionHistory={this.state.versionHistory}
         />
         {this.state.showHelmDeployModalForVersionLabel ===
@@ -1657,24 +1657,24 @@ class AppVersionHistory extends Component<Props, State> {
     } = this.props;
 
     const {
-      showLogsModal,
-      selectedTab,
-      logs,
-      logsLoading,
-      showDeployWarningModal,
-      showSkipModal,
-      releaseNotes,
-      showDiffOverlay,
-      firstSequence,
-      secondSequence,
-      loadingVersionHistory,
-      versionHistory,
-      errorTitle,
-      errorMsg,
-      displayErrorModal,
       airgapUploader,
       checkingForUpdates,
       checkingUpdateMessage,
+      displayErrorModal,
+      errorMsg,
+      errorTitle,
+      firstSequence,
+      loadingVersionHistory,
+      logs,
+      logsLoading,
+      releaseNotes,
+      secondSequence,
+      selectedTab,
+      showDeployWarningModal,
+      showDiffOverlay,
+      showLogsModal,
+      showSkipModal,
+      versionHistory,
     } = this.state;
 
     if (!app) {
@@ -2361,18 +2361,18 @@ class AppVersionHistory extends Component<Props, State> {
         )}
         {this.state.showAutomaticUpdatesModal && (
           <AutomaticUpdatesModal
-            isOpen={this.state.showAutomaticUpdatesModal}
-            onRequestClose={this.toggleAutomaticUpdatesModal}
-            updateCheckerSpec={app?.updateCheckerSpec}
-            autoDeploy={app?.autoDeploy}
             appSlug={app?.slug}
-            isSemverRequired={app?.isSemverRequired}
+            autoDeploy={app?.autoDeploy}
             gitopsIsConnected={downstream?.gitops?.isConnected}
+            isHelmManaged={this.props.isHelmManaged}
+            isOpen={this.state.showAutomaticUpdatesModal}
+            isSemverRequired={app?.isSemverRequired}
             onAutomaticUpdatesConfigured={() => {
               this.toggleAutomaticUpdatesModal();
               this.props.updateCallback();
             }}
-            isHelmManaged={this.props.isHelmManaged}
+            onRequestClose={this.toggleAutomaticUpdatesModal}
+            updateCheckerSpec={app?.updateCheckerSpec}
           />
         )}
       </div>
