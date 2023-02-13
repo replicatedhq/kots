@@ -224,6 +224,10 @@ func CreateInstanceBackup(ctx context.Context, cluster *downstreamtypes.Downstre
 		includedNamespaces = append(includedNamespaces, appNamespace)
 	}
 
+	if isKurl {
+		includedNamespaces = append(includedNamespaces, "kurl")
+	}
+
 	apps, err := store.GetStore().ListInstalledApps()
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to list installed apps")
@@ -286,9 +290,6 @@ func CreateInstanceBackup(ctx context.Context, cluster *downstreamtypes.Downstre
 		}
 
 		// ** merge app backup info ** //
-		if isKurl {
-			includedNamespaces = append(includedNamespaces, "kurl")
-		}
 		// included namespaces
 		includedNamespaces = append(includedNamespaces, veleroBackup.Spec.IncludedNamespaces...)
 		includedNamespaces = append(includedNamespaces, kotsKinds.KotsApplication.Spec.AdditionalNamespaces...)
