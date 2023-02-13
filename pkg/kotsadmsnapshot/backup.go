@@ -111,6 +111,18 @@ func CreateApplicationBackup(ctx context.Context, a *apptypes.App, isScheduled b
 	includedNamespaces = append(includedNamespaces, veleroBackup.Spec.IncludedNamespaces...)
 	includedNamespaces = append(includedNamespaces, kotsKinds.KotsApplication.Spec.AdditionalNamespaces...)
 
+	clientset, err := k8sutil.GetClientset()
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to create k8s clientset")
+	}
+
+	isKotsadmClusterScoped := k8sutil.IsKotsadmClusterScoped(ctx, clientset, kotsadmNamespace)
+
+	// excludeShutdownPodsFromBackup is run before the prepareIncludedNamespaces
+	if err := excludeShutdownPodsFromBackup(ctx, clientset, includedNamespaces, isKotsadmClusterScoped); err != nil {
+		return nil, errors.Wrap(err, "failed to exclude shutdown pods from backup")
+	}
+
 	veleroBackup.Spec.IncludedNamespaces = prepareIncludedNamespaces(includedNamespaces)
 
 	snapshotTrigger := "manual"
@@ -159,15 +171,6 @@ func CreateApplicationBackup(ctx context.Context, a *apptypes.App, isScheduled b
 		}
 	}
 
-	clientset, err := k8sutil.GetClientset()
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to create k8s clientset")
-	}
-
-	if err := excludeShutdownPodsFromBackup(ctx, clientset, veleroBackup); err != nil {
-		return nil, errors.Wrap(err, "failed to exclude shutdown pods from backup")
-	}
-
 	cfg, err := k8sutil.GetClusterConfig()
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get cluster config")
@@ -188,6 +191,16 @@ func CreateApplicationBackup(ctx context.Context, a *apptypes.App, isScheduled b
 
 func CreateInstanceBackup(ctx context.Context, cluster *downstreamtypes.Downstream, isScheduled bool) (*velerov1.Backup, error) {
 	logger.Debug("creating instance backup")
+
+	clientset, err := k8sutil.GetClientset()
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to create k8s clientset")
+	}
+
+	isKurl, err := kurl.IsKurl(clientset)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to check if cluster is kurl")
+	}
 
 	kotsadmNamespace := util.PodNamespace
 	appsSequences := map[string]int64{}
@@ -273,7 +286,9 @@ func CreateInstanceBackup(ctx context.Context, cluster *downstreamtypes.Downstre
 		}
 
 		// ** merge app backup info ** //
-
+		if isKurl {
+			includedNamespaces = append(includedNamespaces, "kurl")
+		}
 		// included namespaces
 		includedNamespaces = append(includedNamespaces, veleroBackup.Spec.IncludedNamespaces...)
 		includedNamespaces = append(includedNamespaces, kotsKinds.KotsApplication.Spec.AdditionalNamespaces...)
@@ -295,20 +310,6 @@ func CreateInstanceBackup(ctx context.Context, cluster *downstreamtypes.Downstre
 		backupHooks.Resources = append(backupHooks.Resources, veleroBackup.Spec.Hooks.Resources...)
 	}
 
-	clientset, err := k8sutil.GetClientset()
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to create k8s clientset")
-	}
-
-	isKurl, err := kurl.IsKurl(clientset)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to check if cluster is kurl")
-	}
-
-	if isKurl {
-		includedNamespaces = append(includedNamespaces, "kurl")
-	}
-
 	kotsadmVeleroBackendStorageLocation, err := kotssnapshot.FindBackupStoreLocation(ctx, kotsadmNamespace)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to find backupstoragelocations")
@@ -325,6 +326,10 @@ func CreateInstanceBackup(ctx context.Context, cluster *downstreamtypes.Downstre
 		includedNamespaces = append(includedNamespaces, kotsadmVeleroBackendStorageLocation.Namespace)
 	}
 
+	//
+	if err := excludeShutdownPodsFromBackup(ctx, clientset, includedNamespaces, isKotsadmClusterScoped); err != nil {
+		return nil, errors.Wrap(err, "failed to exclude shutdown pods from backup")
+	}
 	kotsadmImage, err := k8sutil.FindKotsadmImage(kotsadmNamespace)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to find kotsadm image")
@@ -390,10 +395,6 @@ func CreateInstanceBackup(ctx context.Context, cluster *downstreamtypes.Downstre
 		veleroBackup.Spec.TTL = metav1.Duration{
 			Duration: ttlDuration,
 		}
-	}
-
-	if err := excludeShutdownPodsFromBackup(ctx, clientset, veleroBackup); err != nil {
-		return nil, errors.Wrap(err, "failed to exclude shutdown pods from backup")
 	}
 
 	cfg, err := k8sutil.GetClusterConfig()
@@ -950,20 +951,54 @@ func prepareIncludedNamespaces(namespaces []string) []string {
 
 // excludeShutdownPodsFromBackup will exclude pods that are in a shutdown state from the backup
 // this is to prevent the hook backup from failing if a pod is in a shutdown state and cannot be backed up
-func excludeShutdownPodsFromBackup(ctx context.Context, clientset kubernetes.Interface, backup *velerov1.Backup) (err error) {
-	namespaces := backup.Spec.IncludedNamespaces
-	if len(namespaces) == 0 {
-		return
-	}
+func excludeShutdownPodsFromBackup(ctx context.Context, clientset kubernetes.Interface, backupNamespaces []string, isKotsadmClusterScoped bool) (err error) {
+	failedPodListOptions := buildShutdownPodListOptions()
 
-	// if the backup includes all namespaces, we need to get the list of namespaces
-	if namespaces[0] == "*" {
-		namespaces, err = getNamespaces(ctx, clientset)
-		if err != nil {
-			return errors.Wrap(err, "failed to get namespaces")
+	for _, namespace := range backupNamespaces {
+		if namespace == "*" {
+			if !isKotsadmClusterScoped {
+				continue
+			} else {
+				// if namespace is *, kubernetes api equivalent is empty string for all namespaces
+				namespace = ""
+			}
+		}
+
+		if err := excludeShutdownPodsFromBackupInNamespace(ctx, clientset, namespace, failedPodListOptions); err != nil {
+			return errors.Wrap(err, "failed to exclude shutdown pods from backup")
 		}
 	}
 
+	return nil
+}
+
+// excludeShutdownPodsFromBackupInNamespace will exclude pods that are in a shutdown state from the backup in a specific namespace
+func excludeShutdownPodsFromBackupInNamespace(ctx context.Context, clientset kubernetes.Interface, namespace string, failedPodListOptions metav1.ListOptions) error {
+	pods, err := clientset.CoreV1().Pods(namespace).List(ctx, failedPodListOptions)
+	if err != nil {
+		return errors.Wrapf(err, "failed to list pods in namespace %s", namespace)
+	}
+
+	for _, pod := range pods.Items {
+		if pod.Status.Phase == corev1.PodFailed && pod.Status.Reason == "Shutdown" {
+			logger.Infof("Excluding pod %s in namespace %s from backup", pod.Name, namespace)
+			// add velero.io/exclude-from-backup=true label to pod
+			if pod.Labels == nil {
+				pod.Labels = map[string]string{}
+			}
+
+			pod.Labels[kotsadmtypes.ExcludeKey] = kotsadmtypes.ExcludeValue
+			_, err := clientset.CoreV1().Pods(pod.Namespace).Update(ctx, &pod, metav1.UpdateOptions{})
+			if err != nil {
+				return errors.Wrapf(err, "failed to update pod %s in namespace %s", pod.Name, pod.Namespace)
+			}
+		}
+	}
+	return nil
+}
+
+// buildShutdownPodListOptions returns a list options object that will match all pods that are in a failed state with shutdown reason
+func buildShutdownPodListOptions() metav1.ListOptions {
 	kotsadmLabelSet := labels.Set{
 		kotsadmtypes.KotsadmKey:  kotsadmtypes.KotsadmLabelValue,
 		kotsadmtypes.BackupLabel: kotsadmtypes.BackupLabelValue,
@@ -973,44 +1008,8 @@ func excludeShutdownPodsFromBackup(ctx context.Context, clientset kubernetes.Int
 		"status.phase": string(corev1.PodFailed),
 	}
 
-	failedPodListOptions := metav1.ListOptions{
+	return metav1.ListOptions{
 		LabelSelector: kotsadmLabelSet.String(),
 		FieldSelector: fields.SelectorFromSet(selectorMap).String(),
 	}
-
-	for _, namespace := range namespaces {
-		pods, err := clientset.CoreV1().Pods(namespace).List(ctx, failedPodListOptions)
-		if err != nil {
-			return errors.Wrapf(err, "failed to list pods in namespace %s", namespace)
-		}
-		for _, pod := range pods.Items {
-			if pod.Status.Phase == corev1.PodFailed && pod.Status.Reason == "Shutdown" {
-				logger.Infof("Excluding pod %s in namespace %s from backup", pod.Name, namespace)
-				// add velero.io/exclude-from-backup=true label to pod
-				if pod.Labels == nil {
-					pod.Labels = map[string]string{}
-				}
-
-				pod.Labels[kotsadmtypes.ExcludeKey] = kotsadmtypes.ExcludeValue
-				_, err := clientset.CoreV1().Pods(namespace).Update(ctx, &pod, metav1.UpdateOptions{})
-				if err != nil {
-					return errors.Wrapf(err, "failed to update pod %s in namespace %s", pod.Name, namespace)
-				}
-			}
-		}
-	}
-
-	return nil
-}
-
-func getNamespaces(ctx context.Context, clientset kubernetes.Interface) (namespaces []string, err error) {
-	ns, err := clientset.CoreV1().Namespaces().List(ctx, metav1.ListOptions{})
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to list namespaces")
-	}
-
-	for _, n := range ns.Items {
-		namespaces = append(namespaces, n.Name)
-	}
-	return namespaces, nil
 }

@@ -2,12 +2,10 @@ package snapshot
 
 import (
 	"context"
-	"reflect"
 	"testing"
 
 	kotsadmtypes "github.com/replicatedhq/kots/pkg/kotsadm/types"
 	"github.com/stretchr/testify/assert"
-	velerov1 "github.com/vmware-tanzu/velero/pkg/apis/velero/v1"
 	corev1 "k8s.io/api/core/v1"
 	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -85,27 +83,16 @@ func TestPrepareIncludedNamespaces(t *testing.T) {
 	}
 }
 
-func mockGetNamespacesErrorClient() kubernetes.Interface {
+func mockGetPodsInANamespaceErrorClient() kubernetes.Interface {
 	mockClient := &fake.Clientset{}
-	mockClient.Fake.AddReactor("list", "namespaces", func(action coretest.Action) (handled bool, ret runtime.Object, err error) {
+	mockClient.Fake.AddReactor("list", "pods", func(action coretest.Action) (handled bool, ret runtime.Object, err error) {
 		return true, nil, kuberneteserrors.NewGone("kotsadm-gitops")
 	})
 	return mockClient
 }
 
-func mockGetNamespacesAndPodsClient() kubernetes.Interface {
+func mockGetRunningPodsClient() kubernetes.Interface {
 	mockClient := &fake.Clientset{}
-	mockClient.Fake.AddReactor("list", "namespaces", func(action coretest.Action) (handled bool, ret runtime.Object, err error) {
-		return true, &corev1.NamespaceList{
-			Items: []corev1.Namespace{
-				{
-					ObjectMeta: metav1.ObjectMeta{
-						Name: "test",
-					},
-				},
-			},
-		}, nil
-	})
 	mockClient.Fake.AddReactor("list", "pods", func(action coretest.Action) (handled bool, ret runtime.Object, err error) {
 		return true, &corev1.PodList{
 			Items: []corev1.Pod{
@@ -126,6 +113,68 @@ func mockGetNamespacesAndPodsClient() kubernetes.Interface {
 		}, nil
 	})
 	return mockClient
+}
+
+func Test_excludeShutdownPodsFromBackup(t *testing.T) {
+	type args struct {
+		ctx                    context.Context
+		clientset              kubernetes.Interface
+		backupNamespaces       []string
+		isKotsadmClusterScoped bool
+	}
+	tests := []struct {
+		name    string
+		args    args
+		wantErr bool
+	}{
+		{
+			name: "expect no error when namespaces are empty",
+			args: args{
+				ctx:                    context.TODO(),
+				clientset:              mockGetPodsInANamespaceErrorClient(),
+				backupNamespaces:       nil,
+				isKotsadmClusterScoped: false,
+			},
+			wantErr: false,
+		},
+		{
+			name: "expect no error when isKotsadmClusterScoped is true and namespaces are *",
+			args: args{
+				ctx:                    context.TODO(),
+				clientset:              mockGetPodsInANamespaceErrorClient(),
+				backupNamespaces:       []string{"*"},
+				isKotsadmClusterScoped: false,
+			},
+			wantErr: false,
+		},
+		{
+			name: "expect error when isKotsadmClusterScoped is true and namespaces are * and k8s client returns error",
+			args: args{
+				ctx:                    context.TODO(),
+				clientset:              mockGetPodsInANamespaceErrorClient(),
+				backupNamespaces:       []string{"*"},
+				isKotsadmClusterScoped: true,
+			},
+			wantErr: true,
+		},
+		{
+			name: "expect no error when isKotsadmClusterScoped is true and namespaces are not *",
+			args: args{
+				ctx:                    context.TODO(),
+				clientset:              mockGetRunningPodsClient(),
+				backupNamespaces:       []string{"test"},
+				isKotsadmClusterScoped: true,
+			},
+			wantErr: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if err := excludeShutdownPodsFromBackup(tt.args.ctx, tt.args.clientset, tt.args.backupNamespaces, tt.args.isKotsadmClusterScoped); (err != nil) != tt.wantErr {
+				t.Errorf("excludeShutdownPodsFromBackup() error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
+	}
 }
 
 func mockK8sClientWithShutdownPods() kubernetes.Interface {
@@ -167,55 +216,12 @@ func mockK8sClientWithShutdownPods() kubernetes.Interface {
 	return mockClient
 }
 
-func Test_getNamespaces(t *testing.T) {
+func Test_excludeShutdownPodsFromBackupInNamespace(t *testing.T) {
 	type args struct {
-		ctx       context.Context
-		clientset kubernetes.Interface
-	}
-	tests := []struct {
-		name           string
-		args           args
-		wantNamespaces []string
-		wantErr        bool
-	}{
-		{
-			name: "expect error when k8s client returns error",
-			args: args{
-				ctx:       context.TODO(),
-				clientset: mockGetNamespacesErrorClient(),
-			},
-			wantNamespaces: nil,
-			wantErr:        true,
-		},
-		{
-			name: "expect no error when k8s client returns namespaces",
-			args: args{
-				ctx:       context.TODO(),
-				clientset: mockGetNamespacesAndPodsClient(),
-			},
-			wantNamespaces: []string{"test"},
-			wantErr:        false,
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			gotNamespaces, err := getNamespaces(tt.args.ctx, tt.args.clientset)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("getNamespaces() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
-			if !reflect.DeepEqual(gotNamespaces, tt.wantNamespaces) {
-				t.Errorf("getNamespaces() = %v, want %v", gotNamespaces, tt.wantNamespaces)
-			}
-		})
-	}
-}
-
-func Test_excludeShutdownPodsFromBackup(t *testing.T) {
-	type args struct {
-		ctx       context.Context
-		clientset kubernetes.Interface
-		backup    *velerov1.Backup
+		ctx                  context.Context
+		clientset            kubernetes.Interface
+		namespace            string
+		failedPodListOptions metav1.ListOptions
 	}
 	tests := []struct {
 		name                               string
@@ -224,50 +230,43 @@ func Test_excludeShutdownPodsFromBackup(t *testing.T) {
 		wantNumOfPodsWithExcludeAnnotation int
 	}{
 		{
-			name: "expect no error when namespaces is empty",
+			name: "expect no error when no shutdown pods are found",
 			args: args{
-				ctx:       context.TODO(),
-				clientset: mockGetNamespacesAndPodsClient(),
-				backup:    &velerov1.Backup{},
+				ctx:                  context.TODO(),
+				clientset:            mockGetRunningPodsClient(),
+				namespace:            "test",
+				failedPodListOptions: buildShutdownPodListOptions(),
 			},
 			wantErr: false,
 		},
 		{
-			name: "expect error when getting namespaces returns error",
+			name: "expect error when list pods returns error",
 			args: args{
-				ctx:       context.TODO(),
-				clientset: mockGetNamespacesErrorClient(),
-				backup: &velerov1.Backup{
-					Spec: velerov1.BackupSpec{
-						IncludedNamespaces: []string{"*"},
-					},
-				},
+				ctx:                  context.TODO(),
+				clientset:            mockGetPodsInANamespaceErrorClient(),
+				namespace:            "test",
+				failedPodListOptions: buildShutdownPodListOptions(),
 			},
 			wantErr: true,
 		},
 		{
-			name: "expect no error when getting listing namespaces and pods with running status returns no errors",
+			name: "expect no error when shutdown pods are found with namespace *",
 			args: args{
-				ctx:       context.TODO(),
-				clientset: mockGetNamespacesAndPodsClient(),
-				backup: &velerov1.Backup{
-					Spec: velerov1.BackupSpec{
-						IncludedNamespaces: []string{"*"},
-					},
-				},
+				ctx:                  context.TODO(),
+				clientset:            mockK8sClientWithShutdownPods(),
+				namespace:            "test",
+				failedPodListOptions: buildShutdownPodListOptions(),
 			},
-			wantErr: false,
+			wantErr:                            false,
+			wantNumOfPodsWithExcludeAnnotation: 1,
 		},
 		{
-			name: "expect no error when k8s client list namespaces, pods and updates pods with velero exclude annotation",
+			name: "expect no error when shutdown pods are found with namespace *",
 			args: args{
-				ctx:       context.TODO(),
-				clientset: mockK8sClientWithShutdownPods(),
-				backup: &velerov1.Backup{
-					Spec: velerov1.BackupSpec{
-						IncludedNamespaces: []string{"*"},
-					},
-				},
+				ctx:                  context.TODO(),
+				clientset:            mockK8sClientWithShutdownPods(),
+				namespace:            "", // all namespaces
+				failedPodListOptions: buildShutdownPodListOptions(),
 			},
 			wantErr:                            false,
 			wantNumOfPodsWithExcludeAnnotation: 1,
@@ -275,15 +274,16 @@ func Test_excludeShutdownPodsFromBackup(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if err := excludeShutdownPodsFromBackup(tt.args.ctx, tt.args.clientset, tt.args.backup); (err != nil) != tt.wantErr {
-				t.Errorf("excludeShutdownPodsFromBackup() error = %v, wantErr %v", err, tt.wantErr)
+			if err := excludeShutdownPodsFromBackupInNamespace(tt.args.ctx, tt.args.clientset, tt.args.namespace, tt.args.failedPodListOptions); (err != nil) != tt.wantErr {
+				t.Errorf("excludeShutdownPodsFromBackupInNamespace() error = %v, wantErr %v", err, tt.wantErr)
 			}
+
 			foundNumofPodsWithExcludeAnnotation := 0
 			if !tt.wantErr {
 				// get pods in test namespace and check if they have the velero exclude annotation for Shutdown pods
-				pods, err := tt.args.clientset.CoreV1().Pods("test").List(context.TODO(), metav1.ListOptions{})
+				pods, err := tt.args.clientset.CoreV1().Pods(tt.args.namespace).List(context.TODO(), metav1.ListOptions{})
 				if err != nil {
-					t.Errorf("excludeShutdownPodsFromBackup() error = %v, wantErr %v", err, tt.wantErr)
+					t.Errorf("excludeShutdownPodsFromBackupInNamespace() error = %v, wantErr %v", err, tt.wantErr)
 				}
 				for _, pod := range pods.Items {
 					if _, ok := pod.Labels["velero.io/exclude-from-backup"]; ok {
@@ -291,17 +291,17 @@ func Test_excludeShutdownPodsFromBackup(t *testing.T) {
 					}
 					if pod.Status.Phase == corev1.PodFailed && pod.Status.Reason == "Shutdown" {
 						if _, ok := pod.Labels["velero.io/exclude-from-backup"]; !ok {
-							t.Errorf("excludeShutdownPodsFromBackup() velero.io/exclude-from-backup annotation not found on pod %s", pod.Name)
+							t.Errorf("excludeShutdownPodsFromBackupInNamespace() velero.io/exclude-from-backup annotation not found on pod %s", pod.Name)
 						}
 					} else {
 						if _, ok := pod.Labels["velero.io/exclude-from-backup"]; ok {
-							t.Errorf("excludeShutdownPodsFromBackup() velero.io/exclude-from-backup annotation found on pod %s", pod.Name)
+							t.Errorf("excludeShutdownPodsFromBackupInNamespace() velero.io/exclude-from-backup annotation found on pod %s", pod.Name)
 						}
 					}
 				}
 
 				if foundNumofPodsWithExcludeAnnotation != tt.wantNumOfPodsWithExcludeAnnotation {
-					t.Errorf("excludeShutdownPodsFromBackup() found %d pods with velero.io/exclude-from-backup annotation, want %d", foundNumofPodsWithExcludeAnnotation, tt.wantNumOfPodsWithExcludeAnnotation)
+					t.Errorf("excludeShutdownPodsFromBackupInNamespace() found %d pods with velero.io/exclude-from-backup annotation, want %d", foundNumofPodsWithExcludeAnnotation, tt.wantNumOfPodsWithExcludeAnnotation)
 				}
 			}
 		})
