@@ -47,8 +47,7 @@ export const useSelectedAppClusterDashboard = ({
 }: {
   refetchInterval: number | false;
 }) => {
-  const { data: isHelmManagedResponse } = useIsHelmManaged();
-  const { isHelmManaged } = isHelmManagedResponse || { isHelmManaged: false };
+  const { data: isHelmManaged = false } = useIsHelmManaged();
 
   const selectedApp = useSelectedApp();
   const { slug } = selectedApp || { slug: "" };

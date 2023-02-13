@@ -161,17 +161,16 @@ function useVersions({
   _useParams = useParams,
   _useSelectedApp = useSelectedApp,
   _useMetadata = useMetadata,
-  _useIsHelmManaged = useIsHelmManaged,
 } = {}) {
   let { slug } = _useParams();
   let { selectedApp } = _useSelectedApp();
   let { data: metadata } = _useMetadata();
-  let { data: isHelmManagedResponse } = _useIsHelmManaged();
+  let { data: isHelmManaged } = useIsHelmManaged();
 
   const versionSelector = chooseVersionsSelector({
     // labels differ by installation manager and if airgapped
     isAirgap: metadata?.isAirgap,
-    isHelmManaged: isHelmManagedResponse?.isHelmManaged,
+    isHelmManaged,
     isKurl: metadata?.isKurl,
   });
 
