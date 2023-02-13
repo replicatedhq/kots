@@ -92,16 +92,19 @@ runs:
         credentials_json: ${{ inputs.gke-service-key }}
 
     - name: Setup Cloud SDK
+      if: inputs.platform == 'gke'
       uses: google-github-actions/setup-gcloud@v1
       with:
-        install_components: 'gke-cloud-auth-plugin'
+        install_components: 'gke-gcloud-auth-plugin'
 
     - name: Create the GKE cluster
+      if: inputs.platform == 'gke'
       shell: bash
       run: |
         gcloud container clusters create-auto "${{ steps.cluster-name.outputs.cluster_name }}" --project "${{ inputs.gke-project }}" --region "${{ inputs.gke-cluster-region }}" --network "${{ inputs.gke-cluster-network }}"  --subnetwork "${{ inputs.gke-cluster-subnetwork }}"
 
     - name: Get GKE cluster credentials for kubectl
+      if: inputs.platform == 'gke'
       uses: google-github-actions/get-gke-credentials@v1
       with:
         cluster_name: ${{ steps.cluster-name.outputs.cluster_name }}
