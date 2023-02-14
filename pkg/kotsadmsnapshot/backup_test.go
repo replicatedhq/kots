@@ -200,6 +200,19 @@ func mockK8sClientWithShutdownPods() kubernetes.Interface {
 		},
 		&corev1.Pod{
 			ObjectMeta: metav1.ObjectMeta{
+				Name:      "test-backup-shutdown",
+				Namespace: "test-2",
+				Labels: map[string]string{
+					kotsadmtypes.BackupLabel: kotsadmtypes.BackupLabelValue,
+				},
+			},
+			Status: corev1.PodStatus{
+				Phase:  "Failed",
+				Reason: "Shutdown",
+			},
+		},
+		&corev1.Pod{
+			ObjectMeta: metav1.ObjectMeta{
 				Name:      "test-running",
 				Namespace: "test",
 				Labels: map[string]string{
@@ -235,7 +248,7 @@ func Test_excludeShutdownPodsFromBackupInNamespace(t *testing.T) {
 				ctx:                  context.TODO(),
 				clientset:            mockGetRunningPodsClient(),
 				namespace:            "test",
-				failedPodListOptions: buildShutdownPodListOptions(),
+				failedPodListOptions: buildShutdownPodListOptions()[0],
 			},
 			wantErr: false,
 		},
@@ -245,17 +258,17 @@ func Test_excludeShutdownPodsFromBackupInNamespace(t *testing.T) {
 				ctx:                  context.TODO(),
 				clientset:            mockGetPodsInANamespaceErrorClient(),
 				namespace:            "test",
-				failedPodListOptions: buildShutdownPodListOptions(),
+				failedPodListOptions: buildShutdownPodListOptions()[0],
 			},
 			wantErr: true,
 		},
 		{
-			name: "expect no error when shutdown pods are found with namespace *",
+			name: "expect no error when shutdown pods are found with namespace test",
 			args: args{
 				ctx:                  context.TODO(),
 				clientset:            mockK8sClientWithShutdownPods(),
 				namespace:            "test",
-				failedPodListOptions: buildShutdownPodListOptions(),
+				failedPodListOptions: buildShutdownPodListOptions()[0],
 			},
 			wantErr:                            false,
 			wantNumOfPodsWithExcludeAnnotation: 1,
@@ -266,10 +279,10 @@ func Test_excludeShutdownPodsFromBackupInNamespace(t *testing.T) {
 				ctx:                  context.TODO(),
 				clientset:            mockK8sClientWithShutdownPods(),
 				namespace:            "", // all namespaces
-				failedPodListOptions: buildShutdownPodListOptions(),
+				failedPodListOptions: buildShutdownPodListOptions()[1],
 			},
 			wantErr:                            false,
-			wantNumOfPodsWithExcludeAnnotation: 1,
+			wantNumOfPodsWithExcludeAnnotation: 2,
 		},
 	}
 	for _, tt := range tests {

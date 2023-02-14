@@ -965,8 +965,10 @@ func excludeShutdownPodsFromBackup(ctx context.Context, clientset kubernetes.Int
 			}
 		}
 
-		if err := excludeShutdownPodsFromBackupInNamespace(ctx, clientset, namespace, failedPodListOptions); err != nil {
-			return errors.Wrap(err, "failed to exclude shutdown pods from backup")
+		for _, podListOption := range failedPodListOptions {
+			if err := excludeShutdownPodsFromBackupInNamespace(ctx, clientset, namespace, podListOption); err != nil {
+				return errors.Wrap(err, "failed to exclude shutdown pods from backup")
+			}
 		}
 	}
 
@@ -999,9 +1001,12 @@ func excludeShutdownPodsFromBackupInNamespace(ctx context.Context, clientset kub
 }
 
 // buildShutdownPodListOptions returns a list options object that will match all pods that are in a failed state with shutdown reason
-func buildShutdownPodListOptions() metav1.ListOptions {
+func buildShutdownPodListOptions() []metav1.ListOptions {
 	kotsadmLabelSet := labels.Set{
-		kotsadmtypes.KotsadmKey:  kotsadmtypes.KotsadmLabelValue,
+		kotsadmtypes.KotsadmKey: kotsadmtypes.KotsadmLabelValue,
+	}
+
+	kotsadmBackupLabelSet := labels.Set{
 		kotsadmtypes.BackupLabel: kotsadmtypes.BackupLabelValue,
 	}
 
@@ -1009,8 +1014,14 @@ func buildShutdownPodListOptions() metav1.ListOptions {
 		"status.phase": string(corev1.PodFailed),
 	}
 
-	return metav1.ListOptions{
-		LabelSelector: kotsadmLabelSet.String(),
-		FieldSelector: fields.SelectorFromSet(selectorMap).String(),
+	return []metav1.ListOptions{
+		{
+			LabelSelector: kotsadmLabelSet.String(),
+			FieldSelector: fields.SelectorFromSet(selectorMap).String(),
+		},
+		{
+			LabelSelector: kotsadmBackupLabelSet.String(),
+			FieldSelector: fields.SelectorFromSet(selectorMap).String(),
+		},
 	}
 }
