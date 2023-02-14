@@ -6,8 +6,10 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	logs "log"
 	"os"
 	"path/filepath"
+	"time"
 
 	"github.com/pkg/errors"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
@@ -65,12 +67,15 @@ type ProcessImageOptions struct {
 }
 
 func WriteMidstream(writeMidstreamOptions WriteOptions, processImageOptions ProcessImageOptions, b *base.Base, license *kotsv1beta1.License, identityConfig *kotsv1beta1.IdentityConfig, upstreamDir string, log *logger.CLILogger) (*Midstream, error) {
+	startWriteMidstream := time.Now()
+	verbose := b.Path == "charts/livedesign"
 	var images []kustomizetypes.Image
 	var objects []k8sdoc.K8sDoc
 	var pullSecretRegistries []string
 	var pullSecretUsername string
 	var pullSecretPassword string
 
+	startOne := time.Now()
 	clientset, err := k8sutil.GetClientset()
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get k8s clientset")
@@ -92,8 +97,15 @@ func WriteMidstream(writeMidstreamOptions WriteOptions, processImageOptions Proc
 	if dockerhubSecret != nil {
 		dockerHubRegistryCreds, _ = registry.GetCredentialsForRegistryFromConfigJSON(dockerhubSecret.Data[".dockerconfigjson"], registry.DockerHubRegistryName)
 	}
-
+	durationOne := time.Since(startOne)
+	if verbose {
+		logs.Printf("LG: TimeOne Duration: %v", durationOne)
+	}
+	startTwo := time.Now()
 	if processImageOptions.RewriteImages {
+		if verbose {
+			logs.Printf("LG: In processImageOptions.RewriteImages")
+		}
 		// A target registry is configured. Rewrite all images and copy them (if necessary) to the configured registry.
 		if processImageOptions.RegistrySettings.IsReadOnly {
 			log.ActionWithSpinner("Rewriting images")
@@ -104,6 +116,9 @@ func WriteMidstream(writeMidstreamOptions WriteOptions, processImageOptions Proc
 		}
 
 		if processImageOptions.AirgapRoot == "" {
+			if verbose {
+				logs.Printf("LG: In processImageOptions.AirgapRoot")
+			}
 			// This is an online installation. Pull and rewrite images from online and copy them (if necessary) to the configured registry.
 			rewriteResult, err := rewriteBaseImages(processImageOptions, writeMidstreamOptions.BaseDir, newKotsKinds, license, dockerHubRegistryCreds, log)
 			if err != nil {
@@ -134,6 +149,10 @@ func WriteMidstream(writeMidstreamOptions WriteOptions, processImageOptions Proc
 			}
 		}
 	} else if license != nil {
+		if verbose {
+			logs.Printf("LG: In else if license != nil")
+		}
+		privateImagesStart := time.Now()
 		// A target registry is NOT configured. Find and rewrite private images to be proxied through proxy.replicated.com
 		findResult, err := findPrivateImages(writeMidstreamOptions, b, newKotsKinds, license, dockerHubRegistryCreds)
 		if err != nil {
@@ -142,11 +161,24 @@ func WriteMidstream(writeMidstreamOptions WriteOptions, processImageOptions Proc
 		images = findResult.Images
 		newKotsKinds.Installation.Spec.KnownImages = findResult.CheckedImages
 		objects = findResult.Docs
+		privateImagesDuration := time.Since(privateImagesStart)
+		if verbose {
+			logs.Printf("LG: TimePrivateImages Duration: %v", privateImagesDuration)
+		}
 
+		registryProxyInfoStart := time.Now()
 		// Use license to create image pull secrets for all objects that have private images.
 		pullSecretRegistries = registry.GetRegistryProxyInfo(license, &newKotsKinds.KotsApplication).ToSlice()
 		pullSecretUsername = license.Spec.LicenseID
 		pullSecretPassword = license.Spec.LicenseID
+		registryProxyInfoDuration := time.Since(registryProxyInfoStart)
+		if verbose {
+			logs.Printf("LG: TimeRegistryProxyInfo Duration: %v", registryProxyInfoDuration)
+		}
+	}
+	durationTwo := time.Since(startTwo)
+	if verbose {
+		logs.Printf("LG: WriteMidstream TimeTwo Duration: %v", durationTwo)
 	}
 
 	// For the newer style charts, create a new secret per chart as helm adds chart specific
@@ -183,6 +215,10 @@ func WriteMidstream(writeMidstreamOptions WriteOptions, processImageOptions Proc
 		return nil, errors.Wrap(err, "failed to write common midstream")
 	}
 
+	writeMidstreamDuration := time.Since(startWriteMidstream)
+	if verbose {
+		logs.Printf("LG: write helmMidstream duration: %v", writeMidstreamDuration)
+	}
 	return m, nil
 }
 
@@ -278,6 +314,7 @@ func ProcessAirgapImages(options ProcessImageOptions, kotsKinds *kotsutil.KotsKi
 
 // findPrivateImages Finds and rewrites private images to be proxied through proxy.replicated.com
 func findPrivateImages(writeMidstreamOptions WriteOptions, b *base.Base, kotsKinds *kotsutil.KotsKinds, license *kotsv1beta1.License, dockerHubRegistryCreds registry.Credentials) (*base.FindPrivateImagesResult, error) {
+	verbose := b.Path == "charts/livedesign"
 	replicatedRegistryInfo := registry.GetRegistryProxyInfo(license, &kotsKinds.KotsApplication)
 	allPrivate := kotsKinds.KotsApplication.Spec.ProxyPublicImages
 
@@ -299,9 +336,15 @@ func findPrivateImages(writeMidstreamOptions WriteOptions, b *base.Base, kotsKin
 		UseHelmInstall:   writeMidstreamOptions.UseHelmInstall,
 		KotsKindsImages:  kotsutil.GetImagesFromKotsKinds(kotsKinds),
 	}
-	findResult, err := base.FindPrivateImages(findPrivateImagesOptions)
+
+	startThree := time.Now()
+	findResult, err := base.FindPrivateImages(findPrivateImagesOptions, verbose)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to find private images")
+	}
+	durationThree := time.Since(startThree)
+	if verbose {
+		logs.Printf("LG: inside findPrivateImages -- FindPrivateImages duration: %v", durationThree)
 	}
 
 	return findResult, nil

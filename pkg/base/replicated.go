@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	logs "log"
 	"os"
 	"path"
 	"strconv"
@@ -45,6 +46,8 @@ type Document struct {
 }
 
 func renderReplicated(u *upstreamtypes.Upstream, renderOptions *RenderOptions) (*Base, []Base, error) {
+	logs.Println("LG: Inside renderReplicated")
+	// start := time.Now()
 	commonBase := Base{
 		Files: []BaseFile{},
 		Bases: []Base{},
@@ -127,6 +130,7 @@ func renderReplicated(u *upstreamtypes.Upstream, renderOptions *RenderOptions) (
 
 	// render helm charts that were specified
 	// we just inject them into u.Files
+	// this below may have taken a while
 	kotsHelmCharts, err := findAllKotsHelmCharts(u.Files, *builder, renderOptions.Log)
 	if err != nil {
 		return nil, nil, errors.Wrap(err, "failed to find helm charts")
@@ -134,6 +138,7 @@ func renderReplicated(u *upstreamtypes.Upstream, renderOptions *RenderOptions) (
 
 	helmBases := []Base{}
 	for _, kotsHelmChart := range kotsHelmCharts {
+		// this is calling the render of helm charts
 		helmBase, err := renderReplicatedHelmChart(kotsHelmChart, u.Files, renderOptions, builder)
 		if err != nil {
 			return nil, nil, errors.Wrapf(err, "failed to render helm chart %s", kotsHelmChart.Name)
@@ -152,7 +157,8 @@ func renderReplicated(u *upstreamtypes.Upstream, renderOptions *RenderOptions) (
 			commonBase.Bases = append(commonBase.Bases, *renderedHelmBase)
 		}
 	}
-
+	// duration := time.Since(start)
+	// logs.Println("LG: renderReplicated took: ", duration)
 	return &commonBase, helmBases, nil
 }
 
@@ -228,7 +234,7 @@ func renderReplicatedHelmChart(kotsHelmChart *kotsv1beta1.HelmChart, upstreamFil
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to render local values for chart")
 	}
-
+	// this is where the rendering of helm happens
 	helmBase, err := RenderHelm(helmUpstream, &RenderOptions{
 		SplitMultiDocYAML: true,
 		Namespace:         kotsHelmChart.Spec.Namespace,

@@ -496,7 +496,7 @@ func Test_RewriteImages(t *testing.T) {
 			assert.ElementsMatch(t, test.wantProcessResult.CheckedImages, gotUpstreamResult.CheckedImages)
 
 			test.findOptions.KotsKindsImages = kotsutil.GetImagesFromKotsKinds(test.processOptions.KotsKinds)
-			gotFindResult, err := FindPrivateImages(test.findOptions)
+			gotFindResult, err := FindPrivateImages(test.findOptions, false)
 			req.NoError(err)
 
 			wantDocs, err := loadDocs(test.baseDir)

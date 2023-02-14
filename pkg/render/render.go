@@ -2,6 +2,7 @@ package render
 
 import (
 	"fmt"
+	logs "log"
 	"os"
 	"path/filepath"
 
@@ -16,6 +17,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/rewrite"
 	"github.com/replicatedhq/kots/pkg/template"
 	"github.com/replicatedhq/kots/pkg/util"
+	"go.uber.org/zap"
 )
 
 type Renderer struct {
@@ -102,6 +104,11 @@ func (r Renderer) RenderDir(archiveDir string, a *apptypes.App, downstreams []do
 }
 
 func RenderDir(archiveDir string, a *apptypes.App, downstreams []downstreamtypes.Downstream, registrySettings registrytypes.RegistrySettings, sequence int64) error {
+	logs.Println("LG: Inside RenderDir")
+	zaplogger, _ := zap.NewProduction(zap.AddCaller())
+	defer zaplogger.Sync()
+	zaplogger.Info("hello from RenderDir")
+
 	kotsKinds, err := kotsutil.LoadKotsKindsFromPath(archiveDir)
 	if err != nil {
 		return errors.Wrap(err, "failed to load kotskinds from path")

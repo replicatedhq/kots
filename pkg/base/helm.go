@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"io/ioutil"
+	logs "log"
 	"os"
 	"path"
 	"path/filepath"
@@ -21,7 +22,9 @@ import (
 	kustomizetypes "sigs.k8s.io/kustomize/api/types"
 )
 
+// This function renders helm
 func RenderHelm(u *upstreamtypes.Upstream, renderOptions *RenderOptions) (*Base, error) {
+	logs.Println("LG: Inside RenderHelm")
 	chartPath, err := ioutil.TempDir("", "kots")
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create chart dir")
@@ -376,9 +379,10 @@ func helmChartUpstreamPathToBasePaths(upstreamPath string, upstreamFileMap map[s
 
 // Takes an input chart path and returns a list that represents the dependency tree for the chart.
 // The top-level chart is represented by an empty string.
-//  // "" => [""]
-//  // "charts/mariadb" => ["", "mariadb"]
-//  // "charts/mariadb/charts/common" => ["", "mariadb", "common"]
+//
+//	// "" => [""]
+//	// "charts/mariadb" => ["", "mariadb"]
+//	// "charts/mariadb/charts/common" => ["", "mariadb", "common"]
 func pathToCharts(path string) []string {
 	re := regexp.MustCompile(`\/?charts\/`)
 	return re.Split(path, -1)

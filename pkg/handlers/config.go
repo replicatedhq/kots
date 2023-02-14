@@ -5,11 +5,13 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	logs "log"
 	"net/http"
 	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
@@ -131,6 +133,7 @@ func (h *Handler) DownloadFileFromConfig(w http.ResponseWriter, r *http.Request)
 	w.Write(decoded)
 }
 
+// Implementation of the handler that saves changes to config:
 func (h *Handler) UpdateAppConfig(w http.ResponseWriter, r *http.Request) {
 	updateAppConfigResponse := UpdateAppConfigResponse{
 		Success: false,
@@ -849,7 +852,9 @@ func updateAppConfig(updateApp *apptypes.App, sequence int64, configGroups []kot
 		return updateAppConfigResponse, err
 	}
 
+	start := time.Now()
 	if createNewVersion {
+		logs.Printf("LG: inside createNewVersion")
 		newSequence, err := store.GetStore().CreateAppVersion(updateApp.ID, &sequence, archiveDir, "Config Change", skipPreflights, &version.DownstreamGitOps{}, render.Renderer{})
 		if err != nil {
 			updateAppConfigResponse.Error = "failed to create an app version"
@@ -857,6 +862,7 @@ func updateAppConfig(updateApp *apptypes.App, sequence int64, configGroups []kot
 		}
 		sequence = newSequence
 	} else {
+		logs.Printf("LG: inside getDownstreamVersionSource")
 		source, err := store.GetStore().GetDownstreamVersionSource(updateApp.ID, sequence)
 		if err != nil {
 			updateAppConfigResponse.Error = "failed to get existing downstream version source"
@@ -867,17 +873,26 @@ func updateAppConfig(updateApp *apptypes.App, sequence int64, configGroups []kot
 			return updateAppConfigResponse, err
 		}
 	}
+	createNewVersionDuration := time.Since(start)
+	logs.Printf("LG: duration creating new version or getting existing downstream version: %v", createNewVersionDuration)
 
+	setDownstreamStart := time.Now()
 	if err := store.GetStore().SetDownstreamVersionStatus(updateApp.ID, int64(sequence), storetypes.VersionPendingPreflight, ""); err != nil {
 		updateAppConfigResponse.Error = "failed to set downstream status to 'pending preflight'"
 		return updateAppConfigResponse, err
 	}
+	setDownstreamDuration := time.Since(setDownstreamStart)
+	logs.Printf("LG: duration setting downstream status: %v", setDownstreamDuration)
 
+	checkForStrictPreflightsStart := time.Now()
 	hasStrictPreflights, err := store.GetStore().HasStrictPreflights(updateApp.ID, sequence)
 	if err != nil {
 		updateAppConfigResponse.Error = "failed to check if version has strict preflights"
 		return updateAppConfigResponse, err
 	}
+	checkForStrictPreflightsDuration := time.Since(checkForStrictPreflightsStart)
+	logs.Printf("LG: duration checking for strict preflights: %v", checkForStrictPreflightsDuration)
+	logs.Printf("LG: in updateAppConfig after RenderDir and queries: %v\n", time.Since(start))
 
 	if hasStrictPreflights && skipPreflights {
 		logger.Warnf("preflights will not be skipped, strict preflights are set to %t", hasStrictPreflights)
@@ -897,7 +912,8 @@ func updateAppConfig(updateApp *apptypes.App, sequence int64, configGroups []kot
 			return updateAppConfigResponse, err
 		}
 	}
-
+	duration := time.Since(start)
+	logs.Printf("LG: time taken by updateAppConfig after RenderDir: %v\n", duration)
 	updateAppConfigResponse.Success = true
 	return updateAppConfigResponse, nil
 }
@@ -924,6 +940,7 @@ func getMissingRequiredConfig(configGroups []kotsv1beta1.ConfigGroup) ([]string,
 	return requiredItems, requiredItemsTitles
 }
 
+// This function is part of updating app config
 func updateAppConfigValues(values map[string]kotsv1beta1.ConfigValue, configGroups []kotsv1beta1.ConfigGroup) map[string]kotsv1beta1.ConfigValue {
 	for _, group := range configGroups {
 		for _, item := range group.Items {

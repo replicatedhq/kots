@@ -3,6 +3,7 @@ package base
 import (
 	"bytes"
 	"fmt"
+	logs "log"
 	"os"
 	"regexp"
 	"sort"
@@ -26,6 +27,8 @@ var (
 const NamespaceTemplateConst = "repl{{ Namespace}}"
 
 func renderHelmV3(chartName string, chartPath string, vals map[string]interface{}, renderOptions *RenderOptions) ([]BaseFile, []BaseFile, error) {
+	logs.Println("LG: Inside renderHelmV3")
+	// start := time.Now()
 	cfg := &action.Configuration{
 		Log: renderOptions.Log.Debug,
 	}
@@ -139,17 +142,21 @@ func renderHelmV3(chartName string, chartPath string, vals map[string]interface{
 		})
 	}
 
+	kustomizeStart := time.Now()
 	// insert namespace defined in the HelmChart spec
 	baseFiles, err = kustomizeHelmNamespace(baseFiles, renderOptions)
 	if err != nil {
 		return nil, nil, errors.Wrap(err, "failed to insert helm namespace")
 	}
+	logs.Printf("LG: kustomizeHelmNamespace took %v\n", time.Since(kustomizeStart))
 
 	// ensure order
 	merged := mergeBaseFiles(baseFiles)
 	sort.Slice(merged, func(i, j int) bool {
 		return 0 > strings.Compare(merged[i].Path, merged[j].Path)
 	})
+	// duration := time.Since(start)
+	// logs.Printf("LG: renderHelmV3 took: %s", duration)
 	return merged, additionalFiles, nil
 }
 

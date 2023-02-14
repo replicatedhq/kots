@@ -4,8 +4,10 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	logs "log"
 	"os"
 	"path/filepath"
+	"time"
 
 	"github.com/pkg/errors"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
@@ -53,6 +55,10 @@ type RewriteOptions struct {
 
 func Rewrite(rewriteOptions RewriteOptions) error {
 	log := logger.NewCLILogger(os.Stdout)
+	//log that we are in Rewrite function
+	logs.Println("LG: Rewrite function called")
+	reWriteStart := time.Now()
+	oneStart := time.Now()
 
 	if rewriteOptions.Silent {
 		log.Silence()
@@ -122,10 +128,16 @@ func Rewrite(rewriteOptions RewriteOptions) error {
 	log.ActionWithSpinner("Creating base")
 	io.WriteString(rewriteOptions.ReportWriter, "Creating base\n")
 
+	durationOne := time.Since(oneStart)
+	logs.Printf("LG: Rewrite durationOne: %v", durationOne)
+	start := time.Now()
 	commonBase, helmBases, err := base.RenderUpstream(u, &renderOptions)
+	duration := time.Since(start)
 	if err != nil {
 		return errors.Wrap(err, "failed to render upstream")
 	}
+	logs.Printf("LG: Time taken to render upstream / renderReplicated / renderHelm: %v\n", duration)
+	twoStart := time.Now()
 
 	errorFiles := []base.BaseFile{}
 	errorFiles = append(errorFiles, base.PrependBaseFilesPath(commonBase.ListErrorFiles(), commonBase.Path)...)
@@ -167,6 +179,9 @@ func Rewrite(rewriteOptions RewriteOptions) error {
 	if err := commonBase.WriteBase(writeBaseOptions); err != nil {
 		return errors.Wrap(err, "failed to write common base")
 	}
+	durationTwo := time.Since(twoStart)
+	logs.Printf("LG: Rewrite durationTwo: %v", durationTwo)
+	threeStart := time.Now()
 
 	for _, helmBase := range helmBases {
 		helmBaseCopy := helmBase.DeepCopy()
@@ -183,7 +198,9 @@ func Rewrite(rewriteOptions RewriteOptions) error {
 			return errors.Wrapf(err, "failed to write helm base %s", helmBaseCopy.Path)
 		}
 	}
-
+	durationThree := time.Since(threeStart)
+	logs.Printf("LG: Rewrite durationThree: %v", durationThree)
+	fourStart := time.Now()
 	log.FinishSpinner()
 
 	log.ActionWithSpinner("Creating midstreams")
@@ -203,6 +220,10 @@ func Rewrite(rewriteOptions RewriteOptions) error {
 	if err != nil {
 		return errors.Wrap(err, "failed to load new helm charts")
 	}
+
+	durationFour := time.Since(fourStart)
+	logs.Printf("LG: Rewrite durationFour: %v", durationFour)
+	fiveStart := time.Now()
 
 	commonWriteMidstreamOptions := midstream.WriteOptions{
 		AppSlug:            rewriteOptions.AppSlug,
@@ -264,8 +285,13 @@ func Rewrite(rewriteOptions RewriteOptions) error {
 		return errors.Wrap(err, "failed to write common midstream")
 	}
 
+	durationFive := time.Since(fiveStart)
+	logs.Printf("LG: Rewrite durationFive: %v", durationFive)
+	sixStart := time.Now()
+
 	helmMidstreams := []midstream.Midstream{}
 	for _, helmBase := range helmBases {
+		loopStart := time.Now()
 		// we must look at the current chart for private images, but must ignore subcharts
 		// to do this, we remove only the current helmBase name from the UseHelmInstall map to unblock visibility into the chart directory
 		// this ensures only the current chart resources are added to kustomization.yaml and pullsecret.yaml
@@ -283,6 +309,12 @@ func Rewrite(rewriteOptions RewriteOptions) error {
 		processImageOptionsCopy.Namespace = helmBaseCopy.Namespace
 		processImageOptionsCopy.CopyImages = false // don't copy images more than once
 
+		//log name of chart being processed
+		verbose := helmBaseCopy.Path == "charts/livedesign"
+		if verbose {
+			logs.Printf("LG: Creating midstreams for %s", helmBaseCopy.Path)
+		}
+
 		helmMidstream, err := midstream.WriteMidstream(writeMidstreamOptions, processImageOptionsCopy, helmBaseCopy, rewriteOptions.License, identityConfig, upstreamDir, log)
 		if err != nil {
 			return errors.Wrapf(err, "failed to write helm midstream %s", helmBase.Path)
@@ -292,7 +324,15 @@ func Rewrite(rewriteOptions RewriteOptions) error {
 		writeMidstreamOptions.UseHelmInstall[helmBase.Path] = previousUseHelmInstall
 
 		helmMidstreams = append(helmMidstreams, *helmMidstream)
+		loopDuration := time.Since(loopStart)
+		if verbose {
+			logs.Printf("LG: helmMidstream iteration duration: %v", loopDuration)
+		}
 	}
+
+	durationSix := time.Since(sixStart)
+	logs.Printf("LG: Rewrite durationSix: %v", durationSix)
+	sevenStart := time.Now()
 
 	if err := writeDownstreams(rewriteOptions, commonBase.GetOverlaysDir(writeBaseOptions), m, helmMidstreams, log); err != nil {
 		return errors.Wrap(err, "failed to write downstreams")
@@ -308,8 +348,12 @@ func Rewrite(rewriteOptions RewriteOptions) error {
 		return errors.Wrap(err, "failed to update installation spec")
 	}
 
-	log.FinishSpinner()
+	durationSeven := time.Since(sevenStart)
+	logs.Printf("LG: Rewrite durationSeven: %v", durationSeven)
 
+	log.FinishSpinner()
+	rewriteDuration := time.Since(reWriteStart)
+	logs.Printf("LG: Rewrite function took %v\n", rewriteDuration)
 	return nil
 }
 

@@ -184,7 +184,7 @@ func RegisterSessionAuthRoutes(r *mux.Router, kotsStore store.Store, handler KOT
 		HandlerFunc(middleware.EnforceAccess(policy.AppRegistryRead, handler.GetImageRewriteStatus))
 	r.Name("ValidateAppRegistry").Path("/api/v1/app/{appSlug}/registry/validate").Methods("POST").
 		HandlerFunc(middleware.EnforceAccess(policy.AppRegistryWrite, handler.ValidateAppRegistry))
-
+		// Below is the handler for saving changes to config:
 	r.Name("UpdateAppConfig").Path("/api/v1/app/{appSlug}/config").Methods("PUT").
 		HandlerFunc(middleware.EnforceAccess(policy.AppDownstreamConfigWrite, handler.UpdateAppConfig))
 	r.Name("CurrentAppConfig").Path("/api/v1/app/{appSlug}/config/{sequence}").Methods("GET").

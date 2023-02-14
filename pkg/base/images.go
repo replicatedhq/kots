@@ -1,7 +1,9 @@
 package base
 
 import (
+	logs "log"
 	"strings"
+	"time"
 
 	dockerref "github.com/containers/image/v5/docker/reference"
 	"github.com/distribution/distribution/v3/reference"
@@ -34,9 +36,20 @@ type FindPrivateImagesResult struct {
 	CheckedImages []kotsv1beta1.InstallationImage // all images found in the installation
 }
 
-func FindPrivateImages(options FindPrivateImagesOptions) (*FindPrivateImagesResult, error) {
+func FindPrivateImages(options FindPrivateImagesOptions, verbose bool) (*FindPrivateImagesResult, error) {
+	startOne := time.Now()
 	checkedImages := makeImageInfoMap(options.Installation.Spec.KnownImages)
-	upstreamImages, objects, err := image.GetPrivateImages(options.BaseDir, options.KotsKindsImages, checkedImages, options.AllImagesPrivate, options.DockerHubRegistry, options.HelmChartPath, options.UseHelmInstall)
+	durationOne := time.Since(startOne)
+	if verbose {
+		logs.Printf("LG: FindPrivateImages: duration one took %s", durationOne)
+	}
+
+	startTwo := time.Now()
+	upstreamImages, objects, err := image.GetPrivateImages(options.BaseDir, options.KotsKindsImages, checkedImages, options.AllImagesPrivate, options.DockerHubRegistry, options.HelmChartPath, options.UseHelmInstall, verbose)
+	durationTwo := time.Since(startTwo)
+	if verbose {
+		logs.Printf("LG: FindPrivateImages: duration two took %s", durationTwo)
+	}
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to list upstream images")
 	}

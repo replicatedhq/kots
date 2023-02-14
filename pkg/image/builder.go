@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	logs "log"
 	"os"
 	"path"
 	"path/filepath"
@@ -78,7 +79,8 @@ func RewriteImages(srcRegistry, destRegistry registrytypes.RegistryOptions, appS
 	return newImages, nil
 }
 
-func GetPrivateImages(baseDir string, kotsKindsImages []string, checkedImages map[string]types.ImageInfo, allPrivate bool, dockerHubRegistry registrytypes.RegistryOptions, parentHelmChartPath string, useHelmInstall map[string]bool) ([]string, []k8sdoc.K8sDoc, error) {
+func GetPrivateImages(baseDir string, kotsKindsImages []string, checkedImages map[string]types.ImageInfo, allPrivate bool, dockerHubRegistry registrytypes.RegistryOptions, parentHelmChartPath string, useHelmInstall map[string]bool, verbose bool) ([]string, []k8sdoc.K8sDoc, error) {
+	startOne := time.Now()
 	uniqueImages := make(map[string]bool)
 
 	objectsWithImages := make([]k8sdoc.K8sDoc, 0) // all objects where images are referenced from
@@ -98,7 +100,12 @@ func GetPrivateImages(baseDir string, kotsKindsImages []string, checkedImages ma
 			}
 		}
 	}
+	durationOne := time.Since(startOne)
+	if verbose {
+		logs.Printf("LG: GetPrivateImages duration one: %v", durationOne)
+	}
 
+	startTwo := time.Now()
 	err := filepath.Walk(baseDir,
 		func(path string, info os.FileInfo, err error) error {
 			if err != nil {
@@ -168,12 +175,21 @@ func GetPrivateImages(baseDir string, kotsKindsImages []string, checkedImages ma
 	if err != nil {
 		return nil, nil, errors.Wrap(err, "failed to walk upstream dir")
 	}
+	durationTwo := time.Since(startTwo)
+	if verbose {
+		logs.Printf("LG: GetPrivateImages duration two: %v", durationTwo)
+	}
 
+	startThree := time.Now()
 	result := make([]string, 0, len(uniqueImages))
 	for i := range uniqueImages {
 		result = append(result, i)
 	}
 	sort.Strings(result) // sort the images to get an ordered and reproducible output for easier testing
+	durationThree := time.Since(startThree)
+	if verbose {
+		logs.Printf("LG: GetPrivateImages duration three: %v", durationThree)
+	}
 
 	return result, objectsWithImages, nil
 }
@@ -494,7 +510,7 @@ func IsPrivateImage(image string, dockerHubRegistry registrytypes.RegistryOption
 			time.Sleep(1 * time.Second)
 			continue
 		}
-
+		// This is showing up in logs when saving config:
 		logger.Debugf("Marking image '%s' as private because: %v", image, err.Error())
 
 		// if the registry is unreachable (which might be due to a firewall, proxy, etc..),
