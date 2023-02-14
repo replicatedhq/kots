@@ -830,7 +830,6 @@ function AppVersionHistoryRow(props: Props) {
               />
             )}
           </div>
-<<<<<<< HEAD
           <div
             className={`${
               nothingToCommit && selectedDiffReleases && "u-opacity--half"
@@ -889,45 +888,6 @@ function AppVersionHistoryRow(props: Props) {
       </>
     </div>
   );
-=======
-          {this.props.showVersionPreviousDownloadStatus && (
-            <div className="flex alignItems--center justifyContent--flexEnd">
-              <span
-                className={`u-textColor--bodyCopy u-fontWeight--medium u-fontSize--small u-lineHeight--default ${
-                  version.downloadStatus.status === "failed"
-                    ? "u-textColor--error"
-                    : ""
-                }`}
-              >
-                {version.downloadStatus.message}
-              </span>
-            </div>
-          )}
-          {this.props.showVersionDownloadingStatus && (
-            <div className="flex alignItems--center justifyContent--flexEnd">
-              {this.props.versionDownloadStatus?.downloadingVersion && (
-                <Loader className="u-marginRight--5" size="15" />
-              )}
-              <span
-                className={`u-textColor--bodyCopy u-fontWeight--medium u-fontSize--small u-lineHeight--default ${
-                  this.props.versionDownloadStatus?.downloadingVersionError
-                    ? "u-textColor--error"
-                    : ""
-                }`}
-              >
-                {this.props.versionDownloadStatus?.downloadingVersionMessage
-                  ? this.props.versionDownloadStatus?.downloadingVersionMessage
-                  : this.props.versionDownloadStatus?.downloadingVersion
-                  ? "Downloading"
-                  : ""}
-              </span>
-            </div>
-          )}
-        </>
-      </div>
-    );
-  }
->>>>>>> 8e76c0588f53d6983c73468521c0fc956213584c
 }
 
 export { AppVersionHistoryRow };
