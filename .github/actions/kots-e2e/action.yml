@@ -64,7 +64,7 @@ runs:
   steps:
     - name: Generate GKE cluster name
       if: inputs.platform == 'gke'
-      uses: ./.github/actions/kots-gke
+      uses: ./.github/actions/kots-gke-create
       with:
         service-key: inputs.gke-service-key
 
@@ -127,7 +127,6 @@ runs:
 
     - name: Delete GKE cluster if created
       if: ${{ always() && inputs.platform == 'gke' }}
-      uses: ./.github/actions/kots-gke
+      uses: ./.github/actions/kots-gke-delete
       with:
         service-key: inputs.gke-service-key
-        delete: 'true'
