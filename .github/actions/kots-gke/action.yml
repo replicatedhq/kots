@@ -1,0 +1,73 @@
+name: 'KOTS E2E'
+description: 'Composite action for running KOTS e2e test'
+inputs:
+  service-key:
+    description: 'Service key to authenticate a Google Cloud service account'
+    required: false
+
+  cluster-region:
+    description: GKE cluster region to use
+    default: 'us-west1'
+    required: false
+
+  cluster-network:
+    description: GKE cluster network tag
+    default: 'projects/replicated-qa/global/networks/default'
+    required: false
+
+  cluster-subnetwork:
+    description: GKE cluster subnetwork tag
+    default: 'projects/replicated-qa/regions/us-west1/subnetworks/default'
+    required: false
+
+  project:
+    description: Google Cloud project name
+    default: 'replicated-qa'
+    required: false
+
+  delete:
+    description: Flag to indicate the cluster should be deleted
+    default: 'false'
+    required: false
+
+runs:
+  using: "composite"
+  steps:
+    - name: Generate GKE cluster name
+      if: inputs.delete == 'false'
+      id: cluster-name
+      shell: bash
+      run: |
+        echo "cluster_name=kots-ci-${{ github.run_id }}-${{ github.run_attempt }}-$(echo '${{ github.job }}' | cut -c -18)" >> $GITHUB_OUTPUT
+      
+    - name: Authenticate to Google Cloud
+      if: inputs.delete == 'false'
+      uses: google-github-actions/auth@v1
+      with:
+        credentials_json: ${{ inputs.service-key }}
+
+    - name: Setup Cloud SDK
+      if: inputs.delete == 'false'
+      uses: google-github-actions/setup-gcloud@v1
+      with:
+        install_components: 'gke-gcloud-auth-plugin'
+
+    - name: Create the GKE cluster
+      if: inputs.delete == 'false'
+      shell: bash
+      run: |
+        gcloud container clusters create-auto "${{ steps.cluster-name.outputs.cluster_name }}" --project "${{ inputs.project }}" --region "${{ inputs.cluster-region }}" --network "${{ inputs.cluster-network }}"  --subnetwork "${{ inputs.cluster-subnetwork }}"
+
+    - name: Get GKE cluster credentials for kubectl
+      if: inputs.delete == 'false'
+      uses: google-github-actions/get-gke-credentials@v1
+      with:
+        cluster_name: ${{ steps.cluster-name.outputs.cluster_name }}
+        location: ${{ inputs.cluster-region }}
+        project_id: ${{ inputs.project }}
+
+    - name: Delete GKE cluster if flagged
+      if: inputs.delete == 'true'
+      shell: bash
+      run: |
+        gcloud -q container clusters delete "${{ steps.cluster-name.outputs.cluster_name }}" --project "${{ inputs.project }}" --region "${{ inputs.cluster-region }}"

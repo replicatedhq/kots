@@ -58,58 +58,15 @@ inputs:
   gke-service-key:
     description: 'Service key to authenticate a Google Cloud service account'
     required: false
-  gke-cluster-region:
-    description: GKE cluster region to use
-    default: "us-west1"
-    required: false
-  gke-cluster-network:
-    description: GKE cluster network tag
-    default: "projects/replicated-qa/global/networks/default"
-    required: false
-  gke-cluster-subnetwork:
-    description: GKE cluster subnetwork tag
-    default: "projects/replicated-qa/regions/us-west1/subnetworks/default"
-    required: false
-  gke-project:
-    description: Google Cloud project name
-    default: "replicated-qa"
-    required: false
 
 runs:
   using: "composite"
   steps:
     - name: Generate GKE cluster name
       if: inputs.platform == 'gke'
-      id: cluster-name
-      shell: bash
-      run: |
-        echo "cluster_name=kots-ci-${{ github.run_id }}-${{ github.run_attempt }}-$(echo '${{ github.job }}' | cut -c -18)" >> $GITHUB_OUTPUT
-      
-    - name: Authenticate to Google Cloud
-      if: inputs.platform == 'gke'
-      uses: google-github-actions/auth@v1
+      uses: ./.github/actions/kots-gke
       with:
-        credentials_json: ${{ inputs.gke-service-key }}
-
-    - name: Setup Cloud SDK
-      if: inputs.platform == 'gke'
-      uses: google-github-actions/setup-gcloud@v1
-      with:
-        install_components: 'gke-gcloud-auth-plugin'
-
-    - name: Create the GKE cluster
-      if: inputs.platform == 'gke'
-      shell: bash
-      run: |
-        gcloud container clusters create-auto "${{ steps.cluster-name.outputs.cluster_name }}" --project "${{ inputs.gke-project }}" --region "${{ inputs.gke-cluster-region }}" --network "${{ inputs.gke-cluster-network }}"  --subnetwork "${{ inputs.gke-cluster-subnetwork }}"
-
-    - name: Get GKE cluster credentials for kubectl
-      if: inputs.platform == 'gke'
-      uses: google-github-actions/get-gke-credentials@v1
-      with:
-        cluster_name: ${{ steps.cluster-name.outputs.cluster_name }}
-        location: ${{ inputs.gke-cluster-region }}
-        project_id: ${{ inputs.gke-project }}
+        service-key: inputs.gke-service-key
 
     # TODO: use k3d eventually but this is difficult to support with ${{ inputs.k8s-version }}
     - name: Generate a k3s cluster
@@ -170,6 +127,7 @@ runs:
 
     - name: Delete GKE cluster if created
       if: ${{ always() && inputs.platform == 'gke' }}
-      shell: bash
-      run: |
-        gcloud -q container clusters delete "${{ steps.cluster-name.outputs.cluster_name }}" --project "${{ inputs.gke-project }}" --region "${{ inputs.gke-cluster-region }}"
+      uses: ./.github/actions/kots-gke
+      with:
+        service-key: inputs.gke-service-key
+        delete: 'true'
