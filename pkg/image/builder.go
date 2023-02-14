@@ -132,6 +132,9 @@ func GetPrivateImages(baseDir string, kotsKindsImages []string, checkedImages ma
 			}
 
 			return listImagesInFile(contents, func(images []string, doc k8sdoc.K8sDoc) error {
+				if verbose {
+					logs.Printf("LG: number of images: %d", len(images))
+				}
 				numImages := 0
 				for idx, image := range images {
 					numImages = numImages + 1

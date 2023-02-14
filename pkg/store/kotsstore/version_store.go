@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	logs "log"
 	"math"
 	"os"
 	"path/filepath"
@@ -481,6 +482,7 @@ func (s *KOTSStore) createAppVersionStatements(appID string, baseSequence *int64
 }
 
 func (s *KOTSStore) upsertAppVersionStatements(appID string, sequence int64, baseSequence *int64, filesInDir string, source string, skipPreflights bool, gitops gitopstypes.DownstreamGitOps, renderer rendertypes.Renderer) ([]gorqlite.ParameterizedStatement, error) {
+	upsertStart := time.Now()
 	statements := []gorqlite.ParameterizedStatement{}
 
 	kotsKinds, err := kotsutil.LoadKotsKindsFromPath(filesInDir)
@@ -615,6 +617,8 @@ func (s *KOTSStore) upsertAppVersionStatements(appID string, sequence int64, bas
 		}
 		statements = append(statements, downstreamVersionStatements...)
 	}
+	upsertDuration := time.Since(upsertStart)
+	logs.Printf("LG: upsertAppVersionStatements took %v", upsertDuration)
 
 	return statements, nil
 }
