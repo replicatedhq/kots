@@ -4,9 +4,10 @@ import (
 	"bytes"
 	"context"
 	"io/ioutil"
-	"k8s.io/client-go/kubernetes"
 	"os"
 	"path/filepath"
+
+	"k8s.io/client-go/kubernetes"
 
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/logger"

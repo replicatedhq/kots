@@ -10,6 +10,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"time"
 
@@ -34,6 +35,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/supportbundle/types"
 	"github.com/replicatedhq/kots/pkg/util"
 	troubleshootv1beta2 "github.com/replicatedhq/troubleshoot/pkg/apis/troubleshoot/v1beta2"
+	sb "github.com/replicatedhq/troubleshoot/pkg/supportbundle"
 	"go.uber.org/multierr"
 	"gopkg.in/yaml.v3"
 	corev1 "k8s.io/api/core/v1"
@@ -44,6 +46,12 @@ import (
 	"k8s.io/apimachinery/pkg/util/rand"
 	"k8s.io/client-go/kubernetes"
 )
+
+var appNameRE *regexp.Regexp
+
+func init() {
+	appNameRE = regexp.MustCompile(`^kotsadm-.*-supportbundle$`)
+}
 
 // CreateRenderedSpec creates the support bundle specification from defaults and the kots app
 func CreateRenderedSpec(app apptypes.AppType, sequence int64, kotsKinds *kotsutil.KotsKinds, opts types.TroubleshootOptions) (*troubleshootv1beta2.SupportBundle, error) {
@@ -144,37 +152,35 @@ func CreateRenderedSpec(app apptypes.AppType, sequence int64, kotsKinds *kotsuti
 	renderedSpec = b.Bytes()
 
 	secretName := GetSpecSecretName(app.GetSlug())
-	// to add the troubleshoot labels to existing support-bundle spec secrets that were created in older versions of kots
-	existingSecret, err := k8sutil.AddLabelsToSecret(clientset, util.PodNamespace, secretName, kotstypes.GetTroubleshootLabels())
-	if err != nil {
-		errors.Wrap(err, "failed to add troubleshoot labels to existing spec secret")
-	}
-
+	existingSecret, err := clientset.CoreV1().Secrets(util.PodNamespace).Get(context.TODO(), secretName, metav1.GetOptions{})
 	labels := kotstypes.MergeLabels(kotstypes.GetKotsadmLabels(), kotstypes.GetTroubleshootLabels())
-	if err != nil && !kuberneteserrors.IsNotFound(err) {
-		return nil, errors.Wrap(err, "failed to read support bundle secret")
-	} else if kuberneteserrors.IsNotFound(err) {
-		secret := &corev1.Secret{
-			TypeMeta: metav1.TypeMeta{
-				APIVersion: "v1",
-				Kind:       "Secret",
-			},
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      secretName,
-				Namespace: util.PodNamespace,
-				Labels:    labels,
-			},
-			Data: map[string][]byte{
-				SpecDataKey: renderedSpec,
-			},
-		}
+	if err != nil {
+		if kuberneteserrors.IsNotFound(err) {
+			secret := &corev1.Secret{
+				TypeMeta: metav1.TypeMeta{
+					APIVersion: "v1",
+					Kind:       "Secret",
+				},
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      secretName,
+					Namespace: util.PodNamespace,
+					Labels:    labels,
+				},
+				Data: map[string][]byte{
+					SpecDataKey: renderedSpec,
+				},
+			}
 
-		_, err = clientset.CoreV1().Secrets(util.PodNamespace).Create(context.TODO(), secret, metav1.CreateOptions{})
-		if err != nil {
-			return nil, errors.Wrap(err, "failed to create support bundle secret")
-		}
+			_, err = clientset.CoreV1().Secrets(util.PodNamespace).Create(context.TODO(), secret, metav1.CreateOptions{})
+			if err != nil {
+				return nil, errors.Wrap(err, "failed to create support bundle secret")
+			}
 
-		return supportBundle, nil
+			logger.Debugf("created %q default support bundle spec secret", app.GetSlug())
+			return supportBundle, nil
+		} else {
+			return nil, errors.Wrap(err, "failed to read support bundle secret")
+		}
 	}
 
 	if existingSecret.Data == nil {
@@ -188,7 +194,9 @@ func CreateRenderedSpec(app apptypes.AppType, sequence int64, kotsKinds *kotsuti
 		return nil, errors.Wrap(err, "failed to update support bundle secret")
 	}
 
-	return supportBundle, nil
+	// Include discovered support bundle specs. Perform this action here so
+	// as not to add discovered specs to the default support bundle spec secret.
+	return addDiscoveredSpecs(supportBundle, app), nil
 }
 
 // injectDefaults injects the kotsadm default collectors/analyzers in the the support bundle specification.
@@ -254,6 +262,120 @@ func injectDefaults(app apptypes.AppType, b *troubleshootv1beta2.SupportBundle, 
 	}
 
 	return supportBundle, nil
+}
+
+func addDiscoveredSpecs(
+	supportBundle *troubleshootv1beta2.SupportBundle, app apptypes.AppType,
+) *troubleshootv1beta2.SupportBundle {
+	clientset, err := k8sutil.GetClientset()
+	if err != nil {
+		logger.Errorf("Failed to get kubernetes clientset: %v", err)
+		return supportBundle
+	}
+
+	specs, err := findSupportBundleSpecs(clientset)
+	if err != nil {
+		logger.Errorf("Failed to find support bundle secrets: %v", err)
+		return supportBundle
+	}
+
+	for _, specData := range specs {
+		sbObject, err := sb.ParseSupportBundleFromDoc([]byte(specData))
+		if err != nil {
+			logger.Errorf("Failed to unmarshal support bundle spec: %v", err)
+			continue
+		}
+
+		// TODO: How about other spec fields e.g URI?
+		supportBundle.Spec.Collectors = append(supportBundle.Spec.Collectors, sbObject.Spec.Collectors...)
+		supportBundle.Spec.Analyzers = append(supportBundle.Spec.Analyzers, sbObject.Spec.Analyzers...)
+	}
+
+	return supportBundle
+}
+
+// findSupportBundleSpecs finds all support bundle secrets/configmaps in the cluster
+// The function will query all objects with troubleshoot.io/kind=support-bundle label
+// and, in code, filter out all kotsadm objects that have an object name
+// following kotsadm-<app-slug>-supportbundle format.
+// Reference: https://troubleshoot.sh/docs/support-bundle/discover-cluster-specs/
+func findSupportBundleSpecs(client kubernetes.Interface) ([]string, error) {
+	labelSelector := kotstypes.TroubleshootKey + "=" + kotstypes.TroubleshootValue
+	ctx := context.TODO()
+
+	specs := []string{}
+
+	// Get all namespaces
+	nsList, err := client.CoreV1().Namespaces().List(ctx, metav1.ListOptions{})
+	if err != nil {
+		return nil, err
+	}
+
+	// List objects from one namespace at a time so as to isolate errors e.g RBAC
+	// Search secrets
+	for _, ns := range nsList.Items {
+		secrets, err := client.CoreV1().Secrets(ns.Name).List(ctx, metav1.ListOptions{LabelSelector: labelSelector})
+		if err != nil {
+			if kuberneteserrors.IsForbidden(err) || kuberneteserrors.IsUnauthorized(err) {
+				logger.Debugf("access denied when listing secrets from %q namespace: %v", ns.Name, err)
+			} else {
+				logger.Errorf("failed to list secrets in namespace %q: %v", ns.Name, err)
+			}
+			continue
+		}
+
+		for _, obj := range secrets.Items {
+			// Filter out all kotsadm objects
+			if appNameRE.MatchString(obj.Name) {
+				continue
+			}
+
+			if obj.Data == nil {
+				continue
+			}
+
+			specData, ok := obj.Data[SpecDataKey]
+			if !ok {
+				continue
+			}
+
+			specs = append(specs, string(specData))
+		}
+	}
+
+	// Search config maps
+	for _, ns := range nsList.Items {
+		configmaps, err := client.CoreV1().ConfigMaps(ns.Name).List(context.TODO(), metav1.ListOptions{LabelSelector: labelSelector})
+		if err != nil {
+			if kuberneteserrors.IsForbidden(err) || kuberneteserrors.IsUnauthorized(err) {
+				logger.Debugf("Access denied when listing configmaps from %q namespace: %v", ns.Name, err)
+			} else {
+				logger.Errorf("Failed to list configmaps in namespace %q: %v", ns.Name, err)
+			}
+			continue
+		}
+
+		for _, obj := range configmaps.Items {
+			// Filter out all kotsadm objects
+			if appNameRE.MatchString(obj.Name) {
+				continue
+			}
+
+			if obj.Data == nil {
+				continue
+			}
+
+			specData, ok := obj.Data[SpecDataKey]
+			if !ok {
+				continue
+			}
+
+			specs = append(specs, specData)
+		}
+	}
+
+	logger.Debugf("Discovered %d support bundle specs", len(specs))
+	return specs, nil
 }
 
 // if a namespace is not set for a secret/run/logs/exec/copy collector, set it to the current namespace
