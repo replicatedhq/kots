@@ -13,6 +13,7 @@ import Icon from "@src/components/Icon";
 
 import { ViewDiffButton } from "@features/VersionDiff/ViewDiffButton";
 import { App, Metadata, Version, VersionDownloadStatus } from "@types";
+import { useIsHelmManaged } from "@components/hooks";
 
 interface Props extends Partial<RouteComponentProps> {
   adminConsoleMetadata: Metadata;
@@ -25,7 +26,6 @@ interface Props extends Partial<RouteComponentProps> {
   handleViewLogs: (version: Version | null, isFailing: boolean) => void;
   isChecked: boolean;
   isDownloading: boolean;
-  isHelmManaged: boolean;
   isNew: boolean;
   newPreflightResults: boolean;
   nothingToCommit: boolean;
@@ -54,6 +54,8 @@ function AppVersionHistoryRow(props: Props) {
       !props.version.source?.includes("Online Install")
   );
 
+  const { data: isHelmManaged } = useIsHelmManaged();
+
   useEffect(() => {
     setShowViewDiffButton(
       !props.version.source?.includes("Airgap Install") &&
@@ -72,7 +74,7 @@ function AppVersionHistoryRow(props: Props) {
   };
 
   const deployButtonStatus = (version: Version) => {
-    if (props.isHelmManaged) {
+    if (isHelmManaged) {
       const deployedSequence = props.app?.downstream?.currentVersion?.sequence;
 
       if (version.sequence > deployedSequence) {
@@ -164,7 +166,7 @@ function AppVersionHistoryRow(props: Props) {
   };
 
   const isActionButtonDisabled = (version: Version) => {
-    if (props.isHelmManaged) {
+    if (isHelmManaged) {
       return false;
     }
     if (version.status === "deploying") {
@@ -185,7 +187,7 @@ function AppVersionHistoryRow(props: Props) {
     const { newPreflightResults } = props;
 
     let actionFn = props.deployVersion;
-    if (props.isHelmManaged) {
+    if (isHelmManaged) {
       actionFn = () => {};
     } else if (version.needsKotsUpgrade) {
       actionFn = props.upgradeAdminConsole;
@@ -267,7 +269,7 @@ function AppVersionHistoryRow(props: Props) {
     }
 
     let configScreenURL = `/app/${app.slug}/config/${version.sequence}`;
-    if (props.isHelmManaged && version.status.startsWith("pending")) {
+    if (isHelmManaged && version.status.startsWith("pending")) {
       configScreenURL = `${configScreenURL}?isPending=true&semver=${version.semver}`;
     }
 
@@ -727,7 +729,6 @@ function AppVersionHistoryRow(props: Props) {
     isNew,
     gitopsEnabled,
     newPreflightResults,
-    isHelmManaged,
   } = props;
 
   let showSequence = true;

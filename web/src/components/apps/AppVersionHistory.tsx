@@ -1468,7 +1468,6 @@ class AppVersionHistory extends Component<Props, State> {
             this.state.versionDownloadStatuses?.[version.sequence]
               ?.downloadingVersion
           }
-          isHelmManaged={this.props.isHelmManaged}
           isNew={isNew}
           key={version.sequence}
           newPreflightResults={newPreflightResults}
