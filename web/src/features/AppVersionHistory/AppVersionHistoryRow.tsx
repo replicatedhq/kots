@@ -860,6 +860,7 @@ class AppVersionHistoryRow extends Component<Props, State> {
               {this.renderVersionAction(version)}
             </div>
           </div>
+<<<<<<< HEAD
           {this.props.showVersionPreviousDownloadStatus && (
             <div className="flex alignItems--center justifyContent--flexEnd">
               <span
@@ -893,6 +894,9 @@ class AppVersionHistoryRow extends Component<Props, State> {
               </span>
             </div>
           )}
+=======
+          {this.props.renderVersionDownloadStatus(version)}
+>>>>>>> 26a7e5e64ff1aead2ed1b240314bea96fb2c8b4d
         </>
       </div>
     );
