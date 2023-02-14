@@ -12,11 +12,12 @@ import { YamlErrors } from "./YamlErrors";
 import Icon from "@src/components/Icon";
 
 import { ViewDiffButton } from "@features/VersionDiff/ViewDiffButton";
-import { App, Metadata, Version, VersionDownloadStatus } from "@types";
+import { Metadata, Version, VersionDownloadStatus } from "@types";
+import { useIsHelmManaged } from "@components/hooks";
+import { useSelectedApp } from "@features/App/hooks/useSelectedApp";
 
 interface Props extends Partial<RouteComponentProps> {
   adminConsoleMetadata: Metadata;
-  app: App;
   deployVersion: (version: Version) => void;
   downloadVersion: (version: Version) => void;
   gitopsEnabled: boolean;
@@ -25,7 +26,6 @@ interface Props extends Partial<RouteComponentProps> {
   handleViewLogs: (version: Version | null, isFailing: boolean) => void;
   isChecked: boolean;
   isDownloading: boolean;
-  isHelmManaged: boolean;
   isNew: boolean;
   newPreflightResults: boolean;
   nothingToCommit: boolean;
@@ -54,6 +54,9 @@ function AppVersionHistoryRow(props: Props) {
       !props.version.source?.includes("Online Install")
   );
 
+  const { data: isHelmManaged } = useIsHelmManaged();
+  const selectedApp = useSelectedApp();
+
   useEffect(() => {
     setShowViewDiffButton(
       !props.version.source?.includes("Airgap Install") &&
@@ -72,8 +75,11 @@ function AppVersionHistoryRow(props: Props) {
   };
 
   const deployButtonStatus = (version: Version) => {
-    if (props.isHelmManaged) {
-      const deployedSequence = props.app?.downstream?.currentVersion?.sequence;
+    if (isHelmManaged) {
+      const deployedSequence =
+        selectedApp?.downstream?.currentVersion?.sequence;
+
+      if (!deployedSequence) throw new Error("deployedSequence is undefined");
 
       if (version.sequence > deployedSequence) {
         return "Deploy";
@@ -86,17 +92,17 @@ function AppVersionHistoryRow(props: Props) {
       return "Redeploy";
     }
 
-    const app = props.app;
-    const downstream = app?.downstream;
+    const downstream = selectedApp?.downstream;
 
     const isCurrentVersion =
-      version.sequence === downstream.currentVersion?.sequence;
+      version.sequence === downstream?.currentVersion?.sequence;
     const isDeploying = version.status === "deploying";
-    const isPastVersion = find(downstream.pastVersions, {
+    const isPastVersion = find(downstream?.pastVersions, {
       sequence: version.sequence,
     });
     const needsConfiguration = version.status === "pending_config";
-    const isRollback = isPastVersion && version.deployedAt && app.allowRollback;
+    const isRollback =
+      isPastVersion && version.deployedAt && selectedApp?.allowRollback;
     const isRedeploy =
       isCurrentVersion &&
       (version.status === "failed" || version.status === "deployed");
@@ -164,7 +170,7 @@ function AppVersionHistoryRow(props: Props) {
   };
 
   const isActionButtonDisabled = (version: Version) => {
-    if (props.isHelmManaged) {
+    if (isHelmManaged) {
       return false;
     }
     if (version.status === "deploying") {
@@ -180,12 +186,12 @@ function AppVersionHistoryRow(props: Props) {
   };
 
   const renderVersionAction = (version: Version) => {
-    const app = props.app;
+    const app = selectedApp;
     const downstream = app?.downstream;
     const { newPreflightResults } = props;
 
     let actionFn = props.deployVersion;
-    if (props.isHelmManaged) {
+    if (isHelmManaged) {
       actionFn = () => {};
     } else if (version.needsKotsUpgrade) {
       actionFn = props.upgradeAdminConsole;
@@ -217,24 +223,25 @@ function AppVersionHistoryRow(props: Props) {
     }
 
     const isCurrentVersion =
-      version.sequence === downstream.currentVersion?.sequence;
-    const isLatestVersion = version.sequence === app.currentSequence;
-    const isPendingVersion = find(downstream.pendingVersions, {
+      version.sequence === downstream?.currentVersion?.sequence;
+    const isLatestVersion = version.sequence === selectedApp?.currentSequence;
+    const isPendingVersion = find(downstream?.pendingVersions, {
       sequence: version.sequence,
     });
-    const isPastVersion = find(downstream.pastVersions, {
+    const isPastVersion = find(downstream?.pastVersions, {
       sequence: version.sequence,
     });
-    const isPendingDeployedVersion = find(downstream.pendingVersions, {
+    const isPendingDeployedVersion = find(downstream?.pendingVersions, {
       sequence: version.sequence,
       status: "deployed",
     });
     const needsConfiguration = version.status === "pending_config";
-    const showActions = !isPastVersion || app.allowRollback;
+    const showActions = !isPastVersion || selectedApp?.allowRollback;
     const isRedeploy =
       isCurrentVersion &&
       (version.status === "failed" || version.status === "deployed");
-    const isRollback = isPastVersion && version.deployedAt && app.allowRollback;
+    const isRollback =
+      isPastVersion && version.deployedAt && selectedApp?.allowRollback;
 
     const isSecondaryBtn =
       isPastVersion || needsConfiguration || (isRedeploy && !isRollback);
@@ -266,12 +273,12 @@ function AppVersionHistoryRow(props: Props) {
       checksStatusText = "Checks passed";
     }
 
-    let configScreenURL = `/app/${app.slug}/config/${version.sequence}`;
-    if (props.isHelmManaged && version.status.startsWith("pending")) {
+    let configScreenURL = `/app/${selectedApp?.slug}/config/${version.sequence}`;
+    if (isHelmManaged && version.status.startsWith("pending")) {
       configScreenURL = `${configScreenURL}?isPending=true&semver=${version.semver}`;
     }
 
-    if (downstream.gitops?.isConnected) {
+    if (downstream?.gitops?.isConnected) {
       if (version.gitDeployable === false) {
         return (
           <div
@@ -300,7 +307,7 @@ function AppVersionHistoryRow(props: Props) {
               ) : preflightState.preflightState !== "" ? (
                 <>
                   <Link
-                    to={`/app/${app?.slug}/downstreams/${app?.downstream.cluster?.slug}/version-history/preflight/${version?.sequence}`}
+                    to={`/app/${app?.slug}/downstreams/${app?.downstream?.cluster?.slug}/version-history/preflight/${version?.sequence}`}
                     className="u-position--relative u-marginRight--10"
                     data-tip="View preflight checks"
                   >
@@ -370,7 +377,7 @@ function AppVersionHistoryRow(props: Props) {
             ) : preflightState.preflightState !== "" ? (
               <>
                 <Link
-                  to={`/app/${app?.slug}/downstreams/${app?.downstream.cluster?.slug}/version-history/preflight/${version?.sequence}`}
+                  to={`/app/${app?.slug}/downstreams/${app?.downstream?.cluster?.slug}/version-history/preflight/${version?.sequence}`}
                   className="u-position--relative u-marginRight--10"
                   data-tip="View preflight checks"
                 >
@@ -448,7 +455,7 @@ function AppVersionHistoryRow(props: Props) {
           ) : preflightState.preflightState !== "" ? (
             <>
               <Link
-                to={`/app/${app?.slug}/downstreams/${app?.downstream.cluster?.slug}/version-history/preflight/${version?.sequence}`}
+                to={`/app/${app?.slug}/downstreams/${app?.downstream?.cluster?.slug}/version-history/preflight/${version?.sequence}`}
                 className="u-position--relative u-marginRight--10"
                 data-tip="View preflight checks"
               >
@@ -570,16 +577,16 @@ function AppVersionHistoryRow(props: Props) {
   };
 
   const renderVersionStatus = (version: Version) => {
-    const app = props.app;
+    const app = selectedApp;
     const downstream = app?.downstream;
     if (!downstream) {
       return null;
     }
 
-    const isPastVersion = find(downstream.pastVersions, {
+    const isPastVersion = find(downstream?.pastVersions, {
       sequence: version.sequence,
     });
-    const isPendingDeployedVersion = find(downstream.pendingVersions, {
+    const isPendingDeployedVersion = find(downstream?.pendingVersions, {
       sequence: version.sequence,
       status: "deployed",
     });
@@ -727,7 +734,6 @@ function AppVersionHistoryRow(props: Props) {
     isNew,
     gitopsEnabled,
     newPreflightResults,
-    isHelmManaged,
   } = props;
 
   let showSequence = true;

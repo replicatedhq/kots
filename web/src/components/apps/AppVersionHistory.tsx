@@ -1450,7 +1450,6 @@ class AppVersionHistory extends Component<Props, State> {
       <React.Fragment key={index}>
         <AppVersionHistoryRow
           adminConsoleMetadata={this.props.adminConsoleMetadata}
-          app={this.props.app}
           deployVersion={this.deployVersion}
           downloadVersion={this.downloadVersion}
           gitopsEnabled={gitopsIsConnected}
@@ -1468,7 +1467,6 @@ class AppVersionHistory extends Component<Props, State> {
             this.state.versionDownloadStatuses?.[version.sequence]
               ?.downloadingVersion
           }
-          isHelmManaged={this.props.isHelmManaged}
           isNew={isNew}
           key={version.sequence}
           newPreflightResults={newPreflightResults}
