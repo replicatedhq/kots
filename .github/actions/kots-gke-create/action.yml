@@ -47,7 +47,7 @@ runs:
     - name: Create the GKE cluster
       shell: bash
       run: |
-        gcloud container clusters create-auto "${{ steps.cluster-name.outputs.cluster_name }}" --project "${{ inputs.project }}" --region "${{ inputs.cluster-region }}" --network "${{ inputs.cluster-network }}"  --subnetwork "${{ inputs.cluster-subnetwork }}" --label=expires-on=$(date "+%F" -d "+24 hours")
+        gcloud container clusters create-auto "${{ steps.cluster-name.outputs.cluster_name }}" --project "${{ inputs.project }}" --region "${{ inputs.cluster-region }}" --network "${{ inputs.cluster-network }}"  --subnetwork "${{ inputs.cluster-subnetwork }}" --labels=expires-on=$(date "+%F" -d "+24 hours")
 
     - name: Get GKE cluster credentials for kubectl
       uses: google-github-actions/get-gke-credentials@v1
