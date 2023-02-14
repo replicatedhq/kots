@@ -483,6 +483,7 @@ func (s *KOTSStore) createAppVersionStatements(appID string, baseSequence *int64
 
 func (s *KOTSStore) upsertAppVersionStatements(appID string, sequence int64, baseSequence *int64, filesInDir string, source string, skipPreflights bool, gitops gitopstypes.DownstreamGitOps, renderer rendertypes.Renderer) ([]gorqlite.ParameterizedStatement, error) {
 	upsertStart := time.Now()
+	oneStart := time.Now()
 	statements := []gorqlite.ParameterizedStatement{}
 
 	kotsKinds, err := kotsutil.LoadKotsKindsFromPath(filesInDir)
@@ -506,18 +507,27 @@ func (s *KOTSStore) upsertAppVersionStatements(appID string, sequence int64, bas
 		return nil, errors.Wrap(err, "failed to render app preflight spec")
 	}
 	kotsKinds.Preflight = renderedPreflight
+	durationOne := time.Since(oneStart)
+	logs.Printf("LG: --- upsertAppVersionStatements: one: %v", durationOne)
 
+	twoStart := time.Now()
 	renderedApplication, err := s.renderApplicationSpec(appID, a.Slug, sequence, a.IsAirgap, kotsKinds, renderer)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to render app application spec")
 	}
 	kotsKinds.Application = renderedApplication
+	durationTwo := time.Since(twoStart)
+	logs.Printf("LG: --- upsertAppVersionStatements: two: %v", durationTwo)
 
+	threeStart := time.Now()
 	brandingArchive, err := kotsutil.LoadBrandingArchiveFromPath(filepath.Join(filesInDir, "upstream"))
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to load branding archive")
 	}
+	durationThree := time.Since(threeStart)
+	logs.Printf("LG: --- upsertAppVersionStatements: three: %v", durationThree)
 
+	fourStart := time.Now()
 	appVersionRecordStatements, err := s.upsertAppVersionRecordStatements(appID, sequence, appName, appIcon, kotsKinds, brandingArchive.Bytes())
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to construct app version record statements")
@@ -535,7 +545,10 @@ func (s *KOTSStore) upsertAppVersionStatements(appID string, sequence int64, bas
 	if err := s.CreateAppVersionArchive(appID, sequence, filesInDir); err != nil {
 		return nil, errors.Wrap(err, "failed to create app version archive")
 	}
+	durationFour := time.Since(fourStart)
+	logs.Printf("LG: --- upsertAppVersionStatements: four: %v", durationFour)
 
+	fiveStart := time.Now()
 	previousArchiveDir := ""
 	if baseSequence != nil {
 		previousDir, err := ioutil.TempDir("", "kotsadm")
@@ -552,7 +565,10 @@ func (s *KOTSStore) upsertAppVersionStatements(appID string, sequence int64, bas
 
 		previousArchiveDir = previousDir
 	}
+	durationFive := time.Since(fiveStart)
+	logs.Printf("LG: --- upsertAppVersionStatements: five: %v", durationFive)
 
+	sixStart := time.Now()
 	registrySettings, err := s.GetRegistryDetailsForApp(appID)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get app registry info")
@@ -564,7 +580,10 @@ func (s *KOTSStore) upsertAppVersionStatements(appID string, sequence int64, bas
 	}
 
 	kustomizeBinPath := kotsKinds.GetKustomizeBinaryPath()
+	durationSix := time.Since(sixStart)
+	logs.Printf("LG: --- upsertAppVersionStatements: six: %v", durationSix)
 
+	sevenStart := time.Now()
 	for _, d := range downstreams {
 		// there's a small chance this is not optimal, but no current code path
 		// will support multiple downstreams, so this is cleaner here for now
@@ -617,6 +636,9 @@ func (s *KOTSStore) upsertAppVersionStatements(appID string, sequence int64, bas
 		}
 		statements = append(statements, downstreamVersionStatements...)
 	}
+	durationSeven := time.Since(sevenStart)
+	logs.Printf("LG: --- upsertAppVersionStatements: seven: %v", durationSeven)
+
 	upsertDuration := time.Since(upsertStart)
 	logs.Printf("LG: upsertAppVersionStatements took %v", upsertDuration)
 
