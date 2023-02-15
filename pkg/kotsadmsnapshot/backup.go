@@ -950,7 +950,6 @@ func prepareIncludedNamespaces(namespaces []string) []string {
 }
 
 // excludeShutdownPodsFromBackup will exclude pods that are in a shutdown state from the backup
-// this is to prevent the hook backup from failing if a pod is in a shutdown state and cannot be backed up
 func excludeShutdownPodsFromBackup(ctx context.Context, clientset kubernetes.Interface, veleroBackup *velerov1.Backup) (err error) {
 	selectorMap := map[string]string{
 		"status.phase": string(corev1.PodFailed),
