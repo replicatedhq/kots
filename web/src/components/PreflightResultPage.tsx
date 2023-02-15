@@ -19,9 +19,7 @@ import {
   useRerunPreflights,
 } from "@features/PreflightChecks/api";
 
-import {
-  useDeployAppVersion
-} from "@features/AppVersionHistory/api";
+import { useDeployAppVersion } from "@features/App/api";
 
 import { KotsParams } from "@types";
 

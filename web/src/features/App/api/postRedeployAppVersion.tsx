@@ -1,5 +1,4 @@
 import { useMutation } from "react-query";
-import { useHistory } from "react-router-dom";
 import { Utilities } from "@src/utilities/utilities";
 
 async function postRedeployAppVersion({
@@ -30,18 +29,16 @@ async function postRedeployAppVersion({
   }
 }
 
-function useDeployAppVersion({
+function useRedeployAppVersion({
   slug,
   sequence,
 }: {
   slug: string;
   sequence: string;
 }) {
-  const history = useHistory();
-
   return useMutation({
     mutationFn: () =>
-    postRedeployAppVersion({
+      postRedeployAppVersion({
         slug,
         sequence,
       }),
@@ -58,4 +55,4 @@ function useDeployAppVersion({
   });
 }
 
-export { useDeployAppVersion };
+export { useRedeployAppVersion };

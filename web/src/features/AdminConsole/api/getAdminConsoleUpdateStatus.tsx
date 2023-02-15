@@ -30,29 +30,21 @@ async function getAdminConsoleUpdateStatus({
     return await response.json();
   } catch (err) {
     if (err instanceof Error) {
-
       throw new Error(
         `Error while trying to unmarshal get admin update status: ${err.message}`
       );
     }
-    throw new Error(
-      `Error while trying to unmarshal get admin update status`
-    );
+    throw new Error(`Error while trying to unmarshal get admin update status`);
   }
 }
 
-function useAdminConsoleUpdateStatus({
-  slug,
-}: {
-  slug: string;
-}) {
-
+function useAdminConsoleUpdateStatus({ slug }: { slug: string }) {
   return useQuery({
     queryFn: () =>
       getAdminConsoleUpdateStatus({
         slug,
       }),
-      // TODO: add refetch interval
+    // TODO: add refetch interval
     onError: (err: Error) => {
       console.log(err);
       throw new Error(

@@ -32,14 +32,11 @@ async function getAdminConsoleUpdateStatus({
     return await response.json();
   } catch (err) {
     if (err instanceof Error) {
-
       throw new Error(
         `Error while trying to unmarshal download version status: ${err.message}`
       );
     }
-    throw new Error(
-      `Error while trying to unmarshal download version status`
-    );
+    throw new Error(`Error while trying to unmarshal download version status`);
   }
 }
 
@@ -50,14 +47,13 @@ function useAdminConsoleUpdateStatus({
   sequence: string;
   slug: string;
 }) {
-
   return useQuery({
     queryFn: () =>
       getAdminConsoleUpdateStatus({
         sequence,
         slug,
       }),
-      // TODO: add refetch interval
+    // TODO: add refetch interval
     onError: (err: Error) => {
       console.log(err);
       throw new Error(

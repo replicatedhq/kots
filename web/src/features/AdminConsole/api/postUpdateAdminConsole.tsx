@@ -32,7 +32,6 @@ async function postUpdateAdminConsole({
     return await response.json();
   } catch (err) {
     if (err instanceof Error) {
-
       throw new Error(
         `Error while trying to unmarshal update admin console response: ${err.message}`
       );
@@ -50,7 +49,6 @@ function useUpdateAdminConsole({
   slug: string;
   sequence: string;
 }) {
-
   // TODO: add refetching behavior that uses getAdminConsoleUpdateStatus
   return useMutation({
     mutationFn: () =>

@@ -5,7 +5,7 @@ import { useParams } from "react-router-dom";
 import { useSelectedApp } from "@features/App";
 import { useMetadata } from "@src/stores";
 import { useIsHelmManaged } from "@src/components/hooks";
-import { App, KotsParams, Metadata,Version} from "@types";
+import { App, KotsParams, Metadata, Version } from "@types";
 
 async function getVersions({
   accessToken = Utilities.getToken(),
@@ -13,7 +13,7 @@ async function getVersions({
   currentPage = 0,
   pageSize = 20,
   slug,
-} : {
+}: {
   accessToken?: string;
   apiEndpoint?: string;
   currentPage?: number;
@@ -40,7 +40,10 @@ async function getVersions({
     }
     return await res.json();
   } catch (err) {
-    throw Error(err);
+    if (err instanceof Error) {
+      throw Error(`Failed to fetch apps: ${err.message}`);
+    }
+    throw Error(`Failed to fetch apps`);
   }
 }
 
@@ -115,13 +118,19 @@ function getVersionsSelectorForKotsManaged({
 }
 
 // TODO: refactor this function so that the airgapped / nonairgapped are separate
-function getVersionsSelectorForAirgapped(
-  { versions, selectedApp, metadata }: SelectorParams) {
+function getVersionsSelectorForAirgapped({
+  versions,
+  selectedApp,
+  metadata,
+}: SelectorParams) {
   return getVersionsSelectorForKotsManaged({ versions, selectedApp, metadata });
 }
 
-function getVersionsSelectorForHelmManaged({ versions }:
-  { versions: {versionHistory: Version[] }}) {
+function getVersionsSelectorForHelmManaged({
+  versions,
+}: {
+  versions: { versionHistory: Version[] };
+}) {
   const deployedSequence = versions?.versionHistory?.find(
     (v) => v.status === "deployed"
   )?.sequence;
@@ -132,7 +141,7 @@ function getVersionsSelectorForHelmManaged({ versions }:
     if (deployedSequence === undefined)
       return {
         ...version,
-        statusLabel
+        statusLabel,
       };
 
     if (version.sequence > deployedSequence) {
@@ -180,7 +189,7 @@ function chooseVersionsSelector({
 function useVersions({
   currentPage,
   pageSize,
-} : {
+}: {
   currentPage?: number;
   pageSize?: number;
 } = {}) {
@@ -203,13 +212,11 @@ function useVersions({
       // don't call versions until current app is ascertained
       enabled: !!selectedApp,
       select: (versions) =>
-        selectedApp !== null ?
-          versionSelector({ versions, selectedApp, metadata }) :
-          versions,
+        selectedApp !== null
+          ? versionSelector({ versions, selectedApp, metadata })
+          : versions,
     }
   );
 }
 
-export {
-  useVersions,
-};
+export { useVersions };

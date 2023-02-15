@@ -36,7 +36,6 @@ function useDownloadAppVersion({
   slug: string;
   sequence: string;
 }) {
-
   return useMutation({
     mutationFn: () =>
       postDownloadAppVersion({
@@ -46,8 +45,7 @@ function useDownloadAppVersion({
     onError: (err: Error) => {
       console.log(err);
       throw new Error(
-        err.message ||
-          "Encountered an error while trying to download version"
+        err.message || "Encountered an error while trying to download version"
       );
     },
   });
