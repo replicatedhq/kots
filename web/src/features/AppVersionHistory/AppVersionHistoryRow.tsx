@@ -190,6 +190,7 @@ function AppVersionHistoryRow(props: Props) {
     const downstream = app?.downstream;
     const { newPreflightResults } = props;
 
+    // useDeployAppVersion
     let actionFn = props.deployVersion;
     if (isHelmManaged) {
       actionFn = () => {};

@@ -1,6 +1,6 @@
 
 import { App, Version } from '@types";
-import { UseMutationResult } from 'react-query';
+import { useDeployAppVersion } from '@features/App/api';
 
 type VersionActionType =
   "deployVersion" |
@@ -8,18 +8,22 @@ type VersionActionType =
   "redeployVersion"  |
   "upgradeAdminConsole";
 
+type VersionAction = {
+  type: VersionActionType;
+} & ReturnType<typeof useDeployAppVersion>
+
 function getVersionActionType() {
   return "deployVersion";
 }
 
-function createVersionAction({ app, version }: { app: App; version: Version; }) {
+function createVersionAction({ slug, sequence }: { slug: string; sequence: string; }) : VersionAction {
 ]
-  const deployQuery = useDeployVersionMutation(app, version);
+  const deployQuery = useDeployAppVersion({ slug, sequence } );
   const downloadQuery = useDownloadVersionMutation(app, version);
   const redeployQuery = useRedeployVersionMutation(app, version);
   const upgradeAdminConsoleQuery = useUpgradeAdminConsoleMutation(app, version);
 
-  switch getVersionActionType() {
+  switch (getVersionActionType()) {
     case "deployVersion":
       return {
         type: "deployVersion",
@@ -40,10 +44,7 @@ function createVersionAction({ app, version }: { app: App; version: Version; }) 
         type: "upgradeAdminConsole",
         ...upgradeAdminConsoleQuery
       };
-  }
-
-  return {
-    type: "deployVersion",
-    callbackAction: () => console.log('deployVersion');
+    default:
+      throw new Error("Invalid version action type");
   }
 }
