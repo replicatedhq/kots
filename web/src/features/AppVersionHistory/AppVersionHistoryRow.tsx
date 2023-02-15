@@ -195,6 +195,8 @@ function AppVersionHistoryRow(props: Props) {
     if (isHelmManaged) {
       actionFn = () => {};
     } else if (version.needsKotsUpgrade) {
+      // postUpdateAdminConsole then
+      // getAdminConsoleUpdateStatus
       actionFn = props.upgradeAdminConsole;
     } else if (version.status === "pending_download") {
       actionFn = props.downloadVersion;
