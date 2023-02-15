@@ -499,7 +499,7 @@ func restartVelero(ctx context.Context, kotsadmNamespace string) error {
 
 	veleroDeployments, err := listPossibleVeleroDeployments(ctx, clientset, veleroNamespace)
 	if err != nil {
-		return errors.Wrap(err, "failed to list velero deployments")
+		return errors.Wrap(err, "failed to list possible velero deployments")
 	}
 
 	for _, veleroDeployment := range veleroDeployments {
@@ -507,19 +507,19 @@ func restartVelero(ctx context.Context, kotsadmNamespace string) error {
 			LabelSelector: labels.SelectorFromSet(veleroDeployment.Labels).String(),
 		})
 		if err != nil {
-			return errors.Wrap(err, "failed to list pods in velero deployment")
+			return errors.Wrap(err, "failed to list velero pods")
 		}
 
 		for _, pod := range pods.Items {
 			if err := clientset.CoreV1().Pods(veleroNamespace).Delete(ctx, pod.Name, metav1.DeleteOptions{}); err != nil {
-				return errors.Wrap(err, "failed to delete velero deployment")
+				return errors.Wrapf(err, "failed to delete %s pod", pod.Name)
 			}
 		}
 	}
 
 	nodeAgentDaemonSets, err := listPossibleNodeAgentDaemonsets(ctx, clientset, veleroNamespace)
 	if err != nil {
-		return errors.Wrap(err, "failed to list node-agent daemonsets")
+		return errors.Wrap(err, "failed to list possible node-agent daemonsets")
 	}
 
 	for _, nodeAgentDaemonSet := range nodeAgentDaemonSets {
@@ -527,12 +527,12 @@ func restartVelero(ctx context.Context, kotsadmNamespace string) error {
 			LabelSelector: labels.SelectorFromSet(nodeAgentDaemonSet.Labels).String(),
 		})
 		if err != nil {
-			return errors.Wrap(err, "failed to list pods in node-agent daemonset")
+			return errors.Wrap(err, "failed to list node-agent pods")
 		}
 
 		for _, pod := range pods.Items {
 			if err := clientset.CoreV1().Pods(veleroNamespace).Delete(ctx, pod.Name, metav1.DeleteOptions{}); err != nil {
-				return errors.Wrap(err, "failed to delete node-agent daemonset")
+				return errors.Wrapf(err, "failed to delete %s pod", pod.Name)
 			}
 		}
 	}
