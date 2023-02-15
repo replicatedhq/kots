@@ -1,3 +1,4 @@
-import { useVersions, UseVersions } from "./getVersions";j
+import { useVersions } from "./getVersions";j
+import { useDownloadAppVersion } from "./postDownloadAppVersion";
 
-export { useVersions, UseVersions };
+export { useDownloadAppVersion, useVersions };
