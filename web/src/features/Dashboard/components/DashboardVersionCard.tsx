@@ -3,7 +3,7 @@ import { Link, useHistory, useParams } from "react-router-dom";
 import ReactTooltip from "react-tooltip";
 import DashboardGitOpsCard from "./DashboardGitOpsCard";
 import MarkdownRenderer from "@src/components/shared/MarkdownRenderer";
-import DownstreamWatchVersionDiff from "@src/components/watches/DownstreamWatchVersionDiff";
+import VersionDiff from "@features/VersionDiff/VersionDiff";
 import Modal from "react-modal";
 import AirgapUploadProgress from "@src/components/AirgapUploadProgress";
 import Loader from "@src/components/shared/Loader";
@@ -174,7 +174,7 @@ const DashboardVersionCard = (props: Props) => {
   );
   const history = useHistory();
   const params = useParams<KotsParams>();
-  const { selectedApp } = useSelectedApp();
+  const selectedApp = useSelectedApp();
   const {
     data: newAppVersionWithInterceptData,
     error: latestDeployableVersionErrMsg,
@@ -182,8 +182,7 @@ const DashboardVersionCard = (props: Props) => {
   } = useNextAppVersionWithIntercept();
   const { latestDeployableVersion } = newAppVersionWithInterceptData || {};
 
-  const { data: isHelmManagedResponse } = useIsHelmManaged();
-  const { isHelmManaged = false } = isHelmManagedResponse || {};
+  const { data: isHelmManaged = false } = useIsHelmManaged();
 
   // moving this out of the state because new repeater instances were getting created
   // and it doesn't really affect the UI
@@ -522,7 +521,7 @@ const DashboardVersionCard = (props: Props) => {
                     ""
                   )}
                   <p
-                    className={`checks-running-text u-fontSize--small u-lineHeight--normal u-fontWeight--medium 
+                    className={`checks-running-text u-fontSize--small u-lineHeight--normal u-fontWeight--medium
                     } ${
                       preflightState.preflightsFailed
                         ? "err"
@@ -1852,7 +1851,7 @@ const DashboardVersionCard = (props: Props) => {
           className="Modal DiffViewerModal"
         >
           <div className="DiffOverlay">
-            <DownstreamWatchVersionDiff
+            <VersionDiff
               slug={params.slug}
               firstSequence={state.firstSequence}
               secondSequence={state.secondSequence}

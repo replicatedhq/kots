@@ -14,8 +14,8 @@ const EditConfigIcon = ({
   isPending: boolean;
 }) => {
   const { data: isHelmManagedResponse } = useIsHelmManaged();
-  const { isHelmManaged = false } = isHelmManagedResponse || {};
-  const { selectedApp } = useSelectedApp();
+  const isHelmManaged = isHelmManagedResponse || {};
+  const selectedApp = useSelectedApp();
 
   if (!version) {
     return null;
