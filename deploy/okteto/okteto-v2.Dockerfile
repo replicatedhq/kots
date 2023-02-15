@@ -106,17 +106,17 @@ ENV KOTS_KUSTOMIZE_BIN_DIR=/usr/local/bin
 # discover all kustomize binaries in the KOTS_KUSTOMIZE_BIN_DIR directory for use by KOTS.
 # CURRENNTLY ONLY ONE VERSION IS SHIPPED BELOW
 
-# Install kustomize 4
-ENV KUSTOMIZE4_VERSION=4.5.7
-ENV KUSTOMIZE4_URL=https://github.com/kubernetes-sigs/kustomize/releases/download/kustomize/v${KUSTOMIZE4_VERSION}/kustomize_v${KUSTOMIZE4_VERSION}_linux_amd64.tar.gz
-ENV KUSTOMIZE4_SHA256SUM=701e3c4bfa14e4c520d481fdf7131f902531bfc002cb5062dcf31263a09c70c9
-RUN curl -fsSL -o kustomize.tar.gz "${KUSTOMIZE4_URL}" \
-  && echo "${KUSTOMIZE4_SHA256SUM} kustomize.tar.gz" | sha256sum -c - \
+# Install kustomize 5
+ENV KUSTOMIZE5_VERSION=5.0.0
+ENV KUSTOMIZE5_URL=https://github.com/kubernetes-sigs/kustomize/releases/download/kustomize/v${KUSTOMIZE5_VERSION}/kustomize_v${KUSTOMIZE5_VERSION}_linux_amd64.tar.gz
+ENV KUSTOMIZE5_SHA256SUM=2e8c28a80ce213528251f489db8d2dcbea7c63b986c8f7595a39fc76ff871cd7
+RUN curl -fsSL -o kustomize.tar.gz "${KUSTOMIZE5_URL}" \
+  && echo "${KUSTOMIZE5_SHA256SUM} kustomize.tar.gz" | sha256sum -c - \
   && tar -xzvf kustomize.tar.gz \
   && rm kustomize.tar.gz \
   && chmod a+x kustomize \
-  && mv kustomize "${KOTS_KUSTOMIZE_BIN_DIR}/kustomize${KUSTOMIZE4_VERSION}" \
-  && ln -s "${KOTS_KUSTOMIZE_BIN_DIR}/kustomize${KUSTOMIZE4_VERSION}" "${KOTS_KUSTOMIZE_BIN_DIR}/kustomize4" \
+  && mv kustomize "${KOTS_KUSTOMIZE_BIN_DIR}/kustomize${KUSTOMIZE5_VERSION}" \
+  && ln -s "${KOTS_KUSTOMIZE_BIN_DIR}/kustomize${KUSTOMIZE5_VERSION}" "${KOTS_KUSTOMIZE_BIN_DIR}/kustomize4" \
   && ln -s "${KOTS_KUSTOMIZE_BIN_DIR}/kustomize4" "${KOTS_KUSTOMIZE_BIN_DIR}/kustomize"
 
 # KOTS can be configured to use a specific version of helm by setting helmVersion in the
