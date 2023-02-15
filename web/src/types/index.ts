@@ -89,7 +89,7 @@ export type DashboardResponse = {
 
 export type Downstream = {
   cluster: Cluster;
-  pastVersions: Object;
+  pastVersions: Version[];
   currentVersion: Version;
   gitops: GitOps;
   links: DashboardActionLink[];
