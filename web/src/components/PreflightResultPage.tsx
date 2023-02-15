@@ -219,7 +219,7 @@ function PreflightResultPage(props: Props) {
           )}
         </div>
       )}
-      {!props.fromLicenseFlow && preflightCheck?.showPreflightCheckPending && (
+      {!props.fromLicenseFlow && preflightCheck?.shouldShowRerunPreflight && (
         <div className="flex-auto flex justifyContent--flexEnd u-marginBottom--15">
           <button
             type="button"
