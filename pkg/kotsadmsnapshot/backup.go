@@ -111,18 +111,6 @@ func CreateApplicationBackup(ctx context.Context, a *apptypes.App, isScheduled b
 	includedNamespaces = append(includedNamespaces, veleroBackup.Spec.IncludedNamespaces...)
 	includedNamespaces = append(includedNamespaces, kotsKinds.KotsApplication.Spec.AdditionalNamespaces...)
 
-	clientset, err := k8sutil.GetClientset()
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to create k8s clientset")
-	}
-
-	isKotsadmClusterScoped := k8sutil.IsKotsadmClusterScoped(ctx, clientset, kotsadmNamespace)
-
-	// excludeShutdownPodsFromBackup is run before the prepareIncludedNamespaces to ensure that the isKotsadmClusterScoped installs ignore all namespaces
-	if err := excludeShutdownPodsFromBackup(ctx, clientset, includedNamespaces, isKotsadmClusterScoped); err != nil {
-		return nil, errors.Wrap(err, "failed to exclude shutdown pods from backup")
-	}
-
 	veleroBackup.Spec.IncludedNamespaces = prepareIncludedNamespaces(includedNamespaces)
 
 	snapshotTrigger := "manual"
@@ -169,6 +157,16 @@ func CreateApplicationBackup(ctx context.Context, a *apptypes.App, isScheduled b
 		veleroBackup.Spec.TTL = metav1.Duration{
 			Duration: ttlDuration,
 		}
+	}
+
+	clientset, err := k8sutil.GetClientset()
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to create k8s clientset")
+	}
+
+	err = excludeShutdownPodsFromBackup(ctx, clientset, veleroBackup)
+	if err != nil {
+		logger.Error(errors.Wrap(err, "failed to exclude shutdown pods from backup"))
 	}
 
 	cfg, err := k8sutil.GetClusterConfig()
@@ -327,10 +325,6 @@ func CreateInstanceBackup(ctx context.Context, cluster *downstreamtypes.Downstre
 		includedNamespaces = append(includedNamespaces, kotsadmVeleroBackendStorageLocation.Namespace)
 	}
 
-	// excludeShutdownPodsFromBackup is run before the prepareIncludedNamespaces to ensure that the isKotsadmClusterScoped installs ignore all namespaces
-	if err := excludeShutdownPodsFromBackup(ctx, clientset, includedNamespaces, isKotsadmClusterScoped); err != nil {
-		return nil, errors.Wrap(err, "failed to exclude shutdown pods from backup")
-	}
 	kotsadmImage, err := k8sutil.FindKotsadmImage(kotsadmNamespace)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to find kotsadm image")
@@ -396,6 +390,11 @@ func CreateInstanceBackup(ctx context.Context, cluster *downstreamtypes.Downstre
 		veleroBackup.Spec.TTL = metav1.Duration{
 			Duration: ttlDuration,
 		}
+	}
+
+	err = excludeShutdownPodsFromBackup(ctx, clientset, veleroBackup)
+	if err != nil {
+		logger.Error(errors.Wrap(err, "failed to exclude shutdown pods from backup"))
 	}
 
 	cfg, err := k8sutil.GetClusterConfig()
@@ -952,23 +951,23 @@ func prepareIncludedNamespaces(namespaces []string) []string {
 
 // excludeShutdownPodsFromBackup will exclude pods that are in a shutdown state from the backup
 // this is to prevent the hook backup from failing if a pod is in a shutdown state and cannot be backed up
-func excludeShutdownPodsFromBackup(ctx context.Context, clientset kubernetes.Interface, backupNamespaces []string, isKotsadmClusterScoped bool) (err error) {
-	failedPodListOptions := buildShutdownPodListOptions()
+func excludeShutdownPodsFromBackup(ctx context.Context, clientset kubernetes.Interface, veleroBackup *velerov1.Backup) (err error) {
+	selectorMap := map[string]string{
+		"status.phase": string(corev1.PodFailed),
+	}
 
-	for _, namespace := range backupNamespaces {
+	podListOption := metav1.ListOptions{
+		LabelSelector: labels.SelectorFromSet(veleroBackup.Spec.LabelSelector.MatchLabels).String(),
+		FieldSelector: fields.SelectorFromSet(selectorMap).String(),
+	}
+
+	for _, namespace := range veleroBackup.Spec.IncludedNamespaces {
 		if namespace == "*" {
-			if !isKotsadmClusterScoped {
-				continue
-			} else {
-				// if namespace is *, kubernetes api equivalent is empty string for all namespaces
-				namespace = ""
-			}
+			namespace = "" // specifying an empty ("") namespace in client-go retrieves resources from all namespaces
 		}
 
-		for _, podListOption := range failedPodListOptions {
-			if err := excludeShutdownPodsFromBackupInNamespace(ctx, clientset, namespace, podListOption); err != nil {
-				return errors.Wrap(err, "failed to exclude shutdown pods from backup")
-			}
+		if err := excludeShutdownPodsFromBackupInNamespace(ctx, clientset, namespace, podListOption); err != nil {
+			return errors.Wrap(err, "failed to exclude shutdown pods from backup")
 		}
 	}
 
@@ -977,12 +976,16 @@ func excludeShutdownPodsFromBackup(ctx context.Context, clientset kubernetes.Int
 
 // excludeShutdownPodsFromBackupInNamespace will exclude pods that are in a shutdown state from the backup in a specific namespace
 func excludeShutdownPodsFromBackupInNamespace(ctx context.Context, clientset kubernetes.Interface, namespace string, failedPodListOptions metav1.ListOptions) error {
-	pods, err := clientset.CoreV1().Pods(namespace).List(ctx, failedPodListOptions)
+	podList, err := clientset.CoreV1().Pods(namespace).List(ctx, failedPodListOptions)
 	if err != nil {
 		return errors.Wrapf(err, "failed to list pods in namespace %s", namespace)
 	}
 
-	for _, pod := range pods.Items {
+	if podList == nil {
+		return nil
+	}
+
+	for _, pod := range podList.Items {
 		if pod.Status.Phase == corev1.PodFailed && pod.Status.Reason == "Shutdown" {
 			logger.Infof("Excluding pod %s in namespace %s from backup", pod.Name, namespace)
 			// add velero.io/exclude-from-backup=true label to pod
@@ -998,30 +1001,4 @@ func excludeShutdownPodsFromBackupInNamespace(ctx context.Context, clientset kub
 		}
 	}
 	return nil
-}
-
-// buildShutdownPodListOptions returns a list options object that will match all pods that are in a failed state with shutdown reason
-func buildShutdownPodListOptions() []metav1.ListOptions {
-	kotsadmLabelSet := labels.Set{
-		kotsadmtypes.KotsadmKey: kotsadmtypes.KotsadmLabelValue,
-	}
-
-	kotsadmBackupLabelSet := labels.Set{
-		kotsadmtypes.BackupLabel: kotsadmtypes.BackupLabelValue,
-	}
-
-	selectorMap := map[string]string{
-		"status.phase": string(corev1.PodFailed),
-	}
-
-	return []metav1.ListOptions{
-		{
-			LabelSelector: kotsadmLabelSet.String(),
-			FieldSelector: fields.SelectorFromSet(selectorMap).String(),
-		},
-		{
-			LabelSelector: kotsadmBackupLabelSet.String(),
-			FieldSelector: fields.SelectorFromSet(selectorMap).String(),
-		},
-	}
 }
