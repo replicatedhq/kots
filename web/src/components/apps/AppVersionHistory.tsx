@@ -796,7 +796,6 @@ class AppVersionHistory extends Component<Props, State> {
     }
   };
 
-  // redeployVersion = (version: Version, isRollback = false) => {
   redeployVersion = (version: Version) => {
     const { app } = this.props;
     const clusterSlug = app.downstream.cluster?.slug;
@@ -804,20 +803,11 @@ class AppVersionHistory extends Component<Props, State> {
       return;
     }
 
-    // prompt to make sure user wants to redeploy
-    // if (isRollback) {
-    //   this.setState({
-    //     displayConfirmDeploymentModal: true,
-    //     confirmType: "rollback",
-    //     versionToDeploy: version,
-    //   });
-    // } else {
     this.setState({
       displayConfirmDeploymentModal: true,
       confirmType: "redeploy",
       versionToDeploy: version,
     });
-    // }
   };
 
   finalizeRedeployment = async () => {
