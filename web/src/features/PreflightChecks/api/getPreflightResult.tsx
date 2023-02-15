@@ -135,6 +135,9 @@ function flattenPreflightResponse({
     shouldShowConfirmContinueWithFailedPreflights:
       !response?.preflightResult?.skipped && // not skipped
       (hasFailureOrWarning(response) || hasPreflightErrors(response)), // or it has errors
+    shouldShowRerunPreflight:
+      !hasRunningPreflightChecks(response) && // not running
+      !response?.preflightResult?.skipped, // not skipped
     showDeploymentBlocked:
       response?.preflightResult?.hasFailingStrictPreflights,
     showIgnorePreflight:
