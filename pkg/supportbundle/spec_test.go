@@ -457,12 +457,6 @@ func Test_findSupportBundleSecrets(t *testing.T) {
 			assert.Equal(t, tt.wantErr, err != nil, "findSupportBundleSecrets() error %v, wantErr %v", err, tt.wantErr)
 			require.NotNil(t, got)
 
-			t.Log(got)
-			specs := []string{}
-			for _, spec := range got {
-				specs = append(specs, spec)
-			}
-
 			assert.ElementsMatchf(t, got, tt.want, "got %v, want %v", got, tt.want)
 		})
 	}

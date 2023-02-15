@@ -196,7 +196,7 @@ func CreateRenderedSpec(app apptypes.AppType, sequence int64, kotsKinds *kotsuti
 
 	// Include discovered support bundle specs. Perform this action here so
 	// as not to add discovered specs to the default support bundle spec secret.
-	return addDiscoveredSpecs(supportBundle, app), nil
+	return addDiscoveredSpecs(supportBundle, app, clientset), nil
 }
 
 // injectDefaults injects the kotsadm default collectors/analyzers in the the support bundle specification.
@@ -265,14 +265,8 @@ func injectDefaults(app apptypes.AppType, b *troubleshootv1beta2.SupportBundle, 
 }
 
 func addDiscoveredSpecs(
-	supportBundle *troubleshootv1beta2.SupportBundle, app apptypes.AppType,
+	supportBundle *troubleshootv1beta2.SupportBundle, app apptypes.AppType, clientset kubernetes.Interface,
 ) *troubleshootv1beta2.SupportBundle {
-	clientset, err := k8sutil.GetClientset()
-	if err != nil {
-		logger.Errorf("Failed to get kubernetes clientset: %v", err)
-		return supportBundle
-	}
-
 	specs, err := findSupportBundleSpecs(clientset)
 	if err != nil {
 		logger.Errorf("Failed to find support bundle secrets: %v", err)
@@ -306,20 +300,28 @@ func findSupportBundleSpecs(client kubernetes.Interface) ([]string, error) {
 	specs := []string{}
 
 	// Get all namespaces
-	nsList, err := client.CoreV1().Namespaces().List(ctx, metav1.ListOptions{})
-	if err != nil {
-		return nil, err
+	namespaces := []string{}
+	if k8sutil.IsKotsadmClusterScoped(ctx, client, util.PodNamespace) {
+		nsList, err := client.CoreV1().Namespaces().List(ctx, metav1.ListOptions{})
+		if err != nil {
+			return nil, err
+		}
+		for _, ns := range nsList.Items {
+			namespaces = append(namespaces, ns.Name)
+		}
+	} else {
+		namespaces = []string{util.PodNamespace}
 	}
 
 	// List objects from one namespace at a time so as to isolate errors e.g RBAC
 	// Search secrets
-	for _, ns := range nsList.Items {
-		secrets, err := client.CoreV1().Secrets(ns.Name).List(ctx, metav1.ListOptions{LabelSelector: labelSelector})
+	for _, ns := range namespaces {
+		secrets, err := client.CoreV1().Secrets(ns).List(ctx, metav1.ListOptions{LabelSelector: labelSelector})
 		if err != nil {
 			if kuberneteserrors.IsForbidden(err) || kuberneteserrors.IsUnauthorized(err) {
-				logger.Debugf("access denied when listing secrets from %q namespace: %v", ns.Name, err)
+				logger.Debugf("access denied when listing secrets from %q namespace: %v", ns, err)
 			} else {
-				logger.Errorf("failed to list secrets in namespace %q: %v", ns.Name, err)
+				logger.Errorf("failed to list secrets in namespace %q: %v", ns, err)
 			}
 			continue
 		}
@@ -344,13 +346,13 @@ func findSupportBundleSpecs(client kubernetes.Interface) ([]string, error) {
 	}
 
 	// Search config maps
-	for _, ns := range nsList.Items {
-		configmaps, err := client.CoreV1().ConfigMaps(ns.Name).List(context.TODO(), metav1.ListOptions{LabelSelector: labelSelector})
+	for _, ns := range namespaces {
+		configmaps, err := client.CoreV1().ConfigMaps(ns).List(context.TODO(), metav1.ListOptions{LabelSelector: labelSelector})
 		if err != nil {
 			if kuberneteserrors.IsForbidden(err) || kuberneteserrors.IsUnauthorized(err) {
-				logger.Debugf("Access denied when listing configmaps from %q namespace: %v", ns.Name, err)
+				logger.Debugf("access denied when listing configmaps from %q namespace: %v", ns, err)
 			} else {
-				logger.Errorf("Failed to list configmaps in namespace %q: %v", ns.Name, err)
+				logger.Errorf("failed to list configmaps in namespace %q: %v", ns, err)
 			}
 			continue
 		}
