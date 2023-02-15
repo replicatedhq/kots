@@ -179,11 +179,12 @@ sbom: sbom/kots-sbom.tgz
 .PHONY: scan
 scan: 
 	trivy fs \
-		--security-checks vuln \
+		--scanners=vuln \
 		--exit-code=1 \
 		--severity="CRITICAL,HIGH,MEDIUM" \
 		--ignore-unfixed \
 		--skip-dirs .github \
+		--skip-dirs web/node_modules \
 		--skip-files actions/version-tag/package-lock.json \
 		--skip-files web/yarn.lock \
 		--ignorefile .trivyignore \
