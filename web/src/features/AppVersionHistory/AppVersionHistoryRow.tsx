@@ -203,6 +203,7 @@ function AppVersionHistoryRow(props: Props) {
       // postDownloadVersion
       actionFn = props.downloadVersion;
     } else if (version.status === "failed" || version.status === "deployed") {
+      // postRedeployVersion
       actionFn = props.redeployVersion;
     }
 
