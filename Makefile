@@ -184,7 +184,6 @@ scan:
 		--severity="CRITICAL,HIGH,MEDIUM" \
 		--ignore-unfixed \
 		--skip-dirs .github \
-		--skip-dirs web/node_modules \
 		--skip-files actions/version-tag/package-lock.json \
 		--skip-files web/yarn.lock \
 		--ignorefile .trivyignore \
