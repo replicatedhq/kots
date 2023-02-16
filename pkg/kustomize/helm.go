@@ -2,15 +2,15 @@ package kustomize
 
 import (
 	"fmt"
+	"io/fs"
 	"io/ioutil"
+	logs "log"
 	"os"
 	"os/exec"
 	"path"
 	"path/filepath"
 	"regexp"
-	logs "log"
 	"time"
-	"io/fs"
 
 	"github.com/marccampbell/yaml-toolbox/pkg/splitter"
 	"github.com/mholt/archiver/v3"
@@ -62,6 +62,14 @@ func RenderChartsArchive(versionArchive string, downstreamName string, kustomize
 		})
 	filewalkDuration := time.Since(filewalkStart)
 	logs.Printf("LG: Filepath walk only duration: %v File count: %v", filewalkDuration, fileCount)
+
+	processArchiveStart := time.Now()
+	err = processArchive(archiveChartDir, sourceChartsDir, destChartsDir, kustomizeBinPath, kustomizedFilesList, metadataFiles)
+	if err != nil {
+		return nil, nil, errors.Wrap(err, "failed to process archive")
+	}
+	processArchiveDuration := time.Since(processArchiveStart)
+	logs.Printf("LG: Process archive duration: %v", processArchiveDuration)
 
 	var totalDuration time.Duration
 	totalPaths := 0
@@ -199,11 +207,16 @@ func copyHelmMetadataFile(srcRootDir string, dstRootDir string, relPath string, 
 // When saving templated file back into a chart, we need to escape Go templates so second Helm pass would ignore them.
 // These are application templates that maybe used in application config files and Helm should ignore them.
 // For example, original chart has this:
-//		"legendFormat": "{{`{{`}} value {{`}}`}}",
+//
+//	"legendFormat": "{{`{{`}} value {{`}}`}}",
+//
 // Rendered chart becomes:
-//		"legendFormat": "{{ value }}",
+//
+//	"legendFormat": "{{ value }}",
+//
 // Repackaged chart should have this:
-//		"legendFormat": "{{`{{`}} value {{`}}`}}",
+//
+//	"legendFormat": "{{`{{`}} value {{`}}`}}",
 func escapeGoTemplates(content []byte) []byte {
 	replace := func(in []byte) []byte {
 		if string(in) == "{{" {
@@ -216,4 +229,69 @@ func escapeGoTemplates(content []byte) []byte {
 	}
 
 	return goTemplateRegex.ReplaceAllFunc(content, replace)
+}
+
+func processArchive(archiveChartDir string, sourceChartsDir string, destChartsDir string, kustomizeBinPath string, kustomizedFilesList map[string]string, metadataFiles []string) error {
+	totalPaths := 0
+	visit := func(path string, info fs.DirEntry, err error) error {
+		// start := time.Now()
+		totalPaths++
+		if err != nil {
+			return err
+		}
+		relPath, err := filepath.Rel(archiveChartDir, filepath.Dir(path))
+		if err != nil {
+			return errors.Wrapf(err, "failed to get %s relative path to %s", path, archiveChartDir)
+		}
+
+		for _, filename := range metadataFiles {
+			err = copyHelmMetadataFile(sourceChartsDir, destChartsDir, relPath, filename)
+			if err != nil {
+				return errors.Wrapf(err, "failed to export file %s", filename)
+			}
+		}
+
+		if info.Name() != "kustomization.yaml" {
+			return nil
+		}
+
+		srcPath := filepath.Join(sourceChartsDir, relPath)
+		_, err = os.Stat(srcPath)
+		if err != nil && !os.IsNotExist(err) {
+			return errors.Wrapf(err, "failed to os stat file %s", srcPath)
+		}
+		if os.IsNotExist(err) {
+			return nil // source chart does not exist in base
+		}
+
+		archiveChartOutput, err := exec.Command(kustomizeBinPath, "build", filepath.Dir(path)).Output()
+		if err != nil {
+			if ee, ok := err.(*exec.ExitError); ok {
+				err = fmt.Errorf("kustomize %s: %q", path, string(ee.Stderr))
+			}
+			return errors.Wrapf(err, "failed to kustomize %s", path)
+		}
+
+		archiveFiles, err := splitter.SplitYAML(archiveChartOutput)
+		if err != nil {
+			return errors.Wrapf(err, "failed to split yaml result for %s", path)
+		}
+		for filename, d := range archiveFiles {
+			kustomizedFilesList[filename] = string(d)
+		}
+
+		err = saveHelmFile(destChartsDir, relPath, "all.yaml", archiveChartOutput)
+		if err != nil {
+			return errors.Wrapf(err, "failed to export content for %s", path)
+		}
+		// thisDuration := time.Since(start)
+		// totalDuration += thisDuration
+		return nil
+	}
+	err := filepath.WalkDir(archiveChartDir, visit)
+	logs.Printf("LG: totalPaths: %d", totalPaths)
+	if err != nil {
+		return err
+	}
+	return nil
 }
