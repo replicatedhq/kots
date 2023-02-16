@@ -93,7 +93,7 @@ func (h *daemonSetEventHandler) getInformer(r *appsv1.DaemonSet) (types.StatusIn
 
 func makeDaemonSetResourceState(r *appsv1.DaemonSet, state types.State) types.ResourceState {
 	return types.ResourceState{
-		Kind:      StatefulSetResourceKind,
+		Kind:      DaemonSetResourceKind,
 		Name:      r.Name,
 		Namespace: r.Namespace,
 		State:     state,
