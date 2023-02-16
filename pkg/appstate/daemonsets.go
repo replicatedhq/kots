@@ -131,7 +131,11 @@ func calculateDaemonSetState(r *appsv1.DaemonSet) types.State {
 
 	if r.Status.NumberReady >= r.Status.DesiredNumberScheduled {
 		return types.StateReady
-	} else {
+	}
+
+	if r.Status.NumberReady > 0 {
 		return types.StateDegraded
 	}
+
+	return types.StateUnavailable
 }
