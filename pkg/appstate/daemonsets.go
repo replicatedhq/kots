@@ -99,13 +99,34 @@ func makeDaemonSetResourceState(r *appsv1.DaemonSet, state types.State) types.Re
 	}
 }
 
+// The order of checks is done "top-down" to avoid calculating the wrong state.
+// Notes:
+//   - Check the generations first because the cluster will look both ready and degraded
+//   - Check for unavailable or misscheduled before the current scheduled and ready to not count
+//     incorrectly scheduled pods.
 func calculateDaemonSetState(r *appsv1.DaemonSet) types.State {
 	if r == nil {
 		return types.StateUnavailable
 	}
 
-	if r.Status.ObservedGeneration != r.ObjectMeta.Generation {
+	if r.Status.ObservedGeneration < r.ObjectMeta.Generation {
 		return types.StateUpdating
+	}
+
+	if r.Status.ObservedGeneration > r.ObjectMeta.Generation {
+		return types.StateDegraded
+	}
+
+	if r.Status.NumberUnavailable > 0 {
+		return types.StateDegraded
+	}
+
+	if r.Status.NumberMisscheduled > 0 {
+		return types.StateDegraded
+	}
+
+	if r.Status.CurrentNumberScheduled != r.Status.DesiredNumberScheduled {
+		return types.StateDegraded
 	}
 
 	if r.Status.NumberReady >= r.Status.DesiredNumberScheduled {
