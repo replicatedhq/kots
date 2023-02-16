@@ -10,6 +10,7 @@ import (
 	"path"
 	"path/filepath"
 	"regexp"
+	"sync"
 	"time"
 
 	"github.com/marccampbell/yaml-toolbox/pkg/splitter"
@@ -64,12 +65,16 @@ func RenderChartsArchive(versionArchive string, downstreamName string, kustomize
 	logs.Printf("LG: Filepath walk only duration: %v File count: %v", filewalkDuration, fileCount)
 
 	processArchiveStart := time.Now()
-	err = processArchive(archiveChartDir, sourceChartsDir, destChartsDir, kustomizeBinPath, kustomizedFilesList, metadataFiles)
+	totalPathsProcessed := 0
+	wg := new(sync.WaitGroup)
+	wg.Add(1)
+	err = processArchive(archiveChartDir, sourceChartsDir, destChartsDir, kustomizeBinPath, kustomizedFilesList, metadataFiles, wg, &totalPathsProcessed)
 	if err != nil {
 		return nil, nil, errors.Wrap(err, "failed to process archive")
 	}
+	wg.Wait()
 	processArchiveDuration := time.Since(processArchiveStart)
-	logs.Printf("LG: Process archive duration: %v", processArchiveDuration)
+	logs.Printf("LG: Process archive duration: %v, totalPathsProcessed: %v", processArchiveDuration, totalPathsProcessed)
 
 	var totalDuration time.Duration
 	totalPaths := 0
@@ -231,14 +236,24 @@ func escapeGoTemplates(content []byte) []byte {
 	return goTemplateRegex.ReplaceAllFunc(content, replace)
 }
 
-func processArchive(archiveChartDir string, sourceChartsDir string, destChartsDir string, kustomizeBinPath string, kustomizedFilesList map[string]string, metadataFiles []string) error {
-	totalPaths := 0
+func processArchive(archiveChartDir string, sourceChartsDir string, destChartsDir string, kustomizeBinPath string, kustomizedFilesList map[string]string, metadataFiles []string, wg *sync.WaitGroup, totalPaths *int) error {
+	defer wg.Done()
+
+	*totalPaths++
+
 	visit := func(path string, info fs.DirEntry, err error) error {
 		// start := time.Now()
-		totalPaths++
+		//totalPaths++
 		if err != nil {
 			return err
 		}
+
+		if info.IsDir() && path != archiveChartDir {
+			wg.Add(1)
+			go processArchive(path, sourceChartsDir, destChartsDir, kustomizeBinPath, kustomizedFilesList, metadataFiles, wg, totalPaths)
+			return filepath.SkipDir
+		}
+
 		relPath, err := filepath.Rel(archiveChartDir, filepath.Dir(path))
 		if err != nil {
 			return errors.Wrapf(err, "failed to get %s relative path to %s", path, archiveChartDir)
@@ -289,7 +304,7 @@ func processArchive(archiveChartDir string, sourceChartsDir string, destChartsDi
 		return nil
 	}
 	err := filepath.WalkDir(archiveChartDir, visit)
-	logs.Printf("LG: totalPaths: %d", totalPaths)
+	// logs.Printf("LG: totalPaths: %d", totalPaths)
 	if err != nil {
 		return err
 	}
