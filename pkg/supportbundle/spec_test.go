@@ -1,12 +1,20 @@
 package supportbundle
 
 import (
+	"context"
+	"encoding/base64"
 	"reflect"
 	"testing"
 
 	"github.com/replicatedhq/kots/pkg/util"
 	troubleshootv1beta2 "github.com/replicatedhq/troubleshoot/pkg/apis/troubleshoot/v1beta2"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/client-go/kubernetes"
+	testclient "k8s.io/client-go/kubernetes/fake"
 )
 
 func TestBuilder_populateNamespaces(t *testing.T) {
@@ -338,5 +346,131 @@ func Test_deduplicatedAnalyzers(t *testing.T) {
 				t.Errorf("deduplicatedAnalyzers() = %v, want %v", got, tt.want)
 			}
 		})
+	}
+}
+
+func Test_findSupportBundleSecrets(t *testing.T) {
+	encode := func(s string) []byte {
+		return []byte(base64.StdEncoding.EncodeToString([]byte(s)))
+	}
+
+	tests := []struct {
+		name    string
+		objects []runtime.Object
+		want    []string
+		wantErr bool
+	}{
+		{
+			name: "support bundle specs from configmaps and secrets",
+			objects: []runtime.Object{
+				&corev1.Secret{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "kotsadm-my-app-supportbundle",
+						Namespace: "kotsadm",
+						Labels: map[string]string{
+							"foo":                  "bar",
+							"troubleshoot.io/kind": "support-bundle",
+						},
+					},
+					Data: map[string][]byte{
+						"support-bundle-spec": encode("my-app-spec"),
+					},
+				},
+				&corev1.ConfigMap{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "cluster-wide-supportbundle",
+						Namespace: "another",
+						Labels: map[string]string{
+							"foo":                  "bar",
+							"troubleshoot.io/kind": "support-bundle",
+						},
+					},
+					Data: map[string]string{
+						"support-bundle-spec": "cluster-wide-spec",
+					},
+				},
+				&corev1.Secret{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "kotsadm-another-app-supportbundle",
+						Namespace: "kotsadm",
+						Labels: map[string]string{
+							"foo":                  "bar",
+							"troubleshoot.io/kind": "support-bundle",
+						},
+					},
+					Data: map[string][]byte{
+						"support-bundle-spec": encode("another-app-spec"),
+					},
+				},
+			},
+			want:    []string{"cluster-wide-spec"},
+		},
+		{
+			name: "support bundle specs with wrong data",
+			objects: []runtime.Object{
+				&corev1.Secret{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "kotsadm-my-app-supportbundle",
+						Namespace: "kotsadm",
+						Labels: map[string]string{
+							"troubleshoot.io/kind": "support-bundle",
+						},
+					},
+					Data: map[string][]byte{
+						"wrong-key": encode("my-app-spec"),
+					},
+				},
+				&corev1.Secret{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "cluster-wide-supportbundle",
+						Namespace: "default",
+						Labels: map[string]string{
+							"troubleshoot.io/kind": "support-bundle",
+						},
+					},
+				},
+			},
+			want:    []string{},
+		},
+		{
+			name: "fail to find support bundle secrets",
+			objects: []runtime.Object{
+				&corev1.Secret{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "some-secret",
+						Namespace: "default",
+						Labels: map[string]string{
+							"foo": "bar",
+						},
+					},
+				},
+			},
+			want:    []string{},
+		},
+	}
+	for _, tt := range tests {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+			clientset := testclient.NewSimpleClientset(tt.objects...)
+			createNamespaces(t, clientset, "kotsadm", "default", "another")
+			got, err := findSupportBundleSpecs(clientset)
+			assert.Equal(t, tt.wantErr, err != nil, "findSupportBundleSecrets() error %v, wantErr %v", err, tt.wantErr)
+			require.NotNil(t, got)
+
+			assert.ElementsMatchf(t, got, tt.want, "got %v, want %v", got, tt.want)
+		})
+	}
+}
+
+func createNamespaces(t *testing.T, clientset kubernetes.Interface, namespaces ...string) {
+	t.Helper()
+
+	for _, ns := range namespaces {
+		_, err := clientset.CoreV1().Namespaces().Create(context.TODO(), &corev1.Namespace{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: ns,
+			},
+		}, metav1.CreateOptions{})
+		require.NoError(t, err)
 	}
 }
