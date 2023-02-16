@@ -318,11 +318,7 @@ func findSupportBundleSpecs(client kubernetes.Interface) ([]string, error) {
 	for _, ns := range namespaces {
 		secrets, err := client.CoreV1().Secrets(ns).List(ctx, metav1.ListOptions{LabelSelector: labelSelector})
 		if err != nil {
-			if kuberneteserrors.IsForbidden(err) || kuberneteserrors.IsUnauthorized(err) {
-				logger.Debugf("access denied when listing secrets from %q namespace: %v", ns, err)
-			} else {
-				logger.Errorf("failed to list secrets in namespace %q: %v", ns, err)
-			}
+			logger.Errorf("failed to list secrets in namespace %q: %v", ns, err)
 			continue
 		}
 
@@ -349,11 +345,7 @@ func findSupportBundleSpecs(client kubernetes.Interface) ([]string, error) {
 	for _, ns := range namespaces {
 		configmaps, err := client.CoreV1().ConfigMaps(ns).List(context.TODO(), metav1.ListOptions{LabelSelector: labelSelector})
 		if err != nil {
-			if kuberneteserrors.IsForbidden(err) || kuberneteserrors.IsUnauthorized(err) {
-				logger.Debugf("access denied when listing configmaps from %q namespace: %v", ns, err)
-			} else {
-				logger.Errorf("failed to list configmaps in namespace %q: %v", ns, err)
-			}
+			logger.Errorf("failed to list configmaps in namespace %q: %v", ns, err)
 			continue
 		}
 
