@@ -684,8 +684,8 @@ class AppSnapshots extends Component {
               <p className="u-marginTop--10 u-fontSize--normal u-lineHeight--more u-fontWeight--medium u-textColor--bodyCopy">
                 {" "}
                 Partial snapshots (Application) only back up application volumes
-                and application manifests; they do not back up the Admin Console
-                or the metadata about an application.{" "}
+                and application manifests; they do not back up the Admin
+                Console.{" "}
               </p>
             </div>
             <div className="flex flex-auto u-marginBottom--15 alignItems--flexStart justifyContent--spaceBetween">
