@@ -47,9 +47,7 @@ func runDaemonSetController(ctx context.Context, clientset kubernetes.Interface,
 }
 
 func (h *daemonSetEventHandler) ObjectCreated(obj interface{}) {
-	var i interface{} = &h
-	r, _ := i.(*appsv1.DaemonSet)
-
+	r := h.cast(obj)
 	if _, ok := h.getInformer(r); !ok {
 		return
 	}
@@ -58,9 +56,7 @@ func (h *daemonSetEventHandler) ObjectCreated(obj interface{}) {
 }
 
 func (h *daemonSetEventHandler) ObjectDeleted(obj interface{}) {
-	var i interface{} = &h
-	r, _ := i.(*appsv1.DaemonSet)
-
+	r := h.cast(obj)
 	if _, ok := h.getInformer(r); !ok {
 		return
 	}
@@ -69,9 +65,7 @@ func (h *daemonSetEventHandler) ObjectDeleted(obj interface{}) {
 }
 
 func (h *daemonSetEventHandler) ObjectUpdated(obj interface{}) {
-	var i interface{} = &h
-	r, _ := i.(*appsv1.DaemonSet)
-
+	r := h.cast(obj)
 	if _, ok := h.getInformer(r); !ok {
 		return
 	}
@@ -89,6 +83,11 @@ func (h *daemonSetEventHandler) getInformer(r *appsv1.DaemonSet) (types.StatusIn
 	}
 
 	return types.StatusInformer{}, false
+}
+
+func (h *daemonSetEventHandler) cast(obj interface{}) *appsv1.DaemonSet {
+	r, _ := obj.(*appsv1.DaemonSet)
+	return r
 }
 
 func makeDaemonSetResourceState(r *appsv1.DaemonSet, state types.State) types.ResourceState {

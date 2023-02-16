@@ -23,6 +23,7 @@ func filterStatusInformersByResourceKind(informers []types.StatusInformer, kind 
 			next = append(next, informer)
 		}
 	}
+
 	return
 }
 
