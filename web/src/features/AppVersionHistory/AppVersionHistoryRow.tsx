@@ -190,14 +190,20 @@ function AppVersionHistoryRow(props: Props) {
     const downstream = app?.downstream;
     const { newPreflightResults } = props;
 
+    // useDeployAppVersion
     let actionFn = props.deployVersion;
     if (isHelmManaged) {
       actionFn = () => {};
+      // TODO: conditionally fetch the admin console update status when mounting the hook
+      // by using verision.needsKotsUpgrade
     } else if (version.needsKotsUpgrade) {
+      // postUpdateAdminConsole
       actionFn = props.upgradeAdminConsole;
     } else if (version.status === "pending_download") {
+      // postDownloadVersion
       actionFn = props.downloadVersion;
     } else if (version.status === "failed" || version.status === "deployed") {
+      // postRedeployVersion
       actionFn = props.redeployVersion;
     }
 
