@@ -12,7 +12,8 @@ inputs:
     required: true
   platform:
     description: 'Platform to run tests on (k3s, gke)'
-    required: true
+    default: 'k3s'
+    required: false
   k8s-arguments:
     description: 'arguments to pass to k8s'
     required: false
