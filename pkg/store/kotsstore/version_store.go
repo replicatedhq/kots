@@ -584,19 +584,27 @@ func (s *KOTSStore) upsertAppVersionStatements(appID string, sequence int64, bas
 	logs.Printf("LG: --- upsertAppVersionStatements: six: %v", durationSix)
 
 	sevenStart := time.Now()
+	logs.Printf("LG: --- upsertAppVersionStatements: Length of Downstreams: %d", len(downstreams))
 	for _, d := range downstreams {
+		downstreamsOne := time.Now()
 		// there's a small chance this is not optimal, but no current code path
 		// will support multiple downstreams, so this is cleaner here for now
 		hasStrictPreflights, err := troubleshootpreflight.HasStrictAnalyzers(renderedPreflight)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to check strict preflights from spec")
 		}
+		downstreamsOneDuration := time.Since(downstreamsOne)
+		logs.Printf("LG: downstreams One: %v", downstreamsOneDuration)
+		downstreamsTwo := time.Now()
 		downstreamStatus := types.VersionPending
 		if baseSequence == nil && kotsKinds.IsConfigurable() { // initial version should always require configuration (if exists) even if all required items are already set and have values (except for automated installs, which can override this later)
 			downstreamStatus = types.VersionPendingConfig
 		} else if kotsKinds.HasPreflights() && (!skipPreflights || hasStrictPreflights) {
 			downstreamStatus = types.VersionPendingPreflight
 		}
+		downstreamsTwoDuration := time.Since(downstreamsTwo)
+		logs.Printf("LG: downstreams Two: %v", downstreamsTwoDuration)
+		downstreamsThree := time.Now()
 		if baseSequence != nil { // only check if the version needs configuration for later versions (not the initial one) since the config is always required for the initial version (except for automated installs, which can override that later)
 			// check if version needs additional configuration
 			t, err := kotsadmconfig.NeedsConfiguration(a.Slug, sequence, a.IsAirgap, kotsKinds, registrySettings)
@@ -607,6 +615,9 @@ func (s *KOTSStore) upsertAppVersionStatements(appID string, sequence int64, bas
 				downstreamStatus = types.VersionPendingConfig
 			}
 		}
+		downstreamsThreeDuration := time.Since(downstreamsThree)
+		logs.Printf("LG: downstreams Three: %v", downstreamsThreeDuration)
+		downstreamsFour := time.Now()
 
 		diffSummary, diffSummaryError := "", ""
 		if baseSequence != nil {
@@ -622,12 +633,18 @@ func (s *KOTSStore) upsertAppVersionStatements(appID string, sequence int64, bas
 				diffSummary = string(b)
 			}
 		}
+		downstreamsFourDuration := time.Since(downstreamsFour)
+		logs.Printf("LG: downstreams Four: %v", downstreamsFourDuration)
 
+		downstreamsFive := time.Now()
 		commitURL, err := gitops.CreateGitOpsDownstreamCommit(appID, d.ClusterID, int(sequence), filesInDir, d.Name)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to create gitops commit")
 		}
+		downstreamsFiveDuration := time.Since(downstreamsFive)
+		logs.Printf("LG: downstreams Five: %v", downstreamsFiveDuration)
 
+		downstreamsSix := time.Now()
 		downstreamVersionStatements, err := s.upsertAppDownstreamVersionStatements(appID, d.ClusterID, sequence,
 			kotsKinds.Installation.Spec.VersionLabel, downstreamStatus,
 			source, diffSummary, diffSummaryError, commitURL, commitURL != "", skipPreflights)
@@ -635,6 +652,8 @@ func (s *KOTSStore) upsertAppVersionStatements(appID string, sequence int64, bas
 			return nil, errors.Wrap(err, "failed to construct app downstream version statements")
 		}
 		statements = append(statements, downstreamVersionStatements...)
+		downstreamsSixDuration := time.Since(downstreamsSix)
+		logs.Printf("LG: downstreams Six: %v", downstreamsSixDuration)
 	}
 	durationSeven := time.Since(sevenStart)
 	logs.Printf("LG: --- upsertAppVersionStatements: seven: %v", durationSeven)

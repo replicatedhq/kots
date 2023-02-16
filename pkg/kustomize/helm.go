@@ -8,6 +8,9 @@ import (
 	"path"
 	"path/filepath"
 	"regexp"
+	logs "log"
+	"time"
+	"io/fs"
 
 	"github.com/marccampbell/yaml-toolbox/pkg/splitter"
 	"github.com/mholt/archiver/v3"
@@ -24,6 +27,7 @@ func init() {
 
 func RenderChartsArchive(versionArchive string, downstreamName string, kustomizeBinPath string) ([]byte, map[string]string, error) {
 	archiveChartDir := filepath.Join(versionArchive, "overlays", "downstreams", downstreamName, "charts")
+	logs.Printf("LG: archive directory: %v", archiveChartDir)
 	_, err := os.Stat(archiveChartDir)
 	if err != nil {
 		if os.IsNotExist(err) {
@@ -49,8 +53,23 @@ func RenderChartsArchive(versionArchive string, downstreamName string, kustomize
 	sourceChartsDir := filepath.Join(versionArchive, "base", "charts")
 	metadataFiles := []string{"Chart.yaml", "Chart.lock"}
 
-	err = filepath.Walk(archiveChartDir,
-		func(path string, info os.FileInfo, err error) error {
+	filewalkStart := time.Now()
+	fileCount := 0
+	err = filepath.WalkDir(archiveChartDir,
+		func(path string, info fs.DirEntry, err error) error {
+			fileCount++
+			return nil
+		})
+	filewalkDuration := time.Since(filewalkStart)
+	logs.Printf("LG: Filepath walk only duration: %v File count: %v", filewalkDuration, fileCount)
+
+	var totalDuration time.Duration
+	totalPaths := 0
+	startWalk := time.Now()
+	err = filepath.WalkDir(archiveChartDir,
+		func(path string, info fs.DirEntry, err error) error {
+			start := time.Now()
+			totalPaths++
 			if err != nil {
 				return err
 			}
@@ -99,8 +118,14 @@ func RenderChartsArchive(versionArchive string, downstreamName string, kustomize
 			if err != nil {
 				return errors.Wrapf(err, "failed to export content for %s", path)
 			}
+			thisDuration := time.Since(start)
+			totalDuration += thisDuration
 			return nil
 		})
+	avgDuration := totalDuration / time.Duration(totalPaths)
+	logs.Printf("LG: Total paths: %d, total duration: %v, Average duration per path: %v", totalPaths, totalDuration, avgDuration)
+	walkDuration := time.Since(startWalk)
+	logs.Printf("LG: Duration of file tree walk: %v", walkDuration)
 	if err != nil {
 		return nil, nil, errors.Wrap(err, "failed to walk charts directory")
 	}

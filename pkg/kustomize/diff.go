@@ -7,6 +7,8 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strings"
+	logs "log"
+	"time"
 
 	"github.com/marccampbell/yaml-toolbox/pkg/splitter"
 	"github.com/pkg/errors"
@@ -48,6 +50,8 @@ func diffContent(baseContent string, updatedContent string) (int, int, error) {
 // archivedirs
 func DiffAppVersionsForDownstream(downstreamName string, archive string, diffBasePath string, kustomizeBinPath string) (*Diff, error) {
 	// kustomize build both of these archives before diffing
+	logs.Printf("LG: ---------- DiffAppVersionsForDownstream -------")
+	oneStart := time.Now()
 	archiveOutput, err := exec.Command(kustomizeBinPath, "build", filepath.Join(archive, "overlays", "downstreams", downstreamName)).Output()
 	if err != nil {
 		if ee, ok := err.(*exec.ExitError); ok {
@@ -55,6 +59,9 @@ func DiffAppVersionsForDownstream(downstreamName string, archive string, diffBas
 		}
 		return nil, errors.Wrap(err, "failed to run kustomize on archive dir")
 	}
+	oneDuration := time.Since(oneStart)
+	logs.Printf("LG: duration one: %v", oneDuration)
+	twoStart := time.Now()
 	baseOutput, err := exec.Command(kustomizeBinPath, "build", filepath.Join(diffBasePath, "overlays", "downstreams", downstreamName)).Output()
 	if err != nil {
 		if ee, ok := err.(*exec.ExitError); ok {
@@ -62,7 +69,10 @@ func DiffAppVersionsForDownstream(downstreamName string, archive string, diffBas
 		}
 		return nil, errors.Wrap(err, "failed to run kustomize on base dir")
 	}
-
+	twoDuration := time.Since(twoStart)
+	logs.Printf("LG: duration two: %v", twoDuration)
+	
+	threeStart := time.Now()
 	archiveFiles, err := splitter.SplitYAML(archiveOutput)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to split archive yaml")
@@ -72,7 +82,10 @@ func DiffAppVersionsForDownstream(downstreamName string, archive string, diffBas
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to split base yaml")
 	}
+	threeDuration := time.Since(threeStart)
+	logs.Printf("LG: duration three: %v", threeDuration)
 
+	fourStart := time.Now()
 	diff := Diff{}
 	for archiveFilename, archiveContents := range archiveFiles {
 		baseContents, ok := baseFiles[archiveFilename]
@@ -98,7 +111,10 @@ func DiffAppVersionsForDownstream(downstreamName string, archive string, diffBas
 			diff.FilesChanged++
 		}
 	}
+	fourDuration := time.Since(fourStart)
+	logs.Printf("LG: duration four: %v", fourDuration)
 
+	fiveStart := time.Now()
 	for baseFilename, baseContents := range baseFiles {
 		_, ok := archiveFiles[baseFilename]
 		if !ok {
@@ -110,17 +126,30 @@ func DiffAppVersionsForDownstream(downstreamName string, archive string, diffBas
 			diff.FilesChanged++
 		}
 	}
+	fiveDuration := time.Since(fiveStart)
+	logs.Printf("LG: duration five: %v", fiveDuration)
 
+	sixStart := time.Now()
+	archiveStart := time.Now()
 	_, archiveChartFiles, err := RenderChartsArchive(archive, downstreamName, kustomizeBinPath)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to kustomize archive charts dir")
 	}
+	archiveDuration := time.Since(archiveStart)
+	logs.Printf("LG: archive duration: %v", archiveDuration)
 
+	baseStart := time.Now()
 	_, baseChartFiles, err := RenderChartsArchive(diffBasePath, downstreamName, kustomizeBinPath)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to kustomize base charts dir")
 	}
+	baseDuration := time.Since(baseStart)
+	logs.Printf("LG: base duration: %v", baseDuration)
+	
+	sixDuration := time.Since(sixStart)
+	logs.Printf("LG: duration six: %v", sixDuration)
 
+	sevenStart := time.Now()
 	for archiveFilename, archiveContents := range archiveChartFiles {
 		baseContents, ok := baseChartFiles[archiveFilename]
 		if !ok {
@@ -145,7 +174,10 @@ func DiffAppVersionsForDownstream(downstreamName string, archive string, diffBas
 			diff.FilesChanged++
 		}
 	}
+	sevenDuration := time.Since(sevenStart)
+	logs.Printf("LG: duration seven: %v", sevenDuration)
 
+	eightStart := time.Now()
 	for baseFilename, baseContents := range baseChartFiles {
 		_, ok := archiveChartFiles[baseFilename]
 		if !ok {
@@ -157,5 +189,8 @@ func DiffAppVersionsForDownstream(downstreamName string, archive string, diffBas
 			diff.FilesChanged++
 		}
 	}
+	eightDuration := time.Since(eightStart)
+	logs.Printf("LG: duration eight: %v", eightDuration)
+	logs.Printf("LG: ---------------------------")
 	return &diff, nil
 }
