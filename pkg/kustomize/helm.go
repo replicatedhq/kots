@@ -239,8 +239,6 @@ func escapeGoTemplates(content []byte) []byte {
 func processArchive(archiveChartDir string, sourceChartsDir string, destChartsDir string, kustomizeBinPath string, kustomizedFilesList map[string]string, metadataFiles []string, wg *sync.WaitGroup, totalPaths *int) error {
 	defer wg.Done()
 
-	*totalPaths++
-
 	visit := func(path string, info fs.DirEntry, err error) error {
 		// start := time.Now()
 		//totalPaths++
@@ -248,59 +246,14 @@ func processArchive(archiveChartDir string, sourceChartsDir string, destChartsDi
 			return err
 		}
 
-		if info.IsDir() && path != archiveChartDir {
-			wg.Add(1)
-			go processArchive(path, sourceChartsDir, destChartsDir, kustomizeBinPath, kustomizedFilesList, metadataFiles, wg, totalPaths)
-			return filepath.SkipDir
-		}
+		// if info.IsDir() && path != archiveChartDir {
+		// 	wg.Add(1)
+		// 	go processArchive(path, sourceChartsDir, destChartsDir, kustomizeBinPath, kustomizedFilesList, metadataFiles, wg, totalPaths)
+		// 	return filepath.SkipDir
+		// }
+		wg.Add(1)
+		go processFile(archiveChartDir, sourceChartsDir, destChartsDir, kustomizeBinPath, kustomizedFilesList, metadataFiles, wg, totalPaths, path, info)
 
-		relPath, err := filepath.Rel(archiveChartDir, filepath.Dir(path))
-		if err != nil {
-			return errors.Wrapf(err, "failed to get %s relative path to %s", path, archiveChartDir)
-		}
-
-		for _, filename := range metadataFiles {
-			err = copyHelmMetadataFile(sourceChartsDir, destChartsDir, relPath, filename)
-			if err != nil {
-				return errors.Wrapf(err, "failed to export file %s", filename)
-			}
-		}
-
-		if info.Name() != "kustomization.yaml" {
-			return nil
-		}
-
-		srcPath := filepath.Join(sourceChartsDir, relPath)
-		_, err = os.Stat(srcPath)
-		if err != nil && !os.IsNotExist(err) {
-			return errors.Wrapf(err, "failed to os stat file %s", srcPath)
-		}
-		if os.IsNotExist(err) {
-			return nil // source chart does not exist in base
-		}
-
-		archiveChartOutput, err := exec.Command(kustomizeBinPath, "build", filepath.Dir(path)).Output()
-		if err != nil {
-			if ee, ok := err.(*exec.ExitError); ok {
-				err = fmt.Errorf("kustomize %s: %q", path, string(ee.Stderr))
-			}
-			return errors.Wrapf(err, "failed to kustomize %s", path)
-		}
-
-		archiveFiles, err := splitter.SplitYAML(archiveChartOutput)
-		if err != nil {
-			return errors.Wrapf(err, "failed to split yaml result for %s", path)
-		}
-		for filename, d := range archiveFiles {
-			kustomizedFilesList[filename] = string(d)
-		}
-
-		err = saveHelmFile(destChartsDir, relPath, "all.yaml", archiveChartOutput)
-		if err != nil {
-			return errors.Wrapf(err, "failed to export content for %s", path)
-		}
-		// thisDuration := time.Since(start)
-		// totalDuration += thisDuration
 		return nil
 	}
 	err := filepath.WalkDir(archiveChartDir, visit)
@@ -308,5 +261,58 @@ func processArchive(archiveChartDir string, sourceChartsDir string, destChartsDi
 	if err != nil {
 		return err
 	}
+	return nil
+}
+
+func processFile(archiveChartDir string, sourceChartsDir string, destChartsDir string, kustomizeBinPath string, kustomizedFilesList map[string]string, metadataFiles []string, wg *sync.WaitGroup, totalPaths *int, path string, info fs.DirEntry) error {
+	defer wg.Done()
+	*totalPaths++
+	relPath, err := filepath.Rel(archiveChartDir, filepath.Dir(path))
+	if err != nil {
+		return errors.Wrapf(err, "failed to get %s relative path to %s", path, archiveChartDir)
+	}
+
+	for _, filename := range metadataFiles {
+		err = copyHelmMetadataFile(sourceChartsDir, destChartsDir, relPath, filename)
+		if err != nil {
+			return errors.Wrapf(err, "failed to export file %s", filename)
+		}
+	}
+
+	if info.Name() != "kustomization.yaml" {
+		return nil
+	}
+
+	srcPath := filepath.Join(sourceChartsDir, relPath)
+	_, err = os.Stat(srcPath)
+	if err != nil && !os.IsNotExist(err) {
+		return errors.Wrapf(err, "failed to os stat file %s", srcPath)
+	}
+	if os.IsNotExist(err) {
+		return nil // source chart does not exist in base
+	}
+
+	archiveChartOutput, err := exec.Command(kustomizeBinPath, "build", filepath.Dir(path)).Output()
+	if err != nil {
+		if ee, ok := err.(*exec.ExitError); ok {
+			err = fmt.Errorf("kustomize %s: %q", path, string(ee.Stderr))
+		}
+		return errors.Wrapf(err, "failed to kustomize %s", path)
+	}
+
+	archiveFiles, err := splitter.SplitYAML(archiveChartOutput)
+	if err != nil {
+		return errors.Wrapf(err, "failed to split yaml result for %s", path)
+	}
+	for filename, d := range archiveFiles {
+		kustomizedFilesList[filename] = string(d)
+	}
+
+	err = saveHelmFile(destChartsDir, relPath, "all.yaml", archiveChartOutput)
+	if err != nil {
+		return errors.Wrapf(err, "failed to export content for %s", path)
+	}
+	// thisDuration := time.Since(start)
+	// totalDuration += thisDuration
 	return nil
 }
