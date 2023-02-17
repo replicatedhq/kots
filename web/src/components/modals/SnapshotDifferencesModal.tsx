@@ -42,10 +42,10 @@ export default function SnapshotDifferencesModal(
             </p>
             <p className="u-fontSize--normal u-fontWeight--normal u-textColor--bodyCopy u-lineHeight--normal">
               Partial snapshots (Application) back up application volumes and
-              application manifests; they do not back up the Admin Console or
-              the application metadata. They can be used for capturing
-              information before deploying a new release, in case of needed roll
-              back, but they are not suitable for full disaster recovery.
+              application manifests; they do not back up the Admin Console. They
+              can be used for capturing information before deploying a new
+              release, in case of needed roll back, but they are not suitable
+              for full disaster recovery.
             </p>
           </div>
         </div>
