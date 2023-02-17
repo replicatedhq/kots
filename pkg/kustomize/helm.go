@@ -18,6 +18,12 @@ import (
 	"github.com/pkg/errors"
 )
 
+// struct with mutex and kustomizedFilesList map
+type kustomizedFiles struct {
+	mu   sync.Mutex
+	list map[string]string
+}
+
 var (
 	goTemplateRegex *regexp.Regexp
 )
@@ -68,7 +74,11 @@ func RenderChartsArchive(versionArchive string, downstreamName string, kustomize
 	totalPathsProcessed := 0
 	wg := new(sync.WaitGroup)
 	wg.Add(1)
-	err = processArchive(archiveChartDir, sourceChartsDir, destChartsDir, kustomizeBinPath, kustomizedFilesList, metadataFiles, wg, &totalPathsProcessed)
+	// new kustomizedFiles struct
+	kustomizedFiles := &kustomizedFiles{
+		list: make(map[string]string),
+	}
+	err = processArchive(archiveChartDir, sourceChartsDir, destChartsDir, kustomizeBinPath, kustomizedFiles, metadataFiles, wg, &totalPathsProcessed)
 	if err != nil {
 		return nil, nil, errors.Wrap(err, "failed to process archive")
 	}
@@ -236,7 +246,7 @@ func escapeGoTemplates(content []byte) []byte {
 	return goTemplateRegex.ReplaceAllFunc(content, replace)
 }
 
-func processArchive(archiveChartDir string, sourceChartsDir string, destChartsDir string, kustomizeBinPath string, kustomizedFilesList map[string]string, metadataFiles []string, wg *sync.WaitGroup, totalPaths *int) error {
+func processArchive(archiveChartDir string, sourceChartsDir string, destChartsDir string, kustomizeBinPath string, kustomizedFiles *kustomizedFiles, metadataFiles []string, wg *sync.WaitGroup, totalPaths *int) error {
 	defer wg.Done()
 
 	visit := func(path string, info fs.DirEntry, err error) error {
@@ -252,7 +262,7 @@ func processArchive(archiveChartDir string, sourceChartsDir string, destChartsDi
 		// 	return filepath.SkipDir
 		// }
 		wg.Add(1)
-		go processFile(archiveChartDir, sourceChartsDir, destChartsDir, kustomizeBinPath, kustomizedFilesList, metadataFiles, wg, totalPaths, path, info)
+		go processFile(archiveChartDir, sourceChartsDir, destChartsDir, kustomizeBinPath, kustomizedFiles, metadataFiles, wg, totalPaths, path, info)
 
 		return nil
 	}
@@ -264,7 +274,7 @@ func processArchive(archiveChartDir string, sourceChartsDir string, destChartsDi
 	return nil
 }
 
-func processFile(archiveChartDir string, sourceChartsDir string, destChartsDir string, kustomizeBinPath string, kustomizedFilesList map[string]string, metadataFiles []string, wg *sync.WaitGroup, totalPaths *int, path string, info fs.DirEntry) error {
+func processFile(archiveChartDir string, sourceChartsDir string, destChartsDir string, kustomizeBinPath string, kustomizedFiles *kustomizedFiles, metadataFiles []string, wg *sync.WaitGroup, totalPaths *int, path string, info fs.DirEntry) error {
 	defer wg.Done()
 	*totalPaths++
 	relPath, err := filepath.Rel(archiveChartDir, filepath.Dir(path))
@@ -304,9 +314,11 @@ func processFile(archiveChartDir string, sourceChartsDir string, destChartsDir s
 	if err != nil {
 		return errors.Wrapf(err, "failed to split yaml result for %s", path)
 	}
+	kustomizedFiles.mu.Lock()
 	for filename, d := range archiveFiles {
-		kustomizedFilesList[filename] = string(d)
+		kustomizedFiles.list[filename] = string(d)
 	}
+	kustomizedFiles.mu.Unlock()
 
 	err = saveHelmFile(destChartsDir, relPath, "all.yaml", archiveChartOutput)
 	if err != nil {
