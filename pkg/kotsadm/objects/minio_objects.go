@@ -1,18 +1,27 @@
 package kotsadm
 
 import (
+	_ "embed"
+
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/kotsadm/types"
 	kotsadmversion "github.com/replicatedhq/kots/pkg/kotsadm/version"
 	appsv1 "k8s.io/api/apps/v1"
+	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	"k8s.io/utils/pointer"
 )
 
-func MinioStatefulset(deployOptions types.DeployOptions, size resource.Quantity) (*appsv1.StatefulSet, error) {
+var (
+	//go:embed scripts/migrate-minio-xl.sh
+	migrateMinioXlScript string
+)
+
+func MinioStatefulset(deployOptions types.DeployOptions, size resource.Quantity, name string) (*appsv1.StatefulSet, error) {
 	image := GetAdminConsoleImage(deployOptions, "minio")
 
 	var pullSecrets []corev1.LocalObjectReference
@@ -41,14 +50,14 @@ func MinioStatefulset(deployOptions types.DeployOptions, size resource.Quantity)
 			Kind:       "StatefulSet",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "kotsadm-minio",
+			Name:      name,
 			Namespace: deployOptions.Namespace,
 			Labels:    types.GetKotsadmLabels(),
 		},
 		Spec: appsv1.StatefulSetSpec{
 			Selector: &metav1.LabelSelector{
 				MatchLabels: map[string]string{
-					"app": "kotsadm-minio",
+					"app": name,
 				},
 			},
 			UpdateStrategy: appsv1.StatefulSetUpdateStrategy{
@@ -57,7 +66,7 @@ func MinioStatefulset(deployOptions types.DeployOptions, size resource.Quantity)
 			VolumeClaimTemplates: []corev1.PersistentVolumeClaim{
 				{
 					ObjectMeta: metav1.ObjectMeta{
-						Name:   "kotsadm-minio",
+						Name:   name,
 						Labels: types.GetKotsadmLabels(),
 					},
 					Spec: corev1.PersistentVolumeClaimSpec{
@@ -75,7 +84,7 @@ func MinioStatefulset(deployOptions types.DeployOptions, size resource.Quantity)
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
 					Labels: types.GetKotsadmLabels(map[string]string{
-						"app": "kotsadm-minio",
+						"app": name,
 					}),
 					Annotations: map[string]string{
 						"backup.velero.io/backup-volumes": "kotsadm-minio,minio-config-dir,minio-cert-dir",
@@ -86,10 +95,10 @@ func MinioStatefulset(deployOptions types.DeployOptions, size resource.Quantity)
 					ImagePullSecrets: pullSecrets,
 					Volumes: []corev1.Volume{
 						{
-							Name: "kotsadm-minio",
+							Name: name,
 							VolumeSource: corev1.VolumeSource{
 								PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{
-									ClaimName: "kotsadm-minio",
+									ClaimName: name,
 								},
 							},
 						},
@@ -110,7 +119,7 @@ func MinioStatefulset(deployOptions types.DeployOptions, size resource.Quantity)
 						{
 							Image:           image,
 							ImagePullPolicy: corev1.PullIfNotPresent,
-							Name:            "kotsadm-minio",
+							Name:            name,
 							Command: []string{
 								"/bin/sh",
 								"-ce",
@@ -124,7 +133,7 @@ func MinioStatefulset(deployOptions types.DeployOptions, size resource.Quantity)
 							},
 							VolumeMounts: []corev1.VolumeMount{
 								{
-									Name:      "kotsadm-minio",
+									Name:      name,
 									MountPath: "/export",
 								},
 								{
@@ -217,20 +226,20 @@ func MinioStatefulset(deployOptions types.DeployOptions, size resource.Quantity)
 	return statefulset, nil
 }
 
-func MinioService(namespace string) *corev1.Service {
+func MinioService(namespace string, name string) *corev1.Service {
 	service := &corev1.Service{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "v1",
 			Kind:       "Service",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "kotsadm-minio",
+			Name:      name,
 			Namespace: namespace,
 			Labels:    types.GetKotsadmLabels(),
 		},
 		Spec: corev1.ServiceSpec{
 			Selector: map[string]string{
-				"app": "kotsadm-minio",
+				"app": name,
 			},
 			Type: corev1.ServiceTypeClusterIP,
 			Ports: []corev1.ServicePort{
@@ -244,4 +253,137 @@ func MinioService(namespace string) *corev1.Service {
 	}
 
 	return service
+}
+
+func MinioXlMigrationScriptsConfigMap(namespace string) *corev1.ConfigMap {
+	data := map[string]string{}
+
+	data["migrate-minio-xl.sh"] = migrateMinioXlScript
+
+	configMap := &corev1.ConfigMap{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: "v1",
+			Kind:       "ConfigMap",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "kotsadm-minio-xl-migration-scripts",
+			Namespace: namespace,
+			Labels:    types.GetKotsadmLabels(),
+		},
+		Data: data,
+	}
+	return configMap
+}
+
+func MinioXlMigrationJob(deployOptions types.DeployOptions, namespace string) *batchv1.Job {
+	scriptsFileMode := int32(0755)
+	return &batchv1.Job{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "kotsadm-migrate-minio-xl",
+			Namespace: namespace,
+			Labels: map[string]string{
+				"app": "kotsadm-migrate-minio-xl",
+			},
+		},
+		Spec: batchv1.JobSpec{
+			Template: corev1.PodTemplateSpec{
+				ObjectMeta: metav1.ObjectMeta{
+					Labels: map[string]string{
+						"app": "kotsadm-migrate-minio-xl",
+					},
+				},
+				Spec: corev1.PodSpec{
+					RestartPolicy: corev1.RestartPolicyNever,
+					Containers: []corev1.Container{
+						{
+							Image:           GetAdminConsoleImage(deployOptions, "minio-client"),
+							ImagePullPolicy: corev1.PullIfNotPresent,
+							Name:            "migrate-minio-xl",
+							Command: []string{
+								"/scripts/migrate-minio-xl.sh",
+							},
+							Env: []corev1.EnvVar{
+								{
+									Name:  "S3_ENDPOINT_OLD",
+									Value: "http://kotsadm-minio:9000",
+								},
+								{
+									Name:  "S3_ENDPOINT_NEW",
+									Value: "http://kotsadm-minio-xl-migration:9000",
+								},
+								{
+									Name:  "S3_BUCKET_NAME",
+									Value: "kotsadm",
+								},
+								{
+									Name: "S3_ACCESS_KEY_ID",
+									ValueFrom: &corev1.EnvVarSource{
+										SecretKeyRef: &corev1.SecretKeySelector{
+											LocalObjectReference: corev1.LocalObjectReference{
+												Name: "kotsadm-minio",
+											},
+											Key:      "accesskey",
+											Optional: pointer.BoolPtr(true),
+										},
+									},
+								},
+								{
+									Name: "S3_SECRET_ACCESS_KEY",
+									ValueFrom: &corev1.EnvVarSource{
+										SecretKeyRef: &corev1.SecretKeySelector{
+											LocalObjectReference: corev1.LocalObjectReference{
+												Name: "kotsadm-minio",
+											},
+											Key:      "secretkey",
+											Optional: pointer.BoolPtr(true),
+										},
+									},
+								},
+								{
+									Name:  "S3_BUCKET_ENDPOINT",
+									Value: "true",
+								},
+							},
+							Resources: corev1.ResourceRequirements{
+								Limits: corev1.ResourceList{
+									"cpu":    resource.MustParse("100m"),
+									"memory": resource.MustParse("512Mi"),
+								},
+								Requests: corev1.ResourceList{
+									"cpu":    resource.MustParse("50m"),
+									"memory": resource.MustParse("100Mi"),
+								},
+							},
+							SecurityContext: secureContainerContext(deployOptions.StrictSecurityContext),
+							VolumeMounts: []corev1.VolumeMount{
+								{
+									Name:      "kotsadm-minio-xl-migration-scripts",
+									MountPath: "/scripts",
+								},
+							},
+						},
+					},
+					Volumes: []corev1.Volume{
+						{
+							Name: "kotsadm-minio-xl-migration-scripts",
+							VolumeSource: corev1.VolumeSource{
+								ConfigMap: &corev1.ConfigMapVolumeSource{
+									LocalObjectReference: corev1.LocalObjectReference{
+										Name: "kotsadm-minio-xl-migration-scripts",
+									},
+									DefaultMode: &scriptsFileMode,
+									Items: []corev1.KeyToPath{
+										{
+											Key:  "migrate-minio-xl.sh",
+											Path: "migrate-minio-xl.sh",
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	}
 }

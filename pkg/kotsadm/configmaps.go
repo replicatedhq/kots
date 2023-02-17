@@ -174,3 +174,30 @@ func configMapFromFile(deployOptions types.DeployOptions, configMapName string, 
 
 	return configMap, nil
 }
+
+func ensureMinioXlMigrationScriptsConfigmap(namespace string, clientset kubernetes.Interface) error {
+	desiredConfigMap := kotsadmobjects.MinioXlMigrationScriptsConfigMap(namespace)
+
+	existingConfigMap, err := clientset.CoreV1().ConfigMaps(namespace).Get(context.TODO(), desiredConfigMap.Name, metav1.GetOptions{})
+	if err != nil {
+		if !kuberneteserrors.IsNotFound(err) {
+			return errors.Wrap(err, "failed to get existing minio xl migration scripts configmap")
+		}
+
+		_, err := clientset.CoreV1().ConfigMaps(namespace).Create(context.TODO(), desiredConfigMap, metav1.CreateOptions{})
+		if err != nil {
+			return errors.Wrap(err, "failed to create minio xl migration scripts configmap")
+		}
+
+		return nil
+	}
+
+	existingConfigMap = updateConfigMap(existingConfigMap, desiredConfigMap)
+
+	_, err = clientset.CoreV1().ConfigMaps(namespace).Update(context.TODO(), existingConfigMap, metav1.UpdateOptions{})
+	if err != nil {
+		return errors.Wrap(err, "failed to update minio xl migration scripts configmap")
+	}
+
+	return nil
+}

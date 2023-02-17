@@ -126,6 +126,12 @@ func Upgrade(clientset *kubernetes.Clientset, upgradeOptions types.UpgradeOption
 	deployOptions.IncludeMinio = upgradeOptions.IncludeMinio
 	deployOptions.StrictSecurityContext = upgradeOptions.StrictSecurityContext
 
+	if upgradeOptions.IncludeMinio {
+		if err := MigrateExistingMinioBackend(*deployOptions, clientset, log, upgradeOptions.Namespace); err != nil {
+			return errors.Wrap(err, "failed to migrate existing minio")
+		}
+	}
+
 	// Attempt migrations to fail early.
 	if !deployOptions.IncludeMinioSnapshots {
 		if err = MigrateExistingMinioFilesystemDeployments(log, deployOptions); err != nil {
@@ -532,7 +538,7 @@ func ensureKotsadm(deployOptions types.DeployOptions, clientset *kubernetes.Clie
 
 		g.Go(func() error {
 			if deployOptions.IncludeMinio {
-				if err := ensureMinio(deployOptions, clientset); err != nil {
+				if err := ensureMinio(deployOptions, clientset, "kotsadm-minio"); err != nil {
 					return errors.Wrap(err, "failed to ensure minio")
 				}
 				if err := k8sutil.WaitForStatefulSetReady(ctx, clientset, deployOptions.Namespace, "kotsadm-minio", deployOptions.Timeout); err != nil {
