@@ -89,6 +89,7 @@ func RenderChartsArchive(versionArchive string, downstreamName string, kustomize
 	var totalDuration time.Duration
 	totalPaths := 0
 	startWalk := time.Now()
+	durations := []time.Duration{}
 	err = filepath.WalkDir(archiveChartDir,
 		func(path string, info fs.DirEntry, err error) error {
 			start := time.Now()
@@ -142,6 +143,7 @@ func RenderChartsArchive(versionArchive string, downstreamName string, kustomize
 				return errors.Wrapf(err, "failed to export content for %s", path)
 			}
 			thisDuration := time.Since(start)
+			durations = append(durations, thisDuration)
 			totalDuration += thisDuration
 			return nil
 		})
@@ -152,6 +154,13 @@ func RenderChartsArchive(versionArchive string, downstreamName string, kustomize
 	if err != nil {
 		return nil, nil, errors.Wrap(err, "failed to walk charts directory")
 	}
+	logs.Printf("LG: file tree durations: ")
+	//log durations
+	for _, d := range durations {
+		logs.Printf("%v", d)
+	}
+
+	logs.Printf("LG: ------------------")
 
 	tempDir, err := ioutil.TempDir("", "helmkots")
 	if err != nil {
