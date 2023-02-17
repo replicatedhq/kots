@@ -85,6 +85,7 @@ func RenderChartsArchive(versionArchive string, downstreamName string, kustomize
 	wg.Wait()
 	processArchiveDuration := time.Since(processArchiveStart)
 	logs.Printf("LG: Process archive duration: %v, totalPathsProcessed: %v", processArchiveDuration, totalPathsProcessed)
+	logs.Printf("LG: Length of kustomize List: %v", len(kustomizedFiles.list))
 
 	var totalDuration time.Duration
 	totalPaths := 0
@@ -101,6 +102,9 @@ func RenderChartsArchive(versionArchive string, downstreamName string, kustomize
 			if err != nil {
 				return errors.Wrapf(err, "failed to get %s relative path to %s", path, archiveChartDir)
 			}
+
+			//sleep for 5 seconds
+			time.Sleep(5 * time.Second)
 
 			for _, filename := range metadataFiles {
 				err = copyHelmMetadataFile(sourceChartsDir, destChartsDir, relPath, filename)
@@ -154,6 +158,7 @@ func RenderChartsArchive(versionArchive string, downstreamName string, kustomize
 	if err != nil {
 		return nil, nil, errors.Wrap(err, "failed to walk charts directory")
 	}
+	logs.Printf("LG: Length of kustomizeList: %v", len(kustomizedFilesList))
 	logs.Printf("LG: file tree durations: ")
 	//log durations
 	for _, d := range durations {
