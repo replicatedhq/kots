@@ -15,6 +15,8 @@ import (
 
 const DaemonSetResourceKind = "daemonset"
 
+var lastSeenGeneration int64 = -1
+
 type daemonSetEventHandler struct {
 	informers       []types.StatusInformer
 	resourceStateCh chan<- types.ResourceState
@@ -99,22 +101,22 @@ func makeDaemonSetResourceState(r *appsv1.DaemonSet, state types.State) types.Re
 	}
 }
 
-// The order of checks is done "top-down" to avoid calculating the wrong state.
-// Notes:
-//   - Check the generations first because the cluster will look both ready and degraded
-//   - Check for unavailable or misscheduled before the current scheduled and ready to not count
-//     incorrectly scheduled pods.
 func calculateDaemonSetState(r *appsv1.DaemonSet) types.State {
 	if r == nil {
 		return types.StateUnavailable
 	}
 
-	if r.Status.ObservedGeneration < r.ObjectMeta.Generation {
-		return types.StateUpdating
-	}
+	if r.Status.ObservedGeneration > lastSeenGeneration {
+		if r.Status.UpdatedNumberScheduled < r.Status.DesiredNumberScheduled {
+			return types.StateUpdating
+		}
 
-	if r.Status.ObservedGeneration > r.ObjectMeta.Generation {
-		return types.StateDegraded
+		if r.Status.NumberAvailable < r.Status.DesiredNumberScheduled {
+			return types.StateUpdating
+		}
+
+		lastSeenGeneration = r.Generation
+		return types.StateReady
 	}
 
 	if r.Status.NumberUnavailable > 0 {
