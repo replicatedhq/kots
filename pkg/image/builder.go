@@ -178,6 +178,10 @@ func GetPrivateImages(baseDir string, kotsKindsImages []string, checkedImages ma
 				return nil
 			})
 		})
+		filewalkDurationBeforePrivate := time.Since(startTwo)
+		if verbose {
+			logs.Printf("LG: part two duration before private images: %v", filewalkDurationBeforePrivate)
+		}
 
 	// Check for private images:
 	err = checkForPrivateImages(uncheckedImages, checkedImages, uniqueImages, dockerHubRegistry)

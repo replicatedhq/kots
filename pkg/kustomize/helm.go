@@ -90,10 +90,10 @@ func RenderChartsArchive(versionArchive string, downstreamName string, kustomize
 	var totalDuration time.Duration
 	totalPaths := 0
 	startWalk := time.Now()
-	durations := []time.Duration{}
+	// durations := []time.Duration{}
 	err = filepath.WalkDir(archiveChartDir,
 		func(path string, info fs.DirEntry, err error) error {
-			start := time.Now()
+			// start := time.Now()
 			totalPaths++
 			if err != nil {
 				return err
@@ -104,7 +104,7 @@ func RenderChartsArchive(versionArchive string, downstreamName string, kustomize
 			}
 
 			//sleep for 5 seconds
-			time.Sleep(5 * time.Second)
+			// time.Sleep(5 * time.Second)
 
 			for _, filename := range metadataFiles {
 				err = copyHelmMetadataFile(sourceChartsDir, destChartsDir, relPath, filename)
@@ -146,8 +146,8 @@ func RenderChartsArchive(versionArchive string, downstreamName string, kustomize
 			if err != nil {
 				return errors.Wrapf(err, "failed to export content for %s", path)
 			}
-			thisDuration := time.Since(start)
-			durations = append(durations, thisDuration)
+			// thisDuration := time.Since(start)
+			// durations = append(durations, thisDuration)
 			totalDuration += thisDuration
 			return nil
 		})
@@ -159,13 +159,13 @@ func RenderChartsArchive(versionArchive string, downstreamName string, kustomize
 		return nil, nil, errors.Wrap(err, "failed to walk charts directory")
 	}
 	logs.Printf("LG: Length of kustomizeList: %v", len(kustomizedFilesList))
-	logs.Printf("LG: file tree durations: ")
-	//log durations
-	for _, d := range durations {
-		logs.Printf("%v", d)
-	}
+	// logs.Printf("LG: file tree durations: ")
+	// //log durations
+	// for _, d := range durations {
+	// 	logs.Printf("%v", d)
+	// }
 
-	logs.Printf("LG: ------------------")
+	// logs.Printf("LG: ------------------")
 
 	tempDir, err := ioutil.TempDir("", "helmkots")
 	if err != nil {
