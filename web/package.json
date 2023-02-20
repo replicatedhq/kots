@@ -122,7 +122,7 @@
     "webpack-merge": "5.8.0"
   },
   "dependencies": {
-    "@grafana/data": "^8.5.2",
+    "@grafana/data": "^8.5.16",
     "@maji/react-prism": "^1.0.1",
     "@monaco-editor/react": "^4.4.5",
     "@storybook/addon-storysource": "^6.5.16",
