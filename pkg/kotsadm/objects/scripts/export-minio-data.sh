@@ -24,13 +24,6 @@ then
     exit 1
 fi
 
-# check if the migration has already been completed
-if [ -f /export/.migration ];
-then
-    echo "migration already completed, no-op"
-    exit 0
-fi
-
 # change the working directory to the migration directory
 cd $KOTSADM_MINIO_MIGRATION_WORK_DIR
 
@@ -48,7 +41,7 @@ done
 echo "aliasing minio instance"
 until $KOTSADM_MINIO_MIGRATION_WORK_DIR/bin/mc alias set $KOTSADM_MINIO_LEGACY_ALIAS $KOTSADM_MINIO_ENDPOINT $MINIO_ACCESS_KEY $MINIO_SECRET_KEY; do
     # minio may not actually be ready to accept requests immediately after it is "ready", so this provides a secondary check
-    echo "waiting for minio to be ready"
+    echo "attempting to alias minio instance"
     sleep 1
 done
 

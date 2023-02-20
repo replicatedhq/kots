@@ -44,7 +44,7 @@ done
 echo "aliasing minio instance"
 until $KOTSADM_MINIO_MIGRATION_WORK_DIR/bin/mc alias set $KOTSADM_MINIO_NEW_ALIAS $KOTSADM_MINIO_ENDPOINT $MINIO_ACCESS_KEY $MINIO_SECRET_KEY; do
     # minio may not actually be ready to accept requests immediately after it is "ready", so this provides a secondary check
-    echo "waiting for minio to be ready"
+    echo "attempting to alias minio instance"
     sleep 1
 done
 
@@ -81,5 +81,8 @@ shopt -s dotglob
 mkdir -p $KOTSADM_MINIO_MIGRATION_WORK_DIR/old-data
 mv -v /export/* $KOTSADM_MINIO_MIGRATION_WORK_DIR/old-data/
 mv -v $KOTSADM_MINIO_MIGRATION_WORK_DIR/new-data/* /export/
+
+echo "adding migration complete marker"
+touch /export/.migration
 
 echo "data migration complete"
