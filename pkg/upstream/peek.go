@@ -9,15 +9,6 @@ import (
 )
 
 func GetUpdatesUpstream(upstreamURI string, fetchOptions *types.FetchOptions) (*types.UpdateCheckResult, error) {
-	updates, err := getUpdatesUpstream(upstreamURI, fetchOptions)
-	if err != nil {
-		return nil, errors.Wrap(err, "download upstream failed")
-	}
-
-	return updates, nil
-}
-
-func getUpdatesUpstream(upstreamURI string, fetchOptions *types.FetchOptions) (*types.UpdateCheckResult, error) {
 	if !util.IsURL(upstreamURI) {
 		return nil, errors.New("not implemented")
 	}
@@ -26,19 +17,8 @@ func getUpdatesUpstream(upstreamURI string, fetchOptions *types.FetchOptions) (*
 	if err != nil {
 		return nil, errors.Wrap(err, "parse request uri failed")
 	}
-	if u.Scheme == "helm" {
-		return getUpdatesHelm(u, fetchOptions.HelmRepoURI)
-	}
 	if u.Scheme == "replicated" {
 		return getUpdatesReplicated(u, fetchOptions)
-	}
-	if u.Scheme == "git" {
-		// return getUpdatesGit(upstreamURI)
-		// TODO
-	}
-	if u.Scheme == "http" || u.Scheme == "https" {
-		// return getUpdatesHttp(upstreamURI)
-		// TODO
 	}
 
 	return nil, errors.Errorf("unknown protocol scheme %q", u.Scheme)

@@ -9,7 +9,7 @@ PullOptions:
   SharedPassword: dummy-pass
   RewriteImages: true
   RewriteImageOptions:
-    Host: proxy.replicated.com
+    Hostname: proxy.replicated.com
     Username: test
     Password: fake-pass
     IsReadOnly: true

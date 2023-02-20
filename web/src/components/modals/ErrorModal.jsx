@@ -12,6 +12,7 @@ export default function ErrorModal(props) {
     loading,
     err,
     appSlug,
+    showDismissButton = false,
   } = props;
 
   return (
@@ -26,7 +27,7 @@ export default function ErrorModal(props) {
       className="Modal DefaultSize"
     >
       <div className="Modal-body">
-        <div className="flex justifyContent--flexEnd">
+        <div className="tw-flex tw-justify-end">
           <Icon
             icon="close"
             size={14}
@@ -34,7 +35,7 @@ export default function ErrorModal(props) {
             onClick={() => toggleErrorModal()}
           />
         </div>
-        <div className="flex flex-column justifyContent--center alignItems--center">
+        <div className="tw-flex tw-flex-col tw-justify-center tw-items-center">
           <span className="icon redWarningIcon flex-auto" />
           <div className="flex flex-column alignItems--center u-marginTop--10">
             <p className="u-textColor--error u-fontSize--largest u-fontWeight--bold u-lineHeight--normal">
@@ -45,12 +46,22 @@ export default function ErrorModal(props) {
             </p>
           </div>
           <div className="flex u-marginTop--20">
-            <Link
-              to={appSlug ? `/app/${appSlug}` : "/"}
-              className="btn secondary blue"
-            >
-              Back to the dashboard
-            </Link>
+            {!showDismissButton && (
+              <Link
+                to={appSlug ? `/app/${appSlug}` : "/"}
+                className="btn secondary blue"
+              >
+                Back to the dashboard
+              </Link>
+            )}
+            {showDismissButton && (
+              <button
+                className="btn secondary blue"
+                onClick={() => toggleErrorModal()}
+              >
+                Ok, got it!
+              </button>
+            )}
             {tryAgain && typeof tryAgain === "function" && (
               <div className="flex-auto u-marginLeft--10">
                 <button

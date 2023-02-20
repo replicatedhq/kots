@@ -58,7 +58,7 @@ Signed SBOMs for KOTS Go dependencies and are included in each release.
 Use [Cosign](https://github.com/sigstore/cosign) to validate the signature by running the following
 command.
 ```shell
-cosign verify-blob -key sbom/key.pub -signature sbom/kots-sbom.tgz.sig sbom/kots-sbom.tgz
+cosign verify-blob --key sbom/key.pub --signature sbom/kots-sbom.tgz.sig sbom/kots-sbom.tgz
 ```
 
 # Development
@@ -128,7 +128,7 @@ This V2 work flow attempts to solve these issues by:
 | Build and Deploy     | `okteto pipeline deploy -f okteto-v2.yml` | Runs both build and deploy sections of the Okteto manifest. Perfect for updating or creating a namespace.  |
 | Build single service | `okteto build -f okteto-v2.yml {{SERVICE_NAME}}` | Builds the named service (kotsadm, kotsadm-web, kotsadm-migrations) and pushes it to the Okteto registry. |
 | Deploy               | `okteto deploy -f okteto-v2.yml` | Deploys the kubernetes manifests. If there were builds before this command, the new images will be used in the deployment. | 
-| Development mode     | `okteto up -f okteto-v2.yml` | Prompts the use for what container to put into development mode.  Only web and migrations should appear at this time. |
+| Development mode     | `okteto up -f okteto-v2.yml` | Prompts the use for what container to put into development mode.  kotsadm(api), web and migrations will appear for debugging. |
 
 #### Warning
 

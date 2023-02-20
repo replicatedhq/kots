@@ -117,7 +117,7 @@ class KotsApplicationTree extends React.Component<Props, State> {
             Need to edit these files?{" "}
             <span
               onClick={this.toggleInstructionsModal}
-              className="replicated-link"
+              className="u-fontWeight--bold u-cursor--pointer u-textDecoration--underlineOnHover"
             >
               Click here
             </span>{" "}

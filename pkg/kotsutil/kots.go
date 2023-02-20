@@ -33,6 +33,7 @@ import (
 	"github.com/replicatedhq/troubleshoot/pkg/collect"
 	"github.com/replicatedhq/troubleshoot/pkg/docrewrite"
 	velerov1 "github.com/vmware-tanzu/velero/pkg/apis/velero/v1"
+	"gopkg.in/yaml.v2"
 	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	serializer "k8s.io/apimachinery/pkg/runtime/serializer/json"
@@ -58,6 +59,17 @@ var (
 		".svg":   "svg",
 	}
 )
+
+type OverlySimpleGVK struct {
+	APIVersion string               `yaml:"apiVersion"`
+	Kind       string               `yaml:"kind"`
+	Metadata   OverlySimpleMetadata `yaml:"metadata"`
+}
+
+type OverlySimpleMetadata struct {
+	Name      string `yaml:"name"`
+	Namespace string `yaml:"namespace"`
+}
 
 // KotsKinds are all of the special "client-side" kinds that are packaged in
 // an application. These should be pointers because they are all optional.
@@ -570,9 +582,13 @@ func LoadHelmChartsFromPath(fromDir string) ([]*kotsv1beta1.HelmChart, error) {
 				return errors.Wrap(err, "failed to read file")
 			}
 
+			if !IsHelmChartKind(contents) {
+				return nil
+			}
+
 			decoded, gvk, err := decode(contents, nil, nil)
 			if err != nil {
-				return nil
+				return errors.Wrap(err, "failed to decode")
 			}
 
 			if gvk.String() == "kots.io/v1beta1, Kind=HelmChart" {
@@ -588,6 +604,17 @@ func LoadHelmChartsFromPath(fromDir string) ([]*kotsv1beta1.HelmChart, error) {
 	}
 
 	return charts, nil
+}
+
+func IsHelmChartKind(content []byte) bool {
+	gvk := OverlySimpleGVK{}
+	if err := yaml.Unmarshal(content, &gvk); err != nil {
+		return false
+	}
+	if gvk.APIVersion == "kots.io/v1beta1" && gvk.Kind == "HelmChart" {
+		return true
+	}
+	return false
 }
 
 func LoadInstallationFromPath(installationFilePath string) (*kotsv1beta1.Installation, error) {
@@ -835,12 +862,10 @@ func GetInstallationParams(configMapName string) (InstallationParams, error) {
 		return autoConfig, errors.Wrap(err, "failed to get k8s clientset")
 	}
 
-	isKurl, err := kurl.IsKurl()
+	isKurl, err := kurl.IsKurl(clientset)
 	if err != nil {
 		return autoConfig, errors.Wrap(err, "failed to check if cluster is kurl")
 	}
-
-	autoConfig.EnableImageDeletion = isKurl
 
 	kotsadmConfigMap, err := clientset.CoreV1().ConfigMaps(util.PodNamespace).Get(context.TODO(), configMapName, metav1.GetOptions{})
 	if err != nil {
@@ -862,6 +887,12 @@ func GetInstallationParams(configMapName string) (InstallationParams, error) {
 	autoConfig.WaitDuration, _ = time.ParseDuration(kotsadmConfigMap.Data["wait-duration"])
 	autoConfig.WithMinio, _ = strconv.ParseBool(kotsadmConfigMap.Data["with-minio"])
 	autoConfig.AppVersionLabel = kotsadmConfigMap.Data["app-version-label"]
+
+	if enableImageDeletion, ok := kotsadmConfigMap.Data["enable-image-deletion"]; ok {
+		autoConfig.EnableImageDeletion, _ = strconv.ParseBool(enableImageDeletion)
+	} else {
+		autoConfig.EnableImageDeletion = isKurl
+	}
 
 	return autoConfig, nil
 }

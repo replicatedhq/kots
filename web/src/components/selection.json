@@ -5,23 +5,78 @@
       "icon": {
         "paths": [
           "M530.485 407.656l-37.168-37.168c-7.219-7.219-9.431-17.945-6.687-27.777 24.784-88.81-12.406-186.49-95.944-234.72-64.362-37.16-140.388-35.817-201.407-3.119-16.208 8.685-14.659 30.956 1.267 40.15l111.416 64.326c12.511 7.224 16.798 23.222 9.574 35.734l-48.647 84.259c-7.224 12.511-23.222 16.798-35.733 9.575l-111.417-64.327c-15.925-9.194-35.987 0.599-35.405 18.979 2.192 69.194 39.042 135.706 103.404 172.866 51.242 29.584 109.875 34.764 162.444 19.146 9.943-2.954 20.878-0.792 28.212 6.543l384.23 384.236c33.216 33.21 87.066 33.21 120.282 0 33.216-33.216 33.216-87.066 0-120.282l-263.955-263.955",
-          "M366.025 484.41l-210.974 210.976c-47.926 47.923-47.926 125.626 0 173.555v0c47.925 47.923 125.628 47.923 173.553 0l210.975-210.976",
+          "M366.024 484.41l-210.974 210.976c-47.926 47.923-47.926 125.626 0 173.555v0c47.926 47.923 125.628 47.923 173.554 0l210.974-210.976",
           "M494.059 609.847l192.085-192.083c20.147-20.149 46.445-32.998 74.72-36.513l30.138-3.745c20.781-2.582 38.982-15.17 48.736-33.702l53.203-101.077c13.062-24.812 8.448-55.237-11.379-75.064l-25.222-25.225c-19.827-19.827-50.253-24.439-75.066-11.379l-101.075 53.202c-18.534 9.754-31.123 27.958-33.702 48.74l-3.744 30.134c-3.517 28.278-16.366 54.574-36.515 74.723l-192.083 192.083",
           "M794.79 827.078c17.837 0 32.301-14.464 32.301-32.307 0-17.837-14.464-32.301-32.301-32.301-17.843 0-32.307 14.464-32.307 32.301 0 17.843 14.464 32.307 32.307 32.307z"
         ],
-        "attrs": [],
+        "attrs": [
+          {
+            "fill": "none",
+            "stroke": "currentColor",
+            "strokeLinejoin": "miter",
+            "strokeLinecap": "butt",
+            "strokeMiterlimit": "4",
+            "strokeWidth": 64
+          },
+          {
+            "fill": "none",
+            "stroke": "currentColor",
+            "strokeLinejoin": "round",
+            "strokeLinecap": "butt",
+            "strokeMiterlimit": "4",
+            "strokeWidth": 64
+          },
+          {
+            "fill": "none",
+            "stroke": "currentColor",
+            "strokeLinejoin": "round",
+            "strokeLinecap": "butt",
+            "strokeMiterlimit": "4",
+            "strokeWidth": 64
+          },
+          {}
+        ],
         "isMulticolor": false,
         "isMulticolor2": true,
         "grid": 0,
-        "tags": ["tools"]
+        "tags": ["Group 134"],
+        "colorPermutations": {
+          "15515515516868681": [{ "s": 1 }, { "s": 1 }, { "s": 1 }, { "f": 1 }]
+        }
       },
-      "attrs": [{}],
+      "attrs": [
+        {
+          "fill": "none",
+          "stroke": "currentColor",
+          "strokeLinejoin": "miter",
+          "strokeLinecap": "butt",
+          "strokeMiterlimit": "4",
+          "strokeWidth": 64
+        },
+        {
+          "fill": "none",
+          "stroke": "currentColor",
+          "strokeLinejoin": "round",
+          "strokeLinecap": "butt",
+          "strokeMiterlimit": "4",
+          "strokeWidth": 64
+        },
+        {
+          "fill": "none",
+          "stroke": "currentColor",
+          "strokeLinejoin": "round",
+          "strokeLinecap": "butt",
+          "strokeMiterlimit": "4",
+          "strokeWidth": 64
+        },
+        {}
+      ],
       "properties": {
-        "order": 252,
-        "id": 0,
+        "order": 255,
+        "id": 2,
         "name": "tools",
         "prevSize": 32,
-        "code": 59748
+        "code": 59648
       },
       "setIdx": 0,
       "setId": 1,
@@ -42,11 +97,11 @@
       },
       "attrs": [{}],
       "properties": {
-        "order": 4,
+        "order": 256,
         "id": 62,
         "name": "yaml-square-filled",
         "prevSize": 32,
-        "code": 59648
+        "code": 59649
       },
       "setIdx": 1,
       "setId": 0,
@@ -69,12 +124,12 @@
       },
       "attrs": [{}, { "fill": "rgb(255, 255, 255)" }],
       "properties": {
-        "order": 5,
+        "order": 257,
         "id": 61,
         "name": "info-circle-fill",
         "prevSize": 32,
-        "code": 59649,
-        "codes": [59649, 59650]
+        "code": 59650,
+        "codes": [59650, 59748]
       },
       "setIdx": 1,
       "setId": 0,
@@ -97,7 +152,7 @@
       },
       "attrs": [{}, {}],
       "properties": {
-        "order": 6,
+        "order": 258,
         "id": 60,
         "name": "settings-gear-outline",
         "prevSize": 32,
@@ -125,7 +180,7 @@
       },
       "attrs": [{}, {}],
       "properties": {
-        "order": 7,
+        "order": 259,
         "id": 59,
         "name": "user-outline",
         "prevSize": 32,
@@ -162,7 +217,7 @@
       },
       "attrs": [{}, {}, {}, {}, {}],
       "properties": {
-        "order": 8,
+        "order": 260,
         "id": 58,
         "name": "stopwatch",
         "prevSize": 32,
@@ -187,7 +242,7 @@
       },
       "attrs": [{}],
       "properties": {
-        "order": 9,
+        "order": 261,
         "id": 57,
         "name": "dollar-sign",
         "prevSize": 32,
@@ -216,7 +271,7 @@
       },
       "attrs": [{}, {}, {}],
       "properties": {
-        "order": 10,
+        "order": 262,
         "id": 56,
         "name": "code",
         "prevSize": 32,
@@ -241,7 +296,7 @@
       },
       "attrs": [{}],
       "properties": {
-        "order": 11,
+        "order": 263,
         "id": 55,
         "name": "prev-arrow",
         "prevSize": 32,
@@ -266,7 +321,7 @@
       },
       "attrs": [{}],
       "properties": {
-        "order": 12,
+        "order": 264,
         "id": 54,
         "name": "next-arrow",
         "prevSize": 32,
@@ -291,7 +346,7 @@
       },
       "attrs": [{}],
       "properties": {
-        "order": 13,
+        "order": 265,
         "id": 53,
         "name": "up-arrow",
         "prevSize": 32,
@@ -316,7 +371,7 @@
       },
       "attrs": [{}],
       "properties": {
-        "order": 14,
+        "order": 266,
         "id": 52,
         "name": "down-arrow",
         "prevSize": 32,
@@ -341,7 +396,7 @@
       },
       "attrs": [{}],
       "properties": {
-        "order": 15,
+        "order": 267,
         "id": 51,
         "name": "paper-airplane",
         "prevSize": 32,
@@ -369,7 +424,7 @@
       },
       "attrs": [{}, {}],
       "properties": {
-        "order": 16,
+        "order": 268,
         "id": 50,
         "name": "sync-license",
         "prevSize": 32,
@@ -397,7 +452,7 @@
       },
       "attrs": [{}, {}],
       "properties": {
-        "order": 17,
+        "order": 269,
         "id": 49,
         "name": "check-update",
         "prevSize": 32,
@@ -425,7 +480,7 @@
       },
       "attrs": [{}, {}, {}],
       "properties": {
-        "order": 18,
+        "order": 270,
         "id": 48,
         "name": "schedule-sync",
         "prevSize": 32,
@@ -452,7 +507,7 @@
       },
       "attrs": [{}, {}],
       "properties": {
-        "order": 19,
+        "order": 271,
         "id": 47,
         "name": "schedule-update",
         "prevSize": 32,
@@ -486,7 +541,7 @@
       },
       "attrs": [{}, {}, {}, {}],
       "properties": {
-        "order": 20,
+        "order": 272,
         "id": 46,
         "name": "more-circle-outline",
         "prevSize": 32,
@@ -525,7 +580,7 @@
       },
       "attrs": [{}, {}, {}, {}, {}, {}],
       "properties": {
-        "order": 21,
+        "order": 273,
         "id": 45,
         "name": "small-file",
         "prevSize": 32,
@@ -552,7 +607,7 @@
       },
       "attrs": [{}, {}],
       "properties": {
-        "order": 22,
+        "order": 274,
         "id": 44,
         "name": "sync",
         "prevSize": 32,
@@ -589,7 +644,7 @@
       },
       "attrs": [{}, {}, {}, {}, {}],
       "properties": {
-        "order": 23,
+        "order": 275,
         "id": 43,
         "name": "release-notes",
         "prevSize": 32,
@@ -618,7 +673,7 @@
       },
       "attrs": [{}, {}, {}],
       "properties": {
-        "order": 24,
+        "order": 276,
         "id": 42,
         "name": "megaphone-filled",
         "prevSize": 32,
@@ -642,7 +697,7 @@
       },
       "attrs": [{}],
       "properties": {
-        "order": 25,
+        "order": 277,
         "id": 41,
         "name": "dotted-circle",
         "prevSize": 32,
@@ -666,7 +721,7 @@
       },
       "attrs": [{}],
       "properties": {
-        "order": 26,
+        "order": 278,
         "id": 40,
         "name": "plus",
         "prevSize": 32,
@@ -695,7 +750,7 @@
       },
       "attrs": [{}, {}, {}],
       "properties": {
-        "order": 27,
+        "order": 279,
         "id": 39,
         "name": "view-config",
         "prevSize": 32,
@@ -724,7 +779,7 @@
       },
       "attrs": [{}, {}, {}],
       "properties": {
-        "order": 28,
+        "order": 280,
         "id": 38,
         "name": "edit-config",
         "prevSize": 32,
@@ -763,7 +818,7 @@
       },
       "attrs": [{}, {}, {}, {}, {}, {}],
       "properties": {
-        "order": 29,
+        "order": 281,
         "id": 37,
         "name": "view-logs",
         "prevSize": 32,
@@ -803,7 +858,7 @@
       },
       "attrs": [{}, {}, {}, {}, {}, {}, {}],
       "properties": {
-        "order": 30,
+        "order": 282,
         "id": 36,
         "name": "preflight-checks",
         "prevSize": 32,
@@ -831,7 +886,7 @@
       },
       "attrs": [{}, {}],
       "properties": {
-        "order": 31,
+        "order": 283,
         "id": 35,
         "name": "download",
         "prevSize": 32,
@@ -865,7 +920,7 @@
       },
       "attrs": [{}, {}, {}, {}],
       "properties": {
-        "order": 32,
+        "order": 284,
         "id": 34,
         "name": "trash",
         "prevSize": 32,
@@ -892,7 +947,7 @@
       },
       "attrs": [{}, {}],
       "properties": {
-        "order": 33,
+        "order": 285,
         "id": 33,
         "name": "external-page",
         "prevSize": 32,
@@ -921,7 +976,7 @@
       },
       "attrs": [{ "fill": "rgb(255, 255, 255)" }, {}, {}],
       "properties": {
-        "order": 34,
+        "order": 286,
         "id": 32,
         "name": "text-file-icon",
         "prevSize": 32,
@@ -957,7 +1012,7 @@
       },
       "attrs": [{ "fill": "rgb(255, 255, 255)" }, {}, {}, {}],
       "properties": {
-        "order": 35,
+        "order": 287,
         "id": 31,
         "name": "json-icon",
         "prevSize": 32,
@@ -997,7 +1052,7 @@
       },
       "attrs": [{ "fill": "rgb(255, 255, 255)" }, {}, {}, {}, {}, {}],
       "properties": {
-        "order": 36,
+        "order": 288,
         "id": 30,
         "name": "yaml-icon",
         "prevSize": 32,
@@ -1023,7 +1078,7 @@
       },
       "attrs": [{}],
       "properties": {
-        "order": 37,
+        "order": 289,
         "id": 29,
         "name": "left-arrow-pointer",
         "prevSize": 32,
@@ -1048,7 +1103,7 @@
       },
       "attrs": [{}],
       "properties": {
-        "order": 38,
+        "order": 290,
         "id": 28,
         "name": "right-arrow-pointer",
         "prevSize": 32,
@@ -1073,7 +1128,7 @@
       },
       "attrs": [{}],
       "properties": {
-        "order": 39,
+        "order": 291,
         "id": 27,
         "name": "settings-gear-filled",
         "prevSize": 32,
@@ -1101,7 +1156,7 @@
       },
       "attrs": [{}, {}],
       "properties": {
-        "order": 40,
+        "order": 292,
         "id": 26,
         "name": "marker-tip-outline",
         "prevSize": 32,
@@ -1128,7 +1183,7 @@
       },
       "attrs": [{}, {}],
       "properties": {
-        "order": 41,
+        "order": 293,
         "id": 25,
         "name": "clock-no-ticks",
         "prevSize": 32,
@@ -1155,7 +1210,7 @@
       },
       "attrs": [{}, {}],
       "properties": {
-        "order": 42,
+        "order": 294,
         "id": 24,
         "name": "clock",
         "prevSize": 32,
@@ -1182,7 +1237,7 @@
       },
       "attrs": [{}, {}],
       "properties": {
-        "order": 43,
+        "order": 295,
         "id": 23,
         "name": "helm-logo",
         "prevSize": 32,
@@ -1219,7 +1274,7 @@
       },
       "attrs": [{}, {}, {}, {}, {}],
       "properties": {
-        "order": 44,
+        "order": 296,
         "id": 22,
         "name": "diff-icon",
         "prevSize": 32,
@@ -1244,7 +1299,7 @@
       },
       "attrs": [{}],
       "properties": {
-        "order": 45,
+        "order": 297,
         "id": 21,
         "name": "infinity",
         "prevSize": 32,
@@ -1269,7 +1324,7 @@
       },
       "attrs": [{}],
       "properties": {
-        "order": 46,
+        "order": 298,
         "id": 20,
         "name": "commit",
         "prevSize": 32,
@@ -1294,7 +1349,7 @@
       },
       "attrs": [{}],
       "properties": {
-        "order": 47,
+        "order": 299,
         "id": 19,
         "name": "warning",
         "prevSize": 32,
@@ -1423,7 +1478,7 @@
         {}
       ],
       "properties": {
-        "order": 48,
+        "order": 300,
         "id": 18,
         "name": "file-icon",
         "prevSize": 32,
@@ -1462,7 +1517,7 @@
       },
       "attrs": [{}, {}, {}, {}],
       "properties": {
-        "order": 49,
+        "order": 301,
         "id": 17,
         "name": "merge",
         "prevSize": 32,
@@ -1490,7 +1545,7 @@
       },
       "attrs": [{}, {}, {}],
       "properties": {
-        "order": 50,
+        "order": 302,
         "id": 16,
         "name": "ribbon-circle-outline",
         "prevSize": 32,
@@ -1528,7 +1583,7 @@
       },
       "attrs": [{}, {}, {}, {}, {}, {}],
       "properties": {
-        "order": 51,
+        "order": 303,
         "id": 15,
         "name": "branch-circle-outline",
         "prevSize": 32,
@@ -1582,7 +1637,7 @@
       },
       "attrs": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}],
       "properties": {
-        "order": 52,
+        "order": 304,
         "id": 14,
         "name": "file-circle-outline",
         "prevSize": 32,
@@ -1620,7 +1675,7 @@
       },
       "attrs": [{}, {}, {}, {}, {}, {}],
       "properties": {
-        "order": 53,
+        "order": 305,
         "id": 13,
         "name": "fork-circle-outline",
         "prevSize": 32,
@@ -1647,7 +1702,7 @@
       },
       "attrs": [{}, {}],
       "properties": {
-        "order": 54,
+        "order": 306,
         "id": 12,
         "name": "edit",
         "prevSize": 32,
@@ -1671,7 +1726,7 @@
       },
       "attrs": [{}],
       "properties": {
-        "order": 55,
+        "order": 307,
         "id": 11,
         "name": "close",
         "prevSize": 32,
@@ -1695,7 +1750,7 @@
       },
       "attrs": [{}],
       "properties": {
-        "order": 56,
+        "order": 308,
         "id": 10,
         "name": "kubernetes-logo-filled",
         "prevSize": 32,
@@ -1722,7 +1777,7 @@
       },
       "attrs": [{}, { "fill": "rgb(255, 255, 255)" }],
       "properties": {
-        "order": 57,
+        "order": 309,
         "id": 9,
         "name": "warning-circle-filled",
         "prevSize": 32,
@@ -1750,7 +1805,7 @@
       },
       "attrs": [{}, { "fill": "rgb(255, 255, 255)" }],
       "properties": {
-        "order": 58,
+        "order": 310,
         "id": 8,
         "name": "no-activity-circle-filled",
         "prevSize": 32,
@@ -1778,7 +1833,7 @@
       },
       "attrs": [{}, {}],
       "properties": {
-        "order": 59,
+        "order": 311,
         "id": 7,
         "name": "info-circle-outline",
         "prevSize": 32,
@@ -1802,7 +1857,7 @@
       },
       "attrs": [{}],
       "properties": {
-        "order": 60,
+        "order": 312,
         "id": 6,
         "name": "check-circle-filled",
         "prevSize": 32,
@@ -1829,7 +1884,7 @@
       },
       "attrs": [{}, {}],
       "properties": {
-        "order": 61,
+        "order": 313,
         "id": 5,
         "name": "add-circle-outline",
         "prevSize": 32,
@@ -1857,7 +1912,7 @@
       },
       "attrs": [{}, {}],
       "properties": {
-        "order": 62,
+        "order": 314,
         "id": 4,
         "name": "download-file-outline",
         "prevSize": 32,
@@ -1884,7 +1939,7 @@
       },
       "attrs": [{}, {}],
       "properties": {
-        "order": 63,
+        "order": 315,
         "id": 3,
         "name": "link",
         "prevSize": 32,
@@ -1909,7 +1964,7 @@
       },
       "attrs": [{}],
       "properties": {
-        "order": 64,
+        "order": 316,
         "id": 2,
         "name": "mail",
         "prevSize": 32,
@@ -1952,7 +2007,7 @@
       },
       "attrs": [{}, {}, {}, {}, {}, {}, {}, {}],
       "properties": {
-        "order": 65,
+        "order": 317,
         "id": 1,
         "name": "github-icon",
         "prevSize": 32,
@@ -1977,7 +2032,7 @@
       },
       "attrs": [{}],
       "properties": {
-        "order": 66,
+        "order": 318,
         "id": 0,
         "name": "kots-o-filled",
         "prevSize": 32,
@@ -2009,6 +2064,7 @@
       "color": 0,
       "bgColor": 16777215
     },
-    "historySize": 50
+    "historySize": 50,
+    "gridSize": 16
   }
 }

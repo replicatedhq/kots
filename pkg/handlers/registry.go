@@ -15,6 +15,7 @@ import (
 	"github.com/pkg/errors"
 	apptypes "github.com/replicatedhq/kots/pkg/app/types"
 	dockerregistry "github.com/replicatedhq/kots/pkg/docker/registry"
+	"github.com/replicatedhq/kots/pkg/handlers/types"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/preflight"
 	"github.com/replicatedhq/kots/pkg/registry"
@@ -177,7 +178,7 @@ func (h *Handler) UpdateAppRegistry(w http.ResponseWriter, r *http.Request) {
 
 	if updateAppRegistryRequest.Hostname == "" {
 		if foundApp.IsAirgap {
-			JSON(w, http.StatusBadRequest, NewErrorResponse(errors.New("registry cannot be removed in airgap installs")))
+			JSON(w, http.StatusBadRequest, types.NewErrorResponse(errors.New("registry cannot be removed in airgap installs")))
 			return
 		}
 		// lazy way to clear out all fields
@@ -186,7 +187,7 @@ func (h *Handler) UpdateAppRegistry(w http.ResponseWriter, r *http.Request) {
 		err = dockerregistry.CheckAccess(updateAppRegistryRequest.Hostname, updateAppRegistryRequest.Username, registryPassword)
 		if err != nil {
 			logger.Infof("Failed to test access to %q with user %q: %v", updateAppRegistryRequest.Hostname, updateAppRegistryRequest.Username, err)
-			JSON(w, http.StatusBadRequest, NewErrorResponse(err))
+			JSON(w, http.StatusBadRequest, types.NewErrorResponse(err))
 			return
 		}
 	}
@@ -455,7 +456,7 @@ func (h *Handler) ValidateAppRegistry(w http.ResponseWriter, r *http.Request) {
 
 	if password == registrytypes.PasswordMask {
 		err := errors.Errorf("no password found for %s", validateAppRegistryRequest.Hostname)
-		JSON(w, 400, NewErrorResponse(err))
+		JSON(w, 400, types.NewErrorResponse(err))
 		return
 	}
 
@@ -463,7 +464,7 @@ func (h *Handler) ValidateAppRegistry(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		// NOTE: it is possible this is a 500 sometimes
 		logger.Infof("Failed to test access to %q with user %q: %v", validateAppRegistryRequest.Hostname, validateAppRegistryRequest.Username, err)
-		JSON(w, 400, NewErrorResponse(err))
+		JSON(w, 400, types.NewErrorResponse(err))
 		return
 	}
 

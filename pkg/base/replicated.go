@@ -18,13 +18,13 @@ import (
 	kotsconfig "github.com/replicatedhq/kots/pkg/config"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/logger"
+	registrytypes "github.com/replicatedhq/kots/pkg/registry/types"
 	"github.com/replicatedhq/kots/pkg/template"
 	upstreamtypes "github.com/replicatedhq/kots/pkg/upstream/types"
 	"github.com/replicatedhq/kots/pkg/util"
 	troubleshootv1beta2 "github.com/replicatedhq/troubleshoot/pkg/apis/troubleshoot/v1beta2"
 	troubleshootscheme "github.com/replicatedhq/troubleshoot/pkg/client/troubleshootclientset/scheme"
 	velerov1 "github.com/vmware-tanzu/velero/pkg/apis/velero/v1"
-	stdyaml "gopkg.in/yaml.v2"
 	"helm.sh/helm/v3/pkg/chart"
 	"k8s.io/client-go/kubernetes/scheme"
 	applicationv1beta1 "sigs.k8s.io/application/api/v1beta1"
@@ -59,12 +59,12 @@ func renderReplicated(u *upstreamtypes.Upstream, renderOptions *RenderOptions) (
 		return nil, nil, errors.Wrap(err, "failed to find config file")
 	}
 
-	registry := template.LocalRegistry{
-		Host:      renderOptions.LocalRegistryHost,
-		Namespace: renderOptions.LocalRegistryNamespace,
-		Username:  renderOptions.LocalRegistryUsername,
-		Password:  renderOptions.LocalRegistryPassword,
-		ReadOnly:  renderOptions.LocalRegistryIsReadOnly,
+	registry := registrytypes.RegistrySettings{
+		Hostname:   renderOptions.LocalRegistryHost,
+		Namespace:  renderOptions.LocalRegistryNamespace,
+		Username:   renderOptions.LocalRegistryUsername,
+		Password:   renderOptions.LocalRegistryPassword,
+		IsReadOnly: renderOptions.LocalRegistryIsReadOnly,
 	}
 
 	versionInfo := template.VersionInfoFromInstallation(renderOptions.Sequence, renderOptions.IsAirgap, kotsKinds.Installation.Spec)
@@ -311,13 +311,13 @@ func upstreamFileToBaseFile(upstreamFile upstreamtypes.UpstreamFile, builder tem
 func findAllKotsHelmCharts(upstreamFiles []upstreamtypes.UpstreamFile, builder template.Builder, log *logger.CLILogger) ([]*kotsv1beta1.HelmChart, error) {
 	kotsHelmCharts := []*kotsv1beta1.HelmChart{}
 	for _, upstreamFile := range upstreamFiles {
-		if !isHelmChartKind(upstreamFile.Content) {
+		if !kotsutil.IsHelmChartKind(upstreamFile.Content) {
 			continue
 		}
 
 		baseFile, err := upstreamFileToBaseFile(upstreamFile, builder, log)
 		if err != nil {
-			continue
+			return nil, errors.Wrapf(err, "failed to convert upstream file %s to base", upstreamFile.Path)
 		}
 
 		helmChart, err := ParseHelmChart(baseFile.Content)
@@ -348,19 +348,6 @@ func ParseHelmChart(content []byte) (*kotsv1beta1.HelmChart, error) {
 	}
 
 	return nil, errors.Errorf("not a HelmChart GVK: %s", gvk.String())
-}
-
-func isHelmChartKind(content []byte) bool {
-	gvk := OverlySimpleGVK{}
-
-	if err := stdyaml.Unmarshal(content, &gvk); err != nil {
-		return false
-	}
-
-	if gvk.APIVersion == "kots.io/v1beta1" && gvk.Kind == "HelmChart" {
-		return true
-	}
-	return false
 }
 
 func tryGetConfigFromFileContent(content []byte, log *logger.CLILogger) *kotsv1beta1.Config {

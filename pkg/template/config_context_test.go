@@ -7,7 +7,8 @@ import (
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	"github.com/replicatedhq/kots/kotskinds/multitype"
 	"github.com/replicatedhq/kots/pkg/crypto"
-	registrytypes "github.com/replicatedhq/kots/pkg/docker/registry/types"
+	dockerregistrytypes "github.com/replicatedhq/kots/pkg/docker/registry/types"
+	registrytypes "github.com/replicatedhq/kots/pkg/registry/types"
 	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -484,8 +485,8 @@ func TestBuilder_NewConfigContext(t *testing.T) {
 			builder := Builder{}
 			builder.AddCtx(StaticCtx{})
 
-			localRegistry := LocalRegistry{}
-			got, err := builder.newConfigContext(tt.args.configGroups, tt.args.templateContext, localRegistry, tt.args.license, nil, nil, registrytypes.RegistryOptions{}, "app-slug", tt.args.decryptValues)
+			localRegistry := registrytypes.RegistrySettings{}
+			got, err := builder.newConfigContext(tt.args.configGroups, tt.args.templateContext, localRegistry, tt.args.license, nil, nil, dockerregistrytypes.RegistryOptions{}, "app-slug", tt.args.decryptValues)
 			req.NoError(err)
 			req.Equal(tt.want, got)
 		})
@@ -494,8 +495,8 @@ func TestBuilder_NewConfigContext(t *testing.T) {
 
 func Test_localImageName(t *testing.T) {
 	ctxWithRegistry := ConfigCtx{
-		LocalRegistry: LocalRegistry{
-			Host:      "my.registry.com",
+		LocalRegistry: registrytypes.RegistrySettings{
+			Hostname:  "my.registry.com",
 			Namespace: "my_namespace",
 			Username:  "my_user",
 			Password:  "my_password",
@@ -514,7 +515,7 @@ func Test_localImageName(t *testing.T) {
 	}
 
 	ctxWithoutRegistry := ConfigCtx{
-		LocalRegistry: LocalRegistry{},
+		LocalRegistry: registrytypes.RegistrySettings{},
 
 		license: &kotsv1beta1.License{
 			Spec: kotsv1beta1.LicenseSpec{
@@ -530,7 +531,7 @@ func Test_localImageName(t *testing.T) {
 	}
 
 	ctxWithoutRegistryProxyAll := ConfigCtx{
-		LocalRegistry: LocalRegistry{},
+		LocalRegistry: registrytypes.RegistrySettings{},
 
 		license: &kotsv1beta1.License{
 			Spec: kotsv1beta1.LicenseSpec{
@@ -546,7 +547,7 @@ func Test_localImageName(t *testing.T) {
 	}
 
 	ctxWithNothing := ConfigCtx{
-		LocalRegistry: LocalRegistry{},
+		LocalRegistry: registrytypes.RegistrySettings{},
 	}
 
 	tests := []struct {
@@ -612,14 +613,14 @@ func Test_localImageName(t *testing.T) {
 func TestConfigCtx_localRegistryImagePullSecret(t *testing.T) {
 	tests := []struct {
 		name          string
-		LocalRegistry LocalRegistry
+		LocalRegistry registrytypes.RegistrySettings
 		license       *kotsv1beta1.License
 		want          string
 	}{
 		{
 			name: "nil license",
-			LocalRegistry: LocalRegistry{
-				Host:      "",
+			LocalRegistry: registrytypes.RegistrySettings{
+				Hostname:  "",
 				Namespace: "",
 				Username:  "",
 				Password:  "",
@@ -629,8 +630,8 @@ func TestConfigCtx_localRegistryImagePullSecret(t *testing.T) {
 		},
 		{
 			name: "licenseid abc",
-			LocalRegistry: LocalRegistry{
-				Host:      "",
+			LocalRegistry: registrytypes.RegistrySettings{
+				Hostname:  "",
 				Namespace: "",
 				Username:  "",
 				Password:  "",
@@ -647,8 +648,8 @@ func TestConfigCtx_localRegistryImagePullSecret(t *testing.T) {
 		},
 		{
 			name: "localregistry set",
-			LocalRegistry: LocalRegistry{
-				Host:      "example.com:5000",
+			LocalRegistry: registrytypes.RegistrySettings{
+				Hostname:  "example.com:5000",
 				Namespace: "",
 				Username:  "user",
 				Password:  "password",

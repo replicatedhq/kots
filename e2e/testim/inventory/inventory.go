@@ -29,6 +29,7 @@ func NewRegressionTest() Test {
 		Label:           "type=existing cluster, env=online, phase=new install, rbac=minimal rbac",
 		Namespace:       "qakotsregression",
 		UpstreamURI:     "qakotsregression/type-existing-cluster-env-on-2",
+		Browser:         "firefox",
 		UseMinimalRBAC:  true,
 		NeedsMonitoring: true,
 		NeedsRegistry:   true,
@@ -43,6 +44,15 @@ func NewSmokeTest() Test {
 		Namespace:      "smoke-test",
 		UpstreamURI:    "qakotstestim/github-actions-qa",
 		NeedsSnapshots: true,
+	}
+}
+
+func NewAirgapSmokeTest() Test {
+	return Test{
+		Name:        "airgap-smoke-test",
+		Suite:       "airgap-smoke-test",
+		Namespace:   "airgap-smoke-test",
+		UpstreamURI: "airgap-smoke-test/automated",
 	}
 }
 

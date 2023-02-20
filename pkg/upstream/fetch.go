@@ -56,12 +56,6 @@ func downloadUpstream(upstreamURI string, fetchOptions *types.FetchOptions) (*ty
 			fetchOptions.SkipCompatibilityCheck,
 		)
 	}
-	if u.Scheme == "git" {
-		return downloadGit(upstreamURI)
-	}
-	if u.Scheme == "http" || u.Scheme == "https" {
-		return downloadHttp(upstreamURI)
-	}
 
 	return nil, errors.Errorf("unknown protocol scheme %q", u.Scheme)
 }

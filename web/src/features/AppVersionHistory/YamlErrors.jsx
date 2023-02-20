@@ -10,7 +10,7 @@ const YamlErrors = ({ yamlErrors, handleShowDetailsClicked }) => {
         {yamlErrors?.length !== 1 ? "s" : ""}{" "}
       </span>
       <span
-        className="replicated-link u-marginLeft--5 u-fontSize--small"
+        className="link u-marginLeft--5 u-fontSize--small"
         onClick={handleShowDetailsClicked}
       >
         {" "}

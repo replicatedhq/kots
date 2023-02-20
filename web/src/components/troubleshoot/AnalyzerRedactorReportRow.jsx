@@ -101,7 +101,7 @@ class AnalyzerRedactorReportRow extends React.Component {
             </span>
           </p>
           <span
-            className="replicated-link u-fontSize--small u-marginLeft--10"
+            className="link u-fontSize--small u-marginLeft--10"
             onClick={this.toggleDetails}
           >
             {" "}

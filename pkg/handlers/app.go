@@ -38,6 +38,11 @@ func (h *Handler) GetPendingApp(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if util.IsHelmManaged() {
+		w.WriteHeader(http.StatusNotFound)
+		return
+	}
+
 	papp, err := store.GetStore().GetPendingAirgapUploadApp()
 	if err != nil {
 		if store.GetStore().IsNotFound(err) {
@@ -748,6 +753,7 @@ func helmReleaseToDownsreamVersion(installedRelease *helm.InstalledRelease) *dow
 		UpstreamReleasedAt: installedRelease.ReleasedOn,
 		IsDeployable:       false,               // TODO: implement
 		NonDeployableCause: "already installed", // TODO: implement
+		HasConfig:          true,                // TODO: implement
 		ParentSequence:     int64(installedRelease.Revision),
 		Sequence:           int64(installedRelease.Revision),
 		Status:             storetypes.DownstreamVersionStatus(installedRelease.Status.String()),

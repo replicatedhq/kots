@@ -4,11 +4,13 @@ import (
 	"archive/tar"
 	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
 	"io"
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"time"
 
@@ -25,6 +27,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/registry"
 	registrytypes "github.com/replicatedhq/kots/pkg/registry/types"
 	"github.com/replicatedhq/kots/pkg/render/helper"
+	"github.com/replicatedhq/kots/pkg/reporting"
 	"github.com/replicatedhq/kots/pkg/snapshot"
 	kotssnapshot "github.com/replicatedhq/kots/pkg/snapshot"
 	"github.com/replicatedhq/kots/pkg/store"
@@ -32,6 +35,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/supportbundle/types"
 	"github.com/replicatedhq/kots/pkg/util"
 	troubleshootv1beta2 "github.com/replicatedhq/troubleshoot/pkg/apis/troubleshoot/v1beta2"
+	sb "github.com/replicatedhq/troubleshoot/pkg/supportbundle"
 	"go.uber.org/multierr"
 	"gopkg.in/yaml.v3"
 	corev1 "k8s.io/api/core/v1"
@@ -42,6 +46,12 @@ import (
 	"k8s.io/apimachinery/pkg/util/rand"
 	"k8s.io/client-go/kubernetes"
 )
+
+var appNameRE *regexp.Regexp
+
+func init() {
+	appNameRE = regexp.MustCompile(`^kotsadm-.*-supportbundle$`)
+}
 
 // CreateRenderedSpec creates the support bundle specification from defaults and the kots app
 func CreateRenderedSpec(app apptypes.AppType, sequence int64, kotsKinds *kotsutil.KotsKinds, opts types.TroubleshootOptions) (*troubleshootv1beta2.SupportBundle, error) {
@@ -73,7 +83,7 @@ func CreateRenderedSpec(app apptypes.AppType, sequence int64, kotsKinds *kotsuti
 	namespacesToCollect := []string{}
 	namespacesToAnalyze := []string{}
 
-	isKurl, err := kurl.IsKurl()
+	isKurl, err := kurl.IsKurl(clientset)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to check if cluster is kurl")
 	}
@@ -130,7 +140,7 @@ func CreateRenderedSpec(app apptypes.AppType, sequence int64, kotsKinds *kotsuti
 		registrySettings = s
 	}
 
-	collectors, err := registry.UpdateCollectorSpecsWithRegistryData(supportBundle.Spec.Collectors, registrySettings, kotsKinds.Installation.Spec.KnownImages, kotsKinds.License)
+	collectors, err := registry.UpdateCollectorSpecsWithRegistryData(supportBundle.Spec.Collectors, registrySettings, kotsKinds.Installation.Spec.KnownImages, kotsKinds.License, &kotsKinds.KotsApplication)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to update collectors")
 	}
@@ -143,44 +153,50 @@ func CreateRenderedSpec(app apptypes.AppType, sequence int64, kotsKinds *kotsuti
 
 	secretName := GetSpecSecretName(app.GetSlug())
 	existingSecret, err := clientset.CoreV1().Secrets(util.PodNamespace).Get(context.TODO(), secretName, metav1.GetOptions{})
-	if err != nil && !kuberneteserrors.IsNotFound(err) {
-		return nil, errors.Wrap(err, "failed to read support bundle secret")
-	} else if kuberneteserrors.IsNotFound(err) {
-		secret := &corev1.Secret{
-			TypeMeta: metav1.TypeMeta{
-				APIVersion: "v1",
-				Kind:       "Secret",
-			},
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      secretName,
-				Namespace: util.PodNamespace,
-				Labels:    kotstypes.GetKotsadmLabels(),
-			},
-			Data: map[string][]byte{
-				SpecDataKey: renderedSpec,
-			},
-		}
+	labels := kotstypes.MergeLabels(kotstypes.GetKotsadmLabels(), kotstypes.GetTroubleshootLabels())
+	if err != nil {
+		if kuberneteserrors.IsNotFound(err) {
+			secret := &corev1.Secret{
+				TypeMeta: metav1.TypeMeta{
+					APIVersion: "v1",
+					Kind:       "Secret",
+				},
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      secretName,
+					Namespace: util.PodNamespace,
+					Labels:    labels,
+				},
+				Data: map[string][]byte{
+					SpecDataKey: renderedSpec,
+				},
+			}
 
-		_, err = clientset.CoreV1().Secrets(util.PodNamespace).Create(context.TODO(), secret, metav1.CreateOptions{})
-		if err != nil {
-			return nil, errors.Wrap(err, "failed to create support bundle secret")
-		}
+			_, err = clientset.CoreV1().Secrets(util.PodNamespace).Create(context.TODO(), secret, metav1.CreateOptions{})
+			if err != nil {
+				return nil, errors.Wrap(err, "failed to create support bundle secret")
+			}
 
-		return supportBundle, nil
+			logger.Debugf("created %q default support bundle spec secret", app.GetSlug())
+			return supportBundle, nil
+		} else {
+			return nil, errors.Wrap(err, "failed to read support bundle secret")
+		}
 	}
 
 	if existingSecret.Data == nil {
 		existingSecret.Data = map[string][]byte{}
 	}
 	existingSecret.Data[SpecDataKey] = renderedSpec
-	existingSecret.ObjectMeta.Labels = kotstypes.GetKotsadmLabels()
+	existingSecret.ObjectMeta.Labels = labels
 
 	_, err = clientset.CoreV1().Secrets(util.PodNamespace).Update(context.TODO(), existingSecret, metav1.UpdateOptions{})
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to update support bundle secret")
 	}
 
-	return supportBundle, nil
+	// Include discovered support bundle specs. Perform this action here so
+	// as not to add discovered specs to the default support bundle spec secret.
+	return addDiscoveredSpecs(supportBundle, app, clientset), nil
 }
 
 // injectDefaults injects the kotsadm default collectors/analyzers in the the support bundle specification.
@@ -246,6 +262,120 @@ func injectDefaults(app apptypes.AppType, b *troubleshootv1beta2.SupportBundle, 
 	}
 
 	return supportBundle, nil
+}
+
+func addDiscoveredSpecs(
+	supportBundle *troubleshootv1beta2.SupportBundle, app apptypes.AppType, clientset kubernetes.Interface,
+) *troubleshootv1beta2.SupportBundle {
+	specs, err := findSupportBundleSpecs(clientset)
+	if err != nil {
+		logger.Errorf("Failed to find support bundle secrets: %v", err)
+		return supportBundle
+	}
+
+	for _, specData := range specs {
+		sbObject, err := sb.ParseSupportBundleFromDoc([]byte(specData))
+		if err != nil {
+			logger.Errorf("Failed to unmarshal support bundle spec: %v", err)
+			continue
+		}
+
+		// ParseSupportBundleFromDoc will check if there is a uri field and if so,
+		// use the upstream spec, otherwise fall back to
+		// what's defined in the current spec
+		supportBundle.Spec.Collectors = append(supportBundle.Spec.Collectors, sbObject.Spec.Collectors...)
+		supportBundle.Spec.Analyzers = append(supportBundle.Spec.Analyzers, sbObject.Spec.Analyzers...)
+	}
+
+	// remove duplicated collectors and analyzers if there are multiple support bundle upstream spec
+	supportBundle = deduplicatedCollectors(supportBundle)
+	supportBundle = deduplicatedAnalyzers(supportBundle)
+
+	return supportBundle
+}
+
+// findSupportBundleSpecs finds all support bundle secrets/configmaps in the cluster
+// The function will query all objects with troubleshoot.io/kind=support-bundle label
+// and, in code, filter out all kotsadm objects that have an object name
+// following kotsadm-<app-slug>-supportbundle format.
+// Reference: https://troubleshoot.sh/docs/support-bundle/discover-cluster-specs/
+func findSupportBundleSpecs(client kubernetes.Interface) ([]string, error) {
+	labelSelector := kotstypes.TroubleshootKey + "=" + kotstypes.TroubleshootValue
+	ctx := context.TODO()
+
+	specs := []string{}
+
+	// Get all namespaces
+	namespaces := []string{}
+	if k8sutil.IsKotsadmClusterScoped(ctx, client, util.PodNamespace) {
+		nsList, err := client.CoreV1().Namespaces().List(ctx, metav1.ListOptions{})
+		if err != nil {
+			return nil, err
+		}
+		for _, ns := range nsList.Items {
+			namespaces = append(namespaces, ns.Name)
+		}
+	} else {
+		namespaces = []string{util.PodNamespace}
+	}
+
+	// List objects from one namespace at a time so as to isolate errors e.g RBAC
+	// Search secrets
+	for _, ns := range namespaces {
+		secrets, err := client.CoreV1().Secrets(ns).List(ctx, metav1.ListOptions{LabelSelector: labelSelector})
+		if err != nil {
+			logger.Errorf("failed to list secrets in namespace %q: %v", ns, err)
+			continue
+		}
+
+		for _, obj := range secrets.Items {
+			// Filter out all kotsadm objects
+			if appNameRE.MatchString(obj.Name) {
+				continue
+			}
+
+			if obj.Data == nil {
+				continue
+			}
+
+			specData, ok := obj.Data[SpecDataKey]
+			if !ok {
+				continue
+			}
+
+			specs = append(specs, string(specData))
+		}
+	}
+
+	// Search config maps
+	for _, ns := range namespaces {
+		configmaps, err := client.CoreV1().ConfigMaps(ns).List(context.TODO(), metav1.ListOptions{LabelSelector: labelSelector})
+		if err != nil {
+			logger.Errorf("failed to list configmaps in namespace %q: %v", ns, err)
+			continue
+		}
+
+		for _, obj := range configmaps.Items {
+			// Filter out all kotsadm objects
+			if appNameRE.MatchString(obj.Name) {
+				continue
+			}
+
+			if obj.Data == nil {
+				continue
+			}
+
+			specData, ok := obj.Data[SpecDataKey]
+			if !ok {
+				continue
+			}
+
+			specs = append(specs, specData)
+		}
+	}
+
+	logger.Debugf("Discovered %d support bundle specs", len(specs))
+	return specs, nil
 }
 
 // if a namespace is not set for a secret/run/logs/exec/copy collector, set it to the current namespace
@@ -422,22 +552,38 @@ func deduplicatedAnalyzers(supportBundle *troubleshootv1beta2.SupportBundle) *tr
 
 // addDefaultTroubleshoot adds kots.io (github.com/replicatedhq/kots/support-bundle/spec.yaml) spec to the support bundle.
 func addDefaultTroubleshoot(supportBundle *troubleshootv1beta2.SupportBundle, imageName string, pullSecret *troubleshootv1beta2.ImagePullSecrets) *troubleshootv1beta2.SupportBundle {
+	clientset, err := k8sutil.GetClientset()
+	if err != nil {
+		logger.Errorf("Failed to get kubernetes clientset: %v", err)
+	}
+
+	isKurl, err := kurl.IsKurl(clientset)
+	if err != nil {
+		logger.Errorf("Failed to check if cluster is kurl: %v", err)
+	}
 	next := supportBundle.DeepCopy()
-	next.Spec.Collectors = append(next.Spec.Collectors, getDefaultCollectors(imageName, pullSecret)...)
-	next.Spec.Analyzers = append(next.Spec.Analyzers, getDefaultAnalyzers()...)
+	next.Spec.Collectors = append(next.Spec.Collectors, getDefaultCollectors(imageName, pullSecret, isKurl)...)
+	next.Spec.Analyzers = append(next.Spec.Analyzers, getDefaultAnalyzers(isKurl)...)
 	return next
 }
 
-func getDefaultCollectors(imageName string, pullSecret *troubleshootv1beta2.ImagePullSecrets) []*troubleshootv1beta2.Collect {
+func getDefaultCollectors(imageName string, pullSecret *troubleshootv1beta2.ImagePullSecrets, isKurl bool) []*troubleshootv1beta2.Collect {
 	supportBundle := defaultspec.Get()
 	if imageName != "" {
 		supportBundle = *populateImages(&supportBundle, imageName, pullSecret)
 	}
+	if !isKurl {
+		supportBundle = *removeKurlCollectors(&supportBundle)
+	}
 	return supportBundle.Spec.Collectors
 }
 
-func getDefaultAnalyzers() []*troubleshootv1beta2.Analyze {
-	return defaultspec.Get().Spec.Analyzers
+func getDefaultAnalyzers(isKurl bool) []*troubleshootv1beta2.Analyze {
+	defaultAnalyzers := defaultspec.Get().Spec.Analyzers
+	if !isKurl {
+		defaultAnalyzers = removeKurlAnalyzers(defaultAnalyzers)
+	}
+	return defaultAnalyzers
 }
 
 // addDefaultDynamicTroubleshoot adds dynamic spec to the support bundle.
@@ -483,6 +629,21 @@ func getDefaultDynamicCollectors(app apptypes.AppType, imageName string, pullSec
 				},
 			})
 		}
+	}
+
+	reportingInfo := reporting.GetReportingInfo(app.GetID())
+	if b, err := json.MarshalIndent(reportingInfo, "", "  "); err != nil {
+		logger.Errorf("Failed to marshal reporting info: %v", err)
+	} else {
+		collectors = append(collectors, &troubleshootv1beta2.Collect{
+			Data: &troubleshootv1beta2.Data{
+				CollectorMeta: troubleshootv1beta2.CollectorMeta{
+					CollectorName: "app-info.json",
+				},
+				Name: "kots/admin_console",
+				Data: string(b),
+			},
+		})
 	}
 
 	collectors = append(collectors, &troubleshootv1beta2.Collect{
@@ -535,7 +696,7 @@ func getDefaultDynamicCollectors(app apptypes.AppType, imageName string, pullSec
 		logger.Errorf("Failed to get kubernetes clientset: %v", err)
 	}
 
-	isKurl, err := kurl.IsKurl()
+	isKurl, err := kurl.IsKurl(clientset)
 	if err != nil {
 		logger.Errorf("Failed to check if cluster is kurl: %v", err)
 	}
@@ -600,7 +761,12 @@ func getDefaultDynamicAnalyzers(app apptypes.AppType) []*troubleshootv1beta2.Ana
 		},
 	})
 
-	isKurl, err := kurl.IsKurl()
+	clientset, err := k8sutil.GetClientset()
+	if err != nil {
+		logger.Errorf("Failed to get kubernetes clientset: %v", err)
+	}
+
+	isKurl, err := kurl.IsKurl(clientset)
 	if err != nil {
 		logger.Errorf("Failed to check if cluster is kurl: %v", err)
 	}
@@ -901,4 +1067,76 @@ func populateImages(supportBundle *troubleshootv1beta2.SupportBundle, imageName 
 	next.Spec.Collectors = collects
 
 	return next
+}
+
+// removeKurlCollectors removes collectors from the default support bundle spec that are specific to kURL clusters
+func removeKurlCollectors(supportBundle *troubleshootv1beta2.SupportBundle) *troubleshootv1beta2.SupportBundle {
+	next := supportBundle.DeepCopy()
+
+	collects := []*troubleshootv1beta2.Collect{}
+	for _, collect := range next.Spec.Collectors {
+		if collect.Ceph != nil {
+			continue
+		}
+		if collect.Longhorn != nil {
+			continue
+		}
+		if collect.Collectd != nil {
+			continue
+		}
+		if collect.Exec != nil {
+			if collect.Exec.Name == "kots/kurl/weave" {
+				continue
+			}
+		}
+		if collect.Logs != nil {
+			if collect.Logs.Name == "kots/kurl/weave" {
+				continue
+			}
+			if collect.Logs.Namespace == "kurl" || collect.Logs.Namespace == "rook-ceph" {
+				continue
+			}
+		}
+		if collect.ConfigMap != nil && collect.ConfigMap.Namespace == "kurl" {
+			continue
+		}
+		if collect.CopyFromHost != nil && collect.CopyFromHost.CollectorName == "kurl-host-preflights" {
+			continue
+		}
+		collects = append(collects, collect)
+	}
+	next.Spec.Collectors = collects
+
+	return next
+}
+
+// removeKurlAnalyzers removes analyzers from the default support bundle spec that are specific to kURL clusters
+func removeKurlAnalyzers(analyzers []*troubleshootv1beta2.Analyze) []*troubleshootv1beta2.Analyze {
+
+	analyze := []*troubleshootv1beta2.Analyze{}
+
+	for _, analyzer := range analyzers {
+		if analyzer.CephStatus != nil {
+			continue
+		}
+		if analyzer.Longhorn != nil {
+			continue
+		}
+		if analyzer.WeaveReport != nil {
+			continue
+		}
+		if analyzer.TextAnalyze != nil {
+			checkName := analyzer.TextAnalyze.CheckName
+
+			if checkName == "Weave Report" || checkName == "Weave Status" {
+				continue
+			}
+			if checkName == "Flannel: can read net-conf.json" || checkName == "Flannel: has access" {
+				continue
+			}
+		}
+		analyze = append(analyze, analyzer)
+	}
+
+	return analyze
 }

@@ -56,7 +56,7 @@ const EditRedactor = () => {
 
   const history = useHistory();
   const match = useRouteMatch<KotsParams>();
-  const slug = useSelectedApp()?.selectedApp?.slug || "";
+  const slug = useSelectedApp()?.slug || "";
 
   const getRedactor = (redactorSlug: string) => {
     setState({
@@ -316,7 +316,7 @@ spec:
         <div className="u-fontSize--small u-fontWeight--medium u-textColor--bodyCopy u-marginBottom--20">
           <Link
             to={`/app/${slug}/troubleshoot/redactors`}
-            className="replicated-link u-marginRight--5"
+            className="link u-marginRight--5"
           >
             Redactors
           </Link>{" "}
@@ -361,7 +361,7 @@ spec:
             href="https://troubleshoot.sh/reference/redactors/overview/"
             target="_blank"
             rel="noopener noreferrer"
-            className="replicated-link"
+            className="link"
           >
             {" "}
             check out our docs

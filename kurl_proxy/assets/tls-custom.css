@@ -128,6 +128,9 @@ code {
 .u-marginBottom--8 {
   margin-bottom: 8px;
 }
+.u-marginBottom--15 {
+  margin-bottom: 15px;
+}
 .upload-form {
   margin-bottom: 15px;
 }
@@ -294,8 +297,8 @@ button.text-button:hover {
 }
 
 .u-minHeight--full {
-  min-height: 100%; 
-} 
+  min-height: 100%;
+}
 
 .u-width--full {
   width: 100%;
@@ -336,7 +339,7 @@ button.text-button:hover {
   font-weight: 400;
   color: #4a4a4a;
   line-height: 22px;
-  margin-bottom: 30px;
+  margin-bottom: 10px;
 }
 
 .tls-section-header {
@@ -399,6 +402,7 @@ button.text-button:hover {
   overflow: hidden;
   position: absolute;
   z-index: -1;
+  opacity: 0;
 }
 
 .inputkey:focus {
@@ -415,6 +419,7 @@ button.text-button:hover {
   overflow: hidden;
   position: absolute;
   z-index: -1;
+  opacity: 0;
 }
 
 .inputcert:focus {
@@ -435,4 +440,33 @@ button.text-button:hover {
   margin-right: 10px;
   border-radius: 40px;
   box-shadow: 0px 0px 3px 0px rgba(0, 0, 0, 0.3);
+}
+.hostname-hint {
+    color: red;
+    font-size: 12px;
+    padding: 2px 0;
+}
+
+input[type="radio"], label {
+  display: inline-block;
+  font-family: "Helvetica Neue", "Helvetica", sans-serif;
+  font-weight: 400;
+  font-size: 14px;
+  margin-bottom: 10px;
+}
+
+span.hidden {
+  display: none;
+}
+
+div.hidden {
+  display: none;
+}
+
+p.hidden {
+  display: none;
+}
+#key-label, #cert-label {
+  max-width: 240px;
+  word-wrap: break-word;
 }

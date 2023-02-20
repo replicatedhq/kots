@@ -1,3 +1,4 @@
+// This is ReponseApp in the go types
 export type App = {
   allowRollback: Object | undefined;
   allowSnapshots: boolean;
@@ -17,6 +18,7 @@ export type App = {
   isGitOpsSupported: boolean;
   isIdentityServiceSupported: boolean;
   isSemverRequired: boolean;
+  isSupportBundleUploadSupported: boolean;
   name: string;
   namespace: string;
   needsRegistry?: boolean;
@@ -87,7 +89,7 @@ export type DashboardResponse = {
 
 export type Downstream = {
   cluster: Cluster;
-  pastVersions: Object;
+  pastVersions: Version[];
   currentVersion: Version;
   gitops: GitOps;
   links: DashboardActionLink[];
@@ -101,6 +103,7 @@ export type GitOps = {
 };
 
 export type KotsParams = {
+  downstreamSlug?: string;
   firstSequence: string | undefined;
   owner: string;
   redactorSlug: string;
@@ -127,6 +130,34 @@ export type Metadata = {
   isKurl: boolean;
 };
 
+export type PreflightError = {
+  error: string;
+  isRbac: boolean;
+};
+
+export type PreflightResult = {
+  appSlug: string;
+  clusterSlug: string;
+  createdAt: string;
+  hasFailingStrictPreflights: boolean;
+  result: string;
+  sequence: number;
+  skipped: boolean;
+};
+
+export type PreflightProgress = {
+  completedCount: number;
+  currentName: string;
+  currentStatus: string;
+  totalCount: number;
+  updatedAt: string;
+};
+
+export type PreflightResultResponse = {
+  errors?: PreflightError[];
+  results?: PreflightResult[];
+};
+
 export type ThemeState = {
   navbarLogo: string | null;
 };
@@ -139,6 +170,39 @@ export type ResourceStates = {
   state: AppStatusState;
 };
 
+export type SupportBundle = {
+  analysis: SupportBundleAnalysis;
+  createdAt: string;
+  id: string;
+  isArchived: boolean;
+  name: string;
+  sharedAt: string;
+  size: number;
+  slug: string;
+  status: string;
+  uploadedAt: string;
+};
+
+type SupportBundleAnalysis = {
+  createdAt: string;
+  insights: SupportBundleInsight[];
+};
+
+export type SupportBundleInsight = {
+  detail: string;
+  icon: string;
+  iconKey: string;
+  key: string;
+  primary: string;
+  severity: string;
+};
+
+export type SupportBundleProgress = {
+  collectorCount: number;
+  collectorsCompleted: number;
+  message: string;
+};
+
 export type Version = {
   channelId: string;
   commitUrl: string;
@@ -148,25 +212,29 @@ export type Version = {
   diffSummaryError: string;
   downloadStatus: VersionDownloadStatus;
   gitDeployable: boolean;
+  hasConfig: boolean;
+  isChecked: boolean;
   isDeployable: boolean;
   isRequired: boolean;
   needsKotsUpgrade: boolean;
   nonDeployableCause: string;
   parentSequence: number;
   preflightResult: string;
-  preflightStatus: string;
   preflightResultCreatedAt: string;
   preflightSkipped: boolean;
+  preflightStatus: string;
   releaseNotes: string;
   semver: string;
   sequence: number;
   source: string;
   status: VersionStatus;
-  title: string;
+  appTitle: string;
+  appIconUri: string;
   updateCursor: string;
+  upstreamReleasedAt: string;
+  title: string;
   versionLabel?: string;
   yamlErrors: string[];
-  isChecked: boolean;
 };
 
 export type VersionDownloadStatus = {
@@ -186,6 +254,7 @@ export type VersionStatus =
   | "pending_config"
   | "pending_download"
   | "pending_preflight"
+  | "superseded"
   | "waiting";
 
 export type LicenseFile = {
@@ -212,4 +281,18 @@ export type Chart = {
   tickTemplate: string;
   tickFormat: string;
   series: Series[];
+};
+
+export type Snapshot = {
+  name: string;
+  status: string;
+  trigger: string;
+  sequence: number;
+  startedAt: string;
+  finishedAt: string;
+  expiresAt: string;
+  volumeCount: number;
+  volumeSuccessCount: number;
+  volumeBytes: number;
+  volumeSizeHuman: string;
 };

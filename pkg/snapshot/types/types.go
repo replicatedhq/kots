@@ -3,6 +3,7 @@ package types
 import (
 	"time"
 
+	"github.com/replicatedhq/kots/pkg/image"
 	velerov1 "github.com/vmware-tanzu/velero/pkg/apis/velero/v1"
 )
 
@@ -202,3 +203,12 @@ type ScheduledInstanceSnapshot struct {
 	// name of Backup CR will be set once scheduled
 	BackupName string `json:"backupName,omitempty"`
 }
+
+type VeleroPlugin string
+
+const (
+	VeleroAWSPlugin   VeleroPlugin = "velero/velero-plugin-for-aws:v1.6.1"
+	VeleroGCPPlugin   VeleroPlugin = "velero/velero-plugin-for-gcp:v1.6.1"
+	VeleroAzurePlugin VeleroPlugin = "velero/velero-plugin-for-microsoft-azure:v1.6.1"
+	VeleroLVPPlugin   VeleroPlugin = image.Lvp
+)

@@ -53,6 +53,7 @@ type DeployOptions struct {
 	UpstreamURI            string
 	IsMinimalRBAC          bool
 	AdditionalNamespaces   []string
+	IsGKEAutopilot         bool
 
 	IdentityConfig kotsv1beta1.IdentityConfig
 	IngressConfig  kotsv1beta1.IngressConfig

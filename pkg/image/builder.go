@@ -6,11 +6,11 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
-	"net/http"
 	"os"
 	"path"
 	"path/filepath"
 	"runtime"
+	"sort"
 	"strings"
 	"time"
 
@@ -21,7 +21,6 @@ import (
 	"github.com/containers/image/v5/transports/alltransports"
 	containerstypes "github.com/containers/image/v5/types"
 	"github.com/distribution/distribution/v3/reference"
-	"github.com/distribution/distribution/v3/registry/api/errcode"
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/docker/registry"
 	registrytypes "github.com/replicatedhq/kots/pkg/docker/registry/types"
@@ -79,7 +78,7 @@ func RewriteImages(srcRegistry, destRegistry registrytypes.RegistryOptions, appS
 	return newImages, nil
 }
 
-func GetPrivateImages(upstreamDir string, kotsKindsImages []string, checkedImages map[string]types.ImageInfo, allPrivate bool, dockerHubRegistry registrytypes.RegistryOptions, parentHelmChartPath string, useHelmInstall map[string]bool) ([]string, []k8sdoc.K8sDoc, error) {
+func GetPrivateImages(baseDir string, kotsKindsImages []string, checkedImages map[string]types.ImageInfo, allPrivate bool, dockerHubRegistry registrytypes.RegistryOptions, parentHelmChartPath string, useHelmInstall map[string]bool) ([]string, []k8sdoc.K8sDoc, error) {
 	uniqueImages := make(map[string]bool)
 
 	objectsWithImages := make([]k8sdoc.K8sDoc, 0) // all objects where images are referenced from
@@ -100,14 +99,14 @@ func GetPrivateImages(upstreamDir string, kotsKindsImages []string, checkedImage
 		}
 	}
 
-	err := filepath.Walk(upstreamDir,
+	err := filepath.Walk(baseDir,
 		func(path string, info os.FileInfo, err error) error {
 			if err != nil {
 				return err
 			}
 
 			if info.IsDir() {
-				chartName, err := filepath.Rel(upstreamDir, path)
+				chartName, err := filepath.Rel(baseDir, path)
 				if err != nil {
 					logger.Debugf("Failed to remove prefix from %s: %v", path, err)
 					return nil
@@ -174,6 +173,7 @@ func GetPrivateImages(upstreamDir string, kotsKindsImages []string, checkedImage
 	for i := range uniqueImages {
 		result = append(result, i)
 	}
+	sort.Strings(result) // sort the images to get an ordered and reproducible output for easier testing
 
 	return result, objectsWithImages, nil
 }
@@ -445,10 +445,9 @@ func CopyImage(opts types.CopyImageOptions) error {
 	return nil
 }
 
-// if dockerHubRegistry is provided, its credentials will be used in case of rate limiting
+// if dockerHubRegistry is provided, its credentials will be used for DockerHub images to increase the rate limit.
 func IsPrivateImage(image string, dockerHubRegistry registrytypes.RegistryOptions) (bool, error) {
 	var lastErr error
-	isRateLimited := false
 	for i := 0; i < 3; i++ {
 		dockerRef, err := dockerref.ParseDockerRef(image)
 		if err != nil {
@@ -459,7 +458,7 @@ func IsPrivateImage(image string, dockerHubRegistry registrytypes.RegistryOption
 
 		registryHost := reference.Domain(dockerRef)
 		isDockerIO := registryHost == "docker.io" || strings.HasSuffix(registryHost, ".docker.io")
-		if isRateLimited && isDockerIO && dockerHubRegistry.Username != "" && dockerHubRegistry.Password != "" {
+		if isDockerIO && dockerHubRegistry.Username != "" && dockerHubRegistry.Password != "" {
 			sysCtx.DockerAuthConfig = &containerstypes.DockerAuthConfig{
 				Username: dockerHubRegistry.Username,
 				Password: dockerHubRegistry.Password,
@@ -496,11 +495,7 @@ func IsPrivateImage(image string, dockerHubRegistry registrytypes.RegistryOption
 			continue
 		}
 
-		if isTooManyRequests(err) {
-			lastErr = err
-			isRateLimited = true
-			continue
-		}
+		logger.Debugf("Marking image '%s' as private because: %v", image, err.Error())
 
 		// if the registry is unreachable (which might be due to a firewall, proxy, etc..),
 		// we won't be able to determine if the error is due to a missing auth or not.
@@ -534,33 +529,6 @@ func RewritePrivateImage(srcRegistry registrytypes.RegistryOptions, image string
 
 	// no tag, so it will be "latest"
 	return newImage, nil
-}
-
-func isTooManyRequests(err error) bool {
-	switch err := err.(type) {
-	case errcode.Errors:
-		for _, e := range err {
-			if isTooManyRequests(e) {
-				return true
-			}
-		}
-		return false
-	case errcode.Error:
-		return err.Code.Descriptor().HTTPStatusCode == http.StatusTooManyRequests
-	}
-
-	if err.Error() == imagedocker.ErrTooManyRequests.Error() {
-		return true
-	}
-
-	cause := errors.Cause(err)
-	if cause, ok := cause.(error); ok {
-		if cause.Error() == err.Error() {
-			return false
-		}
-	}
-
-	return isTooManyRequests(cause)
 }
 
 func getPolicyContext() (*signature.PolicyContext, error) {

@@ -4,6 +4,7 @@
   width: 100%;
   max-width: 750px;
   min-width: 500px;
+  padding-top: 20px;
 }
 
 .ConfigError--wrapper {
@@ -48,6 +49,9 @@ a:visited {
   width: 250px;
   height: fit-content;
   padding: 10px;
+  top: 60px;
+  position: sticky;
+  max-height: calc(100vh - 190px);
   border-radius: 4px;
   overflow: auto;
   & .side-nav-group {
@@ -68,15 +72,18 @@ a:visited {
     }
 
     &.group-open {
-      & .group-title {
-        font-weight: 700;
-      }
       .icon.u-darkDropdownArrow,
       .arrow-down {
         transform: rotate(180deg);
       }
       & .side-nav-items {
         display: block;
+      }
+    }
+    &.is-active {
+      & .group-title {
+        font-weight: 700;
+        color: $text-color-primary;
       }
     }
   }

@@ -540,7 +540,8 @@ func (s *KOTSStore) AddDownstreamVersionsDetails(appID string, clusterID string,
 	adv.preflight_result_created_at,
 	av.kots_installation_spec,
 	av.kots_app_spec,
-	av.preflight_spec
+	av.preflight_spec,
+	av.config_spec
  FROM
 	 app_downstream_version AS adv
  LEFT JOIN
@@ -571,6 +572,7 @@ func (s *KOTSStore) AddDownstreamVersionsDetails(appID string, clusterID string,
 		var kotsInstallationSpecStr gorqlite.NullString
 		var kotsAppSpecStr gorqlite.NullString
 		var preflightSpecStr gorqlite.NullString
+		var configSpecStr gorqlite.NullString
 
 		if err := rows.Scan(
 			&sequence,
@@ -581,6 +583,7 @@ func (s *KOTSStore) AddDownstreamVersionsDetails(appID string, clusterID string,
 			&kotsInstallationSpecStr,
 			&kotsAppSpecStr,
 			&preflightSpecStr,
+			&configSpecStr,
 		); err != nil {
 			return errors.Wrap(err, "failed to scan")
 		}
@@ -638,6 +641,8 @@ func (s *KOTSStore) AddDownstreamVersionsDetails(appID string, clusterID string,
 				return errors.Wrap(err, "failed to load installation spec")
 			}
 			version.KOTSKinds.KotsApplication = *app
+			version.AppTitle = app.Spec.Title
+			version.AppIconURI = app.Spec.Icon
 		}
 		version.NeedsKotsUpgrade = needsKotsUpgrade(&version.KOTSKinds.KotsApplication)
 
@@ -646,6 +651,16 @@ func (s *KOTSStore) AddDownstreamVersionsDetails(appID string, clusterID string,
 			return errors.Wrap(err, "failed to get strict preflight results")
 		}
 		version.HasFailingStrictPreflights = p
+
+		if configSpecStr.String != "" {
+			config, err := kotsutil.LoadConfigFromBytes([]byte(configSpecStr.String))
+			if err != nil {
+				return errors.Wrap(err, "failed to load config from spec")
+			}
+			if len(config.Spec.Groups) > 0 {
+				version.HasConfig = true
+			}
+		}
 	}
 
 	if checkIfDeployable {

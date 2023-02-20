@@ -68,19 +68,11 @@ func NeedsConfiguration(appSlug string, sequence int64, isAirgap bool, kotsKinds
 		configValues = map[string]template.ItemValue{}
 	}
 
-	localRegistry := template.LocalRegistry{
-		Host:      registrySettings.Hostname,
-		Namespace: registrySettings.Namespace,
-		Username:  registrySettings.Username,
-		Password:  registrySettings.Password,
-		ReadOnly:  registrySettings.IsReadOnly,
-	}
-
 	versionInfo := template.VersionInfoFromInstallation(sequence, isAirgap, kotsKinds.Installation.Spec)
 	appInfo := template.ApplicationInfo{Slug: appSlug}
 
 	// rendered, err := kotsconfig.TemplateConfig(logger.NewCLILogger(os.Stdout), configSpec, configValuesSpec, licenseSpec, appSpec, identityConfigSpec, localRegistry, util.PodNamespace)
-	config, err := kotsconfig.TemplateConfigObjects(kotsKinds.Config, configValues, kotsKinds.License, &kotsKinds.KotsApplication, localRegistry, &versionInfo, &appInfo, kotsKinds.IdentityConfig, util.PodNamespace, true)
+	config, err := kotsconfig.TemplateConfigObjects(kotsKinds.Config, configValues, kotsKinds.License, &kotsKinds.KotsApplication, registrySettings, &versionInfo, &appInfo, kotsKinds.IdentityConfig, util.PodNamespace, true)
 	if err != nil {
 		return false, errors.Wrap(err, "failed to template config")
 	}

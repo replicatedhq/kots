@@ -9,7 +9,7 @@ import EditRedactor from "../redactors/EditRedactor";
 import { Utilities } from "@src/utilities/utilities";
 
 // Types
-import { App } from "@types";
+import { App, SupportBundleProgress } from "@types";
 
 type Props = {
   app: App | null;
@@ -20,7 +20,7 @@ type State = {
   isGeneratingBundle: false;
   generateBundleErrMsg: string;
   loading: boolean;
-  bundleAnalysisProgress: Object;
+  bundleAnalysisProgress?: SupportBundleProgress;
   getSupportBundleErrMsg: string;
   displayErrorModal: boolean;
   bundle: object;
@@ -36,7 +36,6 @@ class TroubleshootContainer extends Component<Props, State> {
       isGeneratingBundle: false,
       generateBundleErrMsg: "",
       loading: false,
-      bundleAnalysisProgress: {},
       getSupportBundleErrMsg: "",
       displayErrorModal: false,
       bundle: {},

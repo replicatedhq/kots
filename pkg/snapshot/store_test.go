@@ -402,7 +402,7 @@ func Test_updateExistingStore(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			req := require.New(t)
 
-			newStore, needsVeleroRestart, err := updateExistingStore(test.args.context, test.args.clientset, test.args.existingStore, test.args.options)
+			newStore, needsVeleroRestart, err := buildNewStore(test.args.context, test.args.clientset, test.args.existingStore, test.args.options)
 			if test.wantErr {
 				req.Error(err)
 				if test.wantValidationErr != nil {

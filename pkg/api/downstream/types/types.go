@@ -47,12 +47,15 @@ type DownstreamVersion struct {
 	PreflightResult            string                          `json:"preflightResult,omitempty"`
 	PreflightResultCreatedAt   *time.Time                      `json:"preflightResultCreatedAt,omitempty"`
 	HasFailingStrictPreflights bool                            `json:"hasFailingStrictPreflights,omitempty"`
+	HasConfig                  bool                            `json:"hasConfig,omitempty"`
 	DiffSummary                string                          `json:"diffSummary,omitempty"`
 	DiffSummaryError           string                          `json:"diffSummaryError,omitempty"`
 	YamlErrors                 []v1beta1.InstallationYAMLError `json:"yamlErrors,omitempty"`
 	NeedsKotsUpgrade           bool                            `json:"needsKotsUpgrade,omitempty"`
 	KOTSKinds                  *kotsutil.KotsKinds             `json:"-"`
 	DownloadStatus             DownloadStatus                  `json:"downloadStatus,omitempty"`
+	AppTitle                   string                          `json:"appTitle,omitempty"`
+	AppIconURI                 string                          `json:"appIconUri,omitempty"`
 }
 
 type DownloadStatus struct {

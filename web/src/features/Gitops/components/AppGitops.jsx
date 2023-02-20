@@ -240,12 +240,7 @@ const AppGitops = () => {
               style={{ color: "#585858" }}
             >
               Add this SSH key on your
-              <a
-                className="replicated-link"
-                href={addKeyUri}
-                target="_blank"
-                rel="noopener noreferrer"
-              >
+              <a href={addKeyUri} target="_blank" rel="noopener noreferrer">
                 {selectedApp.downstream.gitops.provider === "bitbucket_server"
                   ? " account settings page, "
                   : " repository settings page, "}

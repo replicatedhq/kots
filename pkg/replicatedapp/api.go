@@ -165,29 +165,3 @@ func getApplicationMetadataFromHost(host string, endpoint string, upstream *url.
 
 	return respBody, nil
 }
-
-func GetSuccessfulHeadResponse(replicatedUpstream *ReplicatedUpstream, license *kotsv1beta1.License) error {
-	headReq, err := replicatedUpstream.GetRequest("HEAD", license, ReplicatedCursor{})
-	if err != nil {
-		return errors.Wrap(err, "failed to create http request")
-	}
-	headResp, err := http.DefaultClient.Do(headReq)
-	if err != nil {
-		return errors.Wrap(err, "failed to execute head request")
-	}
-	defer headResp.Body.Close()
-
-	if headResp.StatusCode == 401 {
-		return errors.New("license was not accepted")
-	}
-
-	if headResp.StatusCode == 403 {
-		return util.ActionableError{Message: "License is expired"}
-	}
-
-	if headResp.StatusCode >= 400 {
-		return errors.Errorf("unexpected result from head request: %d", headResp.StatusCode)
-	}
-
-	return nil
-}

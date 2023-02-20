@@ -356,7 +356,7 @@ class GenerateSupportBundle extends React.Component {
       errorMsg,
     } = this.state;
     const { watch } = this.props;
-    const appTitle = watch.watchName || watch.name;
+    const appTitle = watch.downstream?.currentVersion?.appTitle || watch.name;
 
     return (
       <div className="GenerateSupportBundle--wrapper container flex-column u-overflow--auto u-paddingTop--30 u-paddingBottom--20 alignItems--center">
@@ -365,7 +365,7 @@ class GenerateSupportBundle extends React.Component {
           {!watch.downstream && !this.state.supportBundles?.length ? (
             <Link
               to={`/watch/${watch.slug}/troubleshoot`}
-              className="replicated-link u-marginRight--5"
+              className="link u-marginRight--5"
             >
               {" "}
               &lt; Support Bundle List{" "}
@@ -398,7 +398,7 @@ class GenerateSupportBundle extends React.Component {
               <div className="flex justifyContent--spaceBetween u-paddingBottom--15">
                 <p className="card-title">Support Bundles</p>
                 <span
-                  className="replicated-link flex alignItems--center u-fontSize--small u-marginLeft--20"
+                  className="link flex alignItems--center u-fontSize--small u-marginLeft--20"
                   onClick={this.toggleRedactorModal}
                 >
                   <Icon
@@ -470,7 +470,6 @@ class GenerateSupportBundle extends React.Component {
                     If you'd prefer,{" "}
                     <a
                       href="#"
-                      className="replicated-link"
                       onClick={(e) => this.fetchSupportBundleCommand()}
                     >
                       click here

@@ -39,6 +39,10 @@ import {
   ResourceStates,
   Version,
 } from "@types";
+import {
+  UpdateStatusResponse,
+  useUpdateDownloadStatus,
+} from "../api/getUpdateDownloadStatus";
 //import LicenseTester from "./LicenseTester";
 
 type Props = {
@@ -102,7 +106,6 @@ type State = {
   startSnapshotErr: boolean;
   startSnapshotErrorMsg: string;
   startSnapshotOptions: SnapshotOption[];
-  updateChecker: Repeater;
   uploadProgress: number;
   uploadResuming: boolean;
   uploadSize: number;
@@ -156,7 +159,6 @@ const Dashboard = (props: Props) => {
         { option: "full", name: "Start a Full snapshot" },
         { option: "learn", name: "Learn about the difference" },
       ],
-      updateChecker: new Repeater(),
       uploadingAirgapFile: false,
       uploadProgress: 0,
       uploadResuming: false,
@@ -226,9 +228,12 @@ const Dashboard = (props: Props) => {
 
   const setWatchState = (newAppState: App) => {
     setState({
-      appName: newAppState.name,
-      iconUri: newAppState.iconUri,
       currentVersion: newAppState.downstream?.currentVersion,
+      appName:
+        newAppState.downstream?.currentVersion?.appTitle || newAppState.name,
+      iconUri:
+        newAppState.downstream?.currentVersion?.appIconUri ||
+        newAppState.iconUri,
       downstream: newAppState.downstream,
       links: newAppState.downstream?.links,
     });
@@ -240,6 +245,34 @@ const Dashboard = (props: Props) => {
     refetch: getAppLicense,
     isSlowLoading: isSlowLoadingLicense,
   } = useLicenseWithIntercept();
+
+  const onUpdateDownloadStatusSuccess = (data: UpdateStatusResponse) => {
+    setState({
+      checkingForUpdateError: data.status === "failed",
+      checkingForUpdates: data.status === "running",
+      checkingUpdateMessage: data.currentMessage,
+    });
+    getAppLicense();
+
+    if (props.updateCallback) {
+      props.updateCallback();
+    }
+    startFetchAppDownstreamJob();
+  };
+
+  const onUpdateDownloadStatusError = (data: Error) => {
+    setState({
+      checkingForUpdates: false,
+      checkingForUpdateError: true,
+      checkingUpdateMessage: data.message,
+    });
+  };
+
+  const { refetch: refetchUpdateDownloadStatus } = useUpdateDownloadStatus(
+    onUpdateDownloadStatusSuccess,
+    onUpdateDownloadStatusError,
+    props.isBundleUploading
+  );
 
   useEffect(() => {
     if (!licenseWithInterceptResponse) {
@@ -301,57 +334,14 @@ const Dashboard = (props: Props) => {
     props.toggleIsBundleUploading(false);
   };
 
-  const updateStatus = (): Promise<void> => {
-    return new Promise((resolve, reject) => {
-      fetch(
-        `${process.env.API_ENDPOINT}/app/${app?.slug}/task/updatedownload`,
-        {
-          headers: {
-            Authorization: Utilities.getToken(),
-            "Content-Type": "application/json",
-          },
-          method: "GET",
-        }
-      )
-        .then(async (res) => {
-          const response = await res.json();
-
-          if (response.status !== "running" && !props.isBundleUploading) {
-            state.updateChecker.stop();
-
-            setState({
-              checkingForUpdates: false,
-              checkingUpdateMessage: response.currentMessage,
-              checkingForUpdateError: response.status === "failed",
-            });
-
-            getAppLicense();
-            if (props.updateCallback) {
-              props.updateCallback();
-            }
-            startFetchAppDownstreamJob();
-          } else {
-            setState({
-              checkingForUpdates: true,
-              checkingUpdateMessage: response.currentMessage,
-            });
-          }
-          resolve();
-        })
-        .catch((err) => {
-          console.log("failed to get rewrite status", err);
-          reject();
-        });
-    });
-  };
-
   const onUploadComplete = () => {
-    state.updateChecker.start(updateStatus, 1000);
+    refetchUpdateDownloadStatus();
     setState({
       uploadingAirgapFile: false,
       uploadProgress: 0,
       uploadSize: 0,
       uploadResuming: false,
+      checkingForUpdates: true,
     });
     props.toggleIsBundleUploading(false);
   };
@@ -526,7 +516,7 @@ const Dashboard = (props: Props) => {
     // sort the available states to show them in the correct order
     const allStates = Object.keys(statesMap);
     const sortedStates = sortBy(allStates, (s) => {
-      if (s === "missing") {
+      if (s === "failed") {
         return 1;
       }
       if (s === "unavailable") {
@@ -538,7 +528,7 @@ const Dashboard = (props: Props) => {
       if (s === "updating") {
         return 4;
       }
-      if (s === "ready") {
+      if (s === "success") {
         return 5;
       }
     });
@@ -678,13 +668,11 @@ const Dashboard = (props: Props) => {
       getAirgapConfig();
     }
 
-    state.updateChecker.start(updateStatus, 1000);
     if (app) {
       setWatchState(app);
       getAppLicense();
     }
     return () => {
-      state.updateChecker.stop();
       state.fetchAppDownstreamJob.stop();
     };
   }, []);
@@ -726,7 +714,8 @@ const Dashboard = (props: Props) => {
             setState({ noUpdatesAvalable: false });
           }, 3000);
         } else {
-          state.updateChecker.start(updateStatus, 1000);
+          refetchUpdateDownloadStatus();
+          setState({ checkingForUpdates: true });
         }
       })
       .catch((err) => {
@@ -952,7 +941,7 @@ const Dashboard = (props: Props) => {
                         (resource, j) => (
                           <div key={`${resource?.name}-${j}`}>
                             <p
-                              className={`ResourceStateText u-fontSize--normal ${resource.state}`}
+                              className={`ResourceStateText status-tag u-fontSize--normal ${resource.state}`}
                             >
                               {resource?.namespace}/{resource?.kind}/
                               {resource?.name}

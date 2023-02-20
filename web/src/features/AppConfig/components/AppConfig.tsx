@@ -578,8 +578,51 @@ class AppConfig extends Component<Props, State> {
       saveButtonText = "Generate Upgrade Command";
     }
 
+    const sections = document.querySelectorAll(".observe-elements");
+
+    const callback = (entries: IntersectionObserverEntry[]) => {
+      entries.forEach(({ isIntersecting, target }) => {
+        // find the group nav link that matches the current section in view
+        const groupNav = document.querySelector(
+          `#config-group-nav-${target.id}`
+        );
+        // find the active link in the group nav
+        const activeLink = document.querySelector(".active-item");
+        const hash = this.props.location.hash.slice(1);
+        const activeLinkByHash = document.querySelector(`a[href='#${hash}']`);
+        if (isIntersecting) {
+          groupNav?.classList.add("is-active");
+          // if your group is active, item will be active
+          if (activeLinkByHash && groupNav?.contains(activeLinkByHash)) {
+            activeLinkByHash.classList.add("active-item");
+          }
+        } else {
+          // if the section is not in view, remove the highlight from the active link
+          if (groupNav?.contains(activeLink) && activeLink) {
+            activeLink.classList.remove("active-item");
+          }
+          // remove the highlight from the group nav link
+          groupNav?.classList.remove("is-active");
+        }
+      });
+    };
+
+    const options = {
+      root: document,
+      // rootMargin is the amount of space around the root element that the intersection observer will look for intersections
+      rootMargin: "20% 0% -75% 0%",
+      // threshold: the proportion of the element that must be within the root bounds for it to be considered intersecting
+      threshold: 0.15,
+    };
+
+    const observer = new IntersectionObserver(callback, options);
+
+    sections.forEach((section) => {
+      observer.observe(section);
+    });
+
     return (
-      <div className="flex flex-column u-padding--20 alignItems--center">
+      <div className="flex flex-column u-paddingLeft--20 u-paddingBottom--20 u-paddingRight--20 alignItems--center">
         <KotsPageTitle pageName="Config" showAppSlug />
         {fromLicenseFlow && app && (
           <Span size="18" weight="bold" mt="30" ml="38">
@@ -608,6 +651,7 @@ class AppConfig extends Component<Props, State> {
                       ? "group-open"
                       : ""
                   }`}
+                  id={`config-group-nav-${group.name}`}
                 >
                   <div
                     className="flex alignItems--center"
@@ -629,23 +673,27 @@ class AppConfig extends Component<Props, State> {
                   </div>
                   {group.items ? (
                     <div className="side-nav-items">
-                      {group.items?.map((item, j) => {
-                        const hash = this.props.location.hash.slice(1);
-                        if (item.hidden || item.when === "false") {
-                          return;
-                        }
-                        return (
-                          <a
-                            className={`u-fontSize--normal u-lineHeight--normal ${
-                              hash === `${item.name}-group` ? "active-item" : ""
-                            }`}
-                            href={`#${item.name}-group`}
-                            key={`${j}-${item.name}-${item.title}`}
-                          >
-                            {item.title}
-                          </a>
-                        );
-                      })}
+                      {group.items
+                        ?.filter((item) => item.type !== "label")
+                        ?.map((item, j) => {
+                          const hash = this.props.location.hash.slice(1);
+                          if (item.hidden || item.when === "false") {
+                            return;
+                          }
+                          return (
+                            <a
+                              className={`u-fontSize--normal u-lineHeight--normal ${
+                                hash === `${item.name}-group`
+                                  ? "active-item"
+                                  : ""
+                              }`}
+                              href={`#${item.name}-group`}
+                              key={`${j}-${item.name}-${item.title}`}
+                            >
+                              {item.title}
+                            </a>
+                          );
+                        })}
                     </div>
                   ) : null}
                 </div>
@@ -654,9 +702,7 @@ class AppConfig extends Component<Props, State> {
           </div>
           <div className="ConfigArea--wrapper">
             <UseIsHelmManaged>
-              {({ data = {} }: { data: { isHelmManaged?: boolean } }) => {
-                const { isHelmManaged: isHelmManagedFromHook } = data;
-
+              {({ data: isHelmManagedFromHook }) => {
                 const { isError: saveError } = useSaveConfig({
                   appSlug: this.getSlug(),
                 });

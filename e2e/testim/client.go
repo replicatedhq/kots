@@ -66,6 +66,13 @@ func (t *Client) NewRun(kubeconfig string, test inventory.Test, runOptions RunOp
 			fmt.Sprintf("--label=%s", test.Label),
 		)
 	}
+	if test.Browser != "" {
+		args = append(
+			args,
+			fmt.Sprintf("--browser=%s", test.Browser),
+			"--mode=selenium",
+		)
+	}
 	if runOptions.BaseUrl != "" {
 		args = append(
 			args,
@@ -82,6 +89,7 @@ func (t *Client) NewRun(kubeconfig string, test inventory.Test, runOptions RunOp
 	cmd := exec.Command("testim", args...)
 	cmd.Env = os.Environ()
 	cmd.Env = append(cmd.Env, fmt.Sprintf("KUBECONFIG=%s", kubeconfig))
+	cmd.Env = append(cmd.Env, "NODE_OPTIONS=--max-old-space-size=4096")
 	session, err := util.RunCommand(cmd)
 	Expect(err).WithOffset(1).Should(Succeed(), "Run testim tests failed")
 	return &Run{session}

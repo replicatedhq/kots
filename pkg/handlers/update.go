@@ -18,6 +18,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/airgap"
 	apptypes "github.com/replicatedhq/kots/pkg/app/types"
 	"github.com/replicatedhq/kots/pkg/helm"
+	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/kotsadm"
 	"github.com/replicatedhq/kots/pkg/kurl"
 	"github.com/replicatedhq/kots/pkg/logger"
@@ -236,7 +237,14 @@ func (h *Handler) UpdateAdminConsole(w http.ResponseWriter, r *http.Request) {
 		Success: false,
 	}
 
-	isKurl, err := kurl.IsKurl()
+	clientset, err := k8sutil.GetClientset()
+	if err != nil {
+		logger.Error(errors.Wrap(err, "failed to get k8s clientset"))
+		JSON(w, http.StatusInternalServerError, updateAdminConsoleResponse)
+		return
+	}
+
+	isKurl, err := kurl.IsKurl(clientset)
 	if err != nil {
 		logger.Error(errors.Wrap(err, "failed to check kURL"))
 		JSON(w, http.StatusInternalServerError, updateAdminConsoleResponse)

@@ -191,7 +191,12 @@ func InstallCmd() *cobra.Command {
 				}
 			}
 
-			isKurl, err := kurl.IsKurl()
+			clientset, err := k8sutil.GetClientset()
+			if err != nil {
+				return errors.Wrap(err, "failed to get k8s clientset")
+			}
+
+			isKurl, err := kurl.IsKurl(clientset)
 			if err != nil {
 				return errors.Wrap(err, "failed to check if cluster is kurl")
 			}
@@ -250,11 +255,9 @@ func InstallCmd() *cobra.Command {
 				IngressConfig:  *ingressConfig,
 			}
 
-			clientset, err := k8sutil.GetClientset()
-			if err != nil {
-				return errors.Wrap(err, "failed to get clientset")
-			}
 			deployOptions.IsOpenShift = k8sutil.IsOpenShift(clientset)
+
+			deployOptions.IsGKEAutopilot = k8sutil.IsGKEAutopilot(clientset)
 
 			timeout, err := time.ParseDuration(v.GetString("wait-duration"))
 			if err != nil {
@@ -734,7 +737,12 @@ func getRegistryConfig(v *viper.Viper) (*kotsadmtypes.RegistryConfig, error) {
 		}
 	}
 
-	isKurl, err := kurl.IsKurl()
+	clientset, err := k8sutil.GetClientset()
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get k8s clientset")
+	}
+
+	isKurl, err := kurl.IsKurl(clientset)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to check if cluster is kurl")
 	}

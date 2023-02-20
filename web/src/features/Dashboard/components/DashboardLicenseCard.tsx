@@ -194,7 +194,9 @@ const DashboardLicenseCard = (props: Props) => {
     ? "expired-license"
     : "";
   const appLicenseClassName =
-    appLicense && size(appLicense) === 0 ? "no-license" : "dashboard-card";
+    appLicense && size(appLicense) === 0
+      ? "no-license"
+      : "dashboard-card card-bg";
 
   return (
     <div
@@ -204,9 +206,9 @@ const DashboardLicenseCard = (props: Props) => {
     >
       <div className="flex flex1 justifyContent--spaceBetween alignItems--center">
         <p
-          className={`u-fontSize--large u-textColor--${
-            Utilities.checkIsDateExpired(expiresAt) ? "error" : "primary"
-          } u-fontWeight--bold`}
+          className={`card-title ${
+            Utilities.checkIsDateExpired(expiresAt) ? "u-textColor--error" : ""
+          }`}
         >
           License {Utilities.checkIsDateExpired(expiresAt) && "is expired"}
           {isCommunityLicense && (
@@ -224,7 +226,7 @@ const DashboardLicenseCard = (props: Props) => {
           >
             <span className="icon clickable dashboard-card-upload-version-icon u-marginRight--5" />
             <span
-              className="replicated-link u-fontSize--small"
+              className="link u-fontSize--small"
               onClick={() => syncLicense("")}
             >
               Upload license
@@ -245,7 +247,7 @@ const DashboardLicenseCard = (props: Props) => {
                   "u-fontWeight--bold u-fontSize--small u-marginRight--10",
                   {
                     "u-textColor--error": messageType === "error",
-                    "u-textColor--primary": messageType === "info",
+                    "u-textColor--info": messageType === "info",
                   }
                 )}
               >
@@ -253,32 +255,34 @@ const DashboardLicenseCard = (props: Props) => {
               </p>
             )}
             {appLicense?.lastSyncedAt && !message ? (
-              <span className="u-fontSize--small u-textColor--header u-fontWeight--medium u-lineHeight--normal u-marginRight--10">
+              <span className="u-fontSize--small u-textColor--info u-fontWeight--medium u-lineHeight--normal u-marginRight--10">
                 Last synced {Utilities.dateFromNow(appLicense.lastSyncedAt)}
               </span>
             ) : null}
-            <Icon
-              icon="sync-license"
-              className="clickable u-marginRight--5"
-              size={16}
-            />
-            <span
-              className="replicated-link u-fontSize--small"
-              onClick={() => syncLicense("")}
-            >
-              Sync license
-            </span>
+            <div className="flex alignItems--center u-marginRight--20 link">
+              <Icon
+                icon="sync-license"
+                className="clickable u-marginRight--5"
+                size={16}
+              />
+              <span
+                className="u-fontSize--small"
+                onClick={() => syncLicense("")}
+              >
+                Sync license
+              </span>
+            </div>
           </div>
         )}
       </div>
-      <div className="LicenseCard-content--wrapper u-marginTop--10">
+      <div className="card-item u-marginTop--10">
         {/* license tester component to try out the useLicense hook! */}
         {props.children}
         {size(appLicense) > 0 ? (
           <div className="flex">
             <div className="flex-column flex1">
               <div className="flex alignItems--center">
-                <p className="u-fontSize--large u-fontWeight--medium u-textColor--header">
+                <p className="u-fontSize--large u-fontWeight--medium card-item-title">
                   {" "}
                   {appLicense?.assignee}
                 </p>
@@ -389,7 +393,7 @@ const DashboardLicenseCard = (props: Props) => {
       <div className="u-marginTop--10">
         <Link
           to={`/app/${app?.slug}/license`}
-          className="replicated-link u-fontSize--small"
+          className="link u-fontSize--small"
         >
           See license details
           <Icon

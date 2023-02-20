@@ -577,7 +577,7 @@ class IdentityProviders extends Component {
           <span className="icon small-warning-icon u-marginRight--10" />
           <p>
             To configure an Identity Provider you must have Ingress configured for the Admin Console.
-          <Link to="/access/configure-ingress" className="u-linkColor u-textDecoration--underlineOnHover"> Configure Ingress </Link>
+          <Link to="/access/configure-ingress" className="link u-textDecoration--underlineOnHover"> Configure Ingress </Link>
           </p>
         </div> */}
         <form className="flex-auto Identity--wrapper u-marginTop--30">
@@ -912,7 +912,7 @@ class IdentityProviders extends Component {
                       />
                     ))}
                     <p
-                      className="u-fontSize--small u-fontWeight--medium u-lineHeight--normal u-linkColor u-cursor--pointer u-marginTop--15"
+                      className="u-fontSize--small u-lineHeight--normal u-marginTop--15 link"
                       onClick={this.onAddGroupRow}
                     >
                       {" "}
@@ -936,7 +936,7 @@ class IdentityProviders extends Component {
             {this.state.selectedProvider === "oidcConfig" && (
               <div className="flex1 flex-column u-marginTop--20">
                 <p
-                  className="u-fontSize--small u-fontWeight--medium u-lineHeight--normal u-linkColor u-cursor--pointer"
+                  className="u-fontSize--small u-lineHeight--normal link"
                   onClick={this.toggleAdvancedOptions}
                 >
                   {" "}

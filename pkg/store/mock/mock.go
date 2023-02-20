@@ -340,6 +340,20 @@ func (mr *MockStoreMockRecorder) DeleteSession(sessionID interface{}) *gomock.Ca
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteSession", reflect.TypeOf((*MockStore)(nil).DeleteSession), sessionID)
 }
 
+// DeleteSupportBundle mocks base method.
+func (m *MockStore) DeleteSupportBundle(bundleID, appID string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DeleteSupportBundle", bundleID, appID)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// DeleteSupportBundle indicates an expected call of DeleteSupportBundle.
+func (mr *MockStoreMockRecorder) DeleteSupportBundle(bundleID, appID interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteSupportBundle", reflect.TypeOf((*MockStore)(nil).DeleteSupportBundle), bundleID, appID)
+}
+
 // FindDownstreamVersions mocks base method.
 func (m *MockStore) FindDownstreamVersions(appID string, downloadedOnly bool) (*types0.DownstreamVersions, error) {
 	m.ctrl.T.Helper()
@@ -2134,6 +2148,20 @@ func (m *MockSupportBundleStore) CreateSupportBundle(bundleID, appID, archivePat
 func (mr *MockSupportBundleStoreMockRecorder) CreateSupportBundle(bundleID, appID, archivePath, marshalledTree interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateSupportBundle", reflect.TypeOf((*MockSupportBundleStore)(nil).CreateSupportBundle), bundleID, appID, archivePath, marshalledTree)
+}
+
+// DeleteSupportBundle mocks base method.
+func (m *MockSupportBundleStore) DeleteSupportBundle(bundleID, appID string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DeleteSupportBundle", bundleID, appID)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// DeleteSupportBundle indicates an expected call of DeleteSupportBundle.
+func (mr *MockSupportBundleStoreMockRecorder) DeleteSupportBundle(bundleID, appID interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteSupportBundle", reflect.TypeOf((*MockSupportBundleStore)(nil).DeleteSupportBundle), bundleID, appID)
 }
 
 // GetRedactions mocks base method.
