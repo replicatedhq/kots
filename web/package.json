@@ -175,7 +175,8 @@
   },
   "resolutions": {
     "trim": "^0.0.3",
-    "@grafana/data/moment": "2.29.4"
+    "@grafana/data/moment": "2.29.4",
+    "moment-timezone/moment": "2.9.0"
   },
   "browserslist": [
     "> 1%",
