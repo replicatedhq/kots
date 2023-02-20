@@ -174,7 +174,8 @@
     "webpack-bugsnag-plugins": "^1.4.3"
   },
   "resolutions": {
-    "trim": "^0.0.3"
+    "trim": "^0.0.3",
+    "moment": "^2.29.4"
   },
   "browserslist": [
     "> 1%",
