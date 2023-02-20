@@ -1473,6 +1473,7 @@ jobs:
         uses: ./.github/actions/kots-e2e
         with:
           kots-namespace: "$APP_SLUG"
+          k8s-version: '${{ matrix.k8s_version }}'
           aws-access-key-id: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_ACCESS_KEY_ID }}'
           aws-secret-access-key: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_SECRET_ACCESS_KEY }}'
 
@@ -1932,6 +1933,7 @@ jobs:
       fail-fast: false
       matrix:
         k8s_version: [ v1.26.1-k3s1 ]
+        platform: [ k3s, gke ]
     steps:
       - name: Checkout
         uses: actions/checkout@v2
@@ -1952,6 +1954,7 @@ jobs:
         with:
           test-focus: 'airgap-smoke-test'
           kots-namespace: 'airgap-smoke-test'
+          platform: '${{ matrix.platform }}'
           k8s-version: '${{ matrix.k8s_version }}'
           k8s-arguments: ${{ startsWith(matrix.k8s_version, 'v1.22') && '--egress-selector-mode disabled' || '' }}
           testim-access-token: '${{ secrets.TESTIM_ACCESS_TOKEN }}'
@@ -1959,6 +1962,7 @@ jobs:
           kots-airgap: true
           aws-access-key-id: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_ACCESS_KEY_ID }}'
           aws-secret-access-key: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_SECRET_ACCESS_KEY }}'
+          gke-service-key: '${{ secrets.GOOGLE_CLOUD_CREDENTIALS }}'
 
 
   validate-pr-tests:
@@ -1994,6 +1998,7 @@ jobs:
       - validate-kots-push-images-anonymous
     steps:
       - run: echo "All PR tests passed"
+
 
   # this job will validate that the kurl add-on validation did not fail and that all pr-tests succeed
   # it is used for the github branch protection rule

@@ -726,51 +726,6 @@ class AppVersionHistory extends Component<Props, State> {
     });
   };
 
-  renderVersionDownloadStatus = (version: Version) => {
-    const { versionDownloadStatuses } = this.state;
-    if (!versionDownloadStatuses.hasOwnProperty(version.sequence)) {
-      // user hasn't tried to re-download the version yet, show last known download status if exists
-      if (version.downloadStatus) {
-        return (
-          <div className="flex alignItems--center justifyContent--flexEnd">
-            <span
-              className={`u-textColor--bodyCopy u-fontWeight--medium u-fontSize--small u-lineHeight--default ${
-                version.downloadStatus.status === "failed"
-                  ? "u-textColor--error"
-                  : ""
-              }`}
-            >
-              {version.downloadStatus.message}
-            </span>
-          </div>
-        );
-      }
-      return null;
-    }
-
-    if (versionDownloadStatuses !== null) {
-      const status = versionDownloadStatuses[version.sequence];
-      return (
-        <div className="flex alignItems--center justifyContent--flexEnd">
-          {status?.downloadingVersion && (
-            <Loader className="u-marginRight--5" size="15" />
-          )}
-          <span
-            className={`u-textColor--bodyCopy u-fontWeight--medium u-fontSize--small u-lineHeight--default ${
-              status.downloadingVersionError ? "u-textColor--error" : ""
-            }`}
-          >
-            {status?.downloadingVersionMessage
-              ? status?.downloadingVersionMessage
-              : status?.downloadingVersion
-              ? "Downloading"
-              : ""}
-          </span>
-        </div>
-      );
-    }
-  };
-
   deployVersion = (
     version: Version | null,
     force = false,
@@ -841,27 +796,18 @@ class AppVersionHistory extends Component<Props, State> {
     }
   };
 
-  redeployVersion = (version: Version, isRollback = false) => {
+  redeployVersion = (version: Version) => {
     const { app } = this.props;
     const clusterSlug = app.downstream.cluster?.slug;
     if (!clusterSlug) {
       return;
     }
 
-    // prompt to make sure user wants to redeploy
-    if (isRollback) {
-      this.setState({
-        displayConfirmDeploymentModal: true,
-        confirmType: "rollback",
-        versionToDeploy: version,
-      });
-    } else {
-      this.setState({
-        displayConfirmDeploymentModal: true,
-        confirmType: "redeploy",
-        versionToDeploy: version,
-      });
-    }
+    this.setState({
+      displayConfirmDeploymentModal: true,
+      confirmType: "redeploy",
+      versionToDeploy: version,
+    });
   };
 
   finalizeRedeployment = async () => {
@@ -1495,7 +1441,6 @@ class AppVersionHistory extends Component<Props, State> {
       <React.Fragment key={index}>
         <AppVersionHistoryRow
           adminConsoleMetadata={this.props.adminConsoleMetadata}
-          app={this.props.app}
           deployVersion={this.deployVersion}
           downloadVersion={this.downloadVersion}
           gitopsEnabled={gitopsIsConnected}
@@ -1513,7 +1458,6 @@ class AppVersionHistory extends Component<Props, State> {
             this.state.versionDownloadStatuses?.[version.sequence]
               ?.downloadingVersion
           }
-          isHelmManaged={this.props.isHelmManaged}
           isNew={isNew}
           key={version.sequence}
           newPreflightResults={newPreflightResults}
@@ -1535,13 +1479,26 @@ class AppVersionHistory extends Component<Props, State> {
             });
           }}
           redeployVersion={this.redeployVersion}
-          renderVersionDownloadStatus={this.renderVersionDownloadStatus}
           selectedDiffReleases={this.state.selectedDiffReleases}
           showReleaseNotes={this.showReleaseNotes}
+          showVersionPreviousDownloadStatus={
+            // user hasn't tried to re-download the version yet,
+            // show last known download status if exists
+            !this.state.versionDownloadStatuses.hasOwnProperty(
+              version.sequence
+            ) && Boolean(version.downloadStatus)
+          }
+          showVersionDownloadingStatus={
+            this.state.versionDownloadStatuses.hasOwnProperty(
+              version.sequence
+            ) && Boolean(this.state.versionDownloadStatuses?.[version.sequence])
+          }
           toggleShowDetailsModal={this.toggleShowDetailsModal}
           upgradeAdminConsole={this.upgradeAdminConsole}
           version={version}
-          wrappedMatch={this.props.wrappedMatch}
+          versionDownloadStatus={
+            this.state.versionDownloadStatuses?.[version.sequence]
+          }
           versionHistory={this.state.versionHistory}
         />
         {this.state.showHelmDeployModalForVersionLabel ===

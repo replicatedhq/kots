@@ -89,7 +89,7 @@ export type DashboardResponse = {
 
 export type Downstream = {
   cluster: Cluster;
-  pastVersions: Object;
+  pastVersions: Version[];
   currentVersion: Version;
   gitops: GitOps;
   links: DashboardActionLink[];
@@ -231,6 +231,8 @@ export type Version = {
   appTitle: string;
   appIconUri: string;
   updateCursor: string;
+  upstreamReleasedAt: string;
+  title: string;
   versionLabel?: string;
   yamlErrors: string[];
 };
@@ -252,6 +254,7 @@ export type VersionStatus =
   | "pending_config"
   | "pending_download"
   | "pending_preflight"
+  | "superseded"
   | "waiting";
 
 export type LicenseFile = {

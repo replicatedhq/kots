@@ -1,5 +1,5 @@
-import React, { Component } from "react";
-import { Link } from "react-router-dom";
+import React, { useEffect, useState } from "react";
+import { Link, RouteComponentProps } from "react-router-dom";
 import find from "lodash/find";
 import classNames from "classnames";
 import ReactTooltip from "react-tooltip";
@@ -12,36 +12,74 @@ import { YamlErrors } from "./YamlErrors";
 import Icon from "@src/components/Icon";
 
 import { ViewDiffButton } from "@features/VersionDiff/ViewDiffButton";
+import { Metadata, Version, VersionDownloadStatus } from "@types";
+import { useIsHelmManaged } from "@components/hooks";
+import { useSelectedApp } from "@features/App/hooks/useSelectedApp";
 
-class AppVersionHistoryRow extends Component {
-  constructor(props) {
-    super(props);
+interface Props extends Partial<RouteComponentProps> {
+  adminConsoleMetadata: Metadata;
+  deployVersion: (version: Version) => void;
+  downloadVersion: (version: Version) => void;
+  gitopsEnabled: boolean;
+  handleActionButtonClicked: () => void;
+  handleSelectReleasesToDiff: (version: Version, isChecked: boolean) => void;
+  handleViewLogs: (version: Version | null, isFailing: boolean) => void;
+  isChecked: boolean;
+  isDownloading: boolean;
+  isNew: boolean;
+  newPreflightResults: boolean;
+  nothingToCommit: boolean;
+  onWhyNoGeneratedDiffClicked: (rowVersion: Version) => void;
+  onWhyUnableToGeneratedDiffClicked: (rowVersion: Version) => void;
+  onViewDiffClicked: (firstSequence: number, secondSequence: number) => void;
+  redeployVersion: (version: Version) => void;
+  selectedDiffReleases: boolean;
+  showReleaseNotes: (releaseNotes: string) => void;
+  showVersionPreviousDownloadStatus: boolean;
+  showVersionDownloadingStatus: boolean;
+  toggleShowDetailsModal: (
+    yamlErrorDetails: string[],
+    selectedSequence: number
+  ) => void;
+  upgradeAdminConsole: (version: Version) => void;
+  version: Version;
+  versionDownloadStatus: VersionDownloadStatus;
+  versionHistory: Version[];
+}
 
-    this.state = {
-      // TODO: move this into selector
-      showViewDiffButton:
-        !props.version.source?.includes("Airgap Install") &&
-        !props.version.source?.includes("Online Install"),
-    };
-  }
+function AppVersionHistoryRow(props: Props) {
+  // TODO: move this into a selector
+  const [showViewDiffButton, setShowViewDiffButton] = useState(
+    !props.version.source?.includes("Airgap Install") &&
+      !props.version.source?.includes("Online Install")
+  );
 
-  handleSelectReleasesToDiff = () => {
-    if (!this.props.selectedDiffReleases) {
-      return;
-    }
-    if (this.props.nothingToCommit) {
-      return;
-    }
-    this.props.handleSelectReleasesToDiff(
-      this.props.version,
-      !this.props.isChecked
+  const { data: isHelmManaged } = useIsHelmManaged();
+  const selectedApp = useSelectedApp();
+
+  useEffect(() => {
+    setShowViewDiffButton(
+      !props.version.source?.includes("Airgap Install") &&
+        !props.version.source?.includes("Online Install")
     );
+  }, [props.version.source]);
+
+  const handleSelectReleasesToDiff = () => {
+    if (!props.selectedDiffReleases) {
+      return;
+    }
+    if (props.nothingToCommit) {
+      return;
+    }
+    props.handleSelectReleasesToDiff(props.version, !props.isChecked);
   };
 
-  deployButtonStatus = (version) => {
-    if (this.props.isHelmManaged) {
+  const deployButtonStatus = (version: Version) => {
+    if (isHelmManaged) {
       const deployedSequence =
-        this.props.app?.downstream?.currentVersion?.sequence;
+        selectedApp?.downstream?.currentVersion?.sequence;
+
+      if (!deployedSequence) throw new Error("deployedSequence is undefined");
 
       if (version.sequence > deployedSequence) {
         return "Deploy";
@@ -54,24 +92,24 @@ class AppVersionHistoryRow extends Component {
       return "Redeploy";
     }
 
-    const app = this.props.app;
-    const downstream = app?.downstream;
+    const downstream = selectedApp?.downstream;
 
     const isCurrentVersion =
-      version.sequence === downstream.currentVersion?.sequence;
+      version.sequence === downstream?.currentVersion?.sequence;
     const isDeploying = version.status === "deploying";
-    const isPastVersion = find(downstream.pastVersions, {
+    const isPastVersion = find(downstream?.pastVersions, {
       sequence: version.sequence,
     });
     const needsConfiguration = version.status === "pending_config";
-    const isRollback = isPastVersion && version.deployedAt && app.allowRollback;
+    const isRollback =
+      isPastVersion && version.deployedAt && selectedApp?.allowRollback;
     const isRedeploy =
       isCurrentVersion &&
       (version.status === "failed" || version.status === "deployed");
     const canUpdateKots =
       version.needsKotsUpgrade &&
-      !this.props.adminConsoleMetadata?.isAirgap &&
-      !this.props.adminConsoleMetadata?.isKurl;
+      !props.adminConsoleMetadata?.isAirgap &&
+      !props.adminConsoleMetadata?.isKurl;
 
     if (needsConfiguration) {
       return "Configure";
@@ -98,7 +136,7 @@ class AppVersionHistoryRow extends Component {
     }
   };
 
-  getPreflightState = (version) => {
+  const getPreflightState = (version: Version) => {
     let preflightsFailed = false;
     let preflightState = "";
     if (version?.preflightResult) {
@@ -113,7 +151,7 @@ class AppVersionHistoryRow extends Component {
     };
   };
 
-  renderReleaseNotes = (version) => {
+  const renderReleaseNotes = (version: Version) => {
     if (!version?.releaseNotes) {
       return null;
     }
@@ -122,7 +160,7 @@ class AppVersionHistoryRow extends Component {
         <Icon
           icon="release-notes"
           size={24}
-          onClick={() => this.props.showReleaseNotes(version?.releaseNotes)}
+          onClick={() => props.showReleaseNotes(version?.releaseNotes)}
           data-tip="View release notes"
           className="u-marginRight--10 clickable"
         />
@@ -131,35 +169,57 @@ class AppVersionHistoryRow extends Component {
     );
   };
 
-  renderVersionAction = (version) => {
-    const app = this.props.app;
-    const downstream = app?.downstream;
-    const { newPreflightResults } = this.props;
+  const isActionButtonDisabled = (version: Version) => {
+    if (isHelmManaged) {
+      return false;
+    }
+    if (version.status === "deploying") {
+      return true;
+    }
+    if (version.status === "pending_config") {
+      return false;
+    }
+    if (version.status === "pending_download") {
+      return false;
+    }
+    return !version.isDeployable;
+  };
 
-    let actionFn = this.props.deployVersion;
-    if (this.props.isHelmManaged) {
+  const renderVersionAction = (version: Version) => {
+    const app = selectedApp;
+    const downstream = app?.downstream;
+    const { newPreflightResults } = props;
+
+    // useDeployAppVersion
+    let actionFn = props.deployVersion;
+    if (isHelmManaged) {
       actionFn = () => {};
+      // TODO: conditionally fetch the admin console update status when mounting the hook
+      // by using verision.needsKotsUpgrade
     } else if (version.needsKotsUpgrade) {
-      actionFn = this.props.upgradeAdminConsole;
+      // postUpdateAdminConsole
+      actionFn = props.upgradeAdminConsole;
     } else if (version.status === "pending_download") {
-      actionFn = this.props.downloadVersion;
+      // postDownloadVersion
+      actionFn = props.downloadVersion;
     } else if (version.status === "failed" || version.status === "deployed") {
-      actionFn = this.props.redeployVersion;
+      // postRedeployVersion
+      actionFn = props.redeployVersion;
     }
 
     if (version.status === "pending_download") {
       let buttonText = "Download";
-      if (this.props.isDownloading) {
+      if (props.isDownloading) {
         buttonText = "Downloading";
       } else if (version.needsKotsUpgrade) {
         buttonText = "Upgrade";
       }
       return (
         <div className="flex flex1 justifyContent--flexEnd alignItems--center">
-          {this.renderReleaseNotes(version)}
+          {renderReleaseNotes(version)}
           <button
             className={"btn secondary blue"}
-            disabled={this.props.isDownloading}
+            disabled={props.isDownloading}
             onClick={() => actionFn(version)}
           >
             {buttonText}
@@ -169,24 +229,25 @@ class AppVersionHistoryRow extends Component {
     }
 
     const isCurrentVersion =
-      version.sequence === downstream.currentVersion?.sequence;
-    const isLatestVersion = version.sequence === app.currentSequence;
-    const isPendingVersion = find(downstream.pendingVersions, {
+      version.sequence === downstream?.currentVersion?.sequence;
+    const isLatestVersion = version.sequence === selectedApp?.currentSequence;
+    const isPendingVersion = find(downstream?.pendingVersions, {
       sequence: version.sequence,
     });
-    const isPastVersion = find(downstream.pastVersions, {
+    const isPastVersion = find(downstream?.pastVersions, {
       sequence: version.sequence,
     });
-    const isPendingDeployedVersion = find(downstream.pendingVersions, {
+    const isPendingDeployedVersion = find(downstream?.pendingVersions, {
       sequence: version.sequence,
       status: "deployed",
     });
     const needsConfiguration = version.status === "pending_config";
-    const showActions = !isPastVersion || app.allowRollback;
+    const showActions = !isPastVersion || selectedApp?.allowRollback;
     const isRedeploy =
       isCurrentVersion &&
       (version.status === "failed" || version.status === "deployed");
-    const isRollback = isPastVersion && version.deployedAt && app.allowRollback;
+    const isRollback =
+      isPastVersion && version.deployedAt && selectedApp?.allowRollback;
 
     const isSecondaryBtn =
       isPastVersion || needsConfiguration || (isRedeploy && !isRollback);
@@ -195,10 +256,11 @@ class AppVersionHistoryRow extends Component {
       isCurrentVersion || isLatestVersion || isPendingVersion?.semver;
 
     const showDeployLogs =
-      isPastVersion ||
-      isCurrentVersion ||
-      isPendingDeployedVersion ||
-      (version?.status === "superseded" && version?.status !== "pending");
+      (isPastVersion ||
+        isCurrentVersion ||
+        isPendingDeployedVersion ||
+        version?.status === "superseded") &&
+      version?.status !== "pending";
 
     let tooltipTip;
     if (editableConfig) {
@@ -207,7 +269,7 @@ class AppVersionHistoryRow extends Component {
       tooltipTip = "View config";
     }
 
-    const preflightState = this.getPreflightState(version);
+    const preflightState = getPreflightState(version);
     let checksStatusText;
     if (preflightState.preflightsFailed) {
       checksStatusText = "Checks failed";
@@ -217,19 +279,19 @@ class AppVersionHistoryRow extends Component {
       checksStatusText = "Checks passed";
     }
 
-    let configScreenURL = `/app/${app.slug}/config/${version.sequence}`;
-    if (this.props.isHelmManaged && version.status.startsWith("pending")) {
+    let configScreenURL = `/app/${selectedApp?.slug}/config/${version.sequence}`;
+    if (isHelmManaged && version.status.startsWith("pending")) {
       configScreenURL = `${configScreenURL}?isPending=true&semver=${version.semver}`;
     }
 
-    if (downstream.gitops?.isConnected) {
+    if (downstream?.gitops?.isConnected) {
       if (version.gitDeployable === false) {
         return (
           <div
             className={
-              this.props.nothingToCommit &&
-              this.props.selectedDiffReleases &&
-              "u-opacity--half"
+              props.nothingToCommit && props.selectedDiffReleases
+                ? "u-opacity--half"
+                : ""
             }
           >
             Nothing to commit
@@ -239,7 +301,7 @@ class AppVersionHistoryRow extends Component {
       if (!version.commitUrl) {
         return (
           <div className="flex flex1 justifyContent--flexEnd alignItems--center">
-            {this.renderReleaseNotes(version)}
+            {renderReleaseNotes(version)}
             <>
               {version.status === "pending_preflight" ? (
                 <div className="u-position--relative">
@@ -251,7 +313,7 @@ class AppVersionHistoryRow extends Component {
               ) : preflightState.preflightState !== "" ? (
                 <>
                   <Link
-                    to={`/app/${app?.slug}/downstreams/${app?.downstream.cluster?.slug}/version-history/preflight/${version?.sequence}`}
+                    to={`/app/${app?.slug}/downstreams/${app?.downstream?.cluster?.slug}/version-history/preflight/${version?.sequence}`}
                     className="u-position--relative u-marginRight--10"
                     data-tip="View preflight checks"
                   >
@@ -309,7 +371,7 @@ class AppVersionHistoryRow extends Component {
       }
       return (
         <div className="flex flex1 justifyContent--flexEnd alignItems--center">
-          {this.renderReleaseNotes(version)}
+          {renderReleaseNotes(version)}
           <div>
             {version.status === "pending_preflight" ? (
               <div className="u-position--relative">
@@ -321,7 +383,7 @@ class AppVersionHistoryRow extends Component {
             ) : preflightState.preflightState !== "" ? (
               <>
                 <Link
-                  to={`/app/${app?.slug}/downstreams/${app?.downstream.cluster?.slug}/version-history/preflight/${version?.sequence}`}
+                  to={`/app/${app?.slug}/downstreams/${app?.downstream?.cluster?.slug}/version-history/preflight/${version?.sequence}`}
                   className="u-position--relative u-marginRight--10"
                   data-tip="View preflight checks"
                 >
@@ -386,7 +448,7 @@ class AppVersionHistoryRow extends Component {
 
     return (
       <div className="flex flex1 justifyContent--flexEnd alignItems--center">
-        {this.renderReleaseNotes(version)}
+        {renderReleaseNotes(version)}
 
         <div>
           {version.status === "pending_preflight" ? (
@@ -399,7 +461,7 @@ class AppVersionHistoryRow extends Component {
           ) : preflightState.preflightState !== "" ? (
             <>
               <Link
-                to={`/app/${app?.slug}/downstreams/${app?.downstream.cluster?.slug}/version-history/preflight/${version?.sequence}`}
+                to={`/app/${app?.slug}/downstreams/${app?.downstream?.cluster?.slug}/version-history/preflight/${version?.sequence}`}
                 className="u-position--relative u-marginRight--10"
                 data-tip="View preflight checks"
               >
@@ -460,7 +522,7 @@ class AppVersionHistoryRow extends Component {
           <div className="u-marginLeft--10">
             <span
               onClick={() =>
-                this.props.handleViewLogs(version, version?.status === "failed")
+                props.handleViewLogs(version, version?.status === "failed")
               }
               data-tip="View deploy logs"
             >
@@ -488,15 +550,15 @@ class AppVersionHistoryRow extends Component {
                 "secondary blue": isSecondaryBtn,
                 "primary blue": isPrimaryButton,
               })}
-              disabled={this.isActionButtonDisabled(version)}
+              disabled={isActionButtonDisabled(version)}
               onClick={() => {
-                this.props.handleActionButtonClicked();
+                props.handleActionButtonClicked();
                 if (needsConfiguration) {
-                  this.props.history.push(configScreenURL);
+                  props?.history?.push(configScreenURL);
                   return null;
                 }
                 if (isRollback) {
-                  actionFn(version, true);
+                  actionFn(version);
                   return null;
                 }
 
@@ -506,11 +568,11 @@ class AppVersionHistoryRow extends Component {
             >
               <span
                 key={version.nonDeployableCause}
-                data-tip-disable={!this.isActionButtonDisabled(version)}
+                data-tip-disable={!isActionButtonDisabled(version)}
                 data-tip={version.nonDeployableCause}
                 data-for="disable-deployment-tooltip"
               >
-                {this.deployButtonStatus(version)}
+                {deployButtonStatus(version)}
               </span>
             </button>
             <ReactTooltip effect="solid" id="disable-deployment-tooltip" />
@@ -520,33 +582,17 @@ class AppVersionHistoryRow extends Component {
     );
   };
 
-  isActionButtonDisabled = (version) => {
-    if (this.props.isHelmManaged) {
-      return false;
-    }
-    if (version.status === "deploying") {
-      return true;
-    }
-    if (version.status === "pending_config") {
-      return false;
-    }
-    if (version.status === "pending_download") {
-      return false;
-    }
-    return !version.isDeployable;
-  };
-
-  renderVersionStatus = (version) => {
-    const app = this.props.app;
+  const renderVersionStatus = (version: Version) => {
+    const app = selectedApp;
     const downstream = app?.downstream;
     if (!downstream) {
       return null;
     }
 
-    const isPastVersion = find(downstream.pastVersions, {
+    const isPastVersion = find(downstream?.pastVersions, {
       sequence: version.sequence,
     });
-    const isPendingDeployedVersion = find(downstream.pendingVersions, {
+    const isPendingDeployedVersion = find(downstream?.pendingVersions, {
       sequence: version.sequence,
       status: "deployed",
     });
@@ -559,11 +605,7 @@ class AppVersionHistoryRow extends Component {
               className="status-tag success flex-auto u-cursor--default"
               data-tip={
                 version.deployedAt
-                  ? `${
-                      version.status === "deploying"
-                        ? "Deploy started at"
-                        : "Deployed"
-                    } ${Utilities.dateFormat(
+                  ? `${"Deployed"} ${Utilities.dateFormat(
                       version.deployedAt,
                       "MMMM D, YYYY @ hh:mm a z"
                     )}`
@@ -591,7 +633,7 @@ class AppVersionHistoryRow extends Component {
             </span>
             <span
               className="link u-fontSize--small"
-              onClick={() => this.props.handleViewLogs(version, true)}
+              onClick={() => props.handleViewLogs(version, true)}
             >
               View deploy logs
             </span>
@@ -655,7 +697,7 @@ class AppVersionHistoryRow extends Component {
             </span>
             <span
               className="link u-fontSize--small"
-              onClick={() => this.props.handleViewLogs(version, true)}
+              onClick={() => props.handleViewLogs(version, true)}
             >
               View deploy logs
             </span>
@@ -690,51 +732,50 @@ class AppVersionHistoryRow extends Component {
     }
   };
 
-  render() {
-    const {
-      version,
-      selectedDiffReleases,
-      nothingToCommit,
-      isChecked,
-      isNew,
-      gitopsEnabled,
-      newPreflightResults,
-      isHelmManaged,
-    } = this.props;
+  const {
+    version,
+    selectedDiffReleases,
+    nothingToCommit,
+    isChecked,
+    isNew,
+    gitopsEnabled,
+    newPreflightResults,
+  } = props;
 
-    let showSequence = true;
-    if (isHelmManaged && version.status.startsWith("pending")) {
-      showSequence = false;
-    }
+  let showSequence = true;
+  if (isHelmManaged && version.status.startsWith("pending")) {
+    showSequence = false;
+  }
 
-    let sequenceLabel = "Sequence";
-    if (isHelmManaged) {
-      sequenceLabel = "Revision";
-    }
+  let sequenceLabel = "Sequence";
+  if (isHelmManaged) {
+    sequenceLabel = "Revision";
+  }
 
-    // Old Helm charts will not have any timestamps, so don't show current time when they are missing because it's misleading.
-    let releasedTs = "";
-    const tsFormat = "MM/DD/YY @ hh:mm a z";
-    if (version.upstreamReleasedAt) {
-      releasedTs = Utilities.dateFormat(version.upstreamReleasedAt, tsFormat);
-    }
+  // Old Helm charts will not have any timestamps, so don't show current time when they are missing because it's misleading.
+  let releasedTs = "";
+  const tsFormat = "MM/DD/YY @ hh:mm a z";
+  if (version.upstreamReleasedAt) {
+    releasedTs = Utilities.dateFormat(version.upstreamReleasedAt, tsFormat);
+  }
 
-    return (
-      <div
-        key={version.sequence}
-        className={classNames(
-          `card-item VersionHistoryRowWrapper ${version.status} flex-column justifyContent--center u-padding--15`,
-          {
-            overlay: selectedDiffReleases,
-            disabled: nothingToCommit,
-            selected: isChecked && !nothingToCommit,
-            "is-new": isNew,
-            "show-preflight-passed-text": newPreflightResults,
-          }
-        )}
-        style={{ minHeight: "60px" }}
-        onClick={this.handleSelectReleasesToDiff}
-      >
+  return (
+    <div
+      key={version.sequence}
+      className={classNames(
+        `card-item VersionHistoryRowWrapper ${version.status} flex-column justifyContent--center u-padding--15`,
+        {
+          overlay: selectedDiffReleases,
+          disabled: nothingToCommit,
+          selected: isChecked && !nothingToCommit,
+          "is-new": isNew,
+          "show-preflight-passed-text": newPreflightResults,
+        }
+      )}
+      style={{ minHeight: "60px" }}
+      onClick={handleSelectReleasesToDiff}
+    >
+      <>
         <div className="VersionHistoryRow flex flex-auto">
           {selectedDiffReleases && (
             <div
@@ -776,26 +817,24 @@ class AppVersionHistoryRow extends Component {
                 <span className="u-fontWeight--bold">{releasedTs}</span>
               </p>
             )}
-            {this.state.showViewDiffButton && (
+            {showViewDiffButton && (
               <ViewDiffButton
-                onWhyNoGeneratedDiffClicked={
-                  this.props.onWhyNoGeneratedDiffClicked
-                }
+                onWhyNoGeneratedDiffClicked={props.onWhyNoGeneratedDiffClicked}
                 onWhyUnableToGeneratedDiffClicked={
-                  this.props.onWhyUnableToGeneratedDiffClicked
+                  props.onWhyUnableToGeneratedDiffClicked
                 }
                 onViewDiffClicked={(firstSequence, secondSequence) =>
-                  this.props.onViewDiffClicked(firstSequence, secondSequence)
+                  props.onViewDiffClicked(firstSequence, secondSequence)
                 }
-                version={this.props.version}
-                versionHistory={this.props.versionHistory}
+                version={props.version}
+                versionHistory={props.versionHistory}
               />
             )}
             {version.yamlErrors && (
               <YamlErrors
                 yamlErrors={version.yamlErrors}
                 handleShowDetailsClicked={() =>
-                  this.props.toggleShowDetailsModal(
+                  props.toggleShowDetailsModal(
                     version.yamlErrors,
                     version.sequence
                   )
@@ -813,7 +852,7 @@ class AppVersionHistoryRow extends Component {
             </p>
             {gitopsEnabled && version.status !== "pending_download" ? null : (
               <div className="flex flex-auto u-marginTop--10">
-                {this.renderVersionStatus(version)}
+                {renderVersionStatus(version)}
               </div>
             )}
           </div>
@@ -822,13 +861,45 @@ class AppVersionHistoryRow extends Component {
               nothingToCommit && selectedDiffReleases && "u-opacity--half"
             } flex-column flex-auto alignItems--flexEnd justifyContent--center`}
           >
-            {this.renderVersionAction(version)}
+            {renderVersionAction(version)}
           </div>
         </div>
-        {this.props.renderVersionDownloadStatus(version)}
-      </div>
-    );
-  }
+        {props.showVersionPreviousDownloadStatus && (
+          <div className="flex alignItems--center justifyContent--flexEnd">
+            <span
+              className={`u-textColor--bodyCopy u-fontWeight--medium u-fontSize--small u-lineHeight--default ${
+                version.downloadStatus.status === "failed"
+                  ? "u-textColor--error"
+                  : ""
+              }`}
+            >
+              {version.downloadStatus.message}
+            </span>
+          </div>
+        )}
+        {props.showVersionDownloadingStatus && (
+          <div className="flex alignItems--center justifyContent--flexEnd">
+            {props.versionDownloadStatus?.downloadingVersion && (
+              <Loader className="u-marginRight--5" size="15" />
+            )}
+            <span
+              className={`u-textColor--bodyCopy u-fontWeight--medium u-fontSize--small u-lineHeight--default ${
+                props.versionDownloadStatus?.downloadingVersionError
+                  ? "u-textColor--error"
+                  : ""
+              }`}
+            >
+              {props.versionDownloadStatus?.downloadingVersionMessage
+                ? props.versionDownloadStatus?.downloadingVersionMessage
+                : props.versionDownloadStatus?.downloadingVersion
+                ? "Downloading"
+                : ""}
+            </span>
+          </div>
+        )}
+      </>
+    </div>
+  );
 }
 
 export { AppVersionHistoryRow };
