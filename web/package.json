@@ -36,13 +36,13 @@
     "@pact-foundation/pact-node": "^10.17.2",
     "@pmmmwh/react-refresh-webpack-plugin": "^0.5.4",
     "@storybook/addon-actions": "^6.5.14",
-    "@storybook/addon-essentials": "^6.5.14",
+    "@storybook/addon-essentials": "^6.5.16",
     "@storybook/addon-interactions": "^6.5.14",
     "@storybook/addon-links": "^6.5.14",
     "@storybook/builder-webpack5": "^6.5.14",
     "@storybook/manager-webpack5": "^6.5.14",
     "@storybook/preset-scss": "^1.0.3",
-    "@storybook/react": "^6.5.14",
+    "@storybook/react": "^6.5.16",
     "@storybook/testing-library": "^0.0.13",
     "@testing-library/jest-dom": "^5.16.5",
     "@testing-library/react": "^13.3.0",
@@ -70,7 +70,6 @@
     "babel-plugin-transform-object-rest-spread": "^6.26.0",
     "babel-preset-flow": "^6.23.0",
     "babel-preset-stage-0": "^6.24.1",
-    "babel-register": "^6.26.0",
     "browserify-zlib": "^0.2.0",
     "concurrently": "^7.2.2",
     "constants-browserify": "^1.0.0",
@@ -177,7 +176,8 @@
     "webpack-bugsnag-plugins": "^1.4.3"
   },
   "resolutions": {
-    "favicons/**/minimist": "1.2.6"
+    "favicons/**/minimist": "1.2.6",
+    "trim": "^0.0.3"
   },
   "browserslist": [
     "> 1%",
