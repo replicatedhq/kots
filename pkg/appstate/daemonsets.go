@@ -2,10 +2,13 @@ package appstate
 
 import (
 	"context"
+	"fmt"
+	"log"
 	"time"
 
 	"github.com/replicatedhq/kots/pkg/appstate/types"
 	appsv1 "k8s.io/api/apps/v1"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/watch"
@@ -14,12 +17,15 @@ import (
 )
 
 const DaemonSetResourceKind = "daemonset"
+const DaemonSetPodVersionLabel = "controller-revision-hash"
 
 var lastSeenGeneration int64 = -1
 
 type daemonSetEventHandler struct {
 	informers       []types.StatusInformer
 	resourceStateCh chan<- types.ResourceState
+	clientset       kubernetes.Interface
+	targetNamespace string
 }
 
 func init() {
@@ -43,6 +49,8 @@ func runDaemonSetController(ctx context.Context, clientset kubernetes.Interface,
 	eventHandler := &daemonSetEventHandler{
 		informers:       filterStatusInformersByResourceKind(informers, DaemonSetResourceKind),
 		resourceStateCh: resourceStateCh,
+		clientset:       clientset,
+		targetNamespace: targetNamespace,
 	}
 
 	runInformer(ctx, informer, eventHandler)
@@ -54,7 +62,7 @@ func (h *daemonSetEventHandler) ObjectCreated(obj interface{}) {
 		return
 	}
 
-	h.resourceStateCh <- makeDaemonSetResourceState(r, calculateDaemonSetState(r))
+	h.resourceStateCh <- makeDaemonSetResourceState(r, h.calculateDaemonSetState(r))
 }
 
 func (h *daemonSetEventHandler) ObjectDeleted(obj interface{}) {
@@ -72,7 +80,7 @@ func (h *daemonSetEventHandler) ObjectUpdated(obj interface{}) {
 		return
 	}
 
-	h.resourceStateCh <- makeDaemonSetResourceState(r, calculateDaemonSetState(r))
+	h.resourceStateCh <- makeDaemonSetResourceState(r, h.calculateDaemonSetState(r))
 }
 
 func (h *daemonSetEventHandler) getInformer(r *appsv1.DaemonSet) (types.StatusInformer, bool) {
@@ -92,31 +100,53 @@ func (h *daemonSetEventHandler) cast(obj interface{}) *appsv1.DaemonSet {
 	return r
 }
 
-func makeDaemonSetResourceState(r *appsv1.DaemonSet, state types.State) types.ResourceState {
-	return types.ResourceState{
-		Kind:      DaemonSetResourceKind,
-		Name:      r.Name,
-		Namespace: r.Namespace,
-		State:     state,
-	}
-}
-
-func calculateDaemonSetState(r *appsv1.DaemonSet) types.State {
+// The pods in a daemonset can be identified by the match label set in the daemonset and the
+// "controller-revision-hash" can be used to determine if they are all the in the same daemonset
+// version.
+func (h *daemonSetEventHandler) calculateDaemonSetState(r *appsv1.DaemonSet) types.State {
 	if r == nil {
 		return types.StateUnavailable
 	}
 
-	if r.Status.ObservedGeneration > lastSeenGeneration {
-		if r.Status.UpdatedNumberScheduled < r.Status.DesiredNumberScheduled {
-			return types.StateUpdating
+	selector := ""
+	for key, value := range r.Spec.Selector.MatchLabels {
+		if len(selector) > 0 {
+			selector += ","
+		}
+		selector += fmt.Sprintf("%s=%s", key, value)
+	}
+
+	// Gather all pods by looping until server responds with an empty continue field.
+	pods := make([]corev1.Pod, 0)
+	for {
+		result, err := h.clientset.CoreV1().Pods(h.targetNamespace).List(context.TODO(), metav1.ListOptions{LabelSelector: selector})
+		if err != nil {
+			log.Printf("failed to get daemonset pod list: %s", err)
+			return types.StateUnavailable
+		}
+		pods = append(pods, result.Items...)
+
+		if len(result.Continue) == 0 {
+			break
+		}
+	}
+
+	// If the pod version labels are not all the same, then the daemonset is updating.
+	currentVersion := ""
+	for _, pod := range pods {
+		version, exists := pod.Labels[DaemonSetPodVersionLabel]
+		if !exists {
+			log.Printf("failed to find %s label for pod %s", DaemonSetPodVersionLabel, pod.Name)
+			return types.StateUnavailable
 		}
 
-		if r.Status.NumberAvailable < r.Status.DesiredNumberScheduled {
-			return types.StateUpdating
+		if len(currentVersion) == 0 {
+			currentVersion = version
+		} else {
+			if version != currentVersion {
+				return types.StateUpdating
+			}
 		}
-
-		lastSeenGeneration = r.Generation
-		return types.StateReady
 	}
 
 	if r.Status.NumberUnavailable > 0 {
@@ -140,4 +170,13 @@ func calculateDaemonSetState(r *appsv1.DaemonSet) types.State {
 	}
 
 	return types.StateUnavailable
+}
+
+func makeDaemonSetResourceState(r *appsv1.DaemonSet, state types.State) types.ResourceState {
+	return types.ResourceState{
+		Kind:      DaemonSetResourceKind,
+		Name:      r.Name,
+		Namespace: r.Namespace,
+		State:     state,
+	}
 }
