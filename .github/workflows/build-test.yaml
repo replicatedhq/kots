@@ -1540,6 +1540,11 @@ jobs:
     needs: [ enable-tests, can-run-ci, build-kots, build-kurl-proxy, build-migrations, push-minio, push-mc, push-rqlite ]
     strategy:
       fail-fast: false
+      matrix:
+        k8s_version: [ v1.26.1-k3s1 ]
+    env:
+      APP_SLUG: minimal-rbac
+      BASE_KOTS_VERSION: v1.72.0
     steps:
       - name: Checkout
         uses: actions/checkout@v2
@@ -1553,6 +1558,76 @@ jobs:
         run: |
           set +e
           ./bin/kots admin-console generate-manifests --shared-password password
+      - name: validate that ./admin-console exists and is not empty
+        run: |
+          set +e
+          if [ ! -d ./admin-console ]; then
+            echo "admin-console directory does not exist"
+            exit -1
+          fi
+          if [ -z "$(ls -A ./admin-console)" ]; then
+            echo "admin-console directory is empty"
+            exit -1
+          fi
+      - name: validate that ./admin-console/minio-statefulset.yaml does not have initContainers since we do not have a k8s context
+        run: |
+          set +e
+          if [ -n "$(grep -E 'initContainers' ./admin-console/minio-statefulset.yaml)" ]; then
+            echo "admin-console/minio-statefulset.yaml has initContainers"
+            exit -1
+          fi
+      - name: install k3s
+        uses: replicatedhq/action-k3s@main
+        with:
+          version: ${{ matrix.k8s_version }}
+          arguments: ${{ startsWith(matrix.k8s_version, 'v1.22') && '--egress-selector-mode disabled' || '' }}
+      - name: download base kots version
+        run: |
+          curl -LO https://github.com/replicatedhq/kots/releases/download/$BASE_KOTS_VERSION/kots_linux_amd64.tar.gz \
+            && tar zxvf kots_linux_amd64.tar.gz \
+            && mv kots kots-$BASE_KOTS_VERSION
+      - name: install base kots version
+        run: |
+          set +e
+          ./kots-$BASE_KOTS_VERSION install $APP_SLUG/automated -n generate-manifests --shared-password password --port-forward=false
+      - name: run kots admin-console generate-manifests with k8s context
+        run: |
+          set +e
+          ./bin/kots admin-console generate-manifests -n generate-manifests --shared-password password
+      - name: validate that ./admin-console/minio-statefulset.yaml has initContainers since a migration is needed
+        run: |
+          set +e
+          if [ -z "$(grep -E 'initContainers' ./admin-console/minio-statefulset.yaml)" ]; then
+            echo "admin-console/minio-statefulset.yaml does not have initContainers"
+            exit -1
+          fi
+      - name: apply the generated manifests
+        run: |
+          set +e
+          kubectl apply -f ./admin-console -n generate-manifests
+      - name: wait for minio to be ready
+        run: |
+          set +e
+          kubectl wait --for=condition=ready --timeout=120s pod/kotsadm-minio-0 -n generate-manifests
+      - name: run kots admin-console generate-manifests with k8s context
+        run: |
+          set +e
+          ./bin/kots admin-console generate-manifests -n generate-manifests --shared-password password
+      - name: validate that ./admin-console/minio-statefulset.yaml does not have initContainers since a migration is not needed
+        run: |
+          set +e
+          if [ -n "$(grep -E 'initContainers' ./admin-console/minio-statefulset.yaml)" ]; then
+            echo "admin-console/minio-statefulset.yaml has initContainers"
+            exit -1
+          fi
+      - name: apply the generated manifests
+        run: |
+          set +e
+          kubectl apply -f ./admin-console -n generate-manifests
+      - name: wait for minio to be ready
+        run: |
+          set +e
+          kubectl wait --for=condition=ready --timeout=120s pod/kotsadm-minio-0 -n generate-manifests
 
 
   validate-min-kots-version:
