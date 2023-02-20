@@ -280,10 +280,16 @@ func addDiscoveredSpecs(
 			continue
 		}
 
-		// TODO: How about other spec fields e.g URI?
+		// ParseSupportBundleFromDoc will check if there is a uri field and if so,
+		// use the upstream spec, otherwise fall back to
+		// what's defined in the current spec
 		supportBundle.Spec.Collectors = append(supportBundle.Spec.Collectors, sbObject.Spec.Collectors...)
 		supportBundle.Spec.Analyzers = append(supportBundle.Spec.Analyzers, sbObject.Spec.Analyzers...)
 	}
+
+	// remove duplicated collectors and analyzers if there are multiple support bundle upstream spec
+	supportBundle = deduplicatedCollectors(supportBundle)
+	supportBundle = deduplicatedAnalyzers(supportBundle)
 
 	return supportBundle
 }
