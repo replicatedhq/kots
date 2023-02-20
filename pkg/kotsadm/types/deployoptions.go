@@ -34,6 +34,8 @@ type DeployOptions struct {
 	ProgressWriter         io.Writer
 	IncludeMinio           bool
 	IncludeMinioSnapshots  bool
+	MigrateMinioXl         bool
+	MigrateMinioXlOldImage string
 	Timeout                time.Duration
 	PreflightsTimeout      time.Duration
 	HTTPProxyEnvValue      string

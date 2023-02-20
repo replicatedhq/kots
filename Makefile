@@ -1,6 +1,7 @@
 include Makefile.build.mk
 CURRENT_USER := $(shell id -u -n)
-MINIO_TAG ?= RELEASE.2022-10-24T18-35-07Z
+MINIO_TAG ?= RELEASE.2023-02-17T17-52-43Z
+MC_TAG ?= RELEASE.2023-02-16T19-20-11Z
 RQLITE_TAG ?= 7.13.1
 DEX_TAG ?= v2.35.3
 LVP_TAG ?= v0.5.0
@@ -117,6 +118,10 @@ all-ttl.sh: build-ttl.sh
 	docker pull minio/minio:${MINIO_TAG}
 	docker tag minio/minio:${MINIO_TAG} ttl.sh/${CURRENT_USER}/minio:${MINIO_TAG}
 	docker push ttl.sh/${CURRENT_USER}/minio:${MINIO_TAG}
+
+	docker pull minio/mc:${MC_TAG}
+	docker tag minio/mc:${MC_TAG} ttl.sh/${CURRENT_USER}/mc:${MC_TAG}
+	docker push ttl.sh/${CURRENT_USER}/mc:${MC_TAG}
 
 	docker pull rqlite/rqlite:${RQLITE_TAG}
 	docker tag rqlite/rqlite:${RQLITE_TAG} ttl.sh/${CURRENT_USER}/rqlite:${RQLITE_TAG}

@@ -3,6 +3,8 @@ package kotsadm
 import (
 	"bytes"
 	"context"
+	"regexp"
+	"time"
 
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
@@ -16,14 +18,30 @@ import (
 	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime/serializer/json"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/scheme"
 )
 
+var (
+	MinioImageTagDateRegexp = regexp.MustCompile(`RELEASE\.(\d{4}-\d{2}-\d{2}T\d{2}-\d{2}-\d{2}Z)`)
+	// MigrateMinioXlBeforeTime is the time that the minio version was released that removed the legacy backend
+	// that we need to migrate from: https://github.com/minio/minio/releases/tag/RELEASE.2022-10-29T06-21-33Z
+	MigrateMinioXlBeforeTime = time.Date(2022, 10, 29, 6, 21, 33, 0, time.UTC)
+)
+
 func getMinioYAML(deployOptions types.DeployOptions) (map[string][]byte, error) {
 	docs := map[string][]byte{}
 	s := json.NewYAMLSerializer(json.DefaultMetaFactory, scheme.Scheme, scheme.Scheme)
+
+	if deployOptions.MigrateMinioXl {
+		var configMap bytes.Buffer
+		if err := s.Encode(kotsadmobjects.MinioXlMigrationScriptsConfigMap(deployOptions.Namespace), &configMap); err != nil {
+			return nil, errors.Wrap(err, "failed to marshal minio migration configmap")
+		}
+		docs["minio-xl-migration-configmap.yaml"] = configMap.Bytes()
+	}
 
 	size, err := getSize(deployOptions, "minio", resource.MustParse("4Gi"))
 	if err != nil {
@@ -56,6 +74,12 @@ func ensureMinio(deployOptions types.DeployOptions, clientset *kubernetes.Client
 
 	if err := ensureS3Secret(deployOptions.Namespace, clientset); err != nil {
 		return errors.Wrap(err, "failed to ensure minio secret")
+	}
+
+	if deployOptions.MigrateMinioXl {
+		if err := ensureMinioXlMigrationScriptsConfigmap(deployOptions.Namespace, clientset); err != nil {
+			return errors.Wrap(err, "failed to ensure minio xl migration scripts configmap")
+		}
 	}
 
 	if err := ensureMinioStatefulset(deployOptions, clientset, size); err != nil {
@@ -97,10 +121,18 @@ func ensureMinioStatefulset(deployOptions types.DeployOptions, clientset *kubern
 	existingMinio.Spec.Template.Spec.Volumes = desiredMinio.Spec.Template.Spec.DeepCopy().Volumes
 	existingMinio.Spec.Template.Spec.Containers[0].Image = desiredMinio.Spec.Template.Spec.Containers[0].Image
 	existingMinio.Spec.Template.Spec.Containers[0].VolumeMounts = desiredMinio.Spec.Template.Spec.Containers[0].DeepCopy().VolumeMounts
+	existingMinio.Spec.Template.Spec.InitContainers = desiredMinio.Spec.Template.Spec.DeepCopy().InitContainers
 
 	_, err = clientset.AppsV1().StatefulSets(deployOptions.Namespace).Update(ctx, existingMinio, metav1.UpdateOptions{})
 	if err != nil {
 		return errors.Wrap(err, "failed to update minio statefulset")
+	}
+
+	// ensureMinioStatefulset can return before the init containers are actually added or removed from the pods
+	// if this occurs, the statefulset will show as a false 'Ready' status and kotsadm will start before the migration is complete
+	desiredInitContainers := len(existingMinio.Spec.Template.Spec.InitContainers)
+	if err := waitForMinioInitContainers(ctx, deployOptions.Namespace, clientset, deployOptions.Timeout, desiredInitContainers); err != nil {
+		return errors.Wrap(err, "failed to wait for minio xl migration")
 	}
 
 	return nil
@@ -326,4 +358,69 @@ func cleanUpMigrationArtifact(clientset kubernetes.Interface, namespace string) 
 		}
 	}
 	return nil
+}
+
+// IsMinioXlMigrationNeeded checks if the minio statefulset needs to be migrated from FS to XL.
+// If the minio statefulset exists, it returns a bool indicating whether a migration is needed and the image of the minio container.
+// If the minio statefulset does not exist, it returns false and an empty string.
+func IsMinioXlMigrationNeeded(clientset kubernetes.Interface, namespace string) (needsMigration bool, minioImage string, err error) {
+	existingMinio, err := clientset.AppsV1().StatefulSets(namespace).Get(context.TODO(), "kotsadm-minio", metav1.GetOptions{})
+	if err != nil {
+		if !kuberneteserrors.IsNotFound(err) {
+			return false, "", errors.Wrap(err, "failed to get minio statefulset")
+		}
+		return false, "", nil
+	}
+
+	minioImage = existingMinio.Spec.Template.Spec.Containers[0].Image
+	needsMigration, err = imageNeedsMinioXlMigration(minioImage)
+	if err != nil {
+		return false, "", errors.Wrap(err, "failed to check if minio needs migration")
+	}
+
+	return needsMigration, minioImage, nil
+}
+
+// imageNeedsMinioXlMigration returns true if the minio image is older than the migrate before time (2022-10-29T06-21-33Z).
+func imageNeedsMinioXlMigration(minioImage string) (bool, error) {
+	existingImageTagDateMatch := MinioImageTagDateRegexp.FindStringSubmatch(minioImage)
+	if len(existingImageTagDateMatch) != 2 {
+		return false, errors.New("failed to parse existing image tag date")
+	}
+
+	existingImageTagDate, err := time.Parse("2006-01-02T15-04-05Z", existingImageTagDateMatch[1])
+	if err != nil {
+		return false, errors.Wrap(err, "failed to parse existing image tag date")
+	}
+
+	return existingImageTagDate.Before(MigrateMinioXlBeforeTime), nil
+}
+
+func waitForMinioInitContainers(ctx context.Context, namespace string, clientset kubernetes.Interface, timeout time.Duration, desiredInitContainers int) error {
+	start := time.Now()
+	for {
+		if time.Since(start) > timeout {
+			return errors.New("timed out waiting for minio xl migration to update")
+		}
+
+		existingMinio, err := clientset.AppsV1().StatefulSets(namespace).Get(ctx, "kotsadm-minio", metav1.GetOptions{})
+		if err != nil {
+			return errors.Wrap(err, "failed to get existing statefulset")
+		}
+
+		pods, err := clientset.CoreV1().Pods(namespace).List(ctx, metav1.ListOptions{
+			LabelSelector: labels.SelectorFromSet(existingMinio.Spec.Selector.MatchLabels).String(),
+		})
+		if err != nil {
+			return errors.Wrap(err, "failed to list pods")
+		}
+
+		for _, pod := range pods.Items {
+			if len(pod.Spec.InitContainers) == desiredInitContainers {
+				return nil
+			}
+		}
+
+		time.Sleep(1 * time.Second)
+	}
 }

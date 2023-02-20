@@ -6,6 +6,8 @@ import (
 	"path/filepath"
 
 	"github.com/pkg/errors"
+	"github.com/replicatedhq/kots/pkg/k8sutil"
+	"github.com/replicatedhq/kots/pkg/kotsadm"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/upstream"
 	upstreamtypes "github.com/replicatedhq/kots/pkg/upstream/types"
@@ -31,16 +33,28 @@ func AdminGenerateManifestsCmd() *cobra.Command {
 				return errors.Wrap(err, "failed to get namespace")
 			}
 
+			// set defaults for variables requiring cluster context
+			isOpenShift, isGKEAutopilot := false, false
+			migrateMinioXl, migrateMinioXlOldImage := false, ""
+			if clientset, err := k8sutil.GetClientset(); err == nil {
+				isOpenShift, isGKEAutopilot = k8sutil.IsOpenShift(clientset), k8sutil.IsGKEAutopilot(clientset)
+				migrateMinioXl, migrateMinioXlOldImage, _ = kotsadm.IsMinioXlMigrationNeeded(clientset, namespace)
+			}
+
 			renderDir := ExpandDir(v.GetString("rootdir"))
 			options := upstreamtypes.WriteOptions{
-				Namespace:            namespace,
-				SharedPassword:       v.GetString("shared-password"),
-				HTTPProxyEnvValue:    v.GetString("http-proxy"),
-				HTTPSProxyEnvValue:   v.GetString("https-proxy"),
-				NoProxyEnvValue:      v.GetString("no-proxy"),
-				IncludeMinio:         v.GetBool("with-minio"),
-				IsMinimalRBAC:        v.GetBool("minimal-rbac"),
-				AdditionalNamespaces: v.GetStringSlice("additional-namespaces"),
+				Namespace:              namespace,
+				SharedPassword:         v.GetString("shared-password"),
+				HTTPProxyEnvValue:      v.GetString("http-proxy"),
+				HTTPSProxyEnvValue:     v.GetString("https-proxy"),
+				NoProxyEnvValue:        v.GetString("no-proxy"),
+				IncludeMinio:           v.GetBool("with-minio"),
+				MigrateMinioXl:         migrateMinioXl,
+				MigrateMinioXlOldImage: migrateMinioXlOldImage,
+				IsMinimalRBAC:          v.GetBool("minimal-rbac"),
+				AdditionalNamespaces:   v.GetStringSlice("additional-namespaces"),
+				IsOpenShift:            isOpenShift,
+				IsGKEAutopilot:         isGKEAutopilot,
 			}
 			adminConsoleFiles, err := upstream.GenerateAdminConsoleFiles(renderDir, options)
 			if err != nil {

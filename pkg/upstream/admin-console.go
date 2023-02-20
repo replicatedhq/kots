@@ -30,8 +30,11 @@ type UpstreamSettings struct {
 	NoProxyEnvValue        string
 	AutoCreateClusterToken string
 	IsOpenShift            bool
+	IsGKEAutopilot         bool
 	IncludeMinio           bool
 	IsMinimalRBAC          bool
+	MigrateMinioXl         bool
+	MigrateMinioXlOldImage string
 	AdditionalNamespaces   []string
 }
 
@@ -49,7 +52,10 @@ func GenerateAdminConsoleFiles(renderDir string, options types.WriteOptions) ([]
 			HTTPSProxyEnvValue:     options.HTTPSProxyEnvValue,
 			NoProxyEnvValue:        options.NoProxyEnvValue,
 			IsOpenShift:            options.IsOpenShift,
+			IsGKEAutopilot:         options.IsGKEAutopilot,
 			IncludeMinio:           options.IncludeMinio,
+			MigrateMinioXl:         options.MigrateMinioXl,
+			MigrateMinioXlOldImage: options.MigrateMinioXlOldImage,
 			IsMinimalRBAC:          options.IsMinimalRBAC,
 			AdditionalNamespaces:   options.AdditionalNamespaces,
 		}
@@ -65,7 +71,10 @@ func GenerateAdminConsoleFiles(renderDir string, options types.WriteOptions) ([]
 		Namespace:              options.Namespace,
 		AutoCreateClusterToken: uuid.New().String(),
 		IsOpenShift:            options.IsOpenShift,
+		IsGKEAutopilot:         options.IsGKEAutopilot,
 		IncludeMinio:           options.IncludeMinio,
+		MigrateMinioXl:         options.MigrateMinioXl,
+		MigrateMinioXlOldImage: options.MigrateMinioXlOldImage,
 		IsMinimalRBAC:          options.IsMinimalRBAC,
 		AdditionalNamespaces:   options.AdditionalNamespaces,
 	}
@@ -166,7 +175,10 @@ func generateNewAdminConsoleFiles(settings *UpstreamSettings) ([]types.UpstreamF
 		HTTPSProxyEnvValue:     settings.HTTPSProxyEnvValue,
 		NoProxyEnvValue:        settings.NoProxyEnvValue,
 		IsOpenShift:            settings.IsOpenShift,
+		IsGKEAutopilot:         settings.IsGKEAutopilot,
 		IncludeMinio:           settings.IncludeMinio,
+		MigrateMinioXl:         settings.MigrateMinioXl,
+		MigrateMinioXlOldImage: settings.MigrateMinioXlOldImage,
 		EnsureRBAC:             true,
 		IsMinimalRBAC:          settings.IsMinimalRBAC,
 		AdditionalNamespaces:   settings.AdditionalNamespaces,

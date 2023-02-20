@@ -126,6 +126,13 @@ func Upgrade(clientset *kubernetes.Clientset, upgradeOptions types.UpgradeOption
 	deployOptions.IncludeMinio = upgradeOptions.IncludeMinio
 	deployOptions.StrictSecurityContext = upgradeOptions.StrictSecurityContext
 
+	if deployOptions.IncludeMinio {
+		deployOptions.MigrateMinioXl, deployOptions.MigrateMinioXlOldImage, err = IsMinioXlMigrationNeeded(clientset, deployOptions.Namespace)
+		if err != nil {
+			return errors.Wrap(err, "failed to check if minio xl migration is needed")
+		}
+	}
+
 	// Attempt migrations to fail early.
 	if !deployOptions.IncludeMinioSnapshots {
 		if err = MigrateExistingMinioFilesystemDeployments(log, deployOptions); err != nil {
@@ -312,6 +319,11 @@ func removeUnusedKotsadmComponents(deployOptions types.DeployOptions, clientset 
 		return errors.Wrap(err, "failed to remove kotsadm postgres")
 	}
 
+	// if there are resources from the minio xl migration, remove them
+	if err := removeMinioXlMigrationScriptsConfigMap(deployOptions, clientset); err != nil {
+		return errors.Wrap(err, "failed to remove minio xl migration scripts")
+	}
+
 	return nil
 }
 
@@ -461,6 +473,15 @@ func removeKotsadmPostgres(deployOptions types.DeployOptions, clientset *kuberne
 		if err != nil {
 			return errors.Wrap(err, "failed to delete kotsadm-postgres pvc")
 		}
+	}
+
+	return nil
+}
+
+func removeMinioXlMigrationScriptsConfigMap(deployOptions types.DeployOptions, clientset *kubernetes.Clientset) error {
+	err := clientset.CoreV1().ConfigMaps(deployOptions.Namespace).Delete(context.TODO(), "kotsadm-minio-xl-migration-scripts", metav1.DeleteOptions{})
+	if err != nil && !kuberneteserrors.IsNotFound(err) {
+		return errors.Wrap(err, "failed to delete kotsadm-minio-xl-migration-scripts configmap")
 	}
 
 	return nil
@@ -1009,31 +1030,6 @@ func ReadDeployOptionsFromCluster(namespace string, clientset *kubernetes.Client
 		}
 
 		deployOptions.SharedPassword = sharedPassword
-	}
-
-	if deployOptions.IncludeMinio {
-		// s3 secret, get from cluster or create new random values
-		s3Secret, err := getS3Secret(namespace, clientset)
-		if err != nil {
-			return nil, errors.Wrap(err, "failed to get s3 secret")
-		}
-		if s3Secret != nil {
-			accessKey, ok := s3Secret.Data["accesskey"]
-			if ok {
-				deployOptions.S3AccessKey = string(accessKey)
-			}
-
-			secretyKey, ok := s3Secret.Data["secretkey"]
-			if ok {
-				deployOptions.S3SecretKey = string(secretyKey)
-			}
-		}
-		if deployOptions.S3AccessKey == "" {
-			deployOptions.S3AccessKey = uuid.New().String()
-		}
-		if deployOptions.S3SecretKey == "" {
-			deployOptions.S3SecretKey = uuid.New().String()
-		}
 	}
 
 	// jwt key, get or create new value

@@ -154,6 +154,33 @@ func ensureS3Secret(namespace string, clientset *kubernetes.Clientset) error {
 	return nil
 }
 
+func ensureMinioXlMigrationScriptsConfigmap(namespace string, clientset *kubernetes.Clientset) error {
+	desiredConfigMap := kotsadmobjects.MinioXlMigrationScriptsConfigMap(namespace)
+
+	existingConfigMap, err := clientset.CoreV1().ConfigMaps(namespace).Get(context.TODO(), desiredConfigMap.Name, metav1.GetOptions{})
+	if err != nil {
+		if !kuberneteserrors.IsNotFound(err) {
+			return errors.Wrap(err, "failed to get existing minio xl migration scripts configmap")
+		}
+
+		_, err := clientset.CoreV1().ConfigMaps(namespace).Create(context.TODO(), desiredConfigMap, metav1.CreateOptions{})
+		if err != nil {
+			return errors.Wrap(err, "failed to create minio xl migration scripts configmap")
+		}
+
+		return nil
+	}
+
+	existingConfigMap = updateConfigMap(existingConfigMap, desiredConfigMap)
+
+	_, err = clientset.CoreV1().ConfigMaps(namespace).Update(context.TODO(), existingConfigMap, metav1.UpdateOptions{})
+	if err != nil {
+		return errors.Wrap(err, "failed to update minio xl migration scripts configmap")
+	}
+
+	return nil
+}
+
 func getJWTSessionSecret(namespace string, clientset *kubernetes.Clientset) (*corev1.Secret, error) {
 	jwtSecret, err := clientset.CoreV1().Secrets(namespace).Get(context.TODO(), "kotsadm-session", metav1.GetOptions{})
 	if err != nil {
