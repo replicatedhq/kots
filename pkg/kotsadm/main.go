@@ -479,7 +479,16 @@ func removeKotsadmPostgres(deployOptions types.DeployOptions, clientset *kuberne
 }
 
 func removeMinioXlMigrationScriptsConfigMap(deployOptions types.DeployOptions, clientset *kubernetes.Clientset) error {
-	err := clientset.CoreV1().ConfigMaps(deployOptions.Namespace).Delete(context.TODO(), "kotsadm-minio-xl-migration-scripts", metav1.DeleteOptions{})
+	// only remove if there's no minio statefulset or the statefulset does not have xl migration initcontainers
+	statefulset, err := clientset.AppsV1().StatefulSets(deployOptions.Namespace).Get(context.TODO(), "kotsadm-minio", metav1.GetOptions{})
+	if err != nil && !kuberneteserrors.IsNotFound(err) {
+		return errors.Wrap(err, "failed to get kotsadm-minio statefulset")
+	}
+	if statefulset != nil && len(statefulset.Spec.Template.Spec.InitContainers) > 0 {
+		return nil
+	}
+
+	err = clientset.CoreV1().ConfigMaps(deployOptions.Namespace).Delete(context.TODO(), "kotsadm-minio-xl-migration-scripts", metav1.DeleteOptions{})
 	if err != nil && !kuberneteserrors.IsNotFound(err) {
 		return errors.Wrap(err, "failed to delete kotsadm-minio-xl-migration-scripts configmap")
 	}
