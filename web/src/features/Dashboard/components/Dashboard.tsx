@@ -172,12 +172,14 @@ const Dashboard = (props: Props) => {
   const match = useRouteMatch();
   const { app, isBundleUploading, isVeleroInstalled } = props;
   const airgapUploader = useRef<AirgapUploader | null>(null);
+  const timer = useRef(new Array());
 
   const onAppDownstreamSuccess = (data: Downstream) => {
     setState({ downstream: data });
-    setTimeout(() => {
+    let timerId = setTimeout(() => {
       props.refreshAppData();
     }, 2000);
+    timer.current.push(timerId);
   };
 
   const onAppDownstreamError = (data: { message: string }) => {
@@ -639,6 +641,12 @@ const Dashboard = (props: Props) => {
       setWatchState(app);
       getAppLicense();
     }
+
+    return () => {
+      timer.current.forEach((time: NodeJS.Timeout) => {
+        clearTimeout(time);
+      });
+    };
   }, []);
 
   const onCheckForUpdates = async () => {
@@ -674,9 +682,10 @@ const Dashboard = (props: Props) => {
             checkingForUpdates: false,
             noUpdatesAvalable: true,
           });
-          setTimeout(() => {
+          let timerId = setTimeout(() => {
             setState({ noUpdatesAvalable: false });
           }, 3000);
+          timer.current.push(timerId);
         } else {
           refetchUpdateDownloadStatus();
           setState({ checkingForUpdates: true });
