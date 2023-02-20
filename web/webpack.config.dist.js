@@ -1,20 +1,9 @@
 const path = require("path");
 const srcPath = path.join(__dirname, "src");
 const TerserPlugin = require("terser-webpack-plugin");
-const { BugsnagSourceMapUploaderPlugin } = require("webpack-bugsnag-plugins");
 
 function getPlugins(appEnv) {
   const plugins = [];
-
-  if (appEnv.BUGSNAG_API_KEY) {
-    plugins.push(new BugsnagSourceMapUploaderPlugin({
-      apiKey: appEnv.BUGSNAG_API_KEY,
-      publicPath: appEnv.PUBLIC_ASSET_PATH,
-      releaseStage: appEnv.ENVIRONMENT,
-      appVersion: appEnv.KOTSADM_BUILD_VERSION,
-      overwrite: true
-    }));
-  }
 
   return plugins;
 }
