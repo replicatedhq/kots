@@ -177,7 +177,8 @@
     "webpack-bugsnag-plugins": "^1.4.3"
   },
   "resolutions": {
-    "favicons/**/minimist": "1.2.6"
+    "favicons/**/minimist": "1.2.6",
+    "trim": "^0.0.3"
   },
   "browserslist": [
     "> 1%",
