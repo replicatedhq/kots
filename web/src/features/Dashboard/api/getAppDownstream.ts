@@ -25,12 +25,16 @@ export const getAppDownstream = async (
   return appResponse.downstream;
 };
 
-export const useAppDownstream = () => {
+export const useAppDownstream = (
+  onSuccess: (data: Downstream) => void,
+  onError: (data: { message: string }) => void
+) => {
   const selectedApp = useSelectedApp();
   return useQuery({
     queryFn: () => getAppDownstream(selectedApp?.slug || ""),
     queryKey: ["getAppDownstream"],
-    onError: (err: Error) => console.log(err),
+    onError,
+    onSuccess,
     refetchInterval: (downstream) =>
       downstream && !isAwaitingResults(downstream?.pendingVersions)
         ? false
