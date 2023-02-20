@@ -19,8 +19,6 @@ import (
 const DaemonSetResourceKind = "daemonset"
 const DaemonSetPodVersionLabel = "controller-revision-hash"
 
-var lastSeenGeneration int64 = -1
-
 type daemonSetEventHandler struct {
 	informers       []types.StatusInformer
 	resourceStateCh chan<- types.ResourceState
