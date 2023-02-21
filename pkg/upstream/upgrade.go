@@ -18,7 +18,6 @@ import (
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/kotsadm"
 	kotsadmtypes "github.com/replicatedhq/kots/pkg/kotsadm/types"
-	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/util"
 	kustomizetypes "sigs.k8s.io/kustomize/api/types"
@@ -40,10 +39,7 @@ type UpgradeRelease struct {
 
 type UpgradeOptions struct {
 	AirgapBundle        string
-	RegistryEndpoint    string
-	RegistryNamespace   string
-	RegistryUsername    string
-	RegistryPassword    string
+	RegistryConfig      kotsadmtypes.RegistryConfig
 	IsKurl              bool
 	DisableImagePush    bool
 	UpdateCheckEndpoint string
@@ -70,33 +66,6 @@ func Upgrade(appSlug string, options UpgradeOptions) (*UpgradeResponse, error) {
 		}
 		defer os.RemoveAll(airgapRootDir)
 
-		registryEndpoint := options.RegistryEndpoint
-		registryNamespace := options.RegistryNamespace
-		registryUsername := options.RegistryUsername
-		registryPassword := options.RegistryPassword
-
-		if registryNamespace == "" {
-			// check if it's provided as part of the registry endpoint
-			parts := strings.Split(registryEndpoint, "/")
-			if len(parts) > 1 {
-				registryEndpoint = parts[0]
-				registryNamespace = strings.Join(parts[1:], "/")
-			}
-		}
-
-		if registryNamespace == "" {
-			if options.IsKurl {
-				registryNamespace = appSlug
-			}
-		}
-
-		if registryEndpoint == "" && options.IsKurl {
-			registryEndpoint, registryUsername, registryPassword, err = kotsutil.GetKurlRegistryCreds()
-			if err != nil {
-				return nil, errors.Wrap(err, "failed to get kURL registry info")
-			}
-		}
-
 		airgapPath = airgapRootDir
 
 		err = kotsadm.ExtractAppAirgapArchive(options.AirgapBundle, airgapRootDir, options.DisableImagePush, os.Stdout)
@@ -106,10 +75,10 @@ func Upgrade(appSlug string, options UpgradeOptions) (*UpgradeResponse, error) {
 
 		pushOptions := kotsadmtypes.PushImagesOptions{
 			Registry: registrytypes.RegistryOptions{
-				Endpoint:  registryEndpoint,
-				Namespace: registryNamespace,
-				Username:  registryUsername,
-				Password:  registryPassword,
+				Endpoint:  options.RegistryConfig.OverrideRegistry,
+				Namespace: options.RegistryConfig.OverrideNamespace,
+				Username:  options.RegistryConfig.Username,
+				Password:  options.RegistryConfig.Password,
 			},
 			ProgressWriter: os.Stdout,
 		}
