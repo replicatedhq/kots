@@ -35,26 +35,26 @@ func AdminGenerateManifestsCmd() *cobra.Command {
 
 			// set defaults for variables requiring cluster context
 			isOpenShift, isGKEAutopilot := false, false
-			migrateMinioXl, migrateMinioXlOldImage := false, ""
+			migrateToMinioXl, currentMinioImage := false, ""
 			if clientset, err := k8sutil.GetClientset(); err == nil {
 				isOpenShift, isGKEAutopilot = k8sutil.IsOpenShift(clientset), k8sutil.IsGKEAutopilot(clientset)
-				migrateMinioXl, migrateMinioXlOldImage, _ = kotsadm.IsMinioXlMigrationNeeded(clientset, namespace)
+				migrateToMinioXl, currentMinioImage, _ = kotsadm.IsMinioXlMigrationNeeded(clientset, namespace)
 			}
 
 			renderDir := ExpandDir(v.GetString("rootdir"))
 			options := upstreamtypes.WriteOptions{
-				Namespace:              namespace,
-				SharedPassword:         v.GetString("shared-password"),
-				HTTPProxyEnvValue:      v.GetString("http-proxy"),
-				HTTPSProxyEnvValue:     v.GetString("https-proxy"),
-				NoProxyEnvValue:        v.GetString("no-proxy"),
-				IncludeMinio:           v.GetBool("with-minio"),
-				MigrateMinioXl:         migrateMinioXl,
-				MigrateMinioXlOldImage: migrateMinioXlOldImage,
-				IsMinimalRBAC:          v.GetBool("minimal-rbac"),
-				AdditionalNamespaces:   v.GetStringSlice("additional-namespaces"),
-				IsOpenShift:            isOpenShift,
-				IsGKEAutopilot:         isGKEAutopilot,
+				Namespace:            namespace,
+				SharedPassword:       v.GetString("shared-password"),
+				HTTPProxyEnvValue:    v.GetString("http-proxy"),
+				HTTPSProxyEnvValue:   v.GetString("https-proxy"),
+				NoProxyEnvValue:      v.GetString("no-proxy"),
+				IncludeMinio:         v.GetBool("with-minio"),
+				MigrateToMinioXl:     migrateToMinioXl,
+				CurrentMinioImage:    currentMinioImage,
+				IsMinimalRBAC:        v.GetBool("minimal-rbac"),
+				AdditionalNamespaces: v.GetStringSlice("additional-namespaces"),
+				IsOpenShift:          isOpenShift,
+				IsGKEAutopilot:       isGKEAutopilot,
 			}
 			adminConsoleFiles, err := upstream.GenerateAdminConsoleFiles(renderDir, options)
 			if err != nil {

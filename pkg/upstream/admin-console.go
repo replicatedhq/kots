@@ -33,8 +33,8 @@ type UpstreamSettings struct {
 	IsGKEAutopilot         bool
 	IncludeMinio           bool
 	IsMinimalRBAC          bool
-	MigrateMinioXl         bool
-	MigrateMinioXlOldImage string
+	MigrateToMinioXl       bool
+	CurrentMinioImage      string
 	AdditionalNamespaces   []string
 }
 
@@ -54,8 +54,8 @@ func GenerateAdminConsoleFiles(renderDir string, options types.WriteOptions) ([]
 			IsOpenShift:            options.IsOpenShift,
 			IsGKEAutopilot:         options.IsGKEAutopilot,
 			IncludeMinio:           options.IncludeMinio,
-			MigrateMinioXl:         options.MigrateMinioXl,
-			MigrateMinioXlOldImage: options.MigrateMinioXlOldImage,
+			MigrateToMinioXl:       options.MigrateToMinioXl,
+			CurrentMinioImage:      options.CurrentMinioImage,
 			IsMinimalRBAC:          options.IsMinimalRBAC,
 			AdditionalNamespaces:   options.AdditionalNamespaces,
 		}
@@ -73,8 +73,8 @@ func GenerateAdminConsoleFiles(renderDir string, options types.WriteOptions) ([]
 		IsOpenShift:            options.IsOpenShift,
 		IsGKEAutopilot:         options.IsGKEAutopilot,
 		IncludeMinio:           options.IncludeMinio,
-		MigrateMinioXl:         options.MigrateMinioXl,
-		MigrateMinioXlOldImage: options.MigrateMinioXlOldImage,
+		MigrateToMinioXl:       options.MigrateToMinioXl,
+		CurrentMinioImage:      options.CurrentMinioImage,
 		IsMinimalRBAC:          options.IsMinimalRBAC,
 		AdditionalNamespaces:   options.AdditionalNamespaces,
 	}
@@ -177,8 +177,8 @@ func generateNewAdminConsoleFiles(settings *UpstreamSettings) ([]types.UpstreamF
 		IsOpenShift:            settings.IsOpenShift,
 		IsGKEAutopilot:         settings.IsGKEAutopilot,
 		IncludeMinio:           settings.IncludeMinio,
-		MigrateMinioXl:         settings.MigrateMinioXl,
-		MigrateMinioXlOldImage: settings.MigrateMinioXlOldImage,
+		MigrateToMinioXl:       settings.MigrateToMinioXl,
+		CurrentMinioImage:      settings.CurrentMinioImage,
 		EnsureRBAC:             true,
 		IsMinimalRBAC:          settings.IsMinimalRBAC,
 		AdditionalNamespaces:   settings.AdditionalNamespaces,

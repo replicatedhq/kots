@@ -127,7 +127,7 @@ func Upgrade(clientset *kubernetes.Clientset, upgradeOptions types.UpgradeOption
 	deployOptions.StrictSecurityContext = upgradeOptions.StrictSecurityContext
 
 	if deployOptions.IncludeMinio {
-		deployOptions.MigrateMinioXl, deployOptions.MigrateMinioXlOldImage, err = IsMinioXlMigrationNeeded(clientset, deployOptions.Namespace)
+		deployOptions.MigrateToMinioXl, deployOptions.CurrentMinioImage, err = IsMinioXlMigrationNeeded(clientset, deployOptions.Namespace)
 		if err != nil {
 			return errors.Wrap(err, "failed to check if minio xl migration is needed")
 		}

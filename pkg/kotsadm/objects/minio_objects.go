@@ -69,8 +69,8 @@ func MinioStatefulset(deployOptions types.DeployOptions, size resource.Quantity)
 	}
 
 	initContainers := []corev1.Container{}
-	if deployOptions.MigrateMinioXl {
-		initContainers = append(initContainers, migrateMinioXlInitContainers(deployOptions, resourceRequirements)...)
+	if deployOptions.MigrateToMinioXl {
+		initContainers = append(initContainers, migrateToMinioXlInitContainers(deployOptions, resourceRequirements)...)
 	}
 
 	statefulset := &appsv1.StatefulSet{
@@ -213,7 +213,7 @@ func MinioStatefulset(deployOptions types.DeployOptions, size resource.Quantity)
 	return statefulset, nil
 }
 
-func migrateMinioXlInitContainers(deployOptions types.DeployOptions, resourceRequirements corev1.ResourceRequirements) []corev1.Container {
+func migrateToMinioXlInitContainers(deployOptions types.DeployOptions, resourceRequirements corev1.ResourceRequirements) []corev1.Container {
 	volumeMounts := append(minioVolumeMounts(), minioXlMigrationVolumeMounts()...)
 
 	return []corev1.Container{
@@ -235,7 +235,7 @@ func migrateMinioXlInitContainers(deployOptions types.DeployOptions, resourceReq
 			SecurityContext: secureContainerContext(deployOptions.StrictSecurityContext),
 		},
 		{
-			Image:           deployOptions.MigrateMinioXlOldImage,
+			Image:           deployOptions.CurrentMinioImage,
 			ImagePullPolicy: corev1.PullIfNotPresent,
 			Name:            "export-minio-data",
 			Command: []string{
@@ -365,7 +365,7 @@ func minioVolumes(deployOptions types.DeployOptions) []corev1.Volume {
 		},
 	}
 
-	if deployOptions.MigrateMinioXl {
+	if deployOptions.MigrateToMinioXl {
 		volumes = append(volumes, corev1.Volume{
 			Name: "kotsadm-minio-client-config",
 			VolumeSource: corev1.VolumeSource{

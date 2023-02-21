@@ -26,16 +26,16 @@ import (
 
 var (
 	MinioImageTagDateRegexp = regexp.MustCompile(`RELEASE\.(\d{4}-\d{2}-\d{2}T\d{2}-\d{2}-\d{2}Z)`)
-	// MigrateMinioXlBeforeTime is the time that the minio version was released that removed the legacy backend
+	// MigrateToMinioXlBeforeTime is the time that the minio version was released that removed the legacy backend
 	// that we need to migrate from: https://github.com/minio/minio/releases/tag/RELEASE.2022-10-29T06-21-33Z
-	MigrateMinioXlBeforeTime = time.Date(2022, 10, 29, 6, 21, 33, 0, time.UTC)
+	MigrateToMinioXlBeforeTime = time.Date(2022, 10, 29, 6, 21, 33, 0, time.UTC)
 )
 
 func getMinioYAML(deployOptions types.DeployOptions) (map[string][]byte, error) {
 	docs := map[string][]byte{}
 	s := json.NewYAMLSerializer(json.DefaultMetaFactory, scheme.Scheme, scheme.Scheme)
 
-	if deployOptions.MigrateMinioXl {
+	if deployOptions.MigrateToMinioXl {
 		var configMap bytes.Buffer
 		if err := s.Encode(kotsadmobjects.MinioXlMigrationScriptsConfigMap(deployOptions.Namespace), &configMap); err != nil {
 			return nil, errors.Wrap(err, "failed to marshal minio migration configmap")
@@ -76,7 +76,7 @@ func ensureMinio(deployOptions types.DeployOptions, clientset *kubernetes.Client
 		return errors.Wrap(err, "failed to ensure minio secret")
 	}
 
-	if deployOptions.MigrateMinioXl {
+	if deployOptions.MigrateToMinioXl {
 		if err := ensureMinioXlMigrationScriptsConfigmap(deployOptions.Namespace, clientset); err != nil {
 			return errors.Wrap(err, "failed to ensure minio xl migration scripts configmap")
 		}
@@ -393,7 +393,7 @@ func imageNeedsMinioXlMigration(minioImage string) (bool, error) {
 		return false, errors.Wrap(err, "failed to parse existing image tag date")
 	}
 
-	return existingImageTagDate.Before(MigrateMinioXlBeforeTime), nil
+	return existingImageTagDate.Before(MigrateToMinioXlBeforeTime), nil
 }
 
 func waitForMinioInitContainers(ctx context.Context, namespace string, clientset kubernetes.Interface, timeout time.Duration, desiredInitContainers int) error {

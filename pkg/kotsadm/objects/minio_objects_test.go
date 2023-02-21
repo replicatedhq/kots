@@ -20,7 +20,7 @@ func Test_MinioStatefulset_InitContainers(t *testing.T) {
 		{
 			name: "does not add init containers if not migrating",
 			deployOptions: types.DeployOptions{
-				MigrateMinioXl: false,
+				MigrateToMinioXl: false,
 			},
 			size:                             resource.MustParse("10Gi"),
 			wantNumInitContainers:            0,
@@ -30,8 +30,8 @@ func Test_MinioStatefulset_InitContainers(t *testing.T) {
 		{
 			name: "adds init containers if not migrating",
 			deployOptions: types.DeployOptions{
-				MigrateMinioXl:         true,
-				MigrateMinioXlOldImage: "minio/minio:RELEASE.2020-10-27T00-54-19Z",
+				MigrateToMinioXl:  true,
+				CurrentMinioImage: "minio/minio:RELEASE.2020-10-27T00-54-19Z",
 			},
 			size:                             resource.MustParse("10Gi"),
 			wantNumInitContainers:            3,
@@ -69,8 +69,8 @@ func Test_MinioStatefulset_InitContainers(t *testing.T) {
 					return
 				}
 				// export container should be using the old image
-				if sts.Spec.Template.Spec.InitContainers[1].Image != tt.deployOptions.MigrateMinioXlOldImage {
-					t.Errorf("MinioStatefulset() got = %v, want %v", sts.Spec.Template.Spec.InitContainers[1].Image, tt.deployOptions.MigrateMinioXlOldImage)
+				if sts.Spec.Template.Spec.InitContainers[1].Image != tt.deployOptions.CurrentMinioImage {
+					t.Errorf("MinioStatefulset() got = %v, want %v", sts.Spec.Template.Spec.InitContainers[1].Image, tt.deployOptions.CurrentMinioImage)
 				}
 
 				if sts.Spec.Template.Spec.InitContainers[2].Name != "import-minio-data" {
@@ -130,8 +130,8 @@ func Test_MinioStatefulset_ResourceRequirements(t *testing.T) {
 		{
 			name: "sets resource requests and limits for autopilot with migration",
 			deployOptions: types.DeployOptions{
-				IsGKEAutopilot: true,
-				MigrateMinioXl: true,
+				IsGKEAutopilot:   true,
+				MigrateToMinioXl: true,
 			},
 			size: resource.MustParse("10Gi"),
 			want: corev1.ResourceRequirements{
@@ -168,7 +168,7 @@ func Test_MinioStatefulset_ResourceRequirements(t *testing.T) {
 				t.Errorf("MinioStatefulset() got = %v, want %v", sts.Spec.Template.Spec.Containers[0].Resources.Limits.Memory().String(), tt.want.Limits.Memory().String())
 			}
 
-			if tt.deployOptions.MigrateMinioXl {
+			if tt.deployOptions.MigrateToMinioXl {
 				for _, container := range sts.Spec.Template.Spec.InitContainers {
 					if container.Resources.Requests.Cpu().String() != tt.want.Requests.Cpu().String() {
 						t.Errorf("MinioStatefulset() got = %v, want %v", container.Resources.Requests.Cpu().String(), tt.want.Requests.Cpu().String())

@@ -52,18 +52,18 @@ type UpdateCheckResult struct {
 }
 
 type WriteOptions struct {
-	RootDir                string
-	Namespace              string
-	CreateAppDir           bool
-	IncludeAdminConsole    bool
-	IncludeMinio           bool
-	MigrateMinioXl         bool
-	MigrateMinioXlOldImage string
-	HTTPProxyEnvValue      string
-	HTTPSProxyEnvValue     string
-	NoProxyEnvValue        string
-	IsMinimalRBAC          bool
-	AdditionalNamespaces   []string
+	RootDir              string
+	Namespace            string
+	CreateAppDir         bool
+	IncludeAdminConsole  bool
+	IncludeMinio         bool
+	MigrateToMinioXl     bool
+	CurrentMinioImage    string
+	HTTPProxyEnvValue    string
+	HTTPSProxyEnvValue   string
+	NoProxyEnvValue      string
+	IsMinimalRBAC        bool
+	AdditionalNamespaces []string
 	// This should be set to true when updating due to license sync, config update, registry settings update.
 	// and should be false when it's an upstream update.
 	// When true, the channel name in Installation yaml will not be changed.
