@@ -7,7 +7,6 @@ import (
 
 	"github.com/replicatedhq/kots/pkg/appstate/types"
 	appsv1 "k8s.io/api/apps/v1"
-	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	labels "k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -111,24 +110,15 @@ func (h *daemonSetEventHandler) calculateDaemonSetState(r *appsv1.DaemonSet) typ
 	} else {
 		listOptions := metav1.ListOptions{LabelSelector: labels.SelectorFromSet(r.Spec.Selector.MatchLabels).String()}
 
-		// Gather all pods by looping until server responds with an empty continue field.
-		pods := make([]corev1.Pod, 0)
-		for {
-			result, err := h.clientset.CoreV1().Pods(h.targetNamespace).List(context.TODO(), listOptions)
-			if err != nil {
-				log.Printf("failed to get daemonset pod list: %s", err)
-				return types.StateUnavailable
-			}
-			pods = append(pods, result.Items...)
-
-			if len(result.Continue) == 0 {
-				break
-			}
+		pods, err := h.clientset.CoreV1().Pods(h.targetNamespace).List(context.TODO(), listOptions)
+		if err != nil {
+			log.Printf("failed to get daemonset pod list: %s", err)
+			return types.StateUnavailable
 		}
 
 		// If the pod version labels are not all the same, then the daemonset is updating.
 		currentVersion := ""
-		for _, pod := range pods {
+		for _, pod := range pods.Items {
 			version, exists := pod.Labels[DaemonSetPodVersionLabel]
 			if !exists {
 				log.Printf("failed to find %s label for pod %s", DaemonSetPodVersionLabel, pod.Name)
