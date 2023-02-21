@@ -227,8 +227,8 @@ func migrateToMinioXlInitContainers(deployOptions types.DeployOptions, resourceR
 			VolumeMounts: volumeMounts,
 			Env: []corev1.EnvVar{
 				{
-					Name:  "KOTSADM_MINIO_MIGRATION_WORK_DIR",
-					Value: "/migration-work",
+					Name:  "KOTSADM_MINIO_MIGRATION_DIR",
+					Value: "/migration",
 				},
 			},
 			Resources:       resourceRequirements,
@@ -278,8 +278,8 @@ func migrateToMinioXlInitContainers(deployOptions types.DeployOptions, resourceR
 					Value: "legacy",
 				},
 				{
-					Name:  "KOTSADM_MINIO_MIGRATION_WORK_DIR",
-					Value: "/migration-work",
+					Name:  "KOTSADM_MINIO_MIGRATION_DIR",
+					Value: "/migration",
 				},
 			},
 			Resources:       resourceRequirements,
@@ -329,8 +329,8 @@ func migrateToMinioXlInitContainers(deployOptions types.DeployOptions, resourceR
 					Value: "new",
 				},
 				{
-					Name:  "KOTSADM_MINIO_MIGRATION_WORK_DIR",
-					Value: "/migration-work",
+					Name:  "KOTSADM_MINIO_MIGRATION_DIR",
+					Value: "/migration",
 				},
 			},
 			Resources:       resourceRequirements,
@@ -431,7 +431,7 @@ func minioXlMigrationVolumeMounts() []corev1.VolumeMount {
 		},
 		{
 			Name:      "kotsadm-minio-xl-migration",
-			MountPath: "/migration-work",
+			MountPath: "/migration",
 		},
 		{
 			Name:      "kotsadm-minio-xl-migration-scripts",

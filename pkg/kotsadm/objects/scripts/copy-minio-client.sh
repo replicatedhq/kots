@@ -13,11 +13,11 @@ then
 fi
 
 # validate environment variables
-if [ -z $KOTSADM_MINIO_MIGRATION_WORK_DIR ]; then
-    echo 'KOTSADM_MINIO_MIGRATION_WORK_DIR not set'
+if [ -z $KOTSADM_MINIO_MIGRATION_DIR ]; then
+    echo 'KOTSADM_MINIO_MIGRATION_DIR not set'
     exit 1
 fi
 
 echo "copying minio client binary to migration directory and preserving permissions"
-mkdir -p $KOTSADM_MINIO_MIGRATION_WORK_DIR/bin
-cp /usr/bin/mc $KOTSADM_MINIO_MIGRATION_WORK_DIR/bin/mc
+mkdir -p $KOTSADM_MINIO_MIGRATION_DIR/bin
+cp /usr/bin/mc $KOTSADM_MINIO_MIGRATION_DIR/bin/mc

@@ -13,7 +13,7 @@ then
 fi
 
 # validate environment variables
-if [ -z $KOTSADM_MINIO_MIGRATION_WORK_DIR ] ||
+if [ -z $KOTSADM_MINIO_MIGRATION_DIR ] ||
    [ -z $KOTSADM_MINIO_LEGACY_ALIAS ] ||
    [ -z $KOTSADM_MINIO_ENDPOINT ] ||
    [ -z $MINIO_ACCESS_KEY ] ||
@@ -25,7 +25,7 @@ then
 fi
 
 # change the working directory to the migration directory
-cd $KOTSADM_MINIO_MIGRATION_WORK_DIR
+cd $KOTSADM_MINIO_MIGRATION_DIR
 
 echo "starting minio instance"
 /bin/sh -ce "/usr/bin/docker-entrypoint.sh minio -C /home/minio/.minio/ server /export" &
@@ -39,14 +39,14 @@ done
 
 # alias the minio instance
 echo "aliasing minio instance"
-until $KOTSADM_MINIO_MIGRATION_WORK_DIR/bin/mc alias set $KOTSADM_MINIO_LEGACY_ALIAS $KOTSADM_MINIO_ENDPOINT $MINIO_ACCESS_KEY $MINIO_SECRET_KEY; do
+until $KOTSADM_MINIO_MIGRATION_DIR/bin/mc alias set $KOTSADM_MINIO_LEGACY_ALIAS $KOTSADM_MINIO_ENDPOINT $MINIO_ACCESS_KEY $MINIO_SECRET_KEY; do
     # minio may not actually be ready to accept requests immediately after it is "ready", so this provides a secondary check
     echo "attempting to alias minio instance"
     sleep 1
 done
 
 echo "exporting minio bucket content"
-$KOTSADM_MINIO_MIGRATION_WORK_DIR/bin/mc mirror --preserve $KOTSADM_MINIO_LEGACY_ALIAS/$KOTSADM_MINIO_BUCKET_NAME $KOTSADM_MINIO_MIGRATION_WORK_DIR/$KOTSADM_MINIO_BUCKET_NAME
+$KOTSADM_MINIO_MIGRATION_DIR/bin/mc mirror --preserve $KOTSADM_MINIO_LEGACY_ALIAS/$KOTSADM_MINIO_BUCKET_NAME $KOTSADM_MINIO_MIGRATION_DIR/$KOTSADM_MINIO_BUCKET_NAME
 
 echo "export complete"
 

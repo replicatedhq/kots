@@ -13,7 +13,7 @@ then
 fi
 
 # validate environment variables
-if [ -z $KOTSADM_MINIO_MIGRATION_WORK_DIR ] ||
+if [ -z $KOTSADM_MINIO_MIGRATION_DIR ] ||
    [ -z $KOTSADM_MINIO_NEW_ALIAS ] ||
    [ -z $KOTSADM_MINIO_ENDPOINT ] ||
    [ -z $MINIO_ACCESS_KEY ] ||
@@ -25,13 +25,13 @@ then
 fi
 
 # change the working directory to the migration directory
-cd $KOTSADM_MINIO_MIGRATION_WORK_DIR
+cd $KOTSADM_MINIO_MIGRATION_DIR
 
 # create the new data directory
-mkdir -p $KOTSADM_MINIO_MIGRATION_WORK_DIR/new-data
+mkdir -p $KOTSADM_MINIO_MIGRATION_DIR/new-data
 
 echo "starting minio instance"
-/bin/sh -ce "/usr/bin/docker-entrypoint.sh minio -C /home/minio/.minio/ --quiet server $KOTSADM_MINIO_MIGRATION_WORK_DIR/new-data" &
+/bin/sh -ce "/usr/bin/docker-entrypoint.sh minio -C /home/minio/.minio/ --quiet server $KOTSADM_MINIO_MIGRATION_DIR/new-data" &
 MINIO_PID=$!
 
 # wait for minio to be ready
@@ -42,25 +42,25 @@ done
 
 # alias the minio instance
 echo "aliasing minio instance"
-until $KOTSADM_MINIO_MIGRATION_WORK_DIR/bin/mc alias set $KOTSADM_MINIO_NEW_ALIAS $KOTSADM_MINIO_ENDPOINT $MINIO_ACCESS_KEY $MINIO_SECRET_KEY; do
+until $KOTSADM_MINIO_MIGRATION_DIR/bin/mc alias set $KOTSADM_MINIO_NEW_ALIAS $KOTSADM_MINIO_ENDPOINT $MINIO_ACCESS_KEY $MINIO_SECRET_KEY; do
     # minio may not actually be ready to accept requests immediately after it is "ready", so this provides a secondary check
     echo "attempting to alias minio instance"
     sleep 1
 done
 
 # check if the bucket already exists
-if $KOTSADM_MINIO_MIGRATION_WORK_DIR/bin/mc ls $KOTSADM_MINIO_NEW_ALIAS | grep -q $KOTSADM_MINIO_BUCKET_NAME; then
+if $KOTSADM_MINIO_MIGRATION_DIR/bin/mc ls $KOTSADM_MINIO_NEW_ALIAS | grep -q $KOTSADM_MINIO_BUCKET_NAME; then
     echo "bucket already exists, skipping creation"
 else
     # create the bucket
     echo "creating minio bucket"
-    $KOTSADM_MINIO_MIGRATION_WORK_DIR/bin/mc mb $KOTSADM_MINIO_NEW_ALIAS/$KOTSADM_MINIO_BUCKET_NAME
+    $KOTSADM_MINIO_MIGRATION_DIR/bin/mc mb $KOTSADM_MINIO_NEW_ALIAS/$KOTSADM_MINIO_BUCKET_NAME
 fi
 
 # import the bucket content
-if [ -d $KOTSADM_MINIO_MIGRATION_WORK_DIR/$KOTSADM_MINIO_BUCKET_NAME ]; then
+if [ -d $KOTSADM_MINIO_MIGRATION_DIR/$KOTSADM_MINIO_BUCKET_NAME ]; then
     echo "importing minio bucket content"
-    $KOTSADM_MINIO_MIGRATION_WORK_DIR/bin/mc mirror --preserve $KOTSADM_MINIO_MIGRATION_WORK_DIR/$KOTSADM_MINIO_BUCKET_NAME $KOTSADM_MINIO_NEW_ALIAS/$KOTSADM_MINIO_BUCKET_NAME
+    $KOTSADM_MINIO_MIGRATION_DIR/bin/mc mirror --preserve $KOTSADM_MINIO_MIGRATION_DIR/$KOTSADM_MINIO_BUCKET_NAME $KOTSADM_MINIO_NEW_ALIAS/$KOTSADM_MINIO_BUCKET_NAME
     echo "import complete"
 else
     # if the directory does not exist, there is no bucket content to import
@@ -78,9 +78,9 @@ echo "minio stopped"
 
 echo "replacing old data with new data"
 shopt -s dotglob
-mkdir -p $KOTSADM_MINIO_MIGRATION_WORK_DIR/old-data
-mv -v /export/* $KOTSADM_MINIO_MIGRATION_WORK_DIR/old-data/
-mv -v $KOTSADM_MINIO_MIGRATION_WORK_DIR/new-data/* /export/
+mkdir -p $KOTSADM_MINIO_MIGRATION_DIR/old-data
+mv -v /export/* $KOTSADM_MINIO_MIGRATION_DIR/old-data/
+mv -v $KOTSADM_MINIO_MIGRATION_DIR/new-data/* /export/
 
 echo "adding migration complete marker"
 touch /export/.migration
