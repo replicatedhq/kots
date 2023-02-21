@@ -1,6 +1,8 @@
 package cli
 
 import (
+	"fmt"
+	"net/url"
 	"path/filepath"
 	"strings"
 
@@ -23,4 +25,18 @@ func ExpandDir(input string) string {
 	}
 
 	return uploadPath
+}
+
+func getHostnameFromEndpoint(endpoint string) (string, error) {
+	if !strings.HasPrefix(endpoint, "http") {
+		// url.Parse doesn't work without scheme
+		endpoint = fmt.Sprintf("https://%s", endpoint)
+	}
+
+	parsed, err := url.Parse(endpoint)
+	if err != nil {
+		return "", errors.Wrap(err, "failed to parse endpoint")
+	}
+
+	return parsed.Hostname(), nil
 }
