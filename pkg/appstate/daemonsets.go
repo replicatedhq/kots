@@ -2,7 +2,6 @@ package appstate
 
 import (
 	"context"
-	"fmt"
 	"log"
 	"time"
 
@@ -10,6 +9,7 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	labels "k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/kubernetes"
@@ -106,42 +106,38 @@ func (h *daemonSetEventHandler) calculateDaemonSetState(r *appsv1.DaemonSet) typ
 		return types.StateUnavailable
 	}
 
-	selector := ""
-	for key, value := range r.Spec.Selector.MatchLabels {
-		if len(selector) > 0 {
-			selector += ","
-		}
-		selector += fmt.Sprintf("%s=%s", key, value)
-	}
+	if r.Status.ObservedGeneration != r.ObjectMeta.Generation {
+		return types.StateUpdating
+	} else {
+		listOptions := metav1.ListOptions{LabelSelector: labels.SelectorFromSet(r.Spec.Selector.MatchLabels).String()}
 
-	// Gather all pods by looping until server responds with an empty continue field.
-	pods := make([]corev1.Pod, 0)
-	for {
-		result, err := h.clientset.CoreV1().Pods(h.targetNamespace).List(context.TODO(), metav1.ListOptions{LabelSelector: selector})
-		if err != nil {
-			log.Printf("failed to get daemonset pod list: %s", err)
-			return types.StateUnavailable
-		}
-		pods = append(pods, result.Items...)
+		// Gather all pods by looping until server responds with an empty continue field.
+		pods := make([]corev1.Pod, 0)
+		for {
+			result, err := h.clientset.CoreV1().Pods(h.targetNamespace).List(context.TODO(), listOptions)
+			if err != nil {
+				log.Printf("failed to get daemonset pod list: %s", err)
+				return types.StateUnavailable
+			}
+			pods = append(pods, result.Items...)
 
-		if len(result.Continue) == 0 {
-			break
-		}
-	}
-
-	// If the pod version labels are not all the same, then the daemonset is updating.
-	currentVersion := ""
-	for _, pod := range pods {
-		version, exists := pod.Labels[DaemonSetPodVersionLabel]
-		if !exists {
-			log.Printf("failed to find %s label for pod %s", DaemonSetPodVersionLabel, pod.Name)
-			return types.StateUnavailable
+			if len(result.Continue) == 0 {
+				break
+			}
 		}
 
-		if len(currentVersion) == 0 {
-			currentVersion = version
-		} else {
-			if version != currentVersion {
+		// If the pod version labels are not all the same, then the daemonset is updating.
+		currentVersion := ""
+		for _, pod := range pods {
+			version, exists := pod.Labels[DaemonSetPodVersionLabel]
+			if !exists {
+				log.Printf("failed to find %s label for pod %s", DaemonSetPodVersionLabel, pod.Name)
+				return types.StateUnavailable
+			}
+
+			if len(currentVersion) == 0 {
+				currentVersion = version
+			} else if version != currentVersion {
 				return types.StateUpdating
 			}
 		}
