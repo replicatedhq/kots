@@ -1584,6 +1584,10 @@ jobs:
         run: |
           set +e
           ./kots-$BASE_KOTS_VERSION admin-console generate-manifests -n generate-manifests --shared-password password
+      - name: create namespace
+        run: |
+          set +e
+          kubectl create namespace generate-manifests
       - name: apply the generated manifests
         run: |
           set +e
