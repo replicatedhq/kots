@@ -21,6 +21,18 @@ spec:
           - app=kotsadm-postgres
         timeout: 10s
     - exec:
+        collectorName: kotsadm-rqlite-db
+        name: kots/admin_console
+        containerName: rqlite
+        selector:
+          - app=kotsadm-rqlite
+        command:
+          - wget
+        args:
+          - -qO-
+          - kotsadm:${RQLITE_PASSWORD}@localhost:4001/db/backup?fmt=sql
+        timeout: 10s
+    - exec:
         args:
           - "http://localhost:3030/goroutines"
         collectorName: kotsadm-goroutines
