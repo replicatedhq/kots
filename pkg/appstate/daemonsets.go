@@ -1,7 +1,10 @@
 package appstate
 
 import (
+	"bytes"
 	"context"
+	"crypto/sha256"
+	"encoding/json"
 	"fmt"
 	"log"
 	"time"
@@ -24,6 +27,11 @@ type daemonSetEventHandler struct {
 	resourceStateCh chan<- types.ResourceState
 	clientset       kubernetes.Interface
 	targetNamespace string
+}
+
+type validContainer struct {
+	exists      bool
+	volumeNames map[string]bool
 }
 
 func init() {
@@ -99,13 +107,56 @@ func (h *daemonSetEventHandler) cast(obj interface{}) *appsv1.DaemonSet {
 }
 
 // The pods in a daemonset can be identified by the match label set in the daemonset and the
-// "controller-revision-hash" can be used to determine if they are all the in the same daemonset
-// version.
+// daemonset template spec is compared against running pods' specs to determine the updating state.
 func (h *daemonSetEventHandler) calculateDaemonSetState(r *appsv1.DaemonSet) types.State {
 	if r == nil {
 		return types.StateUnavailable
 	}
 
+	// Generate maps of valid data from the template to check against the pod.
+	// Note: the resource requests between the template and spec can differ.
+	validContainers := make(map[string]validContainer, 0)
+	for i := range r.Spec.Template.Spec.Containers {
+		r.Spec.Template.Spec.Containers[i].Resources.Requests = nil
+		container := r.Spec.Template.Spec.Containers[i]
+
+		temp := validContainer{exists: true}
+		for _, volume := range container.VolumeMounts {
+			if temp.volumeNames == nil {
+				temp.volumeNames = make(map[string]bool)
+			}
+
+			temp.volumeNames[volume.Name] = true
+		}
+
+		validContainers[container.Name] = temp
+	}
+
+	validImagePullSecrets := make(map[string]bool, 0)
+	for _, secret := range r.Spec.Template.Spec.ImagePullSecrets {
+		validImagePullSecrets[secret.Name] = true
+	}
+
+	validVolumes := make(map[string]bool, 0)
+	for _, volume := range r.Spec.Template.Spec.Volumes {
+		validVolumes[volume.Name] = true
+	}
+
+	// The affinities and termination grace period will be different from the template spec and running nodes.
+	r.Spec.Template.Spec.Affinity = nil
+	r.Spec.Template.Spec.TerminationGracePeriodSeconds = nil
+
+	templateBytes, err := json.Marshal(r.Spec.Template.Spec)
+	if err != nil {
+		log.Printf("failed to marshal the template spec: %s", err)
+		return types.StateUnavailable
+	}
+
+	hasher := sha256.New()
+	hasher.Write(templateBytes)
+	validHash := hasher.Sum(nil)
+
+	// Select all pods that match the daemonset.
 	selector := ""
 	for key, value := range r.Spec.Selector.MatchLabels {
 		if len(selector) > 0 {
@@ -114,36 +165,69 @@ func (h *daemonSetEventHandler) calculateDaemonSetState(r *appsv1.DaemonSet) typ
 		selector += fmt.Sprintf("%s=%s", key, value)
 	}
 
-	// Gather all pods by looping until server responds with an empty continue field.
-	pods := make([]corev1.Pod, 0)
-	for {
-		result, err := h.clientset.CoreV1().Pods(h.targetNamespace).List(context.TODO(), metav1.ListOptions{LabelSelector: selector})
-		if err != nil {
-			log.Printf("failed to get daemonset pod list: %s", err)
-			return types.StateUnavailable
-		}
-		pods = append(pods, result.Items...)
-
-		if len(result.Continue) == 0 {
-			break
-		}
+	pods, err := h.clientset.CoreV1().Pods(h.targetNamespace).List(context.TODO(), metav1.ListOptions{LabelSelector: selector})
+	if err != nil {
+		log.Printf("failed to get daemonset pod list: %s", err)
+		return types.StateUnavailable
 	}
 
-	// If the pod version labels are not all the same, then the daemonset is updating.
-	currentVersion := ""
-	for _, pod := range pods {
-		version, exists := pod.Labels[DaemonSetPodVersionLabel]
-		if !exists {
-			log.Printf("failed to find %s label for pod %s", DaemonSetPodVersionLabel, pod.Name)
+	// Remove things from the spec that won't match then compare the hashes. If they differ, then the daemonset is being updated.
+	for _, pod := range pods.Items {
+		for i, container := range pod.Spec.Containers {
+			if validContainers[container.Name].exists {
+				container.Env = nil
+				container.Resources.Requests = nil
+
+				mounts := []corev1.VolumeMount{}
+				for _, volume := range container.VolumeMounts {
+					if validContainers[container.Name].volumeNames[volume.Name] {
+						mounts = append(mounts, volume)
+					}
+				}
+				container.VolumeMounts = mounts
+			}
+
+			pod.Spec.Containers[i] = container
+		}
+
+		secrets := []corev1.LocalObjectReference{}
+		for _, secret := range pod.Spec.ImagePullSecrets {
+			if validImagePullSecrets[secret.Name] {
+				secrets = append(secrets, secret)
+			}
+		}
+		pod.Spec.ImagePullSecrets = secrets
+
+		volumes := []corev1.Volume{}
+		for _, volume := range pod.Spec.Volumes {
+			if validVolumes[volume.Name] {
+				volumes = append(volumes, volume)
+			}
+		}
+		pod.Spec.Volumes = volumes
+
+		pod.Spec.Affinity = nil
+		pod.Spec.DeprecatedServiceAccount = ""
+		pod.Spec.EnableServiceLinks = nil
+		pod.Spec.NodeName = ""
+		pod.Spec.PreemptionPolicy = nil
+		pod.Spec.Priority = nil
+		pod.Spec.ServiceAccountName = ""
+		pod.Spec.Tolerations = nil
+		pod.Spec.TerminationGracePeriodSeconds = nil
+
+		podBytes, err := json.Marshal(pod.Spec)
+		if err != nil {
+			log.Printf("failed to marshal the pod spec: %s", err)
 			return types.StateUnavailable
 		}
 
-		if len(currentVersion) == 0 {
-			currentVersion = version
-		} else {
-			if version != currentVersion {
-				return types.StateUpdating
-			}
+		hasher.Reset()
+		hasher.Write(podBytes)
+		podHash := hasher.Sum(nil)
+
+		if bytes.Compare(podHash, validHash) != 0 {
+			return types.StateUpdating
 		}
 	}
 
