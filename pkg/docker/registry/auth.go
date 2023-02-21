@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/containers/image/v5/pkg/docker/config"
 	"github.com/containers/image/v5/types"
@@ -17,6 +18,7 @@ import (
 
 var (
 	insecureClient = &http.Client{
+		Timeout: 30 * time.Second,
 		Transport: &http.Transport{
 			TLSClientConfig: &tls.Config{
 				InsecureSkipVerify: true,
