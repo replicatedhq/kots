@@ -1604,11 +1604,24 @@ jobs:
         run: |
           set +e
           kubectl apply -f ./admin-console -n generate-manifests
-      
-      - name: wait for minio to be ready
+
+      - name: wait for the kotsadm-minio-0 pod to be created
         run: |
           set +e
-          kubectl wait --for=condition=ready --timeout=120s pod/kotsadm-minio-0 -n generate-manifests
+          COUNTER=1
+          while [ -z "$(kubectl get pods -n generate-manifests | grep kotsadm-minio-0)" ]; do
+            COUNTER=$[$COUNTER +1]
+            if [ $COUNTER -gt 30 ]; then
+              echo "timed out waiting for kotsadm-minio-0 pod to be created"
+              exit -1
+            fi
+            sleep 1
+          done
+      
+      - name: wait for kotsadm-minio-0 pod to be ready
+        run: |
+          set +e
+          kubectl wait --for=condition=ready --timeout=180s pod/kotsadm-minio-0 -n generate-manifests
       
       - name: run kots admin-console generate-manifests using new kots version with k8s context
         run: |
@@ -1627,8 +1640,21 @@ jobs:
         run: |
           set +e
           kubectl apply -f ./admin-console -n generate-manifests
+
+      - name: wait for the kotsadm-minio-0 pod to be created
+        run: |
+          set +e
+          COUNTER=1
+          while [ -z "$(kubectl get pods -n generate-manifests | grep kotsadm-minio-0)" ]; do
+            COUNTER=$[$COUNTER +1]
+            if [ $COUNTER -gt 30 ]; then
+              echo "timed out waiting for kotsadm-minio-0 pod to be created"
+              exit -1
+            fi
+            sleep 1
+          done
       
-      - name: wait for minio to be ready
+      - name: wait for kotsadm-minio-0 pod to be ready
         run: |
           set +e
           kubectl wait --for=condition=ready --timeout=180s pod/kotsadm-minio-0 -n generate-manifests
@@ -1650,11 +1676,24 @@ jobs:
         run: |
           set +e
           kubectl apply -f ./admin-console -n generate-manifests
-      
-      - name: wait for minio to be ready
+
+      - name: wait for the kotsadm-minio-0 pod to be created
         run: |
           set +e
-          kubectl wait --for=condition=ready --timeout=120s pod/kotsadm-minio-0 -n generate-manifests
+          COUNTER=1
+          while [ -z "$(kubectl get pods -n generate-manifests | grep kotsadm-minio-0)" ]; do
+            COUNTER=$[$COUNTER +1]
+            if [ $COUNTER -gt 30 ]; then
+              echo "timed out waiting for kotsadm-minio-0 pod to be created"
+              exit -1
+            fi
+            sleep 1
+          done
+      
+      - name: wait for kotsadm-minio-0 pod to be ready
+        run: |
+          set +e
+          kubectl wait --for=condition=ready --timeout=180s pod/kotsadm-minio-0 -n generate-manifests
 
 
   validate-min-kots-version:
