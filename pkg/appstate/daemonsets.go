@@ -15,8 +15,10 @@ import (
 	"k8s.io/client-go/tools/cache"
 )
 
-const DaemonSetResourceKind = "daemonset"
-const DaemonSetPodVersionLabel = "controller-revision-hash"
+const (
+	DaemonSetResourceKind    = "daemonset"
+	DaemonSetPodVersionLabel = "controller-revision-hash"
+)
 
 type daemonSetEventHandler struct {
 	informers       []types.StatusInformer
