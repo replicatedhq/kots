@@ -53,6 +53,7 @@ func GetOriginalAdminConsoleImages(deployOptions types.DeployOptions) map[string
 		"kotsadm-migrations": fmt.Sprintf("kotsadm/kotsadm-migrations:%s", kotsadmversion.KotsadmTag(deployOptions.RegistryConfig)),
 		"kotsadm":            fmt.Sprintf("kotsadm/kotsadm:%s", kotsadmversion.KotsadmTag(deployOptions.RegistryConfig)),
 		"minio":              image.Minio,
+		"minio-client":       image.Mc,
 		"rqlite":             image.Rqlite,
 		"dex":                fmt.Sprintf("kotsadm/dex:%s", dexTag),
 	}
