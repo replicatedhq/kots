@@ -172,7 +172,7 @@
     "universal-cookie": "^4.0.4"
   },
   "resolutions": {
-    "d3-color": "^1.4.1",
+    "d3-color": "^3.1.0",
     "trim": "^0.0.3",
     "moment": "^2.9.0"
   },
