@@ -3,7 +3,6 @@ package kotsadm
 import (
 	"context"
 	"testing"
-	"time"
 
 	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
@@ -123,86 +122,58 @@ func Test_IsMinioXlMigrationNeeded(t *testing.T) {
 	}
 }
 
-func Test_waitForMinioInitContainers(t *testing.T) {
+func Test_IsMinioXlMigrationRunning(t *testing.T) {
 	tests := []struct {
-		name                  string
-		namespace             string
-		clientset             kubernetes.Interface
-		timeout               time.Duration
-		desiredInitContainers int
-		wantErr               bool
+		name      string
+		clientset kubernetes.Interface
+		want      bool
 	}{
 		{
-			name:      "timeout if pods in kotsadm-minio statefulset do not have init containers",
-			namespace: "default",
+			name: "should return true if status is running",
 			clientset: fake.NewSimpleClientset(
-				&appsv1.StatefulSet{
+				&corev1.ConfigMap{
 					ObjectMeta: metav1.ObjectMeta{
-						Name:      "kotsadm-minio",
+						Name:      "kotsadm-minio-xl-migration-status",
 						Namespace: "default",
 					},
-					Spec: appsv1.StatefulSetSpec{
-						Selector: &metav1.LabelSelector{
-							MatchLabels: map[string]string{
-								"app": "kotsadm-minio",
-							},
-						},
-					},
-				},
-				&corev1.Pod{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "kotsadm-minio-0",
-						Namespace: "default",
-						Labels: map[string]string{
-							"app": "kotsadm-minio",
-						},
-					},
-					Spec: corev1.PodSpec{
-						InitContainers: []corev1.Container{},
+					Data: map[string]string{
+						"status": "running",
 					},
 				},
 			),
-			timeout:               time.Second,
-			desiredInitContainers: 1,
-			wantErr:               true,
+			want: true,
 		},
 		{
-			name:      "return if pods in kotsadm-minio statefulset have init containers",
-			namespace: "default",
+			name: "should return false if status is not running",
 			clientset: fake.NewSimpleClientset(
-				&appsv1.StatefulSet{
+				&corev1.ConfigMap{
 					ObjectMeta: metav1.ObjectMeta{
-						Name:      "kotsadm-minio",
+						Name:      "kotsadm-minio-xl-migration-status",
 						Namespace: "default",
 					},
-					Spec: appsv1.StatefulSetSpec{
-						Selector: &metav1.LabelSelector{
-							MatchLabels: map[string]string{
-								"app": "kotsadm-minio",
-							},
-						},
-					},
-				},
-				&corev1.Pod{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "kotsadm-minio-0",
-						Namespace: "default",
-						Labels: map[string]string{
-							"app": "kotsadm-minio",
-						},
-					},
-					Spec: corev1.PodSpec{
-						InitContainers: []corev1.Container{
-							{
-								Name: "init",
-							},
-						},
+					Data: map[string]string{
+						"status": "not-running",
 					},
 				},
 			),
-			timeout:               time.Second,
-			desiredInitContainers: 1,
-			wantErr:               false,
+			want: false,
+		},
+		{
+			name: "should return false if there is no configmap data",
+			clientset: fake.NewSimpleClientset(
+				&corev1.ConfigMap{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "kotsadm-minio-xl-migration-status",
+						Namespace: "default",
+					},
+				},
+			),
+			want: false,
+		},
+		{
+			name:      "should return false if there is no status configmap",
+			clientset: fake.NewSimpleClientset(),
+			want:      false,
 		},
 	}
 
@@ -210,12 +181,52 @@ func Test_waitForMinioInitContainers(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			req := require.New(t)
 			ctx := context.Background()
+			got, err := IsMinioXlMigrationRunning(ctx, test.clientset, "default")
+			req.NoError(err)
+			req.Equal(test.want, got)
+		})
+	}
+}
 
-			err := waitForMinioInitContainers(ctx, test.namespace, test.clientset, test.timeout, test.desiredInitContainers)
-			if test.wantErr {
-				req.Error(err)
-			} else {
+func Test_MarkMinioXlMigrationComplete(t *testing.T) {
+	tests := []struct {
+		name         string
+		clientset    kubernetes.Interface
+		wantComplete bool
+	}{
+		{
+			name: "should update status to complete if running",
+			clientset: fake.NewSimpleClientset(
+				&corev1.ConfigMap{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "kotsadm-minio-xl-migration-status",
+						Namespace: "default",
+					},
+					Data: map[string]string{
+						"status": "running",
+					},
+				},
+			),
+			wantComplete: true,
+		},
+		{
+			name:         "should no-op if there is no status configmap",
+			clientset:    fake.NewSimpleClientset(),
+			wantComplete: false,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			req := require.New(t)
+			ctx := context.Background()
+			err := MarkMinioXlMigrationComplete(ctx, test.clientset, "default")
+			req.NoError(err)
+
+			if test.wantComplete {
+				cm, err := test.clientset.CoreV1().ConfigMaps("default").Get(ctx, "kotsadm-minio-xl-migration-status", metav1.GetOptions{})
 				req.NoError(err)
+				req.Equal("complete", cm.Data["status"])
 			}
 		})
 	}

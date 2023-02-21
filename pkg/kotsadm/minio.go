@@ -18,7 +18,6 @@ import (
 	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime/serializer/json"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/scheme"
@@ -66,7 +65,7 @@ func getMinioYAML(deployOptions types.DeployOptions) (map[string][]byte, error) 
 	return docs, nil
 }
 
-func ensureMinio(deployOptions types.DeployOptions, clientset *kubernetes.Clientset) error {
+func ensureMinio(deployOptions types.DeployOptions, clientset kubernetes.Interface) error {
 	size, err := getSize(deployOptions, "minio", resource.MustParse("4Gi"))
 	if err != nil {
 		return errors.Wrap(err, "failed to get size")
@@ -86,6 +85,12 @@ func ensureMinio(deployOptions types.DeployOptions, clientset *kubernetes.Client
 		return errors.Wrap(err, "failed to ensure minio statefulset")
 	}
 
+	if deployOptions.MigrateToMinioXl {
+		if err := ensureMinioXlMigrationStatusConfigmap(deployOptions.Namespace, clientset); err != nil {
+			return errors.Wrap(err, "failed to ensure minio xl migration status configmap")
+		}
+	}
+
 	if err := ensureMinioService(deployOptions.Namespace, clientset); err != nil {
 		return errors.Wrap(err, "failed to ensure minio service")
 	}
@@ -93,7 +98,7 @@ func ensureMinio(deployOptions types.DeployOptions, clientset *kubernetes.Client
 	return nil
 }
 
-func ensureMinioStatefulset(deployOptions types.DeployOptions, clientset *kubernetes.Clientset, size resource.Quantity) error {
+func ensureMinioStatefulset(deployOptions types.DeployOptions, clientset kubernetes.Interface, size resource.Quantity) error {
 	desiredMinio, err := kotsadmobjects.MinioStatefulset(deployOptions, size)
 	if err != nil {
 		return errors.Wrap(err, "failed to get desired minio statefulset definition")
@@ -128,17 +133,10 @@ func ensureMinioStatefulset(deployOptions types.DeployOptions, clientset *kubern
 		return errors.Wrap(err, "failed to update minio statefulset")
 	}
 
-	// ensureMinioStatefulset can return before the init containers are actually added or removed from the pods
-	// if this occurs, the statefulset will show as a false 'Ready' status and kotsadm will start before the migration is complete
-	desiredInitContainers := len(existingMinio.Spec.Template.Spec.InitContainers)
-	if err := waitForMinioInitContainers(ctx, deployOptions.Namespace, clientset, deployOptions.Timeout, desiredInitContainers); err != nil {
-		return errors.Wrap(err, "failed to wait for minio xl migration")
-	}
-
 	return nil
 }
 
-func ensureMinioService(namespace string, clientset *kubernetes.Clientset) error {
+func ensureMinioService(namespace string, clientset kubernetes.Interface) error {
 	_, err := clientset.CoreV1().Services(namespace).Get(context.TODO(), "kotsadm-minio", metav1.GetOptions{})
 	if err != nil {
 		if !kuberneteserrors.IsNotFound(err) {
@@ -396,31 +394,75 @@ func imageNeedsMinioXlMigration(minioImage string) (bool, error) {
 	return existingImageTagDate.Before(MigrateToMinioXlBeforeTime), nil
 }
 
-func waitForMinioInitContainers(ctx context.Context, namespace string, clientset kubernetes.Interface, timeout time.Duration, desiredInitContainers int) error {
-	start := time.Now()
-	for {
-		if time.Since(start) > timeout {
-			return errors.New("timed out waiting for minio xl migration to update")
-		}
+func ensureAndWaitForMinio(ctx context.Context, deployOptions types.DeployOptions, clientset kubernetes.Interface) (finalErr error) {
+	isMinioXlMigrationRunning, err := IsMinioXlMigrationRunning(ctx, clientset, deployOptions.Namespace)
+	if err != nil {
+		return errors.Wrap(err, "failed to check if minio xl migration is running")
+	}
 
-		existingMinio, err := clientset.AppsV1().StatefulSets(namespace).Get(ctx, "kotsadm-minio", metav1.GetOptions{})
-		if err != nil {
-			return errors.Wrap(err, "failed to get existing statefulset")
+	// if minio xl migration is running, don't update the minio statefulset
+	if !isMinioXlMigrationRunning {
+		if err := ensureMinio(deployOptions, clientset); err != nil {
+			return errors.Wrap(err, "failed to ensure minio")
 		}
+	}
 
-		pods, err := clientset.CoreV1().Pods(namespace).List(ctx, metav1.ListOptions{
-			LabelSelector: labels.SelectorFromSet(existingMinio.Spec.Selector.MatchLabels).String(),
-		})
-		if err != nil {
-			return errors.Wrap(err, "failed to list pods")
-		}
+	defer func() {
+		if finalErr == nil {
+			isMinioXlMigrationRunning, err := IsMinioXlMigrationRunning(ctx, clientset, deployOptions.Namespace)
+			if err != nil {
+				logger.Error(errors.Wrap(err, "failed to check if minio xl migration is running"))
+			}
 
-		for _, pod := range pods.Items {
-			if len(pod.Spec.InitContainers) == desiredInitContainers {
-				return nil
+			if isMinioXlMigrationRunning {
+				if err := MarkMinioXlMigrationComplete(ctx, clientset, deployOptions.Namespace); err != nil {
+					logger.Error(errors.Wrap(err, "failed to mark minio xl migration complete"))
+				}
 			}
 		}
+	}()
 
-		time.Sleep(1 * time.Second)
+	if err := k8sutil.WaitForStatefulSetReady(ctx, clientset, deployOptions.Namespace, "kotsadm-minio", deployOptions.Timeout); err != nil {
+		return errors.Wrap(err, "failed to wait for minio")
 	}
+
+	return nil
+}
+
+func IsMinioXlMigrationRunning(ctx context.Context, clientset kubernetes.Interface, namespace string) (bool, error) {
+	cm, err := clientset.CoreV1().ConfigMaps(namespace).Get(ctx, "kotsadm-minio-xl-migration-status", metav1.GetOptions{})
+	if err != nil {
+		if !kuberneteserrors.IsNotFound(err) {
+			return false, errors.Wrap(err, "failed to get kotsadm-minio-xl-migration-status configmap")
+		}
+		return false, nil
+	}
+
+	if cm.Data == nil {
+		return false, nil
+	}
+
+	return cm.Data["status"] == "running", nil
+}
+
+func MarkMinioXlMigrationComplete(ctx context.Context, clientset kubernetes.Interface, namespace string) error {
+	cm, err := clientset.CoreV1().ConfigMaps(namespace).Get(ctx, "kotsadm-minio-xl-migration-status", metav1.GetOptions{})
+	if err != nil {
+		if !kuberneteserrors.IsNotFound(err) {
+			return errors.Wrap(err, "failed to get kotsadm-minio-xl-migration-status configmap")
+		}
+		return nil // no-op
+	}
+
+	if cm.Data == nil {
+		cm.Data = map[string]string{}
+	}
+	cm.Data["status"] = "complete"
+
+	_, err = clientset.CoreV1().ConfigMaps(namespace).Update(ctx, cm, metav1.UpdateOptions{})
+	if err != nil {
+		return errors.Wrap(err, "failed to update kotsadm-minio-xl-migration-status configmap")
+	}
+
+	return nil
 }
