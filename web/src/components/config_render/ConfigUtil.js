@@ -9,7 +9,7 @@ export const setOrder = (index, affix) => {
     if (index === 2) {
       return index;
     }
-    return index + 1;
+    return index - 1;
   }
-  return "oops something went wrong";
+  return "";
 };

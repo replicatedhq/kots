@@ -3,7 +3,7 @@ import { Link, useHistory, useParams } from "react-router-dom";
 import ReactTooltip from "react-tooltip";
 import DashboardGitOpsCard from "./DashboardGitOpsCard";
 import MarkdownRenderer from "@src/components/shared/MarkdownRenderer";
-import DownstreamWatchVersionDiff from "@src/components/watches/DownstreamWatchVersionDiff";
+import VersionDiff from "@features/VersionDiff/VersionDiff";
 import Modal from "react-modal";
 import AirgapUploadProgress from "@src/components/AirgapUploadProgress";
 import Loader from "@src/components/shared/Loader";
@@ -39,6 +39,7 @@ import {
   VersionStatus,
 } from "@types";
 import { AirgapUploader } from "@src/utilities/airgapUploader";
+import EditConfigIcon from "@components/shared/EditConfigIcon";
 
 type Props = {
   adminConsoleMetadata?: Metadata;
@@ -173,7 +174,7 @@ const DashboardVersionCard = (props: Props) => {
   );
   const history = useHistory();
   const params = useParams<KotsParams>();
-  const { selectedApp } = useSelectedApp();
+  const selectedApp = useSelectedApp();
   const {
     data: newAppVersionWithInterceptData,
     error: latestDeployableVersionErrMsg,
@@ -181,8 +182,7 @@ const DashboardVersionCard = (props: Props) => {
   } = useNextAppVersionWithIntercept();
   const { latestDeployableVersion } = newAppVersionWithInterceptData || {};
 
-  const { data: isHelmManagedResponse } = useIsHelmManaged();
-  const { isHelmManaged = false } = isHelmManagedResponse || {};
+  const { data: isHelmManaged = false } = useIsHelmManaged();
 
   // moving this out of the state because new repeater instances were getting created
   // and it doesn't really affect the UI
@@ -521,7 +521,7 @@ const DashboardVersionCard = (props: Props) => {
                     ""
                   )}
                   <p
-                    className={`checks-running-text u-fontSize--small u-lineHeight--normal u-fontWeight--medium 
+                    className={`checks-running-text u-fontSize--small u-lineHeight--normal u-fontWeight--medium
                     } ${
                       preflightState.preflightsFailed
                         ? "err"
@@ -543,39 +543,6 @@ const DashboardVersionCard = (props: Props) => {
             <ReactTooltip effect="solid" className="replicated-tooltip" />
           </>
         ) : null}
-      </div>
-    );
-  };
-
-  const renderEditConfigIcon = (
-    version: Version | null,
-    isPending: boolean
-  ) => {
-    if (!selectedApp?.isConfigurable) {
-      return null;
-    }
-    if (!version) {
-      return null;
-    }
-    if (version.status === "pending_download") {
-      return null;
-    }
-    if (version.status === "pending_config") {
-      // action button will already be set to "Configure", no need to show edit config icon as well
-      return null;
-    }
-
-    let url = `/app/${selectedApp?.slug}/config/${version.sequence}`;
-    if (isHelmManaged) {
-      url = `${url}?isPending=${isPending}&semver=${version.versionLabel}`;
-    }
-
-    return (
-      <div className="u-marginLeft--10">
-        <Link to={url} data-tip="Edit config">
-          <Icon icon="edit-config" size={22} />
-        </Link>
-        <ReactTooltip effect="solid" className="replicated-tooltip" />
       </div>
     );
   };
@@ -681,7 +648,7 @@ const DashboardVersionCard = (props: Props) => {
           <div className="flex-column">
             <div className="flex alignItems--center u-marginBottom--5">
               <p className="u-fontSize--header2 u-fontWeight--bold u-lineHeight--medium card-item-title">
-                {currentVersion?.versionLabel || currentVersion?.title}
+                {currentVersion?.versionLabel || currentVersion?.appTitle}
               </p>
               <p className="u-fontSize--small u-textColor--bodyCopy u-fontWeight--medium u-marginLeft--10">
                 {sequenceLabel} {currentVersion?.sequence}
@@ -711,7 +678,7 @@ const DashboardVersionCard = (props: Props) => {
           <div className="flex flex1 alignItems--center justifyContent--flexEnd">
             {renderReleaseNotes(currentVersion)}
             {renderPreflights(currentVersion)}
-            {renderEditConfigIcon(currentVersion, false)}
+            <EditConfigIcon version={currentVersion} isPending={false} />
             {selectedApp ? (
               <div className="u-marginLeft--10">
                 <span
@@ -1180,7 +1147,7 @@ const DashboardVersionCard = (props: Props) => {
       <div className="flex flex1 alignItems--center justifyContent--flexEnd">
         {renderReleaseNotes(version)}
         {renderPreflights(version)}
-        {renderEditConfigIcon(version, true)}
+        <EditConfigIcon version={version} isPending={true} />
         <div className="flex-column justifyContent--center u-marginLeft--10">
           <button
             className={classNames("btn", {
@@ -1884,7 +1851,7 @@ const DashboardVersionCard = (props: Props) => {
           className="Modal DiffViewerModal"
         >
           <div className="DiffOverlay">
-            <DownstreamWatchVersionDiff
+            <VersionDiff
               slug={params.slug}
               firstSequence={state.firstSequence}
               secondSequence={state.secondSequence}

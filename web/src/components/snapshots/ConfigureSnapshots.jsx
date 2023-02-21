@@ -1,5 +1,6 @@
 import React from "react";
 import Modal from "react-modal";
+import semverjs from "semver";
 import SnapshotInstallationBox from "./SnapshotInstallationBox";
 import CodeSnippet from "../shared/CodeSnippet";
 import {
@@ -25,6 +26,27 @@ class ConfigureSnapshots extends React.Component {
       activeTab: active,
     });
   };
+
+  isVelero10OrNewer = (
+    veleroVersion = this.props.snapshotSettings?.veleroVersion
+  ) => {
+    if (!semverjs.valid(veleroVersion)) {
+      return true;
+    }
+
+    const velero10Semver = semverjs.coerce("1.10");
+    const actualVeleroSemver = semverjs.coerce(veleroVersion);
+
+    return semverjs.gte(actualVeleroSemver, velero10Semver);
+  };
+
+  getFSBackupComponentName = () =>
+    this.isVelero10OrNewer() ? "Node Agent" : "Restic";
+
+  getFSBackupComponentFlags = () =>
+    this.isVelero10OrNewer()
+      ? ["--use-node-agent", "--uploader-type=restic"]
+      : ["--use-restic"];
 
   render() {
     const { activeTab } = this.state;
@@ -144,12 +166,12 @@ class ConfigureSnapshots extends React.Component {
                       Install the CLI on your machine by following the Velero
                       installation instructions at:{" "}
                       <a
-                        href="https://velero.io/docs/v1.6/basic-install/"
+                        href="https://docs.replicated.com/enterprise/snapshots-velero-cli-installing"
                         target="_blank"
                         rel="noopener noreferrer"
                         className="link u-marginLeft--5"
                       >
-                        https://velero.io/docs/v1.6/basic-install/
+                        https://docs.replicated.com/enterprise/snapshots-velero-cli-installing
                       </a>{" "}
                     </p>
                   ) : (
@@ -160,7 +182,7 @@ class ConfigureSnapshots extends React.Component {
                       </span>
                       Install the CLI on your machine by following the{" "}
                       <a
-                        href="https://velero.io/docs/v1.6/basic-install/"
+                        href="https://docs.replicated.com/enterprise/snapshots-velero-cli-installing"
                         target="_blank"
                         rel="noopener noreferrer"
                         className="link u-marginLeft--5"
@@ -237,7 +259,7 @@ class ConfigureSnapshots extends React.Component {
                           />
                         </a>
                         <a
-                          href="https://velero.io/docs/v1.6/supported-providers/"
+                          href="https://velero.io/docs/v1.10/supported-providers/"
                           target="_blank"
                           rel="noopener noreferrer"
                           className="snapshotOptions"
@@ -327,10 +349,13 @@ class ConfigureSnapshots extends React.Component {
                         {" "}
                         With all providers, you must install using the{" "}
                         <span className="inline-code u-marginLeft--5 u-marginRight--5">
-                          {" "}
-                          --use-restic{" "}
+                          {this.getFSBackupComponentFlags().join(" ")}{" "}
                         </span>{" "}
-                        flag for snapshots to work.{" "}
+                        flag
+                        {this.getFSBackupComponentFlags().length > 1
+                          ? "s"
+                          : ""}{" "}
+                        for snapshots to work.{" "}
                       </p>
                     </div>
                   </div>
@@ -343,6 +368,7 @@ class ConfigureSnapshots extends React.Component {
             renderNotVeleroMessage={renderNotVeleroMessage}
             snapshotSettings={snapshotSettings}
             hideCheckVeleroButton={hideCheckVeleroButton}
+            fsBackupComponentName={this.getFSBackupComponentName()}
           />
           <div className="flex justifyContent--flexStart u-marginTop--20">
             <button

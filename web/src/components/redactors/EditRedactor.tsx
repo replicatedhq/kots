@@ -56,7 +56,7 @@ const EditRedactor = () => {
 
   const history = useHistory();
   const match = useRouteMatch<KotsParams>();
-  const slug = useSelectedApp()?.selectedApp?.slug || "";
+  const slug = useSelectedApp()?.slug || "";
 
   const getRedactor = (redactorSlug: string) => {
     setState({

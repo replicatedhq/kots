@@ -430,7 +430,7 @@ jobs:
       - uses: ./.github/actions/kots-e2e
         with:
           test-focus: 'Regression'
-          k8s-version: 'v1.24.4-k3s1'
+          k8s-version: 'v1.26.1-k3s1'
           testim-branch: ${{ github.head_ref == 'main' && 'master' || github.head_ref }}
           testim-access-token: '${{ secrets.TESTIM_ACCESS_TOKEN }}'
           aws-access-key-id: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_ACCESS_KEY_ID }}'
@@ -443,7 +443,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        k8s_version: [ v1.21.8-k3s2,v1.22.5-k3s2,v1.23.3-k3s1,v1.24.4-k3s1 ]
+        k8s_version: [ v1.23.15-k3s1,v1.24.9-k3s2,v1.25.6-k3s1,v1.26.1-k3s1 ]
     steps:
       - name: Checkout
         uses: actions/checkout@v2
@@ -465,6 +465,7 @@ jobs:
           test-focus: 'Smoke Test'
           kots-namespace: 'smoke-test'
           k8s-version: '${{ matrix.k8s_version }}'
+          k8s-arguments: ${{ startsWith(matrix.k8s_version, 'v1.22') && '--egress-selector-mode disabled' || '' }}
           testim-access-token: '${{ secrets.TESTIM_ACCESS_TOKEN }}'
           testim-branch: ${{ github.head_ref == 'main' && 'master' || github.head_ref }}
           aws-access-key-id: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_ACCESS_KEY_ID }}'
@@ -477,7 +478,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        k8s_version: [ v1.21.8-k3s2,v1.22.5-k3s2,v1.23.3-k3s1,v1.24.4-k3s1 ]
+        k8s_version: [ v1.23.15-k3s1,v1.24.9-k3s2,v1.25.6-k3s1,v1.26.1-k3s1 ]
     steps:
       - name: Checkout
         uses: actions/checkout@v2
@@ -499,6 +500,7 @@ jobs:
           test-focus: 'Minimal RBAC'
           kots-namespace: 'minimal-rbac'
           k8s-version: '${{ matrix.k8s_version }}'
+          k8s-arguments: ${{ startsWith(matrix.k8s_version, 'v1.22') && '--egress-selector-mode disabled' || '' }}
           testim-access-token: '${{ secrets.TESTIM_ACCESS_TOKEN }}'
           testim-branch: ${{ github.head_ref == 'main' && 'master' || github.head_ref }}
           aws-access-key-id: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_ACCESS_KEY_ID }}'
@@ -511,7 +513,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        k8s_version: [ v1.21.8-k3s2,v1.22.5-k3s2,v1.23.3-k3s1,v1.24.4-k3s1 ]
+        k8s_version: [ v1.23.15-k3s1,v1.24.9-k3s2,v1.25.6-k3s1,v1.26.1-k3s1 ]
     steps:
       - name: Checkout
         uses: actions/checkout@v2
@@ -533,6 +535,7 @@ jobs:
           test-focus: 'Backup and Restore'
           kots-namespace: 'backup-and-restore'
           k8s-version: '${{ matrix.k8s_version }}'
+          k8s-arguments: ${{ startsWith(matrix.k8s_version, 'v1.22') && '--egress-selector-mode disabled' || '' }}
           testim-access-token: '${{ secrets.TESTIM_ACCESS_TOKEN }}'
           testim-branch: ${{ github.head_ref == 'main' && 'master' || github.head_ref }}
           aws-access-key-id: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_ACCESS_KEY_ID }}'
@@ -545,7 +548,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        k8s_version: [ v1.24.4-k3s1 ] # there's no need to run this test on multiple k3s versions
+        k8s_version: [ v1.26.1-k3s1 ] # there's no need to run this test on multiple k3s versions
     steps:
       - name: Checkout
         uses: actions/checkout@v2
@@ -567,6 +570,7 @@ jobs:
           test-focus: 'No Required Config'
           kots-namespace: 'no-required-config'
           k8s-version: '${{ matrix.k8s_version }}'
+          k8s-arguments: ${{ startsWith(matrix.k8s_version, 'v1.22') && '--egress-selector-mode disabled' || '' }}
           testim-access-token: '${{ secrets.TESTIM_ACCESS_TOKEN }}'
           testim-branch: ${{ github.head_ref == 'main' && 'master' || github.head_ref }}
           aws-access-key-id: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_ACCESS_KEY_ID }}'
@@ -579,7 +583,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        k8s_version: [ v1.24.4-k3s1 ] # there's no need to run this test on multiple k3s versions
+        k8s_version: [ v1.26.1-k3s1 ] # there's no need to run this test on multiple k3s versions
     steps:
       - name: Checkout
         uses: actions/checkout@v2
@@ -601,6 +605,7 @@ jobs:
           test-focus: 'Strict Preflight Checks'
           kots-namespace: 'strict-preflight-checks'
           k8s-version: '${{ matrix.k8s_version }}'
+          k8s-arguments: ${{ startsWith(matrix.k8s_version, 'v1.22') && '--egress-selector-mode disabled' || '' }}
           testim-access-token: '${{ secrets.TESTIM_ACCESS_TOKEN }}'
           testim-branch: ${{ github.head_ref == 'main' && 'master' || github.head_ref }}
           aws-access-key-id: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_ACCESS_KEY_ID }}'
@@ -613,7 +618,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        k8s_version: [ v1.24.9-k3s2 ] # there's no need to run this test on multiple k3s versions
+        k8s_version: [ v1.26.1-k3s1 ] # there's no need to run this test on multiple k3s versions
     steps:
       - name: Checkout
         uses: actions/checkout@v2
@@ -635,6 +640,7 @@ jobs:
           test-focus: 'Version History Pagination'
           kots-namespace: 'version-history-pagination'
           k8s-version: '${{ matrix.k8s_version }}'
+          k8s-arguments: ${{ startsWith(matrix.k8s_version, 'v1.22') && '--egress-selector-mode disabled' || '' }}
           testim-access-token: '${{ secrets.TESTIM_ACCESS_TOKEN }}'
           testim-branch: ${{ github.head_ref == 'main' && 'master' || github.head_ref }}
           aws-access-key-id: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_ACCESS_KEY_ID }}'
@@ -647,7 +653,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        k8s_version: [ v1.24.4-k3s1 ] # there's no need to run this test on multiple k3s versions
+        k8s_version: [ v1.26.1-k3s1 ] # there's no need to run this test on multiple k3s versions
     steps:
       - name: Checkout
         uses: actions/checkout@v2
@@ -669,6 +675,7 @@ jobs:
           test-focus: 'Change License'
           kots-namespace: 'change-license'
           k8s-version: '${{ matrix.k8s_version }}'
+          k8s-arguments: ${{ startsWith(matrix.k8s_version, 'v1.22') && '--egress-selector-mode disabled' || '' }}
           testim-access-token: '${{ secrets.TESTIM_ACCESS_TOKEN }}'
           testim-branch: ${{ github.head_ref == 'main' && 'master' || github.head_ref }}
           aws-access-key-id: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_ACCESS_KEY_ID }}'
@@ -681,7 +688,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        k8s_version: [ v1.24.4-k3s1 ] # there's no need to run this test on multiple k3s versions
+        k8s_version: [ v1.26.1-k3s1 ] # there's no need to run this test on multiple k3s versions
     steps:
       - name: Checkout
         uses: actions/checkout@v2
@@ -703,6 +710,7 @@ jobs:
           test-focus: 'Helm Managed'
           kots-namespace: 'helm-managed'
           k8s-version: '${{ matrix.k8s_version }}'
+          k8s-arguments: ${{ startsWith(matrix.k8s_version, 'v1.22') && '--egress-selector-mode disabled' || '' }}
           testim-access-token: '${{ secrets.TESTIM_ACCESS_TOKEN }}'
           testim-branch: ${{ github.head_ref == 'main' && 'master' || github.head_ref }}
           aws-access-key-id: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_ACCESS_KEY_ID }}'
@@ -717,7 +725,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        k8s_version: [ v1.21.8-k3s2,v1.22.5-k3s2,v1.23.3-k3s1,v1.24.4-k3s1 ]
+        k8s_version: [ v1.23.15-k3s1,v1.24.9-k3s2,v1.25.6-k3s1,v1.26.1-k3s1 ]
     env:
       APP_SLUG: minimal-rbac
       APP_VERSION_LABEL: "0.0.1"
@@ -728,6 +736,7 @@ jobs:
       - uses: replicatedhq/action-k3s@main
         with:
           version: ${{ matrix.k8s_version }}
+          arguments: ${{ startsWith(matrix.k8s_version, 'v1.22') && '--egress-selector-mode disabled' || '' }}
 
       - name: download kots binary
         uses: actions/download-artifact@v2
@@ -797,16 +806,21 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        k8s_version: [ v1.21.8-k3s2,v1.22.5-k3s2,v1.23.3-k3s1,v1.24.4-k3s1 ]
+        k8s_version: [ v1.23.15-k3s1,v1.24.9-k3s2,v1.25.6-k3s1,v1.26.1-k3s1 ]
     env:
       APP_SLUG: multi-namespace-yeti
     steps:
       - name: Checkout
         uses: actions/checkout@v2
 
+      - uses: azure/setup-helm@v3
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
       - uses: replicatedhq/action-k3s@main
         with:
           version: ${{ matrix.k8s_version }}
+          arguments: ${{ startsWith(matrix.k8s_version, 'v1.22') && '--egress-selector-mode disabled' || '' }}
 
       - name: download kots binary
         uses: actions/download-artifact@v2
@@ -852,8 +866,19 @@ jobs:
             sleep 1
           done
 
-          printf "App is installed successfully and is ready\n\n"
-          ./bin/kots get apps --namespace $APP_SLUG
+          # validate that helm charts installed using the native helm workflow were deployed via the helm CLI correctly
+
+          if [ ! helm ls -n postgres-test | awk 'NR>1{print $1}' | grep -q postgresql ]; then
+            printf "postgresql helm release not found in postgres-test namespace\n\n"
+            helm ls -n postgres-test
+            exit 1
+          fi
+
+          if [ ! helm ls -n $APP_SLUG | awk 'NR>1{print $1}' | grep -q private-chart ]; then
+            printf "private-chart helm release not found in $APP_SLUG namespace\n\n"
+            helm ls -n $APP_SLUG
+            exit 1
+          fi
 
       - name: Generate support bundle on failure
         if: failure()
@@ -870,7 +895,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        k8s_version: [ v1.21.8-k3s2,v1.22.5-k3s2,v1.23.3-k3s1,v1.24.4-k3s1 ]
+        k8s_version: [ v1.23.15-k3s1,v1.24.9-k3s2,v1.25.6-k3s1,v1.26.1-k3s1 ]
     env:
       APP_NAME: multi-namespace-yeti
       APP_SLUG: multi-namespace
@@ -881,6 +906,7 @@ jobs:
       - uses: replicatedhq/action-k3s@main
         with:
           version: ${{ matrix.k8s_version }}
+          arguments: ${{ startsWith(matrix.k8s_version, 'v1.22') && '--egress-selector-mode disabled' || '' }}
 
       - name: download kots binary
         uses: actions/download-artifact@v2
@@ -956,7 +982,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        k8s_version: [ v1.24.4-k3s1 ] # there's no need to run this test on multiple k3s versions
+        k8s_version: [ v1.26.1-k3s1 ] # there's no need to run this test on multiple k3s versions
     env:
       APP_SLUG: app-version-label
       APP_VERSION_LABEL: v1.0.0
@@ -968,6 +994,7 @@ jobs:
       - uses: replicatedhq/action-k3s@main
         with:
           version: ${{ matrix.k8s_version }}
+          arguments: ${{ startsWith(matrix.k8s_version, 'v1.22') && '--egress-selector-mode disabled' || '' }}
 
       - name: download kots binary
         uses: actions/download-artifact@v2
@@ -1090,7 +1117,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        k8s_version: [ v1.21.8-k3s2,v1.22.5-k3s2,v1.23.3-k3s1,v1.24.4-k3s1 ]
+        k8s_version: [ v1.23.15-k3s1,v1.24.9-k3s2,v1.25.6-k3s1,v1.26.1-k3s1 ]
     env:
       APP_SLUG: helm-install-order
     steps:
@@ -1100,6 +1127,7 @@ jobs:
       - uses: replicatedhq/action-k3s@main
         with:
           version: ${{ matrix.k8s_version }}
+          arguments: ${{ startsWith(matrix.k8s_version, 'v1.22') && '--egress-selector-mode disabled' || '' }}
 
       - name: download kots binary
         uses: actions/download-artifact@v2
@@ -1164,7 +1192,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        k8s_version: [ v1.21.8-k3s2,v1.22.5-k3s2,v1.23.3-k3s1,v1.24.4-k3s1 ]
+        k8s_version: [ v1.23.15-k3s1,v1.24.9-k3s2,v1.25.6-k3s1,v1.26.1-k3s1 ]
     env:
       APP_SLUG: yamlescape
     steps:
@@ -1174,6 +1202,7 @@ jobs:
       - uses: replicatedhq/action-k3s@main
         with:
           version: ${{ matrix.k8s_version }}
+          arguments: ${{ startsWith(matrix.k8s_version, 'v1.22') && '--egress-selector-mode disabled' || '' }}
 
       - name: download kots binary
         uses: actions/download-artifact@v2
@@ -1238,7 +1267,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        k8s_version: [ v1.24.4-k3s1 ]
+        k8s_version: [ v1.26.1-k3s1 ]
     env:
       APP_SLUG: no-redeploy-on-restart
     steps:
@@ -1248,6 +1277,7 @@ jobs:
       - uses: replicatedhq/action-k3s@main
         with:
           version: ${{ matrix.k8s_version }}
+          arguments: ${{ startsWith(matrix.k8s_version, 'v1.22') && '--egress-selector-mode disabled' || '' }}
 
       - name: download kots binary
         uses: actions/download-artifact@v2
@@ -1336,13 +1366,15 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        k8s_version: [ v1.24.4-k3s1 ]
+        k8s_version: [ v1.26.1-k3s1 ]
     env:
       APP_SLUG: kubernetes-installer-preflight
+      K8S_VERSION: ${{ matrix.k8s_version }}
     steps:
       - uses: replicatedhq/action-k3s@main
         with:
           version: ${{ matrix.k8s_version }}
+          arguments: ${{ startsWith(matrix.k8s_version, 'v1.22') && '--egress-selector-mode disabled' || '' }}
 
       - name: download kots binary
         uses: actions/download-artifact@v2
@@ -1420,7 +1452,7 @@ jobs:
           # try get apps without namespace (using kubeconfig)
           # validate that output is the same as above
           mkdir -p /tmp/.kube
-          sudo cp /tmp/output/kubeconfig-v1.24.4-k3s1.yaml /tmp/.kube/config
+          sudo cp /tmp/output/kubeconfig-${K8S_VERSION}.yaml /tmp/.kube/config
           sudo chmod -R 777 /tmp/.kube
           export KUBECONFIG=/tmp/.kube/config
           kubectl config set-context --current --namespace=$APP_SLUG
@@ -1437,6 +1469,7 @@ jobs:
         uses: ./.github/actions/kots-e2e
         with:
           kots-namespace: "$APP_SLUG"
+          k8s-version: '${{ matrix.k8s_version }}'
           aws-access-key-id: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_ACCESS_KEY_ID }}'
           aws-secret-access-key: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_SECRET_ACCESS_KEY }}'
 
@@ -1447,7 +1480,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        k8s_version: [ v1.24.4-k3s1 ]
+        k8s_version: [ v1.26.1-k3s1 ]
     steps:
       - name: Checkout
         uses: actions/checkout@v2
@@ -1469,6 +1502,7 @@ jobs:
           test-focus: 'Tag and Digest'
           kots-namespace: 'tag-and-digest'
           k8s-version: '${{ matrix.k8s_version }}'
+          k8s-arguments: ${{ startsWith(matrix.k8s_version, 'v1.22') && '--egress-selector-mode disabled' || '' }}
           testim-access-token: '${{ secrets.TESTIM_ACCESS_TOKEN }}'
           testim-branch: ${{ github.head_ref == 'main' && 'master' || github.head_ref }}
           aws-access-key-id: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_ACCESS_KEY_ID }}'
@@ -1506,7 +1540,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        k8s_version: [v1.25.0-k3s1]
+        k8s_version: [v1.25.5-k3s2]
     steps:
       - name: Checkout
         uses: actions/checkout@v2
@@ -1531,6 +1565,7 @@ jobs:
           test-focus: 'Min KOTS Version'
           kots-namespace: 'min-kots-version'
           k8s-version: '${{ matrix.k8s_version }}'
+          k8s-arguments: ${{ startsWith(matrix.k8s_version, 'v1.22') && '--egress-selector-mode disabled' || '' }}
           testim-access-token: '${{ secrets.TESTIM_ACCESS_TOKEN }}'
           testim-branch: ${{ github.head_ref == 'main' && 'master' || github.head_ref }}
           kotsadm-image-registry: ttl.sh
@@ -1559,7 +1594,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        k8s_version: [v1.25.0-k3s1]
+        k8s_version: [v1.25.5-k3s2]
     steps:
       - name: Checkout
         uses: actions/checkout@v2
@@ -1584,6 +1619,7 @@ jobs:
           test-focus: 'Target KOTS Version'
           kots-namespace: 'target-kots-version'
           k8s-version: '${{ matrix.k8s_version }}'
+          k8s-arguments: ${{ startsWith(matrix.k8s_version, 'v1.22') && '--egress-selector-mode disabled' || '' }}
           testim-access-token: '${{ secrets.TESTIM_ACCESS_TOKEN }}'
           testim-branch: ${{ github.head_ref == 'main' && 'master' || github.head_ref }}
           aws-access-key-id: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_ACCESS_KEY_ID }}'
@@ -1608,7 +1644,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        k8s_version: [v1.25.0-k3s1]
+        k8s_version: [v1.25.5-k3s2]
     steps:
       - name: Checkout
         uses: actions/checkout@v2
@@ -1633,6 +1669,7 @@ jobs:
           test-focus: 'Range KOTS Version'
           kots-namespace: 'range-kots-version'
           k8s-version: '${{ matrix.k8s_version }}'
+          k8s-arguments: ${{ startsWith(matrix.k8s_version, 'v1.22') && '--egress-selector-mode disabled' || '' }}
           testim-access-token: '${{ secrets.TESTIM_ACCESS_TOKEN }}'
           testim-branch: ${{ github.head_ref == 'main' && 'master' || github.head_ref }}
           aws-access-key-id: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_ACCESS_KEY_ID }}'
@@ -1657,7 +1694,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        k8s_version: [ v1.21.8-k3s2,v1.22.5-k3s2,v1.23.3-k3s1,v1.24.4-k3s1 ]
+        k8s_version: [ v1.23.15-k3s1,v1.24.9-k3s2,v1.25.6-k3s1,v1.26.1-k3s1 ]
     env:
       APP_SLUG: postgres-to-rqlite
       BASE_KOTS_VERSION: v1.57.0
@@ -1668,6 +1705,7 @@ jobs:
       - uses: replicatedhq/action-k3s@main
         with:
           version: ${{ matrix.k8s_version }}
+          arguments: ${{ startsWith(matrix.k8s_version, 'v1.22') && '--egress-selector-mode disabled' || '' }}
 
       - name: download base kots version
         run: |
@@ -1760,7 +1798,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        k8s_version: [ v1.24.4-k3s1 ] # there's no need to run this test on multiple k3s versions
+        k8s_version: [ v1.26.1-k3s1 ] # there's no need to run this test on multiple k3s versions
     steps:
       - name: Checkout
         uses: actions/checkout@v2
@@ -1782,6 +1820,7 @@ jobs:
           test-focus: 'multi-app-install'
           kots-namespace: 'multi-app-install'
           k8s-version: '${{ matrix.k8s_version }}'
+          k8s-arguments: ${{ startsWith(matrix.k8s_version, 'v1.22') && '--egress-selector-mode disabled' || '' }}
           testim-access-token: '${{ secrets.TESTIM_ACCESS_TOKEN }}'
           testim-branch: ${{ github.head_ref == 'main' && 'master' || github.head_ref }}
           aws-access-key-id: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_ACCESS_KEY_ID }}'
@@ -1794,7 +1833,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        k8s_version: [ v1.24.4-k3s1 ]
+        k8s_version: [ v1.26.1-k3s1 ]
+        platform: [ k3s, gke ]
     steps:
       - name: Checkout
         uses: actions/checkout@v2
@@ -1815,10 +1855,164 @@ jobs:
         with:
           test-focus: 'airgap-smoke-test'
           kots-namespace: 'airgap-smoke-test'
+          platform: '${{ matrix.platform }}'
           k8s-version: '${{ matrix.k8s_version }}'
+          k8s-arguments: ${{ startsWith(matrix.k8s_version, 'v1.22') && '--egress-selector-mode disabled' || '' }}
           testim-access-token: '${{ secrets.TESTIM_ACCESS_TOKEN }}'
           testim-branch: ${{ github.head_ref == 'main' && 'master' || github.head_ref }}
           kots-airgap: true
+          aws-access-key-id: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_ACCESS_KEY_ID }}'
+          aws-secret-access-key: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_SECRET_ACCESS_KEY }}'
+          gke-service-key: '${{ secrets.GOOGLE_CLOUD_CREDENTIALS }}'
+
+
+  validate-remove-app:
+    runs-on: ubuntu-20.04
+    needs: [ enable-tests, can-run-ci, build-kots, build-kurl-proxy, build-migrations, push-minio, push-rqlite ]
+    strategy:
+      fail-fast: false
+      matrix:
+        k8s_version: [ v1.26.1-k3s1 ]
+    env:
+      APP_SLUG: remove-app
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - uses: replicatedhq/action-k3s@main
+        with:
+          version: ${{ matrix.k8s_version }}
+          arguments: ${{ startsWith(matrix.k8s_version, 'v1.22') && '--egress-selector-mode disabled' || '' }}
+
+      - name: download kots binary
+        uses: actions/download-artifact@v2
+        with:
+          name: kots
+          path: bin/
+
+      - run: chmod +x bin/kots
+
+      - name: run the test
+        run: |
+          set +e
+          echo ${{ secrets.REMOVE_APP_LICENSE }} | base64 -d > license.yaml
+          ./bin/kots \
+            install $APP_SLUG/automated \
+            --license-file license.yaml \
+            --no-port-forward \
+            --namespace $APP_SLUG \
+            --shared-password password \
+            --kotsadm-registry ttl.sh \
+            --kotsadm-namespace automated-${{ github.run_id }} \
+            --kotsadm-tag 24h
+
+          COUNTER=1
+          while [ "$(./bin/kots get apps --namespace $APP_SLUG | awk 'NR>1{print $2}')" != "ready" ]; do
+            COUNTER=$[$COUNTER +1]
+            if [ $COUNTER -gt 120 ]; then
+              echo "Timed out waiting for app to be ready"
+              ./bin/kots get apps --namespace $APP_SLUG
+              echo "kotsadm logs:"
+              kubectl logs -l app=kotsadm --tail=100 --namespace $APP_SLUG
+              exit -1
+            fi
+            sleep 1
+          done
+
+          # test that --undeploy deletes application resources from the cluster
+
+          ./bin/kots remove remove-app --namespace $APP_SLUG --undeploy --force
+
+          if [ "$(./bin/kots get apps --namespace $APP_SLUG --output=json | tr -d '\n')" != "[]" ]; then
+            printf "App reference was not removed\n\n"
+            exit 1
+          fi
+
+          if [ "$(kubectl get all -n postgres-test --ignore-not-found | wc -l | tr -d '\n')" != "0" ]; then
+            printf "postgres-test namespace still contains resources\n\n"
+            kubectl get all -n postgres-test
+            exit 1
+          fi
+
+          if [ "$(kubectl get all -n redis-test --ignore-not-found | wc -l | tr -d '\n')" != "0" ]; then
+            printf "redis-test namespace still contains resources\n\n"
+            kubectl get all -n redis-test
+            exit 1
+          fi
+
+          if [ "$(kubectl get all -n nginx-test --ignore-not-found | wc -l | tr -d '\n')" != "0" ]; then
+            printf "nginx-test namespace still contains resources\n\n"
+            kubectl get all -n nginx-test
+            exit 1
+          fi
+
+          if [ "$(kubectl get pods -n $APP_SLUG -l kots.io/app-slug=$APP_SLUG --ignore-not-found | wc -l | tr -d '\n')" != "0" ]; then
+            printf "$APP_SLUG namespace still contains application resources\n\n"
+            kubectl get pods -n $APP_SLUG -l kots.io/app-slug=$APP_SLUG
+            exit 1
+          fi
+
+          # re-install and test that running the remove command without --undeploy does _not_ delete any resources from the cluster
+
+          ./bin/kots \
+            install $APP_SLUG/automated \
+            --license-file license.yaml \
+            --no-port-forward \
+            --namespace $APP_SLUG \
+            --shared-password password \
+            --kotsadm-registry ttl.sh \
+            --kotsadm-namespace automated-${{ github.run_id }} \
+            --kotsadm-tag 24h
+
+          COUNTER=1
+          while [ "$(./bin/kots get apps --namespace $APP_SLUG | awk 'NR>1{print $2}')" != "ready" ]; do
+            COUNTER=$[$COUNTER +1]
+            if [ $COUNTER -gt 120 ]; then
+              echo "Timed out waiting for app to be ready"
+              ./bin/kots get apps --namespace $APP_SLUG
+              echo "kotsadm logs:"
+              kubectl logs -l app=kotsadm --tail=100 --namespace $APP_SLUG
+              exit -1
+            fi
+            sleep 1
+          done
+
+          ./bin/kots remove remove-app --namespace $APP_SLUG --force
+
+          if [ "$(./bin/kots get apps --namespace $APP_SLUG --output=json | tr -d '\n')" != "[]" ]; then
+            printf "App reference was not removed\n\n"
+            exit 1
+          fi
+
+          if [ "$(kubectl get all -n postgres-test --ignore-not-found | wc -l | tr -d '\n')" == "0" ]; then
+            printf "postgres-test namespace does not contain any resources\n\n"
+            kubectl get all -n postgres-test
+            exit 1
+          fi
+
+          if [ "$(kubectl get all -n redis-test --ignore-not-found | wc -l | tr -d '\n')" == "0" ]; then
+            printf "redis-test namespace does not contain any resources\n\n"
+            kubectl get all -n redis-test
+            exit 1
+          fi
+
+          if [ "$(kubectl get all -n nginx-test --ignore-not-found | wc -l | tr -d '\n')" == "0" ]; then
+            printf "nginx-test namespace does not contain any resources\n\n"
+            kubectl get all -n nginx-test
+            exit 1
+          fi
+
+          if [ "$(kubectl get pods -n $APP_SLUG -l kots.io/app-slug=$APP_SLUG --ignore-not-found | wc -l | tr -d '\n')" == "0" ]; then
+            printf "$APP_SLUG namespace does not contain any application resources\n\n"
+            kubectl get pods -n $APP_SLUG
+            exit 1
+          fi
+
+      - name: Generate support bundle on failure
+        if: failure()
+        uses: ./.github/actions/generate-support-bundle
+        with:
+          kots-namespace: "$APP_SLUG"
           aws-access-key-id: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_ACCESS_KEY_ID }}'
           aws-secret-access-key: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_SECRET_ACCESS_KEY }}'
 
@@ -1852,10 +2046,12 @@ jobs:
       - validate-no-redeploy-on-restart
       - validate-kubernetes-installer-preflight
       - validate-postgres-to-rqlite-migration
+      - validate-remove-app
       # cli-only tests
       - validate-kots-push-images-anonymous
     steps:
       - run: echo "All PR tests passed"
+
 
   # this job will validate that the kurl add-on validation did not fail and that all pr-tests succeed
   # it is used for the github branch protection rule

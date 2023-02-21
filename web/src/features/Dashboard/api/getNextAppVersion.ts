@@ -32,7 +32,7 @@ export const getNextAppVersion = async (appSlug: string) => {
 };
 
 export const useNextAppVersion = () => {
-  const { selectedApp } = useSelectedApp();
+  const selectedApp = useSelectedApp();
   return useQuery(
     ["getNextAppVersion", selectedApp?.slug],
     () => getNextAppVersion(selectedApp?.slug || ""),

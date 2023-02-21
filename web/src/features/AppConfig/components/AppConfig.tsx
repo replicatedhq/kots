@@ -702,9 +702,7 @@ class AppConfig extends Component<Props, State> {
           </div>
           <div className="ConfigArea--wrapper">
             <UseIsHelmManaged>
-              {({ data = {} }: { data: { isHelmManaged?: boolean } }) => {
-                const { isHelmManaged: isHelmManagedFromHook } = data;
-
+              {({ data: isHelmManagedFromHook }) => {
                 const { isError: saveError } = useSaveConfig({
                   appSlug: this.getSlug(),
                 });
