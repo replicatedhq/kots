@@ -527,12 +527,12 @@ func (o *Operator) processRestoreForApp(a *apptypes.App) error {
 		break
 
 	default:
-		downstreams, err := o.store.GetDownstream(o.clusterID)
+		d, err := o.store.GetDownstream(o.clusterID)
 		if err != nil {
 			return errors.Wrap(err, "failed to get downstream")
 		}
 
-		if err := o.undeployApp(a, downstreams, true); err != nil {
+		if err := o.UndeployApp(a, d, true); err != nil {
 			return errors.Wrap(err, "failed to undeploy app")
 		}
 		break
@@ -657,7 +657,7 @@ func (o *Operator) checkRestoreComplete(a *apptypes.App, restore *velerov1.Resto
 	return nil
 }
 
-func (o *Operator) undeployApp(a *apptypes.App, d *downstreamtypes.Downstream, isRestore bool) error {
+func (o *Operator) UndeployApp(a *apptypes.App, d *downstreamtypes.Downstream, isRestore bool) error {
 	if _, ok := o.deployMtxs[a.ID]; !ok {
 		o.deployMtxs[a.ID] = &sync.Mutex{}
 	}
@@ -695,23 +695,32 @@ func (o *Operator) undeployApp(a *apptypes.App, d *downstreamtypes.Downstream, i
 	}
 	base64EncodedManifests := base64.StdEncoding.EncodeToString(renderedManifests)
 
-	backup, err := snapshot.GetBackup(context.Background(), util.PodNamespace, a.RestoreInProgressName)
-	if err != nil {
-		return errors.Wrap(err, "failed to get backup")
-	}
+	var clearNamespaces []string
+	var restoreLabelSelector *metav1.LabelSelector
 
-	// merge the backup label selector and the restore label selector so that we only undeploy manifests that are:
-	// 1- included in the backup AND
-	// 2- are going to be restored
-	// a valid use case here is when restoring just an app from a full snapshot because the backup won't have this label in that case.
-	// this will be a no-op when restoring from an app (partial) snapshot since the backup will already have this label.
-	restoreLabelSelector := backup.Spec.LabelSelector.DeepCopy()
-	if restoreLabelSelector == nil {
-		restoreLabelSelector = &metav1.LabelSelector{
-			MatchLabels: map[string]string{},
+	if isRestore {
+		backup, err := snapshot.GetBackup(context.Background(), util.PodNamespace, a.RestoreInProgressName)
+		if err != nil {
+			return errors.Wrap(err, "failed to get backup")
 		}
+		clearNamespaces = backup.Spec.IncludedNamespaces
+
+		// merge the backup label selector and the restore label selector so that we only undeploy manifests that are:
+		// 1- included in the backup AND
+		// 2- are going to be restored
+		// a valid use case here is when restoring just an app from a full snapshot because the backup won't have this label in that case.
+		// this will be a no-op when restoring from an app (partial) snapshot since the backup will already have this label.
+		restoreLabelSelector = backup.Spec.LabelSelector.DeepCopy()
+		if restoreLabelSelector == nil {
+			restoreLabelSelector = &metav1.LabelSelector{
+				MatchLabels: map[string]string{},
+			}
+		}
+		restoreLabelSelector.MatchLabels["kots.io/app-slug"] = a.Slug
+	} else {
+		clearNamespaces = append(clearNamespaces, util.AppNamespace())
+		clearNamespaces = append(clearNamespaces, kotsKinds.KotsApplication.Spec.AdditionalNamespaces...)
 	}
-	restoreLabelSelector.MatchLabels["kots.io/app-slug"] = a.Slug
 
 	undeployArgs := operatortypes.DeployAppArgs{
 		AppID:                a.ID,
@@ -724,16 +733,22 @@ func (o *Operator) undeployApp(a *apptypes.App, d *downstreamtypes.Downstream, i
 		PreviousManifests:    base64EncodedManifests,
 		Action:               "undeploy",
 		Wait:                 true,
-		ClearNamespaces:      backup.Spec.IncludedNamespaces,
+		ClearNamespaces:      clearNamespaces,
 		ClearPVCs:            true,
 		IsRestore:            isRestore,
 		RestoreLabelSelector: restoreLabelSelector,
 		KotsKinds:            kotsKinds,
 	}
-	go o.client.DeployApp(undeployArgs) // this happens async and progress/status is polled later.
 
-	if err := app.SetRestoreUndeployStatus(a.ID, apptypes.UndeployInProcess); err != nil {
-		return errors.Wrap(err, "failed to set restore undeploy status")
+	if isRestore {
+		// during a restore, this happens async and progress/status is polled later.
+		go o.client.DeployApp(undeployArgs)
+
+		if err := app.SetRestoreUndeployStatus(a.ID, apptypes.UndeployInProcess); err != nil {
+			return errors.Wrap(err, "failed to set restore undeploy status")
+		}
+	} else {
+		o.client.DeployApp(undeployArgs)
 	}
 
 	return nil

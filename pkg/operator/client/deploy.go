@@ -522,7 +522,9 @@ func (c *Client) installWithHelm(helmDir string, targetNamespace string, kotsCha
 		installDir := filepath.Join(chartsDir, dir.Name)
 		args := []string{"upgrade", "-i", dir.ReleaseName, installDir, "--timeout", "3600s"}
 
-		if targetNamespace != "" && targetNamespace != "." {
+		if dir.Namespace != "" {
+			args = append(args, "-n", dir.Namespace)
+		} else if targetNamespace != "" && targetNamespace != "." {
 			args = append(args, "-n", targetNamespace)
 		}
 		if len(dir.UpgradeFlags) > 0 {
@@ -561,6 +563,7 @@ type orderedDir struct {
 	ChartName    string
 	ChartVersion string
 	ReleaseName  string
+	Namespace    string
 	UpgradeFlags []string
 }
 
@@ -592,6 +595,7 @@ func getSortedCharts(chartsDir string, kotsCharts []*v1beta1.HelmChart) ([]order
 			if kotsChart.Spec.Chart.ChartVersion == dir.ChartVersion && kotsChart.Spec.Chart.Name == dir.ChartName && kotsChart.GetDirName() == dir.Name {
 				orderedDirs[idx].Weight = kotsChart.Spec.Weight
 				orderedDirs[idx].ReleaseName = kotsChart.GetReleaseName()
+				orderedDirs[idx].Namespace = kotsChart.Spec.Namespace
 				orderedDirs[idx].UpgradeFlags = kotsChart.Spec.HelmUpgradeFlags
 			}
 		}
