@@ -2030,7 +2030,7 @@ jobs:
       - validate-yamlescape
       - validate-no-redeploy-on-restart
       - validate-kubernetes-installer-preflight
-      - validate-postgres-to-rqlite-migration
+      - validate-kots-upgrade
       # cli-only tests
       - validate-kots-push-images-anonymous
     steps:
