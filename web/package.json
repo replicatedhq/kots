@@ -170,8 +170,7 @@
     "semver": "^7.3.5",
     "styled-components": "^5.3.5",
     "tar-stream": "2.1.0",
-    "universal-cookie": "^4.0.4",
-    "webpack-bugsnag-plugins": "^1.4.3"
+    "universal-cookie": "^4.0.4"
   },
   "resolutions": {
     "trim": "^0.0.3",
