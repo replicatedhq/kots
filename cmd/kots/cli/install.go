@@ -23,6 +23,7 @@ import (
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	"github.com/replicatedhq/kots/pkg/auth"
 	"github.com/replicatedhq/kots/pkg/automation"
+	dockerregistry "github.com/replicatedhq/kots/pkg/docker/registry"
 	"github.com/replicatedhq/kots/pkg/handlers"
 	"github.com/replicatedhq/kots/pkg/identity"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
@@ -106,6 +107,23 @@ func InstallCmd() *cobra.Command {
 			registryConfig, err := getRegistryConfig(v)
 			if err != nil {
 				return errors.Wrap(err, "failed to get registry config")
+			}
+
+			if !v.GetBool("skip-registry-check") {
+				log.ActionWithSpinner("Validating registry information")
+
+				hostname, err := getHostnameFromEndpoint(registryConfig.OverrideRegistry)
+				if err != nil {
+					log.FinishSpinnerWithError()
+					return errors.Wrap(err, "failed get hostname from endpoint")
+				}
+
+				if err := dockerregistry.CheckAccess(hostname, registryConfig.Username, registryConfig.Password); err != nil {
+					log.FinishSpinnerWithError()
+					return fmt.Errorf("Failed to test access to %q with user %q: %v", hostname, registryConfig.Username, err)
+				}
+
+				log.FinishSpinner()
 			}
 
 			isAirgap := false
@@ -488,6 +506,7 @@ func InstallCmd() *cobra.Command {
 	cmd.Flags().Bool("airgap", false, "set to true to run install in airgapped mode. setting --airgap-bundle implies --airgap=true.")
 	cmd.Flags().Bool("skip-preflights", false, "set to true to skip preflight checks")
 	cmd.Flags().Bool("disable-image-push", false, "set to true to disable images from being pushed to private registry")
+	cmd.Flags().Bool("skip-registry-check", false, "set to true to skip the connectivity test and validation of the provided registry information")
 	cmd.Flags().Bool("strict-security-context", false, "set to explicitly enable explicit security contexts for all kots pods and containers (may not work for some storage providers)")
 	cmd.Flags().Bool("skip-compatibility-check", false, "set to true to skip compatibility checks between the current kots version and the app")
 	cmd.Flags().String("app-version-label", "", "the application version label to install. if not specified, the latest version will be installed")
