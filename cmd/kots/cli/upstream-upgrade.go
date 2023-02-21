@@ -63,7 +63,7 @@ func UpstreamUpgradeCmd() *cobra.Command {
 				return errors.Wrap(err, "failed to get registry config")
 			}
 
-			if !v.GetBool("skip-registry-check") {
+			if registryConfig.OverrideRegistry != "" && !v.GetBool("skip-registry-check") {
 				log.ActionWithSpinner("Validating registry information")
 
 				hostname, err := getHostnameFromEndpoint(registryConfig.OverrideRegistry)
