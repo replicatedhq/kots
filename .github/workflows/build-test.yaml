@@ -1813,7 +1813,7 @@ jobs:
           fi
 
 
-  validate-postgres-to-rqlite-migration:
+  validate-kots-upgrade:
     runs-on: ubuntu-20.04
     needs: [ enable-tests, can-run-ci, build-kots, build-kurl-proxy, build-migrations, push-minio, push-mc, push-rqlite ]
     strategy:
@@ -1890,10 +1890,21 @@ jobs:
             --kotsadm-namespace automated-${{ github.run_id }} \
             --kotsadm-tag 24h
 
+          # verify that the postgres to rqlite migration was successful
+
           if ! kubectl logs -l app=kotsadm --namespace $APP_SLUG | grep -q "Migrated from Postgres to rqlite successfully"; then
             echo "Failed to find a successful migration log line"
             echo "kotsadm logs:"
             kubectl logs -l app=kotsadm --all-containers --namespace $APP_SLUG
+            exit 1
+          fi
+
+          # verify that the minio migration happened
+
+          if [ -z "$(kubectl get statefulset kotsadm-minio -n $APP_SLUG -o jsonpath='{.spec.template.spec.initContainers}')" ]; then
+            echo "Failed to find initContainers in the kotsadm-minio statefulset"
+            echo "kotsadm-minio statefulset:"
+            kubectl get statefulset kotsadm-minio -n $APP_SLUG -o yaml
             exit 1
           fi
 
