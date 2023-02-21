@@ -14,11 +14,12 @@ import PreflightsProgress from "./troubleshoot/PreflightsProgress";
 import Icon from "./Icon";
 
 import {
-  useDeployKotsDownsteam,
   useGetPrelightResults,
   useIgnorePermissionErrors,
   useRerunPreflights,
 } from "@features/PreflightChecks/api";
+
+import { useDeployAppVersion } from "@features/App/api";
 
 import { KotsParams } from "@types";
 
@@ -40,7 +41,7 @@ function PreflightResultPage(props: Props) {
 
   const history = useHistory();
   const { sequence = "0", slug } = useParams<KotsParams>();
-  const { mutate: deployKotsDownstream } = useDeployKotsDownsteam({
+  const { mutate: deployKotsDownstream } = useDeployAppVersion({
     slug,
     sequence,
   });
@@ -219,7 +220,7 @@ function PreflightResultPage(props: Props) {
           )}
         </div>
       )}
-      {!props.fromLicenseFlow && preflightCheck?.showPreflightCheckPending && (
+      {!props.fromLicenseFlow && preflightCheck?.shouldShowRerunPreflight && (
         <div className="flex-auto flex justifyContent--flexEnd u-marginBottom--15">
           <button
             type="button"

@@ -2,7 +2,7 @@ import { useMutation } from "react-query";
 import { useHistory } from "react-router-dom";
 import { Utilities } from "@src/utilities/utilities";
 
-async function postDeployKotsDownstream({
+async function postDeployAppVersion({
   apiEndpoint = process.env.API_ENDPOINT,
   slug,
   sequence,
@@ -46,7 +46,7 @@ function makeBody({
   });
 }
 
-function useDeployKotsDownsteam({
+function useDeployAppVersion({
   slug,
   sequence,
 }: {
@@ -63,7 +63,7 @@ function useDeployKotsDownsteam({
       continueWithFailedPreflights?: boolean;
       isSkipPreflights?: boolean;
     }) =>
-      postDeployKotsDownstream({
+      postDeployAppVersion({
         slug,
         sequence,
         body: makeBody({ continueWithFailedPreflights, isSkipPreflights }),
@@ -81,4 +81,4 @@ function useDeployKotsDownsteam({
   });
 }
 
-export { useDeployKotsDownsteam };
+export { useDeployAppVersion };

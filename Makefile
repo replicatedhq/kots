@@ -188,6 +188,7 @@ scan:
 		--exit-code=1 \
 		--severity="CRITICAL,HIGH,MEDIUM" \
 		--ignore-unfixed \
+		--skip-dirs .github \
 		--skip-files actions/version-tag/package-lock.json \
 		--skip-files web/yarn.lock \
 		--ignorefile .trivyignore \
