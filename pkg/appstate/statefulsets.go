@@ -116,29 +116,29 @@ func (h *statefulSetEventHandler) calculateStatefulSetState(r *appsv1.StatefulSe
 
 	if r.Status.ObservedGeneration != r.ObjectMeta.Generation {
 		return types.StateUpdating
-	} else {
-		listOptions := metav1.ListOptions{LabelSelector: labels.SelectorFromSet(r.Spec.Selector.MatchLabels).String()}
+	}
 
-		pods, err := h.clientset.CoreV1().Pods(h.targetNamespace).List(context.TODO(), listOptions)
-		if err != nil {
-			log.Printf("failed to get daemonset pod list: %s", err)
+	listOptions := metav1.ListOptions{LabelSelector: labels.SelectorFromSet(r.Spec.Selector.MatchLabels).String()}
+
+	pods, err := h.clientset.CoreV1().Pods(h.targetNamespace).List(context.TODO(), listOptions)
+	if err != nil {
+		log.Printf("failed to get statefulset pod list: %s", err)
+		return types.StateUnavailable
+	}
+
+	// If the pod version labels are not all the same, then the statefulset is updating.
+	currentVersion := ""
+	for _, pod := range pods.Items {
+		version, exists := pod.Labels[StatefulSetPodVersionLabel]
+		if !exists {
+			log.Printf("failed to find %s label for pod %s", StatefulSetPodVersionLabel, pod.Name)
 			return types.StateUnavailable
 		}
 
-		// If the pod version labels are not all the same, then the daemonset is updating.
-		currentVersion := ""
-		for _, pod := range pods.Items {
-			version, exists := pod.Labels[StatefulSetPodVersionLabel]
-			if !exists {
-				log.Printf("failed to find %s label for pod %s", StatefulSetPodVersionLabel, pod.Name)
-				return types.StateUnavailable
-			}
-
-			if len(currentVersion) == 0 {
-				currentVersion = version
-			} else if version != currentVersion {
-				return types.StateUpdating
-			}
+		if len(currentVersion) == 0 {
+			currentVersion = version
+		} else if version != currentVersion {
+			return types.StateUpdating
 		}
 	}
 
