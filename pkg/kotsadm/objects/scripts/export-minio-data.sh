@@ -2,13 +2,13 @@
 
 set -e
 
-# This script exports configuration, bucket metadata, iam settings, and bucket content from the old minio instance
-# to the shared migration directory
+# This script exports bucket content from the old minio instance to the shared migration directory
 
 # check if the migration has already been completed
 if [ -f /export/.migration ];
 then
-    echo "migration already completed, no-op"
+    MIGRATION_DATE=$(cat /export/.migration)
+    echo "migration already completed at $MIGRATION_DATE, no-op"
     exit 0
 fi
 

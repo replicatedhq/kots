@@ -8,7 +8,8 @@ set -e
 # check if the migration has already been completed
 if [ -f /export/.migration ];
 then
-    echo "migration already completed, no-op"
+    MIGRATION_DATE=$(cat /export/.migration)
+    echo "migration already completed at $MIGRATION_DATE, no-op"
     exit 0
 fi
 

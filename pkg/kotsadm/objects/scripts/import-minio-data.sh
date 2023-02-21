@@ -2,13 +2,13 @@
 
 set -e
 
-# This script imports configuration, bucket metadata, iam settings, and bucket content from the shared migration directory
-# to the new minio instance.
+# This script imports bucket content from the shared migration directory to the new minio instance.
 
 # check if the migration has already been completed
 if [ -f /export/.migration ];
 then
-    echo "migration already completed, no-op"
+    MIGRATION_DATE=$(cat /export/.migration)
+    echo "migration already completed at $MIGRATION_DATE, no-op"
     exit 0
 fi
 
@@ -83,6 +83,6 @@ mv -v /export/* $KOTSADM_MINIO_MIGRATION_DIR/old-data/
 mv -v $KOTSADM_MINIO_MIGRATION_DIR/new-data/* /export/
 
 echo "adding migration complete marker"
-touch /export/.migration
+date -u +"%Y-%m-%dT%H:%M:%SZ" > /export/.migration
 
 echo "data migration complete"
