@@ -1,6 +1,6 @@
 import * as React from "react";
 import AceEditor from "react-ace";
-import { withRouter } from "react-router-dom";
+import { withRouter } from "@src/utilities/react-router-utilities";
 import { getFileFormat, rootPath, Utilities } from "../../utilities/utilities";
 import sortBy from "lodash/sortBy";
 import find from "lodash/find";
@@ -321,7 +321,7 @@ class AnalyzerFileTree extends React.Component {
                   >
                     <Icon
                       icon="left-arrow-pointer"
-                      size="14"
+                      size={14}
                       className={isFirstRedaction ? "gray-color" : "clickable"}
                     />
                   </div>
@@ -353,7 +353,7 @@ class AnalyzerFileTree extends React.Component {
                   >
                     <Icon
                       icon="right-arrow-pointer"
-                      size="13"
+                      size={13}
                       className={isLastRedaction ? "gray-color" : "clickable"}
                     />
                   </div>

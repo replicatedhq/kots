@@ -1,5 +1,5 @@
 CURRENT_USER := $(shell id -u -n)
-POSTGRES_14_TAG ?= 14-alpine
+SCHEMAHERO_TAG ?= 0.13.2
 
 .PHONY: test
 test:

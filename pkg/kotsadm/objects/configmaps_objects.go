@@ -10,12 +10,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-//go:embed scripts/copy-postgres-10.sh
-var copyPostgres10Script string
-
-//go:embed scripts/upgrade-postgres.sh
-var upgradePostgresScript string
-
 func KotsadmConfigMap(deployOptions types.DeployOptions) *corev1.ConfigMap {
 	data := map[string]string{
 		"initial-app-images-pushed": fmt.Sprintf("%v", deployOptions.AppImagesPushed),
@@ -42,35 +36,6 @@ func KotsadmConfigMap(deployOptions types.DeployOptions) *corev1.ConfigMap {
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      types.KotsadmConfigMap,
-			Namespace: deployOptions.Namespace,
-			Labels:    types.GetKotsadmLabels(),
-		},
-		Data: data,
-	}
-
-	return configMap
-}
-
-func PostgresConfigMap(deployOptions types.DeployOptions) *corev1.ConfigMap {
-	data := map[string]string{}
-
-	if !deployOptions.IsOpenShift {
-		// Old stretch based image used uid 999, but new alpine based image uses uid 70.
-		// UID remapping is needed to allow alpine image access files created by older versions.
-		data["passwd"] = `root:x:0:0:root:/root:/bin/ash
-postgres:x:999:999:Linux User,,,:/var/lib/postgresql:/bin/sh`
-	}
-
-	data["copy-postgres-10.sh"] = copyPostgres10Script
-	data["upgrade-postgres.sh"] = upgradePostgresScript
-
-	configMap := &corev1.ConfigMap{
-		TypeMeta: metav1.TypeMeta{
-			APIVersion: "v1",
-			Kind:       "ConfigMap",
-		},
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "kotsadm-postgres",
 			Namespace: deployOptions.Namespace,
 			Labels:    types.GetKotsadmLabels(),
 		},

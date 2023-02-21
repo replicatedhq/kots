@@ -1,8 +1,8 @@
 package kotsstore
 
 import (
-	"database/sql"
 	"encoding/json"
+	"fmt"
 	"time"
 
 	"github.com/pkg/errors"
@@ -10,15 +10,19 @@ import (
 	"github.com/replicatedhq/kots/pkg/persistence"
 	preflighttypes "github.com/replicatedhq/kots/pkg/preflight/types"
 	troubleshootpreflight "github.com/replicatedhq/troubleshoot/pkg/preflight"
+	"github.com/rqlite/gorqlite"
 )
 
 func (s *KOTSStore) SetPreflightProgress(appID string, sequence int64, progress string) error {
 	db := persistence.MustGetDBSession()
-	query := `update app_downstream_version set preflight_progress = $1 where app_id = $2 and parent_sequence = $3`
+	query := `update app_downstream_version set preflight_progress = ? where app_id = ? and parent_sequence = ?`
 
-	_, err := db.Exec(query, progress, appID, sequence)
+	wr, err := db.WriteOneParameterized(gorqlite.ParameterizedStatement{
+		Query:     query,
+		Arguments: []interface{}{progress, appID, sequence},
+	})
 	if err != nil {
-		return errors.Wrap(err, "failed to write preflight results")
+		return fmt.Errorf("failed to write: %v: %v", err, wr.Err)
 	}
 
 	return nil
@@ -29,12 +33,21 @@ func (s *KOTSStore) GetPreflightProgress(appID string, sequence int64) (string, 
 	query := `
 	SELECT preflight_progress
 	FROM app_downstream_version
-	WHERE app_id = $1 AND sequence = $2`
+	WHERE app_id = ? AND sequence = ?`
 
-	row := db.QueryRow(query, appID, sequence)
+	rows, err := db.QueryOneParameterized(gorqlite.ParameterizedStatement{
+		Query:     query,
+		Arguments: []interface{}{appID, sequence},
+	})
+	if err != nil {
+		return "", fmt.Errorf("failed to query: %v: %v", err, rows.Err)
+	}
+	if !rows.Next() {
+		return "", ErrNotFound
+	}
 
-	var progress sql.NullString
-	if err := row.Scan(&progress); err != nil {
+	var progress gorqlite.NullString
+	if err := rows.Scan(&progress); err != nil {
 		return "", errors.Wrap(err, "failed to scan")
 	}
 
@@ -43,14 +56,17 @@ func (s *KOTSStore) GetPreflightProgress(appID string, sequence int64) (string, 
 
 func (s *KOTSStore) SetPreflightResults(appID string, sequence int64, results []byte) error {
 	db := persistence.MustGetDBSession()
-	query := `update app_downstream_version set preflight_result = $1, preflight_result_created_at = $2,
+	query := `update app_downstream_version set preflight_result = ?, preflight_result_created_at = ?,
 status = (case when status = 'deployed' then 'deployed' else 'pending' end),
 preflight_progress = NULL, preflight_skipped = false
-where app_id = $3 and parent_sequence = $4`
+where app_id = ? and parent_sequence = ?`
 
-	_, err := db.Exec(query, results, time.Now(), appID, sequence)
+	wr, err := db.WriteOneParameterized(gorqlite.ParameterizedStatement{
+		Query:     query,
+		Arguments: []interface{}{string(results), time.Now().Unix(), appID, sequence},
+	})
 	if err != nil {
-		return errors.Wrap(err, "failed to write preflight results")
+		return fmt.Errorf("failed to write: %v: %v", err, wr.Err)
 	}
 
 	return nil
@@ -71,11 +87,21 @@ func (s *KOTSStore) GetPreflightResults(appID string, sequence int64) (*prefligh
 		INNER JOIN cluster ON app_downstream_version.cluster_id = cluster.id
 		INNER JOIN app_version ON app_downstream_version.app_id = app_version.app_id AND app_downstream_version.parent_sequence = app_version.sequence
 	WHERE
-		app_downstream_version.app_id = $1 AND
-		app_downstream_version.sequence = $2`
+		app_downstream_version.app_id = ? AND
+		app_downstream_version.sequence = ?`
 
-	row := db.QueryRow(query, appID, sequence)
-	r, err := s.preflightResultFromRow(row)
+	rows, err := db.QueryOneParameterized(gorqlite.ParameterizedStatement{
+		Query:     query,
+		Arguments: []interface{}{appID, sequence},
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to query: %v: %v", err, rows.Err)
+	}
+	if !rows.Next() {
+		return nil, ErrNotFound
+	}
+
+	r, err := s.preflightResultFromRow(rows)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get preflight result from row")
 	}
@@ -85,10 +111,13 @@ func (s *KOTSStore) GetPreflightResults(appID string, sequence int64) (*prefligh
 
 func (s *KOTSStore) ResetPreflightResults(appID string, sequence int64) error {
 	db := persistence.MustGetDBSession()
-	query := `update app_downstream_version set preflight_result=null, preflight_result_created_at=null, preflight_skipped=false where app_id = $1 and parent_sequence = $2`
-	_, err := db.Exec(query, appID, sequence)
+	query := `update app_downstream_version set preflight_result=null, preflight_result_created_at=null, preflight_skipped=false where app_id = ? and parent_sequence = ?`
+	wr, err := db.WriteOneParameterized(gorqlite.ParameterizedStatement{
+		Query:     query,
+		Arguments: []interface{}{appID, sequence},
+	})
 	if err != nil {
-		return errors.Wrap(err, "failed to exec")
+		return fmt.Errorf("failed to write: %v: %v", err, wr.Err)
 	}
 	return nil
 }
@@ -97,22 +126,25 @@ func (s *KOTSStore) SetIgnorePreflightPermissionErrors(appID string, sequence in
 	db := persistence.MustGetDBSession()
 	query := `UPDATE app_downstream_version
 	SET status = 'pending_preflight', preflight_ignore_permissions = true, preflight_result = null, preflight_skipped = false
-	WHERE app_id = $1 AND sequence = $2`
+	WHERE app_id = ? AND sequence = ?`
 
-	_, err := db.Exec(query, appID, sequence)
+	wr, err := db.WriteOneParameterized(gorqlite.ParameterizedStatement{
+		Query:     query,
+		Arguments: []interface{}{appID, sequence},
+	})
 	if err != nil {
-		return errors.Wrap(err, "failed to set downstream version ignore rbac errors")
+		return fmt.Errorf("failed to set downstream version ignore rbac errors: %v: %v", err, wr.Err)
 	}
 
 	return nil
 }
 
-func (s *KOTSStore) preflightResultFromRow(row scannable) (*preflighttypes.PreflightResult, error) {
+func (s *KOTSStore) preflightResultFromRow(row gorqlite.QueryResult) (*preflighttypes.PreflightResult, error) {
 	r := &preflighttypes.PreflightResult{}
 
-	var preflightResult sql.NullString
-	var preflightResultCreatedAt sql.NullTime
-	var preflightSpec sql.NullString
+	var preflightResult gorqlite.NullString
+	var preflightResultCreatedAt gorqlite.NullTime
+	var preflightSpec gorqlite.NullString
 
 	if err := row.Scan(
 		&preflightResult,
@@ -139,7 +171,7 @@ func (s *KOTSStore) preflightResultFromRow(row scannable) (*preflighttypes.Prefl
 	return r, nil
 }
 
-func (s *KOTSStore) hasFailingStrictPreflights(preflightSpecStr sql.NullString, preflightResultStr sql.NullString) (bool, error) {
+func (s *KOTSStore) hasFailingStrictPreflights(preflightSpecStr gorqlite.NullString, preflightResultStr gorqlite.NullString) (bool, error) {
 	hasFailingStrictPreflights, err := s.hasStrictPreflights(preflightSpecStr)
 	if err != nil {
 		return false, errors.Wrap(err, "failed to check for strict preflight")
@@ -155,7 +187,7 @@ func (s *KOTSStore) hasFailingStrictPreflights(preflightSpecStr sql.NullString, 
 	return hasFailingStrictPreflights, nil
 }
 
-func (s *KOTSStore) hasStrictPreflights(preflightSpecStr sql.NullString) (bool, error) {
+func (s *KOTSStore) hasStrictPreflights(preflightSpecStr gorqlite.NullString) (bool, error) {
 	hasStrictPreflights := false
 	if preflightSpecStr.Valid && preflightSpecStr.String != "" {
 		preflight, err := kotsutil.LoadPreflightFromContents([]byte(preflightSpecStr.String))

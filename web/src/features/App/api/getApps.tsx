@@ -34,13 +34,19 @@ async function getApps({
   }
 }
 
-function useApps({ _getApps = getApps } = {}): UseQueryResult<{
+function useApps({
+  _getApps = getApps,
+  refetchInterval = false,
+}: {
+  _getApps?: typeof getApps;
+  refetchInterval?: number | false;
+} = {}): UseQueryResult<{
   apps: App[] | null;
 }> {
   const query: UseQueryResult<{
     apps: App[] | null;
   }> = useQuery("apps", () => _getApps(), {
-    staleTime: 2000,
+    refetchInterval,
   });
 
   return query;

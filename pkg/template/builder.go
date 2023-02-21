@@ -9,8 +9,9 @@ import (
 	"github.com/pkg/errors"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	"github.com/replicatedhq/kots/pkg/docker/registry"
-	registrytypes "github.com/replicatedhq/kots/pkg/docker/registry/types"
+	dockerregistrytypes "github.com/replicatedhq/kots/pkg/docker/registry/types"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
+	registrytypes "github.com/replicatedhq/kots/pkg/registry/types"
 )
 
 var (
@@ -25,7 +26,7 @@ type Builder struct {
 type BuilderOptions struct {
 	ConfigGroups    []kotsv1beta1.ConfigGroup
 	ExistingValues  map[string]ItemValue
-	LocalRegistry   LocalRegistry
+	LocalRegistry   registrytypes.RegistrySettings
 	License         *kotsv1beta1.License
 	Application     *kotsv1beta1.Application
 	ApplicationInfo *ApplicationInfo
@@ -40,12 +41,12 @@ func NewBuilder(opts BuilderOptions) (Builder, map[string]ItemValue, error) {
 	b := Builder{}
 
 	// do not fail on being unable to get dockerhub credentials, since they're just used to increase the rate limit
-	dockerHubRegistry := registrytypes.RegistryOptions{}
+	dockerHubRegistry := dockerregistrytypes.RegistryOptions{}
 	if opts.Namespace != "" {
 		clientset, err := k8sutil.GetClientset()
 		if err == nil {
 			dockerHubRegistryCreds, _ := registry.GetDockerHubCredentials(clientset, opts.Namespace)
-			dockerHubRegistry = registrytypes.RegistryOptions{
+			dockerHubRegistry = dockerregistrytypes.RegistryOptions{
 				Username: dockerHubRegistryCreds.Username,
 				Password: dockerHubRegistryCreds.Password,
 			}
@@ -65,7 +66,7 @@ func NewBuilder(opts BuilderOptions) (Builder, map[string]ItemValue, error) {
 
 	b.Ctx = []Ctx{
 		StaticCtx{},
-		licenseCtx{License: opts.License},
+		licenseCtx{License: opts.License, App: opts.Application},
 		newKurlContext("base", "default"), // can be hardcoded because kurl always deploys to the default namespace
 		newVersionCtx(opts.VersionInfo),
 		newIdentityCtx(opts.IdentityConfig, opts.ApplicationInfo),

@@ -15,25 +15,21 @@ func GetAdminConsoleImage(deployOptions types.DeployOptions, imageKey string) st
 func GetAdminConsoleImages(deployOptions types.DeployOptions) map[string]string {
 	// TODO: Add error handling to this function
 	minioTag, _ := image.GetTag(image.Minio)
-	postgres10Tag, _ := image.GetTag(image.Postgres10)
-	postgres14Tag, _ := image.GetTag(image.Postgres14)
+	rqliteTag, _ := image.GetTag(image.Rqlite)
 	dexTag, _ := image.GetTag(image.Dex)
 
 	minioImage := fmt.Sprintf("minio/minio:%s", minioTag)
-	postgres10Image := fmt.Sprintf("postgres:%s", postgres10Tag)
-	postgres14Image := fmt.Sprintf("postgres:%s", postgres14Tag)
+	rqliteImage := fmt.Sprintf("rqlite/rqlite:%s", rqliteTag)
 	dexImage := fmt.Sprintf("kotsadm/dex:%s", dexTag)
 
 	if s := kotsadmversion.KotsadmPullSecret(deployOptions.Namespace, deployOptions.RegistryConfig); s != nil {
 		minioImage = fmt.Sprintf("%s/minio:%s", kotsadmversion.KotsadmRegistry(deployOptions.RegistryConfig), minioTag)
-		postgres10Image = fmt.Sprintf("%s/postgres:%s", kotsadmversion.KotsadmRegistry(deployOptions.RegistryConfig), postgres10Tag)
-		postgres14Image = fmt.Sprintf("%s/postgres:%s", kotsadmversion.KotsadmRegistry(deployOptions.RegistryConfig), postgres14Tag)
+		rqliteImage = fmt.Sprintf("%s/rqlite:%s", kotsadmversion.KotsadmRegistry(deployOptions.RegistryConfig), rqliteTag)
 		dexImage = fmt.Sprintf("%s/dex:%s", kotsadmversion.KotsadmRegistry(deployOptions.RegistryConfig), dexTag)
 	} else if deployOptions.RegistryConfig.OverrideRegistry != "" {
 		// if there is a registry specified, use images there and not the ones from docker hub - even though there's not a username/password specified
 		minioImage = fmt.Sprintf("%s/minio:%s", kotsadmversion.KotsadmRegistry(deployOptions.RegistryConfig), minioTag)
-		postgres10Image = fmt.Sprintf("%s/postgres:%s", kotsadmversion.KotsadmRegistry(deployOptions.RegistryConfig), postgres10Tag)
-		postgres14Image = fmt.Sprintf("%s/postgres:%s", kotsadmversion.KotsadmRegistry(deployOptions.RegistryConfig), postgres14Tag)
+		rqliteImage = fmt.Sprintf("%s/rqlite:%s", kotsadmversion.KotsadmRegistry(deployOptions.RegistryConfig), rqliteTag)
 		dexImage = fmt.Sprintf("%s/dex:%s", kotsadmversion.KotsadmRegistry(deployOptions.RegistryConfig), dexTag)
 	}
 
@@ -41,8 +37,7 @@ func GetAdminConsoleImages(deployOptions types.DeployOptions) map[string]string 
 		"kotsadm-migrations": fmt.Sprintf("%s/kotsadm-migrations:%s", kotsadmversion.KotsadmRegistry(deployOptions.RegistryConfig), kotsadmversion.KotsadmTag(deployOptions.RegistryConfig)),
 		"kotsadm":            fmt.Sprintf("%s/kotsadm:%s", kotsadmversion.KotsadmRegistry(deployOptions.RegistryConfig), kotsadmversion.KotsadmTag(deployOptions.RegistryConfig)),
 		"minio":              minioImage,
-		"postgres-10":        postgres10Image,
-		"postgres-14":        postgres14Image,
+		"rqlite":             rqliteImage,
 		"dex":                dexImage,
 	}
 }
@@ -53,8 +48,7 @@ func GetOriginalAdminConsoleImages(deployOptions types.DeployOptions) map[string
 		"kotsadm-migrations": fmt.Sprintf("kotsadm/kotsadm-migrations:%s", kotsadmversion.KotsadmTag(deployOptions.RegistryConfig)),
 		"kotsadm":            fmt.Sprintf("kotsadm/kotsadm:%s", kotsadmversion.KotsadmTag(deployOptions.RegistryConfig)),
 		"minio":              image.Minio,
-		"postgres-10":        image.Postgres10,
-		"postgres-14":        image.Postgres14,
+		"rqlite":             image.Rqlite,
 		"dex":                fmt.Sprintf("kotsadm/dex:%s", dexTag),
 	}
 }

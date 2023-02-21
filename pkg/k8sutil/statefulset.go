@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
-	kotsadmtypes "github.com/replicatedhq/kots/pkg/kotsadm/types"
+	types "github.com/replicatedhq/kots/pkg/k8sutil/types"
 	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
@@ -30,7 +30,7 @@ func WaitForStatefulSetReady(ctx context.Context, clientset kubernetes.Interface
 		time.Sleep(time.Second)
 
 		if time.Now().Sub(start) > timeout {
-			return &kotsadmtypes.ErrorTimeout{Message: "timeout waiting for statefulset to become ready"}
+			return &types.ErrorTimeout{Message: "timeout waiting for statefulset to become ready"}
 		}
 	}
 }

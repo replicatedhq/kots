@@ -7,7 +7,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
-	"github.com/replicatedhq/kots/pkg/kotsadm/types"
+	k8sutiltypes "github.com/replicatedhq/kots/pkg/k8sutil/types"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -38,10 +38,15 @@ func AdminConsoleCmd() *cobra.Command {
 				return errors.Wrap(err, "failed to parse timeout value")
 			}
 
+			namespace, err := getNamespaceOrDefault(v.GetString("namespace"))
+			if err != nil {
+				return errors.Wrap(err, "failed to get namespace")
+			}
+
 			getPodName := func() (string, error) {
-				podName, err := k8sutil.WaitForKotsadm(clientset, v.GetString("namespace"), timeout)
+				podName, err := k8sutil.WaitForKotsadm(clientset, namespace, timeout)
 				if err != nil {
-					if _, ok := errors.Cause(err).(*types.ErrorTimeout); ok {
+					if _, ok := errors.Cause(err).(*k8sutiltypes.ErrorTimeout); ok {
 						return podName, errors.Errorf("kotsadm failed to start: %s. Use the --wait-duration flag to increase timeout.", err)
 					}
 					return podName, errors.Wrap(err, "failed to wait for web")
@@ -58,7 +63,7 @@ func AdminConsoleCmd() *cobra.Command {
 				pollForAdditionalPorts = false
 			}
 
-			adminConsolePort, errChan, err := k8sutil.PortForward(localPort, 3000, v.GetString("namespace"), getPodName, pollForAdditionalPorts, stopCh, log)
+			adminConsolePort, errChan, err := k8sutil.PortForward(localPort, 3000, namespace, getPodName, pollForAdditionalPorts, stopCh, log)
 			if err != nil {
 				return errors.Wrap(err, "failed to port forward")
 			}

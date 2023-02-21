@@ -1,5 +1,5 @@
 import React, { Component } from "react";
-import { withRouter } from "react-router-dom";
+import { withRouter } from "@src/utilities/react-router-utilities";
 import isEmpty from "lodash/isEmpty";
 
 import AnalyzerRedactorReportRow from "./AnalyzerRedactorReportRow";
@@ -86,9 +86,9 @@ export class AnalyzerRedactorReport extends Component {
       <div className="flex flex-column">
         {!isEmpty(redactions) ? (
           <p className="u-fontSize--normal u-textColor--bodyCopy u-fontWeight--medium u-lineHeight--normal u-marginTop--10 u-marginBottom--20">
-            Below is a list of default redactors that were applied when
-            collecting this support bundle. You can see how many files each
-            redactor affected and how many values were redacted.
+            Below is a list of the redactor specs that were applied when
+            collecting this support bundle. You can see how many files each spec
+            affected and how many values were redacted.
           </p>
         ) : (
           <p className="u-fontSize--normal u-textColor--bodyCopy u-fontWeight--medium u-lineHeight--normal u-marginTop--10 u-marginBottom--20">

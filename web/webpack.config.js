@@ -17,6 +17,7 @@ function mapEnvironment(env) {
   return "skaffold";
 }
 
+// TODO: refactor this to use proper env varibles from webpack https://webpack.js.org/guides/environment-variables/
 module.exports = function (env) {
   const distPath = path.join(__dirname, "dist");
   const srcPath = path.join(__dirname, "src");
@@ -46,11 +47,13 @@ module.exports = function (env) {
         tty: require.resolve("tty-browserify")
       },
       alias: {
-        "@src": path.resolve(__dirname, "src"),
+        "@components": path.resolve(__dirname, "src/components"),
         "@features": path.resolve(__dirname, "src/features"),
         "@stores": path.resolve(__dirname, "src/stores"),
         "@types": path.resolve(__dirname, "src/types/index"),
-        "handlebars" : "handlebars/dist/handlebars.js"
+        "@utils": path.resolve(__dirname, "src/utilities/index"),
+        "handlebars" : "handlebars/dist/handlebars.js",
+        "@src": path.resolve(__dirname, "src")
       },
       mainFields: ["browser", "main"],
     },
@@ -117,6 +120,12 @@ module.exports = function (env) {
               }
             }
           ]
+        },
+        {
+          test: /\.m?js/,
+          resolve: {
+              fullySpecified: false
+          }
         }
       ],
     },

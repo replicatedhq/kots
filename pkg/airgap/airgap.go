@@ -183,7 +183,7 @@ func CreateAppFromAirgap(opts CreateAirgapAppOpts) (finalError error) {
 		configFile = tmpFile.Name()
 	}
 
-	identityConfigFile, err := identity.InitAppIdentityConfig(opts.PendingApp.Slug, kotsv1beta1.Storage{})
+	identityConfigFile, err := identity.InitAppIdentityConfig(opts.PendingApp.Slug)
 	if err != nil {
 		return errors.Wrap(err, "failed to init identity config")
 	}
@@ -220,8 +220,8 @@ func CreateAppFromAirgap(opts CreateAirgapAppOpts) (finalError error) {
 		ExcludeAdminConsole: true,
 		RewriteImages:       true,
 		ReportWriter:        pipeWriter,
-		RewriteImageOptions: pull.RewriteImageOptions{
-			Host:       opts.RegistryHost,
+		RewriteImageOptions: registrytypes.RegistrySettings{
+			Hostname:   opts.RegistryHost,
 			Namespace:  opts.RegistryNamespace,
 			Username:   opts.RegistryUsername,
 			Password:   opts.RegistryPassword,
@@ -234,7 +234,9 @@ func CreateAppFromAirgap(opts CreateAirgapAppOpts) (finalError error) {
 	}
 
 	if _, err := pull.Pull(fmt.Sprintf("replicated://%s", license.Spec.AppSlug), pullOptions); err != nil {
-		return errors.Wrap(err, "failed to pull")
+		if errors.Cause(err) != pull.ErrConfigNeeded {
+			return errors.Wrap(err, "failed to pull")
+		}
 	}
 
 	if err := store.GetStore().AddAppToAllDownstreams(opts.PendingApp.ID); err != nil {

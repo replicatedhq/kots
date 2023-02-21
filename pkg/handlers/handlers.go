@@ -63,6 +63,8 @@ func RegisterSessionAuthRoutes(r *mux.Router, kotsStore store.Store, handler KOT
 		HandlerFunc(middleware.EnforceAccess(policy.AppSupportbundleWrite, handler.CollectHelmSupportBundle))
 	r.Name("ShareSupportBundle").Path("/api/v1/troubleshoot/app/{appSlug}/supportbundle/{bundleId}/share").Methods("POST").
 		HandlerFunc(middleware.EnforceAccess(policy.AppSupportbundleWrite, handler.ShareSupportBundle))
+	r.Name("DeleteSupportBundle").Path("/api/v1/troubleshoot/app/{appSlug}/supportbundle/{bundleId}").Methods("DELETE").
+		HandlerFunc(middleware.EnforceAccess(policy.AppSupportbundleWrite, handler.DeleteSupportBundle))
 	r.Name("GetPodDetailsFromSupportBundle").Path("/api/v1/troubleshoot/app/{appSlug}/supportbundle/{bundleId}/pod").Methods("GET").
 		HandlerFunc(middleware.EnforceAccess(policy.AppSupportbundleRead, handler.GetPodDetailsFromSupportBundle))
 
@@ -203,8 +205,10 @@ func RegisterSessionAuthRoutes(r *mux.Router, kotsStore store.Store, handler KOT
 
 	r.Name("AppUpdateCheck").Path("/api/v1/app/{appSlug}/updatecheck").Methods("POST").
 		HandlerFunc(middleware.EnforceAccess(policy.AppDownstreamWrite, handler.AppUpdateCheck))
-	r.Name("ConfigureAutomaticUpdates").Path("/api/v1/app/{appSlug}/automaticupdates").Methods("PUT").
-		HandlerFunc(middleware.EnforceAccess(policy.AppDownstreamWrite, handler.ConfigureAutomaticUpdates))
+	r.Name("SetAutomaticUpdatesConfig").Path("/api/v1/app/{appSlug}/automaticupdates").Methods("PUT").
+		HandlerFunc(middleware.EnforceAccess(policy.AppDownstreamWrite, handler.SetAutomaticUpdatesConfig))
+	r.Name("GetAutomaticUpdatesConfig").Path("/api/v1/app/{appSlug}/automaticupdates").Methods("GET").
+		HandlerFunc(middleware.EnforceAccess(policy.AppDownstreamWrite, handler.GetAutomaticUpdatesConfig))
 	r.Name("RemoveApp").Path("/api/v1/app/{appSlug}/remove").Methods("POST").
 		HandlerFunc(middleware.EnforceAccess(policy.AppUpdate, handler.RemoveApp))
 
@@ -239,8 +243,8 @@ func RegisterSessionAuthRoutes(r *mux.Router, kotsStore store.Store, handler KOT
 		HandlerFunc(middleware.EnforceAccess(policy.SnapshotsettingsRead, handler.GetGlobalSnapshotSettings))
 	r.Name("UpdateGlobalSnapshotSettings").Path("/api/v1/snapshots/settings").Methods("PUT").
 		HandlerFunc(middleware.EnforceAccess(policy.SnapshotsettingsWrite, handler.UpdateGlobalSnapshotSettings))
-	r.Name("ConfigureFileSystemSnapshotProvider").Path("/api/v1/snapshots/filesystem").Methods("PUT").
-		HandlerFunc(middleware.EnforceAccess(policy.SnapshotsettingsWrite, handler.ConfigureFileSystemSnapshotProvider))
+	r.Name("GetFileSystemSnapshotProviderInstructions").Path("/api/v1/snapshots/filesystem/instructions").Methods("POST").
+		HandlerFunc(middleware.EnforceAccess(policy.SnapshotsettingsRead, handler.GetFileSystemSnapshotProviderInstructions))
 	r.Name("GetBackup").Path("/api/v1/snapshot/{snapshotName}").Methods("GET").
 		HandlerFunc(middleware.EnforceAccess(policy.BackupRead, handler.GetBackup))
 	r.Name("DeleteBackup").Path("/api/v1/snapshot/{snapshotName}/delete").Methods("POST").
@@ -283,11 +287,11 @@ func RegisterSessionAuthRoutes(r *mux.Router, kotsStore store.Store, handler KOT
 	r.Name("InitGitOpsConnection").Path("/api/v1/gitops/app/{appId}/cluster/{clusterId}/initconnection").Methods("POST").
 		HandlerFunc(middleware.EnforceAccess(policy.AppGitopsWrite, handler.InitGitOpsConnection))
 	r.Name("CreateGitOps").Path("/api/v1/gitops/create").Methods("POST").
-		HandlerFunc(middleware.EnforceAccess(policy.GitopsWrite, handler.CreateGitOps))
+		HandlerFunc(middleware.EnforceAccess(policy.GitOpsWrite, handler.CreateGitOps))
 	r.Name("ResetGitOps").Path("/api/v1/gitops/reset").Methods("POST").
-		HandlerFunc(middleware.EnforceAccess(policy.GitopsWrite, handler.ResetGitOps))
+		HandlerFunc(middleware.EnforceAccess(policy.GitOpsWrite, handler.ResetGitOps))
 	r.Name("GetGitOpsRepo").Path("/api/v1/gitops/get").Methods("GET").
-		HandlerFunc(middleware.EnforceAccess(policy.GitopsRead, handler.GetGitOpsRepo))
+		HandlerFunc(middleware.EnforceAccess(policy.GitOpsRead, handler.GetGitOpsRepo))
 
 	// Password change
 	r.Name("ChangePassword").Path("/api/v1/password/change").Methods("PUT").
@@ -318,14 +322,15 @@ func RegisterTokenAuthRoutes(handler *Handler, debugRouter *mux.Router, loggingR
 	loggingRouter.Path("/api/v1/upload").Methods("PUT").HandlerFunc(handler.UploadExistingApp)
 	loggingRouter.Path("/api/v1/download").Methods("GET").HandlerFunc(handler.DownloadApp)
 	loggingRouter.Path("/api/v1/airgap/install").Methods("POST").HandlerFunc(handler.UploadInitialAirgapApp)
+	loggingRouter.Path("/api/v1/branding/install").Methods("POST").HandlerFunc(handler.UploadInitialBranding)
 }
 
-func RegisterUnauthenticatedRoutes(handler *Handler, debugRouter *mux.Router, loggingRouter *mux.Router) {
+func RegisterUnauthenticatedRoutes(handler *Handler, kotsStore store.Store, debugRouter *mux.Router, loggingRouter *mux.Router) {
 	debugRouter.HandleFunc("/healthz", handler.Healthz)
 	loggingRouter.HandleFunc("/api/v1/login", handler.Login)
 	loggingRouter.HandleFunc("/api/v1/login/info", handler.GetLoginInfo)
 	loggingRouter.HandleFunc("/api/v1/logout", handler.Logout) // this route uses its own auth
-	loggingRouter.Path("/api/v1/metadata").Methods("GET").HandlerFunc(GetMetadataHandler(GetMetaDataConfig))
+	loggingRouter.Path("/api/v1/metadata").Methods("GET").HandlerFunc(GetMetadataHandler(GetMetaDataConfig, kotsStore))
 
 	loggingRouter.HandleFunc("/api/v1/oidc/login", handler.OIDCLogin)
 	loggingRouter.HandleFunc("/api/v1/oidc/login/callback", handler.OIDCLoginCallback)

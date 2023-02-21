@@ -143,6 +143,9 @@ func ReportAppInfo(appID string, sequence int64, isSkipPreflights bool, isCLI bo
 }
 
 func getPreflightState(preflightResults *troubleshootpreflight.UploadPreflightResults) string {
+	if preflightResults == nil {
+		return ""
+	}
 	if len(preflightResults.Errors) > 0 {
 		return "fail"
 	}

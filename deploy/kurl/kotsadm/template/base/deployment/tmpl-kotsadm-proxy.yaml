@@ -9,8 +9,8 @@ spec:
       - name: kotsadm
         env:
         - name: HTTP_PROXY
-          value: ${PROXY_ADDRESS}
+          value: "${PROXY_ADDRESS}"
         - name: HTTPS_PROXY
-          value: ${PROXY_ADDRESS}
+          value: "${PROXY_ADDRESS}"
         - name: NO_PROXY
-          value: ${NO_PROXY_ADDRESSES}
+          value: "${NO_PROXY_ADDRESSES}"

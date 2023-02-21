@@ -1,5 +1,5 @@
 import * as React from "react";
-import Helmet from "react-helmet";
+import { KotsPageTitle } from "@components/Head";
 import { Utilities, dynamicallyResizeText } from "@src/utilities/utilities";
 import Loader from "@src/components/shared/Loader";
 import ErrorModal from "@src/components/modals/ErrorModal";
@@ -250,20 +250,20 @@ class SecureAdminConsole extends React.Component<Props, State> {
   async componentDidMount() {
     window.addEventListener("keydown", this.submitForm);
 
-    const localStorageToken = window.localStorage.getItem("token");
-    const cookieToken = Utilities.getCookie("token");
-    const cookieSessionRole = Utilities.getCookie("session_role");
-    const localStorageSessionRole = window.localStorage.getItem("session_role");
-    if (Utilities.isLoggedIn() || cookieToken) {
+    const token = Utilities.getCookie("token");
+    if (token) {
       // this is a redirect from identity service login
       // strip quotes from token (golang adds them when the cookie value has spaces, commas, etc..)
       const loginData = {
-        token: (
-          localStorageToken?.replace(/"/g, "") || cookieToken.replace(/"/g, "")
-        ).toString(),
-        sessionRoles: (localStorageSessionRole || cookieSessionRole).toString(),
+        token: token.replace(/"/g, ""),
+        sessionRoles: Utilities.getCookie("session_roles"),
       };
-      await this.completeLogin(loginData);
+      const loggedIn = await this.completeLogin(loginData);
+      if (loggedIn) {
+        Utilities.removeCookie("token");
+        Utilities.removeCookie("session_roles");
+      }
+      return;
     }
 
     const urlParams = new URLSearchParams(window.location.search);
@@ -330,11 +330,7 @@ class SecureAdminConsole extends React.Component<Props, State> {
 
     return (
       <div className="container flex-column flex1 u-overflow--auto Login-wrapper justifyContent--center alignItems--center">
-        <Helmet>
-          <title>{`${
-            appName ? `${appName} Admin Console` : "Admin Console"
-          }`}</title>
-        </Helmet>
+        <KotsPageTitle pageName="Login" showAppSlug />
         <div className="LoginBox-wrapper u-flexTabletReflow flex-auto">
           <div className="flex-auto flex-column login-form-wrapper secure-console justifyContent--center">
             <div className="flex-column alignItems--center">

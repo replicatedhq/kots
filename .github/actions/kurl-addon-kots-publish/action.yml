@@ -1,0 +1,58 @@
+name: Publish kURL Add-On
+
+inputs:
+  addon_version:
+    type: string
+    description: "Kots version (without the 'v')."
+    required: true
+  s3_prefix:
+    type: string
+    description: "S3 key prefix."
+    default: "test/"
+  priority:
+    type: number
+    description: 'Testgrid run priority.'
+    default: 0
+  testgrid_api_token:
+    type: string
+    description: "Testgrid API token."
+    required: true
+  kotsadm_binary_override:
+    type: string
+    description: "Kots binary override."
+outputs:
+  addon_package_url:
+    description: "S3 package url"
+    value: ${{ steps.addon-test.outputs.addon_package_url }}
+  testgrid_run_message:
+    description: "Testgrid run message"
+    value: ${{ steps.addon-test.outputs.message }}
+
+runs:
+  using: "composite"
+  steps:
+
+    - uses: ./.github/actions/kurl-addon-kots-generate
+      id: addon-generate
+      with:
+        addon_version: ${{ inputs.addon_version }}
+        s3_prefix: ${{ inputs.s3_prefix }}
+        kotsadm_binary_override: ${{ inputs.kotsadm_binary_override }}
+
+    - uses: ./.github/actions/kurl-addon-kots-test
+      id: addon-test
+      with:
+        addon_version: ${{ inputs.addon_version }}
+        addon_package_url: ${{ steps.addon-generate.outputs.addon_package_url }}
+        priority: ${{ inputs.priority }}
+        testgrid_api_token: ${{ inputs.testgrid_api_token }}
+
+    - uses: ./.github/actions/kurl-addon-kots-publisher
+      with:
+        ADDON_VERSION: ${{ inputs.addon_version }}
+        ADDON_PACKAGE_URL: ${{ steps.addon-generate.outputs.addon_package_url }}
+        GITHUB_TOKEN: ${{ github.token }}
+
+    - run: aws s3 cp versions.json s3://kots-kurl-addons-production-1658439274
+      shell: bash
+      working-directory: ${{ github.action_path }}/../../../deploy/kurl

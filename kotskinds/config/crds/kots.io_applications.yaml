@@ -49,20 +49,17 @@ spec:
               branding:
                 properties:
                   css:
-                    type: string
-                  fontFiles:
+                    items:
+                      type: string
+                    type: array
+                  fonts:
                     items:
                       properties:
                         fontFamily:
                           type: string
                         sources:
                           items:
-                            properties:
-                              data:
-                                type: string
-                              format:
-                                type: string
-                            type: object
+                            type: string
                           type: array
                       type: object
                     type: array
@@ -128,7 +125,11 @@ spec:
                 type: array
               proxyPublicImages:
                 type: boolean
+              proxyRegistryDomain:
+                type: string
               releaseNotes:
+                type: string
+              replicatedRegistryDomain:
                 type: string
               requireMinimalRBACPrivileges:
                 type: boolean

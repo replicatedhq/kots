@@ -76,7 +76,7 @@ class AnalyzerRedactorReportRow extends React.Component {
             </p>
             <Icon
               icon="right-arrow-pointer"
-              size="13"
+              size={13}
               className="gray-color u-marginLeft--5"
             />
           </div>
@@ -101,7 +101,7 @@ class AnalyzerRedactorReportRow extends React.Component {
             </span>
           </p>
           <span
-            className="replicated-link u-fontSize--small u-marginLeft--10"
+            className="link u-fontSize--small u-marginLeft--10"
             onClick={this.toggleDetails}
           >
             {" "}

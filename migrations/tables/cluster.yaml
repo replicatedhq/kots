@@ -3,10 +3,10 @@ kind: Table
 metadata:
   name: cluster
 spec:
-  database: kotsadm-postgres
   name: cluster
   schema:
-    postgres:
+    rqlite:
+      strict: true
       primaryKey:
       - id
       indexes:
@@ -28,11 +28,11 @@ spec:
         constraints:
           notNull: true
       - name: created_at
-        type: timestamp without time zone
+        type: integer
         constraints:
           notNull: true
       - name: updated_at
-        type: timestamp without time zone
+        type: integer
       - name: token
         type: text
       - name: cluster_type
@@ -41,10 +41,10 @@ spec:
           notNull: true
         default: 'gitops'
       - name: is_all_users
-        type: boolean
+        type: integer
         constraints:
           notNull: true
-        default: "false"
+        default: 0
       - name: snapshot_schedule
         type: text
       - name: snapshot_ttl

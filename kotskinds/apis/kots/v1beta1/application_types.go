@@ -62,21 +62,18 @@ type ApplicationSpec struct {
 	SupportMinimalRBACPrivileges bool                `json:"supportMinimalRBACPrivileges,omitempty"`
 	ProxyPublicImages            bool                `json:"proxyPublicImages,omitempty"`
 	ConsoleFeatureFlags          []string            `json:"consoleFeatureFlags,omitempty"`
+	ReplicatedRegistryDomain     string              `json:"replicatedRegistryDomain,omitempty"`
+	ProxyRegistryDomain          string              `json:"proxyRegistryDomain,omitempty"`
 }
 
 type ApplicationBranding struct {
-	Css       string                        `json:"css,omitempty"`
-	FontFiles []ApplicationBrandingFontFile `json:"fontFiles,omitempty"`
+	Css   []string                      `json:"css,omitempty"`
+	Fonts []ApplicationBrandingFontFile `json:"fonts,omitempty"`
 }
 
 type ApplicationBrandingFontFile struct {
-	FontFamily string                              `json:"fontFamily,omitempty"`
-	Sources    []ApplicationBrandingFontFileSource `json:"sources,omitempty"`
-}
-
-type ApplicationBrandingFontFileSource struct {
-	Format string `json:"format,omitempty"`
-	Data   string `json:"data,omitempty"`
+	FontFamily string   `json:"fontFamily,omitempty"`
+	Sources    []string `json:"sources,omitempty"`
 }
 
 type ApplicationPort struct {

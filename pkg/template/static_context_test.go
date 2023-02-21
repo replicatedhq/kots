@@ -4,10 +4,14 @@ import (
 	"crypto/x509"
 	"encoding/pem"
 	"fmt"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/require"
 	"gopkg.in/yaml.v2"
+	"k8s.io/apimachinery/pkg/version"
+	fakediscovery "k8s.io/client-go/discovery/fake"
+	fakeclientset "k8s.io/client-go/kubernetes/fake"
 )
 
 func TestStaticContext_kubeSeal_badCert(t *testing.T) {
@@ -211,4 +215,39 @@ func TestProxyEnvVars(t *testing.T) {
 	req.Equal(httpsProxy, "1.1.1.1")
 	req.Equal(httpProxy, "2.2.2.2")
 	req.Equal(noProxy, "3.3.3.3")
+}
+
+func TestKubernetesVersion(t *testing.T) {
+	clientset := fakeclientset.NewSimpleClientset()
+	fakeDiscovery, ok := clientset.Discovery().(*fakediscovery.FakeDiscovery)
+	if !ok {
+		t.Error("couldn't convert Discovery() to *FakeDiscovery")
+		return
+	}
+
+	wantK8sVersion := "v1.25.0"
+	wantK8sMajorVersion := "1"
+	wantK8sMinorVersion := "25"
+
+	fakeDiscovery.FakedServerVersion = &version.Info{
+		GitVersion: wantK8sVersion,
+		Major:      wantK8sMajorVersion,
+		Minor:      wantK8sMinorVersion,
+	}
+
+	ctx := StaticCtx{
+		clientset: clientset,
+	}
+
+	if actualK8sVersion := ctx.kubernetesVersion(); actualK8sVersion != strings.TrimPrefix(wantK8sVersion, "v") {
+		t.Errorf("expected kubernetes version to be %q, got %q", strings.TrimPrefix(wantK8sVersion, "v"), actualK8sVersion)
+	}
+
+	if actualK8sMajorVersion := ctx.kubernetesMajorVersion(); actualK8sMajorVersion != wantK8sMajorVersion {
+		t.Errorf("expected kubernetes major version to be %q, got %q", wantK8sMajorVersion, actualK8sMajorVersion)
+	}
+
+	if actualK8sMinorVersion := ctx.kubernetesMinorVersion(); actualK8sMinorVersion != wantK8sMinorVersion {
+		t.Errorf("expected kubernetes minor version to be %q, got %q", wantK8sMinorVersion, actualK8sMinorVersion)
+	}
 }

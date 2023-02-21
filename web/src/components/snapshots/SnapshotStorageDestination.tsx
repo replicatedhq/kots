@@ -1,6 +1,6 @@
 import React, { Component } from "react";
 import Select from "react-select";
-import { withRouter, RouteComponentProps } from "react-router-dom";
+import { RouteComponentProps } from "react-router-dom";
 import MonacoEditor from "@monaco-editor/react";
 import find from "lodash/find";
 import Modal from "react-modal";
@@ -30,6 +30,15 @@ type CACertificate = {
   name: string;
   data: Array<string>;
 };
+
+type FileSystemProviderInstructionType = "link" | "command";
+
+type FileSystemProviderInstruction = {
+  title: string;
+  action: string;
+  type: FileSystemProviderInstructionType;
+};
+
 type State = {
   azureBucket?: string;
   azureClientId: string;
@@ -40,9 +49,9 @@ type State = {
   azureSubscriptionId: string;
   azureTenantId: string;
   caCertificate?: CACertificate;
-  configureFileSystemProviderErrorMsg?: string;
-  configureFileSystemProviderNamespace?: string;
-  configuringFileSystemProvider?: boolean;
+  gettingFileSystemProviderInstructionsErrorMsg?: string;
+  fileSystemProviderInstructions?: FileSystemProviderInstruction[];
+  gettingFileSystemProviderInstructions?: boolean;
   determiningDestination?: boolean;
   fileSystemHostPath?: string;
   fileSystemNFSPath?: string;
@@ -53,7 +62,6 @@ type State = {
   gcsPath?: string;
   gcsServiceAccount: string;
   gcsUseIam: boolean;
-  resetFileSystemWarningMessage?: string;
   s3bucket?: string;
   s3CompatibleBucket?: string;
   s3CompatibleEndpoint: string;
@@ -70,8 +78,7 @@ type State = {
   selectedDestination?: ValueType & {};
   showCACertificateField?: boolean;
   showConfigureFileSystemProviderModal?: boolean;
-  showConfigureFileSystemProviderNextStepsModal?: boolean;
-  showResetFileSystemWarningModal?: boolean;
+  showFileSystemProviderInstructionsModal?: boolean;
   tmpFileSystemHostPath?: string;
   tmpFileSystemNFSPath?: string;
   tmpFileSystemNFSServer?: string;
@@ -190,7 +197,7 @@ type ProviderPayload =
 type Props = RouteComponentProps & {
   // TODO: add apps type for apps response
   apps: Array<object>;
-  checkForVeleroAndRestic: boolean;
+  checkForVeleroAndNodeAgent: boolean;
   fetchSnapshotSettings: () => void;
   hideCheckVeleroButton: () => void;
   hideResetFileSystemWarningModal: () => void;
@@ -293,13 +300,11 @@ class SnapshotStorageDestination extends Component<Props, State> {
       s3CompatibleRegion: "",
       s3CompatibleFieldErrors: {},
 
-      configuringFileSystemProvider: false,
-      configureFileSystemProviderErrorMsg: "",
-      configureFileSystemProviderNamespace: "",
-      showConfigureFileSystemProviderNextStepsModal: false,
+      gettingFileSystemProviderInstructions: false,
+      gettingFileSystemProviderInstructionsErrorMsg: "",
+      fileSystemProviderInstructions: [],
+      showFileSystemProviderInstructionsModal: false,
       showConfigureFileSystemProviderModal: false,
-      showResetFileSystemWarningModal: false,
-      resetFileSystemWarningMessage: "",
 
       fileSystemType: "",
       fileSystemNFSPath: "",
@@ -320,7 +325,7 @@ class SnapshotStorageDestination extends Component<Props, State> {
   };
 
   componentDidMount() {
-    if (this.props.snapshotSettings && !this.props.checkForVeleroAndRestic) {
+    if (this.props.snapshotSettings && !this.props.checkForVeleroAndNodeAgent) {
       this.setFields();
     }
   }
@@ -329,7 +334,7 @@ class SnapshotStorageDestination extends Component<Props, State> {
     if (
       this.props.snapshotSettings !== lastProps.snapshotSettings &&
       this.props.snapshotSettings &&
-      !this.props.checkForVeleroAndRestic
+      !this.props.checkForVeleroAndNodeAgent
     ) {
       this.setFields();
     }
@@ -360,22 +365,22 @@ class SnapshotStorageDestination extends Component<Props, State> {
     const { snapshotSettings } = this.props;
 
     if (provider === "aws") {
-      if (snapshotSettings.store.aws) {
+      if (snapshotSettings.store?.aws) {
         return (
-          snapshotSettings.store.aws.region !== s3Region ||
-          snapshotSettings.store.aws.accessKeyID !== s3KeyId ||
-          snapshotSettings.store.aws.secretAccessKey !== s3KeySecret ||
-          snapshotSettings.store.aws.useInstanceRole !== useIamAws
+          snapshotSettings.store?.aws.region !== s3Region ||
+          snapshotSettings.store?.aws.accessKeyID !== s3KeyId ||
+          snapshotSettings.store?.aws.secretAccessKey !== s3KeySecret ||
+          snapshotSettings.store?.aws.useInstanceRole !== useIamAws
         );
       }
       return true;
     }
     if (provider === "gcp") {
-      if (snapshotSettings.store.gcp) {
+      if (snapshotSettings.store?.gcp) {
         return (
-          snapshotSettings.store.gcp.useInstanceRole !== gcsUseIam ||
-          snapshotSettings.store.gcp.serviceAccount !== gcsServiceAccount ||
-          snapshotSettings.store.gcp.jsonFile !== gcsJsonFile
+          snapshotSettings.store?.gcp.useInstanceRole !== gcsUseIam ||
+          snapshotSettings.store?.gcp.serviceAccount !== gcsServiceAccount ||
+          snapshotSettings.store?.gcp.jsonFile !== gcsJsonFile
         );
       }
       return true;
@@ -711,7 +716,7 @@ class SnapshotStorageDestination extends Component<Props, State> {
 
   snapshotProviderFileSystem = async (forceReset = false) => {
     if (forceReset) {
-      this.hideResetFileSystemWarningModal();
+      this.props.hideResetFileSystemWarningModal();
     }
 
     const type = this.state.fileSystemType;
@@ -764,22 +769,11 @@ class SnapshotStorageDestination extends Component<Props, State> {
     this.setState({ showConfigureFileSystemProviderModal: false });
   };
 
-  hideConfigureFileSystemProviderNextStepsModal = () => {
-    this.setState({ showConfigureFileSystemProviderNextStepsModal: false });
+  hideConfigureFileSystemProviderInstructionsModal = () => {
+    this.setState({ showFileSystemProviderInstructionsModal: false });
   };
 
-  hideResetFileSystemWarningModal = () => {
-    this.setState({ showResetFileSystemWarningModal: false });
-    if (this.props.hideResetFileSystemWarningModal) {
-      this.props.hideResetFileSystemWarningModal();
-    }
-  };
-
-  configureFileSystemProvider = (forceReset = false) => {
-    if (forceReset) {
-      this.hideResetFileSystemWarningModal();
-    }
-
+  getFileSystemProviderInstructions = () => {
     const type = this.state.tmpFileSystemType;
     const path = this.state.tmpFileSystemNFSPath;
     const server = this.state.tmpFileSystemNFSServer;
@@ -789,16 +783,16 @@ class SnapshotStorageDestination extends Component<Props, State> {
       path,
       server,
       hostPath,
-      forceReset
+      false
     );
 
     this.setState({
-      configuringFileSystemProvider: true,
-      configureFileSystemProviderErrorMsg: "",
+      gettingFileSystemProviderInstructions: true,
+      gettingFileSystemProviderInstructionsErrorMsg: "",
     });
 
-    fetch(`${process.env.API_ENDPOINT}/snapshots/filesystem`, {
-      method: "PUT",
+    fetch(`${process.env.API_ENDPOINT}/snapshots/filesystem/instructions`, {
+      method: "POST",
       headers: {
         Authorization: Utilities.getToken() || "",
         "Content-Type": "application/json",
@@ -808,46 +802,36 @@ class SnapshotStorageDestination extends Component<Props, State> {
       }),
     })
       .then(async (res) => {
-        if (res.status === 409) {
-          const response = await res.json();
-          this.setState({
-            configuringFileSystemProvider: false,
-            showResetFileSystemWarningModal: true,
-            resetFileSystemWarningMessage: response.error,
-          });
-          return;
-        }
-
         const response = await res.json();
         if (!res.ok) {
           this.setState({
-            configuringFileSystemProvider: false,
-            configureFileSystemProviderErrorMsg: response.error,
+            gettingFileSystemProviderInstructions: false,
+            gettingFileSystemProviderInstructionsErrorMsg: response.error,
           });
           return;
         }
 
         if (response.success) {
           this.setState({
-            configuringFileSystemProvider: false,
+            gettingFileSystemProviderInstructions: false,
             showConfigureFileSystemProviderModal: false,
-            showConfigureFileSystemProviderNextStepsModal: true,
-            configureFileSystemProviderErrorMsg: "",
-            configureFileSystemProviderNamespace: response.namespace,
+            showFileSystemProviderInstructionsModal: true,
+            gettingFileSystemProviderInstructionsErrorMsg: "",
+            fileSystemProviderInstructions: response.instructions,
           });
           return;
         }
 
         this.setState({
-          configuringFileSystemProvider: false,
-          configureFileSystemProviderErrorMsg: response.error,
+          gettingFileSystemProviderInstructions: false,
+          gettingFileSystemProviderInstructionsErrorMsg: response.error,
         });
       })
       .catch((err) => {
         console.error(err);
         this.setState({
-          configuringFileSystemProvider: false,
-          configureFileSystemProviderErrorMsg:
+          gettingFileSystemProviderInstructions: false,
+          gettingFileSystemProviderInstructionsErrorMsg:
             "Something went wrong, please try again.",
         });
       });
@@ -889,9 +873,9 @@ class SnapshotStorageDestination extends Component<Props, State> {
       case "aws":
         return (
           <>
-            <div className="flex u-marginBottom--30">
+            <div className="flex u-marginBottom--15">
               <div className="flex1 u-paddingRight--5">
-                <p className="u-fontSize--normal u-textColor--primary u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">
+                <p className="u-fontSize--normal card-item-title u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">
                   Bucket
                 </p>
                 <input
@@ -903,7 +887,7 @@ class SnapshotStorageDestination extends Component<Props, State> {
                 />
               </div>
               <div className="flex1 u-paddingLeft--5">
-                <p className="u-fontSize--normal u-textColor--primary u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">
+                <p className="u-fontSize--normal card-item-title u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">
                   Region
                 </p>
                 <input
@@ -915,9 +899,9 @@ class SnapshotStorageDestination extends Component<Props, State> {
                 />
               </div>
             </div>
-            <div className="flex u-marginBottom--30">
-              <div className="flex1 u-paddingRight--5">
-                <p className="u-fontSize--normal u-textColor--primary u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">
+            <div className="flex flex-column u-marginBottom--30">
+              <div className="u-marginBottom--5">
+                <p className="u-fontSize--normal card-item-title u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">
                   Path
                 </p>
                 <input
@@ -926,44 +910,40 @@ class SnapshotStorageDestination extends Component<Props, State> {
                   placeholder="/path/to/destination"
                   value={this.state.s3Path}
                   onChange={(e) => this.handleFormChange("s3Path", e)}
+                  style={{ width: "49%" }}
                 />
               </div>
-              <div className="flex1 u-paddingLeft--5">
-                <p className="u-fontSize--normal u-textColor--primary u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">
-                  &nbsp;
-                </p>
-                <div className="BoxedCheckbox-wrapper flex1 u-textAlign--left">
-                  <div
-                    className={`BoxedCheckbox flex-auto flex alignItems--center ${
-                      this.state.useIamAws ? "is-active" : ""
-                    }`}
+              <div>
+                <div
+                  className={`flex-auto flex alignItems--center ${
+                    this.state.useIamAws ? "is-active" : ""
+                  }`}
+                >
+                  <input
+                    type="checkbox"
+                    className="u-cursor--pointer"
+                    id="useIamAws"
+                    checked={this.state.useIamAws}
+                    onChange={(e) => this.handleFormChange("useIamAws", e)}
+                  />
+                  <label
+                    htmlFor="useIamAws"
+                    className="flex1 flex u-width--full u-position--relative u-cursor--pointer u-userSelect--none"
                   >
-                    <input
-                      type="checkbox"
-                      className="u-cursor--pointer u-marginLeft--10"
-                      id="useIamAws"
-                      checked={this.state.useIamAws}
-                      onChange={(e) => this.handleFormChange("useIamAws", e)}
-                    />
-                    <label
-                      htmlFor="useIamAws"
-                      className="flex1 flex u-width--full u-position--relative u-cursor--pointer u-userSelect--none"
-                    >
-                      <div className="flex1">
-                        <p className="u-textColor--primary u-fontSize--normal u-fontWeight--medium">
-                          Use IAM Instance Role
-                        </p>
-                      </div>
-                    </label>
-                  </div>
+                    <div className="flex1">
+                      <p className="u-textColor--primary u-fontSize--normal u-fontWeight--medium">
+                        Use IAM Role
+                      </p>
+                    </div>
+                  </label>
                 </div>
               </div>
             </div>
 
             {!useIamAws && (
-              <div className="flex u-marginBottom--30">
+              <div className="flex u-marginBottom--5">
                 <div className="flex1 u-paddingRight--5">
-                  <p className="u-fontSize--normal u-textColor--primary u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">
+                  <p className="u-fontSize--normal card-item-title u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">
                     Access Key ID
                   </p>
                   <input
@@ -975,7 +955,7 @@ class SnapshotStorageDestination extends Component<Props, State> {
                   />
                 </div>
                 <div className="flex1 u-paddingLeft--5">
-                  <p className="u-fontSize--normal u-textColor--primary u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">
+                  <p className="u-fontSize--normal card-item-title u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">
                     Access Key Secret
                   </p>
                   <input
@@ -994,8 +974,8 @@ class SnapshotStorageDestination extends Component<Props, State> {
       case "azure":
         return (
           <>
-            <div className="flex1 u-paddingRight--5">
-              <p className="u-fontSize--normal u-textColor--primary u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">
+            <div className="flex1 u-paddingRight--5 u-marginBottom--15">
+              <p className="u-fontSize--normal card-item-title u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">
                 Bucket
               </p>
               <input
@@ -1006,9 +986,9 @@ class SnapshotStorageDestination extends Component<Props, State> {
                 onChange={(e) => this.handleFormChange("azureBucket", e)}
               />
             </div>
-            <div className="flex u-marginBottom--30">
+            <div className="flex u-marginBottom--15">
               <div className="flex1 u-paddingRight--5">
-                <p className="u-fontSize--normal u-textColor--primary u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">
+                <p className="u-fontSize--normal card-item-title u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">
                   Path
                 </p>
                 <input
@@ -1020,9 +1000,9 @@ class SnapshotStorageDestination extends Component<Props, State> {
                 />
               </div>
             </div>
-            <div className="flex u-marginBottom--30">
+            <div className="flex u-marginBottom--15">
               <div className="flex1 u-paddingRight--5">
-                <p className="u-fontSize--normal u-textColor--primary u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">
+                <p className="u-fontSize--normal card-item-title u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">
                   Subscription ID
                 </p>
                 <input
@@ -1036,7 +1016,7 @@ class SnapshotStorageDestination extends Component<Props, State> {
                 />
               </div>
               <div className="flex1 u-paddingLeft--5">
-                <p className="u-fontSize--normal u-textColor--primary u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">
+                <p className="u-fontSize--normal card-item-title u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">
                   Tenant ID
                 </p>
                 <input
@@ -1048,9 +1028,9 @@ class SnapshotStorageDestination extends Component<Props, State> {
                 />
               </div>
             </div>
-            <div className="flex u-marginBottom--30">
+            <div className="flex u-marginBottom--15">
               <div className="flex1 u-paddingRight--5">
-                <p className="u-fontSize--normal u-textColor--primary u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">
+                <p className="u-fontSize--normal card-item-title u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">
                   Client ID
                 </p>
                 <input
@@ -1062,7 +1042,7 @@ class SnapshotStorageDestination extends Component<Props, State> {
                 />
               </div>
               <div className="flex1 u-paddingLeft--5">
-                <p className="u-fontSize--normal u-textColor--primary u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">
+                <p className="u-fontSize--normal card-item-title u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">
                   Client Secret
                 </p>
                 <input
@@ -1077,8 +1057,8 @@ class SnapshotStorageDestination extends Component<Props, State> {
               </div>
             </div>
 
-            <div className="flex-column u-marginBottom--30">
-              <p className="u-fontSize--normal u-textColor--primary u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">
+            <div className="flex-column u-marginBottom--15">
+              <p className="u-fontSize--normal card-item-title u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">
                 Cloud Name
               </p>
               <div className="flex1">
@@ -1101,9 +1081,9 @@ class SnapshotStorageDestination extends Component<Props, State> {
                 />
               </div>
             </div>
-            <div className="flex u-marginBottom--30">
+            <div className="flex u-marginBottom--5">
               <div className="flex1 u-paddingRight--5">
-                <p className="u-fontSize--normal u-textColor--primary u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">
+                <p className="u-fontSize--normal card-item-title u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">
                   Resource Group Name
                 </p>
                 <input
@@ -1117,7 +1097,7 @@ class SnapshotStorageDestination extends Component<Props, State> {
                 />
               </div>
               <div className="flex1 u-paddingLeft--5">
-                <p className="u-fontSize--normal u-textColor--primary u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">
+                <p className="u-fontSize--normal card-item-title u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">
                   Storage Account ID
                 </p>
                 <input
@@ -1137,8 +1117,8 @@ class SnapshotStorageDestination extends Component<Props, State> {
       case "gcp":
         return (
           <div>
-            <div className="flex1 u-paddingRight--5">
-              <p className="u-fontSize--normal u-textColor--primary u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">
+            <div className="flex1 u-paddingRight--5 u-marginBottom--15">
+              <p className="u-fontSize--normal card-item-title u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">
                 Bucket
               </p>
               <input
@@ -1149,9 +1129,9 @@ class SnapshotStorageDestination extends Component<Props, State> {
                 onChange={(e) => this.handleFormChange("gcsBucket", e)}
               />
             </div>
-            <div className="flex u-marginBottom--30">
+            <div className="flex u-marginBottom--5">
               <div className="flex1 u-paddingRight--5">
-                <p className="u-fontSize--normal u-textColor--primary u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">
+                <p className="u-fontSize--normal card-item-title u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">
                   Path
                 </p>
                 <input
@@ -1163,15 +1143,15 @@ class SnapshotStorageDestination extends Component<Props, State> {
                 />
               </div>
             </div>
-            <div className="BoxedCheckbox-wrapper u-textAlign--left u-marginBottom--20">
+            <div className="BoxedCheckbox-wrapper u-textAlign--left u-marginBottom--15">
               <div
-                className={`BoxedCheckbox flex-auto flex alignItems--center u-width--half ${
+                className={`flex-auto flex alignItems--center u-width--half ${
                   this.state.gcsUseIam ? "is-active" : ""
                 }`}
               >
                 <input
                   type="checkbox"
-                  className="u-cursor--pointer u-marginLeft--10"
+                  className="u-cursor--pointer"
                   id="gcsUseIam"
                   checked={this.state.gcsUseIam}
                   onChange={(e) => this.handleFormChange("gcsUseIam", e)}
@@ -1190,9 +1170,9 @@ class SnapshotStorageDestination extends Component<Props, State> {
             </div>
 
             {gcsUseIam && (
-              <div className="flex u-marginBottom--30">
+              <div className="flex u-marginBottom--5">
                 <div className="flex1 u-paddingRight--5">
-                  <p className="u-fontSize--normal u-textColor--primary u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">
+                  <p className="u-fontSize--normal card-item-title u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">
                     Service Account
                   </p>
                   <input
@@ -1209,9 +1189,9 @@ class SnapshotStorageDestination extends Component<Props, State> {
             )}
 
             {!gcsUseIam && (
-              <div className="flex u-marginBottom--30">
+              <div className="flex u-marginBottom--5">
                 <div className="flex1">
-                  <p className="u-fontSize--normal u-textColor--primary u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">
+                  <p className="u-fontSize--normal card-item-title u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">
                     JSON File
                   </p>
                   <div className="gcs-editor">
@@ -1238,8 +1218,8 @@ class SnapshotStorageDestination extends Component<Props, State> {
       case "other":
         return (
           <div>
-            <div className="flex1 u-paddingRight--5">
-              <p className="u-fontSize--normal u-textColor--primary u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">
+            <div className="flex1 u-paddingRight--5 u-marginBottom--15">
+              <p className="u-fontSize--normal card-item-title u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">
                 Bucket
               </p>
               <input
@@ -1250,9 +1230,9 @@ class SnapshotStorageDestination extends Component<Props, State> {
                 onChange={(e) => this.handleFormChange("s3CompatibleBucket", e)}
               />
             </div>
-            <div className="flex u-marginBottom--30">
+            <div className="flex u-marginBottom--15">
               <div className="flex1 u-paddingRight--5">
-                <p className="u-fontSize--normal u-textColor--primary u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">
+                <p className="u-fontSize--normal card-item-title u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">
                   Path
                 </p>
                 <input
@@ -1264,9 +1244,9 @@ class SnapshotStorageDestination extends Component<Props, State> {
                 />
               </div>
             </div>
-            <div className="flex u-marginBottom--30">
+            <div className="flex u-marginBottom--15">
               <div className="flex1 u-paddingRight--5">
-                <p className="u-fontSize--normal u-textColor--primary u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">
+                <p className="u-fontSize--normal card-item-title u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">
                   Access Key ID
                 </p>
                 <input
@@ -1280,7 +1260,7 @@ class SnapshotStorageDestination extends Component<Props, State> {
                 />
               </div>
               <div className="flex1 u-paddingLeft--5">
-                <p className="u-fontSize--normal u-textColor--primary u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">
+                <p className="u-fontSize--normal card-item-title u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">
                   Access Key Secret
                 </p>
                 <input
@@ -1294,10 +1274,10 @@ class SnapshotStorageDestination extends Component<Props, State> {
                 />
               </div>
             </div>
-            <div className="u-marginBottom--30">
+            <div className="u-marginBottom--5">
               <div className="flex">
                 <div className="flex1 u-paddingRight--5">
-                  <p className="u-fontSize--normal u-textColor--primary u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">
+                  <p className="u-fontSize--normal card-item-title u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">
                     Endpoint
                   </p>
                   <input
@@ -1311,7 +1291,7 @@ class SnapshotStorageDestination extends Component<Props, State> {
                   />
                 </div>
                 <div className="flex1 u-paddingLeft--5">
-                  <p className="u-fontSize--normal u-textColor--primary u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">
+                  <p className="u-fontSize--normal card-item-title u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">
                     Region
                   </p>
                   <input
@@ -1339,9 +1319,9 @@ class SnapshotStorageDestination extends Component<Props, State> {
 
       case "nfs":
         return (
-          <div className="flex u-marginBottom--30">
+          <div className="flex u-marginBottom--5">
             <div className="flex1 u-paddingRight--5">
-              <p className="u-fontSize--normal u-textColor--primary u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">
+              <p className="u-fontSize--normal card-item-title u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">
                 Server
               </p>
               <input
@@ -1356,7 +1336,7 @@ class SnapshotStorageDestination extends Component<Props, State> {
               />
             </div>
             <div className="flex1 u-paddingLeft--5">
-              <p className="u-fontSize--normal u-textColor--primary u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">
+              <p className="u-fontSize--normal card-item-title u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">
                 Path
               </p>
               <input
@@ -1373,9 +1353,9 @@ class SnapshotStorageDestination extends Component<Props, State> {
 
       case "hostpath":
         return (
-          <div className="flex u-marginBottom--30">
+          <div className="flex u-marginBottom--5">
             <div className="flex1 u-paddingRight--5">
-              <p className="u-fontSize--normal u-textColor--primary u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">
+              <p className="u-fontSize--normal card-item-title u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">
                 Host Path
               </p>
               <input
@@ -1408,7 +1388,7 @@ class SnapshotStorageDestination extends Component<Props, State> {
           </p>
           <div className="flex u-marginBottom--30">
             <div className="flex1 u-paddingRight--5">
-              <p className="u-fontSize--normal u-textColor--primary u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">
+              <p className="u-fontSize--normal card-item-title u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">
                 Host Path
               </p>
               <input
@@ -1423,21 +1403,21 @@ class SnapshotStorageDestination extends Component<Props, State> {
             </div>
           </div>
           <div className="flex justifyContent--flexStart alignItems-center">
-            {this.state.configuringFileSystemProvider && (
+            {this.state.gettingFileSystemProviderInstructions && (
               <Loader className="u-marginRight--5" size="32" />
             )}
             <button
               type="button"
               className="btn blue primary u-marginRight--10"
-              onClick={() => this.configureFileSystemProvider(false)}
+              onClick={this.getFileSystemProviderInstructions}
               disabled={
                 !this.state.tmpFileSystemHostPath ||
-                this.state.configuringFileSystemProvider
+                this.state.gettingFileSystemProviderInstructions
               }
             >
-              {this.state.configuringFileSystemProvider
-                ? "Configuring"
-                : "Configure"}
+              {this.state.gettingFileSystemProviderInstructions
+                ? "Getting instructions"
+                : "Get instructions"}
             </button>
             <button
               type="button"
@@ -1447,9 +1427,9 @@ class SnapshotStorageDestination extends Component<Props, State> {
               Cancel
             </button>
           </div>
-          {this.state.configureFileSystemProviderErrorMsg && (
+          {this.state.gettingFileSystemProviderInstructionsErrorMsg && (
             <div className="flex u-fontWeight--bold u-fontSize--small u-textColor--error u-marginBottom--10 u-marginTop--10">
-              {this.state.configureFileSystemProviderErrorMsg}
+              {this.state.gettingFileSystemProviderInstructionsErrorMsg}
             </div>
           )}
         </div>
@@ -1468,7 +1448,7 @@ class SnapshotStorageDestination extends Component<Props, State> {
           </p>
           <div className="flex u-marginBottom--30">
             <div className="flex1 u-paddingRight--5">
-              <p className="u-fontSize--normal u-textColor--primary u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">
+              <p className="u-fontSize--normal card-item-title u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">
                 Server
               </p>
               <input
@@ -1482,7 +1462,7 @@ class SnapshotStorageDestination extends Component<Props, State> {
               />
             </div>
             <div className="flex1 u-paddingLeft--5">
-              <p className="u-fontSize--normal u-textColor--primary u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">
+              <p className="u-fontSize--normal card-item-title u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">
                 Path
               </p>
               <input
@@ -1497,7 +1477,7 @@ class SnapshotStorageDestination extends Component<Props, State> {
             </div>
           </div>
           <div className="flex justifyContent--flexStart alignItems-center">
-            {this.state.configuringFileSystemProvider && (
+            {this.state.gettingFileSystemProviderInstructions && (
               <Loader className="u-marginRight--5" size="32" />
             )}
             <button
@@ -1506,13 +1486,13 @@ class SnapshotStorageDestination extends Component<Props, State> {
               disabled={
                 !this.state.tmpFileSystemNFSServer ||
                 !this.state.tmpFileSystemNFSPath ||
-                this.state.configuringFileSystemProvider
+                this.state.gettingFileSystemProviderInstructions
               }
-              onClick={() => this.configureFileSystemProvider(false)}
+              onClick={this.getFileSystemProviderInstructions}
             >
-              {this.state.configuringFileSystemProvider
-                ? "Configuring"
-                : "Configure"}
+              {this.state.gettingFileSystemProviderInstructions
+                ? "Getting instructions"
+                : "Get instructions"}
             </button>
             <button
               type="button"
@@ -1522,9 +1502,9 @@ class SnapshotStorageDestination extends Component<Props, State> {
               Cancel
             </button>
           </div>
-          {this.state.configureFileSystemProviderErrorMsg && (
+          {this.state.gettingFileSystemProviderInstructionsErrorMsg && (
             <div className="flex u-fontWeight--bold u-fontSize--small u-textColor--error u-marginBottom--10 u-marginTop--10">
-              {this.state.configureFileSystemProviderErrorMsg}
+              {this.state.gettingFileSystemProviderInstructionsErrorMsg}
             </div>
           )}
         </div>
@@ -1534,6 +1514,57 @@ class SnapshotStorageDestination extends Component<Props, State> {
     return null;
   };
 
+  renderFileSystemProviderInstructions = () => {
+    const instructions = this.state.fileSystemProviderInstructions;
+    if (!instructions?.length) {
+      return null;
+    }
+
+    return instructions.map((instruction, index) => {
+      let action;
+      if (instruction.type === "link") {
+        action = (
+          <span className="link u-fontSize--small u-cursor--pointer">
+            <a href={instruction.action} target="_blank" className="link">
+              {instruction.action}
+            </a>
+          </span>
+        );
+      } else {
+        action = (
+          <CodeSnippet
+            language="bash"
+            canCopy={true}
+            onCopyText={
+              <span className="u-textColor--success">
+                Snippet has been copied to your clipboard
+              </span>
+            }
+          >
+            {instruction.action}
+          </CodeSnippet>
+        );
+      }
+      return (
+        <div key={`${index}`} className="flex flex1 u-marginTop--20">
+          <div className="flex">
+            <span className="circleNumberGray u-marginRight--10">
+              {" "}
+              {index + 1}{" "}
+            </span>
+          </div>
+          <div className="flex flex-column">
+            <p className="u-fontSize--small flex alignItems--center u-fontWeight--medium u-lineHeight--medium u-textColor--bodyCopy">
+              {" "}
+              {instruction.title}{" "}
+            </p>
+            <div className="flex u-marginTop--5">{action}</div>
+          </div>
+        </div>
+      );
+    });
+  };
+
   render() {
     const {
       snapshotSettings,
@@ -1541,7 +1572,7 @@ class SnapshotStorageDestination extends Component<Props, State> {
       updateConfirm,
       updateErrorMsg,
       isKurlEnabled,
-      checkForVeleroAndRestic,
+      checkForVeleroAndNodeAgent,
     } = this.props;
 
     const availableDestinations = [];
@@ -1611,56 +1642,49 @@ class SnapshotStorageDestination extends Component<Props, State> {
     );
 
     const showResetFileSystemWarningModal =
-      this.state.showResetFileSystemWarningModal ||
       this.props.showResetFileSystemWarningModal;
     const resetFileSystemWarningMessage =
-      this.state.resetFileSystemWarningMessage ||
       this.props.resetFileSystemWarningMessage;
 
     return (
       <div className="flex1 flex-column u-marginTop--40">
-        <p className="u-fontSize--normal u-marginBottom--15 u-fontWeight--bold u-textColor--secondary">
-          Snapshot settings
-        </p>
-        <div className="flex">
-          <div className="flex flex-column">
-            <div className="Info--wrapper flex flex-auto u-marginBottom--15">
-              <span className="icon info-icon flex-auto u-marginTop--5" />
-              <div className="flex flex-column u-marginLeft--5">
-                <p className="u-fontSize--normal u-fontWeight--bold u-lineHeight--normal u-textColor--primary">
-                  Configuration is shared
-                </p>
-                <span className="u-fontSize--small u-fontWeight--normal u-lineHeight--normal u-textColor--bodyCopy">
+        <div className="flex" style={{ gap: "30px" }}>
+          <div
+            className="flex flex-column card-bg u-padding--15"
+            style={{ maxWidth: "400px" }}
+          >
+            <div className="flex justifyContent--spaceBetween">
+              <p className="card-title u-paddingBottom--15">
+                Snapshot settings
+              </p>
+              <span
+                className="link u-fontSize--small flex justifyContent--flexEnd u-cursor--pointer"
+                onClick={this.props.toggleConfigureSnapshotsModal}
+              >
+                + Add a new destination
+              </span>
+            </div>
+            <div className="flex flex-auto u-marginBottom--15">
+              <div className="flex flex-column">
+                <span className="u-fontSize--normal u-fontWeight--normal u-lineHeight--normal u-textColor--bodyCopy">
                   Full (Instance) and Partial (Application) snapshots share
-                  Velero configuration. Your storage destination will be used
-                  for both.
+                  share the same Velero configuration and storage destination.
                 </span>
               </div>
             </div>
-            <div className="flex flex-column u-marginRight--50">
-              <form className="flex flex-column snapshot-form-wrapper">
-                <p className="u-fontSize--normal u-marginBottom--20 u-fontWeight--bold u-textColor--secondary">
-                  Storage
-                </p>
+            <div className="flex flex-column card-item u-padding--15">
+              <p className="u-fontSize--normal card-item-title u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">
+                Destination
+              </p>
+              <form className="flex flex-column">
                 {updateErrorMsg && (
                   <div className="flex-auto u-fontWeight--bold u-fontSize--small u-textColor--error u-marginBottom--10">
                     {updateErrorMsg}
                   </div>
                 )}
-                <div className="flex flex-column u-marginBottom--20">
-                  <div className="flex flex1 justifyContent--spaceBetween alignItems--center">
-                    <p className="u-fontSize--normal u-textColor--primary u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">
-                      Destination
-                    </p>
-                    <span
-                      className="replicated-link u-fontSize--normal flex justifyContent--flexEnd u-cursor--pointer"
-                      onClick={this.props.toggleConfigureSnapshotsModal}
-                    >
-                      + Add a new storage destination
-                    </span>
-                  </div>
+                <div className="flex flex-column u-marginBottom--15">
                   {!snapshotSettings?.isVeleroRunning &&
-                    !checkForVeleroAndRestic &&
+                    !checkForVeleroAndNodeAgent &&
                     isKurlEnabled && (
                       <div className="flex-auto u-fontWeight--bold u-fontSize--small u-textColor--error u-marginBottom--10">
                         Please fix Velero so that the deployment is running. For
@@ -1669,7 +1693,7 @@ class SnapshotStorageDestination extends Component<Props, State> {
                           href="https://velero.io/docs/main/troubleshooting/"
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="replicated-link u-marginLeft--5"
+                          className="link u-marginLeft--5"
                         >
                           https://velero.io/docs/main/troubleshooting/
                         </a>
@@ -1722,7 +1746,7 @@ class SnapshotStorageDestination extends Component<Props, State> {
                     )}
                     {!this.state.showCACertificateField && (
                       <button
-                        className="AddCAButton replicated-link u-fontSize--normal"
+                        className="AddCAButton link u-fontSize--small"
                         onClick={this.handleCACertificateFieldClick}
                       >
                         + Add a CA Certificate
@@ -1804,10 +1828,12 @@ class SnapshotStorageDestination extends Component<Props, State> {
           </Modal>
         )}
 
-        {this.state.showConfigureFileSystemProviderNextStepsModal && (
+        {this.state.showFileSystemProviderInstructionsModal && (
           <Modal
-            isOpen={this.state.showConfigureFileSystemProviderNextStepsModal}
-            onRequestClose={this.hideConfigureFileSystemProviderNextStepsModal}
+            isOpen={this.state.showFileSystemProviderInstructionsModal}
+            onRequestClose={
+              this.hideConfigureFileSystemProviderInstructionsModal
+            }
             shouldReturnFocusAfterClose={false}
             contentLabel="File system next steps"
             ariaHideApp={false}
@@ -1815,28 +1841,16 @@ class SnapshotStorageDestination extends Component<Props, State> {
           >
             <div className="Modal-body">
               <p className="u-fontSize--largest u-fontWeight--bold u-textColor--secondary u-marginBottom--10">
-                Next steps
+                Velero installation instructions
               </p>
-              <p className="u-fontSize--normal u-fontWeight--normal u-textColor--bodyCopy u-lineHeight--normal">
-                Run the following command for instructions on how to set up
-                Velero:
-              </p>
-              <CodeSnippet
-                language="bash"
-                canCopy={true}
-                onCopyText={
-                  <span className="u-textColor--success">
-                    Command has been copied to your clipboard
-                  </span>
-                }
-              >
-                {`kubectl kots velero print-fs-instructions --namespace ${this.state.configureFileSystemProviderNamespace}`}
-              </CodeSnippet>
-              <div className="u-marginTop--10 flex justifyContent--flexStart">
+              {this.renderFileSystemProviderInstructions()}
+              <div className="u-marginTop--20 flex justifyContent--flexStart">
                 <button
                   type="button"
                   className="btn blue primary"
-                  onClick={this.hideConfigureFileSystemProviderNextStepsModal}
+                  onClick={
+                    this.hideConfigureFileSystemProviderInstructionsModal
+                  }
                 >
                   Ok, got it!
                 </button>
@@ -1848,7 +1862,7 @@ class SnapshotStorageDestination extends Component<Props, State> {
         {showResetFileSystemWarningModal && (
           <Modal
             isOpen={showResetFileSystemWarningModal}
-            onRequestClose={this.hideResetFileSystemWarningModal}
+            onRequestClose={this.props.hideResetFileSystemWarningModal}
             shouldReturnFocusAfterClose={false}
             contentLabel="Reset file system config"
             ariaHideApp={false}
@@ -1862,18 +1876,14 @@ class SnapshotStorageDestination extends Component<Props, State> {
                 <button
                   type="button"
                   className="btn blue primary u-marginRight--10"
-                  onClick={
-                    this.state.showConfigureFileSystemProviderModal
-                      ? () => this.configureFileSystemProvider(true)
-                      : () => this.snapshotProviderFileSystem(true)
-                  }
+                  onClick={() => this.snapshotProviderFileSystem(true)}
                 >
                   Yes
                 </button>
                 <button
                   type="button"
                   className="btn secondary"
-                  onClick={this.hideResetFileSystemWarningModal}
+                  onClick={this.props.hideResetFileSystemWarningModal}
                 >
                   No
                 </button>
@@ -1886,7 +1896,4 @@ class SnapshotStorageDestination extends Component<Props, State> {
   }
 }
 
-// TODO: fix this typing thing
-// @ts-ignore
-const RoutedSnapshotStorageDestination = withRouter(SnapshotStorageDestination);
-export default RoutedSnapshotStorageDestination;
+export default SnapshotStorageDestination;

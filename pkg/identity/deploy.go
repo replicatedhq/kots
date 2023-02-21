@@ -35,6 +35,7 @@ func Deploy(
 
 	options := identitydeploy.Options{
 		NamePrefix:         KotsadmNamePrefix,
+		Namespace:          namespace,
 		IdentitySpec:       getIdentitySpec(ctx, clientset, namespace, identityConfig.Spec, ingressConfig.Spec, applyAppBranding),
 		IdentityConfigSpec: identityConfig.Spec,
 		IsOpenShift:        k8sutil.IsOpenShift(clientset),
@@ -42,7 +43,7 @@ func Deploy(
 		Builder:            nil,
 	}
 
-	isKurl, err := kurl.IsKurl()
+	isKurl, err := kurl.IsKurl(clientset)
 	if err != nil {
 		return errors.Wrap(err, "failed to check if cluster is kurl")
 	}
@@ -55,20 +56,7 @@ func Deploy(
 		return errors.Wrap(err, "failed to migrate client secret")
 	}
 
-	postgresConfig := kotsv1beta1.IdentityPostgresConfig{
-		Host:     "kotsadm-postgres",
-		Database: "dex",
-		User:     "dex",
-	}
-	if err := identitydeploy.EnsurePostgresSecret(context.TODO(), clientset, namespace, KotsadmNamePrefix, postgresConfig, nil); err != nil {
-		return errors.Wrap(err, "failed to ensure postgres secret")
-	}
-
-	if err := identitydeploy.EnsureClientSecret(ctx, clientset, namespace, KotsadmNamePrefix, nil); err != nil {
-		return errors.Wrap(err, "failed to ensure client secret")
-	}
-
-	return identitydeploy.Deploy(ctx, clientset, namespace, options)
+	return identitydeploy.Deploy(ctx, clientset, options)
 }
 
 func Configure(ctx context.Context, clientset kubernetes.Interface, namespace string, identityConfig kotsv1beta1.IdentityConfig, ingressConfig kotsv1beta1.IngressConfig, proxyEnv map[string]string, applyAppBranding bool) error {
@@ -76,6 +64,7 @@ func Configure(ctx context.Context, clientset kubernetes.Interface, namespace st
 
 	options := identitydeploy.Options{
 		NamePrefix:         KotsadmNamePrefix,
+		Namespace:          namespace,
 		IdentitySpec:       getIdentitySpec(ctx, clientset, namespace, identityConfig.Spec, ingressConfig.Spec, applyAppBranding),
 		IdentityConfigSpec: identityConfig.Spec,
 		IsOpenShift:        k8sutil.IsOpenShift(clientset),
@@ -84,7 +73,7 @@ func Configure(ctx context.Context, clientset kubernetes.Interface, namespace st
 		Builder:            nil,
 	}
 
-	return identitydeploy.Configure(ctx, clientset, namespace, options)
+	return identitydeploy.Configure(ctx, clientset, options)
 }
 
 func Undeploy(ctx context.Context, clientset kubernetes.Interface, namespace string) error {
@@ -122,7 +111,7 @@ func migrateClientSecret(ctx context.Context, clientset kubernetes.Interface, na
 		return nil
 	}
 
-	secret := identitydeploy.ClientSecretResource(KotsadmNamePrefix, client.Secret, nil)
+	secret := identitydeploy.ClientSecretResource(namespace, KotsadmNamePrefix, client.Secret, nil)
 	_, err = clientset.CoreV1().Secrets(namespace).Create(ctx, secret, metav1.CreateOptions{})
 	return errors.Wrap(err, "failed to create secret")
 }

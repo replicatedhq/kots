@@ -72,7 +72,7 @@ func GetConfig(ctx context.Context, namespace string) (*kotsv1beta1.IdentityConf
 		return nil, errors.Wrap(err, "failed to evaluate dex connectors value")
 	}
 
-	return identityConfig, err
+	return identityConfig, nil
 }
 
 func evaluateDexConnectorsValue(ctx context.Context, namespace string, dexConnectors *kotsv1beta1.DexConnectors) error {

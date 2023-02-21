@@ -145,3 +145,18 @@ func (s *S3Store) ReadArchive(path string) (string, error) {
 
 	return outputFilePath, nil
 }
+
+func (s *S3Store) DeleteArchive(path string) error {
+	newSession := awssession.New(kotss3.GetConfig())
+	s3Client := s3.New(newSession)
+
+	iter := s3manager.NewDeleteListIterator(s3Client, &s3.ListObjectsInput{
+		Bucket: aws.String(os.Getenv("S3_BUCKET_NAME")),
+		Prefix: aws.String(path),
+	})
+	if err := s3manager.NewBatchDeleteWithClient(s3Client).Delete(aws.BackgroundContext(), iter); err != nil {
+		return errors.Wrap(err, "failed to delete from s3")
+	}
+
+	return nil
+}

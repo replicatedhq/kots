@@ -64,6 +64,10 @@ func Test_RenderHelm(t *testing.T) {
 				},
 				AdditionalFiles: []BaseFile{
 					{
+						Path:    "values.yaml",
+						Content: []byte("{}\n"),
+					},
+					{
 						Path:    "Chart.yaml",
 						Content: []byte("name: test-chart\nversion: 0.1.0"),
 					},
@@ -99,6 +103,10 @@ func Test_RenderHelm(t *testing.T) {
 					},
 				},
 				AdditionalFiles: []BaseFile{
+					{
+						Path:    "values.yaml",
+						Content: []byte("{}\n"),
+					},
 					{
 						Path:    "Chart.yaml",
 						Content: []byte("name: test-chart\nversion: 0.1.0"),
@@ -146,6 +154,10 @@ func Test_RenderHelm(t *testing.T) {
 				},
 				AdditionalFiles: []BaseFile{
 					{
+						Path:    "values.yaml",
+						Content: []byte("{}\n"),
+					},
+					{
 						Path:    "Chart.yaml",
 						Content: []byte("name: test-chart\nversion: 0.1.0"),
 					},
@@ -186,6 +198,10 @@ func Test_RenderHelm(t *testing.T) {
 				},
 				AdditionalFiles: []BaseFile{
 					{
+						Path:    "values.yaml",
+						Content: []byte("{}\n"),
+					},
+					{
 						Path:    "Chart.yaml",
 						Content: []byte("name: test-chart\nversion: 0.1.0"),
 					},
@@ -221,6 +237,10 @@ func Test_RenderHelm(t *testing.T) {
 					},
 				},
 				AdditionalFiles: []BaseFile{
+					{
+						Path:    "values.yaml",
+						Content: []byte("{}\n"),
+					},
 					{
 						Path:    "Chart.yaml",
 						Content: []byte("name: test-chart\nversion: 0.1.0"),
@@ -261,6 +281,10 @@ func Test_RenderHelm(t *testing.T) {
 					},
 				},
 				AdditionalFiles: []BaseFile{
+					{
+						Path:    "values.yaml",
+						Content: []byte("{}\n"),
+					},
 					{
 						Path:    "Chart.yaml",
 						Content: []byte("name: test-chart\nversion: 0.1.0"),
@@ -307,6 +331,10 @@ func Test_RenderHelm(t *testing.T) {
 					},
 				},
 				AdditionalFiles: []BaseFile{
+					{
+						Path:    "values.yaml",
+						Content: []byte("test-subchart:\n  global: {}\n"),
+					},
 					{
 						Path:    "Chart.yaml",
 						Content: []byte("name: test-chart\nversion: 0.1.0"),
@@ -371,6 +399,10 @@ func Test_RenderHelm(t *testing.T) {
 				Namespace: "test-namespace",
 
 				AdditionalFiles: []BaseFile{
+					{
+						Path:    "values.yaml",
+						Content: []byte("test-subchart:\n  global: {}\ntest-subchart-2:\n  global: {}\n"),
+					},
 					{
 						Path:    "Chart.yaml",
 						Content: []byte("name: test-chart\nversion: 0.1.0"),
@@ -461,6 +493,10 @@ func Test_RenderHelm(t *testing.T) {
 				},
 				AdditionalFiles: []BaseFile{
 					{
+						Path:    "values.yaml",
+						Content: []byte("test-subchart:\n  global: {}\ntest-subchart-2:\n  global: {}\n"),
+					},
+					{
 						Path:    "Chart.yaml",
 						Content: []byte("name: test-chart\nversion: 0.1.0"),
 					},
@@ -534,6 +570,10 @@ func Test_RenderHelm(t *testing.T) {
 					},
 				},
 				AdditionalFiles: []BaseFile{
+					{
+						Path:    "values.yaml",
+						Content: []byte("{}\n"),
+					},
 					{
 						Path:    "Chart.yaml",
 						Content: []byte("name: test-chart\nversion: 0.1.0"),

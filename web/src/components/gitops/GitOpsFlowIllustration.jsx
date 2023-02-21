@@ -57,7 +57,7 @@ export default class GitOpsFlowIllustration extends React.Component {
             fillRule="evenodd"
           >
             <g
-              id="Gitops-intro"
+              id="GitOps-intro"
               transform="translate(-357.000000, -196.000000)"
             >
               <g

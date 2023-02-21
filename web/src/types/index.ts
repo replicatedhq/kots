@@ -1,19 +1,24 @@
+// This is ReponseApp in the go types
 export type App = {
+  allowRollback: Object | undefined;
   allowSnapshots: boolean;
-  autoDeploy: boolean;
+  autoDeploy: string;
   chartPath: string;
   credentials: Credentials;
   currentSequence: number;
   downstream: Downstream;
   hasPreflight: boolean;
+  helmName: string;
   id: string;
   iconUri: string;
   isAirgap: boolean;
+  isAppIdentityServiceSupported: boolean;
   isConfigurable: boolean;
   isGeoaxisSupported: boolean;
   isGitOpsSupported: boolean;
   isIdentityServiceSupported: boolean;
   isSemverRequired: boolean;
+  isSupportBundleUploadSupported: boolean;
   name: string;
   namespace: string;
   needsRegistry?: boolean;
@@ -24,7 +29,7 @@ export type App = {
 export type AppLicense = {
   assignee: string;
   channelName: string;
-  entitlements: string[];
+  entitlements: Entitlement[];
   expiresAt: string;
   id: string;
   isAirgapSupported: boolean;
@@ -32,24 +37,22 @@ export type AppLicense = {
   isGitOpsSupported: boolean;
   isIdentityServiceSupported: boolean;
   isSemverRequired: boolean;
-  isSnapshotsSupported: boolean;
+  isSnapshotSupported: boolean;
   isSupportBundleUploadSupported: boolean;
   lastSyncedAt: string;
   licenseSequence: number;
   licenseType: string;
-};
-
-export type Credentials = {
-  username: string;
-  password: string;
-};
-
-export type ResourceStates = {
-  kind: string;
-  name: string;
-  namespace: string;
-  // from https://github.com/replicatedhq/kots/blob/84b7e4e0e9275bb200a36be69691c4944eb8cf8f/pkg/appstate/types/types.go#L10-L14
-  state: "ready" | "updating" | "degrading" | "unavailable" | "missing";
+  changingLicense: boolean;
+  entitlementsToShow: string[];
+  isViewingLicenseEntitlements: boolean;
+  licenseChangeFile: LicenseFile | null;
+  licenseChangeMessage: string;
+  licenseChangeMessageType: string;
+  loading: boolean;
+  message: string;
+  messageType: string;
+  showLicenseChangeModal: boolean;
+  showNextStepModal: boolean;
 };
 
 type AppStatus = {
@@ -60,13 +63,33 @@ type AppStatus = {
   updatedAt: string;
 };
 
+export type AppStatusState =
+  | "degraded"
+  | "degrading"
+  | "missing"
+  | "ready"
+  | "unavailable"
+  | "updating";
+
+type Cluster = {
+  id: number;
+  slug: string;
+};
+
+export type Credentials = {
+  username: string;
+  password: string;
+};
+
 export type DashboardResponse = {
   appStatus: AppStatus | null;
-  metrics: string[];
+  metrics: Chart[];
   prometheusAddress: string;
 };
 
 export type Downstream = {
+  cluster: Cluster;
+  pastVersions: Version[];
   currentVersion: Version;
   gitops: GitOps;
   links: DashboardActionLink[];
@@ -74,13 +97,20 @@ export type Downstream = {
 };
 
 export type GitOps = {
-  isConnected: true;
+  provider: string;
+  isConnected: boolean;
   uri: string;
 };
 
 export type KotsParams = {
+  downstreamSlug?: string;
+  firstSequence: string | undefined;
+  owner: string;
+  redactorSlug: string;
+  secondSequence: string | undefined;
   sequence: string;
   slug: string;
+  tab: string;
 };
 
 export type DashboardActionLink = {
@@ -88,15 +118,181 @@ export type DashboardActionLink = {
   uri: string;
 };
 
-export type Version = {
-  parentSequence: number;
-  semver: string;
-  sequence: number;
-  versionLabel?: string;
-};
 export type Entitlement = {
   title: string;
   value: string;
   label: string;
   valueType: "Text" | "Boolean" | "Integer" | "String";
+};
+
+export type Metadata = {
+  isAirgap: boolean;
+  isKurl: boolean;
+};
+
+export type PreflightError = {
+  error: string;
+  isRbac: boolean;
+};
+
+export type PreflightResult = {
+  appSlug: string;
+  clusterSlug: string;
+  createdAt: string;
+  hasFailingStrictPreflights: boolean;
+  result: string;
+  sequence: number;
+  skipped: boolean;
+};
+
+export type PreflightProgress = {
+  completedCount: number;
+  currentName: string;
+  currentStatus: string;
+  totalCount: number;
+  updatedAt: string;
+};
+
+export type PreflightResultResponse = {
+  errors?: PreflightError[];
+  results?: PreflightResult[];
+};
+
+export type ThemeState = {
+  navbarLogo: string | null;
+};
+
+export type ResourceStates = {
+  kind: string;
+  name: string;
+  namespace: string;
+  // from https://github.com/replicatedhq/kots/blob/84b7e4e0e9275bb200a36be69691c4944eb8cf8f/pkg/appstate/types/types.go#L10-L14
+  state: AppStatusState;
+};
+
+export type SupportBundle = {
+  analysis: SupportBundleAnalysis;
+  createdAt: string;
+  id: string;
+  isArchived: boolean;
+  name: string;
+  sharedAt: string;
+  size: number;
+  slug: string;
+  status: string;
+  uploadedAt: string;
+};
+
+type SupportBundleAnalysis = {
+  createdAt: string;
+  insights: SupportBundleInsight[];
+};
+
+export type SupportBundleInsight = {
+  detail: string;
+  icon: string;
+  iconKey: string;
+  key: string;
+  primary: string;
+  severity: string;
+};
+
+export type SupportBundleProgress = {
+  collectorCount: number;
+  collectorsCompleted: number;
+  message: string;
+};
+
+export type Version = {
+  channelId: string;
+  commitUrl: string;
+  createdOn: string;
+  deployedAt: string;
+  diffSummary: string;
+  diffSummaryError: string;
+  downloadStatus: VersionDownloadStatus;
+  gitDeployable: boolean;
+  hasConfig: boolean;
+  isChecked: boolean;
+  isDeployable: boolean;
+  isRequired: boolean;
+  needsKotsUpgrade: boolean;
+  nonDeployableCause: string;
+  parentSequence: number;
+  preflightResult: string;
+  preflightResultCreatedAt: string;
+  preflightSkipped: boolean;
+  preflightStatus: string;
+  releaseNotes: string;
+  semver: string;
+  sequence: number;
+  source: string;
+  status: VersionStatus;
+  appTitle: string;
+  appIconUri: string;
+  updateCursor: string;
+  upstreamReleasedAt: string;
+  title: string;
+  versionLabel?: string;
+  yamlErrors: string[];
+};
+
+export type VersionDownloadStatus = {
+  downloadingVersion: boolean;
+  downloadingVersionMessage: string;
+  downloadingVersionError?: boolean;
+  message?: string;
+  status?: VersionStatus;
+};
+
+export type VersionStatus =
+  | "deployed"
+  | "deploying"
+  | "failed"
+  | "merged"
+  | "pending"
+  | "pending_config"
+  | "pending_download"
+  | "pending_preflight"
+  | "superseded"
+  | "waiting";
+
+export type LicenseFile = {
+  preview: string;
+  lastModified: number;
+  lastModifiedDate: Date;
+  name: string;
+  size: number;
+  type: string;
+  webkitRelativePath: string;
+};
+
+export type Series = {
+  data: { timestamp: number; value: number }[];
+  legendTemplate: string;
+  metric: {
+    name: string;
+    value: string;
+  }[];
+};
+
+export type Chart = {
+  title: string | null | undefined;
+  tickTemplate: string;
+  tickFormat: string;
+  series: Series[];
+};
+
+export type Snapshot = {
+  name: string;
+  status: string;
+  trigger: string;
+  sequence: number;
+  startedAt: string;
+  finishedAt: string;
+  expiresAt: string;
+  volumeCount: number;
+  volumeSuccessCount: number;
+  volumeBytes: number;
+  volumeSizeHuman: string;
 };

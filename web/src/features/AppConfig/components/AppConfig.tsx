@@ -1,8 +1,9 @@
 import React, { Component } from "react";
 import { AppConfigRenderer } from "../../../components/AppConfigRenderer";
-import { withRouter, Link } from "react-router-dom";
+import { Link } from "react-router-dom";
+import { withRouter } from "@src/utilities/react-router-utilities";
 import classNames from "classnames";
-import Helmet from "react-helmet";
+import { KotsPageTitle } from "@components/Head";
 import debounce from "lodash/debounce";
 import find from "lodash/find";
 import map from "lodash/map";
@@ -19,8 +20,7 @@ import ConfigInfo from "./ConfigInfo";
 
 import "../../../scss/components/watches/WatchConfig.scss";
 import { Utilities } from "../../../utilities/utilities";
-import { Flex, Span } from "../../../styles/common";
-import { GroupTitle, SideNavItems } from "../styles";
+import { Span } from "../../../styles/common";
 import Icon from "@src/components/Icon";
 
 // Types
@@ -578,20 +578,61 @@ class AppConfig extends Component<Props, State> {
       saveButtonText = "Generate Upgrade Command";
     }
 
+    const sections = document.querySelectorAll(".observe-elements");
+
+    const callback = (entries: IntersectionObserverEntry[]) => {
+      entries.forEach(({ isIntersecting, target }) => {
+        // find the group nav link that matches the current section in view
+        const groupNav = document.querySelector(
+          `#config-group-nav-${target.id}`
+        );
+        // find the active link in the group nav
+        const activeLink = document.querySelector(".active-item");
+        const hash = this.props.location.hash.slice(1);
+        const activeLinkByHash = document.querySelector(`a[href='#${hash}']`);
+        if (isIntersecting) {
+          groupNav?.classList.add("is-active");
+          // if your group is active, item will be active
+          if (activeLinkByHash && groupNav?.contains(activeLinkByHash)) {
+            activeLinkByHash.classList.add("active-item");
+          }
+        } else {
+          // if the section is not in view, remove the highlight from the active link
+          if (groupNav?.contains(activeLink) && activeLink) {
+            activeLink.classList.remove("active-item");
+          }
+          // remove the highlight from the group nav link
+          groupNav?.classList.remove("is-active");
+        }
+      });
+    };
+
+    const options = {
+      root: document,
+      // rootMargin is the amount of space around the root element that the intersection observer will look for intersections
+      rootMargin: "20% 0% -75% 0%",
+      // threshold: the proportion of the element that must be within the root bounds for it to be considered intersecting
+      threshold: 0.15,
+    };
+
+    const observer = new IntersectionObserver(callback, options);
+
+    sections.forEach((section) => {
+      observer.observe(section);
+    });
+
     return (
-      <Flex flex="1" direction="column" p="20" align="center">
-        <Helmet>
-          <title>{`${app.name} Config`}</title>
-        </Helmet>
+      <div className="flex flex-column u-paddingLeft--20 u-paddingBottom--20 u-paddingRight--20 alignItems--center">
+        <KotsPageTitle pageName="Config" showAppSlug />
         {fromLicenseFlow && app && (
           <Span size="18" weight="bold" mt="30" ml="38">
             Configure {app.name}
           </Span>
         )}
-        <Flex gap="20px">
+        <div className="flex" style={{ gap: "20px" }}>
           <div
             id="configSidebarWrapper"
-            className="config-sidebar-wrapper clickable"
+            className="config-sidebar-wrapper card-bg clickable"
           >
             {configGroups?.map((group, i) => {
               if (
@@ -610,48 +651,50 @@ class AppConfig extends Component<Props, State> {
                       ? "group-open"
                       : ""
                   }`}
+                  id={`config-group-nav-${group.name}`}
                 >
-                  <Flex
-                    align="center"
+                  <div
+                    className="flex alignItems--center"
                     onClick={() => this.toggleActiveGroups(group.name)}
                   >
-                    <GroupTitle
-                      fontSize="16"
-                      className="u-lineHeight--normal group-title"
-                    >
+                    <div className="u-lineHeight--normal group-title u-fontSize--normal">
                       {group.title}
-                    </GroupTitle>
+                    </div>
                     {/* adding the arrow-down classes, will rotate the icon when clicked */}
                     <Icon
                       icon="down-arrow"
                       className="darkGray-color clickable flex-auto u-marginLeft--5 arrow-down"
-                      size="12"
+                      size={12}
                       style={{}}
                       color={""}
                       disableFill={false}
                       removeInlineStyle={false}
                     />
-                  </Flex>
+                  </div>
                   {group.items ? (
-                    <SideNavItems className="side-nav-items">
-                      {group.items?.map((item, j) => {
-                        const hash = this.props.location.hash.slice(1);
-                        if (item.hidden || item.when === "false") {
-                          return;
-                        }
-                        return (
-                          <a
-                            className={`u-fontSize--normal u-lineHeight--normal ${
-                              hash === `${item.name}-group` ? "active-item" : ""
-                            }`}
-                            href={`#${item.name}-group`}
-                            key={`${j}-${item.name}-${item.title}`}
-                          >
-                            {item.title}
-                          </a>
-                        );
-                      })}
-                    </SideNavItems>
+                    <div className="side-nav-items">
+                      {group.items
+                        ?.filter((item) => item.type !== "label")
+                        ?.map((item, j) => {
+                          const hash = this.props.location.hash.slice(1);
+                          if (item.hidden || item.when === "false") {
+                            return;
+                          }
+                          return (
+                            <a
+                              className={`u-fontSize--normal u-lineHeight--normal ${
+                                hash === `${item.name}-group`
+                                  ? "active-item"
+                                  : ""
+                              }`}
+                              href={`#${item.name}-group`}
+                              key={`${j}-${item.name}-${item.title}`}
+                            >
+                              {item.title}
+                            </a>
+                          );
+                        })}
+                    </div>
                   ) : null}
                 </div>
               );
@@ -659,9 +702,7 @@ class AppConfig extends Component<Props, State> {
           </div>
           <div className="ConfigArea--wrapper">
             <UseIsHelmManaged>
-              {({ data = {} }: { data: { isHelmManaged?: boolean } }) => {
-                const { isHelmManaged: isHelmManagedFromHook } = data;
-
+              {({ data: isHelmManagedFromHook }) => {
                 const { isError: saveError } = useSaveConfig({
                   appSlug: this.getSlug(),
                 });
@@ -686,10 +727,9 @@ class AppConfig extends Component<Props, State> {
                     )}
                     <div
                       className={classNames(
-                        "ConfigOuterWrapper u-paddingTop--30",
+                        "ConfigOuterWrapper card-bg u-padding--15",
                         { "u-marginTop--20": fromLicenseFlow }
                       )}
-                      style={{ width: "100%" }}
                     >
                       <div className="ConfigInnerWrapper">
                         <AppConfigRenderer
@@ -700,32 +740,32 @@ class AppConfig extends Component<Props, State> {
                           appSlug={app.slug}
                         />
                       </div>
-                    </div>
-                    <div className="flex alignItems--flexStart">
-                      {savingConfig && (
-                        <div className="u-paddingBottom--30">
-                          <Loader size="30" />
-                        </div>
-                      )}
-                      {!savingConfig && (
-                        <div className="ConfigError--wrapper flex-column u-paddingBottom--30 alignItems--flexStart">
-                          {configError && (
-                            <span className="u-textColor--error u-marginBottom--20 u-fontWeight--bold">
-                              {configError}
-                            </span>
-                          )}
-                          <button
-                            className="btn primary blue"
-                            disabled={
-                              (!changed && !fromLicenseFlow) ||
-                              this.isConfigReadOnly(app)
-                            }
-                            onClick={this.handleSave}
-                          >
-                            {saveButtonText}
-                          </button>
-                        </div>
-                      )}
+                      <div className="flex alignItems--flexStart">
+                        {savingConfig && (
+                          <div className="u-paddingBottom--30">
+                            <Loader size="30" />
+                          </div>
+                        )}
+                        {!savingConfig && (
+                          <div className="ConfigError--wrapper flex-column alignItems--flexStart">
+                            {configError && (
+                              <span className="u-textColor--error u-marginBottom--20 u-fontWeight--bold">
+                                {configError}
+                              </span>
+                            )}
+                            <button
+                              className="btn primary blue"
+                              disabled={
+                                (!changed && !fromLicenseFlow) ||
+                                this.isConfigReadOnly(app)
+                              }
+                              onClick={this.handleSave}
+                            >
+                              {saveButtonText}
+                            </button>
+                          </div>
+                        )}
+                      </div>
                     </div>
                     {this.state.showHelmDeployModal && (
                       <>
@@ -761,7 +801,7 @@ class AppConfig extends Component<Props, State> {
               }}
             </UseIsHelmManaged>
           </div>
-        </Flex>
+        </div>
 
         <Modal
           isOpen={showNextStepModal}
@@ -839,13 +879,14 @@ class AppConfig extends Component<Props, State> {
             tryAgain={this.getConfig}
           />
         )}
-      </Flex>
+      </div>
     );
   }
 }
 
-// TODO: fix this type
-// eslint-disable-next-line
+/* eslint-disable */
+// @ts-ignore
 const AppConfigWithRouter: any = withRouter(AppConfig);
 
 export default AppConfigWithRouter;
+/* eslint-enable */

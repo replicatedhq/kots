@@ -1,6 +1,6 @@
 import React, { Component } from "react";
-import { withRouter } from "react-router-dom";
-import Helmet from "react-helmet";
+import { withRouter } from "@src/utilities/react-router-utilities";
+import { KotsPageTitle } from "@components/Head";
 import isEmpty from "lodash/isEmpty";
 import isEqual from "lodash/isEqual";
 
@@ -29,7 +29,7 @@ class SnapshotSettings extends Component {
     showResetFileSystemWarningModal: false,
     resetFileSystemWarningMessage: "",
     snapshotSettingsJob: new Repeater(),
-    checkForVeleroAndRestic: false,
+    checkForVeleroAndNodeAgent: false,
   };
 
   fetchSnapshotSettings = (isCheckForVelero) => {
@@ -107,7 +107,7 @@ class SnapshotSettings extends Component {
   }
 
   pollSnapshotSettingsOnUpdate = () => {
-    this.setState({ checkForVeleroAndRestic: true });
+    this.setState({ checkForVeleroAndNodeAgent: true });
     this.state.snapshotSettingsJob.start(this.fetchSnapshotSettings, 2000);
   };
 
@@ -125,7 +125,7 @@ class SnapshotSettings extends Component {
         this.setState({ showConfigureSnapshotsModal: true });
       }
 
-      if (this.state.checkForVeleroAndRestic) {
+      if (this.state.checkForVeleroAndNodeAgent) {
         if (
           this.state.snapshotSettings?.veleroPod !==
             lastState.snapshotSettings?.veleroPod &&
@@ -134,34 +134,34 @@ class SnapshotSettings extends Component {
           this.setState({ veleroUpdated: true });
         }
 
-        let sortedStateResticPods = [];
-        let sortedLastStateResticPods = [];
-        if (!isEmpty(this.state.snapshotSettings?.resticPods)) {
-          sortedStateResticPods =
-            this.state.snapshotSettings?.resticPods.sort();
+        let sortedStateNodeAgentPods = [];
+        let sortedLastStateNodeAgentPods = [];
+        if (!isEmpty(this.state.snapshotSettings?.nodeAgentPods)) {
+          sortedStateNodeAgentPods =
+            this.state.snapshotSettings?.nodeAgentPods.sort();
         }
-        if (!isEmpty(lastState.snapshotSettings?.resticPods)) {
-          sortedLastStateResticPods =
-            lastState.snapshotSettings?.resticPods.sort();
+        if (!isEmpty(lastState.snapshotSettings?.nodeAgentPods)) {
+          sortedLastStateNodeAgentPods =
+            lastState.snapshotSettings?.nodeAgentPods.sort();
         }
         if (
-          !isEqual(sortedStateResticPods, sortedLastStateResticPods) &&
-          !isEmpty(this.state.snapshotSettings?.resticPods)
+          !isEqual(sortedStateNodeAgentPods, sortedLastStateNodeAgentPods) &&
+          !isEmpty(this.state.snapshotSettings?.nodeAgentPods)
         ) {
-          this.setState({ resticUpdated: true });
+          this.setState({ nodeAgentUpdated: true });
         }
 
         if (
           this.state.updatingSettings &&
           this.state.veleroUpdated &&
-          this.state.resticUpdated
+          this.state.nodeAgentUpdated
         ) {
           this.setState({
             updatingSettings: false,
             updateConfirm: true,
-            checkForVeleroAndRestic: false,
+            checkForVeleroAndNodeAgent: false,
             veleroUpdated: false,
-            resticUpdated: false,
+            nodeAgentUpdated: false,
           });
 
           setTimeout(() => {
@@ -299,11 +299,11 @@ class SnapshotSettings extends Component {
       updatingSettings,
       updateErrorMsg,
       isEmptyView,
-      checkForVeleroAndRestic,
+      checkForVeleroAndNodeAgent,
     } = this.state;
     const isLicenseUpload = !!this.props.history.location.search;
 
-    if (isLoadingSnapshotSettings && !checkForVeleroAndRestic) {
+    if (isLoadingSnapshotSettings && !checkForVeleroAndNodeAgent) {
       return (
         <div className="flex-column flex1 alignItems--center justifyContent--center">
           <Loader size="60" />
@@ -313,11 +313,9 @@ class SnapshotSettings extends Component {
 
     return (
       <div className="flex1 flex-column u-overflow--auto">
-        <Helmet>
-          <title>Snapshot Settings</title>
-        </Helmet>
+        <KotsPageTitle pageName="Snapshot Settings" />
         {!isVeleroCorrectVersion(snapshotSettings) &&
-        !checkForVeleroAndRestic ? (
+        !checkForVeleroAndNodeAgent ? (
           <div className="VeleroWarningBlock">
             <Icon icon={"warning"} size={24} className="warning-color" />
             <p>
@@ -331,7 +329,7 @@ class SnapshotSettings extends Component {
             snapshotSettings={snapshotSettings}
             updateSettings={this.updateSettings}
             fetchSnapshotSettings={this.fetchSnapshotSettings}
-            checkForVeleroAndRestic={checkForVeleroAndRestic}
+            checkForVeleroAndNodeAgent={checkForVeleroAndNodeAgent}
             updateConfirm={updateConfirm}
             updatingSettings={updatingSettings}
             updateErrorMsg={updateErrorMsg}

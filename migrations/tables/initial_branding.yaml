@@ -1,0 +1,25 @@
+apiVersion: schemas.schemahero.io/v1alpha4
+kind: Table
+metadata:
+  name: initial_branding
+spec:
+  name: initial_branding
+  requires: []
+  schema:
+    rqlite:
+      strict: true
+      primaryKey:
+        - id
+      columns:
+      - name: id
+        type: text
+        constraints:
+          notNull: true
+      - name: contents
+        type: text
+        constraints:
+          notNull: true
+      - name: created_at
+        type: integer
+        constraints:
+          notNull: true

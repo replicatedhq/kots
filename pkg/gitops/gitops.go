@@ -2,6 +2,7 @@ package gitops
 
 import (
 	"context"
+	"crypto/ed25519"
 	"crypto/rsa"
 	"crypto/x509"
 	"encoding/base64"
@@ -20,6 +21,7 @@ import (
 	"github.com/go-git/go-git/v5/plumbing/object"
 	"github.com/go-git/go-git/v5/plumbing/transport"
 	go_git_ssh "github.com/go-git/go-git/v5/plumbing/transport/ssh"
+	"github.com/mikesmitty/edkey"
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/crypto"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
@@ -30,6 +32,7 @@ import (
 	v1 "k8s.io/api/core/v1"
 	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/kubernetes"
 )
 
 type GitOpsConfig struct {
@@ -120,6 +123,11 @@ func GetDownstreamGitOps(appID string, clusterID string) (*GitOpsConfig, error) 
 		return nil, errors.Wrap(err, "failed to get k8s client set")
 	}
 
+	config, err := getDownstreamGitOps(clientset, appID, clusterID)
+	return config, errors.Wrap(err, "failed to get downstream gitops config")
+}
+
+func getDownstreamGitOps(clientset kubernetes.Interface, appID string, clusterID string) (*GitOpsConfig, error) {
 	secret, err := clientset.CoreV1().Secrets(util.PodNamespace).Get(context.TODO(), "kotsadm-gitops", metav1.GetOptions{})
 	if kuberneteserrors.IsNotFound(err) {
 		return nil, nil
@@ -198,15 +206,26 @@ func GetDownstreamGitOps(appID string, clusterID string) (*GitOpsConfig, error) 
 	return nil, nil
 }
 
-func DisableDownstreamGitOps(appID string, clusterID string) error {
+func DisableDownstreamGitOps(appID string, clusterID string, gitOpsConfig *GitOpsConfig) error {
 	clientset, err := k8sutil.GetClientset()
 	if err != nil {
 		return errors.Wrap(err, "failed to get k8s client set")
 	}
 
+	err = deleteDownstreamGitOps(clientset, appID, clusterID, gitOpsConfig.RepoURI)
+	return errors.Wrap(err, "failed to delete data from gitops configmap")
+}
+
+// deleteDownstreamGitOps will delete the gitops config for a downstream, and delete the provider from the secret
+func deleteDownstreamGitOps(clientset kubernetes.Interface, appID string, clusterID string, repoURI string) error {
 	configMap, err := clientset.CoreV1().ConfigMaps(util.PodNamespace).Get(context.TODO(), "kotsadm-gitops", metav1.GetOptions{})
 	if kuberneteserrors.IsNotFound(err) {
 		return errors.Wrap(err, "gitops config map not found")
+	}
+	// if multiple apps have same repo, don't delete the provider from the secret
+	isRepoConfiguredForMultipleApps, err := isGitOpsRepoConfiguredForMultipleApps(configMap.Data, repoURI)
+	if err != nil {
+		return errors.Wrap(err, "failed to check if repo is configured for other apps")
 	}
 
 	configMapDataKey := fmt.Sprintf("%s-%s", appID, clusterID)
@@ -220,6 +239,81 @@ func DisableDownstreamGitOps(appID string, clusterID string) error {
 		return errors.Wrap(err, "failed to update config map")
 	}
 
+	if !isRepoConfiguredForMultipleApps {
+		if err := deleteKeysFromGitOpsSecret(clientset, repoURI); err != nil {
+			return errors.Wrap(err, "failed to delete keys from gitops secret")
+		}
+	}
+
+	return nil
+}
+
+// isGitOpsRepoConfiguredForMultipleApps returns true if the repo is configured for multiple apps
+func isGitOpsRepoConfiguredForMultipleApps(gitOpsEncodedMap map[string]string, repoURI string) (bool, error) {
+	repoURICount := 0
+	for _, val := range gitOpsEncodedMap {
+		configMapDataDecoded, err := base64.StdEncoding.DecodeString(val)
+		if err != nil {
+			return false, errors.Wrap(err, "failed to decode configmap data")
+		}
+
+		configMapData := map[string]string{}
+		if err := json.Unmarshal(configMapDataDecoded, &configMapData); err != nil {
+			return false, errors.Wrap(err, "failed to unmarshal configmap data")
+		}
+
+		if configMapData["repoUri"] == repoURI {
+			repoURICount++
+		}
+
+		if repoURICount > 1 {
+			return true, nil
+		}
+	}
+	return false, nil
+}
+
+// deleteKeysFromGitOpsSecret deletes all keys from the gitops secret that match the given repoURL
+func deleteKeysFromGitOpsSecret(clientset kubernetes.Interface, repoURL string) error {
+	secret, err := clientset.CoreV1().Secrets(util.PodNamespace).Get(context.TODO(), "kotsadm-gitops", metav1.GetOptions{})
+	if kuberneteserrors.IsNotFound(err) {
+		return errors.Wrap(err, "gitops secret not found")
+	}
+
+	var keyIndex int64 = -1
+	for key, val := range secret.Data {
+		splitKey := strings.Split(key, ".")
+		if len(splitKey) != 3 {
+			continue
+		}
+
+		if splitKey[2] == "repoUri" {
+			if string(val) == repoURL {
+				keyIndex, err = strconv.ParseInt(splitKey[1], 10, 64)
+				if err != nil {
+					return errors.Wrap(err, "failed to parse index")
+				}
+				break
+			}
+		}
+	}
+
+	if keyIndex == -1 {
+		return nil
+	}
+
+	// delete all keys that match "provider.keyIndex.*"
+	for key, _ := range secret.Data {
+		if strings.HasPrefix(key, fmt.Sprintf("provider.%d.", keyIndex)) {
+			delete(secret.Data, key)
+		}
+	}
+
+	_, err = clientset.CoreV1().Secrets(util.PodNamespace).Update(context.TODO(), secret, metav1.UpdateOptions{})
+	if err != nil {
+		return errors.Wrap(err, "failed to update secret")
+	}
+
 	return nil
 }
 
@@ -229,6 +323,11 @@ func UpdateDownstreamGitOps(appID, clusterID, uri, branch, path, format, action 
 		return errors.Wrap(err, "failed to get k8s client set")
 	}
 
+	err = updateDownstreamGitOps(clientset, appID, clusterID, uri, branch, path, format, action)
+	return errors.Wrap(err, "failed to update downstream gitops config")
+}
+
+func updateDownstreamGitOps(clientset kubernetes.Interface, appID, clusterID, uri, branch, path, format, action string) error {
 	configMap, err := clientset.CoreV1().ConfigMaps(util.PodNamespace).Get(context.TODO(), "kotsadm-gitops", metav1.GetOptions{})
 	if err != nil && !kuberneteserrors.IsNotFound(err) {
 		return errors.Wrap(err, "failed to get configmap")
@@ -393,6 +492,11 @@ func CreateGitOps(provider string, repoURI string, hostname string, httpPort str
 		return errors.Wrap(err, "failed to get k8s client set")
 	}
 
+	err = createGitOps(clientset, provider, repoURI, hostname, httpPort, sshPort)
+	return errors.Wrap(err, "failed to create gitops")
+}
+
+func createGitOps(clientset kubernetes.Interface, provider string, repoURI string, hostname string, httpPort string, sshPort string) error {
 	secret, err := clientset.CoreV1().Secrets(util.PodNamespace).Get(context.TODO(), "kotsadm-gitops", metav1.GetOptions{})
 	if err != nil && !kuberneteserrors.IsNotFound(err) {
 		return errors.Wrap(err, "failed to get secret")
@@ -445,9 +549,17 @@ func CreateGitOps(provider string, repoURI string, hostname string, httpPort str
 	secretData[fmt.Sprintf("provider.%d.repoUri", repoIdx)] = []byte(repoURI)
 
 	if !repoExists {
-		keyPair, err := generateKeyPair()
-		if err != nil {
-			return errors.Wrap(err, "failed to generate key pair")
+		var keyPair *KeyPair
+		if provider == "github_enterprise" {
+			keyPair, err = generatePrivateKey_ed25519()
+			if err != nil {
+				return errors.Wrap(err, "failed to generate ed25519 key pair")
+			}
+		} else {
+			keyPair, err = generateKeyPair_RSA()
+			if err != nil {
+				return errors.Wrap(err, "failed to generate rsa key pair")
+			}
 		}
 		encryptedPrivateKey := crypto.Encrypt([]byte(keyPair.PrivateKeyPEM))
 		encodedPrivateKey := base64.StdEncoding.EncodeToString(encryptedPrivateKey) // encoding here shouldn't be needed. moved logic from TS where ffi EncryptString function base64 encodes the value as well
@@ -710,10 +822,10 @@ func CreateGitOpsCommit(gitOpsConfig *GitOpsConfig, appSlug string, appName stri
 	return gitOpsConfig.CommitURL(updatedHash.String()), nil
 }
 
-func generateKeyPair() (*KeyPair, error) {
+func generateKeyPair_RSA() (*KeyPair, error) {
 	privateKey, err := getPrivateKey()
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "get private key")
 	}
 
 	var publicKey *rsa.PublicKey
@@ -729,9 +841,32 @@ func generateKeyPair() (*KeyPair, error) {
 
 	publicKeySSH, err := ssh.NewPublicKey(publicKey)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "convert public key to ssh")
 	}
 	pubKeySSHBytes := ssh.MarshalAuthorizedKey(publicKeySSH)
 
 	return &KeyPair{PrivateKeyPEM: string(PrivateKeyPEM), PublicKeySSH: string(pubKeySSHBytes)}, nil
+}
+
+func generatePrivateKey_ed25519() (*KeyPair, error) {
+	publicKey, privateKey, err := ed25519.GenerateKey(r)
+	if err != nil {
+		return nil, errors.Wrap(err, "generate ed25519 key pair")
+	}
+
+	sshPublicKey, err := ssh.NewPublicKey(publicKey)
+	if err != nil {
+		return nil, errors.Wrap(err, "convert public key to ssh")
+	}
+
+	pemPrivateKey := &pem.Block{
+		Type:  "OPENSSH PRIVATE KEY",
+		Bytes: edkey.MarshalED25519PrivateKey(privateKey),
+	}
+
+	keyPair := &KeyPair{
+		PublicKeySSH:  string(ssh.MarshalAuthorizedKey(sshPublicKey)),
+		PrivateKeyPEM: string(pem.EncodeToMemory(pemPrivateKey)),
+	}
+	return keyPair, nil
 }

@@ -12,12 +12,13 @@ import (
 	"github.com/replicatedhq/kots/pkg/app"
 	apptypes "github.com/replicatedhq/kots/pkg/app/types"
 	"github.com/replicatedhq/kots/pkg/helm"
-	"github.com/replicatedhq/kots/pkg/kotsadm/types"
 	"github.com/replicatedhq/kots/pkg/kotsadmconfig"
 	license "github.com/replicatedhq/kots/pkg/kotsadmlicense"
 	upstream "github.com/replicatedhq/kots/pkg/kotsadmupstream"
+	kotslicense "github.com/replicatedhq/kots/pkg/license"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/preflight"
+	"github.com/replicatedhq/kots/pkg/preflight/types"
 	kotspull "github.com/replicatedhq/kots/pkg/pull"
 	registrytypes "github.com/replicatedhq/kots/pkg/registry/types"
 	"github.com/replicatedhq/kots/pkg/reporting"
@@ -28,7 +29,6 @@ import (
 	upstreamtypes "github.com/replicatedhq/kots/pkg/upstream/types"
 	"github.com/replicatedhq/kots/pkg/util"
 	"github.com/replicatedhq/kots/pkg/version"
-	troubleshootpreflight "github.com/replicatedhq/troubleshoot/pkg/preflight"
 	cron "github.com/robfig/cron/v3"
 	"go.uber.org/zap"
 	"k8s.io/apimachinery/pkg/util/wait"
@@ -53,7 +53,7 @@ func Start() error {
 		if a.IsAirgap {
 			continue
 		}
-		if err := Configure(a); err != nil {
+		if err := Configure(a, a.UpdateCheckerSpec); err != nil {
 			logger.Error(errors.Wrapf(err, "failed to configure app %s", a.Slug))
 		}
 	}
@@ -66,20 +66,10 @@ func Start() error {
 // if enabled, and a cron job was found, update the existing cron job with the latest cron spec
 // if disabled: stop the current running cron job (if exists)
 // no-op for airgap applications
-func Configure(a apptypes.AppType) error {
-	var updateCheckerSpec string
+func Configure(a apptypes.AppType, updateCheckerSpec string) error {
 	appId := a.GetID()
 	appSlug := a.GetSlug()
 	isAirgap := a.GetIsAirgap()
-
-	cm, err := store.GetConfigmap(types.KotsadmConfigMap)
-	if err != nil {
-		return errors.New(fmt.Sprintf("failed to get config map"))
-	}
-	if cm.Data == nil {
-		cm.Data = make(map[string]string)
-	}
-	updateCheckerSpec = cm.Data[fmt.Sprintf("update-schedule-%s", appId)]
 
 	if isAirgap {
 		return nil
@@ -123,7 +113,7 @@ func Configure(a apptypes.AppType) error {
 	jobAppID := appId
 	jobAppSlug := appSlug
 
-	_, err = job.AddFunc(cronSpec, func() {
+	_, err := job.AddFunc(cronSpec, func() {
 		logger.Debug("checking updates for app", zap.String("slug", jobAppSlug))
 
 		opts := CheckForUpdatesOpts{
@@ -135,13 +125,14 @@ func Configure(a apptypes.AppType) error {
 			logger.Error(errors.Wrapf(err, "failed to check updates for app %s", jobAppSlug))
 			return
 		}
-
-		if ucr.AvailableUpdates > 0 {
-			logger.Debug("updates found for app",
-				zap.String("slug", jobAppSlug),
-				zap.Int64("available updates", ucr.AvailableUpdates))
-		} else {
-			logger.Debug("no updates found for app", zap.String("slug", jobAppSlug))
+		if ucr != nil {
+			if ucr.AvailableUpdates > 0 {
+				logger.Debug("updates found for app",
+					zap.String("slug", jobAppSlug),
+					zap.Int64("available updates", ucr.AvailableUpdates))
+			} else {
+				logger.Debug("no updates found for app", zap.String("slug", jobAppSlug))
+			}
 		}
 	})
 	if err != nil {
@@ -201,7 +192,7 @@ func CheckForUpdates(opts CheckForUpdatesOpts) (ucr *UpdateCheckResponse, finalE
 		return nil, errors.Wrap(err, "failed to get task status")
 	}
 	if currentStatus == "running" {
-		logger.Debug("update-download is already running, not starting a new one")
+		logger.Infof("an update check is already running for %s, not starting a new one", opts.AppID)
 		return nil, nil
 	}
 
@@ -256,6 +247,23 @@ func checkForHelmAppUpdates(opts CheckForUpdatesOpts, finishedChan chan<- error)
 
 	availableUpdateTags, err := helm.CheckForUpdates(helmApp, license, &currentVersion)
 	if err != nil {
+		expiredErr := util.ActionableError{
+			NoRetry: true,
+			Message: "License is expired",
+		}
+		isExpired := false
+
+		newLicense, _ := helm.GetChartLicenseFromSecretOrDownload(helmApp)
+		if newLicense != nil {
+			isExpired, _ = kotslicense.LicenseIsExpired(newLicense)
+		} else {
+			isExpired, _ = kotslicense.LicenseIsExpired(license)
+		}
+
+		if isExpired {
+			return nil, expiredErr
+		}
+
 		return nil, errors.Wrap(err, "failed to get available updates")
 	}
 
@@ -282,7 +290,7 @@ func checkForHelmAppUpdates(opts CheckForUpdatesOpts, finishedChan chan<- error)
 		if err := downloadHelmAppUpdates(opts, helmApp, license.Spec.LicenseID, updates); err != nil {
 			return nil, errors.Wrap(err, "failed to process updates")
 		}
-	} else {
+	} else if ucr.AvailableUpdates > 0 {
 		go func() {
 			defer close(finishedChan)
 			if err := downloadHelmAppUpdates(opts, helmApp, license.Spec.LicenseID, updates); err != nil {
@@ -400,7 +408,7 @@ func checkForKotsAppUpdates(opts CheckForUpdatesOpts, finishedChan chan<- error)
 		if err := downloadKotsAppUpdates(opts, a.ID, d.ClusterID, filteredUpdates, updates.UpdateCheckTime); err != nil {
 			return nil, errors.Wrap(err, "failed to download updates synchronously")
 		}
-	} else {
+	} else if ucr.AvailableUpdates > 0 {
 		go func() {
 			defer close(finishedChan)
 			err := downloadKotsAppUpdates(opts, a.ID, d.ClusterID, filteredUpdates, updates.UpdateCheckTime)
@@ -420,7 +428,9 @@ func downloadHelmAppUpdates(opts CheckForUpdatesOpts, helmApp *apptypes.HelmApp,
 		return errors.Wrapf(err, "failed to get current config values")
 	}
 
-	for _, update := range updates {
+	// Download in reverse order, from oldest to newest
+	for i := len(updates) - 1; i >= 0; i-- {
+		update := updates[i]
 		status := fmt.Sprintf("Downloading release %s...", update.Version)
 		if err := store.SetTaskStatus("update-download", status, "running"); err != nil {
 			logger.Info("failed to set task status", zap.String("error", err.Error()))
@@ -448,7 +458,13 @@ func downloadHelmAppUpdates(opts CheckForUpdatesOpts, helmApp *apptypes.HelmApp,
 			downstreamStatus = storetypes.VersionPendingConfig
 		}
 
+		replicatedMetadata, err := helm.GetReplicatedMetadataFromUpstreamChartVersion(helmApp, licenseID, update.Version)
+		if err != nil {
+			return errors.Wrap(err, "failed to replicated metadata")
+		}
+
 		helm.SetCachedUpdateStatus(helmApp.ChartPath, update.Version, downstreamStatus)
+		helm.SetCachedUpdateMetadata(helmApp.ChartPath, update.Version, replicatedMetadata)
 	}
 
 	return nil
@@ -710,7 +726,7 @@ func waitForPreflightsToFinish(appID string, sequence int64) error {
 		return errors.New("failed to find a preflight spec")
 	}
 
-	var preflightResults *troubleshootpreflight.UploadPreflightResults
+	var preflightResults *types.PreflightResults
 	if err = json.Unmarshal([]byte(preflightResult.Result), &preflightResults); err != nil {
 		return errors.Wrap(err, "failed to parse preflight results")
 	}

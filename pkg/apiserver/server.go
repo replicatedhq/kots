@@ -15,6 +15,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/binaries"
 	"github.com/replicatedhq/kots/pkg/handlers"
 	"github.com/replicatedhq/kots/pkg/helm"
+	identitymigrate "github.com/replicatedhq/kots/pkg/identity/migrate"
 	"github.com/replicatedhq/kots/pkg/informers"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/operator"
@@ -34,29 +35,17 @@ import (
 
 type APIServerParams struct {
 	Version                string
-	PostgresURI            string
+	RqliteURI              string
 	AutocreateClusterToken string
-	EnableIdentity         bool
 	SharedPassword         string
-	KubeconfigPath         string
-	KotsDataDir            string
 }
 
 func Start(params *APIServerParams) {
 	log.Printf("kotsadm version %s\n", params.Version)
 
-	if params.KubeconfigPath != "" {
-		// it's only possible to set this in the kots run workflow
-		os.Setenv("KUBECONFIG", params.KubeconfigPath)
-	}
-	if params.KotsDataDir != "" {
-		// it's only possible to set this in the kots run workflow
-		os.Setenv("KOTS_DATA_DIR", params.KotsDataDir)
-	}
-
 	if !util.IsHelmManaged() {
 		// set some persistence variables
-		persistence.InitDB(params.PostgresURI)
+		persistence.InitDB(params.RqliteURI)
 
 		ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 		if err := store.GetStore().WaitForReady(ctx); err != nil {
@@ -64,6 +53,14 @@ func Start(params *APIServerParams) {
 			panic(err)
 		}
 		cancel()
+	}
+
+	// check if we need to migrate from postgres before doing anything else
+	if !util.IsHelmManaged() {
+		if err := persistence.MigrateFromPostgresToRqlite(); err != nil {
+			log.Println("error migrating from postgres to rqlite")
+			panic(err)
+		}
 	}
 
 	if err := bootstrap(BootstrapParams{
@@ -75,6 +72,9 @@ func Start(params *APIServerParams) {
 
 	if !util.IsHelmManaged() {
 		store.GetStore().RunMigrations()
+		if err := identitymigrate.RunMigrations(context.TODO(), util.PodNamespace); err != nil {
+			log.Println("Failed to run identity migrations: ", err)
+		}
 	}
 
 	if err := binaries.InitKubectl(); err != nil {
@@ -94,7 +94,12 @@ func Start(params *APIServerParams) {
 			HookStopChans:     []chan struct{}{},
 		}
 		store := store.GetStore()
-		op := operator.Init(client, store, params.AutocreateClusterToken)
+		k8sClientset, err := k8sutil.GetClientset()
+		if err != nil {
+			log.Println("error getting k8s clientset")
+			panic(err)
+		}
+		op := operator.Init(client, store, params.AutocreateClusterToken, k8sClientset)
 		if err := op.Start(); err != nil {
 			log.Println("error starting the operator")
 			panic(err)
@@ -110,18 +115,6 @@ func Start(params *APIServerParams) {
 			panic(err)
 		}
 		os.Setenv("SHARED_PASSWORD_BCRYPT", string(bcryptPassword))
-	}
-
-	if params.EnableIdentity {
-		if util.IsHelmManaged() {
-			log.Println("Identity integration is enabled but isn't suported in Helm managed mode")
-		} else {
-			err := bootstrapIdentity()
-			if err != nil {
-				log.Println("error bootstrapping identity")
-				panic(err)
-			}
-		}
 	}
 
 	if err := k8sutil.InitHelmCapabilities(); err != nil {
@@ -142,7 +135,6 @@ func Start(params *APIServerParams) {
 		if err := updatechecker.Start(); err != nil {
 			log.Println("Failed to start update checker:", err)
 		}
-
 		if err := snapshotscheduler.Start(); err != nil {
 			log.Println("Failed to start snapshot scheduler:", err)
 		}
@@ -181,11 +173,13 @@ func Start(params *APIServerParams) {
 
 	handler := &handlers.Handler{}
 
+	kotsStore := store.GetStore()
+
 	/**********************************************************************
 	* Unauthenticated routes
 	**********************************************************************/
 
-	handlers.RegisterUnauthenticatedRoutes(handler, debugRouter, loggingRouter)
+	handlers.RegisterUnauthenticatedRoutes(handler, kotsStore, debugRouter, loggingRouter)
 
 	/**********************************************************************
 	* KOTS token auth routes
@@ -197,7 +191,6 @@ func Start(params *APIServerParams) {
 	* Session auth routes
 	**********************************************************************/
 
-	kotsStore := store.GetStore()
 	policyMiddleware := policy.NewMiddleware(kotsStore, rbac.DefaultRoles())
 
 	sessionAuthQuietRouter := r.PathPrefix("").Subrouter()

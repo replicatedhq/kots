@@ -9,12 +9,14 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/mholt/archiver"
+	"github.com/mholt/archiver/v3"
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/kotskinds/client/kotsclientset/scheme"
 	apptypes "github.com/replicatedhq/kots/pkg/app/types"
 	"github.com/replicatedhq/kots/pkg/helm"
+	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
+	"github.com/replicatedhq/kots/pkg/kurl"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/redact"
 	"github.com/replicatedhq/kots/pkg/render/helper"
@@ -159,17 +161,31 @@ func CreateSupportBundleDependencies(app apptypes.AppType, sequence int64, opts 
 		return nil, errors.Wrap(err, "failed to create rendered support bundle spec")
 	}
 
-	err = redact.GenerateKotsadmRedactSpec()
+	clientset, err := k8sutil.GetClientset()
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get clientset")
+	}
+
+	// redactors configured in the admin console (from kotsadm-redact backend and written to kotsadm-redact-spec)
+	err = redact.GenerateKotsadmRedactSpec(clientset)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to write kotsadm redact spec configmap")
 	}
 	redactURIs := []string{redact.GetKotsadmRedactSpecURI()}
 
-	err = redact.CreateRenderedAppRedactSpec(app, sequence, kotsKinds)
+	// redactors configured in the app spec (written to kotsadm-<app-slug>-redact-spec)
+	err = redact.CreateRenderedAppRedactSpec(clientset, app, sequence, kotsKinds)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to write app redact spec configmap")
 	}
 	redactURIs = append(redactURIs, redact.GetAppRedactSpecURI(app.GetSlug()))
+
+	// default redactors applied to all support bundles (written to kotsadm-redact-default-spec)
+	err = redact.CreateRenderedDefaultRedactSpec(clientset)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to write default redact spec configmap")
+	}
+	redactURIs = append(redactURIs, redact.GetDefaultRedactSpecURI())
 
 	supportBundleObj := types.SupportBundle{
 		AppID:      app.GetID(),
@@ -351,8 +367,15 @@ func CreateSupportBundleAnalysis(appID string, archivePath string, bundle *types
 			},
 		}
 	}
-
-	analyzer.Spec.Analyzers = append(analyzer.Spec.Analyzers, getDefaultAnalyzers()...)
+	clientset, err := k8sutil.GetClientset()
+	if err != nil {
+		logger.Errorf("Failed to get kubernetes clientset: %v", err)
+	}
+	isKurl, err := kurl.IsKurl(clientset)
+	if err != nil {
+		logger.Errorf("Failed to check if cluster is kurl: %v", err)
+	}
+	analyzer.Spec.Analyzers = append(analyzer.Spec.Analyzers, getDefaultAnalyzers(isKurl)...)
 	analyzer.Spec.Analyzers = append(analyzer.Spec.Analyzers, getDefaultDynamicAnalyzers(foundApp)...)
 
 	s := k8sjson.NewYAMLSerializer(k8sjson.DefaultMetaFactory, scheme.Scheme, scheme.Scheme)

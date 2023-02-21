@@ -8,10 +8,10 @@ spec:
       containers:
         - name: kotsadm
           env:
-            - name: POSTGRES_URI
+            - name: RQLITE_URI
               valueFrom:
                 secretKeyRef:
-                  name: kotsadm-postgres # This secret is created in the migrations directory
+                  name: kotsadm-rqlite # This secret is created in the migrations directory
                   key: uri
             - name: S3_BUCKET_NAME
               value: "shipbucket"

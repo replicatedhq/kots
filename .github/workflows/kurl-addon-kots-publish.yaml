@@ -5,34 +5,23 @@ on:
     inputs:
       addon_version:
         type: string
-        description: "Kots version."
+        description: "Kots version (without the 'v')."
         required: true
-  release:
-    types:
-      - published
 
-concurrency: kurl-addon-publish
+concurrency: kurl-addon-publish-${{ inputs.addon_version }}
 
 jobs:
-  generate-kots-addon:
-    uses: ./.github/workflows/kurl-addon-kots-test.yaml
-    with:
-      addon_version: "${{ inputs.addon_version || github.ref_name }}"
-      s3_prefix: ""
-      priority: 1
-
   publish-kots-addon:
     runs-on: ubuntu-20.04
-    needs: generate-kots-addon
     steps:
-      - uses: ./.github/actions/kurl-addon-kots-publisher
+      - uses: actions/checkout@v3
+      - uses: ./.github/actions/kurl-addon-kots-publish
         with:
-          ADDON_VERSION: ${{ inputs.addon_version || github.ref_name }}
-          ADDON_PACKAGE_URL: ${{ needs.generate-kots-addon.outputs.addon_package_url }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      - env:
+          addon_version: "${{ inputs.addon_version }}"
+          s3_prefix: ""
+          priority: 1
+          testgrid_api_token: ${{ secrets.TESTGRID_PROD_API_TOKEN }}
+        env:
           AWS_ACCESS_KEY_ID: ${{ secrets.KURL_ADDONS_AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.KURL_ADDONS_AWS_SECRET_ACCESS_KEY }}
-          AWS_DEFAULT_REGION: "us-east-1"
-        working-directory: ./deploy/kurl
-        run: aws s3 cp versions.json s3://kots-kurl-addons-production-1658439274
+          AWS_DEFAULT_REGION: us-east-1

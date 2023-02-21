@@ -1,13 +1,14 @@
 package kotsstore
 
 import (
-	"database/sql"
 	"encoding/json"
+	"fmt"
 	"sync"
 	"time"
 
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/persistence"
+	"github.com/rqlite/gorqlite"
 )
 
 const (
@@ -27,16 +28,16 @@ type TaskStatus struct {
 	UpdatedAt time.Time `json:"updatedAt"`
 }
 
-func (s *KOTSStore) migrationTasksFromPostgres() error {
+func (s *KOTSStore) migrateTasksFromRqlite() error {
 	db := persistence.MustGetDBSession()
 
 	query := `select updated_at, current_message, status from api_task_status`
-	rows, err := db.Query(query)
+	rows, err := db.QueryOne(query)
 	if err != nil {
-		return errors.Wrap(err, "failed to select tasks for migration")
+		return fmt.Errorf("failed to select tasks for migration: %v: %v", err, rows.Err)
 	}
 
-	taskCm, err := s.GetConfigmap(TaskStatusConfigMapName)
+	taskCm, err := s.getConfigmap(TaskStatusConfigMapName)
 	if err != nil {
 		return errors.Wrap(err, "failed to get task status configmap")
 	}
@@ -47,8 +48,8 @@ func (s *KOTSStore) migrationTasksFromPostgres() error {
 
 	for rows.Next() {
 		var id string
-		var status sql.NullString
-		var message sql.NullString
+		var status gorqlite.NullString
+		var message gorqlite.NullString
 
 		ts := TaskStatus{}
 		if err := rows.Scan(&id, &ts.UpdatedAt, &message, &status); err != nil {
@@ -70,13 +71,13 @@ func (s *KOTSStore) migrationTasksFromPostgres() error {
 		taskCm.Data[id] = string(b)
 	}
 
-	if err := s.UpdateConfigmap(taskCm); err != nil {
+	if err := s.updateConfigmap(taskCm); err != nil {
 		return errors.Wrap(err, "failed to update task status configmap")
 	}
 
 	query = `delete from api_task_status`
-	if _, err := db.Exec(query); err != nil {
-		return errors.Wrap(err, "failed to delete tasks from postgres")
+	if wr, err := db.WriteOne(query); err != nil {
+		return fmt.Errorf("failed to delete tasks from db: %v: %v", err, wr.Err)
 	}
 
 	return nil
@@ -96,7 +97,7 @@ func (s *KOTSStore) SetTaskStatus(id string, message string, status string) erro
 	cached.taskStatus.UpdatedAt = time.Now()
 	cached.expirationTime = time.Now().Add(taskCacheTTL)
 
-	configmap, err := s.GetConfigmap(TaskStatusConfigMapName)
+	configmap, err := s.getConfigmap(TaskStatusConfigMapName)
 	if err != nil {
 		if canIgnoreEtcdError(err) {
 			return nil
@@ -115,7 +116,7 @@ func (s *KOTSStore) SetTaskStatus(id string, message string, status string) erro
 
 	configmap.Data[id] = string(b)
 
-	if err := s.UpdateConfigmap(configmap); err != nil {
+	if err := s.updateConfigmap(configmap); err != nil {
 		if canIgnoreEtcdError(err) {
 			return nil
 		}
@@ -135,7 +136,7 @@ func (s *KOTSStore) UpdateTaskStatusTimestamp(id string) error {
 		cached.expirationTime = time.Now().Add(taskCacheTTL)
 	}
 
-	configmap, err := s.GetConfigmap(TaskStatusConfigMapName)
+	configmap, err := s.getConfigmap(TaskStatusConfigMapName)
 	if err != nil {
 		if canIgnoreEtcdError(err) && cached != nil {
 			return nil
@@ -166,7 +167,7 @@ func (s *KOTSStore) UpdateTaskStatusTimestamp(id string) error {
 
 	configmap.Data[id] = string(b)
 
-	if err := s.UpdateConfigmap(configmap); err != nil {
+	if err := s.updateConfigmap(configmap); err != nil {
 		if canIgnoreEtcdError(err) && cached != nil {
 			return nil
 		}
@@ -182,7 +183,7 @@ func (s *KOTSStore) ClearTaskStatus(id string) error {
 
 	defer delete(s.cachedTaskStatus, id)
 
-	configmap, err := s.GetConfigmap(TaskStatusConfigMapName)
+	configmap, err := s.getConfigmap(TaskStatusConfigMapName)
 	if err != nil {
 		return errors.Wrap(err, "failed to get task status configmap")
 	}
@@ -198,7 +199,7 @@ func (s *KOTSStore) ClearTaskStatus(id string) error {
 
 	delete(configmap.Data, id)
 
-	if err := s.UpdateConfigmap(configmap); err != nil {
+	if err := s.updateConfigmap(configmap); err != nil {
 		return errors.Wrap(err, "failed to update task status configmap")
 	}
 
@@ -221,7 +222,7 @@ func (s *KOTSStore) GetTaskStatus(id string) (string, string, error) {
 		s.cachedTaskStatus[id] = cached
 	}
 
-	configmap, err := s.GetConfigmap(TaskStatusConfigMapName)
+	configmap, err := s.getConfigmap(TaskStatusConfigMapName)
 	if err != nil {
 		if canIgnoreEtcdError(err) && cached != nil {
 			return cached.taskStatus.Status, cached.taskStatus.Message, nil

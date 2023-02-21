@@ -19,7 +19,7 @@ func GetMinioImage(clientset kubernetes.Interface, kotsadmNamespace string) (str
 	 */
 
 	// expected to fail for minimal rbac
-	isKurl, _ := kurl.IsKurl()
+	isKurl, _ := kurl.IsKurl(clientset)
 	if !isKurl || kotsadmNamespace != metav1.NamespaceDefault {
 		return Minio, nil
 	}

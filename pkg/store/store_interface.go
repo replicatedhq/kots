@@ -22,7 +22,6 @@ import (
 	upstreamtypes "github.com/replicatedhq/kots/pkg/upstream/types"
 	usertypes "github.com/replicatedhq/kots/pkg/user/types"
 	troubleshootredact "github.com/replicatedhq/troubleshoot/pkg/redact"
-	corev1 "k8s.io/api/core/v1"
 )
 
 type Store interface {
@@ -45,6 +44,7 @@ type Store interface {
 	InstallationStore
 	KotsadmParamsStore
 	EmbeddedStore
+	BrandingStore
 
 	Init() error // this may need options
 	WaitForReady(ctx context.Context) error
@@ -64,6 +64,7 @@ type RegistryStore interface {
 type SupportBundleStore interface {
 	ListSupportBundles(appID string) ([]*supportbundletypes.SupportBundle, error)
 	GetSupportBundle(bundleID string) (*supportbundletypes.SupportBundle, error)
+	DeleteSupportBundle(bundleID string, appID string) error
 	CreateSupportBundle(bundleID string, appID string, archivePath string, marshalledTree []byte) (*supportbundletypes.SupportBundle, error)
 	GetSupportBundleArchive(bundleID string) (archivePath string, err error)
 	GetSupportBundleAnalysis(bundleID string) (*supportbundletypes.SupportBundleAnalysis, error)
@@ -136,8 +137,6 @@ type AppStore interface {
 	SetSnapshotSchedule(appID string, snapshotSchedule string) error
 	RemoveApp(appID string) error
 	SetAppChannelChanged(appID string, channelChanged bool) error
-	GetConfigmap(name string) (*corev1.ConfigMap, error)
-	UpdateConfigmap(configmap *corev1.ConfigMap) error
 }
 
 type DownstreamStore interface {
@@ -239,4 +238,11 @@ type KotsadmParamsStore interface {
 type EmbeddedStore interface {
 	GetEmbeddedClusterAuthToken() (string, error)
 	SetEmbeddedClusterAuthToken(token string) error
+}
+
+type BrandingStore interface {
+	GetInitialBranding() ([]byte, error)
+	CreateInitialBranding(brandingArchive []byte) (string, error)
+	GetLatestBranding() ([]byte, error)
+	GetLatestBrandingForApp(appID string) ([]byte, error)
 }

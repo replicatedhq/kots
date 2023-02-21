@@ -57,9 +57,9 @@ func getConfigCmd(cmd *cobra.Command, args []string) error {
 		return errors.Wrap(err, "failed to get clientset")
 	}
 
-	namespace := v.GetString("namespace")
-	if err := validateNamespace(namespace); err != nil {
-		return errors.Wrap(err, "failed to validate namespace")
+	namespace, err := getNamespaceOrDefault(v.GetString("namespace"))
+	if err != nil {
+		return errors.Wrap(err, "failed to get namespace")
 	}
 
 	getPodName := func() (string, error) {
@@ -68,6 +68,7 @@ func getConfigCmd(cmd *cobra.Command, args []string) error {
 
 	appSlug := v.GetString("appslug")
 	appSequence := v.GetInt64("sequence")
+	decrypt := v.GetBool("decrypt")
 
 	localPort, errChan, err := k8sutil.PortForward(0, 3000, namespace, getPodName, false, stopCh, log)
 	if err != nil {
@@ -129,9 +130,11 @@ func getConfigCmd(cmd *cobra.Command, args []string) error {
 		return errors.Wrap(err, "failed to get config")
 	}
 
-	config.ConfigGroups, err = decryptGroups(clientset, namespace, config.ConfigGroups)
-	if err != nil {
-		return errors.Wrap(err, "failed to decrypt config")
+	if decrypt {
+		config.ConfigGroups, err = decryptGroups(clientset, namespace, config.ConfigGroups)
+		if err != nil {
+			return errors.Wrap(err, "failed to decrypt config")
+		}
 	}
 
 	values := configGroupToValues(config.ConfigGroups)
@@ -211,27 +214,28 @@ func decryptGroups(clientset kubernetes.Interface, namespace string, groups []v1
 		for idx, item := range group.Items {
 			if item.Type == "password" {
 				// attempt to decrypt the password's value and default
-				decrypted, err := decryptString(item.Value.String())
-				if err == nil {
-					outGroup.Items[idx].Value = multitype.BoolOrString{
-						Type:   multitype.String,
-						StrVal: decrypted,
-					}
-				}
-
-				decrypted, err = decryptString(item.Default.String())
-				if err == nil {
-					outGroup.Items[idx].Default = multitype.BoolOrString{
-						Type:   multitype.String,
-						StrVal: decrypted,
-					}
-				}
+				outGroup.Items[idx].Value = extractString(item.Value.String())
+				outGroup.Items[idx].Default = extractString(item.Default.String())
 			}
 		}
 		outGroups = append(outGroups, *outGroup)
 	}
 
 	return outGroups, nil
+}
+
+func extractString(item string) multitype.BoolOrString {
+	if item == "" {
+		return multitype.BoolOrString{}
+	}
+	decrypted, err := decryptString(item)
+	if err != nil {
+		return multitype.BoolOrString{} // don't fail if we can't decrypt
+	}
+	return multitype.BoolOrString{
+		Type:   multitype.String,
+		StrVal: decrypted,
+	}
 }
 
 func decryptString(input string) (string, error) {

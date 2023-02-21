@@ -36,3 +36,5 @@ type IngressConfigExpansion interface{}
 type InstallationExpansion interface{}
 
 type LicenseExpansion interface{}
+
+type LintConfigExpansion interface{}

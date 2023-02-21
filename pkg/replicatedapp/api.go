@@ -12,6 +12,11 @@ import (
 	"github.com/replicatedhq/kots/pkg/util"
 )
 
+type ApplicationMetadata struct {
+	Manifest []byte
+	Branding []byte
+}
+
 const DefaultMetadata = `apiVersion: kots.io/v1beta1
 kind: Application
 metadata:
@@ -87,20 +92,29 @@ func getLicenseFromAPI(url string, licenseID string) (*LicenseData, error) {
 // GetApplicationMetadata will return any available application yaml from
 // the upstream. If there is no application.yaml, it will return
 // a placeholder one
-func GetApplicationMetadata(upstream *url.URL, versionLabel string) ([]byte, error) {
-	metadata, err := getApplicationMetadataFromHost("replicated.app", upstream, versionLabel)
+func GetApplicationMetadata(upstream *url.URL, versionLabel string) (*ApplicationMetadata, error) {
+	host := util.GetReplicatedAPIEndpoint()
+	manifest, err := getApplicationMetadataFromHost(host, "metadata", upstream, versionLabel)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to get metadata from replicated.app")
+		return nil, errors.Wrapf(err, "failed to get metadata from %s", host)
 	}
 
-	if len(metadata) == 0 {
-		metadata = []byte(DefaultMetadata)
+	if len(manifest) == 0 {
+		manifest = []byte(DefaultMetadata)
 	}
 
-	return metadata, nil
+	branding, err := getApplicationMetadataFromHost(host, "branding", upstream, versionLabel)
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to get branding from %s", host)
+	}
+
+	return &ApplicationMetadata{
+		Manifest: manifest,
+		Branding: branding,
+	}, nil
 }
 
-func getApplicationMetadataFromHost(host string, upstream *url.URL, versionLabel string) ([]byte, error) {
+func getApplicationMetadataFromHost(host string, endpoint string, upstream *url.URL, versionLabel string) ([]byte, error) {
 	r, err := ParseReplicatedURL(upstream)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to parse replicated upstream")
@@ -110,7 +124,7 @@ func getApplicationMetadataFromHost(host string, upstream *url.URL, versionLabel
 		return nil, errors.Errorf("version label in upstream (%q) does not match version label in parameter (%q)", *r.VersionLabel, versionLabel)
 	}
 
-	getUrl := fmt.Sprintf("https://%s/metadata/%s", host, url.PathEscape(r.AppSlug))
+	getUrl := fmt.Sprintf("%s/%s/%s", host, endpoint, url.PathEscape(r.AppSlug))
 
 	if r.Channel != nil {
 		getUrl = fmt.Sprintf("%s/%s", getUrl, url.PathEscape(*r.Channel))
@@ -150,30 +164,4 @@ func getApplicationMetadataFromHost(host string, upstream *url.URL, versionLabel
 	}
 
 	return respBody, nil
-}
-
-func GetSuccessfulHeadResponse(replicatedUpstream *ReplicatedUpstream, license *kotsv1beta1.License) error {
-	headReq, err := replicatedUpstream.GetRequest("HEAD", license, ReplicatedCursor{})
-	if err != nil {
-		return errors.Wrap(err, "failed to create http request")
-	}
-	headResp, err := http.DefaultClient.Do(headReq)
-	if err != nil {
-		return errors.Wrap(err, "failed to execute head request")
-	}
-	defer headResp.Body.Close()
-
-	if headResp.StatusCode == 401 {
-		return errors.New("license was not accepted")
-	}
-
-	if headResp.StatusCode == 403 {
-		return util.ActionableError{Message: "License is expired"}
-	}
-
-	if headResp.StatusCode >= 400 {
-		return errors.Errorf("unexpected result from head request: %d", headResp.StatusCode)
-	}
-
-	return nil
 }

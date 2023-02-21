@@ -12,18 +12,22 @@ import (
 	"github.com/replicatedhq/kots/pkg/logger"
 )
 
+const (
+	DefaultLogParserBufferSize = 1024 * 1024
+)
+
 var (
 	stdoutPrefix = regexp.MustCompile(`^stdout: `)
 	stderrPrefix = regexp.MustCompile(`^stderr: `)
 )
 
-func parseLogs(reader io.Reader) ([]types.SnapshotError, []types.SnapshotError, []*types.SnapshotHook, error) {
+func parseLogs(reader io.Reader, bufferSize int) ([]types.SnapshotError, []types.SnapshotError, []*types.SnapshotHook, error) {
 	errs := []types.SnapshotError{}
 	warnings := []types.SnapshotError{}
 	execs := []*types.SnapshotHook{}
 	openExecs := map[string]*types.SnapshotHook{}
 
-	d := logfmt.NewDecoder(reader)
+	d := logfmt.NewDecoderSize(reader, bufferSize)
 	for d.ScanRecord() {
 		line := map[string]string{}
 		for d.ScanKeyval() {

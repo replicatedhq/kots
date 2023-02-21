@@ -11,8 +11,8 @@ export default function SubNavBar({
   activeTab,
   app,
   isVeleroInstalled,
-  isAccess,
-  isSnapshots,
+  isAccess = false,
+  isSnapshots = false,
   isHelmManaged,
 }) {
   let { slug } = app;
@@ -75,9 +75,9 @@ export default function SubNavBar({
                 const generatedMenuItem = (
                   <li
                     key={idx}
-                    className={classNames({
-                      "is-active": activeTab === link.tabName,
-                    })}
+                    className={`subnav-item ${
+                      activeTab === link.tabName && "is-active"
+                    }`}
                   >
                     <Link to={link.to()}>{link.displayName}</Link>
                   </li>
@@ -91,9 +91,9 @@ export default function SubNavBar({
                 const generatedMenuItem = (
                   <li
                     key={idx}
-                    className={classNames({
-                      "is-active": activeTab === link.tabName,
-                    })}
+                    className={`subnav-item ${
+                      activeTab === link.tabName && "is-active"
+                    }`}
                   >
                     <Link to={link.to(slug)}>{link.displayName}</Link>
                   </li>
@@ -110,9 +110,9 @@ export default function SubNavBar({
                 const generatedMenuItem = (
                   <li
                     key={idx}
-                    className={classNames({
-                      "is-active": activeTab === link.tabName,
-                    })}
+                    className={`subnav-item ${
+                      activeTab === link.tabName ? "is-active" : ""
+                    }`}
                   >
                     <Link to={link.to(slug, kotsSequence, configSequence)}>
                       {link.displayName}{" "}

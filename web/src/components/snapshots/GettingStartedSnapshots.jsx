@@ -15,7 +15,7 @@ export default function GettingStartedSnapshots(props) {
   } = props;
 
   return (
-    <div className="flex flex-column GettingStartedSnapshots--wrapper alignItems--center">
+    <div className="flex flex-column card-item GettingStartedSnapshots--wrapper  alignItems--center">
       <span className="icon snapshot-getstarted-icon" />
       <p className="u-fontSize--jumbo2 u-fontWeight--bold u-lineHeight--more u-textColor--secondary u-marginTop--20">
         {" "}
@@ -32,10 +32,7 @@ export default function GettingStartedSnapshots(props) {
       ) : isVeleroInstalled ? (
         <p className="u-marginTop--10 u-fontSize--normal u-lineHeight--more u-fontWeight--medium u-textColor--bodyCopy">
           Now that Velero is configured, you can start making snapshots. You can{" "}
-          <Link
-            to="/snapshots/settings"
-            className="replicated-link u-fontSize--normal"
-          >
+          <Link to="/snapshots/settings" className="link u-fontSize--normal">
             create a schedule{" "}
           </Link>
           for automatic snapshots or you can trigger one manually whenever you’d
@@ -45,10 +42,10 @@ export default function GettingStartedSnapshots(props) {
         <p className="u-marginTop--10 u-fontSize--normal u-lineHeight--more u-fontWeight--medium u-textColor--bodyCopy">
           To start backing up your data and applications, you need to have{" "}
           <a
-            href="https://velero.io/docs/v1.6/basic-install/"
+            href="https://velero.io/docs/v1.10/basic-install/"
             target="_blank"
             rel="noopener noreferrer"
-            className="replicated-link u-fontSize--normal"
+            className="link u-fontSize--normal"
           >
             Velero
           </a>{" "}

@@ -10,6 +10,7 @@ import (
 	"sort"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/blang/semver"
 	"github.com/containers/image/v5/docker"
@@ -17,20 +18,34 @@ import (
 	"github.com/pkg/errors"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	apptypes "github.com/replicatedhq/kots/pkg/app/types"
+	"github.com/replicatedhq/kots/pkg/k8sutil"
+	kotsadmtypes "github.com/replicatedhq/kots/pkg/kotsadm/types"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/logger"
 	storetypes "github.com/replicatedhq/kots/pkg/store/types"
 	"github.com/replicatedhq/kots/pkg/util"
 	"go.uber.org/zap"
+	"gopkg.in/yaml.v3"
 	helmgetter "helm.sh/helm/v3/pkg/getter"
 	corev1 "k8s.io/api/core/v1"
+	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes/scheme"
 )
 
 type ChartUpdate struct {
-	Tag     string
-	Version semver.Version
-	Status  storetypes.DownstreamVersionStatus
+	Tag          string
+	Version      semver.Version
+	Status       storetypes.DownstreamVersionStatus
+	CreatedOn    *time.Time
+	IsDownloaded bool
+}
+
+type ReplicatedMeta struct {
+	LicenseID string     `yaml:"license_id"`
+	Username  string     `yaml:"username"`
+	CreatedAt *time.Time `yaml:"created_at"`
+	// TODO "app": map[string][]byte
 }
 
 type ChartUpdates []ChartUpdate
@@ -71,11 +86,37 @@ func GetCachedUpdates(chartPath string) ChartUpdates {
 	return updateCache[chartPath]
 }
 
-func SetCachedUpdateStatus(chartPath string, tag string, stauts storetypes.DownstreamVersionStatus) {
+func GetDownloadedUpdates(chartPath string) ChartUpdates {
+	updateCacheMutex.Lock()
+	defer updateCacheMutex.Unlock()
+
+	downloadedUpdates := ChartUpdates{}
+	for _, u := range updateCache[chartPath] {
+		if u.IsDownloaded {
+			downloadedUpdates = append(downloadedUpdates, u)
+		}
+	}
+	return downloadedUpdates
+}
+
+func SetCachedUpdateStatus(chartPath string, tag string, status storetypes.DownstreamVersionStatus) {
 	updates := GetCachedUpdates(chartPath)
 	for i, u := range updates {
 		if u.Tag == tag {
-			updates[i].Status = stauts
+			updates[i].Status = status
+			break
+		}
+	}
+}
+
+func SetCachedUpdateMetadata(chartPath string, tag string, meta *ReplicatedMeta) {
+	updates := GetCachedUpdates(chartPath)
+	for i, u := range updates {
+		if u.Tag == tag {
+			updates[i].IsDownloaded = true // Metadata is only known when version is downloaded
+			if meta != nil {
+				updates[i].CreatedOn = meta.CreatedAt
+			}
 			break
 		}
 	}
@@ -162,8 +203,9 @@ func CheckForUpdates(helmApp *apptypes.HelmApp, license *kotsv1beta1.License, cu
 		}
 
 		availableUpdates = append(availableUpdates, ChartUpdate{
-			Tag:     tag,
-			Version: v,
+			Tag:          tag,
+			Version:      v,
+			IsDownloaded: false,
 		})
 	}
 
@@ -189,37 +231,23 @@ func removeDuplicates(tags []string) []string {
 }
 
 func GetKotsKindsFromUpstreamChartVersion(helmApp *apptypes.HelmApp, licenseID string, version string) (kotsutil.KotsKinds, error) {
-	chartData, err := getUpdateChartFromCache(helmApp, version)
+	secret, err := GetReplicatedSecretFromUpstreamChartVersion(helmApp, licenseID, version)
 	if err != nil {
-		logger.Info("failed to get chart release from cache", zap.String("error", err.Error()))
+		return kotsutil.KotsKinds{}, errors.Wrap(err, "failed to get secret upstream archive")
 	}
 
-	if chartData == nil {
-		chartData, err = pullChartVersion(helmApp, licenseID, version)
-		if err != nil {
-			return kotsutil.KotsKinds{}, errors.Wrap(err, "failed to pull chart data")
-		}
-	}
-
-	kotsKinds, err := GetKotsKindsFromChartArchive(chartData)
+	kotsKinds, err := GetKotsKindsFromReplicatedSecret(secret)
 	if err != nil {
-		return kotsutil.KotsKinds{}, errors.Wrap(err, "failed to get kotskinds from chart archive")
+		return kotsKinds, errors.Wrap(err, "failed to get kots kinds from secret")
 	}
 
 	return kotsKinds, nil
 }
 
 func GetReplicatedSecretFromUpstreamChartVersion(helmApp *apptypes.HelmApp, licenseID string, version string) (*corev1.Secret, error) {
-	chartData, err := getUpdateChartFromCache(helmApp, version)
+	chartData, err := downloadChartReleaseIfNeeded(helmApp, licenseID, version)
 	if err != nil {
-		logger.Info("failed to get chart release from cache", zap.String("error", err.Error()))
-	}
-
-	if chartData == nil {
-		chartData, err = pullChartVersion(helmApp, licenseID, version)
-		if err != nil {
-			return nil, errors.Wrap(err, "failed to pull chart data")
-		}
+		return nil, errors.Wrap(err, "failed to get chart data")
 	}
 
 	templatedData, err := util.GetFileFromTGZArchive(chartData, "**/templates/_replicated/secret.yaml")
@@ -245,8 +273,40 @@ func GetReplicatedSecretFromUpstreamChartVersion(helmApp *apptypes.HelmApp, lice
 	return obj.(*corev1.Secret), nil
 }
 
-func pullChartVersion(helmApp *apptypes.HelmApp, licenseID string, version string) (*bytes.Buffer, error) {
-	err := CreateHelmRegistryCreds(licenseID, licenseID, helmApp.ChartPath)
+func GetReplicatedMetadataFromUpstreamChartVersion(helmApp *apptypes.HelmApp, licenseID string, version string) (*ReplicatedMeta, error) {
+	chartData, err := downloadChartReleaseIfNeeded(helmApp, licenseID, version)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get chart data")
+	}
+
+	valuesData, err := util.GetFileFromTGZArchive(chartData, "**/values.yaml")
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get values.yaml from chart archive")
+	}
+
+	b := valuesData.Bytes()
+	values := struct {
+		Replicated *ReplicatedMeta `yaml:"replicated,omitempty"`
+	}{}
+	err = yaml.Unmarshal(b, &values)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to decode values.yaml")
+	}
+
+	return values.Replicated, nil
+}
+
+func downloadChartReleaseIfNeeded(helmApp *apptypes.HelmApp, licenseID string, version string) (*bytes.Buffer, error) {
+	chartData, err := getUpdateChartFromCache(helmApp, version)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get release from cache")
+	}
+
+	if chartData != nil {
+		return chartData, nil
+	}
+
+	err = CreateHelmRegistryCreds(licenseID, licenseID, helmApp.ChartPath)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create helm credentials file")
 	}
@@ -256,7 +316,7 @@ func pullChartVersion(helmApp *apptypes.HelmApp, licenseID string, version strin
 	}
 
 	imageName := fmt.Sprintf("%s:%s", helmApp.ChartPath, version)
-	chartData, err := chartGetter.Get(imageName)
+	chartData, err = chartGetter.Get(imageName)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to get chart %q", imageName)
 	}
@@ -315,4 +375,81 @@ func saveUpdateChartInCache(helmApp *apptypes.HelmApp, version string, data *byt
 
 func getUpdateChacheFileName(helmApp *apptypes.HelmApp, version string) string {
 	return filepath.Join(updateCacheDir, strings.TrimPrefix(helmApp.ChartPath, "oci://"), fmt.Sprintf("%s.tgz", version))
+}
+
+func GetUpdateCheckSpec(helmApp *apptypes.HelmApp) (string, error) {
+	clientset, err := k8sutil.GetClientset()
+	if err != nil {
+		return "", errors.Wrap(err, "failed to get clientset")
+	}
+
+	spec := "@default"
+
+	cm, err := clientset.CoreV1().ConfigMaps(util.PodNamespace).Get(context.TODO(), kotsadmtypes.KotsadmConfigMap, metav1.GetOptions{})
+	if err != nil && !kuberneteserrors.IsNotFound(err) {
+		return "", errors.Wrap(err, "failed to get configmap")
+	} else if kuberneteserrors.IsNotFound(err) {
+		return spec, nil
+	}
+
+	if cm.Data == nil {
+		return spec, nil
+	}
+
+	key := fmt.Sprintf("update-schedule-%s", helmApp.GetID())
+	if s := cm.Data[key]; s != "" {
+		spec = s
+	}
+
+	return spec, nil
+}
+
+var configMapMutex sync.Mutex
+
+func SetUpdateCheckSpec(helmApp *apptypes.HelmApp, updateSpec string) error {
+	configMapMutex.Lock()
+	defer configMapMutex.Unlock()
+
+	clientset, err := k8sutil.GetClientset()
+	if err != nil {
+		return errors.Wrap(err, "failed to get clientset")
+	}
+
+	key := fmt.Sprintf("update-schedule-%s", helmApp.GetID())
+
+	cm, err := clientset.CoreV1().ConfigMaps(util.PodNamespace).Get(context.TODO(), kotsadmtypes.KotsadmConfigMap, metav1.GetOptions{})
+	if err != nil && !kuberneteserrors.IsNotFound(err) {
+		return errors.Wrap(err, "failed to get configmap")
+	} else if kuberneteserrors.IsNotFound(err) {
+		cm := &corev1.ConfigMap{
+			TypeMeta: metav1.TypeMeta{
+				APIVersion: "v1",
+				Kind:       "ConfigMap",
+			},
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      kotsadmtypes.KotsadmConfigMap,
+				Namespace: util.PodNamespace,
+				Labels:    kotsadmtypes.GetKotsadmLabels(),
+			},
+			Data: map[string]string{
+				key: updateSpec,
+			},
+		}
+		_, err = clientset.CoreV1().ConfigMaps(util.PodNamespace).Create(context.Background(), cm, metav1.CreateOptions{})
+		if err != nil {
+			return errors.Wrap(err, "failed to update config map")
+		}
+	}
+
+	if cm.Data == nil {
+		cm.Data = map[string]string{}
+	}
+	cm.Data[key] = updateSpec
+
+	_, err = clientset.CoreV1().ConfigMaps(util.PodNamespace).Update(context.Background(), cm, metav1.UpdateOptions{})
+	if err != nil {
+		return errors.Wrap(err, "failed to update config map")
+	}
+
+	return nil
 }

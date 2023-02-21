@@ -7,6 +7,7 @@ import (
 	"os"
 
 	"github.com/pkg/errors"
+	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/kurl"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/upload"
@@ -35,7 +36,12 @@ func UpstreamUpgradeCmd() *cobra.Command {
 
 			appSlug := args[0]
 
-			isKurl, err := kurl.IsKurl()
+			clientset, err := k8sutil.GetClientset()
+			if err != nil {
+				return errors.Wrap(err, "failed to get k8s clientset")
+			}
+
+			isKurl, err := kurl.IsKurl(clientset)
 			if err != nil {
 				return errors.Wrap(err, "failed to check if cluster is kurl")
 			}
@@ -43,6 +49,11 @@ func UpstreamUpgradeCmd() *cobra.Command {
 			output := v.GetString("output")
 			if output != "json" && output != "" {
 				return errors.Errorf("output format %s not supported (allowed formats are: json)", output)
+			}
+
+			namespace, err := getNamespaceOrDefault(v.GetString("namespace"))
+			if err != nil {
+				return errors.Wrap(err, "failed to get namespace")
 			}
 
 			upgradeOptions := upstream.UpgradeOptions{
@@ -53,7 +64,7 @@ func UpstreamUpgradeCmd() *cobra.Command {
 				RegistryPassword:   v.GetString("registry-password"),
 				IsKurl:             isKurl,
 				DisableImagePush:   v.GetBool("disable-image-push"),
-				Namespace:          v.GetString("namespace"),
+				Namespace:          namespace,
 				Debug:              v.GetBool("debug"),
 				Deploy:             v.GetBool("deploy"),
 				DeployVersionLabel: v.GetString("deploy-version-label"),

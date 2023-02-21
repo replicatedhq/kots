@@ -1,8 +1,7 @@
-image kotsadm-migrations docker.io/kotsadm/kotsadm-migrations:__KOTSADM_TAG__
-image kotsadm docker.io/kotsadm/kotsadm:__KOTSADM_TAG__
-image kurl-proxy docker.io/kotsadm/kurl-proxy:__KOTSADM_TAG__
-image postgres-10 postgres:__POSTGRES_10_TAG__
-image postgres-14 postgres:__POSTGRES_14_TAG__
-image dex docker.io/kotsadm/dex:__DEX_TAG__
+image kotsadm-migrations __KOTSADM_MIGRATIONS_IMAGE__
+image kotsadm __KOTSADM_IMAGE__
+image kurl-proxy __KURL_PROXY_IMAGE__
+image rqlite rqlite/rqlite:__RQLITE_TAG__
+image dex __DEX_IMAGE__
 
-asset kots.tar.gz https://github.com/replicatedhq/kots/releases/download/__KOTSADM_BINARY_VERSION__/kots_linux_amd64.tar.gz
+asset kots.tar.gz __KOTSADM_BINARY__

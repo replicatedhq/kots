@@ -1,3 +1,5 @@
+@import "../../variables.scss";
+
 .GenerateSupportBundle--wrapper {
   .full-width-container {
     max-width: 90%;
@@ -29,4 +31,18 @@
     color: white;
     margin: 15px 0;
   }
+}
+
+.GenerateSupportBundleDetails {
+  border: 1px dashed #c4c7ca66;
+}
+
+.has-file-border {
+  border: 1px solid $success-color;
+  color: $success-color;
+  padding: 18px;
+  border-radius: 4px;
+  width: 100%;
+  display: flex;
+  align-items: center;
 }

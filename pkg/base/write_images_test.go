@@ -18,28 +18,27 @@ import (
 )
 
 func Test_RewriteImages(t *testing.T) {
-	testBaseDir := "./testdata/base-specs"
-	appSlug := "test-app-slug"
-
-	replicatedRegistry := registrytypes.RegistryOptions{
-		Endpoint:      "registry.replicated.com",
-		ProxyEndpoint: "proxy.replicated.com",
-		Username:      "test-license-id",
-		Password:      "test-license-id",
-	}
-
 	tests := []struct {
 		name              string
+		baseDir           string
+		appSlug           string
 		processOptions    RewriteImageOptions
 		wantProcessResult RewriteImagesResult
 		findOptions       FindPrivateImagesOptions
 		wantFindResult    FindPrivateImagesResult
 	}{
 		{
-			name: "all unique",
+			name:    "all unique",
+			baseDir: "./testdata/base-specs",
+			appSlug: "test-app-slug",
 			processOptions: RewriteImageOptions{
-				BaseDir:        testBaseDir,
-				SourceRegistry: replicatedRegistry,
+				BaseDir: "./testdata/base-specs",
+				SourceRegistry: registrytypes.RegistryOptions{
+					Endpoint:      "registry.replicated.com",
+					ProxyEndpoint: "proxy.replicated.com",
+					Username:      "test-license-id",
+					Password:      "test-license-id",
+				},
 				KotsKinds: &kotsutil.KotsKinds{
 					KotsApplication: kotsv1beta1.Application{
 						Spec: kotsv1beta1.ApplicationSpec{
@@ -83,7 +82,7 @@ func Test_RewriteImages(t *testing.T) {
 					},
 				},
 				CopyImages: false,
-				AppSlug:    appSlug,
+				AppSlug:    "test-app-slug",
 				DestRegistry: registrytypes.RegistryOptions{
 					Endpoint:  "ttl.sh",
 					Namespace: "testing-ns",
@@ -216,11 +215,16 @@ func Test_RewriteImages(t *testing.T) {
 			},
 
 			findOptions: FindPrivateImagesOptions{
-				BaseDir:            testBaseDir,
-				AppSlug:            appSlug,
-				ReplicatedRegistry: replicatedRegistry,
-				Installation:       &kotsv1beta1.Installation{},
-				AllImagesPrivate:   false,
+				BaseDir: "./testdata/base-specs",
+				AppSlug: "test-app-slug",
+				ReplicatedRegistry: registrytypes.RegistryOptions{
+					Endpoint:      "registry.replicated.com",
+					ProxyEndpoint: "proxy.replicated.com",
+					Username:      "test-license-id",
+					Password:      "test-license-id",
+				},
+				Installation:     &kotsv1beta1.Installation{},
+				AllImagesPrivate: false,
 			},
 			wantFindResult: FindPrivateImagesResult{
 				Images: []kustomizeimage.Image{
@@ -271,6 +275,214 @@ func Test_RewriteImages(t *testing.T) {
 				},
 			},
 		},
+		{
+			name:    "replicated registry with custom domains configured should rewrite replicated images and not custom domain images",
+			baseDir: "./testdata/replicated-registry",
+			appSlug: "test-app-slug",
+			processOptions: RewriteImageOptions{
+				BaseDir: "./testdata/replicated-registry",
+				SourceRegistry: registrytypes.RegistryOptions{
+					Endpoint:         "my-registry.example.com",
+					ProxyEndpoint:    "my-proxy.example.com",
+					UpstreamEndpoint: "registry.replicated.com",
+					Username:         "test-license-id",
+					Password:         "test-license-id",
+				},
+				KotsKinds: &kotsutil.KotsKinds{
+					KotsApplication: kotsv1beta1.Application{
+						Spec: kotsv1beta1.ApplicationSpec{
+							AdditionalImages: []string{},
+						},
+					},
+				},
+				CopyImages: false,
+				AppSlug:    "test-app-slug",
+				DestRegistry: registrytypes.RegistryOptions{
+					Endpoint:  "ttl.sh",
+					Namespace: "testing-ns",
+					Username:  "testing-user-name",
+					Password:  "testing-password",
+				},
+			},
+			wantProcessResult: RewriteImagesResult{
+				Images: []kustomizeimage.Image{
+					{
+						Name:    "registry.replicated.com/appslug/image",
+						NewName: "ttl.sh/testing-ns/image",
+						NewTag:  "version",
+					},
+					{
+						Name:    "my-registry.example.com/appslug/some-other-image",
+						NewName: "ttl.sh/testing-ns/some-other-image",
+						NewTag:  "version",
+					},
+					{
+						Name:    "quay.io/replicatedcom/someimage",
+						NewName: "ttl.sh/testing-ns/someimage",
+						NewTag:  "1",
+					},
+				},
+				CheckedImages: []kotsv1beta1.InstallationImage{
+					{
+						Image:     "registry.replicated.com/appslug/image:version",
+						IsPrivate: true,
+					},
+					{
+						Image:     "my-registry.example.com/appslug/some-other-image:version",
+						IsPrivate: true,
+					},
+					{
+						Image:     "quay.io/replicatedcom/someimage:1",
+						IsPrivate: true,
+					},
+				},
+			},
+
+			findOptions: FindPrivateImagesOptions{
+				BaseDir: "./testdata/replicated-registry",
+				AppSlug: "test-app-slug",
+				ReplicatedRegistry: registrytypes.RegistryOptions{
+					Endpoint:         "my-registry.example.com",
+					ProxyEndpoint:    "my-proxy.example.com",
+					UpstreamEndpoint: "registry.replicated.com",
+					Username:         "test-license-id",
+					Password:         "test-license-id",
+				},
+				Installation:     &kotsv1beta1.Installation{},
+				AllImagesPrivate: false,
+			},
+			wantFindResult: FindPrivateImagesResult{
+				Images: []kustomizeimage.Image{
+					{
+						Name:    "registry.replicated.com/appslug/image",
+						NewName: "my-registry.example.com/appslug/image",
+						NewTag:  "version",
+					},
+					{
+						Name:    "quay.io/replicatedcom/someimage",
+						NewName: "my-proxy.example.com/proxy/test-app-slug/quay.io/replicatedcom/someimage",
+						NewTag:  "1",
+					},
+				},
+				CheckedImages: []kotsv1beta1.InstallationImage{
+					{
+						Image:     "registry.replicated.com/appslug/image:version",
+						IsPrivate: true,
+					},
+					{
+						Image:     "my-registry.example.com/appslug/some-other-image:version",
+						IsPrivate: true,
+					},
+					{
+						Image:     "quay.io/replicatedcom/someimage:1",
+						IsPrivate: true,
+					},
+				},
+			},
+		},
+		{
+			name:    "replicated registry without custom domains should not rewrite replicated registry images",
+			baseDir: "./testdata/replicated-registry",
+			appSlug: "test-app-slug",
+			processOptions: RewriteImageOptions{
+				BaseDir: "./testdata/replicated-registry",
+				SourceRegistry: registrytypes.RegistryOptions{
+					Endpoint:      "registry.replicated.com",
+					ProxyEndpoint: "proxy.replicated.com",
+					Username:      "test-license-id",
+					Password:      "test-license-id",
+				},
+				KotsKinds: &kotsutil.KotsKinds{
+					KotsApplication: kotsv1beta1.Application{
+						Spec: kotsv1beta1.ApplicationSpec{
+							AdditionalImages: []string{},
+						},
+					},
+				},
+				CopyImages: false,
+				AppSlug:    "test-app-slug",
+				DestRegistry: registrytypes.RegistryOptions{
+					Endpoint:  "ttl.sh",
+					Namespace: "testing-ns",
+					Username:  "testing-user-name",
+					Password:  "testing-password",
+				},
+			},
+			wantProcessResult: RewriteImagesResult{
+				Images: []kustomizeimage.Image{
+					{
+						Name:    "registry.replicated.com/appslug/image",
+						NewName: "ttl.sh/testing-ns/image",
+						NewTag:  "version",
+					},
+					{
+						Name:    "my-registry.example.com/appslug/some-other-image",
+						NewName: "ttl.sh/testing-ns/some-other-image",
+						NewTag:  "version",
+					},
+					{
+						Name:    "quay.io/replicatedcom/someimage",
+						NewName: "ttl.sh/testing-ns/someimage",
+						NewTag:  "1",
+					},
+				},
+				CheckedImages: []kotsv1beta1.InstallationImage{
+					{
+						Image:     "registry.replicated.com/appslug/image:version",
+						IsPrivate: true,
+					},
+					{
+						Image:     "my-registry.example.com/appslug/some-other-image:version",
+						IsPrivate: true,
+					},
+					{
+						Image:     "quay.io/replicatedcom/someimage:1",
+						IsPrivate: true,
+					},
+				},
+			},
+
+			findOptions: FindPrivateImagesOptions{
+				BaseDir: "./testdata/replicated-registry",
+				AppSlug: "test-app-slug",
+				ReplicatedRegistry: registrytypes.RegistryOptions{
+					Endpoint:      "registry.replicated.com",
+					ProxyEndpoint: "proxy.replicated.com",
+					Username:      "test-license-id",
+					Password:      "test-license-id",
+				},
+				Installation:     &kotsv1beta1.Installation{},
+				AllImagesPrivate: false,
+			},
+			wantFindResult: FindPrivateImagesResult{
+				Images: []kustomizeimage.Image{
+					{
+						Name:    "my-registry.example.com/appslug/some-other-image",
+						NewName: "proxy.replicated.com/proxy/test-app-slug/my-registry.example.com/appslug/some-other-image",
+						NewTag:  "version",
+					},
+					{
+						Name:    "quay.io/replicatedcom/someimage",
+						NewName: "proxy.replicated.com/proxy/test-app-slug/quay.io/replicatedcom/someimage",
+						NewTag:  "1",
+					},
+				},
+				CheckedImages: []kotsv1beta1.InstallationImage{
+					{
+						Image:     "registry.replicated.com/appslug/image:version",
+						IsPrivate: true,
+					},
+					{
+						Image:     "my-registry.example.com/appslug/some-other-image:version",
+						IsPrivate: true,
+					},
+					{
+						Image:     "quay.io/replicatedcom/someimage:1",
+						IsPrivate: true,
+					},
+				},
+			},
+		},
 	}
 
 	for _, test := range tests {
@@ -287,7 +499,7 @@ func Test_RewriteImages(t *testing.T) {
 			gotFindResult, err := FindPrivateImages(test.findOptions)
 			req.NoError(err)
 
-			wantDocs, err := loadDocs(testBaseDir)
+			wantDocs, err := loadDocs(test.baseDir)
 			req.NoError(err)
 
 			assert.ElementsMatch(t, test.wantFindResult.Images, gotFindResult.Images)

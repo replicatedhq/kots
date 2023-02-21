@@ -1,7 +1,6 @@
 package kotsstore
 
 import (
-	"database/sql"
 	"fmt"
 	"strings"
 	"time"
@@ -11,11 +10,11 @@ import (
 	downstreamtypes "github.com/replicatedhq/kots/pkg/api/downstream/types"
 	apptypes "github.com/replicatedhq/kots/pkg/app/types"
 	"github.com/replicatedhq/kots/pkg/gitops"
-	"github.com/replicatedhq/kots/pkg/kotsadm/types"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/persistence"
 	troubleshootanalyze "github.com/replicatedhq/troubleshoot/pkg/analyze"
+	"github.com/rqlite/gorqlite"
 	"github.com/segmentio/ksuid"
 	"go.uber.org/zap"
 )
@@ -28,10 +27,13 @@ func (s *KOTSStore) AddAppToAllDownstreams(appID string) error {
 		return errors.Wrap(err, "failed to list clusters")
 	}
 	for _, cluster := range clusters {
-		query := `insert into app_downstream (app_id, cluster_id, downstream_name) values ($1, $2, $3) ON CONFLICT DO NOTHING`
-		_, err = db.Exec(query, appID, cluster.ClusterID, cluster.Name)
+		query := `insert into app_downstream (app_id, cluster_id, downstream_name) values (?, ?, ?) ON CONFLICT DO NOTHING`
+		wr, err := db.WriteOneParameterized(gorqlite.ParameterizedStatement{
+			Query:     query,
+			Arguments: []interface{}{appID, cluster.ClusterID, cluster.Name},
+		})
 		if err != nil {
-			return errors.Wrap(err, "failed to create app downstream")
+			return fmt.Errorf("failed to create app downstream: %v: %v", err, wr.Err)
 		}
 	}
 
@@ -41,10 +43,13 @@ func (s *KOTSStore) AddAppToAllDownstreams(appID string) error {
 func (s *KOTSStore) SetAppInstallState(appID string, state string) error {
 	db := persistence.MustGetDBSession()
 
-	query := `update app set install_state = $1 where id = $2`
-	_, err := db.Exec(query, state, appID)
+	query := `update app set install_state = ? where id = ?`
+	wr, err := db.WriteOneParameterized(gorqlite.ParameterizedStatement{
+		Query:     query,
+		Arguments: []interface{}{state, appID},
+	})
 	if err != nil {
-		return errors.Wrap(err, "failed to update app install state")
+		return fmt.Errorf("failed to update app install state: %v: %v", err, wr.Err)
 	}
 
 	return nil
@@ -53,11 +58,10 @@ func (s *KOTSStore) SetAppInstallState(appID string, state string) error {
 func (s *KOTSStore) ListInstalledApps() ([]*apptypes.App, error) {
 	db := persistence.MustGetDBSession()
 	query := `select id from app where install_state = 'installed'`
-	rows, err := db.Query(query)
+	rows, err := db.QueryOne(query)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to query db")
+		return nil, fmt.Errorf("failed to query: %v: %v", err, rows.Err)
 	}
-	defer rows.Close()
 
 	apps := []*apptypes.App{}
 	for rows.Next() {
@@ -78,11 +82,10 @@ func (s *KOTSStore) ListInstalledApps() ([]*apptypes.App, error) {
 func (s *KOTSStore) ListFailedApps() ([]*apptypes.App, error) {
 	db := persistence.MustGetDBSession()
 	query := `select id from app where install_state != 'installed'`
-	rows, err := db.Query(query)
+	rows, err := db.QueryOne(query)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to query db")
+		return nil, fmt.Errorf("failed to query: %v: %v", err, rows.Err)
 	}
-	defer rows.Close()
 
 	apps := []*apptypes.App{}
 	for rows.Next() {
@@ -103,11 +106,10 @@ func (s *KOTSStore) ListFailedApps() ([]*apptypes.App, error) {
 func (s *KOTSStore) ListInstalledAppSlugs() ([]string, error) {
 	db := persistence.MustGetDBSession()
 	query := `select slug from app where install_state = 'installed'`
-	rows, err := db.Query(query)
+	rows, err := db.QueryOne(query)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to query db")
+		return nil, fmt.Errorf("failed to query: %v: %v", err, rows.Err)
 	}
-	defer rows.Close()
 
 	appSlugs := []string{}
 	for rows.Next() {
@@ -122,12 +124,20 @@ func (s *KOTSStore) ListInstalledAppSlugs() ([]string, error) {
 
 func (s *KOTSStore) GetAppIDFromSlug(slug string) (string, error) {
 	db := persistence.MustGetDBSession()
-	query := `select id from app where slug = $1`
-	row := db.QueryRow(query, slug)
+	query := `select id from app where slug = ?`
+	rows, err := db.QueryOneParameterized(gorqlite.ParameterizedStatement{
+		Query:     query,
+		Arguments: []interface{}{slug},
+	})
+	if err != nil {
+		return "", fmt.Errorf("failed to query: %v: %v", err, rows.Err)
+	}
+	if !rows.Next() {
+		return "", ErrNotFound
+	}
 
 	id := ""
-
-	if err := row.Scan(&id); err != nil {
+	if err := rows.Scan(&id); err != nil {
 		return "", errors.Wrap(err, "failed to scan id")
 	}
 
@@ -135,47 +145,52 @@ func (s *KOTSStore) GetAppIDFromSlug(slug string) (string, error) {
 }
 
 func (s *KOTSStore) GetApp(id string) (*apptypes.App, error) {
-
-	// too noisy
-	// logger.Debug("getting app from id",
-	// 	zap.String("id", id))
-
 	db := persistence.MustGetDBSession()
-	query := `select id, name, license, upstream_uri, icon_uri, created_at, updated_at, slug, current_sequence, last_update_check_at, last_license_sync, is_airgap, snapshot_ttl_new, snapshot_schedule, restore_in_progress_name, restore_undeploy_status, update_checker_spec, semver_auto_deploy, install_state, channel_changed from app where id = $1`
-	row := db.QueryRow(query, id)
+	query := `select id, name, license, upstream_uri, icon_uri, created_at, updated_at, slug, current_sequence, last_update_check_at, last_license_sync, is_airgap, snapshot_ttl_new, snapshot_schedule, restore_in_progress_name, restore_undeploy_status, update_checker_spec, semver_auto_deploy, install_state, channel_changed from app where id = ?`
+	rows, err := db.QueryOneParameterized(gorqlite.ParameterizedStatement{
+		Query:     query,
+		Arguments: []interface{}{id},
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to query app: %v: %v", err, rows.Err)
+	}
+	if !rows.Next() {
+		return nil, ErrNotFound
+	}
 
 	app := apptypes.App{}
 
-	var licenseStr sql.NullString
-	var upstreamURI sql.NullString
-	var iconURI sql.NullString
-	var createdAt persistence.StringTime
-	var updatedAt persistence.NullStringTime
-	var currentSequence sql.NullInt64
-	var lastUpdateCheckAt persistence.NullStringTime
-	var lastLicenseSync sql.NullString
-	var snapshotTTLNew sql.NullString
-	var snapshotSchedule sql.NullString
-	var restoreInProgressName sql.NullString
-	var restoreUndeployStatus sql.NullString
-	var updateCheckerSpec sql.NullString
-	var autoDeploy sql.NullString
+	var licenseStr gorqlite.NullString
+	var upstreamURI gorqlite.NullString
+	var iconURI gorqlite.NullString
+	var updatedAt gorqlite.NullTime
+	var currentSequence gorqlite.NullInt64
+	var lastUpdateCheckAt gorqlite.NullTime
+	var lastLicenseSync gorqlite.NullTime
+	var snapshotTTLNew gorqlite.NullString
+	var snapshotSchedule gorqlite.NullString
+	var restoreInProgressName gorqlite.NullString
+	var restoreUndeployStatus gorqlite.NullString
+	var updateCheckerSpec gorqlite.NullString
+	var autoDeploy gorqlite.NullString
 
-	if err := row.Scan(&app.ID, &app.Name, &licenseStr, &upstreamURI, &iconURI, &createdAt, &updatedAt, &app.Slug, &currentSequence, &lastUpdateCheckAt, &lastLicenseSync, &app.IsAirgap, &snapshotTTLNew, &snapshotSchedule, &restoreInProgressName, &restoreUndeployStatus, &updateCheckerSpec, &autoDeploy, &app.InstallState, &app.ChannelChanged); err != nil {
+	if err := rows.Scan(&app.ID, &app.Name, &licenseStr, &upstreamURI, &iconURI, &app.CreatedAt, &updatedAt, &app.Slug, &currentSequence, &lastUpdateCheckAt, &lastLicenseSync, &app.IsAirgap, &snapshotTTLNew, &snapshotSchedule, &restoreInProgressName, &restoreUndeployStatus, &updateCheckerSpec, &autoDeploy, &app.InstallState, &app.ChannelChanged); err != nil {
 		return nil, errors.Wrap(err, "failed to scan app")
 	}
 
-	app.CreatedAt = createdAt.Time
 	app.License = licenseStr.String
 	app.UpstreamURI = upstreamURI.String
 	app.IconURI = iconURI.String
-	app.LastLicenseSync = lastLicenseSync.String
 	app.SnapshotTTL = snapshotTTLNew.String
 	app.SnapshotSchedule = snapshotSchedule.String
 	app.RestoreInProgressName = restoreInProgressName.String
 	app.RestoreUndeployStatus = apptypes.UndeployStatus(restoreUndeployStatus.String)
 	app.UpdateCheckerSpec = updateCheckerSpec.String
 	app.AutoDeploy = apptypes.AutoDeploy(autoDeploy.String)
+
+	if lastLicenseSync.Valid {
+		app.LastLicenseSync = lastLicenseSync.Time.Format(time.RFC3339)
+	}
 
 	if lastUpdateCheckAt.Valid {
 		app.LastUpdateCheckAt = &lastUpdateCheckAt.Time
@@ -197,13 +212,22 @@ func (s *KOTSStore) GetApp(id string) (*apptypes.App, error) {
 			return nil, errors.Wrap(err, "failed to get latest app sequence")
 		}
 
-		query = `select preflight_spec, config_spec from app_version where app_id = $1 AND sequence = $2`
-		row = db.QueryRow(query, id, latestSequence)
+		query = `select preflight_spec, config_spec from app_version where app_id = ? AND sequence = ?`
+		rows, err := db.QueryOneParameterized(gorqlite.ParameterizedStatement{
+			Query:     query,
+			Arguments: []interface{}{id, latestSequence},
+		})
+		if err != nil {
+			return nil, fmt.Errorf("failed to query app_version: %v: %v", err, rows.Err)
+		}
+		if !rows.Next() {
+			return nil, ErrNotFound
+		}
 
-		var preflightSpec sql.NullString
-		var configSpec sql.NullString
+		var preflightSpec gorqlite.NullString
+		var configSpec gorqlite.NullString
 
-		if err := row.Scan(&preflightSpec, &configSpec); err != nil {
+		if err := rows.Scan(&preflightSpec, &configSpec); err != nil {
 			return nil, errors.Wrap(err, "failed to scan app_version")
 		}
 
@@ -261,11 +285,6 @@ func (s *KOTSStore) CreateApp(name string, upstreamURI string, licenseData strin
 		zap.String("upstreamURI", upstreamURI))
 
 	db := persistence.MustGetDBSession()
-	tx, err := db.Begin()
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to begin transaction")
-	}
-	defer tx.Rollback()
 
 	titleForSlug := strings.Replace(name, ".", "-", 0)
 	slugProposal := slug.Make(titleForSlug)
@@ -277,10 +296,20 @@ func (s *KOTSStore) CreateApp(name string, upstreamURI string, licenseData strin
 			slugProposal = fmt.Sprintf("%s-%d", titleForSlug, i)
 		}
 
-		query := `select count(1) as count from app where slug = $1`
-		row := tx.QueryRow(query, slugProposal)
+		query := `select count(1) as count from app where slug = ?`
+		rows, err := db.QueryOneParameterized(gorqlite.ParameterizedStatement{
+			Query:     query,
+			Arguments: []interface{}{slugProposal},
+		})
+		if err != nil {
+			return nil, fmt.Errorf("failed to query app: %v: %v", err, rows.Err)
+		}
+		if !rows.Next() {
+			return nil, ErrNotFound
+		}
+
 		exists := 0
-		if err := row.Scan(&exists); err != nil {
+		if err := rows.Scan(&exists); err != nil {
 			return nil, errors.Wrap(err, "failed to scan existing slug")
 		}
 
@@ -308,15 +337,13 @@ func (s *KOTSStore) CreateApp(name string, upstreamURI string, licenseData strin
 
 	id := ksuid.New().String()
 
-	query := `insert into app (id, name, icon_uri, created_at, slug, upstream_uri, license, is_all_users, install_state, registry_is_readonly)
-values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`
-	_, err = tx.Exec(query, id, name, "", time.Now(), slugProposal, upstreamURI, licenseData, true, installState, registryIsReadOnly)
+	query := `insert into app (id, name, icon_uri, created_at, slug, upstream_uri, license, is_all_users, install_state, registry_is_readonly) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+	wr, err := db.WriteOneParameterized(gorqlite.ParameterizedStatement{
+		Query:     query,
+		Arguments: []interface{}{id, name, "", time.Now().Unix(), slugProposal, upstreamURI, licenseData, true, installState, registryIsReadOnly},
+	})
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to insert app")
-	}
-
-	if err := tx.Commit(); err != nil {
-		return nil, errors.Wrap(err, "failed to commit transaction")
+		return nil, fmt.Errorf("failed to insert app: %v: %v", err, wr.Err)
 	}
 
 	return s.GetApp(id)
@@ -324,12 +351,14 @@ values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`
 
 func (s *KOTSStore) ListDownstreamsForApp(appID string) ([]downstreamtypes.Downstream, error) {
 	db := persistence.MustGetDBSession()
-	query := `select c.id from app_downstream d inner join cluster c on d.cluster_id = c.id where app_id = $1`
-	rows, err := db.Query(query, appID)
+	query := `select c.id from app_downstream d inner join cluster c on d.cluster_id = c.id where app_id = ?`
+	rows, err := db.QueryOneParameterized(gorqlite.ParameterizedStatement{
+		Query:     query,
+		Arguments: []interface{}{appID},
+	})
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to query")
+		return nil, fmt.Errorf("failed to query: %v: %v", err, rows.Err)
 	}
-	defer rows.Close()
 
 	downstreams := []downstreamtypes.Downstream{}
 	for rows.Next() {
@@ -351,12 +380,14 @@ func (s *KOTSStore) ListDownstreamsForApp(appID string) ([]downstreamtypes.Downs
 
 func (s *KOTSStore) ListAppsForDownstream(clusterID string) ([]*apptypes.App, error) {
 	db := persistence.MustGetDBSession()
-	query := `select ad.app_id from app_downstream ad inner join app a on ad.app_id = a.id where ad.cluster_id = $1 and a.install_state = 'installed'`
-	rows, err := db.Query(query, clusterID)
+	query := `select ad.app_id from app_downstream ad inner join app a on ad.app_id = a.id where ad.cluster_id = ? and a.install_state = 'installed'`
+	rows, err := db.QueryOneParameterized(gorqlite.ParameterizedStatement{
+		Query:     query,
+		Arguments: []interface{}{clusterID},
+	})
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to query db")
+		return nil, fmt.Errorf("failed to query: %v: %v", err, rows.Err)
 	}
-	defer rows.Close()
 
 	apps := []*apptypes.App{}
 	for rows.Next() {
@@ -376,17 +407,23 @@ func (s *KOTSStore) ListAppsForDownstream(clusterID string) ([]*apptypes.App, er
 
 func (s *KOTSStore) GetDownstream(clusterID string) (*downstreamtypes.Downstream, error) {
 	db := persistence.MustGetDBSession()
-	query := `select c.id, c.slug, d.downstream_name, d.current_sequence from app_downstream d inner join cluster c on d.cluster_id = c.id where c.id = $1`
-	row := db.QueryRow(query, clusterID)
+	query := `select c.id, c.slug, d.downstream_name, d.current_sequence from app_downstream d inner join cluster c on d.cluster_id = c.id where c.id = ?`
+	rows, err := db.QueryOneParameterized(gorqlite.ParameterizedStatement{
+		Query:     query,
+		Arguments: []interface{}{clusterID},
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to query: %v: %v", err, rows.Err)
+	}
+	if !rows.Next() {
+		return nil, nil
+	}
 
 	downstream := downstreamtypes.Downstream{
 		CurrentSequence: -1,
 	}
-	var sequence sql.NullInt64
-	if err := row.Scan(&downstream.ClusterID, &downstream.ClusterSlug, &downstream.Name, &sequence); err != nil {
-		if err == sql.ErrNoRows {
-			return nil, nil
-		}
+	var sequence gorqlite.NullInt64
+	if err := rows.Scan(&downstream.ClusterID, &downstream.ClusterSlug, &downstream.Name, &sequence); err != nil {
 		return nil, errors.Wrap(err, "failed to scan downstream")
 	}
 	if sequence.Valid {
@@ -419,17 +456,16 @@ func (s *KOTSStore) SetUpdateCheckerSpec(appID string, updateCheckerSpec string)
 	logger.Debug("setting update checker spec",
 		zap.String("appID", appID))
 
-	cm, err := s.GetConfigmap(types.KotsadmConfigMap)
+	db := persistence.MustGetDBSession()
+	query := `update app set update_checker_spec = ? where id = ?`
+	wr, err := db.WriteOneParameterized(gorqlite.ParameterizedStatement{
+		Query:     query,
+		Arguments: []interface{}{updateCheckerSpec, appID},
+	})
 	if err != nil {
-		return errors.Wrap(err, "failed to get config map")
+		return fmt.Errorf("failed to write: %v: %v", err, wr.Err)
 	}
 
-	cm.Data[fmt.Sprintf("update-schedule-%s", appID)] = updateCheckerSpec
-
-	err = s.UpdateConfigmap(cm)
-	if err != nil {
-		return errors.Wrap(err, "failed to update config map")
-	}
 	return nil
 }
 
@@ -438,10 +474,13 @@ func (s *KOTSStore) SetAutoDeploy(appID string, autoDeploy apptypes.AutoDeploy) 
 		zap.String("appID", appID))
 
 	db := persistence.MustGetDBSession()
-	query := `update app set semver_auto_deploy = $1 where id = $2`
-	_, err := db.Exec(query, autoDeploy, appID)
+	query := `update app set semver_auto_deploy = ? where id = ?`
+	wr, err := db.WriteOneParameterized(gorqlite.ParameterizedStatement{
+		Query:     query,
+		Arguments: []interface{}{autoDeploy, appID},
+	})
 	if err != nil {
-		return errors.Wrap(err, "failed to exec db query")
+		return fmt.Errorf("failed to write: %v: %v", err, wr.Err)
 	}
 
 	return nil
@@ -450,11 +489,15 @@ func (s *KOTSStore) SetAutoDeploy(appID string, autoDeploy apptypes.AutoDeploy) 
 func (s *KOTSStore) SetSnapshotTTL(appID string, snapshotTTL string) error {
 	logger.Debug("Setting snapshot TTL",
 		zap.String("appID", appID))
+
 	db := persistence.MustGetDBSession()
-	query := `update app set snapshot_ttl_new = $1 where id = $2`
-	_, err := db.Exec(query, snapshotTTL, appID)
+	query := `update app set snapshot_ttl_new = ? where id = ?`
+	wr, err := db.WriteOneParameterized(gorqlite.ParameterizedStatement{
+		Query:     query,
+		Arguments: []interface{}{snapshotTTL, appID},
+	})
 	if err != nil {
-		return errors.Wrap(err, "failed to exec db query")
+		return fmt.Errorf("failed to write: %v: %v", err, wr.Err)
 	}
 
 	return nil
@@ -463,11 +506,15 @@ func (s *KOTSStore) SetSnapshotTTL(appID string, snapshotTTL string) error {
 func (s *KOTSStore) SetSnapshotSchedule(appID string, snapshotSchedule string) error {
 	logger.Debug("Setting snapshot Schedule",
 		zap.String("appID", appID))
+
 	db := persistence.MustGetDBSession()
-	query := `update app set snapshot_schedule = $1 where id = $2`
-	_, err := db.Exec(query, snapshotSchedule, appID)
+	query := `update app set snapshot_schedule = ? where id = ?`
+	wr, err := db.WriteOneParameterized(gorqlite.ParameterizedStatement{
+		Query:     query,
+		Arguments: []interface{}{snapshotSchedule, appID},
+	})
 	if err != nil {
-		return errors.Wrap(err, "failed to exec db query")
+		return fmt.Errorf("failed to write: %v: %v", err, wr.Err)
 	}
 
 	return nil
@@ -478,66 +525,56 @@ func (s *KOTSStore) RemoveApp(appID string) error {
 		zap.String("appID", appID))
 
 	db := persistence.MustGetDBSession()
-	tx, err := db.Begin()
-	if err != nil {
-		return errors.Wrap(err, "failed to begin transaction")
-	}
-	defer tx.Rollback()
-
-	var query string
+	statements := []gorqlite.ParameterizedStatement{}
 
 	// TODO: api_task_status needs app ID
 
-	query = "delete from app_status where app_id = $1"
-	_, err = tx.Exec(query, appID)
-	if err != nil {
-		return errors.Wrap(err, "failed to delete from app_status")
-	}
+	statements = append(statements, gorqlite.ParameterizedStatement{
+		Query:     "delete from app_status where app_id = ?",
+		Arguments: []interface{}{appID},
+	})
 
-	query = "delete from app_downstream_output where app_id = $1"
-	_, err = tx.Exec(query, appID)
-	if err != nil {
-		return errors.Wrap(err, "failed to delete from app_downstream_output")
-	}
+	statements = append(statements, gorqlite.ParameterizedStatement{
+		Query:     "delete from app_downstream_output where app_id = ?",
+		Arguments: []interface{}{appID},
+	})
 
-	query = "delete from app_downstream_version where app_id = $1"
-	_, err = tx.Exec(query, appID)
-	if err != nil {
-		return errors.Wrap(err, "failed to delete from app_downstream_version")
-	}
+	statements = append(statements, gorqlite.ParameterizedStatement{
+		Query:     "delete from app_downstream_version where app_id = ?",
+		Arguments: []interface{}{appID},
+	})
 
-	query = "delete from app_downstream where app_id = $1"
-	_, err = tx.Exec(query, appID)
-	if err != nil {
-		return errors.Wrap(err, "failed to delete from app_downstream")
-	}
+	statements = append(statements, gorqlite.ParameterizedStatement{
+		Query:     "delete from app_downstream where app_id = ?",
+		Arguments: []interface{}{appID},
+	})
 
-	query = "delete from app_version where app_id = $1"
-	_, err = tx.Exec(query, appID)
-	if err != nil {
-		return errors.Wrap(err, "failed to delete from app_version")
-	}
+	statements = append(statements, gorqlite.ParameterizedStatement{
+		Query:     "delete from app_version where app_id = ?",
+		Arguments: []interface{}{appID},
+	})
 
-	query = "delete from user_app where app_id = $1"
-	_, err = tx.Exec(query, appID)
-	if err != nil {
-		return errors.Wrap(err, "failed to delete from user_app")
-	}
+	statements = append(statements, gorqlite.ParameterizedStatement{
+		Query:     "delete from user_app where app_id = ?",
+		Arguments: []interface{}{appID},
+	})
 
-	query = "delete from pending_supportbundle where app_id = $1"
-	_, err = tx.Exec(query, appID)
-	if err != nil {
-		return errors.Wrap(err, "failed to delete from pending_supportbundle")
-	}
+	statements = append(statements, gorqlite.ParameterizedStatement{
+		Query:     "delete from pending_supportbundle where app_id = ?",
+		Arguments: []interface{}{appID},
+	})
 
-	query = "delete from app where id = $1"
-	_, err = tx.Exec(query, appID)
-	if err != nil {
-		return errors.Wrap(err, "failed to delete from app")
-	}
+	statements = append(statements, gorqlite.ParameterizedStatement{
+		Query:     "delete from app where id = ?",
+		Arguments: []interface{}{appID},
+	})
 
-	if err := tx.Commit(); err != nil {
-		return errors.Wrap(err, "failed to commit transaction")
+	if wrs, err := db.WriteParameterized(statements); err != nil {
+		wrErrs := []error{}
+		for _, wr := range wrs {
+			wrErrs = append(wrErrs, wr.Err)
+		}
+		return fmt.Errorf("failed to write: %v: %v", err, wrErrs)
 	}
 
 	return nil
@@ -546,10 +583,13 @@ func (s *KOTSStore) RemoveApp(appID string) error {
 func (s *KOTSStore) SetAppChannelChanged(appID string, channelChanged bool) error {
 	db := persistence.MustGetDBSession()
 
-	query := `update app set channel_changed = $1 where id = $2`
-	_, err := db.Exec(query, channelChanged, appID)
+	query := `update app set channel_changed = ? where id = ?`
+	wr, err := db.WriteOneParameterized(gorqlite.ParameterizedStatement{
+		Query:     query,
+		Arguments: []interface{}{channelChanged, appID},
+	})
 	if err != nil {
-		return errors.Wrap(err, "failed to update app channel changed flag")
+		return fmt.Errorf("failed to update app channel changed flag: %v: %v", err, wr.Err)
 	}
 
 	return nil

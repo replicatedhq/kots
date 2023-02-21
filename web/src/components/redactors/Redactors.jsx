@@ -1,6 +1,7 @@
 import React, { Component } from "react";
-import { withRouter, Link } from "react-router-dom";
-import Helmet from "react-helmet";
+import { Link } from "react-router-dom";
+import { withRouter } from "@src/utilities/react-router-utilities";
+import { KotsPageTitle } from "@components/Head";
 import dayjs from "dayjs";
 import Select from "react-select";
 import Toggle from "../shared/Toggle";
@@ -9,6 +10,8 @@ import DeleteRedactorModal from "../modals/DeleteRedactorModal";
 import Loader from "../shared/Loader";
 
 import { Utilities } from "../../utilities/utilities";
+import Icon from "@components/Icon";
+import "../../scss/components/redactors/Redactor.scss";
 
 class Redactors extends Component {
   state = {
@@ -220,10 +223,8 @@ class Redactors extends Component {
 
     return (
       <div className="centered-container flex-column flex1 u-overflow--auto u-paddingTop--30 u-paddingBottom--20 justifyContent--center alignItems--center">
-        <Helmet>
-          <title>Redactors </title>
-        </Helmet>
-        <div className="Redactors--wrapper flex1 flex-column u-width--full">
+        <KotsPageTitle pageName="Redactors" showAppSlug />
+        <div className="Redactors--wrapper flex1 flex-column">
           <div className="flex justifyContent--center u-paddingBottom--30">
             <Toggle
               items={[
@@ -247,12 +248,10 @@ class Redactors extends Component {
             />
           </div>
           {sortedRedactors?.length > 0 ? (
-            <div className="flex1 flex-column">
+            <div className="flex1 flex-column card-bg">
               <div className="flex flex-auto alignItems--center justifyContent--spaceBetween">
                 <div className="flex flex1 alignItems--center">
-                  <p className="u-fontWeight--bold u-textColor--primary u-fontSize--larger u-lineHeight--normal u-marginRight--10">
-                    Redactors
-                  </p>
+                  <p className="card-title u-marginRight--10">Redactors</p>
                   <div style={{ width: "220px" }}>
                     <Select
                       className="replicated-select-container"
@@ -270,13 +269,18 @@ class Redactors extends Component {
                 <div className="flex justifyContent--flexEnd">
                   <Link
                     to={`/app/${this.props.appSlug}/troubleshoot/redactors/new`}
-                    className="btn primary blue"
+                    className="link u-fontSize--small flex alignItems--center"
                   >
+                    <Icon
+                      icon="plus"
+                      size={10}
+                      className="clickable u-marginRight--5"
+                    />
                     Create new redactor
                   </Link>
                 </div>
               </div>
-              <p className="u-fontSize--normal u-textColor--bodyCopy u-fontWeight--medium u-lineHeight--normal u-marginTop--20 u-marginBottom--30">
+              <p className="u-fontSize--normal u-textColor--bodyCopy u-fontWeight--medium u-lineHeight--normal u-marginTop--20 u-marginBottom--20">
                 Define custom rules for sensitive values you need to be redacted
                 when gathering a support bundle. This might include things like
                 Secrets or IP addresses. For help with creating custom
@@ -285,7 +289,7 @@ class Redactors extends Component {
                   href="https://troubleshoot.sh/reference/redactors/overview/"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="replicated-link"
+                  className="link"
                 >
                   {" "}
                   check out our docs
@@ -308,12 +312,15 @@ class Redactors extends Component {
               ))}
             </div>
           ) : (
-            <div className="flex-column flex1 alignItems--center">
-              <div className="flex-column flex1 alignItems--center u-textAlign--center justifyContent--center u-width--half">
-                <p className="u-fontSize--20 u-fontWeight--bold u-textColor--secondary u-lineHeight--normal">
+            <div className="flex-column card-bg u-padding--15">
+              <div className="flex justifyContent--spaceBetween u-paddingBottom--15">
+                <p className="card-title">Redactors</p>
+              </div>
+              <div className="card-item ConfigureRedactorDetails u-padding--50 flex-column justifyContent--center alignItems--center u-textAlign--center">
+                <p className="u-fontSize--jumbo2 u-fontWeight--bold u-textColor--primary u-textAlign--center u-paddingBottom--15">
                   Configure custom redactors
                 </p>
-                <p className="u-fontSize--normal u-textColor--bodyCopy u-fontWeight--medium u-lineHeight--normal u-marginTop--20">
+                <p className="u-fontSize--normal u-textColor--bodyCopy u-fontWeight--medium u-lineHeight--normal ConfigureRedactorText">
                   Define custom rules for sensitive values you need to be
                   redacted when gathering a support bundle. This might include
                   things like Secrets or IP addresses. For help with creating
@@ -322,7 +329,7 @@ class Redactors extends Component {
                     href="https://troubleshoot.sh/reference/redactors/overview/"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="replicated-link"
+                    className="link"
                   >
                     {" "}
                     check out our docs

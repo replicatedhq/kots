@@ -8,6 +8,7 @@ import (
 
 	"github.com/pkg/errors"
 	identitydeploy "github.com/replicatedhq/kots/pkg/identity/deploy"
+	identitytypes "github.com/replicatedhq/kots/pkg/identity/types"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	kustomizetypes "sigs.k8s.io/kustomize/api/types"
 )
@@ -36,6 +37,7 @@ func (m *Midstream) writeIdentityService(ctx context.Context, options WriteOptio
 
 	deployOptions := identitydeploy.Options{
 		NamePrefix:         options.AppSlug,
+		Namespace:          identitytypes.Namespace(options.AppSlug),
 		IdentitySpec:       m.IdentitySpec.Spec,
 		IdentityConfigSpec: m.IdentityConfig.Spec,
 		IsOpenShift:        options.IsOpenShift,
@@ -48,27 +50,6 @@ func (m *Midstream) writeIdentityService(ctx context.Context, options WriteOptio
 	resources, err := identitydeploy.Render(ctx, deployOptions)
 	if err != nil {
 		return "", errors.Wrap(err, "failed to render identity service resources")
-	}
-
-	if m.IdentityConfig.Spec.Storage.PostgresConfig != nil {
-		postgresSecretResource, err := identitydeploy.RenderPostgresSecret(ctx, options.AppSlug, *m.IdentityConfig.Spec.Storage.PostgresConfig, additionalLabels)
-		if err != nil {
-			return "", errors.Wrap(err, "failed to render postgres secret")
-		}
-		resources["postgressecret.yaml"] = postgresSecretResource
-	}
-
-	if m.IdentityConfig.Spec.ClientID != "" {
-		clientSecret, err := m.IdentityConfig.Spec.ClientSecret.GetValue()
-		if err != nil {
-			return "", errors.Wrap(err, "failed to decrypt client secret")
-		}
-
-		clientSecretResource, err := identitydeploy.RenderClientSecret(ctx, m.IdentityConfig.Spec.ClientID, clientSecret, additionalLabels)
-		if err != nil {
-			return "", errors.Wrap(err, "failed to render client secret")
-		}
-		resources["clientsecret.yaml"] = clientSecretResource
 	}
 
 	kustomization := kustomizetypes.Kustomization{

@@ -46,13 +46,34 @@ func (e AppRollbackError) Error() string {
 	return fmt.Sprintf("app:%s, version:%d", e.AppID, e.Sequence)
 }
 
+func shouldGarbageCollectImages(isKurl bool, kurlRegistryHost string, installParams kotsutil.InstallationParams, registrySettings types.RegistrySettings) bool {
+	if !installParams.EnableImageDeletion {
+		logger.Info("ignoring image garbage collection because image deletion is disabled")
+		return false
+	}
+
+	if registrySettings.IsReadOnly {
+		logger.Info("ignoring image garbage collection because registry is read only")
+		return false
+	}
+
+	if !isKurl {
+		logger.Info("ignoring image garbage collection because cluster is not kurl")
+		return false
+	}
+
+	if kurlRegistryHost != registrySettings.Hostname {
+		logger.Info("ignoring image garbage collection because registry is not kurl registry")
+		return false
+	}
+
+	return true
+}
+
 func DeleteUnusedImages(appID string, ignoreRollback bool) error {
 	installParams, err := kotsutil.GetInstallationParams(kotsadmtypes.KotsadmConfigMap)
 	if err != nil {
 		return errors.Wrap(err, "failed to get app registry info")
-	}
-	if !installParams.EnableImageDeletion {
-		return nil
 	}
 
 	registrySettings, err := store.GetStore().GetRegistryDetailsForApp(appID)
@@ -60,16 +81,22 @@ func DeleteUnusedImages(appID string, ignoreRollback bool) error {
 		return errors.Wrap(err, "failed to get app registry info")
 	}
 
-	if registrySettings.IsReadOnly {
-		return nil
+	clientset, err := k8sutil.GetClientset()
+	if err != nil {
+		return errors.Wrap(err, "failed to get k8s clientset")
 	}
 
-	isKurl, err := kurl.IsKurl()
+	isKurl, err := kurl.IsKurl(clientset)
 	if err != nil {
 		return errors.Wrap(err, "failed to check if cluster is kurl")
 	}
 
-	if !isKurl {
+	kurlRegistryHost, _, _, err := kotsutil.GetKurlRegistryCreds()
+	if err != nil {
+		return errors.Wrap(err, "failed to get kurl registry creds")
+	}
+
+	if !shouldGarbageCollectImages(isKurl, kurlRegistryHost, installParams, registrySettings) {
 		return nil
 	}
 

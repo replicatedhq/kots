@@ -22,7 +22,7 @@ export default class SnapshotInstallationBox extends Component {
                 href="https://velero.io/docs/main/troubleshooting/"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="replicated-link u-marginLeft--5"
+                className="link u-marginLeft--5"
               >
                 Get help
               </a>
@@ -33,38 +33,10 @@ export default class SnapshotInstallationBox extends Component {
     }
   };
 
-  renderResticErrors = (snapshotSettings) => {
-    if (snapshotSettings?.veleroVersion && !snapshotSettings?.resticVersion) {
-      return (
-        <div className="flex u-marginBottom--20">
-          <div className="flex u-marginRight--20">
-            <span className="icon redWarningIcon" />
-          </div>
-          <div className="flex flex-column">
-            <p className="u-textColor--error u-fontSize--larger u-fontWeight--bold">
-              {" "}
-              Restic integration not found{" "}
-            </p>
-            <p className="u-fontSize--small u-textColor--bodyCopy u-lineHeight--normal u-fontWeight--medium u-marginTop--10">
-              The Admin Console requires the Velero restic integration to use
-              Snapshots, but it was not found. Please install the Velero restic
-              integration to continue.
-              <a
-                href="https://velero.io/"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="replicated-link u-marginLeft--5"
-              >
-                Get help
-              </a>
-            </p>
-          </div>
-        </div>
-      );
-    } else if (
+  renderNodeAgentErrors = (snapshotSettings) => {
+    if (
       snapshotSettings?.veleroVersion &&
-      snapshotSettings?.resticVersion &&
-      !snapshotSettings?.isResticRunning
+      !snapshotSettings?.nodeAgentVersion
     ) {
       return (
         <div className="flex u-marginBottom--20">
@@ -74,17 +46,50 @@ export default class SnapshotInstallationBox extends Component {
           <div className="flex flex-column">
             <p className="u-textColor--error u-fontSize--larger u-fontWeight--bold">
               {" "}
-              Restic is not working{" "}
+              {this.props.fsBackupComponentName} integration not found{" "}
             </p>
             <p className="u-fontSize--small u-textColor--bodyCopy u-lineHeight--normal u-fontWeight--medium u-marginTop--10">
-              Velero and the restic integration have been detected, but restic
-              is not running successfully. To continue configuring and using
-              snapshots Restic has to be running reliably.
+              The Admin Console requires the Velero{" "}
+              {this.props.fsBackupComponentName} integration to use Snapshots,
+              but it was not found. Please install the Velero{" "}
+              {this.props.fsBackupComponentName} integration to continue.
               <a
-                href="https://velero.io/docs/main/restic/#troubleshooting"
+                href="https://velero.io/"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="replicated-link u-marginLeft--5"
+                className="link u-marginLeft--5"
+              >
+                Get help
+              </a>
+            </p>
+          </div>
+        </div>
+      );
+    } else if (
+      snapshotSettings?.veleroVersion &&
+      snapshotSettings?.nodeAgentVersion &&
+      !snapshotSettings?.isNodeAgentRunning
+    ) {
+      return (
+        <div className="flex u-marginBottom--20">
+          <div className="flex u-marginRight--20">
+            <span className="icon redWarningIcon" />
+          </div>
+          <div className="flex flex-column">
+            <p className="u-textColor--error u-fontSize--larger u-fontWeight--bold">
+              {" "}
+              {this.props.fsBackupComponentName} is not working{" "}
+            </p>
+            <p className="u-fontSize--small u-textColor--bodyCopy u-lineHeight--normal u-fontWeight--medium u-marginTop--10">
+              Velero and the {this.props.fsBackupComponentName} integration have
+              been detected, but Node Agent is not running successfully. To
+              continue configuring and using snapshots,{" "}
+              {this.props.fsBackupComponentName} has to be running reliably.
+              <a
+                href="https://velero.io/docs/v1.10/file-system-backup/#troubleshooting"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="link u-marginLeft--5"
               >
                 Get help
               </a>
@@ -106,7 +111,7 @@ export default class SnapshotInstallationBox extends Component {
     return (
       <div className="flex1 flex-column">
         {this.renderVeleroErrors(snapshotSettings)}
-        {this.renderResticErrors(snapshotSettings)}
+        {this.renderNodeAgentErrors(snapshotSettings)}
         <div className="CheckVelero--wrapper flex1 flex-column justifyContent--center">
           <p className="u-textColor--primary u-fontSize--large u-fontWeight--bold">
             Check Velero installation

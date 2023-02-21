@@ -3,6 +3,7 @@ package preflight
 import (
 	"testing"
 
+	"github.com/replicatedhq/kots/pkg/preflight/types"
 	kurlv1beta1 "github.com/replicatedhq/kurl/kurlkinds/pkg/apis/cluster/v1beta1"
 	troubleshootv1beta2 "github.com/replicatedhq/troubleshoot/pkg/apis/troubleshoot/v1beta2"
 	troubleshootpreflight "github.com/replicatedhq/troubleshoot/pkg/preflight"
@@ -14,12 +15,12 @@ import (
 func Test_getPreflightState(t *testing.T) {
 	tests := []struct {
 		name             string
-		preflightResults *troubleshootpreflight.UploadPreflightResults
+		preflightResults *types.PreflightResults
 		want             string
 	}{
 		{
 			name: "pass",
-			preflightResults: &troubleshootpreflight.UploadPreflightResults{
+			preflightResults: &types.PreflightResults{
 				Results: []*troubleshootpreflight.UploadPreflightResult{
 					{},
 					{},
@@ -30,7 +31,7 @@ func Test_getPreflightState(t *testing.T) {
 		},
 		{
 			name: "warn",
-			preflightResults: &troubleshootpreflight.UploadPreflightResults{
+			preflightResults: &types.PreflightResults{
 				Results: []*troubleshootpreflight.UploadPreflightResult{
 					{},
 					{IsWarn: true},
@@ -41,7 +42,7 @@ func Test_getPreflightState(t *testing.T) {
 		},
 		{
 			name: "fail",
-			preflightResults: &troubleshootpreflight.UploadPreflightResults{
+			preflightResults: &types.PreflightResults{
 				Results: []*troubleshootpreflight.UploadPreflightResult{
 					{},
 					{IsFail: true},
@@ -52,13 +53,13 @@ func Test_getPreflightState(t *testing.T) {
 		},
 		{
 			name: "error",
-			preflightResults: &troubleshootpreflight.UploadPreflightResults{
+			preflightResults: &types.PreflightResults{
 				Results: []*troubleshootpreflight.UploadPreflightResult{
 					{},
 					{IsWarn: true},
 					{},
 				},
-				Errors: []*troubleshootpreflight.UploadPreflightError{
+				Errors: []*types.PreflightError{
 					{},
 				},
 			},
@@ -66,7 +67,7 @@ func Test_getPreflightState(t *testing.T) {
 		},
 		{
 			name:             "empty",
-			preflightResults: &troubleshootpreflight.UploadPreflightResults{},
+			preflightResults: &types.PreflightResults{},
 			want:             "pass",
 		},
 	}

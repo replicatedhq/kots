@@ -8,7 +8,7 @@ spec:
     - clusterResources: {}
     - ceph: {}
     - longhorn: {}
-    - exec:
+    - exec: # this is removable when we don't need to support kots <= 1.87
         args:
           - "-U"
           - kotsadm
@@ -42,11 +42,16 @@ spec:
         selector:
           - app=kotsadm-operator
         timeout: 10s
-    - logs:
+    - logs: # this is removable when we don't need to support kots <= 1.87
         collectorName: kotsadm-postgres-db
         name: kots/admin_console
         selector:
           - app=kotsadm-postgres
+    - logs:
+        collectorName: kotsadm-rqlite-db
+        name: kots/admin_console
+        selector:
+          - app=kotsadm-rqlite
     - logs:  # this is removable when we don't need to support kots <= 1.19
         collectorName: kotsadm-api
         name: kots/admin_console
@@ -100,51 +105,7 @@ spec:
         includeValue: false
         key: .dockerconfigjson
     - logs:
-        collectorName: rook-ceph-agent
-        selector:
-          - app=rook-ceph-agent
-        namespace: rook-ceph
-        name: kots/rook
-    - logs:
-        collectorName: rook-ceph-mgr
-        selector:
-          - app=rook-ceph-mgr
-        namespace: rook-ceph
-        name: kots/rook
-    - logs:
-        collectorName: rook-ceph-mon
-        selector:
-          - app=rook-ceph-mon
-        namespace: rook-ceph
-        name: kots/rook
-    - logs:
-        collectorName: rook-ceph-operator
-        selector:
-          - app=rook-ceph-operator
-        namespace: rook-ceph
-        name: kots/rook
-    - logs:
-        collectorName: rook-ceph-osd
-        selector:
-          - app=rook-ceph-osd
-        namespace: rook-ceph
-        name: kots/rook
-    - logs:
-        collectorName: rook-ceph-osd-prepare
-        selector:
-          - app=rook-ceph-osd-prepare
-        namespace: rook-ceph
-        name: kots/rook
-    - logs:
-        collectorName: rook-ceph-rgw
-        selector:
-          - app=rook-ceph-rgw
-        namespace: rook-ceph
-        name: kots/rook
-    - logs:
-        collectorName: rook-discover
-        selector:
-          - app=rook-discover
+        collectorName: rook-ceph-logs
         namespace: rook-ceph
         name: kots/rook
     - exec:
@@ -181,6 +142,12 @@ spec:
           - name=weave-net
         namespace: kube-system
         name: kots/kurl/weave
+    - logs:
+        collectorName: kube-flannel
+        selector:
+          - app=flannel
+        namespace: kube-flannel
+        name: kots/kurl/flannel
     - exec:
         args:
           - "http://goldpinger.kurl.svc.cluster.local:80/check_all"
@@ -267,6 +234,42 @@ spec:
           - pass:
               message: Weave is ready
         regex: '"Ready": true'
+    - textAnalyze:
+        checkName: "Flannel: can read net-conf.json"
+        ignoreIfNoFiles: true
+        fileName: kots/kurl/flannel/kube-flannel-ds-*/kube-flannel.log
+        outcomes:
+          - fail:
+              when: "true"
+              message: "failed to read net-conf.json"
+          - pass:
+              when: "false"
+              message: "can read net-conf.json"
+        regex: 'failed to read net conf'
+    - textAnalyze:
+        checkName: "Flannel: net-conf.json properly formatted"
+        ignoreIfNoFiles: true
+        fileName: kots/kurl/flannel/kube-flannel-ds-*/kube-flannel.log
+        outcomes:
+          - fail:
+              when: "true"
+              message: "malformed net-conf.json"
+          - pass:
+              when: "false"
+              message: "properly formatted net-conf.json"
+        regex: 'error parsing subnet config'
+    - textAnalyze:
+        checkName: "Flannel: has access"
+        ignoreIfNoFiles: true
+        fileName: kots/kurl/flannel/kube-flannel-ds-*/kube-flannel.log
+        outcomes:
+          - fail:
+              when: "true"
+              message: "RBAC error"
+          - pass:
+              when: "false"
+              message: "has access"
+        regex: 'the server does not allow access to the requested resource'
     - textAnalyze:
         checkName: Inter-pod Networking
         exclude: ""

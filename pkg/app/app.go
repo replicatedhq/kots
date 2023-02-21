@@ -1,20 +1,24 @@
 package app
 
 import (
+	"fmt"
 	"time"
 
-	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/app/types"
 	"github.com/replicatedhq/kots/pkg/persistence"
+	"github.com/rqlite/gorqlite"
 )
 
 // SetLastUpdateAtTime sets the time that the client last checked for an update to now
 func SetLastUpdateAtTime(appID string, t time.Time) error {
 	db := persistence.MustGetDBSession()
-	query := `update app set last_update_check_at = $1 where id = $2`
-	_, err := db.Exec(query, t, appID)
+	query := `update app set last_update_check_at = ? where id = ?`
+	wr, err := db.WriteOneParameterized(gorqlite.ParameterizedStatement{
+		Query:     query,
+		Arguments: []interface{}{t.Unix(), appID},
+	})
 	if err != nil {
-		return errors.Wrap(err, "failed to update last_update_check_at")
+		return fmt.Errorf("failed to update last_update_check_at: %v: %v", err, wr.Err)
 	}
 
 	return nil
@@ -22,10 +26,13 @@ func SetLastUpdateAtTime(appID string, t time.Time) error {
 
 func InitiateRestore(snapshotName string, appID string) error {
 	db := persistence.MustGetDBSession()
-	query := `update app set restore_in_progress_name = $1 where id = $2`
-	_, err := db.Exec(query, snapshotName, appID)
+	query := `update app set restore_in_progress_name = ? where id = ?`
+	wr, err := db.WriteOneParameterized(gorqlite.ParameterizedStatement{
+		Query:     query,
+		Arguments: []interface{}{snapshotName, appID},
+	})
 	if err != nil {
-		return errors.Wrap(err, "failed to update restore_in_progress_name")
+		return fmt.Errorf("failed to update restore_in_progress_name: %v: %v", err, wr.Err)
 	}
 
 	return nil
@@ -33,10 +40,13 @@ func InitiateRestore(snapshotName string, appID string) error {
 
 func ResetRestore(appID string) error {
 	db := persistence.MustGetDBSession()
-	query := `update app set restore_in_progress_name = NULL, restore_undeploy_status = '' where id = $1`
-	_, err := db.Exec(query, appID)
+	query := `update app set restore_in_progress_name = NULL, restore_undeploy_status = '' where id = ?`
+	wr, err := db.WriteOneParameterized(gorqlite.ParameterizedStatement{
+		Query:     query,
+		Arguments: []interface{}{appID},
+	})
 	if err != nil {
-		return errors.Wrap(err, "failed to exec")
+		return fmt.Errorf("failed to write: %v: %v", err, wr.Err)
 	}
 
 	return nil
@@ -44,10 +54,13 @@ func ResetRestore(appID string) error {
 
 func SetRestoreUndeployStatus(appID string, undeployStatus types.UndeployStatus) error {
 	db := persistence.MustGetDBSession()
-	query := `update app set restore_undeploy_status = $1 where id = $2`
-	_, err := db.Exec(query, undeployStatus, appID)
+	query := `update app set restore_undeploy_status = ? where id = ?`
+	wr, err := db.WriteOneParameterized(gorqlite.ParameterizedStatement{
+		Query:     query,
+		Arguments: []interface{}{undeployStatus, appID},
+	})
 	if err != nil {
-		return errors.Wrap(err, "failed to exec")
+		return fmt.Errorf("failed to write: %v: %v", err, wr.Err)
 	}
 
 	return nil

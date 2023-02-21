@@ -218,3 +218,7 @@ func Base64DecodeInterface(d interface{}) ([]byte, error) {
 	}
 	return decoded[:n], nil
 }
+
+func StrPointer(s string) *string {
+	return &s
+}

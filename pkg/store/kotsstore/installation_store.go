@@ -1,26 +1,31 @@
 package kotsstore
 
 import (
-	"database/sql"
+	"fmt"
 
 	"github.com/pkg/errors"
 	installationtypes "github.com/replicatedhq/kots/pkg/online/types"
 	"github.com/replicatedhq/kots/pkg/persistence"
+	"github.com/rqlite/gorqlite"
 )
 
 func (s *KOTSStore) GetPendingInstallationStatus() (*installationtypes.InstallStatus, error) {
 	db := persistence.MustGetDBSession()
 	query := `SELECT install_state from app ORDER BY created_at DESC LIMIT 1`
-	row := db.QueryRow(query)
+	rows, err := db.QueryOne(query)
+	if err != nil {
+		return nil, fmt.Errorf("failed to query: %v: %v", err, rows.Err)
+	}
 
-	var installState sql.NullString
-	if err := row.Scan(&installState); err != nil {
-		if err == sql.ErrNoRows {
-			return &installationtypes.InstallStatus{
-				InstallStatus:  "not_installed",
-				CurrentMessage: "",
-			}, nil
-		}
+	if !rows.Next() {
+		return &installationtypes.InstallStatus{
+			InstallStatus:  "not_installed",
+			CurrentMessage: "",
+		}, nil
+	}
+
+	var installState gorqlite.NullString
+	if err := rows.Scan(&installState); err != nil {
 		return nil, errors.Wrap(err, "failed to scan")
 	}
 

@@ -13,7 +13,7 @@ spec:
         kots.io/backup: velero
       annotations:
         backup.velero.io/backup-volumes: backup
-        pre.hook.backup.velero.io/command: '["/bin/bash", "-c", "PGPASSWORD=password pg_dump -U kotsadm -h kotsadm-postgres > /backup/kotsadm-postgres.sql"]'
+        pre.hook.backup.velero.io/command: '["/bin/bash", "-c", "curl -f http://kotsadm:password@kotsadm-rqlite:4001/db/backup -o /backup/kotsadm-rqlite.sql"]'
         pre.hook.backup.velero.io/timeout: 3m
     spec:
       serviceAccountName: default
@@ -29,10 +29,10 @@ spec:
               name: dlv
               protocol: TCP
           env:
-            - name: POSTGRES_URI
+            - name: RQLITE_URI
               valueFrom:
                 secretKeyRef:
-                  name: kotsadm-postgres # This secret is created in the migrations directory
+                  name: kotsadm-rqlite # This secret is created in the migrations directory
                   key: uri
             - name: S3_BUCKET_NAME
               value: "shipbucket"
@@ -44,11 +44,6 @@ spec:
               value: not-a-secret
             - name: S3_BUCKET_ENDPOINT
               value: "true"
-            - name: DEX_PGPASSWORD
-              valueFrom:
-                secretKeyRef:
-                  key: PGPASSWORD
-                  name: kotsadm-dex-postgres
             - name: KOTSADM_LOG_LEVEL
               value: "debug"
             - name: DISABLE_SPA_SERVING
@@ -101,9 +96,6 @@ spec:
           secret:
             secretName: kubelet-client-cert
             optional: true
-        - name: init-dex-db
-          configMap:
-            name: init-dex-db
       hostAliases:
         - ip: 172.17.0.1
           hostnames:

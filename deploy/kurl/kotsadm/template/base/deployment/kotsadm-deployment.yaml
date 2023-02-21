@@ -43,7 +43,7 @@ spec:
         emptyDir:
           medium: Memory
       containers:
-      - image: kotsadm/kotsadm:__KOTSADM_TAG__
+      - image: __KOTSADM_IMAGE__
         name: kotsadm
         command: ["bash"]
         args:
@@ -81,15 +81,23 @@ spec:
               secretKeyRef:
                 name: kotsadm-session
                 key: key
-          - name: POSTGRES_URI
+          - name: POSTGRES_URI # this is still needed for the migration
             valueFrom:
               secretKeyRef:
                 name: kotsadm-postgres
                 key: uri
-          - name: POSTGRES_PASSWORD
+                optional: true
+          - name: POSTGRES_SCHEMA_DIR # this is needed for the migration
+            value: "/postgres/tables"
+          - name: RQLITE_URI
             valueFrom:
               secretKeyRef:
-                name: kotsadm-postgres
+                name: kotsadm-rqlite
+                key: uri
+          - name: RQLITE_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: kotsadm-rqlite
                 key: password
           - name: POD_NAMESPACE
             valueFrom:
@@ -127,11 +135,6 @@ spec:
             value: deployment
           - name: KURL_PROXY_TLS_CERT_PATH
             value: /etc/kurl-proxy/ca/tls.crt
-          - name: DEX_PGPASSWORD
-            valueFrom:
-              secretKeyRef:
-                key: PGPASSWORD
-                name: kotsadm-dex-postgres
         volumeMounts:
           - name: kotsadm-web-scripts
             mountPath: /scripts/start-kotsadm-web.sh
@@ -153,20 +156,20 @@ spec:
 
       initContainers:
       - name: schemahero-plan
-        image: kotsadm/kotsadm-migrations:__KOTSADM_TAG__
+        image: __KOTSADM_MIGRATIONS_IMAGE__
         args: ["plan"]
         volumeMounts:
         - name: migrations
           mountPath: /migrations
         env:
         - name: SCHEMAHERO_DRIVER
-          value: postgres
+          value: rqlite
         - name: SCHEMAHERO_SPEC_FILE
           value: /tables
         - name: SCHEMAHERO_URI
           valueFrom:
             secretKeyRef:
-              name: kotsadm-postgres
+              name: kotsadm-rqlite
               key: uri
         - name: SCHEMAHERO_OUT
           value: /migrations/plan.yaml              
@@ -179,20 +182,20 @@ spec:
             memory: 50Mi
 
       - name: schemahero-apply
-        image: kotsadm/kotsadm-migrations:__KOTSADM_TAG__
+        image: __KOTSADM_MIGRATIONS_IMAGE__
         args: ["apply"]
         volumeMounts:
           - name: migrations
             mountPath: /migrations
         env:
         - name: SCHEMAHERO_DRIVER
-          value: postgres
+          value: rqlite
         - name: SCHEMAHERO_DDL
           value: /migrations/plan.yaml
         - name: SCHEMAHERO_URI
           valueFrom:
             secretKeyRef:
-              name: kotsadm-postgres
+              name: kotsadm-rqlite
               key: uri
         resources:
           limits:
@@ -206,12 +209,12 @@ spec:
         command:
         - "/restore-db.sh"
         env:
-        - name: POSTGRES_PASSWORD
+        - name: RQLITE_PASSWORD
           valueFrom:
             secretKeyRef:
               key: password
-              name: kotsadm-postgres
-        image: kotsadm/kotsadm:__KOTSADM_TAG__
+              name: kotsadm-rqlite
+        image: __KOTSADM_IMAGE__
         imagePullPolicy: IfNotPresent
         volumeMounts:
         - mountPath: /backup
@@ -246,7 +249,7 @@ spec:
               name: kotsadm-s3
         - name: S3_BUCKET_ENDPOINT
           value: "true"
-        image: kotsadm/kotsadm:__KOTSADM_TAG__
+        image: __KOTSADM_IMAGE__
         imagePullPolicy: IfNotPresent
         volumeMounts:
         - mountPath: /backup

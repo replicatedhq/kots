@@ -1,7 +1,7 @@
 import * as React from "react";
-import { withRouter } from "react-router-dom";
+import { withRouter } from "@src/utilities/react-router-utilities";
 import { Utilities } from "../../utilities/utilities";
-import Helmet from "react-helmet";
+import { KotsPageTitle } from "@components/Head";
 import isEmpty from "lodash/isEmpty";
 import keys from "lodash/keys";
 import MonacoEditor from "@monaco-editor/react";
@@ -111,15 +111,13 @@ class KotsApplicationTree extends React.Component<Props, State> {
 
     return (
       <div className="flex-column flex1 ApplicationTree--wrapper u-paddingBottom--30">
-        <Helmet>
-          <title>{`${this.props.app?.name} Files`}</title>
-        </Helmet>
+        <KotsPageTitle pageName="View Files" showAppSlug />
         {!this.props.isHelmManaged && (
           <div className="edit-files-banner u-fontSize--small u-fontWeight--medium">
             Need to edit these files?{" "}
             <span
               onClick={this.toggleInstructionsModal}
-              className="replicated-link"
+              className="u-fontWeight--bold u-cursor--pointer u-textDecoration--underlineOnHover"
             >
               Click here
             </span>{" "}
@@ -249,5 +247,7 @@ class KotsApplicationTree extends React.Component<Props, State> {
   }
 }
 
-// eslint-disable-next-line
+/* eslint-disable */
+// @ts-ignore
 export default withRouter(KotsApplicationTree) as any;
+/* eslint-enable */

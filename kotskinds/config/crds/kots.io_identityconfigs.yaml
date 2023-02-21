@@ -144,32 +144,6 @@ spec:
                 type: object
               insecureSkipTLSVerify:
                 type: boolean
-              storage:
-                properties:
-                  postgresConfig:
-                    properties:
-                      database:
-                        type: string
-                      host:
-                        type: string
-                      password:
-                        properties:
-                          value:
-                            type: string
-                          valueEncrypted:
-                            type: string
-                        type: object
-                      port:
-                        type: string
-                      user:
-                        type: string
-                    required:
-                    - database
-                    - host
-                    - password
-                    - user
-                    type: object
-                type: object
             required:
             - enabled
             type: object

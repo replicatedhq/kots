@@ -14,7 +14,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/preflight"
-	kotspull "github.com/replicatedhq/kots/pkg/pull"
+	"github.com/replicatedhq/kots/pkg/pull"
 	"github.com/replicatedhq/kots/pkg/render"
 	"github.com/replicatedhq/kots/pkg/reporting"
 	"github.com/replicatedhq/kots/pkg/store"
@@ -137,6 +137,9 @@ func DownloadUpdate(appID string, update types.Update, skipPreflights bool, skip
 	beforeCursor := beforeKotsKinds.Installation.Spec.UpdateCursor
 
 	pipeReader, pipeWriter := io.Pipe()
+	defer func() {
+		pipeWriter.CloseWithError(finalError)
+	}()
 	go func() {
 		scanner := bufio.NewScanner(pipeReader)
 		for scanner.Scan() {
@@ -183,7 +186,7 @@ func DownloadUpdate(appID string, update types.Update, skipPreflights bool, skip
 
 	identityConfigFile := filepath.Join(archiveDir, "upstream", "userdata", "identityconfig.yaml")
 	if _, err := os.Stat(identityConfigFile); os.IsNotExist(err) {
-		file, err := identity.InitAppIdentityConfig(a.Slug, kotsv1beta1.Storage{})
+		file, err := identity.InitAppIdentityConfig(a.Slug)
 		if err != nil {
 			finalError = errors.Wrap(err, "failed to init identity config")
 			return
@@ -201,37 +204,39 @@ func DownloadUpdate(appID string, update types.Update, skipPreflights bool, skip
 		return
 	}
 
-	pullOptions := kotspull.PullOptions{
-		LicenseObj:          latestLicense,
-		Namespace:           appNamespace,
-		ConfigFile:          filepath.Join(archiveDir, "upstream", "userdata", "config.yaml"),
-		IdentityConfigFile:  identityConfigFile,
-		InstallationFile:    filepath.Join(archiveDir, "upstream", "userdata", "installation.yaml"),
-		UpdateCursor:        update.Cursor,
-		RootDir:             archiveDir,
-		Downstreams:         downstreamNames,
-		ExcludeKotsKinds:    true,
-		ExcludeAdminConsole: true,
-		CreateAppDir:        false,
-		ReportWriter:        pipeWriter,
-		AppSlug:             a.Slug,
-		AppSequence:         appSequence,
-		IsGitOps:            a.IsGitOps,
-		ReportingInfo:       reporting.GetReportingInfo(a.ID),
-		RewriteImages:       registrySettings.IsValid(),
-		RewriteImageOptions: kotspull.RewriteImageOptions{
-			Host:       registrySettings.Hostname,
-			Namespace:  registrySettings.Namespace,
-			Username:   registrySettings.Username,
-			Password:   registrySettings.Password,
-			IsReadOnly: registrySettings.IsReadOnly,
-		},
+	if err := pull.CleanBaseArchive(archiveDir); err != nil {
+		finalError = errors.Wrap(err, "failed to clean base archive")
+		return
+	}
+
+	pullOptions := pull.PullOptions{
+		LicenseObj:             latestLicense,
+		Namespace:              appNamespace,
+		ConfigFile:             filepath.Join(archiveDir, "upstream", "userdata", "config.yaml"),
+		IdentityConfigFile:     identityConfigFile,
+		InstallationFile:       filepath.Join(archiveDir, "upstream", "userdata", "installation.yaml"),
+		UpdateCursor:           update.Cursor,
+		RootDir:                archiveDir,
+		Downstreams:            downstreamNames,
+		ExcludeKotsKinds:       true,
+		ExcludeAdminConsole:    true,
+		CreateAppDir:           false,
+		ReportWriter:           pipeWriter,
+		AppSlug:                a.Slug,
+		AppSequence:            appSequence,
+		IsGitOps:               a.IsGitOps,
+		ReportingInfo:          reporting.GetReportingInfo(a.ID),
+		RewriteImages:          registrySettings.IsValid(),
+		RewriteImageOptions:    registrySettings,
 		SkipCompatibilityCheck: skipCompatibilityCheck,
 	}
 
-	if _, err := kotspull.Pull(fmt.Sprintf("replicated://%s", beforeKotsKinds.License.Spec.AppSlug), pullOptions); err != nil {
-		finalError = errors.Wrap(err, "failed to pull")
-		return
+	_, err = pull.Pull(fmt.Sprintf("replicated://%s", beforeKotsKinds.License.Spec.AppSlug), pullOptions)
+	if err != nil {
+		if errors.Cause(err) != pull.ErrConfigNeeded {
+			finalError = errors.Wrap(err, "failed to pull")
+			return
+		}
 	}
 
 	if update.AppSequence == nil {

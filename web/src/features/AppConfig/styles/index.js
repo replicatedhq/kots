@@ -1,13 +1,6 @@
 import styled from "styled-components";
 import * as colors from "../../../styles/colors";
 
-export const GroupTitle = styled.a`
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  font-size: ${(props) => (props.fontSize && `${props.fontSize}px`) || "14px"};
-`;
-
 export const SideNavGroup = styled.div`
   a {
     display: block;
@@ -28,15 +21,6 @@ export const SideNavGroup = styled.div`
 
     &:last-child {
       margin-bottom: 0;
-    }
-  }
-  // SideNavGroup overrides styles of GroupTitle
-  // have to set it here to override it
-  & ${GroupTitle} {
-    margin-bottom: 0px;
-    color: ${colors.secondaryText};
-    &:hover {
-      color: ${colors.primary};
     }
   }
 `;
@@ -61,9 +45,6 @@ export const SideNavWrapper = styled.div`
     }
 
     &.group-open {
-      & ${GroupTitle} {
-        font-weight: 700;
-      }
       .icon.u-darkDropdownArrow,
       .arrow-down {
         transform: rotate(180deg);

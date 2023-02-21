@@ -10,23 +10,20 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os"
-	"sync"
-	"time"
 
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/api/reporting/types"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/kurl"
-	kurltypes "github.com/replicatedhq/kots/pkg/kurl/types"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/store"
 	"github.com/replicatedhq/kots/pkg/util"
+	troubleshootpreflight "github.com/replicatedhq/troubleshoot/pkg/preflight"
 	"github.com/segmentio/ksuid"
 	helmrelease "helm.sh/helm/v3/pkg/release"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
-	"k8s.io/client-go/kubernetes"
 )
 
 var (
@@ -193,10 +190,10 @@ func SendAppInfo(appID string) error {
 }
 
 func GetReportingInfo(appID string) *types.ReportingInfo {
-	ctx := context.TODO()
-
 	r := types.ReportingInfo{
-		InstanceID: appID,
+		InstanceID:    appID,
+		KOTSInstallID: os.Getenv("KOTS_INSTALL_ID"),
+		KURLInstallID: os.Getenv("KURL_INSTALL_ID"),
 	}
 
 	clientset, err := k8sutil.GetClientset()
@@ -247,13 +244,13 @@ func GetReportingInfo(appID string) *types.ReportingInfo {
 		}
 	}
 
-	r.IsKurl, err = kurl.IsKurl()
+	r.IsKurl, err = kurl.IsKurl(clientset)
 	if err != nil {
 		logger.Debugf(errors.Wrap(err, "failed to check if cluster is kurl").Error())
 	}
 
 	if r.IsKurl && clientset != nil {
-		kurlNodes, err := cachedKurlGetNodes(ctx, clientset)
+		kurlNodes, err := kurl.GetNodes(clientset)
 		if err != nil {
 			logger.Debugf(errors.Wrap(err, "failed to get kurl nodes").Error())
 		}
@@ -269,34 +266,6 @@ func GetReportingInfo(appID string) *types.ReportingInfo {
 	return &r
 }
 
-var (
-	cachedKurlNodes               *kurltypes.KurlNodes
-	cachedKurlNodesLastUpdateTime time.Time
-	cachedKurlNodesMu             sync.Mutex
-)
-
-const (
-	cachedKurlNodesUpdateInterval = 5 * time.Minute
-)
-
-func cachedKurlGetNodes(ctx context.Context, clientset kubernetes.Interface) (*kurltypes.KurlNodes, error) {
-	cachedKurlNodesMu.Lock()
-	defer cachedKurlNodesMu.Unlock()
-
-	if cachedKurlNodes != nil && time.Now().Sub(cachedKurlNodesLastUpdateTime) < cachedKurlNodesUpdateInterval {
-		return cachedKurlNodes, nil
-	}
-
-	kurlNodes, err := kurl.GetNodes(clientset)
-	if err != nil {
-		return nil, err
-	}
-
-	cachedKurlNodes = kurlNodes
-	cachedKurlNodesLastUpdateTime = time.Now()
-	return cachedKurlNodes, nil
-}
-
 func getDownstreamInfo(appID string) (*types.DownstreamInfo, error) {
 	di := types.DownstreamInfo{}
 
@@ -308,20 +277,20 @@ func getDownstreamInfo(appID string) (*types.DownstreamInfo, error) {
 		return nil, errors.New("no downstreams found for app")
 	}
 
-	deployedAppSequence, err := store.GetStore().GetCurrentParentSequence(appID, downstreams[0].ClusterID)
+	currentVersion, err := store.GetStore().GetCurrentDownstreamVersion(appID, downstreams[0].ClusterID)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get current downstream parent sequence")
 	}
 
 	// info about the deployed app sequence
-	if deployedAppSequence != -1 {
+	if currentVersion != nil {
 		deployedArchiveDir, err := ioutil.TempDir("", "kotsadm")
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to create temp dir")
 		}
 		defer os.RemoveAll(deployedArchiveDir)
 
-		err = store.GetStore().GetAppVersionArchive(appID, deployedAppSequence, deployedArchiveDir)
+		err = store.GetStore().GetAppVersionArchive(appID, currentVersion.ParentSequence, deployedArchiveDir)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to get app version archive")
 		}
@@ -334,6 +303,16 @@ func getDownstreamInfo(appID string) (*types.DownstreamInfo, error) {
 		di.Cursor = deployedKotsKinds.Installation.Spec.UpdateCursor
 		di.ChannelID = deployedKotsKinds.Installation.Spec.ChannelID
 		di.ChannelName = deployedKotsKinds.Installation.Spec.ChannelName
+		di.Sequence = &currentVersion.Sequence
+		di.Source = currentVersion.Source
+		di.Status = string(currentVersion.Status)
+
+		var preflightResults *troubleshootpreflight.UploadPreflightResults
+		if err := json.Unmarshal([]byte(currentVersion.PreflightResult), &preflightResults); err != nil {
+			logger.Debugf("failed to unmarshal preflight results: %v", err.Error())
+		}
+		di.PreflightState = getPreflightState(preflightResults)
+		di.SkipPreflights = currentVersion.PreflightSkipped
 
 		if len(deployedKotsKinds.HelmCharts) > 0 {
 			for _, chart := range deployedKotsKinds.HelmCharts {

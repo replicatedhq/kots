@@ -14,6 +14,7 @@ func Test_parseLogs(t *testing.T) {
 	tests := []struct {
 		name         string
 		logs         string
+		bufferSize   int
 		wantErrors   []types.SnapshotError
 		wantWarnings []types.SnapshotError
 		wantHooks    []*types.SnapshotHook
@@ -486,6 +487,7 @@ time="2020-08-24T15:41:27Z" level=info msg="Listing items" backup=velero/qakots-
 time="2020-08-24T15:41:27Z" level=info msg="Retrieved 0 items" backup=velero/qakots-ns24s group=extensions/v1beta1 logSource="pkg/backup/resource_backupper.go:240" namespace=test resource=ingresses
 time="2020-08-24T15:41:27Z" level=info msg="Backing up resource" backup=velero/qakots-ns24s group=extensions/v1beta1 logSource="pkg/backup/resource_backupper.go:105" resource=podsecuritypolicies
 time="2020-08-24T15:41:27Z" level=info msg="Skipping resource because it's cluster-scoped and only specific namespaces are included in the backup" backup=velero/qakots-ns24s group=extensions/v1beta1 logSource="pkg/backup/resource_backupper.go:127" resource=podsecuritypolicies`,
+			bufferSize: DefaultLogParserBufferSize,
 			wantErrors: []types.SnapshotError{},
 			wantWarnings: []types.SnapshotError{
 				{
@@ -512,10 +514,21 @@ time="2020-08-24T15:41:27Z" level=info msg="Skipping resource because it's clust
 				},
 			},
 		},
+		{
+			name: "logs with lines exceeding max length",
+			logs: `first-line
+second-line-that-exceeds-the-buffer-size
+third-line`,
+			bufferSize:   16,
+			wantErrors:   []types.SnapshotError{},
+			wantWarnings: []types.SnapshotError{},
+			wantHooks:    []*types.SnapshotHook{},
+			wantErr:      true,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, got1, got2, err := parseLogs(strings.NewReader(tt.logs))
+			got, got1, got2, err := parseLogs(strings.NewReader(tt.logs), tt.bufferSize)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("parseLogs() error = %v, wantErr %v", err, tt.wantErr)
 				return

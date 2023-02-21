@@ -1,6 +1,6 @@
 import React, { Component } from "react";
-import { withRouter } from "react-router-dom";
-import Helmet from "react-helmet";
+import { withRouter } from "@src/utilities/react-router-utilities";
+import { KotsPageTitle } from "@components/Head";
 import { Line } from "rc-progress";
 import Loader from "../shared/Loader";
 import { Utilities } from "@src/utilities/utilities";
@@ -99,13 +99,6 @@ class SnapshotRestore extends Component {
           : "Something went wrong, please try again.",
         errorTitle: "Failed to fetch restore details",
       });
-    }
-  };
-
-  logOutUser = () => {
-    const token = Utilities.getToken();
-    if (token) {
-      window.localStorage.removeItem("token");
     }
   };
 
@@ -350,15 +343,12 @@ class SnapshotRestore extends Component {
     }
 
     if (restoreCompleted && hasNoErrorsOrWarnings) {
-      this.logOutUser();
-      this.props.history.push("/restore-completed");
+      Utilities.logoutUser(null, { snapshotRestore: true });
     }
 
     return (
       <div className="container flex-column flex1 u-overflow--auto u-paddingTop--30 u-paddingBottom--20 alignItems--center">
-        <Helmet>
-          <title>{`${this.props.match.params.slug} Snapshots Restore`}</title>
-        </Helmet>
+        <KotsPageTitle pageName="Snapshot Restore" showAppSlug />
         {!restoreCompleted && !restoreFailing ? (
           <div className="flex1 flex-column alignItems--center">
             <p className="u-fontWeight--bold u-textColor--primary u-fontSize--larger u-lineHeight--normal u-marginBottom--10">

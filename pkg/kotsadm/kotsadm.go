@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"time"
 
 	"github.com/pkg/errors"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
@@ -115,53 +114,6 @@ func getKotsadmNamespacedRBAC(s *json.Serializer, additionalNamespace string, ko
 	roleBindingName := fmt.Sprintf("kotsadm-rolebinding-%s.yaml", additionalNamespace)
 	docs[roleBindingName] = roleBinding.Bytes()
 	return nil
-}
-
-func restartKotsadm(deployOptions *types.DeployOptions, clientset *kubernetes.Clientset) error {
-	pods, err := clientset.CoreV1().Pods(deployOptions.Namespace).List(context.TODO(), metav1.ListOptions{LabelSelector: "app=kotsadm"})
-	if err != nil {
-		return errors.Wrap(err, "failed to list pods for termination")
-	}
-
-	deletedPods := make(map[string]bool)
-	for _, pod := range pods.Items {
-		err := clientset.CoreV1().Pods(deployOptions.Namespace).Delete(context.TODO(), pod.Name, metav1.DeleteOptions{})
-		if err != nil {
-			return errors.Wrap(err, "failed to delete admin console")
-		}
-		deletedPods[pod.Name] = true
-	}
-
-	// wait for pods to stop running, or waiting for new pods will trip up.
-	start := time.Now()
-	for {
-		pods, err := clientset.CoreV1().Pods(deployOptions.Namespace).List(context.TODO(), metav1.ListOptions{LabelSelector: "app=kotsadm"})
-		if err != nil {
-			return errors.Wrap(err, "failed to list pods")
-		}
-
-		keepWaiting := false
-		for _, pod := range pods.Items {
-			if !deletedPods[pod.Name] {
-				continue
-			}
-
-			if pod.Status.Phase == corev1.PodRunning {
-				keepWaiting = true
-				break
-			}
-		}
-
-		if !keepWaiting {
-			return nil
-		}
-
-		time.Sleep(time.Second)
-
-		if time.Now().Sub(start) > deployOptions.Timeout {
-			return &types.ErrorTimeout{Message: "timeout waiting for kotsadm pod to stop"}
-		}
-	}
 }
 
 func ensureKotsadmComponent(deployOptions *types.DeployOptions, clientset *kubernetes.Clientset) error {

@@ -1,7 +1,9 @@
 package kotsutil
 
 import (
+	"archive/tar"
 	"bytes"
+	"compress/gzip"
 	"context"
 	"encoding/base64"
 	"fmt"
@@ -31,6 +33,7 @@ import (
 	"github.com/replicatedhq/troubleshoot/pkg/collect"
 	"github.com/replicatedhq/troubleshoot/pkg/docrewrite"
 	velerov1 "github.com/vmware-tanzu/velero/pkg/apis/velero/v1"
+	"gopkg.in/yaml.v2"
 	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	serializer "k8s.io/apimachinery/pkg/runtime/serializer/json"
@@ -44,6 +47,28 @@ func init() {
 	velerov1.AddToScheme(scheme.Scheme)
 	kurlscheme.AddToScheme(scheme.Scheme)
 	applicationv1beta1.AddToScheme(scheme.Scheme)
+}
+
+var (
+	BrandingFontFileExtensions = map[string]string{
+		".woff":  "woff",
+		".woff2": "woff2",
+		".ttf":   "truetype",
+		".otf":   "opentype",
+		".eot":   "embedded-opentype",
+		".svg":   "svg",
+	}
+)
+
+type OverlySimpleGVK struct {
+	APIVersion string               `yaml:"apiVersion"`
+	Kind       string               `yaml:"kind"`
+	Metadata   OverlySimpleMetadata `yaml:"metadata"`
+}
+
+type OverlySimpleMetadata struct {
+	Name      string `yaml:"name"`
+	Namespace string `yaml:"namespace"`
 }
 
 // KotsKinds are all of the special "client-side" kinds that are packaged in
@@ -73,6 +98,8 @@ type KotsKinds struct {
 
 	Backup    *velerov1.Backup
 	Installer *kurlv1beta1.Installer
+
+	LintConfig *kotsv1beta1.LintConfig
 }
 
 func (k *KotsKinds) EncryptConfigValues() error {
@@ -505,6 +532,8 @@ func LoadKotsKindsFromPath(fromDir string) (*KotsKinds, error) {
 					kotsKinds.Installation = *decoded.(*kotsv1beta1.Installation)
 				case "kots.io/v1beta1, Kind=HelmChart":
 					kotsKinds.HelmCharts = append(kotsKinds.HelmCharts, decoded.(*kotsv1beta1.HelmChart))
+				case "kots.io/v1beta1, Kind=LintConfig":
+					kotsKinds.LintConfig = decoded.(*kotsv1beta1.LintConfig)
 				case "troubleshoot.sh/v1beta2, Kind=Collector":
 					kotsKinds.Collector = decoded.(*troubleshootv1beta2.Collector)
 				case "troubleshoot.sh/v1beta2, Kind=Analyzer":
@@ -553,9 +582,13 @@ func LoadHelmChartsFromPath(fromDir string) ([]*kotsv1beta1.HelmChart, error) {
 				return errors.Wrap(err, "failed to read file")
 			}
 
+			if !IsHelmChartKind(contents) {
+				return nil
+			}
+
 			decoded, gvk, err := decode(contents, nil, nil)
 			if err != nil {
-				return nil
+				return errors.Wrap(err, "failed to decode")
 			}
 
 			if gvk.String() == "kots.io/v1beta1, Kind=HelmChart" {
@@ -571,6 +604,17 @@ func LoadHelmChartsFromPath(fromDir string) ([]*kotsv1beta1.HelmChart, error) {
 	}
 
 	return charts, nil
+}
+
+func IsHelmChartKind(content []byte) bool {
+	gvk := OverlySimpleGVK{}
+	if err := yaml.Unmarshal(content, &gvk); err != nil {
+		return false
+	}
+	if gvk.APIVersion == "kots.io/v1beta1" && gvk.Kind == "HelmChart" {
+		return true
+	}
+	return false
 }
 
 func LoadInstallationFromPath(installationFilePath string) (*kotsv1beta1.Installation, error) {
@@ -749,6 +793,21 @@ func LoadApplicationFromContents(content []byte) (*applicationv1beta1.Applicatio
 	return obj.(*applicationv1beta1.Application), nil
 }
 
+func LoadApplicationFromBytes(content []byte) (*kotsv1beta1.Application, error) {
+	decode := scheme.Codecs.UniversalDeserializer().Decode
+
+	obj, gvk, err := decode(content, nil, nil)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to decode content")
+	}
+
+	if gvk.String() != "kots.io/v1beta1, Kind=Application" {
+		return nil, errors.Errorf("unexpected gvk: %s", gvk.String())
+	}
+
+	return obj.(*kotsv1beta1.Application), nil
+}
+
 func SupportBundleToCollector(sb *troubleshootv1beta2.SupportBundle) *troubleshootv1beta2.Collector {
 	return &troubleshootv1beta2.Collector{
 		TypeMeta: metav1.TypeMeta{
@@ -803,12 +862,10 @@ func GetInstallationParams(configMapName string) (InstallationParams, error) {
 		return autoConfig, errors.Wrap(err, "failed to get k8s clientset")
 	}
 
-	isKurl, err := kurl.IsKurl()
+	isKurl, err := kurl.IsKurl(clientset)
 	if err != nil {
 		return autoConfig, errors.Wrap(err, "failed to check if cluster is kurl")
 	}
-
-	autoConfig.EnableImageDeletion = isKurl
 
 	kotsadmConfigMap, err := clientset.CoreV1().ConfigMaps(util.PodNamespace).Get(context.TODO(), configMapName, metav1.GetOptions{})
 	if err != nil {
@@ -830,6 +887,12 @@ func GetInstallationParams(configMapName string) (InstallationParams, error) {
 	autoConfig.WaitDuration, _ = time.ParseDuration(kotsadmConfigMap.Data["wait-duration"])
 	autoConfig.WithMinio, _ = strconv.ParseBool(kotsadmConfigMap.Data["with-minio"])
 	autoConfig.AppVersionLabel = kotsadmConfigMap.Data["app-version-label"]
+
+	if enableImageDeletion, ok := kotsadmConfigMap.Data["enable-image-deletion"]; ok {
+		autoConfig.EnableImageDeletion, _ = strconv.ParseBool(enableImageDeletion)
+	} else {
+		autoConfig.EnableImageDeletion = isKurl
+	}
 
 	return autoConfig, nil
 }
@@ -1047,4 +1110,87 @@ func GetKOTSBinPath() string {
 		// we're not inside the kotsadm pod, return the command used to run kots
 		return os.Args[0]
 	}
+}
+
+func LoadBrandingArchiveFromPath(archivePath string) (*bytes.Buffer, error) {
+	fileInfo, err := os.Stat(archivePath)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to stat branding archive path")
+	}
+	if !fileInfo.IsDir() {
+		return nil, errors.New("branding archive path is not a directory")
+	}
+
+	buf := bytes.NewBuffer(nil)
+	gz := gzip.NewWriter(buf)
+	defer gz.Close()
+	tw := tar.NewWriter(gz)
+	defer tw.Close()
+
+	hasFiles := false
+
+	err = filepath.Walk(archivePath,
+		func(path string, info os.FileInfo, err error) error {
+			if err != nil {
+				return err
+			}
+
+			if info.IsDir() {
+				return nil
+			}
+
+			ext := filepath.Ext(path)
+			_, isFontFile := BrandingFontFileExtensions[ext]
+			if ext != ".yaml" && ext != ".css" && !isFontFile {
+				return nil
+			}
+
+			contents, err := ioutil.ReadFile(path)
+			if err != nil {
+				return errors.Wrap(err, "failed to read file")
+			}
+
+			name := strings.TrimPrefix(path, archivePath+string(os.PathSeparator))
+
+			if ext == ".yaml" {
+				_, gvk, err := scheme.Codecs.UniversalDeserializer().Decode(contents, nil, nil)
+				if err != nil {
+					return nil
+				}
+
+				if gvk.String() != "kots.io/v1beta1, Kind=Application" {
+					return nil
+				}
+
+				name = "application.yaml"
+			}
+
+			hdr := &tar.Header{
+				Name:    name,
+				Mode:    int64(info.Mode()),
+				Size:    info.Size(),
+				ModTime: info.ModTime(),
+			}
+
+			if err := tw.WriteHeader(hdr); err != nil {
+				return errors.Wrap(err, "failed to write tar header")
+			}
+
+			if _, err := tw.Write(contents); err != nil {
+				return errors.Wrap(err, "failed to write tar contents")
+			}
+
+			hasFiles = true
+
+			return nil
+		})
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to walk archive path")
+	}
+
+	if !hasFiles {
+		return bytes.NewBuffer(nil), nil
+	}
+
+	return buf, nil
 }

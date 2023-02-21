@@ -1,5 +1,5 @@
 # syntax=docker/dockerfile:1.3
-FROM golang:1.17-buster as builder
+FROM golang:1.19-bullseye as builder
 
 EXPOSE 2345
 
@@ -7,10 +7,7 @@ ENV GOCACHE "/.cache/gocache/"
 ENV GOMODCACHE "/.cache/gomodcache/"
 ENV DEBUG_KOTSADM=1
 
-RUN curl -k https://www.postgresql.org/media/keys/ACCC4CF8.asc | apt-key add - \
-  && echo "deb http://apt.postgresql.org/pub/repos/apt/ buster-pgdg main" > /etc/apt/sources.list.d/PostgreSQL.list \
-  && apt-get update && apt-get install -y --no-install-recommends gnupg2 postgresql-client-14 python-pip ca-certificates \
-  && pip install s3cmd \
+RUN apt-get update && apt-get install -y --no-install-recommends gnupg2 s3cmd ca-certificates \
   && rm -rf /var/lib/apt/lists/*
 
 ENV PATH="/usr/local/bin:$PATH"

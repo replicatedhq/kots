@@ -22,6 +22,7 @@ type KOTSHandler interface {
 	CollectSupportBundle(w http.ResponseWriter, r *http.Request)
 	CollectHelmSupportBundle(w http.ResponseWriter, r *http.Request)
 	ShareSupportBundle(w http.ResponseWriter, r *http.Request)
+	DeleteSupportBundle(w http.ResponseWriter, r *http.Request)
 	GetPodDetailsFromSupportBundle(w http.ResponseWriter, r *http.Request)
 
 	// redactor routes
@@ -99,7 +100,8 @@ type KOTSHandler interface {
 	GetLicense(w http.ResponseWriter, r *http.Request)
 
 	AppUpdateCheck(w http.ResponseWriter, r *http.Request)
-	ConfigureAutomaticUpdates(w http.ResponseWriter, r *http.Request)
+	SetAutomaticUpdatesConfig(w http.ResponseWriter, r *http.Request)
+	GetAutomaticUpdatesConfig(w http.ResponseWriter, r *http.Request)
 	RemoveApp(w http.ResponseWriter, r *http.Request)
 
 	// App snapshot routes
@@ -119,7 +121,7 @@ type KOTSHandler interface {
 	SaveInstanceSnapshotConfig(w http.ResponseWriter, r *http.Request)
 	GetGlobalSnapshotSettings(w http.ResponseWriter, r *http.Request)
 	UpdateGlobalSnapshotSettings(w http.ResponseWriter, r *http.Request)
-	ConfigureFileSystemSnapshotProvider(w http.ResponseWriter, r *http.Request)
+	GetFileSystemSnapshotProviderInstructions(w http.ResponseWriter, r *http.Request)
 	GetBackup(w http.ResponseWriter, r *http.Request)
 	DeleteBackup(w http.ResponseWriter, r *http.Request)
 	RestoreApps(w http.ResponseWriter, r *http.Request)

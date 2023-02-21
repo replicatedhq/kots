@@ -25,16 +25,13 @@ is useful to restrict release tags to a major version, or to filter out garbage 
 ### Sample image-spec
 ```text
 minio minio/minio
-postgres-10 postgres ^10.\d+-alpine$
-postgres-14 postgres ^14.\d+-alpine$
+rqlite rqlite/rqlite
 dex ghcr.io/dexidp/dex
 ```
-The preceding image spec will produce the following environment and Go files. Note how the override tags are applied 
-to the Postgres definitions. 
+The preceding image spec will produce the following environment and Go files.
 ```shell
 MINIO_TAG='RELEASE.2021-09-15T04-54-25Z'
-POSTGRES_10_TAG='10.21-alpine'
-POSTGRES_14_TAG='14.4-alpine'
+RQLITE_TAG='7.7.0'
 DEX_TAG='v2.30.0'
 ```
 ```go
@@ -42,14 +39,13 @@ package image
 
 const (
 	Minio = "minio/minio:RELEASE.2021-09-15T04-54-25Z"
-	Postgres10 = "postgres:10.21-alpine"
-	Postgres14 = "postgres:14.4-alpine"
+	Rqlite = "rqlite/rqlite:7.7.0"
 	Dex = "ghcr.io/dexidp/dex:v2.30.0"
 )
 ```
 
-## Github 
-Some of the image tags are resolved by looking at the Github release history of their associated projects.  This involves 
-interacting with the Github API.  The program uses an optional environment variable `GITHUB_AUTH_TOKEN` which is a Github API token 
+## GitHub 
+Some of the image tags are resolved by looking at the GitHub release history of their associated projects.  This involves 
+interacting with the GitHub API.  The program uses an optional environment variable `GITHUB_AUTH_TOKEN` which is a GitHub API token 
 with **public_repo** scope for the purpose of avoiding rate limiting.  The program will work without `GITHUB_AUTH_TOKEN`
 but it is not recommended. 

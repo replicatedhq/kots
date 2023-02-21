@@ -5,11 +5,11 @@ metadata:
     controller-tools.k8s.io: "1.0"
   name: object-store
 spec:
-  database: kotsadm-postgres
   name: object_store
   requires: []
   schema:
-    postgres:
+    rqlite:
+      strict: true
       primaryKey:
       - filepath
       columns:

@@ -43,7 +43,7 @@ const ConfigInfo = ({ match, fromLicenseFlow, app }) => {
         </p>
         <Link
           to={`/app/${app?.slug}/config/${pendingVersions[0].parentSequence}`}
-          className="replicated-link"
+          className="link"
         >
           {" "}
           Edit the latest config{" "}
@@ -66,7 +66,7 @@ const ConfigInfo = ({ match, fromLicenseFlow, app }) => {
         </p>
         <Link
           to={`/app/${app?.slug}/config/${currentSequence}`}
-          className="replicated-link"
+          className="link"
         >
           {" "}
           Edit the currently deployed config{" "}
@@ -87,7 +87,7 @@ const ConfigInfo = ({ match, fromLicenseFlow, app }) => {
         </p>
         <Link
           to={`/app/${app?.slug}/config/${currentSequence}`}
-          className="replicated-link"
+          className="link"
         >
           {" "}
           Edit the currently deployed config{" "}

@@ -1,15 +1,13 @@
 package persistence
 
-import (
-	"database/sql"
-)
+import "github.com/rqlite/gorqlite"
 
 var (
-	db  *sql.DB
+	db  *gorqlite.Connection
 	uri string
 )
 
-func SetDB(database *sql.DB) {
+func SetDB(database *gorqlite.Connection) {
 	db = database
 }
 

@@ -198,6 +198,17 @@ var HandlerPolicyTests = map[string][]HandlerPolicyTest{
 			ExpectStatus: http.StatusOK,
 		},
 	},
+	"DeleteSupportBundle": {
+		{
+			Vars:         map[string]string{"appSlug": "my-app", "bundleId": "234"},
+			Roles:        []rbactypes.Role{rbac.ClusterAdminRole},
+			SessionRoles: []string{rbac.ClusterAdminRoleID},
+			Calls: func(storeRecorder *mock_store.MockStoreMockRecorder, handlerRecorder *mock_handlers.MockKOTSHandlerMockRecorder) {
+				handlerRecorder.DeleteSupportBundle(gomock.Any(), gomock.Any())
+			},
+			ExpectStatus: http.StatusOK,
+		},
+	},
 	"GetPodDetailsFromSupportBundle": {
 		{
 			Vars:         map[string]string{"appSlug": "my-app", "bundleId": "234"},
@@ -865,13 +876,24 @@ var HandlerPolicyTests = map[string][]HandlerPolicyTest{
 			ExpectStatus: http.StatusOK,
 		},
 	},
-	"ConfigureAutomaticUpdates": {
+	"SetAutomaticUpdatesConfig": {
 		{
 			Vars:         map[string]string{"appSlug": "my-app"},
 			Roles:        []rbactypes.Role{rbac.ClusterAdminRole},
 			SessionRoles: []string{rbac.ClusterAdminRoleID},
 			Calls: func(storeRecorder *mock_store.MockStoreMockRecorder, handlerRecorder *mock_handlers.MockKOTSHandlerMockRecorder) {
-				handlerRecorder.ConfigureAutomaticUpdates(gomock.Any(), gomock.Any())
+				handlerRecorder.SetAutomaticUpdatesConfig(gomock.Any(), gomock.Any())
+			},
+			ExpectStatus: http.StatusOK,
+		},
+	},
+	"GetAutomaticUpdatesConfig": {
+		{
+			Vars:         map[string]string{"appSlug": "my-app"},
+			Roles:        []rbactypes.Role{rbac.ClusterAdminRole},
+			SessionRoles: []string{rbac.ClusterAdminRoleID},
+			Calls: func(storeRecorder *mock_store.MockStoreMockRecorder, handlerRecorder *mock_handlers.MockKOTSHandlerMockRecorder) {
+				handlerRecorder.GetAutomaticUpdatesConfig(gomock.Any(), gomock.Any())
 			},
 			ExpectStatus: http.StatusOK,
 		},
@@ -1037,12 +1059,12 @@ var HandlerPolicyTests = map[string][]HandlerPolicyTest{
 			ExpectStatus: http.StatusOK,
 		},
 	},
-	"ConfigureFileSystemSnapshotProvider": {
+	"GetFileSystemSnapshotProviderInstructions": {
 		{
 			Roles:        []rbactypes.Role{rbac.ClusterAdminRole},
 			SessionRoles: []string{rbac.ClusterAdminRoleID},
 			Calls: func(storeRecorder *mock_store.MockStoreMockRecorder, handlerRecorder *mock_handlers.MockKOTSHandlerMockRecorder) {
-				handlerRecorder.ConfigureFileSystemSnapshotProvider(gomock.Any(), gomock.Any())
+				handlerRecorder.GetFileSystemSnapshotProviderInstructions(gomock.Any(), gomock.Any())
 			},
 			ExpectStatus: http.StatusOK,
 		},
@@ -1402,7 +1424,7 @@ func TestListUnauthedRoutes(t *testing.T) {
 	req := require.New(t)
 
 	r := mux.NewRouter()
-	handlers.RegisterUnauthenticatedRoutes(&handlers.Handler{}, r, r)
+	handlers.RegisterUnauthenticatedRoutes(&handlers.Handler{}, nil, r, r)
 	// build a list of patterns that are used by kots
 	patternList := []string{}
 	err := r.Walk(func(route *mux.Route, _ *mux.Router, _ []*mux.Route) error {

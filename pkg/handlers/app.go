@@ -6,7 +6,6 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
-	"time"
 
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
@@ -19,6 +18,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/helm"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/logger"
+	"github.com/replicatedhq/kots/pkg/operator"
 	"github.com/replicatedhq/kots/pkg/rbac"
 	"github.com/replicatedhq/kots/pkg/registry"
 	"github.com/replicatedhq/kots/pkg/render"
@@ -36,6 +36,11 @@ func (h *Handler) GetPendingApp(w http.ResponseWriter, r *http.Request) {
 	if sess == nil {
 		logger.Error(errors.New("invalid session"))
 		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	if util.IsHelmManaged() {
+		w.WriteHeader(http.StatusNotFound)
 		return
 	}
 
@@ -392,7 +397,7 @@ func (h *Handler) GetAppVersionHistory(w http.ResponseWriter, r *http.Request) {
 		}
 
 		history.NumOfRemainingVersions = 0
-		chartUpdates := helm.GetCachedUpdates(release.ChartPath)
+		chartUpdates := helm.GetDownloadedUpdates(release.ChartPath)
 
 		installedReleases, err := helm.ListChartVersions(appSlug, release.Namespace)
 		if err != nil {
@@ -472,7 +477,8 @@ func (h *Handler) GetAppVersionHistory(w http.ResponseWriter, r *http.Request) {
 }
 
 type RemoveAppRequest struct {
-	Force bool `json:"force"`
+	Undeploy bool `json:"undeploy"`
+	Force    bool `json:"force"`
 }
 
 type RemoveAppResponse struct {
@@ -506,35 +512,49 @@ func (h *Handler) RemoveApp(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	downstreams, err := store.GetStore().ListDownstreamsForApp(app.ID)
+	if err != nil {
+		response.Error = "failed to list downstreams"
+		logger.Error(errors.Wrap(err, response.Error))
+		JSON(w, http.StatusInternalServerError, response)
+		return
+	}
+
+	if len(downstreams) == 0 {
+		response.Error = "no downstreams found for app"
+		logger.Error(errors.New(response.Error))
+		JSON(w, http.StatusInternalServerError, response)
+		return
+	}
+	d := downstreams[0]
+
 	if !removeAppRequest.Force {
-		downstreams, err := store.GetStore().ListDownstreamsForApp(app.ID)
+		currentVersion, err := store.GetStore().GetCurrentDownstreamVersion(app.ID, d.ClusterID)
 		if err != nil {
-			response.Error = "failed to list downstreams"
+			response.Error = "failed to get current downstream version"
 			logger.Error(errors.Wrap(err, response.Error))
 			JSON(w, http.StatusInternalServerError, response)
 			return
 		}
 
-		for _, d := range downstreams {
-			currentVersion, err := store.GetStore().GetCurrentDownstreamVersion(app.ID, d.ClusterID)
-			if err != nil {
-				response.Error = "failed to get current downstream version"
-				logger.Error(errors.Wrap(err, response.Error))
-				JSON(w, http.StatusInternalServerError, response)
-				return
-			}
-
-			if currentVersion != nil {
-				response.Error = fmt.Sprintf("application %s is deployed and cannot be removed", appSlug)
-				logger.Error(errors.Wrap(err, response.Error))
-				JSON(w, http.StatusBadRequest, response)
-				return
-			}
+		if currentVersion != nil {
+			response.Error = fmt.Sprintf("application %s is deployed and cannot be removed", appSlug)
+			logger.Error(errors.Wrap(err, response.Error))
+			JSON(w, http.StatusBadRequest, response)
+			return
 		}
 	}
 
-	err = store.GetStore().RemoveApp(app.ID)
-	if err != nil {
+	if removeAppRequest.Undeploy {
+		if err := operator.MustGetOperator().UndeployApp(app, &d, false); err != nil {
+			response.Error = "failed to undeploy app"
+			logger.Error(errors.Wrap(err, response.Error))
+			JSON(w, http.StatusInternalServerError, response)
+			return
+		}
+	}
+
+	if err := store.GetStore().RemoveApp(app.ID); err != nil {
 		response.Error = "failed to remove app"
 		logger.Error(errors.Wrap(err, response.Error))
 		JSON(w, http.StatusInternalServerError, response)
@@ -740,15 +760,16 @@ func (h *Handler) GetAutomatedInstallStatus(w http.ResponseWriter, r *http.Reque
 }
 
 func helmReleaseToDownsreamVersion(installedRelease *helm.InstalledRelease) *downstreamtypes.DownstreamVersion {
-	now := time.Now()
 	return &downstreamtypes.DownstreamVersion{
 		VersionLabel:       installedRelease.Version,
 		Semver:             installedRelease.Semver,
 		UpdateCursor:       installedRelease.Version,
-		CreatedOn:          &now,                // TODO: implement
-		UpstreamReleasedAt: &now,                // TODO: implement
+		CreatedOn:          nil,
+		DeployedAt:         installedRelease.DeployedOn,
+		UpstreamReleasedAt: installedRelease.ReleasedOn,
 		IsDeployable:       false,               // TODO: implement
 		NonDeployableCause: "already installed", // TODO: implement
+		HasConfig:          true,                // TODO: implement
 		ParentSequence:     int64(installedRelease.Revision),
 		Sequence:           int64(installedRelease.Revision),
 		Status:             storetypes.DownstreamVersionStatus(installedRelease.Status.String()),

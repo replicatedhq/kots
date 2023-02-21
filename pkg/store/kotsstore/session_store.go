@@ -2,8 +2,8 @@ package kotsstore
 
 import (
 	"context"
-	"database/sql"
 	"encoding/json"
+	"fmt"
 	"sync"
 	"time"
 
@@ -15,6 +15,7 @@ import (
 	sessiontypes "github.com/replicatedhq/kots/pkg/session/types"
 	usertypes "github.com/replicatedhq/kots/pkg/user/types"
 	"github.com/replicatedhq/kots/pkg/util"
+	"github.com/rqlite/gorqlite"
 	"github.com/segmentio/ksuid"
 	corev1 "k8s.io/api/core/v1"
 	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
@@ -35,14 +36,14 @@ type SessionMetadata struct {
 	Roles []string
 }
 
-func (s *KOTSStore) migrateSessionsFromPostgres() error {
-	logger.Debug("migrating sessions from postgres")
+func (s *KOTSStore) migrateSessionsFromRqlite() error {
+	logger.Debug("migrating sessions from rqlite")
 
 	db := persistence.MustGetDBSession()
 	query := `select id, metadata, issued_at, expire_at from session`
-	rows, err := db.Query(query)
+	rows, err := db.QueryOne(query)
 	if err != nil {
-		return errors.Wrap(err, "failed to query rows")
+		return fmt.Errorf("failed to query: %v: %v", err, rows.Err)
 	}
 
 	sessionSecret, err := s.getSessionSecret()
@@ -53,7 +54,7 @@ func (s *KOTSStore) migrateSessionsFromPostgres() error {
 	for rows.Next() {
 		session := sessiontypes.Session{}
 
-		var issuedAt sql.NullTime
+		var issuedAt gorqlite.NullTime
 		var expiresAt time.Time
 		var metadataStr string
 		if err := rows.Scan(&session.ID, &metadataStr, &issuedAt, &expiresAt); err != nil {
@@ -96,8 +97,8 @@ func (s *KOTSStore) migrateSessionsFromPostgres() error {
 	}
 
 	query = `delete from session`
-	if _, err := db.Exec(query); err != nil {
-		return errors.Wrap(err, "failed to delete sessions from pg")
+	if wr, err := db.WriteOne(query); err != nil {
+		return fmt.Errorf("failed to delete sessions from db: %v: %v", err, wr.Err)
 	}
 
 	return nil

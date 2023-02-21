@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
-	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
+	apptypes "github.com/replicatedhq/kots/pkg/app/types"
 	kotsadmconfig "github.com/replicatedhq/kots/pkg/kotsadmconfig"
 	identity "github.com/replicatedhq/kots/pkg/kotsadmidentity"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
@@ -59,6 +59,7 @@ func CreateAppFromOnline(opts CreateOnlineAppOpts) (_ *kotsutil.KotsKinds, final
 		}
 	}()
 
+	var app *apptypes.App
 	defer func() {
 		if finalError == nil {
 			if err := store.GetStore().ClearTaskStatus("online-install"); err != nil {
@@ -67,7 +68,7 @@ func CreateAppFromOnline(opts CreateOnlineAppOpts) (_ *kotsutil.KotsKinds, final
 			if err := store.GetStore().SetAppInstallState(opts.PendingApp.ID, "installed"); err != nil {
 				logger.Error(errors.Wrap(err, "failed to set app status to installed"))
 			}
-			if err := updatechecker.Configure(opts.PendingApp); err != nil {
+			if err := updatechecker.Configure(app, app.UpdateCheckerSpec); err != nil {
 				logger.Error(errors.Wrap(err, "failed to configure update checker"))
 			}
 		} else {
@@ -128,7 +129,7 @@ func CreateAppFromOnline(opts CreateOnlineAppOpts) (_ *kotsutil.KotsKinds, final
 		configFile = tmpFile.Name()
 	}
 
-	identityConfigFile, err := identity.InitAppIdentityConfig(opts.PendingApp.Slug, kotsv1beta1.Storage{})
+	identityConfigFile, err := identity.InitAppIdentityConfig(opts.PendingApp.Slug)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to init identity config")
 	}
@@ -157,7 +158,9 @@ func CreateAppFromOnline(opts CreateOnlineAppOpts) (_ *kotsutil.KotsKinds, final
 	}
 
 	if _, err := pull.Pull(opts.UpstreamURI, pullOptions); err != nil {
-		return nil, errors.Wrap(err, "failed to pull")
+		if errors.Cause(err) != pull.ErrConfigNeeded {
+			return nil, errors.Wrap(err, "failed to pull")
+		}
 	}
 
 	// Create the downstream
@@ -176,7 +179,7 @@ func CreateAppFromOnline(opts CreateOnlineAppOpts) (_ *kotsutil.KotsKinds, final
 		return nil, errors.Wrap(err, "failed to create new version")
 	}
 
-	app, err := store.GetStore().GetApp(opts.PendingApp.ID)
+	app, err = store.GetStore().GetApp(opts.PendingApp.ID)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to get app %s", opts.PendingApp.ID)
 	}

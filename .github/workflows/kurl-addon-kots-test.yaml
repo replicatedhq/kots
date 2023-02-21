@@ -5,12 +5,8 @@ on:
     inputs:
       addon_version:
         type: string
-        description: "Kots version."
+        description: "Kots version (without the 'v')."
         required: true
-      s3_prefix:
-        type: string
-        description: "S3 key prefix."
-        default: "test/"
       priority:
         type: number
         description: 'Testgrid run priority.'
@@ -19,7 +15,7 @@ on:
     inputs:
       addon_version:
         type: string
-        description: "Kots version."
+        description: "Kots version (without the 'v')."
         required: true
       s3_prefix:
         type: string
@@ -32,33 +28,28 @@ on:
     outputs:
       addon_package_url:
         description: "S3 package url"
-        value: ${{ jobs.generate-kots-addon.outputs.addon_package_url }}
-
-concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+        value: ${{ jobs.test-kots-addon.outputs.addon_package_url }}
 
 jobs:
-  generate-kots-addon:
-    uses: ./.github/workflows/kurl-addon-kots-generate.yaml
-    with:
-      addon_version: "${{ inputs.addon_version }}"
-      s3_prefix: "${{ inputs.s3_prefix }}"
-
   test-kots-addon:
     runs-on: ubuntu-20.04
-    needs: generate-kots-addon
+    outputs:
+      addon_package_url: ${{ steps.addon-generate.outputs.addon_package_url }}
     steps:
       - uses: actions/checkout@v3
-      - name: set outputs
-        id: vars
-        run: echo "::set-output name=sha_short::${GITHUB_SHA:0:7}"
-      - uses: replicatedhq/kurl/.github/actions/addon-testgrid-tester@main
+      - id: addon-generate
+        uses: ./.github/actions/kurl-addon-kots-generate
         with:
-          addon: "kotsadm"
-          version: "${{ inputs.addon_version }}"
-          package-url: "${{ needs.generate-kots-addon.outputs.addon_package_url }}"
-          testgrid-spec-path: "deploy/kurl/kotsadm/template/testgrid"
-          testgrid-run-prefix: "KOTS-${{ inputs.addon_version }}-${{ github.ref }}-${{ steps.vars.outputs.sha_short }}"
-          testgrid-api-token: "${{ secrets.TESTGRID_PROD_API_TOKEN }}"
+          addon_version: "${{ inputs.addon_version }}"
+          s3_prefix: "${{ github.event.action == 'workflow_dispatch' && 'test/' || inputs.s3_prefix }}"
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.KURL_ADDONS_AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.KURL_ADDONS_AWS_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: us-east-1
+      - uses: ./.github/actions/kurl-addon-kots-test
+        id: addon-test
+        with:
+          addon_version: "${{ inputs.addon_version }}"
+          addon_package_url: ${{ steps.addon-generate.outputs.addon_package_url }}
           priority: "${{ inputs.priority }}"
+          testgrid_api_token: "${{ secrets.TESTGRID_PROD_API_TOKEN }}"

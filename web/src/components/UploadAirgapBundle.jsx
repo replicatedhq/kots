@@ -1,16 +1,16 @@
 import * as React from "react";
 import classNames from "classnames";
-import { withRouter } from "react-router-dom";
-import { Helmet } from "react-helmet";
+import { KotsPageTitle } from "@components/Head";
 import isEmpty from "lodash/isEmpty";
 import Modal from "react-modal";
 import CodeSnippet from "@src/components/shared/CodeSnippet";
 import MountAware from "@src/components/shared/MountAware";
-import AirgapUploadProgress from "@src/components/AirgapUploadProgress";
+import AirgapUploadProgress from "@features/Dashboard/components/AirgapUploadProgress";
 import LicenseUploadProgress from "./LicenseUploadProgress";
 import AirgapRegistrySettings from "./shared/AirgapRegistrySettings";
 import { Utilities } from "../utilities/utilities";
 import { AirgapUploader } from "../utilities/airgapUploader";
+import { withRouter } from "@src/utilities/react-router-utilities";
 
 import "../scss/components/troubleshoot/UploadSupportBundleModal.scss";
 import "../scss/components/Login.scss";
@@ -456,13 +456,7 @@ class UploadAirgapBundle extends React.Component {
 
     return (
       <div className="UploadLicenseFile--wrapper container flex-column u-overflow--auto u-marginTop--auto u-marginBottom--auto alignItems--center">
-        <Helmet>
-          <title>{`${
-            applicationName
-              ? `${applicationName} Admin Console`
-              : "Admin Console"
-          }`}</title>
-        </Helmet>
+        <KotsPageTitle pageName="Air Gap Installation" showAppSlug />
         <div className="LoginBox-wrapper u-flexTabletReflow flex-auto u-marginTop--20 u-marginBottom--5">
           <div className="flex-auto flex-column login-form-wrapper secure-console justifyContent--center">
             <div className="flex-column alignItems--center">
@@ -538,7 +532,7 @@ class UploadAirgapBundle extends React.Component {
                         <div className="u-textAlign--center">
                           <p className="u-fontSize--normal u-textColor--secondary u-fontWeight--medium u-lineHeight--normal">
                             Drag your airgap bundle here or{" "}
-                            <span className="u-linkColor u-fontWeight--medium u-textDecoration--underlineOnHover">
+                            <span className="link u-textDecoration--underlineOnHover">
                               choose a bundle to upload
                             </span>
                           </p>
@@ -590,11 +584,7 @@ class UploadAirgapBundle extends React.Component {
                     ) : supportBundleCommand ? (
                       <div>
                         <div className="u-marginTop--10">
-                          <a
-                            href="#"
-                            className="replicated-link"
-                            onClick={this.toggleShowRun}
-                          >
+                          <a href="#" onClick={this.toggleShowRun}>
                             Click here
                           </a>{" "}
                           to get a command to generate a support bundle.
@@ -606,7 +596,7 @@ class UploadAirgapBundle extends React.Component {
                 {hasFile && (
                   <div className="u-marginTop--10">
                     <span
-                      className="replicated-link u-fontSize--small"
+                      className="link u-fontSize--small"
                       onClick={this.clearFile}
                     >
                       Select a different bundle
@@ -629,7 +619,7 @@ class UploadAirgapBundle extends React.Component {
             onClick={this.handleOnlineInstall}
           >
             Optionally you can{" "}
-            <span className="replicated-link">
+            <span className="link">
               download{" "}
               {applicationName?.length > 0
                 ? applicationName
@@ -644,7 +634,7 @@ class UploadAirgapBundle extends React.Component {
               Unable to install license
             </span>
             <span
-              className="u-fontSize--small replicated-link"
+              className="u-fontSize--small link"
               onClick={this.toggleViewOnlineInstallErrorMessage}
             >
               view more
@@ -696,4 +686,5 @@ class UploadAirgapBundle extends React.Component {
   }
 }
 
+// eslint-disable-next-line
 export default withRouter(UploadAirgapBundle);

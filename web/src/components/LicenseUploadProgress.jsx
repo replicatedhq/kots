@@ -1,5 +1,4 @@
 import React from "react";
-import { withRouter } from "react-router-dom";
 import { Utilities } from "@src/utilities/utilities";
 import { Repeater } from "@src/utilities/repeater";
 import "@src/scss/components/AirgapUploadProgress.scss";
@@ -108,4 +107,4 @@ class LicenseUploadProgress extends React.Component {
   }
 }
 
-export default withRouter(LicenseUploadProgress);
+export default LicenseUploadProgress;

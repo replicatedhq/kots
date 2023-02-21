@@ -1,12 +1,14 @@
 package kotsstore
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/pkg/errors"
 	snapshottypes "github.com/replicatedhq/kots/pkg/kotsadmsnapshot/types"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/persistence"
+	"github.com/rqlite/gorqlite"
 	"go.uber.org/zap"
 )
 
@@ -15,12 +17,14 @@ func (s *KOTSStore) ListPendingScheduledSnapshots(appID string) ([]snapshottypes
 		zap.String("appID", appID))
 
 	db := persistence.MustGetDBSession()
-	query := `SELECT id, app_id, scheduled_timestamp FROM scheduled_snapshots WHERE app_id = $1 AND backup_name IS NULL;`
-	rows, err := db.Query(query, appID)
+	query := `SELECT id, app_id, scheduled_timestamp FROM scheduled_snapshots WHERE app_id = ? AND backup_name IS NULL;`
+	rows, err := db.QueryOneParameterized(gorqlite.ParameterizedStatement{
+		Query:     query,
+		Arguments: []interface{}{appID},
+	})
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to query")
+		return nil, fmt.Errorf("failed to query: %v: %v", err, rows.Err)
 	}
-	defer rows.Close()
 
 	scheduledSnapshots := []snapshottypes.ScheduledSnapshot{}
 	for rows.Next() {
@@ -39,10 +43,13 @@ func (s *KOTSStore) UpdateScheduledSnapshot(snapshotID string, backupName string
 		zap.String("ID", snapshotID))
 
 	db := persistence.MustGetDBSession()
-	query := `UPDATE scheduled_snapshots SET backup_name = $1 WHERE id = $2`
-	_, err := db.Exec(query, backupName, snapshotID)
+	query := `UPDATE scheduled_snapshots SET backup_name = ? WHERE id = ?`
+	wr, err := db.WriteOneParameterized(gorqlite.ParameterizedStatement{
+		Query:     query,
+		Arguments: []interface{}{backupName, snapshotID},
+	})
 	if err != nil {
-		return errors.Wrap(err, "failed to exec")
+		return fmt.Errorf("failed to write: %v: %v", err, wr.Err)
 	}
 	return nil
 }
@@ -52,10 +59,13 @@ func (s *KOTSStore) DeletePendingScheduledSnapshots(appID string) error {
 		zap.String("appID", appID))
 
 	db := persistence.MustGetDBSession()
-	query := `DELETE FROM scheduled_snapshots WHERE app_id = $1 AND backup_name IS NULL`
-	_, err := db.Exec(query, appID)
+	query := `DELETE FROM scheduled_snapshots WHERE app_id = ? AND backup_name IS NULL`
+	wr, err := db.WriteOneParameterized(gorqlite.ParameterizedStatement{
+		Query:     query,
+		Arguments: []interface{}{appID},
+	})
 	if err != nil {
-		return errors.Wrap(err, "failed to db exec query")
+		return fmt.Errorf("failed to write: %v: %v", err, wr.Err)
 	}
 
 	return nil
@@ -72,14 +82,17 @@ func (s *KOTSStore) CreateScheduledSnapshot(id string, appID string, timestamp t
 			app_id,
 			scheduled_timestamp
 		) VALUES (
-			$1,
-			$2,
-			$3
+			?,
+			?,
+			?
 		)
 	`
-	_, err := db.Exec(query, id, appID, timestamp)
+	wr, err := db.WriteOneParameterized(gorqlite.ParameterizedStatement{
+		Query:     query,
+		Arguments: []interface{}{id, appID, timestamp.Unix()},
+	})
 	if err != nil {
-		return errors.Wrap(err, "Failed to db exec query")
+		return fmt.Errorf("failed to write: %v: %v", err, wr.Err)
 	}
 
 	return nil
@@ -90,12 +103,14 @@ func (s *KOTSStore) ListPendingScheduledInstanceSnapshots(clusterID string) ([]s
 		zap.String("clusterID", clusterID))
 
 	db := persistence.MustGetDBSession()
-	query := `SELECT id, cluster_id, scheduled_timestamp FROM scheduled_instance_snapshots WHERE cluster_id = $1 AND backup_name IS NULL;`
-	rows, err := db.Query(query, clusterID)
+	query := `SELECT id, cluster_id, scheduled_timestamp FROM scheduled_instance_snapshots WHERE cluster_id = ? AND backup_name IS NULL;`
+	rows, err := db.QueryOneParameterized(gorqlite.ParameterizedStatement{
+		Query:     query,
+		Arguments: []interface{}{clusterID},
+	})
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to query")
+		return nil, fmt.Errorf("failed to query: %v: %v", err, rows.Err)
 	}
-	defer rows.Close()
 
 	scheduledSnapshots := []snapshottypes.ScheduledInstanceSnapshot{}
 	for rows.Next() {
@@ -114,10 +129,13 @@ func (s *KOTSStore) UpdateScheduledInstanceSnapshot(snapshotID string, backupNam
 		zap.String("ID", snapshotID))
 
 	db := persistence.MustGetDBSession()
-	query := `UPDATE scheduled_instance_snapshots SET backup_name = $1 WHERE id = $2`
-	_, err := db.Exec(query, backupName, snapshotID)
+	query := `UPDATE scheduled_instance_snapshots SET backup_name = ? WHERE id = ?`
+	wr, err := db.WriteOneParameterized(gorqlite.ParameterizedStatement{
+		Query:     query,
+		Arguments: []interface{}{backupName, snapshotID},
+	})
 	if err != nil {
-		return errors.Wrap(err, "failed to exec")
+		return fmt.Errorf("failed to write: %v: %v", err, wr.Err)
 	}
 	return nil
 }
@@ -127,10 +145,13 @@ func (s *KOTSStore) DeletePendingScheduledInstanceSnapshots(clusterID string) er
 		zap.String("clusterID", clusterID))
 
 	db := persistence.MustGetDBSession()
-	query := `DELETE FROM scheduled_instance_snapshots WHERE cluster_id = $1 AND backup_name IS NULL`
-	_, err := db.Exec(query, clusterID)
+	query := `DELETE FROM scheduled_instance_snapshots WHERE cluster_id = ? AND backup_name IS NULL`
+	wr, err := db.WriteOneParameterized(gorqlite.ParameterizedStatement{
+		Query:     query,
+		Arguments: []interface{}{clusterID},
+	})
 	if err != nil {
-		return errors.Wrap(err, "failed to db exec query")
+		return fmt.Errorf("failed to write: %v: %v", err, wr.Err)
 	}
 
 	return nil
@@ -147,14 +168,17 @@ func (s *KOTSStore) CreateScheduledInstanceSnapshot(id string, clusterID string,
 			cluster_id,
 			scheduled_timestamp
 		) VALUES (
-			$1,
-			$2,
-			$3
+			?,
+			?,
+			?
 		)
 	`
-	_, err := db.Exec(query, id, clusterID, timestamp)
+	wr, err := db.WriteOneParameterized(gorqlite.ParameterizedStatement{
+		Query:     query,
+		Arguments: []interface{}{id, clusterID, timestamp.Unix()},
+	})
 	if err != nil {
-		return errors.Wrap(err, "Failed to db exec query")
+		return fmt.Errorf("failed to write: %v: %v", err, wr.Err)
 	}
 
 	return nil

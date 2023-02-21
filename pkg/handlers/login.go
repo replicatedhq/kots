@@ -11,6 +11,7 @@ import (
 
 	oidc "github.com/coreos/go-oidc"
 	"github.com/pkg/errors"
+	"github.com/replicatedhq/kots/pkg/handlers/types"
 	"github.com/replicatedhq/kots/pkg/identity"
 	identityclient "github.com/replicatedhq/kots/pkg/identity/client"
 	ingress "github.com/replicatedhq/kots/pkg/ingress"
@@ -63,7 +64,7 @@ func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 	}
 	if identityConfig.Spec.Enabled && identityConfig.Spec.DisablePasswordAuth {
 		err := errors.New("password authentication disabled")
-		JSON(w, http.StatusForbidden, NewErrorResponse(err))
+		JSON(w, http.StatusForbidden, types.NewErrorResponse(err))
 		return
 	}
 

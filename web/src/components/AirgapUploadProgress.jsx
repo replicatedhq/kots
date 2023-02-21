@@ -1,5 +1,4 @@
 import React from "react";
-import { withRouter } from "react-router-dom";
 import Loader from "./shared/Loader";
 import {
   formatByteSize,
@@ -338,4 +337,4 @@ AirgapUploadProgress.defaultProps = {
   progress: 0,
 };
 
-export default withRouter(AirgapUploadProgress);
+export default AirgapUploadProgress;

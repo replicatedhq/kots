@@ -22,6 +22,7 @@ import (
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	reportingtypes "github.com/replicatedhq/kots/pkg/api/reporting/types"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
+	registrytypes "github.com/replicatedhq/kots/pkg/registry/types"
 	"github.com/replicatedhq/kots/pkg/replicatedapp"
 	reporting "github.com/replicatedhq/kots/pkg/reporting"
 	"github.com/replicatedhq/kots/pkg/template"
@@ -91,10 +92,6 @@ func getUpdatesReplicated(u *url.URL, fetchOptions *types.FetchOptions) (*types.
 		return nil, errors.Wrap(err, "failed to parse replicated upstream")
 	}
 
-	if err := replicatedapp.GetSuccessfulHeadResponse(replicatedUpstream, fetchOptions.License); err != nil {
-		return nil, errors.Wrap(err, "failed to get successful head response")
-	}
-
 	pendingReleases, updateCheckTime, err := listPendingChannelReleases(replicatedUpstream, fetchOptions.License, fetchOptions.LastUpdateCheckAt, currentCursor, fetchOptions.ChannelChanged, fetchOptions.ReportingInfo)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to list replicated app releases")
@@ -138,7 +135,7 @@ func downloadReplicated(
 	appSequence int64,
 	isAirgap bool,
 	airgapMetadata *kotsv1beta1.Airgap,
-	registry types.LocalRegistry,
+	registry registrytypes.RegistrySettings,
 	reportingInfo *reportingtypes.ReportingInfo,
 	skipCompatibilityCheck bool,
 ) (*types.Upstream, error) {
@@ -176,10 +173,6 @@ func downloadReplicated(
 			if replicatedUpstream.VersionLabel == nil && versionLabel != "" {
 				replicatedUpstream.VersionLabel = &versionLabel
 			}
-		}
-
-		if err := replicatedapp.GetSuccessfulHeadResponse(replicatedUpstream, license); err != nil {
-			return nil, errors.Wrap(err, "failed to get successful head response")
 		}
 
 		downloadedRelease, err := downloadReplicatedApp(replicatedUpstream, license, updateCursor, reportingInfo)
@@ -274,16 +267,9 @@ func downloadReplicated(
 			IsAirgap:     isAirgap,
 		}
 
-		localRegistry := template.LocalRegistry{
-			Host:      registry.Host,
-			Namespace: registry.Namespace,
-			Username:  registry.Username,
-			Password:  registry.Password,
-		}
-
 		// If config existed and was removed from the app,
 		// values will be carried over to the new version anyway.
-		configValues, err := createConfigValues(application.Name, config, existingConfigValues, license, application, &appInfo, &versionInfo, localRegistry, existingIdentityConfig)
+		configValues, err := createConfigValues(application.Name, config, existingConfigValues, license, application, &appInfo, &versionInfo, registry, existingIdentityConfig)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to create empty config values")
 		}
@@ -533,7 +519,7 @@ func mustMarshalConfigValues(configValues *kotsv1beta1.ConfigValues) []byte {
 	return b.Bytes()
 }
 
-func createConfigValues(applicationName string, config *kotsv1beta1.Config, existingConfigValues *kotsv1beta1.ConfigValues, license *kotsv1beta1.License, app *kotsv1beta1.Application, appInfo *template.ApplicationInfo, versionInfo *template.VersionInfo, localRegistry template.LocalRegistry, identityConfig *kotsv1beta1.IdentityConfig) (*kotsv1beta1.ConfigValues, error) {
+func createConfigValues(applicationName string, config *kotsv1beta1.Config, existingConfigValues *kotsv1beta1.ConfigValues, license *kotsv1beta1.License, app *kotsv1beta1.Application, appInfo *template.ApplicationInfo, versionInfo *template.VersionInfo, localRegistry registrytypes.RegistrySettings, identityConfig *kotsv1beta1.IdentityConfig) (*kotsv1beta1.ConfigValues, error) {
 	templateContextValues := make(map[string]template.ItemValue)
 
 	var newValues kotsv1beta1.ConfigValuesSpec

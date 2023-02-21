@@ -13,6 +13,7 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
+	"github.com/replicatedhq/kots/pkg/handlers/types"
 	"github.com/replicatedhq/kots/pkg/identity"
 	identitydeploy "github.com/replicatedhq/kots/pkg/identity/deploy"
 	dextypes "github.com/replicatedhq/kots/pkg/identity/types/dex"
@@ -78,14 +79,14 @@ func (h *Handler) ConfigureIdentityService(w http.ResponseWriter, r *http.Reques
 	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
 		err = errors.Wrap(err, "failed to decode request body")
 		logger.Error(err)
-		JSON(w, http.StatusBadRequest, NewErrorResponse(err))
+		JSON(w, http.StatusBadRequest, types.NewErrorResponse(err))
 		return
 	}
 
 	if err := validateConfigureIdentityRequest(request, false); err != nil {
 		err = errors.Wrap(err, "failed to validate request")
 		logger.Error(err)
-		JSON(w, http.StatusBadRequest, NewErrorResponse(err))
+		JSON(w, http.StatusBadRequest, types.NewErrorResponse(err))
 		return
 	}
 
@@ -161,7 +162,7 @@ func (h *Handler) ConfigureIdentityService(w http.ResponseWriter, r *http.Reques
 	if err := identity.ValidateConfig(r.Context(), namespace, identityConfig, *ingressConfig); err != nil {
 		err = errors.Wrap(err, "invalid identity config")
 		logger.Error(err)
-		JSON(w, http.StatusBadRequest, NewErrorResponse(err))
+		JSON(w, http.StatusBadRequest, types.NewErrorResponse(err))
 		return
 	}
 
@@ -170,7 +171,7 @@ func (h *Handler) ConfigureIdentityService(w http.ResponseWriter, r *http.Reques
 		if _, ok := errors.Cause(err).(*identity.ErrorConnection); ok {
 			err = errors.Wrap(err, "invalid connection")
 			logger.Error(err)
-			JSON(w, http.StatusBadRequest, NewErrorResponse(err))
+			JSON(w, http.StatusBadRequest, types.NewErrorResponse(err))
 			return
 		}
 		err = errors.Wrap(err, "failed to validate identity connection")
@@ -223,7 +224,7 @@ func (h *Handler) ConfigureIdentityService(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	response := ErrorResponse{
+	response := types.ErrorResponse{
 		Success: true,
 	}
 
@@ -235,14 +236,14 @@ func (h *Handler) ConfigureAppIdentityService(w http.ResponseWriter, r *http.Req
 	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
 		err = errors.Wrap(err, "failed to decode request body")
 		logger.Error(err)
-		JSON(w, http.StatusBadRequest, NewErrorResponse(err))
+		JSON(w, http.StatusBadRequest, types.NewErrorResponse(err))
 		return
 	}
 
 	if err := validateConfigureIdentityRequest(request, true); err != nil {
 		err = errors.Wrap(err, "failed to validate request")
 		logger.Error(err)
-		JSON(w, http.StatusBadRequest, NewErrorResponse(err))
+		JSON(w, http.StatusBadRequest, types.NewErrorResponse(err))
 		return
 	}
 
@@ -289,13 +290,13 @@ func (h *Handler) ConfigureAppIdentityService(w http.ResponseWriter, r *http.Req
 	if kotsKinds.Identity == nil {
 		err := errors.New("identity spec not found")
 		logger.Error(err)
-		JSON(w, http.StatusBadRequest, NewErrorResponse(err))
+		JSON(w, http.StatusBadRequest, types.NewErrorResponse(err))
 		return
 	}
 
 	identityConfigFile := filepath.Join(archiveDir, "upstream", "userdata", "identityconfig.yaml")
 	if _, err := os.Stat(identityConfigFile); os.IsNotExist(err) {
-		f, err := kotsadmidentity.InitAppIdentityConfig(a.Slug, kotsv1beta1.Storage{})
+		f, err := kotsadmidentity.InitAppIdentityConfig(a.Slug)
 		if err != nil {
 			err = errors.Wrap(err, "failed to init identity config")
 			logger.Error(err)
@@ -404,7 +405,7 @@ func (h *Handler) ConfigureAppIdentityService(w http.ResponseWriter, r *http.Req
 		if _, ok := errors.Cause(err).(*identity.ErrorConnection); ok {
 			err = errors.Wrap(err, "invalid connection")
 			logger.Error(err)
-			JSON(w, http.StatusBadRequest, NewErrorResponse(err))
+			JSON(w, http.StatusBadRequest, types.NewErrorResponse(err))
 			return
 		}
 		err = errors.Wrap(err, "failed to validate identity connection")
@@ -477,7 +478,7 @@ func (h *Handler) ConfigureAppIdentityService(w http.ResponseWriter, r *http.Req
 		return
 	}
 
-	response := ErrorResponse{
+	response := types.ErrorResponse{
 		Success: true,
 	}
 
@@ -690,7 +691,7 @@ func (h *Handler) GetAppIdentityServiceConfig(w http.ResponseWriter, r *http.Req
 	if kotsKinds.Identity == nil {
 		err := errors.New("identity spec not found")
 		logger.Error(err)
-		JSON(w, http.StatusBadRequest, NewErrorResponse(err))
+		JSON(w, http.StatusBadRequest, types.NewErrorResponse(err))
 		return
 	}
 

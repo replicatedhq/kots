@@ -7,6 +7,7 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
 	appstatetypes "github.com/replicatedhq/kots/pkg/appstate/types"
+	"github.com/replicatedhq/kots/pkg/helm"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/store"
 	"github.com/replicatedhq/kots/pkg/util"
@@ -24,14 +25,26 @@ func (h *Handler) GetAppDashboard(w http.ResponseWriter, r *http.Request) {
 	clusterID := mux.Vars(r)["clusterId"]
 	appStatus := new(appstatetypes.AppStatus)
 	if util.IsHelmManaged() {
-		appStatus.State = "ready"
-		getAppDashboardResponse := GetAppDashboardResponse{
-			AppStatus:         appStatus,
-			Metrics:           nil,
-			PrometheusAddress: "",
+		release := helm.GetHelmApp(appSlug)
+		if release == nil {
+			logger.Errorf("release for app: %s does not exist\n", appSlug)
+			w.WriteHeader(http.StatusNotFound)
+			return
 		}
 
-		JSON(w, 200, getAppDashboardResponse)
+		// we have received informer data
+		if len(release.Status.ResourceStates) > 0 {
+			getAppDashboardResponse := GetAppDashboardResponse{
+				AppStatus:         &release.Status,
+				Metrics:           nil,
+				PrometheusAddress: "",
+			}
+
+			JSON(w, 200, getAppDashboardResponse)
+			return
+		}
+
+		w.WriteHeader(http.StatusNotFound)
 		return
 	}
 
@@ -66,10 +79,13 @@ func (h *Handler) GetAppDashboard(w http.ResponseWriter, r *http.Request) {
 		prometheusAddress = os.Getenv("PROMETHEUS_ADDRESS")
 	}
 
-	metrics, err := version.GetMetricCharts(a.ID, parentSequence, prometheusAddress)
-	if err != nil {
-		logger.Error(errors.Wrap(err, "failed to get metric charts"))
-		metrics = []version.MetricChart{}
+	metrics := []version.MetricChart{}
+	if prometheusAddress != "" {
+		graphs, err := version.GetGraphs(a, parentSequence, store.GetStore())
+		if err != nil {
+			logger.Error(errors.Wrapf(err, "failed to get graphs for app %s sequence %d. falling back to default graphs", a.Slug, parentSequence))
+		}
+		metrics = version.GetMetricCharts(graphs, prometheusAddress)
 	}
 
 	getAppDashboardResponse := GetAppDashboardResponse{

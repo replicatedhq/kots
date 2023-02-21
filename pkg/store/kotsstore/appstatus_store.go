@@ -1,34 +1,42 @@
 package kotsstore
 
 import (
-	"database/sql"
 	"encoding/json"
+	"fmt"
 	"time"
 
 	"github.com/pkg/errors"
 	appstatetypes "github.com/replicatedhq/kots/pkg/appstate/types"
 	"github.com/replicatedhq/kots/pkg/persistence"
+	"github.com/rqlite/gorqlite"
 )
 
 func (s *KOTSStore) GetAppStatus(appID string) (*appstatetypes.AppStatus, error) {
 	db := persistence.MustGetDBSession()
-	query := `select resource_states, updated_at, sequence from app_status where app_id = $1`
-	row := db.QueryRow(query, appID)
+	query := `select resource_states, updated_at, sequence from app_status where app_id = ?`
+	rows, err := db.QueryOneParameterized(gorqlite.ParameterizedStatement{
+		Query:     query,
+		Arguments: []interface{}{appID},
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to query: %v: %v", err, rows.Err)
+	}
 
-	var updatedAt sql.NullTime
-	var resourceStatesStr sql.NullString
-	var sequence sql.NullInt64
+	if !rows.Next() {
+		return &appstatetypes.AppStatus{
+			AppID:          appID,
+			UpdatedAt:      time.Time{},
+			ResourceStates: appstatetypes.ResourceStates{},
+			State:          appstatetypes.StateMissing,
+			Sequence:       0,
+		}, nil
+	}
 
-	if err := row.Scan(&resourceStatesStr, &updatedAt, &sequence); err != nil {
-		if err == sql.ErrNoRows {
-			return &appstatetypes.AppStatus{
-				AppID:          appID,
-				UpdatedAt:      time.Time{},
-				ResourceStates: appstatetypes.ResourceStates{},
-				State:          appstatetypes.StateMissing,
-				Sequence:       0,
-			}, nil
-		}
+	var updatedAt gorqlite.NullTime
+	var resourceStatesStr gorqlite.NullString
+	var sequence gorqlite.NullInt64
+
+	if err := rows.Scan(&resourceStatesStr, &updatedAt, &sequence); err != nil {
 		return nil, errors.Wrap(err, "failed to scan")
 	}
 
@@ -63,14 +71,17 @@ func (s *KOTSStore) SetAppStatus(appID string, resourceStates appstatetypes.Reso
 	db := persistence.MustGetDBSession()
 	query := `
 	insert into app_status (app_id, resource_states, updated_at, sequence)
-	values ($1, $2, $3, $4)
+	values (?, ?, ?, ?)
 	on conflict (app_id) do update set
 	  resource_states = EXCLUDED.resource_states,
 	  updated_at = EXCLUDED.updated_at,
 	  sequence = EXCLUDED.sequence`
-	_, err = db.Exec(query, appID, marshalledResourceStates, updatedAt, sequence)
+	wr, err := db.WriteOneParameterized(gorqlite.ParameterizedStatement{
+		Query:     query,
+		Arguments: []interface{}{appID, string(marshalledResourceStates), updatedAt.Unix(), sequence},
+	})
 	if err != nil {
-		return errors.Wrap(err, "failed to exec")
+		return fmt.Errorf("failed to write: %v: %v", err, wr.Err)
 	}
 
 	return nil

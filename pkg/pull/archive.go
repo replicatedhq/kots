@@ -7,9 +7,10 @@ import (
 	"io/ioutil"
 	"os"
 	"path"
+	"path/filepath"
 	"strconv"
 
-	"github.com/mholt/archiver"
+	"github.com/mholt/archiver/v3"
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/base"
 	upstreamtypes "github.com/replicatedhq/kots/pkg/upstream/types"
@@ -97,6 +98,30 @@ func writeArchiveAsConfigMap(pullOptions PullOptions, u *upstreamtypes.Upstream,
 
 		if err := base.AddBundlePart(baseDir, fmt.Sprintf("kotsadm-bundle-%d.yaml", i), b.Bytes()); err != nil {
 			return errors.Wrap(err, "failed to write base")
+		}
+	}
+
+	return nil
+}
+
+func CleanBaseArchive(path string) error {
+	files, err := ioutil.ReadDir(path)
+	if err != nil {
+		return errors.Wrap(err, "failed to read dir")
+	}
+
+	// "overlays" contains manual kustomizations.
+	// "upstream" contains config values, known images, and other important installation info
+	// everything else should be deleted and generated again
+	for _, file := range files {
+		switch file.Name() {
+		case "overlays", "upstream":
+			continue
+		default:
+			err := os.RemoveAll(filepath.Join(path, file.Name()))
+			if err != nil {
+				return errors.Wrapf(err, "failed to delete %s", file.Name())
+			}
 		}
 	}
 

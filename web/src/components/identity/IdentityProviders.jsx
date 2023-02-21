@@ -1,6 +1,5 @@
 import React, { Component } from "react";
-import { withRouter } from "react-router-dom";
-import Helmet from "react-helmet";
+import { KotsPageTitle } from "@components/Head";
 import ReactTooltip from "react-tooltip";
 import isEmpty from "lodash/isEmpty";
 import size from "lodash/size";
@@ -570,14 +569,15 @@ class IdentityProviders extends Component {
 
     return (
       <div className="flex-column flex1 u-position--relative u-overflow--auto u-padding--20 alignItems--center">
-        <Helmet>
-          <title>Identity Providers</title>
-        </Helmet>
+        <KotsPageTitle
+          pageName="Configure Identity Provider"
+          showAppSlug={isApplicationSettings}
+        />
         {/* <div className="IdentityProviderWarning--wrapper flex alignItems--center u-marginTop--30">
           <span className="icon small-warning-icon u-marginRight--10" />
           <p>
             To configure an Identity Provider you must have Ingress configured for the Admin Console.
-          <Link to="/access/configure-ingress" className="u-linkColor u-textDecoration--underlineOnHover"> Configure Ingress </Link>
+          <Link to="/access/configure-ingress" className="link u-textDecoration--underlineOnHover"> Configure Ingress </Link>
           </p>
         </div> */}
         <form className="flex-auto Identity--wrapper u-marginTop--30">
@@ -912,7 +912,7 @@ class IdentityProviders extends Component {
                       />
                     ))}
                     <p
-                      className="u-fontSize--small u-fontWeight--medium u-lineHeight--normal u-linkColor u-cursor--pointer u-marginTop--15"
+                      className="u-fontSize--small u-lineHeight--normal u-marginTop--15 link"
                       onClick={this.onAddGroupRow}
                     >
                       {" "}
@@ -936,7 +936,7 @@ class IdentityProviders extends Component {
             {this.state.selectedProvider === "oidcConfig" && (
               <div className="flex1 flex-column u-marginTop--20">
                 <p
-                  className="u-fontSize--small u-fontWeight--medium u-lineHeight--normal u-linkColor u-cursor--pointer"
+                  className="u-fontSize--small u-lineHeight--normal link"
                   onClick={this.toggleAdvancedOptions}
                 >
                   {" "}
@@ -1152,7 +1152,7 @@ class IdentityProviders extends Component {
                             icon="info-circle-outline"
                             size={16}
                             className="gray-color u-marginLeft--10 clickable"
-                            data-tip='For offline_access, the prompt parameter is set by default to "prompt=consent". 
+                            data-tip='For offline_access, the prompt parameter is set by default to "prompt=consent".
                               However this is not supported by all OIDC providers, some of them support different value for prompt, like "prompt=login" or "prompt=none"'
                           />
                           <ReactTooltip
@@ -1321,4 +1321,4 @@ class IdentityProviders extends Component {
   }
 }
 
-export default withRouter(IdentityProviders);
+export default IdentityProviders;

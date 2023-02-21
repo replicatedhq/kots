@@ -1,5 +1,5 @@
 # syntax=docker/dockerfile:1.3
-FROM schemahero/schemahero:0.13.0-alpha.1 as schemahero
+FROM schemahero/schemahero:0.13.6 as schemahero
 
 USER root
 RUN apt-get update && apt-get install -y build-essential

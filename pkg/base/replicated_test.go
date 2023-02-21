@@ -1170,6 +1170,313 @@ spec:
 					ErrorFiles: []BaseFile{},
 					AdditionalFiles: []BaseFile{
 						{
+							Path: "values.yaml",
+							Content: []byte(`audit:
+  clientMinMessages: error
+  logConnections: false
+  logDisconnections: false
+  logHostname: false
+  logLinePrefix: ""
+  logTimezone: ""
+  pgAuditLog: ""
+  pgAuditLogCatalog: "off"
+common:
+  exampleValue: common-chart
+  global:
+    imagePullSecrets: []
+    imageRegistry: ""
+    postgresql:
+      existingSecret: ""
+      postgresqlDatabase: ""
+      postgresqlPassword: ""
+      postgresqlUsername: ""
+      replicationPassword: ""
+      servicePort: ""
+    storageClass: ""
+commonAnnotations: {}
+commonLabels: {}
+configurationConfigMap: ""
+containerSecurityContext:
+  enabled: true
+  runAsUser: 1001
+customLivenessProbe: {}
+customReadinessProbe: {}
+customStartupProbe: {}
+diagnosticMode:
+  args:
+  - infinity
+  command:
+  - sleep
+  enabled: false
+existingSecret: ""
+extendedConfConfigMap: ""
+extraDeploy: []
+extraEnv: []
+extraEnvVarsCM: ""
+fullnameOverride: ""
+global:
+  imagePullSecrets: []
+  imageRegistry: ""
+  postgresql:
+    existingSecret: ""
+    postgresqlDatabase: ""
+    postgresqlPassword: ""
+    postgresqlUsername: ""
+    replicationPassword: ""
+    servicePort: ""
+  storageClass: ""
+image:
+  debug: false
+  pullPolicy: IfNotPresent
+  pullSecrets: []
+  registry: docker.io
+  repository: bitnami/postgresql
+  tag: 11.14.0-debian-10-r0
+initdbPassword: ""
+initdbScripts: {}
+initdbScriptsConfigMap: ""
+initdbScriptsSecret: ""
+initdbUser: ""
+ldap:
+  baseDN: ""
+  bind_password: ""
+  bindDN: ""
+  enabled: false
+  port: ""
+  prefix: ""
+  scheme: ""
+  search_attr: ""
+  search_filter: ""
+  server: ""
+  suffix: ""
+  tls: ""
+  url: ""
+lifecycleHooks: {}
+livenessProbe:
+  enabled: true
+  failureThreshold: 6
+  initialDelaySeconds: 30
+  periodSeconds: 10
+  successThreshold: 1
+  timeoutSeconds: 5
+metrics:
+  customMetrics: {}
+  enabled: false
+  extraEnvVars: []
+  image:
+    pullPolicy: IfNotPresent
+    pullSecrets: []
+    registry: docker.io
+    repository: bitnami/postgres-exporter
+    tag: 0.10.0-debian-10-r116
+  livenessProbe:
+    enabled: true
+    failureThreshold: 6
+    initialDelaySeconds: 5
+    periodSeconds: 10
+    successThreshold: 1
+    timeoutSeconds: 5
+  prometheusRule:
+    additionalLabels: {}
+    enabled: false
+    namespace: ""
+    rules: []
+  readinessProbe:
+    enabled: true
+    failureThreshold: 6
+    initialDelaySeconds: 5
+    periodSeconds: 10
+    successThreshold: 1
+    timeoutSeconds: 5
+  resources: {}
+  securityContext:
+    enabled: false
+    runAsUser: 1001
+  service:
+    annotations:
+      prometheus.io/port: "9187"
+      prometheus.io/scrape: "true"
+    loadBalancerIP: ""
+    type: ClusterIP
+  serviceMonitor:
+    additionalLabels: {}
+    enabled: false
+    interval: ""
+    metricRelabelings: []
+    namespace: ""
+    relabelings: []
+    scrapeTimeout: ""
+nameOverride: ""
+networkPolicy:
+  allowExternal: true
+  enabled: false
+  explicitNamespacesSelector: {}
+persistence:
+  accessModes:
+  - ReadWriteOnce
+  annotations: {}
+  enabled: true
+  existingClaim: ""
+  mountPath: /bitnami/postgresql
+  selector: {}
+  size: 8Gi
+  storageClass: ""
+  subPath: ""
+pgHbaConfiguration: ""
+postgresqlConfiguration: {}
+postgresqlDataDir: /bitnami/postgresql/data
+postgresqlDatabase: ""
+postgresqlDbUserConnectionLimit: ""
+postgresqlExtendedConf: {}
+postgresqlInitdbArgs: ""
+postgresqlInitdbWalDir: ""
+postgresqlMaxConnections: ""
+postgresqlPassword: abc123
+postgresqlPghbaRemoveFilters: ""
+postgresqlPostgresConnectionLimit: ""
+postgresqlPostgresPassword: ""
+postgresqlSharedPreloadLibraries: pgaudit
+postgresqlStatementTimeout: ""
+postgresqlTcpKeepalivesCount: ""
+postgresqlTcpKeepalivesIdle: ""
+postgresqlTcpKeepalivesInterval: ""
+postgresqlUsername: postgres
+primary:
+  affinity: {}
+  annotations: {}
+  extraInitContainers: []
+  extraPodSpec: {}
+  extraVolumeMounts: []
+  extraVolumes: []
+  labels: {}
+  nodeAffinityPreset:
+    key: ""
+    type: ""
+    values: []
+  nodeSelector: {}
+  podAffinityPreset: ""
+  podAnnotations: {}
+  podAntiAffinityPreset: soft
+  podLabels: {}
+  priorityClassName: ""
+  service:
+    clusterIP: ""
+    nodePort: ""
+    type: ""
+  sidecars: []
+  tolerations: []
+primaryAsStandBy:
+  enabled: false
+  primaryHost: ""
+  primaryPort: ""
+psp:
+  create: false
+rbac:
+  create: false
+readReplicas:
+  affinity: {}
+  annotations: {}
+  extraInitContainers: []
+  extraPodSpec: {}
+  extraVolumeMounts: []
+  extraVolumes: []
+  labels: {}
+  nodeAffinityPreset:
+    key: ""
+    type: ""
+    values: []
+  nodeSelector: {}
+  persistence:
+    enabled: true
+  podAffinityPreset: ""
+  podAnnotations: {}
+  podAntiAffinityPreset: soft
+  podLabels: {}
+  priorityClassName: ""
+  resources: {}
+  service:
+    clusterIP: ""
+    nodePort: ""
+    type: ""
+  sidecars: []
+  tolerations: []
+  topologySpreadConstraints: []
+readinessProbe:
+  enabled: true
+  failureThreshold: 6
+  initialDelaySeconds: 5
+  periodSeconds: 10
+  successThreshold: 1
+  timeoutSeconds: 5
+replication:
+  applicationName: my_application
+  enabled: false
+  numSynchronousReplicas: 0
+  password: repl_password
+  readReplicas: 1
+  singleService: true
+  synchronousCommit: "off"
+  uniqueServices: false
+  user: repl_user
+resources:
+  requests:
+    cpu: 250m
+    memory: 256Mi
+schedulerName: ""
+securityContext:
+  enabled: true
+  fsGroup: 1001
+service:
+  annotations: {}
+  clusterIP: ""
+  externalTrafficPolicy: Cluster
+  loadBalancerIP: ""
+  loadBalancerSourceRanges: []
+  nodePort: ""
+  port: 5432
+  type: ClusterIP
+serviceAccount:
+  autoMount: false
+  enabled: false
+  name: ""
+shmVolume:
+  chmod:
+    enabled: true
+  enabled: true
+  sizeLimit: ""
+startupProbe:
+  enabled: false
+  failureThreshold: 10
+  initialDelaySeconds: 30
+  periodSeconds: 15
+  successThreshold: 1
+  timeoutSeconds: 5
+terminationGracePeriodSeconds: ""
+tls:
+  autoGenerated: false
+  certCAFilename: ""
+  certFilename: ""
+  certKeyFilename: ""
+  certificatesSecret: ""
+  crlFilename: ""
+  enabled: false
+  preferServerCiphers: true
+updateStrategy:
+  type: RollingUpdate
+usePasswordFile: false
+volumePermissions:
+  enabled: false
+  image:
+    pullPolicy: IfNotPresent
+    pullSecrets: []
+    registry: docker.io
+    repository: bitnami/bitnami-shell
+    tag: 10-debian-10-r248
+  securityContext:
+    runAsUser: 0
+`),
+						},
+						{
 							Path: "Chart.yaml",
 							Content: []byte(`annotations:
   category: Database

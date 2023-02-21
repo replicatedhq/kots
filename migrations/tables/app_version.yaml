@@ -3,19 +3,23 @@ kind: Table
 metadata:
   name: app-version
 spec:
-  database: kotsadm-postgres
   name: app_version
   requires: []
   schema:
-    postgres:
+    rqlite:
+      strict: true
       primaryKey:
         - app_id
         - sequence
       columns:
       - name: app_id
         type: text
+        constraints:
+          notNull: true
       - name: sequence
         type: integer
+        constraints:
+          notNull: true
       - name: update_cursor
         type: text
       - name: channel_id
@@ -23,18 +27,18 @@ spec:
       - name: channel_name
         type: text
       - name: upstream_released_at
-        type: timestamp without time zone
+        type: integer
       - name: created_at
-        type: timestamp without time zone
+        type: integer
       - name: version_label
         type: text
         constraints:
           notNull: true
       - name: is_required
-        type: boolean
+        type: integer
         constraints:
           notNull: true
-        default: "false"
+        default: 0
       - name: release_notes
         type: text
       - name: supportbundle_spec
@@ -56,7 +60,7 @@ spec:
       - name: config_values
         type: text
       - name: applied_at
-        type: timestamp without time zone
+        type: integer
       - name: status
         type: text
       - name: encryption_key
@@ -64,4 +68,6 @@ spec:
       - name: backup_spec
         type: text
       - name: identity_spec
+        type: text
+      - name: branding_archive
         type: text

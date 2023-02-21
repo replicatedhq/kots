@@ -12,6 +12,7 @@ import (
 	"strconv"
 	"sync"
 	"text/template"
+	"time"
 
 	"github.com/blang/semver"
 	"github.com/pkg/errors"
@@ -47,6 +48,8 @@ type InstalledRelease struct {
 	Version     string
 	Semver      *semver.Version
 	Status      helmrelease.Status
+	DeployedOn  *time.Time
+	ReleasedOn  *time.Time
 }
 
 type InstalledReleases []InstalledRelease
@@ -170,6 +173,7 @@ func GetChartVersion(releaseName string, revision int64, namespace string) (*Ins
 
 	return release, nil
 }
+
 func getChartVersionFromSecretData(secret *corev1.Secret) (*InstalledRelease, error) {
 	revision, err := strconv.Atoi(secret.Labels["version"])
 	if err != nil {
@@ -185,6 +189,15 @@ func getChartVersionFromSecretData(secret *corev1.Secret) (*InstalledRelease, er
 		ReleaseName: secret.Labels["releaseName"],
 		Revision:    revision,
 		Status:      helmrelease.Status(secret.Labels["status"]),
+		DeployedOn:  &secret.CreationTimestamp.Time,
+	}
+
+	createdAt := util.GetValueFromMapPath(helmRelease.Chart.Values, []string{"replicated", "created_at"})
+	if s, ok := createdAt.(string); ok {
+		t, err := time.Parse(time.RFC3339, s)
+		if err == nil {
+			release.ReleasedOn = &t
+		}
 	}
 
 	if helmRelease.Chart != nil && helmRelease.Chart.Metadata != nil {
@@ -379,6 +392,15 @@ func GetKotsKindsFromReplicatedSecret(secret *corev1.Secret) (kotsutil.KotsKinds
 		kotsKinds.ConfigValues = configValues
 	}
 
+	appData := secret.Data["application"]
+	if len(appData) != 0 {
+		app, err := kotsutil.LoadApplicationFromBytes(appData)
+		if err != nil {
+			return kotsKinds, errors.Wrap(err, "failed to load application from data")
+		}
+		kotsKinds.KotsApplication = *app
+	}
+
 	return kotsKinds, nil
 }
 
@@ -447,6 +469,7 @@ func GetKotsKindsForRevision(releaseName string, revision int64, namespace strin
 		}
 
 		kotsKinds.Config = k.Config
+		kotsKinds.Application = k.Application
 
 		break
 	}
@@ -469,37 +492,6 @@ func GetKotsKindsForRevision(releaseName string, revision int64, namespace strin
 	kotsKinds.ConfigValues, err = kotsutil.LoadConfigValuesFromBytes(configValuesData)
 	if err != nil {
 		return kotsKinds, errors.Wrap(err, "failed to get config values from chart values")
-	}
-
-	return kotsKinds, nil
-}
-
-func GetKotsKindsFromChartArchive(archive *bytes.Buffer) (kotsutil.KotsKinds, error) {
-	kotsKinds := kotsutil.EmptyKotsKinds()
-
-	templatedData, err := util.GetFileFromTGZArchive(archive, "**/templates/_replicated/secret.yaml")
-	if err != nil {
-		return kotsKinds, errors.Wrap(err, "failed to get secret file from chart archive")
-	}
-
-	secretData, err := removeHelmTemplate(templatedData.Bytes())
-	if err != nil {
-		return kotsKinds, errors.Wrap(err, "failed to remove helm templates from replicated secret file")
-	}
-
-	decode := scheme.Codecs.UniversalDeserializer().Decode
-	obj, gvk, err := decode(secretData, nil, nil)
-	if err != nil {
-		return kotsKinds, errors.Wrap(err, "failed to decode secret data")
-	}
-
-	if gvk.Group != "" || gvk.Version != "v1" || gvk.Kind != "Secret" {
-		return kotsKinds, errors.Errorf("unexpected secret GVK: %s", gvk.String())
-	}
-
-	kotsKinds, err = GetKotsKindsFromReplicatedSecret(obj.(*corev1.Secret))
-	if err != nil {
-		return kotsKinds, errors.Wrap(err, "failed to get kots kinds from secret")
 	}
 
 	return kotsKinds, nil

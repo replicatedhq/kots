@@ -3,15 +3,20 @@ package handlers
 import (
 	"context"
 	"fmt"
-	"html/template"
+	"io/ioutil"
 	"net/http"
+	"os"
+	"path/filepath"
 	"strings"
 
+	"github.com/pkg/errors"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/kotsadm"
 	"github.com/replicatedhq/kots/pkg/kotsadm/types"
+	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/logger"
+	"github.com/replicatedhq/kots/pkg/store"
 	"github.com/replicatedhq/kots/pkg/util"
 	v1 "k8s.io/api/core/v1"
 	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
@@ -40,7 +45,7 @@ type MetadataResponse struct {
 }
 
 type MetadataResponseBranding struct {
-	Css       string   `json:"css"`
+	Css       []string `json:"css"`
 	FontFaces []string `json:"fontFaces"`
 }
 
@@ -51,8 +56,10 @@ type AdminConsoleMetadata struct {
 
 // GetMetadataHandler helper function that returns a http handler func that returns metadata. It takes a function that
 // retrieves state information from an active k8s cluster.
-func GetMetadataHandler(getK8sInfoFn MetadataK8sFn) http.HandlerFunc {
+func GetMetadataHandler(getK8sInfoFn MetadataK8sFn, kotsStore store.Store) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		appID := r.FormValue("app_id")
+
 		metadataResponse := MetadataResponse{
 			IconURI:   iconURI,
 			Name:      defaultAppName,
@@ -98,7 +105,9 @@ func GetMetadataHandler(getK8sInfoFn MetadataK8sFn) http.HandlerFunc {
 		}
 		application := obj.(*kotsv1beta1.Application)
 		metadataResponse.IconURI = application.Spec.Icon
-		metadataResponse.Branding = formatBrandingResponse(application.Spec.Branding)
+		if !util.IsHelmManaged() {
+			metadataResponse.Branding = getBrandingResponse(kotsStore, appID)
+		}
 		metadataResponse.Name = application.Spec.Title
 		metadataResponse.UpstreamURI = brandingConfigMap.Data[upstreamUriKey]
 		metadataResponse.ConsoleFeatureFlags = application.Spec.ConsoleFeatureFlags
@@ -112,20 +121,108 @@ func GetMetadataHandler(getK8sInfoFn MetadataK8sFn) http.HandlerFunc {
 }
 
 // Converts the application spec branding field into the response format expected by the UI
-func formatBrandingResponse(branding kotsv1beta1.ApplicationBranding) MetadataResponseBranding {
+func getBrandingResponse(kotsStore store.Store, appID string) MetadataResponseBranding {
 	response := MetadataResponseBranding{
-		Css:       template.HTMLEscapeString(branding.Css),
+		Css:       []string{},
 		FontFaces: []string{},
 	}
-	for _, fontFile := range branding.FontFiles {
-		if len(fontFile.Sources) == 0 {
+
+	var brandingArchive []byte
+	if appID != "" {
+		latestBrandingArchive, err := kotsStore.GetLatestBrandingForApp(appID)
+		if err != nil {
+			logger.Error(errors.Wrapf(err, "failed to get latest branding for app %s", appID))
+			return response
+		}
+		brandingArchive = latestBrandingArchive
+	} else {
+		latestBrandingArchive, err := kotsStore.GetLatestBranding()
+		if err != nil {
+			logger.Error(errors.Wrap(err, "failed to get latest branding"))
+			return response
+		}
+		brandingArchive = latestBrandingArchive
+	}
+
+	if len(brandingArchive) == 0 {
+		return response
+	}
+
+	tmpDir, err := ioutil.TempDir("", "kotsadm-branding")
+	if err != nil {
+		logger.Error(errors.Wrap(err, "failed to create temp dir"))
+		return response
+	}
+	defer os.RemoveAll(tmpDir)
+
+	if err := ioutil.WriteFile(filepath.Join(tmpDir, "branding.tar.gz"), brandingArchive, 0644); err != nil {
+		logger.Error(errors.Wrap(err, "failed to write branding archive to temp dir"))
+		return response
+	}
+
+	if err := util.ExtractTGZArchive(filepath.Join(tmpDir, "branding.tar.gz"), tmpDir); err != nil {
+		logger.Error(errors.Wrap(err, "failed to extract branding archive"))
+		return response
+	}
+
+	applicationYaml, err := ioutil.ReadFile(filepath.Join(tmpDir, "application.yaml"))
+	if err != nil {
+		logger.Error(errors.Wrap(err, "failed to read application.yaml"))
+		return response
+	}
+
+	application, err := kotsutil.LoadKotsAppFromContents(applicationYaml)
+	if err != nil {
+		logger.Error(errors.Wrap(err, "failed to parse kots app from application.yaml"))
+		return response
+	}
+
+	for _, source := range application.Spec.Branding.Css {
+		ext := filepath.Ext(source)
+
+		if ext != ".css" {
+			logger.Error(fmt.Errorf("expected css file but got %s", source))
 			continue
 		}
-		sources := []string{}
-		for _, source := range fontFile.Sources {
-			sources = append(sources, fmt.Sprintf(`url("data:font/%s; base64, %s") format("%s")`, source.Format, source.Data, source.Format))
+
+		contents, err := ioutil.ReadFile(filepath.Join(tmpDir, source))
+		if err != nil {
+			logger.Error(errors.Wrapf(err, "failed to read font file %s", source))
+			continue
 		}
-		fontFace := fmt.Sprintf(`@font-face { font-family: "%s"; src: %s; }`, fontFile.FontFamily, strings.Join(sources, ", "))
+
+		response.Css = append(response.Css, string(contents))
+	}
+
+	for _, font := range application.Spec.Branding.Fonts {
+		if len(font.Sources) == 0 {
+			continue
+		}
+
+		sources := []string{}
+		for _, source := range font.Sources {
+			ext := filepath.Ext(source)
+
+			format, ok := kotsutil.BrandingFontFileExtensions[ext]
+			if !ok {
+				logger.Error(fmt.Errorf("invalid branding file extension %s", ext))
+				continue
+			}
+
+			contents, err := ioutil.ReadFile(filepath.Join(tmpDir, source))
+			if err != nil {
+				logger.Error(errors.Wrapf(err, "failed to read font file %s", source))
+				continue
+			}
+
+			sources = append(sources, fmt.Sprintf(`url("data:font/%s;base64,%s") format("%s")`, format, string(contents), format))
+		}
+
+		if len(sources) == 0 {
+			continue
+		}
+
+		fontFace := fmt.Sprintf(`@font-face { font-family: "%s"; src: %s; }`, font.FontFamily, strings.Join(sources, ", "))
 		response.FontFaces = append(response.FontFaces, fontFace)
 	}
 	return response
@@ -138,7 +235,7 @@ func GetMetaDataConfig() (*v1.ConfigMap, types.Metadata, error) {
 		return nil, types.Metadata{}, nil
 	}
 
-	kotsadmMetadata := kotsadm.GetMetadata()
+	kotsadmMetadata := kotsadm.GetMetadata(clientset)
 
 	brandingConfigMap, err := clientset.CoreV1().ConfigMaps(util.PodNamespace).Get(context.TODO(), metadataConfigMapName, metav1.GetOptions{})
 	if err != nil {

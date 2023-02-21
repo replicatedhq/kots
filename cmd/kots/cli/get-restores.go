@@ -30,8 +30,13 @@ func GetRestoresCmd() *cobra.Command {
 func getRestoresCmd(cmd *cobra.Command, args []string) error {
 	v := viper.GetViper()
 
+	namespace, err := getNamespaceOrDefault(v.GetString("namespace"))
+	if err != nil {
+		return errors.Wrap(err, "failed to get namespace")
+	}
+
 	options := snapshot.ListInstanceRestoresOptions{
-		Namespace: v.GetString("namespace"),
+		Namespace: namespace,
 	}
 	restores, err := snapshot.ListInstanceRestores(cmd.Context(), options)
 	if err != nil {

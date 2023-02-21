@@ -1,0 +1,72 @@
+name: Generate kURL Add-On
+
+inputs:
+  addon_version:
+    type: string
+    description: "Kots version (without the 'v')."
+    required: true
+  kotsadm_image_registry:
+    type: string
+    description: "Kots image registry override."
+  kotsadm_image_namespace:
+    type: string
+    description: "Kots image namespace override."
+  kotsadm_image_tag:
+    type: string
+    description: "Kots image tag override."
+  kotsadm_binary_override:
+    type: string
+    description: "Kots binary override."
+  s3_prefix:
+    type: string
+    description: "S3 key prefix."
+outputs:
+  addon_package_url:
+    description: "S3 package url"
+    value: ${{ steps.s3-upload.outputs.addon_package_url }}
+
+runs:
+  using: "composite"
+  steps:
+
+    - name: load environment from .image.env
+      uses: falti/dotenv-action@v0.2
+      id: dotenv
+      with:
+        path: ${{ github.action_path }}/../../../.image.env
+
+    - name: generate add-on version
+      shell: bash
+      env:
+        DEX_TAG: ${{ steps.dotenv.outputs.DEX_TAG }}
+        RQLITE_TAG: ${{ steps.dotenv.outputs.RQLITE_TAG }}
+      run: |
+        ( cd ${{ github.action_path }}/../../../deploy/kurl/kotsadm/template; \
+          ./generate.sh \
+            "${{ inputs.addon_version }}" \
+            "${{ inputs.kotsadm_image_registry }}" \
+            "${{ inputs.kotsadm_image_namespace }}" \
+            "${{ inputs.kotsadm_image_tag }}" \
+            "${{ inputs.kotsadm_binary_override }}" )
+        mv ${{ github.action_path }}/../../../deploy/kurl/kotsadm/${{ inputs.addon_version }} .
+
+    - uses: replicatedhq/kurl/.github/actions/addon-manifest-downloader@main
+      with:
+        package-name: "kotsadm-${{ inputs.addon_version }}"
+        manifest-path: "${{ inputs.addon_version }}/Manifest"
+        output-path: "${{ inputs.addon_version }}"
+
+    - name: build add-on package
+      shell: bash
+      run: |
+        mkdir -p addons/kotsadm
+        cp -R ${{ inputs.addon_version }} addons/kotsadm/
+        tar -czvf kotsadm-${{ inputs.addon_version }}.tar.gz addons
+
+    - name: s3 upload
+      id: s3-upload
+      shell: bash
+      run: |
+        out=${{ inputs.s3_prefix }}kotsadm-${{ inputs.addon_version }}-${GITHUB_SHA:0:7}.tar.gz
+        aws s3 cp kotsadm-${{ inputs.addon_version }}.tar.gz s3://kots-kurl-addons-production-1658439274/$out
+        echo "::set-output name=addon_package_url::https://kots-kurl-addons-production-1658439274.s3.amazonaws.com/$out"

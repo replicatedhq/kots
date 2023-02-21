@@ -19,8 +19,7 @@ const (
 	schemaheroReference               = "schemahero"
 	minioReference                    = "minio"
 	dexReference                      = "dex"
-	postgres10Reference               = "postgres-10"
-	postgres14Reference               = "postgres-14"
+	rqliteReference                   = "rqlite"
 	lvpReference                      = "lvp"
 	inputFilename                     = "cmd/imagedeps/image-spec"
 	outputConstantFilename            = "pkg/image/constants.go"
@@ -57,8 +56,6 @@ var (
 	replacers = []*replacer{
 		getMakefileReplacer("Makefile"),
 		getMakefileReplacer("migrations/Makefile"),
-		getMakefileReplacer("migrations/fixtures/Makefile"),
-		getDockerfileReplacer("migrations/fixtures/deploy/Dockerfile"),
 	}
 )
 

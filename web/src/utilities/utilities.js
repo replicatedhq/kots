@@ -66,21 +66,6 @@ export function getApplicationType(watch) {
   }
 }
 
-export function getReadableCollectorName(name) {
-  const namesObj = {
-    "cluster-info": "Gathering basic information about the cluster",
-    "cluster-resources": "Gathering available resources in cluster",
-    mysql: "Gathering information about MySQL",
-    postgres: "Gathering information about PostgreSQL",
-    redis: "Gathering information about Redis",
-  };
-  const statusToReturn = namesObj[name];
-  if (statusToReturn) {
-    return statusToReturn;
-  }
-  return "Gathering details about the cluster";
-}
-
 /**
  * @param {String} - Returns the commit SHA of the current build
  */
@@ -685,7 +670,7 @@ export const Utilities = {
     return str;
   },
 
-  logoutUser(client) {
+  logoutUser(client, options = {}) {
     const token = this.getToken();
     // TODO: for now we just remove the token,
     if (token) {
@@ -700,8 +685,11 @@ export const Utilities = {
       window.localStorage.removeItem("session_roles");
     }
 
-    if (window.location.pathname !== "/secure-console") {
-      window.location = "/secure-console";
+    const redirectPath = options?.snapshotRestore
+      ? "/restore-completed"
+      : "/secure-console";
+    if (window.location.pathname !== redirectPath) {
+      window.location = redirectPath;
     }
   },
 
@@ -796,13 +784,10 @@ export const Utilities = {
   },
 
   checkIsDateExpired(date) {
-    const currentDate = dayjs();
-    const diff = currentDate.diff(dayjs(date), "days");
+    const currentDate = dayjs.utc();
+    const expirationDate = dayjs.utc(date);
 
-    if (diff > 0) {
-      return true;
-    }
-    return false;
+    return currentDate.isAfter(expirationDate);
   },
 
   checkIsDeployedConfigLatest(app) {

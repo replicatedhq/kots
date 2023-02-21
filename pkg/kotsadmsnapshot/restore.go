@@ -19,12 +19,16 @@ import (
 	"go.uber.org/zap"
 	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/utils/pointer"
 )
 
 func GetRestore(ctx context.Context, kotsadmNamespace string, snapshotName string) (*velerov1.Restore, error) {
 	bsl, err := kotssnapshot.FindBackupStoreLocation(ctx, kotsadmNamespace)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get velero namespace")
+	}
+	if bsl == nil {
+		return nil, errors.New("no backup store location found")
 	}
 
 	veleroNamespace := bsl.Namespace
@@ -60,6 +64,9 @@ func CreateApplicationRestore(ctx context.Context, kotsadmNamespace string, snap
 	if err != nil {
 		return errors.Wrap(err, "failed to get velero namespace")
 	}
+	if bsl == nil {
+		return errors.New("no backup store location found")
+	}
 
 	veleroNamespace := bsl.Namespace
 
@@ -79,7 +86,6 @@ func CreateApplicationRestore(ctx context.Context, kotsadmNamespace string, snap
 		return errors.Wrap(err, "failed to find backup")
 	}
 
-	trueVal := true
 	restore := &velerov1.Restore{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: veleroNamespace,
@@ -87,8 +93,8 @@ func CreateApplicationRestore(ctx context.Context, kotsadmNamespace string, snap
 		},
 		Spec: velerov1.RestoreSpec{
 			BackupName:              snapshotName,
-			RestorePVs:              &trueVal,
-			IncludeClusterResources: &trueVal,
+			RestorePVs:              pointer.BoolPtr(true),
+			IncludeClusterResources: pointer.BoolPtr(true),
 		},
 	}
 
@@ -153,6 +159,9 @@ func GetRestoreDetails(ctx context.Context, kotsadmNamespace string, restoreName
 	backendStorageLocation, err := kotssnapshot.FindBackupStoreLocation(ctx, kotsadmNamespace)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to find backupstoragelocations")
+	}
+	if backendStorageLocation == nil {
+		return nil, errors.New("no backup store location found")
 	}
 
 	veleroNamespace := backendStorageLocation.Namespace

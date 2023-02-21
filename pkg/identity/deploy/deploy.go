@@ -18,6 +18,7 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
+	rbacv1 "k8s.io/api/rbac/v1"
 	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -33,6 +34,7 @@ var (
 
 type Options struct {
 	NamePrefix         string
+	Namespace          string
 	IdentitySpec       kotsv1beta1.IdentitySpec
 	IdentityConfigSpec kotsv1beta1.IdentityConfigSpec
 	IsOpenShift        bool
@@ -42,7 +44,7 @@ type Options struct {
 	Builder            *template.Builder
 }
 
-func Deploy(ctx context.Context, clientset kubernetes.Interface, namespace string, options Options) error {
+func Deploy(ctx context.Context, clientset kubernetes.Interface, options Options) error {
 	issuerURL, err := dexIssuerURL(options.IdentitySpec, options.Builder)
 	if err != nil {
 		return errors.Wrap(err, "failed to get dex issuer url")
@@ -51,25 +53,41 @@ func Deploy(ctx context.Context, clientset kubernetes.Interface, namespace strin
 	if err != nil {
 		return errors.Wrap(err, "failed to get dex config")
 	}
-	if err := ensureSecret(ctx, clientset, namespace, dexConfig, options); err != nil {
+	// TODO (salah): make this work with minimal rbac
+	if err := ensureNamespace(ctx, clientset, options); err != nil {
+		return errors.Wrap(err, "failed to ensure namespace")
+	}
+	if err := ensureClusterRole(ctx, clientset, options); err != nil {
+		return errors.Wrap(err, "failed to ensure cluster role")
+	}
+	if err := ensureServiceAccount(ctx, clientset, options); err != nil {
+		return errors.Wrap(err, "failed to ensure service account")
+	}
+	if err := ensureClusterRoleBinding(ctx, clientset, options); err != nil {
+		return errors.Wrap(err, "failed to ensure cluster role binding")
+	}
+	if err := ensureClientSecret(ctx, clientset, options); err != nil {
+		return errors.Wrap(err, "failed to ensure client secret")
+	}
+	if err := ensureSecret(ctx, clientset, dexConfig, options); err != nil {
 		return errors.Wrap(err, "failed to ensure secret")
 	}
-	if err := ensureDexThemeConfigMap(ctx, clientset, namespace, options); err != nil {
+	if err := ensureDexThemeConfigMap(ctx, clientset, options); err != nil {
 		return errors.Wrap(err, "failed to ensure dex theme config map")
 	}
-	if err := ensureDeployment(ctx, clientset, namespace, issuerURL, dexConfig, options); err != nil {
+	if err := ensureDeployment(ctx, clientset, issuerURL, dexConfig, options); err != nil {
 		return errors.Wrap(err, "failed to ensure deployment")
 	}
-	if err := ensureService(ctx, clientset, namespace, options); err != nil {
+	if err := ensureService(ctx, clientset, options); err != nil {
 		return errors.Wrap(err, "failed to ensure service")
 	}
-	if err := ensureIngress(ctx, clientset, namespace, options); err != nil {
+	if err := ensureIngress(ctx, clientset, options); err != nil {
 		return errors.Wrap(err, "failed to ensure ingress")
 	}
 	return nil
 }
 
-func Configure(ctx context.Context, clientset kubernetes.Interface, namespace string, options Options) error {
+func Configure(ctx context.Context, clientset kubernetes.Interface, options Options) error {
 	issuerURL, err := dexIssuerURL(options.IdentitySpec, options.Builder)
 	if err != nil {
 		return errors.Wrap(err, "failed to get dex issuer url")
@@ -78,10 +96,10 @@ func Configure(ctx context.Context, clientset kubernetes.Interface, namespace st
 	if err != nil {
 		return errors.Wrap(err, "failed to get dex config")
 	}
-	if err := ensureSecret(ctx, clientset, namespace, dexConfig, options); err != nil {
+	if err := ensureSecret(ctx, clientset, dexConfig, options); err != nil {
 		return errors.Wrap(err, "failed to ensure secret")
 	}
-	if err := patchDeploymentSecret(ctx, clientset, namespace, issuerURL, dexConfig, options); err != nil {
+	if err := patchDeploymentSecret(ctx, clientset, issuerURL, dexConfig, options); err != nil {
 		return errors.Wrap(err, "failed to patch deployment secret")
 	}
 	return nil
@@ -97,16 +115,165 @@ func AdditionalLabels(namePrefix string, additionalLabels map[string]string) map
 	return next
 }
 
-func ensureSecret(ctx context.Context, clientset kubernetes.Interface, namespace string, dexConfig []byte, options Options) error {
+func ensureNamespace(ctx context.Context, clientset kubernetes.Interface, options Options) error {
+	ns := namespaceResource(options)
+
+	_, err := clientset.CoreV1().Namespaces().Get(ctx, ns.Name, metav1.GetOptions{})
+	if err != nil {
+		if !kuberneteserrors.IsNotFound(err) {
+			return errors.Wrap(err, "failed to get namespace")
+		}
+
+		_, err = clientset.CoreV1().Namespaces().Create(ctx, ns, metav1.CreateOptions{})
+		if err != nil {
+			return errors.Wrap(err, "failed to create namespace")
+		}
+	}
+
+	return nil
+}
+
+func namespaceResource(options Options) *corev1.Namespace {
+	return &corev1.Namespace{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: "v1",
+			Kind:       "Namespace",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:   options.Namespace,
+			Labels: kotsadmtypes.GetKotsadmLabels(AdditionalLabels(options.NamePrefix, options.AdditionalLabels)),
+		},
+	}
+}
+
+func ensureClusterRole(ctx context.Context, clientset kubernetes.Interface, options Options) error {
+	clusterRole := clusterRoleResource(options)
+
+	_, err := clientset.RbacV1().ClusterRoles().Get(ctx, clusterRole.Name, metav1.GetOptions{})
+	if err != nil {
+		if !kuberneteserrors.IsNotFound(err) {
+			return errors.Wrap(err, "failed to get existing cluster role")
+		}
+
+		_, err = clientset.RbacV1().ClusterRoles().Create(ctx, clusterRole, metav1.CreateOptions{})
+		if err != nil {
+			return errors.Wrap(err, "failed to create cluster role")
+		}
+	}
+
+	return nil
+}
+
+func clusterRoleResource(options Options) *rbacv1.ClusterRole {
+	return &rbacv1.ClusterRole{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: "rbac.authorization.k8s.io/v1",
+			Kind:       "ClusterRole",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:   types.ClusterRoleName(options.NamePrefix),
+			Labels: kotsadmtypes.GetKotsadmLabels(AdditionalLabels(options.NamePrefix, options.AdditionalLabels)),
+		},
+		Rules: []rbacv1.PolicyRule{
+			{
+				APIGroups: []string{"dex.coreos.com"},
+				Resources: []string{"*"},
+				Verbs:     metav1.Verbs{"*"},
+			},
+			{
+				APIGroups: []string{"apiextensions.k8s.io"},
+				Resources: []string{"customresourcedefinitions"},
+				Verbs:     metav1.Verbs{"create"},
+			},
+		},
+	}
+}
+
+func ensureServiceAccount(ctx context.Context, clientset kubernetes.Interface, options Options) error {
+	sa := serviceAccountResource(options)
+
+	_, err := clientset.CoreV1().ServiceAccounts(options.Namespace).Get(ctx, sa.Name, metav1.GetOptions{})
+	if err != nil {
+		if !kuberneteserrors.IsNotFound(err) {
+			return errors.Wrap(err, "failed to get existing service account")
+		}
+
+		_, err = clientset.CoreV1().ServiceAccounts(options.Namespace).Create(ctx, sa, metav1.CreateOptions{})
+		if err != nil {
+			return errors.Wrap(err, "failed to create service account")
+		}
+	}
+
+	return nil
+}
+
+func serviceAccountResource(options Options) *corev1.ServiceAccount {
+	return &corev1.ServiceAccount{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: "v1",
+			Kind:       "ServiceAccount",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      types.ServiceAccountName(options.NamePrefix),
+			Namespace: options.Namespace,
+			Labels:    kotsadmtypes.GetKotsadmLabels(AdditionalLabels(options.NamePrefix, options.AdditionalLabels)),
+		},
+	}
+}
+
+func ensureClusterRoleBinding(ctx context.Context, clientset kubernetes.Interface, options Options) error {
+	clusterRoleBinding := clusterRoleBindingResource(options)
+
+	_, err := clientset.RbacV1().ClusterRoleBindings().Get(ctx, clusterRoleBinding.Name, metav1.GetOptions{})
+	if err != nil {
+		if !kuberneteserrors.IsNotFound(err) {
+			return errors.Wrap(err, "failed to get existing cluster role binding")
+		}
+
+		_, err = clientset.RbacV1().ClusterRoleBindings().Create(ctx, clusterRoleBinding, metav1.CreateOptions{})
+		if err != nil {
+			return errors.Wrap(err, "failed to create cluster role binding")
+		}
+	}
+
+	return nil
+}
+
+func clusterRoleBindingResource(options Options) *rbacv1.ClusterRoleBinding {
+	return &rbacv1.ClusterRoleBinding{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: "rbac.authorization.k8s.io/v1",
+			Kind:       "ClusterRoleBinding",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:   types.ClusterRoleBindingName(options.NamePrefix),
+			Labels: kotsadmtypes.GetKotsadmLabels(AdditionalLabels(options.NamePrefix, options.AdditionalLabels)),
+		},
+		Subjects: []rbacv1.Subject{
+			{
+				Kind:      "ServiceAccount",
+				Name:      types.ServiceAccountName(options.NamePrefix),
+				Namespace: options.Namespace,
+			},
+		},
+		RoleRef: rbacv1.RoleRef{
+			APIGroup: "rbac.authorization.k8s.io",
+			Kind:     "ClusterRole",
+			Name:     types.ClusterRoleName(options.NamePrefix),
+		},
+	}
+}
+
+func ensureSecret(ctx context.Context, clientset kubernetes.Interface, dexConfig []byte, options Options) error {
 	secret := secretResource(dexConfig, options)
 
-	existingSecret, err := clientset.CoreV1().Secrets(namespace).Get(ctx, secret.Name, metav1.GetOptions{})
+	existingSecret, err := clientset.CoreV1().Secrets(options.Namespace).Get(ctx, secret.Name, metav1.GetOptions{})
 	if err != nil {
 		if !kuberneteserrors.IsNotFound(err) {
 			return errors.Wrap(err, "failed to get existing secret")
 		}
 
-		_, err = clientset.CoreV1().Secrets(namespace).Create(ctx, secret, metav1.CreateOptions{})
+		_, err = clientset.CoreV1().Secrets(options.Namespace).Create(ctx, secret, metav1.CreateOptions{})
 		if err != nil {
 			return errors.Wrap(err, "failed to create secret")
 		}
@@ -116,7 +283,7 @@ func ensureSecret(ctx context.Context, clientset kubernetes.Interface, namespace
 
 	existingSecret = updateSecret(existingSecret, secret)
 
-	_, err = clientset.CoreV1().Secrets(namespace).Update(ctx, existingSecret, metav1.UpdateOptions{})
+	_, err = clientset.CoreV1().Secrets(options.Namespace).Update(ctx, existingSecret, metav1.UpdateOptions{})
 	if err != nil {
 		return errors.Wrap(err, "failed to update secret")
 	}
@@ -131,8 +298,9 @@ func secretResource(dexConfig []byte, options Options) *corev1.Secret {
 			Kind:       "Secret",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:   prefixName(options.NamePrefix, "dex"),
-			Labels: kotsadmtypes.GetKotsadmLabels(AdditionalLabels(options.NamePrefix, options.AdditionalLabels)),
+			Name:      types.SecretName(options.NamePrefix),
+			Namespace: options.Namespace,
+			Labels:    kotsadmtypes.GetKotsadmLabels(AdditionalLabels(options.NamePrefix, options.AdditionalLabels)),
 		},
 		Data: map[string][]byte{
 			"dexConfig.yaml": dexConfig,
@@ -145,7 +313,7 @@ func updateSecret(existingSecret, desiredSecret *corev1.Secret) *corev1.Secret {
 	return existingSecret
 }
 
-func ensureDeployment(ctx context.Context, clientset kubernetes.Interface, namespace string, issuerURL string, marshalledDexConfig []byte, options Options) error {
+func ensureDeployment(ctx context.Context, clientset kubernetes.Interface, issuerURL string, marshalledDexConfig []byte, options Options) error {
 	configChecksum := fmt.Sprintf("%x", md5.Sum(marshalledDexConfig))
 
 	deployment, err := deploymentResource(issuerURL, configChecksum, options)
@@ -153,13 +321,13 @@ func ensureDeployment(ctx context.Context, clientset kubernetes.Interface, names
 		return errors.Wrap(err, "failed to get deployment resource")
 	}
 
-	existingDeployment, err := clientset.AppsV1().Deployments(namespace).Get(ctx, deployment.Name, metav1.GetOptions{})
+	existingDeployment, err := clientset.AppsV1().Deployments(options.Namespace).Get(ctx, deployment.Name, metav1.GetOptions{})
 	if err != nil {
 		if !kuberneteserrors.IsNotFound(err) {
 			return errors.Wrap(err, "failed to get existing deployment")
 		}
 
-		_, err = clientset.AppsV1().Deployments(namespace).Create(ctx, deployment, metav1.CreateOptions{})
+		_, err = clientset.AppsV1().Deployments(options.Namespace).Create(ctx, deployment, metav1.CreateOptions{})
 		if err != nil {
 			return errors.Wrap(err, "failed to create deployment")
 		}
@@ -169,7 +337,7 @@ func ensureDeployment(ctx context.Context, clientset kubernetes.Interface, names
 
 	existingDeployment = updateDeployment(options.NamePrefix, existingDeployment, deployment)
 
-	_, err = clientset.AppsV1().Deployments(namespace).Update(ctx, existingDeployment, metav1.UpdateOptions{})
+	_, err = clientset.AppsV1().Deployments(options.Namespace).Update(ctx, existingDeployment, metav1.UpdateOptions{})
 	if err != nil {
 		return errors.Wrap(err, "failed to update deployment")
 	}
@@ -177,7 +345,7 @@ func ensureDeployment(ctx context.Context, clientset kubernetes.Interface, names
 	return nil
 }
 
-func patchDeploymentSecret(ctx context.Context, clientset kubernetes.Interface, namespace string, issuerURL string, marshalledDexConfig []byte, options Options) error {
+func patchDeploymentSecret(ctx context.Context, clientset kubernetes.Interface, issuerURL string, marshalledDexConfig []byte, options Options) error {
 	configChecksum := fmt.Sprintf("%x", md5.Sum(marshalledDexConfig))
 
 	deployment, err := deploymentResource(issuerURL, configChecksum, options)
@@ -189,7 +357,7 @@ func patchDeploymentSecret(ctx context.Context, clientset kubernetes.Interface, 
 
 	// TODO (ethan): patch readiness and liveness checks if issuer url changes
 
-	_, err = clientset.AppsV1().Deployments(namespace).Patch(ctx, deployment.Name, k8stypes.StrategicMergePatchType, []byte(patch), metav1.PatchOptions{})
+	_, err = clientset.AppsV1().Deployments(options.Namespace).Patch(ctx, deployment.Name, k8stypes.StrategicMergePatchType, []byte(patch), metav1.PatchOptions{})
 	if err != nil {
 		return errors.Wrap(err, "failed to patch deployment")
 	}
@@ -246,8 +414,9 @@ func deploymentResource(issuerURL, configChecksum string, options Options) (*app
 			Kind:       "Deployment",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:   types.DeploymentName(options.NamePrefix),
-			Labels: kotsadmtypes.GetKotsadmLabels(AdditionalLabels(options.NamePrefix, options.AdditionalLabels)),
+			Name:      types.DeploymentName(options.NamePrefix),
+			Namespace: options.Namespace,
+			Labels:    kotsadmtypes.GetKotsadmLabels(AdditionalLabels(options.NamePrefix, options.AdditionalLabels)),
 		},
 		Spec: appsv1.DeploymentSpec{
 			Replicas: pointer.Int32Ptr(2),
@@ -285,8 +454,9 @@ func deploymentResource(issuerURL, configChecksum string, options Options) (*app
 							},
 							}},
 					},
-					SecurityContext:  &securityContext,
-					ImagePullSecrets: imagePullSecrets,
+					SecurityContext:    &securityContext,
+					ImagePullSecrets:   imagePullSecrets,
+					ServiceAccountName: types.ServiceAccountName(options.NamePrefix),
 					Containers: []corev1.Container{
 						{
 							Image:           image,
@@ -296,8 +466,7 @@ func deploymentResource(issuerURL, configChecksum string, options Options) (*app
 							Ports: []corev1.ContainerPort{
 								{Name: "http", ContainerPort: 5556},
 							},
-							EnvFrom: []corev1.EnvFromSource{postgresSecretEnvFromSource(options.NamePrefix)},
-							Env:     env,
+							Env: env,
 							VolumeMounts: []corev1.VolumeMount{
 								{Name: secretVolume.Name, MountPath: "/etc/dex/cfg"},
 								{Name: themeVolume.Name, MountPath: "/web/themes/kots"},
@@ -347,7 +516,7 @@ func configSecretVolume(namePrefix string) corev1.Volume {
 		Name: "config",
 		VolumeSource: corev1.VolumeSource{
 			Secret: &corev1.SecretVolumeSource{
-				SecretName: prefixName(namePrefix, "dex"),
+				SecretName: types.SecretName(namePrefix),
 			},
 		},
 	}
@@ -381,21 +550,12 @@ func clientSecretEnvVar(namePrefix string) corev1.EnvVar {
 	}
 }
 
-func postgresSecretEnvFromSource(namePrefix string) corev1.EnvFromSource {
-	return corev1.EnvFromSource{
-		SecretRef: &corev1.SecretEnvSource{
-			LocalObjectReference: corev1.LocalObjectReference{
-				Name: prefixName(namePrefix, "dex-postgres"),
-			},
-		},
-	}
-}
-
 func updateDeployment(namePrefix string, existingDeployment, desiredDeployment *appsv1.Deployment) *appsv1.Deployment {
 	if len(existingDeployment.Spec.Template.Spec.Containers) == 0 {
-		// wtf
 		return desiredDeployment
 	}
+
+	existingDeployment.Spec.Template.Spec.ServiceAccountName = desiredDeployment.Spec.Template.Spec.ServiceAccountName
 
 	if existingDeployment.Spec.Template.Annotations == nil {
 		existingDeployment.Spec.Template.ObjectMeta.Annotations = map[string]string{}
@@ -403,18 +563,14 @@ func updateDeployment(namePrefix string, existingDeployment, desiredDeployment *
 	existingDeployment.Spec.Template.ObjectMeta.Annotations["kots.io/dex-secret-checksum"] = desiredDeployment.Spec.Template.ObjectMeta.Annotations["kots.io/dex-secret-checksum"]
 
 	existingDeployment.Spec.Template.Spec.Containers[0].Image = desiredDeployment.Spec.Template.Spec.Containers[0].Image
-
 	existingDeployment.Spec.Template.Spec.Containers[0].LivenessProbe = desiredDeployment.Spec.Template.Spec.Containers[0].LivenessProbe
 	existingDeployment.Spec.Template.Spec.Containers[0].ReadinessProbe = desiredDeployment.Spec.Template.Spec.Containers[0].ReadinessProbe
 	existingDeployment.Spec.Template.Spec.Containers[0].Env = desiredDeployment.Spec.Template.Spec.Containers[0].Env
-
+	existingDeployment.Spec.Template.Spec.Containers[0].EnvFrom = desiredDeployment.Spec.Template.Spec.Containers[0].EnvFrom
 	existingDeployment.Spec.Template.Spec.Containers[0].Resources = desiredDeployment.Spec.Template.Spec.Containers[0].Resources
 
 	existingDeployment = updateDeploymentConfigSecretVolume(namePrefix, existingDeployment, desiredDeployment)
-
 	existingDeployment = updateDeploymentClientSecretEnvVar(namePrefix, existingDeployment, desiredDeployment)
-
-	existingDeployment = updateDeploymentPostgresSecretEnvFromSource(namePrefix, existingDeployment, desiredDeployment)
 
 	return existingDeployment
 }
@@ -472,35 +628,16 @@ func updateDeploymentClientSecretEnvVar(namePrefix string, existingDeployment *a
 	return existingDeployment
 }
 
-func updateDeploymentPostgresSecretEnvFromSource(namePrefix string, existingDeployment *appsv1.Deployment, desiredDeployment *appsv1.Deployment) *appsv1.Deployment {
-	if len(existingDeployment.Spec.Template.Spec.Containers) == 0 {
-		return desiredDeployment
-	}
-
-	newPostgresSecretEnvFromSource := postgresSecretEnvFromSource(namePrefix)
-
-	for _, envFrom := range existingDeployment.Spec.Template.Spec.Containers[0].EnvFrom {
-		if envFrom.SecretRef.Name == newPostgresSecretEnvFromSource.SecretRef.Name {
-			return existingDeployment
-		}
-	}
-
-	existingDeployment.Spec.Template.Spec.Containers[0].EnvFrom =
-		append(existingDeployment.Spec.Template.Spec.Containers[0].EnvFrom, newPostgresSecretEnvFromSource)
-
-	return existingDeployment
-}
-
-func ensureService(ctx context.Context, clientset kubernetes.Interface, namespace string, options Options) error {
+func ensureService(ctx context.Context, clientset kubernetes.Interface, options Options) error {
 	service := serviceResource(options)
 
-	existingService, err := clientset.CoreV1().Services(namespace).Get(ctx, service.Name, metav1.GetOptions{})
+	existingService, err := clientset.CoreV1().Services(options.Namespace).Get(ctx, service.Name, metav1.GetOptions{})
 	if err != nil {
 		if !kuberneteserrors.IsNotFound(err) {
 			return errors.Wrap(err, "failed to get existing service")
 		}
 
-		_, err = clientset.CoreV1().Services(namespace).Create(ctx, service, metav1.CreateOptions{})
+		_, err = clientset.CoreV1().Services(options.Namespace).Create(ctx, service, metav1.CreateOptions{})
 		if err != nil {
 			return errors.Wrap(err, "failed to create service")
 		}
@@ -510,7 +647,7 @@ func ensureService(ctx context.Context, clientset kubernetes.Interface, namespac
 
 	existingService = updateService(existingService, service)
 
-	_, err = clientset.CoreV1().Services(namespace).Update(ctx, existingService, metav1.UpdateOptions{})
+	_, err = clientset.CoreV1().Services(options.Namespace).Update(ctx, existingService, metav1.UpdateOptions{})
 	if err != nil {
 		return errors.Wrap(err, "failed to update service")
 	}
@@ -536,8 +673,9 @@ func serviceResource(options Options) *corev1.Service {
 			Kind:       "Service",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:   types.ServiceName(options.NamePrefix),
-			Labels: kotsadmtypes.GetKotsadmLabels(AdditionalLabels(options.NamePrefix, options.AdditionalLabels)),
+			Name:      types.ServiceName(options.NamePrefix),
+			Namespace: options.Namespace,
+			Labels:    kotsadmtypes.GetKotsadmLabels(AdditionalLabels(options.NamePrefix, options.AdditionalLabels)),
 		},
 		Spec: corev1.ServiceSpec{
 			Type: serviceType,
@@ -557,13 +695,13 @@ func updateService(existingService, desiredService *corev1.Service) *corev1.Serv
 	return existingService
 }
 
-func ensureIngress(ctx context.Context, clientset kubernetes.Interface, namespace string, options Options) error {
+func ensureIngress(ctx context.Context, clientset kubernetes.Interface, options Options) error {
 	ingressSpec := options.IdentityConfigSpec.IngressConfig
 	if !ingressSpec.Enabled || ingressSpec.Ingress == nil {
-		return deleteIngress(ctx, clientset, namespace, options.NamePrefix)
+		return deleteIngress(ctx, clientset, options.Namespace, options.NamePrefix)
 	}
 	dexIngress := ingressResource(options)
-	return ingress.EnsureIngress(ctx, clientset, namespace, dexIngress)
+	return ingress.EnsureIngress(ctx, clientset, options.Namespace, dexIngress)
 }
 
 func ingressResource(options Options) *networkingv1.Ingress {
@@ -572,6 +710,7 @@ func ingressResource(options Options) *networkingv1.Ingress {
 		return nil
 	}
 	return ingress.IngressFromConfig(
+		options.Namespace,
 		*ingressSpec.Ingress,
 		prefixName(options.NamePrefix, "dex"),
 		types.ServiceName(options.NamePrefix),

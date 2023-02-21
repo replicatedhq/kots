@@ -1,6 +1,5 @@
 import React, { Component } from "react";
-import { withRouter } from "react-router-dom";
-import Helmet from "react-helmet";
+import { KotsPageTitle } from "@components/Head";
 import Dropzone from "react-dropzone";
 import isEmpty from "lodash/isEmpty";
 
@@ -62,9 +61,7 @@ class ConfigureIngress extends Component {
 
     return (
       <div className="flex-column flex1 u-position--relative u-overflow--auto u-padding--20 alignItems--center">
-        <Helmet>
-          <title>Configure Ingress</title>
-        </Helmet>
+        <KotsPageTitle pageName="Configure Ingress" showAppSlug />
         <form className="flex flex-column Identity--wrapper u-marginTop--30">
           <p className="u-fontSize--largest u-lineHeight--default u-fontWeight--bold u-textColor--primary">
             {" "}
@@ -165,7 +162,7 @@ class ConfigureIngress extends Component {
                         <div className="flex-column">
                           <p className="u-fontSize--normal u-textColor--secondary u-fontWeight--medium u-lineHeight--normal">
                             Drag your cert here or{" "}
-                            <span className="u-linkColor u-fontWeight--medium u-textDecoration--underlineOnHover">
+                            <span className="link u-textDecoration--underlineOnHover">
                               choose a file
                             </span>
                           </p>
@@ -195,7 +192,7 @@ class ConfigureIngress extends Component {
 
               <div className="u-marginTop--20">
                 <p
-                  className="u-fontSize--small u-fontWeight--medium u-lineHeight--normal u-linkColor u-cursor--pointer"
+                  className="u-fontSize--small u-fontWeight--medium u-lineHeight--normal link"
                   onClick={this.toggleAdvancedOptions}
                 >
                   {" "}
@@ -215,7 +212,7 @@ class ConfigureIngress extends Component {
                     </div>
                     {this.state.showAdvancedOptions && annotationRows}
                     <p
-                      className="u-fontSize--small u-fontWeight--medium u-lineHeight--normal u-linkColor u-cursor--pointer u-marginTop--15"
+                      className="u-fontSize--small u-lineHeight--normal u-marginTop--15 link"
                       onClick={this.addAnnotation}
                     >
                       {" "}
@@ -265,4 +262,4 @@ class ConfigureIngress extends Component {
   }
 }
 
-export default withRouter(ConfigureIngress);
+export default ConfigureIngress;

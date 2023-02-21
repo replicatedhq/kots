@@ -14,6 +14,7 @@ import (
 	kotstypes "github.com/replicatedhq/kots/pkg/kotsadm/types"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/logger"
+	"github.com/replicatedhq/kots/pkg/preflight/types"
 	"github.com/replicatedhq/kots/pkg/registry"
 	registrytypes "github.com/replicatedhq/kots/pkg/registry/types"
 	"github.com/replicatedhq/kots/pkg/render"
@@ -26,7 +27,6 @@ import (
 	kurlv1beta1 "github.com/replicatedhq/kurl/kurlkinds/pkg/apis/cluster/v1beta1"
 	troubleshootanalyze "github.com/replicatedhq/troubleshoot/pkg/analyze"
 	troubleshootv1beta2 "github.com/replicatedhq/troubleshoot/pkg/apis/troubleshoot/v1beta2"
-	troubleshootpreflight "github.com/replicatedhq/troubleshoot/pkg/preflight"
 	"go.uber.org/zap"
 	"gopkg.in/yaml.v2"
 	corev1 "k8s.io/api/core/v1"
@@ -104,20 +104,34 @@ func Run(appID string, appSlug string, sequence int64, isAirgap bool, archiveDir
 	}
 
 	if runPreflights {
+		var preflightErr error
+		defer func() {
+			if preflightErr != nil {
+				err := setPreflightResult(appID, sequence, &types.PreflightResults{}, preflightErr)
+				if err != nil {
+					logger.Error(errors.Wrap(err, "failed to set preflight results"))
+					return
+				}
+			}
+		}()
+
 		status, err := store.GetStore().GetDownstreamVersionStatus(appID, sequence)
 		if err != nil {
-			return errors.Wrap(err, "failed to get version status")
+			preflightErr = errors.Wrap(err, "failed to get version status")
+			return preflightErr
 		}
 
 		if status != "deployed" {
 			if err := store.GetStore().SetDownstreamVersionStatus(appID, sequence, storetypes.VersionPendingPreflight, ""); err != nil {
-				return errors.Wrapf(err, "failed to set downstream version %d pending preflight", sequence)
+				preflightErr = errors.Wrapf(err, "failed to set downstream version %d pending preflight", sequence)
+				return preflightErr
 			}
 		}
 
-		collectors, err := registry.UpdateCollectorSpecsWithRegistryData(preflight.Spec.Collectors, registrySettings, renderedKotsKinds.Installation.Spec.KnownImages, renderedKotsKinds.License)
+		collectors, err := registry.UpdateCollectorSpecsWithRegistryData(preflight.Spec.Collectors, registrySettings, renderedKotsKinds.Installation.Spec.KnownImages, renderedKotsKinds.License, &renderedKotsKinds.KotsApplication)
 		if err != nil {
-			return errors.Wrap(err, "failed to rewrite images in preflight")
+			preflightErr = errors.Wrap(err, "failed to rewrite images in preflight")
+			return preflightErr
 		}
 		preflight.Spec.Collectors = collectors
 
@@ -129,6 +143,7 @@ func Run(appID string, appSlug string, sequence int64, isAirgap bool, archiveDir
 				return
 			}
 			logger.Debug("preflight checks completed")
+			go reporting.SendAppInfo(appID) // send app and preflight info when preflights finish
 
 			// status could've changed while preflights were running
 			status, err := store.GetStore().GetDownstreamVersionStatus(appID, sequence)
@@ -156,7 +171,7 @@ func Run(appID string, appSlug string, sequence int64, isAirgap bool, archiveDir
 		}()
 	} else if status != storetypes.VersionDeployed && status != storetypes.VersionFailed {
 		if sequence == 0 {
-			_, err := maybeDeployFirstVersion(appID, sequence, &troubleshootpreflight.UploadPreflightResults{})
+			_, err := maybeDeployFirstVersion(appID, sequence, &types.PreflightResults{})
 			if err != nil {
 				return errors.Wrap(err, "failed to deploy first version")
 			}
@@ -172,7 +187,7 @@ func Run(appID string, appSlug string, sequence int64, isAirgap bool, archiveDir
 }
 
 // maybeDeployFirstVersion will deploy the first version if preflight checks pass
-func maybeDeployFirstVersion(appID string, sequence int64, preflightResults *troubleshootpreflight.UploadPreflightResults) (bool, error) {
+func maybeDeployFirstVersion(appID string, sequence int64, preflightResults *types.PreflightResults) (bool, error) {
 	if sequence != 0 {
 		return false, nil
 	}
@@ -202,7 +217,7 @@ func maybeDeployFirstVersion(appID string, sequence int64, preflightResults *tro
 	return true, nil
 }
 
-func GetPreflightState(preflightResults *troubleshootpreflight.UploadPreflightResults) string {
+func GetPreflightState(preflightResults *types.PreflightResults) string {
 	if len(preflightResults.Errors) > 0 {
 		return "fail"
 	}
@@ -261,7 +276,7 @@ func CreateRenderedSpec(app *apptypes.App, sequence int64, origin string, inClus
 
 	injectDefaultPreflights(builtPreflight, kotsKinds, registrySettings)
 
-	collectors, err := registry.UpdateCollectorSpecsWithRegistryData(builtPreflight.Spec.Collectors, registrySettings, kotsKinds.Installation.Spec.KnownImages, kotsKinds.License)
+	collectors, err := registry.UpdateCollectorSpecsWithRegistryData(builtPreflight.Spec.Collectors, registrySettings, kotsKinds.Installation.Spec.KnownImages, kotsKinds.License, &kotsKinds.KotsApplication)
 	if err != nil {
 		return errors.Wrap(err, "failed to rewrite images in preflight")
 	}

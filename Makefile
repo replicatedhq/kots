@@ -1,9 +1,9 @@
 include Makefile.build.mk
 CURRENT_USER := $(shell id -u -n)
-MINIO_TAG ?= RELEASE.2022-09-17T00-09-45Z
-POSTGRES_14_TAG ?= 14.5-alpine
-DEX_TAG ?= v2.34.0
-LVP_TAG ?= v0.3.8
+MINIO_TAG ?= RELEASE.2022-10-24T18-35-07Z
+RQLITE_TAG ?= 7.13.1
+DEX_TAG ?= v2.35.3
+LVP_TAG ?= v0.5.0
 
 define sendMetrics
 @if [ -z "${PROJECT_NAME}" ]; then \
@@ -83,6 +83,18 @@ build-real:
 run:
 	./bin/kotsadm api
 
+.PHONY: okteto-dev
+okteto-dev:
+    ## We download all go modules, instead of putting them in the container. This will
+    ## use the PVC that everyone has, and will build a cache.
+    ##
+    ## We also run `make build` here because the initial compilation is slow and
+    ## this enabled `okteto up` to do all of the long-running stuff and give the user
+    ## a pretty good env right after
+	@go mod download -x
+	@make build
+	@printf "\n\n To build and run api, run: \n\n   # make build run\n\n"
+
 # Debugging
 .PHONY: debug-build
 debug-build:
@@ -95,20 +107,20 @@ debug: debug-build
 .PHONY: build-ttl.sh
 build-ttl.sh: build
 	source .image.env && ${MAKE} -C web build-kotsadm
-	docker build -f deploy/Dockerfile -t ttl.sh/${CURRENT_USER}/kotsadm:12h .
-	docker push ttl.sh/${CURRENT_USER}/kotsadm:12h
+	docker build -f deploy/Dockerfile -t ttl.sh/${CURRENT_USER}/kotsadm:24h .
+	docker push ttl.sh/${CURRENT_USER}/kotsadm:24h
 
 .PHONY: all-ttl.sh
 all-ttl.sh: build-ttl.sh
-	source .image.env && IMAGE=ttl.sh/${CURRENT_USER}/kotsadm-migrations:12h make -C migrations build_schema
+	source .image.env && IMAGE=ttl.sh/${CURRENT_USER}/kotsadm-migrations:24h make -C migrations build_schema
 
 	docker pull minio/minio:${MINIO_TAG}
-	docker tag minio/minio:${MINIO_TAG} ttl.sh/${CURRENT_USER}/minio:12h
-	docker push ttl.sh/${CURRENT_USER}/minio:12h
+	docker tag minio/minio:${MINIO_TAG} ttl.sh/${CURRENT_USER}/minio:${MINIO_TAG}
+	docker push ttl.sh/${CURRENT_USER}/minio:${MINIO_TAG}
 
-	docker pull postgres:${POSTGRES_14_TAG}
-	docker tag postgres:${POSTGRES_14_TAG} ttl.sh/${CURRENT_USER}/postgres:12h
-	docker push ttl.sh/${CURRENT_USER}/postgres:12h
+	docker pull rqlite/rqlite:${RQLITE_TAG}
+	docker tag rqlite/rqlite:${RQLITE_TAG} ttl.sh/${CURRENT_USER}/rqlite:${RQLITE_TAG}
+	docker push ttl.sh/${CURRENT_USER}/rqlite:${RQLITE_TAG}
 
 .PHONY: build-alpha
 build-alpha:
@@ -135,19 +147,6 @@ build-release:
 
 	mkdir -p bin/docker-archive/local-volume-provider
 	skopeo copy docker://replicated/local-volume-provider:${LVP_TAG} docker-archive:bin/docker-archive/local-volume-provider/${LVP_TAG}
-
-.PHONY: project-pact-tests
-project-pact-tests:
-	make -C web test
-
-	make -C migrations/fixtures schema-fixtures build run
-	cd migrations && docker build -t kotsadm/kotsadm-fixtures:local -f ./fixtures/deploy/Dockerfile ./fixtures
-
-	mkdir -p api/pacts
-	cp web/pacts/kotsadm-web-kotsadm.json api/pacts/
-	make -C api test
-
-	@echo All contract tests have passed.
 
 .PHONY: cache
 cache:
@@ -182,10 +181,10 @@ scan:
 	trivy fs \
 		--security-checks vuln \
 		--exit-code=1 \
-		--severity="HIGH,CRITICAL" \
+		--severity="CRITICAL,HIGH,MEDIUM" \
 		--ignore-unfixed \
+		--skip-dirs .github \
 		--skip-files actions/version-tag/package-lock.json \
-		--skip-files migrations/fixtures/yarn.lock \
 		--skip-files web/yarn.lock \
 		--ignorefile .trivyignore \
 		./

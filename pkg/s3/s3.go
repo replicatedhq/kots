@@ -195,7 +195,7 @@ func s3BucketPod(clientset kubernetes.Interface, podOptions S3OpsPodOptions, com
 	image := fmt.Sprintf("kotsadm/kotsadm:%s", kotsadmTag)
 	imagePullSecrets := []corev1.LocalObjectReference{}
 
-	isKurl, err := kurl.IsKurl()
+	isKurl, err := kurl.IsKurl(clientset)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to check if cluster is kurl")
 	}

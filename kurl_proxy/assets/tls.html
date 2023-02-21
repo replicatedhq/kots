@@ -22,30 +22,49 @@
           <div class="flex u-marginBottom--8">
             {{if .AppIcon }}<span class="appIcon flex flex-auto" style="background-image: url('{{ .AppIcon }}')"></span>{{end}}
             <div class="flex-column flex1 justifyContent--center">
-              <p class="tls-header">HTTPS for {{ .AppTitle }} admin console</p>
+              <p class="tls-header">HTTPS for {{ .AppTitle }} the admin console</p>
             </div>
-          </div>
-          <p class="tls-header-sub">We're currently using a self-signed TLS certificate to secure the
-            communication between your browser & the management console. If you don't upload your own
-            TLS cert, you'll see a warning about this in your browser every time you access the
-            management console.</p>
-          <div>
-            <p class="tls-section-header">Private key & certificate</p>
-            <p class="tls-section-sub">Files will be uploaded directly to the mangement server & will never leave.</p>
           </div>
           <form id="upload-form" class="flex-column" action="" method="post" enctype="multipart/form-data">
+
             <div>
-              <p class="tls-section-header2">Hostname</p>
-              <p class="tls-section-sub-sub">Ensure this domain is routable on your network.</p>
-              <input id="hostname" class="form-input larger" type="text" name="hostname" placeholder="app.yourdomain.com"
-                style="width: 250px; margin-bottom: 20px;" />
+              <p class="tls-section-header2">Certificate type</p>
+              <input type="radio" name="type" id="self-signed" value="self-signed" checked autocomplete="off">
+              <label for="self-signed">Self-signed</label>
+              <input type="radio" name="type" id="custom-cert" value="custom-cert" autocomplete="off">
+              <label for="custom-cert">Upload your own</label>
             </div>
-            <div class="flex upload-form">
+            <p class="tls-header-sub self-signed-visible">
+              A self-signed TLS certificate is currently used to secure communication
+              between your browser and the admin console. You will see a warning in your browser
+              every time you access the admin console unless you upload your own TLS certificate.
+            </p>
+            <p class="tls-header-sub custom-cert-visible hidden">
+              A trusted certificate that you upload will be used to secure communication between
+              your browser and the admin console.
+            </p>
+            <div>
+              <p class="tls-section-header2">
+                Hostname
+                <span class="self-signed-visible">(optional)</span>
+              </p>
+              <p id="hostname-hint" class="hostname-hint"></p>
+              <p class="tls-section-sub-sub">Ensure this domain is routable on your network.</p>
+              <input id="hostname" class="form-input larger" type="text" name="hostname"
+                placeholder="app.yourdomain.com" style="width: 250px; margin-bottom: 20px;" />
+            </div>
+            <div class="custom-cert-visible hidden">
+              <p class="tls-section-header">Private key and certificate</p>
+              <p class="tls-section-sub">Files will be stored in the cluster.
+              </p>
+            </div>
+            <div class="flex upload-form hidden custom-cert-visible" id="upload-files">
               <div class="u-position--relative flex-column flex-auto upload">
                 <div>
                   <label class="tls-section-header2">Upload private key</label>
                   <input type="file" name="key" id="key" class="inputkey" />
                   <label for="key" class="btn secondary u-marginTop--8">Choose private key</label>
+                  <p id="key-label" class="tls-header-sub">No file chosen.</p>
                 </div>
               </div>
               <div class="u-position--relative flex-column flex-auto u-marginRight--15 upload">
@@ -53,6 +72,7 @@
                   <label class="tls-section-header2">Upload SSL certificate</label>
                   <input type="file" name="cert" id="cert" class="inputcert" />
                   <label for="cert" class="btn secondary u-marginTop--8">Choose SSL certificate</label>
+                  <p id="cert-label" class="tls-header-sub">No file chosen.</p>
                 </div>
               </div>
             </div>
@@ -64,11 +84,10 @@
             </div>
 
             <div class="button-wrapper flex alignItems--center">
-              <button class="btn primary" type="submit">Upload &amp; continue</button>
-              <div class="flex-column justifyContent--center">
-                <button id="skip-button" class="text-button" type="submit" formaction="/tls/skip">Skip &amp;
-                  continue</button>
-              </div>
+              <button class="btn primary" type="submit">
+                <span class="self-signed-visible">Continue</span>
+                <span class="custom-cert-visible hidden">Upload &amp; continue</span>
+              </button>
             </div>
           </form>
         </div>

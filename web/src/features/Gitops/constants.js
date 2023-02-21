@@ -37,11 +37,9 @@ export const BITBUCKET_SERVER_DEFAULT_SSH_PORT = "7999";
 export const IconWrapper = styled.div`
   height: 30px;
   width: 30px;
-  border-radius: 50%;
   background-position: center;
   background-size: contain;
   background-repeat: no-repeat;
-  box-shadow: inset 0 0 3px rgba(0, 0, 0, 0.3);
   background-color: #ffffff;
   z-index: 1;
 `;

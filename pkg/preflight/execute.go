@@ -9,6 +9,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/logger"
+	"github.com/replicatedhq/kots/pkg/preflight/types"
 	"github.com/replicatedhq/kots/pkg/store"
 	troubleshootv1beta2 "github.com/replicatedhq/troubleshoot/pkg/apis/troubleshoot/v1beta2"
 	"github.com/replicatedhq/troubleshoot/pkg/preflight"
@@ -16,9 +17,32 @@ import (
 	"go.uber.org/zap"
 )
 
+func setPreflightResult(appID string, sequence int64, preflightResults *types.PreflightResults, preflightRunError error) error {
+	if preflightRunError != nil {
+		if preflightResults.Errors == nil {
+			preflightResults.Errors = []*types.PreflightError{}
+		}
+		preflightResults.Errors = append(preflightResults.Errors, &types.PreflightError{
+			Error:  preflightRunError.Error(),
+			IsRBAC: false,
+		})
+	}
+
+	b, err := json.Marshal(preflightResults)
+	if err != nil {
+		return errors.Wrap(err, "failed to marshal preflight results")
+	}
+
+	if err := store.GetStore().SetPreflightResults(appID, sequence, b); err != nil {
+		return errors.Wrap(err, "failed to set preflight results")
+	}
+
+	return nil
+}
+
 // execute will execute the preflights using spec in preflightSpec.
 // This spec should be rendered, no template functions remaining
-func execute(appID string, sequence int64, preflightSpec *troubleshootv1beta2.Preflight, ignorePermissionErrors bool) (*troubleshootpreflight.UploadPreflightResults, error) {
+func execute(appID string, sequence int64, preflightSpec *troubleshootv1beta2.Preflight, ignorePermissionErrors bool) (*types.PreflightResults, error) {
 	logger.Debug("executing preflight checks",
 		zap.String("appID", appID),
 		zap.Int64("sequence", sequence))
@@ -26,6 +50,7 @@ func execute(appID string, sequence int64, preflightSpec *troubleshootv1beta2.Pr
 	progressChan := make(chan interface{}, 0) // non-zero buffer will result in missed messages
 	defer close(progressChan)
 
+	var preflightRunError error
 	completeMx := sync.Mutex{}
 	isComplete := false
 	go func() {
@@ -66,8 +91,21 @@ func execute(appID string, sequence int64, preflightSpec *troubleshootv1beta2.Pr
 		}
 	}()
 
+	uploadPreflightResults := &types.PreflightResults{}
+	defer func() {
+		completeMx.Lock()
+		defer completeMx.Unlock()
+
+		isComplete = true
+		if err := setPreflightResult(appID, sequence, uploadPreflightResults, preflightRunError); err != nil {
+			logger.Error(errors.Wrap(err, "failed to set preflight results"))
+			return
+		}
+	}()
+
 	restConfig, err := k8sutil.GetClusterConfig()
 	if err != nil {
+		preflightRunError = err
 		return nil, errors.Wrap(err, "failed to get cluster config")
 	}
 
@@ -81,22 +119,24 @@ func execute(appID string, sequence int64, preflightSpec *troubleshootv1beta2.Pr
 	logger.Debug("preflight collect phase")
 	collectResults, err := troubleshootpreflight.Collect(collectOpts, preflightSpec)
 	if err != nil && !isPermissionsError(err) {
+		preflightRunError = err
 		return nil, errors.Wrap(err, "failed to collect")
 	}
 
 	clusterCollectResult, ok := collectResults.(troubleshootpreflight.ClusterCollectResult)
 	if !ok {
-		return nil, errors.Errorf("unexpected result type: %T", collectResults)
+		preflightRunError = errors.Errorf("unexpected result type: %T", collectResults)
+		return nil, preflightRunError
 	}
 
-	uploadPreflightResults := &troubleshootpreflight.UploadPreflightResults{}
 	if isPermissionsError(err) {
 		logger.Debug("skipping analyze due to RBAC errors")
-		rbacErrors := []*troubleshootpreflight.UploadPreflightError{}
+		rbacErrors := []*types.PreflightError{}
 		for _, collector := range clusterCollectResult.Collectors {
-			for _, e := range collector.RBACErrors {
-				rbacErrors = append(rbacErrors, &preflight.UploadPreflightError{
-					Error: e.Error(),
+			for _, e := range collector.GetRBACErrors() {
+				rbacErrors = append(rbacErrors, &types.PreflightError{
+					Error:  e.Error(),
+					IsRBAC: true,
 				})
 			}
 		}
@@ -123,20 +163,6 @@ func execute(appID string, sequence int64, preflightSpec *troubleshootv1beta2.Pr
 			results = append(results, uploadPreflightResult)
 		}
 		uploadPreflightResults.Results = results
-	}
-
-	logger.Debug("preflight marshalling")
-	b, err := json.Marshal(uploadPreflightResults)
-	if err != nil {
-		return uploadPreflightResults, errors.Wrap(err, "failed to marshal results")
-	}
-
-	completeMx.Lock()
-	defer completeMx.Unlock()
-
-	isComplete = true
-	if err := store.GetStore().SetPreflightResults(appID, sequence, b); err != nil {
-		return uploadPreflightResults, errors.Wrap(err, "failed to set preflight results")
 	}
 
 	return uploadPreflightResults, nil
