@@ -23,7 +23,9 @@ func WaitForStatefulSetReady(ctx context.Context, clientset kubernetes.Interface
 			return nil
 		}
 
-		if s.Status.ObservedGeneration == s.ObjectMeta.Generation && s.Status.ReadyReplicas == *s.Spec.Replicas {
+		if s.Status.ObservedGeneration == s.ObjectMeta.Generation &&
+			s.Status.ReadyReplicas == *s.Spec.Replicas &&
+			s.Status.UpdateRevision == s.Status.CurrentRevision {
 			return nil
 		}
 
