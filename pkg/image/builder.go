@@ -13,6 +13,7 @@ import (
 	"runtime"
 	"sort"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/containers/image/v5/copy"
@@ -212,7 +213,7 @@ func checkForPrivateImages(uncheckedImages []string, checkedImages map[string]ty
 	if len(uncheckedImages) == 0 {
 		return nil
 	}
-	/*
+	
 		// Check for private images:
 		var wg sync.WaitGroup
 		var mutex sync.Mutex
@@ -229,11 +230,16 @@ func checkForPrivateImages(uncheckedImages []string, checkedImages map[string]ty
 				checkedImages[image] = types.ImageInfo{
 					IsPrivate: isPrivate,
 				}
+				if isPrivate {
+					uniqueImages[image] = true
+				}
 				mutex.Unlock()
 			}(image)
 		}
-		wg.Wait()*/
-	for _, image := range uncheckedImages {
+		wg.Wait()
+	
+	/*
+		for _, image := range uncheckedImages {
 		isPrivate := false
 		p, err := IsPrivateImage(image, dockerHubRegistry)
 		if err != nil {
@@ -247,6 +253,7 @@ func checkForPrivateImages(uncheckedImages []string, checkedImages map[string]ty
 			uniqueImages[image] = true
 		}
 	}
+	*/
 
 	return nil
 }

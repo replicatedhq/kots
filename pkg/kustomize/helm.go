@@ -148,7 +148,7 @@ func RenderChartsArchive(versionArchive string, downstreamName string, kustomize
 			}
 			// thisDuration := time.Since(start)
 			// durations = append(durations, thisDuration)
-			totalDuration += thisDuration
+			// totalDuration += thisDuration
 			return nil
 		})
 	avgDuration := totalDuration / time.Duration(totalPaths)
