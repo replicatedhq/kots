@@ -173,8 +173,9 @@
     "universal-cookie": "^4.0.4"
   },
   "resolutions": {
+    "moment": "^2.9.0",
     "trim": "^0.0.3",
-    "moment": "^2.9.0"
+    "trim-newlines": "^3.0.1"
   },
   "browserslist": [
     "> 1%",
