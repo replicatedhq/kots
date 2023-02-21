@@ -74,6 +74,11 @@ func CheckAccess(endpoint, username, password string) error {
 	authURL := challenges[0].Parameters["realm"]
 	basicAuthToken := makeBasicAuthToken(username, password)
 
+	// some registries (e.g. ACR - Azure Container Registry) require the "service" parameter to be set.
+	if service := challenges[0].Parameters["service"]; service != "" {
+		authURL = fmt.Sprintf("%s?service=%s", authURL, service)
+	}
+
 	if IsECREndpoint(endpoint) && username != "AWS" {
 		token, err := GetECRBasicAuthToken(endpoint, username, password)
 		if err != nil {
