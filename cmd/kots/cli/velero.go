@@ -14,6 +14,7 @@ import (
 
 	"github.com/fatih/color"
 	"github.com/manifoldco/promptui"
+	"github.com/replicatedhq/kots/pkg/image"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/kotsadm"
 	kotsadmtypes "github.com/replicatedhq/kots/pkg/kotsadm/types"
@@ -132,12 +133,10 @@ func VeleroConfigureInternalCmd() *cobra.Command {
 				return errors.Wrap(err, "failed to detect velero")
 			}
 			if veleroStatus == nil {
-				return errors.New("velero namespace not found")
+				return errors.New("velero not found")
 			}
-
 			if !veleroStatus.ContainsPlugin("velero-plugin-for-aws") {
-				return errors.New("velero does not have the 'velero-plugin-for-aws' installed; " +
-					"consult https://kots.io/kotsadm/snapshots/overview/ for install instructions`)")
+				return errors.New("velero does not have the 'velero-plugin-for-aws' plugin installed")
 			}
 
 			registryConfig, err := kotsadm.GetRegistryConfigFromCluster(namespace, clientset)
@@ -175,29 +174,6 @@ func VeleroConfigureAmazonS3Cmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "configure-aws-s3",
 		Short: "Configure snapshots to use AWS S3 storage",
-		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
-			viper.BindPFlags(cmd.Flags())
-			v := viper.GetViper()
-
-			namespace := v.GetString("namespace")
-			if err := validateNamespace(namespace); err != nil {
-				return err
-			}
-
-			veleroStatus, err := snapshot.DetectVelero(cmd.Context(), namespace)
-			if err != nil {
-				return errors.Wrap(err, "failed to detect velero")
-			}
-			if veleroStatus == nil {
-				return errors.New("velero namespace not found")
-			}
-
-			if !veleroStatus.ContainsPlugin("velero-plugin-for-aws") {
-				return errors.New("velero does not have the 'velero-plugin-for-aws' installed; " +
-					"consult https://kots.io/kotsadm/snapshots/overview/ for install instructions`)")
-			}
-			return nil
-		},
 	}
 
 	cmd.AddCommand(VeleroConfigureAmazonS3AccessKeyCmd())
@@ -218,8 +194,12 @@ func VeleroConfigureAmazonS3AccessKeyCmd() *cobra.Command {
 		},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			v := viper.GetViper()
+			log := logger.NewCLILogger(cmd.OutOrStdout())
 
 			namespace := v.GetString("namespace")
+			if err := validateNamespace(namespace); err != nil {
+				return err
+			}
 
 			clientset, err := k8sutil.GetClientset()
 			if err != nil {
@@ -229,6 +209,18 @@ func VeleroConfigureAmazonS3AccessKeyCmd() *cobra.Command {
 			registryConfig, err := kotsadm.GetRegistryConfigFromCluster(namespace, clientset)
 			if err != nil {
 				return errors.Wrap(err, "failed to get registry options from cluster")
+			}
+
+			veleroStatus, err := snapshot.DetectVelero(cmd.Context(), namespace)
+			if err != nil {
+				return errors.Wrap(err, "failed to detect velero")
+			}
+			if veleroStatus == nil {
+				print.VeleroInstallationInstructionsForCLI(log, snapshottypes.VeleroAWSPlugin, &registryConfig, strings.Join(os.Args, " "))
+				return nil
+			}
+			if !veleroStatus.ContainsPlugin("velero-plugin-for-aws") {
+				return errors.New("velero does not have the 'velero-plugin-for-aws' plugin installed")
 			}
 
 			configureStoreOptions := snapshot.ConfigureStoreOptions{
@@ -250,7 +242,6 @@ func VeleroConfigureAmazonS3AccessKeyCmd() *cobra.Command {
 				return errors.Wrap(err, "failed to configure store")
 			}
 
-			log := logger.NewCLILogger(cmd.OutOrStdout())
 			log.Info("\nStore Configured Successfully")
 
 			return nil
@@ -284,8 +275,12 @@ func VeleroConfigureAmazonS3InstanceRoleCmd() *cobra.Command {
 		},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			v := viper.GetViper()
+			log := logger.NewCLILogger(cmd.OutOrStdout())
 
 			namespace := v.GetString("namespace")
+			if err := validateNamespace(namespace); err != nil {
+				return err
+			}
 
 			clientset, err := k8sutil.GetClientset()
 			if err != nil {
@@ -295,6 +290,18 @@ func VeleroConfigureAmazonS3InstanceRoleCmd() *cobra.Command {
 			registryConfig, err := kotsadm.GetRegistryConfigFromCluster(namespace, clientset)
 			if err != nil {
 				return errors.Wrap(err, "failed to get registry options from cluster")
+			}
+
+			veleroStatus, err := snapshot.DetectVelero(cmd.Context(), namespace)
+			if err != nil {
+				return errors.Wrap(err, "failed to detect velero")
+			}
+			if veleroStatus == nil {
+				print.VeleroInstallationInstructionsForCLI(log, snapshottypes.VeleroAWSPlugin, &registryConfig, strings.Join(os.Args, " "))
+				return nil
+			}
+			if !veleroStatus.ContainsPlugin("velero-plugin-for-aws") {
+				return errors.New("velero does not have the 'velero-plugin-for-aws' plugin installed")
 			}
 
 			configureStoreOptions := snapshot.ConfigureStoreOptions{
@@ -314,7 +321,6 @@ func VeleroConfigureAmazonS3InstanceRoleCmd() *cobra.Command {
 				return errors.Wrap(err, "failed to configure store")
 			}
 
-			log := logger.NewCLILogger(cmd.OutOrStdout())
 			log.Info("\nStore Configured Successfully")
 
 			return nil
@@ -344,6 +350,7 @@ func VeleroConfigureOtherS3Cmd() *cobra.Command {
 		},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			v := viper.GetViper()
+			log := logger.NewCLILogger(cmd.OutOrStdout())
 
 			namespace := v.GetString("namespace")
 			if err := validateNamespace(namespace); err != nil {
@@ -355,12 +362,29 @@ func VeleroConfigureOtherS3Cmd() *cobra.Command {
 				return errors.Wrap(err, "failed to get clientset")
 			}
 
+			registryConfig, err := getRegistryConfig(v)
+			if err != nil {
+				return errors.Wrap(err, "failed to get registry config")
+			}
+			if registryConfig.OverrideRegistry == "" {
+				// check if there's already an existing registry configuration.
+				rc, err := kotsadm.GetRegistryConfigFromCluster(namespace, clientset)
+				if err != nil {
+					return errors.Wrap(err, "failed to get registry options from cluster")
+				}
+				registryConfig = &rc
+			}
+
 			veleroStatus, err := snapshot.DetectVelero(cmd.Context(), namespace)
 			if err != nil {
 				return errors.Wrap(err, "failed to detect velero")
 			}
 			if veleroStatus == nil {
-				return errors.New("velero namespace not found")
+				print.VeleroInstallationInstructionsForCLI(log, snapshottypes.VeleroAWSPlugin, registryConfig, strings.Join(os.Args, " "))
+				return nil
+			}
+			if !veleroStatus.ContainsPlugin("velero-plugin-for-aws") {
+				return errors.New("velero does not have the 'velero-plugin-for-aws' plugin installed")
 			}
 
 			var caCertData []byte
@@ -376,17 +400,6 @@ func VeleroConfigureOtherS3Cmd() *cobra.Command {
 				}
 			}
 
-			if !veleroStatus.ContainsPlugin("velero-plugin-for-aws") {
-				return errors.New("velero does not have the 'velero-plugin-for-aws' installed; " +
-					"consult https://kots.io/kotsadm/snapshots/overview/ for install instructions`)")
-			}
-
-			registryConfig, err := kotsadm.GetRegistryConfigFromCluster(namespace, clientset)
-			if err != nil {
-				return errors.Wrap(err, "failed to get registry options from cluster")
-			}
-
-			log := logger.NewCLILogger(cmd.OutOrStdout())
 			if !v.GetBool("skip-validation") {
 				log.Info("\nRunning a pod to test the connection to your S3 API and if the bucket exists...")
 			}
@@ -402,7 +415,7 @@ func VeleroConfigureOtherS3Cmd() *cobra.Command {
 					Endpoint:        v.GetString("endpoint"),
 				},
 				KotsadmNamespace:  namespace,
-				RegistryConfig:    &registryConfig,
+				RegistryConfig:    registryConfig,
 				SkipValidation:    v.GetBool("skip-validation"),
 				ValidateUsingAPod: true,
 				CACertData:        caCertData,
@@ -433,6 +446,8 @@ func VeleroConfigureOtherS3Cmd() *cobra.Command {
 	cmd.MarkFlagRequired("secret-access-key")
 	cmd.MarkFlagRequired("endpoint")
 
+	registryFlags(cmd.Flags())
+
 	return cmd
 }
 
@@ -440,29 +455,6 @@ func VeleroConfigureGCPCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "configure-gcp",
 		Short: "Configure snapshots to use GCP Object Storage",
-		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
-			viper.BindPFlags(cmd.Flags())
-			v := viper.GetViper()
-
-			namespace := v.GetString("namespace")
-			if err := validateNamespace(namespace); err != nil {
-				return err
-			}
-
-			veleroStatus, err := snapshot.DetectVelero(cmd.Context(), namespace)
-			if err != nil {
-				return errors.Wrap(err, "failed to detect velero")
-			}
-			if veleroStatus == nil {
-				return errors.New("velero namespace not found")
-			}
-
-			if !veleroStatus.ContainsPlugin("velero-plugin-for-gcp") {
-				return errors.New("velero does not have the 'velero-plugin-for-gcp' installed; " +
-					"consult https://kots.io/kotsadm/snapshots/overview/ for install instructions`)")
-			}
-			return nil
-		},
 	}
 
 	cmd.AddCommand(VeleroConfigureGCPServiceAccount())
@@ -483,12 +475,33 @@ func VeleroConfigureGCPServiceAccount() *cobra.Command {
 		},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			v := viper.GetViper()
+			log := logger.NewCLILogger(cmd.OutOrStdout())
 
 			namespace := v.GetString("namespace")
+			if err := validateNamespace(namespace); err != nil {
+				return err
+			}
 
 			clientset, err := k8sutil.GetClientset()
 			if err != nil {
 				return errors.Wrap(err, "failed to get clientset")
+			}
+
+			registryConfig, err := kotsadm.GetRegistryConfigFromCluster(namespace, clientset)
+			if err != nil {
+				return errors.Wrap(err, "failed to get registry options from cluster")
+			}
+
+			veleroStatus, err := snapshot.DetectVelero(cmd.Context(), namespace)
+			if err != nil {
+				return errors.Wrap(err, "failed to detect velero")
+			}
+			if veleroStatus == nil {
+				print.VeleroInstallationInstructionsForCLI(log, snapshottypes.VeleroGCPPlugin, &registryConfig, strings.Join(os.Args, " "))
+				return nil
+			}
+			if !veleroStatus.ContainsPlugin("velero-plugin-for-gcp") {
+				return errors.New("velero does not have the 'velero-plugin-for-gcp' plugin installed")
 			}
 
 			jsonFile := ""
@@ -498,11 +511,6 @@ func VeleroConfigureGCPServiceAccount() *cobra.Command {
 					return errors.Wrap(err, "failed to read json file")
 				}
 				jsonFile = string(content)
-			}
-
-			registryConfig, err := kotsadm.GetRegistryConfigFromCluster(namespace, clientset)
-			if err != nil {
-				return errors.Wrap(err, "failed to get registry options from cluster")
 			}
 
 			configureStoreOptions := snapshot.ConfigureStoreOptions{
@@ -521,7 +529,6 @@ func VeleroConfigureGCPServiceAccount() *cobra.Command {
 				return errors.Wrap(err, "failed to configure store")
 			}
 
-			log := logger.NewCLILogger(cmd.OutOrStdout())
 			log.Info("\nStore Configured Successfully")
 
 			return nil
@@ -551,8 +558,12 @@ func VeleroConfigureGCPWorkloadIdentity() *cobra.Command {
 		},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			v := viper.GetViper()
+			log := logger.NewCLILogger(cmd.OutOrStdout())
 
 			namespace := v.GetString("namespace")
+			if err := validateNamespace(namespace); err != nil {
+				return err
+			}
 
 			clientset, err := k8sutil.GetClientset()
 			if err != nil {
@@ -562,6 +573,18 @@ func VeleroConfigureGCPWorkloadIdentity() *cobra.Command {
 			registryConfig, err := kotsadm.GetRegistryConfigFromCluster(namespace, clientset)
 			if err != nil {
 				return errors.Wrap(err, "failed to get registry options from cluster")
+			}
+
+			veleroStatus, err := snapshot.DetectVelero(cmd.Context(), namespace)
+			if err != nil {
+				return errors.Wrap(err, "failed to detect velero")
+			}
+			if veleroStatus == nil {
+				print.VeleroInstallationInstructionsForCLI(log, snapshottypes.VeleroGCPPlugin, &registryConfig, strings.Join(os.Args, " "))
+				return nil
+			}
+			if !veleroStatus.ContainsPlugin("velero-plugin-for-gcp") {
+				return errors.New("velero does not have the 'velero-plugin-for-gcp' plugin installed")
 			}
 
 			configureStoreOptions := snapshot.ConfigureStoreOptions{
@@ -580,7 +603,6 @@ func VeleroConfigureGCPWorkloadIdentity() *cobra.Command {
 				return errors.Wrap(err, "failed to configure store")
 			}
 
-			log := logger.NewCLILogger(cmd.OutOrStdout())
 			log.Info("\nStore Configured Successfully")
 
 			return nil
@@ -602,33 +624,8 @@ func VeleroConfigureAzureCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "configure-azure",
 		Short: "Configure snapshots to use Azure Blob Storage",
-		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
-			viper.BindPFlags(cmd.Flags())
-			v := viper.GetViper()
-
-			namespace := v.GetString("namespace")
-			if err := validateNamespace(namespace); err != nil {
-				return err
-			}
-
-			veleroStatus, err := snapshot.DetectVelero(cmd.Context(), namespace)
-			if err != nil {
-				return errors.Wrap(err, "failed to detect velero")
-			}
-			if veleroStatus == nil {
-				return errors.New("velero namespace not found")
-			}
-
-			if !veleroStatus.ContainsPlugin("velero-plugin-for-microsoft-azure") {
-				return errors.New("velero does not have the 'velero-plugin-for-microsoft-azure' installed; " +
-					"consult https://kots.io/kotsadm/snapshots/overview/ for install instructions`)")
-			}
-			return nil
-		},
 	}
 
-	// TODO (dan): add other auth methods
-	// common required args: container, resource-group, namespace, storage-account
 	cmd.AddCommand(VeleroConfigureAzureServicePrincipleCmd())
 
 	return cmd
@@ -646,8 +643,12 @@ func VeleroConfigureAzureServicePrincipleCmd() *cobra.Command {
 		},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			v := viper.GetViper()
+			log := logger.NewCLILogger(cmd.OutOrStdout())
 
 			namespace := v.GetString("namespace")
+			if err := validateNamespace(namespace); err != nil {
+				return err
+			}
 
 			clientset, err := k8sutil.GetClientset()
 			if err != nil {
@@ -657,6 +658,18 @@ func VeleroConfigureAzureServicePrincipleCmd() *cobra.Command {
 			registryConfig, err := kotsadm.GetRegistryConfigFromCluster(namespace, clientset)
 			if err != nil {
 				return errors.Wrap(err, "failed to get registry options from cluster")
+			}
+
+			veleroStatus, err := snapshot.DetectVelero(cmd.Context(), namespace)
+			if err != nil {
+				return errors.Wrap(err, "failed to detect velero")
+			}
+			if veleroStatus == nil {
+				print.VeleroInstallationInstructionsForCLI(log, snapshottypes.VeleroAzurePlugin, &registryConfig, strings.Join(os.Args, " "))
+				return nil
+			}
+			if !veleroStatus.ContainsPlugin("velero-plugin-for-microsoft-azure") {
+				return errors.New("velero does not have the 'velero-plugin-for-microsoft-azure' plugin installed")
 			}
 
 			configureStoreOptions := snapshot.ConfigureStoreOptions{
@@ -682,7 +695,6 @@ func VeleroConfigureAzureServicePrincipleCmd() *cobra.Command {
 				return errors.Wrap(err, "failed to configure store")
 			}
 
-			log := logger.NewCLILogger(cmd.OutOrStdout())
 			log.Info("\nStore Configured Successfully")
 
 			return nil
@@ -730,6 +742,11 @@ func VeleroConfigureNFSCmd() *cobra.Command {
 				return err
 			}
 
+			clientset, err := k8sutil.GetClientset()
+			if err != nil {
+				return errors.Wrap(err, "failed to get clientset")
+			}
+
 			nfsPath := v.GetString("nfs-path")
 			nfsServer := v.GetString("nfs-server")
 
@@ -751,6 +768,14 @@ func VeleroConfigureNFSCmd() *cobra.Command {
 			if err != nil {
 				return errors.Wrap(err, "failed to get registry config")
 			}
+			if registryConfig.OverrideRegistry == "" {
+				// check if there's already an existing registry configuration.
+				rc, err := kotsadm.GetRegistryConfigFromCluster(namespace, clientset)
+				if err != nil {
+					return errors.Wrap(err, "failed to get registry options from cluster")
+				}
+				registryConfig = &rc
+			}
 
 			log := logger.NewCLILogger(cmd.OutOrStdout())
 
@@ -758,18 +783,16 @@ func VeleroConfigureNFSCmd() *cobra.Command {
 				Namespace:        namespace,
 				RegistryConfig:   registryConfig,
 				FileSystemConfig: fileSystemConfig,
-				Output:           v.GetString("output"),
 				ForceReset:       v.GetBool("force-reset"),
 				SkipValidation:   v.GetBool("skip-validation"),
 				IsMinioDisabled:  !v.GetBool("with-minio"),
 			}
-			return veleroConfigureFileSystem(cmd.Context(), log, opts)
+			return veleroConfigureFileSystem(cmd.Context(), clientset, log, opts)
 		},
 	}
 
 	cmd.Flags().String("nfs-path", "", "the path that is exported by the NFS server")
 	cmd.Flags().String("nfs-server", "", "the hostname or IP address of the NFS server")
-	cmd.Flags().StringP("output", "o", "", "output format. supported values: json")
 	cmd.Flags().Bool("force-reset", false, "bypass the reset prompt and force resetting the nfs path")
 	cmd.Flags().Bool("with-minio", true, "when set, kots will deploy minio for NFS snapshot locations")
 	cmd.Flags().Bool("skip-validation", false, "skip the validation of the backup store endpoint/bucket")
@@ -798,8 +821,12 @@ func VeleroConfigureHostPathCmd() *cobra.Command {
 				return err
 			}
 
-			hostPath := v.GetString("hostpath")
+			clientset, err := k8sutil.GetClientset()
+			if err != nil {
+				return errors.Wrap(err, "failed to get clientset")
+			}
 
+			hostPath := v.GetString("hostpath")
 			if hostPath == "" {
 				return errors.New("--hostpath option is required")
 			}
@@ -812,6 +839,14 @@ func VeleroConfigureHostPathCmd() *cobra.Command {
 			if err != nil {
 				return errors.Wrap(err, "failed to get registry config")
 			}
+			if registryConfig.OverrideRegistry == "" {
+				// check if there's already an existing registry configuration.
+				rc, err := kotsadm.GetRegistryConfigFromCluster(namespace, clientset)
+				if err != nil {
+					return errors.Wrap(err, "failed to get registry options from cluster")
+				}
+				registryConfig = &rc
+			}
 
 			log := logger.NewCLILogger(cmd.OutOrStdout())
 
@@ -819,17 +854,15 @@ func VeleroConfigureHostPathCmd() *cobra.Command {
 				Namespace:        namespace,
 				RegistryConfig:   registryConfig,
 				FileSystemConfig: fileSystemConfig,
-				Output:           v.GetString("output"),
 				ForceReset:       v.GetBool("force-reset"),
 				SkipValidation:   v.GetBool("skip-validation"),
 				IsMinioDisabled:  !v.GetBool("with-minio"),
 			}
-			return veleroConfigureFileSystem(cmd.Context(), log, opts)
+			return veleroConfigureFileSystem(cmd.Context(), clientset, log, opts)
 		},
 	}
 
 	cmd.Flags().String("hostpath", "", "a local host path on the node")
-	cmd.Flags().StringP("output", "o", "", "output format. supported values: json")
 	cmd.Flags().Bool("force-reset", false, "bypass the reset prompt and force resetting the host path directory")
 	cmd.Flags().Bool("skip-validation", false, "skip the validation of the backup store endpoint/bucket")
 	cmd.Flags().Bool("with-minio", true, "when set, kots will deploy minio for hostpath snapshot locations")
@@ -845,33 +878,40 @@ type VeleroConfigureFileSystemOptions struct {
 	Namespace          string
 	RegistryConfig     *kotsadmtypes.RegistryConfig
 	FileSystemConfig   snapshottypes.FileSystemConfig
-	Output             string
 	ForceReset         bool
 	SkipValidation     bool
 	IsMinioDisabled    bool
 	IsLegacyDeployment bool
 }
 
-func veleroConfigureFileSystem(ctx context.Context, log *logger.CLILogger, opts VeleroConfigureFileSystemOptions) error {
-	if opts.Output != "" {
-		log.Silence()
-	}
-	log.ActionWithoutSpinner("Setting up File System")
-
-	clientset, err := k8sutil.GetClientset()
-	if err != nil {
-		return errors.Wrap(err, "failed to get clientset")
-	}
-
+func veleroConfigureFileSystem(ctx context.Context, clientset kubernetes.Interface, log *logger.CLILogger, opts VeleroConfigureFileSystemOptions) error {
 	// Check for existing status; bail if not enabled
 	isMinioDisabled, err := snapshot.IsFileSystemMinioDisabled(opts.Namespace)
 	if err != nil {
-		return errors.Wrap(err, "could ")
+		return errors.Wrap(err, "failed to check if file system minio is disabled")
 	}
-
 	if isMinioDisabled {
 		opts.IsMinioDisabled = isMinioDisabled
 	}
+
+	veleroStatus, err := snapshot.DetectVelero(ctx, opts.Namespace)
+	if err != nil {
+		return errors.Wrap(err, "failed to detect velero")
+	}
+
+	if opts.IsMinioDisabled {
+		if veleroStatus == nil || !veleroStatus.ContainsPlugin("local-volume-provider") {
+			print.VeleroInstallationInstructionsForCLI(log, image.Lvp, opts.RegistryConfig, strings.Join(os.Args, " "))
+			return nil
+		}
+	} else {
+		if veleroStatus == nil || !veleroStatus.ContainsPlugin("plugin-for-aws") {
+			print.VeleroInstallationInstructionsForCLI(log, snapshottypes.VeleroAWSPlugin, opts.RegistryConfig, strings.Join(os.Args, " "))
+			return nil
+		}
+	}
+
+	log.ActionWithoutSpinner("Setting up File System")
 
 	deployOptions := snapshot.FileSystemDeployOptions{
 		Namespace:        opts.Namespace,
@@ -898,34 +938,6 @@ func veleroConfigureFileSystem(ctx context.Context, log *logger.CLILogger, opts 
 		if err := snapshot.DeployFileSystemLvp(ctx, clientset, deployOptions, *opts.RegistryConfig); err != nil {
 			return errors.Wrap(err, "could not deploy lvp file system config")
 		}
-	}
-
-	veleroStatus, err := snapshot.DetectVelero(ctx, opts.Namespace)
-	if err != nil {
-		return errors.Wrap(err, "failed to detect velero namespace")
-	}
-
-	if isVeleroConfiguredForMinio(veleroStatus, opts.IsMinioDisabled) {
-		c, err := buildPrintableMinioFileSystemVeleroConfig(ctx, clientset, opts.Namespace)
-		if err != nil {
-			return errors.Wrap(err, "failed to get printable minio file system velero config")
-		}
-		if opts.Output == "" {
-			log.ActionWithoutSpinner("File system configuration for the Admin Console is successful, but no Velero installation has been detected.")
-		}
-		print.MinioFileSystemVeleroInfo(c, opts.Output, log)
-		return nil
-	}
-	if veleroStatus == nil || !veleroStatus.ContainsPlugin("local-volume-provider") {
-		c, err := buildPrintableLvpFileSystemVeleroConfig(ctx, clientset, opts)
-		if err != nil {
-			return errors.Wrap(err, "failed to get printable lvp file system velero config")
-		}
-		if opts.Output == "" {
-			log.ActionWithoutSpinner("No Velero installation has been detected.")
-		}
-		print.LvpFileSystemVeleroInfo(c, opts.Output, log)
-		return nil
 	}
 
 	log.ActionWithSpinner("Configuring Velero")
@@ -992,13 +1004,12 @@ func deployVeleroMinioFileSystem(ctx context.Context, clientset kubernetes.Inter
 	return nil
 }
 
-// VeleroPrintFileSystemInstrunctions logs to stdout or json, instructions for setting up the current
-// file system configuration including Velero installation
+// (DEPRECATED) VeleroPrintFileSystemInstrunctions prints instructions for setting up a file system (e.g. NFS, Host Path) as the snapshots storage destination
 func VeleroPrintFileSystemInstructionsCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:           "print-fs-instructions",
-		Short:         "Print instructions for setting up Velero with the current file system configuration (e.g. NFS, Host Path, etc..)",
-		Long:          ``,
+		Short:         "Prints instructions for setting up a file system as the snapshots storage destination (e.g. NFS, Host Path, etc..)",
+		Long:          `This command is deprecated and will be removed in a future release. Please us configure-hostpath or configure-nfs instead.`,
 		SilenceUsage:  true,
 		SilenceErrors: false,
 		PreRun: func(cmd *cobra.Command, args []string) {
@@ -1006,6 +1017,7 @@ func VeleroPrintFileSystemInstructionsCmd() *cobra.Command {
 		},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			v := viper.GetViper()
+			log := logger.NewCLILogger(cmd.OutOrStdout())
 
 			namespace := v.GetString("namespace")
 			if err := validateNamespace(namespace); err != nil {
@@ -1017,153 +1029,43 @@ func VeleroPrintFileSystemInstructionsCmd() *cobra.Command {
 				return errors.Wrap(err, "failed to get clientset")
 			}
 
+			registryConfig, err := getRegistryConfig(v)
+			if err != nil {
+				return errors.Wrap(err, "failed to get registry config")
+			}
+			if registryConfig.OverrideRegistry == "" {
+				// check if there's already an existing registry configuration.
+				rc, err := kotsadm.GetRegistryConfigFromCluster(namespace, clientset)
+				if err != nil {
+					return errors.Wrap(err, "failed to get registry options from cluster")
+				}
+				registryConfig = &rc
+			}
+
 			isMinioDisabled, err := snapshot.IsFileSystemMinioDisabled(namespace)
 			if err != nil {
 				return errors.Wrap(err, "failed to check for existing snapshot preference")
 			}
 
+			blue := color.New(color.FgHiBlue).SprintFunc()
+			kotsConfigureCommand := fmt.Sprintf("	* To configure a host path as the storage destination, please refer to: %s\n", blue("https://docs.replicated.com/reference/kots-cli-velero-configure-hostpath"))
+			kotsConfigureCommand += fmt.Sprintf("	* To configure NFS as the storage destination, please refer to: %s", blue("https://docs.replicated.com/reference/kots-cli-velero-configure-nfs"))
+
 			if !v.GetBool("with-minio") || isMinioDisabled {
-				registryConfig, err := getRegistryConfig(v)
-				if err != nil {
-					return errors.Wrap(err, "failed to get registry config")
-				}
-
-				fsConfig, err := snapshot.GetCurrentLvpFileSystemConfig(cmd.Context(), namespace)
-				if err != nil {
-					return errors.Wrap(err, "could not get the current filesystem configuration")
-				}
-
-				deployOptions := snapshot.FileSystemDeployOptions{
-					Namespace:        namespace,
-					IsOpenShift:      k8sutil.IsOpenShift(clientset),
-					FileSystemConfig: *fsConfig,
-				}
-
-				// Peak to see if this is a legacy minio deployment
-				isLegacyMinioDeployment, _, err := snapshot.ValidateFileSystemDeployment(cmd.Context(), clientset, deployOptions, *registryConfig)
-				if err != nil {
-					return errors.Wrap(err, "could not validate lvp file system")
-				}
-
-				opts := VeleroConfigureFileSystemOptions{
-					Namespace:          namespace,
-					RegistryConfig:     registryConfig,
-					FileSystemConfig:   *fsConfig,
-					IsLegacyDeployment: isLegacyMinioDeployment,
-					IsMinioDisabled:    true,
-				}
-
-				c, err := buildPrintableLvpFileSystemVeleroConfig(cmd.Context(), clientset, opts)
-				if err != nil {
-					return errors.Wrap(err, "failed to get file system minio velero config")
-				}
-				log := logger.NewCLILogger(cmd.OutOrStdout())
-				print.LvpFileSystemVeleroInfo(c, v.GetString("output"), log)
+				print.VeleroInstallationInstructionsForCLI(log, image.Lvp, registryConfig, kotsConfigureCommand)
 			} else {
-				c, err := buildPrintableMinioFileSystemVeleroConfig(cmd.Context(), clientset, namespace)
-				if err != nil {
-					return errors.Wrap(err, "failed to get file system minio velero config")
-				}
-				log := logger.NewCLILogger(cmd.OutOrStdout())
-				print.MinioFileSystemVeleroInfo(c, v.GetString("output"), log)
+				print.VeleroInstallationInstructionsForCLI(log, snapshottypes.VeleroAWSPlugin, registryConfig, kotsConfigureCommand)
 			}
 
 			return nil
 		},
 	}
 
-	cmd.Flags().StringP("output", "o", "", "output format. supported values: json")
 	cmd.Flags().Bool("with-minio", true, "when set, kots will deploy minio for hostpath snapshot locations")
 
+	registryFlags(cmd.Flags())
+
 	return cmd
-}
-
-func buildPrintableMinioFileSystemVeleroConfig(ctx context.Context, clientset kubernetes.Interface, namespace string) (*print.MinioFileSystemVeleroConfig, error) {
-	fileSystemStore, err := snapshot.BuildMinioStoreFileSystem(ctx, clientset, namespace)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to build file system store")
-	}
-
-	creds, err := snapshot.BuildAWSCredentials(fileSystemStore.AccessKeyID, fileSystemStore.SecretAccessKey)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to format credentials")
-	}
-
-	publicURL := fmt.Sprintf("http://%s:%d", fileSystemStore.ObjectStoreClusterIP, snapshot.FileSystemMinioServicePort)
-	s3URL := fileSystemStore.Endpoint
-
-	c := print.MinioFileSystemVeleroConfig{
-		Provider:    "aws",
-		Plugins:     []string{"velero/velero-plugin-for-aws:v1.2.0"},
-		Credentials: creds,
-		Bucket:      snapshot.FileSystemMinioBucketName,
-		BackupLocationConfig: map[string]string{
-			"region":           snapshot.FileSystemMinioRegion,
-			"s3Url":            s3URL,
-			"publicUrl":        publicURL,
-			"s3ForcePathStyle": "true",
-		},
-		SnapshotLocationConfig: map[string]string{
-			"region": snapshot.FileSystemMinioRegion,
-		},
-		UseRestic: true,
-	}
-
-	return &c, nil
-}
-
-func buildPrintableLvpFileSystemVeleroConfig(ctx context.Context, clientset kubernetes.Interface, opts VeleroConfigureFileSystemOptions) (*print.LvpFileSystemVeleroConfig, error) {
-
-	isHostPath := opts.FileSystemConfig.HostPath != nil
-
-	// Set the default path to root for NFS only
-	if opts.FileSystemConfig.NFS != nil && opts.FileSystemConfig.NFS.Path == "" {
-		opts.FileSystemConfig.NFS.Path = "/"
-	}
-
-	var backupLocationConfig map[string]string
-	if isHostPath {
-		backupLocationConfig = map[string]string{
-			"path": *opts.FileSystemConfig.HostPath,
-		}
-	} else {
-		backupLocationConfig = map[string]string{
-			"path":   opts.FileSystemConfig.NFS.Path,
-			"server": opts.FileSystemConfig.NFS.Server,
-		}
-	}
-	var prefix string
-	if opts.IsLegacyDeployment {
-		prefix = "/velero"
-	}
-
-	bucket, err := snapshot.GetLvpBucket(&opts.FileSystemConfig)
-	if err != nil {
-		return nil, errors.Wrap(err, "could not get bucket name")
-	}
-
-	backupLocationConfig["resticRepo"] = filepath.Join(resticRepoBase, bucket, prefix, "restic")
-
-	c := print.LvpFileSystemVeleroConfig{
-		IsHostPath:           isHostPath,
-		Provider:             snapshot.GetLvpProvider(&opts.FileSystemConfig),
-		Bucket:               bucket,
-		Prefix:               prefix,
-		BackupLocationConfig: backupLocationConfig,
-	}
-
-	return &c, nil
-}
-
-// isVeleroConfiguredForMinio returns true the following conditions are met:
-// 1. velero was detected (non-nil status)
-// 2. velero has the AWS plugin installed
-// 3. isMinioDisabeld is false
-func isVeleroConfiguredForMinio(status *snapshot.VeleroStatus, isMinioDisabled bool) bool {
-	if !isMinioDisabled {
-		return status == nil || status != nil && !status.ContainsPlugin("plugin-for-aws")
-	}
-	return false
 }
 
 func promptForFileSystemReset(log *logger.CLILogger, warningMsg string) bool {

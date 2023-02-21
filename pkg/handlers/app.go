@@ -18,6 +18,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/helm"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/logger"
+	"github.com/replicatedhq/kots/pkg/operator"
 	"github.com/replicatedhq/kots/pkg/rbac"
 	"github.com/replicatedhq/kots/pkg/registry"
 	"github.com/replicatedhq/kots/pkg/render"
@@ -476,7 +477,8 @@ func (h *Handler) GetAppVersionHistory(w http.ResponseWriter, r *http.Request) {
 }
 
 type RemoveAppRequest struct {
-	Force bool `json:"force"`
+	Undeploy bool `json:"undeploy"`
+	Force    bool `json:"force"`
 }
 
 type RemoveAppResponse struct {
@@ -510,35 +512,49 @@ func (h *Handler) RemoveApp(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	downstreams, err := store.GetStore().ListDownstreamsForApp(app.ID)
+	if err != nil {
+		response.Error = "failed to list downstreams"
+		logger.Error(errors.Wrap(err, response.Error))
+		JSON(w, http.StatusInternalServerError, response)
+		return
+	}
+
+	if len(downstreams) == 0 {
+		response.Error = "no downstreams found for app"
+		logger.Error(errors.New(response.Error))
+		JSON(w, http.StatusInternalServerError, response)
+		return
+	}
+	d := downstreams[0]
+
 	if !removeAppRequest.Force {
-		downstreams, err := store.GetStore().ListDownstreamsForApp(app.ID)
+		currentVersion, err := store.GetStore().GetCurrentDownstreamVersion(app.ID, d.ClusterID)
 		if err != nil {
-			response.Error = "failed to list downstreams"
+			response.Error = "failed to get current downstream version"
 			logger.Error(errors.Wrap(err, response.Error))
 			JSON(w, http.StatusInternalServerError, response)
 			return
 		}
 
-		for _, d := range downstreams {
-			currentVersion, err := store.GetStore().GetCurrentDownstreamVersion(app.ID, d.ClusterID)
-			if err != nil {
-				response.Error = "failed to get current downstream version"
-				logger.Error(errors.Wrap(err, response.Error))
-				JSON(w, http.StatusInternalServerError, response)
-				return
-			}
-
-			if currentVersion != nil {
-				response.Error = fmt.Sprintf("application %s is deployed and cannot be removed", appSlug)
-				logger.Error(errors.Wrap(err, response.Error))
-				JSON(w, http.StatusBadRequest, response)
-				return
-			}
+		if currentVersion != nil {
+			response.Error = fmt.Sprintf("application %s is deployed and cannot be removed", appSlug)
+			logger.Error(errors.Wrap(err, response.Error))
+			JSON(w, http.StatusBadRequest, response)
+			return
 		}
 	}
 
-	err = store.GetStore().RemoveApp(app.ID)
-	if err != nil {
+	if removeAppRequest.Undeploy {
+		if err := operator.MustGetOperator().UndeployApp(app, &d, false); err != nil {
+			response.Error = "failed to undeploy app"
+			logger.Error(errors.Wrap(err, response.Error))
+			JSON(w, http.StatusInternalServerError, response)
+			return
+		}
+	}
+
+	if err := store.GetStore().RemoveApp(app.ID); err != nil {
 		response.Error = "failed to remove app"
 		logger.Error(errors.Wrap(err, response.Error))
 		JSON(w, http.StatusInternalServerError, response)

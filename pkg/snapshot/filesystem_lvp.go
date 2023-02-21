@@ -146,7 +146,7 @@ func DeleteFileSystemMinio(ctx context.Context, kotsadmNamespace string) error {
 
 // EnsureLocalVolumeProviderConfigMaps ensures two configmaps:
 // one customizes the LVP plugin deployment with a config map based on the chosen file system backing and the detection of Openshift.
-// This ensures the Velero and Restic have permissions to write to the disk.
+// This ensures that Velero and NodeAgent have permissions to write to the disk.
 // the second config map is used to store the current file system configuration.
 func EnsureLocalVolumeProviderConfigMaps(deployOptions FileSystemDeployOptions, veleroNamespace string) error {
 	clientset, err := k8sutil.GetClientset()

@@ -5,17 +5,23 @@ import { useParams } from "react-router-dom";
 import { useSelectedApp } from "@features/App";
 import { useMetadata } from "@src/stores";
 import { useIsHelmManaged } from "@src/components/hooks";
+import { App, KotsParams, Metadata, Version } from "@types";
 
 async function getVersions({
   accessToken = Utilities.getToken(),
   apiEndpoint = process.env.API_ENDPOINT,
-  _fetch = fetch,
   currentPage = 0,
   pageSize = 20,
   slug,
+}: {
+  accessToken?: string;
+  apiEndpoint?: string;
+  currentPage?: number;
+  pageSize?: number;
+  slug?: string;
 } = {}) {
   try {
-    const res = await _fetch(
+    const res = await fetch(
       `${apiEndpoint}/app/${slug}/versions?currentPage=${currentPage}&pageSize=${pageSize}&pinLatestDeployable=true`,
       {
         headers: {
@@ -34,16 +40,27 @@ async function getVersions({
     }
     return await res.json();
   } catch (err) {
-    throw Error(err);
+    if (err instanceof Error) {
+      throw Error(`Failed to fetch apps: ${err.message}`);
+    }
+    throw Error(`Failed to fetch apps`);
   }
+}
+
+interface SelectorParams {
+  metadata: Metadata;
+  selectedApp: App;
+  versions: {
+    versionHistory: Version[];
+  };
 }
 
 // TODO: refactor this function so that the airgapped / nonairgapped are separate
 function getVersionsSelectorForKotsManaged({
-  versions,
-  selectedApp,
   metadata,
-}) {
+  selectedApp,
+  versions,
+}: SelectorParams) {
   const downstream = selectedApp?.downstream;
 
   const versionHistory = versions?.versionHistory.map((version) => {
@@ -51,7 +68,8 @@ function getVersionsSelectorForKotsManaged({
       version.sequence === downstream?.currentVersion?.sequence;
     const isDeploying = version.status === "deploying";
     const isPastVersion = !!downstream?.pastVersions?.find(
-      (downstreamVersion) => downstreamVersion.sequence === version.sequence
+      (downstreamVersion: Version) =>
+        downstreamVersion.sequence === version.sequence
     );
     const needsConfiguration = version.status === "pending_config";
     const isRollback =
@@ -100,17 +118,31 @@ function getVersionsSelectorForKotsManaged({
 }
 
 // TODO: refactor this function so that the airgapped / nonairgapped are separate
-function getVersionsSelectorForAirgapped({ versions, selectedApp, metadata }) {
+function getVersionsSelectorForAirgapped({
+  versions,
+  selectedApp,
+  metadata,
+}: SelectorParams) {
   return getVersionsSelectorForKotsManaged({ versions, selectedApp, metadata });
 }
 
-function getVersionsSelectorForHelmManaged({ versions }) {
+function getVersionsSelectorForHelmManaged({
+  versions,
+}: {
+  versions: { versionHistory: Version[] };
+}) {
   const deployedSequence = versions?.versionHistory?.find(
     (v) => v.status === "deployed"
   )?.sequence;
 
   const versionHistory = versions?.versionHistory.map((version) => {
     let statusLabel = "Redeploy";
+
+    if (deployedSequence === undefined)
+      return {
+        ...version,
+        statusLabel,
+      };
 
     if (version.sequence > deployedSequence) {
       statusLabel = "Deploy";
@@ -135,68 +167,56 @@ function chooseVersionsSelector({
   isAirgap,
   isKurl,
   isHelmManaged,
-  _getVersionsSelectorForKotsManaged = getVersionsSelectorForKotsManaged,
-  _getVersionsSelectorForAirgapped = getVersionsSelectorForAirgapped,
-  _getVersionsSelectorForHelmManaged = getVersionsSelectorForHelmManaged,
+}: {
+  isAirgap?: boolean;
+  isKurl?: boolean;
+  isHelmManaged?: boolean;
 }) {
   // if airgapped
   if (isAirgap && isKurl) {
-    return _getVersionsSelectorForAirgapped;
+    return getVersionsSelectorForAirgapped;
   }
 
   // if helm managed
   if (isHelmManaged) {
-    return _getVersionsSelectorForHelmManaged;
+    return getVersionsSelectorForHelmManaged;
   }
 
   // if kots managed
-  return _getVersionsSelectorForKotsManaged;
+  return getVersionsSelectorForKotsManaged;
 }
 
 function useVersions({
   currentPage,
-  refetchInterval,
   pageSize,
-  _getVersions = getVersions,
-  _useParams = useParams,
-  _useSelectedApp = useSelectedApp,
-  _useMetadata = useMetadata,
-  _useIsHelmManaged = useIsHelmManaged,
+}: {
+  currentPage?: number;
+  pageSize?: number;
 } = {}) {
-  let { slug } = _useParams();
-  let { selectedApp } = _useSelectedApp();
-  let { data: metadata } = _useMetadata();
-  let { data: isHelmManagedResponse } = _useIsHelmManaged();
+  let { slug } = useParams<KotsParams>();
+  let selectedApp = useSelectedApp();
+  let { data: metadata } = useMetadata();
+  let { data: isHelmManaged } = useIsHelmManaged();
 
   const versionSelector = chooseVersionsSelector({
     // labels differ by installation manager and if airgapped
     isAirgap: metadata?.isAirgap,
-    isHelmManaged: isHelmManagedResponse?.isHelmManaged,
+    isHelmManaged,
     isKurl: metadata?.isKurl,
   });
 
   return useQuery(
     ["versions", currentPage, pageSize],
-    () => _getVersions({ slug, currentPage, pageSize }),
+    () => getVersions({ slug, currentPage, pageSize }),
     {
       // don't call versions until current app is ascertained
       enabled: !!selectedApp,
       select: (versions) =>
-        versionSelector({ versions, selectedApp, metadata }),
-      refetchInterval,
+        selectedApp !== null
+          ? versionSelector({ versions, selectedApp, metadata })
+          : versions,
     }
   );
 }
 
-function UseVersions({ children, currentPage, refetchInterval, pageSize }) {
-  const query = useVersions({ currentPage, refetchInterval, pageSize });
-
-  return children(query);
-}
-
-export {
-  useVersions,
-  UseVersions,
-  getVersions,
-  getVersionsSelectorForHelmManaged,
-};
+export { useVersions };

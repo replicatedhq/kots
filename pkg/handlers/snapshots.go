@@ -20,6 +20,7 @@ import (
 	snapshottypes "github.com/replicatedhq/kots/pkg/kotsadmsnapshot/types"
 	"github.com/replicatedhq/kots/pkg/kurl"
 	"github.com/replicatedhq/kots/pkg/logger"
+	"github.com/replicatedhq/kots/pkg/print"
 	kotssnapshot "github.com/replicatedhq/kots/pkg/snapshot"
 	kotssnapshottypes "github.com/replicatedhq/kots/pkg/snapshot/types"
 	"github.com/replicatedhq/kots/pkg/store"
@@ -34,15 +35,15 @@ const (
 )
 
 type GlobalSnapshotSettingsResponse struct {
-	VeleroVersion   string   `json:"veleroVersion"`
-	VeleroPlugins   []string `json:"veleroPlugins"`
-	VeleroNamespace string   `json:"veleroNamespace"`
-	IsVeleroRunning bool     `json:"isVeleroRunning"`
-	IsMinioDisabled bool     `json:"isMinioDisabled"`
-	VeleroPod       string   `json:"veleroPod"`
-	ResticVersion   string   `json:"resticVersion"`
-	IsResticRunning bool     `json:"isResticRunning"`
-	ResticPods      []string `json:"resticPods"`
+	VeleroVersion      string   `json:"veleroVersion"`
+	VeleroPlugins      []string `json:"veleroPlugins"`
+	VeleroNamespace    string   `json:"veleroNamespace"`
+	IsVeleroRunning    bool     `json:"isVeleroRunning"`
+	IsMinioDisabled    bool     `json:"isMinioDisabled"`
+	VeleroPod          string   `json:"veleroPod"`
+	NodeAgentVersion   string   `json:"nodeAgentVersion"`
+	IsNodeAgentRunning bool     `json:"isNodeAgentRunning"`
+	NodeAgentPods      []string `json:"nodeAgentPods"`
 
 	KotsadmNamespace     string `json:"kotsadmNamespace"`
 	IsKurl               bool   `json:"isKurl"`
@@ -70,13 +71,13 @@ type UpdateGlobalSnapshotSettingsRequest struct {
 	CACertData []byte `json:"caCertData"`
 }
 
-type ConfigureFileSystemSnapshotProviderResponse struct {
-	Success   bool   `json:"success"`
-	Error     string `json:"error,omitempty"`
-	Namespace string `json:"namespace,omitempty"`
+type GetFileSystemSnapshotProviderInstructionsResponse struct {
+	Success      bool                                  `json:"success"`
+	Error        string                                `json:"error,omitempty"`
+	Instructions []print.VeleroInstallationInstruction `json:"instructions,omitempty"`
 }
 
-type ConfigureFileSystemSnapshotProviderRequest struct {
+type GetFileSystemSnapshotProviderInstructionsRequest struct {
 	FileSystemOptions FileSystemOptions `json:"fileSystemOptions"`
 }
 
@@ -130,7 +131,7 @@ func (h *Handler) UpdateGlobalSnapshotSettings(w http.ResponseWriter, r *http.Re
 	isMinioDisabled, err := kotssnapshot.IsFileSystemMinioDisabled(kotsadmNamespace)
 	if err != nil {
 		logger.Error(err)
-		globalSnapshotSettingsResponse.Error = "failed to create k8s clientset"
+		globalSnapshotSettingsResponse.Error = "failed to check if file system minio is disabled"
 		JSON(w, http.StatusInternalServerError, globalSnapshotSettingsResponse)
 		return
 	}
@@ -168,9 +169,9 @@ func (h *Handler) UpdateGlobalSnapshotSettings(w http.ResponseWriter, r *http.Re
 	globalSnapshotSettingsResponse.VeleroNamespace = veleroStatus.Namespace
 	globalSnapshotSettingsResponse.VeleroPod = veleroStatus.VeleroPod
 	globalSnapshotSettingsResponse.IsVeleroRunning = veleroStatus.Status == "Ready"
-	globalSnapshotSettingsResponse.ResticVersion = veleroStatus.ResticVersion
-	globalSnapshotSettingsResponse.IsResticRunning = veleroStatus.ResticStatus == "Ready"
-	globalSnapshotSettingsResponse.ResticPods = veleroStatus.ResticPods
+	globalSnapshotSettingsResponse.NodeAgentVersion = veleroStatus.NodeAgentVersion
+	globalSnapshotSettingsResponse.IsNodeAgentRunning = veleroStatus.NodeAgentStatus == "Ready"
+	globalSnapshotSettingsResponse.NodeAgentPods = veleroStatus.NodeAgentPods
 	globalSnapshotSettingsResponse.KotsadmNamespace = kotsadmNamespace
 	globalSnapshotSettingsResponse.IsKurl = isKurl
 	globalSnapshotSettingsResponse.IsMinimalRBACEnabled = !k8sutil.IsKotsadmClusterScoped(r.Context(), clientset, kotsadmNamespace)
@@ -288,7 +289,7 @@ func (h *Handler) GetGlobalSnapshotSettings(w http.ResponseWriter, r *http.Reque
 	isMinioDisabled, err := kotssnapshot.IsFileSystemMinioDisabled(kotsadmNamespace)
 	if err != nil {
 		logger.Error(err)
-		globalSnapshotSettingsResponse.Error = "failed to create k8s clientset"
+		globalSnapshotSettingsResponse.Error = "failed to check if file system minio is disabled"
 		JSON(w, http.StatusInternalServerError, globalSnapshotSettingsResponse)
 		return
 	}
@@ -326,9 +327,9 @@ func (h *Handler) GetGlobalSnapshotSettings(w http.ResponseWriter, r *http.Reque
 	globalSnapshotSettingsResponse.VeleroNamespace = veleroStatus.Namespace
 	globalSnapshotSettingsResponse.VeleroPod = veleroStatus.VeleroPod
 	globalSnapshotSettingsResponse.IsVeleroRunning = veleroStatus.Status == "Ready"
-	globalSnapshotSettingsResponse.ResticVersion = veleroStatus.ResticVersion
-	globalSnapshotSettingsResponse.IsResticRunning = veleroStatus.ResticStatus == "Ready"
-	globalSnapshotSettingsResponse.ResticPods = veleroStatus.ResticPods
+	globalSnapshotSettingsResponse.NodeAgentVersion = veleroStatus.NodeAgentVersion
+	globalSnapshotSettingsResponse.IsNodeAgentRunning = veleroStatus.NodeAgentStatus == "Ready"
+	globalSnapshotSettingsResponse.NodeAgentPods = veleroStatus.NodeAgentPods
 	globalSnapshotSettingsResponse.KotsadmNamespace = kotsadmNamespace
 	globalSnapshotSettingsResponse.IsKurl = isKurl
 	globalSnapshotSettingsResponse.IsMinimalRBACEnabled = !k8sutil.IsKotsadmClusterScoped(r.Context(), clientset, kotsadmNamespace)
@@ -341,30 +342,25 @@ func (h *Handler) GetGlobalSnapshotSettings(w http.ResponseWriter, r *http.Reque
 		JSON(w, http.StatusInternalServerError, globalSnapshotSettingsResponse)
 		return
 	}
-	if store == nil {
-		err = errors.New("store not found")
-		logger.Error(err)
-		globalSnapshotSettingsResponse.Error = "store not found"
-		JSON(w, http.StatusInternalServerError, globalSnapshotSettingsResponse)
-		return
-	}
 
-	if err := kotssnapshot.Redact(store); err != nil {
-		logger.Error(err)
-		globalSnapshotSettingsResponse.Error = "failed to redact"
-		JSON(w, http.StatusInternalServerError, globalSnapshotSettingsResponse)
-		return
-	}
-
-	if store.FileSystem != nil {
-		fileSystemConfig, err := kotssnapshot.GetCurrentFileSystemConfig(r.Context(), kotsadmNamespace, globalSnapshotSettingsResponse.IsMinioDisabled)
-		if err != nil {
+	if store != nil {
+		if err := kotssnapshot.Redact(store); err != nil {
 			logger.Error(err)
-			globalSnapshotSettingsResponse.Error = "failed to get file system config"
+			globalSnapshotSettingsResponse.Error = "failed to redact"
 			JSON(w, http.StatusInternalServerError, globalSnapshotSettingsResponse)
 			return
 		}
-		globalSnapshotSettingsResponse.FileSystemConfig = fileSystemConfig
+
+		if store.FileSystem != nil {
+			fileSystemConfig, err := kotssnapshot.GetCurrentFileSystemConfig(r.Context(), kotsadmNamespace, globalSnapshotSettingsResponse.IsMinioDisabled)
+			if err != nil {
+				logger.Error(err)
+				globalSnapshotSettingsResponse.Error = "failed to get file system config"
+				JSON(w, http.StatusInternalServerError, globalSnapshotSettingsResponse)
+				return
+			}
+			globalSnapshotSettingsResponse.FileSystemConfig = fileSystemConfig
+		}
 	}
 
 	globalSnapshotSettingsResponse.Store = store
@@ -373,12 +369,12 @@ func (h *Handler) GetGlobalSnapshotSettings(w http.ResponseWriter, r *http.Reque
 	JSON(w, http.StatusOK, globalSnapshotSettingsResponse)
 }
 
-func (h *Handler) ConfigureFileSystemSnapshotProvider(w http.ResponseWriter, r *http.Request) {
-	response := ConfigureFileSystemSnapshotProviderResponse{
+func (h *Handler) GetFileSystemSnapshotProviderInstructions(w http.ResponseWriter, r *http.Request) {
+	response := GetFileSystemSnapshotProviderInstructionsResponse{
 		Success: false,
 	}
 
-	request := ConfigureFileSystemSnapshotProviderRequest{}
+	request := GetFileSystemSnapshotProviderInstructionsRequest{}
 	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
 		errMsg := "failed to decode request body"
 		logger.Error(errors.Wrap(err, errMsg))
@@ -398,17 +394,7 @@ func (h *Handler) ConfigureFileSystemSnapshotProvider(w http.ResponseWriter, r *
 
 	kotsadmNamespace := util.PodNamespace
 
-	isMinioDisabled, err := kotssnapshot.IsFileSystemMinioDisabled(kotsadmNamespace)
-	if err != nil {
-		logger.Error(err)
-		response.Error = "failed to create k8s clientset"
-		JSON(w, http.StatusInternalServerError, response)
-		return
-	}
-
-	namespace := util.PodNamespace
-
-	registryConfig, err := kotsadm.GetRegistryConfigFromCluster(namespace, clientset)
+	registryConfig, err := kotsadm.GetRegistryConfigFromCluster(kotsadmNamespace, clientset)
 	if err != nil {
 		errMsg := "failed to get kotsadm options from cluster"
 		response.Error = errMsg
@@ -417,41 +403,50 @@ func (h *Handler) ConfigureFileSystemSnapshotProvider(w http.ResponseWriter, r *
 		return
 	}
 
-	// TODO: do this asynchronously and use task status to report back
-	if !isMinioDisabled {
-		if err := configureMinioFileSystemProvider(r.Context(), clientset, namespace, registryConfig, request.FileSystemOptions); err != nil {
-			if _, ok := errors.Cause(err).(*kotssnapshot.ResetFileSystemError); ok {
-				response.Error = err.Error()
-				JSON(w, http.StatusConflict, response)
-				return
-			}
-			if _, ok := errors.Cause(err).(*kotssnapshot.HostPathNotFoundError); ok {
-				response.Error = err.Error()
-				JSON(w, http.StatusBadRequest, response)
-				return
-			}
-			if err, ok := errors.Cause(err).(util.ActionableError); ok {
-				response.Error = err.Error()
-				JSON(w, http.StatusBadRequest, response)
-				return
-			}
+	configureCommand := ""
+	if request.FileSystemOptions.HostPath != nil {
+		configureCommand = fmt.Sprintf(`kubectl kots velero configure-hostpath --hostpath %s`, *request.FileSystemOptions.HostPath)
+	} else if request.FileSystemOptions.NFS != nil {
+		configureCommand = fmt.Sprintf(`kubectl kots velero configure-nfs --nfs-server %s --nfs-path %s`, request.FileSystemOptions.NFS.Server, request.FileSystemOptions.NFS.Path)
+	}
 
-			errMsg := "failed to configure file system provider"
-			response.Error = errMsg
-			logger.Error(errors.Wrap(err, errMsg))
-			w.WriteHeader(http.StatusInternalServerError)
-			return
+	configureCommand += fmt.Sprintf(` --namespace %s`, kotsadmNamespace)
+
+	if request.FileSystemOptions.ForceReset {
+		configureCommand += " --force-reset"
+	}
+
+	if registryConfig.OverrideRegistry != "" {
+		configureCommand += fmt.Sprintf(` --kotsadm-registry %s`, registryConfig.OverrideRegistry)
+
+		if registryConfig.OverrideNamespace != "" {
+			configureCommand += fmt.Sprintf(` --kotsadm-namespace %s`, registryConfig.OverrideNamespace)
 		}
-	} else {
-		if err := configureLvpFileSystemProvider(r.Context(), clientset, namespace, registryConfig, request.FileSystemOptions); err != nil {
-			response.Error = err.Error()
-			JSON(w, http.StatusInternalServerError, response)
-			return
+		if registryConfig.Username != "" {
+			configureCommand += fmt.Sprintf(` --registry-username %s`, registryConfig.Username)
+		}
+		if registryConfig.Password != "" {
+			configureCommand += fmt.Sprintf(` --registry-password %s`, registryConfig.Password)
 		}
 	}
 
+	isMinioDisabled, err := kotssnapshot.IsFileSystemMinioDisabled(kotsadmNamespace)
+	if err != nil {
+		logger.Error(err)
+		response.Error = "failed to check if file system minio is disabled"
+		JSON(w, http.StatusInternalServerError, response)
+		return
+	}
+
+	var plugin kotssnapshottypes.VeleroPlugin
+	if isMinioDisabled {
+		plugin = kotssnapshottypes.VeleroLVPPlugin
+	} else {
+		plugin = kotssnapshottypes.VeleroAWSPlugin
+	}
+
 	response.Success = true
-	response.Namespace = namespace
+	response.Instructions = print.VeleroInstallationInstructionsForUI(plugin, &registryConfig, configureCommand)
 
 	JSON(w, http.StatusOK, response)
 }
@@ -476,14 +471,6 @@ func configureMinioFileSystemProvider(ctx context.Context, clientset kubernetes.
 		ForceReset:       fileSystemOptions.ForceReset,
 		FileSystemConfig: fileSystemOptions.FileSystemConfig,
 	}
-
-	// NOTE: commenting out for now since this not implemented and is causing a nil pointer panic for NFS because deployOptions.FileSystemConfig.HostPath == nil
-	// if _, err := os.Stat(*deployOptions.FileSystemConfig.HostPath); os.IsNotExist(err) {
-	// 	// TODO: fix to check host path outside of container (ticket https://app.shortcut.com/replicated/story/42701/check-host-path-outside-of-container)
-	// 	// return &kotssnapshot.HostPathNotFoundError{Message: "Provided host path does not exist"}
-	// } else if err != nil {
-	// 	// return errors.Wrap(err, "failed to os stat")
-	// }
 
 	if err := kotssnapshot.DeployFileSystemMinio(ctx, clientset, deployOptions, registryConfig); err != nil {
 		return errors.Wrap(err, "failed to deploy file system minio")

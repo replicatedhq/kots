@@ -641,6 +641,8 @@ func (s *KOTSStore) AddDownstreamVersionsDetails(appID string, clusterID string,
 				return errors.Wrap(err, "failed to load installation spec")
 			}
 			version.KOTSKinds.KotsApplication = *app
+			version.AppTitle = app.Spec.Title
+			version.AppIconURI = app.Spec.Icon
 		}
 		version.NeedsKotsUpgrade = needsKotsUpgrade(&version.KOTSKinds.KotsApplication)
 

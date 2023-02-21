@@ -1,11 +1,19 @@
 import React from "react";
 import Modal from "react-modal";
 
-export default function SkipPreflightsModal(props) {
+interface Props {
+  showSkipModal: boolean;
+  hideSkipModal: () => void;
+  onIgnorePreflightsAndDeployClick?: () => void;
+  // TODO: remove this parameter
+  onForceDeployClick?: (continueWithFailedPreflights: boolean) => void;
+}
+
+export default function SkipPreflightsModal(props: Props) {
   const {
     showSkipModal,
     hideSkipModal,
-    deployKotsDownstream,
+    onIgnorePreflightsAndDeployClick,
     onForceDeployClick,
   } = props;
 
@@ -48,7 +56,7 @@ export default function SkipPreflightsModal(props) {
             ) : (
               <span
                 className="u-fontSize--normal u-fontWeight--medium u-textDecoration--underline u-textColor--bodyCopy u-marginTop--15 u-cursor--pointer"
-                onClick={() => deployKotsDownstream(false, true)}
+                onClick={onIgnorePreflightsAndDeployClick}
               >
                 Ignore Preflights and deploy
               </span>

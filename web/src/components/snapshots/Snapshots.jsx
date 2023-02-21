@@ -306,6 +306,7 @@ class Snapshots extends Component {
       errorTitle: "",
       displayErrorModal: false,
     });
+
     try {
       const res = await fetch(
         `${process.env.API_ENDPOINT}/snapshots/settings`,
@@ -317,6 +318,7 @@ class Snapshots extends Component {
           },
         }
       );
+
       if (!res.ok) {
         if (res.status === 401) {
           Utilities.logoutUser();
@@ -342,7 +344,9 @@ class Snapshots extends Component {
         });
         return;
       }
+
       const result = await res.json();
+
       this.setState({
         snapshotSettings: result,
         isLoadingSnapshotSettings: false,
@@ -350,8 +354,13 @@ class Snapshots extends Component {
         errorTitle: "",
         displayErrorModal: false,
       });
-      if (result?.isVeleroRunning && result?.isResticRunning) {
-        this.state.listSnapshotsJob.start(this.listInstanceSnapshots, 2000);
+      if (result?.isVeleroRunning && result?.isNodeAgentRunning) {
+        if (!result?.store) {
+          // velero and node-agent are running but a backup storage location is not configured yet
+          this.props.history.replace("/snapshots/settings");
+        } else {
+          this.state.listSnapshotsJob.start(this.listInstanceSnapshots, 2000);
+        }
       } else {
         this.props.history.push("/snapshots/settings?configure=true");
       }

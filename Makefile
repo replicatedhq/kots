@@ -1,9 +1,9 @@
 include Makefile.build.mk
 CURRENT_USER := $(shell id -u -n)
 MINIO_TAG ?= RELEASE.2022-10-24T18-35-07Z
-RQLITE_TAG ?= 7.10.0
+RQLITE_TAG ?= 7.13.1
 DEX_TAG ?= v2.35.3
-LVP_TAG ?= v0.4.3
+LVP_TAG ?= v0.5.0
 
 define sendMetrics
 @if [ -z "${PROJECT_NAME}" ]; then \
@@ -183,6 +183,7 @@ scan:
 		--exit-code=1 \
 		--severity="CRITICAL,HIGH,MEDIUM" \
 		--ignore-unfixed \
+		--skip-dirs .github \
 		--skip-files actions/version-tag/package-lock.json \
 		--skip-files web/yarn.lock \
 		--ignorefile .trivyignore \

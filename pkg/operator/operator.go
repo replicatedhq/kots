@@ -23,6 +23,7 @@ import (
 	appstatetypes "github.com/replicatedhq/kots/pkg/appstate/types"
 	identitydeploy "github.com/replicatedhq/kots/pkg/identity/deploy"
 	identitytypes "github.com/replicatedhq/kots/pkg/identity/types"
+	kotsadmobjects "github.com/replicatedhq/kots/pkg/kotsadm/objects"
 	snapshot "github.com/replicatedhq/kots/pkg/kotsadmsnapshot"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/kustomize"
@@ -30,7 +31,9 @@ import (
 	"github.com/replicatedhq/kots/pkg/midstream"
 	"github.com/replicatedhq/kots/pkg/operator/client"
 	operatortypes "github.com/replicatedhq/kots/pkg/operator/types"
+	registrytypes "github.com/replicatedhq/kots/pkg/registry/types"
 	"github.com/replicatedhq/kots/pkg/render"
+	rendertypes "github.com/replicatedhq/kots/pkg/render/types"
 	"github.com/replicatedhq/kots/pkg/reporting"
 	"github.com/replicatedhq/kots/pkg/store"
 	storetypes "github.com/replicatedhq/kots/pkg/store/types"
@@ -40,8 +43,10 @@ import (
 	"github.com/replicatedhq/kots/pkg/util"
 	velerov1 "github.com/vmware-tanzu/velero/pkg/apis/velero/v1"
 	corev1 "k8s.io/api/core/v1"
+	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	serializer "k8s.io/apimachinery/pkg/runtime/serializer/json"
+	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/scheme"
 )
 
@@ -55,14 +60,16 @@ type Operator struct {
 	clusterToken string
 	clusterID    string
 	deployMtxs   map[string]*sync.Mutex // key is app id
+	k8sClientset kubernetes.Interface
 }
 
-func Init(client client.ClientInterface, store store.Store, clusterToken string) *Operator {
+func Init(client client.ClientInterface, store store.Store, clusterToken string, k8sClientset kubernetes.Interface) *Operator {
 	operator = &Operator{
 		client:       client,
 		store:        store,
 		clusterToken: clusterToken,
 		deployMtxs:   map[string]*sync.Mutex{},
+		k8sClientset: k8sClientset,
 	}
 	return operator
 }
@@ -229,6 +236,10 @@ func (o *Operator) DeployApp(appID string, sequence int64) (deployed bool, deplo
 	registrySettings, err := o.store.GetRegistryDetailsForApp(app.ID)
 	if err != nil {
 		return false, errors.Wrap(err, "failed to get registry settings for app")
+	}
+
+	if err := o.ensureKotsadmApplicationMetadataConfigMap(app, sequence, util.PodNamespace, kotsKinds, registrySettings); err != nil {
+		return false, errors.Wrap(err, "failed to ensure kotsadm application metadata configmap")
 	}
 
 	builder, err := render.NewBuilder(kotsKinds, registrySettings, app.Slug, sequence, app.IsAirgap, util.PodNamespace)
@@ -516,12 +527,12 @@ func (o *Operator) processRestoreForApp(a *apptypes.App) error {
 		break
 
 	default:
-		downstreams, err := o.store.GetDownstream(o.clusterID)
+		d, err := o.store.GetDownstream(o.clusterID)
 		if err != nil {
 			return errors.Wrap(err, "failed to get downstream")
 		}
 
-		if err := o.undeployApp(a, downstreams, true); err != nil {
+		if err := o.UndeployApp(a, d, true); err != nil {
 			return errors.Wrap(err, "failed to undeploy app")
 		}
 		break
@@ -646,7 +657,7 @@ func (o *Operator) checkRestoreComplete(a *apptypes.App, restore *velerov1.Resto
 	return nil
 }
 
-func (o *Operator) undeployApp(a *apptypes.App, d *downstreamtypes.Downstream, isRestore bool) error {
+func (o *Operator) UndeployApp(a *apptypes.App, d *downstreamtypes.Downstream, isRestore bool) error {
 	if _, ok := o.deployMtxs[a.ID]; !ok {
 		o.deployMtxs[a.ID] = &sync.Mutex{}
 	}
@@ -684,23 +695,32 @@ func (o *Operator) undeployApp(a *apptypes.App, d *downstreamtypes.Downstream, i
 	}
 	base64EncodedManifests := base64.StdEncoding.EncodeToString(renderedManifests)
 
-	backup, err := snapshot.GetBackup(context.Background(), util.PodNamespace, a.RestoreInProgressName)
-	if err != nil {
-		return errors.Wrap(err, "failed to get backup")
-	}
+	var clearNamespaces []string
+	var restoreLabelSelector *metav1.LabelSelector
 
-	// merge the backup label selector and the restore label selector so that we only undeploy manifests that are:
-	// 1- included in the backup AND
-	// 2- are going to be restored
-	// a valid use case here is when restoring just an app from a full snapshot because the backup won't have this label in that case.
-	// this will be a no-op when restoring from an app (partial) snapshot since the backup will already have this label.
-	restoreLabelSelector := backup.Spec.LabelSelector.DeepCopy()
-	if restoreLabelSelector == nil {
-		restoreLabelSelector = &metav1.LabelSelector{
-			MatchLabels: map[string]string{},
+	if isRestore {
+		backup, err := snapshot.GetBackup(context.Background(), util.PodNamespace, a.RestoreInProgressName)
+		if err != nil {
+			return errors.Wrap(err, "failed to get backup")
 		}
+		clearNamespaces = backup.Spec.IncludedNamespaces
+
+		// merge the backup label selector and the restore label selector so that we only undeploy manifests that are:
+		// 1- included in the backup AND
+		// 2- are going to be restored
+		// a valid use case here is when restoring just an app from a full snapshot because the backup won't have this label in that case.
+		// this will be a no-op when restoring from an app (partial) snapshot since the backup will already have this label.
+		restoreLabelSelector = backup.Spec.LabelSelector.DeepCopy()
+		if restoreLabelSelector == nil {
+			restoreLabelSelector = &metav1.LabelSelector{
+				MatchLabels: map[string]string{},
+			}
+		}
+		restoreLabelSelector.MatchLabels["kots.io/app-slug"] = a.Slug
+	} else {
+		clearNamespaces = append(clearNamespaces, util.AppNamespace())
+		clearNamespaces = append(clearNamespaces, kotsKinds.KotsApplication.Spec.AdditionalNamespaces...)
 	}
-	restoreLabelSelector.MatchLabels["kots.io/app-slug"] = a.Slug
 
 	undeployArgs := operatortypes.DeployAppArgs{
 		AppID:                a.ID,
@@ -713,16 +733,22 @@ func (o *Operator) undeployApp(a *apptypes.App, d *downstreamtypes.Downstream, i
 		PreviousManifests:    base64EncodedManifests,
 		Action:               "undeploy",
 		Wait:                 true,
-		ClearNamespaces:      backup.Spec.IncludedNamespaces,
+		ClearNamespaces:      clearNamespaces,
 		ClearPVCs:            true,
 		IsRestore:            isRestore,
 		RestoreLabelSelector: restoreLabelSelector,
 		KotsKinds:            kotsKinds,
 	}
-	go o.client.DeployApp(undeployArgs) // this happens async and progress/status is polled later.
 
-	if err := app.SetRestoreUndeployStatus(a.ID, apptypes.UndeployInProcess); err != nil {
-		return errors.Wrap(err, "failed to set restore undeploy status")
+	if isRestore {
+		// during a restore, this happens async and progress/status is polled later.
+		go o.client.DeployApp(undeployArgs)
+
+		if err := app.SetRestoreUndeployStatus(a.ID, apptypes.UndeployInProcess); err != nil {
+			return errors.Wrap(err, "failed to set restore undeploy status")
+		}
+	} else {
+		o.client.DeployApp(undeployArgs)
 	}
 
 	return nil
@@ -757,4 +783,50 @@ func deduplicateSecrets(secretSpecs []string) []string {
 	}
 
 	return secretSpecs
+}
+
+func (o *Operator) ensureKotsadmApplicationMetadataConfigMap(app *apptypes.App, sequence int64, namespace string, kotsKinds *kotsutil.KotsKinds, registrySettings registrytypes.RegistrySettings) error {
+	renderedKotsAppSpec, err := o.renderKotsApplicationSpec(app, sequence, namespace, kotsKinds, registrySettings, &render.Renderer{})
+	if err != nil {
+		return errors.Wrap(err, "failed to render kots application spec")
+	}
+
+	existingConfigMap, err := o.k8sClientset.CoreV1().ConfigMaps(namespace).Get(context.TODO(), "kotsadm-application-metadata", metav1.GetOptions{})
+	if err != nil {
+		if !kuberneteserrors.IsNotFound(err) {
+			return errors.Wrap(err, "failed to get existing metadata config map")
+		}
+
+		_, err := o.k8sClientset.CoreV1().ConfigMaps(namespace).Create(context.TODO(), kotsadmobjects.ApplicationMetadataConfig(renderedKotsAppSpec, namespace, app.UpstreamURI), metav1.CreateOptions{})
+		if err != nil {
+			return errors.Wrap(err, "failed to create metadata config map")
+		}
+		return nil
+	}
+
+	if existingConfigMap.Data == nil {
+		existingConfigMap.Data = map[string]string{}
+	}
+
+	existingConfigMap.Data["application.yaml"] = string(renderedKotsAppSpec)
+	_, err = o.k8sClientset.CoreV1().ConfigMaps(util.PodNamespace).Update(context.Background(), existingConfigMap, metav1.UpdateOptions{})
+	if err != nil {
+		return errors.Wrap(err, "failed to update config map")
+	}
+
+	return nil
+}
+
+func (o *Operator) renderKotsApplicationSpec(app *apptypes.App, sequence int64, namespace string, kotsKinds *kotsutil.KotsKinds, registrySettings registrytypes.RegistrySettings, renderer rendertypes.Renderer) ([]byte, error) {
+	marshalledKotsAppSpec, err := kotsKinds.Marshal("kots.io", "v1beta1", "Application")
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to marshal kots app spec")
+	}
+
+	renderedKotsAppSpec, err := renderer.RenderFile(kotsKinds, registrySettings, app.Slug, sequence, app.IsAirgap, namespace, []byte(marshalledKotsAppSpec))
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to render preflights")
+	}
+
+	return renderedKotsAppSpec, nil
 }

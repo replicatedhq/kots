@@ -1,9 +1,6 @@
 name: 'Generate Support Bundle'
 description: 'Composite action for generating a support bundle'
 inputs:
-  kots-namespace:
-    description: 'KOTS namespace'
-    required: true
   aws-access-key-id:
     description: 'AWS access key id for uploading support bundle'
     required: true
@@ -31,7 +28,7 @@ runs:
         )"
         curl -fsLO "https://github.com/replicatedhq/troubleshoot/releases/download/${RELEASE}/support-bundle_linux_amd64.tar.gz"
         tar xzf support-bundle_linux_amd64.tar.gz
-        ./support-bundle -n "${KOTS_NAMESPACE}" https://kots.io
+        ./support-bundle https://kots.io
         BUNDLE="$(ls -1 | grep 'support-bundle-.*.tar.gz')"
         aws s3 cp "${BUNDLE}" "s3://kots-e2e-build-test-support-bundles/${BUNDLE}"
         echo "::notice ::support bundle uploaded to aws replicated-dev account s3://kots-e2e-build-test-support-bundles/${BUNDLE}"

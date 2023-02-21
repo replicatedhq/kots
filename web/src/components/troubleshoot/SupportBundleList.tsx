@@ -21,6 +21,7 @@ import GenerateSupportBundleModal from "./GenerateSupportBundleModal";
 import { useHistory } from "react-router-dom";
 import { ToastContext } from "@src/context/ToastContext";
 import Toast from "@components/shared/Toast";
+import { usePrevious } from "@src/hooks/usePrevious";
 
 type Props = {
   bundle: SupportBundle;
@@ -31,15 +32,7 @@ type Props = {
   loadingBundleId: string;
   pollForBundleAnalysisProgress: () => void;
   updateBundleSlug: (slug: string) => void;
-  updateState: ({
-    displayErrorModal,
-    loading,
-    loadingBundle,
-  }: {
-    displayErrorModal: boolean;
-    loading?: boolean;
-    loadingBundle?: boolean;
-  }) => void;
+  updateState: (value: Object) => void;
   watch: App | null;
 } & withRouterType;
 
@@ -71,11 +64,21 @@ export const SupportBundleList = (props: Props) => {
   const history = useHistory();
   const {
     deleteBundleId,
-    setIsToastVisible,
     isToastVisible,
     toastMessage,
-    setIsCancelled,
+    toastType,
+    setIsToastVisible,
+    toastChild,
   } = useContext(ToastContext);
+
+  // rework this so full page refresh is not needed.
+  // const deleteBundleFromList = (deleteId: string) => {
+  //   setState({
+  //     supportBundles: state.supportBundles?.filter(
+  //       (bundle) => bundle.id !== deleteId
+  //     ),
+  //   });
+  // };
 
   const listSupportBundles = () => {
     setState({
@@ -155,6 +158,37 @@ export const SupportBundleList = (props: Props) => {
     }
   }, [props.bundle]);
 
+  const prevLoadingBundleId = usePrevious(props.loadingBundleId);
+  const prevDeleteBundleId = usePrevious(deleteBundleId);
+
+  useEffect(() => {
+    // if the current bundle to delete is the same as the bundle that is loading
+    // stop the polling
+    if (props.loadingBundleId === deleteBundleId) {
+      state.pollForBundleAnalysisProgress.stop();
+      props.updateState({ loadingBundleId: "", loadingBundle: false });
+    }
+    // if the loading bundle is done and user previously tried to delete the bundle, and changed their mind (undo)
+    // refresh the list
+    if (
+      prevLoadingBundleId === "" &&
+      prevDeleteBundleId !== "" &&
+      deleteBundleId === ""
+    ) {
+      listSupportBundles();
+    }
+    // if the loading bundle is not done and user tried to delete a bundle, and changed their mind (undo)
+    // refresh the list, which will start polling again, and show the progress bar
+    if (prevLoadingBundleId === prevDeleteBundleId && deleteBundleId === "") {
+      props.updateState({
+        loadingBundleId: prevLoadingBundleId,
+        loadingBundle: true,
+      });
+      listSupportBundles();
+      // need to refresh show the progress bar
+    }
+  }, [deleteBundleId]);
+
   const toggleGenerateBundleModal = () => {
     setState({
       isGeneratingBundleOpen: !state.isGeneratingBundleOpen,
@@ -204,6 +238,7 @@ export const SupportBundleList = (props: Props) => {
               watch?.isSupportBundleUploadSupported
             }
             refetchBundleList={listSupportBundles}
+            //  deleteBundleFromList={deleteBundleFromList}
             progressData={
               props.loadingBundleId === bundle.id && props.bundleProgress
             }
@@ -321,15 +356,10 @@ export const SupportBundleList = (props: Props) => {
         />
       </div>
 
-      <Toast isToastVisible={isToastVisible} type="warning">
+      <Toast isToastVisible={isToastVisible} type={toastType}>
         <div className="tw-flex tw-items-center">
           <p className="tw-ml-2 tw-mr-4">{toastMessage}</p>
-          <span
-            onClick={() => setIsCancelled(true)}
-            className="tw-underline tw-cursor-pointer"
-          >
-            undo
-          </span>
+          {toastChild}
           <Icon
             icon="close"
             size={10}

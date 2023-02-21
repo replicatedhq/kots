@@ -30,6 +30,15 @@ type CACertificate = {
   name: string;
   data: Array<string>;
 };
+
+type FileSystemProviderInstructionType = "link" | "command";
+
+type FileSystemProviderInstruction = {
+  title: string;
+  action: string;
+  type: FileSystemProviderInstructionType;
+};
+
 type State = {
   azureBucket?: string;
   azureClientId: string;
@@ -40,9 +49,9 @@ type State = {
   azureSubscriptionId: string;
   azureTenantId: string;
   caCertificate?: CACertificate;
-  configureFileSystemProviderErrorMsg?: string;
-  configureFileSystemProviderNamespace?: string;
-  configuringFileSystemProvider?: boolean;
+  gettingFileSystemProviderInstructionsErrorMsg?: string;
+  fileSystemProviderInstructions?: FileSystemProviderInstruction[];
+  gettingFileSystemProviderInstructions?: boolean;
   determiningDestination?: boolean;
   fileSystemHostPath?: string;
   fileSystemNFSPath?: string;
@@ -53,7 +62,6 @@ type State = {
   gcsPath?: string;
   gcsServiceAccount: string;
   gcsUseIam: boolean;
-  resetFileSystemWarningMessage?: string;
   s3bucket?: string;
   s3CompatibleBucket?: string;
   s3CompatibleEndpoint: string;
@@ -70,8 +78,7 @@ type State = {
   selectedDestination?: ValueType & {};
   showCACertificateField?: boolean;
   showConfigureFileSystemProviderModal?: boolean;
-  showConfigureFileSystemProviderNextStepsModal?: boolean;
-  showResetFileSystemWarningModal?: boolean;
+  showFileSystemProviderInstructionsModal?: boolean;
   tmpFileSystemHostPath?: string;
   tmpFileSystemNFSPath?: string;
   tmpFileSystemNFSServer?: string;
@@ -190,7 +197,7 @@ type ProviderPayload =
 type Props = RouteComponentProps & {
   // TODO: add apps type for apps response
   apps: Array<object>;
-  checkForVeleroAndRestic: boolean;
+  checkForVeleroAndNodeAgent: boolean;
   fetchSnapshotSettings: () => void;
   hideCheckVeleroButton: () => void;
   hideResetFileSystemWarningModal: () => void;
@@ -293,13 +300,11 @@ class SnapshotStorageDestination extends Component<Props, State> {
       s3CompatibleRegion: "",
       s3CompatibleFieldErrors: {},
 
-      configuringFileSystemProvider: false,
-      configureFileSystemProviderErrorMsg: "",
-      configureFileSystemProviderNamespace: "",
-      showConfigureFileSystemProviderNextStepsModal: false,
+      gettingFileSystemProviderInstructions: false,
+      gettingFileSystemProviderInstructionsErrorMsg: "",
+      fileSystemProviderInstructions: [],
+      showFileSystemProviderInstructionsModal: false,
       showConfigureFileSystemProviderModal: false,
-      showResetFileSystemWarningModal: false,
-      resetFileSystemWarningMessage: "",
 
       fileSystemType: "",
       fileSystemNFSPath: "",
@@ -320,7 +325,7 @@ class SnapshotStorageDestination extends Component<Props, State> {
   };
 
   componentDidMount() {
-    if (this.props.snapshotSettings && !this.props.checkForVeleroAndRestic) {
+    if (this.props.snapshotSettings && !this.props.checkForVeleroAndNodeAgent) {
       this.setFields();
     }
   }
@@ -329,7 +334,7 @@ class SnapshotStorageDestination extends Component<Props, State> {
     if (
       this.props.snapshotSettings !== lastProps.snapshotSettings &&
       this.props.snapshotSettings &&
-      !this.props.checkForVeleroAndRestic
+      !this.props.checkForVeleroAndNodeAgent
     ) {
       this.setFields();
     }
@@ -360,22 +365,22 @@ class SnapshotStorageDestination extends Component<Props, State> {
     const { snapshotSettings } = this.props;
 
     if (provider === "aws") {
-      if (snapshotSettings.store.aws) {
+      if (snapshotSettings.store?.aws) {
         return (
-          snapshotSettings.store.aws.region !== s3Region ||
-          snapshotSettings.store.aws.accessKeyID !== s3KeyId ||
-          snapshotSettings.store.aws.secretAccessKey !== s3KeySecret ||
-          snapshotSettings.store.aws.useInstanceRole !== useIamAws
+          snapshotSettings.store?.aws.region !== s3Region ||
+          snapshotSettings.store?.aws.accessKeyID !== s3KeyId ||
+          snapshotSettings.store?.aws.secretAccessKey !== s3KeySecret ||
+          snapshotSettings.store?.aws.useInstanceRole !== useIamAws
         );
       }
       return true;
     }
     if (provider === "gcp") {
-      if (snapshotSettings.store.gcp) {
+      if (snapshotSettings.store?.gcp) {
         return (
-          snapshotSettings.store.gcp.useInstanceRole !== gcsUseIam ||
-          snapshotSettings.store.gcp.serviceAccount !== gcsServiceAccount ||
-          snapshotSettings.store.gcp.jsonFile !== gcsJsonFile
+          snapshotSettings.store?.gcp.useInstanceRole !== gcsUseIam ||
+          snapshotSettings.store?.gcp.serviceAccount !== gcsServiceAccount ||
+          snapshotSettings.store?.gcp.jsonFile !== gcsJsonFile
         );
       }
       return true;
@@ -711,7 +716,7 @@ class SnapshotStorageDestination extends Component<Props, State> {
 
   snapshotProviderFileSystem = async (forceReset = false) => {
     if (forceReset) {
-      this.hideResetFileSystemWarningModal();
+      this.props.hideResetFileSystemWarningModal();
     }
 
     const type = this.state.fileSystemType;
@@ -764,22 +769,11 @@ class SnapshotStorageDestination extends Component<Props, State> {
     this.setState({ showConfigureFileSystemProviderModal: false });
   };
 
-  hideConfigureFileSystemProviderNextStepsModal = () => {
-    this.setState({ showConfigureFileSystemProviderNextStepsModal: false });
+  hideConfigureFileSystemProviderInstructionsModal = () => {
+    this.setState({ showFileSystemProviderInstructionsModal: false });
   };
 
-  hideResetFileSystemWarningModal = () => {
-    this.setState({ showResetFileSystemWarningModal: false });
-    if (this.props.hideResetFileSystemWarningModal) {
-      this.props.hideResetFileSystemWarningModal();
-    }
-  };
-
-  configureFileSystemProvider = (forceReset = false) => {
-    if (forceReset) {
-      this.hideResetFileSystemWarningModal();
-    }
-
+  getFileSystemProviderInstructions = () => {
     const type = this.state.tmpFileSystemType;
     const path = this.state.tmpFileSystemNFSPath;
     const server = this.state.tmpFileSystemNFSServer;
@@ -789,16 +783,16 @@ class SnapshotStorageDestination extends Component<Props, State> {
       path,
       server,
       hostPath,
-      forceReset
+      false
     );
 
     this.setState({
-      configuringFileSystemProvider: true,
-      configureFileSystemProviderErrorMsg: "",
+      gettingFileSystemProviderInstructions: true,
+      gettingFileSystemProviderInstructionsErrorMsg: "",
     });
 
-    fetch(`${process.env.API_ENDPOINT}/snapshots/filesystem`, {
-      method: "PUT",
+    fetch(`${process.env.API_ENDPOINT}/snapshots/filesystem/instructions`, {
+      method: "POST",
       headers: {
         Authorization: Utilities.getToken() || "",
         "Content-Type": "application/json",
@@ -808,46 +802,36 @@ class SnapshotStorageDestination extends Component<Props, State> {
       }),
     })
       .then(async (res) => {
-        if (res.status === 409) {
-          const response = await res.json();
-          this.setState({
-            configuringFileSystemProvider: false,
-            showResetFileSystemWarningModal: true,
-            resetFileSystemWarningMessage: response.error,
-          });
-          return;
-        }
-
         const response = await res.json();
         if (!res.ok) {
           this.setState({
-            configuringFileSystemProvider: false,
-            configureFileSystemProviderErrorMsg: response.error,
+            gettingFileSystemProviderInstructions: false,
+            gettingFileSystemProviderInstructionsErrorMsg: response.error,
           });
           return;
         }
 
         if (response.success) {
           this.setState({
-            configuringFileSystemProvider: false,
+            gettingFileSystemProviderInstructions: false,
             showConfigureFileSystemProviderModal: false,
-            showConfigureFileSystemProviderNextStepsModal: true,
-            configureFileSystemProviderErrorMsg: "",
-            configureFileSystemProviderNamespace: response.namespace,
+            showFileSystemProviderInstructionsModal: true,
+            gettingFileSystemProviderInstructionsErrorMsg: "",
+            fileSystemProviderInstructions: response.instructions,
           });
           return;
         }
 
         this.setState({
-          configuringFileSystemProvider: false,
-          configureFileSystemProviderErrorMsg: response.error,
+          gettingFileSystemProviderInstructions: false,
+          gettingFileSystemProviderInstructionsErrorMsg: response.error,
         });
       })
       .catch((err) => {
         console.error(err);
         this.setState({
-          configuringFileSystemProvider: false,
-          configureFileSystemProviderErrorMsg:
+          gettingFileSystemProviderInstructions: false,
+          gettingFileSystemProviderInstructionsErrorMsg:
             "Something went wrong, please try again.",
         });
       });
@@ -1419,21 +1403,21 @@ class SnapshotStorageDestination extends Component<Props, State> {
             </div>
           </div>
           <div className="flex justifyContent--flexStart alignItems-center">
-            {this.state.configuringFileSystemProvider && (
+            {this.state.gettingFileSystemProviderInstructions && (
               <Loader className="u-marginRight--5" size="32" />
             )}
             <button
               type="button"
               className="btn blue primary u-marginRight--10"
-              onClick={() => this.configureFileSystemProvider(false)}
+              onClick={this.getFileSystemProviderInstructions}
               disabled={
                 !this.state.tmpFileSystemHostPath ||
-                this.state.configuringFileSystemProvider
+                this.state.gettingFileSystemProviderInstructions
               }
             >
-              {this.state.configuringFileSystemProvider
-                ? "Configuring"
-                : "Configure"}
+              {this.state.gettingFileSystemProviderInstructions
+                ? "Getting instructions"
+                : "Get instructions"}
             </button>
             <button
               type="button"
@@ -1443,9 +1427,9 @@ class SnapshotStorageDestination extends Component<Props, State> {
               Cancel
             </button>
           </div>
-          {this.state.configureFileSystemProviderErrorMsg && (
+          {this.state.gettingFileSystemProviderInstructionsErrorMsg && (
             <div className="flex u-fontWeight--bold u-fontSize--small u-textColor--error u-marginBottom--10 u-marginTop--10">
-              {this.state.configureFileSystemProviderErrorMsg}
+              {this.state.gettingFileSystemProviderInstructionsErrorMsg}
             </div>
           )}
         </div>
@@ -1493,7 +1477,7 @@ class SnapshotStorageDestination extends Component<Props, State> {
             </div>
           </div>
           <div className="flex justifyContent--flexStart alignItems-center">
-            {this.state.configuringFileSystemProvider && (
+            {this.state.gettingFileSystemProviderInstructions && (
               <Loader className="u-marginRight--5" size="32" />
             )}
             <button
@@ -1502,13 +1486,13 @@ class SnapshotStorageDestination extends Component<Props, State> {
               disabled={
                 !this.state.tmpFileSystemNFSServer ||
                 !this.state.tmpFileSystemNFSPath ||
-                this.state.configuringFileSystemProvider
+                this.state.gettingFileSystemProviderInstructions
               }
-              onClick={() => this.configureFileSystemProvider(false)}
+              onClick={this.getFileSystemProviderInstructions}
             >
-              {this.state.configuringFileSystemProvider
-                ? "Configuring"
-                : "Configure"}
+              {this.state.gettingFileSystemProviderInstructions
+                ? "Getting instructions"
+                : "Get instructions"}
             </button>
             <button
               type="button"
@@ -1518,9 +1502,9 @@ class SnapshotStorageDestination extends Component<Props, State> {
               Cancel
             </button>
           </div>
-          {this.state.configureFileSystemProviderErrorMsg && (
+          {this.state.gettingFileSystemProviderInstructionsErrorMsg && (
             <div className="flex u-fontWeight--bold u-fontSize--small u-textColor--error u-marginBottom--10 u-marginTop--10">
-              {this.state.configureFileSystemProviderErrorMsg}
+              {this.state.gettingFileSystemProviderInstructionsErrorMsg}
             </div>
           )}
         </div>
@@ -1530,6 +1514,57 @@ class SnapshotStorageDestination extends Component<Props, State> {
     return null;
   };
 
+  renderFileSystemProviderInstructions = () => {
+    const instructions = this.state.fileSystemProviderInstructions;
+    if (!instructions?.length) {
+      return null;
+    }
+
+    return instructions.map((instruction, index) => {
+      let action;
+      if (instruction.type === "link") {
+        action = (
+          <span className="link u-fontSize--small u-cursor--pointer">
+            <a href={instruction.action} target="_blank" className="link">
+              {instruction.action}
+            </a>
+          </span>
+        );
+      } else {
+        action = (
+          <CodeSnippet
+            language="bash"
+            canCopy={true}
+            onCopyText={
+              <span className="u-textColor--success">
+                Snippet has been copied to your clipboard
+              </span>
+            }
+          >
+            {instruction.action}
+          </CodeSnippet>
+        );
+      }
+      return (
+        <div key={`${index}`} className="flex flex1 u-marginTop--20">
+          <div className="flex">
+            <span className="circleNumberGray u-marginRight--10">
+              {" "}
+              {index + 1}{" "}
+            </span>
+          </div>
+          <div className="flex flex-column">
+            <p className="u-fontSize--small flex alignItems--center u-fontWeight--medium u-lineHeight--medium u-textColor--bodyCopy">
+              {" "}
+              {instruction.title}{" "}
+            </p>
+            <div className="flex u-marginTop--5">{action}</div>
+          </div>
+        </div>
+      );
+    });
+  };
+
   render() {
     const {
       snapshotSettings,
@@ -1537,7 +1572,7 @@ class SnapshotStorageDestination extends Component<Props, State> {
       updateConfirm,
       updateErrorMsg,
       isKurlEnabled,
-      checkForVeleroAndRestic,
+      checkForVeleroAndNodeAgent,
     } = this.props;
 
     const availableDestinations = [];
@@ -1607,10 +1642,8 @@ class SnapshotStorageDestination extends Component<Props, State> {
     );
 
     const showResetFileSystemWarningModal =
-      this.state.showResetFileSystemWarningModal ||
       this.props.showResetFileSystemWarningModal;
     const resetFileSystemWarningMessage =
-      this.state.resetFileSystemWarningMessage ||
       this.props.resetFileSystemWarningMessage;
 
     return (
@@ -1651,7 +1684,7 @@ class SnapshotStorageDestination extends Component<Props, State> {
                 )}
                 <div className="flex flex-column u-marginBottom--15">
                   {!snapshotSettings?.isVeleroRunning &&
-                    !checkForVeleroAndRestic &&
+                    !checkForVeleroAndNodeAgent &&
                     isKurlEnabled && (
                       <div className="flex-auto u-fontWeight--bold u-fontSize--small u-textColor--error u-marginBottom--10">
                         Please fix Velero so that the deployment is running. For
@@ -1744,11 +1777,9 @@ class SnapshotStorageDestination extends Component<Props, State> {
                   </>
                 )}
                 <span className="u-fontSize--small u-fontWeight--normal u-lineHeight--normal u-textColor--bodyCopy u-marginTop--15">
-                  All data in your snapshots will be deduplicated. To learn more
-                  about how,{" "}
-                  <a href="/" target="_blank" className="link">
-                    check out our docs.
-                  </a>
+                  All data in your snapshots will be deduplicated. Snapshots
+                  makes use of Restic, a fast and secure backup technology with
+                  native deduplication.
                 </span>
               </form>
             </div>
@@ -1797,10 +1828,12 @@ class SnapshotStorageDestination extends Component<Props, State> {
           </Modal>
         )}
 
-        {this.state.showConfigureFileSystemProviderNextStepsModal && (
+        {this.state.showFileSystemProviderInstructionsModal && (
           <Modal
-            isOpen={this.state.showConfigureFileSystemProviderNextStepsModal}
-            onRequestClose={this.hideConfigureFileSystemProviderNextStepsModal}
+            isOpen={this.state.showFileSystemProviderInstructionsModal}
+            onRequestClose={
+              this.hideConfigureFileSystemProviderInstructionsModal
+            }
             shouldReturnFocusAfterClose={false}
             contentLabel="File system next steps"
             ariaHideApp={false}
@@ -1808,28 +1841,16 @@ class SnapshotStorageDestination extends Component<Props, State> {
           >
             <div className="Modal-body">
               <p className="u-fontSize--largest u-fontWeight--bold u-textColor--secondary u-marginBottom--10">
-                Next steps
+                Velero installation instructions
               </p>
-              <p className="u-fontSize--normal u-fontWeight--normal u-textColor--bodyCopy u-lineHeight--normal">
-                Run the following command for instructions on how to set up
-                Velero:
-              </p>
-              <CodeSnippet
-                language="bash"
-                canCopy={true}
-                onCopyText={
-                  <span className="u-textColor--success">
-                    Command has been copied to your clipboard
-                  </span>
-                }
-              >
-                {`kubectl kots velero print-fs-instructions --namespace ${this.state.configureFileSystemProviderNamespace}`}
-              </CodeSnippet>
-              <div className="u-marginTop--10 flex justifyContent--flexStart">
+              {this.renderFileSystemProviderInstructions()}
+              <div className="u-marginTop--20 flex justifyContent--flexStart">
                 <button
                   type="button"
                   className="btn blue primary"
-                  onClick={this.hideConfigureFileSystemProviderNextStepsModal}
+                  onClick={
+                    this.hideConfigureFileSystemProviderInstructionsModal
+                  }
                 >
                   Ok, got it!
                 </button>
@@ -1841,7 +1862,7 @@ class SnapshotStorageDestination extends Component<Props, State> {
         {showResetFileSystemWarningModal && (
           <Modal
             isOpen={showResetFileSystemWarningModal}
-            onRequestClose={this.hideResetFileSystemWarningModal}
+            onRequestClose={this.props.hideResetFileSystemWarningModal}
             shouldReturnFocusAfterClose={false}
             contentLabel="Reset file system config"
             ariaHideApp={false}
@@ -1855,18 +1876,14 @@ class SnapshotStorageDestination extends Component<Props, State> {
                 <button
                   type="button"
                   className="btn blue primary u-marginRight--10"
-                  onClick={
-                    this.state.showConfigureFileSystemProviderModal
-                      ? () => this.configureFileSystemProvider(true)
-                      : () => this.snapshotProviderFileSystem(true)
-                  }
+                  onClick={() => this.snapshotProviderFileSystem(true)}
                 >
                   Yes
                 </button>
                 <button
                   type="button"
                   className="btn secondary"
-                  onClick={this.hideResetFileSystemWarningModal}
+                  onClick={this.props.hideResetFileSystemWarningModal}
                 >
                   No
                 </button>

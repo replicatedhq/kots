@@ -5,7 +5,6 @@ import (
 	"strconv"
 	"strings"
 
-	configv1client "github.com/openshift/client-go/config/clientset/versioned/typed/config/v1"
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/util"
 	corev1 "k8s.io/api/core/v1"
@@ -79,36 +78,4 @@ func GetOpenShiftPodSecurityContext(kotsadmNamespace string) (*corev1.PodSecurit
 	}
 
 	return psc, nil
-}
-
-func OpenShiftVersion() (string, error) {
-	// openshift-apiserver does not report version,
-	// clusteroperator/openshift-apiserver does, and only version number
-
-	cfg, err := GetClusterConfig()
-	if err != nil {
-		return "", errors.Wrap(err, "failed to get cluster config")
-	}
-
-	client, err := configv1client.NewForConfig(cfg)
-	if err != nil {
-		return "", errors.Wrap(err, "failed to build client from config")
-	}
-
-	clusterOperator, err := client.ClusterOperators().Get(context.TODO(), "openshift-apiserver", metav1.GetOptions{})
-	if err != nil {
-		return "", errors.Wrap(err, "failed to get openshift apiserver")
-	}
-
-	if clusterOperator == nil {
-		return "", errors.New("no openshift apiserver found")
-	}
-
-	for _, ver := range clusterOperator.Status.Versions {
-		if ver.Name == "operator" {
-			return ver.Version, nil
-		}
-	}
-
-	return "", errors.New("no openshift operator found")
 }

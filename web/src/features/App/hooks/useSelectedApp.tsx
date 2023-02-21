@@ -6,7 +6,7 @@ import { App } from "@types";
 
 import { KotsParams } from "@types";
 
-function useSelectedApp(): { selectedApp: App | null } {
+function useSelectedApp(): App | null {
   let { slug } = useParams<KotsParams>();
   let { data } = useApps();
 
@@ -20,7 +20,7 @@ function useSelectedApp(): { selectedApp: App | null } {
     setSelectedApp(apps?.find((app: App) => app.slug === slug) || null);
   }, [apps, slug]);
 
-  return { selectedApp };
+  return selectedApp;
 }
 
 export { useSelectedApp };
