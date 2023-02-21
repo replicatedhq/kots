@@ -173,7 +173,8 @@
   },
   "resolutions": {
     "trim": "^0.0.3",
-    "moment": "^2.9.0"
+    "moment": "^2.9.0",
+    "moment-timezone": "^0.5.34"
   },
   "browserslist": [
     "> 1%",
