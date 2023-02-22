@@ -8,6 +8,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/kotsadm"
+	kotsadmtypes "github.com/replicatedhq/kots/pkg/kotsadm/types"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/upstream"
 	upstreamtypes "github.com/replicatedhq/kots/pkg/upstream/types"
@@ -55,6 +56,14 @@ func AdminGenerateManifestsCmd() *cobra.Command {
 				AdditionalNamespaces: v.GetStringSlice("additional-namespaces"),
 				IsOpenShift:          isOpenShift,
 				IsGKEAutopilot:       isGKEAutopilot,
+
+				RegistryConfig: kotsadmtypes.RegistryConfig{
+					OverrideVersion:   v.GetString("kotsadm-tag"),
+					OverrideRegistry:  v.GetString("kotsadm-registry"),
+					OverrideNamespace: v.GetString("kotsadm-namespace"),
+					Username:          v.GetString("registry-username"),
+					Password:          v.GetString("registry-password"),
+				},
 			}
 			adminConsoleFiles, err := upstream.GenerateAdminConsoleFiles(renderDir, options)
 			if err != nil {
@@ -90,6 +99,8 @@ func AdminGenerateManifestsCmd() *cobra.Command {
 	cmd.Flags().Bool("with-minio", true, "set to true to include a local minio instance to be used for storage")
 	cmd.Flags().Bool("minimal-rbac", false, "set to true to use the namespaced role and bindings instead of cluster-level permissions")
 	cmd.Flags().StringSlice("additional-namespaces", []string{}, "Comma separate list to specify additional namespace(s) managed by KOTS outside where it is to be deployed. Ignored without with '--minimal-rbac=true'")
+
+	registryFlags(cmd.Flags())
 
 	return cmd
 }

@@ -7,6 +7,7 @@ import (
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	kotsscheme "github.com/replicatedhq/kots/kotskinds/client/kotsclientset/scheme"
 	reportingtypes "github.com/replicatedhq/kots/pkg/api/reporting/types"
+	kotsadmtypes "github.com/replicatedhq/kots/pkg/kotsadm/types"
 	registrytypes "github.com/replicatedhq/kots/pkg/registry/types"
 	"k8s.io/client-go/kubernetes/scheme"
 )
@@ -73,6 +74,8 @@ type WriteOptions struct {
 	SharedPassword string
 	IsOpenShift    bool
 	IsGKEAutopilot bool
+
+	RegistryConfig kotsadmtypes.RegistryConfig
 }
 
 type FetchOptions struct {
