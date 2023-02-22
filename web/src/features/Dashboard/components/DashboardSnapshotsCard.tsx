@@ -172,14 +172,15 @@ export const DashboardSnapshotsCard = (props: Props) => {
     });
   };
 
-  const { data: snapshotSettings } = useSnapshotSettings(onSnapshotSettingsSuccess, onSnapshotSettingsError);
+  const { data: snapshotSettings } = useSnapshotSettings(
+    onSnapshotSettingsSuccess,
+    onSnapshotSettingsError
+  );
   const previousSnapshotSettings = usePrevious(snapshotSettings);
 
-  const onCreateSnapshotSuccess = (
-    data
-  : {
+  const onCreateSnapshotSuccess = (data: {
     success?: boolean;
-    option?: 'full' | 'partial' | undefined
+    option?: "full" | "partial" | undefined;
   }) => {
     setState({
       startingSnapshot: false,

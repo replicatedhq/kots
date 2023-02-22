@@ -7,7 +7,7 @@ interface SnapshotResponse {
   error: string;
   kotsadmNamespace: string;
   kotsadmRequiresVeleroAccess: boolean;
-  option?: 'full' | 'partial' | undefined
+  option?: "full" | "partial" | undefined;
 }
 
 export const createSnapshot = async (
@@ -33,7 +33,7 @@ export const createSnapshot = async (
     throw error;
   }
 
-  return {...response, option };
+  return { ...response, option };
 };
 
 export const useCreateSnapshot = (
@@ -45,7 +45,7 @@ export const useCreateSnapshot = (
     mutationFn: (option: "full" | "partial") =>
       createSnapshot(option, selectedApp?.slug || ""),
     onSuccess,
-    onError
+    onError,
   });
 };
 
