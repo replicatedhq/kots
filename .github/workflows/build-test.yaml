@@ -1720,6 +1720,8 @@ jobs:
           kubectl -n $NAMESPACE get pods
           echo "------kotsadm logs"
           kubectl logs -l app=kotsadm --tail=100 --namespace $NAMESPACE
+          echo "------kotsadm-minio logs"
+          kubectl logs -l app=kotsadm-minio --tail=100 --namespace $NAMESPACE
 
       - name: Generate support bundle on failure
         if: failure()
