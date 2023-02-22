@@ -1,13 +1,13 @@
 import { useMutation } from "react-query";
 import { Utilities } from "../../../utilities/utilities";
 import { useSelectedApp } from "@features/App";
-import { SnapshotSettings } from "@types";
 
 interface SnapshotResponse {
   success: boolean;
   error: string;
   kotsadmNamespace: string;
   kotsadmRequiresVeleroAccess: boolean;
+  option?: 'full' | 'partial' | undefined
 }
 
 export const createSnapshot = async (
@@ -33,11 +33,11 @@ export const createSnapshot = async (
     throw error;
   }
 
-  return { ...response, option };
+  return {...response, option };
 };
 
 export const useCreateSnapshot = (
-  onSuccess: () => void,
+  onSuccess: (data: SnapshotResponse) => void,
   onError: (error: Error) => void
 ) => {
   const selectedApp = useSelectedApp();
@@ -45,7 +45,7 @@ export const useCreateSnapshot = (
     mutationFn: (option: "full" | "partial") =>
       createSnapshot(option, selectedApp?.slug || ""),
     onSuccess,
-    onError,
+    onError
   });
 };
 

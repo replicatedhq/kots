@@ -154,7 +154,7 @@ export const DashboardSnapshotsCard = (props: Props) => {
     });
   };
 
-  const onSuccess = () => {
+  const onSnapshotSettingsSuccess = (result: SnapshotSettings) => {
     setState({
       kotsadmRequiresVeleroAccess: false,
       isLoadingSnapshotSettings: false,
@@ -162,9 +162,9 @@ export const DashboardSnapshotsCard = (props: Props) => {
       snapshotSettingsErrMsg: "",
     });
 
-    setCurrentProvider(snapshotSettings);
+    setCurrentProvider(result);
   };
-  const onError = (err: Error) => {
+  const onSnapshotSettingsError = (err: Error) => {
     setState({
       isLoadingSnapshotSettings: false,
       snapshotSettingsErr: true,
@@ -172,20 +172,20 @@ export const DashboardSnapshotsCard = (props: Props) => {
     });
   };
 
-  const { data: snapshotSettings } = useSnapshotSettings(onSuccess, onError);
+  const { data: snapshotSettings } = useSnapshotSettings(onSnapshotSettingsSuccess, onSnapshotSettingsError);
   const previousSnapshotSettings = usePrevious(snapshotSettings);
 
-  const onCreateSnapshotSuccess = ({
-    option,
-  }: {
+  const onCreateSnapshotSuccess = (
+    data
+  : {
     success?: boolean;
-    option: "full" | "partial";
+    option?: 'full' | 'partial' | undefined
   }) => {
     setState({
       startingSnapshot: false,
     });
     ping();
-    if (option === "full") {
+    if (data.option === "full") {
       history.push("/snapshots");
     } else {
       history.push(`/snapshots/partial/${app.slug}`);
@@ -193,18 +193,6 @@ export const DashboardSnapshotsCard = (props: Props) => {
   };
 
   const onCreateSnapshotError = (err: Error) => {
-    // need to figure out a way to handle 409 error code,
-    // not important here since we render this component when velero is installed
-    // will be useful if we use useCreateSnapshot hook in Snapshots.
-    // if (err.status === 409) {
-    //           if (res.kotsadmRequiresVeleroAccess) {
-    //             setState({
-    //               startingSnapshot: false,
-    //             });
-    //             props.history.replace("/snapshots/settings");
-    //             return;
-    //           }
-    //         }
     setState({
       startingSnapshot: false,
       startSnapshotErr: true,
