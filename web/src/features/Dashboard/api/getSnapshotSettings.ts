@@ -1,3 +1,4 @@
+import { SnapshotSettings } from "@types";
 import { useQuery } from "react-query";
 import { Utilities } from "../../../utilities/utilities";
 
@@ -20,7 +21,7 @@ const getSnapshotSettings = async () => {
 };
 
 export const useSnapshotSettings = (
-  onSuccess: (data: any) => void,
+  onSuccess: (data: SnapshotSettings) => void,
   onError: (error: Error) => void
 ) => {
   return useQuery({
