@@ -1561,6 +1561,7 @@ jobs:
     env:
       APP_SLUG: minimal-rbac
       BASE_KOTS_VERSION: v1.72.0
+      NAMESPACE: generate-manifests
     steps:
       - name: Checkout
         uses: actions/checkout@v2
@@ -1576,7 +1577,7 @@ jobs:
       - name: run kots admin-console generate-manifests without k8s context
         run: |
           set +e
-          ./bin/kots admin-console generate-manifests --shared-password password
+          ./bin/kots admin-console generate-manifests -n $NAMESPACE --shared-password password
       
       - name: validate that ./admin-console exists and is not empty
         run: |
@@ -1608,23 +1609,23 @@ jobs:
       - name: create namespace
         run: |
           set +e
-          kubectl create namespace generate-manifests
+          kubectl create namespace $NAMESPACE
       
       - name: run kots admin-console generate-manifests using base kots version with k8s context
         run: |
           set +e
-          ./kots-$BASE_KOTS_VERSION admin-console generate-manifests -n generate-manifests --shared-password password
+          ./kots-$BASE_KOTS_VERSION admin-console generate-manifests -n $NAMESPACE --shared-password password
       
       - name: apply the generated manifests
         run: |
           set +e
-          kubectl apply -f ./admin-console -n generate-manifests
+          kubectl apply -f ./admin-console -n $NAMESPACE
 
       - name: wait for the kotsadm-minio-0 pod to be created
         run: |
           set +e
           COUNTER=1
-          while [ -z "$(kubectl get pods -n generate-manifests | grep kotsadm-minio-0)" ]; do
+          while [ -z "$(kubectl get pods -n $NAMESPACE | grep kotsadm-minio-0)" ]; do
             COUNTER=$[$COUNTER +1]
             if [ $COUNTER -gt 30 ]; then
               echo "timed out waiting for kotsadm-minio-0 pod to be created"
@@ -1636,12 +1637,12 @@ jobs:
       - name: wait for kotsadm-minio-0 pod to be ready
         run: |
           set +e
-          kubectl wait --for=condition=ready --timeout=180s pod/kotsadm-minio-0 -n generate-manifests
+          kubectl wait --for=condition=ready --timeout=180s pod/kotsadm-minio-0 -n $NAMESPACE
       
       - name: run kots admin-console generate-manifests using new kots version with k8s context
         run: |
           set +e
-          ./bin/kots admin-console generate-manifests -n generate-manifests --shared-password password
+          ./bin/kots admin-console generate-manifests -n $NAMESPACE --shared-password password
       
       - name: validate that ./admin-console/minio-statefulset.yaml has initContainers since a migration is needed
         run: |
@@ -1654,13 +1655,13 @@ jobs:
       - name: apply the generated manifests
         run: |
           set +e
-          kubectl apply -f ./admin-console -n generate-manifests
+          kubectl apply -f ./admin-console -n $NAMESPACE
 
       - name: wait for the kotsadm-minio-0 pod to be created
         run: |
           set +e
           COUNTER=1
-          while [ -z "$(kubectl get pods -n generate-manifests | grep kotsadm-minio-0)" ]; do
+          while [ -z "$(kubectl get pods -n $NAMESPACE | grep kotsadm-minio-0)" ]; do
             COUNTER=$[$COUNTER +1]
             if [ $COUNTER -gt 30 ]; then
               echo "timed out waiting for kotsadm-minio-0 pod to be created"
@@ -1672,12 +1673,12 @@ jobs:
       - name: wait for kotsadm-minio-0 pod to be ready
         run: |
           set +e
-          kubectl wait --for=condition=ready --timeout=180s pod/kotsadm-minio-0 -n generate-manifests
+          kubectl wait --for=condition=ready --timeout=180s pod/kotsadm-minio-0 -n $NAMESPACE
       
       - name: run kots admin-console generate-manifests using new kots version with k8s context
         run: |
           set +e
-          ./bin/kots admin-console generate-manifests -n generate-manifests --shared-password password
+          ./bin/kots admin-console generate-manifests -n $NAMESPACE --shared-password password
       
       - name: validate that ./admin-console/minio-statefulset.yaml does not have initContainers since a migration is not needed
         run: |
@@ -1690,13 +1691,13 @@ jobs:
       - name: apply the generated manifests
         run: |
           set +e
-          kubectl apply -f ./admin-console -n generate-manifests
+          kubectl apply -f ./admin-console -n $NAMESPACE
 
       - name: wait for the kotsadm-minio-0 pod to be created
         run: |
           set +e
           COUNTER=1
-          while [ -z "$(kubectl get pods -n generate-manifests | grep kotsadm-minio-0)" ]; do
+          while [ -z "$(kubectl get pods -n $NAMESPACE | grep kotsadm-minio-0)" ]; do
             COUNTER=$[$COUNTER +1]
             if [ $COUNTER -gt 30 ]; then
               echo "timed out waiting for kotsadm-minio-0 pod to be created"
@@ -1708,7 +1709,23 @@ jobs:
       - name: wait for kotsadm-minio-0 pod to be ready
         run: |
           set +e
-          kubectl wait --for=condition=ready --timeout=180s pod/kotsadm-minio-0 -n generate-manifests
+          kubectl wait --for=condition=ready --timeout=180s pod/kotsadm-minio-0 -n $NAMESPACE
+
+      - name: print pods and logs on failure
+        if: failure()
+        run: |
+          echo "------pods:"
+          kubectl -n $NAMESPACE get pods
+          echo "------kotsadm logs"
+          kubectl logs -l app=kotsadm --tail=100 --namespace $NAMESPACE
+
+      - name: Generate support bundle on failure
+        if: failure()
+        uses: ./.github/actions/generate-support-bundle
+        with:
+          kots-namespace: "$APP_SLUG"
+          aws-access-key-id: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_ACCESS_KEY_ID }}'
+          aws-secret-access-key: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_SECRET_ACCESS_KEY }}'
 
 
   validate-min-kots-version:
