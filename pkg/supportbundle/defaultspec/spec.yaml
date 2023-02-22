@@ -27,10 +27,10 @@ spec:
         selector:
           - app=kotsadm-rqlite
         command:
-          - wget
-        args:
-          - -qO-
-          - kotsadm:${RQLITE_PASSWORD}@localhost:4001/db/backup?fmt=sql
+          - sh
+          - -c
+          - |
+            wget -qO- kotsadm:${RQLITE_PASSWORD}@localhost:4001/db/backup?fmt=sql  
         timeout: 10s
     - exec:
         args:
