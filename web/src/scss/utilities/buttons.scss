@@ -138,7 +138,7 @@
     background-color: #ffffff;
     border-width: 1px;
     border-style: solid;
-    border-color: $primary-color;
+    border-color: var(--primary-color, $primary-color);
     color: $primary-color;
     box-shadow: none;
 
