@@ -10,7 +10,6 @@ const getSnapshotSettings = async () => {
     method: "GET",
   });
   const response = await res.json();
-  console.log(response, "res");
   if (!res.ok && res.status !== 200) {
     const error = new Error("could not create a snapshot");
 

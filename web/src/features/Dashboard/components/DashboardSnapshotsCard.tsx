@@ -7,7 +7,7 @@ import "@src/scss/components/watches/DashboardCard.scss";
 import InlineDropdown from "@src/components/shared/InlineDropdown";
 import SnapshotDifferencesModal from "@src/components/modals/SnapshotDifferencesModal";
 import Icon from "@src/components/Icon";
-import { App, KotsParams, Snapshot } from "@types";
+import { App, KotsParams } from "@types";
 import { RouteComponentProps } from "react-router-dom";
 import { usePrevious } from "@src/hooks/usePrevious";
 import { useCreateSnapshot } from "../api/createSnapshot";
@@ -43,6 +43,7 @@ const DESTINATIONS = [
     label: "Host Path",
   },
 ];
+
 type SnapshotSettings = {
   store: {
     aws: {
@@ -87,7 +88,6 @@ type State = {
   readableName: string | undefined;
   selectedDestination: { value: string; label: string } | undefined;
   snapshotDifferencesModal: boolean;
-  snapshotSettings: SnapshotSettings | null;
   snapshotSettingsErr: boolean;
   snapshotSettingsErrMsg: string;
   startingSnapshot: boolean;
@@ -112,7 +112,6 @@ export const DashboardSnapshotsCard = (props: Props) => {
       readableName: "",
       selectedDestination: undefined,
       snapshotDifferencesModal: false,
-      snapshotSettings: null,
       snapshotSettingsErr: false,
       snapshotSettingsErrMsg: "",
       startingSnapshot: false,
@@ -122,10 +121,31 @@ export const DashboardSnapshotsCard = (props: Props) => {
   );
   const { app, ping, isSnapshotAllowed } = props;
   const { selectedDestination } = state;
-  const previousSnapshotSettings = usePrevious(state.snapshotSettings);
 
-  const setCurrentProvider = (snapshotSettings: Snapshot | undefined) => {
-    console.log("snapshotSettings", snapshotSettings);
+  const onSuccess = (result: SnapshotSettings) => {
+    setState({
+      kotsadmRequiresVeleroAccess: false,
+      isLoadingSnapshotSettings: false,
+      snapshotSettingsErr: false,
+      snapshotSettingsErrMsg: "",
+    });
+
+    setCurrentProvider(result);
+  };
+  const onError = (err: Error) => {
+    setState({
+      isLoadingSnapshotSettings: false,
+      snapshotSettingsErr: true,
+      snapshotSettingsErrMsg: err.message,
+    });
+  };
+
+  const { data: snapshotSettings } = useSnapshotSettings(onSuccess, onError);
+  const previousSnapshotSettings = usePrevious(snapshotSettings);
+
+  const setCurrentProvider = (
+    snapshotSettings: SnapshotSettings | undefined
+  ) => {
     if (!snapshotSettings) {
       return;
     }
@@ -255,7 +275,7 @@ export const DashboardSnapshotsCard = (props: Props) => {
 
         const result = await res.json();
         setState({
-          snapshotSettings: result,
+          // snapshotSettings: result,
           kotsadmRequiresVeleroAccess: false,
           isLoadingSnapshotSettings: false,
           snapshotSettingsErr: false,
@@ -272,46 +292,15 @@ export const DashboardSnapshotsCard = (props: Props) => {
       });
   };
 
-  const onSuccess = (result: Snapshot) => {
-    setState({
-      snapshotSettings: result,
-      kotsadmRequiresVeleroAccess: false,
-      isLoadingSnapshotSettings: false,
-      snapshotSettingsErr: false,
-      snapshotSettingsErrMsg: "",
-    });
-    setCurrentProvider(result);
-  };
-  const onError = (err: Error) => {
-    setState({
-      isLoadingSnapshotSettings: false,
-      snapshotSettingsErr: true,
-      snapshotSettingsErrMsg: err.message,
-    });
-  };
-
-  const { data: hookSnapshotSettings } = useSnapshotSettings(
-    onSuccess,
-    onError
-  );
-
   const toggleSnaphotDifferencesModal = () => {
     setState({
       snapshotDifferencesModal: !state.snapshotDifferencesModal,
     });
   };
 
-  /// useEffects /////
   useEffect(() => {
-    fetchSnapshotSettings();
-  }, []);
-
-  useEffect(() => {
-    if (
-      state.snapshotSettings !== previousSnapshotSettings &&
-      state.snapshotSettings
-    ) {
-      setCurrentProvider(state.snapshotSettings);
+    if (snapshotSettings !== previousSnapshotSettings && snapshotSettings) {
+      setCurrentProvider(snapshotSettings);
     }
   }, []);
   /// useEffects /////
