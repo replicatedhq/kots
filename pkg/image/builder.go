@@ -12,6 +12,7 @@ import (
 	"runtime"
 	"sort"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/containers/image/v5/copy"
@@ -81,6 +82,7 @@ func RewriteImages(srcRegistry, destRegistry registrytypes.RegistryOptions, appS
 func GetPrivateImages(baseDir string, kotsKindsImages []string, checkedImages map[string]types.ImageInfo, allPrivate bool, dockerHubRegistry registrytypes.RegistryOptions, parentHelmChartPath string, useHelmInstall map[string]bool) ([]string, []k8sdoc.K8sDoc, error) {
 	uniqueImages := make(map[string]bool)
 
+	var uncheckedImages []string
 	objectsWithImages := make([]k8sdoc.K8sDoc, 0) // all objects where images are referenced from
 
 	for _, image := range kotsKindsImages {
@@ -126,7 +128,7 @@ func GetPrivateImages(baseDir string, kotsKindsImages []string, checkedImages ma
 
 			return listImagesInFile(contents, func(images []string, doc k8sdoc.K8sDoc) error {
 				numImages := 0
-				for idx, image := range images {
+				for _, image := range images {
 					numImages = numImages + 1
 					if allPrivate {
 						checkedImages[image] = types.ImageInfo{
@@ -141,14 +143,17 @@ func GetPrivateImages(baseDir string, kotsKindsImages []string, checkedImages ma
 					if i, ok := checkedImages[image]; ok {
 						isPrivate = i.IsPrivate
 					} else {
-						p, err := IsPrivateImage(image, dockerHubRegistry)
-						if err != nil {
-							return errors.Wrapf(err, "failed to check if image %d of %d in %q is private", idx+1, len(images), info.Name())
-						}
-						isPrivate = p
-						checkedImages[image] = types.ImageInfo{
-							IsPrivate: p,
-						}
+						uncheckedImages = append(uncheckedImages, image)
+						/*
+							p, err := IsPrivateImage(image, dockerHubRegistry)
+							if err != nil {
+								return errors.Wrapf(err, "failed to check if image %d of %d in %q is private", idx+1, len(images), info.Name())
+							}
+							isPrivate = p
+							checkedImages[image] = types.ImageInfo{
+								IsPrivate: p,
+							}
+						*/
 					}
 
 					if !isPrivate {
@@ -169,6 +174,12 @@ func GetPrivateImages(baseDir string, kotsKindsImages []string, checkedImages ma
 		return nil, nil, errors.Wrap(err, "failed to walk upstream dir")
 	}
 
+	// Check for private images:
+	err = checkForPrivateImages(uncheckedImages, checkedImages, uniqueImages, dockerHubRegistry)
+	if err != nil {
+		return nil, nil, errors.Wrap(err, "failed to check for private images")
+	}
+
 	result := make([]string, 0, len(uniqueImages))
 	for i := range uniqueImages {
 		result = append(result, i)
@@ -176,6 +187,37 @@ func GetPrivateImages(baseDir string, kotsKindsImages []string, checkedImages ma
 	sort.Strings(result) // sort the images to get an ordered and reproducible output for easier testing
 
 	return result, objectsWithImages, nil
+}
+
+func checkForPrivateImages(uncheckedImages []string, checkedImages map[string]types.ImageInfo, uniqueImages map[string]bool, dockerHubRegistry registrytypes.RegistryOptions) error {
+	if len(uncheckedImages) == 0 {
+		return nil
+	}
+
+	var wg sync.WaitGroup
+	var mutex sync.Mutex
+	for _, image := range uncheckedImages {
+		wg.Add(1)
+		go func(image string) {
+			defer wg.Done()
+			isPrivate, err := IsPrivateImage(image, dockerHubRegistry)
+			if err != nil {
+				logger.Errorf("Failed to check if image %s is private: %v", image, err)
+				return
+			}
+			mutex.Lock()
+			checkedImages[image] = types.ImageInfo{
+				IsPrivate: isPrivate,
+			}
+			if isPrivate {
+				uniqueImages[image] = true
+			}
+			mutex.Unlock()
+		}(image)
+	}
+	wg.Wait()
+
+	return nil
 }
 
 func rewriteImagesInFileBetweenRegistries(srcRegistry, destRegistry registrytypes.RegistryOptions, appSlug string, log *logger.CLILogger, reportWriter io.Writer, fileData []byte, copyImages, allImagesPrivate bool, checkedImages map[string]types.ImageInfo, savedImages map[string]bool, dockerHubRegistry registrytypes.RegistryOptions) ([]kustomizeimage.Image, error) {
