@@ -1638,6 +1638,11 @@ jobs:
         run: |
           set +e
           kubectl wait --for=condition=ready --timeout=180s pod/kotsadm-minio-0 -n $NAMESPACE
+
+      - name: wait for the kotsadm deployment to be ready
+        run: |
+          set +e
+          kubectl wait --for=condition=available --timeout=180s deployment/kotsadm -n $NAMESPACE
       
       - name: run kots admin-console generate-manifests using new kots version with k8s context
         run: |
@@ -1679,6 +1684,11 @@ jobs:
         run: |
           set +e
           kubectl wait --for=condition=ready --timeout=180s pod/kotsadm-minio-0 -n $NAMESPACE
+
+      - name: wait for the kotsadm deployment to be ready
+        run: |
+          set +e
+          kubectl wait --for=condition=available --timeout=180s deployment/kotsadm -n $NAMESPACE
       
       - name: run kots admin-console generate-manifests using new kots version with k8s context
         run: |
@@ -1720,6 +1730,11 @@ jobs:
         run: |
           set +e
           kubectl wait --for=condition=ready --timeout=180s pod/kotsadm-minio-0 -n $NAMESPACE
+
+      - name: wait for the kotsadm deployment to be ready
+        run: |
+          set +e
+          kubectl wait --for=condition=available --timeout=180s deployment/kotsadm -n $NAMESPACE
 
       - name: print pods and logs on failure
         if: failure()
