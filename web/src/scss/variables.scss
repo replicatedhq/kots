@@ -45,9 +45,9 @@ $border-radius: 4px;
   --sub-nav-text-color: $sub-nav-text-color;
 
   // colors
-  --primary-color: var(--override-blue, $primary-color);
-  --secondary-color: var(--override-dark-gray, $secondary-color);
-  --accent-color: var(--override-blue, $accent-color);
+  --primary-color: var(--override-blue, #{$primary-color});
+  --secondary-color: var(--override-dark-gray, #{$secondary-color});
+  --accent-color: var(--override-blue, #{$accent-color});
   --light-accent: $light-accent;
   --muted-light-accent: $muted-light-accent;
   --really-light-accent: $really-light-accent;
@@ -69,8 +69,8 @@ $border-radius: 4px;
   --text-color-info: $text-color-info;
 
   // links
-  --link-color: var(--override-blue, $link-color);
-  --link-hover-color: var(--override-blue, $link-hover-color);
+  --link-color: var(--override-blue, #{$link-color});
+  --link-hover-color: var(--override-blue, #{$link-hover-color});
 
   // misc
   --gitops-color: $gitops-color;
