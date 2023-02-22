@@ -1660,6 +1660,7 @@ jobs:
       - name: wait for the kotsadm-minio-0 pod to be created
         run: |
           set +e
+          sleep 10
           COUNTER=1
           while [ -z "$(kubectl get pods -n $NAMESPACE | grep kotsadm-minio-0)" ]; do
             COUNTER=$[$COUNTER +1]
@@ -1696,6 +1697,7 @@ jobs:
       - name: wait for the kotsadm-minio-0 pod to be created
         run: |
           set +e
+          sleep 10
           COUNTER=1
           while [ -z "$(kubectl get pods -n $NAMESPACE | grep kotsadm-minio-0)" ]; do
             COUNTER=$[$COUNTER +1]
