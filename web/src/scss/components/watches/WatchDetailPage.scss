@@ -37,7 +37,7 @@
       height: 2px;
       position: absolute;
       display: block;
-      background-color: $accent-color;
+      background-color: var(--accent-color);
       bottom: -1px;
       left: 0;
     }

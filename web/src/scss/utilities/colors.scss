@@ -1,13 +1,13 @@
 @import "../variables.scss";
 
 .u-color--primary {
-  background-color:var(--primary-color);
+  background-color: var(--primary-color);
 }
 .u-color--secondary {
   background-color: $sub-nav-color;
 }
 .u-color--accent {
-  background-color: $accent-color;
+  background-color: var(--accent-color);
 }
 .u-color--error {
   background-color: $error-color;
@@ -58,7 +58,7 @@
 .u-linkColor {
   color: var(--link-color);
   &:hover {
-    color: $link-hover-color;
+    color: var(--link-hover-color);
   }
 }
 

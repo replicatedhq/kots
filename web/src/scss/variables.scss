@@ -69,8 +69,8 @@ $border-radius: 4px;
   --text-color-info: $text-color-info;
 
   // links
-  --link-color: var(--override-blue, var(--link-color));
-  --link-hover-color: $link-hover-color;
+  --link-color: var(--override-blue, $link-color);
+  --link-hover-color: var(--override-blue, $link-hover-color);
 
   // misc
   --gitops-color: $gitops-color;

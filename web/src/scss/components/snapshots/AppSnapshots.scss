@@ -248,7 +248,7 @@
         height: 2px;
         position: absolute;
         display: block;
-        background-color: $accent-color;
+        background-color: var(--accent-color);
         bottom: 0;
         left: 0;
       }
@@ -283,7 +283,7 @@
         height: 2px;
         position: absolute;
         display: block;
-        background-color: $accent-color;
+        background-color: var(--accent-color);
         bottom: 0;
         left: 0;
       }
@@ -325,7 +325,7 @@
   cursor: pointer;
   outline: none;
   position: relative;
-  background-color:var(--primary-color);
+  background-color: var(--primary-color);
   color: #ffffff;
   border: none;
 

@@ -100,7 +100,7 @@
   user-select: none;
 
   &.is-active {
-    border-bottom: 2px solid $accent-color;
+    border-bottom: 2px solid var(--accent-color);
   }
 
   &:hover {

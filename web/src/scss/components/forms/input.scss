@@ -28,7 +28,7 @@
 
   &:active,
   &:focus {
-    border-color: $accent-color;
+    border-color: var(--accent-color);
   }
 
   &.larger {
