@@ -14,4 +14,4 @@ resources:
 persistentVolume:
   enabled: true
   storageClass: standard
-  size: 30Gi
+  size: 20Gi
