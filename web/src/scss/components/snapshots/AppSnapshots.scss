@@ -317,7 +317,7 @@
 
   &.is-selected {
     background: lighten($primary-color, 43.5%);
-    border: 1px solidvar(--primary-color);
+    border: 1px solid var(--primary-color);
   }
 }
 
