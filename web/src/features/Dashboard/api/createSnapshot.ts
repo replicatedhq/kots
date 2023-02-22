@@ -1,4 +1,4 @@
-import { useQuery } from "react-query";
+import { useMutation } from "react-query";
 import { Utilities } from "../../../utilities/utilities";
 import { useSelectedApp } from "@features/App";
 
@@ -8,12 +8,9 @@ interface SnapshotResponse {
   kotsadmNamespace: string;
   kotsadmRequiresVeleroAccess: boolean;
 }
-interface Snapshot {
-  startingSnapshot: boolean;
-}
 
 export const createSnapshot = async (
-  option: string,
+  option: "full" | "partial",
   appSlug: string
 ): Promise<SnapshotResponse> => {
   let url =
@@ -31,27 +28,23 @@ export const createSnapshot = async (
 
   const response = await res.json();
   if (!res.ok && res.status !== 200) {
-    throw new Error(response.error);
+    const error = new Error("could not create a snapshot");
+    throw error;
   }
 
-  return response;
+  return { ...response, option };
 };
 
-const createSnapshotResponse = (response: SnapshotResponse): Snapshot => {
-  return {
-    startingSnapshot: response.kotsadmRequiresVeleroAccess ? false : true,
-  };
-};
-
-export const useCreateSnapshot = (option: "full" | "partial") => {
+export const useCreateSnapshot = (
+  onSuccess: (data: any) => void,
+  onError: (error: Error) => void
+) => {
   const selectedApp = useSelectedApp();
-  return useQuery({
-    queryFn: () => createSnapshot(option, selectedApp?.slug || ""),
-    queryKey: ["createSnapshot"],
-    select: (response: SnapshotResponse) => {
-      createSnapshotResponse(response);
-    },
-    enabled: false,
+  return useMutation({
+    mutationFn: (option: "full" | "partial") =>
+      createSnapshot(option, selectedApp?.slug || ""),
+    onSuccess,
+    onError,
   });
 };
 
