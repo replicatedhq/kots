@@ -1,7 +1,7 @@
 @import "../variables.scss";
 
 .u-color--primary {
-  background-color: $primary-color;
+  background-color:var(--primary-color);
 }
 .u-color--secondary {
   background-color: $sub-nav-color;

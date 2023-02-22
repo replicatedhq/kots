@@ -131,7 +131,7 @@
       cursor: pointer;
       outline: none;
       position: relative;
-      background-color: $primary-color;
+      background-color:var(--primary-color);
       color: #ffffff;
 
       &:not(:disabled):hover {
@@ -140,7 +140,7 @@
     }
 
     .replicated-select__control {
-      border-color: $primary-color;
+      border-color:var(--primary-color);
       cursor: pointer;
       &.replicated-select__control--is-focused {
         border-color: darken($primary-color, 8%);
@@ -156,7 +156,7 @@
       cursor: pointer;
       outline: none;
       position: relative;
-      background-color: $primary-color;
+      background-color:var(--primary-color);
       color: #ffffff;
 
       &:not(:disabled):hover {
@@ -172,7 +172,7 @@
       height: 20px;
     }
     .css-1wy0on6 {
-      background-color: $primary-color;
+      background-color:var(--primary-color);
       color: #ffffff;
       border-radius: 4px;
 

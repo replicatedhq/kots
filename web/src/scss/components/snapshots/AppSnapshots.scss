@@ -317,7 +317,7 @@
 
   &.is-selected {
     background: lighten($primary-color, 43.5%);
-    border: 1px solid $primary-color;
+    border: 1px solidvar(--primary-color);
   }
 }
 
@@ -325,7 +325,7 @@
   cursor: pointer;
   outline: none;
   position: relative;
-  background-color: $primary-color;
+  background-color:var(--primary-color);
   color: #ffffff;
   border: none;
 

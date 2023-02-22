@@ -45,7 +45,7 @@ $border-radius: 4px;
   --sub-nav-text-color: $sub-nav-text-color;
 
   // colors
-  --primary-color: var(--override-blue, $primary-color);
+  --primary-color: var(--override-blue,var(--primary-color));
   --secondary-color: var(--override-dark-gray, $secondary-color);
   --accent-color: var(--override-blue, $accent-color);
   --light-accent: $light-accent;

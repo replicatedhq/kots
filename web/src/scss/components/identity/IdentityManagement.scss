@@ -42,7 +42,7 @@
 
   &.is-active {
     background: lighten($primary-color, 43.5%);
-    border: 1px solid $primary-color;
+    border: 1px solidvar(--primary-color);
   }
 }
 
