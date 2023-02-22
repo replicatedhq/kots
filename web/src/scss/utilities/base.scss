@@ -24,7 +24,7 @@ body a {
   outline: none;
   cursor: pointer;
   font-weight: 500;
-  color: $link-color;
+  color: var(--link-color);
   &:hover {
     color: $link-hover-color;
   }
@@ -45,7 +45,7 @@ body a {
 }
 
 .link {
-  color: $link-color;
+  color: var(--link-color);
   cursor: pointer;
   font-weight: 500;
   position: relative;

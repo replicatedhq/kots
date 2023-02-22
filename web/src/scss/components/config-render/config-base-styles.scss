@@ -31,7 +31,7 @@
     text-decoration: none;
     outline: none;
     font-weight: 500;
-    color: $link-color;
+    color: var(--link-color);
 
     &:hover {
       cursor: pointer;

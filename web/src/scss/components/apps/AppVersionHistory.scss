@@ -169,7 +169,7 @@ $cell-width: 140px;
 }
 
 .release-notes-link {
-  color: $link-color;
+  color: var(--link-color);
 
   &:hover {
     cursor: pointer;

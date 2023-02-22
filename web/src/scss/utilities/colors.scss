@@ -56,7 +56,7 @@
   color: $warning-color;
 }
 .u-linkColor {
-  color: $link-color;
+  color: var(--link-color);
   &:hover {
     color: $link-hover-color;
   }
