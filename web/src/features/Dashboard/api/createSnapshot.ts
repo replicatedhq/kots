@@ -1,6 +1,7 @@
 import { useMutation } from "react-query";
 import { Utilities } from "../../../utilities/utilities";
 import { useSelectedApp } from "@features/App";
+import { SnapshotSettings } from "@types";
 
 interface SnapshotResponse {
   success: boolean;
@@ -36,7 +37,7 @@ export const createSnapshot = async (
 };
 
 export const useCreateSnapshot = (
-  onSuccess: (data: any) => void,
+  onSuccess: () => void,
   onError: (error: Error) => void
 ) => {
   const selectedApp = useSelectedApp();

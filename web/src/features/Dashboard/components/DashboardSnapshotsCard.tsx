@@ -1,13 +1,12 @@
 import React, { useEffect, useReducer } from "react";
 import { withRouter } from "@src/utilities/react-router-utilities";
 import { Link, useHistory } from "react-router-dom";
-import { Utilities } from "@src/utilities/utilities";
 import find from "lodash/find";
 import "@src/scss/components/watches/DashboardCard.scss";
 import InlineDropdown from "@src/components/shared/InlineDropdown";
 import SnapshotDifferencesModal from "@src/components/modals/SnapshotDifferencesModal";
 import Icon from "@src/components/Icon";
-import { App, KotsParams } from "@types";
+import { App, KotsParams, SnapshotSettings } from "@types";
 import { RouteComponentProps } from "react-router-dom";
 import { usePrevious } from "@src/hooks/usePrevious";
 import { useCreateSnapshot } from "../api/createSnapshot";
@@ -43,35 +42,6 @@ const DESTINATIONS = [
     label: "Host Path",
   },
 ];
-
-type SnapshotSettings = {
-  store: {
-    aws: {
-      region: string;
-      bucket: string;
-      accessKeyId: string;
-      secretAccessKey: string;
-    };
-    azure: { accountName: string; accountKey: string; container: string };
-    gcp: { bucket: string; projectId: string; serviceAccountKey: string };
-    other: {
-      endpoint: string;
-      bucket: string;
-      accessKeyId: string;
-      secretAccessKey: string;
-    };
-    internal: { bucket: string };
-    nfs: { server: string; path: string };
-    hostpath: { path: string };
-    bucket: string;
-    path: string;
-    fileSystem: string;
-  };
-  fileSystemConfig: {
-    nfs: { server: string; path: string };
-    hostPath: { path: string };
-  };
-};
 
 type Props = {
   app: App;
@@ -121,27 +91,6 @@ export const DashboardSnapshotsCard = (props: Props) => {
   );
   const { app, ping, isSnapshotAllowed } = props;
   const { selectedDestination } = state;
-
-  const onSuccess = (result: SnapshotSettings) => {
-    setState({
-      kotsadmRequiresVeleroAccess: false,
-      isLoadingSnapshotSettings: false,
-      snapshotSettingsErr: false,
-      snapshotSettingsErrMsg: "",
-    });
-
-    setCurrentProvider(result);
-  };
-  const onError = (err: Error) => {
-    setState({
-      isLoadingSnapshotSettings: false,
-      snapshotSettingsErr: true,
-      snapshotSettingsErrMsg: err.message,
-    });
-  };
-
-  const { data: snapshotSettings } = useSnapshotSettings(onSuccess, onError);
-  const previousSnapshotSettings = usePrevious(snapshotSettings);
 
   const setCurrentProvider = (
     snapshotSettings: SnapshotSettings | undefined
@@ -205,6 +154,27 @@ export const DashboardSnapshotsCard = (props: Props) => {
     });
   };
 
+  const onSuccess = () => {
+    setState({
+      kotsadmRequiresVeleroAccess: false,
+      isLoadingSnapshotSettings: false,
+      snapshotSettingsErr: false,
+      snapshotSettingsErrMsg: "",
+    });
+
+    setCurrentProvider(snapshotSettings);
+  };
+  const onError = (err: Error) => {
+    setState({
+      isLoadingSnapshotSettings: false,
+      snapshotSettingsErr: true,
+      snapshotSettingsErrMsg: err.message,
+    });
+  };
+
+  const { data: snapshotSettings } = useSnapshotSettings(onSuccess, onError);
+  const previousSnapshotSettings = usePrevious(snapshotSettings);
+
   const onCreateSnapshotSuccess = ({
     option,
   }: {
@@ -246,51 +216,6 @@ export const DashboardSnapshotsCard = (props: Props) => {
     onCreateSnapshotSuccess,
     onCreateSnapshotError
   );
-
-  const fetchSnapshotSettings = async () => {
-    setState({
-      isLoadingSnapshotSettings: true,
-      snapshotSettingsErr: false,
-      snapshotSettingsErrMsg: "",
-      minimalRBACKotsadmNamespace: "",
-    });
-
-    fetch(`${process.env.API_ENDPOINT}/snapshots/settings`, {
-      method: "GET",
-      headers: {
-        Authorization: Utilities.getToken(),
-        "Content-Type": "application/json",
-      },
-    })
-      .then(async (res) => {
-        if (!res.ok && res.status === 409) {
-          const result = await res.json();
-          if (result.kotsadmRequiresVeleroAccess) {
-            setState({ isLoadingSnapshotSettings: false });
-            // requires velero access so do something here to show that
-            // openConfigureSnapshotsMinimalRBACModal(result.kotsadmRequiresVeleroAccess, result.kotsadmNamespace);
-            return;
-          }
-        }
-
-        const result = await res.json();
-        setState({
-          // snapshotSettings: result,
-          kotsadmRequiresVeleroAccess: false,
-          isLoadingSnapshotSettings: false,
-          snapshotSettingsErr: false,
-          snapshotSettingsErrMsg: "",
-        });
-        setCurrentProvider(result);
-      })
-      .catch((err) => {
-        setState({
-          isLoadingSnapshotSettings: false,
-          snapshotSettingsErr: true,
-          snapshotSettingsErrMsg: err,
-        });
-      });
-  };
 
   const toggleSnaphotDifferencesModal = () => {
     setState({
