@@ -106,132 +106,109 @@ func CreateRenderedSpec(app apptypes.AppType, sequence int64, kotsKinds *kotsuti
 		}
 	}
 
-	builtBundle, err = injectDefaults(app, builtBundle, opts, namespacesToCollect, namespacesToAnalyze)
+	// split the default kotsadm support bundle into multiple support bundles
+	builtBundles, err := injectDefaults(app, builtBundle, opts, namespacesToCollect, namespacesToAnalyze)
+
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to inject defaults")
 	}
 
-	s := serializer.NewYAMLSerializer(serializer.DefaultMetaFactory, scheme.Scheme, scheme.Scheme)
-	var b bytes.Buffer
-	if err := s.Encode(builtBundle, &b); err != nil {
-		return nil, errors.Wrap(err, "failed to encode support bundle")
-	}
+	for key, builtBundle := range builtBundles {
+		s := serializer.NewYAMLSerializer(serializer.DefaultMetaFactory, scheme.Scheme, scheme.Scheme)
+		var b bytes.Buffer
+		if err := s.Encode(builtBundle, &b); err != nil {
+			return nil, errors.Wrap(err, "failed to encode support bundle")
+		}
 
-	templatedSpec := b.Bytes()
+		templatedSpec := b.Bytes()
 
-	renderedSpec, err := helper.RenderAppFile(app, &sequence, templatedSpec, kotsKinds, util.PodNamespace)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed render support bundle spec")
-	}
-
-	// unmarshal the spec, look for image replacements in collectors and then remarshal
-	// we do this after template rendering to support templating and then replacement
-	supportBundle, err := kotsutil.LoadSupportBundleFromContents(renderedSpec)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to unmarshal rendered support bundle spec")
-	}
-
-	var registrySettings registrytypes.RegistrySettings
-	if !util.IsHelmManaged() {
-		s, err := store.GetStore().GetRegistryDetailsForApp(app.GetID())
+		renderedSpec, err := helper.RenderAppFile(app, &sequence, templatedSpec, kotsKinds, util.PodNamespace)
 		if err != nil {
-			return nil, errors.Wrap(err, "failed to get registry settings for app")
+			return nil, errors.Wrap(err, "failed render support bundle spec")
 		}
-		registrySettings = s
-	}
 
-	collectors, err := registry.UpdateCollectorSpecsWithRegistryData(supportBundle.Spec.Collectors, registrySettings, kotsKinds.Installation.Spec.KnownImages, kotsKinds.License, &kotsKinds.KotsApplication)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to update collectors")
-	}
-	supportBundle.Spec.Collectors = collectors
-	b.Reset()
-	if err := s.Encode(supportBundle, &b); err != nil {
-		return nil, errors.Wrap(err, "failed to encode support bundle")
-	}
-	renderedSpec = b.Bytes()
+		// unmarshal the spec, look for image replacements in collectors and then remarshal
+		// we do this after template rendering to support templating and then replacement
+		supportBundle, err := kotsutil.LoadSupportBundleFromContents(renderedSpec)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to unmarshal rendered support bundle spec")
+		}
 
-	secretName := GetSpecSecretName(app.GetSlug())
-	existingSecret, err := clientset.CoreV1().Secrets(util.PodNamespace).Get(context.TODO(), secretName, metav1.GetOptions{})
-	labels := kotstypes.MergeLabels(kotstypes.GetKotsadmLabels(), kotstypes.GetTroubleshootLabels())
-	if err != nil {
-		if kuberneteserrors.IsNotFound(err) {
-			secret := &corev1.Secret{
-				TypeMeta: metav1.TypeMeta{
-					APIVersion: "v1",
-					Kind:       "Secret",
-				},
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      secretName,
-					Namespace: util.PodNamespace,
-					Labels:    labels,
-				},
-				Data: map[string][]byte{
-					SpecDataKey: renderedSpec,
-				},
-			}
-
-			_, err = clientset.CoreV1().Secrets(util.PodNamespace).Create(context.TODO(), secret, metav1.CreateOptions{})
+		var registrySettings registrytypes.RegistrySettings
+		if !util.IsHelmManaged() {
+			s, err := store.GetStore().GetRegistryDetailsForApp(app.GetID())
 			if err != nil {
-				return nil, errors.Wrap(err, "failed to create support bundle secret")
+				return nil, errors.Wrap(err, "failed to get registry settings for app")
 			}
+			registrySettings = s
+		}
 
-			logger.Debugf("created %q default support bundle spec secret", app.GetSlug())
-			return supportBundle, nil
+		collectors, err := registry.UpdateCollectorSpecsWithRegistryData(supportBundle.Spec.Collectors, registrySettings, kotsKinds.Installation.Spec.KnownImages, kotsKinds.License, &kotsKinds.KotsApplication)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to update collectors")
+		}
+		supportBundle.Spec.Collectors = collectors
+		b.Reset()
+		if err := s.Encode(supportBundle, &b); err != nil {
+			return nil, errors.Wrap(err, "failed to encode support bundle")
+		}
+		renderedSpec = b.Bytes()
+		secretName := GetSpecSecretName(app.GetSlug())
+		if key != "kotsadm" {
+			secretName = GetSpecSecretName(app.GetSlug() + "-" + key)
+		}
+
+		existingSecret, err := clientset.CoreV1().Secrets(util.PodNamespace).Get(context.TODO(), secretName, metav1.GetOptions{})
+		labels := kotstypes.MergeLabels(kotstypes.GetKotsadmLabels(), kotstypes.GetTroubleshootLabels())
+		if err != nil {
+			if kuberneteserrors.IsNotFound(err) {
+				secret := &corev1.Secret{
+					TypeMeta: metav1.TypeMeta{
+						APIVersion: "v1",
+						Kind:       "Secret",
+					},
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      secretName,
+						Namespace: util.PodNamespace,
+						Labels:    labels,
+					},
+					Data: map[string][]byte{
+						SpecDataKey: renderedSpec,
+					},
+				}
+
+				_, err = clientset.CoreV1().Secrets(util.PodNamespace).Create(context.TODO(), secret, metav1.CreateOptions{})
+				if err != nil {
+					return nil, errors.Wrap(err, "failed to create support bundle secret")
+				}
+
+				logger.Debugf("created %q default support bundle spec secret", app.GetSlug())
+				// return supportBundle, nil
+			} else {
+				return nil, errors.Wrap(err, "failed to read support bundle secret")
+			}
 		} else {
-			return nil, errors.Wrap(err, "failed to read support bundle secret")
+			if existingSecret.Data == nil {
+				existingSecret.Data = map[string][]byte{}
+			}
+			existingSecret.Data[SpecDataKey] = renderedSpec
+			existingSecret.ObjectMeta.Labels = labels
+
+			_, err = clientset.CoreV1().Secrets(util.PodNamespace).Update(context.TODO(), existingSecret, metav1.UpdateOptions{})
+			if err != nil {
+				return nil, errors.Wrap(err, "failed to update support bundle secret")
+			}
 		}
 	}
 
-	if existingSecret.Data == nil {
-		existingSecret.Data = map[string][]byte{}
-	}
-	existingSecret.Data[SpecDataKey] = renderedSpec
-	existingSecret.ObjectMeta.Labels = labels
-
-	_, err = clientset.CoreV1().Secrets(util.PodNamespace).Update(context.TODO(), existingSecret, metav1.UpdateOptions{})
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to update support bundle secret")
-	}
-
-	// Include discovered support bundle specs. Perform this action here so
-	// as not to add discovered specs to the default support bundle spec secret.
-	return addDiscoveredSpecs(supportBundle, app, clientset), nil
+	// Include discovered support bundle specs and default kotsadm support bundle spec. Perform this action here so
+	// as not to add discovered specs to the default support bundle spec secret.c
+	return addDiscoveredSpecs(builtBundles["kotsadm"], app, clientset), nil
 }
 
-// injectDefaults injects the kotsadm default collectors/analyzers in the the support bundle specification.
-func injectDefaults(app apptypes.AppType, b *troubleshootv1beta2.SupportBundle, opts types.TroubleshootOptions, namespacesToCollect []string, namespacesToAnalyze []string) (*troubleshootv1beta2.SupportBundle, error) {
+// addClusterSpecificSpec adds cluster specific and upload results URI to the support bundle
+func addClusterSpecificSpec(app apptypes.AppType, b *troubleshootv1beta2.SupportBundle, opts types.TroubleshootOptions, namespacesToCollect []string, namespacesToAnalyze []string, imageName string, pullSecret *troubleshootv1beta2.ImagePullSecrets) *troubleshootv1beta2.SupportBundle {
 	supportBundle := b.DeepCopy()
-
-	clientset, err := k8sutil.GetClientset()
-	if err != nil {
-		logger.Errorf("Failed to get kubernetes clientset: %v", err)
-	}
-
-	var imageName string
-	var pullSecret *troubleshootv1beta2.ImagePullSecrets
-	if clientset != nil {
-		imageName, pullSecret, err = getImageAndSecret(context.TODO(), clientset)
-		if err != nil {
-			logger.Errorf("Failed to get kotsadm image and secret: %v", err)
-		}
-	}
-
-	if supportBundle == nil {
-		supportBundle = &troubleshootv1beta2.SupportBundle{}
-	}
-	if supportBundle.Spec.Collectors == nil {
-		supportBundle.Spec.Collectors = make([]*troubleshootv1beta2.Collect, 0)
-	}
-	if supportBundle.Spec.Analyzers == nil {
-		supportBundle.Spec.Analyzers = make([]*troubleshootv1beta2.Analyze, 0)
-	}
-
-	supportBundle = addDefaultTroubleshoot(supportBundle, imageName, pullSecret)
-	supportBundle = addDefaultDynamicTroubleshoot(supportBundle, app, imageName, pullSecret)
-	supportBundle = populateNamespaces(supportBundle, namespacesToCollect, namespacesToAnalyze)
-	supportBundle = deduplicatedCollectors(supportBundle)
-	supportBundle = deduplicatedAnalyzers(supportBundle)
 
 	// determine an upload URL
 	var uploadURL string
@@ -239,7 +216,7 @@ func injectDefaults(app apptypes.AppType, b *troubleshootv1beta2.SupportBundle, 
 	randomBundleID := strings.ToLower(rand.String(32))
 	if opts.DisableUpload {
 		//Just use the library internally
-		return supportBundle, nil
+		return supportBundle
 	} else if opts.Origin != "" {
 		uploadURL = fmt.Sprintf("%s/api/v1/troubleshoot/%s/%s", opts.Origin, app.GetID(), randomBundleID)
 		redactURL = fmt.Sprintf("%s/api/v1/troubleshoot/supportbundle/%s/redactions", opts.Origin, randomBundleID)
@@ -261,7 +238,91 @@ func injectDefaults(app apptypes.AppType, b *troubleshootv1beta2.SupportBundle, 
 		},
 	}
 
-	return supportBundle, nil
+	supportBundle = addDefaultDynamicTroubleshoot(supportBundle, app, imageName, pullSecret)
+	supportBundle = populateNamespaces(supportBundle, namespacesToCollect, namespacesToAnalyze)
+	supportBundle = deduplicatedCollectors(supportBundle)
+	supportBundle = deduplicatedAnalyzers(supportBundle)
+
+	return supportBundle
+}
+
+// createClusterSpecificSupportBundle creates a support bundle spec with only cluster specific collectors, analyzers and upload result URI.
+func createClusterSpecificSupportBundle(app apptypes.AppType, b *troubleshootv1beta2.SupportBundle, opts types.TroubleshootOptions, namespacesToCollect []string, namespacesToAnalyze []string, imageName string, pullSecret *troubleshootv1beta2.ImagePullSecrets) *troubleshootv1beta2.SupportBundle {
+	supportBundle := b.DeepCopy()
+	supportBundle.Spec.Collectors = make([]*troubleshootv1beta2.Collect, 0)
+	supportBundle.Spec.Analyzers = make([]*troubleshootv1beta2.Analyze, 0)
+
+	supportBundle = addClusterSpecificSpec(app, supportBundle, opts, namespacesToCollect, namespacesToAnalyze, imageName, pullSecret)
+
+	return supportBundle
+}
+
+// addDefaultSpec adds the default collectors and analyzers to the support bundle spec.
+func addDefaultSpec(app apptypes.AppType, b *troubleshootv1beta2.SupportBundle, opts types.TroubleshootOptions, namespacesToCollect []string, namespacesToAnalyze []string, imageName string, pullSecret *troubleshootv1beta2.ImagePullSecrets) *troubleshootv1beta2.SupportBundle {
+	supportBundle := b.DeepCopy()
+
+	supportBundle = addDefaultTroubleshoot(supportBundle, imageName, pullSecret)
+	supportBundle = populateNamespaces(supportBundle, namespacesToCollect, namespacesToAnalyze)
+	supportBundle = deduplicatedCollectors(supportBundle)
+	supportBundle = deduplicatedAnalyzers(supportBundle)
+
+	return supportBundle
+}
+
+// createDefaultSupportBundle creates a support bundle spec with only default collectors and analyzers.
+func createDefaultSupportBundle(app apptypes.AppType, b *troubleshootv1beta2.SupportBundle, opts types.TroubleshootOptions, namespacesToCollect []string, namespacesToAnalyze []string, imageName string, pullSecret *troubleshootv1beta2.ImagePullSecrets) *troubleshootv1beta2.SupportBundle {
+	supportBundle := b.DeepCopy()
+	supportBundle.Spec.Collectors = make([]*troubleshootv1beta2.Collect, 0)
+	supportBundle.Spec.Analyzers = make([]*troubleshootv1beta2.Analyze, 0)
+
+	supportBundle = addDefaultSpec(app, supportBundle, opts, namespacesToCollect, namespacesToAnalyze, imageName, pullSecret)
+
+	return supportBundle
+}
+
+// injectDefaults injects the kotsadm default collectors/analyzers in the the support bundle specification and split into multiple specs.
+func injectDefaults(app apptypes.AppType, b *troubleshootv1beta2.SupportBundle, opts types.TroubleshootOptions, namespacesToCollect []string, namespacesToAnalyze []string) (map[string]*troubleshootv1beta2.SupportBundle, error) {
+	supportBundle := b.DeepCopy()
+
+	clientset, err := k8sutil.GetClientset()
+	if err != nil {
+		logger.Errorf("Failed to get kubernetes clientset: %v", err)
+		return nil, err
+	}
+
+	var imageName string
+	var pullSecret *troubleshootv1beta2.ImagePullSecrets
+	if clientset != nil {
+		imageName, pullSecret, err = getImageAndSecret(context.TODO(), clientset)
+		if err != nil {
+			logger.Errorf("Failed to get kotsadm image and secret: %v", err)
+			return nil, err
+		}
+	}
+
+	if supportBundle == nil {
+		supportBundle = &troubleshootv1beta2.SupportBundle{}
+	}
+	if supportBundle.Spec.Collectors == nil {
+		supportBundle.Spec.Collectors = make([]*troubleshootv1beta2.Collect, 0)
+	}
+	if supportBundle.Spec.Analyzers == nil {
+		supportBundle.Spec.Analyzers = make([]*troubleshootv1beta2.Analyze, 0)
+	}
+
+	venderSupportBundle := supportBundle.DeepCopy()
+	clusterSpecificSupportBundle := createClusterSpecificSupportBundle(app, supportBundle, opts, namespacesToCollect, namespacesToAnalyze, imageName, pullSecret)
+	defaultSupportBundle := createDefaultSupportBundle(app, supportBundle, opts, namespacesToCollect, namespacesToAnalyze, imageName, pullSecret)
+
+	supportBundle = addClusterSpecificSpec(app, supportBundle, opts, namespacesToCollect, namespacesToAnalyze, imageName, pullSecret)
+	supportBundle = addDefaultSpec(app, supportBundle, opts, namespacesToCollect, namespacesToAnalyze, imageName, pullSecret)
+
+	return map[string]*troubleshootv1beta2.SupportBundle{
+		"vender":           venderSupportBundle,          //vendors' application support-bundle spec
+		"cluster-specific": clusterSpecificSupportBundle, //cluster-specific support-bundle spec with upload results URI
+		"default":          defaultSupportBundle,         //default support-bundle spec
+		"kotsadm":          supportBundle,                //default kotsadm support-bundle spec (backward compatible)
+	}, nil
 }
 
 func addDiscoveredSpecs(
