@@ -430,7 +430,7 @@ jobs:
     - id: get_id
       run: |
         id=${{ github.sha }}
-        echo "name=id::${id:0:7}" > "$GITHUB_OUTPUT"
+        echo "name=id::${id:0:7}" >> "$GITHUB_OUTPUT"
 
   regression-test:
     if: github.ref_type == 'branch'
