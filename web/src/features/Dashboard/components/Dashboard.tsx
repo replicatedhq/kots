@@ -533,35 +533,34 @@ const Dashboard = (props: Props) => {
     };
   }, []);
 
+  // need to add a function to setstate when checkForUpdates gets triggered
 
-  // need to add a function to setstate when checkForUpdates gets triggered 
-
-  const onSuccess = (response: Updates) => { 
+  const onSuccess = (response: Updates) => {
     if (response.availableUpdates === 0) {
-              setState({
-                checkingForUpdates: false,
-                noUpdatesAvalable: true,
-              });
-              let timerId = setTimeout(() => {
-                setState({ noUpdatesAvalable: false });
-              }, 3000);
-              timer.current.push(timerId);
-            } else {
-              refetchUpdateDownloadStatus();
-              setState({ checkingForUpdates: true });
-            }
-  }
+      setState({
+        checkingForUpdates: false,
+        noUpdatesAvalable: true,
+      });
+      let timerId = setTimeout(() => {
+        setState({ noUpdatesAvalable: false });
+      }, 3000);
+      timer.current.push(timerId);
+    } else {
+      refetchUpdateDownloadStatus();
+      setState({ checkingForUpdates: true });
+    }
+  };
 
-  const onError = (err:Error) => { 
+  const onError = (err: Error) => {
     setState({
-              checkingForUpdateError: true,
-              checkingForUpdates: false,
-              checkingUpdateMessage: err?.message
-                ? err?.message
-                : "There was an error checking for updates.",
-            });
-  }
-  const {refetch: checkForUpdates} = useCheckForUpdates(onSuccess,onError);
+      checkingForUpdateError: true,
+      checkingForUpdates: false,
+      checkingUpdateMessage: err?.message
+        ? err?.message
+        : "There was an error checking for updates.",
+    });
+  };
+  const { refetch: checkForUpdates } = useCheckForUpdates(onSuccess, onError);
 
   // const onCheckForUpdates = async () => {
   //   setState({

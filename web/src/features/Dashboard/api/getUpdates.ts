@@ -9,7 +9,7 @@ interface UpdateResponse {
   availableReleases: { sequence: number; version: string };
 }
 export interface Updates {
-  availableUpdates?: number
+  availableUpdates?: number;
   checkingForUpdates: boolean;
   checkingForUpdatesError?: boolean;
   checkingUpdateMessage?: string;
@@ -50,16 +50,19 @@ const makeUpdatesResponse = (response: UpdateResponse): Updates => {
 };
 
 // update name later
-export const useCheckForUpdates = (onSuccess:(response: Updates) => void,onError: (err:Error) => void) => {
+export const useCheckForUpdates = (
+  onSuccess: (response: Updates) => void,
+  onError: (err: Error) => void
+) => {
   const selectedApp = useSelectedApp();
   return useQuery({
     queryFn: () => getCheckForUpdates(selectedApp?.slug || ""),
     queryKey: ["getCheckForUpdates"],
-    
+
     enabled: true,
     select: (data) => makeUpdatesResponse(data),
     onSuccess,
-    onError
+    onError,
   });
 };
 
