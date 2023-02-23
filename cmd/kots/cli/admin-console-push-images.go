@@ -3,12 +3,12 @@ package cli
 import (
 	"context"
 	"fmt"
-	"net/url"
 	"os"
 	"strings"
 
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/docker/registry"
+	dockerregistry "github.com/replicatedhq/kots/pkg/docker/registry"
 	registrytypes "github.com/replicatedhq/kots/pkg/docker/registry/types"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/kotsadm"
@@ -43,24 +43,19 @@ func AdminPushImagesCmd() *cobra.Command {
 			imageSource := args[0]
 			endpoint := args[1]
 
-			namespace := v.GetString("namespace")
-			if namespace == "" {
-				namespace = metav1.NamespaceDefault
+			hostname, err := getHostnameFromEndpoint(endpoint)
+			if err != nil {
+				return errors.Wrap(err, "failed get hostname from endpoint")
+			}
+
+			namespace, err := getNamespaceOrDefault(v.GetString("namespace"))
+			if err != nil {
+				return errors.Wrap(err, "failed to get namespace")
 			}
 
 			username := v.GetString("registry-username")
 			password := v.GetString("registry-password")
 			if username == "" && password == "" {
-				hostname, err := getHostnameFromEndpoint(endpoint)
-				if err != nil {
-					return errors.Wrap(err, "failed get hostname from endpoint")
-				}
-
-				namespace, err := getNamespaceOrDefault(v.GetString("namespace"))
-				if err != nil {
-					return errors.Wrap(err, "failed to get namespace")
-				}
-
 				u, p, err := getRegistryCredentialsFromSecret(hostname, namespace)
 				if err != nil {
 					if !kuberneteserrors.IsNotFound(err) {
@@ -81,6 +76,16 @@ func AdminPushImagesCmd() *cobra.Command {
 				password = login.Password
 			}
 
+			if !v.GetBool("skip-registry-check") {
+				log.ActionWithSpinner("Validating registry information")
+
+				if err := dockerregistry.CheckAccess(hostname, username, password); err != nil {
+					log.FinishSpinnerWithError()
+					return fmt.Errorf("Failed to test access to %q with user %q: %v", hostname, username, err)
+				}
+				log.FinishSpinner()
+			}
+
 			options := kotsadmtypes.PushImagesOptions{
 				KotsadmTag: v.GetString("kotsadm-tag"),
 				Registry: registrytypes.RegistryOptions{
@@ -91,8 +96,7 @@ func AdminPushImagesCmd() *cobra.Command {
 				ProgressWriter: os.Stdout,
 			}
 
-			_, err := os.Stat(imageSource)
-			if err == nil {
+			if _, err := os.Stat(imageSource); err == nil {
 				err := kotsadm.PushImages(imageSource, options)
 				if err != nil {
 					return errors.Wrap(err, "failed to push images")
@@ -112,6 +116,7 @@ func AdminPushImagesCmd() *cobra.Command {
 
 	cmd.Flags().String("registry-username", "", "user name to use to authenticate with the registry")
 	cmd.Flags().String("registry-password", "", "password to use to authenticate with the registry")
+	cmd.Flags().Bool("skip-registry-check", false, "skip the connectivity test and validation of the provided registry information")
 
 	cmd.Flags().String("kotsadm-tag", "", "set to override the tag of kotsadm. this may create an incompatible deployment because the version of kots and kotsadm are designed to work together")
 	cmd.Flags().MarkHidden("kotsadm-tag")
@@ -148,18 +153,4 @@ func getRegistryCredentialsFromSecret(endpoint string, namespace string) (userna
 	username = credentials.Username
 	password = credentials.Password
 	return
-}
-
-func getHostnameFromEndpoint(endpoint string) (string, error) {
-	if !strings.HasPrefix(endpoint, "http") {
-		// url.Parse doesn't work without scheme
-		endpoint = fmt.Sprintf("https://%s", endpoint)
-	}
-
-	parsed, err := url.Parse(endpoint)
-	if err != nil {
-		return "", errors.Wrap(err, "failed to parse endpoint")
-	}
-
-	return parsed.Hostname(), nil
 }

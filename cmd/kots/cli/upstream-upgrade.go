@@ -7,6 +7,7 @@ import (
 	"os"
 
 	"github.com/pkg/errors"
+	dockerregistry "github.com/replicatedhq/kots/pkg/docker/registry"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/kurl"
 	"github.com/replicatedhq/kots/pkg/logger"
@@ -35,6 +36,7 @@ func UpstreamUpgradeCmd() *cobra.Command {
 			}
 
 			appSlug := args[0]
+			log := logger.NewCLILogger(cmd.OutOrStdout())
 
 			clientset, err := k8sutil.GetClientset()
 			if err != nil {
@@ -56,12 +58,31 @@ func UpstreamUpgradeCmd() *cobra.Command {
 				return errors.Wrap(err, "failed to get namespace")
 			}
 
+			registryConfig, err := getRegistryConfig(v)
+			if err != nil {
+				return errors.Wrap(err, "failed to get registry config")
+			}
+
+			if registryConfig.OverrideRegistry != "" && !v.GetBool("skip-registry-check") {
+				log.ActionWithSpinner("Validating registry information")
+
+				hostname, err := getHostnameFromEndpoint(registryConfig.OverrideRegistry)
+				if err != nil {
+					log.FinishSpinnerWithError()
+					return errors.Wrap(err, "failed get hostname from endpoint")
+				}
+
+				if err := dockerregistry.CheckAccess(hostname, registryConfig.Username, registryConfig.Password); err != nil {
+					log.FinishSpinnerWithError()
+					return fmt.Errorf("Failed to test access to %q with user %q: %v", hostname, registryConfig.Username, err)
+				}
+
+				log.FinishSpinner()
+			}
+
 			upgradeOptions := upstream.UpgradeOptions{
 				AirgapBundle:       v.GetString("airgap-bundle"),
-				RegistryEndpoint:   v.GetString("kotsadm-registry"),
-				RegistryNamespace:  v.GetString("kotsadm-namespace"),
-				RegistryUsername:   v.GetString("registry-username"),
-				RegistryPassword:   v.GetString("registry-password"),
+				RegistryConfig:     *registryConfig,
 				IsKurl:             isKurl,
 				DisableImagePush:   v.GetBool("disable-image-push"),
 				Namespace:          namespace,
@@ -75,7 +96,6 @@ func UpstreamUpgradeCmd() *cobra.Command {
 			stopCh := make(chan struct{})
 			defer close(stopCh)
 
-			log := logger.NewCLILogger(cmd.OutOrStdout())
 			localPort, errChan, err := upload.StartPortForward(v.GetString("namespace"), stopCh, log)
 			if err != nil {
 				return err
@@ -138,15 +158,14 @@ func UpstreamUpgradeCmd() *cobra.Command {
 	cmd.Flags().Bool("wait", true, "set to false to download the updates in the background")
 
 	cmd.Flags().String("airgap-bundle", "", "path to the application airgap bundle where application images and metadata will be loaded from")
-	cmd.Flags().String("kotsadm-registry", "", "registry endpoint where application images will be pushed")
-	cmd.Flags().String("kotsadm-namespace", "", "registry namespace to use for application images")
-	cmd.Flags().String("registry-username", "", "user name to use to authenticate with the registry")
-	cmd.Flags().String("registry-password", "", "password to use to authenticate with the registry")
 	cmd.Flags().Bool("disable-image-push", false, "set to true to disable images from being pushed to private registry")
+	cmd.Flags().Bool("skip-registry-check", false, "set to true to skip the connectivity test and validation of the provided registry information")
 	cmd.Flags().StringP("output", "o", "", "output format (currently supported: json)")
 
 	cmd.Flags().Bool("debug", false, "when set, log full error traces in some cases where we provide a pretty message")
 	cmd.Flags().MarkHidden("debug")
+
+	registryFlags(cmd.Flags())
 
 	return cmd
 }

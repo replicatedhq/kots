@@ -12,7 +12,7 @@ import AutomaticUpdatesModal from "@src/components/modals/AutomaticUpdatesModal"
 import SnapshotDifferencesModal from "@src/components/modals/SnapshotDifferencesModal";
 import Modal from "react-modal";
 import { Repeater } from "@src/utilities/repeater";
-import { Utilities, isAwaitingResults } from "@src/utilities/utilities";
+import { Utilities } from "@src/utilities/utilities";
 import { AirgapUploader } from "@src/utilities/airgapUploader";
 import { useSelectedAppClusterDashboardWithIntercept } from "../api/useSelectedAppClusterDashboard";
 import { useHistory, useRouteMatch } from "react-router-dom";
@@ -43,6 +43,7 @@ import {
   UpdateStatusResponse,
   useUpdateDownloadStatus,
 } from "../api/getUpdateDownloadStatus";
+import { useAppDownstream } from "../api/getAppDownstream";
 //import LicenseTester from "./LicenseTester";
 
 type Props = {
@@ -90,7 +91,6 @@ type State = {
   dashboard: DashboardResponse;
   displayErrorModal: boolean;
   downstream: Downstream | null;
-  fetchAppDownstreamJob: Repeater;
   getAppDashboardJob: Repeater;
   gettingAppErrMsg: string;
   gettingAppLicenseErrMsg: string;
@@ -138,7 +138,6 @@ const Dashboard = (props: Props) => {
       currentVersion: null,
       displayErrorModal: false,
       downstream: null,
-      fetchAppDownstreamJob: new Repeater(),
       getAppDashboardJob: new Repeater(),
       gettingAppErrMsg: "",
       gettingAppLicenseErrMsg: "",
@@ -174,57 +173,28 @@ const Dashboard = (props: Props) => {
   const { app, isBundleUploading, isVeleroInstalled } = props;
   const airgapUploader = useRef<AirgapUploader | null>(null);
 
-  const fetchAppDownstream = async () => {
-    if (!app) {
-      return;
-    }
+  const timer = useRef<NodeJS.Timeout[]>([]);
 
-    try {
-      const res = await fetch(`${process.env.API_ENDPOINT}/app/${app.slug}`, {
-        headers: {
-          Authorization: Utilities.getToken(),
-          "Content-Type": "application/json",
-        },
-        method: "GET",
-      });
-      if (res.ok && res.status == 200) {
-        const appResponse = await res.json();
-        if (!isAwaitingResults(appResponse.downstream.pendingVersions)) {
-          state.fetchAppDownstreamJob.stop();
-        }
-        setState({
-          downstream: appResponse.downstream,
-        });
-        // wait a couple of seconds to avoid any race condiditons with the update checker then refetch the app to ensure we have the latest everything
-        // this is hacky and I hate it but it's just building up more evidence in my case for having the FE be able to listen to BE envents
-        // if that was in place we would have no need for this becuase the latest version would just be pushed down.
-        setTimeout(() => {
-          props.refreshAppData();
-        }, 2000);
-      } else {
-        setState({
-          loadingApp: false,
-          gettingAppErrMsg: `Unexpected status code: ${res.status}`,
-          displayErrorModal: true,
-        });
-      }
-    } catch (err) {
-      console.log(err);
-      const errorMessage =
-        err instanceof Error
-          ? err.message
-          : "Something went wrong, please try again.";
-      setState({
-        loadingApp: false,
-        gettingAppErrMsg: errorMessage,
-        displayErrorModal: true,
-      });
-    }
+  const onAppDownstreamSuccess = (data: Downstream) => {
+    setState({ downstream: data });
+    let timerId = setTimeout(() => {
+      props.refreshAppData();
+    }, 2000);
+    timer.current.push(timerId);
   };
 
-  const startFetchAppDownstreamJob = () => {
-    state.fetchAppDownstreamJob.start(fetchAppDownstream, 2000);
+  const onAppDownstreamError = (data: { message: string }) => {
+    setState({
+      loadingApp: false,
+      gettingAppErrMsg: data.message,
+      displayErrorModal: true,
+    });
   };
+
+  const { refetch: refetchAppDownstream } = useAppDownstream(
+    onAppDownstreamSuccess,
+    onAppDownstreamError
+  );
 
   const setWatchState = (newAppState: App) => {
     setState({
@@ -257,7 +227,7 @@ const Dashboard = (props: Props) => {
     if (props.updateCallback) {
       props.updateCallback();
     }
-    startFetchAppDownstreamJob();
+    refetchAppDownstream();
   };
 
   const onUpdateDownloadStatusError = (data: Error) => {
@@ -673,7 +643,9 @@ const Dashboard = (props: Props) => {
       getAppLicense();
     }
     return () => {
-      state.fetchAppDownstreamJob.stop();
+      timer.current.forEach((time: NodeJS.Timeout) => {
+        clearTimeout(time);
+      });
     };
   }, []);
 
@@ -710,9 +682,10 @@ const Dashboard = (props: Props) => {
             checkingForUpdates: false,
             noUpdatesAvalable: true,
           });
-          setTimeout(() => {
+          let timerId = setTimeout(() => {
             setState({ noUpdatesAvalable: false });
           }, 3000);
+          timer.current.push(timerId);
         } else {
           refetchUpdateDownloadStatus();
           setState({ checkingForUpdates: true });
@@ -799,7 +772,7 @@ const Dashboard = (props: Props) => {
                     uploadingAirgapFile={uploadingAirgapFile}
                     airgapUploadError={airgapUploadError}
                     refetchData={props.updateCallback}
-                    downloadCallback={startFetchAppDownstreamJob}
+                    downloadCallback={refetchAppDownstream}
                     uploadProgress={state.uploadProgress}
                     uploadSize={state.uploadSize}
                     uploadResuming={state.uploadResuming}

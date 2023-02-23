@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/containers/image/v5/pkg/docker/config"
 	"github.com/containers/image/v5/types"
@@ -17,6 +18,7 @@ import (
 
 var (
 	insecureClient = &http.Client{
+		Timeout: 30 * time.Second,
 		Transport: &http.Transport{
 			TLSClientConfig: &tls.Config{
 				InsecureSkipVerify: true,
@@ -71,6 +73,11 @@ func CheckAccess(endpoint, username, password string) error {
 
 	authURL := challenges[0].Parameters["realm"]
 	basicAuthToken := makeBasicAuthToken(username, password)
+
+	// some registries (e.g. ACR - Azure Container Registry) require the "service" parameter to be set.
+	if service := challenges[0].Parameters["service"]; service != "" {
+		authURL = fmt.Sprintf("%s?service=%s", authURL, service)
+	}
 
 	if IsECREndpoint(endpoint) && username != "AWS" {
 		token, err := GetECRBasicAuthToken(endpoint, username, password)

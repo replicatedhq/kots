@@ -2017,6 +2017,83 @@ jobs:
           aws-secret-access-key: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_SECRET_ACCESS_KEY }}'
 
 
+  validate-registry-check:
+    runs-on: ubuntu-20.04
+    needs: [ enable-tests, can-run-ci, build-kots, build-kurl-proxy, build-migrations, push-minio, push-rqlite ]
+    strategy:
+      fail-fast: false
+      matrix:
+        k8s_version: [ v1.26.1-k3s1 ]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - uses: replicatedhq/action-k3s@main
+        with:
+          version: ${{ matrix.k8s_version }}
+          arguments: ${{ startsWith(matrix.k8s_version, 'v1.22') && '--egress-selector-mode disabled' || '' }}
+
+      - name: download kots binary
+        uses: actions/download-artifact@v2
+        with:
+          name: kots
+          path: bin/
+
+      - run: chmod +x bin/kots
+
+      - name: run the test
+        run: |
+          set +e
+
+          ./bin/kots admin-console push-images \
+            not-an-app.airgap localhost:1234/not-a-namespace \
+            --registry-username not-a-username \
+            --registry-password not-a-password > output.txt 2>&1
+
+          if ! grep -q 'Failed to test access' output.txt; then
+            printf "Expected registry validation to fail before pushing images, but did not.\n\n"
+            cat output.txt
+            exit 1
+          fi
+
+          rm output.txt
+
+          ./bin/kots install not-an-app \
+            --airgap-bundle not-an-app.airgap \
+            --kotsadm-registry localhost:1234/not-a-namespace \
+            --registry-username not-a-username \
+            --registry-password not-a-password > output.txt 2>&1
+
+          if ! grep -q 'Failed to test access' output.txt; then
+            printf "Expected registry validation to fail before installation, but did not.\n\n"
+            cat output.txt
+            exit 1
+          fi
+
+          rm output.txt
+
+          ./bin/kots upstream upgrade not-an-app \
+            --airgap-bundle not-an-app.airgap \
+            --kotsadm-registry localhost:1234/not-a-namespace \
+            --registry-username not-a-username \
+            --registry-password not-a-password \
+            --namespace not-a-namespace > output.txt 2>&1
+
+          if ! grep -q 'Failed to test access' output.txt; then
+            printf "Expected registry validation to fail before upgrading, but did not.\n\n"
+            cat output.txt
+            exit 1
+          fi
+
+      - name: Generate support bundle on failure
+        if: failure()
+        uses: ./.github/actions/generate-support-bundle
+        with:
+          kots-namespace: "$APP_SLUG"
+          aws-access-key-id: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_ACCESS_KEY_ID }}'
+          aws-secret-access-key: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_SECRET_ACCESS_KEY }}'
+
+
   validate-pr-tests:
     runs-on: ubuntu-20.04
     needs:
@@ -2047,6 +2124,7 @@ jobs:
       - validate-kubernetes-installer-preflight
       - validate-postgres-to-rqlite-migration
       - validate-remove-app
+      - validate-registry-check
       # cli-only tests
       - validate-kots-push-images-anonymous
     steps:
