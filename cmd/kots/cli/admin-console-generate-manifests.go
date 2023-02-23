@@ -44,13 +44,16 @@ func AdminGenerateManifestsCmd() *cobra.Command {
 				Username:          v.GetString("registry-username"),
 				Password:          v.GetString("registry-password"),
 			}
+
+			log := logger.NewCLILogger(cmd.OutOrStdout())
+
 			if clientset, err := k8sutil.GetClientset(); err == nil {
 				isOpenShift, isGKEAutopilot = k8sutil.IsOpenShift(clientset), k8sutil.IsGKEAutopilot(clientset)
 				migrateToMinioXl, currentMinioImage, _ = kotsadm.IsMinioXlMigrationNeeded(clientset, namespace)
 				if newRegistryConfig, err := getRegistryConfig(v, clientset); err == nil {
 					registryConfig = *newRegistryConfig
 				} else {
-					logger.Error(errors.Wrap(err, "failed to get registry config"))
+					log.Error(errors.Wrap(err, "failed to get registry config"))
 				}
 			}
 
@@ -88,8 +91,6 @@ func AdminGenerateManifestsCmd() *cobra.Command {
 					return errors.Wrapf(err, "failed to write file %s", fileRenderPath)
 				}
 			}
-
-			log := logger.NewCLILogger(cmd.OutOrStdout())
 			log.Info("Admin Console manifests created in %s", filepath.Join(renderDir, "admin-console"))
 
 			return nil
