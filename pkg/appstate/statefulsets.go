@@ -18,6 +18,7 @@ import (
 const (
 	StatefulSetResourceKind    = "statefulset"
 	StatefulSetPodVersionLabel = "controller-revision-hash"
+	StatefulSetOwnerKind       = "StatefulSet"
 )
 
 type statefulSetEventHandler struct {
@@ -129,6 +130,19 @@ func (h *statefulSetEventHandler) calculateStatefulSetState(r *appsv1.StatefulSe
 	// If the pod version labels are not all the same, then the statefulset is updating.
 	currentVersion := ""
 	for _, pod := range pods.Items {
+		validOwner := false
+		for _, owner := range pod.ObjectMeta.OwnerReferences {
+			if owner.Kind == StatefulSetOwnerKind && owner.Name == r.ObjectMeta.Name {
+				validOwner = true
+				break
+			}
+		}
+
+		if !validOwner {
+			log.Printf("skipping pod %s due to invalid owner reference for %s", pod.ObjectMeta.Name, r.ObjectMeta.Name)
+			continue
+		}
+
 		version, exists := pod.Labels[StatefulSetPodVersionLabel]
 		if !exists {
 			log.Printf("failed to find %s label for pod %s", StatefulSetPodVersionLabel, pod.Name)
