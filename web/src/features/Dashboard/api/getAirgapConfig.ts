@@ -16,6 +16,7 @@ export const getAirgapConfig = async (appSlug: string): Promise<number> => {
   });
   const response = await res.json();
   if (res.ok) {
+    console.log("response", response);
     simultaneousUploads = response.simultaneousUploads;
 
     return simultaneousUploads;
