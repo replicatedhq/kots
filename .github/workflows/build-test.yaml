@@ -45,7 +45,7 @@ jobs:
       tag: ${{ steps.get_tag.outputs.GIT_TAG }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
       - name: Get tags
         id: get_tag
         uses: ./.github/actions/version-tag
@@ -56,7 +56,7 @@ jobs:
     needs: [ can-run-ci ]
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
       - name: Test Okteto development environment
         uses: replicatedhq/action-okteto-test@main
         with:
@@ -72,23 +72,23 @@ jobs:
       # Please read https://securitylab.github.com/research/github-actions-preventing-pwn-requests/
       # this action checks out the remote branch and runs CI
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           ref: ${{github.event.pull_request.head.ref}}
           repository: ${{github.event.pull_request.head.repo.full_name}}
 
       - name: Setup Node.js environment
-        uses: actions/setup-node@v2
+        uses: actions/setup-node@v3
         with:
           node-version: '17.x'
 
       - name: Build web
         env:
           GIT_TAG: ${{ needs.generate-tag.outputs.tag }}
-        run: export $(cat .image.env | sed 's/#.*//g' | xargs) && make -C web deps lint test-unit build-kotsadm
+        run: mapfile -t envs < <(grep -v '#.*' < .image.env) && export "${envs[@]}" && make -C web deps lint test-unit build-kotsadm
 
       - name: Upload web artifact
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: web
           path: ./web/dist
@@ -99,20 +99,20 @@ jobs:
     needs: [ can-run-ci, build-web, generate-tag ]
 
     steps:
-      - uses: actions/setup-go@v2
+      - uses: actions/setup-go@v3
         with:
           go-version: '^1.19.2'
 
       - name: setup env
         run: |
-          echo "GOPATH=$(go env GOPATH)" >> $GITHUB_ENV
-          echo "$(go env GOPATH)/bin" >> $GITHUB_PATH
+          echo "GOPATH=$(go env GOPATH)" >> "$GITHUB_ENV"
+          echo "$(go env GOPATH)/bin" >> "$GITHUB_PATH"
         shell: bash
 
       # This workflow trigger may lead to malicious PR authors being able to obtain repository write permissions or stealing repository secrets.
       # Please read https://securitylab.github.com/research/github-actions-preventing-pwn-requests/
       # this action checks out the remote branch and runs CI
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         with:
           ref: ${{github.event.pull_request.head.ref}}
           repository: ${{github.event.pull_request.head.repo.full_name}}
@@ -128,20 +128,20 @@ jobs:
             ${{ runner.os }}-go-kots-
 
       - name: Download web artifact
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: web
           path: ./web/dist
       - name: Build kots
         env:
           GIT_TAG: ${{ needs.generate-tag.outputs.tag }}
-        run: export $(cat .image.env | sed 's/#.*//g' | xargs) && make vet ci-test kots build
-      - uses: actions/upload-artifact@v2
+        run: mapfile -t envs < <(grep -v '#.*' < .image.env) && export "${envs[@]}" && make vet ci-test kots build
+      - uses: actions/upload-artifact@v3
         with:
           name: kots
           path: bin/kots
       - name: build and push kotsadm for e2e
-        uses: docker/build-push-action@v2
+        uses: docker/build-push-action@v3
         with:
           tags: ttl.sh/automated-${{ github.run_id }}/kotsadm:24h
           context: ./
@@ -154,7 +154,7 @@ jobs:
     needs: [ can-run-ci ]
 
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         with:
           ref: main
           repository: replicatedhq/kots-helm
@@ -163,8 +163,8 @@ jobs:
         env:
           GIT_COMMIT: ${{ github.sha }}
         run: |
-          curl -O -L https://raw.githubusercontent.com/replicatedhq/kots/${GIT_COMMIT}/.image.env
-          export $(cat .image.env | sed 's/#.*//g' | xargs)
+          curl -O -L "https://raw.githubusercontent.com/replicatedhq/kots/${GIT_COMMIT}/.image.env"
+          mapfile -t envs < <(grep -v '#.*' < .image.env) && export "${envs[@]}"
 
           export CHART_VERSION=0.0.${{ github.run_id }}-automated
           export KOTS_VERSION=24h
@@ -174,19 +174,20 @@ jobs:
           envsubst < Chart.yaml.tmpl > Chart.yaml
           envsubst < values.yaml.tmpl > values.yaml
 
-          export CHART_NAME=`helm package . | rev | cut -d/ -f1 | rev`
-          helm push $CHART_NAME oci://ttl.sh/automated-${{ github.run_id }}
+          CHART_NAME=$(helm package . | rev | cut -d/ -f1 | rev)
+          export CHART_NAME
+          helm push "$CHART_NAME" oci://ttl.sh/automated-${{ github.run_id }}
 
 
   build-e2e:
     runs-on: ubuntu-20.04
     needs: [ can-run-ci ]
     steps:
-      - uses: actions/setup-go@v2
+      - uses: actions/setup-go@v3
         with:
           go-version: '^1.19.2'
 
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         with:
           ref: ${{github.event.pull_request.head.ref}}
           repository: ${{github.event.pull_request.head.repo.full_name}}
@@ -202,7 +203,7 @@ jobs:
             ${{ runner.os }}-go-e2e-
       - run: make -C e2e build deps
       - run: docker save e2e-deps -o e2e/bin/e2e-deps.tar
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v3
         with:
           name: e2e
           path: e2e/bin/
@@ -212,20 +213,20 @@ jobs:
     runs-on: ubuntu-20.04
     needs: [ can-run-ci ]
     steps:
-      - uses: actions/setup-go@v2
+      - uses: actions/setup-go@v3
         with:
           go-version: '^1.19.2'
 
       - name: setup env
         run: |
-          echo "GOPATH=$(go env GOPATH)" >> $GITHUB_ENV
-          echo "$(go env GOPATH)/bin" >> $GITHUB_PATH
+          echo "GOPATH=$(go env GOPATH)" >> "$GITHUB_ENV"
+          echo "$(go env GOPATH)/bin" >> "$GITHUB_PATH"
         shell: bash
 
       # This workflow trigger may lead to malicious PR authors being able to obtain repository write permissions or stealing repository secrets.
       # Please read https://securitylab.github.com/research/github-actions-preventing-pwn-requests/
       # this action creates a branch based on remote branch and runs the tests
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         with:
           ref: ${{github.event.pull_request.head.ref}}
           repository: ${{github.event.pull_request.head.repo.full_name}}
@@ -240,10 +241,10 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-go-kurlproxy-
 
-      - run: export $(cat .image.env | sed 's/#.*//g' | xargs) && make -C kurl_proxy test build
+      - run: mapfile -t envs < <(grep -v '#.*' < .image.env) && export "${envs[@]}" && make -C kurl_proxy test build
 
       - name: build and push kurl_proxy for e2e
-        uses: docker/build-push-action@v2
+        uses: docker/build-push-action@v3
         with:
           tags: ttl.sh/automated-${{ github.run_id }}/kurl-proxy:24h
           context: ./kurl_proxy
@@ -257,26 +258,26 @@ jobs:
     steps:
       - name: setup env
         run: |
-          echo "GOPATH=$(go env GOPATH)" >> $GITHUB_ENV
-          echo "$(go env GOPATH)/bin" >> $GITHUB_PATH
+          echo "GOPATH=$(go env GOPATH)" >> "$GITHUB_ENV"
+          echo "$(go env GOPATH)/bin" >> "$GITHUB_PATH"
         shell: bash
 
       # This workflow trigger may lead to malicious PR authors being able to obtain repository write permissions or stealing repository secrets.
       # Please read https://securitylab.github.com/research/github-actions-preventing-pwn-requests/
       # this action creates a branch based on remote branch and runs the tests
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         with:
           ref: ${{github.event.pull_request.head.ref}}
           repository: ${{github.event.pull_request.head.repo.full_name}}
 
       - name: load environment variables from .image.env
-        uses: falti/dotenv-action@v0.2
+        uses: falti/dotenv-action@v1
         id: dotenv
         with:
           path: .image.env
 
       - name: build and push migrations for e2e
-        uses: docker/build-push-action@v2
+        uses: docker/build-push-action@v3
         with:
           tags: ttl.sh/automated-${{ github.run_id }}/kotsadm-migrations:24h
           context: ./migrations
@@ -289,10 +290,10 @@ jobs:
     runs-on: ubuntu-20.04
     needs: [ can-run-ci ]
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
 
       - name: load environment variables from .image.env
-        uses: falti/dotenv-action@v0.2
+        uses: falti/dotenv-action@v1
         id: dotenv
         with:
           path: .image.env
@@ -308,10 +309,10 @@ jobs:
     runs-on: ubuntu-20.04
     needs: [ can-run-ci ]
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
 
       - name: load environment variables from .image.env
-        uses: falti/dotenv-action@v0.2
+        uses: falti/dotenv-action@v1
         id: dotenv
         with:
           path: .image.env
@@ -327,10 +328,10 @@ jobs:
     runs-on: ubuntu-20.04
     needs: [ can-run-ci ]
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
 
       - name: load environment variables from .image.env
-        uses: falti/dotenv-action@v0.2
+        uses: falti/dotenv-action@v1
         id: dotenv
         with:
           path: .image.env
@@ -346,10 +347,10 @@ jobs:
     runs-on: ubuntu-20.04
     needs: [ can-run-ci ]
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
 
       - name: load environment variables from .image.env
-        uses: falti/dotenv-action@v0.2
+        uses: falti/dotenv-action@v1
         id: dotenv
         with:
           path: .image.env
@@ -367,7 +368,7 @@ jobs:
     outputs:
       ok-to-test: ${{ steps.filter.outputs.kurl-addon }}
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - uses: dorny/paths-filter@v2
         id: filter
         with:
@@ -381,14 +382,14 @@ jobs:
     needs: [ can-run-ci, enable-tests, generate-tag, kurl-addon-changes-filter, build-kots, build-kurl-proxy, build-migrations, push-dex ]
     steps:
       - name: checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
       - name: set outputs
         id: vars
         run: |
           addon_version=${{ needs.generate-tag.outputs.tag }}
-          echo "::set-output name=addon_version::${addon_version#v}"
+          echo "name=addon_version::${addon_version#v}" >> "$GITHUB_OUTPUT"
       - name: download kots binary
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: kots
           path: bin/
@@ -405,7 +406,9 @@ jobs:
           AWS_DEFAULT_REGION: us-east-1
         with:
           addon_version: ${{ steps.vars.outputs.addon_version }}
-          s3_prefix: ${{ github.event.action == 'workflow_dispatch' && 'test/' || inputs.s3_prefix }}
+          # REVIEW: this workflow does not have any trigger that takes inputs (including workflow_dispatch)
+          #    The parameter is not set on the called wokflow.
+          # s3_prefix: ${{ github.event.action == 'workflow_dispatch' && 'test/' || inputs.s3_prefix }}
           kotsadm_image_registry: ttl.sh
           kotsadm_image_namespace: automated-${{ github.run_id }}
           kotsadm_image_tag: 24h
@@ -416,10 +419,12 @@ jobs:
         with:
           addon_version: ${{ steps.vars.outputs.addon_version }}
           addon_package_url: ${{ steps.addon-generate.outputs.addon_package_url }}
-          priority: ${{ inputs.priority }}
+          # REVIEW: this workflow does not have any trigger that takes inputs (including workflow_dispatch)
+          #    The parameter is not set on the called wokflow.
+          # priority: ${{ inputs.priority }}
           testgrid_api_token: ${{ secrets.TESTGRID_PROD_API_TOKEN }}
       - name: comment testgrid url
-        uses: mshick/add-pr-comment@v1
+        uses: mshick/add-pr-comment@v2
         with:
           message: ${{ steps.addon-test.outputs.testgrid_run_message }}
           repo-token: ${{ secrets.GITHUB_TOKEN }}
@@ -431,14 +436,14 @@ jobs:
     needs: [ enable-tests, can-run-ci, build-kots, build-e2e, build-kurl-proxy, build-migrations, push-minio, push-mc, push-rqlite ]
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
       - name: download e2e deps
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: e2e
           path: e2e/bin/
       - name: download kots binary
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: kots
           path: bin/
@@ -448,6 +453,8 @@ jobs:
           chmod +x bin/*
       - uses: ./.github/actions/kots-e2e
         with:
+          # REVIEW: missing required `kots-namespace` parameter. Set to empty string`
+          kots-namespace: ''
           test-focus: 'Regression'
           k8s-version: 'v1.26.1-k3s1'
           testim-branch: ${{ github.head_ref == 'main' && 'master' || github.head_ref }}
@@ -465,16 +472,16 @@ jobs:
         k8s_version: [ v1.23.15-k3s1,v1.24.9-k3s2,v1.25.6-k3s1,v1.26.1-k3s1 ]
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
       - name: download e2e deps
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: e2e
           path: e2e/bin/
       - run: docker load -i e2e/bin/e2e-deps.tar
       - run: chmod +x e2e/bin/*
       - name: download kots binary
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: kots
           path: bin/
@@ -500,16 +507,16 @@ jobs:
         k8s_version: [ v1.23.15-k3s1,v1.24.9-k3s2,v1.25.6-k3s1,v1.26.1-k3s1 ]
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
       - name: download e2e deps
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: e2e
           path: e2e/bin/
       - run: docker load -i e2e/bin/e2e-deps.tar
       - run: chmod +x e2e/bin/*
       - name: download kots binary
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: kots
           path: bin/
@@ -535,16 +542,16 @@ jobs:
         k8s_version: [ v1.23.15-k3s1,v1.24.9-k3s2,v1.25.6-k3s1,v1.26.1-k3s1 ]
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
       - name: download e2e deps
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: e2e
           path: e2e/bin/
       - run: docker load -i e2e/bin/e2e-deps.tar
       - run: chmod +x e2e/bin/*
       - name: download kots binary
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: kots
           path: bin/
@@ -570,16 +577,16 @@ jobs:
         k8s_version: [ v1.26.1-k3s1 ] # there's no need to run this test on multiple k3s versions
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
       - name: download e2e deps
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: e2e
           path: e2e/bin/
       - run: docker load -i e2e/bin/e2e-deps.tar
       - run: chmod +x e2e/bin/*
       - name: download kots binary
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: kots
           path: bin/
@@ -605,16 +612,16 @@ jobs:
         k8s_version: [ v1.26.1-k3s1 ] # there's no need to run this test on multiple k3s versions
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
       - name: download e2e deps
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: e2e
           path: e2e/bin/
       - run: docker load -i e2e/bin/e2e-deps.tar
       - run: chmod +x e2e/bin/*
       - name: download kots binary
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: kots
           path: bin/
@@ -640,16 +647,16 @@ jobs:
         k8s_version: [ v1.26.1-k3s1 ] # there's no need to run this test on multiple k3s versions
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
       - name: download e2e deps
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: e2e
           path: e2e/bin/
       - run: docker load -i e2e/bin/e2e-deps.tar
       - run: chmod +x e2e/bin/*
       - name: download kots binary
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: kots
           path: bin/
@@ -675,16 +682,16 @@ jobs:
         k8s_version: [ v1.26.1-k3s1 ] # there's no need to run this test on multiple k3s versions
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
       - name: download e2e deps
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: e2e
           path: e2e/bin/
       - run: docker load -i e2e/bin/e2e-deps.tar
       - run: chmod +x e2e/bin/*
       - name: download kots binary
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: kots
           path: bin/
@@ -710,16 +717,16 @@ jobs:
         k8s_version: [ v1.26.1-k3s1 ] # there's no need to run this test on multiple k3s versions
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
       - name: download e2e deps
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: e2e
           path: e2e/bin/
       - run: docker load -i e2e/bin/e2e-deps.tar
       - run: chmod +x e2e/bin/*
       - name: download kots binary
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: kots
           path: bin/
@@ -750,7 +757,7 @@ jobs:
       APP_VERSION_LABEL: "0.0.1"
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       - uses: replicatedhq/action-k3s@main
         with:
@@ -758,7 +765,7 @@ jobs:
           arguments: ${{ startsWith(matrix.k8s_version, 'v1.22') && '--egress-selector-mode disabled' || '' }}
 
       - name: download kots binary
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: kots
           path: bin/
@@ -767,54 +774,55 @@ jobs:
 
       - name: minimal rbac override on command line
         run: |
-          kubectl delete ns $APP_SLUG --ignore-not-found
+          kubectl delete ns "$APP_SLUG" --ignore-not-found
           ./bin/kots \
-            install $APP_SLUG/automated \
-            --app-version-label $APP_VERSION_LABEL \
+            install "$APP_SLUG/automated" \
+            --app-version-label "$APP_VERSION_LABEL" \
             --no-port-forward \
-            --namespace $APP_SLUG \
+            --namespace "$APP_SLUG" \
             --shared-password password \
             --kotsadm-registry ttl.sh \
             --kotsadm-namespace automated-${{ github.run_id }} \
             --kotsadm-tag 24h \
             --use-minimal-rbac
-          if kubectl get roles -n $APP_SLUG | grep -q kotsadm; then
+          if kubectl get roles -n "$APP_SLUG" | grep -q kotsadm; then
             echo "Found kotsadm role in ${APP_SLUG}"
           else
             echo "No kotsadm role found in appication namespace"
-            exit -1
+            exit 255
           fi
           if kubectl get clusterroles | grep -q kotsadm; then
             echo "Found kotsadm cluster roles in minimal RBAC install"
-            exit -1
+            exit 255
           fi
       - name: no minimal rbac override on command line
         run: |
-          kubectl delete ns $APP_SLUG --ignore-not-found
+          kubectl delete ns "$APP_SLUG" --ignore-not-found
           ./bin/kots \
-            install $APP_SLUG/automated \
-            --app-version-label $APP_VERSION_LABEL \
+            install "$APP_SLUG/automated" \
+            --app-version-label "$APP_VERSION_LABEL" \
             --no-port-forward \
-            --namespace $APP_SLUG \
+            --namespace "$APP_SLUG" \
             --shared-password password \
             --kotsadm-registry ttl.sh \
             --kotsadm-namespace automated-${{ github.run_id }} \
             --kotsadm-tag 24h
-          if kubectl get roles -n $APP_SLUG | grep -q kotsadm; then
+          if kubectl get roles -n "$APP_SLUG" | grep -q kotsadm; then
             echo "Found kotsadm role in cluster scoped install"
-            exit -1
+            exit 255
           fi
           if kubectl get clusterroles | grep -q kotsadm; then
             echo "Found kotsadm cluster role in cluster scoped install"
           else
             echo "No kotsadm cluster role in cluster scoped install"
-            exit -1
+            exit 255
           fi
       - name: Generate support bundle on failure
         if: failure()
         uses: ./.github/actions/generate-support-bundle
         with:
-          kots-namespace: "$APP_SLUG"
+          # REVIEW: input `kots-namespace` does not exist on `generate-support-bundle` action
+          # kots-namespace: "$APP_SLUG"
           aws-access-key-id: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_ACCESS_KEY_ID }}'
           aws-secret-access-key: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_SECRET_ACCESS_KEY }}'
 
@@ -830,7 +838,7 @@ jobs:
       APP_SLUG: multi-namespace-yeti
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       - uses: azure/setup-helm@v3
         with:
@@ -842,7 +850,7 @@ jobs:
           arguments: ${{ startsWith(matrix.k8s_version, 'v1.22') && '--egress-selector-mode disabled' || '' }}
 
       - name: download kots binary
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: kots
           path: bin/
@@ -854,10 +862,10 @@ jobs:
           set +e
           echo ${{ secrets.MULTI_NAMESPACE_LICENSE }} | base64 -d > license.yaml
           ./bin/kots \
-            install $APP_SLUG/automated \
+            install "$APP_SLUG/automated" \
             --license-file license.yaml \
             --no-port-forward \
-            --namespace $APP_SLUG \
+            --namespace "$APP_SLUG" \
             --shared-password password \
             --kotsadm-registry ttl.sh \
             --kotsadm-namespace automated-${{ github.run_id }} \
@@ -866,36 +874,36 @@ jobs:
           EXIT_CODE=$?
           if [ $EXIT_CODE -ne 0 ]; then
             echo "------pods:"
-            kubectl -n $APP_SLUG get pods
+            kubectl -n "$APP_SLUG" get pods
             echo "------kotsadm logs"
-            kubectl logs -l app=kotsadm --tail=100 --namespace $APP_SLUG
+            kubectl logs -l app=kotsadm --tail=100 --namespace "$APP_SLUG"
             exit $EXIT_CODE
           fi
 
           COUNTER=1
-          while [ "$(./bin/kots get apps --namespace $APP_SLUG | awk 'NR>1{print $2}')" != "ready" ]; do
-            COUNTER=$[$COUNTER +1]
+          while [ "$(./bin/kots get apps --namespace "$APP_SLUG" | awk 'NR>1{print $2}')" != "ready" ]; do
+            ((COUNTER += 1))
             if [ $COUNTER -gt 120 ]; then
               echo "Timed out waiting for app to be ready"
-              ./bin/kots get apps --namespace $APP_SLUG
+              ./bin/kots get apps --namespace "$APP_SLUG"
               echo "kotsadm logs:"
-              kubectl logs -l app=kotsadm --tail=100 --namespace $APP_SLUG
-              exit -1
+              kubectl logs -l app=kotsadm --tail=100 --namespace "$APP_SLUG"
+              exit 255
             fi
             sleep 1
           done
 
           # validate that helm charts installed using the native helm workflow were deployed via the helm CLI correctly
 
-          if ! helm ls -n postgres-test | awk 'NR>1{print $1}' | grep -q postgresql ; then
+          if ! helm ls -n postgres-test | awk 'NR>1{print $1}' | grep -q postgresql; then
             printf "postgresql helm release not found in postgres-test namespace\n\n"
             helm ls -n postgres-test
             exit 1
           fi
 
-          if ! helm ls -n $APP_SLUG | awk 'NR>1{print $1}' | grep -q private-chart ; then
-            printf "private-chart helm release not found in $APP_SLUG namespace\n\n"
-            helm ls -n $APP_SLUG
+          if ! helm ls -n "$APP_SLUG" | awk 'NR>1{print $1}' | grep -q private-chart; then
+            printf "private-chart helm release not found in %s namespace\n\n" "$APP_SLUG"
+            helm ls -n "$APP_SLUG"
             exit 1
           fi
 
@@ -903,7 +911,8 @@ jobs:
         if: failure()
         uses: ./.github/actions/generate-support-bundle
         with:
-          kots-namespace: "$APP_SLUG"
+          # REVIEW: input `kots-namespace` does not exist on `generate-support-bundle` action
+          # kots-namespace: "$APP_SLUG"
           aws-access-key-id: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_ACCESS_KEY_ID }}'
           aws-secret-access-key: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_SECRET_ACCESS_KEY }}'
 
@@ -920,7 +929,7 @@ jobs:
       APP_SLUG: multi-namespace
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       - uses: replicatedhq/action-k3s@main
         with:
@@ -928,7 +937,7 @@ jobs:
           arguments: ${{ startsWith(matrix.k8s_version, 'v1.22') && '--egress-selector-mode disabled' || '' }}
 
       - name: download kots binary
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: kots
           path: bin/
@@ -939,13 +948,13 @@ jobs:
         run: |
           set +e
           echo ${{ secrets.MULTI_NAMESPACE_LICENSE }} | base64 -d > license.yaml
-          ./bin/kots pull $APP_NAME/automated \
+          ./bin/kots pull "$APP_NAME/automated" \
             --license-file license.yaml \
             --shared-password password \
-            --namespace $APP_NAME \
+            --namespace "$APP_NAME" \
             --exclude-admin-console
 
-          kubectl create ns $APP_NAME
+          kubectl create ns "$APP_NAME"
           kubectl create ns nginx-test
           kubectl create ns redis-test
           kubectl create ns postgres-test
@@ -958,8 +967,8 @@ jobs:
           kubectl -n postgres-test create secret generic multi-namespace-yeti-registry --type=kubernetes.io/dockerconfigjson --from-file=.dockerconfigjson=./replicated-registry-auth.json
           kubectl -n default create secret generic multi-namespace-yeti-registry --type=kubernetes.io/dockerconfigjson --from-file=.dockerconfigjson=./replicated-registry-auth.json
 
-          kustomize build $PWD/$APP_SLUG/overlays/midstream | kubectl apply -f -
-          kustomize build $PWD/$APP_SLUG/overlays/midstream/charts/redis | kubectl apply -f -
+          kustomize build "$PWD/$APP_SLUG/overlays/midstream" | kubectl apply -f -
+          kustomize build "$PWD/$APP_SLUG/overlays/midstream/charts/redis" | kubectl apply -f -
 
           EXIT_CODE=$?
           if [ $EXIT_CODE -ne 0 ]; then
@@ -967,19 +976,19 @@ jobs:
             echo "------pods:"
             kubectl get pods -A
             echo "------kotsadm logs"
-            kubectl logs -l app=kotsadm --tail=100 --namespace $APP_SLUG
+            kubectl logs -l app=kotsadm --tail=100 --namespace "$APP_SLUG"
             exit $EXIT_CODE
           fi
 
           echo "Waiting for pods to start"
 
           COUNTER=1
-          while [ "$(kubectl get pods --no-headers | grep -v Running | grep -v Completed | wc -l)" -gt 0 ]; do
-            COUNTER=$[$COUNTER +1]
+          while [ "$(kubectl get pods --no-headers | grep -v Running | grep -cv Completed)" -gt 0 ]; do
+            ((COUNTER += 1))
             if [ $COUNTER -gt 120 ]; then
               echo "Timed out waiting for pods to start"
               kubectl get pods -A
-              exit -1
+              exit 255
             fi
             sleep 1
           done
@@ -990,7 +999,8 @@ jobs:
         if: failure()
         uses: ./.github/actions/generate-support-bundle
         with:
-          kots-namespace: "$APP_NAME"
+          # REVIEW: input `kots-namespace` does not exist on `generate-support-bundle` action
+          # kots-namespace: "$APP_NAME"
           aws-access-key-id: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_ACCESS_KEY_ID }}'
           aws-secret-access-key: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_SECRET_ACCESS_KEY }}'
 
@@ -1008,7 +1018,7 @@ jobs:
       LATEST_APP_VERSION_LABEL: v1.0.1
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       - uses: replicatedhq/action-k3s@main
         with:
@@ -1016,7 +1026,7 @@ jobs:
           arguments: ${{ startsWith(matrix.k8s_version, 'v1.22') && '--egress-selector-mode disabled' || '' }}
 
       - name: download kots binary
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: kots
           path: bin/
@@ -1028,11 +1038,11 @@ jobs:
           set +e
           echo ${{ secrets.APP_VERSION_LABEL_LICENSE }} | base64 -d > license.yaml
           ./bin/kots \
-            install $APP_SLUG/automated \
+            install "$APP_SLUG/automated" \
             --license-file license.yaml \
-            --app-version-label $APP_VERSION_LABEL \
+            --app-version-label "$APP_VERSION_LABEL" \
             --no-port-forward \
-            --namespace $APP_SLUG \
+            --namespace "$APP_SLUG" \
             --shared-password password \
             --kotsadm-registry ttl.sh \
             --kotsadm-namespace automated-${{ github.run_id }} \
@@ -1041,56 +1051,56 @@ jobs:
           EXIT_CODE=$?
           if [ $EXIT_CODE -ne 0 ]; then
             echo "------pods:"
-            kubectl -n $APP_SLUG get pods
+            kubectl -n "$APP_SLUG" get pods
             echo "------kotsadm logs"
-            kubectl logs -l app=kotsadm --tail=100 --namespace $APP_SLUG
+            kubectl logs -l app=kotsadm --tail=100 --namespace "$APP_SLUG"
             exit $EXIT_CODE
           fi
 
           COUNTER=1
-          while [ "$(./bin/kots get apps --namespace $APP_SLUG | awk 'NR>1{print $3}')" != "$APP_VERSION_LABEL" ]; do
-            COUNTER=$[$COUNTER +1]
+          while [ "$(./bin/kots get apps --namespace "$APP_SLUG" | awk 'NR>1{print $3}')" != "$APP_VERSION_LABEL" ]; do
+            ((COUNTER += 1))
             if [ $COUNTER -gt 120 ]; then
               echo "Timed out waiting for app to be installed with correct version label: $APP_VERSION_LABEL"
-              ./bin/kots get apps --namespace $APP_SLUG
+              ./bin/kots get apps --namespace "$APP_SLUG"
               echo "kotsadm logs:"
-              kubectl logs -l app=kotsadm --tail=100 --namespace $APP_SLUG
-              exit -1
+              kubectl logs -l app=kotsadm --tail=100 --namespace "$APP_SLUG"
+              exit 255
             fi
             sleep 1
           done
 
-          printf "App is installed successfully with the correct version label: $APP_VERSION_LABEL\n\n"
-          ./bin/kots get apps --namespace $APP_SLUG
+          printf "App is installed successfully with the correct version label: %s\n\n" "$APP_VERSION_LABEL"
+          ./bin/kots get apps --namespace "$APP_SLUG"
 
           # test setting DockerHub credentials
 
           set +e
 
           # TODO: deploy and check secrets are actually created and images are pulled
-          ./bin/kots docker ensure-secret --dockerhub-username replicatedtests --dockerhub-password ${{ secrets.DOCKERHUB_RATELIMIT_PASSWORD }} -n $APP_SLUG
-          ./bin/kots download -n $APP_SLUG --slug $APP_SLUG
-          if grep ${APP_SLUG}-kotsadm-dockerhub -w ./${APP_SLUG}/overlays/midstream/secret.yaml; then
+          ./bin/kots docker ensure-secret --dockerhub-username replicatedtests --dockerhub-password ${{ secrets.DOCKERHUB_RATELIMIT_PASSWORD }} -n "$APP_SLUG"
+          ./bin/kots download -n "$APP_SLUG" --slug "$APP_SLUG"
+          if grep "${APP_SLUG}-kotsadm-dockerhub" -w "./${APP_SLUG}/overlays/midstream/secret.yaml"; then
             echo "Found DockerHub secret in ${APP_SLUG} latest version"
           else
             echo "No DockerHub secret found in appication namespace"
-            exit -1
+            exit 255
           fi
 
       - name: remove the app
         run: |
           set +e
-          ./bin/kots remove $APP_SLUG --namespace $APP_SLUG --force
+          ./bin/kots remove "$APP_SLUG" --namespace "$APP_SLUG" --force
 
       - name: test kots install without version label
         run: |
           set +e
           echo ${{ secrets.APP_VERSION_LABEL_LICENSE }} | base64 -d > license.yaml
           ./bin/kots \
-            install $APP_SLUG/automated \
+            install "$APP_SLUG/automated" \
             --license-file license.yaml \
             --no-port-forward \
-            --namespace $APP_SLUG \
+            --namespace "$APP_SLUG" \
             --shared-password password \
             --kotsadm-registry ttl.sh \
             --kotsadm-namespace automated-${{ github.run_id }} \
@@ -1099,33 +1109,34 @@ jobs:
           EXIT_CODE=$?
           if [ $EXIT_CODE -ne 0 ]; then
             echo "------pods:"
-            kubectl -n $APP_SLUG get pods
+            kubectl -n "$APP_SLUG" get pods
             echo "------kotsadm logs"
-            kubectl logs -l app=kotsadm --tail=100 --namespace $APP_SLUG
+            kubectl logs -l app=kotsadm --tail=100 --namespace "$APP_SLUG"
             exit $EXIT_CODE
           fi
 
           COUNTER=1
-          while [ "$(./bin/kots get apps --namespace $APP_SLUG | awk 'NR>1{print $3}')" != "$LATEST_APP_VERSION_LABEL" ]; do
-            COUNTER=$[$COUNTER +1]
+          while [ "$(./bin/kots get apps --namespace "$APP_SLUG" | awk 'NR>1{print $3}')" != "$LATEST_APP_VERSION_LABEL" ]; do
+            ((COUNTER += 1))
             if [ $COUNTER -gt 120 ]; then
               echo "Timed out waiting for app to be installed with latest version label: $LATEST_APP_VERSION_LABEL"
-              ./bin/kots get apps --namespace $APP_SLUG
+              ./bin/kots get apps --namespace "$APP_SLUG"
               echo "kotsadm logs:"
-              kubectl logs -l app=kotsadm --tail=100 --namespace $APP_SLUG
-              exit -1
+              kubectl logs -l app=kotsadm --tail=100 --namespace "$APP_SLUG"
+              exit 255
             fi
             sleep 1
           done
 
-          printf "App is installed successfully with the correct version label: $LATEST_APP_VERSION_LABEL\n\n"
-          ./bin/kots get apps --namespace $APP_SLUG
+          printf "App is installed successfully with the correct version label: %s\n\n" "$LATEST_APP_VERSION_LABEL"
+          ./bin/kots get apps --namespace "$APP_SLUG"
 
       - name: Generate support bundle on failure
         if: failure()
         uses: ./.github/actions/generate-support-bundle
         with:
-          kots-namespace: "$APP_SLUG"
+          # REVIEW: input `kots-namespace` does not exist on `generate-support-bundle` action
+          # kots-namespace: "$APP_SLUG"
           aws-access-key-id: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_ACCESS_KEY_ID }}'
           aws-secret-access-key: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_SECRET_ACCESS_KEY }}'
 
@@ -1141,7 +1152,7 @@ jobs:
       APP_SLUG: helm-install-order
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       - uses: replicatedhq/action-k3s@main
         with:
@@ -1149,7 +1160,7 @@ jobs:
           arguments: ${{ startsWith(matrix.k8s_version, 'v1.22') && '--egress-selector-mode disabled' || '' }}
 
       - name: download kots binary
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: kots
           path: bin/
@@ -1161,10 +1172,10 @@ jobs:
           set +e
           echo ${{ secrets.HELM_INSTALL_ORDER_LICENSE }} | base64 -d > license.yaml
           ./bin/kots \
-            install $APP_SLUG/automated \
+            install "$APP_SLUG/automated" \
             --license-file license.yaml \
             --no-port-forward \
-            --namespace $APP_SLUG \
+            --namespace "$APP_SLUG" \
             --shared-password password \
             --kotsadm-registry ttl.sh \
             --kotsadm-namespace automated-${{ github.run_id }} \
@@ -1174,33 +1185,34 @@ jobs:
           EXIT_CODE=$?
           if [ $EXIT_CODE -ne 0 ]; then
             echo "------pods:"
-            kubectl -n $APP_SLUG get pods
+            kubectl -n "$APP_SLUG" get pods
             echo "------kotsadm logs"
-            kubectl logs -l app=kotsadm --tail=100 --namespace $APP_SLUG
+            kubectl logs -l app=kotsadm --tail=100 --namespace "$APP_SLUG"
             exit $EXIT_CODE
           fi
 
           COUNTER=1
-          while [ "$(./bin/kots get apps --namespace $APP_SLUG | awk 'NR>1{print $2}')" != "ready" ]; do
-            COUNTER=$[$COUNTER +1]
+          while [ "$(./bin/kots get apps --namespace "$APP_SLUG" | awk 'NR>1{print $2}')" != "ready" ]; do
+            ((COUNTER += 1))
             if [ $COUNTER -gt 120 ]; then
               echo "Timed out waiting for app to be ready"
-              ./bin/kots get apps --namespace $APP_SLUG
+              ./bin/kots get apps --namespace "$APP_SLUG"
               echo "kotsadm logs:"
-              kubectl logs -l app=kotsadm --tail=100 --namespace $APP_SLUG
-              exit -1
+              kubectl logs -l app=kotsadm --tail=100 --namespace "$APP_SLUG"
+              exit 255
             fi
             sleep 1
           done
 
           printf "App is installed successfully and is ready\n\n"
-          ./bin/kots get apps --namespace $APP_SLUG
+          ./bin/kots get apps --namespace "$APP_SLUG"
 
       - name: Generate support bundle on failure
         if: failure()
         uses: ./.github/actions/generate-support-bundle
         with:
-          kots-namespace: "$APP_SLUG"
+          # REVIEW: input `kots-namespace` does not exist on `generate-support-bundle` action
+          # kots-namespace: "$APP_SLUG"
           aws-access-key-id: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_ACCESS_KEY_ID }}'
           aws-secret-access-key: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_SECRET_ACCESS_KEY }}'
 
@@ -1216,7 +1228,7 @@ jobs:
       APP_SLUG: yamlescape
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       - uses: replicatedhq/action-k3s@main
         with:
@@ -1224,7 +1236,7 @@ jobs:
           arguments: ${{ startsWith(matrix.k8s_version, 'v1.22') && '--egress-selector-mode disabled' || '' }}
 
       - name: download kots binary
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: kots
           path: bin/
@@ -1236,10 +1248,10 @@ jobs:
           set +e
           echo ${{ secrets.YAMLESCAPE_LICENSE }} | base64 -d > license.yaml
           ./bin/kots \
-            install $APP_SLUG/automated \
+            install "$APP_SLUG/automated" \
             --license-file license.yaml \
             --no-port-forward \
-            --namespace $APP_SLUG \
+            --namespace "$APP_SLUG" \
             --shared-password password \
             --kotsadm-registry ttl.sh \
             --kotsadm-namespace automated-${{ github.run_id }} \
@@ -1249,33 +1261,34 @@ jobs:
           EXIT_CODE=$?
           if [ $EXIT_CODE -ne 0 ]; then
             echo "------pods:"
-            kubectl -n $APP_SLUG get pods
+            kubectl -n "$APP_SLUG" get pods
             echo "------kotsadm logs"
-            kubectl logs -l app=kotsadm --tail=100 --namespace $APP_SLUG
+            kubectl logs -l app=kotsadm --tail=100 --namespace "$APP_SLUG"
             exit $EXIT_CODE
           fi
 
           COUNTER=1
-          while [ "$(./bin/kots get apps --namespace $APP_SLUG | awk 'NR>1{print $2}')" != "ready" ]; do
-            COUNTER=$[$COUNTER +1]
+          while [ "$(./bin/kots get apps --namespace "$APP_SLUG" | awk 'NR>1{print $2}')" != "ready" ]; do
+            ((COUNTER += 1))
             if [ $COUNTER -gt 120 ]; then
               echo "Timed out waiting for app to be ready"
-              ./bin/kots get apps --namespace $APP_SLUG
+              ./bin/kots get apps --namespace "$APP_SLUG"
               echo "kotsadm logs:"
-              kubectl logs -l app=kotsadm --tail=100 --namespace $APP_SLUG
-              exit -1
+              kubectl logs -l app=kotsadm --tail=100 --namespace "$APP_SLUG"
+              exit 255
             fi
             sleep 1
           done
 
           printf "App is installed successfully and is ready\n\n"
-          ./bin/kots get apps --namespace $APP_SLUG
+          ./bin/kots get apps --namespace "$APP_SLUG"
 
       - name: Generate support bundle on failure
         if: failure()
         uses: ./.github/actions/generate-support-bundle
         with:
-          kots-namespace: "$APP_SLUG"
+          # REVIEW: input `kots-namespace` does not exist on `generate-support-bundle` action
+          # kots-namespace: "$APP_SLUG"
           aws-access-key-id: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_ACCESS_KEY_ID }}'
           aws-secret-access-key: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_SECRET_ACCESS_KEY }}'
 
@@ -1291,7 +1304,7 @@ jobs:
       APP_SLUG: no-redeploy-on-restart
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       - uses: replicatedhq/action-k3s@main
         with:
@@ -1299,7 +1312,7 @@ jobs:
           arguments: ${{ startsWith(matrix.k8s_version, 'v1.22') && '--egress-selector-mode disabled' || '' }}
 
       - name: download kots binary
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: kots
           path: bin/
@@ -1311,10 +1324,10 @@ jobs:
           set +e
           echo ${{ secrets.NO_REDEPLOY_ON_RESTART_LICENSE }} | base64 -d > license.yaml
           ./bin/kots \
-            install $APP_SLUG/automated \
+            install "$APP_SLUG/automated" \
             --license-file license.yaml \
             --no-port-forward \
-            --namespace $APP_SLUG \
+            --namespace "$APP_SLUG" \
             --shared-password password \
             --kotsadm-registry ttl.sh \
             --kotsadm-namespace automated-${{ github.run_id }} \
@@ -1324,48 +1337,48 @@ jobs:
           EXIT_CODE=$?
           if [ $EXIT_CODE -ne 0 ]; then
             echo "------pods:"
-            kubectl -n $APP_SLUG get pods
+            kubectl -n "$APP_SLUG" get pods
             echo "------kotsadm logs"
-            kubectl logs -l app=kotsadm --tail=100 --namespace $APP_SLUG
+            kubectl logs -l app=kotsadm --tail=100 --namespace "$APP_SLUG"
             exit $EXIT_CODE
           fi
 
           # wait for application job to be created
           COUNTER=1
-          while [ "$(kubectl get jobs -l app=example,component=job -n $APP_SLUG --ignore-not-found | awk 'NR>1' | wc -l)" == "0" ]; do
-            COUNTER=$[$COUNTER +1]
+          while [ "$(kubectl get jobs -l app=example,component=job -n "$APP_SLUG" --ignore-not-found | awk 'NR>1' | wc -l)" == "0" ]; do
+            ((COUNTER += 1))
             if [ $COUNTER -gt 60 ]; then
               echo "Timed out waiting for job to be created"
-              exit -1
+              exit 255
             fi
             sleep 1
           done
 
           # delete the application job and restart the admin console
-          kubectl delete jobs -n $APP_SLUG --all
-          kubectl delete pods -l app=kotsadm -n $APP_SLUG
+          kubectl delete jobs -n "$APP_SLUG" --all
+          kubectl delete pods -l app=kotsadm -n "$APP_SLUG"
 
           # wait for old kotsadm pod to terminate
           COUNTER=1
-          while [ "$(kubectl get pods -l app=kotsadm -n $APP_SLUG | awk 'NR>1' | wc -l)" != "1" ]; do
-            COUNTER=$[$COUNTER +1]
+          while [ "$(kubectl get pods -l app=kotsadm -n "$APP_SLUG" | awk 'NR>1' | wc -l)" != "1" ]; do
+            ((COUNTER += 1))
             if [ $COUNTER -gt 60 ]; then
               echo "More than 1 kotsadm pod found"
-              exit -1
+              exit 255
             fi
             sleep 1
           done
 
           # wait for new kotsadm pod to become ready
-          kubectl wait --for=condition=ready pod -l app=kotsadm -n $APP_SLUG --timeout=60s
+          kubectl wait --for=condition=ready pod -l app=kotsadm -n "$APP_SLUG" --timeout=60s
 
           # delay in case the app takes a bit to be deployed
           sleep 20
 
           # validate that the application wasn't re-deployed and the job wasn't re-created
-          if [ "$(kubectl get jobs -l app=example,component=job -n $APP_SLUG --ignore-not-found | awk 'NR>1' | wc -l)" != "0" ]; then
+          if [ "$(kubectl get jobs -l app=example,component=job -n "$APP_SLUG" --ignore-not-found | awk 'NR>1' | wc -l)" != "0" ]; then
               echo "App should not be re-deployed after restart"
-              exit -1
+              exit 255
           fi
 
           printf "Success. App was not re-deployed after restart\n\n"
@@ -1374,7 +1387,8 @@ jobs:
         if: failure()
         uses: ./.github/actions/generate-support-bundle
         with:
-          kots-namespace: "$APP_SLUG"
+          # REVIEW: input `kots-namespace` does not exist on `generate-support-bundle` action
+          # kots-namespace: "$APP_SLUG"
           aws-access-key-id: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_ACCESS_KEY_ID }}'
           aws-secret-access-key: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_SECRET_ACCESS_KEY }}'
 
@@ -1390,13 +1404,14 @@ jobs:
       APP_SLUG: kubernetes-installer-preflight
       K8S_VERSION: ${{ matrix.k8s_version }}
     steps:
+      - uses: actions/checkout@v3
       - uses: replicatedhq/action-k3s@main
         with:
           version: ${{ matrix.k8s_version }}
           arguments: ${{ startsWith(matrix.k8s_version, 'v1.22') && '--egress-selector-mode disabled' || '' }}
 
       - name: download kots binary
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: kots
           path: bin/
@@ -1412,10 +1427,10 @@ jobs:
           # Fake kurl installation using the crd and installer spec from the application manifests:
 
           # Pull application manifests
-          ./bin/kots pull $APP_SLUG/automated --license-file license.yaml --shared-password password
+          ./bin/kots pull "$APP_SLUG/automated" --license-file license.yaml --shared-password password
 
           # Apply installer crd
-          kubectl apply -f $APP_SLUG/upstream/installer-crd.yaml
+          kubectl apply -f "$APP_SLUG/upstream/installer-crd.yaml"
 
           # Wait for crd to be created
           kubectl wait --for condition=established --timeout=60s crd/installers.cluster.kurl.sh
@@ -1424,16 +1439,16 @@ jobs:
           sleep 10
 
           # Apply installer
-          kubectl apply -f $APP_SLUG/upstream/installer.yaml
+          kubectl apply -f "$APP_SLUG/upstream/installer.yaml"
 
           # Create kurl-config configmap in kube-system
           kubectl create cm kurl-config -n kube-system --from-literal=installer_id=my-installer
 
           ./bin/kots \
-            install $APP_SLUG/automated \
+            install "$APP_SLUG/automated" \
             --license-file license.yaml \
             --no-port-forward \
-            --namespace $APP_SLUG \
+            --namespace "$APP_SLUG" \
             --shared-password password \
             --kotsadm-registry ttl.sh \
             --kotsadm-namespace automated-${{ github.run_id }} \
@@ -1442,28 +1457,28 @@ jobs:
           EXIT_CODE=$?
           if [ $EXIT_CODE -ne 0 ]; then
             echo "------pods:"
-            kubectl -n $APP_SLUG get pods
+            kubectl -n "$APP_SLUG" get pods
             echo "------kotsadm logs"
-            kubectl logs -l app=kotsadm --tail=100 --namespace $APP_SLUG
+            kubectl logs -l app=kotsadm --tail=100 --namespace "$APP_SLUG"
             exit $EXIT_CODE
           fi
 
           # validate that preflight checks ran
           JSON_PATH="jsonpath={.data['automated-install-slug-$APP_SLUG']}"
-          if [ "$(kubectl get cm kotsadm-tasks -n $APP_SLUG -o $JSON_PATH | grep -c pending_preflight)" != "1" ]; then
+          if [ "$(kubectl get cm kotsadm-tasks -n "$APP_SLUG" -o "$JSON_PATH" | grep -c pending_preflight)" != "1" ]; then
               echo "Preflight checks did not run"
-              exit -1
+              exit 255
           fi
 
           COUNTER=1
-          while [ "$(./bin/kots get apps --namespace $APP_SLUG | awk 'NR>1{print $2}')" != "ready" ]; do
-            COUNTER=$[$COUNTER +1]
+          while [ "$(./bin/kots get apps --namespace "$APP_SLUG" | awk 'NR>1{print $2}')" != "ready" ]; do
+            ((COUNTER += 1))
             if [ $COUNTER -gt 120 ]; then
               echo "Timed out waiting for app to be ready"
-              ./bin/kots get apps --namespace $APP_SLUG
+              ./bin/kots get apps --namespace "$APP_SLUG"
               echo "kotsadm logs:"
-              kubectl logs -l app=kotsadm --tail=100 --namespace $APP_SLUG
-              exit -1
+              kubectl logs -l app=kotsadm --tail=100 --namespace "$APP_SLUG"
+              exit 255
             fi
             sleep 1
           done
@@ -1471,24 +1486,24 @@ jobs:
           # try get apps without namespace (using kubeconfig)
           # validate that output is the same as above
           mkdir -p /tmp/.kube
-          sudo cp /tmp/output/kubeconfig-${K8S_VERSION}.yaml /tmp/.kube/config
+          sudo cp "/tmp/output/kubeconfig-${K8S_VERSION}.yaml" /tmp/.kube/config
           sudo chmod -R 777 /tmp/.kube
           export KUBECONFIG=/tmp/.kube/config
-          kubectl config set-context --current --namespace=$APP_SLUG
+          kubectl config set-context --current --namespace="$APP_SLUG"
           if [ "$(./bin/kots get apps | awk 'NR>1{print $2}')" != "ready" ]; then
               echo "kots get apps output is not the same as above"
-              exit -1
+              exit 255
           fi
 
           printf "App is installed successfully and is ready\n\n"
-          ./bin/kots get apps --namespace $APP_SLUG
+          ./bin/kots get apps --namespace "$APP_SLUG"
 
       - name: Generate support bundle on failure
         if: failure()
-        uses: ./.github/actions/kots-e2e
+        uses: ./.github/actions/generate-support-bundle
         with:
-          kots-namespace: "$APP_SLUG"
-          k8s-version: '${{ matrix.k8s_version }}'
+          # REVIEW: input `kots-namespace` does not exist on `generate-support-bundle` action
+          # kots-namespace: "$APP_SLUG"
           aws-access-key-id: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_ACCESS_KEY_ID }}'
           aws-secret-access-key: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_SECRET_ACCESS_KEY }}'
 
@@ -1502,16 +1517,16 @@ jobs:
         k8s_version: [ v1.26.1-k3s1 ]
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
       - name: download e2e deps
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: e2e
           path: e2e/bin/
       - run: docker load -i e2e/bin/e2e-deps.tar
       - run: chmod +x e2e/bin/*
       - name: download kots binary
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: kots
           path: bin/
@@ -1531,14 +1546,12 @@ jobs:
   validate-kots-push-images-anonymous:
     runs-on: ubuntu-20.04
     needs: [ enable-tests, can-run-ci, build-kots, build-kurl-proxy, build-migrations, push-minio, push-mc, push-rqlite ]
-    strategy:
-      fail-fast: false
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       - name: download kots binary
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: kots
           path: bin/
@@ -1564,10 +1577,10 @@ jobs:
       NAMESPACE: generate-manifests
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
       
       - name: download kots binary
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: kots
           path: bin/
@@ -1577,18 +1590,18 @@ jobs:
       - name: run kots admin-console generate-manifests without k8s context
         run: |
           set +e
-          ./bin/kots admin-console generate-manifests -n $NAMESPACE --shared-password password
+          ./bin/kots admin-console generate-manifests -n "$NAMESPACE" --shared-password password
       
       - name: validate that ./admin-console exists and is not empty
         run: |
           set +e
           if [ ! -d ./admin-console ]; then
             echo "admin-console directory does not exist"
-            exit -1
+            exit 255
           fi
           if [ -z "$(ls -A ./admin-console)" ]; then
             echo "admin-console directory is empty"
-            exit -1
+            exit 255
           fi
 
       - name: remove admin-console directory
@@ -1602,34 +1615,34 @@ jobs:
       
       - name: download base kots version
         run: |
-          curl -LO https://github.com/replicatedhq/kots/releases/download/$BASE_KOTS_VERSION/kots_linux_amd64.tar.gz \
+          curl -LO "https://github.com/replicatedhq/kots/releases/download/$BASE_KOTS_VERSION/kots_linux_amd64.tar.gz" \
             && tar zxvf kots_linux_amd64.tar.gz \
-            && mv kots kots-$BASE_KOTS_VERSION
+            && mv kots "kots-$BASE_KOTS_VERSION"
       
       - name: create namespace
         run: |
           set +e
-          kubectl create namespace $NAMESPACE
+          kubectl create namespace "$NAMESPACE"
       
       - name: run kots admin-console generate-manifests using base kots version with k8s context
         run: |
           set +e
-          ./kots-$BASE_KOTS_VERSION admin-console generate-manifests -n $NAMESPACE --shared-password password
+          "./kots-$BASE_KOTS_VERSION" admin-console generate-manifests -n "$NAMESPACE" --shared-password password
       
       - name: apply the generated manifests
         run: |
           set +e
-          kubectl apply -f ./admin-console -n $NAMESPACE
+          kubectl apply -f ./admin-console -n "$NAMESPACE"
 
       - name: wait for the kotsadm-minio-0 pod to be created
         run: |
           set +e
           COUNTER=1
-          while ! kubectl get pods -n $NAMESPACE | grep -q kotsadm-minio-0; do
-            COUNTER=$[$COUNTER +1]
+          while ! kubectl get pods -n "$NAMESPACE" | grep -q kotsadm-minio-0; do
+            ((COUNTER += 1))
             if [ $COUNTER -gt 30 ]; then
               echo "timed out waiting for kotsadm-minio-0 pod to be created"
-              exit -1
+              exit 255
             fi
             sleep 1
           done
@@ -1637,17 +1650,17 @@ jobs:
       - name: wait for kotsadm-minio-0 pod to be ready
         run: |
           set +e
-          kubectl wait --for=condition=ready --timeout=180s pod/kotsadm-minio-0 -n $NAMESPACE
+          kubectl wait --for=condition=ready --timeout=180s pod/kotsadm-minio-0 -n "$NAMESPACE"
 
       - name: wait for the kotsadm deployment to be ready
         run: |
           set +e
-          kubectl wait --for=condition=available --timeout=300s deployment/kotsadm -n $NAMESPACE
+          kubectl wait --for=condition=available --timeout=300s deployment/kotsadm -n "$NAMESPACE"
       
       - name: run kots admin-console generate-manifests using new kots version with k8s context
         run: |
           set +e
-          ./bin/kots admin-console generate-manifests -n $NAMESPACE \
+          ./bin/kots admin-console generate-manifests -n "$NAMESPACE" \
             --shared-password password \
             --kotsadm-registry ttl.sh \
             --kotsadm-namespace automated-${{ github.run_id }} \
@@ -1656,31 +1669,31 @@ jobs:
       - name: validate that ./admin-console/minio-statefulset.yaml has initContainers since a migration is needed
         run: |
           set +e
-          if [ -z "$(grep -E 'initContainers' ./admin-console/minio-statefulset.yaml)" ]; then
+          if ! grep -qE 'initContainers' ./admin-console/minio-statefulset.yaml; then
             echo "admin-console/minio-statefulset.yaml does not have initContainers"
-            exit -1
+            exit 255
           fi
       
       - name: apply the generated manifests
         run: |
           set +e
-          kubectl apply -f ./admin-console -n $NAMESPACE
+          kubectl apply -f ./admin-console -n "$NAMESPACE"
       
       - name: wait for kotsadm-minio-0 pod to be ready
         run: |
           set +e
           sleep 10
-          kubectl wait --for=condition=ready --timeout=180s pod/kotsadm-minio-0 -n $NAMESPACE
+          kubectl wait --for=condition=ready --timeout=180s pod/kotsadm-minio-0 -n "$NAMESPACE"
 
       - name: wait for the kotsadm deployment to be ready
         run: |
           set +e
-          kubectl wait --for=condition=available --timeout=300s deployment/kotsadm -n $NAMESPACE
+          kubectl wait --for=condition=available --timeout=300s deployment/kotsadm -n "$NAMESPACE"
       
       - name: run kots admin-console generate-manifests using new kots version with k8s context
         run: |
           set +e
-          ./bin/kots admin-console generate-manifests -n $NAMESPACE \
+          ./bin/kots admin-console generate-manifests -n "$NAMESPACE" \
             --shared-password password \
             --kotsadm-registry ttl.sh \
             --kotsadm-namespace automated-${{ github.run_id }} \
@@ -1689,42 +1702,43 @@ jobs:
       - name: validate that ./admin-console/minio-statefulset.yaml does not have initContainers since a migration is not needed
         run: |
           set +e
-          if [ -n "$(grep -E 'initContainers' ./admin-console/minio-statefulset.yaml)" ]; then
+          if grep -qE 'initContainers' ./admin-console/minio-statefulset.yaml; then
             echo "admin-console/minio-statefulset.yaml has initContainers"
-            exit -1
+            exit 255
           fi
       
       - name: apply the generated manifests
         run: |
           set +e
-          kubectl apply -f ./admin-console -n $NAMESPACE
+          kubectl apply -f ./admin-console -n "$NAMESPACE"
       
       - name: wait for kotsadm-minio-0 pod to be ready
         run: |
           set +e
           sleep 10
-          kubectl wait --for=condition=ready --timeout=180s pod/kotsadm-minio-0 -n $NAMESPACE
+          kubectl wait --for=condition=ready --timeout=180s pod/kotsadm-minio-0 -n "$NAMESPACE"
 
       - name: wait for the kotsadm deployment to be ready
         run: |
           set +e
-          kubectl wait --for=condition=available --timeout=300s deployment/kotsadm -n $NAMESPACE
+          kubectl wait --for=condition=available --timeout=300s deployment/kotsadm -n "$NAMESPACE"
 
       - name: print pods and logs on failure
         if: failure()
         run: |
           echo "------pods:"
-          kubectl -n $NAMESPACE get pods
+          kubectl -n "$NAMESPACE" get pods
           echo "------kotsadm logs"
-          kubectl logs -l app=kotsadm --tail=100 --namespace $NAMESPACE
+          kubectl logs -l app=kotsadm --tail=100 --namespace "$NAMESPACE"
           echo "------kotsadm-minio logs"
-          kubectl logs -l app=kotsadm-minio --tail=100 --namespace $NAMESPACE
+          kubectl logs -l app=kotsadm-minio --tail=100 --namespace "$NAMESPACE"
 
       - name: Generate support bundle on failure
         if: failure()
         uses: ./.github/actions/generate-support-bundle
         with:
-          kots-namespace: "$APP_SLUG"
+          # REVIEW: input `kots-namespace` does not exist on `generate-support-bundle` action
+          # kotsadm-namespace: automated-${{ github.run_id }}          
           aws-access-key-id: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_ACCESS_KEY_ID }}'
           aws-secret-access-key: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_SECRET_ACCESS_KEY }}'
 
@@ -1740,14 +1754,14 @@ jobs:
         k8s_version: [v1.25.5-k3s2]
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
       - name: download e2e deps
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: e2e
           path: e2e/bin/
       - name: download kots binary
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: kots
           path: bin/
@@ -1766,8 +1780,9 @@ jobs:
           testim-access-token: '${{ secrets.TESTIM_ACCESS_TOKEN }}'
           testim-branch: ${{ github.head_ref == 'main' && 'master' || github.head_ref }}
           kotsadm-image-registry: ttl.sh
-          kotsadm-namespace: automated-${{ github.run_id }}
-          kotsadm-tag: 24h
+          # REVIEW: inputs `kotsadm-namespace` and `kotsadm-tag` do not exist on `kots-e2e` action
+          # kotsadm-namespace: automated-${{ github.run_id }}
+          # kotsadm-tag: 24h
           aws-access-key-id: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_ACCESS_KEY_ID }}'
           aws-secret-access-key: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_SECRET_ACCESS_KEY }}'
 
@@ -1775,10 +1790,10 @@ jobs:
         run: |
           set +e
 
-          result=$(kubectl kots install $APP_SLUG/automated --no-port-forward --namespace $APP_SLUG --shared-password password 2>&1 >/dev/null)
+          result=$(kubectl kots install "$APP_SLUG/automated" --no-port-forward --namespace "$APP_SLUG" --shared-password password 2>&1 >/dev/null)
           echo "$result"
 
-          if [[ "$result" =~ "requires" ]] && [[ "$result" =~ "10000.0.0" ]]; then
+          if [[ "$result" == *"requires"* ]] && [[ "$result" == *"10000.0.0"* ]]; then
             exit 0
           else
             exit 1
@@ -1794,14 +1809,14 @@ jobs:
         k8s_version: [v1.25.5-k3s2]
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
       - name: download e2e deps
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: e2e
           path: e2e/bin/
       - name: download kots binary
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: kots
           path: bin/
@@ -1828,7 +1843,7 @@ jobs:
           result=$(kubectl kots install target-kots-version/automated --no-port-forward --namespace target-kots-version --shared-password password 2>&1 >/dev/null)
           echo "$result"
 
-          if [[ "$result" =~ "requires" ]] && [[ "$result" =~ "1.0.0" ]]; then
+          if [[ "$result" == *"requires"* ]] && [[ "$result" == *"1.0.0"* ]]; then
             exit 0
           else
             exit 1
@@ -1844,14 +1859,14 @@ jobs:
         k8s_version: [v1.25.5-k3s2]
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
       - name: download e2e deps
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: e2e
           path: e2e/bin/
       - name: download kots binary
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: kots
           path: bin/
@@ -1878,7 +1893,7 @@ jobs:
           result=$(kubectl kots install range-kots-version/automated --no-port-forward --namespace range-kots-version --shared-password password 2>&1 >/dev/null)
           echo "$result"
 
-          if [[ "$result" =~ "requires" ]] && [[ "$result" =~ "11000.0.0" ]]; then
+          if [[ "$result" == *"requires"* ]] && [[ "$result" == *"11000.0.0"* ]]; then
             exit 0
           else
             exit 1
@@ -1897,7 +1912,7 @@ jobs:
       BASE_KOTS_VERSION: v1.57.0
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       - uses: replicatedhq/action-k3s@main
         with:
@@ -1906,12 +1921,12 @@ jobs:
 
       - name: download base kots version
         run: |
-          curl -LO https://github.com/replicatedhq/kots/releases/download/$BASE_KOTS_VERSION/kots_linux_amd64.tar.gz \
+          curl -LO "https://github.com/replicatedhq/kots/releases/download/$BASE_KOTS_VERSION/kots_linux_amd64.tar.gz" \
             && tar zxvf kots_linux_amd64.tar.gz \
-            && mv kots kots-$BASE_KOTS_VERSION
+            && mv kots "kots-$BASE_KOTS_VERSION"
 
       - name: download kots binary
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: kots
           path: bin/
@@ -1925,31 +1940,31 @@ jobs:
 
           # install using the base KOTS version
 
-          ./kots-$BASE_KOTS_VERSION \
-            install $APP_SLUG/automated \
+          "./kots-$BASE_KOTS_VERSION" \
+            install "$APP_SLUG/automated" \
             --license-file license.yaml \
             --port-forward=false \
-            --namespace $APP_SLUG \
+            --namespace "$APP_SLUG" \
             --shared-password password
 
           EXIT_CODE=$?
           if [ $EXIT_CODE -ne 0 ]; then
             echo "------pods:"
-            kubectl -n $APP_SLUG get pods
+            kubectl -n "$APP_SLUG" get pods
             echo "------kotsadm logs"
-            kubectl logs -l app=kotsadm --tail=100 --namespace $APP_SLUG
+            kubectl logs -l app=kotsadm --tail=100 --namespace "$APP_SLUG"
             exit $EXIT_CODE
           fi
 
           COUNTER=1
-          while [ "$(./kots-$BASE_KOTS_VERSION get apps --namespace $APP_SLUG | awk 'NR>1{print $2}')" != "ready" ]; do
-            COUNTER=$[$COUNTER +1]
+          while [ "$("./kots-$BASE_KOTS_VERSION" get apps --namespace "$APP_SLUG" | awk 'NR>1{print $2}')" != "ready" ]; do
+            ((COUNTER += 1))
             if [ $COUNTER -gt 120 ]; then
               echo "Timed out waiting for app to be ready"
-              ./kots-$BASE_KOTS_VERSION get apps --namespace $APP_SLUG
+              "./kots-$BASE_KOTS_VERSION" get apps --namespace "$APP_SLUG"
               echo "kotsadm logs:"
-              kubectl logs -l app=kotsadm --tail=100 --namespace $APP_SLUG
-              exit -1
+              kubectl logs -l app=kotsadm --tail=100 --namespace "$APP_SLUG"
+              exit 255
             fi
             sleep 1
           done
@@ -1957,46 +1972,45 @@ jobs:
           # upgrade using the new KOTS version
 
           ./bin/kots admin-console upgrade \
-            --namespace $APP_SLUG \
+            --namespace "$APP_SLUG" \
             --kotsadm-registry ttl.sh \
             --kotsadm-namespace automated-${{ github.run_id }} \
             --kotsadm-tag 24h
 
-          # verify that the postgres to rqlite migration was successful
-
-          if ! kubectl logs -l app=kotsadm --namespace $APP_SLUG | grep -q "Migrated from Postgres to rqlite successfully"; then
+          if ! kubectl logs -l app=kotsadm --namespace "$APP_SLUG" | grep -q "Migrated from Postgres to rqlite successfully"; then
             echo "Failed to find a successful migration log line"
             echo "kotsadm logs:"
-            kubectl logs -l app=kotsadm --all-containers --namespace $APP_SLUG
+            kubectl logs -l app=kotsadm --all-containers --namespace "$APP_SLUG"
             exit 1
           fi
 
           # verify that the minio migration happened
 
-          if [ -z "$(kubectl get statefulset kotsadm-minio -n $APP_SLUG -o jsonpath='{.spec.template.spec.initContainers}')" ]; then
+          if [ -z "$(kubectl get statefulset kotsadm-minio -n "$APP_SLUG" -o jsonpath='{.spec.template.spec.initContainers}')" ]; then
             echo "Failed to find initContainers in the kotsadm-minio statefulset"
             echo "kotsadm-minio statefulset:"
-            kubectl get statefulset kotsadm-minio -n $APP_SLUG -o yaml
+            kubectl get statefulset kotsadm-minio -n "$APP_SLUG" -o yaml
             exit 1
           fi
 
           # make sure app is still installed and ready
 
-          if [ "$(./bin/kots get apps --namespace $APP_SLUG | awk 'NR>1{print $2}')" != "ready" ]; then
+          if [ "$(./bin/kots get apps --namespace "$APP_SLUG" | awk 'NR>1{print $2}')" != "ready" ]; then
             echo "App is not ready after the upgrade"
             echo "kotsadm logs:"
-            kubectl logs -l app=kotsadm --tail=100 --namespace $APP_SLUG
+            kubectl logs -l app=kotsadm --tail=100 --namespace "$APP_SLUG"
             exit 1
           fi
 
           printf "App is still installed and is ready after the migration\n\n"
-          ./bin/kots get apps --namespace $APP_SLUG
+          ./bin/kots get apps --namespace "$APP_SLUG"
 
       - name: Generate support bundle on failure
         if: failure()
         uses: ./.github/actions/generate-support-bundle
         with:
-          kots-namespace: "$APP_SLUG"
+          # REVIEW: input `kots-namespace` does not exist on `generate-support-bundle` action
+          # kots-namespace: "$APP_SLUG"
           aws-access-key-id: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_ACCESS_KEY_ID }}'
           aws-secret-access-key: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_SECRET_ACCESS_KEY }}'
 
@@ -2009,16 +2023,16 @@ jobs:
         k8s_version: [ v1.26.1-k3s1 ] # there's no need to run this test on multiple k3s versions
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
       - name: download e2e deps
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: e2e
           path: e2e/bin/
       - run: docker load -i e2e/bin/e2e-deps.tar
       - run: chmod +x e2e/bin/*
       - name: download kots binary
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: kots
           path: bin/
@@ -2045,16 +2059,16 @@ jobs:
         platform: [ k3s, gke ]
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
       - name: download e2e deps
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: e2e
           path: e2e/bin/
       - run: docker load -i e2e/bin/e2e-deps.tar
       - run: chmod +x e2e/bin/*
       - name: download kots binary
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: kots
           path: bin/
@@ -2085,7 +2099,7 @@ jobs:
       APP_SLUG: remove-app
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       - uses: replicatedhq/action-k3s@main
         with:
@@ -2093,7 +2107,7 @@ jobs:
           arguments: ${{ startsWith(matrix.k8s_version, 'v1.22') && '--egress-selector-mode disabled' || '' }}
 
       - name: download kots binary
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: kots
           path: bin/
@@ -2105,33 +2119,33 @@ jobs:
           set +e
           echo ${{ secrets.REMOVE_APP_LICENSE }} | base64 -d > license.yaml
           ./bin/kots \
-            install $APP_SLUG/automated \
+            install "$APP_SLUG/automated" \
             --license-file license.yaml \
             --no-port-forward \
-            --namespace $APP_SLUG \
+            --namespace "$APP_SLUG" \
             --shared-password password \
             --kotsadm-registry ttl.sh \
             --kotsadm-namespace automated-${{ github.run_id }} \
             --kotsadm-tag 24h
 
           COUNTER=1
-          while [ "$(./bin/kots get apps --namespace $APP_SLUG | awk 'NR>1{print $2}')" != "ready" ]; do
-            COUNTER=$[$COUNTER +1]
+          while [ "$(./bin/kots get apps --namespace "$APP_SLUG" | awk 'NR>1{print $2}')" != "ready" ]; do
+            ((COUNTER += 1))
             if [ $COUNTER -gt 120 ]; then
               echo "Timed out waiting for app to be ready"
-              ./bin/kots get apps --namespace $APP_SLUG
+              ./bin/kots get apps --namespace "$APP_SLUG"
               echo "kotsadm logs:"
-              kubectl logs -l app=kotsadm --tail=100 --namespace $APP_SLUG
-              exit -1
+              kubectl logs -l app=kotsadm --tail=100 --namespace "$APP_SLUG"
+              exit 255
             fi
             sleep 1
           done
 
           # test that --undeploy deletes application resources from the cluster
 
-          ./bin/kots remove $APP_SLUG --namespace $APP_SLUG --undeploy
+          ./bin/kots remove "$APP_SLUG" --namespace "$APP_SLUG" --undeploy
 
-          if [ "$(./bin/kots get apps --namespace $APP_SLUG --output=json | tr -d '\n')" != "[]" ]; then
+          if [ "$(./bin/kots get apps --namespace "$APP_SLUG" --output=json | tr -d '\n')" != "[]" ]; then
             printf "App reference was not removed\n\n"
             exit 1
           fi
@@ -2154,40 +2168,40 @@ jobs:
             exit 1
           fi
 
-          if [ "$(kubectl get pods -n $APP_SLUG -l kots.io/app-slug=$APP_SLUG --ignore-not-found | wc -l | tr -d '\n')" != "0" ]; then
-            printf "$APP_SLUG namespace still contains application resources\n\n"
-            kubectl get pods -n $APP_SLUG -l kots.io/app-slug=$APP_SLUG
+          if [ "$(kubectl get pods -n "$APP_SLUG" -l "kots.io/app-slug=$APP_SLUG" --ignore-not-found | wc -l | tr -d '\n')" != "0" ]; then
+            printf "%s namespace still contains application resources\n\n" "$APP_SLUG"
+            kubectl get pods -n "$APP_SLUG" -l "kots.io/app-slug=$APP_SLUG"
             exit 1
           fi
 
           # re-install and test that running the remove command without --undeploy does _not_ delete any resources from the cluster
 
           ./bin/kots \
-            install $APP_SLUG/automated \
+            install "$APP_SLUG/automated" \
             --license-file license.yaml \
             --no-port-forward \
-            --namespace $APP_SLUG \
+            --namespace "$APP_SLUG" \
             --shared-password password \
             --kotsadm-registry ttl.sh \
             --kotsadm-namespace automated-${{ github.run_id }} \
             --kotsadm-tag 24h
 
           COUNTER=1
-          while [ "$(./bin/kots get apps --namespace $APP_SLUG | awk 'NR>1{print $2}')" != "ready" ]; do
-            COUNTER=$[$COUNTER +1]
+          while [ "$(./bin/kots get apps --namespace "$APP_SLUG" | awk 'NR>1{print $2}')" != "ready" ]; do
+            ((COUNTER += 1))
             if [ $COUNTER -gt 120 ]; then
               echo "Timed out waiting for app to be ready"
-              ./bin/kots get apps --namespace $APP_SLUG
+              ./bin/kots get apps --namespace "$APP_SLUG"
               echo "kotsadm logs:"
-              kubectl logs -l app=kotsadm --tail=100 --namespace $APP_SLUG
-              exit -1
+              kubectl logs -l app=kotsadm --tail=100 --namespace "$APP_SLUG"
+              exit 255
             fi
             sleep 1
           done
 
-          ./bin/kots remove $APP_SLUG --namespace $APP_SLUG --force
+          ./bin/kots remove "$APP_SLUG" --namespace "$APP_SLUG" --force
 
-          if [ "$(./bin/kots get apps --namespace $APP_SLUG --output=json | tr -d '\n')" != "[]" ]; then
+          if [ "$(./bin/kots get apps --namespace "$APP_SLUG" --output=json | tr -d '\n')" != "[]" ]; then
             printf "App reference was not removed\n\n"
             exit 1
           fi
@@ -2210,9 +2224,9 @@ jobs:
             exit 1
           fi
 
-          if [ "$(kubectl get pods -n $APP_SLUG -l kots.io/app-slug=$APP_SLUG --ignore-not-found | wc -l | tr -d '\n')" == "0" ]; then
-            printf "$APP_SLUG namespace does not contain any application resources\n\n"
-            kubectl get pods -n $APP_SLUG
+          if [ "$(kubectl get pods -n "$APP_SLUG" -l "kots.io/app-slug=$APP_SLUG" --ignore-not-found | wc -l | tr -d '\n')" == "0" ]; then
+            printf "%s namespace does not contain any application resources\n\n" "$APP_SLUG"
+            kubectl get pods -n "$APP_SLUG"
             exit 1
           fi
 
@@ -2220,7 +2234,8 @@ jobs:
         if: failure()
         uses: ./.github/actions/generate-support-bundle
         with:
-          kots-namespace: "$APP_SLUG"
+          # REVIEW: input `kots-namespace` does not exist on `generate-support-bundle` action
+          # kots-namespace: "$APP_SLUG"
           aws-access-key-id: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_ACCESS_KEY_ID }}'
           aws-secret-access-key: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_SECRET_ACCESS_KEY }}'
 
@@ -2234,7 +2249,7 @@ jobs:
         k8s_version: [ v1.26.1-k3s1 ]
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       - uses: replicatedhq/action-k3s@main
         with:
@@ -2242,7 +2257,7 @@ jobs:
           arguments: ${{ startsWith(matrix.k8s_version, 'v1.22') && '--egress-selector-mode disabled' || '' }}
 
       - name: download kots binary
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: kots
           path: bin/
@@ -2297,7 +2312,8 @@ jobs:
         if: failure()
         uses: ./.github/actions/generate-support-bundle
         with:
-          kots-namespace: "$APP_SLUG"
+          # REVIEW: input `kots-namespace` does not exist on `generate-support-bundle` action
+          # kots-namespace: "$APP_SLUG"
           aws-access-key-id: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_ACCESS_KEY_ID }}'
           aws-secret-access-key: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_SECRET_ACCESS_KEY }}'
 

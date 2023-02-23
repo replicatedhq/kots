@@ -7,10 +7,14 @@ on:
         type: string
         description: "Kots version (without the 'v')."
         required: true
+      s3_prefix:
+        type: string
+        description: "S3 key prefix."
+        default: "test/"
       priority:
-        type: number
+        type: string
         description: 'Testgrid run priority.'
-        default: 0
+        default: "0"
   workflow_call:
     inputs:
       addon_version:
@@ -41,7 +45,7 @@ jobs:
         uses: ./.github/actions/kurl-addon-kots-generate
         with:
           addon_version: "${{ inputs.addon_version }}"
-          s3_prefix: "${{ github.event.action == 'workflow_dispatch' && 'test/' || inputs.s3_prefix }}"
+          s3_prefix: "${{ inputs.s3_prefix }}"
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.KURL_ADDONS_AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.KURL_ADDONS_AWS_SECRET_ACCESS_KEY }}

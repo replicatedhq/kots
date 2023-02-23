@@ -14,7 +14,7 @@ jobs:
       tag: ${{ github.ref_type == 'branch' && steps.get_tag.outputs.GIT_TAG || github.ref_name }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
       - name: Get tags
         id: get_tag
         uses: ./.github/actions/version-tag
@@ -23,16 +23,16 @@ jobs:
         env:
           GIT_TAG: ${{ steps.get_tag.outputs.GIT_TAG }}
         run: |
-          git tag $GIT_TAG
-          git push origin $GIT_TAG
+          git tag "$GIT_TAG"
+          git push origin "$GIT_TAG"
 
   image-deps-updater:
     runs-on: ubuntu-20.04
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
       - name: Setup Go
-        uses: actions/setup-go@v2
+        uses: actions/setup-go@v3
         with:
           go-version: '^1.19.2'
       - name: Run Update Script
@@ -41,7 +41,7 @@ jobs:
         run: |
           go run ./cmd/imagedeps
       - name: Create Pull Request # creates a PR if there are differences
-        uses: peter-evans/create-pull-request@v3
+        uses: peter-evans/create-pull-request@v4
         id: cpr
         with:
           token: ${{ secrets.NIGHTLY_GH_PAT }}
@@ -67,7 +67,7 @@ jobs:
     needs: [generate-tag]
     steps:
     - name: Checkout
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
     - uses: azure/docker-login@v1
       env:
         DOCKER_CONFIG: ./migrations/.docker
@@ -78,10 +78,9 @@ jobs:
       env:
         GIT_TAG: ${{ needs.generate-tag.outputs.tag }}
         DOCKER_CONFIG: ./.docker
-      run: |
-        export $(cat .image.env | sed 's/#.*//g' | xargs) && make -C migrations schema-release
+      run: mapfile -t envs < <(grep -v '#.*' < .image.env) && export "${envs[@]}" && make -C migrations schema-release
     - name: Upload airgap image
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v3
       with:
         name: migrations-image
         path: ./migrations/bin/docker-archive
@@ -94,13 +93,13 @@ jobs:
       options: --user root
     steps:
     - name: Checkout
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
     - name: Build web
       env:
         GIT_TAG: ${{ needs.generate-tag.outputs.tag }}
-      run: export $(cat .image.env | sed 's/#.*//g' | xargs) && make -C web deps build-kotsadm
+      run: mapfile -t envs < <(grep -v '#.*' < .image.env) && export "${envs[@]}" && make -C web deps build-kotsadm
     - name: Upload web artifact
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v3
       with:
         name: web
         path: ./web/dist
@@ -111,11 +110,11 @@ jobs:
     env:
       GIT_TAG: ${{ needs.generate-tag.outputs.tag }}
     steps:
-    - uses: actions/setup-go@v2
+    - uses: actions/setup-go@v3
       with:
         go-version: '^1.19.2'
     - name: Checkout
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
     - name: Cache Go modules
       uses: actions/cache@v3
       with:
@@ -129,9 +128,9 @@ jobs:
       env:
         GIT_TAG: ${{ needs.generate-tag.outputs.tag }}
         SCOPE_DSN_PUBLIC: ""
-      run: export $(cat .image.env | sed 's/#.*//g' | xargs) && make -C kurl_proxy test build
+      run: mapfile -t envs < <(grep -v '#.*' < .image.env) && export "${envs[@]}" && make -C kurl_proxy test build
     - name: Upload kurl_proxy artifact
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v3
       with:
         name: kurl_proxy
         path: ./kurl_proxy/bin
@@ -142,19 +141,19 @@ jobs:
     - name: Build tagged release
       working-directory: ./kurl_proxy
       run: |
-        docker build --pull -f deploy/Dockerfile -t kotsadm/kurl-proxy:$GIT_TAG -t kotsadm/kurl-proxy:v0.0.0-nightly .
-        docker push kotsadm/kurl-proxy:$GIT_TAG
+        docker build --pull -f deploy/Dockerfile -t "kotsadm/kurl-proxy:$GIT_TAG" -t kotsadm/kurl-proxy:v0.0.0-nightly .
+        docker push "kotsadm/kurl-proxy:$GIT_TAG"
         docker push kotsadm/kurl-proxy:v0.0.0-nightly
 
   build-go-api:
     runs-on: ubuntu-20.04
     needs: [build-web, generate-tag]
     steps:
-    - uses: actions/setup-go@v2
+    - uses: actions/setup-go@v3
       with:
         go-version: '^1.19.2'
     - name: Checkout
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
     - name: Cache Go modules
       uses: actions/cache@v3
       with:
@@ -165,7 +164,7 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-go-kots-
     - name: Download web artifact
-      uses: actions/download-artifact@v2
+      uses: actions/download-artifact@v3
       with:
         name: web
         path: ./web/dist
@@ -173,9 +172,9 @@ jobs:
       env:
         GIT_TAG: ${{ needs.generate-tag.outputs.tag }}
         SCOPE_DSN_PUBLIC: ""
-      run: export $(cat .image.env | sed 's/#.*//g' | xargs) && make ci-test kots build
+      run: mapfile -t envs < <(grep -v '#.*' < .image.env) && export "${envs[@]}" && make ci-test kots build
     - name: Upload Go API artifact
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v3
       with:
         name: go_api
         path: ./bin
@@ -185,9 +184,9 @@ jobs:
     needs: [build-go-api, generate-tag]
     steps:
     - name: Checkout
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
     - name: Download go_api artifact
-      uses: actions/download-artifact@v2
+      uses: actions/download-artifact@v3
       with:
         name: go_api
         path: ./bin
@@ -205,10 +204,9 @@ jobs:
       env:
         GIT_TAG: ${{ needs.generate-tag.outputs.tag }}
         DOCKER_CONFIG: ./.docker
-      run: |
-        export $(cat .image.env | sed 's/#.*//g' | xargs) && make build-release
+      run: mapfile -t envs < <(grep -v '#.*' < .image.env) && export "${envs[@]}" && make build-release
     - name: Upload airgap image
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v3
       with:
         name: kotsadm-image
         path: ./bin/docker-archive
@@ -218,12 +216,12 @@ jobs:
     if: github.ref_type != 'branch'
     needs: [build-web]
     steps:
-    - uses: actions/setup-go@v2
+    - uses: actions/setup-go@v3
       with:
         go-version: '^1.19.2'
 
     - name: Checkout
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
 
     - name: Cache Go modules
       uses: actions/cache@v3
@@ -240,18 +238,19 @@ jobs:
     - run: sudo apt-get -qq -y install gnupg2 libdevmapper-dev libgpgme-dev libc6-dev-i386 btrfs-progs libbtrfs-dev pkg-config
     - name: set previous release tag for goreleaser
       run: |
-        export TAG=$(curl --silent "https://api.github.com/repos/replicatedhq/kots/releases/latest" | grep -Po '"tag_name": "\K.*?(?=")')
-        echo "GORELEASER_PREVIOUS_TAG=${TAG}" >> $GITHUB_ENV
+        TAG="$(curl --silent "https://api.github.com/repos/replicatedhq/kots/releases/latest" | grep -Po '"tag_name": "\K.*?(?=")')"
+        export TAG
+        echo "GORELEASER_PREVIOUS_TAG=${TAG}" >> "$GITHUB_ENV"
     - uses: sigstore/cosign-installer@main
       with:
         cosign-release: 'v1.2.1'
     - name: Get Cosign Key
       run: |
-        echo $COSIGN_KEY | base64 -d > ./cosign.key
+        echo "$COSIGN_KEY" | base64 -d > ./cosign.key
       env:
-        COSIGN_KEY: ${{secrets.COSIGN_KEY}}
+        COSIGN_KEY: ${{ secrets.COSIGN_KEY }}
     - name: Download web artifact
-      uses: actions/download-artifact@v2
+      uses: actions/download-artifact@v3
       with:
         name: web
         path: ./web/dist
@@ -262,7 +261,7 @@ jobs:
       env:
         COSIGN_PASSWORD: ${{ secrets.COSIGN_PASSWORD }}
     - name: Run GoReleaser
-      uses: goreleaser/goreleaser-action@v2
+      uses: goreleaser/goreleaser-action@v3
       with:
         version: "v1.2.5"
         args: release --rm-dist --config deploy/.goreleaser.yaml
@@ -280,14 +279,14 @@ jobs:
       AWS_DEFAULT_REGION: us-east-1
     steps:
       - name: checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
       - name: set outputs
         id: vars
         run: |
           addon_version=${{ needs.generate-tag.outputs.tag }}
-          echo "::set-output name=addon_version::${addon_version#v}"
+          echo "addon_version=${addon_version#v}" >> "$GITHUB_OUTPUT"
       - name: download kots binary
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: go_api
           path: bin/
@@ -307,7 +306,7 @@ jobs:
     outputs:
       ok-to-test: ${{ steps.filter.outputs.kurl-addon }}
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - uses: dorny/paths-filter@v2
         id: filter
         with:
@@ -318,15 +317,15 @@ jobs:
   validate-kurl-addon:
     runs-on: ubuntu-20.04
     if: ${{ github.ref_type != 'branch' || needs.kurl-addon-changes-filter.outputs.ok-to-test == 'true' }}
-    needs: [ generate-kurl-addon, kurl-addon-changes-filter ]
+    needs: [ generate-tag, generate-kurl-addon, kurl-addon-changes-filter ]
     steps:
       - name: checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
       - name: set outputs
         id: vars
         run: |
           addon_version=${{ needs.generate-tag.outputs.tag }}
-          echo "::set-output name=addon_version::${addon_version#v}"
+          echo "addon_version=${addon_version#v}" >> "$GITHUB_OUTPUT"
       - uses: ./.github/actions/kurl-addon-kots-test
         with:
           addon_version: ${{ steps.vars.outputs.addon_version }}
@@ -343,12 +342,12 @@ jobs:
       AWS_DEFAULT_REGION: us-east-1
     steps:
       - name: checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
       - name: set outputs
         id: vars
         run: |
           addon_version=${{ needs.generate-tag.outputs.tag }}
-          echo "::set-output name=addon_version::${addon_version#v}"
+          echo "addon_version=${addon_version#v}" >> "$GITHUB_OUTPUT"
       - uses: ./.github/actions/kurl-addon-kots-publisher
         with:
           ADDON_VERSION: ${{ steps.vars.outputs.addon_version }}
@@ -362,7 +361,7 @@ jobs:
     if: github.ref_type != 'branch'
     steps:
     - name: Checkout
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
 
     - name: Generate KOTS Release Notes PR
       env:
@@ -380,12 +379,12 @@ jobs:
     needs: [release-go-api-tagged, goreleaser, build-schema-migrations, generate-tag]
     steps:
     - name: Download migrations
-      uses: actions/download-artifact@v2
+      uses: actions/download-artifact@v3
       with:
         name: migrations-image
         path: ./docker-archive
     - name: Download kotsadm image
-      uses: actions/download-artifact@v2
+      uses: actions/download-artifact@v3
       with:
         name: kotsadm-image
         path: ./docker-archive
@@ -458,7 +457,7 @@ jobs:
   #     GIT_TAG: ${{ needs.generate-tag.outputs.tag }}
   #   steps:
   #   - name: Checkout
-  #     uses: actions/checkout@v2
+  #     uses: actions/checkout@v3
   #   - uses: kceb/pull-request-url-action@v2
   #     id: pr_url
   #   - name: Expose git commit data
