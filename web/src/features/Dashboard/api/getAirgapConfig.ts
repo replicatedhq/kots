@@ -26,7 +26,7 @@ export const getAirgapConfig = async (appSlug: string): Promise<number> => {
 };
 
 export const useAirgapConfig = (
-  onSuccess: (simultaneousUploads: Number) => {}
+  onSuccess: (simultaneousUploads: Number) => void
 ) => {
   const selectedApp = useSelectedApp();
   return useQuery({
