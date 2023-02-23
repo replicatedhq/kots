@@ -2050,7 +2050,7 @@ jobs:
             --registry-username not-a-username \
             --registry-password not-a-password > output.txt 2>&1
 
-          if [ ! grep -q 'Failed to test access' output.txt ]; then
+          if ! grep -q 'Failed to test access' output.txt; then
             printf "Expected registry validation to fail before pushing images, but did not.\n\n"
             cat output.txt
             exit 1
@@ -2064,7 +2064,7 @@ jobs:
             --registry-username not-a-username \
             --registry-password not-a-password > output.txt 2>&1
 
-          if [ ! grep -q 'Failed to test access' output.txt ]; then
+          if ! grep -q 'Failed to test access' output.txt; then
             printf "Expected registry validation to fail before installation, but did not.\n\n"
             cat output.txt
             exit 1
@@ -2079,7 +2079,7 @@ jobs:
             --registry-password not-a-password \
             --namespace not-a-namespace > output.txt 2>&1
 
-          if [ ! grep -q 'Failed to test access' output.txt ]; then
+          if ! grep -q 'Failed to test access' output.txt; then
             printf "Expected registry validation to fail before upgrading, but did not.\n\n"
             cat output.txt
             exit 1
