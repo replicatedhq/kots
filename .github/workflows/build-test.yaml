@@ -868,13 +868,13 @@ jobs:
 
           # validate that helm charts installed using the native helm workflow were deployed via the helm CLI correctly
 
-          if [ ! helm ls -n postgres-test | awk 'NR>1{print $1}' | grep -q postgresql ]; then
+          if ! helm ls -n postgres-test | awk 'NR>1{print $1}' | grep -q postgresql ; then
             printf "postgresql helm release not found in postgres-test namespace\n\n"
             helm ls -n postgres-test
             exit 1
           fi
 
-          if [ ! helm ls -n $APP_SLUG | awk 'NR>1{print $1}' | grep -q private-chart ]; then
+          if ! helm ls -n $APP_SLUG | awk 'NR>1{print $1}' | grep -q private-chart ; then
             printf "private-chart helm release not found in $APP_SLUG namespace\n\n"
             helm ls -n $APP_SLUG
             exit 1
