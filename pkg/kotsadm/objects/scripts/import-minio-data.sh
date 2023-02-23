@@ -27,11 +27,13 @@ fi
 # change the working directory to the migration directory
 cd $KOTSADM_MINIO_MIGRATION_DIR
 
-# create the new data directory
-mkdir -p $KOTSADM_MINIO_MIGRATION_DIR/new-data
+# now that we have a copy of the old minio data in the migration directory, remove the old data from the volume
+echo "removing old minio data"
+shopt -s dotglob
+rm -rfv /export/*
 
-echo "starting minio instance"
-/bin/sh -ce "/usr/bin/docker-entrypoint.sh minio -C /home/minio/.minio/ --quiet server $KOTSADM_MINIO_MIGRATION_DIR/new-data" &
+echo "starting new minio instance"
+/bin/sh -ce "/usr/bin/docker-entrypoint.sh minio -C /home/minio/.minio/ server /export" &
 MINIO_PID=$!
 
 # wait for minio to be ready
@@ -75,19 +77,6 @@ kill $MINIO_PID
 wait $MINIO_PID
 
 echo "minio stopped"
-
-echo "replacing old data with new data"
-shopt -s dotglob
-
-if [ "$(ls -A /export)" ]; then
-    echo "/export is not empty, moving old data to migration directory"
-    mkdir -p $KOTSADM_MINIO_MIGRATION_DIR/old-data
-    mv -v /export/* $KOTSADM_MINIO_MIGRATION_DIR/old-data/
-else
-    echo "/export is empty, no data to move to migration directory"
-fi
-
-mv -v $KOTSADM_MINIO_MIGRATION_DIR/new-data/* /export/
 
 echo "adding migration complete marker"
 date -u +"%Y-%m-%dT%H:%M:%SZ" > /export/.migration
