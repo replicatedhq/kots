@@ -14,6 +14,10 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
+const (
+	MinioXlMigrationScriptsConfigmapName = "kotsadm-minio-xl-migration-scripts"
+)
+
 var (
 	//go:embed scripts/copy-minio-client.sh
 	copyMinioClient string
@@ -381,7 +385,7 @@ func minioVolumes(deployOptions types.DeployOptions) []corev1.Volume {
 			VolumeSource: corev1.VolumeSource{
 				ConfigMap: &corev1.ConfigMapVolumeSource{
 					LocalObjectReference: corev1.LocalObjectReference{
-						Name: "kotsadm-minio-xl-migration-scripts",
+						Name: MinioXlMigrationScriptsConfigmapName,
 					},
 					DefaultMode: &scriptsFileMode,
 					Items: []corev1.KeyToPath{
@@ -453,7 +457,7 @@ func MinioXlMigrationScriptsConfigMap(namespace string) *corev1.ConfigMap {
 			Kind:       "ConfigMap",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "kotsadm-minio-xl-migration-scripts",
+			Name:      MinioXlMigrationScriptsConfigmapName,
 			Namespace: namespace,
 			Labels:    types.GetKotsadmLabels(),
 		},

@@ -133,7 +133,7 @@ func Test_IsMinioXlMigrationRunning(t *testing.T) {
 			clientset: fake.NewSimpleClientset(
 				&corev1.ConfigMap{
 					ObjectMeta: metav1.ObjectMeta{
-						Name:      "kotsadm-minio-xl-migration-status",
+						Name:      MinioXlMigrationStatusConfigmapName,
 						Namespace: "default",
 					},
 					Data: map[string]string{
@@ -148,7 +148,7 @@ func Test_IsMinioXlMigrationRunning(t *testing.T) {
 			clientset: fake.NewSimpleClientset(
 				&corev1.ConfigMap{
 					ObjectMeta: metav1.ObjectMeta{
-						Name:      "kotsadm-minio-xl-migration-status",
+						Name:      MinioXlMigrationStatusConfigmapName,
 						Namespace: "default",
 					},
 					Data: map[string]string{
@@ -163,7 +163,7 @@ func Test_IsMinioXlMigrationRunning(t *testing.T) {
 			clientset: fake.NewSimpleClientset(
 				&corev1.ConfigMap{
 					ObjectMeta: metav1.ObjectMeta{
-						Name:      "kotsadm-minio-xl-migration-status",
+						Name:      MinioXlMigrationStatusConfigmapName,
 						Namespace: "default",
 					},
 				},
@@ -199,7 +199,7 @@ func Test_MarkMinioXlMigrationComplete(t *testing.T) {
 			clientset: fake.NewSimpleClientset(
 				&corev1.ConfigMap{
 					ObjectMeta: metav1.ObjectMeta{
-						Name:      "kotsadm-minio-xl-migration-status",
+						Name:      MinioXlMigrationStatusConfigmapName,
 						Namespace: "default",
 					},
 					Data: map[string]string{
@@ -224,7 +224,7 @@ func Test_MarkMinioXlMigrationComplete(t *testing.T) {
 			req.NoError(err)
 
 			if test.wantComplete {
-				cm, err := test.clientset.CoreV1().ConfigMaps("default").Get(ctx, "kotsadm-minio-xl-migration-status", metav1.GetOptions{})
+				cm, err := test.clientset.CoreV1().ConfigMaps("default").Get(ctx, MinioXlMigrationStatusConfigmapName, metav1.GetOptions{})
 				req.NoError(err)
 				req.Equal("complete", cm.Data["status"])
 			}

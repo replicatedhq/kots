@@ -19,6 +19,10 @@ import (
 	"k8s.io/client-go/kubernetes/scheme"
 )
 
+const (
+	MinioXlMigrationStatusConfigmapName = "kotsadm-minio-xl-migration-status"
+)
+
 func getConfigMapsYAML(deployOptions types.DeployOptions) (map[string][]byte, error) {
 	docs := map[string][]byte{}
 	s := json.NewYAMLSerializer(json.DefaultMetaFactory, scheme.Scheme, scheme.Scheme)
@@ -203,7 +207,7 @@ func ensureMinioXlMigrationScriptsConfigmap(namespace string, clientset kubernet
 }
 
 func ensureMinioXlMigrationStatusConfigmap(namespace string, clientset kubernetes.Interface) error {
-	_, err := clientset.CoreV1().ConfigMaps(namespace).Get(context.TODO(), "kotsadm-minio-xl-migration-status", metav1.GetOptions{})
+	_, err := clientset.CoreV1().ConfigMaps(namespace).Get(context.TODO(), MinioXlMigrationStatusConfigmapName, metav1.GetOptions{})
 	if err != nil {
 		if !kuberneteserrors.IsNotFound(err) {
 			return errors.Wrap(err, "failed to get existing minio xl migration status configmap")
@@ -211,7 +215,7 @@ func ensureMinioXlMigrationStatusConfigmap(namespace string, clientset kubernete
 
 		cm := &corev1.ConfigMap{
 			ObjectMeta: metav1.ObjectMeta{
-				Name: "kotsadm-minio-xl-migration-status",
+				Name: MinioXlMigrationStatusConfigmapName,
 			},
 			Data: map[string]string{
 				"status": "running",

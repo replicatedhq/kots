@@ -430,10 +430,10 @@ func ensureAndWaitForMinio(ctx context.Context, deployOptions types.DeployOption
 }
 
 func IsMinioXlMigrationRunning(ctx context.Context, clientset kubernetes.Interface, namespace string) (bool, error) {
-	cm, err := clientset.CoreV1().ConfigMaps(namespace).Get(ctx, "kotsadm-minio-xl-migration-status", metav1.GetOptions{})
+	cm, err := clientset.CoreV1().ConfigMaps(namespace).Get(ctx, MinioXlMigrationStatusConfigmapName, metav1.GetOptions{})
 	if err != nil {
 		if !kuberneteserrors.IsNotFound(err) {
-			return false, errors.Wrap(err, "failed to get kotsadm-minio-xl-migration-status configmap")
+			return false, errors.Wrapf(err, "failed to get %s configmap", MinioXlMigrationStatusConfigmapName)
 		}
 		return false, nil
 	}
@@ -446,10 +446,10 @@ func IsMinioXlMigrationRunning(ctx context.Context, clientset kubernetes.Interfa
 }
 
 func MarkMinioXlMigrationComplete(ctx context.Context, clientset kubernetes.Interface, namespace string) error {
-	cm, err := clientset.CoreV1().ConfigMaps(namespace).Get(ctx, "kotsadm-minio-xl-migration-status", metav1.GetOptions{})
+	cm, err := clientset.CoreV1().ConfigMaps(namespace).Get(ctx, MinioXlMigrationStatusConfigmapName, metav1.GetOptions{})
 	if err != nil {
 		if !kuberneteserrors.IsNotFound(err) {
-			return errors.Wrap(err, "failed to get kotsadm-minio-xl-migration-status configmap")
+			return errors.Wrapf(err, "failed to get %s configmap", MinioXlMigrationStatusConfigmapName)
 		}
 		return nil // no-op
 	}
@@ -461,7 +461,7 @@ func MarkMinioXlMigrationComplete(ctx context.Context, clientset kubernetes.Inte
 
 	_, err = clientset.CoreV1().ConfigMaps(namespace).Update(ctx, cm, metav1.UpdateOptions{})
 	if err != nil {
-		return errors.Wrap(err, "failed to update kotsadm-minio-xl-migration-status configmap")
+		return errors.Wrapf(err, "failed to update %s configmap", MinioXlMigrationStatusConfigmapName)
 	}
 
 	return nil
