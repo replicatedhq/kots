@@ -171,15 +171,6 @@ func NewRangeKotsVersion() Test {
 	}
 }
 
-func NewStatusInformer() Test {
-	return Test{
-		Name:        "Status Informer",
-		Suite:       "status-informer",
-		Namespace:   "status-informer",
-		UpstreamURI: "status-informer",
-	}
-}
-
 func SetupRegressionTest(kubectlCLI *kubectl.CLI) TestimParams {
 	cmd := kubectlCLI.Command(
 		context.Background(),
