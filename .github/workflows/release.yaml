@@ -421,10 +421,12 @@ jobs:
       uses: github-script@v6
       with:
         script: |
-          const { data: { tag_name } } = await github.rest.repos.getLatestRelease({
+          const {
+            data: { tag_name },
+          } = await github.rest.repos.getLatestRelease({
             ...context.repo,
           });
-          core.setOutput('last_release_tag', tag_name);
+          core.setOutput("release", tag_name);
     - id: get_id
       run: |
         id=${{ github.sha }}
