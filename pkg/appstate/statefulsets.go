@@ -139,7 +139,7 @@ func (h *statefulSetEventHandler) calculateStatefulSetState(r *appsv1.StatefulSe
 		}
 
 		if !validOwner {
-			log.Printf("skipping pod %s due to invalid owner reference for %s", pod.ObjectMeta.Name, r.ObjectMeta.Name)
+			log.Printf("skipping pod %s due to invalid owner reference for statefulset %s", pod.ObjectMeta.Name, r.ObjectMeta.Name)
 			continue
 		}
 
