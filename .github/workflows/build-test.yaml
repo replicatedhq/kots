@@ -1625,7 +1625,7 @@ jobs:
         run: |
           set +e
           COUNTER=1
-          while [ -z "$(kubectl get pods -n $NAMESPACE | grep kotsadm-minio-0)" ]; do
+          while ! kubectl get pods -n $NAMESPACE | grep -q kotsadm-minio-0; do
             COUNTER=$[$COUNTER +1]
             if [ $COUNTER -gt 30 ]; then
               echo "timed out waiting for kotsadm-minio-0 pod to be created"
@@ -1665,24 +1665,11 @@ jobs:
         run: |
           set +e
           kubectl apply -f ./admin-console -n $NAMESPACE
-
-      - name: wait for the kotsadm-minio-0 pod to be created
-        run: |
-          set +e
-          sleep 10
-          COUNTER=1
-          while [ -z "$(kubectl get pods -n $NAMESPACE | grep kotsadm-minio-0)" ]; do
-            COUNTER=$[$COUNTER +1]
-            if [ $COUNTER -gt 30 ]; then
-              echo "timed out waiting for kotsadm-minio-0 pod to be created"
-              exit -1
-            fi
-            sleep 1
-          done
       
       - name: wait for kotsadm-minio-0 pod to be ready
         run: |
           set +e
+          sleep 10
           kubectl wait --for=condition=ready --timeout=180s pod/kotsadm-minio-0 -n $NAMESPACE
 
       - name: wait for the kotsadm deployment to be ready
@@ -1711,24 +1698,11 @@ jobs:
         run: |
           set +e
           kubectl apply -f ./admin-console -n $NAMESPACE
-
-      - name: wait for the kotsadm-minio-0 pod to be created
-        run: |
-          set +e
-          sleep 10
-          COUNTER=1
-          while [ -z "$(kubectl get pods -n $NAMESPACE | grep kotsadm-minio-0)" ]; do
-            COUNTER=$[$COUNTER +1]
-            if [ $COUNTER -gt 30 ]; then
-              echo "timed out waiting for kotsadm-minio-0 pod to be created"
-              exit -1
-            fi
-            sleep 1
-          done
       
       - name: wait for kotsadm-minio-0 pod to be ready
         run: |
           set +e
+          sleep 10
           kubectl wait --for=condition=ready --timeout=180s pod/kotsadm-minio-0 -n $NAMESPACE
 
       - name: wait for the kotsadm deployment to be ready
