@@ -248,9 +248,15 @@ func addClusterSpecificSpec(app apptypes.AppType, b *troubleshootv1beta2.Support
 
 // createClusterSpecificSupportBundle creates a support bundle spec with only cluster specific collectors, analyzers and upload result URI.
 func createClusterSpecificSupportBundle(app apptypes.AppType, b *troubleshootv1beta2.SupportBundle, opts types.TroubleshootOptions, namespacesToCollect []string, namespacesToAnalyze []string, imageName string, pullSecret *troubleshootv1beta2.ImagePullSecrets) *troubleshootv1beta2.SupportBundle {
-	supportBundle := b.DeepCopy()
-	supportBundle.Spec.Collectors = make([]*troubleshootv1beta2.Collect, 0)
-	supportBundle.Spec.Analyzers = make([]*troubleshootv1beta2.Analyze, 0)
+	supportBundle := &troubleshootv1beta2.SupportBundle{
+		TypeMeta: v1.TypeMeta{
+			Kind:       "SupportBundle",
+			APIVersion: "troubleshoot.sh/v1beta2",
+		},
+		ObjectMeta: v1.ObjectMeta{
+			Name: "cluster-specific-supportbundle",
+		},
+	}
 
 	supportBundle = addClusterSpecificSpec(app, supportBundle, opts, namespacesToCollect, namespacesToAnalyze, imageName, pullSecret)
 
@@ -271,9 +277,15 @@ func addDefaultSpec(app apptypes.AppType, b *troubleshootv1beta2.SupportBundle, 
 
 // createDefaultSupportBundle creates a support bundle spec with only default collectors and analyzers.
 func createDefaultSupportBundle(app apptypes.AppType, b *troubleshootv1beta2.SupportBundle, opts types.TroubleshootOptions, namespacesToCollect []string, namespacesToAnalyze []string, imageName string, pullSecret *troubleshootv1beta2.ImagePullSecrets) *troubleshootv1beta2.SupportBundle {
-	supportBundle := b.DeepCopy()
-	supportBundle.Spec.Collectors = make([]*troubleshootv1beta2.Collect, 0)
-	supportBundle.Spec.Analyzers = make([]*troubleshootv1beta2.Analyze, 0)
+	supportBundle := &troubleshootv1beta2.SupportBundle{
+		TypeMeta: v1.TypeMeta{
+			Kind:       "SupportBundle",
+			APIVersion: "troubleshoot.sh/v1beta2",
+		},
+		ObjectMeta: v1.ObjectMeta{
+			Name: "cluster-specific-supportbundle",
+		},
+	}
 
 	supportBundle = addDefaultSpec(app, supportBundle, opts, namespacesToCollect, namespacesToAnalyze, imageName, pullSecret)
 
