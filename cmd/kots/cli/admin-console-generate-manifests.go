@@ -37,9 +37,21 @@ func AdminGenerateManifestsCmd() *cobra.Command {
 			// set defaults for variables requiring cluster context
 			isOpenShift, isGKEAutopilot := false, false
 			migrateToMinioXl, currentMinioImage := false, ""
+			registryConfig := kotsadmtypes.RegistryConfig{
+				OverrideVersion:   v.GetString("kotsadm-tag"),
+				OverrideRegistry:  v.GetString("kotsadm-registry"),
+				OverrideNamespace: v.GetString("kotsadm-namespace"),
+				Username:          v.GetString("registry-username"),
+				Password:          v.GetString("registry-password"),
+			}
 			if clientset, err := k8sutil.GetClientset(); err == nil {
 				isOpenShift, isGKEAutopilot = k8sutil.IsOpenShift(clientset), k8sutil.IsGKEAutopilot(clientset)
 				migrateToMinioXl, currentMinioImage, _ = kotsadm.IsMinioXlMigrationNeeded(clientset, namespace)
+				if newRegistryConfig, err := getRegistryConfig(v, clientset); err == nil {
+					registryConfig = *newRegistryConfig
+				} else {
+					logger.Error(errors.Wrap(err, "failed to get registry config"))
+				}
 			}
 
 			renderDir := ExpandDir(v.GetString("rootdir"))
@@ -56,14 +68,7 @@ func AdminGenerateManifestsCmd() *cobra.Command {
 				AdditionalNamespaces: v.GetStringSlice("additional-namespaces"),
 				IsOpenShift:          isOpenShift,
 				IsGKEAutopilot:       isGKEAutopilot,
-
-				RegistryConfig: kotsadmtypes.RegistryConfig{
-					OverrideVersion:   v.GetString("kotsadm-tag"),
-					OverrideRegistry:  v.GetString("kotsadm-registry"),
-					OverrideNamespace: v.GetString("kotsadm-namespace"),
-					Username:          v.GetString("registry-username"),
-					Password:          v.GetString("registry-password"),
-				},
+				RegistryConfig:       registryConfig,
 			}
 			adminConsoleFiles, err := upstream.GenerateAdminConsoleFiles(renderDir, options)
 			if err != nil {
