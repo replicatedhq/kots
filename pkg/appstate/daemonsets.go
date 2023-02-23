@@ -132,7 +132,7 @@ func (h *daemonSetEventHandler) calculateDaemonSetState(r *appsv1.DaemonSet) typ
 		}
 
 		if !validOwner {
-			log.Printf("skipping pod %s due to invalid owner references for %s", pod.ObjectMeta.Name, r.ObjectMeta.Name)
+			log.Printf("skipping pod %s due to invalid owner references for daemonset %s", pod.ObjectMeta.Name, r.ObjectMeta.Name)
 			continue
 		}
 
