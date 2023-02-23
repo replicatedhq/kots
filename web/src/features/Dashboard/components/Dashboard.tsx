@@ -44,6 +44,7 @@ import {
 } from "../api/getUpdateDownloadStatus";
 import { useAppDownstream } from "../api/getAppDownstream";
 import { useAirgapConfig } from "../api/getAirgapConfig";
+import { Updates, useCheckForUpdates } from "../api/getUpdates";
 //import LicenseTester from "./LicenseTester";
 
 type Props = {
@@ -532,58 +533,88 @@ const Dashboard = (props: Props) => {
     };
   }, []);
 
-  const onCheckForUpdates = async () => {
+
+  // need to add a function to setstate when checkForUpdates gets triggered 
+
+  const onSuccess = (response: Updates) => { 
+    if (response.availableUpdates === 0) {
+              setState({
+                checkingForUpdates: false,
+                noUpdatesAvalable: true,
+              });
+              let timerId = setTimeout(() => {
+                setState({ noUpdatesAvalable: false });
+              }, 3000);
+              timer.current.push(timerId);
+            } else {
+              refetchUpdateDownloadStatus();
+              setState({ checkingForUpdates: true });
+            }
+  }
+
+  const onError = (err:Error) => { 
     setState({
-      checkingForUpdates: true,
-      checkingForUpdateError: false,
-    });
+              checkingForUpdateError: true,
+              checkingForUpdates: false,
+              checkingUpdateMessage: err?.message
+                ? err?.message
+                : "There was an error checking for updates.",
+            });
+  }
+  const {refetch: checkForUpdates} = useCheckForUpdates(onSuccess,onError);
 
-    fetch(`${process.env.API_ENDPOINT}/app/${app.slug}/updatecheck`, {
-      headers: {
-        Authorization: Utilities.getToken(),
-        "Content-Type": "application/json",
-      },
-      method: "POST",
-    })
-      .then(async (res) => {
-        getAppLicense();
-        if (!res.ok) {
-          const text = await res.text();
-          setState({
-            checkingForUpdateError: true,
-            checkingForUpdates: false,
-            checkingUpdateMessage: text
-              ? text
-              : "There was an error checking for updates.",
-          });
-          return;
-        }
+  // const onCheckForUpdates = async () => {
+  //   setState({
+  //     checkingForUpdates: true,
+  //     checkingForUpdateError: false,
+  //   });
 
-        const response = await res.json();
-        if (response.availableUpdates === 0) {
-          setState({
-            checkingForUpdates: false,
-            noUpdatesAvalable: true,
-          });
-          let timerId = setTimeout(() => {
-            setState({ noUpdatesAvalable: false });
-          }, 3000);
-          timer.current.push(timerId);
-        } else {
-          refetchUpdateDownloadStatus();
-          setState({ checkingForUpdates: true });
-        }
-      })
-      .catch((err) => {
-        setState({
-          checkingForUpdateError: true,
-          checkingForUpdates: false,
-          checkingUpdateMessage: err?.message
-            ? err?.message
-            : "There was an error checking for updates.",
-        });
-      });
-  };
+  //   fetch(`${process.env.API_ENDPOINT}/app/${app.slug}/updatecheck`, {
+  //     headers: {
+  //       Authorization: Utilities.getToken(),
+  //       "Content-Type": "application/json",
+  //     },
+  //     method: "POST",
+  //   })
+  //     .then(async (res) => {
+  //       getAppLicense();
+  //       if (!res.ok) {
+  //         const text = await res.text();
+  //         setState({
+  //           checkingForUpdateError: true,
+  //           checkingForUpdates: false,
+  //           checkingUpdateMessage: text
+  //             ? text
+  //             : "There was an error checking for updates.",
+  //         });
+  //         return;
+  //       }
+
+  //       const response = await res.json();
+  //       if (response.availableUpdates === 0) {
+  //         setState({
+  //           checkingForUpdates: false,
+  //           noUpdatesAvalable: true,
+  //         });
+  //         let timerId = setTimeout(() => {
+  //           setState({ noUpdatesAvalable: false });
+  //         }, 3000);
+  //         timer.current.push(timerId);
+  //       } else {
+  //         refetchUpdateDownloadStatus();
+  //         setState({ checkingForUpdates: true });
+  //       }
+  //     })
+  //     .catch((err) => {
+  //       setState({
+  //         checkingForUpdateError: true,
+  //         checkingForUpdates: false,
+  //         checkingUpdateMessage: err?.message
+  //           ? err?.message
+  //           : "There was an error checking for updates.",
+  //       });
+  //     });
+  // };
 
   const hideAutomaticUpdatesModal = () => {
     setState({
@@ -662,7 +693,7 @@ const Dashboard = (props: Props) => {
                     makeCurrentVersion={props.makeCurrentVersion}
                     redeployVersion={props.redeployVersion}
                     onProgressError={onProgressError}
-                    onCheckForUpdates={() => onCheckForUpdates()}
+                    onCheckForUpdates={() => checkForUpdates()}
                     isBundleUploading={isBundleUploading}
                     checkingForUpdateError={state.checkingForUpdateError}
                     viewAirgapUploadError={() => toggleViewAirgapUploadError()}
