@@ -19,10 +19,6 @@ if [ -z $KOTSADM_MINIO_MIGRATION_DIR ]; then
     exit 1
 fi
 
-# clean the migration directory
-shopt -s dotglob
-rm -rfv $KOTSADM_MINIO_MIGRATION_DIR/*
-
 echo "copying minio client binary to migration directory and preserving permissions"
 mkdir -p $KOTSADM_MINIO_MIGRATION_DIR/bin
 cp /usr/bin/mc $KOTSADM_MINIO_MIGRATION_DIR/bin/mc

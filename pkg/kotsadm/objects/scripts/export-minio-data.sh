@@ -45,10 +45,15 @@ until $KOTSADM_MINIO_MIGRATION_DIR/bin/mc alias set $KOTSADM_MINIO_LEGACY_ALIAS 
     sleep 1
 done
 
-echo "exporting minio bucket content"
-$KOTSADM_MINIO_MIGRATION_DIR/bin/mc mirror --preserve $KOTSADM_MINIO_LEGACY_ALIAS/$KOTSADM_MINIO_BUCKET_NAME $KOTSADM_MINIO_MIGRATION_DIR/$KOTSADM_MINIO_BUCKET_NAME
+# check if the bucket exists and export the content
+if $KOTSADM_MINIO_MIGRATION_DIR/bin/mc ls $KOTSADM_MINIO_LEGACY_ALIAS | grep -q $KOTSADM_MINIO_BUCKET_NAME; then
+    echo "exporting minio bucket content"
+    $KOTSADM_MINIO_MIGRATION_DIR/bin/mc mirror --preserve $KOTSADM_MINIO_LEGACY_ALIAS/$KOTSADM_MINIO_BUCKET_NAME $KOTSADM_MINIO_MIGRATION_DIR/$KOTSADM_MINIO_BUCKET_NAME
 
-echo "export complete"
+    echo "export complete"
+else
+    echo "bucket does not exist, skipping export"
+fi
 
 # shutdown minio
 echo "stopping minio"

@@ -78,8 +78,15 @@ echo "minio stopped"
 
 echo "replacing old data with new data"
 shopt -s dotglob
-mkdir -p $KOTSADM_MINIO_MIGRATION_DIR/old-data
-mv -v /export/* $KOTSADM_MINIO_MIGRATION_DIR/old-data/
+
+if [ "$(ls -A /export)" ]; then
+    echo "/export is not empty, moving old data to migration directory"
+    mkdir -p $KOTSADM_MINIO_MIGRATION_DIR/old-data
+    mv -v /export/* $KOTSADM_MINIO_MIGRATION_DIR/old-data/
+else
+    echo "/export is empty, no data to move to migration directory"
+fi
+
 mv -v $KOTSADM_MINIO_MIGRATION_DIR/new-data/* /export/
 
 echo "adding migration complete marker"
