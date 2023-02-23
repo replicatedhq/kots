@@ -418,14 +418,17 @@ jobs:
     steps:
     - name: Get latest release tag
       id: get_latest_release_tag
-      uses: pozetroninc/github-action-get-latest-release@master
+      uses: github-script@v6
       with:
-        repository: ${{ github.repository }}
-        excludes: prerelease, draft
+        script: |
+          const { data: { tag_name } } = await github.rest.repos.getLatestRelease({
+            ...context.repo,
+          });
+          core.setOutput('last_release_tag', tag_name);
     - id: get_id
       run: |
         id=${{ github.sha }}
-        echo "::set-output name=id::${id:0:7}"
+        echo "name=id::${id:0:7}" > "$GITHUB_OUTPUT"
 
   regression-test:
     if: github.ref_type == 'branch'
