@@ -18,6 +18,7 @@ import (
 const (
 	DaemonSetResourceKind    = "daemonset"
 	DaemonSetPodVersionLabel = "controller-revision-hash"
+	DaemonSetOwnerKind       = "DaemonSet"
 )
 
 type daemonSetEventHandler struct {
@@ -122,6 +123,19 @@ func (h *daemonSetEventHandler) calculateDaemonSetState(r *appsv1.DaemonSet) typ
 	// If the pod version labels are not all the same, then the daemonset is updating.
 	currentVersion := ""
 	for _, pod := range pods.Items {
+		validOwner := false
+		for _, owner := range pod.ObjectMeta.OwnerReferences {
+			if owner.Kind == DaemonSetOwnerKind && owner.Name == r.ObjectMeta.Name {
+				validOwner = true
+				break
+			}
+		}
+
+		if !validOwner {
+			log.Printf("skipping pod %s due to invalid owner references for %s", pod.ObjectMeta.Name, r.ObjectMeta.Name)
+			continue
+		}
+
 		version, exists := pod.Labels[DaemonSetPodVersionLabel]
 		if !exists {
 			log.Printf("failed to find %s label for pod %s", DaemonSetPodVersionLabel, pod.Name)
