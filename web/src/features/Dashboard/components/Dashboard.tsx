@@ -43,6 +43,7 @@ import {
   useUpdateDownloadStatus,
 } from "../api/getUpdateDownloadStatus";
 import { useAppDownstream } from "../api/getAppDownstream";
+import { useAirgapConfig } from "../api/getAirgapConfig";
 //import LicenseTester from "./LicenseTester";
 
 type Props = {
@@ -451,25 +452,7 @@ const Dashboard = (props: Props) => {
 
   const { appStatus } = state.dashboard;
 
-  const getAirgapConfig = async () => {
-    const configUrl = `${process.env.API_ENDPOINT}/app/${app.slug}/airgap/config`;
-    let simultaneousUploads = 3;
-    try {
-      let res = await fetch(configUrl, {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: Utilities.getToken(),
-        },
-      });
-      if (res.ok) {
-        const response = await res.json();
-        simultaneousUploads = response.simultaneousUploads;
-      }
-    } catch {
-      // no-op
-    }
-
+  const onAirgapConfigSuccess = (simultaneousUploads: Number) => {
     airgapUploader.current = new AirgapUploader(
       true,
       app.slug,
@@ -477,6 +460,8 @@ const Dashboard = (props: Props) => {
       simultaneousUploads
     );
   };
+
+  const { refetch: getAirgapConfig } = useAirgapConfig(onAirgapConfigSuccess);
 
   const {
     data: selectedAppClusterDashboardResponse,
