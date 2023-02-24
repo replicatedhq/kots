@@ -501,7 +501,7 @@ and `background-position: [value]`
 
 /// NEW CSS CLASSES
 .card-bg {
-  background: $really-light-accent;
+  background: var(--card-color);
   border-radius: 6px;
   padding: 15px;
 }

@@ -52,6 +52,7 @@ $border-radius: 4px;
   --link-color: var(--primary-color);
   --link-hover-color: var(--link-color);
 
+  --card-color: #{$really-light-accent};
   --icon-color: #{$primary-color};
   --subnav-color: #{$sub-nav-color};
   --tooltip-color: #{$primary-extra-dark-color};
