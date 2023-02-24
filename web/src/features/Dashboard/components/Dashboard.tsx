@@ -533,8 +533,6 @@ const Dashboard = (props: Props) => {
     };
   }, []);
 
-  // need to add a function to setstate when checkForUpdates gets triggered
-
   const onSuccess = (response: Updates) => {
     if (response.availableUpdates === 0) {
       setState({
@@ -561,6 +559,15 @@ const Dashboard = (props: Props) => {
     });
   };
   const { refetch: checkForUpdates } = useCheckForUpdates(onSuccess, onError);
+
+  const onCheckForUpdates = async () => {
+    setState({
+      checkingForUpdates: true,
+      checkingForUpdateError: false,
+    });
+
+    checkForUpdates();
+  };
 
   const hideAutomaticUpdatesModal = () => {
     setState({
@@ -639,7 +646,7 @@ const Dashboard = (props: Props) => {
                     makeCurrentVersion={props.makeCurrentVersion}
                     redeployVersion={props.redeployVersion}
                     onProgressError={onProgressError}
-                    onCheckForUpdates={() => checkForUpdates()}
+                    onCheckForUpdates={() => onCheckForUpdates()}
                     isBundleUploading={isBundleUploading}
                     checkingForUpdateError={state.checkingForUpdateError}
                     viewAirgapUploadError={() => toggleViewAirgapUploadError()}
