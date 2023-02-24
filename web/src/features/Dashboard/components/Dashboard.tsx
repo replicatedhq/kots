@@ -562,59 +562,6 @@ const Dashboard = (props: Props) => {
   };
   const { refetch: checkForUpdates } = useCheckForUpdates(onSuccess, onError);
 
-  // const onCheckForUpdates = async () => {
-  //   setState({
-  //     checkingForUpdates: true,
-  //     checkingForUpdateError: false,
-  //   });
-
-  //   fetch(`${process.env.API_ENDPOINT}/app/${app.slug}/updatecheck`, {
-  //     headers: {
-  //       Authorization: Utilities.getToken(),
-  //       "Content-Type": "application/json",
-  //     },
-  //     method: "POST",
-  //   })
-  //     .then(async (res) => {
-  //       getAppLicense();
-  //       if (!res.ok) {
-  //         const text = await res.text();
-  //         setState({
-  //           checkingForUpdateError: true,
-  //           checkingForUpdates: false,
-  //           checkingUpdateMessage: text
-  //             ? text
-  //             : "There was an error checking for updates.",
-  //         });
-  //         return;
-  //       }
-
-  //       const response = await res.json();
-  //       if (response.availableUpdates === 0) {
-  //         setState({
-  //           checkingForUpdates: false,
-  //           noUpdatesAvalable: true,
-  //         });
-  //         let timerId = setTimeout(() => {
-  //           setState({ noUpdatesAvalable: false });
-  //         }, 3000);
-  //         timer.current.push(timerId);
-  //       } else {
-  //         refetchUpdateDownloadStatus();
-  //         setState({ checkingForUpdates: true });
-  //       }
-  //     })
-  //     .catch((err) => {
-  //       setState({
-  //         checkingForUpdateError: true,
-  //         checkingForUpdates: false,
-  //         checkingUpdateMessage: err?.message
-  //           ? err?.message
-  //           : "There was an error checking for updates.",
-  //       });
-  //     });
-  // };
-
   const hideAutomaticUpdatesModal = () => {
     setState({
       showAutomaticUpdatesModal: false,
