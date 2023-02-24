@@ -213,6 +213,7 @@ func (m *AppMonitor) runInformers(ctx context.Context, informers []types.StatusI
 	}
 
 	kindImpls := map[string]runControllerFunc{
+		DaemonSetResourceKind:             runDaemonSetController,
 		DeploymentResourceKind:            runDeploymentController,
 		IngressResourceKind:               runIngressController,
 		PersistentVolumeClaimResourceKind: runPersistentVolumeClaimController,
