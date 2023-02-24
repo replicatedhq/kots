@@ -10,6 +10,11 @@ then
     MIGRATION_DATE=$(cat /export/.migration)
     echo "migration already completed at $MIGRATION_DATE, no-op"
     exit 0
+elif [ -f /export/.export-complete ];
+then
+    EXPORT_DATE=$(cat /export/.export-complete)
+    echo "export already completed at $EXPORT_DATE, no-op"
+    exit 0
 fi
 
 # validate environment variables
@@ -63,3 +68,7 @@ kill $MINIO_PID
 wait $MINIO_PID
 
 echo "minio stopped"
+
+# mark the export as complete
+echo "marking export as complete"
+date -u +"%Y-%m-%dT%H:%M:%SZ" > /export/.export-complete
