@@ -241,8 +241,8 @@ func GetChartConfigSecret(helmApp *apptypes.HelmApp) (*corev1.Secret, error) {
 		return nil, errors.Wrap(err, "failed to get clientset")
 	}
 
-	// Note that this must be chart name, not release name
-	secretName := fmt.Sprintf("kots-%s-config", helmApp.Release.Chart.Name())
+	// Note that this is release name - chart name to support deploying multiple instances
+	secretName := fmt.Sprintf("kots-%s-%s-config", helmApp.Release.Name, helmApp.Release.Chart.Name())
 	secret, err := clientSet.CoreV1().Secrets(helmApp.Namespace).Get(context.TODO(), secretName, metav1.GetOptions{})
 	if err != nil {
 		if kuberneteserrors.IsNotFound(err) {
