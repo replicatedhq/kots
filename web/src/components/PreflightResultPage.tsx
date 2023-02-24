@@ -220,17 +220,18 @@ function PreflightResultPage(props: Props) {
           )}
         </div>
       )}
-      {!props.fromLicenseFlow && preflightCheck?.shouldShowRerunPreflight && (
-        <div className="flex-auto flex justifyContent--flexEnd u-marginBottom--15">
-          <button
-            type="button"
-            className="btn primary blue"
-            onClick={() => rerunPreflights()}
-          >
-            Re-run
-          </button>
-        </div>
-      )}
+      {preflightCheck?.shouldShowRerunPreflight &&
+        preflightCheck?.showPreflightCheckPending && (
+          <div className="flex-auto flex justifyContent--flexEnd u-marginBottom--15">
+            <button
+              type="button"
+              className="btn primary blue"
+              onClick={() => rerunPreflights()}
+            >
+              Re-run
+            </button>
+          </div>
+        )}
 
       {showConfirmIgnorePreflightsModal && (
         <SkipPreflightsModal
