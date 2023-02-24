@@ -50,7 +50,7 @@ import (
 var appNameRE *regexp.Regexp
 
 func init() {
-	appNameRE = regexp.MustCompile(`^kotsadm-.*-supportbundle$`)
+	appNameRE = regexp.MustCompile(`^kotsadm-.*-supportbundle(?:$|.*)`)
 }
 
 // CreateRenderedSpec creates the support bundle specification from defaults and the kots app
@@ -154,8 +154,8 @@ func CreateRenderedSpec(app apptypes.AppType, sequence int64, kotsKinds *kotsuti
 		}
 		renderedSpec = b.Bytes()
 		secretName := GetSpecSecretName(app.GetSlug())
-		if key != "kotsadm" {
-			secretName = GetSpecSecretName(app.GetSlug() + "-" + key)
+		if key != kotstypes.KotsadmSupportBundleSpecKey {
+			secretName = GetSpecSecretName(app.GetSlug()) + "-" + key
 		}
 
 		existingSecret, err := clientset.CoreV1().Secrets(util.PodNamespace).Get(context.TODO(), secretName, metav1.GetOptions{})
@@ -182,8 +182,7 @@ func CreateRenderedSpec(app apptypes.AppType, sequence int64, kotsKinds *kotsuti
 					return nil, errors.Wrap(err, "failed to create support bundle secret")
 				}
 
-				logger.Debugf("created %q default support bundle spec secret", app.GetSlug())
-				// return supportBundle, nil
+				logger.Debugf("created %q support bundle spec secret", secretName)
 			} else {
 				return nil, errors.Wrap(err, "failed to read support bundle secret")
 			}
@@ -203,7 +202,7 @@ func CreateRenderedSpec(app apptypes.AppType, sequence int64, kotsKinds *kotsuti
 
 	// Include discovered support bundle specs and default kotsadm support bundle spec. Perform this action here so
 	// as not to add discovered specs to the default support bundle spec secret.c
-	return addDiscoveredSpecs(builtBundles["kotsadm"], app, clientset), nil
+	return addDiscoveredSpecs(builtBundles[kotstypes.KotsadmSupportBundleSpecKey], app, clientset), nil
 }
 
 // addClusterSpecificSpec adds cluster specific and upload results URI to the support bundle
@@ -238,7 +237,6 @@ func addClusterSpecificSpec(app apptypes.AppType, b *troubleshootv1beta2.Support
 		},
 	}
 
-	supportBundle = addDefaultDynamicTroubleshoot(supportBundle, app, imageName, pullSecret)
 	supportBundle = populateNamespaces(supportBundle, namespacesToCollect, namespacesToAnalyze)
 	supportBundle = deduplicatedCollectors(supportBundle)
 	supportBundle = deduplicatedAnalyzers(supportBundle)
@@ -247,7 +245,7 @@ func addClusterSpecificSpec(app apptypes.AppType, b *troubleshootv1beta2.Support
 }
 
 // createClusterSpecificSupportBundle creates a support bundle spec with only cluster specific collectors, analyzers and upload result URI.
-func createClusterSpecificSupportBundle(app apptypes.AppType, b *troubleshootv1beta2.SupportBundle, opts types.TroubleshootOptions, namespacesToCollect []string, namespacesToAnalyze []string, imageName string, pullSecret *troubleshootv1beta2.ImagePullSecrets) *troubleshootv1beta2.SupportBundle {
+func createClusterSpecificSupportBundle(app apptypes.AppType, opts types.TroubleshootOptions, namespacesToCollect []string, namespacesToAnalyze []string, imageName string, pullSecret *troubleshootv1beta2.ImagePullSecrets) *troubleshootv1beta2.SupportBundle {
 	supportBundle := &troubleshootv1beta2.SupportBundle{
 		TypeMeta: v1.TypeMeta{
 			Kind:       "SupportBundle",
@@ -268,6 +266,7 @@ func addDefaultSpec(app apptypes.AppType, b *troubleshootv1beta2.SupportBundle, 
 	supportBundle := b.DeepCopy()
 
 	supportBundle = addDefaultTroubleshoot(supportBundle, imageName, pullSecret)
+	supportBundle = addDefaultDynamicTroubleshoot(supportBundle, app, imageName, pullSecret)
 	supportBundle = populateNamespaces(supportBundle, namespacesToCollect, namespacesToAnalyze)
 	supportBundle = deduplicatedCollectors(supportBundle)
 	supportBundle = deduplicatedAnalyzers(supportBundle)
@@ -276,14 +275,14 @@ func addDefaultSpec(app apptypes.AppType, b *troubleshootv1beta2.SupportBundle, 
 }
 
 // createDefaultSupportBundle creates a support bundle spec with only default collectors and analyzers.
-func createDefaultSupportBundle(app apptypes.AppType, b *troubleshootv1beta2.SupportBundle, opts types.TroubleshootOptions, namespacesToCollect []string, namespacesToAnalyze []string, imageName string, pullSecret *troubleshootv1beta2.ImagePullSecrets) *troubleshootv1beta2.SupportBundle {
+func createDefaultSupportBundle(app apptypes.AppType, opts types.TroubleshootOptions, namespacesToCollect []string, namespacesToAnalyze []string, imageName string, pullSecret *troubleshootv1beta2.ImagePullSecrets) *troubleshootv1beta2.SupportBundle {
 	supportBundle := &troubleshootv1beta2.SupportBundle{
 		TypeMeta: v1.TypeMeta{
 			Kind:       "SupportBundle",
 			APIVersion: "troubleshoot.sh/v1beta2",
 		},
 		ObjectMeta: v1.ObjectMeta{
-			Name: "cluster-specific-supportbundle",
+			Name: "default-supportbundle",
 		},
 	}
 
@@ -322,18 +321,18 @@ func injectDefaults(app apptypes.AppType, b *troubleshootv1beta2.SupportBundle, 
 		supportBundle.Spec.Analyzers = make([]*troubleshootv1beta2.Analyze, 0)
 	}
 
-	venderSupportBundle := supportBundle.DeepCopy()
-	clusterSpecificSupportBundle := createClusterSpecificSupportBundle(app, supportBundle, opts, namespacesToCollect, namespacesToAnalyze, imageName, pullSecret)
-	defaultSupportBundle := createDefaultSupportBundle(app, supportBundle, opts, namespacesToCollect, namespacesToAnalyze, imageName, pullSecret)
+	vendorSupportBundle := supportBundle.DeepCopy()
+	clusterSpecificSupportBundle := createClusterSpecificSupportBundle(app, opts, namespacesToCollect, namespacesToAnalyze, imageName, pullSecret)
+	defaultSupportBundle := createDefaultSupportBundle(app, opts, namespacesToCollect, namespacesToAnalyze, imageName, pullSecret)
 
 	supportBundle = addClusterSpecificSpec(app, supportBundle, opts, namespacesToCollect, namespacesToAnalyze, imageName, pullSecret)
 	supportBundle = addDefaultSpec(app, supportBundle, opts, namespacesToCollect, namespacesToAnalyze, imageName, pullSecret)
 
 	return map[string]*troubleshootv1beta2.SupportBundle{
-		"vender":           venderSupportBundle,          //vendors' application support-bundle spec
-		"cluster-specific": clusterSpecificSupportBundle, //cluster-specific support-bundle spec with upload results URI
-		"default":          defaultSupportBundle,         //default support-bundle spec
-		"kotsadm":          supportBundle,                //default kotsadm support-bundle spec (backward compatible)
+		kotstypes.VendorSpecificSupportBundleSpecKey:  vendorSupportBundle,          //vendors' application support-bundle spec
+		kotstypes.ClusterSpecificSupportBundleSpecKey: clusterSpecificSupportBundle, //cluster-specific support-bundle spec with upload results URI
+		kotstypes.DefaultSupportBundleSpecKey:         defaultSupportBundle,         //default support-bundle spec
+		kotstypes.KotsadmSupportBundleSpecKey:         supportBundle,                //default kotsadm support-bundle spec (backward compatible)
 	}, nil
 }
 
@@ -370,7 +369,7 @@ func addDiscoveredSpecs(
 // findSupportBundleSpecs finds all support bundle secrets/configmaps in the cluster
 // The function will query all objects with troubleshoot.io/kind=support-bundle label
 // and, in code, filter out all kotsadm objects that have an object name
-// following kotsadm-<app-slug>-supportbundle format.
+// following kotsadm-<app-slug>-supportbundle or kotsadm-<app-slug>-supportbundle-.* format.
 // Reference: https://troubleshoot.sh/docs/support-bundle/discover-cluster-specs/
 func findSupportBundleSpecs(client kubernetes.Interface) ([]string, error) {
 	labelSelector := kotstypes.TroubleshootKey + "=" + kotstypes.TroubleshootValue
