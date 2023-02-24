@@ -42,16 +42,15 @@ $border-radius: 4px;
 
 // custom branding fallbacks
 :root {
-  // vendor configurable
+  // vendor configurable (minimal recommended)
   --primary-color: #{$primary-color};
   --primary-disabled-color: #{$primary-less-light-color};
   --primary-hover-color: #{$primary-dark-color};
-
   --secondary-hover-color: #{$primary-light-color};
 
+  // vendor configurable (additional overrides)
   --link-color: var(--primary-color);
   --link-hover-color: var(--link-color);
-
   --card-color: #{$really-light-accent};
   --icon-color: #{$primary-color};
   --subnav-color: #{$sub-nav-color};
