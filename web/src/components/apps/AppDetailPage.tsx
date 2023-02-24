@@ -456,7 +456,6 @@ function AppDetailPage(props: Props) {
                       isBundleUploading={isBundleUploading}
                       isVeleroInstalled={isVeleroInstalled}
                       refreshAppData={refetchApps}
-                      snapshotInProgressApps={props.snapshotInProgressApps}
                       ping={props.ping}
                       isHelmManaged={props.isHelmManaged}
                     />

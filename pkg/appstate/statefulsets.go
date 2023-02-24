@@ -2,11 +2,13 @@ package appstate
 
 import (
 	"context"
+	"log"
 	"time"
 
 	"github.com/replicatedhq/kots/pkg/appstate/types"
 	appsv1 "k8s.io/api/apps/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	labels "k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/kubernetes"
@@ -14,8 +16,17 @@ import (
 )
 
 const (
-	StatefulSetResourceKind = "statefulset"
+	StatefulSetResourceKind    = "statefulset"
+	StatefulSetPodVersionLabel = "controller-revision-hash"
+	StatefulSetOwnerKind       = "StatefulSet"
 )
+
+type statefulSetEventHandler struct {
+	informers       []types.StatusInformer
+	resourceStateCh chan<- types.ResourceState
+	clientset       kubernetes.Interface
+	targetNamespace string
+}
 
 func init() {
 	registerResourceKindNames(StatefulSetResourceKind, "statefulsets", "sts")
@@ -39,25 +50,15 @@ func runStatefulSetController(
 		time.Minute,
 	)
 
-	eventHandler := NewStatefulSetEventHandler(
-		filterStatusInformersByResourceKind(informers, StatefulSetResourceKind),
-		resourceStateCh,
-	)
+	eventHandler := &statefulSetEventHandler{
+		informers:       informers,
+		resourceStateCh: resourceStateCh,
+		clientset:       clientset,
+		targetNamespace: targetNamespace,
+	}
 
 	runInformer(ctx, informer, eventHandler)
 	return
-}
-
-type statefulSetEventHandler struct {
-	informers       []types.StatusInformer
-	resourceStateCh chan<- types.ResourceState
-}
-
-func NewStatefulSetEventHandler(informers []types.StatusInformer, resourceStateCh chan<- types.ResourceState) *statefulSetEventHandler {
-	return &statefulSetEventHandler{
-		informers:       informers,
-		resourceStateCh: resourceStateCh,
-	}
 }
 
 func (h *statefulSetEventHandler) ObjectCreated(obj interface{}) {
@@ -65,7 +66,7 @@ func (h *statefulSetEventHandler) ObjectCreated(obj interface{}) {
 	if _, ok := h.getInformer(r); !ok {
 		return
 	}
-	h.resourceStateCh <- makeStatefulSetResourceState(r, calculateStatefulSetState(r))
+	h.resourceStateCh <- makeStatefulSetResourceState(r, h.calculateStatefulSetState(r))
 }
 
 func (h *statefulSetEventHandler) ObjectUpdated(obj interface{}) {
@@ -73,7 +74,7 @@ func (h *statefulSetEventHandler) ObjectUpdated(obj interface{}) {
 	if _, ok := h.getInformer(r); !ok {
 		return
 	}
-	h.resourceStateCh <- makeStatefulSetResourceState(r, calculateStatefulSetState(r))
+	h.resourceStateCh <- makeStatefulSetResourceState(r, h.calculateStatefulSetState(r))
 }
 
 func (h *statefulSetEventHandler) ObjectDeleted(obj interface{}) {
@@ -109,21 +110,66 @@ func makeStatefulSetResourceState(r *appsv1.StatefulSet, state types.State) type
 	}
 }
 
-func calculateStatefulSetState(r *appsv1.StatefulSet) types.State {
+func (h *statefulSetEventHandler) calculateStatefulSetState(r *appsv1.StatefulSet) types.State {
+	if r == nil {
+		return types.StateMissing
+	}
+
 	if r.Status.ObservedGeneration != r.ObjectMeta.Generation {
 		return types.StateUpdating
 	}
+
+	listOptions := metav1.ListOptions{LabelSelector: labels.SelectorFromSet(r.Spec.Selector.MatchLabels).String()}
+
+	pods, err := h.clientset.CoreV1().Pods(h.targetNamespace).List(context.TODO(), listOptions)
+	if err != nil {
+		log.Printf("failed to get statefulset pod list: %s", err)
+		return types.StateUnavailable
+	}
+
+	// If the pod version labels are not all the same, then the statefulset is updating.
+	currentVersion := ""
+	for _, pod := range pods.Items {
+		validOwner := false
+		for _, owner := range pod.ObjectMeta.OwnerReferences {
+			if owner.Kind == StatefulSetOwnerKind && owner.Name == r.ObjectMeta.Name {
+				validOwner = true
+				break
+			}
+		}
+
+		if !validOwner {
+			log.Printf("skipping pod %s due to invalid owner reference for statefulset %s", pod.ObjectMeta.Name, r.ObjectMeta.Name)
+			continue
+		}
+
+		version, exists := pod.Labels[StatefulSetPodVersionLabel]
+		if !exists {
+			log.Printf("failed to find %s label for pod %s", StatefulSetPodVersionLabel, pod.Name)
+			return types.StateUnavailable
+		}
+
+		if len(currentVersion) == 0 {
+			currentVersion = version
+		} else if version != currentVersion {
+			return types.StateUpdating
+		}
+	}
+
 	var desiredReplicas int32
 	if r.Spec.Replicas == nil {
 		desiredReplicas = 1
 	} else {
 		desiredReplicas = *r.Spec.Replicas
 	}
+
 	if r.Status.ReadyReplicas >= desiredReplicas {
 		return types.StateReady
 	}
+
 	if r.Status.ReadyReplicas > 0 {
 		return types.StateDegraded
 	}
+
 	return types.StateUnavailable
 }
