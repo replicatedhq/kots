@@ -5,9 +5,9 @@ set -e
 # This script imports bucket content from the shared migration directory to the new minio instance.
 
 # check if the migration has already been completed
-if [ -f /export/.migration ];
+if [ -f /export/.migration-complete ];
 then
-    MIGRATION_DATE=$(cat /export/.migration)
+    MIGRATION_DATE=$(cat /export/.migration-complete)
     echo "migration already completed at $MIGRATION_DATE, no-op"
     exit 0
 fi
@@ -69,6 +69,14 @@ else
     echo "no bucket content to import"
 fi
 
+# mark the migration as complete
+echo "marking migration as complete"
+date -u +"%Y-%m-%dT%H:%M:%SZ" > /export/.migration-complete
+
+# clean the migration directory
+echo "cleaning up migration directory"
+rm -rf $KOTSADM_MINIO_MIGRATION_DIR/*
+
 # shutdown minio
 echo "stopping minio"
 kill $MINIO_PID
@@ -77,12 +85,3 @@ kill $MINIO_PID
 wait $MINIO_PID
 
 echo "minio stopped"
-
-echo "adding migration complete marker"
-date -u +"%Y-%m-%dT%H:%M:%SZ" > /export/.migration
-
-echo "data migration complete"
-
-# clean the migration directory
-echo "cleaning up migration directory"
-rm -rf $KOTSADM_MINIO_MIGRATION_DIR/*

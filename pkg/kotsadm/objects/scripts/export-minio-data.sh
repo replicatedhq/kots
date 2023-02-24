@@ -5,9 +5,9 @@ set -e
 # This script exports bucket content from the old minio instance to the shared migration directory
 
 # check if the migration has already been completed
-if [ -f /export/.migration ];
+if [ -f /export/.migration-complete ];
 then
-    MIGRATION_DATE=$(cat /export/.migration)
+    MIGRATION_DATE=$(cat /export/.migration-complete)
     echo "migration already completed at $MIGRATION_DATE, no-op"
     exit 0
 elif [ -f /export/.export-complete ];
@@ -60,6 +60,10 @@ else
     echo "bucket does not exist, skipping export"
 fi
 
+# mark the export as complete
+echo "marking export as complete"
+date -u +"%Y-%m-%dT%H:%M:%SZ" > /export/.export-complete
+
 # shutdown minio
 echo "stopping minio"
 kill $MINIO_PID
@@ -68,7 +72,3 @@ kill $MINIO_PID
 wait $MINIO_PID
 
 echo "minio stopped"
-
-# mark the export as complete
-echo "marking export as complete"
-date -u +"%Y-%m-%dT%H:%M:%SZ" > /export/.export-complete

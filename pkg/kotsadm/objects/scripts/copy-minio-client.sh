@@ -6,9 +6,9 @@ set -e
 # This is necessary because the minio client binary is not available in the minio container
 
 # check if the migration has already been completed
-if [ -f /export/.migration ];
+if [ -f /export/.migration-complete ];
 then
-    MIGRATION_DATE=$(cat /export/.migration)
+    MIGRATION_DATE=$(cat /export/.migration-complete)
     echo "migration already completed at $MIGRATION_DATE, no-op"
     exit 0
 fi
