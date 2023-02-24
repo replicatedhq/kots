@@ -8,6 +8,7 @@ $sub-nav-text-color: #9c9c9c;
 $primary-color: #326de6;
 $primary-light-color: #f5f8fe; // replaces lighten($primary-color, 43.5%)
 $secondary-color: #9c9c9c;
+$secondary-light-color: #dcdcdc; // replaces lighten($secondary-color, 25%)
 $accent-color: #326de6;
 $light-accent: #e1f0f1;
 $muted-light-accent: #bccacd;
@@ -41,6 +42,9 @@ $border-radius: 4px;
   // vendor configurable
   --primary-color: #{$primary-color};
   --primary-light-color: #{$primary-light-color};
+  --secondary-color: ${$secondary-color};
+  --secondary-light-color: #{$secondary-light-color};
+
   // inherited (not for vendor configuration)
   --link-color: var(--primary-color);
   --link-hover-color: var(--primary-color);
