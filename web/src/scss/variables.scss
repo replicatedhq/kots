@@ -53,6 +53,7 @@ $border-radius: 4px;
   --link-hover-color: var(--link-color);
 
   --icon-color: #{$primary-color};
+  --subnav-color: #{$sub-nav-color};
   --tooltip-color: #{$primary-extra-dark-color};
 
   // inherited (not for vendor configuration- these need to be refactored)

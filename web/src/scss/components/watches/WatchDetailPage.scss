@@ -162,7 +162,7 @@
   top: 0;
   z-index: 1;
   padding: 0 20px;
-  background-color: $sub-nav-color;
+  background-color: var(--subnav-color);
   border-top: 1px solid $border-color;
   border-bottom: 1px solid $border-color;
   ul {
