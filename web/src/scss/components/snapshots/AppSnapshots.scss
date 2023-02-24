@@ -63,7 +63,7 @@
   position: absolute;
   left: 26px;
   bottom: 83px;
-  background-color: var(--primary-light-color);
+  background-color: $primary-light-color;
   color: #073551;
   width: 150px;
   height: 36px;
@@ -85,7 +85,7 @@
     top: 5px;
     left: 155px;
     width: 25px;
-    background: var(--primary-light-color);
+    background: $primary-light-color;
     height: 25px;
     z-index: 1;
     transform: rotate(45deg);
@@ -99,7 +99,7 @@
   border-radius: 4px;
 
   &.in-progress {
-    background: var(--primary-light-color);
+    background: $primary-light-color;
   }
 }
 
@@ -316,7 +316,7 @@
   cursor: pointer;
 
   &.is-selected {
-    background: var(--primary-light-color);
+    background: $primary-light-color;
     border: 1px solid var(--primary-color);
   }
 }

@@ -6,11 +6,12 @@ $sub-nav-text-color: #9c9c9c;
 
 // colors
 $primary-color: #326de6;
-$primary-dark-color: #1a57d5;         // darken($primary-color, 8%);
-$primary-less-light-color: #a4bef4;   // lighten($primary-color, 25%)
-$primary-light-color: #f5f8fe;        // lighten($primary-color, 43.5%)
+$primary-dark-color: darken($primary-color, 8%);
+$primary-extra-dark-color: darken($primary-color, 35%);
+$primary-less-light-color: lighten($primary-color, 25%);
+$primary-light-color: lighten($primary-color, 43.5%);
 $secondary-color: #9c9c9c;
-$secondary-light-color: #dcdcdc;      // lighten($secondary-color, 25%)
+$secondary-light-color: lighten($secondary-color, 25%);
 $accent-color: #326de6;
 $light-accent: #e1f0f1;
 $muted-light-accent: #bccacd;
@@ -45,11 +46,15 @@ $border-radius: 4px;
   --primary-color: #{$primary-color};
   --primary-disabled-color: #{$primary-less-light-color};
   --primary-hover-color: #{$primary-dark-color};
-  --secondary-color: ${$secondary-color};
+
+  --secondary-hover-color: #{$primary-light-color};
+
+  --link-color: var(--primary-color);
+  --link-hover-color: var(--link-color);
+
+  --icon-color: #{$primary-color};
+  --tooltip-color: #{$primary-extra-dark-color};
 
   // inherited (not for vendor configuration- these need to be refactored)
-  --primary-light-color: #{$primary-light-color};
-  --link-color: var(--primary-color);
-  --link-hover-color: var(--primary-color);
   --secondary-light-color: #{$secondary-light-color};
 }

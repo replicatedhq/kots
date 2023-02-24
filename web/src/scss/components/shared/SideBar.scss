@@ -24,7 +24,7 @@
 
   &.selected,
   &.selected:hover {
-    background-color: var(--primary-light-color);
+    background-color: $primary-light-color;
     border-color: #337ab7;
     box-shadow: none;
   }

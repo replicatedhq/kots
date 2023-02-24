@@ -6,7 +6,7 @@
 .__react_component_tooltip.type-dark.replicated-tooltip {
   color: #ffffff;
   font-weight: 500;
-  background-color: darken($primary-color, 35%);
+  background-color: var(--tooltip-color);
 
   &.white {
     color: $text-color-secondary;
@@ -19,16 +19,16 @@
   }
 }
 .__react_component_tooltip.type-dark.place-top.replicated-tooltip:after {
-  border-top-color: darken($primary-color, 35%);
+  border-top-color: var(--tooltip-color);
 }
 .__react_component_tooltip.type-dark.place-right.replicated-tooltip:after {
-  border-right-color: darken($primary-color, 35%);
+  border-right-color: var(--tooltip-color);
 }
 .__react_component_tooltip.type-dark.place-left.replicated-tooltip:after {
-  border-left-color: darken($primary-color, 35%);
+  border-left-color: var(--tooltip-color);
 }
 .__react_component_tooltip.type-dark.place-bottom.replicated-tooltip:after {
-  border-bottom-color: darken($primary-color, 35%);
+  border-bottom-color: var(--tooltip-color);
 }
 .__react_component_tooltip.type-dark.place-top.replicated-tooltip.white:after {
   border-top-color: #ffffff;

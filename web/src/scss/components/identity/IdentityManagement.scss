@@ -37,11 +37,11 @@
   height: 55px;
 
   &:hover {
-    background-color: var(--primary-light-color);
+    background-color: $primary-light-color;
   }
 
   &.is-active {
-    background: var(--primary-light-color);
+    background: $primary-light-color;
     border: 1px solid var(--primary-color);
   }
 }

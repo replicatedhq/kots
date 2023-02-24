@@ -105,7 +105,7 @@
       transition: background-color 0.3s;
 
       &:hover {
-        background-color: var(--primary-light-color);
+        background-color: $primary-light-color;
       }
       &.deployment:hover {
         background-color: #ecf8ef;
@@ -181,7 +181,7 @@
       transition: background-color 0.3s;
 
       &:hover {
-        background-color: var(--primary-light-color);
+        background-color: $primary-light-color;
       }
       &.deployment:hover {
         background-color: #ecf8ef;

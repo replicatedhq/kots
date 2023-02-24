@@ -7,7 +7,7 @@
     right: 15px;
   }
   &:hover {
-    background: var(--primary-light-color);
+    background: $primary-light-color;
   }
   &:last-child {
     margin-bottom: 0;
@@ -23,7 +23,7 @@
 }
 
 .spec-row-wrapper:hover {
-  background-color: var(--primary-light-color);
+  background-color: $primary-light-color;
   cursor: pointer;
 }
 

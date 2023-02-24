@@ -112,7 +112,7 @@
 
     .midstream-banner {
       padding: 8px 12px;
-      background-color: var(--primary-light-color);
+      background-color: $primary-light-color;
       text-align: center;
     }
 
@@ -152,7 +152,7 @@
   .test-connection-box {
     padding: 14px 12px;
     border-radius: 4px;
-    background-color: var(--primary-light-color);
+    background-color: $primary-light-color;
     border: 1px solid $border-color;
   }
 }
