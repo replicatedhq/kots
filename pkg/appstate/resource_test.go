@@ -24,6 +24,11 @@ func Test_getResourceKindCommonName(t *testing.T) {
 			want: "statefulset",
 		},
 		{
+			name: "daemonset",
+			args: args{a: "ds"},
+			want: "daemonset",
+		},
+		{
 			name: "uppercase",
 			args: args{a: "StatefulSet"},
 			want: "statefulset",

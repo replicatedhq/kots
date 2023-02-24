@@ -9,7 +9,6 @@ import DashboardLicenseCard from "./DashboardLicenseCard";
 import DashboardSnapshotsCard from "./DashboardSnapshotsCard";
 import DashboardGraphsCard from "./DashboardGraphsCard";
 import AutomaticUpdatesModal from "@src/components/modals/AutomaticUpdatesModal";
-import SnapshotDifferencesModal from "@src/components/modals/SnapshotDifferencesModal";
 import Modal from "react-modal";
 import { Repeater } from "@src/utilities/repeater";
 import { Utilities } from "@src/utilities/utilities";
@@ -67,14 +66,8 @@ type Props = {
     version: Version | null
   ) => Promise<void>;
   refreshAppData: () => void;
-  snapshotInProgressApps: string[];
   toggleIsBundleUploading: (isUploading: boolean) => void;
   updateCallback: () => void | null;
-};
-
-type SnapshotOption = {
-  option: string;
-  name: string;
 };
 
 // TODO:  update these strings so that they are not nullable (maybe just set default to "")
@@ -98,14 +91,8 @@ type State = {
   loadingApp: boolean;
   links: DashboardActionLink[];
   noUpdatesAvalable: boolean;
-  selectedSnapshotOption: SnapshotOption;
   showAppStatusModal: boolean;
   showAutomaticUpdatesModal: boolean;
-  snapshotDifferencesModal: boolean;
-  startingSnapshot: boolean;
-  startSnapshotErr: boolean;
-  startSnapshotErrorMsg: string;
-  startSnapshotOptions: SnapshotOption[];
   uploadProgress: number;
   uploadResuming: boolean;
   uploadSize: number;
@@ -146,18 +133,8 @@ const Dashboard = (props: Props) => {
       links: [],
       // TODO: fix misspelling of available
       noUpdatesAvalable: false,
-      selectedSnapshotOption: { option: "full", name: "Start a Full snapshot" },
       showAppStatusModal: false,
       showAutomaticUpdatesModal: false,
-      snapshotDifferencesModal: false,
-      startingSnapshot: false,
-      startSnapshotErr: false,
-      startSnapshotErrorMsg: "",
-      startSnapshotOptions: [
-        { option: "partial", name: "Start a Partial snapshot" },
-        { option: "full", name: "Start a Full snapshot" },
-        { option: "learn", name: "Learn about the difference" },
-      ],
       uploadingAirgapFile: false,
       uploadProgress: 0,
       uploadResuming: false,
@@ -367,85 +344,6 @@ const Dashboard = (props: Props) => {
       viewAirgapUpdateError: !state.viewAirgapUpdateError,
       airgapUpdateError: !state.viewAirgapUpdateError && err ? err : "",
     });
-  };
-
-  const startASnapshot = (option: string) => {
-    setState({
-      startingSnapshot: true,
-      startSnapshotErr: false,
-      startSnapshotErrorMsg: "",
-    });
-
-    let url =
-      option === "full"
-        ? `${process.env.API_ENDPOINT}/snapshot/backup`
-        : `${process.env.API_ENDPOINT}/app/${app.slug}/snapshot/backup`;
-
-    fetch(url, {
-      method: "POST",
-      headers: {
-        Authorization: Utilities.getToken(),
-        "Content-Type": "application/json",
-      },
-    })
-      .then(async (result) => {
-        if (!result.ok && result.status === 409) {
-          const res = await result.json();
-          if (res.kotsadmRequiresVeleroAccess) {
-            setState({
-              startingSnapshot: false,
-            });
-            history.replace("/snapshots/settings");
-            return;
-          }
-        }
-
-        if (result.ok) {
-          setState({
-            startingSnapshot: false,
-          });
-          props.ping();
-          if (option === "full") {
-            history.push("/snapshots");
-          } else {
-            history.push(`/snapshots/partial/${app.slug}`);
-          }
-        } else {
-          const body = await result.json();
-          setState({
-            startingSnapshot: false,
-            startSnapshotErr: true,
-            startSnapshotErrorMsg: body.error,
-          });
-        }
-      })
-      .catch((err) => {
-        console.log(err);
-        setState({
-          startSnapshotErrorMsg: err
-            ? err.message
-            : "Something went wrong, please try again.",
-        });
-      });
-  };
-
-  const onSnapshotOptionChange = (selectedSnapshotOption: SnapshotOption) => {
-    if (selectedSnapshotOption.option === "learn") {
-      setState({ snapshotDifferencesModal: true });
-    } else {
-      startASnapshot(selectedSnapshotOption.option);
-    }
-  };
-
-  const toggleSnaphotDifferencesModal = () => {
-    setState({
-      snapshotDifferencesModal: !state.snapshotDifferencesModal,
-    });
-  };
-
-  const onSnapshotOptionClick = () => {
-    const { selectedSnapshotOption } = state;
-    startASnapshot(selectedSnapshotOption.option);
   };
 
   const toggleAppStatusModal = () => {
@@ -798,15 +696,6 @@ const Dashboard = (props: Props) => {
                         isSnapshotAllowed={
                           app.allowSnapshots && isVeleroInstalled
                         }
-                        isVeleroInstalled={isVeleroInstalled}
-                        startASnapshot={startASnapshot}
-                        startSnapshotOptions={state.startSnapshotOptions}
-                        startSnapshotErr={state.startSnapshotErr}
-                        startSnapshotErrorMsg={state.startSnapshotErrorMsg}
-                        snapshotInProgressApps={props.snapshotInProgressApps}
-                        selectedSnapshotOption={state.selectedSnapshotOption}
-                        onSnapshotOptionChange={onSnapshotOptionChange}
-                        onSnapshotOptionClick={onSnapshotOptionClick}
                       />
                     </div>
                   ) : null}
@@ -958,12 +847,6 @@ const Dashboard = (props: Props) => {
                 props.refreshAppData();
               }}
               isHelmManaged={props.isHelmManaged}
-            />
-          )}
-          {state.snapshotDifferencesModal && (
-            <SnapshotDifferencesModal
-              snapshotDifferencesModal={state.snapshotDifferencesModal}
-              toggleSnapshotDifferencesModal={toggleSnaphotDifferencesModal}
             />
           )}
         </div>
