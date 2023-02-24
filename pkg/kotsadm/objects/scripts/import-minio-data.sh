@@ -78,6 +78,10 @@ wait $MINIO_PID
 
 echo "minio stopped"
 
+# clean the migration directory
+echo "removing migration directory"
+rm -rf $KOTSADM_MINIO_MIGRATION_DIR/*
+
 echo "adding migration complete marker"
 date -u +"%Y-%m-%dT%H:%M:%SZ" > /export/.migration
 
