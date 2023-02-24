@@ -143,7 +143,7 @@
     box-shadow: none;
 
     &:not(:disabled):hover {
-      background-color: lighten($primary-color, 43.5%);
+      background-color: var(--primary-light-color);
       border-color: var(--primary-color);
       color: var(--primary-color);
     }
@@ -158,7 +158,7 @@
     box-shadow: none;
 
     &:not(:disabled):hover {
-      background-color: lighten($primary-color, 43.5%);
+      background-color: var(--primary-light-color);
       border-color: darken($primary-color, 42%);
       color: darken($primary-color, 42%);
     }
@@ -209,7 +209,7 @@
     color: #326de6;
 
     &:not(:disabled):hover {
-      background-color: lighten($primary-color, 43.5%);
+      background-color: var(--primary-light-color);
     }
   }
 }

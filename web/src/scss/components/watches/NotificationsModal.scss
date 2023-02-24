@@ -21,7 +21,7 @@
 
     &.is-active,
     &.is-active:hover {
-      background-color: lighten($primary-color, 43.5%);
+      background-color: var(--primary-light-color);
       border-color: var(--primary-color);
     }
   }

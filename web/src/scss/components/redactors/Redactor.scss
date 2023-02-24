@@ -22,7 +22,7 @@
   }
 
   .nodeTag {
-    background-color: lighten($primary-color, 43.5%);
+    background-color: var(--primary-light-color);
     font-size: 12px;
     line-height: 12px;
     color: #73a3cd;

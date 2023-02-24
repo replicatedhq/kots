@@ -29,7 +29,7 @@
       transition: background-color 0.3s;
 
       &:hover {
-        background-color: lighten($primary-color, 43.5%);
+        background-color: var(--primary-light-color);
       }
     }
   }

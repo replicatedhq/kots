@@ -69,7 +69,7 @@ $cell-width: 140px;
 }
 
 .info-box {
-  background-color: lighten($primary-color, 43.5%);
+  background-color: var(--primary-light-color);
   border-radius: 4px;
   padding: 12px;
   text-align: center;
@@ -111,7 +111,7 @@ $cell-width: 140px;
   }
 
   .nodeTag {
-    background-color: lighten($primary-color, 43.5%);
+    background-color: var(--primary-light-color);
     font-size: 12px;
     line-height: 12px;
     color: #73a3cd;
@@ -151,7 +151,7 @@ $cell-width: 140px;
 
 .ActiveRelease-wrapper {
   .no-current-version {
-    background-color: lighten($primary-color, 43.5%);
+    background-color: var(--primary-light-color);
     margin-top: 16px;
     border-radius: 4px;
     padding: 16px 12px;
@@ -224,7 +224,7 @@ $cell-width: 140px;
   }
 
   &.blue.is-active::after {
-    background-color: lighten($primary-color, 43.5%);
+    background-color: var(--primary-light-color);
   }
 
   &:last-child {

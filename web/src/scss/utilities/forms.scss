@@ -111,7 +111,7 @@
     padding: 12px;
 
     &.replicated-select__option--is-focused {
-      background-color: lighten($primary-color, 43.5%);
+      background-color: var(--primary-light-color);
       color: $text-color-primary;
     }
   }

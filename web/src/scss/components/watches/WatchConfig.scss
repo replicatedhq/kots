@@ -30,7 +30,7 @@ a:visited {
   padding: 13px 40px 10px;
 
   &.newer {
-    background: lighten($primary-color, 43.5%);
+    background: var(--primary-light-color);
     color: $text-color-body-copy;
   }
 

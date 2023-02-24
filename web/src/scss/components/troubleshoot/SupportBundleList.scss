@@ -7,7 +7,7 @@
     right: 15px;
   }
   &:hover {
-    background: lighten($primary-color, 43.5%);
+    background: var(--primary-light-color);
   }
   &:last-child {
     margin-bottom: 0;
@@ -23,7 +23,7 @@
 }
 
 .spec-row-wrapper:hover {
-  background-color: lighten($primary-color, 43.5%);
+  background-color: var(--primary-light-color);
   cursor: pointer;
 }
 
