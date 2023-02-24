@@ -9,10 +9,9 @@ import DashboardLicenseCard from "./DashboardLicenseCard";
 import DashboardSnapshotsCard from "./DashboardSnapshotsCard";
 import DashboardGraphsCard from "./DashboardGraphsCard";
 import AutomaticUpdatesModal from "@src/components/modals/AutomaticUpdatesModal";
-import SnapshotDifferencesModal from "@src/components/modals/SnapshotDifferencesModal";
 import Modal from "react-modal";
 import { Repeater } from "@src/utilities/repeater";
-import { Utilities, isAwaitingResults } from "@src/utilities/utilities";
+import { Utilities } from "@src/utilities/utilities";
 import { AirgapUploader } from "@src/utilities/airgapUploader";
 import { useSelectedAppClusterDashboardWithIntercept } from "../api/useSelectedAppClusterDashboard";
 import { useHistory, useRouteMatch } from "react-router-dom";
@@ -43,6 +42,8 @@ import {
   UpdateStatusResponse,
   useUpdateDownloadStatus,
 } from "../api/getUpdateDownloadStatus";
+import { useAppDownstream } from "../api/getAppDownstream";
+import { useAirgapConfig } from "../api/getAirgapConfig";
 //import LicenseTester from "./LicenseTester";
 
 type Props = {
@@ -66,14 +67,8 @@ type Props = {
     version: Version | null
   ) => Promise<void>;
   refreshAppData: () => void;
-  snapshotInProgressApps: string[];
   toggleIsBundleUploading: (isUploading: boolean) => void;
   updateCallback: () => void | null;
-};
-
-type SnapshotOption = {
-  option: string;
-  name: string;
 };
 
 // TODO:  update these strings so that they are not nullable (maybe just set default to "")
@@ -90,7 +85,6 @@ type State = {
   dashboard: DashboardResponse;
   displayErrorModal: boolean;
   downstream: Downstream | null;
-  fetchAppDownstreamJob: Repeater;
   getAppDashboardJob: Repeater;
   gettingAppErrMsg: string;
   gettingAppLicenseErrMsg: string;
@@ -98,14 +92,8 @@ type State = {
   loadingApp: boolean;
   links: DashboardActionLink[];
   noUpdatesAvalable: boolean;
-  selectedSnapshotOption: SnapshotOption;
   showAppStatusModal: boolean;
   showAutomaticUpdatesModal: boolean;
-  snapshotDifferencesModal: boolean;
-  startingSnapshot: boolean;
-  startSnapshotErr: boolean;
-  startSnapshotErrorMsg: string;
-  startSnapshotOptions: SnapshotOption[];
   uploadProgress: number;
   uploadResuming: boolean;
   uploadSize: number;
@@ -138,7 +126,6 @@ const Dashboard = (props: Props) => {
       currentVersion: null,
       displayErrorModal: false,
       downstream: null,
-      fetchAppDownstreamJob: new Repeater(),
       getAppDashboardJob: new Repeater(),
       gettingAppErrMsg: "",
       gettingAppLicenseErrMsg: "",
@@ -147,18 +134,8 @@ const Dashboard = (props: Props) => {
       links: [],
       // TODO: fix misspelling of available
       noUpdatesAvalable: false,
-      selectedSnapshotOption: { option: "full", name: "Start a Full snapshot" },
       showAppStatusModal: false,
       showAutomaticUpdatesModal: false,
-      snapshotDifferencesModal: false,
-      startingSnapshot: false,
-      startSnapshotErr: false,
-      startSnapshotErrorMsg: "",
-      startSnapshotOptions: [
-        { option: "partial", name: "Start a Partial snapshot" },
-        { option: "full", name: "Start a Full snapshot" },
-        { option: "learn", name: "Learn about the difference" },
-      ],
       uploadingAirgapFile: false,
       uploadProgress: 0,
       uploadResuming: false,
@@ -174,57 +151,28 @@ const Dashboard = (props: Props) => {
   const { app, isBundleUploading, isVeleroInstalled } = props;
   const airgapUploader = useRef<AirgapUploader | null>(null);
 
-  const fetchAppDownstream = async () => {
-    if (!app) {
-      return;
-    }
+  const timer = useRef<NodeJS.Timeout[]>([]);
 
-    try {
-      const res = await fetch(`${process.env.API_ENDPOINT}/app/${app.slug}`, {
-        headers: {
-          Authorization: Utilities.getToken(),
-          "Content-Type": "application/json",
-        },
-        method: "GET",
-      });
-      if (res.ok && res.status == 200) {
-        const appResponse = await res.json();
-        if (!isAwaitingResults(appResponse.downstream.pendingVersions)) {
-          state.fetchAppDownstreamJob.stop();
-        }
-        setState({
-          downstream: appResponse.downstream,
-        });
-        // wait a couple of seconds to avoid any race condiditons with the update checker then refetch the app to ensure we have the latest everything
-        // this is hacky and I hate it but it's just building up more evidence in my case for having the FE be able to listen to BE envents
-        // if that was in place we would have no need for this becuase the latest version would just be pushed down.
-        setTimeout(() => {
-          props.refreshAppData();
-        }, 2000);
-      } else {
-        setState({
-          loadingApp: false,
-          gettingAppErrMsg: `Unexpected status code: ${res.status}`,
-          displayErrorModal: true,
-        });
-      }
-    } catch (err) {
-      console.log(err);
-      const errorMessage =
-        err instanceof Error
-          ? err.message
-          : "Something went wrong, please try again.";
-      setState({
-        loadingApp: false,
-        gettingAppErrMsg: errorMessage,
-        displayErrorModal: true,
-      });
-    }
+  const onAppDownstreamSuccess = (data: Downstream) => {
+    setState({ downstream: data });
+    let timerId = setTimeout(() => {
+      props.refreshAppData();
+    }, 2000);
+    timer.current.push(timerId);
   };
 
-  const startFetchAppDownstreamJob = () => {
-    state.fetchAppDownstreamJob.start(fetchAppDownstream, 2000);
+  const onAppDownstreamError = (data: { message: string }) => {
+    setState({
+      loadingApp: false,
+      gettingAppErrMsg: data.message,
+      displayErrorModal: true,
+    });
   };
+
+  const { refetch: refetchAppDownstream } = useAppDownstream(
+    onAppDownstreamSuccess,
+    onAppDownstreamError
+  );
 
   const setWatchState = (newAppState: App) => {
     setState({
@@ -257,7 +205,7 @@ const Dashboard = (props: Props) => {
     if (props.updateCallback) {
       props.updateCallback();
     }
-    startFetchAppDownstreamJob();
+    refetchAppDownstream();
   };
 
   const onUpdateDownloadStatusError = (data: Error) => {
@@ -399,85 +347,6 @@ const Dashboard = (props: Props) => {
     });
   };
 
-  const startASnapshot = (option: string) => {
-    setState({
-      startingSnapshot: true,
-      startSnapshotErr: false,
-      startSnapshotErrorMsg: "",
-    });
-
-    let url =
-      option === "full"
-        ? `${process.env.API_ENDPOINT}/snapshot/backup`
-        : `${process.env.API_ENDPOINT}/app/${app.slug}/snapshot/backup`;
-
-    fetch(url, {
-      method: "POST",
-      headers: {
-        Authorization: Utilities.getToken(),
-        "Content-Type": "application/json",
-      },
-    })
-      .then(async (result) => {
-        if (!result.ok && result.status === 409) {
-          const res = await result.json();
-          if (res.kotsadmRequiresVeleroAccess) {
-            setState({
-              startingSnapshot: false,
-            });
-            history.replace("/snapshots/settings");
-            return;
-          }
-        }
-
-        if (result.ok) {
-          setState({
-            startingSnapshot: false,
-          });
-          props.ping();
-          if (option === "full") {
-            history.push("/snapshots");
-          } else {
-            history.push(`/snapshots/partial/${app.slug}`);
-          }
-        } else {
-          const body = await result.json();
-          setState({
-            startingSnapshot: false,
-            startSnapshotErr: true,
-            startSnapshotErrorMsg: body.error,
-          });
-        }
-      })
-      .catch((err) => {
-        console.log(err);
-        setState({
-          startSnapshotErrorMsg: err
-            ? err.message
-            : "Something went wrong, please try again.",
-        });
-      });
-  };
-
-  const onSnapshotOptionChange = (selectedSnapshotOption: SnapshotOption) => {
-    if (selectedSnapshotOption.option === "learn") {
-      setState({ snapshotDifferencesModal: true });
-    } else {
-      startASnapshot(selectedSnapshotOption.option);
-    }
-  };
-
-  const toggleSnaphotDifferencesModal = () => {
-    setState({
-      snapshotDifferencesModal: !state.snapshotDifferencesModal,
-    });
-  };
-
-  const onSnapshotOptionClick = () => {
-    const { selectedSnapshotOption } = state;
-    startASnapshot(selectedSnapshotOption.option);
-  };
-
   const toggleAppStatusModal = () => {
     setState({ showAppStatusModal: !state.showAppStatusModal });
   };
@@ -583,25 +452,7 @@ const Dashboard = (props: Props) => {
 
   const { appStatus } = state.dashboard;
 
-  const getAirgapConfig = async () => {
-    const configUrl = `${process.env.API_ENDPOINT}/app/${app.slug}/airgap/config`;
-    let simultaneousUploads = 3;
-    try {
-      let res = await fetch(configUrl, {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: Utilities.getToken(),
-        },
-      });
-      if (res.ok) {
-        const response = await res.json();
-        simultaneousUploads = response.simultaneousUploads;
-      }
-    } catch {
-      // no-op
-    }
-
+  const onAirgapConfigSuccess = (simultaneousUploads: Number) => {
     airgapUploader.current = new AirgapUploader(
       true,
       app.slug,
@@ -609,6 +460,8 @@ const Dashboard = (props: Props) => {
       simultaneousUploads
     );
   };
+
+  const { refetch: getAirgapConfig } = useAirgapConfig(onAirgapConfigSuccess);
 
   const {
     data: selectedAppClusterDashboardResponse,
@@ -673,7 +526,9 @@ const Dashboard = (props: Props) => {
       getAppLicense();
     }
     return () => {
-      state.fetchAppDownstreamJob.stop();
+      timer.current.forEach((time: NodeJS.Timeout) => {
+        clearTimeout(time);
+      });
     };
   }, []);
 
@@ -710,9 +565,10 @@ const Dashboard = (props: Props) => {
             checkingForUpdates: false,
             noUpdatesAvalable: true,
           });
-          setTimeout(() => {
+          let timerId = setTimeout(() => {
             setState({ noUpdatesAvalable: false });
           }, 3000);
+          timer.current.push(timerId);
         } else {
           refetchUpdateDownloadStatus();
           setState({ checkingForUpdates: true });
@@ -799,7 +655,7 @@ const Dashboard = (props: Props) => {
                     uploadingAirgapFile={uploadingAirgapFile}
                     airgapUploadError={airgapUploadError}
                     refetchData={props.updateCallback}
-                    downloadCallback={startFetchAppDownstreamJob}
+                    downloadCallback={refetchAppDownstream}
                     uploadProgress={state.uploadProgress}
                     uploadSize={state.uploadSize}
                     uploadResuming={state.uploadResuming}
@@ -825,15 +681,6 @@ const Dashboard = (props: Props) => {
                         isSnapshotAllowed={
                           app.allowSnapshots && isVeleroInstalled
                         }
-                        isVeleroInstalled={isVeleroInstalled}
-                        startASnapshot={startASnapshot}
-                        startSnapshotOptions={state.startSnapshotOptions}
-                        startSnapshotErr={state.startSnapshotErr}
-                        startSnapshotErrorMsg={state.startSnapshotErrorMsg}
-                        snapshotInProgressApps={props.snapshotInProgressApps}
-                        selectedSnapshotOption={state.selectedSnapshotOption}
-                        onSnapshotOptionChange={onSnapshotOptionChange}
-                        onSnapshotOptionClick={onSnapshotOptionClick}
                       />
                     </div>
                   ) : null}
@@ -985,12 +832,6 @@ const Dashboard = (props: Props) => {
                 props.refreshAppData();
               }}
               isHelmManaged={props.isHelmManaged}
-            />
-          )}
-          {state.snapshotDifferencesModal && (
-            <SnapshotDifferencesModal
-              snapshotDifferencesModal={state.snapshotDifferencesModal}
-              toggleSnapshotDifferencesModal={toggleSnaphotDifferencesModal}
             />
           )}
         </div>

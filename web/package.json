@@ -25,6 +25,7 @@
     "@babel/cli": "^7.16.0",
     "@babel/core": "^7.18.13",
     "@babel/eslint-parser": "^7.18.2",
+    "@babel/helper-get-function-arity": "^7.16.7",
     "@babel/plugin-proposal-class-properties": "7.10.4",
     "@babel/plugin-proposal-decorators": "7.10.5",
     "@babel/plugin-proposal-object-rest-spread": "7.10.4",
@@ -140,7 +141,7 @@
     "history": "^4.9.0",
     "js-yaml": "3.14.0",
     "lodash": "4.17.21",
-    "markdown-it": "^10.0.0",
+    "markdown-it": "^12.3.2",
     "monaco-editor": "^0.33.0",
     "monaco-editor-webpack-plugin": "^7.0.1",
     "node-polyfill-webpack-plugin": "^1.1.4",
@@ -172,8 +173,11 @@
     "universal-cookie": "^4.0.4"
   },
   "resolutions": {
+    "d3-color": "^3.1.0",
+    "moment": "^2.9.0",
     "trim": "^0.0.3",
-    "moment": "^2.9.0"
+    "moment-timezone": "^0.5.35",
+    "trim-newlines": "^3.0.1"
   },
   "browserslist": [
     "> 1%",

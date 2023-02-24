@@ -296,3 +296,32 @@ export type Snapshot = {
   volumeBytes: number;
   volumeSizeHuman: string;
 };
+
+export type SnapshotSettings = {
+  store: {
+    aws: {
+      region: string;
+      bucket: string;
+      accessKeyId: string;
+      secretAccessKey: string;
+    };
+    azure: { accountName: string; accountKey: string; container: string };
+    gcp: { bucket: string; projectId: string; serviceAccountKey: string };
+    other: {
+      endpoint: string;
+      bucket: string;
+      accessKeyId: string;
+      secretAccessKey: string;
+    };
+    internal: { bucket: string };
+    nfs: { server: string; path: string };
+    hostpath: { path: string };
+    bucket: string;
+    path: string;
+    fileSystem: string;
+  };
+  fileSystemConfig: {
+    nfs: { server: string; path: string };
+    hostPath: { path: string };
+  };
+};
