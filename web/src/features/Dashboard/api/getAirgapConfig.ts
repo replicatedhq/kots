@@ -24,13 +24,16 @@ export const getAirgapConfig = async (appSlug: string): Promise<number> => {
   }
 };
 
-export const useAirgapConfig = () => {
+export const useAirgapConfig = (
+  onSuccess: (simultaneousUploads: Number) => void
+) => {
   const selectedApp = useSelectedApp();
   return useQuery({
     queryFn: () => getAirgapConfig(selectedApp?.slug || ""),
     queryKey: ["getAirgapConfig"],
     onError: (err: Error) => console.log(err),
     enabled: false,
+    onSuccess,
   });
 };
 
