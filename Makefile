@@ -150,6 +150,9 @@ build-release:
 	mkdir -p bin/docker-archive/minio
 	skopeo copy docker://minio/minio:${MINIO_TAG} docker-archive:bin/docker-archive/minio/${MINIO_TAG}
 
+	mkdir -p bin/docker-archive/mc
+	skopeo copy docker://minio/mc:${MC_TAG} docker-archive:bin/docker-archive/mc/${MC_TAG}
+
 	mkdir -p bin/docker-archive/local-volume-provider
 	skopeo copy docker://replicated/local-volume-provider:${LVP_TAG} docker-archive:bin/docker-archive/local-volume-provider/${LVP_TAG}
 
