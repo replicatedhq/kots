@@ -104,7 +104,12 @@ func InstallCmd() *cobra.Command {
 				return errors.Wrap(err, "failed to get license")
 			}
 
-			registryConfig, err := getRegistryConfig(v)
+			clientset, err := k8sutil.GetClientset()
+			if err != nil {
+				return errors.Wrap(err, "failed to get k8s clientset")
+			}
+
+			registryConfig, err := getRegistryConfig(v, clientset)
 			if err != nil {
 				return errors.Wrap(err, "failed to get registry config")
 			}
@@ -207,11 +212,6 @@ func InstallCmd() *cobra.Command {
 					v.Set("storage-base-uri", "docker://kotsadm-storage-registry:5000")
 					v.Set("storage-base-uri-plainhttp", true)
 				}
-			}
-
-			clientset, err := k8sutil.GetClientset()
-			if err != nil {
-				return errors.Wrap(err, "failed to get k8s clientset")
 			}
 
 			isKurl, err := kurl.IsKurl(clientset)
@@ -742,7 +742,7 @@ func registryFlags(flagset *pflag.FlagSet) {
 	flagset.MarkHidden("kotsadm-tag")
 }
 
-func getRegistryConfig(v *viper.Viper) (*kotsadmtypes.RegistryConfig, error) {
+func getRegistryConfig(v *viper.Viper, clientset kubernetes.Interface) (*kotsadmtypes.RegistryConfig, error) {
 	registryEndpoint := v.GetString("kotsadm-registry")
 	registryNamespace := v.GetString("kotsadm-namespace")
 	registryUsername := v.GetString("registry-username")
@@ -754,11 +754,6 @@ func getRegistryConfig(v *viper.Viper) (*kotsadmtypes.RegistryConfig, error) {
 			registryEndpoint = parts[0]
 			registryNamespace = strings.Join(parts[1:], "/")
 		}
-	}
-
-	clientset, err := k8sutil.GetClientset()
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to get k8s clientset")
 	}
 
 	isKurl, err := kurl.IsKurl(clientset)

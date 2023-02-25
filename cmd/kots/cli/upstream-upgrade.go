@@ -58,7 +58,7 @@ func UpstreamUpgradeCmd() *cobra.Command {
 				return errors.Wrap(err, "failed to get namespace")
 			}
 
-			registryConfig, err := getRegistryConfig(v)
+			registryConfig, err := getRegistryConfig(v, clientset)
 			if err != nil {
 				return errors.Wrap(err, "failed to get registry config")
 			}

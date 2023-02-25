@@ -19,6 +19,10 @@ import (
 	"k8s.io/client-go/kubernetes/scheme"
 )
 
+const (
+	MinioXlMigrationStatusConfigmapName = "kotsadm-minio-xl-migration-status"
+)
+
 func getConfigMapsYAML(deployOptions types.DeployOptions) (map[string][]byte, error) {
 	docs := map[string][]byte{}
 	s := json.NewYAMLSerializer(json.DefaultMetaFactory, scheme.Scheme, scheme.Scheme)
@@ -173,4 +177,56 @@ func configMapFromFile(deployOptions types.DeployOptions, configMapName string, 
 	}
 
 	return configMap, nil
+}
+
+func ensureMinioXlMigrationScriptsConfigmap(namespace string, clientset kubernetes.Interface) error {
+	desiredConfigMap := kotsadmobjects.MinioXlMigrationScriptsConfigMap(namespace)
+
+	existingConfigMap, err := clientset.CoreV1().ConfigMaps(namespace).Get(context.TODO(), desiredConfigMap.Name, metav1.GetOptions{})
+	if err != nil {
+		if !kuberneteserrors.IsNotFound(err) {
+			return errors.Wrap(err, "failed to get existing minio xl migration scripts configmap")
+		}
+
+		_, err := clientset.CoreV1().ConfigMaps(namespace).Create(context.TODO(), desiredConfigMap, metav1.CreateOptions{})
+		if err != nil {
+			return errors.Wrap(err, "failed to create minio xl migration scripts configmap")
+		}
+
+		return nil
+	}
+
+	existingConfigMap = updateConfigMap(existingConfigMap, desiredConfigMap)
+
+	_, err = clientset.CoreV1().ConfigMaps(namespace).Update(context.TODO(), existingConfigMap, metav1.UpdateOptions{})
+	if err != nil {
+		return errors.Wrap(err, "failed to update minio xl migration scripts configmap")
+	}
+
+	return nil
+}
+
+func ensureMinioXlMigrationStatusConfigmap(namespace string, clientset kubernetes.Interface) error {
+	_, err := clientset.CoreV1().ConfigMaps(namespace).Get(context.TODO(), MinioXlMigrationStatusConfigmapName, metav1.GetOptions{})
+	if err != nil {
+		if !kuberneteserrors.IsNotFound(err) {
+			return errors.Wrap(err, "failed to get existing minio xl migration status configmap")
+		}
+
+		cm := &corev1.ConfigMap{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: MinioXlMigrationStatusConfigmapName,
+			},
+			Data: map[string]string{
+				"status": "running",
+			},
+		}
+
+		_, err := clientset.CoreV1().ConfigMaps(namespace).Create(context.TODO(), cm, metav1.CreateOptions{})
+		if err != nil {
+			return errors.Wrap(err, "failed to create minio xl migration status configmap")
+		}
+	}
+
+	return nil
 }

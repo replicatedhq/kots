@@ -98,6 +98,7 @@ func Rewrite(rewriteOptions RewriteOptions) error {
 		IncludeAdminConsole:  false,
 		PreserveInstallation: true,
 		IsOpenShift:          k8sutil.IsOpenShift(clientset),
+		IsGKEAutopilot:       k8sutil.IsGKEAutopilot(clientset),
 	}
 	if err := upstream.WriteUpstream(u, writeUpstreamOptions); err != nil {
 		log.FinishSpinnerWithError()

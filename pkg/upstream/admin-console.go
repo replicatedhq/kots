@@ -30,9 +30,14 @@ type UpstreamSettings struct {
 	NoProxyEnvValue        string
 	AutoCreateClusterToken string
 	IsOpenShift            bool
+	IsGKEAutopilot         bool
 	IncludeMinio           bool
 	IsMinimalRBAC          bool
+	MigrateToMinioXl       bool
+	CurrentMinioImage      string
 	AdditionalNamespaces   []string
+
+	RegistryConfig kotsadmtypes.RegistryConfig
 }
 
 func GenerateAdminConsoleFiles(renderDir string, options types.WriteOptions) ([]types.UpstreamFile, error) {
@@ -49,9 +54,13 @@ func GenerateAdminConsoleFiles(renderDir string, options types.WriteOptions) ([]
 			HTTPSProxyEnvValue:     options.HTTPSProxyEnvValue,
 			NoProxyEnvValue:        options.NoProxyEnvValue,
 			IsOpenShift:            options.IsOpenShift,
+			IsGKEAutopilot:         options.IsGKEAutopilot,
 			IncludeMinio:           options.IncludeMinio,
+			MigrateToMinioXl:       options.MigrateToMinioXl,
+			CurrentMinioImage:      options.CurrentMinioImage,
 			IsMinimalRBAC:          options.IsMinimalRBAC,
 			AdditionalNamespaces:   options.AdditionalNamespaces,
+			RegistryConfig:         options.RegistryConfig,
 		}
 		return generateNewAdminConsoleFiles(settings)
 	}
@@ -65,9 +74,13 @@ func GenerateAdminConsoleFiles(renderDir string, options types.WriteOptions) ([]
 		Namespace:              options.Namespace,
 		AutoCreateClusterToken: uuid.New().String(),
 		IsOpenShift:            options.IsOpenShift,
+		IsGKEAutopilot:         options.IsGKEAutopilot,
 		IncludeMinio:           options.IncludeMinio,
+		MigrateToMinioXl:       options.MigrateToMinioXl,
+		CurrentMinioImage:      options.CurrentMinioImage,
 		IsMinimalRBAC:          options.IsMinimalRBAC,
 		AdditionalNamespaces:   options.AdditionalNamespaces,
+		RegistryConfig:         options.RegistryConfig,
 	}
 	if err := loadUpstreamSettingsFromFiles(settings, renderDir, existingFiles); err != nil {
 		return nil, errors.Wrap(err, "failed to find existing settings")
@@ -166,10 +179,14 @@ func generateNewAdminConsoleFiles(settings *UpstreamSettings) ([]types.UpstreamF
 		HTTPSProxyEnvValue:     settings.HTTPSProxyEnvValue,
 		NoProxyEnvValue:        settings.NoProxyEnvValue,
 		IsOpenShift:            settings.IsOpenShift,
+		IsGKEAutopilot:         settings.IsGKEAutopilot,
 		IncludeMinio:           settings.IncludeMinio,
+		MigrateToMinioXl:       settings.MigrateToMinioXl,
+		CurrentMinioImage:      settings.CurrentMinioImage,
 		EnsureRBAC:             true,
 		IsMinimalRBAC:          settings.IsMinimalRBAC,
 		AdditionalNamespaces:   settings.AdditionalNamespaces,
+		RegistryConfig:         settings.RegistryConfig,
 	}
 
 	if deployOptions.SharedPasswordBcrypt == "" && deployOptions.SharedPassword == "" {

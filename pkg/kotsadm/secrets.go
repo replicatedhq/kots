@@ -125,7 +125,7 @@ func ensureSecrets(deployOptions *types.DeployOptions, clientset *kubernetes.Cli
 	return nil
 }
 
-func getS3Secret(namespace string, clientset *kubernetes.Clientset) (*corev1.Secret, error) {
+func getS3Secret(namespace string, clientset kubernetes.Interface) (*corev1.Secret, error) {
 	s3Secret, err := clientset.CoreV1().Secrets(namespace).Get(context.TODO(), "kotsadm-minio", metav1.GetOptions{})
 	if err != nil {
 		if kuberneteserrors.IsNotFound(err) {
@@ -138,7 +138,7 @@ func getS3Secret(namespace string, clientset *kubernetes.Clientset) (*corev1.Sec
 	return s3Secret, nil
 }
 
-func ensureS3Secret(namespace string, clientset *kubernetes.Clientset) error {
+func ensureS3Secret(namespace string, clientset kubernetes.Interface) error {
 	existingS3Secret, err := getS3Secret(namespace, clientset)
 	if err != nil {
 		return errors.Wrap(err, "failed to check for existing s3 secret")

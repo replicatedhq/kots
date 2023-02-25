@@ -1,6 +1,8 @@
 package kotsadm
 
 import (
+	_ "embed"
+
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/kotsadm/types"
@@ -10,6 +12,19 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
+)
+
+const (
+	MinioXlMigrationScriptsConfigmapName = "kotsadm-minio-xl-migration-scripts"
+)
+
+var (
+	//go:embed scripts/copy-minio-client.sh
+	copyMinioClient string
+	//go:embed scripts/export-minio-data.sh
+	exportMinioData string
+	//go:embed scripts/import-minio-data.sh
+	importMinioData string
 )
 
 func MinioStatefulset(deployOptions types.DeployOptions, size resource.Quantity) (*appsv1.StatefulSet, error) {
@@ -33,6 +48,33 @@ func MinioStatefulset(deployOptions types.DeployOptions, size resource.Quantity)
 			return nil, errors.Wrap(err, "failed to get openshift pod security context")
 		}
 		securityContext = psc
+	}
+
+	cpuRequest, cpuLimit := "50m", "100m"
+	memoryRequest, memoryLimit := "100Mi", "512Mi"
+
+	if deployOptions.IsGKEAutopilot {
+		// requests and limits must be the same for GKE autopilot: https://cloud.google.com/kubernetes-engine/docs/concepts/autopilot-resource-requests#resource-limits
+		// otherwise, the limit will be lowered to match the request
+		// additionally, cpu requests must be in multiples of 250m: https://cloud.google.com/kubernetes-engine/docs/concepts/autopilot-resource-requests#min-max-requests
+		cpuRequest, cpuLimit = "250m", "250m"
+		memoryRequest, memoryLimit = "512Mi", "512Mi"
+	}
+
+	resourceRequirements := corev1.ResourceRequirements{
+		Limits: corev1.ResourceList{
+			"cpu":    resource.MustParse(cpuLimit),
+			"memory": resource.MustParse(memoryLimit),
+		},
+		Requests: corev1.ResourceList{
+			"cpu":    resource.MustParse(cpuRequest),
+			"memory": resource.MustParse(memoryRequest),
+		},
+	}
+
+	initContainers := []corev1.Container{}
+	if deployOptions.MigrateToMinioXl {
+		initContainers = append(initContainers, migrateToMinioXlInitContainers(deployOptions, resourceRequirements)...)
 	}
 
 	statefulset := &appsv1.StatefulSet{
@@ -84,28 +126,8 @@ func MinioStatefulset(deployOptions types.DeployOptions, size resource.Quantity)
 				Spec: corev1.PodSpec{
 					SecurityContext:  securityContext,
 					ImagePullSecrets: pullSecrets,
-					Volumes: []corev1.Volume{
-						{
-							Name: "kotsadm-minio",
-							VolumeSource: corev1.VolumeSource{
-								PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{
-									ClaimName: "kotsadm-minio",
-								},
-							},
-						},
-						{
-							Name: "minio-config-dir",
-							VolumeSource: corev1.VolumeSource{
-								EmptyDir: &corev1.EmptyDirVolumeSource{},
-							},
-						},
-						{
-							Name: "minio-cert-dir",
-							VolumeSource: corev1.VolumeSource{
-								EmptyDir: &corev1.EmptyDirVolumeSource{},
-							},
-						},
-					},
+					InitContainers:   initContainers,
+					Volumes:          minioVolumes(deployOptions),
 					Containers: []corev1.Container{
 						{
 							Image:           image,
@@ -122,20 +144,7 @@ func MinioStatefulset(deployOptions types.DeployOptions, size resource.Quantity)
 									ContainerPort: 9000,
 								},
 							},
-							VolumeMounts: []corev1.VolumeMount{
-								{
-									Name:      "kotsadm-minio",
-									MountPath: "/export",
-								},
-								{
-									Name:      "minio-config-dir",
-									MountPath: "/home/minio/.minio/",
-								},
-								{
-									Name:      "minio-cert-dir",
-									MountPath: "/.minio/",
-								},
-							},
+							VolumeMounts: minioVolumeMounts(),
 							Env: []corev1.EnvVar{
 								{
 									Name: "MINIO_ACCESS_KEY",
@@ -196,16 +205,7 @@ func MinioStatefulset(deployOptions types.DeployOptions, size resource.Quantity)
 									},
 								},
 							},
-							Resources: corev1.ResourceRequirements{
-								Limits: corev1.ResourceList{
-									"cpu":    resource.MustParse("100m"),
-									"memory": resource.MustParse("512Mi"),
-								},
-								Requests: corev1.ResourceList{
-									"cpu":    resource.MustParse("50m"),
-									"memory": resource.MustParse("100Mi"),
-								},
-							},
+							Resources:       resourceRequirements,
 							SecurityContext: secureContainerContext(deployOptions.StrictSecurityContext),
 						},
 					},
@@ -215,6 +215,255 @@ func MinioStatefulset(deployOptions types.DeployOptions, size resource.Quantity)
 	}
 
 	return statefulset, nil
+}
+
+func migrateToMinioXlInitContainers(deployOptions types.DeployOptions, resourceRequirements corev1.ResourceRequirements) []corev1.Container {
+	volumeMounts := append(minioVolumeMounts(), minioXlMigrationVolumeMounts()...)
+
+	return []corev1.Container{
+		{
+			Image:           GetAdminConsoleImage(deployOptions, "minio-client"),
+			ImagePullPolicy: corev1.PullIfNotPresent,
+			Name:            "copy-minio-client",
+			Command: []string{
+				"/scripts/copy-minio-client.sh",
+			},
+			VolumeMounts: volumeMounts,
+			Env: []corev1.EnvVar{
+				{
+					Name:  "KOTSADM_MINIO_MIGRATION_DIR",
+					Value: "/migration",
+				},
+			},
+			Resources:       resourceRequirements,
+			SecurityContext: secureContainerContext(deployOptions.StrictSecurityContext),
+		},
+		{
+			Image:           deployOptions.CurrentMinioImage,
+			ImagePullPolicy: corev1.PullIfNotPresent,
+			Name:            "export-minio-data",
+			Command: []string{
+				"/scripts/export-minio-data.sh",
+			},
+			VolumeMounts: volumeMounts,
+			Env: []corev1.EnvVar{
+				{
+					Name:  "KOTSADM_MINIO_ENDPOINT",
+					Value: "http://localhost:9000",
+				},
+				{
+					Name:  "KOTSADM_MINIO_BUCKET_NAME",
+					Value: "kotsadm",
+				},
+				{
+					Name: "MINIO_ACCESS_KEY",
+					ValueFrom: &corev1.EnvVarSource{
+						SecretKeyRef: &corev1.SecretKeySelector{
+							LocalObjectReference: corev1.LocalObjectReference{
+								Name: "kotsadm-minio",
+							},
+							Key: "accesskey",
+						},
+					},
+				},
+				{
+					Name: "MINIO_SECRET_KEY",
+					ValueFrom: &corev1.EnvVarSource{
+						SecretKeyRef: &corev1.SecretKeySelector{
+							LocalObjectReference: corev1.LocalObjectReference{
+								Name: "kotsadm-minio",
+							},
+							Key: "secretkey",
+						},
+					},
+				},
+				{
+					Name:  "KOTSADM_MINIO_LEGACY_ALIAS",
+					Value: "legacy",
+				},
+				{
+					Name:  "KOTSADM_MINIO_MIGRATION_DIR",
+					Value: "/migration",
+				},
+			},
+			Resources:       resourceRequirements,
+			SecurityContext: secureContainerContext(deployOptions.StrictSecurityContext),
+		},
+		{
+			Image:           GetAdminConsoleImage(deployOptions, "minio"),
+			ImagePullPolicy: corev1.PullIfNotPresent,
+			Name:            "import-minio-data",
+			Command: []string{
+				"/scripts/import-minio-data.sh",
+			},
+			VolumeMounts: volumeMounts,
+			Env: []corev1.EnvVar{
+				{
+					Name:  "KOTSADM_MINIO_ENDPOINT",
+					Value: "http://localhost:9000",
+				},
+				{
+					Name:  "KOTSADM_MINIO_BUCKET_NAME",
+					Value: "kotsadm",
+				},
+				{
+					Name: "MINIO_ACCESS_KEY",
+					ValueFrom: &corev1.EnvVarSource{
+						SecretKeyRef: &corev1.SecretKeySelector{
+							LocalObjectReference: corev1.LocalObjectReference{
+								Name: "kotsadm-minio",
+							},
+							Key: "accesskey",
+						},
+					},
+				},
+				{
+					Name: "MINIO_SECRET_KEY",
+					ValueFrom: &corev1.EnvVarSource{
+						SecretKeyRef: &corev1.SecretKeySelector{
+							LocalObjectReference: corev1.LocalObjectReference{
+								Name: "kotsadm-minio",
+							},
+							Key: "secretkey",
+						},
+					},
+				},
+				{
+					Name:  "KOTSADM_MINIO_NEW_ALIAS",
+					Value: "new",
+				},
+				{
+					Name:  "KOTSADM_MINIO_MIGRATION_DIR",
+					Value: "/migration",
+				},
+			},
+			Resources:       resourceRequirements,
+			SecurityContext: secureContainerContext(deployOptions.StrictSecurityContext),
+		},
+	}
+}
+
+func minioVolumes(deployOptions types.DeployOptions) []corev1.Volume {
+	scriptsFileMode := int32(0755)
+
+	volumes := []corev1.Volume{
+		{
+			Name: "kotsadm-minio",
+			VolumeSource: corev1.VolumeSource{
+				PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{
+					ClaimName: "kotsadm-minio",
+				},
+			},
+		},
+		{
+			Name: "minio-config-dir",
+			VolumeSource: corev1.VolumeSource{
+				EmptyDir: &corev1.EmptyDirVolumeSource{},
+			},
+		},
+		{
+			Name: "minio-cert-dir",
+			VolumeSource: corev1.VolumeSource{
+				EmptyDir: &corev1.EmptyDirVolumeSource{},
+			},
+		},
+	}
+
+	if deployOptions.MigrateToMinioXl {
+		volumes = append(volumes, corev1.Volume{
+			Name: "kotsadm-minio-client-config",
+			VolumeSource: corev1.VolumeSource{
+				EmptyDir: &corev1.EmptyDirVolumeSource{},
+			},
+		}, corev1.Volume{
+			Name: "kotsadm-minio-xl-migration",
+			VolumeSource: corev1.VolumeSource{
+				EmptyDir: &corev1.EmptyDirVolumeSource{},
+			},
+		}, corev1.Volume{
+			Name: "kotsadm-minio-xl-migration-scripts",
+			VolumeSource: corev1.VolumeSource{
+				ConfigMap: &corev1.ConfigMapVolumeSource{
+					LocalObjectReference: corev1.LocalObjectReference{
+						Name: MinioXlMigrationScriptsConfigmapName,
+					},
+					DefaultMode: &scriptsFileMode,
+					Items: []corev1.KeyToPath{
+						{
+							Key:  "copy-minio-client.sh",
+							Path: "copy-minio-client.sh",
+						},
+						{
+							Key:  "export-minio-data.sh",
+							Path: "export-minio-data.sh",
+						},
+						{
+							Key:  "import-minio-data.sh",
+							Path: "import-minio-data.sh",
+						},
+					},
+				},
+			},
+		})
+	}
+
+	return volumes
+}
+
+func minioVolumeMounts() []corev1.VolumeMount {
+	return []corev1.VolumeMount{
+		{
+			Name:      "kotsadm-minio",
+			MountPath: "/export",
+		},
+		{
+			Name:      "minio-config-dir",
+			MountPath: "/home/minio/.minio/",
+		},
+		{
+			Name:      "minio-cert-dir",
+			MountPath: "/.minio/",
+		},
+	}
+}
+
+func minioXlMigrationVolumeMounts() []corev1.VolumeMount {
+	return []corev1.VolumeMount{
+		{
+			Name:      "kotsadm-minio-client-config",
+			MountPath: "/.mc",
+		},
+		{
+			Name:      "kotsadm-minio-xl-migration",
+			MountPath: "/migration",
+		},
+		{
+			Name:      "kotsadm-minio-xl-migration-scripts",
+			MountPath: "/scripts",
+		},
+	}
+}
+
+func MinioXlMigrationScriptsConfigMap(namespace string) *corev1.ConfigMap {
+	data := map[string]string{}
+
+	data["copy-minio-client.sh"] = copyMinioClient
+	data["export-minio-data.sh"] = exportMinioData
+	data["import-minio-data.sh"] = importMinioData
+
+	configMap := &corev1.ConfigMap{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: "v1",
+			Kind:       "ConfigMap",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      MinioXlMigrationScriptsConfigmapName,
+			Namespace: namespace,
+			Labels:    types.GetKotsadmLabels(),
+		},
+		Data: data,
+	}
+	return configMap
 }
 
 func MinioService(namespace string) *corev1.Service {

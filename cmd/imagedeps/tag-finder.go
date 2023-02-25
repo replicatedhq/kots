@@ -123,6 +123,11 @@ func getTagFinder(opts ...func(c *configuration)) tagFinderFn {
 			if err != nil {
 				return nil, fmt.Errorf("failed to get release tag for minio/minio %w", err)
 			}
+		case minioClientReference:
+			latestReleaseTag, err = getLatestTagFromGithub(config.releaseFinder, "minio", "mc", matcherFn)
+			if err != nil {
+				return nil, fmt.Errorf("failed to get release tag for minio/mc %w", err)
+			}
 		case dexReference:
 			latestReleaseTag, err = getLatestTagFromGithub(config.releaseFinder, "dexidp", "dex", matcherFn)
 			if err != nil {

@@ -3,6 +3,8 @@ package kotsadm
 import (
 	"bytes"
 	"context"
+	"regexp"
+	"time"
 
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
@@ -21,9 +23,24 @@ import (
 	"k8s.io/client-go/kubernetes/scheme"
 )
 
+var (
+	MinioImageTagDateRegexp = regexp.MustCompile(`RELEASE\.(\d{4}-\d{2}-\d{2}T\d{2}-\d{2}-\d{2}Z)`)
+	// MigrateToMinioXlBeforeTime is the time that the minio version was released that removed the legacy backend
+	// that we need to migrate from: https://github.com/minio/minio/releases/tag/RELEASE.2022-10-29T06-21-33Z
+	MigrateToMinioXlBeforeTime = time.Date(2022, 10, 29, 6, 21, 33, 0, time.UTC)
+)
+
 func getMinioYAML(deployOptions types.DeployOptions) (map[string][]byte, error) {
 	docs := map[string][]byte{}
 	s := json.NewYAMLSerializer(json.DefaultMetaFactory, scheme.Scheme, scheme.Scheme)
+
+	if deployOptions.MigrateToMinioXl {
+		var configMap bytes.Buffer
+		if err := s.Encode(kotsadmobjects.MinioXlMigrationScriptsConfigMap(deployOptions.Namespace), &configMap); err != nil {
+			return nil, errors.Wrap(err, "failed to marshal minio migration configmap")
+		}
+		docs["minio-xl-migration-configmap.yaml"] = configMap.Bytes()
+	}
 
 	size, err := getSize(deployOptions, "minio", resource.MustParse("4Gi"))
 	if err != nil {
@@ -48,7 +65,7 @@ func getMinioYAML(deployOptions types.DeployOptions) (map[string][]byte, error) 
 	return docs, nil
 }
 
-func ensureMinio(deployOptions types.DeployOptions, clientset *kubernetes.Clientset) error {
+func ensureMinio(deployOptions types.DeployOptions, clientset kubernetes.Interface) error {
 	size, err := getSize(deployOptions, "minio", resource.MustParse("4Gi"))
 	if err != nil {
 		return errors.Wrap(err, "failed to get size")
@@ -58,8 +75,20 @@ func ensureMinio(deployOptions types.DeployOptions, clientset *kubernetes.Client
 		return errors.Wrap(err, "failed to ensure minio secret")
 	}
 
+	if deployOptions.MigrateToMinioXl {
+		if err := ensureMinioXlMigrationScriptsConfigmap(deployOptions.Namespace, clientset); err != nil {
+			return errors.Wrap(err, "failed to ensure minio xl migration scripts configmap")
+		}
+	}
+
 	if err := ensureMinioStatefulset(deployOptions, clientset, size); err != nil {
 		return errors.Wrap(err, "failed to ensure minio statefulset")
+	}
+
+	if deployOptions.MigrateToMinioXl {
+		if err := ensureMinioXlMigrationStatusConfigmap(deployOptions.Namespace, clientset); err != nil {
+			return errors.Wrap(err, "failed to ensure minio xl migration status configmap")
+		}
 	}
 
 	if err := ensureMinioService(deployOptions.Namespace, clientset); err != nil {
@@ -69,7 +98,7 @@ func ensureMinio(deployOptions types.DeployOptions, clientset *kubernetes.Client
 	return nil
 }
 
-func ensureMinioStatefulset(deployOptions types.DeployOptions, clientset *kubernetes.Clientset, size resource.Quantity) error {
+func ensureMinioStatefulset(deployOptions types.DeployOptions, clientset kubernetes.Interface, size resource.Quantity) error {
 	desiredMinio, err := kotsadmobjects.MinioStatefulset(deployOptions, size)
 	if err != nil {
 		return errors.Wrap(err, "failed to get desired minio statefulset definition")
@@ -97,6 +126,7 @@ func ensureMinioStatefulset(deployOptions types.DeployOptions, clientset *kubern
 	existingMinio.Spec.Template.Spec.Volumes = desiredMinio.Spec.Template.Spec.DeepCopy().Volumes
 	existingMinio.Spec.Template.Spec.Containers[0].Image = desiredMinio.Spec.Template.Spec.Containers[0].Image
 	existingMinio.Spec.Template.Spec.Containers[0].VolumeMounts = desiredMinio.Spec.Template.Spec.Containers[0].DeepCopy().VolumeMounts
+	existingMinio.Spec.Template.Spec.InitContainers = desiredMinio.Spec.Template.Spec.DeepCopy().InitContainers
 
 	_, err = clientset.AppsV1().StatefulSets(deployOptions.Namespace).Update(ctx, existingMinio, metav1.UpdateOptions{})
 	if err != nil {
@@ -106,7 +136,7 @@ func ensureMinioStatefulset(deployOptions types.DeployOptions, clientset *kubern
 	return nil
 }
 
-func ensureMinioService(namespace string, clientset *kubernetes.Clientset) error {
+func ensureMinioService(namespace string, clientset kubernetes.Interface) error {
 	_, err := clientset.CoreV1().Services(namespace).Get(context.TODO(), "kotsadm-minio", metav1.GetOptions{})
 	if err != nil {
 		if !kuberneteserrors.IsNotFound(err) {
@@ -325,5 +355,114 @@ func cleanUpMigrationArtifact(clientset kubernetes.Interface, namespace string) 
 			return errors.Wrap(err, "failed to delete config map")
 		}
 	}
+	return nil
+}
+
+// IsMinioXlMigrationNeeded checks if the minio statefulset needs to be migrated from FS to XL.
+// If the minio statefulset exists, it returns a bool indicating whether a migration is needed and the image of the minio container.
+// If the minio statefulset does not exist, it returns false and an empty string.
+func IsMinioXlMigrationNeeded(clientset kubernetes.Interface, namespace string) (needsMigration bool, minioImage string, err error) {
+	existingMinio, err := clientset.AppsV1().StatefulSets(namespace).Get(context.TODO(), "kotsadm-minio", metav1.GetOptions{})
+	if err != nil {
+		if !kuberneteserrors.IsNotFound(err) {
+			return false, "", errors.Wrap(err, "failed to get minio statefulset")
+		}
+		return false, "", nil
+	}
+
+	minioImage = existingMinio.Spec.Template.Spec.Containers[0].Image
+	needsMigration, err = imageNeedsMinioXlMigration(minioImage)
+	if err != nil {
+		return false, "", errors.Wrap(err, "failed to check if minio needs migration")
+	}
+
+	return needsMigration, minioImage, nil
+}
+
+// imageNeedsMinioXlMigration returns true if the minio image is older than the migrate before time (2022-10-29T06-21-33Z).
+func imageNeedsMinioXlMigration(minioImage string) (bool, error) {
+	existingImageTagDateMatch := MinioImageTagDateRegexp.FindStringSubmatch(minioImage)
+	if len(existingImageTagDateMatch) != 2 {
+		return false, errors.New("failed to parse existing image tag date")
+	}
+
+	existingImageTagDate, err := time.Parse("2006-01-02T15-04-05Z", existingImageTagDateMatch[1])
+	if err != nil {
+		return false, errors.Wrap(err, "failed to parse existing image tag date")
+	}
+
+	return existingImageTagDate.Before(MigrateToMinioXlBeforeTime), nil
+}
+
+func ensureAndWaitForMinio(ctx context.Context, deployOptions types.DeployOptions, clientset kubernetes.Interface) (finalErr error) {
+	isMinioXlMigrationRunning, err := IsMinioXlMigrationRunning(ctx, clientset, deployOptions.Namespace)
+	if err != nil {
+		return errors.Wrap(err, "failed to check if minio xl migration is running")
+	}
+
+	// if minio xl migration is running, don't update the minio statefulset
+	if !isMinioXlMigrationRunning {
+		if err := ensureMinio(deployOptions, clientset); err != nil {
+			return errors.Wrap(err, "failed to ensure minio")
+		}
+	}
+
+	defer func() {
+		if finalErr == nil {
+			isMinioXlMigrationRunning, err := IsMinioXlMigrationRunning(ctx, clientset, deployOptions.Namespace)
+			if err != nil {
+				logger.Error(errors.Wrap(err, "failed to check if minio xl migration is running"))
+			}
+
+			if isMinioXlMigrationRunning {
+				if err := MarkMinioXlMigrationComplete(ctx, clientset, deployOptions.Namespace); err != nil {
+					logger.Error(errors.Wrap(err, "failed to mark minio xl migration complete"))
+				}
+			}
+		}
+	}()
+
+	if err := k8sutil.WaitForStatefulSetReady(ctx, clientset, deployOptions.Namespace, "kotsadm-minio", deployOptions.Timeout); err != nil {
+		return errors.Wrap(err, "failed to wait for minio")
+	}
+
+	return nil
+}
+
+func IsMinioXlMigrationRunning(ctx context.Context, clientset kubernetes.Interface, namespace string) (bool, error) {
+	cm, err := clientset.CoreV1().ConfigMaps(namespace).Get(ctx, MinioXlMigrationStatusConfigmapName, metav1.GetOptions{})
+	if err != nil {
+		if !kuberneteserrors.IsNotFound(err) {
+			return false, errors.Wrapf(err, "failed to get %s configmap", MinioXlMigrationStatusConfigmapName)
+		}
+		return false, nil
+	}
+
+	if cm.Data == nil {
+		return false, nil
+	}
+
+	return cm.Data["status"] == "running", nil
+}
+
+func MarkMinioXlMigrationComplete(ctx context.Context, clientset kubernetes.Interface, namespace string) error {
+	cm, err := clientset.CoreV1().ConfigMaps(namespace).Get(ctx, MinioXlMigrationStatusConfigmapName, metav1.GetOptions{})
+	if err != nil {
+		if !kuberneteserrors.IsNotFound(err) {
+			return errors.Wrapf(err, "failed to get %s configmap", MinioXlMigrationStatusConfigmapName)
+		}
+		return nil // no-op
+	}
+
+	if cm.Data == nil {
+		cm.Data = map[string]string{}
+	}
+	cm.Data["status"] = "complete"
+
+	_, err = clientset.CoreV1().ConfigMaps(namespace).Update(ctx, cm, metav1.UpdateOptions{})
+	if err != nil {
+		return errors.Wrapf(err, "failed to update %s configmap", MinioXlMigrationStatusConfigmapName)
+	}
+
 	return nil
 }

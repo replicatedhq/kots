@@ -273,6 +273,7 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 		HTTPSProxyEnvValue:  pullOptions.HTTPSProxyEnvValue,
 		NoProxyEnvValue:     pullOptions.NoProxyEnvValue,
 		IsOpenShift:         k8sutil.IsOpenShift(clientset),
+		IsGKEAutopilot:      k8sutil.IsGKEAutopilot(clientset),
 		IncludeMinio:        pullOptions.IncludeMinio,
 	}
 	if err := upstream.WriteUpstream(u, writeUpstreamOptions); err != nil {
