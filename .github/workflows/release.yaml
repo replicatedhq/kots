@@ -164,7 +164,7 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-go-kots-
     - name: Download web artifact
-      uses: actions/download-artifact@v2
+      uses: actions/download-artifact@v3
       with:
         name: web
         path: ./web/dist
@@ -186,7 +186,7 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v2
     - name: Download go_api artifact
-      uses: actions/download-artifact@v2
+      uses: actions/download-artifact@v3
       with:
         name: go_api
         path: ./bin
@@ -250,7 +250,7 @@ jobs:
       env:
         COSIGN_KEY: ${{secrets.COSIGN_KEY}}
     - name: Download web artifact
-      uses: actions/download-artifact@v2
+      uses: actions/download-artifact@v3
       with:
         name: web
         path: ./web/dist
@@ -286,7 +286,7 @@ jobs:
           addon_version=${{ needs.generate-tag.outputs.tag }}
           echo "::set-output name=addon_version::${addon_version#v}"
       - name: download kots binary
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: go_api
           path: bin/
@@ -379,12 +379,12 @@ jobs:
     needs: [release-go-api-tagged, goreleaser, build-schema-migrations, generate-tag]
     steps:
     - name: Download migrations
-      uses: actions/download-artifact@v2
+      uses: actions/download-artifact@v3
       with:
         name: migrations-image
         path: ./docker-archive
     - name: Download kotsadm image
-      uses: actions/download-artifact@v2
+      uses: actions/download-artifact@v3
       with:
         name: kotsadm-image
         path: ./docker-archive

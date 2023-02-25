@@ -125,7 +125,7 @@ jobs:
           ${{ runner.os }}-go-kots-
 
     - name: Download web artifact
-      uses: actions/download-artifact@v2
+      uses: actions/download-artifact@v3
       with:
         name: web
         path: ./web/dist
@@ -153,7 +153,7 @@ jobs:
       uses: actions/checkout@v2
 
     - name: Download go_api artifact
-      uses: actions/download-artifact@v2
+      uses: actions/download-artifact@v3
       with:
         name: go_api
         path: ./bin
@@ -188,7 +188,7 @@ jobs:
       uses: actions/checkout@v2
 
     - name: Download kurl_proxy artifact
-      uses: actions/download-artifact@v2
+      uses: actions/download-artifact@v3
       with:
         name: kurl_proxy
         path: ./kurl_proxy/bin
