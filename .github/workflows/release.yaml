@@ -52,6 +52,7 @@ jobs:
           labels: |
             automated-pr
             images
+            type::security
           draft: false
           base: "main"
           body: "Automated changes by the [release](https://github.com/replicatedhq/kots/blob/main/.github/workflows/release.yaml) GitHub action"
