@@ -182,48 +182,45 @@ function PreflightResultPage(props: Props) {
       </div>
 
       <div className="flex justifyContent--flexEnd tw-gap-5">
-        {preflightCheck?.shouldShowRerunPreflight && (
-          <div className="flex-auto flex justifyContent--flexEnd u-marginBottom--15">
-            <button
-              type="button"
-              className="btn primary blue"
-              onClick={() => rerunPreflights()}
-            >
-              Re-run
-            </button>
-          </div>
-        )}
+        {preflightCheck?.shouldShowRerunPreflight &&
+          !preflightCheck?.showPreflightResultErrors && (
+            <div className="flex-auto flex justifyContent--flexEnd u-marginBottom--15">
+              <button
+                type="button"
+                className="btn primary blue"
+                onClick={() => rerunPreflights()}
+              >
+                Re-run
+              </button>
+            </div>
+          )}
         {props.fromLicenseFlow && (
           <div className="flex-auto flex justifyContent--flexEnd u-marginBottom--15">
-            {!preflightCheck?.showPreflightCheckPending &&
-              !preflightCheck?.showPreflightResultErrors && (
-                <div>
-                  <button
-                    type="button"
-                    className="btn primary blue"
-                    disabled={preflightCheck?.showDeploymentBlocked}
-                    onClick={() =>
-                      preflightCheck?.shouldShowConfirmContinueWithFailedPreflights
-                        ? setShowContinueWithFailedPreflightsModal(true)
-                        : deployKotsDownstream({
-                            continueWithFailedPreflights: true,
-                          })
-                    }
+            {!preflightCheck?.showPreflightCheckPending && (
+              <div>
+                <button
+                  type="button"
+                  className="btn primary blue"
+                  disabled={preflightCheck?.showDeploymentBlocked}
+                  onClick={() =>
+                    preflightCheck?.shouldShowConfirmContinueWithFailedPreflights
+                      ? setShowContinueWithFailedPreflightsModal(true)
+                      : deployKotsDownstream({
+                          continueWithFailedPreflights: true,
+                        })
+                  }
+                >
+                  <span
+                    data-tip-disable={!preflightCheck?.showDeploymentBlocked}
+                    data-tip="Deployment is disabled as a strict analyzer in this version's preflight checks has failed or has not been run"
+                    data-for="disable-deployment-tooltip"
                   >
-                    <span
-                      data-tip-disable={!preflightCheck?.showDeploymentBlocked}
-                      data-tip="Deployment is disabled as a strict analyzer in this version's preflight checks has failed or has not been run"
-                      data-for="disable-deployment-tooltip"
-                    >
-                      Continue
-                    </span>
-                  </button>
-                  <ReactTooltip
-                    effect="solid"
-                    id="disable-deployment-tooltip"
-                  />
-                </div>
-              )}
+                    Continue
+                  </span>
+                </button>
+                <ReactTooltip effect="solid" id="disable-deployment-tooltip" />
+              </div>
+            )}
             {preflightCheck?.showIgnorePreflight && (
               <div className="flex flex1 justifyContent--center alignItems--center">
                 <span
