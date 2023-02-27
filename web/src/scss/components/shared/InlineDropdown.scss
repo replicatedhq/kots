@@ -8,7 +8,7 @@
     font-weight: inherit;
     cursor: pointer;
     user-select: none;
-    color: $link-color;
+    color: var(--link-color);
   }
 
   &:hover .display-text {
@@ -39,7 +39,7 @@
       font-size: 12px;
       line-height: 20px;
       font-weight: 500;
-      color: $link-color;
+      color: var(--link-color);
       padding: 8px;
       cursor: pointer;
       display: block;

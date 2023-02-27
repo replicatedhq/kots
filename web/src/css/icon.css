@@ -1,5 +1,5 @@
 .icons {
-  color: #326de6;
+  color: var(--icon-color);
 }
 .clickable {
   cursor: pointer;

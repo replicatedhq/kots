@@ -24,7 +24,7 @@
 
   &.selected,
   &.selected:hover {
-    background-color: lighten($primary-color, 43.5%);
+    background-color: $primary-light-color;
     border-color: #337ab7;
     box-shadow: none;
   }

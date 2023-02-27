@@ -17,7 +17,7 @@
 }
 .Textarea:active,
 .Textarea:focus {
-  border-color: $accent-color;
+  border-color: var(--accent-color);
 }
 .Textarea.has-error,
 .Textarea.has-error:focus,

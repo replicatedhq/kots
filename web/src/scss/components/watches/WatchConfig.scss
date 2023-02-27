@@ -15,7 +15,7 @@
 
 .link,
 a:visited {
-  color: $link-color;
+  color: var(--link-color);
   cursor: pointer;
   font-weight: 500;
   text-decoration: underline;
@@ -30,7 +30,7 @@ a:visited {
   padding: 13px 40px 10px;
 
   &.newer {
-    background: lighten($primary-color, 43.5%);
+    background: $primary-light-color;
     color: $text-color-body-copy;
   }
 
