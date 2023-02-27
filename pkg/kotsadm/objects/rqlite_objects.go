@@ -130,6 +130,7 @@ func RqliteStatefulset(deployOptions types.DeployOptions, size resource.Quantity
 								},
 							},
 							VolumeMounts: volumeMounts,
+							Env:          getRqliteEnvs(),
 							LivenessProbe: &corev1.Probe{
 								InitialDelaySeconds: 30,
 								TimeoutSeconds:      5,
@@ -283,4 +284,20 @@ func getRqliteVolumeMounts() []corev1.VolumeMount {
 	}
 
 	return volumeMounts
+}
+
+func getRqliteEnvs() []corev1.EnvVar {
+	return []corev1.EnvVar{
+		{
+			Name: "RQLITE_PASSWORD",
+			ValueFrom: &corev1.EnvVarSource{
+				SecretKeyRef: &corev1.SecretKeySelector{
+					LocalObjectReference: corev1.LocalObjectReference{
+						Name: "kotsadm-rqlite",
+					},
+					Key: "password",
+				},
+			},
+		},
+	}
 }

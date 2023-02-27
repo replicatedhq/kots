@@ -99,6 +99,12 @@ spec:
         - name: authconfig
           mountPath: /auth/config.json
           subPath: authconfig.json
+        env:
+        - name: RQLITE_PASSWORD # this is used by the support bundle collector to get the db backup from rqlite
+          valueFrom:
+            secretKeyRef:
+              name: kotsadm-rqlite
+              key: password          
       volumes:
       - name: authconfig
         secret:
