@@ -58,11 +58,11 @@ export const useCheckForUpdates = (
   return useQuery({
     queryFn: () => getCheckForUpdates(selectedApp?.slug || ""),
     queryKey: ["getCheckForUpdates"],
-
     enabled: true,
     select: (data) => makeUpdatesResponse(data),
     onSuccess,
     onError,
+    refetchOnWindowFocus: false,
   });
 };
 
