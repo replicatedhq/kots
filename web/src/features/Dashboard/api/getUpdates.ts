@@ -58,7 +58,7 @@ export const useCheckForUpdates = (
   return useQuery({
     queryFn: () => getCheckForUpdates(selectedApp?.slug || ""),
     queryKey: ["getCheckForUpdates"],
-    enabled: true,
+    enabled: false,
     select: (data) => makeUpdatesResponse(data),
     onSuccess,
     onError,
