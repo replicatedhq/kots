@@ -183,7 +183,7 @@ function PreflightResultPage(props: Props) {
 
       <div className="flex justifyContent--flexEnd tw-gap-5">
         {preflightCheck?.shouldShowRerunPreflight &&
-          !preflightCheck?.showPreflightResultErrors && (
+          preflightCheck?.showPreflightResultErrors && (
             <div className="flex-auto flex justifyContent--flexEnd u-marginBottom--15">
               <button
                 type="button"
