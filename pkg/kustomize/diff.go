@@ -3,12 +3,8 @@ package kustomize
 import (
 	"bufio"
 	"bytes"
-	"fmt"
-	"os/exec"
-	"path/filepath"
 	"strings"
 
-	"github.com/marccampbell/yaml-toolbox/pkg/splitter"
 	"github.com/pkg/errors"
 	"github.com/sergi/go-diff/diffmatchpatch"
 )
@@ -44,33 +40,16 @@ func diffContent(baseContent string, updatedContent string) (int, int, error) {
 	return additions, deletions, nil
 }
 
-// DiffAppVersionsForDownstream will generate a diff of the rendered yaml between two different
-// archivedirs
+// DiffAppVersionsForDownstream will generate a diff of the rendered yaml between two different archive dirs
 func DiffAppVersionsForDownstream(downstreamName string, archive string, diffBasePath string, kustomizeBinPath string) (*Diff, error) {
-	// kustomize build both of these archives before diffing
-	archiveOutput, err := exec.Command(kustomizeBinPath, "build", filepath.Join(archive, "overlays", "downstreams", downstreamName)).Output()
+	_, archiveFiles, err := GetRenderedApp(archive, downstreamName, kustomizeBinPath)
 	if err != nil {
-		if ee, ok := err.(*exec.ExitError); ok {
-			err = fmt.Errorf("kustomize stderr: %q", string(ee.Stderr))
-		}
-		return nil, errors.Wrap(err, "failed to run kustomize on archive dir")
-	}
-	baseOutput, err := exec.Command(kustomizeBinPath, "build", filepath.Join(diffBasePath, "overlays", "downstreams", downstreamName)).Output()
-	if err != nil {
-		if ee, ok := err.(*exec.ExitError); ok {
-			err = fmt.Errorf("kustomize stderr: %q", string(ee.Stderr))
-		}
-		return nil, errors.Wrap(err, "failed to run kustomize on base dir")
+		return nil, errors.Wrap(err, "failed to get rendered app")
 	}
 
-	archiveFiles, err := splitter.SplitYAML(archiveOutput)
+	_, baseFiles, err := GetRenderedApp(diffBasePath, downstreamName, kustomizeBinPath)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to split archive yaml")
-	}
-
-	baseFiles, err := splitter.SplitYAML(baseOutput)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to split base yaml")
+		return nil, errors.Wrap(err, "failed to get base rendered app")
 	}
 
 	diff := Diff{}
@@ -111,21 +90,21 @@ func DiffAppVersionsForDownstream(downstreamName string, archive string, diffBas
 		}
 	}
 
-	_, archiveChartFiles, err := RenderChartsArchive(archive, downstreamName, kustomizeBinPath)
+	_, archiveChartFiles, err := GetRenderedChartsArchive(archive, downstreamName, kustomizeBinPath)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to kustomize archive charts dir")
+		return nil, errors.Wrap(err, "failed to get rendered charts files")
 	}
 
-	_, baseChartFiles, err := RenderChartsArchive(diffBasePath, downstreamName, kustomizeBinPath)
+	_, baseChartFiles, err := GetRenderedChartsArchive(diffBasePath, downstreamName, kustomizeBinPath)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to kustomize base charts dir")
+		return nil, errors.Wrap(err, "failed to get base rendered charts files")
 	}
 
 	for archiveFilename, archiveContents := range archiveChartFiles {
 		baseContents, ok := baseChartFiles[archiveFilename]
 		if !ok {
 			// this file was added
-			scanner := bufio.NewScanner(strings.NewReader(archiveContents))
+			scanner := bufio.NewScanner(bytes.NewReader(archiveContents))
 			for scanner.Scan() {
 				diff.LinesAdded++
 			}
@@ -150,7 +129,7 @@ func DiffAppVersionsForDownstream(downstreamName string, archive string, diffBas
 		_, ok := archiveChartFiles[baseFilename]
 		if !ok {
 			// this file was removed
-			scanner := bufio.NewScanner(strings.NewReader(baseContents))
+			scanner := bufio.NewScanner(bytes.NewReader(baseContents))
 			for scanner.Scan() {
 				diff.LinesRemoved++
 			}

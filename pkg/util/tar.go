@@ -5,11 +5,37 @@ import (
 	"bytes"
 	"compress/gzip"
 	"io"
+	"io/ioutil"
 	"os"
 	"path/filepath"
 
+	"github.com/mholt/archiver/v3"
 	"github.com/pkg/errors"
 )
+
+func TGZArchive(dir string) ([]byte, error) {
+	tempDir, err := ioutil.TempDir("", "kots")
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to create temp dir")
+	}
+	defer os.RemoveAll(tempDir)
+
+	tarGz := archiver.TarGz{
+		Tar: &archiver.Tar{
+			ImplicitTopLevelFolder: true,
+		},
+	}
+	if err := tarGz.Archive([]string{dir}, filepath.Join(tempDir, "tmp.tar.gz")); err != nil {
+		return nil, errors.Wrap(err, "failed to create tar gz")
+	}
+
+	archive, err := ioutil.ReadFile(filepath.Join(tempDir, "tmp.tar.gz"))
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to read tar.gz file")
+	}
+
+	return archive, nil
+}
 
 func ExtractTGZArchive(tgzFile string, destDir string) error {
 	fileReader, err := os.Open(tgzFile)

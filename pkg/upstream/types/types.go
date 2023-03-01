@@ -121,6 +121,24 @@ func (u *Upstream) GetBaseDir(options WriteOptions) string {
 	return path.Join(renderDir, "base")
 }
 
+func (u *Upstream) GetOverlaysDir(options WriteOptions) string {
+	renderDir := options.RootDir
+	if options.CreateAppDir {
+		renderDir = path.Join(renderDir, u.Name)
+	}
+
+	return path.Join(renderDir, "overlays")
+}
+
+func (u *Upstream) GetRenderedDir(options WriteOptions) string {
+	renderDir := options.RootDir
+	if options.CreateAppDir {
+		renderDir = path.Join(renderDir, u.Name)
+	}
+
+	return path.Join(renderDir, "rendered")
+}
+
 func (u *Upstream) GetSkippedDir(options WriteOptions) string {
 	renderDir := options.RootDir
 	if options.CreateAppDir {

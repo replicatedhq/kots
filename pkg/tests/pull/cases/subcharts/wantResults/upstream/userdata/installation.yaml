@@ -6,8 +6,10 @@ metadata:
 spec:
   channelID: 1vusIYZLAVxMG6q760OJmRKj5i5
   channelName: My Channel
-  encryptionKey: z74aV2jTX79N3kaabGvZNbN7kmTGqBarqYAYVNZPdU11ZOCc
   knownImages:
-  - image: nginx:latest
   - image: busybox
+  - image: cr.fluentbit.io/fluent/fluent-bit:1.9.4
+  - image: busybox:1
+  - image: busybox:latest
+  - image: nginx:latest
 status: {}

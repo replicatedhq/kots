@@ -1,16 +1,12 @@
 package handlers
 
 import (
-	"fmt"
 	"io/ioutil"
 	"net/http"
 	"os"
-	"os/exec"
-	"path/filepath"
 	"strconv"
 
 	"github.com/gorilla/mux"
-	"github.com/marccampbell/yaml-toolbox/pkg/splitter"
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/kustomize"
@@ -90,49 +86,29 @@ func (h *Handler) GetAppRenderedContents(w http.ResponseWriter, r *http.Request)
 	}
 	d := downstreams[0]
 
-	kustomizeBinPath := kotsKinds.GetKustomizeBinaryPath()
-	kustomizeBuildTarget := filepath.Join(archivePath, "overlays", "downstreams", d.Name)
-
-	archiveOutput, err := exec.Command(kustomizeBinPath, "build", kustomizeBuildTarget).Output()
+	_, appFilesMap, err := kustomize.GetRenderedApp(archivePath, d.Name, kotsKinds.GetKustomizeBinaryPath())
 	if err != nil {
-		if ee, ok := err.(*exec.ExitError); ok {
-			err = fmt.Errorf("kustomize stderr: %q", string(ee.Stderr))
-			logger.Error(err)
-
-			JSON(w, http.StatusInternalServerError, GetAppRenderedContentsErrorResponse{
-				Error: fmt.Sprintf("Failed to build release: %v", err),
-			})
-			return
-		}
-		logger.Error(errors.Wrap(err, "failed to exec command"))
+		logger.Error(errors.Wrap(err, "failed to get rendered app"))
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
-	archiveFiles, err := splitter.SplitYAML(archiveOutput)
-	if err != nil {
-		logger.Error(errors.Wrap(err, "failed to split yaml"))
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-	// base64 decode these
-	decodedArchiveFiles := map[string]string{}
-	for filename, b := range archiveFiles {
-		decodedArchiveFiles[filename] = string(b)
-	}
-
-	_, kustomizedFiles, err := kustomize.RenderChartsArchive(archivePath, d.Name, kustomizeBinPath)
+	_, chartsFilesMap, err := kustomize.GetRenderedChartsArchive(archivePath, d.Name, kotsKinds.GetKustomizeBinaryPath())
 	if err != nil {
 		logger.Error(errors.Wrap(err, "failed to get kustomized files"))
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
-	for filename, b := range kustomizedFiles {
-		decodedArchiveFiles[filename] = b
+	responseFiles := map[string]string{}
+	for filename, content := range appFilesMap {
+		responseFiles[filename] = string(content)
+	}
+	for filename, content := range chartsFilesMap {
+		responseFiles[filename] = string(content)
 	}
 
 	JSON(w, http.StatusOK, GetAppRenderedContentsResponse{
-		Files: decodedArchiveFiles,
+		Files: responseFiles,
 	})
 }
