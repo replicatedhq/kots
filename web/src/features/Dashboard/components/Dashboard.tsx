@@ -539,6 +539,7 @@ const Dashboard = (props: Props) => {
         checkingForUpdates: false,
         noUpdatesAvalable: true,
       });
+      getAppLicense();
       let timerId = setTimeout(() => {
         setState({ noUpdatesAvalable: false });
       }, 3000);
@@ -557,6 +558,7 @@ const Dashboard = (props: Props) => {
         ? err?.message
         : "There was an error checking for updates.",
     });
+    getAppLicense();
   };
   const { refetch: checkForUpdates } = useCheckForUpdates(onSuccess, onError);
 
@@ -566,7 +568,6 @@ const Dashboard = (props: Props) => {
       checkingForUpdateError: false,
     });
 
-    getAppLicense();
     checkForUpdates();
   };
 
