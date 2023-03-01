@@ -2129,7 +2129,7 @@ jobs:
 
           # test that --undeploy deletes application resources from the cluster
 
-          ./bin/kots remove remove-app --namespace $APP_SLUG --undeploy --force
+          ./bin/kots remove remove-app --namespace $APP_SLUG --undeploy
 
           if [ "$(./bin/kots get apps --namespace $APP_SLUG --output=json | tr -d '\n')" != "[]" ]; then
             printf "App reference was not removed\n\n"
