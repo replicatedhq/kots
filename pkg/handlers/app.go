@@ -528,7 +528,7 @@ func (h *Handler) RemoveApp(w http.ResponseWriter, r *http.Request) {
 	}
 	d := downstreams[0]
 
-	if !removeAppRequest.Force {
+	if !removeAppRequest.Force && !removeAppRequest.Undeploy {
 		currentVersion, err := store.GetStore().GetCurrentDownstreamVersion(app.ID, d.ClusterID)
 		if err != nil {
 			response.Error = "failed to get current downstream version"
