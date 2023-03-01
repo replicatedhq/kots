@@ -566,6 +566,7 @@ const Dashboard = (props: Props) => {
       checkingForUpdateError: false,
     });
 
+    getAppLicense();
     checkForUpdates();
   };
 
