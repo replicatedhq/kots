@@ -13,7 +13,6 @@ import (
 	"github.com/replicatedhq/kots/pkg/util"
 	"helm.sh/helm/v3/pkg/action"
 	"helm.sh/helm/v3/pkg/chart/loader"
-	"helm.sh/helm/v3/pkg/chartutil"
 	rspb "helm.sh/helm/v3/pkg/release"
 	helmtime "helm.sh/helm/v3/pkg/time"
 	k8syaml "sigs.k8s.io/yaml"
@@ -60,12 +59,7 @@ func renderHelmV3(chartName string, chartPath string, vals map[string]interface{
 		}
 	}
 
-	coalescedValues, err := chartutil.CoalesceValues(rel.Chart, rel.Config)
-	if err != nil {
-		return nil, nil, errors.Wrap(err, "failed to coalesce values")
-	}
-
-	valuesContent, err := k8syaml.Marshal(coalescedValues)
+	valuesContent, err := k8syaml.Marshal(rel.Config)
 	if err != nil {
 		return nil, nil, errors.Wrap(err, "failed to marshal rendered values")
 	}

@@ -30,12 +30,7 @@ func renderHelmV2(chartName string, chartPath string, vals map[string]interface{
 		return nil, nil, errors.Wrap(err, "failed to load chart")
 	}
 
-	coalescedValues, err := chartutil.CoalesceValues(c, config)
-	if err != nil {
-		return nil, nil, errors.Wrap(err, "failed to coalesce values")
-	}
-
-	valuesContent, err := k8syaml.Marshal(coalescedValues)
+	valuesContent, err := k8syaml.Marshal(c.Values)
 	if err != nil {
 		return nil, nil, errors.Wrap(err, "failed to marshal rendered values")
 	}
