@@ -26,17 +26,19 @@ export const getCheckForUpdates = async (
       headers: {
         Authorization: Utilities.getToken(),
         "Content-Type": "application/json",
+        Accept: "application/json",
       },
       method: "POST",
     }
   );
 
-  const response = await res.json();
   // on the dashboard page it triggers getAppLicense here
   if (res.ok) {
+    const response = await res.json();
     return response;
   } else {
-    throw new Error(response.error);
+    const text = await res.text();
+    throw new Error(text);
   }
 };
 
