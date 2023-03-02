@@ -12,6 +12,7 @@ import (
 	"runtime"
 	"sort"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/containers/image/v5/copy"
@@ -28,6 +29,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/image/types"
 	"github.com/replicatedhq/kots/pkg/k8sdoc"
 	"github.com/replicatedhq/kots/pkg/logger"
+	"golang.org/x/sync/errgroup"
 	kustomizeimage "sigs.k8s.io/kustomize/api/types"
 )
 
@@ -80,23 +82,45 @@ func RewriteImages(srcRegistry, destRegistry registrytypes.RegistryOptions, appS
 
 func GetPrivateImages(baseDir string, kotsKindsImages []string, checkedImages map[string]types.ImageInfo, allPrivate bool, dockerHubRegistry registrytypes.RegistryOptions, parentHelmChartPath string, useHelmInstall map[string]bool) ([]string, []k8sdoc.K8sDoc, error) {
 	uniqueImages := make(map[string]bool)
-
 	objectsWithImages := make([]k8sdoc.K8sDoc, 0) // all objects where images are referenced from
 
-	for _, image := range kotsKindsImages {
+	var mtx sync.Mutex
+	const concurrencyLimit = 10
+	g, _ := errgroup.WithContext(context.Background())
+	g.SetLimit(concurrencyLimit)
+
+	isPrivateImage := func(image string) (bool, error) {
 		if allPrivate {
-			checkedImages[image] = types.ImageInfo{
-				IsPrivate: true,
-			}
-		} else if _, ok := checkedImages[image]; !ok {
-			isPrivate, err := IsPrivateImage(image, dockerHubRegistry)
-			if err != nil {
-				return nil, nil, errors.Wrapf(err, "failed to check if kotskinds image %s is private", image)
-			}
-			checkedImages[image] = types.ImageInfo{
-				IsPrivate: isPrivate,
-			}
+			return true, nil
 		}
+
+		mtx.Lock()
+		checkedImage, ok := checkedImages[image]
+		mtx.Unlock()
+		if ok {
+			return checkedImage.IsPrivate, nil
+		}
+
+		p, err := IsPrivateImage(image, dockerHubRegistry)
+		if err != nil {
+			return false, err
+		}
+		return p, nil
+	}
+
+	for _, image := range kotsKindsImages {
+		func(image string) {
+			g.Go(func() error {
+				isPrivate, err := isPrivateImage(image)
+				if err != nil {
+					return errors.Wrapf(err, "failed to check if kotskinds image %s is private", image)
+				}
+				mtx.Lock()
+				checkedImages[image] = types.ImageInfo{IsPrivate: isPrivate}
+				mtx.Unlock()
+				return nil
+			})
+		}(image)
 	}
 
 	err := filepath.Walk(baseDir,
@@ -125,48 +149,37 @@ func GetPrivateImages(baseDir string, kotsKindsImages []string, checkedImages ma
 			}
 
 			return listImagesInFile(contents, func(images []string, doc k8sdoc.K8sDoc) error {
-				numImages := 0
-				for idx, image := range images {
-					numImages = numImages + 1
-					if allPrivate {
-						checkedImages[image] = types.ImageInfo{
-							IsPrivate: true,
-						}
-						numImages = numImages + 1
-						uniqueImages[image] = true
-						continue
-					}
-
-					isPrivate := false
-					if i, ok := checkedImages[image]; ok {
-						isPrivate = i.IsPrivate
-					} else {
-						p, err := IsPrivateImage(image, dockerHubRegistry)
-						if err != nil {
-							return errors.Wrapf(err, "failed to check if image %d of %d in %q is private", idx+1, len(images), info.Name())
-						}
-						isPrivate = p
-						checkedImages[image] = types.ImageInfo{
-							IsPrivate: p,
-						}
-					}
-
-					if !isPrivate {
-						continue
-					}
-					uniqueImages[image] = true
+				for _, image := range images {
+					func(image string) {
+						g.Go(func() error {
+							isPrivate, err := isPrivateImage(image)
+							if err != nil {
+								return errors.Wrapf(err, "failed to check if image %s is private", image)
+							}
+							mtx.Lock()
+							checkedImages[image] = types.ImageInfo{IsPrivate: isPrivate}
+							if isPrivate {
+								uniqueImages[image] = true
+							}
+							mtx.Unlock()
+							return nil
+						})
+					}(image)
 				}
 
-				if numImages > 0 {
+				if len(images) > 0 {
 					objectsWithImages = append(objectsWithImages, doc)
 				}
-
 				return nil
 			})
 		})
 
 	if err != nil {
 		return nil, nil, errors.Wrap(err, "failed to walk upstream dir")
+	}
+
+	if err := g.Wait(); err != nil {
+		return nil, nil, errors.Wrap(err, "failed to wait for image checks")
 	}
 
 	result := make([]string, 0, len(uniqueImages))
