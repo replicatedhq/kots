@@ -28,6 +28,7 @@ jobs:
         labels: |
           automated-pr
           kubectl
+          type::chore
         draft: false
         base: "main"
         body: "Automated changes by the [cron-kubectl-update](https://github.com/replicatedhq/kots/blob/main/.github/workflows/update-kubectl.yaml) GitHub action"
