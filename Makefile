@@ -4,7 +4,7 @@ MINIO_TAG ?= RELEASE.2023-02-27T18-10-45Z
 MC_TAG ?= RELEASE.2023-02-28T00-12-59Z
 RQLITE_TAG ?= 7.13.2
 DEX_TAG ?= v2.35.3
-LVP_TAG ?= v0.5.0
+LVP_TAG ?= v0.5.1
 
 define sendMetrics
 @if [ -z "${PROJECT_NAME}" ]; then \

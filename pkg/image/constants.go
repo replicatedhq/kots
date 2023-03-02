@@ -10,5 +10,5 @@ const (
 	Rqlite     = "rqlite/rqlite:7.13.2"
 	Dex        = "ghcr.io/dexidp/dex:v2.35.3"
 	Schemahero = "schemahero/schemahero:0.13.8"
-	Lvp        = "replicated/local-volume-provider:v0.5.0"
+	Lvp        = "replicated/local-volume-provider:v0.5.1"
 )
