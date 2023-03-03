@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { KotsPageTitle } from "@components/Head";
-import { useHistory, useParams } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import Modal from "react-modal";
 import ReactTooltip from "react-tooltip";
 
@@ -11,7 +11,6 @@ import SkipPreflightsModal from "./shared/modals/SkipPreflightsModal";
 
 import "../scss/components/PreflightCheckPage.scss";
 import PreflightsProgress from "./troubleshoot/PreflightsProgress";
-import Icon from "./Icon";
 
 import {
   useGetPrelightResults,
@@ -39,7 +38,6 @@ function PreflightResultPage(props: Props) {
     setShowConfirmIgnorePreflightsModal,
   ] = useState(false);
 
-  const history = useHistory();
   const { sequence = "0", slug } = useParams<KotsParams>();
   const { mutate: deployKotsDownstream } = useDeployAppVersion({
     slug,
