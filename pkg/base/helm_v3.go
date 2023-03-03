@@ -34,7 +34,6 @@ func renderHelmV3(chartName string, chartPath string, vals map[string]interface{
 	client.ReleaseName = chartName
 	client.Replace = true
 	client.ClientOnly = true
-	client.IncludeCRDs = true
 
 	client.Namespace = renderOptions.Namespace
 	if client.Namespace == "" {
@@ -70,18 +69,23 @@ func renderHelmV3(chartName string, chartPath string, vals map[string]interface{
 		return nil, nil, errors.Wrap(err, "failed to marshal rendered values")
 	}
 
-	var manifests bytes.Buffer
-	fmt.Fprintln(&manifests, strings.TrimSpace(rel.Manifest))
-	for _, m := range rel.Hooks {
-		fmt.Fprintf(&manifests, "---\n# Source: %s\n%s\n", m.Path, m.Manifest)
-	}
-
 	baseFiles := []BaseFile{}
 	additionalFiles := []BaseFile{
 		{
 			Path:    "values.yaml",
 			Content: valuesContent,
 		},
+	}
+
+	var manifests bytes.Buffer
+	fmt.Fprintln(&manifests, strings.TrimSpace(rel.Manifest))
+	// add hooks
+	for _, m := range rel.Hooks {
+		fmt.Fprintf(&manifests, "---\n# Source: %s\n%s\n", m.Path, m.Manifest)
+	}
+	// add crds
+	for _, crd := range chartRequested.CRDObjects() {
+		fmt.Fprintf(&manifests, "---\n# Source: %s\n%s\n", crd.Filename, string(crd.File.Data[:]))
 	}
 
 	splitManifests := splitManifests(manifests.String())
