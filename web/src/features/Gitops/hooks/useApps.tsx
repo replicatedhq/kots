@@ -26,8 +26,7 @@ async function getApps({
 
     return apps;
   } catch (err) {
-    if (err instanceof Error)
-      throw Error(err.message);
+    if (err instanceof Error) throw Error(err.message);
 
     throw Error("Failed to fetch apps");
   }
