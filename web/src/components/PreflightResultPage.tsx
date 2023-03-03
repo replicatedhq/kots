@@ -181,56 +181,59 @@ function PreflightResultPage(props: Props) {
         </div>
       </div>
 
-      {props.fromLicenseFlow && (
-        <div className="flex-auto flex justifyContent--flexEnd u-marginBottom--15">
-          {!preflightCheck?.showPreflightCheckPending && (
-            <div>
+      <div className="flex justifyContent--flexEnd tw-gap-5">
+        {preflightCheck?.shouldShowRerunPreflight &&
+          preflightCheck?.showPreflightResultErrors && (
+            <div className="flex-auto flex justifyContent--flexEnd u-marginBottom--15">
               <button
                 type="button"
                 className="btn primary blue"
-                disabled={preflightCheck?.showDeploymentBlocked}
-                onClick={() =>
-                  preflightCheck?.shouldShowConfirmContinueWithFailedPreflights
-                    ? setShowContinueWithFailedPreflightsModal(true)
-                    : deployKotsDownstream({
-                        continueWithFailedPreflights: true,
-                      })
-                }
+                onClick={() => rerunPreflights()}
               >
-                <span
-                  data-tip-disable={!preflightCheck?.showDeploymentBlocked}
-                  data-tip="Deployment is disabled as a strict analyzer in this version's preflight checks has failed or has not been run"
-                  data-for="disable-deployment-tooltip"
-                >
-                  Continue
-                </span>
+                Re-run
               </button>
-              <ReactTooltip effect="solid" id="disable-deployment-tooltip" />
             </div>
           )}
-          {preflightCheck?.showIgnorePreflight && (
-            <div className="flex flex1 justifyContent--center alignItems--center">
-              <span
-                className="u-fontSize--normal u-fontWeight--medium u-textDecoration--underline u-textColor--bodyCopy u-marginTop--15 u-cursor--pointer"
-                onClick={() => setShowConfirmIgnorePreflightsModal(true)}
-              >
-                Ignore Preflights{" "}
-              </span>
-            </div>
-          )}
-        </div>
-      )}
-      {!props.fromLicenseFlow && preflightCheck?.shouldShowRerunPreflight && (
-        <div className="flex-auto flex justifyContent--flexEnd u-marginBottom--15">
-          <button
-            type="button"
-            className="btn primary blue"
-            onClick={() => rerunPreflights()}
-          >
-            Re-run
-          </button>
-        </div>
-      )}
+        {props.fromLicenseFlow && (
+          <div className="flex-auto flex justifyContent--flexEnd u-marginBottom--15">
+            {!preflightCheck?.showPreflightCheckPending && (
+              <div>
+                <button
+                  type="button"
+                  className="btn primary blue"
+                  disabled={preflightCheck?.showDeploymentBlocked}
+                  onClick={() =>
+                    preflightCheck?.shouldShowConfirmContinueWithFailedPreflights
+                      ? setShowContinueWithFailedPreflightsModal(true)
+                      : deployKotsDownstream({
+                          continueWithFailedPreflights: true,
+                        })
+                  }
+                >
+                  <span
+                    data-tip-disable={!preflightCheck?.showDeploymentBlocked}
+                    data-tip="Deployment is disabled as a strict analyzer in this version's preflight checks has failed or has not been run"
+                    data-for="disable-deployment-tooltip"
+                  >
+                    Continue
+                  </span>
+                </button>
+                <ReactTooltip effect="solid" id="disable-deployment-tooltip" />
+              </div>
+            )}
+            {preflightCheck?.showIgnorePreflight && (
+              <div className="flex flex1 justifyContent--center alignItems--center">
+                <span
+                  className="u-fontSize--normal u-fontWeight--medium u-textDecoration--underline u-textColor--bodyCopy u-marginTop--15 u-cursor--pointer"
+                  onClick={() => setShowConfirmIgnorePreflightsModal(true)}
+                >
+                  Ignore Preflights{" "}
+                </span>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
 
       {showConfirmIgnorePreflightsModal && (
         <SkipPreflightsModal
