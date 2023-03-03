@@ -406,9 +406,6 @@ jobs:
           AWS_DEFAULT_REGION: us-east-1
         with:
           addon_version: ${{ steps.vars.outputs.addon_version }}
-          # REVIEW: this workflow does not have any trigger that takes inputs (including workflow_dispatch)
-          #    The parameter is not set on the called wokflow.
-          # s3_prefix: ${{ github.event.action == 'workflow_dispatch' && 'test/' || inputs.s3_prefix }}
           kotsadm_image_registry: ttl.sh
           kotsadm_image_namespace: automated-${{ github.run_id }}
           kotsadm_image_tag: 24h
@@ -419,9 +416,6 @@ jobs:
         with:
           addon_version: ${{ steps.vars.outputs.addon_version }}
           addon_package_url: ${{ steps.addon-generate.outputs.addon_package_url }}
-          # REVIEW: this workflow does not have any trigger that takes inputs (including workflow_dispatch)
-          #    The parameter is not set on the called wokflow.
-          # priority: ${{ inputs.priority }}
           testgrid_api_token: ${{ secrets.TESTGRID_PROD_API_TOKEN }}
       - name: comment testgrid url
         uses: mshick/add-pr-comment@v2
@@ -453,8 +447,7 @@ jobs:
           chmod +x bin/*
       - uses: ./.github/actions/kots-e2e
         with:
-          # REVIEW: missing required `kots-namespace` parameter. Set to empty string`
-          kots-namespace: ''
+          kots-namespace: 'qakotsregression'
           test-focus: 'Regression'
           k8s-version: 'v1.26.1-k3s1'
           testim-branch: ${{ github.head_ref == 'main' && 'master' || github.head_ref }}
@@ -789,11 +782,11 @@ jobs:
             echo "Found kotsadm role in ${APP_SLUG}"
           else
             echo "No kotsadm role found in appication namespace"
-            exit 255
+            exit 1
           fi
           if kubectl get clusterroles | grep -q kotsadm; then
             echo "Found kotsadm cluster roles in minimal RBAC install"
-            exit 255
+            exit 
           fi
       - name: no minimal rbac override on command line
         run: |
@@ -809,20 +802,19 @@ jobs:
             --kotsadm-tag 24h
           if kubectl get roles -n "$APP_SLUG" | grep -q kotsadm; then
             echo "Found kotsadm role in cluster scoped install"
-            exit 255
+            exit 1
           fi
           if kubectl get clusterroles | grep -q kotsadm; then
             echo "Found kotsadm cluster role in cluster scoped install"
           else
             echo "No kotsadm cluster role in cluster scoped install"
-            exit 255
+            exit 1
           fi
       - name: Generate support bundle on failure
         if: failure()
         uses: ./.github/actions/generate-support-bundle
         with:
-          # REVIEW: input `kots-namespace` does not exist on `generate-support-bundle` action
-          # kots-namespace: "$APP_SLUG"
+          kots-namespace: "$APP_SLUG"
           aws-access-key-id: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_ACCESS_KEY_ID }}'
           aws-secret-access-key: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_SECRET_ACCESS_KEY }}'
 
@@ -888,7 +880,7 @@ jobs:
               ./bin/kots get apps --namespace "$APP_SLUG"
               echo "kotsadm logs:"
               kubectl logs -l app=kotsadm --tail=100 --namespace "$APP_SLUG"
-              exit 255
+              exit 1
             fi
             sleep 1
           done
@@ -911,8 +903,7 @@ jobs:
         if: failure()
         uses: ./.github/actions/generate-support-bundle
         with:
-          # REVIEW: input `kots-namespace` does not exist on `generate-support-bundle` action
-          # kots-namespace: "$APP_SLUG"
+          kots-namespace: "$APP_SLUG"
           aws-access-key-id: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_ACCESS_KEY_ID }}'
           aws-secret-access-key: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_SECRET_ACCESS_KEY }}'
 
@@ -988,7 +979,7 @@ jobs:
             if [ $COUNTER -gt 120 ]; then
               echo "Timed out waiting for pods to start"
               kubectl get pods -A
-              exit 255
+              exit 1
             fi
             sleep 1
           done
@@ -999,8 +990,7 @@ jobs:
         if: failure()
         uses: ./.github/actions/generate-support-bundle
         with:
-          # REVIEW: input `kots-namespace` does not exist on `generate-support-bundle` action
-          # kots-namespace: "$APP_NAME"
+          kots-namespace: "$APP_NAME"
           aws-access-key-id: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_ACCESS_KEY_ID }}'
           aws-secret-access-key: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_SECRET_ACCESS_KEY }}'
 
@@ -1065,7 +1055,7 @@ jobs:
               ./bin/kots get apps --namespace "$APP_SLUG"
               echo "kotsadm logs:"
               kubectl logs -l app=kotsadm --tail=100 --namespace "$APP_SLUG"
-              exit 255
+              exit 1
             fi
             sleep 1
           done
@@ -1084,7 +1074,7 @@ jobs:
             echo "Found DockerHub secret in ${APP_SLUG} latest version"
           else
             echo "No DockerHub secret found in appication namespace"
-            exit 255
+            exit 1
           fi
 
       - name: remove the app
@@ -1123,7 +1113,7 @@ jobs:
               ./bin/kots get apps --namespace "$APP_SLUG"
               echo "kotsadm logs:"
               kubectl logs -l app=kotsadm --tail=100 --namespace "$APP_SLUG"
-              exit 255
+              exit 1
             fi
             sleep 1
           done
@@ -1135,8 +1125,7 @@ jobs:
         if: failure()
         uses: ./.github/actions/generate-support-bundle
         with:
-          # REVIEW: input `kots-namespace` does not exist on `generate-support-bundle` action
-          # kots-namespace: "$APP_SLUG"
+          kots-namespace: "$APP_SLUG"
           aws-access-key-id: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_ACCESS_KEY_ID }}'
           aws-secret-access-key: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_SECRET_ACCESS_KEY }}'
 
@@ -1199,7 +1188,7 @@ jobs:
               ./bin/kots get apps --namespace "$APP_SLUG"
               echo "kotsadm logs:"
               kubectl logs -l app=kotsadm --tail=100 --namespace "$APP_SLUG"
-              exit 255
+              exit 1
             fi
             sleep 1
           done
@@ -1211,8 +1200,7 @@ jobs:
         if: failure()
         uses: ./.github/actions/generate-support-bundle
         with:
-          # REVIEW: input `kots-namespace` does not exist on `generate-support-bundle` action
-          # kots-namespace: "$APP_SLUG"
+          kots-namespace: "$APP_SLUG"
           aws-access-key-id: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_ACCESS_KEY_ID }}'
           aws-secret-access-key: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_SECRET_ACCESS_KEY }}'
 
@@ -1275,7 +1263,7 @@ jobs:
               ./bin/kots get apps --namespace "$APP_SLUG"
               echo "kotsadm logs:"
               kubectl logs -l app=kotsadm --tail=100 --namespace "$APP_SLUG"
-              exit 255
+              exit 1
             fi
             sleep 1
           done
@@ -1287,8 +1275,7 @@ jobs:
         if: failure()
         uses: ./.github/actions/generate-support-bundle
         with:
-          # REVIEW: input `kots-namespace` does not exist on `generate-support-bundle` action
-          # kots-namespace: "$APP_SLUG"
+          kots-namespace: "$APP_SLUG"
           aws-access-key-id: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_ACCESS_KEY_ID }}'
           aws-secret-access-key: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_SECRET_ACCESS_KEY }}'
 
@@ -1349,7 +1336,7 @@ jobs:
             ((COUNTER += 1))
             if [ $COUNTER -gt 60 ]; then
               echo "Timed out waiting for job to be created"
-              exit 255
+              exit 1
             fi
             sleep 1
           done
@@ -1364,7 +1351,7 @@ jobs:
             ((COUNTER += 1))
             if [ $COUNTER -gt 60 ]; then
               echo "More than 1 kotsadm pod found"
-              exit 255
+              exit 1
             fi
             sleep 1
           done
@@ -1378,7 +1365,7 @@ jobs:
           # validate that the application wasn't re-deployed and the job wasn't re-created
           if [ "$(kubectl get jobs -l app=example,component=job -n "$APP_SLUG" --ignore-not-found | awk 'NR>1' | wc -l)" != "0" ]; then
               echo "App should not be re-deployed after restart"
-              exit 255
+              exit 1
           fi
 
           printf "Success. App was not re-deployed after restart\n\n"
@@ -1387,8 +1374,7 @@ jobs:
         if: failure()
         uses: ./.github/actions/generate-support-bundle
         with:
-          # REVIEW: input `kots-namespace` does not exist on `generate-support-bundle` action
-          # kots-namespace: "$APP_SLUG"
+          kots-namespace: "$APP_SLUG"
           aws-access-key-id: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_ACCESS_KEY_ID }}'
           aws-secret-access-key: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_SECRET_ACCESS_KEY }}'
 
@@ -1467,7 +1453,7 @@ jobs:
           JSON_PATH="jsonpath={.data['automated-install-slug-$APP_SLUG']}"
           if [ "$(kubectl get cm kotsadm-tasks -n "$APP_SLUG" -o "$JSON_PATH" | grep -c pending_preflight)" != "1" ]; then
               echo "Preflight checks did not run"
-              exit 255
+              exit 1
           fi
 
           COUNTER=1
@@ -1478,7 +1464,7 @@ jobs:
               ./bin/kots get apps --namespace "$APP_SLUG"
               echo "kotsadm logs:"
               kubectl logs -l app=kotsadm --tail=100 --namespace "$APP_SLUG"
-              exit 255
+              exit 1
             fi
             sleep 1
           done
@@ -1492,7 +1478,7 @@ jobs:
           kubectl config set-context --current --namespace="$APP_SLUG"
           if [ "$(./bin/kots get apps | awk 'NR>1{print $2}')" != "ready" ]; then
               echo "kots get apps output is not the same as above"
-              exit 255
+              exit 1
           fi
 
           printf "App is installed successfully and is ready\n\n"
@@ -1502,8 +1488,7 @@ jobs:
         if: failure()
         uses: ./.github/actions/generate-support-bundle
         with:
-          # REVIEW: input `kots-namespace` does not exist on `generate-support-bundle` action
-          # kots-namespace: "$APP_SLUG"
+          kots-namespace: "$APP_SLUG"
           aws-access-key-id: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_ACCESS_KEY_ID }}'
           aws-secret-access-key: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_SECRET_ACCESS_KEY }}'
 
@@ -1597,11 +1582,11 @@ jobs:
           set +e
           if [ ! -d ./admin-console ]; then
             echo "admin-console directory does not exist"
-            exit 255
+            exit 1
           fi
           if [ -z "$(ls -A ./admin-console)" ]; then
             echo "admin-console directory is empty"
-            exit 255
+            exit 1
           fi
 
       - name: remove admin-console directory
@@ -1642,7 +1627,7 @@ jobs:
             ((COUNTER += 1))
             if [ $COUNTER -gt 30 ]; then
               echo "timed out waiting for kotsadm-minio-0 pod to be created"
-              exit 255
+              exit 1
             fi
             sleep 1
           done
@@ -1671,7 +1656,7 @@ jobs:
           set +e
           if ! grep -qE 'initContainers' ./admin-console/minio-statefulset.yaml; then
             echo "admin-console/minio-statefulset.yaml does not have initContainers"
-            exit 255
+            exit 1
           fi
       
       - name: apply the generated manifests
@@ -1704,7 +1689,7 @@ jobs:
           set +e
           if grep -qE 'initContainers' ./admin-console/minio-statefulset.yaml; then
             echo "admin-console/minio-statefulset.yaml has initContainers"
-            exit 255
+            exit 1
           fi
       
       - name: apply the generated manifests
@@ -1737,8 +1722,7 @@ jobs:
         if: failure()
         uses: ./.github/actions/generate-support-bundle
         with:
-          # REVIEW: input `kots-namespace` does not exist on `generate-support-bundle` action
-          # kotsadm-namespace: automated-${{ github.run_id }}          
+          kots-namespace: automated-${{ github.run_id }}          
           aws-access-key-id: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_ACCESS_KEY_ID }}'
           aws-secret-access-key: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_SECRET_ACCESS_KEY }}'
 
@@ -1780,9 +1764,6 @@ jobs:
           testim-access-token: '${{ secrets.TESTIM_ACCESS_TOKEN }}'
           testim-branch: ${{ github.head_ref == 'main' && 'master' || github.head_ref }}
           kotsadm-image-registry: ttl.sh
-          # REVIEW: inputs `kotsadm-namespace` and `kotsadm-tag` do not exist on `kots-e2e` action
-          # kotsadm-namespace: automated-${{ github.run_id }}
-          # kotsadm-tag: 24h
           aws-access-key-id: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_ACCESS_KEY_ID }}'
           aws-secret-access-key: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_SECRET_ACCESS_KEY }}'
 
@@ -1964,7 +1945,7 @@ jobs:
               "./kots-$BASE_KOTS_VERSION" get apps --namespace "$APP_SLUG"
               echo "kotsadm logs:"
               kubectl logs -l app=kotsadm --tail=100 --namespace "$APP_SLUG"
-              exit 255
+              exit 1
             fi
             sleep 1
           done
@@ -1976,6 +1957,8 @@ jobs:
             --kotsadm-registry ttl.sh \
             --kotsadm-namespace automated-${{ github.run_id }} \
             --kotsadm-tag 24h
+
+          # verify that the postgres to rqlite migration was successful
 
           if ! kubectl logs -l app=kotsadm --namespace "$APP_SLUG" | grep -q "Migrated from Postgres to rqlite successfully"; then
             echo "Failed to find a successful migration log line"
@@ -2009,8 +1992,7 @@ jobs:
         if: failure()
         uses: ./.github/actions/generate-support-bundle
         with:
-          # REVIEW: input `kots-namespace` does not exist on `generate-support-bundle` action
-          # kots-namespace: "$APP_SLUG"
+          kots-namespace: "$APP_SLUG"
           aws-access-key-id: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_ACCESS_KEY_ID }}'
           aws-secret-access-key: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_SECRET_ACCESS_KEY }}'
 
@@ -2136,7 +2118,7 @@ jobs:
               ./bin/kots get apps --namespace "$APP_SLUG"
               echo "kotsadm logs:"
               kubectl logs -l app=kotsadm --tail=100 --namespace "$APP_SLUG"
-              exit 255
+              exit 1
             fi
             sleep 1
           done
@@ -2194,7 +2176,7 @@ jobs:
               ./bin/kots get apps --namespace "$APP_SLUG"
               echo "kotsadm logs:"
               kubectl logs -l app=kotsadm --tail=100 --namespace "$APP_SLUG"
-              exit 255
+              exit 1
             fi
             sleep 1
           done
@@ -2234,8 +2216,7 @@ jobs:
         if: failure()
         uses: ./.github/actions/generate-support-bundle
         with:
-          # REVIEW: input `kots-namespace` does not exist on `generate-support-bundle` action
-          # kots-namespace: "$APP_SLUG"
+          kots-namespace: "$APP_SLUG"
           aws-access-key-id: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_ACCESS_KEY_ID }}'
           aws-secret-access-key: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_SECRET_ACCESS_KEY }}'
 
@@ -2312,8 +2293,7 @@ jobs:
         if: failure()
         uses: ./.github/actions/generate-support-bundle
         with:
-          # REVIEW: input `kots-namespace` does not exist on `generate-support-bundle` action
-          # kots-namespace: "$APP_SLUG"
+          kots-namespace: "$APP_SLUG"
           aws-access-key-id: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_ACCESS_KEY_ID }}'
           aws-secret-access-key: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_SECRET_ACCESS_KEY }}'
 
