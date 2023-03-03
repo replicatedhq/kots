@@ -11,6 +11,9 @@ inputs:
     description: 'AWS region for uploading support bundle'
     default: 'us-east-1'
     required: false
+  kots-namespace:
+    description: 'KOTS namespace'
+    required: true
 runs:
   using: "composite"
   steps:
