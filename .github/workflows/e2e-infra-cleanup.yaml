@@ -7,13 +7,6 @@ on:
         description: Cleanup interval in hours
         required: true
         default: "24"
-    secrets:
-      E2E_TESTIM_AWS_ACCESS_KEY_ID:
-        required: true
-      E2E_TESTIM_AWS_SECRET_ACCESS_KEY:
-        required: true
-      E2E_GH_PAT:
-        required: true
   schedule:
     - cron: "0 * * * *"
 
@@ -36,7 +29,7 @@ jobs:
       count: ${{ steps.get-workspaces.outputs.count }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           repository: replicatedhq/kots-regression-automation
           token: ${{ secrets.E2E_GH_PAT }}
@@ -51,14 +44,14 @@ jobs:
       - name: Get automation workspaces
         id: get-workspaces
         run: |
-          WORKSPACES=($(terraform workspace list | grep "automation-"))
+          mapfile -t WORKSPACES < <(terraform workspace list | grep "automation-")
           declare -a EXPIRED_WORKSPACES
-          for TF_WORKSPACE in ${WORKSPACES[@]}; do
-            COMPLETION=$(date -d "$(TF_WORKSPACE=${TF_WORKSPACE} terraform output -no-color -raw completion_timestamp)" +%s) || continue
-            [ $(( $(date +%s) - ${COMPLETION} )) -gt $(( 60 * 60 * ${CLEANUP_INTERVAL_HOURS} )) ] && EXPIRED_WORKSPACES+=(${TF_WORKSPACE})
+          for TF_WORKSPACE in "${WORKSPACES[@]}"; do
+            COMPLETION=$(date -d "$(terraform output -no-color -raw completion_timestamp)" +%s) || continue
+            [ $(($(date +%s) - COMPLETION)) -gt $((60 * 60 * CLEANUP_INTERVAL_HOURS)) ] && EXPIRED_WORKSPACES+=("${TF_WORKSPACE}")
           done
-          echo "::set-output name=workspaces::$(printf '%s\n' "${EXPIRED_WORKSPACES[@]}" | head -c -1 | jq -R . | jq -sc .)"
-          echo "::set-output name=count::$(printf '%s\n' "${EXPIRED_WORKSPACES[@]}" | head -c -1 | jq -R . | jq -sc '. | length')"
+          echo "workspaces=$(printf '%s\n' "${EXPIRED_WORKSPACES[@]}" | head -c -1 | jq -R . | jq -sc .)" >> "$GITHUB_OUTPUT"
+          echo "count=$(printf '%s\n' "${EXPIRED_WORKSPACES[@]}" | head -c -1 | jq -R . | jq -sc '. | length')" >> "$GITHUB_OUTPUT"
 
   cleanup-expired-workspaces:
     needs: find-expired-workspaces

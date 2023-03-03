@@ -30,7 +30,7 @@ runs:
   steps:
 
     - name: load environment from .image.env
-      uses: falti/dotenv-action@v0.2
+      uses: falti/dotenv-action@v1
       id: dotenv
       with:
         path: ${{ github.action_path }}/../../../.image.env

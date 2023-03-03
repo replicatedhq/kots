@@ -23,13 +23,6 @@ on:
         type: string
         description: Terraform workspace to turn down
         required: true
-    secrets:
-      E2E_TESTIM_AWS_ACCESS_KEY_ID:
-        required: true
-      E2E_TESTIM_AWS_SECRET_ACCESS_KEY:
-        required: true
-      E2E_GH_PAT:
-        required: true
 
 concurrency: cleanup-${{ github.event.inputs.workspace || github.event.client_payload.workspace }}
 
@@ -65,7 +58,7 @@ jobs:
           - existing-online-upgrade-minimum
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           repository: replicatedhq/kots-regression-automation
           token: ${{ secrets.E2E_GH_PAT }}
@@ -93,7 +86,7 @@ jobs:
         working-directory: automation/jumpbox
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           repository: replicatedhq/kots-regression-automation
           token: ${{ secrets.E2E_GH_PAT }}

@@ -64,24 +64,24 @@ jobs:
       image: hashicorp/terraform:1.0.11
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           repository: replicatedhq/kots-regression-automation
           token: ${{ secrets.E2E_GH_PAT }}
           path: automation
           ref: main
       - name: Download go_api artifact
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: go_api
           path: ./automation/jumpbox/bin
       - name: Download kotsadm image
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: kotsadm-image
           path: ./automation/jumpbox/docker-archive
       - name: Download migrations
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: migrations-image
           path: ./automation/jumpbox/docker-archive
@@ -93,8 +93,8 @@ jobs:
         working-directory: automation/jumpbox
         run: |
           terraform init
-          terraform workspace new $WORKSPACE || true
-          terraform workspace select $WORKSPACE
+          terraform workspace new "$WORKSPACE" || true
+          terraform workspace select "$WORKSPACE"
       - name: Create Jumpbox Environment
         if: always()
         working-directory: automation/jumpbox
@@ -193,7 +193,7 @@ jobs:
         ]
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           repository: replicatedhq/kots-regression-automation
           token: ${{ secrets.E2E_GH_PAT }}
@@ -204,8 +204,8 @@ jobs:
         working-directory: automation/cluster
         run: |
           terraform init -backend-config ${{ matrix.test.backend_config }}
-          terraform workspace new $WORKSPACE || true
-          terraform workspace select $WORKSPACE
+          terraform workspace new "$WORKSPACE" || true
+          terraform workspace select "$WORKSPACE"
       - name: Destroy test environment before re-run
         if: always() && github.run_attempt > 1
         working-directory: automation/cluster
@@ -214,10 +214,10 @@ jobs:
         if: always()
         working-directory: automation/cluster
         run: |
-          export CURRENT_TAG=${{ github.event.inputs.version_tag_old || inputs.version_tag_old }}
-          export NEXT_TAG=${{ github.event.inputs.version_tag_new || inputs.version_tag_new }}
+          export CURRENT_TAG="${{ github.event.inputs.version_tag_old || inputs.version_tag_old }}"
+          export NEXT_TAG="${{ github.event.inputs.version_tag_new || inputs.version_tag_new }}"
 
-          if [ "${{ matrix.test.is_upgrade }}" ]; then
+          if [ -n "${{ matrix.test.is_upgrade }}" ]; then
             export TF_VAR_kots_version_initial="${CURRENT_TAG:1}"
             export TF_VAR_kots_version_upgrade="${NEXT_TAG:1}"
           else
@@ -231,7 +231,7 @@ jobs:
         run: |
           apk update && apk add aws-cli jq
           terraform output -raw control_plane_instance_id
-          until [ -n "$(aws ec2 describe-instance-status --instance-ids $(terraform output -raw control_plane_instance_id) --filter Name=instance-status.reachability,Values=passed | jq -r '.InstanceStatuses[].InstanceStatus.Details[].Status')" ]
+          until [ -n "$(aws ec2 describe-instance-status --instance-ids "$(terraform output -raw control_plane_instance_id)" --filter Name=instance-status.reachability,Values=passed | jq -r '.InstanceStatuses[].InstanceStatus.Details[].Status')" ]
           do
           echo "waiting for instance to become ready" && sleep 1
           done
@@ -240,7 +240,7 @@ jobs:
         run: |
           terraform output -raw jumpbox_private_key > ssh.pem
           chmod 600 ssh.pem
-          ssh -i ssh.pem ubuntu@$(terraform output -raw jumpbox_public_ip) -oStrictHostKeyChecking=no -oServerAliveInterval=60 -oServerAliveCountMax=10 "ssh -tt ubuntu@$(terraform output -raw control_plane_private_ip) -oServerAliveInterval=60 -oServerAliveCountMax=10 -oConnectionAttempts=30 \"sudo /tmp/start.sh\""
+          ssh -i ssh.pem "ubuntu@$(terraform output -raw jumpbox_public_ip)" -oStrictHostKeyChecking=no -oServerAliveInterval=60 -oServerAliveCountMax=10 "ssh -tt ubuntu@$(terraform output -raw control_plane_private_ip) -oServerAliveInterval=60 -oServerAliveCountMax=10 -oConnectionAttempts=30 \"sudo /tmp/start.sh\""
       - name: Notify Slack
         if: always() && github.ref_name == 'main'
         uses: 8398a7/action-slack@v3
