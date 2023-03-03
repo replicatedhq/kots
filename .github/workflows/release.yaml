@@ -88,12 +88,13 @@ jobs:
   build-web:
     runs-on: ubuntu-20.04
     needs: [generate-tag]
-    container:
-      image: replicated/gitops-builder:buildkite-go17-node17
-      options: --user root
     steps:
     - name: Checkout
       uses: actions/checkout@v3
+    - name: Setup Node.js environment
+      uses: actions/setup-node@v3
+      with:
+        node-version: '17.x'
     - name: Build web
       env:
         GIT_TAG: ${{ needs.generate-tag.outputs.tag }}
