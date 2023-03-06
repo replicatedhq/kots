@@ -8,5 +8,6 @@ spec:
   chart:
     name: my-chart
     chartVersion: 0.1.0
+    releaseName: my-chart-release
   helmVersion: v3
   useHelmInstall: true

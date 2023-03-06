@@ -1,6 +1,6 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 bases:
-- ../../../../base/charts/my-chart
+- ../../../../../base/charts/my-chart-release/crds
 commonAnnotations:
   kots.io/app-slug: my-app
 kind: Kustomization
