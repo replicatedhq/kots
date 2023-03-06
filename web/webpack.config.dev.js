@@ -7,7 +7,7 @@ const srcPath = path.join(__dirname, "src");
 module.exports = {
   mode: "development",
   entry: [
-    "./src/index.jsx"
+    "./src/index.tsx"
   ],
   cache: {
     type: "filesystem"
