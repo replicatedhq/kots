@@ -1,0 +1,6 @@
+# Source: my-chart/templates/my-chart-configmap.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: my-chart-configmap
+data: {}
