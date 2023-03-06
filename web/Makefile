@@ -23,14 +23,14 @@ clean:
 	rm -rf dist
 
 .PHONY: serve
-serve: deps
+serve:
 	node --max_old_space_size=6144 \
 		./node_modules/webpack-dev-server/bin/webpack-dev-server.js \
 		--config webpack.config.js \
 		--color --env development
 
 .PHONY: build-local
-build-local: deps
+build-local:
 	node \
 		--max_old_space_size=6144 \
 		./node_modules/webpack/bin/webpack.js \
@@ -38,7 +38,7 @@ build-local: deps
 		--env development
 
 .PHONY: build-kotsadm
-build-kotsadm: deps
+build-kotsadm:
 	KOTSADM_BUILD_VERSION=$(GIT_TAG) \
 	node \
 		--max_old_space_size=6144 \
