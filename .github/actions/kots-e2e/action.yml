@@ -43,8 +43,7 @@ inputs:
     required: false
   kots-airgap:
     description: 'Run KOTS with the --airgap flag'
-    type: boolean
-    default: false
+    default: "false"
     required: false
   aws-access-key-id:
     description: 'AWS access key id for uploading support bundle'
