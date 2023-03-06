@@ -7,7 +7,7 @@
   .dirtree-wrapper {
     max-width: 260px;
     border-radius: 4px;
-    background-color: darken($primary-color, 42%);
+    background-color: var(--file-tree-color);
 
     &.fs-mode {
       max-width: 300px;
@@ -99,7 +99,7 @@
       height: 100%;
       top: 1px;
       z-index: -1;
-      background-color: #032c50;
+      background-color: var(--file-tree-highlight-color);
     }
   }
 

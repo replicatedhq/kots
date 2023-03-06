@@ -37,8 +37,10 @@ $text-color-info: #c4c8ca;
 $link-color: #326de6;
 
 // misc
-$gitops-color: #e9e5ef;
 $border-radius: 4px;
+$file-tree-color: darken($primary-color, 42%);
+$file-tree-highlight-color: #032c50;
+$gitops-color: #e9e5ef;
 
 // custom branding fallbacks
 :root {
@@ -49,10 +51,12 @@ $border-radius: 4px;
   --secondary-hover-color: #{$primary-light-color};
 
   // vendor configurable (additional overrides)
+  --card-color: #{$really-light-accent};
+  --file-tree-color: #{$file-tree-color};
+  --file-tree-highlight-color: #{$file-tree-highlight-color};
+  --icon-color: #{$primary-color};
   --link-color: var(--primary-color);
   --link-hover-color: var(--link-color);
-  --card-color: #{$really-light-accent};
-  --icon-color: #{$primary-color};
   --subnav-color: #{$sub-nav-color};
   --tooltip-color: #{$primary-extra-dark-color};
 
