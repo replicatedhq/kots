@@ -25,13 +25,13 @@ var (
 
 const NamespaceTemplateConst = "repl{{ Namespace}}"
 
-func renderHelmV3(chartName string, chartPath string, vals map[string]interface{}, renderOptions *RenderOptions) ([]BaseFile, []BaseFile, error) {
+func renderHelmV3(releaseName string, chartPath string, vals map[string]interface{}, renderOptions *RenderOptions) ([]BaseFile, []BaseFile, error) {
 	cfg := &action.Configuration{
 		Log: renderOptions.Log.Debug,
 	}
 	client := action.NewInstall(cfg)
 	client.DryRun = true
-	client.ReleaseName = chartName
+	client.ReleaseName = releaseName
 	client.Replace = true
 	client.ClientOnly = true
 
@@ -94,7 +94,7 @@ func renderHelmV3(chartName string, chartPath string, vals map[string]interface{
 		submatch := HelmV3ManifestNameRegex.FindStringSubmatch(manifest)
 		if len(submatch) > 0 {
 			// multi-doc manifests will not have the Source comment so use the previous name
-			manifestName = strings.TrimPrefix(submatch[1], fmt.Sprintf("%s/", chartName))
+			manifestName = strings.TrimPrefix(submatch[1], fmt.Sprintf("%s/", chartRequested.Name()))
 		}
 		if manifestName == "" {
 			// if the manifest name is empty im not sure what to do with the doc
