@@ -57,5 +57,6 @@ $border-radius: 4px;
   --tooltip-color: #{$primary-extra-dark-color};
 
   // inherited (not for vendor configuration- these need to be refactored)
+  --accent-color: #{$accent-color};
   --secondary-light-color: #{$secondary-light-color};
 }
