@@ -1,7 +1,31 @@
 import styled from "styled-components";
 import * as colors from "./colors";
 
-export const Flex = styled.div`
+interface FlexProps {
+  align?: string;
+  direction?: string;
+  flex?: string;
+  gap?: string;
+  justifyContent?: string;
+  justifyItems?: string;
+  m?: string;
+  mb?: string;
+  ml?: string;
+  mr?: string;
+  mt?: string;
+  mx?: string;
+  my?: string;
+  p?: string;
+  pb?: string;
+  pl?: string;
+  pr?: string;
+  pt?: string;
+  px?: string;
+  py?: string;
+  width?: string;
+  wrap?: string;
+}
+export const Flex = styled.div<FlexProps>`
   display: flex;
   flex-direction: ${(props) => props.direction || "row"};
   flex-wrap: ${(props) => props.wrap || "nowrap"};
@@ -34,7 +58,27 @@ export const Flex = styled.div`
   -ms-flex: ${(props) => props.flex};
 `;
 
-export const Paragraph = styled.p`
+interface ParagraphProps {
+  color?: string;
+  m?: string;
+  mb?: string;
+  ml?: string;
+  mr?: string;
+  mt?: string;
+  mx?: string;
+  my?: string;
+  p?: string;
+  pb?: string;
+  pl?: string;
+  pr?: string;
+  pt?: string;
+  px?: string;
+  py?: string;
+  size?: string;
+  weight?: string;
+}
+
+export const Paragraph = styled.p<ParagraphProps>`
   font-size: ${(props) => `${props.size}px` || "14px"};
   font-weight: ${(props) => props.weight};
   color: ${(props) => (props.color && props.color) || colors.primary};
@@ -59,7 +103,27 @@ export const Paragraph = styled.p`
     (props.ml && `${props.ml}px`) || (props.mx && `${props.mx}px`)};
 `;
 
-export const Span = styled.span`
+interface SpanProps {
+  color?: string;
+  m?: string;
+  mb?: string;
+  ml?: string;
+  mr?: string;
+  mt?: string;
+  mx?: string;
+  my?: string;
+  p?: string;
+  pb?: string;
+  pl?: string;
+  pr?: string;
+  pt?: string;
+  px?: string;
+  py?: string;
+  size?: string;
+  weight?: string;
+}
+
+export const Span = styled.span<SpanProps>`
   font-size: ${(props) => `${props.size}px` || "14px"};
   font-weight: ${(props) => props.weight};
   color: ${(props) => (props.color && props.color) || colors.primary};
