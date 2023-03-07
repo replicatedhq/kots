@@ -16,7 +16,6 @@ const BackupLabelValue = "velero"
 const TroubleshootKey = "troubleshoot.io/kind"
 const TroubleshootValue = "support-bundle"
 
-const KotsadmSupportBundleSpecKey = "kotsadm"
 const DefaultSupportBundleSpecKey = "default"
 const ClusterSpecificSupportBundleSpecKey = "cluster-specific"
 const VendorSpecificSupportBundleSpecKey = "vendor"

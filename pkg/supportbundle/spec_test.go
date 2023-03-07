@@ -403,7 +403,7 @@ func Test_findSupportBundleSecrets(t *testing.T) {
 					},
 				},
 			},
-			want:    []string{"cluster-wide-spec"},
+			want: []string{"cluster-wide-spec"},
 		},
 		{
 			name: "support bundle specs with wrong data",
@@ -430,7 +430,7 @@ func Test_findSupportBundleSecrets(t *testing.T) {
 					},
 				},
 			},
-			want:    []string{},
+			want: []string{},
 		},
 		{
 			name: "fail to find support bundle secrets",
@@ -445,7 +445,7 @@ func Test_findSupportBundleSecrets(t *testing.T) {
 					},
 				},
 			},
-			want:    []string{},
+			want: []string{},
 		},
 	}
 	for _, tt := range tests {
