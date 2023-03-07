@@ -82,7 +82,7 @@
   }
 
   &.primary.red {
-    background-color: $error-color;
+    background-color: var(--error-color);
     border-width: 1px;
     border-style: solid;
     border-color: transparent;
@@ -92,7 +92,7 @@
     box-shadow: inset 0px -2px 0px 0px rgba(0, 0, 0, 0.25);
 
     &:not(:disabled):hover {
-      background: darken($error-color, 8%);
+      background: var(--error-color-light);
     }
   }
 
@@ -101,9 +101,9 @@
   &.primary.red:disabled,
   &.primary.red[disabled] {
     cursor: not-allowed;
-    border-color: lighten($error-color, 25%);
+    border-color: var(--error-color-light);
     color: #ffffff;
-    background-color: lighten($error-color, 25%);
+    background-color: var(--error-color-light);
   }
 
   &.secondary {
@@ -123,13 +123,13 @@
 
   &.secondary.red {
     background-color: #ffffff;
-    border: 1px solid $error-color;
+    border: 1px solid var(--error-color);
     box-shadow: none;
-    color: $error-color;
+    color: var(--error-color);
 
     &:not(:disabled):hover {
-      border-color: darken($error-color, 8%);
-      color: darken($error-color, 8%);
+      border-color: var(--error-color-light);
+      color: var(--error-color-light);
     }
   }
 

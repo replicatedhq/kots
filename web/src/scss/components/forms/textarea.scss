@@ -22,5 +22,5 @@
 .Textarea.has-error,
 .Textarea.has-error:focus,
 .Textarea.has-error:active {
-  border-color: $error-color;
+  border-color: var(--error-color);
 }

@@ -7,7 +7,7 @@
   border-radius: 4px;
 
   .error-highlight {
-    background: lighten($error-color, 43.5%);
+    background: var(--error-color-light);
     position: absolute;
   }
 
@@ -27,7 +27,7 @@
   border-radius: 4px;
 
   .error-highlight {
-    background: lighten($error-color, 43.5%);
+    background: var(--error-color-light);
     position: absolute;
   }
 

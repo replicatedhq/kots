@@ -1335,6 +1335,7 @@ const DashboardVersionCard = (props: Props) => {
       return (
         <div className="error-block-wrapper u-marginTop--20 u-marginBottom--10 flex flex1">
           <span className="u-textColor--error">
+            error
             {state.latestDeployableVersionErrMsg}
           </span>
         </div>

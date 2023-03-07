@@ -47,7 +47,7 @@
   &.has-error,
   &.has-error:focus,
   &.has-error:active {
-    border-color: $error-color;
+    border-color: var(--error-color);
   }
 }
 

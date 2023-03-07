@@ -10,13 +10,13 @@
   background-color: var(--accent-color);
 }
 .u-color--error {
-  background-color: $error-color;
+  background-color: var(--error-color);
 }
 .u-color--success {
-  background-color: $success-color;
+  background-color: var(--success-color);
 }
 .u-color--warning {
-  background-color: $warning-color;
+  background-color: var(--warning-color);
 }
 .u-color--bodyCopy {
   background-color: $text-color-body-copy;
@@ -47,13 +47,13 @@
   color: $muted-light-accent;
 }
 .u-textColor--error {
-  color: $error-color;
+  color: var(--error-color);
 }
 .u-textColor--success {
-  color: $success-color;
+  color: var(--success-color);
 }
 .u-textColor--warning {
-  color: $warning-color;
+  color: var(--warning-color);
 }
 .u-linkColor {
   color: var(--link-color);

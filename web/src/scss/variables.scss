@@ -25,6 +25,7 @@ $error-color-light: #ffd1c7;
 $warning-color: #f7b500;
 $warning-color-light: #fff3d3;
 $success-color: #38cc97;
+$success-color-light: lighten($success-color, 43.5%);
 
 // text
 $text-color-primary: #323232;
@@ -53,6 +54,7 @@ $border-radius: 4px;
   --warning-color: #{$warning-color};
   --warning-color-light: #{$warning-color-light};
   --success-color: #{$success-color};
+  --success-color-light: #{$success-color-light};
 
   // vendor configurable (additional overrides)
   --link-color: var(--primary-color);

@@ -126,10 +126,10 @@ body a {
     fill: var(--primary-color);
   }
   &.warning path {
-    fill: $warning-color;
+    fill: var(--warning-color);
   }
   &.error path {
-    fill: $error-color;
+    fill: var(--error-color);
   }
 }
 
@@ -193,11 +193,11 @@ body a {
   }
   // version status colors //
   &.success {
-    background-color: $success-color;
+    background-color: var(--success-color);
     color: #ffffff;
   }
   &.failed {
-    background-color: $error-color;
+    background-color: var(--error-color);
     color: #ffffff;
   }
   &.skipped {
@@ -209,7 +209,7 @@ body a {
     color: #ffffff;
   }
   &.required {
-    background-color: $warning-color;
+    background-color: var(--warning-color);
     color: #ffffff;
   }
 }
@@ -362,7 +362,7 @@ code {
 }
 
 .error-block-wrapper {
-  background-color: lighten($error-color, 43.5%);
+  background-color: var(--error-color-light);
   border-radius: 4px;
   padding: 15px;
   margin: 0 auto;
@@ -382,7 +382,7 @@ code {
   width: 8px;
   height: 8px;
   padding: 3px 6px 6px 5px;
-  background: $error-color;
+  background: var(--error-color);
 }
 .warnings {
   display: inline-block;
@@ -395,7 +395,7 @@ code {
   width: 8px;
   height: 8px;
   padding: 3px 6px 6px 5px;
-  background: $warning-color;
+  background: var(--warning-color);
 }
 
 .circleNumberGray {
@@ -440,7 +440,7 @@ and `background-position: [value]`
 .required-label {
   background-color: var(--warning-color-light);
   border-radius: 2px;
-  color: $warning-color;
+  color: var(--warning-color);
   font-size: 10px;
   line-height: 10px;
   font-weight: 500;

@@ -43,7 +43,7 @@
   &.has-error,
   &.has-error:focus,
   &.has-error:active {
-    border-color: $error-color;
+    border-color: var(--error-color);
   }
   &.is-disabled {
     user-select: none;
@@ -127,8 +127,8 @@ input.Checkbox-toggle {
 }
 
 .Checkbox--switch.is-checked {
-  background: $success-color;
-  border: 1px solid $success-color;
+  background: var(--success-color);
+  border: 1px solid var(--success-color);
 }
 .Checkbox--switch.is-checked::after {
   left: 49%;

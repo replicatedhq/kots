@@ -15,14 +15,14 @@
     margin-bottom: 10px;
 
     &.has-file {
-      border: 1px solid $success-color;
-      color: $success-color;
+      border: 1px solid var(--success-color);
+      color: var(--success-color);
       padding: 12px;
 
       &.has-error {
-        border: 1px solid $error-color;
-        background-color: lighten($error-color, 43.5%);
-        color: $error-color;
+        border: 1px solid var(--error-color);
+        background-color: var(--error-color-light);
+        color: var(--error-color);
       }
     }
   }
@@ -53,7 +53,7 @@
   font-weight: normal;
   font-size: 14px;
   line-height: 22px;
-  color: $warning-color;
+  color: var(--warning-color);
   width: 490px;
 }
 

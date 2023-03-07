@@ -13,15 +13,15 @@
   }
 
   &.warn {
-    color: $warning-color;
-    border-color: lighten($warning-color, 35%);
+    color: var(--warning-color);
+    border-color: var(--warning-color-light);
     background-color: var(--warning-color-light);
   }
 
   &.error {
-    color: $error-color;
-    border-color: lighten($error-color, 35%);
-    background-color: lighten($error-color, 43.5%);
+    color: var(--error-color);
+    border-color: var(--error-color-light);
+    background-color: var(--error-color-light);
   }
 
   a,
