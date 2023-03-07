@@ -12,7 +12,6 @@ $primary-less-light-color: lighten($primary-color, 25%);
 $primary-light-color: lighten($primary-color, 43.5%);
 $secondary-color: #9c9c9c;
 $secondary-light-color: lighten($secondary-color, 25%);
-$accent-color: #326de6;
 $light-accent: #e1f0f1;
 $muted-light-accent: #bccacd;
 $really-light-accent: #f5f8f9;
@@ -57,6 +56,5 @@ $border-radius: 4px;
   --tooltip-color: #{$primary-extra-dark-color};
 
   // inherited (not for vendor configuration- these need to be refactored)
-  --accent-color: #{$accent-color};
   --secondary-light-color: #{$secondary-light-color};
 }
