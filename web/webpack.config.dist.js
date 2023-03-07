@@ -12,7 +12,7 @@ module.exports = (appEnv) => {
   return {
     mode: "production",
     entry: [
-      "./src/index.jsx"
+      "./src/index.tsx"
     ],
 
     module: {
