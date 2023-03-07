@@ -11,7 +11,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -27,6 +26,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/kotsadm/types"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
+	"github.com/replicatedhq/kots/pkg/kustomize"
 	"github.com/replicatedhq/kots/pkg/util"
 	"golang.org/x/crypto/ssh"
 	v1 "k8s.io/api/core/v1"
@@ -727,14 +727,9 @@ func CreateGitOpsCommit(gitOpsConfig *GitOpsConfig, appSlug string, appName stri
 		return "", errors.Wrap(err, "failed to load kots kinds")
 	}
 
-	// we use the kustomize binary here...
-	cmd := exec.Command(kotsKinds.GetKustomizeBinaryPath(), "build", filepath.Join(archiveDir, "overlays", "downstreams", downstreamName))
-	out, err := cmd.Output()
+	out, _, err := kustomize.GetRenderedApp(archiveDir, downstreamName, kotsKinds.GetKustomizeBinaryPath())
 	if err != nil {
-		if ee, ok := err.(*exec.ExitError); ok {
-			err = fmt.Errorf("kustomize stderr: %q", string(ee.Stderr))
-		}
-		return "", errors.Wrap(err, "failed to run kustomize")
+		return "", errors.Wrap(err, "failed to get rendered app")
 	}
 
 	// using the deploy key, create the commit in a new branch

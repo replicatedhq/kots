@@ -5,7 +5,6 @@ metadata:
   annotations:
     helm.sh/hook: pre-install
     helm.sh/hook-weight: "2"
-  labels: null
   name: pre-install-job
 spec:
   backoffLimit: 3

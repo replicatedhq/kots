@@ -8,3 +8,5 @@ PullOptions:
   RootDir: cases/subchart-crds/results
   SharedPassword: dummy-pass
   RewriteImages: false
+  Downstreams:
+    - this-cluster

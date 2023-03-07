@@ -5,10 +5,12 @@ import (
 	crand "crypto/rand"
 	"encoding/base64"
 	"fmt"
+	"io/ioutil"
 	"math/big"
 	rand "math/rand"
 	"net/url"
 	"os"
+	"path/filepath"
 	"time"
 
 	"github.com/pkg/errors"
@@ -221,4 +223,38 @@ func Base64DecodeInterface(d interface{}) ([]byte, error) {
 
 func StrPointer(s string) *string {
 	return &s
+}
+
+func GetFilesMap(dir string) (map[string][]byte, error) {
+	filesMap := map[string][]byte{}
+
+	err := filepath.Walk(dir,
+		func(path string, info os.FileInfo, err error) error {
+			if err != nil {
+				return err
+			}
+
+			if info.IsDir() {
+				return nil
+			}
+
+			contents, err := ioutil.ReadFile(path)
+			if err != nil {
+				return errors.Wrapf(err, "failed to read file %s", path)
+			}
+
+			relPath, err := filepath.Rel(dir, path)
+			if err != nil {
+				return errors.Wrapf(err, "failed to get relative path for %s", path)
+			}
+
+			filesMap[relPath] = contents
+
+			return nil
+		})
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to walk dir")
+	}
+
+	return filesMap, nil
 }

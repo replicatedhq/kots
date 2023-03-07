@@ -8,3 +8,5 @@ PullOptions:
   RootDir: cases/customhostnames/results
   SharedPassword: dummy-pass
   RewriteImages: false
+  Downstreams:
+    - this-cluster

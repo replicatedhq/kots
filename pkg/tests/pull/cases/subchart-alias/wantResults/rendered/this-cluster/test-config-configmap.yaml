@@ -1,0 +1,11 @@
+apiVersion: v1
+data:
+  configOptionHostname: my-app.somebigbank.com
+kind: ConfigMap
+metadata:
+  annotations:
+    kots.io/app-slug: my-app
+  labels:
+    kots.io/app-slug: my-app
+    kots.io/backup: velero
+  name: test-config

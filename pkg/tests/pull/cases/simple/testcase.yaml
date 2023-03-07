@@ -8,3 +8,5 @@ PullOptions:
   RootDir: cases/simple/results
   SharedPassword: dummy-pass
   RewriteImages: false
+  Downstreams:
+    - this-cluster
