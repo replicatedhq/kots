@@ -47,7 +47,7 @@ jobs:
           mapfile -t WORKSPACES < <(terraform workspace list | grep -o 'automation-\w*')
           declare -a EXPIRED_WORKSPACES
           for workspace in "${WORKSPACES[@]}"; do
-            TF_WORKSPACE="${workspace}"
+            export TF_WORKSPACE="${workspace}"
             COMPLETION=$(date -d "$(terraform output -no-color -raw completion_timestamp)" +%s) || continue
             [ $(($(date +%s) - COMPLETION)) -gt $((60 * 60 * CLEANUP_INTERVAL_HOURS)) ] && EXPIRED_WORKSPACES+=("${TF_WORKSPACE}")
           done
