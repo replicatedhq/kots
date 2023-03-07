@@ -7,6 +7,6 @@ spec:
   channelID: 1vusIYZLAVxMG6q760OJmRKj5i5
   channelName: My Channel
   knownImages:
-  - image: nginx:latest
   - image: busybox
+  - image: nginx:latest
 status: {}

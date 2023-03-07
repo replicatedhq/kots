@@ -11,9 +11,9 @@ spec:
     isPrivate: true
   - image: somebigbank.registry.org/appslug/some-other-image:version
     isPrivate: true
+  - image: nginx:latest
   - image: quay.io/replicatedcom/someimage:1
     isPrivate: true
-  - image: nginx:latest
   releaseNotes: |
     release notes
 status: {}
