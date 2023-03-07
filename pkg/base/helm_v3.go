@@ -25,16 +25,15 @@ var (
 
 const NamespaceTemplateConst = "repl{{ Namespace}}"
 
-func renderHelmV3(chartName string, chartPath string, vals map[string]interface{}, renderOptions *RenderOptions) ([]BaseFile, []BaseFile, error) {
+func renderHelmV3(releaseName string, chartPath string, vals map[string]interface{}, renderOptions *RenderOptions) ([]BaseFile, []BaseFile, error) {
 	cfg := &action.Configuration{
 		Log: renderOptions.Log.Debug,
 	}
 	client := action.NewInstall(cfg)
 	client.DryRun = true
-	client.ReleaseName = chartName
+	client.ReleaseName = releaseName
 	client.Replace = true
 	client.ClientOnly = true
-	client.IncludeCRDs = true
 
 	client.Namespace = renderOptions.Namespace
 	if client.Namespace == "" {
@@ -70,12 +69,6 @@ func renderHelmV3(chartName string, chartPath string, vals map[string]interface{
 		return nil, nil, errors.Wrap(err, "failed to marshal rendered values")
 	}
 
-	var manifests bytes.Buffer
-	fmt.Fprintln(&manifests, strings.TrimSpace(rel.Manifest))
-	for _, m := range rel.Hooks {
-		fmt.Fprintf(&manifests, "---\n# Source: %s\n%s\n", m.Path, m.Manifest)
-	}
-
 	baseFiles := []BaseFile{}
 	additionalFiles := []BaseFile{
 		{
@@ -84,13 +77,24 @@ func renderHelmV3(chartName string, chartPath string, vals map[string]interface{
 		},
 	}
 
+	var manifests bytes.Buffer
+	fmt.Fprintln(&manifests, strings.TrimSpace(rel.Manifest))
+	// add hooks
+	for _, m := range rel.Hooks {
+		fmt.Fprintf(&manifests, "---\n# Source: %s\n%s\n", m.Path, m.Manifest)
+	}
+	// add crds
+	for _, crd := range chartRequested.CRDObjects() {
+		fmt.Fprintf(&manifests, "---\n# Source: %s\n%s\n", crd.Filename, string(crd.File.Data[:]))
+	}
+
 	splitManifests := splitManifests(manifests.String())
 	manifestName := ""
 	for _, manifest := range splitManifests {
 		submatch := HelmV3ManifestNameRegex.FindStringSubmatch(manifest)
 		if len(submatch) > 0 {
 			// multi-doc manifests will not have the Source comment so use the previous name
-			manifestName = strings.TrimPrefix(submatch[1], fmt.Sprintf("%s/", chartName))
+			manifestName = strings.TrimPrefix(submatch[1], fmt.Sprintf("%s/", chartRequested.Name()))
 		}
 		if manifestName == "" {
 			// if the manifest name is empty im not sure what to do with the doc

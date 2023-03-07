@@ -1,0 +1,6 @@
+# Source: my-chart/charts/my-sub-chart/templates/my-subchart-configmap.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: my-subchart-configmap
+data: {}
