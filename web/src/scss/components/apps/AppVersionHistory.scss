@@ -326,12 +326,12 @@ $cell-width: 140px;
   align-self: center;
   width: 16px;
   height: 16px;
-  border: solid 1px #326de6;
+  border: solid 1px var(--primary-color);
   border-radius: 3px;
 }
 
 .checkbox.checked {
-  background-color: #326de6;
+  background-color: var(--primary-color);
   background-image: url("@src/images/main_spritesheet.svg");
   background-position: 1px -431px;
 }
