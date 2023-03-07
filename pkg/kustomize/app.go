@@ -72,10 +72,10 @@ func WriteRenderedApp(options WriteOptions) error {
 
 func writeRenderedFile(destPath string, content []byte) error {
 	parentDir := filepath.Dir(destPath)
-	if err := os.MkdirAll(parentDir, 0744); err != nil {
+	if err := os.MkdirAll(parentDir, 0755); err != nil {
 		return errors.Wrapf(err, "failed to mkdir %s", parentDir)
 	}
-	if err := ioutil.WriteFile(destPath, content, 0744); err != nil {
+	if err := ioutil.WriteFile(destPath, content, 0644); err != nil {
 		return errors.Wrap(err, "failed to write file")
 	}
 	return nil
