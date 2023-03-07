@@ -7,7 +7,7 @@ bases:
 resources:
   - ./dlv-service.yaml
 
-patchesStrategicMerge:
+patches:
   - ./deployment.yaml
 
 commonLabels:

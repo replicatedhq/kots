@@ -4,5 +4,5 @@ bases:
 resources:
   - ./distribution/distribution.yaml
 
-patchesStrategicMerge:
+patches:
   - ./deployment.yaml
