@@ -11,7 +11,6 @@ import (
 
 	"github.com/marccampbell/yaml-toolbox/pkg/splitter"
 	"github.com/pkg/errors"
-	"github.com/replicatedhq/kots/pkg/util"
 )
 
 type WriteOptions struct {
@@ -85,21 +84,42 @@ func GetRenderedApp(versionArchive string, downstreamName, kustomizeBinPath stri
 	// check if the app is already rendered
 	renderedAppDir := filepath.Join(versionArchive, "rendered", downstreamName)
 	if _, err := os.Stat(renderedAppDir); err == nil {
-		filesMap, err := util.GetFilesMap(renderedAppDir)
-		if err != nil {
-			return nil, nil, errors.Wrap(err, "failed to get files map")
-		}
-
 		allContent := [][]byte{}
+		filesMap := map[string][]byte{}
 
-		for relPath, content := range filesMap {
-			// the charts directory includes helm charts to be installed using the helm cli,
-			// and those are processed separately.
-			if strings.Split(relPath, string(os.PathSeparator))[0] == "charts" {
-				delete(filesMap, relPath)
-				continue
-			}
-			allContent = append(allContent, content)
+		err := filepath.Walk(renderedAppDir,
+			func(path string, info os.FileInfo, err error) error {
+				if err != nil {
+					return err
+				}
+
+				if info.IsDir() {
+					return nil
+				}
+
+				relPath, err := filepath.Rel(renderedAppDir, path)
+				if err != nil {
+					return errors.Wrapf(err, "failed to get relative path for %s", path)
+				}
+
+				// the charts directory includes helm charts to be installed using the helm cli,
+				// and those are processed separately.
+				if strings.Split(relPath, string(os.PathSeparator))[0] == "charts" {
+					return nil
+				}
+
+				content, err := ioutil.ReadFile(path)
+				if err != nil {
+					return errors.Wrapf(err, "failed to read file %s", path)
+				}
+
+				allContent = append(allContent, content)
+				filesMap[relPath] = content
+
+				return nil
+			})
+		if err != nil {
+			return nil, nil, errors.Wrap(err, "failed to walk dir")
 		}
 
 		return bytes.Join(allContent, []byte("\n---\n")), filesMap, nil
