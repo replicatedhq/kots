@@ -47,7 +47,7 @@
 }
 
 .IdentityProviderWarning--wrapper {
-  background: lighten($warning-color, 43.5%);
+  background: var(--warning-color-light);
   border-radius: 4px;
   padding: 12px;
   font-weight: normal;

@@ -15,7 +15,7 @@
   &.warn {
     color: $warning-color;
     border-color: lighten($warning-color, 35%);
-    background-color: lighten($warning-color, 43.5%);
+    background-color: var(--warning-color-light);
   }
 
   &.error {

@@ -140,7 +140,7 @@
     border-radius: 2px;
 
     &.required {
-      background-color: lighten($warning-color, 43.5%);
+      background-color: var(--warning-color-light);
       color: $warning-color;
     }
     &.recommended {

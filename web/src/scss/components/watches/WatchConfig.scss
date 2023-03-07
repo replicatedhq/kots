@@ -35,7 +35,7 @@ a:visited {
   }
 
   &.older {
-    background: lighten($warning-color, 43.5%);
+    background: var(--warning-color-light);
     color: $warning-color;
   }
 

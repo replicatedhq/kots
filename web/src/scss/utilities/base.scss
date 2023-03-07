@@ -438,7 +438,7 @@ and `background-position: [value]`
 }
 
 .required-label {
-  background-color: lighten($warning-color, 43.5%);
+  background-color: var(--warning-color-light);
   border-radius: 2px;
   color: $warning-color;
   font-size: 10px;

@@ -14,7 +14,7 @@
 }
 
 .RestoreWarning--wrapper {
-  background-color: lighten($warning-color, 43.5%);
+  background-color: var(--warning-color-light);
   color: $warning-color;
   padding-bottom: 10px;
   padding-top: 10px;
@@ -187,7 +187,7 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  background: lighten($warning-color, 43.5%);
+  background: var(--warning-color-light);
   padding: 10px;
 
   p {
