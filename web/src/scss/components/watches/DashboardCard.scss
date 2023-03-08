@@ -33,7 +33,7 @@
   }
 
   &.expired-license {
-    background-color: $error-color-light;
+    background-color: var(--error-color)-light;
   }
 }
 

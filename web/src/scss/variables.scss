@@ -22,7 +22,9 @@ $border-color: #c4c8ca;
 $error-color: #f65c5c;
 $error-color-light: #ffd1c7;
 $warning-color: #f7b500;
+$warning-color-light: #fff3d3;
 $success-color: #38cc97;
+$success-color-light: lighten($success-color, 43.5%);
 
 // text
 $text-color-primary: #323232;
@@ -48,6 +50,12 @@ $gitops-color: #e9e5ef;
   --primary-disabled-color: #{$primary-less-light-color};
   --primary-hover-color: #{$primary-dark-color};
   --secondary-hover-color: #{$primary-light-color};
+  --error-color: #{$error-color};
+  --error-color-light: #{$error-color-light};
+  --warning-color: #{$warning-color};
+  --warning-color-light: #{$warning-color-light};
+  --success-color: #{$success-color};
+  --success-color-light: #{$success-color-light};
 
   // vendor configurable (additional overrides)
   --card-color: #{$really-light-accent};

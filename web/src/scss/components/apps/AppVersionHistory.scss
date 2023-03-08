@@ -76,7 +76,7 @@ $cell-width: 140px;
 }
 
 .checking-update-error-wrapper {
-  background-color: lighten($error-color, 43.5%);
+  background-color: var(--error-color-light);
   border-radius: 4px;
   padding: 15px;
   width: 100%;
@@ -85,7 +85,7 @@ $cell-width: 140px;
 }
 
 .airgap-upload-error-wrapper {
-  background-color: lighten($error-color, 43.5%);
+  background-color: var(--error-color-light);
   border-radius: 4px;
   padding: 0px 5px 0px 5px;
   width: 100%;
@@ -281,16 +281,16 @@ $cell-width: 140px;
   color: $text-color-body-copy;
 
   &.err {
-    color: $error-color;
+    color: var(--error-color);
   }
   &.warning {
-    color: $warning-color;
+    color: var(--warning-color);
     &.without-btns {
       transform: translateX(-70%);
     }
   }
   &.success {
-    color: $success-color;
+    color: var(--success-color);
   }
 }
 
@@ -345,8 +345,8 @@ $cell-width: 140px;
   box-shadow: 0 0 4px rgba(0, 0, 0, 0.16);
   line-height: normal;
   border-radius: 4px;
-  background-color: lighten($error-color, 43.5%);
-  color: $error-color;
+  background-color: var(--error-color-light);
+  color: var(--error-color);
 
   .title {
     font-size: 16px;

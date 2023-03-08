@@ -124,7 +124,7 @@
   .config-errblock {
     display: none;
     font-size: 14px;
-    color: $error-color;
+    color: var(--error-color);
     font-weight: 500;
     line-height: 20px;
 
@@ -140,12 +140,12 @@
     border-radius: 2px;
 
     &.required {
-      background-color: lighten($warning-color, 43.5%);
-      color: $warning-color;
+      background-color: var(--warning-color-light);
+      color: var(--warning-color);
     }
     &.recommended {
-      background-color: lighten($success-color, 43.5%);
-      color: $success-color;
+      background-color: var(--success-color-light);
+      color: var(--success-color);
     }
   }
 

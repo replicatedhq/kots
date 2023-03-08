@@ -193,11 +193,11 @@ body a {
   }
   // version status colors //
   &.success {
-    background-color: $success-color;
+    background-color: var(--success-color);
     color: #ffffff;
   }
   &.failed {
-    background-color: $error-color;
+    background-color: var(--error-color);
     color: #ffffff;
   }
   &.skipped {
@@ -209,7 +209,7 @@ body a {
     color: #ffffff;
   }
   &.required {
-    background-color: $warning-color;
+    background-color: var(--warning-color);
     color: #ffffff;
   }
 }

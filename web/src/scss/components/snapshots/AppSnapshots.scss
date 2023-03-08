@@ -14,8 +14,8 @@
 }
 
 .RestoreWarning--wrapper {
-  background-color: lighten($warning-color, 43.5%);
-  color: $warning-color;
+  background-color: var(--warning-color-light);
+  color: var(--warning-color);
   padding-bottom: 10px;
   padding-top: 10px;
   text-align: center;
@@ -46,8 +46,8 @@
 }
 
 .RestoreError--wrapper {
-  background-color: lighten($error-color, 43.5%);
-  color: $error-color;
+  background-color: var(--error-color-light);
+  color: var(--error-color);
   padding-bottom: 10px;
   padding-top: 10px;
   text-align: center;
@@ -187,14 +187,14 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  background: lighten($warning-color, 43.5%);
+  background: var(--warning-color-light);
   padding: 10px;
 
   p {
     font-weight: 500;
     font-size: 14px;
     line-height: 16px;
-    color: $warning-color;
+    color: var(--warning-color);
     margin-left: 10px;
   }
 }

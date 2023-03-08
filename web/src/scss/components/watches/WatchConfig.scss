@@ -35,13 +35,13 @@ a:visited {
   }
 
   &.older {
-    background: lighten($warning-color, 43.5%);
-    color: $warning-color;
+    background: var(--warning-color-light);
+    color: var(--warning-color);
   }
 
   &.current {
-    background: lighten($success-color, 43.5%);
-    color: $success-color;
+    background: var(--success-color-light);
+    color: var(--success-color);
   }
 }
 .config-sidebar-wrapper {
