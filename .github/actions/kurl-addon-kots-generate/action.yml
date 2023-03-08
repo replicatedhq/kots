@@ -69,4 +69,4 @@ runs:
       run: |
         out=${{ inputs.s3_prefix }}kotsadm-${{ inputs.addon_version }}-${GITHUB_SHA:0:7}.tar.gz
         aws s3 cp kotsadm-${{ inputs.addon_version }}.tar.gz s3://kots-kurl-addons-production-1658439274/$out
-        echo "::set-output name=addon_package_url::https://kots-kurl-addons-production-1658439274.s3.amazonaws.com/$out"
+        echo "addon_package_url=https://kots-kurl-addons-production-1658439274.s3.amazonaws.com/$out" >> "$GITHUB_OUTPUT"

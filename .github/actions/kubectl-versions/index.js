@@ -2,7 +2,6 @@ const fetch = require('node-fetch');
 const fs = require('fs');
 var semver = require('semver');
 
-
 const OLDEST_SUPPORTED_VERSION = "1.19.0"
 
 async function updateVersions() {

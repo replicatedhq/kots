@@ -1767,6 +1767,20 @@ const isDomainOrSubdomain = function isDomainOrSubdomain(destination, original) 
 };
 
 /**
+ * isSameProtocol reports whether the two provided URLs use the same protocol.
+ *
+ * Both domains must already be in canonical form.
+ * @param {string|URL} original
+ * @param {string|URL} destination
+ */
+const isSameProtocol = function isSameProtocol(destination, original) {
+	const orig = new URL$1(original).protocol;
+	const dest = new URL$1(destination).protocol;
+
+	return orig === dest;
+};
+
+/**
  * Fetch function
  *
  * @param   Mixed    url   Absolute url or Request instance
@@ -1797,7 +1811,7 @@ function fetch(url, opts) {
 			let error = new AbortError('The user aborted a request.');
 			reject(error);
 			if (request.body && request.body instanceof Stream.Readable) {
-				request.body.destroy(error);
+				destroyStream(request.body, error);
 			}
 			if (!response || !response.body) return;
 			response.body.emit('error', error);
@@ -1838,8 +1852,42 @@ function fetch(url, opts) {
 
 		req.on('error', function (err) {
 			reject(new FetchError(`request to ${request.url} failed, reason: ${err.message}`, 'system', err));
+
+			if (response && response.body) {
+				destroyStream(response.body, err);
+			}
+
 			finalize();
 		});
+
+		fixResponseChunkedTransferBadEnding(req, function (err) {
+			if (signal && signal.aborted) {
+				return;
+			}
+
+			if (response && response.body) {
+				destroyStream(response.body, err);
+			}
+		});
+
+		/* c8 ignore next 18 */
+		if (parseInt(process.version.substring(1)) < 14) {
+			// Before Node.js 14, pipeline() does not fully support async iterators and does not always
+			// properly handle when the socket close/end events are out of order.
+			req.on('socket', function (s) {
+				s.addListener('close', function (hadError) {
+					// if a data listener is still present we didn't end cleanly
+					const hasDataListener = s.listenerCount('data') > 0;
+
+					// if end happened before close but the socket didn't emit an error, do it now
+					if (response && hasDataListener && !hadError && !(signal && signal.aborted)) {
+						const err = new Error('Premature close');
+						err.code = 'ERR_STREAM_PREMATURE_CLOSE';
+						response.body.emit('error', err);
+					}
+				});
+			});
+		}
 
 		req.on('response', function (res) {
 			clearTimeout(reqTimeout);
@@ -1912,7 +1960,7 @@ function fetch(url, opts) {
 							size: request.size
 						};
 
-						if (!isDomainOrSubdomain(request.url, locationURL)) {
+						if (!isDomainOrSubdomain(request.url, locationURL) || !isSameProtocol(request.url, locationURL)) {
 							for (const name of ['authorization', 'www-authenticate', 'cookie', 'cookie2']) {
 								requestOpts.headers.delete(name);
 							}
@@ -2005,6 +2053,13 @@ function fetch(url, opts) {
 					response = new Response(body, response_options);
 					resolve(response);
 				});
+				raw.on('end', function () {
+					// some old IIS servers return zero-length OK deflate responses, so 'data' is never emitted.
+					if (!response) {
+						response = new Response(body, response_options);
+						resolve(response);
+					}
+				});
 				return;
 			}
 
@@ -2024,6 +2079,41 @@ function fetch(url, opts) {
 		writeToStream(req, request);
 	});
 }
+function fixResponseChunkedTransferBadEnding(request, errorCallback) {
+	let socket;
+
+	request.on('socket', function (s) {
+		socket = s;
+	});
+
+	request.on('response', function (response) {
+		const headers = response.headers;
+
+		if (headers['transfer-encoding'] === 'chunked' && !headers['content-length']) {
+			response.once('close', function (hadError) {
+				// if a data listener is still present we didn't end cleanly
+				const hasDataListener = socket.listenerCount('data') > 0;
+
+				if (hasDataListener && !hadError) {
+					const err = new Error('Premature close');
+					err.code = 'ERR_STREAM_PREMATURE_CLOSE';
+					errorCallback(err);
+				}
+			});
+		}
+	});
+}
+
+function destroyStream(stream, err) {
+	if (stream.destroy) {
+		stream.destroy(err);
+	} else {
+		// node < 8
+		stream.emit('error', err);
+		stream.end();
+	}
+}
+
 /**
  * Redirect code matching
  *
@@ -2448,6 +2538,7 @@ const isX = id => !id || id.toLowerCase() === 'x' || id === '*'
 // ~1.2, ~1.2.x, ~>1.2, ~>1.2.x --> >=1.2.0 <1.3.0-0
 // ~1.2.3, ~>1.2.3 --> >=1.2.3 <1.3.0-0
 // ~1.2.0, ~>1.2.0 --> >=1.2.0 <1.3.0-0
+// ~0.0.1 --> >=0.0.1 <0.1.0-0
 const replaceTildes = (comp, options) =>
   comp.trim().split(/\s+/).map((c) => {
     return replaceTilde(c, options)
@@ -2487,6 +2578,8 @@ const replaceTilde = (comp, options) => {
 // ^1.2, ^1.2.x --> >=1.2.0 <2.0.0-0
 // ^1.2.3 --> >=1.2.3 <2.0.0-0
 // ^1.2.0 --> >=1.2.0 <2.0.0-0
+// ^0.0.1 --> >=0.0.1 <0.0.2-0
+// ^0.1.0 --> >=0.1.0 <0.2.0-0
 const replaceCarets = (comp, options) =>
   comp.trim().split(/\s+/).map((c) => {
     return replaceCaret(c, options)
@@ -3441,51 +3534,91 @@ module.exports = valid
 
 // just pre-load all the stuff that index.js lazily exports
 const internalRe = __nccwpck_require__(9523)
+const constants = __nccwpck_require__(2293)
+const SemVer = __nccwpck_require__(8088)
+const identifiers = __nccwpck_require__(2463)
+const parse = __nccwpck_require__(5925)
+const valid = __nccwpck_require__(9601)
+const clean = __nccwpck_require__(8848)
+const inc = __nccwpck_require__(900)
+const diff = __nccwpck_require__(4297)
+const major = __nccwpck_require__(6688)
+const minor = __nccwpck_require__(8447)
+const patch = __nccwpck_require__(2866)
+const prerelease = __nccwpck_require__(4016)
+const compare = __nccwpck_require__(4309)
+const rcompare = __nccwpck_require__(6417)
+const compareLoose = __nccwpck_require__(2804)
+const compareBuild = __nccwpck_require__(2156)
+const sort = __nccwpck_require__(1426)
+const rsort = __nccwpck_require__(8701)
+const gt = __nccwpck_require__(4123)
+const lt = __nccwpck_require__(194)
+const eq = __nccwpck_require__(1898)
+const neq = __nccwpck_require__(6017)
+const gte = __nccwpck_require__(5522)
+const lte = __nccwpck_require__(7520)
+const cmp = __nccwpck_require__(5098)
+const coerce = __nccwpck_require__(3466)
+const Comparator = __nccwpck_require__(1532)
+const Range = __nccwpck_require__(9828)
+const satisfies = __nccwpck_require__(6055)
+const toComparators = __nccwpck_require__(2706)
+const maxSatisfying = __nccwpck_require__(579)
+const minSatisfying = __nccwpck_require__(832)
+const minVersion = __nccwpck_require__(4179)
+const validRange = __nccwpck_require__(2098)
+const outside = __nccwpck_require__(420)
+const gtr = __nccwpck_require__(9380)
+const ltr = __nccwpck_require__(3323)
+const intersects = __nccwpck_require__(7008)
+const simplifyRange = __nccwpck_require__(5297)
+const subset = __nccwpck_require__(7863)
 module.exports = {
+  parse,
+  valid,
+  clean,
+  inc,
+  diff,
+  major,
+  minor,
+  patch,
+  prerelease,
+  compare,
+  rcompare,
+  compareLoose,
+  compareBuild,
+  sort,
+  rsort,
+  gt,
+  lt,
+  eq,
+  neq,
+  gte,
+  lte,
+  cmp,
+  coerce,
+  Comparator,
+  Range,
+  satisfies,
+  toComparators,
+  maxSatisfying,
+  minSatisfying,
+  minVersion,
+  validRange,
+  outside,
+  gtr,
+  ltr,
+  intersects,
+  simplifyRange,
+  subset,
+  SemVer,
   re: internalRe.re,
   src: internalRe.src,
   tokens: internalRe.t,
-  SEMVER_SPEC_VERSION: (__nccwpck_require__(2293).SEMVER_SPEC_VERSION),
-  SemVer: __nccwpck_require__(8088),
-  compareIdentifiers: (__nccwpck_require__(2463).compareIdentifiers),
-  rcompareIdentifiers: (__nccwpck_require__(2463).rcompareIdentifiers),
-  parse: __nccwpck_require__(5925),
-  valid: __nccwpck_require__(9601),
-  clean: __nccwpck_require__(8848),
-  inc: __nccwpck_require__(900),
-  diff: __nccwpck_require__(4297),
-  major: __nccwpck_require__(6688),
-  minor: __nccwpck_require__(8447),
-  patch: __nccwpck_require__(2866),
-  prerelease: __nccwpck_require__(4016),
-  compare: __nccwpck_require__(4309),
-  rcompare: __nccwpck_require__(6417),
-  compareLoose: __nccwpck_require__(2804),
-  compareBuild: __nccwpck_require__(2156),
-  sort: __nccwpck_require__(1426),
-  rsort: __nccwpck_require__(8701),
-  gt: __nccwpck_require__(4123),
-  lt: __nccwpck_require__(194),
-  eq: __nccwpck_require__(1898),
-  neq: __nccwpck_require__(6017),
-  gte: __nccwpck_require__(5522),
-  lte: __nccwpck_require__(7520),
-  cmp: __nccwpck_require__(5098),
-  coerce: __nccwpck_require__(3466),
-  Comparator: __nccwpck_require__(1532),
-  Range: __nccwpck_require__(9828),
-  satisfies: __nccwpck_require__(6055),
-  toComparators: __nccwpck_require__(2706),
-  maxSatisfying: __nccwpck_require__(579),
-  minSatisfying: __nccwpck_require__(832),
-  minVersion: __nccwpck_require__(4179),
-  validRange: __nccwpck_require__(2098),
-  outside: __nccwpck_require__(420),
-  gtr: __nccwpck_require__(9380),
-  ltr: __nccwpck_require__(3323),
-  intersects: __nccwpck_require__(7008),
-  simplifyRange: __nccwpck_require__(5297),
-  subset: __nccwpck_require__(7863),
+  SEMVER_SPEC_VERSION: constants.SEMVER_SPEC_VERSION,
+  compareIdentifiers: identifiers.compareIdentifiers,
+  rcompareIdentifiers: identifiers.rcompareIdentifiers,
 }
 
 
@@ -7088,7 +7221,6 @@ var __webpack_exports__ = {};
 const fetch = __nccwpck_require__(467);
 const fs = __nccwpck_require__(7147);
 var semver = __nccwpck_require__(1383);
-
 
 const OLDEST_SUPPORTED_VERSION = "1.19.0"
 

@@ -1,7 +1,6 @@
 import { getInput } from '@actions/core'
 import { getOctokit } from '@actions/github'
 import { HttpClient } from '@actions/http-client';
-import * as semverCompare from 'semver/functions/compare';
 import fs from 'node:fs/promises';
 import { appendVersion } from './publisher';
 

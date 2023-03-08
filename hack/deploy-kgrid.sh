@@ -39,4 +39,4 @@ git add .
 git commit --allow-empty -m "${PR_URL}"
 git push origin ${GITOPS_BRANCH}
 
-echo "::set-output name=kgrid-run-id::$KGRID_RUN_ID"
+echo "kgrid-run-id=$KGRID_RUN_ID" >> "$GITHUB_OUTPUT"
