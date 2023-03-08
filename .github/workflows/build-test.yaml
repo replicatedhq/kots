@@ -63,10 +63,90 @@ jobs:
           token: ${{ secrets.OKTETO_TOKEN }}
           branch: ${{ github.head_ref }}
 
+  deps-web:
+    runs-on: ubuntu-20.04
+    needs: [ can-run-ci ]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          ref: ${{github.event.pull_request.head.ref}}
+          repository: ${{github.event.pull_request.head.repo.full_name}}
+
+      - name: Setup Node.js environment
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18.x'
+          cache: yarn
+          cache-dependency-path: web/yarn.lock
+
+      - name: Cache node_modules
+        uses: actions/cache@v3
+        with:
+          path: ${{ github.workspace }}/web/node_modules
+          key: ${{ runner.os }}-${{ runner.arch }}-yarn-node_modules-${{ hashFiles('web/yarn.lock') }}
+          
+      - name: Install web deps
+        run: make -C web deps
+
+
+  lint-web:
+    runs-on: ubuntu-20.04
+    needs: [ can-run-ci, deps-web ]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          ref: ${{github.event.pull_request.head.ref}}
+          repository: ${{github.event.pull_request.head.repo.full_name}}
+
+      - name: Setup Node.js environment
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18.x'
+          cache: yarn
+          cache-dependency-path: web/yarn.lock
+
+      - name: Cache node_modules
+        uses: actions/cache@v3
+        with:
+          path: ${{ github.workspace }}/web/node_modules
+          key: ${{ runner.os }}-${{ runner.arch }}-yarn-node_modules-${{ hashFiles('web/yarn.lock') }}
+
+      - name: Lint
+        run: make -C web lint
+
+
+  unit-test-web:
+    runs-on: ubuntu-20.04
+    needs: [ can-run-ci, deps-web ]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          ref: ${{github.event.pull_request.head.ref}}
+          repository: ${{github.event.pull_request.head.repo.full_name}}
+
+      - name: Setup Node.js environment
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18.x'
+          cache: yarn
+          cache-dependency-path: web/yarn.lock
+
+      - name: Cache node_modules
+        uses: actions/cache@v3
+        with:
+          path: ${{ github.workspace }}/web/node_modules
+          key: ${{ runner.os }}-${{ runner.arch }}-yarn-node_modules-${{ hashFiles('web/yarn.lock') }}
+
+      - name: Unit test 
+        run: make -C web test-unit
+
 
   build-web:
     runs-on: ubuntu-20.04
-    needs: [ can-run-ci, generate-tag ]
+    needs: [ can-run-ci, deps-web, generate-tag ]
     steps:
       # This workflow trigger may lead to malicious PR authors being able to obtain repository write permissions or stealing repository secrets.
       # Please read https://securitylab.github.com/research/github-actions-preventing-pwn-requests/
@@ -80,12 +160,20 @@ jobs:
       - name: Setup Node.js environment
         uses: actions/setup-node@v3
         with:
-          node-version: '17.x'
+          node-version: '18.x'
+          cache: yarn
+          cache-dependency-path: web/yarn.lock
 
+      - name: Cache node_modules
+        uses: actions/cache@v3
+        with:
+          path: ${{ github.workspace }}/web/node_modules
+          key: ${{ runner.os }}-${{ runner.arch }}-yarn-node_modules-${{ hashFiles('web/yarn.lock') }}
+          
       - name: Build web
         env:
           GIT_TAG: ${{ needs.generate-tag.outputs.tag }}
-        run: mapfile -t envs < <(grep -v '#.*' < .image.env) && export "${envs[@]}" && make -C web deps lint test-unit build-kotsadm
+        run: mapfile -t envs < <(grep -v '#.*' < .image.env) && export "${envs[@]}" && make -C web build-kotsadm
 
       - name: Upload web artifact
         uses: actions/upload-artifact@v3
@@ -93,53 +181,141 @@ jobs:
           name: web
           path: ./web/dist
 
-
-  build-kots:
+  deps-kots:
     runs-on: ubuntu-20.04
-    needs: [ can-run-ci, build-web, generate-tag ]
-
+    needs: [ can-run-ci ]
     steps:
-      - uses: actions/setup-go@v3
-        with:
-          go-version: '^1.19.2'
-
-      - name: setup env
-        run: |
-          echo "GOPATH=$(go env GOPATH)" >> "$GITHUB_ENV"
-          echo "$(go env GOPATH)/bin" >> "$GITHUB_PATH"
-        shell: bash
-
-      # This workflow trigger may lead to malicious PR authors being able to obtain repository write permissions or stealing repository secrets.
-      # Please read https://securitylab.github.com/research/github-actions-preventing-pwn-requests/
-      # this action checks out the remote branch and runs CI
       - uses: actions/checkout@v3
         with:
           ref: ${{github.event.pull_request.head.ref}}
           repository: ${{github.event.pull_request.head.repo.full_name}}
 
-      - name: Cache Go modules
-        uses: actions/cache@v3
+      - uses: actions/setup-go@v3
         with:
-          path: |
-            ~/.cache/go-build
-            ~/go/pkg/mod
-          key: ${{ runner.os }}-go-kots-${{ hashFiles('**/go.sum') }}
-          restore-keys: |
-            ${{ runner.os }}-go-kots-
+          go-version: '^1.19.2'
+          cache: true
+
+      - run: go mod download
+
+  vet-kots:
+    runs-on: ubuntu-20.04
+    needs: [ can-run-ci, deps-kots ]
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          ref: ${{github.event.pull_request.head.ref}}
+          repository: ${{github.event.pull_request.head.repo.full_name}}
+
+      - uses: actions/setup-go@v3
+        with:
+          go-version: '^1.19.2'
+          cache: true
+ 
+      - name: vet
+        run: make vet
+  
+  ci-test-kots:
+    runs-on: ubuntu-20.04
+    needs: [ can-run-ci, deps-kots ]
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          ref: ${{github.event.pull_request.head.ref}}
+          repository: ${{github.event.pull_request.head.repo.full_name}}
+
+      - uses: actions/setup-go@v3
+        with:
+          go-version: '^1.19.2'
+          cache: true
+ 
+      - name: test
+        run: make ci-test
+  
+  build-kotsadm:
+    runs-on: ubuntu-20.04
+    needs: [ can-run-ci, build-web, deps-kots, generate-tag ]
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          ref: ${{github.event.pull_request.head.ref}}
+          repository: ${{github.event.pull_request.head.repo.full_name}}
+
+      - uses: actions/setup-go@v3
+        with:
+          go-version: '^1.19.2'
+          cache: true
+ 
+      - name: Download web artifact
+        uses: actions/download-artifact@v3
+        with:
+          name: web
+          path: ./web/dist
+    
+      - name: Build
+        env:
+          GIT_TAG: ${{ needs.generate-tag.outputs.tag }}
+        run: mapfile -t envs < <(grep -v '#.*' < .image.env) && export "${envs[@]}" && make build
+
+      - uses: actions/upload-artifact@v3
+        with:
+          name: kotsadm
+          path: ./bin/kotsadm
+          
+  build-kots:
+    runs-on: ubuntu-20.04
+    needs: [ can-run-ci, build-web, deps-kots, generate-tag ]
+
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          ref: ${{github.event.pull_request.head.ref}}
+          repository: ${{github.event.pull_request.head.repo.full_name}}
+
+      - uses: actions/setup-go@v3
+        with:
+          go-version: '^1.19.2'
+          cache: true
 
       - name: Download web artifact
         uses: actions/download-artifact@v3
         with:
           name: web
           path: ./web/dist
+
       - name: Build kots
         env:
           GIT_TAG: ${{ needs.generate-tag.outputs.tag }}
-        run: mapfile -t envs < <(grep -v '#.*' < .image.env) && export "${envs[@]}" && make vet ci-test kots build
+        run: mapfile -t envs < <(grep -v '#.*' < .image.env) && export "${envs[@]}" && make kots
+
       - uses: actions/upload-artifact@v3
         with:
           name: kots
-          path: bin/kots
+          path: ./bin/kots
+
+
+  build-push-kotsadm-image:
+    runs-on: ubuntu-20.04
+    needs: [ can-run-ci, build-kotsadm, build-kots ]
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          ref: ${{github.event.pull_request.head.ref}}
+          repository: ${{github.event.pull_request.head.repo.full_name}}
+
+      - name: Download kots artifact
+        uses: actions/download-artifact@v3
+        with:
+          name: kots
+          path: bin/
+
+      - name: Download kotsadm artifact
+        uses: actions/download-artifact@v3
+        with:
+          name: kotsadm
+          path: bin/
+
+      - run: chmod +x bin/kots bin/kotsadm
+
       - name: build and push kotsadm for e2e
         uses: docker/build-push-action@v3
         with:
@@ -147,7 +323,7 @@ jobs:
           context: ./
           file: ./deploy/Dockerfile
           push: true
-
+  
 
   build-kots-helm:
     runs-on: ubuntu-20.04
@@ -427,7 +603,7 @@ jobs:
 
   validate-existing-online-install-minimal:
     runs-on: ubuntu-20.04
-    needs: [ enable-tests, can-run-ci, build-kots, build-e2e, build-kurl-proxy, build-migrations, push-minio, push-mc, push-rqlite ]
+    needs: [ enable-tests, can-run-ci, build-push-kotsadm-image, build-e2e, build-kurl-proxy, build-migrations, push-minio, push-mc, push-rqlite ]
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -458,7 +634,7 @@ jobs:
 
   validate-smoke-test:
     runs-on: ubuntu-20.04
-    needs: [ enable-tests, can-run-ci, build-kots, build-e2e, build-kurl-proxy, build-migrations, push-minio, push-mc, push-rqlite ]
+    needs: [ enable-tests, can-run-ci, build-push-kotsadm-image, build-e2e, build-kurl-proxy, build-migrations, push-minio, push-mc, push-rqlite ]
     strategy:
       fail-fast: false
       matrix:
@@ -493,7 +669,7 @@ jobs:
 
   validate-minimal-rbac:
     runs-on: ubuntu-20.04
-    needs: [ enable-tests, can-run-ci, build-kots, build-e2e, build-kurl-proxy, build-migrations, push-minio, push-mc, push-rqlite ]
+    needs: [ enable-tests, can-run-ci, build-push-kotsadm-image, build-e2e, build-kurl-proxy, build-migrations, push-minio, push-mc, push-rqlite ]
     strategy:
       fail-fast: false
       matrix:
@@ -528,7 +704,7 @@ jobs:
 
   validate-backup-and-restore:
     runs-on: ubuntu-20.04
-    needs: [ enable-tests, can-run-ci, build-kots, build-e2e, build-kurl-proxy, build-migrations, push-minio, push-mc, push-rqlite ]
+    needs: [ enable-tests, can-run-ci, build-push-kotsadm-image, build-e2e, build-kurl-proxy, build-migrations, push-minio, push-mc, push-rqlite ]
     strategy:
       fail-fast: false
       matrix:
@@ -563,7 +739,7 @@ jobs:
 
   validate-no-required-config:
     runs-on: ubuntu-20.04
-    needs: [ enable-tests, can-run-ci, build-kots, build-e2e, build-kurl-proxy, build-migrations, push-minio, push-mc, push-rqlite ]
+    needs: [ enable-tests, can-run-ci, build-push-kotsadm-image, build-e2e, build-kurl-proxy, build-migrations, push-minio, push-mc, push-rqlite ]
     strategy:
       fail-fast: false
       matrix:
@@ -598,7 +774,7 @@ jobs:
 
   validate-strict-preflight-checks:
     runs-on: ubuntu-20.04
-    needs: [ enable-tests, can-run-ci, build-kots, build-e2e, build-kurl-proxy, build-migrations, push-minio, push-mc, push-rqlite ]
+    needs: [ enable-tests, can-run-ci, build-push-kotsadm-image, build-e2e, build-kurl-proxy, build-migrations, push-minio, push-mc, push-rqlite ]
     strategy:
       fail-fast: false
       matrix:
@@ -633,7 +809,7 @@ jobs:
 
   validate-version-history-pagination:
     runs-on: ubuntu-20.04
-    needs: [ enable-tests, can-run-ci, build-kots, build-e2e, build-kurl-proxy, build-migrations, push-minio, push-mc, push-rqlite ]
+    needs: [ enable-tests, can-run-ci, build-push-kotsadm-image, build-e2e, build-kurl-proxy, build-migrations, push-minio, push-mc, push-rqlite ]
     strategy:
       fail-fast: false
       matrix:
@@ -668,7 +844,7 @@ jobs:
 
   validate-change-license:
     runs-on: ubuntu-20.04
-    needs: [ enable-tests, can-run-ci, build-kots, build-e2e, build-kurl-proxy, build-migrations, push-minio, push-mc, push-rqlite ]
+    needs: [ enable-tests, can-run-ci, build-push-kotsadm-image, build-e2e, build-kurl-proxy, build-migrations, push-minio, push-mc, push-rqlite ]
     strategy:
       fail-fast: false
       matrix:
@@ -703,7 +879,7 @@ jobs:
 
   validate-helm-managed:
     runs-on: ubuntu-20.04
-    needs: [ enable-tests, can-run-ci, build-kots, build-e2e, build-kurl-proxy, build-migrations, push-minio, push-mc, push-rqlite ]
+    needs: [ enable-tests, can-run-ci, build-push-kotsadm-image, build-e2e, build-kurl-proxy, build-migrations, push-minio, push-mc, push-rqlite ]
     strategy:
       fail-fast: false
       matrix:
@@ -740,7 +916,7 @@ jobs:
 
   validate-minimal-rbac-override:
     runs-on: ubuntu-20.04
-    needs: [ enable-tests, can-run-ci, build-kots, build-kurl-proxy, build-migrations, push-minio, push-mc, push-rqlite ]
+    needs: [ enable-tests, can-run-ci, build-push-kotsadm-image, build-kurl-proxy, build-migrations, push-minio, push-mc, push-rqlite ]
     strategy:
       fail-fast: false
       matrix:
@@ -821,7 +997,7 @@ jobs:
 
   validate-multi-namespace:
     runs-on: ubuntu-20.04
-    needs: [ enable-tests, can-run-ci, build-kots, build-kurl-proxy, build-migrations, push-minio, push-mc, push-rqlite ]
+    needs: [ enable-tests, can-run-ci, build-push-kotsadm-image, build-kurl-proxy, build-migrations, push-minio, push-mc, push-rqlite ]
     strategy:
       fail-fast: false
       matrix:
@@ -910,7 +1086,7 @@ jobs:
 
   validate-kots-pull:
     runs-on: ubuntu-20.04
-    needs: [ enable-tests, can-run-ci, build-kots, build-kurl-proxy, build-migrations, push-minio, push-mc, push-rqlite ]
+    needs: [ enable-tests, can-run-ci, build-push-kotsadm-image, build-kurl-proxy, build-migrations, push-minio, push-mc, push-rqlite ]
     strategy:
       fail-fast: false
       matrix:
@@ -997,7 +1173,7 @@ jobs:
 
   validate-app-version-label:
     runs-on: ubuntu-20.04
-    needs: [ enable-tests, can-run-ci, build-kots, build-kurl-proxy, build-migrations, push-minio, push-mc, push-rqlite ]
+    needs: [ enable-tests, can-run-ci, build-push-kotsadm-image, build-kurl-proxy, build-migrations, push-minio, push-mc, push-rqlite ]
     strategy:
       fail-fast: false
       matrix:
@@ -1132,7 +1308,7 @@ jobs:
 
   validate-helm-install-order:
     runs-on: ubuntu-20.04
-    needs: [ enable-tests, can-run-ci, build-kots, build-kurl-proxy, build-migrations, push-minio, push-mc, push-rqlite ]
+    needs: [ enable-tests, can-run-ci, build-push-kotsadm-image, build-kurl-proxy, build-migrations, push-minio, push-mc, push-rqlite ]
     strategy:
       fail-fast: false
       matrix:
@@ -1207,7 +1383,7 @@ jobs:
 
   validate-yamlescape:
     runs-on: ubuntu-20.04
-    needs: [ enable-tests, can-run-ci, build-kots, build-kurl-proxy, build-migrations, push-minio, push-mc, push-rqlite ]
+    needs: [ enable-tests, can-run-ci, build-push-kotsadm-image, build-kurl-proxy, build-migrations, push-minio, push-mc, push-rqlite ]
     strategy:
       fail-fast: false
       matrix:
@@ -1282,7 +1458,7 @@ jobs:
 
   validate-no-redeploy-on-restart:
     runs-on: ubuntu-20.04
-    needs: [ enable-tests, can-run-ci, build-kots, build-kurl-proxy, build-migrations, push-minio, push-mc, push-rqlite ]
+    needs: [ enable-tests, can-run-ci, build-push-kotsadm-image, build-kurl-proxy, build-migrations, push-minio, push-mc, push-rqlite ]
     strategy:
       fail-fast: false
       matrix:
@@ -1381,7 +1557,7 @@ jobs:
 
   validate-kubernetes-installer-preflight:
     runs-on: ubuntu-20.04
-    needs: [ enable-tests, can-run-ci, build-kots, build-kurl-proxy, build-migrations, push-minio, push-mc, push-rqlite ]
+    needs: [ enable-tests, can-run-ci, build-push-kotsadm-image, build-kurl-proxy, build-migrations, push-minio, push-mc, push-rqlite ]
     strategy:
       fail-fast: false
       matrix:
@@ -1495,7 +1671,7 @@ jobs:
 
   validate-tag-and-digest:
     runs-on: ubuntu-20.04
-    needs: [ enable-tests, can-run-ci, build-kots, build-e2e, build-kurl-proxy, build-migrations, push-minio, push-mc, push-rqlite ]
+    needs: [ enable-tests, can-run-ci, build-push-kotsadm-image, build-e2e, build-kurl-proxy, build-migrations, push-minio, push-mc, push-rqlite ]
     strategy:
       fail-fast: false
       matrix:
@@ -1530,7 +1706,7 @@ jobs:
 
   validate-kots-push-images-anonymous:
     runs-on: ubuntu-20.04
-    needs: [ enable-tests, can-run-ci, build-kots, build-kurl-proxy, build-migrations, push-minio, push-mc, push-rqlite ]
+    needs: [ enable-tests, can-run-ci, build-push-kotsadm-image, build-kurl-proxy, build-migrations, push-minio, push-mc, push-rqlite ]
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -1551,7 +1727,7 @@ jobs:
 
   validate-kots-admin-console-generate-manifests:
     runs-on: ubuntu-20.04
-    needs: [ enable-tests, can-run-ci, build-kots, build-kurl-proxy, build-migrations, push-minio, push-mc, push-rqlite ]
+    needs: [ enable-tests, can-run-ci, build-push-kotsadm-image, build-kurl-proxy, build-migrations, push-minio, push-mc, push-rqlite ]
     strategy:
       fail-fast: false
       matrix:
@@ -1729,7 +1905,7 @@ jobs:
 
   validate-min-kots-version:
     runs-on: ubuntu-20.04
-    needs: [ enable-tests, can-run-ci, build-e2e, build-kots, build-kurl-proxy, build-migrations, push-minio, push-mc, push-rqlite, generate-tag ]
+    needs: [ enable-tests, can-run-ci, build-e2e, build-push-kotsadm-image, build-kurl-proxy, build-migrations, push-minio, push-mc, push-rqlite, generate-tag ]
     env:
       APP_SLUG: min-kots-version
     strategy:
@@ -1783,7 +1959,7 @@ jobs:
 
   validate-target-kots-version:
     runs-on: ubuntu-20.04
-    needs: [ enable-tests, can-run-ci, build-e2e, build-kots, build-kurl-proxy, build-migrations, push-minio, push-mc, push-rqlite, generate-tag ]
+    needs: [ enable-tests, can-run-ci, build-e2e, build-push-kotsadm-image, build-kurl-proxy, build-migrations, push-minio, push-mc, push-rqlite, generate-tag ]
     strategy:
       fail-fast: false
       matrix:
@@ -1833,7 +2009,7 @@ jobs:
 
   validate-range-kots-version:
     runs-on: ubuntu-20.04
-    needs: [ enable-tests, can-run-ci, build-e2e, build-kots, build-kurl-proxy, build-migrations, push-minio, push-mc, push-rqlite, generate-tag ]
+    needs: [ enable-tests, can-run-ci, build-e2e, build-push-kotsadm-image, build-kurl-proxy, build-migrations, push-minio, push-mc, push-rqlite, generate-tag ]
     strategy:
       fail-fast: false
       matrix:
@@ -1883,7 +2059,7 @@ jobs:
 
   validate-kots-upgrade:
     runs-on: ubuntu-20.04
-    needs: [ enable-tests, can-run-ci, build-kots, build-kurl-proxy, build-migrations, push-minio, push-mc, push-rqlite ]
+    needs: [ enable-tests, can-run-ci, build-push-kotsadm-image, build-kurl-proxy, build-migrations, push-minio, push-mc, push-rqlite ]
     strategy:
       fail-fast: false
       matrix:
@@ -1998,7 +2174,7 @@ jobs:
 
   validate-multi-app-install:
     runs-on: ubuntu-20.04
-    needs: [ enable-tests, can-run-ci, build-kots, build-e2e, build-kurl-proxy, build-migrations, push-minio, push-mc, push-rqlite ]
+    needs: [ enable-tests, can-run-ci, build-push-kotsadm-image, build-e2e, build-kurl-proxy, build-migrations, push-minio, push-mc, push-rqlite ]
     strategy:
       fail-fast: false
       matrix:
@@ -2033,7 +2209,7 @@ jobs:
 
   validate-airgap-smoke-test:
     runs-on: ubuntu-20.04
-    needs: [ enable-tests, can-run-ci, build-kots, build-e2e, build-kurl-proxy, build-migrations, push-minio, push-mc, push-rqlite ]
+    needs: [ enable-tests, can-run-ci, build-push-kotsadm-image, build-e2e, build-kurl-proxy, build-migrations, push-minio, push-mc, push-rqlite ]
     strategy:
       fail-fast: false
       matrix:
@@ -2072,7 +2248,7 @@ jobs:
 
   validate-remove-app:
     runs-on: ubuntu-20.04
-    needs: [ enable-tests, can-run-ci, build-kots, build-kurl-proxy, build-migrations, push-minio, push-rqlite ]
+    needs: [ enable-tests, can-run-ci, build-push-kotsadm-image, build-kurl-proxy, build-migrations, push-minio, push-rqlite ]
     strategy:
       fail-fast: false
       matrix:
@@ -2223,7 +2399,7 @@ jobs:
 
   validate-registry-check:
     runs-on: ubuntu-20.04
-    needs: [ enable-tests, can-run-ci, build-kots, build-kurl-proxy, build-migrations, push-minio, push-rqlite ]
+    needs: [ enable-tests, can-run-ci, build-push-kotsadm-image, build-kurl-proxy, build-migrations, push-minio, push-rqlite ]
     strategy:
       fail-fast: false
       matrix:
@@ -2301,6 +2477,11 @@ jobs:
   validate-pr-tests:
     runs-on: ubuntu-20.04
     needs:
+      # static and unit tests
+      - lint-web
+      - unit-test-web
+      - vet-kots
+      - ci-test-kots
       # testim tests
       - validate-existing-online-install-minimal
       - validate-smoke-test
