@@ -231,6 +231,8 @@ func getFingerprint(certData []byte) (string, error) {
 func getHttpServer(fingerprint string, acceptAnonymousUploads bool) *http.Server {
 	r := gin.Default()
 
+	r.Use(CSPMiddleware)
+
 	r.StaticFS("/assets", http.Dir("/assets"))
 	r.LoadHTMLGlob("/assets/*.html")
 
@@ -276,11 +278,11 @@ func getHttpServer(fingerprint string, acceptAnonymousUploads bool) *http.Server
 }
 
 func getHttpsServer(upstream, dexUpstream *url.URL, tlsSecretName string, secrets corev1.SecretInterface, acceptAnonymousUploads bool) *http.Server {
-	mux := http.NewServeMux()
-
 	r := gin.Default()
 
-	mux.Handle("/tls/assets/", http.StripPrefix("/tls/assets/", http.FileServer(http.Dir("/assets"))))
+	r.Use(CSPMiddleware)
+
+	r.StaticFS("/tls/assets", http.Dir("/assets"))
 	r.LoadHTMLGlob("/assets/*.html")
 
 	r.GET("/tls", func(c *gin.Context) {
@@ -430,24 +432,23 @@ func getHttpsServer(upstream, dexUpstream *url.URL, tlsSecretName string, secret
 			}
 		}()
 	})
-	mux.Handle("/tls", r)
-	mux.Handle("/tls/", r)
-
-	// mux.Handle("/api/v1/kots/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-	// 	log.Println("Kots REST API not proxied.")
-	// 	http.Error(w, "Not found", http.StatusNotFound)
-	// }))
 
 	if dexUpstream != nil {
-		dexReverseProxy := httputil.NewSingleHostReverseProxy(dexUpstream)
-		mux.Handle("/dex", dexReverseProxy)
-		mux.Handle("/dex/", dexReverseProxy)
+		r.Any("/dex/*path", gin.WrapH(httputil.NewSingleHostReverseProxy(dexUpstream)))
 	}
-	mux.Handle("/", httputil.NewSingleHostReverseProxy(upstream))
+
+	r.NoRoute(gin.WrapH(httputil.NewSingleHostReverseProxy(upstream)))
 
 	return &http.Server{
-		Handler: mux,
+		Handler: r,
 	}
+}
+
+// CSPMiddleware adds Content-Security-Policy and X-Frame-Options headers to the response.
+func CSPMiddleware(c *gin.Context) {
+	c.Writer.Header().Set("Content-Security-Policy", "frame-ancestors 'none';")
+	c.Writer.Header().Set("X-Frame-Options", "DENY")
+	c.Next()
 }
 
 func getUploadedCerts(c *gin.Context) ([]byte, []byte, error) {
