@@ -1,0 +1,9 @@
+dependencies:
+- name: subchart-1
+  repository: file://./helm-charts/subchart-1/
+  version: 0.1.0
+- name: subchart-1
+  repository: file://./helm-charts/subchart-1/
+  version: 0.1.0
+digest: sha256:51024f792ce1919d1d89454088107f220d0cb3831966085ac1c47ce965741905
+generated: "2021-12-23T14:04:18.190852-05:00"

@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -265,19 +264,15 @@ func (o *Operator) DeployApp(appID string, sequence int64) (deployed bool, deplo
 
 	kustomizeBinPath := kotsKinds.GetKustomizeBinaryPath()
 
-	cmd := exec.Command(kustomizeBinPath, "build", filepath.Join(deployedVersionArchive, "overlays", "downstreams", downstreams.Name))
-	renderedManifests, err := cmd.Output()
+	renderedManifests, _, err := kustomize.GetRenderedApp(deployedVersionArchive, downstreams.Name, kustomizeBinPath)
 	if err != nil {
-		if ee, ok := err.(*exec.ExitError); ok {
-			err = fmt.Errorf("kustomize stderr: %q", string(ee.Stderr))
-		}
-		return false, errors.Wrap(err, "failed to run kustomize")
+		return false, errors.Wrap(err, "failed to get rendered app")
 	}
 	base64EncodedManifests := base64.StdEncoding.EncodeToString(renderedManifests)
 
-	chartArchive, _, err := kustomize.RenderChartsArchive(deployedVersionArchive, downstreams.Name, kustomizeBinPath)
+	chartArchive, _, err := kustomize.GetRenderedChartsArchive(deployedVersionArchive, downstreams.Name, kustomizeBinPath)
 	if err != nil {
-		return false, errors.Wrap(err, "failed to run kustomize on currently deployed charts")
+		return false, errors.Wrap(err, "failed to get rendered charts archive")
 	}
 
 	imagePullSecrets := []string{}
@@ -333,19 +328,14 @@ func (o *Operator) DeployApp(appID string, sequence int64) (deployed bool, deplo
 				return false, errors.Wrap(err, "failed to load kotskinds for previously deployed app version")
 			}
 
-			cmd := exec.Command(previousKotsKinds.GetKustomizeBinaryPath(), "build", filepath.Join(previouslyDeployedVersionArchive, "overlays", "downstreams", downstreams.Name))
-			previousRenderedManifests, err := cmd.Output()
+			previousRenderedManifests, _, err := kustomize.GetRenderedApp(previouslyDeployedVersionArchive, downstreams.Name, kustomizeBinPath)
 			if err != nil {
-				if ee, ok := err.(*exec.ExitError); ok {
-					err = fmt.Errorf("kustomize stderr: %q", string(ee.Stderr))
-				}
-				logger.Error(errors.Wrap(err, "failed to run kustomize for previously deployed app version."))
+				logger.Error(errors.Wrap(err, "failed to get previously deployed rendered app"))
 			} else {
 				base64EncodedPreviousManifests = base64.StdEncoding.EncodeToString(previousRenderedManifests)
-				// Run kustomization on the charts as well
-				previouslyDeployedChartArchive, _, err = kustomize.RenderChartsArchive(previouslyDeployedVersionArchive, downstreams.Name, kustomizeBinPath)
+				previouslyDeployedChartArchive, _, err = kustomize.GetRenderedChartsArchive(previouslyDeployedVersionArchive, downstreams.Name, kustomizeBinPath)
 				if err != nil {
-					return false, errors.Wrap(err, "failed to run kustomize on previously deployed charts")
+					return false, errors.Wrap(err, "failed to get previously deployed rendered charts archive")
 				}
 			}
 		}
@@ -685,13 +675,9 @@ func (o *Operator) UndeployApp(a *apptypes.App, d *downstreamtypes.Downstream, i
 		return errors.Wrap(err, "failed to load kotskinds")
 	}
 
-	cmd := exec.Command(kotsKinds.GetKustomizeBinaryPath(), "build", filepath.Join(deployedVersionArchive, "overlays", "downstreams", d.Name))
-	renderedManifests, err := cmd.Output()
+	renderedManifests, _, err := kustomize.GetRenderedApp(deployedVersionArchive, d.Name, kotsKinds.GetKustomizeBinaryPath())
 	if err != nil {
-		if ee, ok := err.(*exec.ExitError); ok {
-			err = fmt.Errorf("kustomize stderr: %q", string(ee.Stderr))
-		}
-		return errors.Wrap(err, "failed to run kustomize")
+		return errors.Wrap(err, "failed to get rendered app")
 	}
 	base64EncodedManifests := base64.StdEncoding.EncodeToString(renderedManifests)
 

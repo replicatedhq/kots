@@ -19,6 +19,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/kotsadmconfig"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
+	"github.com/replicatedhq/kots/pkg/kustomize"
 	kotslicense "github.com/replicatedhq/kots/pkg/license"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/midstream"
@@ -499,7 +500,7 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 	}
 
 	writeMidstreamOptions := commonWriteMidstreamOptions
-	writeMidstreamOptions.MidstreamDir = filepath.Join(commonBase.GetOverlaysDir(writeBaseOptions), "midstream")
+	writeMidstreamOptions.MidstreamDir = filepath.Join(u.GetOverlaysDir(writeUpstreamOptions), "midstream")
 	writeMidstreamOptions.BaseDir = filepath.Join(u.GetBaseDir(writeUpstreamOptions), commonBase.Path)
 
 	m, err := midstream.WriteMidstream(writeMidstreamOptions, processImageOptions, commonBase, fetchOptions.License, identityConfig, u.GetUpstreamDir(writeUpstreamOptions), log)
@@ -517,7 +518,7 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 		previousUseHelmInstall := writeMidstreamOptions.UseHelmInstall[helmBase.Path]
 		writeMidstreamOptions.UseHelmInstall[helmBase.Path] = false
 
-		writeMidstreamOptions.MidstreamDir = filepath.Join(helmBase.GetOverlaysDir(writeBaseOptions), "midstream", helmBase.Path)
+		writeMidstreamOptions.MidstreamDir = filepath.Join(u.GetOverlaysDir(writeUpstreamOptions), "midstream", helmBase.Path)
 		writeMidstreamOptions.BaseDir = filepath.Join(u.GetBaseDir(writeUpstreamOptions), helmBase.Path)
 
 		helmBaseCopy := helmBase.DeepCopy()
@@ -546,7 +547,7 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 
 	log.FinishSpinner()
 
-	if err := writeDownstreams(pullOptions, commonBase.GetOverlaysDir(writeBaseOptions), m, helmMidstreams, log); err != nil {
+	if err := writeDownstreams(pullOptions, u.GetOverlaysDir(writeUpstreamOptions), m, helmMidstreams, log); err != nil {
 		return "", errors.Wrap(err, "failed to write downstreams")
 	}
 
@@ -554,6 +555,16 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 		if err := writeArchiveAsConfigMap(pullOptions, u, u.GetBaseDir(writeUpstreamOptions)); err != nil {
 			return "", errors.Wrap(err, "failed to write archive as config map")
 		}
+	}
+
+	if err := kustomize.WriteRenderedApp(kustomize.WriteOptions{
+		BaseDir:          u.GetBaseDir(writeUpstreamOptions),
+		OverlaysDir:      u.GetOverlaysDir(writeUpstreamOptions),
+		RenderedDir:      u.GetRenderedDir(writeUpstreamOptions),
+		Downstreams:      pullOptions.Downstreams,
+		KustomizeBinPath: kotsKinds.GetKustomizeBinaryPath(),
+	}); err != nil {
+		return "", errors.Wrap(err, "failed to write rendered")
 	}
 
 	return filepath.Join(pullOptions.RootDir, u.Name), nil

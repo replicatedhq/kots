@@ -216,6 +216,11 @@ func (s *KOTSStore) CreateAppVersionArchive(appID string, sequence int64, archiv
 		paths = append(paths, overlaysPath)
 	}
 
+	renderedPath := filepath.Join(archivePath, "rendered")
+	if _, err := os.Stat(renderedPath); err == nil {
+		paths = append(paths, renderedPath)
+	}
+
 	skippedFilesPath := filepath.Join(archivePath, "skippedFiles")
 	if _, err := os.Stat(skippedFilesPath); err == nil {
 		paths = append(paths, skippedFilesPath)
