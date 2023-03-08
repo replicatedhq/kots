@@ -15,3 +15,5 @@ PullOptions:
     Username: test
     Password: fake-pass
     IsReadOnly: true
+  Downstreams:
+    - this-cluster

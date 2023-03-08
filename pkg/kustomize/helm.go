@@ -5,13 +5,12 @@ import (
 	"io/ioutil"
 	"os"
 	"os/exec"
-	"path"
 	"path/filepath"
 	"regexp"
 
 	"github.com/marccampbell/yaml-toolbox/pkg/splitter"
-	"github.com/mholt/archiver/v3"
 	"github.com/pkg/errors"
+	"github.com/replicatedhq/kots/pkg/util"
 )
 
 var (
@@ -22,9 +21,38 @@ func init() {
 	goTemplateRegex = regexp.MustCompile(`({{)|(}})`)
 }
 
-func RenderChartsArchive(versionArchive string, downstreamName string, kustomizeBinPath string) ([]byte, map[string]string, error) {
-	archiveChartDir := filepath.Join(versionArchive, "overlays", "downstreams", downstreamName, "charts")
-	_, err := os.Stat(archiveChartDir)
+func GetRenderedChartsArchive(versionArchive string, downstreamName, kustomizeBinPath string) ([]byte, map[string][]byte, error) {
+	renderedChartsDir := filepath.Join(versionArchive, "rendered", downstreamName, "charts")
+	if _, err := os.Stat(renderedChartsDir); err == nil {
+		// charts are already rendered, so we can just tar.gz them up
+		filesMap, err := util.GetFilesMap(renderedChartsDir)
+		if err != nil {
+			return nil, nil, errors.Wrap(err, "failed to get files map")
+		}
+
+		archive, err := util.TGZArchive(renderedChartsDir)
+		if err != nil {
+			return nil, nil, errors.Wrap(err, "failed to create tar.gz")
+		}
+
+		return archive, filesMap, nil
+	}
+
+	// older kots versions did not include the rendered charts in the app archive, so we have to render them
+	baseDir := filepath.Join(versionArchive, "base")
+	overlaysDir := filepath.Join(versionArchive, "overlays")
+
+	archive, filesMap, err := RenderChartsArchive(baseDir, overlaysDir, downstreamName, kustomizeBinPath)
+	if err != nil {
+		return nil, nil, errors.Wrap(err, "failed to render charts archive")
+	}
+
+	return archive, filesMap, nil
+}
+
+func RenderChartsArchive(baseDir string, overlaysDir string, downstreamName string, kustomizeBinPath string) ([]byte, map[string][]byte, error) {
+	archiveChartsDir := filepath.Join(overlaysDir, "downstreams", downstreamName, "charts")
+	_, err := os.Stat(archiveChartsDir)
 	if err != nil {
 		if os.IsNotExist(err) {
 			return nil, nil, nil
@@ -45,23 +73,29 @@ func RenderChartsArchive(versionArchive string, downstreamName string, kustomize
 		}
 	}
 
-	kustomizedFilesList := map[string]string{}
-	sourceChartsDir := filepath.Join(versionArchive, "base", "charts")
+	renderedFilesMap := map[string][]byte{}
+	sourceChartsDir := filepath.Join(baseDir, "charts")
 	metadataFiles := []string{"Chart.yaml", "Chart.lock"}
 
-	err = filepath.Walk(archiveChartDir,
+	err = filepath.Walk(archiveChartsDir,
 		func(path string, info os.FileInfo, err error) error {
 			if err != nil {
 				return err
 			}
-			relPath, err := filepath.Rel(archiveChartDir, filepath.Dir(path))
+			relPath, err := filepath.Rel(archiveChartsDir, filepath.Dir(path))
 			if err != nil {
-				return errors.Wrapf(err, "failed to get %s relative path to %s", path, archiveChartDir)
+				return errors.Wrapf(err, "failed to get %s relative path to %s", path, archiveChartsDir)
 			}
 
 			for _, filename := range metadataFiles {
-				err = copyHelmMetadataFile(sourceChartsDir, destChartsDir, relPath, filename)
+				content, err := ioutil.ReadFile(filepath.Join(sourceChartsDir, relPath, filename))
 				if err != nil {
+					if os.IsNotExist(err) {
+						continue
+					}
+					return errors.Wrapf(err, "failed to read file %s", filename)
+				}
+				if err := writeHelmFile(destChartsDir, relPath, filename, content, renderedFilesMap); err != nil {
 					return errors.Wrapf(err, "failed to export file %s", filename)
 				}
 			}
@@ -91,82 +125,46 @@ func RenderChartsArchive(versionArchive string, downstreamName string, kustomize
 			if err != nil {
 				return errors.Wrapf(err, "failed to split yaml result for %s", path)
 			}
-			for filename, d := range archiveFiles {
-				kustomizedFilesList[filename] = string(d)
+
+			for filename, content := range archiveFiles {
+				destRelPath := relPath
+
+				if filepath.Base(destRelPath) != "crds" {
+					destRelPath = filepath.Join(destRelPath, "templates")
+					content = escapeGoTemplates(content)
+				}
+
+				if err := writeHelmFile(destChartsDir, destRelPath, filename, content, renderedFilesMap); err != nil {
+					return errors.Wrapf(err, "failed to write file %s", filename)
+				}
 			}
 
-			err = saveHelmFile(destChartsDir, relPath, "all.yaml", archiveChartOutput)
-			if err != nil {
-				return errors.Wrapf(err, "failed to export content for %s", path)
-			}
 			return nil
 		})
 	if err != nil {
 		return nil, nil, errors.Wrap(err, "failed to walk charts directory")
 	}
 
-	tempDir, err := ioutil.TempDir("", "helmkots")
+	archive, err := util.TGZArchive(destChartsDir)
 	if err != nil {
-		return nil, nil, errors.Wrap(err, "failed to create temp dir")
-	}
-	defer os.RemoveAll(tempDir)
-	tarGz := archiver.TarGz{
-		Tar: &archiver.Tar{
-			ImplicitTopLevelFolder: true,
-		},
-	}
-	if err := tarGz.Archive([]string{destChartsDir}, path.Join(tempDir, "helmcharts.tar.gz")); err != nil {
-		return nil, nil, errors.Wrap(err, "failed to create tar gz")
+		return nil, nil, errors.Wrap(err, "failed to create tar.gz")
 	}
 
-	archive, err := ioutil.ReadFile(path.Join(tempDir, "helmcharts.tar.gz"))
-	if err != nil {
-		return nil, nil, errors.Wrap(err, "failed to read helm tar.gz file")
-	}
-
-	return archive, kustomizedFilesList, nil
+	return archive, renderedFilesMap, nil
 }
 
-func saveHelmFile(rootDir string, relDir string, filename string, content []byte) error {
-	// We only get CRDs and templates YAML after kustomization
-	destDir := filepath.Join(rootDir, relDir)
-	if filepath.Base(relDir) != "crds" {
-		destDir = filepath.Join(destDir, "templates")
-		content = escapeGoTemplates(content)
-	}
-
-	if err := os.MkdirAll(destDir, 0755); err != nil {
-		return errors.Wrapf(err, "failed to mkdir for export chart %s", destDir)
-	}
-
-	exportFile := filepath.Join(destDir, filename)
-	err := ioutil.WriteFile(exportFile, content, 0644)
-	if err != nil {
-		return errors.Wrapf(err, "failed to write file %s", exportFile)
-	}
-
-	return nil
-}
-
-func copyHelmMetadataFile(srcRootDir string, dstRootDir string, relPath string, filename string) error {
-	fileContent, err := ioutil.ReadFile(filepath.Join(srcRootDir, relPath, filename))
-	if err != nil {
-		if os.IsNotExist(err) {
-			return nil
-		}
-		return errors.Wrap(err, "failed to read file")
-	}
-
+func writeHelmFile(dstRootDir string, relPath string, filename string, content []byte, renderedFilesMap map[string][]byte) error {
 	dstDir := filepath.Join(dstRootDir, relPath)
 	if err := os.MkdirAll(dstDir, 0755); err != nil {
 		return errors.Wrap(err, "failed to create destination dir")
 	}
 
-	dstFilename := filepath.Join(dstDir, filename)
-	err = ioutil.WriteFile(dstFilename, fileContent, 0644)
-	if err != nil {
+	destFilePath := filepath.Join(dstDir, filename)
+	if err := ioutil.WriteFile(destFilePath, content, 0644); err != nil {
 		return errors.Wrap(err, "failed to write file")
 	}
+
+	renderedFilesMap[filepath.Join(relPath, filename)] = content
 
 	return nil
 }
@@ -174,11 +172,16 @@ func copyHelmMetadataFile(srcRootDir string, dstRootDir string, relPath string, 
 // When saving templated file back into a chart, we need to escape Go templates so second Helm pass would ignore them.
 // These are application templates that maybe used in application config files and Helm should ignore them.
 // For example, original chart has this:
-//		"legendFormat": "{{`{{`}} value {{`}}`}}",
+//
+//	"legendFormat": "{{`{{`}} value {{`}}`}}",
+//
 // Rendered chart becomes:
-//		"legendFormat": "{{ value }}",
+//
+//	"legendFormat": "{{ value }}",
+//
 // Repackaged chart should have this:
-//		"legendFormat": "{{`{{`}} value {{`}}`}}",
+//
+//	"legendFormat": "{{`{{`}} value {{`}}`}}",
 func escapeGoTemplates(content []byte) []byte {
 	replace := func(in []byte) []byte {
 		if string(in) == "{{" {

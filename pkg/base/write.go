@@ -347,9 +347,3 @@ func convertToSingleDocBaseFiles(files []BaseFile) []BaseFile {
 	}
 	return singleDocs
 }
-
-func (b *Base) GetOverlaysDir(options WriteOptions) string {
-	renderDir := options.BaseDir
-
-	return filepath.Join(renderDir, "..", "overlays")
-}

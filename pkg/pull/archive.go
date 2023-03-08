@@ -35,6 +35,11 @@ func writeArchiveAsConfigMap(pullOptions PullOptions, u *upstreamtypes.Upstream,
 		path.Join(pullOptions.RootDir, u.Name, "overlays"),
 	}
 
+	renderedPath := path.Join(pullOptions.RootDir, "rendered")
+	if _, err := os.Stat(renderedPath); err == nil {
+		paths = append(paths, renderedPath)
+	}
+
 	skippedFilesPath := path.Join(pullOptions.RootDir, "skippedFiles")
 	if _, err := os.Stat(skippedFilesPath); err == nil {
 		paths = append(paths, skippedFilesPath)

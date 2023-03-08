@@ -15,6 +15,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/downstream"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
+	"github.com/replicatedhq/kots/pkg/kustomize"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/midstream"
 	registrytypes "github.com/replicatedhq/kots/pkg/registry/types"
@@ -236,7 +237,7 @@ func Rewrite(rewriteOptions RewriteOptions) error {
 	}
 
 	writeMidstreamOptions := commonWriteMidstreamOptions
-	writeMidstreamOptions.MidstreamDir = filepath.Join(commonBase.GetOverlaysDir(writeBaseOptions), "midstream")
+	writeMidstreamOptions.MidstreamDir = filepath.Join(u.GetOverlaysDir(writeUpstreamOptions), "midstream")
 	writeMidstreamOptions.BaseDir = filepath.Join(u.GetBaseDir(writeUpstreamOptions), commonBase.Path)
 
 	processImageOptions := midstream.ProcessImageOptions{
@@ -275,7 +276,7 @@ func Rewrite(rewriteOptions RewriteOptions) error {
 		previousUseHelmInstall := writeMidstreamOptions.UseHelmInstall[helmBase.Path]
 		writeMidstreamOptions.UseHelmInstall[helmBase.Path] = false
 
-		writeMidstreamOptions.MidstreamDir = filepath.Join(helmBase.GetOverlaysDir(writeBaseOptions), "midstream", helmBase.Path)
+		writeMidstreamOptions.MidstreamDir = filepath.Join(u.GetOverlaysDir(writeUpstreamOptions), "midstream", helmBase.Path)
 		writeMidstreamOptions.BaseDir = filepath.Join(u.GetBaseDir(writeUpstreamOptions), helmBase.Path)
 
 		helmBaseCopy := helmBase.DeepCopy()
@@ -295,7 +296,7 @@ func Rewrite(rewriteOptions RewriteOptions) error {
 		helmMidstreams = append(helmMidstreams, *helmMidstream)
 	}
 
-	if err := writeDownstreams(rewriteOptions, commonBase.GetOverlaysDir(writeBaseOptions), m, helmMidstreams, log); err != nil {
+	if err := writeDownstreams(rewriteOptions, u.GetOverlaysDir(writeUpstreamOptions), m, helmMidstreams, log); err != nil {
 		return errors.Wrap(err, "failed to write downstreams")
 	}
 
@@ -307,6 +308,16 @@ func Rewrite(rewriteOptions RewriteOptions) error {
 	err = store.GetStore().UpdateAppVersionInstallationSpec(rewriteOptions.AppID, rewriteOptions.AppSequence, kotsKinds.Installation)
 	if err != nil {
 		return errors.Wrap(err, "failed to update installation spec")
+	}
+
+	if err := kustomize.WriteRenderedApp(kustomize.WriteOptions{
+		BaseDir:          u.GetBaseDir(writeUpstreamOptions),
+		OverlaysDir:      u.GetOverlaysDir(writeUpstreamOptions),
+		RenderedDir:      u.GetRenderedDir(writeUpstreamOptions),
+		Downstreams:      rewriteOptions.Downstreams,
+		KustomizeBinPath: kotsKinds.GetKustomizeBinaryPath(),
+	}); err != nil {
+		return errors.Wrap(err, "failed to write rendered")
 	}
 
 	log.FinishSpinner()

@@ -111,6 +111,11 @@ func (h *Handler) DownloadApp(w http.ResponseWriter, r *http.Request) {
 		filepath.Join(archivePath, "overlays"),
 	}
 
+	renderedPath := filepath.Join(archivePath, "rendered")
+	if _, err := os.Stat(renderedPath); err == nil {
+		paths = append(paths, renderedPath)
+	}
+
 	skippedFilesPath := filepath.Join(archivePath, "skippedFiles")
 	if _, err := os.Stat(skippedFilesPath); err == nil {
 		paths = append(paths, skippedFilesPath)

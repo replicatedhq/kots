@@ -29,6 +29,11 @@ func createUploadableArchive(rootPath string) (string, error) {
 		path.Join(rootPath, "overlays"),
 	}
 
+	renderedPath := path.Join(rootPath, "rendered")
+	if _, err := os.Stat(renderedPath); err == nil {
+		paths = append(paths, renderedPath)
+	}
+
 	skippedFilesPath := path.Join(rootPath, "skippedFiles")
 	if _, err := os.Stat(skippedFilesPath); err == nil {
 		paths = append(paths, skippedFilesPath)

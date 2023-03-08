@@ -46,9 +46,9 @@ jobs:
         run: |
           mapfile -t WORKSPACES < <(terraform workspace list | grep -o 'automation-\w*')
           declare -a EXPIRED_WORKSPACES
-          for TF_WORKSPACE in "${WORKSPACES[@]}"; do
-            COMPLETION=$(date -d "$(terraform output -no-color -raw completion_timestamp)" +%s) || continue
-            [ $(($(date +%s) - COMPLETION)) -gt $((60 * 60 * CLEANUP_INTERVAL_HOURS)) ] && EXPIRED_WORKSPACES+=("${TF_WORKSPACE}")
+          for workspace in "${WORKSPACES[@]}"; do
+            COMPLETION=$(date -d "$(TF_WORKSPACE="${workspace}" terraform output -no-color -raw completion_timestamp)" +%s) || continue
+            [ $(($(date +%s) - COMPLETION)) -gt $((60 * 60 * CLEANUP_INTERVAL_HOURS)) ] && EXPIRED_WORKSPACES+=("${workspace}")
           done
           echo "workspaces=$(printf '%s\n' "${EXPIRED_WORKSPACES[@]}" | head -c -1 | jq -R . | jq -sc .)" >> "$GITHUB_OUTPUT"
           echo "count=$(printf '%s\n' "${EXPIRED_WORKSPACES[@]}" | head -c -1 | jq -R . | jq -sc '. | length')" >> "$GITHUB_OUTPUT"

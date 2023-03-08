@@ -1,0 +1,53 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    kots.io/app-slug: my-app
+  labels:
+    app.kubernetes.io/instance: chart
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: subsubchart
+    app.kubernetes.io/version: 1.16.0
+    helm.sh/chart: subsubchart-0.1.0
+    kots.io/app-slug: my-app
+    kots.io/backup: velero
+  name: chart-subsubchart
+  namespace: helmns
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/instance: chart
+      app.kubernetes.io/name: subsubchart
+  template:
+    metadata:
+      annotations:
+        kots.io/app-slug: my-app
+      labels:
+        app.kubernetes.io/instance: chart
+        app.kubernetes.io/name: subsubchart
+        kots.io/app-slug: my-app
+        kots.io/backup: velero
+    spec:
+      containers:
+      - image: fake-docker-proxy/nginx:latest
+        imagePullPolicy: IfNotPresent
+        livenessProbe:
+          httpGet:
+            path: /
+            port: http
+        name: subsubchart
+        ports:
+        - containerPort: 80
+          name: http
+          protocol: TCP
+        readinessProbe:
+          httpGet:
+            path: /
+            port: http
+        resources: {}
+        securityContext: {}
+      imagePullSecrets:
+      - name: my-app-subsubchart-registry
+      securityContext: {}
+      serviceAccountName: chart-subsubchart

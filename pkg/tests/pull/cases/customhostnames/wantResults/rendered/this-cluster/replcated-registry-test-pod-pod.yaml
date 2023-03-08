@@ -1,0 +1,22 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  annotations:
+    kots.io/app-slug: my-app
+  labels:
+    kots.io/app-slug: my-app
+    kots.io/backup: velero
+  name: replcated-registry-test-pod
+  namespace: replicated-registry-test
+spec:
+  containers:
+  - image: somebigbank.registry.org/appslug/image:version
+    name: replicated-registry-image
+  - image: somebigbank.registry.org/appslug/some-other-image:version
+    name: custom-registry-hostname-image
+  - image: proxy.replicated.com/proxy/my-app/quay.io/replicatedcom/someimage:1
+    name: private-image
+  - image: nginx:latest
+    name: public-image
+  imagePullSecrets:
+  - name: my-app-registry
