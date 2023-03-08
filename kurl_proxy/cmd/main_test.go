@@ -2,6 +2,11 @@ package main
 
 import (
 	"fmt"
+	"net/http"
+	"net/http/httptest"
+	"net/url"
+	"os"
+	"path/filepath"
 	"testing"
 )
 
@@ -142,4 +147,72 @@ func Test_getFingerprint(t *testing.T) {
 			}
 		})
 	}
+}
+
+func Test_httpServerCSPHeaders(t *testing.T) {
+	tmpDir, err := os.MkdirTemp("", "test-assets")
+	if err != nil {
+		t.Fatalf("failed to create temp dir: %v", err)
+	}
+	defer os.RemoveAll(tmpDir)
+
+	indexFile := filepath.Join(tmpDir, "index.html")
+	if err := os.WriteFile(indexFile, []byte("hello world"), 0644); err != nil {
+		t.Fatalf("failed to write index.html: %v", err)
+	}
+
+	tests := []struct {
+		name        string
+		httpServer  *http.Server
+		isHttps     bool
+		path        string
+		wantHeaders map[string]string
+	}{
+		{
+			name:       "returns the correct headers from the http server",
+			httpServer: getHttpServer("some-fingerprint", true, tmpDir),
+			path:       "/assets/index.html",
+			wantHeaders: map[string]string{
+				"Content-Security-Policy": "frame-ancestors 'none';",
+				"X-Frame-Options":         "DENY",
+			},
+		},
+		{
+			name:       "returns the correct headers from the https server",
+			httpServer: getHttpsServer(&url.URL{}, &url.URL{}, "some-tls-secret", nil, true, tmpDir),
+			isHttps:    true,
+			path:       "/tls/assets/index.html",
+			wantHeaders: map[string]string{
+				"Content-Security-Policy": "frame-ancestors 'none';",
+				"X-Frame-Options":         "DENY",
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		var ts *httptest.Server
+		if tt.isHttps {
+			ts = httptest.NewTLSServer(tt.httpServer.Handler)
+		} else {
+			ts = httptest.NewServer(tt.httpServer.Handler)
+		}
+		defer ts.Close()
+
+		client := ts.Client()
+		resp, err := client.Get(ts.URL + tt.path)
+		if err != nil {
+			t.Fatalf("failed to get index.html: %v", err)
+		}
+
+		if resp.StatusCode != http.StatusOK {
+			t.Errorf("expected status code %d, got %d", http.StatusOK, resp.StatusCode)
+		}
+
+		for header, want := range tt.wantHeaders {
+			if got := resp.Header.Get(header); got != want {
+				t.Errorf("expected header %q to be %q, got %q", header, want, got)
+			}
+		}
+	}
+
 }

@@ -118,12 +118,14 @@ func main() {
 
 		m := cmux.New(listener)
 
-		httpsServer = getHttpsServer(upstream, dexUpstream, tlsSecretName, secrets, cert.acceptAnonymousUploads)
+		assetsDir := "/assets"
+
+		httpsServer = getHttpsServer(upstream, dexUpstream, tlsSecretName, secrets, cert.acceptAnonymousUploads, assetsDir)
 		tlsConfig := tlsconfig.ServerDefault()
 		tlsConfig.Certificates = []tls.Certificate{cert.tlsCert}
 		go httpsServer.Serve(tls.NewListener(m.Match(cmux.TLS()), tlsConfig))
 
-		httpServer = getHttpServer(cert.fingerprint, cert.acceptAnonymousUploads)
+		httpServer = getHttpServer(cert.fingerprint, cert.acceptAnonymousUploads, assetsDir)
 		go httpServer.Serve(m.Match(cmux.Any()))
 
 		log.Printf("Kurl Proxy listening on :%s\n", nodePort)
@@ -228,13 +230,13 @@ func getFingerprint(certData []byte) (string, error) {
 	return strings.ToUpper(strings.Replace(fmt.Sprintf("% x", sha1.Sum(x509Cert.Raw)), " ", ":", -1)), nil
 }
 
-func getHttpServer(fingerprint string, acceptAnonymousUploads bool) *http.Server {
+func getHttpServer(fingerprint string, acceptAnonymousUploads bool, assetsDir string) *http.Server {
 	r := gin.Default()
 
 	r.Use(CSPMiddleware)
 
-	r.StaticFS("/assets", http.Dir("/assets"))
-	r.LoadHTMLGlob("/assets/*.html")
+	r.StaticFS("/assets", http.Dir(assetsDir))
+	r.LoadHTMLGlob(fmt.Sprintf("%s/*.html", assetsDir))
 
 	r.GET("/", func(c *gin.Context) {
 		if !acceptAnonymousUploads {
@@ -277,13 +279,13 @@ func getHttpServer(fingerprint string, acceptAnonymousUploads bool) *http.Server
 	}
 }
 
-func getHttpsServer(upstream, dexUpstream *url.URL, tlsSecretName string, secrets corev1.SecretInterface, acceptAnonymousUploads bool) *http.Server {
+func getHttpsServer(upstream, dexUpstream *url.URL, tlsSecretName string, secrets corev1.SecretInterface, acceptAnonymousUploads bool, assetsDir string) *http.Server {
 	r := gin.Default()
 
 	r.Use(CSPMiddleware)
 
-	r.StaticFS("/tls/assets", http.Dir("/assets"))
-	r.LoadHTMLGlob("/assets/*.html")
+	r.StaticFS("/tls/assets", http.Dir(assetsDir))
+	r.LoadHTMLGlob(fmt.Sprintf("%s/*.html", assetsDir))
 
 	r.GET("/tls", func(c *gin.Context) {
 		if !acceptAnonymousUploads {
