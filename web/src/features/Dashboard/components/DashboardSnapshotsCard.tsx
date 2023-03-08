@@ -220,7 +220,7 @@ export const DashboardSnapshotsCard = (props: Props) => {
   /// useEffects /////
 
   return (
-    <div className="flex-column flex1 dashboard-card">
+    <div className="flex-column flex1 dashboard-card card-bg">
       <div className="flex flex1 justifyContent--spaceBetween alignItems--center">
         <p className="card-title">Snapshots</p>
         <div className="u-fontSize--small u-fontWeight--medium flex flex-auto alignItems--center">
