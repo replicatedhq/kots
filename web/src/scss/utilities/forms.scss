@@ -34,10 +34,10 @@
   }
 
   &.is-active {
-    border-color: var(--accent-color);
-    background-color: lighten($accent-color, 43.5%);
+    border-color: var(--primary-color);
+    background-color: $primary-light-color;
     &:hover {
-      border-color: var(--accent-color);
+      border-color: var(--primary-color);
     }
   }
 
@@ -84,7 +84,7 @@
     border-color: $border-color;
     cursor: pointer;
     &.replicated-select__control--is-focused {
-      border-color: var(--accent-color);
+      border-color: var(--primary-color);
       box-shadow: none;
 
       .replicated-select__dropdown-indicator {
