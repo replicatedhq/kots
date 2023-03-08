@@ -39,7 +39,7 @@
   &.warn {
     background-color: #fffdf6;
     .PreflightMessageRow p {
-      color: #f7b500;
+      color: var(--warning-color);
     }
   }
   &.fail {
