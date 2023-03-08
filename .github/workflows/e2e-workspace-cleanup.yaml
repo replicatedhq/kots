@@ -44,7 +44,6 @@ jobs:
       matrix:
         environment:
           - embedded-airgapped-install
-          - embedded-airgapped-install-k3s
           - embedded-airgapped-upgrade
           - embedded-online-install
           - embedded-online-upgrade
