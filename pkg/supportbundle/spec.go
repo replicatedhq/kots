@@ -10,6 +10,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"reflect"
 	"regexp"
 	"strings"
 	"time"
@@ -114,20 +115,52 @@ func CreateRenderedSpec(app apptypes.AppType, sequence int64, kotsKinds *kotsuti
 	}
 
 	for key, builtBundle := range builtBundles {
-		err := createSupportBundleSpecSecret(app, sequence, kotsKinds, key, builtBundle, opts, clientset)
+		secretName := GetSpecSecretName(app.GetSlug()) + "-" + key
+		err := createSupportBundleSpecSecret(app, sequence, kotsKinds, secretName, builtBundle, opts, clientset)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to create support bundle secret")
 		}
 	}
 
+	mergedBundle := mergeSupportBundleSpecs(builtBundles)
+	err = createSupportBundleSpecSecret(app, sequence, kotsKinds, GetSpecSecretName(app.GetSlug()), mergedBundle, opts, clientset)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to create support bundle secret")
+	}
+
 	// Include discovered support bundle specs and multiple kotsadm support bundle specs. Perform this action here so
 	// as not to add discovered specs to the default support bundle spec secret.c
 	// use cluster specific support bundle spec to add Spec.AfterCollection as default
-	return addDiscoveredSpecs(builtBundles[kotstypes.ClusterSpecificSupportBundleSpecKey], app, clientset), nil
+	return mergedBundle, nil
+}
+
+// mergeSupportBundleSpecs merges multiple support bundle specs into one and remove duplicates
+func mergeSupportBundleSpecs(builtBundles map[string]*troubleshootv1beta2.SupportBundle) *troubleshootv1beta2.SupportBundle {
+	mergedBundle := &troubleshootv1beta2.SupportBundle{
+		TypeMeta: v1.TypeMeta{
+			Kind:       "SupportBundle",
+			APIVersion: "troubleshoot.sh/v1beta2",
+		},
+		ObjectMeta: v1.ObjectMeta{
+			Name: "default-supportbundle",
+		},
+	}
+
+	for _, builtBundle := range builtBundles {
+		mergedBundle.Spec.Collectors = append(mergedBundle.Spec.Collectors, builtBundle.Spec.Collectors...)
+		mergedBundle.Spec.Analyzers = append(mergedBundle.Spec.Analyzers, builtBundle.Spec.Analyzers...)
+		mergedBundle.Spec.AfterCollection = append(mergedBundle.Spec.AfterCollection, builtBundle.Spec.AfterCollection...)
+	}
+
+	mergedBundle = deduplicatedCollectors(mergedBundle)
+	mergedBundle = deduplicatedAnalyzers(mergedBundle)
+	mergedBundle = deduplicatedAfterCollection(mergedBundle)
+
+	return mergedBundle
 }
 
 // createSupportBundleSpecSecret creates a secret containing the support bundle spec
-func createSupportBundleSpecSecret(app apptypes.AppType, sequence int64, kotsKinds *kotsutil.KotsKinds, key string, builtBundle *troubleshootv1beta2.SupportBundle, opts types.TroubleshootOptions, clientset kubernetes.Interface) error {
+func createSupportBundleSpecSecret(app apptypes.AppType, sequence int64, kotsKinds *kotsutil.KotsKinds, secretName string, builtBundle *troubleshootv1beta2.SupportBundle, opts types.TroubleshootOptions, clientset kubernetes.Interface) error {
 	s := serializer.NewYAMLSerializer(serializer.DefaultMetaFactory, scheme.Scheme, scheme.Scheme)
 	var b bytes.Buffer
 	if err := s.Encode(builtBundle, &b); err != nil {
@@ -167,7 +200,6 @@ func createSupportBundleSpecSecret(app apptypes.AppType, sequence int64, kotsKin
 		return errors.Wrap(err, "failed to encode support bundle")
 	}
 	renderedSpec = b.Bytes()
-	secretName := GetSpecSecretName(app.GetSlug()) + "-" + key
 
 	existingSecret, err := clientset.CoreV1().Secrets(util.PodNamespace).Get(context.TODO(), secretName, metav1.GetOptions{})
 	labels := kotstypes.MergeLabels(kotstypes.GetKotsadmLabels(), kotstypes.GetTroubleshootLabels())
@@ -212,8 +244,8 @@ func createSupportBundleSpecSecret(app apptypes.AppType, sequence int64, kotsKin
 	return nil
 }
 
-// addClusterSpecificSpec adds cluster specific and upload results URI to the support bundle
-func addClusterSpecificSpec(app apptypes.AppType, b *troubleshootv1beta2.SupportBundle, opts types.TroubleshootOptions) *troubleshootv1beta2.SupportBundle {
+// addAfterCollectionSpec adds cluster specific and upload results URI to the support bundle
+func addAfterCollectionSpec(app apptypes.AppType, b *troubleshootv1beta2.SupportBundle, opts types.TroubleshootOptions) *troubleshootv1beta2.SupportBundle {
 	supportBundle := b.DeepCopy()
 
 	// determine an upload URL
@@ -248,7 +280,7 @@ func addClusterSpecificSpec(app apptypes.AppType, b *troubleshootv1beta2.Support
 }
 
 // createClusterSpecificSupportBundle creates a support bundle spec with only cluster specific collectors, analyzers and upload result URI.
-func createClusterSpecificSupportBundle(app apptypes.AppType, opts types.TroubleshootOptions) *troubleshootv1beta2.SupportBundle {
+func createClusterSpecificSupportBundle(app apptypes.AppType, clientset *kubernetes.Clientset) *troubleshootv1beta2.SupportBundle {
 	supportBundle := &troubleshootv1beta2.SupportBundle{
 		TypeMeta: v1.TypeMeta{
 			Kind:       "SupportBundle",
@@ -259,7 +291,7 @@ func createClusterSpecificSupportBundle(app apptypes.AppType, opts types.Trouble
 		},
 	}
 
-	supportBundle = addClusterSpecificSpec(app, supportBundle, opts)
+	supportBundle = addDiscoveredSpecs(supportBundle, app, clientset)
 
 	return supportBundle
 }
@@ -270,6 +302,7 @@ func addDefaultSpec(app apptypes.AppType, b *troubleshootv1beta2.SupportBundle, 
 
 	supportBundle = addDefaultTroubleshoot(supportBundle, imageName, pullSecret)
 	supportBundle = addDefaultDynamicTroubleshoot(supportBundle, app, imageName, pullSecret)
+	supportBundle = addAfterCollectionSpec(app, supportBundle, opts)
 	supportBundle = populateNamespaces(supportBundle, namespacesToCollect, namespacesToAnalyze)
 
 	return supportBundle
@@ -323,12 +356,12 @@ func injectDefaults(app apptypes.AppType, b *troubleshootv1beta2.SupportBundle, 
 	}
 
 	vendorSupportBundle := supportBundle.DeepCopy()
-	clusterSpecificSupportBundle := createClusterSpecificSupportBundle(app, opts)
+	clusterSpecificSupportBundle := createClusterSpecificSupportBundle(app, clientset)
 	defaultSupportBundle := createDefaultSupportBundle(app, opts, namespacesToCollect, namespacesToAnalyze, imageName, pullSecret)
 
 	return map[string]*troubleshootv1beta2.SupportBundle{
 		kotstypes.VendorSpecificSupportBundleSpecKey:  vendorSupportBundle,          //vendors' application support-bundle spec
-		kotstypes.ClusterSpecificSupportBundleSpecKey: clusterSpecificSupportBundle, //cluster-specific support-bundle spec with upload results URI
+		kotstypes.ClusterSpecificSupportBundleSpecKey: clusterSpecificSupportBundle, //cluster-specific support-bundle spec discovered from the cluster
 		kotstypes.DefaultSupportBundleSpecKey:         defaultSupportBundle,         //default support-bundle spec
 	}, nil
 }
@@ -616,6 +649,21 @@ func deduplicatedAnalyzers(supportBundle *troubleshootv1beta2.SupportBundle) *tr
 	next.Spec.Analyzers = analyzers
 
 	return next
+}
+
+func deduplicatedAfterCollection(supportBundle *troubleshootv1beta2.SupportBundle) *troubleshootv1beta2.SupportBundle {
+	b := supportBundle.DeepCopy()
+
+	for i := 0; i < len(b.Spec.AfterCollection); i++ {
+		for j := i + 1; j < len(b.Spec.AfterCollection); j++ {
+			if reflect.DeepEqual(b.Spec.AfterCollection[i], b.Spec.AfterCollection[j]) {
+				b.Spec.AfterCollection = append(b.Spec.AfterCollection[:j], b.Spec.AfterCollection[j+1:]...)
+				j--
+			}
+		}
+	}
+
+	return b
 }
 
 // addDefaultTroubleshoot adds kots.io (github.com/replicatedhq/kots/support-bundle/spec.yaml) spec to the support bundle.

@@ -119,17 +119,13 @@ func GetSpecSecretName(appSlug string) string {
 	return fmt.Sprintf("kotsadm-%s-supportbundle", appSlug)
 }
 
-func GetSpecURI(appSlug string) string {
-	return fmt.Sprintf("secret/%s/%s", util.PodNamespace, GetSpecSecretName(appSlug))
-}
-
 func GetBundleCommand(appSlug string) []string {
 	redactURIs := []string{redact.GetKotsadmRedactSpecURI(), redact.GetAppRedactSpecURI(appSlug)}
 	redactors := strings.Join(redactURIs, ",")
 
 	command := []string{
 		"curl https://krew.sh/support-bundle | bash",
-		fmt.Sprintf("kubectl support-bundle %s --redactors=%s\n", GetSpecURI(appSlug), redactors),
+		fmt.Sprintf("kubectl support-bundle --load-cluster-specs --redactors=%s\n", redactors),
 	}
 
 	return command
@@ -189,11 +185,11 @@ func CreateSupportBundleDependencies(app apptypes.AppType, sequence int64, opts 
 
 	supportBundleObj := types.SupportBundle{
 		AppID:      app.GetID(),
-		URI:        GetSpecURI(app.GetSlug()),
 		RedactURIs: redactURIs,
 		Progress: types.SupportBundleProgress{
 			CollectorCount: len(supportBundle.Spec.Collectors),
 		},
+		BundleSpec: supportBundle,
 	}
 
 	return &supportBundleObj, nil

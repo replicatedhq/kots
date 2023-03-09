@@ -349,6 +349,212 @@ func Test_deduplicatedAnalyzers(t *testing.T) {
 	}
 }
 
+func Test_deduplicatedAfterCollection(t *testing.T) {
+	type args struct {
+		supportBundle *troubleshootv1beta2.SupportBundle
+	}
+	tests := []struct {
+		name string
+		args args
+		want *troubleshootv1beta2.SupportBundle
+	}{
+		{
+			name: "duplicated upload results to",
+			args: args{
+				supportBundle: &troubleshootv1beta2.SupportBundle{
+					Spec: troubleshootv1beta2.SupportBundleSpec{
+						AfterCollection: []*troubleshootv1beta2.AfterCollection{
+							{
+								UploadResultsTo: &troubleshootv1beta2.ResultRequest{
+									URI:       "first",
+									Method:    "PUT",
+									RedactURI: "first",
+								},
+							},
+							{
+								UploadResultsTo: &troubleshootv1beta2.ResultRequest{
+									URI:       "first",
+									Method:    "PUT",
+									RedactURI: "first",
+								},
+							},
+						},
+					},
+				},
+			},
+			want: &troubleshootv1beta2.SupportBundle{
+				Spec: troubleshootv1beta2.SupportBundleSpec{
+					AfterCollection: []*troubleshootv1beta2.AfterCollection{
+						{
+							UploadResultsTo: &troubleshootv1beta2.ResultRequest{
+								URI:       "first",
+								Method:    "PUT",
+								RedactURI: "first",
+							},
+						},
+					},
+				},
+			},
+		},
+		{
+			name: "duplicated upload results to field",
+			args: args{
+				supportBundle: &troubleshootv1beta2.SupportBundle{
+					Spec: troubleshootv1beta2.SupportBundleSpec{
+						AfterCollection: []*troubleshootv1beta2.AfterCollection{
+							{
+								UploadResultsTo: &troubleshootv1beta2.ResultRequest{
+									URI:       "first",
+									Method:    "PUT",
+									RedactURI: "first",
+								},
+							},
+							{
+								UploadResultsTo: &troubleshootv1beta2.ResultRequest{
+									URI:       "first",
+									Method:    "PUT",
+									RedactURI: "second",
+								},
+							},
+						},
+					},
+				},
+			},
+			want: &troubleshootv1beta2.SupportBundle{
+				Spec: troubleshootv1beta2.SupportBundleSpec{
+					AfterCollection: []*troubleshootv1beta2.AfterCollection{
+						{
+							UploadResultsTo: &troubleshootv1beta2.ResultRequest{
+								URI:       "first",
+								Method:    "PUT",
+								RedactURI: "first",
+							},
+						},
+						{
+							UploadResultsTo: &troubleshootv1beta2.ResultRequest{
+								URI:       "first",
+								Method:    "PUT",
+								RedactURI: "second",
+							},
+						},
+					},
+				},
+			},
+		},
+		{
+			name: "no duplicated upload results to",
+			args: args{
+				supportBundle: &troubleshootv1beta2.SupportBundle{
+					Spec: troubleshootv1beta2.SupportBundleSpec{
+						AfterCollection: []*troubleshootv1beta2.AfterCollection{
+							{
+								UploadResultsTo: &troubleshootv1beta2.ResultRequest{
+									URI:       "first",
+									Method:    "PUT",
+									RedactURI: "first",
+								},
+							},
+							{
+								UploadResultsTo: &troubleshootv1beta2.ResultRequest{
+									URI:       "second",
+									Method:    "PUT",
+									RedactURI: "second",
+								},
+							},
+						},
+					},
+				},
+			},
+			want: &troubleshootv1beta2.SupportBundle{
+				Spec: troubleshootv1beta2.SupportBundleSpec{
+					AfterCollection: []*troubleshootv1beta2.AfterCollection{
+						{
+							UploadResultsTo: &troubleshootv1beta2.ResultRequest{
+								URI:       "first",
+								Method:    "PUT",
+								RedactURI: "first",
+							},
+						},
+						{
+							UploadResultsTo: &troubleshootv1beta2.ResultRequest{
+								URI:       "second",
+								Method:    "PUT",
+								RedactURI: "second",
+							},
+						},
+					},
+				},
+			},
+		},
+		{
+			name: "multiple duplicated upload results to",
+			args: args{
+				supportBundle: &troubleshootv1beta2.SupportBundle{
+					Spec: troubleshootv1beta2.SupportBundleSpec{
+						AfterCollection: []*troubleshootv1beta2.AfterCollection{
+							{
+								UploadResultsTo: &troubleshootv1beta2.ResultRequest{
+									URI:       "first",
+									Method:    "PUT",
+									RedactURI: "first",
+								},
+							},
+							{
+								UploadResultsTo: &troubleshootv1beta2.ResultRequest{
+									URI:       "second",
+									Method:    "PUT",
+									RedactURI: "second",
+								},
+							},
+							{
+								UploadResultsTo: &troubleshootv1beta2.ResultRequest{
+									URI:       "first",
+									Method:    "PUT",
+									RedactURI: "first",
+								},
+							},
+							{
+								UploadResultsTo: &troubleshootv1beta2.ResultRequest{
+									URI:       "second",
+									Method:    "PUT",
+									RedactURI: "second",
+								},
+							},
+						},
+					},
+				},
+			},
+			want: &troubleshootv1beta2.SupportBundle{
+				Spec: troubleshootv1beta2.SupportBundleSpec{
+					AfterCollection: []*troubleshootv1beta2.AfterCollection{
+						{
+							UploadResultsTo: &troubleshootv1beta2.ResultRequest{
+								URI:       "first",
+								Method:    "PUT",
+								RedactURI: "first",
+							},
+						},
+						{
+							UploadResultsTo: &troubleshootv1beta2.ResultRequest{
+								URI:       "second",
+								Method:    "PUT",
+								RedactURI: "second",
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := deduplicatedAfterCollection(tt.args.supportBundle); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("deduplicatedAfterCollection() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
 func Test_findSupportBundleSecrets(t *testing.T) {
 	encode := func(s string) []byte {
 		return []byte(base64.StdEncoding.EncodeToString([]byte(s)))
