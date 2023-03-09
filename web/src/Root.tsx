@@ -455,7 +455,7 @@ const Root = () => {
               logo={state.themeState.navbarLogo || state.appLogo}
               refetchAppsList={getAppsList}
               fetchingMetadata={state.fetchingMetadata}
-              isKurlEnabled={state.adminConsoleMetadata?.isKurl}
+              isKurlEnabled={Boolean(state.adminConsoleMetadata?.isKurl)}
               isGitOpsSupported={isGitOpsSupported()}
               isIdentityServiceSupported={isIdentityServiceSupported()}
               appsList={state.appsList}
