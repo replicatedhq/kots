@@ -133,7 +133,7 @@ const PreflightResultErrors = (props: Props) => {
 
   return (
     <div className="flex flex1 flex-column">
-      <div className="flex flex1 u-height--full u-width--full u-marginTop--5 u-marginBottom--20">
+      <div className="flex flex1 u-height--full u-width--full u-marginTop--5 tw-mb-6">
         <div className="flex-column u-width--full u-overflow--hidden u-paddingTop--30 u-paddingBottom--5 alignItems--center justifyContent--center">
           <div className="PreChecksBox-wrapper flex-column u-padding--20">
             <div className="flex">
@@ -211,14 +211,6 @@ const PreflightResultErrors = (props: Props) => {
                   {command}
                 </CodeSnippet>
               ) : null}
-            </div>
-            <div className="u-marginTop--30 flex justifyContent--flexEnd">
-              <span
-                className="link u-marginLeft--20 u-fontSize--normal"
-                onClick={props.ignorePermissionErrors}
-              >
-                Proceed with limited Preflights
-              </span>
             </div>
           </div>
         </div>
