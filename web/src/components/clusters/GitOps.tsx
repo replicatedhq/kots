@@ -6,7 +6,10 @@ import { GitOpsProvider } from "../../features/Gitops/context";
 import "../../scss/components/watches/WatchedApps.scss";
 import "../../scss/components/watches/WatchCard.scss";
 
-export class GitOps extends React.Component {
+interface Props {
+  appName: string;
+}
+export class GitOps extends React.Component<Props> {
   render() {
     return (
       <GitOpsProvider>

@@ -593,7 +593,7 @@ const Root = () => {
                 <ProtectedRoute
                   path="/gitops"
                   render={(props) => (
-                    <GitOps {...props} appName={state.selectedAppName} />
+                    <GitOps {...props} appName={state.selectedAppName || ""} />
                   )}
                 />
                 <ProtectedRoute

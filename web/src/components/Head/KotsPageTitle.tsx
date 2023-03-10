@@ -25,10 +25,10 @@ function makePageTitle({
 */
 function KotsPageTitle({
   pageName,
-  showAppSlug,
+  showAppSlug = false,
 }: {
   pageName: string;
-  showAppSlug: boolean;
+  showAppSlug?: boolean;
 }) {
   const { slug } = useParams<KotsParams>();
 
