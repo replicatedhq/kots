@@ -1,6 +1,13 @@
 import * as React from "react";
 import classNames from "classnames";
-export default class Loader extends React.Component {
+
+interface Props {
+  className?: string;
+  displayBlock?: boolean;
+  size?: string;
+}
+
+export default class Loader extends React.Component<Props> {
   render() {
     const { className, displayBlock, size } = this.props;
 
