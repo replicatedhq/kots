@@ -148,21 +148,6 @@
     }
   }
 
-  &.secondary.dark {
-    background-color: #ffffff;
-    border-width: 1px;
-    border-style: solid;
-    border-color: darken($primary-color, 30%);
-    color: darken($primary-color, 30%);
-    box-shadow: none;
-
-    &:not(:disabled):hover {
-      background-color: $primary-light-color;
-      border-color: darken($primary-color, 42%);
-      color: darken($primary-color, 42%);
-    }
-  }
-
   &.secondary.smallPadding {
     padding: 3px 12px 3px;
   }
