@@ -1,19 +1,15 @@
 import React, { Component, Fragment } from "react";
 import classNames from "classnames";
-import PropTypes from "prop-types";
 
 import Loader from "@src/components/shared/Loader";
 import "@src/scss/components/shared/SideBar.scss";
 
-class SideBar extends Component {
-  static propTypes = {
-    /** @type {String} className to use for styling */
-    className: PropTypes.string,
-
-    /** @type {Array<JSX>} array of JSX elements to render */
-    items: PropTypes.array.isRequired,
-  };
-
+interface Props {
+  className?: string;
+  items: (JSX.Element | undefined)[];
+  loading?: boolean;
+}
+class SideBar extends Component<Props> {
   static defaultProps = {
     items: [],
   };
