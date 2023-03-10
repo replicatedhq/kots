@@ -546,8 +546,7 @@ function AppVersionHistoryRow(props: Props) {
           <div className="flex alignItems--center">
             <button
               className={classNames("btn u-marginLeft--10", {
-                "secondary dark": isRollback,
-                "secondary blue": isSecondaryBtn,
+                "secondary blue": isSecondaryBtn || isRollback,
                 "primary blue": isPrimaryButton,
               })}
               disabled={isActionButtonDisabled(version)}
