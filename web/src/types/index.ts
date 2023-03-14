@@ -19,6 +19,7 @@ export type App = {
   isIdentityServiceSupported: boolean;
   isSemverRequired: boolean;
   isSupportBundleUploadSupported: boolean;
+  licenseType: string;
   name: string;
   namespace: string;
   needsRegistry?: boolean;

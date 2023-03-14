@@ -2,15 +2,38 @@ import React, { PureComponent } from "react";
 import PropTypes from "prop-types";
 import classNames from "classnames";
 import { withRouter } from "@src/utilities/react-router-utilities";
+import { RouteComponentProps } from "react-router-dom";
 import { Link } from "react-router-dom";
 import { Utilities } from "@src/utilities/utilities";
 import ErrorModal from "../modals/ErrorModal";
 import NavBarDropdown from "./NavBarDropdown";
 
 import "@src/scss/components/shared/NavBar.scss";
+import { App } from "@types";
 
-export class NavBar extends PureComponent {
-  constructor(props) {
+interface Props extends Partial<RouteComponentProps> {
+  appsList: App[];
+  className?: string;
+  errLoggingOut: string;
+  fetchingMetadata: boolean;
+  isGitOpsSupported: boolean;
+  isHelmManaged: boolean;
+  isIdentityServiceSupported: boolean;
+  isKurlEnabled: boolean;
+  isSnapshotsSupported: boolean;
+  logo: string | null;
+  onLogoutError: (message: string) => void;
+  refetchAppsList: () => void;
+}
+
+interface State {
+  displayErrorModal: boolean;
+  loggingOut: boolean;
+  selectedTab: string;
+}
+
+export class NavBar extends PureComponent<Props, State> {
+  constructor(props: Props) {
     super(props);
 
     this.state = {
@@ -25,7 +48,7 @@ export class NavBar extends PureComponent {
     history: PropTypes.object.isRequired,
   };
 
-  handleLogOut = async (e) => {
+  handleLogOut = async (e: React.ChangeEvent) => {
     const { onLogoutError } = this.props;
     e.preventDefault();
     try {
@@ -52,10 +75,10 @@ export class NavBar extends PureComponent {
       }
     } catch (err) {
       console.log(err);
+      const errorMessage =
+        err instanceof Error ? err.message : "Something went wrong.";
       this.setState({ loggingOut: false, displayErrorModal: true });
-      onLogoutError(
-        err ? err.message : "Something went wrong, please try again."
-      );
+      onLogoutError(errorMessage);
     }
   };
 
@@ -63,9 +86,8 @@ export class NavBar extends PureComponent {
     this.setState({ displayErrorModal: !this.state.displayErrorModal });
   };
 
-  componentDidUpdate(lastProps) {
-    const { pathname } = this.props.location;
-    if (pathname !== lastProps.location.pathname) {
+  componentDidUpdate(lastProps: Props) {
+    if (this.props.location?.pathname !== lastProps.location?.pathname) {
       this.setSelectedTab();
     }
   }
@@ -75,48 +97,47 @@ export class NavBar extends PureComponent {
   }
 
   setSelectedTab = () => {
-    const { pathname } = this.props.location;
     let selectedTab = "";
-    if (pathname === "/gitops") {
+    if (this.props.location?.pathname === "/gitops") {
       selectedTab = "gitops";
-    } else if (pathname === "/cluster/manage") {
+    } else if (this.props.location?.pathname === "/cluster/manage") {
       selectedTab = "cluster_management";
-    } else if (pathname.startsWith("/app")) {
+    } else if (this.props.location?.pathname.startsWith("/app")) {
       selectedTab = "dashboard";
-    } else if (pathname.startsWith("/snapshots")) {
+    } else if (this.props.location?.pathname.startsWith("/snapshots")) {
       selectedTab = "snapshots";
-    } else if (pathname.startsWith("/access")) {
+    } else if (this.props.location?.pathname.startsWith("/access")) {
       selectedTab = "access";
     }
     this.setState({ selectedTab });
   };
 
   handleGoToGitOps = () => {
-    if (this.props.location.pathname !== "/gitops") {
-      this.props.history.push("/gitops");
+    if (this.props.location?.pathname !== "/gitops") {
+      this.props.history?.push("/gitops");
     }
   };
 
   handleGoToClusterManagement = () => {
-    this.props.history.push("/cluster/manage");
+    this.props.history?.push("/cluster/manage");
   };
 
   handleAddNewApplication = () => {
-    this.props.history.push("/upload-license");
+    this.props.history?.push("/upload-license");
   };
 
   handleGoToSnapshots = () => {
-    this.props.history.push("/snapshots");
+    this.props.history?.push("/snapshots");
   };
 
   handleGoToAccess = () => {
-    this.props.history.push("/access");
+    this.props.history?.push("/access");
   };
 
   redirectToDashboard = () => {
     const { history, refetchAppsList } = this.props;
     refetchAppsList();
-    history.push("/");
+    history?.push("/");
   };
 
   render() {
@@ -133,7 +154,7 @@ export class NavBar extends PureComponent {
     } = this.props;
     const { selectedTab } = this.state;
 
-    const pathname = location.pathname.split("/");
+    const pathname = location?.pathname.split("/") || "";
     let selectedApp;
     let appLogo;
     let licenseType;
@@ -149,7 +170,7 @@ export class NavBar extends PureComponent {
     }
 
     const isClusterScope =
-      this.props.location.pathname.includes("/clusterscope");
+      this.props.location?.pathname.includes("/clusterscope");
     return (
       <div
         className={classNames("NavBarWrapper", className, {
@@ -159,7 +180,7 @@ export class NavBar extends PureComponent {
         <div className="flex flex-auto u-height--full">
           <div className="flex alignItems--center flex1 flex-verticalCenter u-position--relative">
             <div className="HeaderLogo">
-              <Link to={isClusterScope ? "/clusterscope" : "/"} tabIndex="-1">
+              <Link to={isClusterScope ? "/clusterscope" : "/"} tabIndex={-1}>
                 {appLogo ? (
                   <span
                     className="nav-logo clickable"
@@ -275,4 +296,5 @@ export class NavBar extends PureComponent {
   }
 }
 
+// @ts-ignore
 export default withRouter(NavBar);
