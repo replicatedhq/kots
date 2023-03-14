@@ -1,3 +1,7 @@
+// DO NOT CACHE THE PARSED SPEC
+// All getters always parse the bundle from the raw spec (embedded files)
+// to ensure that we fetch the latest specs defined in URI fields (if any)
+
 package staticspecs
 
 import (
@@ -19,40 +23,18 @@ var vendorspec []byte
 //go:embed defaultspec.yaml
 var defaultspec []byte
 
-var spec *troubleshootv1beta2.SupportBundle
-
-func GetVendorSpec() troubleshootv1beta2.SupportBundle {
-	var err error
-	spec, err = supportbundle.ParseSupportBundleFromDoc(vendorspec)
-	if err != nil {
-		panic(err)
-	}
-	return *spec.DeepCopy()
+func GetVendorSpec() (*troubleshootv1beta2.SupportBundle, error) {
+	return supportbundle.ParseSupportBundleFromDoc(vendorspec)
 }
 
-func GetClusterSpecificSpec() troubleshootv1beta2.SupportBundle {
-	var err error
-	spec, err = supportbundle.ParseSupportBundleFromDoc(clusterspec)
-	if err != nil {
-		panic(err)
-	}
-	return *spec.DeepCopy()
+func GetClusterSpecificSpec() (*troubleshootv1beta2.SupportBundle, error) {
+	return supportbundle.ParseSupportBundleFromDoc(clusterspec)
 }
 
-func GetDefaultSpec() troubleshootv1beta2.SupportBundle {
-	var err error
-	spec, err = supportbundle.ParseSupportBundleFromDoc(defaultspec)
-	if err != nil {
-		panic(err)
-	}
-	return *spec.DeepCopy()
+func GetDefaultSpec() (*troubleshootv1beta2.SupportBundle, error) {
+	return supportbundle.ParseSupportBundleFromDoc(defaultspec)
 }
 
-func GetKurlSpec() troubleshootv1beta2.SupportBundle {
-	var err error
-	spec, err = supportbundle.ParseSupportBundleFromDoc(kurlspec)
-	if err != nil {
-		panic(err)
-	}
-	return *spec.DeepCopy()
+func GetKurlSpec() (*troubleshootv1beta2.SupportBundle, error) {
+	return supportbundle.ParseSupportBundleFromDoc(kurlspec)
 }
