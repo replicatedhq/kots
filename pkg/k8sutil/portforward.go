@@ -257,6 +257,7 @@ func PortForward(localPort int, remotePort int, namespace string, getPodName fun
 
 		sleepTime := time.Second
 		go func() {
+			prevServiceForwardErrMap := map[string]error{}
 			for keepPolling {
 				time.Sleep(sleepTime)
 				sleepTime = time.Second * 5
@@ -326,14 +327,23 @@ func PortForward(localPort int, remotePort int, namespace string, getPodName fun
 
 					serviceStopCh, err := ServiceForward(clientset, cfg, desiredAdditionalPort.LocalPort, desiredAdditionalPort.ServicePort, namespace, desiredAdditionalPort.ServiceName)
 					if err != nil {
-						log.Error(errors.Wrap(err, fmt.Sprintf("failed to execute kubectl port-forward -n %s svc/%s %d:%d", namespace, desiredAdditionalPort.ServiceName, desiredAdditionalPort.LocalPort, desiredAdditionalPort.ServicePort)))
+						prevServiceForwardErr := prevServiceForwardErrMap[desiredAdditionalPort.ServiceName]
+						if prevServiceForwardErr == nil || prevServiceForwardErr.Error() != err.Error() {
+							log.Error(errors.Wrap(err, fmt.Sprintf("failed to execute kubectl port-forward -n %s svc/%s %d:%d", namespace, desiredAdditionalPort.ServiceName, desiredAdditionalPort.LocalPort, desiredAdditionalPort.ServicePort)))
+							prevServiceForwardErrMap[desiredAdditionalPort.ServiceName] = err
+						}
 						continue // try again
 					}
 					if serviceStopCh == nil {
 						// we didn't do the port forwarding, probably because the pod isn't ready.
 						// try again next loop
 						// The API doesn't return ports that aren't ready, so this is possibly rbac?
-						log.Error(errors.Errorf("failed to forward port. check that you have permission to run kubectl port-forward -n %s svc/%s %d:%d", namespace, desiredAdditionalPort.ServiceName, desiredAdditionalPort.LocalPort, desiredAdditionalPort.ServicePort))
+						err = errors.Errorf("failed to forward port. check that you have permission to run kubectl port-forward -n %s svc/%s %d:%d", namespace, desiredAdditionalPort.ServiceName, desiredAdditionalPort.LocalPort, desiredAdditionalPort.ServicePort)
+						prevServiceForwardErr := prevServiceForwardErrMap[desiredAdditionalPort.ServiceName]
+						if prevServiceForwardErr == nil || prevServiceForwardErr.Error() != err.Error(){
+							log.Error(err)
+							prevServiceForwardErrMap[desiredAdditionalPort.ServiceName] = err
+						}
 						continue // try again
 					}
 
