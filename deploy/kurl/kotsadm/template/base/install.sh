@@ -579,9 +579,16 @@ function check_stateful_set_readiness() {
 
 function kotsadm_ready_spinner() {
     sleep 1 # ensure that kubeadm has had time to begin applying and scheduling the kotsadm pods
-    if ! spinner_until 180 check_deployment_readiness "kotsadm"; then
-      kubectl logs -l "app=kotsadm" --all-containers --tail 10
-      bail "The kotsadm statefulset in the kotsadm addon failed to deploy successfully."
+    if [ "$KOTSADM_DISABLE_S3" == "1" ]; then
+        if ! spinner_until 180 check_stateful_set_readiness "kotsadm"; then
+            kubectl logs -l "app=kotsadm" --all-containers --tail 10
+            bail "The kotsadm statefulset in the kotsadm addon failed to deploy successfully."
+        fi
+    else
+        if ! spinner_until 180 check_deployment_readiness "kotsadm"; then
+            kubectl logs -l "app=kotsadm" --all-containers --tail 10
+            bail "The kotsadm deployment in the kotsadm addon failed to deploy successfully."
+        fi
     fi
 }
 
