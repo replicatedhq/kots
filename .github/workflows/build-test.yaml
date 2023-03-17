@@ -563,7 +563,7 @@ jobs:
         id: vars
         run: |
           addon_version=${{ needs.generate-tag.outputs.tag }}
-          echo "name=addon_version::${addon_version#v}" >> "$GITHUB_OUTPUT"
+          echo "addon_version=${addon_version#v}" >> "$GITHUB_OUTPUT"
       - name: download kots binary
         uses: actions/download-artifact@v3
         with:
