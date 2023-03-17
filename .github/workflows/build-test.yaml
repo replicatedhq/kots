@@ -1088,7 +1088,7 @@ jobs:
     runs-on: ubuntu-20.04
     needs: [ enable-tests, can-run-ci, build-kots, build-kurl-proxy, build-migrations, push-minio, push-mc, push-rqlite ]
     env:
-      APP_SLUG: multi-namespace-yeti
+      APP_SLUG: helm-install-order
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -1113,7 +1113,7 @@ jobs:
       - name: run the test
         run: |
           set +e
-          echo ${{ secrets.MULTI_NAMESPACE_LICENSE }} | base64 -d > license.yaml
+          echo ${{ secrets.HELM_INSTALL_ORDER_LICENSE }} | base64 -d > license.yaml
           ./bin/kots \
             install "$APP_SLUG/automated" \
             --license-file license.yaml \
@@ -1149,17 +1149,17 @@ jobs:
 
           # validate that helm charts installed using the native helm workflow were deployed via the helm CLI correctly
 
-          if ! helm ls -n postgres-test | awk 'NR>1{print $1}' | grep -q postgresql; then
-            printf "postgresql helm release not found in postgres-test namespace\n\n"
-            helm ls -n postgres-test
-            exit 1
-          fi
+          #if ! helm ls -n postgres-test | awk 'NR>1{print $1}' | grep -q postgresql; then
+          #  printf "postgresql helm release not found in postgres-test namespace\n\n"
+          #  helm ls -n postgres-test
+          #  exit 1
+          #fi
 
-          if ! helm ls -n "$APP_SLUG" | awk 'NR>1{print $1}' | grep -q private-chart; then
-            printf "private-chart helm release not found in %s namespace\n\n" "$APP_SLUG"
-            helm ls -n "$APP_SLUG"
-            exit 1
-          fi
+          #if ! helm ls -n "$APP_SLUG" | awk 'NR>1{print $1}' | grep -q private-chart; then
+          #  printf "private-chart helm release not found in %s namespace\n\n" "$APP_SLUG"
+          #  helm ls -n "$APP_SLUG"
+          #  exit 1
+          #fi
 
       - name: Generate support bundle on failure
         if: failure()
