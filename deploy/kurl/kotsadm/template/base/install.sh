@@ -477,26 +477,55 @@ function kotsadm_scale_down() {
     fi
 }
 
-function kotsadm_health_check() {
-    local selector=$1
-    # Get pods below will initially return only 0 lines
-    # Then it will return 1 line: "PodScheduled=True"
-    # Finally, it will return 4 lines.  And this is when we want to grep until "Ready=False" is not shown, and '1/1 Running' is
-    if [ $(kubectl get pods -l ${selector} -o jsonpath="{range .items[*]}{range .status.conditions[*]}{ .type }={ .status }{'\n'}{end}{end}" 2>/dev/null | wc -l) -ne 4 ]; then
-        # if this returns more than 4 lines, there are multiple copies of the pod running, which is a failure
-        return 1
+function check_deployment_readiness() {
+    deploymentName=$1
+    podHashLabel="pod-template-hash"
+
+    # Get the current state of the deploymeny
+    deployment=$(kubectl get deployment "${deploymentName}" -o jsonpath='{.spec.replicas}/{.status.readyReplicas}/{.metadata.generation}/{.status.observedGeneration}')
+
+    # Split the deployment into its parts
+    desiredReplicas=$(echo "$deployment" | cut -d'/' -f1)
+    readyReplicas=$(echo "$deployment" | cut -d'/' -f2)
+    metadataGeneration=$(echo "$deployment" | cut -d'/' -f3)
+    observedGeneration=$(echo "$deployment" | cut -d'/' -f4)
+
+    if [[ "$desiredReplicas" == "$readyReplicas" &&  "$desiredReplicas" != "" && "$readyReplicas" != "" &&
+            "$metadataGeneration" == "$observedGeneration" && "$metadataGeneration" != "" && "$observedGeneration" != "" ]]; then
+
+        # get replicaset by describing deployment
+        replicasetName=$(kubectl describe deployment "${deploymentName}" | grep "^NewReplicaSet:" | awk '{print $2}')
+
+        # get pod-template-hash label value from replicaset
+        podHashValue=$(kubectl get replicaset "${replicasetName}" -o jsonpath='{.spec.template.metadata.labels.'$podHashLabel'}')
+        
+        # get pods by labels
+        pods=$(kubectl get pods -l app="${deploymentName}",pod-template-hash="${podHashValue}" -o jsonpath='{.items[*].metadata.name}')
+        if [[ -z "$pods" ]]; then
+            return 1
+        fi
+
+        podCount=$(echo "$pods" | wc -w)
+        if [ "$podCount" != "$desiredReplicas" ]; then
+            return 1
+        fi
+
+        for podName in $pods; do
+        
+            pod=$(kubectl get pod "$podName" -o=jsonpath='{.metadata.ownerReferences[?(@.kind=="ReplicaSet")].name}/{.status.phase}/{.status.conditions[?(@.type=="Ready")].status}')
+
+            owner=$(echo "$pod" | cut -d'/' -f1)
+            phase=$(echo "$pod" | cut -d'/' -f2)
+            status=$(echo "$pod" | cut -d'/' -f3)
+
+            if [[ "$owner" != "$replicasetName" && "$phase" != "Running" && "$status" != "True" ]]; then
+                return 1
+            fi
+        done
+        return 0
     fi
 
-    if [[ -n $(kubectl get pods -l ${selector} --field-selector=status.phase=Running -o jsonpath="{range .items[*]}{range .status.conditions[*]}{ .type }={ .status }{'\n'}{end}{end}" 2>/dev/null | grep -q Ready=False) ]]; then
-        # if there is a pod with Ready=False, then kotsadm is not ready
-        return 1
-    fi
-
-    if [[ -z $(kubectl get pods -l ${selector} --field-selector=status.phase=Running 2>/dev/null | grep '1/1' | grep 'Running') ]]; then
-        # when kotsadm is ready, it will be '1/1 Running'
-        return 1
-    fi
-    return 0
+    return 1
 }
 
 function check_stateful_set_readiness() {
@@ -531,13 +560,14 @@ function check_stateful_set_readiness() {
 
         for podName in $pods; do
         
-            pod=$(kubectl get pod "$podName" -o=jsonpath='{.metadata.ownerReferences[?(@.kind=="StatefulSet")].name}/{.metadata.labels.'$statefulSetPodVersionLabel'}/{.status.phase}')
+            pod=$(kubectl get pod "$podName" -o=jsonpath='{.metadata.ownerReferences[?(@.kind=="StatefulSet")].name}/{.metadata.labels.'$statefulSetPodVersionLabel'}/{.status.phase}/{.status.conditions[?(@.type=="Ready")].status}')
 
             owner=$(echo "$pod" | cut -d'/' -f1)
             version=$(echo "$pod" | cut -d'/' -f2)
             phase=$(echo "$pod" | cut -d'/' -f3)
+            status=$(echo "$pod" | cut -d'/' -f4)
 
-            if [[ "$owner" != "$statefulsetName"  && "$version" != "$currentRevision" && "$phase" != "Running" ]]; then
+            if [[ "$owner" != "$statefulsetName"  && "$version" != "$currentRevision" && "$phase" != "Running" && "$status" != "True" ]]; then
                 return 1
             fi
         done
@@ -549,7 +579,7 @@ function check_stateful_set_readiness() {
 
 function kotsadm_ready_spinner() {
     sleep 1 # ensure that kubeadm has had time to begin applying and scheduling the kotsadm pods
-    if ! spinner_until 180 kotsadm_health_check "app=kotsadm"; then
+    if ! spinner_until 180 check_deployment_readiness "kotsadm"; then
       kubectl logs -l "app=kotsadm" --all-containers --tail 10
       bail "The kotsadm statefulset in the kotsadm addon failed to deploy successfully."
     fi
