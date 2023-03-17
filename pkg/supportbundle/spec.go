@@ -649,54 +649,29 @@ func populateNamespaces(supportBundle *troubleshootv1beta2.SupportBundle, namesp
 func deduplicatedCollectors(supportBundle *troubleshootv1beta2.SupportBundle) *troubleshootv1beta2.SupportBundle {
 	next := supportBundle.DeepCopy()
 
-	collectors := []*troubleshootv1beta2.Collect{}
-
-	hasClusterResources := false
-	hasClusterInfo := false
-	hasCeph := false
-	hasLonghorn := false
-	hasSysctl := false
-
-	for _, c := range next.Spec.Collectors {
-		if c.ClusterResources != nil {
-			if hasClusterResources {
-				continue
+	for i := 0; i < len(next.Spec.Collectors); i++ {
+		for j := i + 1; j < len(next.Spec.Collectors); j++ {
+			if reflect.DeepEqual(next.Spec.Collectors[i], next.Spec.Collectors[j]) {
+				next.Spec.Collectors = append(next.Spec.Collectors[:j], next.Spec.Collectors[j+1:]...)
+				j--
+			} else if next.Spec.Collectors[i].ClusterResources != nil && next.Spec.Collectors[j].ClusterResources != nil {
+				next.Spec.Collectors = append(next.Spec.Collectors[:j], next.Spec.Collectors[j+1:]...)
+				j--
+			} else if next.Spec.Collectors[i].ClusterInfo != nil && next.Spec.Collectors[j].ClusterInfo != nil {
+				next.Spec.Collectors = append(next.Spec.Collectors[:j], next.Spec.Collectors[j+1:]...)
+				j--
+			} else if next.Spec.Collectors[i].Ceph != nil && next.Spec.Collectors[j].Ceph != nil {
+				next.Spec.Collectors = append(next.Spec.Collectors[:j], next.Spec.Collectors[j+1:]...)
+				j--
+			} else if next.Spec.Collectors[i].Longhorn != nil && next.Spec.Collectors[j].Longhorn != nil {
+				next.Spec.Collectors = append(next.Spec.Collectors[:j], next.Spec.Collectors[j+1:]...)
+				j--
+			} else if next.Spec.Collectors[i].Sysctl != nil && next.Spec.Collectors[j].Sysctl != nil {
+				next.Spec.Collectors = append(next.Spec.Collectors[:j], next.Spec.Collectors[j+1:]...)
+				j--
 			}
-			hasClusterResources = true
 		}
-
-		if c.ClusterInfo != nil {
-			if hasClusterInfo {
-				continue
-			}
-			hasClusterInfo = true
-		}
-
-		if c.Ceph != nil {
-			if hasCeph {
-				continue
-			}
-			hasCeph = true
-		}
-
-		if c.Longhorn != nil {
-			if hasLonghorn {
-				continue
-			}
-			hasLonghorn = true
-		}
-
-		if c.Sysctl != nil {
-			if hasSysctl {
-				continue
-			}
-			hasSysctl = true
-		}
-
-		collectors = append(collectors, c)
 	}
-
-	next.Spec.Collectors = collectors
 
 	return next
 }
@@ -704,38 +679,23 @@ func deduplicatedCollectors(supportBundle *troubleshootv1beta2.SupportBundle) *t
 func deduplicatedAnalyzers(supportBundle *troubleshootv1beta2.SupportBundle) *troubleshootv1beta2.SupportBundle {
 	next := supportBundle.DeepCopy()
 
-	analyzers := []*troubleshootv1beta2.Analyze{}
-
-	hasClusterVersion := false
-	hasLonghorn := false
-	hasWeaveReport := false
-
-	for _, a := range next.Spec.Analyzers {
-		if a.ClusterVersion != nil {
-			if hasClusterVersion {
-				continue
+	for i := 0; i < len(next.Spec.Analyzers); i++ {
+		for j := i + 1; j < len(next.Spec.Analyzers); j++ {
+			if reflect.DeepEqual(next.Spec.Analyzers[i], next.Spec.Analyzers[j]) {
+				next.Spec.Analyzers = append(next.Spec.Analyzers[:j], next.Spec.Analyzers[j+1:]...)
+				j--
+			} else if next.Spec.Analyzers[i].ClusterVersion != nil && next.Spec.Analyzers[j].ClusterVersion != nil {
+				next.Spec.Analyzers = append(next.Spec.Analyzers[:j], next.Spec.Analyzers[j+1:]...)
+				j--
+			} else if next.Spec.Analyzers[i].Longhorn != nil && next.Spec.Analyzers[j].Longhorn != nil {
+				next.Spec.Analyzers = append(next.Spec.Analyzers[:j], next.Spec.Analyzers[j+1:]...)
+				j--
+			} else if next.Spec.Analyzers[i].WeaveReport != nil && next.Spec.Analyzers[j].WeaveReport != nil {
+				next.Spec.Analyzers = append(next.Spec.Analyzers[:j], next.Spec.Analyzers[j+1:]...)
+				j--
 			}
-			hasClusterVersion = true
 		}
-
-		if a.Longhorn != nil {
-			if hasLonghorn {
-				continue
-			}
-			hasLonghorn = true
-		}
-
-		if a.WeaveReport != nil {
-			if hasWeaveReport {
-				continue
-			}
-			hasWeaveReport = true
-		}
-
-		analyzers = append(analyzers, a)
 	}
-
-	next.Spec.Analyzers = analyzers
 
 	return next
 }

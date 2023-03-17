@@ -277,6 +277,181 @@ func Test_deduplicatedCollectors(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "Multiple ClusterResources",
+			args: args{
+				supportBundle: &troubleshootv1beta2.SupportBundle{
+					Spec: troubleshootv1beta2.SupportBundleSpec{
+						Collectors: []*troubleshootv1beta2.Collect{
+							{
+								ClusterResources: &troubleshootv1beta2.ClusterResources{
+									CollectorMeta: troubleshootv1beta2.CollectorMeta{CollectorName: "first"},
+								},
+							},
+							{
+								ClusterResources: &troubleshootv1beta2.ClusterResources{
+									CollectorMeta: troubleshootv1beta2.CollectorMeta{CollectorName: "first"},
+								},
+							},
+							{
+								ClusterResources: &troubleshootv1beta2.ClusterResources{},
+							},
+						},
+					},
+				},
+			},
+			want: &troubleshootv1beta2.SupportBundle{
+				Spec: troubleshootv1beta2.SupportBundleSpec{
+					Collectors: []*troubleshootv1beta2.Collect{
+						{
+							ClusterResources: &troubleshootv1beta2.ClusterResources{
+								CollectorMeta: troubleshootv1beta2.CollectorMeta{CollectorName: "first"},
+							},
+						},
+					},
+				},
+			},
+		},
+		{
+			name: "Multiple ClusterInfo",
+			args: args{
+				supportBundle: &troubleshootv1beta2.SupportBundle{
+					Spec: troubleshootv1beta2.SupportBundleSpec{
+						Collectors: []*troubleshootv1beta2.Collect{
+							{
+								ClusterInfo: &troubleshootv1beta2.ClusterInfo{
+									CollectorMeta: troubleshootv1beta2.CollectorMeta{CollectorName: "first"},
+								},
+							},
+							{
+								ClusterInfo: &troubleshootv1beta2.ClusterInfo{
+									CollectorMeta: troubleshootv1beta2.CollectorMeta{CollectorName: "first"},
+								},
+							},
+							{
+								ClusterInfo: &troubleshootv1beta2.ClusterInfo{},
+							},
+						},
+					},
+				},
+			},
+			want: &troubleshootv1beta2.SupportBundle{
+				Spec: troubleshootv1beta2.SupportBundleSpec{
+					Collectors: []*troubleshootv1beta2.Collect{
+						{
+							ClusterInfo: &troubleshootv1beta2.ClusterInfo{
+								CollectorMeta: troubleshootv1beta2.CollectorMeta{CollectorName: "first"},
+							},
+						},
+					},
+				},
+			},
+		},
+		{
+			name: "Multiple Ceph",
+			args: args{
+				supportBundle: &troubleshootv1beta2.SupportBundle{
+					Spec: troubleshootv1beta2.SupportBundleSpec{
+						Collectors: []*troubleshootv1beta2.Collect{
+							{
+								Ceph: &troubleshootv1beta2.Ceph{
+									CollectorMeta: troubleshootv1beta2.CollectorMeta{CollectorName: "first"},
+								},
+							},
+							{
+								Ceph: &troubleshootv1beta2.Ceph{
+									CollectorMeta: troubleshootv1beta2.CollectorMeta{CollectorName: "first"},
+								},
+							},
+							{
+								Ceph: &troubleshootv1beta2.Ceph{},
+							},
+						},
+					},
+				},
+			},
+			want: &troubleshootv1beta2.SupportBundle{
+				Spec: troubleshootv1beta2.SupportBundleSpec{
+					Collectors: []*troubleshootv1beta2.Collect{
+						{
+							Ceph: &troubleshootv1beta2.Ceph{
+								CollectorMeta: troubleshootv1beta2.CollectorMeta{CollectorName: "first"},
+							},
+						},
+					},
+				},
+			},
+		},
+		{
+			name: "Multiple Longhorn",
+			args: args{
+				supportBundle: &troubleshootv1beta2.SupportBundle{
+					Spec: troubleshootv1beta2.SupportBundleSpec{
+						Collectors: []*troubleshootv1beta2.Collect{
+							{
+								Longhorn: &troubleshootv1beta2.Longhorn{
+									CollectorMeta: troubleshootv1beta2.CollectorMeta{CollectorName: "first"},
+								},
+							},
+							{
+								Longhorn: &troubleshootv1beta2.Longhorn{
+									CollectorMeta: troubleshootv1beta2.CollectorMeta{CollectorName: "first"},
+								},
+							},
+							{
+								Longhorn: &troubleshootv1beta2.Longhorn{},
+							},
+						},
+					},
+				},
+			},
+			want: &troubleshootv1beta2.SupportBundle{
+				Spec: troubleshootv1beta2.SupportBundleSpec{
+					Collectors: []*troubleshootv1beta2.Collect{
+						{
+							Longhorn: &troubleshootv1beta2.Longhorn{
+								CollectorMeta: troubleshootv1beta2.CollectorMeta{CollectorName: "first"},
+							},
+						},
+					},
+				},
+			},
+		},
+		{
+			name: "Multiple Sysctl",
+			args: args{
+				supportBundle: &troubleshootv1beta2.SupportBundle{
+					Spec: troubleshootv1beta2.SupportBundleSpec{
+						Collectors: []*troubleshootv1beta2.Collect{
+							{
+								Sysctl: &troubleshootv1beta2.Sysctl{
+									CollectorMeta: troubleshootv1beta2.CollectorMeta{CollectorName: "first"},
+								},
+							},
+							{
+								Sysctl: &troubleshootv1beta2.Sysctl{
+									CollectorMeta: troubleshootv1beta2.CollectorMeta{CollectorName: "first"},
+								},
+							},
+							{
+								Sysctl: &troubleshootv1beta2.Sysctl{},
+							},
+						},
+					},
+				},
+			},
+			want: &troubleshootv1beta2.SupportBundle{
+				Spec: troubleshootv1beta2.SupportBundleSpec{
+					Collectors: []*troubleshootv1beta2.Collect{
+						{
+							Sysctl: &troubleshootv1beta2.Sysctl{
+								CollectorMeta: troubleshootv1beta2.CollectorMeta{CollectorName: "first"},
+							},
+						},
+					},
+				},
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -339,217 +514,131 @@ func Test_deduplicatedAnalyzers(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "weave report duplicated",
+			args: args{
+				supportBundle: &troubleshootv1beta2.SupportBundle{
+					Spec: troubleshootv1beta2.SupportBundleSpec{
+						Analyzers: []*troubleshootv1beta2.Analyze{
+							{
+								ClusterVersion: &troubleshootv1beta2.ClusterVersion{
+									AnalyzeMeta: troubleshootv1beta2.AnalyzeMeta{CheckName: "first"},
+								},
+							},
+							{
+								Longhorn: &troubleshootv1beta2.LonghornAnalyze{
+									AnalyzeMeta: troubleshootv1beta2.AnalyzeMeta{CheckName: "first"},
+								},
+							},
+							{
+								WeaveReport: &troubleshootv1beta2.WeaveReportAnalyze{
+									AnalyzeMeta: troubleshootv1beta2.AnalyzeMeta{CheckName: "first"},
+								},
+							},
+							{
+								ClusterVersion: &troubleshootv1beta2.ClusterVersion{},
+							},
+							{
+								Longhorn: &troubleshootv1beta2.LonghornAnalyze{},
+							},
+							{
+								WeaveReport: &troubleshootv1beta2.WeaveReportAnalyze{},
+							},
+						},
+					},
+				},
+			},
+			want: &troubleshootv1beta2.SupportBundle{
+				Spec: troubleshootv1beta2.SupportBundleSpec{
+					Analyzers: []*troubleshootv1beta2.Analyze{
+						{
+							ClusterVersion: &troubleshootv1beta2.ClusterVersion{
+								AnalyzeMeta: troubleshootv1beta2.AnalyzeMeta{CheckName: "first"},
+							},
+						},
+						{
+							Longhorn: &troubleshootv1beta2.LonghornAnalyze{
+								AnalyzeMeta: troubleshootv1beta2.AnalyzeMeta{CheckName: "first"},
+							},
+						},
+						{
+							WeaveReport: &troubleshootv1beta2.WeaveReportAnalyze{
+								AnalyzeMeta: troubleshootv1beta2.AnalyzeMeta{CheckName: "first"},
+							},
+						},
+					},
+				},
+			},
+		},
+		{
+			name: "ClusterVersion duplicated",
+			args: args{
+				supportBundle: &troubleshootv1beta2.SupportBundle{
+					Spec: troubleshootv1beta2.SupportBundleSpec{
+						Analyzers: []*troubleshootv1beta2.Analyze{
+							{
+								ClusterVersion: &troubleshootv1beta2.ClusterVersion{
+									AnalyzeMeta: troubleshootv1beta2.AnalyzeMeta{CheckName: "first"},
+								},
+							},
+							{
+								ClusterVersion: &troubleshootv1beta2.ClusterVersion{
+									AnalyzeMeta: troubleshootv1beta2.AnalyzeMeta{CheckName: "first"},
+								},
+							},
+						},
+					},
+				},
+			},
+			want: &troubleshootv1beta2.SupportBundle{
+				Spec: troubleshootv1beta2.SupportBundleSpec{
+					Analyzers: []*troubleshootv1beta2.Analyze{
+						{
+							ClusterVersion: &troubleshootv1beta2.ClusterVersion{
+								AnalyzeMeta: troubleshootv1beta2.AnalyzeMeta{CheckName: "first"},
+							},
+						},
+					},
+				},
+			},
+		},
+		{
+			name: "Multiple ClusterVersion duplicated",
+			args: args{
+				supportBundle: &troubleshootv1beta2.SupportBundle{
+					Spec: troubleshootv1beta2.SupportBundleSpec{
+						Analyzers: []*troubleshootv1beta2.Analyze{
+							{
+								ClusterVersion: &troubleshootv1beta2.ClusterVersion{
+									AnalyzeMeta: troubleshootv1beta2.AnalyzeMeta{CheckName: "first"},
+								},
+							},
+							{
+								ClusterVersion: &troubleshootv1beta2.ClusterVersion{
+									AnalyzeMeta: troubleshootv1beta2.AnalyzeMeta{CheckName: "first"},
+								},
+							},
+						},
+					},
+				},
+			},
+			want: &troubleshootv1beta2.SupportBundle{
+				Spec: troubleshootv1beta2.SupportBundleSpec{
+					Analyzers: []*troubleshootv1beta2.Analyze{
+						{
+							ClusterVersion: &troubleshootv1beta2.ClusterVersion{
+								AnalyzeMeta: troubleshootv1beta2.AnalyzeMeta{CheckName: "first"},
+							},
+						},
+					},
+				},
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if got := deduplicatedAnalyzers(tt.args.supportBundle); !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("deduplicatedAnalyzers() = %v, want %v", got, tt.want)
-			}
-		})
-	}
-}
-
-func Test_deduplicatedAfterCollection(t *testing.T) {
-	type args struct {
-		supportBundle *troubleshootv1beta2.SupportBundle
-	}
-	tests := []struct {
-		name string
-		args args
-		want *troubleshootv1beta2.SupportBundle
-	}{
-		{
-			name: "duplicated upload results to",
-			args: args{
-				supportBundle: &troubleshootv1beta2.SupportBundle{
-					Spec: troubleshootv1beta2.SupportBundleSpec{
-						AfterCollection: []*troubleshootv1beta2.AfterCollection{
-							{
-								UploadResultsTo: &troubleshootv1beta2.ResultRequest{
-									URI:       "first",
-									Method:    "PUT",
-									RedactURI: "first",
-								},
-							},
-							{
-								UploadResultsTo: &troubleshootv1beta2.ResultRequest{
-									URI:       "first",
-									Method:    "PUT",
-									RedactURI: "first",
-								},
-							},
-						},
-					},
-				},
-			},
-			want: &troubleshootv1beta2.SupportBundle{
-				Spec: troubleshootv1beta2.SupportBundleSpec{
-					AfterCollection: []*troubleshootv1beta2.AfterCollection{
-						{
-							UploadResultsTo: &troubleshootv1beta2.ResultRequest{
-								URI:       "first",
-								Method:    "PUT",
-								RedactURI: "first",
-							},
-						},
-					},
-				},
-			},
-		},
-		{
-			name: "duplicated upload results to field",
-			args: args{
-				supportBundle: &troubleshootv1beta2.SupportBundle{
-					Spec: troubleshootv1beta2.SupportBundleSpec{
-						AfterCollection: []*troubleshootv1beta2.AfterCollection{
-							{
-								UploadResultsTo: &troubleshootv1beta2.ResultRequest{
-									URI:       "first",
-									Method:    "PUT",
-									RedactURI: "first",
-								},
-							},
-							{
-								UploadResultsTo: &troubleshootv1beta2.ResultRequest{
-									URI:       "first",
-									Method:    "PUT",
-									RedactURI: "second",
-								},
-							},
-						},
-					},
-				},
-			},
-			want: &troubleshootv1beta2.SupportBundle{
-				Spec: troubleshootv1beta2.SupportBundleSpec{
-					AfterCollection: []*troubleshootv1beta2.AfterCollection{
-						{
-							UploadResultsTo: &troubleshootv1beta2.ResultRequest{
-								URI:       "first",
-								Method:    "PUT",
-								RedactURI: "first",
-							},
-						},
-						{
-							UploadResultsTo: &troubleshootv1beta2.ResultRequest{
-								URI:       "first",
-								Method:    "PUT",
-								RedactURI: "second",
-							},
-						},
-					},
-				},
-			},
-		},
-		{
-			name: "no duplicated upload results to",
-			args: args{
-				supportBundle: &troubleshootv1beta2.SupportBundle{
-					Spec: troubleshootv1beta2.SupportBundleSpec{
-						AfterCollection: []*troubleshootv1beta2.AfterCollection{
-							{
-								UploadResultsTo: &troubleshootv1beta2.ResultRequest{
-									URI:       "first",
-									Method:    "PUT",
-									RedactURI: "first",
-								},
-							},
-							{
-								UploadResultsTo: &troubleshootv1beta2.ResultRequest{
-									URI:       "second",
-									Method:    "PUT",
-									RedactURI: "second",
-								},
-							},
-						},
-					},
-				},
-			},
-			want: &troubleshootv1beta2.SupportBundle{
-				Spec: troubleshootv1beta2.SupportBundleSpec{
-					AfterCollection: []*troubleshootv1beta2.AfterCollection{
-						{
-							UploadResultsTo: &troubleshootv1beta2.ResultRequest{
-								URI:       "first",
-								Method:    "PUT",
-								RedactURI: "first",
-							},
-						},
-						{
-							UploadResultsTo: &troubleshootv1beta2.ResultRequest{
-								URI:       "second",
-								Method:    "PUT",
-								RedactURI: "second",
-							},
-						},
-					},
-				},
-			},
-		},
-		{
-			name: "multiple duplicated upload results to",
-			args: args{
-				supportBundle: &troubleshootv1beta2.SupportBundle{
-					Spec: troubleshootv1beta2.SupportBundleSpec{
-						AfterCollection: []*troubleshootv1beta2.AfterCollection{
-							{
-								UploadResultsTo: &troubleshootv1beta2.ResultRequest{
-									URI:       "first",
-									Method:    "PUT",
-									RedactURI: "first",
-								},
-							},
-							{
-								UploadResultsTo: &troubleshootv1beta2.ResultRequest{
-									URI:       "second",
-									Method:    "PUT",
-									RedactURI: "second",
-								},
-							},
-							{
-								UploadResultsTo: &troubleshootv1beta2.ResultRequest{
-									URI:       "first",
-									Method:    "PUT",
-									RedactURI: "first",
-								},
-							},
-							{
-								UploadResultsTo: &troubleshootv1beta2.ResultRequest{
-									URI:       "second",
-									Method:    "PUT",
-									RedactURI: "second",
-								},
-							},
-						},
-					},
-				},
-			},
-			want: &troubleshootv1beta2.SupportBundle{
-				Spec: troubleshootv1beta2.SupportBundleSpec{
-					AfterCollection: []*troubleshootv1beta2.AfterCollection{
-						{
-							UploadResultsTo: &troubleshootv1beta2.ResultRequest{
-								URI:       "first",
-								Method:    "PUT",
-								RedactURI: "first",
-							},
-						},
-						{
-							UploadResultsTo: &troubleshootv1beta2.ResultRequest{
-								URI:       "second",
-								Method:    "PUT",
-								RedactURI: "second",
-							},
-						},
-					},
-				},
-			},
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if got := deduplicatedAfterCollection(tt.args.supportBundle); !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("deduplicatedAfterCollection() = %v, want %v", got, tt.want)
 			}
 		})
 	}
