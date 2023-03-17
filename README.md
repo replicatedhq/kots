@@ -3,16 +3,16 @@
 [![FOSSA Status](https://app.fossa.com/api/projects/custom%2B5995%2Fgithub.com%2Freplicatedhq%2Fkots.svg?type=small)](https://app.fossa.com/projects/custom%2B5995%2Fgithub.com%2Freplicatedhq%2Fkots?ref=badge_small)
 
 # Kubernetes Off-The-Shelf (KOTS) Software
-Replicated KOTS is the collective set of tools that enable the distribution and management of Kubernetes Off-The-Shelf (KOTS) software. The Kots CLI (a Kubectl plugin) is a general purpose, client-side binary for configuring and building dynamic Kubernetes manifests. The Kots CLI also serves as the bootstrapper for the in-cluster Kubernetes application Admin Console [kotsadm](https://github.com/replicatedhq/kots/tree/main/kotsadm) which can be used to automate the core Kots CLI tasks for managing applications (license verification, configuration, updates, image renaming, version controlling changes, and deployment) as well as additional KOTS tasks (running preflight checks and performing support bundle analysis).
+Replicated KOTS is the collective set of tools that enable the distribution and management of Kubernetes Off-The-Shelf (KOTS) software. The KOTS CLI (a Kubectl plugin) is a general purpose, client-side binary for configuring and building dynamic Kubernetes manifests. The KOTS CLI also serves as the bootstrapper for the in-cluster Kubernetes application Admin Console [kotsadm](https://github.com/replicatedhq/kots/tree/main/kotsadm) which can be used to automate the core KOTS CLI tasks for managing applications (license verification, configuration, updates, image renaming, version controlling changes, and deployment) as well as additional KOTS tasks (running preflight checks and performing support bundle analysis).
 
 ## Distributing a KOTS application
 Software vendors can [package their Kubernetes applications](https://docs.replicated.com/vendor/distributing-workflow) or [Helm charts](https://docs.replicated.com/vendor/helm-overview) or [Operators](https://docs.replicated.com/vendor/operator-packaging-about) as a KOTS application in order to distribute the application to cluster operators.
 
-## Kots CLI Documentation
-Check out the [full docs on the cluster operator experience](https://docs.replicated.com/reference/kots-cli-getting-started) for using the Kots CLI as a Kubectl plugin.
+## KOTS CLI Documentation
+Check out the [full docs on the cluster operator experience](https://docs.replicated.com/reference/kots-cli-getting-started) for using the KOTS CLI as a Kubectl plugin.
 
-## Try Kots
-Try Kots as a cluster operator by installing the Replicated sample app ([Sentry Pro Example](https://github.com/replicatedhq/kots-sentry/)) into an existing Kubernetes cluster. First, install the Kots CLI (a Kubectl plugin) on your workstation:
+## Try KOTS
+Try KOTS as a cluster operator by installing the Replicated sample app ([Sentry Pro Example](https://github.com/replicatedhq/kots-sentry/)) into an existing Kubernetes cluster. First, install the KOTS CLI (a Kubectl plugin) on your workstation:
 ```
 curl https://kots.io/install | bash
 ```
@@ -67,7 +67,7 @@ cosign verify-blob --key sbom/key.pub --signature sbom/kots-sbom.tgz.sig sbom/ko
 
 ### Known issues
 
-1. Kots cannot be installed through the CLI.
+1. KOTS cannot be installed through the CLI.
 2. When a manifest yaml file changes, the only supported way to apply it right now is to redeploy the whole pipeline.
 
 ### Unsupported workflows
@@ -76,24 +76,24 @@ cosign verify-blob --key sbom/key.pub --signature sbom/kots-sbom.tgz.sig sbom/ko
 
 ### How To
 
-#### Deploying an application to a different namespace from Kots Admin
+#### Deploying an application to a different namespace from KOTS Admin
 
 If you need to test deploying an application to a different namespace, you'll need to first create the additional namespace in Okteto.
 Your permissions will be the same between both namespaces, and you will be able to create deploy/resources there.
 
-##### Use the Kots CLI while Kots Admin is running
+##### Use the KOTS CLI while KOTS Admin is running
 
 1. `okteto up` - Put the the kots pod into dev mode
-2. `make build run` - Runs Kots Admin
-3. In a new terminal, navigate to the kots project.
-4. `okteto exec bash` - Runs bash interactively in the kots pod.
-5. `./bin/kots {{COMMAND}}` - Run the kots commands you need.
+2. `make build run` - Runs KOTS Admin
+3. In a new terminal, navigate to the KOTS project.
+4. `okteto exec bash` - Runs bash interactively in the KOTS pod.
+5. `./bin/kots {{COMMAND}}` - Run the KOTS commands you need.
 
 #### Running KOTS in Helm managed mode in Okteto
 Steps to run in Helm managed mode:
 1. `okteto pipeline deploy`
 1. Ensure your local context is set to your okteto environment
-1. Set the `IS_HELM_MANAGED` environment variable for the kots deployment `kubectl set env deployment/kotsadm IS_HELM_MANAGED=true`
+1. Set the `IS_HELM_MANAGED` environment variable for the KOTS deployment `kubectl set env deployment/kotsadm IS_HELM_MANAGED=true`
 1. Remove S3 endpoint: `kubectl set env deployment/kotsadm S3_ENDPOINT=""`
 1. Optional:
    - if you wish to use Admin Console with production: `kubectl set env deployment/kotsadm REPLICATED_API_ENDPOINT=""`
@@ -137,7 +137,7 @@ Because this new workflow is experimental, we still have the old workflow in the
 #### Example workflow: kotsadm change
 
 1. `okteto pipeline deploy -f okteto-v2.yml`
-2. Make code changes to kots.
+2. Make code changes to KOTS.
 3. `okteto build -f okteto-v2.yml kotsadm`
 4. `okteto deploy -f okteto-v2.yml`
 
