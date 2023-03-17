@@ -496,6 +496,11 @@ function check_deployment_readiness() {
         # get replicaset by describing deployment
         replicasetName=$(kubectl describe deployment "${deploymentName}" | grep "^NewReplicaSet:" | awk '{print $2}')
 
+        # NewReplicaSet is <none> in k8s 1.19/1.20, so get replicaset from OldReplicaSets [remove when kurl doesn't support 1.19/1.20]
+        if [[ "$replicasetName" == "<none>" ]]; then
+            replicasetName=$(kubectl describe deployment "${deploymentName}" | grep "^OldReplicaSets:" | awk '{print $2}')
+        fi
+
         # get pod-template-hash label value from replicaset
         podHashValue=$(kubectl get replicaset "${replicasetName}" -o jsonpath='{.spec.template.metadata.labels.'$podHashLabel'}')
         
