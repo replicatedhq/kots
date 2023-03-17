@@ -31,7 +31,7 @@ function kotsadm() {
     kotsadm_secret_authstring
     kotsadm_secret_password
     kotsadm_secret_rqlite
-    kotsadm_secret_s3           # this secret is only used for (re)configuring internal snapshots; will not be created if there is no object store 
+    kotsadm_secret_s3           # this secret is only used for (re)configuring internal snapshots; will not be created if there is no object store
     kotsadm_secret_session
     kotsadm_api_encryption_key
 
@@ -141,7 +141,7 @@ function kotsadm_already_applied() {
 # TODO (dans): remove this when the KOTS default state is set disableS3=true
 # Having no object storage in your spec and not setting disableS3 to true is invalid and not supported
 function validate_object_storage() {
-    if ! object_store_exists && [ "$KOTSADM_DISABLE_S3" != 1 ]; then 
+    if ! object_store_exists && [ "$KOTSADM_DISABLE_S3" != 1 ]; then
         bail "KOTS must have an object storage provider as part of the installer spec (e.g. Rook or Minio), or must have 'kotsadm.disableS3=true' set in the installer"
     fi
 }
@@ -255,7 +255,7 @@ function kotsadm_secret_s3() {
     local src="$DIR/addons/kotsadm/$KOTSADM_VERSION"
     local dst="$DIR/kustomize/kotsadm"
 
-    # When no object store is defined and S3 is disabled for KOTS, bail from adding the secret. 
+    # When no object store is defined and S3 is disabled for KOTS, bail from adding the secret.
     if [ -z "$OBJECT_STORE_ACCESS_KEY" ] && [ "$KOTSADM_DISABLE_S3" == "1" ]; then
         return
     fi
@@ -499,6 +499,54 @@ function kotsadm_health_check() {
     return 0
 }
 
+function check_stateful_set_readiness() {
+    statefulsetName=$1
+    statefulSetPodVersionLabel="controller-revision-hash"
+
+    # Get the current state of the StatefulSet
+    statefulset=$(kubectl get statefulset "${statefulsetName}" -o jsonpath='{.spec.replicas}/{.status.readyReplicas}/{.status.currentRevision}/{.status.updateRevision}/{.metadata.generation}/{.status.observedGeneration}')
+
+    # Split the statefulset into its parts
+    desiredReplicas=$(echo "$statefulset" | cut -d'/' -f1)
+    readyReplicas=$(echo "$statefulset" | cut -d'/' -f2)
+    currentRevision=$(echo "$statefulset" | cut -d'/' -f3)
+    updateRevision=$(echo "$statefulset" | cut -d'/' -f4)
+    metadataGeneration=$(echo "$statefulset" | cut -d'/' -f5)
+    observedGeneration=$(echo "$statefulset" | cut -d'/' -f6)
+
+    if [[ "$desiredReplicas" == "$readyReplicas" &&  "$desiredReplicas" != "" && "$readyReplicas" != "" &&
+            "$currentRevision" == "$updateRevision" &&  "$currentRevision" != "" && "$updateRevision" != "" &&
+            "$metadataGeneration" == "$observedGeneration" && "$metadataGeneration" != "" && "$observedGeneration" != "" ]]; then
+
+        # get statefulset pods by label selector and check if they are ready
+        pods=$(kubectl get pods -l app="${statefulsetName}",controller-revision-hash="${currentRevision}" -o jsonpath='{.items[*].metadata.name}')
+        if [[ -z "$pods" ]]; then
+            return 1
+        fi
+
+        podCount=$(echo "$pods" | wc -w)
+        if [ "$podCount" != "$desiredReplicas" ]; then
+            return 1
+        fi
+
+        for podName in $pods; do
+        
+            pod=$(kubectl get pod "$podName" -o=jsonpath='{.metadata.ownerReferences[?(@.kind=="StatefulSet")].name}/{.metadata.labels.'$statefulSetPodVersionLabel'}/{.status.phase}')
+
+            owner=$(echo "$pod" | cut -d'/' -f1)
+            version=$(echo "$pod" | cut -d'/' -f2)
+            phase=$(echo "$pod" | cut -d'/' -f3)
+
+            if [[ "$owner" != "$statefulsetName"  && "$version" != "$currentRevision" && "$phase" != "Running" ]]; then
+                return 1
+            fi
+        done
+        return 0
+    fi
+
+    return 1
+}
+
 function kotsadm_ready_spinner() {
     sleep 1 # ensure that kubeadm has had time to begin applying and scheduling the kotsadm pods
     if ! spinner_until 180 kotsadm_health_check "app=kotsadm"; then
@@ -509,7 +557,7 @@ function kotsadm_ready_spinner() {
 
 function kotsadm_rqlite_ready_spinner() {
     sleep 1 # ensure that kubeadm has had time to begin applying and scheduling the kotsadm pods
-    if ! spinner_until 300 kotsadm_health_check "app=kotsadm-rqlite"; then
+    if ! spinner_until 300 check_stateful_set_readiness "kotsadm-rqlite"; then
       kubectl logs -l "app=kotsadm-rqlite" --all-containers --tail 10
       bail "The kotsadm-rqlite statefulset in the kotsadm addon failed to deploy successfully."
     fi
