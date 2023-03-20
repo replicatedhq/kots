@@ -1098,10 +1098,6 @@ jobs:
         with:
           service-key: ${{ secrets.GOOGLE_CLOUD_CREDENTIALS }}
       
-      - uses: azure/setup-helm@v3
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-
       - name: download kots binary
         uses: actions/download-artifact@v3
         with:
@@ -1146,20 +1142,6 @@ jobs:
             fi
             sleep 1
           done
-
-          # validate that helm charts installed using the native helm workflow were deployed via the helm CLI correctly
-
-          #if ! helm ls -n postgres-test | awk 'NR>1{print $1}' | grep -q postgresql; then
-          #  printf "postgresql helm release not found in postgres-test namespace\n\n"
-          #  helm ls -n postgres-test
-          #  exit 1
-          #fi
-
-          #if ! helm ls -n "$APP_SLUG" | awk 'NR>1{print $1}' | grep -q private-chart; then
-          #  printf "private-chart helm release not found in %s namespace\n\n" "$APP_SLUG"
-          #  helm ls -n "$APP_SLUG"
-          #  exit 1
-          #fi
 
       - name: Generate support bundle on failure
         if: failure()
