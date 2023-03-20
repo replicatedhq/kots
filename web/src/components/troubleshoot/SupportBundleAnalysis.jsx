@@ -412,11 +412,6 @@ export class SupportBundleAnalysis extends React.Component {
                         This bundle was uploaded by a customer under a Community
                         license type.{" "}
                       </p>
-                      <p className="u-textColor--info u-fontSize--normal u-lineHeight--medium">
-                        {" "}
-                        Customers with Community licenses are using the free,
-                        Community-Supported version of Nomad Enterprise.{" "}
-                      </p>
                     </div>
                   </div>
                 </div>
