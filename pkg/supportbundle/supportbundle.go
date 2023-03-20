@@ -129,7 +129,7 @@ func GetBundleCommand(appSlug string) []string {
 
 	command := []string{
 		"curl https://krew.sh/support-bundle | bash",
-		fmt.Sprintf("kubectl support-bundle --load-cluster-specs --redactors=%s\n", redactors),
+		fmt.Sprintf("kubectl support-bundle %s --redactors=%s\n", GetSpecURI(appSlug), redactors),
 	}
 
 	return command
