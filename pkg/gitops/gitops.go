@@ -3,13 +3,12 @@ package gitops
 import (
 	"context"
 	"crypto/ed25519"
-	"crypto/rsa"
-	"crypto/x509"
 	"encoding/base64"
 	"encoding/json"
 	"encoding/pem"
 	"fmt"
 	"io/ioutil"
+	"math/rand"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -549,18 +548,11 @@ func createGitOps(clientset kubernetes.Interface, provider string, repoURI strin
 	secretData[fmt.Sprintf("provider.%d.repoUri", repoIdx)] = []byte(repoURI)
 
 	if !repoExists {
-		var keyPair *KeyPair
-		if provider == "github_enterprise" {
-			keyPair, err = generatePrivateKey_ed25519()
-			if err != nil {
-				return errors.Wrap(err, "failed to generate ed25519 key pair")
-			}
-		} else {
-			keyPair, err = generateKeyPair_RSA()
-			if err != nil {
-				return errors.Wrap(err, "failed to generate rsa key pair")
-			}
+		keyPair, err := generatePrivateKey_ed25519()
+		if err != nil {
+			return errors.Wrap(err, "failed to generate ed25519 key pair")
 		}
+
 		encryptedPrivateKey := crypto.Encrypt([]byte(keyPair.PrivateKeyPEM))
 		encodedPrivateKey := base64.StdEncoding.EncodeToString(encryptedPrivateKey) // encoding here shouldn't be needed. moved logic from TS where ffi EncryptString function base64 encodes the value as well
 
@@ -817,33 +809,8 @@ func CreateGitOpsCommit(gitOpsConfig *GitOpsConfig, appSlug string, appName stri
 	return gitOpsConfig.CommitURL(updatedHash.String()), nil
 }
 
-func generateKeyPair_RSA() (*KeyPair, error) {
-	privateKey, err := getPrivateKey()
-	if err != nil {
-		return nil, errors.Wrap(err, "get private key")
-	}
-
-	var publicKey *rsa.PublicKey
-	publicKey = &privateKey.PublicKey
-
-	privateKeyBytes := x509.MarshalPKCS1PrivateKey(privateKey)
-	PrivateKeyPEM := pem.EncodeToMemory(
-		&pem.Block{
-			Type:  "RSA PRIVATE KEY",
-			Bytes: privateKeyBytes,
-		},
-	)
-
-	publicKeySSH, err := ssh.NewPublicKey(publicKey)
-	if err != nil {
-		return nil, errors.Wrap(err, "convert public key to ssh")
-	}
-	pubKeySSHBytes := ssh.MarshalAuthorizedKey(publicKeySSH)
-
-	return &KeyPair{PrivateKeyPEM: string(PrivateKeyPEM), PublicKeySSH: string(pubKeySSHBytes)}, nil
-}
-
 func generatePrivateKey_ed25519() (*KeyPair, error) {
+	r := rand.New(rand.NewSource(time.Now().UTC().UnixNano()))
 	publicKey, privateKey, err := ed25519.GenerateKey(r)
 	if err != nil {
 		return nil, errors.Wrap(err, "generate ed25519 key pair")
