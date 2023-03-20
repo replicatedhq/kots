@@ -8,7 +8,6 @@ import (
 	"encoding/pem"
 	"fmt"
 	"io/ioutil"
-	"math/rand"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -810,8 +809,7 @@ func CreateGitOpsCommit(gitOpsConfig *GitOpsConfig, appSlug string, appName stri
 }
 
 func generatePrivateKey_ed25519() (*KeyPair, error) {
-	r := rand.New(rand.NewSource(time.Now().UTC().UnixNano()))
-	publicKey, privateKey, err := ed25519.GenerateKey(r)
+	publicKey, privateKey, err := ed25519.GenerateKey(nil)
 	if err != nil {
 		return nil, errors.Wrap(err, "generate ed25519 key pair")
 	}
