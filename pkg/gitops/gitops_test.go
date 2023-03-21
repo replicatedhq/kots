@@ -32,6 +32,20 @@ func Test_createGitOps(t *testing.T) {
 		wantKeyType string
 	}{
 		{
+			name:        "gitlab provider",
+			provider:    "gitlab",
+			repoURI:     "https://1.2.3.6/test_org/test_repo",
+			hostname:    "1.2.3.6",
+			httpPort:    "",
+			sshPort:     "",
+			configIndex: 0,
+			action:      "commit",
+			branch:      "test0-branch",
+			format:      "single",
+			path:        "/test/path/0",
+			wantKeyType: "ssh-ed25519",
+		},
+		{
 			name:        "github provider",
 			provider:    "github",
 			repoURI:     "https://1.2.3.4/test_org/test_repo",
@@ -43,7 +57,7 @@ func Test_createGitOps(t *testing.T) {
 			branch:      "test1-branch",
 			format:      "single",
 			path:        "/test/path/1",
-			wantKeyType: "ssh-rsa",
+			wantKeyType: "ssh-ed25519",
 		},
 		{
 			name:        "github enterprise provider",
