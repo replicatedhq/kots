@@ -1,1 +1,1 @@
-export const slowLoadingThreshold = 5000;
+export const slowLoadingThreshold = 120000;
