@@ -50,8 +50,13 @@ func MigrateExistingHelmReleaseSecrets(clientset kubernetes.Interface, releaseNa
 		if err != nil {
 			return errors.Wrapf(err, "failed to encode release")
 		}
-		
+
 		newReleaseSecret := corev1.Secret{
+			Type: secret.Type,
+			TypeMeta: metav1.TypeMeta{
+				Kind:       secret.Kind,
+				APIVersion: secret.APIVersion,
+			},
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      secret.Name,
 				Namespace: releaseNamespace,
@@ -76,8 +81,8 @@ func MigrateExistingHelmReleaseSecrets(clientset kubernetes.Interface, releaseNa
 	return nil
 }
 
-func encodeRelease(rls *release.Release) (string, error) {
-	b, err := json.Marshal(rls)
+func encodeRelease(helmRelease *release.Release) (string, error) {
+	b, err := json.Marshal(helmRelease)
 	if err != nil {
 		return "", err
 	}
