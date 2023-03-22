@@ -28,9 +28,6 @@ func mockKotsadmHelmReleaseSecretClient(t *testing.T) kubernetes.Interface {
 	clientset := fake.NewSimpleClientset(
 		testReleaseSecret,
 	)
-	// clientset.PrependReactor("get", "secrets", func(action core.Action) (bool, runtime.Object, error) {
-	// 	return true, testReleaseSecret, nil
-	// })
 	return clientset
 }
 
@@ -105,17 +102,6 @@ func TestMigrateExistingHelmReleaseSecrets(t *testing.T) {
 			if movedSecret.Namespace != tt.args.releaseNamespace {
 				t.Errorf("expected helm release secret to be in namespace %s, but was in %s", tt.args.releaseNamespace, movedSecret.Namespace)
 			}
-
-			// verify movedSecret release namespace is correct
-			// release, err := HelmReleaseFromSecretData(movedSecret.Data["release"])
-			// if err != nil {
-
-			// 	t.Errorf("failed to get helm release from secret: %v, dataLen: %v data: %s", err,len(movedSecret.Data), movedSecret.Data["release"])
-			// }
-
-			// if release.Namespace != tt.args.releaseNamespace {
-			// 	t.Errorf("expected helm release secret to be in namespace %s, but was in %s", tt.args.releaseNamespace, release.Namespace)
-			// }
 
 			_, err = tt.args.clientset.CoreV1().Secrets(tt.args.kotsadmNamespace).Get(context.TODO(), tt.args.releaseName, v1.GetOptions{})
 			if err == nil {
