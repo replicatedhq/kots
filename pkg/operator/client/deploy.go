@@ -818,7 +818,7 @@ func getLabelSelector(appLabelSelector *metav1.LabelSelector) string {
 func migrateExistingHelmReleaseSecrets(relaseName string, releaseNamespace string, kotsadmNamespace string) error {
 	clientset, err := k8sutil.GetClientset()
 	if err != nil {
-		return  errors.Wrap(err, "failed to get k8s client set")
+		return errors.Wrap(err, "failed to get k8s client set")
 	}
 	return helm.MigrateExistingHelmReleaseSecrets(clientset, relaseName, releaseNamespace, kotsadmNamespace)
 }
