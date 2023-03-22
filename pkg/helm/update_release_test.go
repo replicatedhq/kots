@@ -6,16 +6,12 @@ import (
 
 	"helm.sh/helm/v3/pkg/release"
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/kubernetes/fake"
-	// core "k8s.io/client-go/testing"
-
 	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	// "k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/kubernetes/fake"
 )
 
-// clientset := fake.NewSimpleClientset()
 const (
 	kotsadmNamespace      = "kotsadm"
 	helmReleaseNamespace  = "helm-release"

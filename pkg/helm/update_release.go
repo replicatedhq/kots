@@ -25,7 +25,6 @@ func MigrateExistingHelmReleaseSecrets(clientset kubernetes.Interface, releaseNa
 		LabelSelector: labels.SelectorFromSet(selectorLabels).String(),
 	}
 
-	// list all helm releases secrets for given release name
 	secretList, err := clientset.CoreV1().Secrets(kotsadmNamespace).List(context.TODO(), listOpts)
 	if err != nil {
 		return errors.Wrapf(err, "failed to list release secrets for %s", releaseName)
