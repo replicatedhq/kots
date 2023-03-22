@@ -23,16 +23,16 @@ const (
 
 // MigrateExistingHelmReleaseSecrets will move all helm release secrets from the kotsadm namespace to the release namespace
 func MigrateExistingHelmReleaseSecrets(clientset kubernetes.Interface, releaseName string, releaseNamespace string, kotsadmNamespace string) error {
-	selectorLabels := map[string]string{
+	selectorLabels := labels.Set{
 		"owner": "helm",
 		"name":  releaseName,
-	}
-	fieldSelectorMap := map[string]string{
+	}.AsSelector()
+	fieldSelectorMap := fields.Set{
 		"type": HelmReleaseSecretType,
-	}
+	}.AsSelector()
 	listOpts := metav1.ListOptions{
-		LabelSelector: labels.SelectorFromSet(selectorLabels).String(),
-		FieldSelector: fields.SelectorFromSet(fieldSelectorMap).String(),
+		LabelSelector: selectorLabels.String(),
+		FieldSelector: fieldSelectorMap.String(),
 	}
 
 	secretList, err := clientset.CoreV1().Secrets(kotsadmNamespace).List(context.TODO(), listOpts)
