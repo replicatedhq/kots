@@ -43,6 +43,10 @@ func MigrateExistingHelmReleaseSecrets(clientset kubernetes.Interface, releaseNa
 		return errors.Wrapf(err, "failed to list release secrets for %s", releaseName)
 	}
 
+	if len(secretList.Items) == 0 {
+		return nil
+	}
+
 	for _, secret := range secretList.Items {
 		if secret.Namespace != releaseNamespace {
 			err := moveHelmReleaseSecret(clientset, secret, releaseNamespace)
