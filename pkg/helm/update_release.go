@@ -8,7 +8,6 @@ import (
 	"encoding/json"
 
 	"github.com/pkg/errors"
-	"github.com/replicatedhq/kots/pkg/logger"
 	"helm.sh/helm/v3/pkg/release"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -32,8 +31,6 @@ func MigrateExistingHelmReleaseSecrets(clientset kubernetes.Interface, releaseNa
 		return errors.Wrapf(err, "failed to list release secrets for %s", releaseName)
 	}
 
-	logger.Debugf("found %d secrets for release %s", len(secretList.Items), releaseName)
-
 	secretsToMove := []corev1.Secret{}
 	for _, secret := range secretList.Items {
 		if secret.Namespace != releaseNamespace {
@@ -41,10 +38,7 @@ func MigrateExistingHelmReleaseSecrets(clientset kubernetes.Interface, releaseNa
 		}
 	}
 
-	logger.Debugf("found %d secrets to move for release %s", len(secretsToMove), releaseName)
-
 	for _, secret := range secretsToMove {
-		logger.Debugf("moving secret %s/%s to %s", secret.Namespace, secret.Name, releaseNamespace)
 		release, err := HelmReleaseFromSecretData(secret.Data["release"])
 		if err != nil {
 			return errors.Wrapf(err, "failed to get release from secret data")
@@ -56,7 +50,7 @@ func MigrateExistingHelmReleaseSecrets(clientset kubernetes.Interface, releaseNa
 		if err != nil {
 			return errors.Wrapf(err, "failed to encode release")
 		}
-		// create the new secret
+		
 		newReleaseSecret := corev1.Secret{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      secret.Name,
@@ -68,14 +62,11 @@ func MigrateExistingHelmReleaseSecrets(clientset kubernetes.Interface, releaseNa
 			},
 		}
 
-		// create the new secret
-		logger.Debugf("creating secret %s/%s", releaseNamespace, secret.Name)
 		_, err = clientset.CoreV1().Secrets(releaseNamespace).Create(context.TODO(), &newReleaseSecret, metav1.CreateOptions{})
 		if err != nil {
 			return errors.Wrapf(err, "failed to create secret %s/%s", releaseNamespace, secret.Name)
 		}
 
-		logger.Debugf("deleting secret %s/%s", secret.Namespace, secret.Name)
 		err = clientset.CoreV1().Secrets(secret.Namespace).Delete(context.TODO(), secret.Name, metav1.DeleteOptions{})
 		if err != nil {
 			return errors.Wrapf(err, "failed to delete secret %s/%s", secret.Namespace, secret.Name)

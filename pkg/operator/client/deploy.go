@@ -533,7 +533,7 @@ func (c *Client) installWithHelm(helmDir string, targetNamespace string, kotsCha
 			args = append(args, "-n", targetNamespace)
 		}
 
-		kotsadmNamespace := util.PodNamespace
+		kotsadmNamespace := util.AppNamespace()
 		if upgradeNamespace != kotsadmNamespace {
 			clientset, err := k8sutil.GetClientset()
 			if err != nil {
