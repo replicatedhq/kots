@@ -1,0 +1,177 @@
+apiVersion: troubleshoot.sh/v1beta2
+kind: SupportBundle
+metadata:
+  name: default-supportbundle
+spec:
+  collectors:
+    - clusterInfo: {}
+    - clusterResources: {}
+    - exec: # this is removable when we don't need to support kots <= 1.87
+        args:
+          - "-U"
+          - kotsadm
+        collectorName: kotsadm-postgres-db
+        command:
+          - pg_dump
+        containerName: kotsadm-postgres
+        name: kots/admin_console
+        selector:
+          - app=kotsadm-postgres
+        timeout: 10s
+    - exec:
+        collectorName: kotsadm-rqlite-db
+        name: kots/admin_console
+        containerName: rqlite
+        selector:
+          - app=kotsadm-rqlite
+        command:
+          - sh
+          - -c
+          - |
+            wget -qO- kotsadm:${RQLITE_PASSWORD}@localhost:4001/db/backup?fmt=sql  
+        timeout: 10s
+    - exec:
+        args:
+          - "http://localhost:3030/goroutines"
+        collectorName: kotsadm-goroutines
+        command:
+          - curl
+        containerName: kotsadm
+        name: kots/admin_console
+        selector:
+          - app=kotsadm
+        timeout: 10s
+    - exec:
+        args:
+          - "http://localhost:3030/goroutines"
+        collectorName: kotsadm-operator-goroutines
+        command:
+          - curl
+        containerName: kotsadm-operator
+        name: kots/admin_console
+        selector:
+          - app=kotsadm-operator
+        timeout: 10s
+    - logs: # this is removable when we don't need to support kots <= 1.87
+        collectorName: kotsadm-postgres-db
+        name: kots/admin_console
+        selector:
+          - app=kotsadm-postgres
+    - logs:
+        collectorName: kotsadm-rqlite-db
+        name: kots/admin_console
+        selector:
+          - app=kotsadm-rqlite
+    - logs:  # this is removable when we don't need to support kots <= 1.19
+        collectorName: kotsadm-api
+        name: kots/admin_console
+        selector:
+          - app=kotsadm-api
+    - logs:
+        collectorName: kotsadm-operator
+        name: kots/admin_console
+        selector:
+          - app=kotsadm-operator
+    - logs:
+        collectorName: kotsadm
+        name: kots/admin_console
+        selector:
+          - app=kotsadm
+    - logs:
+        collectorName: kurl-proxy-kotsadm
+        name: kots/admin_console
+        selector:
+          - app=kurl-proxy-kotsadm
+    - logs:
+        collectorName: kotsadm-dex
+        name: kots/admin_console
+        selector:
+          - app=kotsadm-dex
+    - logs:
+        collectorName: kotsadm-fs-minio
+        name: kots/admin_console
+        selector:
+          - app=kotsadm-fs-minio
+    - logs:
+        collectorName: kotsadm-s3-ops
+        name: kots/admin_console
+        selector:
+          - app=kotsadm-s3-ops
+    - secret:
+        collectorName: kotsadm-replicated-registry
+        name: kotsadm-replicated-registry # NOTE: this will not live under the kots/ directory like other collectors
+        includeValue: false
+        key: .dockerconfigjson
+    - logs:
+        collectorName: kube-flannel
+        selector:
+          - app=flannel
+        namespace: kube-flannel
+        name: kots/kurl/flannel
+    - exec:
+        args:
+          - "http://goldpinger.kurl.svc.cluster.local:80/check_all"
+        collectorName: goldpinger-statistics
+        command:
+          - curl
+        containerName: kotsadm
+        name: kots/goldpinger
+        selector:
+          - app=kotsadm
+        timeout: 10s
+
+  analyzers:
+    - clusterVersion:
+        outcomes:
+          - fail:
+              when: "< 1.16.0"
+              message: The Admin Console requires at least Kubernetes 1.16.0
+          - pass:
+              message: Your cluster meets the recommended and required versions of Kubernetes
+    - containerRuntime:
+        outcomes:
+          - fail:
+              when: "== gvisor"
+              message: The Admin Console does not support using the gvisor runtime
+          - pass:
+              message: A supported container runtime is present on all nodes
+    - clusterPodStatuses:
+        outcomes:
+          - fail:
+              when: "!= Healthy"
+              message: "Status: {{ .Status.Reason }}"
+    - statefulsetStatus: {}
+    - deploymentStatus: {}
+    - jobStatus: {}
+    - replicasetStatus: {}
+    - textAnalyze:
+        checkName: Inter-pod Networking
+        exclude: ""
+        ignoreIfNoFiles: true
+        fileName: kots/goldpinger/*/kotsadm-*/goldpinger-statistics-stdout.txt
+        outcomes:
+          - fail:
+              when: "OK = false"
+              message: Some nodes have pod communication issues
+          - pass:
+              message: Goldpinger can communicate properly
+        regexGroups: '"OK": ?(?P<OK>\w+)'
+    - nodeResources:
+        checkName: Node status check
+        outcomes:
+          - fail:
+              when: "nodeCondition(Ready) == False"
+              message: "Not all nodes are online."
+          - fail:
+              when: "nodeCondition(Ready) == Unknown"
+              message: "Not all nodes are online."
+          - pass:
+              message: "All nodes are online."
+    - clusterPodStatuses:
+        checkName: contour pods unhealthy
+        namespaces:
+          - projectcontour
+        outcomes:
+          - fail:
+              when: "!= Healthy" # Catch all unhealthy pods. A pod is considered healthy if it has a status of Completed, or Running and all of its containers are ready.
+              message: A Contour pod, {{ .Name }}, is unhealthy with a status of {{ .Status.Reason }}. Restarting the pod may fix the issue.

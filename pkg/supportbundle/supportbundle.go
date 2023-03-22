@@ -115,12 +115,12 @@ func CreateBundle(requestedID string, appID string, archivePath string) (*types.
 	return store.GetStore().CreateSupportBundle(id, appID, archivePath, marshalledTree)
 }
 
-func GetSpecSecretName(appSlug string) string {
+func GetSpecName(appSlug string) string {
 	return fmt.Sprintf("kotsadm-%s-supportbundle", appSlug)
 }
 
 func GetSpecURI(appSlug string) string {
-	return fmt.Sprintf("secret/%s/%s", util.PodNamespace, GetSpecSecretName(appSlug))
+	return fmt.Sprintf("secret/%s/%s", util.PodNamespace, GetSpecName(appSlug))
 }
 
 func GetBundleCommand(appSlug string) []string {
