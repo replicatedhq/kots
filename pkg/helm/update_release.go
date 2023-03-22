@@ -48,7 +48,7 @@ func MigrateExistingHelmReleaseSecrets(clientset kubernetes.Interface, releaseNa
 	}
 
 	for _, secret := range secretList.Items {
-		err := moveHelmReleaseSecret(clientset, secret, releaseNamespace)
+		err := moveHelmReleaseSecret(clientset, secret, releaseNamespace, kotsadmNamespace)
 		if err != nil {
 			return errors.Wrapf(err, "failed to move helm release secret %s to %s", secret.Name, releaseNamespace)
 		}
@@ -57,7 +57,7 @@ func MigrateExistingHelmReleaseSecrets(clientset kubernetes.Interface, releaseNa
 }
 
 // moveHelmReleaseSecret will create a new secret in the releaseNamespace and delete the old one from the kotsadmNamespace
-func moveHelmReleaseSecret(clientset kubernetes.Interface, secret corev1.Secret, releaseNamespace string) error {
+func moveHelmReleaseSecret(clientset kubernetes.Interface, secret corev1.Secret, releaseNamespace string, kotsadmNamespace string) error {
 	release, err := HelmReleaseFromSecretData(secret.Data["release"])
 	if err != nil {
 		return errors.Wrapf(err, "failed to get release from secret data")
@@ -70,37 +70,19 @@ func moveHelmReleaseSecret(clientset kubernetes.Interface, secret corev1.Secret,
 		return errors.Wrapf(err, "failed to encode release")
 	}
 
-	// update the secret 
-	newReleaseSecret := secret.DeepCopy()
-	newReleaseSecret.Namespace = releaseNamespace
-	newReleaseSecret.Data["release"] = []byte(releaseStr)
+	secret.ResourceVersion = ""
+	secret.Namespace = releaseNamespace
+	secret.Data["release"] = []byte(releaseStr)
 
-
-	// newReleaseSecret := corev1.Secret{
-	// 	Type: secret.Type,
-	// 	TypeMeta: metav1.TypeMeta{
-	// 		Kind:       secret.Kind,
-	// 		APIVersion: secret.APIVersion,
-	// 	},
-	// 	ObjectMeta: metav1.ObjectMeta{
-	// 		Name:      secret.Name,
-	// 		Labels:    secret.Labels,
-	// 		Namespace: releaseNamespace,
-	// 	},
-	// 	StringData: map[string]string{
-	// 		"release": releaseStr,
-	// 	},
-	// }
-
-	_, err = clientset.CoreV1().Secrets(releaseNamespace).Create(context.TODO(), newReleaseSecret, metav1.CreateOptions{})
+	_, err = clientset.CoreV1().Secrets(releaseNamespace).Create(context.TODO(), &secret, metav1.CreateOptions{})
 	if err != nil {
 		return errors.Wrapf(err, "failed to create secret %s/%s", releaseNamespace, secret.Name)
 	}
 
-	// err = clientset.CoreV1().Secrets(secret.Namespace).Delete(context.TODO(), secret.Name, metav1.DeleteOptions{})
-	// if err != nil {
-	// 	return errors.Wrapf(err, "failed to delete secret %s/%s", secret.Namespace, secret.Name)
-	// }
+	err = clientset.CoreV1().Secrets(kotsadmNamespace).Delete(context.TODO(), secret.Name, metav1.DeleteOptions{})
+	if err != nil {
+		return errors.Wrapf(err, "failed to delete secret %s/%s", kotsadmNamespace, secret.Name)
+	}
 
 	return nil
 }

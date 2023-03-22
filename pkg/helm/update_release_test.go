@@ -116,6 +116,15 @@ func TestMigrateExistingHelmReleaseSecrets(t *testing.T) {
 				t.Errorf("expected helm release secret to be in namespace %s, but was in %s", tt.args.releaseNamespace, movedSecret.Namespace)
 			}
 
+			release, err := HelmReleaseFromSecretData(movedSecret.Data["release"])
+			if err != nil {
+				t.Errorf("failed to get helm release from secret data: %v", err)
+			}
+
+			if release.Namespace != tt.args.releaseNamespace {
+				t.Errorf("expected helm release to be in namespace %s, but was in %s", tt.args.releaseNamespace, release.Namespace)
+			}
+
 			_, err = tt.args.clientset.CoreV1().Secrets(tt.args.kotsadmNamespace).Get(context.TODO(), tt.args.releaseName, v1.GetOptions{})
 			if err == nil {
 				t.Errorf("expected helm release secret to be deleted from %s, but it was not", tt.args.kotsadmNamespace)
