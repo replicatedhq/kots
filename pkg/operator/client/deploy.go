@@ -20,6 +20,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/operator/applier"
 	operatortypes "github.com/replicatedhq/kots/pkg/operator/types"
+	"github.com/replicatedhq/kots/pkg/util"
 	"github.com/replicatedhq/yaml/v3"
 	corev1 "k8s.io/api/core/v1"
 	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
@@ -523,27 +524,29 @@ func (c *Client) installWithHelm(helmDir string, targetNamespace string, kotsCha
 		installDir := filepath.Join(chartsDir, dir.Name)
 		args := []string{"upgrade", "-i", dir.ReleaseName, installDir, "--timeout", "3600s"}
 
-		upgradeNS := "default"
+		upgradeNamespace := "default"
 		if dir.Namespace != "" {
-			upgradeNS = dir.Namespace
+			upgradeNamespace = dir.Namespace
 			args = append(args, "-n", dir.Namespace)
 		} else if targetNamespace != "" && targetNamespace != "." {
-			upgradeNS = targetNamespace
+			upgradeNamespace = targetNamespace
 			args = append(args, "-n", targetNamespace)
+		}
+
+		kotsadmNamespace := util.PodNamespace
+		if upgradeNamespace != kotsadmNamespace {
+			clientset, err := k8sutil.GetClientset()
+			if err != nil {
+				return nil, errors.Wrap(err, "failed to get k8s client set")
+			}
+			err = helm.MigrateExistingHelmReleaseSecrets(clientset, dir.ReleaseName, upgradeNamespace, kotsadmNamespace)
+			if err != nil {
+				return nil, errors.Wrap(err, "failed to update existing helm releases")
+			}
 		}
 
 		if len(dir.UpgradeFlags) > 0 {
 			args = append(args, dir.UpgradeFlags...)
-		}
-
-		// apply the helm release secret moving logic
-		clientset, err := k8sutil.GetClientset()
-		if err != nil {
-			return nil, errors.Wrap(err, "failed to get k8s client set")
-		}
-		err = helm.MigrateExistingHelmReleaseSecrets(clientset, dir.ReleaseName, upgradeNS)
-		if err != nil {
-			return nil, errors.Wrap(err, "failed to update existing helm releases")
 		}
 
 		logger.Infof("running helm with arguments %v", args)
