@@ -68,25 +68,42 @@ func TestMigrateExistingHelmReleaseSecrets(t *testing.T) {
 		kotsadmNamespace string
 	}
 	tests := []struct {
-		name    string
-		args    args
-		wantErr bool
+		name                     string
+		args                     args
+		wantErr                  bool
+		wantMigratedSecretsCount int
 	}{
 		{
-			name: "migrate existing helm release secret",
+			name: "expect no error and migrate existing helm release secret",
 			args: args{
 				clientset:        mockKotsadmHelmReleaseSecretClient(t),
 				releaseName:      helmReleaseName,
 				releaseNamespace: helmReleaseNamespace,
 				kotsadmNamespace: kotsadmNamespace,
 			},
-			wantErr: false,
+			wantErr:                  false,
+			wantMigratedSecretsCount: 1,
+		},
+		{
+			name: "expect no error when no helm release secret exists",
+			args: args{
+				clientset:        fake.NewSimpleClientset(),
+				releaseName:      helmReleaseName,
+				releaseNamespace: helmReleaseNamespace,
+				kotsadmNamespace: kotsadmNamespace,
+			},
+			wantErr:                  false,
+			wantMigratedSecretsCount: 0,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if err := MigrateExistingHelmReleaseSecrets(tt.args.clientset, tt.args.releaseName, tt.args.releaseNamespace, tt.args.kotsadmNamespace); (err != nil) != tt.wantErr {
 				t.Errorf("MigrateExistingHelmReleaseSecrets() error = %v, wantErr %v", err, tt.wantErr)
+			}
+
+			if tt.wantMigratedSecretsCount == 0 {
+				return
 			}
 
 			// verify that the secret was moved to the new namespace

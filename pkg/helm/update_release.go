@@ -10,6 +10,7 @@ import (
 	"github.com/pkg/errors"
 	"helm.sh/helm/v3/pkg/release"
 	corev1 "k8s.io/api/core/v1"
+	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/client-go/kubernetes"
@@ -27,6 +28,9 @@ func MigrateExistingHelmReleaseSecrets(clientset kubernetes.Interface, releaseNa
 
 	secretList, err := clientset.CoreV1().Secrets(kotsadmNamespace).List(context.TODO(), listOpts)
 	if err != nil {
+		if kuberneteserrors.IsNotFound(err) {
+			return nil
+		}
 		return errors.Wrapf(err, "failed to list release secrets for %s", releaseName)
 	}
 
