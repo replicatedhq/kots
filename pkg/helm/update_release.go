@@ -36,7 +36,7 @@ func MigrateExistingHelmReleaseSecrets(clientset kubernetes.Interface, releaseNa
 
 	secretsToMove := []corev1.Secret{}
 	for _, secret := range secretList.Items {
-		if secret.Namespace != releaseNamespace {
+		if secret.Namespace != releaseNamespace && secret.Type == "helm.sh/release.v1" {
 			secretsToMove = append(secretsToMove, secret)
 		}
 	}
