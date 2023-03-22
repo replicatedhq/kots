@@ -26,13 +26,13 @@ func MigrateExistingHelmReleaseSecrets(clientset kubernetes.Interface, releaseNa
 	selectorLabels := labels.Set{
 		"owner": "helm",
 		"name":  releaseName,
-	}.AsSelector()
+	}
 	fieldSelectorMap := fields.Set{
 		"type": HelmReleaseSecretType,
-	}.AsSelector()
+	}
 	listOpts := metav1.ListOptions{
-		LabelSelector: selectorLabels.String(),
-		FieldSelector: fieldSelectorMap.String(),
+		LabelSelector: selectorLabels.AsSelector().String(),
+		FieldSelector: fieldSelectorMap.AsSelector().String(),
 	}
 
 	secretList, err := clientset.CoreV1().Secrets(kotsadmNamespace).List(context.TODO(), listOpts)
@@ -48,11 +48,9 @@ func MigrateExistingHelmReleaseSecrets(clientset kubernetes.Interface, releaseNa
 	}
 
 	for _, secret := range secretList.Items {
-		if secret.Namespace != releaseNamespace {
-			err := moveHelmReleaseSecret(clientset, secret, releaseNamespace)
-			if err != nil {
-				return errors.Wrapf(err, "failed to move helm release secret %s to %s", secret.Name, releaseNamespace)
-			}
+		err := moveHelmReleaseSecret(clientset, secret, releaseNamespace)
+		if err != nil {
+			return errors.Wrapf(err, "failed to move helm release secret %s to %s", secret.Name, releaseNamespace)
 		}
 	}
 	return nil
@@ -72,31 +70,37 @@ func moveHelmReleaseSecret(clientset kubernetes.Interface, secret corev1.Secret,
 		return errors.Wrapf(err, "failed to encode release")
 	}
 
-	newReleaseSecret := corev1.Secret{
-		Type: secret.Type,
-		TypeMeta: metav1.TypeMeta{
-			Kind:       secret.Kind,
-			APIVersion: secret.APIVersion,
-		},
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      secret.Name,
-			Labels:    secret.Labels,
-			Namespace: releaseNamespace,
-		},
-		StringData: map[string]string{
-			"release": releaseStr,
-		},
-	}
+	// update the secret 
+	newReleaseSecret := secret.DeepCopy()
+	newReleaseSecret.Namespace = releaseNamespace
+	newReleaseSecret.Data["release"] = []byte(releaseStr)
 
-	_, err = clientset.CoreV1().Secrets(releaseNamespace).Create(context.TODO(), &newReleaseSecret, metav1.CreateOptions{})
+
+	// newReleaseSecret := corev1.Secret{
+	// 	Type: secret.Type,
+	// 	TypeMeta: metav1.TypeMeta{
+	// 		Kind:       secret.Kind,
+	// 		APIVersion: secret.APIVersion,
+	// 	},
+	// 	ObjectMeta: metav1.ObjectMeta{
+	// 		Name:      secret.Name,
+	// 		Labels:    secret.Labels,
+	// 		Namespace: releaseNamespace,
+	// 	},
+	// 	StringData: map[string]string{
+	// 		"release": releaseStr,
+	// 	},
+	// }
+
+	_, err = clientset.CoreV1().Secrets(releaseNamespace).Create(context.TODO(), newReleaseSecret, metav1.CreateOptions{})
 	if err != nil {
 		return errors.Wrapf(err, "failed to create secret %s/%s", releaseNamespace, secret.Name)
 	}
 
-	err = clientset.CoreV1().Secrets(secret.Namespace).Delete(context.TODO(), secret.Name, metav1.DeleteOptions{})
-	if err != nil {
-		return errors.Wrapf(err, "failed to delete secret %s/%s", secret.Namespace, secret.Name)
-	}
+	// err = clientset.CoreV1().Secrets(secret.Namespace).Delete(context.TODO(), secret.Name, metav1.DeleteOptions{})
+	// if err != nil {
+	// 	return errors.Wrapf(err, "failed to delete secret %s/%s", secret.Namespace, secret.Name)
+	// }
 
 	return nil
 }
