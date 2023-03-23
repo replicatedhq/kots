@@ -2279,13 +2279,19 @@ jobs:
           fi
 
           # verify that the helm release secret is created in the helm relase namespace
-          releaseSecret=$(kubectl get secret "$releaseSecretName" -n "$RELEASE_NAMESPACE")
-          if [ -z "$releaseSecret" ]; then
-            echo "Failed to find the helm release secret in the $RELEASE_NAMESPACE namespace"
-            echo "kotsadm logs:"
-            kubectl logs -l app=kotsadm --tail=100 --namespace "$APP_SLUG"
-            exit 1
-          fi
+          COUNT=1
+          releaseSecret=""
+          while [ -z "$releaseSecret" ]; do
+            ((COUNT += 1))
+            if [ $COUNT -gt 10 ]; then
+              echo "Timed out waiting for the helm release secret to be migrated"
+              echo "kotsadm logs:"
+              kubectl logs -l app=kotsadm --tail=100 --namespace "$APP_SLUG"
+              exit 1
+            fi
+            sleep 1
+            releaseSecret=$(kubectl get secret "$releaseSecretName" -n "$RELEASE_NAMESPACE")
+          done
 
           # verify that the release secret in app namepspace is deleted
           oldReleaseSecret=$(kubectl get secret "$releaseSecretName" -n "$APP_SLUG")
@@ -2297,10 +2303,10 @@ jobs:
           fi
 
           # verify that there are two helm release secrets in the helm release namespace
-          releaseSecretName=$(kubectl get secret -n "$RELEASE_NAMESPACE" -l owner=helm,name="$RELEASE_NAME" -o jsonpath='{.items[*].metadata.name}')
+          releaseSecretNames=$(kubectl get secret -n "$RELEASE_NAMESPACE" -l owner=helm,name="$RELEASE_NAME" -o jsonpath='{.items[*].metadata.name}')
           # if the helm release secrets are not 2 in the helm release namespace, fail
-          if [ "$(echo "$releaseSecretName" | wc -l)" -ne 2 ]; then
-            echo "Found more than two helm release secret in the $APP_SLUG namespace"
+          if [ "$(echo "$releaseSecretNames" | wc -w)" -ne 2 ]; then
+            echo "Found more than two helm release secret in the $RELEASE_NAMESPACE namespace"
             echo "kotsadm logs:"
             kubectl logs -l app=kotsadm --tail=100 --namespace "$APP_SLUG"
             exit 1
