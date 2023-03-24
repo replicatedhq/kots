@@ -41,13 +41,18 @@ runs:
         DEX_TAG: ${{ steps.dotenv.outputs.DEX_TAG }}
         RQLITE_TAG: ${{ steps.dotenv.outputs.RQLITE_TAG }}
       run: |
+        kotsadm_binary=${{ inputs.kotsadm_binary_override }}
+        # absolute path
+        if [ -n "$kotsadm_binary" ]; then
+          kotsadm_binary="$(realpath "$kotsadm_binary")"
+        fi
         ( cd ${{ github.action_path }}/../../../deploy/kurl/kotsadm/template; \
           ./generate.sh \
             "${{ inputs.addon_version }}" \
             "${{ inputs.kotsadm_image_registry }}" \
             "${{ inputs.kotsadm_image_namespace }}" \
             "${{ inputs.kotsadm_image_tag }}" \
-            "${{ inputs.kotsadm_binary_override }}" )
+            "$kotsadm_binary" )
         mv ${{ github.action_path }}/../../../deploy/kurl/kotsadm/${{ inputs.addon_version }} .
 
     - uses: replicatedhq/kurl/.github/actions/addon-manifest-downloader@main
