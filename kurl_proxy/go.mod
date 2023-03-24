@@ -3,7 +3,6 @@ module github.com/replicatedhq/kots/kurl_proxy
 go 1.17
 
 require (
-	github.com/docker/go-connections v0.4.0
 	github.com/gin-gonic/gin v1.7.7
 	github.com/pkg/errors v0.9.1
 	github.com/soheilhy/cmux v0.1.5
