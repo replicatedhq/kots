@@ -49,7 +49,7 @@ func Test_getTroubleshootLabels(t *testing.T) {
 				},
 			},
 			expectLabels: map[string]string{
-				"troubleshoot.io/kind": "support-bundle",
+				"troubleshoot.sh/kind": "support-bundle",
 				"foo":                  "foo",
 			},
 		},
@@ -97,7 +97,7 @@ func Test_mergeLabels(t *testing.T) {
 			expectLabels: map[string]string{
 				"kots.io/kotsadm":      "true",
 				"kots.io/backup":       "velero",
-				"troubleshoot.io/kind": "support-bundle",
+				"troubleshoot.sh/kind": "support-bundle",
 			},
 		},
 		{
@@ -111,7 +111,7 @@ func Test_mergeLabels(t *testing.T) {
 				"bar":                  "bar",
 				"kots.io/kotsadm":      "true",
 				"kots.io/backup":       "velero",
-				"troubleshoot.io/kind": "support-bundle",
+				"troubleshoot.sh/kind": "support-bundle",
 			},
 		},
 	}

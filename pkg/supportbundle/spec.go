@@ -486,7 +486,7 @@ func addDiscoveredSpecs(
 }
 
 // findSupportBundleSpecs finds all support bundle secrets/configmaps in the cluster
-// The function will query all objects with troubleshoot.io/kind=support-bundle label
+// The function will query all objects with troubleshoot.sh/kind=support-bundle label
 // and, in code, filter out all kotsadm objects
 // following kotsadm-<app-slug>-supportbundle.
 // Reference: https://troubleshoot.sh/docs/support-bundle/discover-cluster-specs/

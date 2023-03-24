@@ -13,7 +13,7 @@ const ExcludeValue = "true"
 const BackupLabel = "kots.io/backup"
 const BackupLabelValue = "velero"
 
-const TroubleshootKey = "troubleshoot.io/kind"
+const TroubleshootKey = "troubleshoot.sh/kind"
 const TroubleshootValue = "support-bundle"
 
 const DefaultSupportBundleSpecKey = "default"
