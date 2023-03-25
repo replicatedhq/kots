@@ -48,6 +48,43 @@ func (b *Base) WriteBase(options WriteOptions) error {
 	return nil
 }
 
+func (b *Base) WriteKotsKinds(options WriteOptions) error {
+	renderDir := filepath.Join(options.BaseDir, b.Path)
+
+	_, err := os.Stat(renderDir)
+	if err == nil {
+		if options.Overwrite {
+			if err := os.RemoveAll(renderDir); err != nil {
+				return errors.Wrap(err, "failed to remove previous content in base")
+			}
+		} else {
+			return fmt.Errorf("directory %s already exists", renderDir)
+		}
+	}
+
+	if os.IsNotExist(err) {
+		if err := os.MkdirAll(renderDir, 0744); err != nil {
+			return errors.Wrap(err, "failed to mkdir for base root")
+		}
+	}
+
+	for _, file := range b.Files {
+		fileRenderPath := filepath.Join(renderDir, file.Path)
+		d, _ := path.Split(fileRenderPath)
+		if _, err := os.Stat(d); os.IsNotExist(err) {
+			if err := os.MkdirAll(d, 0755); err != nil {
+				return errors.Wrapf(err, "failed to mkdir %s", d)
+			}
+		}
+
+		if err := os.WriteFile(fileRenderPath, file.Content, 0644); err != nil {
+			return errors.Wrap(err, "failed to write base file")
+		}
+	}
+
+	return nil
+}
+
 func (b *Base) writeBase(options WriteOptions, isTopLevelBase bool) ([]string, []kustomizetypes.PatchStrategicMerge, error) {
 	renderDir := filepath.Join(options.BaseDir, b.Path)
 
