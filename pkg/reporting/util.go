@@ -55,6 +55,11 @@ func InjectReportingInfoHeaders(req *http.Request, reportingInfo *types.Reportin
 
 	req.Header.Set("X-Replicated-KurlNodeCountTotal", strconv.Itoa(reportingInfo.KurlNodeCountTotal))
 	req.Header.Set("X-Replicated-KurlNodeCountReady", strconv.Itoa(reportingInfo.KurlNodeCountReady))
+
+	if reportingInfo.GitOpsReport != nil {
+		req.Header.Set("X-Replicated-IsGitOpsEnabled", strconv.FormatBool(reportingInfo.GitOpsReport.IsEnabled))
+		req.Header.Set("X-Replicated-GitOpsProvider", reportingInfo.GitOpsReport.Provider)
+	}
 }
 
 func canReport(endpoint string) bool {

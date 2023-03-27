@@ -13,6 +13,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/api/reporting/types"
+	"github.com/replicatedhq/kots/pkg/gitops"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/kurl"
@@ -24,6 +25,7 @@ import (
 	helmrelease "helm.sh/helm/v3/pkg/release"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/client-go/kubernetes"
 )
 
 var (
@@ -263,6 +265,7 @@ func GetReportingInfo(appID string) *types.ReportingInfo {
 		}
 	}
 
+	r.GitOpsReport = getGitOpsReport(clientset, appID, r.ClusterID)
 	return &r
 }
 
@@ -326,4 +329,20 @@ func getDownstreamInfo(appID string) (*types.DownstreamInfo, error) {
 	}
 
 	return &di, nil
+}
+
+func getGitOpsReport(clientset kubernetes.Interface, appID string, clusterID string) *types.GitOpsReport {
+	gitOpsConfig, err := gitops.GetDownstreamGitOpsConfig(clientset, appID, clusterID)
+	if err != nil {
+		logger.Debugf("failed to get gitops config: %v", err.Error())
+		return nil
+	}
+
+	if gitOpsConfig != nil {
+		return &types.GitOpsReport{
+			Provider:  gitOpsConfig.Provider,
+			IsEnabled: gitOpsConfig.IsConnected,
+		}
+	}
+	return nil
 }
