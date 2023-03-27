@@ -126,7 +126,7 @@ func getAPIAutoCreateClusterToken(namespace string, clientset *kubernetes.Client
 
 func getKotsInstallID(namespace string, clientset *kubernetes.Clientset) (string, error) {
 	configMap, err := clientset.CoreV1().ConfigMaps(namespace).Get(context.TODO(), types.KotsadmConfigMap, metav1.GetOptions{})
-	if err != nil && kuberneteserrors.IsNotFound(err) {
+	if err != nil && !kuberneteserrors.IsNotFound(err) {
 		return "", errors.Wrap(err, "failed to read configmap")
 	}
 	if err == nil && configMap.Data != nil {
