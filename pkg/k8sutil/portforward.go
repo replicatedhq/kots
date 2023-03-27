@@ -340,7 +340,7 @@ func PortForward(localPort int, remotePort int, namespace string, getPodName fun
 						// The API doesn't return ports that aren't ready, so this is possibly rbac?
 						err = errors.Errorf("failed to forward port. check that you have permission to run kubectl port-forward -n %s svc/%s %d:%d", namespace, desiredAdditionalPort.ServiceName, desiredAdditionalPort.LocalPort, desiredAdditionalPort.ServicePort)
 						prevServiceForwardErr := prevServiceForwardErrMap[desiredAdditionalPort.ServiceName]
-						if prevServiceForwardErr == nil || prevServiceForwardErr.Error() != err.Error(){
+						if prevServiceForwardErr == nil || prevServiceForwardErr.Error() != err.Error() {
 							log.Error(err)
 							prevServiceForwardErrMap[desiredAdditionalPort.ServiceName] = err
 						}
