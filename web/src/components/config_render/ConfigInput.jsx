@@ -13,11 +13,30 @@ export default class ConfigInput extends React.Component {
       inputVal: "",
       focused: false,
     };
+    if (props.validationRegEx) {
+      console.log(props.validationRegEx);
+      this.regex = new RegExp(props.validationRegEx);
+      this.validationErrorMessage = props.validationErrorMessage || "Invalid input";
+    }
   }
 
   handleOnChange = (field, e, objKey) => {
-    const { handleOnChange, name } = this.props;
     this.setState({ [`${field}`]: e.target.value });
+    if (this.regex) {
+      if (this.regex.test(e.target.value)) {
+        this.setState({ hasValidationError: false });
+      } else {
+        this.setState({ hasValidationError: true });
+        return;
+      }
+    }
+    /*
+
+      const regex = new RegExp(`^.{$minLength,$maxLength}$`);
+
+  if (regex.test(str)) {
+    */
+    const { handleOnChange, name } = this.props;
     if (handleOnChange && typeof handleOnChange === "function") {
       handleOnChange(name, e.target.value, objKey);
     }
@@ -55,6 +74,8 @@ export default class ConfigInput extends React.Component {
   // Use title -OR- required prop to render <ConfigItemTitle> to make sure error
   // elements are rendered.
   render() {
+    const showValidationError = this.state.hasValidationError &&
+      this.state.focused === false;
     const hidden = this.props.hidden || this.props.when === "false";
     const placeholder =
       this.props.inputType === "password"
@@ -76,13 +97,15 @@ export default class ConfigInput extends React.Component {
             hidden={hidden}
             order={setOrder(this.props.index, this.props.affix)}
           >
-            {this.props.title !== "" || this.props.required ? (
+            {this.props.title !== "" || this.props.required || showValidationError ? (
               <ConfigItemTitle
                 title={this.props.title}
                 recommended={this.props.recommended}
                 required={this.props.required}
                 name={this.props.name}
                 error={this.props.error}
+                showValidationError={showValidationError}
+                validationErrorMessage={this.props.validationErrorMessage}
               />
             ) : null}
             {this.props.help_text !== "" ? (
@@ -115,9 +138,8 @@ export default class ConfigInput extends React.Component {
                 onBlur={() =>
                   this.setState({ [`${objKey}InputFocused`]: false })
                 }
-                className={`${this.props.className || ""} Input ${
-                  this.props.readonly ? "readonly" : ""
-                }`}
+                className={`${this.props.className || ""} Input ${this.props.readonly ? "readonly" : ""
+                  }`}
               />
               {variadicItemsLen > 1 ? (
                 <Icon
@@ -162,13 +184,15 @@ export default class ConfigInput extends React.Component {
         hidden={hidden}
         order={setOrder(this.props.index, this.props.affix)}
       >
-        {this.props.title !== "" || this.props.required ? (
+        {this.props.title !== "" || this.props.required || showValidationError ? (
           <ConfigItemTitle
             title={this.props.title}
             recommended={this.props.recommended}
             required={this.props.required}
             name={this.props.name}
             error={this.props.error}
+            showValidationError={showValidationError}
+            validationErrorMessage={this.props.validationErrorMessage}
           />
         ) : null}
         {this.props.help_text !== "" ? (
@@ -195,9 +219,8 @@ export default class ConfigInput extends React.Component {
             onChange={(e) => this.handleOnChange("inputVal", e)}
             onFocus={() => this.setState({ focused: true })}
             onBlur={() => this.setState({ focused: false })}
-            className={`${this.props.className || ""} Input ${
-              this.props.readonly ? "readonly" : ""
-            }`}
+            className={`${this.props.className || ""} Input ${this.props.readonly ? "readonly" : ""
+              }`}
           />
         </div>
         {this.props.inputType !== "password" && this.props.default ? (

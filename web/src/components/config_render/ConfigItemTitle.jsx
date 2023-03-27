@@ -12,10 +12,13 @@ export default class ConfigItemTitle extends React.Component {
       hidden,
       when,
       error = "",
+      validationErrorMessage,
+      showValidationError = false,
     } = this.props;
 
+
     var isHidden =
-      hidden || when === "false" || (!title && !required && !recommended);
+      hidden || when === "false" || (!title && !required && !recommended && !showValidationError);
 
     if (isHidden) {
       return null;
@@ -45,12 +48,13 @@ export default class ConfigItemTitle extends React.Component {
             <span className="field-label recommended">Recommended</span>
           ) : null}
           <span
-            className={classNames("u-marginLeft--5 config-errblock", {
-              visible: !!error,
+            className={classNames("u-marginLeft--5 u-marginBottom--5 config-errblock", {
+              visible: !!error || showValidationError,
             })}
             id={`${this.props.name}-errblock`}
           >
-            {error || ""}
+            {showValidationError && validationErrorMessage}
+            {!showValidationError && (error || "")}
           </span>
         </div>
       </h4>

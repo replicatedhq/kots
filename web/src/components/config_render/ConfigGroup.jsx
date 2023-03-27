@@ -58,6 +58,8 @@ const ConfigGroup = (props) => {
               {...item}
               readonly={isReadOnly}
               index={i + 1}
+              validationRegEx={item?.validation?.regex}
+              validationErrorMessage={item?.validation?.message}
             />
           );
         case "textarea":
@@ -217,6 +219,12 @@ const ConfigGroup = (props) => {
     return null;
   }
   const hasAffix = item.items.every((option) => option.affix);
+
+  item.items[1].validation = {
+    regex: '^.{4,20}$',
+    message: 'should be between 4 and 20 characters'
+  };
+
   return (
     <div className="flex-column flex-auto">
       {item && (
