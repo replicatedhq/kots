@@ -181,7 +181,7 @@ func renderKotsKinds(upstreamFiles []upstreamtypes.UpstreamFile, renderedConfig 
 		decode := scheme.Codecs.UniversalDeserializer().Decode
 		_, gvk, err := decode(upstreamFile.Content, nil, nil)
 		if err != nil {
-			if document.APIVersion == "kots.io/v1beta1" {
+			if document.APIVersion == "kots.io/v1beta1" || document.APIVersion == "troubleshoot.sh/v1beta2" || document.APIVersion == "velero.io/v1" {
 				return nil, errors.Wrapf(err, "failed to decode kots yaml %s", upstreamFile.Path)
 			}
 			continue

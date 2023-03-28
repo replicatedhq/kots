@@ -1063,7 +1063,9 @@ spec:
   useHelmInstall: true
   weight: 42
   values:
-    postgresqlPassword: "abc123"
+    postgresqlPassword:
+      strValue: abc123
+      valueType: string
 `,
 						),
 					},
