@@ -6,7 +6,7 @@ generate: controller-gen client-gen
 		object:headerFile=./hack/boilerplate.go.txt \
 		paths=./apis/...
 	$(CONTROLLER_GEN) \
-		crd \
+		crd:allowDangerousTypes=true \
 		+output:dir=./config/crds \
 		paths=./apis/kots/v1beta1/...
 	$(CLIENT_GEN) \
