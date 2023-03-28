@@ -513,7 +513,7 @@ class AirgapRegistrySettings extends Component<Props, State> {
                 className="tw-gap-0"
                 placeholder="password"
                 value={password || ""}
-                onChange={(e) => {
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
                   this.handleFormChange("password", e.target.value);
                 }}
                 id={"airgap-registry-password"}
