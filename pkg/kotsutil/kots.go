@@ -402,6 +402,72 @@ func (o KotsKinds) Marshal(g string, v string, k string) (string, error) {
 	return "", errors.Errorf("unknown gvk %s/%s, Kind=%s", g, v, k)
 }
 
+func (k *KotsKinds) addKotsKind(content []byte) error {
+	decode := scheme.Codecs.UniversalDeserializer().Decode
+
+	// kots kinds could be part of a multi-yaml doc
+	docs := util.ConvertToSingleDocs(content)
+	for _, doc := range docs {
+		decoded, gvk, err := decode(doc, nil, nil)
+		if err != nil {
+			// TODO: log something on yaml errors (based on file extention)
+			return errors.Wrap(err, "failed to decode yaml content")
+		}
+
+		if strings.HasPrefix(gvk.String(), "troubleshoot.replicated.com/v1beta1,") {
+			doc, err = docrewrite.ConvertToV1Beta2(doc)
+			if err != nil {
+				return errors.Wrap(err, "failed to convert to v1beta2")
+			}
+			decoded, gvk, err = decode(doc, nil, nil)
+			if err != nil {
+				return err
+			}
+		}
+
+		switch gvk.String() {
+		case "kots.io/v1beta1, Kind=Config":
+			k.Config = decoded.(*kotsv1beta1.Config)
+		case "kots.io/v1beta1, Kind=ConfigValues":
+			k.ConfigValues = decoded.(*kotsv1beta1.ConfigValues)
+		case "kots.io/v1beta1, Kind=Application":
+			k.KotsApplication = *decoded.(*kotsv1beta1.Application)
+		case "kots.io/v1beta1, Kind=License":
+			k.License = decoded.(*kotsv1beta1.License)
+		case "kots.io/v1beta1, Kind=Identity":
+			k.Identity = decoded.(*kotsv1beta1.Identity)
+		case "kots.io/v1beta1, Kind=IdentityConfig":
+			k.IdentityConfig = decoded.(*kotsv1beta1.IdentityConfig)
+		case "kots.io/v1beta1, Kind=Installation":
+			k.Installation = *decoded.(*kotsv1beta1.Installation)
+		case "kots.io/v1beta1, Kind=HelmChart":
+			k.HelmCharts = append(k.HelmCharts, decoded.(*kotsv1beta1.HelmChart))
+		case "kots.io/v1beta1, Kind=LintConfig":
+			k.LintConfig = decoded.(*kotsv1beta1.LintConfig)
+		case "troubleshoot.sh/v1beta2, Kind=Collector":
+			k.Collector = decoded.(*troubleshootv1beta2.Collector)
+		case "troubleshoot.sh/v1beta2, Kind=Analyzer":
+			k.Analyzer = decoded.(*troubleshootv1beta2.Analyzer)
+		case "troubleshoot.sh/v1beta2, Kind=SupportBundle":
+			k.SupportBundle = decoded.(*troubleshootv1beta2.SupportBundle)
+		case "troubleshoot.sh/v1beta2, Kind=Redactor":
+			k.Redactor = decoded.(*troubleshootv1beta2.Redactor)
+		case "troubleshoot.sh/v1beta2, Kind=Preflight":
+			k.Preflight = decoded.(*troubleshootv1beta2.Preflight)
+		case "troubleshoot.sh/v1beta2, Kind=HostPreflight":
+			k.HostPreflight = decoded.(*troubleshootv1beta2.HostPreflight)
+		case "velero.io/v1, Kind=Backup":
+			k.Backup = decoded.(*velerov1.Backup)
+		case "kurl.sh/v1beta1, Kind=Installer", "cluster.kurl.sh/v1beta1, Kind=Installer":
+			k.Installer = decoded.(*kurlv1beta1.Installer)
+		case "app.k8s.io/v1beta1, Kind=Application":
+			k.Application = decoded.(*applicationv1beta1.Application)
+		}
+	}
+
+	return nil
+}
+
 func GetImagesFromKotsKinds(kotsKinds *KotsKinds) []string {
 	if kotsKinds == nil {
 		return nil
@@ -510,72 +576,6 @@ func LoadKotsKindsFromPath(fromDir string) (*KotsKinds, error) {
 	}
 
 	return &kotsKinds, nil
-}
-
-func (k *KotsKinds) addKotsKind(content []byte) error {
-	decode := scheme.Codecs.UniversalDeserializer().Decode
-
-	// kots kinds could be part of a multi-yaml doc
-	docs := util.ConvertToSingleDocs(content)
-	for _, doc := range docs {
-		decoded, gvk, err := decode(doc, nil, nil)
-		if err != nil {
-			// TODO: log something on yaml errors (based on file extention)
-			return errors.Wrap(err, "failed to decode yaml content")
-		}
-
-		if strings.HasPrefix(gvk.String(), "troubleshoot.replicated.com/v1beta1,") {
-			doc, err = docrewrite.ConvertToV1Beta2(doc)
-			if err != nil {
-				return errors.Wrap(err, "failed to convert to v1beta2")
-			}
-			decoded, gvk, err = decode(doc, nil, nil)
-			if err != nil {
-				return err
-			}
-		}
-
-		switch gvk.String() {
-		case "kots.io/v1beta1, Kind=Config":
-			k.Config = decoded.(*kotsv1beta1.Config)
-		case "kots.io/v1beta1, Kind=ConfigValues":
-			k.ConfigValues = decoded.(*kotsv1beta1.ConfigValues)
-		case "kots.io/v1beta1, Kind=Application":
-			k.KotsApplication = *decoded.(*kotsv1beta1.Application)
-		case "kots.io/v1beta1, Kind=License":
-			k.License = decoded.(*kotsv1beta1.License)
-		case "kots.io/v1beta1, Kind=Identity":
-			k.Identity = decoded.(*kotsv1beta1.Identity)
-		case "kots.io/v1beta1, Kind=IdentityConfig":
-			k.IdentityConfig = decoded.(*kotsv1beta1.IdentityConfig)
-		case "kots.io/v1beta1, Kind=Installation":
-			k.Installation = *decoded.(*kotsv1beta1.Installation)
-		case "kots.io/v1beta1, Kind=HelmChart":
-			k.HelmCharts = append(k.HelmCharts, decoded.(*kotsv1beta1.HelmChart))
-		case "kots.io/v1beta1, Kind=LintConfig":
-			k.LintConfig = decoded.(*kotsv1beta1.LintConfig)
-		case "troubleshoot.sh/v1beta2, Kind=Collector":
-			k.Collector = decoded.(*troubleshootv1beta2.Collector)
-		case "troubleshoot.sh/v1beta2, Kind=Analyzer":
-			k.Analyzer = decoded.(*troubleshootv1beta2.Analyzer)
-		case "troubleshoot.sh/v1beta2, Kind=SupportBundle":
-			k.SupportBundle = decoded.(*troubleshootv1beta2.SupportBundle)
-		case "troubleshoot.sh/v1beta2, Kind=Redactor":
-			k.Redactor = decoded.(*troubleshootv1beta2.Redactor)
-		case "troubleshoot.sh/v1beta2, Kind=Preflight":
-			k.Preflight = decoded.(*troubleshootv1beta2.Preflight)
-		case "troubleshoot.sh/v1beta2, Kind=HostPreflight":
-			k.HostPreflight = decoded.(*troubleshootv1beta2.HostPreflight)
-		case "velero.io/v1, Kind=Backup":
-			k.Backup = decoded.(*velerov1.Backup)
-		case "kurl.sh/v1beta1, Kind=Installer", "cluster.kurl.sh/v1beta1, Kind=Installer":
-			k.Installer = decoded.(*kurlv1beta1.Installer)
-		case "app.k8s.io/v1beta1, Kind=Application":
-			k.Application = decoded.(*applicationv1beta1.Application)
-		}
-	}
-
-	return nil
 }
 
 func KotsKindsFromMap(kotsKindsMap map[string][]byte) (*KotsKinds, error) {
