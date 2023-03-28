@@ -13,6 +13,7 @@ import (
 	"github.com/ghodss/yaml"
 	"github.com/pmezard/go-difflib/difflib"
 	"github.com/replicatedhq/kots/pkg/base"
+	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/template"
 	upstreamtypes "github.com/replicatedhq/kots/pkg/upstream/types"
@@ -27,11 +28,12 @@ type TestCaseSpec struct {
 }
 
 type testCase struct {
-	Name          string
-	Upstream      upstreamtypes.Upstream
-	RenderOptions base.RenderOptions
-	WantBase      base.Base
-	WantHelmBase  base.Base
+	Name                string
+	Upstream            upstreamtypes.Upstream
+	RenderOptions       base.RenderOptions
+	WantBase            base.Base
+	WantHelmBase        base.Base
+	WantKotsKindsBundle kotsutil.KotsKindsBundle
 }
 
 func TestRenderUpstream(t *testing.T) {
@@ -107,7 +109,7 @@ func TestRenderUpstream(t *testing.T) {
 			template.TestingDisableKurlValues = true
 			defer func() { template.TestingDisableKurlValues = false }()
 
-			gotBase, gotHelmBases, err := base.RenderUpstream(&tt.Upstream, &tt.RenderOptions)
+			gotBase, gotHelmBases, gotKotsKindsBundle, err := base.RenderUpstream(&tt.Upstream, &tt.RenderOptions)
 			require.NoError(t, err)
 
 			if len(tt.WantBase.Files) > 0 {
@@ -125,6 +127,11 @@ func TestRenderUpstream(t *testing.T) {
 					}
 					t.FailNow()
 				}
+			}
+
+			if !assert.IsEqual(tt.WantKotsKindsBundle, gotKotsKindsBundle) {
+				t.Log(diffJSON(gotKotsKindsBundle, tt.WantKotsKindsBundle))
+				t.FailNow()
 			}
 
 			// TODO: Need to test upstream with multiple Helm charts.

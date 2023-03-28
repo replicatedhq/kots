@@ -379,7 +379,7 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 	log.ActionWithSpinner("Creating base")
 	io.WriteString(pullOptions.ReportWriter, "Creating base\n")
 
-	commonBase, helmBases, kotsBase, err := base.RenderUpstream(u, &renderOptions)
+	commonBase, helmBases, kotsKindsBundle, err := base.RenderUpstream(u, &renderOptions)
 	if err != nil {
 		log.FinishSpinnerWithError()
 		return "", errors.Wrap(err, "failed to render upstream")
@@ -423,7 +423,6 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 		ExcludeKotsKinds: pullOptions.ExcludeKotsKinds,
 		IsHelmBase:       false,
 	}
-
 	if err := commonBase.WriteBase(writeBaseOptions); err != nil {
 		log.FinishSpinnerWithError()
 		return "", errors.Wrap(err, "failed to write common base")
@@ -444,16 +443,6 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 			log.FinishSpinnerWithError()
 			return "", errors.Wrapf(err, "failed to write helm base %s", helmBaseCopy.Path)
 		}
-	}
-
-	writeKotsKindsOptions := base.WriteOptions{
-		BaseDir:   u.GetKotsKindsDir(writeUpstreamOptions),
-		Overwrite: true,
-	}
-
-	if err := kotsBase.WriteKotsKinds(writeKotsKindsOptions); err != nil {
-		log.FinishSpinnerWithError()
-		return "", errors.Wrap(err, "failed to write kots base")
 	}
 
 	log.FinishSpinner()
@@ -576,6 +565,11 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 		KustomizeBinPath: kotsKinds.GetKustomizeBinaryPath(),
 	}); err != nil {
 		return "", errors.Wrap(err, "failed to write rendered")
+	}
+
+	err = kotsKindsBundle.Write(u.GetKotsKindsDir(writeUpstreamOptions), true)
+	if err != nil {
+		return "", errors.Wrap(err, "failed to write the rendered kots kinds")
 	}
 
 	return filepath.Join(pullOptions.RootDir, u.Name), nil
@@ -754,7 +748,7 @@ func GetAppMetadataFromAirgap(airgapArchive string) (*replicatedapp.ApplicationM
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create temp dir")
 	}
-	//defer os.RemoveAll(tempDir)
+	defer os.RemoveAll(tempDir)
 
 	err = archives.ExtractTGZArchiveFromReader(bytes.NewReader(appArchive), tempDir)
 	if err != nil {

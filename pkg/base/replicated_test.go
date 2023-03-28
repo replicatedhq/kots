@@ -2,11 +2,13 @@ package base
 
 import (
 	_ "embed"
+	"fmt"
 	"io/ioutil"
 	"reflect"
 	"testing"
 
 	envsubst "github.com/drone/envsubst/v2"
+	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/template"
 	upstreamtypes "github.com/replicatedhq/kots/pkg/upstream/types"
@@ -22,6 +24,7 @@ func Test_findAllKotsHelmCharts(t *testing.T) {
 	tests := []struct {
 		name    string
 		content string
+		path    string
 		expect  map[string]interface{}
 	}{
 		{
@@ -51,6 +54,7 @@ spec:
 					"isNumber2": float64(100.5),
 				},
 			},
+			path: "/helm/chart.yaml",
 		},
 	}
 
@@ -60,7 +64,7 @@ spec:
 
 			upstreamFiles := []upstreamtypes.UpstreamFile{
 				{
-					Path:    "/heml/chart.yaml",
+					Path:    test.path,
 					Content: []byte(test.content),
 				},
 			}
@@ -68,14 +72,16 @@ spec:
 			builder := template.Builder{}
 			builder.AddCtx(template.StaticCtx{})
 
-			helmCharts, err := findAllKotsHelmCharts(upstreamFiles, builder, nil)
+			helmCharts, helmChartPaths, err := findAllKotsHelmCharts(upstreamFiles, builder, nil)
 			req.NoError(err)
 			assert.Len(t, helmCharts, 1)
+			assert.Len(t, helmChartPaths, 1)
 
 			helmValues, err := helmCharts[0].Spec.GetHelmValues(helmCharts[0].Spec.Values)
 			req.NoError(err)
 
 			assert.Equal(t, test.expect, helmValues)
+			assert.Equal(t, []string{test.path}, helmChartPaths)
 		})
 	}
 }
@@ -314,12 +320,13 @@ func Test_renderReplicated(t *testing.T) {
 	// secretName-3 tests repeatable items with a bool
 	// don't touch this! tests merging repeatable items with existing items
 	tests := []struct {
-		name               string
-		upstream           *upstreamtypes.Upstream
-		renderOptions      *RenderOptions
-		expectedDeployment BaseFile
-		expectedSecrets    []BaseFile
-		expectedMultidoc   BaseFile
+		name                    string
+		upstream                *upstreamtypes.Upstream
+		renderOptions           *RenderOptions
+		expectedDeployment      BaseFile
+		expectedSecrets         []BaseFile
+		expectedMultidoc        BaseFile
+		expectedKotsKindsBundle kotsutil.KotsKindsBundle
 	}{
 		{
 			name: "replace array with repeat values",
@@ -588,6 +595,62 @@ metadata:
   labels:
     app.kubernetes.io/name: multidoc`),
 			},
+			expectedKotsKindsBundle: kotsutil.KotsKindsBundle{
+				Config: &kotsutil.KotsKindsFile{
+					Path: "config.yaml",
+					Content: []byte(`apiVersion: kots.io/v1beta1
+kind: Config
+metadata:
+  creationTimestamp: null
+  name: config-sample
+spec:
+  groups:
+  - name: podInfo
+    description: info for pod
+    title: ""
+    items:
+    - name: podName
+      type: text
+      default: test
+      value: testPod
+    - name: mountPath
+      type: text
+      default: /var/www/html
+      value: ""
+  - name: secrets
+    minimumCount: 1
+    title: Secrets
+    description: Buncha Secrets
+    items:
+    - name: secretName
+      type: text
+      value: ""
+      title: Secret Name
+      countByGroup:
+      - secrets: 3
+      default: onetwothree
+      repeatable: true
+      minimumCount: 1
+      templates:
+      - apiVersion: apps/v1
+        kind: Deployment
+        name: my-deploy
+        namespace: my-app
+        yamlPath: spec.template.spec.volumes[1].projected.sources[1]
+      - apiVersion: v1
+        kind: Secret
+        name: my-secret
+        namespace: my-app
+        yamlPath:
+      valuesByGroup:
+        secrets:
+          secretName-1: MTIz
+          secretName-2: MTIz
+          secretName-3: MTIz
+`,
+					),
+				},
+			},
 		},
 	}
 
@@ -595,7 +658,7 @@ metadata:
 		t.Run(test.name, func(t *testing.T) {
 			req := require.New(t)
 
-			base, _, err := renderReplicated(test.upstream, test.renderOptions)
+			base, _, kotsKindsBundle, err := renderReplicated(test.upstream, test.renderOptions)
 			req.NoError(err)
 
 			decode := scheme.Codecs.UniversalDeserializer().Decode
@@ -608,6 +671,11 @@ metadata:
 			req.NoError(err)
 
 			expectedMultidoc := multidocobj.(*corev1.ServiceAccount)
+
+			fmt.Printf("expected:\n%s\n\n", string(test.expectedKotsKindsBundle.Config.Content))
+			fmt.Printf("got:\n%s\n\n", string(kotsKindsBundle.Config.Content))
+
+			req.ElementsMatch(test.expectedKotsKindsBundle, kotsKindsBundle)
 
 			var unmarshaledSecrets []*corev1.Secret
 			for _, expectedSecret := range test.expectedSecrets {
@@ -705,11 +773,12 @@ func Test_renderReplicatedHelm(t *testing.T) {
 		return c
 	}
 	tests := []struct {
-		name          string
-		upstream      *upstreamtypes.Upstream
-		renderOptions *RenderOptions
-		expectedBase  Base
-		expectedHelm  []Base
+		name                    string
+		upstream                *upstreamtypes.Upstream
+		renderOptions           *RenderOptions
+		expectedBase            Base
+		expectedHelm            []Base
+		expectedKotsKindsBundle kotsutil.KotsKindsBundle
 	}{
 		{
 			name: "basic test",
@@ -819,6 +888,27 @@ spec:
 				},
 			}},
 			expectedHelm: []Base{},
+			expectedKotsKindsBundle: kotsutil.KotsKindsBundle{
+				Config: &kotsutil.KotsKindsFile{
+					Path: "config.yaml",
+					Content: []byte(`apiVersion: kots.io/v1beta1
+kind: Config
+metadata:
+  creationTimestamp: null
+  name: config-sample
+spec:
+  groups:
+  - name: "podInfo"
+    description: "info for pod"
+    items:
+    - name: "podName"
+      type: "text"
+      default: "test"
+      value: "testPod"
+`,
+					),
+				},
+			},
 		},
 		{
 			name: "helm install test",
@@ -937,6 +1027,48 @@ spec:
 `),
 				},
 			}},
+			expectedKotsKindsBundle: kotsutil.KotsKindsBundle{
+				Config: &kotsutil.KotsKindsFile{
+					Path: "config.yaml",
+					Content: []byte(`apiVersion: kots.io/v1beta1
+kind: Config
+metadata:
+  creationTimestamp: null
+  name: config-sample
+spec:
+  groups:
+  - name: "podInfo"
+    description: "info for pod"
+    items:
+    - name: "podName"
+      type: "text"
+      default: "test"
+      value: "testPod"
+`,
+					),
+				},
+				HelmCharts: []*kotsutil.KotsKindsFile{
+					{
+						Path: "postgresql.yaml",
+						Content: []byte(`apiVersion: kots.io/v1beta1
+kind: HelmChart
+metadata:
+  name: postgresql
+spec:
+  # chart identifies a matching chart from a .tgz
+  chart:
+    name: postgresql
+    chartVersion: 10.13.8
+  helmVersion: v3
+  useHelmInstall: true
+  weight: 42
+  values:
+    postgresqlPassword: "abc123"
+`,
+						),
+					},
+				},
+			},
 			expectedHelm: []Base{
 				{
 					Path: "charts/postgresql",
@@ -1563,10 +1695,11 @@ version: 1.10.1
 		t.Run(test.name, func(t *testing.T) {
 			req := require.New(t)
 
-			base, helmBase, err := renderReplicated(test.upstream, test.renderOptions)
+			base, helmBase, kotsKindsBundle, err := renderReplicated(test.upstream, test.renderOptions)
 			req.NoError(err)
 			req.ElementsMatch(test.expectedHelm, helmBase)
 			req.ElementsMatch(test.expectedBase.Files, base.Files)
+			req.ElementsMatch(test.expectedKotsKindsBundle, kotsKindsBundle)
 		})
 	}
 }

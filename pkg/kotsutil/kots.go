@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"path"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -69,6 +70,159 @@ type OverlySimpleGVK struct {
 type OverlySimpleMetadata struct {
 	Name      string `yaml:"name"`
 	Namespace string `yaml:"namespace"`
+}
+
+type KotsKindsFile struct {
+	Path    string
+	Content []byte
+}
+
+type KotsKindsBundle struct {
+	KotsApplication *KotsKindsFile
+	Application     *KotsKindsFile
+	HelmCharts      []*KotsKindsFile
+
+	Collector     *KotsKindsFile
+	Preflight     *KotsKindsFile
+	Analyzer      *KotsKindsFile
+	SupportBundle *KotsKindsFile
+	Redactor      *KotsKindsFile
+	HostPreflight *KotsKindsFile
+
+	Config       *KotsKindsFile
+	ConfigValues *KotsKindsFile
+
+	Installation *KotsKindsFile
+	License      *KotsKindsFile
+
+	Identity       *KotsKindsFile
+	IdentityConfig *KotsKindsFile
+
+	Backup    *KotsKindsFile
+	Installer *KotsKindsFile
+
+	LintConfig *KotsKindsFile
+}
+
+func (b *KotsKindsBundle) Files() []*KotsKindsFile {
+	files := []*KotsKindsFile{}
+
+	if b.KotsApplication != nil {
+		files = append(files, b.KotsApplication)
+	}
+
+	if b.Application != nil {
+		files = append(files, b.Application)
+	}
+
+	for _, chart := range b.HelmCharts {
+		files = append(files, chart)
+	}
+
+	if b.Collector != nil {
+		files = append(files, b.Collector)
+	}
+
+	if b.Preflight != nil {
+		files = append(files, b.Preflight)
+	}
+
+	if b.Analyzer != nil {
+		files = append(files, b.Analyzer)
+	}
+
+	if b.SupportBundle != nil {
+		files = append(files, b.SupportBundle)
+	}
+
+	if b.SupportBundle != nil {
+		files = append(files, b.SupportBundle)
+	}
+
+	if b.Redactor != nil {
+		files = append(files, b.Redactor)
+	}
+
+	if b.HostPreflight != nil {
+		files = append(files, b.HostPreflight)
+	}
+
+	if b.Config != nil {
+		files = append(files, b.Config)
+	}
+
+	if b.ConfigValues != nil {
+		files = append(files, b.ConfigValues)
+	}
+
+	if b.Installation != nil {
+		files = append(files, b.Installation)
+	}
+
+	if b.License != nil {
+		files = append(files, b.License)
+	}
+
+	if b.Identity != nil {
+		files = append(files, b.Identity)
+	}
+
+	if b.IdentityConfig != nil {
+		files = append(files, b.IdentityConfig)
+	}
+
+	if b.Backup != nil {
+		files = append(files, b.Backup)
+	}
+
+	if b.Installer != nil {
+		files = append(files, b.Installer)
+	}
+
+	if b.LintConfig != nil {
+		files = append(files, b.LintConfig)
+	}
+
+	return files
+}
+
+func (b *KotsKindsBundle) Write(rootDir string, overwrite bool) error {
+	_, err := os.Stat(rootDir)
+	if err == nil {
+		if overwrite {
+			if err := os.RemoveAll(rootDir); err != nil {
+				return errors.Wrap(err, "failed to remove previous content in base")
+			}
+		} else {
+			return fmt.Errorf("directory %s already exists", rootDir)
+		}
+	}
+
+	if os.IsNotExist(err) {
+		if err := os.MkdirAll(rootDir, 0744); err != nil {
+			return errors.Wrap(err, "failed to mkdir for base root")
+		}
+	}
+
+	for _, file := range b.Files() {
+		fileRenderPath := filepath.Join(rootDir, file.Path)
+		d, _ := path.Split(fileRenderPath)
+		if _, err := os.Stat(d); os.IsNotExist(err) {
+			if err := os.MkdirAll(d, 0755); err != nil {
+				return errors.Wrapf(err, "failed to mkdir %s", d)
+			}
+		}
+
+		if err := os.WriteFile(fileRenderPath, file.Content, 0644); err != nil {
+			return errors.Wrap(err, "failed to write base file")
+		}
+	}
+
+	return nil
+}
+
+func (b *KotsKindsBundle) KotsKinds() (*KotsKinds, error) {
+	return nil, nil
 }
 
 // KotsKinds are all of the special "client-side" kinds that are packaged in
