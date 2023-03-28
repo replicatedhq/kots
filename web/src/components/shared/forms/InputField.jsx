@@ -1,6 +1,7 @@
 import React from "react";
 
 import "@src/scss/components/shared/forms/InputField.scss";
+import Icon from "@components/Icon";
 
 const InputField = ({
   label,
@@ -54,7 +55,13 @@ const InputField = ({
         />
         {type === "password" && isFirstChange && (
           <span className="show-password-toggle" onClick={handleToggleShow}>
-            {show ? "hide" : "show"}
+            {
+              <Icon
+                icon={show ? "visible" : "visibility-off"}
+                size={16}
+                className="gray-color"
+              />
+            }
           </span>
         )}
       </div>
