@@ -77,154 +77,6 @@ type KotsKindsFile struct {
 	Content []byte
 }
 
-type KotsKindsBundle struct {
-	KotsApplication *KotsKindsFile
-	Application     *KotsKindsFile
-	HelmCharts      []*KotsKindsFile
-
-	Collector     *KotsKindsFile
-	Preflight     *KotsKindsFile
-	Analyzer      *KotsKindsFile
-	SupportBundle *KotsKindsFile
-	Redactor      *KotsKindsFile
-	HostPreflight *KotsKindsFile
-
-	Config       *KotsKindsFile
-	ConfigValues *KotsKindsFile
-
-	Installation *KotsKindsFile
-	License      *KotsKindsFile
-
-	Identity       *KotsKindsFile
-	IdentityConfig *KotsKindsFile
-
-	Backup    *KotsKindsFile
-	Installer *KotsKindsFile
-
-	LintConfig *KotsKindsFile
-}
-
-func (b *KotsKindsBundle) Files() []*KotsKindsFile {
-	files := []*KotsKindsFile{}
-
-	if b.KotsApplication != nil {
-		files = append(files, b.KotsApplication)
-	}
-
-	if b.Application != nil {
-		files = append(files, b.Application)
-	}
-
-	for _, chart := range b.HelmCharts {
-		files = append(files, chart)
-	}
-
-	if b.Collector != nil {
-		files = append(files, b.Collector)
-	}
-
-	if b.Preflight != nil {
-		files = append(files, b.Preflight)
-	}
-
-	if b.Analyzer != nil {
-		files = append(files, b.Analyzer)
-	}
-
-	if b.SupportBundle != nil {
-		files = append(files, b.SupportBundle)
-	}
-
-	if b.SupportBundle != nil {
-		files = append(files, b.SupportBundle)
-	}
-
-	if b.Redactor != nil {
-		files = append(files, b.Redactor)
-	}
-
-	if b.HostPreflight != nil {
-		files = append(files, b.HostPreflight)
-	}
-
-	if b.Config != nil {
-		files = append(files, b.Config)
-	}
-
-	if b.ConfigValues != nil {
-		files = append(files, b.ConfigValues)
-	}
-
-	if b.Installation != nil {
-		files = append(files, b.Installation)
-	}
-
-	if b.License != nil {
-		files = append(files, b.License)
-	}
-
-	if b.Identity != nil {
-		files = append(files, b.Identity)
-	}
-
-	if b.IdentityConfig != nil {
-		files = append(files, b.IdentityConfig)
-	}
-
-	if b.Backup != nil {
-		files = append(files, b.Backup)
-	}
-
-	if b.Installer != nil {
-		files = append(files, b.Installer)
-	}
-
-	if b.LintConfig != nil {
-		files = append(files, b.LintConfig)
-	}
-
-	return files
-}
-
-func (b *KotsKindsBundle) Write(rootDir string, overwrite bool) error {
-	_, err := os.Stat(rootDir)
-	if err == nil {
-		if overwrite {
-			if err := os.RemoveAll(rootDir); err != nil {
-				return errors.Wrap(err, "failed to remove previous content in base")
-			}
-		} else {
-			return fmt.Errorf("directory %s already exists", rootDir)
-		}
-	}
-
-	if os.IsNotExist(err) {
-		if err := os.MkdirAll(rootDir, 0744); err != nil {
-			return errors.Wrap(err, "failed to mkdir for base root")
-		}
-	}
-
-	for _, file := range b.Files() {
-		fileRenderPath := filepath.Join(rootDir, file.Path)
-		d, _ := path.Split(fileRenderPath)
-		if _, err := os.Stat(d); os.IsNotExist(err) {
-			if err := os.MkdirAll(d, 0755); err != nil {
-				return errors.Wrapf(err, "failed to mkdir %s", d)
-			}
-		}
-
-		if err := os.WriteFile(fileRenderPath, file.Content, 0644); err != nil {
-			return errors.Wrap(err, "failed to write base file")
-		}
-	}
-
-	return nil
-}
-
-func (b *KotsKindsBundle) KotsKinds() (*KotsKinds, error) {
-	return nil, nil
-}
-
 // KotsKinds are all of the special "client-side" kinds that are packaged in
 // an application. These should be pointers because they are all optional.
 // But a few are still expected in the code later, so we make them not pointers,
@@ -716,6 +568,380 @@ func LoadKotsKindsFromPath(fromDir string) (*KotsKinds, error) {
 	}
 
 	return &kotsKinds, nil
+}
+
+// KotsKindsBundle is used for gathering rendered KOTS Kinds manifests for writing.
+type KotsKindsBundle struct {
+	KotsApplication *KotsKindsFile
+	Application     *KotsKindsFile
+	HelmCharts      []*KotsKindsFile
+
+	Collector     *KotsKindsFile
+	Preflight     *KotsKindsFile
+	Analyzer      *KotsKindsFile
+	SupportBundle *KotsKindsFile
+	Redactor      *KotsKindsFile
+	HostPreflight *KotsKindsFile
+
+	Config       *KotsKindsFile
+	ConfigValues *KotsKindsFile
+
+	Installation *KotsKindsFile
+	License      *KotsKindsFile
+
+	Identity       *KotsKindsFile
+	IdentityConfig *KotsKindsFile
+
+	Backup    *KotsKindsFile
+	Installer *KotsKindsFile
+
+	LintConfig *KotsKindsFile
+}
+
+func (b *KotsKindsBundle) Files() []*KotsKindsFile {
+	files := []*KotsKindsFile{}
+
+	if b.KotsApplication != nil {
+		files = append(files, b.KotsApplication)
+	}
+
+	if b.Application != nil {
+		files = append(files, b.Application)
+	}
+
+	for _, chart := range b.HelmCharts {
+		files = append(files, chart)
+	}
+
+	if b.Collector != nil {
+		files = append(files, b.Collector)
+	}
+
+	if b.Preflight != nil {
+		files = append(files, b.Preflight)
+	}
+
+	if b.Analyzer != nil {
+		files = append(files, b.Analyzer)
+	}
+
+	if b.SupportBundle != nil {
+		files = append(files, b.SupportBundle)
+	}
+
+	if b.SupportBundle != nil {
+		files = append(files, b.SupportBundle)
+	}
+
+	if b.Redactor != nil {
+		files = append(files, b.Redactor)
+	}
+
+	if b.HostPreflight != nil {
+		files = append(files, b.HostPreflight)
+	}
+
+	if b.Config != nil {
+		files = append(files, b.Config)
+	}
+
+	if b.ConfigValues != nil {
+		files = append(files, b.ConfigValues)
+	}
+
+	if b.Installation != nil {
+		files = append(files, b.Installation)
+	}
+
+	if b.License != nil {
+		files = append(files, b.License)
+	}
+
+	if b.Identity != nil {
+		files = append(files, b.Identity)
+	}
+
+	if b.IdentityConfig != nil {
+		files = append(files, b.IdentityConfig)
+	}
+
+	if b.Backup != nil {
+		files = append(files, b.Backup)
+	}
+
+	if b.Installer != nil {
+		files = append(files, b.Installer)
+	}
+
+	if b.LintConfig != nil {
+		files = append(files, b.LintConfig)
+	}
+
+	return files
+}
+
+func (b *KotsKindsBundle) KotsKinds() (*KotsKinds, error) {
+	kotsKinds := KotsKinds{}
+
+	decode := scheme.Codecs.UniversalDeserializer().Decode
+
+	if b.KotsApplication != nil {
+		decoded, _, err := decode(b.KotsApplication.Content, nil, nil)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to decode kots kind KotsApplication type")
+		}
+		tmp, ok := decoded.(*kotsv1beta1.Application)
+		if !ok {
+			return nil, errors.New("failed to cast kots kind Application")
+		}
+		kotsKinds.KotsApplication = *tmp
+	}
+
+	if b.Application != nil {
+		decoded, _, err := decode(b.Application.Content, nil, nil)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to decode kots kind Application type")
+		}
+		tmp, ok := decoded.(*applicationv1beta1.Application)
+		if !ok {
+			return nil, errors.New("failed to cast kots kind Application")
+		}
+		kotsKinds.Application = tmp
+	}
+
+	if b.HelmCharts != nil {
+		charts := []*kotsv1beta1.HelmChart{}
+		for _, chart := range b.HelmCharts {
+			decoded, _, err := decode(chart.Content, nil, nil)
+			if err != nil {
+				return nil, errors.Wrap(err, "failed to decode kots kind HelmCharts type")
+			}
+			tmp, ok := decoded.(*kotsv1beta1.HelmChart)
+			if !ok {
+				return nil, errors.New("failed to cast kots kind Application")
+			}
+			charts = append(charts, tmp)
+
+		}
+		kotsKinds.HelmCharts = charts
+	}
+
+	if b.Collector != nil {
+		decoded, _, err := decode(b.Collector.Content, nil, nil)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to decode kots kind Collector type")
+		}
+		tmp, ok := decoded.(*troubleshootv1beta2.Collector)
+		if !ok {
+			return nil, errors.New("failed to cast kots kind Application")
+		}
+		kotsKinds.Collector = tmp
+	}
+
+	if b.Preflight != nil {
+		decoded, _, err := decode(b.Preflight.Content, nil, nil)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to decode kots kind Preflight type")
+		}
+		tmp, ok := decoded.(*troubleshootv1beta2.Preflight)
+		if !ok {
+			return nil, errors.New("failed to cast kots kind Application")
+		}
+		kotsKinds.Preflight = tmp
+	}
+
+	if b.Analyzer != nil {
+		decoded, _, err := decode(b.Analyzer.Content, nil, nil)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to decode kots kind Analyzer type")
+		}
+		tmp, ok := decoded.(*troubleshootv1beta2.Analyzer)
+		if !ok {
+			return nil, errors.New("failed to cast kots kind Application")
+		}
+		kotsKinds.Analyzer = tmp
+	}
+
+	if b.SupportBundle != nil {
+		decoded, _, err := decode(b.SupportBundle.Content, nil, nil)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to decode kots kind SupportBundle type")
+		}
+		tmp, ok := decoded.(*troubleshootv1beta2.SupportBundle)
+		if !ok {
+			return nil, errors.New("failed to cast kots kind Application")
+		}
+		kotsKinds.SupportBundle = tmp
+	}
+
+	if b.Redactor != nil {
+		decoded, _, err := decode(b.Redactor.Content, nil, nil)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to decode kots kind Redactor type")
+		}
+		tmp, ok := decoded.(*troubleshootv1beta2.Redactor)
+		if !ok {
+			return nil, errors.New("failed to cast kots kind Application")
+		}
+		kotsKinds.Redactor = tmp
+	}
+
+	if b.HostPreflight != nil {
+		decoded, _, err := decode(b.HostPreflight.Content, nil, nil)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to decode kots kind HostPreflight type")
+		}
+		tmp, ok := decoded.(*troubleshootv1beta2.HostPreflight)
+		if !ok {
+			return nil, errors.New("failed to cast kots kind Application")
+		}
+		kotsKinds.HostPreflight = tmp
+	}
+
+	if b.Config != nil {
+		decoded, _, err := decode(b.Config.Content, nil, nil)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to decode kots kind Config type")
+		}
+		tmp, ok := decoded.(*kotsv1beta1.Config)
+		if !ok {
+			return nil, errors.New("failed to cast kots kind Application")
+		}
+		kotsKinds.Config = tmp
+	}
+
+	if b.ConfigValues != nil {
+		decoded, _, err := decode(b.ConfigValues.Content, nil, nil)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to decode kots kind ConfigValues type")
+		}
+		tmp, ok := decoded.(*kotsv1beta1.ConfigValues)
+		if !ok {
+			return nil, errors.New("failed to cast kots kind Application")
+		}
+		kotsKinds.ConfigValues = tmp
+	}
+
+	if b.Installation != nil {
+		decoded, _, err := decode(b.Installation.Content, nil, nil)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to decode kots kind Installation type")
+		}
+		tmp, ok := decoded.(*kotsv1beta1.Installation)
+		if !ok {
+			return nil, errors.New("failed to cast kots kind Application")
+		}
+		kotsKinds.Installation = *tmp
+	}
+
+	if b.License != nil {
+		decoded, _, err := decode(b.License.Content, nil, nil)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to decode kots kind License type")
+		}
+		tmp, ok := decoded.(*kotsv1beta1.License)
+		if !ok {
+			return nil, errors.New("failed to cast kots kind Application")
+		}
+		kotsKinds.License = tmp
+	}
+
+	if b.Identity != nil {
+		decoded, _, err := decode(b.Identity.Content, nil, nil)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to decode kots kind Identity type")
+		}
+		tmp, ok := decoded.(*kotsv1beta1.Identity)
+		if !ok {
+			return nil, errors.New("failed to cast kots kind Application")
+		}
+		kotsKinds.Identity = tmp
+	}
+
+	if b.IdentityConfig != nil {
+		decoded, _, err := decode(b.IdentityConfig.Content, nil, nil)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to decode kots kind IdentityConfig type")
+		}
+		tmp, ok := decoded.(*kotsv1beta1.IdentityConfig)
+		if !ok {
+			return nil, errors.New("failed to cast kots kind Application")
+		}
+		kotsKinds.IdentityConfig = tmp
+	}
+
+	if b.Backup != nil {
+		decoded, _, err := decode(b.Backup.Content, nil, nil)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to decode kots kind Backup type")
+		}
+		tmp, ok := decoded.(*velerov1.Backup)
+		if !ok {
+			return nil, errors.New("failed to cast kots kind Application")
+		}
+		kotsKinds.Backup = tmp
+	}
+
+	if b.Installer != nil {
+		decoded, _, err := decode(b.Installer.Content, nil, nil)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to decode kots kind Installer type")
+		}
+		tmp, ok := decoded.(*kurlv1beta1.Installer)
+		if !ok {
+			return nil, errors.New("failed to cast kots kind Application")
+		}
+		kotsKinds.Installer = tmp
+	}
+
+	if b.LintConfig != nil {
+		decoded, _, err := decode(b.LintConfig.Content, nil, nil)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to decode kots kind LintConfig type")
+		}
+		tmp, ok := decoded.(*kotsv1beta1.LintConfig)
+		if !ok {
+			return nil, errors.New("failed to cast kots kind Application")
+		}
+		kotsKinds.LintConfig = tmp
+	}
+
+	return &kotsKinds, nil
+}
+
+func (b *KotsKindsBundle) Write(rootDir string, overwrite bool) error {
+	_, err := os.Stat(rootDir)
+	if err == nil {
+		if overwrite {
+			if err := os.RemoveAll(rootDir); err != nil {
+				return errors.Wrap(err, "failed to remove previous content in base")
+			}
+		} else {
+			return fmt.Errorf("directory %s already exists", rootDir)
+		}
+	}
+
+	if os.IsNotExist(err) {
+		if err := os.MkdirAll(rootDir, 0744); err != nil {
+			return errors.Wrap(err, "failed to mkdir for base root")
+		}
+	}
+
+	for _, file := range b.Files() {
+		fileRenderPath := filepath.Join(rootDir, file.Path)
+		d, _ := path.Split(fileRenderPath)
+		if _, err := os.Stat(d); os.IsNotExist(err) {
+			if err := os.MkdirAll(d, 0755); err != nil {
+				return errors.Wrapf(err, "failed to mkdir %s", d)
+			}
+		}
+
+		if err := os.WriteFile(fileRenderPath, file.Content, 0644); err != nil {
+			return errors.Wrap(err, "failed to write base file")
+		}
+	}
+
+	return nil
 }
 
 func LoadHelmChartsFromPath(fromDir string) ([]*kotsv1beta1.HelmChart, error) {

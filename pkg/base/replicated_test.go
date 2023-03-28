@@ -2,7 +2,6 @@ package base
 
 import (
 	_ "embed"
-	"fmt"
 	"io/ioutil"
 	"reflect"
 	"testing"
@@ -627,7 +626,7 @@ spec:
       value: ""
       title: Secret Name
       countByGroup:
-      - secrets: 3
+        secrets: 3
       default: onetwothree
       repeatable: true
       minimumCount: 1
@@ -672,10 +671,11 @@ spec:
 
 			expectedMultidoc := multidocobj.(*corev1.ServiceAccount)
 
-			fmt.Printf("expected:\n%s\n\n", string(test.expectedKotsKindsBundle.Config.Content))
-			fmt.Printf("got:\n%s\n\n", string(kotsKindsBundle.Config.Content))
-
-			req.ElementsMatch(test.expectedKotsKindsBundle, kotsKindsBundle)
+			expKindsStruct, err := test.expectedKotsKindsBundle.KotsKinds()
+			req.NoError(err)
+			kindsStruct, err := kotsKindsBundle.KotsKinds()
+			req.NoError(err)
+			req.Equal(expKindsStruct, kindsStruct)
 
 			var unmarshaledSecrets []*corev1.Secret
 			for _, expectedSecret := range test.expectedSecrets {
@@ -904,7 +904,7 @@ spec:
     - name: "podName"
       type: "text"
       default: "test"
-      value: "testPod"
+      value: "testvalue"
 `,
 					),
 				},
@@ -1043,7 +1043,7 @@ spec:
     - name: "podName"
       type: "text"
       default: "test"
-      value: "testPod"
+      value: "testvalue"
 `,
 					),
 				},
@@ -1699,7 +1699,12 @@ version: 1.10.1
 			req.NoError(err)
 			req.ElementsMatch(test.expectedHelm, helmBase)
 			req.ElementsMatch(test.expectedBase.Files, base.Files)
-			req.ElementsMatch(test.expectedKotsKindsBundle, kotsKindsBundle)
+
+			expKindsStruct, err := test.expectedKotsKindsBundle.KotsKinds()
+			req.NoError(err)
+			kindsStruct, err := kotsKindsBundle.KotsKinds()
+			req.NoError(err)
+			req.Equal(expKindsStruct, kindsStruct)
 		})
 	}
 }
