@@ -265,7 +265,7 @@ func GetReportingInfo(appID string) *types.ReportingInfo {
 		}
 	}
 
-	r.GitOpsReport = getGitOpsReport(clientset, appID, r.ClusterID)
+	r.IsGitOpsEnabled, r.GitOpsProvider = getGitOpsReport(clientset, appID, r.ClusterID)
 	return &r
 }
 
@@ -331,18 +331,15 @@ func getDownstreamInfo(appID string) (*types.DownstreamInfo, error) {
 	return &di, nil
 }
 
-func getGitOpsReport(clientset kubernetes.Interface, appID string, clusterID string) *types.GitOpsReport {
+func getGitOpsReport(clientset kubernetes.Interface, appID string, clusterID string) (bool, string) {
 	gitOpsConfig, err := gitops.GetDownstreamGitOpsConfig(clientset, appID, clusterID)
 	if err != nil {
 		logger.Debugf("failed to get gitops config: %v", err.Error())
-		return nil
+		return false, ""
 	}
 
 	if gitOpsConfig != nil {
-		return &types.GitOpsReport{
-			Provider:  gitOpsConfig.Provider,
-			IsEnabled: gitOpsConfig.IsConnected,
-		}
+		return gitOpsConfig.IsConnected, gitOpsConfig.Provider
 	}
-	return nil
+	return false, ""
 }
