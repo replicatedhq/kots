@@ -11,6 +11,7 @@ import { Repeater } from "../../utilities/repeater";
 import Icon from "../Icon";
 import { App, KotsParams } from "@types";
 import { RouteComponentProps } from "react-router-dom";
+import InputField from "./forms/InputField";
 
 type Props = RouteComponentProps<KotsParams> & {
   app: App;
@@ -53,7 +54,6 @@ type State = {
   originalRegistry: RegistryDetails | null;
   pingedEndpoint: string;
   showStopUsingWarning: boolean;
-  passwordVisible: boolean;
   isFirstPasswordChange: boolean;
 };
 
@@ -88,7 +88,6 @@ class AirgapRegistrySettings extends Component<Props, State> {
       originalRegistry: null,
       pingedEndpoint: "",
       showStopUsingWarning: false,
-      passwordVisible: false,
       isFirstPasswordChange: true,
     };
   }
@@ -507,48 +506,23 @@ class AirgapRegistrySettings extends Component<Props, State> {
               <p className="u-fontSize--normal card-item-title u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">
                 Password
               </p>
-              <span className="tw-relative">
-                <input
-                  type={
-                    this.state.passwordVisible &&
-                    this.state.isFirstPasswordChange
-                      ? "text"
-                      : "password"
-                  }
-                  className="Input"
-                  placeholder="password"
-                  autoComplete="current-password"
-                  value={password || ""}
-                  onChange={(e) => {
-                    this.handleFormChange("password", e.target.value);
-                  }}
-                />
 
-                {this.state.isFirstPasswordChange &&
-                  (!this.state.passwordVisible ? (
-                    <Icon
-                      icon="visibility-off"
-                      size={16}
-                      className="gray-color tw-absolute tw-right-0 tw-top-2.5 tw-mr-4"
-                      onClick={() =>
-                        this.setState({
-                          passwordVisible: !this.state.passwordVisible,
-                        })
-                      }
-                    />
-                  ) : (
-                    <Icon
-                      icon="visible"
-                      size={16}
-                      className="gray-color tw-absolute tw-right-0 tw-top-2.5 tw-mr-4"
-                      onClick={() =>
-                        this.setState({
-                          passwordVisible: !this.state.passwordVisible,
-                        })
-                      }
-                    />
-                  ))}
-              </span>
+              <InputField
+                autoFocus
+                type={"password"}
+                className="tw-gap-0"
+                placeholder="password"
+                value={password || ""}
+                onChange={(e) => {
+                  this.handleFormChange("password", e.target.value);
+                }}
+                id={"airgap-registry-password"}
+                isFirstChange={this.state.isFirstPasswordChange}
+                label={undefined}
+                onFocus={undefined}
+                onBlur={undefined}
+                helperText={undefined}
+              />
             </div>
           </div>
           {hideTestConnection ? null : (

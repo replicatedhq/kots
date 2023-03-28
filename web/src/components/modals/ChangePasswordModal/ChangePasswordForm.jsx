@@ -111,6 +111,7 @@ const ChangePasswordForm = ({
         onChange={(e) =>
           setInputs({ ...inputs, currentPassword: e.target.value })
         }
+        isFirstChange={true}
       />
       <InputField
         label="New password"
@@ -120,6 +121,7 @@ const ChangePasswordForm = ({
         type="password"
         value={inputs.newPassword}
         onChange={(e) => setInputs({ ...inputs, newPassword: e.target.value })}
+        isFirstChange={true}
       />
       <InputField
         label="Confirm new password"
@@ -130,6 +132,7 @@ const ChangePasswordForm = ({
         onChange={(e) =>
           setInputs({ ...inputs, confirmPassword: e.target.value })
         }
+        isFirstChange={true}
       />
       <div className="flex change-password-submit-section">
         <button
