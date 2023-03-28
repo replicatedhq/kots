@@ -43,7 +43,7 @@ type Document struct {
 	Kind       string `yaml:"kind"`
 }
 
-func renderReplicated(u *upstreamtypes.Upstream, renderOptions *RenderOptions) (*Base, []Base, *kotsutil.KotsKindsBundle, error) {
+func renderReplicated(u *upstreamtypes.Upstream, renderOptions *RenderOptions) (*Base, []Base, map[string][]byte, error) {
 	commonBase := Base{
 		Files: []BaseFile{},
 		Bases: []Base{},
@@ -163,14 +163,14 @@ func renderReplicated(u *upstreamtypes.Upstream, renderOptions *RenderOptions) (
 			return nil, nil, nil, errors.Wrapf(err, "failed to marshal helm chart %s", kotsHelmChartPaths[i])
 		}
 
-		renderedKotsKinds.HelmCharts = append(renderedKotsKinds.HelmCharts, &kotsutil.KotsKindsFile{Path: kotsHelmChartPaths[i], Content: chartBytes})
+		renderedKotsKinds[kotsHelmChartPaths[i]] = chartBytes
 	}
 
 	return &commonBase, helmBases, renderedKotsKinds, nil
 }
 
-func renderKotsKinds(upstreamFiles []upstreamtypes.UpstreamFile, renderedConfig *kotsv1beta1.Config, renderOptions *RenderOptions, builder *template.Builder) (*kotsutil.KotsKindsBundle, error) {
-	kotsKinds := kotsutil.KotsKindsBundle{}
+func renderKotsKinds(upstreamFiles []upstreamtypes.UpstreamFile, renderedConfig *kotsv1beta1.Config, renderOptions *RenderOptions, builder *template.Builder) (map[string][]byte, error) {
+	kotsKinds := make(map[string][]byte)
 
 	for _, upstreamFile := range upstreamFiles {
 		document := &Document{}
@@ -194,7 +194,7 @@ func renderKotsKinds(upstreamFiles []upstreamtypes.UpstreamFile, renderedConfig 
 			if err != nil {
 				return nil, errors.Wrap(err, "failed to marshal rendered config")
 			}
-			kotsKinds.Config = &kotsutil.KotsKindsFile{Path: upstreamFile.Path, Content: configBytes}
+			kotsKinds[upstreamFile.Path] = configBytes
 			continue
 
 		case "kots.io/v1beta1, Kind=ConfigValues":
@@ -217,40 +217,38 @@ func renderKotsKinds(upstreamFiles []upstreamtypes.UpstreamFile, renderedConfig 
 				return nil, errors.Wrapf(err, "failed to render file %s", upstreamFile.Path)
 			}
 
-			kotsFile := &kotsutil.KotsKindsFile{Path: upstreamFile.Path, Content: []byte(rendered)}
-
 			switch gvk.String() {
 			case "app.k8s.io/v1beta1, Kind=Application":
-				kotsKinds.Application = kotsFile
+				kotsKinds[upstreamFile.Path] = []byte(rendered)
 			case "kots.io/v1beta1, Kind=Application":
-				kotsKinds.KotsApplication = kotsFile
+				kotsKinds[upstreamFile.Path] = []byte(rendered)
 			case "kots.io/v1beta1, Kind=License":
-				kotsKinds.License = kotsFile
+				kotsKinds[upstreamFile.Path] = []byte(rendered)
 			case "kots.io/v1beta1, Kind=Identity":
-				kotsKinds.Identity = kotsFile
+				kotsKinds[upstreamFile.Path] = []byte(rendered)
 			case "kots.io/v1beta1, Kind=IdentityConfig":
-				kotsKinds.IdentityConfig = kotsFile
+				kotsKinds[upstreamFile.Path] = []byte(rendered)
 			case "kots.io/v1beta1, Kind=Installation":
-				kotsKinds.Installation = kotsFile
+				kotsKinds[upstreamFile.Path] = []byte(rendered)
 			case "troubleshoot.sh/v1beta2, Kind=Collector":
-				kotsKinds.Collector = kotsFile
+				kotsKinds[upstreamFile.Path] = []byte(rendered)
 			case "troubleshoot.sh/v1beta2, Kind=Analyzer":
-				kotsKinds.Analyzer = kotsFile
+				kotsKinds[upstreamFile.Path] = []byte(rendered)
 			case "troubleshoot.sh/v1beta2, Kind=SupportBundle":
-				kotsKinds.SupportBundle = kotsFile
+				kotsKinds[upstreamFile.Path] = []byte(rendered)
 			case "troubleshoot.sh/v1beta2, Kind=Redactor":
-				kotsKinds.Redactor = kotsFile
+				kotsKinds[upstreamFile.Path] = []byte(rendered)
 			case "troubleshoot.sh/v1beta2, Kind=Preflight":
-				kotsKinds.Preflight = kotsFile
+				kotsKinds[upstreamFile.Path] = []byte(rendered)
 			case "velero.io/v1, Kind=Backup":
-				kotsKinds.Backup = kotsFile
+				kotsKinds[upstreamFile.Path] = []byte(rendered)
 			default:
 				continue
 			}
 		}
 	}
 
-	return &kotsKinds, nil
+	return kotsKinds, nil
 }
 
 func extractHelmBases(b Base) []Base {

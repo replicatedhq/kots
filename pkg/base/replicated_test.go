@@ -319,13 +319,13 @@ func Test_renderReplicated(t *testing.T) {
 	// secretName-3 tests repeatable items with a bool
 	// don't touch this! tests merging repeatable items with existing items
 	tests := []struct {
-		name                    string
-		upstream                *upstreamtypes.Upstream
-		renderOptions           *RenderOptions
-		expectedDeployment      BaseFile
-		expectedSecrets         []BaseFile
-		expectedMultidoc        BaseFile
-		expectedKotsKindsBundle kotsutil.KotsKindsBundle
+		name               string
+		upstream           *upstreamtypes.Upstream
+		renderOptions      *RenderOptions
+		expectedDeployment BaseFile
+		expectedSecrets    []BaseFile
+		expectedMultidoc   BaseFile
+		expectedKotsKinds  map[string][]byte
 	}{
 		{
 			name: "replace array with repeat values",
@@ -594,10 +594,8 @@ metadata:
   labels:
     app.kubernetes.io/name: multidoc`),
 			},
-			expectedKotsKindsBundle: kotsutil.KotsKindsBundle{
-				Config: &kotsutil.KotsKindsFile{
-					Path: "config.yaml",
-					Content: []byte(`apiVersion: kots.io/v1beta1
+			expectedKotsKinds: map[string][]byte{
+				"config.yaml": []byte(`apiVersion: kots.io/v1beta1
 kind: Config
 metadata:
   creationTimestamp: null
@@ -647,8 +645,7 @@ spec:
           secretName-2: MTIz
           secretName-3: MTIz
 `,
-					),
-				},
+				),
 			},
 		},
 	}
@@ -671,9 +668,9 @@ spec:
 
 			expectedMultidoc := multidocobj.(*corev1.ServiceAccount)
 
-			expKindsStruct, err := test.expectedKotsKindsBundle.KotsKinds()
+			expKindsStruct, err := kotsutil.KotsKindsFromMap(test.expectedKotsKinds)
 			req.NoError(err)
-			kindsStruct, err := kotsKindsBundle.KotsKinds()
+			kindsStruct, err := kotsutil.KotsKindsFromMap(kotsKindsBundle)
 			req.NoError(err)
 			req.Equal(expKindsStruct, kindsStruct)
 
@@ -773,12 +770,12 @@ func Test_renderReplicatedHelm(t *testing.T) {
 		return c
 	}
 	tests := []struct {
-		name                    string
-		upstream                *upstreamtypes.Upstream
-		renderOptions           *RenderOptions
-		expectedBase            Base
-		expectedHelm            []Base
-		expectedKotsKindsBundle kotsutil.KotsKindsBundle
+		name              string
+		upstream          *upstreamtypes.Upstream
+		renderOptions     *RenderOptions
+		expectedBase      Base
+		expectedHelm      []Base
+		expectedKotsKinds map[string][]byte
 	}{
 		{
 			name: "basic test",
@@ -888,10 +885,8 @@ spec:
 				},
 			}},
 			expectedHelm: []Base{},
-			expectedKotsKindsBundle: kotsutil.KotsKindsBundle{
-				Config: &kotsutil.KotsKindsFile{
-					Path: "config.yaml",
-					Content: []byte(`apiVersion: kots.io/v1beta1
+			expectedKotsKinds: map[string][]byte{
+				"config.yaml": []byte(`apiVersion: kots.io/v1beta1
 kind: Config
 metadata:
   creationTimestamp: null
@@ -906,8 +901,7 @@ spec:
       default: "test"
       value: "testvalue"
 `,
-					),
-				},
+				),
 			},
 		},
 		{
@@ -1027,10 +1021,8 @@ spec:
 `),
 				},
 			}},
-			expectedKotsKindsBundle: kotsutil.KotsKindsBundle{
-				Config: &kotsutil.KotsKindsFile{
-					Path: "config.yaml",
-					Content: []byte(`apiVersion: kots.io/v1beta1
+			expectedKotsKinds: map[string][]byte{
+				"config.yaml": []byte(`apiVersion: kots.io/v1beta1
 kind: Config
 metadata:
   creationTimestamp: null
@@ -1045,12 +1037,8 @@ spec:
       default: "test"
       value: "testvalue"
 `,
-					),
-				},
-				HelmCharts: []*kotsutil.KotsKindsFile{
-					{
-						Path: "postgresql.yaml",
-						Content: []byte(`apiVersion: kots.io/v1beta1
+				),
+				"postgresql.yaml": []byte(`apiVersion: kots.io/v1beta1
 kind: HelmChart
 metadata:
   name: postgresql
@@ -1067,9 +1055,7 @@ spec:
       strValue: abc123
       valueType: string
 `,
-						),
-					},
-				},
+				),
 			},
 			expectedHelm: []Base{
 				{
@@ -1697,14 +1683,14 @@ version: 1.10.1
 		t.Run(test.name, func(t *testing.T) {
 			req := require.New(t)
 
-			base, helmBase, kotsKindsBundle, err := renderReplicated(test.upstream, test.renderOptions)
+			base, helmBase, kotsKinds, err := renderReplicated(test.upstream, test.renderOptions)
 			req.NoError(err)
 			req.ElementsMatch(test.expectedHelm, helmBase)
 			req.ElementsMatch(test.expectedBase.Files, base.Files)
 
-			expKindsStruct, err := test.expectedKotsKindsBundle.KotsKinds()
+			expKindsStruct, err := kotsutil.KotsKindsFromMap(test.expectedKotsKinds)
 			req.NoError(err)
-			kindsStruct, err := kotsKindsBundle.KotsKinds()
+			kindsStruct, err := kotsutil.KotsKindsFromMap(kotsKinds)
 			req.NoError(err)
 			req.Equal(expKindsStruct, kindsStruct)
 		})

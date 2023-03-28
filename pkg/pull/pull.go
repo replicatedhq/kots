@@ -379,7 +379,7 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 	log.ActionWithSpinner("Creating base")
 	io.WriteString(pullOptions.ReportWriter, "Creating base\n")
 
-	commonBase, helmBases, kotsKindsBundle, err := base.RenderUpstream(u, &renderOptions)
+	commonBase, helmBases, renderedKotsKinds, err := base.RenderUpstream(u, &renderOptions)
 	if err != nil {
 		log.FinishSpinnerWithError()
 		return "", errors.Wrap(err, "failed to render upstream")
@@ -567,7 +567,7 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 		return "", errors.Wrap(err, "failed to write rendered")
 	}
 
-	err = kotsKindsBundle.Write(u.GetKotsKindsDir(writeUpstreamOptions), true)
+	err = kotsutil.WriteKotsKinds(renderedKotsKinds, u.GetKotsKindsDir(writeUpstreamOptions), true)
 	if err != nil {
 		return "", errors.Wrap(err, "failed to write the rendered kots kinds")
 	}

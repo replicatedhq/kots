@@ -124,7 +124,7 @@ func Rewrite(rewriteOptions RewriteOptions) error {
 	log.ActionWithSpinner("Creating base")
 	io.WriteString(rewriteOptions.ReportWriter, "Creating base\n")
 
-	commonBase, helmBases, kotsKindsBundle, err := base.RenderUpstream(u, &renderOptions)
+	commonBase, helmBases, renderedKotsKinds, err := base.RenderUpstream(u, &renderOptions)
 	if err != nil {
 		return errors.Wrap(err, "failed to render upstream")
 	}
@@ -320,7 +320,7 @@ func Rewrite(rewriteOptions RewriteOptions) error {
 		return errors.Wrap(err, "failed to write rendered")
 	}
 
-	if err := kotsKindsBundle.Write(u.GetKotsKindsDir(writeUpstreamOptions), true); err != nil {
+	if err := kotsutil.WriteKotsKinds(renderedKotsKinds, u.GetKotsKindsDir(writeUpstreamOptions), true); err != nil {
 		return errors.Wrap(err, "failed to write kots base")
 	}
 

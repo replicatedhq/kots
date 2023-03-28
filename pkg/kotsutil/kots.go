@@ -484,7 +484,6 @@ func LoadKotsKindsFromPath(fromDir string) (*KotsKinds, error) {
 		return &kotsKinds, nil
 	}
 
-	decode := scheme.Codecs.UniversalDeserializer().Decode
 	err := filepath.Walk(fromDir,
 		func(path string, info os.FileInfo, err error) error {
 			if err != nil {
@@ -500,65 +499,8 @@ func LoadKotsKindsFromPath(fromDir string) (*KotsKinds, error) {
 				return err
 			}
 
-			// kots kinds could be part of a multi-yaml doc
-			docs := util.ConvertToSingleDocs(contents)
-
-			for _, doc := range docs {
-				decoded, gvk, err := decode(doc, nil, nil)
-				if err != nil {
-					// TODO: log something on yaml errors (based on file extention)
-					return nil // not an error because the file might not be yaml
-				}
-
-				if strings.HasPrefix(gvk.String(), "troubleshoot.replicated.com/v1beta1,") {
-					doc, err = docrewrite.ConvertToV1Beta2(doc)
-					if err != nil {
-						return errors.Wrap(err, "failed to convert to v1beta2")
-					}
-					decoded, gvk, err = decode(doc, nil, nil)
-					if err != nil {
-						return err
-					}
-				}
-
-				switch gvk.String() {
-				case "kots.io/v1beta1, Kind=Config":
-					kotsKinds.Config = decoded.(*kotsv1beta1.Config)
-				case "kots.io/v1beta1, Kind=ConfigValues":
-					kotsKinds.ConfigValues = decoded.(*kotsv1beta1.ConfigValues)
-				case "kots.io/v1beta1, Kind=Application":
-					kotsKinds.KotsApplication = *decoded.(*kotsv1beta1.Application)
-				case "kots.io/v1beta1, Kind=License":
-					kotsKinds.License = decoded.(*kotsv1beta1.License)
-				case "kots.io/v1beta1, Kind=Identity":
-					kotsKinds.Identity = decoded.(*kotsv1beta1.Identity)
-				case "kots.io/v1beta1, Kind=IdentityConfig":
-					kotsKinds.IdentityConfig = decoded.(*kotsv1beta1.IdentityConfig)
-				case "kots.io/v1beta1, Kind=Installation":
-					kotsKinds.Installation = *decoded.(*kotsv1beta1.Installation)
-				case "kots.io/v1beta1, Kind=HelmChart":
-					kotsKinds.HelmCharts = append(kotsKinds.HelmCharts, decoded.(*kotsv1beta1.HelmChart))
-				case "kots.io/v1beta1, Kind=LintConfig":
-					kotsKinds.LintConfig = decoded.(*kotsv1beta1.LintConfig)
-				case "troubleshoot.sh/v1beta2, Kind=Collector":
-					kotsKinds.Collector = decoded.(*troubleshootv1beta2.Collector)
-				case "troubleshoot.sh/v1beta2, Kind=Analyzer":
-					kotsKinds.Analyzer = decoded.(*troubleshootv1beta2.Analyzer)
-				case "troubleshoot.sh/v1beta2, Kind=SupportBundle":
-					kotsKinds.SupportBundle = decoded.(*troubleshootv1beta2.SupportBundle)
-				case "troubleshoot.sh/v1beta2, Kind=Redactor":
-					kotsKinds.Redactor = decoded.(*troubleshootv1beta2.Redactor)
-				case "troubleshoot.sh/v1beta2, Kind=Preflight":
-					kotsKinds.Preflight = decoded.(*troubleshootv1beta2.Preflight)
-				case "troubleshoot.sh/v1beta2, Kind=HostPreflight":
-					kotsKinds.HostPreflight = decoded.(*troubleshootv1beta2.HostPreflight)
-				case "velero.io/v1, Kind=Backup":
-					kotsKinds.Backup = decoded.(*velerov1.Backup)
-				case "kurl.sh/v1beta1, Kind=Installer", "cluster.kurl.sh/v1beta1, Kind=Installer":
-					kotsKinds.Installer = decoded.(*kurlv1beta1.Installer)
-				case "app.k8s.io/v1beta1, Kind=Application":
-					kotsKinds.Application = decoded.(*applicationv1beta1.Application)
-				}
+			if err := kotsKinds.addKotsKind(contents); err != nil {
+				return errors.Wrapf(err, "failed to parse kots kind %s", path)
 			}
 
 			return nil
@@ -570,346 +512,85 @@ func LoadKotsKindsFromPath(fromDir string) (*KotsKinds, error) {
 	return &kotsKinds, nil
 }
 
-// KotsKindsBundle is used for gathering rendered KOTS Kinds manifests for writing.
-type KotsKindsBundle struct {
-	KotsApplication *KotsKindsFile
-	Application     *KotsKindsFile
-	HelmCharts      []*KotsKindsFile
-
-	Collector     *KotsKindsFile
-	Preflight     *KotsKindsFile
-	Analyzer      *KotsKindsFile
-	SupportBundle *KotsKindsFile
-	Redactor      *KotsKindsFile
-	HostPreflight *KotsKindsFile
-
-	Config       *KotsKindsFile
-	ConfigValues *KotsKindsFile
-
-	Installation *KotsKindsFile
-	License      *KotsKindsFile
-
-	Identity       *KotsKindsFile
-	IdentityConfig *KotsKindsFile
-
-	Backup    *KotsKindsFile
-	Installer *KotsKindsFile
-
-	LintConfig *KotsKindsFile
-}
-
-func (b *KotsKindsBundle) Files() []*KotsKindsFile {
-	files := []*KotsKindsFile{}
-
-	if b.KotsApplication != nil {
-		files = append(files, b.KotsApplication)
-	}
-
-	if b.Application != nil {
-		files = append(files, b.Application)
-	}
-
-	for _, chart := range b.HelmCharts {
-		files = append(files, chart)
-	}
-
-	if b.Collector != nil {
-		files = append(files, b.Collector)
-	}
-
-	if b.Preflight != nil {
-		files = append(files, b.Preflight)
-	}
-
-	if b.Analyzer != nil {
-		files = append(files, b.Analyzer)
-	}
-
-	if b.SupportBundle != nil {
-		files = append(files, b.SupportBundle)
-	}
-
-	if b.SupportBundle != nil {
-		files = append(files, b.SupportBundle)
-	}
-
-	if b.Redactor != nil {
-		files = append(files, b.Redactor)
-	}
-
-	if b.HostPreflight != nil {
-		files = append(files, b.HostPreflight)
-	}
-
-	if b.Config != nil {
-		files = append(files, b.Config)
-	}
-
-	if b.ConfigValues != nil {
-		files = append(files, b.ConfigValues)
-	}
-
-	if b.Installation != nil {
-		files = append(files, b.Installation)
-	}
-
-	if b.License != nil {
-		files = append(files, b.License)
-	}
-
-	if b.Identity != nil {
-		files = append(files, b.Identity)
-	}
-
-	if b.IdentityConfig != nil {
-		files = append(files, b.IdentityConfig)
-	}
-
-	if b.Backup != nil {
-		files = append(files, b.Backup)
-	}
-
-	if b.Installer != nil {
-		files = append(files, b.Installer)
-	}
-
-	if b.LintConfig != nil {
-		files = append(files, b.LintConfig)
-	}
-
-	return files
-}
-
-func (b *KotsKindsBundle) KotsKinds() (*KotsKinds, error) {
-	kotsKinds := KotsKinds{}
-
+func (k *KotsKinds) addKotsKind(content []byte) error {
 	decode := scheme.Codecs.UniversalDeserializer().Decode
 
-	if b.KotsApplication != nil {
-		decoded, _, err := decode(b.KotsApplication.Content, nil, nil)
+	// kots kinds could be part of a multi-yaml doc
+	docs := util.ConvertToSingleDocs(content)
+	for _, doc := range docs {
+		decoded, gvk, err := decode(doc, nil, nil)
 		if err != nil {
-			return nil, errors.Wrap(err, "failed to decode kots kind KotsApplication type")
+			// TODO: log something on yaml errors (based on file extention)
+			return errors.Wrap(err, "failed to decode yaml content")
 		}
-		tmp, ok := decoded.(*kotsv1beta1.Application)
-		if !ok {
-			return nil, errors.New("failed to cast kots kind Application")
-		}
-		kotsKinds.KotsApplication = *tmp
-	}
 
-	if b.Application != nil {
-		decoded, _, err := decode(b.Application.Content, nil, nil)
-		if err != nil {
-			return nil, errors.Wrap(err, "failed to decode kots kind Application type")
-		}
-		tmp, ok := decoded.(*applicationv1beta1.Application)
-		if !ok {
-			return nil, errors.New("failed to cast kots kind Application")
-		}
-		kotsKinds.Application = tmp
-	}
-
-	if b.HelmCharts != nil {
-		charts := []*kotsv1beta1.HelmChart{}
-		for _, chart := range b.HelmCharts {
-			decoded, _, err := decode(chart.Content, nil, nil)
+		if strings.HasPrefix(gvk.String(), "troubleshoot.replicated.com/v1beta1,") {
+			doc, err = docrewrite.ConvertToV1Beta2(doc)
 			if err != nil {
-				return nil, errors.Wrap(err, "failed to decode kots kind HelmCharts type")
+				return errors.Wrap(err, "failed to convert to v1beta2")
 			}
-			tmp, ok := decoded.(*kotsv1beta1.HelmChart)
-			if !ok {
-				return nil, errors.New("failed to cast kots kind Application")
+			decoded, gvk, err = decode(doc, nil, nil)
+			if err != nil {
+				return err
 			}
-			charts = append(charts, tmp)
-
 		}
-		kotsKinds.HelmCharts = charts
+
+		switch gvk.String() {
+		case "kots.io/v1beta1, Kind=Config":
+			k.Config = decoded.(*kotsv1beta1.Config)
+		case "kots.io/v1beta1, Kind=ConfigValues":
+			k.ConfigValues = decoded.(*kotsv1beta1.ConfigValues)
+		case "kots.io/v1beta1, Kind=Application":
+			k.KotsApplication = *decoded.(*kotsv1beta1.Application)
+		case "kots.io/v1beta1, Kind=License":
+			k.License = decoded.(*kotsv1beta1.License)
+		case "kots.io/v1beta1, Kind=Identity":
+			k.Identity = decoded.(*kotsv1beta1.Identity)
+		case "kots.io/v1beta1, Kind=IdentityConfig":
+			k.IdentityConfig = decoded.(*kotsv1beta1.IdentityConfig)
+		case "kots.io/v1beta1, Kind=Installation":
+			k.Installation = *decoded.(*kotsv1beta1.Installation)
+		case "kots.io/v1beta1, Kind=HelmChart":
+			k.HelmCharts = append(k.HelmCharts, decoded.(*kotsv1beta1.HelmChart))
+		case "kots.io/v1beta1, Kind=LintConfig":
+			k.LintConfig = decoded.(*kotsv1beta1.LintConfig)
+		case "troubleshoot.sh/v1beta2, Kind=Collector":
+			k.Collector = decoded.(*troubleshootv1beta2.Collector)
+		case "troubleshoot.sh/v1beta2, Kind=Analyzer":
+			k.Analyzer = decoded.(*troubleshootv1beta2.Analyzer)
+		case "troubleshoot.sh/v1beta2, Kind=SupportBundle":
+			k.SupportBundle = decoded.(*troubleshootv1beta2.SupportBundle)
+		case "troubleshoot.sh/v1beta2, Kind=Redactor":
+			k.Redactor = decoded.(*troubleshootv1beta2.Redactor)
+		case "troubleshoot.sh/v1beta2, Kind=Preflight":
+			k.Preflight = decoded.(*troubleshootv1beta2.Preflight)
+		case "troubleshoot.sh/v1beta2, Kind=HostPreflight":
+			k.HostPreflight = decoded.(*troubleshootv1beta2.HostPreflight)
+		case "velero.io/v1, Kind=Backup":
+			k.Backup = decoded.(*velerov1.Backup)
+		case "kurl.sh/v1beta1, Kind=Installer", "cluster.kurl.sh/v1beta1, Kind=Installer":
+			k.Installer = decoded.(*kurlv1beta1.Installer)
+		case "app.k8s.io/v1beta1, Kind=Application":
+			k.Application = decoded.(*applicationv1beta1.Application)
+		}
 	}
 
-	if b.Collector != nil {
-		decoded, _, err := decode(b.Collector.Content, nil, nil)
-		if err != nil {
-			return nil, errors.Wrap(err, "failed to decode kots kind Collector type")
-		}
-		tmp, ok := decoded.(*troubleshootv1beta2.Collector)
-		if !ok {
-			return nil, errors.New("failed to cast kots kind Application")
-		}
-		kotsKinds.Collector = tmp
-	}
+	return nil
+}
 
-	if b.Preflight != nil {
-		decoded, _, err := decode(b.Preflight.Content, nil, nil)
-		if err != nil {
-			return nil, errors.Wrap(err, "failed to decode kots kind Preflight type")
-		}
-		tmp, ok := decoded.(*troubleshootv1beta2.Preflight)
-		if !ok {
-			return nil, errors.New("failed to cast kots kind Application")
-		}
-		kotsKinds.Preflight = tmp
-	}
+func KotsKindsFromMap(kotsKindsMap map[string][]byte) (*KotsKinds, error) {
+	kotsKinds := KotsKinds{}
 
-	if b.Analyzer != nil {
-		decoded, _, err := decode(b.Analyzer.Content, nil, nil)
-		if err != nil {
-			return nil, errors.Wrap(err, "failed to decode kots kind Analyzer type")
+	for path, content := range kotsKindsMap {
+		if err := kotsKinds.addKotsKind(content); err != nil {
+			return nil, errors.Wrapf(err, "failed to parse kots kind %s", path)
 		}
-		tmp, ok := decoded.(*troubleshootv1beta2.Analyzer)
-		if !ok {
-			return nil, errors.New("failed to cast kots kind Application")
-		}
-		kotsKinds.Analyzer = tmp
-	}
-
-	if b.SupportBundle != nil {
-		decoded, _, err := decode(b.SupportBundle.Content, nil, nil)
-		if err != nil {
-			return nil, errors.Wrap(err, "failed to decode kots kind SupportBundle type")
-		}
-		tmp, ok := decoded.(*troubleshootv1beta2.SupportBundle)
-		if !ok {
-			return nil, errors.New("failed to cast kots kind Application")
-		}
-		kotsKinds.SupportBundle = tmp
-	}
-
-	if b.Redactor != nil {
-		decoded, _, err := decode(b.Redactor.Content, nil, nil)
-		if err != nil {
-			return nil, errors.Wrap(err, "failed to decode kots kind Redactor type")
-		}
-		tmp, ok := decoded.(*troubleshootv1beta2.Redactor)
-		if !ok {
-			return nil, errors.New("failed to cast kots kind Application")
-		}
-		kotsKinds.Redactor = tmp
-	}
-
-	if b.HostPreflight != nil {
-		decoded, _, err := decode(b.HostPreflight.Content, nil, nil)
-		if err != nil {
-			return nil, errors.Wrap(err, "failed to decode kots kind HostPreflight type")
-		}
-		tmp, ok := decoded.(*troubleshootv1beta2.HostPreflight)
-		if !ok {
-			return nil, errors.New("failed to cast kots kind Application")
-		}
-		kotsKinds.HostPreflight = tmp
-	}
-
-	if b.Config != nil {
-		decoded, _, err := decode(b.Config.Content, nil, nil)
-		if err != nil {
-			return nil, errors.Wrap(err, "failed to decode kots kind Config type")
-		}
-		tmp, ok := decoded.(*kotsv1beta1.Config)
-		if !ok {
-			return nil, errors.New("failed to cast kots kind Application")
-		}
-		kotsKinds.Config = tmp
-	}
-
-	if b.ConfigValues != nil {
-		decoded, _, err := decode(b.ConfigValues.Content, nil, nil)
-		if err != nil {
-			return nil, errors.Wrap(err, "failed to decode kots kind ConfigValues type")
-		}
-		tmp, ok := decoded.(*kotsv1beta1.ConfigValues)
-		if !ok {
-			return nil, errors.New("failed to cast kots kind Application")
-		}
-		kotsKinds.ConfigValues = tmp
-	}
-
-	if b.Installation != nil {
-		decoded, _, err := decode(b.Installation.Content, nil, nil)
-		if err != nil {
-			return nil, errors.Wrap(err, "failed to decode kots kind Installation type")
-		}
-		tmp, ok := decoded.(*kotsv1beta1.Installation)
-		if !ok {
-			return nil, errors.New("failed to cast kots kind Application")
-		}
-		kotsKinds.Installation = *tmp
-	}
-
-	if b.License != nil {
-		decoded, _, err := decode(b.License.Content, nil, nil)
-		if err != nil {
-			return nil, errors.Wrap(err, "failed to decode kots kind License type")
-		}
-		tmp, ok := decoded.(*kotsv1beta1.License)
-		if !ok {
-			return nil, errors.New("failed to cast kots kind Application")
-		}
-		kotsKinds.License = tmp
-	}
-
-	if b.Identity != nil {
-		decoded, _, err := decode(b.Identity.Content, nil, nil)
-		if err != nil {
-			return nil, errors.Wrap(err, "failed to decode kots kind Identity type")
-		}
-		tmp, ok := decoded.(*kotsv1beta1.Identity)
-		if !ok {
-			return nil, errors.New("failed to cast kots kind Application")
-		}
-		kotsKinds.Identity = tmp
-	}
-
-	if b.IdentityConfig != nil {
-		decoded, _, err := decode(b.IdentityConfig.Content, nil, nil)
-		if err != nil {
-			return nil, errors.Wrap(err, "failed to decode kots kind IdentityConfig type")
-		}
-		tmp, ok := decoded.(*kotsv1beta1.IdentityConfig)
-		if !ok {
-			return nil, errors.New("failed to cast kots kind Application")
-		}
-		kotsKinds.IdentityConfig = tmp
-	}
-
-	if b.Backup != nil {
-		decoded, _, err := decode(b.Backup.Content, nil, nil)
-		if err != nil {
-			return nil, errors.Wrap(err, "failed to decode kots kind Backup type")
-		}
-		tmp, ok := decoded.(*velerov1.Backup)
-		if !ok {
-			return nil, errors.New("failed to cast kots kind Application")
-		}
-		kotsKinds.Backup = tmp
-	}
-
-	if b.Installer != nil {
-		decoded, _, err := decode(b.Installer.Content, nil, nil)
-		if err != nil {
-			return nil, errors.Wrap(err, "failed to decode kots kind Installer type")
-		}
-		tmp, ok := decoded.(*kurlv1beta1.Installer)
-		if !ok {
-			return nil, errors.New("failed to cast kots kind Application")
-		}
-		kotsKinds.Installer = tmp
-	}
-
-	if b.LintConfig != nil {
-		decoded, _, err := decode(b.LintConfig.Content, nil, nil)
-		if err != nil {
-			return nil, errors.Wrap(err, "failed to decode kots kind LintConfig type")
-		}
-		tmp, ok := decoded.(*kotsv1beta1.LintConfig)
-		if !ok {
-			return nil, errors.New("failed to cast kots kind Application")
-		}
-		kotsKinds.LintConfig = tmp
 	}
 
 	return &kotsKinds, nil
 }
 
-func (b *KotsKindsBundle) Write(rootDir string, overwrite bool) error {
+func WriteKotsKinds(kotsKinds map[string][]byte, rootDir string, overwrite bool) error {
 	_, err := os.Stat(rootDir)
 	if err == nil {
 		if overwrite {
@@ -927,8 +608,8 @@ func (b *KotsKindsBundle) Write(rootDir string, overwrite bool) error {
 		}
 	}
 
-	for _, file := range b.Files() {
-		fileRenderPath := filepath.Join(rootDir, file.Path)
+	for filePath, content := range kotsKinds {
+		fileRenderPath := filepath.Join(rootDir, filePath)
 		d, _ := path.Split(fileRenderPath)
 		if _, err := os.Stat(d); os.IsNotExist(err) {
 			if err := os.MkdirAll(d, 0755); err != nil {
@@ -936,7 +617,7 @@ func (b *KotsKindsBundle) Write(rootDir string, overwrite bool) error {
 			}
 		}
 
-		if err := os.WriteFile(fileRenderPath, file.Content, 0644); err != nil {
+		if err := os.WriteFile(fileRenderPath, content, 0644); err != nil {
 			return errors.Wrap(err, "failed to write base file")
 		}
 	}
