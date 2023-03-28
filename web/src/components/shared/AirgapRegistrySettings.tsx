@@ -53,6 +53,8 @@ type State = {
   originalRegistry: RegistryDetails | null;
   pingedEndpoint: string;
   showStopUsingWarning: boolean;
+  passwordVisible: boolean;
+  isFirstPasswordChange: boolean;
 };
 
 class AirgapRegistrySettings extends Component<Props, State> {
@@ -86,6 +88,8 @@ class AirgapRegistrySettings extends Component<Props, State> {
       originalRegistry: null,
       pingedEndpoint: "",
       showStopUsingWarning: false,
+      passwordVisible: false,
+      isFirstPasswordChange: true,
     };
   }
 
@@ -144,6 +148,7 @@ class AirgapRegistrySettings extends Component<Props, State> {
             password: password,
             namespace: namespace,
             isReadOnly: isReadOnly,
+            isFirstPasswordChange: false,
           });
           this.state.updateChecker.start(this.updateStatus, 1000);
         }
@@ -502,16 +507,48 @@ class AirgapRegistrySettings extends Component<Props, State> {
               <p className="u-fontSize--normal card-item-title u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">
                 Password
               </p>
-              <input
-                type="password"
-                className="Input"
-                placeholder="password"
-                autoComplete="current-password"
-                value={password || ""}
-                onChange={(e) => {
-                  this.handleFormChange("password", e.target.value);
-                }}
-              />
+              <span className="tw-relative">
+                <input
+                  type={
+                    this.state.passwordVisible &&
+                    this.state.isFirstPasswordChange
+                      ? "text"
+                      : "password"
+                  }
+                  className="Input"
+                  placeholder="password"
+                  autoComplete="current-password"
+                  value={password || ""}
+                  onChange={(e) => {
+                    this.handleFormChange("password", e.target.value);
+                  }}
+                />
+
+                {this.state.isFirstPasswordChange &&
+                  (!this.state.passwordVisible ? (
+                    <Icon
+                      icon="visibility-off"
+                      size={16}
+                      className="gray-color tw-absolute tw-right-0 tw-top-2.5 tw-mr-4"
+                      onClick={() =>
+                        this.setState({
+                          passwordVisible: !this.state.passwordVisible,
+                        })
+                      }
+                    />
+                  ) : (
+                    <Icon
+                      icon="visible"
+                      size={16}
+                      className="gray-color tw-absolute tw-right-0 tw-top-2.5 tw-mr-4"
+                      onClick={() =>
+                        this.setState({
+                          passwordVisible: !this.state.passwordVisible,
+                        })
+                      }
+                    />
+                  ))}
+              </span>
             </div>
           </div>
           {hideTestConnection ? null : (
