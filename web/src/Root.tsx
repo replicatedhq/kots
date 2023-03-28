@@ -21,6 +21,7 @@ import UploadAirgapBundle from "./components/UploadAirgapBundle";
 import RestoreCompleted from "./components/RestoreCompleted";
 import Access from "./components/identity/Access";
 import SnapshotsWrapper from "./components/snapshots/SnapshotsWrapper";
+import { NewDashboard } from "@features/MuiDashboard/NewDashboard";
 import { QueryClient, QueryClientProvider } from "react-query";
 import { InstallWithHelm } from "@features/AddNewApp";
 import { RouteProps } from "react-router";
@@ -616,6 +617,12 @@ const Root = () => {
                       isKurlEnabled={state.adminConsoleMetadata?.isKurl}
                       appsList={state.appsList}
                     />
+                  )}
+                />
+                <ProtectedRoute
+                  path={["/new-dashboard"]}
+                  render={() => (
+                    <NewDashboard />
                   )}
                 />
                 <ProtectedRoute
