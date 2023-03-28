@@ -15,11 +15,6 @@ type ReportingInfo struct {
 	GitOpsProvider     string         `json:"gitops_provider"`
 }
 
-type GitOpsReport struct {
-	IsEnabled bool   `json:"is_enabled"`
-	Provider  string `json:"provider"`
-}
-
 type DownstreamInfo struct {
 	Cursor             string `json:"cursor"`
 	ChannelID          string `json:"channel_id"`
