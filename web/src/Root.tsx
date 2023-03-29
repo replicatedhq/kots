@@ -620,10 +620,8 @@ const Root = () => {
                   )}
                 />
                 <ProtectedRoute
-                  path={["/new-dashboard"]}
-                  render={() => (
-                    <NewDashboard />
-                  )}
+                  path={["/:slug/new-dashboard"]}
+                  render={() => <NewDashboard />}
                 />
                 <ProtectedRoute
                   path={["/apps", "/app/:slug/:tab?"]}
