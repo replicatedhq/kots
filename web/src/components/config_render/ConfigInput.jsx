@@ -104,8 +104,6 @@ export default class ConfigInput extends React.Component {
                 required={this.props.required}
                 name={this.props.name}
                 error={this.props.error}
-                showValidationError={showValidationError}
-                validationErrorMessage={this.props.validationErrorMessage}
               />
             ) : null}
             {this.props.help_text !== "" ? (
@@ -191,8 +189,6 @@ export default class ConfigInput extends React.Component {
             required={this.props.required}
             name={this.props.name}
             error={this.props.error}
-            showValidationError={showValidationError}
-            validationErrorMessage={this.props.validationErrorMessage}
           />
         ) : null}
         {this.props.help_text !== "" ? (
@@ -207,7 +203,7 @@ export default class ConfigInput extends React.Component {
             </Markdown>
           </div>
         ) : null}
-        <div className="field-input-wrapper u-marginTop--15">
+        <div className="field-input-wrapper u-marginTop--15 ">
           <input
             ref={this.inputRef}
             type={this.props.inputType}
@@ -220,7 +216,7 @@ export default class ConfigInput extends React.Component {
             onFocus={() => this.setState({ focused: true })}
             onBlur={() => this.setState({ focused: false })}
             className={`${this.props.className || ""} Input ${this.props.readonly ? "readonly" : ""
-              }`}
+              } ${showValidationError ? "has-error" : ""}`}
           />
         </div>
         {this.props.inputType !== "password" && this.props.default ? (
@@ -228,6 +224,11 @@ export default class ConfigInput extends React.Component {
             Default value: <span className="value"> {this.props.default} </span>
           </div>
         ) : null}
+        {showValidationError && (
+          <div className="config-errblock visible tw-mt-1">
+            {this.props.validationErrorMessage}
+          </div>
+        )}
         {this.props.repeatable && (
           <div
             className="u-marginTop--10"
