@@ -19,7 +19,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/docker/go-connections/tlsconfig"
 	"github.com/gin-gonic/gin"
 	"github.com/pkg/errors"
 	"github.com/soheilhy/cmux"
@@ -32,6 +31,17 @@ import (
 	corev1 "k8s.io/client-go/kubernetes/typed/core/v1"
 	"k8s.io/client-go/rest"
 	certutil "k8s.io/client-go/util/cert"
+)
+
+var (
+	TLSCiperSuites = []uint16{
+		tls.TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,
+		tls.TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,
+		tls.TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256,
+		tls.TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,
+		tls.TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,
+		tls.TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256,
+	}
 )
 
 type cert struct {
@@ -121,8 +131,12 @@ func main() {
 		assetsDir := "/assets"
 
 		httpsServer = getHttpsServer(upstream, dexUpstream, tlsSecretName, secrets, cert.acceptAnonymousUploads, assetsDir)
-		tlsConfig := tlsconfig.ServerDefault()
-		tlsConfig.Certificates = []tls.Certificate{cert.tlsCert}
+		tlsConfig := &tls.Config{
+			MinVersion:               tls.VersionTLS12,
+			PreferServerCipherSuites: true,
+			CipherSuites:             TLSCiperSuites,
+			Certificates:             []tls.Certificate{cert.tlsCert},
+		}
 		go httpsServer.Serve(tls.NewListener(m.Match(cmux.TLS()), tlsConfig))
 
 		httpServer = getHttpServer(cert.fingerprint, cert.acceptAnonymousUploads, assetsDir)

@@ -15,10 +15,12 @@ import (
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	"github.com/replicatedhq/kots/pkg/binaries"
+	"github.com/replicatedhq/kots/pkg/helm"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/operator/applier"
 	operatortypes "github.com/replicatedhq/kots/pkg/operator/types"
+	"github.com/replicatedhq/kots/pkg/util"
 	"github.com/replicatedhq/yaml/v3"
 	corev1 "k8s.io/api/core/v1"
 	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
@@ -511,7 +513,7 @@ func (c *Client) installWithHelm(helmDir string, targetNamespace string, kotsCha
 	version := "3"
 	chartsDir := filepath.Join(helmDir, "charts")
 
-	orderedDirs, err := getSortedCharts(chartsDir, kotsCharts)
+	orderedDirs, err := getSortedCharts(chartsDir, kotsCharts, targetNamespace)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get sorted helm charts")
 	}
@@ -524,9 +526,19 @@ func (c *Client) installWithHelm(helmDir string, targetNamespace string, kotsCha
 
 		if dir.Namespace != "" {
 			args = append(args, "-n", dir.Namespace)
-		} else if targetNamespace != "" && targetNamespace != "." {
-			args = append(args, "-n", targetNamespace)
+
+			// prior to kots v1.95.0, helm release secrets were created in the kotsadm namespace
+			// Since kots v1.95.0, helm release secrets are created in the same namespace as the helm release
+			// This migration will move the helm release secrets to the helm release namespace
+			kotsadmNamespace := util.AppNamespace()
+			if dir.Namespace != kotsadmNamespace {
+				err := migrateExistingHelmReleaseSecrets(dir.ReleaseName, dir.Namespace, kotsadmNamespace)
+				if err != nil {
+					return nil, errors.Wrapf(err, "failed to migrate helm release secrets for %s", dir.ReleaseName)
+				}
+			}
 		}
+
 		if len(dir.UpgradeFlags) > 0 {
 			args = append(args, dir.UpgradeFlags...)
 		}
@@ -567,7 +579,7 @@ type orderedDir struct {
 	UpgradeFlags []string
 }
 
-func getSortedCharts(chartsDir string, kotsCharts []*v1beta1.HelmChart) ([]orderedDir, error) {
+func getSortedCharts(chartsDir string, kotsCharts []*v1beta1.HelmChart, targetNamespace string) ([]orderedDir, error) {
 	dirs, err := ioutil.ReadDir(chartsDir)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to read archive dir")
@@ -602,6 +614,10 @@ func getSortedCharts(chartsDir string, kotsCharts []*v1beta1.HelmChart) ([]order
 		if orderedDirs[idx].ReleaseName == "" {
 			// no matching kots chart was found, use the chart name as the release name
 			orderedDirs[idx].ReleaseName = dir.ChartName
+		}
+
+		if orderedDirs[idx].Namespace == "" && targetNamespace != "" && targetNamespace != "." {
+			orderedDirs[idx].Namespace = targetNamespace
 		}
 	}
 
@@ -797,4 +813,12 @@ func getLabelSelector(appLabelSelector *metav1.LabelSelector) string {
 	}
 
 	return strings.Join(allLabels, ",")
+}
+
+func migrateExistingHelmReleaseSecrets(relaseName string, releaseNamespace string, kotsadmNamespace string) error {
+	clientset, err := k8sutil.GetClientset()
+	if err != nil {
+		return errors.Wrap(err, "failed to get k8s client set")
+	}
+	return helm.MigrateExistingHelmReleaseSecrets(clientset, relaseName, releaseNamespace, kotsadmNamespace)
 }

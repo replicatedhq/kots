@@ -60,10 +60,11 @@ func Test_getSortedCharts(t *testing.T) {
 		contents string
 	}
 	tests := []struct {
-		name       string
-		files      []file
-		kotsCharts []*v1beta1.HelmChart
-		want       []orderedDir
+		name            string
+		files           []file
+		kotsCharts      []*v1beta1.HelmChart
+		targetNamespace string
+		want            []orderedDir
 	}{
 		{
 			name: "chart without an entry in kotsCharts should work", // this should not come up in practice but is good to reduce risk
@@ -509,7 +510,7 @@ version: ver2
 				req.NoError(err)
 			}
 
-			got, err := getSortedCharts(tempdir, tt.kotsCharts)
+			got, err := getSortedCharts(tempdir, tt.kotsCharts, tt.targetNamespace)
 			req.NoError(err)
 			req.Equal(tt.want, got)
 		})

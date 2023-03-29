@@ -2172,6 +2172,158 @@ jobs:
           aws-access-key-id: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_ACCESS_KEY_ID }}'
           aws-secret-access-key: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_SECRET_ACCESS_KEY }}'
 
+
+  validate-kots-helm-release-secret-migration:
+    runs-on: ubuntu-20.04
+    needs: [ enable-tests, can-run-ci, build-push-kotsadm-image, build-kurl-proxy, build-migrations, push-minio, push-mc, push-rqlite ]
+    strategy:
+      fail-fast: false
+      matrix:
+        k8s_version: [ v1.26.1-k3s1 ]
+    env:
+      APP_SLUG: helm-release-secret-migration
+      RELEASE_NAME: helm-release-chart
+      RELEASE_NAMESPACE: helm-release
+      BASE_KOTS_VERSION: v1.94.0
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - uses: replicatedhq/action-k3s@main
+        with:
+          version: ${{ matrix.k8s_version }}
+          arguments: ${{ startsWith(matrix.k8s_version, 'v1.22') && '--egress-selector-mode disabled' || '' }}
+
+      - name: download base kots version
+        run: |
+          curl -LO "https://github.com/replicatedhq/kots/releases/download/$BASE_KOTS_VERSION/kots_linux_amd64.tar.gz" \
+            && tar zxvf kots_linux_amd64.tar.gz \
+            && mv kots "kots-$BASE_KOTS_VERSION"
+
+      - name: download kots binary
+        uses: actions/download-artifact@v3
+        with:
+          name: kots
+          path: bin/
+
+      - run: chmod +x bin/kots
+
+      - name: run the test
+        run: |
+          set +e
+          echo ${{ secrets.HELM_RELEASE_SECRET_MIGRATION_LICENSE }} | base64 -d > license.yaml
+
+          # install using the base KOTS version
+          "./kots-$BASE_KOTS_VERSION" \
+            install "$APP_SLUG/automated" \
+            --license-file license.yaml \
+            --no-port-forward=true \
+            --namespace "$APP_SLUG" \
+            --shared-password password
+
+          EXIT_CODE=$?
+          if [ $EXIT_CODE -ne 0 ]; then
+            echo "------pods:"
+            kubectl -n "$APP_SLUG" get pods
+            echo "------kotsadm logs"
+            kubectl logs -l app=kotsadm --tail=100 --namespace "$APP_SLUG"
+            exit $EXIT_CODE
+          fi
+
+          COUNTER=1
+          while [ "$("./kots-$BASE_KOTS_VERSION" get apps --namespace "$APP_SLUG" | awk 'NR>1{print $2}')" != "ready" ]; do
+            ((COUNTER += 1))
+            if [ $COUNTER -gt 120 ]; then
+              echo "Timed out waiting for app to be ready"
+              "./kots-$BASE_KOTS_VERSION" get apps --namespace "$APP_SLUG"
+              echo "kotsadm logs:"
+              kubectl logs -l app=kotsadm --tail=100 --namespace "$APP_SLUG"
+              exit 1
+            fi
+            sleep 1
+          done
+
+          # verify that the helm release secret is created in the kotsadm namespace
+          releaseSecretName=$(kubectl get secret -n "$APP_SLUG" -l owner=helm,name="$RELEASE_NAME" -o jsonpath='{.items[*].metadata.name}')
+          if [ -z "$releaseSecretName" ]; then
+            echo "Failed to find the helm release secret in the $APP_SLUG namespace"
+            echo "kotsadm logs:"
+            kubectl logs -l app=kotsadm --tail=100 --namespace "$APP_SLUG"
+            exit 1
+          fi
+
+          # if there are more than one helm release secrets, fail
+          if [ "$(echo "$releaseSecretName" | wc -l)" -gt 1 ]; then
+            echo "Found more than one helm release secret in the $APP_SLUG namespace"
+            echo "kotsadm logs:"
+            kubectl logs -l app=kotsadm --tail=100 --namespace "$APP_SLUG"
+            exit 1
+          fi
+
+          # upgrade using the new KOTS version
+          ./bin/kots admin-console upgrade \
+            --namespace "$APP_SLUG" \
+            --kotsadm-registry ttl.sh \
+            --kotsadm-namespace automated-${{ github.run_id }} \
+            --kotsadm-tag 24h
+
+          # make a config change and redeploy the app
+          ./bin/kots set config "$APP_SLUG" create_new_sequence=true --deploy --namespace "$APP_SLUG"
+
+          # make sure app is still installed and ready
+          if [ "$(./bin/kots get apps --namespace "$APP_SLUG" | awk 'NR>1{print $2}')" != "ready" ]; then
+            echo "App is not ready after the upgrade"
+            echo "kotsadm logs:"
+            kubectl logs -l app=kotsadm --tail=100 --namespace "$APP_SLUG"
+            exit 1
+          fi
+
+          # verify that the helm release secret is created in the helm relase namespace
+          COUNT=1
+          releaseSecret=""
+          while [ -z "$releaseSecret" ]; do
+            ((COUNT += 1))
+            if [ $COUNT -gt 10 ]; then
+              echo "Timed out waiting for the helm release secret to be migrated"
+              echo "kotsadm logs:"
+              kubectl logs -l app=kotsadm --tail=100 --namespace "$APP_SLUG"
+              exit 1
+            fi
+            sleep 1
+            releaseSecret=$(kubectl get secret "$releaseSecretName" -n "$RELEASE_NAMESPACE")
+          done
+
+          # verify that the release secret in app namepspace is deleted
+          oldReleaseSecret=$(kubectl get secret "$releaseSecretName" -n "$APP_SLUG")
+          if [ -n "$oldReleaseSecret" ]; then
+            echo "Found the helm release secret in the $APP_SLUG namespace"
+            echo "kotsadm logs:"
+            kubectl logs -l app=kotsadm --tail=100 --namespace "$APP_SLUG"
+            exit 1
+          fi
+
+          # verify that there are two helm release secrets in the helm release namespace
+          releaseSecretNames=$(kubectl get secret -n "$RELEASE_NAMESPACE" -l owner=helm,name="$RELEASE_NAME" -o jsonpath='{.items[*].metadata.name}')
+          # if the helm release secrets are not 2 in the helm release namespace, fail
+          if [ "$(echo "$releaseSecretNames" | wc -w)" -ne 2 ]; then
+            echo "Found more than two helm release secret in the $RELEASE_NAMESPACE namespace"
+            echo "kotsadm logs:"
+            kubectl logs -l app=kotsadm --tail=100 --namespace "$APP_SLUG"
+            exit 1
+          fi
+
+          printf "Helm release secret migration test passed\n\n"
+          ./bin/kots get apps --namespace "$APP_SLUG"
+
+      - name: Generate support bundle on failure
+        if: failure()
+        uses: ./.github/actions/generate-support-bundle
+        with:
+          kots-namespace: "$APP_SLUG"
+          aws-access-key-id: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_ACCESS_KEY_ID }}'
+          aws-secret-access-key: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_SECRET_ACCESS_KEY }}'
+
+
   validate-multi-app-install:
     runs-on: ubuntu-20.04
     needs: [ enable-tests, can-run-ci, build-push-kotsadm-image, build-e2e, build-kurl-proxy, build-migrations, push-minio, push-mc, push-rqlite ]
@@ -2510,6 +2662,7 @@ jobs:
       - validate-kots-upgrade
       - validate-remove-app
       - validate-registry-check
+      - validate-kots-helm-release-secret-migration
       # cli-only tests
       - validate-kots-push-images-anonymous
     steps:

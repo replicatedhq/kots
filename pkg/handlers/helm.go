@@ -26,7 +26,7 @@ type IsHelmManagedResponse struct {
 	IsHelmManaged bool `json:"isHelmManaged"`
 }
 
-//  IsHelmManaged - report whether or not kots is running in helm managed mode
+// IsHelmManaged - report whether or not kots is running in helm managed mode
 func (h *Handler) IsHelmManaged(w http.ResponseWriter, r *http.Request) {
 	helmManagedResponse := IsHelmManagedResponse{
 		Success:       true,
