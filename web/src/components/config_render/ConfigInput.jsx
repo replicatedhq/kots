@@ -17,15 +17,16 @@ export default class ConfigInput extends React.Component {
       isFirstChange: true,
     };
     if (props.validationRegEx) {
-
       console.log(props.validationRegEx);
       this.regex = new RegExp(props.validationRegEx);
-      this.validationErrorMessage = props.validationErrorMessage || "Invalid input";
+      this.validationErrorMessage =
+        props.validationErrorMessage || "Invalid input";
     }
 
-    this.debouncedCheckRegexValidation
-      = debounce(this.checkRegexValidation, 2000);
-
+    this.debouncedCheckRegexValidation = debounce(
+      this.checkRegexValidation,
+      2000
+    );
   }
 
   // debounced in constructor
@@ -37,7 +38,7 @@ export default class ConfigInput extends React.Component {
         this.setState({ showValidationError: true });
       }
     }
-  }
+  };
 
   handleOnChange = (field, e, objKey) => {
     this.setState({ [`${field}`]: e.target.value });
@@ -110,7 +111,9 @@ export default class ConfigInput extends React.Component {
             hidden={hidden}
             order={setOrder(this.props.index, this.props.affix)}
           >
-            {this.props.title !== "" || this.props.required || showValidationError ? (
+            {this.props.title !== "" ||
+            this.props.required ||
+            showValidationError ? (
               <ConfigItemTitle
                 title={this.props.title}
                 recommended={this.props.recommended}
@@ -149,8 +152,9 @@ export default class ConfigInput extends React.Component {
                 onBlur={() =>
                   this.setState({ [`${objKey}InputFocused`]: false })
                 }
-                className={`${this.props.className || ""} ${this.props.readonly ? "readonly" : ""
-                  } tw-gap-0`}
+                className={`${this.props.className || ""} ${
+                  this.props.readonly ? "readonly" : ""
+                } tw-gap-0`}
                 isFirstChange={this.state.isFirstChange}
                 showError={showValidationError}
               />
@@ -197,7 +201,9 @@ export default class ConfigInput extends React.Component {
         hidden={hidden}
         order={setOrder(this.props.index, this.props.affix)}
       >
-        {this.props.title !== "" || this.props.required || showValidationError ? (
+        {this.props.title !== "" ||
+        this.props.required ||
+        showValidationError ? (
           <ConfigItemTitle
             title={this.props.title}
             recommended={this.props.recommended}
@@ -233,8 +239,9 @@ export default class ConfigInput extends React.Component {
               this.setState({ focused: false }),
               this.checkRegexValidation(this.state.inputVal)
             )}
-            className={`${this.props.className || ""} ${this.props.readonly ? "readonly" : ""
-              } tw-gap-0`}
+            className={`${this.props.className || ""} ${
+              this.props.readonly ? "readonly" : ""
+            } tw-gap-0`}
             isFirstChange={this.state.isFirstChange}
             showError={showValidationError}
           />

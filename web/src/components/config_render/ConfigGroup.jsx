@@ -221,8 +221,8 @@ const ConfigGroup = (props) => {
   const hasAffix = item.items.every((option) => option.affix);
 
   item.items[0].validation = {
-    regex: '^.{4,20}$',
-    message: 'should be between 4 and 20 characters'
+    regex: "^.{4,20}$",
+    message: "should be between 4 and 20 characters",
   };
 
   return (
