@@ -227,6 +227,11 @@ export default class ConfigInput extends React.Component {
         {showValidationError && (
           <div className="config-errblock visible tw-mt-1">
             {this.props.validationErrorMessage}
+            <Icon
+              icon={"warning-circle-filled"}
+              size={16}
+              className="error-color"
+            />
           </div>
         )}
         {this.props.repeatable && (
