@@ -4,12 +4,14 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"path"
 	"path/filepath"
 	"strings"
 	"testing"
 
 	envsubst "github.com/drone/envsubst/v2"
 	"github.com/ghodss/yaml"
+	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/pull"
 	upstreamtypes "github.com/replicatedhq/kots/pkg/upstream/types"
 	"github.com/replicatedhq/kots/pkg/util"
@@ -110,6 +112,10 @@ func TestKotsPull(t *testing.T) {
 						return err
 					}
 
+					if info.IsDir() && info.Name() == "kotsKinds" {
+						return filepath.SkipDir
+					}
+
 					if info.IsDir() {
 						return nil
 					}
@@ -131,6 +137,10 @@ func TestKotsPull(t *testing.T) {
 				func(path string, info os.FileInfo, err error) error {
 					if err != nil {
 						return err
+					}
+
+					if info.IsDir() && info.Name() == "kotsKinds" {
+						return filepath.SkipDir
 					}
 
 					if info.IsDir() {
@@ -169,6 +179,15 @@ func TestKotsPull(t *testing.T) {
 				})
 
 			require.NoError(t, err)
+
+			kotsPath := path.Join(tt.PullOptions.RootDir, "kotsKinds")
+			wantKotsPath := strings.Replace(kotsPath, "results", "wantResults", 1)
+			kotsKinds, err := kotsutil.LoadKotsKindsFromPath(kotsPath)
+			require.NoError(t, err)
+			wantKotsKinds, err := kotsutil.LoadKotsKindsFromPath(wantKotsPath)
+			require.NoError(t, err)
+			require.Equal(t, wantKotsKinds, kotsKinds)
+
 		})
 	}
 }

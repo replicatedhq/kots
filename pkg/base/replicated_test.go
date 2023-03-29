@@ -644,6 +644,24 @@ spec:
           secretName-3: MTIz
 `,
 				),
+				"userdata/configvalues.yaml": []byte(`apiVersion: kots.io/v1beta1
+kind: ConfigValues
+metadata:
+  name: test-app
+spec:
+  values:
+    secretName-1:
+      value: "MTIz"
+      repeatableItem: secretName
+    secretName-2:
+      value: "MTIz"
+      repeatableItem: secretName
+    secretName-3:
+      value: "MTIz"
+      repeatableItem: secretName
+status: {}
+`,
+				),
 			},
 		},
 	}
@@ -652,7 +670,7 @@ spec:
 		t.Run(test.name, func(t *testing.T) {
 			req := require.New(t)
 
-			base, _, kotsKindsBundle, err := renderReplicated(test.upstream, test.renderOptions)
+			base, _, kotsKinds, err := renderReplicated(test.upstream, test.renderOptions)
 			req.NoError(err)
 
 			decode := scheme.Codecs.UniversalDeserializer().Decode
@@ -668,7 +686,7 @@ spec:
 
 			expKindsStruct, err := kotsutil.KotsKindsFromMap(test.expectedKotsKinds)
 			req.NoError(err)
-			kindsStruct, err := kotsutil.KotsKindsFromMap(kotsKindsBundle)
+			kindsStruct, err := kotsutil.KotsKindsFromMap(kotsKinds)
 			req.NoError(err)
 			req.Equal(expKindsStruct, kindsStruct)
 
@@ -900,6 +918,16 @@ spec:
       value: "testvalue"
 `,
 				),
+				"userdata/config.yaml": []byte(`apiVersion: kots.io/v1beta1
+kind: ConfigValues
+metadata:
+  name: test-app
+spec:
+  values:
+    podName:
+      value: "testvalue"
+`,
+				),
 			},
 		},
 		{
@@ -1052,6 +1080,16 @@ spec:
     postgresqlPassword:
       strValue: abc123
       valueType: string
+`,
+				),
+				"userdata/config.yaml": []byte(`apiVersion: kots.io/v1beta1
+kind: ConfigValues
+metadata:
+  name: test-app
+spec:
+  values:
+    podName:
+      value: "testvalue"
 `,
 				),
 			},

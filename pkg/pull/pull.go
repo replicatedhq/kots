@@ -559,6 +559,11 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 		}
 	}
 
+	err = kotsutil.WriteKotsKinds(renderedKotsKinds, u.GetKotsKindsDir(writeUpstreamOptions), true)
+	if err != nil {
+		return "", errors.Wrap(err, "failed to write the rendered kots kinds")
+	}
+
 	if err := kustomize.WriteRenderedApp(kustomize.WriteOptions{
 		BaseDir:          u.GetBaseDir(writeUpstreamOptions),
 		OverlaysDir:      u.GetOverlaysDir(writeUpstreamOptions),
@@ -567,11 +572,6 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 		KustomizeBinPath: kotsKinds.GetKustomizeBinaryPath(),
 	}); err != nil {
 		return "", errors.Wrap(err, "failed to write rendered")
-	}
-
-	err = kotsutil.WriteKotsKinds(renderedKotsKinds, u.GetKotsKindsDir(writeUpstreamOptions), true)
-	if err != nil {
-		return "", errors.Wrap(err, "failed to write the rendered kots kinds")
 	}
 
 	return filepath.Join(pullOptions.RootDir, u.Name), nil

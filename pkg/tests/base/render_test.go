@@ -134,11 +134,7 @@ func TestRenderUpstream(t *testing.T) {
 
 			gotKotsKinds, err := kotsutil.KotsKindsFromMap(gotKotsKindsFiles)
 			require.NoError(t, err, "kots kinds from map")
-
-			if !assert.IsEqual(tt.WantKotsKinds, gotKotsKinds) {
-				t.Log(diffJSON(gotKotsKinds, tt.WantKotsKinds))
-				t.FailNow()
-			}
+			require.Equal(t, tt.WantKotsKinds, gotKotsKinds)
 
 			// TODO: Need to test upstream with multiple Helm charts.
 			// HACK: Also right now "no files" in WantHelmBase implies test does not include any charts.
