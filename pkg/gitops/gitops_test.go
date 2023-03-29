@@ -84,7 +84,7 @@ func Test_createGitOps(t *testing.T) {
 			err = updateDownstreamGitOps(clientset, test.appID, test.clusterID, test.repoURI, test.branch, test.path, test.format, test.action)
 			assert.NoError(t, err)
 
-			config, err := getDownstreamGitOps(clientset, test.appID, test.clusterID)
+			config, err := GetDownstreamGitOpsConfig(clientset, test.appID, test.clusterID)
 			assert.NoError(t, err)
 
 			assert.Equal(t, test.provider, config.Provider)
