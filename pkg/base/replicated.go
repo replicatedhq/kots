@@ -162,7 +162,7 @@ func renderReplicated(u *upstreamtypes.Upstream, renderOptions *RenderOptions) (
 
 func renderKotsKinds(upstreamFiles []upstreamtypes.UpstreamFile, renderedConfig *kotsv1beta1.Config, renderOptions *RenderOptions, builder *template.Builder) (*kotsutil.KotsKinds, map[string][]byte, error) {
 	fileContentsMap := make(map[string][]byte)
-	kotsKinds := kotsutil.KotsKinds{}
+	kotsKinds := kotsutil.EmptyKotsKinds()
 
 	for _, upstreamFile := range upstreamFiles {
 		document := &Document{}
@@ -188,11 +188,10 @@ func renderKotsKinds(upstreamFiles []upstreamtypes.UpstreamFile, renderedConfig 
 				return nil, nil, errors.Wrap(err, "failed to marshal rendered config")
 			}
 			fileContentsMap[upstreamFile.Path] = configBytes
-			continue
 
 		case "kots.io/v1beta1, Kind=ConfigValues":
-			// Skip the ConfigValues because the Config section was already rendered.
-			continue
+			fileContentsMap["configvalues.yaml"] = upstreamFile.Content
+			kotsKinds.ConfigValues = decoded.(*kotsv1beta1.ConfigValues)
 
 		case "kots.io/v1beta1, Kind=HelmChart":
 			helmChart := decoded.(*kotsv1beta1.HelmChart)

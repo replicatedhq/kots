@@ -72,11 +72,6 @@ type OverlySimpleMetadata struct {
 	Namespace string `yaml:"namespace"`
 }
 
-type KotsKindsFile struct {
-	Path    string
-	Content []byte
-}
-
 // KotsKinds are all of the special "client-side" kinds that are packaged in
 // an application. These should be pointers because they are all optional.
 // But a few are still expected in the code later, so we make them not pointers,
@@ -410,7 +405,6 @@ func (k *KotsKinds) addKotsKind(content []byte) error {
 	for _, doc := range docs {
 		decoded, gvk, err := decode(doc, nil, nil)
 		if err != nil {
-			// TODO: log something on yaml errors (based on file extention)
 			return errors.Wrap(err, "failed to decode yaml content")
 		}
 
@@ -566,7 +560,9 @@ func LoadKotsKindsFromPath(fromDir string) (*KotsKinds, error) {
 			}
 
 			if err := kotsKinds.addKotsKind(contents); err != nil {
-				return errors.Wrapf(err, "failed to parse kots kind %s", path)
+				// TODO: log something on yaml errors (based on file extention)
+				// No error returned because the file may not be yaml.
+				return nil
 			}
 
 			return nil
@@ -579,7 +575,7 @@ func LoadKotsKindsFromPath(fromDir string) (*KotsKinds, error) {
 }
 
 func KotsKindsFromMap(kotsKindsMap map[string][]byte) (*KotsKinds, error) {
-	kotsKinds := KotsKinds{}
+	kotsKinds := EmptyKotsKinds()
 
 	for path, content := range kotsKindsMap {
 		if err := kotsKinds.addKotsKind(content); err != nil {

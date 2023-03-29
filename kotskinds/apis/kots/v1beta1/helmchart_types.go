@@ -99,6 +99,7 @@ func (m MappedChartValue) MarshalJSON() ([]byte, error) {
 	marshaller.StrValue = m.strValue
 	marshaller.BoolValue = m.boolValue
 	marshaller.FloatValue = m.floatValue
+	marshaller.Children = make(map[string]*interface{})
 
 	for k, v := range m.children {
 		child, err := v.getBuiltValue()

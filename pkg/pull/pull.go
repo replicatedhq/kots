@@ -277,7 +277,8 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 		IsGKEAutopilot:      k8sutil.IsGKEAutopilot(clientset),
 		IncludeMinio:        pullOptions.IncludeMinio,
 	}
-	if err := upstream.WriteUpstream(u, writeUpstreamOptions); err != nil {
+	installationManifest, err := upstream.WriteUpstream(u, writeUpstreamOptions)
+	if err != nil {
 		log.FinishSpinnerWithError()
 		return "", errors.Wrap(err, "failed to write upstream")
 	}
@@ -384,6 +385,7 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 		log.FinishSpinnerWithError()
 		return "", errors.Wrap(err, "failed to render upstream")
 	}
+	renderedKotsKinds["installation.yaml"] = installationManifest
 
 	errorFiles := []base.BaseFile{}
 	errorFiles = append(errorFiles, base.PrependBaseFilesPath(commonBase.ListErrorFiles(), commonBase.Path)...)
