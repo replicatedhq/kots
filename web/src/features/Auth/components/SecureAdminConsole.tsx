@@ -349,7 +349,10 @@ class SecureAdminConsole extends React.Component<Props, State> {
                 style={{ fontSize: "32px" }}
                 className="u-marginTop--10 u-paddingTop--5 u-lineHeight--more u-textColor--primary u-fontWeight--bold u-width--full u-textAlign--center"
               >
-                Log in{appName && appName !== "" ? ` to ${appName}` : ""}
+                Log in
+                {appName && appName !== ""
+                  ? ` to ${appName} admin console`
+                  : " to admin console"}
               </p>
             </div>
             <div className="flex-auto flex-column justifyContent--center">

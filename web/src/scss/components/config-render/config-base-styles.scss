@@ -121,6 +121,10 @@
     }
   }
 
+  .config-input-error-message {
+    color: var(--error-color);
+  }
+
   .config-errblock {
     display: none;
     font-size: 14px;

@@ -11,6 +11,7 @@ import { Repeater } from "../../utilities/repeater";
 import Icon from "../Icon";
 import { App, KotsParams } from "@types";
 import { RouteComponentProps } from "react-router-dom";
+import InputField from "./forms/InputField";
 
 type Props = RouteComponentProps<KotsParams> & {
   app: App;
@@ -53,6 +54,7 @@ type State = {
   originalRegistry: RegistryDetails | null;
   pingedEndpoint: string;
   showStopUsingWarning: boolean;
+  isFirstPasswordChange: boolean;
 };
 
 class AirgapRegistrySettings extends Component<Props, State> {
@@ -86,6 +88,7 @@ class AirgapRegistrySettings extends Component<Props, State> {
       originalRegistry: null,
       pingedEndpoint: "",
       showStopUsingWarning: false,
+      isFirstPasswordChange: true,
     };
   }
 
@@ -144,6 +147,7 @@ class AirgapRegistrySettings extends Component<Props, State> {
             password: password,
             namespace: namespace,
             isReadOnly: isReadOnly,
+            isFirstPasswordChange: false,
           });
           this.state.updateChecker.start(this.updateStatus, 1000);
         }
@@ -502,15 +506,22 @@ class AirgapRegistrySettings extends Component<Props, State> {
               <p className="u-fontSize--normal card-item-title u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">
                 Password
               </p>
-              <input
-                type="password"
-                className="Input"
+
+              <InputField
+                autoFocus
+                type={"password"}
+                className="tw-gap-0"
                 placeholder="password"
-                autoComplete="current-password"
                 value={password || ""}
-                onChange={(e) => {
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
                   this.handleFormChange("password", e.target.value);
                 }}
+                id={"airgap-registry-password"}
+                isFirstChange={this.state.isFirstPasswordChange}
+                label={undefined}
+                onFocus={undefined}
+                onBlur={undefined}
+                helperText={undefined}
               />
             </div>
           </div>

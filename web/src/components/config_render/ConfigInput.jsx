@@ -4,6 +4,7 @@ import Markdown from "react-remarkable";
 import { setOrder } from "./ConfigUtil";
 import { ConfigWrapper } from "./ConfigComponents";
 import Icon from "../Icon";
+import InputField from "@components/shared/forms/InputField";
 
 export default class ConfigInput extends React.Component {
   constructor(props) {
@@ -12,6 +13,7 @@ export default class ConfigInput extends React.Component {
     this.state = {
       inputVal: "",
       focused: false,
+      isFirstChange: true,
     };
     if (props.validationRegEx) {
       console.log(props.validationRegEx);
@@ -50,7 +52,7 @@ export default class ConfigInput extends React.Component {
 
   componentDidMount() {
     if (this.props.value) {
-      this.setState({ inputVal: this.props.value });
+      this.setState({ inputVal: this.props.value, isFirstChange: false });
     }
     if (this.props.valuesByGroup) {
       Object.keys(this.props.valuesByGroup[this.props.groupName]).map((key) => {
@@ -119,7 +121,7 @@ export default class ConfigInput extends React.Component {
               </div>
             ) : null}
             <div className="field-input-wrapper flex alignItems--center u-marginTop--15">
-              <input
+              <InputField
                 ref={this.inputRef}
                 type={this.props.inputType}
                 {...this.props.props}
@@ -136,8 +138,11 @@ export default class ConfigInput extends React.Component {
                 onBlur={() =>
                   this.setState({ [`${objKey}InputFocused`]: false })
                 }
-                className={`${this.props.className || ""} Input ${this.props.readonly ? "readonly" : ""
-                  }`}
+                className={`${this.props.className || ""} ${
+                  this.props.readonly ? "readonly" : ""
+                } tw-gap-0`}
+                isFirstChange={this.state.isFirstChange}
+                showError={showValidationError}
               />
               {variadicItemsLen > 1 ? (
                 <Icon
@@ -204,7 +209,7 @@ export default class ConfigInput extends React.Component {
           </div>
         ) : null}
         <div className="field-input-wrapper u-marginTop--15 ">
-          <input
+          <InputField
             ref={this.inputRef}
             type={this.props.inputType}
             {...this.props.props}
@@ -215,8 +220,11 @@ export default class ConfigInput extends React.Component {
             onChange={(e) => this.handleOnChange("inputVal", e)}
             onFocus={() => this.setState({ focused: true })}
             onBlur={() => this.setState({ focused: false })}
-            className={`${this.props.className || ""} Input ${this.props.readonly ? "readonly" : ""
-              } ${showValidationError ? "has-error" : ""}`}
+            className={`${this.props.className || ""} ${
+              this.props.readonly ? "readonly" : ""
+            } tw-gap-0`}
+            isFirstChange={this.state.isFirstChange}
+            showError={showValidationError}
           />
         </div>
         {this.props.inputType !== "password" && this.props.default ? (
@@ -225,13 +233,8 @@ export default class ConfigInput extends React.Component {
           </div>
         ) : null}
         {showValidationError && (
-          <div className="config-errblock visible tw-mt-1">
+          <div className="config-input-error-message tw-mt-1 tw-text-xs">
             {this.props.validationErrorMessage}
-            <Icon
-              icon={"warning-circle-filled"}
-              size={16}
-              className="error-color"
-            />
           </div>
         )}
         {this.props.repeatable && (
