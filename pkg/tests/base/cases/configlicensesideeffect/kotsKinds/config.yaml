@@ -1,0 +1,31 @@
+apiVersion: kots.io/v1beta1
+kind: Config
+metadata:
+  creationTimestamp: null
+  name: my-app
+spec:
+  groups:
+  - items:
+    - default: "1"
+      hidden: true
+      name: toggle_something
+      title: Toggle Something
+      type: bool
+      value: ""
+    - default: ""
+      hidden: true
+      name: toggled_on
+      title: "On"
+      type: text
+      value: "on"
+      when: "true"
+    - default: ""
+      hidden: true
+      name: toggled_off
+      title: "Off"
+      type: text
+      value: "off"
+      when: "false"
+    name: ternary-test
+    title: testing ternary operators
+status: {}

@@ -1,0 +1,10 @@
+apiVersion: kots.io/v1beta1
+kind: HelmChart
+metadata:
+  name: test-chart
+spec:
+  chart:
+    name: test-chart
+    chartVersion: 0.1.0
+  useHelmInstall: true
+  namespace: helmns

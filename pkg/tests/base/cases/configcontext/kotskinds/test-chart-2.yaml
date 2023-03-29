@@ -1,0 +1,12 @@
+apiVersion: kots.io/v1beta1
+kind: HelmChart
+metadata:
+  creationTimestamp: null
+  name: test-chart-2
+spec:
+  chart:
+    chartVersion: 0.1.1
+    name: test-chart-2
+  exclude: ""
+  namespace: helmns-2
+status: {}
