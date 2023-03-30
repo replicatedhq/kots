@@ -79,46 +79,6 @@ func (m *MappedChartValue) getBuiltValue() (interface{}, error) {
 	return nil, errors.New("unknown value type")
 }
 
-func (m MappedChartValue) MarshalJSON() ([]byte, error) {
-	marshaller := &struct {
-		Value string `json:"value,omitempty"`
-
-		ValueType string `json:"valueType,omitempty"`
-
-		StrValue   string  `json:"strValue,omitempty"`
-		BoolValue  bool    `json:"boolValue,omitempty"`
-		FloatValue float64 `json:"floatValue,omitempty"`
-
-		Children map[string]*interface{} `json:"children,omitempty"`
-		Array    []*interface{}          `json:"array,omitempty"`
-	}{}
-
-	marshaller.Value = m.Value
-	marshaller.ValueType = m.valueType
-	marshaller.StrValue = m.strValue
-	marshaller.BoolValue = m.boolValue
-	marshaller.FloatValue = m.floatValue
-	marshaller.Children = make(map[string]*interface{})
-
-	for k, v := range m.children {
-		child, err := v.getBuiltValue()
-		if err != nil {
-			return nil, errors.Wrap(err, "failed to get map value")
-		}
-		marshaller.Children[k] = &child
-	}
-
-	for _, v := range m.array {
-		elem, err := v.getBuiltValue()
-		if err != nil {
-			return nil, errors.Wrap(err, "failed to get array value")
-		}
-		marshaller.Array = append(marshaller.Array, &elem)
-	}
-
-	return json.Marshal(marshaller)
-}
-
 func (m *MappedChartValue) UnmarshalJSON(value []byte) error {
 	var b interface{}
 	err := json.Unmarshal(value, &b)
