@@ -57,7 +57,6 @@ type ConfigGroupItem = {
   value: string;
   title: string;
   type: string;
-  validation: Validation;
   // TODO: refactor backend to return a boolean not a string
   when: "true" | "false";
 };
@@ -81,12 +80,6 @@ type State = {
   showHelmDeployModal: boolean;
   showNextStepModal: boolean;
 };
-
-interface Validation {
-  regex: string;
-  message: string;
-  hasError: boolean;
-}
 
 class AppConfig extends Component<Props, State> {
   sidebarWrapper: HTMLElement;
