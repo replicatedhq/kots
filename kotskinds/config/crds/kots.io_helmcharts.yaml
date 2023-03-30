@@ -38,26 +38,6 @@ spec:
             properties:
               builder:
                 additionalProperties:
-                  properties:
-                    array:
-                      items: {}
-                      type: array
-                    boolValue:
-                      type: boolean
-                    children:
-                      additionalProperties: {}
-                      type: object
-                    floatValue:
-                      type: number
-                    strValue:
-                      type: string
-                    value:
-                      type: string
-                    valueType:
-                      type: string
-                  required:
-                  - value
-                  - valueType
                   type: object
                 type: object
               chart:
@@ -89,26 +69,6 @@ spec:
                       type: boolean
                     values:
                       additionalProperties:
-                        properties:
-                          array:
-                            items: {}
-                            type: array
-                          boolValue:
-                            type: boolean
-                          children:
-                            additionalProperties: {}
-                            type: object
-                          floatValue:
-                            type: number
-                          strValue:
-                            type: string
-                          value:
-                            type: string
-                          valueType:
-                            type: string
-                        required:
-                        - value
-                        - valueType
                         type: object
                       type: object
                     when:
@@ -122,26 +82,6 @@ spec:
                 type: boolean
               values:
                 additionalProperties:
-                  properties:
-                    array:
-                      items: {}
-                      type: array
-                    boolValue:
-                      type: boolean
-                    children:
-                      additionalProperties: {}
-                      type: object
-                    floatValue:
-                      type: number
-                    strValue:
-                      type: string
-                    value:
-                      type: string
-                    valueType:
-                      type: string
-                  required:
-                  - value
-                  - valueType
                   type: object
                 type: object
               weight:

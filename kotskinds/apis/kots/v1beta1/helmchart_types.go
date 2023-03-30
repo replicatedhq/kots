@@ -27,16 +27,27 @@ import (
 )
 
 type MappedChartValue struct {
-	Value string `json:"value"`
+	Value string `json:"-"`
 
-	valueType string `json:"valueType"`
+	valueType string `json:"-"`
 
-	strValue   string  `json:"strValue,omitempty"`
-	boolValue  bool    `json:"boolValue,omitempty"`
-	floatValue float64 `json:"floatValue,omitempty"`
+	strValue   string  `json:"-"`
+	boolValue  bool    `json:"-"`
+	floatValue float64 `json:"-"`
 
-	children map[string]*MappedChartValue `json:"children,omitempty"`
-	array    []*MappedChartValue          `json:"array,omitempty"`
+	children map[string]*MappedChartValue `json:"-"`
+	array    []*MappedChartValue          `json:"-"`
+}
+
+func (m MappedChartValue) MarshalJSON() ([]byte, error) {
+	val, err := m.getBuiltValue()
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get built value")
+	}
+
+	return json.Marshal(struct {
+		Value interface{} `json:"value,omitempty"`
+	}{Value: val})
 }
 
 func (m *MappedChartValue) getBuiltValue() (interface{}, error) {
