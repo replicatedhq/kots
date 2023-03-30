@@ -376,9 +376,9 @@ func helmChartUpstreamPathToBasePaths(upstreamPath string, upstreamFileMap map[s
 
 // Takes an input chart path and returns a list that represents the dependency tree for the chart.
 // The top-level chart is represented by an empty string.
-//  // "" => [""]
-//  // "charts/mariadb" => ["", "mariadb"]
-//  // "charts/mariadb/charts/common" => ["", "mariadb", "common"]
+// // "" => [""]
+// // "charts/mariadb" => ["", "mariadb"]
+// // "charts/mariadb/charts/common" => ["", "mariadb", "common"]
 func pathToCharts(path string) []string {
 	re := regexp.MustCompile(`\/?charts\/`)
 	return re.Split(path, -1)

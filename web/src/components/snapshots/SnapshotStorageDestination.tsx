@@ -20,6 +20,7 @@ import {
   FILE_SYSTEM_NFS_TYPE,
   FILE_SYSTEM_HOSTPATH_TYPE,
 } from "./SnapshotStorageDestination.data";
+import InputField from "@components/shared/forms/InputField";
 
 type ValueType = {
   value?: string;
@@ -85,6 +86,7 @@ type State = {
   tmpFileSystemType?: string;
   updatingSettings?: boolean;
   useIamAws: boolean;
+  isFirstChange: boolean;
 };
 
 type StoreProviderName = "aws" | "gcp" | "azure" | "other";
@@ -315,6 +317,8 @@ class SnapshotStorageDestination extends Component<Props, State> {
       tmpFileSystemNFSPath: "",
       tmpFileSystemNFSServer: "",
       tmpFileSystemHostPath: "",
+
+      isFirstChange: true,
     };
   }
 
@@ -636,6 +640,9 @@ class SnapshotStorageDestination extends Component<Props, State> {
         await this.snapshotProviderFileSystem(false);
         break;
     }
+    this.setState({
+      isFirstChange: false,
+    });
   };
 
   validateSnapshotProviderS3Compatible = () => {
@@ -958,12 +965,21 @@ class SnapshotStorageDestination extends Component<Props, State> {
                   <p className="u-fontSize--normal card-item-title u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">
                     Access Key Secret
                   </p>
-                  <input
+                  <InputField
                     type="password"
-                    className="Input"
                     placeholder="access key"
                     value={this.state.s3KeySecret}
-                    onChange={(e) => this.handleFormChange("s3KeySecret", e)}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                      this.handleFormChange("s3KeySecret", e)
+                    }
+                    onFocus={undefined}
+                    onBlur={undefined}
+                    className={"tw-gap-0"}
+                    isFirstChange={this.state.isFirstChange}
+                    label={undefined}
+                    id={"access-key"}
+                    autoFocus={undefined}
+                    helperText={undefined}
                   />
                 </div>
               </div>
@@ -1045,14 +1061,22 @@ class SnapshotStorageDestination extends Component<Props, State> {
                 <p className="u-fontSize--normal card-item-title u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">
                   Client Secret
                 </p>
-                <input
+
+                <InputField
                   type="password"
-                  className="Input"
                   placeholder="Client Secret"
                   value={this.state.azureClientSecret}
-                  onChange={(e) =>
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                     this.handleFormChange("azureClientSecret", e)
                   }
+                  onFocus={undefined}
+                  onBlur={undefined}
+                  className={"tw-gap-0"}
+                  isFirstChange={this.state.isFirstChange}
+                  label={undefined}
+                  id={"client-secret"}
+                  autoFocus={undefined}
+                  helperText={undefined}
                 />
               </div>
             </div>
@@ -1263,14 +1287,22 @@ class SnapshotStorageDestination extends Component<Props, State> {
                 <p className="u-fontSize--normal card-item-title u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">
                   Access Key Secret
                 </p>
-                <input
+
+                <InputField
                   type="password"
-                  className="Input"
                   placeholder="access key"
                   value={this.state.s3CompatibleKeySecret}
-                  onChange={(e) =>
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                     this.handleFormChange("s3CompatibleKeySecret", e)
                   }
+                  onFocus={undefined}
+                  onBlur={undefined}
+                  className={"tw-gap-0"}
+                  isFirstChange={this.state.isFirstChange}
+                  label={undefined}
+                  id={"s3-access-key"}
+                  autoFocus={undefined}
+                  helperText={undefined}
                 />
               </div>
             </div>

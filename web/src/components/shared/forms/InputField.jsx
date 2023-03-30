@@ -1,6 +1,7 @@
 import React from "react";
 
 import "@src/scss/components/shared/forms/InputField.scss";
+import Icon from "@components/Icon";
 
 const InputField = ({
   label,
@@ -9,8 +10,12 @@ const InputField = ({
   type,
   value,
   onChange,
+  onFocus,
+  onBlur,
+  className,
   autoFocus,
   helperText,
+  isFirstChange,
 }) => {
   const [show, setShow] = React.useState(false);
 
@@ -45,10 +50,18 @@ const InputField = ({
           placeholder={placeholder}
           value={value}
           onChange={(e) => onChange(e)}
+          onBlur={onBlur}
+          onFocus={onFocus}
         />
-        {type === "password" && (
+        {type === "password" && isFirstChange && (
           <span className="show-password-toggle" onClick={handleToggleShow}>
-            {show ? "hide" : "show"}
+            {
+              <Icon
+                icon={show ? "visible" : "visibility-off"}
+                size={16}
+                className="gray-color"
+              />
+            }
           </span>
         )}
       </div>
@@ -58,7 +71,9 @@ const InputField = ({
   return (
     <>
       {type === "password" ? (
-        <div className="password-input-wrapper flex-column">{component}</div>
+        <div className={`password-input-wrapper flex-column ${className} `}>
+          {component}
+        </div>
       ) : (
         component
       )}

@@ -992,6 +992,12 @@ func ReadDeployOptionsFromCluster(namespace string, clientset *kubernetes.Client
 		IsGKEAutopilot: k8sutil.IsGKEAutopilot(clientset),
 	}
 
+	kotsInstallID, err := getKotsInstallID(deployOptions.Namespace, clientset)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get kots install id")
+	}
+	deployOptions.InstallID = kotsInstallID
+
 	// Shared password, we can't read the original, but we can check if there's a bcrypted value
 	// the caller should not recreate if there is a password bcrypt on the return value
 	sharedPasswordSecret, err := getSharedPasswordSecret(namespace, clientset)
