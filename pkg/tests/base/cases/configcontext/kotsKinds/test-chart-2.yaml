@@ -9,4 +9,6 @@ spec:
     name: test-chart-2
   exclude: ""
   namespace: helmns-2
+  values: {}
+  builder: {}
 status: {}

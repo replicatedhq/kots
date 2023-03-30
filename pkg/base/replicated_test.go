@@ -621,8 +621,6 @@ spec:
       type: text
       value: ""
       title: Secret Name
-      countByGroup:
-        secrets: 3
       default: onetwothree
       repeatable: true
       minimumCount: 1
@@ -637,11 +635,6 @@ spec:
         name: my-secret
         namespace: my-app
         yamlPath:
-      valuesByGroup:
-        secrets:
-          secretName-1: MTIz
-          secretName-2: MTIz
-          secretName-3: MTIz
 `,
 				),
 				"userdata/configvalues.yaml": []byte(`apiVersion: kots.io/v1beta1
@@ -915,7 +908,7 @@ spec:
     - name: "podName"
       type: "text"
       default: "test"
-      value: "testvalue"
+      value: "testPod"
 `,
 				),
 				"userdata/config.yaml": []byte(`apiVersion: kots.io/v1beta1
@@ -1061,7 +1054,7 @@ spec:
     - name: "podName"
       type: "text"
       default: "test"
-      value: "testvalue"
+      value: "testPod"
 `,
 				),
 				"postgresql.yaml": []byte(`apiVersion: kots.io/v1beta1

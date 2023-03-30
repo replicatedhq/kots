@@ -37,8 +37,7 @@ spec:
             description: HelmChartSpec defines the desired state of HelmChartSpec
             properties:
               builder:
-                additionalProperties:
-                  type: object
+                additionalProperties: {}
                 type: object
               chart:
                 properties:
@@ -68,8 +67,7 @@ spec:
                     recursiveMerge:
                       type: boolean
                     values:
-                      additionalProperties:
-                        type: object
+                      additionalProperties: {}
                       type: object
                     when:
                       type: string
@@ -81,8 +79,7 @@ spec:
               useHelmInstall:
                 type: boolean
               values:
-                additionalProperties:
-                  type: object
+                additionalProperties: {}
                 type: object
               weight:
                 format: int64

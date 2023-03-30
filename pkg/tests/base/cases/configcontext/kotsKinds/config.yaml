@@ -13,7 +13,6 @@ spec:
       required: true
       title: Hostname
       type: text
-      value: my-app.somebigbank.com
     - default: "no"
       name: helm
       title: Include helm

@@ -13,4 +13,3 @@ spec:
           help_text: |
             Use this field to provide a hostname for your Example Application installation.
           required: true
-          value: "my-app.somebigbank.com"

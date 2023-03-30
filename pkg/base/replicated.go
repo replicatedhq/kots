@@ -9,7 +9,6 @@ import (
 	"io/ioutil"
 	"os"
 	"path"
-	"strconv"
 	"strings"
 
 	"github.com/pkg/errors"
@@ -75,7 +74,7 @@ func renderReplicated(u *upstreamtypes.Upstream, renderOptions *RenderOptions) (
 		return nil, nil, nil, errors.Wrap(err, "failed to template config objects")
 	}
 
-	_, kotsKindsFileMap, err := renderKotsKinds(u.Files, renderedConfig, renderOptions, builder)
+	kotsKindsFileMap, err := renderKotsKinds(u.Files, renderedConfig, renderOptions, builder)
 	if err != nil {
 		return nil, nil, nil, errors.Wrap(err, "failed to render the kots kinds")
 	}
@@ -160,146 +159,51 @@ func renderReplicated(u *upstreamtypes.Upstream, renderOptions *RenderOptions) (
 	return &commonBase, helmBases, kotsKindsFileMap, nil
 }
 
-func renderKotsKinds(upstreamFiles []upstreamtypes.UpstreamFile, renderedConfig *kotsv1beta1.Config, renderOptions *RenderOptions, builder *template.Builder) (*kotsutil.KotsKinds, map[string][]byte, error) {
+func renderKotsKinds(upstreamFiles []upstreamtypes.UpstreamFile, renderedConfig *kotsv1beta1.Config, renderOptions *RenderOptions, builder *template.Builder) (map[string][]byte, error) {
 	fileContentsMap := make(map[string][]byte)
-	kotsKinds := kotsutil.EmptyKotsKinds()
 
 	for _, upstreamFile := range upstreamFiles {
-		document := &Document{}
-		if err := yaml.Unmarshal(upstreamFile.Content, document); err != nil {
+		gvk := OverlySimpleGVK{}
+		if err := yaml.Unmarshal(upstreamFile.Content, &gvk); err != nil {
+			continue
+		}
+		gvkString := gvk.APIVersion + "," + gvk.Kind
+
+		if !iskotsAPIVersionKind(gvk) {
 			continue
 		}
 
-		decode := scheme.Codecs.UniversalDeserializer().Decode
-		decoded, gvk, err := decode(upstreamFile.Content, nil, nil)
-		if err != nil {
-			if document.APIVersion == "kots.io/v1beta1" || document.APIVersion == "troubleshoot.sh/v1beta2" || document.APIVersion == "velero.io/v1" {
-				return nil, nil, errors.Wrapf(err, "failed to decode kots yaml %s", upstreamFile.Path)
-			}
-			continue
-		}
-
-		switch gvk.String() {
+		switch gvkString {
 		case "kots.io/v1beta1, Kind=Config":
 			// Use the rendered Config instead of the upstream.
-			kotsKinds.Config = renderedConfig
-			configBytes, err := yaml.Marshal(renderedConfig)
+			kotsKinds := kotsutil.KotsKinds{Config: renderedConfig}
+			configBytes, err := kotsKinds.Marshal("kots.io", "v1beta1", "Config")
 			if err != nil {
-				return nil, nil, errors.Wrap(err, "failed to marshal rendered config")
+				return nil, errors.Wrap(err, "failed to marshal rendered config")
 			}
-			fileContentsMap[upstreamFile.Path] = configBytes
+			fileContentsMap[upstreamFile.Path] = []byte(configBytes)
 
 		case "kots.io/v1beta1, Kind=ConfigValues":
+			// ConfigValues do not need rendering since they should already be valid values.
 			fileContentsMap["configvalues.yaml"] = upstreamFile.Content
-			kotsKinds.ConfigValues = decoded.(*kotsv1beta1.ConfigValues)
-
-		case "kots.io/v1beta1, Kind=HelmChart":
-			helmChart := decoded.(*kotsv1beta1.HelmChart)
-
-			mergedValues := helmChart.Spec.Values
-			if mergedValues == nil {
-				mergedValues = map[string]kotsv1beta1.MappedChartValue{}
-			}
-			for _, optionalValues := range helmChart.Spec.OptionalValues {
-				parsedBool, err := strconv.ParseBool(optionalValues.When)
-				if err != nil {
-					return nil, nil, errors.Wrap(err, "failed to parse when conditional on optional values")
-				}
-				if !parsedBool {
-					continue
-				}
-				if optionalValues.RecursiveMerge {
-					mergedValues = kotsv1beta1.MergeHelmChartValues(mergedValues, optionalValues.Values)
-				} else {
-					for k, v := range optionalValues.Values {
-						mergedValues[k] = v
-					}
-				}
-			}
-
-			helmChart.Spec.Values = mergedValues
-			helmChart.Spec.OptionalValues = nil
-
-			mergedContent, err := yaml.Marshal(helmChart)
-			if err != nil {
-				return nil, nil, errors.Wrap(err, "failed to marshal merged helm chart")
-			}
-
-			renderedChart, err := builder.RenderTemplate(upstreamFile.Path, string(mergedContent))
-
-			decodedChart, _, err := decode([]byte(renderedChart), nil, nil)
-			if err != nil {
-				return nil, nil, errors.Wrapf(err, "failed to decode rendered helm chart %s", upstreamFile.Path)
-			}
-
-			if kotsKinds.HelmCharts == nil {
-				kotsKinds.HelmCharts = &kotsv1beta1.HelmChartList{}
-			}
-
-			kotsKinds.HelmCharts.Items = append(kotsKinds.HelmCharts.Items, decodedChart.(*kotsv1beta1.HelmChart))
-			fileContentsMap[upstreamFile.Path] = []byte(renderedChart)
 
 		default:
 			vcConfig, err := processVariadicConfig(&upstreamFile, renderedConfig, renderOptions.Log)
 			if err != nil {
-				return nil, nil, errors.Wrapf(err, "failed to process variadic config in kots kind file %s", upstreamFile.Path)
+				return nil, errors.Wrapf(err, "failed to process variadic config in kots kind file %s", upstreamFile.Path)
 			}
 			upstreamFile.Content = vcConfig
 
 			rendered, err := builder.RenderTemplate(upstreamFile.Path, string(upstreamFile.Content))
 			if err != nil {
-				return nil, nil, errors.Wrapf(err, "failed to render file %s", upstreamFile.Path)
+				return nil, errors.Wrapf(err, "failed to render file %s", upstreamFile.Path)
 			}
 
-			renderedDecoded, _, err := decode([]byte(rendered), nil, nil)
-			if err != nil {
-				return nil, nil, errors.Wrap(err, "failed to decode rendered kots kind")
-			}
-
-			switch gvk.String() {
-			case "app.k8s.io/v1beta1, Kind=Application":
-				fileContentsMap[upstreamFile.Path] = []byte(rendered)
-				kotsKinds.Application = renderedDecoded.(*applicationv1beta1.Application)
-			case "kots.io/v1beta1, Kind=Application":
-				fileContentsMap[upstreamFile.Path] = []byte(rendered)
-				kotsKinds.KotsApplication = *renderedDecoded.(*kotsv1beta1.Application)
-			case "kots.io/v1beta1, Kind=License":
-				fileContentsMap[upstreamFile.Path] = []byte(rendered)
-				kotsKinds.License = renderedDecoded.(*kotsv1beta1.License)
-			case "kots.io/v1beta1, Kind=Identity":
-				fileContentsMap[upstreamFile.Path] = []byte(rendered)
-				kotsKinds.Identity = renderedDecoded.(*kotsv1beta1.Identity)
-			case "kots.io/v1beta1, Kind=IdentityConfig":
-				fileContentsMap[upstreamFile.Path] = []byte(rendered)
-				kotsKinds.IdentityConfig = renderedDecoded.(*kotsv1beta1.IdentityConfig)
-			case "kots.io/v1beta1, Kind=Installation":
-				fileContentsMap[upstreamFile.Path] = []byte(rendered)
-				kotsKinds.Installation = *renderedDecoded.(*kotsv1beta1.Installation)
-			case "troubleshoot.sh/v1beta2, Kind=Collector":
-				fileContentsMap[upstreamFile.Path] = []byte(rendered)
-				kotsKinds.Collector = renderedDecoded.(*troubleshootv1beta2.Collector)
-			case "troubleshoot.sh/v1beta2, Kind=Analyzer":
-				fileContentsMap[upstreamFile.Path] = []byte(rendered)
-				kotsKinds.Analyzer = renderedDecoded.(*troubleshootv1beta2.Analyzer)
-			case "troubleshoot.sh/v1beta2, Kind=SupportBundle":
-				fileContentsMap[upstreamFile.Path] = []byte(rendered)
-				kotsKinds.SupportBundle = renderedDecoded.(*troubleshootv1beta2.SupportBundle)
-			case "troubleshoot.sh/v1beta2, Kind=Redactor":
-				fileContentsMap[upstreamFile.Path] = []byte(rendered)
-				kotsKinds.Redactor = renderedDecoded.(*troubleshootv1beta2.Redactor)
-			case "troubleshoot.sh/v1beta2, Kind=Preflight":
-				fileContentsMap[upstreamFile.Path] = []byte(rendered)
-				kotsKinds.Preflight = renderedDecoded.(*troubleshootv1beta2.Preflight)
-			case "velero.io/v1, Kind=Backup":
-				fileContentsMap[upstreamFile.Path] = []byte(rendered)
-				kotsKinds.Backup = renderedDecoded.(*velerov1.Backup)
-			default:
-				continue
-			}
+			fileContentsMap[upstreamFile.Path] = []byte(rendered)
 		}
 	}
 
-	return &kotsKinds, fileContentsMap, nil
+	return fileContentsMap, nil
 }
 
 func extractHelmBases(b Base) []Base {

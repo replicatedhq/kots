@@ -9,4 +9,6 @@ spec:
   helmVersion: v3
   useHelmInstall: true
   exclude: ""
+  builder: {}
+  values: {}
 status: {}

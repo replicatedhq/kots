@@ -17,14 +17,14 @@ spec:
       name: toggled_on
       title: "On"
       type: text
-      value: "on"
+      value: ""
       when: "true"
     - default: ""
       hidden: true
       name: toggled_off
       title: "Off"
       type: text
-      value: "off"
+      value: ""
       when: "false"
     name: ternary-test
     title: testing ternary operators

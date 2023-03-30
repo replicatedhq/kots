@@ -10,4 +10,6 @@ spec:
   exclude: ""
   namespace: helmns
   useHelmInstall: true
+  values: {}
+  builder: {}
 status: {}

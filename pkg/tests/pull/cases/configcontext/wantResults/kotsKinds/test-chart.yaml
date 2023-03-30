@@ -8,3 +8,5 @@ spec:
     chartVersion: 0.1.0
   useHelmInstall: true
   namespace: helmns
+  values: {}
+  builder: {}

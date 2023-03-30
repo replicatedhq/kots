@@ -15,10 +15,8 @@ spec:
       help_text: |
         Use this field to provide a hostname for your Example Application installation.
       required: true
-      value: hostname
     - name: helm
       title: Include helm
       type: text
       default: "no"
-      value: "yes"
 status: {}
