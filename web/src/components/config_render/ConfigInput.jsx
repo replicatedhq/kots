@@ -156,7 +156,6 @@ export default class ConfigInput extends React.Component {
                   this.props.readonly ? "readonly" : ""
                 } tw-gap-0`}
                 isFirstChange={this.state.isFirstChange}
-                showError={showValidationError}
               />
               {variadicItemsLen > 1 ? (
                 <Icon

@@ -16,7 +16,7 @@ const InputField = ({
   autoFocus,
   helperText,
   isFirstChange,
-  showError,
+  showError = false,
 }) => {
   const [show, setShow] = React.useState(false);
 
@@ -54,7 +54,7 @@ const InputField = ({
           onBlur={onBlur}
           onFocus={onFocus}
         />
-        {showError && (
+        {type !== "password" && showError && (
           <span className="show-input-error">
             <Icon
               icon={"warning-circle-filled"}
