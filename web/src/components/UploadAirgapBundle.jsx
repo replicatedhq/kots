@@ -537,7 +537,7 @@ class UploadAirgapBundle extends React.Component {
                             </span>
                           </p>
                           <p className="u-fontSize--normal u-textColor--bodyCopy u-fontWeight--normal u-lineHeight--normal u-marginTop--10">
-                            This will be a .airgap file
+                            This will be a .airgap file.
                           </p>
                         </div>
                       )}
