@@ -447,7 +447,7 @@ class AppConfig extends Component<Props, State> {
     validation: Validation;
     value: string;
   }): Validation => {
-    if (!value || !validation.regex) {
+    if (!value || !validation?.regex) {
       return { ...validation, hasError: false };
     }
 
@@ -707,7 +707,6 @@ class AppConfig extends Component<Props, State> {
       observer.observe(section);
     });
 
-    console.log(hasRegExError);
     return (
       <ConfigFormValidationContext.Provider value={this.state.configGroups}>
         <div className="flex flex-column u-paddingLeft--20 u-paddingBottom--20 u-paddingRight--20 alignItems--center">
