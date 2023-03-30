@@ -36,8 +36,14 @@ const ConfigInfo = ({ match, fromLicenseFlow, app }) => {
       <div className="ConfigInfo current justifyContent--center">
         <p className="flex alignItems--center u-marginRight--5">
           {" "}
-          <span className="icon info-icon-green flex u-marginRight--5" /> This
-          is the currently deployed config. There{" "}
+          {/* <span className="icon info-icon-green flex u-marginRight--5" /> */}
+          <Icon
+            icon="info"
+            style={{ marginTop: "2px" }}
+            size={9}
+            className="success-color"
+          />
+          This is the currently deployed config. There{" "}
           {size(pendingVersions) === 1 ? "is" : "are"} {size(pendingVersions)}{" "}
           newer version{size(pendingVersions) === 1 ? "" : "s"} since this one.{" "}
         </p>
@@ -80,8 +86,9 @@ const ConfigInfo = ({ match, fromLicenseFlow, app }) => {
       <div className="ConfigInfo newer justifyContent--center">
         <p className="flex alignItems--center u-marginRight--5">
           {" "}
-          <span className="icon info-icon flex u-marginRight--5" /> This config
-          is {numVersionsNewer} version
+          {/* <span className="icon info-icon flex u-marginRight--5" /> */}
+          <Icon icon="info" style={{ marginTop: "2px" }} size={9} />
+          This config is {numVersionsNewer} version
           {numVersionsNewer === 1 ? "" : "s"} newer than the currently deployed
           config.{" "}
         </p>

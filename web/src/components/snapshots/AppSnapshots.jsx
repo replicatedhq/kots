@@ -613,7 +613,8 @@ class AppSnapshots extends Component {
           style={{ maxWidth: "770px" }}
         >
           <div className="InfoSnapshots--wrapper flex flex-auto u-marginBottom--20">
-            <span className="icon info-icon flex-auto u-marginRight--5" />
+            {/* <span className="icon info-icon flex-auto u-marginRight--5" /> */}
+            <Icon icon="info" style={{ marginTop: "2px" }} size={9} />
             <p className="u-fontSize--small u-fontWeight--normal u-lineHeight--normal u-textColor--accent">
               It’s recommend that you use{" "}
               <Link to="/snapshots" className="link u-fontSize--small">
