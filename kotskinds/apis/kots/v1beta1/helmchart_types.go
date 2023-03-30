@@ -29,44 +29,44 @@ import (
 type MappedChartValue struct {
 	Value string `json:"value"`
 
-	ValueType string `json:"valueType"`
+	valueType string `json:"valueType"`
 
-	StrValue   string  `json:"strValue,omitempty"`
-	BoolValue  bool    `json:"boolValue,omitempty"`
-	FloatValue float64 `json:"floatValue,omitempty"`
+	strValue   string  `json:"strValue,omitempty"`
+	boolValue  bool    `json:"boolValue,omitempty"`
+	floatValue float64 `json:"floatValue,omitempty"`
 
-	Children map[string]*MappedChartValue `json:"children,omitempty"`
-	Array    []*MappedChartValue          `json:"array,omitempty"`
+	children map[string]*MappedChartValue `json:"children,omitempty"`
+	array    []*MappedChartValue          `json:"array,omitempty"`
 }
 
 func (m *MappedChartValue) getBuiltValue() (interface{}, error) {
-	if m.ValueType == "string" {
-		return m.StrValue, nil
+	if m.valueType == "string" {
+		return m.strValue, nil
 	}
-	if m.ValueType == "bool" {
-		return m.BoolValue, nil
+	if m.valueType == "bool" {
+		return m.boolValue, nil
 	}
-	if m.ValueType == "float" {
-		return m.FloatValue, nil
+	if m.valueType == "float" {
+		return m.floatValue, nil
 	}
-	if m.ValueType == "nil" {
+	if m.valueType == "nil" {
 		return nil, nil
 	}
 
-	if m.ValueType == "Children" {
-		Children := map[string]interface{}{}
-		for k, v := range m.Children {
+	if m.valueType == "children" {
+		children := map[string]interface{}{}
+		for k, v := range m.children {
 			childValue, err := v.getBuiltValue()
 			if err != nil {
 				return nil, errors.Wrapf(err, "failed to get value of child %s", k)
 			}
-			Children[k] = childValue
+			children[k] = childValue
 		}
-		return Children, nil
+		return children, nil
 	}
-	if m.ValueType == "Array" {
+	if m.valueType == "array" {
 		var elements []interface{}
-		for i, v := range m.Array {
+		for i, v := range m.array {
 			elValue, err := v.getBuiltValue()
 			if err != nil {
 				return nil, errors.Wrapf(err, "failed to get value of child %d", i)
@@ -87,30 +87,30 @@ func (m *MappedChartValue) UnmarshalJSON(value []byte) error {
 	}
 
 	if b == nil {
-		m.ValueType = "nil"
+		m.valueType = "nil"
 		return nil
 	}
 
 	if b, ok := b.(string); ok {
-		m.StrValue = b
-		m.ValueType = "string"
+		m.strValue = b
+		m.valueType = "string"
 		return nil
 	}
 
 	if b, ok := b.(bool); ok {
-		m.BoolValue = b
-		m.ValueType = "bool"
+		m.boolValue = b
+		m.valueType = "bool"
 		return nil
 	}
 
 	if b, ok := b.(float64); ok {
-		m.FloatValue = b
-		m.ValueType = "float"
+		m.floatValue = b
+		m.valueType = "float"
 		return nil
 	}
 
 	if b, ok := b.(map[string]interface{}); ok {
-		m.Children = make(map[string]*MappedChartValue)
+		m.children = make(map[string]*MappedChartValue)
 		for k, v := range b {
 			vv, err := json.Marshal(v)
 			if err != nil {
@@ -122,16 +122,16 @@ func (m *MappedChartValue) UnmarshalJSON(value []byte) error {
 				return err
 			}
 
-			m.Children[k] = m2
+			m.children[k] = m2
 		}
 
-		m.ValueType = "Children"
+		m.valueType = "children"
 
 		return nil
 	}
 
 	if b, ok := b.([]interface{}); ok {
-		m.Array = []*MappedChartValue{}
+		m.array = []*MappedChartValue{}
 		for _, v := range b {
 			vv, err := json.Marshal(v)
 			if err != nil {
@@ -143,10 +143,10 @@ func (m *MappedChartValue) UnmarshalJSON(value []byte) error {
 				return err
 			}
 
-			m.Array = append(m.Array, m2)
+			m.array = append(m.array, m2)
 		}
 
-		m.ValueType = "Array"
+		m.valueType = "array"
 
 		return nil
 	}
@@ -190,9 +190,9 @@ func (h *HelmChartSpec) GetReplTmplValues(values map[string]MappedChartValue) (m
 }
 
 func (h *HelmChartSpec) getReplTmplValue(value *MappedChartValue) (interface{}, error) {
-	if value.ValueType == "Children" {
+	if value.valueType == "children" {
 		result := map[string]interface{}{}
-		for k, v := range value.Children {
+		for k, v := range value.children {
 			built, err := h.getReplTmplValue(v)
 			if err != nil || built == nil {
 				continue
@@ -203,12 +203,12 @@ func (h *HelmChartSpec) getReplTmplValue(value *MappedChartValue) (interface{}, 
 			return nil, nil
 		}
 		return result, nil
-	} else if value.ValueType == "Array" {
+	} else if value.valueType == "array" {
 		result := []interface{}{}
-		for _, v := range value.Array {
+		for _, v := range value.array {
 			built, err := h.getReplTmplValue(v)
 			if err != nil {
-				return nil, errors.Wrap(err, "failed to render Array value")
+				return nil, errors.Wrap(err, "failed to render array value")
 			}
 			result = append(result, built)
 		}
@@ -256,12 +256,12 @@ func MergeHelmChartValues(baseValues map[string]MappedChartValue,
 			result[k] = baseValues[k]
 			continue
 		}
-		if v.ValueType != "Children" {
+		if v.valueType != "children" {
 			result[k] = overlayValues[k]
 		} else {
 			result[k] = MappedChartValue{
-				ValueType: "Children",
-				Children:  mergeValueChildren(v.Children, overlayValues[k].Children),
+				valueType: "children",
+				children:  mergeValueChildren(v.children, overlayValues[k].children),
 			}
 		}
 	}
@@ -280,12 +280,12 @@ func mergeValueChildren(baseValues map[string]*MappedChartValue, overlayValues m
 			result[k] = baseValues[k]
 			continue
 		}
-		if v.ValueType != "Children" {
+		if v.valueType != "children" {
 			result[k] = overlayValues[k]
 		} else {
 			result[k] = &MappedChartValue{
-				ValueType: "Children",
-				Children:  mergeValueChildren(v.Children, overlayValues[k].Children),
+				valueType: "children",
+				children:  mergeValueChildren(v.children, overlayValues[k].children),
 			}
 		}
 	}
@@ -299,9 +299,9 @@ func mergeValueChildren(baseValues map[string]*MappedChartValue, overlayValues m
 }
 
 func (h *HelmChartSpec) renderValue(value *MappedChartValue) (interface{}, error) {
-	if value.ValueType == "Children" {
+	if value.valueType == "children" {
 		result := map[string]interface{}{}
-		for k, v := range value.Children {
+		for k, v := range value.children {
 			built, err := h.renderValue(v)
 			if err != nil {
 				return nil, errors.Wrapf(err, "failed to render child value at key %s", k)
@@ -309,12 +309,12 @@ func (h *HelmChartSpec) renderValue(value *MappedChartValue) (interface{}, error
 			result[k] = built
 		}
 		return result, nil
-	} else if value.ValueType == "Array" {
+	} else if value.valueType == "array" {
 		result := []interface{}{}
-		for _, v := range value.Array {
+		for _, v := range value.array {
 			built, err := h.renderValue(v)
 			if err != nil {
-				return nil, errors.Wrap(err, "failed to render Array value")
+				return nil, errors.Wrap(err, "failed to render array value")
 			}
 			result = append(result, built)
 		}
