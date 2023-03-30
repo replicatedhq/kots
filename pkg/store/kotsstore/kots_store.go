@@ -10,6 +10,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/pkg/errors"
 	kotsscheme "github.com/replicatedhq/kots/kotskinds/client/kotsclientset/scheme"
+	apptypes "github.com/replicatedhq/kots/pkg/app/types"
 	"github.com/replicatedhq/kots/pkg/filestore"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	kotsadmtypes "github.com/replicatedhq/kots/pkg/kotsadm/types"
@@ -28,6 +29,10 @@ var (
 	ErrNotFound = errors.New("not found")
 )
 
+type cachedApp struct {
+	expirationTime time.Time
+	app            *apptypes.App
+}
 type cachedTaskStatus struct {
 	expirationTime time.Time
 	taskStatus     TaskStatus
@@ -38,6 +43,7 @@ type KOTSStore struct {
 	sessionExpiration time.Time
 
 	cachedTaskStatus map[string]*cachedTaskStatus
+	cachedApp        map[string]*cachedApp
 }
 
 func init() {
@@ -166,6 +172,7 @@ func canIgnoreEtcdError(err error) bool {
 func StoreFromEnv() *KOTSStore {
 	return &KOTSStore{
 		cachedTaskStatus: make(map[string]*cachedTaskStatus),
+		cachedApp:        make(map[string]*cachedApp),
 	}
 }
 

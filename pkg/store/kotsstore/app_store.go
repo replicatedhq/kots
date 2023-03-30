@@ -3,6 +3,7 @@ package kotsstore
 import (
 	"fmt"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/gosimple/slug"
@@ -17,6 +18,14 @@ import (
 	"github.com/rqlite/gorqlite"
 	"github.com/segmentio/ksuid"
 	"go.uber.org/zap"
+)
+
+const (
+	appCacheTTL = 1 * time.Minute
+)
+
+var (
+	appCacheLock = sync.Mutex{}
 )
 
 func (s *KOTSStore) AddAppToAllDownstreams(appID string) error {
@@ -145,6 +154,10 @@ func (s *KOTSStore) GetAppIDFromSlug(slug string) (string, error) {
 }
 
 func (s *KOTSStore) GetApp(id string) (*apptypes.App, error) {
+	cachedApp := s.GetAppFromCache(id)
+	if cachedApp != nil {
+		return cachedApp, nil
+	}
 	db := persistence.MustGetDBSession()
 	query := `select id, name, license, upstream_uri, icon_uri, created_at, updated_at, slug, current_sequence, last_update_check_at, last_license_sync, is_airgap, snapshot_ttl_new, snapshot_schedule, restore_in_progress_name, restore_undeploy_status, update_checker_spec, semver_auto_deploy, install_state, channel_changed from app where id = ?`
 	rows, err := db.QueryOneParameterized(gorqlite.ParameterizedStatement{
@@ -266,6 +279,7 @@ func (s *KOTSStore) GetApp(id string) (*apptypes.App, error) {
 		return nil, errors.Wrap(err, "failed to check if gitops is enabled")
 	}
 	app.IsGitOps = isGitOps
+	s.SetCachedApp(&app)
 
 	return &app, nil
 }
@@ -593,4 +607,40 @@ func (s *KOTSStore) SetAppChannelChanged(appID string, channelChanged bool) erro
 	}
 
 	return nil
+}
+
+func (s *KOTSStore) SetCachedApp(app *apptypes.App) error {
+	appCacheLock.Lock()
+	defer appCacheLock.Unlock()
+	if app == nil {
+		return errors.New("cannot save nil app to cache")
+	}
+
+	cached := s.cachedApp[app.ID]
+	if cached == nil {
+		cached = &cachedApp{}
+		s.cachedApp[app.ID] = cached
+	}
+
+	cached.app = app
+	cached.expirationTime = time.Now().Add(appCacheTTL)
+
+	return nil
+}
+
+func (s *KOTSStore) GetAppFromCache(appID string) *apptypes.App {
+	appCacheLock.Lock()
+	defer appCacheLock.Unlock()
+
+	cached := s.cachedApp[appID]
+	if cached == nil {
+		return nil
+	}
+
+	if time.Now().After(cached.expirationTime) {
+		delete(s.cachedApp, appID)
+		return nil
+	}
+
+	return cached.app
 }
