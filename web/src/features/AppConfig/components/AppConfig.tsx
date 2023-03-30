@@ -447,7 +447,7 @@ class AppConfig extends Component<Props, State> {
     validation: Validation;
     value: string;
   }): Validation => {
-    if (!value) {
+    if (!value || !validation.regex) {
       return { ...validation, hasError: false };
     }
 
@@ -476,13 +476,10 @@ class AppConfig extends Component<Props, State> {
           }
         }
         // test data for regex
-        if (["text", "password", "textarea"].includes(newItem.type)) {
-          newItem.validation = {
-            regex: "^.{4,20}$",
-            message: "should be between 4 and 20 characters",
-            hasError: false,
-          };
-
+        if (
+          newItem.validation &&
+          ["text", "password", "textarea"].includes(newItem.type)
+        ) {
           newItem.validation = this.validateRegex({
             validation: newItem.validation,
             value: newItem.value,
@@ -556,11 +553,12 @@ class AppConfig extends Component<Props, State> {
             }
             // test data for regex
             if (["text", "password", "textarea"].includes(newItem.type)) {
-              newItem.validation = {
-                regex: "^.{4,20}$",
-                message: "should be between 4 and 20 characters",
-                hasError: false,
-              };
+              // TODO: remove- this is used for generating test data locally
+              // newItem.validation = {
+              //   regex: "^.{4,20}$",
+              //   message: "should be between 4 and 20 characters",
+              //   hasError: false,
+              // };
 
               newItem.validation = this.validateRegex({
                 validation: newItem.validation,
