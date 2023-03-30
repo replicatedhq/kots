@@ -45,9 +45,7 @@ func (m MappedChartValue) MarshalJSON() ([]byte, error) {
 		return nil, errors.Wrap(err, "failed to get built value")
 	}
 
-	return json.Marshal(struct {
-		Value interface{} `json:"value,omitempty"`
-	}{Value: val})
+	return json.Marshal(val)
 }
 
 func (m *MappedChartValue) getBuiltValue() (interface{}, error) {
