@@ -26,18 +26,17 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// +kubebuilder:validation:Type=""
 type MappedChartValue struct {
-	Value string `json:"-"`
+	Value string `json:"value"`
 
-	valueType string `json:"-"`
+	valueType string `json:"valueType"`
 
-	strValue   string  `json:"-"`
-	boolValue  bool    `json:"-"`
-	floatValue float64 `json:"-"`
+	strValue   string  `json:"strValue,omitempty"`
+	boolValue  bool    `json:"boolValue,omitempty"`
+	floatValue float64 `json:"floatValue,omitempty"`
 
-	children map[string]*MappedChartValue `json:"-"`
-	array    []*MappedChartValue          `json:"-"`
+	children map[string]*MappedChartValue `json:"children,omitempty"`
+	array    []*MappedChartValue          `json:"array,omitempty"`
 }
 
 func (m *MappedChartValue) getBuiltValue() (interface{}, error) {
@@ -427,7 +426,7 @@ type HelmChart struct {
 type HelmChartList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
-	Items           []HelmChart `json:"items"`
+	Items           []*HelmChart `json:"items"`
 }
 
 func init() {

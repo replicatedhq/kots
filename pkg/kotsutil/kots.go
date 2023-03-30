@@ -79,7 +79,7 @@ type OverlySimpleMetadata struct {
 type KotsKinds struct {
 	KotsApplication kotsv1beta1.Application
 	Application     *applicationv1beta1.Application
-	HelmCharts      []*kotsv1beta1.HelmChart
+	HelmCharts      *kotsv1beta1.HelmChartList
 
 	Collector     *troubleshootv1beta2.Collector
 	Preflight     *troubleshootv1beta2.Preflight
@@ -273,6 +273,14 @@ func (o KotsKinds) Marshal(g string, v string, k string) (string, error) {
 					return "", errors.Wrap(err, "failed to encode identityconfig")
 				}
 				return string(b.Bytes()), nil
+			case "HelmChart":
+				if o.HelmCharts == nil {
+					return "", nil
+				}
+				var b bytes.Buffer
+				if err := s.Encode(o.HelmCharts, &b); err != nil {
+					return "", errors.Wrap(err, "failed to encode helmchart")
+				}
 			}
 		}
 	}
@@ -435,7 +443,10 @@ func (k *KotsKinds) addKotsKind(content []byte) error {
 		case "kots.io/v1beta1, Kind=Installation":
 			k.Installation = *decoded.(*kotsv1beta1.Installation)
 		case "kots.io/v1beta1, Kind=HelmChart":
-			k.HelmCharts = append(k.HelmCharts, decoded.(*kotsv1beta1.HelmChart))
+			if k.HelmCharts == nil {
+				k.HelmCharts = &kotsv1beta1.HelmChartList{}
+			}
+			k.HelmCharts.Items = append(k.HelmCharts.Items, decoded.(*kotsv1beta1.HelmChart))
 		case "kots.io/v1beta1, Kind=LintConfig":
 			k.LintConfig = decoded.(*kotsv1beta1.LintConfig)
 		case "troubleshoot.sh/v1beta2, Kind=Collector":

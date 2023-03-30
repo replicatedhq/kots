@@ -314,8 +314,8 @@ func getDownstreamInfo(appID string) (*types.DownstreamInfo, error) {
 		di.PreflightState = getPreflightState(preflightResults)
 		di.SkipPreflights = currentVersion.PreflightSkipped
 
-		if len(deployedKotsKinds.HelmCharts) > 0 {
-			for _, chart := range deployedKotsKinds.HelmCharts {
+		if deployedKotsKinds.HelmCharts != nil && len(deployedKotsKinds.HelmCharts.Items) > 0 {
+			for _, chart := range deployedKotsKinds.HelmCharts.Items {
 				if chart.Spec.UseHelmInstall {
 					di.NativeHelmInstalls++
 				} else {

@@ -37,7 +37,28 @@ spec:
             description: HelmChartSpec defines the desired state of HelmChartSpec
             properties:
               builder:
-                additionalProperties: {}
+                additionalProperties:
+                  properties:
+                    array:
+                      items: {}
+                      type: array
+                    boolValue:
+                      type: boolean
+                    children:
+                      additionalProperties: {}
+                      type: object
+                    floatValue:
+                      type: number
+                    strValue:
+                      type: string
+                    value:
+                      type: string
+                    valueType:
+                      type: string
+                  required:
+                  - value
+                  - valueType
+                  type: object
                 type: object
               chart:
                 properties:
@@ -67,7 +88,28 @@ spec:
                     recursiveMerge:
                       type: boolean
                     values:
-                      additionalProperties: {}
+                      additionalProperties:
+                        properties:
+                          array:
+                            items: {}
+                            type: array
+                          boolValue:
+                            type: boolean
+                          children:
+                            additionalProperties: {}
+                            type: object
+                          floatValue:
+                            type: number
+                          strValue:
+                            type: string
+                          value:
+                            type: string
+                          valueType:
+                            type: string
+                        required:
+                        - value
+                        - valueType
+                        type: object
                       type: object
                     when:
                       type: string
@@ -79,7 +121,28 @@ spec:
               useHelmInstall:
                 type: boolean
               values:
-                additionalProperties: {}
+                additionalProperties:
+                  properties:
+                    array:
+                      items: {}
+                      type: array
+                    boolValue:
+                      type: boolean
+                    children:
+                      additionalProperties: {}
+                      type: object
+                    floatValue:
+                      type: number
+                    strValue:
+                      type: string
+                    value:
+                      type: string
+                    valueType:
+                      type: string
+                  required:
+                  - value
+                  - valueType
+                  type: object
                 type: object
               weight:
                 format: int64

@@ -232,7 +232,11 @@ func renderKotsKinds(upstreamFiles []upstreamtypes.UpstreamFile, renderedConfig 
 				return nil, nil, errors.Wrapf(err, "failed to decode rendered helm chart %s", upstreamFile.Path)
 			}
 
-			kotsKinds.HelmCharts = append(kotsKinds.HelmCharts, decodedChart.(*kotsv1beta1.HelmChart))
+			if kotsKinds.HelmCharts == nil {
+				kotsKinds.HelmCharts = &kotsv1beta1.HelmChartList{}
+			}
+
+			kotsKinds.HelmCharts.Items = append(kotsKinds.HelmCharts.Items, decodedChart.(*kotsv1beta1.HelmChart))
 			fileContentsMap[upstreamFile.Path] = []byte(renderedChart)
 
 		default:

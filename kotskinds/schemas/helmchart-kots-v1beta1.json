@@ -22,7 +22,37 @@
       "properties": {
         "builder": {
           "type": "object",
-          "additionalProperties": {}
+          "additionalProperties": {
+            "type": "object",
+            "required": [
+              "valueType"
+            ],
+            "properties": {
+              "Value": {
+                "type": "string"
+              },
+              "array": {
+                "type": "array",
+                "items": {}
+              },
+              "boolValue": {
+                "type": "boolean"
+              },
+              "children": {
+                "type": "object",
+                "additionalProperties": {}
+              },
+              "floatValue": {
+                "type": "number"
+              },
+              "strValue": {
+                "type": "string"
+              },
+              "valueType": {
+                "type": "string"
+              }
+            }
+          }
         },
         "chart": {
           "type": "object",
@@ -71,7 +101,37 @@
               },
               "values": {
                 "type": "object",
-                "additionalProperties": {}
+                "additionalProperties": {
+                  "type": "object",
+                  "required": [
+                    "valueType"
+                  ],
+                  "properties": {
+                    "Value": {
+                      "type": "string"
+                    },
+                    "array": {
+                      "type": "array",
+                      "items": {}
+                    },
+                    "boolValue": {
+                      "type": "boolean"
+                    },
+                    "children": {
+                      "type": "object",
+                      "additionalProperties": {}
+                    },
+                    "floatValue": {
+                      "type": "number"
+                    },
+                    "strValue": {
+                      "type": "string"
+                    },
+                    "valueType": {
+                      "type": "string"
+                    }
+                  }
+                }
               },
               "when": {
                 "type": "string"
@@ -84,7 +144,37 @@
         },
         "values": {
           "type": "object",
-          "additionalProperties": {}
+          "additionalProperties": {
+            "type": "object",
+            "required": [
+              "valueType"
+            ],
+            "properties": {
+              "Value": {
+                "type": "string"
+              },
+              "array": {
+                "type": "array",
+                "items": {}
+              },
+              "boolValue": {
+                "type": "boolean"
+              },
+              "children": {
+                "type": "object",
+                "additionalProperties": {}
+              },
+              "floatValue": {
+                "type": "number"
+              },
+              "strValue": {
+                "type": "string"
+              },
+              "valueType": {
+                "type": "string"
+              }
+            }
+          }
         },
         "weight": {
           "type": "integer",

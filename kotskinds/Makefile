@@ -6,7 +6,7 @@ generate: controller-gen client-gen
 		object:headerFile=./hack/boilerplate.go.txt \
 		paths=./apis/...
 	$(CONTROLLER_GEN) \
-		crd \
+		crd:allowDangerousTypes=true \
 		+output:dir=./config/crds \
 		paths=./apis/kots/v1beta1/...
 	$(CLIENT_GEN) \
@@ -30,7 +30,7 @@ schemas: fmt generate
 fmt:
 	go fmt ./...
 
-.PHONY: contoller-gen
+.PHONY: controller-gen
 controller-gen:
 ifeq (, $(shell which controller-gen))
 	go install sigs.k8s.io/controller-tools/cmd/controller-gen@v0.7.0
