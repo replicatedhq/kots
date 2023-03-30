@@ -12,67 +12,65 @@ spec:
   useHelmInstall: true
   values:
     fluent-bit:
-      children:
-        config:
-          filters: |
-            [FILTER]
-                Name stdout
-          inputs: |
-            [INPUT]
-                Name tail
-                Path /var/log/containers/*.log
-                Parser docker
-                Tag <pod_name>.<container_name>
-                Tag_Regex (?<pod_name>[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*)_(?<namespace_name>[^_]+)_(?<container_name>.+)-
-                Skip_Long_Lines On
-          outputs: |
-            [OUTPUT]
-                Name file
-                Match imagebuild*
-                Mkdir true
-                Path /test/log-collector
-                Format plain
+      config:
+        filters: |
+          [FILTER]
+              Name stdout
+        inputs: |
+          [INPUT]
+              Name tail
+              Path /var/log/containers/*.log
+              Parser docker
+              Tag <pod_name>.<container_name>
+              Tag_Regex (?<pod_name>[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*)_(?<namespace_name>[^_]+)_(?<container_name>.+)-
+              Skip_Long_Lines On
+        outputs: |
+          [OUTPUT]
+              Name file
+              Match imagebuild*
+              Mkdir true
+              Path /test/log-collector
+              Format plain
 
-            [OUTPUT]
-                Name file
-                Match installer*
-                Mkdir true
-                Path /test/log-collector
-                Format plain
+          [OUTPUT]
+              Name file
+              Match installer*
+              Mkdir true
+              Path /test/log-collector
+              Format plain
 
-            # Workspaces
-            [OUTPUT]
-                Name file
-                Match ws*.workspace
-                Mkdir true
-                Path /test/log-collector
-                Format plain
-        extraContainers:
-        - args:
-          - while true; do echo "waiting" && sleep 60; done
-          command:
-          - sh
-          - -c
-          image: busybox:1
-          name: kots
-          volumeMounts:
-          - mountPath: /test
-            name: collector
-            readOnly: true
-        extraVolumeMounts:
+          # Workspaces
+          [OUTPUT]
+              Name file
+              Match ws*.workspace
+              Mkdir true
+              Path /test/log-collector
+              Format plain
+      extraContainers:
+      - args:
+        - while true; do echo "waiting" && sleep 60; done
+        command:
+        - sh
+        - -c
+        image: busybox:1
+        name: kots
+        volumeMounts:
         - mountPath: /test
           name: collector
-        extraVolumes:
-        - hostPath:
-            path: /test
-            type: DirectoryOrCreate
-          name: collector
-        labels:
-          app: test
-          component: test-log-collector
-        podLabels:
-          app: test
-          component: test-log-collector
-      valueType: children
+          readOnly: true
+      extraVolumeMounts:
+      - mountPath: /test
+        name: collector
+      extraVolumes:
+      - hostPath:
+          path: /test
+          type: DirectoryOrCreate
+        name: collector
+      labels:
+        app: test
+        component: test-log-collector
+      podLabels:
+        app: test
+        component: test-log-collector
   weight: 10
 status: {}

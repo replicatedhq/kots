@@ -1067,19 +1067,18 @@ spec:
 				"postgresql.yaml": []byte(`apiVersion: kots.io/v1beta1
 kind: HelmChart
 metadata:
+  creationTimestamp: null
   name: postgresql
 spec:
-  # chart identifies a matching chart from a .tgz
   chart:
     name: postgresql
     chartVersion: 10.13.8
   helmVersion: v3
   useHelmInstall: true
   weight: 42
+  exclude: ""
   values:
-    postgresqlPassword:
-      strValue: abc123
-      valueType: string
+    postgresqlPassword: abc123
 `,
 				),
 				"userdata/config.yaml": []byte(`apiVersion: kots.io/v1beta1
