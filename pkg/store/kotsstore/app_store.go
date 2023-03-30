@@ -60,6 +60,7 @@ func (s *KOTSStore) SetAppInstallState(appID string, state string) error {
 	if err != nil {
 		return fmt.Errorf("failed to update app install state: %v: %v", err, wr.Err)
 	}
+	s.ClearAppFromCache(appID)
 
 	return nil
 }
@@ -359,6 +360,7 @@ func (s *KOTSStore) CreateApp(name string, upstreamURI string, licenseData strin
 	if err != nil {
 		return nil, fmt.Errorf("failed to insert app: %v: %v", err, wr.Err)
 	}
+	s.ClearAppFromCache(id)
 
 	return s.GetApp(id)
 }
@@ -479,6 +481,7 @@ func (s *KOTSStore) SetUpdateCheckerSpec(appID string, updateCheckerSpec string)
 	if err != nil {
 		return fmt.Errorf("failed to write: %v: %v", err, wr.Err)
 	}
+	s.ClearAppFromCache(appID)
 
 	return nil
 }
@@ -496,6 +499,7 @@ func (s *KOTSStore) SetAutoDeploy(appID string, autoDeploy apptypes.AutoDeploy) 
 	if err != nil {
 		return fmt.Errorf("failed to write: %v: %v", err, wr.Err)
 	}
+	s.ClearAppFromCache(appID)
 
 	return nil
 }
@@ -513,6 +517,7 @@ func (s *KOTSStore) SetSnapshotTTL(appID string, snapshotTTL string) error {
 	if err != nil {
 		return fmt.Errorf("failed to write: %v: %v", err, wr.Err)
 	}
+	s.ClearAppFromCache(appID)
 
 	return nil
 }
@@ -530,6 +535,7 @@ func (s *KOTSStore) SetSnapshotSchedule(appID string, snapshotSchedule string) e
 	if err != nil {
 		return fmt.Errorf("failed to write: %v: %v", err, wr.Err)
 	}
+	s.ClearAppFromCache(appID)
 
 	return nil
 }
@@ -590,6 +596,7 @@ func (s *KOTSStore) RemoveApp(appID string) error {
 		}
 		return fmt.Errorf("failed to write: %v: %v", err, wrErrs)
 	}
+	s.ClearAppFromCache(appID)
 
 	return nil
 }
@@ -605,6 +612,7 @@ func (s *KOTSStore) SetAppChannelChanged(appID string, channelChanged bool) erro
 	if err != nil {
 		return fmt.Errorf("failed to update app channel changed flag: %v: %v", err, wr.Err)
 	}
+	s.ClearAppFromCache(appID)
 
 	return nil
 }
@@ -643,4 +651,11 @@ func (s *KOTSStore) GetAppFromCache(appID string) *apptypes.App {
 	}
 
 	return cached.app
+}
+
+func (s *KOTSStore) ClearAppFromCache(appID string) {
+	appCacheLock.Lock()
+	defer appCacheLock.Unlock()
+
+	delete(s.cachedApp, appID)
 }
