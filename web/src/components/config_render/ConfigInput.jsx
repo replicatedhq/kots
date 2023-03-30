@@ -5,7 +5,6 @@ import { setOrder } from "./ConfigUtil";
 import { ConfigWrapper } from "./ConfigComponents";
 import Icon from "../Icon";
 import InputField from "@components/shared/forms/InputField";
-import debounce from "lodash/debounce";
 
 export default class ConfigInput extends React.Component {
   constructor(props) {
@@ -16,41 +15,11 @@ export default class ConfigInput extends React.Component {
       focused: false,
       isFirstChange: true,
     };
-    if (props.validationRegEx) {
-      console.log(props.validationRegEx);
-      this.regex = new RegExp(props.validationRegEx);
-      this.validationErrorMessage =
-        props.validationErrorMessage || "Invalid input";
-    }
-
-    this.debouncedCheckRegexValidation = debounce(
-      this.checkRegexValidation,
-      2000
-    );
   }
 
-  // debounced in constructor
-  checkRegexValidation = (value) => {
-    if (this.regex) {
-      if (this.regex.test(value)) {
-        this.setState({ showValidationError: false });
-      } else {
-        this.setState({ showValidationError: true });
-      }
-    }
-  };
-
   handleOnChange = (field, e, objKey) => {
-    this.setState({ [`${field}`]: e.target.value });
-    this.setState({ showValidationError: false });
-    this.debouncedCheckRegexValidation(e.target.value);
-    /*
-
-      const regex = new RegExp(`^.{$minLength,$maxLength}$`);
-
-  if (regex.test(str)) {
-    */
     const { handleOnChange, name } = this.props;
+    this.setState({ [`${field}`]: e.target.value });
     if (handleOnChange && typeof handleOnChange === "function") {
       handleOnChange(name, e.target.value, objKey);
     }
@@ -65,7 +34,6 @@ export default class ConfigInput extends React.Component {
   componentDidMount() {
     if (this.props.value) {
       this.setState({ inputVal: this.props.value, isFirstChange: false });
-      this.checkRegexValidation(this.props.value);
     }
     if (this.props.valuesByGroup) {
       Object.keys(this.props.valuesByGroup[this.props.groupName]).map((key) => {
@@ -89,7 +57,6 @@ export default class ConfigInput extends React.Component {
   // Use title -OR- required prop to render <ConfigItemTitle> to make sure error
   // elements are rendered.
   render() {
-    const { showValidationError } = this.state;
     const hidden = this.props.hidden || this.props.when === "false";
     const placeholder =
       this.props.inputType === "password"
@@ -111,9 +78,7 @@ export default class ConfigInput extends React.Component {
             hidden={hidden}
             order={setOrder(this.props.index, this.props.affix)}
           >
-            {this.props.title !== "" ||
-            this.props.required ||
-            showValidationError ? (
+            {this.props.title !== "" || this.props.required ? (
               <ConfigItemTitle
                 title={this.props.title}
                 recommended={this.props.recommended}
@@ -200,9 +165,7 @@ export default class ConfigInput extends React.Component {
         hidden={hidden}
         order={setOrder(this.props.index, this.props.affix)}
       >
-        {this.props.title !== "" ||
-        this.props.required ||
-        showValidationError ? (
+        {this.props.title !== "" || this.props.required ? (
           <ConfigItemTitle
             title={this.props.title}
             recommended={this.props.recommended}
@@ -234,15 +197,12 @@ export default class ConfigInput extends React.Component {
             disabled={this.props.readonly}
             onChange={(e) => this.handleOnChange("inputVal", e)}
             onFocus={() => this.setState({ focused: true })}
-            onBlur={() => (
-              this.setState({ focused: false }),
-              this.checkRegexValidation(this.state.inputVal)
-            )}
+            onBlur={() => this.setState({ focused: false })}
             className={`${this.props.className || ""} ${
               this.props.readonly ? "readonly" : ""
             } tw-gap-0`}
             isFirstChange={this.state.isFirstChange}
-            showError={showValidationError}
+            showError={this.props.showValidationError}
           />
         </div>
         {this.props.inputType !== "password" && this.props.default ? (
@@ -250,7 +210,7 @@ export default class ConfigInput extends React.Component {
             Default value: <span className="value"> {this.props.default} </span>
           </div>
         ) : null}
-        {showValidationError && (
+        {this.props.showValidationError && (
           <div className="config-input-error-message tw-mt-1 tw-text-xs">
             {this.props.validationErrorMessage}
           </div>

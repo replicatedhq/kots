@@ -60,6 +60,7 @@ const ConfigGroup = (props) => {
               index={i + 1}
               validationRegEx={item?.validation?.regex}
               validationErrorMessage={item?.validation?.message}
+              showValidationError={item?.validation?.hasError}
             />
           );
         case "textarea":
@@ -75,6 +76,9 @@ const ConfigGroup = (props) => {
               {...item}
               readonly={isReadOnly}
               index={i + 1}
+              validationRegEx={item?.validation?.regex}
+              validationErrorMessage={item?.validation?.message}
+              showValidationError={item?.validation?.hasError}
             />
           );
         case "bool":
@@ -157,8 +161,9 @@ const ConfigGroup = (props) => {
           return (
             <div
               key={`${i}-${item.name}`}
-              className={`u-marginTop--15 u-marginBottom--15   ${item.hidden || item.when === "false" ? "hidden" : ""
-                }`}
+              className={`u-marginTop--15 u-marginBottom--15   ${
+                item.hidden || item.when === "false" ? "hidden" : ""
+              }`}
               style={{ order: setOrder(i + 1, item.affix) }}
             >
               <h3 className="header-color field-section-header">
@@ -180,6 +185,9 @@ const ConfigGroup = (props) => {
               {...item}
               readonly={isReadOnly}
               index={i + 1}
+              validationRegEx={item?.validation?.regex}
+              validationErrorMessage={item?.validation?.message}
+              showValidationError={item?.validation?.hasError}
             />
           );
         default:
@@ -219,22 +227,14 @@ const ConfigGroup = (props) => {
   }
   const hasAffix = item.items.every((option) => option.affix);
 
-  item.items = item.items.map((itemsItem) => {
-    itemsItem.validation = {
-      regex: "^.{4,20}$",
-      message: "should be between 4 and 20 characters",
-    };
-    return itemsItem;
-  });
-
-
   return (
     <div className="flex-column flex-auto">
       {item && (
         <div
           id={`${item.name}`}
-          className={`flex-auto config-item-wrapper card-item u-padding--15 observe-elements ${isAtLeastOneItemVisible() ? "u-marginBottom--20" : ""
-            } config-groups`}
+          className={`flex-auto config-item-wrapper card-item u-padding--15 observe-elements ${
+            isAtLeastOneItemVisible() ? "u-marginBottom--20" : ""
+          } config-groups`}
         >
           <h3 className="card-item-title">{item.title}</h3>
           {item.description !== "" ? (

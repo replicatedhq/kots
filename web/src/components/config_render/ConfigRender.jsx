@@ -17,7 +17,10 @@ export default class ConfigRender extends React.Component {
     this.triggerChange = debounce(this.triggerChange, 300);
   }
 
-  triggerChange = (data) => {
+  triggerChange = async (groups) => {
+    // this actually updates the config state- it doesn't just get data.
+    // also think it almost always returns undefined
+    const data = await this.props.getData(groups);
     if (this.props.handleChange) {
       this.props.handleChange(data);
     }
@@ -94,7 +97,7 @@ export default class ConfigRender extends React.Component {
     });
 
     // TODO: maybe this should only be on submit
-    this.triggerChange(this.props.getData(groups));
+    this.triggerChange(groups);
   };
 
   handleAddItem = (groupName, itemName) => {

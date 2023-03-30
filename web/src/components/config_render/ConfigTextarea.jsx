@@ -169,8 +169,13 @@ export default class ConfigTextarea extends React.Component {
             onBlur={() => this.setState({ focused: false })}
             className={`${this.props.className || ""} Textarea ${
               this.props.readonly ? "readonly" : ""
-            }`}
+            } ${this.props.showValidationError ? "has-error" : ""}`}
           ></textarea>
+          {this.props.showValidationError && (
+            <div className="config-input-error-message tw-mt-1 tw-text-xs">
+              {this.props.validationErrorMessage}
+            </div>
+          )}
         </div>
         {this.props.repeatable && (
           <div
