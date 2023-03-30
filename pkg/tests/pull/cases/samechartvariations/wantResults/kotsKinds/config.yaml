@@ -1,19 +1,24 @@
 apiVersion: kots.io/v1beta1
 kind: Config
 metadata:
+  creationTimestamp: null
   name: my-app
 spec:
   groups:
-    - name: setup
-      title: Setup
-      items:
-        - name: hostname
-          type: text
-          title: Hostname
-          help_text: |
-            Use this field to provide a hostname for your Example Application installation.
-          required: true
-        - name: helm
-          title: Include helm
-          type: text
-          default: "no"
+  - name: setup
+    title: Setup
+    items:
+    - name: hostname
+      title: Hostname
+      type: text
+      default: ""
+      help_text: |
+        Use this field to provide a hostname for your Example Application installation.
+      required: true
+      value: hostname
+    - name: helm
+      title: Include helm
+      type: text
+      default: "no"
+      value: "yes"
+status: {}

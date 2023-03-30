@@ -6,4 +6,10 @@ metadata:
 spec:
   channelID: 1vusIYZLAVxMG6q760OJmRKj5i5
   channelName: My Channel
+  knownImages:
+  - image: cr.fluentbit.io/fluent/fluent-bit:1.9.4
+  - image: busybox:1
+  - image: busybox:latest
+  - image: nginx:latest
+  - image: busybox
 status: {}

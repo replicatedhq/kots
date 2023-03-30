@@ -7,13 +7,17 @@ spec:
     - name: setup
       title: Setup
       items:
-        - name: hostname
-          type: text
-          title: Hostname
-          help_text: |
-            Use this field to provide a hostname for your Example Application installation.
-          required: true
-        - name: helm
-          title: Include helm
-          type: text
-          default: "no"
+      - name: hostname
+        title: Hostname
+        type: text
+        help_text: |
+          Use this field to provide a hostname for your Example Application installation.
+        required: true
+        default: ""
+        value: my-app.somebigbank.com
+      - name: helm
+        title: Include helm
+        type: text
+        default: "no"
+        value: ""
+status: {}

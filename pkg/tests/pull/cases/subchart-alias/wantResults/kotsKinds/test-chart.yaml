@@ -7,4 +7,7 @@ spec:
     name: chart
     chartVersion: 0.1.0
   useHelmInstall: true
+  exclude: ""
   namespace: helmns
+  useHelmInstall: true
+status: {}
