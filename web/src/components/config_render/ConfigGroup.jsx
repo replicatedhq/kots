@@ -226,7 +226,6 @@ const ConfigGroup = (props) => {
     return null;
   }
   const hasAffix = item.items.every((option) => option.affix);
-
   return (
     <div className="flex-column flex-auto">
       {item && (

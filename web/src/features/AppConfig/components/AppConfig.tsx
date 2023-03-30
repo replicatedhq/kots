@@ -22,10 +22,6 @@ import "../../../scss/components/watches/WatchConfig.scss";
 import { Utilities } from "../../../utilities/utilities";
 import { Span } from "../../../styles/common";
 import Icon from "@src/components/Icon";
-const ConfigFormValidationContext = React.createContext<ConfigGroup[]>([]);
-
-export const ConfigFormValidationConsumer =
-  ConfigFormValidationContext.Consumer;
 
 // Types
 import { App, KotsParams, Version } from "@types";
@@ -48,6 +44,12 @@ type ConfigGroup = {
   when: "true" | "false";
 };
 
+interface Validation {
+  regex: string;
+  message: string;
+  hasError: boolean;
+}
+
 type ConfigGroupItem = {
   name: string;
   error: string;
@@ -55,9 +57,9 @@ type ConfigGroupItem = {
   value: string;
   title: string;
   type: string;
+  validation: Validation;
   // TODO: refactor backend to return a boolean not a string
   when: "true" | "false";
-  validation: Validation;
 };
 
 type RequiredItems = string[];
@@ -460,42 +462,6 @@ class AppConfig extends Component<Props, State> {
     }
   };
 
-  updateConfigGroups = (newGroups: ConfigGroup[]) => {
-    const oldGroups = this.state.configGroups;
-    this.setState({ hasRegExError: false });
-    let hasRegExError = false;
-    map(newGroups, (group) => {
-      if (!group.items) {
-        return;
-      }
-      group.items.forEach((newItem: ConfigGroupItem) => {
-        if (newItem.type === "password") {
-          const oldItem = this.getItemInConfigGroups(oldGroups, newItem.name);
-          if (oldItem) {
-            newItem.value = oldItem.value;
-          }
-        }
-        // test data for regex
-        if (
-          newItem.validation &&
-          ["text", "password", "textarea"].includes(newItem.type)
-        ) {
-          newItem.validation = this.validateRegex({
-            validation: newItem.validation,
-            value: newItem.value,
-          });
-
-          if (!hasRegExError && newItem.validation.hasError) {
-            this.setState({ hasRegExError: true });
-            hasRegExError = true;
-          }
-        }
-      });
-    });
-    const changed = this.isConfigChanged(newGroups);
-    this.setState({ configGroups: newGroups, changed });
-  };
-
   handleConfigChange = (groups: ConfigGroup[]) => {
     const sequence = this.getSequence();
     const slug = this.getSlug();
@@ -507,8 +473,6 @@ class AppConfig extends Component<Props, State> {
 
     this.fetchController = new AbortController();
     const signal = this.fetchController.signal;
-    // for quick regex validation
-    this.updateConfigGroups(groups);
 
     fetch(
       `${process.env.API_ENDPOINT}/app/${slug}/liveconfig${window.location.search}`,
@@ -708,267 +672,265 @@ class AppConfig extends Component<Props, State> {
     });
 
     return (
-      <ConfigFormValidationContext.Provider value={this.state.configGroups}>
-        <div className="flex flex-column u-paddingLeft--20 u-paddingBottom--20 u-paddingRight--20 alignItems--center">
-          <KotsPageTitle pageName="Config" showAppSlug />
-          {fromLicenseFlow && app && (
-            <Span size="18" weight="bold" mt="30" ml="38">
-              Configure {app.name}
-            </Span>
-          )}
-          <div className="flex" style={{ gap: "20px" }}>
-            <div
-              id="configSidebarWrapper"
-              className="config-sidebar-wrapper card-bg clickable"
-            >
-              {configGroups?.map((group, i) => {
-                if (
-                  group.title === "" ||
-                  group.title.length === 0 ||
-                  group.hidden ||
-                  group.when === "false"
-                ) {
-                  return;
-                }
-                return (
+      <div className="flex flex-column u-paddingLeft--20 u-paddingBottom--20 u-paddingRight--20 alignItems--center">
+        <KotsPageTitle pageName="Config" showAppSlug />
+        {fromLicenseFlow && app && (
+          <Span size="18" weight="bold" mt="30" ml="38">
+            Configure {app.name}
+          </Span>
+        )}
+        <div className="flex" style={{ gap: "20px" }}>
+          <div
+            id="configSidebarWrapper"
+            className="config-sidebar-wrapper card-bg clickable"
+          >
+            {configGroups?.map((group, i) => {
+              if (
+                group.title === "" ||
+                group.title.length === 0 ||
+                group.hidden ||
+                group.when === "false"
+              ) {
+                return;
+              }
+              return (
+                <div
+                  key={`${i}-${group.name}-${group.title}`}
+                  className={`side-nav-group ${
+                    this.state.activeGroups.includes(group.name)
+                      ? "group-open"
+                      : ""
+                  }`}
+                  id={`config-group-nav-${group.name}`}
+                >
                   <div
-                    key={`${i}-${group.name}-${group.title}`}
-                    className={`side-nav-group ${
-                      this.state.activeGroups.includes(group.name)
-                        ? "group-open"
-                        : ""
-                    }`}
-                    id={`config-group-nav-${group.name}`}
+                    className="flex alignItems--center"
+                    onClick={() => this.toggleActiveGroups(group.name)}
                   >
-                    <div
-                      className="flex alignItems--center"
-                      onClick={() => this.toggleActiveGroups(group.name)}
-                    >
-                      <div className="u-lineHeight--normal group-title u-fontSize--normal">
-                        {group.title}
-                      </div>
-                      {/* adding the arrow-down classes, will rotate the icon when clicked */}
-                      <Icon
-                        icon="down-arrow"
-                        className="darkGray-color clickable flex-auto u-marginLeft--5 arrow-down"
-                        size={12}
-                        style={{}}
-                        color={""}
-                        disableFill={false}
-                        removeInlineStyle={false}
-                      />
+                    <div className="u-lineHeight--normal group-title u-fontSize--normal">
+                      {group.title}
                     </div>
-                    {group.items ? (
-                      <div className="side-nav-items">
-                        {group.items
-                          ?.filter((item) => item.type !== "label")
-                          ?.map((item, j) => {
-                            const hash = this.props.location.hash.slice(1);
-                            if (item.hidden || item.when === "false") {
-                              return;
-                            }
-                            return (
-                              <a
-                                className={`u-fontSize--normal u-lineHeight--normal ${
-                                  hash === `${item.name}-group`
-                                    ? "active-item"
-                                    : ""
-                                }`}
-                                href={`#${item.name}-group`}
-                                key={`${j}-${item.name}-${item.title}`}
-                              >
-                                {item.title}
-                              </a>
-                            );
-                          })}
-                      </div>
-                    ) : null}
+                    {/* adding the arrow-down classes, will rotate the icon when clicked */}
+                    <Icon
+                      icon="down-arrow"
+                      className="darkGray-color clickable flex-auto u-marginLeft--5 arrow-down"
+                      size={12}
+                      style={{}}
+                      color={""}
+                      disableFill={false}
+                      removeInlineStyle={false}
+                    />
                   </div>
-                );
-              })}
-            </div>
-            <div className="ConfigArea--wrapper">
-              <UseIsHelmManaged>
-                {({ data: isHelmManagedFromHook }) => {
-                  const { isError: saveError } = useSaveConfig({
+                  {group.items ? (
+                    <div className="side-nav-items">
+                      {group.items
+                        ?.filter((item) => item.type !== "label")
+                        ?.map((item, j) => {
+                          const hash = this.props.location.hash.slice(1);
+                          if (item.hidden || item.when === "false") {
+                            return;
+                          }
+                          return (
+                            <a
+                              className={`u-fontSize--normal u-lineHeight--normal ${
+                                hash === `${item.name}-group`
+                                  ? "active-item"
+                                  : ""
+                              }`}
+                              href={`#${item.name}-group`}
+                              key={`${j}-${item.name}-${item.title}`}
+                            >
+                              {item.title}
+                            </a>
+                          );
+                        })}
+                    </div>
+                  ) : null}
+                </div>
+              );
+            })}
+          </div>
+          <div className="ConfigArea--wrapper">
+            <UseIsHelmManaged>
+              {({ data: isHelmManagedFromHook }) => {
+                const { isError: saveError } = useSaveConfig({
+                  appSlug: this.getSlug(),
+                });
+
+                const { download, clearError: clearDownloadError } =
+                  useDownloadValues({
                     appSlug: this.getSlug(),
+                    fileName: "values.yaml",
+                    sequence: match.params.sequence,
+                    versionLabel: downstreamVersionLabel,
+                    isPending: isPending,
                   });
 
-                  const { download, clearError: clearDownloadError } =
-                    useDownloadValues({
-                      appSlug: this.getSlug(),
-                      fileName: "values.yaml",
-                      sequence: match.params.sequence,
-                      versionLabel: downstreamVersionLabel,
-                      isPending: isPending,
-                    });
-
-                  return (
-                    <>
-                      {!isHelmManagedFromHook && (
-                        <ConfigInfo
-                          app={app}
-                          match={this.props.match}
-                          fromLicenseFlow={this.props.fromLicenseFlow}
-                        />
+                return (
+                  <>
+                    {!isHelmManagedFromHook && (
+                      <ConfigInfo
+                        app={app}
+                        match={this.props.match}
+                        fromLicenseFlow={this.props.fromLicenseFlow}
+                      />
+                    )}
+                    <div
+                      className={classNames(
+                        "ConfigOuterWrapper card-bg u-padding--15",
+                        { "u-marginTop--20": fromLicenseFlow }
                       )}
-                      <div
-                        className={classNames(
-                          "ConfigOuterWrapper card-bg u-padding--15",
-                          { "u-marginTop--20": fromLicenseFlow }
-                        )}
-                      >
-                        <div className="ConfigInnerWrapper">
-                          <AppConfigRenderer
-                            groups={configGroups}
-                            getData={this.handleConfigChange}
-                            readonly={this.isConfigReadOnly(app)}
-                            configSequence={match.params.sequence}
-                            appSlug={app.slug}
-                          />
-                        </div>
-                        <div className="flex alignItems--flexStart">
-                          {savingConfig && (
-                            <div className="u-paddingBottom--30">
-                              <Loader size="30" />
-                            </div>
-                          )}
-                          {!savingConfig && (
-                            <div className="ConfigError--wrapper flex-column alignItems--flexStart">
-                              {configError && (
-                                <span className="u-textColor--error u-marginBottom--20 u-fontWeight--bold">
-                                  {configError}
-                                </span>
-                              )}
-                              <button
-                                className="btn primary blue"
-                                disabled={
-                                  hasRegExError ||
-                                  (!changed && !fromLicenseFlow) ||
-                                  this.isConfigReadOnly(app)
-                                }
-                                onClick={this.handleSave}
-                              >
-                                {saveButtonText}
-                              </button>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                      {this.state.showHelmDeployModal && (
-                        <>
-                          <HelmDeployModal
-                            appSlug={this.props?.app?.slug}
-                            chartPath={this.props?.app?.chartPath || ""}
-                            downloadClicked={download}
-                            hideHelmDeployModal={() => {
-                              this.setState({ showHelmDeployModal: false });
-                              clearDownloadError();
-                            }}
-                            registryUsername={
-                              this.props?.app?.credentials?.username || ""
-                            }
-                            registryPassword={
-                              this.props?.app?.credentials?.password || ""
-                            }
-                            saveError={saveError}
-                            showHelmDeployModal={true}
-                            showDownloadValues={true}
-                            subtitle="Follow the steps below to upgrade the release with your new values.yaml."
-                            title={`Upgrade ${this.props?.app?.slug}`}
-                            upgradeTitle="Upgrade release"
-                            version={downstreamVersionLabel || ""}
-                            namespace={this.props?.app?.namespace || ""}
-                            downloadError={false}
-                            revision={null}
-                          />
-                        </>
-                      )}
-                    </>
-                  );
-                }}
-              </UseIsHelmManaged>
-            </div>
-          </div>
-
-          <Modal
-            isOpen={showNextStepModal}
-            onRequestClose={this.hideNextStepModal}
-            shouldReturnFocusAfterClose={false}
-            contentLabel="Next step"
-            ariaHideApp={false}
-            className="Modal MediumSize"
-          >
-            {gitops?.isConnected ? (
-              <div className="Modal-body">
-                {
-                  <p className="u-fontSize--large u-textColor--primary u-lineHeight--medium u-marginBottom--20">
-                    The config for {app.name} has been updated. A new commit has
-                    been made to the gitops repository with these changes.
-                    Please head to the{" "}
-                    <a
-                      className="link"
-                      target="_blank"
-                      href={gitops?.uri}
-                      rel="noopener noreferrer"
                     >
-                      repo
-                    </a>{" "}
-                    to see the diff.
-                  </p>
-                }
-                <div className="flex justifyContent--flexEnd">
-                  <button
-                    type="button"
-                    className="btn blue primary"
-                    onClick={this.hideNextStepModal}
-                  >
-                    Ok, got it!
-                  </button>
-                </div>
-              </div>
-            ) : (
-              <div className="Modal-body">
-                {isNewVersion ? (
-                  <p className="u-fontSize--large u-textColor--primary u-lineHeight--medium u-marginBottom--20">
-                    The config for {app?.name} has been updated. A new version
-                    is available on the version history page with these changes.
-                  </p>
-                ) : (
-                  <p className="u-fontSize--large u-textColor--primary u-lineHeight--medium u-marginBottom--20">
-                    The config for {app?.name} has been updated.
-                  </p>
-                )}
-                <div className="flex justifyContent--flexEnd">
-                  <button
-                    type="button"
-                    className="btn blue secondary u-marginRight--10"
-                    onClick={() => this.navigateToUpdatedConfig(app)}
-                  >
-                    Edit the latest config
-                  </button>
-                  <Link to={`/app/${app?.slug}/version-history`}>
-                    <button type="button" className="btn blue primary">
-                      {isNewVersion
-                        ? "Go to new version"
-                        : "Go to updated version"}
-                    </button>
-                  </Link>
-                </div>
-              </div>
-            )}
-          </Modal>
-          {gettingConfigErrMsg && (
-            <ErrorModal
-              errorModal={displayErrorModal}
-              toggleErrorModal={this.toggleErrorModal}
-              err={errorTitle}
-              errMsg={gettingConfigErrMsg}
-              tryAgain={this.getConfig}
-            />
-          )}
+                      <div className="ConfigInnerWrapper">
+                        <AppConfigRenderer
+                          groups={configGroups}
+                          getData={this.handleConfigChange}
+                          readonly={this.isConfigReadOnly(app)}
+                          configSequence={match.params.sequence}
+                          appSlug={app.slug}
+                        />
+                      </div>
+                      <div className="flex alignItems--flexStart">
+                        {savingConfig && (
+                          <div className="u-paddingBottom--30">
+                            <Loader size="30" />
+                          </div>
+                        )}
+                        {!savingConfig && (
+                          <div className="ConfigError--wrapper flex-column alignItems--flexStart">
+                            {configError && (
+                              <span className="u-textColor--error u-marginBottom--20 u-fontWeight--bold">
+                                {configError}
+                              </span>
+                            )}
+                            <button
+                              className="btn primary blue"
+                              disabled={
+                                hasRegExError ||
+                                (!changed && !fromLicenseFlow) ||
+                                this.isConfigReadOnly(app)
+                              }
+                              onClick={this.handleSave}
+                            >
+                              {saveButtonText}
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                    {this.state.showHelmDeployModal && (
+                      <>
+                        <HelmDeployModal
+                          appSlug={this.props?.app?.slug}
+                          chartPath={this.props?.app?.chartPath || ""}
+                          downloadClicked={download}
+                          hideHelmDeployModal={() => {
+                            this.setState({ showHelmDeployModal: false });
+                            clearDownloadError();
+                          }}
+                          registryUsername={
+                            this.props?.app?.credentials?.username || ""
+                          }
+                          registryPassword={
+                            this.props?.app?.credentials?.password || ""
+                          }
+                          saveError={saveError}
+                          showHelmDeployModal={true}
+                          showDownloadValues={true}
+                          subtitle="Follow the steps below to upgrade the release with your new values.yaml."
+                          title={`Upgrade ${this.props?.app?.slug}`}
+                          upgradeTitle="Upgrade release"
+                          version={downstreamVersionLabel || ""}
+                          namespace={this.props?.app?.namespace || ""}
+                          downloadError={false}
+                          revision={null}
+                        />
+                      </>
+                    )}
+                  </>
+                );
+              }}
+            </UseIsHelmManaged>
+          </div>
         </div>
-      </ConfigFormValidationContext.Provider>
+
+        <Modal
+          isOpen={showNextStepModal}
+          onRequestClose={this.hideNextStepModal}
+          shouldReturnFocusAfterClose={false}
+          contentLabel="Next step"
+          ariaHideApp={false}
+          className="Modal MediumSize"
+        >
+          {gitops?.isConnected ? (
+            <div className="Modal-body">
+              {
+                <p className="u-fontSize--large u-textColor--primary u-lineHeight--medium u-marginBottom--20">
+                  The config for {app.name} has been updated. A new commit has
+                  been made to the gitops repository with these changes. Please
+                  head to the{" "}
+                  <a
+                    className="link"
+                    target="_blank"
+                    href={gitops?.uri}
+                    rel="noopener noreferrer"
+                  >
+                    repo
+                  </a>{" "}
+                  to see the diff.
+                </p>
+              }
+              <div className="flex justifyContent--flexEnd">
+                <button
+                  type="button"
+                  className="btn blue primary"
+                  onClick={this.hideNextStepModal}
+                >
+                  Ok, got it!
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div className="Modal-body">
+              {isNewVersion ? (
+                <p className="u-fontSize--large u-textColor--primary u-lineHeight--medium u-marginBottom--20">
+                  The config for {app?.name} has been updated. A new version is
+                  available on the version history page with these changes.
+                </p>
+              ) : (
+                <p className="u-fontSize--large u-textColor--primary u-lineHeight--medium u-marginBottom--20">
+                  The config for {app?.name} has been updated.
+                </p>
+              )}
+              <div className="flex justifyContent--flexEnd">
+                <button
+                  type="button"
+                  className="btn blue secondary u-marginRight--10"
+                  onClick={() => this.navigateToUpdatedConfig(app)}
+                >
+                  Edit the latest config
+                </button>
+                <Link to={`/app/${app?.slug}/version-history`}>
+                  <button type="button" className="btn blue primary">
+                    {isNewVersion
+                      ? "Go to new version"
+                      : "Go to updated version"}
+                  </button>
+                </Link>
+              </div>
+            </div>
+          )}
+        </Modal>
+        {gettingConfigErrMsg && (
+          <ErrorModal
+            errorModal={displayErrorModal}
+            toggleErrorModal={this.toggleErrorModal}
+            err={errorTitle}
+            errMsg={gettingConfigErrMsg}
+            tryAgain={this.getConfig}
+          />
+        )}
+      </div>
     );
   }
 }
