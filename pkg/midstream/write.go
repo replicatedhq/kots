@@ -317,7 +317,7 @@ func (m *Midstream) Write(options WriteOptions) error {
 		return errors.Wrap(err, "get existing kustomization")
 	}
 
-	secretFilename, err := m.writePullSecret(options)
+	secretFilename, err := m.WritePullSecret(options)
 	if err != nil {
 		return errors.Wrap(err, "failed to write secret")
 	}
@@ -335,7 +335,7 @@ func (m *Midstream) Write(options WriteOptions) error {
 		m.Kustomization.Resources = append(m.Kustomization.Resources, identityBase)
 	}
 
-	if err := m.writeObjectsWithPullSecret(options); err != nil {
+	if err := m.WriteObjectsWithPullSecret(options); err != nil {
 		return errors.Wrap(err, "failed to write patches")
 	}
 
@@ -358,7 +358,7 @@ func (m *Midstream) Write(options WriteOptions) error {
 		m.mergeKustomization(options, *existingKustomization)
 	}
 
-	if err := m.writeKustomization(options); err != nil {
+	if err := m.WriteKustomization(options); err != nil {
 		return errors.Wrap(err, "failed to write kustomization")
 	}
 
@@ -419,7 +419,7 @@ func mergeMaps(new map[string]string, existing map[string]string) map[string]str
 	return merged
 }
 
-func (m *Midstream) writeKustomization(options WriteOptions) error {
+func (m *Midstream) WriteKustomization(options WriteOptions) error {
 	relativeBaseDir, err := filepath.Rel(options.MidstreamDir, options.BaseDir)
 	if err != nil {
 		return errors.Wrap(err, "failed to determine relative path for base from midstream")
@@ -456,7 +456,7 @@ func (m *Midstream) writeDisasterRecoveryLabelTransformer(options WriteOptions) 
 	return disasterRecoveryLabelTransformerFileName, nil
 }
 
-func (m *Midstream) writePullSecret(options WriteOptions) (string, error) {
+func (m *Midstream) WritePullSecret(options WriteOptions) (string, error) {
 	var secretBytes []byte
 	if m.AppPullSecret != nil {
 		b, err := k8syaml.Marshal(m.AppPullSecret)
@@ -502,7 +502,7 @@ func (m *Midstream) writePullSecret(options WriteOptions) (string, error) {
 	return secretFilename, nil
 }
 
-func (m *Midstream) writeObjectsWithPullSecret(options WriteOptions) error {
+func (m *Midstream) WriteObjectsWithPullSecret(options WriteOptions) error {
 	filename := filepath.Join(options.MidstreamDir, patchesFilename)
 	if len(m.DocForPatches) == 0 {
 		err := os.Remove(filename)
