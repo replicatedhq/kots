@@ -57,6 +57,7 @@ type ConfigGroupItem = {
   value: string;
   title: string;
   type: string;
+  validation: Validation;
   // TODO: refactor backend to return a boolean not a string
   when: "true" | "false";
 };
@@ -494,6 +495,9 @@ class AppConfig extends Component<Props, State> {
         const data = await response.json();
         const oldGroups = this.state.configGroups;
         const newGroups = data.configGroups;
+        this.setState({ hasRegExError: false });
+        // used to track if there is a regex error on any of the fields
+        let hasRegExError = false;
         map(newGroups, (group) => {
           if (!group.items) {
             return;
@@ -521,6 +525,11 @@ class AppConfig extends Component<Props, State> {
                 validation: newItem.validation,
                 value: newItem.value,
               });
+
+              if (!hasRegExError && newItem.validation.hasError) {
+                this.setState({ hasRegExError: true });
+                hasRegExError = true;
+              }
             }
           });
         });
