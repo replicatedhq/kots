@@ -174,7 +174,7 @@ func renderKotsKinds(upstreamFiles []upstreamtypes.UpstreamFile, renderedConfig 
 		}
 
 		switch gvkString {
-		case "kots.io/v1beta1, Kind=Config":
+		case "kots.io/v1beta1,Kind=Config":
 			// Use the rendered Config instead of the upstream.
 			kotsKinds := kotsutil.KotsKinds{Config: renderedConfig}
 			configBytes, err := kotsKinds.Marshal("kots.io", "v1beta1", "Config")
@@ -183,7 +183,7 @@ func renderKotsKinds(upstreamFiles []upstreamtypes.UpstreamFile, renderedConfig 
 			}
 			fileContentsMap[upstreamFile.Path] = []byte(configBytes)
 
-		case "kots.io/v1beta1, Kind=ConfigValues":
+		case "kots.io/v1beta1,Kind=ConfigValues":
 			// ConfigValues do not need rendering since they should already be valid values.
 			fileContentsMap["configvalues.yaml"] = upstreamFile.Content
 
