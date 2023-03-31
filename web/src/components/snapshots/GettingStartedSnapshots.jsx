@@ -1,3 +1,4 @@
+import Icon from "@components/Icon";
 import React from "react";
 import { Link } from "react-router-dom";
 
@@ -16,8 +17,7 @@ export default function GettingStartedSnapshots(props) {
 
   return (
     <div className="flex flex-column card-item GettingStartedSnapshots--wrapper  alignItems--center">
-      <span className="icon snapshot-getstarted-icon" />
-      {/* <Icon icon="schedule-update" size={20} /> */}
+      <Icon icon="snapshot-getstarted" size={50} />
       <p className="u-fontSize--jumbo2 u-fontWeight--bold u-lineHeight--more u-textColor--secondary u-marginTop--20">
         {" "}
         {isVeleroInstalled

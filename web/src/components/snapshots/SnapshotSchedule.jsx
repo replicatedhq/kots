@@ -420,8 +420,11 @@ class SnapshotSchedule extends Component {
         <div className="flex flex-column">
           {!isAppConfig && !this.props.isVeleroRunning && !updatingSettings && (
             <div className="Info--wrapper card-bg flex flex1 u-marginBottom--15">
-              {/* <span className="icon info-icon flex-auto u-marginTop--5" /> */}
-              <Icon icon="info" style={{ marginTop: "2px" }} size={9} />
+              <Icon
+                icon="info"
+                className={"tw-mt-2 tw-mr-2 flex-auto"}
+                size={18}
+              />
               <div className="flex flex-column u-marginLeft--5">
                 <p className="u-fontSize--normal u-fontWeight--bold u-lineHeight--normal u-textColor--primary">
                   {" "}
