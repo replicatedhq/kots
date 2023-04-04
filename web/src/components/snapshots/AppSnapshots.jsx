@@ -725,7 +725,7 @@ class AppSnapshots extends Component {
                 ))}
               </div>
             )}
-            {true && (
+            {!isStartButtonClicked && snapshots?.length === 0 && (
               <div className="flex flex-column justifyContent--center alignItems--center">
                 <GettingStartedSnapshots
                   isApp={true}
