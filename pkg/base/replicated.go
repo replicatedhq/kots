@@ -169,7 +169,7 @@ func renderKotsKinds(upstreamFiles []upstreamtypes.UpstreamFile, renderedConfig 
 		if err := yaml.Unmarshal(upstreamFile.Content, &gvk); err != nil {
 			continue
 		}
-		gvkString := gvk.APIVersion + "," + gvk.Kind
+		gvkString := fmt.Sprintf("%s,Kind=%s", gvk.APIVersion, gvk.Kind)
 
 		if !iskotsAPIVersionKind(gvk) {
 			continue
@@ -229,7 +229,12 @@ func renderKotsKinds(upstreamFiles []upstreamtypes.UpstreamFile, renderedConfig 
 				return nil, errors.Wrapf(err, "failed to encode helmchart %s", upstreamFile.Path)
 			}
 
-			fileContentsMap[upstreamFile.Path] = []byte(chartBytes.Bytes())
+			rendered, err := builder.RenderTemplate(upstreamFile.Path, chartBytes.String())
+			if err != nil {
+				return nil, errors.Wrapf(err, "failed to render file %s", upstreamFile.Path)
+			}
+
+			fileContentsMap[upstreamFile.Path] = []byte(rendered)
 
 		default:
 			vcConfig, err := processVariadicConfig(&upstreamFile, renderedConfig, renderOptions.Log)
