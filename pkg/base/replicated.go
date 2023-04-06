@@ -302,6 +302,30 @@ func renderReplicatedHelmChart(kotsHelmChart *kotsv1beta1.HelmChart, upstreamFil
 	}
 	helmUpstream.Name = kotsHelmChart.GetDirName()
 
+	mergedValues := kotsHelmChart.Spec.Values
+	if mergedValues == nil {
+		mergedValues = map[string]kotsv1beta1.MappedChartValue{}
+	}
+
+	for _, optionalValue := range kotsHelmChart.Spec.OptionalValues {
+		parsedBool, err := strconv.ParseBool(optionalValue.When)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to parse when conditional on optional value")
+		}
+
+		if !parsedBool {
+			continue
+		}
+
+		if optionalValue.RecursiveMerge {
+			mergedValues = kotsv1beta1.MergeHelmChartValues(mergedValues, optionalValue.Values)
+		} else {
+			for k, v := range optionalValue.Values {
+				mergedValues[k] = v
+			}
+		}
+	}
+
 	helmValues, err := kotsHelmChart.Spec.GetHelmValues(kotsHelmChart.Spec.Values)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to render local values for chart")
