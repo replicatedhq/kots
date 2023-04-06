@@ -1,10 +1,10 @@
 apiVersion: kots.io/v1beta1
 kind: ConfigValues
 metadata:
-  name: my-app
   creationTimestamp: null
+  name: my-app
 spec:
   values:
     hostname:
-      value: my-app.somebigbank.com
+      value: "my-app.somebigbank.com"
 status: {}

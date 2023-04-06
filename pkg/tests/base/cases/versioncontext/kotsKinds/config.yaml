@@ -13,6 +13,7 @@ spec:
       required: true
       title: Hostname
       type: text
+      value: my-app.somebigbank.com
     name: setup
     title: Setup
 status: {}

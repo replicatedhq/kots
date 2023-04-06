@@ -26,7 +26,6 @@ import (
 	troubleshootscheme "github.com/replicatedhq/troubleshoot/pkg/client/troubleshootclientset/scheme"
 	velerov1 "github.com/vmware-tanzu/velero/pkg/apis/velero/v1"
 	"helm.sh/helm/v3/pkg/chart"
-	serializer "k8s.io/apimachinery/pkg/runtime/serializer/json"
 	"k8s.io/client-go/kubernetes/scheme"
 	applicationv1beta1 "sigs.k8s.io/application/api/v1beta1"
 	"sigs.k8s.io/yaml"
@@ -190,46 +189,7 @@ func renderKotsKinds(upstreamFiles []upstreamtypes.UpstreamFile, renderedConfig 
 			fileContentsMap["configvalues.yaml"] = upstreamFile.Content
 
 		case "kots.io/v1beta1,Kind=HelmChart":
-			decoded, _, err := scheme.Codecs.UniversalDeserializer().Decode(upstreamFile.Content, nil, nil)
-			if err != nil {
-				return nil, errors.Wrapf(err, "failed to decode kots helmchart %s", upstreamFile.Path)
-			}
-			decodedChart := decoded.(*kotsv1beta1.HelmChart)
-
-			mergedValues := decodedChart.Spec.Values
-			if mergedValues == nil {
-				mergedValues = map[string]kotsv1beta1.MappedChartValue{}
-			}
-
-			for _, optionalValue := range decodedChart.Spec.OptionalValues {
-				parsedBool, err := strconv.ParseBool(optionalValue.When)
-				if err != nil {
-					return nil, errors.Wrap(err, "failed to parse when conditional on optional value")
-				}
-
-				if !parsedBool {
-					continue
-				}
-
-				if optionalValue.RecursiveMerge {
-					mergedValues = kotsv1beta1.MergeHelmChartValues(mergedValues, optionalValue.Values)
-				} else {
-					for k, v := range optionalValue.Values {
-						mergedValues[k] = v
-					}
-				}
-			}
-
-			decodedChart.Spec.Values = mergedValues
-			decodedChart.Spec.OptionalValues = nil
-
-			var chartBytes bytes.Buffer
-			s := serializer.NewYAMLSerializer(serializer.DefaultMetaFactory, scheme.Scheme, scheme.Scheme)
-			if err := s.Encode(decodedChart, &chartBytes); err != nil {
-				return nil, errors.Wrapf(err, "failed to encode helmchart %s", upstreamFile.Path)
-			}
-
-			rendered, err := builder.RenderTemplate(upstreamFile.Path, chartBytes.String())
+			rendered, err := builder.RenderTemplate(upstreamFile.Path, string(upstreamFile.Content))
 			if err != nil {
 				return nil, errors.Wrapf(err, "failed to render file %s", upstreamFile.Path)
 			}

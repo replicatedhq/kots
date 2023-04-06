@@ -3,6 +3,7 @@ package base
 import (
 	_ "embed"
 	"io/ioutil"
+	"path"
 	"reflect"
 	"testing"
 
@@ -600,30 +601,26 @@ metadata:
   name: config-sample
 spec:
   groups:
-  - name: podInfo
-    description: info for pod
-    title: ""
+  - description: info for pod
     items:
-    - name: podName
+    - default: test
+      name: podName
       type: text
-      default: test
       value: testPod
-    - name: mountPath
+    - default: /var/www/html
+      name: mountPath
       type: text
-      default: /var/www/html
       value: ""
-  - name: secrets
-    minimumCount: 1
-    title: Secrets
-    description: Buncha Secrets
+    name: podInfo
+    title: ""
+  - description: Buncha Secrets
     items:
-    - name: secretName
-      type: text
-      value: ""
-      title: Secret Name
+    - countByGroup:
+        secrets: 3
       default: onetwothree
-      repeatable: true
       minimumCount: 1
+      name: secretName
+      repeatable: true
       templates:
       - apiVersion: apps/v1
         kind: Deployment
@@ -634,7 +631,17 @@ spec:
         kind: Secret
         name: my-secret
         namespace: my-app
-        yamlPath:
+      title: Secret Name
+      type: text
+      value: ""
+      valuesByGroup:
+        secrets:
+          secretName-1: MTIz
+          secretName-2: MTIz
+          secretName-3: MTIz
+    name: secrets
+    title: Secrets
+status: {}
 `,
 				),
 				"userdata/configvalues.yaml": []byte(`apiVersion: kots.io/v1beta1
@@ -908,7 +915,7 @@ spec:
     - name: "podName"
       type: "text"
       default: "test"
-      value: "testPod"
+      value: "testvalue"
 `,
 				),
 				"userdata/config.yaml": []byte(`apiVersion: kots.io/v1beta1
@@ -1054,7 +1061,7 @@ spec:
     - name: "podName"
       type: "text"
       default: "test"
-      value: "testPod"
+      value: "testvalue"
 `,
 				),
 				"postgresql.yaml": []byte(`apiVersion: kots.io/v1beta1
