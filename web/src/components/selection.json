@@ -4,6 +4,153 @@
     {
       "icon": {
         "paths": [
+          "M1001.244 705.422h22.756v-47.73l-0.542-2.437-130.687-588.364c-2.992-13.473-10.92-24.609-21.174-32.228-10.24-7.609-23.010-11.908-36.452-11.908h-625.379c-13.442 0-26.214 4.299-36.453 11.908-10.253 7.619-18.181 18.754-21.174 32.228l-129.383 582.489 0 2.499 0.001 30.788 0.001 22.756h978.487z",
+          "M494.178 282.078l-86.621-21.006c-3.579-0.867-5.775-4.471-4.908-8.049 0.005-0.020 0.011-0.041 0.016-0.064l22.321-88.316",
+          "M527.221 337.884v96.509c0 2.514 2.039 4.551 4.551 4.551h53.198",
+          "M365.088 314.322c-81.874 236.671 206.748 338.541 312.914 173.821 106.164-164.723-83.69-376.476-272.013-234.278",
+          "M967.562 990.463h0.005c17.169 0 32.158-7.876 42.507-19.508 10.311-11.594 16.316-27.145 16.316-43.798v-0.121l-0.969-185.339h-22.756l22.756-0.118v0.057c-0.014-9.166-3.327-17.934-9.273-24.619-5.996-6.742-14.973-11.592-25.504-11.592l-951.825-0.002-6.788 7.632c-5.959 6.702-9.274 15.492-9.274 24.681v189.244c0 16.655 6.005 32.206 16.316 43.798 10.347 11.635 25.334 19.511 42.502 19.511 0.001 0 0.003 0 0.005 0l885.983 0.175z",
+          "M179.562 875.413c22.178 0 40.157-17.977 40.157-40.154 0-22.18-17.979-40.157-40.157-40.157s-40.157 17.977-40.157 40.157c0 22.178 17.979 40.154 40.157 40.154z"
+        ],
+        "attrs": [
+          {
+            "fill": "none",
+            "stroke": "currentColor",
+            "strokeLinejoin": "miter",
+            "strokeLinecap": "butt",
+            "strokeMiterlimit": "4",
+            "strokeWidth": 45.51111111111111
+          },
+          {
+            "fill": "none",
+            "stroke": "currentColor",
+            "strokeLinejoin": "miter",
+            "strokeLinecap": "round",
+            "strokeMiterlimit": "4",
+            "strokeWidth": 45.51111111111111
+          },
+          {
+            "fill": "none",
+            "stroke": "currentColor",
+            "strokeLinejoin": "miter",
+            "strokeLinecap": "round",
+            "strokeMiterlimit": "4",
+            "strokeWidth": 45.51111111111111
+          },
+          {
+            "fill": "none",
+            "stroke": "currentColor",
+            "strokeLinejoin": "miter",
+            "strokeLinecap": "round",
+            "strokeMiterlimit": "4",
+            "strokeWidth": 45.51111111111111
+          },
+          {
+            "fill": "none",
+            "stroke": "currentColor",
+            "strokeLinejoin": "miter",
+            "strokeLinecap": "butt",
+            "strokeMiterlimit": "4",
+            "strokeWidth": 45.51111111111111
+          },
+          { "fill": "currentColor" }
+        ],
+        "width": 1070,
+        "isMulticolor": true,
+        "isMulticolor2": true,
+        "grid": 0,
+        "tags": ["snapshot-getstarted"],
+        "colorPermutations": {
+          "15515515512552552551": [
+            { "f": 1, "s": 0 },
+            { "s": 0 },
+            { "s": 0 },
+            { "s": 0 },
+            { "f": 1, "s": 0 },
+            { "f": 0 }
+          ]
+        }
+      },
+      "attrs": [
+        {
+          "fill": "none",
+          "stroke": "currentColor",
+          "strokeLinejoin": "miter",
+          "strokeLinecap": "butt",
+          "strokeMiterlimit": "4",
+          "strokeWidth": 45.51111111111111
+        },
+        {
+          "fill": "none",
+          "stroke": "currentColor",
+          "strokeLinejoin": "miter",
+          "strokeLinecap": "round",
+          "strokeMiterlimit": "4",
+          "strokeWidth": 45.51111111111111
+        },
+        {
+          "fill": "none",
+          "stroke": "currentColor",
+          "strokeLinejoin": "miter",
+          "strokeLinecap": "round",
+          "strokeMiterlimit": "4",
+          "strokeWidth": 45.51111111111111
+        },
+        {
+          "fill": "none",
+          "stroke": "currentColor",
+          "strokeLinejoin": "miter",
+          "strokeLinecap": "round",
+          "strokeMiterlimit": "4",
+          "strokeWidth": 45.51111111111111
+        },
+        {
+          "fill": "none",
+          "stroke": "currentColor",
+          "strokeLinejoin": "miter",
+          "strokeLinecap": "butt",
+          "strokeMiterlimit": "4",
+          "strokeWidth": 45.51111111111111
+        },
+        { "fill": "currentColor" }
+      ],
+      "properties": {
+        "order": 4,
+        "id": 0,
+        "name": "snapshot-getstarted",
+        "prevSize": 32,
+        "code": 59648,
+        "codes": [59648, 59649, 59650, 59651, 59652, 59653]
+      },
+      "setIdx": 0,
+      "setId": 4,
+      "iconIdx": 0
+    },
+    {
+      "icon": {
+        "paths": [
+          "M512 0c-282.624 0-512 229.376-512 512s229.376 512 512 512c282.624 0 512-229.376 512-512s-229.376-512-512-512zM563.2 768h-102.4v-307.2h102.4v307.2zM563.2 358.4h-102.4v-102.4h102.4v102.4z"
+        ],
+        "attrs": [{}],
+        "isMulticolor": false,
+        "isMulticolor2": false,
+        "grid": 0,
+        "tags": ["info"]
+      },
+      "attrs": [{}],
+      "properties": {
+        "order": 70,
+        "id": 0,
+        "name": "info",
+        "prevSize": 32,
+        "code": 59750
+      },
+      "setIdx": 0,
+      "setId": 3,
+      "iconIdx": 0
+    },
+    {
+      "icon": {
+        "paths": [
           "M508.197 190.574c-211.749 0-392.581 131.707-465.847 317.622 73.265 185.915 254.098 317.623 465.847 317.623s392.582-131.708 465.847-317.623c-73.265-185.915-254.098-317.622-465.847-317.622zM508.197 719.945c-116.885 0-211.749-94.863-211.749-211.749s94.863-211.749 211.749-211.749c116.885 0 211.749 94.863 211.749 211.749s-94.863 211.749-211.749 211.749zM508.197 381.147c-70.3 0-127.049 56.749-127.049 127.049s56.749 127.049 127.049 127.049c70.301 0 127.049-56.748 127.049-127.049s-56.748-127.049-127.049-127.049z"
         ],
         "attrs": [{}],
