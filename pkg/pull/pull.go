@@ -559,7 +559,7 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 		}
 	}
 
-	err = kotsutil.WriteKotsKinds(renderedKotsKinds, u.GetKotsKindsDir(writeUpstreamOptions), true)
+	err = kotsutil.WriteKotsKinds(renderedKotsKinds, u.GetKotsKindsDir(writeUpstreamOptions))
 	if err != nil {
 		return "", errors.Wrap(err, "failed to write the rendered kots kinds")
 	}

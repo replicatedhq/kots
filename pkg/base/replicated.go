@@ -75,7 +75,7 @@ func renderReplicated(u *upstreamtypes.Upstream, renderOptions *RenderOptions) (
 		return nil, nil, nil, errors.Wrap(err, "failed to template config objects")
 	}
 
-	kotsKindsFileMap, err := renderKotsKinds(u.Files, renderedConfig, renderOptions, builder)
+	renderedKotsKinds, err := renderKotsKinds(u.Files, renderedConfig, renderOptions, builder)
 	if err != nil {
 		return nil, nil, nil, errors.Wrap(err, "failed to render the kots kinds")
 	}
@@ -157,7 +157,7 @@ func renderReplicated(u *upstreamtypes.Upstream, renderOptions *RenderOptions) (
 		}
 	}
 
-	return &commonBase, helmBases, kotsKindsFileMap, nil
+	return &commonBase, helmBases, renderedKotsKinds, nil
 }
 
 func renderKotsKinds(upstreamFiles []upstreamtypes.UpstreamFile, renderedConfig *kotsv1beta1.Config, renderOptions *RenderOptions, builder *template.Builder) (map[string][]byte, error) {

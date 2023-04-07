@@ -597,22 +597,17 @@ func KotsKindsFromMap(kotsKindsMap map[string][]byte) (*KotsKinds, error) {
 	return &kotsKinds, nil
 }
 
-func WriteKotsKinds(kotsKinds map[string][]byte, rootDir string, overwrite bool) error {
+func WriteKotsKinds(kotsKinds map[string][]byte, rootDir string) error {
+	// Remove any existing files from previous renders.
 	_, err := os.Stat(rootDir)
 	if err == nil {
-		if overwrite {
-			if err := os.RemoveAll(rootDir); err != nil {
-				return errors.Wrap(err, "failed to remove previous content in base")
-			}
-		} else {
-			return fmt.Errorf("directory %s already exists", rootDir)
+		if err := os.RemoveAll(rootDir); err != nil {
+			return errors.Wrap(err, "failed to remove previous content in base")
 		}
 	}
 
-	if os.IsNotExist(err) {
-		if err := os.MkdirAll(rootDir, 0744); err != nil {
-			return errors.Wrap(err, "failed to mkdir for base root")
-		}
+	if err := os.MkdirAll(rootDir, 0744); err != nil {
+		return errors.Wrap(err, "failed to mkdir for base root")
 	}
 
 	for filePath, content := range kotsKinds {
