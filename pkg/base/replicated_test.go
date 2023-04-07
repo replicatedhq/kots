@@ -3,7 +3,6 @@ package base
 import (
 	_ "embed"
 	"io/ioutil"
-	"path"
 	"reflect"
 	"testing"
 
