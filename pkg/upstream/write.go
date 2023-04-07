@@ -17,7 +17,7 @@ import (
 	"k8s.io/client-go/kubernetes/scheme"
 )
 
-func WriteUpstream(u *types.Upstream, options types.WriteOptions) ([]byte, error) {
+func WriteUpstream(u *types.Upstream, options types.WriteOptions) error {
 	renderDir := options.RootDir
 	if options.CreateAppDir {
 		renderDir = path.Join(renderDir, u.Name)
@@ -28,7 +28,7 @@ func WriteUpstream(u *types.Upstream, options types.WriteOptions) ([]byte, error
 	if options.IncludeAdminConsole {
 		adminConsoleFiles, err := GenerateAdminConsoleFiles(renderDir, options)
 		if err != nil {
-			return nil, errors.Wrap(err, "failed to generate admin console")
+			return errors.Wrap(err, "failed to generate admin console")
 		}
 
 		u.Files = append(u.Files, adminConsoleFiles...)
@@ -41,14 +41,14 @@ func WriteUpstream(u *types.Upstream, options types.WriteOptions) ([]byte, error
 		if err == nil {
 			c, err := ioutil.ReadFile(path.Join(renderDir, "userdata", "installation.yaml"))
 			if err != nil {
-				return nil, errors.Wrap(err, "failed to read existing installation")
+				return errors.Wrap(err, "failed to read existing installation")
 			}
 
 			previousInstallationContent = c
 		}
 
 		if err := os.RemoveAll(renderDir); err != nil {
-			return nil, errors.Wrap(err, "failed to remove previous content in upstream")
+			return errors.Wrap(err, "failed to remove previous content in upstream")
 		}
 	}
 
@@ -58,14 +58,14 @@ func WriteUpstream(u *types.Upstream, options types.WriteOptions) ([]byte, error
 
 		prevObj, _, err := decode(previousInstallationContent, nil, nil)
 		if err != nil {
-			return nil, errors.Wrap(err, "failed to decode previous installation")
+			return errors.Wrap(err, "failed to decode previous installation")
 		}
 		prevInstallation = prevObj.(*kotsv1beta1.Installation)
 	}
 
 	encryptionKey, err := getEncryptionKey(prevInstallation)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to get encryption key")
+		return errors.Wrap(err, "failed to get encryption key")
 	}
 	_ = crypto.InitFromString(encryptionKey)
 
@@ -74,7 +74,7 @@ func WriteUpstream(u *types.Upstream, options types.WriteOptions) ([]byte, error
 		d, _ := path.Split(fileRenderPath)
 		if _, err := os.Stat(d); os.IsNotExist(err) {
 			if err := os.MkdirAll(d, 0744); err != nil {
-				return nil, errors.Wrap(err, "failed to mkdir")
+				return errors.Wrap(err, "failed to mkdir")
 			}
 		}
 
@@ -83,7 +83,7 @@ func WriteUpstream(u *types.Upstream, options types.WriteOptions) ([]byte, error
 			if configValues != nil {
 				content, err := encryptConfigValues(configValues)
 				if err != nil {
-					return nil, errors.Wrap(err, "failed to encrypt config values")
+					return errors.Wrap(err, "failed to encrypt config values")
 				}
 				file.Content = content
 				u.Files[i] = file
@@ -94,14 +94,14 @@ func WriteUpstream(u *types.Upstream, options types.WriteOptions) ([]byte, error
 		if identityConfig != nil {
 			content, err := maybeEncryptIdentityConfig(identityConfig)
 			if err != nil {
-				return nil, errors.Wrap(err, "failed to encrypt identity config")
+				return errors.Wrap(err, "failed to encrypt identity config")
 			}
 			file.Content = content
 			u.Files[i] = file
 		}
 
 		if err := ioutil.WriteFile(fileRenderPath, file.Content, 0644); err != nil {
-			return nil, errors.Wrap(err, "failed to write upstream file")
+			return errors.Wrap(err, "failed to write upstream file")
 		}
 	}
 
@@ -140,17 +140,17 @@ func WriteUpstream(u *types.Upstream, options types.WriteOptions) ([]byte, error
 
 	if _, err := os.Stat(path.Join(renderDir, "userdata")); os.IsNotExist(err) {
 		if err := os.MkdirAll(path.Join(renderDir, "userdata"), 0755); err != nil {
-			return nil, errors.Wrap(err, "failed to create userdata dir")
+			return errors.Wrap(err, "failed to create userdata dir")
 		}
 	}
 
 	installationBytes := mustMarshalInstallation(&installation)
 	err = ioutil.WriteFile(path.Join(renderDir, "userdata", "installation.yaml"), installationBytes, 0644)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to write installation")
+		return errors.Wrap(err, "failed to write installation")
 	}
 
-	return installationBytes, nil
+	return nil
 }
 
 func getEncryptionKey(prevInstallation *kotsv1beta1.Installation) (string, error) {

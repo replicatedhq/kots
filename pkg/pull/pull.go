@@ -277,7 +277,7 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 		IsGKEAutopilot:      k8sutil.IsGKEAutopilot(clientset),
 		IncludeMinio:        pullOptions.IncludeMinio,
 	}
-	installationManifest, err := upstream.WriteUpstream(u, writeUpstreamOptions)
+	err = upstream.WriteUpstream(u, writeUpstreamOptions)
 	if err != nil {
 		log.FinishSpinnerWithError()
 		return "", errors.Wrap(err, "failed to write upstream")
@@ -385,7 +385,6 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 		log.FinishSpinnerWithError()
 		return "", errors.Wrap(err, "failed to render upstream")
 	}
-	renderedKotsKinds["installation.yaml"] = installationManifest
 
 	errorFiles := []base.BaseFile{}
 	errorFiles = append(errorFiles, base.PrependBaseFilesPath(commonBase.ListErrorFiles(), commonBase.Path)...)
@@ -505,7 +504,7 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 	writeMidstreamOptions.MidstreamDir = filepath.Join(u.GetOverlaysDir(writeUpstreamOptions), "midstream")
 	writeMidstreamOptions.BaseDir = filepath.Join(u.GetBaseDir(writeUpstreamOptions), commonBase.Path)
 
-	m, err := midstream.WriteMidstream(writeMidstreamOptions, processImageOptions, commonBase, fetchOptions.License, identityConfig, u.GetUpstreamDir(writeUpstreamOptions), log)
+	m, installationManifest, err := midstream.WriteMidstream(writeMidstreamOptions, processImageOptions, commonBase, fetchOptions.License, identityConfig, u.GetUpstreamDir(writeUpstreamOptions), log)
 	if err != nil {
 		log.FinishSpinnerWithError()
 		return "", errors.Wrap(err, "failed to write common midstream")
@@ -529,7 +528,7 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 		processImageOptionsCopy.Namespace = helmBaseCopy.Namespace
 		processImageOptionsCopy.PushImages = false // never push images more than once
 
-		helmMidstream, err := midstream.WriteMidstream(writeMidstreamOptions, processImageOptionsCopy, helmBaseCopy, fetchOptions.License, identityConfig, u.GetUpstreamDir(writeUpstreamOptions), log)
+		helmMidstream, _, err := midstream.WriteMidstream(writeMidstreamOptions, processImageOptionsCopy, helmBaseCopy, fetchOptions.License, identityConfig, u.GetUpstreamDir(writeUpstreamOptions), log)
 		if err != nil {
 			log.FinishSpinnerWithError()
 			return "", errors.Wrapf(err, "failed to write helm midstream %s", helmBase.Path)
@@ -558,6 +557,12 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 			return "", errors.Wrap(err, "failed to write archive as config map")
 		}
 	}
+
+	installationBytes, err := kotsutil.KotsKinds{Installation: *installationManifest}.Marshal("kots.io", "v1beta1", "Installation")
+	if err != nil {
+		return "", errors.Wrap(err, "failed to marshal installation kots kind")
+	}
+	renderedKotsKinds["installation.yaml"] = []byte(installationBytes)
 
 	err = kotsutil.WriteKotsKinds(renderedKotsKinds, u.GetKotsKindsDir(writeUpstreamOptions))
 	if err != nil {

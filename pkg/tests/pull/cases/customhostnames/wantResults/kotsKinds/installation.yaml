@@ -6,6 +6,14 @@ metadata:
 spec:
   channelID: 1vusIYZLAVxMG6q760OJmRKj5i5
   channelName: My Channel
+  knownImages:
+  - image: quay.io/replicatedcom/someimage:1
+    isPrivate: true
+  - image: somebigbank.registry.org/appslug/some-other-image:version
+    isPrivate: true
+  - image: registry.replicated.com/appslug/image:version
+    isPrivate: true
+  - image: nginx:latest
   releaseNotes: |
     release notes
 status: {}

@@ -101,7 +101,7 @@ func Rewrite(rewriteOptions RewriteOptions) error {
 		IsOpenShift:          k8sutil.IsOpenShift(clientset),
 		IsGKEAutopilot:       k8sutil.IsGKEAutopilot(clientset),
 	}
-	installationManifest, err := upstream.WriteUpstream(u, writeUpstreamOptions)
+	err = upstream.WriteUpstream(u, writeUpstreamOptions)
 	if err != nil {
 		log.FinishSpinnerWithError()
 		return errors.Wrap(err, "failed to write upstream")
@@ -129,7 +129,6 @@ func Rewrite(rewriteOptions RewriteOptions) error {
 	if err != nil {
 		return errors.Wrap(err, "failed to render upstream")
 	}
-	renderedKotsKinds["installation.yaml"] = installationManifest
 
 	errorFiles := []base.BaseFile{}
 	errorFiles = append(errorFiles, base.PrependBaseFilesPath(commonBase.ListErrorFiles(), commonBase.Path)...)
@@ -263,7 +262,7 @@ func Rewrite(rewriteOptions RewriteOptions) error {
 		return errors.Wrap(err, "failed to load identity config")
 	}
 
-	m, err := midstream.WriteMidstream(writeMidstreamOptions, processImageOptions, commonBase, rewriteOptions.License, identityConfig, upstreamDir, log)
+	m, installationManifest, err := midstream.WriteMidstream(writeMidstreamOptions, processImageOptions, commonBase, rewriteOptions.License, identityConfig, upstreamDir, log)
 	if err != nil {
 		return errors.Wrap(err, "failed to write common midstream")
 	}
@@ -287,7 +286,7 @@ func Rewrite(rewriteOptions RewriteOptions) error {
 		processImageOptionsCopy.Namespace = helmBaseCopy.Namespace
 		processImageOptionsCopy.CopyImages = false // don't copy images more than once
 
-		helmMidstream, err := midstream.WriteMidstream(writeMidstreamOptions, processImageOptionsCopy, helmBaseCopy, rewriteOptions.License, identityConfig, upstreamDir, log)
+		helmMidstream, _, err := midstream.WriteMidstream(writeMidstreamOptions, processImageOptionsCopy, helmBaseCopy, rewriteOptions.License, identityConfig, upstreamDir, log)
 		if err != nil {
 			return errors.Wrapf(err, "failed to write helm midstream %s", helmBase.Path)
 		}
@@ -321,6 +320,12 @@ func Rewrite(rewriteOptions RewriteOptions) error {
 	}); err != nil {
 		return errors.Wrap(err, "failed to write rendered")
 	}
+
+	installationBytes, err := kotsutil.KotsKinds{Installation: *installationManifest}.Marshal("kots.io", "v1beta1", "Installation")
+	if err != nil {
+		return errors.Wrap(err, "failed to marshal isntallation kots kind")
+	}
+	renderedKotsKinds["installation.yaml"] = []byte(installationBytes)
 
 	if err := kotsutil.WriteKotsKinds(renderedKotsKinds, u.GetKotsKindsDir(writeUpstreamOptions)); err != nil {
 		return errors.Wrap(err, "failed to write kots base")
