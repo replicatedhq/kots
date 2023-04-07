@@ -3,13 +3,24 @@ kind: HelmChart
 metadata:
   name: test-chart-variation-1
 spec:
+  # chart identifies a matching chart from a .tgz
   chart:
     name: test-chart
     chartVersion: 0.1.0
     releaseName: test-chart-release-1
+
+  # helmVersion identifies the Helm Version used to render the Chart. Default is v2.
   helmVersion: v3
+
+  # useHelmInstall identifies whether this Helm chart will use the
+  # Replicated Helm installation (false) or native Helm installation (true). Default is false.
+  # Native Helm installations are only available for Helm v3 charts.
   useHelmInstall: true
-  exclude: ""
+
+  # values are used in the customer environment, as a pre-render step
+  # these values will be supplied to helm template
   values: {}
+
+  # builder values provide a way to render the chart with all images
+  # and manifests. this is used in replicated to create airgap packages
   builder: {}
-status: {}

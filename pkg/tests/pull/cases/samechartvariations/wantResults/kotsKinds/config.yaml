@@ -5,18 +5,20 @@ metadata:
   name: my-app
 spec:
   groups:
-  - name: setup
-    title: Setup
-    items:
-    - name: hostname
-      title: Hostname
-      type: text
-      default: ""
+  - items:
+    - default: ""
       help_text: |
         Use this field to provide a hostname for your Example Application installation.
+      name: hostname
       required: true
-    - name: helm
+      title: Hostname
+      type: text
+      value: hostname
+    - default: "no"
+      name: helm
       title: Include helm
       type: text
-      default: "no"
+      value: "yes"
+    name: setup
+    title: Setup
 status: {}
