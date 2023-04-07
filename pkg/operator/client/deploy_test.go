@@ -62,7 +62,7 @@ func Test_getSortedCharts(t *testing.T) {
 	tests := []struct {
 		name            string
 		files           []file
-		kotsCharts      []*v1beta1.HelmChart
+		kotsCharts      []v1beta1.HelmChart
 		targetNamespace string
 		want            []orderedDir
 	}{
@@ -118,7 +118,7 @@ version: "v1"
 `,
 				},
 			},
-			kotsCharts: []*v1beta1.HelmChart{
+			kotsCharts: []v1beta1.HelmChart{
 				{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "chart1",
@@ -214,7 +214,7 @@ name: c2
 `,
 				},
 			},
-			kotsCharts: []*v1beta1.HelmChart{
+			kotsCharts: []v1beta1.HelmChart{
 				{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "chart1",
@@ -261,7 +261,7 @@ version: ver2
 `,
 				},
 			},
-			kotsCharts: []*v1beta1.HelmChart{
+			kotsCharts: []v1beta1.HelmChart{
 				{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "chart1",
@@ -322,7 +322,7 @@ version: ver2
 `,
 				},
 			},
-			kotsCharts: []*v1beta1.HelmChart{
+			kotsCharts: []v1beta1.HelmChart{
 				{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "chart3",
@@ -381,7 +381,7 @@ version: ver2
 `,
 				},
 			},
-			kotsCharts: []*v1beta1.HelmChart{
+			kotsCharts: []v1beta1.HelmChart{
 				{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "chart1",
@@ -444,7 +444,7 @@ version: ver2
 `,
 				},
 			},
-			kotsCharts: []*v1beta1.HelmChart{
+			kotsCharts: []v1beta1.HelmChart{
 				{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "chart1",

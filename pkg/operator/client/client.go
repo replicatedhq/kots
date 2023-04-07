@@ -265,7 +265,7 @@ func (c *Client) deployHelmCharts(deployArgs operatortypes.DeployAppArgs) (*comm
 		}
 	}
 
-	previousKotsCharts := []*v1beta1.HelmChart{}
+	previousKotsCharts := []v1beta1.HelmChart{}
 	if deployArgs.PreviousKotsKinds != nil && deployArgs.PreviousKotsKinds.HelmCharts != nil {
 		previousKotsCharts = deployArgs.PreviousKotsKinds.HelmCharts.Items
 	}
@@ -280,7 +280,7 @@ func (c *Client) deployHelmCharts(deployArgs operatortypes.DeployAppArgs) (*comm
 		}
 	}
 	if len(deployArgs.Charts) > 0 {
-		kotsCharts := []*v1beta1.HelmChart{}
+		kotsCharts := []v1beta1.HelmChart{}
 		if deployArgs.KotsKinds != nil && deployArgs.KotsKinds.HelmCharts != nil {
 			kotsCharts = deployArgs.KotsKinds.HelmCharts.Items
 		}

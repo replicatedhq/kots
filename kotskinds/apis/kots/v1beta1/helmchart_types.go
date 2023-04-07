@@ -396,7 +396,7 @@ type HelmChart struct {
 type HelmChartList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
-	Items           []*HelmChart `json:"items"`
+	Items           []HelmChart `json:"items"`
 }
 
 func init() {

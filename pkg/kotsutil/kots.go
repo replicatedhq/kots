@@ -446,7 +446,7 @@ func (k *KotsKinds) addKotsKind(content []byte) error {
 			if k.HelmCharts == nil {
 				k.HelmCharts = &kotsv1beta1.HelmChartList{}
 			}
-			k.HelmCharts.Items = append(k.HelmCharts.Items, decoded.(*kotsv1beta1.HelmChart))
+			k.HelmCharts.Items = append(k.HelmCharts.Items, *decoded.(*kotsv1beta1.HelmChart))
 		case "kots.io/v1beta1, Kind=LintConfig":
 			k.LintConfig = decoded.(*kotsv1beta1.LintConfig)
 		case "troubleshoot.sh/v1beta2, Kind=Collector":
