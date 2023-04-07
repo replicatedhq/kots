@@ -6,15 +6,15 @@ import (
 	"context"
 	"encoding/base64"
 	"encoding/json"
-	"fmt"
 	"io/ioutil"
-	"net/http"
 	"os"
 
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/api/reporting/types"
+	"github.com/replicatedhq/kots/pkg/buildversion"
 	"github.com/replicatedhq/kots/pkg/gitops"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
+	"github.com/replicatedhq/kots/pkg/kotsadm"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/kurl"
 	"github.com/replicatedhq/kots/pkg/logger"
@@ -44,6 +44,13 @@ func Init() error {
 			return errors.Wrap(err, "failed to init from downstream")
 		}
 	}
+
+	if kotsadm.IsAirgap() {
+		reporter = &AirgapReporter{}
+	} else {
+		reporter = &OnlineReporter{}
+	}
+
 	return nil
 }
 
@@ -147,48 +154,8 @@ func initFromDownstream() error {
 	return err
 }
 
-func SendAppInfo(appID string) error {
-	a, err := store.GetStore().GetApp(appID)
-	if err != nil {
-		if store.GetStore().IsNotFound(err) {
-			return nil
-		}
-		return errors.Wrap(err, "failed to get license for app")
-	}
-
-	license, err := store.GetStore().GetLatestLicenseForApp(a.ID)
-	if err != nil {
-		return errors.Wrap(err, "failed to get license for app")
-	}
-
-	endpoint := license.Spec.Endpoint
-	if !canReport(endpoint) {
-		return nil
-	}
-
-	url := fmt.Sprintf("%s/kots_metrics/license_instance/info", endpoint)
-
-	postReq, err := util.NewRequest("POST", url, nil)
-	if err != nil {
-		return errors.Wrap(err, "failed to create http request")
-	}
-	postReq.Header.Set("Authorization", fmt.Sprintf("Basic %s", base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("%s:%s", license.Spec.LicenseID, license.Spec.LicenseID)))))
-	postReq.Header.Set("Content-Type", "application/json")
-
-	reportingInfo := GetReportingInfo(a.ID)
-	InjectReportingInfoHeaders(postReq, reportingInfo)
-
-	resp, err := http.DefaultClient.Do(postReq)
-	if err != nil {
-		return errors.Wrap(err, "failed to post request")
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != 200 {
-		return errors.Errorf("Unexpected status code %d", resp.StatusCode)
-	}
-
-	return nil
+func GetReporter() Reporter {
+	return reporter
 }
 
 func GetReportingInfo(appID string) *types.ReportingInfo {
@@ -196,6 +163,7 @@ func GetReportingInfo(appID string) *types.ReportingInfo {
 		InstanceID:    appID,
 		KOTSInstallID: os.Getenv("KOTS_INSTALL_ID"),
 		KURLInstallID: os.Getenv("KURL_INSTALL_ID"),
+		KOTSVersion:   buildversion.Version(),
 	}
 
 	clientset, err := k8sutil.GetClientset()
