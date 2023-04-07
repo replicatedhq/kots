@@ -79,7 +79,7 @@ type OverlySimpleMetadata struct {
 type KotsKinds struct {
 	KotsApplication kotsv1beta1.Application
 	Application     *applicationv1beta1.Application
-	HelmCharts      *kotsv1beta1.HelmChartList
+	HelmCharts      []*kotsv1beta1.HelmChart
 
 	Collector     *troubleshootv1beta2.Collector
 	Preflight     *troubleshootv1beta2.Preflight
@@ -443,10 +443,7 @@ func (k *KotsKinds) addKotsKind(content []byte) error {
 		case "kots.io/v1beta1, Kind=Installation":
 			k.Installation = *decoded.(*kotsv1beta1.Installation)
 		case "kots.io/v1beta1, Kind=HelmChart":
-			if k.HelmCharts == nil {
-				k.HelmCharts = &kotsv1beta1.HelmChartList{}
-			}
-			k.HelmCharts.Items = append(k.HelmCharts.Items, decoded.(*kotsv1beta1.HelmChart))
+			k.HelmCharts = append(k.HelmCharts, decoded.(*kotsv1beta1.HelmChart))
 		case "kots.io/v1beta1, Kind=LintConfig":
 			k.LintConfig = decoded.(*kotsv1beta1.LintConfig)
 		case "troubleshoot.sh/v1beta2, Kind=Collector":
