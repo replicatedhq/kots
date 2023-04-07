@@ -228,6 +228,7 @@ class AppVersionHistory extends Component<Props, State> {
   _mounted: boolean | undefined;
 
   componentDidMount() {
+    console.log("mounting");
     this.getPreflightState(this.props.app.downstream.currentVersion);
     const urlParams = new URLSearchParams(window.location.search);
     const pageNumber = urlParams.get("page");

@@ -259,7 +259,7 @@ export function NewDashboard() {
             <Grid item container direction="column" sx={{ maxWidth: "150px" }}>
               <Typography variant="caption">New version available</Typography>
               <Chip
-                label="Update"
+                label="Deploy"
                 variant="filled"
                 color="primary"
                 sx={{ marginTop: "4px" }}
@@ -285,7 +285,7 @@ export function NewDashboard() {
         </Grid>
       </Card>
       <Box>
-        <TabPanel value={value} index={"config"}>
+        {value === "config" && (
           <AppConfig
             //   {...props}
             app={selectedApp}
@@ -293,32 +293,34 @@ export function NewDashboard() {
             fromLicenseFlow={true}
             refetchAppsList={getAppsList}
           />
-        </TabPanel>
-        <TabPanel value={value} index={"version-history"}>
+        )}
+        {value === "version-history" && (
           <AppVersionHistory
             app={selectedApp}
             match={{ match: { params: params } }}
             refreshAppData={refetchApps}
           />
-        </TabPanel>
-        <TabPanel value={value} index={"troubleshoot"}>
+        )}
+        {value === "troubleshoot" && (
           <GenerateSupportBundle watch={selectedApp} />
-        </TabPanel>
-        <TabPanel value={value} index={"preflight"}>
+        )}
+        {value === "preflight" && (
           <PreflightResultPage
             logo={""}
             fromLicenseFlow={true}
             refetchAppsList={getAppsList}
           />
-        </TabPanel>
-        <TabPanel value={value} index={"license"}>
+        )}
+        {/* <TabPanel value={value} index={"license"}> */}
+        {value === "license" && (
           <AppLicense
             app={selectedApp}
             // syncCallback={refetchData}
             // changeCallback={refetchData}
             //isHelmManaged={props.isHelmManaged}
           />
-        </TabPanel>
+        )}
+        {/* </TabPanel> */}
       </Box>
       <Modal
         isOpen={isDetailsOpen}
