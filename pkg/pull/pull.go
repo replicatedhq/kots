@@ -23,6 +23,7 @@ import (
 	kotslicense "github.com/replicatedhq/kots/pkg/license"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/midstream"
+	"github.com/replicatedhq/kots/pkg/postrenderer"
 	registrytypes "github.com/replicatedhq/kots/pkg/registry/types"
 	"github.com/replicatedhq/kots/pkg/replicatedapp"
 	"github.com/replicatedhq/kots/pkg/upstream"
@@ -445,6 +446,10 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 		}
 	}
 
+	if err := postrenderer.WriteHelmPostRendererCharts(u, &renderOptions, pullOptions.RootDir, newHelmCharts); err != nil {
+		return "", errors.Wrap(err, "failed to write helm post-renderer charts")
+	}
+
 	log.FinishSpinner()
 
 	log.ActionWithSpinner("Creating midstreams")
@@ -551,6 +556,10 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 		return "", errors.Wrap(err, "failed to write downstreams")
 	}
 
+	if err := postrenderer.WriteHelmPostRendererDownstreams(pullOptions.RootDir, pullOptions.Downstreams, newHelmCharts, log); err != nil {
+		return "", errors.Wrap(err, "failed to write helm post renderer downstreams")
+	}
+
 	if includeAdminConsole {
 		if err := writeArchiveAsConfigMap(pullOptions, u, u.GetBaseDir(writeUpstreamOptions)); err != nil {
 			return "", errors.Wrap(err, "failed to write archive as config map")
@@ -565,6 +574,22 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 		KustomizeBinPath: kotsKinds.GetKustomizeBinaryPath(),
 	}); err != nil {
 		return "", errors.Wrap(err, "failed to write rendered")
+	}
+
+	// TODO: can there be a single WriteRenderedApp (handles both kustomize and helm)
+	if err := postrenderer.WriteRenderedApp(postrenderer.WriteOptions{
+		RootDir:          pullOptions.RootDir,
+		Downstreams:      pullOptions.Downstreams,
+		KustomizeBinPath: kotsKinds.GetKustomizeBinaryPath(),
+		Log:              log,
+		// Namespace:        pullOptions.Namespace,
+		AppSlug:          pullOptions.AppSlug,
+		RegistryHost:     pullOptions.RewriteImageOptions.Hostname,
+		RegistryUsername: pullOptions.RewriteImageOptions.Username,
+		RegistryPassword: pullOptions.RewriteImageOptions.Password,
+		KotsKinds:        newKotsKinds,
+	}); err != nil {
+		return "", errors.Wrap(err, "failed to write helm rendered")
 	}
 
 	return filepath.Join(pullOptions.RootDir, u.Name), nil

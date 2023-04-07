@@ -5,6 +5,7 @@ import (
 	"encoding/base64"
 	"fmt"
 	"io/ioutil"
+	"os"
 	"os/exec"
 	"path/filepath"
 	"sort"
@@ -17,9 +18,11 @@ import (
 	"github.com/replicatedhq/kots/pkg/binaries"
 	"github.com/replicatedhq/kots/pkg/helm"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
+	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/operator/applier"
 	operatortypes "github.com/replicatedhq/kots/pkg/operator/types"
+	registrytypes "github.com/replicatedhq/kots/pkg/registry/types"
 	"github.com/replicatedhq/kots/pkg/util"
 	"github.com/replicatedhq/yaml/v3"
 	corev1 "k8s.io/api/core/v1"
@@ -569,6 +572,175 @@ func (c *Client) installWithHelm(helmDir string, targetNamespace string, kotsCha
 	return result, nil
 }
 
+// TODO: make this accept an options struct
+func (c *Client) installWithHelmPostRenderer(
+	helmDir,
+	downstream,
+	appSlug,
+	kustomizeBinPath,
+	targetNamespace string,
+	kotsCharts []*v1beta1.HelmChart,
+	kotsKinds *kotsutil.KotsKinds,
+	registrySettings *registrytypes.RegistrySettings,
+) (*commandResult, error) {
+	version := "3"
+	chartsDir := filepath.Join(helmDir, "charts")
+
+	var hasErr bool
+	var multiStdout, multiStderr [][]byte
+	// TODO: fix this to install in the proper order using weights
+	// NOTE: a mix of usePostRenderer and not usePostRenderer could install in the wrong order
+	for _, kotsChart := range kotsCharts {
+		chartDir := filepath.Join(chartsDir, kotsChart.GetDirName())
+		chartPath := filepath.Join(chartDir, fmt.Sprintf("%s-%s.tgz", kotsChart.Spec.Chart.Name, kotsChart.Spec.Chart.ChartVersion))
+		valuesPath := filepath.Join(chartDir, "values.yaml")
+
+		chartNamespace := kotsChart.Spec.Namespace
+		if chartNamespace == "" && targetNamespace != "" && targetNamespace != "." {
+			chartNamespace = targetNamespace
+		}
+
+		// TODO: this doesnt feel right to have to check
+		if kotsKinds == nil {
+			return nil, errors.New("kotsKinds is nil")
+		}
+
+		if kotsKinds.License == nil {
+			return nil, errors.New("no license found")
+		}
+		licensePath := filepath.Join(chartDir, "license.yaml")
+		licenseString, err := kotsKinds.Marshal("kots.io", "v1beta1", "License")
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to marshal license")
+		}
+		err = os.WriteFile(licensePath, []byte(licenseString), 0644)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to write license file")
+		}
+
+		kotsApplicationPath := filepath.Join(chartDir, "kots-application.yaml")
+		kotsApplicationString, err := kotsKinds.Marshal("kots.io", "v1beta1", "Application")
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to marshal kots application")
+		}
+		err = os.WriteFile(kotsApplicationPath, []byte(kotsApplicationString), 0644)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to write kots application file")
+		}
+
+		args := []string{
+			"upgrade",
+			"-i",
+			kotsChart.GetReleaseName(),
+			chartPath,
+			"-f",
+			valuesPath,
+			"--timeout",
+			"3600s",
+			"--post-renderer",
+			"/kots",
+			"--post-renderer-args",
+			"helm",
+			"--post-renderer-args",
+			"post-renderer",
+			"--post-renderer-args",
+			"--kustomize-bin-path",
+			"--post-renderer-args",
+			kustomizeBinPath,
+			"--post-renderer-args",
+			"--root-dir",
+			"--post-renderer-args",
+			chartDir,
+			"--post-renderer-args",
+			"--downstream",
+			"--post-renderer-args",
+			downstream,
+			"--post-renderer-args",
+			"--license-file",
+			"--post-renderer-args",
+			"license.yaml",
+			"--post-renderer-args",
+			"--release-name",
+			"--post-renderer-args",
+			kotsChart.GetReleaseName(),
+			"--post-renderer-args",
+			"-n",
+			"--post-renderer-args",
+			chartNamespace,
+			"--post-renderer-args",
+			"--app-slug",
+			"--post-renderer-args",
+			appSlug,
+			"--post-renderer-args",
+			"--kots-application",
+			"--post-renderer-args",
+			"kots-application.yaml",
+		}
+
+		if registrySettings != nil && registrySettings.Hostname != "" {
+			// add registry settings to post-renderer args
+			args = append(args, []string{
+				"--post-renderer-args",
+				"--registry-hostname",
+				"--post-renderer-args",
+				registrySettings.Hostname,
+				"--post-renderer-args",
+				"--registry-username",
+				"--post-renderer-args",
+				registrySettings.Username,
+				"--post-renderer-args",
+				"--registry-password",
+				"--post-renderer-args",
+				registrySettings.Password,
+			}...)
+		}
+
+		if chartNamespace != "" {
+			args = append(args, "-n", chartNamespace)
+
+			// prior to kots v1.95.0, helm release secrets were created in the kotsadm namespace
+			// Since kots v1.95.0, helm release secrets are created in the same namespace as the helm release
+			// This migration will move the helm release secrets to the helm release namespace
+			kotsadmNamespace := util.AppNamespace()
+			if chartNamespace != kotsadmNamespace {
+				err := migrateExistingHelmReleaseSecrets(kotsChart.GetReleaseName(), chartNamespace, kotsadmNamespace)
+				if err != nil {
+					return nil, errors.Wrapf(err, "failed to migrate helm release secrets for %s", kotsChart.GetReleaseName())
+				}
+			}
+		}
+
+		if len(kotsChart.Spec.HelmUpgradeFlags) > 0 {
+			args = append(args, kotsChart.Spec.HelmUpgradeFlags...)
+		}
+
+		logger.Infof("running helm with arguments %v", args)
+		cmd := exec.Command(fmt.Sprintf("helm%s", version), args...)
+		cmd.Dir = chartDir
+		stdout, stderr, err := applier.Run(cmd)
+		if err != nil {
+			logger.Infof("stdout (helm install) = %s", stdout)
+			logger.Infof("stderr (helm install) = %s", stderr)
+			logger.Infof("error: %s", err.Error())
+			hasErr = true
+		}
+
+		if len(stdout) > 0 {
+			multiStdout = append(multiStdout, []byte(fmt.Sprintf("------- %s -------", kotsChart.GetDirName())), stdout)
+		}
+		if len(stderr) > 0 {
+			multiStderr = append(multiStderr, []byte(fmt.Sprintf("------- %s -------", kotsChart.GetDirName())), stderr)
+		}
+	}
+
+	result := &commandResult{
+		hasErr:      hasErr,
+		multiStderr: multiStderr,
+		multiStdout: multiStdout,
+	}
+	return result, nil
+}
+
 type orderedDir struct {
 	Name         string
 	Weight       int64
@@ -591,6 +763,11 @@ func getSortedCharts(chartsDir string, kotsCharts []*v1beta1.HelmChart, targetNa
 		chartDir := filepath.Join(chartsDir, dir.Name())
 		chartName, chartVersion, err := findChartNameAndVersion(chartDir)
 		if err != nil {
+			// TODO: would be nice to have this be cleaner
+			if _, err := os.Stat(filepath.Join(chartDir, "all.yaml")); err == nil {
+				logger.Debugf("skipping %s because it is a post-renderer chart", chartDir)
+				continue
+			}
 			return nil, errors.Wrapf(err, "failed to find chart name and version in %s", chartDir)
 		}
 		orderedDirs = append(orderedDirs, orderedDir{

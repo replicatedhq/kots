@@ -82,6 +82,9 @@
         "useHelmInstall": {
           "type": "boolean"
         },
+        "usePostRenderer": {
+          "type": "boolean"
+        },
         "values": {
           "type": "object",
           "additionalProperties": {}

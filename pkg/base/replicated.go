@@ -177,10 +177,13 @@ func renderReplicatedHelmChart(kotsHelmChart *kotsv1beta1.HelmChart, upstreamFil
 		if boolVal {
 			return nil, nil
 		}
+	} else if kotsHelmChart.Spec.UsePostRenderer {
+		renderOptions.Log.Debug("Kots.io/v1beta1 HelmChart %s is using a post-renderer. Not rendering to base...", kotsHelmChart.Name)
+		return nil, nil
 	}
 
 	// Include this chart
-	archive, err := findHelmChartArchiveInRelease(upstreamFiles, kotsHelmChart)
+	_, archiveContent, err := FindHelmChartArchiveInRelease(upstreamFiles, kotsHelmChart)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to find helm chart archive in release")
 	}
@@ -191,7 +194,7 @@ func renderReplicatedHelmChart(kotsHelmChart *kotsv1beta1.HelmChart, upstreamFil
 	}
 	defer os.RemoveAll(tmpFile.Name())
 
-	_, err = io.Copy(tmpFile, bytes.NewReader(archive))
+	_, err = io.Copy(tmpFile, bytes.NewReader(archiveContent))
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to copy chart to temp file")
 	}
@@ -419,9 +422,9 @@ func getKotsKinds(u *upstreamtypes.Upstream, log *logger.CLILogger) (*kotsutil.K
 	return kotsKinds, nil
 }
 
-// findHelmChartArchiveInRelease iterates through all files in the release (upstreamFiles), looking for a helm chart archive
+// FindHelmChartArchiveInRelease iterates through all files in the release (upstreamFiles), looking for a helm chart archive
 // that matches the chart name and version specified in the kotsHelmChart parameter
-func findHelmChartArchiveInRelease(upstreamFiles []upstreamtypes.UpstreamFile, kotsHelmChart *kotsv1beta1.HelmChart) ([]byte, error) {
+func FindHelmChartArchiveInRelease(upstreamFiles []upstreamtypes.UpstreamFile, kotsHelmChart *kotsv1beta1.HelmChart) (string, []byte, error) {
 	for _, upstreamFile := range upstreamFiles {
 		if !isHelmChart(upstreamFile.Content) {
 			continue
@@ -430,36 +433,36 @@ func findHelmChartArchiveInRelease(upstreamFiles []upstreamtypes.UpstreamFile, k
 		// We treat all .tar.gz archives as helm charts
 		chartArchivePath, err := ioutil.TempFile("", "chart")
 		if err != nil {
-			return nil, errors.Wrap(err, "failed to create temp file for chart archive path")
+			return "", nil, errors.Wrap(err, "failed to create temp file for chart archive path")
 		}
 		defer os.Remove(chartArchivePath.Name())
 		_, err = io.Copy(chartArchivePath, bytes.NewReader(upstreamFile.Content))
 		if err != nil {
-			return nil, errors.Wrap(err, "failed to copy maybe chart to tmp file")
+			return "", nil, errors.Wrap(err, "failed to copy maybe chart to tmp file")
 		}
 
 		files, err := readTarGz(chartArchivePath.Name())
 		if err != nil {
-			return nil, errors.Wrap(err, "failed to read chart archive")
+			return "", nil, errors.Wrap(err, "failed to read chart archive")
 		}
 
 		for _, chartFile := range files {
 			if chartFile.Path == "Chart.yaml" {
 				chartManifest := new(chart.Metadata)
 				if err := yaml.Unmarshal(chartFile.Content, chartManifest); err != nil {
-					return nil, errors.Wrap(err, "failed to unmarshal chart yaml")
+					return "", nil, errors.Wrap(err, "failed to unmarshal chart yaml")
 				}
 
 				if chartManifest.Name == kotsHelmChart.Spec.Chart.Name {
 					if chartManifest.Version == kotsHelmChart.Spec.Chart.ChartVersion {
-						return upstreamFile.Content, nil
+						return upstreamFile.Path, upstreamFile.Content, nil
 					}
 				}
 			}
 		}
 	}
 
-	return nil, errors.Errorf("unable to find helm chart archive for chart name %s, version %s", kotsHelmChart.Spec.Chart.Name, kotsHelmChart.Spec.Chart.ChartVersion)
+	return "", nil, errors.Errorf("unable to find helm chart archive for chart name %s, version %s", kotsHelmChart.Spec.Chart.Name, kotsHelmChart.Spec.Chart.ChartVersion)
 }
 
 func isHelmChart(data []byte) bool {

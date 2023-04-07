@@ -18,6 +18,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/kustomize"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/midstream"
+	"github.com/replicatedhq/kots/pkg/postrenderer"
 	registrytypes "github.com/replicatedhq/kots/pkg/registry/types"
 	"github.com/replicatedhq/kots/pkg/store"
 	"github.com/replicatedhq/kots/pkg/upstream"
@@ -186,6 +187,15 @@ func Rewrite(rewriteOptions RewriteOptions) error {
 		}
 	}
 
+	newHelmCharts, err := kotsutil.LoadHelmChartsFromPath(rewriteOptions.UpstreamPath)
+	if err != nil {
+		return errors.Wrap(err, "failed to load new helm charts")
+	}
+
+	if err := postrenderer.WriteHelmPostRendererCharts(u, &renderOptions, rewriteOptions.RootDir, newHelmCharts); err != nil {
+		return errors.Wrap(err, "failed to write helm post-renderer charts")
+	}
+
 	log.FinishSpinner()
 
 	log.ActionWithSpinner("Creating midstreams")
@@ -199,11 +209,6 @@ func Rewrite(rewriteOptions RewriteOptions) error {
 	err = crypto.InitFromString(rewriteOptions.Installation.Spec.EncryptionKey)
 	if err != nil {
 		return errors.Wrap(err, "failed to create cipher from installation spec")
-	}
-
-	newHelmCharts, err := kotsutil.LoadHelmChartsFromPath(rewriteOptions.UpstreamPath)
-	if err != nil {
-		return errors.Wrap(err, "failed to load new helm charts")
 	}
 
 	commonWriteMidstreamOptions := midstream.WriteOptions{
@@ -300,6 +305,10 @@ func Rewrite(rewriteOptions RewriteOptions) error {
 		return errors.Wrap(err, "failed to write downstreams")
 	}
 
+	if err := postrenderer.WriteHelmPostRendererDownstreams(rewriteOptions.RootDir, rewriteOptions.Downstreams, newHelmCharts, log); err != nil {
+		return errors.Wrap(err, "failed to write helm post renderer downstreams")
+	}
+
 	kotsKinds, err := kotsutil.LoadKotsKindsFromPath(rewriteOptions.RootDir)
 	if err != nil {
 		return errors.Wrap(err, "failed to load kotskinds")
@@ -318,6 +327,22 @@ func Rewrite(rewriteOptions RewriteOptions) error {
 		KustomizeBinPath: kotsKinds.GetKustomizeBinaryPath(),
 	}); err != nil {
 		return errors.Wrap(err, "failed to write rendered")
+	}
+
+	// TODO: can there be a single WriteRenderedApp (handles both kustomize and helm)
+	if err := postrenderer.WriteRenderedApp(postrenderer.WriteOptions{
+		RootDir:          rewriteOptions.RootDir,
+		Downstreams:      rewriteOptions.Downstreams,
+		KustomizeBinPath: kotsKinds.GetKustomizeBinaryPath(),
+		Log:              log,
+		// Namespace:        rewriteOptions.K8sNamespace,
+		AppSlug:          rewriteOptions.AppSlug,
+		RegistryHost:     rewriteOptions.RegistrySettings.Hostname,
+		RegistryUsername: rewriteOptions.RegistrySettings.Username,
+		RegistryPassword: rewriteOptions.RegistrySettings.Password,
+		KotsKinds:        kotsKinds,
+	}); err != nil {
+		return errors.Wrap(err, "failed to write helm rendered")
 	}
 
 	log.FinishSpinner()

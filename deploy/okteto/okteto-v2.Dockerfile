@@ -158,7 +158,9 @@ RUN --mount=target=$GOMODCACHE,id=kotsadm-gomodcache,type=cache go mod download
 COPY . .
 RUN --mount=target=$GOCACHE,id=kotsadm-gocache,type=cache \
     --mount=target=$GOMODCACHE,id=kotsadm-gomodcache,type=cache \
-    make build kots
+    make build kots && \
+    mv ./bin/kotsadm /kotsadm && \
+    mv ./bin/kots /kots
 
 VOLUME [ "$GOCACHE", "$GOMODCACHE" ]
 

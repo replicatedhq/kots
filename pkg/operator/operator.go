@@ -30,6 +30,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/midstream"
 	"github.com/replicatedhq/kots/pkg/operator/client"
 	operatortypes "github.com/replicatedhq/kots/pkg/operator/types"
+	"github.com/replicatedhq/kots/pkg/postrenderer"
 	registrytypes "github.com/replicatedhq/kots/pkg/registry/types"
 	"github.com/replicatedhq/kots/pkg/render"
 	rendertypes "github.com/replicatedhq/kots/pkg/render/types"
@@ -275,6 +276,11 @@ func (o *Operator) DeployApp(appID string, sequence int64) (deployed bool, deplo
 		return false, errors.Wrap(err, "failed to get rendered charts archive")
 	}
 
+	postRendererChartArchive, err := postrenderer.GetPostRendererChartsArchive(deployedVersionArchive)
+	if err != nil {
+		return false, errors.Wrap(err, "failed to get post-renderer charts archive")
+	}
+
 	imagePullSecrets := []string{}
 	secretFilename := filepath.Join(deployedVersionArchive, "overlays", "midstream", "secret.yaml")
 	_, err = os.Stat(secretFilename)
@@ -355,6 +361,8 @@ func (o *Operator) DeployApp(appID string, sequence int64) (deployed bool, deplo
 		PreviousManifests:    base64EncodedPreviousManifests,
 		Charts:               chartArchive,
 		PreviousCharts:       previouslyDeployedChartArchive,
+		PostRendererCharts:   postRendererChartArchive,
+		Downstream:           downstreams.Name,
 		Action:               "deploy",
 		Wait:                 false,
 		AnnotateSlug:         os.Getenv("ANNOTATE_SLUG") != "",

@@ -307,6 +307,7 @@ func findPrivateImages(writeMidstreamOptions WriteOptions, b *base.Base, kotsKin
 	return findResult, nil
 }
 
+// TODO: Come up with a complete list of requirements in order to do these things
 func (m *Midstream) Write(options WriteOptions) error {
 	if err := os.MkdirAll(options.MidstreamDir, 0744); err != nil {
 		return errors.Wrap(err, "failed to mkdir")
@@ -317,7 +318,7 @@ func (m *Midstream) Write(options WriteOptions) error {
 		return errors.Wrap(err, "get existing kustomization")
 	}
 
-	secretFilename, err := m.writePullSecret(options)
+	secretFilename, err := WritePullSecret(options.MidstreamDir, m.AppPullSecret, m.AdminConsolePullSecret, m.DockerHubPullSecret)
 	if err != nil {
 		return errors.Wrap(err, "failed to write secret")
 	}
@@ -340,7 +341,7 @@ func (m *Midstream) Write(options WriteOptions) error {
 	}
 
 	// transformers
-	drLabelTransformerFilename, err := m.writeDisasterRecoveryLabelTransformer(options)
+	drLabelTransformerFilename, err := WriteDisasterRecoveryLabelTransformer(options.AppSlug, options.MidstreamDir)
 	if err != nil {
 		return errors.Wrap(err, "failed to write disaster recovery label transformer")
 	}
@@ -438,16 +439,16 @@ func (m *Midstream) writeKustomization(options WriteOptions) error {
 	return nil
 }
 
-func (m *Midstream) writeDisasterRecoveryLabelTransformer(options WriteOptions) (string, error) {
+func WriteDisasterRecoveryLabelTransformer(appSlug, midstreamDir string) (string, error) {
 	additionalLabels := map[string]string{
-		"kots.io/app-slug": options.AppSlug,
+		"kots.io/app-slug": appSlug,
 	}
 	drLabelTransformerYAML, err := disasterrecovery.GetLabelTransformerYAML(additionalLabels)
 	if err != nil {
 		return "", errors.Wrap(err, "failed to get disaster recovery label transformer yaml")
 	}
 
-	absFilename := filepath.Join(options.MidstreamDir, disasterRecoveryLabelTransformerFileName)
+	absFilename := filepath.Join(midstreamDir, disasterRecoveryLabelTransformerFileName)
 
 	if err := ioutil.WriteFile(absFilename, drLabelTransformerYAML, 0644); err != nil {
 		return "", errors.Wrap(err, "failed to write disaster recovery label transformer yaml file")
@@ -456,34 +457,34 @@ func (m *Midstream) writeDisasterRecoveryLabelTransformer(options WriteOptions) 
 	return disasterRecoveryLabelTransformerFileName, nil
 }
 
-func (m *Midstream) writePullSecret(options WriteOptions) (string, error) {
+func WritePullSecret(midstreamDir string, appPullSecret, adminConsolePullSecret, dockerHubPullSecret *corev1.Secret) (string, error) {
 	var secretBytes []byte
-	if m.AppPullSecret != nil {
-		b, err := k8syaml.Marshal(m.AppPullSecret)
+	if appPullSecret != nil {
+		b, err := k8syaml.Marshal(appPullSecret)
 		if err != nil {
 			return "", errors.Wrap(err, "failed to marshal app pull secret")
 		}
 		secretBytes = b
 	}
 
-	if m.AdminConsolePullSecret != nil {
+	if adminConsolePullSecret != nil {
 		if secretBytes != nil {
 			secretBytes = append(secretBytes, []byte("\n---\n")...)
 		}
 
-		b, err := k8syaml.Marshal(m.AdminConsolePullSecret)
+		b, err := k8syaml.Marshal(adminConsolePullSecret)
 		if err != nil {
 			return "", errors.Wrap(err, "failed to marshal kots pull secret")
 		}
 		secretBytes = append(secretBytes, b...)
 	}
 
-	if m.DockerHubPullSecret != nil {
+	if dockerHubPullSecret != nil {
 		if secretBytes != nil {
 			secretBytes = append(secretBytes, []byte("\n---\n")...)
 		}
 
-		b, err := k8syaml.Marshal(m.DockerHubPullSecret)
+		b, err := k8syaml.Marshal(dockerHubPullSecret)
 		if err != nil {
 			return "", errors.Wrap(err, "failed to marshal kots pull secret")
 		}
@@ -494,7 +495,7 @@ func (m *Midstream) writePullSecret(options WriteOptions) (string, error) {
 		return "", nil
 	}
 
-	absFilename := filepath.Join(options.MidstreamDir, secretFilename)
+	absFilename := filepath.Join(midstreamDir, secretFilename)
 	if err := ioutil.WriteFile(absFilename, secretBytes, 0644); err != nil {
 		return "", errors.Wrap(err, "failed to write pull secret file")
 	}

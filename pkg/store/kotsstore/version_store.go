@@ -226,6 +226,11 @@ func (s *KOTSStore) CreateAppVersionArchive(appID string, sequence int64, archiv
 		paths = append(paths, skippedFilesPath)
 	}
 
+	helmPath := filepath.Join(archivePath, "helm")
+	if _, err := os.Stat(helmPath); err == nil {
+		paths = append(paths, helmPath)
+	}
+
 	tmpDir, err := ioutil.TempDir("", "kotsadm")
 	if err != nil {
 		return errors.Wrap(err, "failed to create temp file")

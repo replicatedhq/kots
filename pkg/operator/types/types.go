@@ -20,6 +20,8 @@ type DeployAppArgs struct {
 	Manifests            string                `json:"manifests"`
 	PreviousCharts       []byte                `json:"previous_charts"`
 	Charts               []byte                `json:"charts"`
+	PostRendererCharts   []byte                `json:"postRendererCharts"`
+	Downstream           string                `json:"downstream"`
 	Wait                 bool                  `json:"wait"`
 	Action               string                `json:"action"`
 	ClearNamespaces      []string              `json:"clear_namespaces"`

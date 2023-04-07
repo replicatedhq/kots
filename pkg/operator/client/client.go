@@ -243,12 +243,13 @@ func (c *Client) deployHelmCharts(deployArgs operatortypes.DeployAppArgs) (*comm
 
 	var curHelmDir string
 	var installResult *commandResult
+
 	if len(deployArgs.Charts) > 0 {
 		tmpDir, err := ioutil.TempDir("", "helm")
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to create temp dir to stage currently deployed archive")
 		}
-		defer os.RemoveAll(tmpDir)
+		// defer os.RemoveAll(tmpDir)
 
 		err = ioutil.WriteFile(path.Join(tmpDir, "archive.tar.gz"), deployArgs.Charts, 0644)
 		if err != nil {
@@ -265,6 +266,7 @@ func (c *Client) deployHelmCharts(deployArgs operatortypes.DeployAppArgs) (*comm
 		}
 	}
 
+	// NOTE: Can probably keep uninstalling all charts this way, post-renderer or not
 	previousKotsCharts := []*v1beta1.HelmChart{}
 	if deployArgs.PreviousKotsKinds != nil {
 		previousKotsCharts = deployArgs.PreviousKotsKinds.HelmCharts
@@ -282,11 +284,63 @@ func (c *Client) deployHelmCharts(deployArgs operatortypes.DeployAppArgs) (*comm
 	if len(deployArgs.Charts) > 0 {
 		kotsCharts := []*v1beta1.HelmChart{}
 		if deployArgs.KotsKinds != nil {
-			kotsCharts = deployArgs.KotsKinds.HelmCharts
+			for _, helmChart := range deployArgs.KotsKinds.HelmCharts {
+				if !helmChart.Spec.UsePostRenderer {
+					kotsCharts = append(kotsCharts, helmChart)
+				}
+			}
 		}
 		installResult, err = c.installWithHelm(curHelmDir, targetNamespace, kotsCharts)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to install helm charts")
+		}
+	}
+
+	var postRendererHelmDir string
+	if len(deployArgs.PostRendererCharts) > 0 {
+		tmpDir, err := ioutil.TempDir("", "helm")
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to create temp dir to stage currently deployed archive")
+		}
+		// defer os.RemoveAll(tmpDir)
+
+		err = ioutil.WriteFile(path.Join(tmpDir, "archive.tar.gz"), deployArgs.PostRendererCharts, 0644)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to write current archive")
+		}
+
+		postRendererHelmDir = path.Join(tmpDir, "currhelm")
+		if err := os.MkdirAll(curHelmDir, 0755); err != nil {
+			return nil, errors.Wrap(err, "failed to create dir to stage currently deployed archive")
+		}
+
+		if err := tarGz.Unarchive(path.Join(tmpDir, "archive.tar.gz"), postRendererHelmDir); err != nil {
+			return nil, errors.Wrap(err, "failed to unarchive current helm archive")
+		}
+	}
+
+	if len(deployArgs.PostRendererCharts) > 0 {
+		postRendererCharts := []*v1beta1.HelmChart{}
+		if deployArgs.KotsKinds != nil {
+			for _, helmChart := range deployArgs.KotsKinds.HelmCharts {
+				if helmChart.Spec.UsePostRenderer {
+					postRendererCharts = append(postRendererCharts, helmChart)
+				}
+			}
+		}
+		kustomizeBinPath := deployArgs.KotsKinds.GetKustomizeBinaryPath()
+		installResult, err = c.installWithHelmPostRenderer(
+			postRendererHelmDir,
+			deployArgs.Downstream,
+			deployArgs.AppSlug,
+			kustomizeBinPath,
+			targetNamespace,
+			postRendererCharts,
+			deployArgs.KotsKinds,
+			nil, // TODO: pass in registry settings
+		)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to install helm charts with post renderer")
 		}
 	}
 
