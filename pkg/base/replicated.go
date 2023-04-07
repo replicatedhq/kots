@@ -164,51 +164,53 @@ func renderKotsKinds(upstreamFiles []upstreamtypes.UpstreamFile, renderedConfig 
 	fileContentsMap := make(map[string][]byte)
 
 	for _, upstreamFile := range upstreamFiles {
-		gvk := OverlySimpleGVK{}
-		if err := yaml.Unmarshal(upstreamFile.Content, &gvk); err != nil {
-			continue
-		}
-		gvkString := fmt.Sprintf("%s,Kind=%s", gvk.APIVersion, gvk.Kind)
-
-		if !iskotsAPIVersionKind(gvk) {
-			continue
-		}
-
-		switch gvkString {
-		case "kots.io/v1beta1,Kind=Config":
-			// Use the rendered Config instead of the upstream.
-			kotsKinds := kotsutil.KotsKinds{Config: renderedConfig}
-			configBytes, err := kotsKinds.Marshal("kots.io", "v1beta1", "Config")
-			if err != nil {
-				return nil, errors.Wrap(err, "failed to marshal rendered config")
+		for _, doc := range util.ConvertToSingleDocs(upstreamFile.Content) {
+			gvk := OverlySimpleGVK{}
+			if err := yaml.Unmarshal(doc, &gvk); err != nil {
+				continue
 			}
-			fileContentsMap[upstreamFile.Path] = []byte(configBytes)
+			gvkString := fmt.Sprintf("%s, Kind=%s", gvk.APIVersion, gvk.Kind)
 
-		case "kots.io/v1beta1,Kind=ConfigValues":
-			// ConfigValues do not need rendering since they should already be valid values.
-			fileContentsMap["configvalues.yaml"] = upstreamFile.Content
-
-		case "kots.io/v1beta1,Kind=HelmChart":
-			rendered, err := builder.RenderTemplate(upstreamFile.Path, string(upstreamFile.Content))
-			if err != nil {
-				return nil, errors.Wrapf(err, "failed to render file %s", upstreamFile.Path)
+			if !iskotsAPIVersionKind(gvk) {
+				continue
 			}
 
-			fileContentsMap[upstreamFile.Path] = []byte(rendered)
+			switch gvkString {
+			case "kots.io/v1beta1, Kind=Config":
+				// Use the rendered Config instead of the upstream.
+				kotsKinds := kotsutil.KotsKinds{Config: renderedConfig}
+				configBytes, err := kotsKinds.Marshal("kots.io", "v1beta1", "Config")
+				if err != nil {
+					return nil, errors.Wrap(err, "failed to marshal rendered config")
+				}
+				fileContentsMap[upstreamFile.Path] = []byte(configBytes)
 
-		default:
-			vcConfig, err := processVariadicConfig(&upstreamFile, renderedConfig, renderOptions.Log)
-			if err != nil {
-				return nil, errors.Wrapf(err, "failed to process variadic config in kots kind file %s", upstreamFile.Path)
+			case "kots.io/v1beta1, Kind=ConfigValues":
+				// ConfigValues do not need rendering since they should already be valid values.
+				fileContentsMap["configvalues.yaml"] = upstreamFile.Content
+
+			case "kots.io/v1beta1, Kind=HelmChart":
+				rendered, err := builder.RenderTemplate(upstreamFile.Path, string(upstreamFile.Content))
+				if err != nil {
+					return nil, errors.Wrapf(err, "failed to render file %s", upstreamFile.Path)
+				}
+
+				fileContentsMap[upstreamFile.Path] = []byte(rendered)
+
+			default:
+				vcConfig, err := processVariadicConfig(&upstreamFile, renderedConfig, renderOptions.Log)
+				if err != nil {
+					return nil, errors.Wrapf(err, "failed to process variadic config in kots kind file %s", upstreamFile.Path)
+				}
+				upstreamFile.Content = vcConfig
+
+				rendered, err := builder.RenderTemplate(upstreamFile.Path, string(upstreamFile.Content))
+				if err != nil {
+					return nil, errors.Wrapf(err, "failed to render file %s", upstreamFile.Path)
+				}
+
+				fileContentsMap[upstreamFile.Path] = []byte(rendered)
 			}
-			upstreamFile.Content = vcConfig
-
-			rendered, err := builder.RenderTemplate(upstreamFile.Path, string(upstreamFile.Content))
-			if err != nil {
-				return nil, errors.Wrapf(err, "failed to render file %s", upstreamFile.Path)
-			}
-
-			fileContentsMap[upstreamFile.Path] = []byte(rendered)
 		}
 	}
 
@@ -286,7 +288,7 @@ func renderReplicatedHelmChart(kotsHelmChart *kotsv1beta1.HelmChart, upstreamFil
 		}
 	}
 
-	helmValues, err := kotsHelmChart.Spec.GetHelmValues(kotsHelmChart.Spec.Values)
+	helmValues, err := kotsHelmChart.Spec.GetHelmValues(mergedValues)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to render local values for chart")
 	}
