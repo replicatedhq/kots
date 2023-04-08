@@ -528,11 +528,13 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 		processImageOptionsCopy.Namespace = helmBaseCopy.Namespace
 		processImageOptionsCopy.PushImages = false // never push images more than once
 
-		helmMidstream, _, err := midstream.WriteMidstream(writeMidstreamOptions, processImageOptionsCopy, helmBaseCopy, fetchOptions.License, identityConfig, u.GetUpstreamDir(writeUpstreamOptions), log)
+		helmMidstream, tmpInstall, err := midstream.WriteMidstream(writeMidstreamOptions, processImageOptionsCopy, helmBaseCopy, fetchOptions.License, identityConfig, u.GetUpstreamDir(writeUpstreamOptions), log)
 		if err != nil {
 			log.FinishSpinnerWithError()
 			return "", errors.Wrapf(err, "failed to write helm midstream %s", helmBase.Path)
 		}
+
+		installationManifest.Spec.KnownImages = append(installationManifest.Spec.KnownImages, tmpInstall.Spec.KnownImages...)
 
 		// add this chart back into UseHelmInstall to make sure it's not processed again
 		writeMidstreamOptions.UseHelmInstall[helmBase.Path] = previousUseHelmInstall
@@ -557,6 +559,8 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 			return "", errors.Wrap(err, "failed to write archive as config map")
 		}
 	}
+
+	installationManifest.DedupKnownImages()
 
 	installationBytes, err := kotsutil.KotsKinds{Installation: *installationManifest}.Marshal("kots.io", "v1beta1", "Installation")
 	if err != nil {

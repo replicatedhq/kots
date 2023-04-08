@@ -17,6 +17,8 @@ limitations under the License.
 package v1beta1
 
 import (
+	"fmt"
+
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -59,6 +61,19 @@ type Installation struct {
 
 	Spec   InstallationSpec   `json:"spec,omitempty"`
 	Status InstallationStatus `json:"status,omitempty"`
+}
+
+func (i *Installation) DedupKnownImages() {
+	foundImages := map[string]InstallationImage{}
+	for _, image := range i.Spec.KnownImages {
+		name := fmt.Sprintf("%s,%t", image.Image, image.IsPrivate)
+		foundImages[name] = image
+	}
+
+	i.Spec.KnownImages = nil
+	for _, image := range foundImages {
+		i.Spec.KnownImages = append(i.Spec.KnownImages, image)
+	}
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
