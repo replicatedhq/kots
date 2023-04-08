@@ -186,6 +186,10 @@ func TestKotsPull(t *testing.T) {
 			require.NoError(t, err)
 			wantKotsKinds, err := kotsutil.LoadKotsKindsFromPath(wantKotsPath)
 			require.NoError(t, err)
+			// Known images order differing cases the require.Equal to fail.
+			require.ElementsMatch(t, wantKotsKinds.Installation.Spec.KnownImages, kotsKinds.Installation.Spec.KnownImages)
+			wantKotsKinds.Installation.Spec.KnownImages = nil
+			kotsKinds.Installation.Spec.KnownImages = nil
 			require.Equal(t, wantKotsKinds, kotsKinds)
 
 		})
