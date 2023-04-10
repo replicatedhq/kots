@@ -3,6 +3,7 @@ package handlers
 import (
 	"context"
 	"encoding/base64"
+	"fmt"
 	"net/http"
 	"strings"
 	"time"
@@ -53,6 +54,28 @@ func requireValidSession(kotsStore store.Store, w http.ResponseWriter, r *http.R
 	}
 
 	auth := r.Header.Get("authorization")
+
+	//Get cookie named signed-token from request
+	cookie, err := r.Cookie("signed-token")
+	if err != nil {
+		/*
+			//If cookie is not found, return an unauthorized status
+			if err == http.ErrNoCookie {
+				err := errors.New("no session cookie")
+				response := types.ErrorResponse{Error: util.StrPointer(err.Error())}
+				JSON(w, http.StatusUnauthorized, response)
+				return nil, err
+			}
+			//For any other type of error, return a bad request status
+			err := errors.New("failed to get session cookie")
+			response := types.ErrorResponse{Error: util.StrPointer(err.Error())}
+			JSON(w, http.StatusBadRequest, response)
+			return nil, err
+		*/
+		fmt.Println("LG: No Signed-Token Cookie Received: ", err)
+	}
+
+	fmt.Println("LG: Signed-Token Cookie Received: ", cookie)
 
 	if auth == "" {
 		err := errors.New("authorization header empty")

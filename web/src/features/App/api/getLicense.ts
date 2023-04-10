@@ -16,9 +16,9 @@ export const getLicense = async ({
 } | null | void> => {
   const config = {
     headers: {
-      Authorization: Utilities.getToken(),
+      //Authorization: Utilities.getToken(),
       "Content-Type": "application/json",
-    },
+    }, withCredentials: true,
   };
   try {
     const res = await axios.get(

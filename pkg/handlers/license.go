@@ -210,6 +210,11 @@ func (h *Handler) SyncLicense(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) GetLicense(w http.ResponseWriter, r *http.Request) {
+
+	fmt.Println("LG: Inside GetLicense Handler")
+	fmt.Println(r.Cookie("signed-token"))
+	fmt.Println("---------------")
+
 	getLicenseResponse := GetLicenseResponse{
 		Success: false,
 	}
