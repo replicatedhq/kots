@@ -89,6 +89,20 @@
                           "title": {
                             "type": "string"
                           },
+                          "validation": {
+                            "type": "object",
+                            "properties": {
+                              "message": {
+                                "type": "string"
+                              },
+                              "rule": {
+                                "type": "string"
+                              },
+                              "type": {
+                                "type": "string"
+                              }
+                            }
+                          },
                           "value": {
                             "oneOf": [{"type": "string"},{"type": "boolean"}]
                           }
@@ -155,6 +169,20 @@
                     },
                     "type": {
                       "type": "string"
+                    },
+                    "validation": {
+                      "type": "object",
+                      "properties": {
+                        "message": {
+                          "type": "string"
+                        },
+                        "rule": {
+                          "type": "string"
+                        },
+                        "type": {
+                          "type": "string"
+                        }
+                      }
                     },
                     "value": {
                       "oneOf": [{"type": "string"},{"type": "boolean"}]
