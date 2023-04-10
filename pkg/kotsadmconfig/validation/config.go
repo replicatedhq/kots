@@ -4,8 +4,8 @@ import (
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 )
 
-func HasConfigItemValidators(config kotsv1beta1.Config) bool {
-	for _, configGroup := range config.Spec.Groups {
+func HasConfigItemValidators(configSpec kotsv1beta1.ConfigSpec) bool {
+	for _, configGroup := range configSpec.Groups {
 		for _, configItem := range configGroup.Items {
 			if configItem.Validation != nil {
 				return true

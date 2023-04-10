@@ -22,6 +22,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/crypto"
 	"github.com/replicatedhq/kots/pkg/helm"
 	kotsadmconfig "github.com/replicatedhq/kots/pkg/kotsadmconfig"
+	kotsadmvalidator "github.com/replicatedhq/kots/pkg/kotsadmconfig/validation"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/midstream"
@@ -56,9 +57,10 @@ type UpdateAppConfigResponse struct {
 }
 
 type LiveAppConfigResponse struct {
-	Success      bool                      `json:"success"`
-	Error        string                    `json:"error,omitempty"`
-	ConfigGroups []kotsv1beta1.ConfigGroup `json:"configGroups"`
+	Success          bool                                `json:"success"`
+	Error            string                              `json:"error,omitempty"`
+	ConfigGroups     []kotsv1beta1.ConfigGroup           `json:"configGroups"`
+	ValidationErrors []kotsadmvalidator.ConfigGroupError `json:"validationErrors"`
 }
 
 type CurrentAppConfigResponse struct {
@@ -383,6 +385,9 @@ func (h *Handler) LiveAppConfig(w http.ResponseWriter, r *http.Request) {
 		liveAppConfigResponse.ConfigGroups = []kotsv1beta1.ConfigGroup{}
 	} else {
 		liveAppConfigResponse.ConfigGroups = renderedConfig.Spec.Groups
+		if kotsadmvalidator.HasConfigItemValidators(renderedConfig.Spec) {
+			liveAppConfigResponse.ValidationErrors = kotsadmvalidator.ValidateConfigGroups(renderedConfig.Spec.Groups)
+		}
 	}
 
 	JSON(w, http.StatusOK, liveAppConfigResponse)
