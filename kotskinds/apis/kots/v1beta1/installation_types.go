@@ -63,17 +63,17 @@ type Installation struct {
 
 // Merge known images by overwriting existing image entries with newer ones.
 func (i *Installation) MergeKnownImages(newImages []InstallationImage) {
-	images := make(map[string]InstallationImage, len(i.Spec.KnownImages)+len(newImages))
+	images := make(map[InstallationImage]interface{}, len(i.Spec.KnownImages)+len(newImages))
 	for _, image := range i.Spec.KnownImages {
-		images[image.Image] = image
+		images[image] = nil
 	}
 
 	for _, newImage := range newImages {
-		images[newImage.Image] = newImage
+		images[newImage] = nil
 	}
 
 	i.Spec.KnownImages = make([]InstallationImage, 0, len(images))
-	for _, image := range images {
+	for image := range images {
 		i.Spec.KnownImages = append(i.Spec.KnownImages, image)
 	}
 }
