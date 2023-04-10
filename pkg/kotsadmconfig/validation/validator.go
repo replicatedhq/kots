@@ -24,7 +24,6 @@ func validate(item kotsv1beta1.ConfigItem) *ConfigItemError {
 }
 
 func validateRegex(configItem kotsv1beta1.ConfigItem) *ConfigItemError {
-
 	matched, err := regexp.MatchString(configItem.Validation.Rule, configItem.Value.String())
 	if err != nil {
 		return buildValidationItemError(configItem, err.Error())
