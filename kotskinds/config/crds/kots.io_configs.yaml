@@ -73,6 +73,15 @@ spec:
                                   type: boolean
                                 title:
                                   type: string
+                                validation:
+                                  properties:
+                                    message:
+                                      type: string
+                                    rule:
+                                      type: string
+                                    type:
+                                      type: string
+                                  type: object
                                 value:
                                   type: BoolString
                               required:
@@ -121,6 +130,15 @@ spec:
                             type: string
                           type:
                             type: string
+                          validation:
+                            properties:
+                              message:
+                                type: string
+                              rule:
+                                type: string
+                              type:
+                                type: string
+                            type: object
                           value:
                             type: BoolString
                           valuesByGroup:

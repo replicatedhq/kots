@@ -28,6 +28,7 @@ type ConfigChildItem struct {
 	Recommended bool                   `json:"recommended,omitempty"`
 	Default     multitype.BoolOrString `json:"default,omitempty"`
 	Value       multitype.BoolOrString `json:"value,omitempty"`
+	Validation  *ConfigItemValidation  `json:"validation,omitempty"`
 }
 
 type ConfigItem struct {
@@ -60,6 +61,14 @@ type ConfigItem struct {
 	// DefaultCmd  *ConfigItemCmd         `json:"default_cmd,omitempty"`
 	// ValueCmd    *ConfigItemCmd         `json:"value_cmd,omitempty"`
 	// DataCmd     *ConfigItemCmd         `json:"data_cmd,omitempty"`
+
+	Validation *ConfigItemValidation `json:"validation,omitempty"`
+}
+
+type ConfigItemValidation struct {
+	Type    string `json:"type,omitempty"`
+	Rule    string `json:"rule,omitempty"`
+	Message string `json:"message,omitempty"`
 }
 
 type RepeatTemplate struct {
