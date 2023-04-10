@@ -291,7 +291,7 @@ func Rewrite(rewriteOptions RewriteOptions) error {
 			return errors.Wrapf(err, "failed to write helm midstream %s", helmBase.Path)
 		}
 
-		installationManifest.Spec.KnownImages = append(installationManifest.Spec.KnownImages, tmpInstall.Spec.KnownImages...)
+		installationManifest.MergeKnownImages(tmpInstall.Spec.KnownImages)
 
 		// add this chart back into UseHelmInstall to make sure it's not processed again
 		writeMidstreamOptions.UseHelmInstall[helmBase.Path] = previousUseHelmInstall
@@ -322,8 +322,6 @@ func Rewrite(rewriteOptions RewriteOptions) error {
 	}); err != nil {
 		return errors.Wrap(err, "failed to write rendered")
 	}
-
-	installationManifest.DedupKnownImages()
 
 	installationBytes, err := kotsutil.KotsKinds{Installation: *installationManifest}.Marshal("kots.io", "v1beta1", "Installation")
 	if err != nil {

@@ -17,8 +17,6 @@ limitations under the License.
 package v1beta1
 
 import (
-	"fmt"
-
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -63,15 +61,19 @@ type Installation struct {
 	Status InstallationStatus `json:"status,omitempty"`
 }
 
-func (i *Installation) DedupKnownImages() {
-	foundImages := map[string]InstallationImage{}
+// Merge known images by overwriting existing image entries with newer ones.
+func (i *Installation) MergeKnownImages(newImages []InstallationImage) {
+	images := make(map[string]InstallationImage, len(i.Spec.KnownImages)+len(newImages))
 	for _, image := range i.Spec.KnownImages {
-		name := fmt.Sprintf("%s,%t", image.Image, image.IsPrivate)
-		foundImages[name] = image
+		images[image.Image] = image
 	}
 
-	i.Spec.KnownImages = nil
-	for _, image := range foundImages {
+	for _, newImage := range newImages {
+		images[newImage.Image] = newImage
+	}
+
+	i.Spec.KnownImages = make([]InstallationImage, 0, len(images))
+	for _, image := range images {
 		i.Spec.KnownImages = append(i.Spec.KnownImages, image)
 	}
 }
