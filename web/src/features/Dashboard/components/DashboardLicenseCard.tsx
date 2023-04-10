@@ -71,9 +71,10 @@ const DashboardLicenseCard = (props: Props) => {
     fetch(`${process.env.API_ENDPOINT}/app/${app?.slug}/license`, {
       method: "PUT",
       headers: {
-        Authorization: Utilities.getToken(),
+        //Authorization: Utilities.getToken(),
         "Content-Type": "application/json",
       },
+      credentials: "include",
       body: JSON.stringify(payload),
     })
       .then(async (response) => {

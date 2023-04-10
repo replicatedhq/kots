@@ -112,6 +112,19 @@ func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 
 	loginResponse.Token = fmt.Sprintf("Bearer %s", signedJWT)
 
+	expire := time.Now().Add(30 * time.Minute)
+	fmt.Println("LG: Within Login(), setting cookie.")
+	cookie := &http.Cookie{
+		Name:     "signed-token",
+		Value:    signedJWT,
+		Expires:  expire,
+		Path:     "/",
+		HttpOnly: true,
+	}
+
+	http.SetCookie(w, cookie)
+	fmt.Println("LG: Cookie: ", cookie)
+
 	JSON(w, http.StatusOK, loginResponse)
 }
 
