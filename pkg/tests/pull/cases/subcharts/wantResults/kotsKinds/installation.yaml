@@ -11,7 +11,5 @@ spec:
   - image: busybox
   - image: cr.fluentbit.io/fluent/fluent-bit:1.9.4
   - image: busybox:1
-    isPrivate: true
   - image: busybox:latest
-    isPrivate: true
 status: {}
