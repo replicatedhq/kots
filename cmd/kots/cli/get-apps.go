@@ -108,6 +108,7 @@ func getAppsCmd(cmd *cobra.Command, args []string) error {
 		})
 	}
 
+	fmt.Println("LG: In here, we have the apps")
 	print.Apps(printableApps, v.GetString("output"))
 
 	return nil

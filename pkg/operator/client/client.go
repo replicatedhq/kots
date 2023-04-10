@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/base64"
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"log"
 	"os"
@@ -127,6 +128,7 @@ func (c *Client) runAppStateMonitor() error {
 
 func (c *Client) DeployApp(deployArgs operatortypes.DeployAppArgs) (deployed bool, finalError error) {
 	log.Println("received a deploy request for", deployArgs.AppSlug)
+	log.Println("LG: Inside DeployApp")
 
 	var deployRes *deployResult
 	var helmResult *commandResult
@@ -141,6 +143,15 @@ func (c *Client) DeployApp(deployArgs operatortypes.DeployAppArgs) (deployed boo
 		}
 	}()
 
+	helmResult, helmError = c.deployHelmCharts(deployArgs)
+	if helmError != nil {
+		helmResult = &commandResult{}
+		helmResult.hasErr = true
+		helmResult.multiStderr = [][]byte{[]byte(helmError.Error())}
+		log.Printf("failed to deploy helm charts: %v", helmError)
+		return
+	}
+
 	deployRes, deployError = c.deployManifests(deployArgs)
 	if deployError != nil {
 		deployRes = &deployResult{}
@@ -150,14 +161,16 @@ func (c *Client) DeployApp(deployArgs operatortypes.DeployAppArgs) (deployed boo
 		return
 	}
 
-	helmResult, helmError = c.deployHelmCharts(deployArgs)
-	if helmError != nil {
-		helmResult = &commandResult{}
-		helmResult.hasErr = true
-		helmResult.multiStderr = [][]byte{[]byte(helmError.Error())}
-		log.Printf("failed to deploy helm charts: %v", helmError)
-		return
-	}
+	/*
+		helmResult, helmError = c.deployHelmCharts(deployArgs)
+		if helmError != nil {
+			helmResult = &commandResult{}
+			helmResult.hasErr = true
+			helmResult.multiStderr = [][]byte{[]byte(helmError.Error())}
+			log.Printf("failed to deploy helm charts: %v", helmError)
+			return
+		}
+	*/
 
 	c.shutdownNamespacesInformer()
 	if len(c.watchedNamespaces) > 0 {
@@ -168,6 +181,7 @@ func (c *Client) DeployApp(deployArgs operatortypes.DeployAppArgs) (deployed boo
 }
 
 func (c *Client) deployManifests(deployArgs operatortypes.DeployAppArgs) (*deployResult, error) {
+	fmt.Println("LG: Inside deployManifests")
 	if deployArgs.PreviousManifests != "" {
 		if err := c.diffAndRemovePreviousManifests(deployArgs); err != nil {
 			return nil, errors.Wrapf(err, "failed to remove previous manifests")
@@ -207,6 +221,7 @@ func (c *Client) deployManifests(deployArgs operatortypes.DeployAppArgs) (*deplo
 }
 
 func (c *Client) deployHelmCharts(deployArgs operatortypes.DeployAppArgs) (*commandResult, error) {
+	fmt.Println("LG: Inside deployHelmCharts")
 	targetNamespace := c.TargetNamespace
 	if deployArgs.Namespace != "." {
 		targetNamespace = deployArgs.Namespace
@@ -218,8 +233,10 @@ func (c *Client) deployHelmCharts(deployArgs operatortypes.DeployAppArgs) (*comm
 		},
 	}
 
+	fmt.Printf("LG: PreviousCharts: %v, PreviousKotsKinds: %v\n", deployArgs.PreviousCharts, deployArgs.PreviousKotsKinds)
 	var prevHelmDir string
 	if len(deployArgs.PreviousCharts) > 0 {
+		fmt.Println("LG: PreviousCharts is not empty")
 		tmpDir, err := ioutil.TempDir("", "helm")
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to create temp dir for previous charts")
@@ -240,10 +257,12 @@ func (c *Client) deployHelmCharts(deployArgs operatortypes.DeployAppArgs) (*comm
 			return nil, errors.Wrap(err, "falied to unarchive previous helm archive")
 		}
 	}
+	fmt.Println("LG: deployHelmCharts prevHelmDir: ", prevHelmDir)
 
 	var curHelmDir string
 	var installResult *commandResult
 	if len(deployArgs.Charts) > 0 {
+		fmt.Println("LG: Charts is not empty")
 		tmpDir, err := ioutil.TempDir("", "helm")
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to create temp dir to stage currently deployed archive")
@@ -265,6 +284,7 @@ func (c *Client) deployHelmCharts(deployArgs operatortypes.DeployAppArgs) (*comm
 		}
 	}
 
+	fmt.Println("LG: deployHelmCharts curHelmDir: ", curHelmDir)
 	previousKotsCharts := []*v1beta1.HelmChart{}
 	if deployArgs.PreviousKotsKinds != nil {
 		previousKotsCharts = deployArgs.PreviousKotsKinds.HelmCharts
@@ -273,6 +293,7 @@ func (c *Client) deployHelmCharts(deployArgs operatortypes.DeployAppArgs) (*comm
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to find removed charts")
 	}
+	fmt.Println("LG: length of removedCharts: ", len(removedCharts))
 	if len(removedCharts) > 0 {
 		err := c.uninstallWithHelm(prevHelmDir, targetNamespace, removedCharts)
 		if err != nil {

@@ -156,6 +156,7 @@ func (o *Operator) resumeDeployment(a *apptypes.App) (bool, error) {
 }
 
 func (o *Operator) DeployApp(appID string, sequence int64) (deployed bool, deployError error) {
+	fmt.Println("LG: Inside Operator DeployApp")
 	if _, ok := o.deployMtxs[appID]; !ok {
 		o.deployMtxs[appID] = &sync.Mutex{}
 	}
@@ -231,6 +232,7 @@ func (o *Operator) DeployApp(appID string, sequence int64) (deployed bool, deplo
 	if err != nil {
 		return false, errors.Wrap(err, "failed to load kotskinds")
 	}
+	fmt.Println("LG: operator DeployApp kotskinds: ", kotsKinds)
 
 	registrySettings, err := o.store.GetRegistryDetailsForApp(app.ID)
 	if err != nil {
@@ -263,6 +265,7 @@ func (o *Operator) DeployApp(appID string, sequence int64) (deployed bool, deplo
 	}
 
 	kustomizeBinPath := kotsKinds.GetKustomizeBinaryPath()
+	fmt.Println("LG: operator DeployApp kustomizeBinPath: ", kustomizeBinPath)
 
 	renderedManifests, _, err := kustomize.GetRenderedApp(deployedVersionArchive, downstreams.Name, kustomizeBinPath)
 	if err != nil {
@@ -340,6 +343,9 @@ func (o *Operator) DeployApp(appID string, sequence int64) (deployed bool, deplo
 			}
 		}
 	}
+	fmt.Println("LG: Inside operator DeployApp still")
+	fmt.Println("LG: operator DeployApp PreviousKotsKinds: ", previousKotsKinds)
+	fmt.Println("LG: operator DeployApp PreviousCharts: ", previouslyDeployedChartArchive)
 
 	deployArgs := operatortypes.DeployAppArgs{
 		AppID:                app.ID,
@@ -674,6 +680,7 @@ func (o *Operator) UndeployApp(a *apptypes.App, d *downstreamtypes.Downstream, i
 	if err != nil {
 		return errors.Wrap(err, "failed to load kotskinds")
 	}
+	fmt.Println("LG: UndeployApp kotskinds: ", kotsKinds)
 
 	renderedManifests, _, err := kustomize.GetRenderedApp(deployedVersionArchive, d.Name, kotsKinds.GetKustomizeBinaryPath())
 	if err != nil {
@@ -708,6 +715,62 @@ func (o *Operator) UndeployApp(a *apptypes.App, d *downstreamtypes.Downstream, i
 		clearNamespaces = append(clearNamespaces, kotsKinds.KotsApplication.Spec.AdditionalNamespaces...)
 	}
 
+	kustomizeBinPath := kotsKinds.GetKustomizeBinaryPath()
+	fmt.Println("LG: UndeployApp kustomizedBinPath: ", kustomizeBinPath)
+	// get previous manifests (if any)
+	downstreams, err := o.store.GetDownstream(o.clusterID)
+	if err != nil {
+		return errors.Wrap(err, "failed to get downstream")
+	}
+
+	var previousKotsKinds *kotsutil.KotsKinds
+	previouslyDeployedChartArchive := []byte{}
+	previouslyDeployedSequence, err := o.store.GetPreviouslyDeployedSequence(a.ID, o.clusterID)
+	if err != nil {
+		return errors.Wrap(err, "failed to get previously deployed sequence")
+	}
+	fmt.Println("LG: UndeployApp previouslyDeployedSequence: ", previouslyDeployedSequence)
+	if previouslyDeployedSequence != -1 {
+		previouslyDeployedParentSequence, err := o.store.GetParentSequenceForSequence(a.ID, o.clusterID, previouslyDeployedSequence)
+		if err != nil {
+			return errors.Wrap(err, "failed to get previously deployed parent sequence")
+		}
+
+		if previouslyDeployedParentSequence != -1 {
+			previouslyDeployedVersionArchive, err := ioutil.TempDir("", "kotsadm")
+			if err != nil {
+				return errors.Wrap(err, "failed to create temp dir")
+			}
+			defer os.RemoveAll(previouslyDeployedVersionArchive)
+
+			err = o.store.GetAppVersionArchive(a.ID, previouslyDeployedParentSequence, previouslyDeployedVersionArchive)
+			if err != nil {
+				return errors.Wrap(err, "failed to get previously deployed app version archive")
+			}
+
+			previousKotsKinds, err = kotsutil.LoadKotsKindsFromPath(previouslyDeployedVersionArchive)
+			if err != nil {
+				return errors.Wrap(err, "failed to load kotskinds for previously deployed app version")
+			}
+
+			if err != nil {
+				logger.Error(errors.Wrap(err, "failed to get previously deployed rendered app"))
+			} else {
+				previouslyDeployedChartArchive, _, err = kustomize.GetRenderedChartsArchive(previouslyDeployedVersionArchive, downstreams.Name, kustomizeBinPath)
+				if err != nil {
+					return errors.Wrap(err, "failed to get previously deployed rendered charts archive")
+				}
+			}
+		}
+	} else {
+		fmt.Println("LG: UndeployApp previouslyDeployedSequence is -1")
+		previousKotsKinds = kotsKinds
+		previouslyDeployedChartArchive, _, err = kustomize.GetRenderedChartsArchive(deployedVersionArchive, downstreams.Name, kustomizeBinPath)
+		if err != nil {
+			return errors.Wrap(err, "failed to get rendered charts archive")
+		}
+	}
+
 	undeployArgs := operatortypes.DeployAppArgs{
 		AppID:                a.ID,
 		AppSlug:              a.Slug,
@@ -717,6 +780,7 @@ func (o *Operator) UndeployApp(a *apptypes.App, d *downstreamtypes.Downstream, i
 		Namespace:            ".",
 		Manifests:            "",
 		PreviousManifests:    base64EncodedManifests,
+		PreviousCharts:       previouslyDeployedChartArchive,
 		Action:               "undeploy",
 		Wait:                 true,
 		ClearNamespaces:      clearNamespaces,
@@ -724,7 +788,11 @@ func (o *Operator) UndeployApp(a *apptypes.App, d *downstreamtypes.Downstream, i
 		IsRestore:            isRestore,
 		RestoreLabelSelector: restoreLabelSelector,
 		KotsKinds:            kotsKinds,
+		PreviousKotsKinds:    previousKotsKinds,
 	}
+
+	fmt.Println("LG: undeployArgs.PreviousCharts: ", undeployArgs.PreviousCharts)
+	fmt.Println("LG: undeployArgs.PreviousKotsKinds: ", undeployArgs.PreviousKotsKinds)
 
 	if isRestore {
 		// during a restore, this happens async and progress/status is polled later.
@@ -734,6 +802,7 @@ func (o *Operator) UndeployApp(a *apptypes.App, d *downstreamtypes.Downstream, i
 			return errors.Wrap(err, "failed to set restore undeploy status")
 		}
 	} else {
+		fmt.Println("LG: Inside else, going to call DeployApp")
 		o.client.DeployApp(undeployArgs)
 	}
 
