@@ -2,3 +2,10 @@ version: 3
 
 project:
   id: github.com/replicatedhq/kots
+
+targets:
+  only:
+    - type: yarn
+      path: web
+    - type: gomod
+      path: .
