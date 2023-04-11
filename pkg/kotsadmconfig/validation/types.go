@@ -19,3 +19,13 @@ type ConfigItemError struct {
 	Validation             kotsv1beta1.ConfigItemValidation `json:"validation"`
 	ChildItemErrors        []ConfigItemError                `json:"child_item_errors,omitempty"`
 }
+
+func buildConfigItemError(configItem kotsv1beta1.ConfigItem, errorMsg string) *ConfigItemError {
+	return &ConfigItemError{
+		Name:                   configItem.Name,
+		Type:                   configItem.Type,
+		Value:                  configItem.Value,
+		Validation:             *configItem.Validation,
+		ValidationErrorMessage: errorMsg,
+	}
+}
