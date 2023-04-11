@@ -77,9 +77,7 @@ spec:
                                   properties:
                                     message:
                                       type: string
-                                    rule:
-                                      type: string
-                                    type:
+                                    regex:
                                       type: string
                                   type: object
                                 value:
@@ -134,9 +132,7 @@ spec:
                             properties:
                               message:
                                 type: string
-                              rule:
-                                type: string
-                              type:
+                              regex:
                                 type: string
                             type: object
                           value:

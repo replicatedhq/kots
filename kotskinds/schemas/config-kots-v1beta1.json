@@ -95,10 +95,7 @@
                               "message": {
                                 "type": "string"
                               },
-                              "rule": {
-                                "type": "string"
-                              },
-                              "type": {
+                              "regex": {
                                 "type": "string"
                               }
                             }
@@ -176,10 +173,7 @@
                         "message": {
                           "type": "string"
                         },
-                        "rule": {
-                          "type": "string"
-                        },
-                        "type": {
+                        "regex": {
                           "type": "string"
                         }
                       }

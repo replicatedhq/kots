@@ -1,13 +1,14 @@
 package validation
 
 import (
+	"fmt"
 	"regexp"
 
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 )
 
 const (
-	RegexValidationType = "regex"
+	regexMatchError = "Value does not match regex"
 )
 
 func validate(item kotsv1beta1.ConfigItem) *ConfigItemError {
@@ -15,22 +16,25 @@ func validate(item kotsv1beta1.ConfigItem) *ConfigItemError {
 		return nil
 	}
 
-	switch item.Validation.Type {
-	case RegexValidationType:
+	if item.Validation.Regex != "" {
 		return validateRegex(item)
-	default:
-		return nil
 	}
+
+	return nil
 }
 
 func validateRegex(configItem kotsv1beta1.ConfigItem) *ConfigItemError {
-	matched, err := regexp.MatchString(configItem.Validation.Rule, configItem.Value.String())
+	value := configItem.Value.StrVal
+	regexStr := configItem.Validation.Regex
+
+	regex, err := regexp.Compile(regexStr)
 	if err != nil {
-		return buildValidationItemError(configItem, err.Error())
+		return buildValidationItemError(configItem, fmt.Sprintf("Invalid regex: %s", err.Error()))
 	}
 
+	matched := regex.MatchString(value)
 	if !matched {
-		return buildValidationItemError(configItem, "Value does not match regex")
+		return buildValidationItemError(configItem, regexMatchError)
 	}
 
 	return nil
