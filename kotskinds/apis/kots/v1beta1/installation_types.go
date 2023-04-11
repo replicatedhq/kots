@@ -61,23 +61,6 @@ type Installation struct {
 	Status InstallationStatus `json:"status,omitempty"`
 }
 
-// Merge known images by overwriting existing image entries with newer ones.
-func (i *Installation) MergeKnownImages(newImages []InstallationImage) {
-	images := make(map[InstallationImage]interface{}, len(i.Spec.KnownImages)+len(newImages))
-	for _, image := range i.Spec.KnownImages {
-		images[image] = nil
-	}
-
-	for _, newImage := range newImages {
-		images[newImage] = nil
-	}
-
-	i.Spec.KnownImages = make([]InstallationImage, 0, len(images))
-	for image := range images {
-		i.Spec.KnownImages = append(i.Spec.KnownImages, image)
-	}
-}
-
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
 // InstallationList contains a list of Installations

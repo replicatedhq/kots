@@ -504,7 +504,7 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 	writeMidstreamOptions.MidstreamDir = filepath.Join(u.GetOverlaysDir(writeUpstreamOptions), "midstream")
 	writeMidstreamOptions.BaseDir = filepath.Join(u.GetBaseDir(writeUpstreamOptions), commonBase.Path)
 
-	m, installationManifest, err := midstream.WriteMidstream(writeMidstreamOptions, processImageOptions, commonBase, fetchOptions.License, identityConfig, u.GetUpstreamDir(writeUpstreamOptions), log)
+	m, err := midstream.WriteMidstream(writeMidstreamOptions, processImageOptions, commonBase, fetchOptions.License, identityConfig, u.GetUpstreamDir(writeUpstreamOptions), log)
 	if err != nil {
 		log.FinishSpinnerWithError()
 		return "", errors.Wrap(err, "failed to write common midstream")
@@ -528,13 +528,11 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 		processImageOptionsCopy.Namespace = helmBaseCopy.Namespace
 		processImageOptionsCopy.PushImages = false // never push images more than once
 
-		helmMidstream, tmpInstall, err := midstream.WriteMidstream(writeMidstreamOptions, processImageOptionsCopy, helmBaseCopy, fetchOptions.License, identityConfig, u.GetUpstreamDir(writeUpstreamOptions), log)
+		helmMidstream, err := midstream.WriteMidstream(writeMidstreamOptions, processImageOptionsCopy, helmBaseCopy, fetchOptions.License, identityConfig, u.GetUpstreamDir(writeUpstreamOptions), log)
 		if err != nil {
 			log.FinishSpinnerWithError()
 			return "", errors.Wrapf(err, "failed to write helm midstream %s", helmBase.Path)
 		}
-
-		installationManifest.MergeKnownImages(tmpInstall.Spec.KnownImages)
 
 		// add this chart back into UseHelmInstall to make sure it's not processed again
 		writeMidstreamOptions.UseHelmInstall[helmBase.Path] = previousUseHelmInstall
@@ -558,6 +556,11 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 		if err := writeArchiveAsConfigMap(pullOptions, u, u.GetBaseDir(writeUpstreamOptions)); err != nil {
 			return "", errors.Wrap(err, "failed to write archive as config map")
 		}
+	}
+
+	installationManifest, err := kotsutil.LoadInstallationFromPath(filepath.Join(u.GetUpstreamDir(writeUpstreamOptions), "userdata", "installation.yaml"))
+	if err != nil {
+		return "", errors.Wrap(err, "failed to load installation manifest")
 	}
 
 	installationBytes, err := kotsutil.KotsKinds{Installation: *installationManifest}.Marshal("kots.io", "v1beta1", "Installation")

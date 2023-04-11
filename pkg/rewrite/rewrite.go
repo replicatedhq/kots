@@ -262,7 +262,7 @@ func Rewrite(rewriteOptions RewriteOptions) error {
 		return errors.Wrap(err, "failed to load identity config")
 	}
 
-	m, installationManifest, err := midstream.WriteMidstream(writeMidstreamOptions, processImageOptions, commonBase, rewriteOptions.License, identityConfig, upstreamDir, log)
+	m, err := midstream.WriteMidstream(writeMidstreamOptions, processImageOptions, commonBase, rewriteOptions.License, identityConfig, upstreamDir, log)
 	if err != nil {
 		return errors.Wrap(err, "failed to write common midstream")
 	}
@@ -286,12 +286,10 @@ func Rewrite(rewriteOptions RewriteOptions) error {
 		processImageOptionsCopy.Namespace = helmBaseCopy.Namespace
 		processImageOptionsCopy.CopyImages = false // don't copy images more than once
 
-		helmMidstream, tmpInstall, err := midstream.WriteMidstream(writeMidstreamOptions, processImageOptionsCopy, helmBaseCopy, rewriteOptions.License, identityConfig, upstreamDir, log)
+		helmMidstream, err := midstream.WriteMidstream(writeMidstreamOptions, processImageOptionsCopy, helmBaseCopy, rewriteOptions.License, identityConfig, upstreamDir, log)
 		if err != nil {
 			return errors.Wrapf(err, "failed to write helm midstream %s", helmBase.Path)
 		}
-
-		installationManifest.MergeKnownImages(tmpInstall.Spec.KnownImages)
 
 		// add this chart back into UseHelmInstall to make sure it's not processed again
 		writeMidstreamOptions.UseHelmInstall[helmBase.Path] = previousUseHelmInstall
@@ -321,6 +319,11 @@ func Rewrite(rewriteOptions RewriteOptions) error {
 		KustomizeBinPath: kotsKinds.GetKustomizeBinaryPath(),
 	}); err != nil {
 		return errors.Wrap(err, "failed to write rendered")
+	}
+
+	installationManifest, err := kotsutil.LoadInstallationFromPath(filepath.Join(u.GetOverlaysDir(writeUpstreamOptions), "userdata", "installation.yaml"))
+	if err != nil {
+		return errors.Wrap(err, "failed to load installation manifest")
 	}
 
 	installationBytes, err := kotsutil.KotsKinds{Installation: *installationManifest}.Marshal("kots.io", "v1beta1", "Installation")

@@ -64,7 +64,7 @@ type ProcessImageOptions struct {
 	ReportWriter     io.Writer
 }
 
-func WriteMidstream(writeMidstreamOptions WriteOptions, processImageOptions ProcessImageOptions, b *base.Base, license *kotsv1beta1.License, identityConfig *kotsv1beta1.IdentityConfig, upstreamDir string, log *logger.CLILogger) (*Midstream, *kotsv1beta1.Installation, error) {
+func WriteMidstream(writeMidstreamOptions WriteOptions, processImageOptions ProcessImageOptions, b *base.Base, license *kotsv1beta1.License, identityConfig *kotsv1beta1.IdentityConfig, upstreamDir string, log *logger.CLILogger) (*Midstream, error) {
 	var images []kustomizetypes.Image
 	var objects []k8sdoc.K8sDoc
 	var pullSecretRegistries []string
@@ -73,17 +73,17 @@ func WriteMidstream(writeMidstreamOptions WriteOptions, processImageOptions Proc
 
 	clientset, err := k8sutil.GetClientset()
 	if err != nil {
-		return nil, nil, errors.Wrap(err, "failed to get k8s clientset")
+		return nil, errors.Wrap(err, "failed to get k8s clientset")
 	}
 
 	newKotsKinds, err := kotsutil.LoadKotsKindsFromPath(upstreamDir)
 	if err != nil {
-		return nil, nil, errors.Wrap(err, "failed to load kotskinds from new upstream")
+		return nil, errors.Wrap(err, "failed to load kotskinds from new upstream")
 	}
 
 	identitySpec, err := upstream.LoadIdentity(upstreamDir)
 	if err != nil {
-		return nil, nil, errors.Wrap(err, "failed to load identity")
+		return nil, errors.Wrap(err, "failed to load identity")
 	}
 
 	// do not fail on being unable to get dockerhub credentials, since they're just used to increase the rate limit
@@ -107,7 +107,7 @@ func WriteMidstream(writeMidstreamOptions WriteOptions, processImageOptions Proc
 			// This is an online installation. Pull and rewrite images from online and copy them (if necessary) to the configured registry.
 			rewriteResult, err := rewriteBaseImages(processImageOptions, writeMidstreamOptions.BaseDir, newKotsKinds, license, dockerHubRegistryCreds, log)
 			if err != nil {
-				return nil, nil, errors.Wrap(err, "failed to rewrite base images")
+				return nil, errors.Wrap(err, "failed to rewrite base images")
 			}
 			images = rewriteResult.Images
 			newKotsKinds.Installation.Spec.KnownImages = rewriteResult.CheckedImages
@@ -115,7 +115,7 @@ func WriteMidstream(writeMidstreamOptions WriteOptions, processImageOptions Proc
 			// This is an airgapped installation. Copy and rewrite images from the airgap bundle to the configured registry.
 			result, err := ProcessAirgapImages(processImageOptions, newKotsKinds, license, log)
 			if err != nil {
-				return nil, nil, errors.Wrap(err, "failed to process airgap images")
+				return nil, errors.Wrap(err, "failed to process airgap images")
 			}
 			images = result.KustomizeImages
 			newKotsKinds.Installation.Spec.KnownImages = result.KnownImages
@@ -130,14 +130,14 @@ func WriteMidstream(writeMidstreamOptions WriteOptions, processImageOptions Proc
 		if pullSecretUsername == "" {
 			pullSecretUsername, pullSecretPassword, err = registry.LoadAuthForRegistry(processImageOptions.RegistrySettings.Hostname)
 			if err != nil {
-				return nil, nil, errors.Wrapf(err, "failed to load registry auth for %q", processImageOptions.RegistrySettings.Hostname)
+				return nil, errors.Wrapf(err, "failed to load registry auth for %q", processImageOptions.RegistrySettings.Hostname)
 			}
 		}
 	} else if license != nil {
 		// A target registry is NOT configured. Find and rewrite private images to be proxied through proxy.replicated.com
 		findResult, err := findPrivateImages(writeMidstreamOptions, b, newKotsKinds, license, dockerHubRegistryCreds)
 		if err != nil {
-			return nil, nil, errors.Wrap(err, "failed to find private images")
+			return nil, errors.Wrap(err, "failed to find private images")
 		}
 		images = findResult.Images
 		newKotsKinds.Installation.Spec.KnownImages = findResult.CheckedImages
@@ -166,24 +166,24 @@ func WriteMidstream(writeMidstreamOptions WriteOptions, processImageOptions Proc
 		namePrefix,
 	)
 	if err != nil {
-		return nil, nil, errors.Wrap(err, "create pull secret")
+		return nil, errors.Wrap(err, "create pull secret")
 	}
 	pullSecrets.DockerHubSecret = dockerhubSecret
 
 	if err := upstream.SaveInstallation(&newKotsKinds.Installation, upstreamDir); err != nil {
-		return nil, nil, errors.Wrap(err, "failed to save installation")
+		return nil, errors.Wrap(err, "failed to save installation")
 	}
 
 	m, err := CreateMidstream(b, images, objects, &pullSecrets, identitySpec, identityConfig)
 	if err != nil {
-		return nil, nil, errors.Wrap(err, "failed to create midstream")
+		return nil, errors.Wrap(err, "failed to create midstream")
 	}
 
 	if err := m.Write(writeMidstreamOptions); err != nil {
-		return nil, nil, errors.Wrap(err, "failed to write common midstream")
+		return nil, errors.Wrap(err, "failed to write common midstream")
 	}
 
-	return m, &newKotsKinds.Installation, nil
+	return m, nil
 }
 
 // rewriteBaseImages Will rewrite images found in base and copy them (if necessary) to the configured registry.

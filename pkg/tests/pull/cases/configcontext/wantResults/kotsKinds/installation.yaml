@@ -8,7 +8,11 @@ spec:
   channelName: My Channel
   knownImages:
   - image: nginx:latest
+    isPrivate: true
   - image: alpine:3.4
+    isPrivate: true
   - image: busybox
+    isPrivate: true
   - image: alpine
+    isPrivate: true
 status: {}
