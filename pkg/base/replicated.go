@@ -164,6 +164,7 @@ func renderKotsKinds(upstreamFiles []upstreamtypes.UpstreamFile, renderedConfig 
 	fileContentsMap := make(map[string][]byte)
 
 	for _, upstreamFile := range upstreamFiles {
+
 		for _, doc := range util.ConvertToSingleDocs(upstreamFile.Content) {
 			gvk := OverlySimpleGVK{}
 			if err := yaml.Unmarshal(doc, &gvk); err != nil {
@@ -175,6 +176,19 @@ func renderKotsKinds(upstreamFiles []upstreamtypes.UpstreamFile, renderedConfig 
 				continue
 			}
 
+			filePrefix := fmt.Sprintf("%s-%s", strings.ToLower(gvk.Kind), gvk.Metadata.Name)
+			filename := fmt.Sprintf("%s.yaml", filePrefix)
+			if _, exists := fileContentsMap[filename]; exists {
+				index := 1
+				for {
+					filename = fmt.Sprintf("%s.%d.yaml", filePrefix, index)
+					if _, exists := fileContentsMap[filename]; !exists {
+						break
+					}
+					index += 1
+				}
+			}
+
 			switch gvkString {
 			case "kots.io/v1beta1, Kind=Config":
 				// Use the rendered Config instead of the upstream.
@@ -183,11 +197,11 @@ func renderKotsKinds(upstreamFiles []upstreamtypes.UpstreamFile, renderedConfig 
 				if err != nil {
 					return nil, errors.Wrap(err, "failed to marshal rendered config")
 				}
-				fileContentsMap[upstreamFile.Path] = []byte(configBytes)
+				fileContentsMap[filename] = []byte(configBytes)
 
 			case "kots.io/v1beta1, Kind=ConfigValues":
 				// ConfigValues do not need rendering since they should already be valid values.
-				fileContentsMap["configvalues.yaml"] = upstreamFile.Content
+				fileContentsMap[filename] = upstreamFile.Content
 
 			case "kots.io/v1beta1, Kind=HelmChart":
 				rendered, err := builder.RenderTemplate(upstreamFile.Path, string(upstreamFile.Content))
@@ -195,7 +209,7 @@ func renderKotsKinds(upstreamFiles []upstreamtypes.UpstreamFile, renderedConfig 
 					return nil, errors.Wrapf(err, "failed to render file %s", upstreamFile.Path)
 				}
 
-				fileContentsMap[upstreamFile.Path] = []byte(rendered)
+				fileContentsMap[filename] = []byte(rendered)
 
 			default:
 				vcConfig, err := processVariadicConfig(&upstreamFile, renderedConfig, renderOptions.Log)
@@ -209,7 +223,7 @@ func renderKotsKinds(upstreamFiles []upstreamtypes.UpstreamFile, renderedConfig 
 					return nil, errors.Wrapf(err, "failed to render file %s", upstreamFile.Path)
 				}
 
-				fileContentsMap[upstreamFile.Path] = []byte(rendered)
+				fileContentsMap[filename] = []byte(rendered)
 			}
 		}
 	}
