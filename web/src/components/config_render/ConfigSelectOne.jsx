@@ -60,7 +60,7 @@ export default class ConfigSelectOne extends React.Component {
           />
         ) : null}
         {this.props.help_text !== "" ? (
-          <div className="field-section-help-text help-text-color u-marginTop--5">
+          <div className="field-section-help-text help-text-color">
             <Markdown
               options={{
                 linkTarget: "_blank",
