@@ -277,7 +277,7 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 		IsGKEAutopilot:      k8sutil.IsGKEAutopilot(clientset),
 		IncludeMinio:        pullOptions.IncludeMinio,
 	}
-	if err = upstream.WriteUpstream(u, writeUpstreamOptions); err != nil {
+	if err := upstream.WriteUpstream(u, writeUpstreamOptions); err != nil {
 		log.FinishSpinnerWithError()
 		return "", errors.Wrap(err, "failed to write upstream")
 	}
@@ -557,14 +557,9 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 		}
 	}
 
-	installationManifest, err := kotsutil.LoadInstallationFromPath(filepath.Join(u.GetUpstreamDir(writeUpstreamOptions), "userdata", "installation.yaml"))
+	installationBytes, err := ioutil.ReadFile(filepath.Join(u.GetUpstreamDir(writeUpstreamOptions), "userdata", "installation.yaml"))
 	if err != nil {
-		return "", errors.Wrap(err, "failed to load installation manifest")
-	}
-
-	installationBytes, err := kotsutil.KotsKinds{Installation: *installationManifest}.Marshal("kots.io", "v1beta1", "Installation")
-	if err != nil {
-		return "", errors.Wrap(err, "failed to marshal installation kots kind")
+		return "", errors.Wrap(err, "failed to read installation file")
 	}
 
 	// Ensure the installation manifest filename is unique.
