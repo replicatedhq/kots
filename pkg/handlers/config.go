@@ -51,9 +51,10 @@ type LiveAppConfigRequest struct {
 }
 
 type UpdateAppConfigResponse struct {
-	Success       bool     `json:"success"`
-	Error         string   `json:"error,omitempty"`
-	RequiredItems []string `json:"requiredItems,omitempty"`
+	Success          bool                                `json:"success"`
+	Error            string                              `json:"error,omitempty"`
+	RequiredItems    []string                            `json:"requiredItems,omitempty"`
+	ValidationErrors []kotsadmvalidator.ConfigGroupError `json:"validationErrors,omitempty"`
 }
 
 type LiveAppConfigResponse struct {
@@ -183,6 +184,15 @@ func (h *Handler) UpdateAppConfig(w http.ResponseWriter, r *http.Request) {
 		updateAppConfigResponse.Error = "failed to check if version is editable"
 		logger.Error(errors.Wrap(err, updateAppConfigResponse.Error))
 		JSON(w, http.StatusInternalServerError, updateAppConfigResponse)
+		return
+	}
+
+	validationErrors := kotsadmvalidator.ValidateConfigSpec(kotsv1beta1.ConfigSpec{Groups: updateAppConfigRequest.ConfigGroups})
+	if len(validationErrors) > 0 {
+		updateAppConfigResponse.Error = "failed to validate config values"
+		updateAppConfigResponse.ValidationErrors = validationErrors
+		logger.Error(errors.Wrap(err, updateAppConfigResponse.Error))
+		JSON(w, http.StatusBadRequest, updateAppConfigResponse)
 		return
 	}
 
@@ -1152,7 +1162,6 @@ func (h *Handler) SetAppConfigValues(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// validate the config values and return any validation errors
 	validationErrors := kotsadmvalidator.ValidateConfigSpec(renderedConfig.Spec)
 	if len(validationErrors) > 0 {
 		setAppConfigValuesResponse.Error = "failed to validate config values"

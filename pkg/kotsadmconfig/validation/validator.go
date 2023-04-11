@@ -29,23 +29,13 @@ func validateRegex(configItem kotsv1beta1.ConfigItem) *ConfigItemError {
 
 	regex, err := regexp.Compile(regexStr)
 	if err != nil {
-		return buildValidationItemError(configItem, fmt.Sprintf("Invalid regex: %s", err.Error()))
+		return buildConfigItemError(configItem, fmt.Sprintf("Invalid regex: %s", err.Error()))
 	}
 
 	matched := regex.MatchString(value)
 	if !matched {
-		return buildValidationItemError(configItem, regexMatchError)
+		return buildConfigItemError(configItem, regexMatchError)
 	}
 
 	return nil
-}
-
-func buildValidationItemError(configItem kotsv1beta1.ConfigItem, errorMsg string) *ConfigItemError {
-	return &ConfigItemError{
-		Name:                   configItem.Name,
-		Type:                   configItem.Type,
-		Value:                  configItem.Value,
-		Validation:             *configItem.Validation,
-		ValidationErrorMessage: errorMsg,
-	}
 }
