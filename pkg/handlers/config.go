@@ -60,7 +60,7 @@ type LiveAppConfigResponse struct {
 	Success          bool                                `json:"success"`
 	Error            string                              `json:"error,omitempty"`
 	ConfigGroups     []kotsv1beta1.ConfigGroup           `json:"configGroups"`
-	ValidationErrors []kotsadmvalidator.ConfigGroupError `json:"validationErrors"`
+	ValidationErrors []kotsadmvalidator.ConfigGroupError `json:"validationErrors,omitempty"`
 }
 
 type CurrentAppConfigResponse struct {
@@ -385,9 +385,7 @@ func (h *Handler) LiveAppConfig(w http.ResponseWriter, r *http.Request) {
 		liveAppConfigResponse.ConfigGroups = []kotsv1beta1.ConfigGroup{}
 	} else {
 		liveAppConfigResponse.ConfigGroups = renderedConfig.Spec.Groups
-		if kotsadmvalidator.HasConfigItemValidators(renderedConfig.Spec) {
-			liveAppConfigResponse.ValidationErrors = kotsadmvalidator.ValidateConfigGroups(renderedConfig.Spec.Groups)
-		}
+		liveAppConfigResponse.ValidationErrors = kotsadmvalidator.ValidateConfigSpec(renderedConfig.Spec)
 	}
 
 	JSON(w, http.StatusOK, liveAppConfigResponse)
@@ -998,8 +996,9 @@ type SetAppConfigValuesRequest struct {
 }
 
 type SetAppConfigValuesResponse struct {
-	Success bool   `json:"success"`
-	Error   string `json:"error,omitempty"`
+	Success          bool                                `json:"success"`
+	Error            string                              `json:"error,omitempty"`
+	ValidationErrors []kotsadmvalidator.ConfigGroupError `json:"validationErrors,omitempty"`
 }
 
 func (h *Handler) SetAppConfigValues(w http.ResponseWriter, r *http.Request) {
@@ -1117,6 +1116,16 @@ func (h *Handler) SetAppConfigValues(w http.ResponseWriter, r *http.Request) {
 			generatedValue.Value = value.ValuePlaintext
 		}
 		configValueMap[key] = generatedValue
+	}
+
+	// validate the config values and return any validation errors
+	validationErrors := kotsadmvalidator.ValidateConfigSpec(newConfig.Spec)
+	if len(validationErrors) > 0 {
+		setAppConfigValuesResponse.Error = "failed to validate config values"
+		setAppConfigValuesResponse.ValidationErrors = validationErrors
+		logger.Error(errors.Wrap(err, setAppConfigValuesResponse.Error))
+		JSON(w, http.StatusBadRequest, setAppConfigValuesResponse)
+		return
 	}
 
 	registryInfo, err := store.GetStore().GetRegistryDetailsForApp(foundApp.ID)

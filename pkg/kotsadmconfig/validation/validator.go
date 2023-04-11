@@ -40,8 +40,8 @@ func buildValidationItemError(configItem kotsv1beta1.ConfigItem, errorMsg string
 	return &ConfigItemError{
 		Name:                   configItem.Name,
 		Type:                   configItem.Type,
-		ValidationMessage:      configItem.Validation.Message,
-		ValidationType:         configItem.Validation.Type,
+		Value:                  configItem.Value,
+		Validation:             *configItem.Validation,
 		ValidationErrorMessage: errorMsg,
 	}
 }
