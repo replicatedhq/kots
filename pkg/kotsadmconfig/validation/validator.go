@@ -12,7 +12,7 @@ const (
 )
 
 func validate(item kotsv1beta1.ConfigItem) *ConfigItemError {
-	if item.Validation == nil {
+	if item.When == "false" || item.Validation == nil {
 		return nil
 	}
 

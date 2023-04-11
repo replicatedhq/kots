@@ -169,6 +169,7 @@ func (h *Handler) UpdateAppConfig(w http.ResponseWriter, r *http.Request) {
 		JSON(w, http.StatusOK, UpdateAppConfigResponse{Success: true})
 		return
 	}
+
 	foundApp, err := store.GetStore().GetAppFromSlug(mux.Vars(r)["appSlug"])
 	if err != nil {
 		logger.Error(err)
@@ -1118,16 +1119,6 @@ func (h *Handler) SetAppConfigValues(w http.ResponseWriter, r *http.Request) {
 		configValueMap[key] = generatedValue
 	}
 
-	// validate the config values and return any validation errors
-	validationErrors := kotsadmvalidator.ValidateConfigSpec(newConfig.Spec)
-	if len(validationErrors) > 0 {
-		setAppConfigValuesResponse.Error = "failed to validate config values"
-		setAppConfigValuesResponse.ValidationErrors = validationErrors
-		logger.Error(errors.Wrap(err, setAppConfigValuesResponse.Error))
-		JSON(w, http.StatusBadRequest, setAppConfigValuesResponse)
-		return
-	}
-
 	registryInfo, err := store.GetStore().GetRegistryDetailsForApp(foundApp.ID)
 	if err != nil {
 		setAppConfigValuesResponse.Error = "failed to get app registry info"
@@ -1157,6 +1148,16 @@ func (h *Handler) SetAppConfigValues(w http.ResponseWriter, r *http.Request) {
 	if renderedConfig == nil {
 		setAppConfigValuesResponse.Error = "application does not have config"
 		logger.Error(errors.New(setAppConfigValuesResponse.Error))
+		JSON(w, http.StatusBadRequest, setAppConfigValuesResponse)
+		return
+	}
+
+	// validate the config values and return any validation errors
+	validationErrors := kotsadmvalidator.ValidateConfigSpec(renderedConfig.Spec)
+	if len(validationErrors) > 0 {
+		setAppConfigValuesResponse.Error = "failed to validate config values"
+		setAppConfigValuesResponse.ValidationErrors = validationErrors
+		logger.Error(errors.Wrap(err, setAppConfigValuesResponse.Error))
 		JSON(w, http.StatusBadRequest, setAppConfigValuesResponse)
 		return
 	}
