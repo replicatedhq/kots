@@ -4,7 +4,22 @@ import (
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 )
 
-func HasConfigItemValidators(configSpec kotsv1beta1.ConfigSpec) bool {
+func ValidateConfigSpec(configSpec kotsv1beta1.ConfigSpec) []ConfigGroupError {
+	if !hasConfigItemValidators(configSpec) {
+		return nil
+	}
+
+	var configGroupErrors []ConfigGroupError
+	for _, configGroup := range configSpec.Groups {
+		configGroupError := validateConfigGroup(configGroup)
+		if configGroupError != nil {
+			configGroupErrors = append(configGroupErrors, *configGroupError)
+		}
+	}
+	return configGroupErrors
+}
+
+func hasConfigItemValidators(configSpec kotsv1beta1.ConfigSpec) bool {
 	for _, configGroup := range configSpec.Groups {
 		for _, configItem := range configGroup.Items {
 			if configItem.Validation != nil {
@@ -20,17 +35,6 @@ func HasConfigItemValidators(configSpec kotsv1beta1.ConfigSpec) bool {
 	}
 
 	return false
-}
-
-func ValidateConfigGroups(configGroups []kotsv1beta1.ConfigGroup) []ConfigGroupError {
-	var configGroupErrors []ConfigGroupError
-	for _, configGroup := range configGroups {
-		configGroupError := validateConfigGroup(configGroup)
-		if configGroupError != nil {
-			configGroupErrors = append(configGroupErrors, *configGroupError)
-		}
-	}
-	return configGroupErrors
 }
 
 func validateConfigGroup(configGroup kotsv1beta1.ConfigGroup) *ConfigGroupError {
@@ -87,6 +91,7 @@ func validateConfigChildItem(childConfigItem kotsv1beta1.ConfigChildItem) *Confi
 		return nil
 	}
 
+	// convert ConfigChildItem to ConfigItem for validation
 	configItem := kotsv1beta1.ConfigItem{
 		Name:       childConfigItem.Name,
 		Value:      childConfigItem.Value,

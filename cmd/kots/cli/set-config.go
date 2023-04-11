@@ -16,7 +16,9 @@ import (
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	"github.com/replicatedhq/kots/pkg/auth"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
+	kotsadmvalidator "github.com/replicatedhq/kots/pkg/kotsadmconfig/validation"
 	"github.com/replicatedhq/kots/pkg/logger"
+	"github.com/replicatedhq/yaml/v3"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -132,13 +134,25 @@ func SetConfigCmd() *cobra.Command {
 			}
 
 			response := struct {
-				Error string `json:"error"`
+				Error            string                              `json:"error"`
+				ValidationErrors []kotsadmvalidator.ConfigGroupError `json:"validationErrors,omitempty"`
 			}{}
 			_ = json.Unmarshal(respBody, &response)
 
 			if resp.StatusCode != http.StatusOK {
 				if resp.StatusCode == http.StatusNotFound {
 					return errors.Errorf("app with slug %s not found", appSlug)
+				} else if resp.StatusCode == http.StatusBadRequest {
+					if len(response.ValidationErrors) > 0 {
+						validationErrors, err := yaml.Marshal(response.ValidationErrors)
+						if err != nil {
+							return errors.Wrap(err, "failed to marshal config")
+						}
+						fmt.Print(string(validationErrors))
+						return errors.New("config validation failed")
+					} else {
+						return errors.Errorf("failed to update config: %s", response.Error)
+					}
 				} else {
 					return errors.Wrapf(errors.New(response.Error), "unexpected status code from %v", resp.StatusCode)
 				}

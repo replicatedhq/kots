@@ -1,5 +1,10 @@
 package validation
 
+import (
+	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
+	"github.com/replicatedhq/kots/kotskinds/multitype"
+)
+
 type ConfigGroupError struct {
 	Name   string            `json:"name"`
 	Title  string            `json:"title"`
@@ -7,11 +12,10 @@ type ConfigGroupError struct {
 }
 
 type ConfigItemError struct {
-	Name                   string `json:"name"`
-	Type                   string `json:"type"`
-	ValidationType         string `json:"validation_type"`
-	ValidationMessage      string `json:"validation_message"`
-	ValidationErrorMessage string `json:"validation_error_message"`
-
-	ChildItemErrors []ConfigItemError `json:"child_item_errors"`
+	Name                   string                           `json:"name"`
+	Type                   string                           `json:"type"`
+	Value                  multitype.BoolOrString           `json:"value"`
+	ValidationErrorMessage string                           `json:"validation_error_message"`
+	Validation             kotsv1beta1.ConfigItemValidation `json:"validation"`
+	ChildItemErrors        []ConfigItemError                `json:"child_item_errors,omitempty"`
 }
