@@ -643,7 +643,7 @@ spec:
 status: {}
 `,
 				),
-				"userdata/configvalues.yaml": []byte(`apiVersion: kots.io/v1beta1
+				"configvalues.yaml": []byte(`apiVersion: kots.io/v1beta1
 kind: ConfigValues
 metadata:
   name: test-app
@@ -917,7 +917,7 @@ spec:
       value: "testvalue"
 `,
 				),
-				"userdata/config.yaml": []byte(`apiVersion: kots.io/v1beta1
+				"configvalues.yaml": []byte(`apiVersion: kots.io/v1beta1
 kind: ConfigValues
 metadata:
   name: test-app
@@ -1080,7 +1080,7 @@ spec:
     postgresqlPassword: abc123
 `,
 				),
-				"userdata/config.yaml": []byte(`apiVersion: kots.io/v1beta1
+				"configvalues.yaml": []byte(`apiVersion: kots.io/v1beta1
 kind: ConfigValues
 metadata:
   name: test-app
