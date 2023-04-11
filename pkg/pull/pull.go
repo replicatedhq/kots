@@ -277,8 +277,7 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 		IsGKEAutopilot:      k8sutil.IsGKEAutopilot(clientset),
 		IncludeMinio:        pullOptions.IncludeMinio,
 	}
-	err = upstream.WriteUpstream(u, writeUpstreamOptions)
-	if err != nil {
+	if err = upstream.WriteUpstream(u, writeUpstreamOptions); err != nil {
 		log.FinishSpinnerWithError()
 		return "", errors.Wrap(err, "failed to write upstream")
 	}
