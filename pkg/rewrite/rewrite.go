@@ -330,7 +330,11 @@ func Rewrite(rewriteOptions RewriteOptions) error {
 	if err != nil {
 		return errors.Wrap(err, "failed to marshal isntallation kots kind")
 	}
-	renderedKotsKinds["installation.yaml"] = []byte(installationBytes)
+
+	// Ensure the installation manifest filename is unique.
+	installationPrefix := "installation"
+	installationFilename := kotsutil.GenUniqueKotsKindFilename(renderedKotsKinds, installationPrefix)
+	renderedKotsKinds[installationFilename] = []byte(installationBytes)
 
 	if err := kotsutil.WriteKotsKinds(renderedKotsKinds, u.GetKotsKindsDir(writeUpstreamOptions)); err != nil {
 		return errors.Wrap(err, "failed to write kots base")

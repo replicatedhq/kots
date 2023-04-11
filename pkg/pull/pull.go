@@ -566,7 +566,11 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 	if err != nil {
 		return "", errors.Wrap(err, "failed to marshal installation kots kind")
 	}
-	renderedKotsKinds["installation.yaml"] = []byte(installationBytes)
+
+	// Ensure the installation manifest filename is unique.
+	installationPrefix := "installation"
+	installationFilename := kotsutil.GenUniqueKotsKindFilename(renderedKotsKinds, installationPrefix)
+	renderedKotsKinds[installationFilename] = []byte(installationBytes)
 
 	err = kotsutil.WriteKotsKinds(renderedKotsKinds, u.GetKotsKindsDir(writeUpstreamOptions))
 	if err != nil {

@@ -161,7 +161,7 @@ func renderReplicated(u *upstreamtypes.Upstream, renderOptions *RenderOptions) (
 }
 
 func renderKotsKinds(upstreamFiles []upstreamtypes.UpstreamFile, renderedConfig *kotsv1beta1.Config, renderOptions *RenderOptions, builder *template.Builder) (map[string][]byte, error) {
-	fileContentsMap := make(map[string][]byte)
+	renderedKotsKinds := make(map[string][]byte)
 
 	for _, upstreamFile := range upstreamFiles {
 
@@ -177,19 +177,13 @@ func renderKotsKinds(upstreamFiles []upstreamtypes.UpstreamFile, renderedConfig 
 			}
 
 			filePrefix := fmt.Sprintf("%s-%s", strings.ToLower(gvk.Kind), gvk.Metadata.Name)
-			filename := fmt.Sprintf("%s.yaml", filePrefix)
-			if _, exists := fileContentsMap[filename]; exists {
-				index := 1
-				for {
-					filename = fmt.Sprintf("%s.%d.yaml", filePrefix, index)
-					if _, exists := fileContentsMap[filename]; !exists {
-						break
-					}
-					index += 1
-				}
-			}
+			filename := kotsutil.GenUniqueKotsKindFilename(renderedKotsKinds, filePrefix)
 
 			switch gvkString {
+			case "kots.io/v1beta1, Kind=Installation":
+				// Installation manifests are generated later and will have a different filename.
+				continue
+
 			case "kots.io/v1beta1, Kind=Config":
 				// Use the rendered Config instead of the upstream.
 				kotsKinds := kotsutil.KotsKinds{Config: renderedConfig}
@@ -197,11 +191,11 @@ func renderKotsKinds(upstreamFiles []upstreamtypes.UpstreamFile, renderedConfig 
 				if err != nil {
 					return nil, errors.Wrap(err, "failed to marshal rendered config")
 				}
-				fileContentsMap[filename] = []byte(configBytes)
+				renderedKotsKinds[filename] = []byte(configBytes)
 
 			case "kots.io/v1beta1, Kind=ConfigValues":
 				// ConfigValues do not need rendering since they should already be valid values.
-				fileContentsMap[filename] = upstreamFile.Content
+				renderedKotsKinds[filename] = upstreamFile.Content
 
 			case "kots.io/v1beta1, Kind=HelmChart":
 				rendered, err := builder.RenderTemplate(upstreamFile.Path, string(upstreamFile.Content))
@@ -209,7 +203,7 @@ func renderKotsKinds(upstreamFiles []upstreamtypes.UpstreamFile, renderedConfig 
 					return nil, errors.Wrapf(err, "failed to render file %s", upstreamFile.Path)
 				}
 
-				fileContentsMap[filename] = []byte(rendered)
+				renderedKotsKinds[filename] = []byte(rendered)
 
 			default:
 				vcConfig, err := processVariadicConfig(&upstreamFile, renderedConfig, renderOptions.Log)
@@ -223,12 +217,12 @@ func renderKotsKinds(upstreamFiles []upstreamtypes.UpstreamFile, renderedConfig 
 					return nil, errors.Wrapf(err, "failed to render file %s", upstreamFile.Path)
 				}
 
-				fileContentsMap[filename] = []byte(rendered)
+				renderedKotsKinds[filename] = []byte(rendered)
 			}
 		}
 	}
 
-	return fileContentsMap, nil
+	return renderedKotsKinds, nil
 }
 
 func extractHelmBases(b Base) []Base {
