@@ -99,7 +99,7 @@ export default class ConfigFileInput extends React.Component {
             error={this.props.error}
           />
         ) : null}
-        <div className="input input-type-file clearfix">
+        <div className="field-input-wrapper input input-type-file clearfix">
           <div>
             {this.props.help_text !== "" ? (
               <div className="field-section-help-text help-text-color u-marginTop--5">
