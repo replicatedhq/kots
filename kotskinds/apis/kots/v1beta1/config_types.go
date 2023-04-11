@@ -66,8 +66,7 @@ type ConfigItem struct {
 }
 
 type ConfigItemValidation struct {
-	Type    string `json:"type,omitempty"`
-	Rule    string `json:"rule,omitempty"`
+	Regex   string `json:"regex,omitempty"`
 	Message string `json:"message,omitempty"`
 }
 
