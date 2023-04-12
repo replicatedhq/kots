@@ -12,10 +12,10 @@ type ConfigGroupValidationError struct {
 }
 
 type ConfigItemValidationError struct {
-	Name             string                      `json:"name"`
-	Type             string                      `json:"type"`
-	Value            multitype.BoolOrString      `json:"value"`
-	ValidationErrors []ValidationError           `json:"validation_errors"`
+	Name             string                 `json:"name"`
+	Type             string                 `json:"type"`
+	Value            multitype.BoolOrString `json:"value"`
+	ValidationErrors []ValidationError      `json:"validation_errors"`
 }
 
 type ValidationError struct {

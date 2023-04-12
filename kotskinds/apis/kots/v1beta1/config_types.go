@@ -56,12 +56,11 @@ type ConfigItem struct {
 	CountByGroup  map[string]int         `json:"countByGroup,omitempty"`
 	Templates     []RepeatTemplate       `json:"templates,omitempty"`
 	ValuesByGroup ValuesByGroup          `json:"valuesByGroup,omitempty"`
+	Validation    *ConfigItemValidator   `json:"validation,omitempty"`
 	// Props       map[string]interface{} `json:"props,omitempty"`
 	// DefaultCmd  *ConfigItemCmd         `json:"default_cmd,omitempty"`
 	// ValueCmd    *ConfigItemCmd         `json:"value_cmd,omitempty"`
 	// DataCmd     *ConfigItemCmd         `json:"data_cmd,omitempty"`
-
-	Validation *ConfigItemValidator `json:"validation,omitempty"`
 }
 
 type ConfigItemValidator struct {
