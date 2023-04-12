@@ -18,21 +18,22 @@ import { PreflightStatusChip, StatusChip } from "./Chips";
 import { getAppsList } from "./utils";
 
 import { Link as MuiLink } from "@mui/material";
-import AppLicense from "@components/apps/AppLicense";
+// import AppLicense from "@components/apps/AppLicense";
 
-import "@src/scss/components/shared/NavBar.scss";
+// import "@src/scss/components/shared/NavBar.scss";
 
 import { useSelectedAppClusterDashboardWithIntercept } from "@features/Dashboard/api/useSelectedAppClusterDashboard";
 import { useApps, useSelectedApp } from "@features/App";
-import GenerateSupportBundle from "@components/troubleshoot/GenerateSupportBundle";
-import AppVersionHistory from "@components/apps/AppVersionHistory";
-import PreflightResultPage from "@components/PreflightResultPage";
-import AppConfig from "../../features/AppConfig/components/AppConfig";
-interface TabPanelProps {
-  children?: React.ReactNode;
-  index: string;
-  value: string;
-}
+// import GenerateSupportBundle from "@components/troubleshoot/GenerateSupportBundle";
+// import AppVersionHistory from "@components/apps/AppVersionHistory";
+// import PreflightResultPage from "@components/PreflightResultPage";
+// import AppConfig from "../../features/AppConfig/components/AppConfig";
+
+// interface TabPanelProps {
+//   children?: React.ReactNode;
+//   index: string;
+//   value: string;
+// }
 
 function Dashboard() {
   const [value, setValue] = useState("");
@@ -55,24 +56,24 @@ function Dashboard() {
   const { refetch: refetchApps } = useApps();
   const params = useParams<KotsParams>();
 
-  function TabPanel(props: TabPanelProps) {
-    const { children, value, index, ...other } = props;
-    return (
-      <div
-        role="tabpanel"
-        hidden={value !== index}
-        id={`simple-tabpanel-${index}`}
-        aria-labelledby={`simple-tab-${index}`}
-        {...other}
-      >
-        {value === index && (
-          <Box sx={{ p: 3 }}>
-            <Typography>{children}</Typography>
-          </Box>
-        )}
-      </div>
-    );
-  }
+  // function TabPanel(props: TabPanelProps) {
+  //   const { children, value, index, ...other } = props;
+  //   return (
+  //     <div
+  //       role="tabpanel"
+  //       hidden={value !== index}
+  //       id={`simple-tabpanel-${index}`}
+  //       aria-labelledby={`simple-tab-${index}`}
+  //       {...other}
+  //     >
+  //       {value === index && (
+  //         <Box sx={{ p: 3 }}>
+  //           <Typography>{children}</Typography>
+  //         </Box>
+  //       )}
+  //     </div>
+  //   );
+  // }
   const getAppResourcesByState = () => {
     if (!appStatus?.resourceStates?.length) {
       return {};
@@ -285,7 +286,7 @@ function Dashboard() {
         </Grid>
       </Card>
       <Box>
-        {value === "config" && (
+        {/* {value === "config" && (
           <AppConfig
             //   {...props}
             app={selectedApp}
@@ -293,33 +294,33 @@ function Dashboard() {
             fromLicenseFlow={true}
             refetchAppsList={getAppsList}
           />
-        )}
-        {value === "version-history" && (
+        )} */}
+        {/* {value === "version-history" && (
           <AppVersionHistory
             app={selectedApp}
             match={{ match: { params: params } }}
             refreshAppData={refetchApps}
           />
-        )}
-        {value === "troubleshoot" && (
+        )} */}
+        {/* {value === "troubleshoot" && (
           <GenerateSupportBundle watch={selectedApp} />
-        )}
-        {value === "preflight" && (
+        )} */}
+        {/* {value === "preflight" && (
           <PreflightResultPage
             logo={""}
             fromLicenseFlow={true}
             refetchAppsList={getAppsList}
           />
-        )}
+        )} */}
         {/* <TabPanel value={value} index={"license"}> */}
-        {value === "license" && (
+        {/* {value === "license" && (
           <AppLicense
             app={selectedApp}
             // syncCallback={refetchData}
             // changeCallback={refetchData}
             //isHelmManaged={props.isHelmManaged}
           />
-        )}
+        )} */}
         {/* </TabPanel> */}
       </Box>
       <Modal
