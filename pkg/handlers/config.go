@@ -647,6 +647,7 @@ func (h *Handler) CurrentAppConfig(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	currentAppConfigResponse.ConfigGroups = []kotsv1beta1.ConfigGroup{}
 	if renderedConfig != nil {
 		currentAppConfigResponse.ConfigGroups = renderedConfig.Spec.Groups
 		currentAppConfigResponse.ValidationErrors = configvalidation.ValidateConfigSpec(renderedConfig.Spec)
