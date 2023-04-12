@@ -89,25 +89,6 @@
                           "title": {
                             "type": "string"
                           },
-                          "validation": {
-                            "type": "object",
-                            "properties": {
-                              "regex": {
-                                "type": "object",
-                                "required": [
-                                  "regex"
-                                ],
-                                "properties": {
-                                  "message": {
-                                    "type": "string"
-                                  },
-                                  "regex": {
-                                    "type": "string"
-                                  }
-                                }
-                              }
-                            }
-                          },
                           "value": {
                             "oneOf": [{"type": "string"},{"type": "boolean"}]
                           }
