@@ -11,6 +11,8 @@ type ReportingInfo struct {
 	K8sVersion         string         `json:"k8s_version"`
 	KOTSInstallID      string         `json:"kots_install_id"`
 	KURLInstallID      string         `json:"kurl_install_id"`
+	IsGitOpsEnabled    bool           `json:"is_gitops_enabled"`
+	GitOpsProvider     string         `json:"gitops_provider"`
 }
 
 type DownstreamInfo struct {

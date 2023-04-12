@@ -75,7 +75,8 @@ func moveHelmReleaseSecret(clientset kubernetes.Interface, secret corev1.Secret,
 	secret.Data["release"] = []byte(releaseStr)
 
 	_, err = clientset.CoreV1().Secrets(releaseNamespace).Create(context.TODO(), &secret, metav1.CreateOptions{})
-	if err != nil {
+	// if the secret already exists in releaseNamespace, we can ignore the error
+	if err != nil && !kuberneteserrors.IsAlreadyExists(err) {
 		return errors.Wrapf(err, "failed to create secret %s/%s", releaseNamespace, secret.Name)
 	}
 

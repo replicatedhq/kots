@@ -2,6 +2,7 @@ package helm
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
 	"helm.sh/helm/v3/pkg/release"
@@ -13,24 +14,33 @@ import (
 )
 
 const (
-	kotsadmNamespace      = "kotsadm"
-	helmReleaseNamespace  = "helm-release"
-	helmReleaseSecretName = "sh.helm.release.v1.test.v1"
-	helmReleaseName       = "test"
+	kotsadmNamespace     = "kotsadm"
+	helmReleaseNamespace = "helm-release"
+	helmReleaseName      = "test"
 )
 
-func mockKotsadmHelmReleaseSecretClient(t *testing.T) kubernetes.Interface {
-	testReleaseSecret := buildHelmReleaseSecret(t)
+func mockKotsadmHelmReleaseSecretClient(t *testing.T, kotsadmNS string, releaseName string) kubernetes.Interface {
+	kotsadmReleaseSecret := buildHelmReleaseSecret(t, kotsadmNS, releaseName)
 	clientset := fake.NewSimpleClientset(
-		testReleaseSecret,
+		kotsadmReleaseSecret,
 	)
 	return clientset
 }
 
-func buildHelmReleaseSecret(t *testing.T) *corev1.Secret {
+func mockKotsadmHelmReleaseSecretExistsClient(t *testing.T, kotsadmNS string, releaseNS string, releaseName string) kubernetes.Interface {
+	kotsadmReleaseSecret := buildHelmReleaseSecret(t, kotsadmNS, releaseName)
+	helmReleaseSecret := buildHelmReleaseSecret(t, releaseNS, releaseName)
+	clientset := fake.NewSimpleClientset(
+		kotsadmReleaseSecret,
+		helmReleaseSecret,
+	)
+	return clientset
+}
+
+func buildHelmReleaseSecret(t *testing.T, kotsadmNS string, releaseName string) *corev1.Secret {
 	helmRelease := &release.Release{
-		Name:      helmReleaseName,
-		Namespace: kotsadmNamespace,
+		Name:      releaseName,
+		Namespace: kotsadmNS,
 		Version:   1,
 		Info: &release.Info{
 			Status: release.StatusDeployed,
@@ -47,11 +57,11 @@ func buildHelmReleaseSecret(t *testing.T) *corev1.Secret {
 			APIVersion: "v1",
 		},
 		ObjectMeta: v1.ObjectMeta{
-			Name:      helmReleaseSecretName,
-			Namespace: kotsadmNamespace,
+			Name:      fmt.Sprintf("sh.helm.release.v1.%s.v1", releaseName),
+			Namespace: kotsadmNS,
 			Labels: map[string]string{
 				"owner": "helm",
-				"name":  helmReleaseName,
+				"name":  releaseName,
 			},
 		},
 		Data: map[string][]byte{
@@ -76,7 +86,7 @@ func TestMigrateExistingHelmReleaseSecrets(t *testing.T) {
 		{
 			name: "expect no error and migrate existing helm release secret",
 			args: args{
-				clientset:        mockKotsadmHelmReleaseSecretClient(t),
+				clientset:        mockKotsadmHelmReleaseSecretClient(t, kotsadmNamespace, helmReleaseName),
 				releaseName:      helmReleaseName,
 				releaseNamespace: helmReleaseNamespace,
 				kotsadmNamespace: kotsadmNamespace,
@@ -94,6 +104,16 @@ func TestMigrateExistingHelmReleaseSecrets(t *testing.T) {
 			},
 			wantErr:                  false,
 			wantMigratedSecretsCount: 0,
+		}, {
+			name: "expect no error when helm release secret exists in the release namespace",
+			args: args{
+				clientset:        mockKotsadmHelmReleaseSecretExistsClient(t, kotsadmNamespace, helmReleaseNamespace, helmReleaseName),
+				releaseName:      helmReleaseName,
+				releaseNamespace: kotsadmNamespace,
+				kotsadmNamespace: kotsadmNamespace,
+			},
+			wantErr:                  false,
+			wantMigratedSecretsCount: 0,
 		},
 	}
 	for _, tt := range tests {
@@ -102,35 +122,41 @@ func TestMigrateExistingHelmReleaseSecrets(t *testing.T) {
 				t.Errorf("MigrateExistingHelmReleaseSecrets() error = %v, wantErr %v", err, tt.wantErr)
 			}
 
-			if tt.wantMigratedSecretsCount == 0 {
+			if tt.wantErr {
 				return
 			}
 
 			// verify that the secret was moved to the new namespace
-			movedSecret, err := tt.args.clientset.CoreV1().Secrets(tt.args.releaseNamespace).Get(context.TODO(), helmReleaseSecretName, v1.GetOptions{})
+			movedSecret, err := tt.args.clientset.CoreV1().Secrets(tt.args.releaseNamespace).List(context.TODO(), v1.ListOptions{LabelSelector: fmt.Sprintf("owner=helm,name=%s", tt.args.releaseName)})
 			if err != nil {
 				t.Errorf("failed to get helm release secret: %v", err)
 			}
 
-			if movedSecret.Namespace != tt.args.releaseNamespace {
-				t.Errorf("expected helm release secret to be in namespace %s, but was in %s", tt.args.releaseNamespace, movedSecret.Namespace)
+			if len(movedSecret.Items) != tt.wantMigratedSecretsCount {
+				t.Errorf("expected %d helm release secret to be moved, but found %d", tt.wantMigratedSecretsCount, len(movedSecret.Items))
 			}
 
-			release, err := HelmReleaseFromSecretData(movedSecret.Data["release"])
-			if err != nil {
-				t.Errorf("failed to get helm release from secret data: %v", err)
-			}
+			for _, secret := range movedSecret.Items {
+				if secret.Namespace != tt.args.releaseNamespace {
+					t.Errorf("expected helm release secret to be in namespace %s, but was in %s", tt.args.releaseNamespace, secret.Namespace)
+				}
 
-			if release.Namespace != tt.args.releaseNamespace {
-				t.Errorf("expected helm release to be in namespace %s, but was in %s", tt.args.releaseNamespace, release.Namespace)
-			}
+				release, err := HelmReleaseFromSecretData(secret.Data["release"])
+				if err != nil {
+					t.Errorf("failed to get helm release from secret data: %v", err)
+				}
 
-			_, err = tt.args.clientset.CoreV1().Secrets(tt.args.kotsadmNamespace).Get(context.TODO(), tt.args.releaseName, v1.GetOptions{})
-			if err == nil {
-				t.Errorf("expected helm release secret to be deleted from %s, but it was not", tt.args.kotsadmNamespace)
-			}
-			if !kuberneteserrors.IsNotFound(err) {
-				t.Errorf("expected helm release secret to be deleted from %s, but got error: %v", kotsadmNamespace, err)
+				if release.Namespace != tt.args.releaseNamespace {
+					t.Errorf("expected helm release to be in namespace %s, but was in %s", tt.args.releaseNamespace, release.Namespace)
+				}
+
+				_, err = tt.args.clientset.CoreV1().Secrets(tt.args.kotsadmNamespace).Get(context.TODO(), tt.args.releaseName, v1.GetOptions{})
+				if err == nil {
+					t.Errorf("expected helm release secret to be deleted from %s, but it was not", tt.args.kotsadmNamespace)
+				}
+				if !kuberneteserrors.IsNotFound(err) {
+					t.Errorf("expected helm release secret to be deleted from %s, but got error %v", tt.args.kotsadmNamespace, err)
+				}
 			}
 		})
 	}

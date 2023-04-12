@@ -11,6 +11,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/gitops"
 	"github.com/replicatedhq/kots/pkg/handlers/types"
 	"github.com/replicatedhq/kots/pkg/logger"
+	"github.com/replicatedhq/kots/pkg/reporting"
 	"github.com/replicatedhq/kots/pkg/store"
 )
 
@@ -90,6 +91,8 @@ func (h *Handler) DisableAppGitOps(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
+
+	go reporting.SendAppInfo(appID)
 
 	JSON(w, http.StatusNoContent, "")
 }
@@ -261,6 +264,8 @@ func (h *Handler) InitGitOpsConnection(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 	}()
+
+	go reporting.SendAppInfo(appID)
 
 	JSON(w, http.StatusNoContent, "")
 }

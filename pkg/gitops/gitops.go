@@ -121,11 +121,11 @@ func GetDownstreamGitOps(appID string, clusterID string) (*GitOpsConfig, error) 
 		return nil, errors.Wrap(err, "failed to get k8s client set")
 	}
 
-	config, err := getDownstreamGitOps(clientset, appID, clusterID)
+	config, err := GetDownstreamGitOpsConfig(clientset, appID, clusterID)
 	return config, errors.Wrap(err, "failed to get downstream gitops config")
 }
 
-func getDownstreamGitOps(clientset kubernetes.Interface, appID string, clusterID string) (*GitOpsConfig, error) {
+func GetDownstreamGitOpsConfig(clientset kubernetes.Interface, appID string, clusterID string) (*GitOpsConfig, error) {
 	secret, err := clientset.CoreV1().Secrets(util.PodNamespace).Get(context.TODO(), "kotsadm-gitops", metav1.GetOptions{})
 	if kuberneteserrors.IsNotFound(err) {
 		return nil, nil
