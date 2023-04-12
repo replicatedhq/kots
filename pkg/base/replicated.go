@@ -175,8 +175,6 @@ func renderKotsKinds(upstreamFiles []upstreamtypes.UpstreamFile, renderedConfig 
 				continue
 			}
 
-			var rendered []byte
-
 			switch gvkString {
 			case "kots.io/v1beta1, Kind=Installation":
 				// Installation manifests are generated later and will have a different filename.
@@ -189,21 +187,20 @@ func renderKotsKinds(upstreamFiles []upstreamtypes.UpstreamFile, renderedConfig 
 				if err != nil {
 					return nil, errors.Wrap(err, "failed to marshal rendered config")
 				}
-				rendered = []byte(config)
+				doc = []byte(config)
 
 			case "kots.io/v1beta1, Kind=ConfigValues":
 				// ConfigValues do not need rendering since they should already be valid values.
-				rendered = upstreamFile.Content
 
 			case "kots.io/v1beta1, Kind=HelmChart":
 				helmchart, err := builder.RenderTemplate(upstreamFile.Path, string(upstreamFile.Content))
 				if err != nil {
 					return nil, errors.Wrapf(err, "failed to render file %s", upstreamFile.Path)
 				}
-				rendered = []byte(helmchart)
+				doc = []byte(helmchart)
 
 			default:
-				vConfig, err := processVariadicConfig(&upstreamFile, renderedConfig, renderOptions.Log)
+				vConfig, err := processVariadicConfig(&upstreamtypes.UpstreamFile{Content: doc, Path: upstreamFile.Path}, renderedConfig, renderOptions.Log)
 				if err != nil {
 					return nil, errors.Wrapf(err, "failed to process variadic config in kots kind file %s", upstreamFile.Path)
 				}
@@ -212,14 +209,14 @@ func renderKotsKinds(upstreamFiles []upstreamtypes.UpstreamFile, renderedConfig 
 				if err != nil {
 					return nil, errors.Wrapf(err, "failed to render file %s", upstreamFile.Path)
 				}
-				rendered = []byte(bytes)
+				doc = []byte(bytes)
 			}
 
 			if existing, exists := renderedKotsKinds[upstreamFile.Path]; exists {
-				rendered = bytes.Join([][]byte{existing, rendered}, []byte("---\n"))
+				doc = bytes.Join([][]byte{existing, doc}, []byte("\n---\n"))
 			}
 
-			renderedKotsKinds[upstreamFile.Path] = rendered
+			renderedKotsKinds[upstreamFile.Path] = doc
 		}
 	}
 
