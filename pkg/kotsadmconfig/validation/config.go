@@ -107,7 +107,9 @@ func getItemValue(value multitype.BoolOrString, itemType string) (string, error)
 			return "", errors.Wrapf(err, "failed to base64 decode file item value")
 		}
 		return string(decodedBytes), err
-	default:
+	case HeadingItemType, LabelItemType:
 		return "", nil
+	default:
+		return "", errors.Errorf("unknown item type %s", itemType)
 	}
 }
