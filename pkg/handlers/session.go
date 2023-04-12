@@ -3,7 +3,6 @@ package handlers
 import (
 	"context"
 	"encoding/base64"
-	"fmt"
 	"net/http"
 	"strings"
 	"time"
@@ -48,43 +47,29 @@ func parseClusterAuthorization(authHeader string) (authorization, error) {
 	}, nil
 }
 
-func requireValidSession(kotsStore store.Store, w http.ResponseWriter, r *http.Request) (*sessiontypes.Session, error) {
+func requireValidSession(kotsStore store.Store, w http.ResponseWriter, r *http.Request) (sess *sessiontypes.Session, err error) {
 	if r.Method == "OPTIONS" {
 		return nil, nil
 	}
 
 	auth := r.Header.Get("authorization")
-
-	//Get cookie named signed-token from request
-	cookie, err := r.Cookie("signed-token")
-	if err != nil {
-		/*
-			//If cookie is not found, return an unauthorized status
-			if err == http.ErrNoCookie {
-				err := errors.New("no session cookie")
-				response := types.ErrorResponse{Error: util.StrPointer(err.Error())}
-				JSON(w, http.StatusUnauthorized, response)
-				return nil, err
-			}
-			//For any other type of error, return a bad request status
-			err := errors.New("failed to get session cookie")
-			response := types.ErrorResponse{Error: util.StrPointer(err.Error())}
-			JSON(w, http.StatusBadRequest, response)
-			return nil, err
-		*/
-		fmt.Println("LG: No Signed-Token Cookie Received: ", err)
+	if auth == "undefined" {
+		auth = ""
 	}
-
-	fmt.Println("LG: Signed-Token Cookie Received: ", cookie)
 
 	if auth == "" {
-		err := errors.New("authorization header empty")
-		response := types.ErrorResponse{Error: util.StrPointer(err.Error())}
-		JSON(w, http.StatusUnauthorized, response)
-		return nil, err
+		signedTokenCookie, err := r.Cookie("signed-token")
+		auth = signedTokenCookie.Value
+
+		if err == http.ErrNoCookie && auth == "" {
+			err := errors.New("missing authorization token")
+			response := types.ErrorResponse{Error: util.StrPointer(err.Error())}
+			JSON(w, http.StatusUnauthorized, response)
+			return nil, err
+		}
 	}
 
-	sess, err := session.Parse(kotsStore, auth)
+	sess, err = session.Parse(kotsStore, auth)
 	if err != nil {
 		response := types.ErrorResponse{Error: util.StrPointer("failed to parse authorization header")}
 		JSON(w, http.StatusUnauthorized, response)
