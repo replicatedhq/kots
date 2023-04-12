@@ -1,0 +1,28 @@
+apiVersion: troubleshoot.sh/v1beta2
+kind: Preflight
+metadata:
+  name: test-preflight
+spec:
+  analyzers:
+    - clusterVersion:
+      outcomes:
+        - fail:
+          when: "< 1.20.0"
+          message: The application requires kubernetes >= 1.20.0
+          ur: https://www.kubernetes.io
+        - pass:
+          message: Cluster is an up-to-date version
+---
+apiVersion: troubleshoot.sh/v1beta2
+kind: Preflight
+metadata:
+  name: test-preflight
+spec:
+  analyzers:
+    - containerRuntime:
+      outcomes:
+        - fail:
+          message: Did not find containerd runtime
+        - pass:
+          when: "== containerd"
+          message: containerd runtime found
