@@ -199,7 +199,7 @@ func (h *Handler) UpdateAppConfig(w http.ResponseWriter, r *http.Request) {
 	if len(validationErrors) > 0 {
 		updateAppConfigResponse.Error = "failed to validate config values"
 		updateAppConfigResponse.ValidationErrors = validationErrors
-		logger.Errorf(updateAppConfigResponse.Error)
+		logger.Errorf("%v, validation errors: %+v", updateAppConfigResponse.Error, validationErrors)
 		JSON(w, http.StatusBadRequest, updateAppConfigResponse)
 		return
 	}
@@ -393,11 +393,14 @@ func (h *Handler) LiveAppConfig(w http.ResponseWriter, r *http.Request) {
 	}
 
 	liveAppConfigResponse.Success = true
-	if renderedConfig == nil {
-		liveAppConfigResponse.ConfigGroups = []kotsv1beta1.ConfigGroup{}
-	} else {
+	liveAppConfigResponse.ConfigGroups = []kotsv1beta1.ConfigGroup{}
+	if renderedConfig != nil {
 		liveAppConfigResponse.ConfigGroups = renderedConfig.Spec.Groups
-		liveAppConfigResponse.ValidationErrors = configvalidation.ValidateConfigSpec(renderedConfig.Spec)
+		validationErrors := configvalidation.ValidateConfigSpec(renderedConfig.Spec)
+		if len(validationErrors) > 0 {
+			liveAppConfigResponse.ValidationErrors = validationErrors
+			logger.Warnf("Validation errors found for config spec: %v", validationErrors)
+		}
 	}
 
 	JSON(w, http.StatusOK, liveAppConfigResponse)
@@ -650,7 +653,11 @@ func (h *Handler) CurrentAppConfig(w http.ResponseWriter, r *http.Request) {
 	currentAppConfigResponse.ConfigGroups = []kotsv1beta1.ConfigGroup{}
 	if renderedConfig != nil {
 		currentAppConfigResponse.ConfigGroups = renderedConfig.Spec.Groups
-		currentAppConfigResponse.ValidationErrors = configvalidation.ValidateConfigSpec(renderedConfig.Spec)
+		validationErrors := configvalidation.ValidateConfigSpec(renderedConfig.Spec)
+		if len(validationErrors) > 0 {
+			currentAppConfigResponse.ValidationErrors = configvalidation.ValidateConfigSpec(renderedConfig.Spec)
+			logger.Warnf("Validation errors found for config spec: %v", validationErrors)
+		}
 	}
 
 	currentAppConfigResponse.Success = true
@@ -1153,7 +1160,7 @@ func (h *Handler) SetAppConfigValues(w http.ResponseWriter, r *http.Request) {
 	if len(validationErrors) > 0 {
 		setAppConfigValuesResponse.Error = "failed to validate config values"
 		setAppConfigValuesResponse.ValidationErrors = validationErrors
-		logger.Errorf(setAppConfigValuesResponse.Error)
+		logger.Errorf("%v, validation errors: %+v", setAppConfigValuesResponse.Error, validationErrors)
 		JSON(w, http.StatusBadRequest, setAppConfigValuesResponse)
 		return
 	}
