@@ -52,7 +52,7 @@ func validateRegex(value string, regexValidator *kotsv1beta1.RegexValidator) *Va
 	regex, err := regexp.Compile(regexValidator.Pattern)
 	if err != nil {
 		return &ValidationError{
-			ValidationErrorMessage: fmt.Sprintf("failed to compile regex %q: %v", regexValidator.Pattern, err),
+			ValidationErrorMessage: fmt.Sprintf("Invalid regex: %s", err.Error()),
 			RegexValidator:         regexValidator,
 		}
 	}
