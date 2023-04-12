@@ -5,6 +5,10 @@ metadata:
   name: replicated-kots-app
 spec:
   values:
+    brand:
+      value: my brand
     hostname:
       value: my-app.somebigbank.com
+    title:
+      value: a website
 status: {}
