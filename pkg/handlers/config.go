@@ -65,10 +65,11 @@ type LiveAppConfigResponse struct {
 }
 
 type CurrentAppConfigResponse struct {
-	Success           bool                               `json:"success"`
-	Error             string                             `json:"error,omitempty"`
-	DownstreamVersion *downstreamtypes.DownstreamVersion `json:"downstreamVersion"`
-	ConfigGroups      []kotsv1beta1.ConfigGroup          `json:"configGroups"`
+	Success           bool                                          `json:"success"`
+	Error             string                                        `json:"error,omitempty"`
+	DownstreamVersion *downstreamtypes.DownstreamVersion            `json:"downstreamVersion"`
+	ConfigGroups      []kotsv1beta1.ConfigGroup                     `json:"configGroups"`
+	ValidationErrors  []kotsadmvalidator.ConfigGroupValidationError `json:"validationErrors,omitempty"`
 }
 
 type DownloadFileFromConfigResponse struct {
@@ -469,9 +470,7 @@ func (h *Handler) CurrentAppConfig(w http.ResponseWriter, r *http.Request) {
 	var app apptypes.AppType
 	var downstreamVersion *downstreamtypes.DownstreamVersion
 
-	configGroups := []kotsv1beta1.ConfigGroup{}
 	createNewVersion := false
-
 	if util.IsHelmManaged() {
 		helmApp := helm.GetHelmApp(appSlug)
 		if helmApp == nil {
@@ -649,11 +648,11 @@ func (h *Handler) CurrentAppConfig(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if renderedConfig != nil {
-		configGroups = renderedConfig.Spec.Groups
+		currentAppConfigResponse.ConfigGroups = renderedConfig.Spec.Groups
+		currentAppConfigResponse.ValidationErrors = kotsadmvalidator.ValidateConfigSpec(renderedConfig.Spec)
 	}
 
 	currentAppConfigResponse.Success = true
-	currentAppConfigResponse.ConfigGroups = configGroups
 	currentAppConfigResponse.DownstreamVersion = downstreamVersion
 	JSON(w, http.StatusOK, currentAppConfigResponse)
 }
