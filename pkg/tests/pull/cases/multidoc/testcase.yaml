@@ -4,8 +4,8 @@ PullOptions:
   ExcludeAdminConsole: true
   IsAirgap: true
   Silent: true
-  LocalPath: cases/simple/upstream
-  RootDir: cases/simple/results
+  LocalPath: cases/multidoc/upstream
+  RootDir: cases/multidoc/results
   SharedPassword: dummy-pass
   RewriteImages: false
   Downstreams:

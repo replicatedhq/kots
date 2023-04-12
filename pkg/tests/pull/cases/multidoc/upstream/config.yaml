@@ -48,6 +48,8 @@ spec:
           required: false
           default: "My Website"
         - name: brand
-          type: Brand Name
-          title: Title
+          type: text
+          title: Brand
+          help_text: |
+            Use this field to change your brand name
           required: true

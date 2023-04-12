@@ -7,4 +7,8 @@ spec:
   values:
     hostname:
       value: "my-app.somebigbank.com"
+    brand:
+      value: "my brand"
+    title:
+      value: "a website"
 status: {}
