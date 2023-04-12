@@ -1,17 +1,27 @@
 import React from "react";
-import { createRoot } from "react-dom/client";
-import ReplicatedErrorBoundary from "./components/shared/ErrorBoundary";
-import { Root } from "./Root";
+import ReactDOM from "react-dom";
 
-const container = document.getElementById("app");
-if (!container) {
-  throw new Error("No container found");
-}
+import { App } from "./App";
+// import { createRoot } from "react-dom/client";
+// import ReplicatedErrorBoundary from "./components/shared/ErrorBoundary";
+// import { Root } from "./Root";
 
-const root = createRoot(container); // createRoot(container!) if you use TypeScript
+// const container = document.getElementById("app");
+// if (!container) {
+//   throw new Error("No container found");
+// }
 
-root.render(
-  <ReplicatedErrorBoundary>
-    <Root />
-  </ReplicatedErrorBoundary>
+// const root = createRoot(container); // createRoot(container!) if you use TypeScript
+
+// root.render(
+//   <ReplicatedErrorBoundary>
+//     <Root />
+//   </ReplicatedErrorBoundary>
+// );
+
+ReactDOM.render(
+  <React.StrictMode>
+    <App />
+    </React.StrictMode>,
+    document.getElementById("app")
 );

@@ -34,7 +34,7 @@ interface TabPanelProps {
   value: string;
 }
 
-export function NewDashboard() {
+function Dashboard() {
   const [value, setValue] = useState("");
   const [version, setVersion] = useState(1);
   const [isNewVersionAvailable, setIsNewVersionAvailable] = useState(true);
@@ -379,3 +379,5 @@ export function NewDashboard() {
     </Box>
   );
 }
+
+export { Dashboard };

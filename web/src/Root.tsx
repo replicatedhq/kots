@@ -21,7 +21,7 @@ import UploadAirgapBundle from "./components/UploadAirgapBundle";
 import RestoreCompleted from "./components/RestoreCompleted";
 import Access from "./components/identity/Access";
 import SnapshotsWrapper from "./components/snapshots/SnapshotsWrapper";
-import { NewDashboard } from "@features/MuiDashboard/NewDashboard";
+import { Dashboard } from "@src/new-features/Dashboard/Dashboard";
 import { QueryClient, QueryClientProvider } from "react-query";
 import { InstallWithHelm } from "@features/AddNewApp";
 import { RouteProps } from "react-router";
@@ -621,7 +621,7 @@ const Root = () => {
                 />
                 <ProtectedRoute
                   path={["/:slug/new-dashboard"]}
-                  render={() => <NewDashboard />}
+                  render={() => <Dashboard />}
                 />
                 <ProtectedRoute
                   path={["/apps", "/app/:slug/:tab?"]}
