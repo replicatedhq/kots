@@ -10,7 +10,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/crypto"
 )
 
-func Test_getItemValue(t *testing.T) {
+func Test_getValidatableItemValue(t *testing.T) {
 	decryptedPassword := "password"
 	encodedPassword := base64.StdEncoding.EncodeToString(crypto.Encrypt([]byte(decryptedPassword)))
 	fileContent := "this is a file content"
@@ -73,7 +73,7 @@ func Test_getItemValue(t *testing.T) {
 				value:    multitype.BoolOrString{StrVal: "test"},
 				itemType: HeadingItemType,
 			},
-			want: "",
+			wantErr: true,
 		}, {
 			name: "number",
 			args: args{
@@ -85,13 +85,13 @@ func Test_getItemValue(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := getItemValue(tt.args.value, tt.args.itemType)
+			got, err := getValidatableItemValue(tt.args.value, tt.args.itemType)
 			if (err != nil) != tt.wantErr {
-				t.Errorf("getItemValue() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("getValidatableItemValue() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
 			if got != tt.want {
-				t.Errorf("getItemValue() = %v, want %v", got, tt.want)
+				t.Errorf("getValidatableItemValue() = %v, want %v", got, tt.want)
 			}
 		})
 	}
