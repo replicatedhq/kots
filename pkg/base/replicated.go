@@ -216,7 +216,7 @@ func renderKotsKinds(upstreamFiles []upstreamtypes.UpstreamFile, renderedConfig 
 			}
 
 			if existing, exists := renderedKotsKinds[upstreamFile.Path]; exists {
-				rendered = bytes.Join([][]byte{existing, rendered}, []byte("---"))
+				rendered = bytes.Join([][]byte{existing, rendered}, []byte("---\n"))
 			}
 
 			renderedKotsKinds[upstreamFile.Path] = rendered
