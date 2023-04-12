@@ -3,6 +3,8 @@ import { Utilities } from "../../../utilities/utilities";
 import { useSelectedApp } from "@features/App";
 import axios from "axios";
 
+axios.defaults.withCredentials = true;
+
 export const getNextAppVersion = async (appSlug: string) => {
   const config = {
     headers: {

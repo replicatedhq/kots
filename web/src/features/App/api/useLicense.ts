@@ -3,6 +3,8 @@ import { useLicense } from "./getLicense";
 import axios from "axios";
 import { slowLoadingThreshold } from "@src/constants/timers";
 
+axios.defaults.withCredentials = true;
+
 function useLicenseWithIntercept() {
   const [isSlowLoading, setIsSlowLoading] = useState(false);
 

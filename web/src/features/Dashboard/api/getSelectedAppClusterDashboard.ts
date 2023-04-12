@@ -5,6 +5,8 @@ import { useSelectedApp } from "@features/App";
 import { DashboardResponse } from "@types";
 import axios from "axios";
 
+axios.defaults.withCredentials = true;
+
 export const getSelectedAppClusterDashboard = async ({
   appSlug,
   clusterId,
