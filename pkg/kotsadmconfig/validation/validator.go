@@ -49,10 +49,10 @@ func validate(value string, validator kotsv1beta1.ConfigItemValidator) []Validat
 }
 
 func validateRegex(value string, regexValidator *kotsv1beta1.RegexValidator) *ValidationError {
-	regex, err := regexp.Compile(regexValidator.Regex)
+	regex, err := regexp.Compile(regexValidator.Pattern)
 	if err != nil {
 		return &ValidationError{
-			ValidationErrorMessage: fmt.Sprintf("failed to compile regex %q: %v", regexValidator.Regex, err),
+			ValidationErrorMessage: fmt.Sprintf("failed to compile regex %q: %v", regexValidator.Pattern, err),
 			RegexValidator:         regexValidator,
 		}
 	}

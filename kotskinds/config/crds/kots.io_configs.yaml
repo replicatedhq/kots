@@ -127,10 +127,10 @@ spec:
                                 properties:
                                   message:
                                     type: string
-                                  regex:
+                                  pattern:
                                     type: string
                                 required:
-                                - regex
+                                - pattern
                                 type: object
                             type: object
                           value:
