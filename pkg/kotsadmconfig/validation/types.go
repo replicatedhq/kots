@@ -16,7 +16,6 @@ type ConfigItemValidationError struct {
 	Type             string                      `json:"type"`
 	Value            multitype.BoolOrString      `json:"value"`
 	ValidationErrors []ValidationError           `json:"validation_errors"`
-	ChildItemErrors  []ConfigItemValidationError `json:"child_item_errors,omitempty"`
 }
 
 type ValidationError struct {

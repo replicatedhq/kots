@@ -187,19 +187,19 @@ func (h *Handler) UpdateAppConfig(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if !isEditbale {
+		updateAppConfigResponse.Error = "this version cannot be edited"
+		logger.Error(errors.Wrap(err, updateAppConfigResponse.Error))
+		JSON(w, http.StatusForbidden, updateAppConfigResponse)
+		return
+	}
+
 	validationErrors := kotsadmvalidator.ValidateConfigSpec(kotsv1beta1.ConfigSpec{Groups: updateAppConfigRequest.ConfigGroups})
 	if len(validationErrors) > 0 {
 		updateAppConfigResponse.Error = "failed to validate config values"
 		updateAppConfigResponse.ValidationErrors = validationErrors
 		logger.Error(errors.Wrap(err, updateAppConfigResponse.Error))
 		JSON(w, http.StatusBadRequest, updateAppConfigResponse)
-		return
-	}
-
-	if !isEditbale {
-		updateAppConfigResponse.Error = "this version cannot be edited"
-		logger.Error(errors.Wrap(err, updateAppConfigResponse.Error))
-		JSON(w, http.StatusForbidden, updateAppConfigResponse)
 		return
 	}
 
@@ -956,7 +956,7 @@ func updateAppConfigValues(values map[string]kotsv1beta1.ConfigValue, configGrou
 				if item.Type == "password" && !util.IsHelmManaged() { // no encryption in helm mode
 					// encrypt using the key
 					// if the decryption succeeds, don't encrypt again
-					_, err := decrypt(updatedValue)
+					_, err := util.DecryptConfigValue(updatedValue)
 					if err != nil {
 						updatedValue = base64.StdEncoding.EncodeToString(crypto.Encrypt([]byte(updatedValue)))
 					}
@@ -984,19 +984,6 @@ func updateAppConfigValues(values map[string]kotsv1beta1.ConfigValue, configGrou
 		}
 	}
 	return values
-}
-func decrypt(input string) (string, error) {
-	decoded, err := base64.StdEncoding.DecodeString(input)
-	if err != nil {
-		return "", errors.Wrap(err, "failed to base64 decode")
-	}
-
-	decrypted, err := crypto.Decrypt(decoded)
-	if err != nil {
-		return "", errors.Wrap(err, "failed to decrypt")
-	}
-
-	return string(decrypted), nil
 }
 
 type SetAppConfigValuesRequest struct {

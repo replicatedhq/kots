@@ -8,33 +8,44 @@ import (
 )
 
 const (
+	BoolItemType      = "bool"
+	FileItemType      = "file"
+	TextItemType      = "text"
+	LabelItemType     = "label"
+	HeadingItemType   = "heading"
+	PasswordItemType  = "password"
+	TextAreaItemType  = "textarea"
+	SelectOneItemType = "select_one"
+)
+
+const (
 	regexMatchError = "Value does not match regex"
 )
 
-func validate(item kotsv1beta1.ConfigItem) *ConfigItemValidationError {
-	if item.Validation == nil {
-		return nil
+var (
+	validatableItemTypesMap = map[string]bool{
+		TextItemType:     true,
+		PasswordItemType: true,
+		TextAreaItemType: true,
+		FileItemType:     true,
 	}
+)
 
-	value := item.Value.StrVal
+func isValidatableConfigItem(item kotsv1beta1.ConfigItem) bool {
+	return item.Validation != nil && !item.Hidden && item.When != "false" && !item.Repeatable && validatableItemTypesMap[item.Type]
+}
+
+func validate(value string, validator kotsv1beta1.ConfigItemValidator) []ValidationError {
 	var validationErrs []ValidationError
-	if item.Validation.Regex != nil {
-		validationErr := validateRegex(value, item.Validation.Regex)
+
+	if validator.Regex != nil {
+		validationErr := validateRegex(value, validator.Regex)
 		if validationErr != nil {
 			validationErrs = append(validationErrs, *validationErr)
 		}
 	}
 
-	if len(validationErrs) > 0 {
-		return &ConfigItemValidationError{
-			Name:             item.Name,
-			Type:             item.Type,
-			Value:            item.Value,
-			ValidationErrors: validationErrs,
-		}
-	}
-
-	return nil
+	return validationErrs
 }
 
 func validateRegex(value string, regexValidator *kotsv1beta1.RegexValidator) *ValidationError {
