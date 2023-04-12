@@ -4,12 +4,12 @@ import (
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 )
 
-func ValidateConfigSpec(configSpec kotsv1beta1.ConfigSpec) []ConfigGroupError {
+func ValidateConfigSpec(configSpec kotsv1beta1.ConfigSpec) []ConfigGroupValidationError {
 	if !hasConfigItemValidators(configSpec) {
 		return nil
 	}
 
-	var configGroupErrors []ConfigGroupError
+	var configGroupErrors []ConfigGroupValidationError
 	for _, configGroup := range configSpec.Groups {
 		configGroupError := validateConfigGroup(configGroup)
 		if configGroupError != nil {
@@ -21,48 +21,60 @@ func ValidateConfigSpec(configSpec kotsv1beta1.ConfigSpec) []ConfigGroupError {
 
 func hasConfigItemValidators(configSpec kotsv1beta1.ConfigSpec) bool {
 	for _, configGroup := range configSpec.Groups {
-		for _, configItem := range configGroup.Items {
-			if configItem.Validation != nil {
+		for _, item := range configGroup.Items {
+			if item.Hidden || item.When == "false" {
+				continue
+			}
+
+			if item.Validation != nil {
 				return true
 			}
 
-			for _, configChildItem := range configItem.Items {
+			for _, configChildItem := range item.Items {
 				if configChildItem.Validation != nil {
 					return true
 				}
 			}
+
 		}
 	}
 
 	return false
 }
 
-func validateConfigGroup(configGroup kotsv1beta1.ConfigGroup) *ConfigGroupError {
+func hasConfigItemValidator(item kotsv1beta1.ConfigItem) bool {
+	return !item.Hidden && item.When != "false" && item.Validation != nil
+}
+
+func validateConfigGroup(configGroup kotsv1beta1.ConfigGroup) *ConfigGroupValidationError {
 	configItemErrors := validateConfigItems(configGroup.Items)
 	if len(configItemErrors) == 0 {
 		return nil
 	}
 
-	return &ConfigGroupError{
-		Name:   configGroup.Name,
-		Title:  configGroup.Title,
-		Errors: configItemErrors,
+	return &ConfigGroupValidationError{
+		Name:       configGroup.Name,
+		Title:      configGroup.Title,
+		ItemErrors: configItemErrors,
 	}
 }
 
-func validateConfigItems(configItems []kotsv1beta1.ConfigItem) []ConfigItemError {
-	var configItemErrors []ConfigItemError
-	for _, configItem := range configItems {
+func validateConfigItems(configItems []kotsv1beta1.ConfigItem) []ConfigItemValidationError {
+	var configItemErrors []ConfigItemValidationError
+	for _, item := range configItems {
+		if item.Hidden || item.When == "false" {
+			continue
+		}
 		// validate config item
-		congigItemErr := validate(configItem)
+		congigItemErr := validate(item)
 
 		// validate configChildItems
-		configChildItemErrors := validateConfigChildItems(configItem.Items)
+		configChildItemErrors := validateConfigChildItems(item.Items)
 		if len(configChildItemErrors) > 0 {
 			if congigItemErr == nil {
-				congigItemErr = &ConfigItemError{
-					Name: configItem.Name,
-					Type: configItem.Type,
+				congigItemErr = &ConfigItemValidationError{
+					Name: item.Name,
+					Type: item.Type,
 				}
 			}
 			congigItemErr.ChildItemErrors = configChildItemErrors
@@ -75,8 +87,8 @@ func validateConfigItems(configItems []kotsv1beta1.ConfigItem) []ConfigItemError
 	return configItemErrors
 }
 
-func validateConfigChildItems(configChildItems []kotsv1beta1.ConfigChildItem) []ConfigItemError {
-	var configChildItemErrors []ConfigItemError
+func validateConfigChildItems(configChildItems []kotsv1beta1.ConfigChildItem) []ConfigItemValidationError {
+	var configChildItemErrors []ConfigItemValidationError
 	for _, configChildItem := range configChildItems {
 		validateConfigChildItemErr := validateConfigChildItem(configChildItem)
 		if validateConfigChildItemErr != nil {
@@ -86,7 +98,7 @@ func validateConfigChildItems(configChildItems []kotsv1beta1.ConfigChildItem) []
 	return configChildItemErrors
 }
 
-func validateConfigChildItem(childConfigItem kotsv1beta1.ConfigChildItem) *ConfigItemError {
+func validateConfigChildItem(childConfigItem kotsv1beta1.ConfigChildItem) *ConfigItemValidationError {
 	if childConfigItem.Validation == nil {
 		return nil
 	}

@@ -51,17 +51,17 @@ type LiveAppConfigRequest struct {
 }
 
 type UpdateAppConfigResponse struct {
-	Success          bool                                `json:"success"`
-	Error            string                              `json:"error,omitempty"`
-	RequiredItems    []string                            `json:"requiredItems,omitempty"`
-	ValidationErrors []kotsadmvalidator.ConfigGroupError `json:"validationErrors,omitempty"`
+	Success          bool                                          `json:"success"`
+	Error            string                                        `json:"error,omitempty"`
+	RequiredItems    []string                                      `json:"requiredItems,omitempty"`
+	ValidationErrors []kotsadmvalidator.ConfigGroupValidationError `json:"validationErrors,omitempty"`
 }
 
 type LiveAppConfigResponse struct {
-	Success          bool                                `json:"success"`
-	Error            string                              `json:"error,omitempty"`
-	ConfigGroups     []kotsv1beta1.ConfigGroup           `json:"configGroups"`
-	ValidationErrors []kotsadmvalidator.ConfigGroupError `json:"validationErrors,omitempty"`
+	Success          bool                                          `json:"success"`
+	Error            string                                        `json:"error,omitempty"`
+	ConfigGroups     []kotsv1beta1.ConfigGroup                     `json:"configGroups"`
+	ValidationErrors []kotsadmvalidator.ConfigGroupValidationError `json:"validationErrors,omitempty"`
 }
 
 type CurrentAppConfigResponse struct {
@@ -1007,9 +1007,9 @@ type SetAppConfigValuesRequest struct {
 }
 
 type SetAppConfigValuesResponse struct {
-	Success          bool                                `json:"success"`
-	Error            string                              `json:"error,omitempty"`
-	ValidationErrors []kotsadmvalidator.ConfigGroupError `json:"validationErrors,omitempty"`
+	Success          bool                                          `json:"success"`
+	Error            string                                        `json:"error,omitempty"`
+	ValidationErrors []kotsadmvalidator.ConfigGroupValidationError `json:"validationErrors,omitempty"`
 }
 
 func (h *Handler) SetAppConfigValues(w http.ResponseWriter, r *http.Request) {

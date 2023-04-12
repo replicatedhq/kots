@@ -92,11 +92,19 @@
                           "validation": {
                             "type": "object",
                             "properties": {
-                              "message": {
-                                "type": "string"
-                              },
                               "regex": {
-                                "type": "string"
+                                "type": "object",
+                                "required": [
+                                  "regex"
+                                ],
+                                "properties": {
+                                  "message": {
+                                    "type": "string"
+                                  },
+                                  "regex": {
+                                    "type": "string"
+                                  }
+                                }
                               }
                             }
                           },
@@ -170,11 +178,19 @@
                     "validation": {
                       "type": "object",
                       "properties": {
-                        "message": {
-                          "type": "string"
-                        },
                         "regex": {
-                          "type": "string"
+                          "type": "object",
+                          "required": [
+                            "regex"
+                          ],
+                          "properties": {
+                            "message": {
+                              "type": "string"
+                            },
+                            "regex": {
+                              "type": "string"
+                            }
+                          }
                         }
                       }
                     },

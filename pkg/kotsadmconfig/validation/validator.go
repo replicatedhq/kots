@@ -11,31 +11,47 @@ const (
 	regexMatchError = "Value does not match regex"
 )
 
-func validate(item kotsv1beta1.ConfigItem) *ConfigItemError {
-	if item.When == "false" || item.Validation == nil {
+func validate(item kotsv1beta1.ConfigItem) *ConfigItemValidationError {
+	if item.Validation == nil {
 		return nil
 	}
 
-	if item.Validation.Regex != "" {
-		return validateRegex(item)
+	value := item.Value.StrVal
+	var validationErrs []ValidationError
+	if item.Validation.Regex != nil {
+		validationErr := validateRegex(value, item.Validation.Regex)
+		if validationErr != nil {
+			validationErrs = append(validationErrs, *validationErr)
+		}
+	}
+
+	if len(validationErrs) > 0 {
+		return &ConfigItemValidationError{
+			Name:             item.Name,
+			Type:             item.Type,
+			Value:            item.Value,
+			ValidationErrors: validationErrs,
+		}
 	}
 
 	return nil
 }
 
-func validateRegex(configItem kotsv1beta1.ConfigItem) *ConfigItemError {
-	value := configItem.Value.StrVal
-	regexStr := configItem.Validation.Regex
-
-	regex, err := regexp.Compile(regexStr)
+func validateRegex(value string, regexValidator *kotsv1beta1.RegexValidator) *ValidationError {
+	regex, err := regexp.Compile(regexValidator.Regex)
 	if err != nil {
-		return buildConfigItemError(configItem, fmt.Sprintf("Invalid regex: %s", err.Error()))
+		return &ValidationError{
+			ValidationErrorMessage: fmt.Sprintf("failed to compile regex %q: %v", regexValidator.Regex, err),
+			RegexValidator:         regexValidator,
+		}
 	}
 
 	matched := regex.MatchString(value)
 	if !matched {
-		return buildConfigItemError(configItem, regexMatchError)
+		return &ValidationError{
+			ValidationErrorMessage: regexMatchError,
+			RegexValidator:         regexValidator,
+		}
 	}
-
 	return nil
 }
