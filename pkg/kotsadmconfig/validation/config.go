@@ -63,7 +63,7 @@ func validateConfigItem(item kotsv1beta1.ConfigItem) *ConfigItemValidationError 
 		return nil
 	}
 
-	value, err := getItemValue(item.Value, item.Type)
+	value, err := getValidatableItemValue(item.Value, item.Type)
 	if err != nil {
 		return &ConfigItemValidationError{
 			Name:  item.Name,
@@ -90,7 +90,7 @@ func validateConfigItem(item kotsv1beta1.ConfigItem) *ConfigItemValidationError 
 	return nil
 }
 
-func getItemValue(value multitype.BoolOrString, itemType string) (string, error) {
+func getValidatableItemValue(value multitype.BoolOrString, itemType string) (string, error) {
 	switch itemType {
 	case TextItemType, TextAreaItemType:
 		return value.StrVal, nil
@@ -107,9 +107,7 @@ func getItemValue(value multitype.BoolOrString, itemType string) (string, error)
 			return "", errors.Wrapf(err, "failed to base64 decode file item value")
 		}
 		return string(decodedBytes), err
-	case HeadingItemType, LabelItemType:
-		return "", nil
 	default:
-		return "", errors.Errorf("unknown item type %s", itemType)
+		return "", errors.Errorf("item value of type %s is not validated", itemType)
 	}
 }
