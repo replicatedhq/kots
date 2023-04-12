@@ -75,10 +75,15 @@ spec:
                                   type: string
                                 validation:
                                   properties:
-                                    message:
-                                      type: string
                                     regex:
-                                      type: string
+                                      properties:
+                                        message:
+                                          type: string
+                                        regex:
+                                          type: string
+                                      required:
+                                      - regex
+                                      type: object
                                   type: object
                                 value:
                                   type: BoolString
@@ -130,10 +135,15 @@ spec:
                             type: string
                           validation:
                             properties:
-                              message:
-                                type: string
                               regex:
-                                type: string
+                                properties:
+                                  message:
+                                    type: string
+                                  regex:
+                                    type: string
+                                required:
+                                - regex
+                                type: object
                             type: object
                           value:
                             type: BoolString

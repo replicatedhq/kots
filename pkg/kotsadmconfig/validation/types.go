@@ -5,27 +5,21 @@ import (
 	"github.com/replicatedhq/kots/kotskinds/multitype"
 )
 
-type ConfigGroupError struct {
-	Name   string            `json:"name"`
-	Title  string            `json:"title"`
-	Errors []ConfigItemError `json:"errors"`
+type ConfigGroupValidationError struct {
+	Name       string                      `json:"name"`
+	Title      string                      `json:"title"`
+	ItemErrors []ConfigItemValidationError `json:"item_errors"`
 }
 
-type ConfigItemError struct {
-	Name                   string                           `json:"name"`
-	Type                   string                           `json:"type"`
-	Value                  multitype.BoolOrString           `json:"value"`
-	ValidationErrorMessage string                           `json:"validation_error_message"`
-	Validation             kotsv1beta1.ConfigItemValidation `json:"validation"`
-	ChildItemErrors        []ConfigItemError                `json:"child_item_errors,omitempty"`
+type ConfigItemValidationError struct {
+	Name             string                      `json:"name"`
+	Type             string                      `json:"type"`
+	Value            multitype.BoolOrString      `json:"value"`
+	ValidationErrors []ValidationError           `json:"validation_errors"`
+	ChildItemErrors  []ConfigItemValidationError `json:"child_item_errors,omitempty"`
 }
 
-func buildConfigItemError(configItem kotsv1beta1.ConfigItem, errorMsg string) *ConfigItemError {
-	return &ConfigItemError{
-		Name:                   configItem.Name,
-		Type:                   configItem.Type,
-		Value:                  configItem.Value,
-		Validation:             *configItem.Validation,
-		ValidationErrorMessage: errorMsg,
-	}
+type ValidationError struct {
+	ValidationErrorMessage string                      `json:"validation_error_message"`
+	RegexValidator         *kotsv1beta1.RegexValidator `json:"regex,omitempty"`
 }

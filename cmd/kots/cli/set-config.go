@@ -134,8 +134,8 @@ func SetConfigCmd() *cobra.Command {
 			}
 
 			response := struct {
-				Error            string                              `json:"error"`
-				ValidationErrors []kotsadmvalidator.ConfigGroupError `json:"validationErrors,omitempty"`
+				Error            string                                        `json:"error"`
+				ValidationErrors []kotsadmvalidator.ConfigGroupValidationError `json:"validationErrors,omitempty"`
 			}{}
 			_ = json.Unmarshal(respBody, &response)
 
