@@ -176,8 +176,7 @@ func renderKotsKinds(upstreamFiles []upstreamtypes.UpstreamFile, renderedConfig 
 				continue
 			}
 
-			filePrefix := fmt.Sprintf("%s-%s", strings.ToLower(gvk.Kind), gvk.Metadata.Name)
-			filename := kotsutil.GenUniqueKotsKindFilename(renderedKotsKinds, filePrefix)
+			var rendered []byte
 
 			switch gvkString {
 			case "kots.io/v1beta1, Kind=Installation":
@@ -187,38 +186,41 @@ func renderKotsKinds(upstreamFiles []upstreamtypes.UpstreamFile, renderedConfig 
 			case "kots.io/v1beta1, Kind=Config":
 				// Use the rendered Config instead of the upstream.
 				kotsKinds := kotsutil.KotsKinds{Config: renderedConfig}
-				configBytes, err := kotsKinds.Marshal("kots.io", "v1beta1", "Config")
+				config, err := kotsKinds.Marshal("kots.io", "v1beta1", "Config")
 				if err != nil {
 					return nil, errors.Wrap(err, "failed to marshal rendered config")
 				}
-				renderedKotsKinds[filename] = []byte(configBytes)
+				rendered = []byte(config)
 
 			case "kots.io/v1beta1, Kind=ConfigValues":
 				// ConfigValues do not need rendering since they should already be valid values.
-				renderedKotsKinds[filename] = upstreamFile.Content
+				rendered = upstreamFile.Content
 
 			case "kots.io/v1beta1, Kind=HelmChart":
-				rendered, err := builder.RenderTemplate(upstreamFile.Path, string(upstreamFile.Content))
+				helmchart, err := builder.RenderTemplate(upstreamFile.Path, string(upstreamFile.Content))
 				if err != nil {
 					return nil, errors.Wrapf(err, "failed to render file %s", upstreamFile.Path)
 				}
-
-				renderedKotsKinds[filename] = []byte(rendered)
+				rendered = []byte(helmchart)
 
 			default:
-				vcConfig, err := processVariadicConfig(&upstreamFile, renderedConfig, renderOptions.Log)
+				vConfig, err := processVariadicConfig(&upstreamFile, renderedConfig, renderOptions.Log)
 				if err != nil {
 					return nil, errors.Wrapf(err, "failed to process variadic config in kots kind file %s", upstreamFile.Path)
 				}
-				upstreamFile.Content = vcConfig
 
-				rendered, err := builder.RenderTemplate(upstreamFile.Path, string(upstreamFile.Content))
+				bytes, err := builder.RenderTemplate(upstreamFile.Path, string(vConfig))
 				if err != nil {
 					return nil, errors.Wrapf(err, "failed to render file %s", upstreamFile.Path)
 				}
-
-				renderedKotsKinds[filename] = []byte(rendered)
+				rendered = []byte(bytes)
 			}
+
+			if existing, exists := renderedKotsKinds[upstreamFile.Path]; exists {
+				rendered = bytes.Join([][]byte{existing, rendered}, []byte("---"))
+			}
+
+			renderedKotsKinds[upstreamFile.Path] = rendered
 		}
 	}
 
