@@ -162,13 +162,13 @@
                         "regex": {
                           "type": "object",
                           "required": [
-                            "regex"
+                            "pattern"
                           ],
                           "properties": {
                             "message": {
                               "type": "string"
                             },
-                            "regex": {
+                            "pattern": {
                               "type": "string"
                             }
                           }
