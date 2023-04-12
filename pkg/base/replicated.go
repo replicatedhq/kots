@@ -164,7 +164,6 @@ func renderKotsKinds(upstreamFiles []upstreamtypes.UpstreamFile, renderedConfig 
 	renderedKotsKinds := make(map[string][]byte)
 
 	for _, upstreamFile := range upstreamFiles {
-
 		for _, doc := range util.ConvertToSingleDocs(upstreamFile.Content) {
 			gvk := OverlySimpleGVK{}
 			if err := yaml.Unmarshal(doc, &gvk); err != nil {
