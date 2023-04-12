@@ -148,6 +148,7 @@ func SetConfigCmd() *cobra.Command {
 						if err != nil {
 							return errors.Wrap(err, "failed to marshal config")
 						}
+						fmt.Println(response.Error)
 						fmt.Print(string(validationErrors))
 						return errors.New("config validation failed")
 					} else {
