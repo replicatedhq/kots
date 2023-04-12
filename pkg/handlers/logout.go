@@ -9,12 +9,23 @@ import (
 )
 
 func (h *Handler) Logout(w http.ResponseWriter, r *http.Request) {
-	if r.Header.Get("Authorization") == "" {
-		w.WriteHeader(http.StatusNoContent)
-		return
+
+	auth := r.Header.Get("authorization")
+	if auth == "undefined" {
+		auth = ""
 	}
 
-	sess, err := session.Parse(store.GetStore(), r.Header.Get("Authorization"))
+	if auth == "" {
+		signedTokenCookie, err := r.Cookie("signed-token")
+		auth = signedTokenCookie.Value
+
+		if err == http.ErrNoCookie && auth == "" {
+			w.WriteHeader(http.StatusNoContent)
+			return
+		}
+	}
+
+	sess, err := session.Parse(store.GetStore(), auth)
 	if err != nil {
 		if store.GetStore().IsNotFound(err) {
 			w.WriteHeader(http.StatusNoContent)
