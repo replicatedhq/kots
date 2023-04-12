@@ -73,18 +73,6 @@ spec:
                                   type: boolean
                                 title:
                                   type: string
-                                validation:
-                                  properties:
-                                    regex:
-                                      properties:
-                                        message:
-                                          type: string
-                                        regex:
-                                          type: string
-                                      required:
-                                      - regex
-                                      type: object
-                                  type: object
                                 value:
                                   type: BoolString
                               required:
