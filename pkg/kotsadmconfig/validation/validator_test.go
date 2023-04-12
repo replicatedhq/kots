@@ -8,7 +8,7 @@ import (
 )
 
 func Test_isValidatableConfigItem(t *testing.T) {
-	validValidator := &kotsv1beta1.ConfigItemValidator{
+	validValidator := &kotsv1beta1.ConfigItemValidation{
 		Regex: &kotsv1beta1.RegexValidator{
 			Pattern: ".*",
 		},
@@ -109,7 +109,7 @@ func Test_validateRegex(t *testing.T) {
 func Test_validate(t *testing.T) {
 	type args struct {
 		value     string
-		validator kotsv1beta1.ConfigItemValidator
+		validator kotsv1beta1.ConfigItemValidation
 	}
 	tests := []struct {
 		name string
@@ -120,7 +120,7 @@ func Test_validate(t *testing.T) {
 			name: "valid regex",
 			args: args{
 				value: "foo",
-				validator: kotsv1beta1.ConfigItemValidator{
+				validator: kotsv1beta1.ConfigItemValidation{
 					Regex: &kotsv1beta1.RegexValidator{Pattern: ".*"},
 				},
 			},
@@ -129,7 +129,7 @@ func Test_validate(t *testing.T) {
 			name: "invalid regex",
 			args: args{
 				value: "foo",
-				validator: kotsv1beta1.ConfigItemValidator{
+				validator: kotsv1beta1.ConfigItemValidation{
 					Regex: &kotsv1beta1.RegexValidator{Pattern: "["},
 				},
 			},

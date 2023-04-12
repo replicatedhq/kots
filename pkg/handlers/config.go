@@ -22,7 +22,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/crypto"
 	"github.com/replicatedhq/kots/pkg/helm"
 	kotsadmconfig "github.com/replicatedhq/kots/pkg/kotsadmconfig"
-	kotsadmvalidator "github.com/replicatedhq/kots/pkg/kotsadmconfig/validation"
+	configvalidation "github.com/replicatedhq/kots/pkg/kotsadmconfig/validation"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/midstream"
@@ -54,14 +54,14 @@ type UpdateAppConfigResponse struct {
 	Success          bool                                          `json:"success"`
 	Error            string                                        `json:"error,omitempty"`
 	RequiredItems    []string                                      `json:"requiredItems,omitempty"`
-	ValidationErrors []kotsadmvalidator.ConfigGroupValidationError `json:"validationErrors,omitempty"`
+	ValidationErrors []configvalidation.ConfigGroupValidationError `json:"validationErrors,omitempty"`
 }
 
 type LiveAppConfigResponse struct {
 	Success          bool                                          `json:"success"`
 	Error            string                                        `json:"error,omitempty"`
 	ConfigGroups     []kotsv1beta1.ConfigGroup                     `json:"configGroups"`
-	ValidationErrors []kotsadmvalidator.ConfigGroupValidationError `json:"validationErrors,omitempty"`
+	ValidationErrors []configvalidation.ConfigGroupValidationError `json:"validationErrors,omitempty"`
 }
 
 type CurrentAppConfigResponse struct {
@@ -69,7 +69,7 @@ type CurrentAppConfigResponse struct {
 	Error             string                                        `json:"error,omitempty"`
 	DownstreamVersion *downstreamtypes.DownstreamVersion            `json:"downstreamVersion"`
 	ConfigGroups      []kotsv1beta1.ConfigGroup                     `json:"configGroups"`
-	ValidationErrors  []kotsadmvalidator.ConfigGroupValidationError `json:"validationErrors,omitempty"`
+	ValidationErrors  []configvalidation.ConfigGroupValidationError `json:"validationErrors,omitempty"`
 }
 
 type DownloadFileFromConfigResponse struct {
@@ -195,11 +195,11 @@ func (h *Handler) UpdateAppConfig(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	validationErrors := kotsadmvalidator.ValidateConfigSpec(kotsv1beta1.ConfigSpec{Groups: updateAppConfigRequest.ConfigGroups})
+	validationErrors := configvalidation.ValidateConfigSpec(kotsv1beta1.ConfigSpec{Groups: updateAppConfigRequest.ConfigGroups})
 	if len(validationErrors) > 0 {
 		updateAppConfigResponse.Error = "failed to validate config values"
 		updateAppConfigResponse.ValidationErrors = validationErrors
-		logger.Error(errors.Wrap(err, updateAppConfigResponse.Error))
+		logger.Errorf(updateAppConfigResponse.Error)
 		JSON(w, http.StatusBadRequest, updateAppConfigResponse)
 		return
 	}
@@ -397,7 +397,7 @@ func (h *Handler) LiveAppConfig(w http.ResponseWriter, r *http.Request) {
 		liveAppConfigResponse.ConfigGroups = []kotsv1beta1.ConfigGroup{}
 	} else {
 		liveAppConfigResponse.ConfigGroups = renderedConfig.Spec.Groups
-		liveAppConfigResponse.ValidationErrors = kotsadmvalidator.ValidateConfigSpec(renderedConfig.Spec)
+		liveAppConfigResponse.ValidationErrors = configvalidation.ValidateConfigSpec(renderedConfig.Spec)
 	}
 
 	JSON(w, http.StatusOK, liveAppConfigResponse)
@@ -649,7 +649,7 @@ func (h *Handler) CurrentAppConfig(w http.ResponseWriter, r *http.Request) {
 
 	if renderedConfig != nil {
 		currentAppConfigResponse.ConfigGroups = renderedConfig.Spec.Groups
-		currentAppConfigResponse.ValidationErrors = kotsadmvalidator.ValidateConfigSpec(renderedConfig.Spec)
+		currentAppConfigResponse.ValidationErrors = configvalidation.ValidateConfigSpec(renderedConfig.Spec)
 	}
 
 	currentAppConfigResponse.Success = true
@@ -995,7 +995,7 @@ type SetAppConfigValuesRequest struct {
 type SetAppConfigValuesResponse struct {
 	Success          bool                                          `json:"success"`
 	Error            string                                        `json:"error,omitempty"`
-	ValidationErrors []kotsadmvalidator.ConfigGroupValidationError `json:"validationErrors,omitempty"`
+	ValidationErrors []configvalidation.ConfigGroupValidationError `json:"validationErrors,omitempty"`
 }
 
 func (h *Handler) SetAppConfigValues(w http.ResponseWriter, r *http.Request) {
@@ -1148,11 +1148,11 @@ func (h *Handler) SetAppConfigValues(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	validationErrors := kotsadmvalidator.ValidateConfigSpec(renderedConfig.Spec)
+	validationErrors := configvalidation.ValidateConfigSpec(renderedConfig.Spec)
 	if len(validationErrors) > 0 {
 		setAppConfigValuesResponse.Error = "failed to validate config values"
 		setAppConfigValuesResponse.ValidationErrors = validationErrors
-		logger.Error(errors.Wrap(err, setAppConfigValuesResponse.Error))
+		logger.Errorf(setAppConfigValuesResponse.Error)
 		JSON(w, http.StatusBadRequest, setAppConfigValuesResponse)
 		return
 	}
