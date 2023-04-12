@@ -102,7 +102,7 @@ var (
 		Name:  "validRegexConfigItem",
 		Type:  "text",
 		Value: multitype.BoolOrString{StrVal: "test"},
-		Validation: &kotsv1beta1.ConfigItemValidator{
+		Validation: &kotsv1beta1.ConfigItemValidation{
 			Regex: &kotsv1beta1.RegexValidator{
 				Pattern: "^[a-z]+$",
 			},
@@ -112,7 +112,7 @@ var (
 		Name:  "invalidRegexConfigItem",
 		Type:  "text",
 		Value: multitype.BoolOrString{StrVal: "123"},
-		Validation: &kotsv1beta1.ConfigItemValidator{
+		Validation: &kotsv1beta1.ConfigItemValidation{
 			Regex: &kotsv1beta1.RegexValidator{
 				Pattern: "^[a-z]+$",
 			},
@@ -127,7 +127,7 @@ var (
 		Name:  "invalidConfigItemValue",
 		Type:  FileItemType,
 		Value: multitype.BoolOrString{StrVal: "dGhpcyBpcyBhIGZpbGUgY29udGVudAo"},
-		Validation: &kotsv1beta1.ConfigItemValidator{
+		Validation: &kotsv1beta1.ConfigItemValidation{
 			Regex: &kotsv1beta1.RegexValidator{
 				Pattern: "^[a-z]+$",
 			},
