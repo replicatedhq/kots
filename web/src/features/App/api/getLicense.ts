@@ -5,6 +5,8 @@ import { useSelectedApp } from "@features/App";
 import axios from "axios";
 import { AppLicense } from "@types";
 
+axios.defaults.withCredentials = true;
+
 export const getLicense = async ({
   appSlug,
 }: {

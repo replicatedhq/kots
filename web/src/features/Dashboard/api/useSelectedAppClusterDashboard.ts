@@ -4,6 +4,8 @@ import { Utilities } from "@src/utilities/utilities";
 import { slowLoadingThreshold } from "@src/constants/timers";
 import axios from "axios";
 
+axios.defaults.withCredentials = true;
+
 function useSelectedAppClusterDashboardWithIntercept(
   { refetchInterval }: { refetchInterval: number | false } = {
     refetchInterval: false,
