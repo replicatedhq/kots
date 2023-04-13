@@ -8,6 +8,7 @@ import (
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	"github.com/replicatedhq/kots/kotskinds/multitype"
 	"github.com/replicatedhq/kots/pkg/crypto"
+	configtypes "github.com/replicatedhq/kots/pkg/kotsadmconfig/types"
 )
 
 func Test_getValidatableItemValue(t *testing.T) {
@@ -29,49 +30,49 @@ func Test_getValidatableItemValue(t *testing.T) {
 			name: "string",
 			args: args{
 				value:    multitype.BoolOrString{StrVal: "test"},
-				itemType: TextItemType,
+				itemType: configtypes.TextItemType,
 			},
 			want: "test",
 		}, {
 			name: "textarea",
 			args: args{
 				value:    multitype.BoolOrString{StrVal: "test"},
-				itemType: TextAreaItemType,
+				itemType: configtypes.TextAreaItemType,
 			},
 			want: "test",
 		}, {
 			name: "password",
 			args: args{
 				value:    multitype.BoolOrString{StrVal: encodedPassword},
-				itemType: PasswordItemType,
+				itemType: configtypes.PasswordItemType,
 			},
 			want: decryptedPassword,
 		}, {
 			name: "password plain text",
 			args: args{
 				value:    multitype.BoolOrString{StrVal: decryptedPassword},
-				itemType: PasswordItemType,
+				itemType: configtypes.PasswordItemType,
 			},
 			want: decryptedPassword,
 		}, {
 			name: "valid base64 file",
 			args: args{
 				value:    multitype.BoolOrString{StrVal: encodedFileContent},
-				itemType: FileItemType,
+				itemType: configtypes.FileItemType,
 			},
 			want: fileContent,
 		}, {
 			name: "invalid base64 file",
 			args: args{
 				value:    multitype.BoolOrString{StrVal: "dGhpcyBpcyBhIGZpbGUgY29udGVudAo"},
-				itemType: FileItemType,
+				itemType: configtypes.FileItemType,
 			},
 			wantErr: true,
 		}, {
-			name: HeadingItemType,
+			name: configtypes.HeadingItemType,
 			args: args{
 				value:    multitype.BoolOrString{StrVal: "test"},
-				itemType: HeadingItemType,
+				itemType: configtypes.HeadingItemType,
 			},
 			wantErr: true,
 		}, {
@@ -125,7 +126,7 @@ var (
 	}
 	invalidConfigItemValue = kotsv1beta1.ConfigItem{
 		Name:  "invalidConfigItemValue",
-		Type:  FileItemType,
+		Type:  configtypes.FileItemType,
 		Value: multitype.BoolOrString{StrVal: "dGhpcyBpcyBhIGZpbGUgY29udGVudAo"},
 		Validation: &kotsv1beta1.ConfigItemValidation{
 			Regex: &kotsv1beta1.RegexValidator{
@@ -142,7 +143,7 @@ func Test_validateConfigItem(t *testing.T) {
 	tests := []struct {
 		name string
 		args args
-		want *ConfigItemValidationError
+		want *configtypes.ConfigItemValidationError
 	}{
 		{
 			name: "valid regex",
@@ -155,11 +156,11 @@ func Test_validateConfigItem(t *testing.T) {
 			args: args{
 				item: invalidRegexConfigItem,
 			},
-			want: &ConfigItemValidationError{
+			want: &configtypes.ConfigItemValidationError{
 				Name:  invalidRegexConfigItem.Name,
 				Type:  invalidRegexConfigItem.Type,
 				Value: invalidRegexConfigItem.Value,
-				ValidationErrors: []ValidationError{
+				ValidationErrors: []configtypes.ValidationError{
 					{
 						ValidationErrorMessage: regexMatchError,
 						RegexValidator:         invalidRegexConfigItem.Validation.Regex,
@@ -172,11 +173,11 @@ func Test_validateConfigItem(t *testing.T) {
 			args: args{
 				item: invalidConfigItemValue,
 			},
-			want: &ConfigItemValidationError{
+			want: &configtypes.ConfigItemValidationError{
 				Name:  invalidConfigItemValue.Name,
 				Type:  invalidConfigItemValue.Type,
 				Value: invalidConfigItemValue.Value,
-				ValidationErrors: []ValidationError{
+				ValidationErrors: []configtypes.ValidationError{
 					{
 						ValidationErrorMessage: "failed to get item value: failed to base64 decode file item value: failed to bse64 decode interface data: illegal base64 data at input byte 28",
 					},
@@ -207,7 +208,7 @@ func Test_validateConfigItems(t *testing.T) {
 	tests := []struct {
 		name string
 		args args
-		want []ConfigItemValidationError
+		want []configtypes.ConfigItemValidationError
 	}{
 		{
 			name: "valid config items",
@@ -227,12 +228,12 @@ func Test_validateConfigItems(t *testing.T) {
 					nonValidatableConfigItem,
 				},
 			},
-			want: []ConfigItemValidationError{
+			want: []configtypes.ConfigItemValidationError{
 				{
 					Name:  invalidRegexConfigItem.Name,
 					Type:  invalidRegexConfigItem.Type,
 					Value: invalidRegexConfigItem.Value,
-					ValidationErrors: []ValidationError{
+					ValidationErrors: []configtypes.ValidationError{
 						{
 							ValidationErrorMessage: regexMatchError,
 							RegexValidator:         invalidRegexConfigItem.Validation.Regex,
@@ -258,7 +259,7 @@ func Test_validateConfigGroup(t *testing.T) {
 	tests := []struct {
 		name string
 		args args
-		want *ConfigGroupValidationError
+		want *configtypes.ConfigGroupValidationError
 	}{
 		{
 			name: "valid config group",
@@ -284,14 +285,14 @@ func Test_validateConfigGroup(t *testing.T) {
 					},
 				},
 			},
-			want: &ConfigGroupValidationError{
+			want: &configtypes.ConfigGroupValidationError{
 				Name: "test",
-				ItemErrors: []ConfigItemValidationError{
+				ItemErrors: []configtypes.ConfigItemValidationError{
 					{
 						Name:  invalidRegexConfigItem.Name,
 						Type:  invalidRegexConfigItem.Type,
 						Value: invalidRegexConfigItem.Value,
-						ValidationErrors: []ValidationError{
+						ValidationErrors: []configtypes.ValidationError{
 							{
 								ValidationErrorMessage: regexMatchError,
 								RegexValidator:         invalidRegexConfigItem.Validation.Regex,
@@ -369,7 +370,7 @@ func TestValidateConfigSpec(t *testing.T) {
 	tests := []struct {
 		name string
 		args args
-		want []ConfigGroupValidationError
+		want []configtypes.ConfigGroupValidationError
 	}{
 		{
 			name: "valid config spec",
@@ -418,15 +419,15 @@ func TestValidateConfigSpec(t *testing.T) {
 					},
 				},
 			},
-			want: []ConfigGroupValidationError{
+			want: []configtypes.ConfigGroupValidationError{
 				{
 					Name: "test",
-					ItemErrors: []ConfigItemValidationError{
+					ItemErrors: []configtypes.ConfigItemValidationError{
 						{
 							Name:  invalidRegexConfigItem.Name,
 							Type:  invalidRegexConfigItem.Type,
 							Value: invalidRegexConfigItem.Value,
-							ValidationErrors: []ValidationError{
+							ValidationErrors: []configtypes.ValidationError{
 								{
 									ValidationErrorMessage: regexMatchError,
 									RegexValidator:         invalidRegexConfigItem.Validation.Regex,
