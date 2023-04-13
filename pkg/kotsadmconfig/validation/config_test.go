@@ -112,10 +112,10 @@ var (
 			},
 		},
 	}
-	invalidRegexConfigItem = kotsv1beta1.ConfigItem{
-		Name:  "invalidRegexConfigItem",
+	regexMatchFailedConfigItem = kotsv1beta1.ConfigItem{
+		Name:  "regexMatchFailedConfigItem",
 		Type:  "text",
-		Value: multitype.BoolOrString{StrVal: "123"},
+		Value: multitype.BoolOrString{StrVal: "a123"},
 		Validation: &kotsv1beta1.ConfigItemValidation{
 			Regex: &kotsv1beta1.RegexValidator{
 				Pattern: "^[a-z]+$",
@@ -125,12 +125,25 @@ var (
 			},
 		},
 	}
-	nonValidatableConfigItem = kotsv1beta1.ConfigItem{
+	invalidRegexPatternConfigItem = kotsv1beta1.ConfigItem{
+		Name:  "invalidRegexConfigItem",
+		Type:  "text",
+		Value: multitype.BoolOrString{StrVal: "123"},
+		Validation: &kotsv1beta1.ConfigItemValidation{
+			Regex: &kotsv1beta1.RegexValidator{
+				Pattern: "^([a-z]+$",
+				BaseValidator: kotsv1beta1.BaseValidator{
+					Message: "must be a valid regex",
+				},
+			},
+		},
+	}
+	noValidationConfigItem = kotsv1beta1.ConfigItem{
 		Name:  "nonValidatedConfigItem",
 		Type:  "text",
 		Value: multitype.BoolOrString{StrVal: "test"},
 	}
-	invalidConfigItemValue = kotsv1beta1.ConfigItem{
+	invalidValueConfigItem = kotsv1beta1.ConfigItem{
 		Name:  "invalidConfigItemValue",
 		Type:  configtypes.FileItemType,
 		Value: multitype.BoolOrString{StrVal: "dGhpcyBpcyBhIGZpbGUgY29udGVudAo"},
@@ -150,9 +163,10 @@ func Test_validateConfigItem(t *testing.T) {
 		item kotsv1beta1.ConfigItem
 	}
 	tests := []struct {
-		name string
-		args args
-		want *configtypes.ConfigItemValidationError
+		name    string
+		args    args
+		want    *configtypes.ConfigItemValidationError
+		wantErr bool
 	}{
 		{
 			name: "valid regex",
@@ -161,47 +175,52 @@ func Test_validateConfigItem(t *testing.T) {
 			},
 			want: nil,
 		}, {
-			name: "invalid regex",
+			name: "invalid regex pattern",
 			args: args{
-				item: invalidRegexConfigItem,
+				item: invalidRegexPatternConfigItem,
 			},
-			want: &configtypes.ConfigItemValidationError{
-				Name: invalidRegexConfigItem.Name,
-				Type: invalidRegexConfigItem.Type,
-				ValidationErrors: []configtypes.ValidationError{
-					{
-						Error:   regexMatchError,
-						Message: invalidRegexConfigItem.Validation.Regex.Message,
-					},
-				},
-			},
+			want:    nil,
+			wantErr: true,
 		},
 		{
-			name: "invalid config item value",
+			name: "invalid value config item",
 			args: args{
-				item: invalidConfigItemValue,
+				item: invalidValueConfigItem,
 			},
-			want: &configtypes.ConfigItemValidationError{
-				Name: invalidConfigItemValue.Name,
-				Type: invalidConfigItemValue.Type,
-				ValidationErrors: []configtypes.ValidationError{
-					{
-						Message: "failed to get item value: failed to base64 decode file item value: failed to bse64 decode interface data: illegal base64 data at input byte 28",
-					},
-				},
-			},
+			want:    nil,
+			wantErr: true,
 		},
 		{
 			name: "non validatable config item",
 			args: args{
-				item: nonValidatableConfigItem,
+				item: noValidationConfigItem,
 			},
 			want: nil,
+		}, {
+			name: "regex match failed",
+			args: args{
+				item: regexMatchFailedConfigItem,
+			},
+			want: &configtypes.ConfigItemValidationError{
+				Name: regexMatchFailedConfigItem.Name,
+				Type: regexMatchFailedConfigItem.Type,
+				ValidationErrors: []configtypes.ValidationError{
+					{
+						Message: "must be a valid regex",
+						Reason:  regexMatchError,
+					},
+				},
+			},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := validateConfigItem(tt.args.item); !reflect.DeepEqual(got, tt.want) {
+			got, err := validateConfigItem(tt.args.item)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("validateConfigItem() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("validateConfigItem() = %v, want %v", got, tt.want)
 			}
 		})
@@ -213,36 +232,50 @@ func Test_validateConfigItems(t *testing.T) {
 		configItems []kotsv1beta1.ConfigItem
 	}
 	tests := []struct {
-		name string
-		args args
-		want []configtypes.ConfigItemValidationError
+		name    string
+		args    args
+		want    []configtypes.ConfigItemValidationError
+		wantErr bool
 	}{
 		{
 			name: "valid config items",
 			args: args{
 				configItems: []kotsv1beta1.ConfigItem{
 					validRegexConfigItem,
-					nonValidatableConfigItem,
+					noValidationConfigItem,
 				},
 			},
-			want: nil,
-		}, {
-			name: "invalid config items",
+			want: []configtypes.ConfigItemValidationError{},
+		},
+		{
+			name: "invalid config validation regex pattern",
 			args: args{
 				configItems: []kotsv1beta1.ConfigItem{
 					validRegexConfigItem,
-					invalidRegexConfigItem,
-					nonValidatableConfigItem,
+					invalidRegexPatternConfigItem,
+					noValidationConfigItem,
+				},
+			},
+			want:    []configtypes.ConfigItemValidationError{},
+			wantErr: true,
+		},
+		{
+			name: "invalid config item values",
+			args: args{
+				configItems: []kotsv1beta1.ConfigItem{
+					validRegexConfigItem,
+					regexMatchFailedConfigItem,
+					noValidationConfigItem,
 				},
 			},
 			want: []configtypes.ConfigItemValidationError{
 				{
-					Name: invalidRegexConfigItem.Name,
-					Type: invalidRegexConfigItem.Type,
+					Name: regexMatchFailedConfigItem.Name,
+					Type: regexMatchFailedConfigItem.Type,
 					ValidationErrors: []configtypes.ValidationError{
 						{
-							Error:   regexMatchError,
-							Message: invalidRegexConfigItem.Validation.Regex.Message,
+							Reason:  regexMatchError,
+							Message: regexMatchFailedConfigItem.Validation.Regex.Message,
 						},
 					},
 				},
@@ -251,7 +284,12 @@ func Test_validateConfigItems(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := validateConfigItems(tt.args.configItems); !reflect.DeepEqual(got, tt.want) {
+			got, err := validateConfigItems(tt.args.configItems)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("validateConfigItems() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if reflect.DeepEqual(got, tt.want) {
 				t.Errorf("validateConfigItems() = %v, want %v", got, tt.want)
 			}
 		})
@@ -263,10 +301,26 @@ func Test_validateConfigGroup(t *testing.T) {
 		configGroup kotsv1beta1.ConfigGroup
 	}
 	tests := []struct {
-		name string
-		args args
-		want *configtypes.ConfigGroupValidationError
+		name    string
+		args    args
+		want    *configtypes.ConfigGroupValidationError
+		wantErr bool
 	}{
+		{
+			name: "invalid regex pattern config group",
+			args: args{
+				configGroup: kotsv1beta1.ConfigGroup{
+					Name: "test",
+					Items: []kotsv1beta1.ConfigItem{
+						validRegexConfigItem,
+						noValidationConfigItem,
+						invalidRegexPatternConfigItem,
+					},
+				},
+			},
+			want:    nil,
+			wantErr: true,
+		},
 		{
 			name: "valid config group",
 			args: args{
@@ -274,7 +328,7 @@ func Test_validateConfigGroup(t *testing.T) {
 					Name: "test",
 					Items: []kotsv1beta1.ConfigItem{
 						validRegexConfigItem,
-						nonValidatableConfigItem,
+						noValidationConfigItem,
 					},
 				},
 			},
@@ -286,8 +340,8 @@ func Test_validateConfigGroup(t *testing.T) {
 					Name: "test",
 					Items: []kotsv1beta1.ConfigItem{
 						validRegexConfigItem,
-						invalidRegexConfigItem,
-						nonValidatableConfigItem,
+						regexMatchFailedConfigItem,
+						noValidationConfigItem,
 					},
 				},
 			},
@@ -295,12 +349,12 @@ func Test_validateConfigGroup(t *testing.T) {
 				Name: "test",
 				ItemErrors: []configtypes.ConfigItemValidationError{
 					{
-						Name: invalidRegexConfigItem.Name,
-						Type: invalidRegexConfigItem.Type,
+						Name: regexMatchFailedConfigItem.Name,
+						Type: regexMatchFailedConfigItem.Type,
 						ValidationErrors: []configtypes.ValidationError{
 							{
-								Error:   regexMatchError,
-								Message: invalidRegexConfigItem.Validation.Regex.Message,
+								Reason:  regexMatchError,
+								Message: regexMatchFailedConfigItem.Validation.Regex.Message,
 							},
 						},
 					},
@@ -310,7 +364,12 @@ func Test_validateConfigGroup(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := validateConfigGroup(tt.args.configGroup); !reflect.DeepEqual(got, tt.want) {
+			got, err := validateConfigGroup(tt.args.configGroup)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("validateConfigGroup() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("validateConfigGroup() = %v, want %v", got, tt.want)
 			}
 		})
@@ -334,8 +393,8 @@ func Test_hasConfigItemValidators(t *testing.T) {
 						{
 							Items: []kotsv1beta1.ConfigItem{
 								validRegexConfigItem,
-								nonValidatableConfigItem,
-								invalidRegexConfigItem,
+								noValidationConfigItem,
+								regexMatchFailedConfigItem,
 							},
 						},
 					},
@@ -350,7 +409,7 @@ func Test_hasConfigItemValidators(t *testing.T) {
 					Groups: []kotsv1beta1.ConfigGroup{
 						{
 							Items: []kotsv1beta1.ConfigItem{
-								nonValidatableConfigItem,
+								noValidationConfigItem,
 							},
 						},
 					},
@@ -373,9 +432,10 @@ func TestValidateConfigSpec(t *testing.T) {
 		configSpec kotsv1beta1.ConfigSpec
 	}
 	tests := []struct {
-		name string
-		args args
-		want []configtypes.ConfigGroupValidationError
+		name    string
+		args    args
+		want    []configtypes.ConfigGroupValidationError
+		wantErr bool
 	}{
 		{
 			name: "valid config spec",
@@ -386,13 +446,31 @@ func TestValidateConfigSpec(t *testing.T) {
 							Name: "test",
 							Items: []kotsv1beta1.ConfigItem{
 								validRegexConfigItem,
-								nonValidatableConfigItem,
+								noValidationConfigItem,
 							},
 						},
 					},
 				},
 			},
 			want: nil,
+		}, {
+			name: "invalid regex pattern config spec",
+			args: args{
+				configSpec: kotsv1beta1.ConfigSpec{
+					Groups: []kotsv1beta1.ConfigGroup{
+						{
+							Name: "test",
+							Items: []kotsv1beta1.ConfigItem{
+								validRegexConfigItem,
+								noValidationConfigItem,
+								invalidRegexPatternConfigItem,
+							},
+						},
+					},
+				},
+			},
+			want:    nil,
+			wantErr: true,
 		}, {
 			name: "valid config spec with non validatable config item",
 			args: args{
@@ -401,7 +479,7 @@ func TestValidateConfigSpec(t *testing.T) {
 						{
 							Name: "test",
 							Items: []kotsv1beta1.ConfigItem{
-								nonValidatableConfigItem,
+								noValidationConfigItem,
 							},
 						},
 					},
@@ -417,8 +495,8 @@ func TestValidateConfigSpec(t *testing.T) {
 							Name: "test",
 							Items: []kotsv1beta1.ConfigItem{
 								validRegexConfigItem,
-								invalidRegexConfigItem,
-								nonValidatableConfigItem,
+								regexMatchFailedConfigItem,
+								noValidationConfigItem,
 							},
 						},
 					},
@@ -429,12 +507,12 @@ func TestValidateConfigSpec(t *testing.T) {
 					Name: "test",
 					ItemErrors: []configtypes.ConfigItemValidationError{
 						{
-							Name: invalidRegexConfigItem.Name,
-							Type: invalidRegexConfigItem.Type,
+							Name: regexMatchFailedConfigItem.Name,
+							Type: regexMatchFailedConfigItem.Type,
 							ValidationErrors: []configtypes.ValidationError{
 								{
-									Error:   regexMatchError,
-									Message: invalidRegexConfigItem.Validation.Regex.Message,
+									Reason:  regexMatchError,
+									Message: regexMatchFailedConfigItem.Validation.Regex.Message,
 								},
 							},
 						},
@@ -445,7 +523,12 @@ func TestValidateConfigSpec(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := ValidateConfigSpec(tt.args.configSpec); !reflect.DeepEqual(got, tt.want) {
+			got, err := ValidateConfigSpec(tt.args.configSpec)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("ValidateConfigSpec() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("ValidateConfigSpec() = %v, want %v", got, tt.want)
 			}
 		})

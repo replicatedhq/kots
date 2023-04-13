@@ -8,19 +8,22 @@ import (
 	"github.com/replicatedhq/kots/pkg/util"
 )
 
-func ValidateConfigSpec(configSpec kotsv1beta1.ConfigSpec) []configtypes.ConfigGroupValidationError {
+func ValidateConfigSpec(configSpec kotsv1beta1.ConfigSpec) ([]configtypes.ConfigGroupValidationError, error) {
 	if !hasConfigItemValidators(configSpec) {
-		return nil
+		return nil, nil
 	}
 
 	var configGroupErrors []configtypes.ConfigGroupValidationError
 	for _, configGroup := range configSpec.Groups {
-		configGroupError := validateConfigGroup(configGroup)
+		configGroupError, err := validateConfigGroup(configGroup)
+		if err != nil {
+			return nil, err
+		}
 		if configGroupError != nil {
 			configGroupErrors = append(configGroupErrors, *configGroupError)
 		}
 	}
-	return configGroupErrors
+	return configGroupErrors, nil
 }
 
 func hasConfigItemValidators(configSpec kotsv1beta1.ConfigSpec) bool {
@@ -35,58 +38,62 @@ func hasConfigItemValidators(configSpec kotsv1beta1.ConfigSpec) bool {
 	return false
 }
 
-func validateConfigGroup(configGroup kotsv1beta1.ConfigGroup) *configtypes.ConfigGroupValidationError {
-	configItemErrors := validateConfigItems(configGroup.Items)
+func validateConfigGroup(configGroup kotsv1beta1.ConfigGroup) (*configtypes.ConfigGroupValidationError, error) {
+	configItemErrors, err := validateConfigItems(configGroup.Items)
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to validate config items for group %s", configGroup.Name)
+	}
 	if len(configItemErrors) == 0 {
-		return nil
+		return nil, nil
 	}
 
 	return &configtypes.ConfigGroupValidationError{
 		Name:       configGroup.Name,
 		Title:      configGroup.Title,
 		ItemErrors: configItemErrors,
-	}
+	}, nil
 }
 
-func validateConfigItems(configItems []kotsv1beta1.ConfigItem) []configtypes.ConfigItemValidationError {
+func validateConfigItems(configItems []kotsv1beta1.ConfigItem) ([]configtypes.ConfigItemValidationError, error) {
 	var configItemErrors []configtypes.ConfigItemValidationError
 	for _, item := range configItems {
-		configItemErr := validateConfigItem(item)
+		configItemErr, err := validateConfigItem(item)
+		if err != nil {
+			return nil, err
+		}
+
 		if configItemErr != nil {
 			configItemErrors = append(configItemErrors, *configItemErr)
 		}
 	}
-	return configItemErrors
+
+	return configItemErrors, nil
 }
 
-func validateConfigItem(item kotsv1beta1.ConfigItem) *configtypes.ConfigItemValidationError {
+func validateConfigItem(item kotsv1beta1.ConfigItem) (*configtypes.ConfigItemValidationError, error) {
 	if !isValidatableConfigItem(item) {
-		return nil
+		return nil, nil
 	}
 
 	value, err := getValidatableItemValue(item.Value, item.Type)
 	if err != nil {
-		return &configtypes.ConfigItemValidationError{
-			Name: item.Name,
-			Type: item.Type,
-			ValidationErrors: []configtypes.ValidationError{
-				{
-					Message: errors.Wrapf(err, "failed to get item value").Error(),
-				},
-			},
-		}
+		return nil, errors.Wrapf(err, "failed to get value for config item %s", item.Name)
 	}
 
-	validationErrors := validate(value, *item.Validation)
+	validationErrors, err := validate(value, *item.Validation)
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to validate config item %s", item.Name)
+	}
+
 	if len(validationErrors) > 0 {
 		return &configtypes.ConfigItemValidationError{
 			Name:             item.Name,
 			Type:             item.Type,
 			ValidationErrors: validationErrors,
-		}
+		}, nil
 	}
 
-	return nil
+	return nil, nil
 }
 
 func getValidatableItemValue(value multitype.BoolOrString, itemType string) (string, error) {
@@ -107,6 +114,6 @@ func getValidatableItemValue(value multitype.BoolOrString, itemType string) (str
 		}
 		return string(decodedBytes), err
 	default:
-		return "", errors.Errorf("item value of type %s is not validated", itemType)
+		return "", errors.Errorf("item value of type %s validation is not supported", itemType)
 	}
 }

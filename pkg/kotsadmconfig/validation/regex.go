@@ -1,9 +1,9 @@
 package validation
 
 import (
-	"fmt"
 	"regexp"
 
+	"github.com/pkg/errors"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	configtypes "github.com/replicatedhq/kots/pkg/kotsadmconfig/types"
 )
@@ -16,17 +16,17 @@ type regexValidator struct {
 	*kotsv1beta1.RegexValidator
 }
 
-func (v *regexValidator) Validate(input string) *configtypes.ValidationError {
+func (v *regexValidator) Validate(input string) (*configtypes.ValidationError, error) {
 	regex, err := regexp.Compile(v.Pattern)
 	if err != nil {
-		return buildRegexValidationError(v.Message, fmt.Sprintf("Invalid regex: %s", err.Error()))
+		return nil, errors.Wrapf(err, "Invalid regex pattern. failed to compile regex")
 	}
 
 	matched := regex.MatchString(input)
 	if !matched {
-		return buildRegexValidationError(v.Message, regexMatchError)
+		return buildRegexValidationError(v.Message, regexMatchError), nil
 	}
-	return nil
+	return nil, nil
 }
 
 func buildRegexValidationError(validatorMessage string, errorMsg string) *configtypes.ValidationError {
@@ -34,7 +34,7 @@ func buildRegexValidationError(validatorMessage string, errorMsg string) *config
 		validatorMessage = regexMatchError
 	}
 	return &configtypes.ValidationError{
-		Error:   errorMsg,
+		Reason:  errorMsg,
 		Message: validatorMessage,
 	}
 }
