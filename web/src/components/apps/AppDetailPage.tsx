@@ -399,33 +399,40 @@ function AppDetailPage(props: Props) {
         condition={appsList && appsList?.length > 1}
         sidebar={
           <SideBar
-            items={appsList?.map((item: App, idx: number) => {
-              let sidebarItemNode;
-              if (item.name) {
-                const slugFromRoute = params.slug;
-                sidebarItemNode = (
-                  <KotsSidebarItem
-                    key={idx}
-                    className={classNames({
-                      selected:
-                        item.slug === slugFromRoute && params.owner !== "helm",
-                    })}
-                    app={item}
-                  />
-                );
-              } else if (item.helmName) {
-                sidebarItemNode = (
-                  <HelmChartSidebarItem
-                    key={idx}
-                    className={classNames({
-                      selected: item.id === params.slug,
-                    })}
-                    helmChart={item}
-                  />
-                );
-              }
-              return sidebarItemNode;
-            })}
+            items={appsList
+              ?.sort(
+                (a: App, b: App) =>
+                  new Date(b.createdAt).getTime() -
+                  new Date(a.createdAt).getTime()
+              )
+              .map((item: App, idx: number) => {
+                let sidebarItemNode;
+                if (item.name) {
+                  const slugFromRoute = params.slug;
+                  sidebarItemNode = (
+                    <KotsSidebarItem
+                      key={idx}
+                      className={classNames({
+                        selected:
+                          item.slug === slugFromRoute &&
+                          params.owner !== "helm",
+                      })}
+                      app={item}
+                    />
+                  );
+                } else if (item.helmName) {
+                  sidebarItemNode = (
+                    <HelmChartSidebarItem
+                      key={idx}
+                      className={classNames({
+                        selected: item.id === params.slug,
+                      })}
+                      helmChart={item}
+                    />
+                  );
+                }
+                return sidebarItemNode;
+              })}
           />
         }
       >

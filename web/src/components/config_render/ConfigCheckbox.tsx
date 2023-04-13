@@ -89,7 +89,7 @@ export default class ConfigCheckbox extends React.Component<Props> {
         </div>
         {this.props.help_text !== "" ? (
           <div
-            className="field-section-help-text help-text-color u-marginTop--5"
+            className="field-section-help-text help-text-color"
             style={{ marginLeft: "25px" }}
           >
             <Markdown
