@@ -70,7 +70,12 @@ func Test_validate(t *testing.T) {
 			args: args{
 				value: "foo",
 				validator: kotsv1beta1.ConfigItemValidation{
-					Regex: &kotsv1beta1.RegexValidator{Pattern: ".*"},
+					Regex: &kotsv1beta1.RegexValidator{
+						Pattern: ".*",
+						BaseValidator: kotsv1beta1.BaseValidator{
+							Message: "must be a valid regex",
+						},
+					},
 				},
 			},
 			want: nil,
@@ -79,13 +84,17 @@ func Test_validate(t *testing.T) {
 			args: args{
 				value: "foo",
 				validator: kotsv1beta1.ConfigItemValidation{
-					Regex: &kotsv1beta1.RegexValidator{Pattern: "["},
+					Regex: &kotsv1beta1.RegexValidator{
+						Pattern: "[",
+						BaseValidator: kotsv1beta1.BaseValidator{
+							Message: "must be a valid regex",
+						}},
 				},
 			},
 			want: []configtypes.ValidationError{
 				{
-					ValidationErrorMessage: "Invalid regex: error parsing regexp: missing closing ]: `[`",
-					RegexValidator:         &kotsv1beta1.RegexValidator{Pattern: "["},
+					Error:   "Invalid regex: error parsing regexp: missing closing ]: `[`",
+					Message: "must be a valid regex",
 				},
 			},
 		}, {

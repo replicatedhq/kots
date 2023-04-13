@@ -106,6 +106,9 @@ var (
 		Validation: &kotsv1beta1.ConfigItemValidation{
 			Regex: &kotsv1beta1.RegexValidator{
 				Pattern: "^[a-z]+$",
+				BaseValidator: kotsv1beta1.BaseValidator{
+					Message: "must be a valid regex",
+				},
 			},
 		},
 	}
@@ -116,6 +119,9 @@ var (
 		Validation: &kotsv1beta1.ConfigItemValidation{
 			Regex: &kotsv1beta1.RegexValidator{
 				Pattern: "^[a-z]+$",
+				BaseValidator: kotsv1beta1.BaseValidator{
+					Message: "must be a valid regex",
+				},
 			},
 		},
 	}
@@ -131,6 +137,9 @@ var (
 		Validation: &kotsv1beta1.ConfigItemValidation{
 			Regex: &kotsv1beta1.RegexValidator{
 				Pattern: "^[a-z]+$",
+				BaseValidator: kotsv1beta1.BaseValidator{
+					Message: "must be a valid regex",
+				},
 			},
 		},
 	}
@@ -157,13 +166,12 @@ func Test_validateConfigItem(t *testing.T) {
 				item: invalidRegexConfigItem,
 			},
 			want: &configtypes.ConfigItemValidationError{
-				Name:  invalidRegexConfigItem.Name,
-				Type:  invalidRegexConfigItem.Type,
-				Value: invalidRegexConfigItem.Value,
+				Name: invalidRegexConfigItem.Name,
+				Type: invalidRegexConfigItem.Type,
 				ValidationErrors: []configtypes.ValidationError{
 					{
-						ValidationErrorMessage: regexMatchError,
-						RegexValidator:         invalidRegexConfigItem.Validation.Regex,
+						Error:   regexMatchError,
+						Message: invalidRegexConfigItem.Validation.Regex.Message,
 					},
 				},
 			},
@@ -174,12 +182,11 @@ func Test_validateConfigItem(t *testing.T) {
 				item: invalidConfigItemValue,
 			},
 			want: &configtypes.ConfigItemValidationError{
-				Name:  invalidConfigItemValue.Name,
-				Type:  invalidConfigItemValue.Type,
-				Value: invalidConfigItemValue.Value,
+				Name: invalidConfigItemValue.Name,
+				Type: invalidConfigItemValue.Type,
 				ValidationErrors: []configtypes.ValidationError{
 					{
-						ValidationErrorMessage: "failed to get item value: failed to base64 decode file item value: failed to bse64 decode interface data: illegal base64 data at input byte 28",
+						Message: "failed to get item value: failed to base64 decode file item value: failed to bse64 decode interface data: illegal base64 data at input byte 28",
 					},
 				},
 			},
@@ -230,13 +237,12 @@ func Test_validateConfigItems(t *testing.T) {
 			},
 			want: []configtypes.ConfigItemValidationError{
 				{
-					Name:  invalidRegexConfigItem.Name,
-					Type:  invalidRegexConfigItem.Type,
-					Value: invalidRegexConfigItem.Value,
+					Name: invalidRegexConfigItem.Name,
+					Type: invalidRegexConfigItem.Type,
 					ValidationErrors: []configtypes.ValidationError{
 						{
-							ValidationErrorMessage: regexMatchError,
-							RegexValidator:         invalidRegexConfigItem.Validation.Regex,
+							Error:   regexMatchError,
+							Message: invalidRegexConfigItem.Validation.Regex.Message,
 						},
 					},
 				},
@@ -289,13 +295,12 @@ func Test_validateConfigGroup(t *testing.T) {
 				Name: "test",
 				ItemErrors: []configtypes.ConfigItemValidationError{
 					{
-						Name:  invalidRegexConfigItem.Name,
-						Type:  invalidRegexConfigItem.Type,
-						Value: invalidRegexConfigItem.Value,
+						Name: invalidRegexConfigItem.Name,
+						Type: invalidRegexConfigItem.Type,
 						ValidationErrors: []configtypes.ValidationError{
 							{
-								ValidationErrorMessage: regexMatchError,
-								RegexValidator:         invalidRegexConfigItem.Validation.Regex,
+								Error:   regexMatchError,
+								Message: invalidRegexConfigItem.Validation.Regex.Message,
 							},
 						},
 					},
@@ -424,13 +429,12 @@ func TestValidateConfigSpec(t *testing.T) {
 					Name: "test",
 					ItemErrors: []configtypes.ConfigItemValidationError{
 						{
-							Name:  invalidRegexConfigItem.Name,
-							Type:  invalidRegexConfigItem.Type,
-							Value: invalidRegexConfigItem.Value,
+							Name: invalidRegexConfigItem.Name,
+							Type: invalidRegexConfigItem.Type,
 							ValidationErrors: []configtypes.ValidationError{
 								{
-									ValidationErrorMessage: regexMatchError,
-									RegexValidator:         invalidRegexConfigItem.Validation.Regex,
+									Error:   regexMatchError,
+									Message: invalidRegexConfigItem.Validation.Regex.Message,
 								},
 							},
 						},
