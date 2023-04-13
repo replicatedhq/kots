@@ -7,4 +7,6 @@ spec:
   values:
     hostname:
       value: "my-app.somebigbank.com"
+    min_kubernetes_version:
+      value: "1.20.0"
 status: {}

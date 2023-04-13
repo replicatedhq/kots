@@ -14,6 +14,22 @@ spec:
       title: Hostname
       type: text
       value: my-app.somebigbank.com
+    - default: containerd
+      help_text: |
+        Use this field to change the container backend
+      name: container_backend
+      required: true
+      title: Container Backend
+      type: text
+      value: ""
+    - default: ""
+      help_text: |
+        Use this field to change the minimum kubernetes version required
+      name: min_kubernetes_version
+      required: true
+      title: Minimum Kuberentes Version
+      type: text
+      value: 1.20.0
     name: setup
     title: Setup
 status: {}

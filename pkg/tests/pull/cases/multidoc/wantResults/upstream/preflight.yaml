@@ -7,8 +7,8 @@ spec:
     - clusterVersion:
       outcomes:
         - fail:
-          when: "< 1.20.0"
-          message: The application requires kubernetes >= 1.20.0
+          when: '< repl{{ ConfigOption "min_kubernetes_version" }}'
+          message: 'The application requires kubernetes >= repl{{ ConfigOption "min_kubernetes_version" }}'
           ur: https://www.kubernetes.io
         - pass:
           message: Cluster is an up-to-date version
@@ -22,7 +22,7 @@ spec:
     - containerRuntime:
       outcomes:
         - fail:
-          message: Did not find containerd runtime
+          message: 'Did not find repl{{ ConfigOption "container_backend" }} runtime'
         - pass:
-          when: "== containerd"
-          message: containerd runtime found
+          when: '== repl{{ ConfigOption "container_backend" }}'
+          message: 'repl{{ ConfigOption "container_backend" }} runtime found'
