@@ -10,8 +10,6 @@ import (
 
 	"github.com/marccampbell/yaml-toolbox/pkg/splitter"
 	"github.com/pkg/errors"
-	"github.com/replicatedhq/kots/pkg/base"
-	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/util"
 )
 
@@ -43,6 +41,11 @@ func GetRenderedChartsArchive(versionArchive string, downstreamName, kustomizeBi
 	// older kots versions did not include the rendered charts in the app archive, so we have to render them
 	baseDir := filepath.Join(versionArchive, "base")
 	overlaysDir := filepath.Join(versionArchive, "overlays")
+
+	chartsDir := filepath.Join(baseDir, "charts")
+	if err := cleanBaseApp(chartsDir, nil); err != nil {
+		return nil, nil, errors.Wrap(err, "failed to clean base app")
+	}
 
 	archive, filesMap, err := RenderChartsArchive(baseDir, overlaysDir, downstreamName, kustomizeBinPath)
 	if err != nil {
@@ -78,51 +81,6 @@ func RenderChartsArchive(baseDir string, overlaysDir string, downstreamName stri
 	renderedFilesMap := map[string][]byte{}
 	sourceChartsDir := filepath.Join(baseDir, "charts")
 	metadataFiles := []string{"Chart.yaml", "Chart.lock"}
-
-	if _, err := os.Stat(sourceChartsDir); err == nil {
-		// iterate over the base files and remove any files with nil map entries
-		// ref: https://github.com/kubernetes-sigs/kustomize/issues/5050
-		err = filepath.Walk(sourceChartsDir,
-			func(path string, info os.FileInfo, err error) error {
-				if err != nil {
-					return err
-				}
-
-				if info.IsDir() {
-					return nil
-				}
-
-				content, err := ioutil.ReadFile(path)
-				if err != nil {
-					return errors.Wrapf(err, "failed to read file %s", path)
-				}
-
-				_, manifest := base.GetGVKWithNameAndNs(content, "")
-				if manifest.APIVersion == "" || manifest.Kind == "" || manifest.Metadata.Name == "" {
-					// ignore invalid resources
-					return nil
-				}
-
-				if manifest.Kind == "CustomResourceDefinition" {
-					// ignore crds
-					return nil
-				}
-
-				newContent, err := kotsutil.RemoveEmptyMappingFields(content)
-				if err != nil {
-					return errors.Wrapf(err, "failed to remove empty mapping fields from %s", path)
-				}
-
-				if err := os.WriteFile(path, newContent, 0644); err != nil {
-					return errors.Wrapf(err, "failed to write file %s", path)
-				}
-
-				return nil
-			})
-		if err != nil {
-			return nil, nil, errors.Wrap(err, "failed to walk dir")
-		}
-	}
 
 	err = filepath.Walk(archiveChartsDir,
 		func(path string, info os.FileInfo, err error) error {

@@ -32,6 +32,10 @@ func WriteRenderedApp(options WriteOptions) error {
 		}
 	}
 
+	if err := cleanBaseApp(options.BaseDir, nil); err != nil {
+		return errors.Wrap(err, "failed to clean base app")
+	}
+
 	for _, downstreamName := range options.Downstreams {
 		kustomizeBuildTarget := filepath.Join(options.OverlaysDir, "downstreams", downstreamName)
 
@@ -128,10 +132,37 @@ func GetRenderedApp(versionArchive string, downstreamName, kustomizeBinPath stri
 	}
 
 	baseDir := filepath.Join(versionArchive, "base")
+	filter := filterChartsInBasePath(baseDir)
+	if err := cleanBaseApp(baseDir, filter); err != nil {
+		return nil, nil, errors.Wrap(err, "failed to clean base app")
+	}
 
+	// older kots versions did not include the rendered app in the archive, so we have to render it
+	kustomizeBuildTarget := filepath.Join(versionArchive, "overlays", "downstreams", downstreamName)
+
+	allContent, err := exec.Command(kustomizeBinPath, "build", kustomizeBuildTarget).Output()
+	if err != nil {
+		if ee, ok := err.(*exec.ExitError); ok {
+			return nil, nil, fmt.Errorf("kustomize stderr: %q", string(ee.Stderr))
+		}
+		return nil, nil, errors.Wrap(err, "failed to run kustomize build")
+	}
+
+	filesMap, err := splitter.SplitYAML(allContent)
+	if err != nil {
+		return nil, nil, errors.Wrap(err, "failed to split yaml")
+	}
+
+	return allContent, filesMap, nil
+}
+
+// cleanBaseApp iterates over the base files and removes any files with nil map entries
+// this does not include helm charts, which are processed separately.
+// an optional filter can be passed to skip files that should not be removed.
+//
+// workaround for: https://github.com/kubernetes-sigs/kustomize/issues/5050
+func cleanBaseApp(baseDir string, filter func(path string) (bool, error)) error {
 	if _, err := os.Stat(baseDir); err == nil {
-		// iterate over the base files and remove any files with nil map entries
-		// ref: https://github.com/kubernetes-sigs/kustomize/issues/5050
 		err := filepath.Walk(baseDir,
 			func(path string, info os.FileInfo, err error) error {
 				if err != nil {
@@ -142,15 +173,14 @@ func GetRenderedApp(versionArchive string, downstreamName, kustomizeBinPath stri
 					return nil
 				}
 
-				relPath, err := filepath.Rel(renderedAppDir, path)
-				if err != nil {
-					return errors.Wrapf(err, "failed to get relative path for %s", path)
-				}
-
-				// the charts directory includes helm charts to be installed using the helm cli,
-				// and those are processed separately.
-				if strings.Split(relPath, string(os.PathSeparator))[0] == "charts" {
-					return nil
+				if filter != nil {
+					shouldFilter, err := filter(path)
+					if err != nil {
+						return errors.Wrapf(err, "failed to filter path %s", path)
+					}
+					if shouldFilter {
+						return nil
+					}
 				}
 
 				content, err := ioutil.ReadFile(path)
@@ -181,25 +211,26 @@ func GetRenderedApp(versionArchive string, downstreamName, kustomizeBinPath stri
 				return nil
 			})
 		if err != nil {
-			return nil, nil, errors.Wrap(err, "failed to walk dir")
+			return errors.Wrap(err, "failed to walk dir")
 		}
 	}
 
-	// older kots versions did not include the rendered app in the archive, so we have to render it
-	kustomizeBuildTarget := filepath.Join(versionArchive, "overlays", "downstreams", downstreamName)
+	return nil
+}
 
-	allContent, err := exec.Command(kustomizeBinPath, "build", kustomizeBuildTarget).Output()
-	if err != nil {
-		if ee, ok := err.(*exec.ExitError); ok {
-			return nil, nil, fmt.Errorf("kustomize stderr: %q", string(ee.Stderr))
+// filterChartsInBasePath returns a filter that can be passed to cleanBaseApp
+// to skip files in the charts directory
+func filterChartsInBasePath(basePath string) func(path string) (bool, error) {
+	return func(path string) (bool, error) {
+		relPath, err := filepath.Rel(basePath, path)
+		if err != nil {
+			return false, errors.Wrapf(err, "failed to get relative path for %s", path)
 		}
-		return nil, nil, errors.Wrap(err, "failed to run kustomize build")
-	}
 
-	filesMap, err := splitter.SplitYAML(allContent)
-	if err != nil {
-		return nil, nil, errors.Wrap(err, "failed to split yaml")
-	}
+		if strings.Split(relPath, string(os.PathSeparator))[0] == "charts" {
+			return true, nil
+		}
 
-	return allContent, filesMap, nil
+		return false, nil
+	}
 }
