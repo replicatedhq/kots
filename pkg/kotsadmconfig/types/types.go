@@ -1,6 +1,7 @@
 package validation
 
 const (
+	EmptyItemType     = "" // when type is not set, it defaults to text
 	BoolItemType      = "bool"
 	FileItemType      = "file"
 	TextItemType      = "text"

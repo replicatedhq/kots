@@ -27,6 +27,12 @@ func Test_getValidatableItemValue(t *testing.T) {
 		wantErr bool
 	}{
 		{
+			name: "empty type should default to text",
+			args: args{
+				value: multitype.BoolOrString{StrVal: "test"},
+			},
+			want: "test",
+		}, {
 			name: "string",
 			args: args{
 				value:    multitype.BoolOrString{StrVal: "test"},
