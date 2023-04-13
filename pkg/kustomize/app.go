@@ -11,6 +11,8 @@ import (
 
 	"github.com/marccampbell/yaml-toolbox/pkg/splitter"
 	"github.com/pkg/errors"
+	"github.com/replicatedhq/kots/pkg/base"
+	"github.com/replicatedhq/kots/pkg/kotsutil"
 )
 
 type WriteOptions struct {
@@ -123,6 +125,64 @@ func GetRenderedApp(versionArchive string, downstreamName, kustomizeBinPath stri
 		}
 
 		return bytes.Join(allContent, []byte("\n---\n")), filesMap, nil
+	}
+
+	baseDir := filepath.Join(versionArchive, "base")
+
+	if _, err := os.Stat(baseDir); err == nil {
+		// iterate over the base files and remove any files with nil map entries
+		// ref: https://github.com/kubernetes-sigs/kustomize/issues/5050
+		err := filepath.Walk(baseDir,
+			func(path string, info os.FileInfo, err error) error {
+				if err != nil {
+					return err
+				}
+
+				if info.IsDir() {
+					return nil
+				}
+
+				relPath, err := filepath.Rel(renderedAppDir, path)
+				if err != nil {
+					return errors.Wrapf(err, "failed to get relative path for %s", path)
+				}
+
+				// the charts directory includes helm charts to be installed using the helm cli,
+				// and those are processed separately.
+				if strings.Split(relPath, string(os.PathSeparator))[0] == "charts" {
+					return nil
+				}
+
+				content, err := ioutil.ReadFile(path)
+				if err != nil {
+					return errors.Wrapf(err, "failed to read file %s", path)
+				}
+
+				_, manifest := base.GetGVKWithNameAndNs(content, "")
+				if manifest.APIVersion == "" || manifest.Kind == "" || manifest.Metadata.Name == "" {
+					// ignore invalid resources
+					return nil
+				}
+
+				if manifest.Kind == "CustomResourceDefinition" {
+					// ignore crds
+					return nil
+				}
+
+				newContent, err := kotsutil.RemoveEmptyMappingFields(content)
+				if err != nil {
+					return errors.Wrapf(err, "failed to remove empty mapping fields from %s", path)
+				}
+
+				if err := os.WriteFile(path, newContent, 0644); err != nil {
+					return errors.Wrapf(err, "failed to write file %s", path)
+				}
+
+				return nil
+			})
+		if err != nil {
+			return nil, nil, errors.Wrap(err, "failed to walk dir")
+		}
 	}
 
 	// older kots versions did not include the rendered app in the archive, so we have to render it
