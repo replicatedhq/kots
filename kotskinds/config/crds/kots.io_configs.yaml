@@ -130,6 +130,7 @@ spec:
                                   pattern:
                                     type: string
                                 required:
+                                - message
                                 - pattern
                                 type: object
                             type: object
