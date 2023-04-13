@@ -22,6 +22,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/crypto"
 	"github.com/replicatedhq/kots/pkg/helm"
 	kotsadmconfig "github.com/replicatedhq/kots/pkg/kotsadmconfig"
+	configtypes "github.com/replicatedhq/kots/pkg/kotsadmconfig/types"
 	configvalidation "github.com/replicatedhq/kots/pkg/kotsadmconfig/validation"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/logger"
@@ -51,25 +52,25 @@ type LiveAppConfigRequest struct {
 }
 
 type UpdateAppConfigResponse struct {
-	Success          bool                                          `json:"success"`
-	Error            string                                        `json:"error,omitempty"`
-	RequiredItems    []string                                      `json:"requiredItems,omitempty"`
-	ValidationErrors []configvalidation.ConfigGroupValidationError `json:"validationErrors,omitempty"`
+	Success          bool                                     `json:"success"`
+	Error            string                                   `json:"error,omitempty"`
+	RequiredItems    []string                                 `json:"requiredItems,omitempty"`
+	ValidationErrors []configtypes.ConfigGroupValidationError `json:"validationErrors,omitempty"`
 }
 
 type LiveAppConfigResponse struct {
-	Success          bool                                          `json:"success"`
-	Error            string                                        `json:"error,omitempty"`
-	ConfigGroups     []kotsv1beta1.ConfigGroup                     `json:"configGroups"`
-	ValidationErrors []configvalidation.ConfigGroupValidationError `json:"validationErrors,omitempty"`
+	Success          bool                                     `json:"success"`
+	Error            string                                   `json:"error,omitempty"`
+	ConfigGroups     []kotsv1beta1.ConfigGroup                `json:"configGroups"`
+	ValidationErrors []configtypes.ConfigGroupValidationError `json:"validationErrors,omitempty"`
 }
 
 type CurrentAppConfigResponse struct {
-	Success           bool                                          `json:"success"`
-	Error             string                                        `json:"error,omitempty"`
-	DownstreamVersion *downstreamtypes.DownstreamVersion            `json:"downstreamVersion"`
-	ConfigGroups      []kotsv1beta1.ConfigGroup                     `json:"configGroups"`
-	ValidationErrors  []configvalidation.ConfigGroupValidationError `json:"validationErrors,omitempty"`
+	Success           bool                                     `json:"success"`
+	Error             string                                   `json:"error,omitempty"`
+	DownstreamVersion *downstreamtypes.DownstreamVersion       `json:"downstreamVersion"`
+	ConfigGroups      []kotsv1beta1.ConfigGroup                `json:"configGroups"`
+	ValidationErrors  []configtypes.ConfigGroupValidationError `json:"validationErrors,omitempty"`
 }
 
 type DownloadFileFromConfigResponse struct {
@@ -1001,9 +1002,9 @@ type SetAppConfigValuesRequest struct {
 }
 
 type SetAppConfigValuesResponse struct {
-	Success          bool                                          `json:"success"`
-	Error            string                                        `json:"error,omitempty"`
-	ValidationErrors []configvalidation.ConfigGroupValidationError `json:"validationErrors,omitempty"`
+	Success          bool                                     `json:"success"`
+	Error            string                                   `json:"error,omitempty"`
+	ValidationErrors []configtypes.ConfigGroupValidationError `json:"validationErrors,omitempty"`
 }
 
 func (h *Handler) SetAppConfigValues(w http.ResponseWriter, r *http.Request) {

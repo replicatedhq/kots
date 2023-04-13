@@ -16,7 +16,7 @@ import (
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	"github.com/replicatedhq/kots/pkg/auth"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
-	configvalidation "github.com/replicatedhq/kots/pkg/kotsadmconfig/validation"
+	configtypes "github.com/replicatedhq/kots/pkg/kotsadmconfig/types"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/yaml/v3"
 	"github.com/spf13/cobra"
@@ -135,7 +135,7 @@ func SetConfigCmd() *cobra.Command {
 
 			response := struct {
 				Error            string                                        `json:"error"`
-				ValidationErrors []configvalidation.ConfigGroupValidationError `json:"validationErrors,omitempty"`
+				ValidationErrors []configtypes.ConfigGroupValidationError `json:"validationErrors,omitempty"`
 			}{}
 			_ = json.Unmarshal(respBody, &response)
 
