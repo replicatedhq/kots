@@ -244,7 +244,7 @@ func logConfigValidationErrors(groupValidationErrors []configtypes.ConfigGroupVa
 			log.Errorf("    Name: %s", itemValidationError.Name)
 			log.Errorf("    Type: %s", itemValidationError.Type)
 			log.Errorf("    Errors:")
-			for _, validationError := range itemValidationError.ValidationMessages {
+			for _, validationError := range itemValidationError.ValidationErrors {
 				log.Errorf("      - %s", validationError.Message)
 			}
 		}

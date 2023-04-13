@@ -25,5 +25,4 @@ type ConfigItemValidationError struct {
 
 type ValidationError struct {
 	Message string `json:"message"`
-	Reason  string `json:"-"`
 }

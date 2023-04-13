@@ -19,22 +19,17 @@ type regexValidator struct {
 func (v *regexValidator) Validate(input string) (*configtypes.ValidationError, error) {
 	regex, err := regexp.Compile(v.Pattern)
 	if err != nil {
-		return nil, errors.Wrapf(err, "Invalid regex pattern. failed to compile regex")
+		return nil, errors.Wrapf(err, "failed to compile regex pattern")
 	}
 
 	matched := regex.MatchString(input)
 	if !matched {
-		return buildRegexValidationError(v.Message, regexMatchError), nil
+		if v.Message == "" {
+			v.Message = regexMatchError
+		}
+		return &configtypes.ValidationError{
+			Message: v.Message,
+		}, nil
 	}
 	return nil, nil
-}
-
-func buildRegexValidationError(validatorMessage string, errorMsg string) *configtypes.ValidationError {
-	if validatorMessage == "" {
-		validatorMessage = regexMatchError
-	}
-	return &configtypes.ValidationError{
-		Reason:  errorMsg,
-		Message: validatorMessage,
-	}
 }

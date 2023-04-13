@@ -207,7 +207,6 @@ func Test_validateConfigItem(t *testing.T) {
 				ValidationErrors: []configtypes.ValidationError{
 					{
 						Message: "must be a valid regex",
-						Reason:  regexMatchError,
 					},
 				},
 			},
@@ -274,7 +273,6 @@ func Test_validateConfigItems(t *testing.T) {
 					Type: regexMatchFailedConfigItem.Type,
 					ValidationErrors: []configtypes.ValidationError{
 						{
-							Reason:  regexMatchError,
 							Message: regexMatchFailedConfigItem.Validation.Regex.Message,
 						},
 					},
@@ -353,7 +351,6 @@ func Test_validateConfigGroup(t *testing.T) {
 						Type: regexMatchFailedConfigItem.Type,
 						ValidationErrors: []configtypes.ValidationError{
 							{
-								Reason:  regexMatchError,
 								Message: regexMatchFailedConfigItem.Validation.Regex.Message,
 							},
 						},
@@ -511,7 +508,6 @@ func TestValidateConfigSpec(t *testing.T) {
 							Type: regexMatchFailedConfigItem.Type,
 							ValidationErrors: []configtypes.ValidationError{
 								{
-									Reason:  regexMatchError,
 									Message: regexMatchFailedConfigItem.Validation.Regex.Message,
 								},
 							},

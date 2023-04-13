@@ -109,7 +109,6 @@ func Test_validate(t *testing.T) {
 			want: []configtypes.ValidationError{
 				{
 					Message: "must be a valid regex",
-					Reason:  regexMatchError,
 				},
 			},
 		}, {
