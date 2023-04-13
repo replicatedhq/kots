@@ -61,9 +61,10 @@ func Test_validate(t *testing.T) {
 		validator kotsv1beta1.ConfigItemValidation
 	}
 	tests := []struct {
-		name string
-		args args
-		want []configtypes.ValidationError
+		name    string
+		args    args
+		want    []configtypes.ValidationError
+		wantErr bool
 	}{
 		{
 			name: "valid regex",
@@ -80,7 +81,7 @@ func Test_validate(t *testing.T) {
 			},
 			want: nil,
 		}, {
-			name: "invalid regex",
+			name: "invalid regex pattern",
 			args: args{
 				value: "foo",
 				validator: kotsv1beta1.ConfigItemValidation{
@@ -91,10 +92,24 @@ func Test_validate(t *testing.T) {
 						}},
 				},
 			},
+			want:    nil,
+			wantErr: true,
+		}, {
+			name: "invalid value for regex pattern",
+			args: args{
+				value: "foo",
+				validator: kotsv1beta1.ConfigItemValidation{
+					Regex: &kotsv1beta1.RegexValidator{
+						Pattern: "^[A-Z]+$",
+						BaseValidator: kotsv1beta1.BaseValidator{
+							Message: "must be a valid regex",
+						}},
+				},
+			},
 			want: []configtypes.ValidationError{
 				{
-					Error:   "Invalid regex: error parsing regexp: missing closing ]: `[`",
 					Message: "must be a valid regex",
+					Reason:  regexMatchError,
 				},
 			},
 		}, {
@@ -108,7 +123,12 @@ func Test_validate(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := validate(tt.args.value, tt.args.validator); !reflect.DeepEqual(got, tt.want) {
+			got, err := validate(tt.args.value, tt.args.validator)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("validate() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("validate() = %v, want %v", got, tt.want)
 			}
 		})

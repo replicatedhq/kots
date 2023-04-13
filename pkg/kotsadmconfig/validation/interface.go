@@ -5,5 +5,5 @@ import (
 )
 
 type validator interface {
-	Validate(input string) *configtypes.ValidationError
+	Validate(input string) (*configtypes.ValidationError, error)
 }
