@@ -32,10 +32,6 @@ func WriteRenderedApp(options WriteOptions) error {
 		}
 	}
 
-	if err := cleanBaseApp(options.BaseDir, nil); err != nil {
-		return errors.Wrap(err, "failed to clean base app")
-	}
-
 	for _, downstreamName := range options.Downstreams {
 		kustomizeBuildTarget := filepath.Join(options.OverlaysDir, "downstreams", downstreamName)
 
