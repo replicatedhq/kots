@@ -62,7 +62,6 @@ func Test_regexValidator_Validate(t *testing.T) {
 				input: "foo",
 			},
 			want: &configtypes.ValidationError{
-				Reason:  regexMatchError,
 				Message: "must be a valid regex",
 			},
 		}, {
@@ -76,7 +75,6 @@ func Test_regexValidator_Validate(t *testing.T) {
 				input: "foo",
 			},
 			want: &configtypes.ValidationError{
-				Reason:  regexMatchError,
 				Message: regexMatchError,
 			},
 		},

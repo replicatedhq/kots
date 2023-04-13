@@ -672,7 +672,7 @@ func (h *Handler) CurrentAppConfig(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			// log the error and continue to return the config, so UI can show the config
 			currentAppConfigResponse.Error = "failed to validate config spec"
-			logger.Error(errors.Wrap(err, currentAppConfigResponse.Error))			
+			logger.Error(errors.Wrap(err, currentAppConfigResponse.Error))
 		}
 
 		if len(validationErrors) > 0 {
