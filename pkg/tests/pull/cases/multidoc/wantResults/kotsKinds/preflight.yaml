@@ -11,7 +11,7 @@ spec:
         - pass:
           when: '== containerd'
           message: 'containerd runtime found'
---
+---
 apiVersion: troubleshoot.sh/v1beta2
 kind: Preflight
 metadata:

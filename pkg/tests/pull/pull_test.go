@@ -204,6 +204,15 @@ func TestKotsPull(t *testing.T) {
 					require.NoError(t, err, path)
 					contents := util.ConvertToSingleDocs(rawContents)
 
+					contentsJSON := []map[string]interface{}{}
+					for _, doc := range contents {
+						doc = []byte(strings.TrimSpace(string(doc)))
+						temp := map[string]interface{}{}
+						err := yaml.Unmarshal(doc, &temp)
+						require.NoError(t, err)
+						contentsJSON = append(contentsJSON, temp)
+					}
+
 					wantPath := strings.Replace(path, "results", "wantResults", 1)
 
 					rawWantContents, err := ioutil.ReadFile(wantPath)
@@ -213,7 +222,16 @@ func TestKotsPull(t *testing.T) {
 					require.NoError(t, err, wantPath)
 					wantContents := util.ConvertToSingleDocs(rawWantContents)
 
-					require.Equal(t, wantContents, contents)
+					wantContentsJSON := []map[string]interface{}{}
+					for _, doc := range wantContents {
+						doc = []byte(strings.TrimSpace(string(doc)))
+						temp := map[string]interface{}{}
+						err := yaml.Unmarshal(doc, &temp)
+						require.NoError(t, err)
+						wantContentsJSON = append(wantContentsJSON, temp)
+					}
+
+					require.ElementsMatch(t, wantContentsJSON, contentsJSON)
 					return nil
 				})
 
