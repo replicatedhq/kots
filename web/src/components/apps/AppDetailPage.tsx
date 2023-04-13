@@ -179,6 +179,7 @@ function AppDetailPage(props: Props) {
           "Content-Type": "application/json",
         },
         method: "GET",
+        credentials: "include",
       });
       if (res.ok && res.status == 200) {
         const response = await res.json();

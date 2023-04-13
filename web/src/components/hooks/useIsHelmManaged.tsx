@@ -18,6 +18,7 @@ async function fetchIsHelmManaged({
         "Content-Type": "application/json",
       },
       method: "GET",
+      credentials: "include",
     });
     if (res.ok) {
       return await res.json();

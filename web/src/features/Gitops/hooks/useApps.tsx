@@ -14,6 +14,7 @@ async function getApps({
         "Content-Type": "application/json",
       },
       method: "GET",
+      credentials: "include",
     });
     if (!res.ok) {
       if (res.status === 401) {

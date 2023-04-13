@@ -192,6 +192,7 @@ const Root = () => {
           "Content-Type": "application/json",
         },
         method: "GET",
+        credentials: "include",
       });
       if (res.ok && res.status === 200) {
         const response = await res.json();
@@ -216,6 +217,7 @@ const Root = () => {
           "Content-Type": "application/json",
         },
         method: "GET",
+        credentials: "include",
       });
       if (!res.ok) {
         if (res.status === 401) {
@@ -252,6 +254,7 @@ const Root = () => {
           "Content-Type": "application/json",
         },
         method: "GET",
+        credentials: "include", 
       });
       if (!res.ok) {
         if (res.status === 401) {
