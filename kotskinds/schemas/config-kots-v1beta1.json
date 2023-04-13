@@ -162,6 +162,7 @@
                         "regex": {
                           "type": "object",
                           "required": [
+                            "message",
                             "pattern"
                           ],
                           "properties": {

@@ -68,7 +68,7 @@ type ConfigItemValidation struct {
 }
 
 type BaseValidator struct {
-	Message string `json:"message,omitempty"`
+	Message string `json:"message"`
 }
 
 type RegexValidator struct {
