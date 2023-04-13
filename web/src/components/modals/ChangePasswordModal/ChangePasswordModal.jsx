@@ -29,6 +29,7 @@ const ChangePasswordModal = ({ closeModal, isOpen }) => {
             "Content-Type": "application/json",
           },
           method: "GET",
+          credentials: "include",
         });
 
         if (!response.ok) {

@@ -110,6 +110,7 @@ class SecureAdminConsole extends React.Component<Props, State> {
         body: JSON.stringify({
           password: this.state.password,
         }),
+        credentials: "include",
       })
         .then(async (res) => {
           if (res.status >= 400) {
@@ -208,6 +209,7 @@ class SecureAdminConsole extends React.Component<Props, State> {
           "Content-Type": "application/json",
         },
         method: "GET",
+        credentials: "include",
       });
 
       if (!response.ok) {
