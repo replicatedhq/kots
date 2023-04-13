@@ -7,6 +7,7 @@ import (
 
 var (
 	validatableItemTypesMap = map[string]bool{
+		configtypes.EmptyItemType:    true,
 		configtypes.TextItemType:     true,
 		configtypes.PasswordItemType: true,
 		configtypes.TextAreaItemType: true,

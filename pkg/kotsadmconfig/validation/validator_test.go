@@ -24,6 +24,10 @@ func Test_isValidatableConfigItem(t *testing.T) {
 			item: kotsv1beta1.ConfigItem{Type: "text", Validation: validValidator},
 			want: true,
 		}, {
+			name: "valid empty type",
+			item: kotsv1beta1.ConfigItem{Validation: validValidator},
+			want: true,
+		}, {
 			name: "invalid type",
 			item: kotsv1beta1.ConfigItem{Type: "bool", Validation: validValidator},
 		}, {

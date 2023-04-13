@@ -98,7 +98,7 @@ func validateConfigItem(item kotsv1beta1.ConfigItem) (*configtypes.ConfigItemVal
 
 func getValidatableItemValue(value multitype.BoolOrString, itemType string) (string, error) {
 	switch itemType {
-	case configtypes.TextItemType, configtypes.TextAreaItemType:
+	case configtypes.TextItemType, configtypes.TextAreaItemType, configtypes.EmptyItemType:
 		return value.StrVal, nil
 	case configtypes.PasswordItemType:
 		// if decrypting succeeds, use the decrypted value
