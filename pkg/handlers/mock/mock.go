@@ -166,18 +166,6 @@ func (mr *MockKOTSHandlerMockRecorder) ConfigureAppIdentityService(w, r interfac
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ConfigureAppIdentityService", reflect.TypeOf((*MockKOTSHandler)(nil).ConfigureAppIdentityService), w, r)
 }
 
-// GetFileSystemSnapshotProviderInstructions mocks base method.
-func (m *MockKOTSHandler) GetFileSystemSnapshotProviderInstructions(w http.ResponseWriter, r *http.Request) {
-	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "GetFileSystemSnapshotProviderInstructions", w, r)
-}
-
-// GetFileSystemSnapshotProviderInstructions indicates an expected call of GetFileSystemSnapshotProviderInstructions.
-func (mr *MockKOTSHandlerMockRecorder) GetFileSystemSnapshotProviderInstructions(w, r interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetFileSystemSnapshotProviderInstructions", reflect.TypeOf((*MockKOTSHandler)(nil).GetFileSystemSnapshotProviderInstructions), w, r)
-}
-
 // ConfigureIdentityService mocks base method.
 func (m *MockKOTSHandler) ConfigureIdentityService(w http.ResponseWriter, r *http.Request) {
 	m.ctrl.T.Helper()
@@ -680,6 +668,18 @@ func (m *MockKOTSHandler) GetDownstreamOutput(w http.ResponseWriter, r *http.Req
 func (mr *MockKOTSHandlerMockRecorder) GetDownstreamOutput(w, r interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetDownstreamOutput", reflect.TypeOf((*MockKOTSHandler)(nil).GetDownstreamOutput), w, r)
+}
+
+// GetFileSystemSnapshotProviderInstructions mocks base method.
+func (m *MockKOTSHandler) GetFileSystemSnapshotProviderInstructions(w http.ResponseWriter, r *http.Request) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "GetFileSystemSnapshotProviderInstructions", w, r)
+}
+
+// GetFileSystemSnapshotProviderInstructions indicates an expected call of GetFileSystemSnapshotProviderInstructions.
+func (mr *MockKOTSHandlerMockRecorder) GetFileSystemSnapshotProviderInstructions(w, r interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetFileSystemSnapshotProviderInstructions", reflect.TypeOf((*MockKOTSHandler)(nil).GetFileSystemSnapshotProviderInstructions), w, r)
 }
 
 // GetGitOpsRepo mocks base method.

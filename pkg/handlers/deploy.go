@@ -155,7 +155,7 @@ func (h *Handler) DeployAppVersion(w http.ResponseWriter, r *http.Request) {
 	// preflights reports
 	go func() {
 		if request.IsSkipPreflights || request.ContinueWithFailedPreflights {
-			if err := reporting.ReportAppInfo(a.ID, int64(sequence), request.IsSkipPreflights, request.IsCLI); err != nil {
+			if err := reporting.WaitAndReportPreflightChecks(a.ID, int64(sequence), request.IsSkipPreflights, request.IsCLI); err != nil {
 				logger.Debugf("failed to send preflights data to replicated app: %v", err)
 				return
 			}

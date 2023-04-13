@@ -783,7 +783,7 @@ func deployVersion(opts CheckForUpdatesOpts, clusterID string, appVersions *down
 
 		// preflights reporting
 		go func() {
-			err = reporting.ReportAppInfo(opts.AppID, versionToDeploy.Sequence, opts.SkipPreflights, opts.IsCLI)
+			err = reporting.WaitAndReportPreflightChecks(opts.AppID, versionToDeploy.Sequence, opts.SkipPreflights, opts.IsCLI)
 			if err != nil {
 				logger.Debugf("failed to update preflights reports: %v", err)
 			}

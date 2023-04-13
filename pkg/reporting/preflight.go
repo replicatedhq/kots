@@ -1,70 +1,17 @@
 package reporting
 
 import (
-	"bytes"
 	"encoding/json"
-	"fmt"
-	"net/http"
-	"net/url"
 	"time"
 
 	"github.com/pkg/errors"
-	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	appstatetypes "github.com/replicatedhq/kots/pkg/appstate/types"
-	"github.com/replicatedhq/kots/pkg/buildversion"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/store"
-	storetypes "github.com/replicatedhq/kots/pkg/store/types"
-	"github.com/replicatedhq/kots/pkg/util"
 	troubleshootpreflight "github.com/replicatedhq/troubleshoot/pkg/preflight"
 )
 
-func SendPreflightsReportToReplicatedApp(license *kotsv1beta1.License, appID string, clusterID string, sequence int64, skipPreflights bool, installStatus storetypes.DownstreamVersionStatus, isCLI bool, preflightStatus string, appStatus string) error {
-	endpoint := license.Spec.Endpoint
-	if !canReport(endpoint) {
-		return nil
-	}
-
-	urlValues := url.Values{}
-	urlValues.Set("sequence", fmt.Sprintf("%d", sequence))
-	urlValues.Set("skipPreflights", fmt.Sprintf("%t", skipPreflights))
-	urlValues.Set("installStatus", string(installStatus))
-	urlValues.Set("isCLI", fmt.Sprintf("%t", isCLI))
-	urlValues.Set("preflightStatus", preflightStatus)
-	urlValues.Set("appStatus", appStatus)
-	urlValues.Set("kotsVersion", buildversion.Version())
-
-	url := fmt.Sprintf("%s/kots_metrics/preflights/%s/%s?%s", endpoint, appID, clusterID, urlValues.Encode())
-	var buf bytes.Buffer
-	postReq, err := util.NewRequest("POST", url, &buf)
-	if err != nil {
-		return errors.Wrap(err, "failed to call newrequest")
-	}
-	postReq.Header.Add("Authorization", license.Spec.LicenseID)
-	postReq.Header.Set("Content-Type", "application/json")
-
-	resp, err := http.DefaultClient.Do(postReq)
-	if err != nil {
-		return errors.Wrap(err, "failed to send preflights reports")
-	}
-	defer resp.Body.Close()
-	if resp.StatusCode != 201 {
-		return errors.Errorf("Unexpected status code %d", resp.StatusCode)
-	}
-	return nil
-}
-
-func ReportAppInfo(appID string, sequence int64, isSkipPreflights bool, isCLI bool) error {
-	app, err := store.GetStore().GetApp(appID)
-	if err != nil {
-		return errors.Wrap(err, "failed to get app")
-	}
-
-	if app.IsAirgap {
-		logger.Debug("no reporting for airgapped app")
-		return nil
-	}
-
+func WaitAndReportPreflightChecks(appID string, sequence int64, isSkipPreflights bool, isCLI bool) error {
 	license, err := store.GetStore().GetLatestLicenseForApp(appID)
 	if err != nil {
 		return errors.Wrap(err, "failed to find license for app")
@@ -134,7 +81,7 @@ func ReportAppInfo(appID string, sequence int64, isSkipPreflights bool, isCLI bo
 			return
 		}
 
-		if err := SendPreflightsReportToReplicatedApp(license, appID, clusterID, sequence, isSkipPreflights, currentVersionStatus, isCLI, preflightState, string(appStatus)); err != nil {
+		if err := GetReporter().SubmitPreflightData(license, appID, clusterID, sequence, isSkipPreflights, currentVersionStatus, isCLI, preflightState, string(appStatus)); err != nil {
 			logger.Debugf("failed to send preflights data to replicated app: %v", err)
 			return
 		}

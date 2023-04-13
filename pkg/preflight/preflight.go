@@ -143,7 +143,13 @@ func Run(appID string, appSlug string, sequence int64, isAirgap bool, archiveDir
 				return
 			}
 			logger.Debug("preflight checks completed")
-			go reporting.SendAppInfo(appID) // send app and preflight info when preflights finish
+
+			go func() {
+				err := reporting.GetReporter().SubmitAppInfo(appID) // send app and preflight info when preflights finish
+				if err != nil {
+					logger.Debugf("failed to submit app info: %v", err)
+				}
+			}()
 
 			// status could've changed while preflights were running
 			status, err := store.GetStore().GetDownstreamVersionStatus(appID, sequence)
@@ -163,7 +169,7 @@ func Run(appID string, appSlug string, sequence int64, isAirgap bool, archiveDir
 
 			// preflight reporting
 			if isDeployed {
-				if err := reporting.ReportAppInfo(appID, sequence, false, false); err != nil {
+				if err := reporting.WaitAndReportPreflightChecks(appID, sequence, false, false); err != nil {
 					logger.Debugf("failed to send preflights data to replicated app: %v", err)
 					return
 				}
