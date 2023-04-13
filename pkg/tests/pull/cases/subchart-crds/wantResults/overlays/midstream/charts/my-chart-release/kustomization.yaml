@@ -4,6 +4,8 @@ bases:
 commonAnnotations:
   kots.io/app-slug: my-app
 kind: Kustomization
+patchesStrategicMerge:
+- pullsecrets.yaml
 resources:
 - secret.yaml
 transformers:
