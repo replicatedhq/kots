@@ -17,12 +17,12 @@ func (h *Handler) Logout(w http.ResponseWriter, r *http.Request) {
 
 	if auth == "" {
 		signedTokenCookie, err := r.Cookie("signed-token")
-		auth = signedTokenCookie.Value
 
 		if err == http.ErrNoCookie && auth == "" {
 			w.WriteHeader(http.StatusNoContent)
 			return
 		}
+		auth = signedTokenCookie.Value
 	}
 
 	sess, err := session.Parse(store.GetStore(), auth)

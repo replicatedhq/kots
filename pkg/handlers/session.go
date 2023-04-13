@@ -59,7 +59,6 @@ func requireValidSession(kotsStore store.Store, w http.ResponseWriter, r *http.R
 
 	if auth == "" {
 		signedTokenCookie, err := r.Cookie("signed-token")
-		auth = signedTokenCookie.Value
 
 		if err == http.ErrNoCookie && auth == "" {
 			err := errors.New("missing authorization token")
@@ -67,6 +66,7 @@ func requireValidSession(kotsStore store.Store, w http.ResponseWriter, r *http.R
 			JSON(w, http.StatusUnauthorized, response)
 			return nil, err
 		}
+		auth = signedTokenCookie.Value
 	}
 
 	sess, err = session.Parse(kotsStore, auth)
