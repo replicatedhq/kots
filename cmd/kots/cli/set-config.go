@@ -18,7 +18,6 @@ import (
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	configtypes "github.com/replicatedhq/kots/pkg/kotsadmconfig/types"
 	"github.com/replicatedhq/kots/pkg/logger"
-	"github.com/replicatedhq/yaml/v3"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -134,7 +133,7 @@ func SetConfigCmd() *cobra.Command {
 			}
 
 			response := struct {
-				Error            string                                        `json:"error"`
+				Error            string                                   `json:"error"`
 				ValidationErrors []configtypes.ConfigGroupValidationError `json:"validationErrors,omitempty"`
 			}{}
 			_ = json.Unmarshal(respBody, &response)
@@ -144,14 +143,8 @@ func SetConfigCmd() *cobra.Command {
 					return errors.Errorf("app with slug %s not found", appSlug)
 				} else {
 					if len(response.ValidationErrors) > 0 {
-						validationErrors, err := yaml.Marshal(response.ValidationErrors)
-						if err != nil {
-							return errors.Wrap(err, "failed to marshal config validation errors")
-						}
-						log.FinishSpinnerWithError()
-						log.Errorf(response.Error)
-						log.Errorf("Validation errors: \n%s", string(validationErrors))
-						return errors.New("config validation failed")
+						logConfigValidationErrors(response.ValidationErrors, log)
+						return (errors.New(response.Error))
 					}
 					return errors.Wrapf(errors.New(response.Error), "unexpected status code from %v", resp.StatusCode)
 				}
@@ -240,4 +233,20 @@ func getConfigValuesFromArgs(v *viper.Viper, args []string) ([]byte, error) {
 	}
 
 	return b, nil
+}
+
+func logConfigValidationErrors(groupValidationErrors []configtypes.ConfigGroupValidationError, log *logger.CLILogger) {
+	log.Errorf("Following config items have validation errors:")
+	for _, groupValidationError := range groupValidationErrors {
+		log.Errorf("Group - %s(%s)", groupValidationError.Title, groupValidationError.Name)
+		log.Errorf("  Items:")
+		for _, itemValidationError := range groupValidationError.ItemErrors {
+			log.Errorf("    Name: %s", itemValidationError.Name)
+			log.Errorf("    Type: %s", itemValidationError.Type)
+			log.Errorf("    Errors:")
+			for _, validationError := range itemValidationError.ValidationErrors {
+				log.Errorf("      - %s", validationError.Message)
+			}
+		}
+	}
 }

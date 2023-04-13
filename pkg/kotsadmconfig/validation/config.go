@@ -67,12 +67,11 @@ func validateConfigItem(item kotsv1beta1.ConfigItem) *configtypes.ConfigItemVali
 	value, err := getValidatableItemValue(item.Value, item.Type)
 	if err != nil {
 		return &configtypes.ConfigItemValidationError{
-			Name:  item.Name,
-			Type:  item.Type,
-			Value: item.Value,
+			Name: item.Name,
+			Type: item.Type,
 			ValidationErrors: []configtypes.ValidationError{
 				{
-					ValidationErrorMessage: errors.Wrapf(err, "failed to get item value").Error(),
+					Message: errors.Wrapf(err, "failed to get item value").Error(),
 				},
 			},
 		}
@@ -83,7 +82,6 @@ func validateConfigItem(item kotsv1beta1.ConfigItem) *configtypes.ConfigItemVali
 		return &configtypes.ConfigItemValidationError{
 			Name:             item.Name,
 			Type:             item.Type,
-			Value:            item.Value,
 			ValidationErrors: validationErrors,
 		}
 	}
