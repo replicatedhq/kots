@@ -40,7 +40,13 @@ func Test_requireValidSession(t *testing.T) {
 	}
 	sessionJWT := signJWT(t, sess)
 
-	mockStore.EXPECT().GetSession(sess.ID).Return(sess, nil)
+	tokenCookie := http.Cookie{
+		Name:     "signed-token",
+		Value:    fmt.Sprintf("Bearer %v", sessionJWT),
+		HttpOnly: true,
+	}
+
+	mockStore.EXPECT().GetSession(sess.ID).Return(sess, nil).MaxTimes(2)
 	mockStore.EXPECT().GetPasswordUpdatedAt().Return(nil, nil).MaxTimes(2)
 	type args struct {
 		kotsStore store.Store
@@ -85,12 +91,39 @@ func Test_requireValidSession(t *testing.T) {
 			wantErr: true,
 		},
 		{
+			name: "invalid token cookie session should return invalid token error - session: nil, error: true",
+			args: args{
+				r: &http.Request{
+					Header: http.Header{
+						"Cookie": []string{fmt.Sprintf("%s=%s", tokenCookie.Name, "Bearer invalid")},
+					},
+				},
+				w: httptest.NewRecorder(),
+			},
+			want:    nil,
+			wantErr: true,
+		},
+		{
 			name: "valid session should return session: session, error: false",
 			args: args{
 				kotsStore: mockStore,
 				r: &http.Request{
 					Header: http.Header{
 						"Authorization": []string{fmt.Sprintf("Bearer %v", sessionJWT)},
+					},
+				},
+				w: httptest.NewRecorder(),
+			},
+			want:    sess,
+			wantErr: false,
+		},
+		{
+			name: "valid session using cookie should return session: session, error: false",
+			args: args{
+				kotsStore: mockStore,
+				r: &http.Request{
+					Header: http.Header{
+						"Cookie": []string{fmt.Sprintf("%s=%s", tokenCookie.Name, tokenCookie.Value)},
 					},
 				},
 				w: httptest.NewRecorder(),
@@ -124,22 +157,67 @@ func Test_requireValidSession_emptySession(t *testing.T) {
 		ExpiresAt: time.Now().Add(12 * time.Hour),
 	}
 	emptySessionJWT := signJWT(t, emptySession)
+	tokenCookie := http.Cookie{
+		Name:     "signed-token",
+		Value:    fmt.Sprintf("Bearer %v", emptySessionJWT),
+		HttpOnly: true,
+	}
 
-	w := httptest.NewRecorder()
-	r := &http.Request{
-		Header: http.Header{
-			"Authorization": []string{fmt.Sprintf("Bearer %v", emptySessionJWT)},
+	mockStore.EXPECT().GetSession(emptySession.ID).Return(nil, nil).Times(2)
+	type args struct {
+		kotsStore store.Store
+		w         *httptest.ResponseRecorder
+		r         *http.Request
+	}
+	tests := []struct {
+		name    string
+		args    args
+		want    *types.Session
+		wantErr bool
+	}{
+		{
+			name: "empty session from auth header should return session: nil, error: true",
+			args: args{
+				kotsStore: mockStore,
+				w:         httptest.NewRecorder(),
+				r: &http.Request{
+					Header: http.Header{
+						"Authorization": []string{fmt.Sprintf("Bearer %v", emptySessionJWT)},
+					},
+				},
+			},
+			want:    nil,
+			wantErr: true,
+		},
+		{
+			name: "empty session from auth cookie should return session: nil, error: true",
+			args: args{
+				kotsStore: mockStore,
+				w:         httptest.NewRecorder(),
+				r: &http.Request{
+					Header: http.Header{
+						"Cookie": []string{fmt.Sprintf("%s=%s", tokenCookie.Name, tokenCookie.Value)},
+					},
+				},
+			},
+			want:    nil,
+			wantErr: true,
 		},
 	}
 
-	mockStore.EXPECT().GetSession(emptySession.ID).Return(nil, nil)
-	want = nil
-	req := require.New(t)
-	got, err := requireValidSession(mockStore, w, r)
-	req.Error(err)
-	req.Equal("no session in auth header", err.Error())
-	req.Equal(want, got)
-	req.Equal(401, w.Code)
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := requireValidSession(tt.args.kotsStore, tt.args.w, tt.args.r)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("requireValidSession() emptySession error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			req := require.New(t)
+			req.Equal("no session in auth header", err.Error())
+			req.Equal(tt.want, got)
+			req.Equal(401, tt.args.w.Code)
+		})
+	}
 }
 
 func Test_requireValidSession_expiredSession(t *testing.T) {
@@ -153,11 +231,16 @@ func Test_requireValidSession_expiredSession(t *testing.T) {
 		ExpiresAt: time.Now().Add(-1 * time.Hour),
 	}
 	expiredSessionJWT := signJWT(t, expiredSession)
+	expiredTokenCookie := http.Cookie{
+		Name:     "signed-token",
+		Value:    fmt.Sprintf("Bearer %v", expiredSessionJWT),
+		HttpOnly: true,
+	}
 
 	w := httptest.NewRecorder()
 	r := &http.Request{
 		Header: http.Header{
-			"Authorization": []string{fmt.Sprintf("Bearer %v", expiredSessionJWT)},
+			"Cookie": []string{fmt.Sprintf("%s=%s", expiredTokenCookie.Name, expiredTokenCookie.Value)},
 		},
 	}
 
@@ -183,11 +266,16 @@ func Test_requireValidSession_expiredSession_withDeleteErr(t *testing.T) {
 		ExpiresAt: time.Now().Add(-1 * time.Hour),
 	}
 	expiredSessionJWT := signJWT(t, expiredSession)
+	expiredTokenCookie := http.Cookie{
+		Name:     "signed-token",
+		Value:    fmt.Sprintf("Bearer %v", expiredSessionJWT),
+		HttpOnly: true,
+	}
 
 	w := httptest.NewRecorder()
 	r := &http.Request{
 		Header: http.Header{
-			"Authorization": []string{fmt.Sprintf("Bearer %v", expiredSessionJWT)},
+			"Cookie": []string{fmt.Sprintf("%s=%s", expiredTokenCookie.Name, expiredTokenCookie.Value)},
 		},
 	}
 
@@ -213,11 +301,16 @@ func Test_requireValidSession_extendSession(t *testing.T) {
 		ExpiresAt: time.Now().Add(12 * time.Hour).Add(-1 * time.Hour), // simulate a scenario where user is still using the session after one hour
 	}
 	extendSessionJWT := signJWT(t, extendSession)
+	extendedTokenCookie := http.Cookie{
+		Name:     "signed-token",
+		Value:    fmt.Sprintf("Bearer %v", extendSessionJWT),
+		HttpOnly: true,
+	}
 
 	w := httptest.NewRecorder()
 	r := &http.Request{
 		Header: http.Header{
-			"Authorization": []string{fmt.Sprintf("Bearer %v", extendSessionJWT)},
+			"Cookie": []string{fmt.Sprintf("%s=%s", extendedTokenCookie.Name, extendedTokenCookie.Value)},
 		},
 	}
 
@@ -244,11 +337,16 @@ func Test_requireValidSession_extendSession_withUpdateErr(t *testing.T) {
 		ExpiresAt: time.Now().Add(12 * time.Hour).Add(-1 * time.Hour), // simulate a scenario where user is still using the session after one hour
 	}
 	extendSessionJWT := signJWT(t, extendSession)
+	extendedTokenCookie := http.Cookie{
+		Name:     "signed-token",
+		Value:    fmt.Sprintf("Bearer %v", extendSessionJWT),
+		HttpOnly: true,
+	}
 
 	w := httptest.NewRecorder()
 	r := &http.Request{
 		Header: http.Header{
-			"Authorization": []string{fmt.Sprintf("Bearer %v", extendSessionJWT)},
+			"Cookie": []string{fmt.Sprintf("%s=%s", extendedTokenCookie.Name, extendedTokenCookie.Value)},
 		},
 	}
 
@@ -280,11 +378,16 @@ func Test_requireValidSession_FailedToFetchPasswordUpdated_AfterSessionIssuedErr
 		ExpiresAt: time.Now().Add(12 * time.Hour).Add(-1 * time.Hour), // simulate a scenario where user is still using the session after one hour
 	}
 	extendSessionJWT := signJWT(t, extendSession)
+	extendedTokenCookie := http.Cookie{
+		Name:     "signed-token",
+		Value:    fmt.Sprintf("Bearer %v", extendSessionJWT),
+		HttpOnly: true,
+	}
 
 	w := httptest.NewRecorder()
 	r := &http.Request{
 		Header: http.Header{
-			"Authorization": []string{fmt.Sprintf("Bearer %v", extendSessionJWT)},
+			"Cookie": []string{fmt.Sprintf("%s=%s", extendedTokenCookie.Name, extendedTokenCookie.Value)},
 		},
 	}
 
@@ -311,11 +414,16 @@ func Test_requireValidSession_PasswordUpdated_AfterSessionIssuedErr(t *testing.T
 		ExpiresAt: time.Now().Add(12 * time.Hour).Add(-1 * time.Hour), // simulate a scenario where user is still using the session after one hour
 	}
 	sessionJWT := signJWT(t, session)
+	tokenCookie := http.Cookie{
+		Name:     "signed-token",
+		Value:    fmt.Sprintf("Bearer %v", sessionJWT),
+		HttpOnly: true,
+	}
 
 	w := httptest.NewRecorder()
 	r := &http.Request{
 		Header: http.Header{
-			"Authorization": []string{fmt.Sprintf("Bearer %v", sessionJWT)},
+			"Cookie": []string{fmt.Sprintf("%s=%s", tokenCookie.Name, tokenCookie.Value)},
 		},
 	}
 
@@ -344,11 +452,16 @@ func Test_requireValidSession_PasswordUpdated_AfterSessionIssuedErr_logDeleteSes
 		ExpiresAt: time.Now().Add(12 * time.Hour).Add(-1 * time.Hour), // simulate a scenario where user is still using the session after one hour
 	}
 	sessionJWT := signJWT(t, session)
+	tokenCookie := http.Cookie{
+		Name:     "signed-token",
+		Value:    fmt.Sprintf("Bearer %v", sessionJWT),
+		HttpOnly: true,
+	}
 
 	w := httptest.NewRecorder()
 	r := &http.Request{
 		Header: http.Header{
-			"Authorization": []string{fmt.Sprintf("Bearer %v", sessionJWT)},
+			"Cookie": []string{fmt.Sprintf("%s=%s", tokenCookie.Name, tokenCookie.Value)},
 		},
 	}
 
