@@ -3,5 +3,5 @@ bases:
   - ./minio
   - ../../../migrations/kustomize/overlays/dev
 
-patches:
+patchesStrategicMerge:
   - ./deployment.yaml

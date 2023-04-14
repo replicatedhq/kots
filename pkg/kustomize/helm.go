@@ -42,6 +42,11 @@ func GetRenderedChartsArchive(versionArchive string, downstreamName, kustomizeBi
 	baseDir := filepath.Join(versionArchive, "base")
 	overlaysDir := filepath.Join(versionArchive, "overlays")
 
+	chartsDir := filepath.Join(baseDir, "charts")
+	if err := cleanBaseApp(chartsDir, nil); err != nil {
+		return nil, nil, errors.Wrap(err, "failed to clean base app")
+	}
+
 	archive, filesMap, err := RenderChartsArchive(baseDir, overlaysDir, downstreamName, kustomizeBinPath)
 	if err != nil {
 		return nil, nil, errors.Wrap(err, "failed to render charts archive")

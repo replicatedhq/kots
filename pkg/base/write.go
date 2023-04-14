@@ -10,6 +10,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
+	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/util"
 	"gopkg.in/yaml.v2"
 	kustomizetypes "sigs.k8s.io/kustomize/api/types"
@@ -75,7 +76,12 @@ func (b *Base) writeBase(options WriteOptions, isTopLevelBase bool) ([]string, [
 			}
 		}
 
-		if err := ioutil.WriteFile(fileRenderPath, file.Content, 0644); err != nil {
+		newContent, err := kotsutil.RemoveEmptyMappingFields(file.Content)
+		if err != nil {
+			return nil, nil, errors.Wrap(err, "failed to remove empty mapping fields")
+		}
+
+		if err := ioutil.WriteFile(fileRenderPath, newContent, 0644); err != nil {
 			return nil, nil, errors.Wrap(err, "failed to write base file")
 		}
 
