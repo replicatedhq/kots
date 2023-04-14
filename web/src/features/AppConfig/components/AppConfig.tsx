@@ -592,7 +592,7 @@ class AppConfig extends Component<Props, State> {
       downstreamVersion,
       savingConfig,
       changed,
-      showValidationError: hasRegExError,
+      showValidationError,
       showNextStepModal,
       configError,
       configLoading,
@@ -812,7 +812,7 @@ class AppConfig extends Component<Props, State> {
                             <button
                               className="btn primary blue"
                               disabled={
-                                hasRegExError ||
+                                showValidationError ||
                                 (!changed && !fromLicenseFlow) ||
                                 this.isConfigReadOnly(app)
                               }
