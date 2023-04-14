@@ -16,11 +16,23 @@ var (
 )
 
 func isValidatableConfigItem(item kotsv1beta1.ConfigItem) bool {
-	if item.Validation == nil ||
-		item.Hidden ||
-		item.When == "false" ||
-		item.Repeatable ||
-		!validatableItemTypesMap[item.Type] {
+	if item.Validation == nil {
+		return false
+	}
+
+	if item.Hidden {
+		return false
+	}
+
+	if item.When == "false" {
+		return false
+	}
+
+	if item.Repeatable {
+		return false
+	}
+
+	if !validatableItemTypesMap[item.Type] {
 		return false
 	}
 
