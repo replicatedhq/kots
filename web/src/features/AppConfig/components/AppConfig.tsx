@@ -802,13 +802,13 @@ class AppConfig extends Component<Props, State> {
                         )}
                         {!savingConfig && (
                           <div className="ConfigError--wrapper flex-column alignItems--flexStart">
-                            {configError ||
-                              (this.state.showValidationError && (
-                                <span className="u-textColor--error tw-mb-2 tw-text-xs">
-                                  {configError ||
-                                    "Error detected. Please use config nav to the left to locate and fix issues."}
-                                </span>
-                              ))}
+                            {(configError ||
+                              this.state.showValidationError) && (
+                              <span className="u-textColor--error tw-mb-2 tw-text-xs">
+                                {configError ||
+                                  "Error detected. Please use config nav to the left to locate and fix issues."}
+                              </span>
+                            )}
                             <button
                               className="btn primary blue"
                               disabled={
