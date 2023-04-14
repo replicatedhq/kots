@@ -106,6 +106,9 @@ a:visited {
     &.active-item {
       font-weight: 500;
       color: $text-color-secondary;
+      &.has-error {
+        color: var(--error-color);
+      }
     }
 
     &:hover {
