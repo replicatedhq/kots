@@ -67,13 +67,9 @@ type ConfigItemValidation struct {
 	Regex *RegexValidator `json:"regex,omitempty"`
 }
 
-type BaseValidator struct {
-	Message string `json:"message"`
-}
-
 type RegexValidator struct {
-	BaseValidator `json:",inline"`
-	Pattern       string `json:"pattern"`
+	Message string `json:"message"`
+	Pattern string `json:"pattern"`
 }
 
 type RepeatTemplate struct {
