@@ -10,6 +10,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
+	"k8s.io/utils/pointer"
 )
 
 var (
@@ -111,4 +112,45 @@ func PodsHaveTheSameOwner(pods []corev1.Pod) bool {
 	}
 
 	return true
+}
+
+func SecurePodContext(user int64, group int64, isStrict bool) *corev1.PodSecurityContext {
+	var context corev1.PodSecurityContext
+
+	if isStrict {
+		context = corev1.PodSecurityContext{
+			RunAsNonRoot:       pointer.Bool(true),
+			RunAsUser:          &user,
+			RunAsGroup:         &group,
+			FSGroup:            &group,
+			SupplementalGroups: []int64{group},
+			SeccompProfile: &corev1.SeccompProfile{
+				Type: corev1.SeccompProfileTypeRuntimeDefault,
+			},
+		}
+	} else {
+		context = corev1.PodSecurityContext{
+			RunAsUser: pointer.Int64(user),
+			FSGroup:   pointer.Int64(group),
+		}
+	}
+
+	return &context
+}
+func SecureContainerContext(isStrict bool) *corev1.SecurityContext {
+	var context *corev1.SecurityContext
+
+	if isStrict {
+		context = &corev1.SecurityContext{
+			Privileged:               pointer.Bool(false),
+			AllowPrivilegeEscalation: pointer.Bool(false),
+			ReadOnlyRootFilesystem:   pointer.Bool(true),
+			Capabilities: &corev1.Capabilities{
+				Drop: []corev1.Capability{
+					"ALL",
+				},
+			},
+		}
+	}
+	return context
 }
