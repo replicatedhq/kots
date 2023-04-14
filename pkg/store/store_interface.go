@@ -7,6 +7,7 @@ import (
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	airgaptypes "github.com/replicatedhq/kots/pkg/airgap/types"
 	downstreamtypes "github.com/replicatedhq/kots/pkg/api/downstream/types"
+	reportingtypes "github.com/replicatedhq/kots/pkg/api/reporting/types"
 	versiontypes "github.com/replicatedhq/kots/pkg/api/version/types"
 	apptypes "github.com/replicatedhq/kots/pkg/app/types"
 	appstatetypes "github.com/replicatedhq/kots/pkg/appstate/types"
@@ -45,6 +46,7 @@ type Store interface {
 	KotsadmParamsStore
 	EmbeddedStore
 	BrandingStore
+	ReportingStore
 
 	Init() error // this may need options
 	WaitForReady(ctx context.Context) error
@@ -245,4 +247,9 @@ type BrandingStore interface {
 	CreateInitialBranding(brandingArchive []byte) (string, error)
 	GetLatestBranding() ([]byte, error)
 	GetLatestBrandingForApp(appID string) ([]byte, error)
+}
+
+type ReportingStore interface {
+	SavePreflightReport(licenseID string, preflightStatus *reportingtypes.PreflightStatus) error
+	SaveReportingInfo(licenseID string, reportingInfo *reportingtypes.ReportingInfo) error
 }

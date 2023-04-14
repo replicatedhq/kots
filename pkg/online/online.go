@@ -225,7 +225,7 @@ func CreateAppFromOnline(opts CreateOnlineAppOpts) (_ *kotsutil.KotsKinds, final
 					return nil, errors.Wrap(err, "failed to deploy version")
 				}
 				go func() {
-					if err := reporting.ReportAppInfo(opts.PendingApp.ID, newSequence, opts.SkipPreflights, opts.IsAutomated); err != nil {
+					if err := reporting.WaitAndReportPreflightChecks(opts.PendingApp.ID, newSequence, opts.SkipPreflights, opts.IsAutomated); err != nil {
 						logger.Debugf("failed to send preflights data to replicated app: %v", err)
 					}
 				}()
@@ -253,7 +253,7 @@ func CreateAppFromOnline(opts CreateOnlineAppOpts) (_ *kotsutil.KotsKinds, final
 			return nil, errors.Wrap(err, "failed to deploy version")
 		}
 		go func() {
-			if err := reporting.ReportAppInfo(opts.PendingApp.ID, newSequence, opts.SkipPreflights, opts.IsAutomated); err != nil {
+			if err := reporting.WaitAndReportPreflightChecks(opts.PendingApp.ID, newSequence, opts.SkipPreflights, opts.IsAutomated); err != nil {
 				logger.Debugf("failed to send preflights data to replicated app: %v", err)
 			}
 		}()
