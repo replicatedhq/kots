@@ -121,7 +121,7 @@ var (
 	regexMatchFailedConfigItem = kotsv1beta1.ConfigItem{
 		Name:  "regexMatchFailedConfigItem",
 		Type:  "text",
-		Value: multitype.BoolOrString{StrVal: "a123"},
+		Value: multitype.BoolOrString{StrVal: "A123"},
 		Validation: &kotsv1beta1.ConfigItemValidation{
 			Regex: &kotsv1beta1.RegexValidator{
 				Pattern: "^[a-z]+$",
@@ -250,7 +250,8 @@ func Test_validateConfigItems(t *testing.T) {
 					noValidationConfigItem,
 				},
 			},
-			want: []configtypes.ConfigItemValidationError{},
+			want:    []configtypes.ConfigItemValidationError{},
+			wantErr: false,
 		},
 		{
 			name: "invalid config validation regex pattern",
@@ -275,15 +276,14 @@ func Test_validateConfigItems(t *testing.T) {
 			},
 			want: []configtypes.ConfigItemValidationError{
 				{
-					Name: regexMatchFailedConfigItem.Name,
-					Type: regexMatchFailedConfigItem.Type,
+					Name: "regexMatchFailedConfigItem",
+					Type: "text",
 					ValidationErrors: []configtypes.ValidationError{
-						{
-							Message: regexMatchFailedConfigItem.Validation.Regex.Message,
-						},
+						{Message: "must be a valid regex"},
 					},
 				},
 			},
+			wantErr: false,
 		},
 	}
 	for _, tt := range tests {
@@ -293,8 +293,16 @@ func Test_validateConfigItems(t *testing.T) {
 				t.Errorf("validateConfigItems() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-			if reflect.DeepEqual(got, tt.want) {
+			if !reflect.DeepEqual(len(got), len(tt.want)) {
+				t.Errorf("len(validateConfigItems()) = %v, want %v", len(got), len(tt.want))
 				t.Errorf("validateConfigItems() = %v, want %v", got, tt.want)
+			}
+			for i := range got {
+				if !reflect.DeepEqual(got[i].Name, tt.want[i].Name) ||
+					!reflect.DeepEqual(got[i].Type, tt.want[i].Type) ||
+					!reflect.DeepEqual(got[i].ValidationErrors, tt.want[i].ValidationErrors) {
+					t.Errorf("validateConfigItems() = %v, want %v", got, tt.want)
+				}
 			}
 		})
 	}
