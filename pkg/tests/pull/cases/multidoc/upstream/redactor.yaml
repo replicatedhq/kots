@@ -4,13 +4,13 @@ metadata:
   name: test-redactor
 spec:
   redactors:
-  - name: replace password
+  - name: replace test password
     fileSelector:
       file: test/test-file
     removals:
       values:
       - testvalue
-  - name: all files
+  - name: all test files
     removals:
       regex:
         - redactor: '("value": ").*(")'
@@ -23,15 +23,34 @@ metadata:
   name: test-redactor
 spec:
   redactors:
-  - name: replace password
+  - name: replace secret password
     fileSelector:
       file: supsecretdir/passwordfile-no-looky
     removals:
       values:
       - randompassword
-  - name: all files
+  - name: all cc files
     removals:
       regex:
         - redactor: '("value": ").*(")'
       yamlPath:
       - "creditcards.*.yaml"
+---
+apiVersion: troubleshoot.sh/v1beta2
+kind: Redactor
+metadata:
+  name: test-redactor
+spec:
+  redactors:
+  - name: replace k8s version
+    fileSelector:
+      file: etc/rancher/k3s/config.yaml
+    removals:
+      values:
+      - '{{repl ConfigOption "min_kubernetes_version"}}'
+  - name: all files
+    removals:
+      regex:
+        - redactor: '("value": ").*(")'
+      yamlPath:
+      - '{{repl ConfigOption "container_backend"}}.yaml'
