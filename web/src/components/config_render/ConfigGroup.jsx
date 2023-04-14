@@ -122,7 +122,7 @@ const ConfigGroup = (props) => {
             <ConfigWrapper
               key={`${i}-${item.name}`}
               className={"field-type-label "}
-              marginTop={item.affix ? "0" : "15px"}
+              marginTop={item.affix ? "0" : "35px"}
               order={setOrder(i + 1, item.affix)}
             >
               <ConfigFileInput

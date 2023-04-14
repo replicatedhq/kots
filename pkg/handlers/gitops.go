@@ -92,7 +92,12 @@ func (h *Handler) DisableAppGitOps(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	go reporting.SendAppInfo(appID)
+	go func() {
+		err := reporting.GetReporter().SubmitAppInfo(appID)
+		if err != nil {
+			logger.Debugf("failed to submit app info: %v", err)
+		}
+	}()
 
 	JSON(w, http.StatusNoContent, "")
 }
@@ -265,7 +270,12 @@ func (h *Handler) InitGitOpsConnection(w http.ResponseWriter, r *http.Request) {
 		}
 	}()
 
-	go reporting.SendAppInfo(appID)
+	go func() {
+		err := reporting.GetReporter().SubmitAppInfo(appID)
+		if err != nil {
+			logger.Debugf("failed to submit app info: %v", err)
+		}
+	}()
 
 	JSON(w, http.StatusNoContent, "")
 }

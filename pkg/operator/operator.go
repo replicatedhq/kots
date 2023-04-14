@@ -167,9 +167,18 @@ func (o *Operator) DeployApp(appID string, sequence int64) (deployed bool, deplo
 	}
 
 	if os.Getenv("KOTSADM_ENV") != "test" {
-		go reporting.SendAppInfo(appID)
+		go func() {
+			err := reporting.GetReporter().SubmitAppInfo(appID)
+			if err != nil {
+				logger.Debugf("failed to submit initial app info: %v", err)
+			}
+		}()
+
 		defer func() {
-			go reporting.SendAppInfo(appID)
+			err := reporting.GetReporter().SubmitAppInfo(appID)
+			if err != nil {
+				logger.Debugf("failed to submit final app info: %v", err)
+			}
 		}()
 	}
 
@@ -418,7 +427,13 @@ func (o *Operator) applyStatusInformers(a *apptypes.App, sequence int64, kotsKin
 		if err != nil {
 			return errors.Wrap(err, "failed to set app status")
 		}
-		go reporting.SendAppInfo(a.ID)
+
+		go func() {
+			err := reporting.GetReporter().SubmitAppInfo(a.ID)
+			if err != nil {
+				logger.Debugf("failed to submit app info: %v", err)
+			}
+		}()
 	}
 
 	return nil

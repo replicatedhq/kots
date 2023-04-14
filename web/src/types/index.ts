@@ -4,6 +4,7 @@ export type App = {
   allowSnapshots: boolean;
   autoDeploy: string;
   chartPath: string;
+  createdAt: string;
   credentials: Credentials;
   currentSequence: number;
   downstream: Downstream;
