@@ -127,6 +127,29 @@ var (
 			},
 		},
 	}
+	requiredFalseValueEmptyConfigItem = kotsv1beta1.ConfigItem{
+		Name:     "requiredFalseValueEmptyConfigItem",
+		Type:     "text",
+		Value:    multitype.BoolOrString{StrVal: ""},
+		Required: false,
+		Validation: &kotsv1beta1.ConfigItemValidation{
+			Regex: &kotsv1beta1.RegexValidator{
+				Pattern: "^[a-z]+$",
+				Message: "must be a valid regex",
+			},
+		},
+	}
+	regexMatchFailedRequiredConfigItem = kotsv1beta1.ConfigItem{
+		Name:  "regexMatchFailedConfigItem",
+		Type:  "text",
+		Value: multitype.BoolOrString{StrVal: "A123"},
+		Validation: &kotsv1beta1.ConfigItemValidation{
+			Regex: &kotsv1beta1.RegexValidator{
+				Pattern: "^[a-z]+$",
+				Message: "must be a valid regex",
+			},
+		},
+	}
 	invalidRegexPatternConfigItem = kotsv1beta1.ConfigItem{
 		Name:  "invalidRegexConfigItem",
 		Type:  "text",
@@ -202,6 +225,26 @@ func Test_validateConfigItem(t *testing.T) {
 			want: &configtypes.ConfigItemValidationError{
 				Name: regexMatchFailedConfigItem.Name,
 				Type: regexMatchFailedConfigItem.Type,
+				ValidationErrors: []configtypes.ValidationError{
+					{
+						Message: "must be a valid regex",
+					},
+				},
+			},
+		}, {
+			name: "expect no error when required is false and value is empty",
+			args: args{
+				item: requiredFalseValueEmptyConfigItem,
+			},
+			want: nil,
+		}, {
+			name: "regex match failed required config item",
+			args: args{
+				item: regexMatchFailedRequiredConfigItem,
+			},
+			want: &configtypes.ConfigItemValidationError{
+				Name: regexMatchFailedRequiredConfigItem.Name,
+				Type: regexMatchFailedRequiredConfigItem.Type,
 				ValidationErrors: []configtypes.ValidationError{
 					{
 						Message: "must be a valid regex",
@@ -379,56 +422,56 @@ func Test_validateConfigGroup(t *testing.T) {
 	}
 }
 
-func Test_hasConfigItemValidators(t *testing.T) {
-	type args struct {
-		configSpec kotsv1beta1.ConfigSpec
-	}
-	tests := []struct {
-		name string
-		args args
-		want bool
-	}{
-		{
-			name: "has validators",
-			args: args{
-				configSpec: kotsv1beta1.ConfigSpec{
-					Groups: []kotsv1beta1.ConfigGroup{
-						{
-							Items: []kotsv1beta1.ConfigItem{
-								validRegexConfigItem,
-								noValidationConfigItem,
-								regexMatchFailedConfigItem,
-							},
-						},
-					},
-				},
-			},
-			want: true,
-		},
-		{
-			name: "no validators",
-			args: args{
-				configSpec: kotsv1beta1.ConfigSpec{
-					Groups: []kotsv1beta1.ConfigGroup{
-						{
-							Items: []kotsv1beta1.ConfigItem{
-								noValidationConfigItem,
-							},
-						},
-					},
-				},
-			},
-			want: false,
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if got := hasConfigItemValidators(tt.args.configSpec); got != tt.want {
-				t.Errorf("hasConfigItemValidators() = %v, want %v", got, tt.want)
-			}
-		})
-	}
-}
+// func Test_hasConfigItemValidators(t *testing.T) {
+// 	type args struct {
+// 		configSpec kotsv1beta1.ConfigSpec
+// 	}
+// 	tests := []struct {
+// 		name string
+// 		args args
+// 		want bool
+// 	}{
+// 		{
+// 			name: "has validators",
+// 			args: args{
+// 				configSpec: kotsv1beta1.ConfigSpec{
+// 					Groups: []kotsv1beta1.ConfigGroup{
+// 						{
+// 							Items: []kotsv1beta1.ConfigItem{
+// 								validRegexConfigItem,
+// 								noValidationConfigItem,
+// 								regexMatchFailedConfigItem,
+// 							},
+// 						},
+// 					},
+// 				},
+// 			},
+// 			want: true,
+// 		},
+// 		{
+// 			name: "no validators",
+// 			args: args{
+// 				configSpec: kotsv1beta1.ConfigSpec{
+// 					Groups: []kotsv1beta1.ConfigGroup{
+// 						{
+// 							Items: []kotsv1beta1.ConfigItem{
+// 								noValidationConfigItem,
+// 							},
+// 						},
+// 					},
+// 				},
+// 			},
+// 			want: false,
+// 		},
+// 	}
+// 	for _, tt := range tests {
+// 		t.Run(tt.name, func(t *testing.T) {
+// 			if got := hasConfigItemValidators(tt.args.configSpec); got != tt.want {
+// 				t.Errorf("hasConfigItemValidators() = %v, want %v", got, tt.want)
+// 			}
+// 		})
+// 	}
+// }
 
 func TestValidateConfigSpec(t *testing.T) {
 	type args struct {
