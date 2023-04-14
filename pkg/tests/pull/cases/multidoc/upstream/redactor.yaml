@@ -1,0 +1,37 @@
+apiVersion: troubleshoot.sh/v1beta2
+kind: Redactor
+metadata:
+  name: test-redactor
+spec:
+  redactors:
+  - name: replace password
+    fileSelector:
+      file: test/test-file
+    removals:
+      values:
+      - testvalue
+  - name: all files
+    removals:
+      regex:
+        - redactor: '("value": ").*(")'
+      yamlPath:
+      - "test.*"
+---
+apiVersion: troubleshoot.sh/v1beta2
+kind: Redactor
+metadata:
+  name: test-redactor
+spec:
+  redactors:
+  - name: replace password
+    fileSelector:
+      file: supsecretdir/passwordfile-no-looky
+    removals:
+      values:
+      - randompassword
+  - name: all files
+    removals:
+      regex:
+        - redactor: '("value": ").*(")'
+      yamlPath:
+      - "creditcards.*.yaml"

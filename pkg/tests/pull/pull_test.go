@@ -11,6 +11,7 @@ import (
 	envsubst "github.com/drone/envsubst/v2"
 	"github.com/ghodss/yaml"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
+	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/pull"
 	upstreamtypes "github.com/replicatedhq/kots/pkg/upstream/types"
 	"github.com/replicatedhq/kots/pkg/util"
@@ -204,13 +205,11 @@ func TestKotsPull(t *testing.T) {
 					require.NoError(t, err, path)
 					contents := util.ConvertToSingleDocs(rawContents)
 
-					contentsJSON := []map[string]interface{}{}
-					for _, doc := range contents {
-						doc = []byte(strings.TrimSpace(string(doc)))
-						temp := map[string]interface{}{}
-						err := yaml.Unmarshal(doc, &temp)
-						require.NoError(t, err)
-						contentsJSON = append(contentsJSON, temp)
+					kotsKinds := []*kotsutil.KotsKinds{}
+					for _, content := range contents {
+						elem, err := kotsutil.KotsKindsFromMap(map[string][]byte{path: content})
+						require.NoError(t, err, path)
+						kotsKinds = append(kotsKinds, elem)
 					}
 
 					wantPath := strings.Replace(path, "results", "wantResults", 1)
@@ -222,16 +221,14 @@ func TestKotsPull(t *testing.T) {
 					require.NoError(t, err, wantPath)
 					wantContents := util.ConvertToSingleDocs(rawWantContents)
 
-					wantContentsJSON := []map[string]interface{}{}
-					for _, doc := range wantContents {
-						doc = []byte(strings.TrimSpace(string(doc)))
-						temp := map[string]interface{}{}
-						err := yaml.Unmarshal(doc, &temp)
-						require.NoError(t, err)
-						wantContentsJSON = append(wantContentsJSON, temp)
+					wantKotsKinds := []*kotsutil.KotsKinds{}
+					for _, content := range wantContents {
+						elem, err := kotsutil.KotsKindsFromMap(map[string][]byte{path: content})
+						require.NoError(t, err, path)
+						wantKotsKinds = append(wantKotsKinds, elem)
 					}
 
-					require.ElementsMatch(t, wantContentsJSON, contentsJSON)
+					require.ElementsMatch(t, wantKotsKinds, kotsKinds)
 					return nil
 				})
 
