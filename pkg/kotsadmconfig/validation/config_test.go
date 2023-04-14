@@ -112,9 +112,7 @@ var (
 		Validation: &kotsv1beta1.ConfigItemValidation{
 			Regex: &kotsv1beta1.RegexValidator{
 				Pattern: "^[a-z]+$",
-				BaseValidator: kotsv1beta1.BaseValidator{
-					Message: "must be a valid regex",
-				},
+				Message: "must be a valid regex",
 			},
 		},
 	}
@@ -125,9 +123,7 @@ var (
 		Validation: &kotsv1beta1.ConfigItemValidation{
 			Regex: &kotsv1beta1.RegexValidator{
 				Pattern: "^[a-z]+$",
-				BaseValidator: kotsv1beta1.BaseValidator{
-					Message: "must be a valid regex",
-				},
+				Message: "must be a valid regex",
 			},
 		},
 	}
@@ -138,9 +134,7 @@ var (
 		Validation: &kotsv1beta1.ConfigItemValidation{
 			Regex: &kotsv1beta1.RegexValidator{
 				Pattern: "^([a-z]+$",
-				BaseValidator: kotsv1beta1.BaseValidator{
-					Message: "must be a valid regex",
-				},
+				Message: "must be a valid regex",
 			},
 		},
 	}
@@ -156,9 +150,7 @@ var (
 		Validation: &kotsv1beta1.ConfigItemValidation{
 			Regex: &kotsv1beta1.RegexValidator{
 				Pattern: "^[a-z]+$",
-				BaseValidator: kotsv1beta1.BaseValidator{
-					Message: "must be a valid regex",
-				},
+				Message: "must be a valid regex",
 			},
 		},
 	}

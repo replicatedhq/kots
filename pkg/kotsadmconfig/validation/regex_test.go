@@ -38,9 +38,7 @@ func Test_regexValidator_Validate(t *testing.T) {
 			fields: fields{
 				RegexValidator: &kotsv1beta1.RegexValidator{
 					Pattern: "[",
-					BaseValidator: kotsv1beta1.BaseValidator{
-						Message: "must be a valid regex",
-					},
+					Message: "must be a valid regex",
 				},
 			},
 			args: args{
@@ -53,9 +51,7 @@ func Test_regexValidator_Validate(t *testing.T) {
 			fields: fields{
 				RegexValidator: &kotsv1beta1.RegexValidator{
 					Pattern: "test",
-					BaseValidator: kotsv1beta1.BaseValidator{
-						Message: "must be a valid regex",
-					},
+					Message: "must be a valid regex",
 				},
 			},
 			args: args{

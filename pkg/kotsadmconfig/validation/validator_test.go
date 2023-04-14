@@ -77,9 +77,7 @@ func Test_validate(t *testing.T) {
 				validator: kotsv1beta1.ConfigItemValidation{
 					Regex: &kotsv1beta1.RegexValidator{
 						Pattern: ".*",
-						BaseValidator: kotsv1beta1.BaseValidator{
-							Message: "must be a valid regex",
-						},
+						Message: "must be a valid regex",
 					},
 				},
 			},
@@ -91,9 +89,8 @@ func Test_validate(t *testing.T) {
 				validator: kotsv1beta1.ConfigItemValidation{
 					Regex: &kotsv1beta1.RegexValidator{
 						Pattern: "[",
-						BaseValidator: kotsv1beta1.BaseValidator{
-							Message: "must be a valid regex",
-						}},
+						Message: "must be a valid regex",
+					},
 				},
 			},
 			want:    nil,
@@ -105,9 +102,8 @@ func Test_validate(t *testing.T) {
 				validator: kotsv1beta1.ConfigItemValidation{
 					Regex: &kotsv1beta1.RegexValidator{
 						Pattern: "^[A-Z]+$",
-						BaseValidator: kotsv1beta1.BaseValidator{
-							Message: "must be a valid regex",
-						}},
+						Message: "must be a valid regex",
+					},
 				},
 			},
 			want: []configtypes.ValidationError{
