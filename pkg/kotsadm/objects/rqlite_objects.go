@@ -22,11 +22,11 @@ func RqliteStatefulset(deployOptions types.DeployOptions, size resource.Quantity
 		}
 	}
 
-	securityContext := securePodContext(1001, deployOptions.StrictSecurityContext)
+	securityContext := k8sutil.SecurePodContext(1001, 1001, deployOptions.StrictSecurityContext)
 	if deployOptions.IsOpenShift {
 		// need to use a security context here because if the project is running with a scc that has "MustRunAsNonRoot" (or is not "MustRunAsRange"),
 		// openshift won't assign a user id to the container to run with, and the container will try to run as root and fail.
-		psc, err := k8sutil.GetOpenShiftPodSecurityContext(deployOptions.Namespace)
+		psc, err := k8sutil.GetOpenShiftPodSecurityContext(deployOptions.Namespace, deployOptions.StrictSecurityContext)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to get openshift pod security context")
 		}
@@ -165,7 +165,7 @@ func RqliteStatefulset(deployOptions types.DeployOptions, size resource.Quantity
 									"memory": resource.MustParse(memoryRequest),
 								},
 							},
-							SecurityContext: secureContainerContext(deployOptions.StrictSecurityContext),
+							SecurityContext: k8sutil.SecureContainerContext(deployOptions.StrictSecurityContext),
 						},
 					},
 				},
