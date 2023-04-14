@@ -79,7 +79,7 @@ type State = {
   downstreamVersion: Version | null;
   errorTitle: string;
   gettingConfigErrMsg: string;
-  hasValidationError: boolean;
+  showValidationError: boolean;
   initialConfigGroups: ConfigGroup[];
   savingConfig: boolean;
   showHelmDeployModal: boolean;
@@ -105,7 +105,7 @@ class AppConfig extends Component<Props, State> {
       downstreamVersion: null,
       errorTitle: "",
       gettingConfigErrMsg: "",
-      hasValidationError: false,
+      showValidationError: false,
       initialConfigGroups: [],
       savingConfig: false,
       showHelmDeployModal: false,
@@ -482,7 +482,7 @@ class AppConfig extends Component<Props, State> {
           data.validationErrors;
 
         // track errors at the form level
-        this.setState({ hasValidationError: false });
+        this.setState({ showValidationError: false });
         let hasValidationError = false;
 
         // merge validation errors and config group
@@ -505,7 +505,7 @@ class AppConfig extends Component<Props, State> {
                 // if there is an error, then block form submission with state.hasValidationError
                 if (!hasValidationError) {
                   hasValidationError = true;
-                  this.setState({ hasValidationError: true });
+                  this.setState({ showValidationError: true });
                 }
               }
               return item;
@@ -590,7 +590,7 @@ class AppConfig extends Component<Props, State> {
       downstreamVersion,
       savingConfig,
       changed,
-      hasValidationError: hasRegExError,
+      showValidationError: hasRegExError,
       showNextStepModal,
       configError,
       configLoading,
@@ -797,11 +797,13 @@ class AppConfig extends Component<Props, State> {
                         )}
                         {!savingConfig && (
                           <div className="ConfigError--wrapper flex-column alignItems--flexStart">
-                            {configError && (
-                              <span className="u-textColor--error u-marginBottom--20 u-fontWeight--bold">
-                                {configError}
-                              </span>
-                            )}
+                            {configError ||
+                              (this.state.showValidationError && (
+                                <span className="u-textColor--error tw-mb-2 tw-text-xs">
+                                  {configError ||
+                                    "Error detected. Please use config nav to the left to locate and fix issues."}
+                                </span>
+                              ))}
                             <button
                               className="btn primary blue"
                               disabled={
