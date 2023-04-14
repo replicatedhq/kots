@@ -9,10 +9,6 @@ import (
 )
 
 func ValidateConfigSpec(configSpec kotsv1beta1.ConfigSpec) ([]configtypes.ConfigGroupValidationError, error) {
-	if !hasConfigItemValidators(configSpec) {
-		return nil, nil
-	}
-
 	var configGroupErrors []configtypes.ConfigGroupValidationError
 	for _, configGroup := range configSpec.Groups {
 		configGroupError, err := validateConfigGroup(configGroup)
@@ -24,18 +20,6 @@ func ValidateConfigSpec(configSpec kotsv1beta1.ConfigSpec) ([]configtypes.Config
 		}
 	}
 	return configGroupErrors, nil
-}
-
-func hasConfigItemValidators(configSpec kotsv1beta1.ConfigSpec) bool {
-	for _, configGroup := range configSpec.Groups {
-		for _, item := range configGroup.Items {
-			if isValidatableConfigItem(item) {
-				return true
-			}
-		}
-	}
-
-	return false
 }
 
 func validateConfigGroup(configGroup kotsv1beta1.ConfigGroup) (*configtypes.ConfigGroupValidationError, error) {
@@ -75,12 +59,18 @@ func validateConfigItem(item kotsv1beta1.ConfigItem) (*configtypes.ConfigItemVal
 		return nil, nil
 	}
 
-	value, err := getValidatableItemValue(item.Value, item.Type)
+	validatableValue, err := getValidatableItemValue(item.Value, item.Type)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to get value for config item %s", item.Name)
 	}
 
-	validationErrors, err := validate(value, *item.Validation)
+	// if item is not required and value is empty, no need to validate
+	// if item is required and value is empty, need to validate to return error
+	if validatableValue == "" && !item.Required {
+		return nil, nil
+	}
+
+	validationErrors, err := validate(validatableValue, *item.Validation)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to validate config item %s", item.Name)
 	}
