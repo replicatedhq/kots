@@ -489,20 +489,20 @@ class AppConfig extends Component<Props, State> {
         // merge validation errors and config group
         const newGroups = data.configGroups.map((group: ConfigGroup) => {
           const newGroup = { ...group };
-          const configGroupValidationErrors = validationErrors.find(
+          const configGroupValidationErrors = validationErrors?.find(
             (validationError) => validationError.name === group.name
           );
 
           if (configGroupValidationErrors) {
-            newGroup.items = newGroup.items.map((item: ConfigGroupItem) => {
+            newGroup.items = newGroup?.items?.map((item: ConfigGroupItem) => {
               const itemValidationError =
-                configGroupValidationErrors.item_errors.find(
+                configGroupValidationErrors?.item_errors?.find(
                   (validationError) => validationError.name === item.name
                 );
 
               if (itemValidationError && item.value) {
                 item.validationError =
-                  itemValidationError.validation_errors[0].message;
+                  itemValidationError?.validation_errors?.[0]?.message;
                 newGroup.hasError = true;
                 // if there is an error, then block form submission with state.hasValidationError
                 if (!hasValidationError) {
