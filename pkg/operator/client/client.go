@@ -452,7 +452,12 @@ func (c *Client) setAppStatus(newAppStatus appstatetypes.AppStatus) error {
 
 	newAppState := appstatetypes.GetState(newAppStatus.ResourceStates)
 	if currentAppStatus != nil && newAppState != currentAppStatus.State {
-		go reporting.SendAppInfo(newAppStatus.AppID)
+		go func() {
+			err := reporting.GetReporter().SubmitAppInfo(newAppStatus.AppID)
+			if err != nil {
+				logger.Debugf("failed to submit app info: %v", err)
+			}
+		}()
 	}
 
 	return nil
