@@ -58,9 +58,8 @@ const ConfigGroup = (props) => {
               {...item}
               readonly={isReadOnly}
               index={i + 1}
-              validationRegEx={item?.validation?.regex}
-              validationErrorMessage={item?.validation?.message}
-              showValidationError={item?.validation?.hasError}
+              validationErrorMessage={item?.validationError}
+              showValidationError={item?.validationError}
             />
           );
         case "textarea":
@@ -76,9 +75,8 @@ const ConfigGroup = (props) => {
               {...item}
               readonly={isReadOnly}
               index={i + 1}
-              validationRegEx={item?.validation?.regex}
-              validationErrorMessage={item?.validation?.message}
-              showValidationError={item?.validation?.hasError}
+              validationErrorMessage={item?.validationError}
+              showValidationError={item?.validationError}
             />
           );
         case "bool":
@@ -185,9 +183,8 @@ const ConfigGroup = (props) => {
               {...item}
               readonly={isReadOnly}
               index={i + 1}
-              validationRegEx={item?.validation?.regex}
-              validationErrorMessage={item?.validation?.message}
-              showValidationError={item?.validation?.hasError}
+              validationErrorMessage={item?.validationError}
+              showValidationError={item?.validationError}
             />
           );
         default:

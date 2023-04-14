@@ -44,10 +44,14 @@ type ConfigGroup = {
   when: "true" | "false";
 };
 
-interface Validation {
-  regex: string;
-  message: string;
-  hasError: boolean;
+interface ConfigGroupItemValidationErrors {
+  item_errors: {
+    name: string;
+    validation_errors: {
+      message: string;
+    }[];
+  }[];
+  name: string;
 }
 
 type ConfigGroupItem = {
@@ -57,8 +61,8 @@ type ConfigGroupItem = {
   value: string;
   title: string;
   type: string;
-  validation: Validation;
   // TODO: refactor backend to return a boolean not a string
+  validationError: string;
   when: "true" | "false";
 };
 
@@ -75,7 +79,7 @@ type State = {
   downstreamVersion: Version | null;
   errorTitle: string;
   gettingConfigErrMsg: string;
-  hasRegExError: boolean;
+  hasValidationError: boolean;
   initialConfigGroups: ConfigGroup[];
   savingConfig: boolean;
   showHelmDeployModal: boolean;
@@ -101,7 +105,7 @@ class AppConfig extends Component<Props, State> {
       downstreamVersion: null,
       errorTitle: "",
       gettingConfigErrMsg: "",
-      hasRegExError: false,
+      hasValidationError: false,
       initialConfigGroups: [],
       savingConfig: false,
       showHelmDeployModal: false,
@@ -436,26 +440,6 @@ class AppConfig extends Component<Props, State> {
     return foundItem;
   };
 
-  validateRegex = ({
-    validation,
-    value,
-  }: {
-    validation: Validation;
-    value: string;
-  }): Validation => {
-    if (!value || !validation?.regex) {
-      return { ...validation, hasError: false };
-    }
-
-    const validationRegex = new RegExp(validation.regex);
-
-    if (validationRegex.test(value)) {
-      return { ...validation, hasError: false };
-    } else {
-      return { ...validation, hasError: true };
-    }
-  };
-
   handleConfigChange = (groups: ConfigGroup[]) => {
     const sequence = this.getSequence();
     const slug = this.getSlug();
@@ -494,10 +478,41 @@ class AppConfig extends Component<Props, State> {
 
         const data = await response.json();
         const oldGroups = this.state.configGroups;
-        const newGroups = data.configGroups;
-        this.setState({ hasRegExError: false });
-        // used to track if there is a regex error on any of the fields
-        let hasRegExError = false;
+        const validationErrors: ConfigGroupItemValidationErrors[] =
+          data.validationErrors;
+
+        // track errors at the form level
+        this.setState({ hasValidationError: false });
+        let hasValidationError = false;
+
+        // merge validation errors and config group
+        const newGroups = data.configGroups.map((group: ConfigGroup) => {
+          const newGroup = { ...group };
+          const configGroupValidationErrors =
+            validationErrors.find(
+              validationError => validationError.name === group.name);
+
+          if (configGroupValidationErrors) {
+            newGroup.items = newGroup.items.map((item: ConfigGroupItem) => {
+              const itemValidationError =
+                configGroupValidationErrors.item_errors.find(
+                  validationError => validationError.name === item.name);
+
+              if (itemValidationError && item.value) {
+                item.validationError =
+                  itemValidationError.validation_errors[0].message;
+                // if there is an error, then block form submission with state.hasValidationError
+                if (!hasValidationError) {
+                  hasValidationError = true;
+                  this.setState({ hasValidationError: true });
+                }
+              }
+              return item;
+            });
+          }
+          return newGroup;
+        });
+
         map(newGroups, (group) => {
           if (!group.items) {
             return;
@@ -510,25 +525,6 @@ class AppConfig extends Component<Props, State> {
               );
               if (oldItem) {
                 newItem.value = oldItem.value;
-              }
-            }
-            // test data for regex
-            if (["text", "password", "textarea"].includes(newItem.type)) {
-              // TODO: remove- this is used for generating test data locally
-              // newItem.validation = {
-              //   regex: "^.{4,20}$",
-              //   message: "should be between 4 and 20 characters",
-              //   hasError: false,
-              // };
-
-              newItem.validation = this.validateRegex({
-                validation: newItem.validation,
-                value: newItem.value,
-              });
-
-              if (!hasRegExError && newItem.validation.hasError) {
-                this.setState({ hasRegExError: true });
-                hasRegExError = true;
               }
             }
           });
@@ -593,7 +589,7 @@ class AppConfig extends Component<Props, State> {
       downstreamVersion,
       savingConfig,
       changed,
-      hasRegExError,
+      hasValidationError: hasRegExError,
       showNextStepModal,
       configError,
       configLoading,
@@ -698,11 +694,10 @@ class AppConfig extends Component<Props, State> {
               return (
                 <div
                   key={`${i}-${group.name}-${group.title}`}
-                  className={`side-nav-group ${
-                    this.state.activeGroups.includes(group.name)
-                      ? "group-open"
-                      : ""
-                  }`}
+                  className={`side-nav-group ${this.state.activeGroups.includes(group.name)
+                    ? "group-open"
+                    : ""
+                    }`}
                   id={`config-group-nav-${group.name}`}
                 >
                   <div
@@ -734,11 +729,10 @@ class AppConfig extends Component<Props, State> {
                           }
                           return (
                             <a
-                              className={`u-fontSize--normal u-lineHeight--normal ${
-                                hash === `${item.name}-group`
-                                  ? "active-item"
-                                  : ""
-                              }`}
+                              className={`u-fontSize--normal u-lineHeight--normal ${hash === `${item.name}-group`
+                                ? "active-item"
+                                : ""
+                                }`}
                               href={`#${item.name}-group`}
                               key={`${j}-${item.name}-${item.title}`}
                             >
