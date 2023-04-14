@@ -144,7 +144,7 @@ func SetConfigCmd() *cobra.Command {
 				} else {
 					if len(response.ValidationErrors) > 0 {
 						logConfigValidationErrors(response.ValidationErrors, log)
-						return (errors.New(response.Error))
+						return errors.New(response.Error)
 					}
 					return errors.Wrapf(errors.New(response.Error), "unexpected status code from %v", resp.StatusCode)
 				}
