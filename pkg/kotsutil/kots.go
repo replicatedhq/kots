@@ -406,7 +406,7 @@ func (o KotsKinds) Marshal(g string, v string, k string) (string, error) {
 	return "", errors.Errorf("unknown gvk %s/%s, Kind=%s", g, v, k)
 }
 
-func (k *KotsKinds) addKotsKind(content []byte) error {
+func (k *KotsKinds) addKotsKinds(content []byte) error {
 	decode := scheme.Codecs.UniversalDeserializer().Decode
 
 	// kots kinds could be part of a multi-yaml doc
@@ -472,22 +472,6 @@ func (k *KotsKinds) addKotsKind(content []byte) error {
 	}
 
 	return nil
-}
-
-func GenUniqueKotsKindFilename(renderedKotsKinds map[string][]byte, prefix string) string {
-	filename := fmt.Sprintf("%s.yaml", prefix)
-	if _, exists := renderedKotsKinds[filename]; exists {
-		index := 1
-		for {
-			filename = fmt.Sprintf("%s.%d.yaml", prefix, index)
-			if _, exists := renderedKotsKinds[filename]; !exists {
-				break
-			}
-			index += 1
-		}
-	}
-
-	return filename
 }
 
 func GetImagesFromKotsKinds(kotsKinds *KotsKinds) []string {
@@ -587,7 +571,7 @@ func LoadKotsKindsFromPath(fromDir string) (*KotsKinds, error) {
 				return err
 			}
 
-			if err := kotsKinds.addKotsKind(contents); err != nil {
+			if err := kotsKinds.addKotsKinds(contents); err != nil {
 				// TODO: log something on yaml errors (based on file extention)
 				// No error returned because the file may not be yaml.
 				return nil
@@ -606,7 +590,7 @@ func KotsKindsFromMap(kotsKindsMap map[string][]byte) (*KotsKinds, error) {
 	kotsKinds := EmptyKotsKinds()
 
 	for path, content := range kotsKindsMap {
-		if err := kotsKinds.addKotsKind(content); err != nil {
+		if err := kotsKinds.addKotsKinds(content); err != nil {
 			return nil, errors.Wrapf(err, "failed to parse kots kind %s", path)
 		}
 	}

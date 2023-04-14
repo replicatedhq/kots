@@ -101,8 +101,7 @@ func Rewrite(rewriteOptions RewriteOptions) error {
 		IsOpenShift:          k8sutil.IsOpenShift(clientset),
 		IsGKEAutopilot:       k8sutil.IsGKEAutopilot(clientset),
 	}
-	err = upstream.WriteUpstream(u, writeUpstreamOptions)
-	if err != nil {
+	if err = upstream.WriteUpstream(u, writeUpstreamOptions); err != nil {
 		log.FinishSpinnerWithError()
 		return errors.Wrap(err, "failed to write upstream")
 	}
@@ -325,11 +324,7 @@ func Rewrite(rewriteOptions RewriteOptions) error {
 	if err != nil {
 		return errors.Wrap(err, "failed to read installation file")
 	}
-
-	// Ensure the installation manifest filename is unique.
-	installationPrefix := "installation"
-	installationFilename := kotsutil.GenUniqueKotsKindFilename(renderedKotsKinds, installationPrefix)
-	renderedKotsKinds[installationFilename] = []byte(installationBytes)
+	renderedKotsKinds["installation.yaml"] = []byte(installationBytes)
 
 	if err := kotsutil.WriteKotsKinds(renderedKotsKinds, u.GetKotsKindsDir(writeUpstreamOptions)); err != nil {
 		return errors.Wrap(err, "failed to write kots base")
