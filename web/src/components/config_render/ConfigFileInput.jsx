@@ -132,6 +132,11 @@ export default class ConfigFileInput extends React.Component {
                 }
               />
             </span>
+            {this.props.showValidationError && (
+              <div className="config-input-error-message tw-mt-1 tw-text-xs">
+                {this.props.validationErrorMessage}
+              </div>
+            )}
           </div>
         </div>
       </div>

@@ -139,6 +139,8 @@ const ConfigGroup = (props) => {
                 appSlug={props.appSlug}
                 readonly={isReadOnly}
                 index={i + 1}
+                validationErrorMessage={item?.validationError}
+                showValidationError={item?.validationError}
               />
             </ConfigWrapper>
           );

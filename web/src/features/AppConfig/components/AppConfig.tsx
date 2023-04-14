@@ -488,15 +488,16 @@ class AppConfig extends Component<Props, State> {
         // merge validation errors and config group
         const newGroups = data.configGroups.map((group: ConfigGroup) => {
           const newGroup = { ...group };
-          const configGroupValidationErrors =
-            validationErrors.find(
-              validationError => validationError.name === group.name);
+          const configGroupValidationErrors = validationErrors.find(
+            (validationError) => validationError.name === group.name
+          );
 
           if (configGroupValidationErrors) {
             newGroup.items = newGroup.items.map((item: ConfigGroupItem) => {
               const itemValidationError =
                 configGroupValidationErrors.item_errors.find(
-                  validationError => validationError.name === item.name);
+                  (validationError) => validationError.name === item.name
+                );
 
               if (itemValidationError && item.value) {
                 item.validationError =
@@ -694,10 +695,11 @@ class AppConfig extends Component<Props, State> {
               return (
                 <div
                   key={`${i}-${group.name}-${group.title}`}
-                  className={`side-nav-group ${this.state.activeGroups.includes(group.name)
-                    ? "group-open"
-                    : ""
-                    }`}
+                  className={`side-nav-group ${
+                    this.state.activeGroups.includes(group.name)
+                      ? "group-open"
+                      : ""
+                  }`}
                   id={`config-group-nav-${group.name}`}
                 >
                   <div
@@ -729,10 +731,11 @@ class AppConfig extends Component<Props, State> {
                           }
                           return (
                             <a
-                              className={`u-fontSize--normal u-lineHeight--normal ${hash === `${item.name}-group`
-                                ? "active-item"
-                                : ""
-                                }`}
+                              className={`u-fontSize--normal u-lineHeight--normal ${
+                                hash === `${item.name}-group`
+                                  ? "active-item"
+                                  : ""
+                              }`}
                               href={`#${item.name}-group`}
                               key={`${j}-${item.name}-${item.title}`}
                             >
