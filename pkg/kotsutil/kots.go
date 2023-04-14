@@ -281,6 +281,7 @@ func (o KotsKinds) Marshal(g string, v string, k string) (string, error) {
 				if err := s.Encode(o.HelmCharts, &b); err != nil {
 					return "", errors.Wrap(err, "failed to encode helmchart")
 				}
+				return string(b.Bytes()), nil
 			}
 		}
 	}
