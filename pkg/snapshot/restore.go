@@ -137,8 +137,8 @@ func RestoreInstanceBackup(ctx context.Context, options RestoreInstanceBackupOpt
 						kotsadmtypes.KotsadmKey: kotsadmtypes.KotsadmLabelValue, // restoring applications is in a separate step after kotsadm spins up
 					},
 				},
-				RestorePVs:              pointer.BoolPtr(true),
-				IncludeClusterResources: pointer.BoolPtr(true),
+				RestorePVs:              pointer.Bool(true),
+				IncludeClusterResources: pointer.Bool(true),
 			},
 		}
 
