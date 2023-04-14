@@ -54,6 +54,10 @@ a:visited {
   max-height: calc(100vh - 190px);
   border-radius: 4px;
   overflow: auto;
+  .has-error {
+    color: var(--error-color);
+  }
+
   & .side-nav-group {
     .icon.u-darkDropdownArrow,
     .arrow-down {

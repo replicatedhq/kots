@@ -38,6 +38,7 @@ type Props = {
 // This was typed from the implementation of the component so it might be wrong
 type ConfigGroup = {
   hidden: boolean;
+  hasError: boolean;
   items: ConfigGroupItem[];
   name: string;
   title: string;
@@ -502,6 +503,7 @@ class AppConfig extends Component<Props, State> {
               if (itemValidationError && item.value) {
                 item.validationError =
                   itemValidationError.validation_errors[0].message;
+                newGroup.hasError = true;
                 // if there is an error, then block form submission with state.hasValidationError
                 if (!hasValidationError) {
                   hasValidationError = true;
@@ -696,7 +698,8 @@ class AppConfig extends Component<Props, State> {
                 <div
                   key={`${i}-${group.name}-${group.title}`}
                   className={`side-nav-group ${
-                    this.state.activeGroups.includes(group.name)
+                    this.state.activeGroups.includes(group.name) ||
+                    group.hasError
                       ? "group-open"
                       : ""
                   }`}
@@ -731,11 +734,13 @@ class AppConfig extends Component<Props, State> {
                           }
                           return (
                             <a
-                              className={`u-fontSize--normal u-lineHeight--normal ${
-                                hash === `${item.name}-group`
-                                  ? "active-item"
-                                  : ""
-                              }`}
+                              className={`u-fontSize--normal u-lineHeight--normal
+                                ${item.validationError ? "has-error" : ""}
+                                ${
+                                  hash === `${item.name}-group`
+                                    ? "active-item"
+                                    : ""
+                                }`}
                               href={`#${item.name}-group`}
                               key={`${j}-${item.name}-${item.title}`}
                             >
