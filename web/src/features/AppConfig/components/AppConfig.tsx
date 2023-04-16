@@ -563,6 +563,7 @@ class AppConfig extends Component<Props, State> {
           );
 
         this.setState({
+          configError: hasValidationError,
           showValidationError: hasValidationError,
         });
         // const newGroups = data.configGroups.map((group: ConfigGroup) => {
