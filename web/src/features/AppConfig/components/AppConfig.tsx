@@ -46,13 +46,15 @@ type ConfigGroup = {
 };
 
 interface ConfigGroupItemValidationErrors {
-  item_errors: {
-    name: string;
-    validation_errors: {
-      message: string;
-    }[];
-  }[];
+  item_errors: ConfigGroupItemValidationError[];
   name: string;
+}
+
+interface ConfigGroupItemValidationError {
+  name: string;
+  validation_errors: {
+    message: string;
+  }[];
 }
 
 type ConfigGroupItem = {
@@ -337,6 +339,22 @@ class AppConfig extends Component<Props, State> {
   };
 
   handleSave = async () => {
+    const [newConfigGroups, hasRequiredFieldError] =
+      this.mergeConfigGroupsAndValidationErrors(
+        this.state.configGroups,
+        [],
+        true
+      );
+
+    if (hasRequiredFieldError) {
+      this.setState({
+        configGroups: newConfigGroups,
+        showErrorsForEmptyValues: true,
+        showValidationError: true,
+      });
+      return;
+    }
+
     this.setState({
       savingConfig: true,
       configError: false,
@@ -473,15 +491,36 @@ class AppConfig extends Component<Props, State> {
     showErrorsForEmptyValues: boolean
   ): [ConfigGroup[], boolean] => {
     let hasValidationError = false;
+
+    const hasRequiredValidationError =
+      showErrorsForEmptyValues &&
+      Boolean(
+        groups.find((group) =>
+          Boolean(group?.items.find((item) => item.required && !item.value))
+        )
+      );
+
     const newGroups = groups.map((group: ConfigGroup) => {
       const newGroup = { ...group };
       const configGroupValidationErrors = validationErrors?.find(
         (validationError) => validationError.name === group.name
       );
 
-      if (configGroupValidationErrors) {
+      if (configGroupValidationErrors || hasRequiredValidationError) {
         newGroup.items = newGroup?.items?.map((item: ConfigGroupItem) => {
+          const requiredValidationError: ConfigGroupItemValidationError | null =
+            hasRequiredValidationError && item.required && !item.value
+              ? {
+                  name: item.name,
+                  validation_errors: [
+                    {
+                      message: "This item is required",
+                    },
+                  ],
+                }
+              : null;
           const itemValidationError =
+            requiredValidationError ||
             configGroupValidationErrors?.item_errors?.find(
               (validationError) => validationError.name === item.name
             );
@@ -490,11 +529,10 @@ class AppConfig extends Component<Props, State> {
             itemValidationError &&
             (item.value || // show error if there is a value
               showErrorsForEmptyValues) // show errors for empty values if submission attempted
-            //    item.required) // show error if item is required
           ) {
             item.validationError =
-              item.required && !item.value
-                ? "This item is required"
+              requiredValidationError !== null
+                ? requiredValidationError?.validation_errors?.[0]?.message
                 : itemValidationError?.validation_errors?.[0]?.message;
             newGroup.hasError = true;
             // if there is an error, then block form submission with state.hasValidationError
@@ -521,7 +559,6 @@ class AppConfig extends Component<Props, State> {
 
     this.fetchController = new AbortController();
     const signal = this.fetchController.signal;
-    console.log(this.state.showErrorsForEmptyValues);
 
     fetch(
       `${process.env.API_ENDPOINT}/app/${slug}/liveconfig${window.location.search}`,
@@ -554,7 +591,6 @@ class AppConfig extends Component<Props, State> {
 
         // track errors at the form level
         this.setState({ showValidationError: false });
-        // let hasValidationError = false;
 
         // // merge validation errors and config group
         const [newGroups, hasValidationError] =
