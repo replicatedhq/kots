@@ -493,7 +493,9 @@ class AppConfig extends Component<Props, State> {
             //    item.required) // show error if item is required
           ) {
             item.validationError =
-              itemValidationError?.validation_errors?.[0]?.message;
+              item.required && !item.value
+                ? "This item is required"
+                : itemValidationError?.validation_errors?.[0]?.message;
             newGroup.hasError = true;
             // if there is an error, then block form submission with state.hasValidationError
             if (!hasValidationError) {
@@ -566,39 +568,6 @@ class AppConfig extends Component<Props, State> {
           configError: hasValidationError,
           showValidationError: hasValidationError,
         });
-        // const newGroups = data.configGroups.map((group: ConfigGroup) => {
-        //   const newGroup = { ...group };
-        //   const configGroupValidationErrors = validationErrors?.find(
-        //     (validationError) => validationError.name === group.name
-        //   );
-
-        //   if (configGroupValidationErrors) {
-        //     newGroup.items = newGroup?.items?.map((item: ConfigGroupItem) => {
-        //       const itemValidationError =
-        //         configGroupValidationErrors?.item_errors?.find(
-        //           (validationError) => validationError.name === item.name
-        //         );
-
-        //       if (
-        //         itemValidationError &&
-        //         (item.value || // show error if there is a value
-        //           this.state.showErrorsForEmptyValues)// show errors for empty values if submission attempted
-        //         //    item.required) // show error if item is required
-        //       ) {
-        //         item.validationError =
-        //           itemValidationError?.validation_errors?.[0]?.message;
-        //         newGroup.hasError = true;
-        //         // if there is an error, then block form submission with state.hasValidationError
-        //         if (!hasValidationError) {
-        //           hasValidationError = true;
-        //           this.setState({ showValidationError: true });
-        //         }
-        //       }
-        //       return item;
-        //     });
-        //   }
-        //   return newGroup;
-        // });
 
         map(newGroups, (group) => {
           if (!group.items) {
