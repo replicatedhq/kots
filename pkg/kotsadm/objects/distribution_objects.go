@@ -1,6 +1,7 @@
 package kotsadm
 
 import (
+	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/kotsadm/types"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -80,7 +81,7 @@ func DistributionService(deployOptions types.DeployOptions) *corev1.Service {
 func DistributionStatefulset(deployOptions types.DeployOptions, size resource.Quantity) *appsv1.StatefulSet {
 	var securityContext *corev1.PodSecurityContext
 	if !deployOptions.IsOpenShift {
-		securityContext = securePodContext(1000, deployOptions.StrictSecurityContext)
+		securityContext = k8sutil.SecurePodContext(1000, 1000, deployOptions.StrictSecurityContext)
 	}
 
 	statefulset := &appsv1.StatefulSet{
@@ -170,7 +171,7 @@ func DistributionStatefulset(deployOptions types.DeployOptions, size resource.Qu
 									Value: "/var/lib/registry",
 								},
 							},
-							SecurityContext: secureContainerContext(deployOptions.StrictSecurityContext),
+							SecurityContext: k8sutil.SecureContainerContext(deployOptions.StrictSecurityContext),
 							VolumeMounts: []corev1.VolumeMount{
 								{
 									Name:      "kotsadm-storage-registry",

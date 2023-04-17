@@ -530,7 +530,7 @@ func dexThemeVolume(namePrefix string) corev1.Volume {
 				LocalObjectReference: corev1.LocalObjectReference{
 					Name: prefixName(namePrefix, "dex-theme"),
 				},
-				Optional: pointer.BoolPtr(true),
+				Optional: pointer.Bool(true),
 			},
 		},
 	}

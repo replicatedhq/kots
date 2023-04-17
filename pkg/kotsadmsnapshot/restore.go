@@ -93,8 +93,8 @@ func CreateApplicationRestore(ctx context.Context, kotsadmNamespace string, snap
 		},
 		Spec: velerov1.RestoreSpec{
 			BackupName:              snapshotName,
-			RestorePVs:              pointer.BoolPtr(true),
-			IncludeClusterResources: pointer.BoolPtr(true),
+			RestorePVs:              pointer.Bool(true),
+			IncludeClusterResources: pointer.Bool(true),
 		},
 	}
 

@@ -6,7 +6,6 @@ import (
 	"strings"
 
 	"github.com/pkg/errors"
-	"github.com/replicatedhq/kots/pkg/util"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
@@ -28,9 +27,9 @@ func IsOpenShift(clientset kubernetes.Interface) bool {
 }
 
 // GetOpenShiftPodSecurityContext returns a PodSecurityContext object that has:
-// RunAsUser set to the minimum value in the "openshift.io/sa.scc.uid-range" annotation.
-// FSGroup set to the minimum value in the "openshift.io/sa.scc.supplemental-groups" annotation if exists, else falls back to the minimum value in the "openshift.io/sa.scc.uid-range" annotation.
-func GetOpenShiftPodSecurityContext(kotsadmNamespace string) (*corev1.PodSecurityContext, error) {
+// User set to the minimum value in the "openshift.io/sa.scc.uid-range" annotation.
+// Group set to the minimum value in the "openshift.io/sa.scc.supplemental-groups" annotation if exists, else falls back to the minimum value in the "openshift.io/sa.scc.uid-range" annotation.
+func GetOpenShiftPodSecurityContext(kotsadmNamespace string, strictSecurityContext bool) (*corev1.PodSecurityContext, error) {
 	clientset, err := GetClientset()
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get clientset")
@@ -62,20 +61,15 @@ func GetOpenShiftPodSecurityContext(kotsadmNamespace string) (*corev1.PodSecurit
 	uidStr := strings.Split(uidRange, "/")[0]
 	fsGroupStr := strings.Split(supplementalGroups, "/")[0] // use the minimum value of the supplemental groups range as fsgroup. reference: https://www.openshift.com/blog/a-guide-to-openshift-and-uids
 
-	uid, err := strconv.Atoi(uidStr)
+	uid, err := strconv.ParseInt(uidStr, 10, 64)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to convert uid to integer")
 	}
 
-	fsGroup, err := strconv.Atoi(fsGroupStr)
+	fsGroup, err := strconv.ParseInt(fsGroupStr, 10, 64)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to convert fsgroup to integer")
 	}
 
-	psc := &corev1.PodSecurityContext{
-		RunAsUser: util.IntPointer(uid),
-		FSGroup:   util.IntPointer(fsGroup),
-	}
-
-	return psc, nil
+	return SecurePodContext(uid, fsGroup, strictSecurityContext), nil
 }
