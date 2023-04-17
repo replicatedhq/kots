@@ -1,23 +1,28 @@
 package print
 
 import (
-	"github.com/fatih/color"
+	"fmt"
+	"strings"
+
 	configtypes "github.com/replicatedhq/kots/pkg/kotsadmconfig/types"
 	"github.com/replicatedhq/kots/pkg/logger"
 )
 
 func ConfigValidationErrors(log *logger.CLILogger, groupValidationErrors []configtypes.ConfigGroupValidationError) {
-	errPrint := color.New(color.FgHiRed)
-	errPrint.Println("Following config items have validation errors:")
+	var sb strings.Builder
+	fmt.Fprintf(&sb, "Following config items have validation errors:\n\n")
 	for _, groupValidationError := range groupValidationErrors {
-		errPrint.Printf("Group - %s\n", groupValidationError.Name)
-		errPrint.Println("  Items:")
+		fmt.Fprintf(&sb, "Group: %s\n", groupValidationError.Title)
+		fmt.Fprintf(&sb, "  Items:\n")
 		for _, itemValidationError := range groupValidationError.ItemErrors {
-			errPrint.Printf("    Name: %s\n", itemValidationError.Name)
-			errPrint.Println("    Errors:")
+			fmt.Fprintf(&sb, "    Name: %s\n", itemValidationError.Name)
+			fmt.Fprintf(&sb, "    Errors:\n")
 			for _, validationError := range itemValidationError.ValidationErrors {
-				errPrint.Printf("      - %s\n", validationError.Message)
+				fmt.Fprintf(&sb, "      - %s\n", validationError.Message)
 			}
 		}
 	}
+
+	log.FinishSpinnerWithError()
+	log.Errorf(sb.String())
 }
