@@ -5,14 +5,12 @@ import { Utilities } from "../../../utilities/utilities";
 import { App } from "@types";
 
 async function getApps({
-  accessToken = Utilities.getToken(),
   apiEndpoint = process.env.API_ENDPOINT,
   _fetch = fetch,
 } = {}): Promise<{ apps: App[] } | null> {
   try {
     const res = await _fetch(`${apiEndpoint}/apps`, {
       headers: {
-        Authorization: accessToken || "",
         "Content-Type": "application/json",
       },
       method: "GET",

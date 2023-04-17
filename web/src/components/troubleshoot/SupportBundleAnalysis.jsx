@@ -58,9 +58,7 @@ export class SupportBundleAnalysis extends React.Component {
       `${process.env.API_ENDPOINT}/troubleshoot/app/${this.props.match.params.slug}/supportbundle/${this.props.match.params.bundleSlug}/share`,
       {
         method: "POST",
-        headers: {
-          Authorization: Utilities.getToken(),
-        },
+        credentials: "include",
       }
     )
       .then(async (result) => {
@@ -97,9 +95,7 @@ export class SupportBundleAnalysis extends React.Component {
       `${process.env.API_ENDPOINT}/troubleshoot/supportbundle/${bundle.id}/download`,
       {
         method: "GET",
-        headers: {
-          Authorization: Utilities.getToken(),
-        },
+        credentials: "include",
       }
     )
       .then(async (result) => {
@@ -150,9 +146,9 @@ export class SupportBundleAnalysis extends React.Component {
       {
         headers: {
           "Content-Type": "application/json",
-          Authorization: Utilities.getToken(),
         },
         method: "GET",
+        credentials: "include",
       }
     )
       .then(async (res) => {

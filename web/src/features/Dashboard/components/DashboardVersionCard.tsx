@@ -302,9 +302,9 @@ const DashboardVersionCard = (props: Props) => {
         `${process.env.API_ENDPOINT}/app/${selectedApp?.slug}/cluster/${clusterId}/sequence/${version?.sequence}/downstreamoutput`,
         {
           headers: {
-            Authorization: Utilities.getToken(),
             "Content-Type": "application/json",
           },
+          credentials: "include",
           method: "GET",
         }
       );
@@ -853,9 +853,9 @@ const DashboardVersionCard = (props: Props) => {
         `${process.env.API_ENDPOINT}/app/${selectedApp?.slug}/sequence/${version?.parentSequence}/task/updatedownload`,
         {
           headers: {
-            Authorization: Utilities.getToken(),
             "Content-Type": "application/json",
           },
+          credentials: "include",
           method: "GET",
         }
       )
@@ -922,9 +922,9 @@ const DashboardVersionCard = (props: Props) => {
       `${process.env.API_ENDPOINT}/app/${selectedApp?.slug}/sequence/${version.parentSequence}/download`,
       {
         headers: {
-          Authorization: Utilities.getToken(),
           "Content-Type": "application/json",
         },
+        credentials: "include",
         method: "POST",
       }
     )
@@ -1046,9 +1046,9 @@ const DashboardVersionCard = (props: Props) => {
         `${process.env.API_ENDPOINT}/app/${selectedApp?.slug}/task/update-admin-console`,
         {
           headers: {
-            Authorization: Utilities.getToken(),
             "Content-Type": "application/json",
           },
+          credentials: "include",
           method: "GET",
         }
       )
@@ -1098,9 +1098,9 @@ const DashboardVersionCard = (props: Props) => {
       `${process.env.API_ENDPOINT}/app/${selectedApp?.slug}/sequence/${version.parentSequence}/update-console`,
       {
         headers: {
-          Authorization: Utilities.getToken(),
           "Content-Type": "application/json",
         },
+        credentials: "include",
         method: "POST",
       }
     )

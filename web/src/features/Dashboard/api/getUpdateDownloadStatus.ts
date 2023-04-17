@@ -1,5 +1,4 @@
 import { useQuery } from "react-query";
-import { Utilities } from "../../../utilities/utilities";
 import { useSelectedApp } from "@features/App";
 
 export interface UpdateStatusResponse {
@@ -14,9 +13,9 @@ const getUpdateDownloadStatus = async (
     `${process.env.API_ENDPOINT}/app/${appSlug}/task/updatedownload`,
     {
       headers: {
-        Authorization: Utilities.getToken(),
         "Content-Type": "application/json",
       },
+      credentials: "include",
       method: "GET",
     }
   );

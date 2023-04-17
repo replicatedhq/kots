@@ -33,9 +33,9 @@ export default class ConnectionTerminated extends React.Component {
       `${process.env.API_ENDPOINT}/ping`,
       {
         headers: {
-          Authorization: Utilities.getToken(),
           "Content-Type": "application/json",
         },
+        credentials: "include",
       },
       10000
     )

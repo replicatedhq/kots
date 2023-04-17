@@ -1,9 +1,7 @@
 import { useState, useEffect } from "react";
-import { Utilities } from "../../utilities/utilities";
 
 const getValues = async ({
   _fetch = fetch,
-  _token = Utilities.getToken(),
   apiEndpoint = process.env.API_ENDPOINT,
   appSlug,
   sequence,
@@ -16,9 +14,9 @@ const getValues = async ({
       {
         method: "GET",
         headers: {
-          Authorization: _token,
           "Content-Type": "application/blob",
         },
+        credentials: "include",
       }
     );
     if (!response.ok) {

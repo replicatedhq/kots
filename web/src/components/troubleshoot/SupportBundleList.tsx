@@ -95,9 +95,9 @@ export const SupportBundleList = (props: Props) => {
       `${process.env.API_ENDPOINT}/troubleshoot/app/${props.watch?.slug}/supportbundles`,
       {
         headers: {
-          Authorization: Utilities.getToken(),
           "Content-Type": "application/json",
         },
+        credentials: "include",
         method: "GET",
       }
     )

@@ -140,9 +140,7 @@ class SnapshotDetails extends Component {
         `${process.env.API_ENDPOINT}/snapshot/${snapshotName}`,
         {
           method: "GET",
-          headers: {
-            Authorization: Utilities.getToken(),
-          },
+          credentials: "include",
         }
       );
       if (!res.ok) {
@@ -257,9 +255,7 @@ class SnapshotDetails extends Component {
         const name = this.state.snapshotDetails?.name;
         const url = `${process.env.API_ENDPOINT}/snapshot/${name}/logs`;
         fetch(url, {
-          headers: {
-            Authorization: Utilities.getToken(),
-          },
+          credentials: "include",
           method: "GET",
         })
           .then(async (result) => {

@@ -64,9 +64,9 @@ const SetupProvider = ({ appName }) => {
         `${process.env.API_ENDPOINT}/gitops/app/${appId}/cluster/${clusterId}/disable`,
         {
           headers: {
-            Authorization: Utilities.getToken(),
             "Content-Type": "application/json",
           },
+          credentials: "include",
           method: "POST",
         }
       );

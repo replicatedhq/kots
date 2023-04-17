@@ -65,8 +65,8 @@ class TroubleshootContainer extends Component<Props, State> {
       {
         headers: {
           "Content-Type": "application/json",
-          Authorization: Utilities.getToken(),
         },
+        credentials: "include",
         method: "GET",
       }
     )

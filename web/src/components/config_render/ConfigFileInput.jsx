@@ -35,8 +35,8 @@ export default class ConfigFileInput extends React.Component {
       method: "GET",
       headers: {
         "Content-Type": "application/octet-stream",
-        Authorization: Utilities.getToken(),
       },
+      credentials: "include",
     })
       .then((response) => {
         if (!response.ok) {

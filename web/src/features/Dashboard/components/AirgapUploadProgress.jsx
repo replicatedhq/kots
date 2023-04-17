@@ -43,9 +43,9 @@ class AirgapUploadProgress extends React.Component {
         `${process.env.API_ENDPOINT}/app/${appSlug}/airgap/status`,
         {
           headers: {
-            Authorization: Utilities.getToken(),
             "Content-Type": "application/json",
           },
+          credentials: "include",
           method: "GET",
         },
         10000

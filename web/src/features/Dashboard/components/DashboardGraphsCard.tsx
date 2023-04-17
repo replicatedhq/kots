@@ -66,9 +66,9 @@ export default class DashboardGraphsCard extends React.Component<Props, State> {
 
     fetch(`${process.env.API_ENDPOINT}/prometheus`, {
       headers: {
-        Authorization: Utilities.getToken(),
         "Content-Type": "application/json",
       },
+      credentials: "include",
       body: JSON.stringify({
         value: this.state.promValue,
       }),

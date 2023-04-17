@@ -1,5 +1,4 @@
 import { useQuery } from "react-query";
-import { Utilities } from "../../../utilities/utilities";
 import { useSelectedApp } from "@features/App";
 
 export const getAirgapConfig = async (appSlug: string): Promise<number> => {
@@ -11,8 +10,8 @@ export const getAirgapConfig = async (appSlug: string): Promise<number> => {
     method: "GET",
     headers: {
       "Content-Type": "application/json",
-      Authorization: Utilities.getToken(),
     },
+    credentials: "include",
   });
   const response = await res.json();
   if (res.ok) {

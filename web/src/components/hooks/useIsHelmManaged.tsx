@@ -8,13 +8,11 @@ interface IsHelmManagedResponse {
 type IsHelmManaged = boolean;
 
 async function fetchIsHelmManaged({
-  accessToken = Utilities.getToken(),
   apiEndpoint = process.env.API_ENDPOINT,
 } = {}): Promise<IsHelmManagedResponse> {
   try {
     const res = await fetch(`${apiEndpoint}/is-helm-managed`, {
       headers: {
-        Authorization: accessToken,
         "Content-Type": "application/json",
       },
       method: "GET",

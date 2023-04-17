@@ -141,9 +141,9 @@ export default class AutomaticUpdatesModal extends React.Component<
 
     fetch(`${process.env.API_ENDPOINT}/app/${appSlug}/automaticupdates`, {
       headers: {
-        Authorization: Utilities.getToken(),
         "Content-Type": "application/json",
       },
+      credentials: "include",
       method: "PUT",
       body: JSON.stringify({
         updateCheckerSpec: updateCheckerSpec,
@@ -179,9 +179,9 @@ export default class AutomaticUpdatesModal extends React.Component<
 
     fetch(`${process.env.API_ENDPOINT}/app/${appSlug}/automaticupdates`, {
       headers: {
-        Authorization: Utilities.getToken(),
         "Content-Type": "application/json",
       },
+      credentials: "include",
       method: "GET",
     })
       .then(async (res) => {

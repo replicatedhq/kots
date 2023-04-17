@@ -96,9 +96,9 @@ const AppGitops = () => {
         {
           method: "POST",
           headers: {
-            Authorization: Utilities.getToken(),
             "Content-Type": "application/json",
           },
+          credentials: "include",
         }
       );
       if (!res.ok) {
@@ -147,9 +147,9 @@ const AppGitops = () => {
         `${process.env.API_ENDPOINT}/gitops/app/${appId}/cluster/${clusterId}/disable`,
         {
           headers: {
-            Authorization: Utilities.getToken(),
             "Content-Type": "application/json",
           },
+          credentials: "include",
           method: "POST",
         }
       );

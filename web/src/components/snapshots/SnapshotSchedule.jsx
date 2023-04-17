@@ -172,9 +172,9 @@ class SnapshotSchedule extends Component {
       const res = await fetch(url, {
         method: "GET",
         headers: {
-          Authorization: Utilities.getToken(),
           "Content-Type": "application/json",
         },
+        credentials: "include",
       });
       if (!res.ok) {
         this.setState({
@@ -296,10 +296,10 @@ class SnapshotSchedule extends Component {
     }
     fetch(url, {
       headers: {
-        Authorization: Utilities.getToken(),
         "Content-Type": "application/json",
         Accept: "application/json",
       },
+      credentials: "include",
       method: "PUT",
       body: JSON.stringify(body),
     })

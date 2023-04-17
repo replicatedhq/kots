@@ -88,9 +88,9 @@ class Snapshots extends Component {
       const res = await fetch(`${process.env.API_ENDPOINT}/snapshots`, {
         method: "GET",
         headers: {
-          Authorization: Utilities.getToken(),
           "Content-Type": "application/json",
         },
+        credentials: "include",
       });
       if (!res.ok) {
         if (res.status === 401) {
@@ -161,9 +161,9 @@ class Snapshots extends Component {
         fetch(`${process.env.API_ENDPOINT}/snapshot/backup`, {
           method: "POST",
           headers: {
-            Authorization: Utilities.getToken(),
             "Content-Type": "application/json",
           },
+          credentials: "include",
         })
           .then(async (result) => {
             if (!result.ok && result.status === 409) {
@@ -246,9 +246,9 @@ class Snapshots extends Component {
     fetch(`${process.env.API_ENDPOINT}/snapshot/${snapshot.name}/delete`, {
       method: "POST",
       headers: {
-        Authorization: Utilities.getToken(),
         "Content-Type": "application/json",
       },
+      credentials: "include",
     })
       .then(async (res) => {
         if (!res.ok && res.status === 401) {
@@ -313,9 +313,9 @@ class Snapshots extends Component {
         {
           method: "GET",
           headers: {
-            Authorization: Utilities.getToken(),
             "Content-Type": "application/json",
           },
+          credentials: "include",
         }
       );
 
@@ -414,9 +414,9 @@ class Snapshots extends Component {
       {
         method: "POST",
         headers: {
-          Authorization: Utilities.getToken(),
           "Content-Type": "application/json",
         },
+        credentials: "include",
         body: JSON.stringify({
           appSlugs: [selectedRestoreApp?.slug],
         }),

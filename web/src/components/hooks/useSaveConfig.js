@@ -3,7 +3,6 @@ import { Utilities } from "../../utilities/utilities";
 
 const putConfig = async ({
   _fetch = fetch,
-  _token = Utilities.getToken(),
   apiEndpoint = process.env.API_ENDPOINT,
   appSlug,
   body,
@@ -12,9 +11,9 @@ const putConfig = async ({
     const response = await _fetch(`${apiEndpoint}/app/${appSlug}/config`, {
       method: "PUT",
       headers: {
-        Authorization: _token,
         "Content-Type": "application/json",
       },
+      credentials: "include",
       body,
     });
 

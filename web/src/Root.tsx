@@ -188,7 +188,6 @@ const Root = () => {
     try {
       const res = await fetch(`${process.env.API_ENDPOINT}/is-helm-managed`, {
         headers: {
-          Authorization: Utilities.getToken(),
           "Content-Type": "application/json",
         },
         method: "GET",
@@ -213,7 +212,6 @@ const Root = () => {
     try {
       const res = await fetch(`${process.env.API_ENDPOINT}/pendingapp`, {
         headers: {
-          Authorization: Utilities.getToken(),
           "Content-Type": "application/json",
         },
         method: "GET",
@@ -250,11 +248,10 @@ const Root = () => {
     try {
       const res = await fetch(`${process.env.API_ENDPOINT}/apps`, {
         headers: {
-          Authorization: Utilities.getToken(),
           "Content-Type": "application/json",
         },
         method: "GET",
-        credentials: "include", 
+        credentials: "include",
       });
       if (!res.ok) {
         if (res.status === 401) {
@@ -320,9 +317,9 @@ const Root = () => {
       url,
       {
         headers: {
-          Authorization: Utilities.getToken(),
           "Content-Type": "application/json",
         },
+        credentials: "include",
       },
       10000
     )
@@ -357,7 +354,7 @@ const Root = () => {
       ping();
       checkIsHelmManaged();
       getAppsList().then((appsList) => {
-        if (appsList.length > 0 && window.location.pathname === "/apps") {
+        if (appsList?.length > 0 && window.location.pathname === "/apps") {
           const { slug } = appsList[0];
           history.replace(`/app/${slug}`);
         }

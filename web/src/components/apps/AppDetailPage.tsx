@@ -175,7 +175,6 @@ function AppDetailPage(props: Props) {
     try {
       const res = await fetch(`${process.env.API_ENDPOINT}/velero`, {
         headers: {
-          Authorization: Utilities.getToken(),
           "Content-Type": "application/json",
         },
         method: "GET",
@@ -218,9 +217,9 @@ function AppDetailPage(props: Props) {
         `${process.env.API_ENDPOINT}/app/${upstreamSlug}/sequence/${version.sequence}/deploy`,
         {
           headers: {
-            Authorization: Utilities.getToken(),
             "Content-Type": "application/json",
           },
+          credentials: "include",
           method: "POST",
           body: JSON.stringify({
             isSkipPreflights: isSkipPreflights,
@@ -263,9 +262,9 @@ function AppDetailPage(props: Props) {
         `${process.env.API_ENDPOINT}/app/${upstreamSlug}/sequence/${version?.sequence}/redeploy`,
         {
           headers: {
-            Authorization: Utilities.getToken(),
             "Content-Type": "application/json",
           },
+          credentials: "include",
           method: "POST",
         }
       );

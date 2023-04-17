@@ -109,9 +109,9 @@ class AppSnapshots extends Component {
       {
         method: "GET",
         headers: {
-          Authorization: Utilities.getToken(),
           "Content-Type": "application/json",
         },
+        credentials: "include",
       }
     )
       .then(async (result) => {
@@ -151,9 +151,9 @@ class AppSnapshots extends Component {
         {
           method: "GET",
           headers: {
-            Authorization: Utilities.getToken(),
             "Content-Type": "application/json",
           },
+          credentials: "include",
         }
       );
       if (!res.ok) {
@@ -205,9 +205,9 @@ class AppSnapshots extends Component {
     fetch(`${process.env.API_ENDPOINT}/snapshots/settings`, {
       method: "GET",
       headers: {
-        Authorization: Utilities.getToken(),
         "Content-Type": "application/json",
       },
+      credentials: "include",
     })
       .then(async (res) => {
         if (!res.ok && res.status === 409) {
@@ -323,9 +323,9 @@ class AppSnapshots extends Component {
     fetch(`${process.env.API_ENDPOINT}/snapshot/${snapshot.name}/delete`, {
       method: "POST",
       headers: {
-        Authorization: Utilities.getToken(),
         "Content-Type": "application/json",
       },
+      credentials: "include",
     })
       .then(async (res) => {
         if (!res.ok && res.status === 401) {
@@ -379,9 +379,9 @@ class AppSnapshots extends Component {
       {
         method: "POST",
         headers: {
-          Authorization: Utilities.getToken(),
           "Content-Type": "application/json",
         },
+        credentials: "include",
       }
     )
       .then(async (result) => {
@@ -447,9 +447,9 @@ class AppSnapshots extends Component {
       {
         method: "POST",
         headers: {
-          Authorization: Utilities.getToken(),
           "Content-Type": "application/json",
         },
+        credentials: "include",
       }
     )
       .then(async (result) => {

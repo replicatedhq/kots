@@ -11,9 +11,7 @@ export class AirgapUploader {
 
     this.resumableUploader = new Resumable({
       target: `${process.env.API_ENDPOINT}/app/${this.appSlug}/airgap/chunk`,
-      headers: {
-        Authorization: Utilities.getToken(),
-      },
+      credentials: "include",
       fileType: ["airgap"],
       maxFiles: 1,
       simultaneousUploads,
@@ -38,9 +36,9 @@ export class AirgapUploader {
         `${process.env.API_ENDPOINT}/ping`,
         {
           headers: {
-            Authorization: Utilities.getToken(),
             "Content-Type": "application/json",
           },
+          credentials: "include",
         },
         10000
       );
@@ -179,9 +177,7 @@ export class AirgapUploader {
     const res = await fetch(
       `${process.env.API_ENDPOINT}/app/${this.appSlug}/can-install`,
       {
-        headers: {
-          Authorization: Utilities.getToken(),
-        },
+        credentials: "include",
         body: JSON.stringify({
           appSpec: appSpec || "",
           airgapSpec: airgapSpec || "",
@@ -205,9 +201,7 @@ export class AirgapUploader {
     const res = await fetch(
       `${process.env.API_ENDPOINT}/app/${this.appSlug}/airgap/bundleprogress/${this.resumableIdentifier}/${this.resumableTotalChunks}`,
       {
-        headers: {
-          Authorization: Utilities.getToken(),
-        },
+        credentials: "include",
         method: "GET",
       }
     );
@@ -226,9 +220,7 @@ export class AirgapUploader {
     const res = await fetch(
       `${process.env.API_ENDPOINT}/app/${this.appSlug}/airgap/bundleexists/${this.resumableIdentifier}/${this.resumableTotalChunks}`,
       {
-        headers: {
-          Authorization: Utilities.getToken(),
-        },
+        credentials: "include",
         method: "GET",
       }
     );
@@ -247,9 +239,7 @@ export class AirgapUploader {
     const res = await fetch(
       `${process.env.API_ENDPOINT}/app/${this.appSlug}/airgap/processbundle/${this.resumableIdentifier}/${this.resumableTotalChunks}`,
       {
-        headers: {
-          Authorization: Utilities.getToken(),
-        },
+        credentials: "include",
         body: JSON.stringify(this.processParams),
         method: this.isUpdate ? "PUT" : "POST",
       }

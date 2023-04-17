@@ -8,7 +8,6 @@ import { useIsHelmManaged } from "@src/components/hooks";
 import { App, KotsParams, Metadata, Version } from "@types";
 
 async function getVersions({
-  accessToken = Utilities.getToken(),
   apiEndpoint = process.env.API_ENDPOINT,
   currentPage = 0,
   pageSize = 20,
@@ -25,9 +24,9 @@ async function getVersions({
       `${apiEndpoint}/app/${slug}/versions?currentPage=${currentPage}&pageSize=${pageSize}&pinLatestDeployable=true`,
       {
         headers: {
-          Authorization: accessToken,
           "Content-Type": "application/json",
         },
+        credentials: "include",
         method: "GET",
       }
     );

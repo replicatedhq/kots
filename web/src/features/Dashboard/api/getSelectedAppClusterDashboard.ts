@@ -1,5 +1,4 @@
 import { useQuery } from "react-query";
-import { Utilities } from "../../../utilities/utilities";
 import { useIsHelmManaged } from "@components/hooks";
 import { useSelectedApp } from "@features/App";
 import { DashboardResponse } from "@types";
@@ -18,9 +17,9 @@ export const getSelectedAppClusterDashboard = async ({
 }): Promise<DashboardResponse | void> => {
   const config = {
     headers: {
-      Authorization: Utilities.getToken(),
       "Content-Type": "application/json",
     },
+    withCredentials: true,
   };
   const clusterIdToQuery = isHelmManaged && clusterId === "" ? 0 : clusterId;
   try {

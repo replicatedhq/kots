@@ -1,5 +1,4 @@
 import { useQuery } from "react-query";
-import { Utilities } from "../../../utilities/utilities";
 import { useSelectedApp } from "@features/App";
 
 interface UpdateResponse {
@@ -24,10 +23,10 @@ export const getCheckForUpdates = async (
     `${process.env.API_ENDPOINT}/app/${appSlug}/updatecheck`,
     {
       headers: {
-        Authorization: Utilities.getToken(),
         "Content-Type": "application/json",
         Accept: "application/json",
       },
+      credentials: "include",
       method: "POST",
     }
   );

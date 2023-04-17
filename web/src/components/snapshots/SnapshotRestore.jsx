@@ -60,9 +60,7 @@ class SnapshotRestore extends Component {
         `${process.env.API_ENDPOINT}/snapshot/${restoreName}/apps-restore-status`,
         {
           method: "POST",
-          headers: {
-            Authorization: Utilities.getToken(),
-          },
+          credentials: "include",
           body: JSON.stringify({
             appSlugs: [appSlug],
           }),
@@ -129,9 +127,7 @@ class SnapshotRestore extends Component {
       `${process.env.API_ENDPOINT}/app/${appSlug}/snapshot/restore`,
       {
         method: "DELETE",
-        headers: {
-          Authorization: Utilities.getToken(),
-        },
+        credentials: "include",
       }
     );
     if (!res.ok) {

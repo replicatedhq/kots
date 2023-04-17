@@ -1,14 +1,13 @@
 import { SnapshotSettings } from "@types";
 import { useQuery } from "react-query";
-import { Utilities } from "../../../utilities/utilities";
 
 const getSnapshotSettings = async () => {
   const res = await fetch(`${process.env.API_ENDPOINT}/snapshots/settings`, {
     headers: {
-      Authorization: Utilities.getToken(),
       "Content-Type": "application/json",
     },
     method: "GET",
+    credentials: "include",
   });
   const response = await res.json();
   if (!res.ok && res.status !== 200) {
