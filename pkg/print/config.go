@@ -12,7 +12,7 @@ func ConfigValidationErrors(log *logger.CLILogger, groupValidationErrors []confi
 	var sb strings.Builder
 	fmt.Fprintf(&sb, "Following config items have validation errors:\n\n")
 	for _, groupValidationError := range groupValidationErrors {
-		fmt.Fprintf(&sb, "Group: %s\n", groupValidationError.Title)
+		fmt.Fprintf(&sb, "Group: %s\n", groupValidationError.Name)
 		fmt.Fprintf(&sb, "  Items:\n")
 		for _, itemValidationError := range groupValidationError.ItemErrors {
 			fmt.Fprintf(&sb, "    Name: %s\n", itemValidationError.Name)
