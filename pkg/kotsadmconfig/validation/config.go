@@ -13,7 +13,7 @@ func ValidateConfigSpec(configSpec kotsv1beta1.ConfigSpec) ([]configtypes.Config
 	for _, configGroup := range configSpec.Groups {
 		configGroupError, err := validateConfigGroup(configGroup)
 		if err != nil {
-			return nil, err
+			return nil, errors.Wrapf(err, "failed to validate config group %s", configGroup.Name)
 		}
 		if configGroupError != nil {
 			configGroupErrors = append(configGroupErrors, *configGroupError)
@@ -25,7 +25,7 @@ func ValidateConfigSpec(configSpec kotsv1beta1.ConfigSpec) ([]configtypes.Config
 func validateConfigGroup(configGroup kotsv1beta1.ConfigGroup) (*configtypes.ConfigGroupValidationError, error) {
 	configItemErrors, err := validateConfigItems(configGroup.Items)
 	if err != nil {
-		return nil, errors.Wrapf(err, "failed to validate config items for group %s", configGroup.Name)
+		return nil, errors.Wrap(err, "failed to validate config items")
 	}
 	if len(configItemErrors) == 0 {
 		return nil, nil
@@ -43,7 +43,7 @@ func validateConfigItems(configItems []kotsv1beta1.ConfigItem) ([]configtypes.Co
 	for _, item := range configItems {
 		configItemErr, err := validateConfigItem(item)
 		if err != nil {
-			return nil, err
+			return nil, errors.Wrapf(err, "failed to validate config item %s", item.Name)
 		}
 
 		if configItemErr != nil {
@@ -61,7 +61,7 @@ func validateConfigItem(item kotsv1beta1.ConfigItem) (*configtypes.ConfigItemVal
 
 	validatableValue, err := getValidatableItemValue(item.Value, item.Type)
 	if err != nil {
-		return nil, errors.Wrapf(err, "failed to get value for config item %s", item.Name)
+		return nil, errors.Wrap(err, "failed to get validatable value")
 	}
 
 	// if item is not required and value is empty, no need to validate
@@ -72,7 +72,7 @@ func validateConfigItem(item kotsv1beta1.ConfigItem) (*configtypes.ConfigItemVal
 
 	validationErrors, err := validate(validatableValue, *item.Validation)
 	if err != nil {
-		return nil, errors.Wrapf(err, "failed to validate config item %s", item.Name)
+		return nil, errors.Wrap(err, "failed to validate value")
 	}
 
 	if len(validationErrors) > 0 {
