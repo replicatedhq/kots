@@ -485,6 +485,9 @@ class AppConfig extends Component<Props, State> {
     return foundItem;
   };
 
+  // this runs on config update and when save is clicked but before the request is submitted
+  // on update it uses the errors from the liveconfig endpoint
+  // on save it's mostly used to find required field errors
   mergeConfigGroupsAndValidationErrors = (
     groups: ConfigGroup[],
     validationErrors: ConfigGroupItemValidationErrors[],
@@ -492,6 +495,7 @@ class AppConfig extends Component<Props, State> {
   ): [ConfigGroup[], boolean] => {
     let hasValidationError = false;
 
+    // this is gated by showErrorsForEmptyValues which is set when save is attempted
     const hasRequiredValidationError =
       showErrorsForEmptyValues &&
       Boolean(
