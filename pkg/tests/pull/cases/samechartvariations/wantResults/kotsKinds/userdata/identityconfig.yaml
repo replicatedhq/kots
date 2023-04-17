@@ -1,0 +1,15 @@
+apiVersion: kots.io/v1beta1
+kind: IdentityConfig
+metadata:
+  creationTimestamp: null
+  name: identity
+spec:
+  clientID: default-kots-app-4
+  clientSecret:
+    valueEncrypted: Wn7+eJ70qOJpWjCM3SwCR8cy3Suj4tiSsr02Rp4t0YyCmiBtypsbHw6u9g==
+  dexConnectors:
+    valueEncrypted: Bkroe1hywjjr541lSVkIhCWdRzI=
+  enabled: false
+  ingressConfig:
+    enabled: false
+status: {}

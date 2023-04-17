@@ -1,0 +1,14 @@
+apiVersion: kots.io/v1beta1
+kind: ConfigValues
+metadata:
+  creationTimestamp: null
+  name: replicated-kots-app
+spec:
+  values:
+    hostname:
+      value: my-app.somebigbank.com
+    container_backend:
+      default: containerd
+    min_kubernetes_version:
+      value: 1.20.0
+status: {}

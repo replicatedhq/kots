@@ -1,0 +1,25 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: test-licenseinfo
+data:
+    dockerCfg: {{repl LicenseDockerCfg }}
+    licenseFieldValueIsGitOpsSupported: {{repl LicenseFieldValue "isGitOpsSupported" }}
+    licenseFieldValueIsIdentityServiceSupported: {{repl LicenseFieldValue "isIdentityServiceSupported" }}
+    licenseFieldValueIsGeoaxisSupported: {{repl LicenseFieldValue "isGeoaxisSupported" }}
+    licenseFieldValueIsAirgapSupported: {{repl LicenseFieldValue "isAirgapSupported" }}
+    licenseFieldValueLicenseType: {{repl LicenseFieldValue "licenseType" }}
+    licenseFieldValueLicenseSequence: {{repl LicenseFieldValue "licenseSequence" }}
+    licenseFieldValueSignature: '{{repl LicenseFieldValue "signature" }}'
+    licenseFieldValueAppSlug: {{repl LicenseFieldValue "appSlug" }}
+    licenseFieldValueChannelID: {{repl LicenseFieldValue "channelID" }}
+    licenseFieldValueChannelName: {{repl LicenseFieldValue "channelName" }}
+    licenseFieldValueCustomerName: {{repl LicenseFieldValue "customerName" }}
+    licenseFieldValueEndpoint: {{repl LicenseFieldValue "endpoint" }}
+    licenseFieldValueLicenseID: {{repl LicenseFieldValue "licenseID" }}
+    licenseFieldValueLicenseId: {{repl LicenseFieldValue "licenseId" }}
+    licenseFieldValueCustomIntField: {{repl LicenseFieldValue "int_field" }}
+    licenseFieldValueCustomStringField: {{repl LicenseFieldValue "string_field" }}
+    licenseFieldValueCustomTextField: "{{repl LicenseFieldValue "text_field" | replace "\n" "\\n" }}"
+    licenseFieldValueCustomBoolField: "{{repl LicenseFieldValue "bool_field" }}"
+    licenseFieldValueCustomHiddenField: "{{repl LicenseFieldValue "hidden_field" }}"

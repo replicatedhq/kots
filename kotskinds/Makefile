@@ -30,7 +30,7 @@ schemas: fmt generate
 fmt:
 	go fmt ./...
 
-.PHONY: contoller-gen
+.PHONY: controller-gen
 controller-gen:
 ifeq (, $(shell which controller-gen))
 	go install sigs.k8s.io/controller-tools/cmd/controller-gen@v0.7.0

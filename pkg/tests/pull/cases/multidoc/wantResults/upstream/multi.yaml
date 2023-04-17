@@ -1,0 +1,29 @@
+apiVersion: troubleshoot.sh/v1beta2
+kind: Redactor
+metadata:
+  name: test-redactor2
+spec:
+  redactors:
+  - name: replace test password2
+    fileSelector:
+      file: test/another-test-file
+    removals:
+      values:
+      - testvalue2
+---
+apiVersion: kots.io/v1beta1
+kind: Identity
+metadata:
+  name: test-redactor
+spec:
+  identityIssuerURL: '{{repl ConfigOption "hostname"}}'
+---
+apiVersion: kots.io/v1beta1
+kind: LintConfig
+metadata:
+  name: test-lint
+spec:
+  rules:
+  - name: test
+    level: info
+

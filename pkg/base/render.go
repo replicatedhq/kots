@@ -27,16 +27,16 @@ type RenderOptions struct {
 
 // RenderUpstream is responsible for any conversions or transpilation steps are required
 // to take an upstream and make it a valid kubernetes base
-func RenderUpstream(u *upstreamtypes.Upstream, renderOptions *RenderOptions) (base *Base, helmBases []Base, err error) {
+func RenderUpstream(u *upstreamtypes.Upstream, renderOptions *RenderOptions) (base *Base, helmBases []Base, renderedKotsKinds map[string][]byte, err error) {
 	if u.Type == "helm" {
 		base, err = RenderHelm(u, renderOptions)
 		return
 	}
 
 	if u.Type == "replicated" {
-		base, helmBases, err = renderReplicated(u, renderOptions)
+		base, helmBases, renderedKotsKinds, err = renderReplicated(u, renderOptions)
 		return
 	}
 
-	return nil, nil, errors.New("unknown upstream type")
+	return nil, nil, nil, errors.New("unknown upstream type")
 }

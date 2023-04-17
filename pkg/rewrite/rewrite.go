@@ -101,7 +101,7 @@ func Rewrite(rewriteOptions RewriteOptions) error {
 		IsOpenShift:          k8sutil.IsOpenShift(clientset),
 		IsGKEAutopilot:       k8sutil.IsGKEAutopilot(clientset),
 	}
-	if err := upstream.WriteUpstream(u, writeUpstreamOptions); err != nil {
+	if err = upstream.WriteUpstream(u, writeUpstreamOptions); err != nil {
 		log.FinishSpinnerWithError()
 		return errors.Wrap(err, "failed to write upstream")
 	}
@@ -124,7 +124,7 @@ func Rewrite(rewriteOptions RewriteOptions) error {
 	log.ActionWithSpinner("Creating base")
 	io.WriteString(rewriteOptions.ReportWriter, "Creating base\n")
 
-	commonBase, helmBases, err := base.RenderUpstream(u, &renderOptions)
+	commonBase, helmBases, renderedKotsKinds, err := base.RenderUpstream(u, &renderOptions)
 	if err != nil {
 		return errors.Wrap(err, "failed to render upstream")
 	}
@@ -308,6 +308,18 @@ func Rewrite(rewriteOptions RewriteOptions) error {
 	err = store.GetStore().UpdateAppVersionInstallationSpec(rewriteOptions.AppID, rewriteOptions.AppSequence, kotsKinds.Installation)
 	if err != nil {
 		return errors.Wrap(err, "failed to update installation spec")
+	}
+
+	installationBytes, err := ioutil.ReadFile(filepath.Join(u.GetUpstreamDir(writeUpstreamOptions), "userdata", "installation.yaml"))
+	if err != nil {
+		return errors.Wrap(err, "failed to read installation file")
+	}
+
+	installationFilename := kotsutil.GenUniqueKotsKindFilename(renderedKotsKinds, "installation")
+	renderedKotsKinds[installationFilename] = []byte(installationBytes)
+
+	if err := kotsutil.WriteKotsKinds(renderedKotsKinds, u.GetKotsKindsDir(writeUpstreamOptions)); err != nil {
+		return errors.Wrap(err, "failed to write kots base")
 	}
 
 	if err := kustomize.WriteRenderedApp(kustomize.WriteOptions{

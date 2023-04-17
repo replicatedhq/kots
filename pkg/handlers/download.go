@@ -121,6 +121,11 @@ func (h *Handler) DownloadApp(w http.ResponseWriter, r *http.Request) {
 		paths = append(paths, skippedFilesPath)
 	}
 
+	kotsKindsPath := filepath.Join(archivePath, "kotsKinds")
+	if _, err := os.Stat(kotsKindsPath); err == nil {
+		paths = append(paths, kotsKindsPath)
+	}
+
 	tmpDir, err := ioutil.TempDir("", "kotsadm")
 	if err != nil {
 		logger.Error(err)
