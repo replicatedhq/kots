@@ -408,20 +408,20 @@ var _ = Describe("Kots", func() {
 			}
 
 			filename := kotsutil.GenUniqueKotsKindFilename(tmpRendered, "unique")
-			Expect(filename).To(Equal("unique.1.yaml"))
+			Expect(filename).To(Equal("unique-1.yaml"))
 		})
 
 		It("returns a unique name when there is a conflict and the generated name creates a new conflict", func() {
 			tmpRendered := map[string][]byte{
 				"unique.yaml":   nil,
-				"unique.1.yaml": nil,
-				"unique.2.yaml": nil,
-				"unique.4.yaml": nil,
+				"unique-1.yaml": nil,
+				"unique-2.yaml": nil,
+				"unique-4.yaml": nil,
 				"example.yaml":  nil,
 			}
 
 			filename := kotsutil.GenUniqueKotsKindFilename(tmpRendered, "unique")
-			Expect(filename).To(Equal("unique.3.yaml"))
+			Expect(filename).To(Equal("unique-3.yaml"))
 		})
 	})
 })

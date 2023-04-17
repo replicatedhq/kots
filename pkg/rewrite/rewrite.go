@@ -310,16 +310,6 @@ func Rewrite(rewriteOptions RewriteOptions) error {
 		return errors.Wrap(err, "failed to update installation spec")
 	}
 
-	if err := kustomize.WriteRenderedApp(kustomize.WriteOptions{
-		BaseDir:          u.GetBaseDir(writeUpstreamOptions),
-		OverlaysDir:      u.GetOverlaysDir(writeUpstreamOptions),
-		RenderedDir:      u.GetRenderedDir(writeUpstreamOptions),
-		Downstreams:      rewriteOptions.Downstreams,
-		KustomizeBinPath: kotsKinds.GetKustomizeBinaryPath(),
-	}); err != nil {
-		return errors.Wrap(err, "failed to write rendered")
-	}
-
 	installationBytes, err := ioutil.ReadFile(filepath.Join(u.GetUpstreamDir(writeUpstreamOptions), "userdata", "installation.yaml"))
 	if err != nil {
 		return errors.Wrap(err, "failed to read installation file")
@@ -330,6 +320,16 @@ func Rewrite(rewriteOptions RewriteOptions) error {
 
 	if err := kotsutil.WriteKotsKinds(renderedKotsKinds, u.GetKotsKindsDir(writeUpstreamOptions)); err != nil {
 		return errors.Wrap(err, "failed to write kots base")
+	}
+
+	if err := kustomize.WriteRenderedApp(kustomize.WriteOptions{
+		BaseDir:          u.GetBaseDir(writeUpstreamOptions),
+		OverlaysDir:      u.GetOverlaysDir(writeUpstreamOptions),
+		RenderedDir:      u.GetRenderedDir(writeUpstreamOptions),
+		Downstreams:      rewriteOptions.Downstreams,
+		KustomizeBinPath: kotsKinds.GetKustomizeBinaryPath(),
+	}); err != nil {
+		return errors.Wrap(err, "failed to write rendered")
 	}
 
 	log.FinishSpinner()

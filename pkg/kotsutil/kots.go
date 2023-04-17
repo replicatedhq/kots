@@ -479,7 +479,7 @@ func GenUniqueKotsKindFilename(renderedKotsKinds map[string][]byte, prefix strin
 	if _, exists := renderedKotsKinds[filename]; exists {
 		index := 1
 		for {
-			filename = fmt.Sprintf("%s.%d.yaml", prefix, index)
+			filename = fmt.Sprintf("%s-%d.yaml", prefix, index)
 			if _, exists := renderedKotsKinds[filename]; !exists {
 				break
 			}
