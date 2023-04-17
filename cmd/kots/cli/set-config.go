@@ -18,6 +18,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	configtypes "github.com/replicatedhq/kots/pkg/kotsadmconfig/types"
 	"github.com/replicatedhq/kots/pkg/logger"
+	"github.com/replicatedhq/kots/pkg/print"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -143,7 +144,7 @@ func SetConfigCmd() *cobra.Command {
 					return errors.Errorf("app with slug %s not found", appSlug)
 				} else {
 					if len(response.ValidationErrors) > 0 {
-						logConfigValidationErrors(response.ValidationErrors, log)
+						print.ConfigValidationErrors(log, response.ValidationErrors)
 						return errors.New(response.Error)
 					}
 					return errors.Wrapf(errors.New(response.Error), "unexpected status code from %v", resp.StatusCode)
@@ -233,19 +234,4 @@ func getConfigValuesFromArgs(v *viper.Viper, args []string) ([]byte, error) {
 	}
 
 	return b, nil
-}
-
-func logConfigValidationErrors(groupValidationErrors []configtypes.ConfigGroupValidationError, log *logger.CLILogger) {
-	log.Errorf("Following config items have validation errors:")
-	for _, groupValidationError := range groupValidationErrors {
-		log.Errorf("Group - %s(%s)", groupValidationError.Title, groupValidationError.Name)
-		log.Errorf("  Items:")
-		for _, itemValidationError := range groupValidationError.ItemErrors {
-			log.Errorf("    Name: %s", itemValidationError.Name)
-			log.Errorf("    Errors:")
-			for _, validationError := range itemValidationError.ValidationErrors {
-				log.Errorf("      - %s", validationError.Message)
-			}
-		}
-	}
 }
