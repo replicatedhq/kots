@@ -561,7 +561,9 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 	if err != nil {
 		return "", errors.Wrap(err, "failed to read installation file")
 	}
-	renderedKotsKinds["installation.yaml"] = []byte(installationBytes)
+
+	installationFilename := kotsutil.GenUniqueKotsKindFilename(renderedKotsKinds, "installation")
+	renderedKotsKinds[installationFilename] = []byte(installationBytes)
 
 	err = kotsutil.WriteKotsKinds(renderedKotsKinds, u.GetKotsKindsDir(writeUpstreamOptions))
 	if err != nil {
