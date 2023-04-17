@@ -801,9 +801,9 @@ class SnapshotStorageDestination extends Component<Props, State> {
     fetch(`${process.env.API_ENDPOINT}/snapshots/filesystem/instructions`, {
       method: "POST",
       headers: {
-        Authorization: Utilities.getToken() || "",
         "Content-Type": "application/json",
       },
+      credentials: "include",
       body: JSON.stringify({
         fileSystemOptions: fileSystemOptions,
       }),

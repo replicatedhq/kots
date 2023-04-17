@@ -89,7 +89,6 @@ const GitOpsProvider = ({ children }) => {
     try {
       const res = await fetch(`${process.env.API_ENDPOINT}/apps`, {
         headers: {
-          Authorization: Utilities.getToken(),
           "Content-Type": "application/json",
         },
         method: "GET",
@@ -190,9 +189,9 @@ const GitOpsProvider = ({ children }) => {
   const resetGitOps = async () => {
     const res = await fetch(`${process.env.API_ENDPOINT}/gitops/reset`, {
       headers: {
-        Authorization: Utilities.getToken(),
         "Content-Type": "application/json",
       },
+      credentials: "include",
       method: "POST",
     });
     if (!res.ok) {
@@ -207,9 +206,9 @@ const GitOpsProvider = ({ children }) => {
   const createGitOpsRepo = async (gitOpsInput) => {
     const res = await fetch(`${process.env.API_ENDPOINT}/gitops/create`, {
       headers: {
-        Authorization: Utilities.getToken(),
         "Content-Type": "application/json",
       },
+      credentials: "include",
       body: JSON.stringify({
         gitOpsInput: gitOpsInput,
       }),
@@ -229,9 +228,9 @@ const GitOpsProvider = ({ children }) => {
       `${process.env.API_ENDPOINT}/gitops/app/${appId}/cluster/${clusterId}/update`,
       {
         headers: {
-          Authorization: Utilities.getToken(),
           "Content-Type": "application/json",
         },
+        credentials: "include",
         body: JSON.stringify({
           gitOpsInput: gitOpsInput,
         }),

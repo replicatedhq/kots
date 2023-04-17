@@ -73,9 +73,9 @@ const GenerateSupportBundleModal = ({
       {
         method: "POST",
         headers: {
-          Authorization: Utilities.getToken(),
           "Content-Type": "application/json",
         },
+        credentials: "include",
         body: JSON.stringify({
           origin: window.location.origin,
         }),
@@ -95,9 +95,9 @@ const GenerateSupportBundleModal = ({
         `${process.env.API_ENDPOINT}/troubleshoot/app/${watch?.slug}/supportbundles`,
         {
           headers: {
-            Authorization: Utilities.getToken(),
             "Content-Type": "application/json",
           },
+          credentials: "include",
           method: "GET",
         }
       )
@@ -183,9 +183,9 @@ const GenerateSupportBundleModal = ({
 
     fetch(url, {
       headers: {
-        Authorization: Utilities.getToken(),
         "Content-Type": "application/json",
       },
+      credentials: "include",
       method: "POST",
     })
       .then(async (res) => {

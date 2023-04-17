@@ -311,10 +311,10 @@ class AppVersionHistory extends Component<Props, State> {
         `${process.env.API_ENDPOINT}/app/${appSlug}/versions?currentPage=${currentPage}&pageSize=${pageSize}&pinLatestDeployable=true`,
         {
           headers: {
-            Authorization: Utilities.getToken(),
             "Content-Type": "application/json",
           },
           method: "GET",
+          credentials: "include",
         }
       );
       if (!res.ok) {
@@ -380,8 +380,8 @@ class AppVersionHistory extends Component<Props, State> {
         method: "GET",
         headers: {
           "Content-Type": "application/json",
-          Authorization: Utilities.getToken(),
         },
+        credentials: "include",
       });
       if (res.ok) {
         const response = await res.json();
@@ -538,9 +538,9 @@ class AppVersionHistory extends Component<Props, State> {
       `${process.env.API_ENDPOINT}/app/${app.slug}/sequence/${version.parentSequence}/download`,
       {
         headers: {
-          Authorization: Utilities.getToken(),
           "Content-Type": "application/json",
         },
+        credentials: "include",
         method: "POST",
       }
     )
@@ -595,9 +595,9 @@ class AppVersionHistory extends Component<Props, State> {
       `${process.env.API_ENDPOINT}/app/${app.slug}/sequence/${version.parentSequence}/update-console`,
       {
         headers: {
-          Authorization: Utilities.getToken(),
           "Content-Type": "application/json",
         },
+        credentials: "include",
         method: "POST",
       }
     )
@@ -632,9 +632,9 @@ class AppVersionHistory extends Component<Props, State> {
         `${process.env.API_ENDPOINT}/app/${app.slug}/task/update-admin-console`,
         {
           headers: {
-            Authorization: Utilities.getToken(),
             "Content-Type": "application/json",
           },
+          credentials: "include",
           method: "GET",
         }
       )
@@ -679,9 +679,9 @@ class AppVersionHistory extends Component<Props, State> {
         `${process.env.API_ENDPOINT}/app/${app?.slug}/sequence/${version?.parentSequence}/task/updatedownload`,
         {
           headers: {
-            Authorization: Utilities.getToken(),
             "Content-Type": "application/json",
           },
+          credentials: "include",
           method: "GET",
         }
       )
@@ -887,9 +887,9 @@ class AppVersionHistory extends Component<Props, State> {
 
     fetch(`${process.env.API_ENDPOINT}/app/${app.slug}/updatecheck`, {
       headers: {
-        Authorization: Utilities.getToken(),
         "Content-Type": "application/json",
       },
+      credentials: "include",
       method: "POST",
     })
       .then(async (res) => {
@@ -946,9 +946,9 @@ class AppVersionHistory extends Component<Props, State> {
         `${process.env.API_ENDPOINT}/app/${app?.slug}/task/updatedownload`,
         {
           headers: {
-            Authorization: Utilities.getToken(),
             "Content-Type": "application/json",
           },
+          credentials: "include",
           method: "GET",
         }
       )
@@ -1000,9 +1000,9 @@ class AppVersionHistory extends Component<Props, State> {
         `${process.env.API_ENDPOINT}/app/${app.slug}/cluster/${clusterId}/sequence/${version?.sequence}/downstreamoutput`,
         {
           headers: {
-            Authorization: Utilities.getToken(),
             "Content-Type": "application/json",
           },
+          credentials: "include",
           method: "GET",
         }
       );

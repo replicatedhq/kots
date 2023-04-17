@@ -102,9 +102,9 @@ class GenerateSupportBundle extends React.Component {
       `${process.env.API_ENDPOINT}/troubleshoot/app/${this.props.watch?.slug}/supportbundles`,
       {
         headers: {
-          Authorization: Utilities.getToken(),
           "Content-Type": "application/json",
         },
+        credentials: "include",
         method: "GET",
       }
     )
@@ -173,9 +173,9 @@ class GenerateSupportBundle extends React.Component {
         `${process.env.API_ENDPOINT}/troubleshoot/app/${this.props.watch?.slug}/supportbundles`,
         {
           headers: {
-            Authorization: Utilities.getToken(),
             "Content-Type": "application/json",
           },
+          credentials: "include",
           method: "GET",
         }
       )
@@ -269,9 +269,9 @@ class GenerateSupportBundle extends React.Component {
 
     fetch(url, {
       headers: {
-        Authorization: Utilities.getToken(),
         "Content-Type": "application/json",
       },
+      credentials: "include",
       method: "POST",
     })
       .then(async (res) => {
@@ -313,9 +313,9 @@ class GenerateSupportBundle extends React.Component {
       {
         method: "POST",
         headers: {
-          Authorization: Utilities.getToken(),
           "Content-Type": "application/json",
         },
+        credentials: "include",
         body: JSON.stringify({
           origin: window.location.origin,
         }),

@@ -67,9 +67,9 @@ const EditRedactor = () => {
     fetch(`${process.env.API_ENDPOINT}/redact/spec/${redactorSlug}`, {
       method: "GET",
       headers: {
-        Authorization: Utilities.getToken(),
         "Content-Type": "application/json",
       },
+      credentials: "include",
     })
       .then((res) => res.json())
       .then((result) => {
@@ -111,9 +111,9 @@ const EditRedactor = () => {
     fetch(`${process.env.API_ENDPOINT}/redact/spec/${redactorSlug}`, {
       method: "POST",
       headers: {
-        Authorization: Utilities.getToken(),
         "Content-Type": "application/json",
       },
+      credentials: "include",
       body: JSON.stringify(payload),
     })
       .then(async (res) => {
@@ -188,9 +188,9 @@ const EditRedactor = () => {
     fetch(`${process.env.API_ENDPOINT}/redact/spec/new`, {
       method: "POST",
       headers: {
-        Authorization: Utilities.getToken(),
         "Content-Type": "application/json",
       },
+      credentials: "include",
       body: JSON.stringify(payload),
     })
       .then(async (res) => {

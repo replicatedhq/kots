@@ -4,7 +4,6 @@ import {
   withRouterType,
 } from "@src/utilities/react-router-utilities";
 
-import { Utilities } from "../../utilities/utilities";
 import Loader from "../../components/shared/Loader";
 import DiffEditor from "../../components/shared/DiffEditor";
 
@@ -51,10 +50,8 @@ class VersionDiff extends React.Component<Props, State> {
     this.setState({ loadingFileTrees: true });
     const url = `${process.env.API_ENDPOINT}/app/${this.props.slug}/sequence/${sequence}/renderedcontents`;
     return fetch(url, {
-      headers: {
-        Authorization: Utilities.getToken(),
-      },
       method: "GET",
+      credentials: "include",
     })
       .then((res) => res.json())
       .then(async (files) => {

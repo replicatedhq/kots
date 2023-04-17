@@ -45,9 +45,7 @@ class KotsApplicationTree extends React.Component<Props, State> {
   fetchApplicationTree = () => {
     const url = `${process.env.API_ENDPOINT}/app/${this.props.match.params.slug}/sequence/${this.props.match.params.sequence}/contents`;
     fetch(url, {
-      headers: {
-        Authorization: Utilities.getToken(),
-      },
+      credentials: "include",
       method: "GET",
     })
       .then((res) => res.json())

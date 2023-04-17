@@ -98,9 +98,9 @@ class AnalyzerFileTree extends React.Component {
       {
         method: "GET",
         headers: {
-          Authorization: Utilities.getToken(),
           "Content-Type": "application/json",
         },
+        credentials: "include",
       }
     )
       .then(async (result) => {

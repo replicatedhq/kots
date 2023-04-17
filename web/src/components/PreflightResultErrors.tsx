@@ -32,12 +32,12 @@ const fetchPreflightCommand = async (slug: string, sequence: string) => {
     {
       method: "POST",
       headers: {
-        Authorization: Utilities.getToken(),
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
         origin: window.location.origin,
       }),
+      credentials: "include",
     }
   );
   if (!res.ok) {

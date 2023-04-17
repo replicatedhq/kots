@@ -15,9 +15,9 @@ async function getAdminConsoleUpdateStatus({
     {
       headers: {
         Accept: "application/json",
-        Authorization: Utilities.getToken(),
         "Content-Type": "application/json",
       },
+      credentials: "include",
       method: "GET",
     }
   );

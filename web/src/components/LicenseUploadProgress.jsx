@@ -42,10 +42,10 @@ class LicenseUploadProgress extends React.Component {
     try {
       const res = await fetch(`${process.env.API_ENDPOINT}/app/online/status`, {
         headers: {
-          Authorization: Utilities.getToken(),
           "Content-Type": "application/json",
         },
         method: "GET",
+        credentials: "include",
       });
 
       if (!res.ok) {

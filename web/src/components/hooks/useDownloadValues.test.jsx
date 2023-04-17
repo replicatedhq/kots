@@ -80,7 +80,6 @@ describe("useDownloadValues", () => {
       const testAPIEndpoint = "testAPIEndpoint";
       const testGetValuesConfig = {
         _fetch: _fetchValuesSpy,
-        _token: testToken,
         apiEndpoint: testAPIEndpoint,
         appSlug: testAppSlug,
         sequence: testSequence,
@@ -95,9 +94,9 @@ describe("useDownloadValues", () => {
       const expectedFetchConfig = {
         method: "GET",
         headers: {
-          Authorization: testToken,
           "Content-Type": "application/blob",
         },
+        credentials: "include",
       };
       await expect(getValues(testGetValuesConfig)).resolves.toEqual(
         expectedResponse
@@ -121,7 +120,6 @@ describe("useDownloadValues", () => {
       const testVersionLabel = "1.2.3";
       const testIsPending = false;
 
-      const testToken = "testToken";
       const testAPIEndpoint = "testAPIEndpoint";
       const testGetValuesConfig = {
         _fetch: _fetchValuesSpy,

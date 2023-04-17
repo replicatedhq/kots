@@ -2,16 +2,15 @@ import { useQuery } from "react-query";
 import { Utilities } from "../../../utilities/utilities";
 
 async function getGitops({
-  accessToken = Utilities.getToken(),
   apiEndpoint = process.env.API_ENDPOINT,
   _fetch = fetch,
 } = {}) {
   try {
     const res = await _fetch(`${apiEndpoint}/gitops/get`, {
       headers: {
-        Authorization: accessToken,
         "Content-Type": "application/json",
       },
+      credentials: "include",
       method: "GET",
     });
     if (!res.ok) {

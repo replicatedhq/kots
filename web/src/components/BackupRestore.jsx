@@ -49,9 +49,9 @@ class BackupRestore extends React.Component {
     fetch(`${process.env.API_ENDPOINT}/snapshots`, {
       method: "GET",
       headers: {
-        Authorization: Utilities.getToken(),
         "Content-Type": "application/json",
       },
+      credentials: "include",
     })
       .then((res) => res.json())
       .then((result) => {
@@ -84,9 +84,9 @@ class BackupRestore extends React.Component {
     fetch(`${process.env.API_ENDPOINT}/snapshots/settings`, {
       method: "GET",
       headers: {
-        Authorization: Utilities.getToken(),
         "Content-Type": "application/json",
       },
+      credentials: "include",
     })
       .then(async (res) => {
         const result = await res.json();
