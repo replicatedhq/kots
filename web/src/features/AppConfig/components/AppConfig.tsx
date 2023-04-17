@@ -508,6 +508,7 @@ class AppConfig extends Component<Props, State> {
 
       if (configGroupValidationErrors || hasRequiredValidationError) {
         newGroup.items = newGroup?.items?.map((item: ConfigGroupItem) => {
+          // create requiredValidationError if the item is required and has no value
           const requiredValidationError: ConfigGroupItemValidationError | null =
             hasRequiredValidationError && item.required && !item.value
               ? {
@@ -519,6 +520,8 @@ class AppConfig extends Component<Props, State> {
                   ],
                 }
               : null;
+
+          // show the requiredValidationError before the vendor supplied error message
           const itemValidationError =
             requiredValidationError ||
             configGroupValidationErrors?.item_errors?.find(
