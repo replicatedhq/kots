@@ -1,0 +1,24 @@
+apiVersion: kots.io/v1beta1
+kind: Config
+metadata:
+  creationTimestamp: null
+  name: my-app
+spec:
+  groups:
+  - items:
+    - default: ""
+      help_text: |
+        Use this field to provide a hostname for your Example Application installation.
+      name: hostname
+      required: true
+      title: Hostname
+      type: text
+      value: my-app.somebigbank.com
+    - default: "no"
+      name: helm
+      title: Include helm
+      type: text
+      value: ""
+    name: setup
+    title: Setup
+status: {}

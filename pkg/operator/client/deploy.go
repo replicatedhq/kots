@@ -509,7 +509,7 @@ func (c *Client) clearNamespace(slug string, namespace string, isRestore bool, r
 	return clear, nil
 }
 
-func (c *Client) installWithHelm(helmDir string, targetNamespace string, kotsCharts []*v1beta1.HelmChart) (*commandResult, error) {
+func (c *Client) installWithHelm(helmDir string, targetNamespace string, kotsCharts []v1beta1.HelmChart) (*commandResult, error) {
 	version := "3"
 	chartsDir := filepath.Join(helmDir, "charts")
 
@@ -579,7 +579,7 @@ type orderedDir struct {
 	UpgradeFlags []string
 }
 
-func getSortedCharts(chartsDir string, kotsCharts []*v1beta1.HelmChart, targetNamespace string) ([]orderedDir, error) {
+func getSortedCharts(chartsDir string, kotsCharts []v1beta1.HelmChart, targetNamespace string) ([]orderedDir, error) {
 	dirs, err := ioutil.ReadDir(chartsDir)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to read archive dir")
@@ -738,7 +738,7 @@ func deletePVCs(namespace string, appLabelSelector *metav1.LabelSelector, appslu
 	return nil
 }
 
-func getRemovedCharts(prevDir string, curDir string, previousKotsCharts []*v1beta1.HelmChart) ([]string, error) {
+func getRemovedCharts(prevDir string, curDir string, previousKotsCharts []v1beta1.HelmChart) ([]string, error) {
 	if prevDir == "" {
 		return []string{}, nil
 	}

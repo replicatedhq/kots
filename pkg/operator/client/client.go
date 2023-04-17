@@ -265,9 +265,9 @@ func (c *Client) deployHelmCharts(deployArgs operatortypes.DeployAppArgs) (*comm
 		}
 	}
 
-	previousKotsCharts := []*v1beta1.HelmChart{}
-	if deployArgs.PreviousKotsKinds != nil {
-		previousKotsCharts = deployArgs.PreviousKotsKinds.HelmCharts
+	previousKotsCharts := []v1beta1.HelmChart{}
+	if deployArgs.PreviousKotsKinds != nil && deployArgs.PreviousKotsKinds.HelmCharts != nil {
+		previousKotsCharts = deployArgs.PreviousKotsKinds.HelmCharts.Items
 	}
 	removedCharts, err := getRemovedCharts(prevHelmDir, curHelmDir, previousKotsCharts)
 	if err != nil {
@@ -280,9 +280,9 @@ func (c *Client) deployHelmCharts(deployArgs operatortypes.DeployAppArgs) (*comm
 		}
 	}
 	if len(deployArgs.Charts) > 0 {
-		kotsCharts := []*v1beta1.HelmChart{}
-		if deployArgs.KotsKinds != nil {
-			kotsCharts = deployArgs.KotsKinds.HelmCharts
+		kotsCharts := []v1beta1.HelmChart{}
+		if deployArgs.KotsKinds != nil && deployArgs.KotsKinds.HelmCharts != nil {
+			kotsCharts = deployArgs.KotsKinds.HelmCharts.Items
 		}
 		installResult, err = c.installWithHelm(curHelmDir, targetNamespace, kotsCharts)
 		if err != nil {

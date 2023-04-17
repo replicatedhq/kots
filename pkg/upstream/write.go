@@ -143,7 +143,9 @@ func WriteUpstream(u *types.Upstream, options types.WriteOptions) error {
 			return errors.Wrap(err, "failed to create userdata dir")
 		}
 	}
-	err = ioutil.WriteFile(path.Join(renderDir, "userdata", "installation.yaml"), mustMarshalInstallation(&installation), 0644)
+
+	installationBytes := mustMarshalInstallation(&installation)
+	err = ioutil.WriteFile(path.Join(renderDir, "userdata", "installation.yaml"), installationBytes, 0644)
 	if err != nil {
 		return errors.Wrap(err, "failed to write installation")
 	}
