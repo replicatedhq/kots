@@ -9,7 +9,6 @@ import InputField from "@components/shared/forms/InputField";
 export default class ConfigInput extends React.Component {
   constructor(props) {
     super(props);
-    this.inputRef = React.createRef();
     this.state = {
       inputVal: "",
       focused: false,
@@ -101,7 +100,6 @@ export default class ConfigInput extends React.Component {
             ) : null}
             <div className="field-input-wrapper flex alignItems--center u-marginTop--15">
               <InputField
-                ref={this.inputRef}
                 type={this.props.inputType}
                 {...this.props.props}
                 placeholder={placeholder}
@@ -188,7 +186,6 @@ export default class ConfigInput extends React.Component {
         ) : null}
         <div className="field-input-wrapper u-marginTop--15 ">
           <InputField
-            ref={this.inputRef}
             type={this.props.inputType}
             {...this.props.props}
             placeholder={placeholder}
