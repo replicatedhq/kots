@@ -156,6 +156,26 @@
                     "type": {
                       "type": "string"
                     },
+                    "validation": {
+                      "type": "object",
+                      "properties": {
+                        "regex": {
+                          "type": "object",
+                          "required": [
+                            "message",
+                            "pattern"
+                          ],
+                          "properties": {
+                            "message": {
+                              "type": "string"
+                            },
+                            "pattern": {
+                              "type": "string"
+                            }
+                          }
+                        }
+                      }
+                    },
                     "value": {
                       "oneOf": [{"type": "string"},{"type": "boolean"}]
                     },

@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
+	"github.com/replicatedhq/kots/pkg/crypto"
 )
 
 func init() {
@@ -257,4 +258,18 @@ func GetFilesMap(dir string) (map[string][]byte, error) {
 	}
 
 	return filesMap, nil
+}
+
+func DecryptConfigValue(input string) (string, error) {
+	decoded, err := base64.StdEncoding.DecodeString(input)
+	if err != nil {
+		return "", errors.Wrap(err, "failed to base64 decode")
+	}
+
+	decrypted, err := crypto.Decrypt(decoded)
+	if err != nil {
+		return "", errors.Wrap(err, "failed to decrypt")
+	}
+
+	return string(decrypted), nil
 }
