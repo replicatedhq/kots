@@ -384,10 +384,6 @@ class AppConfig extends Component<Props, State> {
         this.setState({ savingConfig: false });
 
         if (!result.success) {
-          // if (result.requiredItems?.length) {
-          //   this.markRequiredItems(result.requiredItems);
-          // }
-          // this.handleConfigChange(this.state.configGroups);
           const validationErrors: ConfigGroupItemValidationErrors[] =
             result.validationErrors;
           const [newGroups, hasValidationError] =
