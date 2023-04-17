@@ -205,7 +205,7 @@ func (h *Handler) UpdateAppConfig(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if len(validationErrors) > 0 {
-		updateAppConfigResponse.Error = "failed to validate config values"
+		updateAppConfigResponse.Error = "invalid config values"
 		updateAppConfigResponse.ValidationErrors = validationErrors
 		logger.Errorf("%v, validation errors: %+v", updateAppConfigResponse.Error, validationErrors)
 		JSON(w, http.StatusBadRequest, updateAppConfigResponse)
