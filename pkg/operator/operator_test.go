@@ -314,13 +314,110 @@ var _ = Describe("Operator", func() {
 				})
 			})
 		})
+
+		When("there is a helm chart with template functions", func() {
+
+			var (
+				mockStore    *mock_store.MockStore
+				mockClient   *mock_client.MockClientInterface
+				testOperator *operator.Operator
+				mockCtrl     *gomock.Controller
+				clusterToken       = "cluster-token"
+				appID              = "some-app-id"
+				sequence     int64 = 0
+
+				archiveDir                 string
+				previouslyDeployedSequence int64
+			)
+
+			BeforeEach(func() {
+				os.Setenv("KOTSADM_ENV", "test")
+				previouslyDeployedSequence = -1
+				mockCtrl = gomock.NewController(GinkgoT())
+				mockStore = mock_store.NewMockStore(mockCtrl)
+
+				mockClient = mock_client.NewMockClientInterface(mockCtrl)
+				mockK8sClientset := fake.NewSimpleClientset()
+				testOperator = operator.Init(mockClient, mockStore, clusterToken, mockK8sClientset)
+			})
+
+			AfterEach(func() {
+				os.Setenv("KOTSADM_ENV", "")
+				mockCtrl.Finish()
+
+				err := os.RemoveAll(archiveDir)
+				Expect(err).ToNot(HaveOccurred())
+			})
+
+			It("installs the helm chart using the templated namespace and upgrade flags", func() {
+				mockStore.EXPECT().SetDownstreamVersionStatus(appID, sequence, gomock.Any(), gomock.Any()).AnyTimes().Return(nil)
+
+				app := &apptypes.App{
+					ID:                    appID,
+					Slug:                  "some-app-slug",
+					IsAirgap:              false,
+					RestoreInProgressName: "",
+				}
+				mockStore.EXPECT().GetApp(appID).Return(app, nil)
+
+				downstreams := &downstreamtypes.Downstream{}
+				mockStore.EXPECT().GetDownstream("").Return(downstreams, nil)
+
+				mockStore.EXPECT().GetAppVersionArchive(appID, sequence, gomock.Any()).DoAndReturn(func(id string, seq int64, archDir string) error {
+					archiveDir = archDir
+					err := setupDirectoriesAndFiles(archiveDir, true)
+					Expect(err).ToNot(HaveOccurred())
+					return nil
+				})
+
+				registrySettings := registrytypes.RegistrySettings{
+					Hostname:   "hostname",
+					Username:   "user",
+					Password:   "pass",
+					Namespace:  "namespace",
+					IsReadOnly: false,
+				}
+				mockStore.EXPECT().GetRegistryDetailsForApp(appID).Return(registrySettings, nil)
+
+				mockStore.EXPECT().GetPreviouslyDeployedSequence(appID, "").Return(previouslyDeployedSequence, nil)
+
+				mockClient.EXPECT().DeployApp(gomock.Any()).Do(func(deployArgs operatortypes.DeployAppArgs) (bool, error) {
+					Expect(deployArgs.KotsKinds.HelmCharts.Items[0].Spec.Namespace).To(Equal("my-namespace"))
+					Expect(deployArgs.KotsKinds.HelmCharts.Items[0].Spec.HelmUpgradeFlags).To(Equal([]string{"--set", "extraValue=my-extra-value"}))
+					return true, nil
+				})
+
+				mockClient.EXPECT().ApplyAppInformers(gomock.Any())
+
+				_, err := testOperator.DeployApp(appID, sequence)
+				Expect(err).ToNot(HaveOccurred())
+			})
+
+		})
 	})
 })
 
+// TODO: refactor this so that each test can set up the files it needs
 func setupDirectoriesAndFiles(archiveDir string, validDeployment bool) error {
+	upstreamDir := fmt.Sprintf("%s/upstream", archiveDir)
+	userDataDir := fmt.Sprintf("%s/userdata", upstreamDir)
 	overlaysDir := fmt.Sprintf("%s/overlays", archiveDir)
 	midstreamDir := fmt.Sprintf("%s/midstream", overlaysDir)
 	downstreamsDir := fmt.Sprintf("%s/downstreams", overlaysDir)
+
+	if _, err := os.Stat(upstreamDir); errors.Is(err, os.ErrNotExist) {
+		err := os.Mkdir(upstreamDir, 0700)
+		if err != nil {
+			return err
+		}
+	}
+
+	if _, err := os.Stat(userDataDir); errors.Is(err, os.ErrNotExist) {
+		err := os.Mkdir(userDataDir, 0700)
+		if err != nil {
+			return err
+		}
+	}
 
 	if _, err := os.Stat(overlaysDir); errors.Is(err, os.ErrNotExist) {
 		err := os.Mkdir(overlaysDir, 0700)
@@ -357,7 +454,17 @@ func setupDirectoriesAndFiles(archiveDir string, validDeployment bool) error {
 		return err
 	}
 
-	err = writeAppFile(fmt.Sprintf("%s/overlays/downstreams/app.yaml", archiveDir))
+	err = writeAppFile(fmt.Sprintf("%s/upstream/app.yaml", archiveDir))
+	if err != nil {
+		return err
+	}
+
+	err = writeHelmChartFile(fmt.Sprintf("%s/upstream/helmchart.yaml", archiveDir))
+	if err != nil {
+		return err
+	}
+
+	err = writeConfigValuesFile(fmt.Sprintf("%s/upstream/userdata/config.yaml", archiveDir))
 	if err != nil {
 		return err
 	}
@@ -371,8 +478,7 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 
 resources:
-  - deployment.yaml
-  - app.yaml`
+  - deployment.yaml`
 
 	kustomizeFile, err := os.Create(filename)
 	if err != nil {
@@ -445,5 +551,74 @@ spec:
 		return err
 	}
 	_, err = deploymentFile.Write([]byte(exampleAppFileContents))
+	return err
+}
+
+func writeHelmChartFile(filename string) error {
+	exampleHelmChartFileContents := `
+apiVersion: kots.io/v1beta1
+kind: HelmChart
+metadata:
+  name: my-helm-chart
+spec:
+  namespace: repl{{ ConfigOption "deploy_namespace" }}
+  helmUpgradeFlags:
+    - --set
+    - extraValue=repl{{ ConfigOption "deploy_extra_value" }}
+`
+	helmChartFile, err := os.Create(filename)
+	if err != nil {
+		return err
+	}
+	_, err = helmChartFile.Write([]byte(exampleHelmChartFileContents))
+	return err
+}
+
+func writeConfigFile(filename string) error {
+	exampleConfigFileContents := `apiVersion: kots.io/v1beta1
+kind: Config
+metadata:
+  name: my-config
+spec:
+  groups:
+  - name: deployment_settings
+    title: Deployment Settings
+    items:
+    - name: deploy_namespace
+      title: Namespace
+      type: text
+      default: 'default'
+    - name: deploy_extra_value
+      title: An Extra Value
+      type: text
+      default: 'default'
+`
+
+	configFile, err := os.Create(filename)
+	if err != nil {
+		return err
+	}
+	_, err = configFile.Write([]byte(exampleConfigFileContents))
+	return err
+}
+
+func writeConfigValuesFile(filename string) error {
+	exampleConfigValuesFileContents := `apiVersion: kots.io/v1beta1
+kind: ConfigValues
+metadata:
+  name: some-chart
+spec:
+  values:
+    deploy_namespace:
+      value: my-namespace
+    deploy_extra_value:
+      value: my-extra-value
+`
+
+	configValuesFile, err := os.Create(filename)
+	if err != nil {
+		return err
+	}
+	_, err = configValuesFile.Write([]byte(exampleConfigValuesFileContents))
 	return err
 }
