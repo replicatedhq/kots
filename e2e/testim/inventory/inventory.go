@@ -70,7 +70,7 @@ func NewConfigValidation() Test {
 		Name:        "Config Validation",
 		Suite:       "config-validation",
 		Namespace:   "config-validation",
-		UpstreamURI: "config-validation/automated",
+		UpstreamURI: "config-validation-panda/automated",
 	}
 }
 
