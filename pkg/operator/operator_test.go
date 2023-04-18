@@ -1,9 +1,9 @@
 package operator_test
 
 import (
-	"errors"
 	"fmt"
 	"os"
+	"path/filepath"
 	"sync"
 	"time"
 
@@ -33,6 +33,17 @@ var _ = Describe("Operator", func() {
 				appID              = "some-app-id"
 				sequence     int64 = 0
 				archiveDir   string
+
+				archiveFiles = map[string]string{
+					"upstream/app.yaml": `
+apiVersion: kots.io/v1beta1
+kind: Application
+metadata:
+  name: my-application
+spec:
+  statusInformers:
+    - deployment/some-deployment`,
+				}
 			)
 
 			BeforeEach(func() {
@@ -75,7 +86,7 @@ var _ = Describe("Operator", func() {
 
 				mockStore.EXPECT().GetAppVersionArchive(appID, sequence, gomock.Any()).DoAndReturn(func(id string, seq int64, archDir string) error {
 					archiveDir = archDir
-					err := setupDirectoriesAndFiles(archiveDir, true)
+					err := writeArchiveFiles(archiveDir, archiveFiles)
 					Expect(err).ToNot(HaveOccurred())
 					return nil
 				})
@@ -190,6 +201,51 @@ var _ = Describe("Operator", func() {
 
 				archiveDir                 string
 				previouslyDeployedSequence int64
+
+				archiveFiles = map[string]string{
+					"base/kustomization.yaml": `
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - deployment.yaml`,
+					"overlays/midstream/kustomization.yaml": `
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - ../../base`,
+					"overlays/downstreams/kustomization.yaml": `
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - ../midstream`,
+					"base/deployment.yaml": `
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: some-deployment
+  labels:
+    app: example
+spec:
+  selector:
+    matchLabels:
+      app: example
+  template:
+    metadata:
+      labels:
+        app: example
+    spec:
+      containers:
+        - name: nginx
+          image: nginx`,
+					"upstream/app.yaml": `
+apiVersion: kots.io/v1beta1
+kind: Application
+metadata:
+  name: my-application
+spec:
+  statusInformers:
+    - deployment/some-deployment`,
+				}
 			)
 
 			BeforeEach(func() {
@@ -227,7 +283,7 @@ var _ = Describe("Operator", func() {
 
 				mockStore.EXPECT().GetAppVersionArchive(appID, sequence, gomock.Any()).DoAndReturn(func(id string, seq int64, archDir string) error {
 					archiveDir = archDir
-					err := setupDirectoriesAndFiles(archiveDir, true)
+					err := writeArchiveFiles(archiveDir, archiveFiles)
 					Expect(err).ToNot(HaveOccurred())
 					return nil
 				})
@@ -253,6 +309,39 @@ var _ = Describe("Operator", func() {
 			})
 
 			When("a previously deployed application has an error", func() {
+				var (
+					previousArchiveFiles = map[string]string{
+						"base/kustomization.yaml": `
+	apiVersion: kustomize.config.k8s.io/v1beta1
+	kind: Kustomization
+	resources:
+	  - deployment.yaml`,
+						"overlays/midstream/kustomization.yaml": `
+	apiVersion: kustomize.config.k8s.io/v1beta1
+	kind: Kustomization
+	resources:
+	  - ../../base`,
+						"overlays/downstreams/kustomization.yaml": `
+	apiVersion: kustomize.config.k8s.io/v1beta1
+	kind: Kustomization
+	resources:
+	  - ../midstream`,
+						"base/deployment.yaml": `
+	apiVersion: apps/v1
+	kind: Deployment
+	metadata:
+	  this is an invalid deployment`,
+						"upstream/app.yaml": `
+	apiVersion: kots.io/v1beta1
+	kind: Application
+	metadata:
+	  name: my-application
+	spec:
+	  statusInformers:
+		- deployment/some-deployment`,
+					}
+				)
+
 				BeforeEach(func() {
 					previouslyDeployedSequence = 1
 				})
@@ -273,13 +362,13 @@ var _ = Describe("Operator", func() {
 
 					validCurrentDeployment := mockStore.EXPECT().GetAppVersionArchive(appID, sequence, gomock.Any()).DoAndReturn(func(id string, seq int64, archDir string) error {
 						archiveDir = archDir
-						err := setupDirectoriesAndFiles(archiveDir, true)
+						err := writeArchiveFiles(archiveDir, archiveFiles)
 						Expect(err).ToNot(HaveOccurred())
 						return nil
 					})
 					invalidPreviousDeployment := mockStore.EXPECT().GetAppVersionArchive(appID, sequence, gomock.Any()).DoAndReturn(func(id string, seq int64, archDir string) error {
 						archiveDir = archDir
-						err := setupDirectoriesAndFiles(archiveDir, false)
+						err := writeArchiveFiles(archiveDir, previousArchiveFiles)
 						Expect(err).ToNot(HaveOccurred())
 						return nil
 					})
@@ -314,136 +403,206 @@ var _ = Describe("Operator", func() {
 				})
 			})
 		})
-	})
-})
 
-func setupDirectoriesAndFiles(archiveDir string, validDeployment bool) error {
-	overlaysDir := fmt.Sprintf("%s/overlays", archiveDir)
-	midstreamDir := fmt.Sprintf("%s/midstream", overlaysDir)
-	downstreamsDir := fmt.Sprintf("%s/downstreams", overlaysDir)
+		When("there is a helm chart with template functions", func() {
 
-	if _, err := os.Stat(overlaysDir); errors.Is(err, os.ErrNotExist) {
-		err := os.Mkdir(overlaysDir, 0700)
-		if err != nil {
-			return err
-		}
-	}
+			var (
+				mockStore    *mock_store.MockStore
+				mockClient   *mock_client.MockClientInterface
+				testOperator *operator.Operator
+				mockCtrl     *gomock.Controller
+				clusterToken       = "cluster-token"
+				appID              = "some-app-id"
+				sequence     int64 = 0
 
-	if _, err := os.Stat(midstreamDir); errors.Is(err, os.ErrNotExist) {
-		err = os.Mkdir(midstreamDir, 0700)
-		if err != nil {
-			return err
-		}
-	}
-	if _, err := os.Stat(downstreamsDir); errors.Is(err, os.ErrNotExist) {
-		err = os.Mkdir(downstreamsDir, 0700)
-		if err != nil {
-			return err
-		}
-	}
+				expectedNamespace        = "my-namespace"
+				expectedHelmUpgradeFlags = []string{"--set", "extraValue=my-extra-value"}
 
-	err := writeKustomizationFile(fmt.Sprintf("%s/overlays/midstream/kustomization.yaml", archiveDir))
-	if err != nil {
-		return err
-	}
-
-	err = writeKustomizationFile(fmt.Sprintf("%s/overlays/downstreams/kustomization.yaml", archiveDir))
-	if err != nil {
-		return err
-	}
-
-	err = writeDeploymentFile(fmt.Sprintf("%s/overlays/downstreams/deployment.yaml", archiveDir), validDeployment)
-	if err != nil {
-		return err
-	}
-
-	err = writeAppFile(fmt.Sprintf("%s/overlays/downstreams/app.yaml", archiveDir))
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func writeKustomizationFile(filename string) error {
-	exampleKustomizationFileContents := `
+				archiveDir                 string
+				previouslyDeployedSequence int64
+				archiveFiles               = map[string]string{
+					"base/kustomization.yaml": `
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
-
+resources: []`,
+					"overlays/midstream/kustomization.yaml": `
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
 resources:
-  - deployment.yaml
-  - app.yaml`
-
-	kustomizeFile, err := os.Create(filename)
-	if err != nil {
-		return err
-	}
-
-	_, err = kustomizeFile.Write([]byte(exampleKustomizationFileContents))
-	return err
-}
-
-func writeDeploymentFile(filename string, valid bool) error {
-	name := `  name: "some-deployment"`
-	if !valid {
-		name = ""
-	}
-	exampleDeploymentFileContents := fmt.Sprintf(`
+  - ../../base`,
+					"overlays/downstreams/kustomization.yaml": `
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - ../midstream`,
+					"base/charts/my-chart/kustomization.yaml": `
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - deployment.yaml`,
+					"overlays/midstream/charts/my-chart/kustomization.yaml": `
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - ../../../../base/charts/my-chart`,
+					"overlays/downstreams/charts/my-chart/kustomization.yaml": `
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - ../../../midstream/charts/my-chart`,
+					"base/charts/my-chart/deployment.yaml": `
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-%s
+  name: some-deployment
   labels:
     app: example
-    component: nginx
 spec:
   selector:
     matchLabels:
       app: example
-      component: nginx
   template:
     metadata:
       labels:
         app: example
-        component: nginx
     spec:
       containers:
         - name: nginx
-          image: nginx
-          envFrom:
-          - configMapRef:
-              name: example-configmap
-          resources:
-            limits:
-              memory: '256Mi'
-              cpu: '500m'
-            requests:
-              memory: '32Mi'
-              cpu: '100m'`, name)
-
-	deploymentFile, err := os.Create(filename)
-	if err != nil {
-		return err
-	}
-	_, err = deploymentFile.Write([]byte(exampleDeploymentFileContents))
-
-	return err
-}
-
-func writeAppFile(filename string) error {
-	exampleAppFileContents := `
+          image: nginx`,
+					"upstream/app.yaml": `
 apiVersion: kots.io/v1beta1
 kind: Application
 metadata:
   name: my-application
 spec:
   statusInformers:
-    - deployment/some-deployment`
+    - deployment/some-deployment`,
+					"upstream/my-chart.yaml": `
+apiVersion: kots.io/v1beta1
+kind: HelmChart
+metadata:
+  name: my-chart
+spec:
+  namespace: repl{{ ConfigOption "deploy_namespace" }}
+  helmUpgradeFlags:
+    - --set
+    - extraValue=repl{{ ConfigOption "deploy_extra_value" }}
+`,
+					"upstream/config.yaml": `
+apiVersion: kots.io/v1beta1
+kind: Config
+metadata:
+  name: my-config
+spec:
+  groups:
+  - name: deployment_settings
+    title: Deployment Settings
+    items:
+    - name: deploy_namespace
+      title: Namespace
+      type: text
+      default: 'default'
+    - name: deploy_extra_value
+      title: An Extra Value
+      type: text
+      default: 'default'
+`,
+					"upstream/userdata/config.yaml": `
+apiVersion: kots.io/v1beta1
+kind: ConfigValues
+metadata:
+  name: some-chart
+spec:
+  values:
+    deploy_namespace:
+      value: my-namespace
+    deploy_extra_value:
+      value: my-extra-value
+`,
+				}
+			)
 
-	deploymentFile, err := os.Create(filename)
-	if err != nil {
-		return err
+			BeforeEach(func() {
+				os.Setenv("KOTSADM_ENV", "test")
+				previouslyDeployedSequence = -1
+				mockCtrl = gomock.NewController(GinkgoT())
+				mockStore = mock_store.NewMockStore(mockCtrl)
+
+				mockClient = mock_client.NewMockClientInterface(mockCtrl)
+				mockK8sClientset := fake.NewSimpleClientset()
+				testOperator = operator.Init(mockClient, mockStore, clusterToken, mockK8sClientset)
+			})
+
+			AfterEach(func() {
+				os.Setenv("KOTSADM_ENV", "")
+				mockCtrl.Finish()
+
+				err := os.RemoveAll(archiveDir)
+				Expect(err).ToNot(HaveOccurred())
+			})
+
+			It("installs the helm chart using the templated namespace and upgrade flags", func() {
+				mockStore.EXPECT().SetDownstreamVersionStatus(appID, sequence, gomock.Any(), gomock.Any()).AnyTimes().Return(nil)
+
+				app := &apptypes.App{
+					ID:                    appID,
+					Slug:                  "some-app-slug",
+					IsAirgap:              false,
+					RestoreInProgressName: "",
+				}
+				mockStore.EXPECT().GetApp(appID).Return(app, nil)
+
+				downstreams := &downstreamtypes.Downstream{}
+				mockStore.EXPECT().GetDownstream("").Return(downstreams, nil)
+
+				mockStore.EXPECT().GetAppVersionArchive(appID, sequence, gomock.Any()).DoAndReturn(func(id string, seq int64, archDir string) error {
+					archiveDir = archDir
+					err := writeArchiveFiles(archiveDir, archiveFiles)
+					Expect(err).ToNot(HaveOccurred())
+					return nil
+				})
+
+				registrySettings := registrytypes.RegistrySettings{
+					Hostname:   "hostname",
+					Username:   "user",
+					Password:   "pass",
+					Namespace:  "namespace",
+					IsReadOnly: false,
+				}
+				mockStore.EXPECT().GetRegistryDetailsForApp(appID).Return(registrySettings, nil)
+
+				mockStore.EXPECT().GetPreviouslyDeployedSequence(appID, "").Return(previouslyDeployedSequence, nil)
+
+				mockClient.EXPECT().DeployApp(gomock.Any()).Do(func(deployArgs operatortypes.DeployAppArgs) (bool, error) {
+					// validate that the namespace and helm upgrade flags are templated when deploying
+					Expect(deployArgs.KotsKinds.HelmCharts.Items[0].Spec.Namespace).To(Equal(expectedNamespace))
+					Expect(deployArgs.KotsKinds.HelmCharts.Items[0].Spec.HelmUpgradeFlags).To(Equal(expectedHelmUpgradeFlags))
+					return true, nil
+				})
+
+				mockClient.EXPECT().ApplyAppInformers(gomock.Any())
+
+				_, err := testOperator.DeployApp(appID, sequence)
+				Expect(err).ToNot(HaveOccurred())
+			})
+
+		})
+	})
+})
+
+func writeArchiveFiles(archiveDir string, archiveFiles map[string]string) error {
+	for path, content := range archiveFiles {
+		archiveFilePath := fmt.Sprintf("%s/%s", archiveDir, path)
+		err := os.MkdirAll(filepath.Dir(archiveFilePath), 0700)
+		if err != nil {
+			return fmt.Errorf("failed to create archive file path %s: %v", archiveFilePath, err)
+		}
+
+		err = os.WriteFile(archiveFilePath, []byte(content), 0644)
+		if err != nil {
+			return fmt.Errorf("failed to write archive file %s: %v", archiveFilePath, err)
+		}
 	}
-	_, err = deploymentFile.Write([]byte(exampleAppFileContents))
-	return err
+
+	return nil
 }
