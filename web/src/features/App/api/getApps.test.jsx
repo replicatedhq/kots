@@ -52,7 +52,6 @@ describe("getApps", () => {
       const testAPIEndpoint = "testAPIEndpoint";
       const testgetAppsFetchConfig = {
         _fetch: getAppsSpy,
-        accessToken: testToken,
         apiEndpoint: testAPIEndpoint,
       };
 

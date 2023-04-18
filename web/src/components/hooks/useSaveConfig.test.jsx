@@ -78,7 +78,6 @@ describe("useSaveConfig", () => {
           "Content-Type": "application/json",
         },
         body: testBody,
-        fetchIsHelmManaged,
       };
       await expect(putConfig(testPutConfig)).resolves.toEqual(expectedResponse);
       expect(testFetch).toHaveBeenCalledTimes(1);
@@ -99,11 +98,9 @@ describe("useSaveConfig", () => {
         })
       );
       const testAppSlug = "testAppSlug";
-      const testToken = "testToken";
       const testAPIEndpoint = "testAPIEndpoint";
       const testPutConfig = {
         _fetch: testFetch,
-        _token: testToken,
         appSlug: testAppSlug,
         apiEndpoint: testAPIEndpoint,
         body: testBody,
@@ -127,11 +124,9 @@ describe("useSaveConfig", () => {
       );
 
       const testAppSlug = "testAppSlug";
-      const testToken = "testToken";
       const testAPIEndpoint = "testAPIEndpoint";
       const testPutConfig = {
         _fetch: testFetch,
-        _token: testToken,
         appSlug: testAppSlug,
         apiEndpoint: testAPIEndpoint,
         body: testBody,
@@ -147,11 +142,9 @@ describe("useSaveConfig", () => {
       );
 
       const testAppSlug = "testAppSlug";
-      const testToken = "testToken";
       const testAPIEndpoint = "testAPIEndpoint";
       const testPutConfig = {
         _fetch: testFetch,
-        _token: testToken,
         appSlug: testAppSlug,
         apiEndpoint: testAPIEndpoint,
       };
