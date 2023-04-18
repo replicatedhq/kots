@@ -255,6 +255,23 @@ func (o *Operator) DeployApp(appID string, sequence int64) (deployed bool, deplo
 		return false, errors.Wrap(err, "failed to get template builder")
 	}
 
+	if kotsKinds.HelmCharts != nil {
+		marshalledHelmCharts, err := kotsKinds.Marshal("kots.io", "v1beta1", "HelmChartList")
+		if err != nil {
+			return false, errors.Wrap(err, "failed to marshal helm charts")
+		}
+
+		renderedHelmCharts, err := builder.String(marshalledHelmCharts)
+		if err != nil {
+			return false, errors.Wrap(err, "failed to render helm charts")
+		}
+
+		kotsKinds.HelmCharts, err = kotsutil.LoadHelmChartsFromContents([]byte(renderedHelmCharts))
+		if err != nil {
+			return false, errors.Wrap(err, "failed to load helm charts")
+		}
+	}
+
 	requireIdentityProvider := false
 	if kotsKinds.Identity != nil {
 		if kotsKinds.Identity.Spec.RequireIdentityProvider.Type == multitype.String {

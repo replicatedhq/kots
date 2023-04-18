@@ -273,7 +273,7 @@ func (o KotsKinds) Marshal(g string, v string, k string) (string, error) {
 					return "", errors.Wrap(err, "failed to encode identityconfig")
 				}
 				return string(b.Bytes()), nil
-			case "HelmChart":
+			case "HelmChartList":
 				if o.HelmCharts == nil {
 					return "", nil
 				}
@@ -445,7 +445,12 @@ func (k *KotsKinds) addKotsKinds(content []byte) error {
 			k.Installation = *decoded.(*kotsv1beta1.Installation)
 		case "kots.io/v1beta1, Kind=HelmChart":
 			if k.HelmCharts == nil {
-				k.HelmCharts = &kotsv1beta1.HelmChartList{}
+				k.HelmCharts = &kotsv1beta1.HelmChartList{
+					TypeMeta: metav1.TypeMeta{
+						APIVersion: "kots.io/v1beta1",
+						Kind:       "HelmChartList",
+					},
+				}
 			}
 			k.HelmCharts.Items = append(k.HelmCharts.Items, *decoded.(*kotsv1beta1.HelmChart))
 		case "kots.io/v1beta1, Kind=LintConfig":
@@ -732,6 +737,20 @@ func LoadKotsAppFromContents(data []byte) (*kotsv1beta1.Application, error) {
 	}
 
 	return obj.(*kotsv1beta1.Application), nil
+}
+
+func LoadHelmChartsFromContents(data []byte) (*kotsv1beta1.HelmChartList, error) {
+	decode := scheme.Codecs.UniversalDeserializer().Decode
+	obj, gvk, err := decode([]byte(data), nil, nil)
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to decode kots app data of length %d", len(data))
+	}
+
+	if gvk.Group != "kots.io" || gvk.Version != "v1beta1" || gvk.Kind != "HelmChartList" {
+		return nil, errors.Errorf("unexpected GVK: %s", gvk.String())
+	}
+
+	return obj.(*kotsv1beta1.HelmChartList), nil
 }
 
 func LoadInstallationFromContents(installationData []byte) (*kotsv1beta1.Installation, error) {
