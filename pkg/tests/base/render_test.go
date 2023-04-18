@@ -134,6 +134,13 @@ func TestRenderUpstream(t *testing.T) {
 
 			gotKotsKinds, err := kotsutil.KotsKindsFromMap(gotKotsKindsFiles)
 			require.NoError(t, err, "kots kinds from map")
+
+			if tt.WantKotsKinds.HelmCharts != nil && gotKotsKinds.HelmCharts != nil {
+				require.ElementsMatch(t, tt.WantKotsKinds.HelmCharts.Items, gotKotsKinds.HelmCharts.Items)
+				tt.WantKotsKinds.HelmCharts.Items = nil
+				gotKotsKinds.HelmCharts.Items = nil
+			}
+
 			require.Equal(t, tt.WantKotsKinds, gotKotsKinds)
 
 			// TODO: Need to test upstream with multiple Helm charts.

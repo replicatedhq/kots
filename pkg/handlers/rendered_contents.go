@@ -4,6 +4,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os"
+	"path/filepath"
 	"strconv"
 
 	"github.com/gorilla/mux"
@@ -66,7 +67,7 @@ func (h *Handler) GetAppRenderedContents(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	kotsKinds, err := kotsutil.LoadKotsKindsFromPath(archivePath)
+	kotsKinds, err := kotsutil.LoadKotsKindsFromPath(filepath.Join(archivePath, "upstream"))
 	if err != nil {
 		logger.Error(errors.Wrap(err, "failed to load kots kinds from path"))
 		w.WriteHeader(http.StatusInternalServerError)

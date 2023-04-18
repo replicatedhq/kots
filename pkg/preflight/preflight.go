@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"path/filepath"
 
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/kotskinds/client/kotsclientset/scheme"
@@ -41,7 +42,7 @@ const (
 )
 
 func Run(appID string, appSlug string, sequence int64, isAirgap bool, archiveDir string) error {
-	renderedKotsKinds, err := kotsutil.LoadKotsKindsFromPath(archiveDir)
+	renderedKotsKinds, err := kotsutil.LoadKotsKindsFromPath(filepath.Join(archiveDir, "upstream"))
 	if err != nil {
 		return errors.Wrap(err, "failed to load rendered kots kinds")
 	}

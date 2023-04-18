@@ -87,7 +87,7 @@ func UpdateAppFromPath(a *apptypes.App, airgapRoot string, airgapBundlePath stri
 	}
 	defer os.RemoveAll(archiveDir)
 
-	beforeKotsKinds, err := kotsutil.LoadKotsKindsFromPath(archiveDir)
+	beforeKotsKinds, err := kotsutil.LoadKotsKindsFromPath(filepath.Join(archiveDir, "upstream"))
 	if err != nil {
 		return errors.Wrap(err, "failed to load current kotskinds")
 	}
@@ -173,7 +173,7 @@ func UpdateAppFromPath(a *apptypes.App, airgapRoot string, airgapBundlePath stri
 		}
 	}
 
-	afterKotsKinds, err := kotsutil.LoadKotsKindsFromPath(archiveDir)
+	afterKotsKinds, err := kotsutil.LoadKotsKindsFromPath(filepath.Join(archiveDir, "upstream"))
 	if err != nil {
 		return errors.Wrap(err, "failed to read after kotskinds")
 	}
