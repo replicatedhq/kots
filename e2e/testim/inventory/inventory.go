@@ -65,6 +65,15 @@ func NewStrictPreflightChecks() Test {
 	}
 }
 
+func NewConfigValidation() Test {
+	return Test{
+		Name:        "Config Validation",
+		Suite:       "config-validation",
+		Namespace:   "config-validation",
+		UpstreamURI: "config-validation-panda/automated",
+	}
+}
+
 func NewMinimalRBACTest() Test {
 	return Test{
 		Name:        "Minimal RBAC",

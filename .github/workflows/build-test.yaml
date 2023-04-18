@@ -807,6 +807,41 @@ jobs:
           aws-secret-access-key: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_SECRET_ACCESS_KEY }}'
 
 
+  validate-config:
+    runs-on: ubuntu-20.04
+    needs: [ enable-tests, can-run-ci, build-push-kotsadm-image, build-e2e, build-kurl-proxy, build-migrations, push-minio, push-mc, push-rqlite ]
+    strategy:
+      fail-fast: false
+      matrix:
+        k8s_version: [ v1.26.1-k3s1 ] # there's no need to run this test on multiple k3s versions
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: download e2e deps
+        uses: actions/download-artifact@v3
+        with:
+          name: e2e
+          path: e2e/bin/
+      - run: docker load -i e2e/bin/e2e-deps.tar
+      - run: chmod +x e2e/bin/*
+      - name: download kots binary
+        uses: actions/download-artifact@v3
+        with:
+          name: kots
+          path: bin/
+      - run: chmod +x bin/*
+      - uses: ./.github/actions/kots-e2e
+        with:
+          test-focus: 'Config Validation'
+          kots-namespace: 'config-validation'
+          k8s-version: '${{ matrix.k8s_version }}'
+          k8s-arguments: ${{ startsWith(matrix.k8s_version, 'v1.22') && '--egress-selector-mode disabled' || '' }}
+          testim-access-token: '${{ secrets.TESTIM_ACCESS_TOKEN }}'
+          testim-branch: ${{ github.head_ref == 'main' && 'master' || github.head_ref }}
+          aws-access-key-id: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_ACCESS_KEY_ID }}'
+          aws-secret-access-key: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_SECRET_ACCESS_KEY }}'
+
+
   validate-version-history-pagination:
     runs-on: ubuntu-20.04
     needs: [ enable-tests, can-run-ci, build-push-kotsadm-image, build-e2e, build-kurl-proxy, build-migrations, push-minio, push-mc, push-rqlite ]
@@ -2649,12 +2684,13 @@ jobs:
       - validate-range-kots-version
       - validate-multi-app-install
       - validate-airgap-smoke-test
+      - validate-strict-preflight-checks
+      - validate-config
       # non-testim tests
       - validate-minimal-rbac-override
       - validate-multi-namespace
       - validate-kots-pull
       - validate-app-version-label
-      - validate-strict-preflight-checks
       - validate-helm-install-order
       - validate-yamlescape
       - validate-no-redeploy-on-restart

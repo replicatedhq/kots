@@ -16,7 +16,9 @@ import (
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	"github.com/replicatedhq/kots/pkg/auth"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
+	configtypes "github.com/replicatedhq/kots/pkg/kotsadmconfig/types"
 	"github.com/replicatedhq/kots/pkg/logger"
+	"github.com/replicatedhq/kots/pkg/print"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -132,7 +134,8 @@ func SetConfigCmd() *cobra.Command {
 			}
 
 			response := struct {
-				Error string `json:"error"`
+				Error            string                                   `json:"error"`
+				ValidationErrors []configtypes.ConfigGroupValidationError `json:"validationErrors,omitempty"`
 			}{}
 			_ = json.Unmarshal(respBody, &response)
 
@@ -140,6 +143,10 @@ func SetConfigCmd() *cobra.Command {
 				if resp.StatusCode == http.StatusNotFound {
 					return errors.Errorf("app with slug %s not found", appSlug)
 				} else {
+					if len(response.ValidationErrors) > 0 {
+						print.ConfigValidationErrors(log, response.ValidationErrors)
+						return errors.New(response.Error)
+					}
 					return errors.Wrapf(errors.New(response.Error), "unexpected status code from %v", resp.StatusCode)
 				}
 			}

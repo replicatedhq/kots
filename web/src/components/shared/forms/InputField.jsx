@@ -16,6 +16,7 @@ const InputField = ({
   autoFocus,
   helperText,
   isFirstChange,
+  showError = false,
 }) => {
   const [show, setShow] = React.useState(false);
 
@@ -44,7 +45,7 @@ const InputField = ({
       <div className="u-position--relative">
         <input
           autoFocus={!!autoFocus}
-          className="Input"
+          className={`Input ${showError ? "has-error" : ""}`}
           type={calculateType()}
           id={id}
           placeholder={placeholder}
@@ -53,6 +54,15 @@ const InputField = ({
           onBlur={onBlur}
           onFocus={onFocus}
         />
+        {type !== "password" && showError && (
+          <span className="show-input-error">
+            <Icon
+              icon={"warning-circle-filled"}
+              size={16}
+              className="error-color"
+            />
+          </span>
+        )}
         {type === "password" && isFirstChange && (
           <span className="show-password-toggle" onClick={handleToggleShow}>
             {

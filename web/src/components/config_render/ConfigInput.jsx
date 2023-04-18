@@ -199,6 +199,7 @@ export default class ConfigInput extends React.Component {
               this.props.readonly ? "readonly" : ""
             } tw-gap-0`}
             isFirstChange={this.state.isFirstChange}
+            showError={this.props.showValidationError}
           />
         </div>
         {this.props.inputType !== "password" && this.props.default ? (
@@ -206,6 +207,11 @@ export default class ConfigInput extends React.Component {
             Default value: <span className="value"> {this.props.default} </span>
           </div>
         ) : null}
+        {this.props.showValidationError && (
+          <div className="config-input-error-message tw-mt-1 tw-text-xs">
+            {this.props.validationErrorMessage}
+          </div>
+        )}
         {this.props.repeatable && (
           <div
             className="u-marginTop--10"
