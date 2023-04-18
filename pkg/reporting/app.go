@@ -8,6 +8,7 @@ import (
 	"encoding/json"
 	"io/ioutil"
 	"os"
+	"path/filepath"
 
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/api/reporting/types"
@@ -266,7 +267,7 @@ func getDownstreamInfo(appID string) (*types.DownstreamInfo, error) {
 			return nil, errors.Wrap(err, "failed to get app version archive")
 		}
 
-		deployedKotsKinds, err := kotsutil.LoadKotsKindsFromPath(deployedArchiveDir)
+		deployedKotsKinds, err := kotsutil.LoadKotsKindsFromPath(filepath.Join(deployedArchiveDir, "upstream"))
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to load kotskinds from path")
 		}

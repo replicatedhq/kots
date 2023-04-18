@@ -300,7 +300,7 @@ func Rewrite(rewriteOptions RewriteOptions) error {
 		return errors.Wrap(err, "failed to write downstreams")
 	}
 
-	kotsKinds, err := kotsutil.LoadKotsKindsFromPath(rewriteOptions.RootDir)
+	kotsKinds, err := kotsutil.LoadKotsKindsFromPath(rewriteOptions.UpstreamPath)
 	if err != nil {
 		return errors.Wrap(err, "failed to load kotskinds")
 	}

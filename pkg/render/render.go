@@ -102,7 +102,7 @@ func (r Renderer) RenderDir(archiveDir string, a *apptypes.App, downstreams []do
 }
 
 func RenderDir(archiveDir string, a *apptypes.App, downstreams []downstreamtypes.Downstream, registrySettings registrytypes.RegistrySettings, sequence int64) error {
-	kotsKinds, err := kotsutil.LoadKotsKindsFromPath(archiveDir)
+	kotsKinds, err := kotsutil.LoadKotsKindsFromPath(filepath.Join(archiveDir, "upstream"))
 	if err != nil {
 		return errors.Wrap(err, "failed to load kotskinds from path")
 	}
