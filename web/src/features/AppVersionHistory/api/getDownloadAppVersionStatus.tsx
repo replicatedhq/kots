@@ -1,5 +1,4 @@
 import { useQuery } from "react-query";
-import { Utilities } from "@src/utilities/utilities";
 
 async function getAdminConsoleUpdateStatus({
   apiEndpoint = process.env.API_ENDPOINT,

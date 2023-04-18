@@ -7,7 +7,6 @@ import "brace/mode/yaml";
 import "brace/theme/chrome";
 
 import Loader from "../shared/Loader";
-import { Utilities } from "../../utilities/utilities";
 
 import "../../scss/components/redactors/EditRedactor.scss";
 import Icon from "../Icon";

@@ -2,7 +2,7 @@ import React from "react";
 import Modal from "react-modal";
 import Select from "react-select";
 import find from "lodash/find";
-import { Utilities, getReadableCronDescriptor } from "@src/utilities/utilities";
+import { getReadableCronDescriptor } from "@src/utilities/utilities";
 
 const SCHEDULES = [
   {

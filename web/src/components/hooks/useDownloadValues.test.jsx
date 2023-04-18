@@ -73,7 +73,6 @@ describe("useDownloadValues", () => {
         })
       );
       const testAppSlug = "testAppSlug";
-      const testToken = "testToken";
       const testSequence = 1;
       const versionLabel = "1.2.3";
       const isPending = false;

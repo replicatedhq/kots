@@ -1,5 +1,4 @@
 import { useMutation } from "react-query";
-import { Utilities } from "../../utilities/utilities";
 
 const putConfig = async ({
   _fetch = fetch,

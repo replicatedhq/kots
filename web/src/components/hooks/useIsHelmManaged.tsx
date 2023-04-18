@@ -1,5 +1,4 @@
 import { useQuery, UseQueryResult } from "react-query";
-import { Utilities } from "../../utilities/utilities";
 
 interface IsHelmManagedResponse {
   isHelmManaged: boolean;

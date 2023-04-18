@@ -15,7 +15,7 @@ import NotFound from "../static/NotFound";
 import { Dashboard } from "@features/Dashboard";
 import DownstreamTree from "../../components/tree/KotsApplicationTree";
 import AppVersionHistory from "./AppVersionHistory";
-import { isAwaitingResults, Utilities } from "../../utilities/utilities";
+import { isAwaitingResults } from "../../utilities/utilities";
 import PreflightResultPage from "../PreflightResultPage";
 import AppConfig from "../../features/AppConfig/components/AppConfig";
 import AppLicense from "./AppLicense";

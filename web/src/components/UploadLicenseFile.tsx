@@ -11,7 +11,7 @@ import isEmpty from "lodash/isEmpty";
 import keyBy from "lodash/keyBy";
 import Modal from "react-modal";
 import Select from "react-select";
-import { getFileContent, Utilities } from "../utilities/utilities";
+import { getFileContent } from "../utilities/utilities";
 import CodeSnippet from "./shared/CodeSnippet";
 import LicenseUploadProgress from "./LicenseUploadProgress";
 

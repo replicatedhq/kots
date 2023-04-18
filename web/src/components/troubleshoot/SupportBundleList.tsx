@@ -12,7 +12,6 @@ import SupportBundleRow from "./SupportBundleRow";
 import GenerateSupportBundle from "./GenerateSupportBundle";
 import ConfigureRedactorsModal from "./ConfigureRedactorsModal";
 import ErrorModal from "../modals/ErrorModal";
-import { Utilities } from "../../utilities/utilities";
 import { Repeater } from "@src/utilities/repeater";
 import "../../scss/components/troubleshoot/SupportBundleList.scss";
 import Icon from "../Icon";

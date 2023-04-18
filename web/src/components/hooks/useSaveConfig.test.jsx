@@ -60,7 +60,6 @@ describe("useSaveConfig", () => {
         })
       );
       const testAppSlug = "testAppSlug";
-      const testToken = "testToken";
       const testAPIEndpoint = "testAPIEndpoint";
       const testPutConfig = {
         _fetch: testFetch,

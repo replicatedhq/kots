@@ -1,7 +1,6 @@
 import React, { useEffect, useReducer } from "react";
 import Modal from "react-modal";
 import CodeSnippet from "@components/shared/CodeSnippet";
-import { Utilities } from "@src/utilities/utilities";
 import { useHistory } from "react-router";
 import { App, LicenseFile, KotsParams, SupportBundle } from "@types";
 // @ts-ignore

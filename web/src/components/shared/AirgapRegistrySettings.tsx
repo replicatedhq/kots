@@ -6,7 +6,6 @@ import Loader from "../shared/Loader";
 import ErrorModal from "../modals/ErrorModal";
 import Modal from "react-modal";
 import "../../scss/components/watches/WatchDetailPage.scss";
-import { Utilities } from "../../utilities/utilities";
 import { Repeater } from "../../utilities/repeater";
 import Icon from "../Icon";
 import { App, KotsParams } from "@types";
