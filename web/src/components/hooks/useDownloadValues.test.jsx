@@ -122,7 +122,6 @@ describe("useDownloadValues", () => {
       const testAPIEndpoint = "testAPIEndpoint";
       const testGetValuesConfig = {
         _fetch: _fetchValuesSpy,
-        _token: testToken,
         apiEndpoint: testAPIEndpoint,
         appSlug: testAppSlug,
         sequence: testSequence,
@@ -145,11 +144,9 @@ describe("useDownloadValues", () => {
 
       const testAppSlug = "testAppSlug";
       const testSequence = 1;
-      const testToken = "testToken";
       const testAPIEndpoint = "testAPIEndpoint";
       const testGetValuesConfig = {
         _fetch: _fetchValuesSpy,
-        _token: testToken,
         apiEndpoint: testAPIEndpoint,
         appSlug: testAppSlug,
         sequence: testSequence,
@@ -164,11 +161,9 @@ describe("useDownloadValues", () => {
         Promise.reject(new Error("Error fetching"))
       );
 
-      const testToken = "testToken";
       const testAPIEndpoint = "testAPIEndpoint";
       const testGetValuesConfig = {
         _fetch: _fetchValuesSpy,
-        _token: testToken,
         apiEndpoint: testAPIEndpoint,
       };
 

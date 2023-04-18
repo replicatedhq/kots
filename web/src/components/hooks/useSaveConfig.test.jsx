@@ -77,6 +77,7 @@ describe("useSaveConfig", () => {
         headers: {
           "Content-Type": "application/json",
         },
+        credentials: "include",
         body: testBody,
       };
       await expect(putConfig(testPutConfig)).resolves.toEqual(expectedResponse);
