@@ -1,6 +1,7 @@
 package validation
 
 import (
+	"github.com/pkg/errors"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	configtypes "github.com/replicatedhq/kots/pkg/kotsadmconfig/types"
 )
@@ -45,7 +46,7 @@ func validate(value string, itemValidation kotsv1beta1.ConfigItemValidation) ([]
 	for _, v := range validators {
 		validationErr, err := v.Validate(value)
 		if err != nil {
-			return nil, err
+			return nil, errors.Wrap(err, "failed to validate")
 		}
 
 		if validationErr != nil {
