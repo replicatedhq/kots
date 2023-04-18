@@ -2,6 +2,7 @@ package kotsstore
 
 import (
 	"fmt"
+	"strconv"
 	"time"
 
 	"github.com/pkg/errors"
@@ -79,6 +80,12 @@ func (s *KOTSStore) SaveReportingInfo(licenseID string, reportingInfo *reporting
 
 	createdAt := time.Now().UTC()
 
+	// not using the "cursor" packages because it doesn't provide access to the underlying int64
+	downstreamSequence, err := strconv.ParseUint(reportingInfo.Downstream.Cursor, 10, 64)
+	if err != nil {
+		logger.Debugf("failed to parse downstream cursor %q: %v", reportingInfo.Downstream.Cursor, err)
+	}
+
 	query := `
 	INSERT INTO instance_report (
 		created_at,
@@ -148,7 +155,7 @@ func (s *KOTSStore) SaveReportingInfo(licenseID string, reportingInfo *reporting
 			reportingInfo.KURLInstallID,
 			reportingInfo.IsGitOpsEnabled,
 			reportingInfo.GitOpsProvider,
-			reportingInfo.Downstream.Cursor,
+			downstreamSequence,
 			reportingInfo.Downstream.ChannelID,
 			reportingInfo.Downstream.ChannelName,
 			reportingInfo.Downstream.Sequence,
