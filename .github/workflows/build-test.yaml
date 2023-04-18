@@ -832,7 +832,7 @@ jobs:
       - run: chmod +x bin/*
       - uses: ./.github/actions/kots-e2e
         with:
-          test-focus: 'Config validation'
+          test-focus: 'Config Validation'
           kots-namespace: 'config-validation'
           k8s-version: '${{ matrix.k8s_version }}'
           k8s-arguments: ${{ startsWith(matrix.k8s_version, 'v1.22') && '--egress-selector-mode disabled' || '' }}
