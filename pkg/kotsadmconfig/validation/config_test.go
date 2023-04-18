@@ -422,57 +422,6 @@ func Test_validateConfigGroup(t *testing.T) {
 	}
 }
 
-// func Test_hasConfigItemValidators(t *testing.T) {
-// 	type args struct {
-// 		configSpec kotsv1beta1.ConfigSpec
-// 	}
-// 	tests := []struct {
-// 		name string
-// 		args args
-// 		want bool
-// 	}{
-// 		{
-// 			name: "has validators",
-// 			args: args{
-// 				configSpec: kotsv1beta1.ConfigSpec{
-// 					Groups: []kotsv1beta1.ConfigGroup{
-// 						{
-// 							Items: []kotsv1beta1.ConfigItem{
-// 								validRegexConfigItem,
-// 								noValidationConfigItem,
-// 								regexMatchFailedConfigItem,
-// 							},
-// 						},
-// 					},
-// 				},
-// 			},
-// 			want: true,
-// 		},
-// 		{
-// 			name: "no validators",
-// 			args: args{
-// 				configSpec: kotsv1beta1.ConfigSpec{
-// 					Groups: []kotsv1beta1.ConfigGroup{
-// 						{
-// 							Items: []kotsv1beta1.ConfigItem{
-// 								noValidationConfigItem,
-// 							},
-// 						},
-// 					},
-// 				},
-// 			},
-// 			want: false,
-// 		},
-// 	}
-// 	for _, tt := range tests {
-// 		t.Run(tt.name, func(t *testing.T) {
-// 			if got := hasConfigItemValidators(tt.args.configSpec); got != tt.want {
-// 				t.Errorf("hasConfigItemValidators() = %v, want %v", got, tt.want)
-// 			}
-// 		})
-// 	}
-// }
-
 func TestValidateConfigSpec(t *testing.T) {
 	type args struct {
 		configSpec kotsv1beta1.ConfigSpec
