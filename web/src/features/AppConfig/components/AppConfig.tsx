@@ -497,13 +497,14 @@ class AppConfig extends Component<Props, State> {
       Boolean(
         groups?.find((group) =>
           Boolean(
-            group?.items?.find(
-              (item) =>
-                item.hidden !== true &&
-                item.required &&
-                !item.value &&
-                item?.when !== "false"
-            )
+            group?.when !== "false" &&
+              group?.items?.find(
+                (item) =>
+                  item.hidden !== true &&
+                  item.required &&
+                  !item.value &&
+                  item?.when !== "false"
+              )
           )
         )
       );
