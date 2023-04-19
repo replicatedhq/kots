@@ -495,9 +495,10 @@ class AppConfig extends Component<Props, State> {
     const hasRequiredValidationError =
       showErrorsForEmptyValues &&
       Boolean(
-        groups?.find((group) =>
-          Boolean(
+        groups?.find(
+          (group) =>
             group?.when !== "false" &&
+            Boolean(
               group?.items?.find(
                 (item) =>
                   item.hidden !== true &&
@@ -505,7 +506,7 @@ class AppConfig extends Component<Props, State> {
                   !item.value &&
                   item?.when !== "false"
               )
-          )
+            )
         )
       );
 
