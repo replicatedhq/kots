@@ -495,12 +495,16 @@ class AppConfig extends Component<Props, State> {
     const hasRequiredValidationError =
       showErrorsForEmptyValues &&
       Boolean(
-        groups.find((group) =>
-          Boolean(group?.items.find((item) => item.required && !item.value))
-        )
+        groups?.find((group) => Boolean(group?.items?.find(
+            (item) =>
+              item.hidden !== true &&
+              item.required &&
+              !item.value &&
+              item?.when !== "false"
+          )))
       );
 
-    const newGroups = groups.map((group: ConfigGroup) => {
+    const newGroups = groups?.map((group: ConfigGroup) => {
       const newGroup = { ...group };
       const configGroupValidationErrors = validationErrors?.find(
         (validationError) => validationError.name === group.name
@@ -595,7 +599,7 @@ class AppConfig extends Component<Props, State> {
         // track errors at the form level
         this.setState({ showValidationError: false });
 
-        // // merge validation errors and config group
+        // merge validation errors and config group
         const [newGroups, hasValidationError] =
           this.mergeConfigGroupsAndValidationErrors(
             data.configGroups,
