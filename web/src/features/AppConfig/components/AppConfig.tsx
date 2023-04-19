@@ -495,13 +495,17 @@ class AppConfig extends Component<Props, State> {
     const hasRequiredValidationError =
       showErrorsForEmptyValues &&
       Boolean(
-        groups?.find((group) => Boolean(group?.items?.find(
-            (item) =>
-              item.hidden !== true &&
-              item.required &&
-              !item.value &&
-              item?.when !== "false"
-          )))
+        groups?.find((group) =>
+          Boolean(
+            group?.items?.find(
+              (item) =>
+                item.hidden !== true &&
+                item.required &&
+                !item.value &&
+                item?.when !== "false"
+            )
+          )
+        )
       );
 
     const newGroups = groups?.map((group: ConfigGroup) => {
