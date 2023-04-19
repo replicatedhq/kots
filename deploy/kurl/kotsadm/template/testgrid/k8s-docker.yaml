@@ -93,7 +93,7 @@
 - name: "upgrade from 1.49 into disableS3"
   installerSpec:
     kubernetes:
-      version: "1.26.x"
+      version: "1.24.x"
     containerd:
       version: "latest"
     flannel:
@@ -110,7 +110,7 @@
       version: 1.49.0
   upgradeSpec:
     kubernetes:
-      version: "1.26.x"
+      version: "1.24.x"
     containerd:
       version: "latest"
     flannel:
