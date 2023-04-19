@@ -53,10 +53,6 @@ func requireValidSession(kotsStore store.Store, w http.ResponseWriter, r *http.R
 	}
 
 	auth := r.Header.Get("authorization")
-	//TODO: remove once FE no longer sends Authorization header
-	if auth == "undefined" {
-		auth = ""
-	}
 
 	if auth == "" {
 		signedTokenCookie, err := r.Cookie("signed-token")

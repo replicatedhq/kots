@@ -11,10 +11,6 @@ import (
 func (h *Handler) Logout(w http.ResponseWriter, r *http.Request) {
 
 	auth := r.Header.Get("authorization")
-	//TODO: remove once FE no longer sends Authorization header
-	if auth == "undefined" {
-		auth = ""
-	}
 
 	if auth == "" {
 		signedTokenCookie, err := r.Cookie("signed-token")
