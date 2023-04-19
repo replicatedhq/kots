@@ -1,43 +1,47 @@
 - name: "minimal rook"
   installerSpec:
     kubernetes:
-      version: "latest"
-    weave:
-      version: "latest"
-    rook:
-      version: 1.7.x
+      version: "1.26.x"
     containerd:
       version: "latest"
+    flannel:
+      version: "latest"
+    rook:
+      version: 1.11.x
     kotsadm:
       version: "__testver__"
       s3Override: "__testdist__"
 - name: "minimal disableS3"
   installerSpec:
     kubernetes:
-      version: "latest"
-    weave:
-      version: "latest"
-    longhorn:
-      version: latest
+      version: "1.26.x"
     containerd:
       version: "latest"
+    flannel:
+      version: "latest"
+    openebs:
+      version: "latest"
+      isLocalPVEnabled: true
+      localPVStorageClassName: "local"
     registry:
       version: "latest"
     kotsadm:
       version: "__testver__"
       s3Override: "__testdist__"
       disableS3: true
-- name: "all optional addons longhorn"
+- name: "all optional addons openebs"
   installerSpec:
     kubernetes:
-      version: "latest"
-    weave:
-      version: "latest"
-    longhorn:
-      version: "latest"
-    minio: 
-      version: "latest"
+      version: "1.26.x"
     containerd:
+      version: "latest"
+    flannel:
+      version: "latest"
+    openebs:
+      version: "latest"
+      isLocalPVEnabled: true
+      localPVStorageClassName: "local"
+    minio: 
       version: "latest"
     velero: 
       version: "latest"
@@ -49,14 +53,16 @@
 - name: "upgrade from 1.49"
   installerSpec:
     kubernetes:
-      version: "latest"
-    weave:
-      version: "latest"
-    longhorn:
-      version: "latest"
-    minio:
-      version: "latest"
+      version: "1.26.x"
     containerd:
+      version: "latest"
+    flannel:
+      version: "latest"
+    openebs:
+      version: "latest"
+      isLocalPVEnabled: true
+      localPVStorageClassName: "local"
+    minio:
       version: "latest"
     velero: 
       version: "latest"
@@ -66,14 +72,16 @@
       version: 1.49.0
   upgradeSpec:
     kubernetes:
-      version: "latest"
-    weave:
-      version: "latest"
-    longhorn:
-      version: "latest"
-    minio:
-      version: "latest"
+      version: "1.26.x"
     containerd:
+      version: "latest"
+    flannel:
+      version: "latest"
+    openebs:
+      version: "latest"
+      isLocalPVEnabled: true
+      localPVStorageClassName: "local"
+    minio:
       version: "latest"
     velero: 
       version: "latest"
@@ -85,14 +93,14 @@
 - name: "upgrade from 1.49 into disableS3"
   installerSpec:
     kubernetes:
+      version: "1.26.x"
+    containerd:
       version: "latest"
-    weave:
+    flannel:
       version: "latest"
-    longhorn:
+    longhorn: # openebs does not support velero internal backups
       version: "latest"
     minio:
-      version: "latest"
-    containerd:
       version: "latest"
     velero: 
       version: "latest"
@@ -102,12 +110,12 @@
       version: 1.49.0
   upgradeSpec:
     kubernetes:
-      version: "latest"
-    weave:
-      version: "latest"
-    longhorn:
-      version: "latest"
+      version: "1.26.x"
     containerd:
+      version: "latest"
+    flannel:
+      version: "latest"
+    longhorn: # openebs does not support velero internal backups
       version: "latest"
     velero: 
       version: "latest"
@@ -121,13 +129,13 @@
   airgap: true
   installerSpec:
     kubernetes:
-      version: "latest"
-    weave:
-      version: "latest"
-    rook:
-      version: 1.7.x
+      version: "1.26.x"
     containerd:
       version: "latest"
+    flannel:
+      version: "latest"
+    rook:
+      version: 1.11.x
     kotsadm:
       version: "__testver__"
       s3Override: "__testdist__"
@@ -135,13 +143,15 @@
   airgap: true
   installerSpec:
     kubernetes:
-      version: "latest"
-    weave:
-      version: "latest"
-    longhorn:
-      version: latest
+      version: "1.26.x"
     containerd:
       version: "latest"
+    flannel:
+      version: "latest"
+    openebs:
+      version: "latest"
+      isLocalPVEnabled: true
+      localPVStorageClassName: "local"
     registry:
       version: "latest"
     kotsadm:
