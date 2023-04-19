@@ -166,3 +166,70 @@ func Test_buildValidators(t *testing.T) {
 		})
 	}
 }
+
+func Test_isValidatableConfigGroup(t *testing.T) {
+	type args struct {
+		group kotsv1beta1.ConfigGroup
+	}
+	tests := []struct {
+		name string
+		args args
+		want bool
+	}{
+		{
+			name: "expect false when group.when is false",
+			args: args{
+				group: kotsv1beta1.ConfigGroup{
+					When: "false",
+				},
+			},
+			want: false,
+		}, {
+			name: "expect false when group.when is true and group.items is empty",
+			args: args{
+				group: kotsv1beta1.ConfigGroup{
+					When: "true",
+				},
+			},
+			want: false,
+		}, {
+			name: "expect true when group.when is true and group.items is not empty",
+			args: args{
+				group: kotsv1beta1.ConfigGroup{
+					When: "true",
+					Items: []kotsv1beta1.ConfigItem{
+						{
+							Name: "foo",
+						},
+					},
+				},
+			},
+			want: true,
+		}, {
+			name: "expect true when group.when is empty and group.items is not empty",
+			args: args{
+				group: kotsv1beta1.ConfigGroup{
+					Items: []kotsv1beta1.ConfigItem{
+						{
+							Name: "foo",
+						},
+					},
+				},
+			},
+			want: true,
+		}, {
+			name: "expect false when group.when is empty and group.items is empty",
+			args: args{
+				group: kotsv1beta1.ConfigGroup{},
+			},
+			want: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := isValidatableConfigGroup(tt.args.group); got != tt.want {
+				t.Errorf("isValidatableConfigGroup() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}

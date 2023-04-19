@@ -16,6 +16,18 @@ var (
 	}
 )
 
+func isValidatableConfigGroup(group kotsv1beta1.ConfigGroup) bool {
+	if group.When == "false" {
+		return false
+	}
+
+	if len(group.Items) == 0 {
+		return false
+	}
+
+	return true
+}
+
 func isValidatableConfigItem(item kotsv1beta1.ConfigItem) bool {
 	if item.Validation == nil {
 		return false
