@@ -763,7 +763,7 @@ func GetAppMetadataFromAirgap(airgapArchive string) (*replicatedapp.ApplicationM
 		return nil, errors.Wrap(err, "failed to extract app archive")
 	}
 
-	kotsKinds, err := kotsutil.LoadKotsKindsFromPath(filepath.Join(tempDir, "upstream"))
+	kotsKinds, err := kotsutil.LoadKotsKindsFromPath(tempDir)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to read kots kinds")
 	}
