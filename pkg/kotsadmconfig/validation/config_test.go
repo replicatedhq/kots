@@ -406,6 +406,37 @@ func Test_validateConfigGroup(t *testing.T) {
 					},
 				},
 			},
+		}, {
+			name: "expect no error for empty config group",
+			args: args{
+				configGroup: kotsv1beta1.ConfigGroup{
+					Name:  "test",
+					Items: []kotsv1beta1.ConfigItem{},
+				},
+			},
+			want: nil,
+		}, {
+			name: "expect no error for nil config group",
+			args: args{
+				configGroup: kotsv1beta1.ConfigGroup{
+					Name: "test",
+				},
+			},
+			want: nil,
+		}, {
+			name: "expect no error for group with items and group.when is false",
+			args: args{
+				configGroup: kotsv1beta1.ConfigGroup{
+					Name: "test",
+					When: "false",
+					Items: []kotsv1beta1.ConfigItem{
+						validRegexConfigItem,
+						regexMatchFailedConfigItem,
+						noValidationConfigItem,
+					},
+				},
+			},
+			want: nil,
 		},
 	}
 	for _, tt := range tests {

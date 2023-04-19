@@ -23,6 +23,10 @@ func ValidateConfigSpec(configSpec kotsv1beta1.ConfigSpec) ([]configtypes.Config
 }
 
 func validateConfigGroup(configGroup kotsv1beta1.ConfigGroup) (*configtypes.ConfigGroupValidationError, error) {
+	if !isValidatableConfigGroup(configGroup) {
+		return nil, nil
+	}
+
 	configItemErrors, err := validateConfigItems(configGroup.Items)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to validate config items")
