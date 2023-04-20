@@ -403,6 +403,7 @@ require (
 )
 
 replace (
+	github.com/Azure/azure-sdk-for-go => github.com/Azure/azure-sdk-for-go v67.3.0+incompatible
 	github.com/Azure/azure-sdk-for-go/sdk/azcore => github.com/Azure/azure-sdk-for-go/sdk/azcore v0.21.1
 	github.com/Azure/azure-sdk-for-go/sdk/internal => github.com/Azure/azure-sdk-for-go/sdk/internal v0.8.3
 	github.com/chai2010/gettext-go => github.com/chai2010/gettext-go v0.0.0-20160711120539-c6fed771bfd5
