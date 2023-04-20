@@ -134,7 +134,7 @@ func DownloadUpdate(appID string, update types.Update, skipPreflights bool, skip
 		return
 	}
 
-	beforeCursor := beforeKotsKinds.Installation.Spec.UpdateCursor
+	beforeInstallation := beforeKotsKinds.Installation.Spec
 
 	pipeReader, pipeWriter := io.Pipe()
 	defer func() {
@@ -245,7 +245,7 @@ func DownloadUpdate(appID string, update types.Update, skipPreflights bool, skip
 			finalError = errors.Wrap(err, "failed to read kots kinds after update")
 			return
 		}
-		if afterKotsKinds.Installation.Spec.UpdateCursor == beforeCursor {
+		if afterKotsKinds.Installation.Spec.UpdateCursor == beforeInstallation.UpdateCursor && afterKotsKinds.Installation.Spec.ChannelID == beforeInstallation.ChannelID {
 			return
 		}
 		newSequence, err := store.GetStore().CreateAppVersion(a.ID, &baseSequence, archiveDir, "Upstream Update", skipPreflights, &version.DownstreamGitOps{}, render.Renderer{})
