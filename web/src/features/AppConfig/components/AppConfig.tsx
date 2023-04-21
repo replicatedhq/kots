@@ -58,6 +58,7 @@ interface ConfigGroupItemValidationError {
 }
 
 type ConfigGroupItem = {
+  default: string;
   error: string;
   hidden: boolean;
   name: string;
@@ -504,6 +505,7 @@ class AppConfig extends Component<Props, State> {
                   item.hidden !== true &&
                   item.required &&
                   !item.value &&
+                  !item.default &&
                   item?.when !== "false"
               )
             )
