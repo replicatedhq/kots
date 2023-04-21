@@ -86,7 +86,6 @@ type State = {
   showValidationError: boolean;
   initialConfigGroups: ConfigGroup[];
   savingConfig: boolean;
-  showErrorsForEmptyValues: boolean;
   showHelmDeployModal: boolean;
   showNextStepModal: boolean;
 };
@@ -116,7 +115,6 @@ class AppConfig extends Component<Props, State> {
       showValidationError: false,
       initialConfigGroups: [],
       savingConfig: false,
-      showErrorsForEmptyValues: false,
       showHelmDeployModal: false,
       showNextStepModal: false,
     };
@@ -343,7 +341,6 @@ class AppConfig extends Component<Props, State> {
     this.setState({
       savingConfig: true,
       configError: false,
-      showErrorsForEmptyValues: true,
     });
 
     const { fromLicenseFlow, history, match, isHelmManaged } = this.props;
@@ -382,7 +379,6 @@ class AppConfig extends Component<Props, State> {
             this.mergeConfigGroupsAndValidationErrors(
               this.state.configGroups,
               validationErrors,
-              this.state.showErrorsForEmptyValues
             );
 
           this.setState({
@@ -479,7 +475,6 @@ class AppConfig extends Component<Props, State> {
   mergeConfigGroupsAndValidationErrors = (
     groups: ConfigGroup[],
     validationErrors: ConfigGroupItemValidationErrors[],
-    showErrorsForEmptyValues: boolean
   ): [ConfigGroup[], boolean] => {
     let hasValidationError = false;
 
@@ -502,9 +497,7 @@ class AppConfig extends Component<Props, State> {
             );
 
           if (
-            itemValidationError &&
-            (item.value || // show error if there is a value
-              showErrorsForEmptyValues) // show errors for empty values if submission attempted
+            itemValidationError
           ) {
             item.validationError =
               itemValidationError?.validation_errors?.[0]?.message;
@@ -571,7 +564,6 @@ class AppConfig extends Component<Props, State> {
           this.mergeConfigGroupsAndValidationErrors(
             data.configGroups,
             validationErrors,
-            this.state.showErrorsForEmptyValues
           );
 
         this.setState({
