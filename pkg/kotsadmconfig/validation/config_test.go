@@ -139,6 +139,18 @@ var (
 			},
 		},
 	}
+	requiredTrueValueEmptyConfigItem = kotsv1beta1.ConfigItem{
+		Name:     "requiredFalseValueEmptyConfigItem",
+		Type:     "text",
+		Value:    multitype.BoolOrString{StrVal: ""},
+		Required: true,
+		Validation: &kotsv1beta1.ConfigItemValidation{
+			Regex: &kotsv1beta1.RegexValidator{
+				Pattern: "^[a-z]+$",
+				Message: "must be a valid regex",
+			},
+		},
+	}
 	regexMatchFailedRequiredConfigItem = kotsv1beta1.ConfigItem{
 		Name:  "regexMatchFailedConfigItem",
 		Type:  "text",
@@ -235,6 +247,12 @@ func Test_validateConfigItem(t *testing.T) {
 			name: "expect no error when required is false and value is empty",
 			args: args{
 				item: requiredFalseValueEmptyConfigItem,
+			},
+			want: nil,
+		}, {
+			name: "expect no error when required is true and value is empty",
+			args: args{
+				item: requiredTrueValueEmptyConfigItem,
 			},
 			want: nil,
 		}, {
