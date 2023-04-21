@@ -49,10 +49,6 @@ func isValidatableConfigItem(item kotsv1beta1.ConfigItem) bool {
 		return false
 	}
 
-	if item.Value.String() == "" {
-		return false
-	}
-
 	return true
 }
 
