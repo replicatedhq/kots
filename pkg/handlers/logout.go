@@ -10,17 +10,13 @@ import (
 
 func (h *Handler) Logout(w http.ResponseWriter, r *http.Request) {
 
-	auth := r.Header.Get("authorization")
+	signedTokenCookie, err := r.Cookie("signed-token")
 
-	if auth == "" {
-		signedTokenCookie, err := r.Cookie("signed-token")
-
-		if err == http.ErrNoCookie && auth == "" {
-			w.WriteHeader(http.StatusNoContent)
-			return
-		}
-		auth = signedTokenCookie.Value
+	if err == http.ErrNoCookie {
+		w.WriteHeader(http.StatusNoContent)
+		return
 	}
+	auth := signedTokenCookie.Value
 
 	sess, err := session.Parse(store.GetStore(), auth)
 	if err != nil {

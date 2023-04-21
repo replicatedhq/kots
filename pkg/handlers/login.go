@@ -112,7 +112,7 @@ func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 
 	responseToken := fmt.Sprintf("Bearer %s", signedJWT)
 
-	expire := time.Now().Add(24 * time.Hour)
+	expire := time.Now().Add(SessionTimeout)
 	tokenCookie := http.Cookie{
 		Name:     "signed-token",
 		Value:    responseToken,
