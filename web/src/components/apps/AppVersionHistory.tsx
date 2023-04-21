@@ -144,6 +144,8 @@ type State = {
   versionToDeploy: Version | null;
   viewLogsErrMsg: string;
   yamlErrorDetails: string[];
+
+  preflightState: string;
 };
 
 const filterNonHelmTabs = (tab: string, isHelmManaged: boolean) => {
@@ -218,6 +220,8 @@ class AppVersionHistory extends Component<Props, State> {
       versionToDeploy: null,
       viewLogsErrMsg: "",
       yamlErrorDetails: [],
+
+      preflightState: "",
     };
   }
 
@@ -1600,6 +1604,9 @@ class AppVersionHistory extends Component<Props, State> {
     }
     if (preflightState === "") {
       this.setState({ hasPreflightChecks: false });
+    } else {
+      console.log("ok");
+      this.setState({ preflightState: preflightState });
     }
   };
 
@@ -1689,10 +1696,12 @@ class AppVersionHistory extends Component<Props, State> {
 
     const renderVersionLabel = () => {
       let shorten = "";
+      let isTruncated = false;
       const { versionLabel } = currentDownstreamVersion;
       if (currentDownstreamVersion && versionLabel) {
         if (versionLabel.length > 18) {
           shorten = `${versionLabel.slice(0, 15)}...`;
+          isTruncated = true;
         } else {
           shorten = versionLabel;
         }
@@ -1705,8 +1714,12 @@ class AppVersionHistory extends Component<Props, State> {
           <p className="u-fontSize--header2 u-fontWeight--bold card-item-title u-marginTop--5 u-position--relative">
             {shorten}
           </p>{" "}
-          <Icon icon="info" size={16} data-tip={versionLabel} />
-          <ReactTooltip effect="solid" className="replicated-tooltip" />
+          {isTruncated && (
+            <>
+              <Icon icon="info" size={16} data-tip={versionLabel} />
+              <ReactTooltip effect="solid" className="replicated-tooltip" />
+            </>
+          )}
         </div>
       );
     };
@@ -1803,7 +1816,7 @@ class AppVersionHistory extends Component<Props, State> {
                                   />
                                 </div>
                               )}
-                              {this.state.hasPreflightChecks ? (
+                              {/* {this.state.hasPreflightChecks ? (
                                 <div className="u-marginRight--5">
                                   <Link
                                     to={`/app/${app?.slug}/downstreams/${app.downstream.cluster?.slug}/version-history/preflight/${currentDownstreamVersion?.sequence}`}
@@ -1824,7 +1837,7 @@ class AppVersionHistory extends Component<Props, State> {
                                     className="replicated-tooltip"
                                   />
                                 </div>
-                              ) : null}
+                              ) : null} */}
                               {app ? (
                                 <div>
                                   <span
@@ -1853,26 +1866,31 @@ class AppVersionHistory extends Component<Props, State> {
                                   />
                                 </div>
                               ) : null}
-                              {currentDownstreamVersion?.status === "failed" ? (
+                              {this.state.preflightState === "fail" ? (
                                 <div className="u-position--relative u-marginLeft--10 u-marginRight--10">
-                                  <Icon
-                                    icon="preflight-checks"
-                                    size={22}
-                                    className="clickable"
-                                    color={""}
-                                    style={{}}
-                                    disableFill={false}
-                                    removeInlineStyle={false}
-                                  />
-                                  <Icon
-                                    icon={"warning-circle-filled"}
-                                    size={12}
-                                    className="version-row-preflight-status-icon warning-color"
-                                    style={{ left: "15px", top: "-6px" }}
-                                    color={""}
-                                    disableFill={false}
-                                    removeInlineStyle={false}
-                                  />
+                                  <Link
+                                    to={`/app/${app?.slug}/downstreams/${app.downstream.cluster?.slug}/version-history/preflight/${currentDownstreamVersion?.sequence}`}
+                                    data-tip="View preflight checks"
+                                  >
+                                    <Icon
+                                      icon="preflight-checks"
+                                      size={22}
+                                      className="clickable"
+                                      color={""}
+                                      style={{}}
+                                      disableFill={false}
+                                      removeInlineStyle={false}
+                                    />
+                                    <Icon
+                                      icon={"warning-circle-filled"}
+                                      size={12}
+                                      className="version-row-preflight-status-icon warning-color"
+                                      style={{ left: "15px", top: "-6px" }}
+                                      color={""}
+                                      disableFill={false}
+                                      removeInlineStyle={false}
+                                    />
+                                  </Link>
                                 </div>
                               ) : null}
                               {app.isConfigurable && (
