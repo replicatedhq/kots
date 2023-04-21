@@ -482,7 +482,7 @@ class AppConfig extends Component<Props, State> {
         (validationError) => validationError.name === group.name
       );
 
-      if (configGroupValidationErrors /*|| hasRequiredValidationError*/) {
+      if (configGroupValidationErrors) {
         newGroup.items = newGroup?.items?.map((item: ConfigGroupItem) => {
           const itemValidationError =
             configGroupValidationErrors?.item_errors?.find(
