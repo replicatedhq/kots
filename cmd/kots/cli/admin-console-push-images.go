@@ -102,6 +102,7 @@ func AdminPushImagesCmd() *cobra.Command {
 					return errors.Wrap(err, "failed to push images")
 				}
 			} else if os.IsNotExist(err) {
+				log.Errorf("airgap bundle %s does not exist, needed images from the public repository will be pushed instead.", imageSource)
 				err := kotsadm.CopyImages(imageSource, options, namespace)
 				if err != nil {
 					return errors.Wrap(err, "failed to push images")
