@@ -49,14 +49,7 @@ func isValidatableConfigItem(item kotsv1beta1.ConfigItem) bool {
 		return false
 	}
 
-	// if item is not required and value is empty, no need to validate
-	if !item.Required && item.Value.String() == "" {
-		return false
-	}
-
-	// if item is require and value is empty and default value is not empty,
-	// don't validate the default value (as user has not entered a required value yet and could use the default value)
-	if item.Required && item.Value.String() == "" && item.Default.String() != "" {
+	if item.Value.String() == "" {
 		return false
 	}
 
