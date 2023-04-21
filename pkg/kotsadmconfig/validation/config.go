@@ -68,6 +68,10 @@ func validateConfigItem(item kotsv1beta1.ConfigItem) (*configtypes.ConfigItemVal
 		return nil, errors.Wrap(err, "failed to get validatable value")
 	}
 
+	if validatableValue == "" {
+		return nil, nil
+	}
+
 	validationErrors, err := validate(validatableValue, *item.Validation)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to validate value")
