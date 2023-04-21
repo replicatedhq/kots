@@ -340,22 +340,6 @@ class AppConfig extends Component<Props, State> {
   };
 
   handleSave = async () => {
-    const [newConfigGroups, hasRequiredFieldError] =
-      this.mergeConfigGroupsAndValidationErrors(
-        this.state.configGroups,
-        [],
-        true
-      );
-
-    if (hasRequiredFieldError) {
-      this.setState({
-        configGroups: newConfigGroups,
-        showErrorsForEmptyValues: true,
-        showValidationError: true,
-      });
-      return;
-    }
-
     this.setState({
       savingConfig: true,
       configError: false,
@@ -492,50 +476,15 @@ class AppConfig extends Component<Props, State> {
   ): [ConfigGroup[], boolean] => {
     let hasValidationError = false;
 
-    // this is gated by showErrorsForEmptyValues which is set when save is attempted
-    const hasRequiredValidationError =
-      showErrorsForEmptyValues &&
-      Boolean(
-        groups?.find(
-          (group) =>
-            group?.when !== "false" &&
-            Boolean(
-              group?.items?.find(
-                (item) =>
-                  item.hidden !== true &&
-                  item.required &&
-                  !item.value &&
-                  !item.default &&
-                  item?.when !== "false"
-              )
-            )
-        )
-      );
-
     const newGroups = groups?.map((group: ConfigGroup) => {
       const newGroup = { ...group };
       const configGroupValidationErrors = validationErrors?.find(
         (validationError) => validationError.name === group.name
       );
 
-      if (configGroupValidationErrors || hasRequiredValidationError) {
+      if (configGroupValidationErrors /*|| hasRequiredValidationError*/) {
         newGroup.items = newGroup?.items?.map((item: ConfigGroupItem) => {
-          // create requiredValidationError if the item is required and has no value
-          const requiredValidationError: ConfigGroupItemValidationError | null =
-            hasRequiredValidationError && item.required && !item.value
-              ? {
-                  name: item.name,
-                  validation_errors: [
-                    {
-                      message: "This item is required",
-                    },
-                  ],
-                }
-              : null;
-
-          // show the requiredValidationError before the vendor supplied error message
           const itemValidationError =
-            requiredValidationError ||
             configGroupValidationErrors?.item_errors?.find(
               (validationError) => validationError.name === item.name
             );
@@ -546,9 +495,7 @@ class AppConfig extends Component<Props, State> {
               showErrorsForEmptyValues) // show errors for empty values if submission attempted
           ) {
             item.validationError =
-              requiredValidationError !== null
-                ? requiredValidationError?.validation_errors?.[0]?.message
-                : itemValidationError?.validation_errors?.[0]?.message;
+              itemValidationError?.validation_errors?.[0]?.message;
             newGroup.hasError = true;
             // if there is an error, then block form submission with state.hasValidationError
             if (!hasValidationError) {
