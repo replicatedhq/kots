@@ -369,6 +369,13 @@ class AppConfig extends Component<Props, State> {
         this.setState({ savingConfig: false });
 
         if (!result.success) {
+          if (result.requiredItems?.length) {
+            this.markRequiredItems(result.requiredItems);
+          }
+          if (result.error) {
+            this.setState({ configError: result.error });
+          }
+
           const validationErrors: ConfigGroupItemValidationErrors[] =
             result.validationErrors;
           const [newGroups, hasValidationError] =
@@ -481,6 +488,11 @@ class AppConfig extends Component<Props, State> {
       const configGroupValidationErrors = validationErrors?.find(
         (validationError) => validationError.name === group.name
       );
+
+      // required errors are handled separately
+      if (group?.items?.find((item) => item.error)) {
+        newGroup.hasError = true;
+      }
 
       if (configGroupValidationErrors) {
         newGroup.items = newGroup?.items?.map((item: ConfigGroupItem) => {
@@ -786,7 +798,11 @@ class AppConfig extends Component<Props, State> {
                           return (
                             <a
                               className={`u-fontSize--normal u-lineHeight--normal
-                                ${item.validationError ? "has-error" : ""}
+                                ${
+                                  item.validationError || item.error
+                                    ? "has-error"
+                                    : ""
+                                }
                                 ${
                                   hash === `${item.name}-group`
                                     ? "active-item"
