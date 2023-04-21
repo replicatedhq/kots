@@ -9,10 +9,10 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/marccampbell/yaml-toolbox/pkg/splitter"
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/base"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
+	"github.com/replicatedhq/kots/pkg/util"
 )
 
 type WriteOptions struct {
@@ -43,7 +43,7 @@ func WriteRenderedApp(options WriteOptions) error {
 			return errors.Wrap(err, "failed to run kustomize build")
 		}
 
-		renderedAppFiles, err := splitter.SplitYAML(renderedApp)
+		renderedAppFiles, err := util.SplitYAML(renderedApp)
 		if err != nil {
 			return errors.Wrap(err, "failed to split yaml")
 		}
@@ -144,7 +144,7 @@ func GetRenderedApp(versionArchive string, downstreamName, kustomizeBinPath stri
 		return nil, nil, errors.Wrap(err, "failed to run kustomize build")
 	}
 
-	filesMap, err := splitter.SplitYAML(allContent)
+	filesMap, err := util.SplitYAML(allContent)
 	if err != nil {
 		return nil, nil, errors.Wrap(err, "failed to split yaml")
 	}

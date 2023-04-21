@@ -9,9 +9,9 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/marccampbell/yaml-toolbox/pkg/splitter"
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/logger"
+	"github.com/replicatedhq/kots/pkg/util"
 	rest "k8s.io/client-go/rest"
 )
 
@@ -151,7 +151,7 @@ func (c *Kubectl) ApplyCreateOrPatch(targetNamespace string, slug string, yamlDo
 	}
 	logger.Info("Failed to apply document: metadata too long. Splitting doc and trying again")
 
-	docs, err := splitter.SplitYAML(yamlDoc)
+	docs, err := util.SplitYAML(yamlDoc)
 	if err != nil {
 		return nil, nil, errors.Wrap(err, "split yaml")
 	}

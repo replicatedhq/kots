@@ -99,7 +99,7 @@ func TestKotsPull(t *testing.T) {
 
 			// Comment out this line to review the generated results.
 			// Just be sure to delete the 'results' directory in each test manually when finished!
-			defer func() { os.RemoveAll(tt.PullOptions.RootDir) }()
+			// defer func() { os.RemoveAll(tt.PullOptions.RootDir) }()
 
 			fmt.Printf("running test %s\n", tt.Name)
 			_, err := pull.Pull(tt.UpstreamURI, tt.PullOptions)
