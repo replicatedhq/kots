@@ -378,7 +378,7 @@ class AppConfig extends Component<Props, State> {
           const [newGroups, hasValidationError] =
             this.mergeConfigGroupsAndValidationErrors(
               this.state.configGroups,
-              validationErrors,
+              validationErrors
             );
 
           this.setState({
@@ -474,7 +474,7 @@ class AppConfig extends Component<Props, State> {
   // on save it's mostly used to find required field errors
   mergeConfigGroupsAndValidationErrors = (
     groups: ConfigGroup[],
-    validationErrors: ConfigGroupItemValidationErrors[],
+    validationErrors: ConfigGroupItemValidationErrors[]
   ): [ConfigGroup[], boolean] => {
     let hasValidationError = false;
 
@@ -496,9 +496,7 @@ class AppConfig extends Component<Props, State> {
               (validationError) => validationError.name === item.name
             );
 
-          if (
-            itemValidationError
-          ) {
+          if (itemValidationError) {
             item.validationError =
               itemValidationError?.validation_errors?.[0]?.message;
             newGroup.hasError = true;
@@ -563,7 +561,7 @@ class AppConfig extends Component<Props, State> {
         const [newGroups, hasValidationError] =
           this.mergeConfigGroupsAndValidationErrors(
             data.configGroups,
-            validationErrors,
+            validationErrors
           );
 
         this.setState({
