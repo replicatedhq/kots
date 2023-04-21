@@ -1884,7 +1884,7 @@ class AppVersionHistory extends Component<Props, State> {
                                     <Icon
                                       icon={"warning-circle-filled"}
                                       size={12}
-                                      className="version-row-preflight-status-icon warning-color"
+                                      className="version-row-preflight-status-icon error-color"
                                       style={{ left: "15px", top: "-6px" }}
                                       color={""}
                                       disableFill={false}
