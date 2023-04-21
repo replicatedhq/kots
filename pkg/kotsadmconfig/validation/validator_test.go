@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
+	"github.com/replicatedhq/kots/kotskinds/multitype"
 	configtypes "github.com/replicatedhq/kots/pkg/kotsadmconfig/types"
 )
 
@@ -21,11 +22,11 @@ func Test_isValidatableConfigItem(t *testing.T) {
 	}{
 		{
 			name: "valid",
-			item: kotsv1beta1.ConfigItem{Type: "text", Validation: validValidator},
+			item: kotsv1beta1.ConfigItem{Type: "text", Validation: validValidator, Value: multitype.BoolOrString{StrVal: "value"}},
 			want: true,
 		}, {
 			name: "valid empty type",
-			item: kotsv1beta1.ConfigItem{Validation: validValidator},
+			item: kotsv1beta1.ConfigItem{Validation: validValidator, Value: multitype.BoolOrString{StrVal: "value"}},
 			want: true,
 		}, {
 			name: "invalid type",
@@ -48,6 +49,21 @@ func Test_isValidatableConfigItem(t *testing.T) {
 		}, {
 			name: "heading",
 			item: kotsv1beta1.ConfigItem{Type: "heading", Validation: validValidator},
+		}, {
+			name: "expect false if item is required and value is empty and default is not empty",
+			item: kotsv1beta1.ConfigItem{
+				Type:       "text",
+				Required:   true,
+				Value:      multitype.BoolOrString{StrVal: ""},
+				Default:    multitype.BoolOrString{StrVal: "default"},
+				Validation: validValidator},
+		}, {
+			name: "expect false if item is not required and value is empty",
+			item: kotsv1beta1.ConfigItem{
+				Type:       "text",
+				Required:   false,
+				Value:      multitype.BoolOrString{StrVal: ""},
+				Validation: validValidator},
 		},
 	}
 	for _, tt := range tests {

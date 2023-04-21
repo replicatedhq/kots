@@ -668,17 +668,6 @@ func (h *Handler) CurrentAppConfig(w http.ResponseWriter, r *http.Request) {
 	currentAppConfigResponse.ConfigGroups = []kotsv1beta1.ConfigGroup{}
 	if renderedConfig != nil {
 		currentAppConfigResponse.ConfigGroups = renderedConfig.Spec.Groups
-		validationErrors, err := configvalidation.ValidateConfigSpec(renderedConfig.Spec)
-		if err != nil {
-			// log the error and continue to return the config, so UI can show the config
-			currentAppConfigResponse.Error = "failed to validate config spec"
-			logger.Error(errors.Wrap(err, currentAppConfigResponse.Error))
-		}
-
-		if len(validationErrors) > 0 {
-			currentAppConfigResponse.ValidationErrors = validationErrors
-			logger.Warnf("Validation errors found for config spec: %v", validationErrors)
-		}
 	}
 
 	currentAppConfigResponse.Success = true
