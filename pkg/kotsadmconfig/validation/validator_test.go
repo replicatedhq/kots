@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
+	"github.com/replicatedhq/kots/kotskinds/multitype"
 	configtypes "github.com/replicatedhq/kots/pkg/kotsadmconfig/types"
 )
 
@@ -21,11 +22,11 @@ func Test_isValidatableConfigItem(t *testing.T) {
 	}{
 		{
 			name: "valid",
-			item: kotsv1beta1.ConfigItem{Type: "text", Validation: validValidator},
+			item: kotsv1beta1.ConfigItem{Type: "text", Validation: validValidator, Value: multitype.BoolOrString{StrVal: "value"}},
 			want: true,
 		}, {
 			name: "valid empty type",
-			item: kotsv1beta1.ConfigItem{Validation: validValidator},
+			item: kotsv1beta1.ConfigItem{Validation: validValidator, Value: multitype.BoolOrString{StrVal: "value"}},
 			want: true,
 		}, {
 			name: "invalid type",

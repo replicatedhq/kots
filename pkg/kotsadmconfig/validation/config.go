@@ -68,9 +68,7 @@ func validateConfigItem(item kotsv1beta1.ConfigItem) (*configtypes.ConfigItemVal
 		return nil, errors.Wrap(err, "failed to get validatable value")
 	}
 
-	// if item is not required and value is empty, no need to validate
-	// if item is required and value is empty, need to validate to return error
-	if validatableValue == "" && !item.Required {
+	if validatableValue == "" {
 		return nil, nil
 	}
 
