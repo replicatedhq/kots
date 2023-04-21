@@ -3,6 +3,7 @@ package cli
 import (
 	"context"
 	"fmt"
+	"net/url"
 	"os"
 	"strings"
 
@@ -102,7 +103,9 @@ func AdminPushImagesCmd() *cobra.Command {
 					return errors.Wrap(err, "failed to push images")
 				}
 			} else if os.IsNotExist(err) {
-				log.Errorf("airgap bundle %s does not exist, needed images from the public repository will be pushed instead.", imageSource)
+				if _, err := url.ParseRequestURI(imageSource); err != nil {
+					log.Errorf("the given bundle %s is neither an existing file nor valid URL, only public KOTS images will be pushed", imageSource)
+				}
 				err := kotsadm.CopyImages(imageSource, options, namespace)
 				if err != nil {
 					return errors.Wrap(err, "failed to push images")
