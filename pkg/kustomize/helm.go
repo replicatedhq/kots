@@ -8,7 +8,6 @@ import (
 	"path/filepath"
 	"regexp"
 
-	"github.com/marccampbell/yaml-toolbox/pkg/splitter"
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/util"
 )
@@ -126,7 +125,7 @@ func RenderChartsArchive(baseDir string, overlaysDir string, downstreamName stri
 				return errors.Wrapf(err, "failed to kustomize %s", path)
 			}
 
-			archiveFiles, err := splitter.SplitYAML(archiveChartOutput)
+			archiveFiles, err := util.SplitYAML(archiveChartOutput)
 			if err != nil {
 				return errors.Wrapf(err, "failed to split yaml result for %s", path)
 			}
