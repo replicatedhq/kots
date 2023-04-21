@@ -1687,6 +1687,30 @@ class AppVersionHistory extends Component<Props, State> {
       }
     }
 
+    const renderVersionLabel = () => {
+      let shorten = "";
+      const { versionLabel } = currentDownstreamVersion;
+      if (currentDownstreamVersion && versionLabel) {
+        if (versionLabel.length > 18) {
+          shorten = `${versionLabel.slice(0, 15)}...`;
+        } else {
+          shorten = versionLabel;
+        }
+      } else {
+        shorten = "---";
+      }
+
+      return (
+        <div className="tw-flex tw-items-center">
+          <p className="u-fontSize--header2 u-fontWeight--bold card-item-title u-marginTop--5 u-position--relative">
+            {shorten}
+          </p>{" "}
+          <Icon icon="info" size={16} data-tip={versionLabel} />
+          <ReactTooltip effect="solid" className="replicated-tooltip" />
+        </div>
+      );
+    };
+
     return (
       <div className="flex flex-column flex1 u-position--relative u-overflow--auto u-padding--20">
         <KotsPageTitle pageName="Version History" showAppSlug />
@@ -1734,21 +1758,15 @@ class AppVersionHistory extends Component<Props, State> {
                             ></div>
                           </div>
                         )}
-                        <div className="flex1 flex-column">
-                          <div className="flex alignItems--center u-marginTop--5">
-                            <p className="u-fontSize--header2 u-fontWeight--bold card-item-title">
-                              {" "}
-                              {currentDownstreamVersion
-                                ? currentDownstreamVersion.versionLabel
-                                : "---"}
-                            </p>
-                            <p className="u-fontSize--small u-lineHeight--normal u-textColor--bodyCopy u-fontWeight--medium u-marginLeft--10">
-                              {" "}
-                              {currentDownstreamVersion
-                                ? `${sequenceLabel} ${currentDownstreamVersion?.sequence}`
-                                : null}
-                            </p>
-                          </div>
+                        <div className="flex1 flex-column ">
+                          {renderVersionLabel()}
+
+                          <p className="u-fontSize--small u-lineHeight--normal u-textColor--bodyCopy u-fontWeight--medium">
+                            {" "}
+                            {currentDownstreamVersion
+                              ? `${sequenceLabel} ${currentDownstreamVersion?.sequence}`
+                              : null}
+                          </p>
                           {currentDownstreamVersion?.deployedAt ? (
                             <p className="u-fontSize--small u-lineHeight--normal u-textColor--info u-fontWeight--medium u-marginTop--10">
                               {currentDownstreamVersion?.status === "deploying"
