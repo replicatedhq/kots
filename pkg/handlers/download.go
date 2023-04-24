@@ -73,7 +73,7 @@ func (h *Handler) DownloadApp(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if decryptPasswordValues {
-		kotsKinds, err := kotsutil.LoadKotsKindsFromPath(archivePath)
+		kotsKinds, err := kotsutil.LoadKotsKindsFromPath(filepath.Join(archivePath, "upstream"))
 		if err != nil {
 			logger.Error(err)
 			w.WriteHeader(500)
@@ -119,6 +119,11 @@ func (h *Handler) DownloadApp(w http.ResponseWriter, r *http.Request) {
 	skippedFilesPath := filepath.Join(archivePath, "skippedFiles")
 	if _, err := os.Stat(skippedFilesPath); err == nil {
 		paths = append(paths, skippedFilesPath)
+	}
+
+	kotsKindsPath := filepath.Join(archivePath, "kotsKinds")
+	if _, err := os.Stat(kotsKindsPath); err == nil {
+		paths = append(paths, kotsKindsPath)
 	}
 
 	tmpDir, err := ioutil.TempDir("", "kotsadm")

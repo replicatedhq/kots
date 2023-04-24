@@ -1,6 +1,7 @@
 import React from "react";
 
 import "@src/scss/components/shared/forms/InputField.scss";
+import Icon from "@components/Icon";
 
 const InputField = ({
   label,
@@ -9,8 +10,13 @@ const InputField = ({
   type,
   value,
   onChange,
+  onFocus,
+  onBlur,
+  className,
   autoFocus,
   helperText,
+  isFirstChange,
+  showError = false,
 }) => {
   const [show, setShow] = React.useState(false);
 
@@ -39,16 +45,33 @@ const InputField = ({
       <div className="u-position--relative">
         <input
           autoFocus={!!autoFocus}
-          className="Input"
+          className={`Input ${showError ? "has-error" : ""}`}
           type={calculateType()}
           id={id}
           placeholder={placeholder}
           value={value}
           onChange={(e) => onChange(e)}
+          onBlur={onBlur}
+          onFocus={onFocus}
         />
-        {type === "password" && (
+        {type !== "password" && showError && (
+          <span className="show-input-error">
+            <Icon
+              icon={"warning-circle-filled"}
+              size={16}
+              className="error-color"
+            />
+          </span>
+        )}
+        {type === "password" && isFirstChange && (
           <span className="show-password-toggle" onClick={handleToggleShow}>
-            {show ? "hide" : "show"}
+            {
+              <Icon
+                icon={show ? "visible" : "visibility-off"}
+                size={16}
+                className="gray-color"
+              />
+            }
           </span>
         )}
       </div>
@@ -58,7 +81,9 @@ const InputField = ({
   return (
     <>
       {type === "password" ? (
-        <div className="password-input-wrapper flex-column">{component}</div>
+        <div className={`password-input-wrapper flex-column ${className} `}>
+          {component}
+        </div>
       ) : (
         component
       )}

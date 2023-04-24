@@ -115,12 +115,12 @@ func CreateBundle(requestedID string, appID string, archivePath string) (*types.
 	return store.GetStore().CreateSupportBundle(id, appID, archivePath, marshalledTree)
 }
 
-func GetSpecSecretName(appSlug string) string {
+func GetSpecName(appSlug string) string {
 	return fmt.Sprintf("kotsadm-%s-supportbundle", appSlug)
 }
 
 func GetSpecURI(appSlug string) string {
-	return fmt.Sprintf("secret/%s/%s", util.PodNamespace, GetSpecSecretName(appSlug))
+	return fmt.Sprintf("secret/%s/%s", util.PodNamespace, GetSpecName(appSlug))
 }
 
 func GetBundleCommand(appSlug string) []string {
@@ -211,7 +211,7 @@ func getKotsKindsForApp(app *apptypes.App, sequence int64) (*kotsutil.KotsKinds,
 		return nil, errors.Wrap(err, "failed to get current archive")
 	}
 
-	kotsKinds, err := kotsutil.LoadKotsKindsFromPath(archivePath)
+	kotsKinds, err := kotsutil.LoadKotsKindsFromPath(filepath.Join(archivePath, "upstream"))
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to load current kotskinds")
 	}
@@ -341,7 +341,7 @@ func CreateSupportBundleAnalysis(appID string, archivePath string, bundle *types
 		return err
 	}
 
-	kotsKinds, err := kotsutil.LoadKotsKindsFromPath(archiveDir)
+	kotsKinds, err := kotsutil.LoadKotsKindsFromPath(filepath.Join(archiveDir, "upstream"))
 	if err != nil {
 		err = errors.Wrap(err, "failed to load kots kinds from archive")
 		logger.Error(err)

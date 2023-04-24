@@ -38,20 +38,35 @@ type Props = {
 // This was typed from the implementation of the component so it might be wrong
 type ConfigGroup = {
   hidden: boolean;
+  hasError: boolean;
   items: ConfigGroupItem[];
   name: string;
   title: string;
   when: "true" | "false";
 };
 
-type ConfigGroupItem = {
+interface ConfigGroupItemValidationErrors {
+  item_errors: ConfigGroupItemValidationError[];
   name: string;
+}
+
+interface ConfigGroupItemValidationError {
+  name: string;
+  validation_errors: {
+    message: string;
+  }[];
+}
+
+type ConfigGroupItem = {
+  default: string;
   error: string;
   hidden: boolean;
-  value: string;
+  name: string;
+  required: boolean;
   title: string;
   type: string;
-  // TODO: refactor backend to return a boolean not a string
+  validationError: string;
+  value: string;
   when: "true" | "false";
 };
 
@@ -68,11 +83,15 @@ type State = {
   downstreamVersion: Version | null;
   errorTitle: string;
   gettingConfigErrMsg: string;
+  showValidationError: boolean;
   initialConfigGroups: ConfigGroup[];
   savingConfig: boolean;
   showHelmDeployModal: boolean;
   showNextStepModal: boolean;
 };
+
+const validationErrorMessage =
+  "Error detected. Please use config nav to the left to locate and fix issues.";
 
 class AppConfig extends Component<Props, State> {
   sidebarWrapper: HTMLElement;
@@ -93,6 +112,7 @@ class AppConfig extends Component<Props, State> {
       downstreamVersion: null,
       errorTitle: "",
       gettingConfigErrMsg: "",
+      showValidationError: false,
       initialConfigGroups: [],
       savingConfig: false,
       showHelmDeployModal: false,
@@ -318,7 +338,10 @@ class AppConfig extends Component<Props, State> {
   };
 
   handleSave = async () => {
-    this.setState({ savingConfig: true, configError: false });
+    this.setState({
+      savingConfig: true,
+      configError: false,
+    });
 
     const { fromLicenseFlow, history, match, isHelmManaged } = this.props;
     const sequence = this.getSequence();
@@ -348,6 +371,25 @@ class AppConfig extends Component<Props, State> {
           }
           if (result.error) {
             this.setState({ configError: result.error });
+          }
+
+          const validationErrors: ConfigGroupItemValidationErrors[] =
+            result.validationErrors;
+          const [newGroups, hasValidationError] =
+            this.mergeConfigGroupsAndValidationErrors(
+              this.state.configGroups,
+              validationErrors
+            );
+
+          this.setState({
+            configGroups: newGroups,
+            showValidationError: hasValidationError,
+          });
+          if (result.error) {
+            this.setState({
+              configError: result.error,
+              showValidationError: true,
+            });
           }
           return;
         }
@@ -427,6 +469,50 @@ class AppConfig extends Component<Props, State> {
     return foundItem;
   };
 
+  // this runs on config update and when save is clicked but before the request is submitted
+  // on update it uses the errors from the liveconfig endpoint
+  // on save it's mostly used to find required field errors
+  mergeConfigGroupsAndValidationErrors = (
+    groups: ConfigGroup[],
+    validationErrors: ConfigGroupItemValidationErrors[]
+  ): [ConfigGroup[], boolean] => {
+    let hasValidationError = false;
+
+    const newGroups = groups?.map((group: ConfigGroup) => {
+      const newGroup = { ...group };
+      const configGroupValidationErrors = validationErrors?.find(
+        (validationError) => validationError.name === group.name
+      );
+
+      // required errors are handled separately
+      if (group?.items?.find((item) => item.error)) {
+        newGroup.hasError = true;
+      }
+
+      if (configGroupValidationErrors) {
+        newGroup.items = newGroup?.items?.map((item: ConfigGroupItem) => {
+          const itemValidationError =
+            configGroupValidationErrors?.item_errors?.find(
+              (validationError) => validationError.name === item.name
+            );
+
+          if (itemValidationError) {
+            item.validationError =
+              itemValidationError?.validation_errors?.[0]?.message;
+            newGroup.hasError = true;
+            // if there is an error, then block form submission with state.hasValidationError
+            if (!hasValidationError) {
+              hasValidationError = true;
+            }
+          }
+          return item;
+        });
+      }
+      return newGroup;
+    });
+    return [newGroups, hasValidationError];
+  };
+
   handleConfigChange = (groups: ConfigGroup[]) => {
     const sequence = this.getSequence();
     const slug = this.getSlug();
@@ -465,7 +551,24 @@ class AppConfig extends Component<Props, State> {
 
         const data = await response.json();
         const oldGroups = this.state.configGroups;
-        const newGroups = data.configGroups;
+        const validationErrors: ConfigGroupItemValidationErrors[] =
+          data.validationErrors;
+
+        // track errors at the form level
+        this.setState({ showValidationError: false });
+
+        // merge validation errors and config group
+        const [newGroups, hasValidationError] =
+          this.mergeConfigGroupsAndValidationErrors(
+            data.configGroups,
+            validationErrors
+          );
+
+        this.setState({
+          configError: hasValidationError,
+          showValidationError: hasValidationError,
+        });
+
         map(newGroups, (group) => {
           if (!group.items) {
             return;
@@ -542,6 +645,7 @@ class AppConfig extends Component<Props, State> {
       downstreamVersion,
       savingConfig,
       changed,
+      showValidationError,
       showNextStepModal,
       configError,
       configLoading,
@@ -647,7 +751,8 @@ class AppConfig extends Component<Props, State> {
                 <div
                   key={`${i}-${group.name}-${group.title}`}
                   className={`side-nav-group ${
-                    this.state.activeGroups.includes(group.name)
+                    this.state.activeGroups.includes(group.name) ||
+                    group.hasError
                       ? "group-open"
                       : ""
                   }`}
@@ -682,11 +787,17 @@ class AppConfig extends Component<Props, State> {
                           }
                           return (
                             <a
-                              className={`u-fontSize--normal u-lineHeight--normal ${
-                                hash === `${item.name}-group`
-                                  ? "active-item"
-                                  : ""
-                              }`}
+                              className={`u-fontSize--normal u-lineHeight--normal
+                                ${
+                                  item.validationError || item.error
+                                    ? "has-error"
+                                    : ""
+                                }
+                                ${
+                                  hash === `${item.name}-group`
+                                    ? "active-item"
+                                    : ""
+                                }`}
                               href={`#${item.name}-group`}
                               key={`${j}-${item.name}-${item.title}`}
                             >
@@ -748,14 +859,16 @@ class AppConfig extends Component<Props, State> {
                         )}
                         {!savingConfig && (
                           <div className="ConfigError--wrapper flex-column alignItems--flexStart">
-                            {configError && (
-                              <span className="u-textColor--error u-marginBottom--20 u-fontWeight--bold">
-                                {configError}
+                            {(configError ||
+                              this.state.showValidationError) && (
+                              <span className="u-textColor--error tw-mb-2 tw-text-xs">
+                                {validationErrorMessage}
                               </span>
                             )}
                             <button
                               className="btn primary blue"
                               disabled={
+                                showValidationError ||
                                 (!changed && !fromLicenseFlow) ||
                                 this.isConfigReadOnly(app)
                               }

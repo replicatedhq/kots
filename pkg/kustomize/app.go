@@ -9,8 +9,10 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/marccampbell/yaml-toolbox/pkg/splitter"
 	"github.com/pkg/errors"
+	"github.com/replicatedhq/kots/pkg/base"
+	"github.com/replicatedhq/kots/pkg/kotsutil"
+	"github.com/replicatedhq/kots/pkg/util"
 )
 
 type WriteOptions struct {
@@ -41,7 +43,7 @@ func WriteRenderedApp(options WriteOptions) error {
 			return errors.Wrap(err, "failed to run kustomize build")
 		}
 
-		renderedAppFiles, err := splitter.SplitYAML(renderedApp)
+		renderedAppFiles, err := util.SplitYAML(renderedApp)
 		if err != nil {
 			return errors.Wrap(err, "failed to split yaml")
 		}
@@ -125,6 +127,12 @@ func GetRenderedApp(versionArchive string, downstreamName, kustomizeBinPath stri
 		return bytes.Join(allContent, []byte("\n---\n")), filesMap, nil
 	}
 
+	baseDir := filepath.Join(versionArchive, "base")
+	filter := filterChartsInBasePath(baseDir)
+	if err := cleanBaseApp(baseDir, filter); err != nil {
+		return nil, nil, errors.Wrap(err, "failed to clean base app")
+	}
+
 	// older kots versions did not include the rendered app in the archive, so we have to render it
 	kustomizeBuildTarget := filepath.Join(versionArchive, "overlays", "downstreams", downstreamName)
 
@@ -136,10 +144,89 @@ func GetRenderedApp(versionArchive string, downstreamName, kustomizeBinPath stri
 		return nil, nil, errors.Wrap(err, "failed to run kustomize build")
 	}
 
-	filesMap, err := splitter.SplitYAML(allContent)
+	filesMap, err := util.SplitYAML(allContent)
 	if err != nil {
 		return nil, nil, errors.Wrap(err, "failed to split yaml")
 	}
 
 	return allContent, filesMap, nil
+}
+
+// cleanBaseApp iterates over the base files and removes any files with nil map entries
+// this does not include helm charts, which are processed separately.
+// an optional filter can be passed to skip files that should not be removed.
+//
+// workaround for: https://github.com/kubernetes-sigs/kustomize/issues/5050
+func cleanBaseApp(baseDir string, filter func(path string) (bool, error)) error {
+	if _, err := os.Stat(baseDir); err == nil {
+		err := filepath.Walk(baseDir,
+			func(path string, info os.FileInfo, err error) error {
+				if err != nil {
+					return err
+				}
+
+				if info.IsDir() {
+					return nil
+				}
+
+				if filter != nil {
+					shouldFilter, err := filter(path)
+					if err != nil {
+						return errors.Wrapf(err, "failed to filter path %s", path)
+					}
+					if shouldFilter {
+						return nil
+					}
+				}
+
+				content, err := ioutil.ReadFile(path)
+				if err != nil {
+					return errors.Wrapf(err, "failed to read file %s", path)
+				}
+
+				_, manifest := base.GetGVKWithNameAndNs(content, "")
+				if manifest.APIVersion == "" || manifest.Kind == "" || manifest.Metadata.Name == "" {
+					// ignore invalid resources
+					return nil
+				}
+
+				if manifest.Kind == "CustomResourceDefinition" {
+					// ignore crds
+					return nil
+				}
+
+				newContent, err := kotsutil.RemoveEmptyMappingFields(content)
+				if err != nil {
+					return errors.Wrapf(err, "failed to remove empty mapping fields from %s", path)
+				}
+
+				if err := os.WriteFile(path, newContent, 0644); err != nil {
+					return errors.Wrapf(err, "failed to write file %s", path)
+				}
+
+				return nil
+			})
+		if err != nil {
+			return errors.Wrap(err, "failed to walk dir")
+		}
+	}
+
+	return nil
+}
+
+// filterChartsInBasePath returns a filter that can be passed to cleanBaseApp
+// to skip files in the charts directory
+func filterChartsInBasePath(basePath string) func(path string) (bool, error) {
+	return func(path string) (bool, error) {
+		relPath, err := filepath.Rel(basePath, path)
+		if err != nil {
+			return false, errors.Wrapf(err, "failed to get relative path for %s", path)
+		}
+
+		if strings.Split(relPath, string(os.PathSeparator))[0] == "charts" {
+			return true, nil
+		}
+
+		return false, nil
+	}
 }

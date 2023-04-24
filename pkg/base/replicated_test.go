@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	envsubst "github.com/drone/envsubst/v2"
+	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/template"
 	upstreamtypes "github.com/replicatedhq/kots/pkg/upstream/types"
@@ -22,6 +23,7 @@ func Test_findAllKotsHelmCharts(t *testing.T) {
 	tests := []struct {
 		name    string
 		content string
+		path    string
 		expect  map[string]interface{}
 	}{
 		{
@@ -51,6 +53,7 @@ spec:
 					"isNumber2": float64(100.5),
 				},
 			},
+			path: "/helm/chart.yaml",
 		},
 	}
 
@@ -60,7 +63,7 @@ spec:
 
 			upstreamFiles := []upstreamtypes.UpstreamFile{
 				{
-					Path:    "/heml/chart.yaml",
+					Path:    test.path,
 					Content: []byte(test.content),
 				},
 			}
@@ -320,6 +323,7 @@ func Test_renderReplicated(t *testing.T) {
 		expectedDeployment BaseFile
 		expectedSecrets    []BaseFile
 		expectedMultidoc   BaseFile
+		expectedKotsKinds  map[string][]byte
 	}{
 		{
 			name: "replace array with repeat values",
@@ -588,6 +592,76 @@ metadata:
   labels:
     app.kubernetes.io/name: multidoc`),
 			},
+			expectedKotsKinds: map[string][]byte{
+				"config.yaml": []byte(`apiVersion: kots.io/v1beta1
+kind: Config
+metadata:
+  creationTimestamp: null
+  name: config-sample
+spec:
+  groups:
+  - description: info for pod
+    items:
+    - default: test
+      name: podName
+      type: text
+      value: testPod
+    - default: /var/www/html
+      name: mountPath
+      type: text
+      value: ""
+    name: podInfo
+    title: ""
+  - description: Buncha Secrets
+    items:
+    - countByGroup:
+        secrets: 3
+      default: onetwothree
+      minimumCount: 1
+      name: secretName
+      repeatable: true
+      templates:
+      - apiVersion: apps/v1
+        kind: Deployment
+        name: my-deploy
+        namespace: my-app
+        yamlPath: spec.template.spec.volumes[1].projected.sources[1]
+      - apiVersion: v1
+        kind: Secret
+        name: my-secret
+        namespace: my-app
+      title: Secret Name
+      type: text
+      value: ""
+      valuesByGroup:
+        secrets:
+          secretName-1: MTIz
+          secretName-2: MTIz
+          secretName-3: MTIz
+    name: secrets
+    title: Secrets
+status: {}
+`,
+				),
+				"configvalues.yaml": []byte(`apiVersion: kots.io/v1beta1
+kind: ConfigValues
+metadata:
+  name: test-app
+spec:
+  values:
+    secretName-1:
+      value: "MTIz"
+      repeatableItem: secretName
+    secretName-2:
+      value: "MTIz"
+      repeatableItem: secretName
+    secretName-3:
+      value: "MTIz"
+      repeatableItem: secretName
+status: {}
+`,
+				),
+			},
 		},
 	}
 
@@ -595,7 +669,7 @@ metadata:
 		t.Run(test.name, func(t *testing.T) {
 			req := require.New(t)
 
-			base, _, err := renderReplicated(test.upstream, test.renderOptions)
+			base, _, kotsKinds, err := renderReplicated(test.upstream, test.renderOptions)
 			req.NoError(err)
 
 			decode := scheme.Codecs.UniversalDeserializer().Decode
@@ -608,6 +682,12 @@ metadata:
 			req.NoError(err)
 
 			expectedMultidoc := multidocobj.(*corev1.ServiceAccount)
+
+			expKindsStruct, err := kotsutil.KotsKindsFromMap(test.expectedKotsKinds)
+			req.NoError(err)
+			kindsStruct, err := kotsutil.KotsKindsFromMap(kotsKinds)
+			req.NoError(err)
+			req.Equal(expKindsStruct, kindsStruct)
 
 			var unmarshaledSecrets []*corev1.Secret
 			for _, expectedSecret := range test.expectedSecrets {
@@ -705,11 +785,12 @@ func Test_renderReplicatedHelm(t *testing.T) {
 		return c
 	}
 	tests := []struct {
-		name          string
-		upstream      *upstreamtypes.Upstream
-		renderOptions *RenderOptions
-		expectedBase  Base
-		expectedHelm  []Base
+		name              string
+		upstream          *upstreamtypes.Upstream
+		renderOptions     *RenderOptions
+		expectedBase      Base
+		expectedHelm      []Base
+		expectedKotsKinds map[string][]byte
 	}{
 		{
 			name: "basic test",
@@ -819,6 +900,34 @@ spec:
 				},
 			}},
 			expectedHelm: []Base{},
+			expectedKotsKinds: map[string][]byte{
+				"config.yaml": []byte(`apiVersion: kots.io/v1beta1
+kind: Config
+metadata:
+  creationTimestamp: null
+  name: config-sample
+spec:
+  groups:
+  - name: "podInfo"
+    description: "info for pod"
+    items:
+    - name: "podName"
+      type: "text"
+      default: "test"
+      value: "testvalue"
+`,
+				),
+				"configvalues.yaml": []byte(`apiVersion: kots.io/v1beta1
+kind: ConfigValues
+metadata:
+  name: test-app
+spec:
+  values:
+    podName:
+      value: "testvalue"
+`,
+				),
+			},
 		},
 		{
 			name: "helm install test",
@@ -937,6 +1046,51 @@ spec:
 `),
 				},
 			}},
+			expectedKotsKinds: map[string][]byte{
+				"config.yaml": []byte(`apiVersion: kots.io/v1beta1
+kind: Config
+metadata:
+  creationTimestamp: null
+  name: config-sample
+spec:
+  groups:
+  - name: "podInfo"
+    description: "info for pod"
+    items:
+    - name: "podName"
+      type: "text"
+      default: "test"
+      value: "testvalue"
+`,
+				),
+				"postgresql.yaml": []byte(`apiVersion: kots.io/v1beta1
+kind: HelmChart
+metadata:
+  creationTimestamp: null
+  name: postgresql
+spec:
+  chart:
+    name: postgresql
+    chartVersion: 10.13.8
+  helmVersion: v3
+  useHelmInstall: true
+  weight: 42
+  exclude: ""
+  values:
+    postgresqlPassword: abc123
+`,
+				),
+				"configvalues.yaml": []byte(`apiVersion: kots.io/v1beta1
+kind: ConfigValues
+metadata:
+  name: test-app
+spec:
+  values:
+    podName:
+      value: "testvalue"
+`,
+				),
+			},
 			expectedHelm: []Base{
 				{
 					Path: "charts/postgresql",
@@ -1563,10 +1717,16 @@ version: 1.10.1
 		t.Run(test.name, func(t *testing.T) {
 			req := require.New(t)
 
-			base, helmBase, err := renderReplicated(test.upstream, test.renderOptions)
+			base, helmBase, kotsKinds, err := renderReplicated(test.upstream, test.renderOptions)
 			req.NoError(err)
 			req.ElementsMatch(test.expectedHelm, helmBase)
 			req.ElementsMatch(test.expectedBase.Files, base.Files)
+
+			expKindsStruct, err := kotsutil.KotsKindsFromMap(test.expectedKotsKinds)
+			req.NoError(err)
+			kindsStruct, err := kotsutil.KotsKindsFromMap(kotsKinds)
+			req.NoError(err)
+			req.Equal(expKindsStruct, kindsStruct)
 		})
 	}
 }

@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"path/filepath"
 
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/kotskinds/client/kotsclientset/scheme"
@@ -41,7 +42,7 @@ const (
 )
 
 func Run(appID string, appSlug string, sequence int64, isAirgap bool, archiveDir string) error {
-	renderedKotsKinds, err := kotsutil.LoadKotsKindsFromPath(archiveDir)
+	renderedKotsKinds, err := kotsutil.LoadKotsKindsFromPath(filepath.Join(archiveDir, "upstream"))
 	if err != nil {
 		return errors.Wrap(err, "failed to load rendered kots kinds")
 	}
@@ -143,7 +144,13 @@ func Run(appID string, appSlug string, sequence int64, isAirgap bool, archiveDir
 				return
 			}
 			logger.Debug("preflight checks completed")
-			go reporting.SendAppInfo(appID) // send app and preflight info when preflights finish
+
+			go func() {
+				err := reporting.GetReporter().SubmitAppInfo(appID) // send app and preflight info when preflights finish
+				if err != nil {
+					logger.Debugf("failed to submit app info: %v", err)
+				}
+			}()
 
 			// status could've changed while preflights were running
 			status, err := store.GetStore().GetDownstreamVersionStatus(appID, sequence)
@@ -163,7 +170,7 @@ func Run(appID string, appSlug string, sequence int64, isAirgap bool, archiveDir
 
 			// preflight reporting
 			if isDeployed {
-				if err := reporting.ReportAppInfo(appID, sequence, false, false); err != nil {
+				if err := reporting.WaitAndReportPreflightChecks(appID, sequence, false, false); err != nil {
 					logger.Debugf("failed to send preflights data to replicated app: %v", err)
 					return
 				}

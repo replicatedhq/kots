@@ -265,9 +265,9 @@ func (c *Client) deployHelmCharts(deployArgs operatortypes.DeployAppArgs) (*comm
 		}
 	}
 
-	previousKotsCharts := []*v1beta1.HelmChart{}
-	if deployArgs.PreviousKotsKinds != nil {
-		previousKotsCharts = deployArgs.PreviousKotsKinds.HelmCharts
+	previousKotsCharts := []v1beta1.HelmChart{}
+	if deployArgs.PreviousKotsKinds != nil && deployArgs.PreviousKotsKinds.HelmCharts != nil {
+		previousKotsCharts = deployArgs.PreviousKotsKinds.HelmCharts.Items
 	}
 	removedCharts, err := getRemovedCharts(prevHelmDir, curHelmDir, previousKotsCharts)
 	if err != nil {
@@ -280,9 +280,9 @@ func (c *Client) deployHelmCharts(deployArgs operatortypes.DeployAppArgs) (*comm
 		}
 	}
 	if len(deployArgs.Charts) > 0 {
-		kotsCharts := []*v1beta1.HelmChart{}
-		if deployArgs.KotsKinds != nil {
-			kotsCharts = deployArgs.KotsKinds.HelmCharts
+		kotsCharts := []v1beta1.HelmChart{}
+		if deployArgs.KotsKinds != nil && deployArgs.KotsKinds.HelmCharts != nil {
+			kotsCharts = deployArgs.KotsKinds.HelmCharts.Items
 		}
 		installResult, err = c.installWithHelm(curHelmDir, targetNamespace, kotsCharts)
 		if err != nil {
@@ -452,7 +452,12 @@ func (c *Client) setAppStatus(newAppStatus appstatetypes.AppStatus) error {
 
 	newAppState := appstatetypes.GetState(newAppStatus.ResourceStates)
 	if currentAppStatus != nil && newAppState != currentAppStatus.State {
-		go reporting.SendAppInfo(newAppStatus.AppID)
+		go func() {
+			err := reporting.GetReporter().SubmitAppInfo(newAppStatus.AppID)
+			if err != nil {
+				logger.Debugf("failed to submit app info: %v", err)
+			}
+		}()
 	}
 
 	return nil

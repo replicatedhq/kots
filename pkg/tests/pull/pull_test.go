@@ -10,6 +10,8 @@ import (
 
 	envsubst "github.com/drone/envsubst/v2"
 	"github.com/ghodss/yaml"
+	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
+	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/pull"
 	upstreamtypes "github.com/replicatedhq/kots/pkg/upstream/types"
 	"github.com/replicatedhq/kots/pkg/util"
@@ -110,6 +112,10 @@ func TestKotsPull(t *testing.T) {
 						return err
 					}
 
+					if info.IsDir() && info.Name() == "kotsKinds" {
+						return filepath.SkipDir
+					}
+
 					if info.IsDir() {
 						return nil
 					}
@@ -131,6 +137,10 @@ func TestKotsPull(t *testing.T) {
 				func(path string, info os.FileInfo, err error) error {
 					if err != nil {
 						return err
+					}
+
+					if info.IsDir() && info.Name() == "kotsKinds" {
+						return filepath.SkipDir
 					}
 
 					if info.IsDir() {
@@ -169,6 +179,81 @@ func TestKotsPull(t *testing.T) {
 				})
 
 			require.NoError(t, err)
+
+			// Check that kots kinds match.
+			installationPath := ""
+			err = filepath.Walk(filepath.Join(tt.PullOptions.RootDir, "kotsKinds"),
+				func(path string, info os.FileInfo, err error) error {
+					if err != nil {
+						return err
+					}
+
+					if info.IsDir() {
+						return nil
+					}
+
+					// Skip installation.yaml because known images order will differ on every generation.
+					if strings.HasSuffix(path, "installation.yaml") {
+						installationPath = path
+						return nil
+					}
+
+					rawContents, err := ioutil.ReadFile(path)
+					if err != nil {
+						return err
+					}
+					require.NoError(t, err, path)
+					contents := util.ConvertToSingleDocs(rawContents)
+
+					kotsKinds := []*kotsutil.KotsKinds{}
+					for _, content := range contents {
+						elem, err := kotsutil.KotsKindsFromMap(map[string][]byte{path: content})
+						require.NoError(t, err, path)
+						kotsKinds = append(kotsKinds, elem)
+					}
+
+					wantPath := strings.Replace(path, "results", "wantResults", 1)
+
+					rawWantContents, err := ioutil.ReadFile(wantPath)
+					if err != nil {
+						fmt.Printf("unable to open file %s\n", wantPath)
+					}
+					require.NoError(t, err, wantPath)
+					wantContents := util.ConvertToSingleDocs(rawWantContents)
+
+					wantKotsKinds := []*kotsutil.KotsKinds{}
+					for _, content := range wantContents {
+						elem, err := kotsutil.KotsKindsFromMap(map[string][]byte{path: content})
+						require.NoError(t, err, path)
+						wantKotsKinds = append(wantKotsKinds, elem)
+					}
+
+					require.ElementsMatch(t, wantKotsKinds, kotsKinds)
+					return nil
+				})
+
+			require.NoError(t, err)
+
+			wantInstallationPath := strings.Replace(installationPath, "results", "wantResults", 1)
+
+			installationContents, err := ioutil.ReadFile(installationPath)
+			require.NoError(t, err)
+
+			wantInstallationContents, err := ioutil.ReadFile(wantInstallationPath)
+			require.NoError(t, err)
+
+			installation := kotsv1beta1.Installation{}
+			err = yaml.Unmarshal(installationContents, &installation)
+			require.NoError(t, err)
+
+			wantInstallation := kotsv1beta1.Installation{}
+			err = yaml.Unmarshal(wantInstallationContents, &wantInstallation)
+			require.NoError(t, err)
+
+			require.ElementsMatch(t, wantInstallation.Spec.KnownImages, installation.Spec.KnownImages)
+			wantInstallation.Spec.KnownImages = nil
+			installation.Spec.KnownImages = nil
+			require.Equal(t, wantInstallation, installation)
 		})
 	}
 }

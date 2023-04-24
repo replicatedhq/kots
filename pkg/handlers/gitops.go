@@ -11,6 +11,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/gitops"
 	"github.com/replicatedhq/kots/pkg/handlers/types"
 	"github.com/replicatedhq/kots/pkg/logger"
+	"github.com/replicatedhq/kots/pkg/reporting"
 	"github.com/replicatedhq/kots/pkg/store"
 )
 
@@ -90,6 +91,13 @@ func (h *Handler) DisableAppGitOps(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
+
+	go func() {
+		err := reporting.GetReporter().SubmitAppInfo(appID)
+		if err != nil {
+			logger.Debugf("failed to submit app info: %v", err)
+		}
+	}()
 
 	JSON(w, http.StatusNoContent, "")
 }
@@ -259,6 +267,13 @@ func (h *Handler) InitGitOpsConnection(w http.ResponseWriter, r *http.Request) {
 				finalError = err
 				return
 			}
+		}
+	}()
+
+	go func() {
+		err := reporting.GetReporter().SubmitAppInfo(appID)
+		if err != nil {
+			logger.Debugf("failed to submit app info: %v", err)
 		}
 	}()
 

@@ -8,7 +8,6 @@ import (
 	"path/filepath"
 	"regexp"
 
-	"github.com/marccampbell/yaml-toolbox/pkg/splitter"
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/util"
 )
@@ -41,6 +40,11 @@ func GetRenderedChartsArchive(versionArchive string, downstreamName, kustomizeBi
 	// older kots versions did not include the rendered charts in the app archive, so we have to render them
 	baseDir := filepath.Join(versionArchive, "base")
 	overlaysDir := filepath.Join(versionArchive, "overlays")
+
+	chartsDir := filepath.Join(baseDir, "charts")
+	if err := cleanBaseApp(chartsDir, nil); err != nil {
+		return nil, nil, errors.Wrap(err, "failed to clean base app")
+	}
 
 	archive, filesMap, err := RenderChartsArchive(baseDir, overlaysDir, downstreamName, kustomizeBinPath)
 	if err != nil {
@@ -121,7 +125,7 @@ func RenderChartsArchive(baseDir string, overlaysDir string, downstreamName stri
 				return errors.Wrapf(err, "failed to kustomize %s", path)
 			}
 
-			archiveFiles, err := splitter.SplitYAML(archiveChartOutput)
+			archiveFiles, err := util.SplitYAML(archiveChartOutput)
 			if err != nil {
 				return errors.Wrapf(err, "failed to split yaml result for %s", path)
 			}

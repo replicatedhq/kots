@@ -1,0 +1,146 @@
+apiVersion: troubleshoot.sh/v1beta2
+kind: SupportBundle
+metadata:
+  name: kurl-supportbundle
+spec:
+  collectors:
+    - ceph: {}
+    - longhorn: {}
+    - collectd:
+        collectorName: collectd
+        hostPath: /var/lib/collectd/rrd
+        image: alpine
+        imagePullPolicy: IfNotPresent
+        timeout: 5m
+    - logs:
+        collectorName: rook-ceph-logs
+        namespace: rook-ceph
+        name: kots/rook
+    - exec:
+        collectorName: weave-status
+        command:
+          - /home/weave/weave
+        args:
+          - --local
+          - status
+        containerName: weave
+        exclude: ""
+        name: kots/kurl/weave
+        namespace: kube-system
+        selector:
+          - name=weave-net
+        timeout: 10s
+    - exec:
+        collectorName: weave-report
+        command:
+          - /home/weave/weave
+        args:
+          - --local
+          - report
+        containerName: weave
+        exclude: ""
+        name: kots/kurl/weave
+        namespace: kube-system
+        selector:
+          - name=weave-net
+        timeout: 10s
+    - logs:
+        collectorName: weave-net
+        selector:
+          - name=weave-net
+        namespace: kube-system
+        name: kots/kurl/weave
+    - logs:
+        collectorName: registry
+        name: kots/kurl
+        selector:
+          - app=registry
+        namespace: kurl
+    - logs:
+        collectorName: ekc-operator
+        name: kots/kurl
+        selector:
+          - app=ekc-operator
+        namespace: kurl
+    - configMap:
+        collectorName: kurl-current-config
+        name: kurl-current-config # NOTE: this will not live under the kots/ directory like other collectors
+        namespace: kurl
+        includeAllData: true
+    - configMap:
+        collectorName: kurl-last-config
+        name: kurl-last-config # NOTE: this will not live under the kots/ directory like other collectors
+        namespace: kurl
+        includeAllData: true
+    - copyFromHost:
+        collectorName: kurl-host-preflights
+        name: kots/kurl/host-preflights
+        hostPath: /var/lib/kurl/host-preflights
+        extractArchive: true
+        image: alpine
+        imagePullPolicy: IfNotPresent
+        timeout: 1m
+
+  analyzers:
+    - cephStatus: {}
+    - longhorn: {}
+    - weaveReport:
+        reportFileGlob: kots/kurl/weave/kube-system/*/weave-report-stdout.txt
+    - textAnalyze:
+        checkName: Weave Status
+        exclude: ""
+        ignoreIfNoFiles: true
+        fileName: kots/kurl/weave/kube-system/weave-net-*/weave-status-stdout.txt
+        outcomes:
+          - fail:
+              message: Weave is not ready
+          - pass:
+              message: Weave is ready
+        regex: 'Status: ready'
+    - textAnalyze:
+        checkName: Weave Report
+        exclude: ""
+        ignoreIfNoFiles: true
+        fileName: kots/kurl/weave/kube-system/weave-net-*/weave-report-stdout.txt
+        outcomes:
+          - fail:
+              message: Weave is not ready
+          - pass:
+              message: Weave is ready
+        regex: '"Ready": true'
+    - textAnalyze:
+        checkName: "Flannel: can read net-conf.json"
+        ignoreIfNoFiles: true
+        fileName: kots/kurl/flannel/kube-flannel-ds-*/kube-flannel.log
+        outcomes:
+          - fail:
+              when: "true"
+              message: "failed to read net-conf.json"
+          - pass:
+              when: "false"
+              message: "can read net-conf.json"
+        regex: 'failed to read net conf'
+    - textAnalyze:
+        checkName: "Flannel: net-conf.json properly formatted"
+        ignoreIfNoFiles: true
+        fileName: kots/kurl/flannel/kube-flannel-ds-*/kube-flannel.log
+        outcomes:
+          - fail:
+              when: "true"
+              message: "malformed net-conf.json"
+          - pass:
+              when: "false"
+              message: "properly formatted net-conf.json"
+        regex: 'error parsing subnet config'
+    - textAnalyze:
+        checkName: "Flannel: has access"
+        ignoreIfNoFiles: true
+        fileName: kots/kurl/flannel/kube-flannel-ds-*/kube-flannel.log
+        outcomes:
+          - fail:
+              when: "true"
+              message: "RBAC error"
+          - pass:
+              when: "false"
+              message: "has access"
+        regex: 'the server does not allow access to the requested resource'

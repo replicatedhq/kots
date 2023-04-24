@@ -203,6 +203,7 @@ var _ = Describe("E2E", func() {
 			Entry(nil, inventory.NewRegressionTest()),
 			Entry(nil, inventory.NewSmokeTest()),
 			Entry(nil, inventory.NewAirgapSmokeTest()),
+			Entry(nil, inventory.NewConfigValidation()),
 			Entry(nil, inventory.NewStrictPreflightChecks()),
 			Entry(nil, inventory.NewMinimalRBACTest()),
 			Entry(nil, inventory.NewBackupAndRestore()),

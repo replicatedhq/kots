@@ -121,6 +121,19 @@ spec:
                             type: string
                           type:
                             type: string
+                          validation:
+                            properties:
+                              regex:
+                                properties:
+                                  message:
+                                    type: string
+                                  pattern:
+                                    type: string
+                                required:
+                                - message
+                                - pattern
+                                type: object
+                            type: object
                           value:
                             type: BoolString
                           valuesByGroup:

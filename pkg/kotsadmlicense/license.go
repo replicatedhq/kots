@@ -3,6 +3,7 @@ package license
 import (
 	"io/ioutil"
 	"os"
+	"path/filepath"
 
 	"github.com/pkg/errors"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
@@ -71,7 +72,7 @@ func Sync(a *apptypes.App, licenseString string, failOnVersionCreate bool) (*kot
 		return nil, false, errors.Wrap(err, "failed to get latest app sequence")
 	}
 
-	kotsKinds, err := kotsutil.LoadKotsKindsFromPath(archiveDir)
+	kotsKinds, err := kotsutil.LoadKotsKindsFromPath(filepath.Join(archiveDir, "upstream"))
 	if err != nil {
 		return nil, false, errors.Wrap(err, "failed to load kotskinds from path")
 	}

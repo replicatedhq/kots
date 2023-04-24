@@ -58,6 +58,8 @@ const ConfigGroup = (props) => {
               {...item}
               readonly={isReadOnly}
               index={i + 1}
+              validationErrorMessage={item?.validationError}
+              showValidationError={item?.validationError}
             />
           );
         case "textarea":
@@ -73,6 +75,8 @@ const ConfigGroup = (props) => {
               {...item}
               readonly={isReadOnly}
               index={i + 1}
+              validationErrorMessage={item?.validationError}
+              showValidationError={item?.validationError}
             />
           );
         case "bool":
@@ -118,7 +122,7 @@ const ConfigGroup = (props) => {
             <ConfigWrapper
               key={`${i}-${item.name}`}
               className={"field-type-label "}
-              marginTop={item.affix ? "0" : "15px"}
+              marginTop={item.affix ? "0" : "35px"}
               order={setOrder(i + 1, item.affix)}
             >
               <ConfigFileInput
@@ -135,6 +139,8 @@ const ConfigGroup = (props) => {
                 appSlug={props.appSlug}
                 readonly={isReadOnly}
                 index={i + 1}
+                validationErrorMessage={item?.validationError}
+                showValidationError={item?.validationError}
               />
             </ConfigWrapper>
           );
@@ -179,6 +185,8 @@ const ConfigGroup = (props) => {
               {...item}
               readonly={isReadOnly}
               index={i + 1}
+              validationErrorMessage={item?.validationError}
+              showValidationError={item?.validationError}
             />
           );
         default:

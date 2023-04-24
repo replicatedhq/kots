@@ -13,6 +13,7 @@ import (
 	"github.com/ghodss/yaml"
 	"github.com/pmezard/go-difflib/difflib"
 	"github.com/replicatedhq/kots/pkg/base"
+	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/template"
 	upstreamtypes "github.com/replicatedhq/kots/pkg/upstream/types"
@@ -32,6 +33,7 @@ type testCase struct {
 	RenderOptions base.RenderOptions
 	WantBase      base.Base
 	WantHelmBase  base.Base
+	WantKotsKinds *kotsutil.KotsKinds
 }
 
 func TestRenderUpstream(t *testing.T) {
@@ -76,6 +78,9 @@ func TestRenderUpstream(t *testing.T) {
 
 		test.WantBase = baseFromDir(t, filepath.Join(path, "base"), false)
 
+		test.WantKotsKinds, err = kotsutil.LoadKotsKindsFromPath(filepath.Join(path, "kotsKinds"))
+		require.NoError(t, err, "kotsKinds")
+
 		chartsPath := filepath.Join(path, "base", "charts")
 		if _, err := os.Stat(chartsPath); err == nil {
 			charts, err := os.ReadDir(chartsPath)
@@ -107,7 +112,7 @@ func TestRenderUpstream(t *testing.T) {
 			template.TestingDisableKurlValues = true
 			defer func() { template.TestingDisableKurlValues = false }()
 
-			gotBase, gotHelmBases, err := base.RenderUpstream(&tt.Upstream, &tt.RenderOptions)
+			gotBase, gotHelmBases, gotKotsKindsFiles, err := base.RenderUpstream(&tt.Upstream, &tt.RenderOptions)
 			require.NoError(t, err)
 
 			if len(tt.WantBase.Files) > 0 {
@@ -126,6 +131,17 @@ func TestRenderUpstream(t *testing.T) {
 					t.FailNow()
 				}
 			}
+
+			gotKotsKinds, err := kotsutil.KotsKindsFromMap(gotKotsKindsFiles)
+			require.NoError(t, err, "kots kinds from map")
+
+			if tt.WantKotsKinds.HelmCharts != nil && gotKotsKinds.HelmCharts != nil {
+				require.ElementsMatch(t, tt.WantKotsKinds.HelmCharts.Items, gotKotsKinds.HelmCharts.Items)
+				tt.WantKotsKinds.HelmCharts.Items = nil
+				gotKotsKinds.HelmCharts.Items = nil
+			}
+
+			require.Equal(t, tt.WantKotsKinds, gotKotsKinds)
 
 			// TODO: Need to test upstream with multiple Helm charts.
 			// HACK: Also right now "no files" in WantHelmBase implies test does not include any charts.

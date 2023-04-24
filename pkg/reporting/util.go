@@ -7,7 +7,6 @@ import (
 	"strconv"
 
 	"github.com/replicatedhq/kots/pkg/api/reporting/types"
-	"github.com/replicatedhq/kots/pkg/kotsadm"
 )
 
 func InjectReportingInfoHeaders(req *http.Request, reportingInfo *types.ReportingInfo) {
@@ -55,12 +54,12 @@ func InjectReportingInfoHeaders(req *http.Request, reportingInfo *types.Reportin
 
 	req.Header.Set("X-Replicated-KurlNodeCountTotal", strconv.Itoa(reportingInfo.KurlNodeCountTotal))
 	req.Header.Set("X-Replicated-KurlNodeCountReady", strconv.Itoa(reportingInfo.KurlNodeCountReady))
+
+	req.Header.Set("X-Replicated-IsGitOpsEnabled", strconv.FormatBool(reportingInfo.IsGitOpsEnabled))
+	req.Header.Set("X-Replicated-GitOpsProvider", reportingInfo.GitOpsProvider)
 }
 
 func canReport(endpoint string) bool {
-	if kotsadm.IsAirgap() {
-		return false
-	}
 	if os.Getenv("KOTSADM_ENV") == "dev" && !isDevEndpoint(endpoint) {
 		// don't send reports from our dev env to our production services even if this is a production license
 		return false

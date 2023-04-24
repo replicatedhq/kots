@@ -15,8 +15,8 @@ type App struct {
 	CurrentSequence       int64          `json:"currentSequence"`
 	UpstreamURI           string         `json:"upstreamUri"`
 	IconURI               string         `json:"iconUri"`
-	UpdatedAt             *time.Time     `json:"createdAt"`
-	CreatedAt             time.Time      `json:"updatedAt"`
+	UpdatedAt             *time.Time     `json:"updatedAt"`
+	CreatedAt             time.Time      `json:"createdAt"`
 	LastUpdateCheckAt     *time.Time     `json:"lastUpdateCheckAt"`
 	HasPreflight          bool           `json:"hasPreflight"`
 	IsConfigurable        bool           `json:"isConfigurable"`

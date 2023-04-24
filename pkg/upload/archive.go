@@ -34,6 +34,11 @@ func createUploadableArchive(rootPath string) (string, error) {
 		paths = append(paths, renderedPath)
 	}
 
+	kotsKindsPath := path.Join(rootPath, "kotsKinds")
+	if _, err := os.Stat(kotsKindsPath); err == nil {
+		paths = append(paths, kotsKindsPath)
+	}
+
 	skippedFilesPath := path.Join(rootPath, "skippedFiles")
 	if _, err := os.Stat(skippedFilesPath); err == nil {
 		paths = append(paths, skippedFilesPath)

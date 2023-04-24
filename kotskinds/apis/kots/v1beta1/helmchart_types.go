@@ -40,6 +40,15 @@ type MappedChartValue struct {
 	array    []*MappedChartValue          `json:"-"`
 }
 
+func (m MappedChartValue) MarshalJSON() ([]byte, error) {
+	val, err := m.getBuiltValue()
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get built value")
+	}
+
+	return json.Marshal(val)
+}
+
 func (m *MappedChartValue) getBuiltValue() (interface{}, error) {
 	if m.valueType == "string" {
 		return m.strValue, nil

@@ -379,7 +379,7 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 	log.ActionWithSpinner("Creating base")
 	io.WriteString(pullOptions.ReportWriter, "Creating base\n")
 
-	commonBase, helmBases, err := base.RenderUpstream(u, &renderOptions)
+	commonBase, helmBases, renderedKotsKinds, err := base.RenderUpstream(u, &renderOptions)
 	if err != nil {
 		log.FinishSpinnerWithError()
 		return "", errors.Wrap(err, "failed to render upstream")
@@ -555,6 +555,19 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 		if err := writeArchiveAsConfigMap(pullOptions, u, u.GetBaseDir(writeUpstreamOptions)); err != nil {
 			return "", errors.Wrap(err, "failed to write archive as config map")
 		}
+	}
+
+	installationBytes, err := ioutil.ReadFile(filepath.Join(u.GetUpstreamDir(writeUpstreamOptions), "userdata", "installation.yaml"))
+	if err != nil {
+		return "", errors.Wrap(err, "failed to read installation file")
+	}
+
+	installationFilename := kotsutil.GenUniqueKotsKindFilename(renderedKotsKinds, "installation")
+	renderedKotsKinds[installationFilename] = []byte(installationBytes)
+
+	err = kotsutil.WriteKotsKinds(renderedKotsKinds, u.GetKotsKindsDir(writeUpstreamOptions))
+	if err != nil {
+		return "", errors.Wrap(err, "failed to write the rendered kots kinds")
 	}
 
 	if err := kustomize.WriteRenderedApp(kustomize.WriteOptions{

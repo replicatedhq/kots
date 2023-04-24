@@ -1,0 +1,28 @@
+apiVersion: kots.io/v1beta1
+kind: Config
+metadata:
+  name: my-app
+spec:
+  groups:
+    - name: setup
+      title: Setup
+      items:
+        - name: hostname
+          type: text
+          title: Hostname
+          help_text: |
+            Use this field to provide a hostname for your Example Application installation.
+          required: true
+        - name: container_backend
+          title: Container Backend
+          type: text
+          help_text: |
+            Use this field to change the container backend
+          default: containerd
+          required: true
+        - name: min_kubernetes_version
+          title: Minimum Kuberentes Version
+          type: text
+          help_text: |
+            Use this field to change the minimum kubernetes version required
+          required: true

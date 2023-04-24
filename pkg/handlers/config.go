@@ -22,6 +22,8 @@ import (
 	"github.com/replicatedhq/kots/pkg/crypto"
 	"github.com/replicatedhq/kots/pkg/helm"
 	kotsadmconfig "github.com/replicatedhq/kots/pkg/kotsadmconfig"
+	configtypes "github.com/replicatedhq/kots/pkg/kotsadmconfig/types"
+	configvalidation "github.com/replicatedhq/kots/pkg/kotsadmconfig/validation"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/midstream"
@@ -50,22 +52,25 @@ type LiveAppConfigRequest struct {
 }
 
 type UpdateAppConfigResponse struct {
-	Success       bool     `json:"success"`
-	Error         string   `json:"error,omitempty"`
-	RequiredItems []string `json:"requiredItems,omitempty"`
+	Success          bool                                     `json:"success"`
+	Error            string                                   `json:"error,omitempty"`
+	RequiredItems    []string                                 `json:"requiredItems,omitempty"`
+	ValidationErrors []configtypes.ConfigGroupValidationError `json:"validationErrors,omitempty"`
 }
 
 type LiveAppConfigResponse struct {
-	Success      bool                      `json:"success"`
-	Error        string                    `json:"error,omitempty"`
-	ConfigGroups []kotsv1beta1.ConfigGroup `json:"configGroups"`
+	Success          bool                                     `json:"success"`
+	Error            string                                   `json:"error,omitempty"`
+	ConfigGroups     []kotsv1beta1.ConfigGroup                `json:"configGroups"`
+	ValidationErrors []configtypes.ConfigGroupValidationError `json:"validationErrors,omitempty"`
 }
 
 type CurrentAppConfigResponse struct {
-	Success           bool                               `json:"success"`
-	Error             string                             `json:"error,omitempty"`
-	DownstreamVersion *downstreamtypes.DownstreamVersion `json:"downstreamVersion"`
-	ConfigGroups      []kotsv1beta1.ConfigGroup          `json:"configGroups"`
+	Success           bool                                     `json:"success"`
+	Error             string                                   `json:"error,omitempty"`
+	DownstreamVersion *downstreamtypes.DownstreamVersion       `json:"downstreamVersion"`
+	ConfigGroups      []kotsv1beta1.ConfigGroup                `json:"configGroups"`
+	ValidationErrors  []configtypes.ConfigGroupValidationError `json:"validationErrors,omitempty"`
 }
 
 type DownloadFileFromConfigResponse struct {
@@ -167,6 +172,7 @@ func (h *Handler) UpdateAppConfig(w http.ResponseWriter, r *http.Request) {
 		JSON(w, http.StatusOK, UpdateAppConfigResponse{Success: true})
 		return
 	}
+
 	foundApp, err := store.GetStore().GetAppFromSlug(mux.Vars(r)["appSlug"])
 	if err != nil {
 		logger.Error(err)
@@ -187,6 +193,22 @@ func (h *Handler) UpdateAppConfig(w http.ResponseWriter, r *http.Request) {
 		updateAppConfigResponse.Error = "this version cannot be edited"
 		logger.Error(errors.Wrap(err, updateAppConfigResponse.Error))
 		JSON(w, http.StatusForbidden, updateAppConfigResponse)
+		return
+	}
+
+	validationErrors, err := configvalidation.ValidateConfigSpec(kotsv1beta1.ConfigSpec{Groups: updateAppConfigRequest.ConfigGroups})
+	if err != nil {
+		updateAppConfigResponse.Error = "failed to validate config spec."
+		logger.Error(errors.Wrap(err, updateAppConfigResponse.Error))
+		JSON(w, http.StatusInternalServerError, updateAppConfigResponse)
+		return
+	}
+
+	if len(validationErrors) > 0 {
+		updateAppConfigResponse.Error = "invalid config values"
+		updateAppConfigResponse.ValidationErrors = validationErrors
+		logger.Errorf("%v, validation errors: %+v", updateAppConfigResponse.Error, validationErrors)
+		JSON(w, http.StatusBadRequest, updateAppConfigResponse)
 		return
 	}
 
@@ -336,7 +358,7 @@ func (h *Handler) LiveAppConfig(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		kotsKinds, err = kotsutil.LoadKotsKindsFromPath(archiveDir)
+		kotsKinds, err = kotsutil.LoadKotsKindsFromPath(filepath.Join(archiveDir, "upstream"))
 		if err != nil {
 			liveAppConfigResponse.Error = "failed to load kots kinds from path"
 			logger.Error(errors.Wrap(err, liveAppConfigResponse.Error))
@@ -378,13 +400,24 @@ func (h *Handler) LiveAppConfig(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	liveAppConfigResponse.Success = true
-	if renderedConfig == nil {
-		liveAppConfigResponse.ConfigGroups = []kotsv1beta1.ConfigGroup{}
-	} else {
+	liveAppConfigResponse.ConfigGroups = []kotsv1beta1.ConfigGroup{}
+	if renderedConfig != nil {
+		validationErrors, err := configvalidation.ValidateConfigSpec(renderedConfig.Spec)
+		if err != nil {
+			liveAppConfigResponse.Error = "failed to validate config spec"
+			logger.Error(errors.Wrap(err, liveAppConfigResponse.Error))
+			JSON(w, http.StatusInternalServerError, liveAppConfigResponse)
+			return
+		}
+
 		liveAppConfigResponse.ConfigGroups = renderedConfig.Spec.Groups
+		if len(validationErrors) > 0 {
+			liveAppConfigResponse.ValidationErrors = validationErrors
+			logger.Warnf("Validation errors found for config spec: %v", validationErrors)
+		}
 	}
 
+	liveAppConfigResponse.Success = true
 	JSON(w, http.StatusOK, liveAppConfigResponse)
 }
 
@@ -455,9 +488,7 @@ func (h *Handler) CurrentAppConfig(w http.ResponseWriter, r *http.Request) {
 	var app apptypes.AppType
 	var downstreamVersion *downstreamtypes.DownstreamVersion
 
-	configGroups := []kotsv1beta1.ConfigGroup{}
 	createNewVersion := false
-
 	if util.IsHelmManaged() {
 		helmApp := helm.GetHelmApp(appSlug)
 		if helmApp == nil {
@@ -576,7 +607,7 @@ func (h *Handler) CurrentAppConfig(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		kotsKinds, err = kotsutil.LoadKotsKindsFromPath(archiveDir)
+		kotsKinds, err = kotsutil.LoadKotsKindsFromPath(filepath.Join(archiveDir, "upstream"))
 		if err != nil {
 			currentAppConfigResponse.Error = "failed to load kots kinds from path"
 			logger.Error(errors.Wrap(err, currentAppConfigResponse.Error))
@@ -634,12 +665,12 @@ func (h *Handler) CurrentAppConfig(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	currentAppConfigResponse.ConfigGroups = []kotsv1beta1.ConfigGroup{}
 	if renderedConfig != nil {
-		configGroups = renderedConfig.Spec.Groups
+		currentAppConfigResponse.ConfigGroups = renderedConfig.Spec.Groups
 	}
 
 	currentAppConfigResponse.Success = true
-	currentAppConfigResponse.ConfigGroups = configGroups
 	currentAppConfigResponse.DownstreamVersion = downstreamVersion
 	JSON(w, http.StatusOK, currentAppConfigResponse)
 }
@@ -718,7 +749,7 @@ func getAppConfigValueForFile(downloadApp *apptypes.App, sequence int64, filenam
 		return "", errors.Wrap(err, "failed to get app version archive")
 	}
 
-	kotsKinds, err := kotsutil.LoadKotsKindsFromPath(archiveDir)
+	kotsKinds, err := kotsutil.LoadKotsKindsFromPath(filepath.Join(archiveDir, "upstream"))
 	if err != nil {
 		return "", errors.Wrap(err, "failed to load kots kinds from archive")
 	}
@@ -752,7 +783,7 @@ func updateAppConfig(updateApp *apptypes.App, sequence int64, configGroups []kot
 		return updateAppConfigResponse, err
 	}
 
-	kotsKinds, err := kotsutil.LoadKotsKindsFromPath(archiveDir)
+	kotsKinds, err := kotsutil.LoadKotsKindsFromPath(filepath.Join(archiveDir, "upstream"))
 	if err != nil {
 		updateAppConfigResponse.Error = "failed to load kots kinds from path"
 		return updateAppConfigResponse, err
@@ -942,7 +973,7 @@ func updateAppConfigValues(values map[string]kotsv1beta1.ConfigValue, configGrou
 				if item.Type == "password" && !util.IsHelmManaged() { // no encryption in helm mode
 					// encrypt using the key
 					// if the decryption succeeds, don't encrypt again
-					_, err := decrypt(updatedValue)
+					_, err := util.DecryptConfigValue(updatedValue)
 					if err != nil {
 						updatedValue = base64.StdEncoding.EncodeToString(crypto.Encrypt([]byte(updatedValue)))
 					}
@@ -971,19 +1002,6 @@ func updateAppConfigValues(values map[string]kotsv1beta1.ConfigValue, configGrou
 	}
 	return values
 }
-func decrypt(input string) (string, error) {
-	decoded, err := base64.StdEncoding.DecodeString(input)
-	if err != nil {
-		return "", errors.Wrap(err, "failed to base64 decode")
-	}
-
-	decrypted, err := crypto.Decrypt(decoded)
-	if err != nil {
-		return "", errors.Wrap(err, "failed to decrypt")
-	}
-
-	return string(decrypted), nil
-}
 
 type SetAppConfigValuesRequest struct {
 	ConfigValues   []byte `json:"configValues"`
@@ -993,8 +1011,9 @@ type SetAppConfigValuesRequest struct {
 }
 
 type SetAppConfigValuesResponse struct {
-	Success bool   `json:"success"`
-	Error   string `json:"error,omitempty"`
+	Success          bool                                     `json:"success"`
+	Error            string                                   `json:"error,omitempty"`
+	ValidationErrors []configtypes.ConfigGroupValidationError `json:"validationErrors,omitempty"`
 }
 
 func (h *Handler) SetAppConfigValues(w http.ResponseWriter, r *http.Request) {
@@ -1060,7 +1079,7 @@ func (h *Handler) SetAppConfigValues(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	kotsKinds, err := kotsutil.LoadKotsKindsFromPath(archiveDir)
+	kotsKinds, err := kotsutil.LoadKotsKindsFromPath(filepath.Join(archiveDir, "upstream"))
 	if err != nil {
 		setAppConfigValuesResponse.Error = "failed to load kots kinds from path"
 		logger.Error(errors.Wrap(err, setAppConfigValuesResponse.Error))
@@ -1143,6 +1162,22 @@ func (h *Handler) SetAppConfigValues(w http.ResponseWriter, r *http.Request) {
 	if renderedConfig == nil {
 		setAppConfigValuesResponse.Error = "application does not have config"
 		logger.Error(errors.New(setAppConfigValuesResponse.Error))
+		JSON(w, http.StatusBadRequest, setAppConfigValuesResponse)
+		return
+	}
+
+	validationErrors, err := configvalidation.ValidateConfigSpec(renderedConfig.Spec)
+	if err != nil {
+		setAppConfigValuesResponse.Error = "failed to validate config spec"
+		logger.Error(errors.Wrap(err, setAppConfigValuesResponse.Error))
+		JSON(w, http.StatusInternalServerError, setAppConfigValuesResponse)
+		return
+	}
+
+	if len(validationErrors) > 0 {
+		setAppConfigValuesResponse.Error = "failed to validate config values"
+		setAppConfigValuesResponse.ValidationErrors = validationErrors
+		logger.Errorf("%v, validation errors: %+v", setAppConfigValuesResponse.Error, validationErrors)
 		JSON(w, http.StatusBadRequest, setAppConfigValuesResponse)
 		return
 	}

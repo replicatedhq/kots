@@ -57,6 +57,8 @@ export default function ShowLogsModal(props) {
                       enabled: false,
                     },
                     scrollBeyondLastLine: false,
+                    wrappingStrategy: "advanced",
+                    wordWrap: "on",
                   }}
                 />
               </div>

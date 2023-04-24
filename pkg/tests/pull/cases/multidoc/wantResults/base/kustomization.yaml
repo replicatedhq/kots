@@ -1,0 +1,7 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+- subdir/configmap.yaml
+- subdir/secrets-2.yaml
+- subdir/secrets-3.yaml
+- subdir/secrets.yaml

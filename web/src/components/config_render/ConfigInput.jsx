@@ -4,14 +4,15 @@ import Markdown from "react-remarkable";
 import { setOrder } from "./ConfigUtil";
 import { ConfigWrapper } from "./ConfigComponents";
 import Icon from "../Icon";
+import InputField from "@components/shared/forms/InputField";
 
 export default class ConfigInput extends React.Component {
   constructor(props) {
     super(props);
-    this.inputRef = React.createRef();
     this.state = {
       inputVal: "",
       focused: false,
+      isFirstChange: true,
     };
   }
 
@@ -31,7 +32,7 @@ export default class ConfigInput extends React.Component {
 
   componentDidMount() {
     if (this.props.value) {
-      this.setState({ inputVal: this.props.value });
+      this.setState({ inputVal: this.props.value, isFirstChange: false });
     }
     if (this.props.valuesByGroup) {
       Object.keys(this.props.valuesByGroup[this.props.groupName]).map((key) => {
@@ -72,7 +73,7 @@ export default class ConfigInput extends React.Component {
             key={objKey}
             id={`${this.props.name}-group`}
             className={`field-type-text`}
-            marginTop={hidden || this.props.affix ? "0" : "15px"}
+            marginTop={hidden || this.props.affix ? "0" : "25px"}
             hidden={hidden}
             order={setOrder(this.props.index, this.props.affix)}
           >
@@ -86,7 +87,7 @@ export default class ConfigInput extends React.Component {
               />
             ) : null}
             {this.props.help_text !== "" ? (
-              <div className="field-section-help-text help-text-color u-marginTop--5">
+              <div className="field-section-help-text help-text-color">
                 <Markdown
                   options={{
                     linkTarget: "_blank",
@@ -98,8 +99,7 @@ export default class ConfigInput extends React.Component {
               </div>
             ) : null}
             <div className="field-input-wrapper flex alignItems--center u-marginTop--15">
-              <input
-                ref={this.inputRef}
+              <InputField
                 type={this.props.inputType}
                 {...this.props.props}
                 placeholder={placeholder}
@@ -115,9 +115,10 @@ export default class ConfigInput extends React.Component {
                 onBlur={() =>
                   this.setState({ [`${objKey}InputFocused`]: false })
                 }
-                className={`${this.props.className || ""} Input ${
+                className={`${this.props.className || ""} ${
                   this.props.readonly ? "readonly" : ""
-                }`}
+                } tw-gap-0`}
+                isFirstChange={this.state.isFirstChange}
               />
               {variadicItemsLen > 1 ? (
                 <Icon
@@ -158,7 +159,7 @@ export default class ConfigInput extends React.Component {
       <ConfigWrapper
         id={`${this.props.name}-group`}
         className={`field-type-text`}
-        marginTop={hidden || this.props.affix ? "0" : "15px"}
+        marginTop={hidden || this.props.affix ? "0" : "35px"}
         hidden={hidden}
         order={setOrder(this.props.index, this.props.affix)}
       >
@@ -172,7 +173,7 @@ export default class ConfigInput extends React.Component {
           />
         ) : null}
         {this.props.help_text !== "" ? (
-          <div className="field-section-help-text help-text-color u-marginTop--5">
+          <div className="field-section-help-text help-text-color">
             <Markdown
               options={{
                 linkTarget: "_blank",
@@ -183,9 +184,8 @@ export default class ConfigInput extends React.Component {
             </Markdown>
           </div>
         ) : null}
-        <div className="field-input-wrapper u-marginTop--15">
-          <input
-            ref={this.inputRef}
+        <div className="field-input-wrapper u-marginTop--15 ">
+          <InputField
             type={this.props.inputType}
             {...this.props.props}
             placeholder={placeholder}
@@ -195,9 +195,11 @@ export default class ConfigInput extends React.Component {
             onChange={(e) => this.handleOnChange("inputVal", e)}
             onFocus={() => this.setState({ focused: true })}
             onBlur={() => this.setState({ focused: false })}
-            className={`${this.props.className || ""} Input ${
+            className={`${this.props.className || ""} ${
               this.props.readonly ? "readonly" : ""
-            }`}
+            } tw-gap-0`}
+            isFirstChange={this.state.isFirstChange}
+            showError={this.props.showValidationError}
           />
         </div>
         {this.props.inputType !== "password" && this.props.default ? (
@@ -205,6 +207,11 @@ export default class ConfigInput extends React.Component {
             Default value: <span className="value"> {this.props.default} </span>
           </div>
         ) : null}
+        {this.props.showValidationError && (
+          <div className="config-input-error-message tw-mt-1 tw-text-xs">
+            {this.props.validationErrorMessage}
+          </div>
+        )}
         {this.props.repeatable && (
           <div
             className="u-marginTop--10"

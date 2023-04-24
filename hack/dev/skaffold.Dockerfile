@@ -125,18 +125,18 @@ ENV KOTS_KUSTOMIZE_BIN_DIR=/usr/local/bin
 # discover all kustomize binaries in the KOTS_KUSTOMIZE_BIN_DIR directory for use by KOTS.
 # CURRENNTLY ONLY ONE VERSION IS SHIPPED BELOW
 
-# Install kustomize 4
-ENV KUSTOMIZE4_VERSION=4.5.7
-ENV KUSTOMIZE4_URL=https://github.com/kubernetes-sigs/kustomize/releases/download/kustomize/v${KUSTOMIZE4_VERSION}/kustomize_v${KUSTOMIZE4_VERSION}_linux_amd64.tar.gz
-ENV KUSTOMIZE4_SHA256SUM=701e3c4bfa14e4c520d481fdf7131f902531bfc002cb5062dcf31263a09c70c9
-RUN curl -fsSL -o kustomize.tar.gz "${KUSTOMIZE4_URL}" \
-  && echo "${KUSTOMIZE4_SHA256SUM} kustomize.tar.gz" | sha256sum -c - \
+# Install kustomize 5
+ENV KUSTOMIZE5_VERSION=5.0.1
+ENV KUSTOMIZE5_URL=https://github.com/kubernetes-sigs/kustomize/releases/download/kustomize/v${KUSTOMIZE5_VERSION}/kustomize_v${KUSTOMIZE5_VERSION}_linux_amd64.tar.gz
+ENV KUSTOMIZE5_SHA256SUM=dca623b36aef84fbdf28f79d02e9b3705ff641424ac1f872d5420dadb12fb78d
+RUN curl -fsSL -o kustomize.tar.gz "${KUSTOMIZE5_URL}" \
+  && echo "${KUSTOMIZE5_SHA256SUM} kustomize.tar.gz" | sha256sum -c - \
   && tar -xzvf kustomize.tar.gz \
   && rm kustomize.tar.gz \
   && chmod a+x kustomize \
-  && mv kustomize "${KOTS_KUSTOMIZE_BIN_DIR}/kustomize${KUSTOMIZE4_VERSION}" \
-  && ln -s "${KOTS_KUSTOMIZE_BIN_DIR}/kustomize${KUSTOMIZE4_VERSION}" "${KOTS_KUSTOMIZE_BIN_DIR}/kustomize4" \
-  && ln -s "${KOTS_KUSTOMIZE_BIN_DIR}/kustomize4" "${KOTS_KUSTOMIZE_BIN_DIR}/kustomize"
+  && mv kustomize "${KOTS_KUSTOMIZE_BIN_DIR}/kustomize${KUSTOMIZE5_VERSION}" \
+  && ln -s "${KOTS_KUSTOMIZE_BIN_DIR}/kustomize${KUSTOMIZE5_VERSION}" "${KOTS_KUSTOMIZE_BIN_DIR}/kustomize5" \
+  && ln -s "${KOTS_KUSTOMIZE_BIN_DIR}/kustomize5" "${KOTS_KUSTOMIZE_BIN_DIR}/kustomize"
 
 # KOTS can be configured to use a specific version of helm by setting helmVersion in the
 # kots.io/v1beta1.HelmChart spec. The github.com/replicatedhq/kots/pkg/binaries package will
@@ -145,9 +145,9 @@ RUN curl -fsSL -o kustomize.tar.gz "${KUSTOMIZE4_URL}" \
 ENV KOTS_HELM_BIN_DIR=/usr/local/bin
 
 # Install helm v3
-ENV HELM3_VERSION=3.9.3
+ENV HELM3_VERSION=3.11.3
 ENV HELM3_URL=https://get.helm.sh/helm-v${HELM3_VERSION}-linux-amd64.tar.gz
-ENV HELM3_SHA256SUM=2d07360a9d93b18488f1ddb9de818b92ba738acbec6e1c66885a88703fa7b21c
+ENV HELM3_SHA256SUM=ca2d5d40d4cdfb9a3a6205dd803b5bc8def00bd2f13e5526c127e9b667974a89
 RUN cd /tmp && curl -fsSL -o helm.tar.gz "${HELM3_URL}" \
   && echo "${HELM3_SHA256SUM} helm.tar.gz" | sha256sum -c - \
   && tar -xzvf helm.tar.gz \

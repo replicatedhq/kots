@@ -51,7 +51,7 @@
     white-space: pre-line;
   }
   .field-section-help-text {
-    font-size: 14px;
+    font-size: 12px;
     line-height: 1.5;
     font-weight: 500;
   }
@@ -119,6 +119,10 @@
       left: 0;
       right: auto;
     }
+  }
+
+  .config-input-error-message {
+    color: var(--error-color);
   }
 
   .config-errblock {

@@ -167,9 +167,18 @@ func (o *Operator) DeployApp(appID string, sequence int64) (deployed bool, deplo
 	}
 
 	if os.Getenv("KOTSADM_ENV") != "test" {
-		go reporting.SendAppInfo(appID)
+		go func() {
+			err := reporting.GetReporter().SubmitAppInfo(appID)
+			if err != nil {
+				logger.Debugf("failed to submit initial app info: %v", err)
+			}
+		}()
+
 		defer func() {
-			go reporting.SendAppInfo(appID)
+			err := reporting.GetReporter().SubmitAppInfo(appID)
+			if err != nil {
+				logger.Debugf("failed to submit final app info: %v", err)
+			}
 		}()
 	}
 
@@ -227,7 +236,7 @@ func (o *Operator) DeployApp(appID string, sequence int64) (deployed bool, deplo
 		return false, errors.Wrap(err, "failed to ensure disaster recovery label transformer")
 	}
 
-	kotsKinds, err := kotsutil.LoadKotsKindsFromPath(deployedVersionArchive)
+	kotsKinds, err := kotsutil.LoadKotsKindsFromPath(filepath.Join(deployedVersionArchive, "upstream"))
 	if err != nil {
 		return false, errors.Wrap(err, "failed to load kotskinds")
 	}
@@ -244,6 +253,23 @@ func (o *Operator) DeployApp(appID string, sequence int64) (deployed bool, deplo
 	builder, err := render.NewBuilder(kotsKinds, registrySettings, app.Slug, sequence, app.IsAirgap, util.PodNamespace)
 	if err != nil {
 		return false, errors.Wrap(err, "failed to get template builder")
+	}
+
+	if kotsKinds.HelmCharts != nil {
+		marshalledHelmCharts, err := kotsKinds.Marshal("kots.io", "v1beta1", "HelmChartList")
+		if err != nil {
+			return false, errors.Wrap(err, "failed to marshal helm charts")
+		}
+
+		renderedHelmCharts, err := builder.String(marshalledHelmCharts)
+		if err != nil {
+			return false, errors.Wrap(err, "failed to render helm charts")
+		}
+
+		kotsKinds.HelmCharts, err = kotsutil.LoadHelmChartsFromContents([]byte(renderedHelmCharts))
+		if err != nil {
+			return false, errors.Wrap(err, "failed to load helm charts")
+		}
 	}
 
 	requireIdentityProvider := false
@@ -323,7 +349,7 @@ func (o *Operator) DeployApp(appID string, sequence int64) (deployed bool, deplo
 				return false, errors.Wrap(err, "failed to get previously deployed app version archive")
 			}
 
-			previousKotsKinds, err = kotsutil.LoadKotsKindsFromPath(previouslyDeployedVersionArchive)
+			previousKotsKinds, err = kotsutil.LoadKotsKindsFromPath(filepath.Join(previouslyDeployedVersionArchive, "upstream"))
 			if err != nil {
 				return false, errors.Wrap(err, "failed to load kotskinds for previously deployed app version")
 			}
@@ -418,7 +444,13 @@ func (o *Operator) applyStatusInformers(a *apptypes.App, sequence int64, kotsKin
 		if err != nil {
 			return errors.Wrap(err, "failed to set app status")
 		}
-		go reporting.SendAppInfo(a.ID)
+
+		go func() {
+			err := reporting.GetReporter().SubmitAppInfo(a.ID)
+			if err != nil {
+				logger.Debugf("failed to submit app info: %v", err)
+			}
+		}()
 	}
 
 	return nil
@@ -459,7 +491,7 @@ func (o *Operator) resumeStatusInformersForApp(app *apptypes.App) error {
 		return errors.Wrap(err, "failed to get app version archive")
 	}
 
-	kotsKinds, err := kotsutil.LoadKotsKindsFromPath(deployedVersionArchive)
+	kotsKinds, err := kotsutil.LoadKotsKindsFromPath(filepath.Join(deployedVersionArchive, "upstream"))
 	if err != nil {
 		return errors.Wrap(err, "failed to load kotskinds")
 	}
@@ -670,7 +702,7 @@ func (o *Operator) UndeployApp(a *apptypes.App, d *downstreamtypes.Downstream, i
 		return errors.Wrap(err, "failed to get app version archive")
 	}
 
-	kotsKinds, err := kotsutil.LoadKotsKindsFromPath(deployedVersionArchive)
+	kotsKinds, err := kotsutil.LoadKotsKindsFromPath(filepath.Join(deployedVersionArchive, "upstream"))
 	if err != nil {
 		return errors.Wrap(err, "failed to load kotskinds")
 	}

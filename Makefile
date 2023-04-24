@@ -1,10 +1,10 @@
 include Makefile.build.mk
 CURRENT_USER := $(shell id -u -n)
-MINIO_TAG ?= RELEASE.2023-03-13T19-46-17Z
-MC_TAG ?= RELEASE.2023-02-28T00-12-59Z
-RQLITE_TAG ?= 7.14.1
+MINIO_TAG ?= RELEASE.2023-04-13T03-08-07Z
+MC_TAG ?= RELEASE.2023-04-12T02-21-51Z
+RQLITE_TAG ?= 7.14.2
 DEX_TAG ?= v2.36.0
-LVP_TAG ?= v0.5.1
+LVP_TAG ?= v0.5.2
 
 define sendMetrics
 @if [ -z "${PROJECT_NAME}" ]; then \
@@ -194,6 +194,7 @@ scan:
 		--skip-dirs .github \
 		--skip-files actions/version-tag/package-lock.json \
 		--skip-files web/yarn.lock \
+		--skip-dirs web/node_modules \
 		--ignorefile .trivyignore \
 		./
 

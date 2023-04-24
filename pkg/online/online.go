@@ -5,6 +5,7 @@ import (
 	"io"
 	"io/ioutil"
 	"os"
+	"path/filepath"
 	"time"
 
 	"github.com/pkg/errors"
@@ -192,7 +193,7 @@ func CreateAppFromOnline(opts CreateOnlineAppOpts) (_ *kotsutil.KotsKinds, final
 		return nil, errors.Wrap(err, "failed to create rendered support bundle spec")
 	}
 
-	kotsKinds, err := kotsutil.LoadKotsKindsFromPath(tmpRoot)
+	kotsKinds, err := kotsutil.LoadKotsKindsFromPath(filepath.Join(tmpRoot, "upstream"))
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to load kotskinds from path")
 	}
@@ -225,7 +226,7 @@ func CreateAppFromOnline(opts CreateOnlineAppOpts) (_ *kotsutil.KotsKinds, final
 					return nil, errors.Wrap(err, "failed to deploy version")
 				}
 				go func() {
-					if err := reporting.ReportAppInfo(opts.PendingApp.ID, newSequence, opts.SkipPreflights, opts.IsAutomated); err != nil {
+					if err := reporting.WaitAndReportPreflightChecks(opts.PendingApp.ID, newSequence, opts.SkipPreflights, opts.IsAutomated); err != nil {
 						logger.Debugf("failed to send preflights data to replicated app: %v", err)
 					}
 				}()
@@ -253,7 +254,7 @@ func CreateAppFromOnline(opts CreateOnlineAppOpts) (_ *kotsutil.KotsKinds, final
 			return nil, errors.Wrap(err, "failed to deploy version")
 		}
 		go func() {
-			if err := reporting.ReportAppInfo(opts.PendingApp.ID, newSequence, opts.SkipPreflights, opts.IsAutomated); err != nil {
+			if err := reporting.WaitAndReportPreflightChecks(opts.PendingApp.ID, newSequence, opts.SkipPreflights, opts.IsAutomated); err != nil {
 				logger.Debugf("failed to send preflights data to replicated app: %v", err)
 			}
 		}()
