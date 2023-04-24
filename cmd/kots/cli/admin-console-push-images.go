@@ -104,7 +104,8 @@ func AdminPushImagesCmd() *cobra.Command {
 				}
 			} else if os.IsNotExist(err) {
 				if _, err := url.ParseRequestURI(imageSource); err != nil {
-					return errors.Wrapf(err, "the airgap bundle %s does not exist", imageSource)
+					// Don't print the URI parsing errors, as this format is only used internally by KOTS.
+					return fmt.Errorf("the airgap bundle %s does not exist", imageSource)
 				}
 				err := kotsadm.CopyImages(imageSource, options, namespace)
 				if err != nil {
