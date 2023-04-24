@@ -104,7 +104,7 @@ func AdminPushImagesCmd() *cobra.Command {
 				}
 			} else if os.IsNotExist(err) {
 				if _, err := url.ParseRequestURI(imageSource); err != nil {
-					return errors.Wrapf(err, "the airgap bundle %s does not exist or is not a valid URL", imageSource)
+					return errors.Wrapf(err, "the airgap bundle %s does not exist", imageSource)
 				}
 				err := kotsadm.CopyImages(imageSource, options, namespace)
 				if err != nil {
