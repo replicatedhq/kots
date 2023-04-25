@@ -35,7 +35,7 @@ import (
 	"go.uber.org/zap"
 )
 
-type DeployResults struct {
+type Results struct {
 	IsError      bool   `json:"isError"`
 	DryrunStdout []byte `json:"dryrunStdout"`
 	DryrunStderr []byte `json:"dryrunStderr"`
@@ -131,8 +131,9 @@ func (c *Client) DeployApp(deployArgs operatortypes.DeployAppArgs) (deployed boo
 	var deployRes *deployResult
 	var helmResult *commandResult
 	var deployError, helmError error
+
 	defer func() {
-		results, err := c.setResults(deployArgs, &deployRes.dryRunResult, &deployRes.applyResult, helmResult)
+		results, err := c.setDeployResults(deployArgs, &deployRes.dryRunResult, &deployRes.applyResult, helmResult)
 		if err != nil {
 			finalError = errors.Wrap(err, "failed to set results")
 		}
@@ -167,10 +168,50 @@ func (c *Client) DeployApp(deployArgs operatortypes.DeployAppArgs) (deployed boo
 	return
 }
 
+func (c *Client) UndeployApp(undeployArgs operatortypes.UndeployAppArgs) (finalError error) {
+	log.Println("received an undeploy request for", undeployArgs.AppSlug)
+
+	defer func() {
+		var status apptypes.UndeployStatus
+		if finalError != nil {
+			status = apptypes.UndeployFailed
+		} else {
+			status = apptypes.UndeployCompleted
+		}
+		if err := c.setUndeployStatus(undeployArgs, status); err != nil {
+			finalError = errors.Wrap(err, "failed to set undeploy status")
+			log.Printf("failed to set undeploy status: %v", err)
+		}
+	}()
+
+	err := c.undeployHelmCharts(undeployArgs)
+	if err != nil {
+		log.Printf("failed to undeploy helm charts: %v", err)
+		return errors.Wrap(err, "failed to undeploy helm charts")
+	}
+
+	if err := c.undeployManifests(undeployArgs); err != nil {
+		log.Printf("failed to undeploy manifests: %v", err)
+		return errors.Wrap(err, "failed to undeploy manifests")
+	}
+
+	return nil
+}
+
 func (c *Client) deployManifests(deployArgs operatortypes.DeployAppArgs) (*deployResult, error) {
 	if deployArgs.PreviousManifests != "" {
-		if err := c.diffAndRemovePreviousManifests(deployArgs); err != nil {
-			return nil, errors.Wrapf(err, "failed to remove previous manifests")
+		opts := DiffAndDeleteOptions{
+			PreviousManifests:    deployArgs.PreviousManifests,
+			CurrentManifests:     deployArgs.Manifests,
+			AdditionalNamespaces: deployArgs.AdditionalNamespaces,
+			IsRestore:            deployArgs.IsRestore,
+			RestoreLabelSelector: deployArgs.RestoreLabelSelector,
+			KubectlVersion:       deployArgs.KubectlVersion,
+			KustomizeVersion:     deployArgs.KustomizeVersion,
+			Wait:                 deployArgs.Wait,
+		}
+		if err := c.diffAndDeleteManifests(opts); err != nil {
+			return nil, errors.Wrapf(err, "failed to diff and delete manifests")
 		}
 	}
 
@@ -207,11 +248,6 @@ func (c *Client) deployManifests(deployArgs operatortypes.DeployAppArgs) (*deplo
 }
 
 func (c *Client) deployHelmCharts(deployArgs operatortypes.DeployAppArgs) (*commandResult, error) {
-	targetNamespace := c.TargetNamespace
-	if deployArgs.Namespace != "." {
-		targetNamespace = deployArgs.Namespace
-	}
-
 	tarGz := archiver.TarGz{
 		Tar: &archiver.Tar{
 			ImplicitTopLevelFolder: false,
@@ -265,26 +301,29 @@ func (c *Client) deployHelmCharts(deployArgs operatortypes.DeployAppArgs) (*comm
 		}
 	}
 
+	curKotsCharts := []v1beta1.HelmChart{}
+	if deployArgs.KotsKinds != nil && deployArgs.KotsKinds.HelmCharts != nil {
+		curKotsCharts = deployArgs.KotsKinds.HelmCharts.Items
+	}
+
 	previousKotsCharts := []v1beta1.HelmChart{}
 	if deployArgs.PreviousKotsKinds != nil && deployArgs.PreviousKotsKinds.HelmCharts != nil {
 		previousKotsCharts = deployArgs.PreviousKotsKinds.HelmCharts.Items
 	}
-	removedCharts, err := getRemovedCharts(prevHelmDir, curHelmDir, previousKotsCharts)
+
+	removedCharts, err := getRemovedCharts(prevHelmDir, curHelmDir, previousKotsCharts, curKotsCharts)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to find removed charts")
 	}
 	if len(removedCharts) > 0 {
-		err := c.uninstallWithHelm(prevHelmDir, targetNamespace, removedCharts)
+		err := c.uninstallWithHelm(prevHelmDir, removedCharts)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to uninstall helm charts")
 		}
 	}
+
 	if len(deployArgs.Charts) > 0 {
-		kotsCharts := []v1beta1.HelmChart{}
-		if deployArgs.KotsKinds != nil && deployArgs.KotsKinds.HelmCharts != nil {
-			kotsCharts = deployArgs.KotsKinds.HelmCharts.Items
-		}
-		installResult, err = c.installWithHelm(curHelmDir, targetNamespace, kotsCharts)
+		installResult, err = c.installWithHelm(curHelmDir, curKotsCharts)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to install helm charts")
 		}
@@ -293,12 +332,86 @@ func (c *Client) deployHelmCharts(deployArgs operatortypes.DeployAppArgs) (*comm
 	return installResult, nil
 }
 
-func (c *Client) setResults(deployArgs operatortypes.DeployAppArgs, dryRunResult *commandResult, applyResult *commandResult, helmResult *commandResult) (*DeployResults, error) {
-	if deployArgs.Action == "" {
-		return nil, nil
+func (c *Client) undeployManifests(undeployArgs operatortypes.UndeployAppArgs) error {
+	if undeployArgs.Manifests != "" {
+		opts := DiffAndDeleteOptions{
+			PreviousManifests:    undeployArgs.Manifests,
+			CurrentManifests:     "",
+			AdditionalNamespaces: undeployArgs.AdditionalNamespaces,
+			IsRestore:            undeployArgs.IsRestore,
+			RestoreLabelSelector: undeployArgs.RestoreLabelSelector,
+			KubectlVersion:       undeployArgs.KubectlVersion,
+			KustomizeVersion:     undeployArgs.KustomizeVersion,
+			Wait:                 undeployArgs.Wait,
+		}
+		if err := c.diffAndDeleteManifests(opts); err != nil {
+			return errors.Wrapf(err, "failed to diff and delete manifests")
+		}
 	}
 
-	results := DeployResults{}
+	if undeployArgs.ClearPVCs {
+		// TODO: multi-namespace support
+		err := c.deletePVCs(undeployArgs.RestoreLabelSelector, undeployArgs.AppSlug)
+		if err != nil {
+			return errors.Wrap(err, "failed to delete PVCs")
+		}
+	}
+
+	if len(undeployArgs.ClearNamespaces) > 0 {
+		err := c.clearNamespaces(undeployArgs.AppSlug, undeployArgs.ClearNamespaces, undeployArgs.IsRestore, undeployArgs.RestoreLabelSelector)
+		if err != nil {
+			return errors.Wrap(err, "failed to clear namespaces")
+		}
+	}
+
+	// TODO: delete the additional namespaces if they are empty
+
+	return nil
+}
+
+func (c *Client) undeployHelmCharts(undeployArgs operatortypes.UndeployAppArgs) error {
+	if len(undeployArgs.Charts) > 0 {
+		return nil
+	}
+
+	tmpDir, err := ioutil.TempDir("", "helm")
+	if err != nil {
+		return errors.Wrap(err, "failed to create temp dir for charts")
+	}
+	defer os.RemoveAll(tmpDir)
+
+	err = ioutil.WriteFile(path.Join(tmpDir, "archive.tar.gz"), undeployArgs.Charts, 0644)
+	if err != nil {
+		return errors.Wrap(err, "failed to write archive")
+	}
+
+	helmDir := path.Join(tmpDir, "prevhelm")
+	if err := os.MkdirAll(helmDir, 0755); err != nil {
+		return errors.Wrap(err, "failed to create dir to stage helm archive")
+	}
+
+	tarGz := archiver.TarGz{
+		Tar: &archiver.Tar{
+			ImplicitTopLevelFolder: false,
+		},
+	}
+	if err := tarGz.Unarchive(path.Join(tmpDir, "archive.tar.gz"), helmDir); err != nil {
+		return errors.Wrap(err, "falied to unarchive helm archive")
+	}
+
+	kotsCharts := []v1beta1.HelmChart{}
+	if undeployArgs.KotsKinds != nil && undeployArgs.KotsKinds.HelmCharts != nil {
+		kotsCharts = undeployArgs.KotsKinds.HelmCharts.Items
+	}
+	if err := c.uninstallWithHelm(helmDir, kotsCharts); err != nil {
+		return errors.Wrap(err, "failed to uninstall helm charts")
+	}
+
+	return nil
+}
+
+func (c *Client) setDeployResults(args operatortypes.DeployAppArgs, dryRunResult *commandResult, applyResult *commandResult, helmResult *commandResult) (*Results, error) {
+	results := &Results{}
 
 	if dryRunResult != nil {
 		results.IsError = results.IsError || dryRunResult.hasErr
@@ -318,22 +431,6 @@ func (c *Client) setResults(deployArgs operatortypes.DeployAppArgs, dryRunResult
 		results.HelmStderr = bytes.Join(helmResult.multiStderr, []byte("\n"))
 	}
 
-	if deployArgs.Action == "deploy" {
-		err := c.setDeployResults(deployArgs, results)
-		if err != nil {
-			return &results, errors.Wrap(err, "failed to set deploy results")
-		}
-	} else {
-		err := c.setUndeployResults(deployArgs, results)
-		if err != nil {
-			return &results, errors.Wrap(err, "failed to set deploy results")
-		}
-	}
-
-	return &results, nil
-}
-
-func (c *Client) setDeployResults(args operatortypes.DeployAppArgs, results DeployResults) error {
 	app, err := store.GetStore().GetApp(args.AppID)
 	if err != nil {
 		logger.Error(errors.Wrapf(err, "failed to get app after deploying"))
@@ -349,11 +446,11 @@ func (c *Client) setDeployResults(args operatortypes.DeployAppArgs, results Depl
 
 	alreadySuccessful, err := store.GetStore().IsDownstreamDeploySuccessful(args.AppID, args.ClusterID, args.Sequence)
 	if err != nil {
-		return errors.Wrap(err, "failed to check deploy successful")
+		return results, errors.Wrap(err, "failed to check deploy successful")
 	}
 
 	if alreadySuccessful {
-		return nil
+		return results, nil
 	}
 
 	downstreamOutput := downstreamtypes.DownstreamOutput{
@@ -367,7 +464,7 @@ func (c *Client) setDeployResults(args operatortypes.DeployAppArgs, results Depl
 	}
 	err = store.GetStore().UpdateDownstreamDeployStatus(args.AppID, args.ClusterID, args.Sequence, results.IsError, downstreamOutput)
 	if err != nil {
-		return errors.Wrap(err, "failed to update downstream deploy status")
+		return results, errors.Wrap(err, "failed to update downstream deploy status")
 	}
 
 	if !results.IsError {
@@ -383,17 +480,10 @@ func (c *Client) setDeployResults(args operatortypes.DeployAppArgs, results Depl
 		}()
 	}
 
-	return nil
+	return results, nil
 }
 
-func (c *Client) setUndeployResults(args operatortypes.DeployAppArgs, results DeployResults) error {
-	var status apptypes.UndeployStatus
-	if results.IsError {
-		status = apptypes.UndeployFailed
-	} else {
-		status = apptypes.UndeployCompleted
-	}
-
+func (c *Client) setUndeployStatus(args operatortypes.UndeployAppArgs, status apptypes.UndeployStatus) error {
 	logger.Info("undeploy status",
 		zap.String("status", string(status)),
 		zap.String("appID", args.AppID))
@@ -463,7 +553,7 @@ func (c *Client) setAppStatus(newAppStatus appstatetypes.AppStatus) error {
 	return nil
 }
 
-func (c *Client) getApplier(kubectlVersion, kustomizeVersion string) (*applier.Kubectl, error) {
+func (c *Client) getApplier(kubectlVersion, kustomizeVersion string) (applier.KubectlInterface, error) {
 	kubectl, err := binaries.GetKubectlPathForVersion(kubectlVersion)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to find kubectl")
