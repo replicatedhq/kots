@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/containers/image/v5/copy"
 	"github.com/containers/image/v5/transports/alltransports"
@@ -103,6 +104,10 @@ func CopyImages(sourceEndpoint string, options types.PushImagesOptions, kotsName
 	return nil
 }
 
+func IsDockerEndpoint(sourceEndpoint string) bool {
+	return strings.Contains(sourceEndpoint, "docker.io")
+}
+
 func getCopyImagesSourceContext(clientset kubernetes.Interface, sourceEndpoint string, kotsNamespace string) (*imagev5types.SystemContext, error) {
 	sourceCtx := &imagev5types.SystemContext{DockerDisableV1Ping: true}
 
@@ -112,7 +117,7 @@ func getCopyImagesSourceContext(clientset kubernetes.Interface, sourceEndpoint s
 		sourceCtx.DockerInsecureSkipTLSVerify = imagev5types.OptionalBoolTrue
 	}
 
-	if sourceEndpoint != "" && sourceEndpoint != "docker.io" && sourceEndpoint != "index.docker.io" {
+	if sourceEndpoint != "" && !IsDockerEndpoint(sourceEndpoint) {
 		return sourceCtx, nil
 	}
 

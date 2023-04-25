@@ -102,6 +102,10 @@ func AdminPushImagesCmd() *cobra.Command {
 					return errors.Wrap(err, "failed to push images")
 				}
 			} else if os.IsNotExist(err) {
+				if !kotsadm.IsDockerEndpoint(imageSource) {
+					return errors.Wrapf(err, "failed to push images")
+				}
+
 				err := kotsadm.CopyImages(imageSource, options, namespace)
 				if err != nil {
 					return errors.Wrap(err, "failed to push images")
