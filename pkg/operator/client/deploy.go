@@ -108,7 +108,6 @@ func (c *Client) diffAndRemovePreviousManifests(deployArgs operatortypes.DeployA
 		decodedCurrentMap[k] = decodedCurrentString
 	}
 
-	// now remove anything that's in previous but not in current
 	kubectl, err := binaries.GetKubectlPathForVersion(deployArgs.KubectlVersion)
 	if err != nil {
 		return errors.Wrap(err, "failed to find kubectl")
@@ -121,11 +120,20 @@ func (c *Client) diffAndRemovePreviousManifests(deployArgs operatortypes.DeployA
 	if err != nil {
 		return errors.Wrap(err, "failed to get cluster config")
 	}
+	dyn, err := k8sutil.GetDynamicClient()
+	if err != nil {
+		return errors.Wrap(err, "failed to create dynamic client")
+	}
+	disc, err := discovery.NewDiscoveryClientForConfig(config)
+	if err != nil {
+		return errors.Wrap(err, "failed to create discovery client")
+	}
 
 	// this is pretty raw, and required kubectl...  we should
 	// consider some other options here?
 	kubernetesApplier := applier.NewKubectl(kubectl, kustomize, config)
 
+	// now remove anything that's in previous but not in current
 	resourcesToDelete := []string{}
 	for k, previous := range decodedPreviousMap {
 		if _, ok := decodedCurrentMap[k]; ok {
@@ -153,16 +161,6 @@ func (c *Client) diffAndRemovePreviousManifests(deployArgs operatortypes.DeployA
 	}
 
 	if len(deployArgs.ClearNamespaces) > 0 {
-		dyn, err := k8sutil.GetDynamicClient()
-		if err != nil {
-			return errors.Wrap(err, "failed to create dynamic client")
-		}
-
-		disc, err := discovery.NewDiscoveryClientForConfig(config)
-		if err != nil {
-			return errors.Wrap(err, "failed to create discovery client")
-		}
-
 		resourceList, err := disc.ServerPreferredNamespacedResources()
 		if err != nil {
 			// An application can define an APIService handled by a Deployment in the application itself.
@@ -174,7 +172,7 @@ func (c *Client) diffAndRemovePreviousManifests(deployArgs operatortypes.DeployA
 
 		gvrs, err := discovery.GroupVersionResources(resourceList)
 		if err != nil {
-			return errors.Wrap(err, "failed to convert resource list to groupversionresource map")
+			logger.Infof("Failed to get GroupVersionResources: %v", err)
 		}
 
 		err = clearNamespaces(deployArgs.AppSlug, deployArgs.ClearNamespaces, deployArgs.IsRestore, deployArgs.RestoreLabelSelector, defaultKindDeleteOrder, dyn, gvrs)
