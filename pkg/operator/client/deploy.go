@@ -24,21 +24,12 @@ import (
 	"github.com/replicatedhq/yaml/v3"
 	corev1 "k8s.io/api/core/v1"
 	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	k8slabels "k8s.io/apimachinery/pkg/labels"
-	"k8s.io/apimachinery/pkg/runtime"
-	k8sruntime "k8s.io/apimachinery/pkg/runtime"
-	k8sschema "k8s.io/apimachinery/pkg/runtime/schema"
-	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/client-go/discovery"
-	"k8s.io/client-go/dynamic"
-	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/scheme"
-	"sigs.k8s.io/controller-runtime/pkg/client/config"
 )
 
-var metadataAccessor = meta.NewAccessor()
 var imagePullSecretsMtx sync.Mutex
 
 type commandResult struct {
@@ -135,6 +126,7 @@ func (c *Client) diffAndRemovePreviousManifests(deployArgs operatortypes.DeployA
 	// consider some other options here?
 	kubernetesApplier := applier.NewKubectl(kubectl, kustomize, config)
 
+	resourcesToDelete := []string{}
 	for k, previous := range decodedPreviousMap {
 		if _, ok := decodedCurrentMap[k]; ok {
 			continue
@@ -142,85 +134,54 @@ func (c *Client) diffAndRemovePreviousManifests(deployArgs operatortypes.DeployA
 		if !previous.delete {
 			continue
 		}
-
-		group := ""
-		kind := ""
-		namespace := targetNamespace
-		name := ""
-
-		obj, gvk, err := parseK8sYaml([]byte(previous.spec))
-		if err != nil {
-			logger.Infof("deleting unidentified manifest. unable to parse error: %s", err.Error())
-			if runtime.IsNotRegisteredError(errors.Cause(err)) {
-				_, o := GetGVKWithNameAndNs([]byte(previous.spec), targetNamespace)
-				if o.Metadata.Namespace != "" {
-					namespace = o.Metadata.Namespace
-				}
-				name = o.Metadata.Name
-			}
-		}
-
-		if obj != nil {
-			if n, _ := metadataAccessor.Namespace(obj); n != "" {
-				namespace = n
-			}
-			name, _ = metadataAccessor.Name(obj)
-		}
-
-		if obj != nil && gvk != nil {
-			group = gvk.Group
-			kind = gvk.Kind
-			logger.Infof("deleting manifest(s): %s/%s/%s", group, kind, name)
-		}
-
-		wait := deployArgs.Wait
-		if gvk != nil && gvk.Kind == "PersistentVolumeClaim" {
-			// blocking on PVC delete will create a deadlock if
-			// it's used by a pod that has not been deleted yet.
-			wait = false
-		}
-
-		stdout, stderr, err := kubernetesApplier.Remove(namespace, []byte(previous.spec), wait)
-		if err != nil {
-			logger.Infof("stdout (delete) = %s", stdout)
-			logger.Infof("stderr (delete) = %s", stderr)
-			logger.Infof("error: %s", err.Error())
-		} else {
-			logger.Infof("manifest(s) deleted: %s/%s/%s", group, kind, name)
-		}
+		resourcesToDelete = append(resourcesToDelete, previous.spec)
 	}
 
+	deleteManifestResources(resourcesToDelete, targetNamespace, kubernetesApplier, defaultKindDeleteOrder, deployArgs.Wait)
+
 	if deployArgs.ClearPVCs {
+		clientset, err := k8sutil.GetClientset()
+		if err != nil {
+			return errors.Wrap(err, "failed to get client set")
+		}
+
 		// TODO: multi-namespace support
-		err := deletePVCs(targetNamespace, deployArgs.RestoreLabelSelector, deployArgs.AppSlug)
+		err = deletePVCs(targetNamespace, deployArgs.RestoreLabelSelector, deployArgs.AppSlug, clientset)
 		if err != nil {
 			return errors.Wrap(err, "failed to delete PVCs")
 		}
 	}
 
-	for _, namespace := range deployArgs.ClearNamespaces {
-		logger.Infof("Ensuring all %s objects have been removed from namespace %s\n", deployArgs.AppSlug, namespace)
-		sleepTime := time.Second * 2
-		for i := 60; i >= 0; i-- { // 2 minute wait, 60 loops with 2 second sleep
-			gone, err := c.clearNamespace(deployArgs.AppSlug, namespace, deployArgs.IsRestore, deployArgs.RestoreLabelSelector)
-			if err != nil {
-				logger.Errorf("Failed to check if app %s objects have been removed from namespace %s: %v\n", deployArgs.AppSlug, namespace, err)
-			} else if gone {
-				break
-			}
-			if i == 0 {
-				return fmt.Errorf("Failed to clear app %s from namespace %s\n", deployArgs.AppSlug, namespace)
-			}
-			logger.Infof("Namespace %s still has objects from app %s: sleeping...\n", namespace, deployArgs.AppSlug)
-			time.Sleep(sleepTime)
-		}
-		logger.Infof("Namespace %s successfully cleared of app %s\n", namespace, deployArgs.AppSlug)
-	}
 	if len(deployArgs.ClearNamespaces) > 0 {
-		// Extra time in case the app-slug annotation was not being used.
-		time.Sleep(time.Second * 20)
-	}
+		dyn, err := k8sutil.GetDynamicClient()
+		if err != nil {
+			return errors.Wrap(err, "failed to create dynamic client")
+		}
 
+		disc, err := discovery.NewDiscoveryClientForConfig(config)
+		if err != nil {
+			return errors.Wrap(err, "failed to create discovery client")
+		}
+
+		resourceList, err := disc.ServerPreferredNamespacedResources()
+		if err != nil {
+			// An application can define an APIService handled by a Deployment in the application itself.
+			// In that case there will be a race condition listing resources in that API group and there
+			// could be an error here. Most of the API groups would still be in the resource list so the
+			// error is not terminal.
+			logger.Infof("Failed to list all resources: %v", err)
+		}
+
+		gvrs, err := discovery.GroupVersionResources(resourceList)
+		if err != nil {
+			return errors.Wrap(err, "failed to convert resource list to groupversionresource map")
+		}
+
+		err = clearNamespaces(deployArgs.AppSlug, deployArgs.ClearNamespaces, deployArgs.IsRestore, deployArgs.RestoreLabelSelector, defaultKindDeleteOrder, dyn, gvrs)
+		if err != nil {
+			logger.Infof("Failed to clear namespaces: %v\n", err)
+		}
+	}
 	return nil
 }
 
@@ -421,94 +382,6 @@ func (c *Client) ensureResourcesPresent(deployArgs operatortypes.DeployAppArgs) 
 	return &deployRes, nil
 }
 
-func (c *Client) clearNamespace(slug string, namespace string, isRestore bool, restoreLabelSelector *metav1.LabelSelector) (bool, error) {
-	cfg, err := config.GetConfig()
-	if err != nil {
-		return false, errors.Wrap(err, "failed to get config")
-	}
-	disc, err := discovery.NewDiscoveryClientForConfig(cfg)
-	if err != nil {
-		return false, errors.Wrap(err, "failed to create discovery client")
-	}
-	dyn, err := dynamic.NewForConfig(cfg)
-	if err != nil {
-		return false, errors.Wrap(err, "failed to create dynamic client")
-	}
-	resourceList, err := disc.ServerPreferredNamespacedResources()
-	if err != nil {
-		// An application can define an APIService handled by a Deployment in the application itself.
-		// In that case there will be a race condition listing resources in that API group and there
-		// could be an error here. Most of the API groups would still be in the resource list so the
-		// error is not terminal.
-		logger.Infof("Failed to list all resources: %v", err)
-	}
-	gvrs, err := discovery.GroupVersionResources(resourceList)
-	if err != nil {
-		return false, errors.Wrap(err, "failed to convert resource list to groupversionresource map")
-	}
-	// skip resources that don't have API endpoints or don't have applied objects
-	var skip = sets.NewString(
-		"/v1/bindings",
-		"/v1/events",
-		"extensions/v1beta1/replicationcontrollers",
-		"apps/v1/controllerrevisions",
-		"authentication.k8s.io/v1/tokenreviews",
-		"authorization.k8s.io/v1/localsubjectaccessreviews",
-		"authorization.k8s.io/v1/subjectaccessreviews",
-		"authorization.k8s.io/v1/selfsubjectaccessreviews",
-		"authorization.k8s.io/v1/selfsubjectrulesreviews",
-	)
-	clear := true
-	for gvr := range gvrs {
-		s := fmt.Sprintf("%s/%s/%s", gvr.Group, gvr.Version, gvr.Resource)
-		if skip.Has(s) {
-			continue
-		}
-		// there may be other resources that can't be listed besides what's in the skip set so ignore error
-		unstructuredList, err := dyn.Resource(gvr).Namespace(namespace).List(context.TODO(), metav1.ListOptions{})
-		if unstructuredList == nil {
-			if err != nil {
-				logger.Errorf("failed to list namespace resources: %s", err.Error())
-			}
-			continue
-		}
-		for _, u := range unstructuredList.Items {
-			if isRestore {
-				labels := u.GetLabels()
-				if excludeLabel, exists := labels["velero.io/exclude-from-backup"]; exists && excludeLabel == "true" {
-					continue
-				}
-				if restoreLabelSelector != nil {
-					s, err := metav1.LabelSelectorAsSelector(restoreLabelSelector)
-					if err != nil {
-						return false, errors.Wrap(err, "failed to convert label selector to a selector")
-					}
-					if !s.Matches(k8slabels.Set(labels)) {
-						continue
-					}
-				}
-			}
-
-			annotations := u.GetAnnotations()
-			if annotations["kots.io/app-slug"] == slug {
-				clear = false
-				if u.GetDeletionTimestamp() != nil {
-					logger.Infof("%s %s is pending deletion\n", gvr, u.GetName())
-					continue
-				}
-				logger.Infof("Deleting %s/%s/%s\n", namespace, gvr, u.GetName())
-				err := dyn.Resource(gvr).Namespace(namespace).Delete(context.TODO(), u.GetName(), metav1.DeleteOptions{})
-				if err != nil {
-					logger.Errorf("Resource %s (%s) in namespace %s could not be deleted: %v\n", u.GetName(), gvr, namespace, err)
-					return false, err
-				}
-			}
-		}
-	}
-
-	return clear, nil
-}
-
 func (c *Client) installWithHelm(helmDir string, targetNamespace string, kotsCharts []v1beta1.HelmChart) (*commandResult, error) {
 	version := "3"
 	chartsDir := filepath.Join(helmDir, "charts")
@@ -666,72 +539,6 @@ func (c *Client) uninstallWithHelm(helmDir string, targetNamespace string, chart
 			}
 			logger.Errorf("error: %s", err.Error())
 			return errors.Wrapf(err, "failed to uninstall chart %s: %s", chart, stderr)
-		}
-	}
-
-	return nil
-}
-
-func parseK8sYaml(doc []byte) (k8sruntime.Object, *k8sschema.GroupVersionKind, error) {
-	decode := scheme.Codecs.UniversalDeserializer().Decode
-	obj, gvk, err := decode(doc, nil, nil)
-	if err != nil {
-		return nil, nil, errors.Wrap(err, "failed to decode k8s yaml")
-	}
-	return obj, gvk, err
-}
-
-func deletePVCs(namespace string, appLabelSelector *metav1.LabelSelector, appslug string) error {
-	cfg, err := config.GetConfig()
-	if err != nil {
-		return errors.Wrap(err, "failed to get config")
-	}
-
-	clientset, err := kubernetes.NewForConfig(cfg)
-	if err != nil {
-		return errors.Wrap(err, "failed to get client set")
-	}
-
-	if appLabelSelector == nil {
-		appLabelSelector = &metav1.LabelSelector{
-			MatchLabels: map[string]string{},
-		}
-	}
-	appLabelSelector.MatchLabels["kots.io/app-slug"] = appslug
-
-	podsList, err := clientset.CoreV1().Pods(namespace).List(context.TODO(), metav1.ListOptions{
-		LabelSelector: getLabelSelector(appLabelSelector),
-	})
-	if err != nil {
-		return errors.Wrap(err, "failed to get list of app pods")
-	}
-
-	pvcs := make([]string, 0)
-	for _, pod := range podsList.Items {
-		for _, v := range pod.Spec.Volumes {
-			if v.PersistentVolumeClaim != nil {
-				pvcs = append(pvcs, v.PersistentVolumeClaim.ClaimName)
-			}
-		}
-	}
-
-	if len(pvcs) == 0 {
-		logger.Infof("no pvcs to delete in %s for pods that match %s", namespace, getLabelSelector(appLabelSelector))
-		return nil
-	}
-	logger.Infof("deleting %d pvcs in %s for pods that match %s", len(pvcs), namespace, getLabelSelector(appLabelSelector))
-
-	for _, pvc := range pvcs {
-		grace := int64(0)
-		policy := metav1.DeletePropagationBackground
-		opts := metav1.DeleteOptions{
-			GracePeriodSeconds: &grace,
-			PropagationPolicy:  &policy,
-		}
-		logger.Infof("deleting pvc: %s", pvc)
-		err := clientset.CoreV1().PersistentVolumeClaims(namespace).Delete(context.TODO(), pvc, opts)
-		if err != nil && !kuberneteserrors.IsNotFound(err) {
-			return errors.Wrapf(err, "failed to delete pvc %s", pvc)
 		}
 	}
 
