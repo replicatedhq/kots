@@ -20,7 +20,7 @@ import (
 )
 
 // Copies Admin Console images from public registry to private registry
-func CopyImages(sourceEndpoint string, options types.PushImagesOptions, kotsNamespace string) error {
+func CopyImages(options types.PushImagesOptions, kotsNamespace string) error {
 	clientset, err := k8sutil.GetClientset()
 	if err != nil {
 		return errors.Wrap(err, "failed to get clientset")
@@ -47,7 +47,7 @@ func CopyImages(sourceEndpoint string, options types.PushImagesOptions, kotsName
 
 		writeProgressLine(options.ProgressWriter, fmt.Sprintf("Copying %s to %s", sourceImage, destImage))
 
-		sourceCtx, err := getCopyImagesSourceContext(clientset, sourceEndpoint, kotsNamespace)
+		sourceCtx, err := getCopyImagesSourceContext(clientset, kotsNamespace)
 		if err != nil {
 			return errors.Wrap(err, "failed to get source context")
 		}
@@ -103,17 +103,13 @@ func CopyImages(sourceEndpoint string, options types.PushImagesOptions, kotsName
 	return nil
 }
 
-func getCopyImagesSourceContext(clientset kubernetes.Interface, sourceEndpoint string, kotsNamespace string) (*imagev5types.SystemContext, error) {
+func getCopyImagesSourceContext(clientset kubernetes.Interface, kotsNamespace string) (*imagev5types.SystemContext, error) {
 	sourceCtx := &imagev5types.SystemContext{DockerDisableV1Ping: true}
 
 	// allow pulling images from http/invalid https docker repos
 	// intended for development only, _THIS MAKES THINGS INSECURE_
 	if os.Getenv("KOTSADM_INSECURE_SRCREGISTRY") == "true" {
 		sourceCtx.DockerInsecureSkipTLSVerify = imagev5types.OptionalBoolTrue
-	}
-
-	if sourceEndpoint != "" && sourceEndpoint != "docker.io" && sourceEndpoint != "index.docker.io" {
-		return sourceCtx, nil
 	}
 
 	credentials, err := registry.GetDockerHubCredentials(clientset, kotsNamespace)

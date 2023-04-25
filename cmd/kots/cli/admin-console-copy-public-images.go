@@ -86,7 +86,7 @@ func AdminCopyPublicImagesCmd() *cobra.Command {
 				ProgressWriter: os.Stdout,
 			}
 
-			err = kotsadm.CopyImages(v.GetString("source-registry"), options, namespace)
+			err = kotsadm.CopyImages(options, namespace)
 			if err != nil {
 				return errors.Wrap(err, "failed to copy images")
 			}
