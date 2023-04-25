@@ -76,7 +76,7 @@ func (b *Base) writeBase(options WriteOptions, isTopLevelBase bool) ([]string, [
 			}
 		}
 
-		newContent, err := kotsutil.RemoveEmptyMappingFields(file.Content)
+		newContent, err := kotsutil.RemoveNilFieldsFromYAML(file.Content)
 		if err != nil {
 			return nil, nil, errors.Wrap(err, "failed to remove empty mapping fields")
 		}

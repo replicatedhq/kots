@@ -195,7 +195,7 @@ func cleanBaseApp(baseDir string, filter func(path string) (bool, error)) error 
 					return nil
 				}
 
-				newContent, err := kotsutil.RemoveEmptyMappingFields(content)
+				newContent, err := kotsutil.RemoveNilFieldsFromYAML(content)
 				if err != nil {
 					return errors.Wrapf(err, "failed to remove empty mapping fields from %s", path)
 				}
