@@ -43,7 +43,6 @@ import (
 	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
-	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/kubernetes"
 )
 
@@ -1658,12 +1657,7 @@ func resetBackupRepositories(ctx context.Context, veleroNamespace string) error 
 }
 
 func resetResticRepositories(ctx context.Context, veleroNamespace string) error {
-	config, err := k8sutil.GetClusterConfig()
-	if err != nil {
-		return errors.Wrap(err, "failed to get cluster config")
-	}
-
-	dynamicClient, err := dynamic.NewForConfig(config)
+	dynamicClient, err := k8sutil.GetDynamicClient()
 	if err != nil {
 		return errors.Wrap(err, "failed to create dynamic client")
 	}
