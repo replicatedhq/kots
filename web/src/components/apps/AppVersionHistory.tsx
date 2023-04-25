@@ -1605,7 +1605,6 @@ class AppVersionHistory extends Component<Props, State> {
     if (preflightState === "") {
       this.setState({ hasPreflightChecks: false });
     } else {
-      console.log("ok");
       this.setState({ preflightState: preflightState });
     }
   };
@@ -1748,7 +1747,7 @@ class AppVersionHistory extends Component<Props, State> {
                   toggleErrorModal={resetRedeployErrorMessage}
                 />
               )}
-              {!gitopsIsConnected && (
+              {!gitopsIsConnected && !showDiffOverlay && (
                 <div
                   className="flex-column flex1"
                   style={{ maxWidth: "370px", marginRight: "20px" }}
@@ -1816,28 +1815,6 @@ class AppVersionHistory extends Component<Props, State> {
                                   />
                                 </div>
                               )}
-                              {/* {this.state.hasPreflightChecks ? (
-                                <div className="u-marginRight--5">
-                                  <Link
-                                    to={`/app/${app?.slug}/downstreams/${app.downstream.cluster?.slug}/version-history/preflight/${currentDownstreamVersion?.sequence}`}
-                                    data-tip="View preflight checks"
-                                  >
-                                    <Icon
-                                      icon="preflight-checks"
-                                      size={22}
-                                      className="clickable"
-                                      color={""}
-                                      style={{}}
-                                      disableFill={false}
-                                      removeInlineStyle={false}
-                                    />
-                                  </Link>
-                                  <ReactTooltip
-                                    effect="solid"
-                                    className="replicated-tooltip"
-                                  />
-                                </div>
-                              ) : null} */}
                               {app ? (
                                 <div>
                                   <span
@@ -2093,6 +2070,7 @@ class AppVersionHistory extends Component<Props, State> {
                       firstSequence={firstSequence}
                       secondSequence={secondSequence}
                       onBackClick={this.hideDiffOverlay}
+                      hideBackButton={false}
                       app={this.props.app}
                     />
                   </div>
