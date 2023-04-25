@@ -26,16 +26,16 @@ func AdminCopyPublicImagesCmd() *cobra.Command {
 				os.Exit(1)
 			}
 
-			v := viper.GetViper()
 			endpoint := args[0]
-			namespace, err := getNamespaceOrDefault(v.GetString("namespace"))
-			if err != nil {
-				return errors.Wrap(err, "failed to get namespace")
-			}
-
 			options, err := genAndCheckPushOptions(endpoint, cmd)
 			if err != nil {
 				return err
+			}
+
+			v := viper.GetViper()
+			namespace, err := getNamespaceOrDefault(v.GetString("namespace"))
+			if err != nil {
+				return errors.Wrap(err, "failed to get namespace")
 			}
 
 			err = kotsadm.CopyImages(*options, namespace)
