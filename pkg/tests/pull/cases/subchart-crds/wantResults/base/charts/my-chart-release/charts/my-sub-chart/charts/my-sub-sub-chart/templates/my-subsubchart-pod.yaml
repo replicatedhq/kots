@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: my-sub-sub-chart-pod
+spec:
+  containers:
+  - image: nginx
+    name: my-sub-sub-chart-container
+    ports:
+    - containerPort: 80
