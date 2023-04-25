@@ -32,8 +32,23 @@ func AdminPushImagesCmd() *cobra.Command {
 		},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			v := viper.GetViper()
+			var imageSource, endpoint string
 
-			publicImages := v.GetBool("public-kots-images")
+			publicImages := v.GetBool("kots-images-only")
+			if publicImages {
+				if len(args) != 1 {
+					cmd.Help()
+					os.Exit(1)
+				}
+				endpoint = args[0]
+			} else {
+				if len(args) != 2 {
+					cmd.Help()
+					os.Exit(1)
+				}
+				imageSource = args[0]
+				endpoint = args[1]
+			}
 
 			if (publicImages && len(args) != 1) || (!publicImages && len(args) != 2) {
 				cmd.Help()
@@ -41,9 +56,6 @@ func AdminPushImagesCmd() *cobra.Command {
 			}
 
 			log := logger.NewCLILogger(cmd.OutOrStdout())
-
-			imageSource := args[0]
-			endpoint := args[1]
 
 			hostname, err := getHostnameFromEndpoint(endpoint)
 			if err != nil {
@@ -117,7 +129,7 @@ func AdminPushImagesCmd() *cobra.Command {
 	cmd.Flags().String("registry-username", "", "user name to use to authenticate with the registry")
 	cmd.Flags().String("registry-password", "", "password to use to authenticate with the registry")
 	cmd.Flags().Bool("skip-registry-check", false, "skip the connectivity test and validation of the provided registry information")
-	cmd.Flags().Bool("public-kots-images", false, "push only the public kots images")
+	cmd.Flags().Bool("kots-images-only", false, "push only the public kots images")
 
 	cmd.Flags().String("kotsadm-tag", "", "set to override the tag of kotsadm. this may create an incompatible deployment because the version of kots and kotsadm are designed to work together")
 	cmd.Flags().MarkHidden("kotsadm-tag")
