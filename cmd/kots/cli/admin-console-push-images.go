@@ -23,8 +23,8 @@ import (
 func AdminPushImagesCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:           "push-images [airgap filename] [registry host]",
-		Short:         "Push app images",
-		Long:          "Push app images from airgap bundle to a private registry",
+		Short:         "Push images from the airgap bundle to a private registry",
+		Long:          "Push images from the airgap bundle to a private registry",
 		SilenceUsage:  true,
 		SilenceErrors: false,
 		PreRun: func(cmd *cobra.Command, args []string) {

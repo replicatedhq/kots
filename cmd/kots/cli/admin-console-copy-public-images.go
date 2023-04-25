@@ -51,8 +51,6 @@ func AdminCopyPublicImagesCmd() *cobra.Command {
 	cmd.Flags().String("registry-password", "", "password to use to authenticate with the registry")
 	cmd.Flags().Bool("skip-registry-check", false, "skip the connectivity test and validation of the provided registry information")
 
-	cmd.Flags().String("source-registry", "docker.io", "source registry for public images")
-
 	cmd.Flags().String("kotsadm-tag", "", "set to override the tag of kotsadm. this may create an incompatible deployment because the version of kots and kotsadm are designed to work together")
 	cmd.Flags().MarkHidden("kotsadm-tag")
 
