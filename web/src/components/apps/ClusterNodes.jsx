@@ -65,7 +65,9 @@ export class ClusterNodes extends Component {
       this.setState({
         kurl: response,
         // if cluster doesn't support ha, then primary will be disabled. Force into secondary
-        selectedNodeType: !response.ha ? "secondary" : this.state.selectedNodeType,
+        selectedNodeType: !response.ha
+          ? "secondary"
+          : this.state.selectedNodeType,
       });
       return response;
     } catch (err) {
