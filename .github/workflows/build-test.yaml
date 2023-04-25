@@ -2612,8 +2612,8 @@ jobs:
         run: |
           set +e
 
-          ./bin/kots admin-console push-images \
-            not-an-app.airgap localhost:1234/not-a-namespace \
+          ./bin/kots admin-console copy-public-images \
+            localhost:1234/not-a-namespace \
             --registry-username not-a-username \
             --registry-password not-a-password > output.txt 2>&1
 
