@@ -1,48 +1,38 @@
 package cli
 
 import (
-	"context"
 	"fmt"
 	"os"
-	"strings"
 
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/docker/registry"
 	dockerregistry "github.com/replicatedhq/kots/pkg/docker/registry"
 	registrytypes "github.com/replicatedhq/kots/pkg/docker/registry/types"
-	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/kotsadm"
 	kotsadmtypes "github.com/replicatedhq/kots/pkg/kotsadm/types"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func AdminPushImagesCmd() *cobra.Command {
+func AdminCopyPublicImagesCmd() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:           "push-images [airgap filename] [registry host]",
-		Short:         "Push app images",
-		Long:          "Push app images from airgap bundle to a private registry",
+		Use:           "copy-public-images [registry host]",
+		Short:         "Copy public admin console images",
+		Long:          "Copy public admin console images to a private registry",
+		Hidden:        true,
 		SilenceUsage:  true,
 		SilenceErrors: false,
+		Args:          cobra.ExactArgs(1),
 		PreRun: func(cmd *cobra.Command, args []string) {
 			viper.BindPFlags(cmd.Flags())
 		},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			v := viper.GetViper()
-
-			if len(args) != 2 {
-				cmd.Help()
-				os.Exit(1)
-			}
-
 			log := logger.NewCLILogger(cmd.OutOrStdout())
 
-			imageSource := args[0]
-			endpoint := args[1]
-
+			endpoint := args[0]
 			hostname, err := getHostnameFromEndpoint(endpoint)
 			if err != nil {
 				return errors.Wrap(err, "failed get hostname from endpoint")
@@ -96,13 +86,9 @@ func AdminPushImagesCmd() *cobra.Command {
 				ProgressWriter: os.Stdout,
 			}
 
-			if _, err := os.Stat(imageSource); err == nil {
-				err := kotsadm.PushImages(imageSource, options)
-				if err != nil {
-					return errors.Wrap(err, "failed to push images")
-				}
-			} else {
-				return errors.Wrap(err, "failed to stat file")
+			err = kotsadm.CopyImages(v.GetString("source-registry"), options, namespace)
+			if err != nil {
+				return errors.Wrap(err, "failed to copy images")
 			}
 
 			return nil
@@ -113,39 +99,10 @@ func AdminPushImagesCmd() *cobra.Command {
 	cmd.Flags().String("registry-password", "", "password to use to authenticate with the registry")
 	cmd.Flags().Bool("skip-registry-check", false, "skip the connectivity test and validation of the provided registry information")
 
+	cmd.Flags().String("source-registry", "docker.io", "source registry for public images")
+
 	cmd.Flags().String("kotsadm-tag", "", "set to override the tag of kotsadm. this may create an incompatible deployment because the version of kots and kotsadm are designed to work together")
 	cmd.Flags().MarkHidden("kotsadm-tag")
 
 	return cmd
-}
-
-func getRegistryCredentialsFromSecret(endpoint string, namespace string) (username string, password string, err error) {
-	clientset, err := k8sutil.GetClientset()
-	if err != nil {
-		err = errors.Wrap(err, "failed to get clientset")
-		return
-	}
-
-	secret, err := clientset.CoreV1().Secrets(namespace).Get(context.TODO(), kotsadmtypes.PrivateKotsadmRegistrySecret, metav1.GetOptions{})
-	if err != nil {
-		err = errors.Wrap(err, "failed to get secret")
-		return
-	}
-
-	dockerConfigJson := secret.Data[".dockerconfigjson"]
-	if len(dockerConfigJson) == 0 {
-		err = errors.New("no .dockerconfigjson found in secret")
-		return
-	}
-
-	endpoint = strings.Split(endpoint, "/")[0]
-	credentials, err := registry.GetCredentialsForRegistryFromConfigJSON(dockerConfigJson, endpoint)
-	if err != nil {
-		err = errors.Wrap(err, "failed to get credentials")
-		return
-	}
-
-	username = credentials.Username
-	password = credentials.Password
-	return
 }
