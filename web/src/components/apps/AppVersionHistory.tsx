@@ -42,6 +42,7 @@ import {
   withRouter,
   withRouterType,
 } from "@src/utilities/react-router-utilities";
+import PreflightIcon from "@features/App/PreflightIcon";
 
 dayjs.extend(relativeTime);
 
@@ -145,7 +146,10 @@ type State = {
   viewLogsErrMsg: string;
   yamlErrorDetails: string[];
 
-  preflightState: string;
+  preflightState: {
+    preflightsFailed: boolean;
+    preflightState: string;
+  } | null;
 };
 
 const filterNonHelmTabs = (tab: string, isHelmManaged: boolean) => {
@@ -221,7 +225,7 @@ class AppVersionHistory extends Component<Props, State> {
       viewLogsErrMsg: "",
       yamlErrorDetails: [],
 
-      preflightState: "",
+      preflightState: null,
     };
   }
 
@@ -1464,7 +1468,7 @@ class AppVersionHistory extends Component<Props, State> {
           }
           isNew={isNew}
           key={version.sequence}
-          newPreflightResults={newPreflightResults}
+          isNewPreflightResults={newPreflightResults}
           nothingToCommit={nothingToCommit}
           onWhyNoGeneratedDiffClicked={(rowVersion: Version) =>
             this.toggleNoChangesModal(rowVersion)
@@ -1597,16 +1601,21 @@ class AppVersionHistory extends Component<Props, State> {
   };
 
   getPreflightState = (version: Version) => {
+    let preflightsFailed = false;
     let preflightState = "";
     if (version?.preflightResult) {
       const preflightResult = JSON.parse(version.preflightResult);
       preflightState = getPreflightResultState(preflightResult);
+      preflightsFailed = preflightState === "fail";
+
+      this.setState({
+        preflightState: {
+          preflightsFailed,
+          preflightState,
+        },
+      });
     }
-    if (preflightState === "") {
-      this.setState({ hasPreflightChecks: false });
-    } else {
-      this.setState({ preflightState: preflightState });
-    }
+    return {};
   };
 
   render() {
@@ -1696,8 +1705,8 @@ class AppVersionHistory extends Component<Props, State> {
     const renderVersionLabel = () => {
       let shorten = "";
       let isTruncated = false;
-      const { versionLabel } = currentDownstreamVersion;
-      if (currentDownstreamVersion && versionLabel) {
+      if (currentDownstreamVersion && currentDownstreamVersion?.versionLabel) {
+        const { versionLabel } = currentDownstreamVersion;
         if (versionLabel.length > 18) {
           shorten = `${versionLabel.slice(0, 15)}...`;
           isTruncated = true;
@@ -1715,7 +1724,11 @@ class AppVersionHistory extends Component<Props, State> {
           </p>{" "}
           {isTruncated && (
             <>
-              <Icon icon="info" size={16} data-tip={versionLabel} />
+              <Icon
+                icon="info"
+                size={16}
+                data-tip={currentDownstreamVersion?.versionLabel || ""}
+              />
               <ReactTooltip effect="solid" className="replicated-tooltip" />
             </>
           )}
@@ -1843,33 +1856,14 @@ class AppVersionHistory extends Component<Props, State> {
                                   />
                                 </div>
                               ) : null}
-                              {this.state.preflightState === "fail" ? (
-                                <div className="u-position--relative u-marginLeft--10 u-marginRight--10">
-                                  <Link
-                                    to={`/app/${app?.slug}/downstreams/${app.downstream.cluster?.slug}/version-history/preflight/${currentDownstreamVersion?.sequence}`}
-                                    data-tip="View preflight checks"
-                                  >
-                                    <Icon
-                                      icon="preflight-checks"
-                                      size={22}
-                                      className="clickable"
-                                      color={""}
-                                      style={{}}
-                                      disableFill={false}
-                                      removeInlineStyle={false}
-                                    />
-                                    <Icon
-                                      icon={"warning-circle-filled"}
-                                      size={12}
-                                      className="version-row-preflight-status-icon error-color"
-                                      style={{ left: "15px", top: "-6px" }}
-                                      color={""}
-                                      disableFill={false}
-                                      removeInlineStyle={false}
-                                    />
-                                  </Link>
-                                </div>
-                              ) : null}
+                              <PreflightIcon
+                                app={app}
+                                version={downstream.currentVersion}
+                                isNewPreflightResults={true}
+                                showText={false}
+                                preflightState={this.state.preflightState}
+                                className={"tw-mx-1"}
+                              />
                               {app.isConfigurable && (
                                 <div>
                                   <Link

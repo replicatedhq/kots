@@ -15,6 +15,7 @@ import { ViewDiffButton } from "@features/VersionDiff/ViewDiffButton";
 import { Metadata, Version, VersionDownloadStatus } from "@types";
 import { useIsHelmManaged } from "@components/hooks";
 import { useSelectedApp } from "@features/App/hooks/useSelectedApp";
+import PreflightIcon from "@features/App/PreflightIcon";
 
 interface Props extends Partial<RouteComponentProps> {
   adminConsoleMetadata: Metadata;
@@ -27,7 +28,7 @@ interface Props extends Partial<RouteComponentProps> {
   isChecked: boolean;
   isDownloading: boolean;
   isNew: boolean;
-  newPreflightResults: boolean;
+  isNewPreflightResults: boolean;
   nothingToCommit: boolean;
   onWhyNoGeneratedDiffClicked: (rowVersion: Version) => void;
   onWhyUnableToGeneratedDiffClicked: (rowVersion: Version) => void;
@@ -188,7 +189,7 @@ function AppVersionHistoryRow(props: Props) {
   const renderVersionAction = (version: Version) => {
     const app = selectedApp;
     const downstream = app?.downstream;
-    const { newPreflightResults } = props;
+    const { isNewPreflightResults } = props;
 
     // useDeployAppVersion
     let actionFn = props.deployVersion;
@@ -270,21 +271,15 @@ function AppVersionHistoryRow(props: Props) {
     }
 
     const preflightState = getPreflightState(version);
-    let checksStatusText;
-    if (preflightState.preflightsFailed) {
-      checksStatusText = "Checks failed";
-    } else if (preflightState.preflightState === "warn") {
-      checksStatusText = "Checks passed with warnings";
-    } else {
-      checksStatusText = "Checks passed";
-    }
 
     let configScreenURL = `/app/${selectedApp?.slug}/config/${version.sequence}`;
     if (isHelmManaged && version.status.startsWith("pending")) {
       configScreenURL = `${configScreenURL}?isPending=true&semver=${version.semver}`;
     }
 
+    // CONNECTED TO GITOPS //
     if (downstream?.gitops?.isConnected) {
+      console.log("GIT OPS");
       if (version.gitDeployable === false) {
         return (
           <div
@@ -312,56 +307,16 @@ function AppVersionHistoryRow(props: Props) {
                 </div>
               ) : preflightState.preflightState !== "" ? (
                 <>
-                  <Link
-                    to={`/app/${app?.slug}/downstreams/${app?.downstream?.cluster?.slug}/version-history/preflight/${version?.sequence}`}
-                    className="u-position--relative u-marginRight--10"
-                    data-tip="View preflight checks"
-                  >
-                    <Icon
-                      icon="preflight-checks"
-                      size={22}
-                      className="clickable"
-                    />
-                    {preflightState.preflightsFailed ||
-                    preflightState.preflightState === "warn" ||
-                    newPreflightResults ? (
-                      <>
-                        {preflightState.preflightsFailed ? (
-                          <Icon
-                            icon={"warning-circle-filled"}
-                            size={12}
-                            className="version-row-preflight-status-icon error-color"
-                          />
-                        ) : preflightState.preflightState === "warn" ? (
-                          <Icon
-                            icon={"warning"}
-                            size={12}
-                            className="version-row-preflight-status-icon warning-color"
-                          />
-                        ) : (
-                          ""
-                        )}
-                        <p
-                          className={`checks-running-text u-fontSize--small u-lineHeight--normal u-fontWeight--medium ${
-                            preflightState.preflightsFailed
-                              ? "err"
-                              : preflightState.preflightState === "warn"
-                              ? "warning"
-                              : newPreflightResults
-                              ? "success"
-                              : ""
-                          }
-                           ${
-                             !showDeployLogs && !showActions
-                               ? "without-btns"
-                               : ""
-                           }`}
-                        >
-                          {checksStatusText}
-                        </p>
-                      </>
-                    ) : null}
-                  </Link>
+                  <PreflightIcon
+                    app={app}
+                    version={version}
+                    isNewPreflightResults={isNewPreflightResults}
+                    showDeployLogs={showDeployLogs}
+                    showActions={showActions}
+                    preflightState={preflightState}
+                    showText={true}
+                    className={"tw-mr-2"}
+                  />
                   <ReactTooltip effect="solid" className="replicated-tooltip" />
                 </>
               ) : null}
@@ -382,56 +337,16 @@ function AppVersionHistoryRow(props: Props) {
               </div>
             ) : preflightState.preflightState !== "" ? (
               <>
-                <Link
-                  to={`/app/${app?.slug}/downstreams/${app?.downstream?.cluster?.slug}/version-history/preflight/${version?.sequence}`}
-                  className="u-position--relative u-marginRight--10"
-                  data-tip="View preflight checks"
-                >
-                  <Icon
-                    icon="preflight-checks"
-                    size={20}
-                    className="clickable"
-                  />
-                  {preflightState.preflightsFailed ||
-                  preflightState.preflightState === "warn" ||
-                  newPreflightResults ? (
-                    <>
-                      {preflightState.preflightsFailed ? (
-                        <Icon
-                          icon={"warning-circle-filled"}
-                          size={12}
-                          className="version-row-preflight-status-icon error-color"
-                        />
-                      ) : preflightState.preflightState === "warn" ? (
-                        <Icon
-                          icon={"warning"}
-                          size={12}
-                          className="version-row-preflight-status-icon warning-color"
-                        />
-                      ) : (
-                        ""
-                      )}
-                      <p
-                        className={`checks-running-text u-fontSize--small u-lineHeight--normal u-fontWeight--medium ${
-                          preflightState.preflightsFailed
-                            ? "err"
-                            : preflightState.preflightState === "warn"
-                            ? "warning"
-                            : newPreflightResults
-                            ? "success"
-                            : ""
-                        }
-                          ${
-                            !showDeployLogs && !showActions
-                              ? "without-btns"
-                              : ""
-                          }`}
-                      >
-                        {checksStatusText}
-                      </p>
-                    </>
-                  ) : null}
-                </Link>
+                <PreflightIcon
+                  app={app}
+                  version={version}
+                  isNewPreflightResults={isNewPreflightResults}
+                  showDeployLogs={showDeployLogs}
+                  showText={true}
+                  showActions={showActions}
+                  preflightState={preflightState}
+                  className={"tw-mr-2"}
+                />
                 <ReactTooltip effect="solid" className="replicated-tooltip" />
               </>
             ) : null}
@@ -445,11 +360,11 @@ function AppVersionHistoryRow(props: Props) {
         </div>
       );
     }
+    // END OF CONNECTED TO GITOPS //
 
     return (
       <div className="flex flex1 justifyContent--flexEnd alignItems--center">
         {renderReleaseNotes(version)}
-
         <div>
           {version.status === "pending_preflight" ? (
             <div className="u-marginRight--10 u-position--relative">
@@ -460,49 +375,16 @@ function AppVersionHistoryRow(props: Props) {
             </div>
           ) : preflightState.preflightState !== "" ? (
             <>
-              <Link
-                to={`/app/${app?.slug}/downstreams/${app?.downstream?.cluster?.slug}/version-history/preflight/${version?.sequence}`}
-                className="u-position--relative u-marginRight--10"
-                data-tip="View preflight checks"
-              >
-                <Icon icon="preflight-checks" size={20} className="clickable" />
-                {preflightState.preflightsFailed ||
-                preflightState.preflightState === "warn" ||
-                newPreflightResults ? (
-                  <>
-                    {preflightState.preflightsFailed ? (
-                      <Icon
-                        icon={"warning-circle-filled"}
-                        size={12}
-                        className="version-row-preflight-status-icon error-color"
-                      />
-                    ) : preflightState.preflightState === "warn" ? (
-                      <Icon
-                        icon={"warning"}
-                        size={12}
-                        className="version-row-preflight-status-icon warning-color"
-                      />
-                    ) : (
-                      ""
-                    )}
-                    <p
-                      className={`checks-running-text u-fontSize--small u-lineHeight--normal u-fontWeight--medium ${
-                        preflightState.preflightsFailed
-                          ? "err"
-                          : preflightState.preflightState === "warn"
-                          ? "warning"
-                          : newPreflightResults
-                          ? "success"
-                          : ""
-                      }
-                      ${!showDeployLogs && !showActions ? "without-btns" : ""}
-                      `}
-                    >
-                      {checksStatusText}
-                    </p>
-                  </>
-                ) : null}
-              </Link>
+              <PreflightIcon
+                app={app}
+                showText={true}
+                version={version}
+                isNewPreflightResults={isNewPreflightResults}
+                showDeployLogs={showDeployLogs}
+                showActions={showActions}
+                preflightState={preflightState}
+                className={"tw-mr-2"}
+              />
               <ReactTooltip effect="solid" className="replicated-tooltip" />
             </>
           ) : null}
@@ -529,17 +411,6 @@ function AppVersionHistoryRow(props: Props) {
               <Icon icon="view-logs" size={22} className="clickable" />
             </span>
             <ReactTooltip effect="solid" className="replicated-tooltip" />
-            {version.status === "failed" ? (
-              <div className="u-position--relative">
-                <Icon icon="preflight-checks" size={20} className="clickable" />
-                <Icon
-                  icon={"warning-circle-filled"}
-                  size={12}
-                  className="version-row-preflight-status-icon error-color"
-                  style={{ left: "15px", top: "-6px" }}
-                />
-              </div>
-            ) : null}
           </div>
         ) : null}
         {showActions && (
@@ -738,7 +609,7 @@ function AppVersionHistoryRow(props: Props) {
     isChecked,
     isNew,
     gitopsEnabled,
-    newPreflightResults,
+    isNewPreflightResults,
   } = props;
 
   let showSequence = true;
@@ -768,7 +639,7 @@ function AppVersionHistoryRow(props: Props) {
           disabled: nothingToCommit,
           selected: isChecked && !nothingToCommit,
           "is-new": isNew,
-          "show-preflight-passed-text": newPreflightResults,
+          "show-preflight-passed-text": isNewPreflightResults,
         }
       )}
       style={{ minHeight: "60px" }}
