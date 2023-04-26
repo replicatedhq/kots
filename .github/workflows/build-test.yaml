@@ -1118,6 +1118,80 @@ jobs:
           aws-access-key-id: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_ACCESS_KEY_ID }}'
           aws-secret-access-key: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_SECRET_ACCESS_KEY }}'
 
+  
+  validate-gke-install:
+    runs-on: ubuntu-20.04
+    needs: [ enable-tests, can-run-ci, build-kots, build-kurl-proxy, build-migrations, push-minio, push-mc, push-rqlite ]
+    env:
+      APP_SLUG: helm-install-order
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Create cluster
+        uses: ./.github/actions/kots-gke-create 
+        with:
+          service-key: ${{ secrets.GOOGLE_CLOUD_CREDENTIALS }}
+      
+      - name: download kots binary
+        uses: actions/download-artifact@v3
+        with:
+          name: kots
+          path: bin/
+
+      - run: chmod +x bin/kots
+
+      - name: run the test
+        run: |
+          set +e
+          echo ${{ secrets.HELM_INSTALL_ORDER_LICENSE }} | base64 -d > license.yaml
+          ./bin/kots \
+            install "$APP_SLUG/automated" \
+            --license-file license.yaml \
+            --no-port-forward \
+            --namespace "$APP_SLUG" \
+            --shared-password password \
+            --kotsadm-registry ttl.sh \
+            --kotsadm-namespace automated-${{ github.run_id }} \
+            --wait-duration 5m \
+            --kotsadm-tag 24h
+
+          EXIT_CODE=$?
+          if [ $EXIT_CODE -ne 0 ]; then
+            echo "------pods:"
+            kubectl -n "$APP_SLUG" get pods
+            echo "------kotsadm logs"
+            kubectl logs -l app=kotsadm --tail=100 --namespace "$APP_SLUG"
+            exit $EXIT_CODE
+          fi
+
+          COUNTER=1
+          while [ "$(./bin/kots get apps --namespace "$APP_SLUG" | awk 'NR>1{print $2}')" != "ready" ]; do
+            ((COUNTER += 1))
+            if [ $COUNTER -gt 600 ]; then
+              echo "Timed out waiting for app to be ready"
+              ./bin/kots get apps --namespace "$APP_SLUG"
+              echo "kotsadm logs:"
+              kubectl logs -l app=kotsadm --tail=100 --namespace "$APP_SLUG"
+              exit 1
+            fi
+            sleep 1
+          done
+
+      - name: Generate support bundle on failure
+        if: failure()
+        uses: ./.github/actions/generate-support-bundle
+        with:
+          kots-namespace: "$APP_SLUG"
+          aws-access-key-id: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_ACCESS_KEY_ID }}'
+          aws-secret-access-key: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_SECRET_ACCESS_KEY }}'
+
+      - name: Delete the GKE cluster
+        if: always()
+        uses: ./.github/actions/kots-gke-delete
+        with:
+          service-key: ${{ secrets.GOOGLE_CLOUD_CREDENTIALS }}
+
 
   validate-kots-pull:
     runs-on: ubuntu-20.04
@@ -2401,7 +2475,6 @@ jobs:
       fail-fast: false
       matrix:
         k8s_version: [ v1.26.1-k3s1 ]
-        platform: [ k3s, gke ]
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -2422,7 +2495,6 @@ jobs:
         with:
           test-focus: 'airgap-smoke-test'
           kots-namespace: 'airgap-smoke-test'
-          platform: '${{ matrix.platform }}'
           k8s-version: '${{ matrix.k8s_version }}'
           k8s-arguments: ${{ startsWith(matrix.k8s_version, 'v1.22') && '--egress-selector-mode disabled' || '' }}
           testim-access-token: '${{ secrets.TESTIM_ACCESS_TOKEN }}'
@@ -2698,6 +2770,7 @@ jobs:
       - validate-kots-upgrade
       - validate-remove-app
       - validate-registry-check
+      - validate-gke-install
       - validate-kots-helm-release-secret-migration
       # cli-only tests
       - validate-kots-push-images-anonymous
