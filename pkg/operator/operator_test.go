@@ -487,6 +487,12 @@ spec:
   helmUpgradeFlags:
     - --set
     - extraValue=repl{{ ConfigOption "deploy_extra_value" }}
+  optionalValues:
+  - when: "repl{{ HasLocalRegistry }}"
+    recursiveMerge: true
+    values:
+      global:
+        registry: ''
 `,
 					"upstream/config.yaml": `
 apiVersion: kots.io/v1beta1

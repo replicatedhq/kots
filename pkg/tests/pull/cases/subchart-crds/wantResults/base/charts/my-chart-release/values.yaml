@@ -1,2 +1,6 @@
 my-sub-chart:
   global: {}
+  my-sub-sub-chart:
+    global: {}
+    my-sub-sub-sub-chart:
+      global: {}

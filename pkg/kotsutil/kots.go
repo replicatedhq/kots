@@ -743,7 +743,7 @@ func LoadHelmChartsFromContents(data []byte) (*kotsv1beta1.HelmChartList, error)
 	decode := scheme.Codecs.UniversalDeserializer().Decode
 	obj, gvk, err := decode([]byte(data), nil, nil)
 	if err != nil {
-		return nil, errors.Wrapf(err, "failed to decode kots app data of length %d", len(data))
+		return nil, errors.Wrapf(err, "failed to decode helm chart data of length %d", len(data))
 	}
 
 	if gvk.Group != "kots.io" || gvk.Version != "v1beta1" || gvk.Kind != "HelmChartList" {

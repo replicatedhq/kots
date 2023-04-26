@@ -35,28 +35,16 @@ func FixUpYAML(inputContent []byte) ([]byte, error) {
 	return bytes.Join(fixedUpDocs, []byte("---\n")), nil
 }
 
-// RemoveEmptyMappingFields removes empty mapping fields from a yaml document for the specific
-// properties that kots applies kustomizations to. This is necessary because kustomize will
-// fail to apply a kustomization if these fields contain null values: https://github.com/kubernetes-sigs/kustomize/issues/5050
-//
-// The properties are:
-//
-//   - metadata.labels
-//   - metadata.annotations
-//   - spec.containers
-//   - spec.initContainers
-//   - spec.template.spec.containers
-//   - spec.template.spec.initContainers
-//   - spec.imagePullSecrets
-//   - spec.template.spec.imagePullSecrets
-func RemoveEmptyMappingFields(input []byte) ([]byte, error) {
+// RemoveNilFieldsFromYAML removes nil fields from a yaml document.
+// This is necessary because kustomize will fail to apply a kustomization if these fields contain nil values: https://github.com/kubernetes-sigs/kustomize/issues/5050
+func RemoveNilFieldsFromYAML(input []byte) ([]byte, error) {
 	var data map[string]interface{}
 	err := k8syaml.Unmarshal([]byte(input), &data)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to unmarshal yaml")
 	}
 
-	removedItems := removeNilValuesFromMap(data)
+	removedItems := removeNilFieldsFromMap(data)
 	if !removedItems {
 		// no changes were made, return the original input
 		return input, nil
@@ -70,60 +58,30 @@ func RemoveEmptyMappingFields(input []byte) ([]byte, error) {
 	return output, nil
 }
 
-func removeNilValuesFromMap(input map[string]interface{}) bool {
+func removeNilFieldsFromMap(input map[string]interface{}) bool {
 	removedItems := false
-	if metadata, ok := input["metadata"].(map[string]interface{}); ok {
-		if removeEmptyMappingsFromMetadata(metadata) {
+
+	for key, value := range input {
+		if value == nil {
+			delete(input, key)
 			removedItems = true
+			continue
 		}
-	}
-	if spec, ok := input["spec"].(map[string]interface{}); ok {
-		if removeEmptyMappingsFromSpec(spec) {
-			removedItems = true
+
+		if valueMap, ok := value.(map[string]interface{}); ok {
+			removedItems = removeNilFieldsFromMap(valueMap) || removedItems
+			continue
 		}
-		if template, ok := spec["template"].(map[string]interface{}); ok {
-			if templateSpec, ok := template["spec"].(map[string]interface{}); ok {
-				if removeEmptyMappingsFromSpec(templateSpec) {
-					removedItems = true
+
+		if valueSlice, ok := value.([]interface{}); ok {
+			for idx := range valueSlice {
+				if itemMap, ok := valueSlice[idx].(map[string]interface{}); ok {
+					removedItems = removeNilFieldsFromMap(itemMap) || removedItems
 				}
 			}
-			if templateMetadata, ok := template["metadata"].(map[string]interface{}); ok {
-				if removeEmptyMappingsFromMetadata(templateMetadata) {
-					removedItems = true
-				}
-			}
+			continue
 		}
 	}
 
-	return removedItems
-}
-
-func removeEmptyMappingsFromMetadata(metadata map[string]interface{}) bool {
-	removedItems := false
-	if labels, ok := metadata["labels"]; ok && labels == nil {
-		delete(metadata, "labels")
-		removedItems = true
-	}
-	if annotations, ok := metadata["annotations"]; ok && annotations == nil {
-		delete(metadata, "annotations")
-		removedItems = true
-	}
-	return removedItems
-}
-
-func removeEmptyMappingsFromSpec(spec map[string]interface{}) bool {
-	removedItems := false
-	if containers, ok := spec["containers"]; ok && containers == nil {
-		delete(spec, "containers")
-		removedItems = true
-	}
-	if initContainers, ok := spec["initContainers"]; ok && initContainers == nil {
-		delete(spec, "initContainers")
-		removedItems = true
-	}
-	if imagePullSecrets, ok := spec["imagePullSecrets"]; ok && imagePullSecrets == nil {
-		delete(spec, "imagePullSecrets")
-		removedItems = true
-	}
 	return removedItems
 }
