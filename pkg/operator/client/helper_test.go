@@ -34,6 +34,16 @@ var (
 			"metadata": map[string]interface{}{
 				"name":      "test",
 				"namespace": "default",
+			},
+		},
+	}
+	unstructuredPodWithLabels = &unstructured.Unstructured{
+		Object: map[string]interface{}{
+			"apiVersion": "v1",
+			"kind":       "Pod",
+			"metadata": map[string]interface{}{
+				"name":      "test",
+				"namespace": "default",
 				"annotations": map[string]interface{}{
 					"kots.io/app-slug": "test",
 				},
@@ -141,13 +151,13 @@ var (
 )
 
 var (
-	podGVK = unstructuredPod.GroupVersionKind()
+	podGVK = unstructuredPodWithLabels.GroupVersionKind()
 	crdGVK = unstructuredRabbitMQCRD.GroupVersionKind()
 	crGVK  = unstructuredRabbitMQCR.GroupVersionKind()
 )
 
 var (
-	podGVR = unstructuredPod.GroupVersionKind().GroupVersion().WithResource("pods")
+	podGVR = unstructuredPodWithLabels.GroupVersionKind().GroupVersion().WithResource("pods")
 )
 
 // Mocks for testing

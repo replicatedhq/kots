@@ -181,7 +181,7 @@ func Test_deleteManifestResource(t *testing.T) {
 			args: args{
 				resource: resource{
 					GVK:          &gvk,
-					Unstructured: unstructuredPod,
+					Unstructured: unstructuredPodWithLabels,
 				},
 				targetNS:          "default",
 				kubernetesApplier: &kubectlApplierMock,
@@ -190,7 +190,7 @@ func Test_deleteManifestResource(t *testing.T) {
 			name: "expect no error for resource without GVKN",
 			args: args{
 				resource: resource{
-					Unstructured: unstructuredPod,
+					Unstructured: unstructuredPodWithLabels,
 				},
 				targetNS:          "default",
 				kubernetesApplier: &kubectlApplierMock,
@@ -368,7 +368,7 @@ func Test_buildCrdGVKMap(t *testing.T) {
 							Kind:    "Pod",
 						},
 						GVR:          schema.GroupVersionResource{},
-						Unstructured: unstructuredPod,
+						Unstructured: unstructuredPodWithLabels,
 					},
 					{
 						GVK: &schema.GroupVersionKind{
@@ -428,7 +428,7 @@ func Test_buildDeleteKindOrderedResources(t *testing.T) {
 	podResource := resource{
 		GVK:          &podGVK,
 		GVR:          schema.GroupVersionResource{},
-		Unstructured: unstructuredPod,
+		Unstructured: unstructuredPodWithLabels,
 	}
 	crdResource := resource{
 		GVK:          &crdGVK,
@@ -632,7 +632,7 @@ func Test_buildDeleteKindOrderedNamespaceResources(t *testing.T) {
 	namespacedPodResource := resource{
 		GVR:          podGVR,
 		GVK:          &podGVK,
-		Unstructured: unstructuredPod,
+		Unstructured: unstructuredPodWithLabels,
 	}
 
 	type args struct {
@@ -671,7 +671,7 @@ func Test_buildDeleteKindOrderedNamespaceResources(t *testing.T) {
 			name: "expect empty map and empty kind order with gvr items empty",
 			args: args{
 				gvrs: []schema.GroupVersionResource{podGVR},
-				dyn:  ReturnEmtyListDynamicClientMock(unstructuredPod),
+				dyn:  ReturnEmtyListDynamicClientMock(unstructuredPodWithLabels),
 			},
 			want:                   map[string][]resource{},
 			wantdeleteOrderedKinds: KindSortOrder{},
@@ -680,7 +680,7 @@ func Test_buildDeleteKindOrderedNamespaceResources(t *testing.T) {
 			name: "expect empty map and empty kind order with gvr items empty",
 			args: args{
 				gvrs: []schema.GroupVersionResource{podGVR},
-				dyn:  ReturnErrorDynamicClientMock(unstructuredPod),
+				dyn:  ReturnErrorDynamicClientMock(unstructuredPodWithLabels),
 			},
 			want:                   map[string][]resource{},
 			wantdeleteOrderedKinds: KindSortOrder{},
@@ -690,7 +690,7 @@ func Test_buildDeleteKindOrderedNamespaceResources(t *testing.T) {
 			name: "expect pod map and pod kind order with valid gvr items",
 			args: args{
 				gvrs:      []schema.GroupVersionResource{podGVR},
-				dyn:       ReturnDynamicClientMock(unstructuredPod),
+				dyn:       ReturnDynamicClientMock(unstructuredPodWithLabels),
 				isRestore: false,
 				appSlug:   "test",
 				namespace: "test",
@@ -702,7 +702,7 @@ func Test_buildDeleteKindOrderedNamespaceResources(t *testing.T) {
 			name: "expect pod map and pod kind order with valid gvr items and restore true",
 			args: args{
 				gvrs:      []schema.GroupVersionResource{podGVR},
-				dyn:       ReturnDynamicClientMock(unstructuredPod),
+				dyn:       ReturnDynamicClientMock(unstructuredPodWithLabels),
 				isRestore: true,
 				appSlug:   "test",
 				namespace: "test",
@@ -714,7 +714,7 @@ func Test_buildDeleteKindOrderedNamespaceResources(t *testing.T) {
 			name: "expect pod map and pod kind order with a pod marked for deletion",
 			args: args{
 				gvrs:      []schema.GroupVersionResource{podGVR},
-				dyn:       ReturnDynamicClientMock(unstructuredPod, unstructuredPodMarkedDeletion),
+				dyn:       ReturnDynamicClientMock(unstructuredPodWithLabels, unstructuredPodMarkedDeletion),
 				isRestore: true,
 				appSlug:   "test",
 				namespace: "test",
@@ -726,7 +726,7 @@ func Test_buildDeleteKindOrderedNamespaceResources(t *testing.T) {
 			name: "expect pod map and pod kind order with a pod excluded from backup",
 			args: args{
 				gvrs:      []schema.GroupVersionResource{podGVR},
-				dyn:       ReturnDynamicClientMock(unstructuredPod, unstructuredPodExcludeFromBackup),
+				dyn:       ReturnDynamicClientMock(unstructuredPodWithLabels, unstructuredPodExcludeFromBackup),
 				isRestore: true,
 				appSlug:   "test",
 				namespace: "test",
@@ -739,7 +739,7 @@ func Test_buildDeleteKindOrderedNamespaceResources(t *testing.T) {
 			name: "expect pod map and pod kind order with a pod restore label not match",
 			args: args{
 				gvrs:      []schema.GroupVersionResource{podGVR},
-				dyn:       ReturnDynamicClientMock(unstructuredPod, unstructuredPodWithRestoreLabelNotMatch),
+				dyn:       ReturnDynamicClientMock(unstructuredPodWithLabels, unstructuredPodWithRestoreLabelNotMatch),
 				isRestore: true,
 				appSlug:   "test",
 				namespace: "test",
@@ -757,7 +757,7 @@ func Test_buildDeleteKindOrderedNamespaceResources(t *testing.T) {
 			name: "expect pod map and pod kind order with a pod restore label match",
 			args: args{
 				gvrs:      []schema.GroupVersionResource{podGVR},
-				dyn:       ReturnDynamicClientMock(unstructuredPod, unstructuredPodWithRestoreLabel),
+				dyn:       ReturnDynamicClientMock(unstructuredPodWithLabels, unstructuredPodWithRestoreLabel),
 				isRestore: true,
 				appSlug:   "test",
 				namespace: "test",
