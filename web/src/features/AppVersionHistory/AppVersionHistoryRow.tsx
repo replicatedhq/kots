@@ -279,7 +279,6 @@ function AppVersionHistoryRow(props: Props) {
 
     // CONNECTED TO GITOPS //
     if (downstream?.gitops?.isConnected) {
-      console.log("GIT OPS");
       if (version.gitDeployable === false) {
         return (
           <div
