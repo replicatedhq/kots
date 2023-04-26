@@ -314,6 +314,7 @@ function AppVersionHistoryRow(props: Props) {
                     preflightState={preflightState}
                     showText={true}
                     className={"tw-mr-2"}
+                    newPreflightResults={newPreflightResults}
                   />
                   <ReactTooltip effect="solid" className="replicated-tooltip" />
                 </>
@@ -343,6 +344,7 @@ function AppVersionHistoryRow(props: Props) {
                   showActions={showActions}
                   preflightState={preflightState}
                   className={"tw-mr-2"}
+                  newPreflightResults={newPreflightResults}
                 />
                 <ReactTooltip effect="solid" className="replicated-tooltip" />
               </>
@@ -380,6 +382,7 @@ function AppVersionHistoryRow(props: Props) {
                 showActions={showActions}
                 preflightState={preflightState}
                 className={"tw-mr-2"}
+                newPreflightResults={newPreflightResults}
               />
               <ReactTooltip effect="solid" className="replicated-tooltip" />
             </>

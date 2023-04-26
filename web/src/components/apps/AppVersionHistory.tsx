@@ -1857,6 +1857,7 @@ class AppVersionHistory extends Component<Props, State> {
                                 showText={false}
                                 preflightState={this.state.preflightState}
                                 className={"tw-mx-1"}
+                                newPreflightResults={true}
                               />
                               {app.isConfigurable && (
                                 <div>

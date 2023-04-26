@@ -5,25 +5,27 @@ import { App, Version } from "@types";
 
 type Props = {
   app: App | null;
-  showDeployLogs?: boolean;
+  className: string;
   showActions?: true | Object | undefined;
+  showDeployLogs?: boolean;
+  showText: boolean;
   preflightState: {
     preflightsFailed: boolean;
     preflightState: string;
   } | null;
-  showText: boolean;
   version: Version;
-  className: string;
+  newPreflightResults: boolean;
 };
 
 const PreflightIcon = ({
   app,
-  version,
-  showDeployLogs,
-  showActions,
-  preflightState,
-  showText,
   className,
+  newPreflightResults,
+  preflightState,
+  showActions,
+  showDeployLogs,
+  showText,
+  version,
 }: Props) => {
   let checksStatusText;
   let textColor = "";
@@ -46,31 +48,35 @@ const PreflightIcon = ({
         data-tip="View preflight checks"
       >
         <Icon icon="preflight-checks" size={22} className="clickable" />
-        <>
-          {preflightState?.preflightsFailed ? (
-            <Icon
-              icon={"warning-circle-filled"}
-              size={12}
-              className="version-row-preflight-status-icon error-color"
-            />
-          ) : preflightState?.preflightState === "warn" ? (
-            <Icon
-              icon={"warning"}
-              size={12}
-              className="version-row-preflight-status-icon warning-color"
-            />
-          ) : (
-            ""
-          )}
-          {showText && (
-            <p
-              className={`checks-running-text u-fontSize--small u-lineHeight--normal u-fontWeight--medium ${textColor}
-                ${!showDeployLogs && !showActions ? "without-btns" : ""}`}
-            >
-              {checksStatusText}
-            </p>
-          )}
-        </>
+        {preflightState?.preflightsFailed ||
+        preflightState?.preflightState === "warn" ||
+        newPreflightResults ? (
+          <>
+            {preflightState?.preflightsFailed ? (
+              <Icon
+                icon={"warning-circle-filled"}
+                size={12}
+                className="version-row-preflight-status-icon error-color"
+              />
+            ) : preflightState?.preflightState === "warn" ? (
+              <Icon
+                icon={"warning"}
+                size={12}
+                className="version-row-preflight-status-icon warning-color"
+              />
+            ) : (
+              ""
+            )}
+            {showText && (
+              <p
+                className={`checks-running-text u-fontSize--small u-lineHeight--normal u-fontWeight--medium ${textColor}
+            ${!showDeployLogs && !showActions ? "without-btns" : ""}`}
+              >
+                {checksStatusText}
+              </p>
+            )}
+          </>
+        ) : null}
       </Link>
     </div>
   );
