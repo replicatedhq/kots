@@ -100,7 +100,6 @@ type State = {
   errorMsg: string;
   errorTitle: string;
   firstSequence: Number | string;
-  hasPreflightChecks: boolean;
   isSkipPreflights: boolean;
   kotsUpdateChecker: Repeater;
   kotsUpdateError: Object | undefined;
@@ -115,6 +114,10 @@ type State = {
   numOfRemainingVersions: Number;
   numOfSkippedVersions: Number;
   pageSize: Number;
+  preflightState: {
+    preflightsFailed: boolean;
+    preflightState: string;
+  } | null;
   releaseNotes: Object | null;
   releaseWithErr: ReleaseWithError | null | undefined;
   releaseWithNoChanges: Release | null | undefined;
@@ -145,11 +148,6 @@ type State = {
   versionToDeploy: Version | null;
   viewLogsErrMsg: string;
   yamlErrorDetails: string[];
-
-  preflightState: {
-    preflightsFailed: boolean;
-    preflightState: string;
-  } | null;
 };
 
 const filterNonHelmTabs = (tab: string, isHelmManaged: boolean) => {
@@ -181,7 +179,6 @@ class AppVersionHistory extends Component<Props, State> {
       errorMsg: "",
       errorTitle: "",
       firstSequence: 0,
-      hasPreflightChecks: true,
       isSkipPreflights: false,
       kotsUpdateChecker: new Repeater(),
       kotsUpdateError: undefined,
@@ -196,6 +193,7 @@ class AppVersionHistory extends Component<Props, State> {
       numOfRemainingVersions: 0,
       numOfSkippedVersions: 0,
       pageSize: 20,
+      preflightState: null,
       releaseNotes: null,
       releaseWithErr: { title: "", sequence: 0, diffSummaryError: "" },
       releaseWithNoChanges: { versionLabel: "", sequence: 0 },
@@ -224,8 +222,6 @@ class AppVersionHistory extends Component<Props, State> {
       versionToDeploy: null,
       viewLogsErrMsg: "",
       yamlErrorDetails: [],
-
-      preflightState: null,
     };
   }
 
@@ -1468,7 +1464,7 @@ class AppVersionHistory extends Component<Props, State> {
           }
           isNew={isNew}
           key={version.sequence}
-          isNewPreflightResults={newPreflightResults}
+          newPreflightResults={newPreflightResults}
           nothingToCommit={nothingToCommit}
           onWhyNoGeneratedDiffClicked={(rowVersion: Version) =>
             this.toggleNoChangesModal(rowVersion)
@@ -1859,7 +1855,6 @@ class AppVersionHistory extends Component<Props, State> {
                               <PreflightIcon
                                 app={app}
                                 version={downstream.currentVersion}
-                                isNewPreflightResults={true}
                                 showText={false}
                                 preflightState={this.state.preflightState}
                                 className={"tw-mx-1"}

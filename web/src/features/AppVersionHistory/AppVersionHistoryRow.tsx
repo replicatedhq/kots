@@ -28,7 +28,7 @@ interface Props extends Partial<RouteComponentProps> {
   isChecked: boolean;
   isDownloading: boolean;
   isNew: boolean;
-  isNewPreflightResults: boolean;
+  newPreflightResults: boolean;
   nothingToCommit: boolean;
   onWhyNoGeneratedDiffClicked: (rowVersion: Version) => void;
   onWhyUnableToGeneratedDiffClicked: (rowVersion: Version) => void;
@@ -189,7 +189,7 @@ function AppVersionHistoryRow(props: Props) {
   const renderVersionAction = (version: Version) => {
     const app = selectedApp;
     const downstream = app?.downstream;
-    const { isNewPreflightResults } = props;
+    const { newPreflightResults } = props;
 
     // useDeployAppVersion
     let actionFn = props.deployVersion;
@@ -310,7 +310,6 @@ function AppVersionHistoryRow(props: Props) {
                   <PreflightIcon
                     app={app}
                     version={version}
-                    isNewPreflightResults={isNewPreflightResults}
                     showDeployLogs={showDeployLogs}
                     showActions={showActions}
                     preflightState={preflightState}
@@ -340,7 +339,6 @@ function AppVersionHistoryRow(props: Props) {
                 <PreflightIcon
                   app={app}
                   version={version}
-                  isNewPreflightResults={isNewPreflightResults}
                   showDeployLogs={showDeployLogs}
                   showText={true}
                   showActions={showActions}
@@ -379,7 +377,6 @@ function AppVersionHistoryRow(props: Props) {
                 app={app}
                 showText={true}
                 version={version}
-                isNewPreflightResults={isNewPreflightResults}
                 showDeployLogs={showDeployLogs}
                 showActions={showActions}
                 preflightState={preflightState}
@@ -609,7 +606,7 @@ function AppVersionHistoryRow(props: Props) {
     isChecked,
     isNew,
     gitopsEnabled,
-    isNewPreflightResults,
+    newPreflightResults,
   } = props;
 
   let showSequence = true;
@@ -639,7 +636,7 @@ function AppVersionHistoryRow(props: Props) {
           disabled: nothingToCommit,
           selected: isChecked && !nothingToCommit,
           "is-new": isNew,
-          "show-preflight-passed-text": isNewPreflightResults,
+          "show-preflight-passed-text": newPreflightResults,
         }
       )}
       style={{ minHeight: "60px" }}

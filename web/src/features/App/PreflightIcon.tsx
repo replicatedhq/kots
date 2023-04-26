@@ -5,7 +5,6 @@ import { App, Version } from "@types";
 
 type Props = {
   app: App | null;
-  isNewPreflightResults: boolean;
   showDeployLogs?: boolean;
   showActions?: true | Object | undefined;
   preflightState: {
@@ -20,7 +19,6 @@ type Props = {
 const PreflightIcon = ({
   app,
   version,
-  isNewPreflightResults,
   showDeployLogs,
   showActions,
   preflightState,
