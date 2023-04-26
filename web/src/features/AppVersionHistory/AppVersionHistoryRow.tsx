@@ -665,21 +665,22 @@ function AppVersionHistoryRow(props: Props) {
               <p className="u-fontSize--header2 u-fontWeight--bold u-lineHeight--medium card-item-title">
                 {version.versionLabel || version.title}
               </p>
-              {showSequence && (
-                <p
-                  className="u-fontSize--small u-textColor--bodyCopy u-fontWeight--medium u-marginLeft--10"
-                  style={{ marginTop: "2px" }}
-                >
-                  {sequenceLabel} {version.sequence}
-                </p>
-              )}
+
               {version.isRequired && (
                 <span className="status-tag required u-marginLeft--10">
                   {" "}
                   Required{" "}
                 </span>
               )}
-            </div>
+            </div>{" "}
+            {showSequence && (
+              <p
+                className="u-fontSize--small u-textColor--bodyCopy u-fontWeight--medium"
+                style={{ marginTop: "2px" }}
+              >
+                {sequenceLabel} {version.sequence}
+              </p>
+            )}
             {releasedTs && (
               <p className="u-fontSize--small u-fontWeight--medium u-textColor--bodyCopy u-marginTop--5">
                 {" "}
