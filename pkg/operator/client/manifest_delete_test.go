@@ -795,3 +795,100 @@ func Test_buildDeleteKindOrderedNamespaceResources(t *testing.T) {
 		})
 	}
 }
+
+func Test_clearNamespacedResources(t *testing.T) {
+	namespacedPodResource := resource{
+		GVR:          podGVR,
+		GVK:          &podGVK,
+		Unstructured: unstructuredPodWithLabels,
+	}
+	type args struct {
+		dyn              dynamic.Interface
+		namespace        string
+		resourcesMap     map[string][]resource
+		deleteKindOrders KindSortOrder
+	}
+	tests := []struct {
+		name    string
+		args    args
+		wantErr bool
+	}{
+		{
+			name:    "expect no error when no resources to clear",
+			args:    args{},
+			wantErr: false,
+		}, {
+			name: "expect no error when no resources to clear with kind order",
+			args: args{
+				deleteKindOrders: KindSortOrder{"Pod"},
+			},
+			wantErr: false,
+		}, {
+			name: "expect no error when pod resources to clear with kind order",
+			args: args{
+				resourcesMap:     map[string][]resource{"Pod": {namespacedPodResource}},
+				deleteKindOrders: KindSortOrder{"Pod"},
+				dyn:              ReturnDynamicClientDeleteMock(unstructuredPodWithLabels),
+				namespace:        "default",
+			},
+			wantErr: false,
+		}, {
+			name: "expect error when pod resources to clear with kind order",
+			args: args{
+				resourcesMap:     map[string][]resource{"Pod": {namespacedPodResource}},
+				deleteKindOrders: KindSortOrder{"Pod"},
+				dyn:              ReturnErrDynamicClientDeleteMock(unstructuredPodWithLabels),
+			},
+			wantErr: true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if err := clearNamespacedResources(tt.args.dyn, tt.args.namespace, tt.args.resourcesMap, tt.args.deleteKindOrders); (err != nil) != tt.wantErr {
+				t.Errorf("clearNamespacedResources() error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
+	}
+}
+
+func Test_clearNamespaces(t *testing.T) {
+	type args struct {
+		appSlug              string
+		namespacesToClear    []string
+		isRestore            bool
+		restoreLabelSelector *metav1.LabelSelector
+		kindDeleteOrder      KindOrder
+		k8sDynamicClient     dynamic.Interface
+		gvrs                 map[schema.GroupVersionResource]struct{}
+	}
+	tests := []struct {
+		name    string
+		args    args
+		wantErr bool
+	}{
+		{
+			name:    "expect no error when no namespaces to clear",
+			args:    args{},
+			wantErr: false,
+		}, {
+			name: "expect no error when no namespaces to clear with gvr in skip list",
+			args: args{
+				gvrs: map[schema.GroupVersionResource]struct{}{
+					{
+						Group:    "",
+						Version:  "v1",
+						Resource: "events",
+					}: {},
+				},
+			},
+			wantErr: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if err := clearNamespaces(tt.args.appSlug, tt.args.namespacesToClear, tt.args.isRestore, tt.args.restoreLabelSelector, tt.args.kindDeleteOrder, tt.args.k8sDynamicClient, tt.args.gvrs); (err != nil) != tt.wantErr {
+				t.Errorf("clearNamespaces() error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
+	}
+}

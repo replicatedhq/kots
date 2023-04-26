@@ -203,3 +203,19 @@ func ReturnDynamicClientMock(objects ...runtime.Object) *dynamicfake.FakeDynamic
 	})
 	return dynamicClient
 }
+
+func ReturnErrDynamicClientDeleteMock(objects ...runtime.Object) *dynamicfake.FakeDynamicClient {
+	dynamicClient := dynamicfake.NewSimpleDynamicClient(runtime.NewScheme(), objects...)
+	dynamicClient.PrependReactor("delete", "pod", func(action core.Action) (handled bool, ret runtime.Object, err error) {
+		return false, nil, &kuberneteserrors.StatusError{}
+	})
+	return dynamicClient
+}
+
+func ReturnDynamicClientDeleteMock(objects ...runtime.Object) *dynamicfake.FakeDynamicClient {
+	dynamicClient := dynamicfake.NewSimpleDynamicClient(runtime.NewScheme(), objects...)
+	dynamicClient.PrependReactor("delete", "pod", func(action core.Action) (handled bool, ret runtime.Object, err error) {
+		return true, nil, nil
+	})
+	return dynamicClient
+}
