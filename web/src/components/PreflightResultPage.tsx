@@ -152,20 +152,11 @@ function PreflightResultPage(props: Props) {
               />
               <div className="flex justifyContent--flexEnd tw-gap-6">
                 <button
-                  className="btn secondary blue"
+                  className="btn primary blue"
                   onClick={() => ignorePermissionErrors()}
                 >
-                  Proceed with limited Preflights
+                  Re-run with limited Preflights
                 </button>
-                {preflightCheck.shouldShowRerunPreflight && (
-                  <button
-                    type="button"
-                    className="btn primary blue"
-                    onClick={() => rerunPreflights()}
-                  >
-                    Re-run
-                  </button>
-                )}
               </div>
             </>
           )}
