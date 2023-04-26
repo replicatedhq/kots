@@ -44,6 +44,7 @@ test:
 			--kotsadm-image-namespace=$(KOTSADM_IMAGE_NAMESPACE) \
 			--kotsadm-image-tag=$(KOTSADM_IMAGE_TAG) \
 			--airgap=$(AIRGAP) \
+			--wait-duration=$(WAIT_DURATION) \
 			--kots-helm-chart-url=$(KOTS_HELM_CHART_URL) \
 			--kots-helm-chart-version=$(KOTS_HELM_CHART_VERSION) \
 			--skip-teardown=$(SKIP_TEARDOWN)
