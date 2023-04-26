@@ -1,19 +1,17 @@
-# Source: fluent-bit/charts/fluent-bit/templates/clusterrolebinding.yaml
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
-  name: fluent-bit
   labels:
-    helm.sh/chart: fluent-bit-0.20.2
-    app.kubernetes.io/name: fluent-bit
     app.kubernetes.io/instance: fluent-bit
-    app.kubernetes.io/version: "1.9.4"
     app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: fluent-bit
+    app.kubernetes.io/version: 1.9.4
+    helm.sh/chart: fluent-bit-0.20.2
+  name: fluent-bit
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
   name: fluent-bit
 subjects:
-  - kind: ServiceAccount
-    name: fluent-bit
-    namespace: 
+- kind: ServiceAccount
+  name: fluent-bit
