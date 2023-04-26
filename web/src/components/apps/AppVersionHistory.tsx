@@ -1781,7 +1781,6 @@ class AppVersionHistory extends Component<Props, State> {
                         )}
                         <div className="flex1 flex-column ">
                           {renderVersionLabel()}
-
                           <p className="u-fontSize--small u-lineHeight--normal u-textColor--bodyCopy u-fontWeight--medium">
                             {" "}
                             {currentDownstreamVersion
