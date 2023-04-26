@@ -39,8 +39,16 @@ func AdminPushImagesCmd() *cobra.Command {
 			imageSource := args[0]
 			endpoint := args[1]
 
+			log := logger.NewCLILogger(cmd.OutOrStdout())
+			v := viper.GetViper()
+
+			namespace, err := getNamespaceOrDefault(v.GetString("namespace"))
+			if err != nil {
+				return errors.Wrap(err, "failed to get namespace")
+			}
+
 			if _, err := os.Stat(imageSource); err == nil {
-				options, err := genAndCheckPushOptions(endpoint, cmd)
+				options, err := genAndCheckPushOptions(endpoint, namespace, log, v)
 				if err != nil {
 					return err
 				}
@@ -67,10 +75,7 @@ func AdminPushImagesCmd() *cobra.Command {
 	return cmd
 }
 
-func genAndCheckPushOptions(endpoint string, cmd *cobra.Command) (*kotsadmtypes.PushImagesOptions, error) {
-	log := logger.NewCLILogger(cmd.OutOrStdout())
-	v := viper.GetViper()
-
+func genAndCheckPushOptions(endpoint string, namespace string, log *logger.CLILogger, v *viper.Viper) (*kotsadmtypes.PushImagesOptions, error) {
 	hostname, err := getHostnameFromEndpoint(endpoint)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed get hostname from endpoint")
@@ -79,11 +84,6 @@ func genAndCheckPushOptions(endpoint string, cmd *cobra.Command) (*kotsadmtypes.
 	username := v.GetString("registry-username")
 	password := v.GetString("registry-password")
 	if username == "" && password == "" {
-		namespace, err := getNamespaceOrDefault(v.GetString("namespace"))
-		if err != nil {
-			return nil, errors.Wrap(err, "failed to get namespace")
-		}
-
 		u, p, err := getRegistryCredentialsFromSecret(hostname, namespace)
 		if err != nil {
 			if !kuberneteserrors.IsNotFound(err) {

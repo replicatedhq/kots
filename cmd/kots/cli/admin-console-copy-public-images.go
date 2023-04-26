@@ -5,6 +5,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/kotsadm"
+	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -27,15 +28,18 @@ func AdminCopyPublicImagesCmd() *cobra.Command {
 			}
 
 			endpoint := args[0]
-			options, err := genAndCheckPushOptions(endpoint, cmd)
-			if err != nil {
-				return err
-			}
 
+			log := logger.NewCLILogger(cmd.OutOrStdout())
 			v := viper.GetViper()
+
 			namespace, err := getNamespaceOrDefault(v.GetString("namespace"))
 			if err != nil {
 				return errors.Wrap(err, "failed to get namespace")
+			}
+
+			options, err := genAndCheckPushOptions(endpoint, namespace, log, v)
+			if err != nil {
+				return err
 			}
 
 			err = kotsadm.CopyImages(*options, namespace)
