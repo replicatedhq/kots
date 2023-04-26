@@ -122,7 +122,11 @@ func (c *Client) diffAndRemovePreviousManifests(deployArgs operatortypes.DeployA
 	}
 	dyn, err := k8sutil.GetDynamicClient()
 	if err != nil {
-		return errors.Wrap(err, "failed to create dynamic client")
+		return errors.Wrap(err, "failed to get dynamic client")
+	}
+	clientset, err := k8sutil.GetClientset()
+	if err != nil {
+		return errors.Wrap(err, "failed to get client set")
 	}
 	disc, err := discovery.NewDiscoveryClientForConfig(config)
 	if err != nil {
@@ -148,11 +152,6 @@ func (c *Client) diffAndRemovePreviousManifests(deployArgs operatortypes.DeployA
 	deleteManifestResources(resourcesToDelete, targetNamespace, kubernetesApplier, defaultKindDeleteOrder, deployArgs.Wait)
 
 	if deployArgs.ClearPVCs {
-		clientset, err := k8sutil.GetClientset()
-		if err != nil {
-			return errors.Wrap(err, "failed to get client set")
-		}
-
 		// TODO: multi-namespace support
 		err = deletePVCs(targetNamespace, deployArgs.RestoreLabelSelector, deployArgs.AppSlug, clientset)
 		if err != nil {
@@ -177,7 +176,7 @@ func (c *Client) diffAndRemovePreviousManifests(deployArgs operatortypes.DeployA
 
 		err = clearNamespaces(deployArgs.AppSlug, deployArgs.ClearNamespaces, deployArgs.IsRestore, deployArgs.RestoreLabelSelector, defaultKindDeleteOrder, dyn, gvrs)
 		if err != nil {
-			logger.Infof("Failed to clear namespaces: %v\n", err)
+			logger.Infof("Failed to clear namespaces: %v", err)
 		}
 	}
 	return nil
