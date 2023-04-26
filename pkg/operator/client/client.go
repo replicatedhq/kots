@@ -463,7 +463,7 @@ func (c *Client) setAppStatus(newAppStatus appstatetypes.AppStatus) error {
 	return nil
 }
 
-func (c *Client) getApplier(kubectlVersion, kustomizeVersion string) (*applier.Kubectl, error) {
+func (c *Client) getApplier(kubectlVersion, kustomizeVersion string) (applier.KubectlInterface, error) {
 	kubectl, err := binaries.GetKubectlPathForVersion(kubectlVersion)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to find kubectl")

@@ -1,7 +1,6 @@
 package client
 
 import (
-	"bytes"
 	"context"
 	"fmt"
 	"sort"
@@ -17,11 +16,10 @@ import (
 	k8slabels "k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
-	"k8s.io/apimachinery/pkg/runtime/serializer/yaml"
 	"k8s.io/apimachinery/pkg/util/sets"
-	yamlutil "k8s.io/apimachinery/pkg/util/yaml"
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/kubernetes/scheme"
 )
 
 // KindSortOrder is an ordering of Kinds.
@@ -76,7 +74,6 @@ var (
 )
 
 type resource struct {
-	Wait         bool
 	Manifest     string
 	GVR          schema.GroupVersionResource
 	GVK          *schema.GroupVersionKind
@@ -105,37 +102,44 @@ func getOrderedKinds(kindOrder KindOrder, defaultKinds KindSortOrder) KindSortOr
 	return orderedKinds
 }
 
-func deleteManifestResources(manifests []string, targetNS string, kubernetesApplier *applier.Kubectl, kindDeleteOrder KindOrder, waitFlag bool) {
+func deleteManifestResources(manifests []string, targetNS string, kubernetesApplier applier.KubectlInterface, kindDeleteOrder KindOrder, waitFlag bool) {
 	resources := decodeManifests(manifests)
 	crdGVKMap := buildCrdGVKMap(resources)
-	deleteOrderResourceMap, deleteOrderedKinds := buildDeleteKindOrderedResources(kindDeleteOrder, resources, targetNS, crdGVKMap, waitFlag)
+	deleteOrderResourceMap, deleteOrderedKinds := buildDeleteKindOrderedResources(kindDeleteOrder, resources, crdGVKMap)
 
 	for _, kind := range deleteOrderedKinds {
 		logger.Infof("deleting resources of kind: %s", kind)
 		for _, r := range deleteOrderResourceMap[kind] {
-			deleteManifestResource(r, targetNS, kubernetesApplier)
+			deleteManifestResource(r, targetNS, waitFlag, kubernetesApplier)
 		}
 	}
 }
 
-func deleteManifestResource(resource resource, targetNS string, kubernetesApplier *applier.Kubectl) {
+func deleteManifestResource(resource resource, targetNS string, waitFlag bool, kubernetesApplier applier.KubectlInterface) {
 	group := ""
 	kind := ""
 	name := ""
 	namespace := targetNS
-	waitFlag := resource.Wait
+	wait := waitFlag
 	if resource.GVK != nil {
 		group = resource.GVK.Group
 		kind = resource.GVK.Kind
-		name = resource.Unstructured.GetName()
-		namespace = resource.Unstructured.GetNamespace()
-		waitFlag = resource.Wait
+		unstructured := resource.Unstructured
+		wait = shouldResourceWaitForDeletion(resource.GVK.Kind, waitFlag)
+		if unstructured != nil {
+			name = unstructured.GetName()
+			if ns := unstructured.GetNamespace(); ns != "" {
+				namespace = ns
+			} else {
+				namespace = targetNS
+			}
+		}
 		logger.Infof("deleting manifest(s): %s/%s/%s/%s", resource.GVK.Group, resource.GVK.Version, resource.GVK.Kind, name)
 	} else {
 		logger.Infof("deleting unidentified manifest: %s", resource.Manifest)
 	}
 
-	stdout, stderr, err := kubernetesApplier.Remove(namespace, []byte(resource.Manifest), waitFlag)
+	stdout, stderr, err := kubernetesApplier.Remove(namespace, []byte(resource.Manifest), wait)
 	if err != nil {
 		logger.Infof("stdout (delete) = %s", stdout)
 		logger.Infof("stderr (delete) = %s", stderr)
@@ -162,19 +166,13 @@ func decodeManifests(manifests []string) []resource {
 }
 
 func decodeToUnstructured(manifest string) (*unstructured.Unstructured, *schema.GroupVersionKind, error) {
-	decoder := yamlutil.NewYAMLOrJSONDecoder(bytes.NewReader([]byte(manifest)), 100)
-	var rawObj runtime.RawExtension
-	if err := decoder.Decode(&rawObj); err != nil {
-		return nil, nil, errors.Wrapf(err, "error decoding yaml")
-	}
-
-	obj, gvk, err := yaml.NewDecodingSerializer(unstructured.UnstructuredJSONScheme).Decode(rawObj.Raw, nil, nil)
-	unstructuredMap, err := runtime.DefaultUnstructuredConverter.ToUnstructured(obj)
+	unstruct := &unstructured.Unstructured{}
+	_, gvk, err := scheme.Codecs.UniversalDeserializer().Decode([]byte(manifest), nil, unstruct)
 	if err != nil {
-		return nil, nil, errors.Wrapf(err, "error converting to unstructured")
+		return nil, nil, errors.Wrap(err, "error decoding manifest")
 	}
 
-	return &unstructured.Unstructured{Object: unstructuredMap}, gvk, nil
+	return unstruct, gvk, nil
 }
 
 // buildCrdGVKMap builds a map of key group/kind/version for CRDs from a list of resources
@@ -200,15 +198,10 @@ func buildCrdGVKMap(resources []resource) map[string]bool {
 }
 
 // buildDeleteKindOrderedResources builds a list of resource kinds in the order they should be deleted and a map of resource kind to a list of resources
-func buildDeleteKindOrderedResources(deleteKindOrder KindOrder, resources []resource, defaultNS string, crdGVKMap map[string]bool, waitFlag bool) (map[string][]resource, KindSortOrder) {
+func buildDeleteKindOrderedResources(deleteKindOrder KindOrder, resources []resource, crdGVKMap map[string]bool) (map[string][]resource, KindSortOrder) {
 	defaultOrder := []string{}
 	deleteOrderResourceMap := initResourceKindOrderMap(deleteKindOrder)
 	for _, r := range resources {
-		r.Wait = shouldResourceWaitForDeletion(r.Unstructured, waitFlag)
-		if ns := r.Unstructured.GetNamespace(); ns == "" {
-			r.Unstructured.SetNamespace(defaultNS)
-		}
-
 		// if GVK is nil, add it to the "" list, else add it to the GVK list
 		if r.GVK == nil {
 			if _, ok := deleteOrderResourceMap[""]; !ok {
@@ -240,8 +233,8 @@ func buildDeleteKindOrderedResources(deleteKindOrder KindOrder, resources []reso
 	return deleteOrderResourceMap, deleteOrderedKinds
 }
 
-func shouldResourceWaitForDeletion(resource *unstructured.Unstructured, waitFlag bool) bool {
-	if resource.GetKind() == "PersistentVolumeClaim" {
+func shouldResourceWaitForDeletion(kind string, waitFlag bool) bool {
+	if kind == "PersistentVolumeClaim" {
 		// blocking on PVC delete will create a deadlock if
 		// it's used by a pod that has not been deleted yet.
 		return false
@@ -346,16 +339,14 @@ func buildDeleteKindOrderedNamespaceResources(dyn dynamic.Interface, gvrs []sche
 					continue
 				}
 
-				logger.Infof("gvrrrr %s/%s/%s(%s)\n", gvr.Group, gvr.Resource, gvr.Version, gvr)
-
-				gvk := u.GetObjectKind().GroupVersionKind()
+				// copy the object so we don't modify the cache
+				uCopy := u.DeepCopy()
+				gvk := uCopy.GetObjectKind().GroupVersionKind()
 				r := resource{
-					Unstructured: &u,
+					Unstructured: u.DeepCopy(),
 					GVK:          &gvk,
 					GVR:          gvr,
 				}
-				logger.Infof("Found %s/%s/%s(%s)\n", namespace, r.GVK, r.Unstructured.GetName(), r.GVR)
-				logger.Infof("u.GetKind() %v\n", u.GetKind())
 				if _, ok := deleteOrdererResourceMap[u.GetKind()]; !ok {
 					defaultKindOrder = append(defaultKindOrder, u.GetKind())
 					deleteOrdererResourceMap[u.GetKind()] = []resource{}
