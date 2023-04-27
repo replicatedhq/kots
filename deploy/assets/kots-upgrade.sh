@@ -25,7 +25,7 @@ done
 
 if [ -n "$REGISTRY" ]
 then
-    /kots admin-console push-images docker.io $REGISTRY -n $NAMESPACE
+    /kots admin-console copy-public-images $REGISTRY -n $NAMESPACE
 fi
 
 /kots admin-console upgrade -n $NAMESPACE $INSTALL_PARAMS
