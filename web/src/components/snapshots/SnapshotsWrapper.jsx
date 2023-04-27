@@ -23,7 +23,7 @@ class SnapshotsWrapper extends Component {
     console.log(snapshotsApps);
     const selectedApp =
       snapshotsApps.find((app) => app.slug === match?.params?.slug) ||
-      snapshotApps[0];
+      snapshotsApps[0];
     console.log(selectedApp);
 
     return (
