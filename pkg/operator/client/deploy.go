@@ -608,22 +608,6 @@ func getRemovedCharts(prevDir string, curDir string, previousKotsCharts []v1beta
 	return removedCharts, nil
 }
 
-func getLabelSelector(appLabelSelector *metav1.LabelSelector) string {
-	allKeys := make([]string, 0)
-	for key := range appLabelSelector.MatchLabels {
-		allKeys = append(allKeys, key)
-	}
-
-	sort.Strings(allKeys)
-
-	allLabels := make([]string, 0)
-	for _, key := range allKeys {
-		allLabels = append(allLabels, fmt.Sprintf("%s=%s", key, appLabelSelector.MatchLabels[key]))
-	}
-
-	return strings.Join(allLabels, ",")
-}
-
 func migrateExistingHelmReleaseSecrets(relaseName string, releaseNamespace string, kotsadmNamespace string) error {
 	clientset, err := k8sutil.GetClientset()
 	if err != nil {

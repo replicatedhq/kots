@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"sort"
+	"strings"
 	"time"
 
 	"github.com/pkg/errors"
@@ -438,4 +439,20 @@ func deletePVCs(namespace string, appLabelSelector *metav1.LabelSelector, appslu
 	}
 
 	return nil
+}
+
+func getLabelSelector(appLabelSelector *metav1.LabelSelector) string {
+	allKeys := make([]string, 0)
+	for key := range appLabelSelector.MatchLabels {
+		allKeys = append(allKeys, key)
+	}
+
+	sort.Strings(allKeys)
+
+	allLabels := make([]string, 0)
+	for _, key := range allKeys {
+		allLabels = append(allLabels, fmt.Sprintf("%s=%s", key, appLabelSelector.MatchLabels[key]))
+	}
+
+	return strings.Join(allLabels, ",")
 }
