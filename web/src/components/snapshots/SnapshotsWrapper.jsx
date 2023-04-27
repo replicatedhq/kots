@@ -22,7 +22,7 @@ class SnapshotsWrapper extends Component {
     const snapshotsApps = appsList.filter((app) => app.allowSnapshots);
     console.log(snapshotsApps);
     const selectedApp =
-      snapshotsApps.filter((app) => app.slug === match?.params?.slug) ||
+      snapshotsApps.find((app) => app.slug === match?.params?.slug) ||
       snapshotApps[0];
     console.log(selectedApp);
 
