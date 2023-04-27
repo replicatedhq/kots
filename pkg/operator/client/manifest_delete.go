@@ -107,7 +107,7 @@ func deleteManifestResources(manifests []string, targetNS string, kubernetesAppl
 	deleteOrderResourceMap, deleteOrderedKinds := buildDeleteKindOrderedResources(kindDeleteOrder, resources, crdGVKMap)
 
 	for _, kind := range deleteOrderedKinds {
-		logger.Infof("deleting resources of kind: %s", kind)
+		logger.Infof("deleting manifest resources of kind: %s", kind)
 		for _, r := range deleteOrderResourceMap[kind] {
 			deleteManifestResource(r, targetNS, waitFlag, kubernetesApplier)
 		}
@@ -256,6 +256,14 @@ func hasResources(resourcesMap map[string][]resource) bool {
 }
 
 func clearNamespaces(appSlug string, namespacesToClear []string, isRestore bool, restoreLabelSelector labels.Selector, kindDeleteOrder KindOrder, k8sDynamicClient dynamic.Interface, gvrs map[schema.GroupVersionResource]struct{}) error {
+	// 2 minute wait, 60 loops with 2 second sleep
+	waitTimeout := 60
+	waitSleepInSec := 2 * time.Second
+	// Extra time in case the app-slug annotation was not being used.
+	// This is the time it takes for the app controller to delete the app
+	// after the namespace is deleted.
+	waitExtraInSec := 20 * time.Second
+
 	// skip resources that don't have API endpoints or don't have applied objects
 	var skip = sets.NewString(
 		"/v1/bindings",
@@ -277,11 +285,18 @@ func clearNamespaces(appSlug string, namespacesToClear []string, isRestore bool,
 		}
 	}
 
+	err := clearNamespacesWithWait(appSlug, namespacesToClear, isRestore, restoreLabelSelector, kindDeleteOrder, k8sDynamicClient, deletionGVRs, waitTimeout, waitSleepInSec, waitExtraInSec)
+	if err != nil {
+		return errors.Wrap(err, "error deleting namespaces")
+	}
+	return nil
+}
+
+func clearNamespacesWithWait(appSlug string, namespacesToClear []string, isRestore bool, restoreLabelSelector labels.Selector, kindDeleteOrder KindOrder, k8sDynamicClient dynamic.Interface, deletionGVRs []schema.GroupVersionResource, waitTimeOut int, waitSleep time.Duration, waitExtra time.Duration) error {
 	for _, namespace := range namespacesToClear {
 		logger.Infof("Ensuring all %s objects have been removed from namespace %s\n", appSlug, namespace)
-		sleepTime := time.Second * 2
 
-		for i := 60; i >= 0; i-- { // 2 minute wait, 60 loops with 2 second sleep
+		for i := waitTimeOut; i >= 0; i-- { // 2 minute wait, 60 loops with 2 second sleep
 			resourcesToDeleteMap, deleteOrderedKinds := buildDeleteKindOrderedNamespaceResources(k8sDynamicClient, deletionGVRs, appSlug, namespace, isRestore, restoreLabelSelector, kindDeleteOrder)
 			if !hasResources(resourcesToDeleteMap) {
 				logger.Infof("Namespace %s successfully cleared of app %s\n", namespace, appSlug)
@@ -297,13 +312,13 @@ func clearNamespaces(appSlug string, namespacesToClear []string, isRestore bool,
 				return fmt.Errorf("Failed to clear app %s from namespace %s\n", appSlug, namespace)
 			}
 			logger.Infof("Namespace %s still has objects from app %s: sleeping...\n", namespace, appSlug)
-			time.Sleep(sleepTime)
+			time.Sleep(waitSleep)
 		}
 	}
 
 	if len(namespacesToClear) > 0 {
 		// Extra time in case the app-slug annotation was not being used.
-		time.Sleep(time.Second * 20)
+		time.Sleep(waitExtra)
 	}
 
 	return nil

@@ -799,6 +799,11 @@ func Test_clearNamespacedResources(t *testing.T) {
 		GVK:          &podGVK,
 		Unstructured: unstructuredPodWithLabels,
 	}
+	namespacedPodResourceMarkedForDeletion := resource{
+		GVR:          podGVR,
+		GVK:          &podGVK,
+		Unstructured: unstructuredPodMarkedDeletion,
+	}
 	type args struct {
 		dyn              dynamic.Interface
 		namespace        string
@@ -837,6 +842,15 @@ func Test_clearNamespacedResources(t *testing.T) {
 				dyn:              ReturnErrDynamicClientDeleteMock(unstructuredPodWithLabels),
 			},
 			wantErr: true,
+		}, {
+			name: "expect no error when pod resources to clear with kind order and with pod marked for deletion",
+			args: args{
+				resourcesMap:     map[string][]resource{"Pod": {namespacedPodResource, namespacedPodResourceMarkedForDeletion}},
+				deleteKindOrders: KindSortOrder{"Pod"},
+				dyn:              ReturnDynamicClientDeleteMock(unstructuredPodWithLabels, unstructuredPodMarkedDeletion),
+				namespace:        "default",
+			},
+			wantErr: false,
 		},
 	}
 	for _, tt := range tests {
