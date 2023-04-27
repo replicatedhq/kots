@@ -1,6 +1,6 @@
 import React, { useReducer, useEffect } from "react";
 import { createBrowserHistory } from "history";
-import { Switch, Route, Redirect, Router } from "react-router-dom";
+import { Switch, Route, Redirect, Router, Routes } from "react-router-dom";
 import { Helmet } from "react-helmet";
 import Modal from "react-modal";
 import find from "lodash/find";
@@ -450,7 +450,7 @@ const Root = () => {
         }}
       >
         <ToastProvider>
-          <Router history={history}>
+          <Router>
             <NavBar
               logo={state.themeState.navbarLogo || state.appLogo}
               refetchAppsList={getAppsList}
@@ -465,7 +465,7 @@ const Root = () => {
               isHelmManaged={state.isHelmManaged}
             />
             <div className="flex1 flex-column u-overflow--auto tw-relative">
-              <Switch>
+              <Routes>
                 <Route
                   exact
                   path="/"
@@ -635,9 +635,12 @@ const Root = () => {
                   )}
                 />
                 <Route
-                  exact
                   path="/restore-completed"
-                  render={(props) => (
+                  render={(
+                    props: JSX.IntrinsicAttributes &
+                      JSX.IntrinsicClassAttributes<RestoreCompleted> &
+                      Readonly<any>
+                  ) => (
                     <RestoreCompleted
                       {...props}
                       logo={state.appLogo}
@@ -645,8 +648,8 @@ const Root = () => {
                     />
                   )}
                 />
-                <Route component={NotFound} />
-              </Switch>
+                <Route Component={NotFound} />
+              </Routes>
             </div>
             <div className="flex-auto Footer-wrapper u-width--full">
               <Footer appsList={state.appsList} />
