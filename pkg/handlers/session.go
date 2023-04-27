@@ -47,21 +47,27 @@ func parseClusterAuthorization(authHeader string) (authorization, error) {
 	}, nil
 }
 
-func requireValidSession(kotsStore store.Store, w http.ResponseWriter, r *http.Request) (*sessiontypes.Session, error) {
+func requireValidSession(kotsStore store.Store, w http.ResponseWriter, r *http.Request) (sess *sessiontypes.Session, err error) {
 	if r.Method == "OPTIONS" {
 		return nil, nil
 	}
 
 	auth := r.Header.Get("authorization")
+	var signedTokenCookie *http.Cookie
 
 	if auth == "" {
-		err := errors.New("authorization header empty")
-		response := types.ErrorResponse{Error: util.StrPointer(err.Error())}
-		JSON(w, http.StatusUnauthorized, response)
-		return nil, err
+		signedTokenCookie, err = r.Cookie("signed-token")
+
+		if err == http.ErrNoCookie && auth == "" {
+			err := errors.New("missing authorization token")
+			response := types.ErrorResponse{Error: util.StrPointer(err.Error())}
+			JSON(w, http.StatusUnauthorized, response)
+			return nil, err
+		}
+		auth = signedTokenCookie.Value
 	}
 
-	sess, err := session.Parse(kotsStore, auth)
+	sess, err = session.Parse(kotsStore, auth)
 	if err != nil {
 		response := types.ErrorResponse{Error: util.StrPointer("failed to parse authorization header")}
 		JSON(w, http.StatusUnauthorized, response)
@@ -107,6 +113,16 @@ func requireValidSession(kotsStore store.Store, w http.ResponseWriter, r *http.R
 		sess.ExpiresAt = time.Now().Add(SessionTimeout)
 		if err := kotsStore.UpdateSessionExpiresAt(sess.ID, sess.ExpiresAt); err != nil {
 			logger.Error(errors.Wrapf(err, "failed to update session expiry %s", sess.ID))
+		}
+		if signedTokenCookie != nil {
+			origin := r.Header.Get("Origin")
+			expiration := sess.ExpiresAt
+			tokenCookie, err := session.GetSessionCookie(auth, expiration, origin)
+			if err != nil {
+				logger.Error(errors.Wrapf(err, "failed to update session cookie expiry %s", sess.ID))
+			} else {
+				http.SetCookie(w, tokenCookie)
+			}
 		}
 	}
 

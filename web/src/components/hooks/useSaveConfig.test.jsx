@@ -60,11 +60,9 @@ describe("useSaveConfig", () => {
         })
       );
       const testAppSlug = "testAppSlug";
-      const testToken = "testToken";
       const testAPIEndpoint = "testAPIEndpoint";
       const testPutConfig = {
         _fetch: testFetch,
-        _token: testToken,
         appSlug: testAppSlug,
         apiEndpoint: testAPIEndpoint,
         body: testBody,
@@ -77,9 +75,9 @@ describe("useSaveConfig", () => {
       const expectedFetchConfig = {
         method: "PUT",
         headers: {
-          Authorization: testToken,
           "Content-Type": "application/json",
         },
+        credentials: "include",
         body: testBody,
       };
       await expect(putConfig(testPutConfig)).resolves.toEqual(expectedResponse);
@@ -101,11 +99,9 @@ describe("useSaveConfig", () => {
         })
       );
       const testAppSlug = "testAppSlug";
-      const testToken = "testToken";
       const testAPIEndpoint = "testAPIEndpoint";
       const testPutConfig = {
         _fetch: testFetch,
-        _token: testToken,
         appSlug: testAppSlug,
         apiEndpoint: testAPIEndpoint,
         body: testBody,
@@ -129,11 +125,9 @@ describe("useSaveConfig", () => {
       );
 
       const testAppSlug = "testAppSlug";
-      const testToken = "testToken";
       const testAPIEndpoint = "testAPIEndpoint";
       const testPutConfig = {
         _fetch: testFetch,
-        _token: testToken,
         appSlug: testAppSlug,
         apiEndpoint: testAPIEndpoint,
         body: testBody,
@@ -149,11 +143,9 @@ describe("useSaveConfig", () => {
       );
 
       const testAppSlug = "testAppSlug";
-      const testToken = "testToken";
       const testAPIEndpoint = "testAPIEndpoint";
       const testPutConfig = {
         _fetch: testFetch,
-        _token: testToken,
         appSlug: testAppSlug,
         apiEndpoint: testAPIEndpoint,
       };

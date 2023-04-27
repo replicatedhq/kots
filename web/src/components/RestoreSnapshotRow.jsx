@@ -24,9 +24,9 @@ class RestoreSnapshotRow extends React.Component {
     fetch(`${process.env.API_ENDPOINT}/snapshot/${snapshotName}`, {
       method: "GET",
       headers: {
-        Authorization: Utilities.getToken(),
         "Content-Type": "application/json",
       },
+      credentials: "include",
     })
       .then((res) => res.json())
       .then((result) => {

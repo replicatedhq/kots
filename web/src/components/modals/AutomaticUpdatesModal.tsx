@@ -2,7 +2,7 @@ import React from "react";
 import Modal from "react-modal";
 import Select from "react-select";
 import find from "lodash/find";
-import { Utilities, getReadableCronDescriptor } from "@src/utilities/utilities";
+import { getReadableCronDescriptor } from "@src/utilities/utilities";
 
 const SCHEDULES = [
   {
@@ -141,9 +141,9 @@ export default class AutomaticUpdatesModal extends React.Component<
 
     fetch(`${process.env.API_ENDPOINT}/app/${appSlug}/automaticupdates`, {
       headers: {
-        Authorization: Utilities.getToken(),
         "Content-Type": "application/json",
       },
+      credentials: "include",
       method: "PUT",
       body: JSON.stringify({
         updateCheckerSpec: updateCheckerSpec,
@@ -179,9 +179,9 @@ export default class AutomaticUpdatesModal extends React.Component<
 
     fetch(`${process.env.API_ENDPOINT}/app/${appSlug}/automaticupdates`, {
       headers: {
-        Authorization: Utilities.getToken(),
         "Content-Type": "application/json",
       },
+      credentials: "include",
       method: "GET",
     })
       .then(async (res) => {

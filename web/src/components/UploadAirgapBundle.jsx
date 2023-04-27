@@ -61,8 +61,8 @@ class UploadAirgapBundle extends React.Component {
         method: "GET",
         headers: {
           "Content-Type": "application/json",
-          Authorization: Utilities.getToken(),
         },
+        credentials: "include",
       });
       if (res.ok) {
         const response = await res.json();
@@ -92,8 +92,8 @@ class UploadAirgapBundle extends React.Component {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: Utilities.getToken(),
         },
+        credentials: "include",
       });
     } catch (error) {
       console.error(error);
@@ -136,7 +136,6 @@ class UploadAirgapBundle extends React.Component {
           {
             method: "POST",
             headers: {
-              Authorization: Utilities.getToken(),
               "Content-Type": "application/json",
             },
             body: JSON.stringify({
@@ -146,6 +145,7 @@ class UploadAirgapBundle extends React.Component {
               password: this.state.registryDetails.password,
               isReadOnly: this.state.registryDetails.isReadOnly,
             }),
+            credentials: "include",
           }
         );
       } catch (err) {
@@ -251,9 +251,9 @@ class UploadAirgapBundle extends React.Component {
     fetch(`${process.env.API_ENDPOINT}/license/resume`, {
       method: "PUT",
       headers: {
-        Authorization: Utilities.getToken(),
         "Content-Type": "application/json",
       },
+      credentials: "include",
       body: JSON.stringify({
         slug,
       }),
@@ -319,9 +319,9 @@ class UploadAirgapBundle extends React.Component {
       {
         method: "POST",
         headers: {
-          Authorization: Utilities.getToken(),
           "Content-Type": "application/json",
         },
+        credentials: "include",
         body: JSON.stringify({
           origin: window.location.origin,
         }),
@@ -383,9 +383,9 @@ class UploadAirgapBundle extends React.Component {
     try {
       const res = await fetch(`${process.env.API_ENDPOINT}/app/${slug}`, {
         headers: {
-          Authorization: Utilities.getToken(),
           "Content-Type": "application/json",
         },
+        credentials: "include",
         method: "GET",
       });
       if (res.ok && res.status == 200) {

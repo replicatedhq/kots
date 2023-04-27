@@ -11,7 +11,7 @@ import isEmpty from "lodash/isEmpty";
 import keyBy from "lodash/keyBy";
 import Modal from "react-modal";
 import Select from "react-select";
-import { getFileContent, Utilities } from "../utilities/utilities";
+import { getFileContent } from "../utilities/utilities";
 import CodeSnippet from "./shared/CodeSnippet";
 import LicenseUploadProgress from "./LicenseUploadProgress";
 
@@ -137,8 +137,8 @@ const UploadLicenseFile = (props: Props) => {
         headers: {
           "Content-Type": "application/json",
           Accept: "application/json",
-          Authorization: Utilities.getToken(),
         },
+        credentials: "include",
         body: JSON.stringify(payload),
       })
         .then(async (res) => {
@@ -207,9 +207,9 @@ const UploadLicenseFile = (props: Props) => {
     fetch(`${process.env.API_ENDPOINT}/license`, {
       method: "POST",
       headers: {
-        Authorization: Utilities.getToken(),
         "Content-Type": "application/json",
       },
+      credentials: "include",
       body: JSON.stringify({
         licenseData: isRliFile ? licenseText : serializedLicense,
       }),
@@ -342,9 +342,9 @@ const UploadLicenseFile = (props: Props) => {
     fetch(`${process.env.API_ENDPOINT}/snapshot/${snapshot.name}/restore`, {
       method: "POST",
       headers: {
-        Authorization: Utilities.getToken(),
         "Content-Type": "application/json",
       },
+      credentials: "include",
       body: JSON.stringify(payload),
     })
       .then(async (res) => {

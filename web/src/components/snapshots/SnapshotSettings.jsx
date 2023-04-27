@@ -44,9 +44,9 @@ class SnapshotSettings extends Component {
     return fetch(`${process.env.API_ENDPOINT}/snapshots/settings`, {
       method: "GET",
       headers: {
-        Authorization: Utilities.getToken(),
         "Content-Type": "application/json",
       },
+      credentials: "include",
     })
       .then(async (res) => {
         if (!res.ok && res.status === 409) {
@@ -191,9 +191,9 @@ class SnapshotSettings extends Component {
     fetch(`${process.env.API_ENDPOINT}/snapshots/settings`, {
       method: "PUT",
       headers: {
-        Authorization: Utilities.getToken(),
         "Content-Type": "application/json",
       },
+      credentials: "include",
       body: JSON.stringify(payload),
     })
       .then(async (res) => {

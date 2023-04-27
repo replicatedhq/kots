@@ -54,9 +54,9 @@ export default class ConfigureRedactorsModal extends Component {
     this.setState({ loadingRedactor: true });
     fetch(`${process.env.API_ENDPOINT}/redact/get`, {
       headers: {
-        Authorization: `${Utilities.getToken()}`,
         "Content-Type": "application/json",
       },
+      credentials: "include",
       method: "GET",
     })
       .then(async (res) => {
@@ -117,10 +117,10 @@ export default class ConfigureRedactorsModal extends Component {
     this.setState({ savingRedactor: true });
     fetch(`${process.env.API_ENDPOINT}/redact/set`, {
       headers: {
-        Authorization: `${Utilities.getToken()}`,
         "Content-Type": "application/json",
         Accept: "application/json",
       },
+      credentials: "include",
       method: "PUT",
       body: JSON.stringify(payload),
     })

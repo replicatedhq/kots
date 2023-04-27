@@ -1,14 +1,15 @@
 import { useQuery } from "react-query";
-import { Utilities } from "../../../utilities/utilities";
 import { useSelectedApp } from "@features/App";
 import axios from "axios";
+
+axios.defaults.withCredentials = true;
 
 export const getNextAppVersion = async (appSlug: string) => {
   const config = {
     headers: {
-      Authorization: Utilities.getToken(),
       "Content-Type": "application/json",
     },
+    withCredentials: true,
   };
   try {
     const res = await axios.get(

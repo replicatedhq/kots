@@ -55,9 +55,9 @@ export class NavBar extends PureComponent<Props, State> {
       this.setState({ loggingOut: true, displayErrorModal: false });
       const res = await fetch(`${process.env.API_ENDPOINT}/logout`, {
         headers: {
-          Authorization: Utilities.getToken(),
           "Content-Type": "application/json",
         },
+        credentials: "include",
         method: "POST",
       });
       if (!res.ok) {
@@ -200,7 +200,7 @@ export class NavBar extends PureComponent<Props, State> {
               </Link>
             </div>
           </div>
-          {Utilities.isLoggedIn() && appsList.length > 0 && (
+          {Utilities.isLoggedIn() && appsList?.length > 0 && (
             <div className="flex flex-auto left-items">
               <div
                 className={classNames("NavItem u-position--relative flex", {

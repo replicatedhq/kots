@@ -72,9 +72,9 @@ class IdentityProviders extends Component {
       const res = await fetch(url, {
         method: "GET",
         headers: {
-          Authorization: Utilities.getToken(),
           "Content-Type": "application/json",
         },
+        credentials: "include",
       });
       if (!res.ok) {
         if (res.status === 401) {
@@ -412,9 +412,9 @@ class IdentityProviders extends Component {
       fetch(url, {
         method: "POST",
         headers: {
-          Authorization: Utilities.getToken(),
           "Content-Type": "application/json",
         },
+        credentials: "include",
         body: JSON.stringify(payload),
       })
         .then(async (res) => {

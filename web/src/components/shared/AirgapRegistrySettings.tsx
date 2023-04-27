@@ -6,7 +6,6 @@ import Loader from "../shared/Loader";
 import ErrorModal from "../modals/ErrorModal";
 import Modal from "react-modal";
 import "../../scss/components/watches/WatchDetailPage.scss";
-import { Utilities } from "../../utilities/utilities";
 import { Repeater } from "../../utilities/repeater";
 import Icon from "../Icon";
 import { App, KotsParams } from "@types";
@@ -116,9 +115,9 @@ class AirgapRegistrySettings extends Component<Props, State> {
     fetch(`${process.env.API_ENDPOINT}/app/${slug}/registry`, {
       method: "PUT",
       headers: {
-        Authorization: Utilities.getToken(),
         "Content-Type": "application/json",
       },
+      credentials: "include",
       body: JSON.stringify({
         hostname,
         username,
@@ -175,9 +174,9 @@ class AirgapRegistrySettings extends Component<Props, State> {
         {
           method: "POST",
           headers: {
-            Authorization: Utilities.getToken(),
             "Content-Type": "application/json",
           },
+          credentials: "include",
           body: JSON.stringify({
             hostname: this.state.hostname,
             namespace: this.state.namespace,
@@ -269,9 +268,7 @@ class AirgapRegistrySettings extends Component<Props, State> {
     }
 
     fetch(url, {
-      headers: {
-        Authorization: Utilities.getToken(),
-      },
+      credentials: "include",
       method: "GET",
     })
       .then((res) => res.json())
@@ -332,9 +329,9 @@ class AirgapRegistrySettings extends Component<Props, State> {
     }
     fetch(url, {
       headers: {
-        Authorization: Utilities.getToken(),
         "Content-Type": "application/json",
       },
+      credentials: "include",
       method: "GET",
     })
       .then(async (response) => {
@@ -361,9 +358,9 @@ class AirgapRegistrySettings extends Component<Props, State> {
     return new Promise<void>((resolve, reject) => {
       fetch(url, {
         headers: {
-          Authorization: Utilities.getToken(),
           "Content-Type": "application/json",
         },
+        credentials: "include",
         method: "GET",
       })
         .then(async (response) => {

@@ -45,9 +45,9 @@ export class ClusterNodes extends Component {
     try {
       const res = await fetch(`${process.env.API_ENDPOINT}/kurl/nodes`, {
         headers: {
-          Authorization: Utilities.getToken(),
           Accept: "application/json",
         },
+        credentials: "include",
         method: "GET",
       });
       if (!res.ok) {
@@ -90,10 +90,10 @@ export class ClusterNodes extends Component {
 
     fetch(`${process.env.API_ENDPOINT}/kurl/nodes/${name}`, {
       headers: {
-        Authorization: Utilities.getToken(),
         "Content-Type": "application/json",
         Accept: "application/json",
       },
+      credentials: "include",
       method: "DELETE",
     })
       .then(async (res) => {
@@ -131,10 +131,10 @@ export class ClusterNodes extends Component {
       `${process.env.API_ENDPOINT}/kurl/generate-node-join-command-secondary`,
       {
         headers: {
-          Authorization: Utilities.getToken(),
           "Content-Type": "application/json",
           Accept: "application/json",
         },
+        credentials: "include",
         method: "POST",
       }
     )
@@ -173,10 +173,10 @@ export class ClusterNodes extends Component {
     this.setState({ showConfirmDrainModal: false, drainingNodeName: name });
     fetch(`${process.env.API_ENDPOINT}/kurl/nodes/${name}/drain`, {
       headers: {
-        Authorization: Utilities.getToken(),
         "Content-Type": "application/json",
         Accept: "application/json",
       },
+      credentials: "include",
       method: "POST",
     })
       .then(async (res) => {
@@ -209,10 +209,10 @@ export class ClusterNodes extends Component {
       `${process.env.API_ENDPOINT}/kurl/generate-node-join-command-primary`,
       {
         headers: {
-          Authorization: Utilities.getToken(),
           "Content-Type": "application/json",
           Accept: "application/json",
         },
+        credentials: "include",
         method: "POST",
       }
     )

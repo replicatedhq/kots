@@ -1,7 +1,6 @@
 import React, { useEffect, useReducer } from "react";
 import Modal from "react-modal";
 import CodeSnippet from "@components/shared/CodeSnippet";
-import { Utilities } from "@src/utilities/utilities";
 import { useHistory } from "react-router";
 import { App, LicenseFile, KotsParams, SupportBundle } from "@types";
 // @ts-ignore
@@ -73,9 +72,9 @@ const GenerateSupportBundleModal = ({
       {
         method: "POST",
         headers: {
-          Authorization: Utilities.getToken(),
           "Content-Type": "application/json",
         },
+        credentials: "include",
         body: JSON.stringify({
           origin: window.location.origin,
         }),
@@ -95,9 +94,9 @@ const GenerateSupportBundleModal = ({
         `${process.env.API_ENDPOINT}/troubleshoot/app/${watch?.slug}/supportbundles`,
         {
           headers: {
-            Authorization: Utilities.getToken(),
             "Content-Type": "application/json",
           },
+          credentials: "include",
           method: "GET",
         }
       )
@@ -183,9 +182,9 @@ const GenerateSupportBundleModal = ({
 
     fetch(url, {
       headers: {
-        Authorization: Utilities.getToken(),
         "Content-Type": "application/json",
       },
+      credentials: "include",
       method: "POST",
     })
       .then(async (res) => {
