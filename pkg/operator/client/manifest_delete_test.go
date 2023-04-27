@@ -3,6 +3,7 @@ package client
 import (
 	"reflect"
 	"testing"
+	"time"
 
 	"github.com/replicatedhq/kots/pkg/operator/applier"
 	"github.com/stretchr/testify/require"
@@ -687,7 +688,7 @@ func Test_buildDeleteKindOrderedNamespaceResources(t *testing.T) {
 			name: "expect empty map and empty kind order with gvr items empty",
 			args: args{
 				gvrs: []schema.GroupVersionResource{podGVR},
-				dyn:  ReturnErrorDynamicClientMock(unstructuredPodWithLabels),
+				dyn:  ReturnErrorDynamicClientListMock(unstructuredPodWithLabels),
 			},
 			want:                   map[string][]resource{},
 			wantdeleteOrderedKinds: KindSortOrder{},
@@ -993,6 +994,68 @@ func Test_getLabelSelector(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			require.Equal(t, tt.want, getLabelSelector(&tt.appLabelSelector))
+		})
+	}
+}
+
+func Test_clearNamespacesWithWait(t *testing.T) {
+	type args struct {
+		appSlug              string
+		namespacesToClear    []string
+		isRestore            bool
+		restoreLabelSelector labels.Selector
+		kindDeleteOrder      KindOrder
+		k8sDynamicClient     dynamic.Interface
+		deletionGVRs         []schema.GroupVersionResource
+		waitTimeOut          int
+		waitSleep            time.Duration
+		waitExtra            time.Duration
+	}
+	tests := []struct {
+		name    string
+		args    args
+		wantErr bool
+	}{
+		{
+			name:    "expect no error when no namespaces to clear",
+			args:    args{},
+			wantErr: false,
+		}, {
+			name: "expect no error when resourcesToDeleteMap is empty",
+			args: args{
+				appSlug:           "not-test",
+				namespacesToClear: []string{"default"},
+				k8sDynamicClient:  ReturnDynamicClientMock(unstructuredPodWithLabels),
+				deletionGVRs:      []schema.GroupVersionResource{podGVR},
+			},
+			wantErr: false,
+		}, {
+			name: "expect no error when resourcesToDeleteMap has a pod to delete",
+			args: args{
+				appSlug:           "test",
+				namespacesToClear: []string{"default"},
+				k8sDynamicClient:  NewSimpleDynamicClient(unstructuredPodWithLabels),
+				deletionGVRs:      []schema.GroupVersionResource{podGVR},
+				waitTimeOut:       1,
+			},
+			wantErr: false,
+		}, {
+			name: "expect no error when resourcesToDeleteMap has a pod to delete",
+			args: args{
+				appSlug:           "test",
+				namespacesToClear: []string{"default"},
+				k8sDynamicClient:  NewSimpleDynamicClient(unstructuredPodWithLabels),
+				deletionGVRs:      []schema.GroupVersionResource{podGVR},
+				waitTimeOut:       1,
+			},
+			wantErr: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if err := clearNamespacesWithWait(tt.args.appSlug, tt.args.namespacesToClear, tt.args.isRestore, tt.args.restoreLabelSelector, tt.args.kindDeleteOrder, tt.args.k8sDynamicClient, tt.args.deletionGVRs, tt.args.waitTimeOut, tt.args.waitSleep, tt.args.waitExtra); (err != nil) != tt.wantErr {
+				t.Errorf("clearNamespacesWithWait() error = %v, wantErr %v", err, tt.wantErr)
+			}
 		})
 	}
 }
