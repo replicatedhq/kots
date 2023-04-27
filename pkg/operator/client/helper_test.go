@@ -169,9 +169,11 @@ type K8sApplierMock struct {
 func (k *K8sApplierMock) Apply(targetNamespace string, slug string, yamlDoc []byte, dryRun bool, wait bool, annotateSlug bool) ([]byte, []byte, error) {
 	return nil, nil, nil
 }
+
 func (k *K8sApplierMock) Remove(targetNamespace string, yamlDoc []byte, wait bool) ([]byte, []byte, error) {
 	return nil, nil, nil
 }
+
 func (k *K8sApplierMock) ApplyCreateOrPatch(targetNamespace string, slug string, yamlDoc []byte, dryRun bool, wait bool, annotateSlug bool) ([]byte, []byte, error) {
 	return nil, nil, nil
 }
