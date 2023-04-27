@@ -47,7 +47,7 @@ func parseClusterAuthorization(authHeader string) (authorization, error) {
 	}, nil
 }
 
-func requireValidSession(kotsStore store.Store, w http.ResponseWriter, r *http.Request) (sess *sessiontypes.Session, err error) {
+func requireValidSession(kotsStore store.Store, w http.ResponseWriter, r *http.Request) (*sessiontypes.Session, error) {
 	if r.Method == "OPTIONS" {
 		return nil, nil
 	}
@@ -56,7 +56,7 @@ func requireValidSession(kotsStore store.Store, w http.ResponseWriter, r *http.R
 	var signedTokenCookie *http.Cookie
 
 	if auth == "" {
-		signedTokenCookie, err = r.Cookie("signed-token")
+		signedTokenCookie, err := r.Cookie("signed-token")
 
 		if err == http.ErrNoCookie && auth == "" {
 			err := errors.New("missing authorization token")
@@ -67,7 +67,7 @@ func requireValidSession(kotsStore store.Store, w http.ResponseWriter, r *http.R
 		auth = signedTokenCookie.Value
 	}
 
-	sess, err = session.Parse(kotsStore, auth)
+	sess, err := session.Parse(kotsStore, auth)
 	if err != nil {
 		response := types.ErrorResponse{Error: util.StrPointer("failed to parse authorization header")}
 		JSON(w, http.StatusUnauthorized, response)
