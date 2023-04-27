@@ -155,7 +155,10 @@ function PreflightResultPage(props: Props) {
                   className="btn primary blue"
                   onClick={() => ignorePermissionErrors()}
                 >
-                  Re-run with limited Preflights
+                  {!history.location.pathname.includes("version-history")
+                    ? "Proceed"
+                    : "Re-run"}{" "}
+                  with limited Preflights
                 </button>
               </div>
             </>
