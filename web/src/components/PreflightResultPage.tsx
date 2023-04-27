@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { KotsPageTitle } from "@components/Head";
-import { useParams } from "react-router-dom";
+import { useParams, useHistory } from "react-router-dom";
 import Modal from "react-modal";
 import ReactTooltip from "react-tooltip";
 
@@ -21,6 +21,7 @@ import {
 import { useDeployAppVersion } from "@features/App/api";
 
 import { KotsParams } from "@types";
+import Icon from "./Icon";
 
 interface Props {
   fromLicenseFlow?: boolean;
@@ -38,6 +39,7 @@ function PreflightResultPage(props: Props) {
     setShowConfirmIgnorePreflightsModal,
   ] = useState(false);
 
+  const history = useHistory();
   const { sequence = "0", slug } = useParams<KotsParams>();
   const { mutate: deployKotsDownstream } = useDeployAppVersion({
     slug,
@@ -70,6 +72,20 @@ function PreflightResultPage(props: Props) {
     <div className="flex-column flex1 container">
       <KotsPageTitle pageName="Preflight Checks" showAppSlug />
       <div className="PreflightChecks--wrapper flex-column u-paddingTop--30 flex1 flex u-overflow--auto">
+        {history.location.pathname.includes("version-history") && (
+          <div
+            className="u-fontWeight--bold link"
+            onClick={() => history.goBack()}
+          >
+            <Icon
+              icon="prev-arrow"
+              size={12}
+              className="clickable u-marginRight--10"
+              style={{ verticalAlign: "0" }}
+            />
+            Back
+          </div>
+        )}
         <div
           className={`u-maxWidth--full u-marginTop--20 flex-column u-position--relative card-bg ${
             preflightCheck?.showPreflightCheckPending ? "flex1" : ""
@@ -136,20 +152,14 @@ function PreflightResultPage(props: Props) {
               />
               <div className="flex justifyContent--flexEnd tw-gap-6">
                 <button
-                  className="btn secondary blue"
+                  className="btn primary blue"
                   onClick={() => ignorePermissionErrors()}
                 >
-                  Proceed with limited Preflights
+                  {!history.location.pathname.includes("version-history")
+                    ? "Proceed"
+                    : "Re-run"}{" "}
+                  with limited Preflights
                 </button>
-                {preflightCheck.shouldShowRerunPreflight && (
-                  <button
-                    type="button"
-                    className="btn primary blue"
-                    onClick={() => rerunPreflights()}
-                  >
-                    Re-run
-                  </button>
-                )}
               </div>
             </>
           )}
