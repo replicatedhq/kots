@@ -32,7 +32,6 @@ type LoginRequest struct {
 
 type LoginResponse struct {
 	Error string `json:"error,omitempty"`
-	Token string `json:"token,omitempty"`
 }
 
 type LoginMethod string
