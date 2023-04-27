@@ -112,27 +112,16 @@ func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 
 	responseToken := fmt.Sprintf("Bearer %s", signedJWT)
 
-	expire := time.Now().Add(SessionTimeout)
-	tokenCookie := http.Cookie{
-		Name:     "signed-token",
-		Value:    responseToken,
-		Expires:  expire,
-		Path:     "/",
-		HttpOnly: true,
-	}
-
-	originURL, err := url.Parse(r.Header.Get("Origin"))
+	expiration := time.Now().Add(SessionTimeout)
+	origin := r.Header.Get("Origin")
+	tokenCookie, err := session.GetSessionCookie(responseToken, expiration, origin)
 	if err != nil {
-		logger.Error(errors.Wrap(err, "failed to parse origin url"))
+		logger.Error(errors.Wrap(err, "failed to get session cookie"))
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
-	if originURL.Scheme == "https" {
-		tokenCookie.Secure = true
-	}
-
-	http.SetCookie(w, &tokenCookie)
+	http.SetCookie(w, tokenCookie)
 
 	JSON(w, http.StatusOK, loginResponse)
 }

@@ -53,9 +53,10 @@ func requireValidSession(kotsStore store.Store, w http.ResponseWriter, r *http.R
 	}
 
 	auth := r.Header.Get("authorization")
+	var signedTokenCookie *http.Cookie
 
 	if auth == "" {
-		signedTokenCookie, err := r.Cookie("signed-token")
+		signedTokenCookie, err = r.Cookie("signed-token")
 
 		if err == http.ErrNoCookie && auth == "" {
 			err := errors.New("missing authorization token")
@@ -112,6 +113,16 @@ func requireValidSession(kotsStore store.Store, w http.ResponseWriter, r *http.R
 		sess.ExpiresAt = time.Now().Add(SessionTimeout)
 		if err := kotsStore.UpdateSessionExpiresAt(sess.ID, sess.ExpiresAt); err != nil {
 			logger.Error(errors.Wrapf(err, "failed to update session expiry %s", sess.ID))
+		}
+		if signedTokenCookie != nil {
+			origin := r.Header.Get("Origin")
+			expiration := sess.ExpiresAt
+			tokenCookie, err := session.GetSessionCookie(auth, expiration, origin)
+			if err != nil {
+				logger.Error(errors.Wrapf(err, "failed to update session cookie expiry %s", sess.ID))
+			} else {
+				http.SetCookie(w, tokenCookie)
+			}
 		}
 	}
 

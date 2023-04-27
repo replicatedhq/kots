@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"net/http"
+	"time"
 
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/session"
@@ -17,6 +18,15 @@ func (h *Handler) Logout(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	auth := signedTokenCookie.Value
+	// delete cookie by setting expiration to past
+	expiration := time.Now().Add(-1 * time.Hour)
+	tokenCookie, err := session.GetSessionCookie(auth, expiration, r.Header.Get("Origin"))
+	if err != nil {
+		logger.Error(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	http.SetCookie(w, tokenCookie)
 
 	sess, err := session.Parse(store.GetStore(), auth)
 	if err != nil {
