@@ -25,7 +25,7 @@ class SnapshotsWrapper extends Component {
     const snapshotsApps = appsList.filter(
       // locate snapshottable app by slug
       (app) =>
-        app.allowSnapshots && (appSlug === "" || app.slug === selectedAppSlug)
+        app.allowSnapshots && (selectedAppSlug === "" || app.slug === selectedAppSlug)
     );
 
     return (
