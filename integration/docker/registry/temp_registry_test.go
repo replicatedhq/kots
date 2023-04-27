@@ -136,6 +136,87 @@ func TestTempRegistry_GetImageLayers(t *testing.T) {
 			},
 			wantErr: false,
 		},
+		{
+			name: "oci image",
+			args: args{
+				image: "some-oci-image:some-tag",
+			},
+			want: []dockertypes.Layer{
+				{
+					Size:   55045922,
+					Digest: "sha256:32fb02163b6bb519a30f909008e852354dae10bdfd6b34190dbdfe8f15403ea0",
+				},
+				{
+					Size:   5166586,
+					Digest: "sha256:167c7feebee855d117e192389484ea8367be1ba84e7ee35f4e5e5663195facbf",
+				},
+				{
+					Size:   10876729,
+					Digest: "sha256:d6dfff1f6f3ddd2194ea0775f199572e8b2d75c38713eef0444d6b1fd0ac7604",
+				},
+				{
+					Size:   54585443,
+					Digest: "sha256:e9cdcd4942ebc7445d8a70117a83ecbc77dcc5ffc72c4b6f8e24c0c76cfee15d",
+				},
+				{
+					Size:   196811476,
+					Digest: "sha256:ca3bce705f6c47c25b6e7896b4da514bf271c5827b1d19f51611c4a149dd713c",
+				},
+				{
+					Size:   4205,
+					Digest: "sha256:4f4cf292bc62eeea8a34b4160f3ef1f335b6b7b2bb9d28c605dc4002c8a24bc2",
+				},
+				{
+					Size:   45579859,
+					Digest: "sha256:054111693acb70b8d7d75dc8a846bb235bc0bfbf996b48867e23231975d0145b",
+				},
+				{
+					Size:   2279423,
+					Digest: "sha256:6ebdc2485ae0ea24eee4a04ebdf693e9a021aa45ab49b4c220e3db53c01d8f79",
+				},
+				{
+					Size:   450,
+					Digest: "sha256:63aedd7b9a0f5940555dca680f079ed3962526dd7fe03bfcce5fa5fe373d2424",
+				},
+				{
+					Size:   14145524,
+					Digest: "sha256:c1c68f450b6ee7ca31d1995a57f1063fc1061ed941661acbb143fec5792ad47e",
+				},
+				{
+					Size:   141,
+					Digest: "sha256:29f8913d8e982041f8366254ffa32dcfc82eca673710074d81756e5c3030aa86",
+				},
+				{
+					Size:   960,
+					Digest: "sha256:15164a7c6a2f31ac9ec373a1aa3423f6be8d892aab62b6c45c2e1bf23dc7adb3",
+				},
+				{
+					Size:   282465,
+					Digest: "sha256:f09029b4a9ddaa1a57f03a3dbe28ae4d661582074b1700c13663b321660af3c0",
+				},
+				{
+					Size:   393,
+					Digest: "sha256:e1300e83b67f39a8081c8234e00d586dfa179bafc693fa360a4c1291c76e4807",
+				},
+				{
+					Size:   8144122,
+					Digest: "sha256:4d7f456c67ea953671ade8da31d8e860b12ad6a2ecbc4c0692f6528eb46c0b7c",
+				},
+				{
+					Size:   32,
+					Digest: "sha256:4f4fb700ef54461cfa02571ae0db9a0dc1e0cdb5577484a6d75e68dc38e8acc1",
+				},
+				{
+					Size:   670652217,
+					Digest: "sha256:1cbe0f76d449b826a46fb582b4d4a29772103f830a261fe690bc0012612a83f9",
+				},
+				{
+					Size:   101201807,
+					Digest: "sha256:0d650e561c9d9f5f8b013053329c4ad767ff265cd99fbdefb18cecce2e5f13ce",
+				},
+			},
+			wantErr: false,
+		},
 	}
 
 	req := require.New(t)
