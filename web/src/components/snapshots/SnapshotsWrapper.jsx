@@ -20,10 +20,14 @@ class SnapshotsWrapper extends Component {
 
     const selectedAppSlug = match?.params?.slug;
 
+    console.log("selectedAppSlug", selectedAppSlug);
+
     const snapshotsApps = appsList.filter(
       // locate snapshottable app by slug
       (app) => app.allowSnapshots && app.slug === selectedAppSlug
     );
+
+    console.log("snapshotsApps", snapshotsApps);
 
     return (
       <div className="WatchDetailPage--wrapper flex-column flex1 u-overflow--auto">
