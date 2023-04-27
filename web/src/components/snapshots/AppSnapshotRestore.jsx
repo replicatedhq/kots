@@ -116,7 +116,6 @@ class AppSnapshotRestore extends Component {
 
   fetchCancelRestore = async () => {
     const { app } = this.props;
-    // use the match id instead of the app slug - this is a prop that's passed in
     const res = await fetch(
       `${process.env.API_ENDPOINT}/app/${app.slug}/snapshot/restore`,
       {
@@ -307,7 +306,6 @@ class AppSnapshotRestore extends Component {
   render() {
     const { cancelingRestore, restoreDetail, loadingRestoreDetail } =
       this.state;
-    console.log(this.props);
 
     const hasNoErrorsOrWarnings =
       (!restoreDetail?.warnings && !restoreDetail?.errors) ||
