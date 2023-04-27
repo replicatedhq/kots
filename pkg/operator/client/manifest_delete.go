@@ -13,7 +13,7 @@ import (
 	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	k8slabels "k8s.io/apimachinery/pkg/labels"
+	labels "k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/util/sets"
@@ -245,7 +245,17 @@ func buildGVKKey(group, kind, version string) string {
 	return fmt.Sprintf("%s/%s/%s", group, kind, version)
 }
 
-func clearNamespaces(appSlug string, namespacesToClear []string, isRestore bool, restoreLabelSelector *metav1.LabelSelector, kindDeleteOrder KindOrder, k8sDynamicClient dynamic.Interface, gvrs map[schema.GroupVersionResource]struct{}) error {
+// check if resourcesToDeleteMap has any resources in it
+func hasResources(resourcesMap map[string][]resource) bool {
+	for _, resources := range resourcesMap {
+		if len(resources) > 0 {
+			return true
+		}
+	}
+	return false
+}
+
+func clearNamespaces(appSlug string, namespacesToClear []string, isRestore bool, restoreLabelSelector labels.Selector, kindDeleteOrder KindOrder, k8sDynamicClient dynamic.Interface, gvrs map[schema.GroupVersionResource]struct{}) error {
 	// skip resources that don't have API endpoints or don't have applied objects
 	var skip = sets.NewString(
 		"/v1/bindings",
@@ -270,20 +280,17 @@ func clearNamespaces(appSlug string, namespacesToClear []string, isRestore bool,
 	for _, namespace := range namespacesToClear {
 		logger.Infof("Ensuring all %s objects have been removed from namespace %s\n", appSlug, namespace)
 		sleepTime := time.Second * 2
+
 		for i := 60; i >= 0; i-- { // 2 minute wait, 60 loops with 2 second sleep
-			resourcesToDelete, deleteOrderedKinds, err := buildDeleteKindOrderedNamespaceResources(k8sDynamicClient, deletionGVRs, appSlug, namespace, isRestore, restoreLabelSelector, kindDeleteOrder)
-			if err != nil {
-				logger.Errorf("Failed to list resources for app %s in namespace %s: %v\n", appSlug, namespace, err)
-				break
-			} else if len(resourcesToDelete) == 0 {
+			resourcesToDeleteMap, deleteOrderedKinds := buildDeleteKindOrderedNamespaceResources(k8sDynamicClient, deletionGVRs, appSlug, namespace, isRestore, restoreLabelSelector, kindDeleteOrder)
+			if !hasResources(resourcesToDeleteMap) {
+				logger.Infof("Namespace %s successfully cleared of app %s\n", namespace, appSlug)
 				break
 			}
 
-			err = clearNamespacedResources(k8sDynamicClient, namespace, resourcesToDelete, deleteOrderedKinds)
+			err := clearNamespacedResources(k8sDynamicClient, namespace, resourcesToDeleteMap, deleteOrderedKinds)
 			if err != nil {
-				logger.Errorf("Failed to check if app %s objects have been removed from namespace %s: %v\n", appSlug, namespace, err)
-			} else {
-				break
+				logger.Errorf("Failed to clear resources from app %s, namespace %s: %v\n", appSlug, namespace, err)
 			}
 
 			if i == 0 {
@@ -292,8 +299,8 @@ func clearNamespaces(appSlug string, namespacesToClear []string, isRestore bool,
 			logger.Infof("Namespace %s still has objects from app %s: sleeping...\n", namespace, appSlug)
 			time.Sleep(sleepTime)
 		}
-		logger.Infof("Namespace %s successfully cleared of app %s\n", namespace, appSlug)
 	}
+
 	if len(namespacesToClear) > 0 {
 		// Extra time in case the app-slug annotation was not being used.
 		time.Sleep(time.Second * 20)
@@ -302,7 +309,7 @@ func clearNamespaces(appSlug string, namespacesToClear []string, isRestore bool,
 	return nil
 }
 
-func buildDeleteKindOrderedNamespaceResources(dyn dynamic.Interface, gvrs []schema.GroupVersionResource, appSlug string, namespace string, isRestore bool, restoreLabelSelector *metav1.LabelSelector, deleteKindOrder KindOrder) (map[string][]resource, KindSortOrder, error) {
+func buildDeleteKindOrderedNamespaceResources(dyn dynamic.Interface, gvrs []schema.GroupVersionResource, appSlug string, namespace string, isRestore bool, restoreLabelSelector labels.Selector, deleteKindOrder KindOrder) (map[string][]resource, KindSortOrder) {
 	deleteOrdererResourceMap := initResourceKindOrderMap(deleteKindOrder)
 	var defaultKindOrder KindSortOrder
 	for _, gvr := range gvrs {
@@ -314,20 +321,17 @@ func buildDeleteKindOrderedNamespaceResources(dyn dynamic.Interface, gvrs []sche
 			}
 			continue
 		}
+
 		for _, u := range unstructuredList.Items {
 			if isRestore {
-				labels := u.GetLabels()
-				if excludeLabel, exists := labels["velero.io/exclude-from-backup"]; exists && excludeLabel == "true" {
+				labelMap := u.GetLabels()
+				if excludeLabel, exists := labelMap["velero.io/exclude-from-backup"]; exists && excludeLabel == "true" {
 					continue
 				}
-				if restoreLabelSelector != nil {
-					s, err := metav1.LabelSelectorAsSelector(restoreLabelSelector)
-					if err != nil {
-						return nil, nil, errors.Wrap(err, "failed to convert label selector to a selector")
-					}
-					if !s.Matches(k8slabels.Set(labels)) {
-						continue
-					}
+
+				labelSet := labels.Set(labelMap)
+				if restoreLabelSelector != nil && !restoreLabelSelector.Matches(labelSet) {
+					continue
 				}
 			}
 
@@ -356,7 +360,7 @@ func buildDeleteKindOrderedNamespaceResources(dyn dynamic.Interface, gvrs []sche
 	}
 
 	deleteOrderedKinds := getOrderedKinds(deleteKindOrder, defaultKindOrder)
-	return deleteOrdererResourceMap, deleteOrderedKinds, nil
+	return deleteOrdererResourceMap, deleteOrderedKinds
 }
 
 func clearNamespacedResources(dyn dynamic.Interface, namespace string, resourcesMap map[string][]resource, deleteKindOrders KindSortOrder) error {

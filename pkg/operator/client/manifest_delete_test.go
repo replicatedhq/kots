@@ -5,8 +5,8 @@ import (
 	"testing"
 
 	"github.com/replicatedhq/kots/pkg/operator/applier"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/dynamic"
 )
@@ -641,7 +641,7 @@ func Test_buildDeleteKindOrderedNamespaceResources(t *testing.T) {
 		appSlug              string
 		namespace            string
 		isRestore            bool
-		restoreLabelSelector *metav1.LabelSelector
+		restoreLabelSelector labels.Selector
 		deleteKindOrder      KindOrder
 	}
 	tests := []struct {
@@ -743,11 +743,9 @@ func Test_buildDeleteKindOrderedNamespaceResources(t *testing.T) {
 				isRestore: true,
 				appSlug:   "test",
 				namespace: "test",
-				restoreLabelSelector: &metav1.LabelSelector{
-					MatchLabels: map[string]string{
-						"label/restore": "true",
-					},
-				},
+				restoreLabelSelector: labels.SelectorFromSet(map[string]string{
+					"label/restore": "true",
+				}),
 			},
 			want:                   map[string][]resource{"Pod": {namespacedPodResource}},
 			wantdeleteOrderedKinds: KindSortOrder{"Pod"},
@@ -761,11 +759,9 @@ func Test_buildDeleteKindOrderedNamespaceResources(t *testing.T) {
 				isRestore: true,
 				appSlug:   "test",
 				namespace: "test",
-				restoreLabelSelector: &metav1.LabelSelector{
-					MatchLabels: map[string]string{
-						"label/restore": "true",
-					},
-				},
+				restoreLabelSelector: labels.SelectorFromSet(map[string]string{
+					"label/restore": "true",
+				}),
 			},
 			want: map[string][]resource{"Pod": {
 				namespacedPodResource,
@@ -781,11 +777,7 @@ func Test_buildDeleteKindOrderedNamespaceResources(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, got1, err := buildDeleteKindOrderedNamespaceResources(tt.args.dyn, tt.args.gvrs, tt.args.appSlug, tt.args.namespace, tt.args.isRestore, tt.args.restoreLabelSelector, tt.args.deleteKindOrder)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("buildDeleteKindOrderedNamespaceResources() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
+			got, got1 := buildDeleteKindOrderedNamespaceResources(tt.args.dyn, tt.args.gvrs, tt.args.appSlug, tt.args.namespace, tt.args.isRestore, tt.args.restoreLabelSelector, tt.args.deleteKindOrder)
 			if !reflect.DeepEqual(got1, tt.wantdeleteOrderedKinds) {
 				t.Errorf("buildDeleteKindOrderedNamespaceResources() got1 = %v, want %v", got1, tt.wantdeleteOrderedKinds)
 			}
@@ -856,7 +848,7 @@ func Test_clearNamespaces(t *testing.T) {
 		appSlug              string
 		namespacesToClear    []string
 		isRestore            bool
-		restoreLabelSelector *metav1.LabelSelector
+		restoreLabelSelector labels.Selector
 		kindDeleteOrder      KindOrder
 		k8sDynamicClient     dynamic.Interface
 		gvrs                 map[schema.GroupVersionResource]struct{}
@@ -888,6 +880,54 @@ func Test_clearNamespaces(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			if err := clearNamespaces(tt.args.appSlug, tt.args.namespacesToClear, tt.args.isRestore, tt.args.restoreLabelSelector, tt.args.kindDeleteOrder, tt.args.k8sDynamicClient, tt.args.gvrs); (err != nil) != tt.wantErr {
 				t.Errorf("clearNamespaces() error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
+	}
+}
+
+func Test_hasResources(t *testing.T) {
+	type args struct {
+		resourcesMap map[string][]resource
+	}
+	tests := []struct {
+		name string
+		args args
+		want bool
+	}{
+		{
+			name: "expect false when no resources",
+			args: args{},
+			want: false,
+		}, {
+			name: "expect true when resources",
+			args: args{
+				resourcesMap: map[string][]resource{"Pod": {
+					resource{
+						GVR:          podGVR,
+						GVK:          &podGVK,
+						Unstructured: unstructuredPodWithLabels,
+					},
+				}},
+			},
+			want: true,
+		}, {
+			name: "expect false when resources empty",
+			args: args{
+				resourcesMap: map[string][]resource{"Pod": {}},
+			},
+			want: false,
+		}, {
+			name: "expect false when resources nil",
+			args: args{
+				resourcesMap: map[string][]resource{"Pod": nil},
+			},
+			want: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := hasResources(tt.args.resourcesMap); got != tt.want {
+				t.Errorf("hasResources() = %v, want %v", got, tt.want)
 			}
 		})
 	}

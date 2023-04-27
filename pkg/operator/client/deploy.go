@@ -25,7 +25,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	k8slabels "k8s.io/apimachinery/pkg/labels"
+	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/client-go/discovery"
 	"k8s.io/client-go/kubernetes/scheme"
 )
@@ -89,7 +89,7 @@ func (c *Client) diffAndRemovePreviousManifests(deployArgs operatortypes.DeployA
 				if err != nil {
 					return errors.Wrap(err, "failed to convert label selector to a selector")
 				}
-				if !s.Matches(k8slabels.Set(o.Metadata.Labels)) {
+				if !s.Matches(labels.Set(o.Metadata.Labels)) {
 					delete = false
 				}
 			}
@@ -174,7 +174,12 @@ func (c *Client) diffAndRemovePreviousManifests(deployArgs operatortypes.DeployA
 			logger.Infof("Failed to get GroupVersionResources: %v", err)
 		}
 
-		err = clearNamespaces(deployArgs.AppSlug, deployArgs.ClearNamespaces, deployArgs.IsRestore, deployArgs.RestoreLabelSelector, defaultKindDeleteOrder, dyn, gvrs)
+		restoreLabelSelector, err := metav1.LabelSelectorAsSelector(deployArgs.RestoreLabelSelector)
+		if err != nil {
+			logger.Infof("Failed to convert label selector to a selector: %v", err)
+		}
+
+		err = clearNamespaces(deployArgs.AppSlug, deployArgs.ClearNamespaces, deployArgs.IsRestore, restoreLabelSelector, defaultKindDeleteOrder, dyn, gvrs)
 		if err != nil {
 			logger.Infof("Failed to clear namespaces: %v", err)
 		}
