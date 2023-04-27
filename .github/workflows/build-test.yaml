@@ -2612,8 +2612,6 @@ jobs:
         run: |
           set +e
 
-          touch not-an-app.airgap
-
           ./bin/kots admin-console push-images \
             not-an-app.airgap localhost:1234/not-a-namespace \
             --registry-username not-a-username \

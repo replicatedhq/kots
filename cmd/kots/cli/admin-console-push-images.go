@@ -47,12 +47,12 @@ func AdminPushImagesCmd() *cobra.Command {
 				return errors.Wrap(err, "failed to get namespace")
 			}
 
-			if _, err := os.Stat(imageSource); err == nil {
-				options, err := genAndCheckPushOptions(endpoint, namespace, log, v)
-				if err != nil {
-					return err
-				}
+			options, err := genAndCheckPushOptions(endpoint, namespace, log, v)
+			if err != nil {
+				return err
+			}
 
+			if _, err := os.Stat(imageSource); err == nil {
 				err = kotsadm.PushImages(imageSource, *options)
 				if err != nil {
 					return errors.Wrap(err, "failed to push images")
