@@ -1,5 +1,5 @@
 import * as React from "react";
-import { Switch, Route } from "react-router-dom";
+import { Route, Routes } from "react-router-dom";
 import NotFound from "../static/NotFound";
 
 import GitHubAuthBegin from "./GitHubAuthBegin";
@@ -9,7 +9,7 @@ export default class GitHubAuth extends React.Component {
   render() {
     return (
       <div className="flex-column flex1 Login-wrapper">
-        <Switch>
+        <Routes>
           <Route exact path="/auth/github" component={GitHubAuthBegin} />
           <Route
             exact
@@ -17,7 +17,7 @@ export default class GitHubAuth extends React.Component {
             component={GitHubAuthCallback}
           />
           <Route component={NotFound} />
-        </Switch>
+        </Routes>
       </div>
     );
   }
