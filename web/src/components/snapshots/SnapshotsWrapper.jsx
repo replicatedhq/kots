@@ -20,8 +20,11 @@ class SnapshotsWrapper extends Component {
     console.log(this.props);
 
     const snapshotsApps = appsList.filter((app) => app.allowSnapshots);
+    console.log(snapshotsApps);
     const selectedApp =
-      appsList.filter((app) => app.slug === match?.params?.slug) || appsList[0];
+      snapshotsApps.filter((app) => app.slug === match?.params?.slug) ||
+      snapshotApps[0];
+    console.log(selectedApp);
 
     return (
       <div className="WatchDetailPage--wrapper flex-column flex1 u-overflow--auto">
