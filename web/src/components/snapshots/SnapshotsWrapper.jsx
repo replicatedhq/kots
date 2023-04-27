@@ -17,20 +17,8 @@ import AppSnapshotRestore from "@src/components/snapshots/AppSnapshotRestore";
 class SnapshotsWrapper extends Component {
   render() {
     const { match, appsList } = this.props;
-    console.log("props", this.props);
 
-    const selectedAppSlug = match?.params?.slug || "";
-
-    console.log("selectedAppSlug", selectedAppSlug);
-
-    const snapshotsApps = appsList.filter(
-      // locate snapshottable app by slug
-      (app) =>
-        app.allowSnapshots && (selectedAppSlug === "" || app.slug === selectedAppSlug)
-    );
-
-    console.log("appsList", appsList);
-    console.log("snapshotsApps", snapshotsApps);
+    const snapshotsApps = appsList.filter((app) => app.allowSnapshots);
 
     return (
       <div className="WatchDetailPage--wrapper flex-column flex1 u-overflow--auto">
