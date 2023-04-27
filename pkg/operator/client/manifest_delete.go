@@ -337,11 +337,6 @@ func buildDeleteKindOrderedNamespaceResources(dyn dynamic.Interface, gvrs []sche
 
 			annotations := u.GetAnnotations()
 			if annotations["kots.io/app-slug"] == appSlug {
-				if u.GetDeletionTimestamp() != nil {
-					logger.Infof("%s %s is pending deletion\n", gvr, u.GetName())
-					continue
-				}
-
 				// copy the object so we don't modify the cache
 				uCopy := u.DeepCopy()
 				gvk := uCopy.GetObjectKind().GroupVersionKind()
@@ -367,6 +362,11 @@ func clearNamespacedResources(dyn dynamic.Interface, namespace string, resources
 	for _, kind := range deleteKindOrders {
 		for _, r := range resourcesMap[kind] {
 			u := r.Unstructured
+			if u.GetDeletionTimestamp() != nil {
+				logger.Infof("Pending deletion %s/%s/%s\n", namespace, r.GVR, u.GetName())
+				continue
+			}
+
 			logger.Infof("Deleting %s/%s/%s\n", namespace, r.GVR, u.GetName())
 			err := dyn.Resource(r.GVR).Namespace(namespace).Delete(context.TODO(), u.GetName(), metav1.DeleteOptions{})
 			if err != nil {

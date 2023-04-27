@@ -634,6 +634,11 @@ func Test_buildDeleteKindOrderedNamespaceResources(t *testing.T) {
 		GVK:          &podGVK,
 		Unstructured: unstructuredPodWithLabels,
 	}
+	namespacedPodResourceMarkedForDeletion := resource{
+		GVR:          podGVR,
+		GVK:          &podGVK,
+		Unstructured: unstructuredPodMarkedDeletion,
+	}
 
 	type args struct {
 		dyn                  dynamic.Interface
@@ -719,7 +724,7 @@ func Test_buildDeleteKindOrderedNamespaceResources(t *testing.T) {
 				appSlug:   "test",
 				namespace: "test",
 			},
-			want:                   map[string][]resource{"Pod": {namespacedPodResource}},
+			want:                   map[string][]resource{"Pod": {namespacedPodResource, namespacedPodResourceMarkedForDeletion}},
 			wantdeleteOrderedKinds: KindSortOrder{"Pod"},
 			wantErr:                false,
 		}, {
