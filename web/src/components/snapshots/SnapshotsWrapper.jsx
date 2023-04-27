@@ -17,6 +17,7 @@ import AppSnapshotRestore from "@src/components/snapshots/AppSnapshotRestore";
 class SnapshotsWrapper extends Component {
   render() {
     const { match, appsList } = this.props;
+    console.log("props", this.props);
 
     const selectedAppSlug = match?.params?.slug || "";
 
