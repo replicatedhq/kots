@@ -42,6 +42,7 @@ import {
   withRouter,
   withRouterType,
 } from "@src/utilities/react-router-utilities";
+import PreflightIcon from "@features/App/PreflightIcon";
 
 dayjs.extend(relativeTime);
 
@@ -99,7 +100,6 @@ type State = {
   errorMsg: string;
   errorTitle: string;
   firstSequence: Number | string;
-  hasPreflightChecks: boolean;
   isSkipPreflights: boolean;
   kotsUpdateChecker: Repeater;
   kotsUpdateError: Object | undefined;
@@ -114,6 +114,10 @@ type State = {
   numOfRemainingVersions: Number;
   numOfSkippedVersions: Number;
   pageSize: Number;
+  preflightState: {
+    preflightsFailed: boolean;
+    preflightState: string;
+  } | null;
   releaseNotes: Object | null;
   releaseWithErr: ReleaseWithError | null | undefined;
   releaseWithNoChanges: Release | null | undefined;
@@ -175,7 +179,6 @@ class AppVersionHistory extends Component<Props, State> {
       errorMsg: "",
       errorTitle: "",
       firstSequence: 0,
-      hasPreflightChecks: true,
       isSkipPreflights: false,
       kotsUpdateChecker: new Repeater(),
       kotsUpdateError: undefined,
@@ -190,6 +193,7 @@ class AppVersionHistory extends Component<Props, State> {
       numOfRemainingVersions: 0,
       numOfSkippedVersions: 0,
       pageSize: 20,
+      preflightState: null,
       releaseNotes: null,
       releaseWithErr: { title: "", sequence: 0, diffSummaryError: "" },
       releaseWithNoChanges: { versionLabel: "", sequence: 0 },
@@ -1593,14 +1597,21 @@ class AppVersionHistory extends Component<Props, State> {
   };
 
   getPreflightState = (version: Version) => {
+    let preflightsFailed = false;
     let preflightState = "";
     if (version?.preflightResult) {
       const preflightResult = JSON.parse(version.preflightResult);
       preflightState = getPreflightResultState(preflightResult);
+      preflightsFailed = preflightState === "fail";
+
+      this.setState({
+        preflightState: {
+          preflightsFailed,
+          preflightState,
+        },
+      });
     }
-    if (preflightState === "") {
-      this.setState({ hasPreflightChecks: false });
-    }
+    return {};
   };
 
   render() {
@@ -1687,6 +1698,40 @@ class AppVersionHistory extends Component<Props, State> {
       }
     }
 
+    const renderVersionLabel = () => {
+      let shorten = "";
+      let isTruncated = false;
+      if (currentDownstreamVersion && currentDownstreamVersion?.versionLabel) {
+        const { versionLabel } = currentDownstreamVersion;
+        if (versionLabel.length > 18) {
+          shorten = `${versionLabel.slice(0, 15)}...`;
+          isTruncated = true;
+        } else {
+          shorten = versionLabel;
+        }
+      } else {
+        shorten = "---";
+      }
+
+      return (
+        <div className="tw-flex tw-items-center">
+          <p className="u-fontSize--header2 u-fontWeight--bold card-item-title u-marginTop--5 u-position--relative">
+            {shorten}
+          </p>{" "}
+          {isTruncated && (
+            <>
+              <Icon
+                icon="info"
+                size={16}
+                data-tip={currentDownstreamVersion?.versionLabel || ""}
+              />
+              <ReactTooltip effect="solid" className="replicated-tooltip" />
+            </>
+          )}
+        </div>
+      );
+    };
+
     return (
       <div className="flex flex-column flex1 u-position--relative u-overflow--auto u-padding--20">
         <KotsPageTitle pageName="Version History" showAppSlug />
@@ -1711,7 +1756,7 @@ class AppVersionHistory extends Component<Props, State> {
                   toggleErrorModal={resetRedeployErrorMessage}
                 />
               )}
-              {!gitopsIsConnected && (
+              {!gitopsIsConnected && !showDiffOverlay && (
                 <div
                   className="flex-column flex1"
                   style={{ maxWidth: "370px", marginRight: "20px" }}
@@ -1734,21 +1779,14 @@ class AppVersionHistory extends Component<Props, State> {
                             ></div>
                           </div>
                         )}
-                        <div className="flex1 flex-column">
-                          <div className="flex alignItems--center u-marginTop--5">
-                            <p className="u-fontSize--header2 u-fontWeight--bold card-item-title">
-                              {" "}
-                              {currentDownstreamVersion
-                                ? currentDownstreamVersion.versionLabel
-                                : "---"}
-                            </p>
-                            <p className="u-fontSize--small u-lineHeight--normal u-textColor--bodyCopy u-fontWeight--medium u-marginLeft--10">
-                              {" "}
-                              {currentDownstreamVersion
-                                ? `${sequenceLabel} ${currentDownstreamVersion?.sequence}`
-                                : null}
-                            </p>
-                          </div>
+                        <div className="flex1 flex-column ">
+                          {renderVersionLabel()}
+                          <p className="u-fontSize--small u-lineHeight--normal u-textColor--bodyCopy u-fontWeight--medium">
+                            {" "}
+                            {currentDownstreamVersion
+                              ? `${sequenceLabel} ${currentDownstreamVersion?.sequence}`
+                              : null}
+                          </p>
                           {currentDownstreamVersion?.deployedAt ? (
                             <p className="u-fontSize--small u-lineHeight--normal u-textColor--info u-fontWeight--medium u-marginTop--10">
                               {currentDownstreamVersion?.status === "deploying"
@@ -1785,28 +1823,6 @@ class AppVersionHistory extends Component<Props, State> {
                                   />
                                 </div>
                               )}
-                              {this.state.hasPreflightChecks ? (
-                                <div className="u-marginRight--5">
-                                  <Link
-                                    to={`/app/${app?.slug}/downstreams/${app.downstream.cluster?.slug}/version-history/preflight/${currentDownstreamVersion?.sequence}`}
-                                    data-tip="View preflight checks"
-                                  >
-                                    <Icon
-                                      icon="preflight-checks"
-                                      size={22}
-                                      className="clickable"
-                                      color={""}
-                                      style={{}}
-                                      disableFill={false}
-                                      removeInlineStyle={false}
-                                    />
-                                  </Link>
-                                  <ReactTooltip
-                                    effect="solid"
-                                    className="replicated-tooltip"
-                                  />
-                                </div>
-                              ) : null}
                               {app ? (
                                 <div>
                                   <span
@@ -1835,28 +1851,14 @@ class AppVersionHistory extends Component<Props, State> {
                                   />
                                 </div>
                               ) : null}
-                              {currentDownstreamVersion?.status === "failed" ? (
-                                <div className="u-position--relative u-marginLeft--10 u-marginRight--10">
-                                  <Icon
-                                    icon="preflight-checks"
-                                    size={22}
-                                    className="clickable"
-                                    color={""}
-                                    style={{}}
-                                    disableFill={false}
-                                    removeInlineStyle={false}
-                                  />
-                                  <Icon
-                                    icon={"warning-circle-filled"}
-                                    size={12}
-                                    className="version-row-preflight-status-icon warning-color"
-                                    style={{ left: "15px", top: "-6px" }}
-                                    color={""}
-                                    disableFill={false}
-                                    removeInlineStyle={false}
-                                  />
-                                </div>
-                              ) : null}
+                              <PreflightIcon
+                                app={app}
+                                version={downstream.currentVersion}
+                                showText={false}
+                                preflightState={this.state.preflightState}
+                                className={"tw-mx-1"}
+                                newPreflightResults={true}
+                              />
                               {app.isConfigurable && (
                                 <div>
                                   <Link
@@ -2057,6 +2059,7 @@ class AppVersionHistory extends Component<Props, State> {
                       firstSequence={firstSequence}
                       secondSequence={secondSequence}
                       onBackClick={this.hideDiffOverlay}
+                      hideBackButton={false}
                       app={this.props.app}
                     />
                   </div>
