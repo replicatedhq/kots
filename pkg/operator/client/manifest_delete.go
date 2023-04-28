@@ -180,12 +180,12 @@ func clearNamespaces(appSlug string, namespacesToClear []string, isRestore bool,
 	return nil
 }
 
-func clearNamespacesWithWait(appSlug string, namespacesToClear []string, isRestore bool, restoreLabelSelector labels.Selector, plan types.Plan, k8sDynamicClient dynamic.Interface, deletionGVRs []schema.GroupVersionResource, waitTimeOut int, waitSleep time.Duration, waitExtra time.Duration) error {
+func clearNamespacesWithWait(appSlug string, namespacesToClear []string, isRestore bool, restoreLabelSelector labels.Selector, plan types.Plan, k8sDynamicClient dynamic.Interface, gvrsToDelete []schema.GroupVersionResource, waitTimeOut int, waitSleep time.Duration, waitExtra time.Duration) error {
 	for _, namespace := range namespacesToClear {
 		logger.Infof("Ensuring all %s objects have been removed from namespace %s\n", appSlug, namespace)
 
 		for i := waitTimeOut; i >= 0; i-- { // 2 minute wait, 60 loops with 2 second sleep
-			resources := getResourcesInNamespace(k8sDynamicClient, deletionGVRs, appSlug, namespace, isRestore, restoreLabelSelector)
+			resources := getResourcesInNamespace(k8sDynamicClient, gvrsToDelete, appSlug, namespace, isRestore, restoreLabelSelector)
 			if len(resources) == 0 {
 				logger.Infof("Namespace %s successfully cleared of app %s\n", namespace, appSlug)
 				break
