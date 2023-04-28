@@ -155,7 +155,7 @@ func (c *Client) diffAndRemovePreviousManifests(deployArgs operatortypes.DeployA
 	}
 
 	if len(deployArgs.ClearNamespaces) > 0 {
-		err = clearNamespaces(deployArgs.AppSlug, deployArgs.ClearNamespaces, deployArgs.IsRestore, deployArgs.RestoreLabelSelector, DefaultDeletionPlan)
+		err := clearNamespaces(deployArgs.AppSlug, deployArgs.ClearNamespaces, deployArgs.IsRestore, deployArgs.RestoreLabelSelector, DefaultDeletionPlan)
 		if err != nil {
 			logger.Infof("Failed to clear namespaces: %v", err)
 		}
