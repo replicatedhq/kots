@@ -31,14 +31,14 @@ var (
 			"Pod",
 			"CronJob",
 			"Job",
-			"StatefulSet",
-			"HorizontalPodAutoscaler",
-			"Deployment",
-			"ReplicaSet",
-			"ReplicationController",
-			"DaemonSet",
 		},
 		AfterAll: []string{
+			"ReplicaSet",
+			"ReplicationController",
+			"Deployment",
+			"StatefulSet",
+			"HorizontalPodAutoscaler",
+			"DaemonSet",
 			"RoleBindingList",
 			"RoleBinding",
 			"RoleList",
@@ -58,6 +58,7 @@ var (
 			"PodSecurityPolicy",
 			"LimitRange",
 			"ResourceQuota",
+			"Namespace",
 		},
 	}
 )
