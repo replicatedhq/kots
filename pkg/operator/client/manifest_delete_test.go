@@ -3,288 +3,74 @@ package client
 import (
 	"reflect"
 	"testing"
-	"time"
 
 	"github.com/replicatedhq/kots/pkg/operator/applier"
+	"github.com/replicatedhq/kots/pkg/operator/types"
 	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime/schema"
-	"k8s.io/client-go/dynamic"
 )
 
-func Test_initResourceKindOrderMap(t *testing.T) {
-	type args struct {
-		kindOrder Plan
-	}
+func Test_flattenPlan(t *testing.T) {
 	tests := []struct {
 		name string
-		args args
-		want map[string][]Resource
+		plan types.Plan
+		want []string
 	}{
 		{
-			name: "expect empty map",
-			args: args{
-				kindOrder: Plan{},
-			},
-			want: map[string][]Resource{},
+			name: "empty",
+			plan: types.Plan{},
+			want: []string{},
 		}, {
-			name: "expect map with PostOrder entry",
-			args: args{
-				kindOrder: Plan{
-					AfterAll: []string{"group1", "group2"},
-				},
+			name: "before all",
+			plan: types.Plan{
+				BeforeAll: []string{"group1", "group2"},
 			},
-			want: map[string][]Resource{
-				"group1": {},
-				"group2": {},
-			},
-		}, {
-			name: "expect map with PreOrder entry",
-			args: args{
-				kindOrder: Plan{
-					BeforeAll: []string{"group1", "group2"},
-				},
-			},
-			want: map[string][]Resource{
-				"group1": {},
-				"group2": {},
-			},
-		}, {
-			name: "expect map with PreOrder and PostOrder entry",
-			args: args{
-				kindOrder: Plan{
-					BeforeAll: []string{"group1", "group2"},
-					AfterAll:  []string{"group3", "group4"},
-				},
-			},
-			want: map[string][]Resource{
-				"group1": {},
-				"group2": {},
-				"group3": {},
-				"group4": {},
-			},
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if got := initResourcesMap(tt.args.kindOrder); !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("initResourceKindOrderMap() = %v, want %v", got, tt.want)
-			}
-		})
-	}
-}
-
-func Test_getOrderedKinds(t *testing.T) {
-	type args struct {
-		kindOrder    Plan
-		defaultKinds KindSortOrder
-	}
-	tests := []struct {
-		name string
-		args args
-		want KindSortOrder
-	}{
-		{
-			name: "expect empty KindSortOrder",
-			args: args{
-				kindOrder:    Plan{},
-				defaultKinds: KindSortOrder{},
-			},
-			want: KindSortOrder{},
-		}, {
-			name: "expect KindSortOrder with PreOrder",
-			args: args{
-				kindOrder: Plan{
-					BeforeAll: []string{"group1", "group2"},
-				},
-				defaultKinds: KindSortOrder{},
-			},
-			want: KindSortOrder{
+			want: []string{
 				"group1", "group2",
 			},
 		}, {
-			name: "expect KindSortOrder with PostOrder",
-			args: args{
-				kindOrder: Plan{
-					AfterAll: []string{"group1", "group2"},
-				},
-				defaultKinds: KindSortOrder{},
+			name: "after all",
+			plan: types.Plan{
+				AfterAll: []string{"group1", "group2"},
 			},
-			want: KindSortOrder{
+			want: []string{
 				"group1", "group2",
 			},
 		}, {
-			name: "expect KindSortOrder with PreOrder and PostOrder",
-			args: args{
-				kindOrder: Plan{
-					BeforeAll: []string{"group1", "group2"},
-					AfterAll:  []string{"group3", "group4"},
-				},
-				defaultKinds: KindSortOrder{},
+			name: "before all and after all",
+			plan: types.Plan{
+				BeforeAll: []string{"group1", "group2"},
+				AfterAll:  []string{"group3", "group4"},
 			},
-			want: KindSortOrder{
+			want: []string{
 				"group1", "group2", "group3", "group4",
 			},
 		}, {
-			name: "expect KindSortOrder with PreOrder and PostOrder and defaultKinds",
-			args: args{
-				kindOrder: Plan{
-					BeforeAll: []string{"group1", "group2"},
-					AfterAll:  []string{"group3", "group4"},
-				},
-				defaultKinds: KindSortOrder{
-					"group5", "group6",
-				},
+			name: "before all, other, and after all",
+			plan: types.Plan{
+				BeforeAll: []string{"group1", "group2"},
+				Other:     []string{"group5", "group6"},
+				AfterAll:  []string{"group3", "group4"},
 			},
-			want: KindSortOrder{
+			want: []string{
 				"group1", "group2", "group5", "group6", "group3", "group4",
 			},
 		}, {
-			name: "expect KindSortOrder with defaultKinds",
-			args: args{
-				kindOrder: Plan{},
-				defaultKinds: KindSortOrder{
-					"group5", "group6",
-				},
+			name: "other",
+			plan: types.Plan{
+				Other: []string{"group5", "group6"},
 			},
-			want: KindSortOrder{
+			want: []string{
 				"group5", "group6",
 			},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := getOrderedKinds(tt.args.kindOrder, tt.args.defaultKinds); !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("getOrderedKinds() = %v, want %v", got, tt.want)
-			}
-		})
-	}
-}
-
-func Test_deleteManifestResource(t *testing.T) {
-	gvk := schema.GroupVersionKind{
-		Group:   "group",
-		Version: "version",
-		Kind:    "kind",
-	}
-	type args struct {
-		resource          Resource
-		targetNS          string
-		waitFlag          bool
-		kubernetesApplier applier.KubectlInterface
-	}
-	tests := []struct {
-		name string
-		args args
-	}{
-		{
-			name: "expect no error for resource with GVKN",
-			args: args{
-				resource: Resource{
-					GVK:          &gvk,
-					Unstructured: unstructuredPodWithLabels,
-				},
-				targetNS:          "default",
-				kubernetesApplier: &kubectlApplierMock,
-			},
-		}, {
-			name: "expect no error for resource without GVKN",
-			args: args{
-				resource: Resource{
-					Unstructured: unstructuredPodWithLabels,
-				},
-				targetNS:          "default",
-				kubernetesApplier: &kubectlApplierMock,
-			},
-		}, {
-			name: "expect no error for resource without Unstructured",
-			args: args{
-				resource: Resource{
-					GVK: &gvk,
-				},
-				targetNS:          "default",
-				kubernetesApplier: &kubectlApplierMock,
-			},
-		}, {
-			name: "expect no error for resource with Unstructured without namespace",
-			args: args{
-				resource: Resource{
-					GVK: &gvk,
-					Unstructured: &unstructured.Unstructured{
-						Object: map[string]interface{}{},
-					},
-				},
-				targetNS:          "default",
-				kubernetesApplier: &kubectlApplierMock,
-			},
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			deleteResource(tt.args.resource, tt.args.targetNS, tt.args.waitFlag, tt.args.kubernetesApplier)
-		})
-	}
-}
-
-func Test_decodeToUnstructured(t *testing.T) {
-	type args struct {
-		manifest string
-	}
-	tests := []struct {
-		name             string
-		args             args
-		wantUnstructured *unstructured.Unstructured
-		wantGVK          *schema.GroupVersionKind
-		wantErr          bool
-	}{
-		{
-			name: "expect no error for valid pod manifest",
-			args: args{
-				manifest: podManifest,
-			},
-			wantUnstructured: unstructuredPod,
-			wantGVK: &schema.GroupVersionKind{
-				Group:   "",
-				Version: "v1",
-				Kind:    "Pod",
-			},
-			wantErr: false,
-		}, {
-			name: "expect error for invalid manifest",
-			args: args{
-				manifest: `test: false123`,
-			},
-			wantUnstructured: nil,
-			wantGVK:          nil,
-			wantErr:          true,
-		}, {
-			name: "expect no for rabbitmq CR manifest",
-			args: args{
-				manifest: rabbitmqCRManifest,
-			},
-			wantUnstructured: unstructuredRabbitMQCR,
-			wantGVK: &schema.GroupVersionKind{
-				Group:   "rabbitmq.com",
-				Version: "v1beta1",
-				Kind:    "RabbitmqCluster",
-			},
-			wantErr: false,
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			got, got1, err := decodeToUnstructured(tt.args.manifest)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("decodeToUnstructured() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
-			if !reflect.DeepEqual(got, tt.wantUnstructured) {
-				t.Errorf("decodeToUnstructured() got = %v, want %v", got, tt.wantUnstructured)
-			}
-			if !reflect.DeepEqual(got1, tt.wantGVK) {
-				t.Errorf("decodeToUnstructured() got1 = %v, want %v", got1, tt.wantGVK)
+			if got := tt.plan.Flatten(); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("flattenPlan() = %v, want %v", got, tt.want)
 			}
 		})
 	}
@@ -297,14 +83,14 @@ func Test_decodeManifests(t *testing.T) {
 	tests := []struct {
 		name string
 		args args
-		want []Resource
+		want types.Resources
 	}{
 		{
 			name: "expect no error for valid pod manifest",
 			args: args{
 				manifests: []string{podManifest},
 			},
-			want: []Resource{
+			want: types.Resources{
 				{
 					GVK: &schema.GroupVersionKind{
 						Group:   "",
@@ -321,7 +107,7 @@ func Test_decodeManifests(t *testing.T) {
 			args: args{
 				manifests: []string{`test: false123`},
 			},
-			want: []Resource{
+			want: types.Resources{
 				{
 					GVK:          nil,
 					GVR:          schema.GroupVersionResource{},
@@ -351,211 +137,12 @@ func Test_decodeManifests(t *testing.T) {
 	}
 }
 
-func Test_buildCrdGVKMap(t *testing.T) {
-	type args struct {
-		resources []Resource
-	}
-	tests := []struct {
-		name string
-		args args
-		want map[string]bool
-	}{
-		{
-			name: "expect map with rabbitmq crd key for valid crd manifest",
-			args: args{
-				resources: []Resource{
-					{
-						GVK: &schema.GroupVersionKind{
-							Group:   "",
-							Version: "v1",
-							Kind:    "Pod",
-						},
-						GVR:          schema.GroupVersionResource{},
-						Unstructured: unstructuredPodWithLabels,
-					},
-					{
-						GVK: &schema.GroupVersionKind{
-							Group:   "apiextensions.k8s.io",
-							Version: "v1",
-							Kind:    "CustomResourceDefinition",
-						},
-						GVR:          schema.GroupVersionResource{},
-						Unstructured: unstructuredRabbitMQCRD,
-					},
-				},
-			},
-			want: map[string]bool{
-				"rabbitmq.com/RabbitmqCluster/v1beta1": true,
-			},
-		},
-		{
-			name: "expect empty map for invalid crd manifest",
-			args: args{
-				resources: []Resource{
-					{
-						GVK: &schema.GroupVersionKind{
-							Group:   "apiextensions.k8s.io",
-							Version: "v1",
-							Kind:    "CustomResourceDefinition",
-						},
-						GVR: schema.GroupVersionResource{},
-						Unstructured: &unstructured.Unstructured{
-							Object: map[string]interface{}{
-								"apiVersion": "apiextensions.k8s.io",
-								"kind":       "CustomResourceDefinition",
-								"metadata": map[string]interface{}{
-									"name":      "rabbitmq-crd",
-									"namespace": "default",
-								},
-								"spec": map[string]interface{}{
-									"group": 123,
-								},
-							},
-						},
-					},
-				},
-			},
-			want: map[string]bool{},
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if got := buildCrdGVKMap(tt.args.resources); !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("buildCrdGVKMap() = %v, want %v", got, tt.want)
-			}
-		})
-	}
-}
-
-func Test_buildDeleteKindOrderedResources(t *testing.T) {
-	podResource := Resource{
-		GVK:          &podGVK,
-		GVR:          schema.GroupVersionResource{},
-		Unstructured: unstructuredPodWithLabels,
-	}
-	crdResource := Resource{
-		GVK:          &crdGVK,
-		GVR:          schema.GroupVersionResource{},
-		Unstructured: unstructuredRabbitMQCRD,
-	}
-	crResource := Resource{
-		GVK:          &crGVK,
-		GVR:          schema.GroupVersionResource{},
-		Unstructured: unstructuredRabbitMQCR,
-	}
-	nilGVKResource := Resource{
-		GVK:          nil,
-		GVR:          schema.GroupVersionResource{},
-		Unstructured: unstructuredRabbitMQCRD,
-	}
-	type args struct {
-		deleteKindOrder Plan
-		resources       []Resource
-		crdGVKMap       map[string]bool
-	}
-	tests := []struct {
-		name             string
-		args             args
-		want             map[string][]Resource
-		WantOrderedKinds KindSortOrder
-	}{
-		{
-			name: "expect empty map with empty kind order for empty resources",
-			args: args{
-				deleteKindOrder: Plan{},
-				resources:       []Resource{},
-				crdGVKMap:       map[string]bool{},
-			},
-			want:             map[string][]Resource{},
-			WantOrderedKinds: KindSortOrder{},
-		}, {
-			name: "expect pod map with pod kind default order for pod resources",
-			args: args{
-				deleteKindOrder: Plan{},
-				resources:       []Resource{podResource},
-				crdGVKMap:       map[string]bool{},
-			},
-			want: map[string][]Resource{
-				"Pod": {podResource},
-			},
-			WantOrderedKinds: KindSortOrder{"Pod"},
-		}, {
-			name: "expect CRD map with CRD kind default order for pod resources",
-			args: args{
-				deleteKindOrder: Plan{
-					BeforeAll: []string{"CustomResourceDefinition"},
-				},
-				resources: []Resource{crdResource},
-				crdGVKMap: map[string]bool{},
-			},
-			want: map[string][]Resource{
-				"CustomResourceDefinition": {crdResource},
-			},
-			WantOrderedKinds: KindSortOrder{"CustomResourceDefinition"},
-		}, {
-			name: "expect CRD map with empty string kind default order for empty GVK",
-			args: args{
-				deleteKindOrder: Plan{},
-				resources:       []Resource{nilGVKResource},
-				crdGVKMap:       map[string]bool{},
-			},
-			want: map[string][]Resource{
-				"": {nilGVKResource},
-			},
-			WantOrderedKinds: KindSortOrder{""},
-		}, {
-			name: "expect CRD map with CRD kind default order for pod and crd/cr resources and crdKeyMap",
-			args: args{
-				deleteKindOrder: Plan{
-					BeforeAll: []string{"CustomResourceDefinition"},
-					AfterAll:  []string{"CustomResource"},
-				},
-				resources: []Resource{crResource, crdResource},
-				crdGVKMap: map[string]bool{
-					"rabbitmq.com/RabbitmqCluster/v1beta1": true,
-				},
-			},
-			want: map[string][]Resource{
-				"CustomResourceDefinition": {crdResource},
-				"CustomResource":           {crResource},
-			},
-			WantOrderedKinds: KindSortOrder{"CustomResourceDefinition", "CustomResource"},
-		}, {
-			name: "an super edge case where the crd kind is in the crdKeyMap",
-			args: args{
-				deleteKindOrder: Plan{
-					BeforeAll: []string{"RabbitmqCluster"},
-				},
-				resources: []Resource{crResource},
-				crdGVKMap: map[string]bool{
-					"rabbitmq.com/RabbitmqCluster/v1beta1": true,
-				},
-			},
-			want: map[string][]Resource{
-				"RabbitmqCluster": {crResource},
-			},
-			WantOrderedKinds: KindSortOrder{"RabbitmqCluster"},
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			got, got1 := sortResources(tt.args.deleteKindOrder, tt.args.resources, tt.args.crdGVKMap)
-			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("buildDeleteKindOrderedResources() got = %v, want %v", got, tt.want)
-			}
-			if !reflect.DeepEqual(got1, tt.WantOrderedKinds) {
-				t.Errorf("buildDeleteKindOrderedResources() got1 = %v, want %v", got1, tt.WantOrderedKinds)
-			}
-		})
-	}
-}
-
-func Test_deleteManifestResources(t *testing.T) {
+func Test_deleteManifests(t *testing.T) {
 	type args struct {
 		manifests         []string
 		targetNS          string
 		kubernetesApplier applier.KubectlInterface
-		kindDeleteOrder   Plan
+		plan              types.Plan
 		waitFlag          bool
 	}
 	tests := []struct {
@@ -563,28 +150,201 @@ func Test_deleteManifestResources(t *testing.T) {
 		args args
 	}{
 		{
-			name: "expect no error when deleting empty manifests",
+			name: "deleting empty manifests",
 			args: args{
 				manifests:         []string{},
 				targetNS:          "",
 				kubernetesApplier: nil,
-				kindDeleteOrder:   Plan{},
+				plan:              types.Plan{},
 				waitFlag:          false,
 			},
-		}, {
-			name: "expect no error when deleting manifests",
+		},
+		{
+			name: "deleting manifests",
 			args: args{
 				manifests:         []string{podManifest},
 				targetNS:          "test",
 				kubernetesApplier: &kubectlApplierMock,
-				kindDeleteOrder:   Plan{},
+				plan:              types.Plan{},
+				waitFlag:          false,
+			},
+		},
+		{
+			name: "deleting manifests with default deletion plan",
+			args: args{
+				manifests:         []string{podManifest, rabbitmqCRManifest},
+				targetNS:          "test",
+				kubernetesApplier: &kubectlApplierMock,
+				plan:              DefaultDeletionPlan,
 				waitFlag:          false,
 			},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			deleteManifests(tt.args.manifests, tt.args.targetNS, tt.args.kubernetesApplier, tt.args.kindDeleteOrder, tt.args.waitFlag)
+			deleteManifests(tt.args.manifests, tt.args.targetNS, tt.args.kubernetesApplier, tt.args.plan, tt.args.waitFlag)
+		})
+	}
+}
+
+func Test_deleteResource(t *testing.T) {
+	gvk := schema.GroupVersionKind{
+		Group:   "group",
+		Version: "version",
+		Kind:    "kind",
+	}
+	type args struct {
+		resource          types.Resource
+		targetNS          string
+		waitFlag          bool
+		kubernetesApplier applier.KubectlInterface
+	}
+	tests := []struct {
+		name string
+		args args
+	}{
+		{
+			name: "expect no error for resource with GVKN",
+			args: args{
+				resource: types.Resource{
+					GVK:          &gvk,
+					Unstructured: unstructuredPodWithLabels,
+				},
+				targetNS:          "default",
+				kubernetesApplier: &kubectlApplierMock,
+			},
+		}, {
+			name: "expect no error for resource without GVKN",
+			args: args{
+				resource: types.Resource{
+					Unstructured: unstructuredPodWithLabels,
+				},
+				targetNS:          "default",
+				kubernetesApplier: &kubectlApplierMock,
+			},
+		}, {
+			name: "expect no error for resource without Unstructured",
+			args: args{
+				resource: types.Resource{
+					GVK: &gvk,
+				},
+				targetNS:          "default",
+				kubernetesApplier: &kubectlApplierMock,
+			},
+		}, {
+			name: "expect no error for resource with Unstructured without namespace",
+			args: args{
+				resource: types.Resource{
+					GVK: &gvk,
+					Unstructured: &unstructured.Unstructured{
+						Object: map[string]interface{}{},
+					},
+				},
+				targetNS:          "default",
+				kubernetesApplier: &kubectlApplierMock,
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			deleteResource(tt.args.resource, tt.args.targetNS, tt.args.waitFlag, tt.args.kubernetesApplier)
+		})
+	}
+}
+
+func Test_applyPlan(t *testing.T) {
+	podResource := types.Resource{
+		GVK:          &podGVK,
+		GVR:          schema.GroupVersionResource{},
+		Unstructured: unstructuredPodWithLabels,
+	}
+	crdResource := types.Resource{
+		GVK:          &crdGVK,
+		GVR:          schema.GroupVersionResource{},
+		Unstructured: unstructuredRabbitMQCRD,
+	}
+	crResource := types.Resource{
+		GVK:          &crGVK,
+		GVR:          schema.GroupVersionResource{},
+		Unstructured: unstructuredRabbitMQCR,
+	}
+	nilGVKResource := types.Resource{
+		GVK:          nil,
+		GVR:          schema.GroupVersionResource{},
+		Unstructured: unstructuredRabbitMQCRD,
+	}
+
+	type args struct {
+		plan      types.Plan
+		resources types.Resources
+	}
+
+	tests := []struct {
+		name string
+		args args
+		want types.Resources
+	}{
+		{
+			name: "empty, no plan",
+			args: args{
+				plan:      types.Plan{},
+				resources: types.Resources{},
+			},
+			want: types.Resources{},
+		},
+		{
+			name: "singe pod resource, no plan",
+			args: args{
+				plan:      types.Plan{},
+				resources: types.Resources{podResource},
+			},
+			want: types.Resources{podResource},
+		},
+		{
+			name: "single crd resource, before all plan",
+			args: args{
+				plan: types.Plan{
+					BeforeAll: []string{"CustomResourceDefinition"},
+				},
+				resources: types.Resources{crdResource},
+			},
+			want: types.Resources{crdResource},
+		},
+		{
+			name: "nil gvk resource, no plan",
+			args: args{
+				plan:      types.Plan{},
+				resources: types.Resources{nilGVKResource},
+			},
+			want: types.Resources{nilGVKResource},
+		},
+		{
+			name: "crd and cr resource, crd in before all plan",
+			args: args{
+				plan: types.Plan{
+					BeforeAll: []string{"CustomResourceDefinition"},
+				},
+				resources: types.Resources{crResource, crdResource},
+			},
+			want: types.Resources{crdResource, crResource},
+		},
+		{
+			name: "crd and cr resource, crd in after all plan",
+			args: args{
+				plan: types.Plan{
+					AfterAll: []string{"CustomResourceDefinition"},
+				},
+				resources: types.Resources{crResource, crdResource},
+			},
+			want: types.Resources{crResource, crdResource},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := tt.args.resources.ApplyPlan(tt.args.plan)
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("applyPlan() got = %v, want %v", got, tt.want)
+			}
 		})
 	}
 }
@@ -631,282 +391,6 @@ func Test_shouldWaitForResourceDeletion(t *testing.T) {
 	}
 }
 
-func Test_buildDeleteKindOrderedNamespaceResources(t *testing.T) {
-	namespacedPodResource := Resource{
-		GVR:          podGVR,
-		GVK:          &podGVK,
-		Unstructured: unstructuredPodWithLabels,
-	}
-	namespacedPodResourceMarkedForDeletion := Resource{
-		GVR:          podGVR,
-		GVK:          &podGVK,
-		Unstructured: unstructuredPodMarkedDeletion,
-	}
-
-	type args struct {
-		dyn                  dynamic.Interface
-		gvrs                 []schema.GroupVersionResource
-		appSlug              string
-		namespace            string
-		isRestore            bool
-		restoreLabelSelector labels.Selector
-		deleteKindOrder      Plan
-	}
-	tests := []struct {
-		name                   string
-		args                   args
-		want                   map[string][]Resource
-		wantdeleteOrderedKinds KindSortOrder
-		wantErr                bool
-	}{
-		{
-			name: "expect empty map and empty kind order with nil gvrs",
-			args: args{
-				gvrs: nil,
-			},
-			want:                   map[string][]Resource{},
-			wantdeleteOrderedKinds: KindSortOrder{},
-			wantErr:                false,
-		}, {
-			name: "expect empty map and empty kind order with empty gvrs",
-			args: args{
-				gvrs: []schema.GroupVersionResource{},
-			},
-			want:                   map[string][]Resource{},
-			wantdeleteOrderedKinds: KindSortOrder{},
-			wantErr:                false,
-		}, {
-			name: "expect empty map and empty kind order with gvr items empty",
-			args: args{
-				gvrs: []schema.GroupVersionResource{podGVR},
-				dyn:  ReturnEmtyListDynamicClientMock(unstructuredPodWithLabels),
-			},
-			want:                   map[string][]Resource{},
-			wantdeleteOrderedKinds: KindSortOrder{},
-			wantErr:                false,
-		}, {
-			name: "expect empty map and empty kind order with gvr items empty",
-			args: args{
-				gvrs: []schema.GroupVersionResource{podGVR},
-				dyn:  ReturnErrorDynamicClientListMock(unstructuredPodWithLabels),
-			},
-			want:                   map[string][]Resource{},
-			wantdeleteOrderedKinds: KindSortOrder{},
-			wantErr:                false,
-		},
-		{
-			name: "expect pod map and pod kind order with valid gvr items",
-			args: args{
-				gvrs:      []schema.GroupVersionResource{podGVR},
-				dyn:       ReturnDynamicClientMock(unstructuredPodWithLabels),
-				isRestore: false,
-				appSlug:   "test",
-				namespace: "test",
-			},
-			want:                   map[string][]Resource{"Pod": {namespacedPodResource}},
-			wantdeleteOrderedKinds: KindSortOrder{"Pod"},
-			wantErr:                false,
-		}, {
-			name: "expect pod map and pod kind order with valid gvr items and restore true",
-			args: args{
-				gvrs:      []schema.GroupVersionResource{podGVR},
-				dyn:       ReturnDynamicClientMock(unstructuredPodWithLabels),
-				isRestore: true,
-				appSlug:   "test",
-				namespace: "test",
-			},
-			want:                   map[string][]Resource{"Pod": {namespacedPodResource}},
-			wantdeleteOrderedKinds: KindSortOrder{"Pod"},
-			wantErr:                false,
-		}, {
-			name: "expect pod map and pod kind order with a pod marked for deletion",
-			args: args{
-				gvrs:      []schema.GroupVersionResource{podGVR},
-				dyn:       ReturnDynamicClientMock(unstructuredPodWithLabels, unstructuredPodMarkedDeletion),
-				isRestore: true,
-				appSlug:   "test",
-				namespace: "test",
-			},
-			want:                   map[string][]Resource{"Pod": {namespacedPodResource, namespacedPodResourceMarkedForDeletion}},
-			wantdeleteOrderedKinds: KindSortOrder{"Pod"},
-			wantErr:                false,
-		}, {
-			name: "expect pod map and pod kind order with a pod excluded from backup",
-			args: args{
-				gvrs:      []schema.GroupVersionResource{podGVR},
-				dyn:       ReturnDynamicClientMock(unstructuredPodWithLabels, unstructuredPodExcludeFromBackup),
-				isRestore: true,
-				appSlug:   "test",
-				namespace: "test",
-			},
-			want:                   map[string][]Resource{"Pod": {namespacedPodResource}},
-			wantdeleteOrderedKinds: KindSortOrder{"Pod"},
-			wantErr:                false,
-		},
-		{
-			name: "expect pod map and pod kind order with a pod restore label not match",
-			args: args{
-				gvrs:      []schema.GroupVersionResource{podGVR},
-				dyn:       ReturnDynamicClientMock(unstructuredPodWithLabels, unstructuredPodWithRestoreLabelNotMatch),
-				isRestore: true,
-				appSlug:   "test",
-				namespace: "test",
-				restoreLabelSelector: labels.SelectorFromSet(map[string]string{
-					"label/restore": "true",
-				}),
-			},
-			want:                   map[string][]Resource{"Pod": {namespacedPodResource}},
-			wantdeleteOrderedKinds: KindSortOrder{"Pod"},
-			wantErr:                false,
-		},
-		{
-			name: "expect pod map and pod kind order with a pod restore label match",
-			args: args{
-				gvrs:      []schema.GroupVersionResource{podGVR},
-				dyn:       ReturnDynamicClientMock(unstructuredPodWithLabels, unstructuredPodWithRestoreLabel),
-				isRestore: true,
-				appSlug:   "test",
-				namespace: "test",
-				restoreLabelSelector: labels.SelectorFromSet(map[string]string{
-					"label/restore": "true",
-				}),
-			},
-			want: map[string][]Resource{"Pod": {
-				namespacedPodResource,
-				Resource{
-					GVR:          podGVR,
-					GVK:          &podGVK,
-					Unstructured: unstructuredPodWithRestoreLabel,
-				},
-			}},
-			wantdeleteOrderedKinds: KindSortOrder{"Pod"},
-			wantErr:                false,
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			got, got1 := getResourcesInNamespace(tt.args.dyn, tt.args.gvrs, tt.args.appSlug, tt.args.namespace, tt.args.isRestore, tt.args.restoreLabelSelector, tt.args.deleteKindOrder)
-			if !reflect.DeepEqual(got1, tt.wantdeleteOrderedKinds) {
-				t.Errorf("buildDeleteKindOrderedNamespaceResources() got1 = %v, want %v", got1, tt.wantdeleteOrderedKinds)
-			}
-			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("buildDeleteKindOrderedNamespaceResources() got = %v, want %v", got, tt.want)
-			}
-		})
-	}
-}
-
-func Test_clearNamespacedResources(t *testing.T) {
-	namespacedPodResource := Resource{
-		GVR:          podGVR,
-		GVK:          &podGVK,
-		Unstructured: unstructuredPodWithLabels,
-	}
-	namespacedPodResourceMarkedForDeletion := Resource{
-		GVR:          podGVR,
-		GVK:          &podGVK,
-		Unstructured: unstructuredPodMarkedDeletion,
-	}
-	type args struct {
-		dyn              dynamic.Interface
-		namespace        string
-		resourcesMap     map[string][]Resource
-		deleteKindOrders KindSortOrder
-	}
-	tests := []struct {
-		name    string
-		args    args
-		wantErr bool
-	}{
-		{
-			name:    "expect no error when no resources to clear",
-			args:    args{},
-			wantErr: false,
-		}, {
-			name: "expect no error when no resources to clear with kind order",
-			args: args{
-				deleteKindOrders: KindSortOrder{"Pod"},
-			},
-			wantErr: false,
-		}, {
-			name: "expect no error when pod resources to clear with kind order",
-			args: args{
-				resourcesMap:     map[string][]Resource{"Pod": {namespacedPodResource}},
-				deleteKindOrders: KindSortOrder{"Pod"},
-				dyn:              ReturnDynamicClientDeleteMock(unstructuredPodWithLabels),
-				namespace:        "default",
-			},
-			wantErr: false,
-		}, {
-			name: "expect error when pod resources to clear with kind order",
-			args: args{
-				resourcesMap:     map[string][]Resource{"Pod": {namespacedPodResource}},
-				deleteKindOrders: KindSortOrder{"Pod"},
-				dyn:              ReturnErrDynamicClientDeleteMock(unstructuredPodWithLabels),
-			},
-			wantErr: true,
-		}, {
-			name: "expect no error when pod resources to clear with kind order and with pod marked for deletion",
-			args: args{
-				resourcesMap:     map[string][]Resource{"Pod": {namespacedPodResource, namespacedPodResourceMarkedForDeletion}},
-				deleteKindOrders: KindSortOrder{"Pod"},
-				dyn:              ReturnDynamicClientDeleteMock(unstructuredPodWithLabels, unstructuredPodMarkedDeletion),
-				namespace:        "default",
-			},
-			wantErr: false,
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if err := clearNamespacedResources(tt.args.dyn, tt.args.namespace, tt.args.resourcesMap, tt.args.deleteKindOrders); (err != nil) != tt.wantErr {
-				t.Errorf("clearNamespacedResources() error = %v, wantErr %v", err, tt.wantErr)
-			}
-		})
-	}
-}
-
-func Test_clearNamespaces(t *testing.T) {
-	type args struct {
-		appSlug              string
-		namespacesToClear    []string
-		isRestore            bool
-		restoreLabelSelector labels.Selector
-		kindDeleteOrder      Plan
-		k8sDynamicClient     dynamic.Interface
-		gvrs                 map[schema.GroupVersionResource]struct{}
-	}
-	tests := []struct {
-		name    string
-		args    args
-		wantErr bool
-	}{
-		{
-			name:    "expect no error when no namespaces to clear",
-			args:    args{},
-			wantErr: false,
-		}, {
-			name: "expect no error when no namespaces to clear with gvr in skip list",
-			args: args{
-				gvrs: map[schema.GroupVersionResource]struct{}{
-					{
-						Group:    "",
-						Version:  "v1",
-						Resource: "events",
-					}: {},
-				},
-			},
-			wantErr: false,
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if err := clearNamespaces(tt.args.appSlug, tt.args.namespacesToClear, tt.args.isRestore, tt.args.restoreLabelSelector, tt.args.kindDeleteOrder, tt.args.k8sDynamicClient, tt.args.gvrs); (err != nil) != tt.wantErr {
-				t.Errorf("clearNamespaces() error = %v, wantErr %v", err, tt.wantErr)
-			}
-		})
-	}
-}
-
 func Test_getLabelSelector(t *testing.T) {
 	tests := []struct {
 		name             string
@@ -946,68 +430,6 @@ func Test_getLabelSelector(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			require.Equal(t, tt.want, getLabelSelector(&tt.appLabelSelector))
-		})
-	}
-}
-
-func Test_clearNamespacesWithWait(t *testing.T) {
-	type args struct {
-		appSlug              string
-		namespacesToClear    []string
-		isRestore            bool
-		restoreLabelSelector labels.Selector
-		kindDeleteOrder      Plan
-		k8sDynamicClient     dynamic.Interface
-		deletionGVRs         []schema.GroupVersionResource
-		waitTimeOut          int
-		waitSleep            time.Duration
-		waitExtra            time.Duration
-	}
-	tests := []struct {
-		name    string
-		args    args
-		wantErr bool
-	}{
-		{
-			name:    "expect no error when no namespaces to clear",
-			args:    args{},
-			wantErr: false,
-		}, {
-			name: "expect no error when resourcesToDeleteMap is empty",
-			args: args{
-				appSlug:           "not-test",
-				namespacesToClear: []string{"default"},
-				k8sDynamicClient:  ReturnDynamicClientMock(unstructuredPodWithLabels),
-				deletionGVRs:      []schema.GroupVersionResource{podGVR},
-			},
-			wantErr: false,
-		}, {
-			name: "expect no error when resourcesToDeleteMap has a pod to delete",
-			args: args{
-				appSlug:           "test",
-				namespacesToClear: []string{"default"},
-				k8sDynamicClient:  NewSimpleDynamicClient(unstructuredPodWithLabels),
-				deletionGVRs:      []schema.GroupVersionResource{podGVR},
-				waitTimeOut:       1,
-			},
-			wantErr: false,
-		}, {
-			name: "expect no error when resourcesToDeleteMap has a pod to delete",
-			args: args{
-				appSlug:           "test",
-				namespacesToClear: []string{"default"},
-				k8sDynamicClient:  NewSimpleDynamicClient(unstructuredPodWithLabels),
-				deletionGVRs:      []schema.GroupVersionResource{podGVR},
-				waitTimeOut:       1,
-			},
-			wantErr: false,
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if err := clearNamespacesWithWait(tt.args.appSlug, tt.args.namespacesToClear, tt.args.isRestore, tt.args.restoreLabelSelector, tt.args.kindDeleteOrder, tt.args.k8sDynamicClient, tt.args.deletionGVRs, tt.args.waitTimeOut, tt.args.waitSleep, tt.args.waitExtra); (err != nil) != tt.wantErr {
-				t.Errorf("clearNamespacesWithWait() error = %v, wantErr %v", err, tt.wantErr)
-			}
 		})
 	}
 }
