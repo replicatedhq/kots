@@ -67,23 +67,14 @@ func (p *Plan) Has(key string) bool {
 }
 
 func (p *Plan) AddBeforeAll(key string) {
-	if p.Has(key) {
-		return
-	}
 	p.BeforeAll = append(p.BeforeAll, key)
 }
 
 func (p *Plan) AddOther(key string) {
-	if p.Has(key) {
-		return
-	}
 	p.Other = append(p.Other, key)
 }
 
 func (p *Plan) AddAfterAll(key string) {
-	if p.Has(key) {
-		return
-	}
 	p.AfterAll = append(p.AfterAll, key)
 }
 
