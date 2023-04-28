@@ -185,25 +185,10 @@ func clearNamespacesWithWait(appSlug string, namespacesToClear []string, isResto
 		logger.Infof("Ensuring all %s objects have been removed from namespace %s\n", appSlug, namespace)
 
 		for i := waitTimeOut; i >= 0; i-- { // 2 minute wait, 60 loops with 2 second sleep
-			resources := getResourcesInNamespace(k8sDynamicClient, gvrsToDelete, appSlug, namespace, isRestore, restoreLabelSelector)
-			if len(resources) == 0 {
+			cleared := clearNamespace(namespace, appSlug, isRestore, restoreLabelSelector, plan, k8sDynamicClient, gvrsToDelete)
+			if cleared {
 				logger.Infof("Namespace %s successfully cleared of app %s\n", namespace, appSlug)
 				break
-			}
-
-			resources = resources.SortWithPlan(plan)
-
-			for _, r := range resources {
-				if r.Unstructured.GetDeletionTimestamp() != nil {
-					logger.Infof("Pending deletion %s/%s/%s\n", namespace, r.GVR, r.Unstructured.GetName())
-					continue
-				}
-
-				logger.Infof("Deleting %s/%s/%s\n", namespace, r.GVR, r.Unstructured.GetName())
-
-				if err := k8sDynamicClient.Resource(r.GVR).Namespace(namespace).Delete(context.TODO(), r.Unstructured.GetName(), metav1.DeleteOptions{}); err != nil {
-					logger.Errorf("Resource %s (%s) in namespace %s could not be deleted: %v\n", r.Unstructured.GetName(), r.GVR, namespace, err)
-				}
 			}
 
 			if i == 0 {
@@ -223,12 +208,12 @@ func clearNamespacesWithWait(appSlug string, namespacesToClear []string, isResto
 	return nil
 }
 
-func getResourcesInNamespace(dyn dynamic.Interface, gvrs []schema.GroupVersionResource, appSlug string, namespace string, isRestore bool, restoreLabelSelector labels.Selector) types.Resources {
+func clearNamespace(namespace string, appSlug string, isRestore bool, restoreLabelSelector labels.Selector, plan types.Plan, k8sDynamicClient dynamic.Interface, gvrsToDelete []schema.GroupVersionResource) bool {
 	resources := types.Resources{}
 
-	for _, gvr := range gvrs {
+	for _, gvr := range gvrsToDelete {
 		// there may be other resources that can't be listed besides what's in the skip set so ignore error
-		unstructuredList, err := dyn.Resource(gvr).Namespace(namespace).List(context.TODO(), metav1.ListOptions{})
+		unstructuredList, err := k8sDynamicClient.Resource(gvr).Namespace(namespace).List(context.TODO(), metav1.ListOptions{})
 		if unstructuredList == nil {
 			if err != nil {
 				logger.Errorf("failed to list namespace resources: %s", err.Error())
@@ -264,7 +249,26 @@ func getResourcesInNamespace(dyn dynamic.Interface, gvrs []schema.GroupVersionRe
 		}
 	}
 
-	return resources
+	if len(resources) == 0 {
+		return true
+	}
+
+	resources = resources.SortWithPlan(plan)
+
+	for _, r := range resources {
+		if r.Unstructured.GetDeletionTimestamp() != nil {
+			logger.Infof("Pending deletion %s/%s/%s\n", namespace, r.GVR, r.Unstructured.GetName())
+			continue
+		}
+
+		logger.Infof("Deleting %s/%s/%s\n", namespace, r.GVR, r.Unstructured.GetName())
+
+		if err := k8sDynamicClient.Resource(r.GVR).Namespace(namespace).Delete(context.TODO(), r.Unstructured.GetName(), metav1.DeleteOptions{}); err != nil {
+			logger.Errorf("Resource %s (%s) in namespace %s could not be deleted: %v\n", r.Unstructured.GetName(), r.GVR, namespace, err)
+		}
+	}
+
+	return false
 }
 
 func deletePVCs(namespace string, appLabelSelector *metav1.LabelSelector, appslug string, clientset kubernetes.Interface) error {
