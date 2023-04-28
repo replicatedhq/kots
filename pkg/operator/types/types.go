@@ -1,8 +1,13 @@
 package types
 
 import (
+	"fmt"
+	"strconv"
+
+	"github.com/pkg/errors"
 	appstatetypes "github.com/replicatedhq/kots/pkg/appstate/types"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
+	"github.com/replicatedhq/kots/pkg/logger"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -46,40 +51,115 @@ type Resource struct {
 	GVR          schema.GroupVersionResource
 	GVK          *schema.GroupVersionKind
 	Unstructured *unstructured.Unstructured
+	DecodeErrMsg string
 }
 
-func (r Resources) GroupByDeletionWeight() map[string]Resources {
-	grouped := map[string]Resources{}
-	for _, resource := range r {
-		weight := "0"
-		if resource.Unstructured != nil {
-			annotations := resource.Unstructured.GetAnnotations()
-			if annotations != nil {
-				weight = annotations["kots.io/deletion-weight"]
-			}
-		}
-		grouped[weight] = append(grouped[weight], resource)
+func (r Resource) GetGroup() string {
+	if r.GVK != nil {
+		return r.GVK.Group
 	}
-	return grouped
+	return ""
+}
+
+func (r Resource) GetVersion() string {
+	if r.GVK != nil {
+		return r.GVK.Version
+	}
+	return ""
+}
+
+func (r Resource) GetKind() string {
+	if r.GVK != nil {
+		return r.GVK.Kind
+	}
+	return ""
+}
+
+func (r Resource) GetName() string {
+	if r.Unstructured != nil {
+		return r.Unstructured.GetName()
+	}
+	return ""
+}
+
+func (r Resource) GetNamespace() string {
+	if r.Unstructured != nil {
+		return r.Unstructured.GetNamespace()
+	}
+	return ""
+}
+
+func (r Resources) HasCRDs() bool {
+	for _, resource := range r {
+		if resource.GVK != nil && resource.GVK.Kind == "CustomResourceDefinition" && resource.GVK.Group == "apiextensions.k8s.io" {
+			return true
+		}
+	}
+	return false
+}
+
+func (r Resources) HasNamespaces() bool {
+	for _, resource := range r {
+		if resource.GVK != nil && resource.GVK.Kind == "Namespace" && resource.GVK.Group == "" && resource.GVK.Version == "v1" {
+			return true
+		}
+	}
+	return false
 }
 
 func (r Resources) GroupByCreationWeight() map[string]Resources {
 	grouped := map[string]Resources{}
+
 	for _, resource := range r {
-		weight := "0"
+		weight := "0" // default to 0
 		if resource.Unstructured != nil {
 			annotations := resource.Unstructured.GetAnnotations()
 			if annotations != nil {
 				weight = annotations["kots.io/creation-weight"]
 			}
 		}
-		grouped[weight] = append(grouped[weight], resource)
+
+		parsed, err := strconv.ParseInt(weight, 10, 64)
+		if err != nil {
+			logger.Error(errors.Wrapf(err, "failed to parse deletion weight %q", weight))
+			parsed = 0
+		}
+
+		key := fmt.Sprintf("%d", parsed)
+		grouped[key] = append(grouped[key], resource)
 	}
+
+	return grouped
+}
+
+func (r Resources) GroupByDeletionWeight() map[string]Resources {
+	grouped := map[string]Resources{}
+
+	for _, resource := range r {
+		weight := "0" // default to 0
+		if resource.Unstructured != nil {
+			annotations := resource.Unstructured.GetAnnotations()
+			if annotations != nil {
+				weight = annotations["kots.io/deletion-weight"]
+			}
+		}
+
+		parsed, err := strconv.ParseInt(weight, 10, 64)
+		if err != nil {
+			logger.Error(errors.Wrapf(err, "failed to parse creation weight %q", weight))
+			parsed = 0
+		}
+
+		key := fmt.Sprintf("%d", parsed)
+		grouped[key] = append(grouped[key], resource)
+	}
+
 	return grouped
 }
 
 func (r Resources) GroupByKind() map[string]Resources {
 	grouped := map[string]Resources{}
+
 	for _, resource := range r {
 		kind := ""
 		if resource.GVK != nil {
@@ -87,5 +167,6 @@ func (r Resources) GroupByKind() map[string]Resources {
 		}
 		grouped[kind] = append(grouped[kind], resource)
 	}
+
 	return grouped
 }

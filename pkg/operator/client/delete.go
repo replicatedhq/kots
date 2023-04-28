@@ -14,54 +14,10 @@ import (
 	"github.com/replicatedhq/kots/pkg/operator/types"
 	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/client-go/discovery"
-	"k8s.io/client-go/kubernetes/scheme"
-)
-
-var (
-	// This order in inspired by Helm: https://github.com/helm/helm/blob/v3.11.3/pkg/releaseutil/kind_sorter.go#L72
-	// Unknown kinds are deleted first.
-	KindDeletionOrder = []string{
-		"APIService",
-		"Ingress",
-		"IngressClass",
-		"Service",
-		"CronJob",
-		"Job",
-		"StatefulSet",
-		"HorizontalPodAutoscaler",
-		"Deployment",
-		"ReplicaSet",
-		"ReplicationController",
-		"Pod",
-		"DaemonSet",
-		"RoleBindingList",
-		"RoleBinding",
-		"RoleList",
-		"Role",
-		"ClusterRoleBindingList",
-		"ClusterRoleBinding",
-		"ClusterRoleList",
-		"ClusterRole",
-		"CustomResourceDefinition",
-		"PersistentVolumeClaim",
-		"PersistentVolume",
-		"StorageClass",
-		"ConfigMap",
-		"SecretList",
-		"Secret",
-		"ServiceAccount",
-		"PodDisruptionBudget",
-		"PodSecurityPolicy",
-		"LimitRange",
-		"ResourceQuota",
-		"NetworkPolicy",
-		"Namespace",
-	}
 )
 
 func deleteManifests(manifests []string, targetNS string, kubernetesApplier applier.KubectlInterface, waitFlag bool) {
@@ -77,29 +33,21 @@ func deleteResources(resources types.Resources, targetNS string, kubernetesAppli
 }
 
 func deleteResource(resource types.Resource, targetNS string, waitFlag bool, kubernetesApplier applier.KubectlInterface) {
-	group := ""
-	kind := ""
-	name := ""
-	namespace := targetNS
-	wait := waitFlag
+	group := resource.GetGroup()
+	version := resource.GetVersion()
+	kind := resource.GetKind()
+	name := resource.GetName()
+	wait := shouldWaitForResourceDeletion(kind, waitFlag)
 
-	if resource.GVK != nil {
-		group = resource.GVK.Group
-		kind = resource.GVK.Kind
-		unstructured := resource.Unstructured
-		wait = shouldWaitForResourceDeletion(resource.GVK.Kind, waitFlag)
+	namespace := resource.GetNamespace()
+	if namespace == "" {
+		namespace = targetNS
+	}
 
-		if unstructured != nil {
-			name = unstructured.GetName()
-			if ns := unstructured.GetNamespace(); ns != "" {
-				namespace = ns
-			} else {
-				namespace = targetNS
-			}
-		}
-		logger.Infof("deleting manifest: %s/%s/%s/%s", resource.GVK.Group, resource.GVK.Version, resource.GVK.Kind, name)
+	if resource.DecodeErrMsg == "" {
+		logger.Infof("deleting resource %s/%s/%s/%s from namespace %s", group, version, kind, name, namespace)
 	} else {
-		logger.Infof("deleting unidentified manifest: %s", resource.Manifest)
+		logger.Infof("deleting unidentified resource. unable to parse error: %s", resource.DecodeErrMsg)
 	}
 
 	stdout, stderr, err := kubernetesApplier.Remove(namespace, []byte(resource.Manifest), wait)
@@ -108,70 +56,12 @@ func deleteResource(resource types.Resource, targetNS string, waitFlag bool, kub
 		logger.Infof("stderr (delete) = %s", stderr)
 		logger.Infof("error: %s", err.Error())
 	} else {
-		logger.Infof("manifest deleted: %s/%s/%s", group, kind, name)
-	}
-}
-
-func decodeManifests(manifests []string) types.Resources {
-	resources := types.Resources{}
-
-	for _, manifest := range manifests {
-		resource := types.Resource{
-			Manifest: manifest,
-		}
-
-		unstructured := &unstructured.Unstructured{}
-		_, gvk, err := scheme.Codecs.UniversalDeserializer().Decode([]byte(manifest), nil, unstructured)
-		if err != nil {
-			logger.Infof("error decoding manifest: %v", err.Error())
+		if resource.DecodeErrMsg == "" {
+			logger.Infof("deleted resource %s/%s/%s/%s from namespace %s", group, version, kind, name, namespace)
 		} else {
-			resource.Unstructured = unstructured
-			resource.GVK = gvk
-		}
-
-		resources = append(resources, resource)
-	}
-
-	return resources
-}
-
-// sortResourcesForDeletion groups and sorts resources by deletion weight first,
-// and resources that have the same deletion weight are then sorted by kind based on the kind deletion order.
-// for each weight group, unknown kinds are deleted first.
-func sortResourcesForDeletion(resources types.Resources) types.Resources {
-	sortedResources := types.Resources{}
-	resourcesByWeight := resources.GroupByDeletionWeight()
-
-	weights := []string{}
-	for weight := range resourcesByWeight {
-		weights = append(weights, weight)
-	}
-	sort.Strings(weights)
-
-	for _, weight := range weights {
-		deletionOrder := KindDeletionOrder
-		resourcesByKind := resourcesByWeight[weight].GroupByKind()
-
-		for kind := range resourcesByKind {
-			unknown := true
-			for _, deletionKind := range deletionOrder {
-				if kind == deletionKind {
-					unknown = false
-					break
-				}
-			}
-			if unknown {
-				// unknown kinds are deleted first
-				deletionOrder = append([]string{kind}, deletionOrder...)
-			}
-		}
-
-		for _, kind := range deletionOrder {
-			sortedResources = append(sortedResources, resourcesByKind[kind]...)
+			logger.Info("deleted unidentified resource")
 		}
 	}
-
-	return sortedResources
 }
 
 func shouldWaitForResourceDeletion(kind string, waitFlag bool) bool {

@@ -10,7 +10,6 @@ import (
 	"sort"
 	"strings"
 	"sync"
-	"time"
 
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
@@ -140,7 +139,7 @@ func (c *Client) diffAndRemovePreviousManifests(deployArgs operatortypes.DeployA
 		manifestsToDelete = append(manifestsToDelete, previous.spec)
 	}
 
-	deleteManifests(manifestsToDelete, targetNamespace, kubernetesApplier, DefaultDeletionPlan, deployArgs.Wait)
+	deleteManifests(manifestsToDelete, targetNamespace, kubernetesApplier, deployArgs.Wait)
 
 	if deployArgs.ClearPVCs {
 		// TODO: multi-namespace support
@@ -151,7 +150,7 @@ func (c *Client) diffAndRemovePreviousManifests(deployArgs operatortypes.DeployA
 	}
 
 	if len(deployArgs.ClearNamespaces) > 0 {
-		err := clearNamespaces(deployArgs.AppSlug, deployArgs.ClearNamespaces, deployArgs.IsRestore, deployArgs.RestoreLabelSelector, DefaultDeletionPlan)
+		err := clearNamespaces(deployArgs.AppSlug, deployArgs.ClearNamespaces, deployArgs.IsRestore, deployArgs.RestoreLabelSelector)
 		if err != nil {
 			logger.Infof("Failed to clear namespaces: %v", err)
 		}
@@ -247,29 +246,32 @@ func (c *Client) ensureResourcesPresent(deployArgs operatortypes.DeployAppArgs) 
 		return nil, errors.Wrap(err, "failed to decode manifests")
 	}
 
-	firstApplyDocs, otherDocs, err := splitMutlidocYAMLIntoFirstApplyAndOthers(decoded)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to split decoded into crds and other")
-	}
+	manifests := strings.Split(string(decoded), "\n---\n")
+	resources := decodeManifests(manifests)
+	resources = sortResourcesForCreation(resources)
 
-	// We don't dry run if there's a crd because there's a likely chance that the
-	// other docs has a custom resource using it
-	shouldDryRun := firstApplyDocs == nil
+	// We don't dry run if there's a crd or a namespace because there's a likely chance that the
+	// other docs have a custom resource using it
+	shouldDryRun := !resources.HasCRDs() && !resources.HasNamespaces()
 	if shouldDryRun {
+		for _, resource := range resources {
+			group := resource.GetGroup()
+			version := resource.GetVersion()
+			kind := resource.GetKind()
+			name := resource.GetName()
 
-		byNamespace, err := docsByNamespace(decoded, targetNamespace)
-		if err != nil {
-			return nil, errors.Wrap(err, "failed to get docs by requested namespace")
-		}
-
-		for requestedNamespace, docs := range byNamespace {
-			if len(docs) == 0 {
-				continue
+			namespace := resource.GetNamespace()
+			if namespace == "" {
+				namespace = targetNamespace
 			}
 
-			logger.Infof("dry run applying manifests(s) in requested namespace: %s", requestedNamespace)
-			dryrunStdout, dryrunStderr, dryRunErr := kubernetesApplier.ApplyCreateOrPatch(requestedNamespace, deployArgs.AppSlug, docs, true, deployArgs.Wait, deployArgs.AnnotateSlug)
+			if resource.DecodeErrMsg == "" {
+				logger.Infof("dry run applying resource %s/%s/%s/%s in namespace %s", group, version, kind, name, namespace)
+			} else {
+				logger.Infof("dry run applying unidentified resource. unable to parse error: %s", resource.DecodeErrMsg)
+			}
 
+			dryrunStdout, dryrunStderr, dryRunErr := kubernetesApplier.ApplyCreateOrPatch(namespace, deployArgs.AppSlug, []byte(resource.Manifest), true, deployArgs.Wait, deployArgs.AnnotateSlug)
 			if len(dryrunStdout) > 0 {
 				deployRes.dryRunResult.multiStdout = append(deployRes.dryRunResult.multiStdout, dryrunStdout)
 			}
@@ -286,17 +288,61 @@ func (c *Client) ensureResourcesPresent(deployArgs operatortypes.DeployAppArgs) 
 				return &deployRes, nil
 			}
 
-			logger.Infof("dry run applied manifests(s) in requested namespace: %s", requestedNamespace)
+			if resource.DecodeErrMsg == "" {
+				logger.Infof("dry run applied resource %s/%s/%s/%s in namespace %s", group, version, kind, name, namespace)
+			} else {
+				logger.Info("dry run applied unidentified resource.")
+			}
 		}
-
 	}
 
-	if len(firstApplyDocs) > 0 {
-		logger.Info("applying first apply docs (CRDs, Namespaces)")
+	// if len(firstApplyDocs) > 0 {
+	// 	logger.Info("applying first apply docs (CRDs, Namespaces)")
 
-		// CRDs don't have namespaces, so we can skip splitting
+	// 	// CRDs don't have namespaces, so we can skip splitting
 
-		applyStdout, applyStderr, applyErr := kubernetesApplier.ApplyCreateOrPatch("", deployArgs.AppSlug, firstApplyDocs, false, deployArgs.Wait, deployArgs.AnnotateSlug)
+	// 	applyStdout, applyStderr, applyErr := kubernetesApplier.ApplyCreateOrPatch("", deployArgs.AppSlug, firstApplyDocs, false, deployArgs.Wait, deployArgs.AnnotateSlug)
+
+	// 	if len(applyStdout) > 0 {
+	// 		deployRes.applyResult.multiStdout = append(deployRes.applyResult.multiStdout, applyStdout)
+	// 	}
+	// 	if len(applyStderr) > 0 {
+	// 		deployRes.applyResult.multiStderr = append(deployRes.applyResult.multiStderr, applyStderr)
+	// 	}
+
+	// 	if applyErr != nil {
+	// 		logger.Infof("stdout (first apply) = %s", applyStdout)
+	// 		logger.Infof("stderr (first apply) = %s", applyStderr)
+	// 		logger.Infof("error (CRDS): %s", applyErr.Error())
+
+	// 		deployRes.applyResult.hasErr = true
+	// 		return &deployRes, nil
+	// 	}
+
+	// 	logger.Info("custom resource definition(s) applied")
+
+	// 	// Give the API server a minute (well, 5 seconds) to cache the CRDs
+	// 	time.Sleep(time.Second * 5)
+	// }
+
+	for _, resource := range resources {
+		group := resource.GetGroup()
+		version := resource.GetVersion()
+		kind := resource.GetKind()
+		name := resource.GetName()
+
+		namespace := resource.GetNamespace()
+		if namespace == "" {
+			namespace = targetNamespace
+		}
+
+		if resource.DecodeErrMsg == "" {
+			logger.Infof("applying resource %s/%s/%s/%s in namespace %s", group, version, kind, name, namespace)
+		} else {
+			logger.Infof("applying unidentified resource. unable to parse error: %s", resource.DecodeErrMsg)
+		}
+
+		applyStdout, applyStderr, applyErr := kubernetesApplier.ApplyCreateOrPatch(namespace, deployArgs.AppSlug, []byte(resource.Manifest), false, deployArgs.Wait, deployArgs.AnnotateSlug)
 
 		if len(applyStdout) > 0 {
 			deployRes.applyResult.multiStdout = append(deployRes.applyResult.multiStdout, applyStdout)
@@ -306,53 +352,20 @@ func (c *Client) ensureResourcesPresent(deployArgs operatortypes.DeployAppArgs) 
 		}
 
 		if applyErr != nil {
-			logger.Infof("stdout (first apply) = %s", applyStdout)
-			logger.Infof("stderr (first apply) = %s", applyStderr)
-			logger.Infof("error (CRDS): %s", applyErr.Error())
+			logger.Infof("stdout (apply) = %s", applyStdout)
+			logger.Infof("stderr (apply) = %s", applyStderr)
+			logger.Infof("error: %s", applyErr.Error())
 
 			deployRes.applyResult.hasErr = true
 			return &deployRes, nil
 		}
 
-		logger.Info("custom resource definition(s) applied")
-
-		// Give the API server a minute (well, 5 seconds) to cache the CRDs
-		time.Sleep(time.Second * 5)
-	}
-
-	byNamespace, err := docsByNamespace(otherDocs, targetNamespace)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to get docs by requested namespace")
-	}
-
-	var hasErr bool
-	var multiStdout, multiStderr [][]byte
-	for requestedNamespace, docs := range byNamespace {
-		if len(docs) == 0 {
-			continue
-		}
-
-		logger.Infof("applying manifest(s) in namespace %s", requestedNamespace)
-		applyStdout, applyStderr, applyErr := kubernetesApplier.ApplyCreateOrPatch(requestedNamespace, deployArgs.AppSlug, docs, false, deployArgs.Wait, deployArgs.AnnotateSlug)
-		if applyErr != nil {
-			logger.Infof("stdout (apply) = %s", applyStdout)
-			logger.Infof("stderr (apply) = %s", applyStderr)
-			logger.Infof("error: %s", applyErr.Error())
-			hasErr = true
+		if resource.DecodeErrMsg == "" {
+			logger.Infof("applied resource %s/%s/%s/%s in namespace %s", group, version, kind, name, namespace)
 		} else {
-			logger.Infof("manifest(s) applied in namespace %s", requestedNamespace)
-		}
-		if len(applyStdout) > 0 {
-			multiStdout = append(multiStdout, applyStdout)
-		}
-		if len(applyStderr) > 0 {
-			multiStderr = append(multiStderr, applyStderr)
+			logger.Info("applied unidentified resource.")
 		}
 	}
-
-	deployRes.applyResult.hasErr = hasErr
-	deployRes.applyResult.multiStdout = multiStdout
-	deployRes.applyResult.multiStderr = multiStderr
 
 	return &deployRes, nil
 }
