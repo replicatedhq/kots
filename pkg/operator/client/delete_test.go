@@ -12,70 +12,6 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 )
 
-func Test_flattenPlan(t *testing.T) {
-	tests := []struct {
-		name string
-		plan types.Plan
-		want []string
-	}{
-		{
-			name: "empty",
-			plan: types.Plan{},
-			want: []string{},
-		}, {
-			name: "before all",
-			plan: types.Plan{
-				BeforeAll: []string{"group1", "group2"},
-			},
-			want: []string{
-				"group1", "group2",
-			},
-		}, {
-			name: "after all",
-			plan: types.Plan{
-				AfterAll: []string{"group1", "group2"},
-			},
-			want: []string{
-				"group1", "group2",
-			},
-		}, {
-			name: "before all and after all",
-			plan: types.Plan{
-				BeforeAll: []string{"group1", "group2"},
-				AfterAll:  []string{"group3", "group4"},
-			},
-			want: []string{
-				"group1", "group2", "group3", "group4",
-			},
-		}, {
-			name: "before all, other, and after all",
-			plan: types.Plan{
-				BeforeAll: []string{"group1", "group2"},
-				Other:     []string{"group5", "group6"},
-				AfterAll:  []string{"group3", "group4"},
-			},
-			want: []string{
-				"group1", "group2", "group5", "group6", "group3", "group4",
-			},
-		}, {
-			name: "other",
-			plan: types.Plan{
-				Other: []string{"group5", "group6"},
-			},
-			want: []string{
-				"group5", "group6",
-			},
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if got := tt.plan.Flatten(); !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("flattenPlan() = %v, want %v", got, tt.want)
-			}
-		})
-	}
-}
-
 func Test_decodeManifests(t *testing.T) {
 	type args struct {
 		manifests []string
@@ -142,7 +78,6 @@ func Test_deleteManifests(t *testing.T) {
 		manifests         []string
 		targetNS          string
 		kubernetesApplier applier.KubectlInterface
-		plan              types.Plan
 		waitFlag          bool
 	}
 	tests := []struct {
@@ -155,34 +90,22 @@ func Test_deleteManifests(t *testing.T) {
 				manifests:         []string{},
 				targetNS:          "",
 				kubernetesApplier: nil,
-				plan:              types.Plan{},
 				waitFlag:          false,
 			},
 		},
 		{
 			name: "deleting manifests",
 			args: args{
-				manifests:         []string{podManifest},
-				targetNS:          "test",
-				kubernetesApplier: &kubectlApplierMock,
-				plan:              types.Plan{},
-				waitFlag:          false,
-			},
-		},
-		{
-			name: "deleting manifests with default deletion plan",
-			args: args{
 				manifests:         []string{podManifest, rabbitmqCRManifest},
 				targetNS:          "test",
 				kubernetesApplier: &kubectlApplierMock,
-				plan:              DefaultDeletionPlan,
 				waitFlag:          false,
 			},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			deleteManifests(tt.args.manifests, tt.args.targetNS, tt.args.kubernetesApplier, tt.args.plan, tt.args.waitFlag)
+			deleteManifests(tt.args.manifests, tt.args.targetNS, tt.args.kubernetesApplier, tt.args.waitFlag)
 		})
 	}
 }
@@ -248,103 +171,6 @@ func Test_deleteResource(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			deleteResource(tt.args.resource, tt.args.targetNS, tt.args.waitFlag, tt.args.kubernetesApplier)
-		})
-	}
-}
-
-func Test_applyPlan(t *testing.T) {
-	podResource := types.Resource{
-		GVK:          &podGVK,
-		GVR:          schema.GroupVersionResource{},
-		Unstructured: unstructuredPodWithLabels,
-	}
-	crdResource := types.Resource{
-		GVK:          &crdGVK,
-		GVR:          schema.GroupVersionResource{},
-		Unstructured: unstructuredRabbitMQCRD,
-	}
-	crResource := types.Resource{
-		GVK:          &crGVK,
-		GVR:          schema.GroupVersionResource{},
-		Unstructured: unstructuredRabbitMQCR,
-	}
-	nilGVKResource := types.Resource{
-		GVK:          nil,
-		GVR:          schema.GroupVersionResource{},
-		Unstructured: unstructuredRabbitMQCRD,
-	}
-
-	type args struct {
-		plan      types.Plan
-		resources types.Resources
-	}
-
-	tests := []struct {
-		name string
-		args args
-		want types.Resources
-	}{
-		{
-			name: "empty, no plan",
-			args: args{
-				plan:      types.Plan{},
-				resources: types.Resources{},
-			},
-			want: types.Resources{},
-		},
-		{
-			name: "singe pod resource, no plan",
-			args: args{
-				plan:      types.Plan{},
-				resources: types.Resources{podResource},
-			},
-			want: types.Resources{podResource},
-		},
-		{
-			name: "single crd resource, before all plan",
-			args: args{
-				plan: types.Plan{
-					BeforeAll: []string{"CustomResourceDefinition"},
-				},
-				resources: types.Resources{crdResource},
-			},
-			want: types.Resources{crdResource},
-		},
-		{
-			name: "nil gvk resource, no plan",
-			args: args{
-				plan:      types.Plan{},
-				resources: types.Resources{nilGVKResource},
-			},
-			want: types.Resources{nilGVKResource},
-		},
-		{
-			name: "crd and cr resource, crd in before all plan",
-			args: args{
-				plan: types.Plan{
-					BeforeAll: []string{"CustomResourceDefinition"},
-				},
-				resources: types.Resources{crResource, crdResource},
-			},
-			want: types.Resources{crdResource, crResource},
-		},
-		{
-			name: "crd and cr resource, crd in after all plan",
-			args: args{
-				plan: types.Plan{
-					AfterAll: []string{"CustomResourceDefinition"},
-				},
-				resources: types.Resources{crResource, crdResource},
-			},
-			want: types.Resources{crResource, crdResource},
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			got := tt.args.resources.ApplyPlan(tt.args.plan)
-			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("applyPlan() got = %v, want %v", got, tt.want)
-			}
 		})
 	}
 }

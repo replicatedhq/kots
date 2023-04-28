@@ -23,57 +23,54 @@ import (
 )
 
 var (
-	// This plan in inspired by Helm: https://github.com/helm/helm/blob/v3.11.3/pkg/releaseutil/kind_sorter.go#L72
-	DefaultDeletionPlan = types.Plan{
-		BeforeAll: []string{
-			"APIService",
-			"Ingress",
-			"IngressClass",
-			"Service",
-			"CronJob",
-			"Job",
-		},
-		AfterAll: []string{
-			"StatefulSet",
-			"HorizontalPodAutoscaler",
-			"Deployment",
-			"ReplicaSet",
-			"ReplicationController",
-			"Pod",
-			"DaemonSet",
-			"RoleBindingList",
-			"RoleBinding",
-			"RoleList",
-			"Role",
-			"ClusterRoleBindingList",
-			"ClusterRoleBinding",
-			"ClusterRoleList",
-			"ClusterRole",
-			"CustomResourceDefinition",
-			"PersistentVolumeClaim",
-			"PersistentVolume",
-			"StorageClass",
-			"ConfigMap",
-			"SecretList",
-			"Secret",
-			"ServiceAccount",
-			"PodDisruptionBudget",
-			"PodSecurityPolicy",
-			"LimitRange",
-			"ResourceQuota",
-			"NetworkPolicy",
-			"Namespace",
-		},
+	// This order in inspired by Helm: https://github.com/helm/helm/blob/v3.11.3/pkg/releaseutil/kind_sorter.go#L72
+	// Unknown kinds are deleted first.
+	KindDeletionOrder = []string{
+		"APIService",
+		"Ingress",
+		"IngressClass",
+		"Service",
+		"CronJob",
+		"Job",
+		"StatefulSet",
+		"HorizontalPodAutoscaler",
+		"Deployment",
+		"ReplicaSet",
+		"ReplicationController",
+		"Pod",
+		"DaemonSet",
+		"RoleBindingList",
+		"RoleBinding",
+		"RoleList",
+		"Role",
+		"ClusterRoleBindingList",
+		"ClusterRoleBinding",
+		"ClusterRoleList",
+		"ClusterRole",
+		"CustomResourceDefinition",
+		"PersistentVolumeClaim",
+		"PersistentVolume",
+		"StorageClass",
+		"ConfigMap",
+		"SecretList",
+		"Secret",
+		"ServiceAccount",
+		"PodDisruptionBudget",
+		"PodSecurityPolicy",
+		"LimitRange",
+		"ResourceQuota",
+		"NetworkPolicy",
+		"Namespace",
 	}
 )
 
-func deleteManifests(manifests []string, targetNS string, kubernetesApplier applier.KubectlInterface, plan types.Plan, waitFlag bool) {
+func deleteManifests(manifests []string, targetNS string, kubernetesApplier applier.KubectlInterface, waitFlag bool) {
 	resources := decodeManifests(manifests)
-	deleteResources(resources, targetNS, kubernetesApplier, plan, waitFlag)
+	deleteResources(resources, targetNS, kubernetesApplier, waitFlag)
 }
 
-func deleteResources(resources types.Resources, targetNS string, kubernetesApplier applier.KubectlInterface, plan types.Plan, waitFlag bool) {
-	resources = resources.ApplyPlan(plan)
+func deleteResources(resources types.Resources, targetNS string, kubernetesApplier applier.KubectlInterface, waitFlag bool) {
+	resources = sortResourcesForDeletion(resources)
 	for _, r := range resources {
 		deleteResource(r, targetNS, waitFlag, kubernetesApplier)
 	}
@@ -138,6 +135,45 @@ func decodeManifests(manifests []string) types.Resources {
 	return resources
 }
 
+// sortResourcesForDeletion groups and sorts resources by deletion weight first,
+// and resources that have the same deletion weight are then sorted by kind based on the kind deletion order.
+// for each weight group, unknown kinds are deleted first.
+func sortResourcesForDeletion(resources types.Resources) types.Resources {
+	sortedResources := types.Resources{}
+	resourcesByWeight := resources.GroupByDeletionWeight()
+
+	weights := []string{}
+	for weight := range resourcesByWeight {
+		weights = append(weights, weight)
+	}
+	sort.Strings(weights)
+
+	for _, weight := range weights {
+		deletionOrder := KindDeletionOrder
+		resourcesByKind := resourcesByWeight[weight].GroupByKind()
+
+		for kind := range resourcesByKind {
+			unknown := true
+			for _, deletionKind := range deletionOrder {
+				if kind == deletionKind {
+					unknown = false
+					break
+				}
+			}
+			if unknown {
+				// unknown kinds are deleted first
+				deletionOrder = append([]string{kind}, deletionOrder...)
+			}
+		}
+
+		for _, kind := range deletionOrder {
+			sortedResources = append(sortedResources, resourcesByKind[kind]...)
+		}
+	}
+
+	return sortedResources
+}
+
 func shouldWaitForResourceDeletion(kind string, waitFlag bool) bool {
 	if kind == "PersistentVolumeClaim" {
 		// blocking on PVC delete will create a deadlock if
@@ -147,7 +183,7 @@ func shouldWaitForResourceDeletion(kind string, waitFlag bool) bool {
 	return waitFlag
 }
 
-func clearNamespaces(appSlug string, namespacesToClear []string, isRestore bool, restoreLabelSelector *metav1.LabelSelector, plan types.Plan) error {
+func clearNamespaces(appSlug string, namespacesToClear []string, isRestore bool, restoreLabelSelector *metav1.LabelSelector) error {
 	dyn, err := k8sutil.GetDynamicClient()
 	if err != nil {
 		return errors.Wrap(err, "failed to get dynamic client")
@@ -264,7 +300,7 @@ func clearNamespaces(appSlug string, namespacesToClear []string, isRestore bool,
 			return nil
 		}
 
-		resourcesToDelete = resourcesToDelete.ApplyPlan(plan)
+		resourcesToDelete = sortResourcesForDeletion(resourcesToDelete)
 
 		for _, r := range resourcesToDelete {
 			if r.Unstructured.GetDeletionTimestamp() != nil {
