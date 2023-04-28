@@ -16,50 +16,50 @@ import (
 
 func Test_initResourceKindOrderMap(t *testing.T) {
 	type args struct {
-		kindOrder KindOrder
+		kindOrder Plan
 	}
 	tests := []struct {
 		name string
 		args args
-		want map[string][]resource
+		want map[string][]Resource
 	}{
 		{
 			name: "expect empty map",
 			args: args{
-				kindOrder: KindOrder{},
+				kindOrder: Plan{},
 			},
-			want: map[string][]resource{},
+			want: map[string][]Resource{},
 		}, {
 			name: "expect map with PostOrder entry",
 			args: args{
-				kindOrder: KindOrder{
-					PostOrder: []string{"group1", "group2"},
+				kindOrder: Plan{
+					AfterAll: []string{"group1", "group2"},
 				},
 			},
-			want: map[string][]resource{
+			want: map[string][]Resource{
 				"group1": {},
 				"group2": {},
 			},
 		}, {
 			name: "expect map with PreOrder entry",
 			args: args{
-				kindOrder: KindOrder{
-					PreOrder: []string{"group1", "group2"},
+				kindOrder: Plan{
+					BeforeAll: []string{"group1", "group2"},
 				},
 			},
-			want: map[string][]resource{
+			want: map[string][]Resource{
 				"group1": {},
 				"group2": {},
 			},
 		}, {
 			name: "expect map with PreOrder and PostOrder entry",
 			args: args{
-				kindOrder: KindOrder{
-					PreOrder:  []string{"group1", "group2"},
-					PostOrder: []string{"group3", "group4"},
+				kindOrder: Plan{
+					BeforeAll: []string{"group1", "group2"},
+					AfterAll:  []string{"group3", "group4"},
 				},
 			},
-			want: map[string][]resource{
+			want: map[string][]Resource{
 				"group1": {},
 				"group2": {},
 				"group3": {},
@@ -69,7 +69,7 @@ func Test_initResourceKindOrderMap(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := initResourceKindOrderMap(tt.args.kindOrder); !reflect.DeepEqual(got, tt.want) {
+			if got := initResourcesMap(tt.args.kindOrder); !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("initResourceKindOrderMap() = %v, want %v", got, tt.want)
 			}
 		})
@@ -78,7 +78,7 @@ func Test_initResourceKindOrderMap(t *testing.T) {
 
 func Test_getOrderedKinds(t *testing.T) {
 	type args struct {
-		kindOrder    KindOrder
+		kindOrder    Plan
 		defaultKinds KindSortOrder
 	}
 	tests := []struct {
@@ -89,15 +89,15 @@ func Test_getOrderedKinds(t *testing.T) {
 		{
 			name: "expect empty KindSortOrder",
 			args: args{
-				kindOrder:    KindOrder{},
+				kindOrder:    Plan{},
 				defaultKinds: KindSortOrder{},
 			},
 			want: KindSortOrder{},
 		}, {
 			name: "expect KindSortOrder with PreOrder",
 			args: args{
-				kindOrder: KindOrder{
-					PreOrder: []string{"group1", "group2"},
+				kindOrder: Plan{
+					BeforeAll: []string{"group1", "group2"},
 				},
 				defaultKinds: KindSortOrder{},
 			},
@@ -107,8 +107,8 @@ func Test_getOrderedKinds(t *testing.T) {
 		}, {
 			name: "expect KindSortOrder with PostOrder",
 			args: args{
-				kindOrder: KindOrder{
-					PostOrder: []string{"group1", "group2"},
+				kindOrder: Plan{
+					AfterAll: []string{"group1", "group2"},
 				},
 				defaultKinds: KindSortOrder{},
 			},
@@ -118,9 +118,9 @@ func Test_getOrderedKinds(t *testing.T) {
 		}, {
 			name: "expect KindSortOrder with PreOrder and PostOrder",
 			args: args{
-				kindOrder: KindOrder{
-					PreOrder:  []string{"group1", "group2"},
-					PostOrder: []string{"group3", "group4"},
+				kindOrder: Plan{
+					BeforeAll: []string{"group1", "group2"},
+					AfterAll:  []string{"group3", "group4"},
 				},
 				defaultKinds: KindSortOrder{},
 			},
@@ -130,9 +130,9 @@ func Test_getOrderedKinds(t *testing.T) {
 		}, {
 			name: "expect KindSortOrder with PreOrder and PostOrder and defaultKinds",
 			args: args{
-				kindOrder: KindOrder{
-					PreOrder:  []string{"group1", "group2"},
-					PostOrder: []string{"group3", "group4"},
+				kindOrder: Plan{
+					BeforeAll: []string{"group1", "group2"},
+					AfterAll:  []string{"group3", "group4"},
 				},
 				defaultKinds: KindSortOrder{
 					"group5", "group6",
@@ -144,7 +144,7 @@ func Test_getOrderedKinds(t *testing.T) {
 		}, {
 			name: "expect KindSortOrder with defaultKinds",
 			args: args{
-				kindOrder: KindOrder{},
+				kindOrder: Plan{},
 				defaultKinds: KindSortOrder{
 					"group5", "group6",
 				},
@@ -170,7 +170,7 @@ func Test_deleteManifestResource(t *testing.T) {
 		Kind:    "kind",
 	}
 	type args struct {
-		resource          resource
+		resource          Resource
 		targetNS          string
 		waitFlag          bool
 		kubernetesApplier applier.KubectlInterface
@@ -182,7 +182,7 @@ func Test_deleteManifestResource(t *testing.T) {
 		{
 			name: "expect no error for resource with GVKN",
 			args: args{
-				resource: resource{
+				resource: Resource{
 					GVK:          &gvk,
 					Unstructured: unstructuredPodWithLabels,
 				},
@@ -192,7 +192,7 @@ func Test_deleteManifestResource(t *testing.T) {
 		}, {
 			name: "expect no error for resource without GVKN",
 			args: args{
-				resource: resource{
+				resource: Resource{
 					Unstructured: unstructuredPodWithLabels,
 				},
 				targetNS:          "default",
@@ -201,7 +201,7 @@ func Test_deleteManifestResource(t *testing.T) {
 		}, {
 			name: "expect no error for resource without Unstructured",
 			args: args{
-				resource: resource{
+				resource: Resource{
 					GVK: &gvk,
 				},
 				targetNS:          "default",
@@ -210,7 +210,7 @@ func Test_deleteManifestResource(t *testing.T) {
 		}, {
 			name: "expect no error for resource with Unstructured without namespace",
 			args: args{
-				resource: resource{
+				resource: Resource{
 					GVK: &gvk,
 					Unstructured: &unstructured.Unstructured{
 						Object: map[string]interface{}{},
@@ -223,7 +223,7 @@ func Test_deleteManifestResource(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			deleteManifestResource(tt.args.resource, tt.args.targetNS, tt.args.waitFlag, tt.args.kubernetesApplier)
+			deleteResource(tt.args.resource, tt.args.targetNS, tt.args.waitFlag, tt.args.kubernetesApplier)
 		})
 	}
 }
@@ -297,14 +297,14 @@ func Test_decodeManifests(t *testing.T) {
 	tests := []struct {
 		name string
 		args args
-		want []resource
+		want []Resource
 	}{
 		{
 			name: "expect no error for valid pod manifest",
 			args: args{
 				manifests: []string{podManifest},
 			},
-			want: []resource{
+			want: []Resource{
 				{
 					GVK: &schema.GroupVersionKind{
 						Group:   "",
@@ -321,7 +321,7 @@ func Test_decodeManifests(t *testing.T) {
 			args: args{
 				manifests: []string{`test: false123`},
 			},
-			want: []resource{
+			want: []Resource{
 				{
 					GVK:          nil,
 					GVR:          schema.GroupVersionResource{},
@@ -353,7 +353,7 @@ func Test_decodeManifests(t *testing.T) {
 
 func Test_buildCrdGVKMap(t *testing.T) {
 	type args struct {
-		resources []resource
+		resources []Resource
 	}
 	tests := []struct {
 		name string
@@ -363,7 +363,7 @@ func Test_buildCrdGVKMap(t *testing.T) {
 		{
 			name: "expect map with rabbitmq crd key for valid crd manifest",
 			args: args{
-				resources: []resource{
+				resources: []Resource{
 					{
 						GVK: &schema.GroupVersionKind{
 							Group:   "",
@@ -391,7 +391,7 @@ func Test_buildCrdGVKMap(t *testing.T) {
 		{
 			name: "expect empty map for invalid crd manifest",
 			args: args{
-				resources: []resource{
+				resources: []Resource{
 					{
 						GVK: &schema.GroupVersionKind{
 							Group:   "apiextensions.k8s.io",
@@ -428,94 +428,94 @@ func Test_buildCrdGVKMap(t *testing.T) {
 }
 
 func Test_buildDeleteKindOrderedResources(t *testing.T) {
-	podResource := resource{
+	podResource := Resource{
 		GVK:          &podGVK,
 		GVR:          schema.GroupVersionResource{},
 		Unstructured: unstructuredPodWithLabels,
 	}
-	crdResource := resource{
+	crdResource := Resource{
 		GVK:          &crdGVK,
 		GVR:          schema.GroupVersionResource{},
 		Unstructured: unstructuredRabbitMQCRD,
 	}
-	crResource := resource{
+	crResource := Resource{
 		GVK:          &crGVK,
 		GVR:          schema.GroupVersionResource{},
 		Unstructured: unstructuredRabbitMQCR,
 	}
-	nilGVKResource := resource{
+	nilGVKResource := Resource{
 		GVK:          nil,
 		GVR:          schema.GroupVersionResource{},
 		Unstructured: unstructuredRabbitMQCRD,
 	}
 	type args struct {
-		deleteKindOrder KindOrder
-		resources       []resource
+		deleteKindOrder Plan
+		resources       []Resource
 		crdGVKMap       map[string]bool
 	}
 	tests := []struct {
 		name             string
 		args             args
-		want             map[string][]resource
+		want             map[string][]Resource
 		WantOrderedKinds KindSortOrder
 	}{
 		{
 			name: "expect empty map with empty kind order for empty resources",
 			args: args{
-				deleteKindOrder: KindOrder{},
-				resources:       []resource{},
+				deleteKindOrder: Plan{},
+				resources:       []Resource{},
 				crdGVKMap:       map[string]bool{},
 			},
-			want:             map[string][]resource{},
+			want:             map[string][]Resource{},
 			WantOrderedKinds: KindSortOrder{},
 		}, {
 			name: "expect pod map with pod kind default order for pod resources",
 			args: args{
-				deleteKindOrder: KindOrder{},
-				resources:       []resource{podResource},
+				deleteKindOrder: Plan{},
+				resources:       []Resource{podResource},
 				crdGVKMap:       map[string]bool{},
 			},
-			want: map[string][]resource{
+			want: map[string][]Resource{
 				"Pod": {podResource},
 			},
 			WantOrderedKinds: KindSortOrder{"Pod"},
 		}, {
 			name: "expect CRD map with CRD kind default order for pod resources",
 			args: args{
-				deleteKindOrder: KindOrder{
-					PreOrder: []string{"CustomResourceDefinition"},
+				deleteKindOrder: Plan{
+					BeforeAll: []string{"CustomResourceDefinition"},
 				},
-				resources: []resource{crdResource},
+				resources: []Resource{crdResource},
 				crdGVKMap: map[string]bool{},
 			},
-			want: map[string][]resource{
+			want: map[string][]Resource{
 				"CustomResourceDefinition": {crdResource},
 			},
 			WantOrderedKinds: KindSortOrder{"CustomResourceDefinition"},
 		}, {
 			name: "expect CRD map with empty string kind default order for empty GVK",
 			args: args{
-				deleteKindOrder: KindOrder{},
-				resources:       []resource{nilGVKResource},
+				deleteKindOrder: Plan{},
+				resources:       []Resource{nilGVKResource},
 				crdGVKMap:       map[string]bool{},
 			},
-			want: map[string][]resource{
+			want: map[string][]Resource{
 				"": {nilGVKResource},
 			},
 			WantOrderedKinds: KindSortOrder{""},
 		}, {
 			name: "expect CRD map with CRD kind default order for pod and crd/cr resources and crdKeyMap",
 			args: args{
-				deleteKindOrder: KindOrder{
-					PreOrder:  []string{"CustomResourceDefinition"},
-					PostOrder: []string{"CustomResource"},
+				deleteKindOrder: Plan{
+					BeforeAll: []string{"CustomResourceDefinition"},
+					AfterAll:  []string{"CustomResource"},
 				},
-				resources: []resource{crResource, crdResource},
+				resources: []Resource{crResource, crdResource},
 				crdGVKMap: map[string]bool{
 					"rabbitmq.com/RabbitmqCluster/v1beta1": true,
 				},
 			},
-			want: map[string][]resource{
+			want: map[string][]Resource{
 				"CustomResourceDefinition": {crdResource},
 				"CustomResource":           {crResource},
 			},
@@ -523,15 +523,15 @@ func Test_buildDeleteKindOrderedResources(t *testing.T) {
 		}, {
 			name: "an super edge case where the crd kind is in the crdKeyMap",
 			args: args{
-				deleteKindOrder: KindOrder{
-					PreOrder: []string{"RabbitmqCluster"},
+				deleteKindOrder: Plan{
+					BeforeAll: []string{"RabbitmqCluster"},
 				},
-				resources: []resource{crResource},
+				resources: []Resource{crResource},
 				crdGVKMap: map[string]bool{
 					"rabbitmq.com/RabbitmqCluster/v1beta1": true,
 				},
 			},
-			want: map[string][]resource{
+			want: map[string][]Resource{
 				"RabbitmqCluster": {crResource},
 			},
 			WantOrderedKinds: KindSortOrder{"RabbitmqCluster"},
@@ -539,7 +539,7 @@ func Test_buildDeleteKindOrderedResources(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, got1 := buildDeleteKindOrderedResources(tt.args.deleteKindOrder, tt.args.resources, tt.args.crdGVKMap)
+			got, got1 := sortResources(tt.args.deleteKindOrder, tt.args.resources, tt.args.crdGVKMap)
 			if !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("buildDeleteKindOrderedResources() got = %v, want %v", got, tt.want)
 			}
@@ -555,7 +555,7 @@ func Test_deleteManifestResources(t *testing.T) {
 		manifests         []string
 		targetNS          string
 		kubernetesApplier applier.KubectlInterface
-		kindDeleteOrder   KindOrder
+		kindDeleteOrder   Plan
 		waitFlag          bool
 	}
 	tests := []struct {
@@ -568,7 +568,7 @@ func Test_deleteManifestResources(t *testing.T) {
 				manifests:         []string{},
 				targetNS:          "",
 				kubernetesApplier: nil,
-				kindDeleteOrder:   KindOrder{},
+				kindDeleteOrder:   Plan{},
 				waitFlag:          false,
 			},
 		}, {
@@ -577,19 +577,19 @@ func Test_deleteManifestResources(t *testing.T) {
 				manifests:         []string{podManifest},
 				targetNS:          "test",
 				kubernetesApplier: &kubectlApplierMock,
-				kindDeleteOrder:   KindOrder{},
+				kindDeleteOrder:   Plan{},
 				waitFlag:          false,
 			},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			deleteManifestResources(tt.args.manifests, tt.args.targetNS, tt.args.kubernetesApplier, tt.args.kindDeleteOrder, tt.args.waitFlag)
+			deleteManifests(tt.args.manifests, tt.args.targetNS, tt.args.kubernetesApplier, tt.args.kindDeleteOrder, tt.args.waitFlag)
 		})
 	}
 }
 
-func Test_shouldResourceWaitForDeletion(t *testing.T) {
+func Test_shouldWaitForResourceDeletion(t *testing.T) {
 	type args struct {
 		kind     string
 		waitFlag bool
@@ -624,20 +624,20 @@ func Test_shouldResourceWaitForDeletion(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := shouldResourceWaitForDeletion(tt.args.kind, tt.args.waitFlag); got != tt.want {
-				t.Errorf("shouldResourceWaitForDeletion() = %v, want %v", got, tt.want)
+			if got := shouldWaitForResourceDeletion(tt.args.kind, tt.args.waitFlag); got != tt.want {
+				t.Errorf("shouldWaitForResourceDeletion() = %v, want %v", got, tt.want)
 			}
 		})
 	}
 }
 
 func Test_buildDeleteKindOrderedNamespaceResources(t *testing.T) {
-	namespacedPodResource := resource{
+	namespacedPodResource := Resource{
 		GVR:          podGVR,
 		GVK:          &podGVK,
 		Unstructured: unstructuredPodWithLabels,
 	}
-	namespacedPodResourceMarkedForDeletion := resource{
+	namespacedPodResourceMarkedForDeletion := Resource{
 		GVR:          podGVR,
 		GVK:          &podGVK,
 		Unstructured: unstructuredPodMarkedDeletion,
@@ -650,12 +650,12 @@ func Test_buildDeleteKindOrderedNamespaceResources(t *testing.T) {
 		namespace            string
 		isRestore            bool
 		restoreLabelSelector labels.Selector
-		deleteKindOrder      KindOrder
+		deleteKindOrder      Plan
 	}
 	tests := []struct {
 		name                   string
 		args                   args
-		want                   map[string][]resource
+		want                   map[string][]Resource
 		wantdeleteOrderedKinds KindSortOrder
 		wantErr                bool
 	}{
@@ -664,7 +664,7 @@ func Test_buildDeleteKindOrderedNamespaceResources(t *testing.T) {
 			args: args{
 				gvrs: nil,
 			},
-			want:                   map[string][]resource{},
+			want:                   map[string][]Resource{},
 			wantdeleteOrderedKinds: KindSortOrder{},
 			wantErr:                false,
 		}, {
@@ -672,7 +672,7 @@ func Test_buildDeleteKindOrderedNamespaceResources(t *testing.T) {
 			args: args{
 				gvrs: []schema.GroupVersionResource{},
 			},
-			want:                   map[string][]resource{},
+			want:                   map[string][]Resource{},
 			wantdeleteOrderedKinds: KindSortOrder{},
 			wantErr:                false,
 		}, {
@@ -681,7 +681,7 @@ func Test_buildDeleteKindOrderedNamespaceResources(t *testing.T) {
 				gvrs: []schema.GroupVersionResource{podGVR},
 				dyn:  ReturnEmtyListDynamicClientMock(unstructuredPodWithLabels),
 			},
-			want:                   map[string][]resource{},
+			want:                   map[string][]Resource{},
 			wantdeleteOrderedKinds: KindSortOrder{},
 			wantErr:                false,
 		}, {
@@ -690,7 +690,7 @@ func Test_buildDeleteKindOrderedNamespaceResources(t *testing.T) {
 				gvrs: []schema.GroupVersionResource{podGVR},
 				dyn:  ReturnErrorDynamicClientListMock(unstructuredPodWithLabels),
 			},
-			want:                   map[string][]resource{},
+			want:                   map[string][]Resource{},
 			wantdeleteOrderedKinds: KindSortOrder{},
 			wantErr:                false,
 		},
@@ -703,7 +703,7 @@ func Test_buildDeleteKindOrderedNamespaceResources(t *testing.T) {
 				appSlug:   "test",
 				namespace: "test",
 			},
-			want:                   map[string][]resource{"Pod": {namespacedPodResource}},
+			want:                   map[string][]Resource{"Pod": {namespacedPodResource}},
 			wantdeleteOrderedKinds: KindSortOrder{"Pod"},
 			wantErr:                false,
 		}, {
@@ -715,7 +715,7 @@ func Test_buildDeleteKindOrderedNamespaceResources(t *testing.T) {
 				appSlug:   "test",
 				namespace: "test",
 			},
-			want:                   map[string][]resource{"Pod": {namespacedPodResource}},
+			want:                   map[string][]Resource{"Pod": {namespacedPodResource}},
 			wantdeleteOrderedKinds: KindSortOrder{"Pod"},
 			wantErr:                false,
 		}, {
@@ -727,7 +727,7 @@ func Test_buildDeleteKindOrderedNamespaceResources(t *testing.T) {
 				appSlug:   "test",
 				namespace: "test",
 			},
-			want:                   map[string][]resource{"Pod": {namespacedPodResource, namespacedPodResourceMarkedForDeletion}},
+			want:                   map[string][]Resource{"Pod": {namespacedPodResource, namespacedPodResourceMarkedForDeletion}},
 			wantdeleteOrderedKinds: KindSortOrder{"Pod"},
 			wantErr:                false,
 		}, {
@@ -739,7 +739,7 @@ func Test_buildDeleteKindOrderedNamespaceResources(t *testing.T) {
 				appSlug:   "test",
 				namespace: "test",
 			},
-			want:                   map[string][]resource{"Pod": {namespacedPodResource}},
+			want:                   map[string][]Resource{"Pod": {namespacedPodResource}},
 			wantdeleteOrderedKinds: KindSortOrder{"Pod"},
 			wantErr:                false,
 		},
@@ -755,7 +755,7 @@ func Test_buildDeleteKindOrderedNamespaceResources(t *testing.T) {
 					"label/restore": "true",
 				}),
 			},
-			want:                   map[string][]resource{"Pod": {namespacedPodResource}},
+			want:                   map[string][]Resource{"Pod": {namespacedPodResource}},
 			wantdeleteOrderedKinds: KindSortOrder{"Pod"},
 			wantErr:                false,
 		},
@@ -771,9 +771,9 @@ func Test_buildDeleteKindOrderedNamespaceResources(t *testing.T) {
 					"label/restore": "true",
 				}),
 			},
-			want: map[string][]resource{"Pod": {
+			want: map[string][]Resource{"Pod": {
 				namespacedPodResource,
-				resource{
+				Resource{
 					GVR:          podGVR,
 					GVK:          &podGVK,
 					Unstructured: unstructuredPodWithRestoreLabel,
@@ -785,7 +785,7 @@ func Test_buildDeleteKindOrderedNamespaceResources(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, got1 := buildDeleteKindOrderedNamespaceResources(tt.args.dyn, tt.args.gvrs, tt.args.appSlug, tt.args.namespace, tt.args.isRestore, tt.args.restoreLabelSelector, tt.args.deleteKindOrder)
+			got, got1 := getResourcesInNamespace(tt.args.dyn, tt.args.gvrs, tt.args.appSlug, tt.args.namespace, tt.args.isRestore, tt.args.restoreLabelSelector, tt.args.deleteKindOrder)
 			if !reflect.DeepEqual(got1, tt.wantdeleteOrderedKinds) {
 				t.Errorf("buildDeleteKindOrderedNamespaceResources() got1 = %v, want %v", got1, tt.wantdeleteOrderedKinds)
 			}
@@ -797,12 +797,12 @@ func Test_buildDeleteKindOrderedNamespaceResources(t *testing.T) {
 }
 
 func Test_clearNamespacedResources(t *testing.T) {
-	namespacedPodResource := resource{
+	namespacedPodResource := Resource{
 		GVR:          podGVR,
 		GVK:          &podGVK,
 		Unstructured: unstructuredPodWithLabels,
 	}
-	namespacedPodResourceMarkedForDeletion := resource{
+	namespacedPodResourceMarkedForDeletion := Resource{
 		GVR:          podGVR,
 		GVK:          &podGVK,
 		Unstructured: unstructuredPodMarkedDeletion,
@@ -810,7 +810,7 @@ func Test_clearNamespacedResources(t *testing.T) {
 	type args struct {
 		dyn              dynamic.Interface
 		namespace        string
-		resourcesMap     map[string][]resource
+		resourcesMap     map[string][]Resource
 		deleteKindOrders KindSortOrder
 	}
 	tests := []struct {
@@ -831,7 +831,7 @@ func Test_clearNamespacedResources(t *testing.T) {
 		}, {
 			name: "expect no error when pod resources to clear with kind order",
 			args: args{
-				resourcesMap:     map[string][]resource{"Pod": {namespacedPodResource}},
+				resourcesMap:     map[string][]Resource{"Pod": {namespacedPodResource}},
 				deleteKindOrders: KindSortOrder{"Pod"},
 				dyn:              ReturnDynamicClientDeleteMock(unstructuredPodWithLabels),
 				namespace:        "default",
@@ -840,7 +840,7 @@ func Test_clearNamespacedResources(t *testing.T) {
 		}, {
 			name: "expect error when pod resources to clear with kind order",
 			args: args{
-				resourcesMap:     map[string][]resource{"Pod": {namespacedPodResource}},
+				resourcesMap:     map[string][]Resource{"Pod": {namespacedPodResource}},
 				deleteKindOrders: KindSortOrder{"Pod"},
 				dyn:              ReturnErrDynamicClientDeleteMock(unstructuredPodWithLabels),
 			},
@@ -848,7 +848,7 @@ func Test_clearNamespacedResources(t *testing.T) {
 		}, {
 			name: "expect no error when pod resources to clear with kind order and with pod marked for deletion",
 			args: args{
-				resourcesMap:     map[string][]resource{"Pod": {namespacedPodResource, namespacedPodResourceMarkedForDeletion}},
+				resourcesMap:     map[string][]Resource{"Pod": {namespacedPodResource, namespacedPodResourceMarkedForDeletion}},
 				deleteKindOrders: KindSortOrder{"Pod"},
 				dyn:              ReturnDynamicClientDeleteMock(unstructuredPodWithLabels, unstructuredPodMarkedDeletion),
 				namespace:        "default",
@@ -871,7 +871,7 @@ func Test_clearNamespaces(t *testing.T) {
 		namespacesToClear    []string
 		isRestore            bool
 		restoreLabelSelector labels.Selector
-		kindDeleteOrder      KindOrder
+		kindDeleteOrder      Plan
 		k8sDynamicClient     dynamic.Interface
 		gvrs                 map[schema.GroupVersionResource]struct{}
 	}
@@ -902,54 +902,6 @@ func Test_clearNamespaces(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			if err := clearNamespaces(tt.args.appSlug, tt.args.namespacesToClear, tt.args.isRestore, tt.args.restoreLabelSelector, tt.args.kindDeleteOrder, tt.args.k8sDynamicClient, tt.args.gvrs); (err != nil) != tt.wantErr {
 				t.Errorf("clearNamespaces() error = %v, wantErr %v", err, tt.wantErr)
-			}
-		})
-	}
-}
-
-func Test_hasResources(t *testing.T) {
-	type args struct {
-		resourcesMap map[string][]resource
-	}
-	tests := []struct {
-		name string
-		args args
-		want bool
-	}{
-		{
-			name: "expect false when no resources",
-			args: args{},
-			want: false,
-		}, {
-			name: "expect true when resources",
-			args: args{
-				resourcesMap: map[string][]resource{"Pod": {
-					resource{
-						GVR:          podGVR,
-						GVK:          &podGVK,
-						Unstructured: unstructuredPodWithLabels,
-					},
-				}},
-			},
-			want: true,
-		}, {
-			name: "expect false when resources empty",
-			args: args{
-				resourcesMap: map[string][]resource{"Pod": {}},
-			},
-			want: false,
-		}, {
-			name: "expect false when resources nil",
-			args: args{
-				resourcesMap: map[string][]resource{"Pod": nil},
-			},
-			want: false,
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if got := hasResources(tt.args.resourcesMap); got != tt.want {
-				t.Errorf("hasResources() = %v, want %v", got, tt.want)
 			}
 		})
 	}
@@ -1004,7 +956,7 @@ func Test_clearNamespacesWithWait(t *testing.T) {
 		namespacesToClear    []string
 		isRestore            bool
 		restoreLabelSelector labels.Selector
-		kindDeleteOrder      KindOrder
+		kindDeleteOrder      Plan
 		k8sDynamicClient     dynamic.Interface
 		deletionGVRs         []schema.GroupVersionResource
 		waitTimeOut          int

@@ -138,7 +138,7 @@ func (c *Client) diffAndRemovePreviousManifests(deployArgs operatortypes.DeployA
 	kubernetesApplier := applier.NewKubectl(kubectl, kustomize, config)
 
 	// now remove anything that's in previous but not in current
-	resourcesToDelete := []string{}
+	manifestsToDelete := []string{}
 	for k, previous := range decodedPreviousMap {
 		if _, ok := decodedCurrentMap[k]; ok {
 			continue
@@ -146,10 +146,10 @@ func (c *Client) diffAndRemovePreviousManifests(deployArgs operatortypes.DeployA
 		if !previous.delete {
 			continue
 		}
-		resourcesToDelete = append(resourcesToDelete, previous.spec)
+		manifestsToDelete = append(manifestsToDelete, previous.spec)
 	}
 
-	deleteManifestResources(resourcesToDelete, targetNamespace, kubernetesApplier, defaultKindDeleteOrder, deployArgs.Wait)
+	deleteManifests(manifestsToDelete, targetNamespace, kubernetesApplier, DefaultDeletionPlan, deployArgs.Wait)
 
 	if deployArgs.ClearPVCs {
 		// TODO: multi-namespace support
@@ -174,16 +174,21 @@ func (c *Client) diffAndRemovePreviousManifests(deployArgs operatortypes.DeployA
 			logger.Infof("Failed to get GroupVersionResources: %v", err)
 		}
 
-		restoreLabelSelector, err := metav1.LabelSelectorAsSelector(deployArgs.RestoreLabelSelector)
-		if err != nil {
-			logger.Infof("Failed to convert label selector to a selector: %v", err)
+		var restoreLabelSelector labels.Selector
+		if deployArgs.RestoreLabelSelector != nil {
+			ls, err := metav1.LabelSelectorAsSelector(deployArgs.RestoreLabelSelector)
+			if err != nil {
+				return errors.Wrap(err, "failed to convert label selector to a selector")
+			}
+			restoreLabelSelector = ls
 		}
 
-		err = clearNamespaces(deployArgs.AppSlug, deployArgs.ClearNamespaces, deployArgs.IsRestore, restoreLabelSelector, defaultKindDeleteOrder, dyn, gvrs)
+		err = clearNamespaces(deployArgs.AppSlug, deployArgs.ClearNamespaces, deployArgs.IsRestore, restoreLabelSelector, DefaultDeletionPlan, dyn, gvrs)
 		if err != nil {
 			logger.Infof("Failed to clear namespaces: %v", err)
 		}
 	}
+
 	return nil
 }
 

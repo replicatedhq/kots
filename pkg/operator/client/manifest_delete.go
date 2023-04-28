@@ -10,12 +10,11 @@ import (
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/operator/applier"
-	apiextensionsv1beta1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
+	"github.com/replicatedhq/kots/pkg/operator/types"
 	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/labels"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/client-go/dynamic"
@@ -23,19 +22,9 @@ import (
 	"k8s.io/client-go/kubernetes/scheme"
 )
 
-// KindSortOrder is an ordering of Kinds.
-type KindSortOrder []string
-
-type KindOrder struct {
-	PreOrder  KindSortOrder
-	PostOrder KindSortOrder
-}
-
-// resource deletion order
 var (
-	defaultKindDeleteOrder = KindOrder{
-		PreOrder: KindSortOrder{
-			"CustomResource",
+	DefaultDeletionPlan = types.Plan{
+		BeforeAll: []string{
 			"APIService",
 			"Ingress",
 			"Service",
@@ -49,7 +38,7 @@ var (
 			"ReplicationController",
 			"DaemonSet",
 		},
-		PostOrder: KindSortOrder{
+		AfterAll: []string{
 			"RoleBindingList",
 			"RoleBinding",
 			"RoleList",
@@ -73,59 +62,31 @@ var (
 	}
 )
 
-type resource struct {
-	Manifest     string
-	GVR          schema.GroupVersionResource
-	GVK          *schema.GroupVersionKind
-	Unstructured *unstructured.Unstructured
-}
-
-// initResourceKindOrderMap initializes a map of resource type to a list of kinds
-func initResourceKindOrderMap(kindOrder KindOrder) map[string][]resource {
-	resourceOrderMap := make(map[string][]resource)
-	for _, resourceType := range kindOrder.PreOrder {
-		resourceOrderMap[resourceType] = []resource{}
-	}
-	for _, resourceType := range kindOrder.PostOrder {
-		resourceOrderMap[resourceType] = []resource{}
-	}
-	return resourceOrderMap
-}
-
-// take KindOrder and a default list of string and return a list of kinds in the order they should be deleted
-func getOrderedKinds(kindOrder KindOrder, defaultKinds KindSortOrder) KindSortOrder {
-	sort.Strings(defaultKinds)
-	orderedKinds := KindSortOrder{}
-	orderedKinds = append(orderedKinds, kindOrder.PreOrder...)
-	orderedKinds = append(orderedKinds, defaultKinds...)
-	orderedKinds = append(orderedKinds, kindOrder.PostOrder...)
-	return orderedKinds
-}
-
-func deleteManifestResources(manifests []string, targetNS string, kubernetesApplier applier.KubectlInterface, kindDeleteOrder KindOrder, waitFlag bool) {
+func deleteManifests(manifests []string, targetNS string, kubernetesApplier applier.KubectlInterface, plan types.Plan, waitFlag bool) {
 	resources := decodeManifests(manifests)
-	crdGVKMap := buildCrdGVKMap(resources)
-	deleteOrderResourceMap, deleteOrderedKinds := buildDeleteKindOrderedResources(kindDeleteOrder, resources, crdGVKMap)
+	deleteResources(resources, targetNS, kubernetesApplier, plan, waitFlag)
+}
 
-	for _, kind := range deleteOrderedKinds {
-		logger.Infof("deleting manifest resources of kind: %s", kind)
-		for _, r := range deleteOrderResourceMap[kind] {
-			deleteManifestResource(r, targetNS, waitFlag, kubernetesApplier)
-		}
+func deleteResources(resources types.Resources, targetNS string, kubernetesApplier applier.KubectlInterface, plan types.Plan, waitFlag bool) {
+	resources = resources.SortWithPlan(plan)
+	for _, r := range resources {
+		deleteResource(r, targetNS, waitFlag, kubernetesApplier)
 	}
 }
 
-func deleteManifestResource(resource resource, targetNS string, waitFlag bool, kubernetesApplier applier.KubectlInterface) {
+func deleteResource(resource types.Resource, targetNS string, waitFlag bool, kubernetesApplier applier.KubectlInterface) {
 	group := ""
 	kind := ""
 	name := ""
 	namespace := targetNS
 	wait := waitFlag
+
 	if resource.GVK != nil {
 		group = resource.GVK.Group
 		kind = resource.GVK.Kind
 		unstructured := resource.Unstructured
-		wait = shouldResourceWaitForDeletion(resource.GVK.Kind, waitFlag)
+		wait = shouldWaitForResourceDeletion(resource.GVK.Kind, waitFlag)
+
 		if unstructured != nil {
 			name = unstructured.GetName()
 			if ns := unstructured.GetNamespace(); ns != "" {
@@ -134,7 +95,7 @@ func deleteManifestResource(resource resource, targetNS string, waitFlag bool, k
 				namespace = targetNS
 			}
 		}
-		logger.Infof("deleting manifest(s): %s/%s/%s/%s", resource.GVK.Group, resource.GVK.Version, resource.GVK.Kind, name)
+		logger.Infof("deleting manifest: %s/%s/%s/%s", resource.GVK.Group, resource.GVK.Version, resource.GVK.Kind, name)
 	} else {
 		logger.Infof("deleting unidentified manifest: %s", resource.Manifest)
 	}
@@ -145,95 +106,34 @@ func deleteManifestResource(resource resource, targetNS string, waitFlag bool, k
 		logger.Infof("stderr (delete) = %s", stderr)
 		logger.Infof("error: %s", err.Error())
 	} else {
-		logger.Infof("manifest(s) deleted: %s/%s/%s", group, kind, name)
+		logger.Infof("manifest deleted: %s/%s/%s", group, kind, name)
 	}
 }
 
-func decodeManifests(manifests []string) []resource {
-	resources := []resource{}
+func decodeManifests(manifests []string) types.Resources {
+	resources := types.Resources{}
+
 	for _, manifest := range manifests {
-		obj, gvk, err := decodeToUnstructured(manifest)
+		resource := types.Resource{
+			Manifest: manifest,
+		}
+
+		unstruct := &unstructured.Unstructured{}
+		_, gvk, err := scheme.Codecs.UniversalDeserializer().Decode([]byte(manifest), nil, unstruct)
 		if err != nil {
 			logger.Infof("error decoding manifest: %v", err.Error())
+		} else {
+			resource.Unstructured = unstruct
+			resource.GVK = gvk
 		}
-		resources = append(resources, resource{
-			Unstructured: obj,
-			GVK:          gvk,
-			Manifest:     manifest,
-		})
+
+		resources = append(resources, resource)
 	}
+
 	return resources
 }
 
-func decodeToUnstructured(manifest string) (*unstructured.Unstructured, *schema.GroupVersionKind, error) {
-	unstruct := &unstructured.Unstructured{}
-	_, gvk, err := scheme.Codecs.UniversalDeserializer().Decode([]byte(manifest), nil, unstruct)
-	if err != nil {
-		return nil, nil, errors.Wrap(err, "error decoding manifest")
-	}
-
-	return unstruct, gvk, nil
-}
-
-// buildCrdGVKMap builds a map of key group/kind/version for CRDs from a list of resources
-func buildCrdGVKMap(resources []resource) map[string]bool {
-	var crdGVKMap = make(map[string]bool)
-	for _, r := range resources {
-		if r.GVK.Kind == "CustomResourceDefinition" {
-			// convert unstructured to CRD. if fails, skip and continue. manifest will be deleted in the default order
-			crd := &apiextensionsv1beta1.CustomResourceDefinition{}
-			err := runtime.DefaultUnstructuredConverter.FromUnstructured(r.Unstructured.Object, &crd)
-			if err != nil {
-				logger.Infof("error converting unstructured to CRD %v: %v", r.Unstructured.GetName, err.Error())
-				continue
-			}
-
-			for _, version := range crd.Spec.Versions {
-				crdGVK := buildGVKKey(crd.Spec.Group, crd.Spec.Names.Kind, version.Name)
-				crdGVKMap[crdGVK] = true
-			}
-		}
-	}
-	return crdGVKMap
-}
-
-// buildDeleteKindOrderedResources builds a list of resource kinds in the order they should be deleted and a map of resource kind to a list of resources
-func buildDeleteKindOrderedResources(deleteKindOrder KindOrder, resources []resource, crdGVKMap map[string]bool) (map[string][]resource, KindSortOrder) {
-	defaultOrder := []string{}
-	deleteOrderResourceMap := initResourceKindOrderMap(deleteKindOrder)
-	for _, r := range resources {
-		// if GVK is nil, add it to the "" list, else add it to the GVK list
-		if r.GVK == nil {
-			if _, ok := deleteOrderResourceMap[""]; !ok {
-				defaultOrder = append(defaultOrder, "")
-				deleteOrderResourceMap[""] = []resource{}
-			}
-			deleteOrderResourceMap[""] = append(deleteOrderResourceMap[""], r)
-			continue
-		}
-
-		crdGVK := buildGVKKey(r.GVK.Group, r.GVK.Kind, r.GVK.Version)
-		if _, ok := crdGVKMap[crdGVK]; ok {
-			// if customResource is in deleteOrderMap, add it to the list, else add it to the CustomResource list
-			if _, ok := deleteOrderResourceMap[r.GVK.Kind]; ok {
-				deleteOrderResourceMap[r.GVK.Kind] = append(deleteOrderResourceMap[r.GVK.Kind], r)
-			} else {
-				deleteOrderResourceMap["CustomResource"] = append(deleteOrderResourceMap["CustomResource"], r)
-			}
-		} else {
-			if _, ok := deleteOrderResourceMap[r.GVK.Kind]; !ok {
-				defaultOrder = append(defaultOrder, r.GVK.Kind)
-				deleteOrderResourceMap[r.GVK.Kind] = []resource{}
-			}
-			deleteOrderResourceMap[r.GVK.Kind] = append(deleteOrderResourceMap[r.GVK.Kind], r)
-		}
-	}
-
-	deleteOrderedKinds := getOrderedKinds(deleteKindOrder, defaultOrder)
-	return deleteOrderResourceMap, deleteOrderedKinds
-}
-
-func shouldResourceWaitForDeletion(kind string, waitFlag bool) bool {
+func shouldWaitForResourceDeletion(kind string, waitFlag bool) bool {
 	if kind == "PersistentVolumeClaim" {
 		// blocking on PVC delete will create a deadlock if
 		// it's used by a pod that has not been deleted yet.
@@ -242,21 +142,7 @@ func shouldResourceWaitForDeletion(kind string, waitFlag bool) bool {
 	return waitFlag
 }
 
-func buildGVKKey(group, kind, version string) string {
-	return fmt.Sprintf("%s/%s/%s", group, kind, version)
-}
-
-// check if resourcesToDeleteMap has any resources in it
-func hasResources(resourcesMap map[string][]resource) bool {
-	for _, resources := range resourcesMap {
-		if len(resources) > 0 {
-			return true
-		}
-	}
-	return false
-}
-
-func clearNamespaces(appSlug string, namespacesToClear []string, isRestore bool, restoreLabelSelector labels.Selector, kindDeleteOrder KindOrder, k8sDynamicClient dynamic.Interface, gvrs map[schema.GroupVersionResource]struct{}) error {
+func clearNamespaces(appSlug string, namespacesToClear []string, isRestore bool, restoreLabelSelector labels.Selector, plan types.Plan, k8sDynamicClient dynamic.Interface, gvrs map[schema.GroupVersionResource]struct{}) error {
 	// 2 minute wait, 60 loops with 2 second sleep
 	waitTimeout := 60
 	waitSleepInSec := 2 * time.Second
@@ -278,40 +164,52 @@ func clearNamespaces(appSlug string, namespacesToClear []string, isRestore bool,
 		"authorization.k8s.io/v1/selfsubjectrulesreviews",
 	)
 
-	deletionGVRs := []schema.GroupVersionResource{}
+	gvrsToDelete := []schema.GroupVersionResource{}
 	for gvr := range gvrs {
 		s := fmt.Sprintf("%s/%s/%s", gvr.Group, gvr.Version, gvr.Resource)
 		if !skip.Has(s) {
-			deletionGVRs = append(deletionGVRs, gvr)
+			gvrsToDelete = append(gvrsToDelete, gvr)
 		}
 	}
 
-	err := clearNamespacesWithWait(appSlug, namespacesToClear, isRestore, restoreLabelSelector, kindDeleteOrder, k8sDynamicClient, deletionGVRs, waitTimeout, waitSleepInSec, waitExtraInSec)
+	err := clearNamespacesWithWait(appSlug, namespacesToClear, isRestore, restoreLabelSelector, plan, k8sDynamicClient, gvrsToDelete, waitTimeout, waitSleepInSec, waitExtraInSec)
 	if err != nil {
 		return errors.Wrap(err, "error deleting namespaces")
 	}
+
 	return nil
 }
 
-func clearNamespacesWithWait(appSlug string, namespacesToClear []string, isRestore bool, restoreLabelSelector labels.Selector, kindDeleteOrder KindOrder, k8sDynamicClient dynamic.Interface, deletionGVRs []schema.GroupVersionResource, waitTimeOut int, waitSleep time.Duration, waitExtra time.Duration) error {
+func clearNamespacesWithWait(appSlug string, namespacesToClear []string, isRestore bool, restoreLabelSelector labels.Selector, plan types.Plan, k8sDynamicClient dynamic.Interface, deletionGVRs []schema.GroupVersionResource, waitTimeOut int, waitSleep time.Duration, waitExtra time.Duration) error {
 	for _, namespace := range namespacesToClear {
 		logger.Infof("Ensuring all %s objects have been removed from namespace %s\n", appSlug, namespace)
 
 		for i := waitTimeOut; i >= 0; i-- { // 2 minute wait, 60 loops with 2 second sleep
-			resourcesToDeleteMap, deleteOrderedKinds := buildDeleteKindOrderedNamespaceResources(k8sDynamicClient, deletionGVRs, appSlug, namespace, isRestore, restoreLabelSelector, kindDeleteOrder)
-			if !hasResources(resourcesToDeleteMap) {
+			resources := getResourcesInNamespace(k8sDynamicClient, deletionGVRs, appSlug, namespace, isRestore, restoreLabelSelector)
+			if len(resources) == 0 {
 				logger.Infof("Namespace %s successfully cleared of app %s\n", namespace, appSlug)
 				break
 			}
 
-			err := clearNamespacedResources(k8sDynamicClient, namespace, resourcesToDeleteMap, deleteOrderedKinds)
-			if err != nil {
-				logger.Errorf("Failed to clear resources from app %s, namespace %s: %v\n", appSlug, namespace, err)
+			resources = resources.SortWithPlan(plan)
+
+			for _, r := range resources {
+				if r.Unstructured.GetDeletionTimestamp() != nil {
+					logger.Infof("Pending deletion %s/%s/%s\n", namespace, r.GVR, r.Unstructured.GetName())
+					continue
+				}
+
+				logger.Infof("Deleting %s/%s/%s\n", namespace, r.GVR, r.Unstructured.GetName())
+
+				if err := k8sDynamicClient.Resource(r.GVR).Namespace(namespace).Delete(context.TODO(), r.Unstructured.GetName(), metav1.DeleteOptions{}); err != nil {
+					logger.Errorf("Resource %s (%s) in namespace %s could not be deleted: %v\n", r.Unstructured.GetName(), r.GVR, namespace, err)
+				}
 			}
 
 			if i == 0 {
 				return fmt.Errorf("Failed to clear app %s from namespace %s\n", appSlug, namespace)
 			}
+
 			logger.Infof("Namespace %s still has objects from app %s: sleeping...\n", namespace, appSlug)
 			time.Sleep(waitSleep)
 		}
@@ -325,9 +223,9 @@ func clearNamespacesWithWait(appSlug string, namespacesToClear []string, isResto
 	return nil
 }
 
-func buildDeleteKindOrderedNamespaceResources(dyn dynamic.Interface, gvrs []schema.GroupVersionResource, appSlug string, namespace string, isRestore bool, restoreLabelSelector labels.Selector, deleteKindOrder KindOrder) (map[string][]resource, KindSortOrder) {
-	deleteOrdererResourceMap := initResourceKindOrderMap(deleteKindOrder)
-	var defaultKindOrder KindSortOrder
+func getResourcesInNamespace(dyn dynamic.Interface, gvrs []schema.GroupVersionResource, appSlug string, namespace string, isRestore bool, restoreLabelSelector labels.Selector) types.Resources {
+	resources := types.Resources{}
+
 	for _, gvr := range gvrs {
 		// there may be other resources that can't be listed besides what's in the skip set so ignore error
 		unstructuredList, err := dyn.Resource(gvr).Namespace(namespace).List(context.TODO(), metav1.ListOptions{})
@@ -340,13 +238,13 @@ func buildDeleteKindOrderedNamespaceResources(dyn dynamic.Interface, gvrs []sche
 
 		for _, u := range unstructuredList.Items {
 			if isRestore {
-				labelMap := u.GetLabels()
-				if excludeLabel, exists := labelMap["velero.io/exclude-from-backup"]; exists && excludeLabel == "true" {
+				itemLabelMap := u.GetLabels()
+				if excludeLabel, exists := itemLabelMap["velero.io/exclude-from-backup"]; exists && excludeLabel == "true" {
 					continue
 				}
 
-				labelSet := labels.Set(labelMap)
-				if restoreLabelSelector != nil && !restoreLabelSelector.Matches(labelSet) {
+				itemLabelSet := labels.Set(itemLabelMap)
+				if restoreLabelSelector != nil && !restoreLabelSelector.Matches(itemLabelSet) {
 					continue
 				}
 			}
@@ -354,44 +252,19 @@ func buildDeleteKindOrderedNamespaceResources(dyn dynamic.Interface, gvrs []sche
 			annotations := u.GetAnnotations()
 			if annotations["kots.io/app-slug"] == appSlug {
 				// copy the object so we don't modify the cache
-				uCopy := u.DeepCopy()
-				gvk := uCopy.GetObjectKind().GroupVersionKind()
-				r := resource{
-					Unstructured: u.DeepCopy(),
+				unstruct := u.DeepCopy()
+				gvk := unstruct.GetObjectKind().GroupVersionKind()
+				resource := types.Resource{
+					Unstructured: unstruct,
 					GVK:          &gvk,
 					GVR:          gvr,
 				}
-				if _, ok := deleteOrdererResourceMap[u.GetKind()]; !ok {
-					defaultKindOrder = append(defaultKindOrder, u.GetKind())
-					deleteOrdererResourceMap[u.GetKind()] = []resource{}
-				}
-				deleteOrdererResourceMap[u.GetKind()] = append(deleteOrdererResourceMap[u.GetKind()], r)
+				resources = append(resources, resource)
 			}
 		}
 	}
 
-	deleteOrderedKinds := getOrderedKinds(deleteKindOrder, defaultKindOrder)
-	return deleteOrdererResourceMap, deleteOrderedKinds
-}
-
-func clearNamespacedResources(dyn dynamic.Interface, namespace string, resourcesMap map[string][]resource, deleteKindOrders KindSortOrder) error {
-	for _, kind := range deleteKindOrders {
-		for _, r := range resourcesMap[kind] {
-			u := r.Unstructured
-			if u.GetDeletionTimestamp() != nil {
-				logger.Infof("Pending deletion %s/%s/%s\n", namespace, r.GVR, u.GetName())
-				continue
-			}
-
-			logger.Infof("Deleting %s/%s/%s\n", namespace, r.GVR, u.GetName())
-			err := dyn.Resource(r.GVR).Namespace(namespace).Delete(context.TODO(), u.GetName(), metav1.DeleteOptions{})
-			if err != nil {
-				logger.Errorf("Resource %s (%s) in namespace %s could not be deleted: %v\n", u.GetName(), r.GVR, namespace, err)
-				return err
-			}
-		}
-	}
-	return nil
+	return resources
 }
 
 func deletePVCs(namespace string, appLabelSelector *metav1.LabelSelector, appslug string, clientset kubernetes.Interface) error {
