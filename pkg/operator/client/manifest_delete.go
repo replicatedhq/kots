@@ -23,21 +23,23 @@ import (
 )
 
 var (
+	// This plan in inspired by Helm: https://github.com/helm/helm/blob/v3.11.3/pkg/releaseutil/kind_sorter.go#L72
 	DefaultDeletionPlan = types.Plan{
 		BeforeAll: []string{
 			"APIService",
 			"Ingress",
+			"IngressClass",
 			"Service",
-			"Pod",
 			"CronJob",
 			"Job",
 		},
 		AfterAll: []string{
-			"ReplicaSet",
-			"ReplicationController",
-			"Deployment",
 			"StatefulSet",
 			"HorizontalPodAutoscaler",
+			"Deployment",
+			"ReplicaSet",
+			"ReplicationController",
+			"Pod",
 			"DaemonSet",
 			"RoleBindingList",
 			"RoleBinding",
@@ -50,6 +52,7 @@ var (
 			"CustomResourceDefinition",
 			"PersistentVolumeClaim",
 			"PersistentVolume",
+			"StorageClass",
 			"ConfigMap",
 			"SecretList",
 			"Secret",
@@ -58,6 +61,7 @@ var (
 			"PodSecurityPolicy",
 			"LimitRange",
 			"ResourceQuota",
+			"NetworkPolicy",
 			"Namespace",
 		},
 	}
