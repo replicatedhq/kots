@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
+	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/operator/applier"
 	"github.com/replicatedhq/kots/pkg/operator/types"
@@ -17,7 +18,7 @@ import (
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/util/sets"
-	"k8s.io/client-go/dynamic"
+	"k8s.io/client-go/discovery"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/scheme"
 )
@@ -68,7 +69,7 @@ func deleteManifests(manifests []string, targetNS string, kubernetesApplier appl
 }
 
 func deleteResources(resources types.Resources, targetNS string, kubernetesApplier applier.KubectlInterface, plan types.Plan, waitFlag bool) {
-	resources = resources.SortWithPlan(plan)
+	resources = resources.ApplyPlan(plan)
 	for _, r := range resources {
 		deleteResource(r, targetNS, waitFlag, kubernetesApplier)
 	}
@@ -118,12 +119,12 @@ func decodeManifests(manifests []string) types.Resources {
 			Manifest: manifest,
 		}
 
-		unstruct := &unstructured.Unstructured{}
-		_, gvk, err := scheme.Codecs.UniversalDeserializer().Decode([]byte(manifest), nil, unstruct)
+		unstructured := &unstructured.Unstructured{}
+		_, gvk, err := scheme.Codecs.UniversalDeserializer().Decode([]byte(manifest), nil, unstructured)
 		if err != nil {
 			logger.Infof("error decoding manifest: %v", err.Error())
 		} else {
-			resource.Unstructured = unstruct
+			resource.Unstructured = unstructured
 			resource.GVK = gvk
 		}
 
@@ -142,14 +143,35 @@ func shouldWaitForResourceDeletion(kind string, waitFlag bool) bool {
 	return waitFlag
 }
 
-func clearNamespaces(appSlug string, namespacesToClear []string, isRestore bool, restoreLabelSelector labels.Selector, plan types.Plan, k8sDynamicClient dynamic.Interface, gvrs map[schema.GroupVersionResource]struct{}) error {
-	// 2 minute wait, 60 loops with 2 second sleep
-	waitTimeout := 60
-	waitSleepInSec := 2 * time.Second
-	// Extra time in case the app-slug annotation was not being used.
-	// This is the time it takes for the app controller to delete the app
-	// after the namespace is deleted.
-	waitExtraInSec := 20 * time.Second
+func clearNamespaces(appSlug string, namespacesToClear []string, isRestore bool, restoreLabelSelector *metav1.LabelSelector, plan types.Plan) error {
+	dyn, err := k8sutil.GetDynamicClient()
+	if err != nil {
+		return errors.Wrap(err, "failed to get dynamic client")
+	}
+
+	config, err := k8sutil.GetClusterConfig()
+	if err != nil {
+		return errors.Wrap(err, "failed to get cluster config")
+	}
+
+	disc, err := discovery.NewDiscoveryClientForConfig(config)
+	if err != nil {
+		return errors.Wrap(err, "failed to create discovery client")
+	}
+
+	resourceList, err := disc.ServerPreferredNamespacedResources()
+	if err != nil {
+		// An application can define an APIService handled by a Deployment in the application itself.
+		// In that case there will be a race condition listing resources in that API group and there
+		// could be an error here. Most of the API groups would still be in the resource list so the
+		// error is not terminal.
+		logger.Infof("Failed to list all resources: %v", err)
+	}
+
+	gvrs, err := discovery.GroupVersionResources(resourceList)
+	if err != nil {
+		return errors.Wrap(err, "failed to get group version resources")
+	}
 
 	// skip resources that don't have API endpoints or don't have applied objects
 	var skip = sets.NewString(
@@ -172,103 +194,79 @@ func clearNamespaces(appSlug string, namespacesToClear []string, isRestore bool,
 		}
 	}
 
-	err := clearNamespacesWithWait(appSlug, namespacesToClear, isRestore, restoreLabelSelector, plan, k8sDynamicClient, gvrsToDelete, waitTimeout, waitSleepInSec, waitExtraInSec)
-	if err != nil {
-		return errors.Wrap(err, "error deleting namespaces")
-	}
+	sleepTime := time.Second * 2
+	for i := 60; i >= 0; i-- { // 2 minute wait, 60 loops with 2 second sleep
+		resourcesToDelete := types.Resources{}
 
-	return nil
-}
-
-func clearNamespacesWithWait(appSlug string, namespacesToClear []string, isRestore bool, restoreLabelSelector labels.Selector, plan types.Plan, k8sDynamicClient dynamic.Interface, gvrsToDelete []schema.GroupVersionResource, waitTimeOut int, waitSleep time.Duration, waitExtra time.Duration) error {
-	for _, namespace := range namespacesToClear {
-		logger.Infof("Ensuring all %s objects have been removed from namespace %s\n", appSlug, namespace)
-
-		for i := waitTimeOut; i >= 0; i-- { // 2 minute wait, 60 loops with 2 second sleep
-			cleared := clearNamespace(namespace, appSlug, isRestore, restoreLabelSelector, plan, k8sDynamicClient, gvrsToDelete)
-			if cleared {
-				logger.Infof("Namespace %s successfully cleared of app %s\n", namespace, appSlug)
-				break
-			}
-
-			if i == 0 {
-				return fmt.Errorf("Failed to clear app %s from namespace %s\n", appSlug, namespace)
-			}
-
-			logger.Infof("Namespace %s still has objects from app %s: sleeping...\n", namespace, appSlug)
-			time.Sleep(waitSleep)
-		}
-	}
-
-	if len(namespacesToClear) > 0 {
-		// Extra time in case the app-slug annotation was not being used.
-		time.Sleep(waitExtra)
-	}
-
-	return nil
-}
-
-func clearNamespace(namespace string, appSlug string, isRestore bool, restoreLabelSelector labels.Selector, plan types.Plan, k8sDynamicClient dynamic.Interface, gvrsToDelete []schema.GroupVersionResource) bool {
-	resources := types.Resources{}
-
-	for _, gvr := range gvrsToDelete {
-		// there may be other resources that can't be listed besides what's in the skip set so ignore error
-		unstructuredList, err := k8sDynamicClient.Resource(gvr).Namespace(namespace).List(context.TODO(), metav1.ListOptions{})
-		if unstructuredList == nil {
-			if err != nil {
-				logger.Errorf("failed to list namespace resources: %s", err.Error())
-			}
-			continue
-		}
-
-		for _, u := range unstructuredList.Items {
-			if isRestore {
-				itemLabelMap := u.GetLabels()
-				if excludeLabel, exists := itemLabelMap["velero.io/exclude-from-backup"]; exists && excludeLabel == "true" {
+		for _, namespace := range namespacesToClear {
+			for _, gvr := range gvrsToDelete {
+				// there may be other resources that can't be
+				// listed besides what's in the skip set so ignore error
+				unstructuredList, err := dyn.Resource(gvr).Namespace(namespace).List(context.TODO(), metav1.ListOptions{})
+				if unstructuredList == nil {
+					if err != nil {
+						logger.Errorf("failed to list namespace resources: %s", err.Error())
+					}
 					continue
 				}
 
-				itemLabelSet := labels.Set(itemLabelMap)
-				if restoreLabelSelector != nil && !restoreLabelSelector.Matches(itemLabelSet) {
-					continue
+				for _, u := range unstructuredList.Items {
+					// if this is a restore process, only delete resources that are part of the backup and will be restored
+					// e.g. resources that do not have the exclude label, and match the restore/backup label selector
+					if isRestore {
+						itemLabelsMap := u.GetLabels()
+						if excludeLabel, exists := itemLabelsMap["velero.io/exclude-from-backup"]; exists && excludeLabel == "true" {
+							continue
+						}
+						if restoreLabelSelector != nil {
+							s, err := metav1.LabelSelectorAsSelector(restoreLabelSelector)
+							if err != nil {
+								return errors.Wrap(err, "failed to convert label selector to a selector")
+							}
+							if !s.Matches(labels.Set(itemLabelsMap)) {
+								continue
+							}
+						}
+					}
+
+					if u.GetAnnotations()["kots.io/app-slug"] == appSlug {
+						unstructured := u.DeepCopy()
+						gvk := unstructured.GetObjectKind().GroupVersionKind()
+						resource := types.Resource{
+							Unstructured: unstructured,
+							GVK:          &gvk,
+							GVR:          gvr,
+						}
+						resourcesToDelete = append(resourcesToDelete, resource)
+					}
 				}
 			}
+		}
 
-			annotations := u.GetAnnotations()
-			if annotations["kots.io/app-slug"] == appSlug {
-				// copy the object so we don't modify the cache
-				unstruct := u.DeepCopy()
-				gvk := unstruct.GetObjectKind().GroupVersionKind()
-				resource := types.Resource{
-					Unstructured: unstruct,
-					GVK:          &gvk,
-					GVR:          gvr,
-				}
-				resources = append(resources, resource)
+		if len(resourcesToDelete) == 0 {
+			logger.Infof("Successfully cleared all resources for app %s\n", appSlug)
+			return nil
+		}
+
+		resourcesToDelete = resourcesToDelete.ApplyPlan(plan)
+
+		for _, r := range resourcesToDelete {
+			if r.Unstructured.GetDeletionTimestamp() != nil {
+				logger.Infof("Pending deletion %s/%s/%s\n", r.Unstructured.GetNamespace(), r.GVR, r.Unstructured.GetName())
+				continue
+			}
+
+			logger.Infof("Deleting %s/%s/%s\n", r.Unstructured.GetNamespace(), r.GVR, r.Unstructured.GetName())
+
+			if err := dyn.Resource(r.GVR).Namespace(r.Unstructured.GetNamespace()).Delete(context.TODO(), r.Unstructured.GetName(), metav1.DeleteOptions{}); err != nil {
+				logger.Errorf("Resource %s (%s) in namespace %s could not be deleted: %v\n", r.Unstructured.GetName(), r.GVR, r.Unstructured.GetNamespace(), err)
 			}
 		}
+
+		time.Sleep(sleepTime)
 	}
 
-	if len(resources) == 0 {
-		return true
-	}
-
-	resources = resources.SortWithPlan(plan)
-
-	for _, r := range resources {
-		if r.Unstructured.GetDeletionTimestamp() != nil {
-			logger.Infof("Pending deletion %s/%s/%s\n", namespace, r.GVR, r.Unstructured.GetName())
-			continue
-		}
-
-		logger.Infof("Deleting %s/%s/%s\n", namespace, r.GVR, r.Unstructured.GetName())
-
-		if err := k8sDynamicClient.Resource(r.GVR).Namespace(namespace).Delete(context.TODO(), r.Unstructured.GetName(), metav1.DeleteOptions{}); err != nil {
-			logger.Errorf("Resource %s (%s) in namespace %s could not be deleted: %v\n", r.Unstructured.GetName(), r.GVR, namespace, err)
-		}
-	}
-
-	return false
+	return nil
 }
 
 func deletePVCs(namespace string, appLabelSelector *metav1.LabelSelector, appslug string, clientset kubernetes.Interface) error {

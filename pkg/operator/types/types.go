@@ -117,7 +117,7 @@ func (r Resources) GroupByKind() map[string]Resources {
 	return grouped
 }
 
-func (r Resources) SortWithPlan(plan Plan) Resources {
+func (r Resources) ApplyPlan(plan Plan) Resources {
 	resourcesMap := r.GroupByKind()
 
 	for kind := range resourcesMap {

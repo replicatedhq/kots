@@ -26,7 +26,6 @@ import (
 	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
-	"k8s.io/client-go/discovery"
 	"k8s.io/client-go/kubernetes/scheme"
 )
 
@@ -80,6 +79,9 @@ func (c *Client) diffAndRemovePreviousManifests(deployArgs operatortypes.DeployA
 				}
 			}
 		}
+
+		// if this is a restore process, only delete resources that are part of the backup and will be restored
+		// e.g. resources that do not have the exclude label, and match the restore/backup label selector
 		if deployArgs.IsRestore {
 			if excludeLabel, exists := o.Metadata.Labels["velero.io/exclude-from-backup"]; exists && excludeLabel == "true" {
 				delete = false
@@ -94,6 +96,7 @@ func (c *Client) diffAndRemovePreviousManifests(deployArgs operatortypes.DeployA
 				}
 			}
 		}
+
 		decodedPreviousMap[k] = previousObject{
 			spec:   decodedPreviousString,
 			delete: delete,
@@ -120,17 +123,9 @@ func (c *Client) diffAndRemovePreviousManifests(deployArgs operatortypes.DeployA
 	if err != nil {
 		return errors.Wrap(err, "failed to get cluster config")
 	}
-	dyn, err := k8sutil.GetDynamicClient()
-	if err != nil {
-		return errors.Wrap(err, "failed to get dynamic client")
-	}
 	clientset, err := k8sutil.GetClientset()
 	if err != nil {
 		return errors.Wrap(err, "failed to get client set")
-	}
-	disc, err := discovery.NewDiscoveryClientForConfig(config)
-	if err != nil {
-		return errors.Wrap(err, "failed to create discovery client")
 	}
 
 	// this is pretty raw, and required kubectl...  we should
@@ -153,37 +148,14 @@ func (c *Client) diffAndRemovePreviousManifests(deployArgs operatortypes.DeployA
 
 	if deployArgs.ClearPVCs {
 		// TODO: multi-namespace support
-		err = deletePVCs(targetNamespace, deployArgs.RestoreLabelSelector, deployArgs.AppSlug, clientset)
+		err := deletePVCs(targetNamespace, deployArgs.RestoreLabelSelector, deployArgs.AppSlug, clientset)
 		if err != nil {
 			return errors.Wrap(err, "failed to delete PVCs")
 		}
 	}
 
 	if len(deployArgs.ClearNamespaces) > 0 {
-		resourceList, err := disc.ServerPreferredNamespacedResources()
-		if err != nil {
-			// An application can define an APIService handled by a Deployment in the application itself.
-			// In that case there will be a race condition listing resources in that API group and there
-			// could be an error here. Most of the API groups would still be in the resource list so the
-			// error is not terminal.
-			logger.Infof("Failed to list all resources: %v", err)
-		}
-
-		gvrs, err := discovery.GroupVersionResources(resourceList)
-		if err != nil {
-			logger.Infof("Failed to get GroupVersionResources: %v", err)
-		}
-
-		var restoreLabelSelector labels.Selector
-		if deployArgs.RestoreLabelSelector != nil {
-			ls, err := metav1.LabelSelectorAsSelector(deployArgs.RestoreLabelSelector)
-			if err != nil {
-				return errors.Wrap(err, "failed to convert label selector to a selector")
-			}
-			restoreLabelSelector = ls
-		}
-
-		err = clearNamespaces(deployArgs.AppSlug, deployArgs.ClearNamespaces, deployArgs.IsRestore, restoreLabelSelector, DefaultDeletionPlan, dyn, gvrs)
+		err = clearNamespaces(deployArgs.AppSlug, deployArgs.ClearNamespaces, deployArgs.IsRestore, deployArgs.RestoreLabelSelector, DefaultDeletionPlan)
 		if err != nil {
 			logger.Infof("Failed to clear namespaces: %v", err)
 		}
