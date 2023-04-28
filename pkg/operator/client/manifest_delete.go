@@ -193,53 +193,65 @@ func clearNamespaces(appSlug string, namespacesToClear []string, isRestore bool,
 		}
 	}
 
+	listResourcesToDelete := func(namespace string) (types.Resources, error) {
+		resources := types.Resources{}
+
+		for _, gvr := range gvrsToDelete {
+			// there may be other resources that can't be
+			// listed besides what's in the skip set so ignore error
+			unstructuredList, err := dyn.Resource(gvr).Namespace(namespace).List(context.TODO(), metav1.ListOptions{})
+			if unstructuredList == nil {
+				if err != nil {
+					logger.Errorf("failed to list namespace resources: %s", err.Error())
+				}
+				continue
+			}
+
+			for _, u := range unstructuredList.Items {
+				// if this is a restore process, only delete resources that are part of the backup and will be restored
+				// e.g. resources that do not have the exclude label, and match the restore/backup label selector
+				if isRestore {
+					itemLabelsMap := u.GetLabels()
+					if excludeLabel, exists := itemLabelsMap["velero.io/exclude-from-backup"]; exists && excludeLabel == "true" {
+						continue
+					}
+					if restoreLabelSelector != nil {
+						s, err := metav1.LabelSelectorAsSelector(restoreLabelSelector)
+						if err != nil {
+							return nil, errors.Wrap(err, "failed to convert label selector to a selector")
+						}
+						if !s.Matches(labels.Set(itemLabelsMap)) {
+							continue
+						}
+					}
+				}
+
+				if u.GetAnnotations()["kots.io/app-slug"] == appSlug {
+					unstructured := u.DeepCopy()
+					gvk := unstructured.GetObjectKind().GroupVersionKind()
+					resource := types.Resource{
+						Unstructured: unstructured,
+						GVK:          &gvk,
+						GVR:          gvr,
+					}
+					resources = append(resources, resource)
+				}
+			}
+		}
+
+		return resources, nil
+	}
+
 	sleepTime := time.Second * 2
 	for i := 60; i >= 0; i-- { // 2 minute wait, 60 loops with 2 second sleep
 		resourcesToDelete := types.Resources{}
 
 		for _, namespace := range namespacesToClear {
-			for _, gvr := range gvrsToDelete {
-				// there may be other resources that can't be
-				// listed besides what's in the skip set so ignore error
-				unstructuredList, err := dyn.Resource(gvr).Namespace(namespace).List(context.TODO(), metav1.ListOptions{})
-				if unstructuredList == nil {
-					if err != nil {
-						logger.Errorf("failed to list namespace resources: %s", err.Error())
-					}
-					continue
-				}
-
-				for _, u := range unstructuredList.Items {
-					// if this is a restore process, only delete resources that are part of the backup and will be restored
-					// e.g. resources that do not have the exclude label, and match the restore/backup label selector
-					if isRestore {
-						itemLabelsMap := u.GetLabels()
-						if excludeLabel, exists := itemLabelsMap["velero.io/exclude-from-backup"]; exists && excludeLabel == "true" {
-							continue
-						}
-						if restoreLabelSelector != nil {
-							s, err := metav1.LabelSelectorAsSelector(restoreLabelSelector)
-							if err != nil {
-								return errors.Wrap(err, "failed to convert label selector to a selector")
-							}
-							if !s.Matches(labels.Set(itemLabelsMap)) {
-								continue
-							}
-						}
-					}
-
-					if u.GetAnnotations()["kots.io/app-slug"] == appSlug {
-						unstructured := u.DeepCopy()
-						gvk := unstructured.GetObjectKind().GroupVersionKind()
-						resource := types.Resource{
-							Unstructured: unstructured,
-							GVK:          &gvk,
-							GVR:          gvr,
-						}
-						resourcesToDelete = append(resourcesToDelete, resource)
-					}
-				}
+			rs, err := listResourcesToDelete(namespace)
+			if err != nil {
+				return errors.Wrapf(err, "failed to list resources to delete in namespace %s", namespace)
 			}
+			resourcesToDelete = append(resourcesToDelete, rs...)
 		}
 
 		if len(resourcesToDelete) == 0 {
