@@ -123,10 +123,6 @@ func (c *Client) diffAndRemovePreviousManifests(deployArgs operatortypes.DeployA
 	if err != nil {
 		return errors.Wrap(err, "failed to get cluster config")
 	}
-	clientset, err := k8sutil.GetClientset()
-	if err != nil {
-		return errors.Wrap(err, "failed to get client set")
-	}
 
 	// this is pretty raw, and required kubectl...  we should
 	// consider some other options here?
@@ -148,7 +144,7 @@ func (c *Client) diffAndRemovePreviousManifests(deployArgs operatortypes.DeployA
 
 	if deployArgs.ClearPVCs {
 		// TODO: multi-namespace support
-		err := deletePVCs(targetNamespace, deployArgs.RestoreLabelSelector, deployArgs.AppSlug, clientset)
+		err := deletePVCs(targetNamespace, deployArgs.RestoreLabelSelector, deployArgs.AppSlug)
 		if err != nil {
 			return errors.Wrap(err, "failed to delete PVCs")
 		}

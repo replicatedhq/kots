@@ -19,7 +19,6 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/client-go/discovery"
-	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/scheme"
 )
 
@@ -269,7 +268,12 @@ func clearNamespaces(appSlug string, namespacesToClear []string, isRestore bool,
 	return nil
 }
 
-func deletePVCs(namespace string, appLabelSelector *metav1.LabelSelector, appslug string, clientset kubernetes.Interface) error {
+func deletePVCs(namespace string, appLabelSelector *metav1.LabelSelector, appslug string) error {
+	clientset, err := k8sutil.GetClientset()
+	if err != nil {
+		return errors.Wrap(err, "failed to get k8s clientset")
+	}
+
 	if appLabelSelector == nil {
 		appLabelSelector = &metav1.LabelSelector{
 			MatchLabels: map[string]string{},
