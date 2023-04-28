@@ -38,7 +38,7 @@ func GetGVKWithNameAndNs(content []byte, baseNS string) (string, OverlySimpleGVK
 	// and vendors would have to implement that themselves using webhook conversion (which is currently pretty complicated).
 	// for now, include the api version when identifying CRDs so that they will be re-created to apply the new schema.
 	key := fmt.Sprintf("%s-%s-%s", o.Kind, o.Metadata.Name, namespace)
-	if isCRD(o) {
+	if IsCRD(content) {
 		key = fmt.Sprintf("%s-%s", o.APIVersion, key)
 	}
 
@@ -52,10 +52,6 @@ func IsCRD(content []byte) bool {
 		return false
 	}
 
-	return isCRD(o)
-}
-
-func isCRD(o OverlySimpleGVKWithName) bool {
 	if o.Kind == "CustomResourceDefinition" {
 		return strings.HasPrefix(o.APIVersion, "apiextensions.k8s.io/")
 	}
