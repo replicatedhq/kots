@@ -13,7 +13,6 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
-	"github.com/replicatedhq/kots/pkg/binaries"
 	"github.com/replicatedhq/kots/pkg/helm"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/logger"
@@ -24,7 +23,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/client-go/kubernetes/scheme"
 )
 
@@ -39,124 +37,6 @@ type commandResult struct {
 type deployResult struct {
 	dryRunResult commandResult
 	applyResult  commandResult
-}
-
-func (c *Client) diffAndRemovePreviousManifests(deployArgs operatortypes.DeployAppArgs) error {
-	decodedPrevious, err := base64.StdEncoding.DecodeString(deployArgs.PreviousManifests)
-	if err != nil {
-		return errors.Wrap(err, "failed to decode previous manifests")
-	}
-
-	decodedCurrent, err := base64.StdEncoding.DecodeString(deployArgs.Manifests)
-	if err != nil {
-		return errors.Wrap(err, "failed to decode manifests")
-	}
-
-	targetNamespace := c.TargetNamespace
-	if deployArgs.Namespace != "." {
-		targetNamespace = deployArgs.Namespace
-	}
-
-	// we need to find the gvk+names that are present in the previous, but not in the current and then remove them
-	// namespaces that were removed from YAML and added to additionalNamespaces should not be removed
-	decodedPreviousStrings := strings.Split(string(decodedPrevious), "\n---\n")
-
-	type previousObject struct {
-		spec   string
-		delete bool
-	}
-	decodedPreviousMap := map[string]previousObject{}
-	for _, decodedPreviousString := range decodedPreviousStrings {
-		k, o := GetGVKWithNameAndNs([]byte(decodedPreviousString), targetNamespace)
-
-		delete := true
-		if o.APIVersion == "v1" && o.Kind == "Namespace" {
-			for _, n := range deployArgs.AdditionalNamespaces {
-				if o.Metadata.Name == n {
-					delete = false
-					break
-				}
-			}
-		}
-
-		// if this is a restore process, only delete resources that are part of the backup and will be restored
-		// e.g. resources that do not have the exclude label, and match the restore/backup label selector
-		if deployArgs.IsRestore {
-			if excludeLabel, exists := o.Metadata.Labels["velero.io/exclude-from-backup"]; exists && excludeLabel == "true" {
-				delete = false
-			}
-			if deployArgs.RestoreLabelSelector != nil {
-				s, err := metav1.LabelSelectorAsSelector(deployArgs.RestoreLabelSelector)
-				if err != nil {
-					return errors.Wrap(err, "failed to convert label selector to a selector")
-				}
-				if !s.Matches(labels.Set(o.Metadata.Labels)) {
-					delete = false
-				}
-			}
-		}
-
-		decodedPreviousMap[k] = previousObject{
-			spec:   decodedPreviousString,
-			delete: delete,
-		}
-	}
-
-	// now get the current names
-	decodedCurrentStrings := strings.Split(string(decodedCurrent), "\n---\n")
-	decodedCurrentMap := map[string]string{}
-	for _, decodedCurrentString := range decodedCurrentStrings {
-		k, _ := GetGVKWithNameAndNs([]byte(decodedCurrentString), targetNamespace)
-		decodedCurrentMap[k] = decodedCurrentString
-	}
-
-	kubectl, err := binaries.GetKubectlPathForVersion(deployArgs.KubectlVersion)
-	if err != nil {
-		return errors.Wrap(err, "failed to find kubectl")
-	}
-	kustomize, err := binaries.GetKustomizePathForVersion(deployArgs.KustomizeVersion)
-	if err != nil {
-		return errors.Wrap(err, "failed to find kustomize")
-	}
-	config, err := k8sutil.GetClusterConfig()
-	if err != nil {
-		return errors.Wrap(err, "failed to get cluster config")
-	}
-
-	// this is pretty raw, and required kubectl...  we should
-	// consider some other options here?
-	kubernetesApplier := applier.NewKubectl(kubectl, kustomize, config)
-
-	// now remove anything that's in previous but not in current
-	manifestsToDelete := []string{}
-	for k, previous := range decodedPreviousMap {
-		if _, ok := decodedCurrentMap[k]; ok {
-			continue
-		}
-		if !previous.delete {
-			continue
-		}
-		manifestsToDelete = append(manifestsToDelete, previous.spec)
-	}
-
-	deleteManifests(manifestsToDelete, targetNamespace, kubernetesApplier, deployArgs.Wait)
-
-	if deployArgs.ClearPVCs {
-		// TODO: multi-namespace support
-		err := deletePVCs(targetNamespace, deployArgs.RestoreLabelSelector, deployArgs.AppSlug)
-		if err != nil {
-			return errors.Wrap(err, "failed to delete PVCs")
-		}
-	}
-
-	if len(deployArgs.ClearNamespaces) > 0 {
-		err := clearNamespaces(deployArgs.AppSlug, deployArgs.ClearNamespaces, deployArgs.IsRestore, deployArgs.RestoreLabelSelector)
-		if err != nil {
-			logger.Infof("Failed to clear namespaces: %v", err)
-		}
-	}
-
-	return nil
 }
 
 func (c *Client) ensureNamespacePresent(name string) error {
@@ -295,35 +175,6 @@ func (c *Client) ensureResourcesPresent(deployArgs operatortypes.DeployAppArgs) 
 			}
 		}
 	}
-
-	// if len(firstApplyDocs) > 0 {
-	// 	logger.Info("applying first apply docs (CRDs, Namespaces)")
-
-	// 	// CRDs don't have namespaces, so we can skip splitting
-
-	// 	applyStdout, applyStderr, applyErr := kubernetesApplier.ApplyCreateOrPatch("", deployArgs.AppSlug, firstApplyDocs, false, deployArgs.Wait, deployArgs.AnnotateSlug)
-
-	// 	if len(applyStdout) > 0 {
-	// 		deployRes.applyResult.multiStdout = append(deployRes.applyResult.multiStdout, applyStdout)
-	// 	}
-	// 	if len(applyStderr) > 0 {
-	// 		deployRes.applyResult.multiStderr = append(deployRes.applyResult.multiStderr, applyStderr)
-	// 	}
-
-	// 	if applyErr != nil {
-	// 		logger.Infof("stdout (first apply) = %s", applyStdout)
-	// 		logger.Infof("stderr (first apply) = %s", applyStderr)
-	// 		logger.Infof("error (CRDS): %s", applyErr.Error())
-
-	// 		deployRes.applyResult.hasErr = true
-	// 		return &deployRes, nil
-	// 	}
-
-	// 	logger.Info("custom resource definition(s) applied")
-
-	// 	// Give the API server a minute (well, 5 seconds) to cache the CRDs
-	// 	time.Sleep(time.Second * 5)
-	// }
 
 	for _, resource := range resources {
 		group := resource.GetGroup()

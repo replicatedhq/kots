@@ -169,7 +169,7 @@ func (c *Client) DeployApp(deployArgs operatortypes.DeployAppArgs) (deployed boo
 
 func (c *Client) deployManifests(deployArgs operatortypes.DeployAppArgs) (*deployResult, error) {
 	if deployArgs.PreviousManifests != "" {
-		if err := c.diffAndRemovePreviousManifests(deployArgs); err != nil {
+		if err := c.diffAndDeletePreviousManifests(deployArgs); err != nil {
 			return nil, errors.Wrapf(err, "failed to remove previous manifests")
 		}
 	}
