@@ -134,7 +134,7 @@ func (c *Client) diffAndDeletePreviousManifests(deployArgs operatortypes.DeployA
 	if len(deployArgs.ClearNamespaces) > 0 {
 		err := c.clearNamespaces(deployArgs.AppSlug, deployArgs.ClearNamespaces, deployArgs.IsRestore, deployArgs.RestoreLabelSelector)
 		if err != nil {
-			logger.Infof("Failed to clear namespaces: %v", err)
+			return errors.Wrap(err, "failed to clear namespaces")
 		}
 	}
 
@@ -295,7 +295,7 @@ func (c *Client) clearNamespaces(appSlug string, namespacesToClear []string, isR
 	}
 
 	sleepTime := time.Second * 2
-	for i := 60; i >= 0; i-- { // 2 minute wait, 60 loops with 2 second sleep
+	for i := 60; i >= 0; i-- { // 2 minute wait
 		resourcesToDelete := types.Resources{}
 
 		for _, namespace := range namespacesToClear {
@@ -329,7 +329,7 @@ func (c *Client) clearNamespaces(appSlug string, namespacesToClear []string, isR
 		time.Sleep(sleepTime)
 	}
 
-	return nil
+	return fmt.Errorf("failed to clear all resources for app %s", appSlug)
 }
 
 func (c *Client) deletePVCs(namespace string, appLabelSelector *metav1.LabelSelector, appslug string) error {
