@@ -1,5 +1,4 @@
 import { useMutation } from "react-query";
-import { Utilities } from "../../../utilities/utilities";
 import { useSelectedApp } from "@features/App";
 
 interface SnapshotResponse {
@@ -22,9 +21,9 @@ export const createSnapshot = async (
   const res = await fetch(url, {
     method: "POST",
     headers: {
-      Authorization: Utilities.getToken(),
       "Content-Type": "application/json",
     },
+    credentials: "include",
   });
 
   const response = await res.json();

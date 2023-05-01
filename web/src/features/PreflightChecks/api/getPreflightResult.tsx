@@ -1,5 +1,4 @@
 import { useQuery } from "react-query";
-import { Utilities } from "@src/utilities/utilities";
 import { PreflightCheck, PreflightResponse } from "../types";
 import { useState } from "react";
 
@@ -17,9 +16,7 @@ async function getPreflightResult({
     : `${apiEndpoint}/app/${slug}/preflight/result`;
   const jsonResponse = await fetch(getUrl, {
     method: "GET",
-    headers: {
-      Authorization: Utilities.getToken(),
-    },
+    credentials: "include",
   });
 
   if (!jsonResponse.ok) {

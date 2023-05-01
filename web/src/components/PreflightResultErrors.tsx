@@ -3,7 +3,6 @@ import { useParams } from "react-router-dom";
 import MonacoEditor from "@monaco-editor/react";
 import CodeSnippet from "./shared/CodeSnippet";
 import ErrorModal from "./modals/ErrorModal";
-import { Utilities } from "../utilities/utilities";
 import { useSelectedApp } from "@features/App";
 import "../scss/components/PreflightCheckPage.scss";
 
@@ -32,12 +31,12 @@ const fetchPreflightCommand = async (slug: string, sequence: string) => {
     {
       method: "POST",
       headers: {
-        Authorization: Utilities.getToken(),
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
         origin: window.location.origin,
       }),
+      credentials: "include",
     }
   );
   if (!res.ok) {

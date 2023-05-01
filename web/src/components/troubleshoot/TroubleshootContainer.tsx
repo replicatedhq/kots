@@ -6,7 +6,6 @@ import SupportBundleAnalysis from "../troubleshoot/SupportBundleAnalysis";
 import GenerateSupportBundle from "../troubleshoot/GenerateSupportBundle";
 import Redactors from "../redactors/Redactors";
 import EditRedactor from "../redactors/EditRedactor";
-import { Utilities } from "@src/utilities/utilities";
 
 // Types
 import { App, SupportBundleProgress } from "@types";
@@ -65,8 +64,8 @@ class TroubleshootContainer extends Component<Props, State> {
       {
         headers: {
           "Content-Type": "application/json",
-          Authorization: Utilities.getToken(),
         },
+        credentials: "include",
         method: "GET",
       }
     )

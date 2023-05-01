@@ -3,6 +3,8 @@ package session
 import (
 	"context"
 	"fmt"
+	"net/http"
+	"net/url"
 	"os"
 	"strings"
 	"time"
@@ -115,4 +117,25 @@ func GetSessionRolesFromRBAC(sessionGroupIDs []string, groups []kotsv1beta1.Iden
 		}
 	}
 	return sessionRolesIDs
+}
+
+func GetSessionCookie(responseToken string, expirationTime time.Time, origin string) (*http.Cookie, error) {
+	sessionCookie := http.Cookie{
+		Name:     "signed-token",
+		Value:    responseToken,
+		Expires:  expirationTime,
+		Path:     "/",
+		HttpOnly: true,
+	}
+
+	originURL, err := url.Parse(origin)
+	if err != nil {
+		return nil, errors.New("failed to parse origin url")
+	}
+
+	if originURL.Scheme == "https" {
+		sessionCookie.Secure = true
+	}
+
+	return &sessionCookie, nil
 }

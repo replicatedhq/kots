@@ -23,86 +23,37 @@ import (
 func AdminPushImagesCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:           "push-images [airgap filename] [registry host]",
-		Short:         "Push admin console images",
-		Long:          "Push admin console images from airgap bundle to a private registry",
+		Short:         "Push images from the airgap bundle to a private registry",
+		Long:          "Push images from the airgap bundle to a private registry",
 		SilenceUsage:  true,
 		SilenceErrors: false,
 		PreRun: func(cmd *cobra.Command, args []string) {
 			viper.BindPFlags(cmd.Flags())
 		},
 		RunE: func(cmd *cobra.Command, args []string) error {
-			v := viper.GetViper()
-
 			if len(args) != 2 {
 				cmd.Help()
 				os.Exit(1)
 			}
 
-			log := logger.NewCLILogger(cmd.OutOrStdout())
-
 			imageSource := args[0]
 			endpoint := args[1]
 
-			hostname, err := getHostnameFromEndpoint(endpoint)
-			if err != nil {
-				return errors.Wrap(err, "failed get hostname from endpoint")
-			}
+			log := logger.NewCLILogger(cmd.OutOrStdout())
+			v := viper.GetViper()
 
 			namespace, err := getNamespaceOrDefault(v.GetString("namespace"))
 			if err != nil {
 				return errors.Wrap(err, "failed to get namespace")
 			}
 
-			username := v.GetString("registry-username")
-			password := v.GetString("registry-password")
-			if username == "" && password == "" {
-				u, p, err := getRegistryCredentialsFromSecret(hostname, namespace)
-				if err != nil {
-					if !kuberneteserrors.IsNotFound(err) {
-						log.Info("Failed to find registry credentials, will try to push anonymously: %v", err)
-					}
-				} else {
-					username, password = u, p
-				}
-			}
-
-			if registry.IsECREndpoint(endpoint) && username != "AWS" {
-				var err error
-				login, err := registry.GetECRLogin(endpoint, username, password)
-				if err != nil {
-					return errors.Wrap(err, "failed get ecr login")
-				}
-				username = login.Username
-				password = login.Password
-			}
-
-			if !v.GetBool("skip-registry-check") {
-				log.ActionWithSpinner("Validating registry information")
-
-				if err := dockerregistry.CheckAccess(hostname, username, password); err != nil {
-					log.FinishSpinnerWithError()
-					return fmt.Errorf("Failed to test access to %q with user %q: %v", hostname, username, err)
-				}
-				log.FinishSpinner()
-			}
-
-			options := kotsadmtypes.PushImagesOptions{
-				KotsadmTag: v.GetString("kotsadm-tag"),
-				Registry: registrytypes.RegistryOptions{
-					Endpoint: endpoint,
-					Username: username,
-					Password: password,
-				},
-				ProgressWriter: os.Stdout,
+			options, err := genAndCheckPushOptions(endpoint, namespace, log, v)
+			if err != nil {
+				return err
 			}
 
 			if _, err := os.Stat(imageSource); err == nil {
-				err := kotsadm.PushImages(imageSource, options)
-				if err != nil {
-					return errors.Wrap(err, "failed to push images")
-				}
-			} else if os.IsNotExist(err) {
-				err := kotsadm.CopyImages(imageSource, options, namespace)
+				err = kotsadm.PushImages(imageSource, *options)
 				if err != nil {
 					return errors.Wrap(err, "failed to push images")
 				}
@@ -122,6 +73,58 @@ func AdminPushImagesCmd() *cobra.Command {
 	cmd.Flags().MarkHidden("kotsadm-tag")
 
 	return cmd
+}
+
+func genAndCheckPushOptions(endpoint string, namespace string, log *logger.CLILogger, v *viper.Viper) (*kotsadmtypes.PushImagesOptions, error) {
+	hostname, err := getHostnameFromEndpoint(endpoint)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed get hostname from endpoint")
+	}
+
+	username := v.GetString("registry-username")
+	password := v.GetString("registry-password")
+	if username == "" && password == "" {
+		u, p, err := getRegistryCredentialsFromSecret(hostname, namespace)
+		if err != nil {
+			if !kuberneteserrors.IsNotFound(err) {
+				log.Info("Failed to find registry credentials, will try to push anonymously: %v", err)
+			}
+		} else {
+			username, password = u, p
+		}
+	}
+
+	if registry.IsECREndpoint(endpoint) && username != "AWS" {
+		var err error
+		login, err := registry.GetECRLogin(endpoint, username, password)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed get ecr login")
+		}
+		username = login.Username
+		password = login.Password
+	}
+
+	if !v.GetBool("skip-registry-check") {
+		log.ActionWithSpinner("Validating registry information")
+
+		if err := dockerregistry.CheckAccess(hostname, username, password); err != nil {
+			log.FinishSpinnerWithError()
+			return nil, fmt.Errorf("Failed to test access to %q with user %q: %v", hostname, username, err)
+		}
+		log.FinishSpinner()
+	}
+
+	options := kotsadmtypes.PushImagesOptions{
+		KotsadmTag: v.GetString("kotsadm-tag"),
+		Registry: registrytypes.RegistryOptions{
+			Endpoint: endpoint,
+			Username: username,
+			Password: password,
+		},
+		ProgressWriter: os.Stdout,
+	}
+
+	return &options, nil
 }
 
 func getRegistryCredentialsFromSecret(endpoint string, namespace string) (username string, password string, err error) {

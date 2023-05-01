@@ -1,9 +1,10 @@
 // This hook has not been integrated yet.
 import { useQuery } from "react-query";
-import { Utilities } from "../../../utilities/utilities";
 import { useSelectedApp } from "@features/App";
 import axios from "axios";
 import { AppLicense } from "@types";
+
+axios.defaults.withCredentials = true;
 
 export const getLicense = async ({
   appSlug,
@@ -16,9 +17,9 @@ export const getLicense = async ({
 } | null | void> => {
   const config = {
     headers: {
-      Authorization: Utilities.getToken(),
       "Content-Type": "application/json",
     },
+    withCredentials: true,
   };
   try {
     const res = await axios.get(
