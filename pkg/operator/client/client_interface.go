@@ -8,6 +8,6 @@ type ClientInterface interface {
 	Init() error
 	Shutdown()
 	DeployApp(deployArgs operatortypes.DeployAppArgs) (deployed bool, finalError error)
-	UndeployApp(undeployArgs operatortypes.UndeployAppArgs) (undeployed bool, finalError error)
+	UndeployApp(undeployArgs operatortypes.UndeployAppArgs) error
 	ApplyAppInformers(args operatortypes.AppInformersArgs)
 }

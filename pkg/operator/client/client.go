@@ -184,8 +184,7 @@ func (c *Client) UndeployApp(undeployArgs operatortypes.UndeployAppArgs) (finalE
 		}
 	}()
 
-	err := c.undeployHelmCharts(undeployArgs)
-	if err != nil {
+	if err := c.undeployHelmCharts(undeployArgs); err != nil {
 		log.Printf("failed to undeploy helm charts: %v", err)
 		return errors.Wrap(err, "failed to undeploy helm charts")
 	}

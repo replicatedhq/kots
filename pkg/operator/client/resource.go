@@ -1,8 +1,6 @@
 package client
 
 import (
-	"sort"
-
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/operator/types"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -113,79 +111,59 @@ func decodeManifests(manifests []string) types.Resources {
 	return resources
 }
 
-// sortResourcesForCreation groups and sorts resources by creation weight first,
-// and resources that have the same creation weight are then sorted by kind based on the kind creation order.
-// for each weight group, unknown kinds are created last.
+// sortResourcesForCreation sorts resources by kind based on the kind creation order.
+// unknown kinds are created last.
 func sortResourcesForCreation(resources types.Resources) types.Resources {
 	sortedResources := types.Resources{}
-	resourcesByWeight := resources.GroupByCreationWeight()
 
-	weights := []string{}
-	for weight := range resourcesByWeight {
-		weights = append(weights, weight)
+	creationOrder := KindCreationOrder
+	resourcesByKind := resources.GroupByKind()
+
+	for kind := range resourcesByKind {
+		unknown := true
+		for _, creationKind := range creationOrder {
+			if kind == creationKind {
+				unknown = false
+				break
+			}
+		}
+		if unknown {
+			// unknown kinds are create last
+			creationOrder = append(creationOrder, kind)
+		}
 	}
-	sort.Strings(weights)
 
-	for _, weight := range weights {
-		creationOrder := KindCreationOrder
-		resourcesByKind := resourcesByWeight[weight].GroupByKind()
-
-		for kind := range resourcesByKind {
-			unknown := true
-			for _, creationKind := range creationOrder {
-				if kind == creationKind {
-					unknown = false
-					break
-				}
-			}
-			if unknown {
-				// unknown kinds are create last
-				creationOrder = append(creationOrder, kind)
-			}
-		}
-
-		for _, kind := range creationOrder {
-			sortedResources = append(sortedResources, resourcesByKind[kind]...)
-		}
+	for _, kind := range creationOrder {
+		sortedResources = append(sortedResources, resourcesByKind[kind]...)
 	}
 
 	return sortedResources
 }
 
-// sortResourcesForDeletion groups and sorts resources by deletion weight first,
-// and resources that have the same deletion weight are then sorted by kind based on the kind deletion order.
-// for each weight group, unknown kinds are deleted first.
+// sortResourcesForDeletion sorts resources by kind based on the kind deletion order.
+// unknown kinds are deleted first.
 func sortResourcesForDeletion(resources types.Resources) types.Resources {
 	sortedResources := types.Resources{}
-	resourcesByWeight := resources.GroupByDeletionWeight()
 
-	weights := []string{}
-	for weight := range resourcesByWeight {
-		weights = append(weights, weight)
+	deletionOrder := KindDeletionOrder
+	resourcesByKind := resources.GroupByKind()
+
+	for kind := range resourcesByKind {
+		unknown := true
+		for _, deletionKind := range deletionOrder {
+			if kind == deletionKind {
+				unknown = false
+				break
+			}
+		}
+		if unknown {
+			// unknown kinds are deleted first
+			deletionOrder = append([]string{kind}, deletionOrder...)
+		}
 	}
-	sort.Strings(weights)
 
-	for _, weight := range weights {
-		deletionOrder := KindDeletionOrder
-		resourcesByKind := resourcesByWeight[weight].GroupByKind()
-
-		for kind := range resourcesByKind {
-			unknown := true
-			for _, deletionKind := range deletionOrder {
-				if kind == deletionKind {
-					unknown = false
-					break
-				}
-			}
-			if unknown {
-				// unknown kinds are deleted first
-				deletionOrder = append([]string{kind}, deletionOrder...)
-			}
-		}
-
-		for _, kind := range deletionOrder {
-			sortedResources = append(sortedResources, resourcesByKind[kind]...)
-		}
+	for _, kind := range deletionOrder {
+		sortedResources = append(sortedResources, resourcesByKind[kind]...)
 	}
 
 	return sortedResources

@@ -769,7 +769,7 @@ func (o *Operator) UndeployApp(a *apptypes.App, d *downstreamtypes.Downstream, i
 			return errors.Wrap(err, "failed to set restore undeploy status")
 		}
 	} else {
-		_, err := o.client.UndeployApp(undeployArgs)
+		err := o.client.UndeployApp(undeployArgs)
 		if err != nil {
 			return errors.Wrap(err, "failed to undeploy app")
 		}

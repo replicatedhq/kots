@@ -1,13 +1,8 @@
 package types
 
 import (
-	"fmt"
-	"strconv"
-
-	"github.com/pkg/errors"
 	appstatetypes "github.com/replicatedhq/kots/pkg/appstate/types"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
-	"github.com/replicatedhq/kots/pkg/logger"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -120,56 +115,6 @@ func (r Resources) HasNamespaces() bool {
 		}
 	}
 	return false
-}
-
-func (r Resources) GroupByCreationWeight() map[string]Resources {
-	grouped := map[string]Resources{}
-
-	for _, resource := range r {
-		weight := "0" // default to 0
-		if resource.Unstructured != nil {
-			annotations := resource.Unstructured.GetAnnotations()
-			if annotations != nil {
-				weight = annotations["kots.io/creation-weight"]
-			}
-		}
-
-		parsed, err := strconv.ParseInt(weight, 10, 64)
-		if err != nil {
-			logger.Error(errors.Wrapf(err, "failed to parse deletion weight %q", weight))
-			parsed = 0
-		}
-
-		key := fmt.Sprintf("%d", parsed)
-		grouped[key] = append(grouped[key], resource)
-	}
-
-	return grouped
-}
-
-func (r Resources) GroupByDeletionWeight() map[string]Resources {
-	grouped := map[string]Resources{}
-
-	for _, resource := range r {
-		weight := "0" // default to 0
-		if resource.Unstructured != nil {
-			annotations := resource.Unstructured.GetAnnotations()
-			if annotations != nil {
-				weight = annotations["kots.io/deletion-weight"]
-			}
-		}
-
-		parsed, err := strconv.ParseInt(weight, 10, 64)
-		if err != nil {
-			logger.Error(errors.Wrapf(err, "failed to parse creation weight %q", weight))
-			parsed = 0
-		}
-
-		key := fmt.Sprintf("%d", parsed)
-		grouped[key] = append(grouped[key], resource)
-	}
-
-	return grouped
 }
 
 func (r Resources) GroupByKind() map[string]Resources {
