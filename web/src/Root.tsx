@@ -608,7 +608,7 @@ const Root = () => {
                   )}
                 />
                 <ProtectedRoute
-                  path={["/snapshots/:tab?"]}
+                  path={["/snapshots/:tab?/:slug?"]}
                   render={(props) => (
                     <SnapshotsWrapper
                       {...props}
