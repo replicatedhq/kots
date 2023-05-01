@@ -14,7 +14,6 @@ import (
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/operator/applier"
 	"github.com/replicatedhq/kots/pkg/operator/types"
-	operatortypes "github.com/replicatedhq/kots/pkg/operator/types"
 	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
@@ -23,20 +22,26 @@ import (
 	"k8s.io/client-go/discovery"
 )
 
-func (c *Client) diffAndDeletePreviousManifests(deployArgs operatortypes.DeployAppArgs) error {
-	decodedPrevious, err := base64.StdEncoding.DecodeString(deployArgs.PreviousManifests)
+type DiffAndDeleteOptions struct {
+	PreviousManifests    string
+	CurrentManifests     string
+	AdditionalNamespaces []string
+	IsRestore            bool
+	RestoreLabelSelector *metav1.LabelSelector
+	KubectlVersion       string
+	KustomizeVersion     string
+	Wait                 bool
+}
+
+func (c *Client) diffAndDeleteManifests(opts DiffAndDeleteOptions) error {
+	decodedPrevious, err := base64.StdEncoding.DecodeString(opts.PreviousManifests)
 	if err != nil {
 		return errors.Wrap(err, "failed to base64 decode previous manifests")
 	}
 
-	decodedCurrent, err := base64.StdEncoding.DecodeString(deployArgs.Manifests)
+	decodedCurrent, err := base64.StdEncoding.DecodeString(opts.CurrentManifests)
 	if err != nil {
 		return errors.Wrap(err, "failed to base64 decode manifests")
-	}
-
-	targetNamespace := c.TargetNamespace
-	if deployArgs.Namespace != "." {
-		targetNamespace = deployArgs.Namespace
 	}
 
 	// we need to find the gvk+names that are present in the previous, but not in the current and then remove them
@@ -49,11 +54,11 @@ func (c *Client) diffAndDeletePreviousManifests(deployArgs operatortypes.DeployA
 	}
 	decodedPreviousMap := map[string]previousObject{}
 	for _, decodedPreviousString := range decodedPreviousStrings {
-		k, o := GetGVKWithNameAndNs([]byte(decodedPreviousString), targetNamespace)
+		k, o := GetGVKWithNameAndNs([]byte(decodedPreviousString), c.TargetNamespace)
 
 		delete := true
 		if o.APIVersion == "v1" && o.Kind == "Namespace" {
-			for _, n := range deployArgs.AdditionalNamespaces {
+			for _, n := range opts.AdditionalNamespaces {
 				if o.Metadata.Name == n {
 					delete = false
 					break
@@ -63,12 +68,12 @@ func (c *Client) diffAndDeletePreviousManifests(deployArgs operatortypes.DeployA
 
 		// if this is a restore process, only delete resources that are part of the backup and will be restored
 		// e.g. resources that do not have the exclude label, and match the restore/backup label selector
-		if deployArgs.IsRestore {
+		if opts.IsRestore {
 			if excludeLabel, exists := o.Metadata.Labels["velero.io/exclude-from-backup"]; exists && excludeLabel == "true" {
 				delete = false
 			}
-			if deployArgs.RestoreLabelSelector != nil {
-				s, err := metav1.LabelSelectorAsSelector(deployArgs.RestoreLabelSelector)
+			if opts.RestoreLabelSelector != nil {
+				s, err := metav1.LabelSelectorAsSelector(opts.RestoreLabelSelector)
 				if err != nil {
 					return errors.Wrap(err, "failed to convert label selector to a selector")
 				}
@@ -88,15 +93,15 @@ func (c *Client) diffAndDeletePreviousManifests(deployArgs operatortypes.DeployA
 	decodedCurrentStrings := strings.Split(string(decodedCurrent), "\n---\n")
 	decodedCurrentMap := map[string]string{}
 	for _, decodedCurrentString := range decodedCurrentStrings {
-		k, _ := GetGVKWithNameAndNs([]byte(decodedCurrentString), targetNamespace)
+		k, _ := GetGVKWithNameAndNs([]byte(decodedCurrentString), c.TargetNamespace)
 		decodedCurrentMap[k] = decodedCurrentString
 	}
 
-	kubectl, err := binaries.GetKubectlPathForVersion(deployArgs.KubectlVersion)
+	kubectl, err := binaries.GetKubectlPathForVersion(opts.KubectlVersion)
 	if err != nil {
 		return errors.Wrap(err, "failed to find kubectl")
 	}
-	kustomize, err := binaries.GetKustomizePathForVersion(deployArgs.KustomizeVersion)
+	kustomize, err := binaries.GetKustomizePathForVersion(opts.KustomizeVersion)
 	if err != nil {
 		return errors.Wrap(err, "failed to find kustomize")
 	}
@@ -121,39 +126,25 @@ func (c *Client) diffAndDeletePreviousManifests(deployArgs operatortypes.DeployA
 		manifestsToDelete = append(manifestsToDelete, previous.spec)
 	}
 
-	c.deleteManifests(manifestsToDelete, targetNamespace, kubernetesApplier, deployArgs.Wait)
-
-	if deployArgs.ClearPVCs {
-		// TODO: multi-namespace support
-		err := c.deletePVCs(targetNamespace, deployArgs.RestoreLabelSelector, deployArgs.AppSlug)
-		if err != nil {
-			return errors.Wrap(err, "failed to delete PVCs")
-		}
-	}
-
-	if len(deployArgs.ClearNamespaces) > 0 {
-		err := c.clearNamespaces(deployArgs.AppSlug, deployArgs.ClearNamespaces, deployArgs.IsRestore, deployArgs.RestoreLabelSelector)
-		if err != nil {
-			return errors.Wrap(err, "failed to clear namespaces")
-		}
-	}
+	// TODO: return error here?
+	c.deleteManifests(manifestsToDelete, kubernetesApplier, opts.Wait)
 
 	return nil
 }
 
-func (c *Client) deleteManifests(manifests []string, targetNamespace string, kubernetesApplier applier.KubectlInterface, waitFlag bool) {
+func (c *Client) deleteManifests(manifests []string, kubernetesApplier applier.KubectlInterface, waitFlag bool) {
 	resources := decodeManifests(manifests)
-	c.deleteResources(resources, targetNamespace, kubernetesApplier, waitFlag)
+	c.deleteResources(resources, kubernetesApplier, waitFlag)
 }
 
-func (c *Client) deleteResources(resources types.Resources, targetNamespace string, kubernetesApplier applier.KubectlInterface, waitFlag bool) {
+func (c *Client) deleteResources(resources types.Resources, kubernetesApplier applier.KubectlInterface, waitFlag bool) {
 	resources = sortResourcesForDeletion(resources)
 	for _, r := range resources {
-		c.deleteResource(r, targetNamespace, waitFlag, kubernetesApplier)
+		c.deleteResource(r, waitFlag, kubernetesApplier)
 	}
 }
 
-func (c *Client) deleteResource(resource types.Resource, targetNamespace string, waitFlag bool, kubernetesApplier applier.KubectlInterface) {
+func (c *Client) deleteResource(resource types.Resource, waitFlag bool, kubernetesApplier applier.KubectlInterface) {
 	group := resource.GetGroup()
 	version := resource.GetVersion()
 	kind := resource.GetKind()
@@ -162,7 +153,7 @@ func (c *Client) deleteResource(resource types.Resource, targetNamespace string,
 
 	namespace := resource.GetNamespace()
 	if namespace == "" {
-		namespace = targetNamespace
+		namespace = c.TargetNamespace
 	}
 
 	if resource.DecodeErrMsg == "" {
@@ -332,7 +323,7 @@ func (c *Client) clearNamespaces(appSlug string, namespacesToClear []string, isR
 	return fmt.Errorf("failed to clear all resources for app %s", appSlug)
 }
 
-func (c *Client) deletePVCs(namespace string, appLabelSelector *metav1.LabelSelector, appslug string) error {
+func (c *Client) deletePVCs(appLabelSelector *metav1.LabelSelector, appslug string) error {
 	clientset, err := k8sutil.GetClientset()
 	if err != nil {
 		return errors.Wrap(err, "failed to get k8s clientset")
@@ -345,7 +336,7 @@ func (c *Client) deletePVCs(namespace string, appLabelSelector *metav1.LabelSele
 	}
 	appLabelSelector.MatchLabels["kots.io/app-slug"] = appslug
 
-	podsList, err := clientset.CoreV1().Pods(namespace).List(context.TODO(), metav1.ListOptions{
+	podsList, err := clientset.CoreV1().Pods(c.TargetNamespace).List(context.TODO(), metav1.ListOptions{
 		LabelSelector: getLabelSelector(appLabelSelector),
 	})
 	if err != nil {
@@ -362,10 +353,10 @@ func (c *Client) deletePVCs(namespace string, appLabelSelector *metav1.LabelSele
 	}
 
 	if len(pvcs) == 0 {
-		logger.Infof("no pvcs to delete in %s for pods that match %s", namespace, getLabelSelector(appLabelSelector))
+		logger.Infof("no pvcs to delete in %s for pods that match %s", c.TargetNamespace, getLabelSelector(appLabelSelector))
 		return nil
 	}
-	logger.Infof("deleting %d pvcs in %s for pods that match %s", len(pvcs), namespace, getLabelSelector(appLabelSelector))
+	logger.Infof("deleting %d pvcs in %s for pods that match %s", len(pvcs), c.TargetNamespace, getLabelSelector(appLabelSelector))
 
 	for _, pvc := range pvcs {
 		grace := int64(0)
@@ -375,7 +366,7 @@ func (c *Client) deletePVCs(namespace string, appLabelSelector *metav1.LabelSele
 			PropagationPolicy:  &policy,
 		}
 		logger.Infof("deleting pvc: %s", pvc)
-		err := clientset.CoreV1().PersistentVolumeClaims(namespace).Delete(context.TODO(), pvc, opts)
+		err := clientset.CoreV1().PersistentVolumeClaims(c.TargetNamespace).Delete(context.TODO(), pvc, opts)
 		if err != nil && !kuberneteserrors.IsNotFound(err) {
 			return errors.Wrapf(err, "failed to delete pvc %s", pvc)
 		}

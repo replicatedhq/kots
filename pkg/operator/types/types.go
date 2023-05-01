@@ -22,19 +22,34 @@ type DeployAppArgs struct {
 	KustomizeVersion     string                `json:"kustomize_version"`
 	AdditionalNamespaces []string              `json:"additional_namespaces"`
 	ImagePullSecrets     []string              `json:"image_pull_secrets"`
-	Namespace            string                `json:"namespace"`
 	PreviousManifests    string                `json:"previous_manifests"`
 	Manifests            string                `json:"manifests"`
 	PreviousCharts       []byte                `json:"previous_charts"`
 	Charts               []byte                `json:"charts"`
 	Wait                 bool                  `json:"wait"`
-	Action               string                `json:"action"`
 	ClearNamespaces      []string              `json:"clear_namespaces"`
 	ClearPVCs            bool                  `json:"clear_pvcs"`
 	AnnotateSlug         bool                  `json:"annotate_slug"`
 	IsRestore            bool                  `json:"is_restore"`
 	RestoreLabelSelector *metav1.LabelSelector `json:"restore_label_selector"`
 	PreviousKotsKinds    *kotsutil.KotsKinds
+	KotsKinds            *kotsutil.KotsKinds
+}
+
+type UndeployAppArgs struct {
+	AppID                string                `json:"app_id"`
+	AppSlug              string                `json:"app_slug"`
+	ClusterID            string                `json:"cluster_id"`
+	KubectlVersion       string                `json:"kubectl_version"`
+	KustomizeVersion     string                `json:"kustomize_version"`
+	AdditionalNamespaces []string              `json:"additional_namespaces"`
+	Manifests            string                `json:"manifests"`
+	Charts               []byte                `json:"charts"`
+	Wait                 bool                  `json:"wait"`
+	ClearNamespaces      []string              `json:"clear_namespaces"`
+	ClearPVCs            bool                  `json:"clear_pvcs"`
+	IsRestore            bool                  `json:"is_restore"`
+	RestoreLabelSelector *metav1.LabelSelector `json:"restore_label_selector"`
 	KotsKinds            *kotsutil.KotsKinds
 }
 

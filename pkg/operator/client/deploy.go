@@ -111,11 +111,6 @@ func (c *Client) ensureImagePullSecretsPresent(namespace string, imagePullSecret
 func (c *Client) ensureResourcesPresent(deployArgs operatortypes.DeployAppArgs) (*deployResult, error) {
 	var deployRes deployResult
 
-	targetNamespace := c.TargetNamespace
-	if deployArgs.Namespace != "." {
-		targetNamespace = deployArgs.Namespace
-	}
-
 	kubernetesApplier, err := c.getApplier(deployArgs.KubectlVersion, deployArgs.KustomizeVersion)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get applier")
@@ -142,7 +137,7 @@ func (c *Client) ensureResourcesPresent(deployArgs operatortypes.DeployAppArgs) 
 
 			namespace := resource.GetNamespace()
 			if namespace == "" {
-				namespace = targetNamespace
+				namespace = c.TargetNamespace
 			}
 
 			if resource.DecodeErrMsg == "" {
@@ -184,7 +179,7 @@ func (c *Client) ensureResourcesPresent(deployArgs operatortypes.DeployAppArgs) 
 
 		namespace := resource.GetNamespace()
 		if namespace == "" {
-			namespace = targetNamespace
+			namespace = c.TargetNamespace
 		}
 
 		if resource.DecodeErrMsg == "" {
@@ -221,11 +216,11 @@ func (c *Client) ensureResourcesPresent(deployArgs operatortypes.DeployAppArgs) 
 	return &deployRes, nil
 }
 
-func (c *Client) installWithHelm(helmDir string, targetNamespace string, kotsCharts []v1beta1.HelmChart) (*commandResult, error) {
+func (c *Client) installWithHelm(helmDir string, kotsCharts []v1beta1.HelmChart) (*commandResult, error) {
 	version := "3"
 	chartsDir := filepath.Join(helmDir, "charts")
 
-	orderedDirs, err := getSortedCharts(chartsDir, kotsCharts, targetNamespace)
+	orderedDirs, err := getSortedCharts(chartsDir, kotsCharts, c.TargetNamespace, false)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get sorted helm charts")
 	}
@@ -291,7 +286,7 @@ type orderedDir struct {
 	UpgradeFlags []string
 }
 
-func getSortedCharts(chartsDir string, kotsCharts []v1beta1.HelmChart, targetNamespace string) ([]orderedDir, error) {
+func getSortedCharts(chartsDir string, kotsCharts []v1beta1.HelmChart, targetNamespace string, isUninstall bool) ([]orderedDir, error) {
 	dirs, err := ioutil.ReadDir(chartsDir)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to read archive dir")
@@ -328,17 +323,29 @@ func getSortedCharts(chartsDir string, kotsCharts []v1beta1.HelmChart, targetNam
 			orderedDirs[idx].ReleaseName = dir.ChartName
 		}
 
-		if orderedDirs[idx].Namespace == "" && targetNamespace != "" && targetNamespace != "." {
+		if orderedDirs[idx].Namespace == "" && targetNamespace != "" {
 			orderedDirs[idx].Namespace = targetNamespace
 		}
 	}
 
-	sort.Slice(orderedDirs, func(i, j int) bool {
-		if orderedDirs[i].Weight != orderedDirs[j].Weight {
-			return orderedDirs[i].Weight < orderedDirs[j].Weight
-		}
-		return orderedDirs[i].ChartName < orderedDirs[j].ChartName
-	})
+	if isUninstall {
+		// higher weight should be uninstalled first
+		sort.Slice(orderedDirs, func(i, j int) bool {
+			if orderedDirs[i].Weight != orderedDirs[j].Weight {
+				return orderedDirs[i].Weight > orderedDirs[j].Weight
+			}
+			return orderedDirs[i].ChartName > orderedDirs[j].ChartName
+		})
+	} else {
+		// lower weight should be installed first
+		sort.Slice(orderedDirs, func(i, j int) bool {
+			if orderedDirs[i].Weight != orderedDirs[j].Weight {
+				return orderedDirs[i].Weight < orderedDirs[j].Weight
+			}
+			return orderedDirs[i].ChartName < orderedDirs[j].ChartName
+		})
+	}
+
 	return orderedDirs, nil
 }
 
@@ -358,13 +365,19 @@ func findChartNameAndVersion(chartDir string) (string, string, error) {
 	return chartInfo.ChartName, chartInfo.ChartVersion, nil
 }
 
-func (c *Client) uninstallWithHelm(helmDir string, targetNamespace string, charts []string) error {
+func (c *Client) uninstallWithHelm(helmDir string, kotsCharts []v1beta1.HelmChart) error {
 	version := "3"
+	chartsDir := filepath.Join(helmDir, "charts")
 
-	for _, chart := range charts {
-		args := []string{"uninstall", chart}
-		if targetNamespace != "" && targetNamespace != "." {
-			args = append(args, "-n", targetNamespace)
+	orderedDirs, err := getSortedCharts(chartsDir, kotsCharts, c.TargetNamespace, true)
+	if err != nil {
+		return errors.Wrap(err, "failed to get sorted helm charts")
+	}
+
+	for _, dir := range orderedDirs {
+		args := []string{"uninstall", dir.ReleaseName}
+		if dir.Namespace != "" {
+			args = append(args, "-n", dir.Namespace)
 		}
 
 		logger.Infof("running helm with arguments %v", args)
@@ -377,16 +390,16 @@ func (c *Client) uninstallWithHelm(helmDir string, targetNamespace string, chart
 				continue
 			}
 			logger.Errorf("error: %s", err.Error())
-			return errors.Wrapf(err, "failed to uninstall chart %s: %s", chart, stderr)
+			return errors.Wrapf(err, "failed to uninstall release %s for chart %s: %s", dir.ReleaseName, dir.ChartName, stderr)
 		}
 	}
 
 	return nil
 }
 
-func getRemovedCharts(prevDir string, curDir string, previousKotsCharts []v1beta1.HelmChart) ([]string, error) {
+func getRemovedCharts(prevDir string, curDir string, previousKotsCharts []v1beta1.HelmChart, curKotsCharts []v1beta1.HelmChart) ([]v1beta1.HelmChart, error) {
 	if prevDir == "" {
-		return []string{}, nil
+		return []v1beta1.HelmChart{}, nil
 	}
 
 	prevDirContent, err := ioutil.ReadDir(filepath.Join(prevDir, "charts"))
@@ -394,10 +407,23 @@ func getRemovedCharts(prevDir string, curDir string, previousKotsCharts []v1beta
 		return nil, errors.Wrap(err, "failed to list previous chart dir")
 	}
 
-	prevCharts := []string{}
+	prevCharts := []v1beta1.HelmChart{}
 	for _, f := range prevDirContent {
-		if f.IsDir() {
-			prevCharts = append(prevCharts, f.Name())
+		if !f.IsDir() {
+			continue
+		}
+
+		dirName := f.Name()
+		prevChartDir := filepath.Join(prevDir, "charts", dirName)
+		prevChartName, prevChartVersion, err := findChartNameAndVersion(prevChartDir)
+		if err != nil {
+			return nil, errors.Wrapf(err, "failed to find chart name and version in %s", prevChartDir)
+		}
+
+		for _, pkc := range previousKotsCharts {
+			if pkc.Spec.Chart.ChartVersion == prevChartVersion && pkc.Spec.Chart.Name == prevChartName && pkc.GetDirName() == dirName {
+				prevCharts = append(prevCharts, pkc)
+			}
 		}
 	}
 
@@ -410,35 +436,45 @@ func getRemovedCharts(prevDir string, curDir string, previousKotsCharts []v1beta
 		return nil, errors.Wrap(err, "failed to list current chart dir")
 	}
 
-	curCharts := []string{}
+	curCharts := []v1beta1.HelmChart{}
 	for _, f := range curDirContent {
-		if f.IsDir() {
-			curCharts = append(curCharts, f.Name())
+		if !f.IsDir() {
+			continue
+		}
+
+		dirName := f.Name()
+		curChartDir := filepath.Join(curDir, "charts", dirName)
+		curChartName, curChartVersion, err := findChartNameAndVersion(curChartDir)
+		if err != nil {
+			return nil, errors.Wrapf(err, "failed to find chart name and version in %s", curChartDir)
+		}
+
+		for _, ckc := range curKotsCharts {
+			if ckc.Spec.Chart.ChartVersion == curChartVersion && ckc.Spec.Chart.Name == curChartName && ckc.GetDirName() == dirName {
+				curCharts = append(curCharts, ckc)
+			}
 		}
 	}
 
-	removedCharts := []string{}
+	removedCharts := []v1beta1.HelmChart{}
 	for _, prevChart := range prevCharts {
 		found := false
 		for _, curChart := range curCharts {
-			if prevChart == curChart {
-				found = true
-				break
+			if prevChart.Spec.Chart.ChartVersion != curChart.Spec.Chart.ChartVersion {
+				continue
 			}
+			if prevChart.Spec.Chart.Name != curChart.Spec.Chart.Name {
+				continue
+			}
+			if prevChart.GetDirName() != curChart.GetDirName() {
+				continue
+			}
+			found = true
+			break
 		}
 
 		if !found {
-			// find the release name that was used to install the chart
-			prevChartDir := filepath.Join(prevDir, "charts", prevChart)
-			prevChartName, prevChartVersion, err := findChartNameAndVersion(prevChartDir)
-			if err != nil {
-				return nil, errors.Wrapf(err, "failed to find chart name and version in %s", prevChartDir)
-			}
-			for _, prevKotsChart := range previousKotsCharts {
-				if prevKotsChart.Spec.Chart.ChartVersion == prevChartVersion && prevKotsChart.Spec.Chart.Name == prevChartName && prevKotsChart.GetDirName() == prevChart {
-					removedCharts = append(removedCharts, prevKotsChart.GetReleaseName())
-				}
-			}
+			removedCharts = append(removedCharts, prevChart)
 		}
 	}
 

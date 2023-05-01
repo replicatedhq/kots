@@ -132,7 +132,7 @@ func sortResourcesForCreation(resources types.Resources) types.Resources {
 
 		for kind := range resourcesByKind {
 			unknown := true
-			for _, deletionKind := range creationOrder { // TODO NOW: fix this range because it's appended to
+			for _, deletionKind := range creationOrder {
 				if kind == deletionKind {
 					unknown = false
 					break
@@ -171,7 +171,7 @@ func sortResourcesForDeletion(resources types.Resources) types.Resources {
 
 		for kind := range resourcesByKind {
 			unknown := true
-			for _, deletionKind := range deletionOrder { // TODO NOW: fix this range because it's appended to
+			for _, deletionKind := range deletionOrder {
 				if kind == deletionKind {
 					unknown = false
 					break
