@@ -132,8 +132,8 @@ func sortResourcesForCreation(resources types.Resources) types.Resources {
 
 		for kind := range resourcesByKind {
 			unknown := true
-			for _, deletionKind := range creationOrder {
-				if kind == deletionKind {
+			for _, creationKind := range creationOrder {
+				if kind == creationKind {
 					unknown = false
 					break
 				}
