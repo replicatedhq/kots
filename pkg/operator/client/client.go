@@ -35,7 +35,7 @@ import (
 	"go.uber.org/zap"
 )
 
-type Results struct {
+type DeployResults struct {
 	IsError      bool   `json:"isError"`
 	DryrunStdout []byte `json:"dryrunStdout"`
 	DryrunStderr []byte `json:"dryrunStderr"`
@@ -410,8 +410,8 @@ func (c *Client) undeployHelmCharts(undeployArgs operatortypes.UndeployAppArgs) 
 	return nil
 }
 
-func (c *Client) setDeployResults(args operatortypes.DeployAppArgs, dryRunResult *commandResult, applyResult *commandResult, helmResult *commandResult) (*Results, error) {
-	results := &Results{}
+func (c *Client) setDeployResults(args operatortypes.DeployAppArgs, dryRunResult *commandResult, applyResult *commandResult, helmResult *commandResult) (*DeployResults, error) {
+	results := &DeployResults{}
 
 	if dryRunResult != nil {
 		results.IsError = results.IsError || dryRunResult.hasErr
