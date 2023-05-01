@@ -20,7 +20,7 @@ export class ClusterNodes extends Component {
     command: "",
     expiry: null,
     displayAddNode: false,
-    selectedNodeType: "secondary", // Change when primary node script is enabled
+    selectedNodeType: "primary",
     generateCommandErrMsg: "",
     kurl: null,
     getNodeStatusJob: new Repeater(),
@@ -64,6 +64,10 @@ export class ClusterNodes extends Component {
       const response = await res.json();
       this.setState({
         kurl: response,
+        // if cluster doesn't support ha, then primary will be disabled. Force into secondary
+        selectedNodeType: !response.ha
+          ? "secondary"
+          : this.state.selectedNodeType,
       });
       return response;
     } catch (err) {
