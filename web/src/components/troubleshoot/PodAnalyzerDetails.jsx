@@ -40,9 +40,7 @@ export class PodAnalyzerDetails extends React.Component {
       `${process.env.API_ENDPOINT}/troubleshoot/app/qakots/supportbundle/${this.props.bundleId}/pod?podNamespace=${pod.namespace}&podName=${pod.name}`,
       {
         method: "GET",
-        headers: {
-          Authorization: Utilities.getToken(),
-        },
+        credentials: "include",
       }
     )
       .then(async (result) => {
@@ -100,9 +98,9 @@ export class PodAnalyzerDetails extends React.Component {
       {
         method: "GET",
         headers: {
-          Authorization: Utilities.getToken(),
           "Content-Type": "application/json",
         },
+        credentials: "include",
       }
     )
       .then(async (result) => {

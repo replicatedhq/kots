@@ -15,7 +15,7 @@ import NotFound from "../static/NotFound";
 import { Dashboard } from "@features/Dashboard";
 import DownstreamTree from "../../components/tree/KotsApplicationTree";
 import AppVersionHistory from "./AppVersionHistory";
-import { isAwaitingResults, Utilities } from "../../utilities/utilities";
+import { isAwaitingResults } from "../../utilities/utilities";
 import PreflightResultPage from "../PreflightResultPage";
 import AppConfig from "../../features/AppConfig/components/AppConfig";
 import AppLicense from "./AppLicense";
@@ -175,10 +175,10 @@ function AppDetailPage(props: Props) {
     try {
       const res = await fetch(`${process.env.API_ENDPOINT}/velero`, {
         headers: {
-          Authorization: Utilities.getToken(),
           "Content-Type": "application/json",
         },
         method: "GET",
+        credentials: "include",
       });
       if (res.ok && res.status == 200) {
         const response = await res.json();
@@ -217,9 +217,9 @@ function AppDetailPage(props: Props) {
         `${process.env.API_ENDPOINT}/app/${upstreamSlug}/sequence/${version.sequence}/deploy`,
         {
           headers: {
-            Authorization: Utilities.getToken(),
             "Content-Type": "application/json",
           },
+          credentials: "include",
           method: "POST",
           body: JSON.stringify({
             isSkipPreflights: isSkipPreflights,
@@ -262,9 +262,9 @@ function AppDetailPage(props: Props) {
         `${process.env.API_ENDPOINT}/app/${upstreamSlug}/sequence/${version?.sequence}/redeploy`,
         {
           headers: {
-            Authorization: Utilities.getToken(),
             "Content-Type": "application/json",
           },
+          credentials: "include",
           method: "POST",
         }
       );

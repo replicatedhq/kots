@@ -208,9 +208,9 @@ class AppConfig extends Component<Props, State> {
       const { slug } = this.props.match.params;
       const res = await fetch(`${process.env.API_ENDPOINT}/app/${slug}`, {
         headers: {
-          Authorization: Utilities.getToken(),
           "Content-Type": "application/json",
         },
+        credentials: "include",
         method: "GET",
       });
       if (res.ok && res.status == 200) {
@@ -237,9 +237,9 @@ class AppConfig extends Component<Props, State> {
       {
         method: "GET",
         headers: {
-          Authorization: Utilities.getToken(),
           "Content-Type": "application/json",
         },
+        credentials: "include",
       }
     )
       .then(async (response) => {
@@ -352,9 +352,9 @@ class AppConfig extends Component<Props, State> {
     fetch(`${process.env.API_ENDPOINT}/app/${slug}/config`, {
       method: "PUT",
       headers: {
-        Authorization: Utilities.getToken(),
         "Content-Type": "application/json",
       },
+      credentials: "include",
       body: JSON.stringify({
         configGroups: this.state.configGroups,
         sequence,
@@ -530,10 +530,10 @@ class AppConfig extends Component<Props, State> {
       {
         signal,
         headers: {
-          Authorization: Utilities.getToken(),
           "Content-Type": "application/json",
           Accept: "application/json",
         },
+        credentials: "include",
         method: "POST",
         body: JSON.stringify({ configGroups: groups, sequence: sequence }),
       }

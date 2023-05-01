@@ -1,6 +1,5 @@
 import { useMutation } from "react-query";
 import { useHistory } from "react-router-dom";
-import { Utilities } from "@src/utilities/utilities";
 
 async function postDeployAppVersion({
   apiEndpoint = process.env.API_ENDPOINT,
@@ -19,8 +18,8 @@ async function postDeployAppVersion({
       headers: {
         "Content-Type": "application/json",
         Accept: "application/json",
-        Authorization: Utilities.getToken(),
       },
+      credentials: "include",
       method: "POST",
       body,
     }

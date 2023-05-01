@@ -49,11 +49,9 @@ describe("getApps", () => {
           json: jsonSpy,
         })
       );
-      const testToken = "testToken";
       const testAPIEndpoint = "testAPIEndpoint";
       const testgetAppsFetchConfig = {
         _fetch: getAppsSpy,
-        accessToken: testToken,
         apiEndpoint: testAPIEndpoint,
       };
 
@@ -61,9 +59,9 @@ describe("getApps", () => {
       const expectedFetchConfig = {
         method: "GET",
         headers: {
-          Authorization: testToken,
           "Content-Type": "application/json",
         },
+        credentials: "include",
       };
       await expect(getApps(testgetAppsFetchConfig)).resolves.toEqual(
         expectedBody
@@ -83,11 +81,10 @@ describe("getApps", () => {
           status: 400,
         })
       );
-      const testToken = "testToken";
+
       const testAPIEndpoint = "testAPIEndpoint";
       const testgetAppsFetchConfig = {
         _fetch: getAppsSpy,
-        accessToken: testToken,
         apiEndpoint: testAPIEndpoint,
       };
 
@@ -104,11 +101,9 @@ describe("getApps", () => {
         })
       );
 
-      const testToken = "testToken";
       const testAPIEndpoint = "testAPIEndpoint";
       const testgetAppsFetchConfig = {
         _fetch: getAppsSpy,
-        accessToken: testToken,
         apiEndpoint: testAPIEndpoint,
       };
 
@@ -121,11 +116,9 @@ describe("getApps", () => {
         Promise.reject(new Error("Error fetching"))
       );
 
-      const testToken = "testToken";
       const testAPIEndpoint = "testAPIEndpoint";
       const testgetAppsFetchConfig = {
         _fetch: getAppsSpy,
-        accessToken: testToken,
         apiEndpoint: testAPIEndpoint,
       };
 

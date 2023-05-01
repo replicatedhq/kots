@@ -1,6 +1,5 @@
 import { isAwaitingResults } from "@src/utilities/utilities";
 import { useQuery } from "react-query";
-import { Utilities } from "../../../utilities/utilities";
 import { useSelectedApp } from "@features/App";
 import { Downstream } from "@types";
 
@@ -9,9 +8,9 @@ export const getAppDownstream = async (
 ): Promise<Downstream | null> => {
   const res = await fetch(`${process.env.API_ENDPOINT}/app/${appSlug}`, {
     headers: {
-      Authorization: Utilities.getToken(),
       "Content-Type": "application/json",
     },
+    credentials: "include",
     method: "GET",
   });
 

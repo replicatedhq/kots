@@ -1,5 +1,4 @@
 import { useQuery, UseQueryResult } from "react-query";
-import { Utilities } from "../../utilities/utilities";
 
 interface IsHelmManagedResponse {
   isHelmManaged: boolean;
@@ -8,16 +7,15 @@ interface IsHelmManagedResponse {
 type IsHelmManaged = boolean;
 
 async function fetchIsHelmManaged({
-  accessToken = Utilities.getToken(),
   apiEndpoint = process.env.API_ENDPOINT,
 } = {}): Promise<IsHelmManagedResponse> {
   try {
     const res = await fetch(`${apiEndpoint}/is-helm-managed`, {
       headers: {
-        Authorization: accessToken,
         "Content-Type": "application/json",
       },
       method: "GET",
+      credentials: "include",
     });
     if (res.ok) {
       return await res.json();

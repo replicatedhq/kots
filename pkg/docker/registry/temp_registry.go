@@ -146,6 +146,10 @@ func (r *TempRegistry) getImageLayers(imageName string, tagOrDigest string) ([]t
 		return nil, errors.Wrap(err, "failed to create http request")
 	}
 
+	for _, mediaType := range containersmanifest.DefaultRequestedManifestMIMETypes {
+		newRequest.Header.Add("Accept", mediaType)
+	}
+
 	resp, err := http.DefaultClient.Do(newRequest)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to execute http request")
