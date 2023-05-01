@@ -23,7 +23,7 @@ jobs:
     if: >
       ( github.event_name == 'pull_request' &&
         ( github.event.pull_request.head.repo.full_name == github.repository ||
-          contains(github.event.pull_request.labels.*.name, '@actions/safe-to-test' ) 
+          contains(github.event.pull_request.labels.*.name, '@actions/safe-to-test' )
         )
       )
     steps:
@@ -85,7 +85,7 @@ jobs:
         with:
           path: ${{ github.workspace }}/web/node_modules
           key: ${{ runner.os }}-${{ runner.arch }}-yarn-node_modules-${{ hashFiles('web/yarn.lock') }}
-          
+
       - name: Install web deps
         run: make -C web deps
 
@@ -140,7 +140,7 @@ jobs:
           path: ${{ github.workspace }}/web/node_modules
           key: ${{ runner.os }}-${{ runner.arch }}-yarn-node_modules-${{ hashFiles('web/yarn.lock') }}
 
-      - name: Unit test 
+      - name: Unit test
         run: make -C web test-unit
 
 
@@ -169,7 +169,7 @@ jobs:
         with:
           path: ${{ github.workspace }}/web/node_modules
           key: ${{ runner.os }}-${{ runner.arch }}-yarn-node_modules-${{ hashFiles('web/yarn.lock') }}
-          
+
       - name: Build web
         env:
           GIT_TAG: ${{ needs.generate-tag.outputs.tag }}
@@ -210,10 +210,10 @@ jobs:
         with:
           go-version: '^1.19.2'
           cache: true
- 
+
       - name: vet
         run: make vet
-  
+
   ci-test-kots:
     runs-on: ubuntu-20.04
     needs: [ can-run-ci, deps-kots ]
@@ -227,10 +227,10 @@ jobs:
         with:
           go-version: '^1.19.2'
           cache: true
- 
+
       - name: test
         run: make ci-test
-  
+
   build-kotsadm:
     runs-on: ubuntu-20.04
     needs: [ can-run-ci, build-web, deps-kots, generate-tag ]
@@ -244,13 +244,13 @@ jobs:
         with:
           go-version: '^1.19.2'
           cache: true
- 
+
       - name: Download web artifact
         uses: actions/download-artifact@v3
         with:
           name: web
           path: ./web/dist
-    
+
       - name: Build
         env:
           GIT_TAG: ${{ needs.generate-tag.outputs.tag }}
@@ -260,7 +260,7 @@ jobs:
         with:
           name: kotsadm
           path: ./bin/kotsadm
-          
+
   build-kots:
     runs-on: ubuntu-20.04
     needs: [ can-run-ci, build-web, deps-kots, generate-tag ]
@@ -323,7 +323,7 @@ jobs:
           context: ./
           file: ./deploy/Dockerfile
           push: true
-  
+
 
   build-kots-helm:
     runs-on: ubuntu-20.04
@@ -997,7 +997,7 @@ jobs:
           fi
           if kubectl get clusterroles | grep -q kotsadm; then
             echo "Found kotsadm cluster roles in minimal RBAC install"
-            exit 
+            exit
           fi
       - name: no minimal rbac override on command line
         run: |
@@ -1118,7 +1118,7 @@ jobs:
           aws-access-key-id: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_ACCESS_KEY_ID }}'
           aws-secret-access-key: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_SECRET_ACCESS_KEY }}'
 
-  
+
   validate-gke-install:
     runs-on: ubuntu-20.04
     needs: [ enable-tests, can-run-ci, build-kots, build-kurl-proxy, build-migrations, push-minio, push-mc, push-rqlite ]
@@ -1129,10 +1129,10 @@ jobs:
         uses: actions/checkout@v3
 
       - name: Create cluster
-        uses: ./.github/actions/kots-gke-create 
+        uses: ./.github/actions/kots-gke-create
         with:
           service-key: ${{ secrets.GOOGLE_CLOUD_CREDENTIALS }}
-      
+
       - name: download kots binary
         uses: actions/download-artifact@v3
         with:
@@ -1848,20 +1848,20 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v3
-      
+
       - name: download kots binary
         uses: actions/download-artifact@v3
         with:
           name: kots
           path: bin/
-      
+
       - run: chmod +x bin/kots
-      
+
       - name: run kots admin-console generate-manifests without k8s context
         run: |
           set +e
           ./bin/kots admin-console generate-manifests -n "$NAMESPACE" --shared-password password
-      
+
       - name: validate that ./admin-console exists and is not empty
         run: |
           set +e
@@ -1876,29 +1876,29 @@ jobs:
 
       - name: remove admin-console directory
         run: rm -rf ./admin-console
-      
+
       - name: install k3s
         uses: replicatedhq/action-k3s@main
         with:
           version: ${{ matrix.k8s_version }}
           arguments: ${{ startsWith(matrix.k8s_version, 'v1.22') && '--egress-selector-mode disabled' || '' }}
-      
+
       - name: download base kots version
         run: |
           curl -LO "https://github.com/replicatedhq/kots/releases/download/$BASE_KOTS_VERSION/kots_linux_amd64.tar.gz" \
             && tar zxvf kots_linux_amd64.tar.gz \
             && mv kots "kots-$BASE_KOTS_VERSION"
-      
+
       - name: create namespace
         run: |
           set +e
           kubectl create namespace "$NAMESPACE"
-      
+
       - name: run kots admin-console generate-manifests using base kots version with k8s context
         run: |
           set +e
           "./kots-$BASE_KOTS_VERSION" admin-console generate-manifests -n "$NAMESPACE" --shared-password password
-      
+
       - name: apply the generated manifests
         run: |
           set +e
@@ -1916,7 +1916,7 @@ jobs:
             fi
             sleep 1
           done
-      
+
       - name: wait for kotsadm-minio-0 pod to be ready
         run: |
           set +e
@@ -1926,7 +1926,7 @@ jobs:
         run: |
           set +e
           kubectl wait --for=condition=available --timeout=300s deployment/kotsadm -n "$NAMESPACE"
-      
+
       - name: run kots admin-console generate-manifests using new kots version with k8s context
         run: |
           set +e
@@ -1935,7 +1935,7 @@ jobs:
             --kotsadm-registry ttl.sh \
             --kotsadm-namespace automated-${{ github.run_id }} \
             --kotsadm-tag 24h
-      
+
       - name: validate that ./admin-console/minio-statefulset.yaml has initContainers since a migration is needed
         run: |
           set +e
@@ -1943,12 +1943,12 @@ jobs:
             echo "admin-console/minio-statefulset.yaml does not have initContainers"
             exit 1
           fi
-      
+
       - name: apply the generated manifests
         run: |
           set +e
           kubectl apply -f ./admin-console -n "$NAMESPACE"
-      
+
       - name: wait for kotsadm-minio-0 pod to be ready
         run: |
           set +e
@@ -1959,7 +1959,7 @@ jobs:
         run: |
           set +e
           kubectl wait --for=condition=available --timeout=300s deployment/kotsadm -n "$NAMESPACE"
-      
+
       - name: run kots admin-console generate-manifests using new kots version with k8s context
         run: |
           set +e
@@ -1968,7 +1968,7 @@ jobs:
             --kotsadm-registry ttl.sh \
             --kotsadm-namespace automated-${{ github.run_id }} \
             --kotsadm-tag 24h
-      
+
       - name: validate that ./admin-console/minio-statefulset.yaml does not have initContainers since a migration is not needed
         run: |
           set +e
@@ -1976,12 +1976,12 @@ jobs:
             echo "admin-console/minio-statefulset.yaml has initContainers"
             exit 1
           fi
-      
+
       - name: apply the generated manifests
         run: |
           set +e
           kubectl apply -f ./admin-console -n "$NAMESPACE"
-      
+
       - name: wait for kotsadm-minio-0 pod to be ready
         run: |
           set +e
@@ -2007,7 +2007,7 @@ jobs:
         if: failure()
         uses: ./.github/actions/generate-support-bundle
         with:
-          kots-namespace: automated-${{ github.run_id }}          
+          kots-namespace: automated-${{ github.run_id }}
           aws-access-key-id: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_ACCESS_KEY_ID }}'
           aws-secret-access-key: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_SECRET_ACCESS_KEY }}'
 
@@ -2433,6 +2433,40 @@ jobs:
           aws-secret-access-key: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_SECRET_ACCESS_KEY }}'
 
 
+  validate-multi-app-backup-and-restore:
+    runs-on: ubuntu-20.04
+    needs: [ enable-tests, can-run-ci, build-push-kotsadm-image, build-e2e, build-kurl-proxy, build-migrations, push-minio, push-mc, push-rqlite ]
+    strategy:
+      fail-fast: false
+      matrix:
+        k8s_version: [ v1.26.1-k3s1 ] # there's no need to run this test on multiple k3s versions
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: download e2e deps
+        uses: actions/download-artifact@v3
+        with:
+          name: e2e
+          path: e2e/bin/
+      - run: docker load -i e2e/bin/e2e-deps.tar
+      - run: chmod +x e2e/bin/*
+      - name: download kots binary
+        uses: actions/download-artifact@v3
+        with:
+          name: kots
+          path: bin/
+      - run: chmod +x bin/*
+      - uses: ./.github/actions/kots-e2e
+        with:
+          test-focus: 'multi-app-backup-and-restore'
+          kots-namespace: 'multi-app-backup-and-restore'
+          k8s-version: '${{ matrix.k8s_version }}'
+          k8s-arguments: ${{ startsWith(matrix.k8s_version, 'v1.22') && '--egress-selector-mode disabled' || '' }}
+          testim-access-token: '${{ secrets.TESTIM_ACCESS_TOKEN }}'
+          testim-branch: ${{ github.head_ref == 'main' && 'master' || github.head_ref }}
+          aws-access-key-id: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_ACCESS_KEY_ID }}'
+          aws-secret-access-key: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_SECRET_ACCESS_KEY }}'
+
   validate-multi-app-install:
     runs-on: ubuntu-20.04
     needs: [ enable-tests, can-run-ci, build-push-kotsadm-image, build-e2e, build-kurl-proxy, build-migrations, push-minio, push-mc, push-rqlite ]
@@ -2754,6 +2788,7 @@ jobs:
       - validate-min-kots-version
       - validate-target-kots-version
       - validate-range-kots-version
+      - validate-multi-app-backup-and-restore
       - validate-multi-app-install
       - validate-airgap-smoke-test
       - validate-strict-preflight-checks
