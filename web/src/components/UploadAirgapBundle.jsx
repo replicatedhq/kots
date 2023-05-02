@@ -27,8 +27,7 @@ class UploadAirgapBundle extends React.Component {
     fileUploading: false,
     registryDetails: {},
     preparingOnlineInstall: false,
-    supportBundleCommand:
-      "curl https://krew.sh/support-bundle | bash\n kubectl support-bundle --load-cluster-specs",
+    supportBundleCommand: "kubectl support-bundle --load-cluster-specs",
     showSupportBundleCommand: false,
     onlineInstallErrorMessage: "",
     viewOnlineInstallErrorMessage: false,
