@@ -102,6 +102,8 @@ type State = {
   viewAirgapUpdateError: boolean;
   viewAirgapUploadError: boolean;
   slowLoader: boolean;
+  lastUpdated: number;
+  lastUpdatedDate: Date;
 };
 
 const Dashboard = (props: Props) => {
@@ -144,6 +146,8 @@ const Dashboard = (props: Props) => {
       viewAirgapUpdateError: false,
       viewAirgapUploadError: false,
       slowLoader: false,
+      lastUpdated: 0,
+      lastUpdatedDate: new Date(),
     }
   );
 
@@ -513,9 +517,24 @@ const Dashboard = (props: Props) => {
             selectedAppClusterDashboardResponse.prometheusAddress,
           metrics: selectedAppClusterDashboardResponse.metrics,
         },
+        lastUpdated: 0,
+        lastUpdatedDate: new Date(),
       });
     }
   }, [selectedAppClusterDashboardResponse]);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const prevDate: Date = state.lastUpdatedDate;
+      const now: Date = new Date();
+      const diffMs = now.getTime() - prevDate.getTime();
+      const diffMins = diffMs / 1000 / 60;
+      setState({ lastUpdated: diffMins });
+    }, 1000);
+    return () => {
+      clearInterval(interval);
+    };
+  }, [state.lastUpdatedDate]);
 
   useEffect(() => {
     if (app?.isAirgap && !airgapUploader.current) {
@@ -761,6 +780,14 @@ const Dashboard = (props: Props) => {
                 <Paragraph size="16" weight="bold">
                   Resource status
                 </Paragraph>
+                <p className="tw-text-xs tw-pt-2">
+                  Last Updated:{" "}
+                  {state.lastUpdated < 1
+                    ? "less than a minute ago"
+                    : state.lastUpdated === 1
+                    ? "1 minute ago"
+                    : `${Math.round(state.lastUpdated)} minutes ago`}
+                </p>
                 <div
                   className="u-marginTop--10 u-marginBottom--10 u-overflow--auto"
                   style={{ maxHeight: "50vh" }}
