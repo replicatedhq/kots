@@ -470,7 +470,13 @@ class GenerateSupportBundle extends React.Component {
                     If you'd prefer,{" "}
                     <a
                       href="#"
-                      onClick={(e) => this.fetchSupportBundleCommand()}
+                      onClick={(e) => {
+                        this.setState({
+                          showRunCommand: !this.state.showRunCommand,
+                          bundleCommand:
+                            "curl https://krew.sh/support-bundle | bash\n kubectl support-bundle --load-cluster-specs",
+                        });
+                      }}
                     >
                       click here
                     </a>{" "}
