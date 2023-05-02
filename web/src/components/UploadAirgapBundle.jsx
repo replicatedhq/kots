@@ -27,7 +27,8 @@ class UploadAirgapBundle extends React.Component {
     fileUploading: false,
     registryDetails: {},
     preparingOnlineInstall: false,
-    supportBundleCommand: undefined,
+    supportBundleCommand:
+      "curl https://krew.sh/support-bundle | bash\n kubectl support-bundle --load-cluster-specs",
     showSupportBundleCommand: false,
     onlineInstallErrorMessage: "",
     viewOnlineInstallErrorMessage: false,
@@ -313,33 +314,12 @@ class UploadAirgapBundle extends React.Component {
     }, 1000);
   };
 
-  getSupportBundleCommand = async (slug) => {
-    const res = await fetch(
-      `${process.env.API_ENDPOINT}/troubleshoot/app/${slug}/supportbundlecommand`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        credentials: "include",
-        body: JSON.stringify({
-          origin: window.location.origin,
-        }),
-      }
-    );
-    if (!res.ok) {
-      throw new Error(`Unexpected status code: ${res.status}`);
-    }
-    const response = await res.json();
-    return response.command;
-  };
-
   onProgressError = async (errorMessage) => {
     const { slug } = this.props.match.params;
 
     let supportBundleCommand = [];
     try {
-      supportBundleCommand = await this.getSupportBundleCommand(slug);
+      supportBundleCommand = "kubectl support-bundle --load-cluster-specs";
     } catch (err) {
       console.log(err);
     }
@@ -524,7 +504,7 @@ class UploadAirgapBundle extends React.Component {
                     >
                       {hasFile ? (
                         <div className="has-file-wrapper">
-                          <p className="u-fontSize--normal u-fontWeight--medium">
+                          <p className="u-fontSize--normal u-fontWeight--medium tw-pl-2">
                             {bundleFile.name}
                           </p>
                         </div>
