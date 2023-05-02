@@ -2534,7 +2534,10 @@ jobs:
       - name: run the test
         run: |
           set +e
+          
           echo ${{ secrets.REMOVE_APP_LICENSE }} | base64 -d > license.yaml
+          APP_NAMESPACES=(postgres-test redis-test nginx-test rabbitmq-system)
+
           ./bin/kots \
             install "$APP_SLUG/automated" \
             --license-file license.yaml \
@@ -2567,23 +2570,14 @@ jobs:
             exit 1
           fi
 
-          if [ "$(kubectl get all -n postgres-test --ignore-not-found | wc -l | tr -d '\n')" != "0" ]; then
-            printf "postgres-test namespace still contains resources\n\n"
-            kubectl get all -n postgres-test
-            exit 1
-          fi
 
-          if [ "$(kubectl get all -n redis-test --ignore-not-found | wc -l | tr -d '\n')" != "0" ]; then
-            printf "redis-test namespace still contains resources\n\n"
-            kubectl get all -n redis-test
-            exit 1
-          fi
-
-          if [ "$(kubectl get all -n nginx-test --ignore-not-found | wc -l | tr -d '\n')" != "0" ]; then
-            printf "nginx-test namespace still contains resources\n\n"
-            kubectl get all -n nginx-test
-            exit 1
-          fi
+          for ns in "${APP_NAMESPACES[@]}"; do
+            if [ "$(kubectl get all -n "$ns" --ignore-not-found | wc -l | tr -d '\n')" != "0" ]; then
+              printf "%s namespace still contains resources\n\n" "$ns"
+              kubectl get all -n "$ns"
+              exit 1
+            fi
+          done
 
           if [ "$(kubectl get pods -n "$APP_SLUG" -l "kots.io/app-slug=$APP_SLUG" --ignore-not-found | wc -l | tr -d '\n')" != "0" ]; then
             printf "%s namespace still contains application resources\n\n" "$APP_SLUG"
@@ -2623,23 +2617,13 @@ jobs:
             exit 1
           fi
 
-          if [ "$(kubectl get all -n postgres-test --ignore-not-found | wc -l | tr -d '\n')" == "0" ]; then
-            printf "postgres-test namespace does not contain any resources\n\n"
-            kubectl get all -n postgres-test
-            exit 1
-          fi
-
-          if [ "$(kubectl get all -n redis-test --ignore-not-found | wc -l | tr -d '\n')" == "0" ]; then
-            printf "redis-test namespace does not contain any resources\n\n"
-            kubectl get all -n redis-test
-            exit 1
-          fi
-
-          if [ "$(kubectl get all -n nginx-test --ignore-not-found | wc -l | tr -d '\n')" == "0" ]; then
-            printf "nginx-test namespace does not contain any resources\n\n"
-            kubectl get all -n nginx-test
-            exit 1
-          fi
+          for ns in "${APP_NAMESPACES[@]}"; do
+            if [ "$(kubectl get all -n "$ns" --ignore-not-found | wc -l | tr -d '\n')" == "0" ]; then
+              printf "%s namespace does not contain any resources\n\n" "$ns"
+              kubectl get all -n "$ns"
+              exit 1
+            fi
+          done
 
           if [ "$(kubectl get pods -n "$APP_SLUG" -l "kots.io/app-slug=$APP_SLUG" --ignore-not-found | wc -l | tr -d '\n')" == "0" ]; then
             printf "%s namespace does not contain any application resources\n\n" "$APP_SLUG"
