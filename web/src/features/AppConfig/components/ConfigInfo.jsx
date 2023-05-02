@@ -73,7 +73,7 @@ const ConfigInfo = ({ match, fromLicenseFlow, app }) => {
         </Link>
       </div>
     );
-  } else if (pendingSequenceInxex > -1 && currentVersion !== null) {
+  } else if (pendingSequenceInxex > -1 && currentVersion) {
     const numVersionsNewer =
       app?.downstream?.pendingVersions?.length - pendingSequenceInxex;
     return (
