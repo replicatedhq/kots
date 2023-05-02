@@ -42,6 +42,8 @@ spec:
                 type: string
               channelName:
                 type: string
+              customerEmail:
+                type: string
               customerName:
                 type: string
               endpoint:
