@@ -369,7 +369,7 @@ func (c *Client) undeployManifests(undeployArgs operatortypes.UndeployAppArgs) e
 }
 
 func (c *Client) undeployHelmCharts(undeployArgs operatortypes.UndeployAppArgs) error {
-	if len(undeployArgs.Charts) > 0 {
+	if len(undeployArgs.Charts) == 0 {
 		return nil
 	}
 
