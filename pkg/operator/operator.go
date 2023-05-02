@@ -689,6 +689,9 @@ func (o *Operator) UndeployApp(a *apptypes.App, d *downstreamtypes.Downstream, i
 	if err != nil {
 		return errors.Wrap(err, "failed to get current downstream version")
 	}
+	if deployedVersion == nil {
+		return nil
+	}
 
 	deployedVersionArchive, err := ioutil.TempDir("", "kotsadm")
 	if err != nil {
