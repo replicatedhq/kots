@@ -898,4 +898,38 @@ export const Utilities = {
       }
     });
   },
+  licenseTypeTag(licenseType) {
+    switch (licenseType) {
+      case "prod": {
+        return {
+          iconName: "dollar-sign",
+          iconColor: "success-color",
+        };
+      }
+      case "trial": {
+        return {
+          iconName: "stopwatch",
+          iconColor: "trial-license-icon",
+        };
+      }
+      case "dev": {
+        return {
+          iconName: "code",
+          iconColor: "dev-license-icon",
+        };
+      }
+      case "community": {
+        return {
+          iconName: "user-outline",
+          iconColor: "warning-color",
+        };
+      }
+      default: {
+        return {
+          iconName: "",
+          iconColor: "",
+        };
+      }
+    }
+  },
 };
