@@ -2544,6 +2544,7 @@ jobs:
             --no-port-forward \
             --namespace "$APP_SLUG" \
             --shared-password password \
+            --no-port-forward \
             --kotsadm-registry ttl.sh \
             --kotsadm-namespace automated-${{ github.run_id }} \
             --kotsadm-tag 24h
@@ -2571,13 +2572,17 @@ jobs:
           fi
 
 
-          for ns in "${APP_NAMESPACES[@]}"; do
-            if [ "$(kubectl get all -n "$ns" --ignore-not-found | wc -l | tr -d '\n')" != "0" ]; then
-              printf "%s namespace still contains resources\n\n" "$ns"
-              kubectl get all -n "$ns"
-              exit 1
-            fi
-          done
+          if [ "$(kubectl get all,secrets,configmap,pvc -A -l "kots.io/app-slug=$APP_SLUG" --ignore-not-found | wc -l | tr -d '\n')" != "0" ]; then
+            printf "%s namespace still contains resources\n\n" "$ns"
+            kubectl get all,secrets,configmap,pvc -A -l "kots.io/app-slug=$APP_SLUG"
+            exit 1
+          fi
+
+          if [ "$(kubectl get crd rabbitmqclusters.rabbitmq.com --ignore-not-found | wc -l | tr -d '\n')" != "0" ]; then
+            printf "rabbitmqclusters.rabbitmq.com CRD was not removed\n\n"
+            kubectl get crd rabbitmqclusters.rabbitmq.com
+            exit 1
+          fi
 
           if [ "$(kubectl get pods -n "$APP_SLUG" -l "kots.io/app-slug=$APP_SLUG" --ignore-not-found | wc -l | tr -d '\n')" != "0" ]; then
             printf "%s namespace still contains application resources\n\n" "$APP_SLUG"
@@ -2593,6 +2598,7 @@ jobs:
             --no-port-forward \
             --namespace "$APP_SLUG" \
             --shared-password password \
+            --no-port-forward \
             --kotsadm-registry ttl.sh \
             --kotsadm-namespace automated-${{ github.run_id }} \
             --kotsadm-tag 24h
@@ -2618,12 +2624,24 @@ jobs:
           fi
 
           for ns in "${APP_NAMESPACES[@]}"; do
-            if [ "$(kubectl get all -n "$ns" --ignore-not-found | wc -l | tr -d '\n')" == "0" ]; then
+            if [ "$(kubectl get all,secrets,configmap,pvc -n "$ns" -l "kots.io/app-slug=$APP_SLUG" --ignore-not-found | wc -l | tr -d '\n')" == "0" ]; then
               printf "%s namespace does not contain any resources\n\n" "$ns"
-              kubectl get all -n "$ns"
+              kubectl get all,secrets,configmap,pvc -n "$ns"
               exit 1
             fi
           done
+
+          if [ "$(kubectl get rabbitmqclusters.rabbitmq.com -n rabbitmq-system --ignore-not-found | wc -l | tr -d '\n')" == "0" ]; then
+            printf "rabbitmq-system namespace does not contain rabbitmqclusters\n\n"
+            kubectl get rabbitmqclusters.rabbitmq.com -n rabbitmq-system
+            exit 1
+          fi
+
+          if [ "$(kubectl get crd rabbitmqclusters.rabbitmq.com --ignore-not-found | wc -l | tr -d '\n')" == "0" ]; then
+            printf "rabbitmqclusters.rabbitmq.com CRD was not found\n\n"
+            kubectl get crd rabbitmqclusters.rabbitmq.com
+            exit 1
+          fi
 
           if [ "$(kubectl get pods -n "$APP_SLUG" -l "kots.io/app-slug=$APP_SLUG" --ignore-not-found | wc -l | tr -d '\n')" == "0" ]; then
             printf "%s namespace does not contain any application resources\n\n" "$APP_SLUG"
