@@ -862,7 +862,7 @@ class AppConfig extends Component<Props, State> {
                             {(configError ||
                               this.state.showValidationError) && (
                               <span className="u-textColor--error tw-mb-2 tw-text-xs">
-                                {validationErrorMessage}
+                                {configError || validationErrorMessage}
                               </span>
                             )}
                             <button
