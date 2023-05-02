@@ -2536,7 +2536,7 @@ jobs:
           set +e
           
           echo ${{ secrets.REMOVE_APP_LICENSE }} | base64 -d > license.yaml
-          APP_NAMESPACES=(postgres-test redis-test nginx-test rabbitmq-system)
+          APP_NAMESPACES=(postgres-test redis-test nginx-test rabbitmq-system $APP_SLUG)
 
           ./bin/kots \
             install "$APP_SLUG/automated" \
@@ -2544,7 +2544,6 @@ jobs:
             --no-port-forward \
             --namespace "$APP_SLUG" \
             --shared-password password \
-            --no-port-forward \
             --kotsadm-registry ttl.sh \
             --kotsadm-namespace automated-${{ github.run_id }} \
             --kotsadm-tag 24h
@@ -2571,7 +2570,6 @@ jobs:
             exit 1
           fi
 
-
           if [ "$(kubectl get all,secrets,configmap,pvc -A -l "kots.io/app-slug=$APP_SLUG" --ignore-not-found | wc -l | tr -d '\n')" != "0" ]; then
             printf "Application resources are still found in the cluster\n\n"
             kubectl get all,secrets,configmap,pvc -A -l "kots.io/app-slug=$APP_SLUG"
@@ -2584,9 +2582,9 @@ jobs:
             exit 1
           fi
 
-          if [ "$(kubectl get pods -n "$APP_SLUG" -l "kots.io/app-slug=$APP_SLUG" --ignore-not-found | wc -l | tr -d '\n')" != "0" ]; then
-            printf "%s namespace still contains application resources\n\n" "$APP_SLUG"
-            kubectl get pods -n "$APP_SLUG" -l "kots.io/app-slug=$APP_SLUG"
+          if [ "$(kubectl get secret -A --field-selector type=helm.sh/release.v1 --ignore-not-found | wc -l | tr -d '\n')" != "0" ]; then
+            printf "helm.sh/release.v1 secrets were not removed\n\n"
+            kubectl get secret -A --field-selector type=helm.sh/release.v1
             exit 1
           fi
 
@@ -2598,7 +2596,6 @@ jobs:
             --no-port-forward \
             --namespace "$APP_SLUG" \
             --shared-password password \
-            --no-port-forward \
             --kotsadm-registry ttl.sh \
             --kotsadm-namespace automated-${{ github.run_id }} \
             --kotsadm-tag 24h
@@ -2631,21 +2628,21 @@ jobs:
             fi
           done
 
-          if [ "$(kubectl get rabbitmqclusters.rabbitmq.com -n rabbitmq-system --ignore-not-found | wc -l | tr -d '\n')" == "0" ]; then
-            printf "rabbitmq-system namespace does not contain rabbitmqclusters\n\n"
-            kubectl get rabbitmqclusters.rabbitmq.com -n rabbitmq-system
-            exit 1
-          fi
-
           if [ "$(kubectl get crd rabbitmqclusters.rabbitmq.com --ignore-not-found | wc -l | tr -d '\n')" == "0" ]; then
             printf "rabbitmqclusters.rabbitmq.com CRD was not found\n\n"
             kubectl get crd rabbitmqclusters.rabbitmq.com
             exit 1
           fi
 
-          if [ "$(kubectl get pods -n "$APP_SLUG" -l "kots.io/app-slug=$APP_SLUG" --ignore-not-found | wc -l | tr -d '\n')" == "0" ]; then
-            printf "%s namespace does not contain any application resources\n\n" "$APP_SLUG"
-            kubectl get pods -n "$APP_SLUG"
+          if [ "$(kubectl get rabbitmqclusters.rabbitmq.com -n rabbitmq-system --ignore-not-found | wc -l | tr -d '\n')" == "0" ]; then
+            printf "rabbitmq-system namespace does not contain rabbitmqclusters\n\n"
+            kubectl get rabbitmqclusters.rabbitmq.com -n rabbitmq-system
+            exit 1
+          fi
+
+          if [ "$(kubectl get secret -A --field-selector type=helm.sh/release.v1 --ignore-not-found | wc -l | tr -d '\n')" == "0" ]; then
+            printf "helm.sh/release.v1 secrets were not found\n\n"
+            kubectl get secret -A --field-selector type=helm.sh/release.v1
             exit 1
           fi
 
