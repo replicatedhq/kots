@@ -316,6 +316,13 @@ class UploadAirgapBundle extends React.Component {
   onProgressError = async (errorMessage) => {
     const { slug } = this.props.match.params;
 
+    let supportBundleCommand = [];
+    try {
+      supportBundleCommand = "kubectl support-bundle --load-cluster-specs";
+    } catch (err) {
+      console.log(err);
+    }
+
     // Push this setState call to the end of the call stack
     setTimeout(() => {
       Object.entries(COMMON_ERRORS).forEach(([errorString, message]) => {
@@ -330,6 +337,7 @@ class UploadAirgapBundle extends React.Component {
         uploadProgress: 0,
         uploadSize: 0,
         uploadResuming: false,
+        supportBundleCommand: supportBundleCommand,
       });
     }, 0);
   };
