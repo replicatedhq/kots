@@ -31,6 +31,9 @@
         "channelName": {
           "type": "string"
         },
+        "customerEmail": {
+          "type": "string"
+        },
         "customerName": {
           "type": "string"
         },
