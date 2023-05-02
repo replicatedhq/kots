@@ -582,7 +582,6 @@ class AppConfig extends Component<Props, State> {
           );
 
         this.setState({
-          // configError: hasValidationError,
           showValidationError: hasValidationError,
         });
 
@@ -745,9 +744,6 @@ class AppConfig extends Component<Props, State> {
     sections.forEach((section) => {
       observer.observe(section);
     });
-
-    console.log("configErrorMessage", configErrorMessage);
-    console.log("showValidationError", showValidationError);
 
     return (
       <div className="flex flex-column u-paddingLeft--20 u-paddingBottom--20 u-paddingRight--20 alignItems--center">
