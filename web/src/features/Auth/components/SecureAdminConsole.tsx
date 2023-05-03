@@ -195,7 +195,7 @@ class SecureAdminConsole extends React.Component<Props, State> {
       this.loginText.current.innerHTML,
       this.loginText.current.clientWidth,
       "32px",
-      null
+      "10px"
     );
     this.loginText.current.style.fontSize = newFontSize;
   };
