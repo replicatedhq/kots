@@ -250,8 +250,8 @@ class SecureAdminConsole extends React.Component<Props, State> {
   async componentDidMount() {
     window.addEventListener("keydown", this.submitForm);
 
-    const token = Utilities.getCookie("identity-service-login");
-    if (token) {
+    const isIdentityServiceLogin = Utilities.getCookie("identity-service-login");
+    if (isIdentityServiceLogin) {
       // this is a redirect from identity service login
       const loginData = {
         sessionRoles: Utilities.getCookie("session_roles"),
