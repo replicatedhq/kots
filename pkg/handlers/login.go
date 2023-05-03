@@ -373,17 +373,25 @@ func (h *Handler) OIDCLoginCallback(w http.ResponseWriter, r *http.Request) {
 
 	expire := time.Now().Add(30 * time.Minute)
 
-	// token cookie
-	tokenCookie := http.Cookie{
-		Name:    "token",
-		Value:   responseToken,
+	// cookie for identity service
+	identityServiceCookie := http.Cookie{
+		Name:    "identity-service-login",
+		Value:   "true",
 		Expires: expire,
 		Path:    "/",
 	}
 	if u.Scheme == "https" {
-		tokenCookie.Secure = true
+		identityServiceCookie.Secure = true
 	}
-	http.SetCookie(w, &tokenCookie)
+	http.SetCookie(w, &identityServiceCookie)
+
+	signedTokenCookie, err := session.GetSessionCookie(responseToken, expire, redirectURL)
+	if err != nil {
+		logger.Error(errors.Wrap(err, "failed to get session cookie"))
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	http.SetCookie(w, signedTokenCookie)
 
 	// session roles cookie
 	sessionRolesCookie := http.Cookie{
