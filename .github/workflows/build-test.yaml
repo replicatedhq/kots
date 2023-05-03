@@ -2536,8 +2536,8 @@ jobs:
           set +e
           
           echo ${{ secrets.REMOVE_APP_LICENSE }} | base64 -d > license.yaml
-          HELM_APP_NAMESPACES=(postgres-test redis-test $APP_SLUG)
-          APP_NAMESPACES=(postgres-test redis-test nginx-test rabbitmq-system $APP_SLUG)
+          HELM_APP_NAMESPACES=(postgres-test redis-test "$APP_SLUG")
+          APP_NAMESPACES=(postgres-test redis-test nginx-test rabbitmq-system "$APP_SLUG")
 
           ./bin/kots \
             install "$APP_SLUG/automated" \
