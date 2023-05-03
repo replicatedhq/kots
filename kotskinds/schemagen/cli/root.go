@@ -2,7 +2,7 @@ package cli
 
 import (
 	"encoding/json"
-	"io/ioutil"
+	"fmt"
 	"os"
 	"path"
 	"path/filepath"
@@ -62,108 +62,46 @@ func generateSchemas(v *viper.Viper) error {
 		return errors.Wrap(err, "failed to get workdir")
 	}
 
-	airgapContent, err := ioutil.ReadFile(filepath.Join(workdir, "config", "crds", "kots.io_airgaps.yaml"))
-	if err != nil {
-		return errors.Wrap(err, "failed to read airgap crd")
-	}
-	if err := generateSchemaFromCRD(airgapContent, filepath.Join(workdir, v.GetString("output-dir"), "airgap-kots-v1beta1.json")); err != nil {
-		return errors.Wrap(err, "failed to write airgap schema")
-	}
+	if err := filepath.Walk(filepath.Join(workdir, "config", "crds"), func(path string, info os.FileInfo, err error) error {
+		if info.IsDir() {
+			return nil
+		}
 
-	applicationContents, err := ioutil.ReadFile(filepath.Join(workdir, "config", "crds", "kots.io_applications.yaml"))
-	if err != nil {
-		return errors.Wrap(err, "failed to read application crd")
-	}
-	if err := generateSchemaFromCRD(applicationContents, filepath.Join(workdir, v.GetString("output-dir"), "application-kots-v1beta1.json")); err != nil {
-		return errors.Wrap(err, "failed to write application schema")
-	}
+		content, err := os.ReadFile(path)
+		if err != nil {
+			return errors.Wrap(err, "failed to read crd file")
+		}
 
-	configContents, err := ioutil.ReadFile(filepath.Join(workdir, "config", "crds", "kots.io_configs.yaml"))
-	if err != nil {
-		return errors.Wrap(err, "failed to read config crd")
-	}
-	if err := generateSchemaFromCRD(configContents, filepath.Join(workdir, v.GetString("output-dir"), "config-kots-v1beta1.json")); err != nil {
-		return errors.Wrap(err, "failed to write config schema")
-	}
+		extensionsscheme.AddToScheme(scheme.Scheme)
+		decode := scheme.Codecs.UniversalDeserializer().Decode
+		obj, _, err := decode(content, nil, nil)
+		if err != nil {
+			return errors.Wrap(err, "failed to decode crd")
+		}
 
-	configValuesContents, err := ioutil.ReadFile(filepath.Join(workdir, "config", "crds", "kots.io_configvalues.yaml"))
-	if err != nil {
-		return errors.Wrap(err, "failed to read configvalues crd")
-	}
-	if err := generateSchemaFromCRD(configValuesContents, filepath.Join(workdir, v.GetString("output-dir"), "configvalues-kots-v1beta1.json")); err != nil {
-		return errors.Wrap(err, "failed to write configvalues schema")
-	}
+		crd, ok := obj.(*extensionsv1.CustomResourceDefinition)
+		if !ok {
+			return errors.New("failed to cast crd")
+		}
 
-	helmChartContents, err := ioutil.ReadFile(filepath.Join(workdir, "config", "crds", "kots.io_helmcharts.yaml"))
-	if err != nil {
-		return errors.Wrap(err, "failed to read helmchart crd")
-	}
-	if err := generateSchemaFromCRD(helmChartContents, filepath.Join(workdir, v.GetString("output-dir"), "helmchart-kots-v1beta1.json")); err != nil {
-		return errors.Wrap(err, "failed to write helmchart schema")
-	}
+		for _, version := range crd.Spec.Versions {
+			outFile := fmt.Sprintf("%s-kots-%s.json", crd.Spec.Names.Singular, version.Name)
+			if err := writeSchema(version.Schema.OpenAPIV3Schema, filepath.Join(workdir, v.GetString("output-dir"), outFile)); err != nil {
+				return errors.Wrapf(err, "failed to write %s schema", crd.Spec.Names.Singular)
+			}
+		}
 
-	installationContents, err := ioutil.ReadFile(filepath.Join(workdir, "config", "crds", "kots.io_installations.yaml"))
-	if err != nil {
-		return errors.Wrap(err, "failed to read installations crd")
-	}
-	if err := generateSchemaFromCRD(installationContents, filepath.Join(workdir, v.GetString("output-dir"), "installation-kots-v1beta1.json")); err != nil {
-		return errors.Wrap(err, "failed to write installation schema")
-	}
-
-	licenseContents, err := ioutil.ReadFile(filepath.Join(workdir, "config", "crds", "kots.io_licenses.yaml"))
-	if err != nil {
-		return errors.Wrap(err, "failed to read license crd")
-	}
-	if err := generateSchemaFromCRD(licenseContents, filepath.Join(workdir, v.GetString("output-dir"), "license-kots-v1beta1.json")); err != nil {
-		return errors.Wrap(err, "failed to write license schema")
-	}
-
-	ingressConfigContents, err := ioutil.ReadFile(filepath.Join(workdir, "config", "crds", "kots.io_ingressconfigs.yaml"))
-	if err != nil {
-		return errors.Wrap(err, "failed to read ingressconfigs crd")
-	}
-	if err := generateSchemaFromCRD(ingressConfigContents, filepath.Join(workdir, v.GetString("output-dir"), "ingressconfigs-kots-v1beta1.json")); err != nil {
-		return errors.Wrap(err, "failed to write ingressconfigs schema")
-	}
-
-	identityConfigContents, err := ioutil.ReadFile(filepath.Join(workdir, "config", "crds", "kots.io_identityconfigs.yaml"))
-	if err != nil {
-		return errors.Wrap(err, "failed to read identityconfigs crd")
-	}
-	if err := generateSchemaFromCRD(identityConfigContents, filepath.Join(workdir, v.GetString("output-dir"), "identityconfigs-kots-v1beta1.json")); err != nil {
-		return errors.Wrap(err, "failed to write identityconfigs schema")
-	}
-
-	identityContents, err := ioutil.ReadFile(filepath.Join(workdir, "config", "crds", "kots.io_identities.yaml"))
-	if err != nil {
-		return errors.Wrap(err, "failed to read identity crd")
-	}
-	if err := generateSchemaFromCRD(identityContents, filepath.Join(workdir, v.GetString("output-dir"), "identity-kots-v1beta1.json")); err != nil {
-		return errors.Wrap(err, "failed to write identity schema")
-	}
-
-	lintConfigContents, err := ioutil.ReadFile(filepath.Join(workdir, "config", "crds", "kots.io_lintconfigs.yaml"))
-	if err != nil {
-		return errors.Wrap(err, "failed to read lintconfigs crd")
-	}
-	if err := generateSchemaFromCRD(lintConfigContents, filepath.Join(workdir, v.GetString("output-dir"), "lintconfigs-kots-v1beta1.json")); err != nil {
-		return errors.Wrap(err, "failed to write lintconfigs schema")
+		return nil
+	}); err != nil {
+		return errors.Wrap(err, "failed to walk crds")
 	}
 
 	return nil
 }
 
-func generateSchemaFromCRD(crd []byte, outfile string) error {
-	extensionsscheme.AddToScheme(scheme.Scheme)
-	decode := scheme.Codecs.UniversalDeserializer().Decode
-	obj, _, err := decode(crd, nil, nil)
-	if err != nil {
-		return errors.Wrap(err, "failed to decode crd")
-	}
+func writeSchema(schema *extensionsv1.JSONSchemaProps, outfile string) error {
 
-	customResourceDefinition := obj.(*extensionsv1.CustomResourceDefinition)
-
-	b, err := json.MarshalIndent(customResourceDefinition.Spec.Versions[0].Schema.OpenAPIV3Schema, "", "  ")
+	b, err := json.MarshalIndent(schema, "", "  ")
 	if err != nil {
 		return errors.Wrap(err, "failed to marshal json")
 	}
@@ -192,7 +130,7 @@ func generateSchemaFromCRD(crd []byte, outfile string) error {
 	)
 	boolStringed := replacer.Replace(string(b))
 
-	err = ioutil.WriteFile(outfile, []byte(boolStringed), 0644)
+	err = os.WriteFile(outfile, []byte(boolStringed), 0644)
 	if err != nil {
 		return errors.Wrap(err, "failed to write file")
 	}

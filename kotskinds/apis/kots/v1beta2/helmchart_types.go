@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package v1beta1
+package v1beta2
 
 import (
 	"encoding/json"
@@ -167,7 +167,6 @@ func (m *MappedChartValue) UnmarshalJSON(value []byte) error {
 type ChartIdentifier struct {
 	Name         string `json:"name"`
 	ChartVersion string `json:"chartVersion"`
-	ReleaseName  string `json:"releaseName,omitempty"`
 }
 
 func (h *HelmChartSpec) GetHelmValues(values map[string]MappedChartValue) (map[string]interface{}, error) {
@@ -339,15 +338,12 @@ func (h *HelmChartSpec) renderValue(value *MappedChartValue) (interface{}, error
 }
 
 func (h *HelmChart) GetDirName() string {
-	if h.Spec.Chart.ReleaseName != "" {
-		return h.Spec.Chart.ReleaseName
-	}
-	return h.Name
+	return h.GetReleaseName()
 }
 
 func (h *HelmChart) GetReleaseName() string {
-	if h.Spec.Chart.ReleaseName != "" {
-		return h.Spec.Chart.ReleaseName
+	if h.Spec.ReleaseName != "" {
+		return h.Spec.ReleaseName
 	}
 	return h.Spec.Chart.Name
 }
@@ -386,9 +382,8 @@ type OptionalValue struct {
 // HelmChartSpec defines the desired state of HelmChartSpec
 type HelmChartSpec struct {
 	Chart            ChartIdentifier             `json:"chart"`
+	ReleaseName      string                      `json:"releaseName,omitempty"`
 	Exclude          multitype.BoolOrString      `json:"exclude,omitempty"`
-	HelmVersion      string                      `json:"helmVersion,omitempty"`
-	UseHelmInstall   bool                        `json:"useHelmInstall,omitempty"`
 	Namespace        string                      `json:"namespace,omitempty"`
 	Values           map[string]MappedChartValue `json:"values,omitempty"`
 	OptionalValues   []*OptionalValue            `json:"optionalValues,omitempty"`
@@ -406,6 +401,7 @@ type HelmChartStatus struct {
 // HelmChart is the Schema for the helmchart API
 // +k8s:openapi-gen=true
 // +kubebuilder:subresource:status
+// +kubebuilder:storageversion
 type HelmChart struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
