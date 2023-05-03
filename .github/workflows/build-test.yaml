@@ -2534,7 +2534,11 @@ jobs:
       - name: run the test
         run: |
           set +e
+          
           echo ${{ secrets.REMOVE_APP_LICENSE }} | base64 -d > license.yaml
+          HELM_APP_NAMESPACES=(postgres-test redis-test "$APP_SLUG")
+          APP_NAMESPACES=(postgres-test redis-test nginx-test rabbitmq-system "$APP_SLUG")
+
           ./bin/kots \
             install "$APP_SLUG/automated" \
             --license-file license.yaml \
@@ -2567,29 +2571,25 @@ jobs:
             exit 1
           fi
 
-          if [ "$(kubectl get all -n postgres-test --ignore-not-found | wc -l | tr -d '\n')" != "0" ]; then
-            printf "postgres-test namespace still contains resources\n\n"
-            kubectl get all -n postgres-test
+          if [ "$(kubectl get all,secrets,configmap,pvc -A -l "kots.io/app-slug=$APP_SLUG" --ignore-not-found | wc -l | tr -d '\n')" != "0" ]; then
+            printf "Application resources are still found in the cluster\n\n"
+            kubectl get all,secrets,configmap,pvc -A -l "kots.io/app-slug=$APP_SLUG"
             exit 1
           fi
 
-          if [ "$(kubectl get all -n redis-test --ignore-not-found | wc -l | tr -d '\n')" != "0" ]; then
-            printf "redis-test namespace still contains resources\n\n"
-            kubectl get all -n redis-test
+          if [ "$(kubectl get crd rabbitmqclusters.rabbitmq.com --ignore-not-found | wc -l | tr -d '\n')" != "0" ]; then
+            printf "rabbitmqclusters.rabbitmq.com CRD was not removed\n\n"
+            kubectl get crd rabbitmqclusters.rabbitmq.com
             exit 1
           fi
 
-          if [ "$(kubectl get all -n nginx-test --ignore-not-found | wc -l | tr -d '\n')" != "0" ]; then
-            printf "nginx-test namespace still contains resources\n\n"
-            kubectl get all -n nginx-test
-            exit 1
-          fi
-
-          if [ "$(kubectl get pods -n "$APP_SLUG" -l "kots.io/app-slug=$APP_SLUG" --ignore-not-found | wc -l | tr -d '\n')" != "0" ]; then
-            printf "%s namespace still contains application resources\n\n" "$APP_SLUG"
-            kubectl get pods -n "$APP_SLUG" -l "kots.io/app-slug=$APP_SLUG"
-            exit 1
-          fi
+          for ns in "${HELM_APP_NAMESPACES[@]}"; do
+            if [ "$(kubectl get secret -n "$ns" --field-selector type=helm.sh/release.v1 --ignore-not-found | wc -l | tr -d '\n')" != "0" ]; then
+              printf "Application Helm release secrets are still found in the namepspace %s\n\n" "$ns"
+              kubectl get secret -n "$ns" --field-selector type=helm.sh/release.v1
+              exit 1
+            fi
+          done
 
           # re-install and test that running the remove command without --undeploy does _not_ delete any resources from the cluster
 
@@ -2623,29 +2623,33 @@ jobs:
             exit 1
           fi
 
-          if [ "$(kubectl get all -n postgres-test --ignore-not-found | wc -l | tr -d '\n')" == "0" ]; then
-            printf "postgres-test namespace does not contain any resources\n\n"
-            kubectl get all -n postgres-test
+          for ns in "${APP_NAMESPACES[@]}"; do
+            if [ "$(kubectl get all,secrets,configmap,pvc -n "$ns" -l "kots.io/app-slug=$APP_SLUG" --ignore-not-found | wc -l | tr -d '\n')" == "0" ]; then
+              printf "%s namespace does not contain any resources\n\n" "$ns"
+              kubectl get all,secrets,configmap,pvc -n "$ns"
+              exit 1
+            fi
+          done
+
+          if [ "$(kubectl get crd rabbitmqclusters.rabbitmq.com --ignore-not-found | wc -l | tr -d '\n')" == "0" ]; then
+            printf "rabbitmqclusters.rabbitmq.com CRD was not found\n\n"
+            kubectl get crd rabbitmqclusters.rabbitmq.com
             exit 1
           fi
 
-          if [ "$(kubectl get all -n redis-test --ignore-not-found | wc -l | tr -d '\n')" == "0" ]; then
-            printf "redis-test namespace does not contain any resources\n\n"
-            kubectl get all -n redis-test
+          if [ "$(kubectl get rabbitmqclusters.rabbitmq.com -n rabbitmq-system --ignore-not-found | wc -l | tr -d '\n')" == "0" ]; then
+            printf "rabbitmq-system namespace does not contain rabbitmqclusters\n\n"
+            kubectl get rabbitmqclusters.rabbitmq.com -n rabbitmq-system
             exit 1
           fi
 
-          if [ "$(kubectl get all -n nginx-test --ignore-not-found | wc -l | tr -d '\n')" == "0" ]; then
-            printf "nginx-test namespace does not contain any resources\n\n"
-            kubectl get all -n nginx-test
-            exit 1
-          fi
-
-          if [ "$(kubectl get pods -n "$APP_SLUG" -l "kots.io/app-slug=$APP_SLUG" --ignore-not-found | wc -l | tr -d '\n')" == "0" ]; then
-            printf "%s namespace does not contain any application resources\n\n" "$APP_SLUG"
-            kubectl get pods -n "$APP_SLUG"
-            exit 1
-          fi
+          for ns in "${HELM_APP_NAMESPACES[@]}"; do
+            if [ "$(kubectl get secret -n "$ns" --field-selector type=helm.sh/release.v1 --ignore-not-found | wc -l | tr -d '\n')" == "0" ]; then
+              printf "Application Helm release secrets are not found in namepspace %s\n\n" "$ns"
+              kubectl get secret -n "$ns" --field-selector type=helm.sh/release.v1
+              exit 1
+            fi
+          done
 
       - name: Generate support bundle on failure
         if: failure()
