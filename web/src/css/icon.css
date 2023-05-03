@@ -31,3 +31,10 @@
 .close-icon:hover {
   color: #717171;
 }
+
+.dev-license-icon {
+  color: #4a4a4a;
+}
+.trial-license-icon {
+  color: #239de0;
+}
