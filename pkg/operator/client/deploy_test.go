@@ -11,49 +11,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func Test_getLabelSelector(t *testing.T) {
-	tests := []struct {
-		name             string
-		appLabelSelector metav1.LabelSelector
-		want             string
-	}{
-		{
-			name: "no requirements",
-			appLabelSelector: metav1.LabelSelector{
-				MatchLabels:      nil,
-				MatchExpressions: nil,
-			},
-			want: "",
-		},
-		{
-			name: "one requirement",
-			appLabelSelector: metav1.LabelSelector{
-				MatchLabels: map[string]string{
-					"kots.io/label": "abc",
-				},
-				MatchExpressions: nil,
-			},
-			want: "kots.io/label=abc",
-		},
-		{
-			name: "two requirements",
-			appLabelSelector: metav1.LabelSelector{
-				MatchLabels: map[string]string{
-					"kots.io/label": "abc",
-					"otherlabel":    "xyz",
-				},
-				MatchExpressions: nil,
-			},
-			want: "kots.io/label=abc,otherlabel=xyz",
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			require.Equal(t, tt.want, getLabelSelector(&tt.appLabelSelector))
-		})
-	}
-}
-
 func Test_getSortedCharts(t *testing.T) {
 	type file struct {
 		path     string
@@ -64,6 +21,7 @@ func Test_getSortedCharts(t *testing.T) {
 		files           []file
 		kotsCharts      []v1beta1.HelmChart
 		targetNamespace string
+		isUninstall     bool
 		want            []orderedDir
 	}{
 		{
@@ -194,6 +152,122 @@ version: "v1"
 					ChartName:    "chart3",
 					ChartVersion: "v1",
 					ReleaseName:  "chart3",
+				},
+			},
+		},
+		{
+			name: "four charts, one not weighted, two with equal weights, one irrelevant file, is uninstall",
+			files: []file{
+				{
+					path:     "chart1/irrelevant", // this file should be ignored
+					contents: "abc123",
+				},
+				{
+					path: "chart1/Chart.yaml",
+					contents: `
+name: chart1
+version: "ver1"
+`,
+				},
+				{
+					path: "chart2/Chart.yaml",
+					contents: `
+name: chart2
+version: "v1"
+`,
+				},
+				{
+					path: "chart3/Chart.yaml",
+					contents: `
+name: chart3
+version: "v1"
+`,
+				},
+				{
+					path: "chart4/Chart.yaml",
+					contents: `
+name: chart4
+version: "v1"
+`,
+				},
+			},
+			kotsCharts: []v1beta1.HelmChart{
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "chart1",
+					},
+					Spec: v1beta1.HelmChartSpec{
+						Chart: v1beta1.ChartIdentifier{
+							Name:         "chart1",
+							ChartVersion: "ver1",
+						},
+						Weight: 1,
+					},
+				},
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "chart2",
+					},
+					Spec: v1beta1.HelmChartSpec{
+						Chart: v1beta1.ChartIdentifier{
+							Name:         "chart2",
+							ChartVersion: "v1",
+						},
+						Weight: 1,
+					},
+				},
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "chart3",
+					},
+					Spec: v1beta1.HelmChartSpec{
+						Chart: v1beta1.ChartIdentifier{
+							Name:         "chart3",
+							ChartVersion: "v1",
+						},
+						Weight: 5,
+					},
+				},
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "chart4",
+					},
+					Spec: v1beta1.HelmChartSpec{
+						Chart: v1beta1.ChartIdentifier{
+							Name:         "chart4",
+							ChartVersion: "v1",
+						},
+					},
+				},
+			},
+			isUninstall: true,
+			want: []orderedDir{
+				{
+					Name:         "chart3",
+					Weight:       5,
+					ChartName:    "chart3",
+					ChartVersion: "v1",
+					ReleaseName:  "chart3",
+				},
+				{
+					Name:         "chart2",
+					Weight:       1,
+					ChartName:    "chart2",
+					ChartVersion: "v1",
+					ReleaseName:  "chart2",
+				},
+				{
+					Name:         "chart1",
+					Weight:       1,
+					ChartName:    "chart1",
+					ChartVersion: "ver1",
+					ReleaseName:  "chart1",
+				},
+				{
+					Name:         "chart4",
+					ChartName:    "chart4",
+					ChartVersion: "v1",
+					ReleaseName:  "chart4",
 				},
 			},
 		},
@@ -510,7 +584,7 @@ version: ver2
 				req.NoError(err)
 			}
 
-			got, err := getSortedCharts(tempdir, tt.kotsCharts, tt.targetNamespace)
+			got, err := getSortedCharts(tempdir, tt.kotsCharts, tt.targetNamespace, tt.isUninstall)
 			req.NoError(err)
 			req.Equal(tt.want, got)
 		})

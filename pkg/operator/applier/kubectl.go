@@ -15,13 +15,19 @@ import (
 	rest "k8s.io/client-go/rest"
 )
 
+type KubectlInterface interface {
+	Apply(targetNamespace string, slug string, yamlDoc []byte, dryRun bool, wait bool, annotateSlug bool) ([]byte, []byte, error)
+	Remove(targetNamespace string, yamlDoc []byte, wait bool) ([]byte, []byte, error)
+	ApplyCreateOrPatch(targetNamespace string, slug string, yamlDoc []byte, dryRun bool, wait bool, annotateSlug bool) ([]byte, []byte, error)
+}
+
 type Kubectl struct {
 	kubectl   string
 	kustomize string
 	config    *rest.Config
 }
 
-func NewKubectl(kubectl, kustomize string, config *rest.Config) *Kubectl {
+func NewKubectl(kubectl, kustomize string, config *rest.Config) KubectlInterface {
 	return &Kubectl{
 		kubectl:   kubectl,
 		kustomize: kustomize,

@@ -377,12 +377,10 @@ func (o *Operator) DeployApp(appID string, sequence int64) (deployed bool, deplo
 		KustomizeVersion:     kotsKinds.KotsApplication.Spec.KustomizeVersion,
 		AdditionalNamespaces: kotsKinds.KotsApplication.Spec.AdditionalNamespaces,
 		ImagePullSecrets:     imagePullSecrets,
-		Namespace:            ".",
 		Manifests:            base64EncodedManifests,
 		PreviousManifests:    base64EncodedPreviousManifests,
 		Charts:               chartArchive,
 		PreviousCharts:       previouslyDeployedChartArchive,
-		Action:               "deploy",
 		Wait:                 false,
 		AnnotateSlug:         os.Getenv("ANNOTATE_SLUG") != "",
 		KotsKinds:            kotsKinds,
@@ -691,6 +689,9 @@ func (o *Operator) UndeployApp(a *apptypes.App, d *downstreamtypes.Downstream, i
 	if err != nil {
 		return errors.Wrap(err, "failed to get current downstream version")
 	}
+	if deployedVersion == nil {
+		return nil
+	}
 
 	deployedVersionArchive, err := ioutil.TempDir("", "kotsadm")
 	if err != nil {
@@ -713,6 +714,11 @@ func (o *Operator) UndeployApp(a *apptypes.App, d *downstreamtypes.Downstream, i
 		return errors.Wrap(err, "failed to get rendered app")
 	}
 	base64EncodedManifests := base64.StdEncoding.EncodeToString(renderedManifests)
+
+	chartArchive, _, err := kustomize.GetRenderedChartsArchive(deployedVersionArchive, d.Name, kotsKinds.GetKustomizeBinaryPath())
+	if err != nil {
+		return errors.Wrap(err, "failed to get rendered charts archive")
+	}
 
 	var clearNamespaces []string
 	var restoreLabelSelector *metav1.LabelSelector
@@ -741,16 +747,15 @@ func (o *Operator) UndeployApp(a *apptypes.App, d *downstreamtypes.Downstream, i
 		clearNamespaces = append(clearNamespaces, kotsKinds.KotsApplication.Spec.AdditionalNamespaces...)
 	}
 
-	undeployArgs := operatortypes.DeployAppArgs{
+	undeployArgs := operatortypes.UndeployAppArgs{
 		AppID:                a.ID,
 		AppSlug:              a.Slug,
 		ClusterID:            o.clusterID,
 		KubectlVersion:       kotsKinds.KotsApplication.Spec.KubectlVersion,
 		KustomizeVersion:     kotsKinds.KotsApplication.Spec.KustomizeVersion,
-		Namespace:            ".",
-		Manifests:            "",
-		PreviousManifests:    base64EncodedManifests,
-		Action:               "undeploy",
+		AdditionalNamespaces: kotsKinds.KotsApplication.Spec.AdditionalNamespaces,
+		Manifests:            base64EncodedManifests,
+		Charts:               chartArchive,
 		Wait:                 true,
 		ClearNamespaces:      clearNamespaces,
 		ClearPVCs:            true,
@@ -761,13 +766,16 @@ func (o *Operator) UndeployApp(a *apptypes.App, d *downstreamtypes.Downstream, i
 
 	if isRestore {
 		// during a restore, this happens async and progress/status is polled later.
-		go o.client.DeployApp(undeployArgs)
+		go o.client.UndeployApp(undeployArgs)
 
 		if err := app.SetRestoreUndeployStatus(a.ID, apptypes.UndeployInProcess); err != nil {
 			return errors.Wrap(err, "failed to set restore undeploy status")
 		}
 	} else {
-		o.client.DeployApp(undeployArgs)
+		err := o.client.UndeployApp(undeployArgs)
+		if err != nil {
+			return errors.Wrap(err, "failed to undeploy app")
+		}
 	}
 
 	return nil
