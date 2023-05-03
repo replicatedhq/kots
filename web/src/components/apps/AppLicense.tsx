@@ -438,8 +438,7 @@ const AppLicenseComponent = (props: Props) => {
             {appLicense?.licenseType === "community" && (
               <div className="flex-auto">
                 <span className="CommunityEditionTag u-marginLeft--10">
-                  {" "}
-                  Community Edition{" "}
+                  Community Edition
                 </span>
                 <span
                   className="u-fontSize--small u-fontWeight--normal u-lineHeight--normal u-marginLeft--10"
@@ -471,13 +470,18 @@ const AppLicenseComponent = (props: Props) => {
                   <div
                     className={`LicenseTypeTag ${appLicense?.licenseType} flex-auto flex-verticalCenter alignItems--center`}
                   >
-                    <span
-                      className={`icon ${
-                        appLicense?.licenseType === "---"
-                          ? ""
-                          : appLicense?.licenseType
-                      }-icon`}
-                    ></span>
+                    <Icon
+                      icon={
+                        Utilities.licenseTypeTag(appLicense?.licenseType)
+                          .iconName
+                      }
+                      size={12}
+                      style={{ marginRight: "2px" }}
+                      className={
+                        Utilities.licenseTypeTag(appLicense?.licenseType)
+                          .iconColor
+                      }
+                    />
                     {appLicense?.licenseType !== "---"
                       ? `${Utilities.toTitleCase(
                           appLicense.licenseType
