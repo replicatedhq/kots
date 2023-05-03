@@ -155,8 +155,12 @@ export function dynamicallyResizeText(
   }
 
   while (resizerElm.getBoundingClientRect().width > maxWidth) {
-    size = parseInt(resizerElm.style.fontSize, 10);
-    resizerElm.style.fontSize = `${size - 1}px`;
+    if (resizerElm.style.fontSize > 10) {
+      size = parseInt(resizerElm.style.fontSize, 10);
+      resizerElm.style.fontSize = `${size - 1}px`;
+    } else {
+      return `${minFontSize}`;
+    }
   }
 
   resizerElm.remove();
