@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/base64"
 	"fmt"
-	"sort"
 	"strings"
 	"time"
 
@@ -336,8 +335,13 @@ func (c *Client) deletePVCs(appLabelSelector *metav1.LabelSelector, appslug stri
 	}
 	appLabelSelector.MatchLabels["kots.io/app-slug"] = appslug
 
+	appSelector, err := metav1.LabelSelectorAsSelector(appLabelSelector)
+	if err != nil {
+		return errors.Wrap(err, "failed to convert label selector to a selector")
+	}
+
 	podsList, err := clientset.CoreV1().Pods(c.TargetNamespace).List(context.TODO(), metav1.ListOptions{
-		LabelSelector: getLabelSelector(appLabelSelector),
+		LabelSelector: appSelector.String(),
 	})
 	if err != nil {
 		return errors.Wrap(err, "failed to get list of app pods")
@@ -353,10 +357,10 @@ func (c *Client) deletePVCs(appLabelSelector *metav1.LabelSelector, appslug stri
 	}
 
 	if len(pvcs) == 0 {
-		logger.Infof("no pvcs to delete in %s for pods that match %s", c.TargetNamespace, getLabelSelector(appLabelSelector))
+		logger.Infof("no pvcs to delete in %s for pods that match %s", c.TargetNamespace, appSelector.String())
 		return nil
 	}
-	logger.Infof("deleting %d pvcs in %s for pods that match %s", len(pvcs), c.TargetNamespace, getLabelSelector(appLabelSelector))
+	logger.Infof("deleting %d pvcs in %s for pods that match %s", len(pvcs), c.TargetNamespace, appSelector.String())
 
 	for _, pvc := range pvcs {
 		grace := int64(0)
@@ -373,20 +377,4 @@ func (c *Client) deletePVCs(appLabelSelector *metav1.LabelSelector, appslug stri
 	}
 
 	return nil
-}
-
-func getLabelSelector(appLabelSelector *metav1.LabelSelector) string {
-	allKeys := make([]string, 0)
-	for key := range appLabelSelector.MatchLabels {
-		allKeys = append(allKeys, key)
-	}
-
-	sort.Strings(allKeys)
-
-	allLabels := make([]string, 0)
-	for _, key := range allKeys {
-		allLabels = append(allLabels, fmt.Sprintf("%s=%s", key, appLabelSelector.MatchLabels[key]))
-	}
-
-	return strings.Join(allLabels, ",")
 }
