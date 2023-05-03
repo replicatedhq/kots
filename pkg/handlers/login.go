@@ -385,6 +385,17 @@ func (h *Handler) OIDCLoginCallback(w http.ResponseWriter, r *http.Request) {
 	}
 	http.SetCookie(w, &tokenCookie)
 
+	signedTokenCookie, err := session.GetSessionCookie(responseToken, expire, "")
+	if err != nil {
+		logger.Error(errors.Wrap(err, "failed to get session cookie"))
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	if u.Scheme == "https" {
+		signedTokenCookie.Secure = true
+	}
+	http.SetCookie(w, signedTokenCookie)
+
 	// session roles cookie
 	sessionRolesCookie := http.Cookie{
 		Name:    "session_roles",
