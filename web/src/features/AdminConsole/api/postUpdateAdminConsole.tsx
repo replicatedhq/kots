@@ -1,5 +1,4 @@
 import { useMutation } from "react-query";
-import { Utilities } from "@src/utilities/utilities";
 
 async function postUpdateAdminConsole({
   apiEndpoint = process.env.API_ENDPOINT,
@@ -15,9 +14,9 @@ async function postUpdateAdminConsole({
     {
       headers: {
         Accept: "application/json",
-        Authorization: Utilities.getToken(),
         "Content-Type": "application/json",
       },
+      credentials: "include",
       method: "POST",
     }
   );

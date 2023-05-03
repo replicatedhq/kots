@@ -1,5 +1,4 @@
 import { useMutation } from "react-query";
-import { Utilities } from "@src/utilities/utilities";
 
 async function postDownloadAppVersion({
   apiEndpoint = process.env.API_ENDPOINT,
@@ -16,8 +15,8 @@ async function postDownloadAppVersion({
       headers: {
         "Content-Type": "application/json",
         Accept: "application/json",
-        Authorization: Utilities.getToken(),
       },
+      credentials: "include",
       method: "POST",
     }
   );

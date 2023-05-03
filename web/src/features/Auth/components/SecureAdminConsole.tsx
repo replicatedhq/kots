@@ -50,10 +50,9 @@ class SecureAdminConsole extends React.Component<Props, State> {
   completeLogin = async (data: LoginResponse) => {
     let loggedIn = false;
     try {
-      let token = data.token;
       if (Utilities.localStorageEnabled()) {
-        window.localStorage.setItem("token", token);
         loggedIn = true;
+        window.localStorage.setItem("isLoggedIn", "true");
         const isHelmManaged = await this.props.checkIsHelmManaged();
 
         if (data.sessionRoles) {
@@ -110,6 +109,7 @@ class SecureAdminConsole extends React.Component<Props, State> {
         body: JSON.stringify({
           password: this.state.password,
         }),
+        credentials: "include",
       })
         .then(async (res) => {
           if (res.status >= 400) {
@@ -208,6 +208,7 @@ class SecureAdminConsole extends React.Component<Props, State> {
           "Content-Type": "application/json",
         },
         method: "GET",
+        credentials: "include",
       });
 
       if (!response.ok) {

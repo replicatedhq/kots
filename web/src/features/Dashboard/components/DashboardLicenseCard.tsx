@@ -71,9 +71,9 @@ const DashboardLicenseCard = (props: Props) => {
     fetch(`${process.env.API_ENDPOINT}/app/${app?.slug}/license`, {
       method: "PUT",
       headers: {
-        Authorization: Utilities.getToken(),
         "Content-Type": "application/json",
       },
+      credentials: "include",
       body: JSON.stringify(payload),
     })
       .then(async (response) => {
@@ -205,18 +205,22 @@ const DashboardLicenseCard = (props: Props) => {
       } ${expiredLicenseClassName} flex-column`}
     >
       <div className="flex flex1 justifyContent--spaceBetween alignItems--center">
-        <p
-          className={`card-title ${
-            Utilities.checkIsDateExpired(expiresAt) ? "u-textColor--error" : ""
-          }`}
-        >
-          License {Utilities.checkIsDateExpired(expiresAt) && "is expired"}
+        <div className="tw-flex alignItems--center">
+          <p
+            className={`card-title ${
+              Utilities.checkIsDateExpired(expiresAt)
+                ? "u-textColor--error"
+                : ""
+            }`}
+          >
+            License {Utilities.checkIsDateExpired(expiresAt) && "is expired"}
+          </p>
           {isCommunityLicense && (
-            <span className="CommunityEditionTag u-marginLeft--5">
+            <span className="CommunityEditionTag tw-ml-2.5">
               Community Edition
             </span>
           )}
-        </p>
+        </div>
         {app?.isAirgap ? (
           <Dropzone
             className="Dropzone-wrapper flex alignItems--center"
@@ -300,20 +304,13 @@ const DashboardLicenseCard = (props: Props) => {
                   {/* TODO: refactor logic */}
                   <Icon
                     icon={
-                      appLicense?.licenseType === "dev"
-                        ? "code"
-                        : appLicense?.licenseType === "trial"
-                        ? "stopwatch"
-                        : appLicense?.licenseType === "prod"
-                        ? "dollar-sign"
-                        : appLicense?.licenseType === "community"
-                        ? "user-outline"
-                        : ""
+                      Utilities.licenseTypeTag(appLicense?.licenseType).iconName
                     }
                     size={12}
                     style={{ marginRight: "2px" }}
                     className={
-                      appLicense?.licenseType === "prod" ? "success-color" : ""
+                      Utilities.licenseTypeTag(appLicense?.licenseType)
+                        .iconColor
                     }
                   />
                   {appLicense !== null && appLicense?.licenseType !== "---"

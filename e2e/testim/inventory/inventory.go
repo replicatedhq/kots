@@ -132,6 +132,16 @@ func NewHelmManagedMode() Test {
 	}
 }
 
+func NewMultiAppBackupAndRestoreTest() Test {
+	return Test{
+		Name:           "multi-app-backup-and-restore",
+		Suite:          "multi-app-backup-and-restore",
+		Namespace:      "multi-app-backup-and-restore",
+		UpstreamURI:    "multi-app-backup-and-restore/automated",
+		NeedsSnapshots: true,
+	}
+}
+
 func MultiAppTest() Test {
 	return Test{
 		Name:        "multi-app-install",

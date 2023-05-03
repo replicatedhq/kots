@@ -59,9 +59,9 @@ const ChangePasswordForm = ({
 
       fetch(`${process.env.API_ENDPOINT}/password/change`, {
         headers: {
-          Authorization: Utilities.getToken(),
           "Content-Type": "application/json",
         },
+        credentials: "include",
         method: "PUT",
         body: JSON.stringify({
           current_password: inputs.currentPassword,

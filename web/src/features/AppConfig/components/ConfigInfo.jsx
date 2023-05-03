@@ -30,6 +30,7 @@ const ConfigInfo = ({ match, fromLicenseFlow, app }) => {
     }
   );
   const pendingVersions = app?.downstream?.pendingVersions;
+  const currentVersion = app?.downstream?.currentVersion;
 
   if (size(pendingVersions) > 0 && currentSequence === sequence) {
     return (
@@ -72,7 +73,7 @@ const ConfigInfo = ({ match, fromLicenseFlow, app }) => {
         </Link>
       </div>
     );
-  } else if (pendingSequenceInxex > -1) {
+  } else if (pendingSequenceInxex > -1 && currentVersion) {
     const numVersionsNewer =
       app?.downstream?.pendingVersions?.length - pendingSequenceInxex;
     return (

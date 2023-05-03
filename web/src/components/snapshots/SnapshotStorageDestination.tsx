@@ -8,7 +8,6 @@ import Modal from "react-modal";
 import ConfigureSnapshots from "./ConfigureSnapshots";
 import CodeSnippet from "../shared/CodeSnippet";
 import Loader from "../shared/Loader";
-import { Utilities } from "../../utilities/utilities";
 
 import "../../scss/components/shared/SnapshotForm.scss";
 
@@ -801,9 +800,9 @@ class SnapshotStorageDestination extends Component<Props, State> {
     fetch(`${process.env.API_ENDPOINT}/snapshots/filesystem/instructions`, {
       method: "POST",
       headers: {
-        Authorization: Utilities.getToken() || "",
         "Content-Type": "application/json",
       },
+      credentials: "include",
       body: JSON.stringify({
         fileSystemOptions: fileSystemOptions,
       }),

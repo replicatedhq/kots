@@ -315,7 +315,7 @@ func helmChartBaseAppendAdditionalFiles(base Base, fullBasePath string, upstream
 
 	var nextBases []Base
 	for _, nextBase := range base.Bases {
-		nextBase = helmChartBaseAppendAdditionalFiles(nextBase, path.Join(base.Path, nextBase.Path), upstreamFiles, baseToUpstreamPathMap)
+		nextBase = helmChartBaseAppendAdditionalFiles(nextBase, path.Join(fullBasePath, nextBase.Path), upstreamFiles, baseToUpstreamPathMap)
 		nextBases = append(nextBases, nextBase)
 	}
 	base.Bases = nextBases

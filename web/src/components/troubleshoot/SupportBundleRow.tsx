@@ -120,9 +120,7 @@ export const SupportBundleRow = (props: Props) => {
       `${process.env.API_ENDPOINT}/troubleshoot/supportbundle/${bundle.id}/download`,
       {
         method: "GET",
-        headers: {
-          Authorization: Utilities.getToken(),
-        },
+        credentials: "include",
       }
     )
       .then(async (result) => {
@@ -194,9 +192,7 @@ export const SupportBundleRow = (props: Props) => {
         `${process.env.API_ENDPOINT}/troubleshoot/app/${match.params.slug}/supportbundle/${bundle.id}`,
         {
           method: "DELETE",
-          headers: {
-            Authorization: Utilities.getToken(),
-          },
+          credentials: "include",
         }
       );
       if (res.ok) {
@@ -230,9 +226,7 @@ export const SupportBundleRow = (props: Props) => {
       `${process.env.API_ENDPOINT}/troubleshoot/app/${props.match.params.slug}/supportbundle/${bundleSlug}/share`,
       {
         method: "POST",
-        headers: {
-          Authorization: Utilities.getToken(),
-        },
+        credentials: "include",
       }
     )
       .then(async (result) => {

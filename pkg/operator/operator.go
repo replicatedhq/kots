@@ -256,19 +256,20 @@ func (o *Operator) DeployApp(appID string, sequence int64) (deployed bool, deplo
 	}
 
 	if kotsKinds.HelmCharts != nil {
-		marshalledHelmCharts, err := kotsKinds.Marshal("kots.io", "v1beta1", "HelmChartList")
-		if err != nil {
-			return false, errors.Wrap(err, "failed to marshal helm charts")
-		}
+		for i, helmChart := range kotsKinds.HelmCharts.Items {
+			renderedNamespace, err := builder.String(helmChart.Spec.Namespace)
+			if err != nil {
+				return false, errors.Wrapf(err, "failed to render namespace %s for chart %s", helmChart.Spec.Namespace, helmChart.GetReleaseName())
+			}
+			kotsKinds.HelmCharts.Items[i].Spec.Namespace = renderedNamespace
 
-		renderedHelmCharts, err := builder.String(marshalledHelmCharts)
-		if err != nil {
-			return false, errors.Wrap(err, "failed to render helm charts")
-		}
-
-		kotsKinds.HelmCharts, err = kotsutil.LoadHelmChartsFromContents([]byte(renderedHelmCharts))
-		if err != nil {
-			return false, errors.Wrap(err, "failed to load helm charts")
+			for j, upgradeFlag := range helmChart.Spec.HelmUpgradeFlags {
+				renderedUpgradeFlag, err := builder.String(upgradeFlag)
+				if err != nil {
+					return false, errors.Wrapf(err, "failed to render upgrade flag %s for chart %s", upgradeFlag, helmChart.GetReleaseName())
+				}
+				kotsKinds.HelmCharts.Items[i].Spec.HelmUpgradeFlags[j] = renderedUpgradeFlag
+			}
 		}
 	}
 

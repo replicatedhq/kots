@@ -4,7 +4,6 @@ import {
   withRouterType,
 } from "@src/utilities/react-router-utilities";
 
-import { Utilities } from "../../utilities/utilities";
 import Loader from "../../components/shared/Loader";
 import DiffEditor from "../../components/shared/DiffEditor";
 
@@ -51,10 +50,8 @@ class VersionDiff extends React.Component<Props, State> {
     this.setState({ loadingFileTrees: true });
     const url = `${process.env.API_ENDPOINT}/app/${this.props.slug}/sequence/${sequence}/renderedcontents`;
     return fetch(url, {
-      headers: {
-        Authorization: Utilities.getToken(),
-      },
       method: "GET",
+      credentials: "include",
     })
       .then((res) => res.json())
       .then(async (files) => {
@@ -138,9 +135,31 @@ class VersionDiff extends React.Component<Props, State> {
 
     if (loadingFileTrees) {
       return (
-        <div className="u-height--full u-width--full flex alignItems--center justifyContent--center u-marginTop--15">
-          <Loader size="60" />
-        </div>
+        <>
+          <div className="flex u-marginBottom--15">
+            {!this.props.hideBackButton && (
+              <div
+                className="u-fontWeight--bold u-marginRight--20 link"
+                onClick={this.goBack}
+              >
+                <Icon
+                  icon="prev-arrow"
+                  size={10}
+                  className="clickable u-marginRight--10"
+                  style={{ verticalAlign: "0" }}
+                />
+                Back
+              </div>
+            )}
+            <span className="u-fontWeight--bold u-textColor--primary">
+              Diffing releases {firstSequence} and {secondSequence}
+            </span>
+          </div>
+          <div className="u-height--full u-width--full flex alignItems--center justifyContent--center u-marginTop--15">
+            {" "}
+            <Loader size="60" />
+          </div>
+        </>
       );
     }
 

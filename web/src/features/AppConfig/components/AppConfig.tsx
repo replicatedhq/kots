@@ -76,18 +76,19 @@ type State = {
   activeGroups: string[];
   app: App | null;
   changed: boolean;
-  configError: boolean;
+  configErrorMessage: string;
   configGroups: ConfigGroup[];
   configLoading: boolean;
   displayErrorModal: boolean;
   downstreamVersion: Version | null;
   errorTitle: string;
   gettingConfigErrMsg: string;
-  showValidationError: boolean;
   initialConfigGroups: ConfigGroup[];
   savingConfig: boolean;
+  showConfigError: boolean;
   showHelmDeployModal: boolean;
   showNextStepModal: boolean;
+  showValidationError: boolean;
 };
 
 const validationErrorMessage =
@@ -105,7 +106,8 @@ class AppConfig extends Component<Props, State> {
       activeGroups: [],
       app: null,
       changed: false,
-      configError: false,
+      showConfigError: false,
+      configErrorMessage: "",
       configGroups: [],
       configLoading: false,
       displayErrorModal: false,
@@ -161,7 +163,7 @@ class AppConfig extends Component<Props, State> {
     }
     if (location.hash !== lastProps.location.hash && location.hash) {
       // navigate to error if there is one
-      if (this.state.configError) {
+      if (this.state.showConfigError) {
         const hash = location.hash.slice(1);
         const element = document.getElementById(hash);
         if (element) {
@@ -208,9 +210,9 @@ class AppConfig extends Component<Props, State> {
       const { slug } = this.props.match.params;
       const res = await fetch(`${process.env.API_ENDPOINT}/app/${slug}`, {
         headers: {
-          Authorization: Utilities.getToken(),
           "Content-Type": "application/json",
         },
+        credentials: "include",
         method: "GET",
       });
       if (res.ok && res.status == 200) {
@@ -229,7 +231,8 @@ class AppConfig extends Component<Props, State> {
     this.setState({
       configLoading: true,
       gettingConfigErrMsg: "",
-      configError: false,
+      showConfigError: false,
+      configErrorMessage: "",
     });
 
     fetch(
@@ -237,9 +240,9 @@ class AppConfig extends Component<Props, State> {
       {
         method: "GET",
         headers: {
-          Authorization: Utilities.getToken(),
           "Content-Type": "application/json",
         },
+        credentials: "include",
       }
     )
       .then(async (response) => {
@@ -332,7 +335,7 @@ class AppConfig extends Component<Props, State> {
         }
       });
     });
-    this.setState({ configGroups, configError: true }, () => {
+    this.setState({ configGroups, showConfigError: true }, () => {
       this.updateUrlWithErrorId(requiredItems);
     });
   };
@@ -340,7 +343,8 @@ class AppConfig extends Component<Props, State> {
   handleSave = async () => {
     this.setState({
       savingConfig: true,
-      configError: false,
+      showConfigError: false,
+      configErrorMessage: "",
     });
 
     const { fromLicenseFlow, history, match, isHelmManaged } = this.props;
@@ -352,9 +356,9 @@ class AppConfig extends Component<Props, State> {
     fetch(`${process.env.API_ENDPOINT}/app/${slug}/config`, {
       method: "PUT",
       headers: {
-        Authorization: Utilities.getToken(),
         "Content-Type": "application/json",
       },
+      credentials: "include",
       body: JSON.stringify({
         configGroups: this.state.configGroups,
         sequence,
@@ -370,7 +374,10 @@ class AppConfig extends Component<Props, State> {
             this.markRequiredItems(result.requiredItems);
           }
           if (result.error) {
-            this.setState({ configError: result.error });
+            this.setState({
+              showConfigError: Boolean(result.error),
+              configErrorMessage: result.error,
+            });
           }
 
           const validationErrors: ConfigGroupItemValidationErrors[] =
@@ -387,7 +394,8 @@ class AppConfig extends Component<Props, State> {
           });
           if (result.error) {
             this.setState({
-              configError: result.error,
+              showConfigError: Boolean(result.error),
+              configErrorMessage: result.error,
               showValidationError: true,
             });
           }
@@ -426,7 +434,8 @@ class AppConfig extends Component<Props, State> {
       .catch((err) => {
         this.setState({
           savingConfig: false,
-          configError: err
+          showConfigError: Boolean(err),
+          configErrorMessage: err
             ? err.message
             : "Something went wrong, please try again.",
         });
@@ -522,6 +531,11 @@ class AppConfig extends Component<Props, State> {
       this.fetchController.abort();
     }
 
+    this.setState({
+      showConfigError: false,
+      configErrorMessage: "",
+    });
+
     this.fetchController = new AbortController();
     const signal = this.fetchController.signal;
 
@@ -530,10 +544,10 @@ class AppConfig extends Component<Props, State> {
       {
         signal,
         headers: {
-          Authorization: Utilities.getToken(),
           "Content-Type": "application/json",
           Accept: "application/json",
         },
+        credentials: "include",
         method: "POST",
         body: JSON.stringify({ configGroups: groups, sequence: sequence }),
       }
@@ -545,7 +559,10 @@ class AppConfig extends Component<Props, State> {
             return;
           }
           const res = await response.json();
-          this.setState({ configError: res?.error });
+          this.setState({
+            showConfigError: Boolean(res?.error),
+            configErrorMessage: res?.error,
+          });
           return;
         }
 
@@ -565,7 +582,6 @@ class AppConfig extends Component<Props, State> {
           );
 
         this.setState({
-          configError: hasValidationError,
           showValidationError: hasValidationError,
         });
 
@@ -591,7 +607,10 @@ class AppConfig extends Component<Props, State> {
       .catch((error) => {
         if (error.name !== "AbortError") {
           console.log(error);
-          this.setState({ configError: error?.message });
+          this.setState({
+            showConfigError: Boolean(error?.message),
+            configErrorMessage: error?.message,
+          });
         }
       });
   };
@@ -641,17 +660,18 @@ class AppConfig extends Component<Props, State> {
 
   render() {
     const {
-      configGroups,
-      downstreamVersion,
-      savingConfig,
       changed,
-      showValidationError,
-      showNextStepModal,
-      configError,
+      showConfigError,
+      configErrorMessage,
+      configGroups,
       configLoading,
-      gettingConfigErrMsg,
       displayErrorModal,
+      downstreamVersion,
       errorTitle,
+      gettingConfigErrMsg,
+      savingConfig,
+      showNextStepModal,
+      showValidationError,
     } = this.state;
     const { fromLicenseFlow, match, isHelmManaged } = this.props;
     const app = this.props.app || this.state.app;
@@ -859,10 +879,10 @@ class AppConfig extends Component<Props, State> {
                         )}
                         {!savingConfig && (
                           <div className="ConfigError--wrapper flex-column alignItems--flexStart">
-                            {(configError ||
+                            {(showConfigError ||
                               this.state.showValidationError) && (
                               <span className="u-textColor--error tw-mb-2 tw-text-xs">
-                                {validationErrorMessage}
+                                {configErrorMessage || validationErrorMessage}
                               </span>
                             )}
                             <button

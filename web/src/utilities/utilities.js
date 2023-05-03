@@ -533,13 +533,6 @@ export function getSnapshotDestinationLabel(provider) {
 }
 
 export const Utilities = {
-  getToken() {
-    if (this.localStorageEnabled()) {
-      return window.localStorage.getItem("token") || "";
-    }
-    return "";
-  },
-
   getSessionRoles() {
     if (this.localStorageEnabled()) {
       return window.localStorage.getItem("session_roles");
@@ -583,8 +576,11 @@ export const Utilities = {
   },
 
   isLoggedIn() {
-    const hasToken = this.getToken();
-    return !!hasToken;
+    if (localStorage.getItem("isLoggedIn") === "true") {
+      return true;
+    } else {
+      return false;
+    }
   },
 
   dateFormat(date, format, localize = true) {
@@ -671,14 +667,7 @@ export const Utilities = {
   },
 
   logoutUser(client, options = {}) {
-    const token = this.getToken();
-    // TODO: for now we just remove the token,
-    if (token) {
-      if (client) {
-        client.resetStore();
-      }
-      window.localStorage.removeItem("token");
-    }
+    window.localStorage.removeItem("isLoggedIn");
 
     const sessionRoles = this.getSessionRoles();
     if (sessionRoles) {
@@ -908,5 +897,39 @@ export const Utilities = {
         reject(err);
       }
     });
+  },
+  licenseTypeTag(licenseType) {
+    switch (licenseType) {
+      case "prod": {
+        return {
+          iconName: "dollar-sign",
+          iconColor: "success-color",
+        };
+      }
+      case "trial": {
+        return {
+          iconName: "stopwatch",
+          iconColor: "trial-license-icon",
+        };
+      }
+      case "dev": {
+        return {
+          iconName: "code",
+          iconColor: "dev-license-icon",
+        };
+      }
+      case "community": {
+        return {
+          iconName: "user-outline",
+          iconColor: "warning-color",
+        };
+      }
+      default: {
+        return {
+          iconName: "",
+          iconColor: "",
+        };
+      }
+    }
   },
 };

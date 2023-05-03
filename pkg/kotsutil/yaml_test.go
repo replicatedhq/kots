@@ -4,7 +4,7 @@ import (
 	"testing"
 )
 
-func Test_RemoveEmptyMappingFields(t *testing.T) {
+func Test_RemoveNilFieldsFromYAML(t *testing.T) {
 	tests := []struct {
 		name    string
 		input   string
@@ -167,10 +167,108 @@ spec:
       - image: nginx
 `,
 		},
+		{
+			name: "deployment with empty pod spec volumes",
+			input: `apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: test
+spec:
+  template:
+    spec:
+      volumes:
+      containers:
+      - image: nginx
+`,
+			want: `apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: test
+spec:
+  template:
+    spec:
+      containers:
+      - image: nginx
+`,
+		},
+		{
+			name: "statefulset with empty volumeClaimTemplates and volumes",
+			input: `apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: mysql
+spec:
+  volumeClaimTemplates:
+  template:
+    spec:
+      volumes:
+      containers:
+      - name: mysql
+`,
+			want: `apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: mysql
+spec:
+  template:
+    spec:
+      containers:
+      - name: mysql
+`,
+		},
+		{
+			name: "statefulset with null volumeClaimTemplates and volumes",
+			input: `apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: mysql
+spec:
+  volumeClaimTemplates: null
+  template:
+    spec:
+      volumes: null
+      containers:
+      - name: mysql
+`,
+			want: `apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: mysql
+spec:
+  template:
+    spec:
+      containers:
+      - name: mysql
+`,
+		},
+		{
+			name: "statefulset with empty volumeMounts",
+			input: `apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: mysql
+spec:
+  template:
+    spec:
+      containers:
+      - name: mysql
+        volumeMounts:
+`,
+			want: `apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: mysql
+spec:
+  template:
+    spec:
+      containers:
+      - name: mysql
+`,
+		},
 	}
 
 	for _, tt := range tests {
-		got, err := RemoveEmptyMappingFields([]byte(tt.input))
+		got, err := RemoveNilFieldsFromYAML([]byte(tt.input))
 		if (err != nil) != tt.wantErr {
 			t.Errorf("%s - error = %v, wantErr %v", tt.name, err, tt.wantErr)
 			return

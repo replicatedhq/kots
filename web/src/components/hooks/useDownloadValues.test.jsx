@@ -73,14 +73,12 @@ describe("useDownloadValues", () => {
         })
       );
       const testAppSlug = "testAppSlug";
-      const testToken = "testToken";
       const testSequence = 1;
       const versionLabel = "1.2.3";
       const isPending = false;
       const testAPIEndpoint = "testAPIEndpoint";
       const testGetValuesConfig = {
         _fetch: _fetchValuesSpy,
-        _token: testToken,
         apiEndpoint: testAPIEndpoint,
         appSlug: testAppSlug,
         sequence: testSequence,
@@ -95,9 +93,9 @@ describe("useDownloadValues", () => {
       const expectedFetchConfig = {
         method: "GET",
         headers: {
-          Authorization: testToken,
           "Content-Type": "application/blob",
         },
+        credentials: "include",
       };
       await expect(getValues(testGetValuesConfig)).resolves.toEqual(
         expectedResponse
@@ -121,11 +119,9 @@ describe("useDownloadValues", () => {
       const testVersionLabel = "1.2.3";
       const testIsPending = false;
 
-      const testToken = "testToken";
       const testAPIEndpoint = "testAPIEndpoint";
       const testGetValuesConfig = {
         _fetch: _fetchValuesSpy,
-        _token: testToken,
         apiEndpoint: testAPIEndpoint,
         appSlug: testAppSlug,
         sequence: testSequence,
@@ -148,11 +144,9 @@ describe("useDownloadValues", () => {
 
       const testAppSlug = "testAppSlug";
       const testSequence = 1;
-      const testToken = "testToken";
       const testAPIEndpoint = "testAPIEndpoint";
       const testGetValuesConfig = {
         _fetch: _fetchValuesSpy,
-        _token: testToken,
         apiEndpoint: testAPIEndpoint,
         appSlug: testAppSlug,
         sequence: testSequence,
@@ -167,11 +161,9 @@ describe("useDownloadValues", () => {
         Promise.reject(new Error("Error fetching"))
       );
 
-      const testToken = "testToken";
       const testAPIEndpoint = "testAPIEndpoint";
       const testGetValuesConfig = {
         _fetch: _fetchValuesSpy,
-        _token: testToken,
         apiEndpoint: testAPIEndpoint,
       };
 

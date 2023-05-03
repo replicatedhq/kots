@@ -28,9 +28,9 @@ export class AnalyzerRedactorReport extends Component {
       {
         method: "GET",
         headers: {
-          Authorization: Utilities.getToken(),
           "Content-Type": "application/json",
         },
+        credentials: "include",
       }
     )
       .then((res) => res.json())

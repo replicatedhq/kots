@@ -32,7 +32,6 @@ type LoginRequest struct {
 
 type LoginResponse struct {
 	Error string `json:"error,omitempty"`
-	Token string `json:"token,omitempty"`
 }
 
 type LoginMethod string
@@ -110,7 +109,18 @@ func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	loginResponse.Token = fmt.Sprintf("Bearer %s", signedJWT)
+	responseToken := fmt.Sprintf("Bearer %s", signedJWT)
+
+	expiration := time.Now().Add(SessionTimeout)
+	origin := r.Header.Get("Origin")
+	tokenCookie, err := session.GetSessionCookie(responseToken, expiration, origin)
+	if err != nil {
+		logger.Error(errors.Wrap(err, "failed to get session cookie"))
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	http.SetCookie(w, tokenCookie)
 
 	JSON(w, http.StatusOK, loginResponse)
 }
