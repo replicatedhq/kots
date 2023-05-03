@@ -3,7 +3,7 @@ package template
 import (
 	"testing"
 
-	kurlv1beta1 "github.com/replicatedhq/kurl/kurlkinds/pkg/apis/cluster/v1beta1"
+	kurlv1beta1 "github.com/replicatedhq/kurlkinds/pkg/apis/cluster/v1beta1"
 	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -179,17 +179,17 @@ func TestParseInstallerProperly(t *testing.T) {
 			Namespace: "default",
 		},
 		Spec: kurlv1beta1.InstallerSpec{
-			Kubernetes: kurlv1beta1.Kubernetes{
+			Kubernetes: &kurlv1beta1.Kubernetes{
 				MasterAddress:    "1.1.1.1",
 				ServiceCIDR:      "/24",
 				ServiceCidrRange: "1.1.1.1",
 				Version:          "latest",
 			},
-			Fluentd: kurlv1beta1.Fluentd{
+			Fluentd: &kurlv1beta1.Fluentd{
 				FullEFKStack: true,
 				Version:      "latest",
 			},
-			Kotsadm: kurlv1beta1.Kotsadm{
+			Kotsadm: &kurlv1beta1.Kotsadm{
 				ApplicationNamespace: "namelike",
 				ApplicationSlug:      "sluglike",
 				Hostname:             "104.24.13.4",

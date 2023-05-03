@@ -10,8 +10,8 @@ import (
 	"text/template"
 
 	"github.com/replicatedhq/kots/pkg/k8sutil"
-	kurlclientset "github.com/replicatedhq/kurl/kurlkinds/client/kurlclientset/typed/cluster/v1beta1"
-	kurlv1beta1 "github.com/replicatedhq/kurl/kurlkinds/pkg/apis/cluster/v1beta1"
+	kurlclientset "github.com/replicatedhq/kurlkinds/client/kurlclientset/typed/cluster/v1beta1"
+	kurlv1beta1 "github.com/replicatedhq/kurlkinds/pkg/apis/cluster/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 

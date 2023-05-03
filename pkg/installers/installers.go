@@ -6,8 +6,8 @@ import (
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/kurl"
-	"github.com/replicatedhq/kurl/kurlkinds/client/kurlclientset"
-	kurlv1beta1 "github.com/replicatedhq/kurl/kurlkinds/pkg/apis/cluster/v1beta1"
+	kurlv1beta1 "github.com/replicatedhq/kurlkinds/pkg/apis/cluster/v1beta1"
+	"github.com/replicatedhq/kurlkinds/client/kurlclientset"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
