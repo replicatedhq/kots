@@ -33,6 +33,8 @@ func IsKurl(clientset kubernetes.Interface) (bool, error) {
 		configMapExists = true
 	} else if kuberneteserrors.IsNotFound(err) {
 		configMapExists = false
+	} else if kuberneteserrors.IsUnauthorized(err) {
+		configMapExists = false
 	} else if kuberneteserrors.IsForbidden(err) {
 		configMapExists = false
 	} else if err != nil {
