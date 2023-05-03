@@ -4,6 +4,7 @@ import (
 	"github.com/pkg/errors"
 	flag "github.com/spf13/pflag"
 	"k8s.io/cli-runtime/pkg/genericclioptions"
+	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
@@ -58,6 +59,19 @@ func GetClusterConfig() (*rest.Config, error) {
 	cfg.Burst = DEFAULT_K8S_CLIENT_BURST
 
 	return cfg, nil
+}
+
+func GetDynamicClient() (dynamic.Interface, error) {
+	cfg, err := GetClusterConfig()
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get cluster config")
+	}
+
+	dynamicClient, err := dynamic.NewForConfig(cfg)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to create dynamic client")
+	}
+	return dynamicClient, nil
 }
 
 func GetK8sVersion() (string, error) {

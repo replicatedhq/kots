@@ -86,3 +86,17 @@ func (mr *MockClientInterfaceMockRecorder) Shutdown() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Shutdown", reflect.TypeOf((*MockClientInterface)(nil).Shutdown))
 }
+
+// UndeployApp mocks base method.
+func (m *MockClientInterface) UndeployApp(undeployArgs types.UndeployAppArgs) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UndeployApp", undeployArgs)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// UndeployApp indicates an expected call of UndeployApp.
+func (mr *MockClientInterfaceMockRecorder) UndeployApp(undeployArgs interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UndeployApp", reflect.TypeOf((*MockClientInterface)(nil).UndeployApp), undeployArgs)
+}
