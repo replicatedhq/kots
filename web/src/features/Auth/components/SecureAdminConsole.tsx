@@ -26,7 +26,6 @@ type State = {
   } | null;
 };
 type LoginResponse = {
-  token: string;
   expires?: number;
   sessionRoles: string;
 };
@@ -251,17 +250,15 @@ class SecureAdminConsole extends React.Component<Props, State> {
   async componentDidMount() {
     window.addEventListener("keydown", this.submitForm);
 
-    const token = Utilities.getCookie("token");
+    const token = Utilities.getCookie("identity-service-login");
     if (token) {
       // this is a redirect from identity service login
-      // strip quotes from token (golang adds them when the cookie value has spaces, commas, etc..)
       const loginData = {
-        token: token.replace(/"/g, ""),
         sessionRoles: Utilities.getCookie("session_roles"),
       };
       const loggedIn = await this.completeLogin(loginData);
       if (loggedIn) {
-        Utilities.removeCookie("token");
+        Utilities.removeCookie("identity-service-login");
         Utilities.removeCookie("session_roles");
       }
       return;

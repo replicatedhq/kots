@@ -375,8 +375,8 @@ func (h *Handler) OIDCLoginCallback(w http.ResponseWriter, r *http.Request) {
 
 	// token cookie
 	tokenCookie := http.Cookie{
-		Name:    "token",
-		Value:   responseToken,
+		Name:    "identity-service-login",
+		Value:   "true",
 		Expires: expire,
 		Path:    "/",
 	}
