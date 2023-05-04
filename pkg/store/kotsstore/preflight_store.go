@@ -57,7 +57,7 @@ func (s *KOTSStore) GetPreflightProgress(appID string, sequence int64) (string, 
 func (s *KOTSStore) SetPreflightResults(appID string, sequence int64, results []byte) error {
 	db := persistence.MustGetDBSession()
 	query := `update app_downstream_version set preflight_result = ?, preflight_result_created_at = ?,
-status = (case when status = 'deployed' then 'deployed' else 'pending' end),
+status = (case when status = 'deployed' then 'deployed' when status = 'deploying' then 'deploying' else 'pending' end),
 preflight_progress = NULL, preflight_skipped = false
 where app_id = ? and parent_sequence = ?`
 
