@@ -10,8 +10,8 @@ import (
 	"text/template"
 
 	"github.com/replicatedhq/kots/pkg/k8sutil"
-	kurlclientset "github.com/replicatedhq/kurl/kurlkinds/client/kurlclientset/typed/cluster/v1beta1"
-	kurlv1beta1 "github.com/replicatedhq/kurl/kurlkinds/pkg/apis/cluster/v1beta1"
+	kurlclientset "github.com/replicatedhq/kurlkinds/client/kurlclientset/typed/cluster/v1beta1"
+	kurlv1beta1 "github.com/replicatedhq/kurlkinds/pkg/apis/cluster/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -73,20 +73,27 @@ func newKurlContext(installerName, nameSpace string) *kurlCtx {
 }
 
 func (ctx kurlCtx) AddValuesToKurlContext(retrieved *kurlv1beta1.Installer) {
-	Spec := reflect.ValueOf(retrieved.Spec)
+	specReflect := reflect.ValueOf(retrieved.Spec)
+	for i := 0; i < specReflect.NumField(); i++ {
+		category := reflect.ValueOf(specReflect.Field(i).Interface())
 
-	for i := 0; i < Spec.NumField(); i++ {
-		Category := reflect.ValueOf(Spec.Field(i).Interface())
+		if category.IsNil() {
+			continue
+		}
 
-		TypeOfCategory := Category.Type()
+		if category.Kind() == reflect.Ptr {
+			category = category.Elem()
+		}
 
-		RawCategoryName := Category.String()
-		TrimmedRight := strings.Split(RawCategoryName, ".")[1]
-		CategoryName := strings.Split(TrimmedRight, " ")[0]
+		categoryType := category.Type()
 
-		for i := 0; i < Category.NumField(); i++ {
-			if Category.Field(i).CanInterface() {
-				ctx.KurlValues[CategoryName+"."+TypeOfCategory.Field(i).Name] = Category.Field(i).Interface()
+		rawCategoryName := category.String()
+		trimmedRight := strings.Split(rawCategoryName, ".")[1]
+		categoryName := strings.Split(trimmedRight, " ")[0]
+
+		for i := 0; i < category.NumField(); i++ {
+			if category.Field(i).CanInterface() {
+				ctx.KurlValues[categoryName+"."+categoryType.Field(i).Name] = category.Field(i).Interface()
 			}
 		}
 	}
