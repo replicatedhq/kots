@@ -109,7 +109,12 @@ func InstallCmd() *cobra.Command {
 				return errors.Wrap(err, "failed to get k8s clientset")
 			}
 
-			registryConfig, err := getRegistryConfig(v, clientset)
+			appSlug := ""
+			if license != nil {
+				appSlug = license.Spec.AppSlug
+			}
+
+			registryConfig, err := getRegistryConfig(v, clientset, appSlug)
 			if err != nil {
 				return errors.Wrap(err, "failed to get registry config")
 			}
@@ -742,7 +747,7 @@ func registryFlags(flagset *pflag.FlagSet) {
 	flagset.MarkHidden("kotsadm-tag")
 }
 
-func getRegistryConfig(v *viper.Viper, clientset kubernetes.Interface) (*kotsadmtypes.RegistryConfig, error) {
+func getRegistryConfig(v *viper.Viper, clientset kubernetes.Interface, appSlug string) (*kotsadmtypes.RegistryConfig, error) {
 	registryEndpoint := v.GetString("kotsadm-registry")
 	registryNamespace := v.GetString("kotsadm-namespace")
 	registryUsername := v.GetString("registry-username")
@@ -767,18 +772,15 @@ func getRegistryConfig(v *viper.Viper, clientset kubernetes.Interface) (*kotsadm
 	}
 
 	if registryEndpoint == "" && isKurl && isAirgap {
-		license, err := getLicense(v)
-		if err != nil {
-			return nil, errors.Wrap(err, "failed to get license")
-		}
 		registryEndpoint, registryUsername, registryPassword, err = kotsutil.GetKurlRegistryCreds()
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to get kURL registry info")
 		}
-		if registryNamespace == "" && license != nil {
-			registryNamespace = license.Spec.AppSlug
+		if registryNamespace == "" {
+			registryNamespace = appSlug
 		}
 	}
+
 	return &kotsadmtypes.RegistryConfig{
 		OverrideVersion:   v.GetString("kotsadm-tag"),
 		OverrideRegistry:  registryEndpoint,

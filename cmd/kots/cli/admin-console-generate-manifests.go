@@ -50,7 +50,7 @@ func AdminGenerateManifestsCmd() *cobra.Command {
 			if clientset, err := k8sutil.GetClientset(); err == nil {
 				isOpenShift, isGKEAutopilot = k8sutil.IsOpenShift(clientset), k8sutil.IsGKEAutopilot(clientset)
 				migrateToMinioXl, currentMinioImage, _ = kotsadm.IsMinioXlMigrationNeeded(clientset, namespace)
-				if newRegistryConfig, err := getRegistryConfig(v, clientset); err == nil {
+				if newRegistryConfig, err := getRegistryConfig(v, clientset, ""); err == nil {
 					registryConfig = *newRegistryConfig
 				} else {
 					log.Error(errors.Wrap(err, "failed to get registry config"))

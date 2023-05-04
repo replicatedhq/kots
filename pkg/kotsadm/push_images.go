@@ -589,7 +589,8 @@ func pushAppImage(opts types.PushAppImageOptions) error {
 		fmt.Printf("Pushing image %s\n", opts.ImageID) // still log in console for future reference
 		opts.ReportWriter.Write([]byte(fmt.Sprintf("+file.begin:%s\n", opts.ImageID)))
 	} else {
-		writeProgressLine(opts.ReportWriter, fmt.Sprintf("Pushing image %s", opts.ImageID))
+		destImageStr := opts.CopyImageOptions.DestRef.DockerReference().String() // this is better for debugging from the cli than the image id
+		writeProgressLine(opts.ReportWriter, fmt.Sprintf("Pushing image %s", destImageStr))
 	}
 
 	var retryAttempts int = 5
