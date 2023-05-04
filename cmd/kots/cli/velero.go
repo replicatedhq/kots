@@ -362,7 +362,7 @@ func VeleroConfigureOtherS3Cmd() *cobra.Command {
 				return errors.Wrap(err, "failed to get clientset")
 			}
 
-			registryConfig, err := getRegistryConfig(v, clientset)
+			registryConfig, err := getRegistryConfig(v, clientset, "")
 			if err != nil {
 				return errors.Wrap(err, "failed to get registry config")
 			}
@@ -764,7 +764,7 @@ func VeleroConfigureNFSCmd() *cobra.Command {
 				},
 			}
 
-			registryConfig, err := getRegistryConfig(v, clientset)
+			registryConfig, err := getRegistryConfig(v, clientset, "")
 			if err != nil {
 				return errors.Wrap(err, "failed to get registry config")
 			}
@@ -835,7 +835,7 @@ func VeleroConfigureHostPathCmd() *cobra.Command {
 				HostPath: &hostPath,
 			}
 
-			registryConfig, err := getRegistryConfig(v, clientset)
+			registryConfig, err := getRegistryConfig(v, clientset, "")
 			if err != nil {
 				return errors.Wrap(err, "failed to get registry config")
 			}
@@ -1029,7 +1029,7 @@ func VeleroPrintFileSystemInstructionsCmd() *cobra.Command {
 				return errors.Wrap(err, "failed to get clientset")
 			}
 
-			registryConfig, err := getRegistryConfig(v, clientset)
+			registryConfig, err := getRegistryConfig(v, clientset, "")
 			if err != nil {
 				return errors.Wrap(err, "failed to get registry config")
 			}
