@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	"github.com/replicatedhq/kots/pkg/preflight/types"
-	kurlv1beta1 "github.com/replicatedhq/kurl/kurlkinds/pkg/apis/cluster/v1beta1"
+	kurlv1beta1 "github.com/replicatedhq/kurlkinds/pkg/apis/cluster/v1beta1"
 	troubleshootv1beta2 "github.com/replicatedhq/troubleshoot/pkg/apis/troubleshoot/v1beta2"
 	troubleshootpreflight "github.com/replicatedhq/troubleshoot/pkg/preflight"
 	"github.com/stretchr/testify/require"
@@ -127,20 +127,20 @@ func Test_injectInstallerPreflightIfPresent(t *testing.T) {
 			},
 			deployedInstaller: &kurlv1beta1.Installer{
 				Spec: kurlv1beta1.InstallerSpec{
-					Kubernetes: kurlv1beta1.Kubernetes{
+					Kubernetes: &kurlv1beta1.Kubernetes{
 						Version: "1.23.6",
 					},
-					Containerd: kurlv1beta1.Containerd{
+					Containerd: &kurlv1beta1.Containerd{
 						Version: "1.5.11",
 					},
 				},
 			},
 			releaseInstaller: &kurlv1beta1.Installer{
 				Spec: kurlv1beta1.InstallerSpec{
-					Kubernetes: kurlv1beta1.Kubernetes{
+					Kubernetes: &kurlv1beta1.Kubernetes{
 						Version: "1.23.6",
 					},
-					Containerd: kurlv1beta1.Containerd{
+					Containerd: &kurlv1beta1.Containerd{
 						Version: "1.5.11",
 					},
 				},
@@ -184,20 +184,20 @@ func Test_injectInstallerPreflightIfPresent(t *testing.T) {
 			},
 			deployedInstaller: &kurlv1beta1.Installer{
 				Spec: kurlv1beta1.InstallerSpec{
-					Kubernetes: kurlv1beta1.Kubernetes{
+					Kubernetes: &kurlv1beta1.Kubernetes{
 						Version: "1.23.6",
 					},
-					Containerd: kurlv1beta1.Containerd{
+					Containerd: &kurlv1beta1.Containerd{
 						Version: "1.5.11",
 					},
 				},
 			},
 			releaseInstaller: &kurlv1beta1.Installer{
 				Spec: kurlv1beta1.InstallerSpec{
-					Kubernetes: kurlv1beta1.Kubernetes{
+					Kubernetes: &kurlv1beta1.Kubernetes{
 						Version: "1.23.6",
 					},
-					Containerd: kurlv1beta1.Containerd{
+					Containerd: &kurlv1beta1.Containerd{
 						Version: "1.5.11",
 					},
 				},
@@ -220,20 +220,20 @@ func Test_injectInstallerPreflightIfPresent(t *testing.T) {
 			},
 			deployedInstaller: &kurlv1beta1.Installer{
 				Spec: kurlv1beta1.InstallerSpec{
-					Kubernetes: kurlv1beta1.Kubernetes{
+					Kubernetes: &kurlv1beta1.Kubernetes{
 						Version: "1.23.6",
 					},
-					Containerd: kurlv1beta1.Containerd{
+					Containerd: &kurlv1beta1.Containerd{
 						Version: "1.5.11",
 					},
 				},
 			},
 			releaseInstaller: &kurlv1beta1.Installer{
 				Spec: kurlv1beta1.InstallerSpec{
-					Kubernetes: kurlv1beta1.Kubernetes{
+					Kubernetes: &kurlv1beta1.Kubernetes{
 						Version: "1.23.6",
 					},
-					Containerd: kurlv1beta1.Containerd{
+					Containerd: &kurlv1beta1.Containerd{
 						Version: "1.5.11",
 					},
 				},
