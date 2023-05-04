@@ -1713,7 +1713,7 @@ jobs:
           kubectl apply -f "$APP_SLUG/upstream/installer.yaml"
 
           # Create kurl-config configmap in kube-system
-          kubectl create cm kurl-config -n kube-system --from-literal=installer_id=my-installer
+          kubectl create cm kurl-config -n kube-system --from-literal=installer_id=7cc8094
 
           ./bin/kots \
             install "$APP_SLUG/automated" \
