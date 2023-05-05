@@ -421,20 +421,28 @@ func injectInstallerPreflightIfPresent(preflight *troubleshootv1beta2.Preflight,
 }
 
 func injectInstallerPreflight(preflight *troubleshootv1beta2.Preflight, analyzer *troubleshootv1beta2.Analyze, deployedInstaller *kurlv1beta1.Installer, releaseInstaller *kurlv1beta1.Installer) error {
-	if releaseInstaller.Spec.Kurl != nil {
-		if releaseInstaller.Spec.Kurl.AdditionalNoProxyAddresses == nil {
-			// if this is nil, it will be set to an empty string slice by kurl, so lets do so before comparing
-			releaseInstaller.Spec.Kurl.AdditionalNoProxyAddresses = []string{}
+	if releaseInstaller.Spec.Kurl != nil && releaseInstaller.Spec.Kurl.AdditionalNoProxyAddresses == nil {
+		// if AdditionalNoProxyAddresses is nil, kurl will set it to an empty array, so set it to empty array to avoid diff
+		releaseInstaller.Spec.Kurl.AdditionalNoProxyAddresses = []string{}
+	}
+
+	if releaseInstaller.Spec.Kotsadm != nil && deployedInstaller.Spec.Kotsadm != nil {
+		// ApplicationSlug, ApplicationVersionLabel, S3Override may be injected into the deployed installer, so remove it if not specified in release installer to avoid diff
+		if releaseInstaller.Spec.Kotsadm.ApplicationSlug == "" {
+			deployedInstaller.Spec.Kotsadm.ApplicationSlug = ""
+		}
+		if releaseInstaller.Spec.Kotsadm.ApplicationVersionLabel == "" {
+			deployedInstaller.Spec.Kotsadm.ApplicationVersionLabel = ""
+		}
+		if releaseInstaller.Spec.Kotsadm.S3Override == "" {
+			deployedInstaller.Spec.Kotsadm.S3Override = ""
 		}
 	}
 
-	if releaseInstaller.Spec.Kotsadm != nil {
-		if releaseInstaller.Spec.Kotsadm.ApplicationSlug == "" {
-			// application slug may be injected into the deployed installer, so remove it if not specified in release installer
-			deployedInstaller.Spec.Kotsadm.ApplicationSlug = ""
-		}
-	}
-	
+	// Ekco latest version will be installed by default, so remove it from the spec to avoid diff
+	releaseInstaller.Spec.Ekco = nil
+	deployedInstaller.Spec.Ekco = nil
+
 	// Inject deployed installer spec as collected data
 	deployedInstallerSpecYaml, err := yaml.Marshal(deployedInstaller.Spec)
 	if err != nil {
