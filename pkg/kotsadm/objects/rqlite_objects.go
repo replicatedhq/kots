@@ -115,7 +115,7 @@ func RqliteStatefulset(deployOptions types.DeployOptions, size resource.Quantity
 						{
 							Image:           GetAdminConsoleImage(deployOptions, "rqlite"),
 							ImagePullPolicy: corev1.PullIfNotPresent,
-							Name:            "kotsadm-rqlite",
+							Name:            "rqlite",
 							Args: []string{
 								"-disco-mode=dns",
 								"-disco-config={\"name\":\"kotsadm-rqlite-headless\"}",
