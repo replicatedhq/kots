@@ -1,6 +1,7 @@
 package preflight
 
 import (
+	"reflect"
 	"testing"
 
 	"github.com/replicatedhq/kots/pkg/preflight/types"
@@ -261,6 +262,196 @@ func Test_injectInstallerPreflightIfPresent(t *testing.T) {
 
 			if injected != test.want {
 				t.Errorf("installer preflight injected = %v, want %v", injected, test.want)
+			}
+		})
+	}
+}
+
+func Test_injectInstallerPreflight(t *testing.T) {
+	type args struct {
+		preflight         *troubleshootv1beta2.Preflight
+		analyzer          *troubleshootv1beta2.Analyze
+		deployedInstaller *kurlv1beta1.Installer
+		releaseInstaller  *kurlv1beta1.Installer
+	}
+	tests := []struct {
+		name                    string
+		args                    args
+		wantErr                 bool
+		wantYamlCompareAnalyzer *troubleshootv1beta2.YamlCompare
+		wantDataCollector       *troubleshootv1beta2.Data
+	}{
+		{
+			name: "expect EKCO addon to be nil",
+			args: args{
+				preflight: &troubleshootv1beta2.Preflight{
+					Spec: troubleshootv1beta2.PreflightSpec{
+						Collectors: []*troubleshootv1beta2.Collect{},
+						Analyzers:  []*troubleshootv1beta2.Analyze{},
+					},
+				},
+				analyzer: &troubleshootv1beta2.Analyze{
+					YamlCompare: &troubleshootv1beta2.YamlCompare{},
+				},
+				deployedInstaller: &kurlv1beta1.Installer{
+					Spec: kurlv1beta1.InstallerSpec{
+						Ekco: &kurlv1beta1.Ekco{
+							Version: "0.1.0",
+						},
+					},
+				},
+				releaseInstaller: &kurlv1beta1.Installer{
+					Spec: kurlv1beta1.InstallerSpec{
+						Ekco: &kurlv1beta1.Ekco{
+							Version: "0.1.0",
+						},
+					},
+				},
+			},
+			wantErr: false,
+			wantDataCollector: &troubleshootv1beta2.Data{
+				CollectorMeta: troubleshootv1beta2.CollectorMeta{
+					CollectorName: "",
+				},
+				Name: "kurl/installer.yaml",
+				Data: "{}\n",
+			},
+			wantYamlCompareAnalyzer: &troubleshootv1beta2.YamlCompare{
+				FileName: "kurl/installer.yaml",
+				Value:    "{}\n",
+			},
+		},
+		{
+			name: "expect release kurl additonal no proxy address to be empty list when set as nil",
+			args: args{
+				preflight: &troubleshootv1beta2.Preflight{
+					Spec: troubleshootv1beta2.PreflightSpec{
+						Collectors: []*troubleshootv1beta2.Collect{},
+						Analyzers:  []*troubleshootv1beta2.Analyze{},
+					},
+				},
+				analyzer: &troubleshootv1beta2.Analyze{
+					YamlCompare: &troubleshootv1beta2.YamlCompare{},
+				},
+				deployedInstaller: &kurlv1beta1.Installer{
+					Spec: kurlv1beta1.InstallerSpec{},
+				},
+				releaseInstaller: &kurlv1beta1.Installer{
+					Spec: kurlv1beta1.InstallerSpec{
+						Kurl: &kurlv1beta1.Kurl{
+							AdditionalNoProxyAddresses: nil,
+						},
+					},
+				},
+			},
+			wantErr: false,
+			wantDataCollector: &troubleshootv1beta2.Data{
+				CollectorMeta: troubleshootv1beta2.CollectorMeta{
+					CollectorName: "",
+				},
+				Name: "kurl/installer.yaml",
+				Data: "{}\n",
+			},
+			wantYamlCompareAnalyzer: &troubleshootv1beta2.YamlCompare{
+				FileName: "kurl/installer.yaml",
+				Value:    "kurl: {}\n",
+			},
+		},
+		{
+			name: "expect deployed Kotsadm app Slug, versionLabel, S3Override to be empty when releaseInstaller spec is empty",
+			args: args{
+				preflight: &troubleshootv1beta2.Preflight{
+					Spec: troubleshootv1beta2.PreflightSpec{
+						Collectors: []*troubleshootv1beta2.Collect{},
+						Analyzers:  []*troubleshootv1beta2.Analyze{},
+					},
+				},
+				analyzer: &troubleshootv1beta2.Analyze{
+					YamlCompare: &troubleshootv1beta2.YamlCompare{},
+				},
+				deployedInstaller: &kurlv1beta1.Installer{
+					Spec: kurlv1beta1.InstallerSpec{
+						Kotsadm: &kurlv1beta1.Kotsadm{
+							ApplicationSlug:         "app-slug",
+							ApplicationVersionLabel: "app-version-label",
+							S3Override:              "s3-override",
+						},
+					},
+				},
+				releaseInstaller: &kurlv1beta1.Installer{
+					Spec: kurlv1beta1.InstallerSpec{
+						Kotsadm: &kurlv1beta1.Kotsadm{
+							ApplicationSlug:         "",
+							ApplicationVersionLabel: "",
+							S3Override:              "",
+						},
+					},
+				},
+			},
+			wantErr: false,
+			wantDataCollector: &troubleshootv1beta2.Data{
+				CollectorMeta: troubleshootv1beta2.CollectorMeta{
+					CollectorName: "",
+				},
+				Name: "kurl/installer.yaml",
+				Data: "kotsadm:\n  version: \"\"\n",
+			},
+			wantYamlCompareAnalyzer: &troubleshootv1beta2.YamlCompare{
+				FileName: "kurl/installer.yaml",
+				Value:    "kotsadm:\n  version: \"\"\n",
+			},
+		},
+		{
+			name: "expect Kubernetes addon",
+			args: args{
+				preflight: &troubleshootv1beta2.Preflight{
+					Spec: troubleshootv1beta2.PreflightSpec{
+						Collectors: []*troubleshootv1beta2.Collect{},
+						Analyzers:  []*troubleshootv1beta2.Analyze{},
+					},
+				},
+				analyzer: &troubleshootv1beta2.Analyze{
+					YamlCompare: &troubleshootv1beta2.YamlCompare{},
+				},
+				deployedInstaller: &kurlv1beta1.Installer{
+					Spec: kurlv1beta1.InstallerSpec{
+						Kubernetes: &kurlv1beta1.Kubernetes{
+							Version: "1.23.6",
+						},
+					},
+				},
+				releaseInstaller: &kurlv1beta1.Installer{
+					Spec: kurlv1beta1.InstallerSpec{
+						Kubernetes: &kurlv1beta1.Kubernetes{
+							Version: "1.23.6",
+						},
+					},
+				},
+			},
+			wantErr: false,
+			wantDataCollector: &troubleshootv1beta2.Data{
+				CollectorMeta: troubleshootv1beta2.CollectorMeta{
+					CollectorName: "",
+				},
+				Name: "kurl/installer.yaml",
+				Data: "kubernetes:\n  version: 1.23.6\n",
+			},
+			wantYamlCompareAnalyzer: &troubleshootv1beta2.YamlCompare{
+				FileName: "kurl/installer.yaml",
+				Value:    "kubernetes:\n  version: 1.23.6\n",
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if err := injectInstallerPreflight(tt.args.preflight, tt.args.analyzer, tt.args.deployedInstaller, tt.args.releaseInstaller); (err != nil) != tt.wantErr {
+				t.Errorf("injectInstallerPreflight() error = %v, wantErr %v", err, tt.wantErr)
+			}
+			if !reflect.DeepEqual(tt.args.preflight.Spec.Collectors[0].Data, tt.wantDataCollector) {
+				t.Errorf("injectInstallerPreflight() \ngotDataCollector = %v, \nwantDataCollector %v", tt.args.preflight.Spec.Collectors[0].Data, tt.wantDataCollector)
+			}
+			if !reflect.DeepEqual(tt.args.analyzer.YamlCompare, tt.wantYamlCompareAnalyzer) {
+				t.Errorf("injectInstallerPreflight() \ngotYamlCompareAnalyzer = %v, \nwantYamlCompareAnalyzer %v", tt.args.analyzer.YamlCompare, tt.wantYamlCompareAnalyzer)
 			}
 		})
 	}
