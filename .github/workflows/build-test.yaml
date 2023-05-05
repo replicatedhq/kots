@@ -1706,14 +1706,45 @@ jobs:
           # Wait for crd to be created
           kubectl wait --for condition=established --timeout=60s crd/installers.cluster.kurl.sh
 
-          # Seems that the above does not always guarantee the crd exists? So just in case...
-          sleep 10
+          # Check that the crd was created
+          COUNTER=10
+          while [ "$(kubectl get crd installers.cluster.kurl.sh --ignore-not-found | wc -l)" == "0" ]; do
+            ((COUNTER += 1))
+            if [ $COUNTER -gt 10 ]; then
+              echo "Timed out waiting for crd to be created"
+              kubectl get crd
+              exit 1
+            fi
+            sleep 1
+          done
 
-          # Apply installer
-          kubectl apply -f "$APP_SLUG/upstream/installer.yaml"
+          # Create a kurl installer from the app's installer spec
+          KURL_INSTALLER_URL=$(curl -X POST -H "Content-Type: text/yaml" --data-binary "@$APP_SLUG/upstream/installer.yaml" -s https://kurl.sh/installer)
+          if [ -z "$KURL_INSTALLER_URL" ]; then
+            echo "Failed to create kurl installer"
+            exit 1
+          fi
+
+          # Get the installer id from the url
+          KURL_INSTALLER_ID=$(echo "$KURL_INSTALLER_URL" | awk -F '/' '{print $NF}')
+          if [ -z "$KURL_INSTALLER_ID" ]; then
+            echo "Failed to get kurl installer id"
+            exit 1
+          fi
+
+          # Get the resolved installer
+          KURL_INSTALLER_RESOLVED_SPEC=$(curl -s "https://kurl.sh/installer/$KURL_INSTALLER_ID?resolve=true")
+          if [ -z "$KURL_INSTALLER_RESOLVED_SPEC" ]; then
+            echo "Failed to get kurl installer resolved spec"
+            exit 1
+          fi
+
+          # Apply resolved installer
+          echo "$KURL_INSTALLER_RESOLVED_SPEC" > installer.json
+          kubectl apply -f "installer.json"
 
           # Create kurl-config configmap in kube-system
-          kubectl create cm kurl-config -n kube-system --from-literal=installer_id=7cc8094
+          kubectl create cm kurl-config -n kube-system --from-literal=installer_id="$KURL_INSTALLER_ID"
 
           ./bin/kots \
             install "$APP_SLUG/automated" \
