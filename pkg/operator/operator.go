@@ -770,7 +770,7 @@ func (o *Operator) UndeployApp(a *apptypes.App, d *downstreamtypes.Downstream, i
 		KustomizeVersion:     kotsKinds.KotsApplication.Spec.KustomizeVersion,
 		AdditionalNamespaces: kotsKinds.KotsApplication.Spec.AdditionalNamespaces,
 		Manifests:            base64EncodedManifests,
-		Charts:               chartArchive,
+		V1Beta1ChartsArchive: chartArchive,
 		Wait:                 true,
 		ClearNamespaces:      clearNamespaces,
 		ClearPVCs:            true,

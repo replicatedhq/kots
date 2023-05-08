@@ -282,28 +282,32 @@ func (c *Client) deployHelmCharts(deployArgs operatortypes.DeployAppArgs) (*comm
 	prevKotsV1Beta1Charts := []kotsutil.HelmChartInterface{}
 	if deployArgs.PreviousKotsKinds != nil && deployArgs.PreviousKotsKinds.V1Beta1HelmCharts != nil {
 		for _, kotsChart := range deployArgs.PreviousKotsKinds.V1Beta1HelmCharts.Items {
-			prevKotsV1Beta1Charts = append(prevKotsV1Beta1Charts, &kotsChart)
+			kc := kotsChart
+			prevKotsV1Beta1Charts = append(prevKotsV1Beta1Charts, &kc)
 		}
 	}
 
 	curV1Beta1KotsCharts := []kotsutil.HelmChartInterface{}
 	if deployArgs.KotsKinds != nil && deployArgs.KotsKinds.V1Beta1HelmCharts != nil {
 		for _, kotsChart := range deployArgs.KotsKinds.V1Beta1HelmCharts.Items {
-			curV1Beta1KotsCharts = append(curV1Beta1KotsCharts, &kotsChart)
+			kc := kotsChart
+			curV1Beta1KotsCharts = append(curV1Beta1KotsCharts, &kc)
 		}
 	}
 
 	prevKotsV1Beta2Charts := []kotsutil.HelmChartInterface{}
 	if deployArgs.PreviousKotsKinds != nil && deployArgs.PreviousKotsKinds.V1Beta2HelmCharts != nil {
 		for _, kotsChart := range deployArgs.PreviousKotsKinds.V1Beta2HelmCharts.Items {
-			prevKotsV1Beta2Charts = append(prevKotsV1Beta2Charts, &kotsChart)
+			kc := kotsChart
+			prevKotsV1Beta2Charts = append(prevKotsV1Beta2Charts, &kc)
 		}
 	}
 
 	curV1Beta2KotsCharts := []kotsutil.HelmChartInterface{}
 	if deployArgs.KotsKinds != nil && deployArgs.KotsKinds.V1Beta2HelmCharts != nil {
 		for _, kotsChart := range deployArgs.KotsKinds.V1Beta2HelmCharts.Items {
-			curV1Beta2KotsCharts = append(curV1Beta2KotsCharts, &kotsChart)
+			kc := kotsChart
+			curV1Beta2KotsCharts = append(curV1Beta2KotsCharts, &kc)
 		}
 	}
 
@@ -337,14 +341,16 @@ func (c *Client) deployHelmCharts(deployArgs operatortypes.DeployAppArgs) (*comm
 		}
 
 		for _, dir := range orderedDirs {
-			kotsChartDeployments = append(kotsChartDeployments, &dir)
+			kc := dir
+			kotsChartDeployments = append(kotsChartDeployments, &kc)
 		}
 	}
 
 	if len(deployArgs.V1Beta2ChartsArchive) > 0 {
 		if deployArgs.KotsKinds != nil && deployArgs.KotsKinds.V1Beta2HelmCharts != nil {
 			for _, helmChart := range deployArgs.KotsKinds.V1Beta2HelmCharts.Items {
-				kotsChartDeployments = append(kotsChartDeployments, &helmChart)
+				kc := helmChart
+				kotsChartDeployments = append(kotsChartDeployments, &kc)
 			}
 		}
 	}
@@ -430,53 +436,59 @@ func (c *Client) undeployManifests(undeployArgs operatortypes.UndeployAppArgs) e
 }
 
 func (c *Client) undeployHelmCharts(undeployArgs operatortypes.UndeployAppArgs) error {
-	if len(undeployArgs.Charts) == 0 {
+	if undeployArgs.KotsKinds == nil {
 		return nil
 	}
 
-	tmpDir, err := ioutil.TempDir("", "helm")
-	if err != nil {
-		return errors.Wrap(err, "failed to create temp dir for charts")
-	}
-	defer os.RemoveAll(tmpDir)
-
-	err = ioutil.WriteFile(path.Join(tmpDir, "archive.tar.gz"), undeployArgs.Charts, 0644)
-	if err != nil {
-		return errors.Wrap(err, "failed to write archive")
-	}
-
-	helmDir := path.Join(tmpDir, "prevhelm")
-	if err := os.MkdirAll(helmDir, 0755); err != nil {
-		return errors.Wrap(err, "failed to create dir to stage helm archive")
-	}
-
-	tarGz := archiver.TarGz{
-		Tar: &archiver.Tar{
-			ImplicitTopLevelFolder: false,
-		},
-	}
-	if err := tarGz.Unarchive(path.Join(tmpDir, "archive.tar.gz"), helmDir); err != nil {
-		return errors.Wrap(err, "falied to unarchive helm archive")
-	}
-
 	kotsCharts := []kotsutil.HelmChartInterface{}
-	if undeployArgs.KotsKinds != nil {
 
-		v1Beta2Charts := []v1beta2.HelmChart{}
-		if undeployArgs.KotsKinds.V1Beta2HelmCharts != nil {
-			v1Beta2Charts = undeployArgs.KotsKinds.V1Beta2HelmCharts.Items
-			for _, v1Beta2Chart := range undeployArgs.KotsKinds.V1Beta2HelmCharts.Items {
-				kotsCharts = append(kotsCharts, &v1Beta2Chart)
-			}
+	v1Beta2Charts := []v1beta2.HelmChart{}
+	if undeployArgs.KotsKinds.V1Beta2HelmCharts != nil {
+		v1Beta2Charts = undeployArgs.KotsKinds.V1Beta2HelmCharts.Items
+		for _, v1Beta2Chart := range undeployArgs.KotsKinds.V1Beta2HelmCharts.Items {
+			kc := v1Beta2Chart
+			kotsCharts = append(kotsCharts, &kc)
+		}
+	}
+
+	if undeployArgs.KotsKinds.V1Beta1HelmCharts != nil && len(undeployArgs.V1Beta1ChartsArchive) > 0 {
+		tmpDir, err := ioutil.TempDir("", "helm")
+		if err != nil {
+			return errors.Wrap(err, "failed to create temp dir for charts")
+		}
+		defer os.RemoveAll(tmpDir)
+
+		v1Beta1ArchiveDir := path.Join(tmpDir, "prevhelm")
+		if err := os.MkdirAll(v1Beta1ArchiveDir, 0755); err != nil {
+			return errors.Wrap(err, "failed to create dir to stage helm archive")
 		}
 
-		if undeployArgs.KotsKinds.V1Beta1HelmCharts != nil {
-			v1Beta1Charts := undeployArgs.KotsKinds.V1Beta1HelmCharts.Items
-			// filter out v1beta1 charts that have a matching v1beta2 chart
-			filteredV1Beta1Charts := kotsutil.FilterV1Beta1ChartsWithV1Beta2Charts(v1Beta1Charts, v1Beta2Charts)
-			for _, v1Beta1Chart := range filteredV1Beta1Charts {
-				kotsCharts = append(kotsCharts, &v1Beta1Chart)
-			}
+		err = ioutil.WriteFile(path.Join(tmpDir, "archive.tar.gz"), undeployArgs.V1Beta1ChartsArchive, 0644)
+		if err != nil {
+			return errors.Wrap(err, "failed to write archive")
+		}
+
+		tarGz := archiver.TarGz{
+			Tar: &archiver.Tar{
+				ImplicitTopLevelFolder: false,
+			},
+		}
+		if err := tarGz.Unarchive(path.Join(tmpDir, "archive.tar.gz"), v1Beta1ArchiveDir); err != nil {
+			return errors.Wrap(err, "falied to unarchive helm archive")
+		}
+
+		v1Beta1ChartsDir := path.Join(v1Beta1ArchiveDir, "charts")
+
+		// filter out v1beta1 charts that have a matching v1beta2 chart
+		filteredV1Beta1Charts := kotsutil.FilterV1Beta1ChartsWithV1Beta2Charts(undeployArgs.KotsKinds.V1Beta1HelmCharts.Items, v1Beta2Charts)
+		orderedDirs, err := getSortedCharts(v1Beta1ChartsDir, filteredV1Beta1Charts, c.TargetNamespace, true)
+		if err != nil {
+			return errors.Wrap(err, "failed to get sorted charts")
+		}
+
+		for _, dir := range orderedDirs {
+			kc := dir
+			kotsCharts = append(kotsCharts, &kc)
 		}
 	}
 
