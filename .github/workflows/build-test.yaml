@@ -638,7 +638,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        k8s_version: [ v1.24.9-k3s2,v1.25.6-k3s1,v1.26.1-k3s1,v1.27.1+k3s1 ]
+        k8s_version: [ v1.24.9-k3s2,v1.25.6-k3s1,v1.26.1-k3s1,v1.27.1-k3s1 ]
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -673,7 +673,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        k8s_version: [ v1.24.9-k3s2,v1.25.6-k3s1,v1.26.1-k3s1,v1.27.1+k3s1 ]
+        k8s_version: [ v1.24.9-k3s2,v1.25.6-k3s1,v1.26.1-k3s1,v1.27.1-k3s1 ]
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -708,7 +708,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        k8s_version: [ v1.24.9-k3s2,v1.25.6-k3s1,v1.26.1-k3s1,v1.27.1+k3s1 ]
+        k8s_version: [ v1.24.9-k3s2,v1.25.6-k3s1,v1.26.1-k3s1,v1.27.1-k3s1 ]
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -743,7 +743,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        k8s_version: [ v1.27.1+k3s1 ] # there's no need to run this test on multiple k3s versions
+        k8s_version: [ v1.27.1-k3s1 ] # there's no need to run this test on multiple k3s versions
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -778,7 +778,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        k8s_version: [ v1.27.1+k3s1 ] # there's no need to run this test on multiple k3s versions
+        k8s_version: [ v1.27.1-k3s1 ] # there's no need to run this test on multiple k3s versions
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -813,7 +813,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        k8s_version: [ v1.27.1+k3s1 ] # there's no need to run this test on multiple k3s versions
+        k8s_version: [ v1.27.1-k3s1 ] # there's no need to run this test on multiple k3s versions
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -848,7 +848,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        k8s_version: [ v1.27.1+k3s1 ] # there's no need to run this test on multiple k3s versions
+        k8s_version: [ v1.27.1-k3s1 ] # there's no need to run this test on multiple k3s versions
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -883,7 +883,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        k8s_version: [ v1.27.1+k3s1 ] # there's no need to run this test on multiple k3s versions
+        k8s_version: [ v1.27.1-k3s1 ] # there's no need to run this test on multiple k3s versions
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -918,7 +918,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        k8s_version: [ v1.27.1+k3s1 ] # there's no need to run this test on multiple k3s versions
+        k8s_version: [ v1.27.1-k3s1 ] # there's no need to run this test on multiple k3s versions
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -955,7 +955,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        k8s_version: [ v1.24.9-k3s2,v1.25.6-k3s1,v1.26.1-k3s1,v1.27.1+k3s1 ]
+        k8s_version: [ v1.24.9-k3s2,v1.25.6-k3s1,v1.26.1-k3s1,v1.27.1-k3s1 ]
     env:
       APP_SLUG: minimal-rbac
       APP_VERSION_LABEL: "0.0.1"
@@ -1036,7 +1036,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        k8s_version: [ v1.24.9-k3s2,v1.25.6-k3s1,v1.26.1-k3s1,v1.27.1+k3s1 ]
+        k8s_version: [ v1.24.9-k3s2,v1.25.6-k3s1,v1.26.1-k3s1,v1.27.1-k3s1 ]
     env:
       APP_SLUG: multi-namespace-yeti
     steps:
@@ -1199,7 +1199,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        k8s_version: [ v1.24.9-k3s2,v1.25.6-k3s1,v1.26.1-k3s1,v1.27.1+k3s1 ]
+        k8s_version: [ v1.24.9-k3s2,v1.25.6-k3s1,v1.26.1-k3s1,v1.27.1-k3s1 ]
     env:
       APP_NAME: multi-namespace-yeti
       APP_SLUG: multi-namespace
@@ -1286,7 +1286,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        k8s_version: [ v1.27.1+k3s1 ] # there's no need to run this test on multiple k3s versions
+        k8s_version: [ v1.27.1-k3s1 ] # there's no need to run this test on multiple k3s versions
     env:
       APP_SLUG: app-version-label
       APP_VERSION_LABEL: v1.0.0
@@ -1421,7 +1421,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        k8s_version: [ v1.24.9-k3s2,v1.25.6-k3s1,v1.26.1-k3s1,v1.27.1+k3s1 ]
+        k8s_version: [ v1.24.9-k3s2,v1.25.6-k3s1,v1.26.1-k3s1,v1.27.1-k3s1 ]
     env:
       APP_SLUG: helm-install-order
     steps:
@@ -1496,7 +1496,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        k8s_version: [ v1.24.9-k3s2,v1.25.6-k3s1,v1.26.1-k3s1,v1.27.1+k3s1 ]
+        k8s_version: [ v1.24.9-k3s2,v1.25.6-k3s1,v1.26.1-k3s1,v1.27.1-k3s1 ]
     env:
       APP_SLUG: yamlescape
     steps:
@@ -1571,7 +1571,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        k8s_version: [ v1.27.1+k3s1 ]
+        k8s_version: [ v1.27.1-k3s1 ]
     env:
       APP_SLUG: no-redeploy-on-restart
     steps:
@@ -1670,7 +1670,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        k8s_version: [ v1.27.1+k3s1 ]
+        k8s_version: [ v1.27.1-k3s1 ]
     env:
       APP_SLUG: kubernetes-installer-preflight
       K8S_VERSION: ${{ matrix.k8s_version }}
@@ -1784,7 +1784,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        k8s_version: [ v1.27.1+k3s1 ]
+        k8s_version: [ v1.27.1-k3s1 ]
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -1840,7 +1840,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        k8s_version: [ v1.27.1+k3s1 ]
+        k8s_version: [ v1.27.1-k3s1 ]
     env:
       APP_SLUG: minimal-rbac
       BASE_KOTS_VERSION: v1.72.0
@@ -2020,7 +2020,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        k8s_version: [ v1.27.1+k3s1 ]
+        k8s_version: [ v1.27.1-k3s1 ]
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -2072,7 +2072,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        k8s_version: [ v1.27.1+k3s1 ]
+        k8s_version: [ v1.27.1-k3s1 ]
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -2122,7 +2122,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        k8s_version: [ v1.27.1+k3s1 ]
+        k8s_version: [ v1.27.1-k3s1 ]
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -2172,7 +2172,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        k8s_version: [ v1.24.9-k3s2,v1.25.6-k3s1,v1.26.1-k3s1,v1.27.1+k3s1 ]
+        k8s_version: [ v1.24.9-k3s2,v1.25.6-k3s1,v1.26.1-k3s1,v1.27.1-k3s1 ]
     env:
       APP_SLUG: postgres-to-rqlite
       BASE_KOTS_VERSION: v1.57.0
@@ -2288,7 +2288,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        k8s_version: [ v1.27.1+k3s1 ]
+        k8s_version: [ v1.27.1-k3s1 ]
     env:
       APP_SLUG: helm-release-secret-migration
       RELEASE_NAME: helm-release-chart
@@ -2439,7 +2439,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        k8s_version: [ v1.27.1+k3s1 ] # there's no need to run this test on multiple k3s versions
+        k8s_version: [ v1.27.1-k3s1 ] # there's no need to run this test on multiple k3s versions
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -2473,7 +2473,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        k8s_version: [ v1.27.1+k3s1 ] # there's no need to run this test on multiple k3s versions
+        k8s_version: [ v1.27.1-k3s1 ] # there's no need to run this test on multiple k3s versions
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -2508,7 +2508,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        k8s_version: [ v1.27.1+k3s1 ]
+        k8s_version: [ v1.27.1-k3s1 ]
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -2545,7 +2545,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        k8s_version: [ v1.27.1+k3s1 ]
+        k8s_version: [ v1.27.1-k3s1 ]
     env:
       APP_SLUG: remove-app
     steps:
@@ -2700,7 +2700,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        k8s_version: [ v1.27.1+k3s1 ]
+        k8s_version: [ v1.27.1-k3s1 ]
     steps:
       - name: Checkout
         uses: actions/checkout@v3
