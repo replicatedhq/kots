@@ -1,0 +1,20 @@
+# This tests that a v1beta2 HelmChart is not written to base
+apiVersion: kots.io/v1beta2
+kind: HelmChart
+metadata:
+  name: test-chart-3
+spec:
+  # exclude: 'repl{{ ConfigOptionEquals "helm" "no" }}'
+  # chart identifies a matching chart from a .tgz
+  chart:
+    name: test-chart-3
+    chartVersion: 0.1.1
+  namespace: helmns-2
+
+  # values are used in the customer environment, as a pre-render step
+  # these values will be supplied to helm template
+  values: {}
+
+  # builder values provide a way to render the chart with all images
+  # and manifests. this is used in replicated to create airgap packages
+  builder: {}

@@ -141,6 +141,12 @@ func TestRenderUpstream(t *testing.T) {
 				gotKotsKinds.V1Beta1HelmCharts.Items = nil
 			}
 
+			if tt.WantKotsKinds.V1Beta2HelmCharts != nil && gotKotsKinds.V1Beta2HelmCharts != nil {
+				require.ElementsMatch(t, tt.WantKotsKinds.V1Beta2HelmCharts.Items, gotKotsKinds.V1Beta2HelmCharts.Items)
+				tt.WantKotsKinds.V1Beta2HelmCharts.Items = nil
+				gotKotsKinds.V1Beta2HelmCharts.Items = nil
+			}
+
 			require.Equal(t, tt.WantKotsKinds, gotKotsKinds)
 
 			// TODO: Need to test upstream with multiple Helm charts.

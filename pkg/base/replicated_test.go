@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	envsubst "github.com/drone/envsubst/v2"
+	"github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/template"
@@ -16,10 +17,202 @@ import (
 	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes/scheme"
 )
 
-func Test_findAllKotsHelmCharts(t *testing.T) {
+func Test_findAllKotsV1Beta1HelmCharts(t *testing.T) {
+	tests := []struct {
+		name  string
+		files map[string]string
+		want  []v1beta1.HelmChart
+	}{
+		{
+			name: "one v1beta1 chart",
+			files: map[string]string{
+				"my-v1beta1-chart.yaml": `
+apiVersion: "kots.io/v1beta1"
+kind: "HelmChart"
+metadata:
+  name: "test"
+spec:
+  chart:
+    name: "test"
+  values: {}
+`,
+			},
+			want: []v1beta1.HelmChart{
+				{
+					TypeMeta:   v1.TypeMeta{Kind: "HelmChart", APIVersion: "kots.io/v1beta1"},
+					ObjectMeta: metav1.ObjectMeta{Name: "test"},
+					Spec: v1beta1.HelmChartSpec{
+						Chart: v1beta1.ChartIdentifier{
+							Name: "test",
+						},
+						Values: map[string]v1beta1.MappedChartValue{},
+					},
+				},
+			},
+		},
+		{
+			name: "two v1beta1 charts",
+			files: map[string]string{
+				"my-v1beta1-chart.yaml": `
+apiVersion: "kots.io/v1beta1"
+kind: "HelmChart"
+metadata:
+  name: "test"
+spec:
+  chart:
+    name: "test"
+  values: {}
+`,
+				"my-other-v1beta1-chart.yaml": `
+apiVersion: "kots.io/v1beta1"
+kind: "HelmChart"
+metadata:
+  name: "test-2"
+spec:
+  chart:
+    name: "test-2"
+  values: {}
+`,
+			},
+			want: []v1beta1.HelmChart{
+				{
+					TypeMeta:   v1.TypeMeta{Kind: "HelmChart", APIVersion: "kots.io/v1beta1"},
+					ObjectMeta: metav1.ObjectMeta{Name: "test"},
+					Spec: v1beta1.HelmChartSpec{
+						Chart: v1beta1.ChartIdentifier{
+							Name: "test",
+						},
+						Values: map[string]v1beta1.MappedChartValue{},
+					},
+				},
+				{
+					TypeMeta:   v1.TypeMeta{Kind: "HelmChart", APIVersion: "kots.io/v1beta1"},
+					ObjectMeta: metav1.ObjectMeta{Name: "test-2"},
+					Spec: v1beta1.HelmChartSpec{
+						Chart: v1beta1.ChartIdentifier{
+							Name: "test-2",
+						},
+						Values: map[string]v1beta1.MappedChartValue{},
+					},
+				},
+			},
+		},
+		{
+			name: "one v1beta1 chart with a matching v1beta2 chart",
+			files: map[string]string{
+				"my-v1beta1-chart.yaml": `
+apiVersion: "kots.io/v1beta1"
+kind: "HelmChart"
+metadata:
+  name: "test"
+spec:
+  chart:
+    name: "test"
+  values: {}
+`,
+				"my-v1beta2-chart.yaml": `
+apiVersion: "kots.io/v1beta2"
+kind: "HelmChart"
+metadata:
+  name: "test"
+spec:
+  chart:
+    name: "test"
+  values: {}
+`,
+			},
+			want: []v1beta1.HelmChart{},
+		},
+		{
+			name: "two v1beta1 charts with one matching v1beta2 chart",
+			files: map[string]string{
+				"my-v1beta1-chart.yaml": `
+apiVersion: "kots.io/v1beta1"
+kind: "HelmChart"
+metadata:
+  name: "test"
+spec:
+  chart:
+    name: "test"
+  values: {}
+`,
+				"my-other-v1beta1-chart.yaml": `
+apiVersion: "kots.io/v1beta1"
+kind: "HelmChart"
+metadata:
+  name: "test-2"
+spec:
+  chart:
+    name: "test-2"
+  values: {}
+`,
+				"my-v1beta2-chart.yaml": `
+apiVersion: "kots.io/v1beta2"
+kind: "HelmChart"
+metadata:
+  name: "test"
+spec:
+  chart:
+    name: "test"
+  values: {}
+`,
+			},
+			want: []v1beta1.HelmChart{
+				{
+					TypeMeta:   v1.TypeMeta{Kind: "HelmChart", APIVersion: "kots.io/v1beta1"},
+					ObjectMeta: metav1.ObjectMeta{Name: "test-2"},
+					Spec: v1beta1.HelmChartSpec{
+						Chart: v1beta1.ChartIdentifier{
+							Name: "test-2",
+						},
+						Values: map[string]v1beta1.MappedChartValue{},
+					},
+				},
+			},
+		},
+		{
+			name: "one v1beta2 chart",
+			files: map[string]string{
+				"my-v1beta2-chart.yaml": `
+apiVersion: "kots.io/v1beta2"
+kind: "HelmChart"
+metadata:
+  name: "test"
+spec:
+  chart:
+    name: "test"
+  values: {}
+`,
+			},
+			want: []v1beta1.HelmChart{},
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			req := require.New(t)
+
+			upstreamFiles := []upstreamtypes.UpstreamFile{}
+			for path, content := range test.files {
+				upstreamFiles = append(upstreamFiles, upstreamtypes.UpstreamFile{
+					Path:    path,
+					Content: []byte(content),
+				})
+			}
+
+			got, err := findAllKotsV1Beta1HelmCharts(upstreamFiles, template.Builder{}, nil)
+			req.NoError(err)
+			assert.Equal(t, test.want, got)
+		})
+	}
+}
+
+func Test_GetHelmValues(t *testing.T) {
 	tests := []struct {
 		name    string
 		content string
