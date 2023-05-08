@@ -2771,6 +2771,172 @@ jobs:
           aws-secret-access-key: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_SECRET_ACCESS_KEY }}'
 
 
+  validate-native-helm-v2:
+    runs-on: ubuntu-20.04
+    needs: [ enable-tests, can-run-ci, build-push-kotsadm-image, build-kurl-proxy, build-migrations, push-minio, push-mc, push-rqlite ]
+    strategy:
+      fail-fast: false
+      matrix:
+        k8s_version: [ v1.26.1-k3s1 ]
+    env:
+      APP_SLUG: native-helm-v2
+      INITIAL_VERSION: '0.1.1'
+      UPGRADE_VERSION: '0.2.1'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - uses: azure/setup-helm@v3
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: replicatedhq/action-k3s@main
+        with:
+          version: ${{ matrix.k8s_version }}
+          arguments: ${{ startsWith(matrix.k8s_version, 'v1.22') && '--egress-selector-mode disabled' || '' }}
+
+      - name: download kots binary
+        uses: actions/download-artifact@v3
+        with:
+          name: kots
+          path: bin/
+
+      - run: chmod +x bin/kots
+
+      - name: run the test
+        run: |
+          set +e
+          echo ${{ secrets.NATIVE_HELM_V2_LICENSE }} | base64 -d > license.yaml
+          ./bin/kots \
+            install "$APP_SLUG/automated" \
+            --license-file license.yaml \
+            --app-version-label "$INITIAL_VERSION" \
+            --no-port-forward \
+            --namespace "$APP_SLUG" \
+            --shared-password password \
+            --kotsadm-registry ttl.sh \
+            --kotsadm-namespace automated-${{ github.run_id }} \
+            --kotsadm-tag 24h
+
+          EXIT_CODE=$?
+          if [ $EXIT_CODE -ne 0 ]; then
+            echo "------pods:"
+            kubectl -n "$APP_SLUG" get pods
+            echo "------kotsadm logs"
+            kubectl logs -l app=kotsadm --tail=100 --namespace "$APP_SLUG"
+            exit $EXIT_CODE
+          fi
+
+          COUNTER=1
+          while [ "$(./bin/kots get apps --namespace "$APP_SLUG" | awk 'NR>1{print $3}')" != "$INITIAL_VERSION" ]; do
+            ((COUNTER += 1))
+            if [ $COUNTER -gt 120 ]; then
+              echo "Timed out waiting for app to be ready"
+              ./bin/kots get apps --namespace "$APP_SLUG"
+              echo "kotsadm logs:"
+              kubectl logs -l app=kotsadm --tail=100 --namespace "$APP_SLUG"
+              exit 1
+            fi
+            sleep 1
+          done
+
+          COUNTER=1
+          while [ "$(./bin/kots get apps --namespace "$APP_SLUG" | awk 'NR>1{print $2}')" != "ready" ]; do
+            ((COUNTER += 1))
+            if [ $COUNTER -gt 120 ]; then
+              echo "Timed out waiting for app to be ready"
+              ./bin/kots get apps --namespace "$APP_SLUG"
+              echo "kotsadm logs:"
+              kubectl logs -l app=kotsadm --tail=100 --namespace "$APP_SLUG"
+              exit 1
+            fi
+            sleep 1
+          done
+
+          # validate that helm charts installed using both native helm workflow were deployed via the helm CLI correctly
+
+          if ! helm ls -n "$APP_SLUG" | awk 'NR>1{print $1}' | grep -q my-chart-release; then
+            printf "my-chart-release helm release not found in %s namespace\n\n" "$APP_SLUG"
+            helm ls -n "$APP_SLUG"
+            exit 1
+          fi
+
+          if ! helm ls -n "$APP_SLUG" | awk 'NR>1{print $1}' | grep -q my-other-chart-release; then
+            printf "my-other-chart-release helm release not found in %s namespace\n\n" "$APP_SLUG"
+            helm ls -n "$APP_SLUG"
+            exit 1
+          fi
+
+          # validate that `helm get values` works for the v1beta2 chart
+
+          if ! helm get values my-chart-release -n "$APP_SLUG" | grep -q my-value; then
+            printf "my-value not found in helm values for my-chart-release in %s namespace\n\n" "$APP_SLUG"
+            helm get values my-chart-release -n "$APP_SLUG"
+            exit 1
+          fi
+
+          # upgrade the app version
+
+          ./bin/kots upstream upgrade "$APP_SLUG" -n "$APP_SLUG" --deploy
+
+          COUNTER=1
+          while [ "$(./bin/kots get apps --namespace "$APP_SLUG" | awk 'NR>1{print $3}')" != "$UPGRADE_VERSION" ]; do
+            ((COUNTER += 1))
+            if [ $COUNTER -gt 120 ]; then
+              echo "Timed out waiting for app to be ready"
+              ./bin/kots get apps --namespace "$APP_SLUG"
+              echo "kotsadm logs:"
+              kubectl logs -l app=kotsadm --tail=100 --namespace "$APP_SLUG"
+              exit 1
+            fi
+            sleep 1
+          done
+
+          COUNTER=1
+          while [ "$(./bin/kots get apps --namespace "$APP_SLUG" | awk 'NR>1{print $2}')" != "ready" ]; do
+            ((COUNTER += 1))
+            if [ $COUNTER -gt 120 ]; then
+              echo "Timed out waiting for app to be ready"
+              ./bin/kots get apps --namespace "$APP_SLUG"
+              echo "kotsadm logs:"
+              kubectl logs -l app=kotsadm --tail=100 --namespace "$APP_SLUG"
+              exit 1
+            fi
+            sleep 1
+          done
+
+          # validate that the v1beta2 chart was uninstalled and that the v1beta1 chart was upgraded using v1beta2
+
+          if helm ls -n "$APP_SLUG" | awk 'NR>1{print $1}' | grep -q my-chart-release; then
+            printf "my-chart-release helm release was found in %s namespace\n\n" "$APP_SLUG"
+            helm ls -n "$APP_SLUG"
+            exit 1
+          fi
+
+          if ! helm ls -n "$APP_SLUG" | awk 'NR>1{print $1}' | grep -q my-other-chart-release; then
+            printf "my-other-chart-release helm release not found in %s namespace\n\n" "$APP_SLUG"
+            helm ls -n "$APP_SLUG"
+            exit 1
+          fi
+
+          # validate that `helm get values` works for the upgraded v1beta2 chart
+
+          if ! helm get values my-other-chart-release -n "$APP_SLUG" | grep -q my-value; then
+            printf "my-value not found in helm values for my-chart-release in %s namespace\n\n" "$APP_SLUG"
+            helm get values my-chart-release -n "$APP_SLUG"
+            exit 1
+          fi
+
+
+      - name: Generate support bundle on failure
+        if: failure()
+        uses: ./.github/actions/generate-support-bundle
+        with:
+          kots-namespace: "$APP_SLUG"
+          aws-access-key-id: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_ACCESS_KEY_ID }}'
+          aws-secret-access-key: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_SECRET_ACCESS_KEY }}'
+
+
   validate-pr-tests:
     runs-on: ubuntu-20.04
     needs:
@@ -2811,6 +2977,7 @@ jobs:
       - validate-registry-check
       - validate-gke-install
       - validate-kots-helm-release-secret-migration
+      - validate-native-helm-v2
       # cli-only tests
       - validate-kots-push-images-anonymous
     steps:
