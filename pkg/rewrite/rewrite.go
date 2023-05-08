@@ -13,12 +13,13 @@ import (
 	"github.com/replicatedhq/kots/pkg/base"
 	"github.com/replicatedhq/kots/pkg/crypto"
 	"github.com/replicatedhq/kots/pkg/downstream"
+	"github.com/replicatedhq/kots/pkg/helmdeploy"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
-	"github.com/replicatedhq/kots/pkg/kustomize"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/midstream"
 	registrytypes "github.com/replicatedhq/kots/pkg/registry/types"
+	"github.com/replicatedhq/kots/pkg/rendered"
 	"github.com/replicatedhq/kots/pkg/store"
 	"github.com/replicatedhq/kots/pkg/upstream"
 	upstreamtypes "github.com/replicatedhq/kots/pkg/upstream/types"
@@ -186,6 +187,15 @@ func Rewrite(rewriteOptions RewriteOptions) error {
 		}
 	}
 
+	v1Beta2HelmCharts, err := kotsutil.LoadV1Beta2HelmChartsFromPath(rewriteOptions.UpstreamPath)
+	if err != nil {
+		return errors.Wrap(err, "failed to load v1beta2 helm charts")
+	}
+
+	if err := helmdeploy.WriteV1Beta2HelmCharts(u, &renderOptions, u.GetHelmDir(writeUpstreamOptions), v1Beta2HelmCharts); err != nil {
+		return errors.Wrap(err, "failed to write helm v1beta2 charts")
+	}
+
 	log.FinishSpinner()
 
 	log.ActionWithSpinner("Creating midstreams")
@@ -201,9 +211,9 @@ func Rewrite(rewriteOptions RewriteOptions) error {
 		return errors.Wrap(err, "failed to create cipher from installation spec")
 	}
 
-	newHelmCharts, err := kotsutil.LoadHelmChartsFromPath(rewriteOptions.UpstreamPath)
+	v1Beta1HelmCharts, err := kotsutil.LoadV1Beta1HelmChartsFromPath(rewriteOptions.UpstreamPath)
 	if err != nil {
-		return errors.Wrap(err, "failed to load new helm charts")
+		return errors.Wrap(err, "failed to load v1beta1 helm charts")
 	}
 
 	commonWriteMidstreamOptions := midstream.WriteOptions{
@@ -214,7 +224,7 @@ func Rewrite(rewriteOptions RewriteOptions) error {
 		HTTPProxyEnvValue:  rewriteOptions.HTTPProxyEnvValue,
 		HTTPSProxyEnvValue: rewriteOptions.HTTPSProxyEnvValue,
 		NoProxyEnvValue:    rewriteOptions.NoProxyEnvValue,
-		NewHelmCharts:      newHelmCharts,
+		NewHelmCharts:      v1Beta1HelmCharts,
 	}
 
 	// the UseHelmInstall map blocks visibility into charts and subcharts when searching for private images
@@ -222,7 +232,7 @@ func Rewrite(rewriteOptions RewriteOptions) error {
 	// when using Helm Install, each chart gets it's own kustomization and pullsecret yaml and MUST be skipped when processing higher level directories!
 	// for writing Common Midstream, every chart and subchart is in this map as Helm Midstreams will be processed later in the code
 	commonWriteMidstreamOptions.UseHelmInstall = map[string]bool{}
-	for _, v := range newHelmCharts {
+	for _, v := range v1Beta1HelmCharts {
 		chartBaseName := v.GetDirName()
 		commonWriteMidstreamOptions.UseHelmInstall[chartBaseName] = v.Spec.UseHelmInstall
 		if v.Spec.UseHelmInstall {
@@ -322,12 +332,17 @@ func Rewrite(rewriteOptions RewriteOptions) error {
 		return errors.Wrap(err, "failed to write kots base")
 	}
 
-	if err := kustomize.WriteRenderedApp(kustomize.WriteOptions{
-		BaseDir:          u.GetBaseDir(writeUpstreamOptions),
-		OverlaysDir:      u.GetOverlaysDir(writeUpstreamOptions),
-		RenderedDir:      u.GetRenderedDir(writeUpstreamOptions),
-		Downstreams:      rewriteOptions.Downstreams,
-		KustomizeBinPath: kotsKinds.GetKustomizeBinaryPath(),
+	if err := rendered.WriteRenderedApp(&rendered.WriteOptions{
+		BaseDir:             u.GetBaseDir(writeUpstreamOptions),
+		OverlaysDir:         u.GetOverlaysDir(writeUpstreamOptions),
+		RenderedDir:         u.GetRenderedDir(writeUpstreamOptions),
+		Downstreams:         rewriteOptions.Downstreams,
+		KustomizeBinPath:    kotsKinds.GetKustomizeBinaryPath(),
+		HelmDir:             u.GetHelmDir(writeUpstreamOptions),
+		Log:                 log,
+		KotsKinds:           kotsKinds,
+		ProcessImageOptions: processImageOptions,
+		Clientset:           clientset,
 	}); err != nil {
 		return errors.Wrap(err, "failed to write rendered")
 	}

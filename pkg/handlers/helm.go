@@ -115,7 +115,7 @@ func (h *Handler) GetAppValuesFile(w http.ResponseWriter, r *http.Request) {
 		kotsKinds = &k
 	}
 
-	helmChart, err := kotsbase.ParseHelmChart(helmChartFile)
+	helmChart, err := kotsbase.ParseV1Beta1HelmChart(helmChartFile)
 	if err != nil {
 		logger.Error(errors.Wrap(err, "failed to parse HelmChart file"))
 		w.WriteHeader(http.StatusInternalServerError)

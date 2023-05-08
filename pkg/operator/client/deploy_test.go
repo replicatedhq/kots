@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
+	clienttypes "github.com/replicatedhq/kots/pkg/operator/client/types"
 	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -22,7 +23,7 @@ func Test_getSortedCharts(t *testing.T) {
 		kotsCharts      []v1beta1.HelmChart
 		targetNamespace string
 		isUninstall     bool
-		want            []orderedDir
+		want            []clienttypes.OrderedDir
 	}{
 		{
 			name: "chart without an entry in kotsCharts should work", // this should not come up in practice but is good to reduce risk
@@ -32,7 +33,7 @@ func Test_getSortedCharts(t *testing.T) {
 					contents: `name: chart1name`,
 				},
 			},
-			want: []orderedDir{
+			want: []clienttypes.OrderedDir{
 				{
 					Name:        "chart1",
 					ChartName:   "chart1name",
@@ -125,7 +126,7 @@ version: "v1"
 					},
 				},
 			},
-			want: []orderedDir{
+			want: []clienttypes.OrderedDir{
 				{
 					Name:         "chart4",
 					ChartName:    "chart4",
@@ -241,7 +242,7 @@ version: "v1"
 				},
 			},
 			isUninstall: true,
-			want: []orderedDir{
+			want: []clienttypes.OrderedDir{
 				{
 					Name:         "chart3",
 					Weight:       5,
@@ -302,7 +303,7 @@ name: c2
 					},
 				},
 			},
-			want: []orderedDir{
+			want: []clienttypes.OrderedDir{
 				{
 					Name:         "chart1",
 					Weight:       -5,
@@ -361,7 +362,7 @@ version: ver2
 					},
 				},
 			},
-			want: []orderedDir{
+			want: []clienttypes.OrderedDir{
 				{
 					Name:         "chart1",
 					ChartName:    "generic",
@@ -422,7 +423,7 @@ version: ver2
 					},
 				},
 			},
-			want: []orderedDir{
+			want: []clienttypes.OrderedDir{
 				{
 					Name:         "chart1",
 					ChartName:    "generic",
@@ -483,7 +484,7 @@ version: ver2
 					},
 				},
 			},
-			want: []orderedDir{
+			want: []clienttypes.OrderedDir{
 				{
 					Name:         "rel1",
 					ChartName:    "generic",
@@ -548,7 +549,7 @@ version: ver2
 					},
 				},
 			},
-			want: []orderedDir{
+			want: []clienttypes.OrderedDir{
 				{
 					Name:         "chart1",
 					ChartName:    "generic1",

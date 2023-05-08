@@ -71,7 +71,7 @@ spec:
 			builder := template.Builder{}
 			builder.AddCtx(template.StaticCtx{})
 
-			helmCharts, err := findAllKotsHelmCharts(upstreamFiles, builder, nil)
+			helmCharts, err := findAllKotsV1Beta1HelmCharts(upstreamFiles, builder, nil)
 			req.NoError(err)
 			assert.Len(t, helmCharts, 1)
 

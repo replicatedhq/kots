@@ -44,7 +44,7 @@ func RenderValuesFromConfig(helmApp *apptypes.HelmApp, kotsKinds *kotsutil.KotsK
 		return nil, err
 	}
 
-	kotsHelmChart, err := kotsbase.ParseHelmChart([]byte(renderedHelmManifest))
+	kotsHelmChart, err := kotsbase.ParseV1Beta1HelmChart([]byte(renderedHelmManifest))
 	if err != nil {
 		return nil, err
 	}

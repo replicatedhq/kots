@@ -16,14 +16,15 @@ import (
 	"github.com/replicatedhq/kots/pkg/base"
 	"github.com/replicatedhq/kots/pkg/crypto"
 	"github.com/replicatedhq/kots/pkg/downstream"
+	"github.com/replicatedhq/kots/pkg/helmdeploy"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/kotsadmconfig"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
-	"github.com/replicatedhq/kots/pkg/kustomize"
 	kotslicense "github.com/replicatedhq/kots/pkg/license"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/midstream"
 	registrytypes "github.com/replicatedhq/kots/pkg/registry/types"
+	"github.com/replicatedhq/kots/pkg/rendered"
 	"github.com/replicatedhq/kots/pkg/replicatedapp"
 	"github.com/replicatedhq/kots/pkg/upstream"
 	upstreamtypes "github.com/replicatedhq/kots/pkg/upstream/types"
@@ -332,13 +333,13 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 		renderDir = filepath.Join(pullOptions.RootDir, u.Name)
 	}
 
-	newHelmCharts, err := kotsutil.LoadHelmChartsFromPath(renderDir)
+	v1Beta1HelmCharts, err := kotsutil.LoadV1Beta1HelmChartsFromPath(renderDir)
 	if err != nil {
 		return "", errors.Wrap(err, "failed to load new helm charts")
 	}
 
 	if !pullOptions.SkipHelmChartCheck {
-		prevHelmCharts, err := kotsutil.LoadHelmChartsFromPath(pullOptions.RootDir)
+		prevHelmCharts, err := kotsutil.LoadV1Beta1HelmChartsFromPath(pullOptions.RootDir)
 		if err != nil {
 			return "", errors.Wrap(err, "failed to load previous helm charts")
 		}
@@ -351,7 +352,7 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 				}
 			}
 
-			for _, newChart := range newHelmCharts {
+			for _, newChart := range v1Beta1HelmCharts {
 				if prevChart.Spec.Chart.Name != newChart.Spec.Chart.Name {
 					continue
 				}
@@ -445,6 +446,15 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 		}
 	}
 
+	v1Beta2HelmCharts, err := kotsutil.LoadV1Beta2HelmChartsFromPath(renderDir)
+	if err != nil {
+		return "", errors.Wrap(err, "failed to load new helm charts")
+	}
+
+	if err := helmdeploy.WriteV1Beta2HelmCharts(u, &renderOptions, u.GetHelmDir(writeUpstreamOptions), v1Beta2HelmCharts); err != nil {
+		return "", errors.Wrap(err, "failed to write v1beta2 helm charts")
+	}
+
 	log.FinishSpinner()
 
 	log.ActionWithSpinner("Creating midstreams")
@@ -476,7 +486,7 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 		HTTPProxyEnvValue:  pullOptions.HTTPProxyEnvValue,
 		HTTPSProxyEnvValue: pullOptions.HTTPSProxyEnvValue,
 		NoProxyEnvValue:    pullOptions.NoProxyEnvValue,
-		NewHelmCharts:      newHelmCharts,
+		NewHelmCharts:      v1Beta1HelmCharts,
 	}
 
 	// the UseHelmInstall map blocks visibility into charts and subcharts when searching for private images
@@ -484,7 +494,7 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 	// when using Helm Install, each chart gets it's own kustomization and pullsecret yaml and MUST be skipped when processing higher level directories!
 	// for writing Common Midstream, every chart and subchart is in this map as Helm Midstreams will be processed later in the code
 	commonWriteMidstreamOptions.UseHelmInstall = map[string]bool{}
-	for _, v := range newHelmCharts {
+	for _, v := range v1Beta1HelmCharts {
 		chartBaseName := v.GetDirName()
 		commonWriteMidstreamOptions.UseHelmInstall[chartBaseName] = v.Spec.UseHelmInstall
 		if v.Spec.UseHelmInstall {
@@ -570,12 +580,17 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 		return "", errors.Wrap(err, "failed to write the rendered kots kinds")
 	}
 
-	if err := kustomize.WriteRenderedApp(kustomize.WriteOptions{
-		BaseDir:          u.GetBaseDir(writeUpstreamOptions),
-		OverlaysDir:      u.GetOverlaysDir(writeUpstreamOptions),
-		RenderedDir:      u.GetRenderedDir(writeUpstreamOptions),
-		Downstreams:      pullOptions.Downstreams,
-		KustomizeBinPath: kotsKinds.GetKustomizeBinaryPath(),
+	if err := rendered.WriteRenderedApp(&rendered.WriteOptions{
+		BaseDir:             u.GetBaseDir(writeUpstreamOptions),
+		OverlaysDir:         u.GetOverlaysDir(writeUpstreamOptions),
+		RenderedDir:         u.GetRenderedDir(writeUpstreamOptions),
+		Downstreams:         pullOptions.Downstreams,
+		KustomizeBinPath:    kotsKinds.GetKustomizeBinaryPath(),
+		HelmDir:             u.GetHelmDir(writeUpstreamOptions),
+		Log:                 log,
+		KotsKinds:           newKotsKinds,
+		ProcessImageOptions: processImageOptions,
+		Clientset:           clientset,
 	}); err != nil {
 		return "", errors.Wrap(err, "failed to write rendered")
 	}

@@ -14,6 +14,7 @@ import (
 
 	"github.com/pkg/errors"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
+	kotsv1beta2 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta2"
 	kotsscheme "github.com/replicatedhq/kots/kotskinds/client/kotsclientset/scheme"
 	kotsconfig "github.com/replicatedhq/kots/pkg/config"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
@@ -131,14 +132,15 @@ func renderReplicated(u *upstreamtypes.Upstream, renderOptions *RenderOptions) (
 
 	// render helm charts that were specified
 	// we just inject them into u.Files
-	kotsHelmCharts, err := findAllKotsHelmCharts(u.Files, *builder, renderOptions.Log)
+	// NOTE: we only render v1beta1 HelmCharts to base
+	kotsV1Beta1HelmCharts, err := findAllKotsV1Beta1HelmCharts(u.Files, *builder, renderOptions.Log)
 	if err != nil {
 		return nil, nil, nil, errors.Wrap(err, "failed to find helm charts")
 	}
 
 	helmBases := []Base{}
-	for _, kotsHelmChart := range kotsHelmCharts {
-		helmBase, err := renderReplicatedHelmChart(kotsHelmChart, u.Files, renderOptions, builder)
+	for _, kotsHelmChart := range kotsV1Beta1HelmCharts {
+		helmBase, err := renderReplicatedHelmChart(&kotsHelmChart, u.Files, renderOptions, builder)
 		if err != nil {
 			return nil, nil, nil, errors.Wrapf(err, "failed to render helm chart %s", kotsHelmChart.Name)
 		} else if helmBase == nil {
@@ -192,7 +194,7 @@ func renderKotsKinds(upstreamFiles []upstreamtypes.UpstreamFile, renderedConfig 
 			case "kots.io/v1beta1, Kind=ConfigValues":
 				// ConfigValues do not need rendering since they should already be valid values.
 
-			case "kots.io/v1beta1, Kind=HelmChart":
+			case "kots.io/v1beta1, Kind=HelmChart", "kots.io/v1beta2, Kind=HelmChart":
 				helmchart, err := builder.RenderTemplate(upstreamFile.Path, string(upstreamFile.Content))
 				if err != nil {
 					return nil, errors.Wrapf(err, "failed to render file %s", upstreamFile.Path)
@@ -248,7 +250,7 @@ func renderReplicatedHelmChart(kotsHelmChart *kotsv1beta1.HelmChart, upstreamFil
 	}
 
 	// Include this chart
-	archive, err := findHelmChartArchiveInRelease(upstreamFiles, kotsHelmChart)
+	archive, err := FindHelmChartArchiveInRelease(upstreamFiles, kotsHelmChart)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to find helm chart archive in release")
 	}
@@ -379,11 +381,20 @@ func upstreamFileToBaseFile(upstreamFile upstreamtypes.UpstreamFile, builder tem
 	}, nil
 }
 
-func findAllKotsHelmCharts(upstreamFiles []upstreamtypes.UpstreamFile, builder template.Builder, log *logger.CLILogger) ([]*kotsv1beta1.HelmChart, error) {
-	kotsHelmCharts := []*kotsv1beta1.HelmChart{}
+// findAllKotsV1Beta1HelmCharts finds all kotsv1beta1.HelmChart objects in the upstream
+// and will filter out any charts where a cooresponding kotsv1beta2.HelmChart exists
+// because the kotsv1beta2.HelmChart will be used instead
+func findAllKotsV1Beta1HelmCharts(upstreamFiles []upstreamtypes.UpstreamFile, builder template.Builder, log *logger.CLILogger) ([]kotsv1beta1.HelmChart, error) {
+	kotsV1Beta1HelmCharts := []kotsv1beta1.HelmChart{}
+	kotsV1Beta2HelmCharts := []kotsv1beta2.HelmChart{}
 
 	for _, upstreamFile := range upstreamFiles {
-		if !kotsutil.IsHelmChartKind(upstreamFile.Content) {
+		var helmChartVersion string
+		if kotsutil.IsApiVersionKind(upstreamFile.Content, "kots.io/v1beta1", "HelmChart") {
+			helmChartVersion = "v1beta1"
+		} else if kotsutil.IsApiVersionKind(upstreamFile.Content, "kots.io/v1beta2", "HelmChart") {
+			helmChartVersion = "v1beta2"
+		} else {
 			continue
 		}
 
@@ -392,19 +403,29 @@ func findAllKotsHelmCharts(upstreamFiles []upstreamtypes.UpstreamFile, builder t
 			return nil, errors.Wrapf(err, "failed to convert upstream file %s to base", upstreamFile.Path)
 		}
 
-		helmChart, err := ParseHelmChart(baseFile.Content)
-		if err != nil {
-			fmt.Printf("Failed HelmChart contents:\n%s\n", string(baseFile.Content))
-			return nil, errors.Wrapf(err, "failed to parse rendered HelmChart %s", baseFile.Path)
+		switch helmChartVersion {
+		case "v1beta1":
+			helmChart, err := ParseV1Beta1HelmChart(baseFile.Content)
+			if err != nil {
+				return nil, errors.Wrapf(err, "failed to parse rendered HelmChart %s", baseFile.Path)
+			}
+			kotsV1Beta1HelmCharts = append(kotsV1Beta1HelmCharts, *helmChart)
+		case "v1beta2":
+			helmChart, err := ParseV1Beta2HelmChart(baseFile.Content)
+			if err != nil {
+				return nil, errors.Wrapf(err, "failed to parse rendered HelmChart %s", baseFile.Path)
+			}
+			kotsV1Beta2HelmCharts = append(kotsV1Beta2HelmCharts, *helmChart)
 		}
-
-		kotsHelmCharts = append(kotsHelmCharts, helmChart)
 	}
 
-	return kotsHelmCharts, nil
+	// filter out any charts where a cooresponding v1beta2 HelmChart exists
+	filteredCharts := kotsutil.FilterV1Beta1ChartsWithV1Beta2Charts(kotsV1Beta1HelmCharts, kotsV1Beta2HelmCharts)
+
+	return filteredCharts, nil
 }
 
-func ParseHelmChart(content []byte) (*kotsv1beta1.HelmChart, error) {
+func ParseV1Beta1HelmChart(content []byte) (*kotsv1beta1.HelmChart, error) {
 	decode := scheme.Codecs.UniversalDeserializer().Decode
 	obj, gvk, err := decode(content, nil, nil)
 	if err != nil {
@@ -419,7 +440,25 @@ func ParseHelmChart(content []byte) (*kotsv1beta1.HelmChart, error) {
 		}
 	}
 
-	return nil, errors.Errorf("not a HelmChart GVK: %s", gvk.String())
+	return nil, errors.Errorf("not a v1beta1 HelmChart GVK: %s", gvk.String())
+}
+
+func ParseV1Beta2HelmChart(content []byte) (*kotsv1beta2.HelmChart, error) {
+	decode := scheme.Codecs.UniversalDeserializer().Decode
+	obj, gvk, err := decode(content, nil, nil)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to decode chart")
+	}
+
+	if gvk.Group == "kots.io" {
+		if gvk.Version == "v1beta2" {
+			if gvk.Kind == "HelmChart" {
+				return obj.(*kotsv1beta2.HelmChart), nil
+			}
+		}
+	}
+
+	return nil, errors.Errorf("not a v1beta2 HelmChart GVK: %s", gvk.String())
 }
 
 func tryGetConfigFromFileContent(content []byte, log *logger.CLILogger) *kotsv1beta1.Config {
@@ -491,9 +530,9 @@ func getKotsKinds(u *upstreamtypes.Upstream, log *logger.CLILogger) (*kotsutil.K
 	return kotsKinds, nil
 }
 
-// findHelmChartArchiveInRelease iterates through all files in the release (upstreamFiles), looking for a helm chart archive
+// FindHelmChartArchiveInRelease iterates through all files in the release (upstreamFiles), looking for a helm chart archive
 // that matches the chart name and version specified in the kotsHelmChart parameter
-func findHelmChartArchiveInRelease(upstreamFiles []upstreamtypes.UpstreamFile, kotsHelmChart *kotsv1beta1.HelmChart) ([]byte, error) {
+func FindHelmChartArchiveInRelease(upstreamFiles []upstreamtypes.UpstreamFile, kotsHelmChart kotsutil.HelmChartInterface) ([]byte, error) {
 	for _, upstreamFile := range upstreamFiles {
 		if !isHelmChart(upstreamFile.Content) {
 			continue
@@ -522,8 +561,8 @@ func findHelmChartArchiveInRelease(upstreamFiles []upstreamtypes.UpstreamFile, k
 					return nil, errors.Wrap(err, "failed to unmarshal chart yaml")
 				}
 
-				if chartManifest.Name == kotsHelmChart.Spec.Chart.Name {
-					if chartManifest.Version == kotsHelmChart.Spec.Chart.ChartVersion {
+				if chartManifest.Name == kotsHelmChart.GetChartName() {
+					if chartManifest.Version == kotsHelmChart.GetChartVersion() {
 						return upstreamFile.Content, nil
 					}
 				}
@@ -531,7 +570,7 @@ func findHelmChartArchiveInRelease(upstreamFiles []upstreamtypes.UpstreamFile, k
 		}
 	}
 
-	return nil, errors.Errorf("unable to find helm chart archive for chart name %s, version %s", kotsHelmChart.Spec.Chart.Name, kotsHelmChart.Spec.Chart.ChartVersion)
+	return nil, errors.Errorf("unable to find helm chart archive for chart name %s, version %s", kotsHelmChart.GetChartName(), kotsHelmChart.GetChartVersion())
 }
 
 func isHelmChart(data []byte) bool {

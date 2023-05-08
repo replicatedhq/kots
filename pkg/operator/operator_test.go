@@ -581,8 +581,8 @@ spec:
 
 				mockClient.EXPECT().DeployApp(gomock.Any()).Do(func(deployArgs operatortypes.DeployAppArgs) (bool, error) {
 					// validate that the namespace and helm upgrade flags are templated when deploying
-					Expect(deployArgs.KotsKinds.HelmCharts.Items[0].Spec.Namespace).To(Equal(expectedNamespace))
-					Expect(deployArgs.KotsKinds.HelmCharts.Items[0].Spec.HelmUpgradeFlags).To(Equal(expectedHelmUpgradeFlags))
+					Expect(deployArgs.KotsKinds.V1Beta1HelmCharts.Items[0].Spec.Namespace).To(Equal(expectedNamespace))
+					Expect(deployArgs.KotsKinds.V1Beta1HelmCharts.Items[0].Spec.HelmUpgradeFlags).To(Equal(expectedHelmUpgradeFlags))
 					return true, nil
 				})
 

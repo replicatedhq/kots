@@ -104,9 +104,12 @@ func GetRenderedApp(versionArchive string, downstreamName, kustomizeBinPath stri
 					return errors.Wrapf(err, "failed to get relative path for %s", path)
 				}
 
-				// the charts directory includes helm charts to be installed using the helm cli,
-				// and those are processed separately.
+				// the charts and helm directories include v1beta1 and v1beta2 helm charts, respectively,
+				// to be installed using the helm cli and are processed separately.
 				if strings.Split(relPath, string(os.PathSeparator))[0] == "charts" {
+					return nil
+				}
+				if strings.Split(relPath, string(os.PathSeparator))[0] == "helm" {
 					return nil
 				}
 

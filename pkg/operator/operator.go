@@ -20,6 +20,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/app"
 	apptypes "github.com/replicatedhq/kots/pkg/app/types"
 	appstatetypes "github.com/replicatedhq/kots/pkg/appstate/types"
+	"github.com/replicatedhq/kots/pkg/helmdeploy"
 	identitydeploy "github.com/replicatedhq/kots/pkg/identity/deploy"
 	identitytypes "github.com/replicatedhq/kots/pkg/identity/types"
 	kotsadmobjects "github.com/replicatedhq/kots/pkg/kotsadm/objects"
@@ -255,20 +256,20 @@ func (o *Operator) DeployApp(appID string, sequence int64) (deployed bool, deplo
 		return false, errors.Wrap(err, "failed to get template builder")
 	}
 
-	if kotsKinds.HelmCharts != nil {
-		for i, helmChart := range kotsKinds.HelmCharts.Items {
+	if kotsKinds.V1Beta1HelmCharts != nil {
+		for i, helmChart := range kotsKinds.V1Beta1HelmCharts.Items {
 			renderedNamespace, err := builder.String(helmChart.Spec.Namespace)
 			if err != nil {
 				return false, errors.Wrapf(err, "failed to render namespace %s for chart %s", helmChart.Spec.Namespace, helmChart.GetReleaseName())
 			}
-			kotsKinds.HelmCharts.Items[i].Spec.Namespace = renderedNamespace
+			kotsKinds.V1Beta1HelmCharts.Items[i].Spec.Namespace = renderedNamespace
 
 			for j, upgradeFlag := range helmChart.Spec.HelmUpgradeFlags {
 				renderedUpgradeFlag, err := builder.String(upgradeFlag)
 				if err != nil {
 					return false, errors.Wrapf(err, "failed to render upgrade flag %s for chart %s", upgradeFlag, helmChart.GetReleaseName())
 				}
-				kotsKinds.HelmCharts.Items[i].Spec.HelmUpgradeFlags[j] = renderedUpgradeFlag
+				kotsKinds.V1Beta1HelmCharts.Items[i].Spec.HelmUpgradeFlags[j] = renderedUpgradeFlag
 			}
 		}
 	}
@@ -297,9 +298,14 @@ func (o *Operator) DeployApp(appID string, sequence int64) (deployed bool, deplo
 	}
 	base64EncodedManifests := base64.StdEncoding.EncodeToString(renderedManifests)
 
-	chartArchive, _, err := kustomize.GetRenderedChartsArchive(deployedVersionArchive, downstreams.Name, kustomizeBinPath)
+	v1beta1ChartsArchive, _, err := kustomize.GetRenderedChartsArchive(deployedVersionArchive, downstreams.Name, kustomizeBinPath)
 	if err != nil {
 		return false, errors.Wrap(err, "failed to get rendered charts archive")
+	}
+
+	v1beta2ChartsArchive, err := helmdeploy.GetV1Beta2ChartsArchive(deployedVersionArchive)
+	if err != nil {
+		return false, errors.Wrap(err, "failed to get v1beta2 charts archive")
 	}
 
 	imagePullSecrets := []string{}
@@ -327,7 +333,8 @@ func (o *Operator) DeployApp(appID string, sequence int64) (deployed bool, deplo
 	// get previous manifests (if any)
 	var previousKotsKinds *kotsutil.KotsKinds
 	base64EncodedPreviousManifests := ""
-	previouslyDeployedChartArchive := []byte{}
+	previousV1beta1ChartsArchive := []byte{}
+	previousV1beta2ChartsArchive := []byte{}
 	previouslyDeployedSequence, err := o.store.GetPreviouslyDeployedSequence(app.ID, o.clusterID)
 	if err != nil {
 		return false, errors.Wrap(err, "failed to get previously deployed sequence")
@@ -360,31 +367,39 @@ func (o *Operator) DeployApp(appID string, sequence int64) (deployed bool, deplo
 				logger.Error(errors.Wrap(err, "failed to get previously deployed rendered app"))
 			} else {
 				base64EncodedPreviousManifests = base64.StdEncoding.EncodeToString(previousRenderedManifests)
-				previouslyDeployedChartArchive, _, err = kustomize.GetRenderedChartsArchive(previouslyDeployedVersionArchive, downstreams.Name, kustomizeBinPath)
+				previousV1beta1ChartsArchive, _, err = kustomize.GetRenderedChartsArchive(previouslyDeployedVersionArchive, downstreams.Name, kustomizeBinPath)
 				if err != nil {
 					return false, errors.Wrap(err, "failed to get previously deployed rendered charts archive")
+				}
+
+				previousV1beta2ChartsArchive, err = helmdeploy.GetV1Beta2ChartsArchive(previouslyDeployedVersionArchive)
+				if err != nil {
+					return false, errors.Wrap(err, "failed to get previously deployed v1beta2 charts archive")
 				}
 			}
 		}
 	}
 
 	deployArgs := operatortypes.DeployAppArgs{
-		AppID:                app.ID,
-		AppSlug:              app.Slug,
-		ClusterID:            o.clusterID,
-		Sequence:             sequence,
-		KubectlVersion:       kotsKinds.KotsApplication.Spec.KubectlVersion,
-		KustomizeVersion:     kotsKinds.KotsApplication.Spec.KustomizeVersion,
-		AdditionalNamespaces: kotsKinds.KotsApplication.Spec.AdditionalNamespaces,
-		ImagePullSecrets:     imagePullSecrets,
-		Manifests:            base64EncodedManifests,
-		PreviousManifests:    base64EncodedPreviousManifests,
-		Charts:               chartArchive,
-		PreviousCharts:       previouslyDeployedChartArchive,
-		Wait:                 false,
-		AnnotateSlug:         os.Getenv("ANNOTATE_SLUG") != "",
-		KotsKinds:            kotsKinds,
-		PreviousKotsKinds:    previousKotsKinds,
+		AppID:                        app.ID,
+		AppSlug:                      app.Slug,
+		ClusterID:                    o.clusterID,
+		Sequence:                     sequence,
+		KubectlVersion:               kotsKinds.KotsApplication.Spec.KubectlVersion,
+		KustomizeVersion:             kotsKinds.KotsApplication.Spec.KustomizeVersion,
+		AdditionalNamespaces:         kotsKinds.KotsApplication.Spec.AdditionalNamespaces,
+		ImagePullSecrets:             imagePullSecrets,
+		Manifests:                    base64EncodedManifests,
+		PreviousManifests:            base64EncodedPreviousManifests,
+		V1Beta1ChartsArchive:         v1beta1ChartsArchive,
+		PreviousV1Beta1ChartsArchive: previousV1beta1ChartsArchive,
+		V1Beta2ChartsArchive:         v1beta2ChartsArchive,
+		PreviousV1Beta2ChartsArchive: previousV1beta2ChartsArchive,
+		Action:                       "deploy",
+		Wait:                         false,
+		AnnotateSlug:                 os.Getenv("ANNOTATE_SLUG") != "",
+		KotsKinds:                    kotsKinds,
+		PreviousKotsKinds:            previousKotsKinds,
 	}
 	deployed, err = o.client.DeployApp(deployArgs)
 	if err != nil {

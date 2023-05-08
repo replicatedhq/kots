@@ -105,7 +105,7 @@ func WriteMidstream(writeMidstreamOptions WriteOptions, processImageOptions Proc
 
 		if processImageOptions.AirgapRoot == "" {
 			// This is an online installation. Pull and rewrite images from online and copy them (if necessary) to the configured registry.
-			rewriteResult, err := rewriteBaseImages(processImageOptions, writeMidstreamOptions.BaseDir, newKotsKinds, license, dockerHubRegistryCreds, log)
+			rewriteResult, err := RewriteBaseImages(processImageOptions, writeMidstreamOptions.BaseDir, newKotsKinds, license, dockerHubRegistryCreds, log)
 			if err != nil {
 				return nil, errors.Wrap(err, "failed to rewrite base images")
 			}
@@ -186,8 +186,8 @@ func WriteMidstream(writeMidstreamOptions WriteOptions, processImageOptions Proc
 	return m, nil
 }
 
-// rewriteBaseImages Will rewrite images found in base and copy them (if necessary) to the configured registry.
-func rewriteBaseImages(options ProcessImageOptions, baseDir string, kotsKinds *kotsutil.KotsKinds, license *kotsv1beta1.License, dockerHubRegistryCreds registry.Credentials, log *logger.CLILogger) (*base.RewriteImagesResult, error) {
+// RewriteBaseImages Will rewrite images found in base and copy them (if necessary) to the configured registry.
+func RewriteBaseImages(options ProcessImageOptions, baseDir string, kotsKinds *kotsutil.KotsKinds, license *kotsv1beta1.License, dockerHubRegistryCreds registry.Credentials, log *logger.CLILogger) (*base.RewriteImagesResult, error) {
 	replicatedRegistryInfo := registry.GetRegistryProxyInfo(license, &kotsKinds.KotsApplication)
 
 	rewriteImageOptions := base.RewriteImageOptions{

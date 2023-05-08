@@ -1,4 +1,4 @@
-package kustomize
+package diff
 
 import (
 	"testing"
