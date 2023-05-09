@@ -2879,6 +2879,39 @@ jobs:
 
           ./bin/kots upstream upgrade "$APP_SLUG" -n "$APP_SLUG" --deploy
 
+          # wait for my-chart-release to be uninstalled and my-other-chart-release to be upgraded to revision 2
+          
+          COUNTER=1
+          while [ "$(helm ls -n "$APP_SLUG" | awk 'NR>1{print $1}' | grep my-chart-release)" != "" ]; do
+            ((COUNTER += 1))
+            if [ $COUNTER -gt 120 ]; then
+              echo "Timed out waiting for my-chart-release to be uninstalled"
+              helm ls -n "$APP_SLUG"
+              exit 1
+            fi
+            sleep 1
+          done
+
+          COUNTER=1
+          while [ "$(helm ls -n "$APP_SLUG" | grep my-other-chart-release | awk 'NR>0{print $3}')" != "2" ]; do
+            ((COUNTER += 1))
+            if [ $COUNTER -gt 120 ]; then
+              echo "Timed out waiting for my-other-chart-release to be upgraded to revision 2"
+              helm ls -n "$APP_SLUG"
+              exit 1
+            fi
+            sleep 1
+          done
+
+          # validate that `helm get values` works for the upgraded v1beta2 chart
+          if ! helm get values my-other-chart-release -n "$APP_SLUG" | grep -q my-value; then
+            printf "my-value not found in helm values for my-chart-release in %s namespace\n\n" "$APP_SLUG"
+            helm get values my-chart-release -n "$APP_SLUG"
+            exit 1
+          fi
+
+          # wait for the app to be ready again
+
           COUNTER=1
           while [ "$(./bin/kots get apps --namespace "$APP_SLUG" | awk 'NR>1{print $3}')" != "$UPGRADE_VERSION" ]; do
             ((COUNTER += 1))
@@ -2904,28 +2937,6 @@ jobs:
             fi
             sleep 1
           done
-
-          # validate that the v1beta2 chart was uninstalled and that the v1beta1 chart was upgraded using v1beta2
-
-          if helm ls -n "$APP_SLUG" | awk 'NR>1{print $1}' | grep -q my-chart-release; then
-            printf "my-chart-release helm release was found in %s namespace\n\n" "$APP_SLUG"
-            helm ls -n "$APP_SLUG"
-            exit 1
-          fi
-
-          if ! helm ls -n "$APP_SLUG" | awk 'NR>1{print $1}' | grep -q my-other-chart-release; then
-            printf "my-other-chart-release helm release not found in %s namespace\n\n" "$APP_SLUG"
-            helm ls -n "$APP_SLUG"
-            exit 1
-          fi
-
-          # validate that `helm get values` works for the upgraded v1beta2 chart
-
-          if ! helm get values my-other-chart-release -n "$APP_SLUG" | grep -q my-value; then
-            printf "my-value not found in helm values for my-chart-release in %s namespace\n\n" "$APP_SLUG"
-            helm get values my-chart-release -n "$APP_SLUG"
-            exit 1
-          fi
 
 
       - name: Generate support bundle on failure
