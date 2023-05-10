@@ -405,13 +405,13 @@ func findAllKotsV1Beta1HelmCharts(upstreamFiles []upstreamtypes.UpstreamFile, bu
 
 		switch helmChartVersion {
 		case "v1beta1":
-			helmChart, err := ParseV1Beta1HelmChart(baseFile.Content)
+			helmChart, err := kotsutil.LoadV1Beta1HelmChartFromContents(baseFile.Content)
 			if err != nil {
 				return nil, errors.Wrapf(err, "failed to parse rendered HelmChart %s", baseFile.Path)
 			}
 			kotsV1Beta1HelmCharts = append(kotsV1Beta1HelmCharts, *helmChart)
 		case "v1beta2":
-			helmChart, err := ParseV1Beta2HelmChart(baseFile.Content)
+			helmChart, err := kotsutil.LoadV1Beta2HelmChartFromContents(baseFile.Content)
 			if err != nil {
 				return nil, errors.Wrapf(err, "failed to parse rendered HelmChart %s", baseFile.Path)
 			}
@@ -423,42 +423,6 @@ func findAllKotsV1Beta1HelmCharts(upstreamFiles []upstreamtypes.UpstreamFile, bu
 	filteredCharts := kotsutil.FilterV1Beta1ChartsWithV1Beta2Charts(kotsV1Beta1HelmCharts, kotsV1Beta2HelmCharts)
 
 	return filteredCharts, nil
-}
-
-func ParseV1Beta1HelmChart(content []byte) (*kotsv1beta1.HelmChart, error) {
-	decode := scheme.Codecs.UniversalDeserializer().Decode
-	obj, gvk, err := decode(content, nil, nil)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to decode chart")
-	}
-
-	if gvk.Group == "kots.io" {
-		if gvk.Version == "v1beta1" {
-			if gvk.Kind == "HelmChart" {
-				return obj.(*kotsv1beta1.HelmChart), nil
-			}
-		}
-	}
-
-	return nil, errors.Errorf("not a v1beta1 HelmChart GVK: %s", gvk.String())
-}
-
-func ParseV1Beta2HelmChart(content []byte) (*kotsv1beta2.HelmChart, error) {
-	decode := scheme.Codecs.UniversalDeserializer().Decode
-	obj, gvk, err := decode(content, nil, nil)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to decode chart")
-	}
-
-	if gvk.Group == "kots.io" {
-		if gvk.Version == "v1beta2" {
-			if gvk.Kind == "HelmChart" {
-				return obj.(*kotsv1beta2.HelmChart), nil
-			}
-		}
-	}
-
-	return nil, errors.Errorf("not a v1beta2 HelmChart GVK: %s", gvk.String())
 }
 
 func tryGetConfigFromFileContent(content []byte, log *logger.CLILogger) *kotsv1beta1.Config {

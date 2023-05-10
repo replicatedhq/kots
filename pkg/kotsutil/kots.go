@@ -804,9 +804,9 @@ func LoadKotsAppFromContents(data []byte) (*kotsv1beta1.Application, error) {
 	return obj.(*kotsv1beta1.Application), nil
 }
 
-func LoadV1Beta1HelmChartsFromContents(data []byte) (*kotsv1beta1.HelmChartList, error) {
+func LoadV1Beta1HelmChartListFromContents(data []byte) (*kotsv1beta1.HelmChartList, error) {
 	decode := scheme.Codecs.UniversalDeserializer().Decode
-	obj, gvk, err := decode([]byte(data), nil, nil)
+	obj, gvk, err := decode(data, nil, nil)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to decode helm chart data of length %d", len(data))
 	}
@@ -816,6 +816,34 @@ func LoadV1Beta1HelmChartsFromContents(data []byte) (*kotsv1beta1.HelmChartList,
 	}
 
 	return obj.(*kotsv1beta1.HelmChartList), nil
+}
+
+func LoadV1Beta1HelmChartFromContents(content []byte) (*kotsv1beta1.HelmChart, error) {
+	decode := scheme.Codecs.UniversalDeserializer().Decode
+	obj, gvk, err := decode(content, nil, nil)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to decode chart")
+	}
+
+	if gvk.Group != "kots.io" || gvk.Version != "v1beta1" || gvk.Kind != "HelmChart" {
+		return nil, errors.Errorf("unexpected GVK: %s", gvk.String())
+	}
+
+	return obj.(*kotsv1beta1.HelmChart), nil
+}
+
+func LoadV1Beta2HelmChartFromContents(content []byte) (*kotsv1beta2.HelmChart, error) {
+	decode := scheme.Codecs.UniversalDeserializer().Decode
+	obj, gvk, err := decode(content, nil, nil)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to decode chart")
+	}
+
+	if gvk.Group != "kots.io" || gvk.Version != "v1beta2" || gvk.Kind != "HelmChart" {
+		return nil, errors.Errorf("unexpected GVK: %s", gvk.String())
+	}
+
+	return obj.(*kotsv1beta2.HelmChart), nil
 }
 
 func LoadInstallationFromContents(installationData []byte) (*kotsv1beta1.Installation, error) {
