@@ -20,7 +20,7 @@ import ConfigInfo from "./ConfigInfo";
 
 import "../../../scss/components/watches/WatchConfig.scss";
 import { Utilities } from "../../../utilities/utilities";
-import { Span } from "../../../styles/common";
+
 import Icon from "@src/components/Icon";
 
 // Types
