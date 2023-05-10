@@ -191,9 +191,11 @@ func renderHelmChart(opts WriteOptions, downstream string, helmChart *kotsv1beta
 	return renderedPath, nil
 }
 
-// processImages will pull any public images from online and copy them to the configured private registry
+// processImages will pull all images (public and private) from online and copy them to the configured private registry
 func processImages(opts WriteOptions, renderedPath string) error {
-	if !opts.ProcessImageOptions.RewriteImages || opts.ProcessImageOptions.AirgapRoot != "" {
+	if !opts.ProcessImageOptions.RewriteImages {
+		// if an on-prem registry is not configured (which means it's an online installation)
+		// there's no need to process/copy the images as they will be pulled from their original registries or through the replicated proxy
 		return nil
 	}
 
