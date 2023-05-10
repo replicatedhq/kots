@@ -229,18 +229,19 @@ func (c *Client) installWithHelm(v1Beta1ChartsDir, v1beta2ChartsDir string, kots
 	var multiStdout, multiStderr [][]byte
 
 	for _, dir := range orderedDirs {
-		var args []string
+		args := []string{"upgrade", "-i", dir.ReleaseName}
 		if dir.APIVersion == "kots.io/v1beta1" {
 			installDir := filepath.Join(v1Beta1ChartsDir, dir.Name)
-			args = []string{"upgrade", "-i", dir.ReleaseName, installDir, "--timeout", "3600s"}
+			args = append(args, installDir)
 		} else if dir.APIVersion == "kots.io/v1beta2" {
 			installDir := filepath.Join(v1beta2ChartsDir, dir.Name)
 			chartPath := filepath.Join(installDir, fmt.Sprintf("%s-%s.tgz", dir.ChartName, dir.ChartVersion))
 			valuesPath := filepath.Join(installDir, "values.yaml")
-			args = []string{"upgrade", "-i", dir.ReleaseName, chartPath, "-f", valuesPath, "--timeout", "3600s"}
+			args = append(args, chartPath, "-f", valuesPath)
 		} else {
 			return nil, errors.Errorf("unknown api version %s", dir.APIVersion)
 		}
+		args = append(args, "--timeout", "3600s")
 
 		chartNamespace := dir.Namespace
 		if chartNamespace == "" && c.TargetNamespace != "" && c.TargetNamespace != "." {
