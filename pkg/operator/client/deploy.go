@@ -505,7 +505,7 @@ func getRemovedCharts(opts getRemovedChartsOptions) ([]kotsutil.HelmChartInterfa
 
 	if opts.prevV1Beta1Dir != "" {
 		prevV1Beta1ChartsDir := filepath.Join(opts.prevV1Beta1Dir, "charts")
-		matching, err := findMatchingV1Beta1Charts(prevV1Beta1ChartsDir, opts.previousV1Beta1KotsCharts)
+		matching, err := findMatchingHelmCharts(prevV1Beta1ChartsDir, opts.previousV1Beta1KotsCharts)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to find previous matching v1beta1 charts")
 		}
@@ -514,7 +514,7 @@ func getRemovedCharts(opts getRemovedChartsOptions) ([]kotsutil.HelmChartInterfa
 
 	if opts.prevV1Beta2Dir != "" {
 		prevV1Beta2ChartsDir := filepath.Join(opts.prevV1Beta2Dir, "helm")
-		matching, err := findMatchingV1Beta2Charts(prevV1Beta2ChartsDir, opts.previousV1Beta2KotsCharts)
+		matching, err := findMatchingHelmCharts(prevV1Beta2ChartsDir, opts.previousV1Beta2KotsCharts)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to find previous matching v1beta2 charts")
 		}
@@ -525,7 +525,7 @@ func getRemovedCharts(opts getRemovedChartsOptions) ([]kotsutil.HelmChartInterfa
 
 	if opts.curV1Beta1Dir != "" {
 		curV1Beta1ChartsDir := filepath.Join(opts.curV1Beta1Dir, "charts")
-		matching, err := findMatchingV1Beta1Charts(curV1Beta1ChartsDir, opts.currentV1Beta1KotsCharts)
+		matching, err := findMatchingHelmCharts(curV1Beta1ChartsDir, opts.currentV1Beta1KotsCharts)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to find current matching v1beta1 charts")
 		}
@@ -534,7 +534,7 @@ func getRemovedCharts(opts getRemovedChartsOptions) ([]kotsutil.HelmChartInterfa
 
 	if opts.curV1Beta2Dir != "" {
 		curV1Beta2ChartsDir := filepath.Join(opts.curV1Beta2Dir, "helm")
-		matching, err := findMatchingV1Beta2Charts(curV1Beta2ChartsDir, opts.currentV1Beta2KotsCharts)
+		matching, err := findMatchingHelmCharts(curV1Beta2ChartsDir, opts.currentV1Beta2KotsCharts)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to find current matching v1beta2 charts")
 		}
@@ -566,7 +566,7 @@ func getRemovedCharts(opts getRemovedChartsOptions) ([]kotsutil.HelmChartInterfa
 	return removedCharts, nil
 }
 
-func findMatchingV1Beta1Charts(chartsDir string, kotsCharts []kotsutil.HelmChartInterface) ([]kotsutil.HelmChartInterface, error) {
+func findMatchingHelmCharts(chartsDir string, kotsCharts []kotsutil.HelmChartInterface) ([]kotsutil.HelmChartInterface, error) {
 	dirContent, err := ioutil.ReadDir(chartsDir)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to list chart dir %s", chartsDir)
@@ -574,45 +574,37 @@ func findMatchingV1Beta1Charts(chartsDir string, kotsCharts []kotsutil.HelmChart
 
 	matching := []kotsutil.HelmChartInterface{}
 
-	for _, f := range dirContent {
-		if !f.IsDir() {
-			continue
-		}
+	for _, kotsChart := range kotsCharts {
+		for _, f := range dirContent {
+			if !f.IsDir() {
+				continue
+			}
 
-		dirName := f.Name()
-		chartDir := filepath.Join(chartsDir, dirName)
-		chartName, chartVersion, err := findChartNameAndVersion(chartDir)
-		if err != nil {
-			return nil, errors.Wrapf(err, "failed to find chart name and version in %s", chartDir)
-		}
+			dirName := f.Name()
+			chartDir := filepath.Join(chartsDir, dirName)
 
-		for _, kotsChart := range kotsCharts {
+			var chartName, chartVersion string
+			if kotsChart.GetAPIVersion() == "kots.io/v1beta1" {
+				chartName, chartVersion, err = findChartNameAndVersion(chartDir)
+				if err != nil {
+					return nil, errors.Wrapf(err, "failed to find chart name and version in %s", chartDir)
+				}
+			} else if kotsChart.GetAPIVersion() == "kots.io/v1beta2" {
+				archivePath, err := findChartTgz(chartDir)
+				if err != nil {
+					return nil, errors.Wrapf(err, "failed to find chart tgz in %s", chartDir)
+				}
+				chartName, chartVersion, err = findChartNameAndVersionInArchive(archivePath)
+				if err != nil {
+					return nil, errors.Wrapf(err, "failed to find chart name and version in %s", chartDir)
+				}
+			} else {
+				return nil, errors.Errorf("unknown api version %s", kotsChart.GetAPIVersion())
+			}
+
 			if kotsChart.GetChartVersion() == chartVersion && kotsChart.GetChartName() == chartName && kotsChart.GetDirName() == dirName {
 				matching = append(matching, kotsChart)
-			}
-		}
-	}
-
-	return matching, nil
-}
-
-func findMatchingV1Beta2Charts(chartsDir string, kotsCharts []kotsutil.HelmChartInterface) ([]kotsutil.HelmChartInterface, error) {
-	dirContent, err := ioutil.ReadDir(chartsDir)
-	if err != nil {
-		return nil, errors.Wrapf(err, "failed to list chart dir %s", chartsDir)
-	}
-
-	matching := []kotsutil.HelmChartInterface{}
-
-	for _, f := range dirContent {
-		if !f.IsDir() {
-			continue
-		}
-
-		dirName := f.Name()
-		for _, kotsChart := range kotsCharts {
-			if kotsChart.GetDirName() == dirName {
-				matching = append(matching, kotsChart)
+				break
 			}
 		}
 	}
