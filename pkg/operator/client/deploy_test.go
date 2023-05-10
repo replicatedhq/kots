@@ -1,13 +1,15 @@
 package client
 
 import (
+	"encoding/base64"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"testing"
 
 	"github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
-	clienttypes "github.com/replicatedhq/kots/pkg/operator/client/types"
+	"github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta2"
+	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -19,31 +21,33 @@ func Test_getSortedCharts(t *testing.T) {
 	}
 	tests := []struct {
 		name            string
-		files           []file
-		kotsCharts      []v1beta1.HelmChart
+		v1Beta1Files    []file
+		v1Beta2Files    []file
+		kotsCharts      []kotsutil.HelmChartInterface
 		targetNamespace string
 		isUninstall     bool
-		want            []clienttypes.OrderedDir
+		want            []orderedDir
 	}{
 		{
 			name: "chart without an entry in kotsCharts should work", // this should not come up in practice but is good to reduce risk
-			files: []file{
+			v1Beta1Files: []file{
 				{
 					path:     "chart1/Chart.yaml",
 					contents: `name: chart1name`,
 				},
 			},
-			want: []clienttypes.OrderedDir{
+			want: []orderedDir{
 				{
 					Name:        "chart1",
 					ChartName:   "chart1name",
 					ReleaseName: "chart1name",
+					APIVersion:  "kots.io/v1beta1",
 				},
 			},
 		},
 		{
 			name: "four charts, one not weighted, two with equal weights, one irrelevant file",
-			files: []file{
+			v1Beta1Files: []file{
 				{
 					path:     "chart1/irrelevant", // this file should be ignored
 					contents: "abc123",
@@ -77,8 +81,12 @@ version: "v1"
 `,
 				},
 			},
-			kotsCharts: []v1beta1.HelmChart{
-				{
+			kotsCharts: []kotsutil.HelmChartInterface{
+				&v1beta1.HelmChart{
+					TypeMeta: metav1.TypeMeta{
+						APIVersion: "kots.io/v1beta1",
+						Kind:       "HelmChart",
+					},
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "chart1",
 					},
@@ -90,7 +98,11 @@ version: "v1"
 						Weight: 1,
 					},
 				},
-				{
+				&v1beta1.HelmChart{
+					TypeMeta: metav1.TypeMeta{
+						APIVersion: "kots.io/v1beta1",
+						Kind:       "HelmChart",
+					},
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "chart2",
 					},
@@ -102,7 +114,11 @@ version: "v1"
 						Weight: 1,
 					},
 				},
-				{
+				&v1beta1.HelmChart{
+					TypeMeta: metav1.TypeMeta{
+						APIVersion: "kots.io/v1beta1",
+						Kind:       "HelmChart",
+					},
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "chart3",
 					},
@@ -114,7 +130,11 @@ version: "v1"
 						Weight: 5,
 					},
 				},
-				{
+				&v1beta1.HelmChart{
+					TypeMeta: metav1.TypeMeta{
+						APIVersion: "kots.io/v1beta1",
+						Kind:       "HelmChart",
+					},
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "chart4",
 					},
@@ -126,12 +146,13 @@ version: "v1"
 					},
 				},
 			},
-			want: []clienttypes.OrderedDir{
+			want: []orderedDir{
 				{
 					Name:         "chart4",
 					ChartName:    "chart4",
 					ChartVersion: "v1",
 					ReleaseName:  "chart4",
+					APIVersion:   "kots.io/v1beta1",
 				},
 				{
 					Name:         "chart1",
@@ -139,6 +160,7 @@ version: "v1"
 					ChartName:    "chart1",
 					ChartVersion: "ver1",
 					ReleaseName:  "chart1",
+					APIVersion:   "kots.io/v1beta1",
 				},
 				{
 					Name:         "chart2",
@@ -146,6 +168,7 @@ version: "v1"
 					ChartName:    "chart2",
 					ChartVersion: "v1",
 					ReleaseName:  "chart2",
+					APIVersion:   "kots.io/v1beta1",
 				},
 				{
 					Name:         "chart3",
@@ -153,12 +176,13 @@ version: "v1"
 					ChartName:    "chart3",
 					ChartVersion: "v1",
 					ReleaseName:  "chart3",
+					APIVersion:   "kots.io/v1beta1",
 				},
 			},
 		},
 		{
 			name: "four charts, one not weighted, two with equal weights, one irrelevant file, is uninstall",
-			files: []file{
+			v1Beta1Files: []file{
 				{
 					path:     "chart1/irrelevant", // this file should be ignored
 					contents: "abc123",
@@ -192,8 +216,12 @@ version: "v1"
 `,
 				},
 			},
-			kotsCharts: []v1beta1.HelmChart{
-				{
+			kotsCharts: []kotsutil.HelmChartInterface{
+				&v1beta1.HelmChart{
+					TypeMeta: metav1.TypeMeta{
+						APIVersion: "kots.io/v1beta1",
+						Kind:       "HelmChart",
+					},
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "chart1",
 					},
@@ -205,7 +233,11 @@ version: "v1"
 						Weight: 1,
 					},
 				},
-				{
+				&v1beta1.HelmChart{
+					TypeMeta: metav1.TypeMeta{
+						APIVersion: "kots.io/v1beta1",
+						Kind:       "HelmChart",
+					},
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "chart2",
 					},
@@ -217,7 +249,11 @@ version: "v1"
 						Weight: 1,
 					},
 				},
-				{
+				&v1beta1.HelmChart{
+					TypeMeta: metav1.TypeMeta{
+						APIVersion: "kots.io/v1beta1",
+						Kind:       "HelmChart",
+					},
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "chart3",
 					},
@@ -229,7 +265,11 @@ version: "v1"
 						Weight: 5,
 					},
 				},
-				{
+				&v1beta1.HelmChart{
+					TypeMeta: metav1.TypeMeta{
+						APIVersion: "kots.io/v1beta1",
+						Kind:       "HelmChart",
+					},
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "chart4",
 					},
@@ -242,13 +282,14 @@ version: "v1"
 				},
 			},
 			isUninstall: true,
-			want: []clienttypes.OrderedDir{
+			want: []orderedDir{
 				{
 					Name:         "chart3",
 					Weight:       5,
 					ChartName:    "chart3",
 					ChartVersion: "v1",
 					ReleaseName:  "chart3",
+					APIVersion:   "kots.io/v1beta1",
 				},
 				{
 					Name:         "chart2",
@@ -256,6 +297,7 @@ version: "v1"
 					ChartName:    "chart2",
 					ChartVersion: "v1",
 					ReleaseName:  "chart2",
+					APIVersion:   "kots.io/v1beta1",
 				},
 				{
 					Name:         "chart1",
@@ -263,18 +305,20 @@ version: "v1"
 					ChartName:    "chart1",
 					ChartVersion: "ver1",
 					ReleaseName:  "chart1",
+					APIVersion:   "kots.io/v1beta1",
 				},
 				{
 					Name:         "chart4",
 					ChartName:    "chart4",
 					ChartVersion: "v1",
 					ReleaseName:  "chart4",
+					APIVersion:   "kots.io/v1beta1",
 				},
 			},
 		},
 		{
 			name: "negative weights before no weight",
-			files: []file{
+			v1Beta1Files: []file{
 				{
 					path: "chart1/Chart.yaml",
 					contents: `
@@ -289,8 +333,12 @@ name: c2
 `,
 				},
 			},
-			kotsCharts: []v1beta1.HelmChart{
-				{
+			kotsCharts: []kotsutil.HelmChartInterface{
+				&v1beta1.HelmChart{
+					TypeMeta: metav1.TypeMeta{
+						APIVersion: "kots.io/v1beta1",
+						Kind:       "HelmChart",
+					},
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "chart1",
 					},
@@ -303,24 +351,26 @@ name: c2
 					},
 				},
 			},
-			want: []clienttypes.OrderedDir{
+			want: []orderedDir{
 				{
 					Name:         "chart1",
 					Weight:       -5,
 					ChartName:    "c1",
 					ChartVersion: "ver1",
 					ReleaseName:  "c1",
+					APIVersion:   "kots.io/v1beta1",
 				},
 				{
 					Name:        "chart2",
 					ChartName:   "c2",
 					ReleaseName: "c2",
+					APIVersion:  "kots.io/v1beta1",
 				},
 			},
 		},
 		{
 			name: "same name, different versions",
-			files: []file{
+			v1Beta1Files: []file{
 				{
 					path: "chart1/Chart.yaml",
 					contents: `
@@ -336,8 +386,12 @@ version: ver2
 `,
 				},
 			},
-			kotsCharts: []v1beta1.HelmChart{
-				{
+			kotsCharts: []kotsutil.HelmChartInterface{
+				&v1beta1.HelmChart{
+					TypeMeta: metav1.TypeMeta{
+						APIVersion: "kots.io/v1beta1",
+						Kind:       "HelmChart",
+					},
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "chart1",
 					},
@@ -349,7 +403,11 @@ version: ver2
 						Weight: -1,
 					},
 				},
-				{
+				&v1beta1.HelmChart{
+					TypeMeta: metav1.TypeMeta{
+						APIVersion: "kots.io/v1beta1",
+						Kind:       "HelmChart",
+					},
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "chart2",
 					},
@@ -362,13 +420,14 @@ version: ver2
 					},
 				},
 			},
-			want: []clienttypes.OrderedDir{
+			want: []orderedDir{
 				{
 					Name:         "chart1",
 					ChartName:    "generic",
 					ChartVersion: "ver1",
 					ReleaseName:  "generic",
 					Weight:       -1,
+					APIVersion:   "kots.io/v1beta1",
 				},
 				{
 					Name:         "chart2",
@@ -376,12 +435,13 @@ version: ver2
 					ChartName:    "generic",
 					ChartVersion: "ver2",
 					ReleaseName:  "generic",
+					APIVersion:   "kots.io/v1beta1",
 				},
 			},
 		},
 		{
 			name: "metadata name does not match directory name",
-			files: []file{
+			v1Beta1Files: []file{
 				{
 					path: "chart1/Chart.yaml",
 					contents: `
@@ -397,8 +457,12 @@ version: ver2
 `,
 				},
 			},
-			kotsCharts: []v1beta1.HelmChart{
-				{
+			kotsCharts: []kotsutil.HelmChartInterface{
+				&v1beta1.HelmChart{
+					TypeMeta: metav1.TypeMeta{
+						APIVersion: "kots.io/v1beta1",
+						Kind:       "HelmChart",
+					},
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "chart3",
 					},
@@ -410,7 +474,11 @@ version: ver2
 						Weight: -1,
 					},
 				},
-				{
+				&v1beta1.HelmChart{
+					TypeMeta: metav1.TypeMeta{
+						APIVersion: "kots.io/v1beta1",
+						Kind:       "HelmChart",
+					},
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "chart4",
 					},
@@ -423,24 +491,26 @@ version: ver2
 					},
 				},
 			},
-			want: []clienttypes.OrderedDir{
+			want: []orderedDir{
 				{
 					Name:         "chart1",
 					ChartName:    "generic",
 					ChartVersion: "ver1",
 					ReleaseName:  "generic",
+					APIVersion:   "kots.io/v1beta1",
 				},
 				{
 					Name:         "chart2",
 					ChartName:    "generic",
 					ChartVersion: "ver2",
 					ReleaseName:  "generic",
+					APIVersion:   "kots.io/v1beta1",
 				},
 			},
 		},
 		{
 			name: "kots chart specifies a release name",
-			files: []file{
+			v1Beta1Files: []file{
 				{
 					path: "rel1/Chart.yaml",
 					contents: `
@@ -456,8 +526,12 @@ version: ver2
 `,
 				},
 			},
-			kotsCharts: []v1beta1.HelmChart{
-				{
+			kotsCharts: []kotsutil.HelmChartInterface{
+				&v1beta1.HelmChart{
+					TypeMeta: metav1.TypeMeta{
+						APIVersion: "kots.io/v1beta1",
+						Kind:       "HelmChart",
+					},
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "chart1",
 					},
@@ -470,7 +544,11 @@ version: ver2
 						Weight: -1,
 					},
 				},
-				{
+				&v1beta1.HelmChart{
+					TypeMeta: metav1.TypeMeta{
+						APIVersion: "kots.io/v1beta1",
+						Kind:       "HelmChart",
+					},
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "chart2",
 					},
@@ -484,13 +562,14 @@ version: ver2
 					},
 				},
 			},
-			want: []clienttypes.OrderedDir{
+			want: []orderedDir{
 				{
 					Name:         "rel1",
 					ChartName:    "generic",
 					ChartVersion: "ver1",
 					ReleaseName:  "rel1",
 					Weight:       -1,
+					APIVersion:   "kots.io/v1beta1",
 				},
 				{
 					Name:         "rel2",
@@ -498,12 +577,13 @@ version: ver2
 					ChartVersion: "ver2",
 					ReleaseName:  "rel2",
 					Weight:       2,
+					APIVersion:   "kots.io/v1beta1",
 				},
 			},
 		},
 		{
 			name: "kots chart specifies helm flags",
-			files: []file{
+			v1Beta1Files: []file{
 				{
 					path: "chart1/Chart.yaml",
 					contents: `
@@ -519,8 +599,12 @@ version: ver2
 `,
 				},
 			},
-			kotsCharts: []v1beta1.HelmChart{
-				{
+			kotsCharts: []kotsutil.HelmChartInterface{
+				&v1beta1.HelmChart{
+					TypeMeta: metav1.TypeMeta{
+						APIVersion: "kots.io/v1beta1",
+						Kind:       "HelmChart",
+					},
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "chart1",
 					},
@@ -537,7 +621,11 @@ version: ver2
 						},
 					},
 				},
-				{
+				&v1beta1.HelmChart{
+					TypeMeta: metav1.TypeMeta{
+						APIVersion: "kots.io/v1beta1",
+						Kind:       "HelmChart",
+					},
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "chart2",
 					},
@@ -549,7 +637,7 @@ version: ver2
 					},
 				},
 			},
-			want: []clienttypes.OrderedDir{
+			want: []orderedDir{
 				{
 					Name:         "chart1",
 					ChartName:    "generic1",
@@ -561,12 +649,258 @@ version: ver2
 						"--atomic",
 						"--description=my description",
 					},
+					APIVersion: "kots.io/v1beta1",
 				},
 				{
 					Name:         "chart2",
 					ChartName:    "generic2",
 					ChartVersion: "ver2",
 					ReleaseName:  "generic2",
+					APIVersion:   "kots.io/v1beta1",
+				},
+			},
+		},
+		{
+			name: "v1beta2 chart",
+			v1Beta2Files: []file{
+				{
+					path:     "minimal-release/minimal-0.0.1.tgz",
+					contents: "H4sIFAAAAAAA/ykAK2FIUjBjSE02THk5NWIzVjBkUzVpWlM5Nk9WVjZNV2xqYW5keVRRbz1IZWxtAOzSsQoCMQwG4M59ij5B/dvECrf6Du4ZDixcq/TOA99eEF3O0YII+ZZ/yJA/kJJrLjLtjmdpi79LmUx3AJCYnwlgm8CeTWCO6UBEiQxCTBSMQ/8qn27zIs3g613b4/6EXPNpbHO+1MGt0VYp4+BeT2HX9wQePthfd1VKKdXPIwAA//8d5AfYAAgAAA==",
+				},
+			},
+			kotsCharts: []kotsutil.HelmChartInterface{
+				&v1beta2.HelmChart{
+					TypeMeta: metav1.TypeMeta{
+						APIVersion: "kots.io/v1beta2",
+						Kind:       "HelmChart",
+					},
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "minimal",
+					},
+					Spec: v1beta2.HelmChartSpec{
+						Chart: v1beta2.ChartIdentifier{
+							Name:         "minimal",
+							ChartVersion: "0.0.1",
+						},
+						ReleaseName: "minimal-release",
+						Namespace:   "my-namespace",
+						HelmUpgradeFlags: []string{
+							"--skip-crds",
+						},
+					},
+				},
+			},
+			want: []orderedDir{
+				{
+					Name:         "minimal-release",
+					ChartName:    "minimal",
+					ChartVersion: "0.0.1",
+					ReleaseName:  "minimal-release",
+					Namespace:    "my-namespace",
+					UpgradeFlags: []string{
+						"--skip-crds",
+					},
+					APIVersion: "kots.io/v1beta2",
+				},
+			},
+		},
+		{
+			name: "v1beta2 charts with weights",
+			v1Beta2Files: []file{
+				{
+					path:     "minimal-release-1/minimal-0.0.1.tgz",
+					contents: "H4sIFAAAAAAA/ykAK2FIUjBjSE02THk5NWIzVjBkUzVpWlM5Nk9WVjZNV2xqYW5keVRRbz1IZWxtAOzSsQoCMQwG4M59ij5B/dvECrf6Du4ZDixcq/TOA99eEF3O0YII+ZZ/yJA/kJJrLjLtjmdpi79LmUx3AJCYnwlgm8CeTWCO6UBEiQxCTBSMQ/8qn27zIs3g613b4/6EXPNpbHO+1MGt0VYp4+BeT2HX9wQePthfd1VKKdXPIwAA//8d5AfYAAgAAA==",
+				},
+				{
+					path:     "minimal-release-2/minimal-0.0.1.tgz",
+					contents: "H4sIFAAAAAAA/ykAK2FIUjBjSE02THk5NWIzVjBkUzVpWlM5Nk9WVjZNV2xqYW5keVRRbz1IZWxtAOzSsQoCMQwG4M59ij5B/dvECrf6Du4ZDixcq/TOA99eEF3O0YII+ZZ/yJA/kJJrLjLtjmdpi79LmUx3AJCYnwlgm8CeTWCO6UBEiQxCTBSMQ/8qn27zIs3g613b4/6EXPNpbHO+1MGt0VYp4+BeT2HX9wQePthfd1VKKdXPIwAA//8d5AfYAAgAAA==",
+				},
+			},
+			kotsCharts: []kotsutil.HelmChartInterface{
+				&v1beta2.HelmChart{
+					TypeMeta: metav1.TypeMeta{
+						APIVersion: "kots.io/v1beta2",
+						Kind:       "HelmChart",
+					},
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "minimal-1",
+					},
+					Spec: v1beta2.HelmChartSpec{
+						Chart: v1beta2.ChartIdentifier{
+							Name:         "minimal",
+							ChartVersion: "0.0.1",
+						},
+						ReleaseName: "minimal-release-1",
+						Weight:      2,
+					},
+				},
+				&v1beta2.HelmChart{
+					TypeMeta: metav1.TypeMeta{
+						APIVersion: "kots.io/v1beta2",
+						Kind:       "HelmChart",
+					},
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "minimal-2",
+					},
+					Spec: v1beta2.HelmChartSpec{
+						Chart: v1beta2.ChartIdentifier{
+							Name:         "minimal",
+							ChartVersion: "0.0.1",
+						},
+						ReleaseName: "minimal-release-2",
+						Weight:      1,
+					},
+				},
+			},
+			want: []orderedDir{
+				{
+					Name:         "minimal-release-2",
+					ChartName:    "minimal",
+					ChartVersion: "0.0.1",
+					Weight:       1,
+					ReleaseName:  "minimal-release-2",
+					APIVersion:   "kots.io/v1beta2",
+				},
+				{
+					Name:         "minimal-release-1",
+					ChartName:    "minimal",
+					ChartVersion: "0.0.1",
+					Weight:       2,
+					ReleaseName:  "minimal-release-1",
+					APIVersion:   "kots.io/v1beta2",
+				},
+			},
+		},
+		{
+			name: "v1beat1 and v1beta2 charts with weights",
+			v1Beta1Files: []file{
+				{
+					path: "generic1-release/Chart.yaml",
+					contents: `
+name: generic1
+version: ver1
+`,
+				},
+				{
+					path: "generic2-release/Chart.yaml",
+					contents: `
+name: generic2
+version: ver2
+`,
+				},
+			},
+			v1Beta2Files: []file{
+				{
+					path:     "minimal-release-1/minimal-0.0.1.tgz",
+					contents: "H4sIFAAAAAAA/ykAK2FIUjBjSE02THk5NWIzVjBkUzVpWlM5Nk9WVjZNV2xqYW5keVRRbz1IZWxtAOzSsQoCMQwG4M59ij5B/dvECrf6Du4ZDixcq/TOA99eEF3O0YII+ZZ/yJA/kJJrLjLtjmdpi79LmUx3AJCYnwlgm8CeTWCO6UBEiQxCTBSMQ/8qn27zIs3g613b4/6EXPNpbHO+1MGt0VYp4+BeT2HX9wQePthfd1VKKdXPIwAA//8d5AfYAAgAAA==",
+				},
+				{
+					path:     "minimal-release-2/minimal-0.0.1.tgz",
+					contents: "H4sIFAAAAAAA/ykAK2FIUjBjSE02THk5NWIzVjBkUzVpWlM5Nk9WVjZNV2xqYW5keVRRbz1IZWxtAOzSsQoCMQwG4M59ij5B/dvECrf6Du4ZDixcq/TOA99eEF3O0YII+ZZ/yJA/kJJrLjLtjmdpi79LmUx3AJCYnwlgm8CeTWCO6UBEiQxCTBSMQ/8qn27zIs3g613b4/6EXPNpbHO+1MGt0VYp4+BeT2HX9wQePthfd1VKKdXPIwAA//8d5AfYAAgAAA==",
+				},
+			},
+			kotsCharts: []kotsutil.HelmChartInterface{
+				&v1beta1.HelmChart{
+					TypeMeta: metav1.TypeMeta{
+						APIVersion: "kots.io/v1beta1",
+						Kind:       "HelmChart",
+					},
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "generic1",
+					},
+					Spec: v1beta1.HelmChartSpec{
+						Chart: v1beta1.ChartIdentifier{
+							Name:         "generic1",
+							ChartVersion: "ver1",
+							ReleaseName:  "generic1-release",
+						},
+						Weight: 2,
+					},
+				},
+				&v1beta1.HelmChart{
+					TypeMeta: metav1.TypeMeta{
+						APIVersion: "kots.io/v1beta1",
+						Kind:       "HelmChart",
+					},
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "generic2",
+					},
+					Spec: v1beta1.HelmChartSpec{
+						Chart: v1beta1.ChartIdentifier{
+							Name:         "generic2",
+							ChartVersion: "ver2",
+							ReleaseName:  "generic2-release",
+						},
+						Weight: 1,
+					},
+				},
+				&v1beta2.HelmChart{
+					TypeMeta: metav1.TypeMeta{
+						APIVersion: "kots.io/v1beta2",
+						Kind:       "HelmChart",
+					},
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "minimal-1",
+					},
+					Spec: v1beta2.HelmChartSpec{
+						Chart: v1beta2.ChartIdentifier{
+							Name:         "minimal",
+							ChartVersion: "0.0.1",
+						},
+						ReleaseName: "minimal-release-1",
+						Weight:      2,
+					},
+				},
+				&v1beta2.HelmChart{
+					TypeMeta: metav1.TypeMeta{
+						APIVersion: "kots.io/v1beta2",
+						Kind:       "HelmChart",
+					},
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "minimal-2",
+					},
+					Spec: v1beta2.HelmChartSpec{
+						Chart: v1beta2.ChartIdentifier{
+							Name:         "minimal",
+							ChartVersion: "0.0.1",
+						},
+						ReleaseName: "minimal-release-2",
+						Weight:      1,
+					},
+				},
+			},
+			want: []orderedDir{
+				{
+					Name:         "generic2-release",
+					ChartName:    "generic2",
+					ChartVersion: "ver2",
+					Weight:       1,
+					ReleaseName:  "generic2-release",
+					APIVersion:   "kots.io/v1beta1",
+				},
+				{
+					Name:         "minimal-release-2",
+					ChartName:    "minimal",
+					ChartVersion: "0.0.1",
+					Weight:       1,
+					ReleaseName:  "minimal-release-2",
+					APIVersion:   "kots.io/v1beta2",
+				},
+				{
+					Name:         "generic1-release",
+					ChartName:    "generic1",
+					ChartVersion: "ver1",
+					Weight:       2,
+					ReleaseName:  "generic1-release",
+					APIVersion:   "kots.io/v1beta1",
+				},
+				{
+					Name:         "minimal-release-1",
+					ChartName:    "minimal",
+					ChartVersion: "0.0.1",
+					Weight:       2,
+					ReleaseName:  "minimal-release-1",
+					APIVersion:   "kots.io/v1beta2",
 				},
 			},
 		},
@@ -574,18 +908,30 @@ version: ver2
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			req := require.New(t)
-			tempdir := t.TempDir()
+			v1Beta1ChartsDir := t.TempDir()
+			v1Beta2ChartsDir := t.TempDir()
 
 			// populate host directory
-			for _, file := range tt.files {
-				err := os.MkdirAll(filepath.Dir(filepath.Join(tempdir, file.path)), os.ModePerm)
+			for _, file := range tt.v1Beta1Files {
+				err := os.MkdirAll(filepath.Dir(filepath.Join(v1Beta1ChartsDir, file.path)), os.ModePerm)
 				req.NoError(err)
 
-				err = ioutil.WriteFile(filepath.Join(tempdir, file.path), []byte(file.contents), os.ModePerm)
+				err = ioutil.WriteFile(filepath.Join(v1Beta1ChartsDir, file.path), []byte(file.contents), os.ModePerm)
 				req.NoError(err)
 			}
 
-			got, err := getSortedCharts(tempdir, tt.kotsCharts, tt.targetNamespace, tt.isUninstall)
+			for _, file := range tt.v1Beta2Files {
+				err := os.MkdirAll(filepath.Dir(filepath.Join(v1Beta2ChartsDir, file.path)), os.ModePerm)
+				req.NoError(err)
+
+				decoded, err := base64.StdEncoding.DecodeString(file.contents)
+				req.NoError(err)
+
+				err = ioutil.WriteFile(filepath.Join(v1Beta2ChartsDir, file.path), decoded, os.ModePerm)
+				req.NoError(err)
+			}
+
+			got, err := getSortedCharts(v1Beta1ChartsDir, v1Beta2ChartsDir, tt.kotsCharts, tt.targetNamespace, tt.isUninstall)
 			req.NoError(err)
 			req.Equal(tt.want, got)
 		})

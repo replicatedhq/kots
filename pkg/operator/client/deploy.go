@@ -5,20 +5,20 @@ import (
 	"encoding/base64"
 	"fmt"
 	"io/ioutil"
+	"os"
 	"os/exec"
 	"path/filepath"
 	"sort"
 	"strings"
 	"sync"
 
+	"github.com/mholt/archiver/v3"
 	"github.com/pkg/errors"
-	"github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	"github.com/replicatedhq/kots/pkg/helm"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/operator/applier"
-	clienttypes "github.com/replicatedhq/kots/pkg/operator/client/types"
 	operatortypes "github.com/replicatedhq/kots/pkg/operator/types"
 	"github.com/replicatedhq/kots/pkg/util"
 	"github.com/replicatedhq/yaml/v3"
@@ -219,33 +219,30 @@ func (c *Client) ensureResourcesPresent(deployArgs operatortypes.DeployAppArgs) 
 }
 
 func (c *Client) installWithHelm(v1Beta1ChartsDir, v1beta2ChartsDir string, kotsCharts []kotsutil.HelmChartInterface) (*commandResult, error) {
-	// sort the charts by weight and then by name
-	sort.Slice(kotsCharts, func(i, j int) bool {
-		if kotsCharts[i].GetWeight() != kotsCharts[j].GetWeight() {
-			return kotsCharts[i].GetWeight() < kotsCharts[j].GetWeight()
-		}
-		return kotsCharts[i].GetChartName() < kotsCharts[j].GetChartName()
-	})
+	orderedDirs, err := getSortedCharts(v1Beta1ChartsDir, v1beta2ChartsDir, kotsCharts, c.TargetNamespace, false)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get sorted charts")
+	}
 
 	version := "3"
 	var hasErr bool
 	var multiStdout, multiStderr [][]byte
 
-	for _, kotsChart := range kotsCharts {
+	for _, dir := range orderedDirs {
 		var args []string
-		if kotsChart.GetAPIVersion() == "kots.io/v1beta1" {
-			installDir := filepath.Join(v1Beta1ChartsDir, kotsChart.GetDirName())
-			args = []string{"upgrade", "-i", kotsChart.GetReleaseName(), installDir, "--timeout", "3600s"}
-		} else if kotsChart.GetAPIVersion() == "kots.io/v1beta2" {
-			installDir := filepath.Join(v1beta2ChartsDir, kotsChart.GetDirName())
-			chartPath := filepath.Join(installDir, fmt.Sprintf("%s-%s.tgz", kotsChart.GetChartName(), kotsChart.GetChartVersion()))
+		if dir.APIVersion == "kots.io/v1beta1" {
+			installDir := filepath.Join(v1Beta1ChartsDir, dir.Name)
+			args = []string{"upgrade", "-i", dir.ReleaseName, installDir, "--timeout", "3600s"}
+		} else if dir.APIVersion == "kots.io/v1beta2" {
+			installDir := filepath.Join(v1beta2ChartsDir, dir.Name)
+			chartPath := filepath.Join(installDir, fmt.Sprintf("%s-%s.tgz", dir.ChartName, dir.ChartVersion))
 			valuesPath := filepath.Join(installDir, "values.yaml")
-			args = []string{"upgrade", "-i", kotsChart.GetReleaseName(), chartPath, "-f", valuesPath, "--timeout", "3600s"}
+			args = []string{"upgrade", "-i", dir.ReleaseName, chartPath, "-f", valuesPath, "--timeout", "3600s"}
 		} else {
-			return nil, errors.Errorf("unknown api version %s", kotsChart.GetAPIVersion())
+			return nil, errors.Errorf("unknown api version %s", dir.APIVersion)
 		}
 
-		chartNamespace := kotsChart.GetNamespace()
+		chartNamespace := dir.Namespace
 		if chartNamespace == "" && c.TargetNamespace != "" && c.TargetNamespace != "." {
 			chartNamespace = c.TargetNamespace
 		}
@@ -258,15 +255,15 @@ func (c *Client) installWithHelm(v1Beta1ChartsDir, v1beta2ChartsDir string, kots
 			// This migration will move the helm release secrets to the helm release namespace
 			kotsadmNamespace := util.AppNamespace()
 			if chartNamespace != kotsadmNamespace {
-				err := migrateExistingHelmReleaseSecrets(kotsChart.GetReleaseName(), chartNamespace, kotsadmNamespace)
+				err := migrateExistingHelmReleaseSecrets(dir.ReleaseName, chartNamespace, kotsadmNamespace)
 				if err != nil {
-					return nil, errors.Wrapf(err, "failed to migrate helm release secrets for %s", kotsChart.GetReleaseName())
+					return nil, errors.Wrapf(err, "failed to migrate helm release secrets for %s", dir.ReleaseName)
 				}
 			}
 		}
 
-		if len(kotsChart.GetUpgradeFlags()) > 0 {
-			args = append(args, kotsChart.GetUpgradeFlags()...)
+		if len(dir.UpgradeFlags) > 0 {
+			args = append(args, dir.UpgradeFlags...)
 		}
 
 		logger.Infof("running helm with arguments %v", args)
@@ -280,10 +277,10 @@ func (c *Client) installWithHelm(v1Beta1ChartsDir, v1beta2ChartsDir string, kots
 		}
 
 		if len(stdout) > 0 {
-			multiStdout = append(multiStdout, []byte(fmt.Sprintf("------- %s -------", kotsChart.GetDirName())), stdout)
+			multiStdout = append(multiStdout, []byte(fmt.Sprintf("------- %s -------", dir.Name)), stdout)
 		}
 		if len(stderr) > 0 {
-			multiStderr = append(multiStderr, []byte(fmt.Sprintf("------- %s -------", kotsChart.GetDirName())), stderr)
+			multiStderr = append(multiStderr, []byte(fmt.Sprintf("------- %s -------", dir.Name)), stderr)
 		}
 	}
 
@@ -303,39 +300,83 @@ type orderedDir struct {
 	ReleaseName  string
 	Namespace    string
 	UpgradeFlags []string
+	APIVersion   string
 }
 
-func getSortedCharts(chartsDir string, kotsCharts []v1beta1.HelmChart, targetNamespace string, isUninstall bool) ([]clienttypes.OrderedDir, error) {
-	dirs, err := ioutil.ReadDir(chartsDir)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to read archive dir")
+func getSortedCharts(v1Beta1ChartsDir string, v1Beta2ChartsDir string, kotsCharts []kotsutil.HelmChartInterface, targetNamespace string, isUninstall bool) ([]orderedDir, error) {
+	// get a list of the charts to be applied
+	orderedDirs := []orderedDir{}
+
+	if v1Beta1ChartsDir != "" {
+		v1Beta1Dirs, err := ioutil.ReadDir(v1Beta1ChartsDir)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to read v1beta1 archive dir")
+		}
+
+		for _, dir := range v1Beta1Dirs {
+			chartDir := filepath.Join(v1Beta1ChartsDir, dir.Name())
+			chartName, chartVersion, err := findChartNameAndVersion(chartDir)
+			if err != nil {
+				return nil, errors.Wrapf(err, "failed to find chart name and version in %s", chartDir)
+			}
+			orderedDirs = append(orderedDirs, orderedDir{
+				Name:         dir.Name(),
+				ChartName:    chartName,
+				ChartVersion: chartVersion,
+				APIVersion:   "kots.io/v1beta1",
+			})
+		}
 	}
 
-	// get a list of the charts to be applied
-	orderedDirs := []clienttypes.OrderedDir{}
-	for _, dir := range dirs {
-		chartDir := filepath.Join(chartsDir, dir.Name())
-		chartName, chartVersion, err := findChartNameAndVersion(chartDir)
+	if v1Beta2ChartsDir != "" {
+		v1Beta2Dirs, err := ioutil.ReadDir(v1Beta2ChartsDir)
 		if err != nil {
-			return nil, errors.Wrapf(err, "failed to find chart name and version in %s", chartDir)
+			return nil, errors.Wrap(err, "failed to read v1beta2 archive dir")
 		}
-		orderedDirs = append(orderedDirs, clienttypes.OrderedDir{
-			Name:         dir.Name(),
-			ChartName:    chartName,
-			ChartVersion: chartVersion,
-		})
+
+		for _, dir := range v1Beta2Dirs {
+			chartDir := filepath.Join(v1Beta2ChartsDir, dir.Name())
+			archivePath, err := findChartTgz(chartDir)
+			if err != nil {
+				return nil, errors.Wrapf(err, "failed to find chart tgz in %s", chartDir)
+			}
+
+			chartName, chartVersion, err := findChartNameAndVersionInArchive(archivePath)
+			if err != nil {
+				return nil, errors.Wrapf(err, "failed to find chart name and version in %s", archivePath)
+			}
+
+			orderedDirs = append(orderedDirs, orderedDir{
+				Name:         dir.Name(),
+				ChartName:    chartName,
+				ChartVersion: chartVersion,
+				APIVersion:   "kots.io/v1beta2",
+			})
+		}
 	}
 
 	// look through the list of kotsChart objects for each orderedDir, and if the name+version+dirname matches, use that weight+releasename
 	// if there is no match, do not treat this as a fatal error
 	for idx, dir := range orderedDirs {
 		for _, kotsChart := range kotsCharts {
-			if kotsChart.Spec.Chart.ChartVersion == dir.ChartVersion && kotsChart.Spec.Chart.Name == dir.ChartName && kotsChart.GetDirName() == dir.Name {
-				orderedDirs[idx].Weight = kotsChart.Spec.Weight
-				orderedDirs[idx].ReleaseName = kotsChart.GetReleaseName()
-				orderedDirs[idx].Namespace = kotsChart.Spec.Namespace
-				orderedDirs[idx].UpgradeFlags = kotsChart.Spec.HelmUpgradeFlags
+			if kotsChart.GetDirName() != dir.Name {
+				continue
 			}
+			if kotsChart.GetChartName() != dir.ChartName {
+				continue
+			}
+			if kotsChart.GetChartVersion() != dir.ChartVersion {
+				continue
+			}
+			if kotsChart.GetAPIVersion() != dir.APIVersion {
+				continue
+			}
+
+			orderedDirs[idx].Weight = kotsChart.GetWeight()
+			orderedDirs[idx].ReleaseName = kotsChart.GetReleaseName()
+			orderedDirs[idx].Namespace = kotsChart.GetNamespace()
+			orderedDirs[idx].UpgradeFlags = kotsChart.GetUpgradeFlags()
+			break
 		}
 		if orderedDirs[idx].ReleaseName == "" {
 			// no matching kots chart was found, use the chart name as the release name
@@ -384,21 +425,53 @@ func findChartNameAndVersion(chartDir string) (string, string, error) {
 	return chartInfo.ChartName, chartInfo.ChartVersion, nil
 }
 
-func (c *Client) uninstallWithHelm(kotsCharts []kotsutil.HelmChartInterface) error {
+func findChartTgz(dir string) (string, error) {
+	files, err := ioutil.ReadDir(dir)
+	if err != nil {
+		return "", errors.Wrap(err, "failed to read dir")
+	}
+
+	for _, file := range files {
+		if filepath.Ext(file.Name()) == ".tgz" {
+			return filepath.Join(dir, file.Name()), nil
+		}
+	}
+
+	return "", errors.New("no tgz found")
+}
+
+func findChartNameAndVersionInArchive(archivePath string) (string, string, error) {
+	tmpDir, err := ioutil.TempDir("", "kots")
+	if err != nil {
+		return "", "", errors.Wrap(err, "failed to create temp dir")
+	}
+	defer os.RemoveAll(tmpDir)
+
+	tarGz := archiver.TarGz{
+		Tar: &archiver.Tar{
+			ImplicitTopLevelFolder: false,
+			StripComponents:        1, // remove the top level folder
+		},
+	}
+	if err := tarGz.Unarchive(archivePath, tmpDir); err != nil {
+		return "", "", errors.Wrap(err, "failed to unarchive")
+	}
+
+	return findChartNameAndVersion(tmpDir)
+}
+
+func (c *Client) uninstallWithHelm(v1Beta1ChartsDir, v1Beta2ChartsDir string, kotsCharts []kotsutil.HelmChartInterface) error {
+	orderedDirs, err := getSortedCharts(v1Beta1ChartsDir, v1Beta2ChartsDir, kotsCharts, c.TargetNamespace, true)
+	if err != nil {
+		return errors.Wrap(err, "failed to get sorted charts")
+	}
+
 	version := "3"
 
-	// uninstall in reverse order
-	sort.Slice(kotsCharts, func(i, j int) bool {
-		if kotsCharts[i].GetWeight() != kotsCharts[j].GetWeight() {
-			return kotsCharts[i].GetWeight() > kotsCharts[j].GetWeight()
-		}
-		return kotsCharts[i].GetChartName() > kotsCharts[j].GetChartName()
-	})
+	for _, dir := range orderedDirs {
+		args := []string{"uninstall", dir.ReleaseName}
 
-	for _, chart := range kotsCharts {
-		args := []string{"uninstall", chart.GetReleaseName()}
-
-		chartNamespace := chart.GetNamespace()
+		chartNamespace := dir.Namespace
 		if chartNamespace == "" && c.TargetNamespace != "" && c.TargetNamespace != "." {
 			chartNamespace = c.TargetNamespace
 		}
@@ -417,7 +490,7 @@ func (c *Client) uninstallWithHelm(kotsCharts []kotsutil.HelmChartInterface) err
 				continue
 			}
 			logger.Errorf("error: %s", err.Error())
-			return errors.Wrapf(err, "failed to uninstall release %s for chart %s: %s", chart.GetReleaseName(), chart.GetChartName(), stderr)
+			return errors.Wrapf(err, "failed to uninstall release %s for chart %s: %s", dir.ReleaseName, dir.ChartName, stderr)
 		}
 	}
 

@@ -730,9 +730,14 @@ func (o *Operator) UndeployApp(a *apptypes.App, d *downstreamtypes.Downstream, i
 	}
 	base64EncodedManifests := base64.StdEncoding.EncodeToString(renderedManifests)
 
-	chartArchive, _, err := kustomize.GetRenderedChartsArchive(deployedVersionArchive, d.Name, kotsKinds.GetKustomizeBinaryPath())
+	v1Beta1ChartsArchive, _, err := kustomize.GetRenderedChartsArchive(deployedVersionArchive, d.Name, kotsKinds.GetKustomizeBinaryPath())
 	if err != nil {
-		return errors.Wrap(err, "failed to get rendered charts archive")
+		return errors.Wrap(err, "failed to get v1beta1 charts archive")
+	}
+
+	v1Beta2ChartsArchive, err := helmdeploy.GetV1Beta2ChartsArchive(deployedVersionArchive)
+	if err != nil {
+		return errors.Wrap(err, "failed to get v1beta2 charts archive")
 	}
 
 	var clearNamespaces []string
@@ -770,7 +775,8 @@ func (o *Operator) UndeployApp(a *apptypes.App, d *downstreamtypes.Downstream, i
 		KustomizeVersion:     kotsKinds.KotsApplication.Spec.KustomizeVersion,
 		AdditionalNamespaces: kotsKinds.KotsApplication.Spec.AdditionalNamespaces,
 		Manifests:            base64EncodedManifests,
-		V1Beta1ChartsArchive: chartArchive,
+		V1Beta1ChartsArchive: v1Beta1ChartsArchive,
+		V1Beta2ChartsArchive: v1Beta2ChartsArchive,
 		Wait:                 true,
 		ClearNamespaces:      clearNamespaces,
 		ClearPVCs:            true,

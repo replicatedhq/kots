@@ -42,7 +42,8 @@ type UndeployAppArgs struct {
 	KustomizeVersion     string                `json:"kustomize_version"`
 	AdditionalNamespaces []string              `json:"additional_namespaces"`
 	Manifests            string                `json:"manifests"`
-	V1Beta1ChartsArchive []byte                `json:"charts"`
+	V1Beta1ChartsArchive []byte                `json:"v1Beta1ChartsArchive"`
+	V1Beta2ChartsArchive []byte                `json:"v1Beta2ChartsArchive"`
 	Wait                 bool                  `json:"wait"`
 	ClearNamespaces      []string              `json:"clear_namespaces"`
 	ClearPVCs            bool                  `json:"clear_pvcs"`
