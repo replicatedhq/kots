@@ -243,20 +243,15 @@ func (c *Client) installWithHelm(v1Beta1ChartsDir, v1beta2ChartsDir string, kots
 		}
 		args = append(args, "--timeout", "3600s")
 
-		chartNamespace := dir.Namespace
-		if chartNamespace == "" && c.TargetNamespace != "" && c.TargetNamespace != "." {
-			chartNamespace = c.TargetNamespace
-		}
-
-		if chartNamespace != "" {
-			args = append(args, "-n", chartNamespace)
+		if dir.Namespace != "" {
+			args = append(args, "-n", dir.Namespace)
 
 			// prior to kots v1.95.0, helm release secrets were created in the kotsadm namespace
 			// Since kots v1.95.0, helm release secrets are created in the same namespace as the helm release
 			// This migration will move the helm release secrets to the helm release namespace
 			kotsadmNamespace := util.AppNamespace()
-			if chartNamespace != kotsadmNamespace {
-				err := migrateExistingHelmReleaseSecrets(dir.ReleaseName, chartNamespace, kotsadmNamespace)
+			if dir.Namespace != kotsadmNamespace {
+				err := migrateExistingHelmReleaseSecrets(dir.ReleaseName, dir.Namespace, kotsadmNamespace)
 				if err != nil {
 					return nil, errors.Wrapf(err, "failed to migrate helm release secrets for %s", dir.ReleaseName)
 				}
@@ -472,13 +467,8 @@ func (c *Client) uninstallWithHelm(v1Beta1ChartsDir, v1Beta2ChartsDir string, ko
 	for _, dir := range orderedDirs {
 		args := []string{"uninstall", dir.ReleaseName}
 
-		chartNamespace := dir.Namespace
-		if chartNamespace == "" && c.TargetNamespace != "" && c.TargetNamespace != "." {
-			chartNamespace = c.TargetNamespace
-		}
-
-		if chartNamespace != "" {
-			args = append(args, "-n", chartNamespace)
+		if dir.Namespace != "" {
+			args = append(args, "-n", dir.Namespace)
 		}
 
 		logger.Infof("running helm with arguments %v", args)
