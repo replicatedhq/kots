@@ -494,6 +494,23 @@ spec:
       global:
         registry: ''
 `,
+					"upstream/my-other-chart.yaml": `
+apiVersion: kots.io/v1beta2
+kind: HelmChart
+metadata:
+  name: my-other-chart
+spec:
+  namespace: repl{{ ConfigOption "deploy_namespace" }}
+  helmUpgradeFlags:
+    - --set
+    - extraValue=repl{{ ConfigOption "deploy_extra_value" }}
+  optionalValues:
+  - when: "repl{{ HasLocalRegistry }}"
+    recursiveMerge: true
+    values:
+      global:
+        registry: ''
+`,
 					"upstream/config.yaml": `
 apiVersion: kots.io/v1beta1
 kind: Config
@@ -583,6 +600,8 @@ spec:
 					// validate that the namespace and helm upgrade flags are templated when deploying
 					Expect(deployArgs.KotsKinds.V1Beta1HelmCharts.Items[0].Spec.Namespace).To(Equal(expectedNamespace))
 					Expect(deployArgs.KotsKinds.V1Beta1HelmCharts.Items[0].Spec.HelmUpgradeFlags).To(Equal(expectedHelmUpgradeFlags))
+					Expect(deployArgs.KotsKinds.V1Beta2HelmCharts.Items[0].Spec.Namespace).To(Equal(expectedNamespace))
+					Expect(deployArgs.KotsKinds.V1Beta2HelmCharts.Items[0].Spec.HelmUpgradeFlags).To(Equal(expectedHelmUpgradeFlags))
 					return true, nil
 				})
 

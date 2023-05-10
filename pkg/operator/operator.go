@@ -274,6 +274,24 @@ func (o *Operator) DeployApp(appID string, sequence int64) (deployed bool, deplo
 		}
 	}
 
+	if kotsKinds.V1Beta2HelmCharts != nil {
+		for i, helmChart := range kotsKinds.V1Beta2HelmCharts.Items {
+			renderedNamespace, err := builder.String(helmChart.Spec.Namespace)
+			if err != nil {
+				return false, errors.Wrapf(err, "failed to render namespace %s for chart %s", helmChart.Spec.Namespace, helmChart.GetReleaseName())
+			}
+			kotsKinds.V1Beta2HelmCharts.Items[i].Spec.Namespace = renderedNamespace
+
+			for j, upgradeFlag := range helmChart.Spec.HelmUpgradeFlags {
+				renderedUpgradeFlag, err := builder.String(upgradeFlag)
+				if err != nil {
+					return false, errors.Wrapf(err, "failed to render upgrade flag %s for chart %s", upgradeFlag, helmChart.GetReleaseName())
+				}
+				kotsKinds.V1Beta2HelmCharts.Items[i].Spec.HelmUpgradeFlags[j] = renderedUpgradeFlag
+			}
+		}
+	}
+
 	requireIdentityProvider := false
 	if kotsKinds.Identity != nil {
 		if kotsKinds.Identity.Spec.RequireIdentityProvider.Type == multitype.String {
