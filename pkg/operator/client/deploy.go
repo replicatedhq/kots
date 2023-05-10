@@ -498,22 +498,33 @@ func (c *Client) uninstallWithHelm(v1Beta1ChartsDir, v1Beta2ChartsDir string, ko
 	return nil
 }
 
+type getRemovedChartsOptions struct {
+	prevV1Beta1Dir            string
+	curV1Beta1Dir             string
+	previousV1Beta1KotsCharts []kotsutil.HelmChartInterface
+	currentV1Beta1KotsCharts  []kotsutil.HelmChartInterface
+	prevV1Beta2Dir            string
+	curV1Beta2Dir             string
+	previousV1Beta2KotsCharts []kotsutil.HelmChartInterface
+	currentV1Beta2KotsCharts  []kotsutil.HelmChartInterface
+}
+
 // getRemovedCharts returns a list of helm release names that were removed in the current version
-func getRemovedCharts(prevV1Beta1Dir, curV1Beta1Dir string, previousV1Beta1KotsCharts, currentV1Beta1KotsCharts []kotsutil.HelmChartInterface, prevV1Beta2Dir, curV1Beta2Dir string, previousV1Beta2KotsCharts, currentV1Beta2KotsCharts []kotsutil.HelmChartInterface) ([]kotsutil.HelmChartInterface, error) {
+func getRemovedCharts(opts getRemovedChartsOptions) ([]kotsutil.HelmChartInterface, error) {
 	prevCharts := []kotsutil.HelmChartInterface{}
 
-	if prevV1Beta1Dir != "" {
-		prevV1Beta1ChartsDir := filepath.Join(prevV1Beta1Dir, "charts")
-		matching, err := findMatchingV1Beta1Charts(prevV1Beta1ChartsDir, previousV1Beta1KotsCharts)
+	if opts.prevV1Beta1Dir != "" {
+		prevV1Beta1ChartsDir := filepath.Join(opts.prevV1Beta1Dir, "charts")
+		matching, err := findMatchingV1Beta1Charts(prevV1Beta1ChartsDir, opts.previousV1Beta1KotsCharts)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to find previous matching v1beta1 charts")
 		}
 		prevCharts = append(prevCharts, matching...)
 	}
 
-	if prevV1Beta2Dir != "" {
-		prevV1Beta2ChartsDir := filepath.Join(prevV1Beta2Dir, "helm")
-		matching, err := findMatchingV1Beta2Charts(prevV1Beta2ChartsDir, previousV1Beta2KotsCharts)
+	if opts.prevV1Beta2Dir != "" {
+		prevV1Beta2ChartsDir := filepath.Join(opts.prevV1Beta2Dir, "helm")
+		matching, err := findMatchingV1Beta2Charts(prevV1Beta2ChartsDir, opts.previousV1Beta2KotsCharts)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to find previous matching v1beta2 charts")
 		}
@@ -522,18 +533,18 @@ func getRemovedCharts(prevV1Beta1Dir, curV1Beta1Dir string, previousV1Beta1KotsC
 
 	curCharts := []kotsutil.HelmChartInterface{}
 
-	if curV1Beta1Dir != "" {
-		curV1Beta1ChartsDir := filepath.Join(curV1Beta1Dir, "charts")
-		matching, err := findMatchingV1Beta1Charts(curV1Beta1ChartsDir, currentV1Beta1KotsCharts)
+	if opts.curV1Beta1Dir != "" {
+		curV1Beta1ChartsDir := filepath.Join(opts.curV1Beta1Dir, "charts")
+		matching, err := findMatchingV1Beta1Charts(curV1Beta1ChartsDir, opts.currentV1Beta1KotsCharts)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to find current matching v1beta1 charts")
 		}
 		curCharts = append(curCharts, matching...)
 	}
 
-	if curV1Beta2Dir != "" {
-		curV1Beta2ChartsDir := filepath.Join(curV1Beta2Dir, "helm")
-		matching, err := findMatchingV1Beta2Charts(curV1Beta2ChartsDir, currentV1Beta2KotsCharts)
+	if opts.curV1Beta2Dir != "" {
+		curV1Beta2ChartsDir := filepath.Join(opts.curV1Beta2Dir, "helm")
+		matching, err := findMatchingV1Beta2Charts(curV1Beta2ChartsDir, opts.currentV1Beta2KotsCharts)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to find current matching v1beta2 charts")
 		}

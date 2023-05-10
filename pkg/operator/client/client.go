@@ -308,7 +308,17 @@ func (c *Client) deployHelmCharts(deployArgs operatortypes.DeployAppArgs) (*comm
 		}
 	}
 
-	removedCharts, err := getRemovedCharts(prevV1Beta1HelmDir, curV1Beta1HelmDir, prevKotsV1Beta1Charts, curV1Beta1KotsCharts, prevV1Beta2HelmDir, curV1Beta2HelmDir, prevKotsV1Beta2Charts, curV1Beta2KotsCharts)
+	opts := getRemovedChartsOptions{
+		prevV1Beta1Dir:            prevV1Beta1HelmDir,
+		curV1Beta1Dir:             curV1Beta1HelmDir,
+		previousV1Beta1KotsCharts: prevKotsV1Beta1Charts,
+		currentV1Beta1KotsCharts:  curV1Beta1KotsCharts,
+		prevV1Beta2Dir:            prevV1Beta2HelmDir,
+		curV1Beta2Dir:             curV1Beta2HelmDir,
+		previousV1Beta2KotsCharts: prevKotsV1Beta2Charts,
+		currentV1Beta2KotsCharts:  curV1Beta2KotsCharts,
+	}
+	removedCharts, err := getRemovedCharts(opts)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to find removed charts")
 	}
