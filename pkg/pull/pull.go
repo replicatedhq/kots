@@ -335,7 +335,12 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 
 	v1Beta1HelmCharts, err := kotsutil.LoadV1Beta1HelmChartsFromPath(renderDir)
 	if err != nil {
-		return "", errors.Wrap(err, "failed to load new helm charts")
+		return "", errors.Wrap(err, "failed to load new v1beta1 helm charts")
+	}
+
+	v1Beta2HelmCharts, err := kotsutil.LoadV1Beta2HelmChartsFromPath(renderDir)
+	if err != nil {
+		return "", errors.Wrap(err, "failed to load new v1beta2 helm charts")
 	}
 
 	if !pullOptions.SkipHelmChartCheck {
@@ -358,6 +363,16 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 				}
 				if prevChart.Spec.UseHelmInstall != newChart.Spec.UseHelmInstall {
 					return "", errors.Errorf("deployment method for chart %s has changed", newChart.Spec.Chart.Name)
+				}
+			}
+
+			for _, newChart := range v1Beta2HelmCharts {
+				if prevChart.Spec.Chart.Name != newChart.Spec.Chart.Name {
+					continue
+				}
+
+				if !prevChart.Spec.UseHelmInstall {
+					return "", errors.Errorf("cannot upgrade chart %s to v1beta2 because useHelmInstall is false", newChart.Spec.Chart.Name)
 				}
 			}
 		}
@@ -444,11 +459,6 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 			log.FinishSpinnerWithError()
 			return "", errors.Wrapf(err, "failed to write helm base %s", helmBaseCopy.Path)
 		}
-	}
-
-	v1Beta2HelmCharts, err := kotsutil.LoadV1Beta2HelmChartsFromPath(renderDir)
-	if err != nil {
-		return "", errors.Wrap(err, "failed to load new helm charts")
 	}
 
 	if err := helmdeploy.WriteV1Beta2HelmCharts(u, &renderOptions, u.GetHelmDir(writeUpstreamOptions), v1Beta2HelmCharts); err != nil {
