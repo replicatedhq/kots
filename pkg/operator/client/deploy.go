@@ -14,6 +14,7 @@ import (
 
 	"github.com/mholt/archiver/v3"
 	"github.com/pkg/errors"
+	"github.com/replicatedhq/kots/pkg/archives"
 	"github.com/replicatedhq/kots/pkg/helm"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
@@ -424,12 +425,20 @@ func findChartNameAndVersion(chartDir string) (string, string, error) {
 func findChartTgz(dir string) (string, error) {
 	files, err := ioutil.ReadDir(dir)
 	if err != nil {
-		return "", errors.Wrap(err, "failed to read dir")
+		return "", errors.Wrapf(err, "failed to read dir %s", dir)
 	}
 
 	for _, file := range files {
-		if filepath.Ext(file.Name()) == ".tgz" {
-			return filepath.Join(dir, file.Name()), nil
+		if file.IsDir() {
+			continue
+		}
+		path := filepath.Join(dir, file.Name())
+		bytes, err := os.ReadFile(path)
+		if err != nil {
+			return "", errors.Wrapf(err, "failed to read file %s", path)
+		}
+		if archives.IsTGZ(bytes) {
+			return path, nil
 		}
 	}
 
