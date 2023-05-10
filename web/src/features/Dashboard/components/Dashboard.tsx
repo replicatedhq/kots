@@ -635,7 +635,7 @@ const Dashboard = (props: Props) => {
                   />
                 </div>
                 <div className="u-marginLeft--20">
-                  <p className="u-fontSize--30 u-textColor--primary u-fontWeight--bold">
+                  <p className="u-fontSize--30 u-textColor--primary u-fontWeight--bold break-word">
                     {appName}
                   </p>
                   <AppStatus

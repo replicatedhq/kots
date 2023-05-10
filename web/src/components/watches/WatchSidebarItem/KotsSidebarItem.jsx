@@ -36,9 +36,12 @@ export default function KotsSidebarItem(props) {
         ></span>
         <div className="flex-column">
           <p
-            className={classNames("u-textColor--primary u-fontWeight--bold", {
-              "u-marginBottom--10": !gitopsIsConnected,
-            })}
+            className={classNames(
+              "u-textColor--primary u-fontWeight--bold break-word",
+              {
+                "u-marginBottom--10": !gitopsIsConnected,
+              }
+            )}
           >
             {name}
           </p>

@@ -410,10 +410,10 @@ class GenerateSupportBundle extends React.Component {
                 </span>
               </div>
               <div className="card-item GenerateSupportBundleDetails u-padding--50">
-                <h2 className="u-fontSize--jumbo2 u-fontWeight--bold u-textColor--primary u-textAlign--center u-paddingBottom--15">
+                <h2 className="u-fontSize--jumbo2 u-fontWeight--bold u-textColor--primary u-textAlign--center u-paddingBottom--15 break-word">
                   Analyze {appTitle} for support
                 </h2>
-                <p className="u-fontSize--normal u-textColor--bodyCopy u-lineHeight--medium u-marginTop--5 u-textAlign--center u-fontWeight--medium">
+                <p className="u-fontSize--normal u-textColor--bodyCopy u-lineHeight--medium u-marginTop--5 u-textAlign--center u-fontWeight--medium break-word">
                   To diagnose any problems with the application, click the
                   button below to get started. This will collect logs, resources
                   and other data from the running application and analyze them
@@ -423,7 +423,7 @@ class GenerateSupportBundle extends React.Component {
                 {!isGeneratingBundle && (
                   <div className="flex alignItems--center justifyContent--center u-marginTop--30">
                     <button
-                      className="btn primary blue"
+                      className="btn primary blue break-word"
                       type="button"
                       onClick={this.collectBundle.bind(
                         this,

@@ -102,6 +102,7 @@ a:visited {
     color: $sub-nav-text-color;
     cursor: pointer;
     font-weight: 400;
+    word-break: break-word;
 
     &.active-item {
       font-weight: 500;
