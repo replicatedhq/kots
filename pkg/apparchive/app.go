@@ -1,4 +1,4 @@
-package kustomize
+package apparchive
 
 import (
 	"bytes"
@@ -15,7 +15,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/util"
 )
 
-type WriteOptions struct {
+type AppWriteOptions struct {
 	BaseDir          string
 	OverlaysDir      string
 	RenderedDir      string
@@ -23,7 +23,7 @@ type WriteOptions struct {
 	KustomizeBinPath string
 }
 
-func WriteRenderedApp(options WriteOptions) error {
+func WriteRenderedApp(options AppWriteOptions) error {
 	// cleanup existing rendered content if any
 	_, err := os.Stat(options.RenderedDir)
 	if err == nil {

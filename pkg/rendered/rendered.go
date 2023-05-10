@@ -2,11 +2,10 @@ package rendered
 
 import (
 	"github.com/pkg/errors"
-	"github.com/replicatedhq/kots/pkg/helmdeploy"
+	"github.com/replicatedhq/kots/pkg/apparchive"
+	"github.com/replicatedhq/kots/pkg/image"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
-	"github.com/replicatedhq/kots/pkg/kustomize"
 	"github.com/replicatedhq/kots/pkg/logger"
-	midstream "github.com/replicatedhq/kots/pkg/midstream"
 	"k8s.io/client-go/kubernetes"
 )
 
@@ -19,12 +18,12 @@ type WriteOptions struct {
 	HelmDir             string
 	Log                 *logger.CLILogger
 	KotsKinds           *kotsutil.KotsKinds
-	ProcessImageOptions midstream.ProcessImageOptions
+	ProcessImageOptions image.ProcessImageOptions
 	Clientset           kubernetes.Interface
 }
 
 func WriteRenderedApp(opts *WriteOptions) error {
-	if err := kustomize.WriteRenderedApp(kustomize.WriteOptions{
+	if err := apparchive.WriteRenderedApp(apparchive.AppWriteOptions{
 		BaseDir:          opts.BaseDir,
 		OverlaysDir:      opts.OverlaysDir,
 		RenderedDir:      opts.RenderedDir,
@@ -34,7 +33,7 @@ func WriteRenderedApp(opts *WriteOptions) error {
 		return errors.Wrap(err, "failed to write kustomize rendered")
 	}
 
-	if err := helmdeploy.WriteRenderedHelmCharts(helmdeploy.WriteOptions{
+	if err := apparchive.WriteRenderedHelmCharts(apparchive.HelmWriteOptions{
 		HelmDir:             opts.HelmDir,
 		RenderedDir:         opts.RenderedDir,
 		Log:                 opts.Log,

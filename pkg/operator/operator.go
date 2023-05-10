@@ -19,14 +19,13 @@ import (
 	downstreamtypes "github.com/replicatedhq/kots/pkg/api/downstream/types"
 	"github.com/replicatedhq/kots/pkg/app"
 	apptypes "github.com/replicatedhq/kots/pkg/app/types"
+	"github.com/replicatedhq/kots/pkg/apparchive"
 	appstatetypes "github.com/replicatedhq/kots/pkg/appstate/types"
-	"github.com/replicatedhq/kots/pkg/helmdeploy"
 	identitydeploy "github.com/replicatedhq/kots/pkg/identity/deploy"
 	identitytypes "github.com/replicatedhq/kots/pkg/identity/types"
 	kotsadmobjects "github.com/replicatedhq/kots/pkg/kotsadm/objects"
 	snapshot "github.com/replicatedhq/kots/pkg/kotsadmsnapshot"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
-	"github.com/replicatedhq/kots/pkg/kustomize"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/midstream"
 	"github.com/replicatedhq/kots/pkg/operator/client"
@@ -310,18 +309,18 @@ func (o *Operator) DeployApp(appID string, sequence int64) (deployed bool, deplo
 
 	kustomizeBinPath := kotsKinds.GetKustomizeBinaryPath()
 
-	renderedManifests, _, err := kustomize.GetRenderedApp(deployedVersionArchive, downstreams.Name, kustomizeBinPath)
+	renderedManifests, _, err := apparchive.GetRenderedApp(deployedVersionArchive, downstreams.Name, kustomizeBinPath)
 	if err != nil {
 		return false, errors.Wrap(err, "failed to get rendered app")
 	}
 	base64EncodedManifests := base64.StdEncoding.EncodeToString(renderedManifests)
 
-	v1beta1ChartsArchive, _, err := kustomize.GetRenderedChartsArchive(deployedVersionArchive, downstreams.Name, kustomizeBinPath)
+	v1beta1ChartsArchive, _, err := apparchive.GetRenderedV1Beta1ChartsArchive(deployedVersionArchive, downstreams.Name, kustomizeBinPath)
 	if err != nil {
 		return false, errors.Wrap(err, "failed to get rendered charts archive")
 	}
 
-	v1beta2ChartsArchive, err := helmdeploy.GetV1Beta2ChartsArchive(deployedVersionArchive)
+	v1beta2ChartsArchive, err := apparchive.GetV1Beta2ChartsArchive(deployedVersionArchive)
 	if err != nil {
 		return false, errors.Wrap(err, "failed to get v1beta2 charts archive")
 	}
@@ -380,17 +379,17 @@ func (o *Operator) DeployApp(appID string, sequence int64) (deployed bool, deplo
 				return false, errors.Wrap(err, "failed to load kotskinds for previously deployed app version")
 			}
 
-			previousRenderedManifests, _, err := kustomize.GetRenderedApp(previouslyDeployedVersionArchive, downstreams.Name, kustomizeBinPath)
+			previousRenderedManifests, _, err := apparchive.GetRenderedApp(previouslyDeployedVersionArchive, downstreams.Name, kustomizeBinPath)
 			if err != nil {
 				logger.Error(errors.Wrap(err, "failed to get previously deployed rendered app"))
 			} else {
 				base64EncodedPreviousManifests = base64.StdEncoding.EncodeToString(previousRenderedManifests)
-				previousV1beta1ChartsArchive, _, err = kustomize.GetRenderedChartsArchive(previouslyDeployedVersionArchive, downstreams.Name, kustomizeBinPath)
+				previousV1beta1ChartsArchive, _, err = apparchive.GetRenderedV1Beta1ChartsArchive(previouslyDeployedVersionArchive, downstreams.Name, kustomizeBinPath)
 				if err != nil {
 					return false, errors.Wrap(err, "failed to get previously deployed rendered charts archive")
 				}
 
-				previousV1beta2ChartsArchive, err = helmdeploy.GetV1Beta2ChartsArchive(previouslyDeployedVersionArchive)
+				previousV1beta2ChartsArchive, err = apparchive.GetV1Beta2ChartsArchive(previouslyDeployedVersionArchive)
 				if err != nil {
 					return false, errors.Wrap(err, "failed to get previously deployed v1beta2 charts archive")
 				}
@@ -742,18 +741,18 @@ func (o *Operator) UndeployApp(a *apptypes.App, d *downstreamtypes.Downstream, i
 		return errors.Wrap(err, "failed to load kotskinds")
 	}
 
-	renderedManifests, _, err := kustomize.GetRenderedApp(deployedVersionArchive, d.Name, kotsKinds.GetKustomizeBinaryPath())
+	renderedManifests, _, err := apparchive.GetRenderedApp(deployedVersionArchive, d.Name, kotsKinds.GetKustomizeBinaryPath())
 	if err != nil {
 		return errors.Wrap(err, "failed to get rendered app")
 	}
 	base64EncodedManifests := base64.StdEncoding.EncodeToString(renderedManifests)
 
-	v1Beta1ChartsArchive, _, err := kustomize.GetRenderedChartsArchive(deployedVersionArchive, d.Name, kotsKinds.GetKustomizeBinaryPath())
+	v1Beta1ChartsArchive, _, err := apparchive.GetRenderedV1Beta1ChartsArchive(deployedVersionArchive, d.Name, kotsKinds.GetKustomizeBinaryPath())
 	if err != nil {
 		return errors.Wrap(err, "failed to get v1beta1 charts archive")
 	}
 
-	v1Beta2ChartsArchive, err := helmdeploy.GetV1Beta2ChartsArchive(deployedVersionArchive)
+	v1Beta2ChartsArchive, err := apparchive.GetV1Beta2ChartsArchive(deployedVersionArchive)
 	if err != nil {
 		return errors.Wrap(err, "failed to get v1beta2 charts archive")
 	}

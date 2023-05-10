@@ -10,10 +10,11 @@ import (
 	"github.com/pkg/errors"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	reportingtypes "github.com/replicatedhq/kots/pkg/api/reporting/types"
+	"github.com/replicatedhq/kots/pkg/apparchive"
 	"github.com/replicatedhq/kots/pkg/base"
 	"github.com/replicatedhq/kots/pkg/crypto"
 	"github.com/replicatedhq/kots/pkg/downstream"
-	"github.com/replicatedhq/kots/pkg/helmdeploy"
+	"github.com/replicatedhq/kots/pkg/image"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/logger"
@@ -192,7 +193,7 @@ func Rewrite(rewriteOptions RewriteOptions) error {
 		return errors.Wrap(err, "failed to load v1beta2 helm charts")
 	}
 
-	if err := helmdeploy.WriteV1Beta2HelmCharts(u, &renderOptions, u.GetHelmDir(writeUpstreamOptions), v1Beta2HelmCharts); err != nil {
+	if err := apparchive.WriteV1Beta2HelmCharts(u, &renderOptions, u.GetHelmDir(writeUpstreamOptions), v1Beta2HelmCharts); err != nil {
 		return errors.Wrap(err, "failed to write helm v1beta2 charts")
 	}
 
@@ -250,7 +251,7 @@ func Rewrite(rewriteOptions RewriteOptions) error {
 	writeMidstreamOptions.MidstreamDir = filepath.Join(u.GetOverlaysDir(writeUpstreamOptions), "midstream")
 	writeMidstreamOptions.BaseDir = filepath.Join(u.GetBaseDir(writeUpstreamOptions), commonBase.Path)
 
-	processImageOptions := midstream.ProcessImageOptions{
+	processImageOptions := image.ProcessImageOptions{
 		AppSlug:          rewriteOptions.AppSlug,
 		Namespace:        rewriteOptions.K8sNamespace,
 		RewriteImages:    rewriteOptions.RegistrySettings.Hostname != "",

@@ -1,4 +1,4 @@
-package helmdeploy
+package apparchive
 
 import (
 	"bytes"
@@ -14,9 +14,9 @@ import (
 	kotsv1beta2 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta2"
 	"github.com/replicatedhq/kots/pkg/base"
 	"github.com/replicatedhq/kots/pkg/docker/registry"
+	"github.com/replicatedhq/kots/pkg/image"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/logger"
-	"github.com/replicatedhq/kots/pkg/midstream"
 	upstreamtypes "github.com/replicatedhq/kots/pkg/upstream/types"
 	"github.com/replicatedhq/kots/pkg/util"
 	"gopkg.in/yaml.v2"
@@ -25,6 +25,42 @@ import (
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/helm/pkg/chartutil"
 )
+
+// GetV1Beta2ChartsArchive returns an archive of the v1beta2 charts to be deployed
+func GetV1Beta2ChartsArchive(deployedVersionArchive string) ([]byte, error) {
+	chartsDir := filepath.Join(deployedVersionArchive, "helm")
+	if _, err := os.Stat(chartsDir); err != nil {
+		if os.IsNotExist(err) {
+			return nil, nil
+		}
+		return nil, errors.Wrap(err, "failed to stat charts dir")
+	}
+
+	archive, err := util.TGZArchive(chartsDir)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to create charts archive")
+	}
+
+	return archive, nil
+}
+
+// GetRenderedV1Beta2FileMap returns a map of the rendered v1beta2 charts to be deployed
+func GetRenderedV1Beta2FileMap(deployedVersionArchive, downstream string) (map[string][]byte, error) {
+	chartsDir := filepath.Join(deployedVersionArchive, "rendered", downstream, "helm")
+	if _, err := os.Stat(chartsDir); err != nil {
+		if os.IsNotExist(err) {
+			return nil, nil
+		}
+		return nil, errors.Wrap(err, "failed to stat charts dir")
+	}
+
+	filesMap, err := util.GetFilesMap(chartsDir)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get files map")
+	}
+
+	return filesMap, nil
+}
 
 // WriteV1Beta2HelmCharts copies the upstream helm chart archive and rendered values to the helm directory
 func WriteV1Beta2HelmCharts(u *upstreamtypes.Upstream, renderOptions *base.RenderOptions, helmDir string, helmCharts []*kotsv1beta2.HelmChart) error {
@@ -94,18 +130,18 @@ func WriteV1Beta2HelmCharts(u *upstreamtypes.Upstream, renderOptions *base.Rende
 	return nil
 }
 
-type WriteOptions struct {
+type HelmWriteOptions struct {
 	HelmDir             string
 	RenderedDir         string
 	Log                 *logger.CLILogger
 	Downstreams         []string
 	KotsKinds           *kotsutil.KotsKinds
-	ProcessImageOptions midstream.ProcessImageOptions
+	ProcessImageOptions image.ProcessImageOptions
 	Clientset           kubernetes.Interface
 }
 
 // WriteRenderedHelmCharts writes the rendered helm chart to the rendered directory
-func WriteRenderedHelmCharts(opts WriteOptions) error {
+func WriteRenderedHelmCharts(opts HelmWriteOptions) error {
 	if opts.KotsKinds == nil || opts.KotsKinds.V1Beta2HelmCharts == nil {
 		return nil
 	}
@@ -126,7 +162,7 @@ func WriteRenderedHelmCharts(opts WriteOptions) error {
 	return nil
 }
 
-func renderHelmChart(opts WriteOptions, downstream string, helmChart *kotsv1beta2.HelmChart) (string, error) {
+func renderHelmChart(opts HelmWriteOptions, downstream string, helmChart *kotsv1beta2.HelmChart) (string, error) {
 	cfg := &action.Configuration{
 		Log: opts.Log.Debug,
 	}
@@ -192,7 +228,7 @@ func renderHelmChart(opts WriteOptions, downstream string, helmChart *kotsv1beta
 }
 
 // processImages will pull all images (public and private) from online and copy them to the configured private registry
-func processImages(opts WriteOptions, renderedPath string) error {
+func processImages(opts HelmWriteOptions, renderedPath string) error {
 	if !opts.ProcessImageOptions.RewriteImages {
 		// if an on-prem registry is not configured (which means it's an online installation)
 		// there's no need to process/copy the images as they will be pulled from their original registries or through the replicated proxy
@@ -205,7 +241,8 @@ func processImages(opts WriteOptions, renderedPath string) error {
 		dockerHubRegistryCreds, _ = registry.GetCredentialsForRegistryFromConfigJSON(dockerhubSecret.Data[".dockerconfigjson"], registry.DockerHubRegistryName)
 	}
 
-	_, err := midstream.RewriteBaseImages(opts.ProcessImageOptions, renderedPath, opts.KotsKinds, opts.KotsKinds.License, dockerHubRegistryCreds, opts.Log)
+	// TODO: process image stuff should be moved to it's own package
+	_, err := image.RewriteBaseImages(opts.ProcessImageOptions, renderedPath, opts.KotsKinds, opts.KotsKinds.License, dockerHubRegistryCreds, opts.Log)
 	if err != nil {
 		return errors.Wrap(err, "failed to rewrite base images")
 	}

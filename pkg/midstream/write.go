@@ -15,11 +15,11 @@ import (
 	"github.com/replicatedhq/kots/pkg/disasterrecovery"
 	"github.com/replicatedhq/kots/pkg/docker/registry"
 	dockerregistrytypes "github.com/replicatedhq/kots/pkg/docker/registry/types"
+	"github.com/replicatedhq/kots/pkg/image"
 	"github.com/replicatedhq/kots/pkg/k8sdoc"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/logger"
-	registrytypes "github.com/replicatedhq/kots/pkg/registry/types"
 	"github.com/replicatedhq/kots/pkg/template"
 	"github.com/replicatedhq/kots/pkg/upstream"
 	"github.com/replicatedhq/kots/pkg/util"
@@ -49,22 +49,7 @@ type WriteOptions struct {
 	NewHelmCharts      []*kotsv1beta1.HelmChart
 }
 
-type ProcessImageOptions struct {
-	AppSlug          string
-	Namespace        string
-	RewriteImages    bool
-	RegistrySettings registrytypes.RegistrySettings
-	CopyImages       bool
-	RootDir          string
-	IsAirgap         bool
-	AirgapRoot       string
-	AirgapBundle     string
-	PushImages       bool
-	CreateAppDir     bool
-	ReportWriter     io.Writer
-}
-
-func WriteMidstream(writeMidstreamOptions WriteOptions, processImageOptions ProcessImageOptions, b *base.Base, license *kotsv1beta1.License, identityConfig *kotsv1beta1.IdentityConfig, upstreamDir string, log *logger.CLILogger) (*Midstream, error) {
+func WriteMidstream(writeMidstreamOptions WriteOptions, processImageOptions image.ProcessImageOptions, b *base.Base, license *kotsv1beta1.License, identityConfig *kotsv1beta1.IdentityConfig, upstreamDir string, log *logger.CLILogger) (*Midstream, error) {
 	var images []kustomizetypes.Image
 	var objects []k8sdoc.K8sDoc
 	var pullSecretRegistries []string
@@ -187,7 +172,7 @@ func WriteMidstream(writeMidstreamOptions WriteOptions, processImageOptions Proc
 }
 
 // RewriteBaseImages Will rewrite images found in base and copy them (if necessary) to the configured registry.
-func RewriteBaseImages(options ProcessImageOptions, baseDir string, kotsKinds *kotsutil.KotsKinds, license *kotsv1beta1.License, dockerHubRegistryCreds registry.Credentials, log *logger.CLILogger) (*base.RewriteImagesResult, error) {
+func RewriteBaseImages(options image.ProcessImageOptions, baseDir string, kotsKinds *kotsutil.KotsKinds, license *kotsv1beta1.License, dockerHubRegistryCreds registry.Credentials, log *logger.CLILogger) (*base.RewriteImagesResult, error) {
 	replicatedRegistryInfo := registry.GetRegistryProxyInfo(license, &kotsKinds.KotsApplication)
 
 	rewriteImageOptions := base.RewriteImageOptions{
@@ -227,7 +212,7 @@ func RewriteBaseImages(options ProcessImageOptions, baseDir string, kotsKinds *k
 }
 
 // processAirgapImages Will rewrite images found in the airgap bundle/airgap root and copy them (if necessary) to the configured registry.
-func ProcessAirgapImages(options ProcessImageOptions, kotsKinds *kotsutil.KotsKinds, license *kotsv1beta1.License, log *logger.CLILogger) (*upstream.ProcessAirgapImagesResult, error) {
+func ProcessAirgapImages(options image.ProcessImageOptions, kotsKinds *kotsutil.KotsKinds, license *kotsv1beta1.License, log *logger.CLILogger) (*upstream.ProcessAirgapImagesResult, error) {
 	replicatedRegistryInfo := registry.GetRegistryProxyInfo(license, &kotsKinds.KotsApplication)
 
 	processAirgapImageOptions := upstream.ProcessAirgapImagesOptions{

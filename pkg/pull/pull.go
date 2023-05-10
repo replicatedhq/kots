@@ -12,11 +12,12 @@ import (
 	"github.com/pkg/errors"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	reportingtypes "github.com/replicatedhq/kots/pkg/api/reporting/types"
+	"github.com/replicatedhq/kots/pkg/apparchive"
 	"github.com/replicatedhq/kots/pkg/archives"
 	"github.com/replicatedhq/kots/pkg/base"
 	"github.com/replicatedhq/kots/pkg/crypto"
 	"github.com/replicatedhq/kots/pkg/downstream"
-	"github.com/replicatedhq/kots/pkg/helmdeploy"
+	"github.com/replicatedhq/kots/pkg/image"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/kotsadmconfig"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
@@ -302,7 +303,7 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 		return "", errors.Wrap(err, "failed to check if version needs configuration")
 	}
 
-	processImageOptions := midstream.ProcessImageOptions{
+	processImageOptions := image.ProcessImageOptions{
 		AppSlug:          pullOptions.AppSlug,
 		Namespace:        pullOptions.Namespace,
 		RewriteImages:    pullOptions.RewriteImages,
@@ -461,7 +462,7 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 		}
 	}
 
-	if err := helmdeploy.WriteV1Beta2HelmCharts(u, &renderOptions, u.GetHelmDir(writeUpstreamOptions), v1Beta2HelmCharts); err != nil {
+	if err := apparchive.WriteV1Beta2HelmCharts(u, &renderOptions, u.GetHelmDir(writeUpstreamOptions), v1Beta2HelmCharts); err != nil {
 		return "", errors.Wrap(err, "failed to write v1beta2 helm charts")
 	}
 

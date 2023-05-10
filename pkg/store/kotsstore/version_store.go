@@ -18,8 +18,8 @@ import (
 	downstreamtypes "github.com/replicatedhq/kots/pkg/api/downstream/types"
 	versiontypes "github.com/replicatedhq/kots/pkg/api/version/types"
 	apptypes "github.com/replicatedhq/kots/pkg/app/types"
+	"github.com/replicatedhq/kots/pkg/apparchive"
 	"github.com/replicatedhq/kots/pkg/cursor"
-	"github.com/replicatedhq/kots/pkg/diff"
 	"github.com/replicatedhq/kots/pkg/filestore"
 	gitopstypes "github.com/replicatedhq/kots/pkg/gitops/types"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
@@ -605,7 +605,7 @@ func (s *KOTSStore) upsertAppVersionStatements(appID string, sequence int64, bas
 		diffSummary, diffSummaryError := "", ""
 		if baseSequence != nil {
 			// diff this release from the last release
-			diff, err := diff.DiffAppVersionsForDownstream(d.Name, filesInDir, previousArchiveDir, kustomizeBinPath)
+			diff, err := apparchive.DiffAppVersionsForDownstream(d.Name, filesInDir, previousArchiveDir, kustomizeBinPath)
 			if err != nil {
 				diffSummaryError = errors.Wrap(err, "failed to diff").Error()
 			} else {
@@ -904,7 +904,7 @@ func (s *KOTSStore) UpdateNextAppVersionDiffSummary(appID string, baseSequence i
 
 	diffSummary, diffSummaryError := "", ""
 
-	diff, err := diff.DiffAppVersionsForDownstream(d.Name, nextArchiveDir, baseArchiveDir, nextKotsKinds.GetKustomizeBinaryPath())
+	diff, err := apparchive.DiffAppVersionsForDownstream(d.Name, nextArchiveDir, baseArchiveDir, nextKotsKinds.GetKustomizeBinaryPath())
 	if err != nil {
 		diffSummaryError = errors.Wrap(err, "failed to diff").Error()
 	} else {

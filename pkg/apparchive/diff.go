@@ -1,4 +1,4 @@
-package diff
+package apparchive
 
 import (
 	"bufio"
@@ -6,7 +6,6 @@ import (
 	"strings"
 
 	"github.com/pkg/errors"
-	"github.com/replicatedhq/kots/pkg/kustomize"
 	"github.com/sergi/go-diff/diffmatchpatch"
 )
 
@@ -44,12 +43,12 @@ func diffContent(baseContent string, updatedContent string) (int, int, error) {
 // DiffAppVersionsForDownstream will generate a diff of the rendered yaml between two different archive dirs
 func DiffAppVersionsForDownstream(downstreamName string, archive string, diffBasePath string, kustomizeBinPath string) (*Diff, error) {
 	// diff kubernetes manifests
-	_, archiveFiles, err := kustomize.GetRenderedApp(archive, downstreamName, kustomizeBinPath)
+	_, archiveFiles, err := GetRenderedApp(archive, downstreamName, kustomizeBinPath)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get rendered app")
 	}
 
-	_, baseFiles, err := kustomize.GetRenderedApp(diffBasePath, downstreamName, kustomizeBinPath)
+	_, baseFiles, err := GetRenderedApp(diffBasePath, downstreamName, kustomizeBinPath)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get base rendered app")
 	}
@@ -60,12 +59,12 @@ func DiffAppVersionsForDownstream(downstreamName string, archive string, diffBas
 	}
 
 	// diff v1beta1 charts
-	_, archiveV1Beta1ChartFiles, err := kustomize.GetRenderedChartsArchive(archive, downstreamName, kustomizeBinPath)
+	_, archiveV1Beta1ChartFiles, err := GetRenderedV1Beta1ChartsArchive(archive, downstreamName, kustomizeBinPath)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get rendered charts files")
 	}
 
-	_, baseV1Beta1ChartFiles, err := kustomize.GetRenderedChartsArchive(diffBasePath, downstreamName, kustomizeBinPath)
+	_, baseV1Beta1ChartFiles, err := GetRenderedV1Beta1ChartsArchive(diffBasePath, downstreamName, kustomizeBinPath)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get base rendered charts files")
 	}
