@@ -9,7 +9,6 @@ import (
 	"github.com/pkg/errors"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	apptypes "github.com/replicatedhq/kots/pkg/app/types"
-	kotsbase "github.com/replicatedhq/kots/pkg/base"
 	"github.com/replicatedhq/kots/pkg/helm"
 	kotshelm "github.com/replicatedhq/kots/pkg/helm"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
@@ -115,7 +114,7 @@ func (h *Handler) GetAppValuesFile(w http.ResponseWriter, r *http.Request) {
 		kotsKinds = &k
 	}
 
-	helmChart, err := kotsbase.ParseV1Beta1HelmChart(helmChartFile)
+	helmChart, err := kotsutil.LoadV1Beta1HelmChartFromContents(helmChartFile)
 	if err != nil {
 		logger.Error(errors.Wrap(err, "failed to parse HelmChart file"))
 		w.WriteHeader(http.StatusInternalServerError)

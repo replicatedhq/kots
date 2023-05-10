@@ -20,7 +20,6 @@ import (
 	downstreamtypes "github.com/replicatedhq/kots/pkg/api/downstream/types"
 	"github.com/replicatedhq/kots/pkg/api/handlers/types"
 	apptypes "github.com/replicatedhq/kots/pkg/app/types"
-	kotsbase "github.com/replicatedhq/kots/pkg/base"
 	"github.com/replicatedhq/kots/pkg/docker/registry"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
 	registrytypes "github.com/replicatedhq/kots/pkg/registry/types"
@@ -44,7 +43,7 @@ func RenderValuesFromConfig(helmApp *apptypes.HelmApp, kotsKinds *kotsutil.KotsK
 		return nil, err
 	}
 
-	kotsHelmChart, err := kotsbase.ParseV1Beta1HelmChart([]byte(renderedHelmManifest))
+	kotsHelmChart, err := kotsutil.LoadV1Beta1HelmChartFromContents([]byte(renderedHelmManifest))
 	if err != nil {
 		return nil, err
 	}
