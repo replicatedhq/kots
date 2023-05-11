@@ -148,7 +148,7 @@ func WriteV1Beta2HelmCharts(opts WriteV1Beta2HelmChartsOptions) error {
 			continue
 		}
 
-		if err := processOnlineImages(opts, &helmChart, chartDir); err != nil {
+		if err := processV1Beta2HelmChartImages(opts, &helmChart, chartDir); err != nil {
 			return errors.Wrap(err, "failed to process online images")
 		}
 	}
@@ -247,7 +247,7 @@ func templateV1Beta2HelmChartWithValuesToDir(helmChart *kotsv1beta2.HelmChart, c
 	return nil
 }
 
-func processOnlineImages(opts WriteV1Beta2HelmChartsOptions, helmChart *kotsv1beta2.HelmChart, chartDir string) error {
+func processV1Beta2HelmChartImages(opts WriteV1Beta2HelmChartsOptions, helmChart *kotsv1beta2.HelmChart, chartDir string) error {
 	// template the chart with the builder values to a temp dir and then process images
 	tmpDir, err := os.MkdirTemp("", fmt.Sprintf("kots-images-%s", helmChart.GetDirName()))
 	if err != nil {
