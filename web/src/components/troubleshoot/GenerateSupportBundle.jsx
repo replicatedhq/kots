@@ -35,7 +35,7 @@ class GenerateSupportBundle extends React.Component {
       displayErrorModal: false,
       networkErr: false,
       bundleCommand:
-        "curl https://krew.sh/support-bundle | bash \nkubectl support-bundle --load-cluster-specs",
+        "curl https://krew.sh/support-bundle | bash && \nkubectl support-bundle --load-cluster-specs",
     };
   }
 
