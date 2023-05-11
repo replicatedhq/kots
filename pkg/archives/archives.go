@@ -141,12 +141,5 @@ func IsTGZ(b []byte) bool {
 
 	// try to read the first file header from the tar archive
 	_, err = tarReader.Next()
-	if err != nil {
-		if err == io.EOF {
-			return false
-		}
-		return false
-	}
-
-	return true
+	return err == nil
 }
