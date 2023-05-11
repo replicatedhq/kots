@@ -603,11 +603,13 @@ func findMatchingHelmCharts(chartsDir string, kotsCharts []kotsutil.HelmChartInt
 
 			var chartName, chartVersion string
 			if kotsChart.GetAPIVersion() == "kots.io/v1beta1" {
+				// v1beta1 charts are already unpacked, so we can just read the metadata
 				chartName, chartVersion, err = findChartNameAndVersion(chartDir)
 				if err != nil {
 					return nil, errors.Wrapf(err, "failed to find chart name and version in %s", chartDir)
 				}
 			} else if kotsChart.GetAPIVersion() == "kots.io/v1beta2" {
+				// v1beta2 charts are packaged as tgz, so we need to find and extract it to get the chart name and version
 				archivePath, err := findChartTgz(chartDir)
 				if err != nil {
 					return nil, errors.Wrapf(err, "failed to find chart tgz in %s", chartDir)
