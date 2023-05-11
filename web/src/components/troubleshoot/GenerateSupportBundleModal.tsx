@@ -20,7 +20,7 @@ type Props = {
 };
 
 type State = {
-  bundleCommand: string;
+  bundleCommand: string[];
   fileUploading: boolean;
   generateBundleErrMsg: string;
   showGetBundleSpec: boolean;
@@ -45,8 +45,10 @@ const GenerateSupportBundleModal = ({
       ...newState,
     }),
     {
-      bundleCommand:
-        "curl https://krew.sh/support-bundle | bash && \nkubectl support-bundle --load-cluster-specs",
+      bundleCommand: [
+        "curl https://krew.sh/support-bundle | bash",
+        "kubectl support-bundle --load-cluster-specs",
+      ],
       fileUploading: false,
       generateBundleErrMsg: "",
       showGetBundleSpec: false,
