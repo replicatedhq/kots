@@ -155,7 +155,7 @@ func WriteV1Beta2HelmCharts(u *upstreamtypes.Upstream, renderOptions *base.Rende
 	return nil
 }
 
-type HelmWriteOptions struct {
+type HelmV1Beta2WriteOptions struct {
 	HelmDir             string
 	RenderedDir         string
 	Log                 *logger.CLILogger
@@ -165,8 +165,8 @@ type HelmWriteOptions struct {
 	Clientset           kubernetes.Interface
 }
 
-// WriteRenderedHelmCharts writes the rendered helm chart to the rendered directory and processes the images
-func WriteRenderedHelmCharts(opts HelmWriteOptions) error {
+// WriteRenderedV1Beta2HelmCharts writes the rendered v1beta2 helm charts to the rendered directory and processes images
+func WriteRenderedV1Beta2HelmCharts(opts HelmV1Beta2WriteOptions) error {
 	if opts.KotsKinds == nil || opts.KotsKinds.V1Beta2HelmCharts == nil {
 		return nil
 	}
@@ -272,7 +272,7 @@ func templateHelmChartWithValuesToDir(helmDir string, helmChart *kotsv1beta2.Hel
 }
 
 // processImages will pull all images (public and private) from online and copy them to the configured private registry
-func processImages(opts HelmWriteOptions, renderedPath string) error {
+func processImages(opts HelmV1Beta2WriteOptions, renderedPath string) error {
 	var dockerHubRegistryCreds registry.Credentials
 	dockerhubSecret, _ := registry.GetDockerHubPullSecret(opts.Clientset, util.PodNamespace, opts.ProcessImageOptions.Namespace, opts.ProcessImageOptions.AppSlug)
 	if dockerhubSecret != nil {
