@@ -45,7 +45,8 @@ const GenerateSupportBundleModal = ({
       ...newState,
     }),
     {
-      bundleCommand: "kubectl support-bundle --load-cluster-specs",
+      bundleCommand:
+        "curl https://krew.sh/support-bundle | bash kubectl support-bundle --load-cluster-specs",
       fileUploading: false,
       generateBundleErrMsg: "",
       showGetBundleSpec: false,
