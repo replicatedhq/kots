@@ -195,7 +195,7 @@ class SecureAdminConsole extends React.Component<Props, State> {
       this.loginText.current.innerHTML,
       this.loginText.current.clientWidth,
       "32px",
-      null
+      "10px"
     );
     this.loginText.current.style.fontSize = newFontSize;
   };
@@ -347,7 +347,7 @@ class SecureAdminConsole extends React.Component<Props, State> {
               <p
                 ref={this.loginText}
                 style={{ fontSize: "32px" }}
-                className="u-marginTop--10 u-paddingTop--5 u-lineHeight--more u-textColor--primary u-fontWeight--bold u-width--full u-textAlign--center"
+                className="u-marginTop--10 u-paddingTop--5 u-lineHeight--more u-textColor--primary u-fontWeight--bold u-width--full u-textAlign--center break-word"
               >
                 Log in
                 {appName && appName !== ""
@@ -356,7 +356,7 @@ class SecureAdminConsole extends React.Component<Props, State> {
               </p>
             </div>
             <div className="flex-auto flex-column justifyContent--center">
-              <p className="u-marginTop--10 u-marginTop--5 u-fontSize--large u-textAlign--center u-fontWeight--medium u-lineHeight--normal u-textColor--bodyCopy">
+              <p className="u-marginTop--10 u-marginTop--5 u-fontSize--large u-textAlign--center u-fontWeight--medium u-lineHeight--normal u-textColor--bodyCopy break-word">
                 Enter the password to access the {appName} admin console.
               </p>
               <div className="u-marginTop--20 flex-column">

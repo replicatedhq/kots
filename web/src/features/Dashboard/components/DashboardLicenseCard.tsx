@@ -286,7 +286,7 @@ const DashboardLicenseCard = (props: Props) => {
           <div className="flex">
             <div className="flex-column flex1">
               <div className="flex alignItems--center">
-                <p className="u-fontSize--large u-fontWeight--medium card-item-title">
+                <p className="u-fontSize--large u-fontWeight--medium card-item-title break-word">
                   {" "}
                   {appLicense?.assignee}
                 </p>
