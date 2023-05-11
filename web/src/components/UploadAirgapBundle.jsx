@@ -27,8 +27,10 @@ class UploadAirgapBundle extends React.Component {
     fileUploading: false,
     registryDetails: {},
     preparingOnlineInstall: false,
-    supportBundleCommand:
-      "curl https://krew.sh/support-bundle | bash && \nkubectl support-bundle --load-cluster-specs",
+    supportBundleCommand: [
+      "curl https://krew.sh/support-bundle | bash",
+      "kubectl support-bundle --load-cluster-specs",
+    ],
     showSupportBundleCommand: false,
     onlineInstallErrorMessage: "",
     viewOnlineInstallErrorMessage: false,
@@ -319,8 +321,10 @@ class UploadAirgapBundle extends React.Component {
 
     let supportBundleCommand = [];
     try {
-      supportBundleCommand =
-        "curl https://krew.sh/support-bundle | bash && \nkubectl support-bundle --load-cluster-specs";
+      supportBundleCommand = [
+        "curl https://krew.sh/support-bundle | bash",
+        "kubectl support-bundle --load-cluster-specs",
+      ];
     } catch (err) {
       console.log(err);
     }
