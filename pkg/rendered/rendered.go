@@ -33,14 +33,13 @@ func WriteRenderedApp(opts *WriteOptions) error {
 		return errors.Wrap(err, "failed to write kustomize rendered")
 	}
 
-	if err := apparchive.WriteRenderedV1Beta2HelmCharts(apparchive.HelmV1Beta2WriteOptions{
+	if err := apparchive.WriteRenderedV1Beta2HelmCharts(apparchive.WriteRenderedV1Beta2HelmChartsOptions{
 		HelmDir:             opts.HelmDir,
 		RenderedDir:         opts.RenderedDir,
 		Log:                 opts.Log,
 		Downstreams:         opts.Downstreams,
 		KotsKinds:           opts.KotsKinds,
 		ProcessImageOptions: opts.ProcessImageOptions,
-		Clientset:           opts.Clientset,
 	}); err != nil {
 		return errors.Wrap(err, "failed to write helm rendered")
 	}

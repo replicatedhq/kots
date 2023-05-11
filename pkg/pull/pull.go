@@ -462,10 +462,6 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 		}
 	}
 
-	if err := apparchive.WriteV1Beta2HelmCharts(u, &renderOptions, u.GetHelmDir(writeUpstreamOptions), v1Beta2HelmCharts); err != nil {
-		return "", errors.Wrap(err, "failed to write v1beta2 helm charts")
-	}
-
 	log.FinishSpinner()
 
 	log.ActionWithSpinner("Creating midstreams")
@@ -564,6 +560,19 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 	if err != nil {
 		log.FinishSpinnerWithError()
 		return "", errors.Wrapf(err, "failed to remove unused helm midstreams")
+	}
+
+	writeV1Beta2HelmChartsOpts := apparchive.WriteV1Beta2HelmChartsOptions{
+		Upstream:            u,
+		RenderOptions:       &renderOptions,
+		ProcessImageOptions: processImageOptions,
+		HelmDir:             u.GetHelmDir(writeUpstreamOptions),
+		KotsKinds:           newKotsKinds,
+		Clientset:           clientset,
+	}
+
+	if err := apparchive.WriteV1Beta2HelmCharts(writeV1Beta2HelmChartsOpts); err != nil {
+		return "", errors.Wrap(err, "failed to write v1beta2 helm charts")
 	}
 
 	log.FinishSpinner()

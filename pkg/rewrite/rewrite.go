@@ -188,15 +188,6 @@ func Rewrite(rewriteOptions RewriteOptions) error {
 		}
 	}
 
-	v1Beta2HelmCharts, err := kotsutil.LoadV1Beta2HelmChartsFromPath(rewriteOptions.UpstreamPath)
-	if err != nil {
-		return errors.Wrap(err, "failed to load v1beta2 helm charts")
-	}
-
-	if err := apparchive.WriteV1Beta2HelmCharts(u, &renderOptions, u.GetHelmDir(writeUpstreamOptions), v1Beta2HelmCharts); err != nil {
-		return errors.Wrap(err, "failed to write helm v1beta2 charts")
-	}
-
 	log.FinishSpinner()
 
 	log.ActionWithSpinner("Creating midstreams")
@@ -307,13 +298,26 @@ func Rewrite(rewriteOptions RewriteOptions) error {
 		helmMidstreams = append(helmMidstreams, *helmMidstream)
 	}
 
-	if err := writeDownstreams(rewriteOptions, u.GetOverlaysDir(writeUpstreamOptions), m, helmMidstreams, log); err != nil {
-		return errors.Wrap(err, "failed to write downstreams")
-	}
-
 	kotsKinds, err := kotsutil.LoadKotsKindsFromPath(rewriteOptions.UpstreamPath)
 	if err != nil {
 		return errors.Wrap(err, "failed to load kotskinds")
+	}
+
+	writeV1Beta2HelmChartsOpts := apparchive.WriteV1Beta2HelmChartsOptions{
+		Upstream:            u,
+		RenderOptions:       &renderOptions,
+		ProcessImageOptions: processImageOptions,
+		HelmDir:             u.GetHelmDir(writeUpstreamOptions),
+		KotsKinds:           kotsKinds,
+		Clientset:           clientset,
+	}
+
+	if err := apparchive.WriteV1Beta2HelmCharts(writeV1Beta2HelmChartsOpts); err != nil {
+		return errors.Wrap(err, "failed to write helm v1beta2 charts")
+	}
+
+	if err := writeDownstreams(rewriteOptions, u.GetOverlaysDir(writeUpstreamOptions), m, helmMidstreams, log); err != nil {
+		return errors.Wrap(err, "failed to write downstreams")
 	}
 
 	err = store.GetStore().UpdateAppVersionInstallationSpec(rewriteOptions.AppID, rewriteOptions.AppSequence, kotsKinds.Installation)

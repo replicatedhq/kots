@@ -62,15 +62,29 @@ func GetRenderedV1Beta2FileMap(deployedVersionArchive, downstream string) (map[s
 	return filesMap, nil
 }
 
-// WriteV1Beta2HelmCharts copies the upstream helm chart archive and rendered values to the helm directory
-func WriteV1Beta2HelmCharts(u *upstreamtypes.Upstream, renderOptions *base.RenderOptions, helmDir string, helmCharts []*kotsv1beta2.HelmChart) error {
-	for _, helmChart := range helmCharts {
-		chartDir := path.Join(helmDir, helmChart.GetDirName())
+type WriteV1Beta2HelmChartsOptions struct {
+	Upstream            *upstreamtypes.Upstream
+	RenderOptions       *base.RenderOptions
+	ProcessImageOptions image.ProcessImageOptions
+	HelmDir             string
+	KotsKinds           *kotsutil.KotsKinds
+	Clientset           kubernetes.Interface
+}
+
+// WriteV1Beta2HelmCharts copies the upstream helm chart archive and rendered values to the helm directory and processes online images (if necessary)
+func WriteV1Beta2HelmCharts(opts WriteV1Beta2HelmChartsOptions) error {
+	if opts.KotsKinds == nil || opts.KotsKinds.V1Beta2HelmCharts == nil {
+		return nil
+	}
+
+	for _, v1Beta2Chart := range opts.KotsKinds.V1Beta2HelmCharts.Items {
+		helmChart := v1Beta2Chart
+		chartDir := path.Join(opts.HelmDir, helmChart.GetDirName())
 		if err := os.MkdirAll(chartDir, 0744); err != nil {
 			return errors.Wrap(err, "failed to create chart dir")
 		}
 
-		archive, err := base.FindHelmChartArchiveInRelease(u.Files, helmChart)
+		archive, err := base.FindHelmChartArchiveInRelease(opts.Upstream.Files, &helmChart)
 		if err != nil {
 			return errors.Wrap(err, "failed to find helm chart archive in release")
 		}
@@ -111,7 +125,7 @@ func WriteV1Beta2HelmCharts(u *upstreamtypes.Upstream, renderOptions *base.Rende
 			return errors.Wrap(err, "failed to marshal values")
 		}
 
-		builder, _, err := base.NewConfigContextTemplateBuilder(u, renderOptions)
+		builder, _, err := base.NewConfigContextTemplateBuilder(opts.Upstream, opts.RenderOptions)
 		if err != nil {
 			return errors.Wrap(err, "failed to create config context template builder")
 		}
@@ -126,47 +140,33 @@ func WriteV1Beta2HelmCharts(u *upstreamtypes.Upstream, renderOptions *base.Rende
 			return errors.Wrap(err, "failed to write values file")
 		}
 
-		builderValues := helmChart.Spec.Builder
-		if builderValues == nil {
-			builderValues = map[string]kotsv1beta2.MappedChartValue{}
+		if !opts.ProcessImageOptions.RewriteImages || opts.ProcessImageOptions.AirgapRoot != "" {
+			// if an on-prem registry is not configured (which means it's an online installation)
+			// there's no need to process/copy the images as they will be pulled from their original registries or through the replicated proxy.
+			// if an on-prem registry is configured, but it's an airgap installation, we also don't need to process/copy the images
+			// as they will be pushed from the airgap bundle.
+			continue
 		}
 
-		builderHelmValues, err := helmChart.Spec.GetHelmValues(builderValues)
-		if err != nil {
-			return errors.Wrap(err, "failed to get builder values for chart")
-		}
-
-		builderValuesContent, err := yaml.Marshal(builderHelmValues)
-		if err != nil {
-			return errors.Wrap(err, "failed to marshal builder values")
-		}
-
-		renderedBuilderValuesContent, err := builder.RenderTemplate(fmt.Sprintf("%s-builder-values", helmChart.GetDirName()), string(builderValuesContent))
-		if err != nil {
-			return errors.Wrap(err, "failed to render builder values")
-		}
-
-		builderValuesPath := path.Join(chartDir, "builder-values.yaml")
-		if err := ioutil.WriteFile(builderValuesPath, []byte(renderedBuilderValuesContent), 0644); err != nil {
-			return errors.Wrap(err, "failed to write builder values file")
+		if err := processOnlineImages(opts, &helmChart, chartDir); err != nil {
+			return errors.Wrap(err, "failed to process online images")
 		}
 	}
 
 	return nil
 }
 
-type HelmV1Beta2WriteOptions struct {
+type WriteRenderedV1Beta2HelmChartsOptions struct {
 	HelmDir             string
 	RenderedDir         string
 	Log                 *logger.CLILogger
 	Downstreams         []string
 	KotsKinds           *kotsutil.KotsKinds
 	ProcessImageOptions image.ProcessImageOptions
-	Clientset           kubernetes.Interface
 }
 
-// WriteRenderedV1Beta2HelmCharts writes the rendered v1beta2 helm charts to the rendered directory and processes images
-func WriteRenderedV1Beta2HelmCharts(opts HelmV1Beta2WriteOptions) error {
+// WriteRenderedV1Beta2HelmCharts writes the rendered v1beta2 helm charts to the rendered directory for diffing
+func WriteRenderedV1Beta2HelmCharts(opts WriteRenderedV1Beta2HelmChartsOptions) error {
 	if opts.KotsKinds == nil || opts.KotsKinds.V1Beta2HelmCharts == nil {
 		return nil
 	}
@@ -175,31 +175,10 @@ func WriteRenderedV1Beta2HelmCharts(opts HelmV1Beta2WriteOptions) error {
 		for _, helmChart := range opts.KotsKinds.V1Beta2HelmCharts.Items {
 			// template the chart with the values to the rendered dir for the downstream
 			renderedPath := path.Join(opts.RenderedDir, downstream, "helm", helmChart.GetDirName())
-			if err := templateHelmChartWithValuesToDir(opts.HelmDir, &helmChart, "values.yaml", renderedPath, opts.Log.Debug); err != nil {
+			chartDir := path.Join(opts.HelmDir, helmChart.GetDirName())
+			valuesPath := path.Join(chartDir, "values.yaml")
+			if err := templateV1Beta2HelmChartWithValuesToDir(&helmChart, chartDir, valuesPath, renderedPath, opts.Log.Debug); err != nil {
 				return errors.Wrap(err, "failed to template helm chart for rendered dir")
-			}
-
-			if !opts.ProcessImageOptions.RewriteImages || opts.ProcessImageOptions.AirgapRoot != "" {
-				// if an on-prem registry is not configured (which means it's an online installation)
-				// there's no need to process/copy the images as they will be pulled from their original registries or through the replicated proxy.
-				// if an on-prem registry is configured, but it's an airgap installation, we also don't need to process/copy the images
-				// as they will be pushed from the airgap bundle.
-				continue
-			}
-
-			// template the chart with the builder values to a temp dir and then process images
-			imageProcessingPath, err := os.MkdirTemp("", fmt.Sprintf("kots-images-%s", helmChart.GetDirName()))
-			if err != nil {
-				return errors.Wrap(err, "failed to create temp dir for image processing")
-			}
-			defer os.RemoveAll(imageProcessingPath)
-
-			if err := templateHelmChartWithValuesToDir(opts.HelmDir, &helmChart, "builder-values.yaml", imageProcessingPath, opts.Log.Debug); err != nil {
-				return errors.Wrap(err, "failed to template helm chart for image processing")
-			}
-
-			if err := processImages(opts, imageProcessingPath); err != nil {
-				return errors.Wrap(err, "failed to process images")
 			}
 		}
 	}
@@ -207,7 +186,7 @@ func WriteRenderedV1Beta2HelmCharts(opts HelmV1Beta2WriteOptions) error {
 	return nil
 }
 
-func templateHelmChartWithValuesToDir(helmDir string, helmChart *kotsv1beta2.HelmChart, valuesFile, outputDir string, log func(string, ...interface{})) error {
+func templateV1Beta2HelmChartWithValuesToDir(helmChart *kotsv1beta2.HelmChart, chartDir, valuesPath, outputDir string, log func(string, ...interface{})) error {
 	cfg := &action.Configuration{
 		Log: log,
 	}
@@ -218,15 +197,12 @@ func templateHelmChartWithValuesToDir(helmDir string, helmChart *kotsv1beta2.Hel
 	client.ClientOnly = true
 	client.IncludeCRDs = true
 
-	chartDir := path.Join(helmDir, helmChart.GetDirName())
-
 	client.Namespace = helmChart.Spec.Namespace
 	if client.Namespace == "" {
 		client.Namespace = util.PodNamespace
 	}
 
 	chartPath := path.Join(chartDir, fmt.Sprintf("%s-%s.tgz", helmChart.Spec.Chart.Name, helmChart.Spec.Chart.ChartVersion))
-	valuesPath := path.Join(chartDir, valuesFile)
 
 	chartRequested, err := loader.Load(chartPath)
 	if err != nil {
@@ -271,15 +247,50 @@ func templateHelmChartWithValuesToDir(helmDir string, helmChart *kotsv1beta2.Hel
 	return nil
 }
 
-// processImages will pull all images (public and private) from online and copy them to the configured private registry
-func processImages(opts HelmV1Beta2WriteOptions, renderedPath string) error {
+func processOnlineImages(opts WriteV1Beta2HelmChartsOptions, helmChart *kotsv1beta2.HelmChart, chartDir string) error {
+	// template the chart with the builder values to a temp dir and then process images
+	tmpDir, err := os.MkdirTemp("", fmt.Sprintf("kots-images-%s", helmChart.GetDirName()))
+	if err != nil {
+		return errors.Wrap(err, "failed to create temp dir for image processing")
+	}
+	defer os.RemoveAll(tmpDir)
+
+	builderValues := helmChart.Spec.Builder
+	if builderValues == nil {
+		builderValues = map[string]kotsv1beta2.MappedChartValue{}
+	}
+
+	builderHelmValues, err := helmChart.Spec.GetHelmValues(builderValues)
+	if err != nil {
+		return errors.Wrap(err, "failed to get builder values for chart")
+	}
+
+	builderValuesContent, err := yaml.Marshal(builderHelmValues)
+	if err != nil {
+		return errors.Wrap(err, "failed to marshal builder values")
+	}
+
+	builderValuesPath := path.Join(tmpDir, "builder-values.yaml")
+	if err := ioutil.WriteFile(builderValuesPath, builderValuesContent, 0644); err != nil {
+		return errors.Wrap(err, "failed to write builder values file")
+	}
+
+	templatedOutputDir := path.Join(tmpDir, helmChart.GetDirName())
+	if err := os.Mkdir(templatedOutputDir, 0755); err != nil {
+		return errors.Wrap(err, "failed to create temp dir for image processing")
+	}
+
+	if err := templateV1Beta2HelmChartWithValuesToDir(helmChart, chartDir, builderValuesPath, templatedOutputDir, opts.RenderOptions.Log.Debug); err != nil {
+		return errors.Wrap(err, "failed to template helm chart for image processing")
+	}
+
 	var dockerHubRegistryCreds registry.Credentials
 	dockerhubSecret, _ := registry.GetDockerHubPullSecret(opts.Clientset, util.PodNamespace, opts.ProcessImageOptions.Namespace, opts.ProcessImageOptions.AppSlug)
 	if dockerhubSecret != nil {
 		dockerHubRegistryCreds, _ = registry.GetCredentialsForRegistryFromConfigJSON(dockerhubSecret.Data[".dockerconfigjson"], registry.DockerHubRegistryName)
 	}
 
-	_, err := image.RewriteBaseImages(opts.ProcessImageOptions, renderedPath, opts.KotsKinds, opts.KotsKinds.License, dockerHubRegistryCreds, opts.Log)
+	_, err = image.RewriteBaseImages(opts.ProcessImageOptions, templatedOutputDir, opts.KotsKinds, opts.KotsKinds.License, dockerHubRegistryCreds, opts.RenderOptions.Log)
 	if err != nil {
 		return errors.Wrap(err, "failed to rewrite base images")
 	}
