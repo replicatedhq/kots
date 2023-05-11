@@ -103,7 +103,7 @@ func WriteV1Beta2HelmCharts(u *upstreamtypes.Upstream, renderOptions *base.Rende
 
 		helmValues, err := helmChart.Spec.GetHelmValues(mergedValues)
 		if err != nil {
-			return errors.Wrap(err, "failed to render local values for chart")
+			return errors.Wrap(err, "failed to get local values for chart")
 		}
 
 		valuesContent, err := yaml.Marshal(helmValues)
@@ -125,6 +125,31 @@ func WriteV1Beta2HelmCharts(u *upstreamtypes.Upstream, renderOptions *base.Rende
 		if err := ioutil.WriteFile(valuesPath, []byte(renderedValuesContent), 0644); err != nil {
 			return errors.Wrap(err, "failed to write values file")
 		}
+
+		builderValues := helmChart.Spec.Builder
+		if builderValues == nil {
+			builderValues = map[string]kotsv1beta2.MappedChartValue{}
+		}
+
+		builderHelmValues, err := helmChart.Spec.GetHelmValues(builderValues)
+		if err != nil {
+			return errors.Wrap(err, "failed to get builder values for chart")
+		}
+
+		builderValuesContent, err := yaml.Marshal(builderHelmValues)
+		if err != nil {
+			return errors.Wrap(err, "failed to marshal builder values")
+		}
+
+		renderedBuilderValuesContent, err := builder.RenderTemplate(fmt.Sprintf("%s-builder-values", helmChart.GetDirName()), string(builderValuesContent))
+		if err != nil {
+			return errors.Wrap(err, "failed to render builder values")
+		}
+
+		builderValuesPath := path.Join(chartDir, "builder-values.yaml")
+		if err := ioutil.WriteFile(builderValuesPath, []byte(renderedBuilderValuesContent), 0644); err != nil {
+			return errors.Wrap(err, "failed to write builder values file")
+		}
 	}
 
 	return nil
@@ -140,7 +165,7 @@ type HelmWriteOptions struct {
 	Clientset           kubernetes.Interface
 }
 
-// WriteRenderedHelmCharts writes the rendered helm chart to the rendered directory
+// WriteRenderedHelmCharts writes the rendered helm chart to the rendered directory and processes the images
 func WriteRenderedHelmCharts(opts HelmWriteOptions) error {
 	if opts.KotsKinds == nil || opts.KotsKinds.V1Beta2HelmCharts == nil {
 		return nil
@@ -148,12 +173,32 @@ func WriteRenderedHelmCharts(opts HelmWriteOptions) error {
 
 	for _, downstream := range opts.Downstreams {
 		for _, helmChart := range opts.KotsKinds.V1Beta2HelmCharts.Items {
-			renderedPath, err := renderHelmChart(opts, downstream, &helmChart)
-			if err != nil {
-				return errors.Wrap(err, "failed to render helm chart")
+			// template the chart with the values to the rendered dir for the downstream
+			renderedPath := path.Join(opts.RenderedDir, downstream, "helm", helmChart.GetDirName())
+			if err := templateHelmChartWithValuesToDir(opts.HelmDir, &helmChart, "values.yaml", renderedPath, opts.Log.Debug); err != nil {
+				return errors.Wrap(err, "failed to template helm chart for rendered dir")
 			}
 
-			if err := processImages(opts, renderedPath); err != nil {
+			if !opts.ProcessImageOptions.RewriteImages || opts.ProcessImageOptions.AirgapRoot != "" {
+				// if an on-prem registry is not configured (which means it's an online installation)
+				// there's no need to process/copy the images as they will be pulled from their original registries or through the replicated proxy.
+				// if an on-prem registry is configured, but it's an airgap installation, we also don't need to process/copy the images
+				// as they will be pushed from the airgap bundle.
+				continue
+			}
+
+			// template the chart with the builder values to a temp dir and then process images
+			imageProcessingPath, err := os.MkdirTemp("", fmt.Sprintf("kots-images-%s", helmChart.GetDirName()))
+			if err != nil {
+				return errors.Wrap(err, "failed to create temp dir for image processing")
+			}
+			defer os.RemoveAll(imageProcessingPath)
+
+			if err := templateHelmChartWithValuesToDir(opts.HelmDir, &helmChart, "builder-values.yaml", imageProcessingPath, opts.Log.Debug); err != nil {
+				return errors.Wrap(err, "failed to template helm chart for image processing")
+			}
+
+			if err := processImages(opts, imageProcessingPath); err != nil {
 				return errors.Wrap(err, "failed to process images")
 			}
 		}
@@ -162,9 +207,9 @@ func WriteRenderedHelmCharts(opts HelmWriteOptions) error {
 	return nil
 }
 
-func renderHelmChart(opts HelmWriteOptions, downstream string, helmChart *kotsv1beta2.HelmChart) (string, error) {
+func templateHelmChartWithValuesToDir(helmDir string, helmChart *kotsv1beta2.HelmChart, valuesFile, outputDir string, log func(string, ...interface{})) error {
 	cfg := &action.Configuration{
-		Log: opts.Log.Debug,
+		Log: log,
 	}
 	client := action.NewInstall(cfg)
 	client.DryRun = true
@@ -173,7 +218,7 @@ func renderHelmChart(opts HelmWriteOptions, downstream string, helmChart *kotsv1
 	client.ClientOnly = true
 	client.IncludeCRDs = true
 
-	chartDir := path.Join(opts.HelmDir, helmChart.GetDirName())
+	chartDir := path.Join(helmDir, helmChart.GetDirName())
 
 	client.Namespace = helmChart.Spec.Namespace
 	if client.Namespace == "" {
@@ -181,27 +226,27 @@ func renderHelmChart(opts HelmWriteOptions, downstream string, helmChart *kotsv1
 	}
 
 	chartPath := path.Join(chartDir, fmt.Sprintf("%s-%s.tgz", helmChart.Spec.Chart.Name, helmChart.Spec.Chart.ChartVersion))
-	valuesPath := path.Join(chartDir, "values.yaml")
+	valuesPath := path.Join(chartDir, valuesFile)
 
 	chartRequested, err := loader.Load(chartPath)
 	if err != nil {
-		return "", errors.Wrap(err, "failed to load chart")
+		return errors.Wrap(err, "failed to load chart")
 	}
 
 	if req := chartRequested.Metadata.Dependencies; req != nil {
 		if err := action.CheckDependencies(chartRequested, req); err != nil {
-			return "", errors.Wrap(err, "failed dependency check")
+			return errors.Wrap(err, "failed dependency check")
 		}
 	}
 
 	values, err := chartutil.ReadValuesFile(valuesPath)
 	if err != nil {
-		return "", errors.Wrap(err, "failed to read values file")
+		return errors.Wrap(err, "failed to read values file")
 	}
 
 	rel, err := client.Run(chartRequested, values)
 	if err != nil {
-		return "", errors.Wrap(err, "failed to run helm install")
+		return errors.Wrap(err, "failed to run helm install")
 	}
 
 	var manifests bytes.Buffer
@@ -214,34 +259,26 @@ func renderHelmChart(opts HelmWriteOptions, downstream string, helmChart *kotsv1
 		fmt.Fprintf(&manifests, "---\n# Source: %s\n%s\n", m.Path, m.Manifest)
 	}
 
-	renderedPath := path.Join(opts.RenderedDir, downstream, "helm", helmChart.GetDirName())
-	if err := os.MkdirAll(renderedPath, 0744); err != nil {
-		return "", errors.Wrap(err, "failed to create rendered path")
+	if err := os.MkdirAll(outputDir, 0744); err != nil {
+		return errors.Wrap(err, "failed to create rendered path")
 	}
 
-	err = os.WriteFile(filepath.Join(renderedPath, "all.yaml"), manifests.Bytes(), 0644)
+	err = os.WriteFile(filepath.Join(outputDir, "all.yaml"), manifests.Bytes(), 0644)
 	if err != nil {
-		return "", errors.Wrap(err, "failed to write all.yaml")
+		return errors.Wrap(err, "failed to write all.yaml")
 	}
 
-	return renderedPath, nil
+	return nil
 }
 
 // processImages will pull all images (public and private) from online and copy them to the configured private registry
 func processImages(opts HelmWriteOptions, renderedPath string) error {
-	if !opts.ProcessImageOptions.RewriteImages {
-		// if an on-prem registry is not configured (which means it's an online installation)
-		// there's no need to process/copy the images as they will be pulled from their original registries or through the replicated proxy
-		return nil
-	}
-
 	var dockerHubRegistryCreds registry.Credentials
 	dockerhubSecret, _ := registry.GetDockerHubPullSecret(opts.Clientset, util.PodNamespace, opts.ProcessImageOptions.Namespace, opts.ProcessImageOptions.AppSlug)
 	if dockerhubSecret != nil {
 		dockerHubRegistryCreds, _ = registry.GetCredentialsForRegistryFromConfigJSON(dockerhubSecret.Data[".dockerconfigjson"], registry.DockerHubRegistryName)
 	}
 
-	// TODO: process image stuff should be moved to it's own package
 	_, err := image.RewriteBaseImages(opts.ProcessImageOptions, renderedPath, opts.KotsKinds, opts.KotsKinds.License, dockerHubRegistryCreds, opts.Log)
 	if err != nil {
 		return errors.Wrap(err, "failed to rewrite base images")
