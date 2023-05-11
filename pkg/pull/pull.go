@@ -359,21 +359,21 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 			}
 
 			for _, newChart := range v1Beta1HelmCharts {
-				if prevChart.Spec.Chart.Name != newChart.Spec.Chart.Name {
+				if prevChart.GetReleaseName() != newChart.GetReleaseName() {
 					continue
 				}
 				if prevChart.Spec.UseHelmInstall != newChart.Spec.UseHelmInstall {
-					return "", errors.Errorf("deployment method for chart %s has changed", newChart.Spec.Chart.Name)
+					return "", errors.Errorf("deployment method for chart release %s has changed", newChart.GetReleaseName())
 				}
 			}
 
 			for _, newChart := range v1Beta2HelmCharts {
-				if prevChart.Spec.Chart.Name != newChart.Spec.Chart.Name {
+				if prevChart.GetReleaseName() != newChart.GetReleaseName() {
 					continue
 				}
 
 				if !prevChart.Spec.UseHelmInstall {
-					return "", errors.Errorf("cannot upgrade chart %s to v1beta2 because useHelmInstall is false", newChart.Spec.Chart.Name)
+					return "", errors.Errorf("cannot upgrade chart release %s to v1beta2 because useHelmInstall is false", newChart.GetReleaseName())
 				}
 			}
 		}
