@@ -301,8 +301,8 @@ type orderedDir struct {
 }
 
 func getSortedCharts(v1Beta1ChartsDir string, v1Beta2ChartsDir string, kotsCharts []kotsutil.HelmChartInterface, targetNamespace string, isUninstall bool) ([]orderedDir, error) {
-	// get a list of the charts to be applied
-	orderedDirs := []orderedDir{}
+	// get a list of the chart directories
+	foundDirs := []orderedDir{}
 
 	if v1Beta1ChartsDir != "" {
 		v1Beta1Dirs, err := ioutil.ReadDir(v1Beta1ChartsDir)
@@ -316,7 +316,7 @@ func getSortedCharts(v1Beta1ChartsDir string, v1Beta2ChartsDir string, kotsChart
 			if err != nil {
 				return nil, errors.Wrapf(err, "failed to find chart name and version in %s", chartDir)
 			}
-			orderedDirs = append(orderedDirs, orderedDir{
+			foundDirs = append(foundDirs, orderedDir{
 				Name:         dir.Name(),
 				ChartName:    chartName,
 				ChartVersion: chartVersion,
@@ -343,7 +343,7 @@ func getSortedCharts(v1Beta1ChartsDir string, v1Beta2ChartsDir string, kotsChart
 				return nil, errors.Wrapf(err, "failed to find chart name and version in %s", archivePath)
 			}
 
-			orderedDirs = append(orderedDirs, orderedDir{
+			foundDirs = append(foundDirs, orderedDir{
 				Name:         dir.Name(),
 				ChartName:    chartName,
 				ChartVersion: chartVersion,
@@ -352,10 +352,10 @@ func getSortedCharts(v1Beta1ChartsDir string, v1Beta2ChartsDir string, kotsChart
 		}
 	}
 
-	// look through the list of kotsChart objects for each orderedDir, and if the name+version+dirname matches, use that weight+releasename
-	// if there is no match, do not treat this as a fatal error
-	for idx, dir := range orderedDirs {
-		for _, kotsChart := range kotsCharts {
+	// look through the list of kotsChart objects and find the matching directory
+	orderedDirs := []orderedDir{}
+	for _, kotsChart := range kotsCharts {
+		for idx, dir := range foundDirs {
 			if kotsChart.GetDirName() != dir.Name {
 				continue
 			}
@@ -369,20 +369,29 @@ func getSortedCharts(v1Beta1ChartsDir string, v1Beta2ChartsDir string, kotsChart
 				continue
 			}
 
-			orderedDirs[idx].Weight = kotsChart.GetWeight()
-			orderedDirs[idx].ReleaseName = kotsChart.GetReleaseName()
-			orderedDirs[idx].Namespace = kotsChart.GetNamespace()
-			orderedDirs[idx].UpgradeFlags = kotsChart.GetUpgradeFlags()
+			foundDirs[idx].Weight = kotsChart.GetWeight()
+			foundDirs[idx].ReleaseName = kotsChart.GetReleaseName()
+			foundDirs[idx].UpgradeFlags = kotsChart.GetUpgradeFlags()
+			foundDirs[idx].Namespace = kotsChart.GetNamespace()
+			if foundDirs[idx].Namespace == "" && targetNamespace != "" {
+				foundDirs[idx].Namespace = targetNamespace
+			}
+
+			orderedDirs = append(orderedDirs, foundDirs[idx])
+
+			// remove from foundDirs
+			if idx == len(foundDirs)-1 {
+				foundDirs = foundDirs[:idx]
+			} else {
+				foundDirs = append(foundDirs[:idx], foundDirs[idx+1:]...)
+			}
 			break
 		}
-		if orderedDirs[idx].ReleaseName == "" {
-			// no matching kots chart was found, use the chart name as the release name
-			orderedDirs[idx].ReleaseName = dir.ChartName
-		}
+	}
 
-		if orderedDirs[idx].Namespace == "" && targetNamespace != "" {
-			orderedDirs[idx].Namespace = targetNamespace
-		}
+	// log any chart dirs that do not have a matching kotsChart
+	for _, dir := range foundDirs {
+		logger.Warnf("%s chart %s-%s in dir %s was not found in the kotskinds", dir.APIVersion, dir.ChartName, dir.ChartVersion, dir.Name)
 	}
 
 	if isUninstall {

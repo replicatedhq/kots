@@ -325,8 +325,6 @@ func (c *Client) deployHelmCharts(deployArgs operatortypes.DeployAppArgs) (*comm
 
 	// uninstall removed charts
 	if len(removedCharts) > 0 {
-		kotsCharts := append(prevKotsV1Beta1Charts, prevKotsV1Beta2Charts...)
-
 		v1Beta1ChartsDir := ""
 		if prevV1Beta1HelmDir != "" {
 			v1Beta1ChartsDir = filepath.Join(prevV1Beta1HelmDir, "charts")
@@ -336,7 +334,7 @@ func (c *Client) deployHelmCharts(deployArgs operatortypes.DeployAppArgs) (*comm
 			v1Beta2ChartsDir = filepath.Join(prevV1Beta2HelmDir, "helm")
 		}
 
-		err := c.uninstallWithHelm(v1Beta1ChartsDir, v1Beta2ChartsDir, kotsCharts)
+		err := c.uninstallWithHelm(v1Beta1ChartsDir, v1Beta2ChartsDir, removedCharts)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to uninstall helm charts")
 		}
