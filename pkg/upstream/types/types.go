@@ -148,6 +148,15 @@ func (u *Upstream) GetKotsKindsDir(options WriteOptions) string {
 	return path.Join(renderDir, "kotsKinds")
 }
 
+func (u *Upstream) GetHelmDir(options WriteOptions) string {
+	renderDir := options.RootDir
+	if options.CreateAppDir {
+		renderDir = path.Join(renderDir, u.Name)
+	}
+
+	return path.Join(renderDir, "helm")
+}
+
 func (u *Upstream) GetSkippedDir(options WriteOptions) string {
 	renderDir := options.RootDir
 	if options.CreateAppDir {

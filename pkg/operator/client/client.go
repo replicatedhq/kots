@@ -8,10 +8,9 @@ import (
 	"log"
 	"os"
 	"path"
+	"path/filepath"
 	"sync"
 	"time"
-
-	"github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 
 	"github.com/mholt/archiver/v3"
 	"github.com/mitchellh/hashstructure"
@@ -23,6 +22,7 @@ import (
 	appstatetypes "github.com/replicatedhq/kots/pkg/appstate/types"
 	"github.com/replicatedhq/kots/pkg/binaries"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
+	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/operator/applier"
 	operatortypes "github.com/replicatedhq/kots/pkg/operator/types"
@@ -247,88 +247,156 @@ func (c *Client) deployManifests(deployArgs operatortypes.DeployAppArgs) (*deplo
 }
 
 func (c *Client) deployHelmCharts(deployArgs operatortypes.DeployAppArgs) (*commandResult, error) {
-	tarGz := archiver.TarGz{
-		Tar: &archiver.Tar{
-			ImplicitTopLevelFolder: false,
-		},
+	// extract previous v1beta1 helm charts
+	prevV1Beta1HelmDir, err := extractHelmCharts(deployArgs.PreviousV1Beta1ChartsArchive, "prev-v1beta1")
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to extract previous helm charts")
 	}
+	defer os.RemoveAll(prevV1Beta1HelmDir)
 
-	var prevHelmDir string
-	if len(deployArgs.PreviousCharts) > 0 {
-		tmpDir, err := ioutil.TempDir("", "helm")
-		if err != nil {
-			return nil, errors.Wrap(err, "failed to create temp dir for previous charts")
-		}
-		defer os.RemoveAll(tmpDir)
-
-		err = ioutil.WriteFile(path.Join(tmpDir, "archive.tar.gz"), deployArgs.PreviousCharts, 0644)
-		if err != nil {
-			return nil, errors.Wrap(err, "failed to write previous archive")
-		}
-
-		prevHelmDir = path.Join(tmpDir, "prevhelm")
-		if err := os.MkdirAll(prevHelmDir, 0755); err != nil {
-			return nil, errors.Wrap(err, "failed to create dir to stage previous helm archive")
-		}
-
-		if err := tarGz.Unarchive(path.Join(tmpDir, "archive.tar.gz"), prevHelmDir); err != nil {
-			return nil, errors.Wrap(err, "falied to unarchive previous helm archive")
-		}
+	// extract current v1beta1 helm charts
+	curV1Beta1HelmDir, err := extractHelmCharts(deployArgs.V1Beta1ChartsArchive, "curr-v1beta1")
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to extract current helm charts")
 	}
+	defer os.RemoveAll(curV1Beta1HelmDir)
 
-	var curHelmDir string
-	var installResult *commandResult
-	if len(deployArgs.Charts) > 0 {
-		tmpDir, err := ioutil.TempDir("", "helm")
-		if err != nil {
-			return nil, errors.Wrap(err, "failed to create temp dir to stage currently deployed archive")
-		}
-		defer os.RemoveAll(tmpDir)
+	// extract previous v1beta2 helm charts
+	prevV1Beta2HelmDir, err := extractHelmCharts(deployArgs.PreviousV1Beta2ChartsArchive, "prev-v1beta2")
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to extract previous helm charts")
+	}
+	defer os.RemoveAll(prevV1Beta2HelmDir)
 
-		err = ioutil.WriteFile(path.Join(tmpDir, "archive.tar.gz"), deployArgs.Charts, 0644)
-		if err != nil {
-			return nil, errors.Wrap(err, "failed to write current archive")
-		}
+	// extract current v1beta2 helm charts
+	curV1Beta2HelmDir, err := extractHelmCharts(deployArgs.V1Beta2ChartsArchive, "curr-v1beta2")
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to extract current helm charts")
+	}
+	defer os.RemoveAll(curV1Beta2HelmDir)
 
-		curHelmDir = path.Join(tmpDir, "currhelm")
-		if err := os.MkdirAll(curHelmDir, 0755); err != nil {
-			return nil, errors.Wrap(err, "failed to create dir to stage currently deployed archive")
-		}
-
-		if err := tarGz.Unarchive(path.Join(tmpDir, "archive.tar.gz"), curHelmDir); err != nil {
-			return nil, errors.Wrap(err, "failed to unarchive current helm archive")
+	// find removed charts
+	prevKotsV1Beta1Charts := []kotsutil.HelmChartInterface{}
+	if deployArgs.PreviousKotsKinds != nil && deployArgs.PreviousKotsKinds.V1Beta1HelmCharts != nil {
+		for _, kotsChart := range deployArgs.PreviousKotsKinds.V1Beta1HelmCharts.Items {
+			kc := kotsChart
+			prevKotsV1Beta1Charts = append(prevKotsV1Beta1Charts, &kc)
 		}
 	}
 
-	curKotsCharts := []v1beta1.HelmChart{}
-	if deployArgs.KotsKinds != nil && deployArgs.KotsKinds.HelmCharts != nil {
-		curKotsCharts = deployArgs.KotsKinds.HelmCharts.Items
+	curV1Beta1KotsCharts := []kotsutil.HelmChartInterface{}
+	if deployArgs.KotsKinds != nil && deployArgs.KotsKinds.V1Beta1HelmCharts != nil {
+		for _, kotsChart := range deployArgs.KotsKinds.V1Beta1HelmCharts.Items {
+			kc := kotsChart
+			curV1Beta1KotsCharts = append(curV1Beta1KotsCharts, &kc)
+		}
 	}
 
-	previousKotsCharts := []v1beta1.HelmChart{}
-	if deployArgs.PreviousKotsKinds != nil && deployArgs.PreviousKotsKinds.HelmCharts != nil {
-		previousKotsCharts = deployArgs.PreviousKotsKinds.HelmCharts.Items
+	prevKotsV1Beta2Charts := []kotsutil.HelmChartInterface{}
+	if deployArgs.PreviousKotsKinds != nil && deployArgs.PreviousKotsKinds.V1Beta2HelmCharts != nil {
+		for _, kotsChart := range deployArgs.PreviousKotsKinds.V1Beta2HelmCharts.Items {
+			kc := kotsChart
+			prevKotsV1Beta2Charts = append(prevKotsV1Beta2Charts, &kc)
+		}
 	}
 
-	removedCharts, err := getRemovedCharts(prevHelmDir, curHelmDir, previousKotsCharts, curKotsCharts)
+	curV1Beta2KotsCharts := []kotsutil.HelmChartInterface{}
+	if deployArgs.KotsKinds != nil && deployArgs.KotsKinds.V1Beta2HelmCharts != nil {
+		for _, kotsChart := range deployArgs.KotsKinds.V1Beta2HelmCharts.Items {
+			kc := kotsChart
+			curV1Beta2KotsCharts = append(curV1Beta2KotsCharts, &kc)
+		}
+	}
+
+	opts := getRemovedChartsOptions{
+		prevV1Beta1Dir:            prevV1Beta1HelmDir,
+		curV1Beta1Dir:             curV1Beta1HelmDir,
+		previousV1Beta1KotsCharts: prevKotsV1Beta1Charts,
+		currentV1Beta1KotsCharts:  curV1Beta1KotsCharts,
+		prevV1Beta2Dir:            prevV1Beta2HelmDir,
+		curV1Beta2Dir:             curV1Beta2HelmDir,
+		previousV1Beta2KotsCharts: prevKotsV1Beta2Charts,
+		currentV1Beta2KotsCharts:  curV1Beta2KotsCharts,
+	}
+	removedCharts, err := getRemovedCharts(opts)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to find removed charts")
 	}
+
+	// uninstall removed charts
 	if len(removedCharts) > 0 {
-		err := c.uninstallWithHelm(prevHelmDir, removedCharts)
+		v1Beta1ChartsDir := ""
+		if prevV1Beta1HelmDir != "" {
+			v1Beta1ChartsDir = filepath.Join(prevV1Beta1HelmDir, "charts")
+		}
+		v1Beta2ChartsDir := ""
+		if prevV1Beta2HelmDir != "" {
+			v1Beta2ChartsDir = filepath.Join(prevV1Beta2HelmDir, "helm")
+		}
+
+		err := c.uninstallWithHelm(v1Beta1ChartsDir, v1Beta2ChartsDir, removedCharts)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to uninstall helm charts")
 		}
 	}
 
-	if len(deployArgs.Charts) > 0 {
-		installResult, err = c.installWithHelm(curHelmDir, curKotsCharts)
+	var installResult *commandResult
+	// deploy current helm charts
+	if len(deployArgs.V1Beta1ChartsArchive) > 0 || len(deployArgs.V1Beta2ChartsArchive) > 0 {
+		kotsCharts := append(curV1Beta1KotsCharts, curV1Beta2KotsCharts...)
+
+		v1Beta1ChartsDir := ""
+		if curV1Beta1HelmDir != "" {
+			v1Beta1ChartsDir = filepath.Join(curV1Beta1HelmDir, "charts")
+		}
+
+		v1Beta2ChartsDir := ""
+		if curV1Beta2HelmDir != "" {
+			v1Beta2ChartsDir = filepath.Join(curV1Beta2HelmDir, "helm")
+		}
+
+		installResult, err = c.installWithHelm(v1Beta1ChartsDir, v1Beta2ChartsDir, kotsCharts)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to install helm charts")
 		}
 	}
 
 	return installResult, nil
+}
+
+// extractHelmCharts extracts the helm charts from the archive and returns the path to the directory.
+// If the archive is empty, an empty string is returned.
+func extractHelmCharts(chartsArchive []byte, dirName string) (helmDir string, err error) {
+	if len(chartsArchive) == 0 {
+		return "", nil
+	}
+
+	tmpDir, err := os.MkdirTemp("", "helm")
+	if err != nil {
+		return "", errors.Wrap(err, "failed to create temp dir for previous charts")
+	}
+
+	err = ioutil.WriteFile(path.Join(tmpDir, "archive.tar.gz"), chartsArchive, 0644)
+	if err != nil {
+		return "", errors.Wrap(err, "failed to write previous archive")
+	}
+
+	helmDir = path.Join(tmpDir, dirName)
+	if err := os.MkdirAll(helmDir, 0755); err != nil {
+		return "", errors.Wrap(err, "failed to create dir to stage previous helm archive")
+	}
+
+	tarGz := archiver.TarGz{
+		Tar: &archiver.Tar{
+			ImplicitTopLevelFolder: false,
+		},
+	}
+
+	if err := tarGz.Unarchive(path.Join(tmpDir, "archive.tar.gz"), helmDir); err != nil {
+		return "", errors.Wrap(err, "falied to unarchive previous helm archive")
+	}
+
+	return helmDir, nil
 }
 
 func (c *Client) undeployManifests(undeployArgs operatortypes.UndeployAppArgs) error {
@@ -369,40 +437,45 @@ func (c *Client) undeployManifests(undeployArgs operatortypes.UndeployAppArgs) e
 }
 
 func (c *Client) undeployHelmCharts(undeployArgs operatortypes.UndeployAppArgs) error {
-	if len(undeployArgs.Charts) == 0 {
-		return nil
+	kotsCharts := []kotsutil.HelmChartInterface{}
+	if undeployArgs.KotsKinds != nil {
+		if undeployArgs.KotsKinds.V1Beta1HelmCharts != nil {
+			for _, v1Beta1Chart := range undeployArgs.KotsKinds.V1Beta1HelmCharts.Items {
+				kc := v1Beta1Chart
+				kotsCharts = append(kotsCharts, &kc)
+			}
+		}
+		if undeployArgs.KotsKinds.V1Beta2HelmCharts != nil {
+			for _, v1Beta2Chart := range undeployArgs.KotsKinds.V1Beta2HelmCharts.Items {
+				kc := v1Beta2Chart
+				kotsCharts = append(kotsCharts, &kc)
+			}
+		}
 	}
 
-	tmpDir, err := ioutil.TempDir("", "helm")
+	v1Beta1HelmDir, err := extractHelmCharts(undeployArgs.V1Beta1ChartsArchive, "v1beta1")
 	if err != nil {
-		return errors.Wrap(err, "failed to create temp dir for charts")
+		return errors.Wrap(err, "failed to extract v1beta1 helm charts")
 	}
-	defer os.RemoveAll(tmpDir)
+	defer os.RemoveAll(v1Beta1HelmDir)
 
-	err = ioutil.WriteFile(path.Join(tmpDir, "archive.tar.gz"), undeployArgs.Charts, 0644)
+	v1Beta2HelmDir, err := extractHelmCharts(undeployArgs.V1Beta2ChartsArchive, "v1beta2")
 	if err != nil {
-		return errors.Wrap(err, "failed to write archive")
+		return errors.Wrap(err, "failed to extract v1beta2 helm charts")
+	}
+	defer os.RemoveAll(v1Beta2HelmDir)
+
+	v1Beta1ChartsDir := ""
+	if v1Beta1HelmDir != "" {
+		v1Beta1ChartsDir = filepath.Join(v1Beta1HelmDir, "charts")
 	}
 
-	helmDir := path.Join(tmpDir, "prevhelm")
-	if err := os.MkdirAll(helmDir, 0755); err != nil {
-		return errors.Wrap(err, "failed to create dir to stage helm archive")
+	v1Beta2ChartsDir := ""
+	if v1Beta2HelmDir != "" {
+		v1Beta2ChartsDir = filepath.Join(v1Beta2HelmDir, "helm")
 	}
 
-	tarGz := archiver.TarGz{
-		Tar: &archiver.Tar{
-			ImplicitTopLevelFolder: false,
-		},
-	}
-	if err := tarGz.Unarchive(path.Join(tmpDir, "archive.tar.gz"), helmDir); err != nil {
-		return errors.Wrap(err, "falied to unarchive helm archive")
-	}
-
-	kotsCharts := []v1beta1.HelmChart{}
-	if undeployArgs.KotsKinds != nil && undeployArgs.KotsKinds.HelmCharts != nil {
-		kotsCharts = undeployArgs.KotsKinds.HelmCharts.Items
-	}
-	if err := c.uninstallWithHelm(helmDir, kotsCharts); err != nil {
+	if err := c.uninstallWithHelm(v1Beta1ChartsDir, v1Beta2ChartsDir, kotsCharts); err != nil {
 		return errors.Wrap(err, "failed to uninstall helm charts")
 	}
 

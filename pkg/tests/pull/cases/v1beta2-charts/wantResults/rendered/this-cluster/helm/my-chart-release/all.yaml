@@ -1,0 +1,19 @@
+---
+# Source: my-chart/templates/my-chart-configmap.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: my-chart-configmap
+data: {}
+---
+# Source: my-chart/templates/my-chart-pod.yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: my-chart-pod
+spec:
+  containers:
+  - name: my-chart-container
+    image: nginx
+    ports:
+    - containerPort: 80

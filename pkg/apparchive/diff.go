@@ -1,4 +1,4 @@
-package kustomize
+package apparchive
 
 import (
 	"bufio"
@@ -42,6 +42,7 @@ func diffContent(baseContent string, updatedContent string) (int, int, error) {
 
 // DiffAppVersionsForDownstream will generate a diff of the rendered yaml between two different archive dirs
 func DiffAppVersionsForDownstream(downstreamName string, archive string, diffBasePath string, kustomizeBinPath string) (*Diff, error) {
+	// diff kubernetes manifests
 	_, archiveFiles, err := GetRenderedApp(archive, downstreamName, kustomizeBinPath)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get rendered app")
@@ -52,9 +53,56 @@ func DiffAppVersionsForDownstream(downstreamName string, archive string, diffBas
 		return nil, errors.Wrap(err, "failed to get base rendered app")
 	}
 
+	manifestsDiff, err := diffAppFiles(archiveFiles, baseFiles)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to diff app files")
+	}
+
+	// diff v1beta1 charts
+	_, archiveV1Beta1ChartFiles, err := GetRenderedV1Beta1ChartsArchive(archive, downstreamName, kustomizeBinPath)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get rendered charts files")
+	}
+
+	_, baseV1Beta1ChartFiles, err := GetRenderedV1Beta1ChartsArchive(diffBasePath, downstreamName, kustomizeBinPath)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get base rendered charts files")
+	}
+
+	v1Beta1ChartsDiff, err := diffAppFiles(archiveV1Beta1ChartFiles, baseV1Beta1ChartFiles)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to diff charts files")
+	}
+
+	// diff v1beta2 charts
+	archiveV1Beta2ChartFiles, err := GetRenderedV1Beta2FileMap(archive, downstreamName)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get rendered charts files")
+	}
+
+	baseV1Beta2ChartFiles, err := GetRenderedV1Beta2FileMap(diffBasePath, downstreamName)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get base rendered charts files")
+	}
+
+	v1Beta2ChartsDiff, err := diffAppFiles(archiveV1Beta2ChartFiles, baseV1Beta2ChartFiles)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to diff charts files")
+	}
+
+	totalDiff := &Diff{
+		FilesChanged: manifestsDiff.FilesChanged + v1Beta1ChartsDiff.FilesChanged + v1Beta2ChartsDiff.FilesChanged,
+		LinesAdded:   manifestsDiff.LinesAdded + v1Beta1ChartsDiff.LinesAdded + v1Beta2ChartsDiff.LinesAdded,
+		LinesRemoved: manifestsDiff.LinesRemoved + v1Beta1ChartsDiff.LinesRemoved + v1Beta2ChartsDiff.LinesRemoved,
+	}
+
+	return totalDiff, nil
+}
+
+func diffAppFiles(archive map[string][]byte, base map[string][]byte) (*Diff, error) {
 	diff := Diff{}
-	for archiveFilename, archiveContents := range archiveFiles {
-		baseContents, ok := baseFiles[archiveFilename]
+	for archiveFilename, archiveContents := range archive {
+		baseContents, ok := base[archiveFilename]
 		if !ok {
 			// this file was added
 			scanner := bufio.NewScanner(bytes.NewReader(archiveContents))
@@ -78,8 +126,8 @@ func DiffAppVersionsForDownstream(downstreamName string, archive string, diffBas
 		}
 	}
 
-	for baseFilename, baseContents := range baseFiles {
-		_, ok := archiveFiles[baseFilename]
+	for baseFilename, baseContents := range base {
+		_, ok := archive[baseFilename]
 		if !ok {
 			// this file was removed
 			scanner := bufio.NewScanner(bytes.NewReader(baseContents))
@@ -90,51 +138,5 @@ func DiffAppVersionsForDownstream(downstreamName string, archive string, diffBas
 		}
 	}
 
-	_, archiveChartFiles, err := GetRenderedChartsArchive(archive, downstreamName, kustomizeBinPath)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to get rendered charts files")
-	}
-
-	_, baseChartFiles, err := GetRenderedChartsArchive(diffBasePath, downstreamName, kustomizeBinPath)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to get base rendered charts files")
-	}
-
-	for archiveFilename, archiveContents := range archiveChartFiles {
-		baseContents, ok := baseChartFiles[archiveFilename]
-		if !ok {
-			// this file was added
-			scanner := bufio.NewScanner(bytes.NewReader(archiveContents))
-			for scanner.Scan() {
-				diff.LinesAdded++
-			}
-			diff.FilesChanged++
-			continue
-		}
-
-		linesAdded, linesRemoved, err := diffContent(string(baseContents), string(archiveContents))
-		if err != nil {
-			return nil, errors.Wrapf(err, "failed to diff base and archive chart contents %s", archiveFilename)
-		}
-
-		diff.LinesAdded += linesAdded
-		diff.LinesRemoved += linesRemoved
-
-		if linesAdded > 0 || linesRemoved > 0 {
-			diff.FilesChanged++
-		}
-	}
-
-	for baseFilename, baseContents := range baseChartFiles {
-		_, ok := archiveChartFiles[baseFilename]
-		if !ok {
-			// this file was removed
-			scanner := bufio.NewScanner(bytes.NewReader(baseContents))
-			for scanner.Scan() {
-				diff.LinesRemoved++
-			}
-			diff.FilesChanged++
-		}
-	}
 	return &diff, nil
 }

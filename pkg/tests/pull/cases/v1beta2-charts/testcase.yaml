@@ -1,0 +1,12 @@
+Name: test v1beta2 charts
+PullOptions:
+  Namespace: app-namespace
+  ExcludeAdminConsole: true
+  IsAirgap: true
+  Silent: true
+  LocalPath: cases/v1beta2-charts/upstream
+  RootDir: cases/v1beta2-charts/results
+  SharedPassword: dummy-pass
+  RewriteImages: false
+  Downstreams:
+    - this-cluster

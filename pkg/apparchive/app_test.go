@@ -1,4 +1,4 @@
-package kustomize
+package apparchive
 
 import (
 	"io/ioutil"

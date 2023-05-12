@@ -1,4 +1,4 @@
-package kustomize
+package apparchive
 
 import (
 	"encoding/json"
@@ -469,11 +469,11 @@ spec:
 			}
 
 			// this should return the same output
-			gotArchive2, gotRenderedFilesMap2, err := GetRenderedChartsArchive(tmpDir, "this-cluster", "kustomize")
+			gotArchive2, gotRenderedFilesMap2, err := GetRenderedV1Beta1ChartsArchive(tmpDir, "this-cluster", "kustomize")
 			req.NoError(err)
 
 			if !reflect.DeepEqual(gotRenderedFilesMap2, tt.wantRenderedFilesMap) {
-				t.Errorf("GetRenderedChartsArchive() renderedFilesMap \n\n%s", fmtJSONDiff(gotRenderedFilesMap2, tt.wantRenderedFilesMap))
+				t.Errorf("GetRenderedV1Beta1ChartsArchive() renderedFilesMap \n\n%s", fmtJSONDiff(gotRenderedFilesMap2, tt.wantRenderedFilesMap))
 			}
 
 			// validate archive files
@@ -500,7 +500,7 @@ spec:
 				require.Nil(t, err)
 
 				if !reflect.DeepEqual(gotContent, wantContent) {
-					t.Errorf("GetRenderedChartsArchive() %s \n\n%s", wantPath, fmtJSONDiff(string(gotContent), string(wantContent)))
+					t.Errorf("GetRenderedV1Beta1ChartsArchive() %s \n\n%s", wantPath, fmtJSONDiff(string(gotContent), string(wantContent)))
 				}
 			}
 		})

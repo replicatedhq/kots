@@ -1,0 +1,14 @@
+apiVersion: kots.io/v1beta1
+kind: HelmChart
+metadata:
+  name: my-other-chart
+  annotations:
+    kots.io/exclude: "true"
+spec:
+  chart:
+    name: my-other-chart
+    chartVersion: 0.1.0
+    releaseName: my-other-chart-release
+  useHelmInstall: true
+  values:
+    my-value: my-value

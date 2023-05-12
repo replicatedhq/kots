@@ -9,8 +9,8 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
+	"github.com/replicatedhq/kots/pkg/apparchive"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
-	"github.com/replicatedhq/kots/pkg/kustomize"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/store"
 	storetypes "github.com/replicatedhq/kots/pkg/store/types"
@@ -87,16 +87,23 @@ func (h *Handler) GetAppRenderedContents(w http.ResponseWriter, r *http.Request)
 	}
 	d := downstreams[0]
 
-	_, appFilesMap, err := kustomize.GetRenderedApp(archivePath, d.Name, kotsKinds.GetKustomizeBinaryPath())
+	_, appFilesMap, err := apparchive.GetRenderedApp(archivePath, d.Name, kotsKinds.GetKustomizeBinaryPath())
 	if err != nil {
 		logger.Error(errors.Wrap(err, "failed to get rendered app"))
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
-	_, chartsFilesMap, err := kustomize.GetRenderedChartsArchive(archivePath, d.Name, kotsKinds.GetKustomizeBinaryPath())
+	_, v1Beta1ChartsFilesMap, err := apparchive.GetRenderedV1Beta1ChartsArchive(archivePath, d.Name, kotsKinds.GetKustomizeBinaryPath())
 	if err != nil {
-		logger.Error(errors.Wrap(err, "failed to get kustomized files"))
+		logger.Error(errors.Wrap(err, "failed to get rendered v1beta1 chart files"))
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	v1Beta2ChartsFilesMap, err := apparchive.GetRenderedV1Beta2FileMap(archivePath, d.Name)
+	if err != nil {
+		logger.Error(errors.Wrap(err, "failed to get rendered v1beta2 chart files"))
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
@@ -105,7 +112,10 @@ func (h *Handler) GetAppRenderedContents(w http.ResponseWriter, r *http.Request)
 	for filename, content := range appFilesMap {
 		responseFiles[filename] = string(content)
 	}
-	for filename, content := range chartsFilesMap {
+	for filename, content := range v1Beta1ChartsFilesMap {
+		responseFiles[filename] = string(content)
+	}
+	for filename, content := range v1Beta2ChartsFilesMap {
 		responseFiles[filename] = string(content)
 	}
 

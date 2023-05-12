@@ -135,10 +135,16 @@ func TestRenderUpstream(t *testing.T) {
 			gotKotsKinds, err := kotsutil.KotsKindsFromMap(gotKotsKindsFiles)
 			require.NoError(t, err, "kots kinds from map")
 
-			if tt.WantKotsKinds.HelmCharts != nil && gotKotsKinds.HelmCharts != nil {
-				require.ElementsMatch(t, tt.WantKotsKinds.HelmCharts.Items, gotKotsKinds.HelmCharts.Items)
-				tt.WantKotsKinds.HelmCharts.Items = nil
-				gotKotsKinds.HelmCharts.Items = nil
+			if tt.WantKotsKinds.V1Beta1HelmCharts != nil && gotKotsKinds.V1Beta1HelmCharts != nil {
+				require.ElementsMatch(t, tt.WantKotsKinds.V1Beta1HelmCharts.Items, gotKotsKinds.V1Beta1HelmCharts.Items)
+				tt.WantKotsKinds.V1Beta1HelmCharts.Items = nil
+				gotKotsKinds.V1Beta1HelmCharts.Items = nil
+			}
+
+			if tt.WantKotsKinds.V1Beta2HelmCharts != nil && gotKotsKinds.V1Beta2HelmCharts != nil {
+				require.ElementsMatch(t, tt.WantKotsKinds.V1Beta2HelmCharts.Items, gotKotsKinds.V1Beta2HelmCharts.Items)
+				tt.WantKotsKinds.V1Beta2HelmCharts.Items = nil
+				gotKotsKinds.V1Beta2HelmCharts.Items = nil
 			}
 
 			require.Equal(t, tt.WantKotsKinds, gotKotsKinds)
