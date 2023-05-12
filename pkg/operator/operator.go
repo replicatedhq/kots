@@ -397,6 +397,10 @@ func (o *Operator) DeployApp(appID string, sequence int64) (deployed bool, deplo
 		}
 	}
 
+	if err := o.applyStatusInformers(app, sequence, kotsKinds, builder); err != nil {
+		return false, errors.Wrap(err, "failed to apply status informers")
+	}
+
 	deployArgs := operatortypes.DeployAppArgs{
 		AppID:                        app.ID,
 		AppSlug:                      app.Slug,
@@ -421,10 +425,6 @@ func (o *Operator) DeployApp(appID string, sequence int64) (deployed bool, deplo
 	deployed, err = o.client.DeployApp(deployArgs)
 	if err != nil {
 		return false, errors.Wrap(err, "failed to deploy app")
-	}
-
-	if err := o.applyStatusInformers(app, sequence, kotsKinds, builder); err != nil {
-		return false, errors.Wrap(err, "failed to apply status informers")
 	}
 
 	return deployed, nil

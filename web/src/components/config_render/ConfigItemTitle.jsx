@@ -24,10 +24,10 @@ export default class ConfigItemTitle extends React.Component {
     return (
       <h4
         className="card-item-title field-section-sub-header"
-        style={title ? { marginBottom: -18 } : {}}
+        style={title?.length < 101 ? { marginBottom: -18 } : {}}
       >
         {title && (
-          <div className="u-display--inlineBlock u-verticalAlign--top u-marginRight--5">
+          <div className="u-display--inlineBlock u-verticalAlign--top u-marginRight--5 break-word">
             <Markdown
               options={{
                 linkTarget: "_blank",
@@ -38,7 +38,10 @@ export default class ConfigItemTitle extends React.Component {
             </Markdown>
           </div>
         )}
-        <div className="u-display--inlineBlock u-verticalAlign--top">
+        <div
+          className="u-display--inlineBlock u-verticalAlign--top"
+          style={title?.length > 101 ? { marginTop: -12 } : {}}
+        >
           {required ? (
             <span className="field-label required">Required</span>
           ) : recommended ? (
