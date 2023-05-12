@@ -372,6 +372,18 @@ func (h *HelmChart) GetWeight() int64 {
 	return h.Spec.Weight
 }
 
+func (h *HelmChart) GetHelmVersion() string {
+	return "v3" // v3 is the only supported version for v1beta2
+}
+
+func (h *HelmChart) GetBuilderValues() (map[string]interface{}, error) {
+	return h.Spec.GetHelmValues(h.Spec.Builder)
+}
+
+func (h *HelmChart) SetChartNamespace(namespace string) {
+	h.Spec.Namespace = namespace
+}
+
 type OptionalValue struct {
 	When           string `json:"when"`
 	RecursiveMerge bool   `json:"recursiveMerge"`

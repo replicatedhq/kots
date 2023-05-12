@@ -255,12 +255,7 @@ func processV1Beta2HelmChartImages(opts WriteV1Beta2HelmChartsOptions, helmChart
 	}
 	defer os.RemoveAll(tmpDir)
 
-	builderValues := helmChart.Spec.Builder
-	if builderValues == nil {
-		builderValues = map[string]kotsv1beta2.MappedChartValue{}
-	}
-
-	builderHelmValues, err := helmChart.Spec.GetHelmValues(builderValues)
+	builderHelmValues, err := helmChart.GetBuilderValues()
 	if err != nil {
 		return errors.Wrap(err, "failed to get builder values for chart")
 	}

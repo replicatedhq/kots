@@ -84,6 +84,9 @@ type HelmChartInterface interface {
 	GetNamespace() string
 	GetUpgradeFlags() []string
 	GetWeight() int64
+	GetHelmVersion() string
+	GetBuilderValues() (map[string]interface{}, error)
+	SetChartNamespace(namespace string)
 }
 
 // KotsKinds are all of the special "client-side" kinds that are packaged in

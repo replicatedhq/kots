@@ -777,3 +777,55 @@ func Test_GetReplTmplValues(t *testing.T) {
 		})
 	}
 }
+
+func TestHelmChart_GetBuilderValues(t *testing.T) {
+	tests := []struct {
+		name    string
+		chart   *HelmChart
+		want    map[string]interface{}
+		wantErr bool
+	}{
+		{
+			name: "no builder should return empty map",
+			chart: &HelmChart{
+				Spec: HelmChartSpec{},
+			},
+			want: map[string]interface{}{},
+		},
+		{
+			name: "builder with no values should return empty map",
+			chart: &HelmChart{
+				Spec: HelmChartSpec{
+					Builder: map[string]MappedChartValue{},
+				},
+			},
+			want: map[string]interface{}{},
+		},
+		{
+			name: "builder with values should return values",
+			chart: &HelmChart{
+				Spec: HelmChartSpec{
+					Builder: map[string]MappedChartValue{
+						"key": {
+							valueType: "string",
+							strValue:  "value",
+						},
+					},
+				},
+			},
+			want: map[string]interface{}{"key": "value"},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := tt.chart.GetBuilderValues()
+			if (err != nil) != tt.wantErr {
+				t.Errorf("HelmChart.GetBuilderValues() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !assert.Equal(t, got, tt.want) {
+				t.Errorf("HelmChart.GetBuilderValues() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
