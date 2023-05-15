@@ -210,7 +210,7 @@ func PortForward(localPort int, remotePort int, namespace string, getPodName fun
 	start := time.Now()
 	for {
 		if forwardErr != nil {
-			return 0, nil, forwardErr
+			return 0, nil, errors.Wrap(forwardErr, "failed to forward ports")
 		}
 
 		response, err := quickClient.Get(fmt.Sprintf("http://localhost:%d/healthz", localPort))
