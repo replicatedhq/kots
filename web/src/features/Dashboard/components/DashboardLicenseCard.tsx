@@ -286,12 +286,12 @@ const DashboardLicenseCard = (props: Props) => {
           <div className="flex">
             <div className="flex-column flex1">
               <div className="flex alignItems--center">
-                <p className="u-fontSize--large u-fontWeight--medium card-item-title">
+                <p className="u-fontSize--large u-fontWeight--medium card-item-title break-word">
                   {" "}
                   {appLicense?.assignee}
                 </p>
                 {appLicense?.channelName && (
-                  <span className="channelTag flex-auto alignItems--center u-fontWeight--medium u-marginLeft--10">
+                  <span className="channelTag alignItems--center u-fontWeight--medium u-marginLeft--10">
                     {" "}
                     {appLicense.channelName}{" "}
                   </span>

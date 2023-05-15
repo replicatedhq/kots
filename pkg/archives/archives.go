@@ -127,3 +127,19 @@ func ExtractTGZArchiveFromReader(tgzReader io.Reader, destDir string) error {
 
 	return nil
 }
+
+func IsTGZ(b []byte) bool {
+	r := bytes.NewReader(b)
+
+	gzipReader, err := gzip.NewReader(r)
+	if err != nil {
+		return false
+	}
+	defer gzipReader.Close()
+
+	tarReader := tar.NewReader(gzipReader)
+
+	// try to read the first file header from the tar archive
+	_, err = tarReader.Next()
+	return err == nil
+}

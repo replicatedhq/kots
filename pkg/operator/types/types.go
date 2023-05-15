@@ -9,26 +9,29 @@ import (
 )
 
 type DeployAppArgs struct {
-	AppID                string                `json:"app_id"`
-	AppSlug              string                `json:"app_slug"`
-	ClusterID            string                `json:"cluster_id"`
-	Sequence             int64                 `json:"sequence"`
-	KubectlVersion       string                `json:"kubectl_version"`
-	KustomizeVersion     string                `json:"kustomize_version"`
-	AdditionalNamespaces []string              `json:"additional_namespaces"`
-	ImagePullSecrets     []string              `json:"image_pull_secrets"`
-	PreviousManifests    string                `json:"previous_manifests"`
-	Manifests            string                `json:"manifests"`
-	PreviousCharts       []byte                `json:"previous_charts"`
-	Charts               []byte                `json:"charts"`
-	Wait                 bool                  `json:"wait"`
-	ClearNamespaces      []string              `json:"clear_namespaces"`
-	ClearPVCs            bool                  `json:"clear_pvcs"`
-	AnnotateSlug         bool                  `json:"annotate_slug"`
-	IsRestore            bool                  `json:"is_restore"`
-	RestoreLabelSelector *metav1.LabelSelector `json:"restore_label_selector"`
-	PreviousKotsKinds    *kotsutil.KotsKinds
-	KotsKinds            *kotsutil.KotsKinds
+	AppID                        string                `json:"app_id"`
+	AppSlug                      string                `json:"app_slug"`
+	ClusterID                    string                `json:"cluster_id"`
+	Sequence                     int64                 `json:"sequence"`
+	KubectlVersion               string                `json:"kubectl_version"`
+	KustomizeVersion             string                `json:"kustomize_version"`
+	AdditionalNamespaces         []string              `json:"additional_namespaces"`
+	ImagePullSecrets             []string              `json:"image_pull_secrets"`
+	PreviousManifests            string                `json:"previous_manifests"`
+	Manifests                    string                `json:"manifests"`
+	PreviousV1Beta1ChartsArchive []byte                `json:"previous_charts"`
+	V1Beta1ChartsArchive         []byte                `json:"charts"`
+	PreviousV1Beta2ChartsArchive []byte                `json:"previous_v1beta2_charts"`
+	V1Beta2ChartsArchive         []byte                `json:"v1beta2_charts"`
+	Wait                         bool                  `json:"wait"`
+	Action                       string                `json:"action"`
+	ClearNamespaces              []string              `json:"clear_namespaces"`
+	ClearPVCs                    bool                  `json:"clear_pvcs"`
+	AnnotateSlug                 bool                  `json:"annotate_slug"`
+	IsRestore                    bool                  `json:"is_restore"`
+	RestoreLabelSelector         *metav1.LabelSelector `json:"restore_label_selector"`
+	PreviousKotsKinds            *kotsutil.KotsKinds
+	KotsKinds                    *kotsutil.KotsKinds
 }
 
 type UndeployAppArgs struct {
@@ -39,7 +42,8 @@ type UndeployAppArgs struct {
 	KustomizeVersion     string                `json:"kustomize_version"`
 	AdditionalNamespaces []string              `json:"additional_namespaces"`
 	Manifests            string                `json:"manifests"`
-	Charts               []byte                `json:"charts"`
+	V1Beta1ChartsArchive []byte                `json:"v1Beta1ChartsArchive"`
+	V1Beta2ChartsArchive []byte                `json:"v1Beta2ChartsArchive"`
 	Wait                 bool                  `json:"wait"`
 	ClearNamespaces      []string              `json:"clear_namespaces"`
 	ClearPVCs            bool                  `json:"clear_pvcs"`

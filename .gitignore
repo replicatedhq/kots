@@ -28,7 +28,7 @@ supportbundle.tar.gz
 # for the embed experiment
 kubernetes/
 kots.db
-archives/
+/archives/
 kotsdata/
 
 sbom/

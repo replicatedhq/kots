@@ -1,4 +1,4 @@
-package kustomize
+package apparchive
 
 import (
 	"fmt"
@@ -20,7 +20,7 @@ func init() {
 	goTemplateRegex = regexp.MustCompile(`({{)|(}})`)
 }
 
-func GetRenderedChartsArchive(versionArchive string, downstreamName, kustomizeBinPath string) ([]byte, map[string][]byte, error) {
+func GetRenderedV1Beta1ChartsArchive(versionArchive string, downstreamName, kustomizeBinPath string) ([]byte, map[string][]byte, error) {
 	renderedChartsDir := filepath.Join(versionArchive, "rendered", downstreamName, "charts")
 	if _, err := os.Stat(renderedChartsDir); err == nil {
 		// charts are already rendered, so we can just tar.gz them up

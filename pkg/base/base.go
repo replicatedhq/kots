@@ -283,6 +283,9 @@ func iskotsAPIVersionKind(o OverlySimpleGVK) bool {
 	if o.APIVersion == "kots.io/v1beta1" {
 		return true
 	}
+	if o.APIVersion == "kots.io/v1beta2" {
+		return true
+	}
 	if o.APIVersion == "troubleshoot.sh/v1beta2" {
 		return true
 	}

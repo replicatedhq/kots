@@ -1,6 +1,6 @@
 SHELL:=/bin/bash
 PROJECT_NAME ?= kotsadm-migrations
-RQLITE_TAG ?= 7.14.2
+RQLITE_TAG ?= 7.17.0
 SCHEMAHERO_TAG ?= 0.14.0
 
 .PHONY: schema-alpha

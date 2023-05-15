@@ -20,11 +20,11 @@ import (
 	go_git_ssh "github.com/go-git/go-git/v5/plumbing/transport/ssh"
 	"github.com/mikesmitty/edkey"
 	"github.com/pkg/errors"
+	"github.com/replicatedhq/kots/pkg/apparchive"
 	"github.com/replicatedhq/kots/pkg/crypto"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/kotsadm/types"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
-	"github.com/replicatedhq/kots/pkg/kustomize"
 	"github.com/replicatedhq/kots/pkg/util"
 	"golang.org/x/crypto/ssh"
 	v1 "k8s.io/api/core/v1"
@@ -718,7 +718,7 @@ func CreateGitOpsCommit(gitOpsConfig *GitOpsConfig, appSlug string, appName stri
 		return "", errors.Wrap(err, "failed to load kots kinds")
 	}
 
-	out, _, err := kustomize.GetRenderedApp(archiveDir, downstreamName, kotsKinds.GetKustomizeBinaryPath())
+	out, _, err := apparchive.GetRenderedApp(archiveDir, downstreamName, kotsKinds.GetKustomizeBinaryPath())
 	if err != nil {
 		return "", errors.Wrap(err, "failed to get rendered app")
 	}

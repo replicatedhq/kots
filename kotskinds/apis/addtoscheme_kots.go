@@ -18,9 +18,11 @@ package apis
 
 import (
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
+	kotsv1beta2 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta2"
 )
 
 func init() {
 	// Register the types with the Scheme so the components can map objects to GroupVersionKinds and back
 	AddToSchemes = append(AddToSchemes, kotsv1beta1.SchemeBuilder.AddToScheme)
+	AddToSchemes = append(AddToSchemes, kotsv1beta2.SchemeBuilder.AddToScheme)
 }

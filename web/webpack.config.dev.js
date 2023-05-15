@@ -1,19 +1,17 @@
 const ReactRefreshWebpackPlugin = require("@pmmmwh/react-refresh-webpack-plugin");
-const ESLintPlugin = require('eslint-webpack-plugin');
+const ESLintPlugin = require("eslint-webpack-plugin");
 const webpack = require("webpack");
 const path = require("path");
 const srcPath = path.join(__dirname, "src");
 
 module.exports = {
   mode: "development",
-  entry: [
-    "./src/index.tsx"
-  ],
+  entry: ["./src/index.tsx"],
   cache: {
-    type: "filesystem"
+    type: "filesystem",
   },
   output: {
-    path: path.join(__dirname, "dist")
+    path: path.join(__dirname, "dist"),
   },
   module: {
     rules: [
@@ -22,10 +20,10 @@ module.exports = {
         exclude: /node_modules/,
         loader: "babel-loader",
         options: {
-          plugins: [require.resolve('react-refresh/babel')]
-        }
+          plugins: [require.resolve("react-refresh/babel")],
+        },
       },
-    ]
+    ],
   },
   plugins: [
     new webpack.HotModuleReplacementPlugin(),
@@ -33,9 +31,9 @@ module.exports = {
     new ESLintPlugin(),
   ],
   optimization: {
-    moduleIds: "named"
+    moduleIds: "named",
   },
-  devtool: "eval-source-map",
+  devtool: "eval",
   devServer: {
     compress: true,
     hot: true,
@@ -46,7 +44,7 @@ module.exports = {
     },
     historyApiFallback: {
       verbose: true,
-      disableDotRule: true
+      disableDotRule: true,
     },
   },
-}
+};

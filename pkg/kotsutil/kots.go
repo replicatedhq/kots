@@ -18,6 +18,7 @@ import (
 	"github.com/blang/semver"
 	"github.com/pkg/errors"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
+	kotsv1beta2 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta2"
 	kotsscheme "github.com/replicatedhq/kots/kotskinds/client/kotsclientset/scheme"
 	"github.com/replicatedhq/kots/pkg/archives"
 	"github.com/replicatedhq/kots/pkg/binaries"
@@ -37,6 +38,7 @@ import (
 	"gopkg.in/yaml.v2"
 	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 	serializer "k8s.io/apimachinery/pkg/runtime/serializer/json"
 	"k8s.io/client-go/kubernetes/scheme"
 	applicationv1beta1 "sigs.k8s.io/application/api/v1beta1"
@@ -72,14 +74,34 @@ type OverlySimpleMetadata struct {
 	Namespace string `yaml:"namespace"`
 }
 
+// HelmChartInterface represents any kots.io HelmChart (v1beta1 or v1beta2)
+type HelmChartInterface interface {
+	GetAPIVersion() string
+	GetChartName() string
+	GetChartVersion() string
+	GetReleaseName() string
+	GetDirName() string
+	GetNamespace() string
+	GetUpgradeFlags() []string
+	GetWeight() int64
+	GetHelmVersion() string
+	GetBuilderValues() (map[string]interface{}, error)
+	SetChartNamespace(namespace string)
+}
+
+// v1beta1 and v1beta2 HelmChart structs must implement HelmChartInterface
+var _ HelmChartInterface = (*kotsv1beta1.HelmChart)(nil)
+var _ HelmChartInterface = (*kotsv1beta2.HelmChart)(nil)
+
 // KotsKinds are all of the special "client-side" kinds that are packaged in
 // an application. These should be pointers because they are all optional.
 // But a few are still expected in the code later, so we make them not pointers,
 // because other codepaths expect them to be present
 type KotsKinds struct {
-	KotsApplication kotsv1beta1.Application
-	Application     *applicationv1beta1.Application
-	HelmCharts      *kotsv1beta1.HelmChartList
+	KotsApplication   kotsv1beta1.Application
+	Application       *applicationv1beta1.Application
+	V1Beta1HelmCharts *kotsv1beta1.HelmChartList
+	V1Beta2HelmCharts *kotsv1beta2.HelmChartList
 
 	Collector     *troubleshootv1beta2.Collector
 	Preflight     *troubleshootv1beta2.Preflight
@@ -274,12 +296,24 @@ func (o KotsKinds) Marshal(g string, v string, k string) (string, error) {
 				}
 				return string(b.Bytes()), nil
 			case "HelmChartList":
-				if o.HelmCharts == nil {
+				if o.V1Beta1HelmCharts == nil {
 					return "", nil
 				}
 				var b bytes.Buffer
-				if err := s.Encode(o.HelmCharts, &b); err != nil {
-					return "", errors.Wrap(err, "failed to encode helmchart")
+				if err := s.Encode(o.V1Beta1HelmCharts, &b); err != nil {
+					return "", errors.Wrap(err, "failed to encode v1beta1 helmcharts")
+				}
+				return string(b.Bytes()), nil
+			}
+		} else if v == "v1beta2" {
+			switch k {
+			case "HelmChartList":
+				if o.V1Beta2HelmCharts == nil {
+					return "", nil
+				}
+				var b bytes.Buffer
+				if err := s.Encode(o.V1Beta2HelmCharts, &b); err != nil {
+					return "", errors.Wrap(err, "failed to encode v1beta2 helmcharts")
 				}
 				return string(b.Bytes()), nil
 			}
@@ -444,15 +478,25 @@ func (k *KotsKinds) addKotsKinds(content []byte) error {
 		case "kots.io/v1beta1, Kind=Installation":
 			k.Installation = *decoded.(*kotsv1beta1.Installation)
 		case "kots.io/v1beta1, Kind=HelmChart":
-			if k.HelmCharts == nil {
-				k.HelmCharts = &kotsv1beta1.HelmChartList{
+			if k.V1Beta1HelmCharts == nil {
+				k.V1Beta1HelmCharts = &kotsv1beta1.HelmChartList{
 					TypeMeta: metav1.TypeMeta{
 						APIVersion: "kots.io/v1beta1",
 						Kind:       "HelmChartList",
 					},
 				}
 			}
-			k.HelmCharts.Items = append(k.HelmCharts.Items, *decoded.(*kotsv1beta1.HelmChart))
+			k.V1Beta1HelmCharts.Items = append(k.V1Beta1HelmCharts.Items, *decoded.(*kotsv1beta1.HelmChart))
+		case "kots.io/v1beta2, Kind=HelmChart":
+			if k.V1Beta2HelmCharts == nil {
+				k.V1Beta2HelmCharts = &kotsv1beta2.HelmChartList{
+					TypeMeta: metav1.TypeMeta{
+						APIVersion: "kots.io/v1beta2",
+						Kind:       "HelmChartList",
+					},
+				}
+			}
+			k.V1Beta2HelmCharts.Items = append(k.V1Beta2HelmCharts.Items, *decoded.(*kotsv1beta2.HelmChart))
 		case "kots.io/v1beta1, Kind=LintConfig":
 			k.LintConfig = decoded.(*kotsv1beta1.LintConfig)
 		case "troubleshoot.sh/v1beta2, Kind=Collector":
@@ -649,8 +693,8 @@ func WriteKotsKinds(kotsKinds map[string][]byte, rootDir string) error {
 	return nil
 }
 
-func LoadHelmChartsFromPath(fromDir string) ([]*kotsv1beta1.HelmChart, error) {
-	charts := []*kotsv1beta1.HelmChart{}
+func loadRuntimeObjectsFromPath(apiVersion, kind, fromDir string) ([]runtime.Object, error) {
+	objects := []runtime.Object{}
 	decode := scheme.Codecs.UniversalDeserializer().Decode
 	err := filepath.Walk(fromDir,
 		func(path string, info os.FileInfo, err error) error {
@@ -667,7 +711,7 @@ func LoadHelmChartsFromPath(fromDir string) ([]*kotsv1beta1.HelmChart, error) {
 				return errors.Wrap(err, "failed to read file")
 			}
 
-			if !IsHelmChartKind(contents) {
+			if !IsApiVersionKind(contents, apiVersion, kind) {
 				return nil
 			}
 
@@ -676,8 +720,8 @@ func LoadHelmChartsFromPath(fromDir string) ([]*kotsv1beta1.HelmChart, error) {
 				return errors.Wrap(err, "failed to decode")
 			}
 
-			if gvk.String() == "kots.io/v1beta1, Kind=HelmChart" {
-				charts = append(charts, decoded.(*kotsv1beta1.HelmChart))
+			if gvk.String() == fmt.Sprintf("%s, Kind=%s", apiVersion, kind) {
+				objects = append(objects, decoded)
 			}
 
 			return nil
@@ -688,18 +732,46 @@ func LoadHelmChartsFromPath(fromDir string) ([]*kotsv1beta1.HelmChart, error) {
 		}
 	}
 
-	return charts, nil
+	return objects, nil
 }
 
-func IsHelmChartKind(content []byte) bool {
+func IsApiVersionKind(content []byte, apiVersion, kind string) bool {
 	gvk := OverlySimpleGVK{}
 	if err := yaml.Unmarshal(content, &gvk); err != nil {
 		return false
 	}
-	if gvk.APIVersion == "kots.io/v1beta1" && gvk.Kind == "HelmChart" {
+	if gvk.APIVersion == apiVersion && gvk.Kind == kind {
 		return true
 	}
 	return false
+}
+
+func LoadV1Beta1HelmChartsFromPath(fromDir string) ([]*kotsv1beta1.HelmChart, error) {
+	objects, err := loadRuntimeObjectsFromPath("kots.io/v1beta1", "HelmChart", fromDir)
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to load v1beta1 HelmCharts from %s", fromDir)
+	}
+
+	charts := []*kotsv1beta1.HelmChart{}
+	for _, o := range objects {
+		charts = append(charts, o.(*kotsv1beta1.HelmChart))
+	}
+
+	return charts, nil
+}
+
+func LoadV1Beta2HelmChartsFromPath(fromDir string) ([]*kotsv1beta2.HelmChart, error) {
+	objects, err := loadRuntimeObjectsFromPath("kots.io/v1beta2", "HelmChart", fromDir)
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to load v1beta2 HelmCharts from %s", fromDir)
+	}
+
+	charts := []*kotsv1beta2.HelmChart{}
+	for _, o := range objects {
+		charts = append(charts, o.(*kotsv1beta2.HelmChart))
+	}
+
+	return charts, nil
 }
 
 func LoadInstallationFromPath(installationFilePath string) (*kotsv1beta1.Installation, error) {
@@ -739,9 +811,9 @@ func LoadKotsAppFromContents(data []byte) (*kotsv1beta1.Application, error) {
 	return obj.(*kotsv1beta1.Application), nil
 }
 
-func LoadHelmChartsFromContents(data []byte) (*kotsv1beta1.HelmChartList, error) {
+func LoadV1Beta1HelmChartListFromContents(data []byte) (*kotsv1beta1.HelmChartList, error) {
 	decode := scheme.Codecs.UniversalDeserializer().Decode
-	obj, gvk, err := decode([]byte(data), nil, nil)
+	obj, gvk, err := decode(data, nil, nil)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to decode helm chart data of length %d", len(data))
 	}
@@ -751,6 +823,34 @@ func LoadHelmChartsFromContents(data []byte) (*kotsv1beta1.HelmChartList, error)
 	}
 
 	return obj.(*kotsv1beta1.HelmChartList), nil
+}
+
+func LoadV1Beta1HelmChartFromContents(content []byte) (*kotsv1beta1.HelmChart, error) {
+	decode := scheme.Codecs.UniversalDeserializer().Decode
+	obj, gvk, err := decode(content, nil, nil)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to decode chart")
+	}
+
+	if gvk.Group != "kots.io" || gvk.Version != "v1beta1" || gvk.Kind != "HelmChart" {
+		return nil, errors.Errorf("unexpected GVK: %s", gvk.String())
+	}
+
+	return obj.(*kotsv1beta1.HelmChart), nil
+}
+
+func LoadV1Beta2HelmChartFromContents(content []byte) (*kotsv1beta2.HelmChart, error) {
+	decode := scheme.Codecs.UniversalDeserializer().Decode
+	obj, gvk, err := decode(content, nil, nil)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to decode chart")
+	}
+
+	if gvk.Group != "kots.io" || gvk.Version != "v1beta2" || gvk.Kind != "HelmChart" {
+		return nil, errors.Errorf("unexpected GVK: %s", gvk.String())
+	}
+
+	return obj.(*kotsv1beta2.HelmChart), nil
 }
 
 func LoadInstallationFromContents(installationData []byte) (*kotsv1beta1.Installation, error) {
@@ -1292,4 +1392,23 @@ func LoadBrandingArchiveFromPath(archivePath string) (*bytes.Buffer, error) {
 	}
 
 	return buf, nil
+}
+
+// FilterV1Beta1ChartsWithV1Beta2Charts filters out any v1beta1 charts where a cooresponding v1beta2 chart exists with the same release name
+// (or chart name if release name is not set)
+func FilterV1Beta1ChartsWithV1Beta2Charts(v1Beta1Charts []kotsv1beta1.HelmChart, v1Beta2Charts []kotsv1beta2.HelmChart) []kotsv1beta1.HelmChart {
+	v1Beta2ChartMap := map[string]bool{}
+	for _, v1beta2Chart := range v1Beta2Charts {
+		v1Beta2ChartMap[v1beta2Chart.GetReleaseName()] = true
+	}
+
+	filteredCharts := []kotsv1beta1.HelmChart{}
+	for _, chart := range v1Beta1Charts {
+		if v1Beta2ChartMap[chart.GetReleaseName()] {
+			continue
+		}
+		filteredCharts = append(filteredCharts, chart)
+	}
+
+	return filteredCharts
 }

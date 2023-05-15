@@ -8,18 +8,23 @@ generate: controller-gen client-gen
 	$(CONTROLLER_GEN) \
 		crd \
 		+output:dir=./config/crds \
-		paths=./apis/kots/v1beta1/...
+		paths=./apis/kots/v1beta1/... \
+		paths=./apis/kots/v1beta2/...
 	$(CLIENT_GEN) \
 		--output-package=github.com/replicatedhq/kots/kotskinds/client \
 		--clientset-name kotsclientset \
 		--input-base github.com/replicatedhq/kots/kotskinds/apis \
-		--input kots/v1beta1 \
+		--input kots/v1beta1,kots/v1beta2 \
 		-h ./hack/boilerplate.go.txt
 
 
 .PHONY: openapischema
 openapischema: controller-gen
-	$(CONTROLLER_GEN) crd +output:dir=./config/crds  paths=./apis/kots/v1beta1
+	$(CONTROLLER_GEN) \
+		crd \
+		+output:dir=./config/crds \
+		paths=./apis/kots/v1beta1/... \
+		paths=./apis/kots/v1beta2/...
 
 .PHONY: schemas
 schemas: fmt generate
