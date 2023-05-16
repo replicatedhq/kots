@@ -5,6 +5,7 @@ import Select from "react-select";
 import CodeSnippet from "../shared/CodeSnippet";
 
 import { Utilities } from "../../utilities/utilities";
+import Icon from "@components/Icon";
 
 export default function BackupRestoreModal(props) {
   const {
@@ -47,10 +48,21 @@ export default function BackupRestoreModal(props) {
     >
       <div className="Modal-body">
         <div className="flex flex-column">
-          <p className="u-fontSize--largest u-fontWeight--bold u-textColor--primary u-lineHeight--normal u-marginBottom--more">
-            {" "}
-            Restore from backup{" "}
-          </p>
+          <div
+            className="flex"
+            style={{ alignItems: "center", justifyContent: "space-between" }}
+          >
+            <p className="u-fontSize--largest u-fontWeight--bold u-textColor--primary u-lineHeight--normal u-marginBottom--more">
+              {" "}
+              Restore from backup{" "}
+            </p>
+            <button
+              style={{ border: "none", background: "none", cursor: "pointer" }}
+            >
+              <Icon icon="close" onClick={toggleRestoreModal} size={15} />
+            </button>
+          </div>
+
           <p className="u-fontSize--normal u-fontWeight--normal u-textColor--bodyCopy u-lineHeight--normal">
             Select the type of backup you want to perform. A full restore of the
             admin console, your application and its metadata, application config
@@ -169,7 +181,7 @@ export default function BackupRestoreModal(props) {
           </div>
           {selectedRestore === "full" || selectedRestore === "kotsadm" ? (
             <div className="flex flex-column u-marginTop--20">
-              <p className="u-fontSize--small u-fontWeight--normal u-textColor--bodyCopy u-lineHeight--normal">
+              <p className="u-fontSize--large u-fontWeight--bold u-textColor--primary u-lineHeight--normal u-marginBottom--more">
                 {" "}
                 To start the restore, run this command on your cluster.{" "}
               </p>
@@ -257,14 +269,7 @@ export default function BackupRestoreModal(props) {
             </div>
           )}
         </div>
-        {selectedRestore === "full" || selectedRestore === "kotsadm" ? (
-          <div className="flex justifyContent--flexStart u-marginTop--20">
-            <button className="btn primary" onClick={toggleRestoreModal}>
-              {" "}
-              Ok, got it!{" "}
-            </button>
-          </div>
-        ) : (
+        {selectedRestore === "full" || selectedRestore === "kotsadm" ? null : (
           <div className="flex justifyContent--flexStart u-marginTop--30">
             <button
               className="btn secondary blue u-marginRight--10"
