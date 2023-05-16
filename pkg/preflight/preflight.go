@@ -122,7 +122,7 @@ func Run(appID string, appSlug string, sequence int64, isAirgap bool, archiveDir
 			return preflightErr
 		}
 
-		if status != "deployed" {
+		if status != storetypes.VersionDeployed && status != storetypes.VersionDeploying {
 			if err := store.GetStore().SetDownstreamVersionStatus(appID, sequence, storetypes.VersionPendingPreflight, ""); err != nil {
 				preflightErr = errors.Wrapf(err, "failed to set downstream version %d pending preflight", sequence)
 				return preflightErr
@@ -158,7 +158,7 @@ func Run(appID string, appSlug string, sequence int64, isAirgap bool, archiveDir
 				logger.Error(errors.Wrapf(err, "failed to check downstream version %d status", sequence))
 				return
 			}
-			if status == storetypes.VersionDeployed || status == storetypes.VersionFailed {
+			if status == storetypes.VersionDeployed || status == storetypes.VersionDeploying || status == storetypes.VersionFailed {
 				return
 			}
 
@@ -434,7 +434,7 @@ func injectInstallerPreflight(preflight *troubleshootv1beta2.Preflight, analyzer
 			deployedInstaller.Spec.Kotsadm.ApplicationSlug = ""
 		}
 	}
-	
+
 	// Inject deployed installer spec as collected data
 	deployedInstallerSpecYaml, err := yaml.Marshal(deployedInstaller.Spec)
 	if err != nil {
