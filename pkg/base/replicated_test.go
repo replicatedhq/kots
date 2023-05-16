@@ -207,7 +207,7 @@ spec:
 
 			got, err := findAllKotsV1Beta1HelmCharts(upstreamFiles, template.Builder{}, nil)
 			req.NoError(err)
-			assert.Equal(t, test.want, got)
+			assert.ElementsMatch(t, test.want, got)
 		})
 	}
 }
