@@ -291,7 +291,7 @@ const DashboardLicenseCard = (props: Props) => {
                   {appLicense?.assignee}
                 </p>
                 {appLicense?.channelName && (
-                  <span className="channelTag flex-auto alignItems--center u-fontWeight--medium u-marginLeft--10">
+                  <span className="channelTag alignItems--center u-fontWeight--medium u-marginLeft--10">
                     {" "}
                     {appLicense.channelName}{" "}
                   </span>
