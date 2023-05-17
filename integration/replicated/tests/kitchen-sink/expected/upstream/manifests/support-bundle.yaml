@@ -19,7 +19,7 @@ spec:
         collectorName: ping-google
         image: flungo/netutils
         command: ["ping"]
-        args: ["www.google.com"]
+        args: [["-w", "1", "www.google.com"]
         timeout: 5s
     - http:
         collectorName: echo-ip
