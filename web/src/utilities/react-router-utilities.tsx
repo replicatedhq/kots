@@ -1,54 +1,28 @@
-import { KotsParams } from "@types";
 import React from "react";
 import {
-  match,
-  RouteComponentProps,
-  useHistory,
+  useNavigate,
   useLocation,
-  useRouteMatch,
-} from "react-router";
-
-// @ts-ignore
-const RouterWrapper = ({ children }) => {
-  const history = useHistory();
-  const location = useLocation();
-  const wrappedMatch = useRouteMatch<KotsParams>();
-
-  return children({ history, location, wrappedMatch });
-};
+  useParams,
+  useOutletContext,
+} from "react-router-dom";
 
 /**
  * @deprecated The method should not be used on new components. New components should use the hooks directly.
  */
-const withRouter = <P extends object>(
-  WrappedComponent: React.ComponentType<
-    RouteComponentProps | { wrappedMatch: match } | P
-  >
-) => {
-  return class extends React.Component<P> {
-    render() {
-      return (
-        <RouterWrapper
-          // @ts-ignore
-          children={({ history, location, wrappedMatch }) => {
-            return (
-              <WrappedComponent
-                history={history}
-                location={location}
-                match={wrappedMatch}
-                wrappedMatch={wrappedMatch}
-                {...this.props}
-              />
-            );
-          }}
-        />
-      );
-    }
-  };
-};
+export function withRouter(Component: JSX.IntrinsicAttributes) {
+  function ComponentWithRouterProp(props: JSX.IntrinsicAttributes) {
+    let location = useLocation();
+    let navigate = useNavigate();
+    let params = useParams();
+    const outletContext = useOutletContext();
+    return (
+      <Component
+        {...props}
+        router={{ location, navigate, params }}
+        outletContext={outletContext}
+      />
+    );
+  }
 
-export type withRouterType = RouteComponentProps<KotsParams> & {
-  wrappedMatch: match<KotsParams>;
-};
-
-export { withRouter };
+  return ComponentWithRouterProp;
+}

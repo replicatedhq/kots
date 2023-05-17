@@ -1,5 +1,5 @@
 import React, { useEffect } from "react";
-import { useHistory } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 
 // import NotFound from "../static/NotFound";
 // import SubNavBar from "@src/components/shared/SubNavBar";
@@ -14,11 +14,11 @@ type Props = {
 };
 
 const Access = (props: Props) => {
-  const history = useHistory();
+  const navigate = useNavigate();
   // TODO: move this into a redirect route or update links to default to /identity-providers
   useEffect(() => {
-    if (history.location.pathname === "/access") {
-      history.replace(`/access/identity-providers`);
+    if (location.pathname === "/access") {
+      navigate(`/access/identity-providers`, { replace: true });
       return;
     }
   }, []);

@@ -1,6 +1,6 @@
 import React, { useReducer, useEffect } from "react";
 import { createBrowserHistory } from "history";
-import { Switch, Route, Redirect, Router, Routes } from "react-router-dom";
+import { Route, Routes, Navigate, useNavigate } from "react-router-dom";
 import { Helmet } from "react-helmet";
 import Modal from "react-modal";
 import find from "lodash/find";
@@ -23,7 +23,7 @@ import Access from "./components/identity/Access";
 import SnapshotsWrapper from "./components/snapshots/SnapshotsWrapper";
 import { QueryClient, QueryClientProvider } from "react-query";
 import { InstallWithHelm } from "@features/AddNewApp";
-import { RouteProps } from "react-router";
+import DumbComponent from "@features/Dashboard/components/DumbComponent";
 
 import Footer from "./components/shared/Footer";
 import NavBar from "./components/shared/NavBar";
@@ -37,6 +37,7 @@ import connectHistory from "./services/matomo";
 // types
 import { App, Metadata, ThemeState } from "@types";
 import { ToastProvider } from "./context/ToastContext";
+import { Dashboard } from "@features/Dashboard/components/Dashboard";
 
 // react-query client
 const queryClient = new QueryClient();
@@ -47,27 +48,6 @@ let browserHistory = createBrowserHistory();
 let history = connectHistory(browserHistory);
 
 // TODO:  pull in the react router hook
-const ProtectedRoute = ({
-  render,
-  location,
-  path,
-}: {
-  render: (props: object) => React.ReactNode;
-} & RouteProps) => {
-  const redirectURL = `/secure-console?next=${location?.pathname}${location?.search}`;
-
-  return (
-    <Route
-      path={path}
-      render={(innerProps) => {
-        if (Utilities.isLoggedIn()) {
-          return render(innerProps);
-        }
-        return <Redirect to={redirectURL} />;
-      }}
-    />
-  );
-};
 
 const ThemeContext = React.createContext({
   setThemeState: (themeState?: ThemeState) => {
@@ -262,6 +242,7 @@ const Root = () => {
         return;
       }
       const response = await res.json();
+
       const apps = response.apps;
       setState({
         appsList: apps,
@@ -409,6 +390,11 @@ const Root = () => {
     });
   };
 
+  const Crashz = () => {
+    throw new Error("Crashz!");
+  };
+  const navigate = useNavigate();
+
   return (
     <QueryClientProvider client={queryClient}>
       <Helmet>
@@ -450,211 +436,189 @@ const Root = () => {
         }}
       >
         <ToastProvider>
-          <Router>
-            <NavBar
-              logo={state.themeState.navbarLogo || state.appLogo}
-              refetchAppsList={getAppsList}
-              fetchingMetadata={state.fetchingMetadata}
-              isKurlEnabled={Boolean(state.adminConsoleMetadata?.isKurl)}
-              isGitOpsSupported={isGitOpsSupported()}
-              isIdentityServiceSupported={isIdentityServiceSupported()}
-              appsList={state.appsList}
-              onLogoutError={onLogoutError}
-              isSnapshotsSupported={isSnapshotsSupported()}
-              errLoggingOut={state.errLoggingOut}
-              isHelmManaged={state.isHelmManaged}
-            />
-            <div className="flex1 flex-column u-overflow--auto tw-relative">
-              <Routes>
-                <Route
-                  exact
-                  path="/"
-                  component={() => (
-                    <Redirect
-                      to={Utilities.isLoggedIn() ? "/apps" : "/secure-console"}
-                    />
-                  )}
-                />
-                <Route
-                  exact
-                  path="/crashz"
-                  render={() => {
-                    const Crashz = () => {
-                      throw new Error("Crashz!");
-                    };
-                    return <Crashz />;
-                  }}
-                />
-                <ProtectedRoute
-                  path="/:slug/preflight"
-                  render={(props) => (
-                    <PreflightResultPage
-                      {...props}
-                      logo={state.appLogo || ""}
-                      fromLicenseFlow={true}
-                      refetchAppsList={getAppsList}
-                    />
-                  )}
-                />
-                <ProtectedRoute
-                  path="/:slug/config"
-                  render={(props) => (
-                    <AppConfig
-                      {...props}
-                      fromLicenseFlow={true}
-                      refetchAppsList={getAppsList}
-                    />
-                  )}
-                />
-                <Route
-                  exact
-                  path="/secure-console"
-                  render={(props) => (
-                    <SecureAdminConsole
-                      {...props}
-                      logo={state.appLogo}
-                      appName={state.selectedAppName}
-                      pendingApp={getPendingApp}
-                      onLoginSuccess={getAppsList}
-                      fetchingMetadata={state.fetchingMetadata}
-                      checkIsHelmManaged={checkIsHelmManaged}
-                    />
-                  )}
-                />
-                <ProtectedRoute
-                  path="/upload-license"
-                  render={(props) => (
-                    <UploadLicenseFile
-                      {...props}
-                      logo={state.appLogo}
-                      appsListLength={state.appsList?.length}
-                      appName={state.selectedAppName || ""}
-                      appSlugFromMetadata={state.appSlugFromMetadata || ""}
-                      fetchingMetadata={state.fetchingMetadata}
-                      onUploadSuccess={getAppsList}
-                    />
-                  )}
-                />
-                <ProtectedRoute
-                  exact
-                  path="/install-with-helm"
-                  render={() => <InstallWithHelm />}
-                />
-                <ProtectedRoute
-                  exact
-                  path="/restore"
-                  render={(props) => (
-                    <BackupRestore
-                      {...props}
-                      logo={state.appLogo}
-                      appName={state.selectedAppName}
-                      appsListLength={state.appsList?.length}
-                      fetchingMetadata={state.fetchingMetadata}
-                    />
-                  )}
-                />
-                <ProtectedRoute
-                  exact
-                  path="/:slug/airgap"
-                  render={(props) => (
-                    <UploadAirgapBundle
-                      {...props}
-                      showRegistry={true}
-                      logo={state.appLogo}
-                      appsListLength={state.appsList?.length}
-                      appName={state.selectedAppName}
-                      onUploadSuccess={getAppsList}
-                      fetchingMetadata={state.fetchingMetadata}
-                    />
-                  )}
-                />
-                <ProtectedRoute
-                  exact
-                  path="/:slug/airgap-bundle"
-                  render={(props) => (
-                    <UploadAirgapBundle
-                      {...props}
-                      showRegistry={false}
-                      logo={state.appLogo}
-                      appsListLength={state.appsList?.length}
-                      appName={state.selectedAppName}
-                      onUploadSuccess={getAppsList}
-                      fetchingMetadata={state.fetchingMetadata}
-                    />
-                  )}
-                />
-                <Route path="/unsupported" component={UnsupportedBrowser} />
-                <ProtectedRoute
-                  path="/cluster/manage"
-                  render={(props) => (
-                    <ClusterNodes {...props} appName={state.selectedAppName} />
-                  )}
-                />
-                <ProtectedRoute
-                  path="/gitops"
-                  render={(props) => (
-                    <GitOps {...props} appName={state.selectedAppName || ""} />
-                  )}
-                />
-                <ProtectedRoute
-                  path="/access/:tab?"
-                  render={() => (
-                    <Access
-                      isKurlEnabled={
-                        state.adminConsoleMetadata?.isKurl || false
-                      }
-                      isGeoaxisSupported={isGeoaxisSupported()}
-                    />
-                  )}
-                />
-                <ProtectedRoute
-                  path={["/snapshots/:tab?/:slug?"]}
-                  render={(props) => (
-                    <SnapshotsWrapper
-                      {...props}
-                      appName={state.selectedAppName}
-                      isKurlEnabled={state.adminConsoleMetadata?.isKurl}
-                      appsList={state.appsList}
-                    />
-                  )}
-                />
-                <ProtectedRoute
-                  path={["/apps", "/app/:slug/:tab?"]}
-                  render={(props) => (
-                    <AppDetailPage
-                      {...props}
-                      refetchAppMetadata={fetchKotsAppMetadata}
-                      onActiveInitSession={handleActiveInitSession}
-                      appNameSpace={state.appNameSpace}
-                      appName={state.selectedAppName}
-                      refetchAppsList={getAppsList}
-                      snapshotInProgressApps={state.snapshotInProgressApps}
-                      ping={ping}
-                      isHelmManaged={state.isHelmManaged}
-                    />
-                  )}
-                />
-                <Route
-                  path="/restore-completed"
-                  render={(
-                    props: JSX.IntrinsicAttributes &
-                      JSX.IntrinsicClassAttributes<RestoreCompleted> &
-                      Readonly<any>
-                  ) => (
-                    <RestoreCompleted
-                      {...props}
-                      logo={state.appLogo}
-                      fetchingMetadata={state.fetchingMetadata}
-                    />
-                  )}
-                />
-                <Route Component={NotFound} />
-              </Routes>
-            </div>
-            <div className="flex-auto Footer-wrapper u-width--full">
-              <Footer appsList={state.appsList} />
-            </div>
-          </Router>
+          <NavBar
+            logo={state.themeState.navbarLogo || state.appLogo}
+            refetchAppsList={getAppsList}
+            fetchingMetadata={state.fetchingMetadata}
+            isKurlEnabled={Boolean(state.adminConsoleMetadata?.isKurl)}
+            isGitOpsSupported={isGitOpsSupported()}
+            isIdentityServiceSupported={isIdentityServiceSupported()}
+            appsList={state.appsList}
+            onLogoutError={onLogoutError}
+            isSnapshotsSupported={isSnapshotsSupported()}
+            errLoggingOut={state.errLoggingOut}
+            isHelmManaged={state.isHelmManaged}
+          />
+          <div className="flex1 flex-column u-overflow--auto tw-relative">
+            <Routes>
+              <Route
+                path="/"
+                element={
+                  <Navigate
+                    to={Utilities.isLoggedIn() ? "/apps" : "/secure-console"}
+                  />
+                }
+              />
+              <Route path="/crashz" element={<Crashz />} />
+              <Route
+                path="/:slug/preflight"
+                element={
+                  <PreflightResultPage
+                    logo={state.appLogo || ""}
+                    fromLicenseFlow={true}
+                    refetchAppsList={getAppsList}
+                  />
+                }
+              />
+              <Route
+                path="/:slug/config"
+                element={
+                  <AppConfig
+                    fromLicenseFlow={true}
+                    refetchAppsList={getAppsList}
+                  />
+                }
+              />
+              <Route
+                path="/secure-console"
+                element={
+                  <SecureAdminConsole
+                    logo={state.appLogo}
+                    appName={state.selectedAppName}
+                    pendingApp={getPendingApp}
+                    onLoginSuccess={getAppsList}
+                    fetchingMetadata={state.fetchingMetadata}
+                    checkIsHelmManaged={checkIsHelmManaged}
+                    navigate={navigate}
+                  />
+                }
+              />
+              <Route
+                path="/upload-license"
+                element={
+                  <UploadLicenseFile
+                    logo={state.appLogo}
+                    appsListLength={state.appsList?.length}
+                    appName={state.selectedAppName || ""}
+                    appSlugFromMetadata={state.appSlugFromMetadata || ""}
+                    fetchingMetadata={state.fetchingMetadata}
+                    onUploadSuccess={getAppsList}
+                  />
+                }
+              />
+              <Route path="/install-with-helm" element={<InstallWithHelm />} />
+              <Route
+                path="/restore"
+                element={
+                  <BackupRestore
+                    logo={state.appLogo}
+                    appName={state.selectedAppName}
+                    appsListLength={state.appsList?.length}
+                    fetchingMetadata={state.fetchingMetadata}
+                  />
+                }
+              />
+              <Route
+                path="/:slug/airgap"
+                element={
+                  <UploadAirgapBundle
+                    showRegistry={true}
+                    logo={state.appLogo}
+                    appsListLength={state.appsList?.length}
+                    appName={state.selectedAppName}
+                    onUploadSuccess={getAppsList}
+                    fetchingMetadata={state.fetchingMetadata}
+                  />
+                }
+              />
+              <Route
+                path="/:slug/airgap-bundle"
+                element={
+                  <UploadAirgapBundle
+                    showRegistry={false}
+                    logo={state.appLogo}
+                    appsListLength={state.appsList?.length}
+                    appName={state.selectedAppName}
+                    onUploadSuccess={getAppsList}
+                    fetchingMetadata={state.fetchingMetadata}
+                  />
+                }
+              />
+              <Route path="/unsupported" element={<UnsupportedBrowser />} />
+              <Route
+                path="/cluster/manage"
+                element={<ClusterNodes appName={state.selectedAppName} />}
+              />
+              <Route
+                path="/gitops"
+                element={<GitOps appName={state.selectedAppName || ""} />}
+              />
+              <Route
+                path="/access/:tab?"
+                element={
+                  <Access
+                    isKurlEnabled={state.adminConsoleMetadata?.isKurl || false}
+                    isGeoaxisSupported={isGeoaxisSupported()}
+                  />
+                }
+              />
+              <Route
+                path={"/snapshots/:tab?"}
+                element={
+                  <SnapshotsWrapper
+                    appName={state.selectedAppName}
+                    isKurlEnabled={state.adminConsoleMetadata?.isKurl}
+                    appsList={state.appsList}
+                  />
+                }
+              />
+              <Route
+                path={"/apps"}
+                element={
+                  <AppDetailPage
+                    refetchAppMetadata={fetchKotsAppMetadata}
+                    onActiveInitSession={handleActiveInitSession}
+                    appNameSpace={state.appNameSpace}
+                    appName={state.selectedAppName}
+                    refetchAppsList={getAppsList}
+                    snapshotInProgressApps={state.snapshotInProgressApps}
+                    ping={ping}
+                    isHelmManaged={state.isHelmManaged}
+                  />
+                }
+              />
+              <Route
+                path={"/app"}
+                element={
+                  <AppDetailPage
+                    refetchAppMetadata={fetchKotsAppMetadata}
+                    onActiveInitSession={handleActiveInitSession}
+                    appNameSpace={state.appNameSpace}
+                    appName={state.selectedAppName}
+                    refetchAppsList={getAppsList}
+                    snapshotInProgressApps={state.snapshotInProgressApps}
+                    ping={ping}
+                    isHelmManaged={state.isHelmManaged}
+                  />
+                }
+              >
+                <Route path=":slug" element={<Dashboard />} />
+              </Route>
+              <Route
+                path="/restore-completed"
+                element={
+                  <RestoreCompleted
+                    logo={state.appLogo}
+                    fetchingMetadata={state.fetchingMetadata}
+                  />
+                }
+              />
+              <Route element={<NotFound />} />
+            </Routes>
+          </div>
+          <div className="flex-auto Footer-wrapper u-width--full">
+            <Footer appsList={state.appsList} />
+          </div>
         </ToastProvider>
       </ThemeContext.Provider>
       <Modal

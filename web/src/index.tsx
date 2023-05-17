@@ -1,5 +1,6 @@
 import React from "react";
 import { createRoot } from "react-dom/client";
+import { BrowserRouter } from "react-router-dom";
 import ReplicatedErrorBoundary from "./components/shared/ErrorBoundary";
 import { Root } from "./Root";
 
@@ -12,6 +13,8 @@ const root = createRoot(container); // createRoot(container!) if you use TypeScr
 
 root.render(
   <ReplicatedErrorBoundary>
-    <Root />
+    <BrowserRouter>
+      <Root />
+    </BrowserRouter>
   </ReplicatedErrorBoundary>
 );

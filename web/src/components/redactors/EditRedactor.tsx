@@ -1,5 +1,5 @@
 import React, { useEffect, useReducer } from "react";
-import { Link, useHistory, useRouteMatch } from "react-router-dom";
+import { Link, useMatch, useNavigate } from "react-router-dom";
 import { KotsPageTitle } from "@components/Head";
 import AceEditor, { Marker } from "react-ace";
 import "brace/mode/text";
@@ -53,8 +53,8 @@ const EditRedactor = () => {
     }
   );
 
-  const history = useHistory();
-  const match = useRouteMatch<KotsParams>();
+  const navigate = useNavigate();
+  const match = useMatch<KotsParams>();
   const slug = useSelectedApp()?.slug || "";
 
   const getRedactor = (redactorSlug: string) => {
@@ -137,7 +137,9 @@ const EditRedactor = () => {
           setTimeout(() => {
             setState({ editConfirm: false });
           }, 3000);
-          history.replace(`/app/${redactorSlug}/troubleshoot/redactors`);
+          navigate(`/app/${redactorSlug}/troubleshoot/redactors`, {
+            replace: true,
+          });
         } else {
           setState({
             editingRedactor: false,
@@ -220,7 +222,7 @@ const EditRedactor = () => {
           setTimeout(() => {
             setState({ createConfirm: false });
           }, 3000);
-          history.replace(`/app/${slug}/troubleshoot/redactors`);
+          navigate(`/app/${slug}/troubleshoot/redactors`, { replace: true });
         } else {
           setState({
             creatingRedactor: false,

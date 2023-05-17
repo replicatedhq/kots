@@ -5,7 +5,6 @@ import Loader from "@src/components/shared/Loader";
 import ErrorModal from "@src/components/modals/ErrorModal";
 import "@src/scss/components/Login.scss";
 import { App } from "@types";
-import { RouteComponentProps } from "react-router-dom";
 
 type Props = {
   appName: string | null;
@@ -14,7 +13,8 @@ type Props = {
   pendingApp: () => Promise<App>;
   checkIsHelmManaged: () => Promise<boolean>;
   logo: string | null;
-} & RouteComponentProps;
+  navigate: (path: string, options?: any) => void;
+};
 
 type State = {
   password: string;
@@ -47,6 +47,7 @@ class SecureAdminConsole extends React.Component<Props, State> {
   }
 
   completeLogin = async (data: LoginResponse) => {
+    console.log("completed login");
     let loggedIn = false;
     try {
       if (Utilities.localStorageEnabled()) {
@@ -59,21 +60,26 @@ class SecureAdminConsole extends React.Component<Props, State> {
         }
 
         const apps = await this.props.onLoginSuccess();
+        console.log("apps", apps);
         const pendingApp = await this.props.pendingApp();
         this.setState({ authLoading: false });
         if (apps.length > 0) {
-          this.props.history.replace(`/app/${apps[0].slug}`);
+          this.props.navigate(`/app/${apps[0].slug}`, { replace: true });
         } else if (pendingApp?.slug && pendingApp?.needsRegistry) {
-          this.props.history.replace(`/${pendingApp.slug}/airgap`);
-        } else if (pendingApp?.slug && !pendingApp?.needsRegistry) {
-          this.props.history.replace(`/${pendingApp.slug}/airgap-bundle`);
+          this.props.navigate(`/${pendingApp.slug}/airgap`, { replace: true });
+        } else if (
+          (pendingApp?.slug && !pendingApp?.needsRegistry, { replace: true })
+        ) {
+          this.props.navigate(`/${pendingApp.slug}/airgap-bundle`, {
+            replace: true,
+          });
         } else if (isHelmManaged) {
-          this.props.history.replace("install-with-helm");
+          this.props.navigate("install-with-helm", { replace: true });
         } else {
-          this.props.history.replace("upload-license");
+          this.props.navigate("upload-license"), { replace: true };
         }
       } else {
-        this.props.history.push("/unsupported");
+        this.props.navigate("/unsupported");
       }
     } catch (err) {
       console.log(err);

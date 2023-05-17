@@ -1,7 +1,7 @@
 import React, { useEffect, useReducer } from "react";
 import Modal from "react-modal";
 import CodeSnippet from "@components/shared/CodeSnippet";
-import { useHistory } from "react-router";
+import { useNavigate } from "react-router-dom";
 import { App, LicenseFile, KotsParams, SupportBundle } from "@types";
 // @ts-ignore
 import Dropzone from "react-dropzone";
@@ -63,7 +63,7 @@ const GenerateSupportBundleModal = ({
     setState({ showGetBundleSpec: !state.showGetBundleSpec });
   };
 
-  const history = useHistory();
+  const navigate = useNavigate();
   const match = useRouteMatch<KotsParams>();
 
   const fetchSupportBundleCommand = async () => {
@@ -161,11 +161,9 @@ const GenerateSupportBundleModal = ({
           if (bundle.status !== "running") {
             listSupportBundlesJob.stop();
             if (bundle.status === "failed") {
-              history.push(`/app/${watch?.slug}/troubleshoot`);
+              navigate(`/app/${watch?.slug}/troubleshoot`);
             } else {
-              history.push(
-                `/app/${watch?.slug}/troubleshoot/analyze/${bundle.id}`
-              );
+              navigate(`/app/${watch?.slug}/troubleshoot/analyze/${bundle.id}`);
             }
           }
         }
@@ -196,9 +194,7 @@ const GenerateSupportBundleModal = ({
         const response = await res.json();
         updateBundleSlug(response.slug);
 
-        history.push(
-          `/app/${watch?.slug}/troubleshoot/analyze/${response.slug}`
-        );
+        navigate(`/app/${watch?.slug}/troubleshoot/analyze/${response.slug}`);
         setState({ generateBundleErrMsg: "" });
       })
       .catch((err) => {
@@ -245,7 +241,7 @@ const GenerateSupportBundleModal = ({
       setState({ fileUploading: false, uploadBundleErrMsg: "" });
       toggleModal();
       const url = `/app/${match.params.slug}/troubleshoot/analyze/${bundleId}`;
-      history.push(url);
+      navigate(url);
     } catch (err) {
       setState({
         fileUploading: false,

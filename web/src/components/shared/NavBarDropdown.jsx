@@ -1,5 +1,5 @@
 import React from "react";
-import { useHistory } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import Icon from "../Icon";
 import ChangePasswordModal from "../modals/ChangePasswordModal/ChangePasswordModal";
 
@@ -7,8 +7,7 @@ const NavBarDropdown = ({ handleLogOut, isHelmManaged }) => {
   const [showDropdown, setShowDropdown] = React.useState(false);
   const [showModal, setShowModal] = React.useState(false);
   const testRef = React.useRef(null);
-  const history = useHistory();
-
+  const navigate = useNavigate();
   const closeModal = () => {
     setShowModal(false);
   };
@@ -24,7 +23,7 @@ const NavBarDropdown = ({ handleLogOut, isHelmManaged }) => {
 
   const handleNav = (e) => {
     // manually triggers nav because blur event happens too fast otherwise
-    history.push("/upload-license");
+    navigate("/upload-license");
     setShowDropdown(false);
   };
 

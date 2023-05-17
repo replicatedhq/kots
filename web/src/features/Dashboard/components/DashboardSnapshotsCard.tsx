@@ -1,6 +1,6 @@
 import React, { useEffect, useReducer } from "react";
 import { withRouter } from "@src/utilities/react-router-utilities";
-import { Link, useHistory } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import find from "lodash/find";
 import "@src/scss/components/watches/DashboardCard.scss";
 import InlineDropdown from "@src/components/shared/InlineDropdown";
@@ -66,7 +66,7 @@ type State = {
 };
 
 export const DashboardSnapshotsCard = (props: Props) => {
-  const history = useHistory();
+  const navigate = useNavigate();
 
   const [state, setState] = useReducer(
     (currentState: State, newState: Partial<State>) => ({

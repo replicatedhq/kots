@@ -53,9 +53,9 @@ class KotsApplicationTree extends React.Component<Props, State> {
         const files = res?.files || {};
         const paths = keys(files);
         const applicationTree = Utilities.arrangeIntoApplicationTree(paths);
-        if (this.props.history.location.search) {
+        if (this.props.location.search) {
           this.setState({
-            selectedFile: `/skippedFiles/${this.props.history.location.search.slice(
+            selectedFile: `/skippedFiles/${this.props.location.search.slice(
               1
             )}`,
           });
