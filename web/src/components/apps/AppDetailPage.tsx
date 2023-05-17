@@ -1,11 +1,12 @@
 import React, { Fragment, useReducer, useEffect, useState } from "react";
 import classNames from "classnames";
 import {
-  Switch,
+  Routes,
   Route,
-  Redirect,
-  useHistory,
+  useNavigate,
+  Navigate,
   useParams,
+  Outlet,
 } from "react-router-dom";
 import Modal from "react-modal";
 import { useTheme } from "@src/components/context/withTheme";
@@ -27,6 +28,7 @@ import AppRegistrySettings from "./AppRegistrySettings";
 import AppIdentityServiceSettings from "./AppIdentityServiceSettings";
 import TroubleshootContainer from "../troubleshoot/TroubleshootContainer";
 import ErrorModal from "../modals/ErrorModal";
+import DumbComponent from "@features/Dashboard/components/DumbComponent";
 
 import "../../scss/components/watches/WatchDetailPage.scss";
 import { useApps, useSelectedApp } from "@features/App";
@@ -87,7 +89,7 @@ function AppDetailPage(props: Props) {
     }
   );
 
-  const history = useHistory();
+  const navigate = useNavigate();
   const params = useParams<KotsParams>();
   const selectedApp = useSelectedApp();
   const [appsRefetchInterval, setAppsRefetchInterval] = useState<
@@ -110,11 +112,11 @@ function AppDetailPage(props: Props) {
   const redirectToFirstAppOrInstall = () => {
     // navigate to first app if available
     if (appsList && appsList?.length > 0) {
-      history.replace(`/app/${appsList[0].slug}`);
+      navigate(`/app/${appsList[0].slug}`, { replace: true });
     } else if (props.isHelmManaged) {
-      history.replace("/install-with-helm");
+      navigate("/install-with-helm", { replace: true });
     } else {
-      history.replace("/upload-license");
+      navigate("/upload-license", { replace: true });
     }
   };
 
@@ -311,7 +313,7 @@ function AppDetailPage(props: Props) {
 
     // Handle updating the theme state when switching apps.
     // Used for a fresh reload
-    if (history.location.pathname === "/apps") {
+    if (location.pathname === "/apps") {
       // updates state but does not cause infinite loop because app navigates away from /apps
       return;
     }
@@ -326,7 +328,7 @@ function AppDetailPage(props: Props) {
         (version: Version) => version?.sequence === 0
       );
       if (firstVersion?.status === "pending_config") {
-        history.push(`/${appNeedsConfiguration.slug}/config`);
+        navigate(`/${appNeedsConfiguration.slug}/config`);
         return;
       }
     }
@@ -334,7 +336,7 @@ function AppDetailPage(props: Props) {
 
   useEffect(() => {
     refetchApps();
-    if (history.location.pathname === "/apps") {
+    if (location.pathname === "/apps") {
       return;
     }
     // getApp();
@@ -343,7 +345,7 @@ function AppDetailPage(props: Props) {
       theme.clearThemeState();
       setAppsRefetchInterval(false);
     };
-  }, [history.location.pathname]);
+  }, [location.pathname]);
 
   const { appName } = props;
 
@@ -390,6 +392,20 @@ function AppDetailPage(props: Props) {
     setState({
       makingCurrentReleaseErrMsg: "",
     });
+  };
+
+  const testProps = {
+    app: selectedApp,
+    cluster: selectedApp?.downstream?.cluster,
+    updateCallback: refetchData,
+    toggleIsBundleUploading: toggleIsBundleUploading,
+    makeCurrentVersion: makeCurrentRelease,
+    redeployVersion: redeployVersion,
+    isBundleUploading: isBundleUploading,
+    isVeleroInstalled: isVeleroInstalled,
+    refreshAppData: refetchApps,
+    ping: props.ping,
+    isHelmManaged: props.isHelmManaged,
   };
 
   return (
@@ -448,159 +464,7 @@ function AppDetailPage(props: Props) {
                 isVeleroInstalled={isVeleroInstalled}
                 isHelmManaged={props.isHelmManaged}
               />
-              <Switch>
-                <Route
-                  exact
-                  path="/app/:slug"
-                  render={() => (
-                    <Dashboard
-                      app={selectedApp}
-                      cluster={selectedApp.downstream?.cluster}
-                      updateCallback={refetchData}
-                      toggleIsBundleUploading={toggleIsBundleUploading}
-                      makeCurrentVersion={makeCurrentRelease}
-                      redeployVersion={redeployVersion}
-                      isBundleUploading={isBundleUploading}
-                      isVeleroInstalled={isVeleroInstalled}
-                      refreshAppData={refetchApps}
-                      ping={props.ping}
-                      isHelmManaged={props.isHelmManaged}
-                    />
-                  )}
-                />
-
-                <Route
-                  exact
-                  path="/app/:slug/tree/:sequence?"
-                  render={(renderProps) => (
-                    <DownstreamTree
-                      {...renderProps}
-                      app={selectedApp}
-                      appNameSpace={props.appNameSpace}
-                      isHelmManaged={props.isHelmManaged}
-                    />
-                  )}
-                />
-
-                <Route
-                  exact
-                  path={[
-                    "/app/:slug/version-history",
-                    "/app/:slug/version-history/diff/:firstSequence/:secondSequence",
-                  ]}
-                  render={() => (
-                    <AppVersionHistory
-                      app={selectedApp}
-                      match={{ match: { params: params } }}
-                      makeCurrentVersion={makeCurrentRelease}
-                      makingCurrentVersionErrMsg={
-                        state.makingCurrentReleaseErrMsg
-                      }
-                      updateCallback={refetchData}
-                      toggleIsBundleUploading={toggleIsBundleUploading}
-                      isBundleUploading={isBundleUploading}
-                      isHelmManaged={props.isHelmManaged}
-                      refreshAppData={refetchApps}
-                      displayErrorModal={state.displayErrorModal}
-                      toggleErrorModal={toggleErrorModal}
-                      makingCurrentRelease={state.makingCurrentRelease}
-                      redeployVersion={redeployVersion}
-                      redeployVersionErrMsg={state.redeployVersionErrMsg}
-                      resetRedeployErrorMessage={resetRedeployErrorMessage}
-                      resetMakingCurrentReleaseErrorMessage={
-                        resetMakingCurrentReleaseErrorMessage
-                      }
-                      adminConsoleMetadata={props.adminConsoleMetadata}
-                    />
-                  )}
-                />
-                <Route
-                  exact
-                  path="/app/:slug/downstreams/:downstreamSlug/version-history/preflight/:sequence"
-                  render={(renderProps) => (
-                    <PreflightResultPage
-                      logo={selectedApp.iconUri}
-                      {...renderProps}
-                    />
-                  )}
-                />
-                <Route
-                  exact
-                  path="/app/:slug/config/:sequence?"
-                  render={() => (
-                    <AppConfig
-                      app={selectedApp}
-                      refreshAppData={refetchApps}
-                      fromLicenseFlow={false}
-                      isHelmManaged={props.isHelmManaged}
-                    />
-                  )}
-                />
-                <Route
-                  path="/app/:slug/troubleshoot"
-                  render={() => (
-                    <TroubleshootContainer
-                      app={selectedApp}
-                      appName={appName || ""}
-                    />
-                  )}
-                />
-                <Route
-                  exact
-                  path="/app/:slug/license"
-                  render={() => (
-                    <AppLicense
-                      app={selectedApp}
-                      syncCallback={refetchData}
-                      changeCallback={refetchData}
-                      isHelmManaged={props.isHelmManaged}
-                    />
-                  )}
-                />
-                <Route
-                  exact
-                  path="/app/:slug/registry-settings"
-                  render={() => (
-                    <AppRegistrySettings
-                      app={selectedApp}
-                      updateCallback={refetchData}
-                    />
-                  )}
-                />
-                {selectedApp.isAppIdentityServiceSupported && (
-                  <Route
-                    exact
-                    path="/app/:slug/access"
-                    render={() => (
-                      <AppIdentityServiceSettings
-                        app={selectedApp}
-                        refetch={refetchApps}
-                      />
-                    )}
-                  />
-                )}
-                {/* snapshots redirects */}
-                <Route
-                  path="/app/:slug/snapshots"
-                  render={() => <Redirect to="/snapshots/partial/:slug" />}
-                />
-                <Route
-                  path="/app/:slug/snapshots/schedule"
-                  render={() => <Redirect to="/snapshots/settings?:slug" />}
-                />
-                <Route
-                  path="/app/:slug/snapshots/:id"
-                  render={() => <Redirect to="/snapshots/partial/:slug/:id" />}
-                />
-                <Route
-                  path="/app/:slug/snapshots/:id/restore"
-                  render={() => (
-                    <Redirect to="/snapshots/partial/:slug/:id/restore" />
-                  )}
-                />
-
-                <Route component={NotFound} />
-              </Switch>
+              <Outlet context={testProps} />
             </Fragment>
           )}
         </div>

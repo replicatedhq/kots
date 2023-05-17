@@ -14,7 +14,12 @@ import { Repeater } from "@src/utilities/repeater";
 import { Utilities } from "@src/utilities/utilities";
 import { AirgapUploader } from "@src/utilities/airgapUploader";
 import { useSelectedAppClusterDashboardWithIntercept } from "../api/useSelectedAppClusterDashboard";
-import { useHistory, useRouteMatch } from "react-router-dom";
+import {
+  useMatch,
+  useNavigate,
+  useOutletContext,
+  useParams,
+} from "react-router-dom";
 import { useLicenseWithIntercept } from "@features/App";
 import { useNextAppVersionWithIntercept } from "../api/useNextAppVersion";
 
@@ -48,28 +53,28 @@ import { Updates, useCheckForUpdates } from "../api/getUpdates";
 //import LicenseTester from "./LicenseTester";
 
 type Props = {
-  app: App;
-  cluster: {
-    // TODO: figure out if this is actually a "" | number- maybe just go with number
-    id: "" | number;
-  };
-  isBundleUploading: boolean;
-  isHelmManaged: boolean;
-  isVeleroInstalled: boolean;
-  makeCurrentVersion: (
-    slug: string,
-    versionToDeploy: Version,
-    isSkipPreflights: boolean,
-    continueWithFailedPreflights: boolean
-  ) => void;
-  ping: (clusterId?: string) => void;
-  redeployVersion: (
-    upstreamSlug: string,
-    version: Version | null
-  ) => Promise<void>;
-  refreshAppData: () => void;
-  toggleIsBundleUploading: (isUploading: boolean) => void;
-  updateCallback: () => void | null;
+  // app: App;
+  // cluster: {
+  //   // TODO: figure out if this is actually a "" | number- maybe just go with number
+  //   id: "" | number;
+  // };
+  // isBundleUploading: boolean;
+  // isHelmManaged: boolean;
+  // isVeleroInstalled: boolean;
+  // makeCurrentVersion: (
+  //   slug: string,
+  //   versionToDeploy: Version,
+  //   isSkipPreflights: boolean,
+  //   continueWithFailedPreflights: boolean
+  // ) => void;
+  // ping: (clusterId?: string) => void;
+  // redeployVersion: (
+  //   upstreamSlug: string,
+  //   version: Version | null
+  // ) => Promise<void>;
+  // refreshAppData: () => void;
+  // toggleIsBundleUploading: (isUploading: boolean) => void;
+  // updateCallback: () => void | null;
 };
 
 // TODO:  update these strings so that they are not nullable (maybe just set default to "")
@@ -151,9 +156,23 @@ const Dashboard = (props: Props) => {
     }
   );
 
-  const history = useHistory();
-  const match = useRouteMatch();
-  const { app, isBundleUploading, isVeleroInstalled } = props;
+  const navigate = useNavigate();
+  const context = useOutletContext();
+  const {
+    app,
+    cluster,
+    isBundleUploading,
+    isHelmManaged,
+    isVeleroInstalled,
+    makeCurrentVersion,
+    ping,
+    redeployVersion,
+    refreshAppData,
+    toggleIsBundleUploading,
+    updateCallback,
+  } = useOutletContext();
+  const match = useParams();
+  // const { app, isBundleUploading, isVeleroInstalled } = props;
   const airgapUploader = useRef<AirgapUploader | null>(null);
 
   const timer = useRef<NodeJS.Timeout[]>([]);
@@ -161,7 +180,7 @@ const Dashboard = (props: Props) => {
   const onAppDownstreamSuccess = (data: Downstream) => {
     setState({ downstream: data });
     let timerId = setTimeout(() => {
-      props.refreshAppData();
+      refreshAppData();
     }, 2000);
     timer.current.push(timerId);
   };
@@ -207,8 +226,8 @@ const Dashboard = (props: Props) => {
     });
     getAppLicense();
 
-    if (props.updateCallback) {
-      props.updateCallback();
+    if (updateCallback) {
+      updateCallback();
     }
     refetchAppDownstream();
   };
@@ -224,7 +243,7 @@ const Dashboard = (props: Props) => {
   const { refetch: refetchUpdateDownloadStatus } = useUpdateDownloadStatus(
     onUpdateDownloadStatusSuccess,
     onUpdateDownloadStatusError,
-    props.isBundleUploading
+    isBundleUploading
   );
 
   useEffect(() => {
@@ -258,10 +277,10 @@ const Dashboard = (props: Props) => {
   }, [licenseWithInterceptResponse]);
 
   useEffect(() => {
-    if (props.app) {
-      setWatchState(props.app);
+    if (app) {
+      setWatchState(app);
     }
-  }, [props.app]);
+  }, [app]);
 
   const onUploadProgress = (
     progress: number,
@@ -284,7 +303,7 @@ const Dashboard = (props: Props) => {
       uploadResuming: false,
       airgapUploadError: message || "Error uploading bundle, please try again",
     });
-    props.toggleIsBundleUploading(false);
+    toggleIsBundleUploading(false);
   };
 
   const onUploadComplete = () => {
@@ -296,7 +315,7 @@ const Dashboard = (props: Props) => {
       uploadResuming: false,
       checkingForUpdates: true,
     });
-    props.toggleIsBundleUploading(false);
+    toggleIsBundleUploading(false);
   };
   const onDropBundle = async () => {
     setState({
@@ -308,10 +327,10 @@ const Dashboard = (props: Props) => {
       uploadResuming: false,
     });
 
-    props.toggleIsBundleUploading(true);
+    toggleIsBundleUploading(true);
 
     const params = {
-      appId: props.app?.id,
+      appId: app?.id,
     };
 
     // TODO: remove after adding type to airgap uploader
@@ -357,7 +376,7 @@ const Dashboard = (props: Props) => {
   };
 
   const goToTroubleshootPage = () => {
-    history.push(`${match.url}/troubleshoot`);
+    navigate(`${match.url}/troubleshoot`);
   };
 
   const getAppResourcesByState = () => {
@@ -659,13 +678,13 @@ const Dashboard = (props: Props) => {
                     airgapUploader={airgapUploader.current}
                     uploadingAirgapFile={uploadingAirgapFile}
                     airgapUploadError={airgapUploadError}
-                    refetchData={props.updateCallback}
+                    refetchData={updateCallback}
                     downloadCallback={refetchAppDownstream}
                     uploadProgress={state.uploadProgress}
                     uploadSize={state.uploadSize}
                     uploadResuming={state.uploadResuming}
-                    makeCurrentVersion={props.makeCurrentVersion}
-                    redeployVersion={props.redeployVersion}
+                    makeCurrentVersion={makeCurrentVersion}
+                    redeployVersion={redeployVersion}
                     onProgressError={onProgressError}
                     onCheckForUpdates={() => onCheckForUpdates()}
                     isBundleUploading={isBundleUploading}
@@ -682,7 +701,7 @@ const Dashboard = (props: Props) => {
                       <DashboardSnapshotsCard
                         url={match.url}
                         app={app}
-                        ping={props.ping}
+                        ping={ping}
                         isSnapshotAllowed={
                           app.allowSnapshots && isVeleroInstalled
                         }
@@ -710,7 +729,7 @@ const Dashboard = (props: Props) => {
                 <DashboardGraphsCard
                   prometheusAddress={state.dashboard?.prometheusAddress}
                   metrics={state.dashboard?.metrics}
-                  isHelmManaged={props.isHelmManaged}
+                  isHelmManaged={isHelmManaged}
                 />
               </div>
             </div>
@@ -842,9 +861,9 @@ const Dashboard = (props: Props) => {
               gitopsIsConnected={downstream?.gitops?.isConnected}
               onAutomaticUpdatesConfigured={() => {
                 hideAutomaticUpdatesModal();
-                props.refreshAppData();
+                refreshAppData();
               }}
-              isHelmManaged={props.isHelmManaged}
+              isHelmManaged={isHelmManaged}
             />
           )}
         </div>

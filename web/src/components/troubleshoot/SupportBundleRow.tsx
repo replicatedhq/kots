@@ -17,7 +17,7 @@ import {
   SupportBundleInsight,
   SupportBundleProgress,
 } from "@types";
-import { useHistory } from "react-router";
+import { useNavigate } from "react-router-dom";
 import { ToastContext } from "@src/context/ToastContext";
 
 let percentage: number;
@@ -47,7 +47,7 @@ type State = {
 };
 
 export const SupportBundleRow = (props: Props) => {
-  const history = useHistory();
+  const navigate = useNavigate();
   const {
     setIsToastVisible,
     isCancelled,
@@ -111,7 +111,7 @@ export const SupportBundleRow = (props: Props) => {
 
   const handleBundleClick = (bundle: SupportBundle) => {
     const { watchSlug } = props;
-    history.push(`/app/${watchSlug}/troubleshoot/analyze/${bundle.slug}`);
+    navigate(`/app/${watchSlug}/troubleshoot/analyze/${bundle.slug}`);
   };
 
   const downloadBundle = async (bundle: SupportBundle) => {

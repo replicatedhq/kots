@@ -1,5 +1,5 @@
 import React, { useEffect, useReducer } from "react";
-import { Link, useHistory, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import ReactTooltip from "react-tooltip";
 import DashboardGitOpsCard from "./DashboardGitOpsCard";
 import MarkdownRenderer from "@src/components/shared/MarkdownRenderer";
@@ -172,7 +172,7 @@ const DashboardVersionCard = (props: Props) => {
       yamlErrorDetails: [],
     }
   );
-  const history = useHistory();
+  const navigate = useNavigate();
   const params = useParams<KotsParams>();
   const selectedApp = useSelectedApp();
   const {
@@ -207,15 +207,15 @@ const DashboardVersionCard = (props: Props) => {
   }, [props.links]);
 
   useEffect(() => {
-    if (state.showDiffModal === false && history.location.search !== "") {
-      const splitSearch = history.location.search.split("/");
+    if (state.showDiffModal === false && location.search !== "") {
+      const splitSearch = location.search.split("/");
       setState({
         showDiffModal: true,
         firstSequence: splitSearch[1],
         secondSequence: splitSearch[2],
       });
     }
-  }, [history.location.search]);
+  }, [location.search]);
 
   useEffect(() => {
     if (latestDeployableVersionErrMsg instanceof Error) {
@@ -242,7 +242,7 @@ const DashboardVersionCard = (props: Props) => {
   }, [props.downstream]);
 
   const closeViewDiffModal = () => {
-    if (history.location.search) {
+    if (location.search) {
       history.replace(location.pathname);
     }
     setState({ showDiffModal: false });
@@ -752,7 +752,7 @@ const DashboardVersionCard = (props: Props) => {
               {!isHelmManaged && !downstream?.gitops?.isConnected && (
                 <Link
                   className="u-fontSize--small link u-marginLeft--5"
-                  to={`${history.location.pathname}?diff/${props.currentVersion?.sequence}/${version.parentSequence}`}
+                  to={`${location.pathname}?diff/${props.currentVersion?.sequence}/${version.parentSequence}`}
                 >
                   View diff
                 </Link>

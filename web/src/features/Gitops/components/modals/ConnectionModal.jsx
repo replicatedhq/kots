@@ -1,7 +1,7 @@
 import React from "react";
 import Modal from "react-modal";
 import Loader from "../../../../components/shared/Loader";
-import { useHistory } from "react-router";
+import { useNavigate } from "react-router-dom";
 import Icon from "@src/components/Icon";
 
 const ConnectionModal = ({
@@ -14,7 +14,7 @@ const ConnectionModal = ({
   appSlug,
   getAppsList,
 }) => {
-  const history = useHistory();
+  const navigate = useNavigate();
   switch (modalType) {
     case "success":
       return (

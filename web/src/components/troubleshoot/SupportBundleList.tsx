@@ -17,7 +17,7 @@ import "../../scss/components/troubleshoot/SupportBundleList.scss";
 import Icon from "../Icon";
 import { App, SupportBundle, SupportBundleProgress } from "@types";
 import GenerateSupportBundleModal from "./GenerateSupportBundleModal";
-import { useHistory } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { ToastContext } from "@src/context/ToastContext";
 import Toast from "@components/shared/Toast";
 import { usePrevious } from "@src/hooks/usePrevious";
@@ -60,7 +60,7 @@ export const SupportBundleList = (props: Props) => {
     }
   );
 
-  const history = useHistory();
+  const navigate = useNavigate();
   const {
     deleteBundleId,
     isToastVisible,
@@ -152,7 +152,7 @@ export const SupportBundleList = (props: Props) => {
       listSupportBundles();
       state.pollForBundleAnalysisProgress.stop();
       if (bundle.status === "failed") {
-        history.push(`/app/${props.watch?.slug}/troubleshoot`);
+        navigate(`/app/${props.watch?.slug}/troubleshoot`);
       }
     }
   }, [props.bundle]);
@@ -270,13 +270,13 @@ export const SupportBundleList = (props: Props) => {
                 {
                   title: "Support bundles",
                   onClick: () =>
-                    history.push(`/app/${props.watch?.slug}/troubleshoot`),
+                    navigate(`/app/${props.watch?.slug}/troubleshoot`),
                   isActive: true,
                 },
                 {
                   title: "Redactors",
                   onClick: () =>
-                    history.push(
+                    navigate(
                       `/app/${props.watch?.slug}/troubleshoot/redactors`
                     ),
                   isActive: false,

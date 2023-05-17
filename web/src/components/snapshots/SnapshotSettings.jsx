@@ -301,7 +301,7 @@ class SnapshotSettings extends Component {
       isEmptyView,
       checkForVeleroAndNodeAgent,
     } = this.state;
-    const isLicenseUpload = !!this.props.history.location.search;
+    const isLicenseUpload = !!this.props.location.search;
 
     if (isLoadingSnapshotSettings && !checkForVeleroAndNodeAgent) {
       return (
