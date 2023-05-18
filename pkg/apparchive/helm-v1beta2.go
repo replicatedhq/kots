@@ -79,6 +79,18 @@ func WriteV1Beta2HelmCharts(opts WriteV1Beta2HelmChartsOptions) error {
 
 	for _, v1Beta2Chart := range opts.KotsKinds.V1Beta2HelmCharts.Items {
 		helmChart := v1Beta2Chart
+
+		if !helmChart.Spec.Exclude.IsEmpty() {
+			exclude, err := helmChart.Spec.Exclude.Boolean()
+			if err != nil {
+				return errors.Wrap(err, "failed to parse exclude boolean")
+			}
+
+			if exclude {
+				continue
+			}
+		}
+
 		chartDir := path.Join(opts.HelmDir, helmChart.GetDirName())
 		if err := os.MkdirAll(chartDir, 0744); err != nil {
 			return errors.Wrap(err, "failed to create chart dir")
@@ -125,18 +137,8 @@ func WriteV1Beta2HelmCharts(opts WriteV1Beta2HelmChartsOptions) error {
 			return errors.Wrap(err, "failed to marshal values")
 		}
 
-		builder, _, err := base.NewConfigContextTemplateBuilder(opts.Upstream, opts.RenderOptions)
-		if err != nil {
-			return errors.Wrap(err, "failed to create config context template builder")
-		}
-
-		renderedValuesContent, err := builder.RenderTemplate(fmt.Sprintf("%s-values", helmChart.GetDirName()), string(valuesContent))
-		if err != nil {
-			return errors.Wrap(err, "failed to render values")
-		}
-
 		valuesPath := path.Join(chartDir, "values.yaml")
-		if err := ioutil.WriteFile(valuesPath, []byte(renderedValuesContent), 0644); err != nil {
+		if err := ioutil.WriteFile(valuesPath, []byte(valuesContent), 0644); err != nil {
 			return errors.Wrap(err, "failed to write values file")
 		}
 
@@ -173,6 +175,17 @@ func WriteRenderedV1Beta2HelmCharts(opts WriteRenderedV1Beta2HelmChartsOptions) 
 
 	for _, downstream := range opts.Downstreams {
 		for _, helmChart := range opts.KotsKinds.V1Beta2HelmCharts.Items {
+			if !helmChart.Spec.Exclude.IsEmpty() {
+				exclude, err := helmChart.Spec.Exclude.Boolean()
+				if err != nil {
+					return errors.Wrap(err, "failed to parse exclude boolean")
+				}
+
+				if exclude {
+					continue
+				}
+			}
+
 			// template the chart with the values to the rendered dir for the downstream
 			renderedPath := path.Join(opts.RenderedDir, downstream, "helm", helmChart.GetDirName())
 			chartDir := path.Join(opts.HelmDir, helmChart.GetDirName())

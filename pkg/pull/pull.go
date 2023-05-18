@@ -396,7 +396,7 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 	log.ActionWithSpinner("Creating base")
 	io.WriteString(pullOptions.ReportWriter, "Creating base\n")
 
-	commonBase, helmBases, renderedKotsKinds, err := base.RenderUpstream(u, &renderOptions)
+	commonBase, helmBases, renderedKotsKindsMap, err := base.RenderUpstream(u, &renderOptions)
 	if err != nil {
 		log.FinishSpinnerWithError()
 		return "", errors.Wrap(err, "failed to render upstream")
@@ -562,12 +562,18 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 		return "", errors.Wrapf(err, "failed to remove unused helm midstreams")
 	}
 
+	renderedKotsKinds, err := kotsutil.KotsKindsFromMap(renderedKotsKindsMap)
+	if err != nil {
+		log.FinishSpinnerWithError()
+		return "", errors.Wrap(err, "failed to load rendered kotskinds from map")
+	}
+
 	writeV1Beta2HelmChartsOpts := apparchive.WriteV1Beta2HelmChartsOptions{
 		Upstream:            u,
 		RenderOptions:       &renderOptions,
 		ProcessImageOptions: processImageOptions,
 		HelmDir:             u.GetHelmDir(writeUpstreamOptions),
-		KotsKinds:           newKotsKinds,
+		KotsKinds:           renderedKotsKinds,
 		Clientset:           clientset,
 	}
 
@@ -592,10 +598,10 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 		return "", errors.Wrap(err, "failed to read installation file")
 	}
 
-	installationFilename := kotsutil.GenUniqueKotsKindFilename(renderedKotsKinds, "installation")
-	renderedKotsKinds[installationFilename] = []byte(installationBytes)
+	installationFilename := kotsutil.GenUniqueKotsKindFilename(renderedKotsKindsMap, "installation")
+	renderedKotsKindsMap[installationFilename] = []byte(installationBytes)
 
-	err = kotsutil.WriteKotsKinds(renderedKotsKinds, u.GetKotsKindsDir(writeUpstreamOptions))
+	err = kotsutil.WriteKotsKinds(renderedKotsKindsMap, u.GetKotsKindsDir(writeUpstreamOptions))
 	if err != nil {
 		return "", errors.Wrap(err, "failed to write the rendered kots kinds")
 	}
@@ -608,7 +614,7 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 		KustomizeBinPath:    kotsKinds.GetKustomizeBinaryPath(),
 		HelmDir:             u.GetHelmDir(writeUpstreamOptions),
 		Log:                 log,
-		KotsKinds:           newKotsKinds,
+		KotsKinds:           renderedKotsKinds,
 		ProcessImageOptions: processImageOptions,
 		Clientset:           clientset,
 	}); err != nil {
