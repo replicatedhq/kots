@@ -126,7 +126,7 @@ func Rewrite(rewriteOptions RewriteOptions) error {
 	log.ActionWithSpinner("Creating base")
 	io.WriteString(rewriteOptions.ReportWriter, "Creating base\n")
 
-	commonBase, helmBases, renderedKotsKinds, err := base.RenderUpstream(u, &renderOptions)
+	commonBase, helmBases, renderedKotsKindsMap, err := base.RenderUpstream(u, &renderOptions)
 	if err != nil {
 		return errors.Wrap(err, "failed to render upstream")
 	}
@@ -298,9 +298,9 @@ func Rewrite(rewriteOptions RewriteOptions) error {
 		helmMidstreams = append(helmMidstreams, *helmMidstream)
 	}
 
-	kotsKinds, err := kotsutil.LoadKotsKindsFromPath(rewriteOptions.UpstreamPath)
+	renderedKotsKinds, err := kotsutil.KotsKindsFromMap(renderedKotsKindsMap)
 	if err != nil {
-		return errors.Wrap(err, "failed to load kotskinds")
+		return errors.Wrap(err, "failed to load rendered kotskinds from map")
 	}
 
 	writeV1Beta2HelmChartsOpts := apparchive.WriteV1Beta2HelmChartsOptions{
@@ -308,7 +308,7 @@ func Rewrite(rewriteOptions RewriteOptions) error {
 		RenderOptions:       &renderOptions,
 		ProcessImageOptions: processImageOptions,
 		HelmDir:             u.GetHelmDir(writeUpstreamOptions),
-		KotsKinds:           kotsKinds,
+		KotsKinds:           renderedKotsKinds,
 		Clientset:           clientset,
 	}
 
@@ -318,6 +318,11 @@ func Rewrite(rewriteOptions RewriteOptions) error {
 
 	if err := writeDownstreams(rewriteOptions, u.GetOverlaysDir(writeUpstreamOptions), m, helmMidstreams, log); err != nil {
 		return errors.Wrap(err, "failed to write downstreams")
+	}
+
+	kotsKinds, err := kotsutil.LoadKotsKindsFromPath(rewriteOptions.UpstreamPath)
+	if err != nil {
+		return errors.Wrap(err, "failed to load kotskinds")
 	}
 
 	err = store.GetStore().UpdateAppVersionInstallationSpec(rewriteOptions.AppID, rewriteOptions.AppSequence, kotsKinds.Installation)
@@ -330,10 +335,10 @@ func Rewrite(rewriteOptions RewriteOptions) error {
 		return errors.Wrap(err, "failed to read installation file")
 	}
 
-	installationFilename := kotsutil.GenUniqueKotsKindFilename(renderedKotsKinds, "installation")
-	renderedKotsKinds[installationFilename] = []byte(installationBytes)
+	installationFilename := kotsutil.GenUniqueKotsKindFilename(renderedKotsKindsMap, "installation")
+	renderedKotsKindsMap[installationFilename] = []byte(installationBytes)
 
-	if err := kotsutil.WriteKotsKinds(renderedKotsKinds, u.GetKotsKindsDir(writeUpstreamOptions)); err != nil {
+	if err := kotsutil.WriteKotsKinds(renderedKotsKindsMap, u.GetKotsKindsDir(writeUpstreamOptions)); err != nil {
 		return errors.Wrap(err, "failed to write kots base")
 	}
 
@@ -345,7 +350,7 @@ func Rewrite(rewriteOptions RewriteOptions) error {
 		KustomizeBinPath:    kotsKinds.GetKustomizeBinaryPath(),
 		HelmDir:             u.GetHelmDir(writeUpstreamOptions),
 		Log:                 log,
-		KotsKinds:           kotsKinds,
+		KotsKinds:           renderedKotsKinds,
 		ProcessImageOptions: processImageOptions,
 		Clientset:           clientset,
 	}); err != nil {

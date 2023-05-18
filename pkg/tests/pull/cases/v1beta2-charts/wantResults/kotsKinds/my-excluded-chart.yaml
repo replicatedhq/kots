@@ -1,18 +1,14 @@
 apiVersion: kots.io/v1beta2
 kind: HelmChart
 metadata:
-  name: my-chart
+  name: my-excluded-chart
   annotations:
     kots.io/exclude: "true"
 spec:
   chart:
     name: my-chart
     chartVersion: 0.1.0
-  releaseName: my-chart-release
+  releaseName: my-excluded-chart-release
   values:
     my-value: my-value
-  optionalValues:
-    - when: 'repl{{ "true" }}'
-      recursiveMerge: true
-      values:
-        my-optional-value: my-optional-value
+  exclude: 'true'

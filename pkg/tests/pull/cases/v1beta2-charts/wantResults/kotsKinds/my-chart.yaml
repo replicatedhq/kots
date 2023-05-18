@@ -11,3 +11,8 @@ spec:
   releaseName: my-chart-release
   values:
     my-value: my-value
+  optionalValues:
+    - when: 'true'
+      recursiveMerge: true
+      values:
+        my-optional-value: my-optional-value
