@@ -2,6 +2,7 @@ package client
 
 import (
 	"encoding/base64"
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -10,6 +11,7 @@ import (
 	"testing"
 
 	"github.com/mholt/archiver/v3"
+	"github.com/pmezard/go-difflib/difflib"
 	"github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	"github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta2"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
@@ -2517,26 +2519,31 @@ func Test_getRemovedCharts(t *testing.T) {
 
 	for _, tt := range tests {
 		// generate v1beta1 previous archive
-		prevV1Beta1Dir := t.TempDir()
-		generateV1Beta1ChartsDirs(t, tt.prevV1Beta1Charts, prevV1Beta1Dir)
+		var prevV1Beta1Dir string
+		if len(tt.prevV1Beta1Charts) > 0 {
+			prevV1Beta1Dir = t.TempDir()
+			generateV1Beta1ChartsDirs(t, tt.prevV1Beta1Charts, prevV1Beta1Dir)
+		}
 
 		// generate v1beta1 current archive
-		curV1Beta1Dir := t.TempDir()
-		generateV1Beta1ChartsDirs(t, tt.curV1Beta1Charts, curV1Beta1Dir)
+		var curV1Beta1Dir string
+		if len(tt.curV1Beta1Charts) > 0 {
+			curV1Beta1Dir = t.TempDir()
+			generateV1Beta1ChartsDirs(t, tt.curV1Beta1Charts, curV1Beta1Dir)
+		}
 
 		// generate v1beta2 previous archive
-		prevV1Beta2Dir := t.TempDir()
-		generateV1Beta2ChartsDirs(t, tt.prevV1Beta2Charts, prevV1Beta2Dir)
+		var prevV1Beta2Dir string
+		if len(tt.prevV1Beta2Charts) > 0 {
+			prevV1Beta2Dir = t.TempDir()
+			generateV1Beta2ChartsDirs(t, tt.prevV1Beta2Charts, prevV1Beta2Dir)
+		}
 
 		// generate v1beta2 current archive
-		curV1Beta2Dir := t.TempDir()
-		generateV1Beta2ChartsDirs(t, tt.curV1Beta2Charts, curV1Beta2Dir)
-
-		dirs, err := ioutil.ReadDir(prevV1Beta2Dir)
-		require.NoError(t, err)
-
-		for _, dir := range dirs {
-			fmt.Println("++++++", dir.Name())
+		var curV1Beta2Dir string
+		if len(tt.curV1Beta2Charts) > 0 {
+			curV1Beta2Dir = t.TempDir()
+			generateV1Beta2ChartsDirs(t, tt.curV1Beta2Charts, curV1Beta2Dir)
 		}
 
 		// execute
@@ -2555,7 +2562,21 @@ func Test_getRemovedCharts(t *testing.T) {
 
 		// assert
 		if !reflect.DeepEqual(tt.want, got) {
-			t.Errorf("getRemovedCharts() = %v, want %v", got, tt.want)
+			t.Errorf("getRemovedCharts() \n\n%s", fmtJSONDiff(got, tt.want))
 		}
 	}
+}
+
+func fmtJSONDiff(got, want interface{}) string {
+	a, _ := json.MarshalIndent(got, "", "  ")
+	b, _ := json.MarshalIndent(want, "", "  ")
+	diff := difflib.UnifiedDiff{
+		A:        difflib.SplitLines(string(a)),
+		B:        difflib.SplitLines(string(b)),
+		FromFile: "Got",
+		ToFile:   "Want",
+		Context:  1,
+	}
+	diffStr, _ := difflib.GetUnifiedDiffString(diff)
+	return fmt.Sprintf("got:\n%s \n\nwant:\n%s \n\ndiff:\n%s", a, b, diffStr)
 }
