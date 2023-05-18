@@ -563,10 +563,7 @@ func getRemovedCharts(opts getRemovedChartsOptions) ([]kotsutil.HelmChartInterfa
 	for _, prevChart := range prevCharts {
 		found := false
 		for _, curChart := range curCharts {
-			if prevChart.GetChartVersion() != curChart.GetChartVersion() {
-				continue
-			}
-			if prevChart.GetChartName() != curChart.GetChartName() {
+			if prevChart.GetNamespace() != curChart.GetNamespace() {
 				continue
 			}
 			if prevChart.GetDirName() != curChart.GetDirName() {

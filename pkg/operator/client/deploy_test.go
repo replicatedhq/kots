@@ -2,11 +2,16 @@ package client
 
 import (
 	"encoding/base64"
+	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"reflect"
 	"testing"
 
+	"github.com/mholt/archiver/v3"
+	"github.com/pmezard/go-difflib/difflib"
 	"github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	"github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta2"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
@@ -1032,4 +1037,1546 @@ version: ver2
 			req.Equal(tt.want, got)
 		})
 	}
+}
+
+func Test_getRemovedCharts(t *testing.T) {
+	type chart struct {
+		name    string
+		version string
+		dirName string
+	}
+
+	tests := []struct {
+		name                      string
+		prevV1Beta1Charts         []chart
+		curV1Beta1Charts          []chart
+		prevV1Beta2Charts         []chart
+		curV1Beta2Charts          []chart
+		previousV1Beta1KotsCharts []kotsutil.HelmChartInterface
+		currentV1Beta1KotsCharts  []kotsutil.HelmChartInterface
+		previousV1Beta2KotsCharts []kotsutil.HelmChartInterface
+		currentV1Beta2KotsCharts  []kotsutil.HelmChartInterface
+		want                      []kotsutil.HelmChartInterface
+	}{
+		// ---- V1BETA1 ---- //
+		{
+			name: "v1beta1 -- no charts removed",
+			prevV1Beta1Charts: []chart{
+				{
+					name:    "chart1",
+					version: "0.0.1",
+					dirName: "chart1-release",
+				},
+				{
+					name:    "chart2",
+					version: "0.0.1",
+					dirName: "chart2-release",
+				},
+			},
+			curV1Beta1Charts: []chart{
+				{
+					name:    "chart1",
+					version: "0.0.1",
+					dirName: "chart1-release",
+				},
+				{
+					name:    "chart2",
+					version: "0.0.1",
+					dirName: "chart2-release",
+				},
+			},
+			previousV1Beta1KotsCharts: []kotsutil.HelmChartInterface{
+				&v1beta1.HelmChart{
+					TypeMeta: metav1.TypeMeta{
+						APIVersion: "kots.io/v1beta1",
+						Kind:       "HelmChart",
+					},
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "chart1",
+					},
+					Spec: v1beta1.HelmChartSpec{
+						Chart: v1beta1.ChartIdentifier{
+							Name:         "chart1",
+							ChartVersion: "0.0.1",
+							ReleaseName:  "chart1-release",
+						},
+					},
+				},
+				&v1beta1.HelmChart{
+					TypeMeta: metav1.TypeMeta{
+						APIVersion: "kots.io/v1beta1",
+						Kind:       "HelmChart",
+					},
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "chart2",
+					},
+					Spec: v1beta1.HelmChartSpec{
+						Chart: v1beta1.ChartIdentifier{
+							Name:         "chart2",
+							ChartVersion: "0.0.1",
+							ReleaseName:  "chart2-release",
+						},
+					},
+				},
+			},
+			currentV1Beta1KotsCharts: []kotsutil.HelmChartInterface{
+				&v1beta1.HelmChart{
+					TypeMeta: metav1.TypeMeta{
+						APIVersion: "kots.io/v1beta1",
+						Kind:       "HelmChart",
+					},
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "chart1",
+					},
+					Spec: v1beta1.HelmChartSpec{
+						Chart: v1beta1.ChartIdentifier{
+							Name:         "chart1",
+							ChartVersion: "0.0.1",
+							ReleaseName:  "chart1-release",
+						},
+					},
+				},
+				&v1beta1.HelmChart{
+					TypeMeta: metav1.TypeMeta{
+						APIVersion: "kots.io/v1beta1",
+						Kind:       "HelmChart",
+					},
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "chart2",
+					},
+					Spec: v1beta1.HelmChartSpec{
+						Chart: v1beta1.ChartIdentifier{
+							Name:         "chart2",
+							ChartVersion: "0.0.1",
+							ReleaseName:  "chart2-release",
+						},
+					},
+				},
+			},
+			want: []kotsutil.HelmChartInterface{},
+		},
+		{
+			name: "v1beta1 -- chart1 removed",
+			prevV1Beta1Charts: []chart{
+				{
+					name:    "chart1",
+					version: "0.0.1",
+					dirName: "chart1-release",
+				},
+				{
+					name:    "chart2",
+					version: "0.0.1",
+					dirName: "chart2-release",
+				},
+			},
+			curV1Beta1Charts: []chart{
+				{
+					name:    "chart2",
+					version: "0.0.1",
+					dirName: "chart2-release",
+				},
+			},
+			previousV1Beta1KotsCharts: []kotsutil.HelmChartInterface{
+				&v1beta1.HelmChart{
+					TypeMeta: metav1.TypeMeta{
+						APIVersion: "kots.io/v1beta1",
+						Kind:       "HelmChart",
+					},
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "chart1",
+					},
+					Spec: v1beta1.HelmChartSpec{
+						Chart: v1beta1.ChartIdentifier{
+							Name:         "chart1",
+							ChartVersion: "0.0.1",
+							ReleaseName:  "chart1-release",
+						},
+					},
+				},
+				&v1beta1.HelmChart{
+					TypeMeta: metav1.TypeMeta{
+						APIVersion: "kots.io/v1beta1",
+						Kind:       "HelmChart",
+					},
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "chart2",
+					},
+					Spec: v1beta1.HelmChartSpec{
+						Chart: v1beta1.ChartIdentifier{
+							Name:         "chart2",
+							ChartVersion: "0.0.1",
+							ReleaseName:  "chart2-release",
+						},
+					},
+				},
+			},
+			currentV1Beta1KotsCharts: []kotsutil.HelmChartInterface{
+				&v1beta1.HelmChart{
+					TypeMeta: metav1.TypeMeta{
+						APIVersion: "kots.io/v1beta1",
+						Kind:       "HelmChart",
+					},
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "chart2",
+					},
+					Spec: v1beta1.HelmChartSpec{
+						Chart: v1beta1.ChartIdentifier{
+							Name:         "chart2",
+							ChartVersion: "0.0.1",
+							ReleaseName:  "chart2-release",
+						},
+					},
+				},
+			},
+			want: []kotsutil.HelmChartInterface{
+				&v1beta1.HelmChart{
+					TypeMeta: metav1.TypeMeta{
+						APIVersion: "kots.io/v1beta1",
+						Kind:       "HelmChart",
+					},
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "chart1",
+					},
+					Spec: v1beta1.HelmChartSpec{
+						Chart: v1beta1.ChartIdentifier{
+							Name:         "chart1",
+							ChartVersion: "0.0.1",
+							ReleaseName:  "chart1-release",
+						},
+					},
+				},
+			},
+		},
+		{
+			name: "v1beta1 -- no charts removed even though chart1 has a new version",
+			prevV1Beta1Charts: []chart{
+				{
+					name:    "chart1",
+					version: "0.0.1",
+					dirName: "chart1-release",
+				},
+				{
+					name:    "chart2",
+					version: "0.0.1",
+					dirName: "chart2-release",
+				},
+			},
+			curV1Beta1Charts: []chart{
+				{
+					name:    "chart1",
+					version: "0.0.2",
+					dirName: "chart1-release",
+				},
+				{
+					name:    "chart2",
+					version: "0.0.1",
+					dirName: "chart2-release",
+				},
+			},
+			previousV1Beta1KotsCharts: []kotsutil.HelmChartInterface{
+				&v1beta1.HelmChart{
+					TypeMeta: metav1.TypeMeta{
+						APIVersion: "kots.io/v1beta1",
+						Kind:       "HelmChart",
+					},
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "chart1",
+					},
+					Spec: v1beta1.HelmChartSpec{
+						Chart: v1beta1.ChartIdentifier{
+							Name:         "chart1",
+							ChartVersion: "0.0.1",
+							ReleaseName:  "chart1-release",
+						},
+					},
+				},
+				&v1beta1.HelmChart{
+					TypeMeta: metav1.TypeMeta{
+						APIVersion: "kots.io/v1beta1",
+						Kind:       "HelmChart",
+					},
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "chart2",
+					},
+					Spec: v1beta1.HelmChartSpec{
+						Chart: v1beta1.ChartIdentifier{
+							Name:         "chart2",
+							ChartVersion: "0.0.1",
+							ReleaseName:  "chart2-release",
+						},
+					},
+				},
+			},
+			currentV1Beta1KotsCharts: []kotsutil.HelmChartInterface{
+				&v1beta1.HelmChart{
+					TypeMeta: metav1.TypeMeta{
+						APIVersion: "kots.io/v1beta1",
+						Kind:       "HelmChart",
+					},
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "chart1",
+					},
+					Spec: v1beta1.HelmChartSpec{
+						Chart: v1beta1.ChartIdentifier{
+							Name:         "chart1",
+							ChartVersion: "0.0.2",
+							ReleaseName:  "chart1-release",
+						},
+					},
+				},
+				&v1beta1.HelmChart{
+					TypeMeta: metav1.TypeMeta{
+						APIVersion: "kots.io/v1beta1",
+						Kind:       "HelmChart",
+					},
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "chart2",
+					},
+					Spec: v1beta1.HelmChartSpec{
+						Chart: v1beta1.ChartIdentifier{
+							Name:         "chart2",
+							ChartVersion: "0.0.1",
+							ReleaseName:  "chart2-release",
+						},
+					},
+				},
+			},
+			want: []kotsutil.HelmChartInterface{},
+		},
+		{
+			name: "v1beta1 -- chart2 old release removed because release name changed",
+			prevV1Beta1Charts: []chart{
+				{
+					name:    "chart1",
+					version: "0.0.1",
+					dirName: "chart1-release",
+				},
+				{
+					name:    "chart2",
+					version: "0.0.1",
+					dirName: "chart2-release",
+				},
+			},
+			curV1Beta1Charts: []chart{
+				{
+					name:    "chart1",
+					version: "0.0.1",
+					dirName: "chart1-release",
+				},
+				{
+					name:    "chart2",
+					version: "0.0.1",
+					dirName: "chart2-new-release",
+				},
+			},
+			previousV1Beta1KotsCharts: []kotsutil.HelmChartInterface{
+				&v1beta1.HelmChart{
+					TypeMeta: metav1.TypeMeta{
+						APIVersion: "kots.io/v1beta1",
+						Kind:       "HelmChart",
+					},
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "chart1",
+					},
+					Spec: v1beta1.HelmChartSpec{
+						Chart: v1beta1.ChartIdentifier{
+							Name:         "chart1",
+							ChartVersion: "0.0.1",
+							ReleaseName:  "chart1-release",
+						},
+					},
+				},
+				&v1beta1.HelmChart{
+					TypeMeta: metav1.TypeMeta{
+						APIVersion: "kots.io/v1beta1",
+						Kind:       "HelmChart",
+					},
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "chart2",
+					},
+					Spec: v1beta1.HelmChartSpec{
+						Chart: v1beta1.ChartIdentifier{
+							Name:         "chart2",
+							ChartVersion: "0.0.1",
+							ReleaseName:  "chart2-release",
+						},
+					},
+				},
+			},
+			currentV1Beta1KotsCharts: []kotsutil.HelmChartInterface{
+				&v1beta1.HelmChart{
+					TypeMeta: metav1.TypeMeta{
+						APIVersion: "kots.io/v1beta1",
+						Kind:       "HelmChart",
+					},
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "chart1",
+					},
+					Spec: v1beta1.HelmChartSpec{
+						Chart: v1beta1.ChartIdentifier{
+							Name:         "chart1",
+							ChartVersion: "0.0.1",
+							ReleaseName:  "chart1-release",
+						},
+					},
+				},
+				&v1beta1.HelmChart{
+					TypeMeta: metav1.TypeMeta{
+						APIVersion: "kots.io/v1beta1",
+						Kind:       "HelmChart",
+					},
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "chart2",
+					},
+					Spec: v1beta1.HelmChartSpec{
+						Chart: v1beta1.ChartIdentifier{
+							Name:         "chart2",
+							ChartVersion: "0.0.1",
+							ReleaseName:  "chart2-new-release",
+						},
+					},
+				},
+			},
+			want: []kotsutil.HelmChartInterface{
+				&v1beta1.HelmChart{
+					TypeMeta: metav1.TypeMeta{
+						APIVersion: "kots.io/v1beta1",
+						Kind:       "HelmChart",
+					},
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "chart2",
+					},
+					Spec: v1beta1.HelmChartSpec{
+						Chart: v1beta1.ChartIdentifier{
+							Name:         "chart2",
+							ChartVersion: "0.0.1",
+							ReleaseName:  "chart2-release",
+						},
+					},
+				},
+			},
+		},
+		{
+			name: "v1beta1 -- no charts removed because namespace is the same",
+			prevV1Beta1Charts: []chart{
+				{
+					name:    "chart1",
+					version: "0.0.1",
+					dirName: "chart1-release",
+				},
+				{
+					name:    "chart2",
+					version: "0.0.1",
+					dirName: "chart2-release",
+				},
+			},
+			curV1Beta1Charts: []chart{
+				{
+					name:    "chart1",
+					version: "0.0.1",
+					dirName: "chart1-release",
+				},
+				{
+					name:    "chart2",
+					version: "0.0.1",
+					dirName: "chart2-release",
+				},
+			},
+			previousV1Beta1KotsCharts: []kotsutil.HelmChartInterface{
+				&v1beta1.HelmChart{
+					TypeMeta: metav1.TypeMeta{
+						APIVersion: "kots.io/v1beta1",
+						Kind:       "HelmChart",
+					},
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "chart1",
+					},
+					Spec: v1beta1.HelmChartSpec{
+						Chart: v1beta1.ChartIdentifier{
+							Name:         "chart1",
+							ChartVersion: "0.0.1",
+							ReleaseName:  "chart1-release",
+						},
+						Namespace: "ns1",
+					},
+				},
+				&v1beta1.HelmChart{
+					TypeMeta: metav1.TypeMeta{
+						APIVersion: "kots.io/v1beta1",
+						Kind:       "HelmChart",
+					},
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "chart2",
+					},
+					Spec: v1beta1.HelmChartSpec{
+						Chart: v1beta1.ChartIdentifier{
+							Name:         "chart2",
+							ChartVersion: "0.0.1",
+							ReleaseName:  "chart2-release",
+						},
+					},
+				},
+			},
+			currentV1Beta1KotsCharts: []kotsutil.HelmChartInterface{
+				&v1beta1.HelmChart{
+					TypeMeta: metav1.TypeMeta{
+						APIVersion: "kots.io/v1beta1",
+						Kind:       "HelmChart",
+					},
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "chart1",
+					},
+					Spec: v1beta1.HelmChartSpec{
+						Chart: v1beta1.ChartIdentifier{
+							Name:         "chart1",
+							ChartVersion: "0.0.1",
+							ReleaseName:  "chart1-release",
+						},
+						Namespace: "ns1",
+					},
+				},
+				&v1beta1.HelmChart{
+					TypeMeta: metav1.TypeMeta{
+						APIVersion: "kots.io/v1beta1",
+						Kind:       "HelmChart",
+					},
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "chart2",
+					},
+					Spec: v1beta1.HelmChartSpec{
+						Chart: v1beta1.ChartIdentifier{
+							Name:         "chart2",
+							ChartVersion: "0.0.1",
+							ReleaseName:  "chart2-release",
+						},
+					},
+				},
+			},
+			want: []kotsutil.HelmChartInterface{},
+		},
+		{
+			name: "v1beta1 -- chart1 old namespace removed because namespace changed",
+			prevV1Beta1Charts: []chart{
+				{
+					name:    "chart1",
+					version: "0.0.1",
+					dirName: "chart1-release",
+				},
+				{
+					name:    "chart2",
+					version: "0.0.1",
+					dirName: "chart2-release",
+				},
+			},
+			curV1Beta1Charts: []chart{
+				{
+					name:    "chart1",
+					version: "0.0.1",
+					dirName: "chart1-release",
+				},
+				{
+					name:    "chart2",
+					version: "0.0.1",
+					dirName: "chart2-release",
+				},
+			},
+			previousV1Beta1KotsCharts: []kotsutil.HelmChartInterface{
+				&v1beta1.HelmChart{
+					TypeMeta: metav1.TypeMeta{
+						APIVersion: "kots.io/v1beta1",
+						Kind:       "HelmChart",
+					},
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "chart1",
+					},
+					Spec: v1beta1.HelmChartSpec{
+						Chart: v1beta1.ChartIdentifier{
+							Name:         "chart1",
+							ChartVersion: "0.0.1",
+							ReleaseName:  "chart1-release",
+						},
+						Namespace: "ns1",
+					},
+				},
+				&v1beta1.HelmChart{
+					TypeMeta: metav1.TypeMeta{
+						APIVersion: "kots.io/v1beta1",
+						Kind:       "HelmChart",
+					},
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "chart2",
+					},
+					Spec: v1beta1.HelmChartSpec{
+						Chart: v1beta1.ChartIdentifier{
+							Name:         "chart2",
+							ChartVersion: "0.0.1",
+							ReleaseName:  "chart2-release",
+						},
+					},
+				},
+			},
+			currentV1Beta1KotsCharts: []kotsutil.HelmChartInterface{
+				&v1beta1.HelmChart{
+					TypeMeta: metav1.TypeMeta{
+						APIVersion: "kots.io/v1beta1",
+						Kind:       "HelmChart",
+					},
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "chart1",
+					},
+					Spec: v1beta1.HelmChartSpec{
+						Chart: v1beta1.ChartIdentifier{
+							Name:         "chart1",
+							ChartVersion: "0.0.1",
+							ReleaseName:  "chart1-release",
+						},
+						Namespace: "ns2",
+					},
+				},
+				&v1beta1.HelmChart{
+					TypeMeta: metav1.TypeMeta{
+						APIVersion: "kots.io/v1beta1",
+						Kind:       "HelmChart",
+					},
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "chart2",
+					},
+					Spec: v1beta1.HelmChartSpec{
+						Chart: v1beta1.ChartIdentifier{
+							Name:         "chart2",
+							ChartVersion: "0.0.1",
+							ReleaseName:  "chart2-release",
+						},
+					},
+				},
+			},
+			want: []kotsutil.HelmChartInterface{
+				&v1beta1.HelmChart{
+					TypeMeta: metav1.TypeMeta{
+						APIVersion: "kots.io/v1beta1",
+						Kind:       "HelmChart",
+					},
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "chart1",
+					},
+					Spec: v1beta1.HelmChartSpec{
+						Chart: v1beta1.ChartIdentifier{
+							Name:         "chart1",
+							ChartVersion: "0.0.1",
+							ReleaseName:  "chart1-release",
+						},
+						Namespace: "ns1",
+					},
+				},
+			},
+		},
+		// ---- V1BETA2 ---- //
+		{
+			name: "v1beta2 -- no charts removed",
+			prevV1Beta2Charts: []chart{
+				{
+					name:    "chart1",
+					version: "0.0.1",
+					dirName: "chart1-release",
+				},
+				{
+					name:    "chart2",
+					version: "0.0.1",
+					dirName: "chart2-release",
+				},
+			},
+			curV1Beta2Charts: []chart{
+				{
+					name:    "chart1",
+					version: "0.0.1",
+					dirName: "chart1-release",
+				},
+				{
+					name:    "chart2",
+					version: "0.0.1",
+					dirName: "chart2-release",
+				},
+			},
+			previousV1Beta2KotsCharts: []kotsutil.HelmChartInterface{
+				&v1beta2.HelmChart{
+					TypeMeta: metav1.TypeMeta{
+						APIVersion: "kots.io/v1beta2",
+						Kind:       "HelmChart",
+					},
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "chart1",
+					},
+					Spec: v1beta2.HelmChartSpec{
+						Chart: v1beta2.ChartIdentifier{
+							Name:         "chart1",
+							ChartVersion: "0.0.1",
+						},
+						ReleaseName: "chart1-release",
+					},
+				},
+				&v1beta2.HelmChart{
+					TypeMeta: metav1.TypeMeta{
+						APIVersion: "kots.io/v1beta2",
+						Kind:       "HelmChart",
+					},
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "chart2",
+					},
+					Spec: v1beta2.HelmChartSpec{
+						Chart: v1beta2.ChartIdentifier{
+							Name:         "chart2",
+							ChartVersion: "0.0.1",
+						},
+						ReleaseName: "chart2-release",
+					},
+				},
+			},
+			currentV1Beta2KotsCharts: []kotsutil.HelmChartInterface{
+				&v1beta2.HelmChart{
+					TypeMeta: metav1.TypeMeta{
+						APIVersion: "kots.io/v1beta2",
+						Kind:       "HelmChart",
+					},
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "chart1",
+					},
+					Spec: v1beta2.HelmChartSpec{
+						Chart: v1beta2.ChartIdentifier{
+							Name:         "chart1",
+							ChartVersion: "0.0.1",
+						},
+						ReleaseName: "chart1-release",
+					},
+				},
+				&v1beta2.HelmChart{
+					TypeMeta: metav1.TypeMeta{
+						APIVersion: "kots.io/v1beta2",
+						Kind:       "HelmChart",
+					},
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "chart2",
+					},
+					Spec: v1beta2.HelmChartSpec{
+						Chart: v1beta2.ChartIdentifier{
+							Name:         "chart2",
+							ChartVersion: "0.0.1",
+						},
+						ReleaseName: "chart2-release",
+					},
+				},
+			},
+			want: []kotsutil.HelmChartInterface{},
+		},
+		{
+			name: "v1beta2 -- chart1 removed",
+			prevV1Beta2Charts: []chart{
+				{
+					name:    "chart1",
+					version: "0.0.1",
+					dirName: "chart1-release",
+				},
+				{
+					name:    "chart2",
+					version: "0.0.1",
+					dirName: "chart2-release",
+				},
+			},
+			curV1Beta2Charts: []chart{
+				{
+					name:    "chart2",
+					version: "0.0.1",
+					dirName: "chart2-release",
+				},
+			},
+			previousV1Beta2KotsCharts: []kotsutil.HelmChartInterface{
+				&v1beta2.HelmChart{
+					TypeMeta: metav1.TypeMeta{
+						APIVersion: "kots.io/v1beta2",
+						Kind:       "HelmChart",
+					},
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "chart1",
+					},
+					Spec: v1beta2.HelmChartSpec{
+						Chart: v1beta2.ChartIdentifier{
+							Name:         "chart1",
+							ChartVersion: "0.0.1",
+						},
+						ReleaseName: "chart1-release",
+					},
+				},
+				&v1beta2.HelmChart{
+					TypeMeta: metav1.TypeMeta{
+						APIVersion: "kots.io/v1beta2",
+						Kind:       "HelmChart",
+					},
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "chart2",
+					},
+					Spec: v1beta2.HelmChartSpec{
+						Chart: v1beta2.ChartIdentifier{
+							Name:         "chart2",
+							ChartVersion: "0.0.1",
+						},
+						ReleaseName: "chart2-release",
+					},
+				},
+			},
+			currentV1Beta2KotsCharts: []kotsutil.HelmChartInterface{
+				&v1beta2.HelmChart{
+					TypeMeta: metav1.TypeMeta{
+						APIVersion: "kots.io/v1beta2",
+						Kind:       "HelmChart",
+					},
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "chart2",
+					},
+					Spec: v1beta2.HelmChartSpec{
+						Chart: v1beta2.ChartIdentifier{
+							Name:         "chart2",
+							ChartVersion: "0.0.1",
+						},
+						ReleaseName: "chart2-release",
+					},
+				},
+			},
+			want: []kotsutil.HelmChartInterface{
+				&v1beta2.HelmChart{
+					TypeMeta: metav1.TypeMeta{
+						APIVersion: "kots.io/v1beta2",
+						Kind:       "HelmChart",
+					},
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "chart1",
+					},
+					Spec: v1beta2.HelmChartSpec{
+						Chart: v1beta2.ChartIdentifier{
+							Name:         "chart1",
+							ChartVersion: "0.0.1",
+						},
+						ReleaseName: "chart1-release",
+					},
+				},
+			},
+		},
+		{
+			name: "v1beta2 -- no charts removed even though chart1 has a new version",
+			prevV1Beta2Charts: []chart{
+				{
+					name:    "chart1",
+					version: "0.0.1",
+					dirName: "chart1-release",
+				},
+				{
+					name:    "chart2",
+					version: "0.0.1",
+					dirName: "chart2-release",
+				},
+			},
+			curV1Beta2Charts: []chart{
+				{
+					name:    "chart1",
+					version: "0.0.2",
+					dirName: "chart1-release",
+				},
+				{
+					name:    "chart2",
+					version: "0.0.1",
+					dirName: "chart2-release",
+				},
+			},
+			previousV1Beta2KotsCharts: []kotsutil.HelmChartInterface{
+				&v1beta2.HelmChart{
+					TypeMeta: metav1.TypeMeta{
+						APIVersion: "kots.io/v1beta2",
+						Kind:       "HelmChart",
+					},
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "chart1",
+					},
+					Spec: v1beta2.HelmChartSpec{
+						Chart: v1beta2.ChartIdentifier{
+							Name:         "chart1",
+							ChartVersion: "0.0.1",
+						},
+						ReleaseName: "chart1-release",
+					},
+				},
+				&v1beta2.HelmChart{
+					TypeMeta: metav1.TypeMeta{
+						APIVersion: "kots.io/v1beta2",
+						Kind:       "HelmChart",
+					},
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "chart2",
+					},
+					Spec: v1beta2.HelmChartSpec{
+						Chart: v1beta2.ChartIdentifier{
+							Name:         "chart2",
+							ChartVersion: "0.0.1",
+						},
+						ReleaseName: "chart2-release",
+					},
+				},
+			},
+			currentV1Beta2KotsCharts: []kotsutil.HelmChartInterface{
+				&v1beta2.HelmChart{
+					TypeMeta: metav1.TypeMeta{
+						APIVersion: "kots.io/v1beta2",
+						Kind:       "HelmChart",
+					},
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "chart1",
+					},
+					Spec: v1beta2.HelmChartSpec{
+						Chart: v1beta2.ChartIdentifier{
+							Name:         "chart1",
+							ChartVersion: "0.0.2",
+						},
+						ReleaseName: "chart1-release",
+					},
+				},
+				&v1beta2.HelmChart{
+					TypeMeta: metav1.TypeMeta{
+						APIVersion: "kots.io/v1beta2",
+						Kind:       "HelmChart",
+					},
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "chart2",
+					},
+					Spec: v1beta2.HelmChartSpec{
+						Chart: v1beta2.ChartIdentifier{
+							Name:         "chart2",
+							ChartVersion: "0.0.1",
+						},
+						ReleaseName: "chart2-release",
+					},
+				},
+			},
+			want: []kotsutil.HelmChartInterface{},
+		},
+		{
+			name: "v1beta2 -- chart2 old release removed because release name changed",
+			prevV1Beta2Charts: []chart{
+				{
+					name:    "chart1",
+					version: "0.0.1",
+					dirName: "chart1-release",
+				},
+				{
+					name:    "chart2",
+					version: "0.0.1",
+					dirName: "chart2-release",
+				},
+			},
+			curV1Beta2Charts: []chart{
+				{
+					name:    "chart1",
+					version: "0.0.1",
+					dirName: "chart1-release",
+				},
+				{
+					name:    "chart2",
+					version: "0.0.1",
+					dirName: "chart2-new-release",
+				},
+			},
+			previousV1Beta2KotsCharts: []kotsutil.HelmChartInterface{
+				&v1beta2.HelmChart{
+					TypeMeta: metav1.TypeMeta{
+						APIVersion: "kots.io/v1beta2",
+						Kind:       "HelmChart",
+					},
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "chart1",
+					},
+					Spec: v1beta2.HelmChartSpec{
+						Chart: v1beta2.ChartIdentifier{
+							Name:         "chart1",
+							ChartVersion: "0.0.1",
+						},
+						ReleaseName: "chart1-release",
+					},
+				},
+				&v1beta2.HelmChart{
+					TypeMeta: metav1.TypeMeta{
+						APIVersion: "kots.io/v1beta2",
+						Kind:       "HelmChart",
+					},
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "chart2",
+					},
+					Spec: v1beta2.HelmChartSpec{
+						Chart: v1beta2.ChartIdentifier{
+							Name:         "chart2",
+							ChartVersion: "0.0.1",
+						},
+						ReleaseName: "chart2-release",
+					},
+				},
+			},
+			currentV1Beta2KotsCharts: []kotsutil.HelmChartInterface{
+				&v1beta2.HelmChart{
+					TypeMeta: metav1.TypeMeta{
+						APIVersion: "kots.io/v1beta2",
+						Kind:       "HelmChart",
+					},
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "chart1",
+					},
+					Spec: v1beta2.HelmChartSpec{
+						Chart: v1beta2.ChartIdentifier{
+							Name:         "chart1",
+							ChartVersion: "0.0.1",
+						},
+						ReleaseName: "chart1-release",
+					},
+				},
+				&v1beta2.HelmChart{
+					TypeMeta: metav1.TypeMeta{
+						APIVersion: "kots.io/v1beta2",
+						Kind:       "HelmChart",
+					},
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "chart2",
+					},
+					Spec: v1beta2.HelmChartSpec{
+						Chart: v1beta2.ChartIdentifier{
+							Name:         "chart2",
+							ChartVersion: "0.0.1",
+						},
+						ReleaseName: "chart2-new-release",
+					},
+				},
+			},
+			want: []kotsutil.HelmChartInterface{
+				&v1beta2.HelmChart{
+					TypeMeta: metav1.TypeMeta{
+						APIVersion: "kots.io/v1beta2",
+						Kind:       "HelmChart",
+					},
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "chart2",
+					},
+					Spec: v1beta2.HelmChartSpec{
+						Chart: v1beta2.ChartIdentifier{
+							Name:         "chart2",
+							ChartVersion: "0.0.1",
+						},
+						ReleaseName: "chart2-release",
+					},
+				},
+			},
+		},
+		{
+			name: "v1beta2 -- no charts removed because namespace is the same",
+			prevV1Beta2Charts: []chart{
+				{
+					name:    "chart1",
+					version: "0.0.1",
+					dirName: "chart1-release",
+				},
+				{
+					name:    "chart2",
+					version: "0.0.1",
+					dirName: "chart2-release",
+				},
+			},
+			curV1Beta2Charts: []chart{
+				{
+					name:    "chart1",
+					version: "0.0.1",
+					dirName: "chart1-release",
+				},
+				{
+					name:    "chart2",
+					version: "0.0.1",
+					dirName: "chart2-release",
+				},
+			},
+			previousV1Beta2KotsCharts: []kotsutil.HelmChartInterface{
+				&v1beta2.HelmChart{
+					TypeMeta: metav1.TypeMeta{
+						APIVersion: "kots.io/v1beta2",
+						Kind:       "HelmChart",
+					},
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "chart1",
+					},
+					Spec: v1beta2.HelmChartSpec{
+						Chart: v1beta2.ChartIdentifier{
+							Name:         "chart1",
+							ChartVersion: "0.0.1",
+						},
+						ReleaseName: "chart1-release",
+						Namespace:   "ns1",
+					},
+				},
+				&v1beta2.HelmChart{
+					TypeMeta: metav1.TypeMeta{
+						APIVersion: "kots.io/v1beta2",
+						Kind:       "HelmChart",
+					},
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "chart2",
+					},
+					Spec: v1beta2.HelmChartSpec{
+						Chart: v1beta2.ChartIdentifier{
+							Name:         "chart2",
+							ChartVersion: "0.0.1",
+						},
+						ReleaseName: "chart2-release",
+					},
+				},
+			},
+			currentV1Beta2KotsCharts: []kotsutil.HelmChartInterface{
+				&v1beta2.HelmChart{
+					TypeMeta: metav1.TypeMeta{
+						APIVersion: "kots.io/v1beta2",
+						Kind:       "HelmChart",
+					},
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "chart1",
+					},
+					Spec: v1beta2.HelmChartSpec{
+						Chart: v1beta2.ChartIdentifier{
+							Name:         "chart1",
+							ChartVersion: "0.0.1",
+						},
+						ReleaseName: "chart1-release",
+						Namespace:   "ns1",
+					},
+				},
+				&v1beta2.HelmChart{
+					TypeMeta: metav1.TypeMeta{
+						APIVersion: "kots.io/v1beta2",
+						Kind:       "HelmChart",
+					},
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "chart2",
+					},
+					Spec: v1beta2.HelmChartSpec{
+						Chart: v1beta2.ChartIdentifier{
+							Name:         "chart2",
+							ChartVersion: "0.0.1",
+						},
+						ReleaseName: "chart2-release",
+					},
+				},
+			},
+			want: []kotsutil.HelmChartInterface{},
+		},
+		{
+			name: "v1beta2 -- chart1 old namespace removed because namespace changed",
+			prevV1Beta2Charts: []chart{
+				{
+					name:    "chart1",
+					version: "0.0.1",
+					dirName: "chart1-release",
+				},
+				{
+					name:    "chart2",
+					version: "0.0.1",
+					dirName: "chart2-release",
+				},
+			},
+			curV1Beta2Charts: []chart{
+				{
+					name:    "chart1",
+					version: "0.0.1",
+					dirName: "chart1-release",
+				},
+				{
+					name:    "chart2",
+					version: "0.0.1",
+					dirName: "chart2-release",
+				},
+			},
+			previousV1Beta2KotsCharts: []kotsutil.HelmChartInterface{
+				&v1beta2.HelmChart{
+					TypeMeta: metav1.TypeMeta{
+						APIVersion: "kots.io/v1beta2",
+						Kind:       "HelmChart",
+					},
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "chart1",
+					},
+					Spec: v1beta2.HelmChartSpec{
+						Chart: v1beta2.ChartIdentifier{
+							Name:         "chart1",
+							ChartVersion: "0.0.1",
+						},
+						ReleaseName: "chart1-release",
+						Namespace:   "ns1",
+					},
+				},
+				&v1beta2.HelmChart{
+					TypeMeta: metav1.TypeMeta{
+						APIVersion: "kots.io/v1beta2",
+						Kind:       "HelmChart",
+					},
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "chart2",
+					},
+					Spec: v1beta2.HelmChartSpec{
+						Chart: v1beta2.ChartIdentifier{
+							Name:         "chart2",
+							ChartVersion: "0.0.1",
+						},
+						ReleaseName: "chart2-release",
+					},
+				},
+			},
+			currentV1Beta2KotsCharts: []kotsutil.HelmChartInterface{
+				&v1beta2.HelmChart{
+					TypeMeta: metav1.TypeMeta{
+						APIVersion: "kots.io/v1beta2",
+						Kind:       "HelmChart",
+					},
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "chart1",
+					},
+					Spec: v1beta2.HelmChartSpec{
+						Chart: v1beta2.ChartIdentifier{
+							Name:         "chart1",
+							ChartVersion: "0.0.1",
+						},
+						ReleaseName: "chart1-release",
+						Namespace:   "ns2",
+					},
+				},
+				&v1beta2.HelmChart{
+					TypeMeta: metav1.TypeMeta{
+						APIVersion: "kots.io/v1beta2",
+						Kind:       "HelmChart",
+					},
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "chart2",
+					},
+					Spec: v1beta2.HelmChartSpec{
+						Chart: v1beta2.ChartIdentifier{
+							Name:         "chart2",
+							ChartVersion: "0.0.1",
+						},
+						ReleaseName: "chart2-release",
+					},
+				},
+			},
+			want: []kotsutil.HelmChartInterface{
+				&v1beta2.HelmChart{
+					TypeMeta: metav1.TypeMeta{
+						APIVersion: "kots.io/v1beta2",
+						Kind:       "HelmChart",
+					},
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "chart1",
+					},
+					Spec: v1beta2.HelmChartSpec{
+						Chart: v1beta2.ChartIdentifier{
+							Name:         "chart1",
+							ChartVersion: "0.0.1",
+						},
+						ReleaseName: "chart1-release",
+						Namespace:   "ns1",
+					},
+				},
+			},
+		},
+		// ---- MIX OF v1beta1 and v1beta2 ---- //
+		{
+			name: "mix of v1beta1 and v1beta2 -- no charts removed",
+			prevV1Beta1Charts: []chart{
+				{
+					name:    "chart1",
+					version: "0.0.1",
+					dirName: "chart1-release",
+				},
+			},
+			curV1Beta1Charts: []chart{
+				{
+					name:    "chart1",
+					version: "0.0.1",
+					dirName: "chart1-release",
+				},
+			},
+			previousV1Beta1KotsCharts: []kotsutil.HelmChartInterface{
+				&v1beta1.HelmChart{
+					TypeMeta: metav1.TypeMeta{
+						APIVersion: "kots.io/v1beta1",
+						Kind:       "HelmChart",
+					},
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "chart1",
+					},
+					Spec: v1beta1.HelmChartSpec{
+						Chart: v1beta1.ChartIdentifier{
+							Name:         "chart1",
+							ChartVersion: "0.0.1",
+							ReleaseName:  "chart1-release",
+						},
+					},
+				},
+			},
+			currentV1Beta1KotsCharts: []kotsutil.HelmChartInterface{
+				&v1beta1.HelmChart{
+					TypeMeta: metav1.TypeMeta{
+						APIVersion: "kots.io/v1beta1",
+						Kind:       "HelmChart",
+					},
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "chart1",
+					},
+					Spec: v1beta1.HelmChartSpec{
+						Chart: v1beta1.ChartIdentifier{
+							Name:         "chart1",
+							ChartVersion: "0.0.1",
+							ReleaseName:  "chart1-release",
+						},
+					},
+				},
+			},
+			prevV1Beta2Charts: []chart{
+				{
+					name:    "chart2",
+					version: "0.0.1",
+					dirName: "chart2-release",
+				},
+			},
+			curV1Beta2Charts: []chart{
+				{
+					name:    "chart2",
+					version: "0.0.1",
+					dirName: "chart2-release",
+				},
+			},
+			previousV1Beta2KotsCharts: []kotsutil.HelmChartInterface{
+				&v1beta2.HelmChart{
+					TypeMeta: metav1.TypeMeta{
+						APIVersion: "kots.io/v1beta2",
+						Kind:       "HelmChart",
+					},
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "chart2",
+					},
+					Spec: v1beta2.HelmChartSpec{
+						Chart: v1beta2.ChartIdentifier{
+							Name:         "chart2",
+							ChartVersion: "0.0.1",
+						},
+						ReleaseName: "chart2-release",
+					},
+				},
+			},
+			currentV1Beta2KotsCharts: []kotsutil.HelmChartInterface{
+				&v1beta2.HelmChart{
+					TypeMeta: metav1.TypeMeta{
+						APIVersion: "kots.io/v1beta2",
+						Kind:       "HelmChart",
+					},
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "chart2",
+					},
+					Spec: v1beta2.HelmChartSpec{
+						Chart: v1beta2.ChartIdentifier{
+							Name:         "chart2",
+							ChartVersion: "0.0.1",
+						},
+						ReleaseName: "chart2-release",
+					},
+				},
+			},
+			want: []kotsutil.HelmChartInterface{},
+		},
+		{
+			name: "mix of v1beta1 and v1beta2 -- chart2 removed",
+			prevV1Beta1Charts: []chart{
+				{
+					name:    "chart1",
+					version: "0.0.1",
+					dirName: "chart1-release",
+				},
+			},
+			curV1Beta1Charts: []chart{
+				{
+					name:    "chart1",
+					version: "0.0.1",
+					dirName: "chart1-release",
+				},
+			},
+			previousV1Beta1KotsCharts: []kotsutil.HelmChartInterface{
+				&v1beta1.HelmChart{
+					TypeMeta: metav1.TypeMeta{
+						APIVersion: "kots.io/v1beta1",
+						Kind:       "HelmChart",
+					},
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "chart1",
+					},
+					Spec: v1beta1.HelmChartSpec{
+						Chart: v1beta1.ChartIdentifier{
+							Name:         "chart1",
+							ChartVersion: "0.0.1",
+							ReleaseName:  "chart1-release",
+						},
+					},
+				},
+			},
+			currentV1Beta1KotsCharts: []kotsutil.HelmChartInterface{
+				&v1beta1.HelmChart{
+					TypeMeta: metav1.TypeMeta{
+						APIVersion: "kots.io/v1beta1",
+						Kind:       "HelmChart",
+					},
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "chart1",
+					},
+					Spec: v1beta1.HelmChartSpec{
+						Chart: v1beta1.ChartIdentifier{
+							Name:         "chart1",
+							ChartVersion: "0.0.1",
+							ReleaseName:  "chart1-release",
+						},
+					},
+				},
+			},
+			prevV1Beta2Charts: []chart{
+				{
+					name:    "chart2",
+					version: "0.0.1",
+					dirName: "chart2-release",
+				},
+			},
+			curV1Beta2Charts: []chart{},
+			previousV1Beta2KotsCharts: []kotsutil.HelmChartInterface{
+				&v1beta2.HelmChart{
+					TypeMeta: metav1.TypeMeta{
+						APIVersion: "kots.io/v1beta2",
+						Kind:       "HelmChart",
+					},
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "chart2",
+					},
+					Spec: v1beta2.HelmChartSpec{
+						Chart: v1beta2.ChartIdentifier{
+							Name:         "chart2",
+							ChartVersion: "0.0.1",
+						},
+						ReleaseName: "chart2-release",
+					},
+				},
+			},
+			currentV1Beta2KotsCharts: []kotsutil.HelmChartInterface{},
+			want: []kotsutil.HelmChartInterface{
+				&v1beta2.HelmChart{
+					TypeMeta: metav1.TypeMeta{
+						APIVersion: "kots.io/v1beta2",
+						Kind:       "HelmChart",
+					},
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "chart2",
+					},
+					Spec: v1beta2.HelmChartSpec{
+						Chart: v1beta2.ChartIdentifier{
+							Name:         "chart2",
+							ChartVersion: "0.0.1",
+						},
+						ReleaseName: "chart2-release",
+					},
+				},
+			},
+		},
+	}
+
+	generateV1Beta1ChartsDirs := func(t *testing.T, charts []chart, destDir string) {
+		for _, chart := range charts {
+			err := os.MkdirAll(filepath.Join(destDir, "charts", chart.dirName), os.ModePerm)
+			require.NoError(t, err)
+
+			err = ioutil.WriteFile(filepath.Join(destDir, "charts", chart.dirName, "Chart.yaml"), []byte(fmt.Sprintf("name: %s\nversion: %s", chart.name, chart.version)), os.ModePerm)
+			require.NoError(t, err)
+		}
+	}
+
+	generateV1Beta2ChartsDirs := func(t *testing.T, charts []chart, destDir string) {
+		for _, chart := range charts {
+			err := os.MkdirAll(filepath.Join(destDir, "helm", chart.dirName), os.ModePerm)
+			require.NoError(t, err)
+
+			tmpArchive := t.TempDir()
+			err = ioutil.WriteFile(filepath.Join(tmpArchive, "Chart.yaml"), []byte(fmt.Sprintf("name: %s\nversion: %s", chart.name, chart.version)), os.ModePerm)
+			require.NoError(t, err)
+
+			tarGz := archiver.TarGz{
+				Tar: &archiver.Tar{
+					ImplicitTopLevelFolder: false,
+				},
+			}
+			archiveFile := filepath.Join(destDir, "helm", chart.dirName, fmt.Sprintf("%s-%s.tgz", chart.name, chart.version))
+			err = tarGz.Archive([]string{tmpArchive}, archiveFile)
+			require.NoError(t, err)
+		}
+	}
+
+	for _, tt := range tests {
+		// generate v1beta1 previous archive
+		var prevV1Beta1Dir string
+		if len(tt.prevV1Beta1Charts) > 0 {
+			prevV1Beta1Dir = t.TempDir()
+			generateV1Beta1ChartsDirs(t, tt.prevV1Beta1Charts, prevV1Beta1Dir)
+		}
+
+		// generate v1beta1 current archive
+		var curV1Beta1Dir string
+		if len(tt.curV1Beta1Charts) > 0 {
+			curV1Beta1Dir = t.TempDir()
+			generateV1Beta1ChartsDirs(t, tt.curV1Beta1Charts, curV1Beta1Dir)
+		}
+
+		// generate v1beta2 previous archive
+		var prevV1Beta2Dir string
+		if len(tt.prevV1Beta2Charts) > 0 {
+			prevV1Beta2Dir = t.TempDir()
+			generateV1Beta2ChartsDirs(t, tt.prevV1Beta2Charts, prevV1Beta2Dir)
+		}
+
+		// generate v1beta2 current archive
+		var curV1Beta2Dir string
+		if len(tt.curV1Beta2Charts) > 0 {
+			curV1Beta2Dir = t.TempDir()
+			generateV1Beta2ChartsDirs(t, tt.curV1Beta2Charts, curV1Beta2Dir)
+		}
+
+		// execute
+		opts := getRemovedChartsOptions{
+			prevV1Beta1Dir:            prevV1Beta1Dir,
+			curV1Beta1Dir:             curV1Beta1Dir,
+			previousV1Beta1KotsCharts: tt.previousV1Beta1KotsCharts,
+			currentV1Beta1KotsCharts:  tt.currentV1Beta1KotsCharts,
+			prevV1Beta2Dir:            prevV1Beta2Dir,
+			curV1Beta2Dir:             curV1Beta2Dir,
+			previousV1Beta2KotsCharts: tt.previousV1Beta2KotsCharts,
+			currentV1Beta2KotsCharts:  tt.currentV1Beta2KotsCharts,
+		}
+		got, err := getRemovedCharts(opts)
+		require.NoError(t, err)
+
+		// assert
+		if !reflect.DeepEqual(tt.want, got) {
+			t.Errorf("getRemovedCharts() \n\n%s", fmtJSONDiff(got, tt.want))
+		}
+	}
+}
+
+func fmtJSONDiff(got, want interface{}) string {
+	a, _ := json.MarshalIndent(got, "", "  ")
+	b, _ := json.MarshalIndent(want, "", "  ")
+	diff := difflib.UnifiedDiff{
+		A:        difflib.SplitLines(string(a)),
+		B:        difflib.SplitLines(string(b)),
+		FromFile: "Got",
+		ToFile:   "Want",
+		Context:  1,
+	}
+	diffStr, _ := difflib.GetUnifiedDiffString(diff)
+	return fmt.Sprintf("got:\n%s \n\nwant:\n%s \n\ndiff:\n%s", a, b, diffStr)
 }
