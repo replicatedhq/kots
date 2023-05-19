@@ -96,7 +96,7 @@ class KotsApplicationTree extends React.Component<Props, State> {
   };
 
   back = () => {
-    this.props.history.goBack();
+    this.props.navigate(-1);
   };
 
   render() {

@@ -243,7 +243,7 @@ const DashboardVersionCard = (props: Props) => {
 
   const closeViewDiffModal = () => {
     if (location.search) {
-      history.replace(location.pathname);
+      navigate(location.pathname, { replace: true });
     }
     setState({ showDiffModal: false });
   };
@@ -1157,7 +1157,7 @@ const DashboardVersionCard = (props: Props) => {
             disabled={isActionButtonDisabled(version)}
             onClick={() => {
               if (needsConfiguration) {
-                history.push(url);
+                navigate(url);
                 return;
               }
               if (version.needsKotsUpgrade) {

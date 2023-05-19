@@ -87,7 +87,7 @@ class VersionDiff extends React.Component<Props, State> {
   }
 
   componentDidMount() {
-    const { firstSequence, secondSequence, location } = this.props;
+    const { firstSequence, secondSequence, location, navigate } = this.props;
     Promise.all([
       this.fetchRenderedApplicationTree(firstSequence, true),
       this.fetchRenderedApplicationTree(secondSequence, false),
@@ -95,24 +95,29 @@ class VersionDiff extends React.Component<Props, State> {
 
     const url = window.location.pathname;
     if (!url.includes("/diff") && !location.search.includes("?diff/")) {
-      window.history.replaceState(
-        "",
-        "",
-        `${url}/diff/${firstSequence}/${secondSequence}`
-      );
+      // what is this doing?
+      // window.history.replaceState(
+      //   "",
+      //   "",
+      //   `${url}/diff/${firstSequence}/${secondSequence}`
+      // );
+      navigate(`${url}/diff/${firstSequence}/${secondSequence}`, {
+        replace: true,
+      });
     }
   }
 
   componentWillUnmount() {
     const url = window.location.pathname;
     if (url.includes("/diff")) {
-      const { firstSequence, secondSequence } = this.props;
+      const { firstSequence, secondSequence, navigate } = this.props;
       const diffPath = `/diff/${firstSequence}/${secondSequence}`;
-      window.history.replaceState(
-        "",
-        "",
-        url.substring(0, url.indexOf(diffPath))
-      );
+      // window.history.replaceState(
+      //   "",
+      //   "",
+      //   url.substring(0, url.indexOf(diffPath))
+      // );
+      navigate(url.substring(0, url.indexOf(diffPath)), { replace: true });
     }
   }
 
