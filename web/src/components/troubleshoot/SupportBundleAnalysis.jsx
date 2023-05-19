@@ -19,6 +19,7 @@ import Icon from "../Icon";
 
 import { KotsPageTitle } from "@components/Head";
 import { isEmpty } from "lodash";
+import { useSelectedApp } from "@features/App";
 
 let percentage;
 export class SupportBundleAnalysis extends React.Component {
@@ -230,7 +231,7 @@ export class SupportBundleAnalysis extends React.Component {
     }
     if (
       bundle?.status !== "running" &&
-      bundle?.status !== lastProps.bundle.status
+      bundle?.status !== lastProps.outletContext.bundle.status
     ) {
       this.state.pollForBundleAnalysisProgress.stop();
     }
@@ -238,6 +239,7 @@ export class SupportBundleAnalysis extends React.Component {
 
   render() {
     const { watch } = this.props.outletContext;
+
     const { bundleProgress, getSupportBundleErrMsg, loading, bundle } =
       this.props.outletContext;
 
@@ -294,6 +296,7 @@ export class SupportBundleAnalysis extends React.Component {
     const insightsUrl = `/app/:slug/troubleshoot/analyze/:bundleSlug`;
     const fileTreeUrl = `/app/:slug/troubleshoot/analyze/:bundleSlug/contents/*`;
     const redactorUrl = `/app/:slug/troubleshoot/analyze/:bundleSlug/redactor/report`;
+
     const showSendSupportBundleBtn =
       watch.isSupportBundleUploadSupported && !watch.isAirgap;
 
@@ -304,7 +307,7 @@ export class SupportBundleAnalysis extends React.Component {
       openPodDetailsModal: this.togglePodDetailsModal,
       watchSlug: watch.slug,
       bundle: bundle,
-      downloadBundle: this.downloadBundle(bundle),
+      downloadBundle: () => this.downloadBundle(bundle),
     };
 
     return (
@@ -318,7 +321,7 @@ export class SupportBundleAnalysis extends React.Component {
                   <div className="flex-column flex1">
                     <div className="u-fontSize--small u-fontWeight--medium u-textColor--bodyCopy u-marginBottom--20">
                       <Link
-                        to={`/app/${this.props.outletContext.watch.slug}/troubleshoot`}
+                        to={`/app/${this.props.params.slug}/troubleshoot`}
                         className="link u-marginRight--5"
                       >
                         Support bundles
@@ -446,7 +449,7 @@ export class SupportBundleAnalysis extends React.Component {
                   <div className="SupportBundleTabs--wrapper flex1 flex-column">
                     <div className="tab-items flex">
                       <Link
-                        to={`/app/${watch.slug}/troubleshoot/analyze/${bundle.slug}`}
+                        to={`/app/${this.props.params.slug}/troubleshoot/analyze/${bundle.slug}`}
                         className={`${
                           this.state.activeTab === "bundleAnalysis"
                             ? "is-active"
@@ -459,7 +462,7 @@ export class SupportBundleAnalysis extends React.Component {
                         Analysis insights
                       </Link>
                       <Link
-                        to={`/app/${watch.slug}/troubleshoot/analyze/${bundle.slug}/contents/`}
+                        to={`/app/${this.props.params.slug}/troubleshoot/analyze/${bundle.slug}/contents/`}
                         className={`${
                           this.state.activeTab === "fileTree" ? "is-active" : ""
                         } tab-item blue`}
@@ -468,7 +471,7 @@ export class SupportBundleAnalysis extends React.Component {
                         File inspector
                       </Link>
                       <Link
-                        to={`/app/${watch.slug}/troubleshoot/analyze/${bundle.slug}/redactor/report`}
+                        to={`/app/${this.props.params.slug}/troubleshoot/analyze/${bundle.slug}/redactor/report`}
                         className={`${
                           this.state.activeTab === "redactorReport"
                             ? "is-active"

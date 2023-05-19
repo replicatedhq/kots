@@ -1,11 +1,6 @@
 import React, { Component } from "react";
-import { Outlet, Route, Routes } from "react-router-dom";
-import NotFound from "../static/NotFound";
-import SupportBundleList from "../troubleshoot/SupportBundleList";
-import SupportBundleAnalysis from "../troubleshoot/SupportBundleAnalysis";
-import GenerateSupportBundle from "../troubleshoot/GenerateSupportBundle";
-import Redactors from "../redactors/Redactors";
-import EditRedactor from "../redactors/EditRedactor";
+import { Outlet } from "react-router-dom";
+import { withRouter } from "@src/utilities/react-router-utilities";
 
 // Types
 import { App, SupportBundleProgress } from "@types";
@@ -54,7 +49,7 @@ class TroubleshootContainer extends Component<Props, State> {
   pollForBundleAnalysisProgress = async () => {
     this.setState({ loadingBundle: true });
     const { newBundleSlug } = this.state;
-    console.log(newBundleSlug, "newslug");
+
     if (!newBundleSlug) {
       // component may start polling before bundle slug is set
       // this is to prevent an api call if the slug is not set
@@ -105,11 +100,8 @@ class TroubleshootContainer extends Component<Props, State> {
   };
 
   render() {
-    const { app, appName } = this.props;
-    console.log(this.state.bundle, "bundle");
-
     const props = {
-      watch: app,
+      watch: this.props.outletContext.app,
       newBundleSlug: this.state.newBundleSlug,
       updateBundleSlug: this.updateBundleSlug,
       pollForBundleAnalysisProgress: this.pollForBundleAnalysisProgress,
@@ -125,70 +117,9 @@ class TroubleshootContainer extends Component<Props, State> {
     return (
       <div className="flex-column flex1">
         <Outlet context={props} />
-        {/* <Route
-            path="/app/:slug/troubleshoot"
-            element={
-              <SupportBundleList
-                watch={app}
-                newBundleSlug={this.state.newBundleSlug}
-                updateBundleSlug={this.updateBundleSlug}
-                pollForBundleAnalysisProgress={
-                  this.pollForBundleAnalysisProgress
-                }
-                bundle={this.state.bundle}
-                bundleProgress={this.state.bundleAnalysisProgress}
-                loadingBundleId={this.state.loadingBundleId}
-                loadingBundle={this.state.loadingBundle}
-                updateState={this.updateState}
-                displayErrorModal={this.state.displayErrorModal}
-                loading={this.state.loading}
-              />
-            }
-          />
-          <Route
-            path="/app/:slug/troubleshoot/generate"
-            element={
-              <GenerateSupportBundle
-                watch={app}
-                newBundleSlug={this.state.newBundleSlug}
-                updateBundleSlug={this.updateBundleSlug}
-                bundle={this.state.bundle}
-              />
-            }
-          />
-          <Route
-            path="/app/:slug/troubleshoot/analyze/:bundleSlug"
-            element={
-              <SupportBundleAnalysis
-                watch={app}
-                pollForBundleAnalysisProgress={
-                  this.pollForBundleAnalysisProgress
-                }
-                bundle={this.state.bundle}
-                bundleProgress={this.state.bundleAnalysisProgress}
-                updateState={this.updateState}
-                displayErrorModal={this.state.displayErrorModal}
-                getSupportBundleErrMsg={this.state.getSupportBundleErrMsg}
-                loading={this.state.loading}
-              />
-            }
-          />
-          <Route
-            path="/app/:slug/troubleshoot/redactors"
-            element={<Redactors appSlug={app?.slug || ""} appName={appName} />}
-          />
-          <Route
-            path="/app/:slug/troubleshoot/redactors/new"
-            element={<EditRedactor />}
-          />
-          <Route
-            path="/app/:slug/troubleshoot/redactors/:redactorSlug"
-            element={<EditRedactor />}
-          />
-          <Route element={NotFound} /> */}
       </div>
     );
   }
 }
 
-export default TroubleshootContainer;
+export default withRouter(TroubleshootContainer);

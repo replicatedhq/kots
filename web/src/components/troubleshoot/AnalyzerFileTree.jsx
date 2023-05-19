@@ -67,10 +67,12 @@ class AnalyzerFileTree extends React.Component {
   };
 
   async setSelectedFile(path) {
-    const { watchSlug, navigate, outletContext, params } = this.props;
+    console.log(path, "path");
+    console.log("hello");
+    const { navigate, outletContext, params } = this.props;
     const newPath = rootPath(path);
     navigate(
-      `/app/${watchSlug}/troubleshoot/analyze/${params.bundleSlug}/contents${newPath}`,
+      `/app/${outletContext.watchSlug}/troubleshoot/analyze/${params.bundleSlug}/contents${newPath}`,
       { replace: true }
     );
     this.setState({ selectedFile: newPath, activeMarkers: [] });
@@ -167,11 +169,11 @@ class AnalyzerFileTree extends React.Component {
   };
 
   componentDidUpdate(lastProps, lastState) {
-    const { bundle } = this.props;
+    const { bundle } = this.props.outletContext;
     if (this.state.fileTree !== lastState.fileTree && this.state.fileTree) {
       this.setFileTree();
     }
-    if (bundle !== lastProps.bundle && bundle) {
+    if (bundle !== lastProps.outletContext.bundle && bundle) {
       this.setState({
         bundleId: bundle.id,
         fileTree: bundle.treeIndex,
@@ -207,7 +209,7 @@ class AnalyzerFileTree extends React.Component {
   }
 
   componentDidMount() {
-    const { bundle, location } = this.props;
+    const { bundle, location } = this.props.outletContext;
     if (this.state.fileTree) {
       this.setFileTree();
     }
@@ -260,7 +262,7 @@ class AnalyzerFileTree extends React.Component {
   };
 
   handleDownload = () => {
-    const { downloadBundle } = this.props;
+    const { downloadBundle } = this.props.outletContext;
     if (downloadBundle && typeof downloadBundle == "function") {
       downloadBundle();
     }
