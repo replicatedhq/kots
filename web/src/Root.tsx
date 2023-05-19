@@ -707,8 +707,8 @@ const Root = () => {
                   path=":slug/troubleshoot"
                   element={
                     <TroubleshootContainer
-                      app={state.app}
-                      // appName={appName || ""}
+
+                    // appName={appName || ""}
                     />
                   }
                 >
