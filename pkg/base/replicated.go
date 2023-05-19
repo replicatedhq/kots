@@ -407,13 +407,15 @@ func findAllKotsV1Beta1HelmCharts(upstreamFiles []upstreamtypes.UpstreamFile, bu
 		case "v1beta1":
 			helmChart, err := kotsutil.LoadV1Beta1HelmChartFromContents(baseFile.Content)
 			if err != nil {
-				return nil, errors.Wrapf(err, "failed to parse rendered HelmChart %s", baseFile.Path)
+				fmt.Printf("Failed v1beta1 HelmChart contents:\n%s\n", string(baseFile.Content))
+				return nil, errors.Wrapf(err, "failed to parse rendered v1beta1 HelmChart %s", baseFile.Path)
 			}
 			kotsV1Beta1HelmCharts = append(kotsV1Beta1HelmCharts, *helmChart)
 		case "v1beta2":
 			helmChart, err := kotsutil.LoadV1Beta2HelmChartFromContents(baseFile.Content)
 			if err != nil {
-				return nil, errors.Wrapf(err, "failed to parse rendered HelmChart %s", baseFile.Path)
+				fmt.Printf("Failed v1beta2 HelmChart contents:\n%s\n", string(baseFile.Content))
+				return nil, errors.Wrapf(err, "failed to parse rendered v1beta2 HelmChart %s", baseFile.Path)
 			}
 			kotsV1Beta2HelmCharts = append(kotsV1Beta2HelmCharts, *helmChart)
 		}
