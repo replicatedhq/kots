@@ -21,6 +21,7 @@ import { useNavigate, useOutletContext, useParams } from "react-router-dom";
 import { ToastContext } from "@src/context/ToastContext";
 import Toast from "@components/shared/Toast";
 import { usePrevious } from "@src/hooks/usePrevious";
+import { useSelectedApp } from "@features/App";
 
 type Props = {
   bundle: SupportBundle;
@@ -80,9 +81,8 @@ export const SupportBundleList = (props: Props) => {
   // };
 
   const outletContext: Props = useOutletContext();
-  console.log(outletContext, "context");
+
   const params = useParams();
-  console.log(params?.slug, "params");
 
   const listSupportBundles = () => {
     setState({
@@ -225,8 +225,9 @@ export const SupportBundleList = (props: Props) => {
 
   const { watch, loading, loadingBundle } = outletContext;
   const { errorMsg, supportBundles, isGeneratingBundleOpen } = state;
-
-  const downstream = watch?.downstream;
+  const selectedApp = useSelectedApp();
+  const downstream = selectedApp?.downstream;
+  console.log(watch, "watch");
 
   if (loading) {
     return (
@@ -239,6 +240,7 @@ export const SupportBundleList = (props: Props) => {
   let bundlesNode;
   if (downstream) {
     if (supportBundles?.length) {
+      console.log("are we here");
       bundlesNode = supportBundles
         .sort(
           (a, b) =>
@@ -248,8 +250,8 @@ export const SupportBundleList = (props: Props) => {
           <SupportBundleRow
             key={bundle.id}
             bundle={bundle}
-            watchSlug={watch?.slug}
-            isAirgap={watch?.isAirgap}
+            watchSlug={selectedApp.slug}
+            isAirgap={selectedApp?.isAirgap}
             isSupportBundleUploadSupported={
               watch?.isSupportBundleUploadSupported
             }
@@ -269,7 +271,7 @@ export const SupportBundleList = (props: Props) => {
     } else {
       return (
         <GenerateSupportBundle
-          watch={watch}
+          watch={selectedApp}
           updateBundleSlug={outletContext.updateBundleSlug}
           bundle={props.bundle}
           pollForBundleAnalysisProgress={props.pollForBundleAnalysisProgress}

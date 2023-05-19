@@ -24,7 +24,7 @@ export class AnalyzerRedactorReport extends Component {
     });
 
     fetch(
-      `${process.env.API_ENDPOINT}/troubleshoot/supportbundle/${this.props.bundle?.id}/redactions`,
+      `${process.env.API_ENDPOINT}/troubleshoot/supportbundle/${this.props.outletContext.bundle?.id}/redactions`,
       {
         method: "GET",
         headers: {
@@ -66,7 +66,7 @@ export class AnalyzerRedactorReport extends Component {
   };
 
   componentDidMount() {
-    if (this.props.bundle) {
+    if (this.props.outletContext.bundle) {
       this.getSupportBundleRedactions();
     }
   }
@@ -101,8 +101,6 @@ export class AnalyzerRedactorReport extends Component {
             <AnalyzerRedactorReportRow
               key={`redactor-${redactor}`}
               redactor={redactor}
-              match={this.props.match}
-              history={this.props.history}
               redactorFiles={redactions?.byRedactor[redactor]}
             />
           ))}
@@ -114,7 +112,7 @@ export class AnalyzerRedactorReport extends Component {
             tryAgain={this.getSupportBundleRedactions}
             err="Failed to get redactors"
             loading={this.state.isLoadingRedactions}
-            appSlug={this.props.match.params.slug}
+            appSlug={this.props.params.slug}
           />
         )}
       </div>

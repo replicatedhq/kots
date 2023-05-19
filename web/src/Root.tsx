@@ -48,6 +48,9 @@ import EditRedactor from "@components/redactors/EditRedactor";
 import SupportBundleAnalysis from "@components/troubleshoot/SupportBundleAnalysis";
 import GenerateSupportBundle from "@components/troubleshoot/GenerateSupportBundle";
 import SupportBundleList from "@components/troubleshoot/SupportBundleList";
+import AnalyzerInsights from "@components/troubleshoot/AnalyzerInsights";
+import AnalyzerFileTree from "@components/troubleshoot/AnalyzerFileTree";
+import AnalyzerRedactorReport from "@components/troubleshoot/AnalyzerRedactorReport";
 
 // react-query client
 const queryClient = new QueryClient();
@@ -758,7 +761,38 @@ const Root = () => {
                       // loading={this.state.loading}
                       />
                     }
-                  />
+                  >
+                    <Route
+                      index
+                      element={
+                        <AnalyzerInsights
+                        // status={bundle.status}
+                        // refetchSupportBundle={this.getSupportBundle}
+                        // insights={bundle.analysis?.insights}
+                        // openPodDetailsModal={this.togglePodDetailsModal}
+                        />
+                      }
+                    />
+                    <Route
+                      path={"contents/*"}
+                      element={
+                        <AnalyzerFileTree
+                        // watchSlug={watch.slug}
+                        // bundle={bundle}
+                        // downloadBundle={() => this.downloadBundle(bundle)}
+                        />
+                      }
+                    />
+                    <Route
+                      path={"redactor/report"}
+                      element={
+                        <AnalyzerRedactorReport
+                        // watchSlug={watch.slug}
+                        // bundle={bundle}
+                        />
+                      }
+                    />
+                  </Route>
                   <Route
                     path="redactors"
                     element={
