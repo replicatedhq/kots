@@ -132,10 +132,10 @@ class AppConfig extends Component<Props, State> {
   }
 
   componentDidMount() {
-    const { app, history } = this.props;
+    const { app, navigate } = this.props;
     if (app && !app.isConfigurable) {
       // app not configurable - redirect
-      history.replace(`/app/${app.slug}`);
+      navigate(`/app/${app.slug}`, { replace: true });
     }
     window.addEventListener("resize", this.determineSidebarHeight);
 
@@ -150,7 +150,7 @@ class AppConfig extends Component<Props, State> {
 
     if (this.state.app && !this.state.app.isConfigurable) {
       // app not configurable - redirect
-      this.props.history.replace(`/app/${this.state.app.slug}`);
+      this.props.navigate(`/app/${this.state.app.slug}`, { replace: true });
     }
     if (params.sequence !== lastProps.params.sequence) {
       this.getConfig();
@@ -311,15 +311,15 @@ class AppConfig extends Component<Props, State> {
     const { slug } = this.props.params;
 
     if (fromLicenseFlow) {
-      this.props.history.push(
+      this.props.navigate(
         `/${slug}/config${window.location.search}#${requiredItems[0]}-group`
       );
     } else if (params.sequence) {
-      this.props.history.push(
+      this.props.navigate(
         `/app/${slug}/config/${params.sequence}${window.location.search}#${requiredItems[0]}-group`
       );
     } else {
-      this.props.history.push(
+      this.props.navigate(
         `/app/${slug}/config${window.location.search}#${requiredItems[0]}-group`
       );
     }
@@ -347,7 +347,7 @@ class AppConfig extends Component<Props, State> {
       configErrorMessage: "",
     });
 
-    const { fromLicenseFlow, history, params, isHelmManaged } = this.props;
+    const { fromLicenseFlow, navigate, params, isHelmManaged } = this.props;
     const sequence = this.getSequence();
     const { slug } = this.props.params;
     const createNewVersion = !fromLicenseFlow && params.sequence == undefined;
@@ -415,12 +415,12 @@ class AppConfig extends Component<Props, State> {
         if (fromLicenseFlow) {
           const hasPreflight = this.state.app?.hasPreflight;
           if (hasPreflight) {
-            history.replace(`/${slug}/preflight`);
+            navigate(`/${slug}/preflight`, { replace: true });
           } else {
             if (this.props.refetchAppsList) {
               await this.props.refetchAppsList();
             }
-            history.replace(`/app/${slug}`);
+            navigate(`/app/${slug}`, { replace: true });
           }
         } else {
           this.setState({
@@ -652,7 +652,7 @@ class AppConfig extends Component<Props, State> {
     this.setState({ showNextStepModal: false });
 
     const pendingVersions = app?.downstream?.pendingVersions;
-    this.props.history.push(
+    this.props.navigate(
       `/app/${app?.slug}/config/${pendingVersions[0].parentSequence}`
     );
   };

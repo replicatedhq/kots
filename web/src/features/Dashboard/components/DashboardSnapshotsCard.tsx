@@ -7,7 +7,6 @@ import InlineDropdown from "@src/components/shared/InlineDropdown";
 import SnapshotDifferencesModal from "@src/components/modals/SnapshotDifferencesModal";
 import Icon from "@src/components/Icon";
 import { App, KotsParams, SnapshotSettings } from "@types";
-import { RouteComponentProps } from "react-router-dom";
 import { usePrevious } from "@src/hooks/usePrevious";
 import { useCreateSnapshot } from "../api/createSnapshot";
 import { useSnapshotSettings } from "../api/getSnapshotSettings";
@@ -47,7 +46,7 @@ type Props = {
   app: App;
   isSnapshotAllowed: boolean;
   ping: (clusterId?: string) => void;
-} & RouteComponentProps<KotsParams>;
+};
 
 type State = {
   determiningDestination: boolean;
@@ -187,9 +186,9 @@ export const DashboardSnapshotsCard = (props: Props) => {
     });
     ping();
     if (data.option === "full") {
-      history.push("/snapshots");
+      navigate("/snapshots");
     } else {
-      history.push(`/snapshots/partial/${app.slug}`);
+      navigate(`/snapshots/partial/${app.slug}`);
     }
   };
 
