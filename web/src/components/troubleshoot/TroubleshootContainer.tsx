@@ -1,5 +1,5 @@
 import React, { Component } from "react";
-import { Switch, Route } from "react-router-dom";
+import { Outlet, Route, Routes } from "react-router-dom";
 import NotFound from "../static/NotFound";
 import SupportBundleList from "../troubleshoot/SupportBundleList";
 import SupportBundleAnalysis from "../troubleshoot/SupportBundleAnalysis";
@@ -106,13 +106,26 @@ class TroubleshootContainer extends Component<Props, State> {
   render() {
     const { app, appName } = this.props;
 
+    const props = {
+      watch: app,
+      newBundleSlug: this.state.newBundleSlug,
+      updateBundleSlug: this.updateBundleSlug,
+      pollForBundleAnalysisProgress: this.pollForBundleAnalysisProgress,
+      bundle: this.state.bundle,
+      bundleProgress: this.state.bundleAnalysisProgress,
+      loadingBundleId: this.state.loadingBundleId,
+      loadingBundle: this.state.loadingBundle,
+      updateState: this.updateState,
+      displayErrorModal: this.state.displayErrorModal,
+      loading: this.state.loading,
+    };
+
     return (
       <div className="flex-column flex1">
-        <Switch>
-          <Route
-            exact
+        <Outlet context={props} />
+        {/* <Route
             path="/app/:slug/troubleshoot"
-            render={() => (
+            element={
               <SupportBundleList
                 watch={app}
                 newBundleSlug={this.state.newBundleSlug}
@@ -128,23 +141,22 @@ class TroubleshootContainer extends Component<Props, State> {
                 displayErrorModal={this.state.displayErrorModal}
                 loading={this.state.loading}
               />
-            )}
+            }
           />
           <Route
-            exact
             path="/app/:slug/troubleshoot/generate"
-            render={() => (
+            element={
               <GenerateSupportBundle
                 watch={app}
                 newBundleSlug={this.state.newBundleSlug}
                 updateBundleSlug={this.updateBundleSlug}
                 bundle={this.state.bundle}
               />
-            )}
+            }
           />
           <Route
             path="/app/:slug/troubleshoot/analyze/:bundleSlug"
-            render={() => (
+            element={
               <SupportBundleAnalysis
                 watch={app}
                 pollForBundleAnalysisProgress={
@@ -157,31 +169,21 @@ class TroubleshootContainer extends Component<Props, State> {
                 getSupportBundleErrMsg={this.state.getSupportBundleErrMsg}
                 loading={this.state.loading}
               />
-            )}
+            }
           />
           <Route
-            exact
             path="/app/:slug/troubleshoot/redactors"
-            render={(props) => (
-              <Redactors
-                {...props}
-                appSlug={app?.slug || ""}
-                appName={appName}
-              />
-            )}
+            element={<Redactors appSlug={app?.slug || ""} appName={appName} />}
           />
           <Route
-            exact
             path="/app/:slug/troubleshoot/redactors/new"
-            render={() => <EditRedactor />}
+            element={<EditRedactor />}
           />
           <Route
-            exact
             path="/app/:slug/troubleshoot/redactors/:redactorSlug"
-            render={() => <EditRedactor />}
+            element={<EditRedactor />}
           />
-          <Route component={NotFound} />
-        </Switch>
+          <Route element={NotFound} /> */}
       </div>
     );
   }

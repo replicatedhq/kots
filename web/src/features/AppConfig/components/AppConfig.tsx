@@ -146,13 +146,13 @@ class AppConfig extends Component<Props, State> {
   }
 
   componentDidUpdate(lastProps: Props, lastState: State) {
-    const { match, location } = this.props;
+    const { params, location } = this.props;
 
     if (this.state.app && !this.state.app.isConfigurable) {
       // app not configurable - redirect
       this.props.history.replace(`/app/${this.state.app.slug}`);
     }
-    if (match.params.sequence !== lastProps.match.params.sequence) {
+    if (params.sequence !== lastProps.params.sequence) {
       this.getConfig();
     }
     if (
@@ -207,7 +207,7 @@ class AppConfig extends Component<Props, State> {
     }
 
     try {
-      const { slug } = this.props.match.params;
+      const { slug } = this.props.params;
       const res = await fetch(`${process.env.API_ENDPOINT}/app/${slug}`, {
         headers: {
           "Content-Type": "application/json",
@@ -226,7 +226,7 @@ class AppConfig extends Component<Props, State> {
 
   getConfig = async () => {
     const sequence = this.getSequence();
-    const slug = this.getSlug();
+    const { slug } = this.props.params;
 
     this.setState({
       configLoading: true,
@@ -280,12 +280,12 @@ class AppConfig extends Component<Props, State> {
   };
 
   getSequence = () => {
-    const { match, app, fromLicenseFlow } = this.props;
+    const { params, app, fromLicenseFlow } = this.props;
     if (fromLicenseFlow) {
       return 0;
     }
-    if (match.params.sequence != undefined) {
-      return parseInt(match.params.sequence);
+    if (params.sequence != undefined) {
+      return parseInt(params.sequence);
     }
 
     // check is current deployed config latest
@@ -299,24 +299,24 @@ class AppConfig extends Component<Props, State> {
   };
 
   getSlug = () => {
-    const { match, app, fromLicenseFlow } = this.props;
+    const { params, app, fromLicenseFlow } = this.props;
     if (fromLicenseFlow) {
-      return match.params.slug;
+      return params.slug;
     }
     return app?.slug;
   };
 
   updateUrlWithErrorId = (requiredItems: RequiredItems) => {
-    const { match, fromLicenseFlow } = this.props;
-    const slug = this.getSlug();
+    const { params, fromLicenseFlow } = this.props;
+    const { slug } = this.props.params;
 
     if (fromLicenseFlow) {
       this.props.history.push(
         `/${slug}/config${window.location.search}#${requiredItems[0]}-group`
       );
-    } else if (match.params.sequence) {
+    } else if (params.sequence) {
       this.props.history.push(
-        `/app/${slug}/config/${match.params.sequence}${window.location.search}#${requiredItems[0]}-group`
+        `/app/${slug}/config/${params.sequence}${window.location.search}#${requiredItems[0]}-group`
       );
     } else {
       this.props.history.push(
@@ -347,11 +347,10 @@ class AppConfig extends Component<Props, State> {
       configErrorMessage: "",
     });
 
-    const { fromLicenseFlow, history, match, isHelmManaged } = this.props;
+    const { fromLicenseFlow, history, params, isHelmManaged } = this.props;
     const sequence = this.getSequence();
-    const slug = this.getSlug();
-    const createNewVersion =
-      !fromLicenseFlow && match.params.sequence == undefined;
+    const { slug } = this.props.params;
+    const createNewVersion = !fromLicenseFlow && params.sequence == undefined;
 
     fetch(`${process.env.API_ENDPOINT}/app/${slug}/config`, {
       method: "PUT",
@@ -524,7 +523,7 @@ class AppConfig extends Component<Props, State> {
 
   handleConfigChange = (groups: ConfigGroup[]) => {
     const sequence = this.getSequence();
-    const slug = this.getSlug();
+    const { slug } = this.props.params;
 
     // cancel current request (if any)
     if (this.fetchController) {
@@ -620,11 +619,11 @@ class AppConfig extends Component<Props, State> {
   };
 
   isConfigReadOnly = (app: App) => {
-    const { match } = this.props;
-    if (!match.params.sequence) {
+    const { params } = this.props;
+    if (!params.sequence) {
       return false;
     }
-    const sequence = parseInt(match.params.sequence);
+    const sequence = parseInt(params.sequence);
     const isCurrentVersion =
       app.downstream?.currentVersion?.sequence === sequence;
     const isLatestVersion = app.currentSequence === sequence;
@@ -673,7 +672,7 @@ class AppConfig extends Component<Props, State> {
       showNextStepModal,
       showValidationError,
     } = this.state;
-    const { fromLicenseFlow, match, isHelmManaged } = this.props;
+    const { fromLicenseFlow, params, isHelmManaged } = this.props;
     const app = this.props.app || this.state.app;
 
     if (configLoading || !app) {
@@ -685,7 +684,7 @@ class AppConfig extends Component<Props, State> {
     }
 
     const gitops = app.downstream?.gitops;
-    const isNewVersion = !fromLicenseFlow && match.params.sequence == undefined;
+    const isNewVersion = !fromLicenseFlow && params.sequence == undefined;
 
     const urlParams = new URLSearchParams(window.location.search);
 
@@ -836,14 +835,14 @@ class AppConfig extends Component<Props, State> {
               <UseIsHelmManaged>
                 {({ data: isHelmManagedFromHook }) => {
                   const { isError: saveError } = useSaveConfig({
-                    appSlug: this.getSlug(),
+                    appSlug: this.props.params.slug,
                   });
 
                   const { download, clearError: clearDownloadError } =
                     useDownloadValues({
-                      appSlug: this.getSlug(),
+                      appSlug: this.props.params.slug,
                       fileName: "values.yaml",
-                      sequence: match.params.sequence,
+                      sequence: params.sequence,
                       versionLabel: downstreamVersionLabel,
                       isPending: isPending,
                     });
@@ -853,7 +852,6 @@ class AppConfig extends Component<Props, State> {
                       {!isHelmManagedFromHook && (
                         <ConfigInfo
                           app={app}
-                          match={this.props.match}
                           fromLicenseFlow={this.props.fromLicenseFlow}
                         />
                       )}
@@ -868,7 +866,7 @@ class AppConfig extends Component<Props, State> {
                             groups={configGroups}
                             getData={this.handleConfigChange}
                             readonly={this.isConfigReadOnly(app)}
-                            configSequence={match.params.sequence}
+                            configSequence={params.sequence}
                             appSlug={app.slug}
                           />
                         </div>

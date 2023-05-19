@@ -18,7 +18,9 @@ export function withRouter(Component: JSX.IntrinsicAttributes) {
     return (
       <Component
         {...props}
-        router={{ location, navigate, params }}
+        location={location}
+        navigate={navigate}
+        params={params}
         outletContext={outletContext}
       />
     );

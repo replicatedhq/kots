@@ -3,17 +3,19 @@ import size from "lodash/size";
 import findIndex from "lodash/findIndex";
 import { Link } from "react-router-dom";
 import Icon from "@src/components/Icon";
+import { useParams } from "react-router-dom";
 
-const ConfigInfo = ({ match, fromLicenseFlow, app }) => {
+const ConfigInfo = ({ fromLicenseFlow, app }) => {
+  const params = useParams();
   if (fromLicenseFlow || app?.downstream?.gitops?.isConnected) {
     return null;
   }
 
   let sequence;
-  if (!match.params.sequence) {
+  if (!params.sequence) {
     sequence = app?.currentSequence;
   } else {
-    sequence = parseInt(match.params.sequence);
+    sequence = parseInt(params.sequence);
   }
 
   const currentSequence = app?.downstream?.currentVersion?.parentSequence;
