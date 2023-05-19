@@ -23,7 +23,13 @@ import Access from "./components/identity/Access";
 import SnapshotsWrapper from "./components/snapshots/SnapshotsWrapper";
 import { QueryClient, QueryClientProvider } from "react-query";
 import { InstallWithHelm } from "@features/AddNewApp";
-import DumbComponent from "@features/Dashboard/components/DumbComponent";
+import DownstreamTree from "./components/tree/KotsApplicationTree";
+import { Dashboard } from "@features/Dashboard/components/Dashboard";
+import AppVersionHistory from "@components/apps/AppVersionHistory";
+import AppLicense from "@components/apps/AppLicense";
+import AppRegistrySettings from "@components/apps/AppRegistrySettings";
+import AppIdentityServiceSettings from "@components/apps/AppIdentityServiceSettings";
+import TroubleshootContainer from "@components/troubleshoot/TroubleshootContainer";
 
 import Footer from "./components/shared/Footer";
 import NavBar from "./components/shared/NavBar";
@@ -37,7 +43,11 @@ import connectHistory from "./services/matomo";
 // types
 import { App, Metadata, ThemeState } from "@types";
 import { ToastProvider } from "./context/ToastContext";
-import { Dashboard } from "@features/Dashboard/components/Dashboard";
+import Redactors from "@components/redactors/Redactors";
+import EditRedactor from "@components/redactors/EditRedactor";
+import SupportBundleAnalysis from "@components/troubleshoot/SupportBundleAnalysis";
+import GenerateSupportBundle from "@components/troubleshoot/GenerateSupportBundle";
+import SupportBundleList from "@components/troubleshoot/SupportBundleList";
 
 // react-query client
 const queryClient = new QueryClient();
@@ -64,6 +74,7 @@ type AppBranding = {
 };
 
 type State = {
+  app: App | null;
   appBranding: AppBranding | null;
   appLogo: string | null;
   appNameSpace: string | null;
@@ -109,6 +120,7 @@ const Root = () => {
       themeState: {
         navbarLogo: null,
       },
+      app: null,
     }
   );
 
@@ -274,6 +286,7 @@ const Root = () => {
           appLogo: data.iconUri,
           appBranding: data.branding,
           selectedAppName: data.name,
+          app: data,
           appSlugFromMetadata: parseUpstreamUri(data.upstreamUri),
           appNameSpace: data.namespace,
           adminConsoleMetadata: data.adminConsoleMetadata,
@@ -588,7 +601,7 @@ const Root = () => {
                 }
               />
               <Route
-                path={"/app"}
+                path={"/app/*"}
                 element={
                   <AppDetailPage
                     refetchAppMetadata={fetchKotsAppMetadata}
@@ -603,6 +616,217 @@ const Root = () => {
                 }
               >
                 <Route path=":slug" element={<Dashboard />} />
+                <Route
+                  path=":slug/tree/:sequence?"
+                  element={
+                    <DownstreamTree
+                    // app={selectedApp}
+                    // appNameSpace={props.appNameSpace}
+                    // isHelmManaged={props.isHelmManaged}
+                    />
+                  }
+                />
+
+                <Route
+                  path={":slug/version-history"}
+                  element={
+                    <AppVersionHistory
+                    // app={selectedApp}
+                    // match={{ match: { params: params } }}
+                    // makeCurrentVersion={makeCurrentRelease}
+                    // makingCurrentVersionErrMsg={
+                    //   state.makingCurrentReleaseErrMsg
+                    // }
+                    // updateCallback={refetchData}
+                    // toggleIsBundleUploading={toggleIsBundleUploading}
+                    // isBundleUploading={isBundleUploading}
+                    // isHelmManaged={props.isHelmManaged}
+                    // refreshAppData={refetchApps}
+                    // displayErrorModal={state.displayErrorModal}
+                    // toggleErrorModal={toggleErrorModal}
+                    // makingCurrentRelease={state.makingCurrentRelease}
+                    // redeployVersion={redeployVersion}
+                    // redeployVersionErrMsg={state.redeployVersionErrMsg}
+                    // resetRedeployErrorMessage={resetRedeployErrorMessage}
+                    // resetMakingCurrentReleaseErrorMessage={
+                    //   resetMakingCurrentReleaseErrorMessage
+                    // }
+                    // adminConsoleMetadata={props.adminConsoleMetadata}
+                    />
+                  }
+                />
+                <Route
+                  path={
+                    ":slug/version-history/diff/:firstSequence/:secondSequence"
+                  }
+                  element={
+                    <AppVersionHistory
+                    // app={selectedApp}
+                    // match={{ match: { params: params } }}
+                    // makeCurrentVersion={makeCurrentRelease}
+                    // makingCurrentVersionErrMsg={
+                    //   state.makingCurrentReleaseErrMsg
+                    // }
+                    // updateCallback={refetchData}
+                    // toggleIsBundleUploading={toggleIsBundleUploading}
+                    // isBundleUploading={isBundleUploading}
+                    // isHelmManaged={props.isHelmManaged}
+                    // refreshAppData={refetchApps}
+                    // displayErrorModal={state.displayErrorModal}
+                    // toggleErrorModal={toggleErrorModal}
+                    // makingCurrentRelease={state.makingCurrentRelease}
+                    // redeployVersion={redeployVersion}
+                    // redeployVersionErrMsg={state.redeployVersionErrMsg}
+                    // resetRedeployErrorMessage={resetRedeployErrorMessage}
+                    // resetMakingCurrentReleaseErrorMessage={
+                    //   resetMakingCurrentReleaseErrorMessage
+                    // }
+                    // adminConsoleMetadata={props.adminConsoleMetadata}
+                    />
+                  }
+                />
+                <Route
+                  path=":slug/downstreams/:downstreamSlug/version-history/preflight/:sequence"
+                  element={<PreflightResultPage />}
+                />
+                <Route
+                  path=":slug/config/:sequence?"
+                  element={
+                    <AppConfig
+                    // app={selectedApp}
+                    // refreshAppData={refetchApps}
+                    // fromLicenseFlow={false}
+                    // isHelmManaged={props.isHelmManaged}
+                    />
+                  }
+                />
+                <Route
+                  path=":slug/troubleshoot"
+                  element={
+                    <TroubleshootContainer
+                      app={state.app}
+                      // appName={appName || ""}
+                    />
+                  }
+                >
+                  <Route
+                    index
+                    element={
+                      <SupportBundleList
+                      // watch={state.app}
+                      // newBundleSlug={this.state.newBundleSlug}
+                      // updateBundleSlug={this.updateBundleSlug}
+                      // pollForBundleAnalysisProgress={
+                      //   this.pollForBundleAnalysisProgress
+                      // }
+                      // bundle={this.state.bundle}
+                      // bundleProgress={this.state.bundleAnalysisProgress}
+                      // loadingBundleId={this.state.loadingBundleId}
+                      // loadingBundle={this.state.loadingBundle}
+                      // updateState={this.updateState}
+                      // displayErrorModal={this.state.displayErrorModal}
+                      // loading={this.state.loading}
+                      />
+                    }
+                  />
+                  <Route
+                    path="generate"
+                    element={
+                      <GenerateSupportBundle
+                      // watch={app}
+                      // newBundleSlug={this.state.newBundleSlug}
+                      // updateBundleSlug={this.updateBundleSlug}
+                      // bundle={this.state.bundle}
+                      />
+                    }
+                  />
+                  <Route
+                    path="analyze/:bundleSlug"
+                    element={
+                      <SupportBundleAnalysis
+                      // watch={app}
+                      // pollForBundleAnalysisProgress={
+                      //   this.pollForBundleAnalysisProgress
+                      // }
+                      // bundle={this.state.bundle}
+                      // bundleProgress={this.state.bundleAnalysisProgress}
+                      // updateState={this.updateState}
+                      // displayErrorModal={this.state.displayErrorModal}
+                      // getSupportBundleErrMsg={
+                      //   this.state.getSupportBundleErrMsg
+                      // }
+                      // loading={this.state.loading}
+                      />
+                    }
+                  />
+                  <Route
+                    path="redactors"
+                    element={
+                      <Redactors
+                      // appSlug={app?.slug || ""} appName={appName}
+                      />
+                    }
+                  />
+                  <Route path="redactors/new" element={<EditRedactor />} />
+                  <Route
+                    path="redactors/:redactorSlug"
+                    element={<EditRedactor />}
+                  />
+                  <Route element={NotFound} />
+                </Route>
+                <Route
+                  path=":slug/license"
+                  element={
+                    <AppLicense
+                    // app={selectedApp}
+                    // syncCallback={refetchData}
+                    // changeCallback={refetchData}
+                    // isHelmManaged={props.isHelmManaged}
+                    />
+                  }
+                />
+                <Route
+                  path=":slug/registry-settings"
+                  element={
+                    <AppRegistrySettings
+                    // app={selectedApp}
+                    // updateCallback={refetchData}
+                    />
+                  }
+                />
+                {/* WHERE IS SELECTEDAPP */}
+                {state.app?.isAppIdentityServiceSupported && (
+                  <Route
+                    path=":slug/access"
+                    element={
+                      <AppIdentityServiceSettings
+                      // app={selectedApp}
+                      // refetch={refetchApps}
+                      />
+                    }
+                  />
+                )}
+                {/* snapshots redirects */}
+                <Route
+                  path=":slug/snapshots"
+                  element={<Navigate to="/snapshots/partial/:slug" />}
+                />
+                <Route
+                  path=":slug/snapshots/schedule"
+                  element={<Navigate to="/snapshots/settings?:slug" />}
+                />
+                <Route
+                  path=":slug/snapshots/:id"
+                  element={<Navigate to="/snapshots/partial/:slug/:id" />}
+                />
+                <Route
+                  path=":slug/snapshots/:id/restore"
+                  element={
+                    <Navigate to="/snapshots/partial/:slug/:id/restore" />
+                  }
+                />
+
+                <Route element={<NotFound />} />
               </Route>
               <Route
                 path="/restore-completed"

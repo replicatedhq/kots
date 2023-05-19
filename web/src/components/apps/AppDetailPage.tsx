@@ -7,6 +7,7 @@ import {
   Navigate,
   useParams,
   Outlet,
+  useLocation,
 } from "react-router-dom";
 import Modal from "react-modal";
 import { useTheme } from "@src/components/context/withTheme";
@@ -395,18 +396,33 @@ function AppDetailPage(props: Props) {
   };
 
   const testProps = {
+    //match,
+    adminConsoleMetadata: props.adminConsoleMetadata,
     app: selectedApp,
+    appName: props.appName,
     cluster: selectedApp?.downstream?.cluster,
-    updateCallback: refetchData,
-    toggleIsBundleUploading: toggleIsBundleUploading,
-    makeCurrentVersion: makeCurrentRelease,
-    redeployVersion: redeployVersion,
+    displayErrorModal: state.displayErrorModal,
     isBundleUploading: isBundleUploading,
-    isVeleroInstalled: isVeleroInstalled,
-    refreshAppData: refetchApps,
-    ping: props.ping,
     isHelmManaged: props.isHelmManaged,
+    isVeleroInstalled: isVeleroInstalled,
+    logo: selectedApp?.iconUri,
+    makeCurrentVersion: makeCurrentRelease,
+    makingCurrentRelease: state.makingCurrentRelease,
+    makingCurrentVersionErrMsg: state.makingCurrentReleaseErrMsg,
+    ping: props.ping,
+    redeployVersion: redeployVersion,
+    redeployVersionErrMsg: state.redeployVersionErrMsg,
+    refreshAppData: refetchApps,
+    resetMakingCurrentReleaseErrorMessage,
+    resetRedeployErrorMessage,
+    toggleErrorModal: toggleErrorModal,
+    toggleIsBundleUploading: toggleIsBundleUploading,
+    updateCallback: refetchData,
   };
+
+  const lastItem = location.pathname.substring(
+    location.pathname.lastIndexOf("/") + 1
+  );
 
   return (
     <div className="WatchDetailPage--wrapper flex-column flex1 u-overflow--auto">
@@ -459,7 +475,7 @@ function AppDetailPage(props: Props) {
             <Fragment>
               <SubNavBar
                 className="flex"
-                activeTab={params.tab || "app"}
+                activeTab={lastItem === params.slug ? "app" : lastItem}
                 app={selectedApp}
                 isVeleroInstalled={isVeleroInstalled}
                 isHelmManaged={props.isHelmManaged}

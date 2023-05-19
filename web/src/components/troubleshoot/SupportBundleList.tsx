@@ -17,7 +17,7 @@ import "../../scss/components/troubleshoot/SupportBundleList.scss";
 import Icon from "../Icon";
 import { App, SupportBundle, SupportBundleProgress } from "@types";
 import GenerateSupportBundleModal from "./GenerateSupportBundleModal";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useOutletContext, useParams } from "react-router-dom";
 import { ToastContext } from "@src/context/ToastContext";
 import Toast from "@components/shared/Toast";
 import { usePrevious } from "@src/hooks/usePrevious";
@@ -79,19 +79,24 @@ export const SupportBundleList = (props: Props) => {
   //   });
   // };
 
+  const outletContext: Props = useOutletContext();
+  console.log(outletContext, "context");
+  const params = useParams();
+  console.log(params?.slug, "params");
+
   const listSupportBundles = () => {
     setState({
       errorMsg: "",
     });
 
-    props.updateState({
+    outletContext.updateState({
       loading: true,
       displayErrorModal: true,
       loadingBundle: false,
     });
 
     fetch(
-      `${process.env.API_ENDPOINT}/troubleshoot/app/${props.watch?.slug}/supportbundles`,
+      `${process.env.API_ENDPOINT}/troubleshoot/app/${params?.slug}/supportbundles`,
       {
         headers: {
           "Content-Type": "application/json",
@@ -105,7 +110,10 @@ export const SupportBundleList = (props: Props) => {
           setState({
             errorMsg: `Unexpected status code: ${res.status}`,
           });
-          props.updateState({ loading: false, displayErrorModal: true });
+          outletContext.updateState({
+            loading: false,
+            displayErrorModal: true,
+          });
           return;
         }
         const response = await res.json();
@@ -118,7 +126,7 @@ export const SupportBundleList = (props: Props) => {
         }
         if (bundleRunning) {
           state.pollForBundleAnalysisProgress.start(
-            props.pollForBundleAnalysisProgress,
+            outletContext.pollForBundleAnalysisProgress,
             1000
           );
         }
@@ -126,7 +134,10 @@ export const SupportBundleList = (props: Props) => {
           supportBundles: response.supportBundles,
           errorMsg: "",
         });
-        props.updateState({ loading: false, displayErrorModal: false });
+        outletContext.updateState({
+          loading: false,
+          displayErrorModal: false,
+        });
       })
       .catch((err) => {
         console.log(err);
@@ -135,7 +146,10 @@ export const SupportBundleList = (props: Props) => {
             ? err.message
             : "Something went wrong, please try again.",
         });
-        props.updateState({ displayErrorModal: true, loading: false });
+        outletContext.updateState({
+          displayErrorModal: true,
+          loading: false,
+        });
       });
   };
 
@@ -147,25 +161,28 @@ export const SupportBundleList = (props: Props) => {
   }, []);
 
   useEffect(() => {
-    const { bundle } = props;
+    const { bundle } = outletContext;
     if (bundle?.status !== "running") {
       listSupportBundles();
       state.pollForBundleAnalysisProgress.stop();
       if (bundle.status === "failed") {
-        navigate(`/app/${props.watch?.slug}/troubleshoot`);
+        navigate(`/app/${outletContext.watch?.slug}/troubleshoot`);
       }
     }
-  }, [props.bundle]);
+  }, [outletContext.bundle]);
 
-  const prevLoadingBundleId = usePrevious(props.loadingBundleId);
+  const prevLoadingBundleId = usePrevious(outletContext.loadingBundleId);
   const prevDeleteBundleId = usePrevious(deleteBundleId);
 
   useEffect(() => {
     // if the current bundle to delete is the same as the bundle that is loading
     // stop the polling
-    if (props.loadingBundleId === deleteBundleId) {
+    if (outletContext.loadingBundleId === deleteBundleId) {
       state.pollForBundleAnalysisProgress.stop();
-      props.updateState({ loadingBundleId: "", loadingBundle: false });
+      outletContext.updateState({
+        loadingBundleId: "",
+        loadingBundle: false,
+      });
     }
     // if the loading bundle is done and user previously tried to delete the bundle, and changed their mind (undo)
     // refresh the list
@@ -179,7 +196,7 @@ export const SupportBundleList = (props: Props) => {
     // if the loading bundle is not done and user tried to delete a bundle, and changed their mind (undo)
     // refresh the list, which will start polling again, and show the progress bar
     if (prevLoadingBundleId === prevDeleteBundleId && deleteBundleId === "") {
-      props.updateState({
+      outletContext.updateState({
         loadingBundleId: prevLoadingBundleId,
         loadingBundle: true,
       });
@@ -195,8 +212,8 @@ export const SupportBundleList = (props: Props) => {
   };
 
   const toggleErrorModal = () => {
-    props.updateState({
-      displayErrorModal: !props.displayErrorModal,
+    outletContext.updateState({
+      displayErrorModal: !outletContext.displayErrorModal,
     });
   };
 
@@ -206,7 +223,7 @@ export const SupportBundleList = (props: Props) => {
     });
   };
 
-  const { watch, loading, loadingBundle } = props;
+  const { watch, loading, loadingBundle } = outletContext;
   const { errorMsg, supportBundles, isGeneratingBundleOpen } = state;
 
   const downstream = watch?.downstream;
@@ -239,10 +256,12 @@ export const SupportBundleList = (props: Props) => {
             refetchBundleList={listSupportBundles}
             //  deleteBundleFromList={deleteBundleFromList}
             progressData={
-              props.loadingBundleId === bundle.id && props.bundleProgress
+              outletContext.loadingBundleId === bundle.id &&
+              outletContext.bundleProgress
             }
             loadingBundle={
-              props.loadingBundleId === bundle.id && props.loadingBundle
+              outletContext.loadingBundleId === bundle.id &&
+              outletContext.loadingBundle
             }
             className={bundle.id === deleteBundleId ? "deleting" : ""}
           />
@@ -251,7 +270,7 @@ export const SupportBundleList = (props: Props) => {
       return (
         <GenerateSupportBundle
           watch={watch}
-          updateBundleSlug={props.updateBundleSlug}
+          updateBundleSlug={outletContext.updateBundleSlug}
           bundle={props.bundle}
           pollForBundleAnalysisProgress={props.pollForBundleAnalysisProgress}
         />
@@ -270,14 +289,14 @@ export const SupportBundleList = (props: Props) => {
                 {
                   title: "Support bundles",
                   onClick: () =>
-                    navigate(`/app/${props.watch?.slug}/troubleshoot`),
+                    navigate(`/app/${outletContext.watch?.slug}/troubleshoot`),
                   isActive: true,
                 },
                 {
                   title: "Redactors",
                   onClick: () =>
                     navigate(
-                      `/app/${props.watch?.slug}/troubleshoot/redactors`
+                      `/app/${outletContext.watch?.slug}/troubleshoot/redactors`
                     ),
                   isActive: false,
                 },
@@ -338,20 +357,20 @@ export const SupportBundleList = (props: Props) => {
         )}
         {errorMsg && (
           <ErrorModal
-            errorModal={props.displayErrorModal}
+            errorModal={outletContext.displayErrorModal}
             toggleErrorModal={toggleErrorModal}
             errMsg={errorMsg}
             tryAgain={listSupportBundles}
             err="Failed to get bundles"
-            loading={props.loading}
-            appSlug={props.match.params.slug}
+            loading={outletContext.loading}
+            appSlug={params.slug}
           />
         )}
         <GenerateSupportBundleModal
           isOpen={isGeneratingBundleOpen}
           toggleModal={toggleGenerateBundleModal}
-          watch={props.watch}
-          updateBundleSlug={props.updateBundleSlug}
+          watch={watch}
+          updateBundleSlug={outletContext.updateBundleSlug}
         />
       </div>
 
