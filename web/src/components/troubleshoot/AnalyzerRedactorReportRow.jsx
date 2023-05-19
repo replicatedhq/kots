@@ -1,6 +1,7 @@
 import React from "react";
 import groupBy from "lodash/groupBy";
 import Icon from "../Icon";
+import { withRouter } from "@src/utilities/react-router-utilities";
 
 class AnalyzerRedactorReportRow extends React.Component {
   state = {
@@ -29,7 +30,7 @@ class AnalyzerRedactorReportRow extends React.Component {
   };
 
   goToFile = (filePath) => {
-    const { match, history, redactorFiles, redactor } = this.props;
+    const { params, navigate, redactorFiles, redactor } = this.props;
     const filteredFiles = redactorFiles.filter((f) => f.file === filePath);
     let rowString = "#";
     filteredFiles.forEach((file, i) => {
@@ -39,8 +40,8 @@ class AnalyzerRedactorReportRow extends React.Component {
         rowString = `${rowString},${file.line}`;
       }
     });
-    history.push(
-      `/app/${match.params.slug}/troubleshoot/analyze/${match.params.bundleSlug}/contents/${filePath}?file=${redactor}${rowString}`
+    navigate(
+      `/app/${params.slug}/troubleshoot/analyze/${params.bundleSlug}/contents/${filePath}?file=${redactor}${rowString}`
     );
   };
 
@@ -160,4 +161,4 @@ class AnalyzerRedactorReportRow extends React.Component {
   }
 }
 
-export default AnalyzerRedactorReportRow;
+export default withRouter(AnalyzerRedactorReportRow);

@@ -46,7 +46,7 @@ class GenerateSupportBundle extends React.Component {
   }
 
   componentDidUpdate(lastProps, lastState) {
-    const { watch, history, bundle } = this.props;
+    const { watch, navigate, bundle } = this.props;
     const { totalBundles, loadingSupportBundles, supportBundles, networkErr } =
       this.state;
 
@@ -67,13 +67,9 @@ class GenerateSupportBundle extends React.Component {
           if (bundle.status !== "running") {
             this.state.listSupportBundlesJob.stop();
             if (bundle.status === "failed") {
-              this.props.history.push(
-                `/app/${this.props.watch.slug}/troubleshoot`
-              );
+              navigate(`/app/${watch.slug}/troubleshoot`);
             } else {
-              history.push(
-                `/app/${watch.slug}/troubleshoot/analyze/${bundle.id}`
-              );
+              navigate(`/app/${watch.slug}/troubleshoot/analyze/${bundle.id}`);
             }
           }
         }
@@ -261,7 +257,7 @@ class GenerateSupportBundle extends React.Component {
   };
 
   collectBundle = (clusterId) => {
-    const { watch } = this.props;
+    const { watch, navigate } = this.props;
 
     let url = `${process.env.API_ENDPOINT}/troubleshoot/supportbundle/app/${watch?.id}/cluster/${clusterId}/collect`;
     if (!watch.id) {
@@ -288,9 +284,7 @@ class GenerateSupportBundle extends React.Component {
         this.props.updateBundleSlug(response.slug);
         this.setState({ newBundleSlug: response.slug });
 
-        this.props.history.push(
-          `/app/${watch.slug}/troubleshoot/analyze/${response.slug}`
-        );
+        navigate(`/app/${watch.slug}/troubleshoot/analyze/${response.slug}`);
         this.setState({
           isGeneratingBundle: true,
           generateBundleErrMsg: "",
@@ -357,7 +351,7 @@ class GenerateSupportBundle extends React.Component {
       generateBundleErrMsg,
       errorMsg,
     } = this.state;
-    const { watch } = this.props;
+    const { watch, navigate } = this.props;
     const appTitle = watch.downstream?.currentVersion?.appTitle || watch.name;
 
     return (
@@ -380,15 +374,13 @@ class GenerateSupportBundle extends React.Component {
                   {
                     title: "Support bundles",
                     onClick: () =>
-                      this.props.history.push(
-                        `/app/${this.props.watch.slug}/troubleshoot`
-                      ),
+                      navigate(`/app/${this.props.watch.slug}/troubleshoot`),
                     isActive: true,
                   },
                   {
                     title: "Redactors",
                     onClick: () =>
-                      this.props.history.push(
+                      navigate(
                         `/app/${this.props.watch.slug}/troubleshoot/redactors`
                       ),
                     isActive: false,
@@ -495,8 +487,8 @@ class GenerateSupportBundle extends React.Component {
             <UploadSupportBundleModal
               watch={this.props.watch}
               onBundleUploaded={(bundleId) => {
-                const url = `/app/${this.props.match.params.slug}/troubleshoot/analyze/${bundleId}`;
-                this.props.history.push(url);
+                const url = `/app/${this.props.params.slug}/troubleshoot/analyze/${bundleId}`;
+                navigate(url);
               }}
             />
           </div>
@@ -512,7 +504,7 @@ class GenerateSupportBundle extends React.Component {
             tryAgain={this.listSupportBundles}
             err="Failed to get bundles"
             loading={this.state.loadingSupportBundles}
-            appSlug={this.props.match.params.slug}
+            appSlug={this.props.params.slug}
           />
         )}
       </div>

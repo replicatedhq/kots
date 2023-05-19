@@ -169,7 +169,7 @@ export const SupportBundleRow = (props: Props) => {
   }, [isCancelled]);
 
   const deleteBundle = (bundle: SupportBundle) => {
-    const { match } = props;
+    const { params } = props;
     const delayFetch = 7000;
     const bundleCollectionDate = dayjs(bundle?.createdAt)?.format(
       "MMMM D, YYYY @ h:mm a"
@@ -189,7 +189,7 @@ export const SupportBundleRow = (props: Props) => {
 
     let id = setTimeout(async () => {
       const res = await fetch(
-        `${process.env.API_ENDPOINT}/troubleshoot/app/${match.params.slug}/supportbundle/${bundle.id}`,
+        `${process.env.API_ENDPOINT}/troubleshoot/app/${params.slug}/supportbundle/${bundle.id}`,
         {
           method: "DELETE",
           credentials: "include",
@@ -223,7 +223,7 @@ export const SupportBundleRow = (props: Props) => {
       downloadBundleErrMsg: "",
     });
     fetch(
-      `${process.env.API_ENDPOINT}/troubleshoot/app/${props.match.params.slug}/supportbundle/${bundleSlug}/share`,
+      `${process.env.API_ENDPOINT}/troubleshoot/app/${params.slug}/supportbundle/${bundleSlug}/share`,
       {
         method: "POST",
         credentials: "include",
