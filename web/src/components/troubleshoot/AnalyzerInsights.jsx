@@ -56,6 +56,7 @@ export class AnalyzerInsights extends React.Component {
   }
 
   handleFilterTiles = (checked) => {
+    console.log("hi");
     let insights = sortAnalyzers(this.props.insights);
     if (checked) {
       insights = filter(
