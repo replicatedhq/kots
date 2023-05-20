@@ -47,6 +47,7 @@ class TroubleshootContainer extends Component<Props, State> {
   };
 
   pollForBundleAnalysisProgress = async () => {
+    console.log("polling");
     this.setState({ loadingBundle: true });
     const { newBundleSlug } = this.state;
 
@@ -75,6 +76,7 @@ class TroubleshootContainer extends Component<Props, State> {
           return;
         }
         const bundle = await res.json();
+        console.log("hee", bundle);
         this.setState({
           bundleAnalysisProgress: bundle.progress,
           bundle,
@@ -101,6 +103,7 @@ class TroubleshootContainer extends Component<Props, State> {
 
   render() {
     const props = {
+      app: this.props.outletContext.app,
       watch: this.props.outletContext.app,
       newBundleSlug: this.state.newBundleSlug,
       updateBundleSlug: this.updateBundleSlug,

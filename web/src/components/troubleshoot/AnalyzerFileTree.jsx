@@ -209,7 +209,8 @@ class AnalyzerFileTree extends React.Component {
   }
 
   componentDidMount() {
-    const { bundle, location } = this.props.outletContext;
+    const { location } = this.props;
+    const { bundle } = this.props.outletContext;
     if (this.state.fileTree) {
       this.setFileTree();
     }

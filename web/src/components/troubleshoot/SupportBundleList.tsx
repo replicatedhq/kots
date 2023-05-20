@@ -227,7 +227,6 @@ export const SupportBundleList = (props: Props) => {
   const { errorMsg, supportBundles, isGeneratingBundleOpen } = state;
   const selectedApp = useSelectedApp();
   const downstream = selectedApp?.downstream;
-  console.log(watch, "watch");
 
   if (loading) {
     return (
@@ -240,7 +239,6 @@ export const SupportBundleList = (props: Props) => {
   let bundlesNode;
   if (downstream) {
     if (supportBundles?.length) {
-      console.log("are we here");
       bundlesNode = supportBundles
         .sort(
           (a, b) =>
@@ -274,7 +272,9 @@ export const SupportBundleList = (props: Props) => {
           watch={selectedApp}
           updateBundleSlug={outletContext.updateBundleSlug}
           bundle={props.bundle}
-          pollForBundleAnalysisProgress={props.pollForBundleAnalysisProgress}
+          pollForBundleAnalysisProgress={
+            outletContext.pollForBundleAnalysisProgress
+          }
         />
       );
     }

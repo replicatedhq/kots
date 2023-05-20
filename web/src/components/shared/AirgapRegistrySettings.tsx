@@ -9,10 +9,9 @@ import "../../scss/components/watches/WatchDetailPage.scss";
 import { Repeater } from "../../utilities/repeater";
 import Icon from "../Icon";
 import { App, KotsParams } from "@types";
-import { RouteComponentProps } from "react-router-dom";
 import InputField from "./forms/InputField";
 
-type Props = RouteComponentProps<KotsParams> & {
+type Props = {
   app: App;
   registryDetails: RegistryDetails;
   updateCallback: () => void;
@@ -102,7 +101,7 @@ class AirgapRegistrySettings extends Component<Props, State> {
 
   onSaveRegistrySettings = async (stopUsingRegistry: boolean) => {
     let { hostname, username, password, namespace, isReadOnly } = this.state;
-    const { slug } = this.props.match.params;
+    const { slug } = this.props.params;
 
     if (stopUsingRegistry) {
       hostname = "";
@@ -165,7 +164,7 @@ class AirgapRegistrySettings extends Component<Props, State> {
       testMessage: "",
     });
 
-    const { slug } = this.props.app;
+    const { slug } = this.props.outletContext.app;
 
     let res;
     try {
@@ -218,7 +217,11 @@ class AirgapRegistrySettings extends Component<Props, State> {
     let nextState: { [key: string]: string | boolean } = {};
     nextState[field] = val;
 
-    if (this.props.app?.isAirgap && field === "isReadOnly" && !val) {
+    if (
+      this.props.outletContext.app?.isAirgap &&
+      field === "isReadOnly" &&
+      !val
+    ) {
       // Pushing images in airgap mode is not yet supported, so registry name cannot be changed.
       nextState.hostname = this.state.originalRegistry!.hostname;
       nextState.namespace = this.state.originalRegistry!.namespace;
@@ -229,10 +232,10 @@ class AirgapRegistrySettings extends Component<Props, State> {
     // | ((prevState: Readonly<State>, props: Readonly<Props>) => State | Pick<...> | null) | null'.
     // @ts-ignore
     this.setState(nextState, () => {
-      if (this.props.gatherDetails) {
+      if (this.props.outletContext.gatherDetails) {
         const { hostname, username, password, namespace, isReadOnly } =
           this.state;
-        this.props.gatherDetails({
+        this.props.outletContext.gatherDetails({
           hostname,
           username,
           password,
@@ -244,9 +247,9 @@ class AirgapRegistrySettings extends Component<Props, State> {
   };
 
   componentDidUpdate(lastProps: { app: { slug: string } }) {
-    const { app } = this.props;
+    const { app } = this.props.outletContext;
 
-    if (app?.slug !== lastProps.app?.slug) {
+    if (app?.slug !== lastProps.outletContext.app?.slug) {
       this.fetchRegistryInfo();
     }
   }
@@ -263,8 +266,8 @@ class AirgapRegistrySettings extends Component<Props, State> {
     });
 
     let url = `${process.env.API_ENDPOINT}/registry`;
-    if (this.props.app) {
-      url = `${process.env.API_ENDPOINT}/app/${this.props.app.slug}/registry`;
+    if (this.props.outletContext.app) {
+      url = `${process.env.API_ENDPOINT}/app/${this.props.outletContext.app.slug}/registry`;
     }
 
     fetch(url, {
@@ -286,10 +289,10 @@ class AirgapRegistrySettings extends Component<Props, State> {
             displayErrorModal: false,
           });
 
-          if (this.props.gatherDetails) {
+          if (this.props.outletContext.gatherDetails) {
             const { hostname, username, password, namespace, isReadOnly } =
               result;
-            this.props.gatherDetails({
+            this.props.outletContext.gatherDetails({
               hostname,
               username,
               password,
@@ -324,8 +327,8 @@ class AirgapRegistrySettings extends Component<Props, State> {
 
   triggerStatusUpdates = () => {
     let url = `${process.env.API_ENDPOINT}/imagerewritestatus`;
-    if (this.props.app) {
-      url = `${process.env.API_ENDPOINT}/app/${this.props.app.slug}/imagerewritestatus`;
+    if (this.props.outletContext.app) {
+      url = `${process.env.API_ENDPOINT}/app/${this.props.outletContext.app.slug}/imagerewritestatus`;
     }
     fetch(url, {
       headers: {
@@ -352,8 +355,8 @@ class AirgapRegistrySettings extends Component<Props, State> {
 
   updateStatus = () => {
     let url = `${process.env.API_ENDPOINT}/imagerewritestatus`;
-    if (this.props.app) {
-      url = `${process.env.API_ENDPOINT}/app/${this.props.app.slug}/imagerewritestatus`;
+    if (this.props.outletContext.app) {
+      url = `${process.env.API_ENDPOINT}/app/${this.props.outletContext.app.slug}/imagerewritestatus`;
     }
     return new Promise<void>((resolve, reject) => {
       fetch(url, {
@@ -374,8 +377,8 @@ class AirgapRegistrySettings extends Component<Props, State> {
           if (res.status !== "running") {
             this.state.updateChecker.stop();
 
-            if (this.props.updateCallback) {
-              this.props.updateCallback();
+            if (this.props.outletContext.updateCallback) {
+              this.props.outletContext.updateCallback();
             }
           }
 
@@ -395,7 +398,7 @@ class AirgapRegistrySettings extends Component<Props, State> {
       hideCta,
       namespaceDescription,
       showHostnameAsRequired,
-    } = this.props;
+    } = this.props.outletContext;
     const {
       hostname,
       password,
@@ -643,7 +646,7 @@ class AirgapRegistrySettings extends Component<Props, State> {
               >
                 Save changes
               </button>
-              {!this.props.app?.isAirgap && (
+              {!this.props.outletContext.app?.isAirgap && (
                 <button
                   className="btn secondary blue"
                   disabled={disableStopUsingButton}
@@ -679,8 +682,8 @@ class AirgapRegistrySettings extends Component<Props, State> {
         >
           <div className="Modal-body">
             <p className="u-fontSize--large u-textColor--primary u-lineHeight--medium u-marginBottom--20">
-              This will create a version of {this.props.app?.name} without
-              registry settings. Do you want to proceed?
+              This will create a version of {this.props.outletContext.app?.name}{" "}
+              without registry settings. Do you want to proceed?
             </p>
             <div className="flex justifyContent--flexEnd">
               <button

@@ -169,7 +169,13 @@ export class SupportBundleAnalysis extends React.Component {
           bundle: bundle,
         });
 
+        this.state.pollForBundleAnalysisProgress.start(
+          this.props.outletContext.pollForBundleAnalysisProgress,
+          1000
+        );
+
         if (bundle.status === "running") {
+          console.log("bundle runn", bundle);
           this.state.pollForBundleAnalysisProgress.start(
             this.props.outletContext.pollForBundleAnalysisProgress,
             1000
@@ -178,7 +184,7 @@ export class SupportBundleAnalysis extends React.Component {
       })
       .catch((err) => {
         console.log(err);
-        this.props.updateState({
+        this.props.outletContext.updateState({
           displayErrorModal: false,
           loading: false,
           getSupportBundleErrMsg: err
