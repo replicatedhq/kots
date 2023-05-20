@@ -7,7 +7,7 @@ import yaml from "js-yaml";
 import classNames from "classnames";
 import size from "lodash/size";
 import Modal from "react-modal";
-import { Link } from "react-router-dom";
+import { Link, useOutletContext } from "react-router-dom";
 import {
   getFileContent,
   Utilities,
@@ -68,6 +68,7 @@ const AppLicenseComponent = (props: Props) => {
       isViewingLicenseEntitlements: false,
     }
   );
+  const outletContext = useOutletContext();
 
   const { data: licenseWithInterceptResponse } = useLicenseWithIntercept();
   useEffect(() => {
@@ -91,20 +92,21 @@ const AppLicenseComponent = (props: Props) => {
       messageType: "info",
     });
 
-    const { app } = props;
-
     const payload = {
       licenseData,
     };
 
-    fetch(`${process.env.API_ENDPOINT}/app/${app.slug}/license`, {
-      method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      credentials: "include",
-      body: JSON.stringify(payload),
-    })
+    fetch(
+      `${process.env.API_ENDPOINT}/app/${outletContext?.app?.slug}/license`,
+      {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include",
+        body: JSON.stringify(payload),
+      }
+    )
       .then(async (response) => {
         if (!response.ok) {
           if (response.status == 401) {
@@ -315,7 +317,7 @@ const AppLicenseComponent = (props: Props) => {
     );
   }
 
-  const { app } = props;
+  const { app } = outletContext;
   const expiresAt = getLicenseExpiryDate(appLicense);
   const gitops = app.downstream?.gitops;
   const appName = app?.name || "Your application";

@@ -93,7 +93,6 @@ class GenerateSupportBundle extends React.Component {
       displayErrorModal: false,
       networkErr: false,
     });
-    console.log("watchslug", this.props.watch?.slug);
 
     fetch(
       `${process.env.API_ENDPOINT}/troubleshoot/app/${this.props.watch?.slug}/supportbundles`,
