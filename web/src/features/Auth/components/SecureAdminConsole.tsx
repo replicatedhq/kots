@@ -47,7 +47,6 @@ class SecureAdminConsole extends React.Component<Props, State> {
   }
 
   completeLogin = async (data: LoginResponse) => {
-    console.log("completed login");
     let loggedIn = false;
     try {
       if (Utilities.localStorageEnabled()) {
@@ -60,7 +59,6 @@ class SecureAdminConsole extends React.Component<Props, State> {
         }
 
         const apps = await this.props.onLoginSuccess();
-        console.log("apps", apps);
         const pendingApp = await this.props.pendingApp();
         this.setState({ authLoading: false });
         if (apps.length > 0) {

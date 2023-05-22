@@ -5,6 +5,7 @@ import Modal from "react-modal";
 import { useTheme } from "@src/components/context/withTheme";
 import { KotsSidebarItem } from "@src/components/watches/WatchSidebarItem";
 import { HelmChartSidebarItem } from "@src/components/watches/WatchSidebarItem";
+import { isAwaitingResults } from "../../utilities/utilities";
 
 import SubNavBar from "@src/components/shared/SubNavBar";
 import SidebarLayout from "../layout/SidebarLayout/SidebarLayout";
@@ -15,6 +16,7 @@ import ErrorModal from "../modals/ErrorModal";
 
 // Types
 import { App, Metadata, KotsParams, Version } from "@types";
+import { useApps, useSelectedApp } from "@features/App";
 
 type Props = {
   adminConsoleMetadata?: Metadata;

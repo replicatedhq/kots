@@ -806,7 +806,7 @@ const Root = () => {
                     path="redactors/:redactorSlug"
                     element={<EditRedactor />}
                   />
-                  <Route element={NotFound} />
+                  <Route element={<NotFound />} />
                 </Route>
                 <Route
                   path=":slug/license"
