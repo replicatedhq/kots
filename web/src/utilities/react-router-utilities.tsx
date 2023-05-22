@@ -1,4 +1,4 @@
-import React from "react";
+import React, { ComponentType } from "react";
 import {
   useNavigate,
   useLocation,
@@ -9,8 +9,8 @@ import {
 /**
  * @deprecated The method should not be used on new components. New components should use the hooks directly.
  */
-export function withRouter(Component: JSX.IntrinsicAttributes) {
-  function ComponentWithRouterProp(props: JSX.IntrinsicAttributes) {
+export function withRouter<TProps>(Component: ComponentType<TProps>) {
+  function ComponentWithRouterProp(props: TProps) {
     let location = useLocation();
     let navigate = useNavigate();
     let params = useParams();
