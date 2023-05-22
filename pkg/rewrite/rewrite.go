@@ -155,7 +155,7 @@ func Rewrite(rewriteOptions RewriteOptions) error {
 		}
 		newKotsKinds.Installation.Spec.YAMLErrors = files
 
-		err = upstream.SaveInstallation(&newKotsKinds.Installation, u.GetUpstreamDir(writeUpstreamOptions))
+		err = apparchive.SaveInstallation(&newKotsKinds.Installation, u.GetUpstreamDir(writeUpstreamOptions))
 		if err != nil {
 			return errors.Wrap(err, "failed to save installation")
 		}
@@ -304,12 +304,12 @@ func Rewrite(rewriteOptions RewriteOptions) error {
 	}
 
 	writeV1Beta2HelmChartsOpts := apparchive.WriteV1Beta2HelmChartsOptions{
-		Upstream:            u,
-		RenderOptions:       &renderOptions,
-		ProcessImageOptions: processImageOptions,
-		HelmDir:             u.GetHelmDir(writeUpstreamOptions),
-		KotsKinds:           renderedKotsKinds,
-		Clientset:           clientset,
+		Upstream:             u,
+		WriteUpstreamOptions: writeUpstreamOptions,
+		RenderOptions:        &renderOptions,
+		ProcessImageOptions:  processImageOptions,
+		KotsKinds:            renderedKotsKinds,
+		Clientset:            clientset,
 	}
 
 	if err := apparchive.WriteV1Beta2HelmCharts(writeV1Beta2HelmChartsOpts); err != nil {

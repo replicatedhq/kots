@@ -11,6 +11,7 @@ import (
 
 	"github.com/pkg/errors"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
+	"github.com/replicatedhq/kots/pkg/apparchive"
 	"github.com/replicatedhq/kots/pkg/base"
 	"github.com/replicatedhq/kots/pkg/disasterrecovery"
 	"github.com/replicatedhq/kots/pkg/docker/registry"
@@ -155,7 +156,7 @@ func WriteMidstream(writeMidstreamOptions WriteOptions, processImageOptions imag
 	}
 	pullSecrets.DockerHubSecret = dockerhubSecret
 
-	if err := upstream.SaveInstallation(&newKotsKinds.Installation, upstreamDir); err != nil {
+	if err := apparchive.SaveInstallation(&newKotsKinds.Installation, upstreamDir); err != nil {
 		return nil, errors.Wrap(err, "failed to save installation")
 	}
 
