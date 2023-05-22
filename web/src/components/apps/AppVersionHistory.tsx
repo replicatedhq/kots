@@ -38,10 +38,7 @@ import "@src/scss/components/apps/AppVersionHistory.scss";
 import { DashboardGitOpsCard } from "@features/Dashboard";
 import Icon from "../Icon";
 import { App, Downstream, Version, VersionDownloadStatus } from "@types";
-import {
-  withRouter,
-  withRouterType,
-} from "@src/utilities/react-router-utilities";
+import { withRouter } from "@src/utilities/react-router-utilities";
 import PreflightIcon from "@features/App/PreflightIcon";
 
 dayjs.extend(relativeTime);

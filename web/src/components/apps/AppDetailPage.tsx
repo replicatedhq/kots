@@ -1,38 +1,17 @@
 import React, { Fragment, useReducer, useEffect, useState } from "react";
 import classNames from "classnames";
-import {
-  Routes,
-  Route,
-  useNavigate,
-  Navigate,
-  useParams,
-  Outlet,
-  useLocation,
-} from "react-router-dom";
+import { useNavigate, useParams, Outlet } from "react-router-dom";
 import Modal from "react-modal";
 import { useTheme } from "@src/components/context/withTheme";
 import { KotsSidebarItem } from "@src/components/watches/WatchSidebarItem";
 import { HelmChartSidebarItem } from "@src/components/watches/WatchSidebarItem";
-import NotFound from "../static/NotFound";
-import { Dashboard } from "@features/Dashboard";
-import DownstreamTree from "../../components/tree/KotsApplicationTree";
-import AppVersionHistory from "./AppVersionHistory";
-import { isAwaitingResults } from "../../utilities/utilities";
-import PreflightResultPage from "../PreflightResultPage";
-import AppConfig from "../../features/AppConfig/components/AppConfig";
-import AppLicense from "./AppLicense";
+
 import SubNavBar from "@src/components/shared/SubNavBar";
 import SidebarLayout from "../layout/SidebarLayout/SidebarLayout";
 import SideBar from "../shared/SideBar";
 import Loader from "../shared/Loader";
-import AppRegistrySettings from "./AppRegistrySettings";
-import AppIdentityServiceSettings from "./AppIdentityServiceSettings";
-import TroubleshootContainer from "../troubleshoot/TroubleshootContainer";
-import ErrorModal from "../modals/ErrorModal";
-import DumbComponent from "@features/Dashboard/components/DumbComponent";
 
-import "../../scss/components/watches/WatchDetailPage.scss";
-import { useApps, useSelectedApp } from "@features/App";
+import ErrorModal from "../modals/ErrorModal";
 
 // Types
 import { App, Metadata, KotsParams, Version } from "@types";
@@ -347,8 +326,6 @@ function AppDetailPage(props: Props) {
       setAppsRefetchInterval(false);
     };
   }, [location.pathname]);
-
-  const { appName } = props;
 
   const {
     displayRequiredKotsUpdateModal,

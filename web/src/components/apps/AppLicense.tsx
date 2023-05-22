@@ -86,6 +86,7 @@ const AppLicenseComponent = (props: Props) => {
   }, [licenseWithInterceptResponse]);
 
   const syncAppLicense = (licenseData: string) => {
+    const { app } = props;
     setState({
       loading: true,
       message: "",
