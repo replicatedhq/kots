@@ -47,30 +47,30 @@ import { useAirgapConfig } from "../api/getAirgapConfig";
 import { Updates, useCheckForUpdates } from "../api/getUpdates";
 //import LicenseTester from "./LicenseTester";
 
-type Props = {
-  // app: App;
-  // cluster: {
-  //   // TODO: figure out if this is actually a "" | number- maybe just go with number
-  //   id: "" | number;
-  // };
-  // isBundleUploading: boolean;
-  // isHelmManaged: boolean;
-  // isVeleroInstalled: boolean;
-  // makeCurrentVersion: (
-  //   slug: string,
-  //   versionToDeploy: Version,
-  //   isSkipPreflights: boolean,
-  //   continueWithFailedPreflights: boolean
-  // ) => void;
-  // ping: (clusterId?: string) => void;
-  // redeployVersion: (
-  //   upstreamSlug: string,
-  //   version: Version | null
-  // ) => Promise<void>;
-  // refreshAppData: () => void;
-  // toggleIsBundleUploading: (isUploading: boolean) => void;
-  // updateCallback: () => void | null;
-};
+//type Props = {
+// app: App;
+// cluster: {
+//   // TODO: figure out if this is actually a "" | number- maybe just go with number
+//   id: "" | number;
+// };
+// isBundleUploading: boolean;
+// isHelmManaged: boolean;
+// isVeleroInstalled: boolean;
+// makeCurrentVersion: (
+//   slug: string,
+//   versionToDeploy: Version,
+//   isSkipPreflights: boolean,
+//   continueWithFailedPreflights: boolean
+// ) => void;
+// ping: (clusterId?: string) => void;
+// redeployVersion: (
+//   upstreamSlug: string,
+//   version: Version | null
+// ) => Promise<void>;
+// refreshAppData: () => void;
+// toggleIsBundleUploading: (isUploading: boolean) => void;
+// updateCallback: () => void | null;
+//};
 
 // TODO:  update these strings so that they are not nullable (maybe just set default to "")
 type State = {
