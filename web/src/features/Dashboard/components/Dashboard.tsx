@@ -14,12 +14,7 @@ import { Repeater } from "@src/utilities/repeater";
 import { Utilities } from "@src/utilities/utilities";
 import { AirgapUploader } from "@src/utilities/airgapUploader";
 import { useSelectedAppClusterDashboardWithIntercept } from "../api/useSelectedAppClusterDashboard";
-import {
-  useMatch,
-  useNavigate,
-  useOutletContext,
-  useParams,
-} from "react-router-dom";
+import { useNavigate, useOutletContext, useParams } from "react-router-dom";
 import { useLicenseWithIntercept } from "@features/App";
 import { useNextAppVersionWithIntercept } from "../api/useNextAppVersion";
 
@@ -111,7 +106,7 @@ type State = {
   lastUpdatedDate: Date;
 };
 
-const Dashboard = (props: Props) => {
+const Dashboard = () => {
   const [state, setState] = useReducer(
     (currentState: State, newState: Partial<State>) => ({
       ...currentState,
@@ -157,10 +152,10 @@ const Dashboard = (props: Props) => {
   );
 
   const navigate = useNavigate();
-  const context = useOutletContext();
+
   const {
     app,
-    cluster,
+    //cluster,
     isBundleUploading,
     isHelmManaged,
     isVeleroInstalled,

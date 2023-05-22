@@ -13,7 +13,7 @@ import FileTree from "../shared/FileTree";
 import "../../scss/components/troubleshoot/FileTree.scss";
 
 // Types
-import { App, KotsParams } from "@types";
+import { App } from "@types";
 
 type Props = {
   app: App;

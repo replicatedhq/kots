@@ -13,7 +13,7 @@ type Props = {
   pendingApp: () => Promise<App>;
   checkIsHelmManaged: () => Promise<boolean>;
   logo: string | null;
-  navigate: (path: string, options?: any) => void;
+  navigate: (path: string, options?: { replace: boolean }) => void;
 };
 
 type State = {
@@ -76,7 +76,7 @@ class SecureAdminConsole extends React.Component<Props, State> {
         } else if (isHelmManaged) {
           this.props.navigate("install-with-helm", { replace: true });
         } else {
-          this.props.navigate("upload-license"), { replace: true };
+          this.props.navigate("upload-license", { replace: true });
         }
       } else {
         this.props.navigate("/unsupported");

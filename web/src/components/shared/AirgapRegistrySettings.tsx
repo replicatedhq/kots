@@ -8,7 +8,7 @@ import Modal from "react-modal";
 import "../../scss/components/watches/WatchDetailPage.scss";
 import { Repeater } from "../../utilities/repeater";
 import Icon from "../Icon";
-import { App, KotsParams } from "@types";
+import { App } from "@types";
 import InputField from "./forms/InputField";
 
 type Props = {

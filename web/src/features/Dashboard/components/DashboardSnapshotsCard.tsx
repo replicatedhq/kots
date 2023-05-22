@@ -6,7 +6,7 @@ import "@src/scss/components/watches/DashboardCard.scss";
 import InlineDropdown from "@src/components/shared/InlineDropdown";
 import SnapshotDifferencesModal from "@src/components/modals/SnapshotDifferencesModal";
 import Icon from "@src/components/Icon";
-import { App, KotsParams, SnapshotSettings } from "@types";
+import { App, SnapshotSettings } from "@types";
 import { usePrevious } from "@src/hooks/usePrevious";
 import { useCreateSnapshot } from "../api/createSnapshot";
 import { useSnapshotSettings } from "../api/getSnapshotSettings";

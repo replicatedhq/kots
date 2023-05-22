@@ -1,15 +1,14 @@
 import React, { useEffect, useReducer } from "react";
 import Modal from "react-modal";
 import CodeSnippet from "@components/shared/CodeSnippet";
-import { useLocation, useNavigate, useParams } from "react-router-dom";
-import { App, LicenseFile, KotsParams, SupportBundle } from "@types";
+import { useNavigate, useParams } from "react-router-dom";
+import { App, LicenseFile, SupportBundle } from "@types";
 // @ts-ignore
 import Dropzone from "react-dropzone";
 import Icon from "@components/Icon";
 import isEmpty from "lodash/isEmpty";
 // @ts-ignore
 import randomstring from "randomstring";
-import { useRouteMatch } from "react-router";
 import { Repeater } from "../../utilities/repeater";
 import { useSelectedApp } from "@features/App";
 
