@@ -1,8 +1,13 @@
 package types
 
 import (
+	"fmt"
+	"strconv"
+
+	"github.com/pkg/errors"
 	appstatetypes "github.com/replicatedhq/kots/pkg/appstate/types"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
+	"github.com/replicatedhq/kots/pkg/logger"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -56,6 +61,13 @@ type AppInformersArgs struct {
 	AppID     string                               `json:"app_id"`
 	Sequence  int64                                `json:"sequence"`
 	Informers []appstatetypes.StatusInformerString `json:"informers"`
+}
+
+type Phases []Phase
+
+type Phase struct {
+	Name      string
+	Resources Resources
 }
 
 type Resources []Resource
@@ -130,6 +142,60 @@ func (r Resources) GroupByKind() map[string]Resources {
 			kind = resource.GVK.Kind
 		}
 		grouped[kind] = append(grouped[kind], resource)
+	}
+
+	return grouped
+}
+
+func (r Resources) GroupByCreationPhase() map[string]Resources {
+	grouped := map[string]Resources{}
+
+	for _, resource := range r {
+		phase := "0" // default to 0
+		if resource.Unstructured != nil {
+			annotations := resource.Unstructured.GetAnnotations()
+			if annotations != nil {
+				if s, ok := annotations["kots.io/creation-phase"]; ok {
+					phase = s
+				}
+			}
+		}
+
+		parsed, err := strconv.ParseInt(phase, 10, 64)
+		if err != nil {
+			logger.Error(errors.Wrapf(err, "failed to parse creation phase %q", phase))
+			parsed = 0
+		}
+
+		key := fmt.Sprintf("%d", parsed)
+		grouped[key] = append(grouped[key], resource)
+	}
+
+	return grouped
+}
+
+func (r Resources) GroupByDeletionPhase() map[string]Resources {
+	grouped := map[string]Resources{}
+
+	for _, resource := range r {
+		phase := "0" // default to 0
+		if resource.Unstructured != nil {
+			annotations := resource.Unstructured.GetAnnotations()
+			if annotations != nil {
+				if s, ok := annotations["kots.io/deletion-phase"]; ok {
+					phase = s
+				}
+			}
+		}
+
+		parsed, err := strconv.ParseInt(phase, 10, 64)
+		if err != nil {
+			logger.Error(errors.Wrapf(err, "failed to parse deletion phase %q", phase))
+			parsed = 0
+		}
+
+		key := fmt.Sprintf("%d", parsed)
+		grouped[key] = append(grouped[key], resource)
 	}
 
 	return grouped

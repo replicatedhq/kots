@@ -1,6 +1,9 @@
 package client
 
 import (
+	"sort"
+	"strconv"
+
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/operator/types"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -111,60 +114,118 @@ func decodeManifests(manifests []string) types.Resources {
 	return resources
 }
 
-// sortResourcesForCreation sorts resources by kind based on the kind creation order.
+// groupAndSortResourcesForCreation sorts resources by kind based on the kind creation order.
 // unknown kinds are created last.
-func sortResourcesForCreation(resources types.Resources) types.Resources {
-	sortedResources := types.Resources{}
+// resources are then grouped by creation phase.
+func groupAndSortResourcesForCreation(resources types.Resources) types.Phases {
+	resourcesByPhase := resources.GroupByCreationPhase()
 
-	creationOrder := KindCreationOrder
-	resourcesByKind := resources.GroupByKind()
+	sortedPhases := []string{}
+	for phase := range resourcesByPhase {
+		sortedPhases = append(sortedPhases, phase)
+	}
 
-	for kind := range resourcesByKind {
-		unknown := true
-		for _, creationKind := range creationOrder {
-			if kind == creationKind {
-				unknown = false
-				break
+	sort.Slice(sortedPhases, func(i, j int) bool {
+		iInt, err := strconv.ParseInt(sortedPhases[i], 10, 64)
+		if err != nil {
+			iInt = 0
+		}
+		jInt, err := strconv.ParseInt(sortedPhases[j], 10, 64)
+		if err != nil {
+			jInt = 0
+		}
+		return iInt < jInt
+	})
+
+	phases := types.Phases{}
+	for _, name := range sortedPhases {
+		sortedResources := types.Resources{}
+
+		creationOrder := KindCreationOrder
+		resourcesByKind := resourcesByPhase[name].GroupByKind()
+
+		for kind := range resourcesByKind {
+			unknown := true
+			for _, creationKind := range creationOrder {
+				if kind == creationKind {
+					unknown = false
+					break
+				}
+			}
+			if unknown {
+				// unknown kinds are create last
+				creationOrder = append(creationOrder, kind)
 			}
 		}
-		if unknown {
-			// unknown kinds are create last
-			creationOrder = append(creationOrder, kind)
+
+		for _, kind := range creationOrder {
+			sortedResources = append(sortedResources, resourcesByKind[kind]...)
 		}
+
+		phase := types.Phase{
+			Name:      name,
+			Resources: sortedResources,
+		}
+		phases = append(phases, phase)
 	}
 
-	for _, kind := range creationOrder {
-		sortedResources = append(sortedResources, resourcesByKind[kind]...)
-	}
-
-	return sortedResources
+	return phases
 }
 
-// sortResourcesForDeletion sorts resources by kind based on the kind deletion order.
+// groupAndSortResourcesForDeletion sorts resources by kind based on the kind deletion order.
 // unknown kinds are deleted first.
-func sortResourcesForDeletion(resources types.Resources) types.Resources {
-	sortedResources := types.Resources{}
+// resources are then grouped by deletion phase.
+func groupAndSortResourcesForDeletion(resources types.Resources) types.Phases {
+	resourcesByPhase := resources.GroupByDeletionPhase()
 
-	deletionOrder := KindDeletionOrder
-	resourcesByKind := resources.GroupByKind()
+	sortedPhases := []string{}
+	for phase := range resourcesByPhase {
+		sortedPhases = append(sortedPhases, phase)
+	}
 
-	for kind := range resourcesByKind {
-		unknown := true
-		for _, deletionKind := range deletionOrder {
-			if kind == deletionKind {
-				unknown = false
-				break
+	sort.Slice(sortedPhases, func(i, j int) bool {
+		iInt, err := strconv.ParseInt(sortedPhases[i], 10, 64)
+		if err != nil {
+			iInt = 0
+		}
+		jInt, err := strconv.ParseInt(sortedPhases[j], 10, 64)
+		if err != nil {
+			jInt = 0
+		}
+		return iInt < jInt
+	})
+
+	phases := types.Phases{}
+	for _, name := range sortedPhases {
+		sortedResources := types.Resources{}
+
+		deletionOrder := KindDeletionOrder
+		resourcesByKind := resourcesByPhase[name].GroupByKind()
+
+		for kind := range resourcesByKind {
+			unknown := true
+			for _, deletionKind := range deletionOrder {
+				if kind == deletionKind {
+					unknown = false
+					break
+				}
+			}
+			if unknown {
+				// unknown kinds are deleted first
+				deletionOrder = append([]string{kind}, deletionOrder...)
 			}
 		}
-		if unknown {
-			// unknown kinds are deleted first
-			deletionOrder = append([]string{kind}, deletionOrder...)
+
+		for _, kind := range deletionOrder {
+			sortedResources = append(sortedResources, resourcesByKind[kind]...)
 		}
+
+		phase := types.Phase{
+			Name:      name,
+			Resources: sortedResources,
+		}
+		phases = append(phases, phase)
 	}
 
-	for _, kind := range deletionOrder {
-		sortedResources = append(sortedResources, resourcesByKind[kind]...)
-	}
-
-	return sortedResources
+	return phases
 }

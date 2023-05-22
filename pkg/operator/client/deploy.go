@@ -126,13 +126,60 @@ func (c *Client) ensureResourcesPresent(deployArgs operatortypes.DeployAppArgs) 
 
 	manifests := strings.Split(string(decoded), "\n---\n")
 	resources := decodeManifests(manifests)
-	resources = sortResourcesForCreation(resources)
+	phases := groupAndSortResourcesForCreation(resources)
 
 	// We don't dry run if there's a crd or a namespace because there's a likely chance that the
 	// other docs have a custom resource using it
 	shouldDryRun := !resources.HasCRDs() && !resources.HasNamespaces()
 	if shouldDryRun {
-		for _, resource := range resources {
+		for _, phase := range phases {
+			logger.Infof("dry run applying phase %s", phase.Name)
+			for _, resource := range phase.Resources {
+				group := resource.GetGroup()
+				version := resource.GetVersion()
+				kind := resource.GetKind()
+				name := resource.GetName()
+
+				namespace := resource.GetNamespace()
+				if namespace == "" {
+					namespace = c.TargetNamespace
+				}
+
+				if resource.DecodeErrMsg == "" {
+					logger.Infof("dry run applying resource %s/%s/%s/%s in namespace %s", group, version, kind, name, namespace)
+				} else {
+					logger.Infof("dry run applying unidentified resource. unable to parse error: %s", resource.DecodeErrMsg)
+				}
+
+				dryrunStdout, dryrunStderr, dryRunErr := kubernetesApplier.ApplyCreateOrPatch(namespace, deployArgs.AppSlug, []byte(resource.Manifest), true, deployArgs.Wait, deployArgs.AnnotateSlug)
+				if len(dryrunStdout) > 0 {
+					deployRes.dryRunResult.multiStdout = append(deployRes.dryRunResult.multiStdout, dryrunStdout)
+				}
+				if len(dryrunStderr) > 0 {
+					deployRes.dryRunResult.multiStderr = append(deployRes.dryRunResult.multiStderr, dryrunStderr)
+				}
+
+				if dryRunErr != nil {
+					logger.Infof("stdout (dryrun) = %s", dryrunStdout)
+					logger.Infof("stderr (dryrun) = %s", dryrunStderr)
+					logger.Infof("error: %s", dryRunErr.Error())
+
+					deployRes.dryRunResult.hasErr = true
+					return &deployRes, nil
+				}
+
+				if resource.DecodeErrMsg == "" {
+					logger.Infof("dry run applied resource %s/%s/%s/%s in namespace %s", group, version, kind, name, namespace)
+				} else {
+					logger.Info("dry run applied unidentified resource.")
+				}
+			}
+		}
+	}
+
+	for _, phase := range phases {
+		logger.Infof("applying phase %s", phase.Name)
+		for _, resource := range phase.Resources {
 			group := resource.GetGroup()
 			version := resource.GetVersion()
 			kind := resource.GetKind()
@@ -144,75 +191,34 @@ func (c *Client) ensureResourcesPresent(deployArgs operatortypes.DeployAppArgs) 
 			}
 
 			if resource.DecodeErrMsg == "" {
-				logger.Infof("dry run applying resource %s/%s/%s/%s in namespace %s", group, version, kind, name, namespace)
+				logger.Infof("applying resource %s/%s/%s/%s in namespace %s", group, version, kind, name, namespace)
 			} else {
-				logger.Infof("dry run applying unidentified resource. unable to parse error: %s", resource.DecodeErrMsg)
+				logger.Infof("applying unidentified resource. unable to parse error: %s", resource.DecodeErrMsg)
 			}
 
-			dryrunStdout, dryrunStderr, dryRunErr := kubernetesApplier.ApplyCreateOrPatch(namespace, deployArgs.AppSlug, []byte(resource.Manifest), true, deployArgs.Wait, deployArgs.AnnotateSlug)
-			if len(dryrunStdout) > 0 {
-				deployRes.dryRunResult.multiStdout = append(deployRes.dryRunResult.multiStdout, dryrunStdout)
+			applyStdout, applyStderr, applyErr := kubernetesApplier.ApplyCreateOrPatch(namespace, deployArgs.AppSlug, []byte(resource.Manifest), false, deployArgs.Wait, deployArgs.AnnotateSlug)
+
+			if len(applyStdout) > 0 {
+				deployRes.applyResult.multiStdout = append(deployRes.applyResult.multiStdout, applyStdout)
 			}
-			if len(dryrunStderr) > 0 {
-				deployRes.dryRunResult.multiStderr = append(deployRes.dryRunResult.multiStderr, dryrunStderr)
+			if len(applyStderr) > 0 {
+				deployRes.applyResult.multiStderr = append(deployRes.applyResult.multiStderr, applyStderr)
 			}
 
-			if dryRunErr != nil {
-				logger.Infof("stdout (dryrun) = %s", dryrunStdout)
-				logger.Infof("stderr (dryrun) = %s", dryrunStderr)
-				logger.Infof("error: %s", dryRunErr.Error())
+			if applyErr != nil {
+				logger.Infof("stdout (apply) = %s", applyStdout)
+				logger.Infof("stderr (apply) = %s", applyStderr)
+				logger.Infof("error: %s", applyErr.Error())
 
-				deployRes.dryRunResult.hasErr = true
+				deployRes.applyResult.hasErr = true
 				return &deployRes, nil
 			}
 
 			if resource.DecodeErrMsg == "" {
-				logger.Infof("dry run applied resource %s/%s/%s/%s in namespace %s", group, version, kind, name, namespace)
+				logger.Infof("applied resource %s/%s/%s/%s in namespace %s", group, version, kind, name, namespace)
 			} else {
-				logger.Info("dry run applied unidentified resource.")
+				logger.Info("applied unidentified resource.")
 			}
-		}
-	}
-
-	for _, resource := range resources {
-		group := resource.GetGroup()
-		version := resource.GetVersion()
-		kind := resource.GetKind()
-		name := resource.GetName()
-
-		namespace := resource.GetNamespace()
-		if namespace == "" {
-			namespace = c.TargetNamespace
-		}
-
-		if resource.DecodeErrMsg == "" {
-			logger.Infof("applying resource %s/%s/%s/%s in namespace %s", group, version, kind, name, namespace)
-		} else {
-			logger.Infof("applying unidentified resource. unable to parse error: %s", resource.DecodeErrMsg)
-		}
-
-		applyStdout, applyStderr, applyErr := kubernetesApplier.ApplyCreateOrPatch(namespace, deployArgs.AppSlug, []byte(resource.Manifest), false, deployArgs.Wait, deployArgs.AnnotateSlug)
-
-		if len(applyStdout) > 0 {
-			deployRes.applyResult.multiStdout = append(deployRes.applyResult.multiStdout, applyStdout)
-		}
-		if len(applyStderr) > 0 {
-			deployRes.applyResult.multiStderr = append(deployRes.applyResult.multiStderr, applyStderr)
-		}
-
-		if applyErr != nil {
-			logger.Infof("stdout (apply) = %s", applyStdout)
-			logger.Infof("stderr (apply) = %s", applyStderr)
-			logger.Infof("error: %s", applyErr.Error())
-
-			deployRes.applyResult.hasErr = true
-			return &deployRes, nil
-		}
-
-		if resource.DecodeErrMsg == "" {
-			logger.Infof("applied resource %s/%s/%s/%s in namespace %s", group, version, kind, name, namespace)
-		} else {
-			logger.Info("applied unidentified resource.")
 		}
 	}
 
