@@ -62,7 +62,7 @@ func (h *daemonSetEventHandler) ObjectCreated(obj interface{}) {
 		return
 	}
 
-	h.resourceStateCh <- makeDaemonSetResourceState(r, h.calculateDaemonSetState(r))
+	h.resourceStateCh <- makeDaemonSetResourceState(r, CalculateDaemonSetState(h.clientset, h.targetNamespace, r))
 }
 
 func (h *daemonSetEventHandler) ObjectDeleted(obj interface{}) {
@@ -80,7 +80,7 @@ func (h *daemonSetEventHandler) ObjectUpdated(obj interface{}) {
 		return
 	}
 
-	h.resourceStateCh <- makeDaemonSetResourceState(r, h.calculateDaemonSetState(r))
+	h.resourceStateCh <- makeDaemonSetResourceState(r, CalculateDaemonSetState(h.clientset, h.targetNamespace, r))
 }
 
 func (h *daemonSetEventHandler) getInformer(r *appsv1.DaemonSet) (types.StatusInformer, bool) {
@@ -103,7 +103,7 @@ func (h *daemonSetEventHandler) cast(obj interface{}) *appsv1.DaemonSet {
 // The pods in a daemonset can be identified by the match label set in the daemonset and the
 // "controller-revision-hash" can be used to determine if they are all the in the same daemonset
 // version.
-func (h *daemonSetEventHandler) calculateDaemonSetState(r *appsv1.DaemonSet) types.State {
+func CalculateDaemonSetState(clientset kubernetes.Interface, targetNamespace string, r *appsv1.DaemonSet) types.State {
 	if r == nil {
 		return types.StateUnavailable
 	}
@@ -114,7 +114,7 @@ func (h *daemonSetEventHandler) calculateDaemonSetState(r *appsv1.DaemonSet) typ
 
 	listOptions := metav1.ListOptions{LabelSelector: labels.SelectorFromSet(r.Spec.Selector.MatchLabels).String()}
 
-	pods, err := h.clientset.CoreV1().Pods(h.targetNamespace).List(context.TODO(), listOptions)
+	pods, err := clientset.CoreV1().Pods(targetNamespace).List(context.TODO(), listOptions)
 	if err != nil {
 		log.Printf("failed to get daemonset pod list: %s", err)
 		return types.StateUnavailable

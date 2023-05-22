@@ -14,6 +14,7 @@ import (
 
 	"github.com/mholt/archiver/v3"
 	"github.com/pkg/errors"
+	"github.com/replicatedhq/kots/pkg/appstate"
 	"github.com/replicatedhq/kots/pkg/archives"
 	"github.com/replicatedhq/kots/pkg/helm"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
@@ -218,6 +219,16 @@ func (c *Client) ensureResourcesPresent(deployArgs operatortypes.DeployAppArgs) 
 				logger.Infof("applied resource %s/%s/%s/%s in namespace %s", group, version, kind, name, namespace)
 			} else {
 				logger.Info("applied unidentified resource.")
+			}
+
+			if resource.ShouldWaitForReady() {
+				logger.Infof("waiting for resource %s/%s/%s/%s in namespace %s to be ready", group, version, kind, name, namespace)
+				err := appstate.WaitForResourceToBeReady(namespace, name, resource.GVR, resource.GVK)
+				if err != nil {
+					logger.Infof("failed to wait for resource %s/%s/%s/%s in namespace %s to be ready", group, version, kind, name, namespace)
+					return nil, errors.Wrap(err, "failed to wait for resource to be ready")
+				}
+				logger.Infof("resource %s/%s/%s/%s in namespace %s is ready", group, version, kind, name, namespace)
 			}
 		}
 	}

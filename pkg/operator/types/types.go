@@ -115,6 +115,21 @@ func (r Resource) GetNamespace() string {
 	return ""
 }
 
+func (r Resource) ShouldWaitForReady() bool {
+	if r.Unstructured != nil {
+		annotations := r.Unstructured.GetAnnotations()
+		if annotations == nil {
+			return false
+		}
+		waitForReady, ok := annotations["kots.io/wait-for-ready"]
+		if !ok {
+			return false
+		}
+		return waitForReady == "true"
+	}
+	return false
+}
+
 func (r Resources) HasCRDs() bool {
 	for _, resource := range r {
 		if resource.GVK != nil && resource.GVK.Kind == "CustomResourceDefinition" && resource.GVK.Group == "apiextensions.k8s.io" {
