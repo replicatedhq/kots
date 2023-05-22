@@ -2,7 +2,6 @@ import React, { PureComponent } from "react";
 import PropTypes from "prop-types";
 import classNames from "classnames";
 import { withRouter } from "@src/utilities/react-router-utilities";
-import { RouteComponentProps } from "react-router-dom";
 import { Link } from "react-router-dom";
 import { Utilities } from "@src/utilities/utilities";
 import ErrorModal from "../modals/ErrorModal";
@@ -11,7 +10,7 @@ import NavBarDropdown from "./NavBarDropdown";
 import "@src/scss/components/shared/NavBar.scss";
 import { App } from "@types";
 
-interface Props extends Partial<RouteComponentProps> {
+interface Props {
   appsList: App[];
   className?: string;
   errLoggingOut: string;
