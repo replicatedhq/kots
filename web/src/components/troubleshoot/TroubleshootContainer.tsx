@@ -1,14 +1,10 @@
 import React, { Component } from "react";
 import { Outlet } from "react-router-dom";
-import { withRouter } from "@src/utilities/react-router-utilities";
+import { withRouter, RouterProps } from "@src/utilities/react-router-utilities";
 
 // Types
 import { App, SupportBundleProgress } from "@types";
 
-type Props = {
-  app: App | null;
-  appName: string;
-};
 type State = {
   newBundleSlug: string;
   isGeneratingBundle: false;
@@ -21,10 +17,11 @@ type State = {
   loadingBundleId: string;
   loadingBundle: boolean;
 };
-class TroubleshootContainer extends Component<Props, State> {
-  constructor(props: Props) {
-    super(props);
 
+class TroubleshootContainer extends Component<RouterProps, State> {
+  constructor(props: RouterProps) {
+    super(props);
+    console.log(props, "props");
     this.state = {
       newBundleSlug: "",
       isGeneratingBundle: false,
@@ -47,7 +44,6 @@ class TroubleshootContainer extends Component<Props, State> {
   };
 
   pollForBundleAnalysisProgress = async () => {
-    console.log("polling");
     this.setState({ loadingBundle: true });
     const { newBundleSlug } = this.state;
 
@@ -103,7 +99,9 @@ class TroubleshootContainer extends Component<Props, State> {
 
   render() {
     const props = {
+      //@ts-ignore
       app: this.props.outletContext.app,
+      //@ts-ignore
       watch: this.props.outletContext.app,
       newBundleSlug: this.state.newBundleSlug,
       updateBundleSlug: this.updateBundleSlug,

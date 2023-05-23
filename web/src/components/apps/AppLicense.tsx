@@ -24,13 +24,14 @@ import { useLicenseWithIntercept } from "@features/App";
 import Icon from "../Icon";
 import { UseDownloadValues } from "../hooks";
 import { HelmDeployModal } from "../shared/modals/HelmDeployModal";
+import { RouterProps } from "@src/utilities/react-router-utilities";
 
 type Props = {
   app: App;
   changeCallback: () => void;
   syncCallback: () => void;
   isHelmManaged: boolean;
-};
+} & RouterProps;
 
 type State = {
   appLicense: AppLicense | null;
@@ -48,6 +49,7 @@ type State = {
 };
 
 const AppLicenseComponent = (props: Props) => {
+  console.log(props, "props");
   const [state, setState] = useReducer(
     (currentState: State, newState: Partial<State>) => ({
       ...currentState,
@@ -68,7 +70,7 @@ const AppLicenseComponent = (props: Props) => {
       isViewingLicenseEntitlements: false,
     }
   );
-  const outletContext = useOutletContext();
+  const outletContext: Props = useOutletContext();
 
   const { data: licenseWithInterceptResponse } = useLicenseWithIntercept();
   useEffect(() => {
