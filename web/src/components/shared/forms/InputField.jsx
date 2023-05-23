@@ -2,7 +2,6 @@ import React from "react";
 
 import "@src/scss/components/shared/forms/InputField.scss";
 import Icon from "@components/Icon";
-import { usePrevious } from "@src/hooks/usePrevious";
 
 const InputField = ({
   label,
@@ -31,8 +30,6 @@ const InputField = ({
     }
     return type;
   };
-
-  const prevValue = usePrevious(value);
 
   const component = (
     <>
@@ -66,7 +63,7 @@ const InputField = ({
             />
           </span>
         )}
-        {type === "password" && prevValue === "" && (
+        {type === "password" && isFirstChange && (
           <span className="show-password-toggle" onClick={handleToggleShow}>
             {
               <Icon

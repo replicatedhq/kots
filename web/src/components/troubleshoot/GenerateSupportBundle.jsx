@@ -34,10 +34,6 @@ class GenerateSupportBundle extends React.Component {
       errorMsg: "",
       displayErrorModal: false,
       networkErr: false,
-      bundleCommand: [
-        "curl https://krew.sh/support-bundle | bash",
-        "kubectl support-bundle --load-cluster-specs",
-      ],
     };
   }
 
@@ -309,6 +305,32 @@ class GenerateSupportBundle extends React.Component {
       });
   };
 
+  fetchSupportBundleCommand = async () => {
+    const { watch } = this.props;
+
+    const res = await fetch(
+      `${process.env.API_ENDPOINT}/troubleshoot/app/${watch.slug}/supportbundlecommand`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include",
+        body: JSON.stringify({
+          origin: window.location.origin,
+        }),
+      }
+    );
+    if (!res.ok) {
+      throw new Error(`Unexpected status code: ${res.status}`);
+    }
+    const response = await res.json();
+    this.setState({
+      showRunCommand: !this.state.showRunCommand,
+      bundleCommand: response.command,
+    });
+  };
+
   toggleErrorModal = () => {
     this.setState({ displayErrorModal: !this.state.displayErrorModal });
   };
@@ -449,9 +471,7 @@ class GenerateSupportBundle extends React.Component {
                     <a
                       href="#"
                       onClick={(e) => {
-                        this.setState({
-                          showRunCommand: !this.state.showRunCommand,
-                        });
+                        this.fetchSupportBundleCommand();
                       }}
                     >
                       click here

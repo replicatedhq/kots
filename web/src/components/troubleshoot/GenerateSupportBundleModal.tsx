@@ -20,7 +20,7 @@ type Props = {
 };
 
 type State = {
-  bundleCommand: string[];
+  bundleCommand: string;
   fileUploading: boolean;
   generateBundleErrMsg: string;
   showGetBundleSpec: boolean;
@@ -45,10 +45,7 @@ const GenerateSupportBundleModal = ({
       ...newState,
     }),
     {
-      bundleCommand: [
-        "curl https://krew.sh/support-bundle | bash",
-        "kubectl support-bundle --load-cluster-specs",
-      ],
+      bundleCommand: "",
       fileUploading: false,
       generateBundleErrMsg: "",
       showGetBundleSpec: false,
@@ -68,6 +65,27 @@ const GenerateSupportBundleModal = ({
 
   const history = useHistory();
   const match = useRouteMatch<KotsParams>();
+
+  const fetchSupportBundleCommand = async () => {
+    const res = await fetch(
+      `${process.env.API_ENDPOINT}/troubleshoot/app/${watch?.slug}/supportbundlecommand`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include",
+        body: JSON.stringify({
+          origin: window.location.origin,
+        }),
+      }
+    );
+    if (!res.ok) {
+      throw new Error(`Unexpected status code: ${res.status}`);
+    }
+    const response = await res.json();
+    setState({ bundleCommand: response.command });
+  };
 
   const listSupportBundles = () => {
     setState({ loadingSupportBundles: true });
@@ -122,6 +140,7 @@ const GenerateSupportBundleModal = ({
   };
 
   useEffect(() => {
+    fetchSupportBundleCommand();
     listSupportBundles();
 
     return () => {

@@ -27,10 +27,7 @@ class UploadAirgapBundle extends React.Component {
     fileUploading: false,
     registryDetails: {},
     preparingOnlineInstall: false,
-    supportBundleCommand: [
-      "curl https://krew.sh/support-bundle | bash",
-      "kubectl support-bundle --load-cluster-specs",
-    ],
+    supportBundleCommand: undefined,
     showSupportBundleCommand: false,
     onlineInstallErrorMessage: "",
     viewOnlineInstallErrorMessage: false,
@@ -316,15 +313,33 @@ class UploadAirgapBundle extends React.Component {
     }, 1000);
   };
 
+  getSupportBundleCommand = async (slug) => {
+    const res = await fetch(
+      `${process.env.API_ENDPOINT}/troubleshoot/app/${slug}/supportbundlecommand`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include",
+        body: JSON.stringify({
+          origin: window.location.origin,
+        }),
+      }
+    );
+    if (!res.ok) {
+      throw new Error(`Unexpected status code: ${res.status}`);
+    }
+    const response = await res.json();
+    return response.command;
+  };
+
   onProgressError = async (errorMessage) => {
     const { slug } = this.props.match.params;
 
     let supportBundleCommand = [];
     try {
-      supportBundleCommand = [
-        "curl https://krew.sh/support-bundle | bash",
-        "kubectl support-bundle --load-cluster-specs",
-      ];
+      supportBundleCommand = await this.getSupportBundleCommand(slug);
     } catch (err) {
       console.log(err);
     }
