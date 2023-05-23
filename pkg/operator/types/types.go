@@ -3,6 +3,7 @@ package types
 import (
 	"fmt"
 	"strconv"
+	"strings"
 
 	"github.com/pkg/errors"
 	appstatetypes "github.com/replicatedhq/kots/pkg/appstate/types"
@@ -11,6 +12,13 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
+)
+
+const (
+	CreationPhaseAnnotation     = "kots.io/creation-phase"
+	DeletionPhaseAnnotation     = "kots.io/deletion-phase"
+	WaitForReadyAnnotation      = "kots.io/wait-for-ready"
+	WaitForPropertiesAnnotation = "kots.io/wait-for-properties"
 )
 
 type DeployAppArgs struct {
@@ -80,6 +88,11 @@ type Resource struct {
 	DecodeErrMsg string
 }
 
+type WaitForProperty struct {
+	Path  string
+	Value string
+}
+
 func (r Resource) GetGroup() string {
 	if r.GVK != nil {
 		return r.GVK.Group
@@ -121,13 +134,53 @@ func (r Resource) ShouldWaitForReady() bool {
 		if annotations == nil {
 			return false
 		}
-		waitForReady, ok := annotations["kots.io/wait-for-ready"]
+		waitForReady, ok := annotations[WaitForReadyAnnotation]
 		if !ok {
 			return false
 		}
 		return waitForReady == "true"
 	}
 	return false
+}
+
+func (r Resource) ShouldWaitForProperties() bool {
+	if r.Unstructured != nil {
+		annotations := r.Unstructured.GetAnnotations()
+		if annotations == nil {
+			return false
+		}
+		_, ok := annotations[WaitForPropertiesAnnotation]
+		return ok
+	}
+	return false
+}
+
+// GetWaitForProperties returns the key value pairs in the `kots.io/wait-for-properties` annotation
+func (r Resource) GetWaitForProperties() []WaitForProperty {
+	if r.Unstructured != nil {
+		annotations := r.Unstructured.GetAnnotations()
+		if annotations == nil {
+			return nil
+		}
+		annotationValue, ok := annotations[WaitForPropertiesAnnotation]
+		if !ok {
+			return nil
+		}
+
+		waitForProperties := []WaitForProperty{}
+		for _, property := range strings.Split(annotationValue, ",") {
+			parts := strings.SplitN(property, "=", 2)
+			if len(parts) != 2 {
+				continue
+			}
+			waitForProperties = append(waitForProperties, WaitForProperty{
+				Path:  parts[0],
+				Value: parts[1],
+			})
+		}
+		return waitForProperties
+	}
+	return nil
 }
 
 func (r Resources) HasCRDs() bool {
@@ -170,7 +223,7 @@ func (r Resources) GroupByCreationPhase() map[string]Resources {
 		if resource.Unstructured != nil {
 			annotations := resource.Unstructured.GetAnnotations()
 			if annotations != nil {
-				if s, ok := annotations["kots.io/creation-phase"]; ok {
+				if s, ok := annotations[CreationPhaseAnnotation]; ok {
 					phase = s
 				}
 			}
@@ -197,7 +250,7 @@ func (r Resources) GroupByDeletionPhase() map[string]Resources {
 		if resource.Unstructured != nil {
 			annotations := resource.Unstructured.GetAnnotations()
 			if annotations != nil {
-				if s, ok := annotations["kots.io/deletion-phase"]; ok {
+				if s, ok := annotations[DeletionPhaseAnnotation]; ok {
 					phase = s
 				}
 			}

@@ -3,10 +3,15 @@ package k8sutil
 import (
 	"github.com/pkg/errors"
 	flag "github.com/spf13/pflag"
+	"k8s.io/apimachinery/pkg/api/meta"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/cli-runtime/pkg/genericclioptions"
+	"k8s.io/client-go/discovery"
+	memory "k8s.io/client-go/discovery/cached"
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
+	"k8s.io/client-go/restmapper"
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
 )
 
@@ -84,4 +89,37 @@ func GetK8sVersion() (string, error) {
 		return "", errors.Wrap(err, "failed to get kubernetes server version")
 	}
 	return k8sVersion.GitVersion, nil
+}
+
+func GetDynamicResourceInterface(gvk *schema.GroupVersionKind, namespace string) (dynamic.ResourceInterface, error) {
+	config, err := GetClusterConfig()
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get cluster config")
+	}
+
+	disc, err := discovery.NewDiscoveryClientForConfig(config)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to create discovery client")
+	}
+
+	mapper := restmapper.NewDeferredDiscoveryRESTMapper(memory.NewMemCacheClient(disc))
+
+	mapping, err := mapper.RESTMapping(gvk.GroupKind(), gvk.Version)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get rest mapping")
+	}
+
+	dynamicClientset, err := dynamic.NewForConfig(config)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get dynamic clientset")
+	}
+
+	var dr dynamic.ResourceInterface
+	if mapping.Scope.Name() == meta.RESTScopeNameNamespace {
+		dr = dynamicClientset.Resource(mapping.Resource).Namespace(namespace)
+	} else {
+		dr = dynamicClientset.Resource(mapping.Resource)
+	}
+
+	return dr, nil
 }

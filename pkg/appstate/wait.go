@@ -1,7 +1,9 @@
 package appstate
 
 import (
+	"bytes"
 	"context"
+	"fmt"
 	"strings"
 	"time"
 
@@ -11,9 +13,11 @@ import (
 	"github.com/replicatedhq/kots/pkg/logger"
 	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/util/jsonpath"
 )
 
 var (
@@ -27,7 +31,7 @@ var (
 	}
 )
 
-func WaitForResourceToBeReady(namespace, name string, gvr schema.GroupVersionResource, gvk *schema.GroupVersionKind) error {
+func WaitForResourceToBeReady(namespace, name string, gvk *schema.GroupVersionKind) error {
 	clientset, err := k8sutil.GetClientset()
 	if err != nil {
 		return errors.Wrap(err, "failed to get clientset")
@@ -42,12 +46,12 @@ func WaitForResourceToBeReady(namespace, name string, gvr schema.GroupVersionRes
 		return fn(clientset, namespace, name)
 	}
 
-	dynamicClientset, err := k8sutil.GetDynamicClient()
+	dr, err := k8sutil.GetDynamicResourceInterface(gvk, namespace)
 	if err != nil {
-		return errors.Wrap(err, "failed to get dynamic clientset")
+		return errors.Wrap(err, "failed to get dynamic resource interface")
 	}
 
-	return WaitForGenericResourceToBeReady(dynamicClientset, namespace, name, gvr)
+	return WaitForGenericResourceToBeReady(dr, name)
 }
 
 func WaitForDaemonSetToBeReady(clientset kubernetes.Interface, namespace, name string) error {
@@ -176,19 +180,65 @@ func WaitForStatefulSetToBeReady(clientset kubernetes.Interface, namespace, name
 	}
 }
 
-func WaitForGenericResourceToBeReady(dynamicClientset dynamic.Interface, namespace, name string, gvr schema.GroupVersionResource) error {
+func WaitForGenericResourceToBeReady(dr dynamic.ResourceInterface, name string) (err error) {
 	for {
-		_, err := dynamicClientset.Resource(gvr).Namespace(namespace).Get(context.TODO(), name, metav1.GetOptions{})
+		_, err := dr.Get(context.TODO(), name, metav1.GetOptions{})
 		if err != nil && !kuberneteserrors.IsNotFound(err) {
 			return errors.Wrap(err, "failed to get existing resource")
 		}
 
-		if kuberneteserrors.IsNotFound(err) {
-			logger.Debugf("resource %s in namespace %s is not ready, resource not found", name, namespace)
-		} else {
-			logger.Debugf("resource %s in namespace %s is ready", name, namespace)
+		if !kuberneteserrors.IsNotFound(err) {
+			return nil
 		}
 
 		time.Sleep(time.Second * 2)
 	}
+}
+
+func WaitForProperty(namespace, name string, gvk *schema.GroupVersionKind, path, desiredValue string) error {
+	dr, err := k8sutil.GetDynamicResourceInterface(gvk, namespace)
+	if err != nil {
+		return errors.Wrap(err, "failed to get dynamic resource interface")
+	}
+
+	for {
+		r, err := dr.Get(context.TODO(), name, metav1.GetOptions{})
+		if err != nil && !kuberneteserrors.IsNotFound(err) {
+			return errors.Wrap(err, "failed to get existing resource")
+		}
+
+		if !kuberneteserrors.IsNotFound(err) {
+			if matches, err := resourcePropertyMatchesValue(r, path, desiredValue); err != nil {
+				return errors.Wrap(err, "failed to check if resource property matches value")
+			} else if matches {
+				return nil
+			}
+		}
+
+		time.Sleep(time.Second * 2)
+	}
+}
+
+func resourcePropertyMatchesValue(r *unstructured.Unstructured, path, desiredValue string) (bool, error) {
+	if path == "" {
+		return false, errors.New("key cannot be empty")
+	}
+
+	parser := jsonpath.New("wait-for-property")
+	if err := parser.Parse(fmt.Sprintf("{ %s }", path)); err != nil {
+		return false, errors.Wrapf(err, "failed to parse jsonpath %s", path)
+	}
+
+	buf := new(bytes.Buffer)
+	err := parser.Execute(buf, r.Object)
+	if err != nil {
+		// don't return an error here since the field may not exist yet
+		logger.Warnf("failed to execute jsonpath: %v", err)
+	}
+
+	if buf.String() == desiredValue {
+		return true, nil
+	}
+
+	return false, nil
 }

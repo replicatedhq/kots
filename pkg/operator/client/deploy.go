@@ -223,12 +223,24 @@ func (c *Client) ensureResourcesPresent(deployArgs operatortypes.DeployAppArgs) 
 
 			if resource.ShouldWaitForReady() {
 				logger.Infof("waiting for resource %s/%s/%s/%s in namespace %s to be ready", group, version, kind, name, namespace)
-				err := appstate.WaitForResourceToBeReady(namespace, name, resource.GVR, resource.GVK)
+				err := appstate.WaitForResourceToBeReady(namespace, name, resource.GVK)
 				if err != nil {
 					logger.Infof("failed to wait for resource %s/%s/%s/%s in namespace %s to be ready", group, version, kind, name, namespace)
 					return nil, errors.Wrap(err, "failed to wait for resource to be ready")
 				}
 				logger.Infof("resource %s/%s/%s/%s in namespace %s is ready", group, version, kind, name, namespace)
+			}
+
+			if resource.ShouldWaitForProperties() {
+				for _, prop := range resource.GetWaitForProperties() {
+					logger.Infof("waiting for resource %s/%s/%s/%s in namespace %s to have property %s=%s", group, version, kind, name, namespace, prop.Path, prop.Value)
+					err := appstate.WaitForProperty(namespace, name, resource.GVK, prop.Path, prop.Value)
+					if err != nil {
+						logger.Infof("failed to wait for resource %s/%s/%s/%s in namespace %s to have property %s=%s", group, version, kind, name, namespace, prop.Path, prop.Value)
+						return nil, errors.Wrapf(err, "failed to wait for resource to have property %s=%s", prop.Path, prop.Value)
+					}
+					logger.Infof("resource %s/%s/%s/%s in namespace %s has property %s=%s", group, version, kind, name, namespace, prop.Path, prop.Value)
+				}
 			}
 		}
 	}

@@ -125,35 +125,35 @@ func TestSortResourcesForCreation(t *testing.T) {
 				{GVK: &schema.GroupVersionKind{Kind: "ClusterRole"}},
 				{
 					GVK:          &schema.GroupVersionKind{Kind: "Job"},
-					Unstructured: unstructuredWithAnnotation("kots.io/creation-phase", "1"),
+					Unstructured: unstructuredWithAnnotation(types.CreationPhaseAnnotation, "1"),
 				},
 				{
 					GVK:          &schema.GroupVersionKind{Kind: "Job"},
-					Unstructured: unstructuredWithAnnotation("kots.io/creation-phase", "-1"),
+					Unstructured: unstructuredWithAnnotation(types.CreationPhaseAnnotation, "-1"),
 				},
 				{
 					GVK:          &schema.GroupVersionKind{Kind: "UnknownKind", Group: "unknown", Version: "v3"},
-					Unstructured: unstructuredWithAnnotation("kots.io/creation-phase", "1"),
+					Unstructured: unstructuredWithAnnotation(types.CreationPhaseAnnotation, "1"),
 				},
 				{
 					GVK:          &schema.GroupVersionKind{Kind: "UnknownKind", Group: "unknown", Version: "v3"},
-					Unstructured: unstructuredWithAnnotation("kots.io/creation-phase", "-1"),
+					Unstructured: unstructuredWithAnnotation(types.CreationPhaseAnnotation, "-1"),
 				},
 				{
 					GVK:          &schema.GroupVersionKind{Kind: "Job"},
-					Unstructured: unstructuredWithAnnotation("kots.io/creation-phase", "2"),
+					Unstructured: unstructuredWithAnnotation(types.CreationPhaseAnnotation, "2"),
 				},
 				{
 					GVK:          &schema.GroupVersionKind{Kind: "Job"},
-					Unstructured: unstructuredWithAnnotation("kots.io/creation-phase", "-2"),
+					Unstructured: unstructuredWithAnnotation(types.CreationPhaseAnnotation, "-2"),
 				},
 				{
 					GVK:          &schema.GroupVersionKind{Kind: "UnknownKind", Group: "unknown", Version: "v3"},
-					Unstructured: unstructuredWithAnnotation("kots.io/creation-phase", "2"),
+					Unstructured: unstructuredWithAnnotation(types.CreationPhaseAnnotation, "2"),
 				},
 				{
 					GVK:          &schema.GroupVersionKind{Kind: "UnknownKind", Group: "unknown", Version: "v3"},
-					Unstructured: unstructuredWithAnnotation("kots.io/creation-phase", "-2"),
+					Unstructured: unstructuredWithAnnotation(types.CreationPhaseAnnotation, "-2"),
 				},
 				{GVK: &schema.GroupVersionKind{Kind: "RoleList"}},
 				{GVK: &schema.GroupVersionKind{Kind: "DaemonSet"}},
@@ -179,11 +179,11 @@ func TestSortResourcesForCreation(t *testing.T) {
 					Resources: types.Resources{
 						{
 							GVK:          &schema.GroupVersionKind{Kind: "Job"},
-							Unstructured: unstructuredWithAnnotation("kots.io/creation-phase", "-2"),
+							Unstructured: unstructuredWithAnnotation(types.CreationPhaseAnnotation, "-2"),
 						},
 						{
 							GVK:          &schema.GroupVersionKind{Kind: "UnknownKind", Group: "unknown", Version: "v3"},
-							Unstructured: unstructuredWithAnnotation("kots.io/creation-phase", "-2"),
+							Unstructured: unstructuredWithAnnotation(types.CreationPhaseAnnotation, "-2"),
 						},
 					},
 				},
@@ -192,11 +192,11 @@ func TestSortResourcesForCreation(t *testing.T) {
 					Resources: types.Resources{
 						{
 							GVK:          &schema.GroupVersionKind{Kind: "Job"},
-							Unstructured: unstructuredWithAnnotation("kots.io/creation-phase", "-1"),
+							Unstructured: unstructuredWithAnnotation(types.CreationPhaseAnnotation, "-1"),
 						},
 						{
 							GVK:          &schema.GroupVersionKind{Kind: "UnknownKind", Group: "unknown", Version: "v3"},
-							Unstructured: unstructuredWithAnnotation("kots.io/creation-phase", "-1"),
+							Unstructured: unstructuredWithAnnotation(types.CreationPhaseAnnotation, "-1"),
 						},
 					},
 				},
@@ -248,11 +248,11 @@ func TestSortResourcesForCreation(t *testing.T) {
 					Resources: types.Resources{
 						{
 							GVK:          &schema.GroupVersionKind{Kind: "Job"},
-							Unstructured: unstructuredWithAnnotation("kots.io/creation-phase", "1"),
+							Unstructured: unstructuredWithAnnotation(types.CreationPhaseAnnotation, "1"),
 						},
 						{
 							GVK:          &schema.GroupVersionKind{Kind: "UnknownKind", Group: "unknown", Version: "v3"},
-							Unstructured: unstructuredWithAnnotation("kots.io/creation-phase", "1"),
+							Unstructured: unstructuredWithAnnotation(types.CreationPhaseAnnotation, "1"),
 						},
 					},
 				},
@@ -261,11 +261,11 @@ func TestSortResourcesForCreation(t *testing.T) {
 					Resources: types.Resources{
 						{
 							GVK:          &schema.GroupVersionKind{Kind: "Job"},
-							Unstructured: unstructuredWithAnnotation("kots.io/creation-phase", "2"),
+							Unstructured: unstructuredWithAnnotation(types.CreationPhaseAnnotation, "2"),
 						},
 						{
 							GVK:          &schema.GroupVersionKind{Kind: "UnknownKind", Group: "unknown", Version: "v3"},
-							Unstructured: unstructuredWithAnnotation("kots.io/creation-phase", "2"),
+							Unstructured: unstructuredWithAnnotation(types.CreationPhaseAnnotation, "2"),
 						},
 					},
 				},
@@ -315,35 +315,35 @@ func TestSortResourcesForDeletion(t *testing.T) {
 				{GVK: &schema.GroupVersionKind{Kind: "ClusterRole"}},
 				{
 					GVK:          &schema.GroupVersionKind{Kind: "Job"},
-					Unstructured: unstructuredWithAnnotation("kots.io/deletion-phase", "1"),
+					Unstructured: unstructuredWithAnnotation(types.DeletionPhaseAnnotation, "1"),
 				},
 				{
 					GVK:          &schema.GroupVersionKind{Kind: "Job"},
-					Unstructured: unstructuredWithAnnotation("kots.io/deletion-phase", "-1"),
+					Unstructured: unstructuredWithAnnotation(types.DeletionPhaseAnnotation, "-1"),
 				},
 				{
 					GVK:          &schema.GroupVersionKind{Kind: "UnknownKind", Group: "unknown", Version: "v3"},
-					Unstructured: unstructuredWithAnnotation("kots.io/deletion-phase", "1"),
+					Unstructured: unstructuredWithAnnotation(types.DeletionPhaseAnnotation, "1"),
 				},
 				{
 					GVK:          &schema.GroupVersionKind{Kind: "UnknownKind", Group: "unknown", Version: "v3"},
-					Unstructured: unstructuredWithAnnotation("kots.io/deletion-phase", "-1"),
+					Unstructured: unstructuredWithAnnotation(types.DeletionPhaseAnnotation, "-1"),
 				},
 				{
 					GVK:          &schema.GroupVersionKind{Kind: "Job"},
-					Unstructured: unstructuredWithAnnotation("kots.io/deletion-phase", "2"),
+					Unstructured: unstructuredWithAnnotation(types.DeletionPhaseAnnotation, "2"),
 				},
 				{
 					GVK:          &schema.GroupVersionKind{Kind: "Job"},
-					Unstructured: unstructuredWithAnnotation("kots.io/deletion-phase", "-2"),
+					Unstructured: unstructuredWithAnnotation(types.DeletionPhaseAnnotation, "-2"),
 				},
 				{
 					GVK:          &schema.GroupVersionKind{Kind: "UnknownKind", Group: "unknown", Version: "v3"},
-					Unstructured: unstructuredWithAnnotation("kots.io/deletion-phase", "2"),
+					Unstructured: unstructuredWithAnnotation(types.DeletionPhaseAnnotation, "2"),
 				},
 				{
 					GVK:          &schema.GroupVersionKind{Kind: "UnknownKind", Group: "unknown", Version: "v3"},
-					Unstructured: unstructuredWithAnnotation("kots.io/deletion-phase", "-2"),
+					Unstructured: unstructuredWithAnnotation(types.DeletionPhaseAnnotation, "-2"),
 				},
 				{GVK: &schema.GroupVersionKind{Kind: "RoleList"}},
 				{GVK: &schema.GroupVersionKind{Kind: "DaemonSet"}},
@@ -369,11 +369,11 @@ func TestSortResourcesForDeletion(t *testing.T) {
 					Resources: types.Resources{
 						{
 							GVK:          &schema.GroupVersionKind{Kind: "UnknownKind", Group: "unknown", Version: "v3"},
-							Unstructured: unstructuredWithAnnotation("kots.io/deletion-phase", "-2"),
+							Unstructured: unstructuredWithAnnotation(types.DeletionPhaseAnnotation, "-2"),
 						},
 						{
 							GVK:          &schema.GroupVersionKind{Kind: "Job"},
-							Unstructured: unstructuredWithAnnotation("kots.io/deletion-phase", "-2"),
+							Unstructured: unstructuredWithAnnotation(types.DeletionPhaseAnnotation, "-2"),
 						},
 					},
 				},
@@ -382,11 +382,11 @@ func TestSortResourcesForDeletion(t *testing.T) {
 					Resources: types.Resources{
 						{
 							GVK:          &schema.GroupVersionKind{Kind: "UnknownKind", Group: "unknown", Version: "v3"},
-							Unstructured: unstructuredWithAnnotation("kots.io/deletion-phase", "-1"),
+							Unstructured: unstructuredWithAnnotation(types.DeletionPhaseAnnotation, "-1"),
 						},
 						{
 							GVK:          &schema.GroupVersionKind{Kind: "Job"},
-							Unstructured: unstructuredWithAnnotation("kots.io/deletion-phase", "-1"),
+							Unstructured: unstructuredWithAnnotation(types.DeletionPhaseAnnotation, "-1"),
 						},
 					},
 				},
@@ -438,11 +438,11 @@ func TestSortResourcesForDeletion(t *testing.T) {
 					Resources: types.Resources{
 						{
 							GVK:          &schema.GroupVersionKind{Kind: "UnknownKind", Group: "unknown", Version: "v3"},
-							Unstructured: unstructuredWithAnnotation("kots.io/deletion-phase", "1"),
+							Unstructured: unstructuredWithAnnotation(types.DeletionPhaseAnnotation, "1"),
 						},
 						{
 							GVK:          &schema.GroupVersionKind{Kind: "Job"},
-							Unstructured: unstructuredWithAnnotation("kots.io/deletion-phase", "1"),
+							Unstructured: unstructuredWithAnnotation(types.DeletionPhaseAnnotation, "1"),
 						},
 					},
 				},
@@ -451,11 +451,11 @@ func TestSortResourcesForDeletion(t *testing.T) {
 					Resources: types.Resources{
 						{
 							GVK:          &schema.GroupVersionKind{Kind: "UnknownKind", Group: "unknown", Version: "v3"},
-							Unstructured: unstructuredWithAnnotation("kots.io/deletion-phase", "2"),
+							Unstructured: unstructuredWithAnnotation(types.DeletionPhaseAnnotation, "2"),
 						},
 						{
 							GVK:          &schema.GroupVersionKind{Kind: "Job"},
-							Unstructured: unstructuredWithAnnotation("kots.io/deletion-phase", "2"),
+							Unstructured: unstructuredWithAnnotation(types.DeletionPhaseAnnotation, "2"),
 						},
 					},
 				},
