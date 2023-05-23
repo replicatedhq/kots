@@ -66,9 +66,6 @@ func WaitForDaemonSetToBeReady(clientset kubernetes.Interface, namespace, name s
 			if state == types.StateReady {
 				return nil
 			}
-			logger.Debugf("daemonset %s in namespace %s is not ready, current state is %s", name, namespace, state)
-		} else {
-			logger.Debugf("daemonset %s in namespace %s is not ready, daemonset not found", name, namespace)
 		}
 
 		time.Sleep(time.Second * 2)
@@ -87,9 +84,6 @@ func WaitForDeploymentToBeReady(clientset kubernetes.Interface, namespace, name 
 			if state == types.StateReady {
 				return nil
 			}
-			logger.Debugf("deployment %s in namespace %s is not ready, current state is %s", name, namespace, state)
-		} else {
-			logger.Debugf("deployment %s in namespace %s is not ready, deployment not found", name, namespace)
 		}
 
 		time.Sleep(time.Second * 2)
@@ -108,9 +102,6 @@ func WaitForIngressToBeReady(clientset kubernetes.Interface, namespace, name str
 			if state == types.StateReady {
 				return nil
 			}
-			logger.Debugf("ingress %s in namespace %s is not ready, current state is %s", name, namespace, state)
-		} else {
-			logger.Debugf("ingress %s in namespace %s is not ready, ingress not found", name, namespace)
 		}
 
 		time.Sleep(time.Second * 2)
@@ -129,9 +120,6 @@ func WaitForPersistentVolumeClaimToBeReady(clientset kubernetes.Interface, names
 			if state == types.StateReady {
 				return nil
 			}
-			logger.Debugf("persistentvolumeclaim %s in namespace %s is not ready, current state is %s", name, namespace, state)
-		} else {
-			logger.Debugf("persistentvolumeclaim %s in namespace %s is not ready, persistentvolumeclaim not found", name, namespace)
 		}
 
 		time.Sleep(time.Second * 2)
@@ -150,9 +138,6 @@ func WaitForServiceToBeReady(clientset kubernetes.Interface, namespace, name str
 			if state == types.StateReady {
 				return nil
 			}
-			logger.Debugf("service %s in namespace %s is not ready, current state is %s", name, namespace, state)
-		} else {
-			logger.Debugf("service %s in namespace %s is not ready, service not found", name, namespace)
 		}
 
 		time.Sleep(time.Second * 2)
@@ -171,9 +156,6 @@ func WaitForStatefulSetToBeReady(clientset kubernetes.Interface, namespace, name
 			if state == types.StateReady {
 				return nil
 			}
-			logger.Debugf("statefulset %s in namespace %s is not ready, current state is %s", name, namespace, state)
-		} else {
-			logger.Debugf("statefulset %s in namespace %s is not ready, statefulset not found", name, namespace)
 		}
 
 		time.Sleep(time.Second * 2)
