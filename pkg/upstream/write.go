@@ -10,9 +10,9 @@ import (
 	"github.com/pkg/errors"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	"github.com/replicatedhq/kots/pkg/crypto"
+	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/upstream/types"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime/serializer/json"
 	serializer "k8s.io/apimachinery/pkg/runtime/serializer/json"
 	"k8s.io/client-go/kubernetes/scheme"
 )
@@ -144,7 +144,7 @@ func WriteUpstream(u *types.Upstream, options types.WriteOptions) error {
 		}
 	}
 
-	installationBytes := mustMarshalInstallation(&installation)
+	installationBytes := kotsutil.MustMarshalInstallation(&installation)
 	err = ioutil.WriteFile(path.Join(renderDir, "userdata", "installation.yaml"), installationBytes, 0644)
 	if err != nil {
 		return errors.Wrap(err, "failed to write installation")
@@ -159,17 +159,6 @@ func getEncryptionKey(prevInstallation *kotsv1beta1.Installation) (string, error
 	}
 
 	return prevInstallation.Spec.EncryptionKey, nil
-}
-
-func mustMarshalInstallation(installation *kotsv1beta1.Installation) []byte {
-	s := json.NewYAMLSerializer(json.DefaultMetaFactory, scheme.Scheme, scheme.Scheme)
-
-	var b bytes.Buffer
-	if err := s.Encode(installation, &b); err != nil {
-		panic(err)
-	}
-
-	return b.Bytes()
 }
 
 func encryptConfigValues(configValues *kotsv1beta1.ConfigValues) ([]byte, error) {

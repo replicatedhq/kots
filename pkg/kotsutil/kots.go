@@ -39,6 +39,7 @@ import (
 	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/serializer/json"
 	serializer "k8s.io/apimachinery/pkg/runtime/serializer/json"
 	"k8s.io/client-go/kubernetes/scheme"
 	applicationv1beta1 "sigs.k8s.io/application/api/v1beta1"
@@ -1411,4 +1412,15 @@ func FilterV1Beta1ChartsWithV1Beta2Charts(v1Beta1Charts []kotsv1beta1.HelmChart,
 	}
 
 	return filteredCharts
+}
+
+func MustMarshalInstallation(installation *kotsv1beta1.Installation) []byte {
+	s := json.NewYAMLSerializer(json.DefaultMetaFactory, scheme.Scheme, scheme.Scheme)
+
+	var b bytes.Buffer
+	if err := s.Encode(installation, &b); err != nil {
+		panic(err)
+	}
+
+	return b.Bytes()
 }

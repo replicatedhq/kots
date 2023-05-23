@@ -14,6 +14,6 @@ metadata:
 spec:
   containers:
   - name: my-chart-container
-    image: nginx
+    image: nginx:1.23
     ports:
     - containerPort: 80

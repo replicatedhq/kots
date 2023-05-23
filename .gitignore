@@ -33,11 +33,4 @@ kotsdata/
 
 sbom/
 cosign.key
-pkg/tests/pull/cases/configcontext/results
-pkg/tests/pull/cases/customhostnames/results
-pkg/tests/pull/cases/multidoc/results
-pkg/tests/pull/cases/samechartvariations/results
-pkg/tests/pull/cases/simple/results
-pkg/tests/pull/cases/subchart-alias/results
-pkg/tests/pull/cases/subchart-crds/results
-pkg/tests/pull/cases/subcharts/results
+pkg/tests/pull/cases/*/results

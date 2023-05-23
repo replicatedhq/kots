@@ -7,6 +7,12 @@ PullOptions:
   LocalPath: cases/v1beta2-charts/upstream
   RootDir: cases/v1beta2-charts/results
   SharedPassword: dummy-pass
-  RewriteImages: false
+  RewriteImages: true
+  RewriteImageOptions:
+    Hostname: ttl.sh
+    Namespace: test
+    Username: test
+    Password: fake-pass
+    IsReadOnly: true
   Downstreams:
     - this-cluster
