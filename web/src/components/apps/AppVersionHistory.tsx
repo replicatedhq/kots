@@ -38,7 +38,7 @@ import "@src/scss/components/apps/AppVersionHistory.scss";
 import { DashboardGitOpsCard } from "@features/Dashboard";
 import Icon from "../Icon";
 import { App, Downstream, Version, VersionDownloadStatus } from "@types";
-import { withRouter } from "@src/utilities/react-router-utilities";
+import { RouterProps, withRouter } from "@src/utilities/react-router-utilities";
 import PreflightIcon from "@features/App/PreflightIcon";
 
 dayjs.extend(relativeTime);
@@ -78,7 +78,8 @@ type Props = {
     toggleIsBundleUploading: (isUploading: boolean) => void;
     updateCallback: () => void;
   };
-};
+} & RouterProps;
+
 type State = {
   airgapUploader: AirgapUploader | null;
   airgapUploadError: string;
@@ -252,7 +253,8 @@ class AppVersionHistory extends Component<Props, State> {
     this.state.appUpdateChecker.start(this.getAppUpdateStatus, 1000);
 
     const url = window.location.pathname;
-    const { params } = this.props;
+    const { params } = this.props.outletContext;
+    console.log(params, "param");
     if (url.includes("/diff")) {
       const firstSequence = params.firstSequence;
       const secondSequence = params.secondSequence;
@@ -586,7 +588,7 @@ class AppVersionHistory extends Component<Props, State> {
   };
 
   upgradeAdminConsole = (version: Version) => {
-    const { app } = this.props;
+    const { app } = this.props.outletContext;
 
     this.setState({
       displayKotsUpdateModal: true,
@@ -630,7 +632,7 @@ class AppVersionHistory extends Component<Props, State> {
   };
 
   getKotsUpdateStatus = () => {
-    const { app } = this.props;
+    const { app } = this.props.outletContext;
 
     return new Promise<void>((resolve) => {
       fetch(
@@ -677,7 +679,7 @@ class AppVersionHistory extends Component<Props, State> {
   };
 
   updateVersionDownloadStatus = (version: Version) => {
-    const { app } = this.props;
+    const { app } = this.props.outletContext;
 
     return new Promise<void>((resolve, reject) => {
       fetch(
@@ -947,7 +949,7 @@ class AppVersionHistory extends Component<Props, State> {
   };
 
   getAppUpdateStatus = () => {
-    const { app } = this.props;
+    const { app } = this.props.outletContext;
 
     return new Promise<void>((resolve, reject) => {
       fetch(
@@ -2075,7 +2077,7 @@ class AppVersionHistory extends Component<Props, State> {
                 {showDiffOverlay && (
                   <div className="DiffOverlay">
                     <VersionDiff
-                      slug={this.props.params.slug}
+                      slug={this.props.params?.slug}
                       firstSequence={firstSequence}
                       secondSequence={secondSequence}
                       onBackClick={this.hideDiffOverlay}
@@ -2362,6 +2364,4 @@ class AppVersionHistory extends Component<Props, State> {
   }
 }
 
-// @ts-ignore
-// eslint-disable-next-line
-export default withRouter(AppVersionHistory) as any;
+export default withRouter(AppVersionHistory);

@@ -374,6 +374,7 @@ function AppDetailPage(props: Props) {
     });
   };
 
+  // add types
   const testProps = {
     //match,
     adminConsoleMetadata: props.adminConsoleMetadata,
