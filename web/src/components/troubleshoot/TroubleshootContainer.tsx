@@ -3,7 +3,7 @@ import { Outlet } from "react-router-dom";
 import { withRouter, RouterProps } from "@src/utilities/react-router-utilities";
 
 // Types
-import { App, SupportBundleProgress } from "@types";
+import { SupportBundleProgress } from "@types";
 
 type State = {
   newBundleSlug: string;
@@ -21,7 +21,7 @@ type State = {
 class TroubleshootContainer extends Component<RouterProps, State> {
   constructor(props: RouterProps) {
     super(props);
-    console.log(props, "props");
+
     this.state = {
       newBundleSlug: "",
       isGeneratingBundle: false,
