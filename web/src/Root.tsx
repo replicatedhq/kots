@@ -690,7 +690,13 @@ const Root = () => {
                 />
                 <Route
                   path=":slug/downstreams/:downstreamSlug/version-history/preflight/:sequence"
-                  element={<PreflightResultPage />}
+                  element={
+                    <PreflightResultPage
+                      logo={state.appLogo || ""}
+                      fromLicenseFlow={true}
+                      refetchAppsList={getAppsList}
+                    />
+                  }
                 />
                 <Route
                   path=":slug/config/:sequence?"
@@ -706,101 +712,24 @@ const Root = () => {
                 <Route
                   path=":slug/troubleshoot"
                   element={
-                    <TroubleshootContainer
-
-                    // appName={appName || ""}
-                    />
+                    //@ts-ignore
+                    <TroubleshootContainer />
                   }
                 >
-                  <Route
-                    index
-                    element={
-                      <SupportBundleList
-                      // watch={state.app}
-                      // newBundleSlug={this.state.newBundleSlug}
-                      // updateBundleSlug={this.updateBundleSlug}
-                      // pollForBundleAnalysisProgress={
-                      //   this.pollForBundleAnalysisProgress
-                      // }
-                      // bundle={this.state.bundle}
-                      // bundleProgress={this.state.bundleAnalysisProgress}
-                      // loadingBundleId={this.state.loadingBundleId}
-                      // loadingBundle={this.state.loadingBundle}
-                      // updateState={this.updateState}
-                      // displayErrorModal={this.state.displayErrorModal}
-                      // loading={this.state.loading}
-                      />
-                    }
-                  />
-                  <Route
-                    path="generate"
-                    element={
-                      <GenerateSupportBundle
-                      // watch={app}
-                      // newBundleSlug={this.state.newBundleSlug}
-                      // updateBundleSlug={this.updateBundleSlug}
-                      // bundle={this.state.bundle}
-                      />
-                    }
-                  />
+                  <Route index element={<SupportBundleList />} />
+                  <Route path="generate" element={<GenerateSupportBundle />} />
                   <Route
                     path="analyze/:bundleSlug"
-                    element={
-                      <SupportBundleAnalysis
-                      // watch={app}
-                      // pollForBundleAnalysisProgress={
-                      //   this.pollForBundleAnalysisProgress
-                      // }
-                      // bundle={this.state.bundle}
-                      // bundleProgress={this.state.bundleAnalysisProgress}
-                      // updateState={this.updateState}
-                      // displayErrorModal={this.state.displayErrorModal}
-                      // getSupportBundleErrMsg={
-                      //   this.state.getSupportBundleErrMsg
-                      // }
-                      // loading={this.state.loading}
-                      />
-                    }
+                    element={<SupportBundleAnalysis />}
                   >
-                    <Route
-                      index
-                      element={
-                        <AnalyzerInsights
-                        // status={bundle.status}
-                        // refetchSupportBundle={this.getSupportBundle}
-                        // insights={bundle.analysis?.insights}
-                        // openPodDetailsModal={this.togglePodDetailsModal}
-                        />
-                      }
-                    />
-                    <Route
-                      path={"contents/*"}
-                      element={
-                        <AnalyzerFileTree
-                        // watchSlug={watch.slug}
-                        // bundle={bundle}
-                        // downloadBundle={() => this.downloadBundle(bundle)}
-                        />
-                      }
-                    />
+                    <Route index element={<AnalyzerInsights />} />
+                    <Route path={"contents/*"} element={<AnalyzerFileTree />} />
                     <Route
                       path={"redactor/report"}
-                      element={
-                        <AnalyzerRedactorReport
-                        // watchSlug={watch.slug}
-                        // bundle={bundle}
-                        />
-                      }
+                      element={<AnalyzerRedactorReport />}
                     />
                   </Route>
-                  <Route
-                    path="redactors"
-                    element={
-                      <Redactors
-                      // appSlug={app?.slug || ""} appName={appName}
-                      />
-                    }
-                  />
+                  <Route path="redactors" element={<Redactors />} />
                   <Route path="redactors/new" element={<EditRedactor />} />
                   <Route
                     path="redactors/:redactorSlug"
@@ -808,17 +737,7 @@ const Root = () => {
                   />
                   <Route element={<NotFound />} />
                 </Route>
-                <Route
-                  path=":slug/license"
-                  element={
-                    <AppLicense
-                    // app={selectedApp}
-                    // syncCallback={refetchData}
-                    // changeCallback={refetchData}
-                    // isHelmManaged={props.isHelmManaged}
-                    />
-                  }
-                />
+                <Route path=":slug/license" element={<AppLicense />} />
                 <Route
                   path=":slug/registry-settings"
                   element={

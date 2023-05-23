@@ -34,7 +34,7 @@ function useIgnorePermissionErrors({
   slug,
   sequence,
 }: {
-  slug: string;
+  slug: string | undefined;
   sequence: string;
 }) {
   const queryClient = useQueryClient();

@@ -49,7 +49,7 @@ function useDeployAppVersion({
   slug,
   sequence,
 }: {
-  slug: string;
+  slug: string | undefined;
   sequence: string;
 }) {
   const navigate = useNavigate();

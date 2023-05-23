@@ -170,7 +170,7 @@ function useGetPrelightResults({
   slug,
   sequence,
 }: {
-  slug: string;
+  slug: string | undefined;
   sequence?: string;
 }) {
   // this is for the progress bar
