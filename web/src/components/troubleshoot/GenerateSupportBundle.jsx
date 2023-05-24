@@ -470,9 +470,7 @@ class GenerateSupportBundle extends React.Component {
                     If you'd prefer,{" "}
                     <a
                       href="#"
-                      onClick={(e) => {
-                        this.fetchSupportBundleCommand();
-                      }}
+                      onClick={(e) => this.fetchSupportBundleCommand()}
                     >
                       click here
                     </a>{" "}
