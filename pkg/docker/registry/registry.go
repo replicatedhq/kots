@@ -48,10 +48,11 @@ const DockerHubSecretName = "kotsadm-dockerhub"
 var ErrDockerHubCredentialsExist = errors.New("dockerhub credentials exists")
 var dockerHubSecretMutex sync.Mutex
 
-// try to ensure secrets are created first if using a helm install
+// try to ensure secrets are created first if using deployment phases or a helm install
 var secretAnnotations = map[string]string{
-	"helm.sh/hook":        "pre-install,pre-upgrade",
-	"helm.sh/hook-weight": "-9999",
+	"kots.io/creation-phase": "-9999",
+	"helm.sh/hook":           "pre-install,pre-upgrade",
+	"helm.sh/hook-weight":    "-9999",
 }
 
 func GetRegistryProxyInfo(license *kotsv1beta1.License, app *kotsv1beta1.Application) *RegistryProxyInfo {
