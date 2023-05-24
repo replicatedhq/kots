@@ -29,6 +29,8 @@ var (
 		ServiceResourceKind:               WaitForServiceToBeReady,
 		StatefulSetResourceKind:           WaitForStatefulSetToBeReady,
 	}
+
+	WaitForResourceInterval = time.Second * 2
 )
 
 func WaitForResourceToBeReady(namespace, name string, gvk *schema.GroupVersionKind) error {
@@ -68,7 +70,7 @@ func WaitForDaemonSetToBeReady(clientset kubernetes.Interface, namespace, name s
 			}
 		}
 
-		time.Sleep(time.Second * 2)
+		time.Sleep(WaitForResourceInterval)
 	}
 }
 
@@ -86,7 +88,7 @@ func WaitForDeploymentToBeReady(clientset kubernetes.Interface, namespace, name 
 			}
 		}
 
-		time.Sleep(time.Second * 2)
+		time.Sleep(WaitForResourceInterval)
 	}
 }
 
@@ -104,7 +106,7 @@ func WaitForIngressToBeReady(clientset kubernetes.Interface, namespace, name str
 			}
 		}
 
-		time.Sleep(time.Second * 2)
+		time.Sleep(WaitForResourceInterval)
 	}
 }
 
@@ -122,7 +124,7 @@ func WaitForPersistentVolumeClaimToBeReady(clientset kubernetes.Interface, names
 			}
 		}
 
-		time.Sleep(time.Second * 2)
+		time.Sleep(WaitForResourceInterval)
 	}
 }
 
@@ -140,7 +142,7 @@ func WaitForServiceToBeReady(clientset kubernetes.Interface, namespace, name str
 			}
 		}
 
-		time.Sleep(time.Second * 2)
+		time.Sleep(WaitForResourceInterval)
 	}
 }
 
@@ -158,7 +160,7 @@ func WaitForStatefulSetToBeReady(clientset kubernetes.Interface, namespace, name
 			}
 		}
 
-		time.Sleep(time.Second * 2)
+		time.Sleep(WaitForResourceInterval)
 	}
 }
 
@@ -173,7 +175,7 @@ func WaitForGenericResourceToBeReady(dr dynamic.ResourceInterface, name string) 
 			return nil
 		}
 
-		time.Sleep(time.Second * 2)
+		time.Sleep(WaitForResourceInterval)
 	}
 }
 
@@ -197,7 +199,7 @@ func WaitForProperty(namespace, name string, gvk *schema.GroupVersionKind, path,
 			}
 		}
 
-		time.Sleep(time.Second * 2)
+		time.Sleep(WaitForResourceInterval)
 	}
 }
 
