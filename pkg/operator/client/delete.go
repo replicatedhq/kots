@@ -139,7 +139,7 @@ func (c *Client) deleteManifests(manifests []string, kubernetesApplier applier.K
 func (c *Client) deleteResources(resources types.Resources, kubernetesApplier applier.KubectlInterface, waitFlag bool) {
 	phases := groupAndSortResourcesForDeletion(resources)
 	for _, phase := range phases {
-		logger.Infof("deleting resources in phase %s", phase)
+		logger.Infof("deleting resources in phase %s", phase.Name)
 		for _, r := range phase.Resources {
 			c.deleteResource(r, waitFlag, kubernetesApplier)
 		}
@@ -307,7 +307,7 @@ func (c *Client) clearNamespaces(appSlug string, namespacesToClear []string, isR
 		phases := groupAndSortResourcesForDeletion(resourcesToDelete)
 
 		for _, phase := range phases {
-			logger.Infof("Deleting resources in phase %s", len(phase.Resources), phase.Name)
+			logger.Infof("Deleting resources in phase %s", phase.Name)
 			for _, r := range phase.Resources {
 				if r.Unstructured.GetDeletionTimestamp() != nil {
 					logger.Infof("Pending deletion %s/%s/%s/%s/%s", r.Unstructured.GetNamespace(), r.GVR.Group, r.GVR.Version, r.GVR.Resource, r.Unstructured.GetName())

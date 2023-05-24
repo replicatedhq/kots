@@ -171,6 +171,7 @@ func (r Resource) GetWaitForProperties() []WaitForProperty {
 		for _, property := range strings.Split(annotationValue, ",") {
 			parts := strings.SplitN(property, "=", 2)
 			if len(parts) != 2 {
+				logger.Errorf("invalid wait for property %q", property)
 				continue
 			}
 			waitForProperties = append(waitForProperties, WaitForProperty{
