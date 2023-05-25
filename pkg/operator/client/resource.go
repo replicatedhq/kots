@@ -156,27 +156,6 @@ func groupAndSortResourcesForCreation(resources types.Resources) types.Phases {
 	return phases
 }
 
-func getSortedPhases(resourcesByPhase map[string]types.Resources) []string {
-	sortedPhases := []string{}
-	for phase := range resourcesByPhase {
-		sortedPhases = append(sortedPhases, phase)
-	}
-
-	sort.Slice(sortedPhases, func(i, j int) bool {
-		iInt, err := strconv.ParseInt(sortedPhases[i], 10, 64)
-		if err != nil {
-			iInt = 0
-		}
-		jInt, err := strconv.ParseInt(sortedPhases[j], 10, 64)
-		if err != nil {
-			jInt = 0
-		}
-		return iInt < jInt
-	})
-
-	return sortedPhases
-}
-
 // groupAndSortResourcesForDeletion sorts resources by phase and then by kind based on the kind deletion order.
 // unknown kinds are deleted first.
 func groupAndSortResourcesForDeletion(resources types.Resources) types.Phases {
@@ -217,4 +196,25 @@ func groupAndSortResourcesForDeletion(resources types.Resources) types.Phases {
 	}
 
 	return phases
+}
+
+func getSortedPhases(resourcesByPhase map[string]types.Resources) []string {
+	sortedPhases := []string{}
+	for phase := range resourcesByPhase {
+		sortedPhases = append(sortedPhases, phase)
+	}
+
+	sort.Slice(sortedPhases, func(i, j int) bool {
+		iInt, err := strconv.ParseInt(sortedPhases[i], 10, 64)
+		if err != nil {
+			iInt = 0
+		}
+		jInt, err := strconv.ParseInt(sortedPhases[j], 10, 64)
+		if err != nil {
+			jInt = 0
+		}
+		return iInt < jInt
+	})
+
+	return sortedPhases
 }
