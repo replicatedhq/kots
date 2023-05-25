@@ -524,7 +524,7 @@ class UploadAirgapBundle extends React.Component {
                     >
                       {hasFile ? (
                         <div className="has-file-wrapper">
-                          <p className="u-fontSize--normal u-fontWeight--medium">
+                          <p className="u-fontSize--normal u-fontWeight--medium tw-pl-2">
                             {bundleFile.name}
                           </p>
                         </div>
