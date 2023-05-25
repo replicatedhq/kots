@@ -114,9 +114,8 @@ func decodeManifests(manifests []string) types.Resources {
 	return resources
 }
 
-// groupAndSortResourcesForCreation sorts resources by kind based on the kind creation order.
+// groupAndSortResourcesForCreation sorts resources by phase and then by kind based on the kind creation order.
 // unknown kinds are created last.
-// resources are then grouped by creation phase.
 func groupAndSortResourcesForCreation(resources types.Resources) types.Phases {
 	resourcesByPhase := resources.GroupByPhaseAnnotation(types.CreationPhaseAnnotation)
 
@@ -178,9 +177,8 @@ func getSortedPhases(resourcesByPhase map[string]types.Resources) []string {
 	return sortedPhases
 }
 
-// groupAndSortResourcesForDeletion sorts resources by kind based on the kind deletion order.
+// groupAndSortResourcesForDeletion sorts resources by phase and then by kind based on the kind deletion order.
 // unknown kinds are deleted first.
-// resources are then grouped by deletion phase.
 func groupAndSortResourcesForDeletion(resources types.Resources) types.Phases {
 	resourcesByPhase := resources.GroupByPhaseAnnotation(types.DeletionPhaseAnnotation)
 
