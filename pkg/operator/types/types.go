@@ -216,7 +216,7 @@ func (r Resources) GroupByKind() map[string]Resources {
 	return grouped
 }
 
-func (r Resources) GroupByCreationPhase() map[string]Resources {
+func (r Resources) GroupByPhaseAnnotation(annotation string) map[string]Resources {
 	grouped := map[string]Resources{}
 
 	for _, resource := range r {
@@ -224,7 +224,7 @@ func (r Resources) GroupByCreationPhase() map[string]Resources {
 		if resource.Unstructured != nil {
 			annotations := resource.Unstructured.GetAnnotations()
 			if annotations != nil {
-				if s, ok := annotations[CreationPhaseAnnotation]; ok {
+				if s, ok := annotations[annotation]; ok {
 					phase = s
 				}
 			}
@@ -232,34 +232,7 @@ func (r Resources) GroupByCreationPhase() map[string]Resources {
 
 		parsed, err := strconv.ParseInt(phase, 10, 64)
 		if err != nil {
-			logger.Error(errors.Wrapf(err, "failed to parse creation phase %q", phase))
-			parsed = 0
-		}
-
-		key := fmt.Sprintf("%d", parsed)
-		grouped[key] = append(grouped[key], resource)
-	}
-
-	return grouped
-}
-
-func (r Resources) GroupByDeletionPhase() map[string]Resources {
-	grouped := map[string]Resources{}
-
-	for _, resource := range r {
-		phase := "0" // default to 0
-		if resource.Unstructured != nil {
-			annotations := resource.Unstructured.GetAnnotations()
-			if annotations != nil {
-				if s, ok := annotations[DeletionPhaseAnnotation]; ok {
-					phase = s
-				}
-			}
-		}
-
-		parsed, err := strconv.ParseInt(phase, 10, 64)
-		if err != nil {
-			logger.Error(errors.Wrapf(err, "failed to parse deletion phase %q", phase))
+			logger.Error(errors.Wrapf(err, "failed to parse phase %s for annotation %s", phase, annotation))
 			parsed = 0
 		}
 

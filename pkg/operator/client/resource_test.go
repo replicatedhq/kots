@@ -93,7 +93,7 @@ func unstructuredWithAnnotation(key, value string) *unstructured.Unstructured {
 	}
 }
 
-func TestSortResourcesForCreation(t *testing.T) {
+func Test_groupAndSortResourcesForCreation(t *testing.T) {
 	tests := []struct {
 		name     string
 		input    types.Resources
@@ -283,7 +283,7 @@ func TestSortResourcesForCreation(t *testing.T) {
 	}
 }
 
-func TestSortResourcesForDeletion(t *testing.T) {
+func Test_groupAndSortResourcesForDeletion(t *testing.T) {
 	tests := []struct {
 		name     string
 		input    types.Resources
@@ -468,6 +468,44 @@ func TestSortResourcesForDeletion(t *testing.T) {
 			actual := groupAndSortResourcesForDeletion(test.input)
 			if !reflect.DeepEqual(actual, test.expected) {
 				t.Errorf("expected %v, got %v", test.expected, actual)
+			}
+		})
+	}
+}
+
+func Test_getSortedPhases(t *testing.T) {
+	tests := []struct {
+		name             string
+		resourcesByPhase map[string]types.Resources
+		want             []string
+	}{
+		{
+			name:             "empty",
+			resourcesByPhase: map[string]types.Resources{},
+			want:             []string{},
+		},
+		{
+			name: "one phase",
+			resourcesByPhase: map[string]types.Resources{
+				"0": {},
+			},
+			want: []string{"0"},
+		},
+		{
+			name: "multiple phases",
+			resourcesByPhase: map[string]types.Resources{
+				"1":     {},
+				"-9999": {},
+				"0":     {},
+				"-2":    {},
+			},
+			want: []string{"-9999", "-2", "0", "1"},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := getSortedPhases(tt.resourcesByPhase); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("getSortedPhases() = %v, want %v", got, tt.want)
 			}
 		})
 	}
