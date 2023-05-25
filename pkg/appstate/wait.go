@@ -63,7 +63,7 @@ func WaitForDaemonSetToBeReady(clientset kubernetes.Interface, namespace, name s
 			return errors.Wrap(err, "failed to get existing daemonset")
 		}
 
-		if !kuberneteserrors.IsNotFound(err) {
+		if err == nil {
 			state := CalculateDaemonSetState(clientset, namespace, r)
 			if state == types.StateReady {
 				return nil
@@ -81,7 +81,7 @@ func WaitForDeploymentToBeReady(clientset kubernetes.Interface, namespace, name 
 			return errors.Wrap(err, "failed to get existing deployment")
 		}
 
-		if !kuberneteserrors.IsNotFound(err) {
+		if err == nil {
 			state := CalculateDeploymentState(r)
 			if state == types.StateReady {
 				return nil
@@ -99,7 +99,7 @@ func WaitForIngressToBeReady(clientset kubernetes.Interface, namespace, name str
 			return errors.Wrap(err, "failed to get existing ingress")
 		}
 
-		if !kuberneteserrors.IsNotFound(err) {
+		if err == nil {
 			state := CalculateIngressState(clientset, r)
 			if state == types.StateReady {
 				return nil
@@ -117,7 +117,7 @@ func WaitForPersistentVolumeClaimToBeReady(clientset kubernetes.Interface, names
 			return errors.Wrap(err, "failed to get existing persistentvolumeclaim")
 		}
 
-		if !kuberneteserrors.IsNotFound(err) {
+		if err == nil {
 			state := CalculatePersistentVolumeClaimState(r)
 			if state == types.StateReady {
 				return nil
@@ -135,7 +135,7 @@ func WaitForServiceToBeReady(clientset kubernetes.Interface, namespace, name str
 			return errors.Wrap(err, "failed to get existing service")
 		}
 
-		if !kuberneteserrors.IsNotFound(err) {
+		if err == nil {
 			state := CalculateServiceState(clientset, r)
 			if state == types.StateReady {
 				return nil
@@ -153,7 +153,7 @@ func WaitForStatefulSetToBeReady(clientset kubernetes.Interface, namespace, name
 			return errors.Wrap(err, "failed to get existing statefulset")
 		}
 
-		if !kuberneteserrors.IsNotFound(err) {
+		if err == nil {
 			state := CalculateStatefulSetState(clientset, namespace, r)
 			if state == types.StateReady {
 				return nil
@@ -171,7 +171,7 @@ func WaitForGenericResourceToBeReady(dr dynamic.ResourceInterface, name string) 
 			return errors.Wrap(err, "failed to get existing resource")
 		}
 
-		if !kuberneteserrors.IsNotFound(err) {
+		if err == nil {
 			return nil
 		}
 
@@ -191,7 +191,7 @@ func WaitForProperty(namespace, name string, gvk *schema.GroupVersionKind, path,
 			return errors.Wrap(err, "failed to get existing resource")
 		}
 
-		if !kuberneteserrors.IsNotFound(err) {
+		if err == nil {
 			if matches, err := resourcePropertyMatchesValue(r, path, desiredValue); err != nil {
 				return errors.Wrap(err, "failed to check if resource property matches value")
 			} else if matches {
