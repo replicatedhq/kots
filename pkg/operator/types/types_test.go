@@ -104,6 +104,21 @@ func TestResource_ShouldWaitForProperties(t *testing.T) {
 			want: false,
 		},
 		{
+			name: "empty wait-for-properties annotation",
+			resource: Resource{
+				Unstructured: &unstructured.Unstructured{
+					Object: map[string]interface{}{
+						"metadata": map[string]interface{}{
+							"annotations": map[string]interface{}{
+								"kots.io/wait-for-properties": "",
+							},
+						},
+					},
+				},
+			},
+			want: false,
+		},
+		{
 			name: "has wait-for-properties annotation",
 			resource: Resource{
 				Unstructured: &unstructured.Unstructured{

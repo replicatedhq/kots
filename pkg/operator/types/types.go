@@ -149,8 +149,12 @@ func (r Resource) ShouldWaitForProperties() bool {
 		if annotations == nil {
 			return false
 		}
-		_, ok := annotations[WaitForPropertiesAnnotation]
-		return ok
+		annotationValue, ok := annotations[WaitForPropertiesAnnotation]
+		if !ok {
+			return false
+		}
+
+		return annotationValue != ""
 	}
 	return false
 }
