@@ -70,7 +70,7 @@ func (h *ingressEventHandler) ObjectCreated(obj interface{}) {
 	if _, ok := h.getInformer(r); !ok {
 		return
 	}
-	h.resourceStateCh <- makeIngressResourceState(r, calculateIngressState(h.clientset, r))
+	h.resourceStateCh <- makeIngressResourceState(r, CalculateIngressState(h.clientset, r))
 }
 
 func (h *ingressEventHandler) ObjectUpdated(obj interface{}) {
@@ -78,7 +78,7 @@ func (h *ingressEventHandler) ObjectUpdated(obj interface{}) {
 	if _, ok := h.getInformer(r); !ok {
 		return
 	}
-	h.resourceStateCh <- makeIngressResourceState(r, calculateIngressState(h.clientset, r))
+	h.resourceStateCh <- makeIngressResourceState(r, CalculateIngressState(h.clientset, r))
 }
 
 func (h *ingressEventHandler) ObjectDeleted(obj interface{}) {
@@ -114,7 +114,7 @@ func makeIngressResourceState(r *networkingv1.Ingress, state types.State) types.
 	}
 }
 
-func calculateIngressState(clientset kubernetes.Interface, r *networkingv1.Ingress) types.State {
+func CalculateIngressState(clientset kubernetes.Interface, r *networkingv1.Ingress) types.State {
 	var states []types.State
 	// https://github.com/kubernetes/kubectl/blob/6b77b0790ab40d2a692ad80e9e4c962e784bb9b8/pkg/describe/versioned/describe.go#L2367
 	backend := r.Spec.DefaultBackend

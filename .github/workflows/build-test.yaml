@@ -2948,6 +2948,152 @@ jobs:
           aws-secret-access-key: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_SECRET_ACCESS_KEY }}'
 
 
+  validate-deployment-orchestration:
+    runs-on: ubuntu-20.04
+    needs: [ enable-tests, can-run-ci, build-push-kotsadm-image, build-kurl-proxy, build-migrations, push-minio, push-mc, push-rqlite ]
+    strategy:
+      fail-fast: false
+      matrix:
+        k8s_version: [ v1.27.1-k3s1 ]
+    env:
+      APP_SLUG: deployment-orchestration
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - uses: azure/setup-helm@v3
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: replicatedhq/action-k3s@main
+        with:
+          version: ${{ matrix.k8s_version }}
+          arguments: ${{ startsWith(matrix.k8s_version, 'v1.22') && '--egress-selector-mode disabled' || '' }}
+
+      - name: download kots binary
+        uses: actions/download-artifact@v3
+        with:
+          name: kots
+          path: bin/
+
+      - run: chmod +x bin/kots
+
+      - name: run the test
+        run: |
+          set +e
+          echo ${{ secrets.DEPLOYMENT_ORCHESTRATION_LICENSE }} | base64 -d > license.yaml
+          ./bin/kots \
+            install "$APP_SLUG/automated" \
+            --license-file license.yaml \
+            --no-port-forward \
+            --namespace "$APP_SLUG" \
+            --shared-password password \
+            --kotsadm-registry ttl.sh \
+            --kotsadm-namespace automated-${{ github.run_id }} \
+            --kotsadm-tag 24h
+
+          EXIT_CODE=$?
+          if [ $EXIT_CODE -ne 0 ]; then
+            echo "------pods:"
+            kubectl -n "$APP_SLUG" get pods
+            echo "------kotsadm logs"
+            kubectl logs -l app=kotsadm --tail=100 --namespace "$APP_SLUG"
+            exit $EXIT_CODE
+          fi
+
+          function wait_for_log {
+            local counter=1
+            local timeout=30
+            local log_pattern="$1"
+
+            while ! kubectl logs deploy/kotsadm -c kotsadm -n "$APP_SLUG" | grep -i "$log_pattern"; do
+              ((counter += 1))
+              if [ $counter -gt $timeout ]; then
+                echo "Timed out waiting for log $log_pattern"
+                exit 1
+              fi
+              sleep 1
+            done
+          }
+
+          wait_for_log "applying phase -9999"
+
+          wait_for_log "applying phase -3"
+          wait_for_log "waiting for resource apiextensions.k8s.io/v1/CustomResourceDefinition/myresources.example.com in namespace $APP_SLUG to be ready"
+
+          wait_for_log "applying phase -2"
+
+          # validate that phase -1 has not deployed yet since we're waiting on the CR status fields
+          if kubectl logs deploy/kotsadm -c kotsadm -n "$APP_SLUG" | grep -i "applying phase -1"; then
+            printf "phase -1 was deployed before phase -2 completed"
+            kubectl logs deploy/kotsadm -c kotsadm -n "$APP_SLUG"
+            exit 1
+          fi
+
+          wait_for_log "waiting for resource example.com/v1beta1/MyResource/my-resource in namespace $APP_SLUG to have property .status.tasks.extract=true"
+
+          # set .status.tasks.extract=true
+          kubectl patch myresources.example.com my-resource -n "$APP_SLUG" -p '{"status": {"tasks": {"extract": true}}}' --type=merge
+
+          wait_for_log "waiting for resource example.com/v1beta1/MyResource/my-resource in namespace $APP_SLUG to have property .status.tasks.transform=true"
+
+          # set .status.tasks.transform=true
+          kubectl patch myresources.example.com my-resource -n "$APP_SLUG" -p '{"status": {"tasks": {"transform": true}}}' --type=merge
+
+          wait_for_log "waiting for resource example.com/v1beta1/MyResource/my-resource in namespace $APP_SLUG to have property .status.tasks.load=true"
+
+          # set .status.tasks.load=true
+          kubectl patch myresources.example.com my-resource -n "$APP_SLUG" -p '{"status": {"tasks": {"load": true}}}' --type=merge
+
+          # now validate that the remaining phases are deployed (-1, 0, and 1)
+          wait_for_log "applying phase -1"
+          wait_for_log "waiting for resource apps/v1/Deployment/nginx-1 in namespace $APP_SLUG to be ready"
+
+          wait_for_log "applying phase 0"
+          wait_for_log "waiting for resource apps/v1/Deployment/nginx-2 in namespace $APP_SLUG to be ready"
+
+          wait_for_log "applying phase 1"
+          wait_for_log "waiting for resource /v1/Service/nginx-2 in namespace $APP_SLUG to be ready"
+
+          # wait for the app to be ready
+          COUNTER=1
+          while [ "$(./bin/kots get apps --namespace "$APP_SLUG" | awk 'NR>1{print $2}')" != "ready" ]; do
+            ((COUNTER += 1))
+            if [ $COUNTER -gt 120 ]; then
+              echo "Timed out waiting for app to be ready"
+              ./bin/kots get apps --namespace "$APP_SLUG"
+              echo "kotsadm logs:"
+              kubectl logs -l app=kotsadm --tail=100 --namespace "$APP_SLUG"
+              exit 1
+            fi
+            sleep 1
+          done
+
+          # remove the app
+          ./bin/kots remove "$APP_SLUG" -n "$APP_SLUG" --undeploy
+
+          wait_for_log "deleting resources in phase -1"
+          wait_for_log "deleting resources in phase 0"
+          wait_for_log "deleting resources in phase 1"
+          wait_for_log "deleting resources in phase 2"
+          wait_for_log "deleting resources in phase 3"
+
+          # validate that the app reference was removed
+          if [ "$(./bin/kots get apps --namespace "$APP_SLUG" --output=json | tr -d '\n')" != "[]" ]; then
+            printf "App reference was not removed\n\n"
+            exit 1
+          fi
+
+
+      - name: Generate support bundle on failure
+        if: failure()
+        uses: ./.github/actions/generate-support-bundle
+        with:
+          kots-namespace: "$APP_SLUG"
+          aws-access-key-id: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_ACCESS_KEY_ID }}'
+          aws-secret-access-key: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_SECRET_ACCESS_KEY }}'
+
+
   validate-pr-tests:
     runs-on: ubuntu-20.04
     needs:
@@ -2989,6 +3135,7 @@ jobs:
       - validate-gke-install
       - validate-kots-helm-release-secret-migration
       - validate-native-helm-v2
+      - validate-deployment-orchestration
       # cli-only tests
       - validate-kots-push-images-anonymous
     steps:

@@ -1,11 +1,24 @@
 package types
 
 import (
+	"fmt"
+	"strconv"
+	"strings"
+
+	"github.com/pkg/errors"
 	appstatetypes "github.com/replicatedhq/kots/pkg/appstate/types"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
+	"github.com/replicatedhq/kots/pkg/logger"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
+)
+
+const (
+	CreationPhaseAnnotation     = "kots.io/creation-phase"
+	DeletionPhaseAnnotation     = "kots.io/deletion-phase"
+	WaitForReadyAnnotation      = "kots.io/wait-for-ready"
+	WaitForPropertiesAnnotation = "kots.io/wait-for-properties"
 )
 
 type DeployAppArgs struct {
@@ -58,6 +71,13 @@ type AppInformersArgs struct {
 	Informers []appstatetypes.StatusInformerString `json:"informers"`
 }
 
+type Phases []Phase
+
+type Phase struct {
+	Name      string
+	Resources Resources
+}
+
 type Resources []Resource
 
 type Resource struct {
@@ -66,6 +86,11 @@ type Resource struct {
 	GVK          *schema.GroupVersionKind
 	Unstructured *unstructured.Unstructured
 	DecodeErrMsg string
+}
+
+type WaitForProperty struct {
+	Path  string
+	Value string
 }
 
 func (r Resource) GetGroup() string {
@@ -103,6 +128,66 @@ func (r Resource) GetNamespace() string {
 	return ""
 }
 
+func (r Resource) ShouldWaitForReady() bool {
+	if r.Unstructured != nil {
+		annotations := r.Unstructured.GetAnnotations()
+		if annotations == nil {
+			return false
+		}
+		waitForReady, ok := annotations[WaitForReadyAnnotation]
+		if !ok {
+			return false
+		}
+		return waitForReady == "true"
+	}
+	return false
+}
+
+func (r Resource) ShouldWaitForProperties() bool {
+	if r.Unstructured != nil {
+		annotations := r.Unstructured.GetAnnotations()
+		if annotations == nil {
+			return false
+		}
+		annotationValue, ok := annotations[WaitForPropertiesAnnotation]
+		if !ok {
+			return false
+		}
+
+		return annotationValue != ""
+	}
+	return false
+}
+
+// GetWaitForProperties returns the key value pairs in the `kots.io/wait-for-properties` annotation
+func (r Resource) GetWaitForProperties() []WaitForProperty {
+	if r.Unstructured != nil {
+		annotations := r.Unstructured.GetAnnotations()
+		if annotations == nil {
+			return nil
+		}
+		annotationValue, ok := annotations[WaitForPropertiesAnnotation]
+		if !ok {
+			return nil
+		}
+
+		waitForProperties := []WaitForProperty{}
+		for _, property := range strings.Split(annotationValue, ",") {
+			parts := strings.SplitN(property, "=", 2)
+			if len(parts) != 2 {
+				logger.Errorf("invalid wait for property %q", property)
+				continue
+			}
+			waitForProperties = append(waitForProperties, WaitForProperty{
+				Path:  parts[0],
+				Value: parts[1],
+			})
+		}
+		return waitForProperties
+	}
+	return nil
+}
+
 func (r Resources) HasCRDs() bool {
 	for _, resource := range r {
 		if resource.GVK != nil && resource.GVK.Kind == "CustomResourceDefinition" && resource.GVK.Group == "apiextensions.k8s.io" {
@@ -130,6 +215,33 @@ func (r Resources) GroupByKind() map[string]Resources {
 			kind = resource.GVK.Kind
 		}
 		grouped[kind] = append(grouped[kind], resource)
+	}
+
+	return grouped
+}
+
+func (r Resources) GroupByPhaseAnnotation(annotation string) map[string]Resources {
+	grouped := map[string]Resources{}
+
+	for _, resource := range r {
+		phase := "0" // default to 0
+		if resource.Unstructured != nil {
+			annotations := resource.Unstructured.GetAnnotations()
+			if annotations != nil {
+				if s, ok := annotations[annotation]; ok {
+					phase = s
+				}
+			}
+		}
+
+		parsed, err := strconv.ParseInt(phase, 10, 64)
+		if err != nil {
+			logger.Error(errors.Wrapf(err, "failed to parse phase %s for annotation %s", phase, annotation))
+			parsed = 0
+		}
+
+		key := fmt.Sprintf("%d", parsed)
+		grouped[key] = append(grouped[key], resource)
 	}
 
 	return grouped

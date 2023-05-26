@@ -65,7 +65,7 @@ func (h *deploymentEventHandler) ObjectCreated(obj interface{}) {
 	if _, ok := h.getInformer(r); !ok {
 		return
 	}
-	h.resourceStateCh <- makeDeploymentResourceState(r, calculateDeploymentState(r))
+	h.resourceStateCh <- makeDeploymentResourceState(r, CalculateDeploymentState(r))
 }
 
 func (h *deploymentEventHandler) ObjectUpdated(obj interface{}) {
@@ -73,7 +73,7 @@ func (h *deploymentEventHandler) ObjectUpdated(obj interface{}) {
 	if _, ok := h.getInformer(r); !ok {
 		return
 	}
-	h.resourceStateCh <- makeDeploymentResourceState(r, calculateDeploymentState(r))
+	h.resourceStateCh <- makeDeploymentResourceState(r, CalculateDeploymentState(r))
 }
 
 func (h *deploymentEventHandler) ObjectDeleted(obj interface{}) {
@@ -109,7 +109,7 @@ func makeDeploymentResourceState(r *appsv1.Deployment, state types.State) types.
 	}
 }
 
-func calculateDeploymentState(r *appsv1.Deployment) types.State {
+func CalculateDeploymentState(r *appsv1.Deployment) types.State {
 	if r.Status.ObservedGeneration != r.ObjectMeta.Generation {
 		return types.StateUpdating
 	}

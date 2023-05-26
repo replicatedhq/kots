@@ -71,7 +71,7 @@ func (h *serviceEventHandler) ObjectCreated(obj interface{}) {
 	if _, ok := h.getInformer(r); !ok {
 		return
 	}
-	h.resourceStateCh <- makeServiceResourceState(r, calculateServiceState(h.clientset, r))
+	h.resourceStateCh <- makeServiceResourceState(r, CalculateServiceState(h.clientset, r))
 }
 
 func (h *serviceEventHandler) ObjectUpdated(obj interface{}) {
@@ -79,7 +79,7 @@ func (h *serviceEventHandler) ObjectUpdated(obj interface{}) {
 	if _, ok := h.getInformer(r); !ok {
 		return
 	}
-	h.resourceStateCh <- makeServiceResourceState(r, calculateServiceState(h.clientset, r))
+	h.resourceStateCh <- makeServiceResourceState(r, CalculateServiceState(h.clientset, r))
 }
 
 func (h *serviceEventHandler) ObjectDeleted(obj interface{}) {
@@ -115,7 +115,7 @@ func makeServiceResourceState(r *corev1.Service, state types.State) types.Resour
 	}
 }
 
-func calculateServiceState(clientset kubernetes.Interface, r *corev1.Service) types.State {
+func CalculateServiceState(clientset kubernetes.Interface, r *corev1.Service) types.State {
 	var states []types.State
 	// https://github.com/kubernetes/kubectl/blob/6b77b0790ab40d2a692ad80e9e4c962e784bb9b8/pkg/describe/versioned/describe.go#L4617
 	states = append(states, serviceGetStateFromEndpoints(clientset, r))

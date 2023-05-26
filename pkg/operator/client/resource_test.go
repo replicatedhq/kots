@@ -87,11 +87,17 @@ spec:
 	}
 }
 
-func TestSortResourcesForCreation(t *testing.T) {
+func unstructuredWithAnnotation(key, value string) *unstructured.Unstructured {
+	return &unstructured.Unstructured{
+		Object: map[string]interface{}{"metadata": map[string]interface{}{"annotations": map[string]interface{}{key: value}}},
+	}
+}
+
+func Test_groupAndSortResourcesForCreation(t *testing.T) {
 	tests := []struct {
 		name     string
 		input    types.Resources
-		expected types.Resources
+		expected types.Phases
 	}{
 		{
 			name: "sorts known kinds",
@@ -117,6 +123,38 @@ func TestSortResourcesForCreation(t *testing.T) {
 				{GVK: &schema.GroupVersionKind{Kind: "UnknownKind", Group: "unknown", Version: "v1"}},
 				{GVK: &schema.GroupVersionKind{Kind: "Role"}},
 				{GVK: &schema.GroupVersionKind{Kind: "ClusterRole"}},
+				{
+					GVK:          &schema.GroupVersionKind{Kind: "Job"},
+					Unstructured: unstructuredWithAnnotation(types.CreationPhaseAnnotation, "1"),
+				},
+				{
+					GVK:          &schema.GroupVersionKind{Kind: "Job"},
+					Unstructured: unstructuredWithAnnotation(types.CreationPhaseAnnotation, "-1"),
+				},
+				{
+					GVK:          &schema.GroupVersionKind{Kind: "UnknownKind", Group: "unknown", Version: "v3"},
+					Unstructured: unstructuredWithAnnotation(types.CreationPhaseAnnotation, "1"),
+				},
+				{
+					GVK:          &schema.GroupVersionKind{Kind: "UnknownKind", Group: "unknown", Version: "v3"},
+					Unstructured: unstructuredWithAnnotation(types.CreationPhaseAnnotation, "-1"),
+				},
+				{
+					GVK:          &schema.GroupVersionKind{Kind: "Job"},
+					Unstructured: unstructuredWithAnnotation(types.CreationPhaseAnnotation, "2"),
+				},
+				{
+					GVK:          &schema.GroupVersionKind{Kind: "Job"},
+					Unstructured: unstructuredWithAnnotation(types.CreationPhaseAnnotation, "-2"),
+				},
+				{
+					GVK:          &schema.GroupVersionKind{Kind: "UnknownKind", Group: "unknown", Version: "v3"},
+					Unstructured: unstructuredWithAnnotation(types.CreationPhaseAnnotation, "2"),
+				},
+				{
+					GVK:          &schema.GroupVersionKind{Kind: "UnknownKind", Group: "unknown", Version: "v3"},
+					Unstructured: unstructuredWithAnnotation(types.CreationPhaseAnnotation, "-2"),
+				},
 				{GVK: &schema.GroupVersionKind{Kind: "RoleList"}},
 				{GVK: &schema.GroupVersionKind{Kind: "DaemonSet"}},
 				{GVK: &schema.GroupVersionKind{Kind: "UnknownKind", Group: "unknown", Version: "v2"}},
@@ -135,52 +173,109 @@ func TestSortResourcesForCreation(t *testing.T) {
 				{GVK: &schema.GroupVersionKind{Kind: "CronJob"}},
 				{GVK: &schema.GroupVersionKind{Kind: "Ingress"}},
 			},
-			expected: types.Resources{
-				{GVK: &schema.GroupVersionKind{Kind: "Namespace"}},
-				{GVK: &schema.GroupVersionKind{Kind: "NetworkPolicy"}},
-				{GVK: &schema.GroupVersionKind{Kind: "ResourceQuota"}},
-				{GVK: &schema.GroupVersionKind{Kind: "LimitRange"}},
-				{GVK: &schema.GroupVersionKind{Kind: "PodSecurityPolicy"}},
-				{GVK: &schema.GroupVersionKind{Kind: "PodDisruptionBudget"}},
-				{GVK: &schema.GroupVersionKind{Kind: "ServiceAccount"}},
-				{GVK: &schema.GroupVersionKind{Kind: "Secret"}},
-				{GVK: &schema.GroupVersionKind{Kind: "SecretList"}},
-				{GVK: &schema.GroupVersionKind{Kind: "ConfigMap"}},
-				{GVK: &schema.GroupVersionKind{Kind: "StorageClass"}},
-				{GVK: &schema.GroupVersionKind{Kind: "PersistentVolume"}},
-				{GVK: &schema.GroupVersionKind{Kind: "PersistentVolumeClaim"}},
-				{GVK: &schema.GroupVersionKind{Kind: "CustomResourceDefinition"}},
-				{GVK: &schema.GroupVersionKind{Kind: "ClusterRole"}},
-				{GVK: &schema.GroupVersionKind{Kind: "ClusterRoleList"}},
-				{GVK: &schema.GroupVersionKind{Kind: "ClusterRoleBinding"}},
-				{GVK: &schema.GroupVersionKind{Kind: "ClusterRoleBindingList"}},
-				{GVK: &schema.GroupVersionKind{Kind: "Role"}},
-				{GVK: &schema.GroupVersionKind{Kind: "RoleList"}},
-				{GVK: &schema.GroupVersionKind{Kind: "RoleBinding"}},
-				{GVK: &schema.GroupVersionKind{Kind: "RoleBindingList"}},
-				{GVK: &schema.GroupVersionKind{Kind: "Service"}},
-				{GVK: &schema.GroupVersionKind{Kind: "DaemonSet"}},
-				{GVK: &schema.GroupVersionKind{Kind: "Pod"}},
-				{GVK: &schema.GroupVersionKind{Kind: "ReplicationController"}},
-				{GVK: &schema.GroupVersionKind{Kind: "ReplicaSet"}},
-				{GVK: &schema.GroupVersionKind{Kind: "Deployment"}},
-				{GVK: &schema.GroupVersionKind{Kind: "HorizontalPodAutoscaler"}},
-				{GVK: &schema.GroupVersionKind{Kind: "StatefulSet"}},
-				{GVK: &schema.GroupVersionKind{Kind: "Job"}},
-				{GVK: &schema.GroupVersionKind{Kind: "CronJob"}},
-				{GVK: &schema.GroupVersionKind{Kind: "IngressClass"}},
-				{GVK: &schema.GroupVersionKind{Kind: "Ingress"}},
-				{GVK: &schema.GroupVersionKind{Kind: "APIService"}},
-				{GVK: &schema.GroupVersionKind{Kind: "UnknownKind", Group: "unknown", Version: "v3"}}, // unknown kinds are last, original order is preserved
-				{GVK: &schema.GroupVersionKind{Kind: "UnknownKind", Group: "unknown", Version: "v1"}}, // unknown kinds are last, original order is preserved
-				{GVK: &schema.GroupVersionKind{Kind: "UnknownKind", Group: "unknown", Version: "v2"}}, // unknown kinds are last, original order is preserved
+			expected: types.Phases{
+				{
+					Name: "-2",
+					Resources: types.Resources{
+						{
+							GVK:          &schema.GroupVersionKind{Kind: "Job"},
+							Unstructured: unstructuredWithAnnotation(types.CreationPhaseAnnotation, "-2"),
+						},
+						{
+							GVK:          &schema.GroupVersionKind{Kind: "UnknownKind", Group: "unknown", Version: "v3"},
+							Unstructured: unstructuredWithAnnotation(types.CreationPhaseAnnotation, "-2"),
+						},
+					},
+				},
+				{
+					Name: "-1",
+					Resources: types.Resources{
+						{
+							GVK:          &schema.GroupVersionKind{Kind: "Job"},
+							Unstructured: unstructuredWithAnnotation(types.CreationPhaseAnnotation, "-1"),
+						},
+						{
+							GVK:          &schema.GroupVersionKind{Kind: "UnknownKind", Group: "unknown", Version: "v3"},
+							Unstructured: unstructuredWithAnnotation(types.CreationPhaseAnnotation, "-1"),
+						},
+					},
+				},
+				{
+					Name: "0",
+					Resources: types.Resources{
+						{GVK: &schema.GroupVersionKind{Kind: "Namespace"}},
+						{GVK: &schema.GroupVersionKind{Kind: "NetworkPolicy"}},
+						{GVK: &schema.GroupVersionKind{Kind: "ResourceQuota"}},
+						{GVK: &schema.GroupVersionKind{Kind: "LimitRange"}},
+						{GVK: &schema.GroupVersionKind{Kind: "PodSecurityPolicy"}},
+						{GVK: &schema.GroupVersionKind{Kind: "PodDisruptionBudget"}},
+						{GVK: &schema.GroupVersionKind{Kind: "ServiceAccount"}},
+						{GVK: &schema.GroupVersionKind{Kind: "Secret"}},
+						{GVK: &schema.GroupVersionKind{Kind: "SecretList"}},
+						{GVK: &schema.GroupVersionKind{Kind: "ConfigMap"}},
+						{GVK: &schema.GroupVersionKind{Kind: "StorageClass"}},
+						{GVK: &schema.GroupVersionKind{Kind: "PersistentVolume"}},
+						{GVK: &schema.GroupVersionKind{Kind: "PersistentVolumeClaim"}},
+						{GVK: &schema.GroupVersionKind{Kind: "CustomResourceDefinition"}},
+						{GVK: &schema.GroupVersionKind{Kind: "ClusterRole"}},
+						{GVK: &schema.GroupVersionKind{Kind: "ClusterRoleList"}},
+						{GVK: &schema.GroupVersionKind{Kind: "ClusterRoleBinding"}},
+						{GVK: &schema.GroupVersionKind{Kind: "ClusterRoleBindingList"}},
+						{GVK: &schema.GroupVersionKind{Kind: "Role"}},
+						{GVK: &schema.GroupVersionKind{Kind: "RoleList"}},
+						{GVK: &schema.GroupVersionKind{Kind: "RoleBinding"}},
+						{GVK: &schema.GroupVersionKind{Kind: "RoleBindingList"}},
+						{GVK: &schema.GroupVersionKind{Kind: "Service"}},
+						{GVK: &schema.GroupVersionKind{Kind: "DaemonSet"}},
+						{GVK: &schema.GroupVersionKind{Kind: "Pod"}},
+						{GVK: &schema.GroupVersionKind{Kind: "ReplicationController"}},
+						{GVK: &schema.GroupVersionKind{Kind: "ReplicaSet"}},
+						{GVK: &schema.GroupVersionKind{Kind: "Deployment"}},
+						{GVK: &schema.GroupVersionKind{Kind: "HorizontalPodAutoscaler"}},
+						{GVK: &schema.GroupVersionKind{Kind: "StatefulSet"}},
+						{GVK: &schema.GroupVersionKind{Kind: "Job"}},
+						{GVK: &schema.GroupVersionKind{Kind: "CronJob"}},
+						{GVK: &schema.GroupVersionKind{Kind: "IngressClass"}},
+						{GVK: &schema.GroupVersionKind{Kind: "Ingress"}},
+						{GVK: &schema.GroupVersionKind{Kind: "APIService"}},
+						{GVK: &schema.GroupVersionKind{Kind: "UnknownKind", Group: "unknown", Version: "v3"}}, // unknown kinds are last, original order is preserved
+						{GVK: &schema.GroupVersionKind{Kind: "UnknownKind", Group: "unknown", Version: "v1"}}, // unknown kinds are last, original order is preserved
+						{GVK: &schema.GroupVersionKind{Kind: "UnknownKind", Group: "unknown", Version: "v2"}}, // unknown kinds are last, original order is preserved
+					},
+				},
+				{
+					Name: "1",
+					Resources: types.Resources{
+						{
+							GVK:          &schema.GroupVersionKind{Kind: "Job"},
+							Unstructured: unstructuredWithAnnotation(types.CreationPhaseAnnotation, "1"),
+						},
+						{
+							GVK:          &schema.GroupVersionKind{Kind: "UnknownKind", Group: "unknown", Version: "v3"},
+							Unstructured: unstructuredWithAnnotation(types.CreationPhaseAnnotation, "1"),
+						},
+					},
+				},
+				{
+					Name: "2",
+					Resources: types.Resources{
+						{
+							GVK:          &schema.GroupVersionKind{Kind: "Job"},
+							Unstructured: unstructuredWithAnnotation(types.CreationPhaseAnnotation, "2"),
+						},
+						{
+							GVK:          &schema.GroupVersionKind{Kind: "UnknownKind", Group: "unknown", Version: "v3"},
+							Unstructured: unstructuredWithAnnotation(types.CreationPhaseAnnotation, "2"),
+						},
+					},
+				},
 			},
 		},
 	}
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			actual := sortResourcesForCreation(test.input)
+			actual := groupAndSortResourcesForCreation(test.input)
 			if !reflect.DeepEqual(actual, test.expected) {
 				t.Errorf("expected %v, got %v", test.expected, actual)
 			}
@@ -188,11 +283,11 @@ func TestSortResourcesForCreation(t *testing.T) {
 	}
 }
 
-func TestSortResourcesForDeletion(t *testing.T) {
+func Test_groupAndSortResourcesForDeletion(t *testing.T) {
 	tests := []struct {
 		name     string
 		input    types.Resources
-		expected types.Resources
+		expected types.Phases
 	}{
 		{
 			name: "sorts known kinds",
@@ -218,6 +313,38 @@ func TestSortResourcesForDeletion(t *testing.T) {
 				{GVK: &schema.GroupVersionKind{Kind: "UnknownKind", Group: "unknown", Version: "v1"}},
 				{GVK: &schema.GroupVersionKind{Kind: "Role"}},
 				{GVK: &schema.GroupVersionKind{Kind: "ClusterRole"}},
+				{
+					GVK:          &schema.GroupVersionKind{Kind: "Job"},
+					Unstructured: unstructuredWithAnnotation(types.DeletionPhaseAnnotation, "1"),
+				},
+				{
+					GVK:          &schema.GroupVersionKind{Kind: "Job"},
+					Unstructured: unstructuredWithAnnotation(types.DeletionPhaseAnnotation, "-1"),
+				},
+				{
+					GVK:          &schema.GroupVersionKind{Kind: "UnknownKind", Group: "unknown", Version: "v3"},
+					Unstructured: unstructuredWithAnnotation(types.DeletionPhaseAnnotation, "1"),
+				},
+				{
+					GVK:          &schema.GroupVersionKind{Kind: "UnknownKind", Group: "unknown", Version: "v3"},
+					Unstructured: unstructuredWithAnnotation(types.DeletionPhaseAnnotation, "-1"),
+				},
+				{
+					GVK:          &schema.GroupVersionKind{Kind: "Job"},
+					Unstructured: unstructuredWithAnnotation(types.DeletionPhaseAnnotation, "2"),
+				},
+				{
+					GVK:          &schema.GroupVersionKind{Kind: "Job"},
+					Unstructured: unstructuredWithAnnotation(types.DeletionPhaseAnnotation, "-2"),
+				},
+				{
+					GVK:          &schema.GroupVersionKind{Kind: "UnknownKind", Group: "unknown", Version: "v3"},
+					Unstructured: unstructuredWithAnnotation(types.DeletionPhaseAnnotation, "2"),
+				},
+				{
+					GVK:          &schema.GroupVersionKind{Kind: "UnknownKind", Group: "unknown", Version: "v3"},
+					Unstructured: unstructuredWithAnnotation(types.DeletionPhaseAnnotation, "-2"),
+				},
 				{GVK: &schema.GroupVersionKind{Kind: "RoleList"}},
 				{GVK: &schema.GroupVersionKind{Kind: "DaemonSet"}},
 				{GVK: &schema.GroupVersionKind{Kind: "UnknownKind", Group: "unknown", Version: "v2"}},
@@ -236,54 +363,149 @@ func TestSortResourcesForDeletion(t *testing.T) {
 				{GVK: &schema.GroupVersionKind{Kind: "CronJob"}},
 				{GVK: &schema.GroupVersionKind{Kind: "Ingress"}},
 			},
-			expected: types.Resources{
-				{GVK: &schema.GroupVersionKind{Kind: "UnknownKind", Group: "unknown", Version: "v3"}}, // unknown kinds are first, original order is preserved
-				{GVK: &schema.GroupVersionKind{Kind: "UnknownKind", Group: "unknown", Version: "v1"}}, // unknown kinds are first, original order is preserved
-				{GVK: &schema.GroupVersionKind{Kind: "UnknownKind", Group: "unknown", Version: "v2"}}, // unknown kinds are first, original order is preserved
-				{GVK: &schema.GroupVersionKind{Kind: "APIService"}},
-				{GVK: &schema.GroupVersionKind{Kind: "Ingress"}},
-				{GVK: &schema.GroupVersionKind{Kind: "IngressClass"}},
-				{GVK: &schema.GroupVersionKind{Kind: "Service"}},
-				{GVK: &schema.GroupVersionKind{Kind: "CronJob"}},
-				{GVK: &schema.GroupVersionKind{Kind: "Job"}},
-				{GVK: &schema.GroupVersionKind{Kind: "StatefulSet"}},
-				{GVK: &schema.GroupVersionKind{Kind: "HorizontalPodAutoscaler"}},
-				{GVK: &schema.GroupVersionKind{Kind: "Deployment"}},
-				{GVK: &schema.GroupVersionKind{Kind: "ReplicaSet"}},
-				{GVK: &schema.GroupVersionKind{Kind: "ReplicationController"}},
-				{GVK: &schema.GroupVersionKind{Kind: "Pod"}},
-				{GVK: &schema.GroupVersionKind{Kind: "DaemonSet"}},
-				{GVK: &schema.GroupVersionKind{Kind: "RoleBindingList"}},
-				{GVK: &schema.GroupVersionKind{Kind: "RoleBinding"}},
-				{GVK: &schema.GroupVersionKind{Kind: "RoleList"}},
-				{GVK: &schema.GroupVersionKind{Kind: "Role"}},
-				{GVK: &schema.GroupVersionKind{Kind: "ClusterRoleBindingList"}},
-				{GVK: &schema.GroupVersionKind{Kind: "ClusterRoleBinding"}},
-				{GVK: &schema.GroupVersionKind{Kind: "ClusterRoleList"}},
-				{GVK: &schema.GroupVersionKind{Kind: "ClusterRole"}},
-				{GVK: &schema.GroupVersionKind{Kind: "CustomResourceDefinition"}},
-				{GVK: &schema.GroupVersionKind{Kind: "PersistentVolumeClaim"}},
-				{GVK: &schema.GroupVersionKind{Kind: "PersistentVolume"}},
-				{GVK: &schema.GroupVersionKind{Kind: "StorageClass"}},
-				{GVK: &schema.GroupVersionKind{Kind: "ConfigMap"}},
-				{GVK: &schema.GroupVersionKind{Kind: "SecretList"}},
-				{GVK: &schema.GroupVersionKind{Kind: "Secret"}},
-				{GVK: &schema.GroupVersionKind{Kind: "ServiceAccount"}},
-				{GVK: &schema.GroupVersionKind{Kind: "PodDisruptionBudget"}},
-				{GVK: &schema.GroupVersionKind{Kind: "PodSecurityPolicy"}},
-				{GVK: &schema.GroupVersionKind{Kind: "LimitRange"}},
-				{GVK: &schema.GroupVersionKind{Kind: "ResourceQuota"}},
-				{GVK: &schema.GroupVersionKind{Kind: "NetworkPolicy"}},
-				{GVK: &schema.GroupVersionKind{Kind: "Namespace"}},
+			expected: types.Phases{
+				{
+					Name: "-2",
+					Resources: types.Resources{
+						{
+							GVK:          &schema.GroupVersionKind{Kind: "UnknownKind", Group: "unknown", Version: "v3"},
+							Unstructured: unstructuredWithAnnotation(types.DeletionPhaseAnnotation, "-2"),
+						},
+						{
+							GVK:          &schema.GroupVersionKind{Kind: "Job"},
+							Unstructured: unstructuredWithAnnotation(types.DeletionPhaseAnnotation, "-2"),
+						},
+					},
+				},
+				{
+					Name: "-1",
+					Resources: types.Resources{
+						{
+							GVK:          &schema.GroupVersionKind{Kind: "UnknownKind", Group: "unknown", Version: "v3"},
+							Unstructured: unstructuredWithAnnotation(types.DeletionPhaseAnnotation, "-1"),
+						},
+						{
+							GVK:          &schema.GroupVersionKind{Kind: "Job"},
+							Unstructured: unstructuredWithAnnotation(types.DeletionPhaseAnnotation, "-1"),
+						},
+					},
+				},
+				{
+					Name: "0",
+					Resources: types.Resources{
+						{GVK: &schema.GroupVersionKind{Kind: "UnknownKind", Group: "unknown", Version: "v3"}}, // unknown kinds are first, original order is preserved
+						{GVK: &schema.GroupVersionKind{Kind: "UnknownKind", Group: "unknown", Version: "v1"}}, // unknown kinds are first, original order is preserved
+						{GVK: &schema.GroupVersionKind{Kind: "UnknownKind", Group: "unknown", Version: "v2"}}, // unknown kinds are first, original order is preserved
+						{GVK: &schema.GroupVersionKind{Kind: "APIService"}},
+						{GVK: &schema.GroupVersionKind{Kind: "Ingress"}},
+						{GVK: &schema.GroupVersionKind{Kind: "IngressClass"}},
+						{GVK: &schema.GroupVersionKind{Kind: "Service"}},
+						{GVK: &schema.GroupVersionKind{Kind: "CronJob"}},
+						{GVK: &schema.GroupVersionKind{Kind: "Job"}},
+						{GVK: &schema.GroupVersionKind{Kind: "StatefulSet"}},
+						{GVK: &schema.GroupVersionKind{Kind: "HorizontalPodAutoscaler"}},
+						{GVK: &schema.GroupVersionKind{Kind: "Deployment"}},
+						{GVK: &schema.GroupVersionKind{Kind: "ReplicaSet"}},
+						{GVK: &schema.GroupVersionKind{Kind: "ReplicationController"}},
+						{GVK: &schema.GroupVersionKind{Kind: "Pod"}},
+						{GVK: &schema.GroupVersionKind{Kind: "DaemonSet"}},
+						{GVK: &schema.GroupVersionKind{Kind: "RoleBindingList"}},
+						{GVK: &schema.GroupVersionKind{Kind: "RoleBinding"}},
+						{GVK: &schema.GroupVersionKind{Kind: "RoleList"}},
+						{GVK: &schema.GroupVersionKind{Kind: "Role"}},
+						{GVK: &schema.GroupVersionKind{Kind: "ClusterRoleBindingList"}},
+						{GVK: &schema.GroupVersionKind{Kind: "ClusterRoleBinding"}},
+						{GVK: &schema.GroupVersionKind{Kind: "ClusterRoleList"}},
+						{GVK: &schema.GroupVersionKind{Kind: "ClusterRole"}},
+						{GVK: &schema.GroupVersionKind{Kind: "CustomResourceDefinition"}},
+						{GVK: &schema.GroupVersionKind{Kind: "PersistentVolumeClaim"}},
+						{GVK: &schema.GroupVersionKind{Kind: "PersistentVolume"}},
+						{GVK: &schema.GroupVersionKind{Kind: "StorageClass"}},
+						{GVK: &schema.GroupVersionKind{Kind: "ConfigMap"}},
+						{GVK: &schema.GroupVersionKind{Kind: "SecretList"}},
+						{GVK: &schema.GroupVersionKind{Kind: "Secret"}},
+						{GVK: &schema.GroupVersionKind{Kind: "ServiceAccount"}},
+						{GVK: &schema.GroupVersionKind{Kind: "PodDisruptionBudget"}},
+						{GVK: &schema.GroupVersionKind{Kind: "PodSecurityPolicy"}},
+						{GVK: &schema.GroupVersionKind{Kind: "LimitRange"}},
+						{GVK: &schema.GroupVersionKind{Kind: "ResourceQuota"}},
+						{GVK: &schema.GroupVersionKind{Kind: "NetworkPolicy"}},
+						{GVK: &schema.GroupVersionKind{Kind: "Namespace"}},
+					},
+				},
+				{
+					Name: "1",
+					Resources: types.Resources{
+						{
+							GVK:          &schema.GroupVersionKind{Kind: "UnknownKind", Group: "unknown", Version: "v3"},
+							Unstructured: unstructuredWithAnnotation(types.DeletionPhaseAnnotation, "1"),
+						},
+						{
+							GVK:          &schema.GroupVersionKind{Kind: "Job"},
+							Unstructured: unstructuredWithAnnotation(types.DeletionPhaseAnnotation, "1"),
+						},
+					},
+				},
+				{
+					Name: "2",
+					Resources: types.Resources{
+						{
+							GVK:          &schema.GroupVersionKind{Kind: "UnknownKind", Group: "unknown", Version: "v3"},
+							Unstructured: unstructuredWithAnnotation(types.DeletionPhaseAnnotation, "2"),
+						},
+						{
+							GVK:          &schema.GroupVersionKind{Kind: "Job"},
+							Unstructured: unstructuredWithAnnotation(types.DeletionPhaseAnnotation, "2"),
+						},
+					},
+				},
 			},
 		},
 	}
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			actual := sortResourcesForDeletion(test.input)
+			actual := groupAndSortResourcesForDeletion(test.input)
 			if !reflect.DeepEqual(actual, test.expected) {
 				t.Errorf("expected %v, got %v", test.expected, actual)
+			}
+		})
+	}
+}
+
+func Test_getSortedPhases(t *testing.T) {
+	tests := []struct {
+		name             string
+		resourcesByPhase map[string]types.Resources
+		want             []string
+	}{
+		{
+			name:             "empty",
+			resourcesByPhase: map[string]types.Resources{},
+			want:             []string{},
+		},
+		{
+			name: "one phase",
+			resourcesByPhase: map[string]types.Resources{
+				"0": {},
+			},
+			want: []string{"0"},
+		},
+		{
+			name: "multiple phases",
+			resourcesByPhase: map[string]types.Resources{
+				"1":     {},
+				"-9999": {},
+				"0":     {},
+				"-2":    {},
+			},
+			want: []string{"-9999", "-2", "0", "1"},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := getSortedPhases(tt.resourcesByPhase); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("getSortedPhases() = %v, want %v", got, tt.want)
 			}
 		})
 	}

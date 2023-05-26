@@ -65,7 +65,7 @@ func (h *persistentVolumeClaimEventHandler) ObjectCreated(obj interface{}) {
 	if _, ok := h.getInformer(r); !ok {
 		return
 	}
-	h.resourceStateCh <- makePersistentVolumeClaimResourceState(r, calculatePersistentVolumeClaimState(r))
+	h.resourceStateCh <- makePersistentVolumeClaimResourceState(r, CalculatePersistentVolumeClaimState(r))
 }
 
 func (h *persistentVolumeClaimEventHandler) ObjectUpdated(obj interface{}) {
@@ -73,7 +73,7 @@ func (h *persistentVolumeClaimEventHandler) ObjectUpdated(obj interface{}) {
 	if _, ok := h.getInformer(r); !ok {
 		return
 	}
-	h.resourceStateCh <- makePersistentVolumeClaimResourceState(r, calculatePersistentVolumeClaimState(r))
+	h.resourceStateCh <- makePersistentVolumeClaimResourceState(r, CalculatePersistentVolumeClaimState(r))
 }
 
 func (h *persistentVolumeClaimEventHandler) ObjectDeleted(obj interface{}) {
@@ -109,7 +109,7 @@ func makePersistentVolumeClaimResourceState(r *corev1.PersistentVolumeClaim, sta
 	}
 }
 
-func calculatePersistentVolumeClaimState(r *corev1.PersistentVolumeClaim) types.State {
+func CalculatePersistentVolumeClaimState(r *corev1.PersistentVolumeClaim) types.State {
 	// https://github.com/kubernetes/kubernetes/blob/badcd4af3f592376ce891b7c1b7a43ed6a18a348/pkg/printers/internalversion/printers.go#L1403
 	switch r.Status.Phase {
 	case corev1.ClaimPending, corev1.ClaimLost:

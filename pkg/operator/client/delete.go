@@ -137,9 +137,12 @@ func (c *Client) deleteManifests(manifests []string, kubernetesApplier applier.K
 }
 
 func (c *Client) deleteResources(resources types.Resources, kubernetesApplier applier.KubectlInterface, waitFlag bool) {
-	resources = sortResourcesForDeletion(resources)
-	for _, r := range resources {
-		c.deleteResource(r, waitFlag, kubernetesApplier)
+	phases := groupAndSortResourcesForDeletion(resources)
+	for _, phase := range phases {
+		logger.Infof("deleting resources in phase %s", phase.Name)
+		for _, r := range phase.Resources {
+			c.deleteResource(r, waitFlag, kubernetesApplier)
+		}
 	}
 }
 
@@ -301,18 +304,21 @@ func (c *Client) clearNamespaces(appSlug string, namespacesToClear []string, isR
 			return nil
 		}
 
-		resourcesToDelete = sortResourcesForDeletion(resourcesToDelete)
+		phases := groupAndSortResourcesForDeletion(resourcesToDelete)
 
-		for _, r := range resourcesToDelete {
-			if r.Unstructured.GetDeletionTimestamp() != nil {
-				logger.Infof("Pending deletion %s/%s/%s/%s/%s", r.Unstructured.GetNamespace(), r.GVR.Group, r.GVR.Version, r.GVR.Resource, r.Unstructured.GetName())
-				continue
-			}
+		for _, phase := range phases {
+			logger.Infof("Deleting resources in phase %s", phase.Name)
+			for _, r := range phase.Resources {
+				if r.Unstructured.GetDeletionTimestamp() != nil {
+					logger.Infof("Pending deletion %s/%s/%s/%s/%s", r.Unstructured.GetNamespace(), r.GVR.Group, r.GVR.Version, r.GVR.Resource, r.Unstructured.GetName())
+					continue
+				}
 
-			logger.Infof("Deleting %s/%s/%s/%s/%s", r.Unstructured.GetNamespace(), r.GVR.Group, r.GVR.Version, r.GVR.Resource, r.Unstructured.GetName())
+				logger.Infof("Deleting %s/%s/%s/%s/%s", r.Unstructured.GetNamespace(), r.GVR.Group, r.GVR.Version, r.GVR.Resource, r.Unstructured.GetName())
 
-			if err := dyn.Resource(r.GVR).Namespace(r.Unstructured.GetNamespace()).Delete(context.TODO(), r.Unstructured.GetName(), metav1.DeleteOptions{}); err != nil {
-				logger.Errorf("Resource %s/%s/%s/%s/%s could not be deleted: %v", r.Unstructured.GetNamespace(), r.GVR.Group, r.GVR.Version, r.GVR.Resource, r.Unstructured.GetName(), err)
+				if err := dyn.Resource(r.GVR).Namespace(r.Unstructured.GetNamespace()).Delete(context.TODO(), r.Unstructured.GetName(), metav1.DeleteOptions{}); err != nil {
+					logger.Errorf("Resource %s/%s/%s/%s/%s could not be deleted: %v", r.Unstructured.GetNamespace(), r.GVR.Group, r.GVR.Version, r.GVR.Resource, r.Unstructured.GetName(), err)
+				}
 			}
 		}
 

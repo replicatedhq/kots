@@ -66,7 +66,7 @@ func (h *statefulSetEventHandler) ObjectCreated(obj interface{}) {
 	if _, ok := h.getInformer(r); !ok {
 		return
 	}
-	h.resourceStateCh <- makeStatefulSetResourceState(r, h.calculateStatefulSetState(r))
+	h.resourceStateCh <- makeStatefulSetResourceState(r, CalculateStatefulSetState(h.clientset, h.targetNamespace, r))
 }
 
 func (h *statefulSetEventHandler) ObjectUpdated(obj interface{}) {
@@ -74,7 +74,7 @@ func (h *statefulSetEventHandler) ObjectUpdated(obj interface{}) {
 	if _, ok := h.getInformer(r); !ok {
 		return
 	}
-	h.resourceStateCh <- makeStatefulSetResourceState(r, h.calculateStatefulSetState(r))
+	h.resourceStateCh <- makeStatefulSetResourceState(r, CalculateStatefulSetState(h.clientset, h.targetNamespace, r))
 }
 
 func (h *statefulSetEventHandler) ObjectDeleted(obj interface{}) {
@@ -110,7 +110,7 @@ func makeStatefulSetResourceState(r *appsv1.StatefulSet, state types.State) type
 	}
 }
 
-func (h *statefulSetEventHandler) calculateStatefulSetState(r *appsv1.StatefulSet) types.State {
+func CalculateStatefulSetState(clientset kubernetes.Interface, targetNamespace string, r *appsv1.StatefulSet) types.State {
 	if r == nil {
 		return types.StateMissing
 	}
@@ -121,7 +121,7 @@ func (h *statefulSetEventHandler) calculateStatefulSetState(r *appsv1.StatefulSe
 
 	listOptions := metav1.ListOptions{LabelSelector: labels.SelectorFromSet(r.Spec.Selector.MatchLabels).String()}
 
-	pods, err := h.clientset.CoreV1().Pods(h.targetNamespace).List(context.TODO(), listOptions)
+	pods, err := clientset.CoreV1().Pods(targetNamespace).List(context.TODO(), listOptions)
 	if err != nil {
 		log.Printf("failed to get statefulset pod list: %s", err)
 		return types.StateUnavailable
