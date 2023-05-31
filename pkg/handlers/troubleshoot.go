@@ -242,7 +242,7 @@ func (h *Handler) GetSupportBundleCommand(w http.ResponseWriter, r *http.Request
 
 		response.Command = []string{
 			"curl https://krew.sh/support-bundle | bash",
-			fmt.Sprintf("kubectl support-bundle secret/%s/%s", util.PodNamespace, supportbundle.GetSpecName(appSlug)),
+			fmt.Sprintf("kubectl support-bundle --load-cluster-specs"),
 		}
 
 		opts := types.TroubleshootOptions{
@@ -263,7 +263,7 @@ func (h *Handler) GetSupportBundleCommand(w http.ResponseWriter, r *http.Request
 
 	response.Command = []string{
 		"curl https://krew.sh/support-bundle | bash",
-		fmt.Sprintf("kubectl support-bundle secret/%s/%s", util.PodNamespace, supportbundle.GetSpecName(appSlug)),
+		fmt.Sprintf("kubectl support-bundle --load-cluster-specs"),
 	}
 
 	foundApp, err := store.GetStore().GetAppFromSlug(appSlug)
