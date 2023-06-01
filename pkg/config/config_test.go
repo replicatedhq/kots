@@ -96,13 +96,15 @@ func TestTemplateConfig(t *testing.T) {
 	}
 
 	versionInfo := &template.VersionInfo{
-		Sequence:     0,
-		Cursor:       "345",
-		ChannelName:  "Stable",
-		VersionLabel: "1.2.3",
-		IsRequired:   true,
-		ReleaseNotes: "",
-		IsAirgap:     false,
+		Sequence:                 0,
+		Cursor:                   "345",
+		ChannelName:              "Stable",
+		VersionLabel:             "1.2.3",
+		IsRequired:               true,
+		ReleaseNotes:             "",
+		IsAirgap:                 false,
+		ReplicatedRegistryDomain: "custom.registry.com",
+		ReplicatedProxyDomain:    "custom.proxy.com",
 	}
 	appInfo := &template.ApplicationInfo{Slug: "my-app-1"}
 

@@ -21,6 +21,7 @@ import (
 	"fmt"
 
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/client/kotsclientset/typed/kots/v1beta1"
+	kotsv1beta2 "github.com/replicatedhq/kots/kotskinds/client/kotsclientset/typed/kots/v1beta2"
 	discovery "k8s.io/client-go/discovery"
 	rest "k8s.io/client-go/rest"
 	flowcontrol "k8s.io/client-go/util/flowcontrol"
@@ -29,6 +30,7 @@ import (
 type Interface interface {
 	Discovery() discovery.DiscoveryInterface
 	KotsV1beta1() kotsv1beta1.KotsV1beta1Interface
+	KotsV1beta2() kotsv1beta2.KotsV1beta2Interface
 }
 
 // Clientset contains the clients for groups. Each group has exactly one
@@ -36,11 +38,17 @@ type Interface interface {
 type Clientset struct {
 	*discovery.DiscoveryClient
 	kotsV1beta1 *kotsv1beta1.KotsV1beta1Client
+	kotsV1beta2 *kotsv1beta2.KotsV1beta2Client
 }
 
 // KotsV1beta1 retrieves the KotsV1beta1Client
 func (c *Clientset) KotsV1beta1() kotsv1beta1.KotsV1beta1Interface {
 	return c.kotsV1beta1
+}
+
+// KotsV1beta2 retrieves the KotsV1beta2Client
+func (c *Clientset) KotsV1beta2() kotsv1beta2.KotsV1beta2Interface {
+	return c.kotsV1beta2
 }
 
 // Discovery retrieves the DiscoveryClient
@@ -68,6 +76,10 @@ func NewForConfig(c *rest.Config) (*Clientset, error) {
 	if err != nil {
 		return nil, err
 	}
+	cs.kotsV1beta2, err = kotsv1beta2.NewForConfig(&configShallowCopy)
+	if err != nil {
+		return nil, err
+	}
 
 	cs.DiscoveryClient, err = discovery.NewDiscoveryClientForConfig(&configShallowCopy)
 	if err != nil {
@@ -81,6 +93,7 @@ func NewForConfig(c *rest.Config) (*Clientset, error) {
 func NewForConfigOrDie(c *rest.Config) *Clientset {
 	var cs Clientset
 	cs.kotsV1beta1 = kotsv1beta1.NewForConfigOrDie(c)
+	cs.kotsV1beta2 = kotsv1beta2.NewForConfigOrDie(c)
 
 	cs.DiscoveryClient = discovery.NewDiscoveryClientForConfigOrDie(c)
 	return &cs
@@ -90,6 +103,7 @@ func NewForConfigOrDie(c *rest.Config) *Clientset {
 func New(c rest.Interface) *Clientset {
 	var cs Clientset
 	cs.kotsV1beta1 = kotsv1beta1.New(c)
+	cs.kotsV1beta2 = kotsv1beta2.New(c)
 
 	cs.DiscoveryClient = discovery.NewDiscoveryClient(c)
 	return &cs

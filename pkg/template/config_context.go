@@ -60,6 +60,7 @@ type ConfigCtx struct {
 	ItemValues        map[string]ItemValue
 	LocalRegistry     registrytypes.RegistrySettings
 	DockerHubRegistry dockerregistrytypes.RegistryOptions
+	VersionInfo       *VersionInfo
 	AppSlug           string
 	DecryptValues     bool
 
@@ -73,6 +74,7 @@ func (b *Builder) newConfigContext(configGroups []kotsv1beta1.ConfigGroup, exist
 		ItemValues:        existingValues,
 		LocalRegistry:     localRegistry,
 		DockerHubRegistry: dockerHubRegistry,
+		VersionInfo:       info,
 		AppSlug:           appSlug,
 		license:           license,
 		app:               app,
@@ -83,7 +85,7 @@ func (b *Builder) newConfigContext(configGroups []kotsv1beta1.ConfigGroup, exist
 		Ctx: []Ctx{
 			configCtx,
 			StaticCtx{},
-			&licenseCtx{License: license, App: app},
+			&licenseCtx{License: license, App: app, VersionInfo: info},
 			newKurlContext("base", "default"),
 			newVersionCtx(info),
 		},
@@ -312,10 +314,14 @@ func (ctx ConfigCtx) localImageName(imageRef string) string {
 		}
 	}
 
-	registryProxyInfo := registry.GetRegistryProxyInfo(ctx.license, ctx.app)
+	installation := &kotsv1beta1.Installation{
+		Spec: InstallationSpecFromVersionInfo(ctx.VersionInfo),
+	}
+	registryProxyInfo := registry.GetRegistryProxyInfo(ctx.license, installation, ctx.app)
 	registryOptions := dockerregistrytypes.RegistryOptions{
-		Endpoint:      registryProxyInfo.Registry,
-		ProxyEndpoint: registryProxyInfo.Proxy,
+		Endpoint:         registryProxyInfo.Registry,
+		ProxyEndpoint:    registryProxyInfo.Proxy,
+		UpstreamEndpoint: registryProxyInfo.Upstream,
 	}
 
 	licenseAppSlug := ""
@@ -356,7 +362,11 @@ func (ctx ConfigCtx) localRegistryImagePullSecret() string {
 			licenseIDString = ctx.license.Spec.LicenseID
 		}
 
-		registryProxyInfo := registry.GetRegistryProxyInfo(ctx.license, ctx.app)
+		installation := &kotsv1beta1.Installation{
+			Spec: InstallationSpecFromVersionInfo(ctx.VersionInfo),
+		}
+		registryProxyInfo := registry.GetRegistryProxyInfo(ctx.license, installation, ctx.app)
+
 		secrets, err := registry.PullSecretForRegistries(
 			registryProxyInfo.ToSlice(),
 			licenseIDString,

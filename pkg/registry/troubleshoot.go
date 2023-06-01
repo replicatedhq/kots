@@ -22,9 +22,9 @@ import (
 //
 // local registry always overwrites images
 // proxy registry only overwrites private images
-func UpdateCollectorSpecsWithRegistryData(collectors []*troubleshootv1beta2.Collect, localRegistryInfo types.RegistrySettings, knownImages []kotsv1beta1.InstallationImage, license *kotsv1beta1.License, kotsApplication *kotsv1beta1.Application) ([]*troubleshootv1beta2.Collect, error) {
+func UpdateCollectorSpecsWithRegistryData(collectors []*troubleshootv1beta2.Collect, localRegistryInfo types.RegistrySettings, installation kotsv1beta1.Installation, license *kotsv1beta1.License, kotsApplication *kotsv1beta1.Application) ([]*troubleshootv1beta2.Collect, error) {
 	if localRegistryInfo.IsValid() {
-		updatedCollectors, err := updateCollectorsWithLocalRegistryData(collectors, localRegistryInfo, knownImages, license)
+		updatedCollectors, err := updateCollectorsWithLocalRegistryData(collectors, localRegistryInfo, installation, license)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to update collectors with local registry info")
 		}
@@ -32,7 +32,7 @@ func UpdateCollectorSpecsWithRegistryData(collectors []*troubleshootv1beta2.Coll
 		return updatedCollectors, nil
 	}
 
-	updatedCollectors, err := updateCollectorsWithProxyRegistryData(collectors, localRegistryInfo, knownImages, license, kotsApplication)
+	updatedCollectors, err := updateCollectorsWithProxyRegistryData(collectors, localRegistryInfo, installation, license, kotsApplication)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to update collectors with replicated registry info")
 	}
@@ -40,7 +40,7 @@ func UpdateCollectorSpecsWithRegistryData(collectors []*troubleshootv1beta2.Coll
 	return updatedCollectors, nil
 }
 
-func updateCollectorsWithLocalRegistryData(collectors []*troubleshootv1beta2.Collect, localRegistryInfo types.RegistrySettings, knownImages []kotsv1beta1.InstallationImage, license *kotsv1beta1.License) ([]*troubleshootv1beta2.Collect, error) {
+func updateCollectorsWithLocalRegistryData(collectors []*troubleshootv1beta2.Collect, localRegistryInfo types.RegistrySettings, installation kotsv1beta1.Installation, license *kotsv1beta1.License) ([]*troubleshootv1beta2.Collect, error) {
 	updatedCollectors := []*troubleshootv1beta2.Collect{}
 
 	makeImagePullSecret := func(namespace string) (*troubleshootv1beta2.ImagePullSecrets, error) {
@@ -95,7 +95,7 @@ func updateCollectorsWithLocalRegistryData(collectors []*troubleshootv1beta2.Col
 			c.RegistryImages.ImagePullSecrets = imagePullSecret
 
 			images := []string{}
-			for _, knownImage := range knownImages {
+			for _, knownImage := range installation.Spec.KnownImages {
 				image := rewriteImage(localRegistryInfo.Hostname, localRegistryInfo.Namespace, knownImage.Image)
 				images = append(images, image)
 			}
@@ -107,10 +107,10 @@ func updateCollectorsWithLocalRegistryData(collectors []*troubleshootv1beta2.Col
 	return updatedCollectors, nil
 }
 
-func updateCollectorsWithProxyRegistryData(collectors []*troubleshootv1beta2.Collect, localRegistryInfo types.RegistrySettings, knownImages []kotsv1beta1.InstallationImage, license *kotsv1beta1.License, kotsApplication *kotsv1beta1.Application) ([]*troubleshootv1beta2.Collect, error) {
+func updateCollectorsWithProxyRegistryData(collectors []*troubleshootv1beta2.Collect, localRegistryInfo types.RegistrySettings, installation kotsv1beta1.Installation, license *kotsv1beta1.License, kotsApplication *kotsv1beta1.Application) ([]*troubleshootv1beta2.Collect, error) {
 	updatedCollectors := []*troubleshootv1beta2.Collect{}
 
-	registryProxyInfo := kotsregistry.GetRegistryProxyInfo(license, kotsApplication)
+	registryProxyInfo := kotsregistry.GetRegistryProxyInfo(license, &installation, kotsApplication)
 
 	makeImagePullSecret := func(namespace string) (*troubleshootv1beta2.ImagePullSecrets, error) {
 		pullSecrets, err := kotsregistry.PullSecretForRegistries(registryProxyInfo.ToSlice(), license.Spec.LicenseID, license.Spec.LicenseID, namespace, "")
@@ -150,7 +150,7 @@ func updateCollectorsWithProxyRegistryData(collectors []*troubleshootv1beta2.Col
 
 		// all collectors that include images in the spec should have an if / else statement here
 		if imageRunner, ok := collector.(collect.ImageRunner); ok {
-			for _, knownImage := range knownImages {
+			for _, knownImage := range installation.Spec.KnownImages {
 				image := imageRunner.GetImage()
 				if knownImage.Image != image || !knownImage.IsPrivate {
 					continue
@@ -165,7 +165,7 @@ func updateCollectorsWithProxyRegistryData(collectors []*troubleshootv1beta2.Col
 			}
 		} else if podsSpecRunner, ok := collector.(collect.PodSpecRunner); ok {
 			podSpec := podsSpecRunner.GetPodSpec()
-			for _, knownImage := range knownImages {
+			for _, knownImage := range installation.Spec.KnownImages {
 				for i, container := range podSpec.InitContainers {
 					if knownImage.Image != container.Image || !knownImage.IsPrivate {
 						continue

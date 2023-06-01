@@ -14,7 +14,7 @@ import (
 func Test_UpdateCollectorSpecsWithRegistryData(t *testing.T) {
 	tests := []struct {
 		name               string
-		knownImages        []kotsv1beta1.InstallationImage
+		installation       kotsv1beta1.Installation
 		localRegistryInfo  registrytypes.RegistrySettings
 		license            *kotsv1beta1.License
 		collectors         []*troubleshootv1beta2.Collect
@@ -22,7 +22,7 @@ func Test_UpdateCollectorSpecsWithRegistryData(t *testing.T) {
 	}{
 		{
 			name:               "empty spec, no change",
-			knownImages:        nil,
+			installation:       kotsv1beta1.Installation{},
 			localRegistryInfo:  registrytypes.RegistrySettings{},
 			license:            nil,
 			collectors:         []*troubleshootv1beta2.Collect{},
@@ -30,7 +30,7 @@ func Test_UpdateCollectorSpecsWithRegistryData(t *testing.T) {
 		},
 		{
 			name:              "valid spec, no change",
-			knownImages:       nil,
+			installation:      kotsv1beta1.Installation{},
 			localRegistryInfo: registrytypes.RegistrySettings{},
 			license:           nil,
 			collectors: []*troubleshootv1beta2.Collect{
@@ -46,10 +46,14 @@ func Test_UpdateCollectorSpecsWithRegistryData(t *testing.T) {
 		},
 		{
 			name: "run collector, public image",
-			knownImages: []kotsv1beta1.InstallationImage{
-				{
-					Image:     "docker.io/bitnami/postgres:11",
-					IsPrivate: false,
+			installation: kotsv1beta1.Installation{
+				Spec: kotsv1beta1.InstallationSpec{
+					KnownImages: []kotsv1beta1.InstallationImage{
+						{
+							Image:     "docker.io/bitnami/postgres:11",
+							IsPrivate: false,
+						},
+					},
 				},
 			},
 			localRegistryInfo: registrytypes.RegistrySettings{},
@@ -72,8 +76,8 @@ func Test_UpdateCollectorSpecsWithRegistryData(t *testing.T) {
 			},
 		},
 		{
-			name:        "run collector, public image, private local registry",
-			knownImages: []kotsv1beta1.InstallationImage{},
+			name:         "run collector, public image, private local registry",
+			installation: kotsv1beta1.Installation{},
 			localRegistryInfo: registrytypes.RegistrySettings{
 				Hostname:  "ttl.sh",
 				Namespace: "abc",
@@ -105,10 +109,14 @@ func Test_UpdateCollectorSpecsWithRegistryData(t *testing.T) {
 		},
 		{
 			name: "run collector, replicated registry image, no private local registry",
-			knownImages: []kotsv1beta1.InstallationImage{
-				{
-					Image:     "registry.replicated.com/my-app/my-image:abcdef",
-					IsPrivate: true,
+			installation: kotsv1beta1.Installation{
+				Spec: kotsv1beta1.InstallationSpec{
+					KnownImages: []kotsv1beta1.InstallationImage{
+						{
+							Image:     "registry.replicated.com/my-app/my-image:abcdef",
+							IsPrivate: true,
+						},
+					},
 				},
 			},
 			localRegistryInfo: registrytypes.RegistrySettings{},
@@ -141,10 +149,14 @@ func Test_UpdateCollectorSpecsWithRegistryData(t *testing.T) {
 		},
 		{
 			name: "run collector, private image (not replicated), no private local registry",
-			knownImages: []kotsv1beta1.InstallationImage{
-				{
-					Image:     "quay.io/my-app/my-image:abcdef",
-					IsPrivate: true,
+			installation: kotsv1beta1.Installation{
+				Spec: kotsv1beta1.InstallationSpec{
+					KnownImages: []kotsv1beta1.InstallationImage{
+						{
+							Image:     "quay.io/my-app/my-image:abcdef",
+							IsPrivate: true,
+						},
+					},
 				},
 			},
 			localRegistryInfo: types.RegistrySettings{},
@@ -181,7 +193,7 @@ func Test_UpdateCollectorSpecsWithRegistryData(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			req := require.New(t)
 
-			actualCollectors, err := UpdateCollectorSpecsWithRegistryData(test.collectors, test.localRegistryInfo, test.knownImages, test.license, nil)
+			actualCollectors, err := UpdateCollectorSpecsWithRegistryData(test.collectors, test.localRegistryInfo, test.installation, test.license, nil)
 			req.NoError(err)
 
 			assert.Equal(t, test.expectedCollectors, actualCollectors)

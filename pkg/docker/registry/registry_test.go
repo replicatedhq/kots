@@ -10,8 +10,9 @@ import (
 func TestGetRegistryProxyInfo(t *testing.T) {
 	customProxy, customRegistry := "custom.proxy.com", "custom.registry.com"
 	type args struct {
-		license *kotsv1beta1.License
-		app     *kotsv1beta1.Application
+		license      *kotsv1beta1.License
+		installation *kotsv1beta1.Installation
+		app          *kotsv1beta1.Application
 	}
 	tests := []struct {
 		name string
@@ -19,17 +20,36 @@ func TestGetRegistryProxyInfo(t *testing.T) {
 		want *RegistryProxyInfo
 	}{
 		{
-			name: "GetRegistryProxyInfo returns default proxy info when app and license are nil",
+			name: "GetRegistryProxyInfo returns default proxy info when installation, app, and license are nil",
 			args: args{
-				license: nil,
-				app:     nil,
+				license:      nil,
+				installation: nil,
+				app:          nil,
 			},
 			want: &RegistryProxyInfo{
 				Registry: "registry.replicated.com",
 				Proxy:    "proxy.replicated.com",
-				Upstream: "",
+				Upstream: "registry.replicated.com",
 			},
-		}, {
+		},
+		{
+			name: "GetRegistryProxyInfo returns custom registry hostnames when installation has registry settings",
+			args: args{
+				license: nil,
+				installation: &kotsv1beta1.Installation{
+					Spec: kotsv1beta1.InstallationSpec{
+						ReplicatedProxyDomain:    customProxy,
+						ReplicatedRegistryDomain: customRegistry,
+					},
+				},
+			},
+			want: &RegistryProxyInfo{
+				Registry: customRegistry,
+				Proxy:    customProxy,
+				Upstream: "registry.replicated.com",
+			},
+		},
+		{
 			name: "GetRegistryProxyInfo returns custom registry hostnames when app has registry settings",
 			args: args{
 				license: nil,
@@ -46,12 +66,84 @@ func TestGetRegistryProxyInfo(t *testing.T) {
 				Upstream: "registry.replicated.com",
 			},
 		},
+		{
+			name: "GetRegistryProxyInfo returns custom registry hostnames from installation when both installation and app has registry settings",
+			args: args{
+				license: nil,
+				installation: &kotsv1beta1.Installation{
+					Spec: kotsv1beta1.InstallationSpec{
+						ReplicatedProxyDomain:    customProxy,
+						ReplicatedRegistryDomain: customRegistry,
+					},
+				},
+				app: &kotsv1beta1.Application{
+					Spec: kotsv1beta1.ApplicationSpec{
+						ProxyRegistryDomain:      "random.proxy.com",
+						ReplicatedRegistryDomain: "random.registry.com",
+					},
+				},
+			},
+			want: &RegistryProxyInfo{
+				Registry: customRegistry,
+				Proxy:    customProxy,
+				Upstream: "registry.replicated.com",
+			},
+		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := GetRegistryProxyInfo(tt.args.license, tt.args.app); !reflect.DeepEqual(got, tt.want) {
+			if got := GetRegistryProxyInfo(tt.args.license, tt.args.installation, tt.args.app); !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("GetRegistryProxyInfo() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func Test_getRegistryProxyEndpointFromKotsInstallation(t *testing.T) {
+	customProxy, customRegistry := "custom.proxy.com", "custom.registry.com"
+	type args struct {
+		kotsInstallation *kotsv1beta1.Installation
+	}
+	tests := []struct {
+		name                 string
+		args                 args
+		wantProxyEndpoint    string
+		wantRegistryEndpoint string
+	}{
+		{
+			name:                 "getRegistryProxyEndpointFromKotsInstallation returns nil when kotsInstallation is nil",
+			args:                 args{kotsInstallation: nil},
+			wantProxyEndpoint:    "",
+			wantRegistryEndpoint: "",
+		},
+		{
+			name:                 "getRegistryProxyEndpointFromKotsInstallation returns nil when kotsInstallation is not nil but has no registry settings",
+			args:                 args{kotsInstallation: &kotsv1beta1.Installation{}},
+			wantProxyEndpoint:    "",
+			wantRegistryEndpoint: "",
+		},
+		{
+			name: "getRegistryProxyEndpointFromKotsInstallation returns endpoints nil when kotsInstallation and registry settings are not nil",
+			args: args{kotsInstallation: &kotsv1beta1.Installation{
+				Spec: kotsv1beta1.InstallationSpec{
+					ReplicatedProxyDomain:    customProxy,
+					ReplicatedRegistryDomain: customRegistry,
+				},
+			},
+			},
+			wantProxyEndpoint:    customProxy,
+			wantRegistryEndpoint: customRegistry,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			gotProxyEndpoint, gotRegistryEndpoint := getRegistryProxyEndpointFromKotsInstallation(tt.args.kotsInstallation)
+			if gotProxyEndpoint != tt.wantProxyEndpoint {
+				t.Errorf("getRegistryProxyEndpointFromKotsInstallation() gotProxyEndpoint = %v, want %v", gotProxyEndpoint, tt.wantProxyEndpoint)
+			}
+			if gotRegistryEndpoint != tt.wantRegistryEndpoint {
+				t.Errorf("getRegistryProxyEndpointFromKotsInstallation() gotRegistryEndpoint = %v, want %v", gotRegistryEndpoint, tt.wantRegistryEndpoint)
 			}
 		})
 	}

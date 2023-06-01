@@ -546,6 +546,26 @@ func Test_localImageName(t *testing.T) {
 		},
 	}
 
+	ctxWithCustomDomains := ConfigCtx{
+		LocalRegistry: registrytypes.RegistrySettings{},
+
+		license: &kotsv1beta1.License{
+			Spec: kotsv1beta1.LicenseSpec{
+				AppSlug:  "myslug",
+				Endpoint: "replicated.registry.com",
+			},
+		},
+		app: &kotsv1beta1.Application{
+			Spec: kotsv1beta1.ApplicationSpec{
+				ProxyPublicImages: false,
+			},
+		},
+		VersionInfo: &VersionInfo{
+			ReplicatedRegistryDomain: "custom.registry.com",
+			ReplicatedProxyDomain:    "custom.proxy.com",
+		},
+	}
+
 	ctxWithNothing := ConfigCtx{
 		LocalRegistry: registrytypes.RegistrySettings{},
 	}
@@ -593,6 +613,18 @@ func Test_localImageName(t *testing.T) {
 			expected: "registry.replicated.com/kots/myimage:v1.13.0",
 		},
 		{
+			name:     "rewrite private image to custom replicated proxy domain",
+			ctx:      ctxWithCustomDomains,
+			image:    "quay.io/replicated/myimage@sha256:45b23dee08af5e43a7fea6c4cf9c25ccf269ee113168c19722f87876677c5cb2",
+			expected: "custom.proxy.com/proxy/myslug/quay.io/replicated/myimage@sha256:45b23dee08af5e43a7fea6c4cf9c25ccf269ee113168c19722f87876677c5cb2",
+		},
+		{
+			name:     "do not rewrite private image with custom replicated registry domain",
+			ctx:      ctxWithCustomDomains,
+			image:    "custom.registry.com/kots/myimage:v1.13.0",
+			expected: "custom.registry.com/kots/myimage:v1.13.0",
+		},
+		{
 			name:     "do not panic when no license or registry are provided",
 			ctx:      ctxWithNothing,
 			image:    "quay.io/replicated/myimage@sha256:45b23dee08af5e43a7fea6c4cf9c25ccf269ee113168c19722f87876677c5cb2",
@@ -614,6 +646,7 @@ func TestConfigCtx_localRegistryImagePullSecret(t *testing.T) {
 	tests := []struct {
 		name          string
 		LocalRegistry registrytypes.RegistrySettings
+		VersionInfo   *VersionInfo
 		license       *kotsv1beta1.License
 		want          string
 	}{
@@ -647,6 +680,28 @@ func TestConfigCtx_localRegistryImagePullSecret(t *testing.T) {
 			want: `{"auths":{"proxy.replicated.com":{"auth":"YWJjOmFiYw=="},"registry.replicated.com":{"auth":"YWJjOmFiYw=="}}}`,
 		},
 		{
+			name: "licenseid abc with custom domains",
+			LocalRegistry: registrytypes.RegistrySettings{
+				Hostname:  "",
+				Namespace: "",
+				Username:  "",
+				Password:  "",
+			},
+			VersionInfo: &VersionInfo{
+				ReplicatedRegistryDomain: "custom.registry.com",
+				ReplicatedProxyDomain:    "custom.proxy.com",
+			},
+			license: &kotsv1beta1.License{
+				TypeMeta:   metav1.TypeMeta{},
+				ObjectMeta: metav1.ObjectMeta{},
+				Spec: kotsv1beta1.LicenseSpec{
+					LicenseID: "abc",
+				},
+				Status: kotsv1beta1.LicenseStatus{},
+			},
+			want: `{"auths":{"custom.proxy.com":{"auth":"YWJjOmFiYw=="},"custom.registry.com":{"auth":"YWJjOmFiYw=="}}}`,
+		},
+		{
 			name: "localregistry set",
 			LocalRegistry: registrytypes.RegistrySettings{
 				Hostname:  "example.com:5000",
@@ -663,6 +718,7 @@ func TestConfigCtx_localRegistryImagePullSecret(t *testing.T) {
 
 			ctx := ConfigCtx{
 				LocalRegistry: tt.LocalRegistry,
+				VersionInfo:   tt.VersionInfo,
 				license:       tt.license,
 				AppSlug:       "myapp",
 			}

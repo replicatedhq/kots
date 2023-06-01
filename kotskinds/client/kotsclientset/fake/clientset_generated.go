@@ -21,6 +21,8 @@ import (
 	clientset "github.com/replicatedhq/kots/kotskinds/client/kotsclientset"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/client/kotsclientset/typed/kots/v1beta1"
 	fakekotsv1beta1 "github.com/replicatedhq/kots/kotskinds/client/kotsclientset/typed/kots/v1beta1/fake"
+	kotsv1beta2 "github.com/replicatedhq/kots/kotskinds/client/kotsclientset/typed/kots/v1beta2"
+	fakekotsv1beta2 "github.com/replicatedhq/kots/kotskinds/client/kotsclientset/typed/kots/v1beta2/fake"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/discovery"
@@ -78,4 +80,9 @@ var _ clientset.Interface = &Clientset{}
 // KotsV1beta1 retrieves the KotsV1beta1Client
 func (c *Clientset) KotsV1beta1() kotsv1beta1.KotsV1beta1Interface {
 	return &fakekotsv1beta1.FakeKotsV1beta1{Fake: &c.Fake}
+}
+
+// KotsV1beta2 retrieves the KotsV1beta2Client
+func (c *Clientset) KotsV1beta2() kotsv1beta2.KotsV1beta2Interface {
+	return &fakekotsv1beta2.FakeKotsV1beta2{Fake: &c.Fake}
 }

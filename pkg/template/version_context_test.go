@@ -12,13 +12,15 @@ func TestVersionContext(t *testing.T) {
 	// a properly populated versionCtx - should return the appropriate values
 	ctx := versionCtx{
 		info: &VersionInfo{
-			Sequence:     5,
-			Cursor:       "five",
-			ChannelName:  "chanFive",
-			VersionLabel: "verFive",
-			IsRequired:   true,
-			ReleaseNotes: "this is five",
-			IsAirgap:     true,
+			Sequence:                 5,
+			Cursor:                   "five",
+			ChannelName:              "chanFive",
+			VersionLabel:             "verFive",
+			IsRequired:               true,
+			ReleaseNotes:             "this is five",
+			IsAirgap:                 true,
+			ReplicatedRegistryDomain: "custom.registry.com",
+			ReplicatedProxyDomain:    "custom.proxy.com",
 		},
 	}
 
@@ -45,4 +47,10 @@ func TestVersionContext(t *testing.T) {
 
 	req.Equal(true, ctx.isAirgap())
 	req.Equal(false, nilCtx.isAirgap())
+
+	req.Equal("custom.registry.com", ctx.replicatedRegistryDomain())
+	req.Equal("", nilCtx.replicatedRegistryDomain())
+
+	req.Equal("custom.proxy.com", ctx.replicatedProxyDomain())
+	req.Equal("", nilCtx.replicatedProxyDomain())
 }

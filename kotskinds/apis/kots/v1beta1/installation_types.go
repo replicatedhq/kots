@@ -22,16 +22,18 @@ import (
 
 // InstallationSpec defines the desired state of InstallationSpec
 type InstallationSpec struct {
-	UpdateCursor  string                  `json:"updateCursor,omitempty"`
-	ChannelID     string                  `json:"channelID,omitempty"`
-	ChannelName   string                  `json:"channelName,omitempty"`
-	VersionLabel  string                  `json:"versionLabel,omitempty"`
-	IsRequired    bool                    `json:"isRequired,omitempty"`
-	ReleaseNotes  string                  `json:"releaseNotes,omitempty"`
-	ReleasedAt    *metav1.Time            `json:"releasedAt,omitempty"`
-	EncryptionKey string                  `json:"encryptionKey,omitempty"`
-	KnownImages   []InstallationImage     `json:"knownImages,omitempty"`
-	YAMLErrors    []InstallationYAMLError `json:"yamlErrors,omitempty"`
+	UpdateCursor             string                  `json:"updateCursor,omitempty"`
+	ChannelID                string                  `json:"channelID,omitempty"`
+	ChannelName              string                  `json:"channelName,omitempty"`
+	VersionLabel             string                  `json:"versionLabel,omitempty"`
+	IsRequired               bool                    `json:"isRequired,omitempty"`
+	ReleaseNotes             string                  `json:"releaseNotes,omitempty"`
+	ReleasedAt               *metav1.Time            `json:"releasedAt,omitempty"`
+	ReplicatedRegistryDomain string                  `json:"replicatedRegistryDomain,omitempty"`
+	ReplicatedProxyDomain    string                  `json:"replicatedProxyDomain,omitempty"`
+	EncryptionKey            string                  `json:"encryptionKey,omitempty"`
+	KnownImages              []InstallationImage     `json:"knownImages,omitempty"`
+	YAMLErrors               []InstallationYAMLError `json:"yamlErrors,omitempty"`
 }
 
 type InstallationImage struct {

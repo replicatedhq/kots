@@ -48,13 +48,15 @@ func NewConfigContextTemplateBuilder(u *upstreamtypes.Upstream, renderOptions *R
 	}
 
 	versionInfo := template.VersionInfo{
-		Sequence:     renderOptions.Sequence,
-		Cursor:       u.UpdateCursor,
-		ChannelName:  u.ChannelName,
-		VersionLabel: u.VersionLabel,
-		IsRequired:   u.IsRequired,
-		ReleaseNotes: u.ReleaseNotes,
-		IsAirgap:     renderOptions.IsAirgap,
+		Sequence:                 renderOptions.Sequence,
+		Cursor:                   u.UpdateCursor,
+		ChannelName:              u.ChannelName,
+		VersionLabel:             u.VersionLabel,
+		IsRequired:               u.IsRequired,
+		ReleaseNotes:             u.ReleaseNotes,
+		IsAirgap:                 renderOptions.IsAirgap,
+		ReplicatedRegistryDomain: u.ReplicatedRegistryDomain,
+		ReplicatedProxyDomain:    u.ReplicatedProxyDomain,
 	}
 
 	builderOptions := template.BuilderOptions{

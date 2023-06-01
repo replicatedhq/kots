@@ -123,13 +123,15 @@ func WriteUpstream(u *types.Upstream, options types.WriteOptions) error {
 			Name: u.Name,
 		},
 		Spec: kotsv1beta1.InstallationSpec{
-			UpdateCursor:  u.UpdateCursor,
-			ChannelID:     channelID,
-			ChannelName:   channelName,
-			VersionLabel:  u.VersionLabel,
-			IsRequired:    u.IsRequired,
-			ReleaseNotes:  u.ReleaseNotes,
-			EncryptionKey: encryptionKey,
+			UpdateCursor:             u.UpdateCursor,
+			ChannelID:                channelID,
+			ChannelName:              channelName,
+			VersionLabel:             u.VersionLabel,
+			IsRequired:               u.IsRequired,
+			ReleaseNotes:             u.ReleaseNotes,
+			ReplicatedRegistryDomain: u.ReplicatedRegistryDomain,
+			ReplicatedProxyDomain:    u.ReplicatedProxyDomain,
+			EncryptionKey:            encryptionKey,
 		},
 	}
 

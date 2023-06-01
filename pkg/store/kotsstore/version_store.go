@@ -972,9 +972,9 @@ func (s *KOTSStore) GetNextAppSequence(appID string) (int64, error) {
 	return newSequence, nil
 }
 
-func (s *KOTSStore) GetCurrentUpdateCursor(appID string, channelID string) (string, string, bool, error) {
+func (s *KOTSStore) GetCurrentUpdateCursor(appID string, channelID string) (string, error) {
 	db := persistence.MustGetDBSession()
-	query := `SELECT update_cursor, version_label, is_required FROM app_version WHERE app_id = ? AND channel_id = ? AND sequence IN (
+	query := `SELECT update_cursor FROM app_version WHERE app_id = ? AND channel_id = ? AND sequence IN (
 		SELECT MAX(sequence) FROM app_version WHERE app_id = ? AND channel_id = ?
 	) ORDER BY sequence DESC LIMIT 1`
 	rows, err := db.QueryOneParameterized(gorqlite.ParameterizedStatement{
@@ -982,21 +982,18 @@ func (s *KOTSStore) GetCurrentUpdateCursor(appID string, channelID string) (stri
 		Arguments: []interface{}{appID, channelID, appID, channelID},
 	})
 	if err != nil {
-		return "", "", false, fmt.Errorf("failed to query: %v: %v", err, rows.Err)
+		return "", fmt.Errorf("failed to query: %v: %v", err, rows.Err)
 	}
 	if !rows.Next() {
-		return "", "", false, nil
+		return "", nil
 	}
 
 	var updateCursor gorqlite.NullString
-	var versionLabel gorqlite.NullString
-	var isRequired gorqlite.NullBool
-
-	if err := rows.Scan(&updateCursor, &versionLabel, &isRequired); err != nil {
-		return "", "", false, errors.Wrap(err, "failed to scan")
+	if err := rows.Scan(&updateCursor); err != nil {
+		return "", errors.Wrap(err, "failed to scan")
 	}
 
-	return updateCursor.String, versionLabel.String, isRequired.Bool, nil
+	return updateCursor.String, nil
 }
 
 func (s *KOTSStore) HasStrictPreflights(appID string, sequence int64) (bool, error) {
