@@ -40,6 +40,9 @@ function kotsadm() {
     fi
 
     if [ -n "$PROXY_ADDRESS" ] || [ -n "$PROXY_HTTPS_ADDRESS" ]; then
+        if [ -z "$PROXY_HTTPS_ADDRESS" ]; then
+            PROXY_HTTPS_ADDRESS="$PROXY_ADDRESS"
+        fi
         KUBERNETES_CLUSTER_IP=$(kubectl get services kubernetes --no-headers | awk '{ print $3 }')
         if [ "$KOTSADM_DISABLE_S3" == "1" ]; then
             render_yaml_file_2 "$src/statefulset/tmpl-kotsadm-proxy.yaml" > "$dst/kotsadm-proxy.yaml"
