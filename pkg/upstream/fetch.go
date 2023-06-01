@@ -47,6 +47,8 @@ func downloadUpstream(upstreamURI string, fetchOptions *types.FetchOptions) (*ty
 			pickCursor(fetchOptions),
 			pickVersionLabel(fetchOptions),
 			pickVersionIsRequired(fetchOptions),
+			pickReplicatedRegistryDomain(fetchOptions),
+			pickReplicatedProxyDomain(fetchOptions),
 			fetchOptions.AppSlug,
 			fetchOptions.AppSequence,
 			fetchOptions.Airgap != nil,
@@ -58,6 +60,20 @@ func downloadUpstream(upstreamURI string, fetchOptions *types.FetchOptions) (*ty
 	}
 
 	return nil, errors.Errorf("unknown protocol scheme %q", u.Scheme)
+}
+
+func pickReplicatedProxyDomain(fetchOptions *types.FetchOptions) string {
+	if fetchOptions.Airgap != nil {
+		return "" // custom domains are not applicable in airgap mode
+	}
+	return fetchOptions.CurrentReplicatedProxyDomain
+}
+
+func pickReplicatedRegistryDomain(fetchOptions *types.FetchOptions) string {
+	if fetchOptions.Airgap != nil {
+		return "" // custom domains are not applicable in airgap mode
+	}
+	return fetchOptions.CurrentReplicatedRegistryDomain
 }
 
 func pickVersionIsRequired(fetchOptions *types.FetchOptions) bool {

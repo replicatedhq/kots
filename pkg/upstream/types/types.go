@@ -22,18 +22,20 @@ type UpstreamFile struct {
 }
 
 type Upstream struct {
-	URI           string
-	Name          string
-	Type          string
-	Files         []UpstreamFile
-	UpdateCursor  string
-	ChannelID     string
-	ChannelName   string
-	VersionLabel  string
-	IsRequired    bool
-	ReleaseNotes  string
-	ReleasedAt    *time.Time
-	EncryptionKey string
+	URI                      string
+	Name                     string
+	Type                     string
+	Files                    []UpstreamFile
+	UpdateCursor             string
+	ChannelID                string
+	ChannelName              string
+	VersionLabel             string
+	IsRequired               bool
+	ReleaseNotes             string
+	ReleasedAt               *time.Time
+	ReplicatedRegistryDomain string
+	ReplicatedProxyDomain    string
+	EncryptionKey            string
 }
 
 type Update struct {
@@ -79,28 +81,30 @@ type WriteOptions struct {
 }
 
 type FetchOptions struct {
-	RootDir                  string
-	UseAppDir                bool
-	HelmRepoURI              string
-	LocalPath                string
-	License                  *kotsv1beta1.License
-	ConfigValues             *kotsv1beta1.ConfigValues
-	IdentityConfig           *kotsv1beta1.IdentityConfig
-	Airgap                   *kotsv1beta1.Airgap
-	EncryptionKey            string
-	LastUpdateCheckAt        *time.Time
-	CurrentCursor            string
-	CurrentChannelID         string
-	CurrentChannelName       string
-	CurrentVersionLabel      string
-	CurrentVersionIsRequired bool
-	ChannelChanged           bool
-	AppSlug                  string
-	AppSequence              int64
-	AppVersionLabel          string
-	LocalRegistry            registrytypes.RegistrySettings
-	ReportingInfo            *reportingtypes.ReportingInfo
-	SkipCompatibilityCheck   bool
+	RootDir                         string
+	UseAppDir                       bool
+	HelmRepoURI                     string
+	LocalPath                       string
+	License                         *kotsv1beta1.License
+	ConfigValues                    *kotsv1beta1.ConfigValues
+	IdentityConfig                  *kotsv1beta1.IdentityConfig
+	Airgap                          *kotsv1beta1.Airgap
+	EncryptionKey                   string
+	LastUpdateCheckAt               *time.Time
+	CurrentCursor                   string
+	CurrentChannelID                string
+	CurrentChannelName              string
+	CurrentVersionLabel             string
+	CurrentVersionIsRequired        bool
+	CurrentReplicatedRegistryDomain string
+	CurrentReplicatedProxyDomain    string
+	ChannelChanged                  bool
+	AppSlug                         string
+	AppSequence                     int64
+	AppVersionLabel                 string
+	LocalRegistry                   registrytypes.RegistrySettings
+	ReportingInfo                   *reportingtypes.ReportingInfo
+	SkipCompatibilityCheck          bool
 }
 
 func (u *Upstream) GetUpstreamDir(options WriteOptions) string {

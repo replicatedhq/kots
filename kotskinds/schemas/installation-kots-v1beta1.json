@@ -50,6 +50,12 @@
           "type": "string",
           "format": "date-time"
         },
+        "replicatedProxyDomain": {
+          "type": "string"
+        },
+        "replicatedRegistryDomain": {
+          "type": "string"
+        },
         "updateCursor": {
           "type": "string"
         },

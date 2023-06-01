@@ -58,6 +58,10 @@ spec:
               releasedAt:
                 format: date-time
                 type: string
+              replicatedProxyDomain:
+                type: string
+              replicatedRegistryDomain:
+                type: string
               updateCursor:
                 type: string
               versionLabel:

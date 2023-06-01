@@ -206,6 +206,9 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 		if fetchOptions.CurrentCursor == "" {
 			fetchOptions.CurrentCursor = installation.Spec.UpdateCursor
 		}
+		fetchOptions.CurrentVersionIsRequired = installation.Spec.IsRequired
+		fetchOptions.CurrentReplicatedRegistryDomain = installation.Spec.ReplicatedRegistryDomain
+		fetchOptions.CurrentReplicatedProxyDomain = installation.Spec.ReplicatedProxyDomain
 	}
 
 	if pullOptions.AirgapRoot != "" {

@@ -639,14 +639,12 @@ func (mr *MockStoreMockRecorder) GetCurrentParentSequence(appID, clusterID inter
 }
 
 // GetCurrentUpdateCursor mocks base method.
-func (m *MockStore) GetCurrentUpdateCursor(appID, channelID string) (string, string, bool, error) {
+func (m *MockStore) GetCurrentUpdateCursor(appID, channelID string) (string, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetCurrentUpdateCursor", appID, channelID)
 	ret0, _ := ret[0].(string)
-	ret1, _ := ret[1].(string)
-	ret2, _ := ret[2].(bool)
-	ret3, _ := ret[3].(error)
-	return ret0, ret1, ret2, ret3
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
 }
 
 // GetCurrentUpdateCursor indicates an expected call of GetCurrentUpdateCursor.
@@ -3709,14 +3707,12 @@ func (mr *MockVersionStoreMockRecorder) GetAppVersionBaseSequence(appID, version
 }
 
 // GetCurrentUpdateCursor mocks base method.
-func (m *MockVersionStore) GetCurrentUpdateCursor(appID, channelID string) (string, string, bool, error) {
+func (m *MockVersionStore) GetCurrentUpdateCursor(appID, channelID string) (string, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetCurrentUpdateCursor", appID, channelID)
 	ret0, _ := ret[0].(string)
-	ret1, _ := ret[1].(string)
-	ret2, _ := ret[2].(bool)
-	ret3, _ := ret[3].(error)
-	return ret0, ret1, ret2, ret3
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
 }
 
 // GetCurrentUpdateCursor indicates an expected call of GetCurrentUpdateCursor.

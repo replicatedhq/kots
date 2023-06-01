@@ -536,6 +536,11 @@ func RewritePrivateImage(srcRegistry dockerregistrytypes.RegistryOptions, image 
 		return image, nil
 	}
 
+	if registryHost == srcRegistry.UpstreamEndpoint {
+		// image is using the upstream replicated registry, but a custom registry domain is configured, so rewrite to use the custom domain
+		return strings.Replace(image, registryHost, srcRegistry.Endpoint, 1), nil
+	}
+
 	newImage := registry.MakeProxiedImageURL(srcRegistry.ProxyEndpoint, appSlug, image)
 	if can, ok := dockerRef.(reference.Canonical); ok {
 		return newImage + "@" + can.Digest().String(), nil
@@ -590,7 +595,7 @@ type ProcessImageOptions struct {
 
 // RewriteBaseImages Will rewrite images found in base and copy them (if necessary) to the configured registry.
 func RewriteBaseImages(options ProcessImageOptions, baseDir string, kotsKinds *kotsutil.KotsKinds, license *kotsv1beta1.License, dockerHubRegistryCreds registry.Credentials, log *logger.CLILogger) (*RewriteImagesResult, error) {
-	replicatedRegistryInfo := registry.GetRegistryProxyInfo(license, &kotsKinds.KotsApplication)
+	replicatedRegistryInfo := registry.GetRegistryProxyInfo(license, &kotsKinds.Installation, &kotsKinds.KotsApplication)
 
 	rewriteImageOptions := RewriteImagesBetweenRegistriesOptions{
 		BaseDir: baseDir,

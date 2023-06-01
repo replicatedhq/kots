@@ -77,7 +77,7 @@ func NewBuilder(kotsKinds *kotsutil.KotsKinds, registrySettings registrytypes.Re
 		Slug: appSlug,
 	}
 
-	versionInfo := template.VersionInfoFromInstallation(sequence, isAirgap, kotsKinds.Installation.Spec)
+	versionInfo := template.VersionInfoFromInstallationSpec(sequence, isAirgap, kotsKinds.Installation.Spec)
 
 	builderOptions := template.BuilderOptions{
 		ConfigGroups:    configGroups,

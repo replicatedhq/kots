@@ -68,18 +68,20 @@ func Rewrite(rewriteOptions RewriteOptions) error {
 	}
 
 	fetchOptions := &upstreamtypes.FetchOptions{
-		RootDir:                  rewriteOptions.RootDir,
-		LocalPath:                rewriteOptions.UpstreamPath,
-		CurrentCursor:            rewriteOptions.Installation.Spec.UpdateCursor,
-		CurrentVersionLabel:      rewriteOptions.Installation.Spec.VersionLabel,
-		CurrentVersionIsRequired: rewriteOptions.Installation.Spec.IsRequired,
-		EncryptionKey:            rewriteOptions.Installation.Spec.EncryptionKey,
-		License:                  rewriteOptions.License,
-		AppSequence:              rewriteOptions.AppSequence,
-		AppSlug:                  rewriteOptions.AppSlug,
-		LocalRegistry:            rewriteOptions.RegistrySettings,
-		ReportingInfo:            rewriteOptions.ReportingInfo,
-		SkipCompatibilityCheck:   true, // we're rewriting an existing version, no need to check for compatibility
+		RootDir:                         rewriteOptions.RootDir,
+		LocalPath:                       rewriteOptions.UpstreamPath,
+		CurrentCursor:                   rewriteOptions.Installation.Spec.UpdateCursor,
+		CurrentVersionLabel:             rewriteOptions.Installation.Spec.VersionLabel,
+		CurrentVersionIsRequired:        rewriteOptions.Installation.Spec.IsRequired,
+		CurrentReplicatedRegistryDomain: rewriteOptions.Installation.Spec.ReplicatedRegistryDomain,
+		CurrentReplicatedProxyDomain:    rewriteOptions.Installation.Spec.ReplicatedProxyDomain,
+		EncryptionKey:                   rewriteOptions.Installation.Spec.EncryptionKey,
+		License:                         rewriteOptions.License,
+		AppSequence:                     rewriteOptions.AppSequence,
+		AppSlug:                         rewriteOptions.AppSlug,
+		LocalRegistry:                   rewriteOptions.RegistrySettings,
+		ReportingInfo:                   rewriteOptions.ReportingInfo,
+		SkipCompatibilityCheck:          true, // we're rewriting an existing version, no need to check for compatibility
 	}
 
 	log.ActionWithSpinner("Pulling upstream")

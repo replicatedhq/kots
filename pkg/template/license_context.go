@@ -14,8 +14,11 @@ import (
 type licenseCtx struct {
 	License *kotsv1beta1.License
 
-	// App is optional, but if provided, it will be used to determine the registry domains
+	// DEPRECATED: App is optional, but if provided, it will be used to determine the registry domains
 	App *kotsv1beta1.Application
+
+	// VersionInfo is optional, but if provided, it will be used to determine the registry domains
+	VersionInfo *VersionInfo
 }
 
 // FuncMap represents the available functions in the licenseCtx.
@@ -85,7 +88,10 @@ func (ctx licenseCtx) licenseDockercfg() string {
 	auth := fmt.Sprintf("%s:%s", ctx.License.Spec.LicenseID, ctx.License.Spec.LicenseID)
 	encodedAuth := base64.StdEncoding.EncodeToString([]byte(auth))
 
-	registryProxyInfo := registry.GetRegistryProxyInfo(ctx.License, ctx.App)
+	installation := &kotsv1beta1.Installation{
+		Spec: InstallationSpecFromVersionInfo(ctx.VersionInfo),
+	}
+	registryProxyInfo := registry.GetRegistryProxyInfo(ctx.License, installation, ctx.App)
 
 	dockercfg := map[string]interface{}{
 		"auths": map[string]interface{}{

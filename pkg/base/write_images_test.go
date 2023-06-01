@@ -387,10 +387,11 @@ func Test_RewriteImages(t *testing.T) {
 			processOptions: RewriteImageOptions{
 				BaseDir: "./testdata/replicated-registry",
 				SourceRegistry: registrytypes.RegistryOptions{
-					Endpoint:      "registry.replicated.com",
-					ProxyEndpoint: "proxy.replicated.com",
-					Username:      "test-license-id",
-					Password:      "test-license-id",
+					Endpoint:         "registry.replicated.com",
+					ProxyEndpoint:    "proxy.replicated.com",
+					UpstreamEndpoint: "registry.replicated.com",
+					Username:         "test-license-id",
+					Password:         "test-license-id",
 				},
 				KotsKinds: &kotsutil.KotsKinds{
 					KotsApplication: kotsv1beta1.Application{

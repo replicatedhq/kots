@@ -55,20 +55,44 @@ var secretAnnotations = map[string]string{
 	"helm.sh/hook-weight":    "-9999",
 }
 
-func GetRegistryProxyInfo(license *kotsv1beta1.License, app *kotsv1beta1.Application) *RegistryProxyInfo {
+func GetRegistryProxyInfo(license *kotsv1beta1.License, installation *kotsv1beta1.Installation, app *kotsv1beta1.Application) *RegistryProxyInfo {
 	registryProxyInfo := getRegistryProxyInfoFromLicense(license)
-	proxyEndpoint, registryEndpoint := getRegistryProxyEndpointFromKotsApplication(app)
 
+	// DEPRECATED: getting the registry and proxy from the application spec is deprecated and should be removed in a future release
+	proxyEndpoint, registryEndpoint := getRegistryProxyEndpointFromKotsApplication(app)
 	if proxyEndpoint != "" {
 		registryProxyInfo.Proxy = proxyEndpoint
 	}
-
 	if registryEndpoint != "" {
-		registryProxyInfo.Upstream = registryProxyInfo.Registry
+		registryProxyInfo.Registry = registryEndpoint
+	}
+
+	// getting the registry and proxy from the installation spec takes precedence over the application spec
+	proxyEndpoint, registryEndpoint = getRegistryProxyEndpointFromKotsInstallation(installation)
+	if proxyEndpoint != "" {
+		registryProxyInfo.Proxy = proxyEndpoint
+	}
+	if registryEndpoint != "" {
 		registryProxyInfo.Registry = registryEndpoint
 	}
 
 	return registryProxyInfo
+}
+
+func getRegistryProxyEndpointFromKotsInstallation(installation *kotsv1beta1.Installation) (proxyEndpoint string, registryEndpoint string) {
+	if installation == nil {
+		return "", ""
+	}
+
+	if installation.Spec.ReplicatedProxyDomain != "" {
+		proxyEndpoint = installation.Spec.ReplicatedProxyDomain
+	}
+
+	if installation.Spec.ReplicatedRegistryDomain != "" {
+		registryEndpoint = installation.Spec.ReplicatedRegistryDomain
+	}
+
+	return proxyEndpoint, registryEndpoint
 }
 
 func getRegistryProxyEndpointFromKotsApplication(kotsApplication *kotsv1beta1.Application) (proxyEndpoint string, registryEndpoint string) {
@@ -89,6 +113,7 @@ func getRegistryProxyEndpointFromKotsApplication(kotsApplication *kotsv1beta1.Ap
 
 func getRegistryProxyInfoFromLicense(license *kotsv1beta1.License) *RegistryProxyInfo {
 	defaultInfo := &RegistryProxyInfo{
+		Upstream: "registry.replicated.com",
 		Registry: "registry.replicated.com",
 		Proxy:    "proxy.replicated.com",
 	}
@@ -104,6 +129,7 @@ func getRegistryProxyInfoFromLicense(license *kotsv1beta1.License) *RegistryProx
 
 	if u.Hostname() == "staging.replicated.app" {
 		return &RegistryProxyInfo{
+			Upstream: "registry.staging.replicated.com",
 			Registry: "registry.staging.replicated.com",
 			Proxy:    "proxy.staging.replicated.com",
 		}
@@ -116,6 +142,7 @@ func getRegistryProxyInfoFromLicense(license *kotsv1beta1.License) *RegistryProx
 			if len(parts) == 3 {
 				namespace := parts[2]
 				return &RegistryProxyInfo{
+					Upstream: fmt.Sprintf("vendor-registry-v2-%s.okteto.repldev.com", namespace),
 					Registry: fmt.Sprintf("vendor-registry-v2-%s.okteto.repldev.com", namespace),
 					Proxy:    fmt.Sprintf("registry-proxy-%s.okteto.repldev.com", namespace),
 				}

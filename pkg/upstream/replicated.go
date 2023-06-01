@@ -48,12 +48,14 @@ type App struct {
 }
 
 type Release struct {
-	UpdateCursor replicatedapp.ReplicatedCursor
-	VersionLabel string
-	IsRequired   bool
-	ReleaseNotes string
-	ReleasedAt   *time.Time
-	Manifests    map[string][]byte
+	UpdateCursor             replicatedapp.ReplicatedCursor
+	VersionLabel             string
+	IsRequired               bool
+	ReleaseNotes             string
+	ReleasedAt               *time.Time
+	ReplicatedRegistryDomain string
+	ReplicatedProxyDomain    string
+	Manifests                map[string][]byte
 }
 
 type ChannelRelease struct {
@@ -70,16 +72,6 @@ func getUpdatesReplicated(u *url.URL, fetchOptions *types.FetchOptions) (*types.
 		ChannelID:   fetchOptions.CurrentChannelID,
 		ChannelName: fetchOptions.CurrentChannelName,
 		Cursor:      fetchOptions.CurrentCursor,
-	}
-
-	if fetchOptions.LocalPath != "" {
-		parsedLocalRelease, err := readReplicatedAppFromLocalPath(fetchOptions.LocalPath, currentCursor, fetchOptions.CurrentVersionLabel, fetchOptions.CurrentVersionIsRequired)
-		if err != nil {
-			return nil, errors.Wrap(err, "failed to read replicated app from local path")
-		}
-
-		updates := []types.Update{{Cursor: parsedLocalRelease.UpdateCursor.Cursor, VersionLabel: parsedLocalRelease.VersionLabel, IsRequired: parsedLocalRelease.IsRequired}}
-		return &types.UpdateCheckResult{Updates: updates, UpdateCheckTime: time.Now()}, nil
 	}
 
 	// A license file is required to be set for this to succeed
@@ -131,6 +123,8 @@ func downloadReplicated(
 	updateCursor replicatedapp.ReplicatedCursor,
 	versionLabel string,
 	isRequired bool,
+	replicatedRegistryDomain string,
+	replicatedProxyDomain string,
 	appSlug string,
 	appSequence int64,
 	isAirgap bool,
@@ -142,7 +136,7 @@ func downloadReplicated(
 	var release *Release
 
 	if localPath != "" {
-		parsedLocalRelease, err := readReplicatedAppFromLocalPath(localPath, updateCursor, versionLabel, isRequired)
+		parsedLocalRelease, err := readReplicatedAppFromLocalPath(localPath, updateCursor, versionLabel, isRequired, replicatedRegistryDomain, replicatedProxyDomain)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to read replicated app from local path")
 		}
@@ -258,13 +252,15 @@ func downloadReplicated(
 		}
 
 		versionInfo := template.VersionInfo{
-			Sequence:     appSequence,
-			Cursor:       updateCursor.Cursor,
-			ChannelName:  channelName,
-			VersionLabel: release.VersionLabel,
-			IsRequired:   release.IsRequired,
-			ReleaseNotes: release.ReleaseNotes,
-			IsAirgap:     isAirgap,
+			Sequence:                 appSequence,
+			Cursor:                   updateCursor.Cursor,
+			ChannelName:              channelName,
+			VersionLabel:             release.VersionLabel,
+			IsRequired:               release.IsRequired,
+			ReleaseNotes:             release.ReleaseNotes,
+			IsAirgap:                 isAirgap,
+			ReplicatedRegistryDomain: release.ReplicatedRegistryDomain,
+			ReplicatedProxyDomain:    release.ReplicatedProxyDomain,
 		}
 
 		// If config existed and was removed from the app,
@@ -288,28 +284,32 @@ func downloadReplicated(
 	}
 
 	upstream := &types.Upstream{
-		URI:          u.RequestURI(),
-		Name:         application.Name,
-		Files:        files,
-		Type:         "replicated",
-		UpdateCursor: release.UpdateCursor.Cursor,
-		ChannelID:    channelID,
-		ChannelName:  channelName,
-		VersionLabel: release.VersionLabel,
-		IsRequired:   release.IsRequired,
-		ReleaseNotes: release.ReleaseNotes,
-		ReleasedAt:   release.ReleasedAt,
+		URI:                      u.RequestURI(),
+		Name:                     application.Name,
+		Files:                    files,
+		Type:                     "replicated",
+		UpdateCursor:             release.UpdateCursor.Cursor,
+		ChannelID:                channelID,
+		ChannelName:              channelName,
+		VersionLabel:             release.VersionLabel,
+		IsRequired:               release.IsRequired,
+		ReleaseNotes:             release.ReleaseNotes,
+		ReleasedAt:               release.ReleasedAt,
+		ReplicatedRegistryDomain: release.ReplicatedRegistryDomain,
+		ReplicatedProxyDomain:    release.ReplicatedProxyDomain,
 	}
 
 	return upstream, nil
 }
 
-func readReplicatedAppFromLocalPath(localPath string, localCursor replicatedapp.ReplicatedCursor, versionLabel string, isRequired bool) (*Release, error) {
+func readReplicatedAppFromLocalPath(localPath string, localCursor replicatedapp.ReplicatedCursor, versionLabel string, isRequired bool, replicatedRegistryDomain string, replicatedProxyDomain string) (*Release, error) {
 	release := Release{
-		Manifests:    make(map[string][]byte),
-		UpdateCursor: localCursor,
-		VersionLabel: versionLabel,
-		IsRequired:   isRequired,
+		Manifests:                make(map[string][]byte),
+		UpdateCursor:             localCursor,
+		VersionLabel:             versionLabel,
+		IsRequired:               isRequired,
+		ReplicatedRegistryDomain: replicatedRegistryDomain,
+		ReplicatedProxyDomain:    replicatedProxyDomain,
 	}
 
 	err := filepath.Walk(localPath,
@@ -370,6 +370,8 @@ func downloadReplicatedApp(replicatedUpstream *replicatedapp.ReplicatedUpstream,
 	versionLabel := getResp.Header.Get("X-Replicated-VersionLabel")
 	isRequiredStr := getResp.Header.Get("X-Replicated-IsRequired")
 	releasedAtStr := getResp.Header.Get("X-Replicated-ReleasedAt")
+	replicatedRegistryDomain := getResp.Header.Get("X-Replicated-ReplicatedRegistryDomain")
+	replicatedProxyDomain := getResp.Header.Get("X-Replicated-ReplicatedProxyDomain")
 
 	var releasedAt *time.Time
 	r, err := time.Parse(time.RFC3339, releasedAtStr)
@@ -391,9 +393,11 @@ func downloadReplicatedApp(replicatedUpstream *replicatedapp.ReplicatedUpstream,
 			ChannelName: updateChannelName,
 			Cursor:      updateSequence,
 		},
-		VersionLabel: versionLabel,
-		IsRequired:   isRequired,
-		ReleasedAt:   releasedAt,
+		VersionLabel:             versionLabel,
+		IsRequired:               isRequired,
+		ReleasedAt:               releasedAt,
+		ReplicatedRegistryDomain: replicatedRegistryDomain,
+		ReplicatedProxyDomain:    replicatedProxyDomain,
 		// NOTE: release notes come from Application spec
 	}
 	tarReader := tar.NewReader(gzf)

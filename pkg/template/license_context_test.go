@@ -14,6 +14,7 @@ func TestLicenseContext_dockercfg(t *testing.T) {
 		name          string
 		License       *kotsv1beta1.License
 		App           *kotsv1beta1.Application
+		VersionInfo   *VersionInfo
 		expectDecoded map[string]interface{}
 	}{
 		{
@@ -82,12 +83,62 @@ func TestLicenseContext_dockercfg(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "version info passed with custom domains should return custom domains",
+			License: &kotsv1beta1.License{
+				Spec: kotsv1beta1.LicenseSpec{
+					LicenseID: "abcdef",
+				},
+			},
+			VersionInfo: &VersionInfo{
+				ReplicatedProxyDomain:    "my-proxy.example.com",
+				ReplicatedRegistryDomain: "my-registry.example.com",
+			},
+			expectDecoded: map[string]interface{}{
+				"auths": map[string]interface{}{
+					"my-proxy.example.com": map[string]string{
+						"auth": base64.StdEncoding.EncodeToString([]byte("abcdef:abcdef")),
+					},
+					"my-registry.example.com": map[string]string{
+						"auth": base64.StdEncoding.EncodeToString([]byte("abcdef:abcdef")),
+					},
+				},
+			},
+		},
+		{
+			name: "both app and version info are passed with custom domains should return custom domains from version info",
+			License: &kotsv1beta1.License{
+				Spec: kotsv1beta1.LicenseSpec{
+					LicenseID: "abcdef",
+				},
+			},
+			App: &kotsv1beta1.Application{
+				Spec: kotsv1beta1.ApplicationSpec{
+					ProxyRegistryDomain:      "my-other-proxy.example.com",
+					ReplicatedRegistryDomain: "my-other-registry.example.com",
+				},
+			},
+			VersionInfo: &VersionInfo{
+				ReplicatedProxyDomain:    "my-proxy.example.com",
+				ReplicatedRegistryDomain: "my-registry.example.com",
+			},
+			expectDecoded: map[string]interface{}{
+				"auths": map[string]interface{}{
+					"my-proxy.example.com": map[string]string{
+						"auth": base64.StdEncoding.EncodeToString([]byte("abcdef:abcdef")),
+					},
+					"my-registry.example.com": map[string]string{
+						"auth": base64.StdEncoding.EncodeToString([]byte("abcdef:abcdef")),
+					},
+				},
+			},
+		},
 	}
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			req := require.New(t)
-			ctx := licenseCtx{License: test.License, App: test.App}
+			ctx := licenseCtx{License: test.License, App: test.App, VersionInfo: test.VersionInfo}
 
 			expectJson, err := json.Marshal(test.expectDecoded)
 			req.NoError(err)
