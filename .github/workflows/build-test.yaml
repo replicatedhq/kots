@@ -2387,6 +2387,17 @@ jobs:
             exit 1
           fi
 
+          COUNTER=1
+          while [ "$(helm ls -n "$RELEASE_NAMESPACE" | grep "$RELEASE_NAME" | awk 'NR>0{print $3}')" != "2" ]; do
+            ((COUNTER += 1))
+            if [ $COUNTER -gt 120 ]; then
+              echo "Timed out waiting for $RELEASE_NAME to be upgraded to revision 2"
+              helm ls -n "$RELEASE_NAMESPACE"
+              exit 1
+            fi
+            sleep 1
+          done
+
           # verify that the helm release secret is created in the helm relase namespace
           COUNT=1
           releaseSecret=""
@@ -2406,6 +2417,7 @@ jobs:
           oldReleaseSecret=$(kubectl get secret "$releaseSecretName" -n "$APP_SLUG")
           if [ -n "$oldReleaseSecret" ]; then
             echo "Found the helm release secret in the $APP_SLUG namespace"
+            echo "$oldReleaseSecret"
             echo "kotsadm logs:"
             kubectl logs -l app=kotsadm --tail=100 --namespace "$APP_SLUG"
             exit 1
@@ -2413,9 +2425,10 @@ jobs:
 
           # verify that there are two helm release secrets in the helm release namespace
           releaseSecretNames=$(kubectl get secret -n "$RELEASE_NAMESPACE" -l owner=helm,name="$RELEASE_NAME" -o jsonpath='{.items[*].metadata.name}')
-          # if the helm release secrets are not 2 in the helm release namespace, fail
-          if [ "$(echo "$releaseSecretNames" | wc -w)" -ne 2 ]; then
-            echo "Found more than two helm release secret in the $RELEASE_NAMESPACE namespace"
+          releaseSecretNamesCount=$(echo "$releaseSecretNames" | wc -w)
+          if [ "$releaseSecretNamesCount" -ne 2 ]; then
+            echo "Found $releaseSecretNamesCount helm release secrets in the $RELEASE_NAMESPACE namespace(Want: 2)"
+            kubectl get secret -n "$RELEASE_NAMESPACE" -l owner=helm,name="$RELEASE_NAME"
             echo "kotsadm logs:"
             kubectl logs -l app=kotsadm --tail=100 --namespace "$APP_SLUG"
             exit 1
