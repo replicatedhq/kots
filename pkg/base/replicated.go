@@ -55,7 +55,7 @@ func renderReplicated(u *upstreamtypes.Upstream, renderOptions *RenderOptions) (
 		return nil, nil, nil, errors.Wrap(err, "failed to create new config context template builder")
 	}
 
-	kotsKinds, err := getKotsKinds(u, renderOptions.Log)
+	kotsKinds, err := getKotsKinds(u)
 	if err != nil {
 		return nil, nil, nil, errors.Wrap(err, "failed to find config file")
 	}
@@ -442,54 +442,57 @@ func tryGetConfigFromFileContent(content []byte, log *logger.CLILogger) *kotsv1b
 	return nil
 }
 
-func getKotsKinds(u *upstreamtypes.Upstream, log *logger.CLILogger) (*kotsutil.KotsKinds, error) {
+func getKotsKinds(u *upstreamtypes.Upstream) (*kotsutil.KotsKinds, error) {
 	kotsKinds := &kotsutil.KotsKinds{}
 
 	for _, file := range u.Files {
-		document := &Document{}
-		if err := yaml.Unmarshal(file.Content, document); err != nil {
-			continue
-		}
-
-		decode := scheme.Codecs.UniversalDeserializer().Decode
-		decoded, gvk, err := decode(file.Content, nil, nil)
-		if err != nil {
-			if document.APIVersion == "kots.io/v1beta1" && (document.Kind == "Config" || document.Kind == "License") {
-				errMessage := fmt.Sprintf("Failed to decode %s", file.Path)
-				return nil, errors.Wrap(err, errMessage)
+		docs := util.ConvertToSingleDocs(file.Content)
+		for _, doc := range docs {
+			document := &Document{}
+			if err := yaml.Unmarshal(doc, document); err != nil {
+				continue
 			}
-			continue
-		}
 
-		switch gvk.String() {
-		case "kots.io/v1beta1, Kind=Config":
-			kotsKinds.Config = decoded.(*kotsv1beta1.Config)
-		case "kots.io/v1beta1, Kind=ConfigValues":
-			kotsKinds.ConfigValues = decoded.(*kotsv1beta1.ConfigValues)
-		case "kots.io/v1beta1, Kind=Application":
-			kotsKinds.KotsApplication = *decoded.(*kotsv1beta1.Application)
-		case "kots.io/v1beta1, Kind=License":
-			kotsKinds.License = decoded.(*kotsv1beta1.License)
-		case "kots.io/v1beta1, Kind=Identity":
-			kotsKinds.Identity = decoded.(*kotsv1beta1.Identity)
-		case "kots.io/v1beta1, Kind=IdentityConfig":
-			kotsKinds.IdentityConfig = decoded.(*kotsv1beta1.IdentityConfig)
-		case "kots.io/v1beta1, Kind=Installation":
-			kotsKinds.Installation = *decoded.(*kotsv1beta1.Installation)
-		case "troubleshoot.sh/v1beta2, Kind=Collector":
-			kotsKinds.Collector = decoded.(*troubleshootv1beta2.Collector)
-		case "troubleshoot.sh/v1beta2, Kind=Analyzer":
-			kotsKinds.Analyzer = decoded.(*troubleshootv1beta2.Analyzer)
-		case "troubleshoot.sh/v1beta2, Kind=SupportBundle":
-			kotsKinds.SupportBundle = decoded.(*troubleshootv1beta2.SupportBundle)
-		case "troubleshoot.sh/v1beta2, Kind=Redactor":
-			kotsKinds.Redactor = decoded.(*troubleshootv1beta2.Redactor)
-		case "troubleshoot.sh/v1beta2, Kind=Preflight":
-			kotsKinds.Preflight = decoded.(*troubleshootv1beta2.Preflight)
-		case "velero.io/v1, Kind=Backup":
-			kotsKinds.Backup = decoded.(*velerov1.Backup)
-		case "app.k8s.io/v1beta1, Kind=Application":
-			kotsKinds.Application = decoded.(*applicationv1beta1.Application)
+			decode := scheme.Codecs.UniversalDeserializer().Decode
+			decoded, gvk, err := decode(doc, nil, nil)
+			if err != nil {
+				if document.APIVersion == "kots.io/v1beta1" && (document.Kind == "Config" || document.Kind == "License") {
+					errMessage := fmt.Sprintf("Failed to decode %s", file.Path)
+					return nil, errors.Wrap(err, errMessage)
+				}
+				continue
+			}
+
+			switch gvk.String() {
+			case "kots.io/v1beta1, Kind=Config":
+				kotsKinds.Config = decoded.(*kotsv1beta1.Config)
+			case "kots.io/v1beta1, Kind=ConfigValues":
+				kotsKinds.ConfigValues = decoded.(*kotsv1beta1.ConfigValues)
+			case "kots.io/v1beta1, Kind=Application":
+				kotsKinds.KotsApplication = *decoded.(*kotsv1beta1.Application)
+			case "kots.io/v1beta1, Kind=License":
+				kotsKinds.License = decoded.(*kotsv1beta1.License)
+			case "kots.io/v1beta1, Kind=Identity":
+				kotsKinds.Identity = decoded.(*kotsv1beta1.Identity)
+			case "kots.io/v1beta1, Kind=IdentityConfig":
+				kotsKinds.IdentityConfig = decoded.(*kotsv1beta1.IdentityConfig)
+			case "kots.io/v1beta1, Kind=Installation":
+				kotsKinds.Installation = *decoded.(*kotsv1beta1.Installation)
+			case "troubleshoot.sh/v1beta2, Kind=Collector":
+				kotsKinds.Collector = decoded.(*troubleshootv1beta2.Collector)
+			case "troubleshoot.sh/v1beta2, Kind=Analyzer":
+				kotsKinds.Analyzer = decoded.(*troubleshootv1beta2.Analyzer)
+			case "troubleshoot.sh/v1beta2, Kind=SupportBundle":
+				kotsKinds.SupportBundle = decoded.(*troubleshootv1beta2.SupportBundle)
+			case "troubleshoot.sh/v1beta2, Kind=Redactor":
+				kotsKinds.Redactor = decoded.(*troubleshootv1beta2.Redactor)
+			case "troubleshoot.sh/v1beta2, Kind=Preflight":
+				kotsKinds.Preflight = decoded.(*troubleshootv1beta2.Preflight)
+			case "velero.io/v1, Kind=Backup":
+				kotsKinds.Backup = decoded.(*velerov1.Backup)
+			case "app.k8s.io/v1beta1, Kind=Application":
+				kotsKinds.Application = decoded.(*applicationv1beta1.Application)
+			}
 		}
 	}
 

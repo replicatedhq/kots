@@ -242,10 +242,8 @@ func downloadReplicated(
 		}
 	}
 
-	config, _, _, _, _, err := findTemplateContextDataInRelease(release)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to find config in release")
-	}
+	config := findConfigInRelease(release)
+
 	if config != nil || existingConfigValues != nil {
 		appInfo := template.ApplicationInfo{
 			Slug: appSlug,
@@ -696,38 +694,29 @@ func contentToIdentityConfig(content []byte) *kotsv1beta1.IdentityConfig {
 	return nil
 }
 
-func findTemplateContextDataInRelease(release *Release) (*kotsv1beta1.Config, *kotsv1beta1.ConfigValues, *kotsv1beta1.License, *kotsv1beta1.Installation, *kotsv1beta1.IdentityConfig, error) {
+func findConfigInRelease(release *Release) *kotsv1beta1.Config {
 	var config *kotsv1beta1.Config
-	var values *kotsv1beta1.ConfigValues
-	var license *kotsv1beta1.License
-	var installation *kotsv1beta1.Installation
-	var identityConfig *kotsv1beta1.IdentityConfig
 
 	for _, content := range release.Manifests {
-		decode := scheme.Codecs.UniversalDeserializer().Decode
-		obj, gvk, err := decode(content, nil, nil)
-		if err != nil {
-			continue
-		}
+		docs := util.ConvertToSingleDocs(content)
+		for _, doc := range docs {
+			decode := scheme.Codecs.UniversalDeserializer().Decode
+			obj, gvk, err := decode(doc, nil, nil)
+			if err != nil {
+				continue
+			}
 
-		if gvk.Group == "kots.io" {
-			if gvk.Version == "v1beta1" {
-				if gvk.Kind == "Config" {
-					config = obj.(*kotsv1beta1.Config)
-				} else if gvk.Kind == "ConfigValues" {
-					values = obj.(*kotsv1beta1.ConfigValues)
-				} else if gvk.Kind == "License" {
-					license = obj.(*kotsv1beta1.License)
-				} else if gvk.Kind == "Installation" {
-					installation = obj.(*kotsv1beta1.Installation)
-				} else if gvk.Kind == "IdentityConfig" {
-					identityConfig = obj.(*kotsv1beta1.IdentityConfig)
+			if gvk.Group == "kots.io" {
+				if gvk.Version == "v1beta1" {
+					if gvk.Kind == "Config" {
+						config = obj.(*kotsv1beta1.Config)
+					}
 				}
 			}
 		}
 	}
 
-	return config, values, license, installation, identityConfig, nil
+	return config
 }
 
 func findAppInRelease(release *Release) *kotsv1beta1.Application {

@@ -1923,3 +1923,233 @@ version: 1.10.1
 		})
 	}
 }
+
+func Test_getKotsKinds(t *testing.T) {
+	type args struct {
+		u *upstreamtypes.Upstream
+	}
+	tests := []struct {
+		name    string
+		args    args
+		want    *kotsutil.KotsKinds
+		wantErr bool
+	}{
+		{
+			name: "get kotsKinds from single file",
+			args: args{
+				u: &upstreamtypes.Upstream{
+					Files: []upstreamtypes.UpstreamFile{
+						{
+							Path: "kotskinds.yaml",
+							Content: []byte(`apiVersion: kots.io/v1beta1
+kind: Config
+metadata:
+  name: config-sample
+spec:
+  groups:
+  - name: example_settings
+    title: My Example Config
+    items:
+    - name: show_text_inputs
+      title: Customize Text Inputs
+      help_text: "Show custom user text inputs"
+      type: bool
+`),
+						},
+					},
+				},
+			},
+			want: &kotsutil.KotsKinds{
+				Config: &v1beta1.Config{
+					TypeMeta: metav1.TypeMeta{
+						APIVersion: "kots.io/v1beta1",
+						Kind:       "Config",
+					},
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "config-sample",
+					},
+					Spec: v1beta1.ConfigSpec{
+						Groups: []v1beta1.ConfigGroup{
+							{
+								Name:  "example_settings",
+								Title: "My Example Config",
+								Items: []v1beta1.ConfigItem{
+									{
+										Name:     "show_text_inputs",
+										Title:    "Customize Text Inputs",
+										HelpText: "Show custom user text inputs",
+										Type:     "bool",
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			wantErr: false,
+		},
+		{
+			name: "get kotsKinds from multi-doc file",
+			args: args{
+				u: &upstreamtypes.Upstream{
+					Files: []upstreamtypes.UpstreamFile{
+						{
+							Path: "kotskinds.yaml",
+							Content: []byte(`apiVersion: kots.io/v1beta1
+kind: Config
+metadata:
+  name: config-sample
+spec:
+  groups:
+  - name: example_settings
+    title: My Example Config
+    items:
+    - name: show_text_inputs
+      title: Customize Text Inputs
+      help_text: "Show custom user text inputs"
+      type: bool
+---
+apiVersion: kots.io/v1beta1
+kind: Application
+metadata:
+  name: app-sample
+spec:
+  title: My Application
+  icon: https://example.com/icon.png
+---
+apiVersion: kots.io/v1beta1
+kind: License
+metadata:
+  name: license-sample
+spec:
+  appSlug: my-app
+  channelName: stable
+  endpoint: https://example.com
+  customerName: My Customer
+  customerEmail:
+  licenseID: "1234"
+  licenseType: Single
+`),
+						},
+					},
+				},
+			},
+			want: &kotsutil.KotsKinds{
+				Config: &v1beta1.Config{
+					TypeMeta: metav1.TypeMeta{
+						APIVersion: "kots.io/v1beta1",
+						Kind:       "Config",
+					},
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "config-sample",
+					},
+					Spec: v1beta1.ConfigSpec{
+						Groups: []v1beta1.ConfigGroup{
+							{
+								Name:  "example_settings",
+								Title: "My Example Config",
+								Items: []v1beta1.ConfigItem{
+									{
+										Name:     "show_text_inputs",
+										Title:    "Customize Text Inputs",
+										HelpText: "Show custom user text inputs",
+										Type:     "bool",
+									},
+								},
+							},
+						},
+					},
+				},
+				KotsApplication: v1beta1.Application{
+					TypeMeta: metav1.TypeMeta{
+						APIVersion: "kots.io/v1beta1",
+						Kind:       "Application",
+					},
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "app-sample",
+					},
+					Spec: v1beta1.ApplicationSpec{
+						Title: "My Application",
+						Icon:  "https://example.com/icon.png",
+					},
+				},
+				License: &v1beta1.License{
+					TypeMeta: metav1.TypeMeta{
+						APIVersion: "kots.io/v1beta1",
+						Kind:       "License",
+					},
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "license-sample",
+					},
+					Spec: v1beta1.LicenseSpec{
+						AppSlug:       "my-app",
+						ChannelName:   "stable",
+						Endpoint:      "https://example.com",
+						CustomerName:  "My Customer",
+						CustomerEmail: "",
+						LicenseID:     "1234",
+						LicenseType:   "Single",
+					},
+				},
+			},
+			wantErr: false,
+		},
+		{
+			name: "get kotsKinds from empty file",
+			args: args{
+				u: &upstreamtypes.Upstream{
+					Files: []upstreamtypes.UpstreamFile{
+						{
+							Path:    "kotskinds.yaml",
+							Content: []byte(``),
+						},
+					},
+				},
+			},
+			want:    &kotsutil.KotsKinds{},
+			wantErr: false,
+		},
+		{
+			name: "get kotsKinds from invalid yaml file",
+			args: args{
+				u: &upstreamtypes.Upstream{
+					Files: []upstreamtypes.UpstreamFile{
+						{
+							Path: "kotskinds.yaml",
+							Content: []byte(`apiVersion: kots.io/v1beta1
+kind: Config
+metadata:
+	name: config-sample
+spec:
+	groups:
+	- name: example_settings
+	  title: My Example Config
+	  items:
+	  - name: show_text_inputs
+		title: Customize Text Inputs
+		help_text: "Show custom user text inputs"
+		type: bool
+	invalid_key: invalid_value
+`),
+						},
+					},
+				},
+			},
+			want:    &kotsutil.KotsKinds{},
+			wantErr: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := getKotsKinds(tt.args.u)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("getKotsKinds() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("getKotsKinds() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
