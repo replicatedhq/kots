@@ -1,6 +1,7 @@
 package upstream
 
 import (
+	"reflect"
 	"testing"
 
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
@@ -223,4 +224,183 @@ func Test_createConfigValues(t *testing.T) {
 	values3, err := createConfigValues(applicationName, config, configValues, nil, nil, appInfo, nil, registrytypes.RegistrySettings{}, nil)
 	req.NoError(err)
 	assert.Equal(t, expected3, values3.Spec.Values)
+}
+
+func Test_findConfigInRelease(t *testing.T) {
+	type args struct {
+		release *Release
+	}
+	tests := []struct {
+		name string
+		args args
+		want *kotsv1beta1.Config
+	}{
+		{
+			name: "find config in single file release",
+			args: args{
+				release: &Release{
+					Manifests: map[string][]byte{
+						"filepath": []byte(`apiVersion: kots.io/v1beta1
+kind: Config
+metadata:
+  name: config-sample
+spec:
+  groups:
+  - name: example_settings
+    title: My Example Config
+    items:
+    - name: show_text_inputs
+      title: Customize Text Inputs
+      help_text: "Show custom user text inputs"
+      type: bool
+`),
+					},
+				},
+			},
+			want: &kotsv1beta1.Config{
+				TypeMeta: metav1.TypeMeta{
+					APIVersion: "kots.io/v1beta1",
+					Kind:       "Config",
+				},
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "config-sample",
+				},
+				Spec: kotsv1beta1.ConfigSpec{
+					Groups: []kotsv1beta1.ConfigGroup{
+						{
+							Name:        "example_settings",
+							Title:       "My Example Config",
+							Description: "",
+							Items: []kotsv1beta1.ConfigItem{
+								{
+									Name:     "show_text_inputs",
+									Type:     "bool",
+									Title:    "Customize Text Inputs",
+									HelpText: "Show custom user text inputs",
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		{
+			name: "find config in multidoc release",
+			args: args{
+				release: &Release{
+					Manifests: map[string][]byte{
+						"filepath": []byte(`apiVersion: app.k8s.io/v1beta1
+kind: Application
+metadata:
+	name: "sample-app"
+spec:
+	descriptor:
+	links:
+		- description: Open App
+		# needs to match applicationUrl in kots-app.yaml
+		url: "http://sample-app"
+---
+apiVersion: kots.io/v1beta1
+kind: Config
+metadata:
+  name: config-sample
+spec:
+  groups:
+  - name: example_settings
+    title: My Example Config
+    items:
+    - name: show_text_inputs
+      title: Customize Text Inputs
+      help_text: "Show custom user text inputs"
+      type: bool
+---
+apiVersion: troubleshoot.sh/v1beta2
+kind: SupportBundle
+metadata:
+name: support-bundle
+spec:
+collectors:
+	- clusterInfo: {}
+	- clusterResources: {}
+	- logs:
+		selector:
+		- app=sample-app
+		namespace: '{{repl Namespace }}'
+`),
+					},
+				},
+			},
+			want: &kotsv1beta1.Config{
+				TypeMeta: metav1.TypeMeta{
+					APIVersion: "kots.io/v1beta1",
+					Kind:       "Config",
+				},
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "config-sample",
+				},
+				Spec: kotsv1beta1.ConfigSpec{
+					Groups: []kotsv1beta1.ConfigGroup{
+						{
+							Name:        "example_settings",
+							Title:       "My Example Config",
+							Description: "",
+							Items: []kotsv1beta1.ConfigItem{
+								{
+									Name:     "show_text_inputs",
+									Type:     "bool",
+									Title:    "Customize Text Inputs",
+									HelpText: "Show custom user text inputs",
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		{
+			name: "find config in release with empty manifest",
+			args: args{
+				release: &Release{
+					Manifests: map[string][]byte{
+						"filepath": []byte(``),
+					},
+				},
+			},
+			want: nil,
+		},
+		{
+			name: "find config with invalid yaml",
+			args: args{
+				release: &Release{
+					Manifests: map[string][]byte{
+						"filepath": []byte(`apiVersion: kots.io/v1beta1
+kind: Config
+metadata:
+  name: config-sample
+spec:
+  groups:
+  - name: example_settings
+    title: My Example Config
+    items:
+    - name: show_text_inputs
+      title: Customize Text Inputs
+      help_text: "Show custom user text inputs"
+      type: bool
+   invalid_key: invalid_value
+`),
+					},
+				},
+			},
+			want: nil,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := findConfigInRelease(tt.args.release); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("findConfigInRelease() = %v, want %v", got, tt.want)
+			}
+
+		})
+	}
 }
