@@ -146,15 +146,14 @@ export function dynamicallyResizeText(text, maxWidth, defaultFontSize) {
 
   const resizerWidth = () => resizerElm.getBoundingClientRect().width;
   const resizerFontSize = () => parseInt(resizerElm.style.fontSize, 10);
-  console.log(resizerWidth(), maxWidth);
   if (resizerWidth() - maxWidth < 300) {
-    console.log("hello");
     resizerElm.remove();
     size = defaultFontSize;
   }
 
-  while (resizerWidth() - maxWidth > 300) {
-    console.log("here");
+  // if the difference between the resizer width and the max width is greater than 350px, then resize the font
+  while (resizerWidth() - maxWidth >= 350) {
+    // do not let resizeFontSize go below 24px
     if (resizerFontSize > 24) {
       resizerElm.style.fontSize = `${size - 1}px`;
       size = resizerFontSize;

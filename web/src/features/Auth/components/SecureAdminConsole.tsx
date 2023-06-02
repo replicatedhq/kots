@@ -191,13 +191,11 @@ class SecureAdminConsole extends React.Component<Props, State> {
     if (!this.loginText?.current) {
       return;
     }
-    console.log(this.loginText.current.clientHeight);
     const newFontSize = dynamicallyResizeText(
       this.loginText.current.innerHTML,
       this.loginText.current.clientWidth,
       "32px"
     );
-    console.log(newFontSize);
     this.loginText.current.style.fontSize = newFontSize;
   };
 
@@ -350,15 +348,10 @@ class SecureAdminConsole extends React.Component<Props, State> {
                 style={{ fontSize: "32px" }}
                 className="u-marginTop--10 u-paddingTop--5 u-lineHeight--more u-textColor--primary u-fontWeight--bold u-width--full u-textAlign--center break-word"
               >
-                Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed
-                fermentum ante ut ligula congue, nec facilisis dolor vulputate.
-                {/* Vivamus dignissim, mi sed interdum luctus, nisl libero bibendum
-                magna, non pulvinar enim ipsum sed dui. Nulla facilisi. Quisque
-                nec erat non enim gravida consequat. */}
-                {/* Log in
+                Log in
                 {appName && appName !== ""
                   ? ` to ${appName} admin console`
-                  : " to admin console"} */}
+                  : " to admin console"}
               </p>
             </div>
             <div className="flex-auto flex-column justifyContent--center">
