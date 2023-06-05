@@ -47,8 +47,7 @@ type State = {
   isViewingLicenseEntitlements: boolean;
 };
 
-const AppLicenseComponent = (props: { outletContext: any }) => {
-  console.log(props, "props");
+const AppLicenseComponent = () => {
   const [state, setState] = useReducer(
     (currentState: State, newState: Partial<State>) => ({
       ...currentState,
