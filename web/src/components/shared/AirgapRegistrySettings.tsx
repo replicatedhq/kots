@@ -164,7 +164,7 @@ class AirgapRegistrySettings extends Component<Props, State> {
       testMessage: "",
     });
 
-    const { slug } = this.props.outletContext.app;
+    const { slug } = this.props.app;
 
     let res;
     try {
@@ -217,11 +217,7 @@ class AirgapRegistrySettings extends Component<Props, State> {
     let nextState: { [key: string]: string | boolean } = {};
     nextState[field] = val;
 
-    if (
-      this.props.outletContext.app?.isAirgap &&
-      field === "isReadOnly" &&
-      !val
-    ) {
+    if (this.props.app?.isAirgap && field === "isReadOnly" && !val) {
       // Pushing images in airgap mode is not yet supported, so registry name cannot be changed.
       nextState.hostname = this.state.originalRegistry!.hostname;
       nextState.namespace = this.state.originalRegistry!.namespace;
@@ -232,10 +228,10 @@ class AirgapRegistrySettings extends Component<Props, State> {
     // | ((prevState: Readonly<State>, props: Readonly<Props>) => State | Pick<...> | null) | null'.
     // @ts-ignore
     this.setState(nextState, () => {
-      if (this.props.outletContext.gatherDetails) {
+      if (this.props.gatherDetails) {
         const { hostname, username, password, namespace, isReadOnly } =
           this.state;
-        this.props.outletContext.gatherDetails({
+        this.props.gatherDetails({
           hostname,
           username,
           password,
@@ -247,9 +243,9 @@ class AirgapRegistrySettings extends Component<Props, State> {
   };
 
   componentDidUpdate(lastProps: { app: { slug: string } }) {
-    const { app } = this.props.outletContext;
+    const { app } = this.props;
 
-    if (app?.slug !== lastProps.outletContext.app?.slug) {
+    if (app?.slug !== lastProps.app?.slug) {
       this.fetchRegistryInfo();
     }
   }
@@ -266,8 +262,8 @@ class AirgapRegistrySettings extends Component<Props, State> {
     });
 
     let url = `${process.env.API_ENDPOINT}/registry`;
-    if (this.props.outletContext.app) {
-      url = `${process.env.API_ENDPOINT}/app/${this.props.outletContext.app.slug}/registry`;
+    if (this.props.app) {
+      url = `${process.env.API_ENDPOINT}/app/${this.props.app.slug}/registry`;
     }
 
     fetch(url, {
@@ -289,10 +285,10 @@ class AirgapRegistrySettings extends Component<Props, State> {
             displayErrorModal: false,
           });
 
-          if (this.props.outletContext.gatherDetails) {
+          if (this.props.gatherDetails) {
             const { hostname, username, password, namespace, isReadOnly } =
               result;
-            this.props.outletContext.gatherDetails({
+            this.props.gatherDetails({
               hostname,
               username,
               password,
@@ -327,8 +323,8 @@ class AirgapRegistrySettings extends Component<Props, State> {
 
   triggerStatusUpdates = () => {
     let url = `${process.env.API_ENDPOINT}/imagerewritestatus`;
-    if (this.props.outletContext.app) {
-      url = `${process.env.API_ENDPOINT}/app/${this.props.outletContext.app.slug}/imagerewritestatus`;
+    if (this.props.app) {
+      url = `${process.env.API_ENDPOINT}/app/${this.props.app.slug}/imagerewritestatus`;
     }
     fetch(url, {
       headers: {
@@ -355,8 +351,8 @@ class AirgapRegistrySettings extends Component<Props, State> {
 
   updateStatus = () => {
     let url = `${process.env.API_ENDPOINT}/imagerewritestatus`;
-    if (this.props.outletContext.app) {
-      url = `${process.env.API_ENDPOINT}/app/${this.props.outletContext.app.slug}/imagerewritestatus`;
+    if (this.props.app) {
+      url = `${process.env.API_ENDPOINT}/app/${this.props.app.slug}/imagerewritestatus`;
     }
     return new Promise<void>((resolve, reject) => {
       fetch(url, {
@@ -377,8 +373,8 @@ class AirgapRegistrySettings extends Component<Props, State> {
           if (res.status !== "running") {
             this.state.updateChecker.stop();
 
-            if (this.props.outletContext.updateCallback) {
-              this.props.outletContext.updateCallback();
+            if (this.props.updateCallback) {
+              this.props.updateCallback();
             }
           }
 
@@ -398,7 +394,7 @@ class AirgapRegistrySettings extends Component<Props, State> {
       hideCta,
       namespaceDescription,
       showHostnameAsRequired,
-    } = this.props.outletContext;
+    } = this.props;
     const {
       hostname,
       password,
@@ -646,7 +642,7 @@ class AirgapRegistrySettings extends Component<Props, State> {
               >
                 Save changes
               </button>
-              {!this.props.outletContext.app?.isAirgap && (
+              {!this.props.app?.isAirgap && (
                 <button
                   className="btn secondary blue"
                   disabled={disableStopUsingButton}
@@ -682,8 +678,8 @@ class AirgapRegistrySettings extends Component<Props, State> {
         >
           <div className="Modal-body">
             <p className="u-fontSize--large u-textColor--primary u-lineHeight--medium u-marginBottom--20">
-              This will create a version of {this.props.outletContext.app?.name}{" "}
-              without registry settings. Do you want to proceed?
+              This will create a version of {this.props.app?.name} without
+              registry settings. Do you want to proceed?
             </p>
             <div className="flex justifyContent--flexEnd">
               <button
