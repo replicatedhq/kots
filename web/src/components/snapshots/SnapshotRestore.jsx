@@ -108,7 +108,7 @@ class SnapshotRestore extends Component {
     });
     try {
       await this.fetchCancelRestore();
-      this.props.history.push("/snapshots");
+      this.props.navigate("/snapshots");
     } catch (err) {
       this.setState({
         cancelRestoreErr: true,

@@ -3,7 +3,7 @@ import React from "react";
 import { Link } from "react-router-dom";
 
 function navigateToConfiguration(props) {
-  props.history.push("/snapshots/settings?configure=true");
+  props.navigate("/snapshots/settings?configure=true");
 }
 
 export default function GettingStartedSnapshots(props) {

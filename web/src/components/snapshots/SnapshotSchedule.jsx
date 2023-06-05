@@ -238,7 +238,9 @@ class SnapshotSchedule extends Component {
     if (this.state.activeTab !== lastState.activeTab && this.state.activeTab) {
       if (this.state.activeTab === "full") {
         this.settingSnapshotConfig();
-        this.props.history.replace("/snapshots/settings");
+        this.props.navigate("/snapshots/settings", {
+          replace: true,
+        });
       } else {
         if (!isEmpty(this.props.apps) && this.props.location.search) {
           const currentApp = this.props.apps.find(
@@ -247,13 +249,18 @@ class SnapshotSchedule extends Component {
           this.setState({ selectedApp: currentApp }, () => {
             this.settingSnapshotConfig(currentApp);
           });
-          this.props.history.replace(`/snapshots/settings?${currentApp.slug}`);
+          this.props.navigate(`/snapshots/settings?${currentApp.slug}`, {
+            replace: true,
+          });
         } else if (!isEmpty(this.props.apps)) {
           this.setState({ selectedApp: this.props.apps[0] }, () => {
             this.settingSnapshotConfig(this.props.apps[0]);
           });
-          this.props.history.replace(
-            `/snapshots/settings?${this.props.apps[0].slug}`
+          this.props.navigate(
+            `/snapshots/settings?${this.props.apps[0].slug}`,
+            {
+              replace: true,
+            }
           );
         }
       }
@@ -264,8 +271,11 @@ class SnapshotSchedule extends Component {
       this.state.selectedApp
     ) {
       this.settingSnapshotConfig(this.state.selectedApp);
-      this.props.history.replace(
-        `/snapshots/settings?${this.state.selectedApp.slug}`
+      this.props.navigate(
+        `/snapshots/settings?${this.state.selectedApp.slug}`,
+        {
+          replace: true,
+        }
       );
     }
   };

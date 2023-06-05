@@ -100,7 +100,7 @@ class AppSnapshotRestore extends Component {
     });
     try {
       await this.fetchCancelRestore();
-      this.props.history.push(`/snapshots/partial/${this.props.app?.slug}`);
+      this.props.navigate(`/snapshots/partial/${this.props.app?.slug}`);
     } catch (err) {
       this.setState({
         cancelRestoreErr: true,
