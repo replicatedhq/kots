@@ -120,15 +120,15 @@ class SnapshotDetails extends Component {
   }
 
   componentDidUpdate(lastProps) {
-    const { match } = this.props;
-    if (match.params.id !== lastProps.match.params.id) {
+    const { params } = this.props;
+    if (params.id !== lastProps.params.id) {
       this.fetchSnapshotDetails();
     }
   }
 
   fetchSnapshotDetails = async () => {
-    const { match } = this.props;
-    const snapshotName = match.params.id;
+    const { params } = this.props;
+    const snapshotName = params.id;
 
     this.setState({
       errorMessage: "",
