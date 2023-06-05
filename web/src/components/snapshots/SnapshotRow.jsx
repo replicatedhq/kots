@@ -25,11 +25,11 @@ class SnapshotRow extends React.Component {
     const isExpired = dayjs(new Date()).isSameOrAfter(snapshot?.expiresAt);
     if (!isExpired && snapshot?.status !== "Deleting") {
       if (app) {
-        this.props.history.push(
+        this.props.navigate(
           `/snapshots/partial/${this.props.app.slug}/${snapshot?.name}`
         );
       } else {
-        this.props.history.push(`/snapshots/details/${snapshot?.name}`);
+        this.props.navigate(`/snapshots/details/${snapshot?.name}`);
       }
     }
   };

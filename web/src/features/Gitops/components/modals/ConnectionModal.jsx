@@ -56,7 +56,7 @@ const ConnectionModal = ({
                   type="button"
                   className="btn primary blue"
                   //TODO: WORK ON THIS
-                  onClick={() => history.push(`/app/${appSlug}`)}
+                  onClick={() => navigate(`/app/${appSlug}`)}
                 >
                   Go to dashboard
                 </button>

@@ -98,7 +98,9 @@ class AppSnapshots extends Component {
         });
       }, 3000);
       this.checkRestoreInProgress();
-      this.props.history.replace(`/snapshots/partial/${selectedApp.slug}`);
+      this.props.navigate(`/snapshots/partial/${selectedApp.slug}`, {
+        replace: true,
+      });
     }
   }
 
@@ -122,8 +124,11 @@ class AppSnapshots extends Component {
             restoreInProgressMsg: body.error,
           });
         } else if (body.status == "running") {
-          this.props.history.replace(
-            `/snapshots/partial/${selectedApp.slug}/${body.restore_name}/restore`
+          this.props.navigate(
+            `/snapshots/partial/${selectedApp.slug}/${body.restore_name}/restore`,
+            {
+              replace: true,
+            }
           );
         } else {
           this.state.listSnapshotsJob.start(this.listSnapshots, 2000);
@@ -216,7 +221,9 @@ class AppSnapshots extends Component {
             this.setState({
               isLoadingSnapshotSettings: false,
             });
-            this.props.history.replace("/snapshots/settings");
+            this.props.navigate("/snapshots/settings", {
+              replace: true,
+            });
             return;
           }
         }
@@ -226,12 +233,14 @@ class AppSnapshots extends Component {
         if (result?.isVeleroRunning && result?.isNodeAgentRunning) {
           if (!result?.store) {
             // velero and node-agent are running but a backup storage location is not configured yet
-            this.props.history.replace("/snapshots/settings");
+            this.props.navigate("/snapshots/settings", {
+              replace: true,
+            });
           } else {
             this.state.listSnapshotsJob.start(this.listInstanceSnapshots, 2000);
           }
         } else {
-          this.props.history.push("/snapshots/settings?configure=true");
+          this.props.navigate("/snapshots/settings?configure=true");
         }
         this.setState({
           snapshotSettings: result,
@@ -393,8 +402,11 @@ class AppSnapshots extends Component {
             restoreErrorMsg: "",
           });
 
-          this.props.history.replace(
-            `/snapshots/partial/${selectedApp.slug}/${snapshot.name}/restore`
+          this.props.navigate(
+            `/snapshots/partial/${selectedApp.slug}/${snapshot.name}/restore`,
+            {
+              replace: true,
+            }
           );
         } else {
           const body = await result.json();
@@ -459,7 +471,9 @@ class AppSnapshots extends Component {
             this.setState({
               startingSnapshot: false,
             });
-            this.props.history.replace("/snapshots/settings");
+            this.props.navigate("/snapshots/settings", {
+              replace: true,
+            });
             return;
           }
         }
@@ -568,7 +582,7 @@ class AppSnapshots extends Component {
     }
 
     if (!snapshotSettings?.store) {
-      this.props.history.replace("/snapshots");
+      this.props.navigate("/snapshots", { replace: true });
     }
 
     if (restoreInProgressErr) {

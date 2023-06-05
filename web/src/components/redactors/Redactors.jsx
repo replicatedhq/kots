@@ -231,7 +231,7 @@ class Redactors extends Component {
                 {
                   title: "Support bundles",
                   onClick: () =>
-                    this.props.history.push(
+                    this.props.navigate(
                       `/app/${this.props.appSlug}/troubleshoot`
                     ),
                   isActive: false,
@@ -239,7 +239,7 @@ class Redactors extends Component {
                 {
                   title: "Redactors",
                   onClick: () =>
-                    this.props.history.push(
+                    this.props.navigate(
                       `/app/${this.props.appSlug}/troubleshoot/redactors`
                     ),
                   isActive: true,

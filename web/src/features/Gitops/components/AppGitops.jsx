@@ -43,7 +43,7 @@ const AppGitops = () => {
     getInitialOwnerRepo();
 
     if (!gitopsEnabled) {
-      history.push(`/app/${selectedApp.slug}`);
+      navigate(`/app/${selectedApp.slug}`);
     }
   }, []);
 
