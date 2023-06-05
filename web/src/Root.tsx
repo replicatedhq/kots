@@ -51,6 +51,12 @@ import SupportBundleList from "@components/troubleshoot/SupportBundleList";
 import AnalyzerInsights from "@components/troubleshoot/AnalyzerInsights";
 import AnalyzerFileTree from "@components/troubleshoot/AnalyzerFileTree";
 import AnalyzerRedactorReport from "@components/troubleshoot/AnalyzerRedactorReport";
+import Snapshots from "@components/snapshots/Snapshots";
+import SnapshotSettings from "@components/snapshots/SnapshotSettings";
+import SnapshotDetails from "@components/snapshots/SnapshotDetails";
+import SnapshotRestore from "@components/snapshots/SnapshotRestore";
+import AppSnapshots from "@components/snapshots/AppSnapshots";
+import AppSnapshotRestore from "@components/snapshots/AppSnapshotRestore";
 
 // react-query client
 const queryClient = new QueryClient();
@@ -578,8 +584,9 @@ const Root = () => {
                   />
                 }
               />
+              {/* :tab?  */}
               <Route
-                path={"/snapshots/:tab?"}
+                path={"/snapshots/*"}
                 element={
                   <SnapshotsWrapper
                     appName={state.selectedAppName}
@@ -587,7 +594,65 @@ const Root = () => {
                     appsList={state.appsList}
                   />
                 }
-              />
+              >
+                <Route
+                  index
+                  element={
+                    <Snapshots
+                      isKurlEnabled={state.adminConsoleMetadata?.isKurl}
+                      appsList={state.appsList}
+                    />
+                  }
+                />
+                <Route
+                  path="settings"
+                  element={
+                    <SnapshotSettings
+                      isKurlEnabled={state.adminConsoleMetadata?.isKurl}
+                      appsList={state.appsList}
+                    />
+                  }
+                />
+                <Route
+                  path="details/:id"
+                  element={
+                    <SnapshotDetails
+                      isKurlEnabled={state.adminConsoleMetadata?.isKurl}
+                      appsList={state.appsList}
+                    />
+                  }
+                />
+                <Route path=":slug/:id/restore" element={<SnapshotRestore />} />
+                <Route
+                  path="partial/:slug"
+                  element={
+                    <AppSnapshots
+                      appsList={state.appsList}
+                      app={state.app}
+                      appName={state.selectedAppName}
+                    />
+                  }
+                />
+                <Route
+                  path="partial/:slug/:id"
+                  element={
+                    <SnapshotDetails
+                      appsList={state.appsList}
+                      app={state.app}
+                      appName={state.selectedAppName}
+                    />
+                  }
+                />
+                <Route
+                  path="partial/:slug/:id/restore"
+                  element={
+                    <AppSnapshotRestore
+                      appsList={state.appsList}
+                      app={state.app}
+                    />
+                  }
+                />
+              </Route>
               <Route
                 path={"/apps"}
                 element={
@@ -621,72 +686,18 @@ const Root = () => {
                 <Route path=":slug" element={<Dashboard />} />
                 <Route
                   path=":slug/tree/:sequence?"
-                  element={
-                    <DownstreamTree
-                    // app={selectedApp}
-                    // appNameSpace={props.appNameSpace}
-                    // isHelmManaged={props.isHelmManaged}
-                    />
-                  }
+                  element={<DownstreamTree />}
                 />
 
                 <Route
                   path={":slug/version-history"}
-                  element={
-                    <AppVersionHistory
-                    // app={selectedApp}
-                    // match={{ match: { params: params } }}
-                    // makeCurrentVersion={makeCurrentRelease}
-                    // makingCurrentVersionErrMsg={
-                    //   state.makingCurrentReleaseErrMsg
-                    // }
-                    // updateCallback={refetchData}
-                    // toggleIsBundleUploading={toggleIsBundleUploading}
-                    // isBundleUploading={isBundleUploading}
-                    // isHelmManaged={props.isHelmManaged}
-                    // refreshAppData={refetchApps}
-                    // displayErrorModal={state.displayErrorModal}
-                    // toggleErrorModal={toggleErrorModal}
-                    // makingCurrentRelease={state.makingCurrentRelease}
-                    // redeployVersion={redeployVersion}
-                    // redeployVersionErrMsg={state.redeployVersionErrMsg}
-                    // resetRedeployErrorMessage={resetRedeployErrorMessage}
-                    // resetMakingCurrentReleaseErrorMessage={
-                    //   resetMakingCurrentReleaseErrorMessage
-                    // }
-                    // adminConsoleMetadata={props.adminConsoleMetadata}
-                    />
-                  }
+                  element={<AppVersionHistory />}
                 />
                 <Route
                   path={
                     ":slug/version-history/diff/:firstSequence/:secondSequence"
                   }
-                  element={
-                    <AppVersionHistory
-                    // app={selectedApp}
-                    // match={{ match: { params: params } }}
-                    // makeCurrentVersion={makeCurrentRelease}
-                    // makingCurrentVersionErrMsg={
-                    //   state.makingCurrentReleaseErrMsg
-                    // }
-                    // updateCallback={refetchData}
-                    // toggleIsBundleUploading={toggleIsBundleUploading}
-                    // isBundleUploading={isBundleUploading}
-                    // isHelmManaged={props.isHelmManaged}
-                    // refreshAppData={refetchApps}
-                    // displayErrorModal={state.displayErrorModal}
-                    // toggleErrorModal={toggleErrorModal}
-                    // makingCurrentRelease={state.makingCurrentRelease}
-                    // redeployVersion={redeployVersion}
-                    // redeployVersionErrMsg={state.redeployVersionErrMsg}
-                    // resetRedeployErrorMessage={resetRedeployErrorMessage}
-                    // resetMakingCurrentReleaseErrorMessage={
-                    //   resetMakingCurrentReleaseErrorMessage
-                    // }
-                    // adminConsoleMetadata={props.adminConsoleMetadata}
-                    />
-                  }
+                  element={<AppVersionHistory />}
                 />
                 <Route
                   path=":slug/downstreams/:downstreamSlug/version-history/preflight/:sequence"
@@ -698,17 +709,7 @@ const Root = () => {
                     />
                   }
                 />
-                <Route
-                  path=":slug/config/:sequence?"
-                  element={
-                    <AppConfig
-                    // app={selectedApp}
-                    // refreshAppData={refetchApps}
-                    // fromLicenseFlow={false}
-                    // isHelmManaged={props.isHelmManaged}
-                    />
-                  }
-                />
+                <Route path=":slug/config/:sequence?" element={<AppConfig />} />
                 <Route
                   path=":slug/troubleshoot"
                   element={
@@ -751,12 +752,7 @@ const Root = () => {
                 {state.app?.isAppIdentityServiceSupported && (
                   <Route
                     path=":slug/access"
-                    element={
-                      <AppIdentityServiceSettings
-                      // app={selectedApp}
-                      // refetch={refetchApps}
-                      />
-                    }
+                    element={<AppIdentityServiceSettings />}
                   />
                 )}
                 {/* snapshots redirects */}
