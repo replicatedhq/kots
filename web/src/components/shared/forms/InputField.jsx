@@ -17,6 +17,8 @@ const InputField = ({
   helperText,
   isFirstChange,
   showError = false,
+  disabled = false,
+  readOnly = false,
 }) => {
   const [show, setShow] = React.useState(false);
 
@@ -53,6 +55,8 @@ const InputField = ({
           onChange={(e) => onChange(e)}
           onBlur={onBlur}
           onFocus={onFocus}
+          disabled={disabled}
+          readOnly={readOnly}
         />
         {type !== "password" && showError && (
           <span className="show-input-error">
