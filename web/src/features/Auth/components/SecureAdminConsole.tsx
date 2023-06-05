@@ -65,9 +65,7 @@ class SecureAdminConsole extends React.Component<Props, State> {
           this.props.navigate(`/app/${apps[0].slug}`, { replace: true });
         } else if (pendingApp?.slug && pendingApp?.needsRegistry) {
           this.props.navigate(`/${pendingApp.slug}/airgap`, { replace: true });
-        } else if (
-          (pendingApp?.slug && !pendingApp?.needsRegistry, { replace: true })
-        ) {
+        } else if (pendingApp?.slug && !pendingApp?.needsRegistry) {
           this.props.navigate(`/${pendingApp.slug}/airgap-bundle`, {
             replace: true,
           });
