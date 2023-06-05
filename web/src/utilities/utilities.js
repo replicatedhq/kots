@@ -133,42 +133,40 @@ export function secondsAgo(time) {
  * @param {Int} minFontSize The minimum font-size the string can be (ex 18)
  * @return {String} new font-size for text to fit one line (ex 28px)
  */
-export function dynamicallyResizeText(
-  text,
-  maxWidth,
-  defaultFontSize,
-  minFontSize
-) {
+export function dynamicallyResizeText(text, maxWidth, defaultFontSize) {
   let size;
   const resizerElm = document.createElement("p");
   resizerElm.textContent = text;
-  resizerElm.setAttribute("class", "u-fontWeight--bold");
-  resizerElm.setAttribute(
-    "style",
-    `visibility: hidden; z-index: -1; position: absolute; font-size: ${defaultFontSize}`
-  );
+  resizerElm.classList.add("u-fontWeight--bold");
+  resizerElm.style.visibility = "hidden";
+  resizerElm.style.zIndex = "-1";
+  resizerElm.style.position = "absolute";
+  resizerElm.style.fontSize = defaultFontSize;
   document.body.appendChild(resizerElm);
 
-  if (resizerElm.getBoundingClientRect().width < maxWidth) {
+  const resizerWidth = () => resizerElm.getBoundingClientRect().width;
+  const resizerFontSize = () => parseInt(resizerElm.style.fontSize, 10);
+  if (resizerWidth() - maxWidth < 300) {
     resizerElm.remove();
-    return defaultFontSize;
+    size = defaultFontSize;
   }
 
-  while (resizerElm.getBoundingClientRect().width > maxWidth) {
-    if (resizerElm.style.fontSize > 10) {
-      size = parseInt(resizerElm.style.fontSize, 10);
+  // if the difference between the resizer width and the max width is greater than 350px, then resize the font
+  while (resizerWidth() - maxWidth >= 350) {
+    // do not let resizeFontSize go below 24px
+    if (resizerFontSize > 24) {
       resizerElm.style.fontSize = `${size - 1}px`;
+      size = resizerFontSize;
     } else {
-      return `${minFontSize}`;
+      return `24px`;
     }
   }
 
   resizerElm.remove();
-  if (minFontSize && size < minFontSize) {
-    return `${minFontSize}px`;
+  if (size < 24) {
+    return "24px";
   }
-  // Font size needs to be 1px smaller than the last calculated size to fully fit in the container
-  return `${size - 1}px`;
+  return size;
 }
 
 export function sortAnalyzers(bundleInsight) {

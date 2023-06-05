@@ -194,8 +194,7 @@ class SecureAdminConsole extends React.Component<Props, State> {
     const newFontSize = dynamicallyResizeText(
       this.loginText.current.innerHTML,
       this.loginText.current.clientWidth,
-      "32px",
-      "10px"
+      "32px"
     );
     this.loginText.current.style.fontSize = newFontSize;
   };
@@ -231,9 +230,9 @@ class SecureAdminConsole extends React.Component<Props, State> {
     return null;
   };
 
-  componentDidUpdate(lastProps: Props) {
+  componentDidUpdate() {
     const { appName } = this.props;
-    if (appName && appName !== lastProps.appName) {
+    if (appName) {
       if (this.loginText) {
         this.resizeLoginFont();
       }
