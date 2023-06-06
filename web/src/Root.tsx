@@ -498,6 +498,7 @@ const Root = () => {
                   <AppConfig
                     fromLicenseFlow={true}
                     refetchAppsList={getAppsList}
+                    isHelmManaged={state.isHelmManaged}
                   />
                 }
               />
