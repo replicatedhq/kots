@@ -203,6 +203,10 @@ func GetReportingInfo(appID string) *types.ReportingInfo {
 		r.K8sVersion = k8sVersion
 	}
 
+	if distribution := GetDistribution(); distribution != UnknownDistribution {
+		r.K8sDistribution = distribution.String()
+	}
+
 	// get app status
 	if util.IsHelmManaged() {
 		logger.Infof("TODO: get app status in Helm managed mode")

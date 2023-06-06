@@ -57,6 +57,10 @@ func InjectReportingInfoHeaders(req *http.Request, reportingInfo *types.Reportin
 
 	req.Header.Set("X-Replicated-IsGitOpsEnabled", strconv.FormatBool(reportingInfo.IsGitOpsEnabled))
 	req.Header.Set("X-Replicated-GitOpsProvider", reportingInfo.GitOpsProvider)
+
+	if reportingInfo.K8sDistribution != "" {
+		req.Header.Set("X-Replicated-K8sDistribution", reportingInfo.K8sDistribution)
+	}
 }
 
 func canReport(endpoint string) bool {
