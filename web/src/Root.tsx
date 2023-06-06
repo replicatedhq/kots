@@ -710,7 +710,16 @@ const Root = () => {
                     />
                   }
                 />
-                <Route path=":slug/config/:sequence?" element={<AppConfig />} />
+                <Route
+                  path=":slug/config/:sequence?"
+                  element={
+                    <AppConfig
+                      fromLicenseFlow={true}
+                      refetchAppsList={getAppsList}
+                      isHelmManaged={state.isHelmManaged}
+                    />
+                  }
+                />
                 <Route
                   path=":slug/troubleshoot"
                   element={
