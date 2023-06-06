@@ -17,7 +17,7 @@ import { App, KotsParams } from "@types";
 import { useLocation, useNavigate } from "react-router-dom";
 
 type Props = {
-  params: typeof <KotsParams>;
+  params: KotsParams;
   location: ReturnType<typeof useLocation>;
   navigate: ReturnType<typeof useNavigate>;
   outletContext: {
@@ -25,7 +25,7 @@ type Props = {
     appName: string;
     appNameSpace: string;
     isHelmManaged: boolean;
-  }
+  };
 };
 
 type State = {
