@@ -72,7 +72,6 @@ class TroubleshootContainer extends Component<RouterProps, State> {
           return;
         }
         const bundle = await res.json();
-        console.log("hee", bundle);
         this.setState({
           bundleAnalysisProgress: bundle.progress,
           bundle,

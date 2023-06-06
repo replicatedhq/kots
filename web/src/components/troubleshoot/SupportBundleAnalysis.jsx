@@ -38,8 +38,8 @@ export class SupportBundleAnalysis extends React.Component {
       sendingBundle: false,
       sendingBundleErrMsg: "",
       showPodAnalyzerDetailsModal: false,
-      pollForBundleAnalysisProgress: new Repeater(),
     };
+    this.pollingRef = React.createRef();
   }
 
   togglePodDetailsModal = (selectedPod) => {
@@ -169,17 +169,10 @@ export class SupportBundleAnalysis extends React.Component {
           bundle: bundle,
         });
 
-        this.state.pollForBundleAnalysisProgress.start(
-          this.props.outletContext.pollForBundleAnalysisProgress,
-          1000
-        );
-
         if (bundle.status === "running") {
-          console.log("bundle runn", bundle);
-          this.state.pollForBundleAnalysisProgress.start(
-            this.props.outletContext.pollForBundleAnalysisProgress,
-            1000
-          );
+          this.pollingRef.current = setInterval(() => {
+            this.props.outletContext.pollForBundleAnalysisProgress();
+          }, 1000);
         }
       })
       .catch((err) => {
@@ -220,11 +213,12 @@ export class SupportBundleAnalysis extends React.Component {
     this.getSupportBundle();
   }
   componentWillUnmount() {
-    this.state.pollForBundleAnalysisProgress.stop();
+    clearInterval(this.pollingRef.current);
   }
 
   componentDidUpdate = (lastProps) => {
-    const { location, bundle } = this.props;
+    const { location } = this.props;
+    const { bundle } = this.props.outletContext;
     if (location !== lastProps.location) {
       this.setState({
         activeTab:
@@ -239,7 +233,8 @@ export class SupportBundleAnalysis extends React.Component {
       bundle?.status !== "running" &&
       bundle?.status !== lastProps.outletContext.bundle.status
     ) {
-      this.state.pollForBundleAnalysisProgress.stop();
+      console.log("clear", bundle?.status);
+      clearInterval(this.pollingRef.current);
     }
   };
 
