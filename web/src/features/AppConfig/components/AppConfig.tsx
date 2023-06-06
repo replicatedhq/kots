@@ -28,7 +28,7 @@ import { App, KotsParams, Version } from "@types";
 
 type Props = {
   location: ReturnType<typeof useLocation>;
-  params: typeof <KotsParams>;
+  params: KotsParams;
   app: App;
   fromLicenseFlow: boolean;
   isHelmManaged: boolean;
