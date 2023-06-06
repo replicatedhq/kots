@@ -1,8 +1,5 @@
 import React, { useEffect, useContext } from "react";
-import {
-  withRouter,
-  withRouterType,
-} from "@src/utilities/react-router-utilities";
+import { withRouter } from "@src/utilities/react-router-utilities";
 import Loader from "../shared/Loader";
 import dayjs from "dayjs";
 import filter from "lodash/filter";
@@ -13,11 +10,12 @@ import Icon from "../Icon";
 import "@src/scss/components/AirgapUploadProgress.scss";
 
 import {
+  KotsParams,
   SupportBundle,
   SupportBundleInsight,
   SupportBundleProgress,
 } from "@types";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { ToastContext } from "@src/context/ToastContext";
 
 let percentage: number;
@@ -33,7 +31,7 @@ type Props = {
   //deleteBundleFromList: (id: string) => void;
   watchSlug: string;
   className: string;
-} & withRouterType;
+};
 
 type State = {
   downloadBundleErrMsg?: string;
@@ -57,6 +55,8 @@ export const SupportBundleRow = (props: Props) => {
     setToastType,
     setToastChild,
   } = useContext(ToastContext);
+
+  const params = useParams<KotsParams>();
 
   const [state, setState] = React.useReducer(
     (currentState: State, newState: Partial<State>) => ({
@@ -169,7 +169,6 @@ export const SupportBundleRow = (props: Props) => {
   }, [isCancelled]);
 
   const deleteBundle = (bundle: SupportBundle) => {
-    const { params } = props;
     const delayFetch = 7000;
     const bundleCollectionDate = dayjs(bundle?.createdAt)?.format(
       "MMMM D, YYYY @ h:mm a"
@@ -494,5 +493,5 @@ export const SupportBundleRow = (props: Props) => {
 
 /* eslint-disable */
 // @ts-ignore
-export default withRouter(SupportBundleRow) as any;
+export default withRouter(SupportBundleRow);
 /* eslint-enable*/

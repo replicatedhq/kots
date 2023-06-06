@@ -5,6 +5,7 @@ import Loader from "@src/components/shared/Loader";
 import ErrorModal from "@src/components/modals/ErrorModal";
 import "@src/scss/components/Login.scss";
 import { App } from "@types";
+import { useNavigate } from "react-router-dom";
 
 type Props = {
   appName: string | null;
@@ -13,7 +14,7 @@ type Props = {
   pendingApp: () => Promise<App>;
   checkIsHelmManaged: () => Promise<boolean>;
   logo: string | null;
-  navigate: (path: string, options?: { replace: boolean }) => void;
+  navigate: ReturnType<typeof useNavigate>;
 };
 
 type State = {

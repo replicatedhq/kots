@@ -1,6 +1,6 @@
 import React, { Component } from "react";
 import { AppConfigRenderer } from "../../../components/AppConfigRenderer";
-import { Link } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { withRouter } from "@src/utilities/react-router-utilities";
 import classNames from "classnames";
 import { KotsPageTitle } from "@components/Head";
@@ -25,15 +25,17 @@ import Icon from "@src/components/Icon";
 
 // Types
 import { App, KotsParams, Version } from "@types";
-import { RouteComponentProps } from "react-router-dom";
 
 type Props = {
+  location: ReturnType<typeof useLocation>;
+  params: typeof <KotsParams>;
   app: App;
   fromLicenseFlow: boolean;
   isHelmManaged: boolean;
   refreshAppData: () => void;
   refetchAppsList: () => void;
-} & RouteComponentProps<KotsParams>;
+  navigate: ReturnType<typeof useNavigate>;
+};
 
 // This was typed from the implementation of the component so it might be wrong
 type ConfigGroup = {
@@ -161,6 +163,7 @@ class AppConfig extends Component<Props, State> {
     ) {
       this.determineSidebarHeight();
     }
+    // need to dig into this more
     if (location.hash !== lastProps.location.hash && location.hash) {
       // navigate to error if there is one
       if (this.state.showConfigError) {

@@ -72,6 +72,31 @@ import { Updates, useCheckForUpdates } from "../api/getUpdates";
 // updateCallback: () => void | null;
 //};
 
+type OutletContext = {
+  app: App;
+  cluster: {
+    // TODO: figure out if this is actually a "" | number- maybe just go with number
+    id: "" | number;
+  };
+  isBundleUploading: boolean;
+  isHelmManaged: boolean;
+  isVeleroInstalled: boolean;
+  makeCurrentVersion: (
+    slug: string,
+    versionToDeploy: Version,
+    isSkipPreflights: boolean,
+    continueWithFailedPreflights: boolean
+  ) => void;
+  ping: (clusterId?: string) => void;
+  redeployVersion: (
+    upstreamSlug: string,
+    version: Version | null
+  ) => Promise<void>;
+  refreshAppData: () => void;
+  toggleIsBundleUploading: (isUploading: boolean) => void;
+  updateCallback: () => void | null;
+};
+
 // TODO:  update these strings so that they are not nullable (maybe just set default to "")
 type State = {
   activeChart: string | null;
@@ -165,8 +190,8 @@ const Dashboard = () => {
     refreshAppData,
     toggleIsBundleUploading,
     updateCallback,
-  } = useOutletContext();
-  const match = useParams();
+  }: OutletContext = useOutletContext();
+  const params = useParams();
   // const { app, isBundleUploading, isVeleroInstalled } = props;
   const airgapUploader = useRef<AirgapUploader | null>(null);
 
@@ -324,7 +349,7 @@ const Dashboard = () => {
 
     toggleIsBundleUploading(true);
 
-    const params = {
+    const processParams = {
       appId: app?.id,
     };
 
@@ -332,7 +357,7 @@ const Dashboard = () => {
     // eslint-disable-next-line
     // @ts-ignore
     airgapUploader.current?.upload(
-      params,
+      processParams,
       onUploadProgress,
       onUploadError,
       onUploadComplete
@@ -371,7 +396,7 @@ const Dashboard = () => {
   };
 
   const goToTroubleshootPage = () => {
-    navigate(`${match.url}/troubleshoot`);
+    navigate(`${params.url}/troubleshoot`);
   };
 
   const getAppResourcesByState = () => {
@@ -654,7 +679,7 @@ const Dashboard = () => {
                   </p>
                   <AppStatus
                     appStatus={appStatus?.state}
-                    url={match.url}
+                    url={params.url}
                     onViewAppStatusDetails={toggleAppStatusModal}
                     links={links}
                     app={app}
@@ -694,7 +719,7 @@ const Dashboard = () => {
                   {app.allowSnapshots && isVeleroInstalled ? (
                     <div className="u-marginBottom--30">
                       <DashboardSnapshotsCard
-                        url={match.url}
+                        url={params.url}
                         app={app}
                         ping={ping}
                         isSnapshotAllowed={

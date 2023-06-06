@@ -1,10 +1,7 @@
 import * as React from "react";
 import { useReducer, useEffect, useContext } from "react";
 import { KotsPageTitle } from "@components/Head";
-import {
-  withRouter,
-  withRouterType,
-} from "@src/utilities/react-router-utilities";
+import { withRouter } from "@src/utilities/react-router-utilities";
 
 import Toggle from "../shared/Toggle";
 import Loader from "../shared/Loader";
@@ -34,7 +31,7 @@ type Props = {
   updateBundleSlug: (slug: string) => void;
   updateState: (value: Object) => void;
   watch: App | null;
-} & withRouterType;
+};
 
 type State = {
   bundleAnalysisProgress?: SupportBundleProgress;
@@ -371,7 +368,7 @@ export const SupportBundleList = (props: Props) => {
         <GenerateSupportBundleModal
           isOpen={isGeneratingBundleOpen}
           toggleModal={toggleGenerateBundleModal}
-          watch={watch}
+          selectedApp={selectedApp}
           updateBundleSlug={outletContext.updateBundleSlug}
         />
       </div>

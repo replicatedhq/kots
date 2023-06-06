@@ -1,5 +1,5 @@
 import React, { Component } from "react";
-import { Link } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
 import Modal from "react-modal";
@@ -77,6 +77,7 @@ type Props = {
     toggleErrorModal: () => void;
     toggleIsBundleUploading: (isUploading: boolean) => void;
     updateCallback: () => void;
+    params: ReturnType<typeof useParams>;
   };
 } & RouterProps;
 
@@ -253,8 +254,7 @@ class AppVersionHistory extends Component<Props, State> {
     this.state.appUpdateChecker.start(this.getAppUpdateStatus, 1000);
 
     const url = window.location.pathname;
-    const { params } = this.props.outletContext;
-    console.log(params, "param");
+    const { params } = this.props;
     if (url.includes("/diff")) {
       const firstSequence = params.firstSequence;
       const secondSequence = params.secondSequence;
@@ -1459,6 +1459,7 @@ class AppVersionHistory extends Component<Props, State> {
     return (
       <React.Fragment key={index}>
         <AppVersionHistoryRow
+          navigate={this.props.navigate}
           adminConsoleMetadata={this.props.outletContext.adminConsoleMetadata}
           deployVersion={this.deployVersion}
           downloadVersion={this.downloadVersion}
@@ -2305,7 +2306,7 @@ class AppVersionHistory extends Component<Props, State> {
             toggleErrorModal={this.toggleErrorModal}
             err={errorTitle}
             errMsg={errorMsg}
-            appSlug={this.props.params.slug}
+            appSlug={this.props.params?.slug}
           />
         )}
         {this.state.showNoChangesModal && (

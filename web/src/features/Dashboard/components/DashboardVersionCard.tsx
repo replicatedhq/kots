@@ -553,10 +553,10 @@ const DashboardVersionCard = (props: Props) => {
   ) => {
     const { versionToDeploy, isSkipPreflights } = state;
     setState({ displayConfirmDeploymentModal: false, confirmType: "" });
-    if (redeploy) {
+    if (redeploy && params?.slug) {
       await props.redeployVersion(params.slug, versionToDeploy);
     }
-    if (versionToDeploy) {
+    if (versionToDeploy && params?.slug) {
       await props.makeCurrentVersion(
         params.slug,
         versionToDeploy,
