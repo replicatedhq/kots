@@ -714,7 +714,7 @@ const Root = () => {
                   path=":slug/config/:sequence?"
                   element={
                     <AppConfig
-                      fromLicenseFlow={true}
+                      fromLicenseFlow={false}
                       refetchAppsList={getAppsList}
                       isHelmManaged={state.isHelmManaged}
                     />
