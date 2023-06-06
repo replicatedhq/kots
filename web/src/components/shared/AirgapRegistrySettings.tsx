@@ -10,7 +10,6 @@ import { Repeater } from "../../utilities/repeater";
 import Icon from "../Icon";
 import { App } from "@types";
 import InputField from "./forms/InputField";
-import { useParams } from "react-router-dom";
 
 type Props = {
   app: App;
