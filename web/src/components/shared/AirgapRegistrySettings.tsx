@@ -10,6 +10,7 @@ import { Repeater } from "../../utilities/repeater";
 import Icon from "../Icon";
 import { App } from "@types";
 import InputField from "./forms/InputField";
+import { useParams } from "react-router-dom";
 
 type Props = {
   app: App;
@@ -20,6 +21,7 @@ type Props = {
   hideTestConnection: boolean;
   namespaceDescription: string;
   showHostnameAsRequired: boolean;
+  params: { slug: string };
 };
 
 interface RegistryDetails {
@@ -164,7 +166,7 @@ class AirgapRegistrySettings extends Component<Props, State> {
       testMessage: "",
     });
 
-    const { slug } = this.props.app;
+    const { slug } = this.props.params;
 
     let res;
     try {
