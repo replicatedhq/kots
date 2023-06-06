@@ -13,13 +13,19 @@ import FileTree from "../shared/FileTree";
 import "../../scss/components/troubleshoot/FileTree.scss";
 
 // Types
-import { App } from "@types";
+import { App, KotsParams } from "@types";
+import { useLocation, useNavigate } from "react-router-dom";
 
 type Props = {
-  app: App;
-  appName: string;
-  appNameSpace: string;
-  isHelmManaged: boolean;
+  params: typeof <KotsParams>;
+  location: ReturnType<typeof useLocation>;
+  navigate: ReturnType<typeof useNavigate>;
+  outletContext: {
+    app: App;
+    appName: string;
+    appNameSpace: string;
+    isHelmManaged: boolean;
+  }
 };
 
 type State = {

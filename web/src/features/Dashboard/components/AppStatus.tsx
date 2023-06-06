@@ -22,7 +22,7 @@ type Props = {
   hasStatusInformers?: boolean;
   links: PropLink[];
   onViewAppStatusDetails: () => void;
-  url: string;
+  url: string | undefined;
 };
 
 type State = {
