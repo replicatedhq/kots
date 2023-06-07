@@ -22,7 +22,7 @@ class SnapshotsWrapper extends Component {
     const selectedApp =
       snapshotsApps.find((app) => app.slug === this.props.params?.slug) ||
       snapshotsApps[0];
-
+    const tab = this.props.params["*"].split("/")[0];
     return (
       <div className="WatchDetailPage--wrapper flex-column flex1 u-overflow--auto">
         <KotsPageTitle pageName="Version History" />
@@ -37,15 +37,11 @@ class SnapshotsWrapper extends Component {
                 className="flex"
                 isSnapshots={true}
                 activeTab={
-                  this.props.params.tab
-                    ? this.props.params.tab === "details"
-                      ? "snapshots"
-                      : this.props.params.tab
-                    : "snapshots"
+                  tab ? (tab === "details" ? "snapshots" : tab) : "snapshots"
                 }
                 app={selectedApp}
               />
-              <Outlet />
+              <Outlet context={{ app: selectedApp }} />
             </Fragment>
           )}
         </div>
