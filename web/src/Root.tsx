@@ -629,7 +629,6 @@ const Root = () => {
                   element={
                     <AppSnapshots
                       appsList={state.appsList}
-                      app={state.app}
                       appName={state.selectedAppName}
                     />
                   }
