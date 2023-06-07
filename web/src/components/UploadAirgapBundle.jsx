@@ -370,11 +370,11 @@ class UploadAirgapBundle extends React.Component {
     const app = await this.getApp(params.slug);
 
     if (app?.isConfigurable) {
-      this.props.history.replace(`/${app.slug}/config`);
+      this.props.navigate(`/${app.slug}/config`, { replace: true });
     } else if (app?.hasPreflight) {
-      this.props.history.replace(`/${app.slug}/preflight`);
+      this.props.navigate(`/${app.slug}/preflight`, { replace: true });
     } else {
-      this.props.history.replace(`/app/${app.slug}`);
+      this.props.navigate(`/app/${app.slug}`, { replace: true });
     }
   };
 

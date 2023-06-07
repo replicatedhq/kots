@@ -499,6 +499,7 @@ const Root = () => {
                     fromLicenseFlow={true}
                     refetchAppsList={getAppsList}
                     isHelmManaged={state.isHelmManaged}
+                    app={state.app}
                   />
                 }
               />
@@ -716,6 +717,7 @@ const Root = () => {
                       fromLicenseFlow={false}
                       refetchAppsList={getAppsList}
                       isHelmManaged={state.isHelmManaged}
+                      app={state.app}
                     />
                   }
                 />
