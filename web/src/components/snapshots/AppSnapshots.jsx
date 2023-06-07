@@ -58,8 +58,8 @@ class AppSnapshots extends Component {
   };
 
   componentDidMount = async () => {
-    if (!isEmpty(this.props.app)) {
-      this.setState({ selectedApp: this.props.app });
+    if (!isEmpty(this.props.outletContext.app)) {
+      this.setState({ selectedApp: this.props.outletContext.app });
     }
 
     await this.fetchSnapshotSettings();
@@ -152,7 +152,7 @@ class AppSnapshots extends Component {
     });
     try {
       const res = await fetch(
-        `${process.env.API_ENDPOINT}/app/${selectedApp.slug}/snapshots`,
+        `${process.env.API_ENDPOINT}/app/${selectedApp?.slug}/snapshots`,
         {
           method: "GET",
           headers: {
