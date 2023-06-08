@@ -380,6 +380,7 @@ function AppDetailPage(props: Props) {
     adminConsoleMetadata: props.adminConsoleMetadata,
     app: selectedApp,
     appName: props.appName,
+    appNameSpace: props.appNameSpace,
     cluster: selectedApp?.downstream?.cluster,
     displayErrorModal: state.displayErrorModal,
     isBundleUploading: isBundleUploading,
