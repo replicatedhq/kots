@@ -10,6 +10,7 @@ type ReportingInfo struct {
 	KurlNodeCountTotal int            `json:"kurl_node_count_total"`
 	KurlNodeCountReady int            `json:"kurl_node_count_ready"`
 	K8sVersion         string         `json:"k8s_version"`
+	K8sDistribution    string         `json:"k8s_distribution"`
 	KOTSVersion        string         `json:"kots_version"`
 	KOTSInstallID      string         `json:"kots_install_id"`
 	KURLInstallID      string         `json:"kurl_install_id"`
