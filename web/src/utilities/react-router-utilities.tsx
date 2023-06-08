@@ -1,3 +1,4 @@
+import { useSelectedApp } from "@features/App";
 import React, { ComponentType } from "react";
 import {
   useNavigate,
@@ -20,6 +21,7 @@ export function withRouter<TProps extends RouterProps>(
     let navigate = useNavigate();
     let params = useParams();
     const outletContext = useOutletContext();
+    const selectedApp = useSelectedApp();
     return (
       <Component
         {...props}
@@ -27,6 +29,7 @@ export function withRouter<TProps extends RouterProps>(
         navigate={navigate}
         params={params}
         outletContext={outletContext}
+        app={selectedApp}
       />
     );
   }

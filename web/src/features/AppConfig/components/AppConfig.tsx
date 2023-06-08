@@ -148,11 +148,11 @@ class AppConfig extends Component<Props, State> {
   }
 
   componentDidUpdate(lastProps: Props, lastState: State) {
-    const { params, location } = this.props;
+    const { params, location, app } = this.props;
 
-    if (this.state.app && !this.state.app.isConfigurable) {
+    if (app && !app.isConfigurable) {
       // app not configurable - redirect
-      this.props.navigate(`/app/${this.state.app.slug}`, { replace: true });
+      this.props.navigate(`/app/${app.slug}`, { replace: true });
     }
     if (params.sequence !== lastProps.params.sequence) {
       this.getConfig();
@@ -416,7 +416,8 @@ class AppConfig extends Component<Props, State> {
         }
 
         if (fromLicenseFlow) {
-          const hasPreflight = this.state.app?.hasPreflight;
+          const hasPreflight = this.props.app.hasPreflight;
+
           if (hasPreflight) {
             navigate(`/${slug}/preflight`, { replace: true });
           } else {
@@ -676,7 +677,7 @@ class AppConfig extends Component<Props, State> {
       showValidationError,
     } = this.state;
     const { fromLicenseFlow, params, isHelmManaged } = this.props;
-    const app = this.props.app || this.state.app;
+    const app = this.props.app;
 
     if (configLoading || !app) {
       return (

@@ -499,7 +499,6 @@ const Root = () => {
                     fromLicenseFlow={true}
                     refetchAppsList={getAppsList}
                     isHelmManaged={state.isHelmManaged}
-                    app={state.app}
                   />
                 }
               />
@@ -639,19 +638,13 @@ const Root = () => {
                   element={
                     <SnapshotDetails
                       appsList={state.appsList}
-                      app={state.app}
                       appName={state.selectedAppName}
                     />
                   }
                 />
                 <Route
                   path="partial/:slug/:id/restore"
-                  element={
-                    <AppSnapshotRestore
-                      appsList={state.appsList}
-                      app={state.app}
-                    />
-                  }
+                  element={<AppSnapshotRestore appsList={state.appsList} />}
                 />
               </Route>
               <Route
@@ -711,13 +704,12 @@ const Root = () => {
                   }
                 />
                 <Route
-                  path=":slug/config/:sequence?"
+                  path=":slug/config/:sequence"
                   element={
                     <AppConfig
                       fromLicenseFlow={false}
                       refetchAppsList={getAppsList}
                       isHelmManaged={state.isHelmManaged}
-                      app={state.app}
                     />
                   }
                 />
