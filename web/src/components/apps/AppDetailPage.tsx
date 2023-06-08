@@ -274,6 +274,19 @@ function AppDetailPage(props: Props) {
     }
   };
 
+  useEffect(() => {
+    refetchApps();
+    if (location.pathname === "/apps") {
+      return;
+    }
+    // getApp();
+    checkIsVeleroInstalled();
+    return () => {
+      theme.clearThemeState();
+      setAppsRefetchInterval(false);
+    };
+  }, [location.pathname]);
+
   // Enforce initial app configuration (if exists)
   useEffect(() => {
     // Handle updating the theme state when switching apps.
@@ -315,19 +328,6 @@ function AppDetailPage(props: Props) {
       }
     }
   }, [selectedApp]);
-
-  useEffect(() => {
-    refetchApps();
-    if (location.pathname === "/apps") {
-      return;
-    }
-    // getApp();
-    checkIsVeleroInstalled();
-    return () => {
-      theme.clearThemeState();
-      setAppsRefetchInterval(false);
-    };
-  }, [location.pathname]);
 
   const {
     displayRequiredKotsUpdateModal,

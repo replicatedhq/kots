@@ -421,9 +421,7 @@ class AppConfig extends Component<Props, State> {
           if (hasPreflight) {
             navigate(`/${slug}/preflight`, { replace: true });
           } else {
-            if (this.props.refetchAppsList) {
-              await this.props.refetchAppsList();
-            }
+            await this.props.refetchApps();
             navigate(`/app/${slug}`, { replace: true });
           }
         } else {

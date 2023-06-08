@@ -1,4 +1,5 @@
 import { useSelectedApp } from "@features/App";
+import useApps from "@features/Gitops/hooks/useApps";
 import React, { ComponentType } from "react";
 import {
   useNavigate,
@@ -22,6 +23,7 @@ export function withRouter<TProps extends RouterProps>(
     let params = useParams();
     const outletContext = useOutletContext();
     const selectedApp = useSelectedApp();
+    const { refetch: refetchApps } = useApps();
     return (
       <Component
         {...props}
@@ -30,6 +32,7 @@ export function withRouter<TProps extends RouterProps>(
         params={params}
         outletContext={outletContext}
         app={selectedApp}
+        refetchApps={refetchApps}
       />
     );
   }
