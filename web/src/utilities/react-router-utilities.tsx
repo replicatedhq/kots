@@ -7,10 +7,11 @@ import {
   useParams,
   useOutletContext,
 } from "react-router-dom";
+import { KotsParams } from "@types";
 export interface RouterProps {
   location: ReturnType<typeof useLocation>;
   navigate: ReturnType<typeof useNavigate>;
-  params: ReturnType<typeof useParams>;
+  params: KotsParams;
   outletContext: ReturnType<typeof useOutletContext>;
 }
 

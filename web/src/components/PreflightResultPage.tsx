@@ -40,7 +40,7 @@ function PreflightResultPage(props: Props) {
     setShowConfirmIgnorePreflightsModal,
   ] = useState(false);
 
-  const { sequence = "0", slug } = useParams<KotsParams>();
+  const { sequence = "0", slug } = useParams<keyof KotsParams>() as KotsParams;
   const { mutate: deployKotsDownstream } = useDeployAppVersion({
     slug,
     sequence,

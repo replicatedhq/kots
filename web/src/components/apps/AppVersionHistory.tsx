@@ -37,7 +37,13 @@ import { KotsPageTitle } from "@components/Head";
 import "@src/scss/components/apps/AppVersionHistory.scss";
 import { DashboardGitOpsCard } from "@features/Dashboard";
 import Icon from "../Icon";
-import { App, Downstream, Version, VersionDownloadStatus } from "@types";
+import {
+  App,
+  Downstream,
+  KotsParams,
+  Version,
+  VersionDownloadStatus,
+} from "@types";
 import { RouterProps, withRouter } from "@src/utilities/react-router-utilities";
 import PreflightIcon from "@features/App/PreflightIcon";
 
@@ -77,7 +83,6 @@ type Props = {
     toggleErrorModal: () => void;
     toggleIsBundleUploading: (isUploading: boolean) => void;
     updateCallback: () => void;
-    params: ReturnType<typeof useParams>;
   };
 } & RouterProps;
 
@@ -232,7 +237,6 @@ class AppVersionHistory extends Component<Props, State> {
   _mounted: boolean | undefined;
 
   componentDidMount() {
-    console.log(this.props);
     this.getPreflightState(
       this.props.outletContext.app.downstream.currentVersion
     );
@@ -267,10 +271,7 @@ class AppVersionHistory extends Component<Props, State> {
     this._mounted = true;
   }
 
-  componentDidUpdate = async (lastProps: {
-    wrappedMatch: { params: { slug: string } };
-    app: { id: string; downstream: Downstream };
-  }) => {
+  componentDidUpdate = async (lastProps: Props) => {
     if (
       lastProps.params.slug !== this.props.params.slug ||
       lastProps.outletContext.app.id !== this.props.outletContext.app.id

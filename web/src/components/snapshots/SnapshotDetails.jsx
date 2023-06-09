@@ -670,7 +670,7 @@ class SnapshotDetails extends Component {
     return (
       <div className="container flex-column u-overflow--auto u-paddingTop--30 u-paddingBottom--20">
         <p className="u-marginBottom--30 u-fontSize--small u-textColor--accent u-fontWeight--medium">
-          <span className="link" onClick={() => this.props.history.goBack()}>
+          <span className="link" onClick={() => this.props.navigate(-1)}>
             Snapshots
           </span>
           <span className="u-textColor--bodyCopy"> &gt; </span>
