@@ -9,10 +9,10 @@ import {
 } from "react-router-dom";
 import { KotsParams } from "@types";
 export interface RouterProps {
-  location: ReturnType<typeof useLocation>;
+  location?: ReturnType<typeof useLocation>;
   navigate: ReturnType<typeof useNavigate>;
-  params: KotsParams;
-  outletContext: ReturnType<typeof useOutletContext>;
+  params?: KotsParams;
+  outletContext?: ReturnType<typeof useOutletContext>;
 }
 
 export function withRouter<TProps extends RouterProps>(

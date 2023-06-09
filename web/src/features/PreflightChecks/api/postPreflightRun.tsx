@@ -32,7 +32,7 @@ function useRerunPreflights({
   slug,
   sequence,
 }: {
-  slug: string | undefined;
+  slug: string;
   sequence: string;
 }) {
   const queryClient = useQueryClient();

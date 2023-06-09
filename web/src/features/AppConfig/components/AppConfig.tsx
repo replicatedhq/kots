@@ -33,7 +33,7 @@ type Props = {
   fromLicenseFlow: boolean;
   isHelmManaged: boolean;
   refreshAppData: () => void;
-  refetchAppsList: () => void;
+  refetchApps: () => void;
   navigate: ReturnType<typeof useNavigate>;
 };
 
