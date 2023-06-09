@@ -1,3 +1,4 @@
+import useApps from "@features/Gitops/hooks/useApps";
 import { useMutation } from "react-query";
 import { useNavigate } from "react-router-dom";
 
@@ -53,6 +54,7 @@ function useDeployAppVersion({
   sequence: string;
 }) {
   const navigate = useNavigate();
+  const { refetch: refetchApps } = useApps();
 
   return useMutation({
     mutationFn: ({
@@ -75,6 +77,7 @@ function useDeployAppVersion({
       );
     },
     onSuccess: () => {
+      refetchApps();
       navigate(`/app/${slug}`);
     },
   });
