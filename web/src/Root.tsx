@@ -458,8 +458,8 @@ const Root = () => {
         }}
       >
         <ToastProvider>
-          {/* eslint-disable-next-line 
-           @ts-ignore */}
+          {/* eslint-disable-next-line  */}
+          {/* @ts-ignore  */}
           <NavBar
             logo={state.themeState.navbarLogo || state.appLogo}
             refetchAppsList={getAppsList}
