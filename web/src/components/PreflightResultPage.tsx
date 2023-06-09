@@ -22,6 +22,7 @@ import { useDeployAppVersion } from "@features/App/api";
 
 import { KotsParams } from "@types";
 import Icon from "./Icon";
+import { useApps } from "@features/App";
 
 interface Props {
   fromLicenseFlow?: boolean;
@@ -69,6 +70,7 @@ function PreflightResultPage(props: Props) {
 
   const location = useLocation();
   const navigate = useNavigate();
+  const { refetch: refetchApps } = useApps();
 
   return (
     <div className="flex-column flex1 container">
@@ -282,6 +284,7 @@ function PreflightResultPage(props: Props) {
               onClick={() => {
                 setShowContinueWithFailedPreflightsModal(false);
                 deployKotsDownstream({ continueWithFailedPreflights: true });
+                refetchApps();
               }}
             >
               Deploy anyway
