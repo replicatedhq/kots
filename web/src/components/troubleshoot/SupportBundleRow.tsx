@@ -1,5 +1,4 @@
 import React, { useEffect, useContext } from "react";
-import { withRouter } from "@src/utilities/react-router-utilities";
 import Loader from "../shared/Loader";
 import dayjs from "dayjs";
 import filter from "lodash/filter";
@@ -26,7 +25,7 @@ type Props = {
   isCustomer: boolean;
   isSupportBundleUploadSupported: boolean;
   loadingBundle: boolean;
-  progressData: SupportBundleProgress;
+  progressData: SupportBundleProgress | null;
   refetchBundleList: () => void;
   //deleteBundleFromList: (id: string) => void;
   watchSlug: string;
@@ -313,7 +312,7 @@ export const SupportBundleRow = (props: Props) => {
     </div>
   );
 
-  if (progressData.collectorsCompleted > 0) {
+  if (progressData && progressData.collectorsCompleted > 0) {
     moveBar(progressData);
     progressBar = (
       <div className="progressbar">
@@ -452,7 +451,8 @@ export const SupportBundleRow = (props: Props) => {
               {state.downloadingBundle ? (
                 <Loader size="30" />
               ) : props.loadingBundle ||
-                props.progressData?.collectorsCompleted > 0 ? (
+                (props?.progressData &&
+                  props.progressData?.collectorsCompleted > 0) ? (
                 <div
                   className="flex alignItems--center"
                   style={{ width: "350px" }}
@@ -491,7 +491,4 @@ export const SupportBundleRow = (props: Props) => {
   );
 };
 
-/* eslint-disable */
-// @ts-ignore
-export default withRouter(SupportBundleRow);
-/* eslint-enable*/
+export default SupportBundleRow;

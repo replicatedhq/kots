@@ -234,7 +234,7 @@ export const SupportBundleList = (props: Props) => {
   }
 
   let bundlesNode;
-  if (downstream) {
+  if (downstream && watch && outletContext.loadingBundleId === "") {
     if (supportBundles?.length) {
       bundlesNode = supportBundles
         .sort(
@@ -253,14 +253,16 @@ export const SupportBundleList = (props: Props) => {
             refetchBundleList={listSupportBundles}
             //  deleteBundleFromList={deleteBundleFromList}
             progressData={
-              outletContext.loadingBundleId === bundle.id &&
-              outletContext.bundleProgress
+              outletContext?.loadingBundleId === bundle.id
+                ? outletContext.bundleProgress
+                : null
             }
             loadingBundle={
               outletContext.loadingBundleId === bundle.id &&
               outletContext.loadingBundle
             }
             className={bundle.id === deleteBundleId ? "deleting" : ""}
+            isCustomer={false}
           />
         ));
     } else {

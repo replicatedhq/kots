@@ -458,6 +458,8 @@ const Root = () => {
         }}
       >
         <ToastProvider>
+          {/* eslint-disable-next-line 
+           @ts-ignore */}
           <NavBar
             logo={state.themeState.navbarLogo || state.appLogo}
             refetchAppsList={getAppsList}
@@ -685,12 +687,16 @@ const Root = () => {
 
                 <Route
                   path={":slug/version-history"}
+                  // eslint-disable-next-line
+                  // @ts-ignore
                   element={<AppVersionHistory />}
                 />
                 <Route
                   path={
                     ":slug/version-history/diff/:firstSequence/:secondSequence"
                   }
+                  // eslint-disable-next-line
+                  // @ts-ignore
                   element={<AppVersionHistory />}
                 />
                 <Route

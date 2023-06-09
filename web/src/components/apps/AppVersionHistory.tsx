@@ -110,8 +110,8 @@ type State = {
   logs: Object | null;
   logsLoading: boolean;
   noUpdateAvailiableText: string;
-  numOfRemainingVersions: Number;
-  numOfSkippedVersions: Number;
+  numOfRemainingVersions: number;
+  numOfSkippedVersions: number;
   pageSize: Number;
   preflightState: {
     preflightsFailed: boolean;
