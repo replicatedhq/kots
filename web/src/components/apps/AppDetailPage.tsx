@@ -323,6 +323,7 @@ function AppDetailPage(props: Props) {
         (version: Version) => version?.sequence === 0
       );
       if (firstVersion?.status === "pending_config") {
+        console.log("has pending");
         navigate(`/${appNeedsConfiguration.slug}/config`);
         return;
       }
