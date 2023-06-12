@@ -1,6 +1,6 @@
 import React, { useReducer, useEffect } from "react";
 import { createBrowserHistory } from "history";
-import { Route, Routes, Navigate, useNavigate } from "react-router-dom";
+import { Route, Routes, Navigate, useNavigate, Outlet } from "react-router-dom";
 import { Helmet } from "react-helmet";
 import Modal from "react-modal";
 import find from "lodash/find";
@@ -33,6 +33,7 @@ import TroubleshootContainer from "@components/troubleshoot/TroubleshootContaine
 
 import Footer from "./components/shared/Footer";
 import NavBar from "./components/shared/NavBar";
+import { RouteObject } from "react-router-dom";
 
 // scss
 import "./scss/index.scss";
@@ -483,7 +484,22 @@ const Root = () => {
                   />
                 }
               />
-              <Route path="/crashz" element={<Crashz />} />
+              <Route path="/crashz" element={<Crashz />} />{" "}
+              <Route path="*" element={<NotFound />} />
+              <Route
+                path="/secure-console"
+                element={
+                  <SecureAdminConsole
+                    logo={state.appLogo}
+                    appName={state.selectedAppName}
+                    pendingApp={getPendingApp}
+                    onLoginSuccess={getAppsList}
+                    fetchingMetadata={state.fetchingMetadata}
+                    checkIsHelmManaged={checkIsHelmManaged}
+                    navigate={navigate}
+                  />
+                }
+              />
               <Route
                 path="/:slug/preflight"
                 element={
@@ -501,20 +517,6 @@ const Root = () => {
                     fromLicenseFlow={true}
                     refetchAppsList={getAppsList}
                     isHelmManaged={state.isHelmManaged}
-                  />
-                }
-              />
-              <Route
-                path="/secure-console"
-                element={
-                  <SecureAdminConsole
-                    logo={state.appLogo}
-                    appName={state.selectedAppName}
-                    pendingApp={getPendingApp}
-                    onLoginSuccess={getAppsList}
-                    fetchingMetadata={state.fetchingMetadata}
-                    checkIsHelmManaged={checkIsHelmManaged}
-                    navigate={navigate}
                   />
                 }
               />
@@ -589,7 +591,7 @@ const Root = () => {
               />
               {/* :tab?  */}
               <Route
-                path={"/snapshots/*"}
+                path="/snapshots/*"
                 element={
                   <SnapshotsWrapper
                     appName={state.selectedAppName}
@@ -650,7 +652,7 @@ const Root = () => {
                 />
               </Route>
               <Route
-                path={"/apps"}
+                path="/apps"
                 element={
                   <AppDetailPage
                     refetchAppMetadata={fetchKotsAppMetadata}
@@ -665,7 +667,7 @@ const Root = () => {
                 }
               />
               <Route
-                path={"/app/*"}
+                path="/app/*"
                 element={
                   <AppDetailPage
                     refetchAppMetadata={fetchKotsAppMetadata}
@@ -795,7 +797,6 @@ const Root = () => {
                   />
                 }
               />
-              <Route element={<NotFound />} />
             </Routes>
           </div>
           <div className="flex-auto Footer-wrapper u-width--full">

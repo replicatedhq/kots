@@ -250,6 +250,9 @@ class SecureAdminConsole extends React.Component<Props, State> {
   };
 
   async componentDidMount() {
+    if (Utilities.isLoggedIn()) {
+      this.props.navigate("/apps");
+    }
     window.addEventListener("keydown", this.submitForm);
 
     const isIdentityServiceLogin = Utilities.getCookie(
