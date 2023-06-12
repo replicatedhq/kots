@@ -46,7 +46,9 @@ class GenerateSupportBundle extends React.Component {
   }
 
   componentDidUpdate(lastProps, lastState) {
-    const { watch, navigate, bundle } = this.props;
+    const { navigate } = this.props;
+    const { watch, bundle } = this.props.outletContext;
+
     const { totalBundles, loadingSupportBundles, supportBundles, networkErr } =
       this.state;
 
@@ -95,7 +97,7 @@ class GenerateSupportBundle extends React.Component {
     });
 
     fetch(
-      `${process.env.API_ENDPOINT}/troubleshoot/app/${this.props.watch?.slug}/supportbundles`,
+      `${process.env.API_ENDPOINT}/troubleshoot/app/${this.props.outletContext.watch?.slug}/supportbundles`,
       {
         headers: {
           "Content-Type": "application/json",
@@ -122,7 +124,7 @@ class GenerateSupportBundle extends React.Component {
           );
         }
         if (bundleRunning) {
-          this.props.updateBundleSlug(bundleRunning.slug);
+          this.props.outletContext.updateBundleSlug(bundleRunning.slug);
           this.setState({
             newBundleSlug: bundleRunning.slug,
             isGeneratingBundle: true,
@@ -165,9 +167,8 @@ class GenerateSupportBundle extends React.Component {
         networkErr: false,
       });
 
-      console.log(this.props.watch?.slug, " slug");
       fetch(
-        `${process.env.API_ENDPOINT}/troubleshoot/app/${this.props.watch?.slug}/supportbundles`,
+        `${process.env.API_ENDPOINT}/troubleshoot/app/${this.props.outletContext.watch?.slug}/supportbundles`,
         {
           headers: {
             "Content-Type": "application/json",
@@ -256,12 +257,12 @@ class GenerateSupportBundle extends React.Component {
   };
 
   collectBundle = (clusterId) => {
-    const { watch, navigate } = this.props;
+    const { navigate } = this.props;
 
-    let url = `${process.env.API_ENDPOINT}/troubleshoot/supportbundle/app/${watch?.id}/cluster/${clusterId}/collect`;
-    if (!watch.id) {
+    let url = `${process.env.API_ENDPOINT}/troubleshoot/supportbundle/app/${this.props.outletContext?.watch?.id}/cluster/${clusterId}/collect`;
+    if (!this.props.outletContext?.watch.id) {
       // TODO: check if helm managed, not if id is missing
-      url = `${process.env.API_ENDPOINT}/troubleshoot/supportbundle/app/${watch?.slug}/collect`;
+      url = `${process.env.API_ENDPOINT}/troubleshoot/supportbundle/app/${this.props.outletContext?.watch?.slug}/collect`;
     }
 
     fetch(url, {
@@ -280,10 +281,12 @@ class GenerateSupportBundle extends React.Component {
           return;
         }
         const response = await res.json();
-        this.props.updateBundleSlug(response.slug);
+        this.props.outletContext.updateBundleSlug(response.slug);
         this.setState({ newBundleSlug: response.slug });
 
-        navigate(`/app/${watch.slug}/troubleshoot/analyze/${response.slug}`);
+        navigate(
+          `/app/${this.props.outletContext?.watch.slug}/troubleshoot/analyze/${response.slug}`
+        );
         this.setState({
           isGeneratingBundle: true,
           generateBundleErrMsg: "",
@@ -301,10 +304,8 @@ class GenerateSupportBundle extends React.Component {
   };
 
   fetchSupportBundleCommand = async () => {
-    const { watch } = this.props;
-
     const res = await fetch(
-      `${process.env.API_ENDPOINT}/troubleshoot/app/${watch.slug}/supportbundlecommand`,
+      `${process.env.API_ENDPOINT}/troubleshoot/app/${this.props.outletContext?.watch.slug}/supportbundlecommand`,
       {
         method: "POST",
         headers: {
@@ -350,22 +351,16 @@ class GenerateSupportBundle extends React.Component {
       generateBundleErrMsg,
       errorMsg,
     } = this.state;
-    const { watch, navigate } = this.props;
-    const appTitle = watch.downstream?.currentVersion?.appTitle || watch.name;
+    const { navigate } = this.props;
+
+    const appTitle =
+      this.props.outletContext?.watch.downstream?.currentVersion?.appTitle ||
+      this.props.outletContext?.watch.name;
 
     return (
       <div className="GenerateSupportBundle--wrapper container flex-column u-overflow--auto u-paddingTop--30 u-paddingBottom--20 alignItems--center">
         <KotsPageTitle pageName="Generate Support Bundle" showAppSlug />
         <div className="GenerateSupportBundle">
-          {!watch.downstream && !this.state.supportBundles?.length ? (
-            <Link
-              to={`/watch/${watch.slug}/troubleshoot`}
-              className="link u-marginRight--5"
-            >
-              {" "}
-              &lt; Support Bundle List{" "}
-            </Link>
-          ) : null}
           <div className="u-marginTop--15">
             <div className="flex justifyContent--center u-paddingBottom--30">
               <Toggle
@@ -373,14 +368,16 @@ class GenerateSupportBundle extends React.Component {
                   {
                     title: "Support bundles",
                     onClick: () =>
-                      navigate(`/app/${this.props.watch.slug}/troubleshoot`),
+                      navigate(
+                        `/app/${this.props.outletContext?.watch?.slug}/troubleshoot`
+                      ),
                     isActive: true,
                   },
                   {
                     title: "Redactors",
                     onClick: () =>
                       navigate(
-                        `/app/${this.props.watch.slug}/troubleshoot/redactors`
+                        `/app/${this.props.outletContext?.watch?.slug}/troubleshoot/redactors`
                       ),
                     isActive: false,
                   },
@@ -420,7 +417,7 @@ class GenerateSupportBundle extends React.Component {
                       type="button"
                       onClick={this.collectBundle.bind(
                         this,
-                        watch.downstream?.cluster?.id
+                        this.props.outletContext?.watch?.downstream?.cluster?.id
                       )}
                     >
                       Analyze {appTitle}
@@ -484,7 +481,7 @@ class GenerateSupportBundle extends React.Component {
         >
           <div className="Modal-body">
             <UploadSupportBundleModal
-              watch={this.props.watch}
+              watch={this.props.outletContext.watch}
               onBundleUploaded={(bundleId) => {
                 const url = `/app/${this.props.params.slug}/troubleshoot/analyze/${bundleId}`;
                 navigate(url);

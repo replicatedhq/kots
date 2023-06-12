@@ -189,6 +189,10 @@ class Redactors extends Component {
       });
   };
 
+  componentDidMount() {
+    console.log(this.props, "rops");
+  }
+
   render() {
     const {
       sortedRedactors,
@@ -232,7 +236,7 @@ class Redactors extends Component {
                   title: "Support bundles",
                   onClick: () =>
                     this.props.navigate(
-                      `/app/${this.props.appSlug}/troubleshoot`
+                      `/app/${this.props.params.slug}/troubleshoot`
                     ),
                   isActive: false,
                 },
@@ -240,7 +244,7 @@ class Redactors extends Component {
                   title: "Redactors",
                   onClick: () =>
                     this.props.navigate(
-                      `/app/${this.props.appSlug}/troubleshoot/redactors`
+                      `/app/${this.props.params.slug}/troubleshoot/redactors`
                     ),
                   isActive: true,
                 },
@@ -268,7 +272,7 @@ class Redactors extends Component {
                 </div>
                 <div className="flex justifyContent--flexEnd">
                   <Link
-                    to={`/app/${this.props.appSlug}/troubleshoot/redactors/new`}
+                    to={`/app/${this.props.params.slug}/troubleshoot/redactors/new`}
                     className="link u-fontSize--small flex alignItems--center"
                   >
                     <Icon
@@ -305,7 +309,7 @@ class Redactors extends Component {
                 <RedactorRow
                   key={`redactor-${redactor.slug}`}
                   redactor={redactor}
-                  appSlug={this.props.appSlug}
+                  appSlug={this.props.params.slug}
                   toggleConfirmDeleteModal={this.toggleConfirmDeleteModal}
                   handleSetRedactEnabled={this.handleSetRedactEnabled}
                 />
@@ -338,7 +342,7 @@ class Redactors extends Component {
                 </p>
                 <div className="u-marginTop--30">
                   <Link
-                    to={`/app/${this.props.appSlug}/troubleshoot/redactors/new`}
+                    to={`/app/${this.props.params.slug}/troubleshoot/redactors/new`}
                     className="btn primary blue"
                   >
                     Create new redactor

@@ -226,7 +226,7 @@ class AnalyzerFileTree extends React.Component {
             "/" +
             location.pathname
               .split("/")
-              .slice(7, this.props.location.pathname.length)
+              .slice(7, location.pathname.length)
               .join("/"),
         });
         this.fetchFiles(
@@ -247,6 +247,7 @@ class AnalyzerFileTree extends React.Component {
   onSelectionChange = () => {
     const column = this.refAceEditor?.editor?.selection?.anchor.column;
     const row = this.refAceEditor?.editor?.selection?.anchor.row;
+
     if (column === 0) {
       let newMarker = [];
       newMarker.push({

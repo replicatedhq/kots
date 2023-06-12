@@ -114,7 +114,6 @@ export const SupportBundleList = (props: Props) => {
           return;
         }
         const response = await res.json();
-
         let bundleRunning = false;
         if (response.supportBundles) {
           bundleRunning = response.supportBundles.find(
@@ -156,6 +155,12 @@ export const SupportBundleList = (props: Props) => {
       state.pollForBundleAnalysisProgress.stop();
     };
   }, []);
+
+  useEffect(() => {
+    if (state.supportBundles && state.supportBundles.length < 1) {
+      navigate(`/app/${outletContext.watch?.slug}/troubleshoot/generate`);
+    }
+  }, [state.supportBundles]);
 
   useEffect(() => {
     const { bundle } = outletContext;
@@ -234,7 +239,7 @@ export const SupportBundleList = (props: Props) => {
   }
 
   let bundlesNode;
-  if (downstream && watch && outletContext.loadingBundleId === "") {
+  if (downstream && watch) {
     if (supportBundles?.length) {
       bundlesNode = supportBundles
         .sort(
@@ -290,14 +295,14 @@ export const SupportBundleList = (props: Props) => {
                 {
                   title: "Support bundles",
                   onClick: () =>
-                    navigate(`/app/${outletContext.watch?.slug}/troubleshoot`),
+                    navigate(`/app/${outletContext?.watch?.slug}/troubleshoot`),
                   isActive: true,
                 },
                 {
                   title: "Redactors",
                   onClick: () =>
                     navigate(
-                      `/app/${outletContext.watch?.slug}/troubleshoot/redactors`
+                      `/app/${outletContext?.watch?.slug}/troubleshoot/redactors`
                     ),
                   isActive: false,
                 },
