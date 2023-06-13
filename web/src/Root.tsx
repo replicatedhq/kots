@@ -1,6 +1,6 @@
 import React, { useReducer, useEffect } from "react";
 import { createBrowserHistory } from "history";
-import { Route, Routes, Navigate, useNavigate, Outlet } from "react-router-dom";
+import { Route, Routes, Navigate, useNavigate } from "react-router-dom";
 import { Helmet } from "react-helmet";
 import Modal from "react-modal";
 import find from "lodash/find";
@@ -33,7 +33,6 @@ import TroubleshootContainer from "@components/troubleshoot/TroubleshootContaine
 
 import Footer from "./components/shared/Footer";
 import NavBar from "./components/shared/NavBar";
-import { RouteObject } from "react-router-dom";
 
 // scss
 import "./scss/index.scss";
