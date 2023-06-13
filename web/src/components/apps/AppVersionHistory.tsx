@@ -37,11 +37,8 @@ import { KotsPageTitle } from "@components/Head";
 import "@src/scss/components/apps/AppVersionHistory.scss";
 import { DashboardGitOpsCard } from "@features/Dashboard";
 import Icon from "../Icon";
-import { App, Downstream, Version, VersionDownloadStatus } from "@types";
-import {
-  withRouter,
-  withRouterType,
-} from "@src/utilities/react-router-utilities";
+import { App, Version, VersionDownloadStatus } from "@types";
+import { RouterProps, withRouter } from "@src/utilities/react-router-utilities";
 import PreflightIcon from "@features/App/PreflightIcon";
 
 dayjs.extend(relativeTime);
@@ -58,28 +55,30 @@ type ReleaseWithError = {
 };
 
 type Props = {
-  adminConsoleMetadata: { isAirgap: boolean; isKurl: boolean };
-  app: App;
-  displayErrorModal: boolean;
-  isBundleUploading: boolean;
-  isHelmManaged: boolean;
-  makeCurrentVersion: (
-    slug: string,
-    version: Version | null,
-    isSkipPreflights: boolean,
-    continueWithFailedPreflights: boolean
-  ) => void;
-  makingCurrentRelease: boolean;
-  makingCurrentVersionErrMsg: string;
-  redeployVersion: (slug: string, version: Version | null) => void;
-  redeployVersionErrMsg: string;
-  resetMakingCurrentReleaseErrorMessage: () => void;
-  resetRedeployErrorMessage: () => void;
-  refreshAppData: () => void;
-  toggleErrorModal: () => void;
-  toggleIsBundleUploading: (isUploading: boolean) => void;
-  updateCallback: () => void;
-} & withRouterType;
+  outletContext: {
+    adminConsoleMetadata: { isAirgap: boolean; isKurl: boolean };
+    app: App;
+    displayErrorModal: boolean;
+    isBundleUploading: boolean;
+    isHelmManaged: boolean;
+    makeCurrentVersion: (
+      slug: string,
+      version: Version | null,
+      isSkipPreflights: boolean,
+      continueWithFailedPreflights: boolean
+    ) => void;
+    makingCurrentRelease: boolean;
+    makingCurrentVersionErrMsg: string;
+    redeployVersion: (slug: string, version: Version | null) => void;
+    redeployVersionErrMsg: string;
+    resetMakingCurrentReleaseErrorMessage: () => void;
+    resetRedeployErrorMessage: () => void;
+    refreshAppData: () => void;
+    toggleErrorModal: () => void;
+    toggleIsBundleUploading: (isUploading: boolean) => void;
+    updateCallback: () => void;
+  };
+} & RouterProps;
 
 type State = {
   airgapUploader: AirgapUploader | null;
@@ -111,8 +110,8 @@ type State = {
   logs: Object | null;
   logsLoading: boolean;
   noUpdateAvailiableText: string;
-  numOfRemainingVersions: Number;
-  numOfSkippedVersions: Number;
+  numOfRemainingVersions: number;
+  numOfSkippedVersions: number;
   pageSize: Number;
   preflightState: {
     preflightsFailed: boolean;
@@ -232,18 +231,20 @@ class AppVersionHistory extends Component<Props, State> {
   _mounted: boolean | undefined;
 
   componentDidMount() {
-    this.getPreflightState(this.props.app.downstream.currentVersion);
+    this.getPreflightState(
+      this.props.outletContext.app.downstream.currentVersion
+    );
     const urlParams = new URLSearchParams(window.location.search);
     const pageNumber = urlParams.get("page");
     if (pageNumber) {
       this.setState({ currentPage: parseInt(pageNumber) });
     } else {
-      this.props.history.push(`${this.props.location.pathname}?page=0`);
+      this.props.navigate(`${this.props.location.pathname}?page=0`);
     }
 
     this.fetchKotsDownstreamHistory();
-    this.props.refreshAppData();
-    if (this.props.app?.isAirgap && !this.state.airgapUploader) {
+    this.props.outletContext.refreshAppData();
+    if (this.props.outletContext.app?.isAirgap && !this.state.airgapUploader) {
       this.getAirgapConfig();
     }
 
@@ -251,7 +252,7 @@ class AppVersionHistory extends Component<Props, State> {
     this.state.appUpdateChecker.start(this.getAppUpdateStatus, 1000);
 
     const url = window.location.pathname;
-    const { params } = this.props.wrappedMatch;
+    const { params } = this.props;
     if (url.includes("/diff")) {
       const firstSequence = params.firstSequence;
       const secondSequence = params.secondSequence;
@@ -264,25 +265,21 @@ class AppVersionHistory extends Component<Props, State> {
     this._mounted = true;
   }
 
-  componentDidUpdate = async (lastProps: {
-    wrappedMatch: { params: { slug: string } };
-    app: { id: string; downstream: Downstream };
-  }) => {
+  componentDidUpdate = async (lastProps: Props) => {
     if (
-      lastProps.wrappedMatch.params.slug !==
-        this.props.wrappedMatch.params.slug ||
-      lastProps.app.id !== this.props.app.id
+      lastProps.params.slug !== this.props.params.slug ||
+      lastProps.outletContext.app.id !== this.props.outletContext.app.id
     ) {
       this.fetchKotsDownstreamHistory();
     }
     if (
-      this.props.app.downstream.pendingVersions.length > 0 &&
+      this.props.outletContext.app.downstream.pendingVersions.length > 0 &&
       this.state.updatesAvailable === false
     ) {
       this.setState({ updatesAvailable: true });
     }
     if (
-      this.props.app.downstream.pendingVersions.length === 0 &&
+      this.props.outletContext.app.downstream.pendingVersions.length === 0 &&
       this.state.updatesAvailable === true
     ) {
       this.setState({ updatesAvailable: false });
@@ -299,8 +296,7 @@ class AppVersionHistory extends Component<Props, State> {
   }
 
   fetchKotsDownstreamHistory = async () => {
-    const { wrappedMatch } = this.props;
-    const appSlug = wrappedMatch.params.slug;
+    const appSlug = this.props.params.slug;
 
     this.setState({
       loadingVersionHistory: true,
@@ -370,13 +366,13 @@ class AppVersionHistory extends Component<Props, State> {
       { pageSize: parseInt(e.target.value), currentPage: 0 },
       () => {
         this.fetchKotsDownstreamHistory();
-        this.props.history.push(`${this.props.location.pathname}?page=0`);
+        this.props.navigate(`${this.props.location.pathname}?page=0`);
       }
     );
   };
 
   getAirgapConfig = async () => {
-    const { app } = this.props;
+    const { app } = this.props.outletContext;
     const configUrl = `${process.env.API_ENDPOINT}/app/${app.slug}/airgap/config`;
     let simultaneousUploads = 3;
     try {
@@ -415,10 +411,10 @@ class AppVersionHistory extends Component<Props, State> {
       uploadResuming: false,
     });
 
-    this.props.toggleIsBundleUploading(true);
+    this.props.outletContext.toggleIsBundleUploading(true);
 
     const params = {
-      appId: this.props.app?.id,
+      appId: this.props.outletContext.app?.id,
     };
     this.state.airgapUploader?.upload(
       params,
@@ -446,7 +442,7 @@ class AppVersionHistory extends Component<Props, State> {
       airgapUploadError:
         (message as string) || "Error uploading bundle, please try again",
     });
-    this.props.toggleIsBundleUploading(false);
+    this.props.outletContext.toggleIsBundleUploading(false);
   };
 
   onUploadComplete = () => {
@@ -457,7 +453,7 @@ class AppVersionHistory extends Component<Props, State> {
       uploadSize: 0,
       uploadResuming: false,
     });
-    this.props.toggleIsBundleUploading(false);
+    this.props.outletContext.toggleIsBundleUploading(false);
   };
 
   toggleErrorModal = () => {
@@ -506,7 +502,9 @@ class AppVersionHistory extends Component<Props, State> {
       <div className="flex action-tab-bar u-marginTop--10">
         {tabs
           .filter((tab) => tab !== "renderError")
-          .filter((tab) => filterNonHelmTabs(tab, this.props.isHelmManaged))
+          .filter((tab) =>
+            filterNonHelmTabs(tab, this.props.outletContext.isHelmManaged)
+          )
           .map((tab) => (
             <div
               className={`tab-item blue ${tab === selectedTab && "is-active"}`}
@@ -521,7 +519,7 @@ class AppVersionHistory extends Component<Props, State> {
   };
 
   downloadVersion = (version: Version) => {
-    const { app } = this.props;
+    const { app } = this.props.outletContext;
 
     if (!this.versionDownloadStatusJobs.hasOwnProperty(version.sequence)) {
       this.versionDownloadStatusJobs[version.sequence] = new Repeater();
@@ -585,7 +583,7 @@ class AppVersionHistory extends Component<Props, State> {
   };
 
   upgradeAdminConsole = (version: Version) => {
-    const { app } = this.props;
+    const { app } = this.props.outletContext;
 
     this.setState({
       displayKotsUpdateModal: true,
@@ -629,7 +627,7 @@ class AppVersionHistory extends Component<Props, State> {
   };
 
   getKotsUpdateStatus = () => {
-    const { app } = this.props;
+    const { app } = this.props.outletContext;
 
     return new Promise<void>((resolve) => {
       fetch(
@@ -676,7 +674,7 @@ class AppVersionHistory extends Component<Props, State> {
   };
 
   updateVersionDownloadStatus = (version: Version) => {
-    const { app } = this.props;
+    const { app } = this.props.outletContext;
 
     return new Promise<void>((resolve, reject) => {
       fetch(
@@ -706,8 +704,8 @@ class AppVersionHistory extends Component<Props, State> {
               },
             });
 
-            if (this.props.updateCallback) {
-              this.props.updateCallback();
+            if (this.props.outletContext.updateCallback) {
+              this.props.outletContext.updateCallback();
             }
             this.fetchKotsDownstreamHistory();
           } else {
@@ -735,7 +733,7 @@ class AppVersionHistory extends Component<Props, State> {
     force = false,
     continueWithFailedPreflights = false
   ) => {
-    const { app } = this.props;
+    const { app } = this.props.outletContext;
     const clusterSlug = app.downstream.cluster?.slug;
     if (!clusterSlug) {
       return;
@@ -783,11 +781,11 @@ class AppVersionHistory extends Component<Props, State> {
   };
 
   finalizeDeployment = async (continueWithFailedPreflights: boolean) => {
-    const { wrappedMatch, updateCallback } = this.props;
+    const { updateCallback } = this.props.outletContext;
     const { versionToDeploy, isSkipPreflights } = this.state;
     this.setState({ displayConfirmDeploymentModal: false, confirmType: "" });
-    await this.props.makeCurrentVersion(
-      wrappedMatch.params.slug,
+    await this.props.outletContext.makeCurrentVersion(
+      this.props.params.slug,
       versionToDeploy,
       isSkipPreflights,
       continueWithFailedPreflights
@@ -801,7 +799,7 @@ class AppVersionHistory extends Component<Props, State> {
   };
 
   redeployVersion = (version: Version) => {
-    const { app } = this.props;
+    const { app } = this.props.outletContext;
     const clusterSlug = app.downstream.cluster?.slug;
     if (!clusterSlug) {
       return;
@@ -815,10 +813,13 @@ class AppVersionHistory extends Component<Props, State> {
   };
 
   finalizeRedeployment = async () => {
-    const { wrappedMatch, updateCallback } = this.props;
+    const { updateCallback } = this.props.outletContext;
     const { versionToDeploy } = this.state;
     this.setState({ displayConfirmDeploymentModal: false, confirmType: "" });
-    await this.props.redeployVersion(wrappedMatch.params.slug, versionToDeploy);
+    await this.props.outletContext.redeployVersion(
+      this.props.params.slug,
+      versionToDeploy
+    );
     await this.fetchKotsDownstreamHistory();
     this.setState({ versionToDeploy: null });
 
@@ -881,7 +882,7 @@ class AppVersionHistory extends Component<Props, State> {
   };
 
   onCheckForUpdates = async () => {
-    const { app } = this.props;
+    const { app } = this.props.outletContext;
 
     this.setState({
       checkingForUpdates: true,
@@ -906,7 +907,7 @@ class AppVersionHistory extends Component<Props, State> {
           });
           return;
         }
-        this.props.refreshAppData();
+        this.props.outletContext.refreshAppData();
         const response = await res.json();
 
         if (response.availableUpdates === 0) {
@@ -943,7 +944,7 @@ class AppVersionHistory extends Component<Props, State> {
   };
 
   getAppUpdateStatus = () => {
-    const { app } = this.props;
+    const { app } = this.props.outletContext;
 
     return new Promise<void>((resolve, reject) => {
       fetch(
@@ -959,7 +960,10 @@ class AppVersionHistory extends Component<Props, State> {
         .then(async (res) => {
           const response = await res.json();
 
-          if (response.status !== "running" && !this.props.isBundleUploading) {
+          if (
+            response.status !== "running" &&
+            !this.props.outletContext.isBundleUploading
+          ) {
             this.state.appUpdateChecker.stop();
 
             this.setState({
@@ -968,8 +972,8 @@ class AppVersionHistory extends Component<Props, State> {
               checkingForUpdateError: response.status === "failed",
             });
 
-            if (this.props.updateCallback) {
-              this.props.updateCallback();
+            if (this.props.outletContext.updateCallback) {
+              this.props.outletContext.updateCallback();
             }
             this.fetchKotsDownstreamHistory();
           } else {
@@ -989,9 +993,9 @@ class AppVersionHistory extends Component<Props, State> {
 
   handleViewLogs = async (version: Version | null, isFailing: boolean) => {
     try {
-      const { app } = this.props;
+      const { app } = this.props.outletContext;
       let clusterId = app.downstream.cluster?.id;
-      if (this.props.isHelmManaged) {
+      if (this.props.outletContext.isHelmManaged) {
         clusterId = 0;
       }
       this.setState({
@@ -1017,7 +1021,7 @@ class AppVersionHistory extends Component<Props, State> {
           selectedTab = Utilities.getDeployErrorTab(response.logs);
         } else {
           selectedTab = Object.keys(response.logs).filter((tab) =>
-            filterNonHelmTabs(tab, this.props.isHelmManaged)
+            filterNonHelmTabs(tab, this.props.outletContext.isHelmManaged)
           )[0];
         }
         this.setState({
@@ -1044,7 +1048,7 @@ class AppVersionHistory extends Component<Props, State> {
   };
 
   renderDiffBtn = () => {
-    const { app } = this.props;
+    const { app } = this.props.outletContext;
     const { showDiffOverlay, selectedDiffReleases, checkedReleasesToDiff } =
       this.state;
     const downstream = app?.downstream;
@@ -1185,7 +1189,7 @@ class AppVersionHistory extends Component<Props, State> {
     if (this.state.uploadingAirgapFile) {
       return true;
     }
-    if (this.props.isBundleUploading) {
+    if (this.props.outletContext.isBundleUploading) {
       return true;
     }
     if (this.state.checkingForUpdateError) {
@@ -1194,14 +1198,17 @@ class AppVersionHistory extends Component<Props, State> {
     if (this.state.airgapUploadError) {
       return true;
     }
-    if (this.props.app?.isAirgap && this.state.checkingForUpdates) {
+    if (
+      this.props.outletContext.app?.isAirgap &&
+      this.state.checkingForUpdates
+    ) {
       return true;
     }
     return false;
   };
 
   renderUpdateProgress = () => {
-    const { app } = this.props;
+    const { app } = this.props.outletContext;
 
     if (!this.shouldRenderUpdateProgress()) {
       return null;
@@ -1236,7 +1243,7 @@ class AppVersionHistory extends Component<Props, State> {
           smallSize={true}
         />
       );
-    } else if (this.props.isBundleUploading) {
+    } else if (this.props.outletContext.isBundleUploading) {
       updateText = (
         <AirgapUploadProgress
           appSlug={app.slug}
@@ -1281,7 +1288,7 @@ class AppVersionHistory extends Component<Props, State> {
     let allVersions = this.state.versionHistory;
 
     // exclude pinned version
-    if (this.props.isHelmManaged) {
+    if (this.props.outletContext.isHelmManaged) {
       // Only show pending versions in the "New version available" card. Helm, unlike kots, always adds a new version, even when we rollback.
       if (this.state.updatesAvailable && allVersions?.length > 0) {
         if (allVersions[0].status.startsWith("pending")) {
@@ -1336,7 +1343,7 @@ class AppVersionHistory extends Component<Props, State> {
   onGotoPage = (page: Number, ev: { preventDefault: () => void }) => {
     ev.preventDefault();
     this.setState({ currentPage: page, loadingPage: true }, async () => {
-      this.props.history.push(`${this.props.location.pathname}?page=${page}`);
+      this.props.navigate(`${this.props.location.pathname}?page=${page}`);
       await this.fetchKotsDownstreamHistory();
       this.setState({ loadingPage: false });
     });
@@ -1346,7 +1353,7 @@ class AppVersionHistory extends Component<Props, State> {
     versionLabel: string | null | undefined,
     sequence: number
   ) => {
-    if (this.props.isHelmManaged && versionLabel) {
+    if (this.props.outletContext.isHelmManaged && versionLabel) {
       this.setState({
         showHelmDeployModalForVersionLabel: versionLabel,
         showHelmDeployModalForSequence: sequence,
@@ -1355,9 +1362,9 @@ class AppVersionHistory extends Component<Props, State> {
   };
 
   deployButtonStatus = (version: Version) => {
-    if (this.props.isHelmManaged) {
+    if (this.props.outletContext.isHelmManaged) {
       const deployedSequence =
-        this.props.app?.downstream?.currentVersion?.sequence;
+        this.props.outletContext.app?.downstream?.currentVersion?.sequence;
 
       if (version.sequence > deployedSequence) {
         return "Deploy";
@@ -1370,7 +1377,7 @@ class AppVersionHistory extends Component<Props, State> {
       return "Redeploy";
     }
 
-    const app = this.props.app;
+    const app = this.props.outletContext.app;
     const downstream = app?.downstream;
 
     const isCurrentVersion =
@@ -1387,8 +1394,8 @@ class AppVersionHistory extends Component<Props, State> {
       (version.status === "failed" || version.status === "deployed");
     const canUpdateKots =
       version.needsKotsUpgrade &&
-      !this.props.adminConsoleMetadata?.isAirgap &&
-      !this.props.adminConsoleMetadata?.isKurl;
+      !this.props.outletContext.adminConsoleMetadata?.isAirgap &&
+      !this.props.outletContext.adminConsoleMetadata?.isKurl;
 
     if (needsConfiguration) {
       return "Configure";
@@ -1425,7 +1432,7 @@ class AppVersionHistory extends Component<Props, State> {
       return null;
     }
 
-    const downstream = this.props.app.downstream;
+    const downstream = this.props.outletContext.app.downstream;
     const gitopsIsConnected = downstream?.gitops?.isConnected;
     const nothingToCommit = gitopsIsConnected && !version.commitUrl;
     const isChecked = !!this.state.checkedReleasesToDiff.find(
@@ -1437,14 +1444,18 @@ class AppVersionHistory extends Component<Props, State> {
       newPreflightResults = secondsAgo(version.preflightResultCreatedAt) < 12;
     }
     let isPending = false;
-    if (this.props.isHelmManaged && version.status.startsWith("pending")) {
+    if (
+      this.props.outletContext.isHelmManaged &&
+      version.status.startsWith("pending")
+    ) {
       isPending = true;
     }
 
     return (
       <React.Fragment key={index}>
         <AppVersionHistoryRow
-          adminConsoleMetadata={this.props.adminConsoleMetadata}
+          navigate={this.props.navigate}
+          adminConsoleMetadata={this.props.outletContext.adminConsoleMetadata}
           deployVersion={this.deployVersion}
           downloadVersion={this.downloadVersion}
           gitopsEnabled={gitopsIsConnected}
@@ -1456,7 +1467,6 @@ class AppVersionHistory extends Component<Props, State> {
           }
           handleSelectReleasesToDiff={this.handleSelectReleasesToDiff}
           handleViewLogs={this.handleViewLogs}
-          history={this.props.history}
           isChecked={isChecked}
           isDownloading={
             this.state.versionDownloadStatuses?.[version.sequence]
@@ -1476,6 +1486,13 @@ class AppVersionHistory extends Component<Props, State> {
             firstSequence: number,
             secondSequence: number
           ) => {
+            const url = location.pathname;
+            this.props.navigate(
+              `${url}/diff/${firstSequence}/${secondSequence}`,
+              {
+                replace: true,
+              }
+            );
             this.setState({
               showDiffOverlay: true,
               firstSequence,
@@ -1509,7 +1526,7 @@ class AppVersionHistory extends Component<Props, State> {
           version.versionLabel &&
           this.state.showHelmDeployModalForSequence === version.sequence && (
             <UseDownloadValues
-              appSlug={this.props?.app?.slug}
+              appSlug={this.props?.outletContext.app?.slug}
               fileName="values.yaml"
               sequence={version.parentSequence}
               versionLabel={version.versionLabel}
@@ -1535,8 +1552,8 @@ class AppVersionHistory extends Component<Props, State> {
                 return (
                   <>
                     <HelmDeployModal
-                      appSlug={this.props?.app?.slug}
-                      chartPath={this.props?.app?.chartPath || ""}
+                      appSlug={this.props?.outletContext.app?.slug}
+                      chartPath={this.props?.outletContext.app?.chartPath || ""}
                       downloadClicked={download}
                       downloadError={downloadError}
                       //isDownloading={isDownloading}
@@ -1546,8 +1563,12 @@ class AppVersionHistory extends Component<Props, State> {
                         });
                         clearDownloadError();
                       }}
-                      registryUsername={this.props?.app?.credentials?.username}
-                      registryPassword={this.props?.app?.credentials?.password}
+                      registryUsername={
+                        this.props?.outletContext.app?.credentials?.username
+                      }
+                      registryPassword={
+                        this.props?.outletContext.app?.credentials?.password
+                      }
                       revision={
                         this.deployButtonStatus(version) === "Rollback"
                           ? version.sequence
@@ -1565,7 +1586,7 @@ class AppVersionHistory extends Component<Props, State> {
                           : "Follow the steps below to upgrade the release."
                       }
                       title={` ${this.deployButtonStatus(version)} ${
-                        this.props?.app.slug
+                        this.props?.outletContext.app.slug
                       } ${
                         this.deployButtonStatus(version) === "Deploy"
                           ? version.versionLabel
@@ -1579,7 +1600,7 @@ class AppVersionHistory extends Component<Props, State> {
                           : "Upgrade release"
                       }
                       version={version.versionLabel}
-                      namespace={this.props?.app?.namespace}
+                      namespace={this.props?.outletContext.app?.namespace}
                     />
                     <a
                       href={url}
@@ -1617,12 +1638,11 @@ class AppVersionHistory extends Component<Props, State> {
   render() {
     const {
       app,
-      wrappedMatch,
       makingCurrentVersionErrMsg,
       redeployVersionErrMsg,
       resetRedeployErrorMessage,
       resetMakingCurrentReleaseErrorMessage,
-    } = this.props;
+    } = this.props.outletContext;
 
     const {
       airgapUploader,
@@ -1679,13 +1699,13 @@ class AppVersionHistory extends Component<Props, State> {
     }
 
     let sequenceLabel = "Sequence";
-    if (this.props.isHelmManaged) {
+    if (this.props.outletContext.isHelmManaged) {
       sequenceLabel = "Revision";
     }
 
     // In Helm, only pending versions are updates.  In kots native, a deployed version can be an update after a rollback.
     let pendingVersion;
-    if (this.props.isHelmManaged) {
+    if (this.props.outletContext.isHelmManaged) {
       if (
         this.state.updatesAvailable &&
         versionHistory[0].status.startsWith("pending")
@@ -1916,7 +1936,9 @@ class AppVersionHistory extends Component<Props, State> {
                             latestConfigSequence={
                               versionHistory[0]?.parentSequence
                             }
-                            isBundleUploading={this.props.isBundleUploading}
+                            isBundleUploading={
+                              this.props.outletContext.isBundleUploading
+                            }
                             checkingUpdateText={checkingUpdateMessage}
                             checkingUpdateTextShort={checkingUpdateTextShort}
                             onCheckForUpdates={this.onCheckForUpdates}
@@ -1951,7 +1973,8 @@ class AppVersionHistory extends Component<Props, State> {
                                 ) : (
                                   <div className="flex alignItems--center">
                                     {checkingForUpdates &&
-                                    !this.props.isBundleUploading ? (
+                                    !this.props.outletContext
+                                      .isBundleUploading ? (
                                       <div className="flex alignItems--center u-marginRight--20">
                                         <Loader
                                           className="u-marginRight--5"
@@ -2002,7 +2025,7 @@ class AppVersionHistory extends Component<Props, State> {
                               </div>
                               {versionHistory.length > 1 &&
                               !gitopsIsConnected &&
-                              !this.props.isHelmManaged
+                              !this.props.outletContext.isHelmManaged
                                 ? this.renderDiffBtn()
                                 : null}
                             </div>
@@ -2055,12 +2078,12 @@ class AppVersionHistory extends Component<Props, State> {
                 {showDiffOverlay && (
                   <div className="DiffOverlay">
                     <VersionDiff
-                      slug={wrappedMatch.params.slug}
+                      slug={this.props.params?.slug}
                       firstSequence={firstSequence}
                       secondSequence={secondSequence}
                       onBackClick={this.hideDiffOverlay}
                       hideBackButton={false}
-                      app={this.props.app}
+                      app={this.props.outletContext.app}
                     />
                   </div>
                 )}
@@ -2087,7 +2110,8 @@ class AppVersionHistory extends Component<Props, State> {
             hideDeployWarningModal={this.hideDeployWarningModal}
             onForceDeployClick={this.onForceDeployClick}
             showAutoDeployWarning={
-              isPastVersion && this.props.app?.autoDeploy !== "disabled"
+              isPastVersion &&
+              this.props.outletContext.app?.autoDeploy !== "disabled"
             }
             confirmType={this.state.confirmType}
           />
@@ -2184,7 +2208,8 @@ class AppVersionHistory extends Component<Props, State> {
                 {this.state.versionToDeploy?.versionLabel} (Sequence{" "}
                 {this.state.versionToDeploy?.sequence})?
               </p>
-              {isPastVersion && this.props.app?.autoDeploy !== "disabled" ? (
+              {isPastVersion &&
+              this.props.outletContext.app?.autoDeploy !== "disabled" ? (
                 <div className="info-box">
                   <span className="u-fontSize--small u-textColor--info u-lineHeight--normal u-fontWeight--medium">
                     You have automatic deploys enabled.{" "}
@@ -2271,7 +2296,7 @@ class AppVersionHistory extends Component<Props, State> {
             forceDeploy={this.onForceDeployClick}
             showDeployWarningModal={this.state.showDeployWarningModal}
             showSkipModal={this.state.showSkipModal}
-            slug={this.props.wrappedMatch.params.slug}
+            slug={this.props.params.slug}
             sequence={this.state.selectedSequence}
           />
         )}
@@ -2281,7 +2306,7 @@ class AppVersionHistory extends Component<Props, State> {
             toggleErrorModal={this.toggleErrorModal}
             err={errorTitle}
             errMsg={errorMsg}
-            appSlug={this.props.wrappedMatch.params.slug}
+            appSlug={this.props.params?.slug}
           />
         )}
         {this.state.showNoChangesModal && (
@@ -2324,12 +2349,12 @@ class AppVersionHistory extends Component<Props, State> {
             appSlug={app?.slug}
             autoDeploy={app?.autoDeploy}
             gitopsIsConnected={downstream?.gitops?.isConnected}
-            isHelmManaged={this.props.isHelmManaged}
+            isHelmManaged={this.props.outletContext.isHelmManaged}
             isOpen={this.state.showAutomaticUpdatesModal}
             isSemverRequired={app?.isSemverRequired}
             onAutomaticUpdatesConfigured={() => {
               this.toggleAutomaticUpdatesModal();
-              this.props.updateCallback();
+              this.props.outletContext.updateCallback();
             }}
             onRequestClose={this.toggleAutomaticUpdatesModal}
             updateCheckerSpec={app?.updateCheckerSpec}
@@ -2340,6 +2365,4 @@ class AppVersionHistory extends Component<Props, State> {
   }
 }
 
-// @ts-ignore
-// eslint-disable-next-line
-export default withRouter(AppVersionHistory) as any;
+export default withRouter(AppVersionHistory);

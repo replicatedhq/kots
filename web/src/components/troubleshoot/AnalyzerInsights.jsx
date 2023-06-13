@@ -4,6 +4,7 @@ import isEmpty from "lodash/isEmpty";
 import filter from "lodash/filter";
 import MarkdownRenderer from "@src/components/shared/MarkdownRenderer";
 import { sortAnalyzers, parseIconUri } from "../../utilities/utilities";
+import { withRouter } from "@src/utilities/react-router-utilities";
 
 export class AnalyzerInsights extends React.Component {
   constructor(props) {
@@ -16,21 +17,23 @@ export class AnalyzerInsights extends React.Component {
   }
 
   componentDidUpdate(lastProps) {
-    if (this.props.insights !== lastProps.insights && this.props.insights) {
-      const hasProblems = this.props.insights.some(
+    if (
+      this.props.outletContext.insights !== lastProps.outletContext.insights &&
+      this.props.outletContext.insights
+    ) {
+      const hasProblems = this.props.outletContext.insights.some(
         (i) => i.severity === "warn" || i.severity === "error"
       );
       this.handleFilterTiles(hasProblems);
     }
-
-    if (this.props.insights) {
+    if (this.props.outletContext.insights) {
       clearInterval(this.interval);
     }
   }
 
   componentDidMount() {
-    if (this.props.insights) {
-      const hasProblems = this.props.insights.some(
+    if (this.props.outletContext.insights) {
+      const hasProblems = this.props.outletContext.insights.some(
         (i) => i.severity === "warn" || i.severity === "error"
       );
       this.handleFilterTiles(hasProblems);
@@ -40,7 +43,7 @@ export class AnalyzerInsights extends React.Component {
   }
 
   checkBundleStatus = () => {
-    const { status, refetchSupportBundle, insights } = this.props;
+    const { status, refetchSupportBundle, insights } = this.props.outletContext;
     if (status === "uploaded" || status === "analyzing") {
       // Check if the bundle is ready only if the user is on the page
       if (!insights) {
@@ -56,7 +59,7 @@ export class AnalyzerInsights extends React.Component {
   }
 
   handleFilterTiles = (checked) => {
-    let insights = sortAnalyzers(this.props.insights);
+    let insights = sortAnalyzers(this.props.outletContext.insights);
     if (checked) {
       insights = filter(
         insights,
@@ -70,7 +73,7 @@ export class AnalyzerInsights extends React.Component {
   };
 
   render() {
-    const { insights, status } = this.props;
+    const { insights, status } = this.props.outletContext;
     const { filterTiles } = this.state;
     const filteredInsights = this.state.insights;
 
@@ -210,7 +213,7 @@ export class AnalyzerInsights extends React.Component {
                                 <span
                                   className="link u-fontSize--small u-marginTop--5"
                                   onClick={() =>
-                                    this.props.openPodDetailsModal(
+                                    this.props.outletContext.openPodDetailsModal(
                                       tile?.involvedObject
                                     )
                                   }
@@ -233,4 +236,4 @@ export class AnalyzerInsights extends React.Component {
   }
 }
 
-export default AnalyzerInsights;
+export default withRouter(AnalyzerInsights);

@@ -121,7 +121,9 @@ class SnapshotSettings extends Component {
         !this.state.snapshotSettings?.veleroVersion &&
         !this.state.updatingSettings
       ) {
-        this.props.history.replace("/snapshots/settings?configure=true");
+        this.props.navigate("/snapshots/settings?configure=true", {
+          replace: true,
+        });
         this.setState({ showConfigureSnapshotsModal: true });
       }
 
@@ -269,7 +271,9 @@ class SnapshotSettings extends Component {
         minimalRBACKotsadmNamespace,
       },
       () => {
-        this.props.history.replace("/snapshots/settings?configure=true");
+        this.props.navigate("/snapshots/settings?configure=true", {
+          replace: true,
+        });
       }
     );
   };
@@ -277,11 +281,15 @@ class SnapshotSettings extends Component {
   toggleConfigureSnapshotsModal = () => {
     if (this.state.showConfigureSnapshotsModal) {
       this.setState({ showConfigureSnapshotsModal: false }, () => {
-        this.props.history.replace("/snapshots/settings");
+        this.props.navigate("/snapshots/settings", {
+          replace: true,
+        });
       });
     } else {
       this.setState({ showConfigureSnapshotsModal: true }, () => {
-        this.props.history.replace("/snapshots/settings?configure=true");
+        this.props.navigate("/snapshots/settings?configure=true", {
+          replace: true,
+        });
       });
     }
   };
@@ -301,7 +309,7 @@ class SnapshotSettings extends Component {
       isEmptyView,
       checkForVeleroAndNodeAgent,
     } = this.state;
-    const isLicenseUpload = !!this.props.history.location.search;
+    const isLicenseUpload = !!this.props.location.search;
 
     if (isLoadingSnapshotSettings && !checkForVeleroAndNodeAgent) {
       return (

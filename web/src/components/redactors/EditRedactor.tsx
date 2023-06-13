@@ -1,5 +1,5 @@
 import React, { useEffect, useReducer } from "react";
-import { Link, useHistory, useRouteMatch } from "react-router-dom";
+import { Link, useParams, useNavigate } from "react-router-dom";
 import { KotsPageTitle } from "@components/Head";
 import AceEditor, { Marker } from "react-ace";
 import "brace/mode/text";
@@ -10,8 +10,6 @@ import Loader from "../shared/Loader";
 
 import "../../scss/components/redactors/EditRedactor.scss";
 import Icon from "../Icon";
-
-import { KotsParams } from "@types";
 import { useSelectedApp } from "@features/App";
 
 type State = {
@@ -53,8 +51,8 @@ const EditRedactor = () => {
     }
   );
 
-  const history = useHistory();
-  const match = useRouteMatch<KotsParams>();
+  const navigate = useNavigate();
+  const params = useParams();
   const slug = useSelectedApp()?.slug || "";
 
   const getRedactor = (redactorSlug: string) => {
@@ -137,7 +135,9 @@ const EditRedactor = () => {
           setTimeout(() => {
             setState({ editConfirm: false });
           }, 3000);
-          history.replace(`/app/${redactorSlug}/troubleshoot/redactors`);
+          navigate(`/app/${redactorSlug}/troubleshoot/redactors`, {
+            replace: true,
+          });
         } else {
           setState({
             editingRedactor: false,
@@ -220,7 +220,7 @@ const EditRedactor = () => {
           setTimeout(() => {
             setState({ createConfirm: false });
           }, 3000);
-          history.replace(`/app/${slug}/troubleshoot/redactors`);
+          navigate(`/app/${slug}/troubleshoot/redactors`, { replace: true });
         } else {
           setState({
             creatingRedactor: false,
@@ -245,8 +245,8 @@ const EditRedactor = () => {
   };
 
   useEffect(() => {
-    if (match.params.redactorSlug) {
-      getRedactor(match.params.redactorSlug);
+    if (params.redactorSlug) {
+      getRedactor(params.redactorSlug);
     } else {
       const defaultYaml = `kind: Redactor
 apiVersion: troubleshoot.sh/v1beta2
@@ -274,9 +274,9 @@ spec:
   };
 
   const onSaveRedactor = () => {
-    if (match.params.redactorSlug) {
+    if (params.redactorSlug) {
       editRedactor(
-        match.params.redactorSlug,
+        params.redactorSlug,
         state.redactorEnabled,
         state.redactorYaml
       );

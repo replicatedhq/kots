@@ -1,19 +1,10 @@
 import React, { Component } from "react";
-import { Switch, Route } from "react-router-dom";
-import NotFound from "../static/NotFound";
-import SupportBundleList from "../troubleshoot/SupportBundleList";
-import SupportBundleAnalysis from "../troubleshoot/SupportBundleAnalysis";
-import GenerateSupportBundle from "../troubleshoot/GenerateSupportBundle";
-import Redactors from "../redactors/Redactors";
-import EditRedactor from "../redactors/EditRedactor";
+import { Outlet } from "react-router-dom";
+import { withRouter, RouterProps } from "@src/utilities/react-router-utilities";
 
 // Types
-import { App, SupportBundleProgress } from "@types";
+import { SupportBundleProgress } from "@types";
 
-type Props = {
-  app: App | null;
-  appName: string;
-};
 type State = {
   newBundleSlug: string;
   isGeneratingBundle: false;
@@ -26,8 +17,9 @@ type State = {
   loadingBundleId: string;
   loadingBundle: boolean;
 };
-class TroubleshootContainer extends Component<Props, State> {
-  constructor(props: Props) {
+
+class TroubleshootContainer extends Component<RouterProps, State> {
+  constructor(props: RouterProps) {
     super(props);
 
     this.state = {
@@ -54,6 +46,7 @@ class TroubleshootContainer extends Component<Props, State> {
   pollForBundleAnalysisProgress = async () => {
     this.setState({ loadingBundle: true });
     const { newBundleSlug } = this.state;
+
     if (!newBundleSlug) {
       // component may start polling before bundle slug is set
       // this is to prevent an api call if the slug is not set
@@ -79,6 +72,7 @@ class TroubleshootContainer extends Component<Props, State> {
           return;
         }
         const bundle = await res.json();
+
         this.setState({
           bundleAnalysisProgress: bundle.progress,
           bundle,
@@ -104,87 +98,29 @@ class TroubleshootContainer extends Component<Props, State> {
   };
 
   render() {
-    const { app, appName } = this.props;
+    const context = {
+      //@ts-ignore
+      app: this.props.outletContext.app,
+      //@ts-ignore
+      watch: this.props.outletContext.app,
+      newBundleSlug: this.state.newBundleSlug,
+      updateBundleSlug: this.updateBundleSlug,
+      pollForBundleAnalysisProgress: this.pollForBundleAnalysisProgress,
+      bundle: this.state.bundle,
+      bundleProgress: this.state.bundleAnalysisProgress,
+      loadingBundleId: this.state.loadingBundleId,
+      loadingBundle: this.state.loadingBundle,
+      updateState: this.updateState,
+      displayErrorModal: this.state.displayErrorModal,
+      loading: this.state.loading,
+    };
 
     return (
       <div className="flex-column flex1">
-        <Switch>
-          <Route
-            exact
-            path="/app/:slug/troubleshoot"
-            render={() => (
-              <SupportBundleList
-                watch={app}
-                newBundleSlug={this.state.newBundleSlug}
-                updateBundleSlug={this.updateBundleSlug}
-                pollForBundleAnalysisProgress={
-                  this.pollForBundleAnalysisProgress
-                }
-                bundle={this.state.bundle}
-                bundleProgress={this.state.bundleAnalysisProgress}
-                loadingBundleId={this.state.loadingBundleId}
-                loadingBundle={this.state.loadingBundle}
-                updateState={this.updateState}
-                displayErrorModal={this.state.displayErrorModal}
-                loading={this.state.loading}
-              />
-            )}
-          />
-          <Route
-            exact
-            path="/app/:slug/troubleshoot/generate"
-            render={() => (
-              <GenerateSupportBundle
-                watch={app}
-                newBundleSlug={this.state.newBundleSlug}
-                updateBundleSlug={this.updateBundleSlug}
-                bundle={this.state.bundle}
-              />
-            )}
-          />
-          <Route
-            path="/app/:slug/troubleshoot/analyze/:bundleSlug"
-            render={() => (
-              <SupportBundleAnalysis
-                watch={app}
-                pollForBundleAnalysisProgress={
-                  this.pollForBundleAnalysisProgress
-                }
-                bundle={this.state.bundle}
-                bundleProgress={this.state.bundleAnalysisProgress}
-                updateState={this.updateState}
-                displayErrorModal={this.state.displayErrorModal}
-                getSupportBundleErrMsg={this.state.getSupportBundleErrMsg}
-                loading={this.state.loading}
-              />
-            )}
-          />
-          <Route
-            exact
-            path="/app/:slug/troubleshoot/redactors"
-            render={(props) => (
-              <Redactors
-                {...props}
-                appSlug={app?.slug || ""}
-                appName={appName}
-              />
-            )}
-          />
-          <Route
-            exact
-            path="/app/:slug/troubleshoot/redactors/new"
-            render={() => <EditRedactor />}
-          />
-          <Route
-            exact
-            path="/app/:slug/troubleshoot/redactors/:redactorSlug"
-            render={() => <EditRedactor />}
-          />
-          <Route component={NotFound} />
-        </Switch>
+        <Outlet context={context} />
       </div>
     );
   }
 }
 
-export default TroubleshootContainer;
+export default withRouter(TroubleshootContainer);

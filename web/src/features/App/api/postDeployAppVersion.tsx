@@ -1,5 +1,5 @@
 import { useMutation } from "react-query";
-import { useHistory } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 
 async function postDeployAppVersion({
   apiEndpoint = process.env.API_ENDPOINT,
@@ -52,7 +52,7 @@ function useDeployAppVersion({
   slug: string;
   sequence: string;
 }) {
-  const history = useHistory();
+  const navigate = useNavigate();
 
   return useMutation({
     mutationFn: ({
@@ -75,7 +75,7 @@ function useDeployAppVersion({
       );
     },
     onSuccess: () => {
-      history.push(`/app/${slug}`);
+      navigate(`/app/${slug}`);
     },
   });
 }

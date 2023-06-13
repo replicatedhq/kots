@@ -1,54 +1,42 @@
-import { KotsParams } from "@types";
-import React from "react";
+import { useSelectedApp } from "@features/App";
+import useApps from "@features/Gitops/hooks/useApps";
+import React, { ComponentType } from "react";
 import {
-  match,
-  RouteComponentProps,
-  useHistory,
+  useNavigate,
   useLocation,
-  useRouteMatch,
-} from "react-router";
+  useParams,
+  useOutletContext,
+} from "react-router-dom";
+import { KotsParams } from "@types";
+export interface RouterProps {
+  location: ReturnType<typeof useLocation>;
+  navigate: ReturnType<typeof useNavigate>;
+  params: KotsParams;
+  outletContext: ReturnType<typeof useOutletContext>;
+}
 
-// @ts-ignore
-const RouterWrapper = ({ children }) => {
-  const history = useHistory();
-  const location = useLocation();
-  const wrappedMatch = useRouteMatch<KotsParams>();
+export function withRouter<TProps extends RouterProps>(
+  Component: ComponentType<TProps>
+) {
+  function ComponentWithRouterProp(props: TProps) {
+    let location = useLocation();
+    let navigate = useNavigate();
+    let params = useParams();
+    const outletContext = useOutletContext();
+    const selectedApp = useSelectedApp();
+    const { refetch: refetchApps } = useApps();
+    return (
+      <Component
+        {...props}
+        location={location}
+        navigate={navigate}
+        params={params}
+        outletContext={outletContext}
+        app={selectedApp}
+        refetchApps={refetchApps}
+      />
+    );
+  }
 
-  return children({ history, location, wrappedMatch });
-};
-
-/**
- * @deprecated The method should not be used on new components. New components should use the hooks directly.
- */
-const withRouter = <P extends object>(
-  WrappedComponent: React.ComponentType<
-    RouteComponentProps | { wrappedMatch: match } | P
-  >
-) => {
-  return class extends React.Component<P> {
-    render() {
-      return (
-        <RouterWrapper
-          // @ts-ignore
-          children={({ history, location, wrappedMatch }) => {
-            return (
-              <WrappedComponent
-                history={history}
-                location={location}
-                match={wrappedMatch}
-                wrappedMatch={wrappedMatch}
-                {...this.props}
-              />
-            );
-          }}
-        />
-      );
-    }
-  };
-};
-
-export type withRouterType = RouteComponentProps<KotsParams> & {
-  wrappedMatch: match<KotsParams>;
-};
-
-export { withRouter };
+  return ComponentWithRouterProp;
+}

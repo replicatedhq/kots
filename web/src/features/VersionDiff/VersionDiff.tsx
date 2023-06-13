@@ -1,14 +1,12 @@
 import React from "react";
-import {
-  withRouter,
-  withRouterType,
-} from "@src/utilities/react-router-utilities";
+import { withRouter } from "@src/utilities/react-router-utilities";
 
 import Loader from "../../components/shared/Loader";
 import DiffEditor from "../../components/shared/DiffEditor";
 
 import "../../scss/components/watches/DownstreamWatchVersionDiff.scss";
 import Icon from "../../components/Icon";
+import { useNavigate } from "react-router-dom";
 
 type Props = {
   firstSequence: number;
@@ -16,7 +14,8 @@ type Props = {
   onBackClick: (goBack: boolean) => void;
   secondSequence: number;
   slug: string;
-} & withRouterType;
+  navigate: ReturnType<typeof useNavigate>;
+};
 
 type State = {
   loadingFileTrees: boolean;
@@ -87,32 +86,19 @@ class VersionDiff extends React.Component<Props, State> {
   }
 
   componentDidMount() {
-    const { firstSequence, secondSequence, location } = this.props;
+    const { firstSequence, secondSequence } = this.props;
     Promise.all([
       this.fetchRenderedApplicationTree(firstSequence, true),
       this.fetchRenderedApplicationTree(secondSequence, false),
     ]).then(() => this.setState({ loadingFileTrees: false }));
-
-    const url = window.location.pathname;
-    if (!url.includes("/diff") && !location.search.includes("?diff/")) {
-      window.history.replaceState(
-        "",
-        "",
-        `${url}/diff/${firstSequence}/${secondSequence}`
-      );
-    }
   }
 
   componentWillUnmount() {
     const url = window.location.pathname;
     if (url.includes("/diff")) {
-      const { firstSequence, secondSequence } = this.props;
+      const { firstSequence, secondSequence, navigate } = this.props;
       const diffPath = `/diff/${firstSequence}/${secondSequence}`;
-      window.history.replaceState(
-        "",
-        "",
-        url.substring(0, url.indexOf(diffPath))
-      );
+      navigate(url.substring(0, url.indexOf(diffPath)), { replace: true });
     }
   }
 

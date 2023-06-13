@@ -1,8 +1,7 @@
 import React, { PureComponent } from "react";
 import PropTypes from "prop-types";
 import classNames from "classnames";
-import { withRouter } from "@src/utilities/react-router-utilities";
-import { RouteComponentProps } from "react-router-dom";
+import { withRouter, RouterProps } from "@src/utilities/react-router-utilities";
 import { Link } from "react-router-dom";
 import { Utilities } from "@src/utilities/utilities";
 import ErrorModal from "../modals/ErrorModal";
@@ -11,7 +10,7 @@ import NavBarDropdown from "./NavBarDropdown";
 import "@src/scss/components/shared/NavBar.scss";
 import { App } from "@types";
 
-interface Props extends Partial<RouteComponentProps> {
+type Props = {
   appsList: App[];
   className?: string;
   errLoggingOut: string;
@@ -24,7 +23,7 @@ interface Props extends Partial<RouteComponentProps> {
   logo: string | null;
   onLogoutError: (message: string) => void;
   refetchAppsList: () => void;
-}
+} & RouterProps;
 
 interface State {
   displayErrorModal: boolean;
@@ -114,30 +113,30 @@ export class NavBar extends PureComponent<Props, State> {
 
   handleGoToGitOps = () => {
     if (this.props.location?.pathname !== "/gitops") {
-      this.props.history?.push("/gitops");
+      this.props.navigate("/gitops");
     }
   };
 
   handleGoToClusterManagement = () => {
-    this.props.history?.push("/cluster/manage");
+    this.props.navigate("/cluster/manage");
   };
 
   handleAddNewApplication = () => {
-    this.props.history?.push("/upload-license");
+    this.props.navigate("/upload-license");
   };
 
   handleGoToSnapshots = () => {
-    this.props.history?.push("/snapshots");
+    this.props.navigate("/snapshots");
   };
 
   handleGoToAccess = () => {
-    this.props.history?.push("/access");
+    this.props.navigate("/access");
   };
 
   redirectToDashboard = () => {
-    const { history, refetchAppsList } = this.props;
+    const { navigate, refetchAppsList } = this.props;
     refetchAppsList();
-    history?.push("/");
+    navigate("/");
   };
 
   render() {

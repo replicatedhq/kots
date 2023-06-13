@@ -1,8 +1,4 @@
 import React, { useEffect, useContext } from "react";
-import {
-  withRouter,
-  withRouterType,
-} from "@src/utilities/react-router-utilities";
 import Loader from "../shared/Loader";
 import dayjs from "dayjs";
 import filter from "lodash/filter";
@@ -13,11 +9,12 @@ import Icon from "../Icon";
 import "@src/scss/components/AirgapUploadProgress.scss";
 
 import {
+  KotsParams,
   SupportBundle,
   SupportBundleInsight,
   SupportBundleProgress,
 } from "@types";
-import { useHistory } from "react-router";
+import { useNavigate, useParams } from "react-router-dom";
 import { ToastContext } from "@src/context/ToastContext";
 
 let percentage: number;
@@ -28,12 +25,12 @@ type Props = {
   isCustomer: boolean;
   isSupportBundleUploadSupported: boolean;
   loadingBundle: boolean;
-  progressData: SupportBundleProgress;
+  progressData: SupportBundleProgress | null;
   refetchBundleList: () => void;
   //deleteBundleFromList: (id: string) => void;
   watchSlug: string;
   className: string;
-} & withRouterType;
+};
 
 type State = {
   downloadBundleErrMsg?: string;
@@ -47,7 +44,7 @@ type State = {
 };
 
 export const SupportBundleRow = (props: Props) => {
-  const history = useHistory();
+  const navigate = useNavigate();
   const {
     setIsToastVisible,
     isCancelled,
@@ -57,6 +54,8 @@ export const SupportBundleRow = (props: Props) => {
     setToastType,
     setToastChild,
   } = useContext(ToastContext);
+
+  const params = useParams<KotsParams>();
 
   const [state, setState] = React.useReducer(
     (currentState: State, newState: Partial<State>) => ({
@@ -111,7 +110,7 @@ export const SupportBundleRow = (props: Props) => {
 
   const handleBundleClick = (bundle: SupportBundle) => {
     const { watchSlug } = props;
-    history.push(`/app/${watchSlug}/troubleshoot/analyze/${bundle.slug}`);
+    navigate(`/app/${watchSlug}/troubleshoot/analyze/${bundle.slug}`);
   };
 
   const downloadBundle = async (bundle: SupportBundle) => {
@@ -169,7 +168,6 @@ export const SupportBundleRow = (props: Props) => {
   }, [isCancelled]);
 
   const deleteBundle = (bundle: SupportBundle) => {
-    const { match } = props;
     const delayFetch = 7000;
     const bundleCollectionDate = dayjs(bundle?.createdAt)?.format(
       "MMMM D, YYYY @ h:mm a"
@@ -189,7 +187,7 @@ export const SupportBundleRow = (props: Props) => {
 
     let id = setTimeout(async () => {
       const res = await fetch(
-        `${process.env.API_ENDPOINT}/troubleshoot/app/${match.params.slug}/supportbundle/${bundle.id}`,
+        `${process.env.API_ENDPOINT}/troubleshoot/app/${params.slug}/supportbundle/${bundle.id}`,
         {
           method: "DELETE",
           credentials: "include",
@@ -223,7 +221,7 @@ export const SupportBundleRow = (props: Props) => {
       downloadBundleErrMsg: "",
     });
     fetch(
-      `${process.env.API_ENDPOINT}/troubleshoot/app/${props.match.params.slug}/supportbundle/${bundleSlug}/share`,
+      `${process.env.API_ENDPOINT}/troubleshoot/app/${params.slug}/supportbundle/${bundleSlug}/share`,
       {
         method: "POST",
         credentials: "include",
@@ -314,7 +312,7 @@ export const SupportBundleRow = (props: Props) => {
     </div>
   );
 
-  if (progressData.collectorsCompleted > 0) {
+  if (progressData && progressData.collectorsCompleted > 0) {
     moveBar(progressData);
     progressBar = (
       <div className="progressbar">
@@ -453,7 +451,8 @@ export const SupportBundleRow = (props: Props) => {
               {state.downloadingBundle ? (
                 <Loader size="30" />
               ) : props.loadingBundle ||
-                props.progressData?.collectorsCompleted > 0 ? (
+                (props?.progressData &&
+                  props.progressData?.collectorsCompleted > 0) ? (
                 <div
                   className="flex alignItems--center"
                   style={{ width: "350px" }}
@@ -492,7 +491,4 @@ export const SupportBundleRow = (props: Props) => {
   );
 };
 
-/* eslint-disable */
-// @ts-ignore
-export default withRouter(SupportBundleRow) as any;
-/* eslint-enable*/
+export default SupportBundleRow;

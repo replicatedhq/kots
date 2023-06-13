@@ -14,14 +14,19 @@ import "../../scss/components/troubleshoot/FileTree.scss";
 
 // Types
 import { App, KotsParams } from "@types";
-import { RouteComponentProps } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 
 type Props = {
-  app: App;
-  appName: string;
-  appNameSpace: string;
-  isHelmManaged: boolean;
-} & RouteComponentProps<KotsParams>;
+  params: KotsParams;
+  location: ReturnType<typeof useLocation>;
+  navigate: ReturnType<typeof useNavigate>;
+  outletContext: {
+    app: App;
+    appName: string;
+    appNameSpace: string;
+    isHelmManaged: boolean;
+  };
+};
 
 type State = {
   files: {
@@ -43,7 +48,7 @@ class KotsApplicationTree extends React.Component<Props, State> {
   }
 
   fetchApplicationTree = () => {
-    const url = `${process.env.API_ENDPOINT}/app/${this.props.match.params.slug}/sequence/${this.props.match.params.sequence}/contents`;
+    const url = `${process.env.API_ENDPOINT}/app/${this.props.params.slug}/sequence/${this.props.params.sequence}/contents`;
     fetch(url, {
       credentials: "include",
       method: "GET",
@@ -53,9 +58,9 @@ class KotsApplicationTree extends React.Component<Props, State> {
         const files = res?.files || {};
         const paths = keys(files);
         const applicationTree = Utilities.arrangeIntoApplicationTree(paths);
-        if (this.props.history.location.search) {
+        if (this.props.location.search) {
           this.setState({
-            selectedFile: `/skippedFiles/${this.props.history.location.search.slice(
+            selectedFile: `/skippedFiles/${this.props.location.search.slice(
               1
             )}`,
           });
@@ -72,8 +77,8 @@ class KotsApplicationTree extends React.Component<Props, State> {
 
   componentDidUpdate(lastProps: Props) {
     if (
-      this.props.match.params.slug != lastProps.match.params.slug ||
-      this.props.match.params.sequence != lastProps.match.params.sequence
+      this.props.params.slug != lastProps.params.slug ||
+      this.props.params.sequence != lastProps.params.sequence
     ) {
       this.fetchApplicationTree();
     }
@@ -96,7 +101,7 @@ class KotsApplicationTree extends React.Component<Props, State> {
   };
 
   back = () => {
-    this.props.history.goBack();
+    this.props.navigate(-1);
   };
 
   render() {
@@ -110,7 +115,7 @@ class KotsApplicationTree extends React.Component<Props, State> {
     return (
       <div className="flex-column flex1 ApplicationTree--wrapper u-paddingBottom--30">
         <KotsPageTitle pageName="View Files" showAppSlug />
-        {!this.props.isHelmManaged && (
+        {!this.props.outletContext.isHelmManaged && (
           <div className="edit-files-banner u-fontSize--small u-fontWeight--medium">
             Need to edit these files?{" "}
             <span
@@ -192,7 +197,7 @@ class KotsApplicationTree extends React.Component<Props, State> {
                       </span>
                     }
                   >
-                    {`kubectl kots download --namespace ${this.props.appNameSpace} --slug ${this.props.match.params.slug}`}
+                    {`kubectl kots download --namespace ${this.props.outletContext.appNameSpace} --slug ${this.props.params.slug}`}
                   </CodeSnippet>
                 </div>
               </div>
@@ -225,7 +230,7 @@ class KotsApplicationTree extends React.Component<Props, State> {
                       </span>
                     }
                   >
-                    {`kubectl kots upload --namespace ${this.props.appNameSpace} --slug ${this.props.match.params.slug} ./${this.props.match.params.slug}`}
+                    {`kubectl kots upload --namespace ${this.props.outletContext.appNameSpace} --slug ${this.props.params.slug} ./${this.props.params.slug}`}
                   </CodeSnippet>
                 </div>
               </div>

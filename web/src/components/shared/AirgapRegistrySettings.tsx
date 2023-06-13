@@ -8,11 +8,10 @@ import Modal from "react-modal";
 import "../../scss/components/watches/WatchDetailPage.scss";
 import { Repeater } from "../../utilities/repeater";
 import Icon from "../Icon";
-import { App, KotsParams } from "@types";
-import { RouteComponentProps } from "react-router-dom";
+import { App } from "@types";
 import InputField from "./forms/InputField";
 
-type Props = RouteComponentProps<KotsParams> & {
+type Props = {
   app: App;
   registryDetails: RegistryDetails;
   updateCallback: () => void;
@@ -21,6 +20,7 @@ type Props = RouteComponentProps<KotsParams> & {
   hideTestConnection: boolean;
   namespaceDescription: string;
   showHostnameAsRequired: boolean;
+  params: { slug: string };
 };
 
 interface RegistryDetails {
@@ -102,7 +102,7 @@ class AirgapRegistrySettings extends Component<Props, State> {
 
   onSaveRegistrySettings = async (stopUsingRegistry: boolean) => {
     let { hostname, username, password, namespace, isReadOnly } = this.state;
-    const { slug } = this.props.match.params;
+    const { slug } = this.props.params;
 
     if (stopUsingRegistry) {
       hostname = "";
@@ -165,7 +165,7 @@ class AirgapRegistrySettings extends Component<Props, State> {
       testMessage: "",
     });
 
-    const { slug } = this.props.app;
+    const { slug } = this.props.params;
 
     let res;
     try {

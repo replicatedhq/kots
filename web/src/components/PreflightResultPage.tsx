@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { KotsPageTitle } from "@components/Head";
-import { useParams, useHistory } from "react-router-dom";
+import { useParams, useLocation } from "react-router-dom";
 import Modal from "react-modal";
 import ReactTooltip from "react-tooltip";
 
@@ -22,6 +22,7 @@ import { useDeployAppVersion } from "@features/App/api";
 
 import { KotsParams } from "@types";
 import Icon from "./Icon";
+import { useApps } from "@features/App";
 
 interface Props {
   fromLicenseFlow?: boolean;
@@ -39,8 +40,7 @@ function PreflightResultPage(props: Props) {
     setShowConfirmIgnorePreflightsModal,
   ] = useState(false);
 
-  const history = useHistory();
-  const { sequence = "0", slug } = useParams<KotsParams>();
+  const { sequence = "0", slug } = useParams<keyof KotsParams>() as KotsParams;
   const { mutate: deployKotsDownstream } = useDeployAppVersion({
     slug,
     sequence,
@@ -68,15 +68,16 @@ function PreflightResultPage(props: Props) {
     }
   }
 
+  const location = useLocation();
+  const navigate = useNavigate();
+  const { refetch: refetchApps } = useApps();
+
   return (
     <div className="flex-column flex1 container">
       <KotsPageTitle pageName="Preflight Checks" showAppSlug />
       <div className="PreflightChecks--wrapper flex-column u-paddingTop--30 flex1 flex u-overflow--auto">
-        {history.location.pathname.includes("version-history") && (
-          <div
-            className="u-fontWeight--bold link"
-            onClick={() => history.goBack()}
-          >
+        {location.pathname.includes("version-history") && (
+          <div className="u-fontWeight--bold link" onClick={() => navigate(-1)}>
             <Icon
               icon="prev-arrow"
               size={12}
@@ -155,7 +156,7 @@ function PreflightResultPage(props: Props) {
                   className="btn primary blue"
                   onClick={() => ignorePermissionErrors()}
                 >
-                  {!history.location.pathname.includes("version-history")
+                  {!location.pathname.includes("version-history")
                     ? "Proceed"
                     : "Re-run"}{" "}
                   with limited Preflights
@@ -283,6 +284,7 @@ function PreflightResultPage(props: Props) {
               onClick={() => {
                 setShowContinueWithFailedPreflightsModal(false);
                 deployKotsDownstream({ continueWithFailedPreflights: true });
+                refetchApps();
               }}
             >
               Deploy anyway

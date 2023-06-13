@@ -60,12 +60,10 @@ const PreflightResultErrors = (props: Props) => {
       displayErrorModal: false,
     }
   );
-  const { slug, sequence = "0" } = useParams<KotsParams>();
+  const { slug, sequence = "0" } = useParams<keyof KotsParams>() as KotsParams;
   const selectedApp = useSelectedApp();
 
-  const [previousAppSlug, setPreviousAppSlug] = React.useState<
-    string | undefined
-  >(slug);
+  const [previousAppSlug, setPreviousAppSlug] = React.useState(slug);
   const [previousSequence, setPreviousSequence] = React.useState<
     string | undefined
   >(sequence);

@@ -1,6 +1,5 @@
 import React, { Component } from "react";
 import Select from "react-select";
-import { RouteComponentProps } from "react-router-dom";
 import MonacoEditor from "@monaco-editor/react";
 import find from "lodash/find";
 import Modal from "react-modal";
@@ -195,7 +194,7 @@ type ProviderPayload =
     }
   | StoreProvider;
 
-type Props = RouteComponentProps & {
+type Props = {
   // TODO: add apps type for apps response
   apps: Array<object>;
   checkForVeleroAndNodeAgent: boolean;

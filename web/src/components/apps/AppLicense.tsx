@@ -7,7 +7,7 @@ import yaml from "js-yaml";
 import classNames from "classnames";
 import size from "lodash/size";
 import Modal from "react-modal";
-import { Link } from "react-router-dom";
+import { Link, useOutletContext } from "react-router-dom";
 import {
   getFileContent,
   Utilities,
@@ -47,7 +47,7 @@ type State = {
   isViewingLicenseEntitlements: boolean;
 };
 
-const AppLicenseComponent = (props: Props) => {
+const AppLicenseComponent = () => {
   const [state, setState] = useReducer(
     (currentState: State, newState: Partial<State>) => ({
       ...currentState,
@@ -68,6 +68,7 @@ const AppLicenseComponent = (props: Props) => {
       isViewingLicenseEntitlements: false,
     }
   );
+  const outletContext: Props = useOutletContext();
 
   const { data: licenseWithInterceptResponse } = useLicenseWithIntercept();
   useEffect(() => {
@@ -85,26 +86,28 @@ const AppLicenseComponent = (props: Props) => {
   }, [licenseWithInterceptResponse]);
 
   const syncAppLicense = (licenseData: string) => {
+    const { app, syncCallback } = outletContext;
     setState({
       loading: true,
       message: "",
       messageType: "info",
     });
 
-    const { app } = props;
-
     const payload = {
       licenseData,
     };
 
-    fetch(`${process.env.API_ENDPOINT}/app/${app.slug}/license`, {
-      method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      credentials: "include",
-      body: JSON.stringify(payload),
-    })
+    fetch(
+      `${process.env.API_ENDPOINT}/app/${outletContext?.app?.slug}/license`,
+      {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include",
+        body: JSON.stringify(payload),
+      }
+    )
       .then(async (response) => {
         if (!response.ok) {
           if (response.status == 401) {
@@ -133,8 +136,8 @@ const AppLicenseComponent = (props: Props) => {
           showNextStepModal: licenseResponse.synced,
         });
 
-        if (props.syncCallback) {
-          props.syncCallback();
+        if (syncCallback) {
+          syncCallback();
         }
       })
       .catch((err) => {
@@ -209,7 +212,7 @@ const AppLicenseComponent = (props: Props) => {
       licenseChangeMessageType: "info",
     });
 
-    const { app } = props;
+    const { app, changeCallback } = outletContext;
 
     const payload = {
       licenseData,
@@ -243,8 +246,8 @@ const AppLicenseComponent = (props: Props) => {
           licenseChangeMessage: "",
         });
 
-        if (props.changeCallback) {
-          props.changeCallback();
+        if (changeCallback) {
+          changeCallback();
         }
       })
       .catch((err) => {
@@ -315,19 +318,19 @@ const AppLicenseComponent = (props: Props) => {
     );
   }
 
-  const { app } = props;
+  const { app, isHelmManaged } = outletContext;
   const expiresAt = getLicenseExpiryDate(appLicense);
   const gitops = app.downstream?.gitops;
   const appName = app?.name || "Your application";
 
   let nextModalBody: React.ReactNode;
-  if (props.isHelmManaged) {
-    const sequence = props?.app?.downstream?.currentVersion?.sequence;
-    const versionLabel = props?.app?.downstream?.currentVersion?.versionLabel;
+  if (isHelmManaged) {
+    const sequence = app?.downstream?.currentVersion?.sequence;
+    const versionLabel = app?.downstream?.currentVersion?.versionLabel;
 
     nextModalBody = (
       <UseDownloadValues
-        appSlug={props?.app?.slug}
+        appSlug={app?.slug}
         fileName="values.yaml"
         sequence={sequence}
         versionLabel={versionLabel}
@@ -350,22 +353,22 @@ const AppLicenseComponent = (props: Props) => {
           return (
             <>
               <HelmDeployModal
-                appSlug={props?.app?.slug}
-                chartPath={props?.app?.chartPath || ""}
+                appSlug={app?.slug}
+                chartPath={app?.chartPath || ""}
                 downloadClicked={download}
                 downloadError={downloadError}
                 hideHelmDeployModal={hideNextStepModal}
-                registryUsername={props?.app?.credentials?.username}
-                registryPassword={props?.app?.credentials?.password}
+                registryUsername={app?.credentials?.username}
+                registryPassword={app?.credentials?.password}
                 showHelmDeployModal={true}
                 showDownloadValues={true}
                 subtitle={
                   "Follow the steps below to redeploy the release using the new license."
                 }
-                title={` Redeploy ${props?.app?.slug}`}
+                title={` Redeploy ${app?.slug}`}
                 upgradeTitle={"Redeploy release"}
                 version={versionLabel}
-                namespace={props?.app?.namespace}
+                namespace={app?.namespace}
               />
               <a href={url} download={name} className="hidden" ref={ref} />
             </>

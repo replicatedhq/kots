@@ -26,8 +26,8 @@ class AppSnapshotRestore extends Component {
   }
 
   componentDidUpdate(lastProps) {
-    const { match } = this.props;
-    if (match.params.id !== lastProps.match.params.id) {
+    const { params } = this.props;
+    if (params.id !== lastProps.params.id) {
       this.state.fetchRestoreDetailJob.start(this.fetchRestoreDetail, 2000);
     } else {
       const phase = this.state.restoreDetail?.phase;
@@ -42,8 +42,8 @@ class AppSnapshotRestore extends Component {
   }
 
   fetchRestoreDetail = async () => {
-    const { match } = this.props;
-    const restoreName = match.params.id;
+    const { params } = this.props;
+    const restoreName = params.id;
 
     this.setState({
       errorMessage: "",
@@ -100,7 +100,7 @@ class AppSnapshotRestore extends Component {
     });
     try {
       await this.fetchCancelRestore();
-      this.props.history.push(`/snapshots/partial/${this.props.app?.slug}`);
+      this.props.navigate(`/snapshots/partial/${this.props.app?.slug}`);
     } catch (err) {
       this.setState({
         cancelRestoreErr: true,
@@ -189,7 +189,7 @@ class AppSnapshotRestore extends Component {
                 Your application failed to restore to
                 <span className="u-fontWeight--bold u-textColor--bodyCopy">
                   {" "}
-                  {this.props.match.params.id}{" "}
+                  {this.props.params.id}{" "}
                 </span>{" "}
                 because of errors. During the restore there were
                 <span className="u-fontWeight--bold  u-textColor--secondary">
@@ -209,7 +209,7 @@ class AppSnapshotRestore extends Component {
                 Your application failed to restore to
                 <span className="u-fontWeight--bold u-textColor--bodyCopy">
                   {" "}
-                  {this.props.match.params.id}{" "}
+                  {this.props.params.id}{" "}
                 </span>{" "}
                 because of errors. During the restore there{" "}
                 {detail?.errors?.length === 1 ? "was" : "were"}
@@ -250,7 +250,7 @@ class AppSnapshotRestore extends Component {
               Your application failed to restore to{" "}
               <span className="u-fontWeight--bold u-textColor--bodyCopy">
                 {" "}
-                {this.props.match.params.id}{" "}
+                {this.props.params.id}{" "}
               </span>
             </p>
           </div>
@@ -277,7 +277,7 @@ class AppSnapshotRestore extends Component {
             Your application restored to{" "}
             <span className="u-fontWeight--bold u-textColor--bodyCopy">
               {" "}
-              {this.props.match.params.id}{" "}
+              {this.props.params.id}{" "}
             </span>{" "}
             but there were warnings that my affect the application. During the
             restore there were

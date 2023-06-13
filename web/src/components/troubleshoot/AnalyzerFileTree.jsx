@@ -67,10 +67,11 @@ class AnalyzerFileTree extends React.Component {
   };
 
   async setSelectedFile(path) {
-    const { watchSlug } = this.props;
+    const { navigate, outletContext, params } = this.props;
     const newPath = rootPath(path);
-    this.props.history.replace(
-      `/app/${watchSlug}/troubleshoot/analyze/${this.props.match.params.bundleSlug}/contents${newPath}`
+    navigate(
+      `/app/${outletContext.watchSlug}/troubleshoot/analyze/${params.bundleSlug}/contents${newPath}`,
+      { replace: true }
     );
     this.setState({ selectedFile: newPath, activeMarkers: [] });
     if (this.hasContentAlready(newPath)) {
@@ -153,7 +154,7 @@ class AnalyzerFileTree extends React.Component {
       () => {
         // Clear hash from URL to prevent highlighting again on a refresh
         const splitLocation = this.props.location.pathname.split("#");
-        this.props.history.replace(splitLocation[0]);
+        this.props.navigate(splitLocation[0], { replace: true });
       }
     );
   };
@@ -166,11 +167,11 @@ class AnalyzerFileTree extends React.Component {
   };
 
   componentDidUpdate(lastProps, lastState) {
-    const { bundle } = this.props;
+    const { bundle } = this.props.outletContext;
     if (this.state.fileTree !== lastState.fileTree && this.state.fileTree) {
       this.setFileTree();
     }
-    if (bundle !== lastProps.bundle && bundle) {
+    if (bundle !== lastProps.outletContext.bundle && bundle) {
       this.setState({
         bundleId: bundle.id,
         fileTree: bundle.treeIndex,
@@ -206,7 +207,8 @@ class AnalyzerFileTree extends React.Component {
   }
 
   componentDidMount() {
-    const { bundle } = this.props;
+    const { location } = this.props;
+    const { bundle } = this.props.outletContext;
     if (this.state.fileTree) {
       this.setFileTree();
     }
@@ -216,24 +218,24 @@ class AnalyzerFileTree extends React.Component {
         bundleId: bundle.id,
         fileTree: bundle.treeIndex,
       });
-      if (this.props.location) {
+      if (location) {
         this.setState({
           selectedFile:
             "/" +
-            this.props.location.pathname
+            location.pathname
               .split("/")
-              .slice(7, this.props.location.pathname.length)
+              .slice(7, location.pathname.length)
               .join("/"),
         });
         this.fetchFiles(
           bundle.id,
           "/" +
-            this.props.location.pathname
+            location.pathname
               .split("/")
-              .slice(7, this.props.location.pathname.length)
+              .slice(7, location.pathname.length)
               .join("/")
         );
-        if (this.props.location.hash) {
+        if (location.hash) {
           this.setRedactorMarkersFromHash();
         }
       }
@@ -243,6 +245,7 @@ class AnalyzerFileTree extends React.Component {
   onSelectionChange = () => {
     const column = this.refAceEditor?.editor?.selection?.anchor.column;
     const row = this.refAceEditor?.editor?.selection?.anchor.row;
+
     if (column === 0) {
       let newMarker = [];
       newMarker.push({
@@ -252,12 +255,14 @@ class AnalyzerFileTree extends React.Component {
         type: "background",
       });
       this.setState({ activeMarkers: newMarker });
-      this.props.history.replace(`${this.props.location.pathname}#L${row}`);
+      this.props.navigate(`${this.props.location.pathname}#L${row}`, {
+        replace: true,
+      });
     }
   };
 
   handleDownload = () => {
-    const { downloadBundle } = this.props;
+    const { downloadBundle } = this.props.outletContext;
     if (downloadBundle && typeof downloadBundle == "function") {
       downloadBundle();
     }

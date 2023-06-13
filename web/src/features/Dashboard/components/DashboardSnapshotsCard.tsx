@@ -1,13 +1,12 @@
 import React, { useEffect, useReducer } from "react";
 import { withRouter } from "@src/utilities/react-router-utilities";
-import { Link, useHistory } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import find from "lodash/find";
 import "@src/scss/components/watches/DashboardCard.scss";
 import InlineDropdown from "@src/components/shared/InlineDropdown";
 import SnapshotDifferencesModal from "@src/components/modals/SnapshotDifferencesModal";
 import Icon from "@src/components/Icon";
-import { App, KotsParams, SnapshotSettings } from "@types";
-import { RouteComponentProps } from "react-router-dom";
+import { App, SnapshotSettings } from "@types";
 import { usePrevious } from "@src/hooks/usePrevious";
 import { useCreateSnapshot } from "../api/createSnapshot";
 import { useSnapshotSettings } from "../api/getSnapshotSettings";
@@ -47,7 +46,7 @@ type Props = {
   app: App;
   isSnapshotAllowed: boolean;
   ping: (clusterId?: string) => void;
-} & RouteComponentProps<KotsParams>;
+};
 
 type State = {
   determiningDestination: boolean;
@@ -66,7 +65,7 @@ type State = {
 };
 
 export const DashboardSnapshotsCard = (props: Props) => {
-  const history = useHistory();
+  const navigate = useNavigate();
 
   const [state, setState] = useReducer(
     (currentState: State, newState: Partial<State>) => ({
@@ -187,9 +186,9 @@ export const DashboardSnapshotsCard = (props: Props) => {
     });
     ping();
     if (data.option === "full") {
-      history.push("/snapshots");
+      navigate("/snapshots");
     } else {
-      history.push(`/snapshots/partial/${app.slug}`);
+      navigate(`/snapshots/partial/${app.slug}`);
     }
   };
 

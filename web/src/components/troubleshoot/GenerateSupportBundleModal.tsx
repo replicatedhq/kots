@@ -1,21 +1,21 @@
 import React, { useEffect, useReducer } from "react";
 import Modal from "react-modal";
 import CodeSnippet from "@components/shared/CodeSnippet";
-import { useHistory } from "react-router";
-import { App, LicenseFile, KotsParams, SupportBundle } from "@types";
+import { useNavigate, useParams } from "react-router-dom";
+import { App, LicenseFile, SupportBundle } from "@types";
 // @ts-ignore
 import Dropzone from "react-dropzone";
 import Icon from "@components/Icon";
 import isEmpty from "lodash/isEmpty";
 // @ts-ignore
 import randomstring from "randomstring";
-import { useRouteMatch } from "react-router";
 import { Repeater } from "../../utilities/repeater";
+import { useSelectedApp } from "@features/App";
 
 type Props = {
   isOpen: boolean;
   toggleModal: () => void;
-  watch: App | null;
+  selectedApp: App | null;
   updateBundleSlug: (value: string) => void;
 };
 
@@ -36,7 +36,7 @@ type State = {
 const GenerateSupportBundleModal = ({
   isOpen,
   toggleModal,
-  watch,
+
   updateBundleSlug,
 }: Props) => {
   const [state, setState] = useReducer(
@@ -63,12 +63,12 @@ const GenerateSupportBundleModal = ({
     setState({ showGetBundleSpec: !state.showGetBundleSpec });
   };
 
-  const history = useHistory();
-  const match = useRouteMatch<KotsParams>();
-
+  const navigate = useNavigate();
+  const params = useParams();
+  const selectedApp = useSelectedApp();
   const fetchSupportBundleCommand = async () => {
     const res = await fetch(
-      `${process.env.API_ENDPOINT}/troubleshoot/app/${watch?.slug}/supportbundlecommand`,
+      `${process.env.API_ENDPOINT}/troubleshoot/app/${selectedApp?.slug}/supportbundlecommand`,
       {
         method: "POST",
         headers: {
@@ -91,7 +91,7 @@ const GenerateSupportBundleModal = ({
     setState({ loadingSupportBundles: true });
     return new Promise<void>((resolve, reject) => {
       fetch(
-        `${process.env.API_ENDPOINT}/troubleshoot/app/${watch?.slug}/supportbundles`,
+        `${process.env.API_ENDPOINT}/troubleshoot/app/${params?.slug}/supportbundles`,
         {
           headers: {
             "Content-Type": "application/json",
@@ -161,10 +161,10 @@ const GenerateSupportBundleModal = ({
           if (bundle.status !== "running") {
             listSupportBundlesJob.stop();
             if (bundle.status === "failed") {
-              history.push(`/app/${watch?.slug}/troubleshoot`);
+              navigate(`/app/${params?.slug}/troubleshoot`);
             } else {
-              history.push(
-                `/app/${watch?.slug}/troubleshoot/analyze/${bundle.id}`
+              navigate(
+                `/app/${params?.slug}/troubleshoot/analyze/${bundle.id}`
               );
             }
           }
@@ -174,10 +174,10 @@ const GenerateSupportBundleModal = ({
   }, [state.supportBundles]);
 
   const collectBundle = (clusterId: number | undefined) => {
-    let url = `${process.env.API_ENDPOINT}/troubleshoot/supportbundle/app/${watch?.id}/cluster/${clusterId}/collect`;
-    if (!watch?.id) {
+    let url = `${process.env.API_ENDPOINT}/troubleshoot/supportbundle/app/${selectedApp?.id}/cluster/${clusterId}/collect`;
+    if (!selectedApp?.id) {
       // TODO: check if helm managed, not if id is missing
-      url = `${process.env.API_ENDPOINT}/troubleshoot/supportbundle/app/${watch?.slug}/collect`;
+      url = `${process.env.API_ENDPOINT}/troubleshoot/supportbundle/app/${selectedApp?.slug}/collect`;
     }
 
     fetch(url, {
@@ -196,8 +196,8 @@ const GenerateSupportBundleModal = ({
         const response = await res.json();
         updateBundleSlug(response.slug);
 
-        history.push(
-          `/app/${watch?.slug}/troubleshoot/analyze/${response.slug}`
+        navigate(
+          `/app/${selectedApp?.slug}/troubleshoot/analyze/${response.slug}`
         );
         setState({ generateBundleErrMsg: "" });
       })
@@ -219,7 +219,7 @@ const GenerateSupportBundleModal = ({
   const uploadAndAnalyze = async () => {
     try {
       const bundleId = randomstring.generate({ capitalization: "lowercase" });
-      const uploadBundleUrl = `${process.env.API_ENDPOINT}/troubleshoot/${watch?.id}/${bundleId}`;
+      const uploadBundleUrl = `${process.env.API_ENDPOINT}/troubleshoot/${selectedApp?.id}/${bundleId}`;
 
       setState({ fileUploading: true, uploadBundleErrMsg: "" });
 
@@ -244,8 +244,8 @@ const GenerateSupportBundleModal = ({
 
       setState({ fileUploading: false, uploadBundleErrMsg: "" });
       toggleModal();
-      const url = `/app/${match.params.slug}/troubleshoot/analyze/${bundleId}`;
-      history.push(url);
+      const url = `/app/${params.slug}/troubleshoot/analyze/${bundleId}`;
+      navigate(url);
     } catch (err) {
       setState({
         fileUploading: false,
@@ -276,7 +276,7 @@ const GenerateSupportBundleModal = ({
         </span>
         <div className="analyze-modal">
           <span className="u-fontWeight--bold u-textColor--primary">
-            Analyze {watch?.name}
+            Analyze {selectedApp?.name}
           </span>
           <div className="flex analyze-content alignItems--center justifyContent--spaceBetween">
             <p
@@ -291,7 +291,9 @@ const GenerateSupportBundleModal = ({
               <button
                 type="button"
                 className="btn primary"
-                onClick={() => collectBundle(watch?.downstream?.cluster?.id)}
+                onClick={() =>
+                  collectBundle(selectedApp?.downstream?.cluster?.id)
+                }
               >
                 Analyze
               </button>

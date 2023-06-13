@@ -1,16 +1,16 @@
 import { useApps } from "@features/App";
 import React, { useEffect } from "react";
-import { useHistory } from "react-router";
+import { useNavigate } from "react-router-dom";
 
 function InstallWithHelm() {
   // TODO: // move this into a routes component
   // poll for apps data and redirect if app is installed
   const { apps } = useApps({ refetchInterval: 2000 }).data || {};
-  const history = useHistory();
+  const navigate = useNavigate();
 
   useEffect(() => {
     if (apps && apps?.length > 0) {
-      history.push("/apps");
+      navigate("/apps");
     }
   }, [apps?.length]);
 

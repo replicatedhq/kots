@@ -2,7 +2,7 @@ import React, { useContext, useState, useEffect } from "react";
 import { KotsPageTitle } from "@components/Head";
 import CodeSnippet from "@src/components/shared/CodeSnippet";
 import { getAddKeyUri, Utilities } from "../../../utilities/utilities";
-import { useHistory } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import ConnectionModal from "./modals/ConnectionModal";
 import Loader from "../../../components/shared/Loader";
 import DisableModal from "./modals/DisableModal";
@@ -37,13 +37,13 @@ const AppGitops = () => {
     getAppsList,
   } = useContext(GitOpsContext);
 
-  const history = useHistory();
+  const navigate = useNavigate();
 
   useEffect(() => {
     getInitialOwnerRepo();
 
     if (!gitopsEnabled) {
-      history.push(`/app/${selectedApp.slug}`);
+      navigate(`/app/${selectedApp.slug}`);
     }
   }, []);
 

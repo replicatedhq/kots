@@ -1,5 +1,5 @@
 import React from "react";
-import { Link, withRouter } from "react-router-dom";
+import { Link } from "react-router-dom";
 import ReactTooltip from "react-tooltip";
 import dayjs from "dayjs";
 import isSameOrAfter from "dayjs/plugin/isSameOrAfter";
@@ -7,6 +7,7 @@ dayjs.extend(isSameOrAfter);
 
 import { Utilities } from "../../utilities/utilities";
 import Icon from "../Icon";
+import { withRouter } from "@src/utilities/react-router-utilities";
 
 class SnapshotRow extends React.Component {
   handleDeleteClick = (e, snapshot) => {
@@ -24,11 +25,11 @@ class SnapshotRow extends React.Component {
     const isExpired = dayjs(new Date()).isSameOrAfter(snapshot?.expiresAt);
     if (!isExpired && snapshot?.status !== "Deleting") {
       if (app) {
-        this.props.history.push(
+        this.props.navigate(
           `/snapshots/partial/${this.props.app.slug}/${snapshot?.name}`
         );
       } else {
-        this.props.history.push(`/snapshots/details/${snapshot?.name}`);
+        this.props.navigate(`/snapshots/details/${snapshot?.name}`);
       }
     }
   };

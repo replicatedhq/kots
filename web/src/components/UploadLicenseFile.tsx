@@ -1,5 +1,5 @@
 import React, { useEffect, useReducer } from "react";
-import { useHistory } from "react-router";
+import { useNavigate } from "react-router-dom";
 import { Link } from "react-router-dom";
 import { KotsPageTitle } from "@components/Head";
 // TODO: upgrade this dependency
@@ -85,7 +85,7 @@ const UploadLicenseFile = (props: Props) => {
     }
   );
 
-  const history = useHistory();
+  const navigate = useNavigate();
 
   const clearFile = () => {
     setState({
@@ -252,26 +252,26 @@ const UploadLicenseFile = (props: Props) => {
           onUploadSuccess().then(() => {
             if (data.isAirgap) {
               if (data.needsRegistry) {
-                history.replace(`/${data.slug}/airgap`);
+                navigate(`/${data.slug}/airgap`, { replace: true });
               } else {
-                history.replace(`/${data.slug}/airgap-bundle`);
+                navigate(`/${data.slug}/airgap-bundle`, { replace: true });
               }
               return;
             }
 
             if (data.isConfigurable) {
-              history.replace(`/${data.slug}/config`);
+              navigate(`/${data.slug}/config`, { replace: true });
               return;
             }
 
             if (data.hasPreflight) {
-              history.replace(`/${data.slug}/preflight`);
+              navigate(`/${data.slug}/preflight`, { replace: true });
               return;
             }
 
             // No airgap, config or preflight? Go to the kotsApp detail view that was just uploaded
             if (data) {
-              history.replace(`/app/${data.slug}`);
+              navigate(`/app/${data.slug}`, { replace: true });
             }
           });
         }

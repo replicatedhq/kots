@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Link, RouteComponentProps } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import find from "lodash/find";
 import classNames from "classnames";
 import ReactTooltip from "react-tooltip";
@@ -17,7 +17,7 @@ import { useIsHelmManaged } from "@components/hooks";
 import { useSelectedApp } from "@features/App/hooks/useSelectedApp";
 import PreflightIcon from "@features/App/PreflightIcon";
 
-interface Props extends Partial<RouteComponentProps> {
+interface Props {
   adminConsoleMetadata: Metadata;
   deployVersion: (version: Version) => void;
   downloadVersion: (version: Version) => void;
@@ -28,6 +28,7 @@ interface Props extends Partial<RouteComponentProps> {
   isChecked: boolean;
   isDownloading: boolean;
   isNew: boolean;
+  navigate: ReturnType<typeof useNavigate>;
   newPreflightResults: boolean;
   nothingToCommit: boolean;
   onWhyNoGeneratedDiffClicked: (rowVersion: Version) => void;
@@ -423,7 +424,7 @@ function AppVersionHistoryRow(props: Props) {
               onClick={() => {
                 props.handleActionButtonClicked();
                 if (needsConfiguration) {
-                  props?.history?.push(configScreenURL);
+                  props?.navigate(configScreenURL);
                   return null;
                 }
                 if (isRollback) {
