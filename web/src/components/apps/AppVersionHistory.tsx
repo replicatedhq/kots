@@ -1486,6 +1486,13 @@ class AppVersionHistory extends Component<Props, State> {
             firstSequence: number,
             secondSequence: number
           ) => {
+            const url = location.pathname;
+            this.props.navigate(
+              `${url}/diff/${firstSequence}/${secondSequence}`,
+              {
+                replace: true,
+              }
+            );
             this.setState({
               showDiffOverlay: true,
               firstSequence,
