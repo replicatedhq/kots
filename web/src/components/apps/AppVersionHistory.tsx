@@ -1467,7 +1467,6 @@ class AppVersionHistory extends Component<Props, State> {
           }
           handleSelectReleasesToDiff={this.handleSelectReleasesToDiff}
           handleViewLogs={this.handleViewLogs}
-          // history={this.props.history}
           isChecked={isChecked}
           isDownloading={
             this.state.versionDownloadStatuses?.[version.sequence]
@@ -1632,7 +1631,6 @@ class AppVersionHistory extends Component<Props, State> {
   render() {
     const {
       app,
-      // wrappedMatch,
       makingCurrentVersionErrMsg,
       redeployVersionErrMsg,
       resetRedeployErrorMessage,

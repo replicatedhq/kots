@@ -98,7 +98,7 @@ class TroubleshootContainer extends Component<RouterProps, State> {
   };
 
   render() {
-    const props = {
+    const context = {
       //@ts-ignore
       app: this.props.outletContext.app,
       //@ts-ignore
@@ -117,7 +117,7 @@ class TroubleshootContainer extends Component<RouterProps, State> {
 
     return (
       <div className="flex-column flex1">
-        <Outlet context={props} />
+        <Outlet context={context} />
       </div>
     );
   }

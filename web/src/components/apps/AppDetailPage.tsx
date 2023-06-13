@@ -279,7 +279,6 @@ function AppDetailPage(props: Props) {
     if (location.pathname === "/apps") {
       return;
     }
-    // getApp();
     checkIsVeleroInstalled();
     return () => {
       theme.clearThemeState();
@@ -374,9 +373,7 @@ function AppDetailPage(props: Props) {
     });
   };
 
-  // add types
-  const testProps = {
-    //match,
+  const context = {
     adminConsoleMetadata: props.adminConsoleMetadata,
     app: selectedApp,
     appName: props.appName,
@@ -461,7 +458,7 @@ function AppDetailPage(props: Props) {
                 isVeleroInstalled={isVeleroInstalled}
                 isHelmManaged={props.isHelmManaged}
               />
-              <Outlet context={testProps} />
+              <Outlet context={context} />
             </Fragment>
           )}
         </div>
