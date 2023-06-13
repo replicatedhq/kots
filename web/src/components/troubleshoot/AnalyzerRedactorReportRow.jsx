@@ -43,9 +43,6 @@ class AnalyzerRedactorReportRow extends React.Component {
     navigate(
       `/app/${params.slug}/troubleshoot/analyze/${params.bundleSlug}/contents/${filePath}?file=${redactor}${rowString}`
     );
-    console.log(
-      `/app/${params.slug}/troubleshoot/analyze/${params.bundleSlug}/contents/${filePath}?file=${redactor}${rowString}`
-    );
   };
 
   renderRedactorFiles = (file, totalFileRedactions, i) => {

@@ -233,7 +233,6 @@ export class SupportBundleAnalysis extends React.Component {
       bundle?.status !== "running" &&
       bundle?.status !== lastProps.outletContext.bundle.status
     ) {
-      console.log("clear", bundle?.status);
       clearInterval(this.pollingRef.current);
     }
   };

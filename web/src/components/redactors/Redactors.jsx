@@ -189,10 +189,6 @@ class Redactors extends Component {
       });
   };
 
-  componentDidMount() {
-    console.log(this.props, "rops");
-  }
-
   render() {
     const {
       sortedRedactors,

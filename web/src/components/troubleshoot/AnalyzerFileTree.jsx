@@ -67,8 +67,6 @@ class AnalyzerFileTree extends React.Component {
   };
 
   async setSelectedFile(path) {
-    console.log(path, "path");
-    console.log("hello");
     const { navigate, outletContext, params } = this.props;
     const newPath = rootPath(path);
     navigate(
