@@ -4,3 +4,5 @@
 CVE-2020-27847
 # fixed in v2.35.0 whose corresponding go mod tag/commit is v0.0.0-20221003101923-e4bceef9f3d1
 CVE-2022-39222
+# fixed in v2.36.0 whose corresponding go mod tag/commit is v0.0.0-20230320125501-2bb4896d120e
+CVE-2020-26290
