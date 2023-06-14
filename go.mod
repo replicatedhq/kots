@@ -12,7 +12,7 @@ require (
 	github.com/Masterminds/sprig/v3 v3.2.3
 	github.com/ahmetalpbalkan/go-cursor v0.0.0-20131010032410-8136607ea412
 	github.com/aws/aws-sdk-go v1.44.257
-	github.com/bitnami-labs/sealed-secrets v0.14.1
+	github.com/bitnami-labs/sealed-secrets v0.21.0
 	github.com/blang/semver v3.5.1+incompatible
 	github.com/containers/image/v5 v5.25.0
 	github.com/coreos/go-oidc v2.2.1+incompatible
@@ -41,7 +41,7 @@ require (
 	github.com/mholt/archiver/v3 v3.5.1
 	github.com/mikesmitty/edkey v0.0.0-20170222072505-3356ea4e686a
 	github.com/mitchellh/hashstructure v1.1.0
-	github.com/onsi/ginkgo/v2 v2.9.2
+	github.com/onsi/ginkgo/v2 v2.9.4
 	github.com/onsi/gomega v1.27.6
 	github.com/open-policy-agent/opa v0.51.0
 	github.com/ory/dockertest/v3 v3.10.0
