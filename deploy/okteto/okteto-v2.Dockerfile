@@ -1,11 +1,12 @@
 # syntax=docker/dockerfile:1.3
-FROM golang:1.20 
+FROM golang:1.20.5
 
 EXPOSE 2345
- 
+
 RUN apt update && apt install --no-install-recommends gnupg2 curl -y \
-  && apt update && apt install -y --no-install-recommends python3-pip ca-certificates \
-  && pip install s3cmd \
+  && apt update && apt install -y --no-install-recommends ca-certificates \
+  && apt update && apt-get install -y --no-install-recommends pipx \
+	&& pipx install s3cmd && pipx ensurepath \
   && rm -rf /var/lib/apt/lists/*
 
 ENV PATH="/usr/local/bin:$PATH"
