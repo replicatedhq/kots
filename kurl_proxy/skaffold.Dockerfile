@@ -1,4 +1,4 @@
-FROM golang:1.17-buster
+FROM golang:1.20-buster
 
 ENV PROJECTPATH=/go/src/github.com/replicatedhq/kots/kurl_proxy
 WORKDIR $PROJECTPATH
