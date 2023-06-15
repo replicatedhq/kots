@@ -71,7 +71,7 @@ runs:
     # TODO: use k3d eventually but this is difficult to support with ${{ inputs.k8s-version }}
     - name: Generate a k3s cluster
       if: inputs.platform == 'k3s'
-      uses: replicatedhq/action-k3s@main
+      uses: replicatedhq/action-k3s@b592955a82f8a9e9b8cee048ec94e185d7f4e08f
       with:
         version: ${{ inputs.k8s-version }}
         arguments: ${{ inputs.k8s-arguments }}

@@ -963,7 +963,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
 
-      - uses: replicatedhq/action-k3s@main
+      - uses: replicatedhq/action-k3s@b592955a82f8a9e9b8cee048ec94e185d7f4e08f
         with:
           version: ${{ matrix.k8s_version }}
           arguments: ${{ startsWith(matrix.k8s_version, 'v1.22') && '--egress-selector-mode disabled' || '' }}
@@ -1047,7 +1047,7 @@ jobs:
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
 
-      - uses: replicatedhq/action-k3s@main
+      - uses: replicatedhq/action-k3s@b592955a82f8a9e9b8cee048ec94e185d7f4e08f
         with:
           version: ${{ matrix.k8s_version }}
           arguments: ${{ startsWith(matrix.k8s_version, 'v1.22') && '--egress-selector-mode disabled' || '' }}
@@ -1207,7 +1207,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
 
-      - uses: replicatedhq/action-k3s@main
+      - uses: replicatedhq/action-k3s@b592955a82f8a9e9b8cee048ec94e185d7f4e08f
         with:
           version: ${{ matrix.k8s_version }}
           arguments: ${{ startsWith(matrix.k8s_version, 'v1.22') && '--egress-selector-mode disabled' || '' }}
@@ -1295,7 +1295,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
 
-      - uses: replicatedhq/action-k3s@main
+      - uses: replicatedhq/action-k3s@b592955a82f8a9e9b8cee048ec94e185d7f4e08f
         with:
           version: ${{ matrix.k8s_version }}
           arguments: ${{ startsWith(matrix.k8s_version, 'v1.22') && '--egress-selector-mode disabled' || '' }}
@@ -1428,7 +1428,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
 
-      - uses: replicatedhq/action-k3s@main
+      - uses: replicatedhq/action-k3s@b592955a82f8a9e9b8cee048ec94e185d7f4e08f
         with:
           version: ${{ matrix.k8s_version }}
           arguments: ${{ startsWith(matrix.k8s_version, 'v1.22') && '--egress-selector-mode disabled' || '' }}
@@ -1503,7 +1503,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
 
-      - uses: replicatedhq/action-k3s@main
+      - uses: replicatedhq/action-k3s@b592955a82f8a9e9b8cee048ec94e185d7f4e08f
         with:
           version: ${{ matrix.k8s_version }}
           arguments: ${{ startsWith(matrix.k8s_version, 'v1.22') && '--egress-selector-mode disabled' || '' }}
@@ -1578,7 +1578,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
 
-      - uses: replicatedhq/action-k3s@main
+      - uses: replicatedhq/action-k3s@b592955a82f8a9e9b8cee048ec94e185d7f4e08f
         with:
           version: ${{ matrix.k8s_version }}
           arguments: ${{ startsWith(matrix.k8s_version, 'v1.22') && '--egress-selector-mode disabled' || '' }}
@@ -1676,7 +1676,7 @@ jobs:
       K8S_VERSION: ${{ matrix.k8s_version }}
     steps:
       - uses: actions/checkout@v3
-      - uses: replicatedhq/action-k3s@main
+      - uses: replicatedhq/action-k3s@b592955a82f8a9e9b8cee048ec94e185d7f4e08f
         with:
           version: ${{ matrix.k8s_version }}
           arguments: ${{ startsWith(matrix.k8s_version, 'v1.22') && '--egress-selector-mode disabled' || '' }}
@@ -1878,7 +1878,7 @@ jobs:
         run: rm -rf ./admin-console
 
       - name: install k3s
-        uses: replicatedhq/action-k3s@main
+        uses: replicatedhq/action-k3s@b592955a82f8a9e9b8cee048ec94e185d7f4e08f
         with:
           version: ${{ matrix.k8s_version }}
           arguments: ${{ startsWith(matrix.k8s_version, 'v1.22') && '--egress-selector-mode disabled' || '' }}
@@ -2180,7 +2180,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
 
-      - uses: replicatedhq/action-k3s@main
+      - uses: replicatedhq/action-k3s@b592955a82f8a9e9b8cee048ec94e185d7f4e08f
         with:
           version: ${{ matrix.k8s_version }}
           arguments: ${{ startsWith(matrix.k8s_version, 'v1.22') && '--egress-selector-mode disabled' || '' }}
@@ -2298,7 +2298,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
 
-      - uses: replicatedhq/action-k3s@main
+      - uses: replicatedhq/action-k3s@b592955a82f8a9e9b8cee048ec94e185d7f4e08f
         with:
           version: ${{ matrix.k8s_version }}
           arguments: ${{ startsWith(matrix.k8s_version, 'v1.22') && '--egress-selector-mode disabled' || '' }}
@@ -2565,7 +2565,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
 
-      - uses: replicatedhq/action-k3s@main
+      - uses: replicatedhq/action-k3s@b592955a82f8a9e9b8cee048ec94e185d7f4e08f
         with:
           version: ${{ matrix.k8s_version }}
           arguments: ${{ startsWith(matrix.k8s_version, 'v1.22') && '--egress-selector-mode disabled' || '' }}
@@ -2718,7 +2718,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
 
-      - uses: replicatedhq/action-k3s@main
+      - uses: replicatedhq/action-k3s@b592955a82f8a9e9b8cee048ec94e185d7f4e08f
         with:
           version: ${{ matrix.k8s_version }}
           arguments: ${{ startsWith(matrix.k8s_version, 'v1.22') && '--egress-selector-mode disabled' || '' }}
@@ -2803,7 +2803,7 @@ jobs:
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
 
-      - uses: replicatedhq/action-k3s@main
+      - uses: replicatedhq/action-k3s@b592955a82f8a9e9b8cee048ec94e185d7f4e08f
         with:
           version: ${{ matrix.k8s_version }}
           arguments: ${{ startsWith(matrix.k8s_version, 'v1.22') && '--egress-selector-mode disabled' || '' }}
@@ -2978,7 +2978,7 @@ jobs:
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
 
-      - uses: replicatedhq/action-k3s@main
+      - uses: replicatedhq/action-k3s@b592955a82f8a9e9b8cee048ec94e185d7f4e08f
         with:
           version: ${{ matrix.k8s_version }}
           arguments: ${{ startsWith(matrix.k8s_version, 'v1.22') && '--egress-selector-mode disabled' || '' }}
