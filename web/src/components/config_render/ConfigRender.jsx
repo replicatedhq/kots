@@ -113,7 +113,7 @@ export default class ConfigRender extends React.Component {
       };
     }
     this.setState({ rawGroups: groups });
-    this.triggerChange(this.props.getData(groups));
+    this.triggerChange(groups);
   };
 
   handleRemoveItem = (groupName, itemName, itemToRemove) => {
@@ -123,7 +123,7 @@ export default class ConfigRender extends React.Component {
     itemToEdit.countByGroup[groupName] = itemToEdit.countByGroup[groupName] - 1;
     delete itemToEdit.valuesByGroup[`${groupName}`][`${itemToRemove}`];
     this.setState({ rawGroups: groups });
-    this.triggerChange(this.props.getData(groups));
+    this.triggerChange(groups);
   };
 
   componentDidUpdate(lastProps) {
