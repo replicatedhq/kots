@@ -126,6 +126,14 @@ func (c *Client) runAppStateMonitor() error {
 }
 
 func (c *Client) DeployApp(deployArgs operatortypes.DeployAppArgs) (deployed bool, finalError error) {
+	c.imagePullSecrets = deployArgs.ImagePullSecrets
+	c.watchedNamespaces = deployArgs.AdditionalNamespaces
+	
+	c.shutdownNamespacesInformer()
+	if len(c.watchedNamespaces) > 0 {
+		c.runNamespacesInformer()
+	}
+
 	log.Println("received a deploy request for", deployArgs.AppSlug)
 
 	var deployRes *deployResult
@@ -158,11 +166,6 @@ func (c *Client) DeployApp(deployArgs operatortypes.DeployAppArgs) (deployed boo
 		helmResult.multiStderr = [][]byte{[]byte(helmError.Error())}
 		log.Printf("failed to deploy helm charts: %v", helmError)
 		return
-	}
-
-	c.shutdownNamespacesInformer()
-	if len(c.watchedNamespaces) > 0 {
-		c.runNamespacesInformer()
 	}
 
 	return
@@ -235,8 +238,6 @@ func (c *Client) deployManifests(deployArgs operatortypes.DeployAppArgs) (*deplo
 			}
 		}
 	}
-	c.imagePullSecrets = deployArgs.ImagePullSecrets
-	c.watchedNamespaces = deployArgs.AdditionalNamespaces
 
 	result, err := c.ensureResourcesPresent(deployArgs)
 	if err != nil {
