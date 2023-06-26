@@ -1,0 +1,51 @@
+contents:
+  repositories:
+    - https://packages.wolfi.dev/os
+    - ./packages/
+  keyring:
+    - https://packages.wolfi.dev/os/wolfi-signing.rsa.pub
+    - ./melange.rsa.pub
+  packages:
+    - kots-head  # This is expected to be built locally by `melange`.
+
+    - kubectl
+    # https://github.com/wolfi-dev/os/pull/3069
+    #- kubectl-1.27
+    #- kubectl-1.25
+    #- kubectl-1.26
+
+    - bash
+    - busybox
+    - curl
+    - git
+    - helm
+    - kustomize
+    - py3-dateutil
+    - py3-magic
+    - s3cmd
+    - wolfi-baselayout
+
+accounts:
+  groups:
+    - groupname: kotsadm
+      gid: 1001
+  users:
+    - username: kotsadm
+      uid: 1001
+      gid: 1001
+  run-as: kotsadm
+
+environment:
+  VERSION: v1.98.3
+  KOTS_KUBECTL_BIN_DIR: /usr/local/bin
+  KOTS_HELM_BIN_DIR: /usr/local/bin
+  KOTS_KUSTOMIZE_BIN_DIR: /usr/local/bin
+
+entrypoint:
+  command: /kotsadm
+
+cmd: api
+
+archs:
+  - x86_64
+  - aarch64

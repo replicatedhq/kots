@@ -34,3 +34,7 @@ kotsdata/
 sbom/
 cosign.key
 pkg/tests/pull/cases/*/results
+
+melange.rsa
+melange.rsa.pub
+packages/*

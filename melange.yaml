@@ -1,0 +1,72 @@
+package:
+  name: kots-head
+  version: 0.0.1
+  epoch: 0
+  description: Kubernetes Off-The-Shelf (KOTS) Software
+  copyright:
+    - license: Apache-2.0
+
+environment:
+  contents:
+    repositories:
+      - https://packages.wolfi.dev/os
+    keyring:
+      - https://packages.wolfi.dev/os/wolfi-signing.rsa.pub
+    packages:
+      - ca-certificates-bundle
+      - busybox
+      - git
+      - go
+      - nodejs
+      - yarn
+
+pipeline:
+  - runs: |
+      set -x
+      export DESTDIR="${{targets.destdir}}"
+      mkdir -p "${DESTDIR}"
+
+      # Scripts etc.
+      mv deploy/assets/backup.sh "${DESTDIR}/backup.sh"
+      mv deploy/assets/restore-db.sh "${DESTDIR}/restore-db.sh"
+      mv deploy/assets/restore-s3.sh "${DESTDIR}/restore-s3.sh"
+      mv deploy/assets/restore.sh "${DESTDIR}/restore.sh"
+      mv deploy/assets/migrate-s3.sh "${DESTDIR}/migrate-s3.sh"
+      mv deploy/assets/fs-minio-check.sh "${DESTDIR}/fs-minio-check.sh"
+      mv deploy/assets/fs-minio-reset.sh "${DESTDIR}/fs-minio-reset.sh"
+      mv deploy/assets/fs-minio-keys-sha.sh "${DESTDIR}/fs-minio-keys-sha.sh"
+      mv deploy/assets/s3-bucket-create.sh "${DESTDIR}/s3-bucket-create.sh"
+      mv deploy/assets/s3-bucket-head.sh "${DESTDIR}/s3-bucket-head.sh"
+      mv deploy/assets/kots-upgrade.sh "${DESTDIR}/kots-upgrade.sh"
+      mv deploy/assets/postgres "${DESTDIR}/postgres"
+
+      # kotsadm and kots binaries
+      export VERSION=${{package.version}}
+      export GIT_TAG=${{package.version}}
+
+      # Set environment variables from repository
+      source .image.env
+
+      KOTS_KUSTOMIZE_BIN_DIR=/usr/local/bin
+
+      # TODO: fix pact build error on arm https://github.com/pact-foundation/pact-js-core/issues/264
+      export PACT_SKIP_BINARY_INSTALL=true
+
+      # Configure Yarn
+      yarn install --pure-lockfile --network-concurrency 1
+
+      make -C web deps lint build-kotsadm
+      make vet kots build
+
+      mv bin/kotsadm "${DESTDIR}/kotsadm"
+      mv bin/kots "${DESTDIR}/kots"
+
+      # TODO: this requires manual intervention whenever helm bumps its major version
+      ln -s /usr/bin/helm ${{targets.destdir}}/usr/local/bin/helm
+      ln -s /usr/bin/helm ${{targets.destdir}}/usr/local/bin/helm3
+
+      # TODO: this requires manual intervention whenever kustomize bumps its major version
+      ln -s /usr/bin/kustomize ${{targets.destdir}}/usr/local/bin/kustomize
+      ln -s /usr/bin/kustomize ${{targets.destdir}}/usr/local/bin/kustomize5
+
+      ln -s /usr/bin/kubectl ${{targets.destdir}}/usr/local/bin/kubectl
