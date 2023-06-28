@@ -2,12 +2,14 @@
 
 ## What?
 
+This doc describes a non-production-ready process for building a minimal `kots` image using `melange` and `apko`:
+
 - [`melange`](https://github.com/chainguard-dev/melange) is a tool for reproducibly building APK packages from source
 - [`apko`](https://github.com/chainguard-dev/apko) is a tool for reproducibly building container images from APK packages
 
 ## Why?
 
-Building with `apko` and `melange` produces smaller, more reproducible images, which can be easier to operate and easier to keep free of vulnerabilities.
+Building with `melange` and `apko` produces smaller, more reproducible images, which can be easier to operate and easier to keep free of vulnerabilities.
 
 ## How?
 
@@ -43,6 +45,8 @@ docker run $(apko publish ...)
 ### Presubmit GitHub Actions
 
 The above steps are automated in [GitHub Actions](./.github/workflows/presubmit-image.yaml) as a presubmit check for PRs.
+
+The image this workflow produces is only meant for validation, and not meant for production use cases at this time.
 
 ## Further Reading
 
