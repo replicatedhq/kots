@@ -79,7 +79,7 @@ require (
 	k8s.io/apiextensions-apiserver v0.27.2
 	k8s.io/apimachinery v0.27.3
 	k8s.io/cli-runtime v0.27.2
-	k8s.io/client-go v1.5.2
+	k8s.io/client-go v0.27.2
 	k8s.io/cluster-bootstrap v0.23.6
 	k8s.io/helm v2.14.3+incompatible
 	k8s.io/kubelet v0.23.6
