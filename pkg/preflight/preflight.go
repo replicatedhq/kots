@@ -28,6 +28,8 @@ import (
 	kurlv1beta1 "github.com/replicatedhq/kurlkinds/pkg/apis/cluster/v1beta1"
 	troubleshootanalyze "github.com/replicatedhq/troubleshoot/pkg/analyze"
 	troubleshootv1beta2 "github.com/replicatedhq/troubleshoot/pkg/apis/troubleshoot/v1beta2"
+	troubleshootcollect "github.com/replicatedhq/troubleshoot/pkg/collect"
+	troubleshootpreflight "github.com/replicatedhq/troubleshoot/pkg/preflight"
 	"go.uber.org/zap"
 	"gopkg.in/yaml.v2"
 	corev1 "k8s.io/api/core/v1"
@@ -64,23 +66,44 @@ func Run(appID string, appSlug string, sequence int64, isAirgap bool, archiveDir
 	var registrySettings registrytypes.RegistrySettings
 	var preflight *troubleshootv1beta2.Preflight
 
+	ignoreRBAC, err = store.GetStore().GetIgnoreRBACErrors(appID, sequence)
+	if err != nil {
+		return errors.Wrap(err, "failed to get ignore rbac flag")
+	}
+
+	registrySettings, err = store.GetStore().GetRegistryDetailsForApp(appID)
+	if err != nil {
+		return errors.Wrap(err, "failed to get registry settings for app")
+	}
+
+	tsKinds, err := kotsutil.LoadTSKindsFromPath(filepath.Join(archiveDir, "rendered"))
+	if err != nil {
+		return errors.Wrap(err, fmt.Sprintf("failed to load troubleshoot kinds from path: %s", filepath.Join(archiveDir, "rendered")))
+	}
+
 	runPreflights := false
-	if renderedKotsKinds.Preflight != nil {
-		ignoreRBAC, err = store.GetStore().GetIgnoreRBACErrors(appID, sequence)
-		if err != nil {
-			return errors.Wrap(err, "failed to get ignore rbac flag")
+	if tsKinds.PreflightsV1Beta2 != nil {
+
+		for _, v := range tsKinds.PreflightsV1Beta2 {
+			preflight = troubleshootpreflight.ConcatPreflightSpec(preflight, &v)
 		}
 
+		injectDefaultPreflights(preflight, renderedKotsKinds, registrySettings)
+
+		numAnalyzers := 0
+		for _, analyzer := range preflight.Spec.Analyzers {
+			exclude := troubleshootanalyze.GetExcludeFlag(analyzer).BoolOrDefaultFalse()
+			if !exclude {
+				numAnalyzers += 1
+			}
+		}
+		runPreflights = numAnalyzers > 0
+	} else if renderedKotsKinds.Preflight != nil {
 		// render the preflight file
 		// we need to convert to bytes first, so that we can reuse the renderfile function
 		renderedMarshalledPreflights, err := renderedKotsKinds.Marshal("troubleshoot.replicated.com", "v1beta1", "Preflight")
 		if err != nil {
 			return errors.Wrap(err, "failed to marshal rendered preflight")
-		}
-
-		registrySettings, err = store.GetStore().GetRegistryDetailsForApp(appID)
-		if err != nil {
-			return errors.Wrap(err, "failed to get registry settings for app")
 		}
 
 		renderedPreflight, err := render.RenderFile(renderedKotsKinds, registrySettings, appSlug, sequence, isAirgap, util.PodNamespace, []byte(renderedMarshalledPreflights))
@@ -262,7 +285,7 @@ func GetPreflightCommand(appSlug string) []string {
 	return comamnd
 }
 
-func CreateRenderedSpec(app *apptypes.App, sequence int64, origin string, inCluster bool, kotsKinds *kotsutil.KotsKinds) error {
+func CreateRenderedSpec(app *apptypes.App, sequence int64, origin string, inCluster bool, kotsKinds *kotsutil.KotsKinds, archiveDir string) error {
 	builtPreflight := kotsKinds.Preflight.DeepCopy()
 	if builtPreflight == nil {
 		builtPreflight = &troubleshootv1beta2.Preflight{
@@ -275,6 +298,20 @@ func CreateRenderedSpec(app *apptypes.App, sequence int64, origin string, inClus
 			},
 		}
 	}
+
+	tsKinds, err := kotsutil.LoadTSKindsFromPath(filepath.Join(archiveDir, "rendered"))
+	if err != nil {
+		return errors.Wrap(err, fmt.Sprintf("failed to load troubleshoot kinds from path: %s", filepath.Join(archiveDir, "rendered")))
+	}
+
+	if tsKinds.PreflightsV1Beta2 != nil {
+		for _, v := range tsKinds.PreflightsV1Beta2 {
+			builtPreflight = troubleshootpreflight.ConcatPreflightSpec(builtPreflight, &v)
+		}
+	}
+
+	builtPreflight.Spec.Collectors = troubleshootcollect.DedupCollectors(builtPreflight.Spec.Collectors)
+	builtPreflight.Spec.Analyzers = troubleshootanalyze.DedupAnalyzers(builtPreflight.Spec.Analyzers)
 
 	registrySettings, err := store.GetStore().GetRegistryDetailsForApp(app.ID)
 	if err != nil {

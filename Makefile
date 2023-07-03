@@ -28,7 +28,11 @@ report-metric:
 
 .PHONY: test
 test:
-	go test $(TEST_BUILDFLAGS) ./pkg/... ./cmd/... -coverprofile cover.out
+	if [ -n $(RUN) ]; then \
+		go test $(TEST_BUILDFLAGS) ./pkg/... ./cmd/... -coverprofile cover.out -run $(RUN); \
+	else \
+		go test $(TEST_BUILDFLAGS) ./pkg/... ./cmd/... -coverprofile cover.out; \
+	fi
 
 .PHONY: e2e
 e2e:

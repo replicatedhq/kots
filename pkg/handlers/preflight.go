@@ -281,7 +281,7 @@ func (h *Handler) GetPreflightCommand(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = preflight.CreateRenderedSpec(foundApp, sequence, getPreflightCommandRequest.Origin, inCluster, kotsKinds)
+	err = preflight.CreateRenderedSpec(foundApp, sequence, getPreflightCommandRequest.Origin, inCluster, kotsKinds, archivePath)
 	if err != nil {
 		logger.Error(errors.Wrap(err, "failed to render preflight spec"))
 		w.WriteHeader(http.StatusInternalServerError)
