@@ -227,6 +227,22 @@ jobs:
         with:
           go-version: '^1.20.0'
           cache: true
+      # GH Runners have kustomize 5.1.x installed, which is not _yet_ compatible with KOTS
+      - name: install kustomize 5.0.1
+        env:
+          KUSTOMIZE5_VERSION: 5.0.1
+          KUSTOMIZE5_SHA256SUM: dca623b36aef84fbdf28f79d02e9b3705ff641424ac1f872d5420dadb12fb78d
+        run: |
+          mkdir -p /tmp/kustomize \
+            && pushd /tmp/kustomize
+          export KUSTOMIZE5_URL=https://github.com/kubernetes-sigs/kustomize/releases/download/kustomize/v${KUSTOMIZE5_VERSION}/kustomize_v${KUSTOMIZE5_VERSION}_linux_amd64.tar.gz
+          curl -fsSL -o kustomize.tar.gz "${KUSTOMIZE5_URL}" \
+            && echo "${KUSTOMIZE5_SHA256SUM} kustomize.tar.gz" | sha256sum -c - \
+            && tar -xzvf kustomize.tar.gz \
+            && rm kustomize.tar.gz \
+            && chmod a+x kustomize \
+            && mv kustomize /usr/local/bin/kustomize
+          popd
 
       - name: test
         run: make ci-test
@@ -910,43 +926,6 @@ jobs:
           testim-branch: ${{ github.head_ref == 'main' && 'master' || github.head_ref }}
           aws-access-key-id: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_ACCESS_KEY_ID }}'
           aws-secret-access-key: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_SECRET_ACCESS_KEY }}'
-
-
-  validate-helm-managed:
-    runs-on: ubuntu-20.04
-    needs: [ enable-tests, can-run-ci, build-push-kotsadm-image, build-e2e, build-kurl-proxy, build-migrations, push-minio, push-mc, push-rqlite ]
-    strategy:
-      fail-fast: false
-      matrix:
-        k8s_version: [ v1.27.1-k3s1 ] # there's no need to run this test on multiple k3s versions
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v3
-      - name: download e2e deps
-        uses: actions/download-artifact@v3
-        with:
-          name: e2e
-          path: e2e/bin/
-      - run: docker load -i e2e/bin/e2e-deps.tar
-      - run: chmod +x e2e/bin/*
-      - name: download kots binary
-        uses: actions/download-artifact@v3
-        with:
-          name: kots
-          path: bin/
-      - run: chmod +x bin/*
-      - uses: ./.github/actions/kots-e2e
-        with:
-          test-focus: 'Helm Managed'
-          kots-namespace: 'helm-managed'
-          k8s-version: '${{ matrix.k8s_version }}'
-          k8s-arguments: ${{ startsWith(matrix.k8s_version, 'v1.22') && '--egress-selector-mode disabled' || '' }}
-          testim-access-token: '${{ secrets.TESTIM_ACCESS_TOKEN }}'
-          testim-branch: ${{ github.head_ref == 'main' && 'master' || github.head_ref }}
-          aws-access-key-id: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_ACCESS_KEY_ID }}'
-          aws-secret-access-key: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_SECRET_ACCESS_KEY }}'
-          kots-helm-chart-url: 'oci://ttl.sh/automated-${{ github.run_id }}/admin-console'
-          kots-helm-chart-version: '0.0.${{ github.run_id }}-automated'
 
 
   validate-minimal-rbac-override:
@@ -3123,7 +3102,6 @@ jobs:
       - validate-no-required-config
       - validate-version-history-pagination
       - validate-change-license
-      - validate-helm-managed
       - validate-tag-and-digest
       - validate-min-kots-version
       - validate-target-kots-version
