@@ -288,6 +288,19 @@ func GetPreflightCommand(appSlug string) []string {
 func CreateRenderedSpec(app *apptypes.App, sequence int64, origin string, inCluster bool, kotsKinds *kotsutil.KotsKinds, archiveDir string) error {
 	var builtPreflight *troubleshootv1beta2.Preflight
 
+	builtPreflight = kotsKinds.Preflight.DeepCopy()
+	if builtPreflight == nil {
+		builtPreflight = &troubleshootv1beta2.Preflight{
+			TypeMeta: v1.TypeMeta{
+				Kind:       "Preflight",
+				APIVersion: "troubleshoot.sh/v1beta2",
+			},
+			ObjectMeta: v1.ObjectMeta{
+				Name: "default-preflight",
+			},
+		}
+	}
+
 	tsKinds, err := kotsutil.LoadTSKindsFromPath(filepath.Join(archiveDir, "rendered"))
 	if err != nil {
 		return errors.Wrap(err, fmt.Sprintf("failed to load troubleshoot kinds from path: %s", filepath.Join(archiveDir, "rendered")))
@@ -296,19 +309,6 @@ func CreateRenderedSpec(app *apptypes.App, sequence int64, origin string, inClus
 	if tsKinds.PreflightsV1Beta2 != nil {
 		for _, v := range tsKinds.PreflightsV1Beta2 {
 			builtPreflight = troubleshootpreflight.ConcatPreflightSpec(builtPreflight, &v)
-		}
-	} else {
-		builtPreflight = kotsKinds.Preflight.DeepCopy()
-		if builtPreflight == nil {
-			builtPreflight = &troubleshootv1beta2.Preflight{
-				TypeMeta: v1.TypeMeta{
-					Kind:       "Preflight",
-					APIVersion: "troubleshoot.sh/v1beta2",
-				},
-				ObjectMeta: v1.ObjectMeta{
-					Name: "default-preflight",
-				},
-			}
 		}
 	}
 
