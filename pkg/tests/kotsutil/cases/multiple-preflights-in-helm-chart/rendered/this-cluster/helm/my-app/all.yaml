@@ -1,0 +1,256 @@
+---
+# Source: my-app/templates/replicated-library.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: my-app
+  labels:
+    app.kubernetes.io/instance: my-app
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: my-app
+    app.kubernetes.io/version: 1.27.0
+    helm.sh/chart: my-app-0.2.0
+data:
+  SOME_VAR: some-value
+---
+# Source: my-app/templates/replicated-library.yaml
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: my-app
+  labels:
+    app.kubernetes.io/instance: my-app
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: my-app
+    app.kubernetes.io/version: 1.27.0
+    helm.sh/chart: my-app-0.2.0
+  annotations:
+spec:
+    accessModes:
+    - ReadWriteOnce
+    resources:
+      requests:
+        storage: 100Mi
+---
+# Source: my-app/templates/replicated-library.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: my-app
+  labels:
+    app.kubernetes.io/instance: my-app
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: my-app
+    app.kubernetes.io/version: 1.27.0
+    helm.sh/chart: my-app-0.2.0
+  annotations:
+spec:
+  type: ClusterIP
+  ports:
+  - port: 8080
+    targetPort: 80
+    protocol: TCP
+    name: http
+  selector:
+    app.kubernetes.io/name: my-app
+    app.kubernetes.io/instance: my-app
+---
+# Source: my-app/templates/replicated-library.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: my-app
+  labels:
+    app.kubernetes.io/instance: my-app
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: my-app
+    app.kubernetes.io/version: 1.27.0
+    helm.sh/chart: my-app-0.2.0
+spec:
+  revisionHistoryLimit: 
+  replicas: 0
+  strategy:
+    type: RollingUpdate
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: my-app
+      app.kubernetes.io/instance: my-app
+  template:
+    metadata:
+      annotations:
+        
+        checksum/config-my-app: f203e264f1dd19f72d8e660be5ae84c0e9380df9964073c6e33d7b74c82ad216
+      labels:
+        app.kubernetes.io/name: my-app
+        app.kubernetes.io/instance: my-app
+    spec:
+      
+      serviceAccountName: 
+      automountServiceAccountToken: 
+      dnsPolicy: ClusterFirst
+      enableServiceLinks: 
+      initContainers:
+        
+        - name: copy-test
+          image: "busybox:latest"
+          imagePullPolicy: IfNotPresent
+          command:
+              
+            - sh
+            - -c
+            - echo "test" > /data/test.txt
+          volumeMounts:
+            - mountPath: /data
+              name: my-app
+      containers:
+        - name: my-app
+          image: "my-app/server:1.27.0-alpine"
+          imagePullPolicy: IfNotPresent
+          envFrom:
+            - configMapRef:
+                name: my-app
+          ports:
+            - containerPort: 80
+              name: http
+          volumeMounts:
+            - mountPath: /data
+              name: my-app
+          livenessProbe:
+            failureThreshold: 5
+            initialDelaySeconds: 0
+            periodSeconds: 10
+            successThreshold: 1
+            tcpSocket:
+              port: 80
+            terminationGracePeriodSeconds: 30
+            timeoutSeconds: 5
+          readinessProbe:
+            failureThreshold: 5
+            initialDelaySeconds: 0
+            periodSeconds: 10
+            successThreshold: 1
+            tcpSocket:
+              port: 80
+            timeoutSeconds: 1
+      volumes:
+        - name: my-app
+          persistentVolumeClaim:
+            claimName: my-app
+---
+# Source: my-app/templates/replicated-library.yaml
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: my-app
+  labels:
+    app.kubernetes.io/instance: my-app
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: my-app
+    app.kubernetes.io/version: 1.27.0
+    helm.sh/chart: my-app-0.2.0
+spec:
+  tls:
+    - hosts:
+        - "my-app.example.com"
+      secretName: "my-app-tls-secret"
+  rules:
+    - host: "my-app.example.com"
+      http:
+        paths:
+          - path: "/"
+            pathType: Prefix
+            backend:
+              service:
+                name: my-app
+                port:
+                  number: 80
+---
+# Source: my-app/templates/preflight-dos.yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  name: my-app-preflight-other
+  labels:
+    helm.sh/chart: my-app-0.1.0
+    app.kubernetes.io/name: my-app
+    app.kubernetes.io/instance: release-name
+    app.kubernetes.io/version: "1.27.0"
+    app.kubernetes.io/managed-by: Helm
+    troubleshoot.io/kind: preflight
+  annotations:
+    "helm.sh/hook": pre-install, pre-upgrade
+    "helm.sh/hook-weight": "-6"
+    "helm.sh/hook-delete-policy": before-hook-creation, hook-succeeded, hook-failed
+stringData:
+  preflight.yaml: |-
+    apiVersion: troubleshoot.sh/v1beta2
+    kind: Preflight
+    metadata:
+      name: my-app-other
+    spec:
+      collectors:
+        - runPod:
+            name: "run-ping-replicated"
+            namespace: default
+            podSpec: 
+              containers:
+              - name: run-ping
+                image: busybox:1
+                command: ["ping"]
+                args: ["-w", "5", "replicated.com"]
+      analyzers:
+        - textAnalyze:
+            checkName: "run-ping-replicated"
+            fileName: run-ping-replicated/run-ping-replicated.log
+            regexGroups: '(?P<Transmitted>\d+) packets? transmitted, (?P<Received>\d+) packets? received, (?P<Loss>\d+)(\.\d+)?% packet loss'
+            outcomes:
+              - pass:
+                  when: "Loss < 5"
+                  message: Solid connection to google.com
+              - fail:
+                  message: High packet loss
+---
+# Source: my-app/templates/preflight.yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  name: my-app-preflight
+  labels:
+    helm.sh/chart: my-app-0.1.0
+    app.kubernetes.io/name: my-app
+    app.kubernetes.io/instance: release-name
+    app.kubernetes.io/version: "1.27.0"
+    app.kubernetes.io/managed-by: Helm
+    troubleshoot.io/kind: preflight
+  annotations:
+    "helm.sh/hook": pre-install, pre-upgrade
+    "helm.sh/hook-weight": "-6"
+    "helm.sh/hook-delete-policy": before-hook-creation, hook-succeeded, hook-failed
+stringData:
+  preflight.yaml: |-
+    apiVersion: troubleshoot.sh/v1beta2
+    kind: Preflight
+    metadata:
+      name: my-app
+    spec:
+      collectors:
+        - runPod:
+            name: "run-ping"
+            namespace: default
+            podSpec: 
+              containers:
+              - name: run-ping
+                image: busybox:1
+                command: ["ping"]
+                args: ["-w", "5", "www.google.com"]
+      analyzers:
+        - textAnalyze:
+            checkName: "run-ping"
+            fileName: run-ping/run-ping.log
+            regexGroups: '(?P<Transmitted>\d+) packets? transmitted, (?P<Received>\d+) packets? received, (?P<Loss>\d+)(\.\d+)?% packet loss'
+            outcomes:
+              - pass:
+                  when: "Loss < 5"
+                  message: Solid connection to google.com
+              - fail:
+                  message: High packet loss
