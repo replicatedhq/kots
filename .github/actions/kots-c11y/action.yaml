@@ -36,5 +36,5 @@ runs:
       run: |
         mkdir -p ~/.kube
         echo "${{ steps.create-cluster.outputs.cluster-kubeconfig }}" > ~/.kube/config
-        export KUBECONFIG=~/.kube/config
+        echo "KUBECONFIG=~/.kube/config" >> $GITHUB_ENV
       shell: bash
