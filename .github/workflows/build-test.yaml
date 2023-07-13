@@ -654,7 +654,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        k8s_version: [ v1.24.9-k3s2,v1.25.6-k3s1,v1.26.1-k3s1,v1.27.1-k3s1 ]
+        k8s_version: [ v1.24, v1.25, v1.26 ]
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -676,11 +676,11 @@ jobs:
           test-focus: 'Smoke Test'
           kots-namespace: 'smoke-test'
           k8s-version: '${{ matrix.k8s_version }}'
-          k8s-arguments: ${{ startsWith(matrix.k8s_version, 'v1.22') && '--egress-selector-mode disabled' || '' }}
           testim-access-token: '${{ secrets.TESTIM_ACCESS_TOKEN }}'
           testim-branch: ${{ github.head_ref == 'main' && 'master' || github.head_ref }}
           aws-access-key-id: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_ACCESS_KEY_ID }}'
           aws-secret-access-key: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_SECRET_ACCESS_KEY }}'
+          c11y-matrix-token: '${{ secrets.C11Y_MATRIX_TOKEN }}'
 
 
   validate-minimal-rbac:
@@ -936,11 +936,8 @@ jobs:
       matrix:
         cluster: [
           {distribution: k3s, version: v1.24},
-          {distribution: k3s, version: v1.25},
-          {distribution: k3s, version: v1.26},
-          {distribution: eks, version: v1.24},
           {distribution: eks, version: v1.25},
-          {distribution: eks, version: v1.26},
+          {distribution: k3s, version: v1.26},
           {distribution: eks, version: v1.27}
         ] 
     env:
@@ -952,20 +949,11 @@ jobs:
 
       - name: Create Cluster 
         id: create-cluster 
-        uses: replicatedhq/compatibility-actions/create-cluster@v0 
-        with: 
-          api-token: ${{ secrets.C11Y_MATRIX_TOKEN }} 
-          kubernetes-distribution: ${{ matrix.cluster.distribution }} 
-          kubernetes-version: ${{ matrix.cluster.version }} 
-          cluster-name: ${{ github.ref_name }}-${{ matrix.cluster.distribution }}-${{ matrix.cluster.version }}
-          # timeout-minutes: 2 
-          ttl: 60m
-
-      - name: write and export kubeconfig
-        run: |
-          mkdir -p ~/.kube
-          echo "${{ steps.create-cluster.outputs.cluster-kubeconfig }}" > ~/.kube/config
-          export KUBECONFIG=~/.kube/config
+        uses: ./.github/actions/kots-c11y
+        with:
+          api-token: ${{ secrets.C11Y_MATRIX_TOKEN }}
+          kubernetes-distribution: ${{ matrix.cluster.distribution }}
+          kubernetes-version: ${{ matrix.cluster.version }}
 
       - name: download kots binary
         uses: actions/download-artifact@v3
@@ -1031,7 +1019,7 @@ jobs:
       - name: Remove Cluster
         id: remove-cluster
         uses: replicatedhq/compatibility-actions/remove-cluster@v0
-        continue-on-error: true # It could be that the cluster is already removed
+        continue-on-error: true
         with:
           api-token: ${{ secrets.C11Y_MATRIX_TOKEN }}
           cluster-id: ${{ steps.create-cluster.outputs.cluster-id }}

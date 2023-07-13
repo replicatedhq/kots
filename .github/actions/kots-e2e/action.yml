@@ -58,6 +58,9 @@ inputs:
   gke-service-key:
     description: 'Service key to authenticate a Google Cloud service account'
     required: false
+  c11y-matrix-token:
+    description: 'Replicated API token for C11y matrix'
+    required: false
 
 runs:
   using: "composite"
@@ -66,15 +69,17 @@ runs:
       if: inputs.platform == 'gke'
       uses: ./.github/actions/kots-gke-create
       with:
-        service-key: ${{ inputs.gke-service-key }}
+        service-key: ${{ inputs.gke-service-key }}   
 
-    # TODO: use k3d eventually but this is difficult to support with ${{ inputs.k8s-version }}
-    - name: Generate a k3s cluster
-      if: inputs.platform == 'k3s'
-      uses: replicatedhq/action-k3s@main
+    - name: Create Cluster 
+      id: create-cluster 
+      uses: ./.github/actions/kots-c11y
+      # only run if platform is `k3s`, `kind`, or `eks` as those are the only platforms c11y currently supports
+      if: ${{ inputs.platform == 'k3s' || inputs.platform == 'kind' || inputs.platform == 'eks' }}
       with:
-        version: ${{ inputs.k8s-version }}
-        arguments: ${{ inputs.k8s-arguments }}
+        api-token: ${{ inputs.c11y-matrix-token }}
+        kubernetes-distribution: ${{ inputs.platform }}
+        kubernetes-version: ${{ inputs.k8s-version }}
 
     - name: execute suite "${{ inputs.test-focus }}"
       env:
