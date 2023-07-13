@@ -934,7 +934,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        k8s_version: [ v1.24.9-k3s2,v1.25.6-k3s1,v1.26.1-k3s1,v1.27.1-k3s1 ]
+        # k8s_version: [ v1.24.9-k3s2,v1.25.6-k3s1,v1.26.1-k3s1,v1.27.1-k3s1 ]
+        cluster: [ {distribution: k3s, version: v1.24}, {distribution: k3s, version: v1.25}, {distribution: k3s, version: v1.26}] 
     env:
       APP_SLUG: minimal-rbac
       APP_VERSION_LABEL: "0.0.1"
@@ -942,10 +943,27 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
 
-      - uses: replicatedhq/action-k3s@main
-        with:
-          version: ${{ matrix.k8s_version }}
-          arguments: ${{ startsWith(matrix.k8s_version, 'v1.22') && '--egress-selector-mode disabled' || '' }}
+      # - uses: replicatedhq/action-k3s@main
+      #   with:
+      #     version: ${{ matrix.k8s_version }}
+      #     arguments: ${{ startsWith(matrix.k8s_version, 'v1.22') && '--egress-selector-mode disabled' || '' }}
+
+      - name: Create Cluster 
+        id: create-cluster 
+        uses: replicatedhq/compatibility-actions/create-cluster@v0 
+        with: 
+          api-token: ${{ secrets.C11Y_MATRIX_TOKEN }} 
+          kubernetes-distribution: ${{ matrix.cluster.distribution }} 
+          kubernetes-version: ${{ matrix.cluster.version }} 
+          cluster-name: ${{ github.ref_name }}-${{ matrix.cluster.distribution }}-${{ matrix.cluster.version }}
+          timeout-minutes: 2 
+          ttl: 60m
+
+      - name: write and export kubeconfig
+        run: |
+          mkdir -p ~/.kube
+          echo "${{ steps.create-cluster.outputs.cluster-kubeconfig }}" > ~/.kube/config
+          export KUBECONFIG=~/.kube/config
 
       - name: download kots binary
         uses: actions/download-artifact@v3
@@ -1007,6 +1025,14 @@ jobs:
           kots-namespace: "$APP_SLUG"
           aws-access-key-id: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_ACCESS_KEY_ID }}'
           aws-secret-access-key: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_SECRET_ACCESS_KEY }}'
+
+      - name: Remove Cluster
+        id: remove-cluster
+        uses: replicatedhq/compatibility-actions/remove-cluster@v0
+        continue-on-error: true # It could be that the cluster is already removed
+        with:
+          api-token: ${{ secrets.C11Y_MATRIX_TOKEN }}
+          cluster-id: ${{ steps.create-cluster.outputs.cluster-id }}
 
 
   validate-multi-namespace:
