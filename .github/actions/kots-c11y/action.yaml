@@ -34,7 +34,7 @@ runs:
 
     - name: Write and Export KUBECONFIG
       run: |
-        mkdir -p ~/.kube
-        echo "${{ steps.create-cluster.outputs.cluster-kubeconfig }}" > ~/.kube/config
-        echo "KUBECONFIG=~/.kube/config" >> $GITHUB_ENV
+        mkdir -p $HOME/.kube
+        echo "${{ steps.create-cluster.outputs.cluster-kubeconfig }}" > $HOME/.kube/config
+        echo "KUBECONFIG=$HOME/.kube/config" >> $GITHUB_ENV
       shell: bash
