@@ -7,9 +7,14 @@ inputs:
   kots-namespace:
     description: 'KOTS namespace'
     required: true
-  cluster:
-    description: 'Cluster distribution and k8s version'
-    required: true
+  k8s-distribution:
+    description: 'Kubernetes distribution'
+    default: 'k3s'
+    required: false
+  k8s-version:
+    description: 'Kubernetes version'
+    default: 'v1.26'
+    required: false
   testim-access-token:
     description: 'Testim access token'
     required: true
@@ -59,7 +64,7 @@ runs:
   using: "composite"
   steps:
     - name: Generate GKE cluster name
-      if: inputs.cluster.distribution == 'gke'
+      if: inputs.k8s-distribution == 'gke'
       uses: ./.github/actions/kots-gke-create
       with:
         service-key: ${{ inputs.gke-service-key }}
@@ -67,16 +72,16 @@ runs:
     - name: Create Cluster 
       id: create-cluster 
       uses: replicatedhq/compatibility-actions/create-cluster@v0 
-      if: ${{ inputs.cluster.distribution == 'k3s' || inputs.cluster.distribution == 'kind' || inputs.cluster.distribution == 'eks' }}
+      if: ${{ inputs.k8s-distribution == 'k3s' || inputs.k8s-distribution == 'kind' || inputs.k8s-distribution == 'eks' }}
       with: 
         api-token: ${{ inputs.replicated-api-token }}
-        kubernetes-distribution: ${{ inputs.cluster.distribution }}
-        kubernetes-version: ${{ inputs.cluster.version }}
-        cluster-name: ${{ github.ref_name }}-${{ inputs.cluster.distribution }}-${{ inputs.cluster.version }}
+        kubernetes-distribution: ${{ inputs.k8s-distribution }}
+        kubernetes-version: ${{ inputs.k8s-version }}
+        cluster-name: ${{ github.ref_name }}-${{ inputs.k8s-distribution }}-${{ inputs.k8s-version }}
         ttl: ${{ inputs.ttl }}
 
     - name: Write and Export KUBECONFIG
-      if: ${{ inputs.cluster.distribution == 'k3s' || inputs.cluster.distribution == 'kind' || inputs.cluster.distribution == 'eks' }}
+      if: ${{ inputs.k8s-distribution == 'k3s' || inputs.k8s-distribution == 'kind' || inputs.k8s-distribution == 'eks' }}
       run: |
         mkdir -p $HOME/.kube
         echo "${{ steps.create-cluster.outputs.cluster-kubeconfig }}" > $HOME/.kube/config
@@ -135,7 +140,7 @@ runs:
     - name: Remove Cluster
       id: remove-cluster
       uses: replicatedhq/compatibility-actions/remove-cluster@v0
-      if: ${{ always() && (inputs.cluster.distribution == 'k3s' || inputs.cluster.distribution == 'kind' || inputs.cluster.distribution == 'eks') }}
+      if: ${{ always() && (inputs.k8s-distribution == 'k3s' || inputs.k8s-distribution == 'kind' || inputs.k8s-distribution == 'eks') }}
       continue-on-error: true
       with:
         api-token: ${{ inputs.replicated-api-token }}
