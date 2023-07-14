@@ -955,11 +955,21 @@ jobs:
 
       - name: Create Cluster 
         id: create-cluster 
-        uses: ./.github/actions/kots-c11y
+        uses: replicatedhq/compatibility-actions/create-cluster@v0 
         with:
           api-token: ${{ secrets.C11Y_MATRIX_TOKEN }}
           kubernetes-distribution: ${{ matrix.cluster.distribution }}
           kubernetes-version: ${{ matrix.cluster.version }}
+          cluster-name: ${{ github.ref_name }}-${{ matrix.cluster.distribution }}-${{ matrix.cluster.version }}
+          timeout-minutes: 60
+          ttl: 1h
+
+      - name: Write and Export KUBECONFIG
+        run: |
+          mkdir -p $HOME/.kube
+          echo "${{ steps.create-cluster.outputs.cluster-kubeconfig }}" > $HOME/.kube/config
+          echo "KUBECONFIG=$HOME/.kube/config" >> $GITHUB_ENV
+        shell: bash
 
       - name: download kots binary
         uses: actions/download-artifact@v3

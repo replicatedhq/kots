@@ -78,7 +78,8 @@ runs:
         kubernetes-distribution: ${{ inputs.k8s-distribution }}
         kubernetes-version: ${{ inputs.k8s-version }}
         cluster-name: ${{ github.ref_name }}-${{ inputs.k8s-distribution }}-${{ inputs.k8s-version }}
-        ttl: ${{ inputs.ttl }}
+        timeout-minutes: 60
+        ttl: 1h
 
     - name: Write and Export KUBECONFIG
       if: ${{ inputs.k8s-distribution == 'k3s' || inputs.k8s-distribution == 'kind' || inputs.k8s-distribution == 'eks' }}
