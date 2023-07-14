@@ -654,7 +654,12 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        k8s_version: [ v1.24, v1.25, v1.26 ]
+        cluster: [
+          {distribution: k3s, version: v1.24},
+          {distribution: eks, version: v1.25},
+          {distribution: k3s, version: v1.26},
+          {distribution: eks, version: v1.27}
+        ]
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -680,7 +685,7 @@ jobs:
           testim-branch: ${{ github.head_ref == 'main' && 'master' || github.head_ref }}
           aws-access-key-id: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_ACCESS_KEY_ID }}'
           aws-secret-access-key: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_SECRET_ACCESS_KEY }}'
-          c11y-matrix-token: '${{ secrets.C11Y_MATRIX_TOKEN }}'
+          replicated-api-token: '${{ secrets.C11Y_MATRIX_TOKEN }}'
 
 
   validate-minimal-rbac:
@@ -1019,6 +1024,7 @@ jobs:
       - name: Remove Cluster
         id: remove-cluster
         uses: replicatedhq/compatibility-actions/remove-cluster@v0
+        if: always()
         continue-on-error: true
         with:
           api-token: ${{ secrets.C11Y_MATRIX_TOKEN }}

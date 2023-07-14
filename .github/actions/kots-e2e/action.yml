@@ -7,16 +7,9 @@ inputs:
   kots-namespace:
     description: 'KOTS namespace'
     required: true
-  k8s-version:
-    description: 'K8s version'
+  cluster:
+    description: 'Cluster distribution and k8s version'
     required: true
-  platform:
-    description: 'Platform to run tests on (k3s, gke)'
-    default: 'k3s'
-    required: false
-  k8s-arguments:
-    description: 'arguments to pass to k8s'
-    required: false
   testim-access-token:
     description: 'Testim access token'
     required: true
@@ -58,7 +51,7 @@ inputs:
   gke-service-key:
     description: 'Service key to authenticate a Google Cloud service account'
     required: false
-  c11y-matrix-token:
+  replicated-api-token:
     description: 'Replicated API token for C11y matrix'
     required: false
 
@@ -66,20 +59,29 @@ runs:
   using: "composite"
   steps:
     - name: Generate GKE cluster name
-      if: inputs.platform == 'gke'
+      if: inputs.cluster.distribution == 'gke'
       uses: ./.github/actions/kots-gke-create
       with:
-        service-key: ${{ inputs.gke-service-key }}   
+        service-key: ${{ inputs.gke-service-key }}
 
     - name: Create Cluster 
       id: create-cluster 
-      uses: ./.github/actions/kots-c11y
-      # only run if platform is `k3s`, `kind`, or `eks` as those are the only platforms c11y currently supports
-      if: ${{ inputs.platform == 'k3s' || inputs.platform == 'kind' || inputs.platform == 'eks' }}
-      with:
-        api-token: ${{ inputs.c11y-matrix-token }}
-        kubernetes-distribution: ${{ inputs.platform }}
-        kubernetes-version: ${{ inputs.k8s-version }}
+      uses: replicatedhq/compatibility-actions/create-cluster@v0 
+      if: ${{ inputs.cluster.distribution == 'k3s' || inputs.cluster.distribution == 'kind' || inputs.cluster.distribution == 'eks' }}
+      with: 
+        api-token: ${{ inputs.replicated-api-token }}
+        kubernetes-distribution: ${{ inputs.cluster.distribution }}
+        kubernetes-version: ${{ inputs.cluster.version }}
+        cluster-name: ${{ github.ref_name }}-${{ inputs.cluster.distribution }}-${{ inputs.cluster.version }}
+        ttl: ${{ inputs.ttl }}
+
+    - name: Write and Export KUBECONFIG
+      if: ${{ inputs.cluster.distribution == 'k3s' || inputs.cluster.distribution == 'kind' || inputs.cluster.distribution == 'eks' }}
+      run: |
+        mkdir -p $HOME/.kube
+        echo "${{ steps.create-cluster.outputs.cluster-kubeconfig }}" > $HOME/.kube/config
+        echo "KUBECONFIG=$HOME/.kube/config" >> $GITHUB_ENV
+      shell: bash
 
     - name: execute suite "${{ inputs.test-focus }}"
       env:
@@ -129,6 +131,15 @@ runs:
         aws-access-key-id: ${{ inputs.aws-access-key-id }}
         aws-secret-access-key: ${{ inputs.aws-secret-access-key }}
         aws-region: ${{ inputs.aws-region }}
+
+    - name: Remove Cluster
+      id: remove-cluster
+      uses: replicatedhq/compatibility-actions/remove-cluster@v0
+      if: ${{ always() && (inputs.cluster.distribution == 'k3s' || inputs.cluster.distribution == 'kind' || inputs.cluster.distribution == 'eks') }}
+      continue-on-error: true
+      with:
+        api-token: ${{ inputs.replicated-api-token }}
+        cluster-id: ${{ steps.create-cluster.outputs.cluster-id }}
 
     - name: Delete GKE cluster if created
       if: ${{ always() && inputs.platform == 'gke' }}
