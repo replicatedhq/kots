@@ -103,6 +103,16 @@ func UpdateAppFromPath(a *apptypes.App, airgapRoot string, airgapBundlePath stri
 
 	appNamespace := util.AppNamespace()
 
+	downstreams, err := store.GetStore().ListDownstreamsForApp(a.ID)
+	if err != nil {
+		return errors.Wrap(err, "failed to list downstreams for app")
+	}
+
+	downstreamNames := []string{}
+	for _, d := range downstreams {
+		downstreamNames = append(downstreamNames, d.Name)
+	}
+
 	if err := store.GetStore().SetTaskStatus("update-download", "Creating app version...", "running"); err != nil {
 		return errors.Wrap(err, "failed to set task status")
 	}
@@ -146,6 +156,7 @@ func UpdateAppFromPath(a *apptypes.App, airgapRoot string, airgapBundlePath stri
 	}
 
 	pullOptions := pull.PullOptions{
+		Downstreams:            downstreamNames,
 		LicenseObj:             license,
 		Namespace:              appNamespace,
 		ConfigFile:             filepath.Join(archiveDir, "upstream", "userdata", "config.yaml"),
