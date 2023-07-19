@@ -992,7 +992,7 @@ jobs:
           kubernetes-distribution: ${{ matrix.cluster.distribution }}
           kubernetes-version: ${{ matrix.cluster.version }}
           cluster-name: ${{ github.ref_name }}-${{ matrix.cluster.distribution }}-${{ matrix.cluster.version }}
-          timeout-minutes: '30'
+          timeout-minutes: '120'
           ttl: 10m
 
       - name: Write and Export KUBECONFIG
@@ -1104,7 +1104,7 @@ jobs:
           kubernetes-distribution: ${{ matrix.cluster.distribution }}
           kubernetes-version: ${{ matrix.cluster.version }}
           cluster-name: ${{ github.ref_name }}-${{ matrix.cluster.distribution }}-${{ matrix.cluster.version }}
-          timeout-minutes: '30'
+          timeout-minutes: '120'
           ttl: 10m
 
       - name: Write and Export KUBECONFIG
@@ -1292,7 +1292,7 @@ jobs:
           kubernetes-distribution: ${{ matrix.cluster.distribution }}
           kubernetes-version: ${{ matrix.cluster.version }}
           cluster-name: ${{ github.ref_name }}-${{ matrix.cluster.distribution }}-${{ matrix.cluster.version }}
-          timeout-minutes: '30'
+          timeout-minutes: '120'
           ttl: 10m
 
       - name: Write and Export KUBECONFIG
@@ -1405,7 +1405,7 @@ jobs:
           kubernetes-distribution: ${{ matrix.cluster.distribution }}
           kubernetes-version: ${{ matrix.cluster.version }}
           cluster-name: ${{ github.ref_name }}-${{ matrix.cluster.distribution }}-${{ matrix.cluster.version }}
-          timeout-minutes: '30'
+          timeout-minutes: '120'
           ttl: 10m
 
       - name: Write and Export KUBECONFIG
@@ -1566,7 +1566,7 @@ jobs:
           kubernetes-distribution: ${{ matrix.cluster.distribution }}
           kubernetes-version: ${{ matrix.cluster.version }}
           cluster-name: ${{ github.ref_name }}-${{ matrix.cluster.distribution }}-${{ matrix.cluster.version }}
-          timeout-minutes: '30'
+          timeout-minutes: '120'
           ttl: 10m
 
       - name: Write and Export KUBECONFIG
@@ -1669,7 +1669,7 @@ jobs:
           kubernetes-distribution: ${{ matrix.cluster.distribution }}
           kubernetes-version: ${{ matrix.cluster.version }}
           cluster-name: ${{ github.ref_name }}-${{ matrix.cluster.distribution }}-${{ matrix.cluster.version }}
-          timeout-minutes: '30'
+          timeout-minutes: '120'
           ttl: 10m
 
       - name: Write and Export KUBECONFIG
@@ -1769,7 +1769,7 @@ jobs:
           kubernetes-distribution: ${{ matrix.cluster.distribution }}
           kubernetes-version: ${{ matrix.cluster.version }}
           cluster-name: ${{ github.ref_name }}-${{ matrix.cluster.distribution }}-${{ matrix.cluster.version }}
-          timeout-minutes: '30'
+          timeout-minutes: '120'
           ttl: 10m
 
       - name: Write and Export KUBECONFIG
@@ -1893,7 +1893,7 @@ jobs:
           kubernetes-distribution: ${{ matrix.cluster.distribution }}
           kubernetes-version: ${{ matrix.cluster.version }}
           cluster-name: ${{ github.ref_name }}-${{ matrix.cluster.distribution }}-${{ matrix.cluster.version }}
-          timeout-minutes: '30'
+          timeout-minutes: '120'
           ttl: 10m
 
       - name: Write and Export KUBECONFIG
@@ -2122,7 +2122,7 @@ jobs:
           kubernetes-distribution: ${{ matrix.cluster.distribution }}
           kubernetes-version: ${{ matrix.cluster.version }}
           cluster-name: ${{ github.ref_name }}-${{ matrix.cluster.distribution }}-${{ matrix.cluster.version }}
-          timeout-minutes: '30'
+          timeout-minutes: '120'
           ttl: 10m
 
       - name: Write and Export KUBECONFIG
@@ -2461,7 +2461,7 @@ jobs:
           kubernetes-distribution: ${{ matrix.cluster.distribution }}
           kubernetes-version: ${{ matrix.cluster.version }}
           cluster-name: ${{ github.ref_name }}-${{ matrix.cluster.distribution }}-${{ matrix.cluster.version }}
-          timeout-minutes: '30'
+          timeout-minutes: '120'
           ttl: 10m
 
       - name: Write and Export KUBECONFIG
@@ -2604,7 +2604,7 @@ jobs:
           kubernetes-distribution: ${{ matrix.cluster.distribution }}
           kubernetes-version: ${{ matrix.cluster.version }}
           cluster-name: ${{ github.ref_name }}-${{ matrix.cluster.distribution }}-${{ matrix.cluster.version }}
-          timeout-minutes: '30'
+          timeout-minutes: '120'
           ttl: 10m
 
       - name: Write and Export KUBECONFIG
@@ -2904,7 +2904,7 @@ jobs:
           kubernetes-distribution: ${{ matrix.cluster.distribution }}
           kubernetes-version: ${{ matrix.cluster.version }}
           cluster-name: ${{ github.ref_name }}-${{ matrix.cluster.distribution }}-${{ matrix.cluster.version }}
-          timeout-minutes: '30'
+          timeout-minutes: '120'
           ttl: 10m
 
       - name: Write and Export KUBECONFIG
@@ -3082,7 +3082,7 @@ jobs:
           kubernetes-distribution: ${{ matrix.cluster.distribution }}
           kubernetes-version: ${{ matrix.cluster.version }}
           cluster-name: ${{ github.ref_name }}-${{ matrix.cluster.distribution }}-${{ matrix.cluster.version }}
-          timeout-minutes: '30'
+          timeout-minutes: '120'
           ttl: 10m
 
       - name: Write and Export KUBECONFIG
@@ -3192,7 +3192,7 @@ jobs:
           kubernetes-distribution: ${{ matrix.cluster.distribution }}
           kubernetes-version: ${{ matrix.cluster.version }}
           cluster-name: ${{ github.ref_name }}-${{ matrix.cluster.distribution }}-${{ matrix.cluster.version }}
-          timeout-minutes: '30'
+          timeout-minutes: '120'
           ttl: 10m
 
       - name: Write and Export KUBECONFIG
@@ -3392,7 +3392,7 @@ jobs:
           kubernetes-distribution: ${{ matrix.cluster.distribution }}
           kubernetes-version: ${{ matrix.cluster.version }}
           cluster-name: ${{ github.ref_name }}-${{ matrix.cluster.distribution }}-${{ matrix.cluster.version }}
-          timeout-minutes: '30'
+          timeout-minutes: '120'
           ttl: 10m
 
       - name: Write and Export KUBECONFIG
