@@ -75,7 +75,7 @@ runs:
 
     - name: Create Cluster 
       id: create-cluster 
-      uses: replicatedhq/compatibility-actions/create-cluster@v0 
+      uses: replicatedhq/compatibility-actions/create-cluster@bae9378aedf40640023933fdd16ba9365f249bf8
       if: ${{ inputs.k8s-distribution == 'k3s' || inputs.k8s-distribution == 'kind' || inputs.k8s-distribution == 'eks' }}
       with: 
         api-token: ${{ inputs.replicated-api-token }}
@@ -84,14 +84,15 @@ runs:
         cluster-name: ${{ github.ref_name }}-${{ inputs.k8s-distribution }}-${{ inputs.k8s-version }}
         timeout-minutes: '120'
         ttl: ${{ inputs.k8s-cluster-ttl }}
+        export-kubeconfig: 'true'
 
-    - name: Write and Export KUBECONFIG
-      if: ${{ inputs.k8s-distribution == 'k3s' || inputs.k8s-distribution == 'kind' || inputs.k8s-distribution == 'eks' }}
-      run: |
-        mkdir -p $HOME/.kube
-        echo "${{ steps.create-cluster.outputs.cluster-kubeconfig }}" > $HOME/.kube/config
-        echo "KUBECONFIG=$HOME/.kube/config" >> $GITHUB_ENV
-      shell: bash
+    # - name: Write and Export KUBECONFIG
+    #   if: ${{ inputs.k8s-distribution == 'k3s' || inputs.k8s-distribution == 'kind' || inputs.k8s-distribution == 'eks' }}
+    #   run: |
+    #     mkdir -p $HOME/.kube
+    #     echo "${{ steps.create-cluster.outputs.cluster-kubeconfig }}" > $HOME/.kube/config
+    #     echo "KUBECONFIG=$HOME/.kube/config" >> $GITHUB_ENV
+    #   shell: bash
 
     - name: execute suite "${{ inputs.test-focus }}"
       env:
