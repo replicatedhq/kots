@@ -994,13 +994,14 @@ jobs:
           cluster-name: ${{ github.ref_name }}-${{ matrix.cluster.distribution }}-${{ matrix.cluster.version }}
           timeout-minutes: '120'
           ttl: 10m
+          export-kubeconfig: true
 
-      - name: Write and Export KUBECONFIG
-        run: |
-          mkdir -p $HOME/.kube
-          echo "${{ steps.create-cluster.outputs.cluster-kubeconfig }}" > $HOME/.kube/config
-          echo "KUBECONFIG=$HOME/.kube/config" >> $GITHUB_ENV
-        shell: bash
+      # - name: Write and Export KUBECONFIG
+      #   run: |
+      #     mkdir -p $HOME/.kube
+      #     echo "${{ steps.create-cluster.outputs.cluster-kubeconfig }}" > $HOME/.kube/config
+      #     echo "KUBECONFIG=$HOME/.kube/config" >> $GITHUB_ENV
+      #   shell: bash
 
       - name: download kots binary
         uses: actions/download-artifact@v3
