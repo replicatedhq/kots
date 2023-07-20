@@ -986,7 +986,7 @@ jobs:
 
       - name: Create Cluster 
         id: create-cluster 
-        uses: replicatedhq/compatibility-actions/create-cluster@v0 
+        uses: replicatedhq/compatibility-actions/create-cluster@a94e26e7fe9f983f5ecc9c65f462a277e9decc8f 
         with:
           api-token: ${{ secrets.C11Y_MATRIX_TOKEN }}
           kubernetes-distribution: ${{ matrix.cluster.distribution }}
