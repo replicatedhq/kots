@@ -1,0 +1,10 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+bases:
+- ../../../../../../base/charts/subchart-ordering/charts/subchart
+commonAnnotations:
+  kots.io/app-slug: my-app
+kind: Kustomization
+resources:
+- secret.yaml
+transformers:
+- backup-label-transformer.yaml

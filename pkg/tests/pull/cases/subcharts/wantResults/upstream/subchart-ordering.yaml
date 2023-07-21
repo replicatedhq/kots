@@ -1,0 +1,12 @@
+apiVersion: kots.io/v1beta1
+kind: HelmChart
+metadata:
+  name: subchart-ordering
+  annotations:
+    kots.io/exclude: "true"
+spec:
+  chart:
+    name: subchart-ordering
+    chartVersion: 0.1.0
+  useHelmInstall: true
+  
