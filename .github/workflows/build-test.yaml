@@ -994,6 +994,7 @@ jobs:
           cluster-name: ${{ github.ref_name }}-${{ matrix.cluster.distribution }}-${{ matrix.cluster.version }}
           timeout-minutes: '120'
           ttl: 10m
+          kubeconfig-path: ${{ github.workspace }}/kubeconfig-path-test.yaml
           export-kubeconfig: true
 
       # - name: Write and Export KUBECONFIG
