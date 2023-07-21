@@ -5,6 +5,8 @@ import (
 	"time"
 
 	"github.com/replicatedhq/kots/pkg/appstate/types"
+	"github.com/replicatedhq/kots/pkg/k8sutil"
+	"github.com/replicatedhq/kots/pkg/logger"
 	networkingv1 "k8s.io/api/networking/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -115,13 +117,16 @@ func makeIngressResourceState(r *networkingv1.Ingress, state types.State) types.
 }
 
 func CalculateIngressState(clientset kubernetes.Interface, r *networkingv1.Ingress) types.State {
-	var states []types.State
-	// https://github.com/kubernetes/kubectl/blob/6b77b0790ab40d2a692ad80e9e4c962e784bb9b8/pkg/describe/versioned/describe.go#L2367
-	backend := r.Spec.DefaultBackend
 	ns := r.Namespace
-	if backend == nil {
-		// Ingresses that don't specify a default backend inherit the
-		// default backend in the kube-system namespace.
+	backend := r.Spec.DefaultBackend
+
+	k8sMinorVersion, err := k8sutil.GetK8sMinorVersion(clientset)
+	if err != nil {
+		logger.Errorf("failed to get k8s minor version: %v", err)
+	} else if k8sMinorVersion < 22 && backend == nil {
+		// https://github.com/kubernetes/kubectl/blob/6b77b0790ab40d2a692ad80e9e4c962e784bb9b8/pkg/describe/versioned/describe.go#L2367
+		// Ingresses that don't specify a default backend inherit the default backend in the kube-system namespace.
+		// This behavior is applicable to Kubernetes versions prior to 1.22 (i.e. Ingress versions before networking.k8s.io/v1).
 		backend = &networkingv1.IngressBackend{
 			Service: &networkingv1.IngressServiceBackend{
 				Name: "default-http-backend",
@@ -132,7 +137,12 @@ func CalculateIngressState(clientset kubernetes.Interface, r *networkingv1.Ingre
 		}
 		ns = metav1.NamespaceSystem
 	}
-	states = append(states, ingressGetStateFromBackend(clientset, ns, *backend))
+
+	var states []types.State
+	if backend != nil {
+		states = append(states, ingressGetStateFromBackend(clientset, ns, *backend))
+	}
+
 	for _, rules := range r.Spec.Rules {
 		for _, path := range rules.HTTP.Paths {
 			states = append(states, ingressGetStateFromBackend(clientset, r.Namespace, path.Backend))

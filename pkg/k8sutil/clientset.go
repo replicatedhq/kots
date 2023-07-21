@@ -1,6 +1,8 @@
 package k8sutil
 
 import (
+	"strconv"
+
 	"github.com/pkg/errors"
 	flag "github.com/spf13/pflag"
 	"k8s.io/apimachinery/pkg/api/meta"
@@ -89,6 +91,19 @@ func GetK8sVersion() (string, error) {
 		return "", errors.Wrap(err, "failed to get kubernetes server version")
 	}
 	return k8sVersion.GitVersion, nil
+}
+
+func GetK8sMinorVersion(clientset kubernetes.Interface) (int, error) {
+	k8sVersion, err := clientset.Discovery().ServerVersion()
+	if err != nil {
+		return -1, errors.Wrap(err, "failed to get kubernetes server version")
+	}
+
+	k8sMinorVersion, err := strconv.Atoi(k8sVersion.Minor)
+	if err != nil {
+		return -1, errors.Wrap(err, "failed to convert k8s minor version to int")
+	}
+	return k8sMinorVersion, nil
 }
 
 func GetDynamicResourceInterface(gvk *schema.GroupVersionKind, namespace string) (dynamic.ResourceInterface, error) {
