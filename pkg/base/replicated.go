@@ -9,6 +9,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path"
+	"sort"
 	"strconv"
 	"strings"
 
@@ -158,6 +159,11 @@ func renderReplicated(u *upstreamtypes.Upstream, renderOptions *RenderOptions) (
 			commonBase.Bases = append(commonBase.Bases, *renderedHelmBase)
 		}
 	}
+
+	// ensure order of helm bases to prevent overwriting subcharts that appear first
+	sort.SliceStable(helmBases, func(i, j int) bool {
+		return helmBases[i].Path < helmBases[j].Path
+	})
 
 	return &commonBase, helmBases, renderedKotsKinds, nil
 }
