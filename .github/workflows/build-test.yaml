@@ -986,7 +986,7 @@ jobs:
 
       - name: Create Cluster 
         id: create-cluster 
-        uses: replicatedhq/compatibility-actions/create-cluster@f7b3f973046c6483c5843f76dce6db0a45bff1c6 
+        uses: replicatedhq/compatibility-actions/create-cluster@v0 
         with:
           api-token: ${{ secrets.C11Y_MATRIX_TOKEN }}
           kubernetes-distribution: ${{ matrix.cluster.distribution }}
@@ -994,15 +994,7 @@ jobs:
           cluster-name: ${{ github.ref_name }}-${{ matrix.cluster.distribution }}-${{ matrix.cluster.version }}
           timeout-minutes: '120'
           ttl: 10m
-          kubeconfig-path: ${{ github.workspace }}/kubeconfig-path-test.yaml
           export-kubeconfig: true
-
-      # - name: Write and Export KUBECONFIG
-      #   run: |
-      #     mkdir -p $HOME/.kube
-      #     echo "${{ steps.create-cluster.outputs.cluster-kubeconfig }}" > $HOME/.kube/config
-      #     echo "KUBECONFIG=$HOME/.kube/config" >> $GITHUB_ENV
-      #   shell: bash
 
       - name: download kots binary
         uses: actions/download-artifact@v3
