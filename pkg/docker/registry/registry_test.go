@@ -4,7 +4,7 @@ import (
 	"reflect"
 	"testing"
 
-	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
+	kotsv1beta1 "github.com/replicatedhq/kotskinds/apis/kots/v1beta1"
 )
 
 func TestGetRegistryProxyInfo(t *testing.T) {

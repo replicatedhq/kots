@@ -5,10 +5,10 @@ import (
 	"reflect"
 	"testing"
 
-	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
-	"github.com/replicatedhq/kots/kotskinds/multitype"
 	"github.com/replicatedhq/kots/pkg/crypto"
 	configtypes "github.com/replicatedhq/kots/pkg/kotsadmconfig/types"
+	kotsv1beta1 "github.com/replicatedhq/kotskinds/apis/kots/v1beta1"
+	"github.com/replicatedhq/kotskinds/multitype"
 )
 
 func Test_getValidatableItemValue(t *testing.T) {

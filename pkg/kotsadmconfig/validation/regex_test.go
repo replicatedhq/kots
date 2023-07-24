@@ -4,8 +4,8 @@ import (
 	"reflect"
 	"testing"
 
-	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	configtypes "github.com/replicatedhq/kots/pkg/kotsadmconfig/types"
+	kotsv1beta1 "github.com/replicatedhq/kotskinds/apis/kots/v1beta1"
 )
 
 func Test_regexValidator_Validate(t *testing.T) {

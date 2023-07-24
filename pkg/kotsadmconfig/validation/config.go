@@ -2,10 +2,10 @@ package validation
 
 import (
 	"github.com/pkg/errors"
-	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
-	"github.com/replicatedhq/kots/kotskinds/multitype"
 	configtypes "github.com/replicatedhq/kots/pkg/kotsadmconfig/types"
 	"github.com/replicatedhq/kots/pkg/util"
+	kotsv1beta1 "github.com/replicatedhq/kotskinds/apis/kots/v1beta1"
+	"github.com/replicatedhq/kotskinds/multitype"
 )
 
 func ValidateConfigSpec(configSpec kotsv1beta1.ConfigSpec) ([]configtypes.ConfigGroupValidationError, error) {

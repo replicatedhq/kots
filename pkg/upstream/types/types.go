@@ -4,11 +4,11 @@ import (
 	"path"
 	"time"
 
-	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
-	kotsscheme "github.com/replicatedhq/kots/kotskinds/client/kotsclientset/scheme"
 	reportingtypes "github.com/replicatedhq/kots/pkg/api/reporting/types"
 	kotsadmtypes "github.com/replicatedhq/kots/pkg/kotsadm/types"
 	registrytypes "github.com/replicatedhq/kots/pkg/registry/types"
+	kotsv1beta1 "github.com/replicatedhq/kotskinds/apis/kots/v1beta1"
+	kotsscheme "github.com/replicatedhq/kotskinds/client/kotsclientset/scheme"
 	"k8s.io/client-go/kubernetes/scheme"
 )
 

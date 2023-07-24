@@ -4,7 +4,7 @@ import (
 	"net/url"
 	"strings"
 
-	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
+	kotsv1beta1 "github.com/replicatedhq/kotskinds/apis/kots/v1beta1"
 )
 
 func GetAddress(ingressSpec kotsv1beta1.IngressConfigSpec) string {

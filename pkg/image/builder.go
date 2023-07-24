@@ -23,7 +23,6 @@ import (
 	containerstypes "github.com/containers/image/v5/types"
 	"github.com/distribution/distribution/v3/reference"
 	"github.com/pkg/errors"
-	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	"github.com/replicatedhq/kots/pkg/docker/registry"
 	dockerregistrytypes "github.com/replicatedhq/kots/pkg/docker/registry/types"
 	dockertypes "github.com/replicatedhq/kots/pkg/docker/types"
@@ -32,6 +31,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/logger"
 	regsitrytypes "github.com/replicatedhq/kots/pkg/registry/types"
+	kotsv1beta1 "github.com/replicatedhq/kotskinds/apis/kots/v1beta1"
 	"golang.org/x/sync/errgroup"
 	kustomizeimage "sigs.k8s.io/kustomize/api/types"
 )

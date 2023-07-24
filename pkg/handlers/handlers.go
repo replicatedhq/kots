@@ -6,10 +6,10 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/gorilla/websocket"
-	kotsscheme "github.com/replicatedhq/kots/kotskinds/client/kotsclientset/scheme"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/policy"
 	"github.com/replicatedhq/kots/pkg/store"
+	kotsscheme "github.com/replicatedhq/kotskinds/client/kotsclientset/scheme"
 	troubleshootscheme "github.com/replicatedhq/troubleshoot/pkg/client/troubleshootclientset/scheme"
 	yaml "github.com/replicatedhq/yaml/v3"
 	veleroscheme "github.com/vmware-tanzu/velero/pkg/generated/clientset/versioned/scheme"

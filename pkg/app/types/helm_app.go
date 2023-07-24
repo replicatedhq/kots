@@ -3,8 +3,8 @@ package types
 import (
 	"time"
 
-	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	appstatetypes "github.com/replicatedhq/kots/pkg/appstate/types"
+	kotsv1beta1 "github.com/replicatedhq/kotskinds/apis/kots/v1beta1"
 	helmrelease "helm.sh/helm/v3/pkg/release"
 )
 

@@ -16,13 +16,13 @@ import (
 
 	"github.com/manifoldco/promptui"
 	"github.com/pkg/errors"
-	kotsscheme "github.com/replicatedhq/kots/kotskinds/client/kotsclientset/scheme"
 	"github.com/replicatedhq/kots/pkg/auth"
 	registrytypes "github.com/replicatedhq/kots/pkg/docker/registry/types"
 	handlertypes "github.com/replicatedhq/kots/pkg/handlers/types"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/util"
+	kotsscheme "github.com/replicatedhq/kotskinds/client/kotsclientset/scheme"
 	"k8s.io/client-go/kubernetes/scheme"
 )
 

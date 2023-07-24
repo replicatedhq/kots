@@ -5,11 +5,11 @@ import (
 	"time"
 
 	"github.com/blang/semver"
-	v1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	"github.com/replicatedhq/kots/pkg/cursor"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
 	kotssemver "github.com/replicatedhq/kots/pkg/semver"
 	storetypes "github.com/replicatedhq/kots/pkg/store/types"
+	v1beta1 "github.com/replicatedhq/kotskinds/apis/kots/v1beta1"
 )
 
 type Downstream struct {

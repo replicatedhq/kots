@@ -3,7 +3,7 @@ package template
 import (
 	"text/template"
 
-	"github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
+	"github.com/replicatedhq/kotskinds/apis/kots/v1beta1"
 )
 
 type VersionInfo struct {
