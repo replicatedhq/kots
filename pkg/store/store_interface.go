@@ -4,7 +4,6 @@ import (
 	"context"
 	"time"
 
-	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	airgaptypes "github.com/replicatedhq/kots/pkg/airgap/types"
 	downstreamtypes "github.com/replicatedhq/kots/pkg/api/downstream/types"
 	reportingtypes "github.com/replicatedhq/kots/pkg/api/reporting/types"
@@ -22,6 +21,7 @@ import (
 	supportbundletypes "github.com/replicatedhq/kots/pkg/supportbundle/types"
 	upstreamtypes "github.com/replicatedhq/kots/pkg/upstream/types"
 	usertypes "github.com/replicatedhq/kots/pkg/user/types"
+	kotsv1beta1 "github.com/replicatedhq/kotskinds/apis/kots/v1beta1"
 	troubleshootredact "github.com/replicatedhq/troubleshoot/pkg/redact"
 )
 

@@ -1,8 +1,8 @@
 package reporting
 
 import (
-	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	storetypes "github.com/replicatedhq/kots/pkg/store/types"
+	kotsv1beta1 "github.com/replicatedhq/kotskinds/apis/kots/v1beta1"
 )
 
 type Distribution int64

@@ -8,8 +8,8 @@ import (
 	"strconv"
 
 	"github.com/pkg/errors"
-	kotsscheme "github.com/replicatedhq/kots/kotskinds/client/kotsclientset/scheme"
 	"github.com/replicatedhq/kots/pkg/k8sdoc"
+	kotsscheme "github.com/replicatedhq/kotskinds/client/kotsclientset/scheme"
 	troubleshootscheme "github.com/replicatedhq/troubleshoot/pkg/client/troubleshootclientset/scheme"
 	"gopkg.in/yaml.v2"
 	batchv1 "k8s.io/api/batch/v1"

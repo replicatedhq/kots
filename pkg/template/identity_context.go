@@ -4,8 +4,8 @@ import (
 	"strconv"
 	"text/template"
 
-	"github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	identitytypes "github.com/replicatedhq/kots/pkg/identity/types"
+	"github.com/replicatedhq/kotskinds/apis/kots/v1beta1"
 )
 
 type identityCtx struct {

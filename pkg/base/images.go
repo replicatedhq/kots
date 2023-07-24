@@ -6,13 +6,13 @@ import (
 	dockerref "github.com/containers/image/v5/docker/reference"
 	"github.com/distribution/distribution/v3/reference"
 	"github.com/pkg/errors"
-	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	"github.com/replicatedhq/kots/pkg/docker/registry"
 	registrytypes "github.com/replicatedhq/kots/pkg/docker/registry/types"
 	"github.com/replicatedhq/kots/pkg/image"
 	kotsimage "github.com/replicatedhq/kots/pkg/image"
 	imagetypes "github.com/replicatedhq/kots/pkg/image/types"
 	"github.com/replicatedhq/kots/pkg/k8sdoc"
+	kotsv1beta1 "github.com/replicatedhq/kotskinds/apis/kots/v1beta1"
 	kustomizeimage "sigs.k8s.io/kustomize/api/types"
 )
 

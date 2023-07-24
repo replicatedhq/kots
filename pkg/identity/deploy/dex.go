@@ -12,9 +12,9 @@ import (
 	dexkubernetes "github.com/dexidp/dex/storage/kubernetes"
 	ghodssyaml "github.com/ghodss/yaml"
 	"github.com/pkg/errors"
-	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	dextypes "github.com/replicatedhq/kots/pkg/identity/types/dex"
 	"github.com/replicatedhq/kots/pkg/template"
+	kotsv1beta1 "github.com/replicatedhq/kotskinds/apis/kots/v1beta1"
 )
 
 func getDexConfig(ctx context.Context, issuerURL string, options Options) ([]byte, error) {

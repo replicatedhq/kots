@@ -3,10 +3,10 @@ package identity
 import (
 	"fmt"
 
-	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
-	kotsscheme "github.com/replicatedhq/kots/kotskinds/client/kotsclientset/scheme"
 	"github.com/replicatedhq/kots/pkg/ingress"
 	"github.com/replicatedhq/kots/pkg/rbac"
+	kotsv1beta1 "github.com/replicatedhq/kotskinds/apis/kots/v1beta1"
+	kotsscheme "github.com/replicatedhq/kotskinds/client/kotsclientset/scheme"
 	"k8s.io/client-go/kubernetes/scheme"
 )
 

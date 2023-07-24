@@ -9,10 +9,10 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
-	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	"github.com/replicatedhq/kots/pkg/app/types"
 	registrytypes "github.com/replicatedhq/kots/pkg/registry/types"
 	mock_store "github.com/replicatedhq/kots/pkg/store/mock"
+	kotsv1beta1 "github.com/replicatedhq/kotskinds/apis/kots/v1beta1"
 	"github.com/stretchr/testify/require"
 )
 

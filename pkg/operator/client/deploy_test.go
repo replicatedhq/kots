@@ -12,9 +12,9 @@ import (
 
 	"github.com/mholt/archiver/v3"
 	"github.com/pmezard/go-difflib/difflib"
-	"github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
-	"github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta2"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
+	"github.com/replicatedhq/kotskinds/apis/kots/v1beta1"
+	"github.com/replicatedhq/kotskinds/apis/kots/v1beta2"
 	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )

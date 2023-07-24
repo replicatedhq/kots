@@ -2,8 +2,8 @@ package validation
 
 import (
 	"github.com/pkg/errors"
-	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	configtypes "github.com/replicatedhq/kots/pkg/kotsadmconfig/types"
+	kotsv1beta1 "github.com/replicatedhq/kotskinds/apis/kots/v1beta1"
 )
 
 var (
