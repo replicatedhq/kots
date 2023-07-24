@@ -993,7 +993,7 @@ jobs:
           kubernetes-version: ${{ matrix.cluster.version }}
           cluster-name: ${{ github.ref_name }}-${{ matrix.cluster.distribution }}-${{ matrix.cluster.version }}
           timeout-minutes: '120'
-          ttl: 10m
+          ttl: 15m
           export-kubeconfig: true
 
       - name: download kots binary
@@ -1097,7 +1097,7 @@ jobs:
           kubernetes-version: ${{ matrix.cluster.version }}
           cluster-name: ${{ github.ref_name }}-${{ matrix.cluster.distribution }}-${{ matrix.cluster.version }}
           timeout-minutes: '120'
-          ttl: 10m
+          ttl: 15m
           export-kubeconfig: true
 
       - name: download kots binary
@@ -1277,7 +1277,7 @@ jobs:
           kubernetes-version: ${{ matrix.cluster.version }}
           cluster-name: ${{ github.ref_name }}-${{ matrix.cluster.distribution }}-${{ matrix.cluster.version }}
           timeout-minutes: '120'
-          ttl: 10m
+          ttl: 15m
           export-kubeconfig: true
 
       - name: download kots binary
@@ -1382,7 +1382,7 @@ jobs:
           kubernetes-version: ${{ matrix.cluster.version }}
           cluster-name: ${{ github.ref_name }}-${{ matrix.cluster.distribution }}-${{ matrix.cluster.version }}
           timeout-minutes: '120'
-          ttl: 10m
+          ttl: 15m
           export-kubeconfig: true
 
       - name: download kots binary
@@ -1535,7 +1535,7 @@ jobs:
           kubernetes-version: ${{ matrix.cluster.version }}
           cluster-name: ${{ github.ref_name }}-${{ matrix.cluster.distribution }}-${{ matrix.cluster.version }}
           timeout-minutes: '120'
-          ttl: 10m
+          ttl: 15m
           export-kubeconfig: true
 
       - name: download kots binary
@@ -1630,7 +1630,7 @@ jobs:
           kubernetes-version: ${{ matrix.cluster.version }}
           cluster-name: ${{ github.ref_name }}-${{ matrix.cluster.distribution }}-${{ matrix.cluster.version }}
           timeout-minutes: '120'
-          ttl: 10m
+          ttl: 15m
           export-kubeconfig: true
 
       - name: download kots binary
@@ -1722,7 +1722,7 @@ jobs:
           kubernetes-version: ${{ matrix.cluster.version }}
           cluster-name: ${{ github.ref_name }}-${{ matrix.cluster.distribution }}-${{ matrix.cluster.version }}
           timeout-minutes: '120'
-          ttl: 10m
+          ttl: 15m
           export-kubeconfig: true
 
       - name: download kots binary
@@ -1838,7 +1838,7 @@ jobs:
           kubernetes-version: ${{ matrix.cluster.version }}
           cluster-name: ${{ github.ref_name }}-${{ matrix.cluster.distribution }}-${{ matrix.cluster.version }}
           timeout-minutes: '120'
-          ttl: 10m
+          ttl: 15m
           export-kubeconfig: true
 
       - name: download kots binary
@@ -2059,7 +2059,7 @@ jobs:
           kubernetes-version: ${{ matrix.cluster.version }}
           cluster-name: ${{ github.ref_name }}-${{ matrix.cluster.distribution }}-${{ matrix.cluster.version }}
           timeout-minutes: '120'
-          ttl: 10m
+          ttl: 15m
           export-kubeconfig: true
 
       - name: download base kots version
@@ -2390,7 +2390,7 @@ jobs:
           kubernetes-version: ${{ matrix.cluster.version }}
           cluster-name: ${{ github.ref_name }}-${{ matrix.cluster.distribution }}-${{ matrix.cluster.version }}
           timeout-minutes: '120'
-          ttl: 10m
+          ttl: 15m
           export-kubeconfig: true
 
       - name: download base kots version
@@ -2525,7 +2525,7 @@ jobs:
           kubernetes-version: ${{ matrix.cluster.version }}
           cluster-name: ${{ github.ref_name }}-${{ matrix.cluster.distribution }}-${{ matrix.cluster.version }}
           timeout-minutes: '120'
-          ttl: 10m
+          ttl: 15m
           export-kubeconfig: true
 
       - name: download base kots version
@@ -2817,7 +2817,7 @@ jobs:
           kubernetes-version: ${{ matrix.cluster.version }}
           cluster-name: ${{ github.ref_name }}-${{ matrix.cluster.distribution }}-${{ matrix.cluster.version }}
           timeout-minutes: '120'
-          ttl: 10m
+          ttl: 15m
           export-kubeconfig: true
 
       - name: download kots binary
@@ -2987,7 +2987,7 @@ jobs:
           kubernetes-version: ${{ matrix.cluster.version }}
           cluster-name: ${{ github.ref_name }}-${{ matrix.cluster.distribution }}-${{ matrix.cluster.version }}
           timeout-minutes: '120'
-          ttl: 10m
+          ttl: 15m
           export-kubeconfig: true
 
       - name: download kots binary
@@ -3089,7 +3089,7 @@ jobs:
           kubernetes-version: ${{ matrix.cluster.version }}
           cluster-name: ${{ github.ref_name }}-${{ matrix.cluster.distribution }}-${{ matrix.cluster.version }}
           timeout-minutes: '120'
-          ttl: 10m
+          ttl: 15m
           export-kubeconfig: true
 
       - name: download kots binary
@@ -3281,7 +3281,7 @@ jobs:
           kubernetes-version: ${{ matrix.cluster.version }}
           cluster-name: ${{ github.ref_name }}-${{ matrix.cluster.distribution }}-${{ matrix.cluster.version }}
           timeout-minutes: '120'
-          ttl: 10m
+          ttl: 15m
           export-kubeconfig: true
 
       - name: download kots binary
