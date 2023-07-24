@@ -9,7 +9,6 @@ COPY go.mod go.sum ./
 COPY cmd ./cmd
 COPY pkg ./pkg
 COPY web/webcontent.go ./web/webcontent.go
-COPY kotskinds ./kotskinds
 
 ARG DEBUG_KOTSADM=0
 
