@@ -17,7 +17,7 @@ inputs:
     required: false
   k8s-cluster-ttl:
     description: 'TTL for c11y matrix clusters'
-    default: '10m'
+    default: '15m'
     required: false
   testim-access-token:
     description: 'Testim access token'
@@ -84,15 +84,7 @@ runs:
         cluster-name: ${{ github.ref_name }}-${{ inputs.k8s-distribution }}-${{ inputs.k8s-version }}
         timeout-minutes: '120'
         ttl: ${{ inputs.k8s-cluster-ttl }}
-        export-kubeconfig: 'true'
-
-    # - name: Write and Export KUBECONFIG
-    #   if: ${{ inputs.k8s-distribution == 'k3s' || inputs.k8s-distribution == 'kind' || inputs.k8s-distribution == 'eks' }}
-    #   run: |
-    #     mkdir -p $HOME/.kube
-    #     echo "${{ steps.create-cluster.outputs.cluster-kubeconfig }}" > $HOME/.kube/config
-    #     echo "KUBECONFIG=$HOME/.kube/config" >> $GITHUB_ENV
-    #   shell: bash
+        export-kubeconfig: true
 
     - name: execute suite "${{ inputs.test-focus }}"
       env:
@@ -146,8 +138,7 @@ runs:
     - name: Remove Cluster
       id: remove-cluster
       uses: replicatedhq/compatibility-actions/remove-cluster@v0
-      # TODO: remove always() after testing to leave cluster up for debugging?
-      if: ${{ always() && (inputs.k8s-distribution == 'k3s' || inputs.k8s-distribution == 'kind' || inputs.k8s-distribution == 'eks') }}
+      if: ${{ inputs.k8s-distribution == 'k3s' || inputs.k8s-distribution == 'kind' || inputs.k8s-distribution == 'eks' }}
       continue-on-error: true
       with:
         api-token: ${{ inputs.replicated-api-token }}
