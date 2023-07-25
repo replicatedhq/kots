@@ -216,12 +216,10 @@ func Test_createConfigValues(t *testing.T) {
 		},
 		"5_repeatable_item": {},
 		"5_repeatable_item-1": {
-			Value:          "123",
 			Default:        "123",
 			RepeatableItem: "5_repeatable_item",
 		},
 		"5_repeatable_item-2": {
-			Value:          "456",
 			Default:        "456",
 			RepeatableItem: "5_repeatable_item",
 		},
@@ -259,7 +257,6 @@ func Test_createConfigValues(t *testing.T) {
 			RepeatableItem: "5_repeatable_item",
 		},
 		"5_repeatable_item-2": {
-			Value:          "456",
 			Default:        "456",
 			RepeatableItem: "5_repeatable_item",
 		},
