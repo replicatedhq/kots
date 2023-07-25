@@ -584,10 +584,9 @@ func createConfigValues(applicationName string, config *kotsv1beta1.Config, exis
 			}
 
 			for _, repeatableValues := range item.ValuesByGroup {
-				for name, value := range repeatableValues {
-					// currently, `ValuesByGroup` defined in the config contains the defaults for repeatable items.
-					// so we pass the value as the item default, and an empty string for the item value here.
-					err := createConfigValue(newValues, builder, builderOptions, name, "", value, item.Name)
+				for name, defaultValue := range repeatableValues {
+					// currently, `ValuesByGroup` defined in the config by the vendor are considered the defaults for repeatable items.
+					err := createConfigValue(newValues, builder, builderOptions, name, "", defaultValue, item.Name)
 					if err != nil {
 						return nil, errors.Wrapf(err, "failed to create config value for %s", name)
 					}
