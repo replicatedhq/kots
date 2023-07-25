@@ -115,7 +115,7 @@ func Test_createConfigValues(t *testing.T) {
 					Title: "Group Title",
 					Items: []kotsv1beta1.ConfigItem{
 						// should replace default
-						kotsv1beta1.ConfigItem{
+						{
 							Name: "1_with_default",
 							Type: "string",
 							Default: multitype.BoolOrString{
@@ -128,7 +128,7 @@ func Test_createConfigValues(t *testing.T) {
 							},
 						},
 						// should preserve value and add default
-						kotsv1beta1.ConfigItem{
+						{
 							Name: "2_with_value",
 							Type: "string",
 							Default: multitype.BoolOrString{
@@ -141,12 +141,28 @@ func Test_createConfigValues(t *testing.T) {
 							},
 						},
 						// should add a new item
-						kotsv1beta1.ConfigItem{
+						{
 							Name: "4_with_default",
 							Type: "string",
 							Default: multitype.BoolOrString{
 								Type:   multitype.String,
 								StrVal: "default_4",
+							},
+						},
+					},
+				},
+				// repeatable item
+				{
+					Name: "repeatable_group",
+					Items: []kotsv1beta1.ConfigItem{
+						{
+							Name:       "5_repeatable_item",
+							Repeatable: true,
+							ValuesByGroup: kotsv1beta1.ValuesByGroup{
+								"repeatable_group": {
+									"5_repeatable_item-1": "123",
+									"5_repeatable_item-2": "456",
+								},
 							},
 						},
 					},
@@ -175,6 +191,11 @@ func Test_createConfigValues(t *testing.T) {
 					Value:   "value_3",
 					Default: "default_3",
 				},
+				"5_repeatable_item-1": {
+					Value:          "789",
+					Default:        "789",
+					RepeatableItem: "5_repeatable_item",
+				},
 			},
 		},
 	}
@@ -192,6 +213,17 @@ func Test_createConfigValues(t *testing.T) {
 		},
 		"4_with_default": kotsv1beta1.ConfigValue{
 			Default: "default_4",
+		},
+		"5_repeatable_item": {},
+		"5_repeatable_item-1": {
+			Value:          "123",
+			Default:        "123",
+			RepeatableItem: "5_repeatable_item",
+		},
+		"5_repeatable_item-2": {
+			Value:          "456",
+			Default:        "456",
+			RepeatableItem: "5_repeatable_item",
 		},
 	}
 	values1, err := createConfigValues(applicationName, config, nil, nil, nil, appInfo, nil, registrytypes.RegistrySettings{}, nil)
@@ -219,6 +251,17 @@ func Test_createConfigValues(t *testing.T) {
 		},
 		"4_with_default": kotsv1beta1.ConfigValue{
 			Default: "default_4",
+		},
+		"5_repeatable_item": {},
+		"5_repeatable_item-1": {
+			Value:          "789",
+			Default:        "123",
+			RepeatableItem: "5_repeatable_item",
+		},
+		"5_repeatable_item-2": {
+			Value:          "456",
+			Default:        "456",
+			RepeatableItem: "5_repeatable_item",
 		},
 	}
 	values3, err := createConfigValues(applicationName, config, configValues, nil, nil, appInfo, nil, registrytypes.RegistrySettings{}, nil)
