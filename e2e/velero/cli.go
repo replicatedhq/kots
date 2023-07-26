@@ -50,7 +50,7 @@ func (v *CLI) install(workspace, kubeconfig, s3Url, bucket string) (*gexec.Sessi
 		"--node-agent-pod-cpu-request=250m",
 		"--node-agent-pod-mem-request=256Mi",
 		"--node-agent-pod-cpu-limit=500m",
-		"--node-agent-pod-mem-limit=512Mi",
+		"--node-agent-pod-mem-limit=1024Mi",
 		"--wait",
 	}
 	return util.RunCommand(exec.Command("velero", args...))
