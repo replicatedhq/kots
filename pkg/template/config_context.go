@@ -146,11 +146,11 @@ func (b *Builder) newConfigContext(configGroups []kotsv1beta1.ConfigGroup, exist
 
 			// build "value"
 			builtValue, _ := builder.String(configItem.Value.String())
-			buildFilename, _ := builder.String(configItem.Filename)
+			builtFilename, _ := builder.String(configItem.Filename)
 			itemValue := ItemValue{
 				Value:    builtValue,
 				Default:  builtDefault,
-				Filename: buildFilename,
+				Filename: builtFilename,
 			}
 
 			configCtx.ItemValues[configItem.Name] = itemValue

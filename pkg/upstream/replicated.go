@@ -532,9 +532,10 @@ func createConfigValues(applicationName string, config *kotsv1beta1.Config, exis
 				value = v.ValuePlaintext
 			}
 			templateContextValues[k] = template.ItemValue{
-				Value:    value,
-				Default:  v.Default,
-				Filename: v.Filename,
+				Value:          value,
+				Default:        v.Default,
+				Filename:       v.Filename,
+				RepeatableItem: v.RepeatableItem,
 			}
 		}
 		newValues = kotsv1beta1.ConfigValuesSpec{
@@ -577,41 +578,18 @@ func createConfigValues(applicationName string, config *kotsv1beta1.Config, exis
 
 	for _, group := range config.Spec.Groups {
 		for _, item := range group.Items {
-			var foundValue, foundValuePlaintext, foundFilename string
-			prevValue, ok := newValues.Values[item.Name]
-			if ok {
-				foundValue = prevValue.Value
-				foundValuePlaintext = prevValue.ValuePlaintext
-				foundFilename = prevValue.Filename
-			}
-
-			renderedValue, err := builder.RenderTemplate(item.Name, item.Value.String())
+			err := createConfigValue(newValues, builder, builderOptions, item.Name, item.Value.String(), item.Default.String(), "")
 			if err != nil {
-				return nil, errors.Wrap(err, "failed to render config item value")
+				return nil, errors.Wrapf(err, "failed to create config value for %s", item.Name)
 			}
 
-			renderedDefault, err := builder.RenderTemplate(item.Name, item.Default.String())
-			if err != nil {
-				return nil, errors.Wrap(err, "failed to render config item default")
-			}
-
-			if foundValue != "" || foundValuePlaintext != "" {
-				newValues.Values[item.Name] = kotsv1beta1.ConfigValue{
-					Value:          foundValue,
-					ValuePlaintext: foundValuePlaintext,
-					Default:        renderedDefault,
-					Filename:       foundFilename,
-				}
-			} else {
-				newValues.Values[item.Name] = kotsv1beta1.ConfigValue{
-					Value:    renderedValue,
-					Default:  renderedDefault,
-					Filename: foundFilename,
-				}
-				builderOptions.ExistingValues[item.Name] = template.ItemValue{
-					Value:    renderedValue,
-					Default:  renderedDefault,
-					Filename: foundFilename,
+			for _, repeatableValues := range item.ValuesByGroup {
+				for name, defaultValue := range repeatableValues {
+					// currently, `ValuesByGroup` defined in the config by the vendor are considered the defaults for repeatable items.
+					err := createConfigValue(newValues, builder, builderOptions, name, "", defaultValue, item.Name)
+					if err != nil {
+						return nil, errors.Wrapf(err, "failed to create config value for %s", name)
+					}
 				}
 			}
 		}
@@ -629,6 +607,62 @@ func createConfigValues(applicationName string, config *kotsv1beta1.Config, exis
 	}
 
 	return &configValues, nil
+}
+
+func createConfigValue(
+	valuesSpec kotsv1beta1.ConfigValuesSpec,
+	builder template.Builder,
+	builderOptions template.BuilderOptions,
+	itemName string,
+	itemValue string,
+	itemDefault string,
+	repeatableItem string,
+) error {
+	var foundValue, foundValuePlaintext, foundFilename, foundRepeatableItem string
+	prevValue, ok := valuesSpec.Values[itemName]
+	if ok {
+		foundValue = prevValue.Value
+		foundValuePlaintext = prevValue.ValuePlaintext
+		foundFilename = prevValue.Filename
+		foundRepeatableItem = prevValue.RepeatableItem
+	}
+
+	renderedValue, err := builder.RenderTemplate(itemName, itemValue)
+	if err != nil {
+		return errors.Wrapf(err, "failed to render value for config item %q", itemName)
+	}
+
+	renderedDefault, err := builder.RenderTemplate(itemName, itemDefault)
+	if err != nil {
+		return errors.Wrapf(err, "failed to render default for config item %q", itemName)
+	}
+
+	if foundValue != "" || foundValuePlaintext != "" {
+		// found a user value for this item, don't overwrite it
+		valuesSpec.Values[itemName] = kotsv1beta1.ConfigValue{
+			Value:          foundValue,
+			ValuePlaintext: foundValuePlaintext,
+			Default:        renderedDefault,
+			Filename:       foundFilename,
+			RepeatableItem: foundRepeatableItem,
+		}
+	} else {
+		// no user value found, use the value defined in the config by the vendor
+		valuesSpec.Values[itemName] = kotsv1beta1.ConfigValue{
+			Value:          renderedValue,
+			Default:        renderedDefault,
+			Filename:       foundFilename,
+			RepeatableItem: repeatableItem,
+		}
+		builderOptions.ExistingValues[itemName] = template.ItemValue{
+			Value:          renderedValue,
+			Default:        renderedDefault,
+			Filename:       foundFilename,
+			RepeatableItem: repeatableItem,
+		}
+	}
+
+	return nil
 }
 
 func findConfigValuesInFile(filename string) (*kotsv1beta1.ConfigValues, error) {
