@@ -1,7 +1,7 @@
 package base
 
 import (
-	"io/ioutil"
+	"os"
 	"path/filepath"
 	"testing"
 
@@ -512,7 +512,7 @@ func Test_RewriteImages(t *testing.T) {
 }
 
 func loadDocs(basePath string) ([]k8sdoc.K8sDoc, error) {
-	files, err := ioutil.ReadDir(basePath)
+	files, err := os.ReadDir(basePath)
 	if err != nil {
 		return nil, errors.Wrap(err, "read base dir")
 	}
@@ -522,7 +522,7 @@ func loadDocs(basePath string) ([]k8sdoc.K8sDoc, error) {
 		if file.IsDir() {
 			continue
 		}
-		content, err := ioutil.ReadFile(filepath.Join(basePath, file.Name()))
+		content, err := os.ReadFile(filepath.Join(basePath, file.Name()))
 		if err != nil {
 			return nil, errors.Wrap(err, "read file")
 		}

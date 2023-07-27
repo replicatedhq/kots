@@ -8,7 +8,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"net/url"
 	"os"
@@ -320,7 +319,7 @@ func readReplicatedAppFromLocalPath(localPath string, localCursor replicatedapp.
 				return nil
 			}
 
-			contents, err := ioutil.ReadFile(path)
+			contents, err := os.ReadFile(path)
 			if err != nil {
 				return err
 			}
@@ -355,7 +354,7 @@ func downloadReplicatedApp(replicatedUpstream *replicatedapp.ReplicatedUpstream,
 	defer getResp.Body.Close()
 
 	if getResp.StatusCode >= 300 {
-		body, _ := ioutil.ReadAll(getResp.Body)
+		body, _ := io.ReadAll(getResp.Body)
 		if len(body) > 0 {
 			return nil, util.ActionableError{Message: string(body)}
 		}
@@ -416,7 +415,7 @@ func downloadReplicatedApp(replicatedUpstream *replicatedapp.ReplicatedUpstream,
 		case tar.TypeDir:
 			continue
 		case tar.TypeReg:
-			content, err := ioutil.ReadAll(tarReader)
+			content, err := io.ReadAll(tarReader)
 			if err != nil {
 				return nil, errors.Wrap(err, "failed to read file from tar")
 			}
@@ -472,7 +471,7 @@ func listPendingChannelReleases(replicatedUpstream *replicatedapp.ReplicatedUpst
 	}
 	defer resp.Body.Close()
 
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return nil, nil, errors.Wrap(err, "failed to read response body")
 	}
@@ -666,7 +665,7 @@ func createConfigValue(
 }
 
 func findConfigValuesInFile(filename string) (*kotsv1beta1.ConfigValues, error) {
-	content, err := ioutil.ReadFile(filename)
+	content, err := os.ReadFile(filename)
 	if err != nil {
 		if os.IsNotExist(err) {
 			return nil, nil
@@ -703,7 +702,7 @@ func mustMarshalIdentityConfig(identityConfig *kotsv1beta1.IdentityConfig) []byt
 }
 
 func findIdentityConfigInFile(filename string) (*kotsv1beta1.IdentityConfig, error) {
-	content, err := ioutil.ReadFile(filename)
+	content, err := os.ReadFile(filename)
 	if err != nil {
 		if os.IsNotExist(err) {
 			return nil, nil

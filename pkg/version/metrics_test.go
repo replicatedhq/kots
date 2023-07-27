@@ -3,7 +3,6 @@ package version
 import (
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"testing"
@@ -434,7 +433,7 @@ spec:
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			archiveDir, err := ioutil.TempDir("", fmt.Sprintf("kotsadm"))
+			archiveDir, err := os.MkdirTemp("", fmt.Sprintf("kotsadm"))
 			req.NoError(err)
 			defer os.RemoveAll(archiveDir)
 			mockStore := tt.mockStoreFn(tt.app, tt.sequence, archiveDir, tt.files)
@@ -455,7 +454,7 @@ func setupDirectoriesAndFiles(archiveDir string, files map[string]string) error 
 		if err := os.MkdirAll(filepath.Join(archiveDir, dir), 0744); err != nil {
 			return err
 		}
-		if err := ioutil.WriteFile(filepath.Join(archiveDir, path), []byte(content), 0644); err != nil {
+		if err := os.WriteFile(filepath.Join(archiveDir, path), []byte(content), 0644); err != nil {
 			return err
 		}
 	}

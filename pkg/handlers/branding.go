@@ -1,7 +1,7 @@
 package handlers
 
 import (
-	"io/ioutil"
+	"io"
 	"net/http"
 
 	"github.com/pkg/errors"
@@ -23,7 +23,7 @@ func (h *Handler) UploadInitialBranding(w http.ResponseWriter, r *http.Request) 
 	}
 	defer archiveFile.Close()
 
-	brandingArchive, err := ioutil.ReadAll(archiveFile)
+	brandingArchive, err := io.ReadAll(archiveFile)
 	if err != nil {
 		logger.Error(errors.Wrap(err, "failed to read form file"))
 		w.WriteHeader(http.StatusInternalServerError)

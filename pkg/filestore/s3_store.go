@@ -3,7 +3,6 @@ package filestore
 import (
 	"context"
 	"io"
-	"io/ioutil"
 	"log"
 	"os"
 	"path/filepath"
@@ -119,7 +118,7 @@ func (s *S3Store) WriteArchive(outputPath string, body io.ReadSeeker) error {
 }
 
 func (s *S3Store) ReadArchive(path string) (string, error) {
-	tmpDir, err := ioutil.TempDir("", "kotsadm")
+	tmpDir, err := os.MkdirTemp("", "kotsadm")
 	if err != nil {
 		return "", errors.Wrap(err, "failed to create temp dir")
 	}

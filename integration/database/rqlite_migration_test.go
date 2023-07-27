@@ -4,9 +4,9 @@ import (
 	"database/sql"
 	_ "embed"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"net/http"
+	"os"
 	"path"
 	"testing"
 
@@ -64,7 +64,7 @@ func TestMigrateFromPostgresToRqlite(t *testing.T) {
 
 	// start rqlite db
 	rqliteAuthConfigPath := path.Join(t.TempDir(), "rqlite-auth-config.json")
-	err = ioutil.WriteFile(rqliteAuthConfigPath, []byte(RQLITE_AUTH_CONFIG), 0644)
+	err = os.WriteFile(rqliteAuthConfigPath, []byte(RQLITE_AUTH_CONFIG), 0644)
 	if err != nil {
 		t.Fatalf("Failed to write to file %s", rqliteAuthConfigPath)
 	}

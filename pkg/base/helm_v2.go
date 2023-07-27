@@ -2,7 +2,7 @@ package base
 
 import (
 	"fmt"
-	"io/ioutil"
+	"io"
 	golog "log"
 	"os"
 	"strings"
@@ -55,7 +55,7 @@ func renderHelmV2(chartName string, chartPath string, vals map[string]interface{
 	}
 
 	// Silence the go logger because helm will complain about some of our template strings
-	golog.SetOutput(ioutil.Discard)
+	golog.SetOutput(io.Discard)
 	defer golog.SetOutput(os.Stdout)
 
 	rendered, err := renderutil.Render(c, config, renderOpts)

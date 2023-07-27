@@ -1,7 +1,6 @@
 package supportbundle
 
 import (
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -17,7 +16,7 @@ var (
 )
 
 func archiveToFileTree(archivePath string) (*types.FileTree, error) {
-	workDir, err := ioutil.TempDir("", "kotsadm")
+	workDir, err := os.MkdirTemp("", "kotsadm")
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create workdir")
 	}

@@ -6,7 +6,6 @@ import (
 	"compress/gzip"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
@@ -115,7 +114,7 @@ func CreateAppFromAirgap(opts CreateAirgapAppOpts) (finalError error) {
 	}
 
 	// extract the release
-	workspace, err := ioutil.TempDir("", "kots-airgap")
+	workspace, err := os.MkdirTemp("", "kots-airgap")
 	if err != nil {
 		return errors.Wrap(err, "failed to create workspace")
 	}
@@ -126,7 +125,7 @@ func CreateAppFromAirgap(opts CreateAirgapAppOpts) (finalError error) {
 		return errors.Wrap(err, "failed to extract app dir")
 	}
 
-	tmpRoot, err := ioutil.TempDir("", "kots")
+	tmpRoot, err := os.MkdirTemp("", "kots")
 	if err != nil {
 		return errors.Wrap(err, "failed to create temp root")
 	}
@@ -143,11 +142,11 @@ func CreateAppFromAirgap(opts CreateAirgapAppOpts) (finalError error) {
 	}
 	license := obj.(*kotsv1beta1.License)
 
-	licenseFile, err := ioutil.TempFile("", "kotsadm")
+	licenseFile, err := os.CreateTemp("", "kotsadm")
 	if err != nil {
 		return errors.Wrap(err, "failed to create temp file")
 	}
-	if err := ioutil.WriteFile(licenseFile.Name(), []byte(opts.PendingApp.LicenseData), 0644); err != nil {
+	if err := os.WriteFile(licenseFile.Name(), []byte(opts.PendingApp.LicenseData), 0644); err != nil {
 		os.Remove(licenseFile.Name())
 		return errors.Wrapf(err, "failed to write license to temp file")
 	}
@@ -171,12 +170,12 @@ func CreateAppFromAirgap(opts CreateAirgapAppOpts) (finalError error) {
 	}
 	configFile := ""
 	if configValues != "" {
-		tmpFile, err := ioutil.TempFile("", "kots")
+		tmpFile, err := os.CreateTemp("", "kots")
 		if err != nil {
 			return errors.Wrap(err, "failed to create temp file for config values")
 		}
 		defer os.RemoveAll(tmpFile.Name())
-		if err := ioutil.WriteFile(tmpFile.Name(), []byte(configValues), 0644); err != nil {
+		if err := os.WriteFile(tmpFile.Name(), []byte(configValues), 0644); err != nil {
 			return errors.Wrap(err, "failed to write config values to temp file")
 		}
 
@@ -339,7 +338,7 @@ func CreateAppFromAirgap(opts CreateAirgapAppOpts) (finalError error) {
 }
 
 func extractAppRelease(workspace string, airgapDir string) (string, error) {
-	files, err := ioutil.ReadDir(airgapDir)
+	files, err := os.ReadDir(airgapDir)
 	if err != nil {
 		return "", errors.Wrapf(err, "failed to read airgap dir")
 	}
@@ -370,7 +369,7 @@ func extractAppRelease(workspace string, airgapDir string) (string, error) {
 }
 
 func extractAppMetaFromAirgapBundle(airgapBundle string) (string, error) {
-	destDir, err := ioutil.TempDir("", "kotsadm-airgap-meta-")
+	destDir, err := os.MkdirTemp("", "kotsadm-airgap-meta-")
 	if err != nil {
 		return "", errors.Wrap(err, "failed to create temp dir")
 	}

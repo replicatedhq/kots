@@ -4,7 +4,7 @@ import (
 	"crypto/tls"
 	"encoding/base64"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"strings"
 	"time"
@@ -99,7 +99,7 @@ func CheckAccess(endpoint, username, password string) error {
 	}
 	defer resp.Body.Close()
 
-	authBody, err := ioutil.ReadAll(resp.Body)
+	authBody, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return errors.Wrap(err, "failed to load auth response")
 	}

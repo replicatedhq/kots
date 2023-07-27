@@ -1,7 +1,6 @@
 package apiserver
 
 import (
-	"io/ioutil"
 	"os"
 	"path/filepath"
 
@@ -67,7 +66,7 @@ func loadEncryptionKeys() error {
 			return errors.Wrap(err, "failed to get latest app sequence")
 		}
 
-		currentArchivePath, err := ioutil.TempDir("", "kotsadm")
+		currentArchivePath, err := os.MkdirTemp("", "kotsadm")
 		if err != nil {
 			return errors.Wrap(err, "failed to create temp dir")
 		}

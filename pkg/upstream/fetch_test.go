@@ -2,7 +2,7 @@ package upstream
 
 import (
 	"encoding/base64"
-	"io/ioutil"
+	"os"
 	"path/filepath"
 	"testing"
 
@@ -29,7 +29,7 @@ ACgAAA==`,
 	for name, data := range releaseFiles {
 		content, err := base64.StdEncoding.DecodeString(data)
 		req.NoError(err)
-		err = ioutil.WriteFile(filepath.Join(srcDir, name), content, 0644)
+		err = os.WriteFile(filepath.Join(srcDir, name), content, 0644)
 		req.NoError(err)
 	}
 

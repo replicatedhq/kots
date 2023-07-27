@@ -1,7 +1,6 @@
 package main
 
 import (
-	"io/ioutil"
 	"os"
 	"path"
 	"testing"
@@ -128,10 +127,10 @@ func TestFunctional(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			rootDir := path.Join("testdata", tc.name)
 
-			expectedConstants, err := ioutil.ReadFile(path.Join(rootDir, "constants.go"))
+			expectedConstants, err := os.ReadFile(path.Join(rootDir, "constants.go"))
 			require.Nil(t, err)
 
-			expectedEnvs, err := ioutil.ReadFile(path.Join(rootDir, ".image.env"))
+			expectedEnvs, err := os.ReadFile(path.Join(rootDir, ".image.env"))
 			require.Nil(t, err)
 
 			tempDir := t.TempDir()
@@ -170,10 +169,10 @@ func TestFunctional(t *testing.T) {
 
 			require.Nil(t, err)
 
-			actualConstants, err := ioutil.ReadFile(constantFile)
+			actualConstants, err := os.ReadFile(constantFile)
 			require.Nil(t, err)
 
-			actualEnv, err := ioutil.ReadFile(envFile)
+			actualEnv, err := os.ReadFile(envFile)
 			require.Nil(t, err)
 
 			require.Equal(t, string(expectedConstants), string(actualConstants))
@@ -183,14 +182,14 @@ func TestFunctional(t *testing.T) {
 				expectedDir := path.Join(rootDir, "replacers", "expected")
 				actualDir := path.Join(tempDir, "replacers", "actual")
 
-				files, err := ioutil.ReadDir(expectedDir)
+				files, err := os.ReadDir(expectedDir)
 				require.Nil(t, err)
 
 				for _, f := range files {
-					expectedContent, err := ioutil.ReadFile(path.Join(expectedDir, f.Name()))
+					expectedContent, err := os.ReadFile(path.Join(expectedDir, f.Name()))
 					require.Nil(t, err)
 
-					actualContent, err := ioutil.ReadFile(path.Join(actualDir, f.Name()))
+					actualContent, err := os.ReadFile(path.Join(actualDir, f.Name()))
 					require.Nil(t, err)
 
 					require.Equal(t, string(expectedContent), string(actualContent))
@@ -201,7 +200,7 @@ func TestFunctional(t *testing.T) {
 }
 
 func copyDirFiles(inputDir string, outputDir string) error {
-	files, err := ioutil.ReadDir(inputDir)
+	files, err := os.ReadDir(inputDir)
 	if err != nil {
 		return errors.Wrapf(err, "failed to read input dir %s", inputDir)
 	}
@@ -212,12 +211,12 @@ func copyDirFiles(inputDir string, outputDir string) error {
 	}
 
 	for _, f := range files {
-		content, err := ioutil.ReadFile(path.Join(inputDir, f.Name()))
+		content, err := os.ReadFile(path.Join(inputDir, f.Name()))
 		if err != nil {
 			return errors.Wrapf(err, "failed to read file %s", path.Join(inputDir, f.Name()))
 		}
 
-		err = ioutil.WriteFile(path.Join(outputDir, f.Name()), []byte(content), 0644)
+		err = os.WriteFile(path.Join(outputDir, f.Name()), []byte(content), 0644)
 		if err != nil {
 			return errors.Wrapf(err, "failed to write to file %s", path.Join(outputDir, f.Name()))
 		}

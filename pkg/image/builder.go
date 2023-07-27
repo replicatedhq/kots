@@ -5,7 +5,6 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 	"path"
 	"path/filepath"
@@ -54,7 +53,7 @@ func RewriteImages(srcRegistry, destRegistry dockerregistrytypes.RegistryOptions
 				return nil
 			}
 
-			contents, err := ioutil.ReadFile(path)
+			contents, err := os.ReadFile(path)
 			if err != nil {
 				return err
 			}
@@ -145,7 +144,7 @@ func GetPrivateImages(baseDir string, kotsKindsImages []string, checkedImages ma
 				return nil
 			}
 
-			contents, err := ioutil.ReadFile(path)
+			contents, err := os.ReadFile(path)
 			if err != nil {
 				logger.Debugf("Failed to read file %s: %v", path, err)
 				return err
@@ -360,7 +359,7 @@ func rewriteOneImage(srcRegistry, destRegistry dockerregistrytypes.RegistryOptio
 		// this implicitly causes an image format conversion
 
 		// make a temp directory
-		tempDir, err := ioutil.TempDir("", "temp-image-pull")
+		tempDir, err := os.MkdirTemp("", "temp-image-pull")
 		if err != nil {
 			return nil, errors.Wrapf(err, "temp directory %s not created", tempDir)
 		}

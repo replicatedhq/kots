@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 
 	"github.com/pkg/errors"
@@ -42,7 +42,7 @@ func GetFromPlatformLicense(apiEndpoint, platformLicense string) (string, error)
 		return "", errors.Wrap(err, "unexpected result from post request")
 	}
 
-	kotsLicenseData, err := ioutil.ReadAll(resp.Body)
+	kotsLicenseData, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return "", errors.Wrap(err, "failed to load response")
 	}

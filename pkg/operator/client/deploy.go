@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/base64"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -332,7 +331,7 @@ func getSortedCharts(v1Beta1ChartsDir string, v1Beta2ChartsDir string, kotsChart
 	foundDirs := []orderedDir{}
 
 	if v1Beta1ChartsDir != "" {
-		v1Beta1Dirs, err := ioutil.ReadDir(v1Beta1ChartsDir)
+		v1Beta1Dirs, err := os.ReadDir(v1Beta1ChartsDir)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to read v1beta1 archive dir")
 		}
@@ -353,7 +352,7 @@ func getSortedCharts(v1Beta1ChartsDir string, v1Beta2ChartsDir string, kotsChart
 	}
 
 	if v1Beta2ChartsDir != "" {
-		v1Beta2Dirs, err := ioutil.ReadDir(v1Beta2ChartsDir)
+		v1Beta2Dirs, err := os.ReadDir(v1Beta2ChartsDir)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to read v1beta2 archive dir")
 		}
@@ -444,7 +443,7 @@ func getSortedCharts(v1Beta1ChartsDir string, v1Beta2ChartsDir string, kotsChart
 
 func findChartNameAndVersion(chartDir string) (string, string, error) {
 	chartfilePath := filepath.Join(chartDir, "Chart.yaml")
-	chartFile, err := ioutil.ReadFile(chartfilePath)
+	chartFile, err := os.ReadFile(chartfilePath)
 	if err != nil {
 		return "", "", errors.Wrapf(err, "failed to parse %s", chartfilePath)
 	}
@@ -459,7 +458,7 @@ func findChartNameAndVersion(chartDir string) (string, string, error) {
 }
 
 func findChartTgz(dir string) (string, error) {
-	files, err := ioutil.ReadDir(dir)
+	files, err := os.ReadDir(dir)
 	if err != nil {
 		return "", errors.Wrapf(err, "failed to read dir %s", dir)
 	}
@@ -482,7 +481,7 @@ func findChartTgz(dir string) (string, error) {
 }
 
 func findChartNameAndVersionInArchive(archivePath string) (string, string, error) {
-	tmpDir, err := ioutil.TempDir("", "kots")
+	tmpDir, err := os.MkdirTemp("", "kots")
 	if err != nil {
 		return "", "", errors.Wrap(err, "failed to create temp dir")
 	}
@@ -609,7 +608,7 @@ func getRemovedCharts(opts getRemovedChartsOptions) ([]kotsutil.HelmChartInterfa
 }
 
 func findMatchingHelmCharts(chartsDir string, kotsCharts []kotsutil.HelmChartInterface) ([]kotsutil.HelmChartInterface, error) {
-	dirContent, err := ioutil.ReadDir(chartsDir)
+	dirContent, err := os.ReadDir(chartsDir)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to list chart dir %s", chartsDir)
 	}

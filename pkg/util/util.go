@@ -5,7 +5,6 @@ import (
 	crand "crypto/rand"
 	"encoding/base64"
 	"fmt"
-	"io/ioutil"
 	"math/big"
 	rand "math/rand"
 	"net/url"
@@ -239,7 +238,7 @@ func GetFilesMap(dir string) (map[string][]byte, error) {
 				return nil
 			}
 
-			contents, err := ioutil.ReadFile(path)
+			contents, err := os.ReadFile(path)
 			if err != nil {
 				return errors.Wrapf(err, "failed to read file %s", path)
 			}

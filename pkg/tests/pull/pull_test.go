@@ -2,7 +2,6 @@ package pull
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
@@ -68,7 +67,7 @@ func TestKotsPull(t *testing.T) {
 			require.NoError(t, err, path)
 		}
 
-		b, err := ioutil.ReadFile(testcaseFilepath)
+		b, err := os.ReadFile(testcaseFilepath)
 		require.NoError(t, err, path)
 
 		var spec TestCaseSpec
@@ -153,14 +152,14 @@ func TestKotsPull(t *testing.T) {
 						return nil
 					}
 
-					contents, err := ioutil.ReadFile(path)
+					contents, err := os.ReadFile(path)
 					if err != nil {
 						return err
 					}
 
 					wantPath := strings.Replace(path, "results", "wantResults", 1)
 
-					wantContents, err := ioutil.ReadFile(wantPath)
+					wantContents, err := os.ReadFile(wantPath)
 					if err != nil {
 						fmt.Printf("unable to open file %s\n", wantPath)
 					}
@@ -198,7 +197,7 @@ func TestKotsPull(t *testing.T) {
 						return nil
 					}
 
-					rawContents, err := ioutil.ReadFile(path)
+					rawContents, err := os.ReadFile(path)
 					if err != nil {
 						return err
 					}
@@ -214,7 +213,7 @@ func TestKotsPull(t *testing.T) {
 
 					wantPath := strings.Replace(path, "results", "wantResults", 1)
 
-					rawWantContents, err := ioutil.ReadFile(wantPath)
+					rawWantContents, err := os.ReadFile(wantPath)
 					if err != nil {
 						fmt.Printf("unable to open file %s\n", wantPath)
 					}
@@ -236,10 +235,10 @@ func TestKotsPull(t *testing.T) {
 
 			wantInstallationPath := strings.Replace(installationPath, "results", "wantResults", 1)
 
-			installationContents, err := ioutil.ReadFile(installationPath)
+			installationContents, err := os.ReadFile(installationPath)
 			require.NoError(t, err)
 
-			wantInstallationContents, err := ioutil.ReadFile(wantInstallationPath)
+			wantInstallationContents, err := os.ReadFile(wantInstallationPath)
 			require.NoError(t, err)
 
 			installation := kotsv1beta1.Installation{}

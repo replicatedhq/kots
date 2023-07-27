@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"mime/multipart"
 	"net/http"
 	"os"
@@ -60,7 +59,7 @@ func Upgrade(appSlug string, options UpgradeOptions) (*UpgradeResponse, error) {
 	airgapPath := ""
 	var images []kustomizetypes.Image
 	if options.AirgapBundle != "" {
-		airgapRootDir, err := ioutil.TempDir("", "kotsadm-airgap")
+		airgapRootDir, err := os.MkdirTemp("", "kotsadm-airgap")
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to create temp dir")
 		}
@@ -122,7 +121,7 @@ func Upgrade(appSlug string, options UpgradeOptions) (*UpgradeResponse, error) {
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to marshal images data")
 		}
-		err = ioutil.WriteFile(filepath.Join(airgapPath, "images.json"), b, 0644)
+		err = os.WriteFile(filepath.Join(airgapPath, "images.json"), b, 0644)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to write images data")
 		}
@@ -170,7 +169,7 @@ func Upgrade(appSlug string, options UpgradeOptions) (*UpgradeResponse, error) {
 	}
 	defer resp.Body.Close()
 
-	b, err := ioutil.ReadAll(resp.Body)
+	b, err := io.ReadAll(resp.Body)
 	if err != nil {
 		log.FinishSpinnerWithError()
 		return nil, errors.Wrap(err, "failed to read server response")

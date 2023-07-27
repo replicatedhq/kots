@@ -1,7 +1,7 @@
 package applier
 
 import (
-	"io/ioutil"
+	"io"
 	"os/exec"
 	"sync"
 
@@ -32,13 +32,13 @@ func Run(cmd *exec.Cmd) ([]byte, []byte, error) {
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		stdout, _ = ioutil.ReadAll(stdoutReader)
+		stdout, _ = io.ReadAll(stdoutReader)
 	}()
 
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		stderr, _ = ioutil.ReadAll(stderrReader)
+		stderr, _ = io.ReadAll(stderrReader)
 	}()
 
 	// cmd.Wait() must be called after all readers have completed

@@ -5,7 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net"
 	"net/http"
 	"net/url"
@@ -289,7 +289,7 @@ func PortForward(localPort int, remotePort int, namespace string, getPodName fun
 				}
 
 				defer resp.Body.Close()
-				b, err := ioutil.ReadAll(resp.Body)
+				b, err := io.ReadAll(resp.Body)
 				if err != nil {
 					if consecutiveErrorsLogged.read == 0 {
 						log.Info("failed to read response body while listing additional ports: %v", err)

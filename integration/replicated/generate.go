@@ -2,7 +2,6 @@ package replicated
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path"
 
@@ -40,12 +39,12 @@ spec:
 		return errors.Wrap(err, "failed to create test root")
 	}
 
-	err = ioutil.WriteFile(path.Join(testRoot, "license.yaml"), []byte(integrationLicenseData), 0644)
+	err = os.WriteFile(path.Join(testRoot, "license.yaml"), []byte(integrationLicenseData), 0644)
 	if err != nil {
 		return errors.Wrap(err, "failed to write license")
 	}
 
-	err = ioutil.WriteFile(path.Join(testRoot, "archive.tar.gz"), replicatedAppArchive, 0644)
+	err = os.WriteFile(path.Join(testRoot, "archive.tar.gz"), replicatedAppArchive, 0644)
 	if err != nil {
 		return errors.Wrap(err, "failed to write archive")
 	}
@@ -60,12 +59,12 @@ spec:
 			ImplicitTopLevelFolder: false,
 		},
 	}
-	tempExpectedFile, err := ioutil.TempDir("", "kotsintegration")
+	tempExpectedFile, err := os.MkdirTemp("", "kotsintegration")
 	if err != nil {
 		return errors.Wrap(err, "failed to create temp file")
 	}
 	defer os.RemoveAll(tempExpectedFile)
-	err = ioutil.WriteFile(path.Join(tempExpectedFile, "archive.tar.gz"), expectedFilesystem, 0644)
+	err = os.WriteFile(path.Join(tempExpectedFile, "archive.tar.gz"), expectedFilesystem, 0644)
 	if err != nil {
 		return errors.Wrap(err, "failed to write to temp file")
 	}
@@ -83,7 +82,7 @@ func generateReplicatedAppArchive(rawArchivePath string) ([]byte, error) {
 		},
 	}
 
-	archiveDir, err := ioutil.TempDir("", "kots")
+	archiveDir, err := os.MkdirTemp("", "kots")
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create temp dir")
 	}
@@ -93,7 +92,7 @@ func generateReplicatedAppArchive(rawArchivePath string) ([]byte, error) {
 	if err := tarGz.Archive([]string{rawArchivePath}, archiveFile); err != nil {
 		return nil, errors.Wrap(err, "failed to create archive")
 	}
-	b, err := ioutil.ReadFile(archiveFile)
+	b, err := os.ReadFile(archiveFile)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to read archive file")
 	}
@@ -105,7 +104,7 @@ func generateReplicatedAppArchive(rawArchivePath string) ([]byte, error) {
 // and then creates a tar from what the output is. because of this, it's expected
 // that kots is working as expected when creating a new test
 func generateExpectedFilesystem(namespace, rawArchivePath string) ([]byte, error) {
-	tmpRootDir, err := ioutil.TempDir("", "kots")
+	tmpRootDir, err := os.MkdirTemp("", "kots")
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create temp dir")
 	}
@@ -132,7 +131,7 @@ func generateExpectedFilesystem(namespace, rawArchivePath string) ([]byte, error
 		},
 	}
 
-	archiveDir, err := ioutil.TempDir("", "kots")
+	archiveDir, err := os.MkdirTemp("", "kots")
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create temp dir")
 	}
@@ -152,7 +151,7 @@ func generateExpectedFilesystem(namespace, rawArchivePath string) ([]byte, error
 	if err := tarGz.Archive(paths, archiveFile); err != nil {
 		return nil, errors.Wrap(err, "failed to create archive")
 	}
-	b, err := ioutil.ReadFile(archiveFile)
+	b, err := os.ReadFile(archiveFile)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to read archive file")
 	}

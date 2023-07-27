@@ -8,7 +8,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 	"path"
 	"path/filepath"
@@ -33,7 +32,7 @@ import (
 
 // Pushes Admin Console images from airgap bundle to private registry
 func PushImages(airgapArchive string, options types.PushImagesOptions) error {
-	airgapRootDir, err := ioutil.TempDir("", "kotsadm-airgap")
+	airgapRootDir, err := os.MkdirTemp("", "kotsadm-airgap")
 	if err != nil {
 		return errors.Wrap(err, "failed to create temp dir")
 	}
@@ -124,7 +123,7 @@ func ExtractAppAirgapArchive(archive string, destDir string, excludeImages bool,
 }
 
 func pushKotsadmImagesFromPath(rootDir string, options types.PushImagesOptions) error {
-	fileInfos, err := ioutil.ReadDir(rootDir)
+	fileInfos, err := os.ReadDir(rootDir)
 	if err != nil {
 		return errors.Wrap(err, "failed to read dir")
 	}
@@ -144,7 +143,7 @@ func pushKotsadmImagesFromPath(rootDir string, options types.PushImagesOptions) 
 }
 
 func processImageNames(rootDir string, format string, options types.PushImagesOptions) error {
-	fileInfos, err := ioutil.ReadDir(filepath.Join(rootDir, format))
+	fileInfos, err := os.ReadDir(filepath.Join(rootDir, format))
 	if err != nil {
 		return errors.Wrap(err, "failed to read dir")
 	}
@@ -164,7 +163,7 @@ func processImageNames(rootDir string, format string, options types.PushImagesOp
 }
 
 func processImageTags(rootDir string, format string, imageName string, options types.PushImagesOptions) error {
-	fileInfos, err := ioutil.ReadDir(filepath.Join(rootDir, format, imageName))
+	fileInfos, err := os.ReadDir(filepath.Join(rootDir, format, imageName))
 	if err != nil {
 		return errors.Wrap(err, "failed to read dir")
 	}
@@ -262,7 +261,7 @@ func TagAndPushAppImagesFromBundle(airgapBundle string, options types.PushImages
 
 	switch airgap.Spec.Format {
 	case dockertypes.FormatDockerRegistry:
-		extractedBundle, err := ioutil.TempDir("", "extracted-airgap-kots")
+		extractedBundle, err := os.MkdirTemp("", "extracted-airgap-kots")
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to create temp dir for unarchived airgap bundle")
 		}
@@ -518,7 +517,7 @@ func PushAppImagesFromDockerArchiveBundle(airgapBundle string, options types.Pus
 			writeProgressLine(reportWriter, fmt.Sprintf("Extracting image %s", imagePath))
 		}
 
-		tmpFile, err := ioutil.TempFile("", "kotsadm-app-image-")
+		tmpFile, err := os.CreateTemp("", "kotsadm-app-image-")
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to create temp file")
 		}
@@ -943,7 +942,7 @@ func countLayersUploaded(image *types.ImageInfo) int64 {
 }
 
 func isAppArchive(rootDir string) bool {
-	fileInfos, err := ioutil.ReadDir(rootDir)
+	fileInfos, err := os.ReadDir(rootDir)
 	if err != nil {
 		return false
 	}
@@ -953,7 +952,7 @@ func isAppArchive(rootDir string) bool {
 			continue
 		}
 
-		contents, err := ioutil.ReadFile(filepath.Join(rootDir, info.Name()))
+		contents, err := os.ReadFile(filepath.Join(rootDir, info.Name()))
 		if err != nil {
 			continue
 		}

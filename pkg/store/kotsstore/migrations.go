@@ -2,7 +2,6 @@ package kotsstore
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 
@@ -86,7 +85,7 @@ func (s *KOTSStore) migrateKotsAppSpec() error {
 	for _, version := range versions {
 		logger.Info(fmt.Sprintf("Migrating kots_app_spec for app %s sequence %d", version.appID, version.sequence))
 		err := func() error {
-			archiveDir, err := ioutil.TempDir("", "kotsadm")
+			archiveDir, err := os.MkdirTemp("", "kotsadm")
 			if err != nil {
 				return errors.Wrap(err, "failed to create temp dir")
 			}
@@ -158,7 +157,7 @@ func (s *KOTSStore) migrateKotsInstallationSpec() error {
 	for _, version := range versions {
 		logger.Info(fmt.Sprintf("Migrating kots_installation_spec for app %s sequence %d", version.appID, version.sequence))
 		err := func() error {
-			archiveDir, err := ioutil.TempDir("", "kotsadm")
+			archiveDir, err := os.MkdirTemp("", "kotsadm")
 			if err != nil {
 				return errors.Wrap(err, "failed to create temp dir")
 			}
@@ -230,7 +229,7 @@ func (s *KOTSStore) migrateSupportBundleSpec() error {
 	for _, version := range versions {
 		logger.Info(fmt.Sprintf("Migrating kots_installation_spec for app %s sequence %d", version.appID, version.sequence))
 		err := func() error {
-			archiveDir, err := ioutil.TempDir("", "kotsadm")
+			archiveDir, err := os.MkdirTemp("", "kotsadm")
 			if err != nil {
 				return errors.Wrap(err, "failed to create temp dir")
 			}
@@ -302,7 +301,7 @@ func (s *KOTSStore) migratePreflightSpec() error {
 	for _, version := range versions {
 		logger.Info(fmt.Sprintf("Migrating preflight_spec for app %s sequence %d", version.appID, version.sequence))
 		err := func() error {
-			archiveDir, err := ioutil.TempDir("", "kotsadm")
+			archiveDir, err := os.MkdirTemp("", "kotsadm")
 			if err != nil {
 				return errors.Wrap(err, "failed to create temp dir")
 			}
@@ -374,7 +373,7 @@ func (s *KOTSStore) migrateAnalyzerSpec() error {
 	for _, version := range versions {
 		logger.Info(fmt.Sprintf("Migrating analyzer_spec for app %s sequence %d", version.appID, version.sequence))
 		err := func() error {
-			archiveDir, err := ioutil.TempDir("", "kotsadm")
+			archiveDir, err := os.MkdirTemp("", "kotsadm")
 			if err != nil {
 				return errors.Wrap(err, "failed to create temp dir")
 			}
@@ -446,7 +445,7 @@ func (s *KOTSStore) migrateAppSpec() error {
 	for _, version := range versions {
 		logger.Info(fmt.Sprintf("Migrating app_spec for app %s sequence %d", version.appID, version.sequence))
 		err := func() error {
-			archiveDir, err := ioutil.TempDir("", "kotsadm")
+			archiveDir, err := os.MkdirTemp("", "kotsadm")
 			if err != nil {
 				return errors.Wrap(err, "failed to create temp dir")
 			}

@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"os"
 
@@ -20,7 +20,7 @@ type UploadLicenseOptions struct {
 }
 
 func UploadLicense(path string, uploadLicenseOptions UploadLicenseOptions) error {
-	b, err := ioutil.ReadFile(path)
+	b, err := os.ReadFile(path)
 	if err != nil {
 		return errors.Wrap(err, "failed to read license file")
 	}
@@ -87,7 +87,7 @@ func UploadLicense(path string, uploadLicenseOptions UploadLicenseOptions) error
 		return errors.Errorf("unexpected status code: %d", resp.StatusCode)
 	}
 
-	respBody, err := ioutil.ReadAll(resp.Body)
+	respBody, err := io.ReadAll(resp.Body)
 	if err != nil {
 		log.FinishSpinnerWithError()
 		return errors.Wrap(err, "failed to read response body")

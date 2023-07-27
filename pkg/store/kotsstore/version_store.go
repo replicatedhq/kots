@@ -5,7 +5,6 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"math"
 	"os"
 	"path/filepath"
@@ -117,7 +116,7 @@ func (s *KOTSStore) IsSnapshotsSupportedForVersion(a *apptypes.App, sequence int
 		return false, nil
 	}
 
-	archiveDir, err := ioutil.TempDir("", "kotsadm")
+	archiveDir, err := os.MkdirTemp("", "kotsadm")
 	if err != nil {
 		return false, errors.Wrap(err, "failed to create temp dir")
 	}
@@ -236,7 +235,7 @@ func (s *KOTSStore) CreateAppVersionArchive(appID string, sequence int64, archiv
 		paths = append(paths, skippedFilesPath)
 	}
 
-	tmpDir, err := ioutil.TempDir("", "kotsadm")
+	tmpDir, err := os.MkdirTemp("", "kotsadm")
 	if err != nil {
 		return errors.Wrap(err, "failed to create temp file")
 	}
@@ -353,7 +352,7 @@ func (s *KOTSStore) GetAppVersionBaseArchive(appID string, versionLabel string) 
 		return "", -1, errors.Wrapf(err, "failed to get base sequence for version %s", versionLabel)
 	}
 
-	archiveDir, err := ioutil.TempDir("", "kotsadm")
+	archiveDir, err := os.MkdirTemp("", "kotsadm")
 	if err != nil {
 		return "", -1, errors.Wrap(err, "failed to create temp dir")
 	}
@@ -551,7 +550,7 @@ func (s *KOTSStore) upsertAppVersionStatements(appID string, sequence int64, bas
 
 	previousArchiveDir := ""
 	if baseSequence != nil {
-		previousDir, err := ioutil.TempDir("", "kotsadm")
+		previousDir, err := os.MkdirTemp("", "kotsadm")
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to create temp dir")
 		}
@@ -877,7 +876,7 @@ func (s *KOTSStore) UpdateNextAppVersionDiffSummary(appID string, baseSequence i
 	}
 	d := downstreams[0]
 
-	baseArchiveDir, err := ioutil.TempDir("", "kotsadm")
+	baseArchiveDir, err := os.MkdirTemp("", "kotsadm")
 	if err != nil {
 		return errors.Wrap(err, "failed to create base temp dir")
 	}
@@ -887,7 +886,7 @@ func (s *KOTSStore) UpdateNextAppVersionDiffSummary(appID string, baseSequence i
 		return errors.Wrap(err, "failed to get base archive dir")
 	}
 
-	nextArchiveDir, err := ioutil.TempDir("", "kotsadm")
+	nextArchiveDir, err := os.MkdirTemp("", "kotsadm")
 	if err != nil {
 		return errors.Wrap(err, "failed to create next temp dir")
 	}

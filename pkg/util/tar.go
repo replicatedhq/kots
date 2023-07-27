@@ -5,7 +5,6 @@ import (
 	"bytes"
 	"compress/gzip"
 	"io"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 
@@ -14,7 +13,7 @@ import (
 )
 
 func TGZArchive(dir string) ([]byte, error) {
-	tempDir, err := ioutil.TempDir("", "kots")
+	tempDir, err := os.MkdirTemp("", "kots")
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create temp dir")
 	}
@@ -29,7 +28,7 @@ func TGZArchive(dir string) ([]byte, error) {
 		return nil, errors.Wrap(err, "failed to create tar gz")
 	}
 
-	archive, err := ioutil.ReadFile(filepath.Join(tempDir, "tmp.tar.gz"))
+	archive, err := os.ReadFile(filepath.Join(tempDir, "tmp.tar.gz"))
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to read tar.gz file")
 	}

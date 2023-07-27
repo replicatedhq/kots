@@ -5,7 +5,6 @@ import (
 	"bytes"
 	"fmt"
 	"go/format"
-	"io/ioutil"
 	"log"
 	"os"
 	"regexp"
@@ -147,7 +146,7 @@ func generateOutput(filename, fileTemplate string, refs []*ImageRef, fn template
 		return err
 	}
 
-	if err := ioutil.WriteFile(filename, buff, 0644); err != nil {
+	if err := os.WriteFile(filename, buff, 0644); err != nil {
 		return err
 	}
 
@@ -155,7 +154,7 @@ func generateOutput(filename, fileTemplate string, refs []*ImageRef, fn template
 }
 
 func (r *replacer) replace(refs []*ImageRef) error {
-	b, err := ioutil.ReadFile(r.path)
+	b, err := os.ReadFile(r.path)
 	if err != nil {
 		return errors.Wrap(err, "failed to read file")
 	}
@@ -169,7 +168,7 @@ func (r *replacer) replace(refs []*ImageRef) error {
 		content = reg.ReplaceAllString(content, r.valueFn(ref))
 	}
 
-	if err := ioutil.WriteFile(r.path, []byte(content), 0644); err != nil {
+	if err := os.WriteFile(r.path, []byte(content), 0644); err != nil {
 		return errors.Wrap(err, "failed to write file")
 	}
 

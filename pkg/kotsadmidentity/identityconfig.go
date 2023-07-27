@@ -2,7 +2,6 @@ package identity
 
 import (
 	"bytes"
-	"io/ioutil"
 	"os"
 
 	"github.com/pkg/errors"
@@ -35,13 +34,13 @@ func InitAppIdentityConfig(appSlug string) (string, error) {
 		return "", errors.Wrap(err, "failed to encode config")
 	}
 
-	identityConfigTmpFile, err := ioutil.TempFile("", "kots")
+	identityConfigTmpFile, err := os.CreateTemp("", "kots")
 	if err != nil {
 		return "", errors.Wrap(err, "failed to create temp file")
 	}
 	_ = identityConfigTmpFile.Close()
 
-	if err := ioutil.WriteFile(identityConfigTmpFile.Name(), buf.Bytes(), 0644); err != nil {
+	if err := os.WriteFile(identityConfigTmpFile.Name(), buf.Bytes(), 0644); err != nil {
 		os.Remove(identityConfigTmpFile.Name())
 		return "", errors.Wrap(err, "failed to write config to temp file")
 	}

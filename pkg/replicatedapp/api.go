@@ -2,7 +2,7 @@ package replicatedapp
 
 import (
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/url"
 
@@ -67,7 +67,7 @@ func getLicenseFromAPI(url string, licenseID string) (*LicenseData, error) {
 	}
 	defer resp.Body.Close()
 
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to load response")
 	}
@@ -158,7 +158,7 @@ func getApplicationMetadataFromHost(host string, endpoint string, upstream *url.
 		return nil, errors.Errorf("unexpected result from get request: %d", getResp.StatusCode)
 	}
 
-	respBody, err := ioutil.ReadAll(getResp.Body)
+	respBody, err := io.ReadAll(getResp.Body)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to read response body")
 	}

@@ -2,7 +2,7 @@ package helm
 
 import (
 	"context"
-	"io/ioutil"
+	"os"
 	"strconv"
 	"sync"
 	"time"
@@ -32,7 +32,7 @@ var (
 )
 
 func Init(ctx context.Context) error {
-	tmpDir, err := ioutil.TempDir("", "helm-values-")
+	tmpDir, err := os.MkdirTemp("", "helm-values-")
 	if err != nil {
 		return errors.Wrap(err, "failed to create temp dir")
 	}

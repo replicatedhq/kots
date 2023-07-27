@@ -3,7 +3,6 @@ package apparchive
 import (
 	"bytes"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path"
 	"path/filepath"
@@ -102,7 +101,7 @@ func WriteV1Beta2HelmCharts(opts WriteV1Beta2HelmChartsOptions) error {
 		}
 
 		archivePath := path.Join(chartDir, fmt.Sprintf("%s-%s.tgz", helmChart.Spec.Chart.Name, helmChart.Spec.Chart.ChartVersion))
-		if err := ioutil.WriteFile(archivePath, archive, 0644); err != nil {
+		if err := os.WriteFile(archivePath, archive, 0644); err != nil {
 			return errors.Wrap(err, "failed to write helm chart archive")
 		}
 
@@ -138,7 +137,7 @@ func WriteV1Beta2HelmCharts(opts WriteV1Beta2HelmChartsOptions) error {
 		}
 
 		valuesPath := path.Join(chartDir, "values.yaml")
-		if err := ioutil.WriteFile(valuesPath, []byte(valuesContent), 0644); err != nil {
+		if err := os.WriteFile(valuesPath, []byte(valuesContent), 0644); err != nil {
 			return errors.Wrap(err, "failed to write values file")
 		}
 
@@ -293,7 +292,7 @@ func processV1Beta2HelmChartImages(opts WriteV1Beta2HelmChartsOptions, helmChart
 	}
 
 	builderValuesPath := path.Join(tmpDir, "builder-values.yaml")
-	if err := ioutil.WriteFile(builderValuesPath, builderValuesContent, 0644); err != nil {
+	if err := os.WriteFile(builderValuesPath, builderValuesContent, 0644); err != nil {
 		return nil, errors.Wrap(err, "failed to write builder values file")
 	}
 

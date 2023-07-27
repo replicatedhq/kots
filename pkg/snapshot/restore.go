@@ -5,7 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"os"
 	"strings"
@@ -449,7 +449,7 @@ func waitForKotsadmApplicationsRestore(backupName string, kotsadmNamespace strin
 			return errors.Errorf("unexpected status code from %s: %s", url, resp.Status)
 		}
 
-		respBody, err := ioutil.ReadAll(resp.Body)
+		respBody, err := io.ReadAll(resp.Body)
 		if err != nil {
 			return errors.Wrap(err, "failed to read server response")
 		}

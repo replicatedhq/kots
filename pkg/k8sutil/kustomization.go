@@ -1,7 +1,7 @@
 package k8sutil
 
 import (
-	"io/ioutil"
+	"os"
 	"sort"
 	"strings"
 
@@ -11,7 +11,7 @@ import (
 )
 
 func ReadKustomizationFromFile(file string) (*kustomizetypes.Kustomization, error) {
-	b, err := ioutil.ReadFile(file)
+	b, err := os.ReadFile(file)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to read kustomization file")
 	}
@@ -66,7 +66,7 @@ func WriteKustomizationToFile(kustomization kustomizetypes.Kustomization, file s
 		return errors.Wrap(err, "failed to marshal kustomization")
 	}
 
-	if err := ioutil.WriteFile(file, b, 0644); err != nil {
+	if err := os.WriteFile(file, b, 0644); err != nil {
 		return errors.Wrap(err, "failed to write kustomization file")
 	}
 

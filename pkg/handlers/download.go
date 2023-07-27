@@ -3,7 +3,6 @@ package handlers
 import (
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -57,7 +56,7 @@ func (h *Handler) DownloadApp(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	archivePath, err := ioutil.TempDir("", "kotsadm")
+	archivePath, err := os.MkdirTemp("", "kotsadm")
 	if err != nil {
 		logger.Error(err)
 		w.WriteHeader(500)
@@ -94,7 +93,7 @@ func (h *Handler) DownloadApp(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 
-			if err := ioutil.WriteFile(filepath.Join(archivePath, "upstream", "userdata", "config.yaml"), []byte(updated), 0644); err != nil {
+			if err := os.WriteFile(filepath.Join(archivePath, "upstream", "userdata", "config.yaml"), []byte(updated), 0644); err != nil {
 				logger.Error(err)
 				w.WriteHeader(500)
 				return
@@ -131,7 +130,7 @@ func (h *Handler) DownloadApp(w http.ResponseWriter, r *http.Request) {
 		paths = append(paths, helmPath)
 	}
 
-	tmpDir, err := ioutil.TempDir("", "kotsadm")
+	tmpDir, err := os.MkdirTemp("", "kotsadm")
 	if err != nil {
 		logger.Error(err)
 		w.WriteHeader(500)

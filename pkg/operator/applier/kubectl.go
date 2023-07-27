@@ -3,7 +3,6 @@ package applier
 import (
 	"bytes"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -88,7 +87,7 @@ func (c *Kubectl) Remove(targetNamespace string, yamlDoc []byte, wait bool) ([]b
 }
 
 func (c *Kubectl) Apply(targetNamespace string, slug string, yamlDoc []byte, dryRun bool, wait bool, annotateSlug bool) ([]byte, []byte, error) {
-	tmp, err := ioutil.TempDir("", "kots-apply-")
+	tmp, err := os.MkdirTemp("", "kots-apply-")
 	if err != nil {
 		return nil, nil, errors.Wrap(err, "failed to create temp directory")
 	}
@@ -116,7 +115,7 @@ func (c *Kubectl) Apply(targetNamespace string, slug string, yamlDoc []byte, dry
 	}
 
 	yamlPath := filepath.Join(tmp, "doc.yaml")
-	if err := ioutil.WriteFile(yamlPath, yamlDoc, 0644); err != nil {
+	if err := os.WriteFile(yamlPath, yamlDoc, 0644); err != nil {
 		return nil, nil, errors.Wrapf(err, "failed to write %s", yamlPath)
 	}
 
@@ -133,7 +132,7 @@ commonAnnotations:
   kots.io/app-slug: %q
 `, slug)
 	}
-	if err := ioutil.WriteFile(kustomizationPath, []byte(kustomizationYaml), 0644); err != nil {
+	if err := os.WriteFile(kustomizationPath, []byte(kustomizationYaml), 0644); err != nil {
 		return nil, nil, errors.Wrapf(err, "failed to write %s", kustomizationPath)
 	}
 
@@ -189,14 +188,14 @@ func (c *Kubectl) ApplyCreateOrPatch(targetNamespace string, slug string, yamlDo
 }
 
 func (c *Kubectl) createOrPatchSingleDoc(name string, targetNamespace string, slug string, yamlDoc []byte, dryRun bool, wait bool, annotateSlug bool) ([]byte, []byte, error) {
-	tmp, err := ioutil.TempDir("", "kots-create-")
+	tmp, err := os.MkdirTemp("", "kots-create-")
 	if err != nil {
 		return nil, nil, errors.Wrap(err, "failed to create temp directory")
 	}
 	defer os.RemoveAll(tmp)
 
 	docPath := filepath.Join(tmp, "doc.yaml")
-	if err := ioutil.WriteFile(docPath, yamlDoc, 0644); err != nil {
+	if err := os.WriteFile(docPath, yamlDoc, 0644); err != nil {
 		return nil, nil, errors.Wrapf(err, "failed to write %s", docPath)
 	}
 
@@ -214,7 +213,7 @@ commonAnnotations:
   kots.io/app-slug: %q
 `, slug)
 	}
-	if err := ioutil.WriteFile(kustomizationPath, []byte(kustomizationYaml), 0644); err != nil {
+	if err := os.WriteFile(kustomizationPath, []byte(kustomizationYaml), 0644); err != nil {
 		return nil, nil, errors.Wrapf(err, "failed to write %s", kustomizationPath)
 	}
 
@@ -224,7 +223,7 @@ commonAnnotations:
 	}
 
 	renderedManifestPath := filepath.Join(tmp, "patch.yaml")
-	if err := ioutil.WriteFile(renderedManifestPath, renderedManifest, 0644); err != nil {
+	if err := os.WriteFile(renderedManifestPath, renderedManifest, 0644); err != nil {
 		return nil, nil, errors.Wrapf(err, "failed to write %s", renderedManifestPath)
 	}
 	// Try to create and checkout output to see if it already exists

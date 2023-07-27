@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"math"
 	"os"
 	"path/filepath"
@@ -58,7 +57,7 @@ func CreateApplicationBackup(ctx context.Context, a *apptypes.App, isScheduled b
 		zap.String("appID", a.ID),
 		zap.Int64("sequence", parentSequence))
 
-	archiveDir, err := ioutil.TempDir("", "kotsadm")
+	archiveDir, err := os.MkdirTemp("", "kotsadm")
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create temp dir")
 	}
@@ -252,7 +251,7 @@ func CreateInstanceBackup(ctx context.Context, cluster *downstreamtypes.Downstre
 			continue
 		}
 
-		archiveDir, err := ioutil.TempDir("", "kotsadm")
+		archiveDir, err := os.MkdirTemp("", "kotsadm")
 		if err != nil {
 			return nil, errors.Wrapf(err, "failed to create temp dir for app %s", a.Slug)
 		}

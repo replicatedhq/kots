@@ -6,7 +6,7 @@ import (
 	"context"
 	"encoding/base64"
 	"encoding/json"
-	"io/ioutil"
+	"io"
 	"os"
 	"path/filepath"
 
@@ -104,7 +104,7 @@ func helmReleaseFromSecretData(data []byte) (*helmrelease.Release, error) {
 	}
 	defer gzreader.Close()
 
-	releaseData, err := ioutil.ReadAll(gzreader)
+	releaseData, err := io.ReadAll(gzreader)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to read from gzip reader")
 	}
@@ -260,7 +260,7 @@ func getDownstreamInfo(appID string) (*types.DownstreamInfo, error) {
 
 	// info about the deployed app sequence
 	if currentVersion != nil {
-		deployedArchiveDir, err := ioutil.TempDir("", "kotsadm")
+		deployedArchiveDir, err := os.MkdirTemp("", "kotsadm")
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to create temp dir")
 		}

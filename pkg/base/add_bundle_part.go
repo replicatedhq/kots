@@ -1,7 +1,6 @@
 package base
 
 import (
-	"io/ioutil"
 	"os"
 	"path"
 
@@ -15,7 +14,7 @@ func AddBundlePart(baseDir string, filename string, content []byte) error {
 		return errors.New("base bundle file already exists")
 	}
 
-	if err := ioutil.WriteFile(path.Join(baseDir, "admin-console", filename), content, 0644); err != nil {
+	if err := os.WriteFile(path.Join(baseDir, "admin-console", filename), content, 0644); err != nil {
 		return errors.Wrap(err, "failed to write file")
 	}
 

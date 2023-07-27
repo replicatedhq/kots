@@ -7,7 +7,6 @@ import (
 	"context"
 	"encoding/base64"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path"
 	"path/filepath"
@@ -632,7 +631,7 @@ func LoadKotsKindsFromPath(fromDir string) (*KotsKinds, error) {
 				return nil
 			}
 
-			contents, err := ioutil.ReadFile(path)
+			contents, err := os.ReadFile(path)
 			if err != nil {
 				return err
 			}
@@ -707,7 +706,7 @@ func loadRuntimeObjectsFromPath(apiVersion, kind, fromDir string) ([]runtime.Obj
 				return nil
 			}
 
-			contents, err := ioutil.ReadFile(path)
+			contents, err := os.ReadFile(path)
 			if err != nil {
 				return errors.Wrap(err, "failed to read file")
 			}
@@ -776,7 +775,7 @@ func LoadV1Beta2HelmChartsFromPath(fromDir string) ([]*kotsv1beta2.HelmChart, er
 }
 
 func LoadInstallationFromPath(installationFilePath string) (*kotsv1beta1.Installation, error) {
-	installationData, err := ioutil.ReadFile(installationFilePath)
+	installationData, err := os.ReadFile(installationFilePath)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to read installation file")
 	}
@@ -869,7 +868,7 @@ func LoadInstallationFromContents(installationData []byte) (*kotsv1beta1.Install
 }
 
 func LoadLicenseFromPath(licenseFilePath string) (*kotsv1beta1.License, error) {
-	licenseData, err := ioutil.ReadFile(licenseFilePath)
+	licenseData, err := os.ReadFile(licenseFilePath)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to read license file")
 	}
@@ -892,7 +891,7 @@ func LoadLicenseFromBytes(data []byte) (*kotsv1beta1.License, error) {
 }
 
 func LoadConfigValuesFromFile(configValuesFilePath string) (*kotsv1beta1.ConfigValues, error) {
-	configValuesData, err := ioutil.ReadFile(configValuesFilePath)
+	configValuesData, err := os.ReadFile(configValuesFilePath)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to read configvalues file")
 	}
@@ -1252,7 +1251,7 @@ func RemoveAppVersionLabelFromInstallationParams(configMapName string) error {
 }
 
 func FindAirgapMetaInDir(root string) (*kotsv1beta1.Airgap, error) {
-	files, err := ioutil.ReadDir(root)
+	files, err := os.ReadDir(root)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to read airgap directory content")
 	}
@@ -1262,7 +1261,7 @@ func FindAirgapMetaInDir(root string) (*kotsv1beta1.Airgap, error) {
 			continue
 		}
 
-		contents, err := ioutil.ReadFile(filepath.Join(root, file.Name()))
+		contents, err := os.ReadFile(filepath.Join(root, file.Name()))
 		if err != nil {
 			// TODO: log?
 			continue
@@ -1345,7 +1344,7 @@ func LoadBrandingArchiveFromPath(archivePath string) (*bytes.Buffer, error) {
 				return nil
 			}
 
-			contents, err := ioutil.ReadFile(path)
+			contents, err := os.ReadFile(path)
 			if err != nil {
 				return errors.Wrap(err, "failed to read file")
 			}

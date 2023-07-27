@@ -1,7 +1,6 @@
 package operator
 
 import (
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
@@ -11,7 +10,7 @@ import (
 
 func getChartsImagePullSecrets(deployedVersionArchive string) ([]string, error) {
 	archiveChartDir := filepath.Join(deployedVersionArchive, "overlays", "midstream", "charts")
-	chartDirs, err := ioutil.ReadDir(archiveChartDir)
+	chartDirs, err := os.ReadDir(archiveChartDir)
 	if err != nil {
 		if os.IsNotExist(err) {
 			return nil, nil
@@ -26,7 +25,7 @@ func getChartsImagePullSecrets(deployedVersionArchive string) ([]string, error) 
 		}
 
 		secretFilename := filepath.Join(archiveChartDir, chartDir.Name(), "secret.yaml")
-		secretData, err := ioutil.ReadFile(secretFilename)
+		secretData, err := os.ReadFile(secretFilename)
 		if err != nil {
 			if os.IsNotExist(err) {
 				continue

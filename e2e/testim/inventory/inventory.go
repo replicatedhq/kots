@@ -5,7 +5,7 @@ import (
 	"context"
 	"encoding/base64"
 	"fmt"
-	"io/ioutil"
+	"os"
 	"strings"
 	"time"
 
@@ -225,7 +225,7 @@ func SetupNoRequiredConfig(kubectlCLI *kubectl.CLI) TestimParams {
 	kotsadmAPIToken, err := base64.StdEncoding.DecodeString(strings.Trim(buf.String(), `"' `))
 	Expect(err).WithOffset(1).Should(Succeed(), "Decode kotsadm-authstring secret failed")
 
-	err = ioutil.WriteFile(".env", []byte(fmt.Sprintf("KOTSADM_API_TOKEN=%s", string(kotsadmAPIToken))), 0600)
+	err = os.WriteFile(".env", []byte(fmt.Sprintf("KOTSADM_API_TOKEN=%s", string(kotsadmAPIToken))), 0600)
 	Expect(err).WithOffset(1).Should(Succeed(), "Create .env file failed")
 	return nil
 }

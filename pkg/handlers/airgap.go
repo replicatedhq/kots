@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -528,7 +527,7 @@ func (h *Handler) UploadInitialAirgapApp(w http.ResponseWriter, r *http.Request)
 	}
 	defer archiveFile.Close()
 
-	appArchive, err := ioutil.ReadAll(archiveFile)
+	appArchive, err := io.ReadAll(archiveFile)
 	if err != nil {
 		logger.Error(errors.Wrap(err, "failed to get read form file"))
 		w.WriteHeader(http.StatusInternalServerError)

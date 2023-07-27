@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"mime/multipart"
 	"net/http"
 	"net/url"
@@ -321,7 +320,7 @@ func InstallCmd() *cobra.Command {
 
 				log.ActionWithoutSpinner("Extracting airgap bundle")
 
-				airgapRootDir, err := ioutil.TempDir("", "kotsadm-airgap")
+				airgapRootDir, err := os.MkdirTemp("", "kotsadm-airgap")
 				if err != nil {
 					return errors.Wrap(err, "failed to create temp dir")
 				}
@@ -692,7 +691,7 @@ func getIngressConfig(v *viper.Viper) (*kotsv1beta1.IngressConfig, error) {
 
 	ingressConfig := kotsv1beta1.IngressConfig{}
 	if ingressConfigPath != "" {
-		content, err := ioutil.ReadFile(ingressConfigPath)
+		content, err := os.ReadFile(ingressConfigPath)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to read ingress service config file")
 		}
@@ -719,7 +718,7 @@ func getIdentityConfig(v *viper.Viper) (*kotsv1beta1.IdentityConfig, error) {
 
 	identityConfig := kotsv1beta1.IdentityConfig{}
 	if identityConfigPath != "" {
-		content, err := ioutil.ReadFile(identityConfigPath)
+		content, err := os.ReadFile(identityConfigPath)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to read identity service config file")
 		}
@@ -910,7 +909,7 @@ func getAutomatedInstallStatus(url string, authSlug string) (*kotsstore.TaskStat
 		return nil, errors.Errorf("unexpected status code %d", resp.StatusCode)
 	}
 
-	b, err := ioutil.ReadAll(resp.Body)
+	b, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to read response body")
 	}
@@ -974,7 +973,7 @@ func getPreflightResponse(url string, authSlug string) (*handlers.GetPreflightRe
 		return nil, errors.Errorf("unexpected status code %d", resp.StatusCode)
 	}
 
-	b, err := ioutil.ReadAll(resp.Body)
+	b, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to read response body")
 	}

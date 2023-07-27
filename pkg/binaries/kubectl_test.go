@@ -1,7 +1,6 @@
 package binaries
 
 import (
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -45,7 +44,7 @@ func Test_discoverKubectlVersionsFromDir(t *testing.T) {
 			binPath := filepath.Join(dirPath, tt.binPath)
 			require.NoError(t, os.MkdirAll(binPath, 0755))
 			for _, bin := range tt.bins {
-				require.NoError(t, ioutil.WriteFile(filepath.Join(binPath, bin), nil, 0755))
+				require.NoError(t, os.WriteFile(filepath.Join(binPath, bin), nil, 0755))
 			}
 
 			fileSystem := os.DirFS(dirPath)

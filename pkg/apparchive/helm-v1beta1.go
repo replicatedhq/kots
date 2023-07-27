@@ -2,7 +2,6 @@ package apparchive
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -64,7 +63,7 @@ func RenderChartsArchive(baseDir string, overlaysDir string, downstreamName stri
 		return nil, nil, errors.Wrap(err, "failed to stat charts directory")
 	}
 
-	exportChartPath, err := ioutil.TempDir("", "kotsadm")
+	exportChartPath, err := os.MkdirTemp("", "kotsadm")
 	if err != nil {
 		return nil, nil, errors.Wrap(err, "failed to create temp dir")
 	}
@@ -92,7 +91,7 @@ func RenderChartsArchive(baseDir string, overlaysDir string, downstreamName stri
 			}
 
 			for _, filename := range metadataFiles {
-				content, err := ioutil.ReadFile(filepath.Join(sourceChartsDir, relPath, filename))
+				content, err := os.ReadFile(filepath.Join(sourceChartsDir, relPath, filename))
 				if err != nil {
 					if os.IsNotExist(err) {
 						continue
@@ -164,7 +163,7 @@ func writeHelmFile(dstRootDir string, relPath string, filename string, content [
 	}
 
 	destFilePath := filepath.Join(dstDir, filename)
-	if err := ioutil.WriteFile(destFilePath, content, 0644); err != nil {
+	if err := os.WriteFile(destFilePath, content, 0644); err != nil {
 		return errors.Wrap(err, "failed to write file")
 	}
 

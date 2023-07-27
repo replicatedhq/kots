@@ -3,7 +3,6 @@ package apparchive
 import (
 	"bytes"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -76,7 +75,7 @@ func writeRenderedFile(destPath string, content []byte) error {
 	if err := os.MkdirAll(parentDir, 0755); err != nil {
 		return errors.Wrapf(err, "failed to mkdir %s", parentDir)
 	}
-	if err := ioutil.WriteFile(destPath, content, 0644); err != nil {
+	if err := os.WriteFile(destPath, content, 0644); err != nil {
 		return errors.Wrap(err, "failed to write file")
 	}
 	return nil
@@ -113,7 +112,7 @@ func GetRenderedApp(versionArchive string, downstreamName, kustomizeBinPath stri
 					return nil
 				}
 
-				content, err := ioutil.ReadFile(path)
+				content, err := os.ReadFile(path)
 				if err != nil {
 					return errors.Wrapf(err, "failed to read file %s", path)
 				}
@@ -182,7 +181,7 @@ func cleanBaseApp(baseDir string, filter func(path string) (bool, error)) error 
 					}
 				}
 
-				content, err := ioutil.ReadFile(path)
+				content, err := os.ReadFile(path)
 				if err != nil {
 					return errors.Wrapf(err, "failed to read file %s", path)
 				}

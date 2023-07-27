@@ -3,7 +3,6 @@ package secrets
 import (
 	"bytes"
 	"context"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 
@@ -58,7 +57,7 @@ func findPathsWithSecrets(archiveDir string) ([]string, error) {
 			return nil
 		}
 
-		contents, err := ioutil.ReadFile(path)
+		contents, err := os.ReadFile(path)
 		if err != nil {
 			return err
 		}

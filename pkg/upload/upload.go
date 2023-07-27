@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"mime/multipart"
 	"net/http"
 	"net/url"
@@ -126,7 +125,7 @@ func Upload(path string, uploadOptions UploadOptions) (string, error) {
 
 	if resp.StatusCode != 200 {
 		log.FinishSpinnerWithError()
-		b, _ := ioutil.ReadAll(resp.Body)
+		b, _ := io.ReadAll(resp.Body)
 		respError := handlertypes.ErrorFromResponse(b)
 		if respError != "" {
 			log.Error(errors.New(respError))
@@ -134,7 +133,7 @@ func Upload(path string, uploadOptions UploadOptions) (string, error) {
 		return "", errors.Errorf("Unexpected response from the API: %d", resp.StatusCode)
 	}
 
-	b, err := ioutil.ReadAll(resp.Body)
+	b, err := io.ReadAll(resp.Body)
 	if err != nil {
 		log.FinishSpinnerWithError()
 		return "", errors.Wrap(err, "failed to read response body")

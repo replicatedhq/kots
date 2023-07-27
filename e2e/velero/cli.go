@@ -2,7 +2,7 @@ package velero
 
 import (
 	"fmt"
-	"io/ioutil"
+	"os"
 	"os/exec"
 	"path/filepath"
 	"time"
@@ -57,7 +57,7 @@ func (v *CLI) install(workspace, kubeconfig, s3Url, bucket string) (*gexec.Sessi
 }
 
 func writeAWSCredentialsFile(workspace, accessKey, secretKey string) error {
-	return ioutil.WriteFile(filepath.Join(workspace, "aws-credentials"), []byte(fmt.Sprintf(
+	return os.WriteFile(filepath.Join(workspace, "aws-credentials"), []byte(fmt.Sprintf(
 		`[default]
 aws_access_key_id=%s
 aws_secret_access_key=%s

@@ -2,7 +2,6 @@ package kotsutil_test
 
 import (
 	"encoding/base64"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 
@@ -317,7 +316,7 @@ var _ = Describe("Kots", func() {
 		})
 
 		It("returns an error when the path is not a directory", func() {
-			tmpFile, err := ioutil.TempFile("", "kotsutil-test")
+			tmpFile, err := os.CreateTemp("", "kotsutil-test")
 			Expect(err).ToNot(HaveOccurred())
 			defer os.Remove(tmpFile.Name())
 
@@ -326,7 +325,7 @@ var _ = Describe("Kots", func() {
 		})
 
 		It("returns an empty branding archive when there are no branding files", func() {
-			tmpDir, err := ioutil.TempDir("", "kotsutil-test")
+			tmpDir, err := os.MkdirTemp("", "kotsutil-test")
 			Expect(err).ToNot(HaveOccurred())
 			defer os.RemoveAll(tmpDir)
 
@@ -336,20 +335,20 @@ var _ = Describe("Kots", func() {
 		})
 
 		It("returns a branding archive when the path contains branding files", func() {
-			tmpDir, err := ioutil.TempDir("", "kotsutil-test")
+			tmpDir, err := os.MkdirTemp("", "kotsutil-test")
 			Expect(err).ToNot(HaveOccurred())
 			defer os.RemoveAll(tmpDir)
 
-			err = ioutil.WriteFile(filepath.Join(tmpDir, "branding.css"), []byte("body { background-color: red; }"), 0644)
+			err = os.WriteFile(filepath.Join(tmpDir, "branding.css"), []byte("body { background-color: red; }"), 0644)
 			Expect(err).ToNot(HaveOccurred())
 
-			err = ioutil.WriteFile(filepath.Join(tmpDir, "font.ttf"), []byte("my-font-data"), 0644)
+			err = os.WriteFile(filepath.Join(tmpDir, "font.ttf"), []byte("my-font-data"), 0644)
 			Expect(err).ToNot(HaveOccurred())
 
-			err = ioutil.WriteFile(filepath.Join(tmpDir, "application.yaml"), []byte("apiVersion: kots.io/v1beta1\nkind: Application\nmetadata:\n  name: app-slug\nspec:\n  icon: https://foo.com/icon.png\n  title: App Name"), 0644)
+			err = os.WriteFile(filepath.Join(tmpDir, "application.yaml"), []byte("apiVersion: kots.io/v1beta1\nkind: Application\nmetadata:\n  name: app-slug\nspec:\n  icon: https://foo.com/icon.png\n  title: App Name"), 0644)
 			Expect(err).ToNot(HaveOccurred())
 
-			err = ioutil.WriteFile(filepath.Join(tmpDir, "random.yaml"), []byte("some: yaml"), 0644)
+			err = os.WriteFile(filepath.Join(tmpDir, "random.yaml"), []byte("some: yaml"), 0644)
 			Expect(err).ToNot(HaveOccurred())
 
 			archive, err := kotsutil.LoadBrandingArchiveFromPath(tmpDir)

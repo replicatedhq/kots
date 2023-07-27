@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"io/ioutil"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -47,7 +46,7 @@ func (h *Handler) GetAppContents(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	archivePath, err := ioutil.TempDir("", "kotsadm")
+	archivePath, err := os.MkdirTemp("", "kotsadm")
 	if err != nil {
 		logger.Error(errors.Wrap(err, "failed to create temp dir"))
 		w.WriteHeader(http.StatusInternalServerError)
@@ -75,7 +74,7 @@ func (h *Handler) GetAppContents(w http.ResponseWriter, r *http.Request) {
 			return nil
 		}
 
-		contents, err := ioutil.ReadFile(path)
+		contents, err := os.ReadFile(path)
 		if err != nil {
 			return err
 		}

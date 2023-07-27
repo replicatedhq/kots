@@ -3,7 +3,7 @@ package version
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/url"
 	"os"
@@ -87,7 +87,7 @@ var (
 func GetGraphs(app *types.App, sequence int64, kotsStore store.Store) ([]kotsv1beta1.MetricGraph, error) {
 	graphs := DefaultMetricGraphs
 
-	archiveDir, err := ioutil.TempDir("", "kotsadm")
+	archiveDir, err := os.MkdirTemp("", "kotsadm")
 	if err != nil {
 		return graphs, errors.Wrap(err, "failed to create temp dir")
 	}
@@ -229,7 +229,7 @@ func prometheusQueryRange(address string, query string, start uint, end uint, st
 		return nil, errors.Errorf("Unexpected status code %d", resp.StatusCode)
 	}
 
-	b, err := ioutil.ReadAll(resp.Body)
+	b, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to read response body")
 	}

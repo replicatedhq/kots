@@ -6,7 +6,6 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -217,7 +216,7 @@ func (o *Operator) DeployApp(appID string, sequence int64) (deployed bool, deplo
 		return false, errors.Wrap(err, "failed to get downstream")
 	}
 
-	deployedVersionArchive, err := ioutil.TempDir("", "kotsadm")
+	deployedVersionArchive, err := os.MkdirTemp("", "kotsadm")
 	if err != nil {
 		return false, errors.Wrap(err, "failed to create temp dir")
 	}
@@ -332,7 +331,7 @@ func (o *Operator) DeployApp(appID string, sequence int64) (deployed bool, deplo
 		return false, errors.Wrap(err, "failed to os stat image pull secret file")
 	}
 	if err == nil {
-		b, err := ioutil.ReadFile(secretFilename)
+		b, err := os.ReadFile(secretFilename)
 		if err != nil {
 			return false, errors.Wrap(err, "failed to read image pull secret file")
 		}
@@ -363,7 +362,7 @@ func (o *Operator) DeployApp(appID string, sequence int64) (deployed bool, deplo
 		}
 
 		if previouslyDeployedParentSequence != -1 {
-			previouslyDeployedVersionArchive, err := ioutil.TempDir("", "kotsadm")
+			previouslyDeployedVersionArchive, err := os.MkdirTemp("", "kotsadm")
 			if err != nil {
 				return false, errors.Wrap(err, "failed to create temp dir")
 			}
@@ -511,7 +510,7 @@ func (o *Operator) resumeStatusInformersForApp(app *apptypes.App) error {
 
 	logger.Debugf("starting status informers for app %s", app.ID)
 
-	deployedVersionArchive, err := ioutil.TempDir("", "kotsadm")
+	deployedVersionArchive, err := os.MkdirTemp("", "kotsadm")
 	if err != nil {
 		return errors.Wrap(err, "failed to create temp dir")
 	}
@@ -725,7 +724,7 @@ func (o *Operator) UndeployApp(a *apptypes.App, d *downstreamtypes.Downstream, i
 		return nil
 	}
 
-	deployedVersionArchive, err := ioutil.TempDir("", "kotsadm")
+	deployedVersionArchive, err := os.MkdirTemp("", "kotsadm")
 	if err != nil {
 		return errors.Wrap(err, "failed to create temp dir")
 	}

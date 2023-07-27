@@ -1,7 +1,6 @@
 package license
 
 import (
-	"io/ioutil"
 	"os"
 	"path/filepath"
 
@@ -59,7 +58,7 @@ func Sync(a *apptypes.App, licenseString string, failOnVersionCreate bool) (*kot
 		return nil, false, errors.New("license ids do not match")
 	}
 
-	archiveDir, err := ioutil.TempDir("", "kotsadm")
+	archiveDir, err := os.MkdirTemp("", "kotsadm")
 	if err != nil {
 		return nil, false, errors.Wrap(err, "failed to create temp dir")
 	}
@@ -176,7 +175,7 @@ func Change(a *apptypes.App, newLicenseString string) (*kotsv1beta1.License, err
 		return nil, errors.Wrap(err, "failed to get latest app sequence")
 	}
 
-	archiveDir, err := ioutil.TempDir("", "kotsadm")
+	archiveDir, err := os.MkdirTemp("", "kotsadm")
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create temp dir")
 	}

@@ -3,7 +3,6 @@ package rewrite
 import (
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 
@@ -64,7 +63,7 @@ func Rewrite(rewriteOptions RewriteOptions) error {
 	log.Initialize()
 
 	if rewriteOptions.ReportWriter == nil {
-		rewriteOptions.ReportWriter = ioutil.Discard
+		rewriteOptions.ReportWriter = io.Discard
 	}
 
 	fetchOptions := &upstreamtypes.FetchOptions{
@@ -332,7 +331,7 @@ func Rewrite(rewriteOptions RewriteOptions) error {
 		return errors.Wrap(err, "failed to update installation spec")
 	}
 
-	installationBytes, err := ioutil.ReadFile(filepath.Join(u.GetUpstreamDir(writeUpstreamOptions), "userdata", "installation.yaml"))
+	installationBytes, err := os.ReadFile(filepath.Join(u.GetUpstreamDir(writeUpstreamOptions), "userdata", "installation.yaml"))
 	if err != nil {
 		return errors.Wrap(err, "failed to read installation file")
 	}

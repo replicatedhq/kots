@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/base64"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path"
 	"path/filepath"
@@ -45,7 +44,7 @@ func writeArchiveAsConfigMap(pullOptions PullOptions, u *upstreamtypes.Upstream,
 		paths = append(paths, skippedFilesPath)
 	}
 
-	tempDir, err := ioutil.TempDir("", "kots")
+	tempDir, err := os.MkdirTemp("", "kots")
 	if err != nil {
 		return errors.Wrap(err, "failed to create temp dir")
 	}
@@ -55,7 +54,7 @@ func writeArchiveAsConfigMap(pullOptions PullOptions, u *upstreamtypes.Upstream,
 		return errors.Wrap(err, "failed to create tar gz")
 	}
 
-	archive, err := ioutil.ReadFile(path.Join(tempDir, "kots-uploadable-archive.tar.gz"))
+	archive, err := os.ReadFile(path.Join(tempDir, "kots-uploadable-archive.tar.gz"))
 	if err != nil {
 		return errors.Wrap(err, "failed to read temp file")
 	}
@@ -110,7 +109,7 @@ func writeArchiveAsConfigMap(pullOptions PullOptions, u *upstreamtypes.Upstream,
 }
 
 func CleanBaseArchive(path string) error {
-	files, err := ioutil.ReadDir(path)
+	files, err := os.ReadDir(path)
 	if err != nil {
 		return errors.Wrap(err, "failed to read dir")
 	}

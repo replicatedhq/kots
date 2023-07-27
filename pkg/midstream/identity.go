@@ -2,7 +2,6 @@ package midstream
 
 import (
 	"context"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 
@@ -60,7 +59,7 @@ func (m *Midstream) writeIdentityService(ctx context.Context, options WriteOptio
 	}
 
 	for filename, resource := range resources {
-		if err := ioutil.WriteFile(filepath.Join(absDir, filename), resource, 0644); err != nil {
+		if err := os.WriteFile(filepath.Join(absDir, filename), resource, 0644); err != nil {
 			return "", errors.Wrapf(err, "failed to write resource %s", filename)
 		}
 		kustomization.Resources = append(kustomization.Resources, filename)

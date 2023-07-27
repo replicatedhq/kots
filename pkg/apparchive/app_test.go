@@ -1,7 +1,6 @@
 package apparchive
 
 import (
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -383,7 +382,7 @@ data:
 				fullPath := filepath.Join(tmpDir, path)
 				err := os.MkdirAll(filepath.Dir(fullPath), 0755)
 				req.NoError(err)
-				err = ioutil.WriteFile(fullPath, []byte(content), 0644)
+				err = os.WriteFile(fullPath, []byte(content), 0644)
 				req.NoError(err)
 			}
 

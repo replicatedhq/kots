@@ -1,14 +1,14 @@
 package version
 
 import (
-	"io/ioutil"
+	"os"
 
 	"github.com/mholt/archiver/v3"
 	"github.com/pkg/errors"
 )
 
 func ExtractArchiveToTempDirectory(archiveFilename string) (string, error) {
-	tmpDir, err := ioutil.TempDir("", "kotsadm")
+	tmpDir, err := os.MkdirTemp("", "kotsadm")
 	if err != nil {
 		return "", errors.Wrap(err, "failed to create temp dir")
 	}

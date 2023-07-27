@@ -2,7 +2,6 @@ package base
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path"
 	"path/filepath"
@@ -81,7 +80,7 @@ func (b *Base) writeBase(options WriteOptions, isTopLevelBase bool) ([]string, [
 			return nil, nil, errors.Wrap(err, "failed to remove empty mapping fields")
 		}
 
-		if err := ioutil.WriteFile(fileRenderPath, newContent, 0644); err != nil {
+		if err := os.WriteFile(fileRenderPath, newContent, 0644); err != nil {
 			return nil, nil, errors.Wrap(err, "failed to write base file")
 		}
 
@@ -97,7 +96,7 @@ func (b *Base) writeBase(options WriteOptions, isTopLevelBase bool) ([]string, [
 			}
 		}
 
-		if err := ioutil.WriteFile(fileRenderPath, file.Content, 0644); err != nil {
+		if err := os.WriteFile(fileRenderPath, file.Content, 0644); err != nil {
 			return nil, nil, errors.Wrap(err, "failed to write base file")
 		}
 
@@ -114,7 +113,7 @@ func (b *Base) writeBase(options WriteOptions, isTopLevelBase bool) ([]string, [
 			}
 		}
 
-		if err := ioutil.WriteFile(fileRenderPath, file.Content, 0644); err != nil {
+		if err := os.WriteFile(fileRenderPath, file.Content, 0644); err != nil {
 			return nil, nil, errors.Wrap(err, "failed to write additional file")
 		}
 	}
@@ -224,7 +223,7 @@ func (b *Base) writeSkippedFiles(options WriteOptions) error {
 			}
 		}
 
-		if err := ioutil.WriteFile(fileRenderPath, file.Content, 0644); err != nil {
+		if err := os.WriteFile(fileRenderPath, file.Content, 0644); err != nil {
 			return errors.Wrapf(err, "failed to write skipped file %s", fileRenderPath)
 		}
 
@@ -239,7 +238,7 @@ func (b *Base) writeSkippedFiles(options WriteOptions) error {
 		return errors.Wrap(err, "failed to marshal skipped files index")
 	}
 	fileRenderPath := filepath.Join(renderDir, "_index.yaml")
-	if err := ioutil.WriteFile(fileRenderPath, indexOut, 0644); err != nil {
+	if err := os.WriteFile(fileRenderPath, indexOut, 0644); err != nil {
 		return errors.Wrap(err, "failed to write skipped files index")
 	}
 
@@ -265,7 +264,7 @@ func (b *Base) getErrorFiles() []BaseFile {
 func deduplicateResources(filePaths []string, baseDir string, excludeKotsKinds bool, baseNS string) ([]string, []kustomizetypes.PatchStrategicMerge, error) {
 	files := []BaseFile{}
 	for _, filePath := range filePaths {
-		content, err := ioutil.ReadFile(filepath.Join(baseDir, filePath))
+		content, err := os.ReadFile(filepath.Join(baseDir, filePath))
 		if err != nil {
 			return nil, nil, errors.Wrapf(err, "failed to read base file %s", filePath)
 		}

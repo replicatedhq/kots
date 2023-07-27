@@ -8,7 +8,7 @@ import (
 	"encoding/pem"
 	"fmt"
 	"html/template"
-	"io/ioutil"
+	"io"
 	"log"
 	"math/rand"
 	"net"
@@ -477,7 +477,7 @@ func getUploadedCerts(c *gin.Context) ([]byte, []byte, error) {
 		return nil, nil, errors.Wrapf(err, "open cert file")
 	}
 	defer certFile.Close()
-	certData, err := ioutil.ReadAll(certFile)
+	certData, err := io.ReadAll(certFile)
 	if err != nil {
 		return nil, nil, errors.Wrapf(err, "read cert file")
 	}
@@ -491,7 +491,7 @@ func getUploadedCerts(c *gin.Context) ([]byte, []byte, error) {
 		return nil, nil, errors.Wrapf(err, "open key file")
 	}
 	defer keyFile.Close()
-	keyData, err := ioutil.ReadAll(keyFile)
+	keyData, err := io.ReadAll(keyFile)
 	if err != nil {
 		return nil, nil, errors.Wrapf(err, "read key file")
 	}
@@ -541,7 +541,7 @@ type kotsadmApp struct {
 func kotsadmApplication() (kotsadmApp, error) {
 	app := kotsadmApp{}
 
-	data, err := ioutil.ReadFile("/etc/kotsadm/application.yaml")
+	data, err := os.ReadFile("/etc/kotsadm/application.yaml")
 	if err != nil {
 		return app, errors.Wrap(err, "read file /etc/kotsadm/application.yaml")
 	}

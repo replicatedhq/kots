@@ -3,7 +3,6 @@ package handlers
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -262,7 +261,7 @@ func (h *Handler) ConfigureAppIdentityService(w http.ResponseWriter, r *http.Req
 		return
 	}
 
-	archiveDir, err := ioutil.TempDir("", "kotsadm")
+	archiveDir, err := os.MkdirTemp("", "kotsadm")
 	if err != nil {
 		err = errors.Wrap(err, "failed to create temp dir")
 		logger.Error(err)
@@ -312,7 +311,7 @@ func (h *Handler) ConfigureAppIdentityService(w http.ResponseWriter, r *http.Req
 		return
 	}
 
-	b, err := ioutil.ReadFile(identityConfigFile)
+	b, err := os.ReadFile(identityConfigFile)
 	if err != nil {
 		err = errors.Wrap(err, "failed to read identityconfig file")
 		logger.Error(err)
@@ -424,7 +423,7 @@ func (h *Handler) ConfigureAppIdentityService(w http.ResponseWriter, r *http.Req
 		return
 	}
 
-	if err := ioutil.WriteFile(filepath.Join(archiveDir, "upstream", "userdata", "identityconfig.yaml"), []byte(identityConfigSpec), 0644); err != nil {
+	if err := os.WriteFile(filepath.Join(archiveDir, "upstream", "userdata", "identityconfig.yaml"), []byte(identityConfigSpec), 0644); err != nil {
 		err = errors.Wrap(err, "failed to write identityconfig.yaml to upstream/userdata")
 		logger.Error(err)
 		w.WriteHeader(http.StatusInternalServerError)
@@ -663,7 +662,7 @@ func (h *Handler) GetAppIdentityServiceConfig(w http.ResponseWriter, r *http.Req
 		return
 	}
 
-	archiveDir, err := ioutil.TempDir("", "kotsadm")
+	archiveDir, err := os.MkdirTemp("", "kotsadm")
 	if err != nil {
 		err = errors.Wrap(err, "failed to create temp dir")
 		logger.Error(err)

@@ -6,7 +6,6 @@ import (
 	"compress/gzip"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 	"path"
 	"strconv"
@@ -255,7 +254,7 @@ func renderReplicatedHelmChart(kotsHelmChart *kotsv1beta1.HelmChart, upstreamFil
 		return nil, errors.Wrap(err, "failed to find helm chart archive in release")
 	}
 
-	tmpFile, err := ioutil.TempFile("", "kots")
+	tmpFile, err := os.CreateTemp("", "kots")
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create temp file")
 	}
@@ -508,7 +507,7 @@ func FindHelmChartArchiveInRelease(upstreamFiles []upstreamtypes.UpstreamFile, k
 		}
 
 		// We treat all .tar.gz archives as helm charts
-		chartArchivePath, err := ioutil.TempFile("", "chart")
+		chartArchivePath, err := os.CreateTemp("", "chart")
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to create temp file for chart archive path")
 		}

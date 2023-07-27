@@ -1,7 +1,6 @@
 package cli
 
 import (
-	"io/ioutil"
 	"os"
 	"path/filepath"
 
@@ -87,7 +86,7 @@ func AdminGenerateManifestsCmd() *cobra.Command {
 					}
 				}
 
-				if err := ioutil.WriteFile(fileRenderPath, file.Content, 0644); err != nil {
+				if err := os.WriteFile(fileRenderPath, file.Content, 0644); err != nil {
 					return errors.Wrapf(err, "failed to write file %s", fileRenderPath)
 				}
 			}

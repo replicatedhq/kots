@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/url"
 	"os"
 	"path/filepath"
@@ -107,7 +106,7 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 	log.Initialize()
 
 	if pullOptions.ReportWriter == nil {
-		pullOptions.ReportWriter = ioutil.Discard
+		pullOptions.ReportWriter = io.Discard
 	}
 
 	uri, err := url.ParseRequestURI(upstreamURI)
@@ -238,7 +237,7 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 			return "", errors.Wrap(err, "failed to validate app key")
 		}
 
-		airgapAppFiles, err := ioutil.TempDir("", "airgap-kots")
+		airgapAppFiles, err := os.MkdirTemp("", "airgap-kots")
 		if err != nil {
 			return "", errors.Wrap(err, "failed to create temp airgap dir")
 		}
@@ -596,7 +595,7 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 		}
 	}
 
-	installationBytes, err := ioutil.ReadFile(filepath.Join(u.GetUpstreamDir(writeUpstreamOptions), "userdata", "installation.yaml"))
+	installationBytes, err := os.ReadFile(filepath.Join(u.GetUpstreamDir(writeUpstreamOptions), "userdata", "installation.yaml"))
 	if err != nil {
 		return "", errors.Wrap(err, "failed to read installation file")
 	}
@@ -634,7 +633,7 @@ func removeUnusedHelmOverlays(overlayRoot string, baseRoot string) error {
 
 func removeUnusedHelmOverlaysRec(overlayRoot string, baseRoot string, overlayRelDir string) error {
 	curMidstreamDir := filepath.Join(overlayRoot, overlayRelDir)
-	midstreamFiles, err := ioutil.ReadDir(curMidstreamDir)
+	midstreamFiles, err := os.ReadDir(curMidstreamDir)
 	if err != nil {
 		if os.IsNotExist(err) {
 			return nil
@@ -743,7 +742,7 @@ func writeCombinedDownstreamBase(downstreamName string, bases []string, renderDi
 }
 
 func ParseConfigValuesFromFile(filename string) (*kotsv1beta1.ConfigValues, error) {
-	contents, err := ioutil.ReadFile(filename)
+	contents, err := os.ReadFile(filename)
 	if err != nil {
 		if os.IsNotExist(err) {
 			return nil, nil
@@ -767,7 +766,7 @@ func ParseConfigValuesFromFile(filename string) (*kotsv1beta1.ConfigValues, erro
 }
 
 func ParseIdentityConfigFromFile(filename string) (*kotsv1beta1.IdentityConfig, error) {
-	contents, err := ioutil.ReadFile(filename)
+	contents, err := os.ReadFile(filename)
 	if err != nil {
 		if os.IsNotExist(err) {
 			return nil, nil
@@ -796,7 +795,7 @@ func GetAppMetadataFromAirgap(airgapArchive string) (*replicatedapp.ApplicationM
 		return nil, errors.Wrap(err, "failed to extract app archive")
 	}
 
-	tempDir, err := ioutil.TempDir("", "kotsadm")
+	tempDir, err := os.MkdirTemp("", "kotsadm")
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create temp dir")
 	}
@@ -831,7 +830,7 @@ func GetAppMetadataFromAirgap(airgapArchive string) (*replicatedapp.ApplicationM
 }
 
 func parseInstallationFromFile(filename string) (*kotsv1beta1.Installation, error) {
-	contents, err := ioutil.ReadFile(filename)
+	contents, err := os.ReadFile(filename)
 	if err != nil {
 		if os.IsNotExist(err) {
 			return nil, nil
@@ -904,7 +903,7 @@ func findConfig(localPath string) (*kotsv1beta1.Config, *kotsv1beta1.ConfigValue
 				return nil
 			}
 
-			content, err := ioutil.ReadFile(path)
+			content, err := os.ReadFile(path)
 			if err != nil {
 				return err
 			}

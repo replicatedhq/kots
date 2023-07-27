@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/url"
 	"os"
@@ -127,7 +127,7 @@ func SetConfigCmd() *cobra.Command {
 			}
 			defer resp.Body.Close()
 
-			respBody, err := ioutil.ReadAll(resp.Body)
+			respBody, err := io.ReadAll(resp.Body)
 			if err != nil {
 				log.FinishSpinnerWithError()
 				return errors.Wrap(err, "failed to read server response")
@@ -175,7 +175,7 @@ func getConfigValuesFromArgs(v *viper.Viper, args []string) ([]byte, error) {
 			return nil, errors.New("--config-file cannot be used with other key/value arguments")
 		}
 
-		data, err := ioutil.ReadFile(fileName)
+		data, err := os.ReadFile(fileName)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to load config from file")
 		}
@@ -205,7 +205,7 @@ func getConfigValuesFromArgs(v *viper.Viper, args []string) ([]byte, error) {
 				Value: value,
 			}
 		} else if valueFile != "" {
-			data, err := ioutil.ReadFile(valueFile)
+			data, err := os.ReadFile(valueFile)
 			if err != nil {
 				return nil, errors.Wrap(err, "failed to load value from file")
 			}

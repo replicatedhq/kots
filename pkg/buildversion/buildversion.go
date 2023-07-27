@@ -2,7 +2,7 @@ package buildversion
 
 import (
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"runtime"
 	"time"
@@ -98,7 +98,7 @@ func isLatestRelease(client *http.Client, upstream string) (bool, string, error)
 	if err != nil {
 		return false, "", errors.Wrapf(err, "find latest release")
 	}
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return false, "", errors.Wrapf(err, "read latest release body")
 	}

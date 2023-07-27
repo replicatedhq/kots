@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 
@@ -242,7 +241,7 @@ func ProcessAirgapImages(options image.ProcessImageOptions, kotsKinds *kotsutil.
 		processAirgapImageOptions.ReplicatedRegistry.Password = license.Spec.LicenseID
 	}
 
-	imagesData, err := ioutil.ReadFile(filepath.Join(options.AirgapRoot, "images.json"))
+	imagesData, err := os.ReadFile(filepath.Join(options.AirgapRoot, "images.json"))
 	if err != nil && !os.IsNotExist(err) {
 		return nil, errors.Wrap(err, "failed to load images file")
 	}
@@ -437,7 +436,7 @@ func (m *Midstream) writeDisasterRecoveryLabelTransformer(options WriteOptions) 
 
 	absFilename := filepath.Join(options.MidstreamDir, disasterRecoveryLabelTransformerFileName)
 
-	if err := ioutil.WriteFile(absFilename, drLabelTransformerYAML, 0644); err != nil {
+	if err := os.WriteFile(absFilename, drLabelTransformerYAML, 0644); err != nil {
 		return "", errors.Wrap(err, "failed to write disaster recovery label transformer yaml file")
 	}
 
@@ -483,7 +482,7 @@ func (m *Midstream) writePullSecret(options WriteOptions) (string, error) {
 	}
 
 	absFilename := filepath.Join(options.MidstreamDir, secretFilename)
-	if err := ioutil.WriteFile(absFilename, secretBytes, 0644); err != nil {
+	if err := os.WriteFile(absFilename, secretBytes, 0644); err != nil {
 		return "", errors.Wrap(err, "failed to write pull secret file")
 	}
 
@@ -567,7 +566,7 @@ func EnsureDisasterRecoveryLabelTransformer(archiveDir string, additionalLabels 
 
 		absFilename := filepath.Join(dirPath, disasterRecoveryLabelTransformerFileName)
 
-		if err := ioutil.WriteFile(absFilename, drLabelTransformerYAML, 0644); err != nil {
+		if err := os.WriteFile(absFilename, drLabelTransformerYAML, 0644); err != nil {
 			return errors.Wrap(err, "failed to write disaster recovery label transformer yaml file")
 		}
 

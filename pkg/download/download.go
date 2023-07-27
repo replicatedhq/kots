@@ -3,7 +3,6 @@ package download
 import (
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"os"
 
@@ -93,7 +92,7 @@ func Download(appSlug string, path string, downloadOptions DownloadOptions) erro
 		}
 	}
 
-	tmpFile, err := ioutil.TempFile("", "kots")
+	tmpFile, err := os.CreateTemp("", "kots")
 	if err != nil {
 		log.FinishSpinner()
 		return errors.Wrap(err, "failed to create temp file")

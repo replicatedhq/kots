@@ -2,7 +2,7 @@ package handlers
 
 import (
 	"encoding/json"
-	"io/ioutil"
+	"io"
 	"net/http"
 
 	"github.com/gorilla/mux"
@@ -90,7 +90,7 @@ func (h *Handler) UpdateRedact(w http.ResponseWriter, r *http.Request) {
 		}
 		defer resp.Body.Close()
 
-		respBytes, err := ioutil.ReadAll(resp.Body)
+		respBytes, err := io.ReadAll(resp.Body)
 		if err != nil {
 			logger.Error(err)
 			updateRedactResponse.Error = "failed to read spec response from url"

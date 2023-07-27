@@ -1,7 +1,7 @@
 package upstream
 
 import (
-	"io/ioutil"
+	"io/fs"
 	"os"
 	"path"
 
@@ -65,9 +65,17 @@ func GenerateAdminConsoleFiles(renderDir string, options types.WriteOptions) ([]
 		return generateNewAdminConsoleFiles(settings)
 	}
 
-	existingFiles, err := ioutil.ReadDir(path.Join(renderDir, "admin-console"))
+	entries, err := os.ReadDir(path.Join(renderDir, "admin-console"))
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to read existing files")
+	}
+	existingFiles := make([]fs.FileInfo, 0, len(entries))
+	for _, entry := range entries {
+		info, err := entry.Info()
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to read existing files")
+		}
+		existingFiles = append(existingFiles, info)
 	}
 
 	settings := &UpstreamSettings{
@@ -101,7 +109,7 @@ func GenerateAdminConsoleFiles(renderDir string, options types.WriteOptions) ([]
 
 func loadUpstreamSettingsFromFiles(settings *UpstreamSettings, renderDir string, files []os.FileInfo) error {
 	for _, fi := range files {
-		data, err := ioutil.ReadFile(path.Join(renderDir, "admin-console", fi.Name()))
+		data, err := os.ReadFile(path.Join(renderDir, "admin-console", fi.Name()))
 		if err != nil {
 			return errors.Wrap(err, "failed to read file")
 		}

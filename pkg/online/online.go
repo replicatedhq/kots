@@ -3,7 +3,6 @@ package online
 import (
 	"bufio"
 	"io"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"time"
@@ -94,17 +93,17 @@ func CreateAppFromOnline(opts CreateOnlineAppOpts) (_ *kotsutil.KotsKinds, final
 	}()
 
 	// put the license in a temp file
-	licenseFile, err := ioutil.TempFile("", "kotsadm")
+	licenseFile, err := os.CreateTemp("", "kotsadm")
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create tmp file for license")
 	}
 	defer os.RemoveAll(licenseFile.Name())
-	if err := ioutil.WriteFile(licenseFile.Name(), []byte(opts.PendingApp.LicenseData), 0644); err != nil {
+	if err := os.WriteFile(licenseFile.Name(), []byte(opts.PendingApp.LicenseData), 0644); err != nil {
 		return nil, errors.Wrap(err, "failed to write license tmp file")
 	}
 
 	// pull to a tmp dir
-	tmpRoot, err := ioutil.TempDir("", "kots")
+	tmpRoot, err := os.MkdirTemp("", "kots")
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create tmp dir for pull")
 	}
@@ -118,12 +117,12 @@ func CreateAppFromOnline(opts CreateOnlineAppOpts) (_ *kotsutil.KotsKinds, final
 	}
 	configFile := ""
 	if configValues != "" {
-		tmpFile, err := ioutil.TempFile("", "kots")
+		tmpFile, err := os.CreateTemp("", "kots")
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to create temp file for config values")
 		}
 		defer os.RemoveAll(tmpFile.Name())
-		if err := ioutil.WriteFile(tmpFile.Name(), []byte(configValues), 0644); err != nil {
+		if err := os.WriteFile(tmpFile.Name(), []byte(configValues), 0644); err != nil {
 			return nil, errors.Wrap(err, "failed to write config values to temp file")
 		}
 

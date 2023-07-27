@@ -1,7 +1,6 @@
 package upstream
 
 import (
-	"io/ioutil"
 	"os"
 	"path/filepath"
 
@@ -22,7 +21,7 @@ func LoadIdentity(upstreamDir string) (*kotsv1beta1.Identity, error) {
 			return nil
 		}
 
-		content, err := ioutil.ReadFile(path)
+		content, err := os.ReadFile(path)
 		if err != nil {
 			return err
 		}
@@ -54,7 +53,7 @@ func LoadIdentityConfig(upstreamDir string) (*kotsv1beta1.IdentityConfig, error)
 		return nil, errors.Wrap(err, "failed to stat identity Config")
 	}
 
-	content, err := ioutil.ReadFile(filename)
+	content, err := os.ReadFile(filename)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to read existing identity Config")
 	}
@@ -74,7 +73,7 @@ func LoadIdentityConfig(upstreamDir string) (*kotsv1beta1.IdentityConfig, error)
 
 func SaveIdentityConfig(identityConfig *kotsv1beta1.IdentityConfig, upstreamDir string) error {
 	filename := filepath.Join(upstreamDir, "userdata", "identityconfig.yaml")
-	err := ioutil.WriteFile(filename, mustMarshalIdentityConfig(identityConfig), 0644)
+	err := os.WriteFile(filename, mustMarshalIdentityConfig(identityConfig), 0644)
 	if err != nil {
 		return errors.Wrap(err, "failed to write identity config")
 	}

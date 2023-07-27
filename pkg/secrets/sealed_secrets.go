@@ -5,16 +5,16 @@ import (
 	"crypto/rsa"
 	"crypto/x509"
 	"encoding/pem"
+	"os"
+
 	sealedsecretsv1alpha1 "github.com/bitnami-labs/sealed-secrets/pkg/apis/sealed-secrets/v1alpha1"
 	sealedsecretsscheme "github.com/bitnami-labs/sealed-secrets/pkg/client/clientset/versioned/scheme"
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/util"
-	"io/ioutil"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
 	jsonserializer "k8s.io/apimachinery/pkg/runtime/serializer/json"
 	"k8s.io/client-go/kubernetes/scheme"
-	"os"
 )
 
 func replaceSecretsWithSealedSecrets(archivePath string, config map[string][]byte) error {
@@ -41,7 +41,7 @@ func replaceSecretsWithSealedSecrets(archivePath string, config map[string][]byt
 
 	decode := scheme.Codecs.UniversalDeserializer().Decode
 	for _, secretPath := range secretPaths {
-		contents, err := ioutil.ReadFile(secretPath)
+		contents, err := os.ReadFile(secretPath)
 		if err != nil {
 			return errors.Wrap(err, "failed to read file")
 		}
@@ -84,7 +84,7 @@ func replaceSecretsWithSealedSecrets(archivePath string, config map[string][]byt
 			fileContents = append(fileContents, bytes.Join(secrets, []byte("\n---\n"))...)
 		}
 
-		if err := ioutil.WriteFile(secretPath, fileContents, 0644); err != nil {
+		if err := os.WriteFile(secretPath, fileContents, 0644); err != nil {
 			return errors.Wrap(err, "failed to write sealed secret")
 		}
 	}

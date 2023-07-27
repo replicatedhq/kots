@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 
@@ -85,7 +84,7 @@ func CreateBundleForBackup(appID string, backupName string, backupNamespace stri
 	}
 
 	// make a temp file to store the bundle in
-	bundlePath, err := ioutil.TempDir("", "troubleshoot")
+	bundlePath, err := os.MkdirTemp("", "troubleshoot")
 	if err != nil {
 		return "", errors.Wrap(err, "failed to create temp dir")
 	}
@@ -139,7 +138,7 @@ func CreateBundleForBackup(appID string, backupName string, backupNamespace stri
 	}
 
 	// create an archive of this bundle
-	supportBundleArchivePath, err := ioutil.TempDir("", "kotsadm")
+	supportBundleArchivePath, err := os.MkdirTemp("", "kotsadm")
 	if err != nil {
 		return "", errors.Wrap(err, "failed to create archive dir")
 	}
@@ -252,7 +251,7 @@ func tarSupportBundleDir(inputDir string, outputFilename string) error {
 		filepath.Join(inputDir, "version.yaml"), // version file should be first in tar archive for quick extraction
 	}
 
-	topLevelFiles, err := ioutil.ReadDir(inputDir)
+	topLevelFiles, err := os.ReadDir(inputDir)
 	if err != nil {
 		return errors.Wrap(err, "failed to list bundle directory contents")
 	}
@@ -279,7 +278,7 @@ func saveCollectorOutput(output map[string][]byte, bundlePath string) error {
 			return errors.Wrap(err, "failed to create output file")
 		}
 
-		if err := ioutil.WriteFile(filepath.Join(outPath, fileName), maybeContents, 0644); err != nil {
+		if err := os.WriteFile(filepath.Join(outPath, fileName), maybeContents, 0644); err != nil {
 			return errors.Wrap(err, "failed to write file")
 		}
 	}
@@ -301,7 +300,7 @@ func writeVersionFile(path string) error {
 	}
 
 	filename := filepath.Join(path, "version.yaml")
-	err = ioutil.WriteFile(filename, b, 0644)
+	err = os.WriteFile(filename, b, 0644)
 	if err != nil {
 		return err
 	}

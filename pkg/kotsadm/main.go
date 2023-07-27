@@ -3,7 +3,6 @@ package kotsadm
 import (
 	"context"
 	"encoding/json"
-	"io/ioutil"
 	"os"
 	"path"
 	"path/filepath"
@@ -231,7 +230,7 @@ func Deploy(deployOptions types.DeployOptions, log *logger.CLILogger) error {
 		if err != nil {
 			return errors.Wrap(err, "failed to marshal images data")
 		}
-		err = ioutil.WriteFile(filepath.Join(airgapPath, "images.json"), b, 0644)
+		err = os.WriteFile(filepath.Join(airgapPath, "images.json"), b, 0644)
 		if err != nil {
 			return errors.Wrap(err, "failed to write images data")
 		}

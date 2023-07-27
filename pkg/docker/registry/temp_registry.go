@@ -3,7 +3,7 @@ package registry
 import (
 	_ "embed"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"os"
 	"os/exec"
@@ -52,11 +52,11 @@ func (r *TempRegistry) Start(rootDir string) (finalError error) {
 	configYMLCopy := strings.Replace(tempRegistryConfigYML, "__ROOT_DIR__", rootDir, 1)
 	configYMLCopy = strings.Replace(configYMLCopy, "__PORT__", freePort, 1)
 
-	configFile, err := ioutil.TempFile("", "registryconfig")
+	configFile, err := os.CreateTemp("", "registryconfig")
 	if err != nil {
 		return errors.Wrap(err, "failed to create temp file for config")
 	}
-	if err := ioutil.WriteFile(configFile.Name(), []byte(configYMLCopy), 0644); err != nil {
+	if err := os.WriteFile(configFile.Name(), []byte(configYMLCopy), 0644); err != nil {
 		return errors.Wrap(err, "failed to write config to temp file")
 	}
 	defer os.RemoveAll(configFile.Name())
@@ -160,7 +160,7 @@ func (r *TempRegistry) getImageLayers(imageName string, tagOrDigest string) ([]t
 		return nil, errors.Errorf("unexpected status code %d", resp.StatusCode)
 	}
 
-	b, err := ioutil.ReadAll(resp.Body)
+	b, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to read server response")
 	}

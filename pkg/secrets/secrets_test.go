@@ -6,15 +6,15 @@ import (
 	"crypto/x509"
 	"encoding/pem"
 	"fmt"
+	"os"
+
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"github.com/replicatedhq/kots/pkg/secrets"
 	"github.com/replicatedhq/kots/pkg/util"
-	"io/ioutil"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes/fake"
-	"os"
 )
 
 var _ = Describe("Secrets", func() {
@@ -36,10 +36,10 @@ var _ = Describe("Secrets", func() {
 			validLabels["kots.io/secrettype"] = "sealedsecrets"
 
 			var err error
-			tmpArchiveDir, err = ioutil.TempDir(".", "secrets-test")
+			tmpArchiveDir, err = os.MkdirTemp(".", "secrets-test")
 			Expect(err).ToNot(HaveOccurred())
 
-			tmpFile, err = ioutil.TempFile(tmpArchiveDir, "secrets-test")
+			tmpFile, err = os.CreateTemp(tmpArchiveDir, "secrets-test")
 			Expect(err).ToNot(HaveOccurred())
 
 		})
@@ -174,7 +174,7 @@ var _ = Describe("Secrets", func() {
 			err = secrets.ReplaceSecretsInPath(tmpArchiveDir, clientset)
 			Expect(err).ToNot(HaveOccurred())
 
-			secretContents, err := ioutil.ReadFile(tmpFile.Name())
+			secretContents, err := os.ReadFile(tmpFile.Name())
 			Expect(err).ToNot(HaveOccurred())
 			Expect(string(secretContents)).To(ContainSubstring("invalid yaml"))
 		})
@@ -202,7 +202,7 @@ var _ = Describe("Secrets", func() {
 			err = secrets.ReplaceSecretsInPath(tmpArchiveDir, clientset)
 			Expect(err).ToNot(HaveOccurred())
 
-			secretContents, err := ioutil.ReadFile(tmpFile.Name())
+			secretContents, err := os.ReadFile(tmpFile.Name())
 			Expect(err).ToNot(HaveOccurred())
 			Expect(string(secretContents)).To(Equal(secret))
 		})
@@ -230,7 +230,7 @@ var _ = Describe("Secrets", func() {
 			err = secrets.ReplaceSecretsInPath(tmpArchiveDir, clientset)
 			Expect(err).ToNot(HaveOccurred())
 
-			secretContents, err := ioutil.ReadFile(tmpFile.Name())
+			secretContents, err := os.ReadFile(tmpFile.Name())
 			Expect(err).ToNot(HaveOccurred())
 			Expect(string(secretContents)).To(Equal(secret))
 		})
@@ -265,7 +265,7 @@ metadata:
 			err = secrets.ReplaceSecretsInPath(tmpArchiveDir, clientset)
 			Expect(err).ToNot(HaveOccurred())
 
-			secretContents, err := ioutil.ReadFile(tmpFile.Name())
+			secretContents, err := os.ReadFile(tmpFile.Name())
 			Expect(err).ToNot(HaveOccurred())
 			Expect(string(secretContents)).To(ContainSubstring(wronglyLabeledSecret))
 		})
@@ -382,7 +382,7 @@ metadata:
 					err = secrets.ReplaceSecretsInPath(tmpArchiveDir, clientset)
 					Expect(err).ToNot(HaveOccurred())
 
-					secretContents, err := ioutil.ReadFile(tmpFile.Name())
+					secretContents, err := os.ReadFile(tmpFile.Name())
 					Expect(err).ToNot(HaveOccurred())
 					Expect(string(secretContents)).To(ContainSubstring("kind: SealedSecret"))
 					Expect(string(secretContents)).To(ContainSubstring(fmt.Sprintf("namespace: %s", devNamespace)))
@@ -424,7 +424,7 @@ metadata:
 					err = secrets.ReplaceSecretsInPath(tmpArchiveDir, clientset)
 					Expect(err).ToNot(HaveOccurred())
 
-					secretContents, err := ioutil.ReadFile(tmpFile.Name())
+					secretContents, err := os.ReadFile(tmpFile.Name())
 					Expect(err).ToNot(HaveOccurred())
 					Expect(string(secretContents)).To(ContainSubstring("kind: SealedSecret"))
 					Expect(string(secretContents)).To(ContainSubstring(fmt.Sprintf("namespace: %s", podNamespace)))
@@ -455,7 +455,7 @@ metadata:
 			err = secrets.ReplaceSecretsInPath(tmpArchiveDir, clientset)
 			Expect(err).ToNot(HaveOccurred())
 
-			secretContents, err := ioutil.ReadFile(tmpFile.Name())
+			secretContents, err := os.ReadFile(tmpFile.Name())
 			Expect(err).ToNot(HaveOccurred())
 			Expect(string(secretContents)).To(ContainSubstring("kind: SealedSecret"))
 			Expect(string(secretContents)).To(ContainSubstring("namespace: test-namespace"))
@@ -469,7 +469,7 @@ metadata:
 			BeforeEach(func() {
 				for i := 0; i < 10; i++ {
 					filePattern := fmt.Sprintf("secrets-test-%d", i)
-					tmpFile, err := ioutil.TempFile(tmpArchiveDir, filePattern)
+					tmpFile, err := os.CreateTemp(tmpArchiveDir, filePattern)
 					Expect(err).ToNot(HaveOccurred())
 
 					secretsFiles = append(secretsFiles, tmpFile)
@@ -509,7 +509,7 @@ metadata:
 				Expect(err).ToNot(HaveOccurred())
 
 				for i := 0; i < len(secretsFiles); i++ {
-					secretContents, err := ioutil.ReadFile(secretsFiles[0].Name())
+					secretContents, err := os.ReadFile(secretsFiles[0].Name())
 					Expect(err).ToNot(HaveOccurred())
 					Expect(string(secretContents)).To(ContainSubstring("kind: SealedSecret"))
 					Expect(string(secretContents)).To(ContainSubstring("namespace: test-namespace"))
@@ -556,7 +556,7 @@ metadata:
 				err = secrets.ReplaceSecretsInPath(tmpArchiveDir, clientset)
 				Expect(err).ToNot(HaveOccurred())
 
-				secretContents, err := ioutil.ReadFile(tmpFile.Name())
+				secretContents, err := os.ReadFile(tmpFile.Name())
 				Expect(err).ToNot(HaveOccurred())
 				Expect(string(secretContents)).To(ContainSubstring(transformedSecret1))
 				Expect(string(secretContents)).To(ContainSubstring(transformedSecret2))
@@ -612,7 +612,7 @@ metadata:
   creationTimestamp: null
   name: test-secret-1
   namespace: test-namespace`
-				updatedFile, err := ioutil.ReadFile(tmpFile.Name())
+				updatedFile, err := os.ReadFile(tmpFile.Name())
 				Expect(err).ToNot(HaveOccurred())
 				Expect(string(updatedFile)).To(ContainSubstring(transformedSecret))
 				Expect(string(updatedFile)).ToNot(ContainSubstring(originalSecretContents))
@@ -669,7 +669,7 @@ metadata:
   creationTimestamp: null
   name: test-secret-1
   namespace: test-namespace`
-				updatedFile, err := ioutil.ReadFile(tmpFile.Name())
+				updatedFile, err := os.ReadFile(tmpFile.Name())
 				Expect(err).ToNot(HaveOccurred())
 				Expect(string(updatedFile)).To(ContainSubstring(transformedSecret))
 				Expect(string(updatedFile)).ToNot(ContainSubstring(originalSecretContents))
@@ -730,7 +730,7 @@ metadata:
 				undesiredExtraWhitespace := `---
 
 `
-				updatedFile, err := ioutil.ReadFile(tmpFile.Name())
+				updatedFile, err := os.ReadFile(tmpFile.Name())
 				Expect(err).ToNot(HaveOccurred())
 				Expect(string(updatedFile)).To(ContainSubstring(transformedSecret))
 				Expect(string(updatedFile)).ToNot(ContainSubstring(originalSecretContents))

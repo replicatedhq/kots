@@ -7,7 +7,6 @@ import (
 	"encoding/json"
 	"encoding/pem"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -456,7 +455,7 @@ func TestGitOpsConnection(gitOpsConfig *GitOpsConfig) (string, error) {
 		return "", errors.Wrap(err, "failed to get auth")
 	}
 
-	workDir, err := ioutil.TempDir("", "kotsadm")
+	workDir, err := os.MkdirTemp("", "kotsadm")
 	if err != nil {
 		return "", errors.Wrap(err, "failed to create temp dir")
 	}
@@ -729,7 +728,7 @@ func CreateGitOpsCommit(gitOpsConfig *GitOpsConfig, appSlug string, appName stri
 		return "", errors.Wrap(err, "failed to get auth")
 	}
 
-	workDir, err := ioutil.TempDir("", "kotsadm")
+	workDir, err := os.MkdirTemp("", "kotsadm")
 	if err != nil {
 		return "", errors.Wrap(err, "failed to create temp dir")
 	}
@@ -764,7 +763,7 @@ func CreateGitOpsCommit(gitOpsConfig *GitOpsConfig, appSlug string, appName stri
 	filePath := filepath.Join(dirPath, fmt.Sprintf("%s.yaml", appSlug))
 	_, err = os.Stat(filePath)
 	if err == nil { // if the file has not changed, end now
-		currentRevision, err := ioutil.ReadFile(filePath)
+		currentRevision, err := os.ReadFile(filePath)
 		if err != nil {
 			return "", errors.Wrap(err, "failed to read current app yaml")
 		}
@@ -775,7 +774,7 @@ func CreateGitOpsCommit(gitOpsConfig *GitOpsConfig, appSlug string, appName stri
 		return "", errors.Wrap(err, "failed to stat current app yaml")
 	}
 
-	err = ioutil.WriteFile(filePath, out, 0644)
+	err = os.WriteFile(filePath, out, 0644)
 	if err != nil {
 		return "", errors.Wrap(err, "failed to write updated app yaml")
 	}

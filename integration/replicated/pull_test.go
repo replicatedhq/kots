@@ -1,7 +1,7 @@
 package replicated
 
 import (
-	"io/ioutil"
+	"os"
 	"path"
 	"testing"
 
@@ -15,7 +15,7 @@ import (
 func Test_PullReplicated(t *testing.T) {
 	namespace := "test_ns"
 
-	testDirs, err := ioutil.ReadDir("tests")
+	testDirs, err := os.ReadDir("tests")
 	if err != nil {
 		panic(err)
 	}
@@ -30,11 +30,11 @@ func Test_PullReplicated(t *testing.T) {
 		t.Run(testDir.Name(), func(t *testing.T) {
 			req := require.New(t)
 
-			archiveData, err := ioutil.ReadFile(path.Join(testResourcePath, "archive.tar.gz"))
+			archiveData, err := os.ReadFile(path.Join(testResourcePath, "archive.tar.gz"))
 			req.NoError(err)
 
 			licenseFilepath := path.Join(testResourcePath, "license.yaml")
-			licenseFile, err := ioutil.ReadFile(licenseFilepath)
+			licenseFile, err := os.ReadFile(licenseFilepath)
 			req.NoError(err)
 
 			server, err := StartMockServer(archiveData, licenseFile)
@@ -72,7 +72,7 @@ func Test_PullReplicated(t *testing.T) {
 			err = tarGz.Archive(paths, path.Join(actualFilesystemDir, "archive.tar.gz"))
 			req.NoError(err)
 
-			actualFilesystemBytes, err := ioutil.ReadFile(path.Join(actualFilesystemDir, "archive.tar.gz"))
+			actualFilesystemBytes, err := os.ReadFile(path.Join(actualFilesystemDir, "archive.tar.gz"))
 			req.NoError(err)
 
 			// create an archive of the expected
@@ -86,7 +86,7 @@ func Test_PullReplicated(t *testing.T) {
 			err = tarGz.Archive(paths, path.Join(expectedFilesystemDir, "archive.tar.gz"))
 			req.NoError(err)
 
-			expectedFilesystemBytes, err := ioutil.ReadFile(path.Join(expectedFilesystemDir, "archive.tar.gz"))
+			expectedFilesystemBytes, err := os.ReadFile(path.Join(expectedFilesystemDir, "archive.tar.gz"))
 			req.NoError(err)
 
 			compareOptions := util.CompareOptions{

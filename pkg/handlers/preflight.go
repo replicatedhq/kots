@@ -2,7 +2,7 @@ package handlers
 
 import (
 	"encoding/json"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -134,7 +134,7 @@ func (h *Handler) IgnorePreflightRBACErrors(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	archiveDir, err := ioutil.TempDir("", "kotsadm")
+	archiveDir, err := os.MkdirTemp("", "kotsadm")
 	if err != nil {
 		logger.Error(errors.Wrap(err, "failed to create temp dir"))
 		w.WriteHeader(http.StatusInternalServerError)
@@ -201,7 +201,7 @@ func (h *Handler) StartPreflightChecks(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	archiveDir, err := ioutil.TempDir("", "kotsadm")
+	archiveDir, err := os.MkdirTemp("", "kotsadm")
 	if err != nil {
 		logger.Error(errors.Wrap(err, "failed to create temp dir"))
 		w.WriteHeader(http.StatusInternalServerError)
@@ -259,7 +259,7 @@ func (h *Handler) GetPreflightCommand(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	archivePath, err := ioutil.TempDir("", "kotsadm")
+	archivePath, err := os.MkdirTemp("", "kotsadm")
 	if err != nil {
 		logger.Error(errors.Wrap(err, "failed to create temp dir"))
 		w.WriteHeader(http.StatusInternalServerError)
@@ -315,7 +315,7 @@ func (h *Handler) PostPreflightStatus(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	b, err := ioutil.ReadAll(r.Body)
+	b, err := io.ReadAll(r.Body)
 	if err != nil {
 		err = errors.Wrap(err, "failed to read request body")
 		logger.Error(err)

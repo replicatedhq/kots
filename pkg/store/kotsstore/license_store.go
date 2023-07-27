@@ -3,7 +3,7 @@ package kotsstore
 import (
 	"bytes"
 	"fmt"
-	"io/ioutil"
+	"os"
 	"path/filepath"
 	"time"
 
@@ -117,7 +117,7 @@ func (s *KOTSStore) UpdateAppLicense(appID string, baseSequence int64, archiveDi
 		return int64(0), errors.Wrap(err, "failed to encode license")
 	}
 	encodedLicense := b.Bytes()
-	if err := ioutil.WriteFile(filepath.Join(archiveDir, "upstream", "userdata", "license.yaml"), encodedLicense, 0644); err != nil {
+	if err := os.WriteFile(filepath.Join(archiveDir, "upstream", "userdata", "license.yaml"), encodedLicense, 0644); err != nil {
 		return int64(0), errors.Wrap(err, "failed to write new license")
 	}
 

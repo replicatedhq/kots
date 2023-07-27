@@ -4,7 +4,6 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -107,7 +106,7 @@ func (h *Handler) DownloadFileFromConfig(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	archiveDir, err := ioutil.TempDir("", "kotsadmconfig")
+	archiveDir, err := os.MkdirTemp("", "kotsadmconfig")
 	if err != nil {
 		logger.Error(err)
 		downloadFileFromConfigResponse.Error = "failed to create temp directory"
@@ -212,7 +211,7 @@ func (h *Handler) UpdateAppConfig(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	archiveDir, err := ioutil.TempDir("", "kotsadm")
+	archiveDir, err := os.MkdirTemp("", "kotsadm")
 	if err != nil {
 		updateAppConfigResponse.Error = "failed to create temp dir"
 		logger.Error(errors.Wrap(err, updateAppConfigResponse.Error))
@@ -341,7 +340,7 @@ func (h *Handler) LiveAppConfig(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		archiveDir, err := ioutil.TempDir("", "kotsadm")
+		archiveDir, err := os.MkdirTemp("", "kotsadm")
 		if err != nil {
 			liveAppConfigResponse.Error = "failed to create temp dir"
 			logger.Error(errors.Wrap(err, liveAppConfigResponse.Error))
@@ -590,7 +589,7 @@ func (h *Handler) CurrentAppConfig(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		archiveDir, err := ioutil.TempDir("", "kotsadm")
+		archiveDir, err := os.MkdirTemp("", "kotsadm")
 		if err != nil {
 			currentAppConfigResponse.Error = "failed to create temp dir"
 			logger.Error(errors.Wrap(err, currentAppConfigResponse.Error))
@@ -770,7 +769,7 @@ func updateAppConfig(updateApp *apptypes.App, sequence int64, configGroups []kot
 		Success: false,
 	}
 
-	archiveDir, err := ioutil.TempDir("", "kotsadm")
+	archiveDir, err := os.MkdirTemp("", "kotsadm")
 	if err != nil {
 		updateAppConfigResponse.Error = "failed to create temp dir"
 		return updateAppConfigResponse, err
@@ -810,7 +809,7 @@ func updateAppConfig(updateApp *apptypes.App, sequence int64, configGroups []kot
 			return updateAppConfigResponse, err
 		}
 
-		if err := ioutil.WriteFile(filepath.Join(archiveDir, "upstream", "userdata", "config.yaml"), []byte(configValuesSpec), 0644); err != nil {
+		if err := os.WriteFile(filepath.Join(archiveDir, "upstream", "userdata", "config.yaml"), []byte(configValuesSpec), 0644); err != nil {
 			updateAppConfigResponse.Error = "failed to write config.yaml to upstream/userdata"
 			return updateAppConfigResponse, err
 		}
@@ -1062,7 +1061,7 @@ func (h *Handler) SetAppConfigValues(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	archiveDir, err := ioutil.TempDir("", "kotsadm")
+	archiveDir, err := os.MkdirTemp("", "kotsadm")
 	if err != nil {
 		setAppConfigValuesResponse.Error = "failed to create temp dir"
 		logger.Error(errors.Wrap(err, setAppConfigValuesResponse.Error))

@@ -5,7 +5,6 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -75,7 +74,7 @@ func RenderValuesFromConfig(helmApp *apptypes.HelmApp, kotsKinds *kotsutil.KotsK
 }
 
 func GetMergedValues(releasedValues, renderedValues map[string]interface{}) (map[string]interface{}, error) {
-	dir, err := ioutil.TempDir("", "helm-merged-values-")
+	dir, err := os.MkdirTemp("", "helm-merged-values-")
 	if err != nil {
 		return nil, err
 	}
@@ -92,11 +91,11 @@ func GetMergedValues(releasedValues, renderedValues map[string]interface{}) (map
 	}
 	releaseValsFilename := fmt.Sprintf("%s/releasevalues.yaml", dir)
 	renderedValsFilename := fmt.Sprintf("%s/renderedvalues.yaml", dir)
-	if err := ioutil.WriteFile(releaseValsFilename, releasedB, 0644); err != nil {
+	if err := os.WriteFile(releaseValsFilename, releasedB, 0644); err != nil {
 		return nil, err
 	}
 
-	if err := ioutil.WriteFile(renderedValsFilename, renderedB, 0644); err != nil {
+	if err := os.WriteFile(renderedValsFilename, renderedB, 0644); err != nil {
 		return nil, err
 	}
 
@@ -140,7 +139,7 @@ func CreateHelmRegistryCreds(username string, password string, url string) error
 		return errors.Wrap(err, "failed to create directory for helm registry credentials")
 	}
 
-	err = ioutil.WriteFile(filename, data, 0600)
+	err = os.WriteFile(filename, data, 0600)
 	if err != nil {
 		return errors.Wrap(err, "failed to save helm registry credentials")
 	}

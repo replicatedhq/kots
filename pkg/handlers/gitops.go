@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"encoding/json"
-	"io/ioutil"
 	"net/http"
 	"os"
 
@@ -215,7 +214,7 @@ func (h *Handler) InitGitOpsConnection(w http.ResponseWriter, r *http.Request) {
 
 		// Create git commit for current version (if exists)
 		if appVersions.CurrentVersion != nil {
-			currentVersionArchive, err := ioutil.TempDir("", "kotsadm")
+			currentVersionArchive, err := os.MkdirTemp("", "kotsadm")
 			if err != nil {
 				err = errors.Wrap(err, "failed to create temp dir")
 				logger.Error(err)
@@ -243,7 +242,7 @@ func (h *Handler) InitGitOpsConnection(w http.ResponseWriter, r *http.Request) {
 
 		// Create git commits for sorted pending versions
 		for _, pendingVersion := range appVersions.PendingVersions {
-			pendingVersionArchive, err := ioutil.TempDir("", "kotsadm")
+			pendingVersionArchive, err := os.MkdirTemp("", "kotsadm")
 			if err != nil {
 				err = errors.Wrap(err, "failed to create temp dir")
 				logger.Error(err)

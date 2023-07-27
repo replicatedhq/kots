@@ -3,7 +3,6 @@ package base
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
@@ -61,7 +60,7 @@ func TestRenderUpstream(t *testing.T) {
 			require.NoError(t, err, path)
 		}
 
-		b, err := ioutil.ReadFile(testcaseFilepath)
+		b, err := os.ReadFile(testcaseFilepath)
 		require.NoError(t, err, path)
 
 		var spec TestCaseSpec
@@ -251,7 +250,7 @@ func upstreamFilesFromDir(t *testing.T, root string) []upstreamtypes.UpstreamFil
 			return nil
 		}
 
-		b, err := ioutil.ReadFile(path)
+		b, err := os.ReadFile(path)
 		require.NoError(t, err, path)
 
 		relPath, err := filepath.Rel(root, path)
@@ -283,7 +282,7 @@ func baseFromDir(t *testing.T, root string, isHelm bool) base.Base {
 	for _, path := range additionalFiles {
 		additionalFile := filepath.Join(root, path)
 		if _, err := os.Stat(additionalFile); err == nil {
-			data, err := ioutil.ReadFile(additionalFile)
+			data, err := os.ReadFile(additionalFile)
 			require.NoError(t, err, additionalFile)
 
 			b.AdditionalFiles = append(b.AdditionalFiles, base.BaseFile{
@@ -316,7 +315,7 @@ func baseFilesFromDir(t *testing.T, root string, isHelm bool) []base.BaseFile {
 			return nil
 		}
 
-		b, err := ioutil.ReadFile(path)
+		b, err := os.ReadFile(path)
 		require.NoError(t, err, path)
 		var fPath string
 		fPath, err = filepath.Rel(root, path)

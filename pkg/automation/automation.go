@@ -5,7 +5,6 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -268,14 +267,14 @@ func installLicenseSecret(clientset *kubernetes.Clientset, licenseSecret corev1.
 		}
 
 		// Images have been pushed and there is airgap app data available, so this is an airgap install.
-		airgapFilesDir, err := ioutil.TempDir("", "headless-airgap")
+		airgapFilesDir, err := os.MkdirTemp("", "headless-airgap")
 		if err != nil {
 			return errors.Wrap(err, "failed to create temp dir")
 		}
 		defer os.RemoveAll(airgapFilesDir)
 
 		for filename, data := range airgapData {
-			err := ioutil.WriteFile(filepath.Join(airgapFilesDir, filename), data, 0644)
+			err := os.WriteFile(filepath.Join(airgapFilesDir, filename), data, 0644)
 			if err != nil {
 				return errors.Wrapf(err, "failed to create file %s", filename)
 			}

@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
@@ -200,7 +199,7 @@ func CreateSupportBundleDependencies(app apptypes.AppType, sequence int64, opts 
 }
 
 func getKotsKindsForApp(app *apptypes.App, sequence int64) (*kotsutil.KotsKinds, error) {
-	archivePath, err := ioutil.TempDir("", "kotsadm")
+	archivePath, err := os.MkdirTemp("", "kotsadm")
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create temp dir")
 	}
@@ -246,7 +245,7 @@ func getKotsKindsForHelmApp(app *apptypes.HelmApp) (*kotsutil.KotsKinds, error) 
 }
 
 func getAnalysisFromBundle(archivePath string) ([]byte, error) {
-	bundleDir, err := ioutil.TempDir("", "kots")
+	bundleDir, err := os.MkdirTemp("", "kots")
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create temp dir")
 	}
@@ -281,7 +280,7 @@ func getAnalysisFromBundle(archivePath string) ([]byte, error) {
 		trimmedRelPath = strings.TrimPrefix(trimmedRelPath, string(os.PathSeparator)) // extra measure to ensure no leading slashes. for example: "/analysis.json"
 
 		if trimmedRelPath == "analysis.json" {
-			b, err := ioutil.ReadFile(path)
+			b, err := os.ReadFile(path)
 			if err != nil {
 				return errors.Wrap(err, "failed to read analysis file")
 			}
@@ -326,7 +325,7 @@ func CreateSupportBundleAnalysis(appID string, archivePath string, bundle *types
 		return errors.Wrap(err, "failed to get latest app sequence")
 	}
 
-	archiveDir, err := ioutil.TempDir("", "kotsadm")
+	archiveDir, err := os.MkdirTemp("", "kotsadm")
 	if err != nil {
 		err = errors.Wrap(err, "failed to create temp dir")
 		logger.Error(err)

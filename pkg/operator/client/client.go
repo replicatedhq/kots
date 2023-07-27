@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/base64"
 	"encoding/json"
-	"io/ioutil"
 	"log"
 	"os"
 	"path"
@@ -376,7 +375,7 @@ func extractHelmCharts(chartsArchive []byte, dirName string) (helmDir string, er
 		return "", errors.Wrap(err, "failed to create temp dir for previous charts")
 	}
 
-	err = ioutil.WriteFile(path.Join(tmpDir, "archive.tar.gz"), chartsArchive, 0644)
+	err = os.WriteFile(path.Join(tmpDir, "archive.tar.gz"), chartsArchive, 0644)
 	if err != nil {
 		return "", errors.Wrap(err, "failed to write previous archive")
 	}

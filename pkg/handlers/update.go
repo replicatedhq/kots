@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -154,7 +153,7 @@ func (h *Handler) AppUpdateCheck(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		rootDir, err := ioutil.TempDir("", "kotsadm-airgap")
+		rootDir, err := os.MkdirTemp("", "kotsadm-airgap")
 		if err != nil {
 			logger.Error(errors.Wrap(err, "failed to create temp dir"))
 			w.WriteHeader(http.StatusInternalServerError)
@@ -339,7 +338,7 @@ func findLatestKotsVersion(appID string, license *kotsv1beta1.License) (string, 
 	}
 	defer resp.Body.Close()
 
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return "", errors.Wrap(err, "failed to read response body")
 	}

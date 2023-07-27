@@ -3,7 +3,6 @@ package handlers
 import (
 	"context"
 	"fmt"
-	"io/ioutil"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -148,14 +147,14 @@ func getBrandingResponse(kotsStore store.Store, appID string) MetadataResponseBr
 		return response
 	}
 
-	tmpDir, err := ioutil.TempDir("", "kotsadm-branding")
+	tmpDir, err := os.MkdirTemp("", "kotsadm-branding")
 	if err != nil {
 		logger.Error(errors.Wrap(err, "failed to create temp dir"))
 		return response
 	}
 	defer os.RemoveAll(tmpDir)
 
-	if err := ioutil.WriteFile(filepath.Join(tmpDir, "branding.tar.gz"), brandingArchive, 0644); err != nil {
+	if err := os.WriteFile(filepath.Join(tmpDir, "branding.tar.gz"), brandingArchive, 0644); err != nil {
 		logger.Error(errors.Wrap(err, "failed to write branding archive to temp dir"))
 		return response
 	}
@@ -165,7 +164,7 @@ func getBrandingResponse(kotsStore store.Store, appID string) MetadataResponseBr
 		return response
 	}
 
-	applicationYaml, err := ioutil.ReadFile(filepath.Join(tmpDir, "application.yaml"))
+	applicationYaml, err := os.ReadFile(filepath.Join(tmpDir, "application.yaml"))
 	if err != nil {
 		logger.Error(errors.Wrap(err, "failed to read application.yaml"))
 		return response
@@ -185,7 +184,7 @@ func getBrandingResponse(kotsStore store.Store, appID string) MetadataResponseBr
 			continue
 		}
 
-		contents, err := ioutil.ReadFile(filepath.Join(tmpDir, source))
+		contents, err := os.ReadFile(filepath.Join(tmpDir, source))
 		if err != nil {
 			logger.Error(errors.Wrapf(err, "failed to read font file %s", source))
 			continue
@@ -209,7 +208,7 @@ func getBrandingResponse(kotsStore store.Store, appID string) MetadataResponseBr
 				continue
 			}
 
-			contents, err := ioutil.ReadFile(filepath.Join(tmpDir, source))
+			contents, err := os.ReadFile(filepath.Join(tmpDir, source))
 			if err != nil {
 				logger.Error(errors.Wrapf(err, "failed to read font file %s", source))
 				continue

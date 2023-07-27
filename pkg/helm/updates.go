@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"sort"
@@ -335,7 +334,7 @@ var (
 
 func getUpdateChartFromCache(helmApp *apptypes.HelmApp, version string) (*bytes.Buffer, error) {
 	fileName := getUpdateChacheFileName(helmApp, version)
-	b, err := ioutil.ReadFile(fileName)
+	b, err := os.ReadFile(fileName)
 	if err != nil {
 		if os.IsNotExist(err) {
 			return nil, nil
@@ -351,7 +350,7 @@ func saveUpdateChartInCache(helmApp *apptypes.HelmApp, version string, data *byt
 	newBuff := bytes.NewBuffer(b)
 
 	if updateCacheDir == "" {
-		dirName, err := ioutil.TempDir("", "chart-updates-")
+		dirName, err := os.MkdirTemp("", "chart-updates-")
 		if err != nil {
 			return newBuff, errors.Wrap(err, "failed to create temp dir")
 		}
@@ -365,7 +364,7 @@ func saveUpdateChartInCache(helmApp *apptypes.HelmApp, version string, data *byt
 		return newBuff, errors.Wrap(err, "failed to create cache dir")
 	}
 
-	err = ioutil.WriteFile(fileName, b, 0744)
+	err = os.WriteFile(fileName, b, 0744)
 	if err != nil {
 		return newBuff, errors.Wrap(err, "failed to save cache file")
 	}
