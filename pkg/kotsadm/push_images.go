@@ -317,7 +317,7 @@ func PushAppImagesFromTempRegistry(airgapRootDir string, imageList []string, opt
 	if options.LogForUI {
 		wc := reportWriterWithProgress(imageInfos, options.ProgressWriter)
 		reportWriter = wc.(io.Writer)
-		defer wc.Write([]byte(fmt.Sprintf("+status.flush:\n")))
+		defer wc.Write([]byte("+status.flush:\n"))
 		defer wc.Close()
 	}
 
@@ -412,7 +412,7 @@ func PushAppImagesFromDockerArchivePath(airgapRootDir string, options types.Push
 	if options.LogForUI {
 		wc := reportWriterWithProgress(imageInfos, options.ProgressWriter)
 		reportWriter = wc.(io.Writer)
-		defer wc.Write([]byte(fmt.Sprintf("+status.flush:\n")))
+		defer wc.Write([]byte("+status.flush:\n"))
 		defer wc.Close()
 	}
 
@@ -488,7 +488,7 @@ func PushAppImagesFromDockerArchiveBundle(airgapBundle string, options types.Pus
 	if options.LogForUI {
 		wc := reportWriterWithProgress(imageInfos, options.ProgressWriter)
 		reportWriter = wc.(io.Writer)
-		defer wc.Write([]byte(fmt.Sprintf("+status.flush:\n")))
+		defer wc.Write([]byte("+status.flush:\n"))
 		defer wc.Close()
 	}
 
