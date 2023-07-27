@@ -144,9 +144,7 @@ func GetMetricCharts(graphs []kotsv1beta1.MetricGraph, prometheusAddress string)
 			queries = append(queries, query)
 		}
 
-		for _, query := range graph.Queries {
-			queries = append(queries, query)
-		}
+		queries = append(queries, graph.Queries...)
 
 		series := []Series{}
 		for _, query := range queries {
