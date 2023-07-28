@@ -952,6 +952,51 @@ func Test_pathToCharts(t *testing.T) {
 			path: "charts/subchart/charts/subsubchart",
 			want: []string{"", "subchart", "subsubchart"},
 		},
+		{
+			name: "subchart that has 'charts' in the name as a suffix",
+			path: "charts/subchart-charts/charts/subsubchart",
+			want: []string{"", "subchart-charts", "subsubchart"},
+		},
+		{
+			name: "subsubchart that has 'charts' in the name as a suffix",
+			path: "charts/subchart/charts/subsubchart-charts",
+			want: []string{"", "subchart", "subsubchart-charts"},
+		},
+		{
+			name: "subchart and subsubchart that have 'charts' in the name as a suffix",
+			path: "charts/subchart-charts/charts/subsubchart-charts",
+			want: []string{"", "subchart-charts", "subsubchart-charts"},
+		},
+		{
+			name: "subchart that has 'charts' in the name as a prefix",
+			path: "charts/charts-subchart/charts/subsubchart",
+			want: []string{"", "charts-subchart", "subsubchart"},
+		},
+		{
+			name: "subsubchart that has 'charts' in the name as a prefix",
+			path: "charts/subchart/charts/charts-subsubchart",
+			want: []string{"", "subchart", "charts-subsubchart"},
+		},
+		{
+			name: "subchart and subsubchart that have 'charts' in the name as a prefix",
+			path: "charts/charts-subchart/charts/charts-subsubchart",
+			want: []string{"", "charts-subchart", "charts-subsubchart"},
+		},
+		{
+			name: "subchart that has 'charts' in the name",
+			path: "charts/sub-charts-chart/charts/subsubchart",
+			want: []string{"", "sub-charts-chart", "subsubchart"},
+		},
+		{
+			name: "subsubchart that has 'charts' in the name",
+			path: "charts/subchart/charts/subsub-charts-chart",
+			want: []string{"", "subchart", "subsub-charts-chart"},
+		},
+		{
+			name: "subchart and subsubchart that have 'charts' in the name",
+			path: "charts/sub-charts-chart/charts/subsub-charts-chart",
+			want: []string{"", "sub-charts-chart", "subsub-charts-chart"},
+		},
 	}
 
 	for _, tt := range tests {

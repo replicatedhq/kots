@@ -380,7 +380,7 @@ func helmChartUpstreamPathToBasePaths(upstreamPath string, upstreamFileMap map[s
 // // "charts/mariadb" => ["", "mariadb"]
 // // "charts/mariadb/charts/common" => ["", "mariadb", "common"]
 func pathToCharts(path string) []string {
-	re := regexp.MustCompile(`\/?charts\/`)
+	re := regexp.MustCompile(`\/charts\/|^charts\/`)
 	return re.Split(path, -1)
 }
 
