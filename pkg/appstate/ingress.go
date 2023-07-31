@@ -10,6 +10,7 @@ import (
 	networkingv1 "k8s.io/api/networking/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/cache"
@@ -165,9 +166,22 @@ func ingressGetStateFromBackend(clientset kubernetes.Interface, namespace string
 }
 
 func ingressGetStateFromExternalIP(ing *networkingv1.Ingress) types.State {
-	lbIps := loadBalancerStatusIPs(ing.Status.LoadBalancer)
+	lbIps := ingressLoadBalancerStatusIPs(ing.Status.LoadBalancer)
 	if len(lbIps) > 0 {
 		return types.StateReady
 	}
 	return types.StateUnavailable
+}
+
+func ingressLoadBalancerStatusIPs(s networkingv1.IngressLoadBalancerStatus) sets.String {
+	ingress := s.Ingress
+	result := sets.NewString()
+	for i := range ingress {
+		if ingress[i].IP != "" {
+			result.Insert(ingress[i].IP)
+		} else if ingress[i].Hostname != "" {
+			result.Insert(ingress[i].Hostname)
+		}
+	}
+	return result
 }
