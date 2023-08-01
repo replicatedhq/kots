@@ -71,15 +71,21 @@ inputs:
 runs:
   using: "composite"
   steps:
-    - name: Generate GKE cluster name
+    - name: Create a GKE cluster
       if: inputs.k8s-distribution == 'gke'
       uses: ./.github/actions/kots-gke-create
       with:
         service-key: ${{ inputs.gke-service-key }}
 
-    - name: Create Cluster 
+    - name: Create a local k3s cluster
+      if: inputs.k8s-distribution == 'k3s-local'
+      uses: replicatedhq/action-k3s@main
+      with:
+        version: ${{ inputs.k8s-version }}
+
+    - name: Create a c11y matrix cluster 
       id: create-cluster 
-      uses: replicatedhq/compatibility-actions/create-cluster@v0
+      uses: replicatedhq/replicated-actions/create-cluster@v0
       if: ${{ inputs.k8s-distribution == 'k3s' || inputs.k8s-distribution == 'kind' || inputs.k8s-distribution == 'eks' }}
       with: 
         api-token: ${{ inputs.replicated-api-token }}
@@ -141,7 +147,7 @@ runs:
 
     - name: Remove Cluster
       id: remove-cluster
-      uses: replicatedhq/compatibility-actions/remove-cluster@v0
+      uses: replicatedhq/replicated-actions/remove-cluster@v0
       if: ${{ inputs.k8s-cluster-skip-teardown != 'true' && (inputs.k8s-distribution == 'k3s' || inputs.k8s-distribution == 'kind' || inputs.k8s-distribution == 'eks') }}
       continue-on-error: true
       with:

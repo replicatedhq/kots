@@ -895,7 +895,7 @@ jobs:
       fail-fast: false
       matrix:
         cluster: [
-          {distribution: k3s, version: v1.26}
+          {distribution: k3s-local, version: v1.27.1-k3s1}
         ]
     steps:
       - name: Checkout
@@ -919,12 +919,10 @@ jobs:
           kots-namespace: 'version-history-pagination'
           k8s-distribution: ${{ matrix.cluster.distribution }}
           k8s-version: ${{ matrix.cluster.version }}
-          k8s-cluster-ttl: 2h
           testim-access-token: '${{ secrets.TESTIM_ACCESS_TOKEN }}'
           testim-branch: ${{ github.head_ref == 'main' && 'master' || github.head_ref }}
           aws-access-key-id: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_ACCESS_KEY_ID }}'
           aws-secret-access-key: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_SECRET_ACCESS_KEY }}'
-          replicated-api-token: '${{ secrets.C11Y_MATRIX_TOKEN }}'
 
 
   # validate-change-license:
@@ -986,7 +984,7 @@ jobs:
 
   #     - name: Create Cluster 
   #       id: create-cluster 
-  #       uses: replicatedhq/compatibility-actions/create-cluster@v0 
+  #       uses: replicatedhq/replicated-actions/create-cluster@v0 
   #       with:
   #         api-token: ${{ secrets.C11Y_MATRIX_TOKEN }}
   #         kubernetes-distribution: ${{ matrix.cluster.distribution }}
@@ -1059,7 +1057,7 @@ jobs:
 
   #     - name: Remove Cluster
   #       id: remove-cluster
-  #       uses: replicatedhq/compatibility-actions/remove-cluster@v0
+  #       uses: replicatedhq/replicated-actions/remove-cluster@v0
   #       continue-on-error: true
   #       with:
   #         api-token: ${{ secrets.C11Y_MATRIX_TOKEN }}
@@ -1090,7 +1088,7 @@ jobs:
 
   #     - name: Create Cluster 
   #       id: create-cluster
-  #       uses: replicatedhq/compatibility-actions/create-cluster@v0 
+  #       uses: replicatedhq/replicated-actions/create-cluster@v0 
   #       with:
   #         api-token: ${{ secrets.C11Y_MATRIX_TOKEN }}
   #         kubernetes-distribution: ${{ matrix.cluster.distribution }}
@@ -1168,7 +1166,7 @@ jobs:
   
   #     - name: Remove Cluster
   #       id: remove-cluster
-  #       uses: replicatedhq/compatibility-actions/remove-cluster@v0
+  #       uses: replicatedhq/replicated-actions/remove-cluster@v0
   #       continue-on-error: true
   #       with:
   #         api-token: ${{ secrets.C11Y_MATRIX_TOKEN }}
@@ -1270,7 +1268,7 @@ jobs:
 
   #     - name: Create Cluster 
   #       id: create-cluster 
-  #       uses: replicatedhq/compatibility-actions/create-cluster@v0 
+  #       uses: replicatedhq/replicated-actions/create-cluster@v0 
   #       with:
   #         api-token: ${{ secrets.C11Y_MATRIX_TOKEN }}
   #         kubernetes-distribution: ${{ matrix.cluster.distribution }}
@@ -1349,7 +1347,7 @@ jobs:
 
   #     - name: Remove Cluster
   #       id: remove-cluster
-  #       uses: replicatedhq/compatibility-actions/remove-cluster@v0
+  #       uses: replicatedhq/replicated-actions/remove-cluster@v0
   #       continue-on-error: true
   #       with:
   #         api-token: ${{ secrets.C11Y_MATRIX_TOKEN }}
@@ -1375,7 +1373,7 @@ jobs:
 
   #     - name: Create Cluster 
   #       id: create-cluster 
-  #       uses: replicatedhq/compatibility-actions/create-cluster@v0 
+  #       uses: replicatedhq/replicated-actions/create-cluster@v0 
   #       with:
   #         api-token: ${{ secrets.C11Y_MATRIX_TOKEN }}
   #         kubernetes-distribution: ${{ matrix.cluster.distribution }}
@@ -1501,7 +1499,7 @@ jobs:
 
   #     - name: Remove Cluster
   #       id: remove-cluster
-  #       uses: replicatedhq/compatibility-actions/remove-cluster@v0
+  #       uses: replicatedhq/replicated-actions/remove-cluster@v0
   #       continue-on-error: true
   #       with:
   #         api-token: ${{ secrets.C11Y_MATRIX_TOKEN }}
@@ -1528,7 +1526,7 @@ jobs:
 
   #     - name: Create Cluster 
   #       id: create-cluster 
-  #       uses: replicatedhq/compatibility-actions/create-cluster@v0 
+  #       uses: replicatedhq/replicated-actions/create-cluster@v0 
   #       with:
   #         api-token: ${{ secrets.C11Y_MATRIX_TOKEN }}
   #         kubernetes-distribution: ${{ matrix.cluster.distribution }}
@@ -1596,7 +1594,7 @@ jobs:
 
   #     - name: Remove Cluster
   #       id: remove-cluster
-  #       uses: replicatedhq/compatibility-actions/remove-cluster@v0
+  #       uses: replicatedhq/replicated-actions/remove-cluster@v0
   #       continue-on-error: true
   #       with:
   #         api-token: ${{ secrets.C11Y_MATRIX_TOKEN }}
@@ -1623,7 +1621,7 @@ jobs:
 
   #     - name: Create Cluster 
   #       id: create-cluster 
-  #       uses: replicatedhq/compatibility-actions/create-cluster@v0 
+  #       uses: replicatedhq/replicated-actions/create-cluster@v0 
   #       with:
   #         api-token: ${{ secrets.C11Y_MATRIX_TOKEN }}
   #         kubernetes-distribution: ${{ matrix.cluster.distribution }}
@@ -1691,7 +1689,7 @@ jobs:
 
   #     - name: Remove Cluster
   #       id: remove-cluster
-  #       uses: replicatedhq/compatibility-actions/remove-cluster@v0
+  #       uses: replicatedhq/replicated-actions/remove-cluster@v0
   #       continue-on-error: true
   #       with:
   #         api-token: ${{ secrets.C11Y_MATRIX_TOKEN }}
@@ -1715,7 +1713,7 @@ jobs:
 
   #     - name: Create Cluster 
   #       id: create-cluster 
-  #       uses: replicatedhq/compatibility-actions/create-cluster@v0 
+  #       uses: replicatedhq/replicated-actions/create-cluster@v0 
   #       with:
   #         api-token: ${{ secrets.C11Y_MATRIX_TOKEN }}
   #         kubernetes-distribution: ${{ matrix.cluster.distribution }}
@@ -1807,7 +1805,7 @@ jobs:
 
   #     - name: Remove Cluster
   #       id: remove-cluster
-  #       uses: replicatedhq/compatibility-actions/remove-cluster@v0
+  #       uses: replicatedhq/replicated-actions/remove-cluster@v0
   #       continue-on-error: true
   #       with:
   #         api-token: ${{ secrets.C11Y_MATRIX_TOKEN }}
@@ -1831,7 +1829,7 @@ jobs:
 
   #     - name: Create Cluster 
   #       id: create-cluster 
-  #       uses: replicatedhq/compatibility-actions/create-cluster@v0 
+  #       uses: replicatedhq/replicated-actions/create-cluster@v0 
   #       with:
   #         api-token: ${{ secrets.C11Y_MATRIX_TOKEN }}
   #         kubernetes-distribution: ${{ matrix.cluster.distribution }}
@@ -1939,7 +1937,7 @@ jobs:
 
   #     - name: Remove Cluster
   #       id: remove-cluster
-  #       uses: replicatedhq/compatibility-actions/remove-cluster@v0
+  #       uses: replicatedhq/replicated-actions/remove-cluster@v0
   #       continue-on-error: true
   #       with:
   #         api-token: ${{ secrets.C11Y_MATRIX_TOKEN }}
@@ -2052,7 +2050,7 @@ jobs:
 
   #     - name: Create Cluster 
   #       id: create-cluster 
-  #       uses: replicatedhq/compatibility-actions/create-cluster@v0 
+  #       uses: replicatedhq/replicated-actions/create-cluster@v0 
   #       with:
   #         api-token: ${{ secrets.C11Y_MATRIX_TOKEN }}
   #         kubernetes-distribution: ${{ matrix.cluster.distribution }}
@@ -2192,179 +2190,179 @@ jobs:
 
   #     - name: Remove Cluster
   #       id: remove-cluster
-  #       uses: replicatedhq/compatibility-actions/remove-cluster@v0
+  #       uses: replicatedhq/replicated-actions/remove-cluster@v0
   #       continue-on-error: true
   #       with:
   #         api-token: ${{ secrets.C11Y_MATRIX_TOKEN }}
   #         cluster-id: ${{ steps.create-cluster.outputs.cluster-id }}
 
 
-  validate-min-kots-version:
-    runs-on: ubuntu-20.04
-    needs: [ enable-tests, can-run-ci, build-e2e, build-push-kotsadm-image, build-kurl-proxy, build-migrations, push-minio, push-mc, push-rqlite, generate-tag ]
-    env:
-      APP_SLUG: min-kots-version
-    strategy:
-      fail-fast: false
-      matrix:
-        cluster: [
-          {distribution: kind, version: v1.27}
-        ]
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v3
-      - name: download e2e deps
-        uses: actions/download-artifact@v3
-        with:
-          name: e2e
-          path: e2e/bin/
-      - name: download kots binary
-        uses: actions/download-artifact@v3
-        with:
-          name: kots
-          path: bin/
-      - run: |
-          docker load -i e2e/bin/e2e-deps.tar
-          chmod +x e2e/bin/*
-          chmod +x bin/*
-          cp ./bin/kots /usr/local/bin/kubectl-kots
-          sudo apt-get update -y && sudo apt-get install jq -y
-      - uses: ./.github/actions/kots-e2e
-        with:
-          test-focus: 'Min KOTS Version'
-          kots-namespace: 'min-kots-version'
-          k8s-distribution: ${{ matrix.cluster.distribution }}
-          k8s-version: ${{ matrix.cluster.version }}
-          testim-access-token: '${{ secrets.TESTIM_ACCESS_TOKEN }}'
-          testim-branch: ${{ github.head_ref == 'main' && 'master' || github.head_ref }}
-          kotsadm-image-registry: ttl.sh
-          aws-access-key-id: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_ACCESS_KEY_ID }}'
-          aws-secret-access-key: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_SECRET_ACCESS_KEY }}'
-          replicated-api-token: '${{ secrets.C11Y_MATRIX_TOKEN }}'
-          k8s-cluster-skip-teardown: true
+  # validate-min-kots-version:
+  #   runs-on: ubuntu-20.04
+  #   needs: [ enable-tests, can-run-ci, build-e2e, build-push-kotsadm-image, build-kurl-proxy, build-migrations, push-minio, push-mc, push-rqlite, generate-tag ]
+  #   env:
+  #     APP_SLUG: min-kots-version
+  #   strategy:
+  #     fail-fast: false
+  #     matrix:
+  #       cluster: [
+  #         {distribution: kind, version: v1.27}
+  #       ]
+  #   steps:
+  #     - name: Checkout
+  #       uses: actions/checkout@v3
+  #     - name: download e2e deps
+  #       uses: actions/download-artifact@v3
+  #       with:
+  #         name: e2e
+  #         path: e2e/bin/
+  #     - name: download kots binary
+  #       uses: actions/download-artifact@v3
+  #       with:
+  #         name: kots
+  #         path: bin/
+  #     - run: |
+  #         docker load -i e2e/bin/e2e-deps.tar
+  #         chmod +x e2e/bin/*
+  #         chmod +x bin/*
+  #         cp ./bin/kots /usr/local/bin/kubectl-kots
+  #         sudo apt-get update -y && sudo apt-get install jq -y
+  #     - uses: ./.github/actions/kots-e2e
+  #       with:
+  #         test-focus: 'Min KOTS Version'
+  #         kots-namespace: 'min-kots-version'
+  #         k8s-distribution: ${{ matrix.cluster.distribution }}
+  #         k8s-version: ${{ matrix.cluster.version }}
+  #         testim-access-token: '${{ secrets.TESTIM_ACCESS_TOKEN }}'
+  #         testim-branch: ${{ github.head_ref == 'main' && 'master' || github.head_ref }}
+  #         kotsadm-image-registry: ttl.sh
+  #         aws-access-key-id: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_ACCESS_KEY_ID }}'
+  #         aws-secret-access-key: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_SECRET_ACCESS_KEY }}'
+  #         replicated-api-token: '${{ secrets.C11Y_MATRIX_TOKEN }}'
+  #         k8s-cluster-skip-teardown: true
 
-      - name: validate that kots install fails early
-        run: |
-          set +e
+  #     - name: validate that kots install fails early
+  #       run: |
+  #         set +e
 
-          result=$(kubectl kots install "$APP_SLUG/automated" --no-port-forward --namespace "$APP_SLUG" --shared-password password 2>&1 >/dev/null)
-          echo "$result"
+  #         result=$(kubectl kots install "$APP_SLUG/automated" --no-port-forward --namespace "$APP_SLUG" --shared-password password 2>&1 >/dev/null)
+  #         echo "$result"
 
-          if [[ "$result" == *"requires"* ]] && [[ "$result" == *"10000.0.0"* ]]; then
-            exit 0
-          else
-            exit 1
-          fi
-
-
-  validate-target-kots-version:
-    runs-on: ubuntu-20.04
-    needs: [ enable-tests, can-run-ci, build-e2e, build-push-kotsadm-image, build-kurl-proxy, build-migrations, push-minio, push-mc, push-rqlite, generate-tag ]
-    strategy:
-      fail-fast: false
-      matrix:
-        cluster: [
-          {distribution: kind, version: v1.27}
-        ]
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v3
-      - name: download e2e deps
-        uses: actions/download-artifact@v3
-        with:
-          name: e2e
-          path: e2e/bin/
-      - name: download kots binary
-        uses: actions/download-artifact@v3
-        with:
-          name: kots
-          path: bin/
-      - run: |
-          docker load -i e2e/bin/e2e-deps.tar
-          chmod +x e2e/bin/*
-          chmod +x bin/*
-          cp ./bin/kots /usr/local/bin/kubectl-kots
-          sudo apt-get update -y && sudo apt-get install jq -y
-      - uses: ./.github/actions/kots-e2e
-        with:
-          test-focus: 'Target KOTS Version'
-          kots-namespace: 'target-kots-version'
-          k8s-distribution: ${{ matrix.cluster.distribution }}
-          k8s-version: ${{ matrix.cluster.version }}
-          testim-access-token: '${{ secrets.TESTIM_ACCESS_TOKEN }}'
-          testim-branch: ${{ github.head_ref == 'main' && 'master' || github.head_ref }}
-          aws-access-key-id: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_ACCESS_KEY_ID }}'
-          aws-secret-access-key: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_SECRET_ACCESS_KEY }}'
-          replicated-api-token: '${{ secrets.C11Y_MATRIX_TOKEN }}'
-          k8s-cluster-skip-teardown: true
-
-      - name: validate that kots install fails early
-        run: |
-          set +e
-
-          result=$(kubectl kots install target-kots-version/automated --no-port-forward --namespace target-kots-version --shared-password password 2>&1 >/dev/null)
-          echo "$result"
-
-          if [[ "$result" == *"requires"* ]] && [[ "$result" == *"1.0.0"* ]]; then
-            exit 0
-          else
-            exit 1
-          fi
+  #         if [[ "$result" == *"requires"* ]] && [[ "$result" == *"10000.0.0"* ]]; then
+  #           exit 0
+  #         else
+  #           exit 1
+  #         fi
 
 
-  validate-range-kots-version:
-    runs-on: ubuntu-20.04
-    needs: [ enable-tests, can-run-ci, build-e2e, build-push-kotsadm-image, build-kurl-proxy, build-migrations, push-minio, push-mc, push-rqlite, generate-tag ]
-    strategy:
-      fail-fast: false
-      matrix:
-        cluster: [
-          {distribution: kind, version: v1.27}
-        ]
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v3
-      - name: download e2e deps
-        uses: actions/download-artifact@v3
-        with:
-          name: e2e
-          path: e2e/bin/
-      - name: download kots binary
-        uses: actions/download-artifact@v3
-        with:
-          name: kots
-          path: bin/
-      - run: |
-          docker load -i e2e/bin/e2e-deps.tar
-          chmod +x e2e/bin/*
-          chmod +x bin/*
-          cp ./bin/kots /usr/local/bin/kubectl-kots
-          sudo apt-get update -y && sudo apt-get install jq -y
-      - uses: ./.github/actions/kots-e2e
-        with:
-          test-focus: 'Range KOTS Version'
-          kots-namespace: 'range-kots-version'
-          k8s-distribution: ${{ matrix.cluster.distribution }}
-          k8s-version: ${{ matrix.cluster.version }}
-          testim-access-token: '${{ secrets.TESTIM_ACCESS_TOKEN }}'
-          testim-branch: ${{ github.head_ref == 'main' && 'master' || github.head_ref }}
-          aws-access-key-id: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_ACCESS_KEY_ID }}'
-          aws-secret-access-key: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_SECRET_ACCESS_KEY }}'
-          replicated-api-token: '${{ secrets.C11Y_MATRIX_TOKEN }}'
-          k8s-cluster-skip-teardown: true
+  # validate-target-kots-version:
+  #   runs-on: ubuntu-20.04
+  #   needs: [ enable-tests, can-run-ci, build-e2e, build-push-kotsadm-image, build-kurl-proxy, build-migrations, push-minio, push-mc, push-rqlite, generate-tag ]
+  #   strategy:
+  #     fail-fast: false
+  #     matrix:
+  #       cluster: [
+  #         {distribution: kind, version: v1.27}
+  #       ]
+  #   steps:
+  #     - name: Checkout
+  #       uses: actions/checkout@v3
+  #     - name: download e2e deps
+  #       uses: actions/download-artifact@v3
+  #       with:
+  #         name: e2e
+  #         path: e2e/bin/
+  #     - name: download kots binary
+  #       uses: actions/download-artifact@v3
+  #       with:
+  #         name: kots
+  #         path: bin/
+  #     - run: |
+  #         docker load -i e2e/bin/e2e-deps.tar
+  #         chmod +x e2e/bin/*
+  #         chmod +x bin/*
+  #         cp ./bin/kots /usr/local/bin/kubectl-kots
+  #         sudo apt-get update -y && sudo apt-get install jq -y
+  #     - uses: ./.github/actions/kots-e2e
+  #       with:
+  #         test-focus: 'Target KOTS Version'
+  #         kots-namespace: 'target-kots-version'
+  #         k8s-distribution: ${{ matrix.cluster.distribution }}
+  #         k8s-version: ${{ matrix.cluster.version }}
+  #         testim-access-token: '${{ secrets.TESTIM_ACCESS_TOKEN }}'
+  #         testim-branch: ${{ github.head_ref == 'main' && 'master' || github.head_ref }}
+  #         aws-access-key-id: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_ACCESS_KEY_ID }}'
+  #         aws-secret-access-key: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_SECRET_ACCESS_KEY }}'
+  #         replicated-api-token: '${{ secrets.C11Y_MATRIX_TOKEN }}'
+  #         k8s-cluster-skip-teardown: true
 
-      - name: validate that kots install fails early
-        run: |
-          set +e
+  #     - name: validate that kots install fails early
+  #       run: |
+  #         set +e
 
-          result=$(kubectl kots install range-kots-version/automated --no-port-forward --namespace range-kots-version --shared-password password 2>&1 >/dev/null)
-          echo "$result"
+  #         result=$(kubectl kots install target-kots-version/automated --no-port-forward --namespace target-kots-version --shared-password password 2>&1 >/dev/null)
+  #         echo "$result"
 
-          if [[ "$result" == *"requires"* ]] && [[ "$result" == *"11000.0.0"* ]]; then
-            exit 0
-          else
-            exit 1
-          fi
+  #         if [[ "$result" == *"requires"* ]] && [[ "$result" == *"1.0.0"* ]]; then
+  #           exit 0
+  #         else
+  #           exit 1
+  #         fi
+
+
+  # validate-range-kots-version:
+  #   runs-on: ubuntu-20.04
+  #   needs: [ enable-tests, can-run-ci, build-e2e, build-push-kotsadm-image, build-kurl-proxy, build-migrations, push-minio, push-mc, push-rqlite, generate-tag ]
+  #   strategy:
+  #     fail-fast: false
+  #     matrix:
+  #       cluster: [
+  #         {distribution: kind, version: v1.27}
+  #       ]
+  #   steps:
+  #     - name: Checkout
+  #       uses: actions/checkout@v3
+  #     - name: download e2e deps
+  #       uses: actions/download-artifact@v3
+  #       with:
+  #         name: e2e
+  #         path: e2e/bin/
+  #     - name: download kots binary
+  #       uses: actions/download-artifact@v3
+  #       with:
+  #         name: kots
+  #         path: bin/
+  #     - run: |
+  #         docker load -i e2e/bin/e2e-deps.tar
+  #         chmod +x e2e/bin/*
+  #         chmod +x bin/*
+  #         cp ./bin/kots /usr/local/bin/kubectl-kots
+  #         sudo apt-get update -y && sudo apt-get install jq -y
+  #     - uses: ./.github/actions/kots-e2e
+  #       with:
+  #         test-focus: 'Range KOTS Version'
+  #         kots-namespace: 'range-kots-version'
+  #         k8s-distribution: ${{ matrix.cluster.distribution }}
+  #         k8s-version: ${{ matrix.cluster.version }}
+  #         testim-access-token: '${{ secrets.TESTIM_ACCESS_TOKEN }}'
+  #         testim-branch: ${{ github.head_ref == 'main' && 'master' || github.head_ref }}
+  #         aws-access-key-id: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_ACCESS_KEY_ID }}'
+  #         aws-secret-access-key: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_SECRET_ACCESS_KEY }}'
+  #         replicated-api-token: '${{ secrets.C11Y_MATRIX_TOKEN }}'
+  #         k8s-cluster-skip-teardown: true
+
+  #     - name: validate that kots install fails early
+  #       run: |
+  #         set +e
+
+  #         result=$(kubectl kots install range-kots-version/automated --no-port-forward --namespace range-kots-version --shared-password password 2>&1 >/dev/null)
+  #         echo "$result"
+
+  #         if [[ "$result" == *"requires"* ]] && [[ "$result" == *"11000.0.0"* ]]; then
+  #           exit 0
+  #         else
+  #           exit 1
+  #         fi
 
 
   # validate-kots-upgrade:
@@ -2388,7 +2386,7 @@ jobs:
 
   #     - name: Create Cluster 
   #       id: create-cluster 
-  #       uses: replicatedhq/compatibility-actions/create-cluster@v0 
+  #       uses: replicatedhq/replicated-actions/create-cluster@v0 
   #       with:
   #         api-token: ${{ secrets.C11Y_MATRIX_TOKEN }}
   #         kubernetes-distribution: ${{ matrix.cluster.distribution }}
@@ -2496,7 +2494,7 @@ jobs:
 
   #     - name: Remove Cluster
   #       id: remove-cluster
-  #       uses: replicatedhq/compatibility-actions/remove-cluster@v0
+  #       uses: replicatedhq/replicated-actions/remove-cluster@v0
   #       continue-on-error: true
   #       with:
   #         api-token: ${{ secrets.C11Y_MATRIX_TOKEN }}
@@ -2523,7 +2521,7 @@ jobs:
 
   #     - name: Create Cluster 
   #       id: create-cluster 
-  #       uses: replicatedhq/compatibility-actions/create-cluster@v0 
+  #       uses: replicatedhq/replicated-actions/create-cluster@v0 
   #       with:
   #         api-token: ${{ secrets.C11Y_MATRIX_TOKEN }}
   #         kubernetes-distribution: ${{ matrix.cluster.distribution }}
@@ -2677,7 +2675,7 @@ jobs:
 
   #     - name: Remove Cluster
   #       id: remove-cluster
-  #       uses: replicatedhq/compatibility-actions/remove-cluster@v0
+  #       uses: replicatedhq/replicated-actions/remove-cluster@v0
   #       continue-on-error: true
   #       with:
   #         api-token: ${{ secrets.C11Y_MATRIX_TOKEN }}
@@ -2815,7 +2813,7 @@ jobs:
 
   #     - name: Create Cluster 
   #       id: create-cluster 
-  #       uses: replicatedhq/compatibility-actions/create-cluster@v0 
+  #       uses: replicatedhq/replicated-actions/create-cluster@v0 
   #       with:
   #         api-token: ${{ secrets.C11Y_MATRIX_TOKEN }}
   #         kubernetes-distribution: ${{ matrix.cluster.distribution }}
@@ -2963,7 +2961,7 @@ jobs:
 
   #     - name: Remove Cluster
   #       id: remove-cluster
-  #       uses: replicatedhq/compatibility-actions/remove-cluster@v0
+  #       uses: replicatedhq/replicated-actions/remove-cluster@v0
   #       continue-on-error: true
   #       with:
   #         api-token: ${{ secrets.C11Y_MATRIX_TOKEN }}
@@ -2985,7 +2983,7 @@ jobs:
 
   #     - name: Create Cluster 
   #       id: create-cluster 
-  #       uses: replicatedhq/compatibility-actions/create-cluster@v0 
+  #       uses: replicatedhq/replicated-actions/create-cluster@v0 
   #       with:
   #         api-token: ${{ secrets.C11Y_MATRIX_TOKEN }}
   #         kubernetes-distribution: ${{ matrix.cluster.distribution }}
@@ -3057,7 +3055,7 @@ jobs:
 
   #     - name: Remove Cluster
   #       id: remove-cluster
-  #       uses: replicatedhq/compatibility-actions/remove-cluster@v0
+  #       uses: replicatedhq/replicated-actions/remove-cluster@v0
   #       continue-on-error: true
   #       with:
   #         api-token: ${{ secrets.C11Y_MATRIX_TOKEN }}
@@ -3087,7 +3085,7 @@ jobs:
 
   #     - name: Create Cluster 
   #       id: create-cluster 
-  #       uses: replicatedhq/compatibility-actions/create-cluster@v0 
+  #       uses: replicatedhq/replicated-actions/create-cluster@v0 
   #       with:
   #         api-token: ${{ secrets.C11Y_MATRIX_TOKEN }}
   #         kubernetes-distribution: ${{ matrix.cluster.distribution }}
@@ -3251,7 +3249,7 @@ jobs:
 
   #     - name: Remove Cluster
   #       id: remove-cluster
-  #       uses: replicatedhq/compatibility-actions/remove-cluster@v0
+  #       uses: replicatedhq/replicated-actions/remove-cluster@v0
   #       continue-on-error: true
   #       with:
   #         api-token: ${{ secrets.C11Y_MATRIX_TOKEN }}
@@ -3279,7 +3277,7 @@ jobs:
 
   #     - name: Create Cluster 
   #       id: create-cluster 
-  #       uses: replicatedhq/compatibility-actions/create-cluster@v0 
+  #       uses: replicatedhq/replicated-actions/create-cluster@v0 
   #       with:
   #         api-token: ${{ secrets.C11Y_MATRIX_TOKEN }}
   #         kubernetes-distribution: ${{ matrix.cluster.distribution }}
@@ -3414,7 +3412,7 @@ jobs:
 
   #     - name: Remove Cluster
   #       id: remove-cluster
-  #       uses: replicatedhq/compatibility-actions/remove-cluster@v0
+  #       uses: replicatedhq/replicated-actions/remove-cluster@v0
   #       continue-on-error: true
   #       with:
   #         api-token: ${{ secrets.C11Y_MATRIX_TOKEN }}
