@@ -77,8 +77,8 @@ func TestCalculateIngressState(t *testing.T) {
 				r: &networkingv1.Ingress{
 					Spec: networkingv1.IngressSpec{},
 					Status: networkingv1.IngressStatus{
-						LoadBalancer: v1.LoadBalancerStatus{
-							Ingress: []v1.LoadBalancerIngress{
+						LoadBalancer: networkingv1.IngressLoadBalancerStatus{
+							Ingress: []networkingv1.IngressLoadBalancerIngress{
 								{
 									IP: "192.0.0.1",
 								},
@@ -105,8 +105,8 @@ func TestCalculateIngressState(t *testing.T) {
 				r: &networkingv1.Ingress{
 					Spec: networkingv1.IngressSpec{},
 					Status: networkingv1.IngressStatus{
-						LoadBalancer: v1.LoadBalancerStatus{
-							Ingress: []v1.LoadBalancerIngress{
+						LoadBalancer: networkingv1.IngressLoadBalancerStatus{
+							Ingress: []networkingv1.IngressLoadBalancerIngress{
 								{
 									IP: "192.0.0.1",
 								},

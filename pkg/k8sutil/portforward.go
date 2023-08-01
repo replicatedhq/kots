@@ -164,7 +164,7 @@ func PortForward(localPort int, remotePort int, namespace string, getPodName fun
 			// Locks until stopChan is closed or connection to pod is lost.
 			// The main function may timeout before this returns an error
 			forwardErr = forwarder.ForwardPorts()
-			if forwardErr != nil {
+			if !errors.Is(forwardErr, portforward.ErrLostConnectionToPod) {
 				errChan <- errors.Wrap(forwardErr, "forward ports")
 			} else {
 				// Connection to pod was lost or stopChan was closed
