@@ -126,6 +126,35 @@ type KotsKinds struct {
 	LintConfig *kotsv1beta1.LintConfig
 }
 
+func IsKotsKind(apiVersion string, kind string) bool {
+	if apiVersion == "velero.io/v1" && kind == "Backup" {
+		return true
+	}
+	if apiVersion == "kots.io/v1beta1" {
+		return true
+	}
+	if apiVersion == "kots.io/v1beta2" {
+		return true
+	}
+	if apiVersion == "troubleshoot.sh/v1beta2" {
+		return true
+	}
+	if apiVersion == "troubleshoot.replicated.com/v1beta1" {
+		return true
+	}
+	if apiVersion == "cluster.kurl.sh/v1beta1" {
+		return true
+	}
+	if apiVersion == "kurl.sh/v1beta1" {
+		return true
+	}
+	// In addition to kotskinds, we exclude the application crd for now
+	if apiVersion == "app.k8s.io/v1beta1" {
+		return true
+	}
+	return false
+}
+
 func (k *KotsKinds) EncryptConfigValues() error {
 	if k.ConfigValues == nil || k.Config == nil {
 		return nil
@@ -632,15 +661,27 @@ func LoadKotsKindsFromPath(fromDir string) (*KotsKinds, error) {
 				return nil
 			}
 
-			contents, err := ioutil.ReadFile(path)
+			contents, err := os.ReadFile(path)
 			if err != nil {
-				return err
+				return errors.Wrapf(err, "failed to read file %s", path)
+			}
+
+			o := OverlySimpleGVK{}
+
+			if err := yaml.Unmarshal(contents, &o); err != nil {
+				// can't parse as a simple GVK, most probably not a yaml file. log an error based on extension and continue
+				if ext := filepath.Ext(path); ext == ".yaml" || ext == ".yml" {
+					logger.Errorf("Failed to parse yaml file %s: %v", path, err)
+				}
+				return nil
+			}
+
+			if !IsKotsKind(o.APIVersion, o.Kind) {
+				return nil
 			}
 
 			if err := kotsKinds.addKotsKinds(contents); err != nil {
-				// TODO: log something on yaml errors (based on file extention)
-				// No error returned because the file may not be yaml.
-				return nil
+				return errors.Wrapf(err, "failed to add kots kinds from %s", path)
 			}
 
 			return nil

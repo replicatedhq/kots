@@ -9,6 +9,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/k8sdoc"
+	"github.com/replicatedhq/kots/pkg/kotsutil"
 	kotsscheme "github.com/replicatedhq/kotskinds/client/kotsclientset/scheme"
 	troubleshootscheme "github.com/replicatedhq/troubleshoot/pkg/client/troubleshootclientset/scheme"
 	"gopkg.in/yaml.v2"
@@ -191,7 +192,7 @@ func (f BaseFile) ShouldBeIncludedInBaseKustomization(excludeKotsKinds bool) (bo
 
 	// Backup is never deployed. kots.io/exclude and kots.io/when are used to enable snapshots
 	if excludeKotsKinds {
-		if iskotsAPIVersionKind(o) {
+		if kotsutil.IsKotsKind(o.APIVersion, o.Kind) {
 			return false, nil
 		}
 	}
@@ -273,36 +274,7 @@ func (f BaseFile) IsKotsKind() (bool, error) {
 		return false, nil
 	}
 
-	return iskotsAPIVersionKind(o), nil
-}
-
-func iskotsAPIVersionKind(o OverlySimpleGVK) bool {
-	if o.APIVersion == "velero.io/v1" && o.Kind == "Backup" {
-		return true
-	}
-	if o.APIVersion == "kots.io/v1beta1" {
-		return true
-	}
-	if o.APIVersion == "kots.io/v1beta2" {
-		return true
-	}
-	if o.APIVersion == "troubleshoot.sh/v1beta2" {
-		return true
-	}
-	if o.APIVersion == "troubleshoot.replicated.com/v1beta1" {
-		return true
-	}
-	if o.APIVersion == "cluster.kurl.sh/v1beta1" {
-		return true
-	}
-	if o.APIVersion == "kurl.sh/v1beta1" {
-		return true
-	}
-	// In addition to kotskinds, we exclude the application crd for now
-	if o.APIVersion == "app.k8s.io/v1beta1" {
-		return true
-	}
-	return false
+	return kotsutil.IsKotsKind(o.APIVersion, o.Kind), nil
 }
 
 func (b Base) ListErrorFiles() []BaseFile {

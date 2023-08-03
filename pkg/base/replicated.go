@@ -171,11 +171,12 @@ func renderKotsKinds(upstreamFiles []upstreamtypes.UpstreamFile, renderedConfig 
 			if err := yaml.Unmarshal(doc, &gvk); err != nil {
 				continue
 			}
-			gvkString := fmt.Sprintf("%s, Kind=%s", gvk.APIVersion, gvk.Kind)
 
-			if !iskotsAPIVersionKind(gvk) {
+			if !kotsutil.IsKotsKind(gvk.APIVersion, gvk.Kind) {
 				continue
 			}
+
+			gvkString := fmt.Sprintf("%s, Kind=%s", gvk.APIVersion, gvk.Kind)
 
 			switch gvkString {
 			case "kots.io/v1beta1, Kind=Installation":
