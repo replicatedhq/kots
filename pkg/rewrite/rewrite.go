@@ -24,7 +24,6 @@ import (
 	"github.com/replicatedhq/kots/pkg/upstream"
 	upstreamtypes "github.com/replicatedhq/kots/pkg/upstream/types"
 	kotsv1beta1 "github.com/replicatedhq/kotskinds/apis/kots/v1beta1"
-	kustomizetypes "sigs.k8s.io/kustomize/api/types"
 )
 
 type RewriteOptions struct {
@@ -400,27 +399,6 @@ func writeDownstreams(options RewriteOptions, overlaysDir string, m *midstream.M
 		}
 
 		log.FinishSpinner()
-	}
-
-	return nil
-}
-
-func writeCombinedDownstreamBase(downstreamName string, bases []string, renderDir string) error {
-	if _, err := os.Stat(renderDir); os.IsNotExist(err) {
-		if err := os.MkdirAll(renderDir, 0744); err != nil {
-			return errors.Wrap(err, "failed to mkdir")
-		}
-	}
-
-	kustomization := kustomizetypes.Kustomization{
-		TypeMeta: kustomizetypes.TypeMeta{
-			APIVersion: "kustomize.config.k8s.io/v1beta1",
-			Kind:       "Kustomization",
-		},
-		Bases: bases,
-	}
-	if err := k8sutil.WriteKustomizationToFile(kustomization, filepath.Join(renderDir, "kustomization.yaml")); err != nil {
-		return errors.Wrap(err, "failed to write kustomization to file")
 	}
 
 	return nil

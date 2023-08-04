@@ -151,6 +151,11 @@ func (b *Base) writeBase(options WriteOptions, isTopLevelBase bool) ([]string, [
 			APIVersion: "kustomize.config.k8s.io/v1beta1",
 			Kind:       "Kustomization",
 		},
+		MetaData: &kustomizetypes.ObjectMeta{
+			Annotations: map[string]string{
+				"kots.io/kustomization": "base",
+			},
+		},
 		Namespace:             b.Namespace,
 		Resources:             kustomizeResources,
 		PatchesStrategicMerge: kustomizePatches,
