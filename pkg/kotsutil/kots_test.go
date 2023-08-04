@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"testing"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -425,3 +426,95 @@ var _ = Describe("Kots", func() {
 		})
 	})
 })
+
+func TestIsKotsKind(t *testing.T) {
+	type args struct {
+		apiVersion string
+		kind       string
+	}
+	tests := []struct {
+		name string
+		args args
+		want bool
+	}{
+		{
+			name: "velero backup",
+			args: args{
+				apiVersion: "velero.io/v1",
+				kind:       "Backup",
+			},
+			want: true,
+		},
+		{
+			name: "velero other",
+			args: args{
+				apiVersion: "velero.io/v1",
+				kind:       "Blah",
+			},
+			want: false,
+		},
+		{
+			name: "kots.io/v1beta1",
+			args: args{
+				apiVersion: "kots.io/v1beta1",
+			},
+			want: true,
+		},
+		{
+			name: "kots.io/v1beta2",
+			args: args{
+				apiVersion: "kots.io/v1beta2",
+			},
+			want: true,
+		},
+		{
+			name: "troubleshoot.sh/v1beta2",
+			args: args{
+				apiVersion: "troubleshoot.sh/v1beta2",
+			},
+			want: true,
+		},
+		{
+			name: "troubleshoot.replicated.com/v1beta1",
+			args: args{
+				apiVersion: "troubleshoot.replicated.com/v1beta1",
+			},
+			want: true,
+		},
+		{
+			name: "cluster.kurl.sh/v1beta1",
+			args: args{
+				apiVersion: "cluster.kurl.sh/v1beta1",
+			},
+			want: true,
+		},
+		{
+			name: "kurl.sh/v1beta1",
+			args: args{
+				apiVersion: "kurl.sh/v1beta1",
+			},
+			want: true,
+		},
+		{
+			name: "app.k8s.io/v1beta1",
+			args: args{
+				apiVersion: "app.k8s.io/v1beta1",
+			},
+			want: true,
+		},
+		{
+			name: "app.unknown.io/v1",
+			args: args{
+				apiVersion: "app.unknown.io/v1",
+			},
+			want: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := kotsutil.IsKotsKind(tt.args.apiVersion, tt.args.kind); got != tt.want {
+				t.Errorf("IsKotsKind() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
