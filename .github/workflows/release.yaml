@@ -153,22 +153,6 @@ jobs:
     - uses: actions/setup-go@v3
       with:
         go-version: '^1.20.0'
-    # GH Runners have kustomize 5.1.x installed, which is not _yet_ compatible with KOTS
-    - name: install kustomize 5.0.1
-      env:
-        KUSTOMIZE5_VERSION: 5.0.1
-        KUSTOMIZE5_SHA256SUM: dca623b36aef84fbdf28f79d02e9b3705ff641424ac1f872d5420dadb12fb78d
-      run: |
-        mkdir -p /tmp/kustomize \
-          && pushd /tmp/kustomize
-        export KUSTOMIZE5_URL=https://github.com/kubernetes-sigs/kustomize/releases/download/kustomize/v${KUSTOMIZE5_VERSION}/kustomize_v${KUSTOMIZE5_VERSION}_linux_amd64.tar.gz
-        curl -fsSL -o kustomize.tar.gz "${KUSTOMIZE5_URL}" \
-          && echo "${KUSTOMIZE5_SHA256SUM} kustomize.tar.gz" | sha256sum -c - \
-          && tar -xzvf kustomize.tar.gz \
-          && rm kustomize.tar.gz \
-          && chmod a+x kustomize \
-          && mv kustomize /usr/local/bin/kustomize
-        popd
     - name: Checkout
       uses: actions/checkout@v3
     - name: Cache Go modules
