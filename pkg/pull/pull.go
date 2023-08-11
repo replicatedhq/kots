@@ -253,6 +253,11 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 		fetchOptions.LocalPath = airgapAppFiles
 	}
 
+	prevHelmCharts, err := kotsutil.LoadV1Beta1HelmChartsFromPath(pullOptions.RootDir)
+	if err != nil {
+		return "", errors.Wrap(err, "failed to load previous helm charts")
+	}
+
 	log.ActionWithSpinner("Pulling upstream")
 	io.WriteString(pullOptions.ReportWriter, "Pulling upstream\n")
 	u, err := upstream.FetchUpstream(upstreamURI, &fetchOptions)
@@ -348,11 +353,6 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 	}
 
 	if !pullOptions.SkipHelmChartCheck {
-		prevHelmCharts, err := kotsutil.LoadV1Beta1HelmChartsFromPath(pullOptions.RootDir)
-		if err != nil {
-			return "", errors.Wrap(err, "failed to load previous helm charts")
-		}
-
 		for _, prevChart := range prevHelmCharts {
 			if !prevChart.Spec.Exclude.IsEmpty() {
 				isExcluded, err := prevChart.Spec.Exclude.Boolean()
