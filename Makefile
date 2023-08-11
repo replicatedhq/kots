@@ -28,7 +28,7 @@ report-metric:
 
 .PHONY: test
 test:
-	if [ -n $(RUN) ]; then \
+	if [ -n "$(RUN)" ]; then \
 		go test $(TEST_BUILDFLAGS) ./pkg/... ./cmd/... -coverprofile cover.out -run $(RUN); \
 	else \
 		go test $(TEST_BUILDFLAGS) ./pkg/... ./cmd/... -coverprofile cover.out; \

@@ -108,9 +108,9 @@ RUN curl -fsSLO "${KUBECTL_1_27_URL}" \
 ENV KOTS_KUSTOMIZE_BIN_DIR=/usr/local/bin
 
 # Install kustomize 5
-ENV KUSTOMIZE5_VERSION=5.0.1
+ENV KUSTOMIZE5_VERSION=5.1.1
 ENV KUSTOMIZE5_URL=https://github.com/kubernetes-sigs/kustomize/releases/download/kustomize/v${KUSTOMIZE5_VERSION}/kustomize_v${KUSTOMIZE5_VERSION}_linux_amd64.tar.gz
-ENV KUSTOMIZE5_SHA256SUM=dca623b36aef84fbdf28f79d02e9b3705ff641424ac1f872d5420dadb12fb78d
+ENV KUSTOMIZE5_SHA256SUM=3b30477a7ff4fb6547fa77d8117e66d995c2bdd526de0dafbf8b7bcb9556c85d
 RUN curl -fsSL -o kustomize.tar.gz "${KUSTOMIZE5_URL}" \
   && echo "${KUSTOMIZE5_SHA256SUM} kustomize.tar.gz" | sha256sum -c - \
   && tar -xzvf kustomize.tar.gz \
