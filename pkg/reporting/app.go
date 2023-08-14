@@ -196,14 +196,14 @@ func GetReportingInfo(appID string) *types.ReportingInfo {
 	}
 
 	// get kubernetes cluster version
-	k8sVersion, err := k8sutil.GetK8sVersion()
+	k8sVersion, err := k8sutil.GetK8sVersion(clientset)
 	if err != nil {
 		logger.Debugf("failed to get k8s version: %v", err.Error())
 	} else {
 		r.K8sVersion = k8sVersion
 	}
 
-	if distribution := GetDistribution(); distribution != UnknownDistribution {
+	if distribution := GetDistribution(clientset); distribution != UnknownDistribution {
 		r.K8sDistribution = distribution.String()
 	}
 

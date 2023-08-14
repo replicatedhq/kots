@@ -81,11 +81,7 @@ func GetDynamicClient() (dynamic.Interface, error) {
 	return dynamicClient, nil
 }
 
-func GetK8sVersion() (string, error) {
-	clientset, err := GetClientset()
-	if err != nil {
-		return "", errors.Wrap(err, "failed to create kubernetes clientset")
-	}
+func GetK8sVersion(clientset kubernetes.Interface) (string, error) {
 	k8sVersion, err := clientset.Discovery().ServerVersion()
 	if err != nil {
 		return "", errors.Wrap(err, "failed to get kubernetes server version")
