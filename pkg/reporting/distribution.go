@@ -10,25 +10,22 @@ import (
 	"k8s.io/client-go/kubernetes"
 )
 
-func GetDistribution() Distribution {
-	// First try get the special ones. This is because sometimes the server version string is for example GKE, while the actual server is GKE AutoPilot
-	clientset, err := k8sutil.GetClientset()
-	if err == nil {
-		if distribution := distributionFromServerGroupAndResources(clientset); distribution != UnknownDistribution {
-			return distribution
-		}
+func GetDistribution(clientset kubernetes.Interface) Distribution {
+	// First try get the special ones. This is because sometimes we cannot get the distribution from the server version
+	if distribution := distributionFromServerGroupAndResources(clientset); distribution != UnknownDistribution {
+		return distribution
+	}
 
-		if distribution := distributionFromProviderId(clientset); distribution != UnknownDistribution {
-			return distribution
-		}
+	if distribution := distributionFromProviderId(clientset); distribution != UnknownDistribution {
+		return distribution
+	}
 
-		if distribution := distributionFromLabels(clientset); distribution != UnknownDistribution {
-			return distribution
-		}
+	if distribution := distributionFromLabels(clientset); distribution != UnknownDistribution {
+		return distribution
 	}
 
 	// Getting distribution from server version string
-	k8sVersion, err := k8sutil.GetK8sVersion()
+	k8sVersion, err := k8sutil.GetK8sVersion(clientset)
 	if err != nil {
 		logger.Debugf("failed to get k8s version: %v", err.Error())
 		return UnknownDistribution
@@ -44,8 +41,6 @@ func distributionFromServerGroupAndResources(clientset kubernetes.Interface) Dis
 	_, resources, _ := clientset.Discovery().ServerGroupsAndResources()
 	for _, resource := range resources {
 		switch {
-		case strings.HasPrefix(resource.GroupVersion, "auto.gke.io/"):
-			return GKEAutoPilot
 		case strings.HasPrefix(resource.GroupVersion, "apps.openshift.io/"):
 			return OpenShift
 		case strings.HasPrefix(resource.GroupVersion, "run.tanzu.vmware.com/"):
