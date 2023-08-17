@@ -332,7 +332,7 @@ func deduplicateOnContent(files []BaseFile, excludeKotsKinds bool, baseNS string
 func convertToSingleDocBaseFiles(files []BaseFile) []BaseFile {
 	singleDocs := []BaseFile{}
 	for _, file := range files {
-		docs := util.ConvertToSingleDocs(file.Content)
+		docs := util.YAMLBytesToSingleDocs(file.Content)
 		// This is here so as not to change previous behavior
 		if len(docs) == 0 {
 			singleDocs = append(singleDocs, BaseFile{

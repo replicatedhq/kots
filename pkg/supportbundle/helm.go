@@ -1,11 +1,10 @@
 package supportbundle
 
 import (
-	"strings"
-
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/helm"
 	"github.com/replicatedhq/kots/pkg/logger"
+	"github.com/replicatedhq/kots/pkg/util"
 	"github.com/replicatedhq/kotskinds/client/kotsclientset/scheme"
 	troubleshootv1beta2 "github.com/replicatedhq/troubleshoot/pkg/apis/troubleshoot/v1beta2"
 	troubleshootclientsetscheme "github.com/replicatedhq/troubleshoot/pkg/client/troubleshootclientset/scheme"
@@ -25,7 +24,7 @@ func getSupportBundleSpecFromOCI(licenseID string, url string) (*troubleshootv1b
 		return nil, nil, errors.Wrap(err, "failed to load collector spec")
 	}
 
-	multidocs := strings.Split(string(collectorContent), "\n---\n")
+	multidocs := util.YAMLStringToSingleDocs(string(collectorContent))
 
 	// we support both raw collector kinds and supportbundle kinds here
 	supportBundle, err := troubleshootsb.ParseSupportBundleFromDoc([]byte(multidocs[0]))

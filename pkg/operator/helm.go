@@ -4,9 +4,9 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
-	"strings"
 
 	"github.com/pkg/errors"
+	"github.com/replicatedhq/kots/pkg/util"
 )
 
 func getChartsImagePullSecrets(deployedVersionArchive string) ([]string, error) {
@@ -34,7 +34,7 @@ func getChartsImagePullSecrets(deployedVersionArchive string) ([]string, error) 
 			return nil, errors.Wrap(err, "failed to read helm tar.gz file")
 		}
 
-		secrets := strings.Split(string(secretData), "\n---\n")
+		secrets := util.YAMLStringToSingleDocs(string(secretData))
 		imagePullSecrets = append(imagePullSecrets, secrets...)
 	}
 

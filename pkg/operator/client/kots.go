@@ -4,6 +4,7 @@ import (
 	"strings"
 
 	"github.com/pkg/errors"
+	"github.com/replicatedhq/kots/pkg/util"
 	troubleshootclientsetscheme "github.com/replicatedhq/troubleshoot/pkg/client/troubleshootclientset/scheme"
 	"k8s.io/client-go/kubernetes/scheme"
 )
@@ -11,7 +12,7 @@ import (
 func removeInternalGVK(manifests []byte) ([]byte, error) {
 	cleaned := []string{}
 
-	splitRenderedContents := strings.Split(string(manifests), "\n---\n")
+	splitRenderedContents := util.YAMLStringToSingleDocs(string(manifests))
 	troubleshootclientsetscheme.AddToScheme(scheme.Scheme)
 	for _, splitRenderedContent := range splitRenderedContents {
 		decode := scheme.Codecs.UniversalDeserializer().Decode

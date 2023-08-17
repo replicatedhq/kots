@@ -11,6 +11,7 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/pkg/errors"
@@ -128,13 +129,27 @@ func CompareStringArrays(arr1, arr2 []string) bool {
 	return true
 }
 
-func ConvertToSingleDocs(doc []byte) [][]byte {
+func YAMLBytesToSingleDocs(doc []byte) [][]byte {
 	singleDocs := [][]byte{}
 	// replace all windows line endings with unix line endings
 	doc = bytes.ReplaceAll(doc, []byte("\r\n"), []byte("\n"))
 	docs := bytes.Split(doc, []byte("\n---\n"))
 	for _, doc := range docs {
 		if len(bytes.TrimSpace(doc)) == 0 {
+			continue
+		}
+		singleDocs = append(singleDocs, doc)
+	}
+	return singleDocs
+}
+
+func YAMLStringToSingleDocs(doc string) []string {
+	singleDocs := []string{}
+	// replace all windows line endings with unix line endings
+	doc = strings.ReplaceAll(doc, "\r\n", "\n")
+	docs := strings.Split(doc, "\n---\n")
+	for _, doc := range docs {
+		if len(strings.TrimSpace(doc)) == 0 {
 			continue
 		}
 		singleDocs = append(singleDocs, doc)

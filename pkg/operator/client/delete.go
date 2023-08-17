@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/base64"
 	"fmt"
-	"strings"
 	"time"
 
 	"github.com/pkg/errors"
@@ -13,6 +12,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/operator/applier"
 	"github.com/replicatedhq/kots/pkg/operator/types"
+	"github.com/replicatedhq/kots/pkg/util"
 	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
@@ -45,7 +45,7 @@ func (c *Client) diffAndDeleteManifests(opts DiffAndDeleteOptions) error {
 
 	// we need to find the gvk+names that are present in the previous, but not in the current and then remove them
 	// namespaces that were removed from YAML and added to additionalNamespaces should not be removed
-	decodedPreviousStrings := strings.Split(string(decodedPrevious), "\n---\n")
+	decodedPreviousStrings := util.YAMLStringToSingleDocs(string(decodedPrevious))
 
 	type previousObject struct {
 		spec   string
@@ -89,7 +89,7 @@ func (c *Client) diffAndDeleteManifests(opts DiffAndDeleteOptions) error {
 	}
 
 	// now get the current names
-	decodedCurrentStrings := strings.Split(string(decodedCurrent), "\n---\n")
+	decodedCurrentStrings := util.YAMLStringToSingleDocs(string(decodedCurrent))
 	decodedCurrentMap := map[string]string{}
 	for _, decodedCurrentString := range decodedCurrentStrings {
 		k, _ := GetGVKWithNameAndNs([]byte(decodedCurrentString), c.TargetNamespace)

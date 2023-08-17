@@ -11,6 +11,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/logger"
 	upstreamtypes "github.com/replicatedhq/kots/pkg/upstream/types"
+	"github.com/replicatedhq/kots/pkg/util"
 	kotsv1beta1 "github.com/replicatedhq/kotskinds/apis/kots/v1beta1"
 	yaml3 "gopkg.in/yaml.v3"
 )
@@ -23,7 +24,7 @@ import (
 func processVariadicConfig(u *upstreamtypes.UpstreamFile, config *kotsv1beta1.Config, log *logger.CLILogger) ([]byte, error) {
 	var finalDocs [][]byte
 
-	multiDoc := bytes.Split(u.Content, []byte("\n---\n"))
+	multiDoc := util.YAMLBytesToSingleDocs(u.Content)
 
 	for _, doc := range multiDoc {
 		templateMetadata, node, err := getUpstreamTemplateData(doc)
