@@ -732,7 +732,7 @@ func findConfigInRelease(release *Release) *kotsv1beta1.Config {
 	var config *kotsv1beta1.Config
 
 	for _, content := range release.Manifests {
-		docs := util.YAMLBytesToSingleDocs(content)
+		docs := util.ConvertToSingleDocs(content)
 		for _, doc := range docs {
 			decode := scheme.Codecs.UniversalDeserializer().Decode
 			obj, gvk, err := decode(doc, nil, nil)

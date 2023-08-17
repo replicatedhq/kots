@@ -47,7 +47,7 @@ func replaceSecretsWithSealedSecrets(archivePath string, config map[string][]byt
 			return errors.Wrap(err, "failed to read file")
 		}
 
-		multiDocYaml := util.YAMLBytesToSingleDocs(contents)
+		multiDocYaml := util.ConvertToSingleDocs(contents)
 		var secrets [][]byte
 		var nonSecrets [][]byte
 

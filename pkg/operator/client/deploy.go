@@ -125,7 +125,7 @@ func (c *Client) ensureResourcesPresent(deployArgs operatortypes.DeployAppArgs) 
 		return nil, errors.Wrap(err, "failed to decode manifests")
 	}
 
-	manifests := util.YAMLStringToSingleDocs(string(decoded))
+	manifests := util.ConvertToSingleDocs(decoded)
 	resources := decodeManifests(manifests)
 	phases := groupAndSortResourcesForCreation(resources)
 

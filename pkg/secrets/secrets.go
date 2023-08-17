@@ -62,7 +62,7 @@ func findPathsWithSecrets(archiveDir string) ([]string, error) {
 			return err
 		}
 
-		multiDocYaml := util.YAMLBytesToSingleDocs(contents)
+		multiDocYaml := util.ConvertToSingleDocs(contents)
 		for _, doc := range multiDocYaml {
 			_, gvk, err := decode(doc, nil, nil)
 			if err != nil {

@@ -203,7 +203,7 @@ func TestKotsPull(t *testing.T) {
 						return err
 					}
 					require.NoError(t, err, path)
-					contents := util.YAMLBytesToSingleDocs(rawContents)
+					contents := util.ConvertToSingleDocs(rawContents)
 
 					kotsKinds := []*kotsutil.KotsKinds{}
 					for _, content := range contents {
@@ -219,7 +219,7 @@ func TestKotsPull(t *testing.T) {
 						fmt.Printf("unable to open file %s\n", wantPath)
 					}
 					require.NoError(t, err, wantPath)
-					wantContents := util.YAMLBytesToSingleDocs(rawWantContents)
+					wantContents := util.ConvertToSingleDocs(rawWantContents)
 
 					wantKotsKinds := []*kotsutil.KotsKinds{}
 					for _, content := range wantContents {

@@ -24,10 +24,10 @@ func getSupportBundleSpecFromOCI(licenseID string, url string) (*troubleshootv1b
 		return nil, nil, errors.Wrap(err, "failed to load collector spec")
 	}
 
-	multidocs := util.YAMLStringToSingleDocs(string(collectorContent))
+	multidocs := util.ConvertToSingleDocs(collectorContent)
 
 	// we support both raw collector kinds and supportbundle kinds here
-	supportBundle, err := troubleshootsb.ParseSupportBundleFromDoc([]byte(multidocs[0]))
+	supportBundle, err := troubleshootsb.ParseSupportBundleFromDoc(multidocs[0])
 	if err != nil {
 		return nil, nil, errors.Wrap(err, "failed to parse collector")
 	}

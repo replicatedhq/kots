@@ -87,7 +87,7 @@ func renderReplicated(u *upstreamtypes.Upstream, renderOptions *RenderOptions) (
 			// this will prevent errors later from ShouldBeIncludedInBaseKustomization
 			newContent := [][]byte{}
 			isKotsKind := false
-			for _, doc := range util.YAMLBytesToSingleDocs(upstreamFile.Content) {
+			for _, doc := range util.ConvertToSingleDocs(upstreamFile.Content) {
 				file := BaseFile{Path: upstreamFile.Path, Content: doc}
 				// ignore the error here, we will catch it later in ShouldBeIncludedInBaseKustomization
 				if ok, _ := file.IsKotsKind(); ok {
@@ -166,7 +166,7 @@ func renderKotsKinds(upstreamFiles []upstreamtypes.UpstreamFile, renderedConfig 
 	renderedKotsKinds := make(map[string][]byte)
 
 	for _, upstreamFile := range upstreamFiles {
-		for _, doc := range util.YAMLBytesToSingleDocs(upstreamFile.Content) {
+		for _, doc := range util.ConvertToSingleDocs(upstreamFile.Content) {
 			gvk := OverlySimpleGVK{}
 			if err := yaml.Unmarshal(doc, &gvk); err != nil {
 				continue
@@ -447,7 +447,7 @@ func getKotsKinds(u *upstreamtypes.Upstream) (*kotsutil.KotsKinds, error) {
 	kotsKinds := &kotsutil.KotsKinds{}
 
 	for _, file := range u.Files {
-		docs := util.YAMLBytesToSingleDocs(file.Content)
+		docs := util.ConvertToSingleDocs(file.Content)
 		for _, doc := range docs {
 			document := &Document{}
 			if err := yaml.Unmarshal(doc, document); err != nil {

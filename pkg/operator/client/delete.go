@@ -45,15 +45,15 @@ func (c *Client) diffAndDeleteManifests(opts DiffAndDeleteOptions) error {
 
 	// we need to find the gvk+names that are present in the previous, but not in the current and then remove them
 	// namespaces that were removed from YAML and added to additionalNamespaces should not be removed
-	decodedPreviousStrings := util.YAMLStringToSingleDocs(string(decodedPrevious))
+	decodedPreviousDocs := util.ConvertToSingleDocs(decodedPrevious)
 
 	type previousObject struct {
 		spec   string
 		delete bool
 	}
 	decodedPreviousMap := map[string]previousObject{}
-	for _, decodedPreviousString := range decodedPreviousStrings {
-		k, o := GetGVKWithNameAndNs([]byte(decodedPreviousString), c.TargetNamespace)
+	for _, decodedPreviousDoc := range decodedPreviousDocs {
+		k, o := GetGVKWithNameAndNs(decodedPreviousDoc, c.TargetNamespace)
 
 		delete := true
 		if o.APIVersion == "v1" && o.Kind == "Namespace" {
@@ -83,17 +83,17 @@ func (c *Client) diffAndDeleteManifests(opts DiffAndDeleteOptions) error {
 		}
 
 		decodedPreviousMap[k] = previousObject{
-			spec:   decodedPreviousString,
+			spec:   string(decodedPreviousDoc),
 			delete: delete,
 		}
 	}
 
 	// now get the current names
-	decodedCurrentStrings := util.YAMLStringToSingleDocs(string(decodedCurrent))
+	decodedCurrentDocs := util.ConvertToSingleDocs(decodedCurrent)
 	decodedCurrentMap := map[string]string{}
-	for _, decodedCurrentString := range decodedCurrentStrings {
-		k, _ := GetGVKWithNameAndNs([]byte(decodedCurrentString), c.TargetNamespace)
-		decodedCurrentMap[k] = decodedCurrentString
+	for _, decodedCurrentDoc := range decodedCurrentDocs {
+		k, _ := GetGVKWithNameAndNs(decodedCurrentDoc, c.TargetNamespace)
+		decodedCurrentMap[k] = string(decodedCurrentDoc)
 	}
 
 	kubectl, err := binaries.GetKubectlPathForVersion(opts.KubectlVersion)
@@ -114,7 +114,7 @@ func (c *Client) diffAndDeleteManifests(opts DiffAndDeleteOptions) error {
 	kubernetesApplier := applier.NewKubectl(kubectl, kustomize, config)
 
 	// now remove anything that's in previous but not in current
-	manifestsToDelete := []string{}
+	manifestsToDelete := [][]byte{}
 	for k, previous := range decodedPreviousMap {
 		if _, ok := decodedCurrentMap[k]; ok {
 			continue
@@ -122,7 +122,7 @@ func (c *Client) diffAndDeleteManifests(opts DiffAndDeleteOptions) error {
 		if !previous.delete {
 			continue
 		}
-		manifestsToDelete = append(manifestsToDelete, previous.spec)
+		manifestsToDelete = append(manifestsToDelete, []byte(previous.spec))
 	}
 
 	// TODO: return error here?
@@ -131,7 +131,7 @@ func (c *Client) diffAndDeleteManifests(opts DiffAndDeleteOptions) error {
 	return nil
 }
 
-func (c *Client) deleteManifests(manifests []string, kubernetesApplier applier.KubectlInterface, waitFlag bool) {
+func (c *Client) deleteManifests(manifests [][]byte, kubernetesApplier applier.KubectlInterface, waitFlag bool) {
 	resources := decodeManifests(manifests)
 	c.deleteResources(resources, kubernetesApplier, waitFlag)
 }

@@ -24,7 +24,7 @@ import (
 func processVariadicConfig(u *upstreamtypes.UpstreamFile, config *kotsv1beta1.Config, log *logger.CLILogger) ([]byte, error) {
 	var finalDocs [][]byte
 
-	multiDoc := util.YAMLBytesToSingleDocs(u.Content)
+	multiDoc := util.ConvertToSingleDocs(u.Content)
 
 	for _, doc := range multiDoc {
 		templateMetadata, node, err := getUpstreamTemplateData(doc)

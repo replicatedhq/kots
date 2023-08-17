@@ -280,7 +280,7 @@ func TestBase64DecodeInterface(t *testing.T) {
 	}
 }
 
-func TestYAMLBytesToSingleDocs(t *testing.T) {
+func TestConvertToSingleDocs(t *testing.T) {
 	tests := []struct {
 		name string
 		doc  []byte
@@ -319,64 +319,12 @@ func TestYAMLBytesToSingleDocs(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := YAMLBytesToSingleDocs(tt.doc); !reflect.DeepEqual(got, tt.want) {
+			if got := ConvertToSingleDocs(tt.doc); !reflect.DeepEqual(got, tt.want) {
 				for i, doc := range got {
 					t.Logf("got[%d]:\n%s", i, string(doc))
 				}
 				for i, doc := range tt.want {
 					t.Logf("want[%d]:\n%s", i, string(doc))
-				}
-				t.Fatal("ConvertToSingleDocs() mismatch")
-			}
-		})
-	}
-}
-
-func TestYAMLStringToSingleDocs(t *testing.T) {
-	tests := []struct {
-		name string
-		doc  string
-		want []string
-	}{
-		{
-			name: "empty doc",
-			doc:  "",
-			want: []string{},
-		},
-		{
-			name: "single doc",
-			doc:  "abc",
-			want: []string{"abc"},
-		},
-		{
-			name: "multiple docs",
-			doc:  "abc\n---\ndef",
-			want: []string{"abc", "def"},
-		},
-		{
-			name: "multiple docs with empty",
-			doc:  "abc\n---\n\n---\ndef",
-			want: []string{"abc", "def"},
-		},
-		{
-			name: "multiple docs with windows line endings",
-			doc:  "abc\r\n---\r\ndef",
-			want: []string{"abc", "def"},
-		},
-		{
-			name: "multiple docs with empty and windows line endings",
-			doc:  "abc\r\n---\r\n\r\n---\r\ndef",
-			want: []string{"abc", "def"},
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if got := YAMLStringToSingleDocs(tt.doc); !reflect.DeepEqual(got, tt.want) {
-				for i, doc := range got {
-					t.Logf("got[%d]:\n%s", i, doc)
-				}
-				for i, doc := range tt.want {
-					t.Logf("want[%d]:\n%s", i, doc)
 				}
 				t.Fatal("ConvertToSingleDocs() mismatch")
 			}

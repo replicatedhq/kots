@@ -180,7 +180,7 @@ func splitHelmFiles(baseFiles []BaseFile) (rest []BaseFile, crds []BaseFile, sub
 func writeHelmBaseFile(baseFile BaseFile, renderOptions *RenderOptions) ([]BaseFile, error) {
 	multiDoc := [][]byte{}
 	if renderOptions.SplitMultiDocYAML {
-		multiDoc = util.YAMLBytesToSingleDocs(baseFile.Content)
+		multiDoc = util.ConvertToSingleDocs(baseFile.Content)
 	} else {
 		multiDoc = append(multiDoc, baseFile.Content)
 	}

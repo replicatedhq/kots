@@ -34,8 +34,10 @@ func getChartsImagePullSecrets(deployedVersionArchive string) ([]string, error) 
 			return nil, errors.Wrap(err, "failed to read helm tar.gz file")
 		}
 
-		secrets := util.YAMLStringToSingleDocs(string(secretData))
-		imagePullSecrets = append(imagePullSecrets, secrets...)
+		secrets := util.ConvertToSingleDocs(secretData)
+		for _, secret := range secrets {
+			imagePullSecrets = append(imagePullSecrets, string(secret))
+		}
 	}
 
 	return imagePullSecrets, nil

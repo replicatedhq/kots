@@ -1,7 +1,7 @@
 package client
 
 import (
-	"strings"
+	"bytes"
 
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/util"
@@ -10,13 +10,13 @@ import (
 )
 
 func removeInternalGVK(manifests []byte) ([]byte, error) {
-	cleaned := []string{}
+	cleaned := [][]byte{}
 
-	splitRenderedContents := util.YAMLStringToSingleDocs(string(manifests))
+	splitRenderedContents := util.ConvertToSingleDocs(manifests)
 	troubleshootclientsetscheme.AddToScheme(scheme.Scheme)
 	for _, splitRenderedContent := range splitRenderedContents {
 		decode := scheme.Codecs.UniversalDeserializer().Decode
-		_, gvk, err := decode([]byte(splitRenderedContent), nil, nil)
+		_, gvk, err := decode(splitRenderedContent, nil, nil)
 		if err != nil {
 			return nil, errors.Wrap(err, "unable to decode yaml")
 		}
@@ -39,5 +39,5 @@ func removeInternalGVK(manifests []byte) ([]byte, error) {
 		cleaned = append(cleaned, splitRenderedContent)
 	}
 
-	return []byte(strings.Join(cleaned, "\n---\n")), nil
+	return []byte(bytes.Join(cleaned, []byte("\n---\n"))), nil
 }

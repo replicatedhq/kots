@@ -232,7 +232,7 @@ func rewriteImagesInFileBetweenRegistries(srcRegistry, destRegistry dockerregist
 type processImagesFunc func([]string, k8sdoc.K8sDoc) error
 
 func listImagesInFile(contents []byte, handler processImagesFunc) error {
-	yamlDocs := util.YAMLBytesToSingleDocs(contents)
+	yamlDocs := util.ConvertToSingleDocs(contents)
 	for _, yamlDoc := range yamlDocs {
 		parsed, err := k8sdoc.ParseYAML(yamlDoc)
 		if err != nil {

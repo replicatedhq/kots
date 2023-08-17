@@ -474,7 +474,7 @@ func (k *KotsKinds) addKotsKinds(content []byte) error {
 	decode := scheme.Codecs.UniversalDeserializer().Decode
 
 	// kots kinds could be part of a multi-yaml doc
-	docs := util.YAMLBytesToSingleDocs(content)
+	docs := util.ConvertToSingleDocs(content)
 	for _, doc := range docs {
 		decoded, gvk, err := decode(doc, nil, nil)
 		if err != nil {

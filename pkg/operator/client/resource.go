@@ -90,16 +90,16 @@ var (
 	}
 )
 
-func decodeManifests(manifests []string) types.Resources {
+func decodeManifests(manifests [][]byte) types.Resources {
 	resources := types.Resources{}
 
 	for _, manifest := range manifests {
 		resource := types.Resource{
-			Manifest: manifest,
+			Manifest: string(manifest),
 		}
 
 		unstructured := &unstructured.Unstructured{}
-		_, gvk, err := scheme.Codecs.UniversalDeserializer().Decode([]byte(manifest), nil, unstructured)
+		_, gvk, err := scheme.Codecs.UniversalDeserializer().Decode(manifest, nil, unstructured)
 		if err != nil {
 			logger.Infof("error decoding manifest: %v", err.Error())
 			resource.DecodeErrMsg = err.Error()
