@@ -1,0 +1,5 @@
+# NOTE: This file is used to test multi-doc support for CRLF line endings.
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: nginx

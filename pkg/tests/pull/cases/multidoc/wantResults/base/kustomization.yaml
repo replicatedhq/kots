@@ -5,6 +5,9 @@ metadata:
     kots.io/kustomization: base
 resources:
 - subdir/configmap.yaml
+- subdir/nginx-crlf-2.yaml
+- subdir/nginx-crlf-3.yaml
+- subdir/nginx-crlf.yaml
 - subdir/secrets-2.yaml
 - subdir/secrets-3.yaml
 - subdir/secrets.yaml
