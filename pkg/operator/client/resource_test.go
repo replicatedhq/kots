@@ -13,12 +13,12 @@ import (
 func TestDecodeManifests(t *testing.T) {
 	tests := []struct {
 		name     string
-		input    []string
+		input    [][]byte
 		expected types.Resources
 	}{
 		{
 			name: "decodes valid manifest",
-			input: []string{`apiVersion: v1
+			input: [][]byte{[]byte(`apiVersion: v1
 kind: Pod
 metadata:
   name: example
@@ -26,7 +26,7 @@ spec:
   containers:
   - name: example
     image: ubuntu:16.04
-`},
+`)},
 			expected: types.Resources{
 				{
 					Manifest: `apiVersion: v1
@@ -65,7 +65,7 @@ spec:
 		},
 		{
 			name:  "saves error for invalid manifest",
-			input: []string{`invalid manifest`},
+			input: [][]byte{[]byte(`invalid manifest`)},
 			expected: types.Resources{
 				{
 					Manifest:     `invalid manifest`,

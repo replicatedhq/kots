@@ -1,7 +1,6 @@
 package image
 
 import (
-	"bytes"
 	"context"
 	"fmt"
 	"io"
@@ -31,6 +30,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/logger"
 	regsitrytypes "github.com/replicatedhq/kots/pkg/registry/types"
+	"github.com/replicatedhq/kots/pkg/util"
 	kotsv1beta1 "github.com/replicatedhq/kotskinds/apis/kots/v1beta1"
 	"golang.org/x/sync/errgroup"
 	kustomizeimage "sigs.k8s.io/kustomize/api/types"
@@ -232,7 +232,7 @@ func rewriteImagesInFileBetweenRegistries(srcRegistry, destRegistry dockerregist
 type processImagesFunc func([]string, k8sdoc.K8sDoc) error
 
 func listImagesInFile(contents []byte, handler processImagesFunc) error {
-	yamlDocs := bytes.Split(contents, []byte("\n---\n"))
+	yamlDocs := util.ConvertToSingleDocs(contents)
 	for _, yamlDoc := range yamlDocs {
 		parsed, err := k8sdoc.ParseYAML(yamlDoc)
 		if err != nil {

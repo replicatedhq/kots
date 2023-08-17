@@ -22,7 +22,7 @@ type OverlySimpleMetadata struct {
 
 func SplitYAML(input []byte) (map[string][]byte, error) {
 	outputFiles := map[string][]byte{}
-	docs := bytes.Split(input, []byte("\n---\n"))
+	docs := ConvertToSingleDocs(input)
 
 	for _, doc := range docs {
 		if bytes.HasPrefix(doc, []byte("---\n")) {

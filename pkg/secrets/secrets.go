@@ -1,7 +1,6 @@
 package secrets
 
 import (
-	"bytes"
 	"context"
 	"io/ioutil"
 	"os"
@@ -63,7 +62,7 @@ func findPathsWithSecrets(archiveDir string) ([]string, error) {
 			return err
 		}
 
-		multiDocYaml := bytes.Split(contents, []byte("\n---\n"))
+		multiDocYaml := util.ConvertToSingleDocs(contents)
 		for _, doc := range multiDocYaml {
 			_, gvk, err := decode(doc, nil, nil)
 			if err != nil {

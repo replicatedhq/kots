@@ -1,7 +1,6 @@
 package base
 
 import (
-	"bytes"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -181,7 +180,7 @@ func splitHelmFiles(baseFiles []BaseFile) (rest []BaseFile, crds []BaseFile, sub
 func writeHelmBaseFile(baseFile BaseFile, renderOptions *RenderOptions) ([]BaseFile, error) {
 	multiDoc := [][]byte{}
 	if renderOptions.SplitMultiDocYAML {
-		multiDoc = bytes.Split(baseFile.Content, []byte("\n---\n"))
+		multiDoc = util.ConvertToSingleDocs(baseFile.Content)
 	} else {
 		multiDoc = append(multiDoc, baseFile.Content)
 	}

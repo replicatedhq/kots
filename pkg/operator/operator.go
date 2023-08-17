@@ -10,7 +10,6 @@ import (
 	"os"
 	"path/filepath"
 	"strconv"
-	"strings"
 	"sync"
 	"time"
 
@@ -336,7 +335,10 @@ func (o *Operator) DeployApp(appID string, sequence int64) (deployed bool, deplo
 		if err != nil {
 			return false, errors.Wrap(err, "failed to read image pull secret file")
 		}
-		imagePullSecrets = strings.Split(string(b), "\n---\n")
+		secrets := util.ConvertToSingleDocs(b)
+		for _, secret := range secrets {
+			imagePullSecrets = append(imagePullSecrets, string(secret))
+		}
 	}
 
 	chartPullSecrets, err := getChartsImagePullSecrets(deployedVersionArchive)

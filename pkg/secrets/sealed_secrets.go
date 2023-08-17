@@ -5,16 +5,17 @@ import (
 	"crypto/rsa"
 	"crypto/x509"
 	"encoding/pem"
+	"io/ioutil"
+	"os"
+
 	sealedsecretsv1alpha1 "github.com/bitnami-labs/sealed-secrets/pkg/apis/sealed-secrets/v1alpha1"
 	sealedsecretsscheme "github.com/bitnami-labs/sealed-secrets/pkg/client/clientset/versioned/scheme"
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/util"
-	"io/ioutil"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
 	jsonserializer "k8s.io/apimachinery/pkg/runtime/serializer/json"
 	"k8s.io/client-go/kubernetes/scheme"
-	"os"
 )
 
 func replaceSecretsWithSealedSecrets(archivePath string, config map[string][]byte) error {
@@ -46,7 +47,7 @@ func replaceSecretsWithSealedSecrets(archivePath string, config map[string][]byt
 			return errors.Wrap(err, "failed to read file")
 		}
 
-		multiDocYaml := bytes.Split(contents, []byte("\n---\n"))
+		multiDocYaml := util.ConvertToSingleDocs(contents)
 		var secrets [][]byte
 		var nonSecrets [][]byte
 

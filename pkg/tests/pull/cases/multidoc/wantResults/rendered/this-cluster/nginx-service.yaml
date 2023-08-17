@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: Service
+metadata:
+  annotations:
+    kots.io/app-slug: my-app
+  labels:
+    app: nginx
+    kots.io/app-slug: my-app
+    kots.io/backup: velero
+  name: nginx
+spec:
+  ports:
+  - name: web
+    port: 80

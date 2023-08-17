@@ -1,6 +1,7 @@
 package util
 
 import (
+	"reflect"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -275,6 +276,58 @@ func TestBase64DecodeInterface(t *testing.T) {
 				req.NoError(err)
 			}
 			req.Equal(tt.want, got)
+		})
+	}
+}
+
+func TestConvertToSingleDocs(t *testing.T) {
+	tests := []struct {
+		name string
+		doc  []byte
+		want [][]byte
+	}{
+		{
+			name: "empty doc",
+			doc:  []byte(""),
+			want: [][]byte{},
+		},
+		{
+			name: "single doc",
+			doc:  []byte("abc"),
+			want: [][]byte{[]byte("abc")},
+		},
+		{
+			name: "multiple docs",
+			doc:  []byte("abc\n---\ndef"),
+			want: [][]byte{[]byte("abc"), []byte("def")},
+		},
+		{
+			name: "multiple docs with empty",
+			doc:  []byte("abc\n---\n\n---\ndef"),
+			want: [][]byte{[]byte("abc"), []byte("def")},
+		},
+		{
+			name: "multiple docs with windows line endings",
+			doc:  []byte("abc\r\n---\r\ndef"),
+			want: [][]byte{[]byte("abc"), []byte("def")},
+		},
+		{
+			name: "multiple docs with empty and windows line endings",
+			doc:  []byte("abc\r\n---\r\n\r\n---\r\ndef"),
+			want: [][]byte{[]byte("abc"), []byte("def")},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := ConvertToSingleDocs(tt.doc); !reflect.DeepEqual(got, tt.want) {
+				for i, doc := range got {
+					t.Logf("got[%d]:\n%s", i, string(doc))
+				}
+				for i, doc := range tt.want {
+					t.Logf("want[%d]:\n%s", i, string(doc))
+				}
+				t.Fatal("ConvertToSingleDocs() mismatch")
+			}
 		})
 	}
 }
