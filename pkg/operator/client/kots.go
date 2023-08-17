@@ -39,5 +39,5 @@ func removeInternalGVK(manifests []byte) ([]byte, error) {
 		cleaned = append(cleaned, splitRenderedContent)
 	}
 
-	return []byte(bytes.Join(cleaned, []byte("\n---\n"))), nil
+	return bytes.Join(cleaned, []byte("\n---\n")), nil
 }
