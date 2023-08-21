@@ -1107,50 +1107,8 @@ jobs:
       - name: reserve capacity
         run: |
           # https://cloud.google.com/kubernetes-engine/docs/how-to/capacity-provisioning
-
-          echo 'apiVersion: scheduling.k8s.io/v1
-          kind: PriorityClass
-          metadata:
-            name: low-priority
-          value: -10
-          preemptionPolicy: Never
-          globalDefault: false
-          description: "Low priority workloads"
-          ---
-          apiVersion: scheduling.k8s.io/v1
-          kind: PriorityClass
-          metadata:
-            name: default-priority
-          value: 0
-          preemptionPolicy: PreemptLowerPriority
-          globalDefault: true
-          description: "The global default priority."' | kubectl apply -f -
-
-          echo 'apiVersion: batch/v1
-          kind: Job
-          metadata:
-            name: capacity-res-job
-          spec:
-            parallelism: 4
-            backoffLimit: 0
-            template:
-              metadata:
-                labels:
-                  app: capacity-res-job
-              spec:
-                priorityClassName: low-priority
-                terminationGracePeriodSeconds: 0
-                containers:
-                - name: busybox
-                  image: busybox
-                  command: ["sh", "-c", "sleep 3600"]
-                  resources:
-                    requests:
-                      cpu: "250m"
-                restartPolicy: Never' | kubectl apply -f -
-
+          kubectl apply -f ./.github/actions/kots-gke-create/reserve-capacity.yaml
           sleep 10
-
           kubectl wait pod -l app=capacity-res-job --for=condition=Ready --timeout=600s --all
 
       - name: run the test
