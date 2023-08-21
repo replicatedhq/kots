@@ -1130,12 +1130,13 @@ jobs:
           kind: Job
           metadata:
             name: capacity-res-job
-            labels:
-              app: capacity-res-job
           spec:
             parallelism: 4
             backoffLimit: 0
             template:
+              metadata:
+                labels:
+                  app: capacity-res-job
               spec:
                 priorityClassName: low-priority
                 terminationGracePeriodSeconds: 0
