@@ -1148,6 +1148,8 @@ jobs:
                       cpu: "250m"
                 restartPolicy: Never' | kubectl apply -f -
 
+          sleep 10
+
           kubectl wait pod -l app=capacity-res-job --for=condition=Ready --timeout=600s --all
 
       - name: run the test
