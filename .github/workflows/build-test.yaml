@@ -1104,6 +1104,13 @@ jobs:
 
       - run: chmod +x bin/kots
 
+      - name: reserve capacity
+        run: |
+          # https://cloud.google.com/kubernetes-engine/docs/how-to/capacity-provisioning
+          kubectl apply -f ./.github/actions/kots-gke-create/reserve-capacity.yaml
+          sleep 10
+          kubectl wait pod -l app=capacity-res-job --for=condition=Ready --timeout=600s --all
+
       - name: run the test
         run: |
           set +e
