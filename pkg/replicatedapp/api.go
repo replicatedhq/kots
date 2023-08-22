@@ -1,12 +1,18 @@
 package replicatedapp
 
 import (
+	"bytes"
+	"encoding/json"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"net/http"
 	"net/url"
 
 	"github.com/pkg/errors"
+	apptypes "github.com/replicatedhq/kots/pkg/app/types"
+	"github.com/replicatedhq/kots/pkg/logger"
+	"github.com/replicatedhq/kots/pkg/reporting"
 	"github.com/replicatedhq/kots/pkg/util"
 	kotsv1beta1 "github.com/replicatedhq/kotskinds/apis/kots/v1beta1"
 	"github.com/replicatedhq/kotskinds/client/kotsclientset/scheme"
@@ -164,4 +170,47 @@ func getApplicationMetadataFromHost(host string, endpoint string, upstream *url.
 	}
 
 	return respBody, nil
+}
+
+func SetApplicationMetricsData(license *kotsv1beta1.License, app *apptypes.App, data map[string]interface{}) error {
+	url := fmt.Sprintf("%s/TODO/metrics", license.Spec.Endpoint)
+
+	payload := struct {
+		Data map[string]interface{} `json:"data"`
+	}{
+		Data: data,
+	}
+
+	reqBody, err := json.Marshal(payload)
+	if err != nil {
+		return errors.Wrap(err, "marshal data")
+	}
+
+	req, err := util.NewRequest("POST", url, bytes.NewBuffer(reqBody))
+	if err != nil {
+		return errors.Wrap(err, "call newrequest")
+	}
+	req.Header.Set("Content-Type", "application/json")
+
+	reportingInfo := reporting.GetReportingInfo(app.ID)
+	reporting.InjectReportingInfoHeaders(req, reportingInfo)
+
+	req.SetBasicAuth(license.Spec.LicenseID, license.Spec.LicenseID)
+
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return errors.Wrap(err, "execute request")
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode >= 400 {
+		respBody, err := io.ReadAll(resp.Body)
+		if err != nil {
+			logger.Warnf("failed to read metrics response body: %v", err)
+		}
+
+		return errors.Errorf("unexpected result from post request: %d, data: %s", resp.StatusCode, respBody)
+	}
+
+	return nil
 }

@@ -75,6 +75,21 @@ func (m *Middleware) EnforceAccess(p *Policy, handler http.HandlerFunc) http.Han
 	}
 }
 
+func (m *Middleware) EnforceLicense(handler http.HandlerFunc) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		license := session.ContextGetLicense(r)
+		if license == nil {
+			err := errors.New("no valid license for request")
+			logger.Error(err)
+			w.WriteHeader(http.StatusForbidden)
+			w.Write([]byte(err.Error()))
+			return
+		}
+
+		handler(w, r)
+	}
+}
+
 // TODO: move everything below here to a shared package
 
 type ErrorResponse struct {

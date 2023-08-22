@@ -343,6 +343,12 @@ func RegisterUnauthenticatedRoutes(handler *Handler, kotsStore store.Store, debu
 	loggingRouter.Path("/license/v1/license").Methods("GET").HandlerFunc(handler.GetPlatformLicenseCompatibility)
 }
 
+func RegisterLicenseIDAuthRoutes(r *mux.Router, kotsStore store.Store, handler KOTSHandler, middleware *policy.Middleware) {
+	r.Use(LoggingMiddleware, RequireValidLicenseMiddleware(kotsStore))
+	r.Name("SetApplicationMetrics").Path("/api/v1/application/metrics").Methods("POST").
+		HandlerFunc(middleware.EnforceLicense(handler.SetApplicationMetrics))
+}
+
 func StreamJSON(c *websocket.Conn, payload interface{}) {
 	response, err := json.Marshal(payload)
 	if err != nil {

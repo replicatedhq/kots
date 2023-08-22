@@ -1246,6 +1246,18 @@ func (mr *MockKOTSHandlerMockRecorder) SetAppConfigValues(w, r interface{}) *gom
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetAppConfigValues", reflect.TypeOf((*MockKOTSHandler)(nil).SetAppConfigValues), w, r)
 }
 
+// SetApplicationMetrics mocks base method.
+func (m *MockKOTSHandler) SetApplicationMetrics(w http.ResponseWriter, r *http.Request) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "SetApplicationMetrics", w, r)
+}
+
+// SetApplicationMetrics indicates an expected call of SetApplicationMetrics.
+func (mr *MockKOTSHandlerMockRecorder) SetApplicationMetrics(w, r interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetApplicationMetrics", reflect.TypeOf((*MockKOTSHandler)(nil).SetApplicationMetrics), w, r)
+}
+
 // SetAutomaticUpdatesConfig mocks base method.
 func (m *MockKOTSHandler) SetAutomaticUpdatesConfig(w http.ResponseWriter, r *http.Request) {
 	m.ctrl.T.Helper()
