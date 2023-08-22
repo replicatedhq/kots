@@ -107,3 +107,21 @@ func RequireValidSessionQuietMiddleware(kotsStore store.Store) mux.MiddlewareFun
 		})
 	}
 }
+
+func RequireValidLicenseMiddleware(kotsStore store.Store) mux.MiddlewareFunc {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			license, app, err := requireValidLicense(kotsStore, w, r)
+			if err != nil {
+				if !kotsStore.IsNotFound(err) {
+					logger.Error(errors.Wrapf(err, "request %q", r.RequestURI))
+				}
+				return
+			}
+
+			r = session.ContextSetLicense(r, license)
+			r = session.ContextSetApp(r, app)
+			next.ServeHTTP(w, r)
+		})
+	}
+}
