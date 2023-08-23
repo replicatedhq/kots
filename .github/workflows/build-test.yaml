@@ -625,11 +625,13 @@ jobs:
         with:
           kots-namespace: 'qakotsregression'
           test-focus: 'Regression'
-          k8s-version: 'v1.26.1-k3s1'
+          k8s-distribution: k3s
+          k8s-version: v1.26
           testim-branch: ${{ github.head_ref == 'main' && 'master' || github.head_ref }}
           testim-access-token: '${{ secrets.TESTIM_ACCESS_TOKEN }}'
           aws-access-key-id: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_ACCESS_KEY_ID }}'
           aws-secret-access-key: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_SECRET_ACCESS_KEY }}'
+          replicated-api-token: '${{ secrets.C11Y_MATRIX_TOKEN }}'
 
 
   validate-smoke-test:
@@ -638,7 +640,12 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        k8s_version: [ v1.24.9-k3s2,v1.25.6-k3s1,v1.26.1-k3s1,v1.27.1-k3s1 ]
+        cluster: [
+          {distribution: k3s, version: v1.24},
+          {distribution: k3s, version: v1.25},
+          {distribution: k3s, version: v1.26},
+          {distribution: eks, version: v1.27}
+        ]
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -659,12 +666,13 @@ jobs:
         with:
           test-focus: 'Smoke Test'
           kots-namespace: 'smoke-test'
-          k8s-version: '${{ matrix.k8s_version }}'
-          k8s-arguments: ${{ startsWith(matrix.k8s_version, 'v1.22') && '--egress-selector-mode disabled' || '' }}
+          k8s-distribution: ${{ matrix.cluster.distribution }}
+          k8s-version: ${{ matrix.cluster.version }}
           testim-access-token: '${{ secrets.TESTIM_ACCESS_TOKEN }}'
           testim-branch: ${{ github.head_ref == 'main' && 'master' || github.head_ref }}
           aws-access-key-id: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_ACCESS_KEY_ID }}'
           aws-secret-access-key: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_SECRET_ACCESS_KEY }}'
+          replicated-api-token: '${{ secrets.C11Y_MATRIX_TOKEN }}'
 
 
   validate-minimal-rbac:
@@ -673,7 +681,12 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        k8s_version: [ v1.24.9-k3s2,v1.25.6-k3s1,v1.26.1-k3s1,v1.27.1-k3s1 ]
+        cluster: [
+          {distribution: k3s, version: v1.24},
+          {distribution: k3s, version: v1.25},
+          {distribution: k3s, version: v1.26},
+          {distribution: eks, version: v1.27}
+        ]
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -694,12 +707,13 @@ jobs:
         with:
           test-focus: 'Minimal RBAC'
           kots-namespace: 'minimal-rbac'
-          k8s-version: '${{ matrix.k8s_version }}'
-          k8s-arguments: ${{ startsWith(matrix.k8s_version, 'v1.22') && '--egress-selector-mode disabled' || '' }}
+          k8s-distribution: ${{ matrix.cluster.distribution }}
+          k8s-version: ${{ matrix.cluster.version }}
           testim-access-token: '${{ secrets.TESTIM_ACCESS_TOKEN }}'
           testim-branch: ${{ github.head_ref == 'main' && 'master' || github.head_ref }}
           aws-access-key-id: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_ACCESS_KEY_ID }}'
           aws-secret-access-key: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_SECRET_ACCESS_KEY }}'
+          replicated-api-token: '${{ secrets.C11Y_MATRIX_TOKEN }}'
 
 
   validate-backup-and-restore:
@@ -708,7 +722,12 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        k8s_version: [ v1.24.9-k3s2,v1.25.6-k3s1,v1.26.1-k3s1,v1.27.1-k3s1 ]
+        cluster: [
+          {distribution: k3s, version: v1.24},
+          {distribution: k3s, version: v1.25},
+          {distribution: k3s, version: v1.26},
+          {distribution: eks, version: v1.27}
+        ]
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -729,12 +748,13 @@ jobs:
         with:
           test-focus: 'Backup and Restore'
           kots-namespace: 'backup-and-restore'
-          k8s-version: '${{ matrix.k8s_version }}'
-          k8s-arguments: ${{ startsWith(matrix.k8s_version, 'v1.22') && '--egress-selector-mode disabled' || '' }}
+          k8s-distribution: ${{ matrix.cluster.distribution }}
+          k8s-version: ${{ matrix.cluster.version }}
           testim-access-token: '${{ secrets.TESTIM_ACCESS_TOKEN }}'
           testim-branch: ${{ github.head_ref == 'main' && 'master' || github.head_ref }}
           aws-access-key-id: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_ACCESS_KEY_ID }}'
           aws-secret-access-key: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_SECRET_ACCESS_KEY }}'
+          replicated-api-token: '${{ secrets.C11Y_MATRIX_TOKEN }}'
 
 
   validate-no-required-config:
@@ -743,7 +763,9 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        k8s_version: [ v1.27.1-k3s1 ] # there's no need to run this test on multiple k3s versions
+        cluster: [
+          {distribution: kind, version: v1.27}
+        ]
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -764,12 +786,13 @@ jobs:
         with:
           test-focus: 'No Required Config'
           kots-namespace: 'no-required-config'
-          k8s-version: '${{ matrix.k8s_version }}'
-          k8s-arguments: ${{ startsWith(matrix.k8s_version, 'v1.22') && '--egress-selector-mode disabled' || '' }}
+          k8s-distribution: ${{ matrix.cluster.distribution }}
+          k8s-version: ${{ matrix.cluster.version }}
           testim-access-token: '${{ secrets.TESTIM_ACCESS_TOKEN }}'
           testim-branch: ${{ github.head_ref == 'main' && 'master' || github.head_ref }}
           aws-access-key-id: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_ACCESS_KEY_ID }}'
           aws-secret-access-key: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_SECRET_ACCESS_KEY }}'
+          replicated-api-token: '${{ secrets.C11Y_MATRIX_TOKEN }}'
 
 
   validate-strict-preflight-checks:
@@ -778,7 +801,9 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        k8s_version: [ v1.27.1-k3s1 ] # there's no need to run this test on multiple k3s versions
+        cluster: [
+          {distribution: kind, version: v1.27}
+        ]
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -799,12 +824,13 @@ jobs:
         with:
           test-focus: 'Strict Preflight Checks'
           kots-namespace: 'strict-preflight-checks'
-          k8s-version: '${{ matrix.k8s_version }}'
-          k8s-arguments: ${{ startsWith(matrix.k8s_version, 'v1.22') && '--egress-selector-mode disabled' || '' }}
+          k8s-distribution: ${{ matrix.cluster.distribution }}
+          k8s-version: ${{ matrix.cluster.version }}
           testim-access-token: '${{ secrets.TESTIM_ACCESS_TOKEN }}'
           testim-branch: ${{ github.head_ref == 'main' && 'master' || github.head_ref }}
           aws-access-key-id: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_ACCESS_KEY_ID }}'
           aws-secret-access-key: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_SECRET_ACCESS_KEY }}'
+          replicated-api-token: '${{ secrets.C11Y_MATRIX_TOKEN }}'
 
 
   validate-config:
@@ -813,7 +839,9 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        k8s_version: [ v1.27.1-k3s1 ] # there's no need to run this test on multiple k3s versions
+        cluster: [
+          {distribution: kind, version: v1.27}
+        ]
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -834,12 +862,13 @@ jobs:
         with:
           test-focus: 'Config Validation'
           kots-namespace: 'config-validation'
-          k8s-version: '${{ matrix.k8s_version }}'
-          k8s-arguments: ${{ startsWith(matrix.k8s_version, 'v1.22') && '--egress-selector-mode disabled' || '' }}
+          k8s-distribution: ${{ matrix.cluster.distribution }}
+          k8s-version: ${{ matrix.cluster.version }}
           testim-access-token: '${{ secrets.TESTIM_ACCESS_TOKEN }}'
           testim-branch: ${{ github.head_ref == 'main' && 'master' || github.head_ref }}
           aws-access-key-id: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_ACCESS_KEY_ID }}'
           aws-secret-access-key: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_SECRET_ACCESS_KEY }}'
+          replicated-api-token: '${{ secrets.C11Y_MATRIX_TOKEN }}'
 
 
   validate-version-history-pagination:
@@ -848,7 +877,9 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        k8s_version: [ v1.27.1-k3s1 ] # there's no need to run this test on multiple k3s versions
+        cluster: [
+          {distribution: k3s-local, version: v1.27.1-k3s1}
+        ]
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -869,8 +900,8 @@ jobs:
         with:
           test-focus: 'Version History Pagination'
           kots-namespace: 'version-history-pagination'
-          k8s-version: '${{ matrix.k8s_version }}'
-          k8s-arguments: ${{ startsWith(matrix.k8s_version, 'v1.22') && '--egress-selector-mode disabled' || '' }}
+          k8s-distribution: ${{ matrix.cluster.distribution }}
+          k8s-version: ${{ matrix.cluster.version }}
           testim-access-token: '${{ secrets.TESTIM_ACCESS_TOKEN }}'
           testim-branch: ${{ github.head_ref == 'main' && 'master' || github.head_ref }}
           aws-access-key-id: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_ACCESS_KEY_ID }}'
@@ -883,7 +914,9 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        k8s_version: [ v1.27.1-k3s1 ] # there's no need to run this test on multiple k3s versions
+        cluster: [
+          {distribution: kind, version: v1.27}
+        ]
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -904,12 +937,13 @@ jobs:
         with:
           test-focus: 'Change License'
           kots-namespace: 'change-license'
-          k8s-version: '${{ matrix.k8s_version }}'
-          k8s-arguments: ${{ startsWith(matrix.k8s_version, 'v1.22') && '--egress-selector-mode disabled' || '' }}
+          k8s-distribution: ${{ matrix.cluster.distribution }}
+          k8s-version: ${{ matrix.cluster.version }}
           testim-access-token: '${{ secrets.TESTIM_ACCESS_TOKEN }}'
           testim-branch: ${{ github.head_ref == 'main' && 'master' || github.head_ref }}
           aws-access-key-id: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_ACCESS_KEY_ID }}'
           aws-secret-access-key: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_SECRET_ACCESS_KEY }}'
+          replicated-api-token: '${{ secrets.C11Y_MATRIX_TOKEN }}'
 
 
   validate-minimal-rbac-override:
@@ -918,7 +952,12 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        k8s_version: [ v1.24.9-k3s2,v1.25.6-k3s1,v1.26.1-k3s1,v1.27.1-k3s1 ]
+        cluster: [
+          {distribution: k3s, version: v1.24},
+          {distribution: k3s, version: v1.25},
+          {distribution: k3s, version: v1.26},
+          {distribution: kind, version: v1.27.0}
+        ] 
     env:
       APP_SLUG: minimal-rbac
       APP_VERSION_LABEL: "0.0.1"
@@ -926,10 +965,17 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
 
-      - uses: replicatedhq/action-k3s@main
+      - name: Create Cluster 
+        id: create-cluster 
+        uses: replicatedhq/replicated-actions/create-cluster@v0 
         with:
-          version: ${{ matrix.k8s_version }}
-          arguments: ${{ startsWith(matrix.k8s_version, 'v1.22') && '--egress-selector-mode disabled' || '' }}
+          api-token: ${{ secrets.C11Y_MATRIX_TOKEN }}
+          kubernetes-distribution: ${{ matrix.cluster.distribution }}
+          kubernetes-version: ${{ matrix.cluster.version }}
+          cluster-name: ${{ github.ref_name }}-${{ matrix.cluster.distribution }}-${{ matrix.cluster.version }}
+          timeout-minutes: '120'
+          ttl: 2h
+          export-kubeconfig: true
 
       - name: download kots binary
         uses: actions/download-artifact@v3
@@ -992,6 +1038,14 @@ jobs:
           aws-access-key-id: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_ACCESS_KEY_ID }}'
           aws-secret-access-key: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_SECRET_ACCESS_KEY }}'
 
+      - name: Remove Cluster
+        id: remove-cluster
+        uses: replicatedhq/replicated-actions/remove-cluster@v0
+        continue-on-error: true
+        with:
+          api-token: ${{ secrets.C11Y_MATRIX_TOKEN }}
+          cluster-id: ${{ steps.create-cluster.outputs.cluster-id }}
+
 
   validate-multi-namespace:
     runs-on: ubuntu-20.04
@@ -999,7 +1053,12 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        k8s_version: [ v1.24.9-k3s2,v1.25.6-k3s1,v1.26.1-k3s1,v1.27.1-k3s1 ]
+        cluster: [
+          {distribution: k3s, version: v1.24},
+          {distribution: k3s, version: v1.25},
+          {distribution: k3s, version: v1.26},
+          {distribution: kind, version: v1.27.0}
+        ] 
     env:
       APP_SLUG: multi-namespace-yeti
     steps:
@@ -1010,10 +1069,17 @@ jobs:
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
 
-      - uses: replicatedhq/action-k3s@main
+      - name: Create Cluster 
+        id: create-cluster
+        uses: replicatedhq/replicated-actions/create-cluster@v0 
         with:
-          version: ${{ matrix.k8s_version }}
-          arguments: ${{ startsWith(matrix.k8s_version, 'v1.22') && '--egress-selector-mode disabled' || '' }}
+          api-token: ${{ secrets.C11Y_MATRIX_TOKEN }}
+          kubernetes-distribution: ${{ matrix.cluster.distribution }}
+          kubernetes-version: ${{ matrix.cluster.version }}
+          cluster-name: ${{ github.ref_name }}-${{ matrix.cluster.distribution }}-${{ matrix.cluster.version }}
+          timeout-minutes: '120'
+          ttl: 2h
+          export-kubeconfig: true
 
       - name: download kots binary
         uses: actions/download-artifact@v3
@@ -1080,6 +1146,14 @@ jobs:
           kots-namespace: "$APP_SLUG"
           aws-access-key-id: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_ACCESS_KEY_ID }}'
           aws-secret-access-key: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_SECRET_ACCESS_KEY }}'
+  
+      - name: Remove Cluster
+        id: remove-cluster
+        uses: replicatedhq/replicated-actions/remove-cluster@v0
+        continue-on-error: true
+        with:
+          api-token: ${{ secrets.C11Y_MATRIX_TOKEN }}
+          cluster-id: ${{ steps.create-cluster.outputs.cluster-id }}
 
 
   validate-gke-install:
@@ -1169,7 +1243,12 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        k8s_version: [ v1.24.9-k3s2,v1.25.6-k3s1,v1.26.1-k3s1,v1.27.1-k3s1 ]
+        cluster: [
+          {distribution: k3s, version: v1.24},
+          {distribution: k3s, version: v1.25},
+          {distribution: k3s, version: v1.26},
+          {distribution: kind, version: v1.27.0}
+        ]
     env:
       APP_NAME: multi-namespace-yeti
       APP_SLUG: multi-namespace
@@ -1177,10 +1256,17 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
 
-      - uses: replicatedhq/action-k3s@main
+      - name: Create Cluster 
+        id: create-cluster 
+        uses: replicatedhq/replicated-actions/create-cluster@v0 
         with:
-          version: ${{ matrix.k8s_version }}
-          arguments: ${{ startsWith(matrix.k8s_version, 'v1.22') && '--egress-selector-mode disabled' || '' }}
+          api-token: ${{ secrets.C11Y_MATRIX_TOKEN }}
+          kubernetes-distribution: ${{ matrix.cluster.distribution }}
+          kubernetes-version: ${{ matrix.cluster.version }}
+          cluster-name: ${{ github.ref_name }}-${{ matrix.cluster.distribution }}-${{ matrix.cluster.version }}
+          timeout-minutes: '120'
+          ttl: 2h
+          export-kubeconfig: true
 
       - name: download kots binary
         uses: actions/download-artifact@v3
@@ -1249,6 +1335,14 @@ jobs:
           aws-access-key-id: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_ACCESS_KEY_ID }}'
           aws-secret-access-key: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_SECRET_ACCESS_KEY }}'
 
+      - name: Remove Cluster
+        id: remove-cluster
+        uses: replicatedhq/replicated-actions/remove-cluster@v0
+        continue-on-error: true
+        with:
+          api-token: ${{ secrets.C11Y_MATRIX_TOKEN }}
+          cluster-id: ${{ steps.create-cluster.outputs.cluster-id }}
+
 
   validate-app-version-label:
     runs-on: ubuntu-20.04
@@ -1256,7 +1350,9 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        k8s_version: [ v1.27.1-k3s1 ] # there's no need to run this test on multiple k3s versions
+        cluster: [
+          {distribution: kind, version: v1.27.0}
+        ] 
     env:
       APP_SLUG: app-version-label
       APP_VERSION_LABEL: v1.0.0
@@ -1265,10 +1361,17 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
 
-      - uses: replicatedhq/action-k3s@main
+      - name: Create Cluster 
+        id: create-cluster 
+        uses: replicatedhq/replicated-actions/create-cluster@v0 
         with:
-          version: ${{ matrix.k8s_version }}
-          arguments: ${{ startsWith(matrix.k8s_version, 'v1.22') && '--egress-selector-mode disabled' || '' }}
+          api-token: ${{ secrets.C11Y_MATRIX_TOKEN }}
+          kubernetes-distribution: ${{ matrix.cluster.distribution }}
+          kubernetes-version: ${{ matrix.cluster.version }}
+          cluster-name: ${{ github.ref_name }}-${{ matrix.cluster.distribution }}-${{ matrix.cluster.version }}
+          timeout-minutes: '120'
+          ttl: 2h
+          export-kubeconfig: true
 
       - name: download kots binary
         uses: actions/download-artifact@v3
@@ -1384,6 +1487,14 @@ jobs:
           aws-access-key-id: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_ACCESS_KEY_ID }}'
           aws-secret-access-key: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_SECRET_ACCESS_KEY }}'
 
+      - name: Remove Cluster
+        id: remove-cluster
+        uses: replicatedhq/replicated-actions/remove-cluster@v0
+        continue-on-error: true
+        with:
+          api-token: ${{ secrets.C11Y_MATRIX_TOKEN }}
+          cluster-id: ${{ steps.create-cluster.outputs.cluster-id }}
+
 
   validate-helm-install-order:
     runs-on: ubuntu-20.04
@@ -1391,17 +1502,29 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        k8s_version: [ v1.24.9-k3s2,v1.25.6-k3s1,v1.26.1-k3s1,v1.27.1-k3s1 ]
+        cluster: [
+          {distribution: k3s, version: v1.24},
+          {distribution: k3s, version: v1.25},
+          {distribution: k3s, version: v1.26},
+          {distribution: kind, version: v1.27.0}
+        ] 
     env:
       APP_SLUG: helm-install-order
     steps:
       - name: Checkout
         uses: actions/checkout@v3
 
-      - uses: replicatedhq/action-k3s@main
+      - name: Create Cluster 
+        id: create-cluster 
+        uses: replicatedhq/replicated-actions/create-cluster@v0 
         with:
-          version: ${{ matrix.k8s_version }}
-          arguments: ${{ startsWith(matrix.k8s_version, 'v1.22') && '--egress-selector-mode disabled' || '' }}
+          api-token: ${{ secrets.C11Y_MATRIX_TOKEN }}
+          kubernetes-distribution: ${{ matrix.cluster.distribution }}
+          kubernetes-version: ${{ matrix.cluster.version }}
+          cluster-name: ${{ github.ref_name }}-${{ matrix.cluster.distribution }}-${{ matrix.cluster.version }}
+          timeout-minutes: '120'
+          ttl: 2h
+          export-kubeconfig: true
 
       - name: download kots binary
         uses: actions/download-artifact@v3
@@ -1459,6 +1582,14 @@ jobs:
           aws-access-key-id: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_ACCESS_KEY_ID }}'
           aws-secret-access-key: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_SECRET_ACCESS_KEY }}'
 
+      - name: Remove Cluster
+        id: remove-cluster
+        uses: replicatedhq/replicated-actions/remove-cluster@v0
+        continue-on-error: true
+        with:
+          api-token: ${{ secrets.C11Y_MATRIX_TOKEN }}
+          cluster-id: ${{ steps.create-cluster.outputs.cluster-id }}
+
 
   validate-yamlescape:
     runs-on: ubuntu-20.04
@@ -1466,17 +1597,29 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        k8s_version: [ v1.24.9-k3s2,v1.25.6-k3s1,v1.26.1-k3s1,v1.27.1-k3s1 ]
+        cluster: [
+          {distribution: k3s, version: v1.24},
+          {distribution: k3s, version: v1.25},
+          {distribution: k3s, version: v1.26},
+          {distribution: kind, version: v1.27.0}
+        ] 
     env:
       APP_SLUG: yamlescape
     steps:
       - name: Checkout
         uses: actions/checkout@v3
 
-      - uses: replicatedhq/action-k3s@main
+      - name: Create Cluster 
+        id: create-cluster 
+        uses: replicatedhq/replicated-actions/create-cluster@v0 
         with:
-          version: ${{ matrix.k8s_version }}
-          arguments: ${{ startsWith(matrix.k8s_version, 'v1.22') && '--egress-selector-mode disabled' || '' }}
+          api-token: ${{ secrets.C11Y_MATRIX_TOKEN }}
+          kubernetes-distribution: ${{ matrix.cluster.distribution }}
+          kubernetes-version: ${{ matrix.cluster.version }}
+          cluster-name: ${{ github.ref_name }}-${{ matrix.cluster.distribution }}-${{ matrix.cluster.version }}
+          timeout-minutes: '120'
+          ttl: 2h
+          export-kubeconfig: true
 
       - name: download kots binary
         uses: actions/download-artifact@v3
@@ -1534,6 +1677,14 @@ jobs:
           aws-access-key-id: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_ACCESS_KEY_ID }}'
           aws-secret-access-key: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_SECRET_ACCESS_KEY }}'
 
+      - name: Remove Cluster
+        id: remove-cluster
+        uses: replicatedhq/replicated-actions/remove-cluster@v0
+        continue-on-error: true
+        with:
+          api-token: ${{ secrets.C11Y_MATRIX_TOKEN }}
+          cluster-id: ${{ steps.create-cluster.outputs.cluster-id }}
+
 
   validate-no-redeploy-on-restart:
     runs-on: ubuntu-20.04
@@ -1541,17 +1692,26 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        k8s_version: [ v1.27.1-k3s1 ]
+        cluster: [
+          {distribution: kind, version: v1.27.0}
+        ] 
     env:
       APP_SLUG: no-redeploy-on-restart
     steps:
       - name: Checkout
         uses: actions/checkout@v3
 
-      - uses: replicatedhq/action-k3s@main
+      - name: Create Cluster 
+        id: create-cluster 
+        uses: replicatedhq/replicated-actions/create-cluster@v0 
         with:
-          version: ${{ matrix.k8s_version }}
-          arguments: ${{ startsWith(matrix.k8s_version, 'v1.22') && '--egress-selector-mode disabled' || '' }}
+          api-token: ${{ secrets.C11Y_MATRIX_TOKEN }}
+          kubernetes-distribution: ${{ matrix.cluster.distribution }}
+          kubernetes-version: ${{ matrix.cluster.version }}
+          cluster-name: ${{ github.ref_name }}-${{ matrix.cluster.distribution }}-${{ matrix.cluster.version }}
+          timeout-minutes: '120'
+          ttl: 2h
+          export-kubeconfig: true
 
       - name: download kots binary
         uses: actions/download-artifact@v3
@@ -1633,6 +1793,14 @@ jobs:
           aws-access-key-id: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_ACCESS_KEY_ID }}'
           aws-secret-access-key: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_SECRET_ACCESS_KEY }}'
 
+      - name: Remove Cluster
+        id: remove-cluster
+        uses: replicatedhq/replicated-actions/remove-cluster@v0
+        continue-on-error: true
+        with:
+          api-token: ${{ secrets.C11Y_MATRIX_TOKEN }}
+          cluster-id: ${{ steps.create-cluster.outputs.cluster-id }}
+
 
   validate-kubernetes-installer-preflight:
     runs-on: ubuntu-20.04
@@ -1640,16 +1808,25 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        k8s_version: [ v1.27.1-k3s1 ]
+        cluster: [
+          {distribution: kind, version: v1.27.0}
+        ] 
     env:
       APP_SLUG: kubernetes-installer-preflight
-      K8S_VERSION: ${{ matrix.k8s_version }}
     steps:
       - uses: actions/checkout@v3
-      - uses: replicatedhq/action-k3s@main
+
+      - name: Create Cluster 
+        id: create-cluster 
+        uses: replicatedhq/replicated-actions/create-cluster@v0 
         with:
-          version: ${{ matrix.k8s_version }}
-          arguments: ${{ startsWith(matrix.k8s_version, 'v1.22') && '--egress-selector-mode disabled' || '' }}
+          api-token: ${{ secrets.C11Y_MATRIX_TOKEN }}
+          kubernetes-distribution: ${{ matrix.cluster.distribution }}
+          kubernetes-version: ${{ matrix.cluster.version }}
+          cluster-name: ${{ github.ref_name }}-${{ matrix.cluster.distribution }}-${{ matrix.cluster.version }}
+          timeout-minutes: '120'
+          ttl: 2h
+          export-kubeconfig: true
 
       - name: download kots binary
         uses: actions/download-artifact@v3
@@ -1727,7 +1904,7 @@ jobs:
           # try get apps without namespace (using kubeconfig)
           # validate that output is the same as above
           mkdir -p /tmp/.kube
-          sudo cp "/tmp/output/kubeconfig-${K8S_VERSION}.yaml" /tmp/.kube/config
+          sudo cp "$KUBECONFIG" /tmp/.kube/config
           sudo chmod -R 777 /tmp/.kube
           export KUBECONFIG=/tmp/.kube/config
           kubectl config set-context --current --namespace="$APP_SLUG"
@@ -1747,6 +1924,14 @@ jobs:
           aws-access-key-id: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_ACCESS_KEY_ID }}'
           aws-secret-access-key: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_SECRET_ACCESS_KEY }}'
 
+      - name: Remove Cluster
+        id: remove-cluster
+        uses: replicatedhq/replicated-actions/remove-cluster@v0
+        continue-on-error: true
+        with:
+          api-token: ${{ secrets.C11Y_MATRIX_TOKEN }}
+          cluster-id: ${{ steps.create-cluster.outputs.cluster-id }}
+
 
   validate-tag-and-digest:
     runs-on: ubuntu-20.04
@@ -1754,7 +1939,9 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        k8s_version: [ v1.27.1-k3s1 ]
+        cluster: [
+          {distribution: kind, version: v1.27}
+        ]
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -1775,12 +1962,13 @@ jobs:
         with:
           test-focus: 'Tag and Digest'
           kots-namespace: 'tag-and-digest'
-          k8s-version: '${{ matrix.k8s_version }}'
-          k8s-arguments: ${{ startsWith(matrix.k8s_version, 'v1.22') && '--egress-selector-mode disabled' || '' }}
+          k8s-distribution: ${{ matrix.cluster.distribution }}
+          k8s-version: ${{ matrix.cluster.version }}
           testim-access-token: '${{ secrets.TESTIM_ACCESS_TOKEN }}'
           testim-branch: ${{ github.head_ref == 'main' && 'master' || github.head_ref }}
           aws-access-key-id: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_ACCESS_KEY_ID }}'
           aws-secret-access-key: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_SECRET_ACCESS_KEY }}'
+          replicated-api-token: '${{ secrets.C11Y_MATRIX_TOKEN }}'
 
 
   validate-kots-push-images-anonymous:
@@ -1810,7 +1998,9 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        k8s_version: [ v1.27.1-k3s1 ]
+        cluster: [
+          {distribution: kind, version: v1.27.0}
+        ] 
     env:
       APP_SLUG: minimal-rbac
       BASE_KOTS_VERSION: v1.72.0
@@ -1847,11 +2037,17 @@ jobs:
       - name: remove admin-console directory
         run: rm -rf ./admin-console
 
-      - name: install k3s
-        uses: replicatedhq/action-k3s@main
+      - name: Create Cluster 
+        id: create-cluster 
+        uses: replicatedhq/replicated-actions/create-cluster@v0 
         with:
-          version: ${{ matrix.k8s_version }}
-          arguments: ${{ startsWith(matrix.k8s_version, 'v1.22') && '--egress-selector-mode disabled' || '' }}
+          api-token: ${{ secrets.C11Y_MATRIX_TOKEN }}
+          kubernetes-distribution: ${{ matrix.cluster.distribution }}
+          kubernetes-version: ${{ matrix.cluster.version }}
+          cluster-name: ${{ github.ref_name }}-${{ matrix.cluster.distribution }}-${{ matrix.cluster.version }}
+          timeout-minutes: '120'
+          ttl: 2h
+          export-kubeconfig: true
 
       - name: download base kots version
         run: |
@@ -1981,6 +2177,14 @@ jobs:
           aws-access-key-id: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_ACCESS_KEY_ID }}'
           aws-secret-access-key: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_SECRET_ACCESS_KEY }}'
 
+      - name: Remove Cluster
+        id: remove-cluster
+        uses: replicatedhq/replicated-actions/remove-cluster@v0
+        continue-on-error: true
+        with:
+          api-token: ${{ secrets.C11Y_MATRIX_TOKEN }}
+          cluster-id: ${{ steps.create-cluster.outputs.cluster-id }}
+
 
   validate-min-kots-version:
     runs-on: ubuntu-20.04
@@ -1990,7 +2194,9 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        k8s_version: [ v1.27.1-k3s1 ]
+        cluster: [
+          {distribution: kind, version: v1.27}
+        ]
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -2011,16 +2217,19 @@ jobs:
           cp ./bin/kots /usr/local/bin/kubectl-kots
           sudo apt-get update -y && sudo apt-get install jq -y
       - uses: ./.github/actions/kots-e2e
+        id: kots-e2e
         with:
           test-focus: 'Min KOTS Version'
           kots-namespace: 'min-kots-version'
-          k8s-version: '${{ matrix.k8s_version }}'
-          k8s-arguments: ${{ startsWith(matrix.k8s_version, 'v1.22') && '--egress-selector-mode disabled' || '' }}
+          k8s-distribution: ${{ matrix.cluster.distribution }}
+          k8s-version: ${{ matrix.cluster.version }}
           testim-access-token: '${{ secrets.TESTIM_ACCESS_TOKEN }}'
           testim-branch: ${{ github.head_ref == 'main' && 'master' || github.head_ref }}
           kotsadm-image-registry: ttl.sh
           aws-access-key-id: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_ACCESS_KEY_ID }}'
           aws-secret-access-key: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_SECRET_ACCESS_KEY }}'
+          replicated-api-token: '${{ secrets.C11Y_MATRIX_TOKEN }}'
+          k8s-cluster-skip-teardown: true
 
       - name: validate that kots install fails early
         run: |
@@ -2035,6 +2244,15 @@ jobs:
             exit 1
           fi
 
+      - name: Remove Cluster
+        id: remove-cluster
+        uses: replicatedhq/replicated-actions/remove-cluster@v0
+        continue-on-error: true
+        with:
+          api-token: ${{ secrets.C11Y_MATRIX_TOKEN }}
+          cluster-id: ${{ steps.kots-e2e.outputs.cluster-id }}
+          
+
 
   validate-target-kots-version:
     runs-on: ubuntu-20.04
@@ -2042,7 +2260,9 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        k8s_version: [ v1.27.1-k3s1 ]
+        cluster: [
+          {distribution: kind, version: v1.27}
+        ]
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -2063,15 +2283,19 @@ jobs:
           cp ./bin/kots /usr/local/bin/kubectl-kots
           sudo apt-get update -y && sudo apt-get install jq -y
       - uses: ./.github/actions/kots-e2e
+        id: kots-e2e
         with:
           test-focus: 'Target KOTS Version'
           kots-namespace: 'target-kots-version'
-          k8s-version: '${{ matrix.k8s_version }}'
-          k8s-arguments: ${{ startsWith(matrix.k8s_version, 'v1.22') && '--egress-selector-mode disabled' || '' }}
+          k8s-distribution: ${{ matrix.cluster.distribution }}
+          k8s-version: ${{ matrix.cluster.version }}
           testim-access-token: '${{ secrets.TESTIM_ACCESS_TOKEN }}'
           testim-branch: ${{ github.head_ref == 'main' && 'master' || github.head_ref }}
           aws-access-key-id: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_ACCESS_KEY_ID }}'
           aws-secret-access-key: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_SECRET_ACCESS_KEY }}'
+          replicated-api-token: '${{ secrets.C11Y_MATRIX_TOKEN }}'
+          k8s-cluster-skip-teardown: true
+
       - name: validate that kots install fails early
         run: |
           set +e
@@ -2085,6 +2309,14 @@ jobs:
             exit 1
           fi
 
+      - name: Remove Cluster
+        id: remove-cluster
+        uses: replicatedhq/replicated-actions/remove-cluster@v0
+        continue-on-error: true
+        with:
+          api-token: ${{ secrets.C11Y_MATRIX_TOKEN }}
+          cluster-id: ${{ steps.kots-e2e.outputs.cluster-id }}
+
 
   validate-range-kots-version:
     runs-on: ubuntu-20.04
@@ -2092,7 +2324,9 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        k8s_version: [ v1.27.1-k3s1 ]
+        cluster: [
+          {distribution: kind, version: v1.27}
+        ]
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -2113,15 +2347,19 @@ jobs:
           cp ./bin/kots /usr/local/bin/kubectl-kots
           sudo apt-get update -y && sudo apt-get install jq -y
       - uses: ./.github/actions/kots-e2e
+        id: kots-e2e
         with:
           test-focus: 'Range KOTS Version'
           kots-namespace: 'range-kots-version'
-          k8s-version: '${{ matrix.k8s_version }}'
-          k8s-arguments: ${{ startsWith(matrix.k8s_version, 'v1.22') && '--egress-selector-mode disabled' || '' }}
+          k8s-distribution: ${{ matrix.cluster.distribution }}
+          k8s-version: ${{ matrix.cluster.version }}
           testim-access-token: '${{ secrets.TESTIM_ACCESS_TOKEN }}'
           testim-branch: ${{ github.head_ref == 'main' && 'master' || github.head_ref }}
           aws-access-key-id: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_ACCESS_KEY_ID }}'
           aws-secret-access-key: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_SECRET_ACCESS_KEY }}'
+          replicated-api-token: '${{ secrets.C11Y_MATRIX_TOKEN }}'
+          k8s-cluster-skip-teardown: true
+
       - name: validate that kots install fails early
         run: |
           set +e
@@ -2135,6 +2373,14 @@ jobs:
             exit 1
           fi
 
+      - name: Remove Cluster
+        id: remove-cluster
+        uses: replicatedhq/replicated-actions/remove-cluster@v0
+        continue-on-error: true
+        with:
+          api-token: ${{ secrets.C11Y_MATRIX_TOKEN }}
+          cluster-id: ${{ steps.kots-e2e.outputs.cluster-id }}
+
 
   validate-kots-upgrade:
     runs-on: ubuntu-20.04
@@ -2142,7 +2388,12 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        k8s_version: [ v1.24.9-k3s2,v1.25.6-k3s1,v1.26.1-k3s1,v1.27.1-k3s1 ]
+        cluster: [
+          {distribution: k3s, version: v1.24},
+          {distribution: k3s, version: v1.25},
+          {distribution: k3s, version: v1.26},
+          {distribution: kind, version: v1.27.0}
+        ] 
     env:
       APP_SLUG: postgres-to-rqlite
       BASE_KOTS_VERSION: v1.57.0
@@ -2150,10 +2401,17 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
 
-      - uses: replicatedhq/action-k3s@main
+      - name: Create Cluster 
+        id: create-cluster 
+        uses: replicatedhq/replicated-actions/create-cluster@v0 
         with:
-          version: ${{ matrix.k8s_version }}
-          arguments: ${{ startsWith(matrix.k8s_version, 'v1.22') && '--egress-selector-mode disabled' || '' }}
+          api-token: ${{ secrets.C11Y_MATRIX_TOKEN }}
+          kubernetes-distribution: ${{ matrix.cluster.distribution }}
+          kubernetes-version: ${{ matrix.cluster.version }}
+          cluster-name: ${{ github.ref_name }}-${{ matrix.cluster.distribution }}-${{ matrix.cluster.version }}
+          timeout-minutes: '120'
+          ttl: 2h
+          export-kubeconfig: true
 
       - name: download base kots version
         run: |
@@ -2251,6 +2509,14 @@ jobs:
           aws-access-key-id: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_ACCESS_KEY_ID }}'
           aws-secret-access-key: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_SECRET_ACCESS_KEY }}'
 
+      - name: Remove Cluster
+        id: remove-cluster
+        uses: replicatedhq/replicated-actions/remove-cluster@v0
+        continue-on-error: true
+        with:
+          api-token: ${{ secrets.C11Y_MATRIX_TOKEN }}
+          cluster-id: ${{ steps.create-cluster.outputs.cluster-id }}
+
 
   validate-kots-helm-release-secret-migration:
     runs-on: ubuntu-20.04
@@ -2258,7 +2524,9 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        k8s_version: [ v1.27.1-k3s1 ]
+        cluster: [
+          {distribution: kind, version: v1.27.0}
+        ] 
     env:
       APP_SLUG: helm-release-secret-migration
       RELEASE_NAME: helm-release-chart
@@ -2268,10 +2536,17 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
 
-      - uses: replicatedhq/action-k3s@main
+      - name: Create Cluster 
+        id: create-cluster 
+        uses: replicatedhq/replicated-actions/create-cluster@v0 
         with:
-          version: ${{ matrix.k8s_version }}
-          arguments: ${{ startsWith(matrix.k8s_version, 'v1.22') && '--egress-selector-mode disabled' || '' }}
+          api-token: ${{ secrets.C11Y_MATRIX_TOKEN }}
+          kubernetes-distribution: ${{ matrix.cluster.distribution }}
+          kubernetes-version: ${{ matrix.cluster.version }}
+          cluster-name: ${{ github.ref_name }}-${{ matrix.cluster.distribution }}-${{ matrix.cluster.version }}
+          timeout-minutes: '120'
+          ttl: 2h
+          export-kubeconfig: true
 
       - name: download base kots version
         run: |
@@ -2415,6 +2690,14 @@ jobs:
           aws-access-key-id: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_ACCESS_KEY_ID }}'
           aws-secret-access-key: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_SECRET_ACCESS_KEY }}'
 
+      - name: Remove Cluster
+        id: remove-cluster
+        uses: replicatedhq/replicated-actions/remove-cluster@v0
+        continue-on-error: true
+        with:
+          api-token: ${{ secrets.C11Y_MATRIX_TOKEN }}
+          cluster-id: ${{ steps.create-cluster.outputs.cluster-id }}
+
 
   validate-multi-app-backup-and-restore:
     runs-on: ubuntu-20.04
@@ -2422,7 +2705,9 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        k8s_version: [ v1.27.1-k3s1 ] # there's no need to run this test on multiple k3s versions
+        cluster: [
+          {distribution: kind, version: v1.27}
+        ]
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -2443,12 +2728,13 @@ jobs:
         with:
           test-focus: 'multi-app-backup-and-restore'
           kots-namespace: 'multi-app-backup-and-restore'
-          k8s-version: '${{ matrix.k8s_version }}'
-          k8s-arguments: ${{ startsWith(matrix.k8s_version, 'v1.22') && '--egress-selector-mode disabled' || '' }}
+          k8s-distribution: ${{ matrix.cluster.distribution }}
+          k8s-version: ${{ matrix.cluster.version }}
           testim-access-token: '${{ secrets.TESTIM_ACCESS_TOKEN }}'
           testim-branch: ${{ github.head_ref == 'main' && 'master' || github.head_ref }}
           aws-access-key-id: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_ACCESS_KEY_ID }}'
           aws-secret-access-key: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_SECRET_ACCESS_KEY }}'
+          replicated-api-token: '${{ secrets.C11Y_MATRIX_TOKEN }}'
 
   validate-multi-app-install:
     runs-on: ubuntu-20.04
@@ -2456,7 +2742,9 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        k8s_version: [ v1.27.1-k3s1 ] # there's no need to run this test on multiple k3s versions
+        cluster: [
+          {distribution: kind, version: v1.27}
+        ]
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -2477,12 +2765,13 @@ jobs:
         with:
           test-focus: 'multi-app-install'
           kots-namespace: 'multi-app-install'
-          k8s-version: '${{ matrix.k8s_version }}'
-          k8s-arguments: ${{ startsWith(matrix.k8s_version, 'v1.22') && '--egress-selector-mode disabled' || '' }}
+          k8s-distribution: ${{ matrix.cluster.distribution }}
+          k8s-version: ${{ matrix.cluster.version }}
           testim-access-token: '${{ secrets.TESTIM_ACCESS_TOKEN }}'
           testim-branch: ${{ github.head_ref == 'main' && 'master' || github.head_ref }}
           aws-access-key-id: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_ACCESS_KEY_ID }}'
           aws-secret-access-key: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_SECRET_ACCESS_KEY }}'
+          replicated-api-token: '${{ secrets.C11Y_MATRIX_TOKEN }}'
 
 
   validate-airgap-smoke-test:
@@ -2491,7 +2780,9 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        k8s_version: [ v1.27.1-k3s1 ]
+        cluster: [
+          {distribution: kind, version: v1.27}
+        ]
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -2512,14 +2803,14 @@ jobs:
         with:
           test-focus: 'airgap-smoke-test'
           kots-namespace: 'airgap-smoke-test'
-          k8s-version: '${{ matrix.k8s_version }}'
-          k8s-arguments: ${{ startsWith(matrix.k8s_version, 'v1.22') && '--egress-selector-mode disabled' || '' }}
+          k8s-distribution: ${{ matrix.cluster.distribution }}
+          k8s-version: ${{ matrix.cluster.version }}
           testim-access-token: '${{ secrets.TESTIM_ACCESS_TOKEN }}'
           testim-branch: ${{ github.head_ref == 'main' && 'master' || github.head_ref }}
           kots-airgap: true
           aws-access-key-id: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_ACCESS_KEY_ID }}'
           aws-secret-access-key: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_SECRET_ACCESS_KEY }}'
-          gke-service-key: '${{ secrets.GOOGLE_CLOUD_CREDENTIALS }}'
+          replicated-api-token: '${{ secrets.C11Y_MATRIX_TOKEN }}'
 
 
   validate-remove-app:
@@ -2528,17 +2819,26 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        k8s_version: [ v1.27.1-k3s1 ]
+        cluster: [
+          {distribution: kind, version: v1.27}
+        ]
     env:
       APP_SLUG: remove-app
     steps:
       - name: Checkout
         uses: actions/checkout@v3
 
-      - uses: replicatedhq/action-k3s@main
+      - name: Create Cluster 
+        id: create-cluster 
+        uses: replicatedhq/replicated-actions/create-cluster@v0 
         with:
-          version: ${{ matrix.k8s_version }}
-          arguments: ${{ startsWith(matrix.k8s_version, 'v1.22') && '--egress-selector-mode disabled' || '' }}
+          api-token: ${{ secrets.C11Y_MATRIX_TOKEN }}
+          kubernetes-distribution: ${{ matrix.cluster.distribution }}
+          kubernetes-version: ${{ matrix.cluster.version }}
+          cluster-name: ${{ github.ref_name }}-${{ matrix.cluster.distribution }}-${{ matrix.cluster.version }}
+          timeout-minutes: '120'
+          ttl: 2h
+          export-kubeconfig: true
 
       - name: download kots binary
         uses: actions/download-artifact@v3
@@ -2676,6 +2976,14 @@ jobs:
           aws-access-key-id: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_ACCESS_KEY_ID }}'
           aws-secret-access-key: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_SECRET_ACCESS_KEY }}'
 
+      - name: Remove Cluster
+        id: remove-cluster
+        uses: replicatedhq/replicated-actions/remove-cluster@v0
+        continue-on-error: true
+        with:
+          api-token: ${{ secrets.C11Y_MATRIX_TOKEN }}
+          cluster-id: ${{ steps.create-cluster.outputs.cluster-id }}
+
 
   validate-registry-check:
     runs-on: ubuntu-20.04
@@ -2683,15 +2991,24 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        k8s_version: [ v1.27.1-k3s1 ]
+        cluster: [
+          {distribution: kind, version: v1.27.0}
+        ] 
     steps:
       - name: Checkout
         uses: actions/checkout@v3
 
-      - uses: replicatedhq/action-k3s@main
+      - name: Create Cluster 
+        id: create-cluster 
+        uses: replicatedhq/replicated-actions/create-cluster@v0 
         with:
-          version: ${{ matrix.k8s_version }}
-          arguments: ${{ startsWith(matrix.k8s_version, 'v1.22') && '--egress-selector-mode disabled' || '' }}
+          api-token: ${{ secrets.C11Y_MATRIX_TOKEN }}
+          kubernetes-distribution: ${{ matrix.cluster.distribution }}
+          kubernetes-version: ${{ matrix.cluster.version }}
+          cluster-name: ${{ github.ref_name }}-${{ matrix.cluster.distribution }}-${{ matrix.cluster.version }}
+          timeout-minutes: '120'
+          ttl: 2h
+          export-kubeconfig: true
 
       - name: download kots binary
         uses: actions/download-artifact@v3
@@ -2753,6 +3070,14 @@ jobs:
           aws-access-key-id: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_ACCESS_KEY_ID }}'
           aws-secret-access-key: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_SECRET_ACCESS_KEY }}'
 
+      - name: Remove Cluster
+        id: remove-cluster
+        uses: replicatedhq/replicated-actions/remove-cluster@v0
+        continue-on-error: true
+        with:
+          api-token: ${{ secrets.C11Y_MATRIX_TOKEN }}
+          cluster-id: ${{ steps.create-cluster.outputs.cluster-id }}
+
 
   validate-native-helm-v2:
     runs-on: ubuntu-20.04
@@ -2760,7 +3085,9 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        k8s_version: [ v1.26.1-k3s1 ]
+        cluster: [
+          {distribution: kind, version: v1.27.0}
+        ] 
     env:
       APP_SLUG: native-helm-v2
       INITIAL_VERSION: '0.1.1'
@@ -2773,10 +3100,17 @@ jobs:
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
 
-      - uses: replicatedhq/action-k3s@main
+      - name: Create Cluster 
+        id: create-cluster 
+        uses: replicatedhq/replicated-actions/create-cluster@v0 
         with:
-          version: ${{ matrix.k8s_version }}
-          arguments: ${{ startsWith(matrix.k8s_version, 'v1.22') && '--egress-selector-mode disabled' || '' }}
+          api-token: ${{ secrets.C11Y_MATRIX_TOKEN }}
+          kubernetes-distribution: ${{ matrix.cluster.distribution }}
+          kubernetes-version: ${{ matrix.cluster.version }}
+          cluster-name: ${{ github.ref_name }}-${{ matrix.cluster.distribution }}-${{ matrix.cluster.version }}
+          timeout-minutes: '120'
+          ttl: 2h
+          export-kubeconfig: true
 
       - name: download kots binary
         uses: actions/download-artifact@v3
@@ -2930,6 +3264,14 @@ jobs:
           aws-access-key-id: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_ACCESS_KEY_ID }}'
           aws-secret-access-key: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_SECRET_ACCESS_KEY }}'
 
+      - name: Remove Cluster
+        id: remove-cluster
+        uses: replicatedhq/replicated-actions/remove-cluster@v0
+        continue-on-error: true
+        with:
+          api-token: ${{ secrets.C11Y_MATRIX_TOKEN }}
+          cluster-id: ${{ steps.create-cluster.outputs.cluster-id }}
+
 
   validate-deployment-orchestration:
     runs-on: ubuntu-20.04
@@ -2937,7 +3279,9 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        k8s_version: [ v1.27.1-k3s1 ]
+        cluster: [
+          {distribution: kind, version: v1.27.0}
+        ] 
     env:
       APP_SLUG: deployment-orchestration
     steps:
@@ -2948,10 +3292,17 @@ jobs:
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
 
-      - uses: replicatedhq/action-k3s@main
+      - name: Create Cluster 
+        id: create-cluster 
+        uses: replicatedhq/replicated-actions/create-cluster@v0 
         with:
-          version: ${{ matrix.k8s_version }}
-          arguments: ${{ startsWith(matrix.k8s_version, 'v1.22') && '--egress-selector-mode disabled' || '' }}
+          api-token: ${{ secrets.C11Y_MATRIX_TOKEN }}
+          kubernetes-distribution: ${{ matrix.cluster.distribution }}
+          kubernetes-version: ${{ matrix.cluster.version }}
+          cluster-name: ${{ github.ref_name }}-${{ matrix.cluster.distribution }}-${{ matrix.cluster.version }}
+          timeout-minutes: '120'
+          ttl: 2h
+          export-kubeconfig: true
 
       - name: download kots binary
         uses: actions/download-artifact@v3
@@ -3075,6 +3426,14 @@ jobs:
           kots-namespace: "$APP_SLUG"
           aws-access-key-id: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_ACCESS_KEY_ID }}'
           aws-secret-access-key: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_SECRET_ACCESS_KEY }}'
+
+      - name: Remove Cluster
+        id: remove-cluster
+        uses: replicatedhq/replicated-actions/remove-cluster@v0
+        continue-on-error: true
+        with:
+          api-token: ${{ secrets.C11Y_MATRIX_TOKEN }}
+          cluster-id: ${{ steps.create-cluster.outputs.cluster-id }}
 
 
   validate-pr-tests:
