@@ -2251,7 +2251,6 @@ jobs:
         with:
           api-token: ${{ secrets.C11Y_MATRIX_TOKEN }}
           cluster-id: ${{ steps.kots-e2e.outputs.cluster-id }}
-          
 
 
   validate-target-kots-version:
