@@ -96,7 +96,7 @@ runs:
         api-token: ${{ inputs.replicated-api-token }}
         kubernetes-distribution: ${{ inputs.k8s-distribution }}
         kubernetes-version: ${{ inputs.k8s-version }}
-        cluster-name: ${{ github.ref_name }}-${{ inputs.k8s-distribution }}-${{ inputs.k8s-version }}
+        cluster-name: automated-kots-${{ github.run_id }}-${{ inputs.k8s-distribution }}-${{ inputs.k8s-version }}
         timeout-minutes: '120'
         ttl: ${{ inputs.k8s-cluster-ttl }}
         export-kubeconfig: true

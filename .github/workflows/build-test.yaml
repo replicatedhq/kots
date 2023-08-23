@@ -972,7 +972,7 @@ jobs:
           api-token: ${{ secrets.C11Y_MATRIX_TOKEN }}
           kubernetes-distribution: ${{ matrix.cluster.distribution }}
           kubernetes-version: ${{ matrix.cluster.version }}
-          cluster-name: ${{ github.ref_name }}-${{ matrix.cluster.distribution }}-${{ matrix.cluster.version }}
+          cluster-name: automated-kots-${{ github.run_id }}-${{ matrix.cluster.distribution }}-${{ matrix.cluster.version }}
           timeout-minutes: '120'
           ttl: 2h
           export-kubeconfig: true
@@ -1076,7 +1076,7 @@ jobs:
           api-token: ${{ secrets.C11Y_MATRIX_TOKEN }}
           kubernetes-distribution: ${{ matrix.cluster.distribution }}
           kubernetes-version: ${{ matrix.cluster.version }}
-          cluster-name: ${{ github.ref_name }}-${{ matrix.cluster.distribution }}-${{ matrix.cluster.version }}
+          cluster-name: automated-kots-${{ github.run_id }}-${{ matrix.cluster.distribution }}-${{ matrix.cluster.version }}
           timeout-minutes: '120'
           ttl: 2h
           export-kubeconfig: true
@@ -1263,7 +1263,7 @@ jobs:
           api-token: ${{ secrets.C11Y_MATRIX_TOKEN }}
           kubernetes-distribution: ${{ matrix.cluster.distribution }}
           kubernetes-version: ${{ matrix.cluster.version }}
-          cluster-name: ${{ github.ref_name }}-${{ matrix.cluster.distribution }}-${{ matrix.cluster.version }}
+          cluster-name: automated-kots-${{ github.run_id }}-${{ matrix.cluster.distribution }}-${{ matrix.cluster.version }}
           timeout-minutes: '120'
           ttl: 2h
           export-kubeconfig: true
@@ -1368,7 +1368,7 @@ jobs:
           api-token: ${{ secrets.C11Y_MATRIX_TOKEN }}
           kubernetes-distribution: ${{ matrix.cluster.distribution }}
           kubernetes-version: ${{ matrix.cluster.version }}
-          cluster-name: ${{ github.ref_name }}-${{ matrix.cluster.distribution }}-${{ matrix.cluster.version }}
+          cluster-name: automated-kots-${{ github.run_id }}-${{ matrix.cluster.distribution }}-${{ matrix.cluster.version }}
           timeout-minutes: '120'
           ttl: 2h
           export-kubeconfig: true
@@ -1521,7 +1521,7 @@ jobs:
           api-token: ${{ secrets.C11Y_MATRIX_TOKEN }}
           kubernetes-distribution: ${{ matrix.cluster.distribution }}
           kubernetes-version: ${{ matrix.cluster.version }}
-          cluster-name: ${{ github.ref_name }}-${{ matrix.cluster.distribution }}-${{ matrix.cluster.version }}
+          cluster-name: automated-kots-${{ github.run_id }}-${{ matrix.cluster.distribution }}-${{ matrix.cluster.version }}
           timeout-minutes: '120'
           ttl: 2h
           export-kubeconfig: true
@@ -1616,7 +1616,7 @@ jobs:
           api-token: ${{ secrets.C11Y_MATRIX_TOKEN }}
           kubernetes-distribution: ${{ matrix.cluster.distribution }}
           kubernetes-version: ${{ matrix.cluster.version }}
-          cluster-name: ${{ github.ref_name }}-${{ matrix.cluster.distribution }}-${{ matrix.cluster.version }}
+          cluster-name: automated-kots-${{ github.run_id }}-${{ matrix.cluster.distribution }}-${{ matrix.cluster.version }}
           timeout-minutes: '120'
           ttl: 2h
           export-kubeconfig: true
@@ -1708,7 +1708,7 @@ jobs:
           api-token: ${{ secrets.C11Y_MATRIX_TOKEN }}
           kubernetes-distribution: ${{ matrix.cluster.distribution }}
           kubernetes-version: ${{ matrix.cluster.version }}
-          cluster-name: ${{ github.ref_name }}-${{ matrix.cluster.distribution }}-${{ matrix.cluster.version }}
+          cluster-name: automated-kots-${{ github.run_id }}-${{ matrix.cluster.distribution }}-${{ matrix.cluster.version }}
           timeout-minutes: '120'
           ttl: 2h
           export-kubeconfig: true
@@ -1823,7 +1823,7 @@ jobs:
           api-token: ${{ secrets.C11Y_MATRIX_TOKEN }}
           kubernetes-distribution: ${{ matrix.cluster.distribution }}
           kubernetes-version: ${{ matrix.cluster.version }}
-          cluster-name: ${{ github.ref_name }}-${{ matrix.cluster.distribution }}-${{ matrix.cluster.version }}
+          cluster-name: automated-kots-${{ github.run_id }}-${{ matrix.cluster.distribution }}-${{ matrix.cluster.version }}
           timeout-minutes: '120'
           ttl: 2h
           export-kubeconfig: true
@@ -2044,7 +2044,7 @@ jobs:
           api-token: ${{ secrets.C11Y_MATRIX_TOKEN }}
           kubernetes-distribution: ${{ matrix.cluster.distribution }}
           kubernetes-version: ${{ matrix.cluster.version }}
-          cluster-name: ${{ github.ref_name }}-${{ matrix.cluster.distribution }}-${{ matrix.cluster.version }}
+          cluster-name: automated-kots-${{ github.run_id }}-${{ matrix.cluster.distribution }}-${{ matrix.cluster.version }}
           timeout-minutes: '120'
           ttl: 2h
           export-kubeconfig: true
@@ -2408,7 +2408,7 @@ jobs:
           api-token: ${{ secrets.C11Y_MATRIX_TOKEN }}
           kubernetes-distribution: ${{ matrix.cluster.distribution }}
           kubernetes-version: ${{ matrix.cluster.version }}
-          cluster-name: ${{ github.ref_name }}-${{ matrix.cluster.distribution }}-${{ matrix.cluster.version }}
+          cluster-name: automated-kots-${{ github.run_id }}-${{ matrix.cluster.distribution }}-${{ matrix.cluster.version }}
           timeout-minutes: '120'
           ttl: 2h
           export-kubeconfig: true
@@ -2543,7 +2543,7 @@ jobs:
           api-token: ${{ secrets.C11Y_MATRIX_TOKEN }}
           kubernetes-distribution: ${{ matrix.cluster.distribution }}
           kubernetes-version: ${{ matrix.cluster.version }}
-          cluster-name: ${{ github.ref_name }}-${{ matrix.cluster.distribution }}-${{ matrix.cluster.version }}
+          cluster-name: automated-kots-${{ github.run_id }}-${{ matrix.cluster.distribution }}-${{ matrix.cluster.version }}
           timeout-minutes: '120'
           ttl: 2h
           export-kubeconfig: true
@@ -2835,7 +2835,7 @@ jobs:
           api-token: ${{ secrets.C11Y_MATRIX_TOKEN }}
           kubernetes-distribution: ${{ matrix.cluster.distribution }}
           kubernetes-version: ${{ matrix.cluster.version }}
-          cluster-name: ${{ github.ref_name }}-${{ matrix.cluster.distribution }}-${{ matrix.cluster.version }}
+          cluster-name: automated-kots-${{ github.run_id }}-${{ matrix.cluster.distribution }}-${{ matrix.cluster.version }}
           timeout-minutes: '120'
           ttl: 2h
           export-kubeconfig: true
@@ -3005,7 +3005,7 @@ jobs:
           api-token: ${{ secrets.C11Y_MATRIX_TOKEN }}
           kubernetes-distribution: ${{ matrix.cluster.distribution }}
           kubernetes-version: ${{ matrix.cluster.version }}
-          cluster-name: ${{ github.ref_name }}-${{ matrix.cluster.distribution }}-${{ matrix.cluster.version }}
+          cluster-name: automated-kots-${{ github.run_id }}-${{ matrix.cluster.distribution }}-${{ matrix.cluster.version }}
           timeout-minutes: '120'
           ttl: 2h
           export-kubeconfig: true
@@ -3107,7 +3107,7 @@ jobs:
           api-token: ${{ secrets.C11Y_MATRIX_TOKEN }}
           kubernetes-distribution: ${{ matrix.cluster.distribution }}
           kubernetes-version: ${{ matrix.cluster.version }}
-          cluster-name: ${{ github.ref_name }}-${{ matrix.cluster.distribution }}-${{ matrix.cluster.version }}
+          cluster-name: automated-kots-${{ github.run_id }}-${{ matrix.cluster.distribution }}-${{ matrix.cluster.version }}
           timeout-minutes: '120'
           ttl: 2h
           export-kubeconfig: true
@@ -3299,7 +3299,7 @@ jobs:
           api-token: ${{ secrets.C11Y_MATRIX_TOKEN }}
           kubernetes-distribution: ${{ matrix.cluster.distribution }}
           kubernetes-version: ${{ matrix.cluster.version }}
-          cluster-name: ${{ github.ref_name }}-${{ matrix.cluster.distribution }}-${{ matrix.cluster.version }}
+          cluster-name: automated-kots-${{ github.run_id }}-${{ matrix.cluster.distribution }}-${{ matrix.cluster.version }}
           timeout-minutes: '120'
           ttl: 2h
           export-kubeconfig: true
