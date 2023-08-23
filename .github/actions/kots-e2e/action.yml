@@ -90,7 +90,7 @@ runs:
 
     - name: Create a c11y matrix cluster 
       id: create-cluster 
-      uses: replicatedhq/replicated-actions/create-cluster@v0
+      uses: replicatedhq/replicated-actions/create-cluster@v1
       if: ${{ inputs.k8s-distribution == 'k3s' || inputs.k8s-distribution == 'kind' || inputs.k8s-distribution == 'eks' }}
       with: 
         api-token: ${{ inputs.replicated-api-token }}
@@ -152,7 +152,7 @@ runs:
 
     - name: Remove Cluster
       id: remove-cluster
-      uses: replicatedhq/replicated-actions/remove-cluster@v0
+      uses: replicatedhq/replicated-actions/remove-cluster@v1
       if: ${{ inputs.k8s-cluster-skip-teardown != 'true' && (inputs.k8s-distribution == 'k3s' || inputs.k8s-distribution == 'kind' || inputs.k8s-distribution == 'eks') }}
       continue-on-error: true
       with:
