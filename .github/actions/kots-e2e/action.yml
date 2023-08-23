@@ -153,7 +153,7 @@ runs:
     - name: Remove Cluster
       id: remove-cluster
       uses: replicatedhq/replicated-actions/remove-cluster@v1
-      if: ${{ inputs.k8s-cluster-skip-teardown != 'true' && outputs.cluster-id }}
+      if: ${{ inputs.k8s-cluster-skip-teardown != 'true' && steps.create-cluster.outputs.cluster-id != '' }}
       continue-on-error: true
       with:
         api-token: ${{ inputs.replicated-api-token }}
