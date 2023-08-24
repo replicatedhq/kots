@@ -173,13 +173,15 @@ func getApplicationMetadataFromHost(host string, endpoint string, upstream *url.
 }
 
 func SetApplicationMetricsData(license *kotsv1beta1.License, app *apptypes.App, data map[string]interface{}) error {
-	url := fmt.Sprintf("%s/TODO/metrics", license.Spec.Endpoint)
+	url := fmt.Sprintf("%s/application/metrics", license.Spec.Endpoint)
 
 	payload := struct {
 		Data map[string]interface{} `json:"data"`
 	}{
 		Data: data,
 	}
+
+	fmt.Printf("sending payload: %+v url:%s\n", payload, url)
 
 	reqBody, err := json.Marshal(payload)
 	if err != nil {
