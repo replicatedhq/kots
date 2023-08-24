@@ -7,15 +7,21 @@ inputs:
   kots-namespace:
     description: 'KOTS namespace'
     required: true
-  k8s-version:
-    description: 'K8s version'
-    required: true
-  platform:
-    description: 'Platform to run tests on (k3s, gke)'
+  k8s-distribution:
+    description: 'Kubernetes distribution'
     default: 'k3s'
     required: false
-  k8s-arguments:
-    description: 'arguments to pass to k8s'
+  k8s-version:
+    description: 'Kubernetes version'
+    default: 'v1.26'
+    required: false
+  k8s-cluster-ttl:
+    description: 'TTL for c11y matrix clusters'
+    default: '2h'
+    required: false
+  k8s-cluster-skip-teardown:
+    description: 'Skip cluster teardown'
+    default: 'false'
     required: false
   testim-access-token:
     description: 'Testim access token'
@@ -58,23 +64,42 @@ inputs:
   gke-service-key:
     description: 'Service key to authenticate a Google Cloud service account'
     required: false
+  replicated-api-token:
+    description: 'Replicated API token for C11y matrix'
+    required: false
+
+outputs:
+  cluster-id:
+    description: 'ID of the c11y matrix cluster created by create-cluster action'
+    value: ${{ steps.create-cluster.outputs.cluster-id }}
 
 runs:
   using: "composite"
   steps:
-    - name: Generate GKE cluster name
-      if: inputs.platform == 'gke'
+    - name: Create a GKE cluster
+      if: inputs.k8s-distribution == 'gke'
       uses: ./.github/actions/kots-gke-create
       with:
         service-key: ${{ inputs.gke-service-key }}
 
-    # TODO: use k3d eventually but this is difficult to support with ${{ inputs.k8s-version }}
-    - name: Generate a k3s cluster
-      if: inputs.platform == 'k3s'
+    - name: Create a local k3s cluster
+      if: inputs.k8s-distribution == 'k3s-local'
       uses: replicatedhq/action-k3s@main
       with:
         version: ${{ inputs.k8s-version }}
-        arguments: ${{ inputs.k8s-arguments }}
+
+    - name: Create a c11y matrix cluster 
+      id: create-cluster 
+      uses: replicatedhq/replicated-actions/create-cluster@v1
+      if: ${{ inputs.k8s-distribution == 'k3s' || inputs.k8s-distribution == 'kind' || inputs.k8s-distribution == 'eks' }}
+      with: 
+        api-token: ${{ inputs.replicated-api-token }}
+        kubernetes-distribution: ${{ inputs.k8s-distribution }}
+        kubernetes-version: ${{ inputs.k8s-version }}
+        cluster-name: automated-kots-${{ github.run_id }}-${{ inputs.k8s-distribution }}-${{ inputs.k8s-version }}
+        timeout-minutes: '120'
+        ttl: ${{ inputs.k8s-cluster-ttl }}
+        export-kubeconfig: true
 
     - name: execute suite "${{ inputs.test-focus }}"
       env:
@@ -124,6 +149,15 @@ runs:
         aws-access-key-id: ${{ inputs.aws-access-key-id }}
         aws-secret-access-key: ${{ inputs.aws-secret-access-key }}
         aws-region: ${{ inputs.aws-region }}
+
+    - name: Remove Cluster
+      id: remove-cluster
+      uses: replicatedhq/replicated-actions/remove-cluster@v1
+      if: ${{ inputs.k8s-cluster-skip-teardown != 'true' && steps.create-cluster.outputs.cluster-id != '' }}
+      continue-on-error: true
+      with:
+        api-token: ${{ inputs.replicated-api-token }}
+        cluster-id: ${{ steps.create-cluster.outputs.cluster-id }}
 
     - name: Delete GKE cluster if created
       if: ${{ always() && inputs.platform == 'gke' }}
