@@ -231,35 +231,6 @@ jobs:
       - name: test
         run: make ci-test
 
-  build-kotsadm:
-    runs-on: ubuntu-20.04
-    needs: [ can-run-ci, build-web, deps-kots, generate-tag ]
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          ref: ${{github.event.pull_request.head.ref}}
-          repository: ${{github.event.pull_request.head.repo.full_name}}
-
-      - uses: actions/setup-go@v4
-        with:
-          go-version: '^1.20.0'
-          cache: true
-
-      - name: Download web artifact
-        uses: actions/download-artifact@v3
-        with:
-          name: web
-          path: ./web/dist
-
-      - name: Build
-        env:
-          GIT_TAG: ${{ needs.generate-tag.outputs.tag }}
-        run: mapfile -t envs < <(grep -v '#.*' < .image.env) && export "${envs[@]}" && make build
-
-      - uses: actions/upload-artifact@v3
-        with:
-          name: kotsadm
-          path: ./bin/kotsadm
 
   build-kots:
     runs-on: ubuntu-20.04
@@ -295,34 +266,11 @@ jobs:
 
   build-push-kotsadm-image:
     runs-on: ubuntu-20.04
-    needs: [ can-run-ci, build-kotsadm, build-kots ]
+    needs: [ can-run-ci ]
     steps:
-      - uses: actions/checkout@v4
+      - uses: ./.github/actions/build-kotsadm-image
         with:
-          ref: ${{github.event.pull_request.head.ref}}
-          repository: ${{github.event.pull_request.head.repo.full_name}}
-
-      - name: Download kots artifact
-        uses: actions/download-artifact@v3
-        with:
-          name: kots
-          path: bin/
-
-      - name: Download kotsadm artifact
-        uses: actions/download-artifact@v3
-        with:
-          name: kotsadm
-          path: bin/
-
-      - run: chmod +x bin/kots bin/kotsadm
-
-      - name: build and push kotsadm for e2e
-        uses: docker/build-push-action@v5
-        with:
-          tags: ttl.sh/automated-${{ github.run_id }}/kotsadm:24h
-          context: ./
-          file: ./deploy/Dockerfile
-          push: true
+          image-name: ttl.sh/automated-${{ github.run_id }}/kotsadm:24h
 
 
   build-kots-helm:
