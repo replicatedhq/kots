@@ -62,11 +62,11 @@ pipeline:
       mv bin/kots "${DESTDIR}/kots"
 
       # TODO: this requires manual intervention whenever helm bumps its major version
-      ln -s /usr/bin/helm ${{targets.destdir}}/usr/local/bin/helm
-      ln -s /usr/bin/helm ${{targets.destdir}}/usr/local/bin/helm3
+      ln -s /usr/local/bin/helm ${{targets.destdir}}/usr/local/bin/helm
+      ln -s /usr/local/bin/helm ${{targets.destdir}}/usr/local/bin/helm3
 
       # TODO: this requires manual intervention whenever kustomize bumps its major version
-      ln -s /usr/bin/kustomize ${{targets.destdir}}/usr/local/bin/kustomize
-      ln -s /usr/bin/kustomize ${{targets.destdir}}/usr/local/bin/kustomize5
+      ln -s /usr/local/bin/kustomize ${{targets.destdir}}/usr/local/bin/kustomize
+      ln -s /usr/local/bin/kustomize ${{targets.destdir}}/usr/local/bin/kustomize5
 
-      ln -s /usr/bin/kubectl ${{targets.destdir}}/usr/local/bin/kubectl
+      ln -s /usr/local/bin/kubectl ${{targets.destdir}}/usr/local/bin/kubectl
