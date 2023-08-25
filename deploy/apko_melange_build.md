@@ -44,7 +44,7 @@ docker run $(apko publish ...)
 
 ### Presubmit GitHub Actions
 
-The above steps are automated in [GitHub Actions](./.github/workflows/presubmit-image.yaml) as a presubmit check for PRs.
+The above steps are automated in [GitHub Actions](./.github/actions/build-kotsadm-image/action.yml) as a presubmit check for PRs.
 
 The image this workflow produces is only meant for validation, and not meant for production use cases at this time.
 

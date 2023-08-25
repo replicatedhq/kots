@@ -10,13 +10,13 @@ runs:
   steps:
     - uses: chainguard-dev/actions/melange-build@main
       with:
-        config: melange.yaml
+        config: deploy/melange.yaml
         archs: x86_64
         sign-with-temporary-key: true
 
     - uses: chainguard-images/actions/apko-publish@main
       with:
-        config: apko.yaml
+        config: deploy/apko.yaml
         archs: x86_64
         tag: ${{ inputs.image-name }}
         vcs-url: true

@@ -537,7 +537,7 @@ jobs:
           repo-token: ${{ secrets.GITHUB_TOKEN }}
           allow-repeats: false
 
-  
+
   cmx-versions:
     runs-on: ubuntu-20.04
     needs: [ enable-tests, can-run-ci ]
@@ -556,7 +556,7 @@ jobs:
 
   validate-existing-online-install-minimal:
     runs-on: ubuntu-20.04
-    needs: [ enable-tests, can-run-ci, build-push-kotsadm-image, build-e2e, build-kurl-proxy, build-migrations, push-minio, push-rqlite ]
+    needs: [ enable-tests, can-run-ci, build-kots, build-push-kotsadm-image, build-e2e, build-kurl-proxy, build-migrations, push-minio, push-rqlite ]
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -591,7 +591,7 @@ jobs:
 
   validate-smoke-test:
     runs-on: ubuntu-20.04
-    needs: [ enable-tests, can-run-ci, cmx-versions, build-push-kotsadm-image, build-e2e, build-kurl-proxy, build-migrations, push-minio, push-rqlite ]
+    needs: [ enable-tests, can-run-ci, cmx-versions, build-kots, build-push-kotsadm-image, build-e2e, build-kurl-proxy, build-migrations, push-minio, push-rqlite ]
     strategy:
       fail-fast: false
       matrix:
@@ -630,7 +630,7 @@ jobs:
 
   validate-minimal-rbac:
     runs-on: ubuntu-20.04
-    needs: [ enable-tests, can-run-ci, cmx-versions, build-push-kotsadm-image, build-e2e, build-kurl-proxy, build-migrations, push-minio, push-rqlite ]
+    needs: [ enable-tests, can-run-ci, cmx-versions, build-kots, build-push-kotsadm-image, build-e2e, build-kurl-proxy, build-migrations, push-minio, push-rqlite ]
     strategy:
       fail-fast: false
       matrix:
@@ -742,7 +742,7 @@ jobs:
 
   validate-backup-and-restore:
     runs-on: ubuntu-20.04
-    needs: [ enable-tests, can-run-ci, cmx-versions, build-push-kotsadm-image, build-e2e, build-kurl-proxy, build-migrations, push-minio, push-rqlite ]
+    needs: [ enable-tests, can-run-ci, cmx-versions, build-kots, build-push-kotsadm-image, build-e2e, build-kurl-proxy, build-migrations, push-minio, push-rqlite ]
     strategy:
       fail-fast: false
       matrix:
@@ -781,7 +781,7 @@ jobs:
 
   validate-no-required-config:
     runs-on: ubuntu-20.04
-    needs: [ enable-tests, can-run-ci, build-push-kotsadm-image, build-e2e, build-kurl-proxy, build-migrations, push-minio, push-rqlite ]
+    needs: [ enable-tests, can-run-ci, build-kots, build-push-kotsadm-image, build-e2e, build-kurl-proxy, build-migrations, push-minio, push-rqlite ]
     strategy:
       fail-fast: false
       matrix:
@@ -821,7 +821,7 @@ jobs:
 
   validate-strict-preflight-checks:
     runs-on: ubuntu-20.04
-    needs: [ enable-tests, can-run-ci, build-push-kotsadm-image, build-e2e, build-kurl-proxy, build-migrations, push-minio, push-rqlite ]
+    needs: [ enable-tests, can-run-ci, build-kots, build-push-kotsadm-image, build-e2e, build-kurl-proxy, build-migrations, push-minio, push-rqlite ]
     strategy:
       fail-fast: false
       matrix:
@@ -930,7 +930,7 @@ jobs:
 
   validate-config:
     runs-on: ubuntu-20.04
-    needs: [ enable-tests, can-run-ci, build-push-kotsadm-image, build-e2e, build-kurl-proxy, build-migrations, push-minio, push-rqlite ]
+    needs: [ enable-tests, can-run-ci, build-kots, build-push-kotsadm-image, build-e2e, build-kurl-proxy, build-migrations, push-minio, push-rqlite ]
     strategy:
       fail-fast: false
       matrix:
@@ -970,7 +970,7 @@ jobs:
 
   validate-version-history-pagination:
     runs-on: ubuntu-20.04
-    needs: [ enable-tests, can-run-ci, build-push-kotsadm-image, build-e2e, build-kurl-proxy, build-migrations, push-minio, push-rqlite ]
+    needs: [ enable-tests, can-run-ci, build-kots, build-push-kotsadm-image, build-e2e, build-kurl-proxy, build-migrations, push-minio, push-rqlite ]
     strategy:
       fail-fast: false
       matrix:
@@ -1009,7 +1009,7 @@ jobs:
 
   validate-change-license:
     runs-on: ubuntu-20.04
-    needs: [ enable-tests, can-run-ci, build-push-kotsadm-image, build-e2e, build-kurl-proxy, build-migrations, push-minio, push-rqlite ]
+    needs: [ enable-tests, can-run-ci, build-kots, build-push-kotsadm-image, build-e2e, build-kurl-proxy, build-migrations, push-minio, push-rqlite ]
     strategy:
       fail-fast: false
       matrix:
@@ -1049,7 +1049,7 @@ jobs:
 
   validate-minimal-rbac-override:
     runs-on: ubuntu-20.04
-    needs: [ enable-tests, can-run-ci, cmx-versions, build-push-kotsadm-image, build-e2e, build-kurl-proxy, build-migrations, push-minio, push-rqlite ]
+    needs: [ enable-tests, can-run-ci, cmx-versions, build-kots, build-push-kotsadm-image, build-e2e, build-kurl-proxy, build-migrations, push-minio, push-rqlite ]
     strategy:
       fail-fast: false
       matrix:
@@ -1225,7 +1225,7 @@ jobs:
 
   validate-multi-namespace:
     runs-on: ubuntu-20.04
-    needs: [ enable-tests, can-run-ci, cmx-versions, build-push-kotsadm-image, build-e2e, build-kurl-proxy, build-migrations, push-minio, push-rqlite ]
+    needs: [ enable-tests, can-run-ci, cmx-versions, build-kots, build-push-kotsadm-image, build-e2e, build-kurl-proxy, build-migrations, push-minio, push-rqlite ]
     strategy:
       fail-fast: false
       matrix:
@@ -1337,7 +1337,7 @@ jobs:
 
   validate-kots-pull:
     runs-on: ubuntu-20.04
-    needs: [ enable-tests, can-run-ci, cmx-versions, build-push-kotsadm-image, build-e2e, build-kurl-proxy, build-migrations, push-minio, push-rqlite ]
+    needs: [ enable-tests, can-run-ci, cmx-versions, build-kots, build-push-kotsadm-image, build-e2e, build-kurl-proxy, build-migrations, push-minio, push-rqlite ]
     strategy:
       fail-fast: false
       matrix:
@@ -1447,7 +1447,7 @@ jobs:
 
   validate-app-version-label:
     runs-on: ubuntu-20.04
-    needs: [ enable-tests, can-run-ci, build-push-kotsadm-image, build-kurl-proxy, build-migrations, push-minio, push-rqlite ]
+    needs: [ enable-tests, can-run-ci, build-kots, build-push-kotsadm-image, build-kurl-proxy, build-migrations, push-minio, push-rqlite ]
     strategy:
       fail-fast: false
       matrix:
@@ -1605,7 +1605,7 @@ jobs:
 
   validate-helm-install-order:
     runs-on: ubuntu-20.04
-    needs: [ enable-tests, can-run-ci, cmx-versions, build-push-kotsadm-image, build-e2e, build-kurl-proxy, build-migrations, push-minio, push-rqlite ]
+    needs: [ enable-tests, can-run-ci, cmx-versions, build-kots, build-push-kotsadm-image, build-e2e, build-kurl-proxy, build-migrations, push-minio, push-rqlite ]
     strategy:
       fail-fast: false
       matrix:
@@ -1704,7 +1704,7 @@ jobs:
 
   validate-no-redeploy-on-restart:
     runs-on: ubuntu-20.04
-    needs: [ enable-tests, can-run-ci, build-push-kotsadm-image, build-kurl-proxy, build-migrations, push-minio, push-rqlite ]
+    needs: [ enable-tests, can-run-ci, build-kots, build-push-kotsadm-image, build-kurl-proxy, build-migrations, push-minio, push-rqlite ]
     strategy:
       fail-fast: false
       matrix:
@@ -1826,7 +1826,7 @@ jobs:
 
   validate-kubernetes-installer-preflight:
     runs-on: ubuntu-20.04
-    needs: [ enable-tests, can-run-ci, build-push-kotsadm-image, build-kurl-proxy, build-migrations, push-minio, push-rqlite ]
+    needs: [ enable-tests, can-run-ci, build-kots, build-push-kotsadm-image, build-kurl-proxy, build-migrations, push-minio, push-rqlite ]
     strategy:
       fail-fast: false
       matrix:
@@ -1963,7 +1963,7 @@ jobs:
 
   validate-kots-push-images-anonymous:
     runs-on: ubuntu-20.04
-    needs: [ enable-tests, can-run-ci, build-push-kotsadm-image, build-kurl-proxy, build-migrations, push-minio, push-rqlite ]
+    needs: [ enable-tests, can-run-ci, build-kots, build-push-kotsadm-image, build-kurl-proxy, build-migrations, push-minio, push-rqlite ]
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -1984,7 +1984,7 @@ jobs:
 
   validate-kots-admin-console-generate-manifests:
     runs-on: ubuntu-20.04
-    needs: [ enable-tests, can-run-ci, build-push-kotsadm-image, build-kurl-proxy, build-migrations, push-minio, push-rqlite ]
+    needs: [ enable-tests, can-run-ci, build-kots, build-push-kotsadm-image, build-kurl-proxy, build-migrations, push-minio, push-rqlite ]
     strategy:
       fail-fast: false
       matrix:
@@ -2383,7 +2383,7 @@ jobs:
 
   validate-kots-upgrade:
     runs-on: ubuntu-20.04
-    needs: [ enable-tests, can-run-ci, cmx-versions, build-push-kotsadm-image, build-e2e, build-kurl-proxy, build-migrations, push-minio, push-rqlite ]
+    needs: [ enable-tests, can-run-ci, cmx-versions, build-kots, build-push-kotsadm-image, build-e2e, build-kurl-proxy, build-migrations, push-minio, push-rqlite ]
     strategy:
       fail-fast: false
       matrix:
@@ -2522,7 +2522,7 @@ jobs:
 
   validate-kots-helm-release-secret-migration:
     runs-on: ubuntu-20.04
-    needs: [ enable-tests, can-run-ci, build-push-kotsadm-image, build-kurl-proxy, build-migrations, push-minio, push-rqlite ]
+    needs: [ enable-tests, can-run-ci, build-kots, build-push-kotsadm-image, build-kurl-proxy, build-migrations, push-minio, push-rqlite ]
     strategy:
       fail-fast: false
       matrix:
@@ -2709,7 +2709,7 @@ jobs:
 
   validate-multi-app-backup-and-restore:
     runs-on: ubuntu-20.04
-    needs: [ enable-tests, can-run-ci, build-push-kotsadm-image, build-e2e, build-kurl-proxy, build-migrations, push-minio, push-rqlite ]
+    needs: [ enable-tests, can-run-ci, build-kots, build-push-kotsadm-image, build-e2e, build-kurl-proxy, build-migrations, push-minio, push-rqlite ]
     strategy:
       fail-fast: false
       matrix:
@@ -2749,7 +2749,7 @@ jobs:
 
   validate-multi-app-install:
     runs-on: ubuntu-20.04
-    needs: [ enable-tests, can-run-ci, build-push-kotsadm-image, build-e2e, build-kurl-proxy, build-migrations, push-minio, push-rqlite ]
+    needs: [ enable-tests, can-run-ci, build-kots, build-push-kotsadm-image, build-e2e, build-kurl-proxy, build-migrations, push-minio, push-rqlite ]
     strategy:
       fail-fast: false
       matrix:
@@ -2789,7 +2789,7 @@ jobs:
 
   validate-airgap-smoke-test:
     runs-on: ubuntu-20.04
-    needs: [ enable-tests, can-run-ci, build-push-kotsadm-image, build-e2e, build-kurl-proxy, build-migrations, push-minio, push-rqlite ]
+    needs: [ enable-tests, can-run-ci, build-kots, build-push-kotsadm-image, build-e2e, build-kurl-proxy, build-migrations, push-minio, push-rqlite ]
     strategy:
       fail-fast: false
       matrix:
@@ -2830,7 +2830,7 @@ jobs:
 
   validate-remove-app:
     runs-on: ubuntu-20.04
-    needs: [ enable-tests, can-run-ci, build-push-kotsadm-image, build-kurl-proxy, build-migrations, push-minio, push-rqlite ]
+    needs: [ enable-tests, can-run-ci, build-kots, build-push-kotsadm-image, build-kurl-proxy, build-migrations, push-minio, push-rqlite ]
     strategy:
       fail-fast: false
       matrix:
@@ -3009,7 +3009,7 @@ jobs:
 
   validate-registry-check:
     runs-on: ubuntu-20.04
-    needs: [ enable-tests, can-run-ci, build-push-kotsadm-image, build-kurl-proxy, build-migrations, push-minio, push-rqlite ]
+    needs: [ enable-tests, can-run-ci, build-kots, build-push-kotsadm-image, build-kurl-proxy, build-migrations, push-minio, push-rqlite ]
     strategy:
       fail-fast: false
       matrix:
@@ -3104,7 +3104,7 @@ jobs:
 
   validate-native-helm-v2:
     runs-on: ubuntu-20.04
-    needs: [ enable-tests, can-run-ci, build-push-kotsadm-image, build-kurl-proxy, build-migrations, push-minio, push-rqlite ]
+    needs: [ enable-tests, can-run-ci, build-kots, build-push-kotsadm-image, build-kurl-proxy, build-migrations, push-minio, push-rqlite ]
     strategy:
       fail-fast: false
       matrix:
@@ -3330,7 +3330,7 @@ jobs:
 
   validate-deployment-orchestration:
     runs-on: ubuntu-20.04
-    needs: [ enable-tests, can-run-ci, build-push-kotsadm-image, build-kurl-proxy, build-migrations, push-minio, push-rqlite ]
+    needs: [ enable-tests, can-run-ci, build-kots, build-push-kotsadm-image, build-kurl-proxy, build-migrations, push-minio, push-rqlite ]
     strategy:
       fail-fast: false
       matrix:
