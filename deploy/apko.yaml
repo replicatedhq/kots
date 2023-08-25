@@ -6,7 +6,7 @@ contents:
     - https://packages.wolfi.dev/os/wolfi-signing.rsa.pub
     - ./melange.rsa.pub
   packages:
-    - kots-head  # This is expected to be built locally by `melange`.
+    - kotsadm-head  # This is expected to be built locally by `melange`.
 
     # All currently supported kubectl versions.
     # TODO: this requires manual intervention whenever there are new kubectl releases.

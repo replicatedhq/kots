@@ -1,8 +1,8 @@
 package:
-  name: kots-head
+  name: kotsadm-head
   version: 0.0.1
   epoch: 0
-  description: Kubernetes Off-The-Shelf (KOTS) Software
+  description: Kotsadm package
   copyright:
     - license: Apache-2.0
 
@@ -62,11 +62,16 @@ pipeline:
       mv bin/kots "${DESTDIR}/kots"
 
       # TODO: this requires manual intervention whenever helm bumps its major version
-      ln -s /usr/local/bin/helm ${{targets.destdir}}/usr/local/bin/helm
-      ln -s /usr/local/bin/helm ${{targets.destdir}}/usr/local/bin/helm3
+      ln -s /usr/bin/helm ${{targets.destdir}}/usr/local/bin/helm
+      ln -s /usr/bin/helm ${{targets.destdir}}/usr/local/bin/helm3
 
       # TODO: this requires manual intervention whenever kustomize bumps its major version
-      ln -s /usr/local/bin/kustomize ${{targets.destdir}}/usr/local/bin/kustomize
-      ln -s /usr/local/bin/kustomize ${{targets.destdir}}/usr/local/bin/kustomize5
+      ln -s /usr/bin/kustomize ${{targets.destdir}}/usr/local/bin/kustomize
+      ln -s /usr/bin/kustomize ${{targets.destdir}}/usr/local/bin/kustomize5
 
-      ln -s /usr/local/bin/kubectl ${{targets.destdir}}/usr/local/bin/kubectl
+      # TODO: this requires manual intervention whenever kubectl bumps its major version
+      ln -s /usr/bin/kubectl-1.24 ${{targets.destdir}}/usr/local/bin/kubectl-v1.24
+      ln -s /usr/bin/kubectl-1.25 ${{targets.destdir}}/usr/local/bin/kubectl-v1.25
+      ln -s /usr/bin/kubectl-1.26 ${{targets.destdir}}/usr/local/bin/kubectl-v1.26
+      ln -s /usr/bin/kubectl-1.27 ${{targets.destdir}}/usr/local/bin/kubectl-v1.27
+      ln -s /usr/bin/kubectl-1.27 ${{targets.destdir}}/usr/local/bin/kubectl
