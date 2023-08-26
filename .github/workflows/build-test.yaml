@@ -276,9 +276,25 @@ jobs:
         with:
           go-version: '1.20.x'
 
-      - uses: ./.github/actions/build-kotsadm-image
+      - name: template melange and apko configs
+        env:
+          GIT_TAG: ${{ needs.generate-tag.outputs.tag }}
+        run: |
+          envsubst < deploy/melange.yaml.tmpl > deploy/melange.yaml
+          envsubst < deploy/apko.yaml.tmpl > deploy/apko.yaml
+
+      - uses: chainguard-dev/actions/melange-build@main
         with:
-          image-name: ttl.sh/automated-${{ github.run_id }}/kotsadm:24h
+          config: deploy/melange.yaml
+          archs: x86_64
+          sign-with-temporary-key: true
+
+      - uses: chainguard-images/actions/apko-publish@main
+        with:
+          config: deploy/apko.yaml
+          archs: x86_64
+          tag: ttl.sh/automated-${{ github.run_id }}/kotsadm:24h
+          vcs-url: true
 
 
   build-kots-helm:
