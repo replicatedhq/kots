@@ -266,7 +266,7 @@ jobs:
 
   build-push-kotsadm-image:
     runs-on: ubuntu-20.04
-    needs: [ can-run-ci ]
+    needs: [ can-run-ci, generate-tag ]
     permissions:
       contents: read
     steps:
