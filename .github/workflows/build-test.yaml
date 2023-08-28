@@ -277,9 +277,8 @@ jobs:
           go-version: '1.20.x'
 
       - name: template melange and apko configs
-        env:
-          GIT_TAG: ${{ needs.generate-tag.outputs.tag }}
         run: |
+          export GIT_TAG=${{ needs.generate-tag.outputs.tag }}
           envsubst < deploy/melange.yaml.tmpl > deploy/melange.yaml
           envsubst < deploy/apko.yaml.tmpl > deploy/apko.yaml
 
