@@ -1041,6 +1041,7 @@ jobs:
       - name: Remove Cluster
         id: remove-cluster
         uses: replicatedhq/replicated-actions/remove-cluster@v1
+        if: ${{ always() && steps.create-cluster.outputs.cluster-id != '' }}
         continue-on-error: true
         with:
           api-token: ${{ secrets.C11Y_MATRIX_TOKEN }}
@@ -1150,6 +1151,7 @@ jobs:
       - name: Remove Cluster
         id: remove-cluster
         uses: replicatedhq/replicated-actions/remove-cluster@v1
+        if: ${{ always() && steps.create-cluster.outputs.cluster-id != '' }}
         continue-on-error: true
         with:
           api-token: ${{ secrets.C11Y_MATRIX_TOKEN }}
@@ -1338,6 +1340,7 @@ jobs:
       - name: Remove Cluster
         id: remove-cluster
         uses: replicatedhq/replicated-actions/remove-cluster@v1
+        if: ${{ always() && steps.create-cluster.outputs.cluster-id != '' }}
         continue-on-error: true
         with:
           api-token: ${{ secrets.C11Y_MATRIX_TOKEN }}
@@ -1490,6 +1493,7 @@ jobs:
       - name: Remove Cluster
         id: remove-cluster
         uses: replicatedhq/replicated-actions/remove-cluster@v1
+        if: ${{ always() && steps.create-cluster.outputs.cluster-id != '' }}
         continue-on-error: true
         with:
           api-token: ${{ secrets.C11Y_MATRIX_TOKEN }}
@@ -1585,6 +1589,7 @@ jobs:
       - name: Remove Cluster
         id: remove-cluster
         uses: replicatedhq/replicated-actions/remove-cluster@v1
+        if: ${{ always() && steps.create-cluster.outputs.cluster-id != '' }}
         continue-on-error: true
         with:
           api-token: ${{ secrets.C11Y_MATRIX_TOKEN }}
@@ -1680,6 +1685,7 @@ jobs:
       - name: Remove Cluster
         id: remove-cluster
         uses: replicatedhq/replicated-actions/remove-cluster@v1
+        if: ${{ always() && steps.create-cluster.outputs.cluster-id != '' }}
         continue-on-error: true
         with:
           api-token: ${{ secrets.C11Y_MATRIX_TOKEN }}
@@ -1796,6 +1802,7 @@ jobs:
       - name: Remove Cluster
         id: remove-cluster
         uses: replicatedhq/replicated-actions/remove-cluster@v1
+        if: ${{ always() && steps.create-cluster.outputs.cluster-id != '' }}
         continue-on-error: true
         with:
           api-token: ${{ secrets.C11Y_MATRIX_TOKEN }}
@@ -1927,6 +1934,7 @@ jobs:
       - name: Remove Cluster
         id: remove-cluster
         uses: replicatedhq/replicated-actions/remove-cluster@v1
+        if: ${{ always() && steps.create-cluster.outputs.cluster-id != '' }}
         continue-on-error: true
         with:
           api-token: ${{ secrets.C11Y_MATRIX_TOKEN }}
@@ -2180,6 +2188,7 @@ jobs:
       - name: Remove Cluster
         id: remove-cluster
         uses: replicatedhq/replicated-actions/remove-cluster@v1
+        if: ${{ always() && steps.create-cluster.outputs.cluster-id != '' }}
         continue-on-error: true
         with:
           api-token: ${{ secrets.C11Y_MATRIX_TOKEN }}
@@ -2247,6 +2256,7 @@ jobs:
       - name: Remove Cluster
         id: remove-cluster
         uses: replicatedhq/replicated-actions/remove-cluster@v1
+        if: ${{ always() && steps.kots-e2e.outputs.cluster-id != '' }}
         continue-on-error: true
         with:
           api-token: ${{ secrets.C11Y_MATRIX_TOKEN }}
@@ -2311,6 +2321,7 @@ jobs:
       - name: Remove Cluster
         id: remove-cluster
         uses: replicatedhq/replicated-actions/remove-cluster@v1
+        if: ${{ always() && steps.kots-e2e.outputs.cluster-id != '' }}
         continue-on-error: true
         with:
           api-token: ${{ secrets.C11Y_MATRIX_TOKEN }}
@@ -2375,6 +2386,7 @@ jobs:
       - name: Remove Cluster
         id: remove-cluster
         uses: replicatedhq/replicated-actions/remove-cluster@v1
+        if: ${{ always() && steps.kots-e2e.outputs.cluster-id != '' }}
         continue-on-error: true
         with:
           api-token: ${{ secrets.C11Y_MATRIX_TOKEN }}
@@ -2511,6 +2523,7 @@ jobs:
       - name: Remove Cluster
         id: remove-cluster
         uses: replicatedhq/replicated-actions/remove-cluster@v1
+        if: ${{ always() && steps.create-cluster.outputs.cluster-id != '' }}
         continue-on-error: true
         with:
           api-token: ${{ secrets.C11Y_MATRIX_TOKEN }}
@@ -2692,6 +2705,7 @@ jobs:
       - name: Remove Cluster
         id: remove-cluster
         uses: replicatedhq/replicated-actions/remove-cluster@v1
+        if: ${{ always() && steps.create-cluster.outputs.cluster-id != '' }}
         continue-on-error: true
         with:
           api-token: ${{ secrets.C11Y_MATRIX_TOKEN }}
@@ -2978,6 +2992,7 @@ jobs:
       - name: Remove Cluster
         id: remove-cluster
         uses: replicatedhq/replicated-actions/remove-cluster@v1
+        if: ${{ always() && steps.create-cluster.outputs.cluster-id != '' }}
         continue-on-error: true
         with:
           api-token: ${{ secrets.C11Y_MATRIX_TOKEN }}
@@ -3072,6 +3087,7 @@ jobs:
       - name: Remove Cluster
         id: remove-cluster
         uses: replicatedhq/replicated-actions/remove-cluster@v1
+        if: ${{ always() && steps.create-cluster.outputs.cluster-id != '' }}
         continue-on-error: true
         with:
           api-token: ${{ secrets.C11Y_MATRIX_TOKEN }}
@@ -3266,6 +3282,7 @@ jobs:
       - name: Remove Cluster
         id: remove-cluster
         uses: replicatedhq/replicated-actions/remove-cluster@v1
+        if: ${{ always() && steps.create-cluster.outputs.cluster-id != '' }}
         continue-on-error: true
         with:
           api-token: ${{ secrets.C11Y_MATRIX_TOKEN }}
@@ -3429,6 +3446,7 @@ jobs:
       - name: Remove Cluster
         id: remove-cluster
         uses: replicatedhq/replicated-actions/remove-cluster@v1
+        if: ${{ always() && steps.create-cluster.outputs.cluster-id != '' }}
         continue-on-error: true
         with:
           api-token: ${{ secrets.C11Y_MATRIX_TOKEN }}
