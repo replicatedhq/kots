@@ -23,21 +23,22 @@ environment:
 pipeline:
   - runs: |
       set -x
-      mkdir -p "${{targets.destdir}}"
+      export DESTDIR="${{targets.destdir}}"
+      mkdir -p "${DESTDIR}"
 
       # Scripts etc.
-      mv deploy/assets/backup.sh "${{targets.destdir}}/backup.sh"
-      mv deploy/assets/restore-db.sh "${{targets.destdir}}/restore-db.sh"
-      mv deploy/assets/restore-s3.sh "${{targets.destdir}}/restore-s3.sh"
-      mv deploy/assets/restore.sh "${{targets.destdir}}/restore.sh"
-      mv deploy/assets/migrate-s3.sh "${{targets.destdir}}/migrate-s3.sh"
-      mv deploy/assets/fs-minio-check.sh "${{targets.destdir}}/fs-minio-check.sh"
-      mv deploy/assets/fs-minio-reset.sh "${{targets.destdir}}/fs-minio-reset.sh"
-      mv deploy/assets/fs-minio-keys-sha.sh "${{targets.destdir}}/fs-minio-keys-sha.sh"
-      mv deploy/assets/s3-bucket-create.sh "${{targets.destdir}}/s3-bucket-create.sh"
-      mv deploy/assets/s3-bucket-head.sh "${{targets.destdir}}/s3-bucket-head.sh"
-      mv deploy/assets/kots-upgrade.sh "${{targets.destdir}}/kots-upgrade.sh"
-      mv deploy/assets/postgres "${{targets.destdir}}/postgres"
+      mv deploy/assets/backup.sh "${DESTDIR}/backup.sh"
+      mv deploy/assets/restore-db.sh "${DESTDIR}/restore-db.sh"
+      mv deploy/assets/restore-s3.sh "${DESTDIR}/restore-s3.sh"
+      mv deploy/assets/restore.sh "${DESTDIR}/restore.sh"
+      mv deploy/assets/migrate-s3.sh "${DESTDIR}/migrate-s3.sh"
+      mv deploy/assets/fs-minio-check.sh "${DESTDIR}/fs-minio-check.sh"
+      mv deploy/assets/fs-minio-reset.sh "${DESTDIR}/fs-minio-reset.sh"
+      mv deploy/assets/fs-minio-keys-sha.sh "${DESTDIR}/fs-minio-keys-sha.sh"
+      mv deploy/assets/s3-bucket-create.sh "${DESTDIR}/s3-bucket-create.sh"
+      mv deploy/assets/s3-bucket-head.sh "${DESTDIR}/s3-bucket-head.sh"
+      mv deploy/assets/kots-upgrade.sh "${DESTDIR}/kots-upgrade.sh"
+      mv deploy/assets/postgres "${DESTDIR}/postgres"
 
       # kotsadm and kots binaries
       export VERSION=${{package.version}}
@@ -46,7 +47,9 @@ pipeline:
       # Set environment variables from repository
       source .image.env
 
+      KOTS_KUBECTL_BIN_DIR=/usr/local/bin
       KOTS_KUSTOMIZE_BIN_DIR=/usr/local/bin
+      KOTS_HELM_BIN_DIR=/usr/local/bin
 
       # TODO: fix pact build error on arm https://github.com/pact-foundation/pact-js-core/issues/264
       export PACT_SKIP_BINARY_INSTALL=true
@@ -57,20 +60,20 @@ pipeline:
       make -C web deps build-kotsadm
       make kots build
 
-      mv bin/kotsadm "${{targets.destdir}}/kotsadm"
-      mv bin/kots "${{targets.destdir}}/kots"
+      mv bin/kotsadm "${DESTDIR}/kotsadm"
+      mv bin/kots "${DESTDIR}/kots"
 
       # TODO: this requires manual intervention whenever helm bumps its major version
-      ln -s /usr/bin/helm ${{targets.destdir}}/usr/local/bin/helm
-      ln -s /usr/bin/helm ${{targets.destdir}}/usr/local/bin/helm3
+      ln -s /usr/bin/helm ${DESTDIR}/usr/local/bin/helm
+      ln -s /usr/bin/helm ${DESTDIR}/usr/local/bin/helm3
 
       # TODO: this requires manual intervention whenever kustomize bumps its major version
-      ln -s /usr/bin/kustomize ${{targets.destdir}}/usr/local/bin/kustomize
-      ln -s /usr/bin/kustomize ${{targets.destdir}}/usr/local/bin/kustomize5
+      ln -s /usr/bin/kustomize ${DESTDIR}/usr/local/bin/kustomize
+      ln -s /usr/bin/kustomize ${DESTDIR}/usr/local/bin/kustomize5
 
       # TODO: this requires manual intervention whenever kubectl bumps its major version
-      ln -s /usr/bin/kubectl-1.24 ${{targets.destdir}}/usr/local/bin/kubectl-v1.24
-      ln -s /usr/bin/kubectl-1.25 ${{targets.destdir}}/usr/local/bin/kubectl-v1.25
-      ln -s /usr/bin/kubectl-1.26 ${{targets.destdir}}/usr/local/bin/kubectl-v1.26
-      ln -s /usr/bin/kubectl-1.27 ${{targets.destdir}}/usr/local/bin/kubectl-v1.27
-      ln -s /usr/bin/kubectl-1.27 ${{targets.destdir}}/usr/local/bin/kubectl
+      ln -s /usr/bin/kubectl-1.24 ${DESTDIR}/usr/local/bin/kubectl-v1.24
+      ln -s /usr/bin/kubectl-1.25 ${DESTDIR}/usr/local/bin/kubectl-v1.25
+      ln -s /usr/bin/kubectl-1.26 ${DESTDIR}/usr/local/bin/kubectl-v1.26
+      ln -s /usr/bin/kubectl-1.27 ${DESTDIR}/usr/local/bin/kubectl-v1.27
+      ln -s /usr/bin/kubectl-1.27 ${DESTDIR}/usr/local/bin/kubectl
