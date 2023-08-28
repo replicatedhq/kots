@@ -8,13 +8,16 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
+	apptypes "github.com/replicatedhq/kots/pkg/app/types"
 	"github.com/replicatedhq/kots/pkg/handlers/types"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
+	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/session"
 	sessiontypes "github.com/replicatedhq/kots/pkg/session/types"
 	"github.com/replicatedhq/kots/pkg/store"
 	"github.com/replicatedhq/kots/pkg/util"
+	"github.com/replicatedhq/kotskinds/apis/kots/v1beta1"
 	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -127,6 +130,50 @@ func requireValidSession(kotsStore store.Store, w http.ResponseWriter, r *http.R
 	}
 
 	return sess, nil
+}
+
+func requireValidLicense(kotsStore store.Store, w http.ResponseWriter, r *http.Request) (*v1beta1.License, *apptypes.App, error) {
+	if r.Method == "OPTIONS" {
+		return nil, nil, nil
+	}
+
+	licenseID := r.Header.Get("authorization")
+	if licenseID == "" {
+		err := errors.New("missing authorization header")
+		response := types.ErrorResponse{Error: util.StrPointer(err.Error())}
+		JSON(w, http.StatusUnauthorized, response)
+		return nil, nil, err
+	}
+
+	apps, err := kotsStore.ListInstalledApps()
+	if err != nil {
+		return nil, nil, errors.Wrap(err, "get all apps")
+	}
+
+	var license *v1beta1.License
+	var app *apptypes.App
+
+	for _, a := range apps {
+		l, err := kotsutil.LoadLicenseFromBytes([]byte(a.License))
+		if err != nil {
+			return nil, nil, errors.Wrap(err, "load license")
+		}
+
+		if l.Spec.LicenseID == licenseID {
+			license = l
+			app = a
+			break
+		}
+	}
+
+	if license == nil {
+		err := errors.New("license ID is not valid")
+		response := types.ErrorResponse{Error: util.StrPointer(err.Error())}
+		JSON(w, http.StatusUnauthorized, response)
+		return nil, nil, err
+	}
+
+	return license, app, nil
 }
 
 func requireValidKOTSToken(w http.ResponseWriter, r *http.Request) error {

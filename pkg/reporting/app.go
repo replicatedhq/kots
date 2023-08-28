@@ -160,6 +160,12 @@ func GetReporter() Reporter {
 }
 
 func GetReportingInfo(appID string) *types.ReportingInfo {
+	if os.Getenv("USE_MOCK_REPORTING") == "1" {
+		return &types.ReportingInfo{
+			InstanceID: appID,
+		}
+	}
+
 	r := types.ReportingInfo{
 		InstanceID:    appID,
 		KOTSInstallID: os.Getenv("KOTS_INSTALL_ID"),

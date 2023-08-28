@@ -1234,6 +1234,18 @@ func (mr *MockKOTSHandlerMockRecorder) SaveSnapshotConfig(w, r interface{}) *gom
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SaveSnapshotConfig", reflect.TypeOf((*MockKOTSHandler)(nil).SaveSnapshotConfig), w, r)
 }
 
+// SendCustomApplicationMetrics mocks base method.
+func (m *MockKOTSHandler) SendCustomApplicationMetrics(w http.ResponseWriter, r *http.Request) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "SendCustomApplicationMetrics", w, r)
+}
+
+// SendCustomApplicationMetrics indicates an expected call of SendCustomApplicationMetrics.
+func (mr *MockKOTSHandlerMockRecorder) SendCustomApplicationMetrics(w, r interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SendCustomApplicationMetrics", reflect.TypeOf((*MockKOTSHandler)(nil).SendCustomApplicationMetrics), w, r)
+}
+
 // SetAppConfigValues mocks base method.
 func (m *MockKOTSHandler) SetAppConfigValues(w http.ResponseWriter, r *http.Request) {
 	m.ctrl.T.Helper()
