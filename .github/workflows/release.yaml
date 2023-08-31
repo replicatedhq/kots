@@ -5,13 +5,13 @@ on:
     tags:
       - "v*.*.*"
     branches:
-      - main
+      - ricardomaraschini/sc-86964/kots-test-workflow-for-helmvm
 
 jobs:
   generate-tag:
     runs-on: ubuntu-20.04
     outputs:
-      tag: ${{ github.ref_type != 'branch' && steps.get_tag.outputs.GIT_TAG || github.ref_name }}
+      tag: ${{ github.ref_type == 'branch' && steps.get_tag.outputs.GIT_TAG || github.ref_name }}
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -19,7 +19,7 @@ jobs:
         id: get_tag
         uses: ./.github/actions/version-tag
       - name: Push tag
-        if: github.ref_type != 'branch'
+        if: github.ref_type == 'branch'
         env:
           GIT_TAG: ${{ steps.get_tag.outputs.GIT_TAG }}
         run: |
@@ -214,7 +214,7 @@ jobs:
 
   goreleaser:
     runs-on: ubuntu-20.04
-    if: github.ref_type == 'branch'
+    if: github.ref_type != 'branch'
     needs: [build-web]
     steps:
     - uses: actions/setup-go@v3
@@ -299,7 +299,7 @@ jobs:
         id: addon-generate
         with:
           addon_version: ${{ steps.vars.outputs.addon_version }}
-          s3_prefix: "${{ github.ref_type == 'branch' && '' || 'test/' }}"
+          s3_prefix: "${{ github.ref_type != 'branch' && '' || 'test/' }}"
           kotsadm_binary_override: bin/kots.tar.gz
   # only run validate-kurl-addon if changes to "deploy/kurl/kotsadm/template/**"
   kurl-addon-changes-filter:
@@ -317,7 +317,7 @@ jobs:
               - 'deploy/kurl/kotsadm/testgrid-os-spec.yaml'
   validate-kurl-addon:
     runs-on: ubuntu-20.04
-    if: ${{ github.ref_type == 'branch' || needs.kurl-addon-changes-filter.outputs.ok-to-test == 'true' }}
+    if: ${{ github.ref_type != 'branch' || needs.kurl-addon-changes-filter.outputs.ok-to-test == 'true' }}
     needs: [ generate-tag, generate-kurl-addon, kurl-addon-changes-filter ]
     steps:
       - name: checkout
@@ -331,11 +331,11 @@ jobs:
         with:
           addon_version: ${{ steps.vars.outputs.addon_version }}
           addon_package_url: "${{ needs.generate-kurl-addon.outputs.addon_package_url }}"
-          priority: ${{ github.ref_type == 'branch' && '1' || '0' }}
+          priority: ${{ github.ref_type != 'branch' && '1' || '0' }}
           testgrid_api_token: ${{ secrets.TESTGRID_PROD_API_TOKEN }}
   publish-kurl-addon:
     runs-on: ubuntu-20.04
-    if: ${{ github.ref_type == 'branch' }}
+    if: ${{ github.ref_type != 'branch' }}
     needs: [ generate-tag, generate-kurl-addon ]
     env:
       AWS_ACCESS_KEY_ID: ${{ secrets.KURL_ADDONS_AWS_ACCESS_KEY_ID }}
@@ -359,7 +359,7 @@ jobs:
   generate-kots-release-notes-pr:
     runs-on: ubuntu-20.04
     needs: [generate-tag]
-    if: github.ref_type == 'branch'
+    if: github.ref_type != 'branch'
     steps:
     - name: Checkout
       uses: actions/checkout@v3
@@ -376,7 +376,7 @@ jobs:
 
   build-airgap:
     runs-on: ubuntu-20.04
-    if: github.ref_type == 'branch'
+    if: github.ref_type != 'branch'
     needs: [release-go-api-tagged, goreleaser, build-schema-migrations, generate-tag]
     steps:
     - name: Download migrations
@@ -411,7 +411,7 @@ jobs:
 
   regression-test-setup:
     name: Run regression testing
-    if: github.ref_type != 'branch'
+    if: github.ref_type == 'branch'
     runs-on: ubuntu-latest
     needs: [ generate-tag ]
     outputs:
@@ -435,7 +435,7 @@ jobs:
         echo "id=${id:0:7}" >> "$GITHUB_OUTPUT"
 
   regression-test:
-    if: github.ref_type != 'branch'
+    if: github.ref_type == 'branch'
     needs: [ regression-test-setup, generate-tag, build-go-api, release-go-api-tagged, generate-kurl-addon ]
     uses: ./.github/workflows/regression.yaml
     with:
