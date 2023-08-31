@@ -36,10 +36,10 @@ jobs:
           wget https://github.com/aquasecurity/trivy/releases/download/v${TRIVY_VERSION}/trivy_${TRIVY_VERSION}_Linux-64bit.deb
           sudo dpkg -i trivy_${TRIVY_VERSION}_Linux-64bit.deb
 
-      - name: Create licence report artifact
+      - name: Create license report artifact
         run: trivy fs --scanners license --skip-dirs ".github" --skip-files "package-lock.json,bin/scan-images/package-lock.json" . | tee license-report.txt
 
-      - name: Upload licence report artifact
+      - name: Upload license report artifact
         uses: actions/upload-artifact@v3
         with:
           name: license-report
