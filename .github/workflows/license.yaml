@@ -47,7 +47,7 @@ jobs:
 
       - name: Check for unknown licenses
         run: |
-          trivy fs --scanners license -f json --skip-dirs ".github" --skip-files "package-lock.json,bin/scan-images/package-lock.json" --exit-code 1 --severity UNKNOWN . || echo "::warning::Unknown licenses found, please verify"
+          trivy fs --scanners license --skip-dirs ".github" --skip-files "package-lock.json,bin/scan-images/package-lock.json" --exit-code 1 --severity UNKNOWN . || echo "::warning::Unknown licenses found, please verify"
 
       - name: Check for forbidden licenses and fail
-        run: trivy fs --scanners license -f json --skip-dirs ".github" --skip-files "package-lock.json,bin/scan-images/package-lock.json" --exit-code 1 --severity CRITICAL,HIGH .
+        run: trivy fs --scanners license  --skip-dirs ".github" --skip-files "package-lock.json,bin/scan-images/package-lock.json" --exit-code 1 --severity CRITICAL,HIGH .
