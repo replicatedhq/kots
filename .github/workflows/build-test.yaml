@@ -644,7 +644,7 @@ jobs:
           {distribution: k3s, version: v1.25},
           {distribution: k3s, version: v1.26},
           {distribution: eks, version: v1.27},
-          {distribution: k3s-local, version: v1.28.1-rc2+k3s1} # TODO: use CMX for this when 1.28 support is added
+          {distribution: k3s-local, version: v1.28.1-rc2+k3s1} # TODO: use CMX when 1.28 support is added
         ]
     steps:
       - name: Checkout
@@ -685,7 +685,7 @@ jobs:
           {distribution: k3s, version: v1.25},
           {distribution: k3s, version: v1.26},
           {distribution: eks, version: v1.27},
-          {distribution: k3s-local, version: v1.28.1-rc2+k3s1} # TODO: use CMX for this when 1.28 support is added
+          {distribution: k3s-local, version: v1.28.1-rc2+k3s1} # TODO: use CMX when 1.28 support is added
         ]
     steps:
       - name: Checkout
@@ -726,7 +726,7 @@ jobs:
           {distribution: k3s, version: v1.25},
           {distribution: k3s, version: v1.26},
           {distribution: eks, version: v1.27},
-          {distribution: k3s-local, version: v1.28.1-rc2+k3s1} # TODO: use CMX for this when 1.28 support is added
+          {distribution: k3s-local, version: v1.28.1-rc2+k3s1} # TODO: use CMX when 1.28 support is added
         ]
     steps:
       - name: Checkout
@@ -955,8 +955,8 @@ jobs:
         cluster: [
           {distribution: k3s, version: v1.25},
           {distribution: k3s, version: v1.26},
-          {distribution: kind, version: v1.27.0},
-          {distribution: k3s-local, version: v1.28.1-rc2+k3s1} # TODO: use CMX for this when 1.28 support is added
+          {distribution: kind, version: v1.27.0}
+          # TODO: add 1.28 when CMX supports it
         ] 
     env:
       APP_SLUG: minimal-rbac
@@ -1057,8 +1057,8 @@ jobs:
         cluster: [
           {distribution: k3s, version: v1.25},
           {distribution: k3s, version: v1.26},
-          {distribution: kind, version: v1.27.0},
-          {distribution: k3s-local, version: v1.28.1-rc2+k3s1} # TODO: use CMX for this when 1.28 support is added
+          {distribution: kind, version: v1.27.0}
+          # TODO: add 1.28 when CMX supports it
         ] 
     env:
       APP_SLUG: multi-namespace-yeti
@@ -1248,8 +1248,8 @@ jobs:
         cluster: [
           {distribution: k3s, version: v1.25},
           {distribution: k3s, version: v1.26},
-          {distribution: kind, version: v1.27.0},
-          {distribution: k3s-local, version: v1.28.1-rc2+k3s1} # TODO: use CMX for this when 1.28 support is added
+          {distribution: kind, version: v1.27.0}
+          # TODO: add 1.28 when CMX supports it
         ]
     env:
       APP_NAME: multi-namespace-yeti
@@ -1509,8 +1509,8 @@ jobs:
         cluster: [
           {distribution: k3s, version: v1.25},
           {distribution: k3s, version: v1.26},
-          {distribution: kind, version: v1.27.0},
-          {distribution: k3s-local, version: v1.28.1-rc2+k3s1} # TODO: use CMX for this when 1.28 support is added
+          {distribution: kind, version: v1.27.0}
+          # TODO: add 1.28 when CMX supports it
         ] 
     env:
       APP_SLUG: helm-install-order
@@ -1605,8 +1605,8 @@ jobs:
         cluster: [
           {distribution: k3s, version: v1.25},
           {distribution: k3s, version: v1.26},
-          {distribution: kind, version: v1.27.0},
-          {distribution: k3s-local, version: v1.28.1-rc2+k3s1} # TODO: use CMX for this when 1.28 support is added
+          {distribution: kind, version: v1.27.0}
+          # TODO: add 1.28 when CMX supports it
         ] 
     env:
       APP_SLUG: yamlescape
@@ -2402,8 +2402,8 @@ jobs:
         cluster: [
           {distribution: k3s, version: v1.25},
           {distribution: k3s, version: v1.26},
-          {distribution: kind, version: v1.27.0},
-          {distribution: k3s-local, version: v1.28.1-rc2+k3s1} # TODO: use CMX for this when 1.28 support is added
+          {distribution: kind, version: v1.27.0}
+          # TODO: add 1.28 when CMX supports it
         ] 
     env:
       APP_SLUG: postgres-to-rqlite
