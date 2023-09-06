@@ -119,7 +119,7 @@ RUN curl -fsSLO "${KUBECTL_1_27_URL}" \
 # Install Kubectl 1.28
 ENV KUBECTL_1_28_VERSION=v1.28.1
 ENV KUBECTL_1_28_URL=https://dl.k8s.io/release/${KUBECTL_1_28_VERSION}/bin/linux/amd64/kubectl
-ENV KUBECTL_1_28_SHA256SUM=908aa293167be2c9b30e53c1aa81dc5d93b1f0cc9fa7ca9ac2bb32e976ed7575
+ENV KUBECTL_1_28_SHA256SUM=e7a7d6f9d06fab38b4128785aa80f65c54f6675a0d2abef655259ddd852274e1
 RUN curl -fsSLO "${KUBECTL_1_28_URL}" \
   && echo "${KUBECTL_1_28_SHA256SUM} kubectl" | sha256sum -c - \
   && chmod +x kubectl \
