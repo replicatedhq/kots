@@ -641,10 +641,10 @@ jobs:
       fail-fast: false
       matrix:
         cluster: [
-          {distribution: k3s, version: v1.24},
           {distribution: k3s, version: v1.25},
           {distribution: k3s, version: v1.26},
-          {distribution: eks, version: v1.27}
+          {distribution: eks, version: v1.27},
+          {distribution: k3s-local, version: v1.28} # TODO: use CMX for this when 1.28 support is added
         ]
     steps:
       - name: Checkout
@@ -682,10 +682,10 @@ jobs:
       fail-fast: false
       matrix:
         cluster: [
-          {distribution: k3s, version: v1.24},
           {distribution: k3s, version: v1.25},
           {distribution: k3s, version: v1.26},
-          {distribution: eks, version: v1.27}
+          {distribution: eks, version: v1.27},
+          {distribution: k3s-local, version: v1.28} # TODO: use CMX for this when 1.28 support is added
         ]
     steps:
       - name: Checkout
@@ -723,10 +723,10 @@ jobs:
       fail-fast: false
       matrix:
         cluster: [
-          {distribution: k3s, version: v1.24},
           {distribution: k3s, version: v1.25},
           {distribution: k3s, version: v1.26},
-          {distribution: eks, version: v1.27}
+          {distribution: eks, version: v1.27},
+          {distribution: k3s-local, version: v1.28} # TODO: use CMX for this when 1.28 support is added
         ]
     steps:
       - name: Checkout
@@ -953,10 +953,10 @@ jobs:
       fail-fast: false
       matrix:
         cluster: [
-          {distribution: k3s, version: v1.24},
           {distribution: k3s, version: v1.25},
           {distribution: k3s, version: v1.26},
-          {distribution: kind, version: v1.27.0}
+          {distribution: kind, version: v1.27.0},
+          {distribution: k3s-local, version: v1.28} # TODO: use CMX for this when 1.28 support is added
         ] 
     env:
       APP_SLUG: minimal-rbac
@@ -1055,10 +1055,10 @@ jobs:
       fail-fast: false
       matrix:
         cluster: [
-          {distribution: k3s, version: v1.24},
           {distribution: k3s, version: v1.25},
           {distribution: k3s, version: v1.26},
-          {distribution: kind, version: v1.27.0}
+          {distribution: kind, version: v1.27.0},
+          {distribution: k3s-local, version: v1.28} # TODO: use CMX for this when 1.28 support is added
         ] 
     env:
       APP_SLUG: multi-namespace-yeti
@@ -1246,10 +1246,10 @@ jobs:
       fail-fast: false
       matrix:
         cluster: [
-          {distribution: k3s, version: v1.24},
           {distribution: k3s, version: v1.25},
           {distribution: k3s, version: v1.26},
-          {distribution: kind, version: v1.27.0}
+          {distribution: kind, version: v1.27.0},
+          {distribution: k3s-local, version: v1.28} # TODO: use CMX for this when 1.28 support is added
         ]
     env:
       APP_NAME: multi-namespace-yeti
@@ -1507,10 +1507,10 @@ jobs:
       fail-fast: false
       matrix:
         cluster: [
-          {distribution: k3s, version: v1.24},
           {distribution: k3s, version: v1.25},
           {distribution: k3s, version: v1.26},
-          {distribution: kind, version: v1.27.0}
+          {distribution: kind, version: v1.27.0},
+          {distribution: k3s-local, version: v1.28} # TODO: use CMX for this when 1.28 support is added
         ] 
     env:
       APP_SLUG: helm-install-order
@@ -1603,10 +1603,10 @@ jobs:
       fail-fast: false
       matrix:
         cluster: [
-          {distribution: k3s, version: v1.24},
           {distribution: k3s, version: v1.25},
           {distribution: k3s, version: v1.26},
-          {distribution: kind, version: v1.27.0}
+          {distribution: kind, version: v1.27.0},
+          {distribution: k3s-local, version: v1.28} # TODO: use CMX for this when 1.28 support is added
         ] 
     env:
       APP_SLUG: yamlescape
@@ -2400,10 +2400,10 @@ jobs:
       fail-fast: false
       matrix:
         cluster: [
-          {distribution: k3s, version: v1.24},
           {distribution: k3s, version: v1.25},
           {distribution: k3s, version: v1.26},
-          {distribution: kind, version: v1.27.0}
+          {distribution: kind, version: v1.27.0},
+          {distribution: k3s-local, version: v1.28} # TODO: use CMX for this when 1.28 support is added
         ] 
     env:
       APP_SLUG: postgres-to-rqlite
