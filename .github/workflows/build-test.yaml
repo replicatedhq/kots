@@ -643,7 +643,7 @@ jobs:
         cluster: [
           {distribution: k3s, version: v1.25},
           {distribution: k3s, version: v1.26},
-          {distribution: eks, version: v1.27},
+          {distribution: eks, version: v1.27}
         ]
     steps:
       - name: Checkout
@@ -683,7 +683,7 @@ jobs:
         cluster: [
           {distribution: k3s, version: v1.25},
           {distribution: k3s, version: v1.26},
-          {distribution: eks, version: v1.27},
+          {distribution: eks, version: v1.27}
         ]
     steps:
       - name: Checkout
@@ -723,7 +723,7 @@ jobs:
         cluster: [
           {distribution: k3s, version: v1.25},
           {distribution: k3s, version: v1.26},
-          {distribution: eks, version: v1.27},
+          {distribution: eks, version: v1.27}
         ]
     steps:
       - name: Checkout
