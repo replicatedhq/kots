@@ -39,6 +39,8 @@ spec:
           name: kotsadm-web-scripts
       - name: backup
         emptyDir: {}
+      - name: tmp
+        emptyDir: {}
       - name: migrations
         emptyDir:
           medium: Memory
@@ -141,6 +143,8 @@ spec:
             subPath: start-kotsadm-web.sh
           - mountPath: /backup
             name: backup
+          - mountPath: /tmp
+            name: tmp
           - name: kubelet-client-cert
             readOnly: true
             mountPath: /etc/kubernetes/pki/kubelet
