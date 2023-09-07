@@ -147,7 +147,7 @@ require (
 	github.com/containers/ocicrypt v1.1.7 // indirect
 	github.com/coreos/go-oidc/v3 v3.5.0 // indirect
 	github.com/cyberphone/json-canonicalization v0.0.0-20220623050100-57a0ce2678a7 // indirect
-	github.com/cyphar/filepath-securejoin v0.2.3 // indirect
+	github.com/cyphar/filepath-securejoin v0.2.4 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/dexidp/dex/api/v2 v2.1.0 // indirect
 	github.com/dimchansky/utfbom v1.1.1 // indirect
