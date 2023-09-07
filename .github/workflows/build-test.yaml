@@ -641,7 +641,6 @@ jobs:
       fail-fast: false
       matrix:
         cluster: [
-          {distribution: k3s, version: v1.24},
           {distribution: k3s, version: v1.25},
           {distribution: k3s, version: v1.26},
           {distribution: eks, version: v1.27}
@@ -682,7 +681,6 @@ jobs:
       fail-fast: false
       matrix:
         cluster: [
-          {distribution: k3s, version: v1.24},
           {distribution: k3s, version: v1.25},
           {distribution: k3s, version: v1.26},
           {distribution: eks, version: v1.27}
@@ -723,7 +721,6 @@ jobs:
       fail-fast: false
       matrix:
         cluster: [
-          {distribution: k3s, version: v1.24},
           {distribution: k3s, version: v1.25},
           {distribution: k3s, version: v1.26},
           {distribution: eks, version: v1.27}
@@ -953,7 +950,6 @@ jobs:
       fail-fast: false
       matrix:
         cluster: [
-          {distribution: k3s, version: v1.24},
           {distribution: k3s, version: v1.25},
           {distribution: k3s, version: v1.26},
           {distribution: kind, version: v1.27.0}
@@ -1055,7 +1051,6 @@ jobs:
       fail-fast: false
       matrix:
         cluster: [
-          {distribution: k3s, version: v1.24},
           {distribution: k3s, version: v1.25},
           {distribution: k3s, version: v1.26},
           {distribution: kind, version: v1.27.0}
@@ -1246,7 +1241,6 @@ jobs:
       fail-fast: false
       matrix:
         cluster: [
-          {distribution: k3s, version: v1.24},
           {distribution: k3s, version: v1.25},
           {distribution: k3s, version: v1.26},
           {distribution: kind, version: v1.27.0}
@@ -1507,7 +1501,6 @@ jobs:
       fail-fast: false
       matrix:
         cluster: [
-          {distribution: k3s, version: v1.24},
           {distribution: k3s, version: v1.25},
           {distribution: k3s, version: v1.26},
           {distribution: kind, version: v1.27.0}
@@ -1603,7 +1596,6 @@ jobs:
       fail-fast: false
       matrix:
         cluster: [
-          {distribution: k3s, version: v1.24},
           {distribution: k3s, version: v1.25},
           {distribution: k3s, version: v1.26},
           {distribution: kind, version: v1.27.0}
@@ -2400,7 +2392,6 @@ jobs:
       fail-fast: false
       matrix:
         cluster: [
-          {distribution: k3s, version: v1.24},
           {distribution: k3s, version: v1.25},
           {distribution: k3s, version: v1.26},
           {distribution: kind, version: v1.27.0}
