@@ -188,13 +188,6 @@ spec:
         name: kurl-last-config # NOTE: this will not live under the kots/ directory like other collectors
         namespace: kurl
         includeAllData: true
-    - collectd:
-        collectorName: collectd
-        hostPath: /var/lib/collectd/rrd
-        image: alpine
-        imagePullPolicy: IfNotPresent
-        timeout: 5m
-
   analyzers:
     - clusterVersion:
         outcomes:
