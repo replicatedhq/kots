@@ -34,9 +34,14 @@ import (
 	analyze "github.com/replicatedhq/troubleshoot/pkg/analyze"
 	"gopkg.in/yaml.v3"
 	corev1 "k8s.io/api/core/v1"
+	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	k8sversion "k8s.io/apimachinery/pkg/version"
+	"k8s.io/client-go/discovery"
+	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/rest"
 	certUtil "k8s.io/client-go/util/cert"
 )
 
@@ -106,6 +111,8 @@ func (ctx StaticCtx) FuncMap() template.FuncMap {
 	funcMap["KubernetesVersion"] = ctx.kubernetesVersion
 	funcMap["KubernetesMajorVersion"] = ctx.kubernetesMajorVersion
 	funcMap["KubernetesMinorVersion"] = ctx.kubernetesMinorVersion
+
+	funcMap["Lookup"] = ctx.lookup
 
 	return funcMap
 }
@@ -656,4 +663,98 @@ func (ctx StaticCtx) getClientset() (kubernetes.Interface, error) {
 func indent(spaces int, v string) string {
 	pad := strings.Repeat(" ", spaces)
 	return pad + strings.Replace(v, "\n", "\n"+pad, -1)
+}
+
+// reference: https://github.com/helm/helm/blob/v3.12.3/pkg/engine/lookup_func.go
+func (ctx StaticCtx) lookup(apiversion string, resource string, namespace string, name string) map[string]interface{} {
+	config, err := k8sutil.GetClusterConfig()
+	if err != nil {
+		fmt.Printf("Failed to get cluster config: %v\n", err)
+		return map[string]interface{}{}
+	}
+	obj, err := ctx.lookupWithConfig(apiversion, resource, namespace, name, config)
+	if err != nil {
+		fmt.Printf("Failed to lookup %s/%s/%s: %v\n", apiversion, resource, name, err)
+		return map[string]interface{}{}
+	}
+	return obj
+}
+
+func (ctx StaticCtx) lookupWithConfig(apiversion string, resource string, namespace string, name string, config *rest.Config) (map[string]interface{}, error) {
+	var client dynamic.ResourceInterface
+	c, namespaced, err := getDynamicClientOnKind(apiversion, resource, config)
+	if err != nil {
+		return map[string]interface{}{}, errors.Wrap(err, "failed to get dynamic client")
+	}
+	if namespaced && namespace != "" {
+		client = c.Namespace(namespace)
+	} else {
+		client = c
+	}
+	if name != "" {
+		// this will return a single object
+		obj, err := client.Get(context.Background(), name, metav1.GetOptions{})
+		if err != nil {
+			if kuberneteserrors.IsNotFound(err) {
+				// Just return an empty interface when the object was not found.
+				// That way, users can use `if not (lookup ...)` in their templates.
+				return map[string]interface{}{}, nil
+			}
+			return map[string]interface{}{}, errors.Wrap(err, "failed to get object")
+		}
+		return obj.UnstructuredContent(), nil
+	}
+	// this will return a list
+	obj, err := client.List(context.Background(), metav1.ListOptions{})
+	if err != nil {
+		if kuberneteserrors.IsNotFound(err) {
+			// Just return an empty interface when the object was not found.
+			// That way, users can use `if not (lookup ...)` in their templates.
+			return map[string]interface{}{}, nil
+		}
+		return map[string]interface{}{}, errors.Wrap(err, "failed to list objects")
+	}
+	return obj.UnstructuredContent(), nil
+}
+
+// getDynamicClientOnKind returns a dynamic client on an Unstructured type. This client can be further namespaced.
+func getDynamicClientOnKind(apiversion string, kind string, config *rest.Config) (dynamic.NamespaceableResourceInterface, bool, error) {
+	gvk := schema.FromAPIVersionAndKind(apiversion, kind)
+	apiRes, err := getAPIResourceForGVK(gvk, config)
+	if err != nil {
+		return nil, false, errors.Wrapf(err, "unable to get apiresource from unstructured: %s", gvk.String())
+	}
+	gvr := schema.GroupVersionResource{
+		Group:    apiRes.Group,
+		Version:  apiRes.Version,
+		Resource: apiRes.Name,
+	}
+	intf, err := dynamic.NewForConfig(config)
+	if err != nil {
+		return nil, false, errors.Wrap(err, "unable to get dynamic client")
+	}
+	res := intf.Resource(gvr)
+	return res, apiRes.Namespaced, nil
+}
+
+func getAPIResourceForGVK(gvk schema.GroupVersionKind, config *rest.Config) (metav1.APIResource, error) {
+	res := metav1.APIResource{}
+	discoveryClient, err := discovery.NewDiscoveryClientForConfig(config)
+	if err != nil {
+		return res, errors.Wrap(err, "unable to get discovery client")
+	}
+	resList, err := discoveryClient.ServerResourcesForGroupVersion(gvk.GroupVersion().String())
+	if err != nil {
+		return res, errors.Wrapf(err, "unable to get server resources for group version: %s", gvk.GroupVersion().String())
+	}
+	for _, resource := range resList.APIResources {
+		// if a resource contains a "/" it's referencing a subresource. we don't support suberesource for now.
+		if resource.Kind == gvk.Kind && !strings.Contains(resource.Name, "/") {
+			res = resource
+			res.Group = gvk.Group
+			res.Version = gvk.Version
+			break
+		}
+	}
+	return res, nil
 }
