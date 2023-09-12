@@ -210,21 +210,31 @@ func (h *Handler) UpdateAppRegistry(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	skipImagePush := updateAppRegistryRequest.IsReadOnly
+	if foundApp.IsAirgap {
+		// TODO: pushing images not yet supported in airgapped instances.
+		skipImagePush = true
+	}
+
+	latestSequence, err := store.GetStore().GetLatestAppSequence(foundApp.ID, true)
+	if err != nil {
+		logger.Error(errors.Wrapf(err, "failed to get latest app sequence for app %s", foundApp.Slug))
+		updateAppRegistryResponse.Error = err.Error()
+		JSON(w, http.StatusInternalServerError, updateAppRegistryResponse)
+		return
+	}
+
+	// set task status before starting the goroutine so that the UI can show the status
+	if err := store.GetStore().SetTaskStatus("image-rewrite", "Updating registry settings", "running"); err != nil {
+		logger.Error(errors.Wrap(err, "failed to set task status"))
+		updateAppRegistryResponse.Error = err.Error()
+		JSON(w, http.StatusInternalServerError, updateAppRegistryResponse)
+		return
+	}
+
 	// in a goroutine, start pushing the images to the remote registry
 	// we will let this function return while this happens
 	go func() {
-		skipImagePush := updateAppRegistryRequest.IsReadOnly
-		if foundApp.IsAirgap {
-			// TODO: pushing images not yet supported in airgapped instances.
-			skipImagePush = true
-		}
-
-		latestSequence, err := store.GetStore().GetLatestAppSequence(foundApp.ID, true)
-		if err != nil {
-			logger.Error(errors.Wrapf(err, "failed to get latest app sequence for app %s", foundApp.Slug))
-			return
-		}
-
 		appDir, err := registry.RewriteImages(
 			foundApp.ID, latestSequence, updateAppRegistryRequest.Hostname,
 			updateAppRegistryRequest.Username, registryPassword,
