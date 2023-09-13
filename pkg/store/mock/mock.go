@@ -10,7 +10,6 @@ import (
 	time "time"
 
 	gomock "github.com/golang/mock/gomock"
-	v1beta1 "github.com/replicatedhq/kotskinds/apis/kots/v1beta1"
 	types "github.com/replicatedhq/kots/pkg/airgap/types"
 	types0 "github.com/replicatedhq/kots/pkg/api/downstream/types"
 	types1 "github.com/replicatedhq/kots/pkg/api/reporting/types"
@@ -28,6 +27,7 @@ import (
 	types13 "github.com/replicatedhq/kots/pkg/supportbundle/types"
 	types14 "github.com/replicatedhq/kots/pkg/upstream/types"
 	types15 "github.com/replicatedhq/kots/pkg/user/types"
+	v1beta1 "github.com/replicatedhq/kotskinds/apis/kots/v1beta1"
 	redact "github.com/replicatedhq/troubleshoot/pkg/redact"
 )
 

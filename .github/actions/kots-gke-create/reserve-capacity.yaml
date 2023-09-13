@@ -22,7 +22,7 @@ metadata:
   name: capacity-res-job
 spec:
   parallelism: 4
-  backoffLimit: 0
+  backoffLimit: 6
   template:
     metadata:
       labels:

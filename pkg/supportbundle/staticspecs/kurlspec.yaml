@@ -6,12 +6,6 @@ spec:
   collectors:
     - ceph: {}
     - longhorn: {}
-    - collectd:
-        collectorName: collectd
-        hostPath: /var/lib/collectd/rrd
-        image: alpine
-        imagePullPolicy: IfNotPresent
-        timeout: 5m
     - logs:
         collectorName: rook-ceph-logs
         namespace: rook-ceph
