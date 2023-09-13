@@ -9,7 +9,9 @@ import (
 	"regexp"
 
 	"github.com/pkg/errors"
+	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/util"
+	kustomizetypes "sigs.k8s.io/kustomize/api/types"
 )
 
 var (
@@ -115,6 +117,22 @@ func RenderChartsArchive(baseDir string, overlaysDir string, downstreamName stri
 			}
 			if os.IsNotExist(err) {
 				return nil // source chart does not exist in base
+			}
+
+			baseKustomization, err := k8sutil.ReadKustomizationFromFile(filepath.Join(srcPath, "kustomization.yaml"))
+			if err != nil {
+				return errors.Wrap(err, "failed to read base kustomization")
+			}
+
+			if err := baseKustomization.CheckEmpty(); err != nil {
+				baseKustomization.MetaData = &kustomizetypes.ObjectMeta{
+					Annotations: map[string]string{
+						"kots.io/kustomization": "base",
+					},
+				}
+				if err := k8sutil.WriteKustomizationToFile(*baseKustomization, filepath.Join(srcPath, "kustomization.yaml")); err != nil {
+					return errors.Wrap(err, "failed to write base kustomization")
+				}
 			}
 
 			archiveChartOutput, err := exec.Command(kustomizeBinPath, "build", filepath.Dir(path)).Output()
