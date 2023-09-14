@@ -200,13 +200,6 @@ func Start(params *APIServerParams) {
 
 	handlers.RegisterSessionAuthRoutes(r.PathPrefix("").Subrouter(), kotsStore, handler, policyMiddleware)
 
-	/**********************************************************************
-	* Session auth routes
-	**********************************************************************/
-
-	licenseAuthRouter := r.PathPrefix("").Subrouter()
-	handlers.RegisterLicenseIDAuthRoutes(licenseAuthRouter, kotsStore, handler, policyMiddleware)
-
 	// Prevent API requests that don't match anything in this router from returning UI content
 	r.PathPrefix("/api").Handler(handlers.StatusNotFoundHandler{})
 

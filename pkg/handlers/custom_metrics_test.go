@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"bytes"
+	"fmt"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -11,8 +12,7 @@ import (
 	gomock "github.com/golang/mock/gomock"
 	"github.com/gorilla/mux"
 	apptypes "github.com/replicatedhq/kots/pkg/app/types"
-	"github.com/replicatedhq/kots/pkg/session"
-	"github.com/replicatedhq/kotskinds/apis/kots/v1beta1"
+	mock_store "github.com/replicatedhq/kots/pkg/store/mock"
 	"github.com/stretchr/testify/require"
 )
 
@@ -68,9 +68,6 @@ func Test_validateCustomMetricsData(t *testing.T) {
 }
 
 func Test_SendCustomApplicationMetrics(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
 	req := require.New(t)
 	customMetricsData := []byte(`{"data":{"key1_string":"val1","key2_int":5,"key3_float":1.5,"key4_numeric_string":"1.6"}}`)
 	appID := "app-id-123"
@@ -94,24 +91,30 @@ func Test_SendCustomApplicationMetrics(t *testing.T) {
 	os.Setenv("USE_MOCK_REPORTING", "1")
 	defer os.Unsetenv("USE_MOCK_REPORTING")
 
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	app := apptypes.App{
+		ID: appID,
+		License: fmt.Sprintf(`apiVersion: kots.io/v1beta1
+kind: License
+spec:
+  licenseID: 2ULcK9BJd1dHGetHYZIysK9IADZ
+  endpoint: %s`, server.URL),
+	}
+
+	mockStore := mock_store.NewMockStore(ctrl)
+	mockStore.EXPECT().ListInstalledApps().Times(1).Return([]*apptypes.App{&app}, nil)
+
 	handler := Handler{}
 	clientWriter := httptest.NewRecorder()
 	clientRequest := &http.Request{
 		Body: io.NopCloser(bytes.NewBuffer(customMetricsData)),
 	}
 
-	clientRequest = session.ContextSetLicense(clientRequest, &v1beta1.License{
-		Spec: v1beta1.LicenseSpec{
-			Endpoint: server.URL,
-		},
-	})
-	clientRequest = session.ContextSetApp(clientRequest, &apptypes.App{
-		ID: appID,
-	})
-
 	// Validate
 
-	handler.SendCustomApplicationMetrics(clientWriter, clientRequest)
+	handler.GetSendCustomApplicationMetricsHandler(mockStore)(clientWriter, clientRequest)
 
 	req.Equal(http.StatusOK, clientWriter.Code)
 }
