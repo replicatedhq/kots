@@ -339,14 +339,9 @@ func RegisterUnauthenticatedRoutes(handler *Handler, kotsStore store.Store, debu
 	loggingRouter.Path("/api/v1/troubleshoot/supportbundle/{bundleId}/redactions").Methods("PUT").HandlerFunc(handler.SetSupportBundleRedactions)
 	loggingRouter.Path("/api/v1/preflight/app/{appSlug}/sequence/{sequence}").Methods("POST").HandlerFunc(handler.PostPreflightStatus)
 
-	// This the handler for license API and should be called by the application only.
+	// These handlers should be called by the application only.
 	loggingRouter.Path("/license/v1/license").Methods("GET").HandlerFunc(handler.GetPlatformLicenseCompatibility)
-}
-
-func RegisterLicenseIDAuthRoutes(r *mux.Router, kotsStore store.Store, handler KOTSHandler, middleware *policy.Middleware) {
-	r.Use(LoggingMiddleware, RequireValidLicenseMiddleware(kotsStore))
-	r.Name("SendCustomApplicationMetrics").Path("/api/v1/app/custom-metrics").Methods("POST").
-		HandlerFunc(middleware.EnforceLicense(handler.SendCustomApplicationMetrics))
+	loggingRouter.Path("/api/v1/app/custom-metrics").Methods("POST").HandlerFunc(handler.GetSendCustomApplicationMetricsHandler(kotsStore))
 }
 
 func StreamJSON(c *websocket.Conn, payload interface{}) {
