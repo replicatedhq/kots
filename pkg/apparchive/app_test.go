@@ -373,6 +373,28 @@ data:
   key: value
 `),
 		},
+		{
+			name: "app archive does not contain rendered manifests - should handle empty base kustomization",
+			files: map[string]string{
+				"overlays/downstreams/this-cluster/kustomization.yaml": `apiVersion: kustomize.config.k8s.io/v1beta1
+bases:
+- ../../midstream
+kind: Kustomization
+`,
+				"overlays/midstream/kustomization.yaml": `apiVersion: kustomize.config.k8s.io/v1beta1
+bases:
+- ../../base
+commonAnnotations:
+  kots.io/app-slug: my-app
+kind: Kustomization
+`,
+				"base/kustomization.yaml": `apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+`,
+			},
+			wantRenderedFilesMap: map[string][]byte{},
+			wantAllContent:       []byte{},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

@@ -417,6 +417,27 @@ spec:
 `),
 			},
 		},
+		{
+			name: "app archive does not contain rendered charts and has an empty base kustomization",
+			files: map[string]string{
+				"overlays/downstreams/this-cluster/charts/guestbook/kustomization.yaml": `apiVersion: kustomize.config.k8s.io/v1beta1
+bases:
+- ../../../../midstream/charts/guestbook
+kind: Kustomization
+`,
+				"overlays/midstream/charts/guestbook/kustomization.yaml": `apiVersion: kustomize.config.k8s.io/v1beta1
+bases:
+- ../../../../base/charts/guestbook
+commonAnnotations:
+  kots.io/app-slug: my-app
+kind: Kustomization
+`,
+				"base/charts/guestbook/kustomization.yaml": `apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+`,
+			},
+			wantRenderedFilesMap: map[string][]byte{},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

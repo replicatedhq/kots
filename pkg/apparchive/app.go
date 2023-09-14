@@ -11,8 +11,10 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/base"
+	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/util"
+	kustomizetypes "sigs.k8s.io/kustomize/api/types"
 )
 
 type AppWriteOptions struct {
@@ -34,6 +36,22 @@ func WriteRenderedApp(options AppWriteOptions) error {
 
 	for _, downstreamName := range options.Downstreams {
 		kustomizeBuildTarget := filepath.Join(options.OverlaysDir, "downstreams", downstreamName)
+
+		baseKustomization, err := k8sutil.ReadKustomizationFromFile(filepath.Join(options.BaseDir, "kustomization.yaml"))
+		if err != nil {
+			return errors.Wrap(err, "failed to read base kustomization")
+		}
+
+		if err := baseKustomization.CheckEmpty(); err != nil {
+			baseKustomization.MetaData = &kustomizetypes.ObjectMeta{
+				Annotations: map[string]string{
+					"kots.io/kustomization": "base",
+				},
+			}
+			if err := k8sutil.WriteKustomizationToFile(*baseKustomization, filepath.Join(options.BaseDir, "kustomization.yaml")); err != nil {
+				return errors.Wrap(err, "failed to write base kustomization")
+			}
+		}
 
 		renderedApp, err := exec.Command(options.KustomizeBinPath, "build", kustomizeBuildTarget).Output()
 		if err != nil {
@@ -138,6 +156,22 @@ func GetRenderedApp(versionArchive string, downstreamName, kustomizeBinPath stri
 
 	// older kots versions did not include the rendered app in the archive, so we have to render it
 	kustomizeBuildTarget := filepath.Join(versionArchive, "overlays", "downstreams", downstreamName)
+
+	kustomization, err := k8sutil.ReadKustomizationFromFile(filepath.Join(baseDir, "kustomization.yaml"))
+	if err != nil {
+		return nil, nil, errors.Wrap(err, "failed to read base kustomization")
+	}
+
+	if err := kustomization.CheckEmpty(); err != nil {
+		kustomization.MetaData = &kustomizetypes.ObjectMeta{
+			Annotations: map[string]string{
+				"kots.io/kustomization": "base",
+			},
+		}
+		if err := k8sutil.WriteKustomizationToFile(*kustomization, filepath.Join(baseDir, "kustomization.yaml")); err != nil {
+			return nil, nil, errors.Wrap(err, "failed to write base kustomization")
+		}
+	}
 
 	allContent, err := exec.Command(kustomizeBinPath, "build", kustomizeBuildTarget).Output()
 	if err != nil {
