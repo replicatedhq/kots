@@ -5,7 +5,7 @@ on:
     tags:
       - "v*.*.*"
     branches:
-      - ricardomaraschini/sc-86964/kots-test-workflow-for-helmvm
+      - main
 
 jobs:
   generate-tag:
