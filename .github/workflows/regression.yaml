@@ -203,7 +203,7 @@ jobs:
           repository: replicatedhq/kots-regression-automation
           token: ${{ secrets.E2E_GH_PAT }}
           path: automation
-          ref: temporarily-use-my-testim-branch
+          ref: main
       - name: Initialize terraform
         if: always()
         working-directory: automation/cluster
