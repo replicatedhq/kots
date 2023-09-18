@@ -262,7 +262,7 @@ jobs:
       env:
         COSIGN_PASSWORD: ${{ secrets.COSIGN_PASSWORD }}
     - name: Run GoReleaser
-      uses: goreleaser/goreleaser-action@v3
+      uses: goreleaser/goreleaser-action@v5
       with:
         version: "v1.2.5"
         args: release --rm-dist --config deploy/.goreleaser.yaml
