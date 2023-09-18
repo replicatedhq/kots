@@ -1050,7 +1050,6 @@ func checkPreflightResults(response *handlers.GetPreflightResultResponse) (bool,
 	}
 
 	var s strings.Builder
-	s.WriteString("\nPreflight results (status: title)\n")
 	var isWarn, isFail bool
 	for _, result := range results.Results {
 		s.WriteString(fmt.Sprintf("%s - %q\n", status(result), result.Title))
