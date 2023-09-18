@@ -317,7 +317,7 @@ jobs:
       - run: chmod +x bin/kots bin/kotsadm
 
       - name: build and push kotsadm for e2e
-        uses: docker/build-push-action@v3
+        uses: docker/build-push-action@v5
         with:
           tags: ttl.sh/automated-${{ github.run_id }}/kotsadm:24h
           context: ./
@@ -420,7 +420,7 @@ jobs:
       - run: mapfile -t envs < <(grep -v '#.*' < .image.env) && export "${envs[@]}" && make -C kurl_proxy test build
 
       - name: build and push kurl_proxy for e2e
-        uses: docker/build-push-action@v3
+        uses: docker/build-push-action@v5
         with:
           tags: ttl.sh/automated-${{ github.run_id }}/kurl-proxy:24h
           context: ./kurl_proxy
@@ -453,7 +453,7 @@ jobs:
           path: .image.env
 
       - name: build and push migrations for e2e
-        uses: docker/build-push-action@v3
+        uses: docker/build-push-action@v5
         with:
           tags: ttl.sh/automated-${{ github.run_id }}/kotsadm-migrations:24h
           context: ./migrations
