@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"mime/multipart"
 	"net/http"
 	"net/url"
@@ -46,6 +45,10 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 )
+
+var client = &http.Client{
+	Timeout: time.Second * 30,
+}
 
 func InstallCmd() *cobra.Command {
 	cmd := &cobra.Command{
@@ -321,7 +324,7 @@ func InstallCmd() *cobra.Command {
 
 				log.ActionWithoutSpinner("Extracting airgap bundle")
 
-				airgapRootDir, err := ioutil.TempDir("", "kotsadm-airgap")
+				airgapRootDir, err := os.MkdirTemp("", "kotsadm-airgap")
 				if err != nil {
 					return errors.Wrap(err, "failed to create temp dir")
 				}
@@ -446,7 +449,13 @@ func InstallCmd() *cobra.Command {
 					log.ActionWithSpinner("Waiting for preflight checks to complete")
 					if err := ValidatePreflightStatus(deployOptions, authSlug, apiEndpoint); err != nil {
 						log.FinishSpinnerWithError()
-						return errors.Wrap(err, "failed to validate preflight results")
+						perr := preflightError{}
+						if errors.As(err, &perr) {
+							cmd.SilenceErrors = true
+							log.Info(fmt.Sprintf("\n%s", err.Error()))
+							os.Exit(1)
+						}
+						return err
 					}
 					log.FinishSpinner()
 				case storetypes.VersionPendingConfig:
@@ -692,7 +701,7 @@ func getIngressConfig(v *viper.Viper) (*kotsv1beta1.IngressConfig, error) {
 
 	ingressConfig := kotsv1beta1.IngressConfig{}
 	if ingressConfigPath != "" {
-		content, err := ioutil.ReadFile(ingressConfigPath)
+		content, err := os.ReadFile(ingressConfigPath)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to read ingress service config file")
 		}
@@ -719,7 +728,7 @@ func getIdentityConfig(v *viper.Viper) (*kotsv1beta1.IdentityConfig, error) {
 
 	identityConfig := kotsv1beta1.IdentityConfig{}
 	if identityConfigPath != "" {
-		content, err := ioutil.ReadFile(identityConfigPath)
+		content, err := os.ReadFile(identityConfigPath)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to read identity service config file")
 		}
@@ -910,7 +919,7 @@ func getAutomatedInstallStatus(url string, authSlug string) (*kotsstore.TaskStat
 		return nil, errors.Errorf("unexpected status code %d", resp.StatusCode)
 	}
 
-	b, err := ioutil.ReadAll(resp.Body)
+	b, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to read response body")
 	}
@@ -964,7 +973,7 @@ func getPreflightResponse(url string, authSlug string) (*handlers.GetPreflightRe
 	newReq.Header.Add("Content-Type", "application/json")
 	newReq.Header.Add("Authorization", authSlug)
 
-	resp, err := http.DefaultClient.Do(newReq)
+	resp, err := client.Do(newReq)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to execute request")
 	}
@@ -974,7 +983,7 @@ func getPreflightResponse(url string, authSlug string) (*handlers.GetPreflightRe
 		return nil, errors.Errorf("unexpected status code %d", resp.StatusCode)
 	}
 
-	b, err := ioutil.ReadAll(resp.Body)
+	b, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to read response body")
 	}
@@ -1005,6 +1014,16 @@ func checkPreflightsComplete(response *handlers.GetPreflightResultResponse) (boo
 	return true, nil
 }
 
+type preflightError struct {
+	Msg string `json:"msg"`
+}
+
+func (e preflightError) Error() string {
+	return e.Msg
+}
+
+func (e preflightError) Unwrap() error { return fmt.Errorf(e.Msg) }
+
 func checkPreflightResults(response *handlers.GetPreflightResultResponse) (bool, error) {
 	if response.PreflightResult.Result == "" {
 		return false, nil
@@ -1016,8 +1035,25 @@ func checkPreflightResults(response *handlers.GetPreflightResultResponse) (bool,
 		return false, errors.Wrap(err, fmt.Sprintf("failed to unmarshal upload preflight results from response: %v", response.PreflightResult.Result))
 	}
 
+	status := func(r *preflight.UploadPreflightResult) string {
+		if r.IsFail {
+			return "FAIL"
+		}
+		if r.IsWarn {
+			return "WARN"
+		}
+		if r.IsPass {
+			return "PASS"
+		}
+		// We should never get here
+		return "UNKNOWN"
+	}
+
+	var s strings.Builder
+	s.WriteString("\nPreflight results (status: title)\n")
 	var isWarn, isFail bool
 	for _, result := range results.Results {
+		s.WriteString(fmt.Sprintf("%s - %q\n", status(result), result.Title))
 		if result.IsWarn {
 			isWarn = true
 		}
@@ -1027,14 +1063,20 @@ func checkPreflightResults(response *handlers.GetPreflightResultResponse) (bool,
 	}
 
 	if isWarn && isFail {
-		return false, errors.New("There are preflight check failures and warnings for the application. The app was not deployed.")
+		return false, preflightError{
+			Msg: fmt.Sprintf("There are preflight check failures and warnings for the application. The app was not deployed. %s", s.String()),
+		}
 	}
 
 	if isWarn {
-		return false, errors.New("There are preflight check warnings for the application. The app was not deployed.")
+		return false, preflightError{
+			Msg: fmt.Sprintf("There are preflight check warnings for the application. The app was not deployed. %s", s.String()),
+		}
 	}
 	if isFail {
-		return false, errors.New("There are preflight check failures for the application. The app was not deployed.")
+		return false, preflightError{
+			Msg: fmt.Sprintf("There are preflight check failures for the application. The app was not deployed. %s", s.String()),
+		}
 	}
 
 	return true, nil
