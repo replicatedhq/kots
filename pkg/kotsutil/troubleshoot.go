@@ -2,7 +2,6 @@ package kotsutil
 
 import (
 	"context"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 
@@ -22,7 +21,7 @@ func LoadTSKindsFromPath(dir string) (*troubleshootloader.TroubleshootKinds, err
 				return nil
 			}
 
-			contents, err := ioutil.ReadFile(path)
+			contents, err := os.ReadFile(path)
 			if err != nil {
 				return errors.Wrap(err, "failed to read file")
 			}
