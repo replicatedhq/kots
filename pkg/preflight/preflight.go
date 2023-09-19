@@ -160,13 +160,27 @@ func Run(appID string, appSlug string, sequence int64, isAirgap bool, archiveDir
 		preflight.Spec.Collectors = collectors
 
 		go func() {
-			logger.Debug("preflight checks beginning")
+			logger.Info("preflight checks beginning")
 			uploadPreflightResults, err := execute(appID, sequence, preflight, ignoreRBAC)
 			if err != nil {
 				logger.Error(errors.Wrap(err, "failed to run preflight checks"))
 				return
 			}
-			logger.Debug("preflight checks completed")
+
+			// Log the preflight results if there are any warnings or errors
+			// The app may not get installed so we need to see this info for debugging
+			if GetPreflightState(uploadPreflightResults) != "pass" {
+				// TODO: Are there conditions when the application gets installed?
+				logger.Warnf("Preflight checks completed with warnings or errors. The application may not get installed")
+				for _, result := range uploadPreflightResults.Results {
+					if result == nil {
+						continue
+					}
+					logger.Infof("preflight state=%s title=%q message=%q", preflightState(*result), result.Title, result.Message)
+				}
+			} else {
+				logger.Info("preflight checks completed")
+			}
 
 			go func() {
 				err := reporting.GetReporter().SubmitAppInfo(appID) // send app and preflight info when preflights finish
@@ -194,7 +208,7 @@ func Run(appID string, appSlug string, sequence int64, isAirgap bool, archiveDir
 			// preflight reporting
 			if isDeployed {
 				if err := reporting.WaitAndReportPreflightChecks(appID, sequence, false, false); err != nil {
-					logger.Debugf("failed to send preflights data to replicated app: %v", err)
+					logger.Errorf("failed to send preflights data to replicated app: %v", err)
 					return
 				}
 			}
@@ -214,6 +228,21 @@ func Run(appID string, appSlug string, sequence int64, isAirgap bool, archiveDir
 	}
 
 	return nil
+}
+
+func preflightState(p troubleshootpreflight.UploadPreflightResult) string {
+	if p.IsFail {
+		return "fail"
+	}
+
+	if p.IsWarn {
+		return "warn"
+	}
+
+	if p.IsPass {
+		return "pass"
+	}
+	return "unknown"
 }
 
 // maybeDeployFirstVersion will deploy the first version if preflight checks pass

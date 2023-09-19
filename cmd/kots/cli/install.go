@@ -429,6 +429,7 @@ func InstallCmd() *cobra.Command {
 				case err := <-errChan:
 					if err != nil {
 						log.Error(err)
+						// TODO: Why is this a negative exit code?
 						os.Exit(-1)
 					}
 				case <-stopCh:
@@ -447,17 +448,22 @@ func InstallCmd() *cobra.Command {
 				switch status {
 				case storetypes.VersionPendingPreflight:
 					log.ActionWithSpinner("Waiting for preflight checks to complete")
+					log.FinishSpinner()
 					if err := ValidatePreflightStatus(deployOptions, authSlug, apiEndpoint); err != nil {
-						log.FinishSpinnerWithError()
+						log.Errorf("Preflight checks contain warnings or errors. The application was not deployed")
 						perr := preflightError{}
 						if errors.As(err, &perr) {
 							cmd.SilenceErrors = true
-							log.Info(fmt.Sprintf("\n%s", err.Error()))
+							var s strings.Builder
+							s.WriteString("\nPreflight check results (state - title - message)")
+							for _, result := range perr.Results {
+								s.WriteString(fmt.Sprintf("\n%s - %q - %q", preflightState(result), result.Title, result.Message))
+							}
+							log.Info(s.String())
 							os.Exit(1)
 						}
 						return err
 					}
-					log.FinishSpinner()
 				case storetypes.VersionPendingConfig:
 					log.ActionWithoutSpinnerWarning("Additional app configuration is required. Please login to the Admin Console to continue", nil)
 				}
@@ -1015,14 +1021,14 @@ func checkPreflightsComplete(response *handlers.GetPreflightResultResponse) (boo
 }
 
 type preflightError struct {
-	Msg string `json:"msg"`
+	Results []*preflight.UploadPreflightResult
 }
 
 func (e preflightError) Error() string {
-	return e.Msg
+	return "preflight checks have warnings or errors"
 }
 
-func (e preflightError) Unwrap() error { return fmt.Errorf(e.Msg) }
+func (e preflightError) Unwrap() error { return fmt.Errorf("preflight checks have warnings or errors") }
 
 func checkPreflightResults(response *handlers.GetPreflightResultResponse) (bool, error) {
 	if response.PreflightResult.Result == "" {
@@ -1035,24 +1041,8 @@ func checkPreflightResults(response *handlers.GetPreflightResultResponse) (bool,
 		return false, errors.Wrap(err, fmt.Sprintf("failed to unmarshal upload preflight results from response: %v", response.PreflightResult.Result))
 	}
 
-	status := func(r *preflight.UploadPreflightResult) string {
-		if r.IsFail {
-			return "FAIL"
-		}
-		if r.IsWarn {
-			return "WARN"
-		}
-		if r.IsPass {
-			return "PASS"
-		}
-		// We should never get here
-		return "UNKNOWN"
-	}
-
-	var s strings.Builder
 	var isWarn, isFail bool
 	for _, result := range results.Results {
-		s.WriteString(fmt.Sprintf("%s - %q\n", status(result), result.Title))
 		if result.IsWarn {
 			isWarn = true
 		}
@@ -1063,20 +1053,34 @@ func checkPreflightResults(response *handlers.GetPreflightResultResponse) (bool,
 
 	if isWarn && isFail {
 		return false, preflightError{
-			Msg: fmt.Sprintf("There are preflight check failures and warnings for the application. The app was not deployed. %s", s.String()),
+			Results: results.Results,
 		}
 	}
 
 	if isWarn {
 		return false, preflightError{
-			Msg: fmt.Sprintf("There are preflight check warnings for the application. The app was not deployed. %s", s.String()),
+			Results: results.Results,
 		}
 	}
 	if isFail {
 		return false, preflightError{
-			Msg: fmt.Sprintf("There are preflight check failures for the application. The app was not deployed. %s", s.String()),
+			Results: results.Results,
 		}
 	}
 
 	return true, nil
+}
+
+func preflightState(r *preflight.UploadPreflightResult) string {
+	if r.IsFail {
+		return "FAIL"
+	}
+	if r.IsWarn {
+		return "WARN"
+	}
+	if r.IsPass {
+		return "PASS"
+	}
+	// We should never get here
+	return "UNKNOWN"
 }
