@@ -33,6 +33,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/util"
 	analyze "github.com/replicatedhq/troubleshoot/pkg/analyze"
 	"gopkg.in/yaml.v3"
+	helmengine "helm.sh/helm/v3/pkg/engine"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	k8sversion "k8s.io/apimachinery/pkg/version"
@@ -106,6 +107,8 @@ func (ctx StaticCtx) FuncMap() template.FuncMap {
 	funcMap["KubernetesVersion"] = ctx.kubernetesVersion
 	funcMap["KubernetesMajorVersion"] = ctx.kubernetesMajorVersion
 	funcMap["KubernetesMinorVersion"] = ctx.kubernetesMinorVersion
+
+	funcMap["Lookup"] = ctx.lookup
 
 	return funcMap
 }
@@ -656,4 +659,20 @@ func (ctx StaticCtx) getClientset() (kubernetes.Interface, error) {
 func indent(spaces int, v string) string {
 	pad := strings.Repeat(" ", spaces)
 	return pad + strings.Replace(v, "\n", "\n"+pad, -1)
+}
+
+// use the lookup function from helm to mimic the behavior of the lookup function in helm.
+func (ctx StaticCtx) lookup(apiversion string, resource string, namespace string, name string) map[string]interface{} {
+	config, err := k8sutil.GetClusterConfig()
+	if err != nil {
+		fmt.Printf("Failed to get cluster config: %v\n", err)
+		return map[string]interface{}{}
+	}
+	lookupFunc := helmengine.NewLookupFunction(config)
+	obj, err := lookupFunc(apiversion, resource, namespace, name)
+	if err != nil {
+		fmt.Printf("Failed to lookup %s/%s/%s: %v\n", apiversion, resource, name, err)
+		return map[string]interface{}{}
+	}
+	return obj
 }
