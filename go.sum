@@ -1525,6 +1525,16 @@ github.com/rcrowley/go-metrics v0.0.0-20201227073835-cf1acfcdf475/go.mod h1:bCqn
 github.com/remyoudompheng/bigfft v0.0.0-20170806203942-52369c62f446/go.mod h1:uYEyJGbgTkfkS4+E/PavXkNJcbFIpEtjt2B0KDQ5+9M=
 github.com/replicatedhq/kotskinds v0.0.0-20230724164735-f83482cc9cfe h1:3AJInd06UxzqHmgy8+24CPsT2tYSE0zToJZyuX9q+MA=
 github.com/replicatedhq/kotskinds v0.0.0-20230724164735-f83482cc9cfe/go.mod h1:QjhIUu3+OmHZ09u09j3FCoTt8F3BYtQglS+OLmftu9I=
+github.com/replicatedhq/kotskinds v0.0.0-20230918171117-a2399c94e661 h1:67BPVTQE8RoXdUoXehSPjkC09oraT8PNPAaGfcSIuE4=
+github.com/replicatedhq/kotskinds v0.0.0-20230918171117-a2399c94e661/go.mod h1:QjhIUu3+OmHZ09u09j3FCoTt8F3BYtQglS+OLmftu9I=
+github.com/replicatedhq/kotskinds v0.0.0-20230918172602-5e3546cee9f0 h1:T4Zy6TPngavCQ2J1/DbZ6+WitXk32TGmgFobxt8p7Lk=
+github.com/replicatedhq/kotskinds v0.0.0-20230918172602-5e3546cee9f0/go.mod h1:QjhIUu3+OmHZ09u09j3FCoTt8F3BYtQglS+OLmftu9I=
+github.com/replicatedhq/kotskinds v0.0.0-20230918190301-7f2ffb4c8f83 h1:QB1SPjMifQMZKaJGeHLYIP1bdZt5Vjqu5JbNTjzvj6U=
+github.com/replicatedhq/kotskinds v0.0.0-20230918190301-7f2ffb4c8f83/go.mod h1:QjhIUu3+OmHZ09u09j3FCoTt8F3BYtQglS+OLmftu9I=
+github.com/replicatedhq/kotskinds v0.0.0-20230918191109-bb200613d590 h1:bc6NOz6f4otUeuwzjSK3AHx8TP6avthDlR5rTozYBCk=
+github.com/replicatedhq/kotskinds v0.0.0-20230918191109-bb200613d590/go.mod h1:QjhIUu3+OmHZ09u09j3FCoTt8F3BYtQglS+OLmftu9I=
+github.com/replicatedhq/kotskinds v0.0.0-20230918191325-9308f41a877c h1:PqJkwiwC2FTjtN9rGLOoS3R1vF2F6n6SgUcEZRyBxrM=
+github.com/replicatedhq/kotskinds v0.0.0-20230918191325-9308f41a877c/go.mod h1:QjhIUu3+OmHZ09u09j3FCoTt8F3BYtQglS+OLmftu9I=
 github.com/replicatedhq/kurlkinds v1.3.6 h1:/dhS32cSSZR4yS4vA8EquBvz+VgJCyTqBO9Xw+6eI4M=
 github.com/replicatedhq/kurlkinds v1.3.6/go.mod h1:c5+hoAkuARgftB2Ft3RCyWRZZPhL0clHEaw7XoGDAg4=
 github.com/replicatedhq/termui/v3 v3.1.1-0.20200811145416-f40076d26851 h1:eRlNDHxGfVkPCRXbA4BfQJvt5DHjFiTtWy3R/t4djyY=

@@ -49,6 +49,7 @@ type App struct {
 
 type Release struct {
 	UpdateCursor             replicatedapp.ReplicatedCursor
+	ReleaseSequence          int64
 	VersionLabel             string
 	IsRequired               bool
 	ReleaseNotes             string
@@ -121,6 +122,7 @@ func downloadReplicated(
 	existingConfigValues *kotsv1beta1.ConfigValues,
 	existingIdentityConfig *kotsv1beta1.IdentityConfig,
 	updateCursor replicatedapp.ReplicatedCursor,
+	releaseSequence int64,
 	versionLabel string,
 	isRequired bool,
 	replicatedRegistryDomain string,
@@ -136,7 +138,7 @@ func downloadReplicated(
 	var release *Release
 
 	if localPath != "" {
-		parsedLocalRelease, err := readReplicatedAppFromLocalPath(localPath, updateCursor, versionLabel, isRequired, replicatedRegistryDomain, replicatedProxyDomain)
+		parsedLocalRelease, err := readReplicatedAppFromLocalPath(localPath, updateCursor, releaseSequence, versionLabel, isRequired, replicatedRegistryDomain, replicatedProxyDomain)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to read replicated app from local path")
 		}
@@ -287,8 +289,11 @@ func downloadReplicated(
 		Files:                    files,
 		Type:                     "replicated",
 		UpdateCursor:             release.UpdateCursor.Cursor,
+		License:                  license,
+		Application:              application,
 		ChannelID:                channelID,
 		ChannelName:              channelName,
+		ReleaseSequence:          release.ReleaseSequence,
 		VersionLabel:             release.VersionLabel,
 		IsRequired:               release.IsRequired,
 		ReleaseNotes:             release.ReleaseNotes,
@@ -300,10 +305,11 @@ func downloadReplicated(
 	return upstream, nil
 }
 
-func readReplicatedAppFromLocalPath(localPath string, localCursor replicatedapp.ReplicatedCursor, versionLabel string, isRequired bool, replicatedRegistryDomain string, replicatedProxyDomain string) (*Release, error) {
+func readReplicatedAppFromLocalPath(localPath string, localCursor replicatedapp.ReplicatedCursor, releaseSequence int64, versionLabel string, isRequired bool, replicatedRegistryDomain string, replicatedProxyDomain string) (*Release, error) {
 	release := Release{
 		Manifests:                make(map[string][]byte),
 		UpdateCursor:             localCursor,
+		ReleaseSequence:          releaseSequence,
 		VersionLabel:             versionLabel,
 		IsRequired:               isRequired,
 		ReplicatedRegistryDomain: replicatedRegistryDomain,
@@ -365,6 +371,7 @@ func downloadReplicatedApp(replicatedUpstream *replicatedapp.ReplicatedUpstream,
 	updateSequence := getResp.Header.Get("X-Replicated-ChannelSequence")
 	updateChannelID := getResp.Header.Get("X-Replicated-ChannelID")
 	updateChannelName := getResp.Header.Get("X-Replicated-ChannelName")
+	releaseSequenceStr := getResp.Header.Get("X-Replicated-Sequence")
 	versionLabel := getResp.Header.Get("X-Replicated-VersionLabel")
 	isRequiredStr := getResp.Header.Get("X-Replicated-IsRequired")
 	releasedAtStr := getResp.Header.Get("X-Replicated-ReleasedAt")
@@ -377,6 +384,7 @@ func downloadReplicatedApp(replicatedUpstream *replicatedapp.ReplicatedUpstream,
 		releasedAt = &r
 	}
 
+	releaseSequence, _ := strconv.ParseInt(releaseSequenceStr, 10, 64)
 	isRequired, _ := strconv.ParseBool(isRequiredStr)
 
 	gzf, err := gzip.NewReader(getResp.Body)
@@ -391,6 +399,7 @@ func downloadReplicatedApp(replicatedUpstream *replicatedapp.ReplicatedUpstream,
 			ChannelName: updateChannelName,
 			Cursor:      updateSequence,
 		},
+		ReleaseSequence:          releaseSequence,
 		VersionLabel:             versionLabel,
 		IsRequired:               isRequired,
 		ReleasedAt:               releasedAt,

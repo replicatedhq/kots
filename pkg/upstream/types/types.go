@@ -27,8 +27,11 @@ type Upstream struct {
 	Type                     string
 	Files                    []UpstreamFile
 	UpdateCursor             string
+	License                  *kotsv1beta1.License
+	Application              *kotsv1beta1.Application
 	ChannelID                string
 	ChannelName              string
+	ReleaseSequence          int64
 	VersionLabel             string
 	IsRequired               bool
 	ReleaseNotes             string
@@ -94,6 +97,7 @@ type FetchOptions struct {
 	CurrentCursor                   string
 	CurrentChannelID                string
 	CurrentChannelName              string
+	CurrentReleaseSequence          int64
 	CurrentVersionLabel             string
 	CurrentVersionIsRequired        bool
 	CurrentReplicatedRegistryDomain string

@@ -45,6 +45,7 @@ func downloadUpstream(upstreamURI string, fetchOptions *types.FetchOptions) (*ty
 			fetchOptions.ConfigValues,
 			fetchOptions.IdentityConfig,
 			pickCursor(fetchOptions),
+			pickReleaseSequence(fetchOptions),
 			pickVersionLabel(fetchOptions),
 			pickVersionIsRequired(fetchOptions),
 			pickReplicatedRegistryDomain(fetchOptions),
@@ -81,6 +82,13 @@ func pickVersionIsRequired(fetchOptions *types.FetchOptions) bool {
 		return fetchOptions.Airgap.Spec.IsRequired
 	}
 	return fetchOptions.CurrentVersionIsRequired
+}
+
+func pickReleaseSequence(fetchOptions *types.FetchOptions) int64 {
+	if fetchOptions.Airgap != nil {
+		return fetchOptions.Airgap.Spec.ReleaseSequence
+	}
+	return fetchOptions.CurrentReleaseSequence
 }
 
 func pickVersionLabel(fetchOptions *types.FetchOptions) string {

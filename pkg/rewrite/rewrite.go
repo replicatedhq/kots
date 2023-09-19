@@ -70,6 +70,7 @@ func Rewrite(rewriteOptions RewriteOptions) error {
 		RootDir:                         rewriteOptions.RootDir,
 		LocalPath:                       rewriteOptions.UpstreamPath,
 		CurrentCursor:                   rewriteOptions.Installation.Spec.UpdateCursor,
+		CurrentReleaseSequence:          rewriteOptions.Installation.Spec.ReleaseSequence,
 		CurrentVersionLabel:             rewriteOptions.Installation.Spec.VersionLabel,
 		CurrentVersionIsRequired:        rewriteOptions.Installation.Spec.IsRequired,
 		CurrentReplicatedRegistryDomain: rewriteOptions.Installation.Spec.ReplicatedRegistryDomain,

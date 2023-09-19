@@ -199,6 +199,7 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 
 	if installation != nil {
 		fetchOptions.EncryptionKey = installation.Spec.EncryptionKey
+		fetchOptions.CurrentReleaseSequence = installation.Spec.ReleaseSequence
 		fetchOptions.CurrentVersionLabel = installation.Spec.VersionLabel
 		fetchOptions.CurrentChannelID = installation.Spec.ChannelID
 		fetchOptions.CurrentChannelName = installation.Spec.ChannelName
