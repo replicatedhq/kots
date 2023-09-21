@@ -170,8 +170,7 @@ func Run(appID string, appSlug string, sequence int64, isAirgap bool, archiveDir
 			// Log the preflight results if there are any warnings or errors
 			// The app may not get installed so we need to see this info for debugging
 			if GetPreflightState(uploadPreflightResults) != "pass" {
-				// TODO: Are there conditions when the application gets installed?
-				logger.Warnf("Preflight checks completed with warnings or errors. The application may not get installed")
+				logger.Warnf("Preflight checks completed with warnings or errors. The application will not get deployed")
 				for _, result := range uploadPreflightResults.Results {
 					if result == nil {
 						continue
@@ -208,7 +207,7 @@ func Run(appID string, appSlug string, sequence int64, isAirgap bool, archiveDir
 			// preflight reporting
 			if isDeployed {
 				if err := reporting.WaitAndReportPreflightChecks(appID, sequence, false, false); err != nil {
-					logger.Errorf("failed to send preflights data to replicated app: %v", err)
+					logger.Debugf("failed to send preflights data to replicated app: %v", err)
 					return
 				}
 			}

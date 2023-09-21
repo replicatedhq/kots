@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"net/http"
 	"net/url"
@@ -127,7 +128,7 @@ func SetConfigCmd() *cobra.Command {
 			}
 			defer resp.Body.Close()
 
-			respBody, err := ioutil.ReadAll(resp.Body)
+			respBody, err := io.ReadAll(resp.Body)
 			if err != nil {
 				log.FinishSpinnerWithError()
 				return errors.Wrap(err, "failed to read server response")

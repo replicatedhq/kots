@@ -32,6 +32,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/kurl"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/metrics"
+	"github.com/replicatedhq/kots/pkg/print"
 	"github.com/replicatedhq/kots/pkg/pull"
 	"github.com/replicatedhq/kots/pkg/replicatedapp"
 	"github.com/replicatedhq/kots/pkg/store/kotsstore"
@@ -448,18 +449,12 @@ func InstallCmd() *cobra.Command {
 				switch status {
 				case storetypes.VersionPendingPreflight:
 					log.ActionWithSpinner("Waiting for preflight checks to complete")
-					log.FinishSpinner()
 					if err := ValidatePreflightStatus(deployOptions, authSlug, apiEndpoint); err != nil {
+						log.FinishSpinner()
 						log.Errorf("Preflight checks contain warnings or errors. The application was not deployed")
 						perr := preflightError{}
 						if errors.As(err, &perr) {
-							cmd.SilenceErrors = true
-							var s strings.Builder
-							s.WriteString("\nPreflight check results (state - title - message)")
-							for _, result := range perr.Results {
-								s.WriteString(fmt.Sprintf("\n%s - %q - %q", preflightState(result), result.Title, result.Message))
-							}
-							log.Info(s.String())
+							print.PreflightErrors(log, perr.Results)
 							os.Exit(1)
 						}
 						return err
@@ -1069,18 +1064,4 @@ func checkPreflightResults(response *handlers.GetPreflightResultResponse) (bool,
 	}
 
 	return true, nil
-}
-
-func preflightState(r *preflight.UploadPreflightResult) string {
-	if r.IsFail {
-		return "FAIL"
-	}
-	if r.IsWarn {
-		return "WARN"
-	}
-	if r.IsPass {
-		return "PASS"
-	}
-	// We should never get here
-	return "UNKNOWN"
 }
