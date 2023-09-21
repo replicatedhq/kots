@@ -286,9 +286,9 @@ var _ = Describe("Install", func() {
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring(expectedErr))
 		},
-			Entry("warnings and failures", true, true, "There are preflight check failures and warnings for the application"),
-			Entry("warnings only", false, true, "There are preflight check warnings for the application"),
-			Entry("failures only", true, false, "There are preflight check failures for the application"),
+			Entry("warnings and failures", true, true, "Preflight checks have warnings or errors"),
+			Entry("warnings only", false, true, "Preflight checks have warnings or errors"),
+			Entry("failures only", true, false, "Preflight checks have warnings or errors"),
 		)
 
 		It("does not return an error if there are no warnings and failures", func() {
