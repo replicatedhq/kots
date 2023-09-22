@@ -1016,14 +1016,15 @@ func checkPreflightsComplete(response *handlers.GetPreflightResultResponse) (boo
 }
 
 type preflightError struct {
+	Msg     string
 	Results []*preflight.UploadPreflightResult
 }
 
 func (e preflightError) Error() string {
-	return "preflight checks have warnings or errors"
+	return e.Msg
 }
 
-func (e preflightError) Unwrap() error { return fmt.Errorf("preflight checks have warnings or errors") }
+func (e preflightError) Unwrap() error { return fmt.Errorf(e.Msg) }
 
 func checkPreflightResults(response *handlers.GetPreflightResultResponse) (bool, error) {
 	if response.PreflightResult.Result == "" {
@@ -1048,17 +1049,20 @@ func checkPreflightResults(response *handlers.GetPreflightResultResponse) (bool,
 
 	if isWarn && isFail {
 		return false, preflightError{
+			Msg:     "There are preflight check failures and warnings for the application. The app was not deployed.",
 			Results: results.Results,
 		}
 	}
 
 	if isWarn {
 		return false, preflightError{
+			Msg:     "There are preflight check warnings for the application. The app was not deployed.",
 			Results: results.Results,
 		}
 	}
 	if isFail {
 		return false, preflightError{
+			Msg:     "There are preflight check failures for the application. The app was not deployed.",
 			Results: results.Results,
 		}
 	}
