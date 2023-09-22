@@ -450,7 +450,7 @@ func InstallCmd() *cobra.Command {
 				case storetypes.VersionPendingPreflight:
 					log.ActionWithSpinner("Waiting for preflight checks to complete")
 					if err := ValidatePreflightStatus(deployOptions, authSlug, apiEndpoint); err != nil {
-						log.FinishSpinner()
+						log.FinishSpinnerWithError()
 						log.Errorf("Preflight checks contain warnings or errors. The application was not deployed")
 						perr := preflightError{}
 						if errors.As(err, &perr) {
