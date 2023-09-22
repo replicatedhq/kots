@@ -459,6 +459,7 @@ func InstallCmd() *cobra.Command {
 						}
 						return err
 					}
+					log.FinishSpinner()
 				case storetypes.VersionPendingConfig:
 					log.ActionWithoutSpinnerWarning("Additional app configuration is required. Please login to the Admin Console to continue", nil)
 				}
