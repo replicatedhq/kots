@@ -35,7 +35,6 @@ func PreflightErrors(log *logger.CLILogger, results []*preflight.UploadPreflight
 		s.WriteString(fmt.Sprintf("\n%s - %q - %q", preflightState(result), result.Title, result.Message))
 	}
 	log.Info(s.String())
-	// log.Errorf(sb.String())
 }
 
 func preflightState(r *preflight.UploadPreflightResult) string {
