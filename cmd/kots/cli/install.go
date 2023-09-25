@@ -455,7 +455,7 @@ func InstallCmd() *cobra.Command {
 						perr := preflightError{}
 						if errors.As(err, &perr) {
 							print.PreflightErrors(log, perr.Results)
-							os.Exit(1)
+							cmd.SilenceErrors = true // Stop Cobra from printing the error, we print it ourselves
 						}
 						return err
 					}
