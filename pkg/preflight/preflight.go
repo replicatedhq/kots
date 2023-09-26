@@ -175,7 +175,7 @@ func Run(appID string, appSlug string, sequence int64, isAirgap bool, archiveDir
 					if result == nil {
 						continue
 					}
-					logger.Infof("preflight state=%s title=%q message=%q", preflightState(*result), result.Title, result.Message)
+					logger.Infof("preflight state=%s title=%q message=%q", GetPreflightCheckState(result), result.Title, result.Message)
 				}
 			} else {
 				logger.Info("preflight checks completed")
@@ -229,7 +229,12 @@ func Run(appID string, appSlug string, sequence int64, isAirgap bool, archiveDir
 	return nil
 }
 
-func preflightState(p troubleshootpreflight.UploadPreflightResult) string {
+// GetPreflightCheckState returns the state of a single preflight check result
+func GetPreflightCheckState(p *troubleshootpreflight.UploadPreflightResult) string {
+	if p == nil {
+		return "unknown"
+	}
+
 	if p.IsFail {
 		return "fail"
 	}
@@ -275,6 +280,10 @@ func maybeDeployFirstVersion(appID string, sequence int64, preflightResults *typ
 	return true, nil
 }
 
+// GetPreflightState returns a single state based on checking all
+// preflight checks results. If there are any errors, the state is fail.
+// If there are no errors and any warnings, the state is warn.
+// Otherwise, the state is pass.
 func GetPreflightState(preflightResults *types.PreflightResults) string {
 	if len(preflightResults.Errors) > 0 {
 		return "fail"

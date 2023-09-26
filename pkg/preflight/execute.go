@@ -66,10 +66,10 @@ func execute(appID string, sequence int64, preflightSpec *troubleshootv1beta2.Pr
 				logger.Errorf("error while running preflights: %v", err)
 			} else {
 				switch m := msg.(type) {
-					case preflight.CollectProgress:
-						logger.Infof("preflight progress: %s", m.String())
-					default:
-						logger.Infof("preflight progress: %+v", msg)
+				case preflight.CollectProgress:
+					logger.Infof("preflight progress: %s", m.String())
+				default:
+					logger.Infof("preflight progress: %+v", msg)
 				}
 			}
 
