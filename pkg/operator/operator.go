@@ -382,6 +382,9 @@ func (o *Operator) DeployApp(appID string, sequence int64) (deployed bool, deplo
 		return false, errors.Wrap(err, "failed to apply status informers")
 	}
 
+	o.client.ApplyNamespacesInformer(kotsKinds.KotsApplication.Spec.AdditionalNamespaces, imagePullSecrets)
+	o.client.ApplyHooksInformer(kotsKinds.KotsApplication.Spec.AdditionalNamespaces)
+
 	deployArgs := operatortypes.DeployAppArgs{
 		AppID:                        app.ID,
 		AppSlug:                      app.Slug,
@@ -527,7 +530,7 @@ func (o *Operator) resumeInformersForApp(app *apptypes.App) error {
 		return errors.Wrapf(err, "failed to apply status informers for app %s", app.ID)
 	}
 
-	o.client.RestartNamespacesInformer(kotsKinds.KotsApplication.Spec.AdditionalNamespaces, imagePullSecrets)
+	o.client.ApplyNamespacesInformer(kotsKinds.KotsApplication.Spec.AdditionalNamespaces, imagePullSecrets)
 	o.client.ApplyHooksInformer(kotsKinds.KotsApplication.Spec.AdditionalNamespaces)
 
 	return nil

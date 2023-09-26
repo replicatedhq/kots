@@ -124,7 +124,7 @@ func (c *Client) runAppStateMonitor() error {
 	return errors.New("app state monitor shutdown")
 }
 
-func (c *Client) RestartNamespacesInformer(namespaces []string, imagePullSecrets []string) {
+func (c *Client) ApplyNamespacesInformer(namespaces []string, imagePullSecrets []string) {
 	for _, ns := range namespaces {
 		if ns == "*" {
 			continue
@@ -179,9 +179,6 @@ func (c *Client) DeployApp(deployArgs operatortypes.DeployAppArgs) (deployed boo
 			deployed = !results.IsError
 		}
 	}()
-
-	c.RestartNamespacesInformer(deployArgs.AdditionalNamespaces, deployArgs.ImagePullSecrets)
-	c.ApplyHooksInformer(deployArgs.AdditionalNamespaces)
 
 	deployRes, deployError = c.deployManifests(deployArgs)
 	if deployError != nil {
