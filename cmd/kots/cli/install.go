@@ -453,7 +453,7 @@ func InstallCmd() *cobra.Command {
 						perr := preflightError{}
 						if errors.As(err, &perr) {
 							log.FinishSpinner() // We succeeded waiting for the results. Don't finish with an error
-							log.Errorf("Preflight checks contain warnings or errors. The application was not deployed")
+							log.Errorf(perr.Msg)
 							print.PreflightErrors(log, perr.Results)
 							cmd.SilenceErrors = true // Stop Cobra from printing the error, we format the message ourselves
 						} else {
