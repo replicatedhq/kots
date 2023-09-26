@@ -3274,7 +3274,7 @@ jobs:
           done
 
           # toggle the config option to exclude the conditional chart
-          ./bin/kots set config "$APP_SLUG" install_conditional_chart=false --deploy --namespace "$APP_SLUG"
+          ./bin/kots set config "$APP_SLUG" install_conditional_chart=0 --deploy --namespace "$APP_SLUG"
 
           # wait for my-conditional-chart-release to be uninstalled
           COUNTER=1
