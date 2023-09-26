@@ -57,19 +57,18 @@ type Client struct {
 	watchedNamespaces []string
 	imagePullSecrets  []string
 
-	appStateMonitor   *appstate.Monitor
-	HookStopChans     []chan struct{}
-	namespaceStopChan chan struct{}
-	ExistingInformers map[string]bool // namespaces map to invoke the Informer once during deploy
+	appStateMonitor       *appstate.Monitor
+	HookStopChans         []chan struct{}
+	namespaceStopChan     chan struct{}
+	ExistingHookInformers map[string]bool // namespaces map to invoke the Informer once during deploy
 }
 
 func (c *Client) Init() error {
-	if _, ok := c.ExistingInformers[c.TargetNamespace]; !ok {
-		c.ExistingInformers[c.TargetNamespace] = true
+	if _, ok := c.ExistingHookInformers[c.TargetNamespace]; !ok {
+		c.ExistingHookInformers[c.TargetNamespace] = true
 		if err := c.runHooksInformer(c.TargetNamespace); err != nil {
 			// we don't fail here...
-			log.Printf("error registering cleanup hooks for TargetNamespace: %s: %s",
-				c.TargetNamespace, err.Error())
+			log.Printf("error registering cleanup hooks for TargetNamespace: %s: %s", c.TargetNamespace, err.Error())
 		}
 	}
 
@@ -125,6 +124,45 @@ func (c *Client) runAppStateMonitor() error {
 	return errors.New("app state monitor shutdown")
 }
 
+func (c *Client) RestartNamespacesInformer(namespaces []string, imagePullSecrets []string) {
+	for _, ns := range namespaces {
+		if ns == "*" {
+			continue
+		}
+		if err := c.ensureNamespacePresent(ns); err != nil {
+			// we don't fail here...
+			log.Printf("error creating namespace: %s", err.Error())
+		}
+		if err := c.ensureImagePullSecretsPresent(ns, imagePullSecrets); err != nil {
+			// we don't fail here...
+			log.Printf("error ensuring image pull secrets for namespace %s: %s", ns, err.Error())
+		}
+	}
+
+	c.imagePullSecrets = imagePullSecrets
+	c.watchedNamespaces = namespaces
+
+	c.shutdownNamespacesInformer()
+	if len(c.watchedNamespaces) > 0 {
+		c.runNamespacesInformer()
+	}
+}
+
+func (c *Client) ApplyHooksInformer(namespaces []string) {
+	for _, ns := range namespaces {
+		if ns == "*" {
+			continue
+		}
+		if _, ok := c.ExistingHookInformers[ns]; !ok {
+			c.ExistingHookInformers[ns] = true
+			if err := c.runHooksInformer(ns); err != nil {
+				// we don't fail here...
+				log.Printf("error registering cleanup hooks for namespace: %s: %s", ns, err.Error())
+			}
+		}
+	}
+}
+
 func (c *Client) DeployApp(deployArgs operatortypes.DeployAppArgs) (deployed bool, finalError error) {
 	log.Println("received a deploy request for", deployArgs.AppSlug)
 
@@ -142,6 +180,9 @@ func (c *Client) DeployApp(deployArgs operatortypes.DeployAppArgs) (deployed boo
 		}
 	}()
 
+	c.RestartNamespacesInformer(deployArgs.AdditionalNamespaces, deployArgs.ImagePullSecrets)
+	c.ApplyHooksInformer(deployArgs.AdditionalNamespaces)
+
 	deployRes, deployError = c.deployManifests(deployArgs)
 	if deployError != nil {
 		deployRes = &deployResult{}
@@ -158,11 +199,6 @@ func (c *Client) DeployApp(deployArgs operatortypes.DeployAppArgs) (deployed boo
 		helmResult.multiStderr = [][]byte{[]byte(helmError.Error())}
 		log.Printf("failed to deploy helm charts: %v", helmError)
 		return
-	}
-
-	c.shutdownNamespacesInformer()
-	if len(c.watchedNamespaces) > 0 {
-		c.runNamespacesInformer()
 	}
 
 	return
@@ -213,30 +249,6 @@ func (c *Client) deployManifests(deployArgs operatortypes.DeployAppArgs) (*deplo
 			return nil, errors.Wrapf(err, "failed to diff and delete manifests")
 		}
 	}
-
-	for _, additionalNamespace := range deployArgs.AdditionalNamespaces {
-		if additionalNamespace == "*" {
-			continue
-		}
-		if err := c.ensureNamespacePresent(additionalNamespace); err != nil {
-			// we don't fail here...
-			log.Printf("error creating namespace: %s", err.Error())
-		}
-		if err := c.ensureImagePullSecretsPresent(additionalNamespace, deployArgs.ImagePullSecrets); err != nil {
-			// we don't fail here...
-			log.Printf("error ensuring image pull secrets for namespace %s: %s", additionalNamespace, err.Error())
-		}
-		if _, ok := c.ExistingInformers[additionalNamespace]; !ok {
-			c.ExistingInformers[additionalNamespace] = true
-			if err := c.runHooksInformer(additionalNamespace); err != nil {
-				// we don't fail here...
-				log.Printf("error registering cleanup hooks for additionalNamespace: %s: %s",
-					additionalNamespace, err.Error())
-			}
-		}
-	}
-	c.imagePullSecrets = deployArgs.ImagePullSecrets
-	c.watchedNamespaces = deployArgs.AdditionalNamespaces
 
 	result, err := c.ensureResourcesPresent(deployArgs)
 	if err != nil {

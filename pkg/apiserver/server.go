@@ -89,9 +89,9 @@ func Start(params *APIServerParams) {
 
 	if !util.IsHelmManaged() {
 		client := &client.Client{
-			TargetNamespace:   util.AppNamespace(),
-			ExistingInformers: map[string]bool{},
-			HookStopChans:     []chan struct{}{},
+			TargetNamespace:       util.AppNamespace(),
+			ExistingHookInformers: map[string]bool{},
+			HookStopChans:         []chan struct{}{},
 		}
 		store := store.GetStore()
 		k8sClientset, err := k8sutil.GetClientset()

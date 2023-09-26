@@ -16,6 +16,8 @@ import (
 
 // runHooksInformer will create goroutines to start various informers for kots objects
 func (c *Client) runHooksInformer(namespace string) error {
+	logger.Infof("running hooks informer for namespace %s", namespace)
+
 	clientset, err := k8sutil.GetClientset()
 	if err != nil {
 		return errors.Wrap(err, "failed to get clientset")

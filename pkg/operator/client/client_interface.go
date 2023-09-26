@@ -10,4 +10,6 @@ type ClientInterface interface {
 	DeployApp(deployArgs operatortypes.DeployAppArgs) (deployed bool, finalError error)
 	UndeployApp(undeployArgs operatortypes.UndeployAppArgs) error
 	ApplyAppInformers(args operatortypes.AppInformersArgs)
+	RestartNamespacesInformer(namespaces []string, imagePullSecrets []string)
+	ApplyHooksInformer(namespaces []string)
 }

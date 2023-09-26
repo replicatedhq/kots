@@ -6,7 +6,6 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -92,7 +91,7 @@ func (o *Operator) Start() error {
 	}
 	o.clusterID = id
 
-	go o.resumeStatusInformers()
+	go o.resumeInformers()
 	go o.resumeDeployments()
 	startLoop(o.restoreLoop, 2)
 
@@ -216,7 +215,7 @@ func (o *Operator) DeployApp(appID string, sequence int64) (deployed bool, deplo
 		return false, errors.Wrap(err, "failed to get downstream")
 	}
 
-	deployedVersionArchive, err := ioutil.TempDir("", "kotsadm")
+	deployedVersionArchive, err := os.MkdirTemp("", "kotsadm")
 	if err != nil {
 		return false, errors.Wrap(err, "failed to create temp dir")
 	}
@@ -324,30 +323,10 @@ func (o *Operator) DeployApp(appID string, sequence int64) (deployed bool, deplo
 		return false, errors.Wrap(err, "failed to get v1beta2 charts archive")
 	}
 
-	imagePullSecrets := []string{}
-	secretFilename := filepath.Join(deployedVersionArchive, "overlays", "midstream", "secret.yaml")
-	_, err = os.Stat(secretFilename)
-	if err != nil && !os.IsNotExist(err) {
-		return false, errors.Wrap(err, "failed to os stat image pull secret file")
-	}
-	if err == nil {
-		b, err := ioutil.ReadFile(secretFilename)
-		if err != nil {
-			return false, errors.Wrap(err, "failed to read image pull secret file")
-		}
-		secrets := util.ConvertToSingleDocs(b)
-		for _, secret := range secrets {
-			imagePullSecrets = append(imagePullSecrets, string(secret))
-		}
-	}
-
-	chartPullSecrets, err := getChartsImagePullSecrets(deployedVersionArchive)
+	imagePullSecrets, err := getImagePullSecrets(deployedVersionArchive)
 	if err != nil {
-		deployError = errors.Wrap(err, "failed to read image pull secret files from charts")
-		return false, deployError
+		return false, errors.Wrap(err, "failed to get image pull secrets")
 	}
-	imagePullSecrets = append(imagePullSecrets, chartPullSecrets...)
-	imagePullSecrets = deduplicateSecrets(imagePullSecrets)
 
 	// get previous manifests (if any)
 	var previousKotsKinds *kotsutil.KotsKinds
@@ -365,7 +344,7 @@ func (o *Operator) DeployApp(appID string, sequence int64) (deployed bool, deplo
 		}
 
 		if previouslyDeployedParentSequence != -1 {
-			previouslyDeployedVersionArchive, err := ioutil.TempDir("", "kotsadm")
+			previouslyDeployedVersionArchive, err := os.MkdirTemp("", "kotsadm")
 			if err != nil {
 				return false, errors.Wrap(err, "failed to create temp dir")
 			}
@@ -489,20 +468,20 @@ func (o *Operator) applyStatusInformers(a *apptypes.App, sequence int64, kotsKin
 	return nil
 }
 
-func (o *Operator) resumeStatusInformers() {
+func (o *Operator) resumeInformers() {
 	apps, err := o.store.ListAppsForDownstream(o.clusterID)
 	if err != nil {
 		logger.Error(errors.Wrap(err, "failed to list installed apps for downstream"))
 		return
 	}
 	for _, app := range apps {
-		if err := o.resumeStatusInformersForApp(app); err != nil {
+		if err := o.resumeInformersForApp(app); err != nil {
 			logger.Error(errors.Wrapf(err, "failed to resume status informers for app %s in cluster %s", app.ID, o.clusterID))
 		}
 	}
 }
 
-func (o *Operator) resumeStatusInformersForApp(app *apptypes.App) error {
+func (o *Operator) resumeInformersForApp(app *apptypes.App) error {
 	deployedVersion, err := o.store.GetCurrentDownstreamVersion(app.ID, o.clusterID)
 	if err != nil {
 		return errors.Wrap(err, "failed to get current downstream version")
@@ -513,7 +492,7 @@ func (o *Operator) resumeStatusInformersForApp(app *apptypes.App) error {
 
 	logger.Debugf("starting status informers for app %s", app.ID)
 
-	deployedVersionArchive, err := ioutil.TempDir("", "kotsadm")
+	deployedVersionArchive, err := os.MkdirTemp("", "kotsadm")
 	if err != nil {
 		return errors.Wrap(err, "failed to create temp dir")
 	}
@@ -522,6 +501,11 @@ func (o *Operator) resumeStatusInformersForApp(app *apptypes.App) error {
 	err = o.store.GetAppVersionArchive(app.ID, sequence, deployedVersionArchive)
 	if err != nil {
 		return errors.Wrap(err, "failed to get app version archive")
+	}
+
+	imagePullSecrets, err := getImagePullSecrets(deployedVersionArchive)
+	if err != nil {
+		return errors.Wrap(err, "failed to get image pull secrets")
 	}
 
 	kotsKinds, err := kotsutil.LoadKotsKindsFromPath(filepath.Join(deployedVersionArchive, "upstream"))
@@ -542,6 +526,9 @@ func (o *Operator) resumeStatusInformersForApp(app *apptypes.App) error {
 	if err := o.applyStatusInformers(app, sequence, kotsKinds, builder); err != nil {
 		return errors.Wrapf(err, "failed to apply status informers for app %s", app.ID)
 	}
+
+	o.client.RestartNamespacesInformer(kotsKinds.KotsApplication.Spec.AdditionalNamespaces, imagePullSecrets)
+	o.client.ApplyHooksInformer(kotsKinds.KotsApplication.Spec.AdditionalNamespaces)
 
 	return nil
 }
@@ -727,7 +714,7 @@ func (o *Operator) UndeployApp(a *apptypes.App, d *downstreamtypes.Downstream, i
 		return nil
 	}
 
-	deployedVersionArchive, err := ioutil.TempDir("", "kotsadm")
+	deployedVersionArchive, err := os.MkdirTemp("", "kotsadm")
 	if err != nil {
 		return errors.Wrap(err, "failed to create temp dir")
 	}
