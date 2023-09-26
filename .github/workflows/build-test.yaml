@@ -3261,6 +3261,33 @@ jobs:
             sleep 1
           done
 
+          # validate that the conditional chart is installed
+          COUNTER=1
+          while [ "$(helm ls -n "$APP_SLUG" | awk 'NR>1{print $1}' | grep my-conditional-chart-release)" == "" ]; do
+            ((COUNTER += 1))
+            if [ $COUNTER -gt 120 ]; then
+              echo "Timed out waiting for my-conditional-chart-release to be installed"
+              helm ls -n "$APP_SLUG"
+              exit 1
+            fi
+            sleep 1
+          done
+
+          # toggle the config option to exclude the conditional chart
+          ./bin/kots set config "$APP_SLUG" install_conditional_chart=0 --deploy --namespace "$APP_SLUG"
+
+          # wait for my-conditional-chart-release to be uninstalled
+          COUNTER=1
+          while [ "$(helm ls -n "$APP_SLUG" | awk 'NR>1{print $1}' | grep my-conditional-chart-release)" != "" ]; do
+            ((COUNTER += 1))
+            if [ $COUNTER -gt 120 ]; then
+              echo "Timed out waiting for my-conditional-chart-release to be uninstalled"
+              helm ls -n "$APP_SLUG"
+              exit 1
+            fi
+            sleep 1
+          done
+
 
       - name: Generate support bundle on failure
         if: failure()

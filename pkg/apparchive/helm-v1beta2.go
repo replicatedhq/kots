@@ -73,6 +73,10 @@ type WriteV1Beta2HelmChartsOptions struct {
 
 // WriteV1Beta2HelmCharts copies the upstream helm chart archive and rendered values to the helm directory and processes online images (if necessary)
 func WriteV1Beta2HelmCharts(opts WriteV1Beta2HelmChartsOptions) error {
+	// clear the previous helm dir before writing
+	helmDir := opts.Upstream.GetHelmDir(opts.WriteUpstreamOptions)
+	os.RemoveAll(helmDir)
+
 	if opts.KotsKinds == nil || opts.KotsKinds.V1Beta2HelmCharts == nil {
 		return nil
 	}
@@ -91,7 +95,7 @@ func WriteV1Beta2HelmCharts(opts WriteV1Beta2HelmChartsOptions) error {
 			}
 		}
 
-		chartDir := path.Join(opts.Upstream.GetHelmDir(opts.WriteUpstreamOptions), helmChart.GetDirName())
+		chartDir := path.Join(helmDir, helmChart.GetDirName())
 		if err := os.MkdirAll(chartDir, 0744); err != nil {
 			return errors.Wrap(err, "failed to create chart dir")
 		}
