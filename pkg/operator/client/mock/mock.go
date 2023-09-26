@@ -46,6 +46,18 @@ func (mr *MockClientInterfaceMockRecorder) ApplyAppInformers(args interface{}) *
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ApplyAppInformers", reflect.TypeOf((*MockClientInterface)(nil).ApplyAppInformers), args)
 }
 
+// ApplyHooksInformer mocks base method.
+func (m *MockClientInterface) ApplyHooksInformer(namespaces []string) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "ApplyHooksInformer", namespaces)
+}
+
+// ApplyHooksInformer indicates an expected call of ApplyHooksInformer.
+func (mr *MockClientInterfaceMockRecorder) ApplyHooksInformer(namespaces interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ApplyHooksInformer", reflect.TypeOf((*MockClientInterface)(nil).ApplyHooksInformer), namespaces)
+}
+
 // DeployApp mocks base method.
 func (m *MockClientInterface) DeployApp(deployArgs types.DeployAppArgs) (bool, error) {
 	m.ctrl.T.Helper()
@@ -73,6 +85,18 @@ func (m *MockClientInterface) Init() error {
 func (mr *MockClientInterfaceMockRecorder) Init() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Init", reflect.TypeOf((*MockClientInterface)(nil).Init))
+}
+
+// RestartNamespacesInformer mocks base method.
+func (m *MockClientInterface) RestartNamespacesInformer(namespaces, imagePullSecrets []string) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "RestartNamespacesInformer", namespaces, imagePullSecrets)
+}
+
+// RestartNamespacesInformer indicates an expected call of RestartNamespacesInformer.
+func (mr *MockClientInterfaceMockRecorder) RestartNamespacesInformer(namespaces, imagePullSecrets interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RestartNamespacesInformer", reflect.TypeOf((*MockClientInterface)(nil).RestartNamespacesInformer), namespaces, imagePullSecrets)
 }
 
 // Shutdown mocks base method.
