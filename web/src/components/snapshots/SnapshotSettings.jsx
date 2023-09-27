@@ -1,4 +1,5 @@
 import React, { Component } from "react";
+import PropTypes from "prop-types";
 import { withRouter } from "@src/utilities/react-router-utilities";
 import { KotsPageTitle } from "@components/Head";
 import isEmpty from "lodash/isEmpty";
@@ -13,6 +14,11 @@ import { Repeater } from "../../utilities/repeater";
 import Icon from "../Icon";
 
 class SnapshotSettings extends Component {
+  static propTypes = {
+    appsList: PropTypes.array.isRequired,
+    isKurlEnabled: PropTypes.bool,
+  };
+
   state = {
     snapshotSettings: null,
     isLoadingSnapshotSettings: true,
