@@ -207,17 +207,20 @@ type Props = {
   isKurlEnabled?: boolean;
   kotsadmRequiresVeleroAccess: boolean;
   minimalRBACKotsadmNamespace: string;
-  openConfigureSnapshotsMinimalRBACModal: (kotsadmRequiresVeleroAccess: boolean, minimalRBACKotsadmNamespace: string) => void;
+  openConfigureSnapshotsMinimalRBACModal: (
+    kotsadmRequiresVeleroAccess: boolean,
+    minimalRBACKotsadmNamespace: string
+  ) => void;
   renderNotVeleroMessage: () => void;
   resetFileSystemWarningMessage: string;
   showConfigureSnapshotsModal: boolean;
   showResetFileSystemWarningModal: boolean;
-  snapshotSettings: {
+  snapshotSettings?: {
     fileSystemConfig?: FileSystemConfig;
     isKurl?: boolean;
     isMinioDisabled?: boolean;
     isVeleroRunning?: boolean;
-    store: StoreProvider;
+    store?: StoreProvider;
     veleroPlugins?: string[];
     veleroVersion?: string;
   };
@@ -370,22 +373,22 @@ class SnapshotStorageDestination extends Component<Props, State> {
     const { snapshotSettings } = this.props;
 
     if (provider === "aws") {
-      if (snapshotSettings.store?.aws) {
+      if (snapshotSettings?.store?.aws) {
         return (
-          snapshotSettings.store?.aws.region !== s3Region ||
-          snapshotSettings.store?.aws.accessKeyID !== s3KeyId ||
-          snapshotSettings.store?.aws.secretAccessKey !== s3KeySecret ||
-          snapshotSettings.store?.aws.useInstanceRole !== useIamAws
+          snapshotSettings?.store?.aws.region !== s3Region ||
+          snapshotSettings?.store?.aws.accessKeyID !== s3KeyId ||
+          snapshotSettings?.store?.aws.secretAccessKey !== s3KeySecret ||
+          snapshotSettings?.store?.aws.useInstanceRole !== useIamAws
         );
       }
       return true;
     }
     if (provider === "gcp") {
-      if (snapshotSettings.store?.gcp) {
+      if (snapshotSettings?.store?.gcp) {
         return (
-          snapshotSettings.store?.gcp.useInstanceRole !== gcsUseIam ||
-          snapshotSettings.store?.gcp.serviceAccount !== gcsServiceAccount ||
-          snapshotSettings.store?.gcp.jsonFile !== gcsJsonFile
+          snapshotSettings?.store?.gcp.useInstanceRole !== gcsUseIam ||
+          snapshotSettings?.store?.gcp.serviceAccount !== gcsServiceAccount ||
+          snapshotSettings?.store?.gcp.jsonFile !== gcsJsonFile
         );
       }
       return true;

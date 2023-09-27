@@ -19,32 +19,37 @@ type Props = {
 } & RouterProps;
 
 type State = {
-  snapshotSettings: any | null,
-  isLoadingSnapshotSettings: boolean,
-  snapshotSettingsErr: boolean,
-  snapshotSettingsErrMsg: string,
-  toggleSnapshotView: boolean,
-  hideCheckVeleroButton: boolean,
-  updateConfirm: boolean,
-  updatingSettings: boolean,
-  updateErrorMsg: string,
-  showConfigureSnapshotsModal: boolean,
-  kotsadmRequiresVeleroAccess: boolean,
-  minimalRBACKotsadmNamespace: string,
-  showResetFileSystemWarningModal: boolean,
-  resetFileSystemWarningMessage: string,
-  snapshotSettingsJob: Repeater,
-  checkForVeleroAndNodeAgent: boolean,
-  isEmptyView?: boolean,
-  veleroUpdated?: boolean,
-  nodeAgentUpdated?: boolean,
+  snapshotSettings?: {
+    isVeleroRunning: boolean;
+    veleroVersion: string;
+    veleroPod?: object;
+    nodeAgentPods?: object[];
+  };
+  isLoadingSnapshotSettings: boolean;
+  snapshotSettingsErr: boolean;
+  snapshotSettingsErrMsg: string;
+  toggleSnapshotView: boolean;
+  hideCheckVeleroButton: boolean;
+  updateConfirm: boolean;
+  updatingSettings: boolean;
+  updateErrorMsg: string;
+  showConfigureSnapshotsModal: boolean;
+  kotsadmRequiresVeleroAccess: boolean;
+  minimalRBACKotsadmNamespace: string;
+  showResetFileSystemWarningModal: boolean;
+  resetFileSystemWarningMessage: string;
+  snapshotSettingsJob: Repeater;
+  checkForVeleroAndNodeAgent: boolean;
+  isEmptyView?: boolean;
+  veleroUpdated?: boolean;
+  nodeAgentUpdated?: boolean;
 };
 
 class SnapshotSettings extends Component<Props, State> {
   constructor(props: Props) {
     super(props);
     this.state = {
-      snapshotSettings: null,
+      snapshotSettings: undefined,
       isLoadingSnapshotSettings: true,
       snapshotSettingsErr: false,
       snapshotSettingsErrMsg: "",
@@ -167,15 +172,15 @@ class SnapshotSettings extends Component<Props, State> {
           this.setState({ veleroUpdated: true });
         }
 
-        let sortedStateNodeAgentPods = [];
-        let sortedLastStateNodeAgentPods = [];
+        let sortedStateNodeAgentPods: object[] | undefined = [];
+        let sortedLastStateNodeAgentPods: object[] | undefined = [];
         if (!isEmpty(this.state.snapshotSettings?.nodeAgentPods)) {
           sortedStateNodeAgentPods =
-            this.state.snapshotSettings?.nodeAgentPods.sort();
+            this.state.snapshotSettings?.nodeAgentPods?.sort();
         }
         if (!isEmpty(lastState.snapshotSettings?.nodeAgentPods)) {
           sortedLastStateNodeAgentPods =
-            lastState.snapshotSettings?.nodeAgentPods.sort();
+            lastState.snapshotSettings?.nodeAgentPods?.sort();
         }
         if (
           !isEqual(sortedStateNodeAgentPods, sortedLastStateNodeAgentPods) &&
@@ -205,7 +210,7 @@ class SnapshotSettings extends Component<Props, State> {
         }
       }
     }
-  }
+  };
 
   toggleSnapshotView = (isEmptyView?: boolean) => {
     this.setState({
@@ -214,7 +219,7 @@ class SnapshotSettings extends Component<Props, State> {
     });
   };
 
-  updateSettings = (payload: any) => {
+  updateSettings = (payload: object) => {
     this.setState({
       updatingSettings: true,
       updateErrorMsg: "",
@@ -349,8 +354,6 @@ class SnapshotSettings extends Component<Props, State> {
         </div>
       );
     }
-
-    console.log("this.props", this.props)
 
     return (
       <div className="flex1 flex-column u-overflow--auto">
