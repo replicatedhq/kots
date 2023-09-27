@@ -363,7 +363,7 @@ class SnapshotSettings extends Component {
               this.hideResetFileSystemWarningModal
             }
             isKurlEnabled={this.props.isKurlEnabled}
-            apps={this.props.apps}
+            apps={this.props.appsList}
           />
         </div>
       </div>
