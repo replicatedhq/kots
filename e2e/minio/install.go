@@ -77,7 +77,7 @@ func (m *Minio) Install(helmCLI *helm.CLI, kubeconfig string) {
 		fmt.Sprintf("--set=buckets[0].name=%s,buckets[0].policy=none,buckets[0].purge=false", m.GetBucket()),
 		m.options.ReleaseName,
 		"minio/minio",
-		"--version=v4.0.3",
+		"--version=v5.0.13",
 	)
 	Expect(err).WithOffset(1).Should(Succeed(), "helm install")
 	Eventually(session).WithOffset(1).WithTimeout(2*time.Minute).Should(gexec.Exit(0), "helm install")

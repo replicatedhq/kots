@@ -27,7 +27,11 @@ func (v *CLI) Install(workspace, kubeconfig string, minio minio.Minio) {
 
 	session, err := v.install(workspace, kubeconfig, minio.GetURL(), minio.GetBucket())
 	Expect(err).WithOffset(1).Should(Succeed(), "install")
-	Eventually(session).WithOffset(1).WithTimeout(2*time.Minute).Should(gexec.Exit(0), "helm install")
+	Eventually(session).WithOffset(1).WithTimeout(2*time.Minute).Should(gexec.Exit(0), "velero install")
+
+	session, err = patchNodeAgentDaemonset(kubeconfig)
+	Expect(err).WithOffset(1).Should(Succeed(), "patch node agent daemonset")
+	Eventually(session).WithOffset(1).WithTimeout(2*time.Minute).Should(gexec.Exit(0), "kubectl patch")
 }
 
 func (v *CLI) install(workspace, kubeconfig, s3Url, bucket string) (*gexec.Session, error) {
@@ -64,4 +68,17 @@ aws_secret_access_key=%s
 `,
 		accessKey, secretKey,
 	)), 0644)
+}
+
+func patchNodeAgentDaemonset(kubeconfig string) (*gexec.Session, error) {
+	args := []string{
+		fmt.Sprintf("--kubeconfig=%s", kubeconfig),
+		"patch",
+		"ds/node-agent",
+		"--namespace=velero",
+		"--type=json",
+		"-p",
+		`[{"op":"add","path":"/spec/template/spec/containers/0/securityContext","value": { "privileged": true}}]`,
+	}
+	return util.RunCommand(exec.Command("kubectl", args...))
 }
