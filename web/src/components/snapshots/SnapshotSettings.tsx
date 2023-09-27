@@ -1,6 +1,5 @@
 import React, { Component } from "react";
-import PropTypes from "prop-types";
-import { withRouter } from "@src/utilities/react-router-utilities";
+import { RouterProps, withRouter } from "@src/utilities/react-router-utilities";
 import { KotsPageTitle } from "@components/Head";
 import isEmpty from "lodash/isEmpty";
 import isEqual from "lodash/isEqual";
@@ -9,36 +8,62 @@ import Loader from "../shared/Loader";
 import SnapshotStorageDestination from "./SnapshotStorageDestination";
 
 import "../../scss/components/shared/SnapshotForm.scss";
-import { isVeleroCorrectVersion, Utilities } from "../../utilities/utilities";
+import { isVeleroCorrectVersion } from "../../utilities/utilities";
 import { Repeater } from "../../utilities/repeater";
+import { App } from "@types";
 import Icon from "../Icon";
 
-class SnapshotSettings extends Component {
-  static propTypes = {
-    appsList: PropTypes.array.isRequired,
-    isKurlEnabled: PropTypes.bool,
-  };
+type Props = {
+  appsList: App[];
+  isKurlEnabled?: boolean;
+} & RouterProps;
 
-  state = {
-    snapshotSettings: null,
-    isLoadingSnapshotSettings: true,
-    snapshotSettingsErr: false,
-    snapshotSettingsErrMsg: "",
-    toggleSnapshotView: false,
-    hideCheckVeleroButton: false,
-    updateConfirm: false,
-    updatingSettings: false,
-    updateErrorMsg: "",
-    showConfigureSnapshotsModal: false,
-    kotsadmRequiresVeleroAccess: false,
-    minimalRBACKotsadmNamespace: "",
-    showResetFileSystemWarningModal: false,
-    resetFileSystemWarningMessage: "",
-    snapshotSettingsJob: new Repeater(),
-    checkForVeleroAndNodeAgent: false,
-  };
+type State = {
+  snapshotSettings: any | null,
+  isLoadingSnapshotSettings: boolean,
+  snapshotSettingsErr: boolean,
+  snapshotSettingsErrMsg: string,
+  toggleSnapshotView: boolean,
+  hideCheckVeleroButton: boolean,
+  updateConfirm: boolean,
+  updatingSettings: boolean,
+  updateErrorMsg: string,
+  showConfigureSnapshotsModal: boolean,
+  kotsadmRequiresVeleroAccess: boolean,
+  minimalRBACKotsadmNamespace: string,
+  showResetFileSystemWarningModal: boolean,
+  resetFileSystemWarningMessage: string,
+  snapshotSettingsJob: Repeater,
+  checkForVeleroAndNodeAgent: boolean,
+  isEmptyView?: boolean,
+  veleroUpdated?: boolean,
+  nodeAgentUpdated?: boolean,
+};
 
-  fetchSnapshotSettings = (isCheckForVelero) => {
+class SnapshotSettings extends Component<Props, State> {
+  constructor(props: Props) {
+    super(props);
+    this.state = {
+      snapshotSettings: null,
+      isLoadingSnapshotSettings: true,
+      snapshotSettingsErr: false,
+      snapshotSettingsErrMsg: "",
+      toggleSnapshotView: false,
+      hideCheckVeleroButton: false,
+      updateConfirm: false,
+      updatingSettings: false,
+      updateErrorMsg: "",
+      showConfigureSnapshotsModal: false,
+      kotsadmRequiresVeleroAccess: false,
+      minimalRBACKotsadmNamespace: "",
+      showResetFileSystemWarningModal: false,
+      resetFileSystemWarningMessage: "",
+      snapshotSettingsJob: new Repeater(),
+      checkForVeleroAndNodeAgent: false,
+    };
+  }
+
+  fetchSnapshotSettings = (isCheckForVelero?: boolean) => {
     this.setState({
       isLoadingSnapshotSettings: true,
       snapshotSettingsErr: false,
@@ -117,7 +142,7 @@ class SnapshotSettings extends Component {
     this.state.snapshotSettingsJob.start(this.fetchSnapshotSettings, 2000);
   };
 
-  componentDidUpdate(_, lastState) {
+  componentDidUpdate = (_: Props, lastState: State) => {
     if (
       this.state.snapshotSettings !== lastState.snapshotSettings &&
       this.state.snapshotSettings
@@ -182,14 +207,14 @@ class SnapshotSettings extends Component {
     }
   }
 
-  toggleSnapshotView = (isEmptyView) => {
+  toggleSnapshotView = (isEmptyView?: boolean) => {
     this.setState({
       toggleSnapshotView: !this.state.toggleSnapshotView,
       isEmptyView: isEmptyView ? isEmptyView : false,
     });
   };
 
-  updateSettings = (payload) => {
+  updateSettings = (payload: any) => {
     this.setState({
       updatingSettings: true,
       updateErrorMsg: "",
@@ -267,9 +292,9 @@ class SnapshotSettings extends Component {
   };
 
   openConfigureSnapshotsMinimalRBACModal = (
-    kotsadmRequiresVeleroAccess,
-    minimalRBACKotsadmNamespace
-  ) => {
+    kotsadmRequiresVeleroAccess: boolean,
+    minimalRBACKotsadmNamespace: string
+  ): void => {
     this.setState(
       {
         showConfigureSnapshotsModal: true,
@@ -324,6 +349,8 @@ class SnapshotSettings extends Component {
         </div>
       );
     }
+
+    console.log("this.props", this.props)
 
     return (
       <div className="flex1 flex-column u-overflow--auto">

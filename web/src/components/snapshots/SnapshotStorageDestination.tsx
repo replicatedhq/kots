@@ -7,6 +7,7 @@ import Modal from "react-modal";
 import ConfigureSnapshots from "./ConfigureSnapshots";
 import CodeSnippet from "../shared/CodeSnippet";
 import Loader from "../shared/Loader";
+import { App } from "@types";
 
 import "../../scss/components/shared/SnapshotForm.scss";
 
@@ -195,16 +196,18 @@ type ProviderPayload =
   | StoreProvider;
 
 type Props = {
-  // TODO: add apps type for apps response
-  apps: Array<object>;
+  apps: App[];
   checkForVeleroAndNodeAgent: boolean;
   fetchSnapshotSettings: () => void;
-  hideCheckVeleroButton: () => void;
+  hideCheckVeleroButton: boolean;
+  toggleSnapshotView: (isEmptyView?: boolean) => void;
   hideResetFileSystemWarningModal: () => void;
-  isKurlEnabled: boolean;
+  isEmptyView?: boolean;
+  isLicenseUpload: boolean;
+  isKurlEnabled?: boolean;
   kotsadmRequiresVeleroAccess: boolean;
   minimalRBACKotsadmNamespace: string;
-  openConfigureSnapshotsMinimalRBACModal: () => void;
+  openConfigureSnapshotsMinimalRBACModal: (kotsadmRequiresVeleroAccess: boolean, minimalRBACKotsadmNamespace: string) => void;
   renderNotVeleroMessage: () => void;
   resetFileSystemWarningMessage: string;
   showConfigureSnapshotsModal: boolean;

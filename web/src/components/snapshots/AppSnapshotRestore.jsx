@@ -44,7 +44,6 @@ class AppSnapshotRestore extends Component {
   fetchRestoreDetail = async () => {
     const { params } = this.props;
     const restoreName = params.id;
-    const appSlug = params.slug;
 
     this.setState({
       errorMessage: "",
@@ -53,7 +52,7 @@ class AppSnapshotRestore extends Component {
 
     try {
       const res = await fetch(
-        `${process.env.API_ENDPOINT}/app/${appSlug}/snapshot/restore/${restoreName}`,
+        `${process.env.API_ENDPOINT}/app/${this.props.app?.slug}/snapshot/restore/${restoreName}`,
         {
           method: "GET",
           credentials: "include",
@@ -101,9 +100,7 @@ class AppSnapshotRestore extends Component {
     });
     try {
       await this.fetchCancelRestore();
-      const { params } = this.props;
-      const appSlug = params.slug;
-      this.props.navigate(`/snapshots/partial/${appSlug}`);
+      this.props.navigate(`/snapshots/partial/${this.props.app?.slug}`);
     } catch (err) {
       this.setState({
         cancelRestoreErr: true,
