@@ -2824,7 +2824,7 @@ jobs:
       fail-fast: false
       matrix:
         cluster: [
-          {distribution: kind, version: v1.27}
+          {distribution: kind, version: v1.27, instance-type: r1.medium}
         ]
     env:
       APP_SLUG: remove-app
@@ -2842,6 +2842,7 @@ jobs:
           cluster-name: automated-kots-${{ github.run_id }}-${{ matrix.cluster.distribution }}-${{ matrix.cluster.version }}
           timeout-minutes: '120'
           ttl: 2h
+          instance-type: ${{ matrix.cluster.instance-type }}
           export-kubeconfig: true
 
       - name: download kots binary
