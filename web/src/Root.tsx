@@ -458,8 +458,8 @@ const Root = () => {
         }}
       >
         <ToastProvider>
-          {/* eslint-disable-next-line  */}
-          {/* @ts-ignore  */}
+          {/* eslint-disable-next-line */}
+          {/* @ts-ignore */}
           <NavBar
             logo={state.themeState.navbarLogo || state.appLogo}
             refetchAppsList={getAppsList}
@@ -611,6 +611,8 @@ const Root = () => {
                 <Route
                   path="settings"
                   element={
+                    // eslint-disable-next-line
+                    // @ts-ignore
                     <SnapshotSettings
                       isKurlEnabled={state.adminConsoleMetadata?.isKurl}
                       appsList={state.appsList}
