@@ -325,7 +325,8 @@ export default class AutomaticUpdatesModal extends React.Component<
             </p>
             <span className="u-fontSize--normal u-marginTop--5 u-textColor--info u-lineHeight--more u-marginBottom--15">
               Choose how frequently your application checks for updates. A
-              custom schedule can be defined with a cron expression.
+              custom schedule can be defined with a cron expression. Configured
+              automatic update checks use the local server time.
             </span>
             <div className="flex flex1">
               <Select
