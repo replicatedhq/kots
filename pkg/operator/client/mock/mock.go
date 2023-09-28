@@ -46,6 +46,30 @@ func (mr *MockClientInterfaceMockRecorder) ApplyAppInformers(args interface{}) *
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ApplyAppInformers", reflect.TypeOf((*MockClientInterface)(nil).ApplyAppInformers), args)
 }
 
+// ApplyHooksInformer mocks base method.
+func (m *MockClientInterface) ApplyHooksInformer(namespaces []string) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "ApplyHooksInformer", namespaces)
+}
+
+// ApplyHooksInformer indicates an expected call of ApplyHooksInformer.
+func (mr *MockClientInterfaceMockRecorder) ApplyHooksInformer(namespaces interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ApplyHooksInformer", reflect.TypeOf((*MockClientInterface)(nil).ApplyHooksInformer), namespaces)
+}
+
+// ApplyNamespacesInformer mocks base method.
+func (m *MockClientInterface) ApplyNamespacesInformer(namespaces, imagePullSecrets []string) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "ApplyNamespacesInformer", namespaces, imagePullSecrets)
+}
+
+// ApplyNamespacesInformer indicates an expected call of ApplyNamespacesInformer.
+func (mr *MockClientInterfaceMockRecorder) ApplyNamespacesInformer(namespaces, imagePullSecrets interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ApplyNamespacesInformer", reflect.TypeOf((*MockClientInterface)(nil).ApplyNamespacesInformer), namespaces, imagePullSecrets)
+}
+
 // DeployApp mocks base method.
 func (m *MockClientInterface) DeployApp(deployArgs types.DeployAppArgs) (bool, error) {
 	m.ctrl.T.Helper()

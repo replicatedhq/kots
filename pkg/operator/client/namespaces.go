@@ -44,6 +44,8 @@ func (c *Client) runNamespacesInformer() error {
 					// we don't fail here...
 					log.Printf("error ensuring image pull secrets for namespace %s: %s", addedNamespace.Name, err.Error())
 				}
+
+				c.ApplyHooksInformer([]string{addedNamespace.Name})
 			}
 		},
 	})
