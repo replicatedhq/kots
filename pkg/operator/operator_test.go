@@ -63,7 +63,7 @@ spec:
 				Expect(err).ToNot(HaveOccurred())
 			})
 
-			It("starts the status informers", func() {
+			It("resumes informers on (re)start", func() {
 				mockClient.EXPECT().Init().Return(nil)
 
 				mockStore.EXPECT().GetClusterIDFromDeployToken(clusterToken).Return("", nil)
@@ -103,6 +103,16 @@ spec:
 				wg := sync.WaitGroup{}
 				wg.Add(1)
 				mockClient.EXPECT().ApplyAppInformers(gomock.Any()).Times(1).Do(func(args operatortypes.AppInformersArgs) {
+					wg.Done()
+				})
+
+				wg.Add(1)
+				mockClient.EXPECT().ApplyNamespacesInformer(gomock.Any(), gomock.Any()).Times(1).Do(func(namespaces []string, imagePullSecrets []string) {
+					wg.Done()
+				})
+
+				wg.Add(1)
+				mockClient.EXPECT().ApplyHooksInformer(gomock.Any()).Times(1).Do(func(namespaces []string) {
 					wg.Done()
 				})
 
@@ -166,6 +176,16 @@ spec:
 				wg := sync.WaitGroup{}
 				wg.Add(1)
 				mockClient.EXPECT().ApplyAppInformers(gomock.Any()).Times(0).Do(func(args operatortypes.AppInformersArgs) {
+					wg.Done()
+				})
+
+				wg.Add(1)
+				mockClient.EXPECT().ApplyNamespacesInformer(gomock.Any(), gomock.Any()).Times(0).Do(func(namespaces []string, imagePullSecrets []string) {
+					wg.Done()
+				})
+
+				wg.Add(1)
+				mockClient.EXPECT().ApplyHooksInformer(gomock.Any()).Times(0).Do(func(namespaces []string) {
 					wg.Done()
 				})
 
@@ -299,9 +319,13 @@ spec:
 
 				mockStore.EXPECT().GetPreviouslyDeployedSequence(appID, "").Return(previouslyDeployedSequence, nil)
 
-				mockClient.EXPECT().DeployApp(gomock.Any()).Return(true, nil)
+				mockClient.EXPECT().ApplyAppInformers(gomock.Any()).Times(1)
 
-				mockClient.EXPECT().ApplyAppInformers(gomock.Any())
+				mockClient.EXPECT().ApplyNamespacesInformer(gomock.Any(), gomock.Any()).Times(1)
+
+				mockClient.EXPECT().ApplyHooksInformer(gomock.Any()).Times(1)
+
+				mockClient.EXPECT().DeployApp(gomock.Any()).Return(true, nil)
 
 				deployed, err := testOperator.DeployApp(appID, sequence)
 				Expect(err).ToNot(HaveOccurred())
@@ -390,12 +414,16 @@ spec:
 
 					mockStore.EXPECT().GetParentSequenceForSequence(appID, "", previouslyDeployedSequence).Return(int64(0), nil)
 
+					mockClient.EXPECT().ApplyAppInformers(gomock.Any()).Times(1)
+
+					mockClient.EXPECT().ApplyNamespacesInformer(gomock.Any(), gomock.Any()).Times(1)
+
+					mockClient.EXPECT().ApplyHooksInformer(gomock.Any()).Times(1)
+
 					mockClient.EXPECT().DeployApp(gomock.Any()).DoAndReturn(func(deployArgs operatortypes.DeployAppArgs) (bool, error) {
 						Expect(deployArgs.PreviousManifests).To(BeEmpty())
 						return true, nil
 					})
-
-					mockClient.EXPECT().ApplyAppInformers(gomock.Any())
 
 					deployed, err := testOperator.DeployApp(appID, sequence)
 					Expect(err).ToNot(HaveOccurred())
@@ -596,6 +624,12 @@ spec:
 
 				mockStore.EXPECT().GetPreviouslyDeployedSequence(appID, "").Return(previouslyDeployedSequence, nil)
 
+				mockClient.EXPECT().ApplyAppInformers(gomock.Any()).Times(1)
+
+				mockClient.EXPECT().ApplyNamespacesInformer(gomock.Any(), gomock.Any()).Times(1)
+
+				mockClient.EXPECT().ApplyHooksInformer(gomock.Any()).Times(1)
+
 				mockClient.EXPECT().DeployApp(gomock.Any()).Do(func(deployArgs operatortypes.DeployAppArgs) (bool, error) {
 					// validate that the namespace and helm upgrade flags are templated when deploying
 					Expect(deployArgs.KotsKinds.V1Beta1HelmCharts.Items[0].Spec.Namespace).To(Equal(expectedNamespace))
@@ -604,8 +638,6 @@ spec:
 					Expect(deployArgs.KotsKinds.V1Beta2HelmCharts.Items[0].Spec.HelmUpgradeFlags).To(Equal(expectedHelmUpgradeFlags))
 					return true, nil
 				})
-
-				mockClient.EXPECT().ApplyAppInformers(gomock.Any())
 
 				_, err := testOperator.DeployApp(appID, sequence)
 				Expect(err).ToNot(HaveOccurred())

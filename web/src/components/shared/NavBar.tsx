@@ -44,7 +44,6 @@ export class NavBar extends PureComponent<Props, State> {
 
   static propTypes = {
     refetchAppsList: PropTypes.func.isRequired,
-    history: PropTypes.object.isRequired,
   };
 
   handleLogOut = async (e: React.ChangeEvent) => {
