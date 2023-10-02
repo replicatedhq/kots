@@ -47,6 +47,12 @@ inputs:
   kots-helm-chart-version:
     description: 'KOTS Helm chart version'
     required: false
+  kots-dockerhub-username:
+    description: 'KOTS Dockerhub username'
+    required: false
+  kots-dockerhub-password:
+    description: 'KOTS Dockerhub password'
+    required: false
   kots-airgap:
     description: 'Run KOTS with the --airgap flag'
     default: "false"
@@ -107,6 +113,8 @@ runs:
           KOTSADM_IMAGE_TAG=${{ inputs.kotsadm-image-tag }} \
           KOTS_HELM_CHART_URL=${{ inputs.kots-helm-chart-url }} \
           KOTS_HELM_CHART_VERSION=${{ inputs.kots-helm-chart-version }} \
+          KOTS_DOCKERHUB_USERNAME=${{ inputs.kots-dockerhub-username }} \
+          KOTS_DOCKERHUB_PASSWORD=${{ inputs.kots-dockerhub-password }} \
           AIRGAP=${{ inputs.kots-airgap }} \
           SKIP_TEARDOWN=1
       shell: bash

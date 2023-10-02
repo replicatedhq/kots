@@ -46,7 +46,9 @@ test:
 			--airgap=$(AIRGAP) \
 			--kots-helm-chart-url=$(KOTS_HELM_CHART_URL) \
 			--kots-helm-chart-version=$(KOTS_HELM_CHART_VERSION) \
-			--skip-teardown=$(SKIP_TEARDOWN)
+			--kots-dockerhub-username=$(KOTS_DOCKERHUB_USERNAME) \
+			--kots-dockerhub-password=$(KOTS_DOCKERHUB_PASSWORD) \
+			--skip-teardown=$(SKIP_TEARDOWN) 
 
 .PHONY: path
 path:

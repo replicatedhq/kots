@@ -45,6 +45,8 @@ var (
 	kotsadmForwardPort    string
 	kotsHelmChartURL      string
 	kotsHelmChartVersion  string
+	kotsDockerhubUsername string
+	kotsDockerhubPassword string
 )
 
 func init() {
@@ -59,6 +61,8 @@ func init() {
 	flag.StringVar(&kotsadmForwardPort, "kotsadm-forward-port", "", "sets the port that the admin console will be exposed on instead of generating a random one")
 	flag.StringVar(&kotsHelmChartURL, "kots-helm-chart-url", "", "kots helm chart url")
 	flag.StringVar(&kotsHelmChartVersion, "kots-helm-chart-version", "", "kots helm chart version")
+	flag.StringVar(&kotsDockerhubUsername, "kots-dockerhub-username", "", "kots dockerhub username")
+	flag.StringVar(&kotsDockerhubPassword, "kots-dockerhub-password", "", "kots dockerhub password")
 }
 
 func TestE2E(t *testing.T) {
@@ -90,7 +94,7 @@ var _ = BeforeSuite(func() {
 
 	veleroCLI = velero.NewCLI(w.GetDir())
 
-	kotsInstaller = kots.NewInstaller(kotsadmImageRegistry, kotsadmImageNamespace, kotsadmImageTag, airgap)
+	kotsInstaller = kots.NewInstaller(kotsadmImageRegistry, kotsadmImageNamespace, kotsadmImageTag, airgap, kotsDockerhubUsername, kotsDockerhubPassword)
 })
 
 var _ = AfterSuite(func() {
@@ -181,6 +185,7 @@ var _ = Describe("E2E", func() {
 					adminConsolePort = kotsInstaller.AdminConsolePortForward(c.GetKubeconfig(), test, kotsadmForwardPort)
 				} else {
 					GinkgoWriter.Println("Installing KOTS")
+					kotsInstaller.EnsureSecret(c.GetKubeconfig(), test)
 					adminConsolePort = kotsInstaller.Install(c.GetKubeconfig(), test, kotsadmForwardPort)
 				}
 
