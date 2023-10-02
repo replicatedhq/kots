@@ -40,20 +40,14 @@ func NewInstaller(imageRegistry, imageNamespace, imageTag string, airgap bool, d
 	}
 }
 
-func (i *Installer) EnsureSecret(kubeconfig string, test inventory.Test) {
-	if i.dockerhubUsername == "" || i.dockerhubPassword == "" {
-		fmt.Println("Skipping dockerhub ensure-secret because no credentials were provided")
-		return
-	}
-	session, err := i.ensureSecret(kubeconfig, test)
-	Expect(err).WithOffset(1).Should(Succeed(), "Kots docker ensure-secret failed")
-	Eventually(session).WithOffset(1).WithTimeout(InstallWaitDuration).Should(gexec.Exit(0), "Kots docker ensure-secret failed with non-zero exit code")
-}
-
 func (i *Installer) Install(kubeconfig string, test inventory.Test, adminConsolePort string) string {
 	session, err := i.install(kubeconfig, test)
 	Expect(err).WithOffset(1).Should(Succeed(), "Kots install failed")
 	Eventually(session).WithOffset(1).WithTimeout(InstallWaitDuration).Should(gexec.Exit(0), "Kots install failed with non-zero exit code")
+
+	session, err = i.ensureSecret(kubeconfig, test)
+	Expect(err).WithOffset(1).Should(Succeed(), "Kots docker ensure-secret failed")
+	Eventually(session).WithOffset(1).WithTimeout(InstallWaitDuration).Should(gexec.Exit(0), "Kots docker ensure-secret failed with non-zero exit code")
 
 	return i.AdminConsolePortForward(kubeconfig, test, adminConsolePort)
 }

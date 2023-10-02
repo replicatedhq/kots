@@ -185,7 +185,6 @@ var _ = Describe("E2E", func() {
 					adminConsolePort = kotsInstaller.AdminConsolePortForward(c.GetKubeconfig(), test, kotsadmForwardPort)
 				} else {
 					GinkgoWriter.Println("Installing KOTS")
-					kotsInstaller.EnsureSecret(c.GetKubeconfig(), test)
 					adminConsolePort = kotsInstaller.Install(c.GetKubeconfig(), test, kotsadmForwardPort)
 				}
 
