@@ -74,6 +74,7 @@ func Rewrite(rewriteOptions RewriteOptions) error {
 		CurrentVersionIsRequired:        rewriteOptions.Installation.Spec.IsRequired,
 		CurrentReplicatedRegistryDomain: rewriteOptions.Installation.Spec.ReplicatedRegistryDomain,
 		CurrentReplicatedProxyDomain:    rewriteOptions.Installation.Spec.ReplicatedProxyDomain,
+		CurrentReplicatedChartNames:     rewriteOptions.Installation.Spec.ReplicatedChartNames,
 		EncryptionKey:                   rewriteOptions.Installation.Spec.EncryptionKey,
 		License:                         rewriteOptions.License,
 		AppSequence:                     rewriteOptions.AppSequence,
@@ -103,6 +104,9 @@ func Rewrite(rewriteOptions RewriteOptions) error {
 		PreserveInstallation: true,
 		IsOpenShift:          k8sutil.IsOpenShift(clientset),
 		IsGKEAutopilot:       k8sutil.IsGKEAutopilot(clientset),
+		IsAirgap:             rewriteOptions.IsAirgap,
+		KotsadmID:            k8sutil.GetKotsadmID(clientset),
+		AppID:                rewriteOptions.AppID,
 	}
 	if err = upstream.WriteUpstream(u, writeUpstreamOptions); err != nil {
 		log.FinishSpinnerWithError()
