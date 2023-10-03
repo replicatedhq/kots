@@ -1373,11 +1373,6 @@ jobs:
 
       - run: chmod +x bin/kots
 
-      - name: create namespace and dockerhub secret
-        run: |
-          kubectl create ns "$APP_SLUG"
-          kubectl create secret docker-registry kotsadm-dockerhub --docker-server index.docker.io --docker-username "${{ secrets.E2E_DOCKERHUB_USERNAME }}" --docker-password "${{ secrets.E2E_DOCKERHUB_PASSWORD }}" --namespace "$APP_SLUG"
-
       - name: run kots admin-console generate-manifests without k8s context
         run: |
           set +e
@@ -2271,11 +2266,6 @@ jobs:
           path: bin/
 
       - run: chmod +x bin/kots
-
-      - name: create namespace and dockerhub secret
-        run: |
-          kubectl create ns "$APP_SLUG"
-          kubectl create secret docker-registry kotsadm-dockerhub --docker-server index.docker.io --docker-username "${{ secrets.E2E_DOCKERHUB_USERNAME }}" --docker-password "${{ secrets.E2E_DOCKERHUB_PASSWORD }}" --namespace "$APP_SLUG"
 
       - name: run the test
         run: |
