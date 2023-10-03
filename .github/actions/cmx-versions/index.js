@@ -45,6 +45,12 @@ async function getClusterVersions() {
             return;
         }
 
+        if (distroName === 'aks') {
+            // excluding aks for now
+            // TODO: add aks back in when we support some sort of filtering
+            return;
+        }
+
         const latestMinorVersions = {};
         distribution.versions.forEach((version) => {
             const parsed = semverCoerce(version);
