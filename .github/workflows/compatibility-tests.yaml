@@ -22,6 +22,8 @@ on:
         required: true
       MULTI_NAMESPACE_LICENSE:
         required: true
+      MULTI_NAMESPACE_REGISTRY_AUTH:
+        required: true
       HELM_INSTALL_ORDER_LICENSE:
         required: true
       YAMLESCAPE_LICENSE:

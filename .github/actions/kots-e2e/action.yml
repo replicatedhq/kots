@@ -96,7 +96,7 @@ runs:
         cluster-name: automated-kots-${{ github.run_id }}-${{ inputs.k8s-distribution }}-${{ inputs.k8s-version }}
         timeout-minutes: '120'
         ttl: ${{ inputs.k8s-cluster-ttl }}
-        instance-type: ${{ inputs.k8s-distribution == 'gke' && 'n2-standard-4' || '' }}
+        instance-type: ${{ inputs.k8s-distribution == 'gke' && 'n2-standard-4' || inputs.k8s-distribution == 'kind' && 'r1.medium' || '' }}
         export-kubeconfig: true
 
     - name: execute suite "${{ inputs.test-focus }}"
