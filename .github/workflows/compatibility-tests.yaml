@@ -1,0 +1,57 @@
+name: compatibility-tests
+
+on:
+  workflow_call:
+
+jobs:
+  cmx-versions:
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      - name: get CMX versions to test
+        id: cmx-versions-to-test
+        uses: ./.github/actions/cmx-versions
+        with:
+          replicated-api-token: ${{ secrets.C11Y_MATRIX_TOKEN }}
+    outputs:
+      versions-to-test: ${{ steps.cmx-versions-to-test.outputs.versions-to-test }}
+
+
+  validate-smoke-test:
+    runs-on: ubuntu-20.04
+    needs: [ cmx-versions ]
+    strategy:
+      fail-fast: false
+      matrix:
+        cluster: ${{ fromJson(needs.cmx-versions.outputs.versions-to-test) }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: download e2e deps
+        uses: actions/download-artifact@v3
+        with:
+          name: e2e
+          path: e2e/bin/
+      - run: docker load -i e2e/bin/e2e-deps.tar
+      - run: chmod +x e2e/bin/*
+      - name: download kots binary
+        uses: actions/download-artifact@v3
+        with:
+          name: kots
+          path: bin/
+      - run: chmod +x bin/*
+      - uses: ./.github/actions/kots-e2e
+        with:
+          test-focus: 'Smoke Test'
+          kots-namespace: 'smoke-test'
+          k8s-distribution: ${{ matrix.cluster.distribution }}
+          k8s-version: ${{ matrix.cluster.version }}
+          testim-access-token: '${{ secrets.TESTIM_ACCESS_TOKEN }}'
+          testim-branch: ${{ github.head_ref == 'main' && 'master' || github.head_ref }}
+          aws-access-key-id: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_ACCESS_KEY_ID }}'
+          aws-secret-access-key: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_SECRET_ACCESS_KEY }}'
+          replicated-api-token: '${{ secrets.C11Y_MATRIX_TOKEN }}'
+          kots-dockerhub-username: '${{ secrets.E2E_DOCKERHUB_USERNAME }}'
+          kots-dockerhub-password: '${{ secrets.E2E_DOCKERHUB_PASSWORD }}'
