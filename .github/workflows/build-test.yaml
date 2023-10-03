@@ -603,6 +603,7 @@ jobs:
   
   cmx-versions:
     runs-on: ubuntu-20.04
+    needs: [ enable-tests, can-run-ci ]
     steps:
       - uses: actions/checkout@v3
         with:
@@ -620,7 +621,7 @@ jobs:
     needs: [ enable-tests, can-run-ci, build-push-kotsadm-image, build-e2e, build-kurl-proxy, build-migrations, push-minio, push-mc, push-rqlite, cmx-versions ]
     uses: ./.github/workflows/compatibility-tests.yaml
     with:
-      versions-to-test: ${{ fromJson(needs.cmx-versions.outputs.versions-to-test) }}
+      versions-to-test: ${{ needs.cmx-versions.outputs.versions-to-test }}
     secrets:
       TESTIM_ACCESS_TOKEN: ${{ secrets.TESTIM_ACCESS_TOKEN }}
       E2E_SUPPORT_BUNDLE_AWS_ACCESS_KEY_ID: ${{ secrets.E2E_SUPPORT_BUNDLE_AWS_ACCESS_KEY_ID }}
