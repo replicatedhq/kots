@@ -20,6 +20,14 @@ on:
         required: true
       E2E_DOCKERHUB_PASSWORD:
         required: true
+      MULTI_NAMESPACE_LICENSE:
+        required: true
+      HELM_INSTALL_ORDER_LICENSE:
+        required: true
+      YAMLESCAPE_LICENSE:
+        required: true
+      POSTGRES_TO_RQLITE_LICENSE:
+        required: true
 
 jobs:
   validate-smoke-test:
