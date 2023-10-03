@@ -2,30 +2,32 @@ name: compatibility-tests
 
 on:
   workflow_call:
+    inputs:
+      versions-to-test:
+        type: string
+        required: true
+        description: 'CMX versions to test'
+    secrets:
+      C11Y_MATRIX_TOKEN:
+        required: true
+      TESTIM_ACCESS_TOKEN:
+        required: true
+      E2E_SUPPORT_BUNDLE_AWS_ACCESS_KEY_ID:
+        required: true
+      E2E_SUPPORT_BUNDLE_AWS_SECRET_ACCESS_KEY:
+        required: true
+      E2E_DOCKERHUB_USERNAME:
+        required: true
+      E2E_DOCKERHUB_PASSWORD:
+        required: true
 
 jobs:
-  cmx-versions:
-    runs-on: ubuntu-20.04
-    steps:
-      - uses: actions/checkout@v3
-        with:
-          fetch-depth: 0
-      - name: get CMX versions to test
-        id: cmx-versions-to-test
-        uses: ./.github/actions/cmx-versions
-        with:
-          replicated-api-token: ${{ secrets.C11Y_MATRIX_TOKEN }}
-    outputs:
-      versions-to-test: ${{ steps.cmx-versions-to-test.outputs.versions-to-test }}
-
-
   validate-smoke-test:
     runs-on: ubuntu-20.04
-    needs: [ cmx-versions ]
     strategy:
       fail-fast: false
       matrix:
-        cluster: ${{ fromJson(needs.cmx-versions.outputs.versions-to-test) }}
+        cluster: ${{ fromJson(inputs.versions-to-test) }}
     steps:
       - name: Checkout
         uses: actions/checkout@v3

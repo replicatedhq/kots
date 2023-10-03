@@ -600,10 +600,34 @@ jobs:
           repo-token: ${{ secrets.GITHUB_TOKEN }}
           allow-repeats: false
 
+  
+  cmx-versions:
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      - name: get CMX versions to test
+        id: cmx-versions-to-test
+        uses: ./.github/actions/cmx-versions
+        with:
+          replicated-api-token: ${{ secrets.C11Y_MATRIX_TOKEN }}
+    outputs:
+      versions-to-test: ${{ steps.cmx-versions-to-test.outputs.versions-to-test }}
+
         
   validate-compatibility-tests:
-    needs: [ enable-tests, can-run-ci, build-push-kotsadm-image, build-e2e, build-kurl-proxy, build-migrations, push-minio, push-mc, push-rqlite ]
+    needs: [ enable-tests, can-run-ci, build-push-kotsadm-image, build-e2e, build-kurl-proxy, build-migrations, push-minio, push-mc, push-rqlite, cmx-versions ]
     uses: ./.github/workflows/compatibility-tests.yaml
+    with:
+      versions-to-test: ${{ fromJson(needs.cmx-versions.outputs.versions-to-test) }}
+    secrets:
+      TESTIM_ACCESS_TOKEN: ${{ secrets.TESTIM_ACCESS_TOKEN }}
+      E2E_SUPPORT_BUNDLE_AWS_ACCESS_KEY_ID: ${{ secrets.E2E_SUPPORT_BUNDLE_AWS_ACCESS_KEY_ID }}
+      E2E_SUPPORT_BUNDLE_AWS_SECRET_ACCESS_KEY: ${{ secrets.E2E_SUPPORT_BUNDLE_AWS_SECRET_ACCESS_KEY }}
+      C11Y_MATRIX_TOKEN: ${{ secrets.C11Y_MATRIX_TOKEN }}
+      E2E_DOCKERHUB_USERNAME: ${{ secrets.E2E_DOCKERHUB_USERNAME }}
+      E2E_DOCKERHUB_PASSWORD: ${{ secrets.E2E_DOCKERHUB_PASSWORD }}
 
 
   # validate-existing-online-install-minimal:
