@@ -3,7 +3,7 @@ import classNames from "classnames";
 import dayjs from "dayjs";
 import { KotsPageTitle } from "@components/Head";
 import CodeSnippet from "../shared/CodeSnippet";
-import NodeRow from "./NodeRow";
+import HelmVMNodeRow from "./HelmVMNodeRow";
 import Loader from "../shared/Loader";
 import { rbacRoles } from "../../constants/rbac";
 import { Utilities } from "../../utilities/utilities";
@@ -11,10 +11,10 @@ import { Repeater } from "../../utilities/repeater";
 import ErrorModal from "../modals/ErrorModal";
 import Modal from "react-modal";
 
-import "@src/scss/components/apps/ClusterNodes.scss";
+import "@src/scss/components/apps/HelmVMClusterManagement.scss";
 import Icon from "../Icon";
 
-export class ClusterNodes extends Component {
+export class HelmVMClusterManagement extends Component {
   state = {
     generating: false,
     command: "",
@@ -22,7 +22,7 @@ export class ClusterNodes extends Component {
     displayAddNode: false,
     selectedNodeType: "primary",
     generateCommandErrMsg: "",
-    kurl: null,
+    helmvm: null,
     getNodeStatusJob: new Repeater(),
     deletNodeError: "",
     confirmDeleteNode: "",
@@ -43,7 +43,7 @@ export class ClusterNodes extends Component {
 
   getNodeStatus = async () => {
     try {
-      const res = await fetch(`${process.env.API_ENDPOINT}/kurl/nodes`, {
+      const res = await fetch(`${process.env.API_ENDPOINT}/helmvm/nodes`, {
         headers: {
           Accept: "application/json",
         },
@@ -63,7 +63,7 @@ export class ClusterNodes extends Component {
       }
       const response = await res.json();
       this.setState({
-        kurl: response,
+        helmvm: response,
         // if cluster doesn't support ha, then primary will be disabled. Force into secondary
         selectedNodeType: !response.ha
           ? "secondary"
@@ -92,7 +92,7 @@ export class ClusterNodes extends Component {
     const name = this.state.confirmDeleteNode;
     this.cancelDeleteNode();
 
-    fetch(`${process.env.API_ENDPOINT}/kurl/nodes/${name}`, {
+    fetch(`${process.env.API_ENDPOINT}/helmvm/nodes/${name}`, {
       headers: {
         "Content-Type": "application/json",
         Accept: "application/json",
@@ -104,13 +104,6 @@ export class ClusterNodes extends Component {
         if (!res.ok) {
           if (res.status === 401) {
             Utilities.logoutUser();
-            return;
-          }
-          if (res.status === 422) {
-            this.setState({
-              deleteNodeError:
-                "The ekco add-on is required to delete nodes but was not found in your cluster. https://kurl.sh/docs/add-ons/ekco",
-            });
             return;
           }
           this.setState({
@@ -132,7 +125,7 @@ export class ClusterNodes extends Component {
     });
 
     fetch(
-      `${process.env.API_ENDPOINT}/kurl/generate-node-join-command-secondary`,
+      `${process.env.API_ENDPOINT}/helmvm/generate-node-join-command-secondary`,
       {
         headers: {
           "Content-Type": "application/json",
@@ -175,7 +168,7 @@ export class ClusterNodes extends Component {
 
   drainNode = async (name) => {
     this.setState({ showConfirmDrainModal: false, drainingNodeName: name });
-    fetch(`${process.env.API_ENDPOINT}/kurl/nodes/${name}/drain`, {
+    fetch(`${process.env.API_ENDPOINT}/helmvm/nodes/${name}/drain`, {
       headers: {
         "Content-Type": "application/json",
         Accept: "application/json",
@@ -210,7 +203,7 @@ export class ClusterNodes extends Component {
     });
 
     fetch(
-      `${process.env.API_ENDPOINT}/kurl/generate-node-join-command-primary`,
+      `${process.env.API_ENDPOINT}/helmvm/generate-node-join-command-primary`,
       {
         headers: {
           "Content-Type": "application/json",
@@ -276,18 +269,19 @@ export class ClusterNodes extends Component {
   };
 
   render() {
-    const { kurl } = this.state;
+    const { helmvm } = this.state;
     const { displayAddNode, generateCommandErrMsg } = this.state;
 
-    if (!kurl) {
+    if (!helmvm) {
       return (
         <div className="flex-column flex1 alignItems--center justifyContent--center">
           <Loader size="60" />
         </div>
       );
     }
+
     return (
-      <div className="ClusterNodes--wrapper container flex-column flex1 u-overflow--auto u-paddingTop--50">
+      <div className="HelmVMClusterManagement--wrapper container flex-column flex1 u-overflow--auto u-paddingTop--50">
         <KotsPageTitle pageName="Cluster Management" />
         <div className="flex-column flex1 alignItems--center">
           <div className="flex1 flex-column centered-container">
@@ -296,22 +290,22 @@ export class ClusterNodes extends Component {
                 Your nodes
               </p>
               <div className="flex1 u-overflow--auto">
-                {kurl?.nodes &&
-                  kurl?.nodes.map((node, i) => (
-                    <NodeRow
+                {helmvm?.nodes &&
+                  helmvm?.nodes.map((node, i) => (
+                    <HelmVMNodeRow
                       key={i}
                       node={node}
                       drainingNodeName={this.state.drainingNodeName}
                       drainNodeSuccessful={this.state.drainNodeSuccessful}
                       drainNode={
-                        kurl?.isKurlEnabled ? this.onDrainNodeClick : null
+                        helmvm?.isHelmVMEnabled ? this.onDrainNodeClick : null
                       }
-                      deleteNode={kurl?.isKurlEnabled ? this.deleteNode : null}
+                      deleteNode={helmvm?.isHelmVMEnabled ? this.deleteNode : null}
                     />
                   ))}
               </div>
             </div>
-            {kurl?.isKurlEnabled &&
+            {helmvm?.isHelmVMEnabled &&
             Utilities.sessionRolesHasOneOf([rbacRoles.CLUSTER_ADMIN]) ? (
               !displayAddNode ? (
                 <div className="flex justifyContent--center alignItems--center">
@@ -333,7 +327,7 @@ export class ClusterNodes extends Component {
                         {
                           "is-active":
                             this.state.selectedNodeType === "primary",
-                          "is-disabled": !kurl?.ha,
+                          "is-disabled": !helmvm?.ha,
                         }
                       )}
                     >
@@ -343,7 +337,7 @@ export class ClusterNodes extends Component {
                         type="radio"
                         name="nodeType"
                         value="primary"
-                        disabled={!kurl?.ha}
+                        disabled={!helmvm?.ha}
                         checked={this.state.selectedNodeType === "primary"}
                         onChange={this.onSelectNodeType}
                       />
@@ -545,4 +539,4 @@ export class ClusterNodes extends Component {
   }
 }
 
-export default ClusterNodes;
+export default HelmVMClusterManagement;

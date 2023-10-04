@@ -2,26 +2,18 @@ package handlers
 
 import (
 	"context"
-	goerrors "errors"
 	"net/http"
 
 	"github.com/gorilla/mux"
+	"github.com/replicatedhq/kots/pkg/helmvm"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
-	"github.com/replicatedhq/kots/pkg/kurl"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func (h *Handler) DeleteKurlNode(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) DrainHelmVMNode(w http.ResponseWriter, r *http.Request) {
 	client, err := k8sutil.GetClientset()
-	if err != nil {
-		logger.Error(err)
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-
-	restconfig, err := k8sutil.GetClusterConfig()
 	if err != nil {
 		logger.Error(err)
 		w.WriteHeader(http.StatusInternalServerError)
@@ -33,7 +25,7 @@ func (h *Handler) DeleteKurlNode(w http.ResponseWriter, r *http.Request) {
 	node, err := client.CoreV1().Nodes().Get(ctx, nodeName, metav1.GetOptions{})
 	if err != nil {
 		if errors.IsNotFound(err) {
-			logger.Errorf("Failed to delete node %s: not found", nodeName)
+			logger.Errorf("Failed to drain node %s: not found", nodeName)
 			w.WriteHeader(http.StatusNotFound)
 			return
 		}
@@ -42,14 +34,12 @@ func (h *Handler) DeleteKurlNode(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := kurl.DeleteNode(ctx, client, restconfig, node); err != nil {
-		logger.Error(err)
-		if goerrors.Is(err, kurl.ErrNoEkco) {
-			w.WriteHeader(http.StatusUnprocessableEntity)
-		} else {
-			w.WriteHeader(http.StatusInternalServerError)
+	// This pod may get evicted and not be able to respond to the request
+	go func() {
+		if err := helmvm.DrainNode(ctx, client, node); err != nil {
+			logger.Error(err)
+			return
 		}
-		return
-	}
-	logger.Infof("Node %s successfully deleted", node.Name)
+		logger.Infof("Node %s successfully drained", node.Name)
+	}()
 }

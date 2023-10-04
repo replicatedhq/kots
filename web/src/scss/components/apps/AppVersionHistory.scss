@@ -98,51 +98,6 @@ $cell-width: 140px;
 }
 
 .ActiveDownstreamVersionRow--wrapper,
-.NodeRow--wrapper {
-  padding: 12px;
-  border-top: 1px solid #dfdfdf;
-
-  &.is-expired {
-    background-color: $sub-nav-color;
-  }
-
-  &.is-deleting {
-    background-color: $sub-nav-color;
-  }
-
-  .nodeTag {
-    background-color: $primary-light-color;
-    font-size: 12px;
-    line-height: 12px;
-    color: #73a3cd;
-    justify-content: center;
-    border-radius: 3px;
-    padding: 2px 4px 2px 4px;
-  }
-}
-
-.NodeRow--items p {
-  max-width: 180px;
-
-  .icon {
-    vertical-align: -3px;
-    margin-right: 4px;
-  }
-
-  .node-status {
-    width: 6px;
-    height: 6px;
-    border-radius: 100%;
-    margin-right: 4px;
-    display: inline-block;
-    vertical-align: 1px;
-    background-color: #44bb66;
-
-    &.disconnected {
-      background-color: #bc4752;
-    }
-  }
-}
 
 .gh-version-detail-text {
   position: relative;
