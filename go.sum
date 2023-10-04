@@ -1527,6 +1527,8 @@ github.com/rcrowley/go-metrics v0.0.0-20201227073835-cf1acfcdf475/go.mod h1:bCqn
 github.com/remyoudompheng/bigfft v0.0.0-20170806203942-52369c62f446/go.mod h1:uYEyJGbgTkfkS4+E/PavXkNJcbFIpEtjt2B0KDQ5+9M=
 github.com/replicatedhq/kotskinds v0.0.0-20230724164735-f83482cc9cfe h1:3AJInd06UxzqHmgy8+24CPsT2tYSE0zToJZyuX9q+MA=
 github.com/replicatedhq/kotskinds v0.0.0-20230724164735-f83482cc9cfe/go.mod h1:QjhIUu3+OmHZ09u09j3FCoTt8F3BYtQglS+OLmftu9I=
+github.com/replicatedhq/kotskinds v0.0.0-20231004172657-ccccf6dc3b7b h1:fTQ3OY30c/095KOBzyM/fcDg4t3T5Ln/JWmUWimrFeo=
+github.com/replicatedhq/kotskinds v0.0.0-20231004172657-ccccf6dc3b7b/go.mod h1:QjhIUu3+OmHZ09u09j3FCoTt8F3BYtQglS+OLmftu9I=
 github.com/replicatedhq/kurlkinds v1.3.6 h1:/dhS32cSSZR4yS4vA8EquBvz+VgJCyTqBO9Xw+6eI4M=
 github.com/replicatedhq/kurlkinds v1.3.6/go.mod h1:c5+hoAkuARgftB2Ft3RCyWRZZPhL0clHEaw7XoGDAg4=
 github.com/replicatedhq/termui/v3 v3.1.1-0.20200811145416-f40076d26851 h1:eRlNDHxGfVkPCRXbA4BfQJvt5DHjFiTtWy3R/t4djyY=
