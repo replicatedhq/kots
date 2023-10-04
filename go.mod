@@ -47,7 +47,7 @@ require (
 	github.com/phayes/freeport v0.0.0-20220201140144-74d24b5ae9f5
 	github.com/pkg/errors v0.9.1
 	github.com/pmezard/go-difflib v1.0.0
-	github.com/replicatedhq/kotskinds v0.0.0-20231004172657-ccccf6dc3b7b
+	github.com/replicatedhq/kotskinds v0.0.0-20231004174055-e6676d808a82
 	github.com/replicatedhq/kurlkinds v1.3.6
 	github.com/replicatedhq/troubleshoot v0.72.1
 	github.com/replicatedhq/yaml/v3 v3.0.0-beta5-replicatedhq
