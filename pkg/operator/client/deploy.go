@@ -18,11 +18,11 @@ import (
 	"github.com/replicatedhq/kots/pkg/archives"
 	"github.com/replicatedhq/kots/pkg/helm"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
-	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/operator/applier"
 	operatortypes "github.com/replicatedhq/kots/pkg/operator/types"
 	"github.com/replicatedhq/kots/pkg/util"
+	"github.com/replicatedhq/kotskinds/pkg/helmchart"
 	"github.com/replicatedhq/yaml/v3"
 	corev1 "k8s.io/api/core/v1"
 	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
@@ -250,7 +250,7 @@ func (c *Client) ensureResourcesPresent(deployArgs operatortypes.DeployAppArgs) 
 	return &deployRes, nil
 }
 
-func (c *Client) installWithHelm(v1Beta1ChartsDir, v1beta2ChartsDir string, kotsCharts []kotsutil.HelmChartInterface) (*commandResult, error) {
+func (c *Client) installWithHelm(v1Beta1ChartsDir, v1beta2ChartsDir string, kotsCharts []helmchart.HelmChartInterface) (*commandResult, error) {
 	orderedDirs, err := getSortedCharts(v1Beta1ChartsDir, v1beta2ChartsDir, kotsCharts, c.TargetNamespace, false)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get sorted charts")
@@ -331,7 +331,7 @@ type orderedDir struct {
 	APIVersion   string
 }
 
-func getSortedCharts(v1Beta1ChartsDir string, v1Beta2ChartsDir string, kotsCharts []kotsutil.HelmChartInterface, targetNamespace string, isUninstall bool) ([]orderedDir, error) {
+func getSortedCharts(v1Beta1ChartsDir string, v1Beta2ChartsDir string, kotsCharts []helmchart.HelmChartInterface, targetNamespace string, isUninstall bool) ([]orderedDir, error) {
 	// get a list of the chart directories
 	foundDirs := []orderedDir{}
 
@@ -505,7 +505,7 @@ func findChartNameAndVersionInArchive(archivePath string) (string, string, error
 	return findChartNameAndVersion(tmpDir)
 }
 
-func (c *Client) uninstallWithHelm(v1Beta1ChartsDir, v1Beta2ChartsDir string, kotsCharts []kotsutil.HelmChartInterface) error {
+func (c *Client) uninstallWithHelm(v1Beta1ChartsDir, v1Beta2ChartsDir string, kotsCharts []helmchart.HelmChartInterface) error {
 	orderedDirs, err := getSortedCharts(v1Beta1ChartsDir, v1Beta2ChartsDir, kotsCharts, c.TargetNamespace, true)
 	if err != nil {
 		return errors.Wrap(err, "failed to get sorted charts")
@@ -540,17 +540,17 @@ func (c *Client) uninstallWithHelm(v1Beta1ChartsDir, v1Beta2ChartsDir string, ko
 type getRemovedChartsOptions struct {
 	prevV1Beta1Dir            string
 	curV1Beta1Dir             string
-	previousV1Beta1KotsCharts []kotsutil.HelmChartInterface
-	currentV1Beta1KotsCharts  []kotsutil.HelmChartInterface
+	previousV1Beta1KotsCharts []helmchart.HelmChartInterface
+	currentV1Beta1KotsCharts  []helmchart.HelmChartInterface
 	prevV1Beta2Dir            string
 	curV1Beta2Dir             string
-	previousV1Beta2KotsCharts []kotsutil.HelmChartInterface
-	currentV1Beta2KotsCharts  []kotsutil.HelmChartInterface
+	previousV1Beta2KotsCharts []helmchart.HelmChartInterface
+	currentV1Beta2KotsCharts  []helmchart.HelmChartInterface
 }
 
 // getRemovedCharts returns a list of helm release names that were removed in the current version
-func getRemovedCharts(opts getRemovedChartsOptions) ([]kotsutil.HelmChartInterface, error) {
-	prevCharts := []kotsutil.HelmChartInterface{}
+func getRemovedCharts(opts getRemovedChartsOptions) ([]helmchart.HelmChartInterface, error) {
+	prevCharts := []helmchart.HelmChartInterface{}
 
 	if opts.prevV1Beta1Dir != "" {
 		prevV1Beta1ChartsDir := filepath.Join(opts.prevV1Beta1Dir, "charts")
@@ -570,7 +570,7 @@ func getRemovedCharts(opts getRemovedChartsOptions) ([]kotsutil.HelmChartInterfa
 		prevCharts = append(prevCharts, matching...)
 	}
 
-	curCharts := []kotsutil.HelmChartInterface{}
+	curCharts := []helmchart.HelmChartInterface{}
 
 	if opts.curV1Beta1Dir != "" {
 		curV1Beta1ChartsDir := filepath.Join(opts.curV1Beta1Dir, "charts")
@@ -590,7 +590,7 @@ func getRemovedCharts(opts getRemovedChartsOptions) ([]kotsutil.HelmChartInterfa
 		curCharts = append(curCharts, matching...)
 	}
 
-	removedCharts := []kotsutil.HelmChartInterface{}
+	removedCharts := []helmchart.HelmChartInterface{}
 	for _, prevChart := range prevCharts {
 		found := false
 		for _, curChart := range curCharts {
@@ -612,13 +612,13 @@ func getRemovedCharts(opts getRemovedChartsOptions) ([]kotsutil.HelmChartInterfa
 	return removedCharts, nil
 }
 
-func findMatchingHelmCharts(chartsDir string, kotsCharts []kotsutil.HelmChartInterface) ([]kotsutil.HelmChartInterface, error) {
+func findMatchingHelmCharts(chartsDir string, kotsCharts []helmchart.HelmChartInterface) ([]helmchart.HelmChartInterface, error) {
 	dirContent, err := ioutil.ReadDir(chartsDir)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to list chart dir %s", chartsDir)
 	}
 
-	matching := []kotsutil.HelmChartInterface{}
+	matching := []helmchart.HelmChartInterface{}
 
 	for _, kotsChart := range kotsCharts {
 		for _, f := range dirContent {

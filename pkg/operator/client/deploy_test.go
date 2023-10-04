@@ -12,9 +12,9 @@ import (
 
 	"github.com/mholt/archiver/v3"
 	"github.com/pmezard/go-difflib/difflib"
-	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kotskinds/apis/kots/v1beta1"
 	"github.com/replicatedhq/kotskinds/apis/kots/v1beta2"
+	"github.com/replicatedhq/kotskinds/pkg/helmchart"
 	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -28,7 +28,7 @@ func Test_getSortedCharts(t *testing.T) {
 		name            string
 		v1Beta1Files    []file
 		v1Beta2Files    []file
-		kotsCharts      []kotsutil.HelmChartInterface
+		kotsCharts      []helmchart.HelmChartInterface
 		targetNamespace string
 		isUninstall     bool
 		want            []orderedDir
@@ -79,7 +79,7 @@ version: "v1"
 `,
 				},
 			},
-			kotsCharts: []kotsutil.HelmChartInterface{
+			kotsCharts: []helmchart.HelmChartInterface{
 				&v1beta1.HelmChart{
 					TypeMeta: metav1.TypeMeta{
 						APIVersion: "kots.io/v1beta1",
@@ -214,7 +214,7 @@ version: "v1"
 `,
 				},
 			},
-			kotsCharts: []kotsutil.HelmChartInterface{
+			kotsCharts: []helmchart.HelmChartInterface{
 				&v1beta1.HelmChart{
 					TypeMeta: metav1.TypeMeta{
 						APIVersion: "kots.io/v1beta1",
@@ -332,7 +332,7 @@ version: ver1
 `,
 				},
 			},
-			kotsCharts: []kotsutil.HelmChartInterface{
+			kotsCharts: []helmchart.HelmChartInterface{
 				&v1beta1.HelmChart{
 					TypeMeta: metav1.TypeMeta{
 						APIVersion: "kots.io/v1beta1",
@@ -401,7 +401,7 @@ version: ver2
 `,
 				},
 			},
-			kotsCharts: []kotsutil.HelmChartInterface{
+			kotsCharts: []helmchart.HelmChartInterface{
 				&v1beta1.HelmChart{
 					TypeMeta: metav1.TypeMeta{
 						APIVersion: "kots.io/v1beta1",
@@ -472,7 +472,7 @@ version: ver2
 `,
 				},
 			},
-			kotsCharts: []kotsutil.HelmChartInterface{
+			kotsCharts: []helmchart.HelmChartInterface{
 				&v1beta1.HelmChart{
 					TypeMeta: metav1.TypeMeta{
 						APIVersion: "kots.io/v1beta1",
@@ -526,7 +526,7 @@ version: ver2
 `,
 				},
 			},
-			kotsCharts: []kotsutil.HelmChartInterface{
+			kotsCharts: []helmchart.HelmChartInterface{
 				&v1beta1.HelmChart{
 					TypeMeta: metav1.TypeMeta{
 						APIVersion: "kots.io/v1beta1",
@@ -599,7 +599,7 @@ version: ver2
 `,
 				},
 			},
-			kotsCharts: []kotsutil.HelmChartInterface{
+			kotsCharts: []helmchart.HelmChartInterface{
 				&v1beta1.HelmChart{
 					TypeMeta: metav1.TypeMeta{
 						APIVersion: "kots.io/v1beta1",
@@ -668,7 +668,7 @@ version: ver2
 					contents: "H4sIFAAAAAAA/ykAK2FIUjBjSE02THk5NWIzVjBkUzVpWlM5Nk9WVjZNV2xqYW5keVRRbz1IZWxtAOzSsQoCMQwG4M59ij5B/dvECrf6Du4ZDixcq/TOA99eEF3O0YII+ZZ/yJA/kJJrLjLtjmdpi79LmUx3AJCYnwlgm8CeTWCO6UBEiQxCTBSMQ/8qn27zIs3g613b4/6EXPNpbHO+1MGt0VYp4+BeT2HX9wQePthfd1VKKdXPIwAA//8d5AfYAAgAAA==",
 				},
 			},
-			kotsCharts: []kotsutil.HelmChartInterface{
+			kotsCharts: []helmchart.HelmChartInterface{
 				&v1beta2.HelmChart{
 					TypeMeta: metav1.TypeMeta{
 						APIVersion: "kots.io/v1beta2",
@@ -716,7 +716,7 @@ version: ver2
 					contents: "H4sIFAAAAAAA/ykAK2FIUjBjSE02THk5NWIzVjBkUzVpWlM5Nk9WVjZNV2xqYW5keVRRbz1IZWxtAOzSsQoCMQwG4M59ij5B/dvECrf6Du4ZDixcq/TOA99eEF3O0YII+ZZ/yJA/kJJrLjLtjmdpi79LmUx3AJCYnwlgm8CeTWCO6UBEiQxCTBSMQ/8qn27zIs3g613b4/6EXPNpbHO+1MGt0VYp4+BeT2HX9wQePthfd1VKKdXPIwAA//8d5AfYAAgAAA==",
 				},
 			},
-			kotsCharts: []kotsutil.HelmChartInterface{
+			kotsCharts: []helmchart.HelmChartInterface{
 				&v1beta2.HelmChart{
 					TypeMeta: metav1.TypeMeta{
 						APIVersion: "kots.io/v1beta2",
@@ -799,7 +799,7 @@ version: ver2
 					contents: "H4sIFAAAAAAA/ykAK2FIUjBjSE02THk5NWIzVjBkUzVpWlM5Nk9WVjZNV2xqYW5keVRRbz1IZWxtAOzSsQoCMQwG4M59ij5B/dvECrf6Du4ZDixcq/TOA99eEF3O0YII+ZZ/yJA/kJJrLjLtjmdpi79LmUx3AJCYnwlgm8CeTWCO6UBEiQxCTBSMQ/8qn27zIs3g613b4/6EXPNpbHO+1MGt0VYp4+BeT2HX9wQePthfd1VKKdXPIwAA//8d5AfYAAgAAA==",
 				},
 			},
-			kotsCharts: []kotsutil.HelmChartInterface{
+			kotsCharts: []helmchart.HelmChartInterface{
 				&v1beta1.HelmChart{
 					TypeMeta: metav1.TypeMeta{
 						APIVersion: "kots.io/v1beta1",
@@ -916,7 +916,7 @@ version: ver2
 					contents: "H4sIFAAAAAAA/ykAK2FIUjBjSE02THk5NWIzVjBkUzVpWlM5Nk9WVjZNV2xqYW5keVRRbz1IZWxtAOzSsQoCMQwG4M59ij5B/dvECrf6Du4ZDixcq/TOA99eEF3O0YII+ZZ/yJA/kJJrLjLtjmdpi79LmUx3AJCYnwlgm8CeTWCO6UBEiQxCTBSMQ/8qn27zIs3g613b4/6EXPNpbHO+1MGt0VYp4+BeT2HX9wQePthfd1VKKdXPIwAA//8d5AfYAAgAAA==",
 				},
 			},
-			kotsCharts: []kotsutil.HelmChartInterface{
+			kotsCharts: []helmchart.HelmChartInterface{
 				&v1beta1.HelmChart{
 					TypeMeta: metav1.TypeMeta{
 						APIVersion: "kots.io/v1beta1",
@@ -1052,11 +1052,11 @@ func Test_getRemovedCharts(t *testing.T) {
 		curV1Beta1Charts          []chart
 		prevV1Beta2Charts         []chart
 		curV1Beta2Charts          []chart
-		previousV1Beta1KotsCharts []kotsutil.HelmChartInterface
-		currentV1Beta1KotsCharts  []kotsutil.HelmChartInterface
-		previousV1Beta2KotsCharts []kotsutil.HelmChartInterface
-		currentV1Beta2KotsCharts  []kotsutil.HelmChartInterface
-		want                      []kotsutil.HelmChartInterface
+		previousV1Beta1KotsCharts []helmchart.HelmChartInterface
+		currentV1Beta1KotsCharts  []helmchart.HelmChartInterface
+		previousV1Beta2KotsCharts []helmchart.HelmChartInterface
+		currentV1Beta2KotsCharts  []helmchart.HelmChartInterface
+		want                      []helmchart.HelmChartInterface
 	}{
 		// ---- V1BETA1 ---- //
 		{
@@ -1085,7 +1085,7 @@ func Test_getRemovedCharts(t *testing.T) {
 					dirName: "chart2-release",
 				},
 			},
-			previousV1Beta1KotsCharts: []kotsutil.HelmChartInterface{
+			previousV1Beta1KotsCharts: []helmchart.HelmChartInterface{
 				&v1beta1.HelmChart{
 					TypeMeta: metav1.TypeMeta{
 						APIVersion: "kots.io/v1beta1",
@@ -1119,7 +1119,7 @@ func Test_getRemovedCharts(t *testing.T) {
 					},
 				},
 			},
-			currentV1Beta1KotsCharts: []kotsutil.HelmChartInterface{
+			currentV1Beta1KotsCharts: []helmchart.HelmChartInterface{
 				&v1beta1.HelmChart{
 					TypeMeta: metav1.TypeMeta{
 						APIVersion: "kots.io/v1beta1",
@@ -1153,7 +1153,7 @@ func Test_getRemovedCharts(t *testing.T) {
 					},
 				},
 			},
-			want: []kotsutil.HelmChartInterface{},
+			want: []helmchart.HelmChartInterface{},
 		},
 		{
 			name: "v1beta1 -- chart1 removed",
@@ -1176,7 +1176,7 @@ func Test_getRemovedCharts(t *testing.T) {
 					dirName: "chart2-release",
 				},
 			},
-			previousV1Beta1KotsCharts: []kotsutil.HelmChartInterface{
+			previousV1Beta1KotsCharts: []helmchart.HelmChartInterface{
 				&v1beta1.HelmChart{
 					TypeMeta: metav1.TypeMeta{
 						APIVersion: "kots.io/v1beta1",
@@ -1210,7 +1210,7 @@ func Test_getRemovedCharts(t *testing.T) {
 					},
 				},
 			},
-			currentV1Beta1KotsCharts: []kotsutil.HelmChartInterface{
+			currentV1Beta1KotsCharts: []helmchart.HelmChartInterface{
 				&v1beta1.HelmChart{
 					TypeMeta: metav1.TypeMeta{
 						APIVersion: "kots.io/v1beta1",
@@ -1228,7 +1228,7 @@ func Test_getRemovedCharts(t *testing.T) {
 					},
 				},
 			},
-			want: []kotsutil.HelmChartInterface{
+			want: []helmchart.HelmChartInterface{
 				&v1beta1.HelmChart{
 					TypeMeta: metav1.TypeMeta{
 						APIVersion: "kots.io/v1beta1",
@@ -1273,7 +1273,7 @@ func Test_getRemovedCharts(t *testing.T) {
 					dirName: "chart2-release",
 				},
 			},
-			previousV1Beta1KotsCharts: []kotsutil.HelmChartInterface{
+			previousV1Beta1KotsCharts: []helmchart.HelmChartInterface{
 				&v1beta1.HelmChart{
 					TypeMeta: metav1.TypeMeta{
 						APIVersion: "kots.io/v1beta1",
@@ -1307,7 +1307,7 @@ func Test_getRemovedCharts(t *testing.T) {
 					},
 				},
 			},
-			currentV1Beta1KotsCharts: []kotsutil.HelmChartInterface{
+			currentV1Beta1KotsCharts: []helmchart.HelmChartInterface{
 				&v1beta1.HelmChart{
 					TypeMeta: metav1.TypeMeta{
 						APIVersion: "kots.io/v1beta1",
@@ -1341,7 +1341,7 @@ func Test_getRemovedCharts(t *testing.T) {
 					},
 				},
 			},
-			want: []kotsutil.HelmChartInterface{},
+			want: []helmchart.HelmChartInterface{},
 		},
 		{
 			name: "v1beta1 -- chart2 old release removed because release name changed",
@@ -1369,7 +1369,7 @@ func Test_getRemovedCharts(t *testing.T) {
 					dirName: "chart2-new-release",
 				},
 			},
-			previousV1Beta1KotsCharts: []kotsutil.HelmChartInterface{
+			previousV1Beta1KotsCharts: []helmchart.HelmChartInterface{
 				&v1beta1.HelmChart{
 					TypeMeta: metav1.TypeMeta{
 						APIVersion: "kots.io/v1beta1",
@@ -1403,7 +1403,7 @@ func Test_getRemovedCharts(t *testing.T) {
 					},
 				},
 			},
-			currentV1Beta1KotsCharts: []kotsutil.HelmChartInterface{
+			currentV1Beta1KotsCharts: []helmchart.HelmChartInterface{
 				&v1beta1.HelmChart{
 					TypeMeta: metav1.TypeMeta{
 						APIVersion: "kots.io/v1beta1",
@@ -1437,7 +1437,7 @@ func Test_getRemovedCharts(t *testing.T) {
 					},
 				},
 			},
-			want: []kotsutil.HelmChartInterface{
+			want: []helmchart.HelmChartInterface{
 				&v1beta1.HelmChart{
 					TypeMeta: metav1.TypeMeta{
 						APIVersion: "kots.io/v1beta1",
@@ -1482,7 +1482,7 @@ func Test_getRemovedCharts(t *testing.T) {
 					dirName: "chart2-release",
 				},
 			},
-			previousV1Beta1KotsCharts: []kotsutil.HelmChartInterface{
+			previousV1Beta1KotsCharts: []helmchart.HelmChartInterface{
 				&v1beta1.HelmChart{
 					TypeMeta: metav1.TypeMeta{
 						APIVersion: "kots.io/v1beta1",
@@ -1517,7 +1517,7 @@ func Test_getRemovedCharts(t *testing.T) {
 					},
 				},
 			},
-			currentV1Beta1KotsCharts: []kotsutil.HelmChartInterface{
+			currentV1Beta1KotsCharts: []helmchart.HelmChartInterface{
 				&v1beta1.HelmChart{
 					TypeMeta: metav1.TypeMeta{
 						APIVersion: "kots.io/v1beta1",
@@ -1552,7 +1552,7 @@ func Test_getRemovedCharts(t *testing.T) {
 					},
 				},
 			},
-			want: []kotsutil.HelmChartInterface{},
+			want: []helmchart.HelmChartInterface{},
 		},
 		{
 			name: "v1beta1 -- chart1 old namespace removed because namespace changed",
@@ -1580,7 +1580,7 @@ func Test_getRemovedCharts(t *testing.T) {
 					dirName: "chart2-release",
 				},
 			},
-			previousV1Beta1KotsCharts: []kotsutil.HelmChartInterface{
+			previousV1Beta1KotsCharts: []helmchart.HelmChartInterface{
 				&v1beta1.HelmChart{
 					TypeMeta: metav1.TypeMeta{
 						APIVersion: "kots.io/v1beta1",
@@ -1615,7 +1615,7 @@ func Test_getRemovedCharts(t *testing.T) {
 					},
 				},
 			},
-			currentV1Beta1KotsCharts: []kotsutil.HelmChartInterface{
+			currentV1Beta1KotsCharts: []helmchart.HelmChartInterface{
 				&v1beta1.HelmChart{
 					TypeMeta: metav1.TypeMeta{
 						APIVersion: "kots.io/v1beta1",
@@ -1650,7 +1650,7 @@ func Test_getRemovedCharts(t *testing.T) {
 					},
 				},
 			},
-			want: []kotsutil.HelmChartInterface{
+			want: []helmchart.HelmChartInterface{
 				&v1beta1.HelmChart{
 					TypeMeta: metav1.TypeMeta{
 						APIVersion: "kots.io/v1beta1",
@@ -1697,7 +1697,7 @@ func Test_getRemovedCharts(t *testing.T) {
 					dirName: "chart2-release",
 				},
 			},
-			previousV1Beta2KotsCharts: []kotsutil.HelmChartInterface{
+			previousV1Beta2KotsCharts: []helmchart.HelmChartInterface{
 				&v1beta2.HelmChart{
 					TypeMeta: metav1.TypeMeta{
 						APIVersion: "kots.io/v1beta2",
@@ -1731,7 +1731,7 @@ func Test_getRemovedCharts(t *testing.T) {
 					},
 				},
 			},
-			currentV1Beta2KotsCharts: []kotsutil.HelmChartInterface{
+			currentV1Beta2KotsCharts: []helmchart.HelmChartInterface{
 				&v1beta2.HelmChart{
 					TypeMeta: metav1.TypeMeta{
 						APIVersion: "kots.io/v1beta2",
@@ -1765,7 +1765,7 @@ func Test_getRemovedCharts(t *testing.T) {
 					},
 				},
 			},
-			want: []kotsutil.HelmChartInterface{},
+			want: []helmchart.HelmChartInterface{},
 		},
 		{
 			name: "v1beta2 -- chart1 removed",
@@ -1788,7 +1788,7 @@ func Test_getRemovedCharts(t *testing.T) {
 					dirName: "chart2-release",
 				},
 			},
-			previousV1Beta2KotsCharts: []kotsutil.HelmChartInterface{
+			previousV1Beta2KotsCharts: []helmchart.HelmChartInterface{
 				&v1beta2.HelmChart{
 					TypeMeta: metav1.TypeMeta{
 						APIVersion: "kots.io/v1beta2",
@@ -1822,7 +1822,7 @@ func Test_getRemovedCharts(t *testing.T) {
 					},
 				},
 			},
-			currentV1Beta2KotsCharts: []kotsutil.HelmChartInterface{
+			currentV1Beta2KotsCharts: []helmchart.HelmChartInterface{
 				&v1beta2.HelmChart{
 					TypeMeta: metav1.TypeMeta{
 						APIVersion: "kots.io/v1beta2",
@@ -1840,7 +1840,7 @@ func Test_getRemovedCharts(t *testing.T) {
 					},
 				},
 			},
-			want: []kotsutil.HelmChartInterface{
+			want: []helmchart.HelmChartInterface{
 				&v1beta2.HelmChart{
 					TypeMeta: metav1.TypeMeta{
 						APIVersion: "kots.io/v1beta2",
@@ -1885,7 +1885,7 @@ func Test_getRemovedCharts(t *testing.T) {
 					dirName: "chart2-release",
 				},
 			},
-			previousV1Beta2KotsCharts: []kotsutil.HelmChartInterface{
+			previousV1Beta2KotsCharts: []helmchart.HelmChartInterface{
 				&v1beta2.HelmChart{
 					TypeMeta: metav1.TypeMeta{
 						APIVersion: "kots.io/v1beta2",
@@ -1919,7 +1919,7 @@ func Test_getRemovedCharts(t *testing.T) {
 					},
 				},
 			},
-			currentV1Beta2KotsCharts: []kotsutil.HelmChartInterface{
+			currentV1Beta2KotsCharts: []helmchart.HelmChartInterface{
 				&v1beta2.HelmChart{
 					TypeMeta: metav1.TypeMeta{
 						APIVersion: "kots.io/v1beta2",
@@ -1953,7 +1953,7 @@ func Test_getRemovedCharts(t *testing.T) {
 					},
 				},
 			},
-			want: []kotsutil.HelmChartInterface{},
+			want: []helmchart.HelmChartInterface{},
 		},
 		{
 			name: "v1beta2 -- chart2 old release removed because release name changed",
@@ -1981,7 +1981,7 @@ func Test_getRemovedCharts(t *testing.T) {
 					dirName: "chart2-new-release",
 				},
 			},
-			previousV1Beta2KotsCharts: []kotsutil.HelmChartInterface{
+			previousV1Beta2KotsCharts: []helmchart.HelmChartInterface{
 				&v1beta2.HelmChart{
 					TypeMeta: metav1.TypeMeta{
 						APIVersion: "kots.io/v1beta2",
@@ -2015,7 +2015,7 @@ func Test_getRemovedCharts(t *testing.T) {
 					},
 				},
 			},
-			currentV1Beta2KotsCharts: []kotsutil.HelmChartInterface{
+			currentV1Beta2KotsCharts: []helmchart.HelmChartInterface{
 				&v1beta2.HelmChart{
 					TypeMeta: metav1.TypeMeta{
 						APIVersion: "kots.io/v1beta2",
@@ -2049,7 +2049,7 @@ func Test_getRemovedCharts(t *testing.T) {
 					},
 				},
 			},
-			want: []kotsutil.HelmChartInterface{
+			want: []helmchart.HelmChartInterface{
 				&v1beta2.HelmChart{
 					TypeMeta: metav1.TypeMeta{
 						APIVersion: "kots.io/v1beta2",
@@ -2094,7 +2094,7 @@ func Test_getRemovedCharts(t *testing.T) {
 					dirName: "chart2-release",
 				},
 			},
-			previousV1Beta2KotsCharts: []kotsutil.HelmChartInterface{
+			previousV1Beta2KotsCharts: []helmchart.HelmChartInterface{
 				&v1beta2.HelmChart{
 					TypeMeta: metav1.TypeMeta{
 						APIVersion: "kots.io/v1beta2",
@@ -2129,7 +2129,7 @@ func Test_getRemovedCharts(t *testing.T) {
 					},
 				},
 			},
-			currentV1Beta2KotsCharts: []kotsutil.HelmChartInterface{
+			currentV1Beta2KotsCharts: []helmchart.HelmChartInterface{
 				&v1beta2.HelmChart{
 					TypeMeta: metav1.TypeMeta{
 						APIVersion: "kots.io/v1beta2",
@@ -2164,7 +2164,7 @@ func Test_getRemovedCharts(t *testing.T) {
 					},
 				},
 			},
-			want: []kotsutil.HelmChartInterface{},
+			want: []helmchart.HelmChartInterface{},
 		},
 		{
 			name: "v1beta2 -- chart1 old namespace removed because namespace changed",
@@ -2192,7 +2192,7 @@ func Test_getRemovedCharts(t *testing.T) {
 					dirName: "chart2-release",
 				},
 			},
-			previousV1Beta2KotsCharts: []kotsutil.HelmChartInterface{
+			previousV1Beta2KotsCharts: []helmchart.HelmChartInterface{
 				&v1beta2.HelmChart{
 					TypeMeta: metav1.TypeMeta{
 						APIVersion: "kots.io/v1beta2",
@@ -2227,7 +2227,7 @@ func Test_getRemovedCharts(t *testing.T) {
 					},
 				},
 			},
-			currentV1Beta2KotsCharts: []kotsutil.HelmChartInterface{
+			currentV1Beta2KotsCharts: []helmchart.HelmChartInterface{
 				&v1beta2.HelmChart{
 					TypeMeta: metav1.TypeMeta{
 						APIVersion: "kots.io/v1beta2",
@@ -2262,7 +2262,7 @@ func Test_getRemovedCharts(t *testing.T) {
 					},
 				},
 			},
-			want: []kotsutil.HelmChartInterface{
+			want: []helmchart.HelmChartInterface{
 				&v1beta2.HelmChart{
 					TypeMeta: metav1.TypeMeta{
 						APIVersion: "kots.io/v1beta2",
@@ -2299,7 +2299,7 @@ func Test_getRemovedCharts(t *testing.T) {
 					dirName: "chart1-release",
 				},
 			},
-			previousV1Beta1KotsCharts: []kotsutil.HelmChartInterface{
+			previousV1Beta1KotsCharts: []helmchart.HelmChartInterface{
 				&v1beta1.HelmChart{
 					TypeMeta: metav1.TypeMeta{
 						APIVersion: "kots.io/v1beta1",
@@ -2317,7 +2317,7 @@ func Test_getRemovedCharts(t *testing.T) {
 					},
 				},
 			},
-			currentV1Beta1KotsCharts: []kotsutil.HelmChartInterface{
+			currentV1Beta1KotsCharts: []helmchart.HelmChartInterface{
 				&v1beta1.HelmChart{
 					TypeMeta: metav1.TypeMeta{
 						APIVersion: "kots.io/v1beta1",
@@ -2349,7 +2349,7 @@ func Test_getRemovedCharts(t *testing.T) {
 					dirName: "chart2-release",
 				},
 			},
-			previousV1Beta2KotsCharts: []kotsutil.HelmChartInterface{
+			previousV1Beta2KotsCharts: []helmchart.HelmChartInterface{
 				&v1beta2.HelmChart{
 					TypeMeta: metav1.TypeMeta{
 						APIVersion: "kots.io/v1beta2",
@@ -2367,7 +2367,7 @@ func Test_getRemovedCharts(t *testing.T) {
 					},
 				},
 			},
-			currentV1Beta2KotsCharts: []kotsutil.HelmChartInterface{
+			currentV1Beta2KotsCharts: []helmchart.HelmChartInterface{
 				&v1beta2.HelmChart{
 					TypeMeta: metav1.TypeMeta{
 						APIVersion: "kots.io/v1beta2",
@@ -2385,7 +2385,7 @@ func Test_getRemovedCharts(t *testing.T) {
 					},
 				},
 			},
-			want: []kotsutil.HelmChartInterface{},
+			want: []helmchart.HelmChartInterface{},
 		},
 		{
 			name: "mix of v1beta1 and v1beta2 -- chart2 removed",
@@ -2403,7 +2403,7 @@ func Test_getRemovedCharts(t *testing.T) {
 					dirName: "chart1-release",
 				},
 			},
-			previousV1Beta1KotsCharts: []kotsutil.HelmChartInterface{
+			previousV1Beta1KotsCharts: []helmchart.HelmChartInterface{
 				&v1beta1.HelmChart{
 					TypeMeta: metav1.TypeMeta{
 						APIVersion: "kots.io/v1beta1",
@@ -2421,7 +2421,7 @@ func Test_getRemovedCharts(t *testing.T) {
 					},
 				},
 			},
-			currentV1Beta1KotsCharts: []kotsutil.HelmChartInterface{
+			currentV1Beta1KotsCharts: []helmchart.HelmChartInterface{
 				&v1beta1.HelmChart{
 					TypeMeta: metav1.TypeMeta{
 						APIVersion: "kots.io/v1beta1",
@@ -2447,7 +2447,7 @@ func Test_getRemovedCharts(t *testing.T) {
 				},
 			},
 			curV1Beta2Charts: []chart{},
-			previousV1Beta2KotsCharts: []kotsutil.HelmChartInterface{
+			previousV1Beta2KotsCharts: []helmchart.HelmChartInterface{
 				&v1beta2.HelmChart{
 					TypeMeta: metav1.TypeMeta{
 						APIVersion: "kots.io/v1beta2",
@@ -2465,8 +2465,8 @@ func Test_getRemovedCharts(t *testing.T) {
 					},
 				},
 			},
-			currentV1Beta2KotsCharts: []kotsutil.HelmChartInterface{},
-			want: []kotsutil.HelmChartInterface{
+			currentV1Beta2KotsCharts: []helmchart.HelmChartInterface{},
+			want: []helmchart.HelmChartInterface{
 				&v1beta2.HelmChart{
 					TypeMeta: metav1.TypeMeta{
 						APIVersion: "kots.io/v1beta2",
