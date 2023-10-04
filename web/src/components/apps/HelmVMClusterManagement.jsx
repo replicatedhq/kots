@@ -300,7 +300,9 @@ export class HelmVMClusterManagement extends Component {
                       drainNode={
                         helmvm?.isHelmVMEnabled ? this.onDrainNodeClick : null
                       }
-                      deleteNode={helmvm?.isHelmVMEnabled ? this.deleteNode : null}
+                      deleteNode={
+                        helmvm?.isHelmVMEnabled ? this.deleteNode : null
+                      }
                     />
                   ))}
               </div>

@@ -129,7 +129,7 @@ class AnalyzerRedactorReportRow extends React.Component {
 
     return (
       <div
-        className="flex flex-auto ActiveDownstreamVersionRow--wrapper"
+        className="flex flex-auto RedactorReportRow--wrapper"
         key={redactor}
       >
         <div className="flex flex1 alignItems--center">
