@@ -75,25 +75,6 @@ type OverlySimpleMetadata struct {
 	Namespace string `yaml:"namespace"`
 }
 
-// HelmChartInterface represents any kots.io HelmChart (v1beta1 or v1beta2)
-type HelmChartInterface interface {
-	GetAPIVersion() string
-	GetChartName() string
-	GetChartVersion() string
-	GetReleaseName() string
-	GetDirName() string
-	GetNamespace() string
-	GetUpgradeFlags() []string
-	GetWeight() int64
-	GetHelmVersion() string
-	GetBuilderValues() (map[string]interface{}, error)
-	SetChartNamespace(namespace string)
-}
-
-// v1beta1 and v1beta2 HelmChart structs must implement HelmChartInterface
-var _ HelmChartInterface = (*kotsv1beta1.HelmChart)(nil)
-var _ HelmChartInterface = (*kotsv1beta2.HelmChart)(nil)
-
 // KotsKinds are all of the special "client-side" kinds that are packaged in
 // an application. These should be pointers because they are all optional.
 // But a few are still expected in the code later, so we make them not pointers,

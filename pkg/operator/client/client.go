@@ -22,7 +22,6 @@ import (
 	appstatetypes "github.com/replicatedhq/kots/pkg/appstate/types"
 	"github.com/replicatedhq/kots/pkg/binaries"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
-	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/operator/applier"
 	operatortypes "github.com/replicatedhq/kots/pkg/operator/types"
@@ -32,6 +31,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/supportbundle"
 	supportbundletypes "github.com/replicatedhq/kots/pkg/supportbundle/types"
 	"github.com/replicatedhq/kots/pkg/util"
+	"github.com/replicatedhq/kotskinds/pkg/helmchart"
 	"go.uber.org/zap"
 )
 
@@ -285,7 +285,7 @@ func (c *Client) deployHelmCharts(deployArgs operatortypes.DeployAppArgs) (*comm
 	defer os.RemoveAll(curV1Beta2HelmDir)
 
 	// find removed charts
-	prevKotsV1Beta1Charts := []kotsutil.HelmChartInterface{}
+	prevKotsV1Beta1Charts := []helmchart.HelmChartInterface{}
 	if deployArgs.PreviousKotsKinds != nil && deployArgs.PreviousKotsKinds.V1Beta1HelmCharts != nil {
 		for _, kotsChart := range deployArgs.PreviousKotsKinds.V1Beta1HelmCharts.Items {
 			kc := kotsChart
@@ -293,7 +293,7 @@ func (c *Client) deployHelmCharts(deployArgs operatortypes.DeployAppArgs) (*comm
 		}
 	}
 
-	curV1Beta1KotsCharts := []kotsutil.HelmChartInterface{}
+	curV1Beta1KotsCharts := []helmchart.HelmChartInterface{}
 	if deployArgs.KotsKinds != nil && deployArgs.KotsKinds.V1Beta1HelmCharts != nil {
 		for _, kotsChart := range deployArgs.KotsKinds.V1Beta1HelmCharts.Items {
 			kc := kotsChart
@@ -301,7 +301,7 @@ func (c *Client) deployHelmCharts(deployArgs operatortypes.DeployAppArgs) (*comm
 		}
 	}
 
-	prevKotsV1Beta2Charts := []kotsutil.HelmChartInterface{}
+	prevKotsV1Beta2Charts := []helmchart.HelmChartInterface{}
 	if deployArgs.PreviousKotsKinds != nil && deployArgs.PreviousKotsKinds.V1Beta2HelmCharts != nil {
 		for _, kotsChart := range deployArgs.PreviousKotsKinds.V1Beta2HelmCharts.Items {
 			kc := kotsChart
@@ -309,7 +309,7 @@ func (c *Client) deployHelmCharts(deployArgs operatortypes.DeployAppArgs) (*comm
 		}
 	}
 
-	curV1Beta2KotsCharts := []kotsutil.HelmChartInterface{}
+	curV1Beta2KotsCharts := []helmchart.HelmChartInterface{}
 	if deployArgs.KotsKinds != nil && deployArgs.KotsKinds.V1Beta2HelmCharts != nil {
 		for _, kotsChart := range deployArgs.KotsKinds.V1Beta2HelmCharts.Items {
 			kc := kotsChart
@@ -446,7 +446,7 @@ func (c *Client) undeployManifests(undeployArgs operatortypes.UndeployAppArgs) e
 }
 
 func (c *Client) undeployHelmCharts(undeployArgs operatortypes.UndeployAppArgs) error {
-	kotsCharts := []kotsutil.HelmChartInterface{}
+	kotsCharts := []helmchart.HelmChartInterface{}
 	if undeployArgs.KotsKinds != nil {
 		if undeployArgs.KotsKinds.V1Beta1HelmCharts != nil {
 			for _, v1Beta1Chart := range undeployArgs.KotsKinds.V1Beta1HelmCharts.Items {
