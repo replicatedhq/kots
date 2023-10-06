@@ -42,6 +42,7 @@ var (
 	kotsadmImageNamespace string
 	kotsadmImageTag       string
 	airgap                bool
+	isOpenShift           bool
 	kotsadmForwardPort    string
 	kotsHelmChartURL      string
 	kotsHelmChartVersion  string
@@ -58,6 +59,7 @@ func init() {
 	flag.StringVar(&kotsadmImageNamespace, "kotsadm-image-namespace", "", "override the kotsadm images registry namespace")
 	flag.StringVar(&kotsadmImageTag, "kotsadm-image-tag", "alpha", "override the kotsadm images tag")
 	flag.BoolVar(&airgap, "airgap", false, "run install in airgapped mode")
+	flag.BoolVar(&isOpenShift, "is-openshift", false, "the cluster is an openshift cluster")
 	flag.StringVar(&kotsadmForwardPort, "kotsadm-forward-port", "", "sets the port that the admin console will be exposed on instead of generating a random one")
 	flag.StringVar(&kotsHelmChartURL, "kots-helm-chart-url", "", "kots helm chart url")
 	flag.StringVar(&kotsHelmChartVersion, "kots-helm-chart-version", "", "kots helm chart version")
@@ -92,7 +94,7 @@ var _ = BeforeSuite(func() {
 
 	helmCLI = helm.NewCLI(w.GetDir())
 
-	veleroCLI = velero.NewCLI(w.GetDir())
+	veleroCLI = velero.NewCLI(w.GetDir(), isOpenShift)
 
 	kotsInstaller = kots.NewInstaller(kotsadmImageRegistry, kotsadmImageNamespace, kotsadmImageTag, airgap, kotsDockerhubUsername, kotsDockerhubPassword)
 })

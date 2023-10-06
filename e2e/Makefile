@@ -21,6 +21,7 @@ test: export GINKGO_EDITOR_INTEGRATION=1 # disable error on programatic focus
 test: KOTSADM_IMAGE_TAG ?= alpha
 test: TESTIM_BRANCH ?= master
 test: AIRGAP ?= 0
+test: IS_OPENSHIFT ?= 0
 test: SKIP_TEARDOWN ?= 0
 ifneq ($(EXISTING_KUBECONFIG),)
 test: EXISTING_KUBECONFIG_VOLUME_MOUNT := "-v=$(EXISTING_KUBECONFIG):$(EXISTING_KUBECONFIG)"
@@ -44,6 +45,7 @@ test:
 			--kotsadm-image-namespace=$(KOTSADM_IMAGE_NAMESPACE) \
 			--kotsadm-image-tag=$(KOTSADM_IMAGE_TAG) \
 			--airgap=$(AIRGAP) \
+			--is-openshift=$(IS_OPENSHIFT) \
 			--kots-helm-chart-url=$(KOTS_HELM_CHART_URL) \
 			--kots-helm-chart-version=$(KOTS_HELM_CHART_VERSION) \
 			--kots-dockerhub-username=$(KOTS_DOCKERHUB_USERNAME) \

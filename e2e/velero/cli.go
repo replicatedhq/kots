@@ -15,10 +15,13 @@ import (
 )
 
 type CLI struct {
+	isOpenShift bool
 }
 
-func NewCLI(workspace string) *CLI {
-	return &CLI{}
+func NewCLI(workspace string, isOpenShift bool) *CLI {
+	return &CLI{
+		isOpenShift: isOpenShift,
+	}
 }
 
 func (v *CLI) Install(workspace, kubeconfig string, minio minio.Minio) {
@@ -29,9 +32,11 @@ func (v *CLI) Install(workspace, kubeconfig string, minio minio.Minio) {
 	Expect(err).WithOffset(1).Should(Succeed(), "install")
 	Eventually(session).WithOffset(1).WithTimeout(2*time.Minute).Should(gexec.Exit(0), "velero install")
 
-	session, err = patchNodeAgentDaemonset(kubeconfig)
-	Expect(err).WithOffset(1).Should(Succeed(), "patch node agent daemonset")
-	Eventually(session).WithOffset(1).WithTimeout(2*time.Minute).Should(gexec.Exit(0), "kubectl patch")
+	if v.isOpenShift {
+		session, err = patchNodeAgentDaemonset(kubeconfig)
+		Expect(err).WithOffset(1).Should(Succeed(), "patch node agent daemonset")
+		Eventually(session).WithOffset(1).WithTimeout(2*time.Minute).Should(gexec.Exit(0), "kubectl patch")
+	}
 }
 
 func (v *CLI) install(workspace, kubeconfig, s3Url, bucket string) (*gexec.Session, error) {

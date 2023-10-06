@@ -28,6 +28,7 @@ async function getClusterVersions() {
     } catch (error) {
         console.error(`Error: ${error.message}`);
         core.setFailed(error.message);
+        return;
     }
 
     // versions to test looks like this:
@@ -45,11 +46,11 @@ async function getClusterVersions() {
             return;
         }
 
-        if (distroName === 'aks') {
-            // excluding aks for now
-            // TODO: add aks back in when we support some sort of filtering
-            return;
-        }
+        // if (distroName === 'aks') {
+        //     // excluding aks for now
+        //     // TODO: add aks back in when we support some sort of filtering
+        //     return;
+        // }
 
         const latestMinorVersions = {};
         distribution.versions.forEach((version) => {
