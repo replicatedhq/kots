@@ -279,8 +279,8 @@ jobs:
       - name: template melange and apko configs
         run: |
           export GIT_TAG=${{ needs.generate-tag.outputs.tag }}
-          envsubst '${GIT_TAG}' < deploy/melange.yaml.tmpl > deploy/melange.yaml
-          envsubst '${GIT_TAG}' < deploy/apko.yaml.tmpl > deploy/apko.yaml
+          envsubst "${GIT_TAG}" < deploy/melange.yaml.tmpl > deploy/melange.yaml
+          envsubst "${GIT_TAG}" < deploy/apko.yaml.tmpl > deploy/apko.yaml
 
       - uses: chainguard-dev/actions/melange-build@main
         with:
