@@ -1136,64 +1136,64 @@ var HandlerPolicyTests = map[string][]HandlerPolicyTest{
 	},
 
 	"Kurl": {}, // Not implemented
-	"GenerateNodeJoinCommandWorker": {
+	"GenerateKurlNodeJoinCommandWorker": {
 		{
 			Roles:        []rbactypes.Role{rbac.ClusterAdminRole},
 			SessionRoles: []string{rbac.ClusterAdminRoleID},
 			Calls: func(storeRecorder *mock_store.MockStoreMockRecorder, handlerRecorder *mock_handlers.MockKOTSHandlerMockRecorder) {
-				handlerRecorder.GenerateNodeJoinCommandWorker(gomock.Any(), gomock.Any())
+				handlerRecorder.GenerateKurlNodeJoinCommandWorker(gomock.Any(), gomock.Any())
 			},
 			ExpectStatus: http.StatusOK,
 		},
 	},
-	"GenerateNodeJoinCommandMaster": {
+	"GenerateKurlNodeJoinCommandMaster": {
 		{
 			Roles:        []rbactypes.Role{rbac.ClusterAdminRole},
 			SessionRoles: []string{rbac.ClusterAdminRoleID},
 			Calls: func(storeRecorder *mock_store.MockStoreMockRecorder, handlerRecorder *mock_handlers.MockKOTSHandlerMockRecorder) {
-				handlerRecorder.GenerateNodeJoinCommandMaster(gomock.Any(), gomock.Any())
+				handlerRecorder.GenerateKurlNodeJoinCommandMaster(gomock.Any(), gomock.Any())
 			},
 			ExpectStatus: http.StatusOK,
 		},
 	},
-	"GenerateNodeJoinCommandSecondary": {
+	"GenerateKurlNodeJoinCommandSecondary": {
 		{
 			Roles:        []rbactypes.Role{rbac.ClusterAdminRole},
 			SessionRoles: []string{rbac.ClusterAdminRoleID},
 			Calls: func(storeRecorder *mock_store.MockStoreMockRecorder, handlerRecorder *mock_handlers.MockKOTSHandlerMockRecorder) {
-				handlerRecorder.GenerateNodeJoinCommandSecondary(gomock.Any(), gomock.Any())
+				handlerRecorder.GenerateKurlNodeJoinCommandSecondary(gomock.Any(), gomock.Any())
 			},
 			ExpectStatus: http.StatusOK,
 		},
 	},
-	"GenerateNodeJoinCommandPrimary": {
+	"GenerateKurlNodeJoinCommandPrimary": {
 		{
 			Roles:        []rbactypes.Role{rbac.ClusterAdminRole},
 			SessionRoles: []string{rbac.ClusterAdminRoleID},
 			Calls: func(storeRecorder *mock_store.MockStoreMockRecorder, handlerRecorder *mock_handlers.MockKOTSHandlerMockRecorder) {
-				handlerRecorder.GenerateNodeJoinCommandPrimary(gomock.Any(), gomock.Any())
+				handlerRecorder.GenerateKurlNodeJoinCommandPrimary(gomock.Any(), gomock.Any())
 			},
 			ExpectStatus: http.StatusOK,
 		},
 	},
-	"DrainNode": {
+	"DrainKurlNode": {
 		{
 			Vars:         map[string]string{"nodeName": "node-name"},
 			Roles:        []rbactypes.Role{rbac.ClusterAdminRole},
 			SessionRoles: []string{rbac.ClusterAdminRoleID},
 			Calls: func(storeRecorder *mock_store.MockStoreMockRecorder, handlerRecorder *mock_handlers.MockKOTSHandlerMockRecorder) {
-				handlerRecorder.DrainNode(gomock.Any(), gomock.Any())
+				handlerRecorder.DrainKurlNode(gomock.Any(), gomock.Any())
 			},
 			ExpectStatus: http.StatusOK,
 		},
 	},
-	"DeleteNode": {
+	"DeleteKurlNode": {
 		{
 			Vars:         map[string]string{"nodeName": "node-name"},
 			Roles:        []rbactypes.Role{rbac.ClusterAdminRole},
 			SessionRoles: []string{rbac.ClusterAdminRoleID},
 			Calls: func(storeRecorder *mock_store.MockStoreMockRecorder, handlerRecorder *mock_handlers.MockKOTSHandlerMockRecorder) {
-				handlerRecorder.DeleteNode(gomock.Any(), gomock.Any())
+				handlerRecorder.DeleteKurlNode(gomock.Any(), gomock.Any())
 			},
 			ExpectStatus: http.StatusOK,
 		},
@@ -1204,6 +1204,60 @@ var HandlerPolicyTests = map[string][]HandlerPolicyTest{
 			SessionRoles: []string{rbac.ClusterAdminRoleID},
 			Calls: func(storeRecorder *mock_store.MockStoreMockRecorder, handlerRecorder *mock_handlers.MockKOTSHandlerMockRecorder) {
 				handlerRecorder.GetKurlNodes(gomock.Any(), gomock.Any())
+			},
+			ExpectStatus: http.StatusOK,
+		},
+	},
+
+	"HelmVM": {}, // Not implemented
+	"GenerateHelmVMNodeJoinCommandSecondary": {
+		{
+			Roles:        []rbactypes.Role{rbac.ClusterAdminRole},
+			SessionRoles: []string{rbac.ClusterAdminRoleID},
+			Calls: func(storeRecorder *mock_store.MockStoreMockRecorder, handlerRecorder *mock_handlers.MockKOTSHandlerMockRecorder) {
+				handlerRecorder.GenerateHelmVMNodeJoinCommandSecondary(gomock.Any(), gomock.Any())
+			},
+			ExpectStatus: http.StatusOK,
+		},
+	},
+	"GenerateHelmVMNodeJoinCommandPrimary": {
+		{
+			Roles:        []rbactypes.Role{rbac.ClusterAdminRole},
+			SessionRoles: []string{rbac.ClusterAdminRoleID},
+			Calls: func(storeRecorder *mock_store.MockStoreMockRecorder, handlerRecorder *mock_handlers.MockKOTSHandlerMockRecorder) {
+				handlerRecorder.GenerateHelmVMNodeJoinCommandPrimary(gomock.Any(), gomock.Any())
+			},
+			ExpectStatus: http.StatusOK,
+		},
+	},
+	"DrainHelmVMNode": {
+		{
+			Vars:         map[string]string{"nodeName": "node-name"},
+			Roles:        []rbactypes.Role{rbac.ClusterAdminRole},
+			SessionRoles: []string{rbac.ClusterAdminRoleID},
+			Calls: func(storeRecorder *mock_store.MockStoreMockRecorder, handlerRecorder *mock_handlers.MockKOTSHandlerMockRecorder) {
+				handlerRecorder.DrainHelmVMNode(gomock.Any(), gomock.Any())
+			},
+			ExpectStatus: http.StatusOK,
+		},
+	},
+	"DeleteHelmVMNode": {
+		{
+			Vars:         map[string]string{"nodeName": "node-name"},
+			Roles:        []rbactypes.Role{rbac.ClusterAdminRole},
+			SessionRoles: []string{rbac.ClusterAdminRoleID},
+			Calls: func(storeRecorder *mock_store.MockStoreMockRecorder, handlerRecorder *mock_handlers.MockKOTSHandlerMockRecorder) {
+				handlerRecorder.DeleteHelmVMNode(gomock.Any(), gomock.Any())
+			},
+			ExpectStatus: http.StatusOK,
+		},
+	},
+	"GetHelmVMNodes": {
+		{
+			Roles:        []rbactypes.Role{rbac.ClusterAdminRole},
+			SessionRoles: []string{rbac.ClusterAdminRoleID},
+			Calls: func(storeRecorder *mock_store.MockStoreMockRecorder, handlerRecorder *mock_handlers.MockKOTSHandlerMockRecorder) {
+				handlerRecorder.GetHelmVMNodes(gomock.Any(), gomock.Any())
 			},
 			ExpectStatus: http.StatusOK,
 		},
