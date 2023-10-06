@@ -10,57 +10,69 @@ import (
 )
 
 func InjectReportingInfoHeaders(req *http.Request, reportingInfo *types.ReportingInfo) {
+	headers := GetReportingInfoHeaders(reportingInfo)
+
+	for key, value := range headers {
+		req.Header.Set(key, value)
+	}
+}
+
+func GetReportingInfoHeaders(reportingInfo *types.ReportingInfo) map[string]string {
+	headers := make(map[string]string)
+
 	if reportingInfo == nil {
-		return
+		return headers
 	}
 
-	req.Header.Set("X-Replicated-K8sVersion", reportingInfo.K8sVersion)
-	req.Header.Set("X-Replicated-IsKurl", strconv.FormatBool(reportingInfo.IsKurl))
-	req.Header.Set("X-Replicated-AppStatus", reportingInfo.AppStatus)
-	req.Header.Set("X-Replicated-ClusterID", reportingInfo.ClusterID)
-	req.Header.Set("X-Replicated-InstanceID", reportingInfo.InstanceID)
-	req.Header.Set("X-Replicated-ReplHelmInstalls", strconv.Itoa(reportingInfo.Downstream.ReplHelmInstalls))
-	req.Header.Set("X-Replicated-NativeHelmInstalls", strconv.Itoa(reportingInfo.Downstream.NativeHelmInstalls))
+	headers["X-Replicated-K8sVersion"] = reportingInfo.K8sVersion
+	headers["X-Replicated-IsKurl"] = strconv.FormatBool(reportingInfo.IsKurl)
+	headers["X-Replicated-AppStatus"] = reportingInfo.AppStatus
+	headers["X-Replicated-ClusterID"] = reportingInfo.ClusterID
+	headers["X-Replicated-InstanceID"] = reportingInfo.InstanceID
+	headers["X-Replicated-ReplHelmInstalls"] = strconv.Itoa(reportingInfo.Downstream.ReplHelmInstalls)
+	headers["X-Replicated-NativeHelmInstalls"] = strconv.Itoa(reportingInfo.Downstream.NativeHelmInstalls)
 
 	if reportingInfo.Downstream.Cursor != "" {
-		req.Header.Set("X-Replicated-DownstreamChannelSequence", reportingInfo.Downstream.Cursor)
+		headers["X-Replicated-DownstreamChannelSequence"] = reportingInfo.Downstream.Cursor
 	}
 	if reportingInfo.Downstream.ChannelID != "" {
-		req.Header.Set("X-Replicated-DownstreamChannelID", reportingInfo.Downstream.ChannelID)
+		headers["X-Replicated-DownstreamChannelID"] = reportingInfo.Downstream.ChannelID
 	} else if reportingInfo.Downstream.ChannelName != "" {
-		req.Header.Set("X-Replicated-DownstreamChannelName", reportingInfo.Downstream.ChannelName)
+		headers["X-Replicated-DownstreamChannelName"] = reportingInfo.Downstream.ChannelName
 	}
 
 	if reportingInfo.Downstream.Status != "" {
-		req.Header.Set("X-Replicated-InstallStatus", reportingInfo.Downstream.Status)
+		headers["X-Replicated-InstallStatus"] = reportingInfo.Downstream.Status
 	}
 	if reportingInfo.Downstream.PreflightState != "" {
-		req.Header.Set("X-Replicated-PreflightStatus", reportingInfo.Downstream.PreflightState)
+		headers["X-Replicated-PreflightStatus"] = reportingInfo.Downstream.PreflightState
 	}
 	if reportingInfo.Downstream.Sequence != nil {
-		req.Header.Set("X-Replicated-DownstreamSequence", strconv.FormatInt(*reportingInfo.Downstream.Sequence, 10))
+		headers["X-Replicated-DownstreamSequence"] = strconv.FormatInt(*reportingInfo.Downstream.Sequence, 10)
 	}
 	if reportingInfo.Downstream.Source != "" {
-		req.Header.Set("X-Replicated-DownstreamSource", reportingInfo.Downstream.Source)
+		headers["X-Replicated-DownstreamSource"] = reportingInfo.Downstream.Source
 	}
-	req.Header.Set("X-Replicated-SkipPreflights", strconv.FormatBool(reportingInfo.Downstream.SkipPreflights))
+	headers["X-Replicated-SkipPreflights"] = strconv.FormatBool(reportingInfo.Downstream.SkipPreflights)
 
 	if reportingInfo.KOTSInstallID != "" {
-		req.Header.Set("X-Replicated-KotsInstallID", reportingInfo.KOTSInstallID)
+		headers["X-Replicated-KotsInstallID"] = reportingInfo.KOTSInstallID
 	}
 	if reportingInfo.KURLInstallID != "" {
-		req.Header.Set("X-Replicated-KurlInstallID", reportingInfo.KURLInstallID)
+		headers["X-Replicated-KurlInstallID"] = reportingInfo.KURLInstallID
 	}
 
-	req.Header.Set("X-Replicated-KurlNodeCountTotal", strconv.Itoa(reportingInfo.KurlNodeCountTotal))
-	req.Header.Set("X-Replicated-KurlNodeCountReady", strconv.Itoa(reportingInfo.KurlNodeCountReady))
+	headers["X-Replicated-KurlNodeCountTotal"] = strconv.Itoa(reportingInfo.KurlNodeCountTotal)
+	headers["X-Replicated-KurlNodeCountReady"] = strconv.Itoa(reportingInfo.KurlNodeCountReady)
 
-	req.Header.Set("X-Replicated-IsGitOpsEnabled", strconv.FormatBool(reportingInfo.IsGitOpsEnabled))
-	req.Header.Set("X-Replicated-GitOpsProvider", reportingInfo.GitOpsProvider)
+	headers["X-Replicated-IsGitOpsEnabled"] = strconv.FormatBool(reportingInfo.IsGitOpsEnabled)
+	headers["X-Replicated-GitOpsProvider"] = reportingInfo.GitOpsProvider
 
 	if reportingInfo.K8sDistribution != "" {
-		req.Header.Set("X-Replicated-K8sDistribution", reportingInfo.K8sDistribution)
+		headers["X-Replicated-K8sDistribution"] = reportingInfo.K8sDistribution
 	}
+
+	return headers
 }
 
 func canReport(endpoint string) bool {

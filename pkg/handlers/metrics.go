@@ -10,11 +10,17 @@ import (
 	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/replicatedapp"
+	"github.com/replicatedhq/kots/pkg/reporting"
+	"github.com/replicatedhq/kots/pkg/session"
 	"github.com/replicatedhq/kots/pkg/store"
 )
 
 func (h *Handler) GetAppMetrics(w http.ResponseWriter, r *http.Request) {
-	JSON(w, http.StatusOK, "")
+	app := session.ContextGetApp(r)
+	reportingInfo := reporting.GetReportingInfo(app.ID)
+	headers := reporting.GetReportingInfoHeaders(reportingInfo)
+
+	JSON(w, http.StatusOK, headers)
 }
 
 type SendCustomAppMetricsRequest struct {
