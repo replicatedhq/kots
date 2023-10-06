@@ -58,6 +58,7 @@ type PullOptions struct {
 	RewriteImageOptions     registrytypes.RegistrySettings
 	SkipHelmChartCheck      bool
 	ReportWriter            io.Writer
+	AppID                   string
 	AppSlug                 string
 	AppSequence             int64
 	AppVersionLabel         string
@@ -286,6 +287,9 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 		IsOpenShift:         k8sutil.IsOpenShift(clientset),
 		IsGKEAutopilot:      k8sutil.IsGKEAutopilot(clientset),
 		IncludeMinio:        pullOptions.IncludeMinio,
+		IsAirgap:            pullOptions.AirgapRoot != "",
+		KotsadmID:           k8sutil.GetKotsadmID(clientset),
+		AppID:               pullOptions.AppID,
 	}
 	if err := upstream.WriteUpstream(u, writeUpstreamOptions); err != nil {
 		log.FinishSpinnerWithError()

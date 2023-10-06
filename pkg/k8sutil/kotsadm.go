@@ -9,6 +9,7 @@ import (
 	types "github.com/replicatedhq/kots/pkg/k8sutil/types"
 	kotsadmtypes "github.com/replicatedhq/kots/pkg/kotsadm/types"
 	"github.com/replicatedhq/kots/pkg/util"
+	"github.com/segmentio/ksuid"
 	corev1 "k8s.io/api/core/v1"
 	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -81,11 +82,23 @@ func IsKotsadmClusterScoped(ctx context.Context, clientset kubernetes.Interface,
 	return false
 }
 
-func GetKotsadmIDConfigMap() (*corev1.ConfigMap, error) {
-	clientset, err := GetClientset()
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to get clientset")
+func GetKotsadmID(clientset kubernetes.Interface) string {
+	var clusterID string
+	configMap, err := GetKotsadmIDConfigMap(clientset)
+	// if configmap is not found, generate a new guid and create a new configmap, if configmap is found, use the existing guid, otherwise generate
+	if err != nil && !kuberneteserrors.IsNotFound(err) {
+		clusterID = ksuid.New().String()
+	} else if configMap != nil {
+		clusterID = configMap.Data["id"]
+	} else {
+		// configmap is missing for some reason, recreate with new guid, this will appear as a new instance in the report
+		clusterID = ksuid.New().String()
+		CreateKotsadmIDConfigMap(clientset, clusterID)
 	}
+	return clusterID
+}
+
+func GetKotsadmIDConfigMap(clientset kubernetes.Interface) (*corev1.ConfigMap, error) {
 	namespace := util.PodNamespace
 	existingConfigmap, err := clientset.CoreV1().ConfigMaps(namespace).Get(context.TODO(), KotsadmIDConfigMapName, metav1.GetOptions{})
 	if err != nil && !kuberneteserrors.IsNotFound(err) {
@@ -96,12 +109,8 @@ func GetKotsadmIDConfigMap() (*corev1.ConfigMap, error) {
 	return existingConfigmap, nil
 }
 
-func CreateKotsadmIDConfigMap(kotsadmID string) error {
+func CreateKotsadmIDConfigMap(clientset kubernetes.Interface, kotsadmID string) error {
 	var err error = nil
-	clientset, err := GetClientset()
-	if err != nil {
-		return err
-	}
 	configmap := corev1.ConfigMap{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "v1",
@@ -136,11 +145,7 @@ func IsKotsadmIDConfigMapPresent() (bool, error) {
 	return true, nil
 }
 
-func UpdateKotsadmIDConfigMap(kotsadmID string) error {
-	clientset, err := GetClientset()
-	if err != nil {
-		return errors.Wrap(err, "failed to get clientset")
-	}
+func UpdateKotsadmIDConfigMap(clientset kubernetes.Interface, kotsadmID string) error {
 	namespace := util.PodNamespace
 	existingConfigMap, err := clientset.CoreV1().ConfigMaps(namespace).Get(context.TODO(), KotsadmIDConfigMapName, metav1.GetOptions{})
 	if err != nil && !kuberneteserrors.IsNotFound(err) {

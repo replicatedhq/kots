@@ -173,6 +173,7 @@ func UpdateAppFromPath(a *apptypes.App, airgapRoot string, airgapBundlePath stri
 		Silent:                 true,
 		RewriteImages:          true,
 		RewriteImageOptions:    registrySettings,
+		AppID:                  a.ID,
 		AppSlug:                a.Slug,
 		AppSequence:            appSequence,
 		SkipCompatibilityCheck: skipCompatibilityCheck,

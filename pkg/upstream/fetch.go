@@ -49,6 +49,7 @@ func downloadUpstream(upstreamURI string, fetchOptions *types.FetchOptions) (*ty
 			pickVersionIsRequired(fetchOptions),
 			pickReplicatedRegistryDomain(fetchOptions),
 			pickReplicatedProxyDomain(fetchOptions),
+			pickReplicatedChartNames(fetchOptions),
 			fetchOptions.AppSlug,
 			fetchOptions.AppSequence,
 			fetchOptions.Airgap != nil,
@@ -109,4 +110,11 @@ func pickCursor(fetchOptions *types.FetchOptions) replicatedapp.ReplicatedCursor
 		ChannelName: fetchOptions.CurrentChannelName,
 		Cursor:      fetchOptions.CurrentCursor,
 	}
+}
+
+func pickReplicatedChartNames(fetchOptions *types.FetchOptions) []string {
+	if fetchOptions.Airgap != nil {
+		return fetchOptions.Airgap.Spec.ReplicatedChartNames
+	}
+	return fetchOptions.CurrentReplicatedChartNames
 }
