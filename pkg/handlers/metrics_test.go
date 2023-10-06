@@ -19,12 +19,12 @@ import (
 func Test_validateCustomMetricsData(t *testing.T) {
 	tests := []struct {
 		name    string
-		data    ApplicationMetricsData
+		data    CustomAppMetricsData
 		wantErr bool
 	}{
 		{
 			name: "all values are valid",
-			data: ApplicationMetricsData{
+			data: CustomAppMetricsData{
 				"key1": "val1",
 				"key2": 6,
 				"key3": 6.6,
@@ -34,12 +34,12 @@ func Test_validateCustomMetricsData(t *testing.T) {
 		},
 		{
 			name:    "no data",
-			data:    ApplicationMetricsData{},
+			data:    CustomAppMetricsData{},
 			wantErr: true,
 		},
 		{
 			name: "array value",
-			data: ApplicationMetricsData{
+			data: CustomAppMetricsData{
 				"key1": 10,
 				"key2": []string{"val1", "val2"},
 			},
@@ -47,7 +47,7 @@ func Test_validateCustomMetricsData(t *testing.T) {
 		},
 		{
 			name: "map value",
-			data: ApplicationMetricsData{
+			data: CustomAppMetricsData{
 				"key1": 10,
 				"key2": map[string]string{"key1": "val1"},
 			},
@@ -75,7 +75,7 @@ func Test_validateCustomMetricsData(t *testing.T) {
 	}
 }
 
-func Test_SendCustomApplicationMetrics(t *testing.T) {
+func Test_SendCustomAppMetrics(t *testing.T) {
 	req := require.New(t)
 	customMetricsData := []byte(`{"data":{"key1_string":"val1","key2_int":5,"key3_float":1.5,"key4_numeric_string":"1.6"}}`)
 	appID := "app-id-123"
@@ -122,7 +122,7 @@ spec:
 
 	// Validate
 
-	handler.GetSendCustomApplicationMetricsHandler(mockStore)(clientWriter, clientRequest)
+	handler.GetSendCustomAppMetricsHandler(mockStore)(clientWriter, clientRequest)
 
 	req.Equal(http.StatusOK, clientWriter.Code)
 }
