@@ -16,7 +16,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func Test_validateCustomMetricsData(t *testing.T) {
+func Test_validateCustomAppMetricsData(t *testing.T) {
 	tests := []struct {
 		name    string
 		data    CustomAppMetricsData
@@ -65,7 +65,7 @@ func Test_validateCustomMetricsData(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			err := validateCustomMetricsData(test.data)
+			err := validateCustomAppMetricsData(test.data)
 			if test.wantErr {
 				require.Error(t, err)
 			} else {
