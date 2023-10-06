@@ -79,6 +79,10 @@ func validateCustomMetricsData(data ApplicationMetricsData) error {
 
 	for key, val := range data {
 		valType := reflect.TypeOf(val)
+		if valType == nil {
+			return errors.Errorf("%s value is nil, only scalar values are allowed", key)
+		}
+
 		switch valType.Kind() {
 		case reflect.Slice:
 			return errors.Errorf("%s value is an array, only scalar values are allowed", key)
