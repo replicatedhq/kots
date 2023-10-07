@@ -55,7 +55,7 @@ func Test_validateCustomAppMetricsData(t *testing.T) {
 		},
 		{
 			name: "nil value",
-			data: ApplicationMetricsData{
+			data: CustomAppMetricsData{
 				"key1": nil,
 				"key2": 4,
 			},
