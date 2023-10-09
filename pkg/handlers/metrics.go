@@ -10,16 +10,26 @@ import (
 	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/replicatedapp"
+	"github.com/replicatedhq/kots/pkg/reporting"
+	"github.com/replicatedhq/kots/pkg/session"
 	"github.com/replicatedhq/kots/pkg/store"
 )
 
-type SendCustomApplicationMetricsRequest struct {
-	Data ApplicationMetricsData `json:"data"`
+func (h *Handler) GetAppMetrics(w http.ResponseWriter, r *http.Request) {
+	app := session.ContextGetApp(r)
+	reportingInfo := reporting.GetReportingInfo(app.ID)
+	headers := reporting.GetReportingInfoHeaders(reportingInfo)
+
+	JSON(w, http.StatusOK, headers)
 }
 
-type ApplicationMetricsData map[string]interface{}
+type SendCustomAppMetricsRequest struct {
+	Data CustomAppMetricsData `json:"data"`
+}
 
-func (h *Handler) GetSendCustomApplicationMetricsHandler(kotsStore store.Store) http.HandlerFunc {
+type CustomAppMetricsData map[string]interface{}
+
+func (h *Handler) GetSendCustomAppMetricsHandler(kotsStore store.Store) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if kotsadm.IsAirgap() {
 			w.WriteHeader(http.StatusForbidden)
@@ -48,20 +58,20 @@ func (h *Handler) GetSendCustomApplicationMetricsHandler(kotsStore store.Store) 
 			return
 		}
 
-		request := SendCustomApplicationMetricsRequest{}
+		request := SendCustomAppMetricsRequest{}
 		if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
 			logger.Error(errors.Wrap(err, "decode request"))
 			w.WriteHeader(http.StatusBadRequest)
 			return
 		}
 
-		if err := validateCustomMetricsData(request.Data); err != nil {
+		if err := validateCustomAppMetricsData(request.Data); err != nil {
 			w.WriteHeader(http.StatusBadRequest)
 			w.Write([]byte(err.Error()))
 			return
 		}
 
-		err = replicatedapp.SendApplicationMetricsData(license, app, request.Data)
+		err = replicatedapp.SendCustomAppMetricsData(license, app, request.Data)
 		if err != nil {
 			logger.Error(errors.Wrap(err, "set application data"))
 			w.WriteHeader(http.StatusBadRequest)
@@ -72,7 +82,7 @@ func (h *Handler) GetSendCustomApplicationMetricsHandler(kotsStore store.Store) 
 	}
 }
 
-func validateCustomMetricsData(data ApplicationMetricsData) error {
+func validateCustomAppMetricsData(data CustomAppMetricsData) error {
 	if len(data) == 0 {
 		return errors.New("no data provided")
 	}

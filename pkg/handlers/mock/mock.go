@@ -598,6 +598,18 @@ func (mr *MockKOTSHandlerMockRecorder) GetAppIdentityServiceConfig(w, r interfac
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAppIdentityServiceConfig", reflect.TypeOf((*MockKOTSHandler)(nil).GetAppIdentityServiceConfig), w, r)
 }
 
+// GetAppMetrics mocks base method.
+func (m *MockKOTSHandler) GetAppMetrics(w http.ResponseWriter, r *http.Request) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "GetAppMetrics", w, r)
+}
+
+// GetAppMetrics indicates an expected call of GetAppMetrics.
+func (mr *MockKOTSHandlerMockRecorder) GetAppMetrics(w, r interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAppMetrics", reflect.TypeOf((*MockKOTSHandler)(nil).GetAppMetrics), w, r)
+}
+
 // GetAppRegistry mocks base method.
 func (m *MockKOTSHandler) GetAppRegistry(w http.ResponseWriter, r *http.Request) {
 	m.ctrl.T.Helper()
