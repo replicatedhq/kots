@@ -138,13 +138,18 @@ func initFromDownstream() error {
 		return errors.Wrap(err, "failed to check configmap")
 	}
 
+	clientset, err := k8sutil.GetClientset()
+	if err != nil {
+		return errors.Wrap(err, "failed to get clientset")
+	}
+
 	if isKotsadmIDGenerated && !cmpExists {
 		kotsadmID := ksuid.New().String()
-		err = k8sutil.CreateKotsadmIDConfigMap(kotsadmID)
+		err = k8sutil.CreateKotsadmIDConfigMap(clientset, kotsadmID)
 	} else if !isKotsadmIDGenerated && !cmpExists {
-		err = k8sutil.CreateKotsadmIDConfigMap(clusterID)
+		err = k8sutil.CreateKotsadmIDConfigMap(clientset, clusterID)
 	} else if !isKotsadmIDGenerated && cmpExists {
-		err = k8sutil.UpdateKotsadmIDConfigMap(clusterID)
+		err = k8sutil.UpdateKotsadmIDConfigMap(clientset, clusterID)
 	} else {
 		// id exists and so as configmap, noop
 	}
@@ -181,16 +186,7 @@ func GetReportingInfo(appID string) *types.ReportingInfo {
 	if util.IsHelmManaged() {
 		r.ClusterID = clusterID
 	} else {
-		configMap, err := k8sutil.GetKotsadmIDConfigMap()
-		if err != nil {
-			r.ClusterID = ksuid.New().String()
-		} else if configMap != nil {
-			r.ClusterID = configMap.Data["id"]
-		} else {
-			// configmap is missing for some reason, recreate with new guid, this will appear as a new instance in the report
-			r.ClusterID = ksuid.New().String()
-			k8sutil.CreateKotsadmIDConfigMap(r.ClusterID)
-		}
+		r.ClusterID = k8sutil.GetKotsadmID(clientset)
 
 		di, err := getDownstreamInfo(appID)
 		if err != nil {

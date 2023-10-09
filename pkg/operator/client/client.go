@@ -22,7 +22,6 @@ import (
 	appstatetypes "github.com/replicatedhq/kots/pkg/appstate/types"
 	"github.com/replicatedhq/kots/pkg/binaries"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
-	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/operator/applier"
 	operatortypes "github.com/replicatedhq/kots/pkg/operator/types"
@@ -32,6 +31,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/supportbundle"
 	supportbundletypes "github.com/replicatedhq/kots/pkg/supportbundle/types"
 	"github.com/replicatedhq/kots/pkg/util"
+	"github.com/replicatedhq/kotskinds/pkg/helmchart"
 	"go.uber.org/zap"
 )
 
@@ -57,19 +57,18 @@ type Client struct {
 	watchedNamespaces []string
 	imagePullSecrets  []string
 
-	appStateMonitor   *appstate.Monitor
-	HookStopChans     []chan struct{}
-	namespaceStopChan chan struct{}
-	ExistingInformers map[string]bool // namespaces map to invoke the Informer once during deploy
+	appStateMonitor       *appstate.Monitor
+	HookStopChans         []chan struct{}
+	namespaceStopChan     chan struct{}
+	ExistingHookInformers map[string]bool // namespaces map to invoke the Informer once during deploy
 }
 
 func (c *Client) Init() error {
-	if _, ok := c.ExistingInformers[c.TargetNamespace]; !ok {
-		c.ExistingInformers[c.TargetNamespace] = true
+	if _, ok := c.ExistingHookInformers[c.TargetNamespace]; !ok {
+		c.ExistingHookInformers[c.TargetNamespace] = true
 		if err := c.runHooksInformer(c.TargetNamespace); err != nil {
 			// we don't fail here...
-			log.Printf("error registering cleanup hooks for TargetNamespace: %s: %s",
-				c.TargetNamespace, err.Error())
+			log.Printf("error registering cleanup hooks for TargetNamespace: %s: %s", c.TargetNamespace, err.Error())
 		}
 	}
 
@@ -125,6 +124,45 @@ func (c *Client) runAppStateMonitor() error {
 	return errors.New("app state monitor shutdown")
 }
 
+func (c *Client) ApplyNamespacesInformer(namespaces []string, imagePullSecrets []string) {
+	for _, ns := range namespaces {
+		if ns == "*" {
+			continue
+		}
+		if err := c.ensureNamespacePresent(ns); err != nil {
+			// we don't fail here...
+			log.Printf("error creating namespace: %s", err.Error())
+		}
+		if err := c.ensureImagePullSecretsPresent(ns, imagePullSecrets); err != nil {
+			// we don't fail here...
+			log.Printf("error ensuring image pull secrets for namespace %s: %s", ns, err.Error())
+		}
+	}
+
+	c.imagePullSecrets = imagePullSecrets
+	c.watchedNamespaces = namespaces
+
+	c.shutdownNamespacesInformer()
+	if len(c.watchedNamespaces) > 0 {
+		c.runNamespacesInformer()
+	}
+}
+
+func (c *Client) ApplyHooksInformer(namespaces []string) {
+	for _, ns := range namespaces {
+		if ns == "*" {
+			continue
+		}
+		if _, ok := c.ExistingHookInformers[ns]; !ok {
+			c.ExistingHookInformers[ns] = true
+			if err := c.runHooksInformer(ns); err != nil {
+				// we don't fail here...
+				log.Printf("error registering cleanup hooks for namespace: %s: %s", ns, err.Error())
+			}
+		}
+	}
+}
+
 func (c *Client) DeployApp(deployArgs operatortypes.DeployAppArgs) (deployed bool, finalError error) {
 	log.Println("received a deploy request for", deployArgs.AppSlug)
 
@@ -158,11 +196,6 @@ func (c *Client) DeployApp(deployArgs operatortypes.DeployAppArgs) (deployed boo
 		helmResult.multiStderr = [][]byte{[]byte(helmError.Error())}
 		log.Printf("failed to deploy helm charts: %v", helmError)
 		return
-	}
-
-	c.shutdownNamespacesInformer()
-	if len(c.watchedNamespaces) > 0 {
-		c.runNamespacesInformer()
 	}
 
 	return
@@ -214,30 +247,6 @@ func (c *Client) deployManifests(deployArgs operatortypes.DeployAppArgs) (*deplo
 		}
 	}
 
-	for _, additionalNamespace := range deployArgs.AdditionalNamespaces {
-		if additionalNamespace == "*" {
-			continue
-		}
-		if err := c.ensureNamespacePresent(additionalNamespace); err != nil {
-			// we don't fail here...
-			log.Printf("error creating namespace: %s", err.Error())
-		}
-		if err := c.ensureImagePullSecretsPresent(additionalNamespace, deployArgs.ImagePullSecrets); err != nil {
-			// we don't fail here...
-			log.Printf("error ensuring image pull secrets for namespace %s: %s", additionalNamespace, err.Error())
-		}
-		if _, ok := c.ExistingInformers[additionalNamespace]; !ok {
-			c.ExistingInformers[additionalNamespace] = true
-			if err := c.runHooksInformer(additionalNamespace); err != nil {
-				// we don't fail here...
-				log.Printf("error registering cleanup hooks for additionalNamespace: %s: %s",
-					additionalNamespace, err.Error())
-			}
-		}
-	}
-	c.imagePullSecrets = deployArgs.ImagePullSecrets
-	c.watchedNamespaces = deployArgs.AdditionalNamespaces
-
 	result, err := c.ensureResourcesPresent(deployArgs)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to deploy")
@@ -276,7 +285,7 @@ func (c *Client) deployHelmCharts(deployArgs operatortypes.DeployAppArgs) (*comm
 	defer os.RemoveAll(curV1Beta2HelmDir)
 
 	// find removed charts
-	prevKotsV1Beta1Charts := []kotsutil.HelmChartInterface{}
+	prevKotsV1Beta1Charts := []helmchart.HelmChartInterface{}
 	if deployArgs.PreviousKotsKinds != nil && deployArgs.PreviousKotsKinds.V1Beta1HelmCharts != nil {
 		for _, kotsChart := range deployArgs.PreviousKotsKinds.V1Beta1HelmCharts.Items {
 			kc := kotsChart
@@ -284,7 +293,7 @@ func (c *Client) deployHelmCharts(deployArgs operatortypes.DeployAppArgs) (*comm
 		}
 	}
 
-	curV1Beta1KotsCharts := []kotsutil.HelmChartInterface{}
+	curV1Beta1KotsCharts := []helmchart.HelmChartInterface{}
 	if deployArgs.KotsKinds != nil && deployArgs.KotsKinds.V1Beta1HelmCharts != nil {
 		for _, kotsChart := range deployArgs.KotsKinds.V1Beta1HelmCharts.Items {
 			kc := kotsChart
@@ -292,7 +301,7 @@ func (c *Client) deployHelmCharts(deployArgs operatortypes.DeployAppArgs) (*comm
 		}
 	}
 
-	prevKotsV1Beta2Charts := []kotsutil.HelmChartInterface{}
+	prevKotsV1Beta2Charts := []helmchart.HelmChartInterface{}
 	if deployArgs.PreviousKotsKinds != nil && deployArgs.PreviousKotsKinds.V1Beta2HelmCharts != nil {
 		for _, kotsChart := range deployArgs.PreviousKotsKinds.V1Beta2HelmCharts.Items {
 			kc := kotsChart
@@ -300,7 +309,7 @@ func (c *Client) deployHelmCharts(deployArgs operatortypes.DeployAppArgs) (*comm
 		}
 	}
 
-	curV1Beta2KotsCharts := []kotsutil.HelmChartInterface{}
+	curV1Beta2KotsCharts := []helmchart.HelmChartInterface{}
 	if deployArgs.KotsKinds != nil && deployArgs.KotsKinds.V1Beta2HelmCharts != nil {
 		for _, kotsChart := range deployArgs.KotsKinds.V1Beta2HelmCharts.Items {
 			kc := kotsChart
@@ -437,7 +446,7 @@ func (c *Client) undeployManifests(undeployArgs operatortypes.UndeployAppArgs) e
 }
 
 func (c *Client) undeployHelmCharts(undeployArgs operatortypes.UndeployAppArgs) error {
-	kotsCharts := []kotsutil.HelmChartInterface{}
+	kotsCharts := []helmchart.HelmChartInterface{}
 	if undeployArgs.KotsKinds != nil {
 		if undeployArgs.KotsKinds.V1Beta1HelmCharts != nil {
 			for _, v1Beta1Chart := range undeployArgs.KotsKinds.V1Beta1HelmCharts.Items {

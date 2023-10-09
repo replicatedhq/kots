@@ -222,6 +222,7 @@ func DownloadUpdate(appID string, update types.Update, skipPreflights bool, skip
 		ExcludeAdminConsole:    true,
 		CreateAppDir:           false,
 		ReportWriter:           pipeWriter,
+		AppID:                  a.ID,
 		AppSlug:                a.Slug,
 		AppSequence:            appSequence,
 		IsGitOps:               a.IsGitOps,

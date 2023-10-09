@@ -5,7 +5,7 @@ import { rbacRoles } from "../../constants/rbac";
 import { getPercentageStatus, Utilities } from "../../utilities/utilities";
 import Icon from "../Icon";
 
-export default function NodeRow(props) {
+export default function KurlNodeRow(props) {
   const { node } = props;
 
   const DrainDeleteNode = () => {
@@ -59,7 +59,7 @@ export default function NodeRow(props) {
   };
 
   return (
-    <div className="flex flex-auto NodeRow--wrapper">
+    <div className="flex flex-auto KurlNodeRow--wrapper">
       <div className="flex-column flex1">
         <div className="flex flex-auto alignItems--center u-fontWeight--bold u-textColor--primary">
           <p className="u-fontSize--normal u-fontWeight--bold u-textColor--primary">
@@ -71,7 +71,7 @@ export default function NodeRow(props) {
             </span>
           )}
         </div>
-        <div className="flex flex1 alignItems--center u-marginTop--10 NodeRow--items">
+        <div className="flex flex1 alignItems--center u-marginTop--10 KurlNodeRow--items">
           <div className="flex-column flex1 u-marginRight--10">
             <p className="flex1 u-fontSize--small u-fontWeight--medium u-textColor--primary">
               <span
@@ -198,7 +198,7 @@ export default function NodeRow(props) {
             )}
           </div>
         </div>
-        <div className="flex flex1 alignItems--center u-marginTop--15 NodeRow--items">
+        <div className="flex flex1 alignItems--center u-marginTop--15 KurlNodeRow--items">
           <div className="flex-column flex1 u-marginRight--10">
             <p className="flex1 u-fontSize--small u-fontWeight--medium u-textColor--primary">
               <Icon icon="schedule-update" size={16} />

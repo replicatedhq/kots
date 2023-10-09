@@ -19,6 +19,7 @@ type Props = {
   isHelmManaged: boolean;
   isIdentityServiceSupported: boolean;
   isKurlEnabled: boolean;
+  isHelmVMEnabled: boolean;
   isSnapshotsSupported: boolean;
   logo: string | null;
   onLogoutError: (message: string) => void;
@@ -44,7 +45,6 @@ export class NavBar extends PureComponent<Props, State> {
 
   static propTypes = {
     refetchAppsList: PropTypes.func.isRequired,
-    history: PropTypes.object.isRequired,
   };
 
   handleLogOut = async (e: React.ChangeEvent) => {
@@ -144,6 +144,7 @@ export class NavBar extends PureComponent<Props, State> {
       className,
       fetchingMetadata,
       isKurlEnabled,
+      isHelmVMEnabled,
       isGitOpsSupported,
       isIdentityServiceSupported,
       appsList,
@@ -227,7 +228,7 @@ export class NavBar extends PureComponent<Props, State> {
                   </span>
                 </div>
               )}
-              {isKurlEnabled && (
+              {(isKurlEnabled || isHelmVMEnabled) && (
                 <div
                   className={classNames("NavItem u-position--relative flex", {
                     "is-active": selectedTab === "cluster_management",
