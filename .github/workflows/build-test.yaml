@@ -2484,6 +2484,23 @@ jobs:
           printf "App is still installed and is ready after the migration\n\n"
           ./bin/kots get apps --namespace "$APP_SLUG"
 
+      - name: Generate support bundle on failure
+        if: failure()
+        uses: ./.github/actions/generate-support-bundle
+        with:
+          kots-namespace: "$APP_SLUG"
+          aws-access-key-id: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_ACCESS_KEY_ID }}'
+          aws-secret-access-key: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_SECRET_ACCESS_KEY }}'
+
+      - name: Remove Cluster
+        id: remove-cluster
+        uses: replicatedhq/replicated-actions/remove-cluster@v1
+        if: ${{ always() && steps.create-cluster.outputs.cluster-id != '' }}
+        continue-on-error: true
+        with:
+          api-token: ${{ secrets.C11Y_MATRIX_TOKEN }}
+          cluster-id: ${{ steps.create-cluster.outputs.cluster-id }}
+
 
   validate-kots-helm-release-secret-migration:
     runs-on: ubuntu-20.04
