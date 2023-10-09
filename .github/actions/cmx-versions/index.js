@@ -46,6 +46,7 @@ async function getClusterVersions() {
             return;
         }
 
+        // TODO: add a `stage` field or something to versionsToTest so we can conditionally continue-on-error
         if (distroName === 'openshift') {
             // it was recommended to exclude 4.10.0-okd from testing for now
             distribution.versions = distribution.versions.filter((v) => v !== '4.10.0-okd');
