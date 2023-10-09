@@ -46,11 +46,10 @@ async function getClusterVersions() {
             return;
         }
 
-        // if (distroName === 'aks') {
-        //     // excluding aks for now
-        //     // TODO: add aks back in when we support some sort of filtering
-        //     return;
-        // }
+        if (distroName === 'openshift') {
+            // it was recommended to exclude 4.10.0-okd from testing for now
+            distribution.versions = distribution.versions.filter((v) => v !== '4.10.0-okd');
+        }
 
         const latestMinorVersions = {};
         distribution.versions.forEach((version) => {
