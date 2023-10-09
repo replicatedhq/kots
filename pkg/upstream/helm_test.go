@@ -13,6 +13,12 @@ import (
 )
 
 func Test_configureChart(t *testing.T) {
+	origPodNamespace := util.PodNamespace
+	util.PodNamespace = "test-namespace"
+	defer func() {
+		util.PodNamespace = origPodNamespace
+	}()
+
 	testReplicatedChartNames := []string{
 		"replicated",
 		"replicated-sdk",
@@ -375,6 +381,7 @@ global:
 some: value
 # and this comment as well
 
+additionalMetricsEndpoint: http://kotsadm.test-namespace.svc.cluster.local:3000/api/v1/app/metrics
 appID: app-id
 isAirgap: false
 replicatedID: kotsadm-id
@@ -459,6 +466,7 @@ versionLabel: 1.0.0
 some: value
 # and this comment as well
 
+additionalMetricsEndpoint: http://kotsadm.test-namespace.svc.cluster.local:3000/api/v1/app/metrics
 appID: app-id
 isAirgap: true
 replicatedID: kotsadm-id
@@ -570,6 +578,7 @@ image:
     - deployment/replicated
     - service/replicated
   versionLabel: 1.0.0
+  additionalMetricsEndpoint: http://kotsadm.test-namespace.svc.cluster.local:3000/api/v1/app/metrics
   appID: app-id
   isAirgap: false
   replicatedID: kotsadm-id
@@ -677,6 +686,7 @@ image:
     - deployment/replicated
     - service/replicated
   versionLabel: 1.0.0
+  additionalMetricsEndpoint: http://kotsadm.test-namespace.svc.cluster.local:3000/api/v1/app/metrics
   appID: app-id
   isAirgap: true
   license: |
@@ -851,6 +861,7 @@ global:
     - deployment/replicated
     - service/replicated
   versionLabel: 1.0.0
+  additionalMetricsEndpoint: http://kotsadm.test-namespace.svc.cluster.local:3000/api/v1/app/metrics
   appID: app-id
   isAirgap: false
   replicatedID: kotsadm-id
@@ -969,6 +980,7 @@ global:
     - deployment/replicated
     - service/replicated
   versionLabel: 1.0.0
+  additionalMetricsEndpoint: http://kotsadm.test-namespace.svc.cluster.local:3000/api/v1/app/metrics
   appID: app-id
   isAirgap: true
   license: |

@@ -17,6 +17,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/buildversion"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/upstream/types"
+	"github.com/replicatedhq/kots/pkg/util"
 	"gopkg.in/yaml.v3"
 )
 
@@ -268,10 +269,11 @@ func addReplicatedValues(doc *yaml.Node, replicatedChartName string, isSubchart 
 
 func buildReplicatedValues(u *types.Upstream, options types.WriteOptions) (map[string]interface{}, error) {
 	replicatedValues := map[string]interface{}{
-		"replicatedID": options.KotsadmID,
-		"appID":        options.AppID,
-		"userAgent":    buildversion.GetUserAgent(),
-		"isAirgap":     options.IsAirgap,
+		"replicatedID":              options.KotsadmID,
+		"appID":                     options.AppID,
+		"userAgent":                 buildversion.GetUserAgent(),
+		"isAirgap":                  options.IsAirgap,
+		"additionalMetricsEndpoint": fmt.Sprintf("%s/api/v1/app/metrics", fmt.Sprintf("http://kotsadm.%s.svc.cluster.local:3000", util.PodNamespace)),
 	}
 
 	// only add the license if this is an airgap install
