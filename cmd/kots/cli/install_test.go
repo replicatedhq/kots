@@ -223,7 +223,7 @@ var _ = Describe("Install", func() {
 		})
 
 		It("returns an error if the preflight collection results cannot be parsed", func() {
-			invalidPreflightCollection, err := json.Marshal(handlers.GetPreflightResultResponse{
+			invalidPreflightCollection, _ := json.Marshal(handlers.GetPreflightResultResponse{
 				PreflightProgress: `{invalid: json}`,
 				PreflightResult:   preflighttypes.PreflightResult{},
 			})
@@ -239,13 +239,13 @@ var _ = Describe("Install", func() {
 				),
 			)
 
-			err = ValidatePreflightStatus(validDeployOptions, authSlug, server.URL())
+			err := ValidatePreflightStatus(validDeployOptions, authSlug, server.URL())
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("failed to unmarshal collect progress for preflights"))
 		})
 
 		It("returns an error if the upload preflight results are invalid", func() {
-			invalidUploadPreflightResponse, err := json.Marshal(handlers.GetPreflightResultResponse{
+			invalidUploadPreflightResponse, _ := json.Marshal(handlers.GetPreflightResultResponse{
 				PreflightProgress: "",
 				PreflightResult: preflighttypes.PreflightResult{
 					Result: "{invalid: json}",
@@ -262,7 +262,7 @@ var _ = Describe("Install", func() {
 				),
 			)
 
-			err = ValidatePreflightStatus(validDeployOptions, authSlug, server.URL())
+			err := ValidatePreflightStatus(validDeployOptions, authSlug, server.URL())
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("failed to unmarshal upload preflight results"))
 		})

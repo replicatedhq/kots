@@ -201,7 +201,7 @@ func (h *Handler) StartPreflightChecks(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	archiveDir, err := ioutil.TempDir("", "kotsadm")
+	archiveDir, err := os.MkdirTemp("", "kotsadm")
 	if err != nil {
 		logger.Error(errors.Wrap(err, "failed to create temp dir"))
 		w.WriteHeader(http.StatusInternalServerError)
