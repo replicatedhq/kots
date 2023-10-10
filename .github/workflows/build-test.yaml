@@ -659,6 +659,7 @@ jobs:
       fail-fast: false
       matrix:
         cluster: ${{ fromJson(needs.cmx-versions.outputs.versions-to-test) }}
+    continue-on-error: ${{ matrix.cluster.stage != 'stable' }}
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -697,6 +698,7 @@ jobs:
       fail-fast: false
       matrix:
         cluster: ${{ fromJson(needs.cmx-versions.outputs.versions-to-test) }}
+    continue-on-error: ${{ matrix.cluster.stage != 'stable' }}
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -735,6 +737,7 @@ jobs:
       fail-fast: false
       matrix:
         cluster: ${{ fromJson(needs.cmx-versions.outputs.versions-to-test) }}
+    continue-on-error: ${{ matrix.cluster.stage != 'stable' }}
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -972,6 +975,7 @@ jobs:
       fail-fast: false
       matrix:
         cluster: ${{ fromJson(needs.cmx-versions.outputs.versions-to-test) }}
+    continue-on-error: ${{ matrix.cluster.stage != 'stable' }}
     env:
       APP_SLUG: minimal-rbac
       APP_VERSION_LABEL: "0.0.1"
@@ -1080,6 +1084,7 @@ jobs:
       fail-fast: false
       matrix:
         cluster: ${{ fromJson(needs.cmx-versions.outputs.versions-to-test) }}
+    continue-on-error: ${{ matrix.cluster.stage != 'stable' }}
     env:
       APP_SLUG: multi-namespace-yeti
     steps:
@@ -1191,6 +1196,7 @@ jobs:
       fail-fast: false
       matrix:
         cluster: ${{ fromJson(needs.cmx-versions.outputs.versions-to-test) }}
+    continue-on-error: ${{ matrix.cluster.stage != 'stable' }}
     env:
       APP_NAME: multi-namespace-yeti
       APP_SLUG: multi-namespace
@@ -1458,6 +1464,7 @@ jobs:
       fail-fast: false
       matrix:
         cluster: ${{ fromJson(needs.cmx-versions.outputs.versions-to-test) }}
+    continue-on-error: ${{ matrix.cluster.stage != 'stable' }}
     env:
       APP_SLUG: helm-install-order
     steps:
@@ -1555,6 +1562,7 @@ jobs:
       fail-fast: false
       matrix:
         cluster: ${{ fromJson(needs.cmx-versions.outputs.versions-to-test) }}
+    continue-on-error: ${{ matrix.cluster.stage != 'stable' }}
     env:
       APP_SLUG: yamlescape
     steps:
@@ -2371,6 +2379,7 @@ jobs:
       fail-fast: false
       matrix:
         cluster: ${{ fromJson(needs.cmx-versions.outputs.versions-to-test) }}
+    continue-on-error: ${{ matrix.cluster.stage != 'stable' }}
     env:
       APP_SLUG: postgres-to-rqlite
       BASE_KOTS_VERSION: v1.57.0

@@ -33,7 +33,7 @@ async function getClusterVersions() {
 
     // versions to test looks like this:
     // [
-    //   {distribution: k3s, version: v1.24},
+    //   {distribution: k3s, version: v1.24, stage: 'stable'},
     //   ...
     // ]
     const versionsToTest = [];
@@ -44,12 +44,6 @@ async function getClusterVersions() {
         if (distroName === 'helmvm' || distroName === 'kurl') {
             // excluding the embedded distributions
             return;
-        }
-
-        // TODO: add a `stage` field or something to versionsToTest so we can conditionally continue-on-error
-        if (distroName === 'openshift') {
-            // it was recommended to exclude 4.10.0-okd from testing for now
-            distribution.versions = distribution.versions.filter((v) => v !== '4.10.0-okd');
         }
 
         const latestMinorVersions = {};
@@ -71,7 +65,12 @@ async function getClusterVersions() {
         });
 
         Object.keys(latestMinorVersions[distroName]).forEach((minorVersion) => {
-            versionsToTest.push({ distribution: distroName, version: latestMinorVersions[distroName][minorVersion] });
+            let stage = 'stable';
+            if (distroName === 'openshift' && minorVersion === '4.10') {
+                stage = 'beta';
+            }
+
+            versionsToTest.push({ distribution: distroName, version: latestMinorVersions[distroName][minorVersion], stage });
         });
     });
 
