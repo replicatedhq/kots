@@ -7666,6 +7666,11 @@ async function getClusterVersions() {
             return;
         }
 
+        if (distroName === 'openshift') {
+            // filtering out all versions except 4.13.0-okd for now per sc-90893
+            distribution.versions = distribution.versions.filter((version) => version === '4.13.0-okd');
+        }
+
         const latestMinorVersions = {};
         distribution.versions.forEach((version) => {
             const parsed = semverCoerce(version);
@@ -7688,8 +7693,6 @@ async function getClusterVersions() {
             let stage = 'stable';
 
             if (distroName === 'aks') {
-                stage = 'alpha';
-            } else if (distroName === 'openshift' && minorVersion === '4.10') {
                 stage = 'alpha';
             }
 
