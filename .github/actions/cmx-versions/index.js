@@ -66,8 +66,11 @@ async function getClusterVersions() {
 
         Object.keys(latestMinorVersions[distroName]).forEach((minorVersion) => {
             let stage = 'stable';
-            if (distroName === 'openshift' && minorVersion === '4.10') {
-                stage = 'beta';
+
+            if (distroName === 'aks') {
+                stage = 'alpha';
+            } else if (distroName === 'openshift' && minorVersion === '4.10') {
+                stage = 'alpha';
             }
 
             versionsToTest.push({ distribution: distroName, version: latestMinorVersions[distroName][minorVersion], stage });
