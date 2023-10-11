@@ -45,7 +45,7 @@ func setPreflightResult(appID string, sequence int64, preflightResults *types.Pr
 // execute will execute the preflights using spec in preflightSpec.
 // This spec should be rendered, no template functions remaining
 func execute(appID string, sequence int64, preflightSpec *troubleshootv1beta2.Preflight, ignorePermissionErrors bool) (*types.PreflightResults, error) {
-	logger.Debug("executing preflight checks",
+	logger.Info("executing preflight checks",
 		zap.String("appID", appID),
 		zap.Int64("sequence", sequence))
 
@@ -65,7 +65,12 @@ func execute(appID string, sequence int64, preflightSpec *troubleshootv1beta2.Pr
 			if err, ok := msg.(error); ok {
 				logger.Errorf("error while running preflights: %v", err)
 			} else {
-				logger.Infof("preflight progress: %v", msg)
+				switch m := msg.(type) {
+				case preflight.CollectProgress:
+					logger.Infof("preflight progress: %s", m.String())
+				default:
+					logger.Infof("preflight progress: %+v", msg)
+				}
 			}
 
 			progress, ok := msg.(preflight.CollectProgress)
@@ -121,7 +126,7 @@ func execute(appID string, sequence int64, preflightSpec *troubleshootv1beta2.Pr
 		KubernetesRestConfig:   restConfig,
 	}
 
-	logger.Debug("preflight collect phase")
+	logger.Info("preflight collect phase")
 	collectResults, err := troubleshootpreflight.Collect(collectOpts, preflightSpec)
 	if err != nil && !isPermissionsError(err) {
 		preflightRunError = err
@@ -147,7 +152,7 @@ func execute(appID string, sequence int64, preflightSpec *troubleshootv1beta2.Pr
 		}
 		uploadPreflightResults.Errors = rbacErrors
 	} else {
-		logger.Debug("preflight analyze phase")
+		logger.Info("preflight analyze phase")
 		analyzeResults := collectResults.Analyze()
 
 		// the typescript api added some flair to this result

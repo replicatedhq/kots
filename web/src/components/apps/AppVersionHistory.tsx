@@ -56,7 +56,11 @@ type ReleaseWithError = {
 
 type Props = {
   outletContext: {
-    adminConsoleMetadata: { isAirgap: boolean; isKurl: boolean };
+    adminConsoleMetadata: {
+      isAirgap: boolean;
+      isKurl: boolean;
+      isHelmVM: boolean;
+    };
     app: App;
     displayErrorModal: boolean;
     isBundleUploading: boolean;

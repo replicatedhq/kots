@@ -23,6 +23,7 @@ import (
 	kotsv1beta1 "github.com/replicatedhq/kotskinds/apis/kots/v1beta1"
 	kotsv1beta2 "github.com/replicatedhq/kotskinds/apis/kots/v1beta2"
 	kotsscheme "github.com/replicatedhq/kotskinds/client/kotsclientset/scheme"
+	"github.com/replicatedhq/kotskinds/pkg/helmchart"
 	troubleshootv1beta2 "github.com/replicatedhq/troubleshoot/pkg/apis/troubleshoot/v1beta2"
 	troubleshootscheme "github.com/replicatedhq/troubleshoot/pkg/client/troubleshootclientset/scheme"
 	velerov1 "github.com/vmware-tanzu/velero/pkg/apis/velero/v1"
@@ -502,7 +503,7 @@ func getKotsKinds(u *upstreamtypes.Upstream) (*kotsutil.KotsKinds, error) {
 
 // FindHelmChartArchiveInRelease iterates through all files in the release (upstreamFiles), looking for a helm chart archive
 // that matches the chart name and version specified in the kotsHelmChart parameter
-func FindHelmChartArchiveInRelease(upstreamFiles []upstreamtypes.UpstreamFile, kotsHelmChart kotsutil.HelmChartInterface) ([]byte, error) {
+func FindHelmChartArchiveInRelease(upstreamFiles []upstreamtypes.UpstreamFile, kotsHelmChart helmchart.HelmChartInterface) ([]byte, error) {
 	for _, upstreamFile := range upstreamFiles {
 		if !isHelmChart(upstreamFile.Content) {
 			continue

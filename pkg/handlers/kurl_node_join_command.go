@@ -9,12 +9,12 @@ import (
 	"github.com/replicatedhq/kots/pkg/logger"
 )
 
-type GenerateNodeJoinCommandResponse struct {
+type GenerateKurlNodeJoinCommandResponse struct {
 	Command []string `json:"command"`
 	Expiry  string   `json:"expiry"`
 }
 
-func (h *Handler) GenerateNodeJoinCommandWorker(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) GenerateKurlNodeJoinCommandWorker(w http.ResponseWriter, r *http.Request) {
 	client, err := k8sutil.GetClientset()
 	if err != nil {
 		logger.Error(err)
@@ -28,13 +28,13 @@ func (h *Handler) GenerateNodeJoinCommandWorker(w http.ResponseWriter, r *http.R
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
-	JSON(w, http.StatusOK, GenerateNodeJoinCommandResponse{
+	JSON(w, http.StatusOK, GenerateKurlNodeJoinCommandResponse{
 		Command: command,
 		Expiry:  expiry.Format(time.RFC3339),
 	})
 }
 
-func (h *Handler) GenerateNodeJoinCommandMaster(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) GenerateKurlNodeJoinCommandMaster(w http.ResponseWriter, r *http.Request) {
 	client, err := k8sutil.GetClientset()
 	if err != nil {
 		logger.Error(err)
@@ -48,13 +48,13 @@ func (h *Handler) GenerateNodeJoinCommandMaster(w http.ResponseWriter, r *http.R
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
-	JSON(w, http.StatusOK, GenerateNodeJoinCommandResponse{
+	JSON(w, http.StatusOK, GenerateKurlNodeJoinCommandResponse{
 		Command: command,
 		Expiry:  expiry.Format(time.RFC3339),
 	})
 }
 
-func (h *Handler) GenerateNodeJoinCommandSecondary(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) GenerateKurlNodeJoinCommandSecondary(w http.ResponseWriter, r *http.Request) {
 	client, err := k8sutil.GetClientset()
 	if err != nil {
 		logger.Error(err)
@@ -68,13 +68,13 @@ func (h *Handler) GenerateNodeJoinCommandSecondary(w http.ResponseWriter, r *htt
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
-	JSON(w, http.StatusOK, GenerateNodeJoinCommandResponse{
+	JSON(w, http.StatusOK, GenerateKurlNodeJoinCommandResponse{
 		Command: command,
 		Expiry:  expiry.Format(time.RFC3339),
 	})
 }
 
-func (h *Handler) GenerateNodeJoinCommandPrimary(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) GenerateKurlNodeJoinCommandPrimary(w http.ResponseWriter, r *http.Request) {
 	client, err := k8sutil.GetClientset()
 	if err != nil {
 		logger.Error(err)
@@ -88,7 +88,7 @@ func (h *Handler) GenerateNodeJoinCommandPrimary(w http.ResponseWriter, r *http.
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
-	JSON(w, http.StatusOK, GenerateNodeJoinCommandResponse{
+	JSON(w, http.StatusOK, GenerateKurlNodeJoinCommandResponse{
 		Command: command,
 		Expiry:  expiry.Format(time.RFC3339),
 	})

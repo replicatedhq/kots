@@ -151,6 +151,7 @@ func CreateAppFromOnline(opts CreateOnlineAppOpts) (_ *kotsutil.KotsKinds, final
 		ConfigFile:             configFile,
 		IdentityConfigFile:     identityConfigFile,
 		ReportWriter:           pipeWriter,
+		AppID:                  opts.PendingApp.ID,
 		AppSlug:                opts.PendingApp.Slug,
 		AppSequence:            0,
 		AppVersionLabel:        opts.PendingApp.VersionLabel,

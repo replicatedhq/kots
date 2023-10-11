@@ -3,11 +3,11 @@ package upstream
 import (
 	"bytes"
 	"encoding/base64"
-	"io/ioutil"
 	"os"
 	"path"
 
 	"github.com/pkg/errors"
+	"github.com/replicatedhq/kots/pkg/archives"
 	"github.com/replicatedhq/kots/pkg/crypto"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/upstream/types"
@@ -39,7 +39,7 @@ func WriteUpstream(u *types.Upstream, options types.WriteOptions) error {
 	if err == nil {
 		_, err = os.Stat(path.Join(renderDir, "userdata", "installation.yaml"))
 		if err == nil {
-			c, err := ioutil.ReadFile(path.Join(renderDir, "userdata", "installation.yaml"))
+			c, err := os.ReadFile(path.Join(renderDir, "userdata", "installation.yaml"))
 			if err != nil {
 				return errors.Wrap(err, "failed to read existing installation")
 			}
@@ -100,7 +100,16 @@ func WriteUpstream(u *types.Upstream, options types.WriteOptions) error {
 			u.Files[i] = file
 		}
 
-		if err := ioutil.WriteFile(fileRenderPath, file.Content, 0644); err != nil {
+		if archives.IsTGZ(file.Content) {
+			updatedContent, err := configureChart(file.Content, u, options)
+			if err != nil {
+				return errors.Wrap(err, "failed to configure replicated sdk")
+			}
+			file.Content = updatedContent
+			u.Files[i] = file
+		}
+
+		if err := os.WriteFile(fileRenderPath, file.Content, 0644); err != nil {
 			return errors.Wrap(err, "failed to write upstream file")
 		}
 	}
@@ -131,6 +140,7 @@ func WriteUpstream(u *types.Upstream, options types.WriteOptions) error {
 			ReleaseNotes:             u.ReleaseNotes,
 			ReplicatedRegistryDomain: u.ReplicatedRegistryDomain,
 			ReplicatedProxyDomain:    u.ReplicatedProxyDomain,
+			ReplicatedChartNames:     u.ReplicatedChartNames,
 			EncryptionKey:            encryptionKey,
 		},
 	}
@@ -147,7 +157,7 @@ func WriteUpstream(u *types.Upstream, options types.WriteOptions) error {
 	}
 
 	installationBytes := kotsutil.MustMarshalInstallation(&installation)
-	err = ioutil.WriteFile(path.Join(renderDir, "userdata", "installation.yaml"), installationBytes, 0644)
+	err = os.WriteFile(path.Join(renderDir, "userdata", "installation.yaml"), installationBytes, 0644)
 	if err != nil {
 		return errors.Wrap(err, "failed to write installation")
 	}

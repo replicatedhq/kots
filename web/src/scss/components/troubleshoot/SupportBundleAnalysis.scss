@@ -402,9 +402,14 @@
   }
 }
 
-.ActiveDownstreamVersionRow--wrapper .icon.u-iconFullArrowGray {
-  margin-left: 10px;
-  top: 2px;
+.RedactorReportRow--wrapper {
+  padding: 12px;
+  border-top: 1px solid #dfdfdf;
+
+  .icon.u-iconFullArrowGray {
+    margin-left: 100px;
+    top: 20px;
+  }
 }
 
 /* ≥ 960px */

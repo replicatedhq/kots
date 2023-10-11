@@ -3,7 +3,7 @@ import classNames from "classnames";
 import dayjs from "dayjs";
 import { KotsPageTitle } from "@components/Head";
 import CodeSnippet from "../shared/CodeSnippet";
-import NodeRow from "./NodeRow";
+import KurlNodeRow from "./KurlNodeRow";
 import Loader from "../shared/Loader";
 import { rbacRoles } from "../../constants/rbac";
 import { Utilities } from "../../utilities/utilities";
@@ -11,10 +11,10 @@ import { Repeater } from "../../utilities/repeater";
 import ErrorModal from "../modals/ErrorModal";
 import Modal from "react-modal";
 
-import "@src/scss/components/apps/ClusterNodes.scss";
+import "@src/scss/components/apps/KurlClusterManagement.scss";
 import Icon from "../Icon";
 
-export class ClusterNodes extends Component {
+export class KurlClusterManagement extends Component {
   state = {
     generating: false,
     command: "",
@@ -287,7 +287,7 @@ export class ClusterNodes extends Component {
       );
     }
     return (
-      <div className="ClusterNodes--wrapper container flex-column flex1 u-overflow--auto u-paddingTop--50">
+      <div className="KurlClusterManagement--wrapper container flex-column flex1 u-overflow--auto u-paddingTop--50">
         <KotsPageTitle pageName="Cluster Management" />
         <div className="flex-column flex1 alignItems--center">
           <div className="flex1 flex-column centered-container">
@@ -298,7 +298,7 @@ export class ClusterNodes extends Component {
               <div className="flex1 u-overflow--auto">
                 {kurl?.nodes &&
                   kurl?.nodes.map((node, i) => (
-                    <NodeRow
+                    <KurlNodeRow
                       key={i}
                       node={node}
                       drainingNodeName={this.state.drainingNodeName}
@@ -545,4 +545,4 @@ export class ClusterNodes extends Component {
   }
 }
 
-export default ClusterNodes;
+export default KurlClusterManagement;

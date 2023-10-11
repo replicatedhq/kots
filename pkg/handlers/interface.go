@@ -130,13 +130,20 @@ type KOTSHandler interface {
 	GetVeleroStatus(w http.ResponseWriter, r *http.Request)
 
 	// KURL
-	GenerateNodeJoinCommandWorker(w http.ResponseWriter, r *http.Request)
-	GenerateNodeJoinCommandMaster(w http.ResponseWriter, r *http.Request)
-	GenerateNodeJoinCommandSecondary(w http.ResponseWriter, r *http.Request)
-	GenerateNodeJoinCommandPrimary(w http.ResponseWriter, r *http.Request)
-	DrainNode(w http.ResponseWriter, r *http.Request)
-	DeleteNode(w http.ResponseWriter, r *http.Request)
+	GenerateKurlNodeJoinCommandWorker(w http.ResponseWriter, r *http.Request)
+	GenerateKurlNodeJoinCommandMaster(w http.ResponseWriter, r *http.Request)
+	GenerateKurlNodeJoinCommandSecondary(w http.ResponseWriter, r *http.Request)
+	GenerateKurlNodeJoinCommandPrimary(w http.ResponseWriter, r *http.Request)
+	DrainKurlNode(w http.ResponseWriter, r *http.Request)
+	DeleteKurlNode(w http.ResponseWriter, r *http.Request)
 	GetKurlNodes(w http.ResponseWriter, r *http.Request)
+
+	// HelmVM
+	GenerateHelmVMNodeJoinCommandSecondary(w http.ResponseWriter, r *http.Request)
+	GenerateHelmVMNodeJoinCommandPrimary(w http.ResponseWriter, r *http.Request)
+	DrainHelmVMNode(w http.ResponseWriter, r *http.Request)
+	DeleteHelmVMNode(w http.ResponseWriter, r *http.Request)
+	GetHelmVMNodes(w http.ResponseWriter, r *http.Request)
 
 	// Prometheus
 	SetPrometheusAddress(w http.ResponseWriter, r *http.Request)
@@ -155,4 +162,7 @@ type KOTSHandler interface {
 	// Helm
 	IsHelmManaged(w http.ResponseWriter, r *http.Request)
 	GetAppValuesFile(w http.ResponseWriter, r *http.Request)
+
+	// APIs available to applications (except legacy /license/v1/license)
+	GetAppMetrics(w http.ResponseWriter, r *http.Request)
 }

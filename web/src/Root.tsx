@@ -9,7 +9,8 @@ import GitOps from "./components/clusters/GitOps";
 import PreflightResultPage from "./components/PreflightResultPage";
 import AppConfig from "./features/AppConfig/components/AppConfig";
 import { AppDetailPage } from "./components/apps/AppDetailPage";
-import ClusterNodes from "./components/apps/ClusterNodes";
+import KurlClusterManagement from "./components/apps/KurlClusterManagement";
+import HelmVMClusterManagement from "./components/apps/HelmVMClusterManagement";
 import UnsupportedBrowser from "./components/static/UnsupportedBrowser";
 import NotFound from "./components/static/NotFound";
 import { Utilities, parseUpstreamUri } from "./utilities/utilities";
@@ -465,6 +466,7 @@ const Root = () => {
             refetchAppsList={getAppsList}
             fetchingMetadata={state.fetchingMetadata}
             isKurlEnabled={Boolean(state.adminConsoleMetadata?.isKurl)}
+            isHelmVMEnabled={Boolean(state.adminConsoleMetadata?.isHelmVM)}
             isGitOpsSupported={isGitOpsSupported()}
             isIdentityServiceSupported={isIdentityServiceSupported()}
             appsList={state.appsList}
@@ -573,7 +575,13 @@ const Root = () => {
               <Route path="/unsupported" element={<UnsupportedBrowser />} />
               <Route
                 path="/cluster/manage"
-                element={<ClusterNodes appName={state.selectedAppName} />}
+                element={
+                  state.adminConsoleMetadata?.isKurl ? (
+                    <KurlClusterManagement appName={state.selectedAppName} />
+                  ) : (
+                    <HelmVMClusterManagement appName={state.selectedAppName} />
+                  )
+                }
               />
               <Route
                 path="/gitops"

@@ -172,7 +172,7 @@ func getApplicationMetadataFromHost(host string, endpoint string, upstream *url.
 	return respBody, nil
 }
 
-func SendApplicationMetricsData(license *kotsv1beta1.License, app *apptypes.App, data map[string]interface{}) error {
+func SendCustomAppMetricsData(license *kotsv1beta1.License, app *apptypes.App, data map[string]interface{}) error {
 	url := fmt.Sprintf("%s/application/custom-metrics", license.Spec.Endpoint)
 
 	payload := struct {

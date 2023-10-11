@@ -8,6 +8,7 @@ import (
 	"io/ioutil"
 	"math"
 	"net/http"
+	"os"
 	"strconv"
 	"time"
 
@@ -140,7 +141,7 @@ func getNodeMetrics(nodeIP string) (*statsv1alpha1.Summary, error) {
 	port := 10255
 
 	// only use mutual TLS if client cert exists
-	_, err := ioutil.ReadFile("/etc/kubernetes/pki/kubelet/client.crt")
+	_, err := os.ReadFile("/etc/kubernetes/pki/kubelet/client.crt")
 	if err == nil {
 		cert, err := tls.LoadX509KeyPair("/etc/kubernetes/pki/kubelet/client.crt", "/etc/kubernetes/pki/kubelet/client.key")
 		if err != nil {

@@ -227,6 +227,7 @@ func CreateAppFromAirgap(opts CreateAirgapAppOpts) (finalError error) {
 			Password:   opts.RegistryPassword,
 			IsReadOnly: opts.RegistryIsReadOnly,
 		},
+		AppID:                  opts.PendingApp.ID,
 		AppSlug:                opts.PendingApp.Slug,
 		AppSequence:            0,
 		AppVersionLabel:        instParams.AppVersionLabel,

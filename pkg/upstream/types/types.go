@@ -27,6 +27,7 @@ type Upstream struct {
 	Type                     string
 	Files                    []UpstreamFile
 	UpdateCursor             string
+	License                  *kotsv1beta1.License
 	ChannelID                string
 	ChannelName              string
 	VersionLabel             string
@@ -35,6 +36,7 @@ type Upstream struct {
 	ReleasedAt               *time.Time
 	ReplicatedRegistryDomain string
 	ReplicatedProxyDomain    string
+	ReplicatedChartNames     []string
 	EncryptionKey            string
 }
 
@@ -67,6 +69,9 @@ type WriteOptions struct {
 	NoProxyEnvValue      string
 	IsMinimalRBAC        bool
 	AdditionalNamespaces []string
+	IsAirgap             bool
+	KotsadmID            string
+	AppID                string
 	// This should be set to true when updating due to license sync, config update, registry settings update.
 	// and should be false when it's an upstream update.
 	// When true, the channel name in Installation yaml will not be changed.
@@ -98,6 +103,7 @@ type FetchOptions struct {
 	CurrentVersionIsRequired        bool
 	CurrentReplicatedRegistryDomain string
 	CurrentReplicatedProxyDomain    string
+	CurrentReplicatedChartNames     []string
 	ChannelChanged                  bool
 	AppSlug                         string
 	AppSequence                     int64

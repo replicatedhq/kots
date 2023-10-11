@@ -55,6 +55,7 @@ type Release struct {
 	ReleasedAt               *time.Time
 	ReplicatedRegistryDomain string
 	ReplicatedProxyDomain    string
+	ReplicatedChartNames     []string
 	Manifests                map[string][]byte
 }
 
@@ -125,6 +126,7 @@ func downloadReplicated(
 	isRequired bool,
 	replicatedRegistryDomain string,
 	replicatedProxyDomain string,
+	replicatedChartNames []string,
 	appSlug string,
 	appSequence int64,
 	isAirgap bool,
@@ -136,7 +138,7 @@ func downloadReplicated(
 	var release *Release
 
 	if localPath != "" {
-		parsedLocalRelease, err := readReplicatedAppFromLocalPath(localPath, updateCursor, versionLabel, isRequired, replicatedRegistryDomain, replicatedProxyDomain)
+		parsedLocalRelease, err := readReplicatedAppFromLocalPath(localPath, updateCursor, versionLabel, isRequired, replicatedRegistryDomain, replicatedProxyDomain, replicatedChartNames)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to read replicated app from local path")
 		}
@@ -287,6 +289,7 @@ func downloadReplicated(
 		Files:                    files,
 		Type:                     "replicated",
 		UpdateCursor:             release.UpdateCursor.Cursor,
+		License:                  license,
 		ChannelID:                channelID,
 		ChannelName:              channelName,
 		VersionLabel:             release.VersionLabel,
@@ -295,12 +298,13 @@ func downloadReplicated(
 		ReleasedAt:               release.ReleasedAt,
 		ReplicatedRegistryDomain: release.ReplicatedRegistryDomain,
 		ReplicatedProxyDomain:    release.ReplicatedProxyDomain,
+		ReplicatedChartNames:     release.ReplicatedChartNames,
 	}
 
 	return upstream, nil
 }
 
-func readReplicatedAppFromLocalPath(localPath string, localCursor replicatedapp.ReplicatedCursor, versionLabel string, isRequired bool, replicatedRegistryDomain string, replicatedProxyDomain string) (*Release, error) {
+func readReplicatedAppFromLocalPath(localPath string, localCursor replicatedapp.ReplicatedCursor, versionLabel string, isRequired bool, replicatedRegistryDomain string, replicatedProxyDomain string, replicatedChartNames []string) (*Release, error) {
 	release := Release{
 		Manifests:                make(map[string][]byte),
 		UpdateCursor:             localCursor,
@@ -308,6 +312,7 @@ func readReplicatedAppFromLocalPath(localPath string, localCursor replicatedapp.
 		IsRequired:               isRequired,
 		ReplicatedRegistryDomain: replicatedRegistryDomain,
 		ReplicatedProxyDomain:    replicatedProxyDomain,
+		ReplicatedChartNames:     replicatedChartNames,
 	}
 
 	err := filepath.Walk(localPath,
@@ -370,6 +375,7 @@ func downloadReplicatedApp(replicatedUpstream *replicatedapp.ReplicatedUpstream,
 	releasedAtStr := getResp.Header.Get("X-Replicated-ReleasedAt")
 	replicatedRegistryDomain := getResp.Header.Get("X-Replicated-ReplicatedRegistryDomain")
 	replicatedProxyDomain := getResp.Header.Get("X-Replicated-ReplicatedProxyDomain")
+	replicatedChartNamesStr := getResp.Header.Get("X-Replicated-ReplicatedChartNames")
 
 	var releasedAt *time.Time
 	r, err := time.Parse(time.RFC3339, releasedAtStr)
@@ -378,6 +384,11 @@ func downloadReplicatedApp(replicatedUpstream *replicatedapp.ReplicatedUpstream,
 	}
 
 	isRequired, _ := strconv.ParseBool(isRequiredStr)
+
+	var replicatedChartNames []string
+	if replicatedChartNamesStr != "" {
+		replicatedChartNames = strings.Split(replicatedChartNamesStr, ",")
+	}
 
 	gzf, err := gzip.NewReader(getResp.Body)
 	if err != nil {
@@ -396,6 +407,7 @@ func downloadReplicatedApp(replicatedUpstream *replicatedapp.ReplicatedUpstream,
 		ReleasedAt:               releasedAt,
 		ReplicatedRegistryDomain: replicatedRegistryDomain,
 		ReplicatedProxyDomain:    replicatedProxyDomain,
+		ReplicatedChartNames:     replicatedChartNames,
 		// NOTE: release notes come from Application spec
 	}
 	tarReader := tar.NewReader(gzf)
