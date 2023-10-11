@@ -21,18 +21,22 @@ var (
 )
 
 type Installer struct {
-	imageRegistry  string
-	imageNamespace string
-	imageTag       string
-	airgap         bool
+	imageRegistry     string
+	imageNamespace    string
+	imageTag          string
+	airgap            bool
+	dockerhubUsername string
+	dockerhubPassword string
 }
 
-func NewInstaller(imageRegistry, imageNamespace, imageTag string, airgap bool) *Installer {
+func NewInstaller(imageRegistry, imageNamespace, imageTag string, airgap bool, dockerhubUsername string, dockerhubPassword string) *Installer {
 	return &Installer{
-		imageRegistry:  imageRegistry,
-		imageNamespace: imageNamespace,
-		imageTag:       imageTag,
-		airgap:         airgap,
+		imageRegistry:     imageRegistry,
+		imageNamespace:    imageNamespace,
+		imageTag:          imageTag,
+		airgap:            airgap,
+		dockerhubUsername: dockerhubUsername,
+		dockerhubPassword: dockerhubPassword,
 	}
 }
 
@@ -40,6 +44,10 @@ func (i *Installer) Install(kubeconfig string, test inventory.Test, adminConsole
 	session, err := i.install(kubeconfig, test)
 	Expect(err).WithOffset(1).Should(Succeed(), "Kots install failed")
 	Eventually(session).WithOffset(1).WithTimeout(InstallWaitDuration).Should(gexec.Exit(0), "Kots install failed with non-zero exit code")
+
+	session, err = i.ensureSecret(kubeconfig, test)
+	Expect(err).WithOffset(1).Should(Succeed(), "Kots docker ensure-secret failed")
+	Eventually(session).WithOffset(1).WithTimeout(InstallWaitDuration).Should(gexec.Exit(0), "Kots docker ensure-secret failed with non-zero exit code")
 
 	return i.AdminConsolePortForward(kubeconfig, test, adminConsolePort)
 }
@@ -59,6 +67,19 @@ func (i *Installer) AdminConsolePortForward(kubeconfig string, test inventory.Te
 	}
 	Expect(err).WithOffset(1).Should(Succeed(), "port forward")
 	return adminConsolePort
+}
+
+func (i *Installer) ensureSecret(kubeconfig string, test inventory.Test) (*gexec.Session, error) {
+	args := []string{
+		"docker",
+		"ensure-secret",
+		fmt.Sprintf("--kubeconfig=%s", kubeconfig),
+		fmt.Sprintf("--dockerhub-username=%s", i.dockerhubUsername),
+		fmt.Sprintf("--dockerhub-password=%s", i.dockerhubPassword),
+		fmt.Sprintf("--namespace=%s", test.Namespace),
+	}
+
+	return util.RunCommand(exec.Command("kots", args...))
 }
 
 func (i *Installer) install(kubeconfig string, test inventory.Test) (*gexec.Session, error) {

@@ -47,6 +47,12 @@ inputs:
   kots-helm-chart-version:
     description: 'KOTS Helm chart version'
     required: false
+  kots-dockerhub-username:
+    description: 'KOTS Dockerhub username'
+    required: false
+  kots-dockerhub-password:
+    description: 'KOTS Dockerhub password'
+    required: false
   kots-airgap:
     description: 'Run KOTS with the --airgap flag'
     default: "false"
@@ -61,9 +67,6 @@ inputs:
     description: 'AWS region for uploading support bundle'
     default: 'us-east-1'
     required: false
-  gke-service-key:
-    description: 'Service key to authenticate a Google Cloud service account'
-    required: false
   replicated-api-token:
     description: 'Replicated API token for C11y matrix'
     required: false
@@ -76,12 +79,6 @@ outputs:
 runs:
   using: "composite"
   steps:
-    - name: Create a GKE cluster
-      if: inputs.k8s-distribution == 'gke'
-      uses: ./.github/actions/kots-gke-create
-      with:
-        service-key: ${{ inputs.gke-service-key }}
-
     - name: Create a local k3s cluster
       if: inputs.k8s-distribution == 'k3s-local'
       uses: replicatedhq/action-k3s@main
@@ -91,7 +88,7 @@ runs:
     - name: Create a c11y matrix cluster 
       id: create-cluster 
       uses: replicatedhq/replicated-actions/create-cluster@v1
-      if: ${{ inputs.k8s-distribution == 'k3s' || inputs.k8s-distribution == 'kind' || inputs.k8s-distribution == 'eks' }}
+      if: ${{ inputs.k8s-distribution != 'k3s-local' }}
       with: 
         api-token: ${{ inputs.replicated-api-token }}
         kubernetes-distribution: ${{ inputs.k8s-distribution }}
@@ -99,6 +96,7 @@ runs:
         cluster-name: automated-kots-${{ github.run_id }}-${{ inputs.k8s-distribution }}-${{ inputs.k8s-version }}
         timeout-minutes: '120'
         ttl: ${{ inputs.k8s-cluster-ttl }}
+        instance-type: ${{ inputs.k8s-distribution == 'gke' && 'n2-standard-4' || inputs.k8s-distribution == 'kind' && 'r1.medium' || '' }}
         export-kubeconfig: true
 
     - name: execute suite "${{ inputs.test-focus }}"
@@ -115,7 +113,10 @@ runs:
           KOTSADM_IMAGE_TAG=${{ inputs.kotsadm-image-tag }} \
           KOTS_HELM_CHART_URL=${{ inputs.kots-helm-chart-url }} \
           KOTS_HELM_CHART_VERSION=${{ inputs.kots-helm-chart-version }} \
+          KOTS_DOCKERHUB_USERNAME=${{ inputs.kots-dockerhub-username }} \
+          KOTS_DOCKERHUB_PASSWORD=${{ inputs.kots-dockerhub-password }} \
           AIRGAP=${{ inputs.kots-airgap }} \
+          IS_OPENSHIFT=${{ inputs.k8s-distribution == 'openshift' && 'true' || 'false' }} \
           SKIP_TEARDOWN=1
       shell: bash
 
@@ -158,9 +159,3 @@ runs:
       with:
         api-token: ${{ inputs.replicated-api-token }}
         cluster-id: ${{ steps.create-cluster.outputs.cluster-id }}
-
-    - name: Delete GKE cluster if created
-      if: ${{ always() && inputs.platform == 'gke' }}
-      uses: ./.github/actions/kots-gke-delete
-      with:
-        service-key: ${{ inputs.gke-service-key }}

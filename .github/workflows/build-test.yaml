@@ -600,6 +600,22 @@ jobs:
           repo-token: ${{ secrets.GITHUB_TOKEN }}
           allow-repeats: false
 
+  
+  cmx-versions:
+    runs-on: ubuntu-20.04
+    needs: [ enable-tests, can-run-ci ]
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      - name: get CMX versions to test
+        id: cmx-versions-to-test
+        uses: ./.github/actions/cmx-versions
+        with:
+          replicated-api-token: ${{ secrets.C11Y_MATRIX_TOKEN }}
+    outputs:
+      versions-to-test: ${{ steps.cmx-versions-to-test.outputs.versions-to-test }}
+
 
   validate-existing-online-install-minimal:
     runs-on: ubuntu-20.04
@@ -632,19 +648,18 @@ jobs:
           aws-access-key-id: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_ACCESS_KEY_ID }}'
           aws-secret-access-key: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_SECRET_ACCESS_KEY }}'
           replicated-api-token: '${{ secrets.C11Y_MATRIX_TOKEN }}'
+          kots-dockerhub-username: '${{ secrets.E2E_DOCKERHUB_USERNAME }}'
+          kots-dockerhub-password: '${{ secrets.E2E_DOCKERHUB_PASSWORD }}'
 
 
   validate-smoke-test:
     runs-on: ubuntu-20.04
-    needs: [ enable-tests, can-run-ci, build-push-kotsadm-image, build-e2e, build-kurl-proxy, build-migrations, push-minio, push-mc, push-rqlite ]
+    needs: [ enable-tests, can-run-ci, cmx-versions, build-push-kotsadm-image, build-e2e, build-kurl-proxy, build-migrations, push-minio, push-mc, push-rqlite ]
     strategy:
       fail-fast: false
       matrix:
-        cluster: [
-          {distribution: k3s, version: v1.25},
-          {distribution: k3s, version: v1.26},
-          {distribution: eks, version: v1.27}
-        ]
+        cluster: ${{ fromJson(needs.cmx-versions.outputs.versions-to-test) }}
+    continue-on-error: ${{ matrix.cluster.stage != 'stable' }}
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -672,19 +687,18 @@ jobs:
           aws-access-key-id: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_ACCESS_KEY_ID }}'
           aws-secret-access-key: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_SECRET_ACCESS_KEY }}'
           replicated-api-token: '${{ secrets.C11Y_MATRIX_TOKEN }}'
+          kots-dockerhub-username: '${{ secrets.E2E_DOCKERHUB_USERNAME }}'
+          kots-dockerhub-password: '${{ secrets.E2E_DOCKERHUB_PASSWORD }}'
 
 
   validate-minimal-rbac:
     runs-on: ubuntu-20.04
-    needs: [ enable-tests, can-run-ci, build-push-kotsadm-image, build-e2e, build-kurl-proxy, build-migrations, push-minio, push-mc, push-rqlite ]
+    needs: [ enable-tests, can-run-ci, cmx-versions, build-push-kotsadm-image, build-e2e, build-kurl-proxy, build-migrations, push-minio, push-mc, push-rqlite ]
     strategy:
       fail-fast: false
       matrix:
-        cluster: [
-          {distribution: k3s, version: v1.25},
-          {distribution: k3s, version: v1.26},
-          {distribution: eks, version: v1.27}
-        ]
+        cluster: ${{ fromJson(needs.cmx-versions.outputs.versions-to-test) }}
+    continue-on-error: ${{ matrix.cluster.stage != 'stable' }}
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -712,19 +726,18 @@ jobs:
           aws-access-key-id: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_ACCESS_KEY_ID }}'
           aws-secret-access-key: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_SECRET_ACCESS_KEY }}'
           replicated-api-token: '${{ secrets.C11Y_MATRIX_TOKEN }}'
+          kots-dockerhub-username: '${{ secrets.E2E_DOCKERHUB_USERNAME }}'
+          kots-dockerhub-password: '${{ secrets.E2E_DOCKERHUB_PASSWORD }}'
 
 
   validate-backup-and-restore:
     runs-on: ubuntu-20.04
-    needs: [ enable-tests, can-run-ci, build-push-kotsadm-image, build-e2e, build-kurl-proxy, build-migrations, push-minio, push-mc, push-rqlite ]
+    needs: [ enable-tests, can-run-ci, cmx-versions, build-push-kotsadm-image, build-e2e, build-kurl-proxy, build-migrations, push-minio, push-mc, push-rqlite ]
     strategy:
       fail-fast: false
       matrix:
-        cluster: [
-          {distribution: k3s, version: v1.25},
-          {distribution: k3s, version: v1.26},
-          {distribution: eks, version: v1.27}
-        ]
+        cluster: ${{ fromJson(needs.cmx-versions.outputs.versions-to-test) }}
+    continue-on-error: ${{ matrix.cluster.stage != 'stable' }}
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -752,6 +765,8 @@ jobs:
           aws-access-key-id: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_ACCESS_KEY_ID }}'
           aws-secret-access-key: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_SECRET_ACCESS_KEY }}'
           replicated-api-token: '${{ secrets.C11Y_MATRIX_TOKEN }}'
+          kots-dockerhub-username: '${{ secrets.E2E_DOCKERHUB_USERNAME }}'
+          kots-dockerhub-password: '${{ secrets.E2E_DOCKERHUB_PASSWORD }}'
 
 
   validate-no-required-config:
@@ -790,6 +805,8 @@ jobs:
           aws-access-key-id: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_ACCESS_KEY_ID }}'
           aws-secret-access-key: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_SECRET_ACCESS_KEY }}'
           replicated-api-token: '${{ secrets.C11Y_MATRIX_TOKEN }}'
+          kots-dockerhub-username: '${{ secrets.E2E_DOCKERHUB_USERNAME }}'
+          kots-dockerhub-password: '${{ secrets.E2E_DOCKERHUB_PASSWORD }}'
 
 
   validate-strict-preflight-checks:
@@ -828,6 +845,8 @@ jobs:
           aws-access-key-id: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_ACCESS_KEY_ID }}'
           aws-secret-access-key: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_SECRET_ACCESS_KEY }}'
           replicated-api-token: '${{ secrets.C11Y_MATRIX_TOKEN }}'
+          kots-dockerhub-username: '${{ secrets.E2E_DOCKERHUB_USERNAME }}'
+          kots-dockerhub-password: '${{ secrets.E2E_DOCKERHUB_PASSWORD }}'
 
 
   validate-config:
@@ -866,6 +885,8 @@ jobs:
           aws-access-key-id: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_ACCESS_KEY_ID }}'
           aws-secret-access-key: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_SECRET_ACCESS_KEY }}'
           replicated-api-token: '${{ secrets.C11Y_MATRIX_TOKEN }}'
+          kots-dockerhub-username: '${{ secrets.E2E_DOCKERHUB_USERNAME }}'
+          kots-dockerhub-password: '${{ secrets.E2E_DOCKERHUB_PASSWORD }}'
 
 
   validate-version-history-pagination:
@@ -903,6 +924,8 @@ jobs:
           testim-branch: ${{ github.head_ref == 'main' && 'master' || github.head_ref }}
           aws-access-key-id: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_ACCESS_KEY_ID }}'
           aws-secret-access-key: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_SECRET_ACCESS_KEY }}'
+          kots-dockerhub-username: '${{ secrets.E2E_DOCKERHUB_USERNAME }}'
+          kots-dockerhub-password: '${{ secrets.E2E_DOCKERHUB_PASSWORD }}'
 
 
   validate-change-license:
@@ -941,19 +964,18 @@ jobs:
           aws-access-key-id: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_ACCESS_KEY_ID }}'
           aws-secret-access-key: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_SECRET_ACCESS_KEY }}'
           replicated-api-token: '${{ secrets.C11Y_MATRIX_TOKEN }}'
+          kots-dockerhub-username: '${{ secrets.E2E_DOCKERHUB_USERNAME }}'
+          kots-dockerhub-password: '${{ secrets.E2E_DOCKERHUB_PASSWORD }}'
 
 
   validate-minimal-rbac-override:
     runs-on: ubuntu-20.04
-    needs: [ enable-tests, can-run-ci, build-push-kotsadm-image, build-kurl-proxy, build-migrations, push-minio, push-mc, push-rqlite ]
+    needs: [ enable-tests, can-run-ci, cmx-versions, build-push-kotsadm-image, build-e2e, build-kurl-proxy, build-migrations, push-minio, push-mc, push-rqlite ]
     strategy:
       fail-fast: false
       matrix:
-        cluster: [
-          {distribution: k3s, version: v1.25},
-          {distribution: k3s, version: v1.26},
-          {distribution: kind, version: v1.27.0}
-        ] 
+        cluster: ${{ fromJson(needs.cmx-versions.outputs.versions-to-test) }}
+    continue-on-error: ${{ matrix.cluster.stage != 'stable' }}
     env:
       APP_SLUG: minimal-rbac
       APP_VERSION_LABEL: "0.0.1"
@@ -971,6 +993,7 @@ jobs:
           cluster-name: automated-kots-${{ github.run_id }}-${{ matrix.cluster.distribution }}-${{ matrix.cluster.version }}
           timeout-minutes: '120'
           ttl: 2h
+          instance-type: ${{ matrix.cluster.distribution == 'gke' && 'n2-standard-4' || '' }}
           export-kubeconfig: true
 
       - name: download kots binary
@@ -981,9 +1004,13 @@ jobs:
 
       - run: chmod +x bin/kots
 
+      - name: create namespace and dockerhub secret
+        run: |
+          kubectl create ns "$APP_SLUG"
+          kubectl create secret docker-registry kotsadm-dockerhub --docker-server index.docker.io --docker-username "${{ secrets.E2E_DOCKERHUB_USERNAME }}" --docker-password "${{ secrets.E2E_DOCKERHUB_PASSWORD }}" --namespace "$APP_SLUG"
+
       - name: minimal rbac override on command line
         run: |
-          kubectl delete ns "$APP_SLUG" --ignore-not-found
           ./bin/kots \
             install "$APP_SLUG/automated" \
             --app-version-label "$APP_VERSION_LABEL" \
@@ -1004,9 +1031,15 @@ jobs:
             echo "Found kotsadm cluster roles in minimal RBAC install"
             exit
           fi
-      - name: no minimal rbac override on command line
+
+      - name: create namespace and dockerhub secret
         run: |
           kubectl delete ns "$APP_SLUG" --ignore-not-found
+          kubectl create ns "$APP_SLUG"
+          kubectl create secret docker-registry kotsadm-dockerhub --docker-server index.docker.io --docker-username "${{ secrets.E2E_DOCKERHUB_USERNAME }}" --docker-password "${{ secrets.E2E_DOCKERHUB_PASSWORD }}" --namespace "$APP_SLUG"
+
+      - name: no minimal rbac override on command line
+        run: |
           ./bin/kots \
             install "$APP_SLUG/automated" \
             --app-version-label "$APP_VERSION_LABEL" \
@@ -1046,15 +1079,12 @@ jobs:
 
   validate-multi-namespace:
     runs-on: ubuntu-20.04
-    needs: [ enable-tests, can-run-ci, build-push-kotsadm-image, build-kurl-proxy, build-migrations, push-minio, push-mc, push-rqlite ]
+    needs: [ enable-tests, can-run-ci, cmx-versions, build-push-kotsadm-image, build-e2e, build-kurl-proxy, build-migrations, push-minio, push-mc, push-rqlite ]
     strategy:
       fail-fast: false
       matrix:
-        cluster: [
-          {distribution: k3s, version: v1.25},
-          {distribution: k3s, version: v1.26},
-          {distribution: kind, version: v1.27.0}
-        ] 
+        cluster: ${{ fromJson(needs.cmx-versions.outputs.versions-to-test) }}
+    continue-on-error: ${{ matrix.cluster.stage != 'stable' }}
     env:
       APP_SLUG: multi-namespace-yeti
     steps:
@@ -1075,6 +1105,7 @@ jobs:
           cluster-name: automated-kots-${{ github.run_id }}-${{ matrix.cluster.distribution }}-${{ matrix.cluster.version }}
           timeout-minutes: '120'
           ttl: 2h
+          instance-type: ${{ matrix.cluster.distribution == 'gke' && 'n2-standard-4' || '' }}
           export-kubeconfig: true
 
       - name: download kots binary
@@ -1084,6 +1115,11 @@ jobs:
           path: bin/
 
       - run: chmod +x bin/kots
+
+      - name: create namespace and dockerhub secret
+        run: |
+          kubectl create ns "$APP_SLUG"
+          kubectl create secret docker-registry kotsadm-dockerhub --docker-server index.docker.io --docker-username "${{ secrets.E2E_DOCKERHUB_USERNAME }}" --docker-password "${{ secrets.E2E_DOCKERHUB_PASSWORD }}" --namespace "$APP_SLUG"
 
       - name: run the test
         run: |
@@ -1111,7 +1147,7 @@ jobs:
           COUNTER=1
           while [ "$(./bin/kots get apps --namespace "$APP_SLUG" | awk 'NR>1{print $2}')" != "ready" ]; do
             ((COUNTER += 1))
-            if [ $COUNTER -gt 120 ]; then
+            if [ $COUNTER -gt 180 ]; then
               echo "Timed out waiting for app to be ready"
               ./bin/kots get apps --namespace "$APP_SLUG"
               echo "kotsadm logs:"
@@ -1153,98 +1189,14 @@ jobs:
           cluster-id: ${{ steps.create-cluster.outputs.cluster-id }}
 
 
-  validate-gke-install:
-    runs-on: ubuntu-20.04
-    needs: [ enable-tests, can-run-ci, build-kots, build-kurl-proxy, build-migrations, push-minio, push-mc, push-rqlite ]
-    env:
-      APP_SLUG: helm-install-order
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v3
-
-      - name: Create cluster
-        uses: ./.github/actions/kots-gke-create
-        with:
-          service-key: ${{ secrets.GOOGLE_CLOUD_CREDENTIALS }}
-
-      - name: download kots binary
-        uses: actions/download-artifact@v3
-        with:
-          name: kots
-          path: bin/
-
-      - run: chmod +x bin/kots
-
-      - name: reserve capacity
-        run: |
-          # https://cloud.google.com/kubernetes-engine/docs/how-to/capacity-provisioning
-          kubectl apply -f ./.github/actions/kots-gke-create/reserve-capacity.yaml
-          sleep 10
-          kubectl wait pod -l app=capacity-res-job --for=condition=Ready --timeout=600s --all
-
-      - name: run the test
-        run: |
-          set +e
-          echo ${{ secrets.HELM_INSTALL_ORDER_LICENSE }} | base64 -d > license.yaml
-          ./bin/kots \
-            install "$APP_SLUG/automated" \
-            --license-file license.yaml \
-            --no-port-forward \
-            --namespace "$APP_SLUG" \
-            --shared-password password \
-            --kotsadm-registry ttl.sh \
-            --kotsadm-namespace automated-${{ github.run_id }} \
-            --wait-duration 5m \
-            --kotsadm-tag 24h
-
-          EXIT_CODE=$?
-          if [ $EXIT_CODE -ne 0 ]; then
-            echo "------pods:"
-            kubectl -n "$APP_SLUG" get pods
-            echo "------kotsadm logs"
-            kubectl logs -l app=kotsadm --tail=100 --namespace "$APP_SLUG"
-            exit $EXIT_CODE
-          fi
-
-          COUNTER=1
-          while [ "$(./bin/kots get apps --namespace "$APP_SLUG" | awk 'NR>1{print $2}')" != "ready" ]; do
-            ((COUNTER += 1))
-            if [ $COUNTER -gt 600 ]; then
-              echo "Timed out waiting for app to be ready"
-              ./bin/kots get apps --namespace "$APP_SLUG"
-              echo "kotsadm logs:"
-              kubectl logs -l app=kotsadm --tail=100 --namespace "$APP_SLUG"
-              exit 1
-            fi
-            sleep 1
-          done
-
-      - name: Generate support bundle on failure
-        if: failure()
-        uses: ./.github/actions/generate-support-bundle
-        with:
-          kots-namespace: "$APP_SLUG"
-          aws-access-key-id: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_ACCESS_KEY_ID }}'
-          aws-secret-access-key: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_SECRET_ACCESS_KEY }}'
-
-      - name: Delete the GKE cluster
-        if: always()
-        uses: ./.github/actions/kots-gke-delete
-        with:
-          service-key: ${{ secrets.GOOGLE_CLOUD_CREDENTIALS }}
-
-
   validate-kots-pull:
     runs-on: ubuntu-20.04
-    needs: [ enable-tests, can-run-ci, build-push-kotsadm-image, build-kurl-proxy, build-migrations, push-minio, push-mc, push-rqlite ]
+    needs: [ enable-tests, can-run-ci, cmx-versions, build-push-kotsadm-image, build-e2e, build-kurl-proxy, build-migrations, push-minio, push-mc, push-rqlite ]
     strategy:
       fail-fast: false
       matrix:
-        cluster: [
-          {distribution: k3s, version: v1.25},
-          {distribution: k3s, version: v1.26},
-          {distribution: kind, version: v1.27.0}
-        ]
+        cluster: ${{ fromJson(needs.cmx-versions.outputs.versions-to-test) }}
+    continue-on-error: ${{ matrix.cluster.stage != 'stable' }}
     env:
       APP_NAME: multi-namespace-yeti
       APP_SLUG: multi-namespace
@@ -1262,6 +1214,7 @@ jobs:
           cluster-name: automated-kots-${{ github.run_id }}-${{ matrix.cluster.distribution }}-${{ matrix.cluster.version }}
           timeout-minutes: '120'
           ttl: 2h
+          instance-type: ${{ matrix.cluster.distribution == 'gke' && 'n2-standard-4' || '' }}
           export-kubeconfig: true
 
       - name: download kots binary
@@ -1271,6 +1224,11 @@ jobs:
           path: bin/
 
       - run: chmod +x bin/kots
+
+      - name: create namespace and dockerhub secret
+        run: |
+          kubectl create ns "$APP_NAME"
+          kubectl create secret docker-registry kotsadm-dockerhub --docker-server index.docker.io --docker-username "${{ secrets.E2E_DOCKERHUB_USERNAME }}" --docker-password "${{ secrets.E2E_DOCKERHUB_PASSWORD }}" --namespace "$APP_NAME"
 
       - name: run kots pull
         run: |
@@ -1377,6 +1335,11 @@ jobs:
           path: bin/
 
       - run: chmod +x bin/kots
+
+      - name: create namespace and dockerhub secret
+        run: |
+          kubectl create ns "$APP_SLUG"
+          kubectl create secret docker-registry kotsadm-dockerhub --docker-server index.docker.io --docker-username "${{ secrets.E2E_DOCKERHUB_USERNAME }}" --docker-password "${{ secrets.E2E_DOCKERHUB_PASSWORD }}" --namespace "$APP_SLUG"
 
       - name: test kots install with version label
         run: |
@@ -1496,15 +1459,12 @@ jobs:
 
   validate-helm-install-order:
     runs-on: ubuntu-20.04
-    needs: [ enable-tests, can-run-ci, build-push-kotsadm-image, build-kurl-proxy, build-migrations, push-minio, push-mc, push-rqlite ]
+    needs: [ enable-tests, can-run-ci, cmx-versions, build-push-kotsadm-image, build-e2e, build-kurl-proxy, build-migrations, push-minio, push-mc, push-rqlite ]
     strategy:
       fail-fast: false
       matrix:
-        cluster: [
-          {distribution: k3s, version: v1.25},
-          {distribution: k3s, version: v1.26},
-          {distribution: kind, version: v1.27.0}
-        ] 
+        cluster: ${{ fromJson(needs.cmx-versions.outputs.versions-to-test) }}
+    continue-on-error: ${{ matrix.cluster.stage != 'stable' }}
     env:
       APP_SLUG: helm-install-order
     steps:
@@ -1521,6 +1481,7 @@ jobs:
           cluster-name: automated-kots-${{ github.run_id }}-${{ matrix.cluster.distribution }}-${{ matrix.cluster.version }}
           timeout-minutes: '120'
           ttl: 2h
+          instance-type: ${{ matrix.cluster.distribution == 'gke' && 'n2-standard-4' || '' }}
           export-kubeconfig: true
 
       - name: download kots binary
@@ -1530,6 +1491,11 @@ jobs:
           path: bin/
 
       - run: chmod +x bin/kots
+
+      - name: create namespace and dockerhub secret
+        run: |
+          kubectl create ns "$APP_SLUG"
+          kubectl create secret docker-registry kotsadm-dockerhub --docker-server index.docker.io --docker-username "${{ secrets.E2E_DOCKERHUB_USERNAME }}" --docker-password "${{ secrets.E2E_DOCKERHUB_PASSWORD }}" --namespace "$APP_SLUG"
 
       - name: run the test
         run: |
@@ -1591,15 +1557,12 @@ jobs:
 
   validate-yamlescape:
     runs-on: ubuntu-20.04
-    needs: [ enable-tests, can-run-ci, build-push-kotsadm-image, build-kurl-proxy, build-migrations, push-minio, push-mc, push-rqlite ]
+    needs: [ enable-tests, can-run-ci, cmx-versions, build-push-kotsadm-image, build-e2e, build-kurl-proxy, build-migrations, push-minio, push-mc, push-rqlite ]
     strategy:
       fail-fast: false
       matrix:
-        cluster: [
-          {distribution: k3s, version: v1.25},
-          {distribution: k3s, version: v1.26},
-          {distribution: kind, version: v1.27.0}
-        ] 
+        cluster: ${{ fromJson(needs.cmx-versions.outputs.versions-to-test) }}
+    continue-on-error: ${{ matrix.cluster.stage != 'stable' }}
     env:
       APP_SLUG: yamlescape
     steps:
@@ -1616,6 +1579,7 @@ jobs:
           cluster-name: automated-kots-${{ github.run_id }}-${{ matrix.cluster.distribution }}-${{ matrix.cluster.version }}
           timeout-minutes: '120'
           ttl: 2h
+          instance-type: ${{ matrix.cluster.distribution == 'gke' && 'n2-standard-4' || '' }}
           export-kubeconfig: true
 
       - name: download kots binary
@@ -1625,6 +1589,11 @@ jobs:
           path: bin/
 
       - run: chmod +x bin/kots
+
+      - name: create namespace and dockerhub secret
+        run: |
+          kubectl create ns "$APP_SLUG"
+          kubectl create secret docker-registry kotsadm-dockerhub --docker-server index.docker.io --docker-username "${{ secrets.E2E_DOCKERHUB_USERNAME }}" --docker-password "${{ secrets.E2E_DOCKERHUB_PASSWORD }}" --namespace "$APP_SLUG"
 
       - name: run the test
         run: |
@@ -1718,6 +1687,11 @@ jobs:
           path: bin/
 
       - run: chmod +x bin/kots
+
+      - name: create namespace and dockerhub secret
+        run: |
+          kubectl create ns "$APP_SLUG"
+          kubectl create secret docker-registry kotsadm-dockerhub --docker-server index.docker.io --docker-username "${{ secrets.E2E_DOCKERHUB_USERNAME }}" --docker-password "${{ secrets.E2E_DOCKERHUB_PASSWORD }}" --namespace "$APP_SLUG"
 
       - name: run the test
         run: |
@@ -1834,6 +1808,11 @@ jobs:
           path: bin/
 
       - run: chmod +x bin/kots
+
+      - name: create namespace and dockerhub secret
+        run: |
+          kubectl create ns "$APP_SLUG"
+          kubectl create secret docker-registry kotsadm-dockerhub --docker-server index.docker.io --docker-username "${{ secrets.E2E_DOCKERHUB_USERNAME }}" --docker-password "${{ secrets.E2E_DOCKERHUB_PASSWORD }}" --namespace "$APP_SLUG"
 
       - name: run the test
         run: |
@@ -1969,6 +1948,8 @@ jobs:
           aws-access-key-id: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_ACCESS_KEY_ID }}'
           aws-secret-access-key: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_SECRET_ACCESS_KEY }}'
           replicated-api-token: '${{ secrets.C11Y_MATRIX_TOKEN }}'
+          kots-dockerhub-username: '${{ secrets.E2E_DOCKERHUB_USERNAME }}'
+          kots-dockerhub-password: '${{ secrets.E2E_DOCKERHUB_PASSWORD }}'
 
 
   validate-kots-push-images-anonymous:
@@ -2230,6 +2211,8 @@ jobs:
           aws-access-key-id: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_ACCESS_KEY_ID }}'
           aws-secret-access-key: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_SECRET_ACCESS_KEY }}'
           replicated-api-token: '${{ secrets.C11Y_MATRIX_TOKEN }}'
+          kots-dockerhub-username: '${{ secrets.E2E_DOCKERHUB_USERNAME }}'
+          kots-dockerhub-password: '${{ secrets.E2E_DOCKERHUB_PASSWORD }}'
           k8s-cluster-skip-teardown: true
 
       - name: validate that kots install fails early
@@ -2295,6 +2278,8 @@ jobs:
           aws-access-key-id: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_ACCESS_KEY_ID }}'
           aws-secret-access-key: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_SECRET_ACCESS_KEY }}'
           replicated-api-token: '${{ secrets.C11Y_MATRIX_TOKEN }}'
+          kots-dockerhub-username: '${{ secrets.E2E_DOCKERHUB_USERNAME }}'
+          kots-dockerhub-password: '${{ secrets.E2E_DOCKERHUB_PASSWORD }}'
           k8s-cluster-skip-teardown: true
 
       - name: validate that kots install fails early
@@ -2360,6 +2345,8 @@ jobs:
           aws-access-key-id: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_ACCESS_KEY_ID }}'
           aws-secret-access-key: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_SECRET_ACCESS_KEY }}'
           replicated-api-token: '${{ secrets.C11Y_MATRIX_TOKEN }}'
+          kots-dockerhub-username: '${{ secrets.E2E_DOCKERHUB_USERNAME }}'
+          kots-dockerhub-password: '${{ secrets.E2E_DOCKERHUB_PASSWORD }}'
           k8s-cluster-skip-teardown: true
 
       - name: validate that kots install fails early
@@ -2387,15 +2374,12 @@ jobs:
 
   validate-kots-upgrade:
     runs-on: ubuntu-20.04
-    needs: [ enable-tests, can-run-ci, build-push-kotsadm-image, build-kurl-proxy, build-migrations, push-minio, push-mc, push-rqlite ]
+    needs: [ enable-tests, can-run-ci, cmx-versions, build-push-kotsadm-image, build-e2e, build-kurl-proxy, build-migrations, push-minio, push-mc, push-rqlite ]
     strategy:
       fail-fast: false
       matrix:
-        cluster: [
-          {distribution: k3s, version: v1.25},
-          {distribution: k3s, version: v1.26},
-          {distribution: kind, version: v1.27.0}
-        ] 
+        cluster: ${{ fromJson(needs.cmx-versions.outputs.versions-to-test) }}
+    continue-on-error: ${{ matrix.cluster.stage != 'stable' }}
     env:
       APP_SLUG: postgres-to-rqlite
       BASE_KOTS_VERSION: v1.57.0
@@ -2413,6 +2397,7 @@ jobs:
           cluster-name: automated-kots-${{ github.run_id }}-${{ matrix.cluster.distribution }}-${{ matrix.cluster.version }}
           timeout-minutes: '120'
           ttl: 2h
+          instance-type: ${{ matrix.cluster.distribution == 'gke' && 'n2-standard-4' || '' }}
           export-kubeconfig: true
 
       - name: download base kots version
@@ -2428,6 +2413,11 @@ jobs:
           path: bin/
 
       - run: chmod +x bin/kots
+
+      - name: create namespace and dockerhub secret
+        run: |
+          kubectl create ns "$APP_SLUG"
+          kubectl create secret docker-registry kotsadm-dockerhub --docker-server index.docker.io --docker-username "${{ secrets.E2E_DOCKERHUB_USERNAME }}" --docker-password "${{ secrets.E2E_DOCKERHUB_PASSWORD }}" --namespace "$APP_SLUG"
 
       - name: run the test
         run: |
@@ -2564,6 +2554,11 @@ jobs:
           path: bin/
 
       - run: chmod +x bin/kots
+
+      - name: create namespace and dockerhub secret
+        run: |
+          kubectl create ns "$APP_SLUG"
+          kubectl create secret docker-registry kotsadm-dockerhub --docker-server index.docker.io --docker-username "${{ secrets.E2E_DOCKERHUB_USERNAME }}" --docker-password "${{ secrets.E2E_DOCKERHUB_PASSWORD }}" --namespace "$APP_SLUG"
 
       - name: run the test
         run: |
@@ -2739,6 +2734,9 @@ jobs:
           aws-access-key-id: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_ACCESS_KEY_ID }}'
           aws-secret-access-key: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_SECRET_ACCESS_KEY }}'
           replicated-api-token: '${{ secrets.C11Y_MATRIX_TOKEN }}'
+          kots-dockerhub-username: '${{ secrets.E2E_DOCKERHUB_USERNAME }}'
+          kots-dockerhub-password: '${{ secrets.E2E_DOCKERHUB_PASSWORD }}'
+
 
   validate-multi-app-install:
     runs-on: ubuntu-20.04
@@ -2776,6 +2774,8 @@ jobs:
           aws-access-key-id: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_ACCESS_KEY_ID }}'
           aws-secret-access-key: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_SECRET_ACCESS_KEY }}'
           replicated-api-token: '${{ secrets.C11Y_MATRIX_TOKEN }}'
+          kots-dockerhub-username: '${{ secrets.E2E_DOCKERHUB_USERNAME }}'
+          kots-dockerhub-password: '${{ secrets.E2E_DOCKERHUB_PASSWORD }}'
 
 
   validate-airgap-smoke-test:
@@ -2815,6 +2815,8 @@ jobs:
           aws-access-key-id: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_ACCESS_KEY_ID }}'
           aws-secret-access-key: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_SECRET_ACCESS_KEY }}'
           replicated-api-token: '${{ secrets.C11Y_MATRIX_TOKEN }}'
+          kots-dockerhub-username: '${{ secrets.E2E_DOCKERHUB_USERNAME }}'
+          kots-dockerhub-password: '${{ secrets.E2E_DOCKERHUB_PASSWORD }}'
 
 
   validate-remove-app:
@@ -2852,6 +2854,11 @@ jobs:
           path: bin/
 
       - run: chmod +x bin/kots
+
+      - name: create namespace and dockerhub secret
+        run: |
+          kubectl create ns "$APP_SLUG"
+          kubectl create secret docker-registry kotsadm-dockerhub --docker-server index.docker.io --docker-username "${{ secrets.E2E_DOCKERHUB_USERNAME }}" --docker-password "${{ secrets.E2E_DOCKERHUB_PASSWORD }}" --namespace "$APP_SLUG"
 
       - name: run the test
         run: |
@@ -3127,6 +3134,11 @@ jobs:
 
       - run: chmod +x bin/kots
 
+      - name: create namespace and dockerhub secret
+        run: |
+          kubectl create ns "$APP_SLUG"
+          kubectl create secret docker-registry kotsadm-dockerhub --docker-server index.docker.io --docker-username "${{ secrets.E2E_DOCKERHUB_USERNAME }}" --docker-password "${{ secrets.E2E_DOCKERHUB_PASSWORD }}" --namespace "$APP_SLUG"
+
       - name: run the test
         run: |
           set +e
@@ -3289,7 +3301,6 @@ jobs:
             sleep 1
           done
 
-
       - name: Generate support bundle on failure
         if: failure()
         uses: ./.github/actions/generate-support-bundle
@@ -3346,6 +3357,11 @@ jobs:
           path: bin/
 
       - run: chmod +x bin/kots
+
+      - name: create namespace and dockerhub secret
+        run: |
+          kubectl create ns "$APP_SLUG"
+          kubectl create secret docker-registry kotsadm-dockerhub --docker-server index.docker.io --docker-username "${{ secrets.E2E_DOCKERHUB_USERNAME }}" --docker-password "${{ secrets.E2E_DOCKERHUB_PASSWORD }}" --namespace "$APP_SLUG"
 
       - name: run the test
         run: |
@@ -3453,7 +3469,6 @@ jobs:
             exit 1
           fi
 
-
       - name: Generate support bundle on failure
         if: failure()
         uses: ./.github/actions/generate-support-bundle
@@ -3509,7 +3524,6 @@ jobs:
       - validate-kots-upgrade
       - validate-remove-app
       - validate-registry-check
-      - validate-gke-install
       - validate-kots-helm-release-secret-migration
       - validate-native-helm-v2
       - validate-deployment-orchestration
