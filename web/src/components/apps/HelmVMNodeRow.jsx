@@ -67,7 +67,7 @@ export default function HelmVMNodeRow({
         <div className="flex flex-auto alignItems--center u-fontWeight--bold u-textColor--primary">
           <Link
             to={`/cluster/${node?.name}`}
-            className="u-fontSize--normal u-fontWeight--bold u-textColor--primary"
+            className="u-fontSize--normal u-fontWeight--bold tw-color-blue-300 hover:tw-underline"
           >
             {node?.name}
           </Link>

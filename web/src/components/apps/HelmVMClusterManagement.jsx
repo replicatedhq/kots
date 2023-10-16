@@ -1,6 +1,6 @@
 import classNames from "classnames";
 import dayjs from "dayjs";
-import React, { useEffect, useReducer } from "react";
+import React, { useEffect, useReducer, useState } from "react";
 import Modal from "react-modal";
 import { useQuery } from "react-query";
 
@@ -111,6 +111,8 @@ const HelmVMClusterManagement = () => {
       drainNodeSuccessful: false,
     }
   );
+  const [selectedNodeTypes, setSelectedNodeTypes] = useState([]);
+  const [useStaticToken, setUseStaticToken] = useState(false);
 
   const { data: nodes, isLoading: nodesLoading } = useQuery({
     queryKey: "helmVmNodes",
@@ -309,37 +311,57 @@ const HelmVMClusterManagement = () => {
   };
 
   const onAddNodeClick = () => {
-    setState(
-      {
-        displayAddNode: true,
-      },
-      async () => {
-        await generateWorkerAddNodeCommand();
-      }
-    );
-  };
-
-  const onSelectNodeType = (event) => {
-    const value = event.currentTarget.value;
-    setState(
-      {
-        selectedNodeType: value,
-      },
-      async () => {
-        if (state.selectedNodeType === "secondary") {
-          await generateWorkerAddNodeCommand();
-        } else {
-          await generatePrimaryAddNodeCommand();
-        }
-      }
-    );
+    setState({
+      displayAddNode: true,
+    });
   };
 
   const ackDeleteNodeError = () => {
     setState({ deleteNodeError: "" });
   };
 
-  const { displayAddNode, generateCommandErrMsg } = state;
+  const NODE_TYPES = [
+    "controlplane",
+    "db",
+    "app",
+    "search",
+    "webserver",
+    "jobs",
+  ];
+
+  const determineDisabledState = (nodeType, selectedNodeTypes) => {
+    if (nodeType === "controlplane") {
+      const numControlPlanes = testData.nodes.reduce((acc, node) => {
+        if (node.labels.includes("controlplane")) {
+          acc++;
+        }
+        return acc;
+      });
+      return numControlPlanes === 3;
+    }
+    if (
+      (nodeType === "db" || nodeType === "search") &&
+      selectedNodeTypes.includes("webserver")
+    ) {
+      return true;
+    }
+    return false;
+  };
+
+  const handleSelectNodeType = (e) => {
+    const nodeType = e.currentTarget.value;
+    let types = selectedNodeTypes;
+
+    if (nodeType === "webserver") {
+      types = types.filter((type) => type !== "db" && type !== "search");
+    }
+
+    if (selectedNodeTypes.includes(nodeType)) {
+      setSelectedNodeTypes(types.filter((type) => type !== nodeType));
+    } else {
+      setSelectedNodeTypes([...types, nodeType]);
+    }
+  };
 
   if (nodesLoading) {
     return (
@@ -350,7 +372,7 @@ const HelmVMClusterManagement = () => {
   }
 
   return (
-    <div className="HelmVMClusterManagement--wrapper container flex-column flex1 u-overflow--auto u-paddingTop--50">
+    <div className="HelmVMClusterManagement--wrapper container flex-column flex1 u-overflow--auto u-paddingTop--50 tw-font-sans">
       <KotsPageTitle pageName="Cluster Management" />
       <div className="flex-column flex1 alignItems--center u-paddingBottom--50">
         <div className="flex1 flex-column centered-container">
@@ -358,7 +380,7 @@ const HelmVMClusterManagement = () => {
             <p className="flex-auto u-fontSize--larger u-fontWeight--bold u-textColor--primary u-paddingBottom--10">
               Cluster Nodes
             </p>
-            <p className="u-paddingBottom--10">
+            <p className="u-paddingBottom--10 tw-text-base">
               This section lists the nodes that are configured and shows the
               status/health of each. To add additional nodes to this cluster,
               click the "Add node" button at the bottom of this page.
@@ -377,146 +399,113 @@ const HelmVMClusterManagement = () => {
                 ))}
             </div>
           </div>
-          {(nodes?.isHelmVMEnabled || testData.isHelmVMEnabled) &&
-          Utilities.sessionRolesHasOneOf([rbacRoles.CLUSTER_ADMIN]) ? (
-            !displayAddNode ? (
-              <div className="flex justifyContent--center alignItems--center">
-                <button className="btn primary" onClick={onAddNodeClick}>
-                  Add a node
-                </button>
-              </div>
-            ) : (
-              <div className="flex-column">
-                <div>
-                  <p className="u-width--full u-fontSize--larger u-textColor--primary u-fontWeight--bold u-lineHeight--normal u-borderBottom--gray u-paddingBottom--10">
-                    Add a node
-                  </p>
-                </div>
-                <div className="flex justifyContent--center alignItems--center u-marginTop--15">
-                  <div
-                    className={classNames(
-                      "BoxedCheckbox flex-auto flex u-marginRight--20",
-                      {
-                        "is-active": state.selectedNodeType === "primary",
-                        "is-disabled": nodes ? !nodes?.ha : !testData?.ha,
-                      }
-                    )}
-                  >
-                    <input
-                      id="primaryNode"
-                      className="u-cursor--pointer hidden-input"
-                      type="radio"
-                      name="nodeType"
-                      value="primary"
-                      disabled={nodes ? !nodes?.ha : !testData?.ha}
-                      checked={state.selectedNodeType === "primary"}
-                      onChange={onSelectNodeType}
-                    />
-                    <label
-                      htmlFor="primaryNode"
-                      className="flex1 flex u-width--full u-position--relative u-cursor--pointer u-userSelect--none"
-                    >
-                      <div className="flex-auto">
-                        <Icon
-                          icon="commit"
-                          size={32}
-                          className="clickable u-marginRight--10"
-                        />
-                      </div>
-                      <div className="flex1">
-                        <p className="u-textColor--primary u-fontSize--normal u-fontWeight--medium">
-                          Primary Node
-                        </p>
-                        <p className="u-textColor--bodyCopy u-lineHeight--normal u-fontSize--small u-fontWeight--medium u-marginTop--5">
-                          Provides high availability
-                        </p>
-                      </div>
-                    </label>
-                  </div>
-                  <div
-                    className={classNames(
-                      "BoxedCheckbox flex-auto flex u-marginRight--20",
-                      {
-                        "is-active": state.selectedNodeType === "secondary",
-                      }
-                    )}
-                  >
-                    <input
-                      id="secondaryNode"
-                      className="u-cursor--pointer hidden-input"
-                      type="radio"
-                      name="nodeType"
-                      value="secondary"
-                      checked={state.selectedNodeType === "secondary"}
-                      onChange={onSelectNodeType}
-                    />
-                    <label
-                      htmlFor="secondaryNode"
-                      className="flex1 flex u-width--full u-position--relative u-cursor--pointer u-userSelect--none"
-                    >
-                      <div className="flex-auto">
-                        <Icon
-                          icon="commit"
-                          size={32}
-                          className="clickable u-marginRight--10"
-                        />
-                      </div>
-                      <div className="flex1">
-                        <p className="u-textColor--primary u-fontSize--normal u-fontWeight--medium">
-                          Secondary Node
-                        </p>
-                        <p className="u-textColor--bodyCopy u-lineHeight--normal u-fontSize--small u-fontWeight--medium u-marginTop--5">
-                          Optimal for running application workloads
-                        </p>
-                      </div>
-                    </label>
-                  </div>
-                </div>
-                {state.generating && (
-                  <div className="flex u-width--full justifyContent--center">
-                    <Loader size={60} />
-                  </div>
-                )}
-                {!state.generating && state.command?.length > 0 ? (
-                  <>
-                    <p className="u-fontSize--normal u-textColor--bodyCopy u-fontWeight--medium u-lineHeight--normal u-marginBottom--5 u-marginTop--15">
-                      Run this command on the node you wish to join the cluster
-                    </p>
-                    <CodeSnippet
-                      language="bash"
-                      canCopy={true}
-                      onCopyText={
-                        <span className="u-textColor--success">
-                          Command has been copied to your clipboard
-                        </span>
-                      }
-                    >
-                      {[state.command.join(" \\\n  ")]}
-                    </CodeSnippet>
-                    {state.expiry && (
-                      <span className="timestamp u-marginTop--15 u-width--full u-textAlign--right u-fontSize--small u-fontWeight--bold u-textColor--primary">
-                        {`Expires on ${dayjs(state.expiry).format(
-                          "MMM Do YYYY, h:mm:ss a z"
-                        )} UTC${(-1 * new Date().getTimezoneOffset()) / 60}`}
-                      </span>
-                    )}
-                  </>
-                ) : (
-                  <>
-                    {generateCommandErrMsg && (
-                      <div className="alignSelf--center u-marginTop--15">
-                        <span className="u-textColor--error">
-                          {generateCommandErrMsg}
-                        </span>
-                      </div>
-                    )}
-                  </>
-                )}
-              </div>
-            )
-          ) : null}
+          {Utilities.sessionRolesHasOneOf([rbacRoles.CLUSTER_ADMIN]) && (
+            <div className="flex justifyContent--center alignItems--center">
+              <button className="btn primary" onClick={onAddNodeClick}>
+                Add a node
+              </button>
+            </div>
+          )}
         </div>
       </div>
+      <Modal
+        isOpen={state.displayAddNode}
+        onRequestClose={() => setState({ displayAddNode: false })}
+        contentLabel="Add Node"
+        className="Modal"
+        ariaHideApp={false}
+      >
+        <div className="Modal-body tw-flex tw-flex-col tw-gap-4">
+          <div className="tw-flex">
+            <h1 className="u-fontSize--largest u-fontWeight--bold u-textColor--primary u-lineHeight--normal u-marginBottom--more">
+              Add A Node
+            </h1>
+            <Icon
+              icon="close"
+              size={14}
+              className="tw-ml-auto gray-color clickable close-icon"
+              onClick={() => setState({ displayAddNode: false })}
+            />
+          </div>
+          <p className="tw-text-base">
+            To add a node to this cluster, select the type of node you are
+            adding, and then select an installation method below. This screen
+            will automatically show the status when the node successfully joins
+            the cluster.
+          </p>
+          <div className="tw-grid tw-gap-2 tw-grid-cols-4 tw-auto-rows-auto">
+            {NODE_TYPES.map((nodeType) => (
+              <div
+                className={classNames("BoxedCheckbox", {
+                  "is-active": selectedNodeTypes.includes(nodeType),
+                  "is-disabled": determineDisabledState(
+                    nodeType,
+                    selectedNodeTypes
+                  ),
+                })}
+              >
+                <input
+                  id={`${nodeType}NodeType`}
+                  className="u-cursor--pointer hidden-input"
+                  type="checkbox"
+                  name={`${nodeType}NodeType`}
+                  value={nodeType}
+                  disabled={determineDisabledState(nodeType, selectedNodeTypes)}
+                  checked={selectedNodeTypes.includes(nodeType)}
+                  onChange={handleSelectNodeType}
+                />
+                <label
+                  htmlFor={`${nodeType}NodeType`}
+                  className="tw-block u-cursor--pointer u-userSelect--none u-textColor--primary u-fontSize--normal u-fontWeight--medium tw-text-center"
+                >
+                  {nodeType}
+                </label>
+              </div>
+            ))}
+          </div>
+          <div>
+            <CodeSnippet
+              language="bash"
+              canCopy={true}
+              onCopyText={<span className="u-textColor--success">Copied!</span>}
+            >
+              {`curl http://node.something/join?token=abc&labels=${selectedNodeTypes.join(
+                ","
+              )}`}
+            </CodeSnippet>
+          </div>
+          <div className="tw-flex tw-items-center tw-gap-1.5">
+            <input
+              id="useStaticToken"
+              type="checkbox"
+              checked={useStaticToken}
+              onChange={(e) => setUseStaticToken(e.target.checked)}
+            />
+            <label
+              htmlFor="useStaticToken"
+              className="tw-text-base tw-text-gray-700"
+            >
+              Use a static token (useful for ASGs and scripts)
+            </label>
+          </div>
+          {/* buttons */}
+          <div className="tw-w-full tw-flex tw-justify-end tw-gap-2">
+            <button
+              className="btn secondary large"
+              onClick={() => setState({ displayAddNode: false })}
+            >
+              Close
+            </button>
+            <button
+              className="btn primary large"
+              disabled={selectedNodeTypes.length === 0}
+              onClick={() => setState({ displayAddNode: false })}
+            >
+              Add node
+            </button>
+          </div>
+        </div>
+      </Modal>
       {state.deleteNodeError && (
         <ErrorModal
           errorModal={true}
