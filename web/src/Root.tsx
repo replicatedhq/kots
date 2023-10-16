@@ -574,21 +574,19 @@ const Root = () => {
                 }
               />
               <Route path="/unsupported" element={<UnsupportedBrowser />} />
-              {state.adminConsoleMetadata?.isKurl ||
-                (state.adminConsoleMetadata?.isHelmVM && (
-                  <Route
-                    path="/cluster/manage"
-                    element={
-                      state.adminConsoleMetadata?.isKurl ? (
-                        <KurlClusterManagement
-                          appName={state.selectedAppName}
-                        />
-                      ) : (
-                        <HelmVMClusterManagement />
-                      )
-                    }
-                  />
-                ))}
+              {(state.adminConsoleMetadata?.isKurl ||
+                state.adminConsoleMetadata?.isHelmVM) && (
+                <Route
+                  path="/cluster/manage"
+                  element={
+                    state.adminConsoleMetadata?.isKurl ? (
+                      <KurlClusterManagement appName={state.selectedAppName} />
+                    ) : (
+                      <HelmVMClusterManagement />
+                    )
+                  }
+                />
+              )}
               {state.adminConsoleMetadata?.isHelmVM && (
                 <Route path="/cluster/:nodeId" element={<HelmVMViewNode />} />
               )}
