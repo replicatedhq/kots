@@ -13,7 +13,7 @@ import (
 const configMapName = "embedded-cluster-config"
 const configMapNamespace = "kube-system"
 
-// ReadConfigMap will read the Kurl config from a configmap
+// ReadConfigMap will read the embedded cluster config from a configmap
 func ReadConfigMap(client kubernetes.Interface) (*corev1.ConfigMap, error) {
 	return client.CoreV1().ConfigMaps(configMapNamespace).Get(context.TODO(), configMapName, metav1.GetOptions{})
 }
