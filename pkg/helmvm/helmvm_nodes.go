@@ -2,33 +2,42 @@ package helmvm
 
 import (
 	"context"
-	"crypto/tls"
-	"encoding/json"
 	"fmt"
-	"io"
 	"math"
-	"net/http"
-	"os"
 	"strconv"
-	"time"
 
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/helmvm/types"
-	"github.com/replicatedhq/kots/pkg/logger"
+	"github.com/replicatedhq/kots/pkg/k8sutil"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
-	statsv1alpha1 "k8s.io/kubelet/pkg/apis/stats/v1alpha1"
+	metricsv "k8s.io/metrics/pkg/client/clientset/versioned"
 )
 
 // GetNodes will get a list of nodes with stats
-func GetNodes(client kubernetes.Interface) (*types.HelmVMNodes, error) {
-	nodes, err := client.CoreV1().Nodes().List(context.TODO(), metav1.ListOptions{})
+func GetNodes(ctx context.Context, client kubernetes.Interface) (*types.HelmVMNodes, error) {
+	nodes, err := client.CoreV1().Nodes().List(ctx, metav1.ListOptions{})
 	if err != nil {
 		return nil, errors.Wrap(err, "list nodes")
 	}
 
+	clientConfig, err := k8sutil.GetClusterConfig()
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get cluster config")
+	}
+
+	metricsClient, err := metricsv.NewForConfig(clientConfig)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to create metrics client")
+	}
+
 	toReturn := types.HelmVMNodes{}
+
+	nodePods, err := podsPerNode(ctx, client)
+	if err != nil {
+		return nil, errors.Wrap(err, "pods per node")
+	}
 
 	for _, node := range nodes.Items {
 		cpuCapacity := types.CapacityAvailable{}
@@ -44,31 +53,20 @@ func GetNodes(client kubernetes.Interface) (*types.HelmVMNodes, error) {
 
 		podCapacity.Capacity = float64(node.Status.Capacity.Pods().Value())
 
-		nodeIP := ""
-		for _, address := range node.Status.Addresses {
-			if address.Type == corev1.NodeInternalIP {
-				nodeIP = address.Address
-			}
+		nodeMetrics, err := metricsClient.MetricsV1beta1().NodeMetricses().Get(ctx, node.Name, metav1.GetOptions{})
+		if err != nil {
+			return nil, errors.Wrap(err, "list pod metrics")
 		}
 
-		if nodeIP == "" {
-			logger.Infof("Did not find address for node %s, %+v", node.Name, node.Status.Addresses)
-		} else {
-			nodeMetrics, err := getNodeMetrics(nodeIP)
-			if err != nil {
-				logger.Infof("Got error retrieving stats for node %q: %v", node.Name, err)
-			} else {
-				if nodeMetrics.Node.Memory != nil && nodeMetrics.Node.Memory.AvailableBytes != nil {
-					memoryCapacity.Available = float64(*nodeMetrics.Node.Memory.AvailableBytes) / math.Pow(2, 30)
-				}
-
-				if nodeMetrics.Node.CPU != nil && nodeMetrics.Node.CPU.UsageNanoCores != nil {
-					cpuCapacity.Available = cpuCapacity.Capacity - (float64(*nodeMetrics.Node.CPU.UsageNanoCores) / math.Pow(10, 9))
-				}
-
-				podCapacity.Available = podCapacity.Capacity - float64(len(nodeMetrics.Pods))
-			}
+		if nodeMetrics.Usage.Memory() != nil {
+			memoryCapacity.Available = memoryCapacity.Capacity - float64(nodeMetrics.Usage.Memory().Value())/math.Pow(2, 30)
 		}
+
+		if nodeMetrics.Usage.Cpu() != nil {
+			cpuCapacity.Available = cpuCapacity.Capacity - nodeMetrics.Usage.Cpu().AsApproximateFloat64()
+		}
+
+		podCapacity.Available = podCapacity.Capacity - float64(nodePods[node.Name])
 
 		nodeLabelArray := []string{}
 		for k, v := range node.Labels {
@@ -124,49 +122,36 @@ func findNodeConditions(conditions []corev1.NodeCondition) types.NodeConditions 
 	return discoveredConditions
 }
 
-// get kubelet PKI info from /etc/kubernetes/pki/kubelet, use it to hit metrics server at `http://${nodeIP}:10255/stats/summary`
-func getNodeMetrics(nodeIP string) (*statsv1alpha1.Summary, error) {
-	client := http.Client{
-		Timeout: time.Second,
+// podsPerNode returns a map of node names to the number of pods, across all namespaces
+func podsPerNode(ctx context.Context, client kubernetes.Interface) (map[string]int, error) {
+	namespaces, err := client.CoreV1().Namespaces().List(ctx, metav1.ListOptions{})
+	if err != nil {
+		return nil, errors.Wrap(err, "list namespaces")
 	}
-	port := 10255
 
-	// only use mutual TLS if client cert exists
-	_, err := os.ReadFile("/etc/kubernetes/pki/kubelet/client.crt")
-	if err == nil {
-		cert, err := tls.LoadX509KeyPair("/etc/kubernetes/pki/kubelet/client.crt", "/etc/kubernetes/pki/kubelet/client.key")
+	toReturn := map[string]int{}
+
+	for _, ns := range namespaces.Items {
+		nsPods, err := client.CoreV1().Pods(ns.Name).List(ctx, metav1.ListOptions{})
 		if err != nil {
-			return nil, errors.Wrap(err, "get client keypair")
+			return nil, errors.Wrapf(err, "list pods in namespace %s", ns.Name)
 		}
 
-		// this will leak memory
-		client.Transport = &http.Transport{
-			TLSClientConfig: &tls.Config{
-				Certificates:       []tls.Certificate{cert},
-				InsecureSkipVerify: true,
-			},
+		for _, pod := range nsPods.Items {
+			pod := pod
+			if pod.Spec.NodeName == "" {
+				continue
+			}
+
+			if _, ok := toReturn[pod.Spec.NodeName]; !ok {
+				toReturn[pod.Spec.NodeName] = 0
+			}
+
+			toReturn[pod.Spec.NodeName]++
 		}
-		port = 10250
 	}
 
-	r, err := client.Get(fmt.Sprintf("https://%s:%d/stats/summary", nodeIP, port))
-	if err != nil {
-		return nil, errors.Wrapf(err, "get node %s stats", nodeIP)
-	}
-	defer r.Body.Close()
-
-	body, err := io.ReadAll(r.Body)
-	if err != nil {
-		return nil, errors.Wrapf(err, "read node %s stats response", nodeIP)
-	}
-
-	summary := statsv1alpha1.Summary{}
-	err = json.Unmarshal(body, &summary)
-	if err != nil {
-		return nil, errors.Wrapf(err, "parse node %s stats response", nodeIP)
-	}
-
-	return &summary, nil
+	return toReturn, nil
 }
 
 func isConnected(node corev1.Node) bool {
@@ -200,13 +185,4 @@ func isPrimary(node corev1.Node) bool {
 	}
 
 	return false
-}
-
-func internalIP(node corev1.Node) string {
-	for _, address := range node.Status.Addresses {
-		if address.Type == corev1.NodeInternalIP {
-			return address.Address
-		}
-	}
-	return ""
 }

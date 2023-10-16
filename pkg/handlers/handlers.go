@@ -287,6 +287,8 @@ func RegisterSessionAuthRoutes(r *mux.Router, kotsStore store.Store, handler KOT
 		HandlerFunc(middleware.EnforceAccess(policy.ClusterWrite, handler.DeleteHelmVMNode))
 	r.Name("GetHelmVMNodes").Path("/api/v1/helmvm/nodes").Methods("GET").
 		HandlerFunc(middleware.EnforceAccess(policy.ClusterRead, handler.GetHelmVMNodes))
+	r.Name("GetHelmVMNode").Path("/api/v1/helmvm/node/{nodeName}").Methods("GET").
+		HandlerFunc(middleware.EnforceAccess(policy.ClusterRead, handler.GetHelmVMNode))
 
 	// Prometheus
 	r.Name("SetPrometheusAddress").Path("/api/v1/prometheus").Methods("POST").
