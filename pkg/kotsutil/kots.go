@@ -129,6 +129,9 @@ func IsKotsKind(apiVersion string, kind string) bool {
 	if apiVersion == "kurl.sh/v1beta1" {
 		return true
 	}
+	if apiVersion == "embeddedcluster.replicated.com/v1beta1" {
+		return true
+	}
 	// In addition to kotskinds, we exclude the application crd for now
 	if apiVersion == "app.k8s.io/v1beta1" {
 		return true
