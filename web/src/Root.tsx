@@ -58,6 +58,7 @@ import SnapshotDetails from "@components/snapshots/SnapshotDetails";
 import SnapshotRestore from "@components/snapshots/SnapshotRestore";
 import AppSnapshots from "@components/snapshots/AppSnapshots";
 import AppSnapshotRestore from "@components/snapshots/AppSnapshotRestore";
+import HelmVMViewNode from "@components/apps/HelmVMViewNode";
 
 // react-query client
 const queryClient = new QueryClient();
@@ -579,10 +580,11 @@ const Root = () => {
                   state.adminConsoleMetadata?.isKurl ? (
                     <KurlClusterManagement appName={state.selectedAppName} />
                   ) : (
-                    <HelmVMClusterManagement appName={state.selectedAppName} />
+                    <HelmVMClusterManagement />
                   )
                 }
               />
+              <Route path="/cluster/:nodeId" element={<HelmVMViewNode />} />
               <Route
                 path="/gitops"
                 element={<GitOps appName={state.selectedAppName || ""} />}

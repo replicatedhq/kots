@@ -1,15 +1,20 @@
-import React from "react";
 import classNames from "classnames";
-import Loader from "../shared/Loader";
+import React from "react";
+import { Link } from "react-router-dom";
+
 import { rbacRoles } from "../../constants/rbac";
 import { getPercentageStatus, Utilities } from "../../utilities/utilities";
 import Icon from "../Icon";
+import Loader from "../shared/Loader";
 
-export default function HelmVMNodeRow(props) {
-  const { node } = props;
-
+export default function HelmVMNodeRow({
+  node,
+  drainNode,
+  drainNodeSuccessful,
+  drainingNodeName,
+  deleteNode,
+}) {
   const DrainDeleteNode = () => {
-    const { drainNode, drainNodeSuccessful, drainingNodeName } = props;
     if (drainNode && Utilities.sessionRolesHasOneOf(rbacRoles.DRAIN_NODE)) {
       if (
         !drainNodeSuccessful &&
@@ -44,9 +49,7 @@ export default function HelmVMNodeRow(props) {
           <div className="flex-auto flex-column justifyContent--center">
             <button
               onClick={() =>
-                node?.canDelete
-                  ? props.deleteNode(node?.name)
-                  : props.drainNode(node?.name)
+                node?.canDelete ? deleteNode(node?.name) : drainNode(node?.name)
               }
               className="btn secondary red"
             >
@@ -62,9 +65,12 @@ export default function HelmVMNodeRow(props) {
     <div className="flex flex-auto HelmVMNodeRow--wrapper">
       <div className="flex-column flex1">
         <div className="flex flex-auto alignItems--center u-fontWeight--bold u-textColor--primary">
-          <p className="u-fontSize--normal u-fontWeight--bold u-textColor--primary">
+          <Link
+            to={`/cluster/${node?.name}`}
+            className="u-fontSize--normal u-fontWeight--bold u-textColor--primary"
+          >
             {node?.name}
-          </p>
+          </Link>
           {node?.isPrimaryNode && (
             <span className="nodeTag flex-auto alignItems--center u-fontWeight--medium u-marginLeft--10">
               Primary node
