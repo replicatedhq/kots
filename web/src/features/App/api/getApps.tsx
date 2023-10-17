@@ -1,6 +1,6 @@
 // This hook has not been integrated yet.
 import React from "react";
-import { useQuery, UseQueryResult } from '@tanstack/react-query';
+import { useQuery, UseQueryResult } from "@tanstack/react-query";
 import { Utilities } from "../../../utilities/utilities";
 import { App } from "@types";
 
@@ -44,7 +44,7 @@ function useApps({
 }> {
   const query: UseQueryResult<{
     apps: App[] | null;
-  }> = useQuery(['apps'], () => _getApps(), {
+  }> = useQuery(["apps"], () => _getApps(), {
     refetchInterval,
   });
 

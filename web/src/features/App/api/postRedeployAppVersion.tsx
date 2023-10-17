@@ -1,4 +1,4 @@
-import { useMutation } from '@tanstack/react-query';
+import { useMutation } from "@tanstack/react-query";
 
 async function postRedeployAppVersion({
   apiEndpoint = process.env.API_ENDPOINT,

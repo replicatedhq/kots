@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query';
+import { useQuery } from "@tanstack/react-query";
 import { useSelectedApp } from "@features/App";
 
 export interface UpdateStatusResponse {

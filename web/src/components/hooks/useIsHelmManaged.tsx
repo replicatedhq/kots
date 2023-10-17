@@ -1,4 +1,4 @@
-import { useQuery, UseQueryResult } from '@tanstack/react-query';
+import { useQuery, UseQueryResult } from "@tanstack/react-query";
 
 interface IsHelmManagedResponse {
   isHelmManaged: boolean;
@@ -30,10 +30,10 @@ async function fetchIsHelmManaged({
 
 function useIsHelmManaged() {
   return useQuery({
-    queryKey: ['isHelmManaged'],
+    queryKey: ["isHelmManaged"],
     queryFn: () => fetchIsHelmManaged(),
     staleTime: Infinity,
-    select: (response): IsHelmManaged => response.isHelmManaged || false
+    select: (response): IsHelmManaged => response.isHelmManaged || false,
   });
 }
 

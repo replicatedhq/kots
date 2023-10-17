@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query';
+import { useQuery } from "@tanstack/react-query";
 
 async function getAdminConsoleUpdateStatus({
   apiEndpoint = process.env.API_ENDPOINT,

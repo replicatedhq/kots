@@ -1,5 +1,5 @@
 // This hook has not been integrated yet. It's considered a work in progress
-import { useQuery } from '@tanstack/react-query';
+import { useQuery } from "@tanstack/react-query";
 import { Utilities } from "../../../utilities/utilities";
 import { useParams } from "react-router-dom";
 import { useSelectedApp } from "@features/App";

@@ -1,4 +1,4 @@
-import { useMutation } from '@tanstack/react-query';
+import { useMutation } from "@tanstack/react-query";
 import { useSelectedApp } from "@features/App";
 
 interface SnapshotResponse {
