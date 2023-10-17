@@ -1683,7 +1683,7 @@ class SnapshotStorageDestination extends Component<Props, State> {
       this.props.resetFileSystemWarningMessage;
 
     return (
-      <div className="flex1 flex-column u-marginTop--40">
+      (<div className="flex1 flex-column u-marginTop--40">
         <div className="flex" style={{ gap: "30px" }}>
           <div
             className="flex flex-column card-bg u-padding--15"
@@ -1740,7 +1740,7 @@ class SnapshotStorageDestination extends Component<Props, State> {
                     {availableDestinations.length > 1 ? (
                       // TODO: upgrade react-select and use the current typing
                       // @ts-ignore
-                      <Select
+                      (<Select
                         className="replicated-select-container"
                         classNamePrefix="replicated-select"
                         placeholder="Select unit"
@@ -1760,7 +1760,7 @@ class SnapshotStorageDestination extends Component<Props, State> {
                           // @ts-ignore
                           return option.value === selectedDestination;
                         }}
-                      />
+                      />)
                     ) : availableDestinations.length === 1 ? (
                       <div className="u-textColor--primary u-fontWeight--medium flex alignItems--center">
                         {this.getDestinationLabel(
@@ -1831,7 +1831,6 @@ class SnapshotStorageDestination extends Component<Props, State> {
             }
           />
         </div>
-
         {this.props.showConfigureSnapshotsModal && (
           <ConfigureSnapshots
             snapshotSettings={this.props.snapshotSettings}
@@ -1850,7 +1849,6 @@ class SnapshotStorageDestination extends Component<Props, State> {
             isKurlEnabled={isKurlEnabled}
           />
         )}
-
         {this.state.showConfigureFileSystemProviderModal && (
           <Modal
             isOpen={this.state.showConfigureFileSystemProviderModal}
@@ -1863,7 +1861,6 @@ class SnapshotStorageDestination extends Component<Props, State> {
             {this.renderConfigureFileSystemProviderModalContent()}
           </Modal>
         )}
-
         {this.state.showFileSystemProviderInstructionsModal && (
           <Modal
             isOpen={this.state.showFileSystemProviderInstructionsModal}
@@ -1894,7 +1891,6 @@ class SnapshotStorageDestination extends Component<Props, State> {
             </div>
           </Modal>
         )}
-
         {showResetFileSystemWarningModal && (
           <Modal
             isOpen={showResetFileSystemWarningModal}
@@ -1927,7 +1923,7 @@ class SnapshotStorageDestination extends Component<Props, State> {
             </div>
           </Modal>
         )}
-      </div>
+      </div>)
     );
   }
 }

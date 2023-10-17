@@ -19,7 +19,7 @@ async function getMetadata({
 }
 
 function useMetadata({ _getMetadata = getMetadata } = {}) {
-  return useQuery("metadata", () => _getMetadata(), {
+  return useQuery(['metadata'], () => _getMetadata(), {
     staleTime: Infinity,
   });
 }

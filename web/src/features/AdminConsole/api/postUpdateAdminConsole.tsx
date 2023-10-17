@@ -1,4 +1,4 @@
-import { useMutation } from "react-query";
+import { useMutation } from '@tanstack/react-query';
 
 async function postUpdateAdminConsole({
   apiEndpoint = process.env.API_ENDPOINT,

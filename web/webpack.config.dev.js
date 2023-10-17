@@ -12,9 +12,6 @@ module.exports = {
   output: {
     path: path.join(__dirname, "dist"),
   },
-  resolve: {
-    modules: ["node_modules"],
-  },
   module: {
     rules: [
       {

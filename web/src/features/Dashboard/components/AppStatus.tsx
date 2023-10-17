@@ -85,7 +85,7 @@ export default class AppStatus extends React.Component<Props, State> {
       dropdownOptions.length > 0 ? dropdownOptions[0].displayText : "";
 
     return (
-      <div className="flex flex1 u-marginTop--10">
+      (<div className="flex flex1 u-marginTop--10">
         {!isEmpty(appStatus) ? (
           <div className="flex alignItems--center">
             <span
@@ -133,7 +133,7 @@ export default class AppStatus extends React.Component<Props, State> {
           </div>
         )}
         {links?.length > 0 ? ( // TODO: fix this and make it an inline dropdown
-          <div className="flex alignItems--center u-marginLeft--10 u-borderLeft--gray u-paddingLeft--10 u-fontSize--small u-fontWeight--medium">
+          (<div className="flex alignItems--center u-marginLeft--10 u-borderLeft--gray u-paddingLeft--10 u-fontSize--small u-fontWeight--medium">
             {links?.length > 1 ? (
               <InlineDropdown
                 defaultDisplayText={defaultDisplayText}
@@ -150,9 +150,9 @@ export default class AppStatus extends React.Component<Props, State> {
                 {links[0].title}{" "}
               </a>
             ) : null}
-          </div>
+          </div>)
         ) : null}
-      </div>
+      </div>)
     );
   }
 }

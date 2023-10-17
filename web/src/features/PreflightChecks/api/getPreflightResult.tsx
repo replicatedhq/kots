@@ -1,4 +1,4 @@
-import { useQuery } from "react-query";
+import { useQuery } from '@tanstack/react-query';
 import { PreflightCheck, PreflightResponse } from "../types";
 import { useState } from "react";
 

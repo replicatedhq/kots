@@ -22,7 +22,7 @@ import UploadAirgapBundle from "./components/UploadAirgapBundle";
 import RestoreCompleted from "./components/RestoreCompleted";
 import Access from "./components/identity/Access";
 import SnapshotsWrapper from "./components/snapshots/SnapshotsWrapper";
-import { QueryClient, QueryClientProvider } from "react-query";
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { InstallWithHelm } from "@features/AddNewApp";
 import DownstreamTree from "./components/tree/KotsApplicationTree";
 import { Dashboard } from "@features/Dashboard/components/Dashboard";

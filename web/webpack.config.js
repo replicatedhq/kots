@@ -37,7 +37,6 @@ module.exports = function (env) {
       filename: "[name].[fullhash].js",
     },
     resolve: {
-      modules: ["node_modules"],
       extensions: [
         ".js",
         ".mjs",

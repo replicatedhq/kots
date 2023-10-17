@@ -1,5 +1,5 @@
 // This hook has not been integrated yet.
-import { useQuery } from "react-query";
+import { useQuery } from '@tanstack/react-query';
 import { useSelectedApp } from "@features/App";
 import axios from "axios";
 import { AppLicense } from "@types";

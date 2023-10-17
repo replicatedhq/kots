@@ -1,4 +1,4 @@
-import { useQuery } from "react-query";
+import { useQuery } from '@tanstack/react-query';
 import { useIsHelmManaged } from "@components/hooks";
 import { useSelectedApp } from "@features/App";
 import { DashboardResponse } from "@types";
