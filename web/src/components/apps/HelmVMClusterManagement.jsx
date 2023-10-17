@@ -113,45 +113,42 @@ const HelmVMClusterManagement = ({ fromLicenseFlow = false }) => {
 
   const navigate = useNavigate();
 
-  const nodes = testData;
-  const nodesLoading = false;
-
   // #region queries
 
-  // const { data: nodes, isLoading: nodesLoading } = useQuery({
-  //   queryKey: "helmVmNodes",
-  //   queryFn: async () => {
-  //     return (
-  //       await fetch(`${process.env.API_ENDPOINT}/helmvm/nodes`, {
-  //         headers: {
-  //           Accept: "application/json",
-  //         },
-  //         credentials: "include",
-  //         method: "GET",
-  //       })
-  //     ).json();
-  //   },
-  //   onError: (err) => {
-  //     if (err.status === 401) {
-  //       Utilities.logoutUser();
-  //       return;
-  //     }
-  //     console.log(
-  //       "failed to get node status list, unexpected status code",
-  //       err.status
-  //     );
-  //   },
-  //   onSuccess: (data) => {
-  //     setState({
-  //       // if cluster doesn't support ha, then primary will be disabled. Force into secondary
-  //       selectedNodeType: !data.ha ? "secondary" : state.selectedNodeType,
-  //     });
-  //   },
-  //   config: {
-  //     refetchInterval: 1000,
-  //     retry: false,
-  //   },
-  // });
+  const { data: nodes, isLoading: nodesLoading } = useQuery({
+    queryKey: "helmVmNodes",
+    queryFn: async () => {
+      return (
+        await fetch(`${process.env.API_ENDPOINT}/helmvm/nodes`, {
+          headers: {
+            Accept: "application/json",
+          },
+          credentials: "include",
+          method: "GET",
+        })
+      ).json();
+    },
+    onError: (err) => {
+      if (err.status === 401) {
+        Utilities.logoutUser();
+        return;
+      }
+      console.log(
+        "failed to get node status list, unexpected status code",
+        err.status
+      );
+    },
+    onSuccess: (data) => {
+      setState({
+        // if cluster doesn't support ha, then primary will be disabled. Force into secondary
+        selectedNodeType: !data.ha ? "secondary" : state.selectedNodeType,
+      });
+    },
+    config: {
+      refetchInterval: 1000,
+      retry: false,
+    },
+  });
 
   const {
     data: generateSecondaryAddNodeCommand,
@@ -215,12 +212,6 @@ const HelmVMClusterManagement = ({ fromLicenseFlow = false }) => {
           method: "POST",
         })
       ).json();
-    },
-    onSuccess: () => {
-      // if (fromLicenseFlow && data.isConfigurable) {
-      //   navigate(`/${data.slug}/config`, { replace: true });
-      //   return;
-      // }
     },
   });
   // #endregion

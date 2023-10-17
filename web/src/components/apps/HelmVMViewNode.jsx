@@ -271,43 +271,43 @@ const testData = {
 };
 
 const HelmVMViewNode = () => {
-  // const { nodeName } = useParams();
-  // const { data: node } = useQuery({
-  //   queryKey: ["helmVmNode", nodeName],
-  //   queryFn: async ({ queryKey }) => {
-  //     const [, nodeName] = queryKey;
-  //     return (
-  //       await fetch(`${process.env.API_ENDPOINT}/helmvm/node/${nodeName}`, {
-  //         headers: {
-  //           Accept: "application/json",
-  //         },
-  //         credentials: "include",
-  //         method: "GET",
-  //       })
-  //     ).json();
-  //   },
-  //   onError: (err) => {
-  //     if (err.status === 401) {
-  //       Utilities.logoutUser();
-  //       return;
-  //     }
-  //     console.log(
-  //       "failed to get node status list, unexpected status code",
-  //       err.status
-  //     );
-  //   },
-  //   onSuccess: (data) => {
-  //     setState({
-  //       // if cluster doesn't support ha, then primary will be disabled. Force into secondary
-  //       selectedNodeType: !data.ha ? "secondary" : state.selectedNodeType,
-  //     });
-  //   },
-  //   config: {
-  //     retry: false,
-  //   },
-  // });
+  const { nodeName } = useParams();
+  const { data: nodeData } = useQuery({
+    queryKey: ["helmVmNode", nodeName],
+    queryFn: async ({ queryKey }) => {
+      const [, nodeName] = queryKey;
+      return (
+        await fetch(`${process.env.API_ENDPOINT}/helmvm/node/${nodeName}`, {
+          headers: {
+            Accept: "application/json",
+          },
+          credentials: "include",
+          method: "GET",
+        })
+      ).json();
+    },
+    onError: (err) => {
+      if (err.status === 401) {
+        Utilities.logoutUser();
+        return;
+      }
+      console.log(
+        "failed to get node status list, unexpected status code",
+        err.status
+      );
+    },
+    onSuccess: (data) => {
+      setState({
+        // if cluster doesn't support ha, then primary will be disabled. Force into secondary
+        selectedNodeType: !data.ha ? "secondary" : state.selectedNodeType,
+      });
+    },
+    config: {
+      retry: false,
+    },
+  });
 
-  const node = testData.nodes[0];
+  const node = nodeData || testData.nodes[0];
 
   const columns = useMemo(
     () => [
