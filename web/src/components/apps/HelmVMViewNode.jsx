@@ -2,42 +2,118 @@ import React, { useMemo } from "react";
 import { useQuery } from "react-query";
 import { Link } from "react-router-dom";
 
-const HelmVMViewNode = () => {
-  const { data: nodes } = useQuery({
-    queryKey: "helmVmNodes",
-    queryFn: async () => {
-      return (
-        await fetch(`${process.env.API_ENDPOINT}/helmvm/nodes`, {
-          headers: {
-            Accept: "application/json",
-          },
-          credentials: "include",
-          method: "GET",
-        })
-      ).json();
+const testData = {
+  isHelmVMEnabled: true,
+  ha: false,
+  nodes: [
+    {
+      name: "test-helmvm-node",
+      isConnected: true,
+      isReady: true,
+      isPrimaryNode: true,
+      canDelete: false,
+      kubeletVersion: "v1.28.2",
+      cpu: {
+        capacity: 8,
+        available: 7.466876775,
+      },
+      memory: {
+        capacity: 31.33294677734375,
+        available: 24.23790740966797,
+      },
+      pods: {
+        capacity: 110,
+        available: 77,
+      },
+      labels: [
+        "beta.kubernetes.io/arch:amd64",
+        "beta.kubernetes.io/os:linux",
+        "node-role.kubernetes.io/master:",
+        "node.kubernetes.io/exclude-from-external-load-balancers:",
+        "kubernetes.io/arch:amd64",
+        "kubernetes.io/hostname:laverya-kurl",
+        "kubernetes.io/os:linux",
+        "node-role.kubernetes.io/control-plane:",
+      ],
+      conditions: {
+        memoryPressure: false,
+        diskPressure: false,
+        pidPressure: false,
+        ready: true,
+      },
     },
-    onError: (err) => {
-      if (err.status === 401) {
-        Utilities.logoutUser();
-        return;
-      }
-      console.log(
-        "failed to get node status list, unexpected status code",
-        err.status
-      );
+    {
+      name: "test-helmvm-worker",
+      isConnected: true,
+      isReady: true,
+      isPrimaryNode: false,
+      canDelete: false,
+      kubeletVersion: "v1.28.2",
+      cpu: {
+        capacity: 4,
+        available: 3.761070507,
+      },
+      memory: {
+        capacity: 15.50936508178711,
+        available: 11.742542266845703,
+      },
+      pods: {
+        capacity: 110,
+        available: 94,
+      },
+      labels: [
+        "beta.kubernetes.io/arch:amd64",
+        "beta.kubernetes.io/os:linux",
+        "kubernetes.io/arch:amd64",
+        "kubernetes.io/os:linux",
+        "kurl.sh/cluster:true",
+      ],
+      conditions: {
+        memoryPressure: false,
+        diskPressure: false,
+        pidPressure: false,
+        ready: true,
+      },
     },
-    onSuccess: (data) => {
-      setState({
-        // if cluster doesn't support ha, then primary will be disabled. Force into secondary
-        selectedNodeType: !data.ha ? "secondary" : state.selectedNodeType,
-      });
-    },
-    config: {
-      retry: false,
-    },
-  });
+  ],
+};
 
-  const node = nodes.nodes[0];
+const HelmVMViewNode = () => {
+  // const { data: nodes } = useQuery({
+  //   queryKey: "helmVmNodes",
+  //   queryFn: async () => {
+  //     return (
+  //       await fetch(`${process.env.API_ENDPOINT}/helmvm/nodes`, {
+  //         headers: {
+  //           Accept: "application/json",
+  //         },
+  //         credentials: "include",
+  //         method: "GET",
+  //       })
+  //     ).json();
+  //   },
+  //   onError: (err) => {
+  //     if (err.status === 401) {
+  //       Utilities.logoutUser();
+  //       return;
+  //     }
+  //     console.log(
+  //       "failed to get node status list, unexpected status code",
+  //       err.status
+  //     );
+  //   },
+  //   onSuccess: (data) => {
+  //     setState({
+  //       // if cluster doesn't support ha, then primary will be disabled. Force into secondary
+  //       selectedNodeType: !data.ha ? "secondary" : state.selectedNodeType,
+  //     });
+  //   },
+  //   config: {
+  //     retry: false,
+  //   },
+  // });
+
+  const node = testData.nodes[0];
 
   const columns = useMemo(
     () => [
@@ -113,7 +189,7 @@ const HelmVMViewNode = () => {
       tw-shadow-md tw-p-3"
       >
         <p className="tw-font-semibold tw-text-2xl tw-text-gray-800">Pods</p>
-        <table>
+        <table className="tw-w-full">
           <thead>
             <tr>
               {columns.map((col) => {

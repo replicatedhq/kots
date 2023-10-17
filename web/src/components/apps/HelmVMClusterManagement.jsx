@@ -114,40 +114,42 @@ const HelmVMClusterManagement = () => {
   const [selectedNodeTypes, setSelectedNodeTypes] = useState([]);
   const [useStaticToken, setUseStaticToken] = useState(false);
 
-  const { data: nodes, isLoading: nodesLoading } = useQuery({
-    queryKey: "helmVmNodes",
-    queryFn: async () => {
-      return (
-        await fetch(`${process.env.API_ENDPOINT}/helmvm/nodes`, {
-          headers: {
-            Accept: "application/json",
-          },
-          credentials: "include",
-          method: "GET",
-        })
-      ).json();
-    },
-    onError: (err) => {
-      if (err.status === 401) {
-        Utilities.logoutUser();
-        return;
-      }
-      console.log(
-        "failed to get node status list, unexpected status code",
-        err.status
-      );
-    },
-    onSuccess: (data) => {
-      setState({
-        // if cluster doesn't support ha, then primary will be disabled. Force into secondary
-        selectedNodeType: !data.ha ? "secondary" : state.selectedNodeType,
-      });
-    },
-    config: {
-      refetchInterval: 1000,
-      retry: false,
-    },
-  });
+  const nodes = testData;
+  const nodesLoading = false;
+  // const { data: nodes, isLoading: nodesLoading } = useQuery({
+  //   queryKey: "helmVmNodes",
+  //   queryFn: async () => {
+  //     return (
+  //       await fetch(`${process.env.API_ENDPOINT}/helmvm/nodes`, {
+  //         headers: {
+  //           Accept: "application/json",
+  //         },
+  //         credentials: "include",
+  //         method: "GET",
+  //       })
+  //     ).json();
+  //   },
+  //   onError: (err) => {
+  //     if (err.status === 401) {
+  //       Utilities.logoutUser();
+  //       return;
+  //     }
+  //     console.log(
+  //       "failed to get node status list, unexpected status code",
+  //       err.status
+  //     );
+  //   },
+  //   onSuccess: (data) => {
+  //     setState({
+  //       // if cluster doesn't support ha, then primary will be disabled. Force into secondary
+  //       selectedNodeType: !data.ha ? "secondary" : state.selectedNodeType,
+  //     });
+  //   },
+  //   config: {
+  //     refetchInterval: 1000,
+  //     retry: false,
+  //   },
+  // });
 
   const deleteNode = (name) => {
     setState({
@@ -436,6 +438,7 @@ const HelmVMClusterManagement = () => {
           <div className="tw-grid tw-gap-2 tw-grid-cols-4 tw-auto-rows-auto">
             {NODE_TYPES.map((nodeType) => (
               <div
+                key={nodeType}
                 className={classNames("BoxedCheckbox", {
                   "is-active": selectedNodeTypes.includes(nodeType),
                   "is-disabled": determineDisabledState(
