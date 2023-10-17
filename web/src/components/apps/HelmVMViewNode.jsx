@@ -363,7 +363,7 @@ const HelmVMViewNode = () => {
   }, [node.podList]);
 
   return (
-    <div className="container u-paddingTop--50 tw-flex tw-flex-col tw-gap-6 tw-font-sans">
+    <div className="container u-paddingTop--50 tw-mb-10 tw-pb-6 tw-flex tw-flex-col tw-gap-6 tw-font-sans">
       {/* Breadcrumbs */}
       <p className="tw-text-sm tw-text-gray-400">
         <Link
@@ -393,22 +393,6 @@ const HelmVMViewNode = () => {
       tw-shadow-md tw-p-3"
       >
         <p className="tw-font-semibold tw-text-2xl tw-text-gray-800">Pods</p>
-        {/* <table className="tw-w-full">
-          <thead>
-            <tr>
-              {columns.map((col) => {
-                return (
-                  <th key={col.accessorKey}>
-                    <p className="tw-font-semibold tw-text-gray-800 tw-px-2 tw-py-1.5">
-                      {col.header}
-                    </p>
-                  </th>
-                );
-              })}
-            </tr>
-          </thead>
-          <tbody>Some pods here</tbody>
-        </table> */}
         <MaterialReactTable
           columns={columns}
           data={mappedPods}
@@ -441,7 +425,7 @@ const HelmVMViewNode = () => {
           muiTablePaperProps={{
             sx: {
               width: "100%",
-              marginTop: "28px",
+              boxShadow: "none",
             },
           }}
           initialState={{ density: "compact" }}
