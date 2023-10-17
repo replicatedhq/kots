@@ -21,7 +21,7 @@ describe("getApps", () => {
       };
     });
     it("calls _getApps", async () => {
-      const getAppsSpy = jest.fn(() => Promise.resolve());
+      const getAppsSpy = jest.fn(() => Promise.resolve({}));
 
       const { result, waitFor } = renderHook(
         () => useApps({ _getApps: getAppsSpy }),

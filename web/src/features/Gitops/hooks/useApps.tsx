@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { Utilities } from "../../../utilities/utilities";
 
-// TODO: replace with fetatures/App/api
+// TODO: replace with features/App/api
 async function getApps({
   apiEndpoint = process.env.API_ENDPOINT,
   _fetch = fetch,
