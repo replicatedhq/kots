@@ -5,6 +5,7 @@ import (
 	"crypto/tls"
 	"encoding/json"
 	"fmt"
+	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"io"
 	"math"
 	"net/http"
@@ -14,18 +15,28 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/helmvm/types"
-	"github.com/replicatedhq/kots/pkg/logger"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	statsv1alpha1 "k8s.io/kubelet/pkg/apis/stats/v1alpha1"
+	metricsv "k8s.io/metrics/pkg/client/clientset/versioned"
 )
 
 // GetNodes will get a list of nodes with stats
-func GetNodes(client kubernetes.Interface) (*types.HelmVMNodes, error) {
-	nodes, err := client.CoreV1().Nodes().List(context.TODO(), metav1.ListOptions{})
+func GetNodes(ctx context.Context, client kubernetes.Interface) (*types.HelmVMNodes, error) {
+	nodes, err := client.CoreV1().Nodes().List(ctx, metav1.ListOptions{})
 	if err != nil {
 		return nil, errors.Wrap(err, "list nodes")
+	}
+
+	clientConfig, err := k8sutil.GetClusterConfig()
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get cluster config")
+	}
+
+	metricsClient, err := metricsv.NewForConfig(clientConfig)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to create metrics client")
 	}
 
 	toReturn := types.HelmVMNodes{}
@@ -44,31 +55,23 @@ func GetNodes(client kubernetes.Interface) (*types.HelmVMNodes, error) {
 
 		podCapacity.Capacity = float64(node.Status.Capacity.Pods().Value())
 
-		nodeIP := ""
-		for _, address := range node.Status.Addresses {
-			if address.Type == corev1.NodeInternalIP {
-				nodeIP = address.Address
-			}
+		nodeMetrics, err := metricsClient.MetricsV1beta1().NodeMetricses().Get(ctx, node.Name, metav1.GetOptions{})
+		if err != nil {
+			return nil, errors.Wrap(err, "list pod metrics")
 		}
 
-		if nodeIP == "" {
-			logger.Infof("Did not find address for node %s, %+v", node.Name, node.Status.Addresses)
-		} else {
-			nodeMetrics, err := getNodeMetrics(nodeIP)
-			if err != nil {
-				logger.Infof("Got error retrieving stats for node %q: %v", node.Name, err)
-			} else {
-				if nodeMetrics.Node.Memory != nil && nodeMetrics.Node.Memory.AvailableBytes != nil {
-					memoryCapacity.Available = float64(*nodeMetrics.Node.Memory.AvailableBytes) / math.Pow(2, 30)
-				}
+		str, _ := json.Marshal(nodeMetrics)
+		fmt.Printf("node %s metrics: %s\n", node.Name, str)
 
-				if nodeMetrics.Node.CPU != nil && nodeMetrics.Node.CPU.UsageNanoCores != nil {
-					cpuCapacity.Available = cpuCapacity.Capacity - (float64(*nodeMetrics.Node.CPU.UsageNanoCores) / math.Pow(10, 9))
-				}
-
-				podCapacity.Available = podCapacity.Capacity - float64(len(nodeMetrics.Pods))
-			}
+		if nodeMetrics.Usage.Memory() != nil {
+			memoryCapacity.Available = float64(nodeMetrics.Usage.Memory().Value()) / math.Pow(2, 30)
 		}
+
+		if nodeMetrics.Usage.Cpu() != nil {
+			cpuCapacity.Available = cpuCapacity.Capacity - float64(nodeMetrics.Usage.Cpu().Value())
+		}
+
+		podCapacity.Available = podCapacity.Capacity - float64(nodeMetrics.Usage.Pods().Value())
 
 		nodeLabelArray := []string{}
 		for k, v := range node.Labels {

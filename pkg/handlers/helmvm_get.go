@@ -16,7 +16,7 @@ func (h *Handler) GetHelmVMNodes(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	nodes, err := helmvm.GetNodes(client)
+	nodes, err := helmvm.GetNodes(r.Context(), client)
 	if err != nil {
 		logger.Error(err)
 		w.WriteHeader(http.StatusInternalServerError)
