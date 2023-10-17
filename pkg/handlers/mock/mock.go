@@ -778,6 +778,18 @@ func (mr *MockKOTSHandlerMockRecorder) GetHelmVMNodes(w, r interface{}) *gomock.
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetHelmVMNodes", reflect.TypeOf((*MockKOTSHandler)(nil).GetHelmVMNodes), w, r)
 }
 
+// GetHelmVMNodes mocks base method.
+func (m *MockKOTSHandler) GetHelmVMNode(w http.ResponseWriter, r *http.Request) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "GetHelmVMNode", w, r)
+}
+
+// GetHelmVMNode indicates an expected call of GetHelmVMNode.
+func (mr *MockKOTSHandlerMockRecorder) GetHelmVMNode(w, r interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetHelmVMNode", reflect.TypeOf((*MockKOTSHandler)(nil).GetHelmVMNode), w, r)
+}
+
 // GetIdentityServiceConfig mocks base method.
 func (m *MockKOTSHandler) GetIdentityServiceConfig(w http.ResponseWriter, r *http.Request) {
 	m.ctrl.T.Helper()

@@ -1,5 +1,7 @@
 package types
 
+import corev1 "k8s.io/api/core/v1"
+
 type HelmVMNodes struct {
 	Nodes           []Node `json:"nodes"`
 	HA              bool   `json:"ha"`
@@ -18,6 +20,7 @@ type Node struct {
 	Pods           CapacityAvailable `json:"pods"`
 	Labels         []string          `json:"labels"`
 	Conditions     NodeConditions    `json:"conditions"`
+	PodList        []corev1.Pod      `json:"podList"`
 }
 
 type CapacityAvailable struct {
