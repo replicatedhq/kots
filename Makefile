@@ -131,6 +131,10 @@ all-ttl.sh: build-ttl.sh
 	docker tag rqlite/rqlite:${RQLITE_TAG} ttl.sh/${CURRENT_USER}/rqlite:${RQLITE_TAG}
 	docker push ttl.sh/${CURRENT_USER}/rqlite:${RQLITE_TAG}
 
+api-ttl.sh:
+	docker build -f ./deploy/okteto/okteto.Dockerfile -t ttl.sh/${CURRENT_USER}/kotsadm-api:24h .
+	docker push ttl.sh/${CURRENT_USER}/kotsadm-api:24h
+
 .PHONY: build-alpha
 build-alpha:
 	docker build --pull -f deploy/Dockerfile --build-arg version=${GIT_TAG} -t kotsadm/kotsadm:alpha .
