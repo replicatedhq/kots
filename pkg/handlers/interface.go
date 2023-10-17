@@ -144,6 +144,7 @@ type KOTSHandler interface {
 	DrainHelmVMNode(w http.ResponseWriter, r *http.Request)
 	DeleteHelmVMNode(w http.ResponseWriter, r *http.Request)
 	GetHelmVMNodes(w http.ResponseWriter, r *http.Request)
+	GetHelmVMNode(w http.ResponseWriter, r *http.Request)
 
 	// Prometheus
 	SetPrometheusAddress(w http.ResponseWriter, r *http.Request)

@@ -66,7 +66,7 @@ func GetNodes(ctx context.Context, client kubernetes.Interface) (*types.HelmVMNo
 			cpuCapacity.Available = cpuCapacity.Capacity - nodeMetrics.Usage.Cpu().AsApproximateFloat64()
 		}
 
-		podCapacity.Available = podCapacity.Capacity - float64(len(nodePods[node.Name]))
+		podCapacity.Available = podCapacity.Capacity - float64(nodePods[node.Name])
 
 		nodeLabelArray := []string{}
 		for k, v := range node.Labels {
@@ -85,7 +85,6 @@ func GetNodes(ctx context.Context, client kubernetes.Interface) (*types.HelmVMNo
 			Pods:           podCapacity,
 			Labels:         nodeLabelArray,
 			Conditions:     findNodeConditions(node.Status.Conditions),
-			PodList:        nodePods[node.Name],
 		})
 	}
 
@@ -123,14 +122,14 @@ func findNodeConditions(conditions []corev1.NodeCondition) types.NodeConditions 
 	return discoveredConditions
 }
 
-// podsPerNode returns a map of node names to pods, across all namespaces
-func podsPerNode(ctx context.Context, client kubernetes.Interface) (map[string][]corev1.Pod, error) {
+// podsPerNode returns a map of node names to the number of pods, across all namespaces
+func podsPerNode(ctx context.Context, client kubernetes.Interface) (map[string]int, error) {
 	namespaces, err := client.CoreV1().Namespaces().List(ctx, metav1.ListOptions{})
 	if err != nil {
 		return nil, errors.Wrap(err, "list namespaces")
 	}
 
-	toReturn := map[string][]corev1.Pod{}
+	toReturn := map[string]int{}
 
 	for _, ns := range namespaces.Items {
 		nsPods, err := client.CoreV1().Pods(ns.Name).List(ctx, metav1.ListOptions{})
@@ -145,10 +144,10 @@ func podsPerNode(ctx context.Context, client kubernetes.Interface) (map[string][
 			}
 
 			if _, ok := toReturn[pod.Spec.NodeName]; !ok {
-				toReturn[pod.Spec.NodeName] = []corev1.Pod{}
+				toReturn[pod.Spec.NodeName] = 0
 			}
 
-			toReturn[pod.Spec.NodeName] = append(toReturn[pod.Spec.NodeName], pod)
+			toReturn[pod.Spec.NodeName]++
 		}
 	}
 
@@ -186,13 +185,4 @@ func isPrimary(node corev1.Node) bool {
 	}
 
 	return false
-}
-
-func internalIP(node corev1.Node) string {
-	for _, address := range node.Status.Addresses {
-		if address.Type == corev1.NodeInternalIP {
-			return address.Address
-		}
-	}
-	return ""
 }
