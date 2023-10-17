@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"github.com/gorilla/mux"
 	"net/http"
 
 	"github.com/replicatedhq/kots/pkg/helmvm"
@@ -23,4 +24,22 @@ func (h *Handler) GetHelmVMNodes(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	JSON(w, http.StatusOK, nodes)
+}
+
+func (h *Handler) GetHelmVMNode(w http.ResponseWriter, r *http.Request) {
+	client, err := k8sutil.GetClientset()
+	if err != nil {
+		logger.Error(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	nodeName := mux.Vars(r)["nodeName"]
+	node, err := helmvm.GetNode(r.Context(), client, nodeName)
+	if err != nil {
+		logger.Error(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	JSON(w, http.StatusOK, node)
 }
