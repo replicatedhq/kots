@@ -37,6 +37,8 @@ func IsHelmVM(clientset kubernetes.Interface) (bool, error) {
 		return false, fmt.Errorf("failed to get embedded cluster configmap: %w", err)
 	}
 
+	fmt.Printf("Is Embedded Cluster Config found: %v\n", configMapExists)
+
 	return configMapExists, nil
 }
 
