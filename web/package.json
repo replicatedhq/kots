@@ -121,9 +121,13 @@
     "webpack-merge": "5.8.0"
   },
   "dependencies": {
+    "@emotion/react": "^11.11.1",
+    "@emotion/styled": "^11.11.0",
     "@grafana/data": "^8.5.16",
     "@maji/react-prism": "^1.0.1",
     "@monaco-editor/react": "^4.4.5",
+    "@mui/icons-material": "^5.14.14",
+    "@mui/material": "^5.14.14",
     "@storybook/addon-storysource": "^6.5.16",
     "accounting": "^0.4.1",
     "apexcharts": "^3.24.0",
@@ -142,6 +146,7 @@
     "js-yaml": "3.14.0",
     "lodash": "4.17.21",
     "markdown-it": "^12.3.2",
+    "material-react-table": "^1.15.1",
     "monaco-editor": "^0.33.0",
     "monaco-editor-webpack-plugin": "^7.0.1",
     "node-polyfill-webpack-plugin": "^1.1.4",
