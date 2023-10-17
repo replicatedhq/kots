@@ -11,7 +11,8 @@ import (
 	"k8s.io/client-go/kubernetes"
 )
 
-var addNodeMut = sync.Mutex{}
+var addPrimaryNodeMut = sync.Mutex{}
+var addSecondaryNodeMut = sync.Mutex{}
 var primaryNodeJoinCommand []string
 var primaryNodeJoinCommandCreation *time.Time
 var secondaryNodeJoinCommand []string
@@ -20,8 +21,13 @@ var secondaryNodeJoinCommandCreation *time.Time
 // GenerateAddNodeCommand will generate the HelmVM node add command for a primary or secondary node
 // join commands will last for 24 hours, and will be cached for 1 hour after first generation
 func GenerateAddNodeCommand(ctx context.Context, client kubernetes.Interface, primary bool) ([]string, *time.Time, error) {
-	addNodeMut.Lock()
-	defer addNodeMut.Unlock()
+	if primary {
+		addPrimaryNodeMut.Lock()
+		defer addPrimaryNodeMut.Unlock()
+	} else {
+		addSecondaryNodeMut.Lock()
+		defer addSecondaryNodeMut.Unlock()
+	}
 
 	if primary {
 		if primaryNodeJoinCommandCreation != nil && time.Now().Before(primaryNodeJoinCommandCreation.Add(time.Hour)) {
@@ -79,7 +85,8 @@ func runAddNodeCommandPod(ctx context.Context, client kubernetes.Interface, prim
 			},
 		},
 		Spec: corev1.PodSpec{
-			HostNetwork: true,
+			RestartPolicy: corev1.RestartPolicyOnFailure,
+			HostNetwork:   true,
 			Volumes: []corev1.Volume{
 				{
 					Name: "bin",
