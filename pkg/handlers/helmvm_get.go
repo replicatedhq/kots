@@ -1,9 +1,9 @@
 package handlers
 
 import (
-	"github.com/gorilla/mux"
 	"net/http"
 
+	"github.com/gorilla/mux"
 	"github.com/replicatedhq/kots/pkg/helmvm"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/logger"
