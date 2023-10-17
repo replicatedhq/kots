@@ -9,9 +9,9 @@ const NodePolyfillPlugin = require("node-polyfill-webpack-plugin");
 // const { BundleAnalyzerPlugin } = require("webpack-bundle-analyzer");
 
 function mapEnvironment(env) {
-  if(env.enterprise) {
+  if (env.enterprise) {
     return "enterprise";
-  } else if(process.env.OKTETO_NAMESPACE) {
+  } else if (process.env.OKTETO_NAMESPACE) {
     return "okteto";
   }
   return "skaffold";
@@ -22,20 +22,35 @@ module.exports = function (env) {
   const distPath = path.join(__dirname, "dist");
   const srcPath = path.join(__dirname, "src");
   const appEnv = require(`./env/${mapEnvironment(env)}.js`);
-  const replace = {}
-  Object.entries(appEnv).forEach(([key, value]) => replace[`process.env.${key}`] = JSON.stringify(value))
-  if(env.enterprise) {
-    process.env.NODE_ENV = "production"
+  const replace = {};
+  Object.entries(appEnv).forEach(
+    ([key, value]) => (replace[`process.env.${key}`] = JSON.stringify(value))
+  );
+  if (env.enterprise) {
+    process.env.NODE_ENV = "production";
   }
 
   const common = {
     output: {
       path: distPath,
       publicPath: "/",
-      filename: "[name].[fullhash].js"
+      filename: "[name].[fullhash].js",
     },
     resolve: {
-      extensions: [".js", ".mjs", ".jsx", ".css", ".scss", ".png", ".jpg", ".svg", ".ico", ".tsx", ".ts"],
+      modules: ["node_modules"],
+      extensions: [
+        ".js",
+        ".mjs",
+        ".jsx",
+        ".css",
+        ".scss",
+        ".png",
+        ".jpg",
+        ".svg",
+        ".ico",
+        ".tsx",
+        ".ts",
+      ],
       fallback: {
         fs: false,
         stream: require.resolve("stream-browserify"),
@@ -44,7 +59,7 @@ module.exports = function (env) {
         constants: require.resolve("constants-browserify"),
         util: require.resolve("util/"),
         os: require.resolve("os-browserify/browser"),
-        tty: require.resolve("tty-browserify")
+        tty: require.resolve("tty-browserify"),
       },
       alias: {
         "@components": path.resolve(__dirname, "src/components"),
@@ -52,8 +67,8 @@ module.exports = function (env) {
         "@stores": path.resolve(__dirname, "src/stores"),
         "@types": path.resolve(__dirname, "src/types/index"),
         "@utils": path.resolve(__dirname, "src/utilities/index"),
-        "handlebars" : "handlebars/dist/handlebars.js",
-        "@src": path.resolve(__dirname, "src")
+        handlebars: "handlebars/dist/handlebars.js",
+        "@src": path.resolve(__dirname, "src"),
       },
       mainFields: ["browser", "main"],
     },
@@ -62,7 +77,7 @@ module.exports = function (env) {
         {
           test: /\.mjs$/,
           include: /node_modules/,
-          type: "javascript/auto"
+          type: "javascript/auto",
         },
         {
           test: /\.css$/,
@@ -70,13 +85,13 @@ module.exports = function (env) {
             "style-loader",
             // { loader: MiniCssExtractPlugin.loader },
             "css-loader",
-            "postcss-loader"
+            "postcss-loader",
           ],
           sideEffects: true,
         },
         {
           test: /\.ttf$/,
-          use: [{loader: 'file-loader'}],
+          use: [{ loader: "file-loader" }],
           sideEffects: true,
         },
         {
@@ -116,17 +131,17 @@ module.exports = function (env) {
               options: {
                 limit: 10000,
                 mimetype: "application/font-woff",
-                name: "./assets/[fullhash].[ext]"
-              }
-            }
-          ]
+                name: "./assets/[fullhash].[ext]",
+              },
+            },
+          ],
         },
         {
           test: /\.m?js/,
           resolve: {
-              fullySpecified: false
-          }
-        }
+            fullySpecified: false,
+          },
+        },
       ],
     },
     plugins: [
@@ -141,10 +156,7 @@ module.exports = function (env) {
         inject: "body",
       }),
       new MonacoWebpackPlugin({
-        languages: [
-          "yaml",
-          "json"
-        ],
+        languages: ["yaml", "json"],
         features: [
           "coreCommands",
           "folding",
@@ -152,20 +164,22 @@ module.exports = function (env) {
           "clipboard",
           "find",
           "colorDetector",
-          "codelens"
-        ]
+          "codelens",
+        ],
       }),
-      new webpack.ContextReplacementPlugin(/graphql-language-service-interface[/\\]dist/, /\.js$/),
+      new webpack.ContextReplacementPlugin(
+        /graphql-language-service-interface[/\\]dist/,
+        /\.js$/
+      ),
       new MiniCssExtractPlugin({
         filename: "style.[fullhash].css",
-        chunkFilename: "[id].css"
-      })
+        chunkFilename: "[id].css",
+      }),
       // new BundleAnalyzerPlugin({
       //   generateStatsFile: true,
       //   analyzerHost: "0.0.0.0",
       //   analyzerPort: 30088
       // })
-      ,
     ],
   };
 
