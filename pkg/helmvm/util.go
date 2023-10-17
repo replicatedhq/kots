@@ -41,5 +41,5 @@ func IsHelmVM(clientset kubernetes.Interface) (bool, error) {
 }
 
 func IsHA(clientset kubernetes.Interface) (bool, error) {
-	return false, nil
+	return true, nil
 }
