@@ -167,11 +167,11 @@ RUN --mount=target=$GOMODCACHE,id=kots-gomodcache,type=cache \
     mv ./bin/kotsadm /kotsadm && \
     mv ./bin/kots /kots
 
-#RUN --mount=target=/tmp/.cache/gocache,id=kots-gocache,type=cache \
-#    --mount=target=/tmp/.cache/gomodcache,id=kots-gomodcache,type=cache \
-#    mkdir -p $GOCACHE \
-#    && cp -r /tmp/.cache/gocache/* $GOCACHE \
-#    && mkdir -p $GOMODCACHE \
-#    && cp -r /tmp/.cache/gomodcache/* $GOMODCACHE
+RUN --mount=target=/tmp/.cache/gocache,id=kots-gocache,type=cache \
+    --mount=target=/tmp/.cache/gomodcache,id=kots-gomodcache,type=cache \
+    mkdir -p $GOCACHE \
+    && cp -r /tmp/.cache/gocache/* $GOCACHE \
+    && mkdir -p $GOMODCACHE \
+    && cp -r /tmp/.cache/gomodcache/* $GOMODCACHE
 
 ENTRYPOINT [ "/kotsadm", "api"]
