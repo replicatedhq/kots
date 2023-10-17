@@ -1,5 +1,7 @@
+import { MaterialReactTable } from "material-react-table";
 import React, { useMemo } from "react";
 import { useQuery } from "react-query";
+import { useParams } from "react-router";
 import { Link } from "react-router-dom";
 
 const testData = {
@@ -41,6 +43,196 @@ const testData = {
         pidPressure: false,
         ready: true,
       },
+      podList: [
+        {
+          metadata: {
+            name: "example-es-85fc9df74-g9jbn",
+            generateName: "example-es-85fc9df74-",
+            namespace: "helmvm",
+            uid: "1caba3fb-bd52-430a-9cff-0eb0939317fa",
+            resourceVersion: "40284",
+            creationTimestamp: "2023-10-17T16:22:37Z",
+            labels: {
+              app: "example",
+              component: "es",
+              "kots.io/app-slug": "laverya-minimal-kots",
+              "kots.io/backup": "velero",
+              "pod-template-hash": "85fc9df74",
+            },
+            annotations: {
+              "cni.projectcalico.org/containerID":
+                "c3fa12aad2ed6f726ecda31f7f94d1224c9f50a805a9efc67aaf4959e464434c",
+              "cni.projectcalico.org/podIP": "10.244.45.141/32",
+              "cni.projectcalico.org/podIPs": "10.244.45.141/32",
+              "kots.io/app-slug": "laverya-minimal-kots",
+            },
+            ownerReferences: [
+              {
+                apiVersion: "apps/v1",
+                kind: "ReplicaSet",
+                name: "example-es-85fc9df74",
+                uid: "b5008bca-1ad0-4107-8603-397fc3be74f8",
+                controller: true,
+                blockOwnerDeletion: true,
+              },
+            ],
+          },
+          spec: {
+            volumes: [
+              {
+                name: "kube-api-access-fhfc4",
+                projected: {
+                  sources: [
+                    {
+                      serviceAccountToken: {
+                        expirationSeconds: 3607,
+                        path: "token",
+                      },
+                    },
+                    {
+                      configMap: {
+                        name: "kube-root-ca.crt",
+                        items: [{ key: "ca.crt", path: "ca.crt" }],
+                      },
+                    },
+                    {
+                      downwardAPI: {
+                        items: [
+                          {
+                            path: "namespace",
+                            fieldRef: {
+                              apiVersion: "v1",
+                              fieldPath: "metadata.namespace",
+                            },
+                          },
+                        ],
+                      },
+                    },
+                  ],
+                  defaultMode: 420,
+                },
+              },
+            ],
+            containers: [
+              {
+                name: "es",
+                image:
+                  "docker.elastic.co/elasticsearch/elasticsearch-oss:6.8.21",
+                envFrom: [{ configMapRef: { name: "example-config" } }],
+                resources: {
+                  limits: { cpu: "500m", memory: "256Mi" },
+                  requests: { cpu: "50m", memory: "16Mi" },
+                },
+                volumeMounts: [
+                  {
+                    name: "kube-api-access-fhfc4",
+                    readOnly: true,
+                    mountPath: "/var/run/secrets/kubernetes.io/serviceaccount",
+                  },
+                ],
+                terminationMessagePath: "/dev/termination-log",
+                terminationMessagePolicy: "File",
+                imagePullPolicy: "IfNotPresent",
+              },
+            ],
+            restartPolicy: "Always",
+            terminationGracePeriodSeconds: 30,
+            dnsPolicy: "ClusterFirst",
+            serviceAccountName: "default",
+            serviceAccount: "default",
+            nodeName: "laverya-helmvm",
+            securityContext: {},
+            imagePullSecrets: [{ name: "laverya-minimal-kots-registry" }],
+            schedulerName: "default-scheduler",
+            tolerations: [
+              {
+                key: "node.kubernetes.io/not-ready",
+                operator: "Exists",
+                effect: "NoExecute",
+                tolerationSeconds: 300,
+              },
+              {
+                key: "node.kubernetes.io/unreachable",
+                operator: "Exists",
+                effect: "NoExecute",
+                tolerationSeconds: 300,
+              },
+            ],
+            priority: 0,
+            enableServiceLinks: true,
+            preemptionPolicy: "PreemptLowerPriority",
+          },
+          status: {
+            phase: "Running",
+            conditions: [
+              {
+                type: "Initialized",
+                status: "True",
+                lastProbeTime: null,
+                lastTransitionTime: "2023-10-17T16:22:37Z",
+              },
+              {
+                type: "Ready",
+                status: "False",
+                lastProbeTime: null,
+                lastTransitionTime: "2023-10-17T19:55:16Z",
+                reason: "ContainersNotReady",
+                message: "containers with unready status: [es]",
+              },
+              {
+                type: "ContainersReady",
+                status: "False",
+                lastProbeTime: null,
+                lastTransitionTime: "2023-10-17T19:55:16Z",
+                reason: "ContainersNotReady",
+                message: "containers with unready status: [es]",
+              },
+              {
+                type: "PodScheduled",
+                status: "True",
+                lastProbeTime: null,
+                lastTransitionTime: "2023-10-17T16:22:37Z",
+              },
+            ],
+            hostIP: "10.128.0.44",
+            podIP: "10.244.45.141",
+            podIPs: [{ ip: "10.244.45.141" }],
+            startTime: "2023-10-17T16:22:37Z",
+            containerStatuses: [
+              {
+                name: "es",
+                state: {
+                  waiting: {
+                    reason: "CrashLoopBackOff",
+                    message:
+                      "back-off 5m0s restarting failed container=es pod=example-es-85fc9df74-g9jbn_helmvm(1caba3fb-bd52-430a-9cff-0eb0939317fa)",
+                  },
+                },
+                lastState: {
+                  terminated: {
+                    exitCode: 137,
+                    reason: "OOMKilled",
+                    startedAt: "2023-10-17T19:55:11Z",
+                    finishedAt: "2023-10-17T19:55:13Z",
+                    containerID:
+                      "containerd://9cce5c792b7ad61d040f7b8aca042d13a714100c75ebc40e71eb5444bbb65e83",
+                  },
+                },
+                ready: false,
+                restartCount: 46,
+                image:
+                  "docker.elastic.co/elasticsearch/elasticsearch-oss:6.8.21",
+                imageID:
+                  "docker.elastic.co/elasticsearch/elasticsearch-oss@sha256:86e7750c4d896d41bd638b6e510e0610b98fd9fa48f8caeeed8ccd8424b1dc9f",
+                containerID:
+                  "containerd://9cce5c792b7ad61d040f7b8aca042d13a714100c75ebc40e71eb5444bbb65e83",
+                started: false,
+              },
+            ],
+            qosClass: "Burstable",
+          },
+        },
+      ],
     },
     {
       name: "test-helmvm-worker",
@@ -79,11 +271,13 @@ const testData = {
 };
 
 const HelmVMViewNode = () => {
-  // const { data: nodes } = useQuery({
-  //   queryKey: "helmVmNodes",
-  //   queryFn: async () => {
+  // const { nodeName } = useParams();
+  // const { data: node } = useQuery({
+  //   queryKey: ["helmVmNode", nodeName],
+  //   queryFn: async ({ queryKey }) => {
+  //     const [, nodeName] = queryKey;
   //     return (
-  //       await fetch(`${process.env.API_ENDPOINT}/helmvm/nodes`, {
+  //       await fetch(`${process.env.API_ENDPOINT}/helmvm/node/${nodeName}`, {
   //         headers: {
   //           Accept: "application/json",
   //         },
@@ -125,14 +319,14 @@ const HelmVMViewNode = () => {
         size: 150,
       },
       {
-        accessorKey: "isConnected",
-        header: "Connection",
+        accessorKey: "status",
+        header: "Status",
         size: 150,
       },
       {
-        accessorKey: "kubeletVersion",
-        header: "Kubelet Version",
-        size: 170,
+        accessorKey: "disk",
+        header: "Disk",
+        size: 150,
       },
       {
         accessorKey: "cpu",
@@ -145,18 +339,28 @@ const HelmVMViewNode = () => {
         size: 150,
       },
       {
-        accessorKey: "pods",
-        header: "Pods",
-        size: 150,
-      },
-      {
         accessorKey: "canDelete",
-        header: "Delete Node",
+        header: "Delete Pod",
         size: 150,
       },
     ],
     []
   );
+
+  const mappedPods = useMemo(() => {
+    return node.podList.map((n) => ({
+      name: n.metadata.name,
+      status: n.status.phase,
+      disk: null,
+      cpu: null,
+      memory: null,
+      canDelete: (
+        <>
+          <button className="btn red primary">Delete</button>
+        </>
+      ),
+    }));
+  }, [node.podList]);
 
   return (
     <div className="container u-paddingTop--50 tw-flex tw-flex-col tw-gap-6 tw-font-sans">
@@ -189,7 +393,7 @@ const HelmVMViewNode = () => {
       tw-shadow-md tw-p-3"
       >
         <p className="tw-font-semibold tw-text-2xl tw-text-gray-800">Pods</p>
-        <table className="tw-w-full">
+        {/* <table className="tw-w-full">
           <thead>
             <tr>
               {columns.map((col) => {
@@ -204,7 +408,46 @@ const HelmVMViewNode = () => {
             </tr>
           </thead>
           <tbody>Some pods here</tbody>
-        </table>
+        </table> */}
+        <MaterialReactTable
+          columns={columns}
+          data={mappedPods}
+          state={{
+            columnPinning: { left: ["name"] },
+          }}
+          enableColumnResizing
+          enableColumnActions={false}
+          enableColumnOrdering
+          enableBottomToolbar={false}
+          muiTableHeadProps={{
+            sx: {
+              "& hr": {
+                width: "0",
+              },
+            },
+          }}
+          muiTableBodyProps={{
+            sx: {
+              "& tr:nth-of-type(odd)": {
+                backgroundColor: "#f5f5f5",
+              },
+            },
+          }}
+          muiTableBodyCellProps={{
+            sx: {
+              borderRight: "2px solid #e0e0e0",
+            },
+          }}
+          muiTablePaperProps={{
+            sx: {
+              width: "100%",
+              marginTop: "28px",
+            },
+          }}
+          initialState={{ density: "compact" }}
+          enablePagination={false}
+          enableColumnFilters={false}
+        />
       </div>
       {/* Troubleshooting */}
       <div

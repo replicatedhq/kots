@@ -1,40 +1,29 @@
 import React, { useEffect, useReducer } from "react";
-import { useNavigate } from "react-router-dom";
-import { Link } from "react-router-dom";
-import { KotsPageTitle } from "@components/Head";
+import { Link, useNavigate } from "react-router-dom";
 // TODO: upgrade this dependency
 // @ts-ignore
-import Dropzone from "react-dropzone";
 import yaml from "js-yaml";
-import size from "lodash/size";
 import isEmpty from "lodash/isEmpty";
 import keyBy from "lodash/keyBy";
+import size from "lodash/size";
+import Dropzone from "react-dropzone";
 import Modal from "react-modal";
 import Select from "react-select";
+
+import { KotsPageTitle } from "@components/Head";
 import { getFileContent } from "../utilities/utilities";
-import CodeSnippet from "./shared/CodeSnippet";
+import Icon from "./Icon";
 import LicenseUploadProgress from "./LicenseUploadProgress";
+import CodeSnippet from "./shared/CodeSnippet";
 
 import "../scss/components/troubleshoot/UploadSupportBundleModal.scss";
 import "../scss/components/UploadLicenseFile.scss";
-import Icon from "./Icon";
 
 type LicenseYaml = {
   spec: {
     appSlug: string;
     channelName: string;
   };
-};
-
-type Props = {
-  appsListLength: number;
-  appName: string;
-  appSlugFromMetadata: string;
-  fetchingMetadata: boolean;
-  isBackupRestore?: boolean;
-  onUploadSuccess: () => Promise<void>;
-  logo: string | null;
-  snapshot?: { name: string };
 };
 
 type SelectedAppToInstall = {
@@ -68,6 +57,20 @@ type UploadLicenseResponse = {
   slug: string;
   success?: boolean;
 };
+
+type Props = {
+  appsListLength: number;
+  appName: string;
+  appSlugFromMetadata: string;
+  fetchingMetadata: boolean;
+  isBackupRestore?: boolean;
+  onUploadSuccess: () => Promise<void>;
+  logo: string | null;
+  snapshot?: { name: string };
+  isHelmVM: boolean;
+  isKurl: boolean;
+};
+
 const UploadLicenseFile = (props: Props) => {
   const [state, setState] = useReducer(
     (currentState: State, newState: Partial<State>) => ({
@@ -263,6 +266,12 @@ const UploadLicenseFile = (props: Props) => {
               navigate(`/${data.slug}/config`, { replace: true });
               return;
             }
+
+            if (props.isHelmVM && !props.isKurl) {
+              navigate(`/${data.slug}/cluster/manage`, { replace: true });
+              return;
+            }
+            // cluster manage -> config -> preflights
 
             if (data.hasPreflight) {
               navigate(`/${data.slug}/preflight`, { replace: true });

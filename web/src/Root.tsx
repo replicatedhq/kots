@@ -101,6 +101,8 @@ type State = {
   selectedAppName: string | null;
   snapshotInProgressApps: string[];
   themeState: ThemeState;
+  isKurl: boolean | null;
+  isHelmVM: boolean | null;
 };
 
 let interval: ReturnType<typeof setInterval> | undefined;
@@ -132,6 +134,8 @@ const Root = () => {
         navbarLogo: null,
       },
       app: null,
+      isKurl: null,
+      isHelmVM: null,
     }
   );
 
@@ -303,6 +307,8 @@ const Root = () => {
           adminConsoleMetadata: data.adminConsoleMetadata,
           featureFlags: data.consoleFeatureFlags,
           fetchingMetadata: false,
+          isKurl: data.isKurl,
+          isHelmVM: data.isHelmVM,
         });
       })
       .catch((err) => {
@@ -532,6 +538,8 @@ const Root = () => {
                     appSlugFromMetadata={state.appSlugFromMetadata || ""}
                     fetchingMetadata={state.fetchingMetadata}
                     onUploadSuccess={getAppsList}
+                    isKurl={state.isKurl}
+                    isHelmVM={state.isHelmVM}
                   />
                 }
               />
@@ -574,10 +582,16 @@ const Root = () => {
                 }
               />
               <Route path="/unsupported" element={<UnsupportedBrowser />} />
-              {/* {(state.adminConsoleMetadata?.isKurl ||
-                state.adminConsoleMetadata?.isHelmVM) && ( */}
+              {/* {state.adminConsoleMetadata?.isHelmVM && ( */}
               <Route
                 path="/cluster/manage"
+                element={<HelmVMClusterManagement fromLicenseFlow={true} />}
+              />
+              {/* )} */}
+              {/* {(state.adminConsoleMetadata?.isKurl ||
+                  state.adminConsoleMetadata?.isHelmVM) && ( */}
+              <Route
+                path="/:slug/cluster/manage"
                 element={
                   state.adminConsoleMetadata?.isKurl ? (
                     <KurlClusterManagement appName={state.selectedAppName} />
@@ -588,7 +602,7 @@ const Root = () => {
               />
               {/* )} */}
               {/* {state.adminConsoleMetadata?.isHelmVM && ( */}
-              <Route path="/cluster/:nodeId" element={<HelmVMViewNode />} />
+              <Route path="/cluster/:nodeName" element={<HelmVMViewNode />} />
               {/* )} */}
               <Route
                 path="/gitops"
