@@ -3,11 +3,12 @@ package handlers
 import (
 	"encoding/json"
 	"fmt"
+	"net/http"
+
 	"github.com/replicatedhq/kots/pkg/helmvm"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/store/kotsstore"
-	"net/http"
 )
 
 type GenerateK0sNodeJoinCommandResponse struct {
