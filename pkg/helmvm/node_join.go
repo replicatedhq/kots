@@ -14,37 +14,34 @@ import (
 	"k8s.io/client-go/kubernetes"
 )
 
-var addPrimaryNodeMut = sync.Mutex{}
-var addSecondaryNodeMut = sync.Mutex{}
-var primaryNodeJoinCommand []string
-var primaryNodeJoinCommandCreation *time.Time
-var secondaryNodeJoinCommand []string
-var secondaryNodeJoinCommandCreation *time.Time
+type joinCommandEntry struct {
+	Command  []string
+	Creation *time.Time
+	Mut      sync.Mutex
+}
+
+var joinCommandMapMut = sync.Mutex{}
+var joinCommandMap = map[string]*joinCommandEntry{}
 
 // GenerateAddNodeCommand will generate the HelmVM node add command for a primary or secondary node
 // join commands will last for 24 hours, and will be cached for 1 hour after first generation
-func GenerateAddNodeCommand(ctx context.Context, client kubernetes.Interface, primary bool) ([]string, *time.Time, error) {
-	if primary {
-		addPrimaryNodeMut.Lock()
-		defer addPrimaryNodeMut.Unlock()
-	} else {
-		addSecondaryNodeMut.Lock()
-		defer addSecondaryNodeMut.Unlock()
+func GenerateAddNodeCommand(ctx context.Context, client kubernetes.Interface, nodeRole string) ([]string, *time.Time, error) {
+	// get the joinCommand struct entry for this node role
+	joinCommandMapMut.Lock()
+	if _, ok := joinCommandMap[nodeRole]; !ok {
+		joinCommandMap[nodeRole] = &joinCommandEntry{}
 	}
+	joinCommand := joinCommandMap[nodeRole]
+	joinCommandMapMut.Unlock()
 
-	nodeRole := ""
-	if primary {
-		if primaryNodeJoinCommandCreation != nil && time.Now().Before(primaryNodeJoinCommandCreation.Add(time.Hour)) {
-			expiry := primaryNodeJoinCommandCreation.Add(time.Hour * 24)
-			return primaryNodeJoinCommand, &expiry, nil
-		}
-		nodeRole = "controller+worker"
-	} else {
-		if secondaryNodeJoinCommandCreation != nil && time.Now().Before(secondaryNodeJoinCommandCreation.Add(time.Hour)) {
-			expiry := secondaryNodeJoinCommandCreation.Add(time.Hour * 24)
-			return secondaryNodeJoinCommand, &expiry, nil
-		}
-		nodeRole = "worker"
+	// lock the joinCommand struct entry
+	joinCommand.Mut.Lock()
+	defer joinCommand.Mut.Unlock()
+
+	// if the joinCommand has been generated in the past hour, return it
+	if joinCommand.Creation != nil && time.Now().Before(joinCommand.Creation.Add(time.Hour)) {
+		expiry := joinCommand.Creation.Add(time.Hour * 24)
+		return joinCommand.Command, &expiry, nil
 	}
 
 	newToken, err := runAddNodeCommandPod(ctx, client, nodeRole)
@@ -58,13 +55,8 @@ func GenerateAddNodeCommand(ctx context.Context, client kubernetes.Interface, pr
 	}
 
 	now := time.Now()
-	if primary {
-		primaryNodeJoinCommand = newCmd
-		primaryNodeJoinCommandCreation = &now
-	} else {
-		secondaryNodeJoinCommand = newCmd
-		secondaryNodeJoinCommandCreation = &now
-	}
+	joinCommand.Command = newCmd
+	joinCommand.Creation = &now
 
 	expiry := now.Add(time.Hour * 24)
 	return newCmd, &expiry, nil
