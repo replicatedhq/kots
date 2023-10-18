@@ -58,6 +58,7 @@ import SnapshotDetails from "@components/snapshots/SnapshotDetails";
 import SnapshotRestore from "@components/snapshots/SnapshotRestore";
 import AppSnapshots from "@components/snapshots/AppSnapshots";
 import AppSnapshotRestore from "@components/snapshots/AppSnapshotRestore";
+import HelmVMViewNode from "@components/apps/HelmVMViewNode";
 
 // react-query client
 const queryClient = new QueryClient();
@@ -100,6 +101,8 @@ type State = {
   selectedAppName: string | null;
   snapshotInProgressApps: string[];
   themeState: ThemeState;
+  isKurl: boolean | null;
+  isHelmVM: boolean | null;
 };
 
 let interval: ReturnType<typeof setInterval> | undefined;
@@ -131,6 +134,8 @@ const Root = () => {
         navbarLogo: null,
       },
       app: null,
+      isKurl: null,
+      isHelmVM: null,
     }
   );
 
@@ -302,6 +307,8 @@ const Root = () => {
           adminConsoleMetadata: data.adminConsoleMetadata,
           featureFlags: data.consoleFeatureFlags,
           fetchingMetadata: false,
+          isKurl: data.isKurl,
+          isHelmVM: data.isHelmVM,
         });
       })
       .catch((err) => {
@@ -531,6 +538,8 @@ const Root = () => {
                     appSlugFromMetadata={state.appSlugFromMetadata || ""}
                     fetchingMetadata={state.fetchingMetadata}
                     onUploadSuccess={getAppsList}
+                    isKurl={!!state.isKurl}
+                    isHelmVM={!!state.isHelmVM}
                   />
                 }
               />
@@ -573,16 +582,36 @@ const Root = () => {
                 }
               />
               <Route path="/unsupported" element={<UnsupportedBrowser />} />
+              {/* {state.adminConsoleMetadata?.isHelmVM && ( */}
+              <Route
+                path="/:slug/cluster/manage"
+                element={
+                  <HelmVMClusterManagement
+                    fromLicenseFlow={true}
+                    appName={state.selectedAppName || undefined}
+                  />
+                }
+              />
+              {/* )} */}
+              {/* {(state.adminConsoleMetadata?.isKurl ||
+                  state.adminConsoleMetadata?.isHelmVM) && ( */}
               <Route
                 path="/cluster/manage"
                 element={
                   state.adminConsoleMetadata?.isKurl ? (
-                    <KurlClusterManagement appName={state.selectedAppName} />
+                    <KurlClusterManagement />
                   ) : (
-                    <HelmVMClusterManagement appName={state.selectedAppName} />
+                    <HelmVMClusterManagement />
                   )
                 }
               />
+              {/* )} */}
+              {/* {state.adminConsoleMetadata?.isHelmVM && ( */}
+              <Route
+                path="/:slug/cluster/:nodeName"
+                element={<HelmVMViewNode />}
+              />
+              {/* )} */}
               <Route
                 path="/gitops"
                 element={<GitOps appName={state.selectedAppName || ""} />}
@@ -761,12 +790,7 @@ const Root = () => {
                 <Route path=":slug/license" element={<AppLicense />} />
                 <Route
                   path=":slug/registry-settings"
-                  element={
-                    <AppRegistrySettings
-                    // app={selectedApp}
-                    // updateCallback={refetchData}
-                    />
-                  }
+                  element={<AppRegistrySettings />}
                 />
                 {/* WHERE IS SELECTEDAPP */}
                 {state.app?.isAppIdentityServiceSupported && (
