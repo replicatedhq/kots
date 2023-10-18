@@ -47,6 +47,11 @@ func (h *Handler) GenerateK0sNodeJoinCommand(w http.ResponseWriter, r *http.Requ
 		return
 	}
 	nodeJoinCommand, err := helmvm.GenerateAddNodeCommand(r.Context(), client, token)
+	if err != nil {
+		logger.Error(fmt.Errorf("failed to generate add node command: %w", err))
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
 
 	JSON(w, http.StatusOK, GenerateK0sNodeJoinCommandResponse{
 		Command: []string{nodeJoinCommand},
