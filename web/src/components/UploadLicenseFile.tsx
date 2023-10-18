@@ -1,11 +1,11 @@
 import React, { useEffect, useReducer } from "react";
 import { Link, useNavigate } from "react-router-dom";
-// TODO: upgrade this dependency
-// @ts-ignore
 import yaml from "js-yaml";
 import isEmpty from "lodash/isEmpty";
 import keyBy from "lodash/keyBy";
 import size from "lodash/size";
+// TODO: upgrade this dependency
+// @ts-ignore
 import Dropzone from "react-dropzone";
 import Modal from "react-modal";
 import Select from "react-select";
