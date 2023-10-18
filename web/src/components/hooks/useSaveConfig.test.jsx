@@ -2,7 +2,7 @@
  * @jest-environment jsdom
  */
 import React from "react";
-import { QueryClient, QueryClientProvider } from "react-query";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { renderHook } from "@testing-library/react-hooks";
 import { useSaveConfig, putConfig } from "./useSaveConfig";
 
