@@ -14,52 +14,45 @@ import (
 	"k8s.io/client-go/kubernetes"
 )
 
-type joinCommandEntry struct {
-	Command  []string
+type joinTokenEntry struct {
+	Token    string
 	Creation *time.Time
 	Mut      sync.Mutex
 }
 
-var joinCommandMapMut = sync.Mutex{}
-var joinCommandMap = map[string]*joinCommandEntry{}
+var joinTokenMapMut = sync.Mutex{}
+var joinTokenMap = map[string]*joinTokenEntry{}
 
-// GenerateAddNodeCommand will generate the HelmVM node add command for a primary or secondary node
+// GenerateAddNodeToken will generate the HelmVM node add command for a primary or secondary node
 // join commands will last for 24 hours, and will be cached for 1 hour after first generation
-func GenerateAddNodeCommand(ctx context.Context, client kubernetes.Interface, nodeRole string) ([]string, *time.Time, error) {
-	// get the joinCommand struct entry for this node role
-	joinCommandMapMut.Lock()
-	if _, ok := joinCommandMap[nodeRole]; !ok {
-		joinCommandMap[nodeRole] = &joinCommandEntry{}
+func GenerateAddNodeToken(ctx context.Context, client kubernetes.Interface, nodeRole string) (string, error) {
+	// get the joinToken struct entry for this node role
+	joinTokenMapMut.Lock()
+	if _, ok := joinTokenMap[nodeRole]; !ok {
+		joinTokenMap[nodeRole] = &joinTokenEntry{}
 	}
-	joinCommand := joinCommandMap[nodeRole]
-	joinCommandMapMut.Unlock()
+	joinToken := joinTokenMap[nodeRole]
+	joinTokenMapMut.Unlock()
 
-	// lock the joinCommand struct entry
-	joinCommand.Mut.Lock()
-	defer joinCommand.Mut.Unlock()
+	// lock the joinToken struct entry
+	joinToken.Mut.Lock()
+	defer joinToken.Mut.Unlock()
 
-	// if the joinCommand has been generated in the past hour, return it
-	if joinCommand.Creation != nil && time.Now().Before(joinCommand.Creation.Add(time.Hour)) {
-		expiry := joinCommand.Creation.Add(time.Hour * 24)
-		return joinCommand.Command, &expiry, nil
+	// if the joinToken has been generated in the past hour, return it
+	if joinToken.Creation != nil && time.Now().Before(joinToken.Creation.Add(time.Hour)) {
+		return joinToken.Token, nil
 	}
 
 	newToken, err := runAddNodeCommandPod(ctx, client, nodeRole)
 	if err != nil {
-		return nil, nil, fmt.Errorf("failed to run add node command pod: %w", err)
-	}
-
-	newCmd, err := generateAddNodeCommand(ctx, client, nodeRole, newToken)
-	if err != nil {
-		return nil, nil, fmt.Errorf("failed to generate add node command: %w", err)
+		return "", fmt.Errorf("failed to run add node command pod: %w", err)
 	}
 
 	now := time.Now()
-	joinCommand.Command = newCmd
-	joinCommand.Creation = &now
+	joinToken.Token = newToken
+	joinToken.Creation = &now
 
-	expiry := now.Add(time.Hour * 24)
-	return newCmd, &expiry, nil
+	return newToken, nil
 }
 
 // run a pod that will generate the add node token

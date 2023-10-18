@@ -443,15 +443,15 @@ func (mr *MockKOTSHandlerMockRecorder) GarbageCollectImages(w, r interface{}) *g
 }
 
 // GenerateHelmVMNodeJoinCommand mocks base method.
-func (m *MockKOTSHandler) GenerateHelmVMNodeJoinCommand(w http.ResponseWriter, r *http.Request) {
+func (m *MockKOTSHandler) GenerateK0sNodeJoinCommand(w http.ResponseWriter, r *http.Request) {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "GenerateHelmVMNodeJoinCommand", w, r)
+	m.ctrl.Call(m, "GenerateK0sNodeJoinCommand", w, r)
 }
 
 // GenerateHelmVMNodeJoinCommand indicates an expected call of GenerateHelmVMNodeJoinCommand.
 func (mr *MockKOTSHandlerMockRecorder) GenerateHelmVMNodeJoinCommand(w, r interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GenerateHelmVMNodeJoinCommand", reflect.TypeOf((*MockKOTSHandler)(nil).GenerateHelmVMNodeJoinCommand), w, r)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GenerateK0sNodeJoinCommand", reflect.TypeOf((*MockKOTSHandler)(nil).GenerateK0sNodeJoinCommand), w, r)
 }
 
 // GenerateKurlNodeJoinCommandMaster mocks base method.
