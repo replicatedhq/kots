@@ -584,7 +584,7 @@ const Root = () => {
               <Route path="/unsupported" element={<UnsupportedBrowser />} />
               {/* {state.adminConsoleMetadata?.isHelmVM && ( */}
               <Route
-                path="/cluster/manage"
+                path="/:slug/cluster/manage"
                 element={
                   <HelmVMClusterManagement
                     fromLicenseFlow={true}
@@ -596,7 +596,7 @@ const Root = () => {
               {/* {(state.adminConsoleMetadata?.isKurl ||
                   state.adminConsoleMetadata?.isHelmVM) && ( */}
               <Route
-                path="/:slug/cluster/manage"
+                path="/cluster/manage"
                 element={
                   state.adminConsoleMetadata?.isKurl ? (
                     <KurlClusterManagement />

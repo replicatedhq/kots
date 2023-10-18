@@ -308,6 +308,7 @@ const HelmVMViewNode = () => {
 
   const node = nodeData || testData.nodes[0];
 
+  // #region table data
   const columns = useMemo(
     () => [
       {
@@ -347,9 +348,9 @@ const HelmVMViewNode = () => {
   );
 
   const mappedPods = useMemo(() => {
-    return node.podList.map((n) => ({
-      name: n.metadata.name,
-      status: n.status.phase,
+    return node?.podList?.map((p) => ({
+      name: p.metadata.name,
+      status: p.status.phase,
       disk: null,
       cpu: null,
       memory: null,
@@ -359,7 +360,8 @@ const HelmVMViewNode = () => {
         </>
       ),
     }));
-  }, [node.podList]);
+  }, [node?.podList?.toString()]);
+  // #endregion
 
   return (
     <div className="container u-paddingTop--50 tw-mb-10 tw-pb-6 tw-flex tw-flex-col tw-gap-6 tw-font-sans">

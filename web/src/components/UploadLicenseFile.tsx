@@ -271,7 +271,6 @@ const UploadLicenseFile = (props: Props) => {
               navigate(`/${data.slug}/cluster/manage`, { replace: true });
               return;
             }
-            // cluster manage -> config -> preflights
 
             if (data.hasPreflight) {
               navigate(`/${data.slug}/preflight`, { replace: true });
