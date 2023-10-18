@@ -139,8 +139,7 @@ type KOTSHandler interface {
 	GetKurlNodes(w http.ResponseWriter, r *http.Request)
 
 	// HelmVM
-	GenerateHelmVMNodeJoinCommandSecondary(w http.ResponseWriter, r *http.Request)
-	GenerateHelmVMNodeJoinCommandPrimary(w http.ResponseWriter, r *http.Request)
+	GenerateHelmVMNodeJoinCommand(w http.ResponseWriter, r *http.Request)
 	DrainHelmVMNode(w http.ResponseWriter, r *http.Request)
 	DeleteHelmVMNode(w http.ResponseWriter, r *http.Request)
 	GetHelmVMNodes(w http.ResponseWriter, r *http.Request)

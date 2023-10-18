@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"encoding/json"
 	"net/http"
 	"time"
 
@@ -14,27 +15,18 @@ type GenerateHelmVMNodeJoinCommandResponse struct {
 	Expiry  string   `json:"expiry"`
 }
 
-func (h *Handler) GenerateHelmVMNodeJoinCommandSecondary(w http.ResponseWriter, r *http.Request) {
-	client, err := k8sutil.GetClientset()
-	if err != nil {
-		logger.Error(err)
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-
-	command, expiry, err := helmvm.GenerateAddNodeCommand(r.Context(), client, "worker")
-	if err != nil {
-		logger.Error(err)
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-	JSON(w, http.StatusOK, GenerateHelmVMNodeJoinCommandResponse{
-		Command: command,
-		Expiry:  expiry.Format(time.RFC3339),
-	})
+type GenerateHelmVMNodeJoinCommandRequest struct {
+	Roles []string `json:"roles"`
 }
 
-func (h *Handler) GenerateHelmVMNodeJoinCommandPrimary(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) GenerateHelmVMNodeJoinCommand(w http.ResponseWriter, r *http.Request) {
+	generateHelmVMNodeJoinCommandRequest := GenerateHelmVMNodeJoinCommandRequest{}
+	if err := json.NewDecoder(r.Body).Decode(&generateHelmVMNodeJoinCommandRequest); err != nil {
+		logger.Error(err)
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
 	client, err := k8sutil.GetClientset()
 	if err != nil {
 		logger.Error(err)
@@ -42,7 +34,15 @@ func (h *Handler) GenerateHelmVMNodeJoinCommandPrimary(w http.ResponseWriter, r 
 		return
 	}
 
-	command, expiry, err := helmvm.GenerateAddNodeCommand(r.Context(), client, "controller")
+	k0sRole := "worker"
+	for _, role := range generateHelmVMNodeJoinCommandRequest.Roles {
+		if role == "controller" {
+			k0sRole = "controller"
+			break
+		}
+	}
+
+	command, expiry, err := helmvm.GenerateAddNodeCommand(r.Context(), client, k0sRole)
 	if err != nil {
 		logger.Error(err)
 		w.WriteHeader(http.StatusInternalServerError)
