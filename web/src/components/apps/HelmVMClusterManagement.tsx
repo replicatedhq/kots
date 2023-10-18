@@ -208,8 +208,9 @@ const HelmVMClusterManagement = ({
     isLoading: generateAddNodeCommandLoading,
     // error: generateAddNodeCommandError,
   } = useQuery({
-    queryKey: "generateAddNodeCommand",
-    queryFn: async () => {
+    queryKey: ["generateAddNodeCommand", selectedNodeTypes],
+    queryFn: async ({ queryKey }) => {
+      const [, selectedNodeTypes] = queryKey;
       return (
         await fetch(
           `${process.env.API_ENDPOINT}/helmvm/generate-node-join-command`,
@@ -221,12 +222,13 @@ const HelmVMClusterManagement = ({
             credentials: "include",
             method: "POST",
             body: JSON.stringify({
-              roles: selectedNodeTypes.join(","),
+              roles: selectedNodeTypes,
             }),
           }
         )
       ).json();
     },
+    enabled: selectedNodeTypes.length > 0,
   });
 
   // TODO: import useMutation
