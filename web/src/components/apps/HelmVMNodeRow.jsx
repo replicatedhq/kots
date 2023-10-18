@@ -62,7 +62,6 @@ export default function HelmVMNodeRow({
       }
     }
   };
-  console.log("slug", slug);
 
   return (
     <div className="flex flex-auto HelmVMNodeRow--wrapper">

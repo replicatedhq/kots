@@ -165,7 +165,7 @@ const HelmVMClusterManagement = ({
     }[];
   };
 
-  const { data: nodesData, isLoading: nodesLoading } = useQuery<
+  const { data: nodesData, isInitialLoading: nodesLoading } = useQuery<
     NodesResponse,
     Error,
     NodesResponse,
