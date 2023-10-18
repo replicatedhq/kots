@@ -43,3 +43,12 @@ func IsHelmVM(clientset kubernetes.Interface) (bool, error) {
 func IsHA(clientset kubernetes.Interface) (bool, error) {
 	return true, nil
 }
+
+func ClusterID(client kubernetes.Interface) (string, error) {
+	configMap, err := ReadConfigMap(client)
+	if err != nil {
+		return "", fmt.Errorf("failed to read configmap: %w", err)
+	}
+
+	return configMap.Data["embedded-cluster-id"], nil
+}
