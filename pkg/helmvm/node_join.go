@@ -3,6 +3,7 @@ package helmvm
 import (
 	"context"
 	"fmt"
+	"strings"
 	"sync"
 	"time"
 
@@ -31,24 +32,27 @@ func GenerateAddNodeCommand(ctx context.Context, client kubernetes.Interface, pr
 		defer addSecondaryNodeMut.Unlock()
 	}
 
+	nodeRole := ""
 	if primary {
 		if primaryNodeJoinCommandCreation != nil && time.Now().Before(primaryNodeJoinCommandCreation.Add(time.Hour)) {
 			expiry := primaryNodeJoinCommandCreation.Add(time.Hour * 24)
 			return primaryNodeJoinCommand, &expiry, nil
 		}
+		nodeRole = "controller+worker"
 	} else {
 		if secondaryNodeJoinCommandCreation != nil && time.Now().Before(secondaryNodeJoinCommandCreation.Add(time.Hour)) {
 			expiry := secondaryNodeJoinCommandCreation.Add(time.Hour * 24)
 			return secondaryNodeJoinCommand, &expiry, nil
 		}
+		nodeRole = "worker"
 	}
 
-	newToken, err := runAddNodeCommandPod(ctx, client, primary)
+	newToken, err := runAddNodeCommandPod(ctx, client, nodeRole)
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to run add node command pod: %w", err)
 	}
 
-	newCmd, err := generateAddNodeCommand(ctx, client, primary, newToken)
+	newCmd, err := generateAddNodeCommand(ctx, client, nodeRole, newToken)
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to generate add node command: %w", err)
 	}
@@ -67,16 +71,10 @@ func GenerateAddNodeCommand(ctx context.Context, client kubernetes.Interface, pr
 }
 
 // run a pod that will generate the add node token
-func runAddNodeCommandPod(ctx context.Context, client kubernetes.Interface, primary bool) (string, error) {
-	podName := "k0s-token-generator"
-	nodeRole := ""
-	if primary {
-		podName += "-primary"
-		nodeRole = "controller"
-	} else {
-		podName += "-secondary"
-		nodeRole = "worker"
-	}
+func runAddNodeCommandPod(ctx context.Context, client kubernetes.Interface, nodeRole string) (string, error) {
+	podName := "k0s-token-generator-"
+	suffix := strings.Replace(nodeRole, "+", "-", -1)
+	podName += suffix
 
 	// cleanup the pod if it already exists
 	err := client.CoreV1().Pods("kube-system").Delete(ctx, podName, metav1.DeleteOptions{})
@@ -223,8 +221,8 @@ func runAddNodeCommandPod(ctx context.Context, client kubernetes.Interface, prim
 	return string(podLogs), nil
 }
 
-// generate the add node command from the join token, whether this is a primary node, and info from the embedded-cluster-config configmap
-func generateAddNodeCommand(ctx context.Context, client kubernetes.Interface, primary bool, token string) ([]string, error) {
+// generate the add node command from the join token, the node roles, and info from the embedded-cluster-config configmap
+func generateAddNodeCommand(ctx context.Context, client kubernetes.Interface, nodeRole string, token string) ([]string, error) {
 	cm, err := ReadConfigMap(client)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read configmap: %w", err)
@@ -239,13 +237,6 @@ func generateAddNodeCommand(ctx context.Context, client kubernetes.Interface, pr
 		return nil, fmt.Errorf("failed to unmarshal cluster id %s: %w", clusterID, err)
 	}
 
-	nodeRole := ""
-	if primary {
-		nodeRole = "controller"
-	} else {
-		nodeRole = "worker"
-	}
-
 	fullToken := joinToken{
 		ClusterID: clusterUUID,
 		Token:     token,
@@ -257,5 +248,5 @@ func generateAddNodeCommand(ctx context.Context, client kubernetes.Interface, pr
 		return nil, fmt.Errorf("unable to encode token: %w", err)
 	}
 
-	return []string{binaryName, b64token}, nil
+	return []string{binaryName + " node join", b64token}, nil
 }
