@@ -272,7 +272,7 @@ func getControllerNodeIP(ctx context.Context, client kubernetes.Interface) (stri
 	}
 
 	for _, node := range nodes.Items {
-		if cp, ok := node.Labels["node-role.kubernetes.io/control-plane"]; !ok || cp == "true" {
+		if cp, ok := node.Labels["node-role.kubernetes.io/control-plane"]; !ok || cp != "true" {
 			continue
 		}
 
