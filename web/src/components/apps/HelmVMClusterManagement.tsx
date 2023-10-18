@@ -2,7 +2,7 @@ import classNames from "classnames";
 import MaterialReactTable from "material-react-table";
 import React, { ChangeEvent, useMemo, useReducer, useState } from "react";
 import Modal from "react-modal";
-import { useQuery } from "react-query";
+import { useQuery } from "@tanstack/react-query";
 import { Link, useParams } from "react-router-dom";
 
 import { KotsPageTitle } from "@components/Head";
@@ -165,8 +165,8 @@ const HelmVMClusterManagement = ({
     data: nodesData,
     isInitialLoading: nodesLoading,
     error: nodesError,
-  } = useQuery<NodesResponse, Error, NodesResponse, string>({
-    queryKey: "helmVmNodes",
+  } = useQuery<NodesResponse, Error, NodesResponse>({
+    queryKey: ["helmVmNodes"],
     queryFn: async () => {
       const res = await fetch(`${process.env.API_ENDPOINT}/helmvm/nodes`, {
         headers: {
