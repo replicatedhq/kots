@@ -42,7 +42,7 @@ func (h *Handler) GenerateHelmVMNodeJoinCommandPrimary(w http.ResponseWriter, r 
 		return
 	}
 
-	command, expiry, err := helmvm.GenerateAddNodeCommand(r.Context(), client, "controller+worker")
+	command, expiry, err := helmvm.GenerateAddNodeCommand(r.Context(), client, "controller")
 	if err != nil {
 		logger.Error(err)
 		w.WriteHeader(http.StatusInternalServerError)
