@@ -36,7 +36,7 @@ func (s *KOTSStore) SetK0sInstallCommandRoles(roles []string) (string, error) {
 		return "", fmt.Errorf("insert k0s join token: %v: %v", err, wr.Err)
 	}
 
-	return "", nil
+	return installID, nil
 }
 
 func (s *KOTSStore) GetK0sInstallCommandRoles(token string) ([]string, error) {
