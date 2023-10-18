@@ -1,0 +1,21 @@
+apiVersion: schemas.schemahero.io/v1alpha4
+kind: Table
+metadata:
+  name: k0s-tokens
+spec:
+  name: k0s_tokens
+  requires: []
+  schema:
+    rqlite:
+      strict: true
+      primaryKey:
+      - token
+      columns:
+      - name: token
+        type: text
+        constraints:
+          notNull: true
+      - name: roles
+        type: text
+        constraints:
+          notNull: true
