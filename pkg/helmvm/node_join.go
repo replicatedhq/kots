@@ -3,11 +3,11 @@ package helmvm
 import (
 	"context"
 	"fmt"
+	"os"
 	"strings"
 	"sync"
 	"time"
 
-	"github.com/google/uuid"
 	corev1 "k8s.io/api/core/v1"
 	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -206,32 +206,87 @@ func runAddNodeCommandPod(ctx context.Context, client kubernetes.Interface, node
 	return string(podLogs), nil
 }
 
-// generate the add node command from the join token, the node roles, and info from the embedded-cluster-config configmap
-func generateAddNodeCommand(ctx context.Context, client kubernetes.Interface, nodeRole string, token string) ([]string, error) {
+// GenerateAddNodeCommand returns the command a user should run to add a node with the provided token
+// the command will be of the form 'helmvm node join ip:port UUID'
+func GenerateAddNodeCommand(ctx context.Context, client kubernetes.Interface, token string) (string, error) {
 	cm, err := ReadConfigMap(client)
 	if err != nil {
-		return nil, fmt.Errorf("failed to read configmap: %w", err)
+		return "", fmt.Errorf("failed to read configmap: %w", err)
 	}
 
-	clusterID := cm.Data["embedded-cluster-id"]
 	binaryName := cm.Data["embedded-binary-name"]
 
-	clusterUUID := uuid.UUID{}
-	err = clusterUUID.UnmarshalText([]byte(clusterID))
+	// get the IP of a controller node
+	nodeIP, err := getControllerNodeIP(ctx, client)
 	if err != nil {
-		return nil, fmt.Errorf("failed to unmarshal cluster id %s: %w", clusterID, err)
+		return "", fmt.Errorf("failed to get controller node IP: %w", err)
 	}
 
-	fullToken := joinToken{
-		ClusterID: clusterUUID,
-		Token:     token,
-		Role:      nodeRole,
-	}
-
-	b64token, err := fullToken.Encode()
+	// get the port of the 'admin-console' service
+	port, err := getAdminConsolePort(ctx, client)
 	if err != nil {
-		return nil, fmt.Errorf("unable to encode token: %w", err)
+		return "", fmt.Errorf("failed to get admin console port: %w", err)
 	}
 
-	return []string{binaryName + " node join", b64token}, nil
+	return fmt.Sprintf("%s node join %s:%d %s", binaryName, nodeIP, port, token), nil
+}
+
+// GenerateK0sJoinCommand returns the k0s node join command, without the token but with all other required flags
+// (including node labels generated from the roles etc)
+func GenerateK0sJoinCommand(ctx context.Context, client kubernetes.Interface, roles []string) (string, error) {
+	k0sRole := "worker"
+	for _, role := range roles {
+		if role == "controller" {
+			k0sRole = "controller"
+		}
+	}
+
+	cmd := []string{"install", k0sRole, "--force"}
+	if k0sRole == "controller" {
+		cmd = append(cmd, "--enable-worker")
+	}
+
+	return strings.Join(cmd, " "), nil
+}
+
+// gets the port of the 'admin-console' service
+func getAdminConsolePort(ctx context.Context, client kubernetes.Interface) (int32, error) {
+	svc, err := client.CoreV1().Services(os.Getenv("POD_NAMESPACE")).Get(ctx, "admin-console", metav1.GetOptions{})
+	if err != nil {
+		return -1, fmt.Errorf("failed to get admin-console service: %w", err)
+	}
+
+	for _, port := range svc.Spec.Ports {
+		if port.Name == "http" {
+			return port.NodePort, nil
+		}
+	}
+	return -1, fmt.Errorf("did not find port 'http' in service 'admin-console'")
+}
+
+// getControllerNodeIP gets the IP of a healthy controller node
+func getControllerNodeIP(ctx context.Context, client kubernetes.Interface) (string, error) {
+	nodes, err := client.CoreV1().Nodes().List(ctx, metav1.ListOptions{})
+	if err != nil {
+		return "", fmt.Errorf("failed to list nodes: %w", err)
+	}
+
+	for _, node := range nodes.Items {
+		if cp, ok := node.Labels["node-role.kubernetes.io/control-plane"]; !ok || cp == "true" {
+			continue
+		}
+
+		for _, condition := range node.Status.Conditions {
+			if condition.Type == "Ready" && condition.Status == "True" {
+				for _, address := range node.Status.Addresses {
+					if address.Type == "InternalIP" {
+						return address.Address, nil
+					}
+				}
+			}
+		}
+
+	}
+
+	return "", fmt.Errorf("failed to find healthy controller node")
 }

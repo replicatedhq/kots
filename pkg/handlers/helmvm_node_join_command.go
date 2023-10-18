@@ -3,13 +3,11 @@ package handlers
 import (
 	"encoding/json"
 	"fmt"
-	"net/http"
-	"strings"
-
 	"github.com/replicatedhq/kots/pkg/helmvm"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/store/kotsstore"
+	"net/http"
 )
 
 type GenerateK0sNodeJoinCommandResponse struct {
@@ -41,8 +39,17 @@ func (h *Handler) GenerateK0sNodeJoinCommand(w http.ResponseWriter, r *http.Requ
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
+
+	client, err := k8sutil.GetClientset()
+	if err != nil {
+		logger.Error(fmt.Errorf("failed to get clientset: %w", err))
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	nodeJoinCommand, err := helmvm.GenerateAddNodeCommand(r.Context(), client, token)
+
 	JSON(w, http.StatusOK, GenerateK0sNodeJoinCommandResponse{
-		Command: []string{fmt.Sprintf("TODO_BINARY node join TODO_ADDRESS %s", token)},
+		Command: []string{nodeJoinCommand},
 	})
 }
 
@@ -81,9 +88,23 @@ func (h *Handler) GetK0sNodeJoinCommand(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
+	k0sJoinCommand, err := helmvm.GenerateK0sJoinCommand(r.Context(), client, roles)
+	if err != nil {
+		logger.Error(fmt.Errorf("failed to generate k0s join command: %w", err))
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	clusterID, err := helmvm.ClusterID(client)
+	if err != nil {
+		logger.Error(fmt.Errorf("failed to get cluster id: %w", err))
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
 	JSON(w, http.StatusOK, GetK0sNodeJoinCommandResponse{
-		ClusterID:      "TODO",
-		K0sJoinCommand: strings.Join(roles, " --- "),
+		ClusterID:      clusterID,
+		K0sJoinCommand: k0sJoinCommand,
 		K0sToken:       k0sToken,
 	})
 }
