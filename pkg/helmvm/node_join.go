@@ -241,7 +241,7 @@ func GenerateK0sJoinCommand(ctx context.Context, client kubernetes.Interface, ro
 		}
 	}
 
-	cmd := []string{"install", k0sRole, "--force"}
+	cmd := []string{"/usr/local/bin/k0s", "install", k0sRole, "--force"}
 	if k0sRole == "controller" {
 		cmd = append(cmd, "--enable-worker")
 	}
