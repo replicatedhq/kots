@@ -3,14 +3,13 @@ import MaterialReactTable from "material-react-table";
 import React, { ChangeEvent, useMemo, useReducer, useState } from "react";
 import Modal from "react-modal";
 import { useQuery } from "react-query";
-import { Link } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 
 import { KotsPageTitle } from "@components/Head";
 import { useApps } from "@features/App";
 import { rbacRoles } from "../../constants/rbac";
 import { Utilities } from "../../utilities/utilities";
 import Icon from "../Icon";
-import ErrorModal from "../modals/ErrorModal";
 import CodeSnippet from "../shared/CodeSnippet";
 
 import "@src/scss/components/apps/HelmVMClusterManagement.scss";
@@ -127,6 +126,7 @@ const HelmVMClusterManagement = ({
 
   const { data: appsData } = useApps();
   const app = appsData?.apps?.find((a) => a.name === appName);
+  const { slug } = useParams();
 
   // #region queries
   type NodesResponse = {
@@ -270,89 +270,10 @@ const HelmVMClusterManagement = ({
   // });
   // #endregion
 
-  const deleteNode = (name: string) => {
-    setState({
-      confirmDeleteNode: name,
-    });
-  };
-
-  const cancelDeleteNode = () => {
-    setState({
-      confirmDeleteNode: "",
-    });
-  };
-
-  const reallyDeleteNode = () => {
-    const name = state.confirmDeleteNode;
-    cancelDeleteNode();
-
-    fetch(`${process.env.API_ENDPOINT}/helmvm/nodes/${name}`, {
-      headers: {
-        "Content-Type": "application/json",
-        Accept: "application/json",
-      },
-      credentials: "include",
-      method: "DELETE",
-    })
-      .then(async (res) => {
-        if (!res.ok) {
-          if (res.status === 401) {
-            Utilities.logoutUser();
-            return;
-          }
-          setState({
-            deleteNodeError: `Delete failed with status ${res.status}`,
-          });
-        }
-      })
-      .catch((err) => {
-        console.log(err);
-      });
-  };
-
-  const onDrainNodeClick = (name: string) => {
-    setState({
-      showConfirmDrainModal: true,
-      nodeNameToDrain: name,
-    });
-  };
-
-  const drainNode = async (name: string) => {
-    setState({ showConfirmDrainModal: false, drainingNodeName: name });
-    fetch(`${process.env.API_ENDPOINT}/helmvm/nodes/${name}/drain`, {
-      headers: {
-        "Content-Type": "application/json",
-        Accept: "application/json",
-      },
-      credentials: "include",
-      method: "POST",
-    })
-      .then(async () => {
-        setState({ drainNodeSuccessful: true });
-        setTimeout(() => {
-          setState({
-            drainingNodeName: null,
-            drainNodeSuccessful: false,
-          });
-        }, 3000);
-      })
-      .catch((err) => {
-        console.log(err);
-        setState({
-          drainingNodeName: null,
-          drainNodeSuccessful: false,
-        });
-      });
-  };
-
   const onAddNodeClick = () => {
     setState({
       displayAddNode: true,
     });
-  };
-
-  const ackDeleteNodeError = () => {
-    setState({ deleteNodeError: "" });
   };
 
   // #region node type logic
@@ -433,7 +354,14 @@ const HelmVMClusterManagement = ({
 
   const mappedNodes = useMemo(() => {
     return (nodesData?.nodes || testData.nodes).map((n) => ({
-      name: n.name,
+      name: slug ? (
+        <Link
+          to={`${slug}/cluster/${n.name}`}
+          className="tw-font-semibold tw-text-blue-300 hover:tw-underline"
+        />
+      ) : (
+        n.name
+      ),
       roles: (
         <div className="tw-w-full tw-flex tw-flex-wrap tw-gap-1">
           {n.labels.map((l) => (
@@ -472,8 +400,8 @@ const HelmVMClusterManagement = ({
             Cluster Nodes
           </p>
           <div className="tw-flex tw-gap-6 tw-items-center">
-            <p className="tw-text-base tw-flex-1">
-              This section lists the nodes that are configured and shows the
+            <p className="tw-text-base tw-flex-1 tw-text-gray-600">
+              This page lists the nodes that are configured and shows the
               status/health of each.
             </p>
             {Utilities.sessionRolesHasOneOf([rbacRoles.CLUSTER_ADMIN]) && (
@@ -560,7 +488,7 @@ const HelmVMClusterManagement = ({
         className="Modal"
         ariaHideApp={false}
       >
-        <div className="Modal-body tw-flex tw-flex-col tw-gap-4">
+        <div className="Modal-body tw-flex tw-flex-col tw-gap-4 tw-font-sans">
           <div className="tw-flex">
             <h1 className="u-fontSize--largest u-fontWeight--bold u-textColor--primary u-lineHeight--normal u-marginBottom--more">
               Add a Node
@@ -572,11 +500,12 @@ const HelmVMClusterManagement = ({
               onClick={() => setState({ displayAddNode: false })}
             />
           </div>
-          <p className="tw-text-base">
+          <p className="tw-text-base tw-text-gray-600">
             To add a node to this cluster, select the type of node you'd like to
-            add, and then select an installation method below. When the node
-            successfully joins the cluster, you will see it appear in the list
-            of nodes on this page.
+            add. Once you've selected a node type, we will generate a node join
+            command for you to use in the CLI. When the node successfully joins
+            the cluster, you will see it appear in the list of nodes on this
+            page.
           </p>
           <div className="tw-grid tw-gap-2 tw-grid-cols-4 tw-auto-rows-auto">
             {NODE_TYPES.map((nodeType) => (
@@ -641,92 +570,6 @@ const HelmVMClusterManagement = ({
           </div>
         </div>
       </Modal>
-      {state.deleteNodeError && (
-        <ErrorModal
-          errorModal={true}
-          toggleErrorModal={ackDeleteNodeError}
-          err={"Failed to delete node"}
-          errMsg={state.deleteNodeError}
-        />
-      )}
-      <Modal
-        isOpen={!!state.confirmDeleteNode}
-        onRequestClose={cancelDeleteNode}
-        shouldReturnFocusAfterClose={false}
-        contentLabel="Confirm Delete Node"
-        ariaHideApp={false}
-        className="Modal"
-      >
-        <div className="Modal-body">
-          <p className="u-fontSize--normal u-textColor--bodyCopy u-lineHeight--normal u-marginBottom--20">
-            Deleting this node may cause data loss. Are you sure you want to
-            proceed?
-          </p>
-          <div className="u-marginTop--10 flex">
-            <button
-              onClick={reallyDeleteNode}
-              type="button"
-              className="btn red primary"
-            >
-              Delete {state.confirmDeleteNode}
-            </button>
-            <button
-              onClick={cancelDeleteNode}
-              type="button"
-              className="btn secondary u-marginLeft--20"
-            >
-              Cancel
-            </button>
-          </div>
-        </div>
-      </Modal>
-      {state.showConfirmDrainModal && (
-        <Modal
-          isOpen={true}
-          onRequestClose={() =>
-            setState({
-              showConfirmDrainModal: false,
-              nodeNameToDrain: "",
-            })
-          }
-          shouldReturnFocusAfterClose={false}
-          contentLabel="Confirm Drain Node"
-          ariaHideApp={false}
-          className="Modal MediumSize"
-        >
-          <div className="Modal-body">
-            <p className="u-fontSize--larger u-textColor--primary u-fontWeight--bold u-lineHeight--normal">
-              Are you sure you want to drain {state.nodeNameToDrain}?
-            </p>
-            <p className="u-fontSize--normal u-textColor--bodyCopy u-lineHeight--normal u-marginBottom--20">
-              Draining this node may cause data loss. If you want to delete{" "}
-              {state.nodeNameToDrain} you must disconnect it after it has been
-              drained.
-            </p>
-            <div className="u-marginTop--10 flex">
-              <button
-                onClick={() => drainNode(state.nodeNameToDrain)}
-                type="button"
-                className="btn red primary"
-              >
-                Drain {state.nodeNameToDrain}
-              </button>
-              <button
-                onClick={() =>
-                  setState({
-                    showConfirmDrainModal: false,
-                    nodeNameToDrain: "",
-                  })
-                }
-                type="button"
-                className="btn secondary u-marginLeft--20"
-              >
-                Cancel
-              </button>
-            </div>
-          </div>
-        </Modal>
-      )}
     </div>
   );
 };
