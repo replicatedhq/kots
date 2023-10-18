@@ -29,7 +29,7 @@ type GenerateHelmVMNodeJoinCommandRequest struct {
 func (h *Handler) GenerateK0sNodeJoinCommand(w http.ResponseWriter, r *http.Request) {
 	generateHelmVMNodeJoinCommandRequest := GenerateHelmVMNodeJoinCommandRequest{}
 	if err := json.NewDecoder(r.Body).Decode(&generateHelmVMNodeJoinCommandRequest); err != nil {
-		logger.Error(err)
+		logger.Error(fmt.Errorf("failed to decode request body: %w", err))
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
@@ -37,12 +37,12 @@ func (h *Handler) GenerateK0sNodeJoinCommand(w http.ResponseWriter, r *http.Requ
 	store := kotsstore.StoreFromEnv()
 	token, err := store.SetK0sInstallCommandRoles(generateHelmVMNodeJoinCommandRequest.Roles)
 	if err != nil {
-		logger.Error(err)
+		logger.Error(fmt.Errorf("failed to set k0s install command roles: %w", err))
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 	JSON(w, http.StatusOK, GenerateK0sNodeJoinCommandResponse{
-		Command: []string{fmt.Sprint("TODO_BINARY node join TODO_ADDRESS %s", token)},
+		Command: []string{fmt.Sprintf("TODO_BINARY node join TODO_ADDRESS %s", token)},
 	})
 }
 
@@ -53,7 +53,7 @@ func (h *Handler) GetK0sNodeJoinCommand(w http.ResponseWriter, r *http.Request) 
 	store := kotsstore.StoreFromEnv()
 	roles, err := store.GetK0sInstallCommandRoles(token)
 	if err != nil {
-		logger.Error(err)
+		logger.Error(fmt.Errorf("failed to get k0s install command roles: %w", err))
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
@@ -61,7 +61,7 @@ func (h *Handler) GetK0sNodeJoinCommand(w http.ResponseWriter, r *http.Request) 
 	// use roles to generate join token etc
 	client, err := k8sutil.GetClientset()
 	if err != nil {
-		logger.Error(err)
+		logger.Error(fmt.Errorf("failed to get clientset: %w", err))
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
@@ -76,7 +76,7 @@ func (h *Handler) GetK0sNodeJoinCommand(w http.ResponseWriter, r *http.Request) 
 
 	k0sToken, err := helmvm.GenerateAddNodeToken(r.Context(), client, k0sRole)
 	if err != nil {
-		logger.Error(err)
+		logger.Error(fmt.Errorf("failed to generate add node token: %w", err))
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
