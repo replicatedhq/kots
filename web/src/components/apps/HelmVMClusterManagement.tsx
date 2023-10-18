@@ -1,13 +1,12 @@
 import classNames from "classnames";
-import dayjs from "dayjs";
-import React, { useEffect, useMemo, useReducer, useState } from "react";
+import React, { ChangeEvent, useReducer, useState } from "react";
 import Modal from "react-modal";
-import { useMutation, useQuery } from "react-query";
+import { useQuery } from "react-query";
 import { useNavigate } from "react-router-dom";
 
 import { KotsPageTitle } from "@components/Head";
+import { useApps } from "@features/App";
 import { rbacRoles } from "../../constants/rbac";
-import { Repeater } from "../../utilities/repeater";
 import { Utilities } from "../../utilities/utilities";
 import Icon from "../Icon";
 import ErrorModal from "../modals/ErrorModal";
@@ -93,50 +92,106 @@ const testData = {
   ],
 };
 
-const HelmVMClusterManagement = ({ fromLicenseFlow = false }) => {
+type State = {
+  displayAddNode: boolean;
+  selectedNodeType: string;
+  confirmDeleteNode: string;
+  deleteNodeError: string;
+  showConfirmDrainModal: boolean;
+  nodeNameToDrain: string;
+  drainingNodeName: string | null;
+  drainNodeSuccessful: boolean;
+};
+
+const HelmVMClusterManagement = ({
+  fromLicenseFlow = false,
+  appName,
+}: {
+  fromLicenseFlow?: boolean;
+  appName?: string;
+}) => {
   const [state, setState] = useReducer(
-    (state, newState) => ({ ...state, ...newState }),
+    (prevState: State, newState: Partial<State>) => ({
+      ...prevState,
+      ...newState,
+    }),
     {
       displayAddNode: false,
       selectedNodeType: "primary",
-      helmvm: null,
-      deletNodeError: "",
       confirmDeleteNode: "",
+      deleteNodeError: "",
       showConfirmDrainModal: false,
       nodeNameToDrain: "",
       drainingNodeName: null,
       drainNodeSuccessful: false,
     }
   );
-  const [selectedNodeTypes, setSelectedNodeTypes] = useState([]);
+  const [selectedNodeTypes, setSelectedNodeTypes] = useState<string[]>([]);
   const [useStaticToken, setUseStaticToken] = useState(false);
 
   const navigate = useNavigate();
 
   // #region queries
 
-  const { data: nodes, isLoading: nodesLoading } = useQuery({
+  type NodesResponse = {
+    ha: boolean;
+    isHelmVMEnabled: boolean;
+    nodes: {
+      name: string;
+      isConnected: boolean;
+      isReady: boolean;
+      isPrimaryNode: boolean;
+      canDelete: boolean;
+      kubeletVersion: string;
+      cpu: {
+        capacity: number;
+        available: number;
+      };
+      memory: {
+        capacity: number;
+        available: number;
+      };
+      pods: {
+        capacity: number;
+        available: number;
+      };
+      labels: string[];
+      conditions: {
+        memoryPressure: boolean;
+        diskPressure: boolean;
+        pidPressure: boolean;
+        ready: boolean;
+      };
+    }[];
+  };
+
+  const { data: nodesData, isLoading: nodesLoading } = useQuery<
+    NodesResponse,
+    Error,
+    NodesResponse,
+    string
+  >({
     queryKey: "helmVmNodes",
     queryFn: async () => {
-      return (
-        await fetch(`${process.env.API_ENDPOINT}/helmvm/nodes`, {
-          headers: {
-            Accept: "application/json",
-          },
-          credentials: "include",
-          method: "GET",
-        })
-      ).json();
-    },
-    onError: (err) => {
-      if (err.status === 401) {
+      const res = await fetch(`${process.env.API_ENDPOINT}/helmvm/nodes`, {
+        headers: {
+          Accept: "application/json",
+        },
+        credentials: "include",
+        method: "GET",
+      });
+      if (res.status === 401) {
         Utilities.logoutUser();
-        return;
+        console.log(
+          "failed to get node status list, unexpected status code",
+          res.status
+        );
+        const error = await res.json();
+        throw new Error(
+          error?.error?.message || error?.error || error?.message
+        );
       }
-      console.log(
-        "failed to get node status list, unexpected status code",
-        err.status
-      );
+      return res.json();
     },
     onSuccess: (data) => {
       setState({
@@ -144,22 +199,20 @@ const HelmVMClusterManagement = ({ fromLicenseFlow = false }) => {
         selectedNodeType: !data.ha ? "secondary" : state.selectedNodeType,
       });
     },
-    config: {
-      refetchInterval: 1000,
-      retry: false,
-    },
+    refetchInterval: 1000,
+    retry: false,
   });
 
   const {
-    data: generateSecondaryAddNodeCommand,
-    isLoading: generateSecondaryAddNodeCommandLoading,
-    error: generateSecondaryAddNodeCommandError,
+    data: generateAddNodeCommand,
+    isLoading: generateAddNodeCommandLoading,
+    // error: generateAddNodeCommandError,
   } = useQuery({
-    queryKey: "generateSecondaryAddNodeCommand",
+    queryKey: "generateAddNodeCommand",
     queryFn: async () => {
       return (
         await fetch(
-          `${process.env.API_ENDPOINT}/helmvm/generate-node-join-command-secondary`,
+          `${process.env.API_ENDPOINT}/helmvm/generate-node-join-command`,
           {
             headers: {
               "Content-Type": "application/json",
@@ -167,56 +220,37 @@ const HelmVMClusterManagement = ({ fromLicenseFlow = false }) => {
             },
             credentials: "include",
             method: "POST",
+            body: JSON.stringify({
+              roles: selectedNodeTypes.join(","),
+            }),
           }
         )
       ).json();
     },
   });
 
-  const {
-    data: generatePrimaryAddNodeCommand,
-    isLoading: generatePrimaryAddNodeCommandLoading,
-    error: generatePrimaryAddNodeCommandError,
-  } = useQuery({
-    queryKey: "generatePrimaryAddNodeCommand",
-    queryFn: async () => {
-      return (
-        await fetch(
-          `${process.env.API_ENDPOINT}/helmvm/generate-node-join-command-primary`,
-          {
-            headers: {
-              "Content-Type": "application/json",
-              Accept: "application/json",
-            },
-            credentials: "include",
-            method: "POST",
-          }
-        )
-      ).json();
-    },
-  });
-
-  const {
-    mutate: addNodeType,
-    isLoading: addNodeTypeLoading,
-    error: addNodeTypeError,
-  } = useMutation({
-    mutationFn: async () => {
-      return (
-        await fetch(`${process.env.API_ENDPOINT}/helmvm/nodes`, {
-          headers: {
-            "Content-Type": "application/json",
-            Accept: "application/json",
-          },
-          credentials: "include",
-          method: "POST",
-        })
-      ).json();
-    },
-  });
+  // TODO: import useMutation
+  // const {
+  //   mutate: addNodeType,
+  //   isLoading: addNodeTypeLoading,
+  //   error: addNodeTypeError,
+  // } = useMutation({
+  //   mutationFn: async () => {
+  //     return (
+  //       await fetch(`${process.env.API_ENDPOINT}/helmvm/nodes`, {
+  //         headers: {
+  //           "Content-Type": "application/json",
+  //           Accept: "application/json",
+  //         },
+  //         credentials: "include",
+  //         method: "POST",
+  //       })
+  //     ).json();
+  //   },
+  // });
   // #endregion
 
-  const deleteNode = (name) => {
+  const deleteNode = (name: string) => {
     setState({
       confirmDeleteNode: name,
     });
@@ -256,14 +290,14 @@ const HelmVMClusterManagement = ({ fromLicenseFlow = false }) => {
       });
   };
 
-  const onDrainNodeClick = (name) => {
+  const onDrainNodeClick = (name: string) => {
     setState({
       showConfirmDrainModal: true,
       nodeNameToDrain: name,
     });
   };
 
-  const drainNode = async (name) => {
+  const drainNode = async (name: string) => {
     setState({ showConfirmDrainModal: false, drainingNodeName: name });
     fetch(`${process.env.API_ENDPOINT}/helmvm/nodes/${name}/drain`, {
       headers: {
@@ -273,7 +307,7 @@ const HelmVMClusterManagement = ({ fromLicenseFlow = false }) => {
       credentials: "include",
       method: "POST",
     })
-      .then(async (res) => {
+      .then(async () => {
         setState({ drainNodeSuccessful: true });
         setTimeout(() => {
           setState({
@@ -301,41 +335,24 @@ const HelmVMClusterManagement = ({ fromLicenseFlow = false }) => {
     setState({ deleteNodeError: "" });
   };
 
-  const NODE_TYPES = [
-    "controlplane",
-    "db",
-    "app",
-    "search",
-    "webserver",
-    "jobs",
-  ];
+  const NODE_TYPES = ["controller"];
 
-  const determineDisabledState = (nodeType, selectedNodeTypes) => {
-    if (nodeType === "controlplane") {
-      const numControlPlanes = testData.nodes.reduce((acc, node) => {
-        if (node.labels.includes("controlplane")) {
-          acc++;
-        }
-        return acc;
-      });
-      return numControlPlanes === 3;
-    }
-    if (
-      (nodeType === "db" || nodeType === "search") &&
-      selectedNodeTypes.includes("webserver")
-    ) {
-      return true;
-    }
+  const determineDisabledState = () => {
+    // if (nodeType === "controller") {
+    //   const numControllers = testData.nodes.reduce((acc, node) => {
+    //     if (node.labels.includes("controller")) {
+    //       acc += 1;
+    //     }
+    //     return acc;
+    //   }, 0);
+    //   return numControllers === 3;
+    // }
     return false;
   };
 
-  const handleSelectNodeType = (e) => {
-    const nodeType = e.currentTarget.value;
+  const handleSelectNodeType = (e: ChangeEvent<HTMLInputElement>) => {
+    let nodeType = e.currentTarget.value;
     let types = selectedNodeTypes;
-
-    if (nodeType === "webserver") {
-      types = types.filter((type) => type !== "db" && type !== "search");
-    }
 
     if (selectedNodeTypes.includes(nodeType)) {
       setSelectedNodeTypes(types.filter((type) => type !== nodeType));
@@ -344,9 +361,12 @@ const HelmVMClusterManagement = ({ fromLicenseFlow = false }) => {
     }
   };
 
+  const { data } = useApps();
+
   const handleContinue = () => {
-    if (data.isConfigurable) {
-      navigate(`/${data.slug}/config`, { replace: true });
+    const app = data?.apps?.find((a) => a.name === appName);
+    if (app?.isConfigurable) {
+      navigate(`/${app.slug}/config`, { replace: true });
       return;
     }
   };
@@ -382,15 +402,17 @@ const HelmVMClusterManagement = ({ fromLicenseFlow = false }) => {
             )}
           </div>
           <div className="flex1 u-overflow--auto">
-            {(nodes?.nodes || testData?.nodes) &&
-              (nodes?.nodes || testData?.nodes).map((node, i) => (
+            {(nodesData?.nodes || testData?.nodes) &&
+              (nodesData?.nodes || testData?.nodes).map((node, i) => (
                 <HelmVMNodeRow
                   key={i}
                   node={node}
                   drainingNodeName={state.drainingNodeName}
                   drainNodeSuccessful={state.drainNodeSuccessful}
-                  drainNode={nodes?.isHelmVMEnabled ? onDrainNodeClick : null}
-                  deleteNode={nodes?.isHelmVMEnabled ? deleteNode : null}
+                  drainNode={
+                    nodesData?.isHelmVMEnabled ? onDrainNodeClick : null
+                  }
+                  deleteNode={nodesData?.isHelmVMEnabled ? deleteNode : null}
                 />
               ))}
           </div>
@@ -436,10 +458,7 @@ const HelmVMClusterManagement = ({ fromLicenseFlow = false }) => {
                 key={nodeType}
                 className={classNames("BoxedCheckbox", {
                   "is-active": selectedNodeTypes.includes(nodeType),
-                  "is-disabled": determineDisabledState(
-                    nodeType,
-                    selectedNodeTypes
-                  ),
+                  "is-disabled": determineDisabledState(nodeType),
                 })}
               >
                 <input
@@ -448,7 +467,7 @@ const HelmVMClusterManagement = ({ fromLicenseFlow = false }) => {
                   type="checkbox"
                   name={`${nodeType}NodeType`}
                   value={nodeType}
-                  disabled={determineDisabledState(nodeType, selectedNodeTypes)}
+                  disabled={determineDisabledState(nodeType)}
                   checked={selectedNodeTypes.includes(nodeType)}
                   onChange={handleSelectNodeType}
                 />
@@ -456,22 +475,25 @@ const HelmVMClusterManagement = ({ fromLicenseFlow = false }) => {
                   htmlFor={`${nodeType}NodeType`}
                   className="tw-block u-cursor--pointer u-userSelect--none u-textColor--primary u-fontSize--normal u-fontWeight--medium tw-text-center"
                 >
-                  {nodeType}
+                  {nodeType === "controller" ? "controlplane" : nodeType}
                 </label>
               </div>
             ))}
           </div>
           <div>
-            <CodeSnippet
-              key={selectedNodeTypes.toString()}
-              language="bash"
-              canCopy={true}
-              onCopyText={<span className="u-textColor--success">Copied!</span>}
-            >
-              {`curl ${generatePrimaryAddNodeCommand}?token=abc&labels=${selectedNodeTypes.join(
-                ","
-              )}`}
-            </CodeSnippet>
+            {generateAddNodeCommandLoading && <p>Generating command...</p>}
+            {!generateAddNodeCommandLoading && generateAddNodeCommand?.command && (
+              <CodeSnippet
+                key={selectedNodeTypes.toString()}
+                language="bash"
+                canCopy={true}
+                onCopyText={
+                  <span className="u-textColor--success">Copied!</span>
+                }
+              >
+                {generateAddNodeCommand?.command || ""}
+              </CodeSnippet>
+            )}
           </div>
           <div className="tw-flex tw-items-center tw-gap-1.5">
             <input

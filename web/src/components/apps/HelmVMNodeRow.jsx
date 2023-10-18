@@ -1,6 +1,6 @@
 import classNames from "classnames";
 import React from "react";
-import { Link } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 
 import { rbacRoles } from "../../constants/rbac";
 import { getPercentageStatus, Utilities } from "../../utilities/utilities";
@@ -14,6 +14,8 @@ export default function HelmVMNodeRow({
   drainingNodeName,
   deleteNode,
 }) {
+  const { slug } = useParams();
+
   const DrainDeleteNode = () => {
     if (drainNode && Utilities.sessionRolesHasOneOf(rbacRoles.DRAIN_NODE)) {
       if (
@@ -60,17 +62,25 @@ export default function HelmVMNodeRow({
       }
     }
   };
+  console.log("slug", slug);
 
   return (
     <div className="flex flex-auto HelmVMNodeRow--wrapper">
       <div className="flex-column flex1">
         <div className="flex flex-auto alignItems--center u-fontWeight--bold u-textColor--primary">
-          <Link
-            to={`/cluster/${node?.name}`}
-            className="u-fontSize--normal u-fontWeight--bold tw-color-blue-300 hover:tw-underline"
-          >
-            {node?.name}
-          </Link>
+          {slug && (
+            <Link
+              to={`/${slug}/cluster/${node?.name}`}
+              className="u-fontSize--normal u-fontWeight--bold tw-color-blue-300 hover:tw-underline"
+            >
+              {node?.name}
+            </Link>
+          )}
+          {!slug && (
+            <p className="u-fontSize--normal u-fontWeight--bold u-textColor--primary">
+              {node?.name}
+            </p>
+          )}
           {node?.isPrimaryNode && (
             <span className="nodeTag flex-auto alignItems--center u-fontWeight--medium u-marginLeft--10">
               Primary node

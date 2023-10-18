@@ -538,8 +538,8 @@ const Root = () => {
                     appSlugFromMetadata={state.appSlugFromMetadata || ""}
                     fetchingMetadata={state.fetchingMetadata}
                     onUploadSuccess={getAppsList}
-                    isKurl={state.isKurl}
-                    isHelmVM={state.isHelmVM}
+                    isKurl={!!state.isKurl}
+                    isHelmVM={!!state.isHelmVM}
                   />
                 }
               />
@@ -585,7 +585,12 @@ const Root = () => {
               {/* {state.adminConsoleMetadata?.isHelmVM && ( */}
               <Route
                 path="/cluster/manage"
-                element={<HelmVMClusterManagement fromLicenseFlow={true} />}
+                element={
+                  <HelmVMClusterManagement
+                    fromLicenseFlow={true}
+                    appName={state.selectedAppName || undefined}
+                  />
+                }
               />
               {/* )} */}
               {/* {(state.adminConsoleMetadata?.isKurl ||
@@ -594,7 +599,7 @@ const Root = () => {
                 path="/:slug/cluster/manage"
                 element={
                   state.adminConsoleMetadata?.isKurl ? (
-                    <KurlClusterManagement appName={state.selectedAppName} />
+                    <KurlClusterManagement />
                   ) : (
                     <HelmVMClusterManagement />
                   )
@@ -602,7 +607,10 @@ const Root = () => {
               />
               {/* )} */}
               {/* {state.adminConsoleMetadata?.isHelmVM && ( */}
-              <Route path="/cluster/:nodeName" element={<HelmVMViewNode />} />
+              <Route
+                path="/:slug/cluster/:nodeName"
+                element={<HelmVMViewNode />}
+              />
               {/* )} */}
               <Route
                 path="/gitops"
@@ -782,12 +790,7 @@ const Root = () => {
                 <Route path=":slug/license" element={<AppLicense />} />
                 <Route
                   path=":slug/registry-settings"
-                  element={
-                    <AppRegistrySettings
-                    // app={selectedApp}
-                    // updateCallback={refetchData}
-                    />
-                  }
+                  element={<AppRegistrySettings />}
                 />
                 {/* WHERE IS SELECTEDAPP */}
                 {state.app?.isAppIdentityServiceSupported && (
