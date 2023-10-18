@@ -442,28 +442,16 @@ func (mr *MockKOTSHandlerMockRecorder) GarbageCollectImages(w, r interface{}) *g
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GarbageCollectImages", reflect.TypeOf((*MockKOTSHandler)(nil).GarbageCollectImages), w, r)
 }
 
-// GenerateHelmVMNodeJoinCommandPrimary mocks base method.
-func (m *MockKOTSHandler) GenerateHelmVMNodeJoinCommandPrimary(w http.ResponseWriter, r *http.Request) {
+// GenerateHelmVMNodeJoinCommand mocks base method.
+func (m *MockKOTSHandler) GenerateHelmVMNodeJoinCommand(w http.ResponseWriter, r *http.Request) {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "GenerateHelmVMNodeJoinCommandPrimary", w, r)
+	m.ctrl.Call(m, "GenerateHelmVMNodeJoinCommand", w, r)
 }
 
-// GenerateHelmVMNodeJoinCommandPrimary indicates an expected call of GenerateHelmVMNodeJoinCommandPrimary.
-func (mr *MockKOTSHandlerMockRecorder) GenerateHelmVMNodeJoinCommandPrimary(w, r interface{}) *gomock.Call {
+// GenerateHelmVMNodeJoinCommand indicates an expected call of GenerateHelmVMNodeJoinCommand.
+func (mr *MockKOTSHandlerMockRecorder) GenerateHelmVMNodeJoinCommand(w, r interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GenerateHelmVMNodeJoinCommandPrimary", reflect.TypeOf((*MockKOTSHandler)(nil).GenerateHelmVMNodeJoinCommandPrimary), w, r)
-}
-
-// GenerateHelmVMNodeJoinCommandSecondary mocks base method.
-func (m *MockKOTSHandler) GenerateHelmVMNodeJoinCommandSecondary(w http.ResponseWriter, r *http.Request) {
-	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "GenerateHelmVMNodeJoinCommandSecondary", w, r)
-}
-
-// GenerateHelmVMNodeJoinCommandSecondary indicates an expected call of GenerateHelmVMNodeJoinCommandSecondary.
-func (mr *MockKOTSHandlerMockRecorder) GenerateHelmVMNodeJoinCommandSecondary(w, r interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GenerateHelmVMNodeJoinCommandSecondary", reflect.TypeOf((*MockKOTSHandler)(nil).GenerateHelmVMNodeJoinCommandSecondary), w, r)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GenerateHelmVMNodeJoinCommand", reflect.TypeOf((*MockKOTSHandler)(nil).GenerateHelmVMNodeJoinCommand), w, r)
 }
 
 // GenerateKurlNodeJoinCommandMaster mocks base method.
@@ -766,6 +754,18 @@ func (mr *MockKOTSHandlerMockRecorder) GetGlobalSnapshotSettings(w, r interface{
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetGlobalSnapshotSettings", reflect.TypeOf((*MockKOTSHandler)(nil).GetGlobalSnapshotSettings), w, r)
 }
 
+// GetHelmVMNode mocks base method.
+func (m *MockKOTSHandler) GetHelmVMNode(w http.ResponseWriter, r *http.Request) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "GetHelmVMNode", w, r)
+}
+
+// GetHelmVMNode indicates an expected call of GetHelmVMNode.
+func (mr *MockKOTSHandlerMockRecorder) GetHelmVMNode(w, r interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetHelmVMNode", reflect.TypeOf((*MockKOTSHandler)(nil).GetHelmVMNode), w, r)
+}
+
 // GetHelmVMNodes mocks base method.
 func (m *MockKOTSHandler) GetHelmVMNodes(w http.ResponseWriter, r *http.Request) {
 	m.ctrl.T.Helper()
@@ -776,18 +776,6 @@ func (m *MockKOTSHandler) GetHelmVMNodes(w http.ResponseWriter, r *http.Request)
 func (mr *MockKOTSHandlerMockRecorder) GetHelmVMNodes(w, r interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetHelmVMNodes", reflect.TypeOf((*MockKOTSHandler)(nil).GetHelmVMNodes), w, r)
-}
-
-// GetHelmVMNodes mocks base method.
-func (m *MockKOTSHandler) GetHelmVMNode(w http.ResponseWriter, r *http.Request) {
-	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "GetHelmVMNode", w, r)
-}
-
-// GetHelmVMNode indicates an expected call of GetHelmVMNode.
-func (mr *MockKOTSHandlerMockRecorder) GetHelmVMNode(w, r interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetHelmVMNode", reflect.TypeOf((*MockKOTSHandler)(nil).GetHelmVMNode), w, r)
 }
 
 // GetIdentityServiceConfig mocks base method.
