@@ -277,10 +277,8 @@ func RegisterSessionAuthRoutes(r *mux.Router, kotsStore store.Store, handler KOT
 
 	// HelmVM
 	r.Name("HelmVM").Path("/api/v1/helmvm").HandlerFunc(NotImplemented)
-	r.Name("GenerateHelmVMNodeJoinCommandSecondary").Path("/api/v1/helmvm/generate-node-join-command-secondary").Methods("POST").
-		HandlerFunc(middleware.EnforceAccess(policy.ClusterWrite, handler.GenerateHelmVMNodeJoinCommandSecondary))
-	r.Name("GenerateHelmVMNodeJoinCommandPrimary").Path("/api/v1/helmvm/generate-node-join-command-primary").Methods("POST").
-		HandlerFunc(middleware.EnforceAccess(policy.ClusterWrite, handler.GenerateHelmVMNodeJoinCommandPrimary))
+	r.Name("GenerateHelmVMNodeJoinCommand").Path("/api/v1/helmvm/generate-node-join-command").Methods("POST").
+		HandlerFunc(middleware.EnforceAccess(policy.ClusterWrite, handler.GenerateHelmVMNodeJoinCommand))
 	r.Name("DrainHelmVMNode").Path("/api/v1/helmvm/nodes/{nodeName}/drain").Methods("POST").
 		HandlerFunc(middleware.EnforceAccess(policy.ClusterWrite, handler.DrainHelmVMNode))
 	r.Name("DeleteHelmVMNode").Path("/api/v1/helmvm/nodes/{nodeName}").Methods("DELETE").
