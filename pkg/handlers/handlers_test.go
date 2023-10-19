@@ -1210,22 +1210,12 @@ var HandlerPolicyTests = map[string][]HandlerPolicyTest{
 	},
 
 	"HelmVM": {}, // Not implemented
-	"GenerateHelmVMNodeJoinCommandSecondary": {
+	"GenerateK0sNodeJoinCommand": {
 		{
 			Roles:        []rbactypes.Role{rbac.ClusterAdminRole},
 			SessionRoles: []string{rbac.ClusterAdminRoleID},
 			Calls: func(storeRecorder *mock_store.MockStoreMockRecorder, handlerRecorder *mock_handlers.MockKOTSHandlerMockRecorder) {
-				handlerRecorder.GenerateHelmVMNodeJoinCommandSecondary(gomock.Any(), gomock.Any())
-			},
-			ExpectStatus: http.StatusOK,
-		},
-	},
-	"GenerateHelmVMNodeJoinCommandPrimary": {
-		{
-			Roles:        []rbactypes.Role{rbac.ClusterAdminRole},
-			SessionRoles: []string{rbac.ClusterAdminRoleID},
-			Calls: func(storeRecorder *mock_store.MockStoreMockRecorder, handlerRecorder *mock_handlers.MockKOTSHandlerMockRecorder) {
-				handlerRecorder.GenerateHelmVMNodeJoinCommandPrimary(gomock.Any(), gomock.Any())
+				handlerRecorder.GenerateK0sNodeJoinCommand(gomock.Any(), gomock.Any())
 			},
 			ExpectStatus: http.StatusOK,
 		},
@@ -1258,6 +1248,27 @@ var HandlerPolicyTests = map[string][]HandlerPolicyTest{
 			SessionRoles: []string{rbac.ClusterAdminRoleID},
 			Calls: func(storeRecorder *mock_store.MockStoreMockRecorder, handlerRecorder *mock_handlers.MockKOTSHandlerMockRecorder) {
 				handlerRecorder.GetHelmVMNodes(gomock.Any(), gomock.Any())
+			},
+			ExpectStatus: http.StatusOK,
+		},
+	},
+	"GetHelmVMNode": {
+		{
+			Vars:         map[string]string{"nodeName": "node-name"},
+			Roles:        []rbactypes.Role{rbac.ClusterAdminRole},
+			SessionRoles: []string{rbac.ClusterAdminRoleID},
+			Calls: func(storeRecorder *mock_store.MockStoreMockRecorder, handlerRecorder *mock_handlers.MockKOTSHandlerMockRecorder) {
+				handlerRecorder.GetHelmVMNode(gomock.Any(), gomock.Any())
+			},
+			ExpectStatus: http.StatusOK,
+		},
+	},
+	"GetK0sNodeJoinCommand": {
+		{
+			Roles:        []rbactypes.Role{rbac.ClusterAdminRole},
+			SessionRoles: []string{rbac.ClusterAdminRoleID},
+			Calls: func(storeRecorder *mock_store.MockStoreMockRecorder, handlerRecorder *mock_handlers.MockKOTSHandlerMockRecorder) {
+				handlerRecorder.GetK0sNodeJoinCommand(gomock.Any(), gomock.Any())
 			},
 			ExpectStatus: http.StatusOK,
 		},
