@@ -1,3 +1,4 @@
+import { MenuItem } from "@mui/material";
 import { useQuery } from "@tanstack/react-query";
 import classNames from "classnames";
 import MaterialReactTable, { MRT_ColumnDef } from "material-react-table";
@@ -231,6 +232,7 @@ const HelmVMClusterManagement = ({
   };
   // #endregion
 
+  // #region table logic
   type NodeColumns = {
     name: string | JSX.Element;
     roles: JSX.Element;
@@ -370,7 +372,7 @@ const HelmVMClusterManagement = ({
               columns={columns}
               data={mappedNodes}
               state={{
-                columnPinning: { left: ["name"] },
+                columnPinning: { left: ["mrt-row-actions", "name"] },
               }}
               enableColumnResizing
               enableColumnActions={false}
@@ -404,6 +406,15 @@ const HelmVMClusterManagement = ({
               initialState={{ density: "compact" }}
               enablePagination={false}
               enableColumnFilters={false}
+              enableRowActions
+              renderRowActionMenuItems={({ row }) => [
+                <MenuItem key="edit" onClick={() => console.info("Edit")}>
+                  Edit
+                </MenuItem>,
+                <MenuItem key="delete" onClick={() => console.info("Delete")}>
+                  Delete
+                </MenuItem>,
+              ]}
             />
           )}
         </div>

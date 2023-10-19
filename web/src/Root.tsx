@@ -587,22 +587,22 @@ const Root = () => {
                   />
                 </>
               )}
-              {(state.adminConsoleMetadata?.isKurl ||
-                state.adminConsoleMetadata?.isHelmVM) && (
-                <Route
-                  path="/cluster/manage"
-                  element={
-                    state.adminConsoleMetadata?.isKurl ? (
-                      <KurlClusterManagement />
-                    ) : (
-                      <HelmVMClusterManagement />
-                    )
-                  }
-                />
-              )}
-              {state.adminConsoleMetadata?.isHelmVM && (
-                <Route path="/cluster/:nodeName" element={<HelmVMViewNode />} />
-              )}
+              {/* {(state.adminConsoleMetadata?.isKurl ||
+                state.adminConsoleMetadata?.isHelmVM) && ( */}
+              <Route
+                path="/cluster/manage"
+                element={
+                  state.adminConsoleMetadata?.isKurl ? (
+                    <KurlClusterManagement />
+                  ) : (
+                    <HelmVMClusterManagement />
+                  )
+                }
+              />
+              {/* )}
+              {state.adminConsoleMetadata?.isHelmVM && ( */}
+              <Route path="/cluster/:nodeName" element={<HelmVMViewNode />} />
+              {/* )} */}
               <Route
                 path="/gitops"
                 element={<GitOps appName={state.selectedAppName || ""} />}
