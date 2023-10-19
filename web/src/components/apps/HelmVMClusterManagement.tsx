@@ -248,26 +248,6 @@ const HelmVMClusterManagement = ({
     },
     enabled: selectedNodeTypes.length > 0,
   });
-
-  // TODO: import useMutation
-  // const {
-  //   mutate: addNodeType,
-  //   isLoading: addNodeTypeLoading,
-  //   error: addNodeTypeError,
-  // } = useMutation({
-  //   mutationFn: async () => {
-  //     return (
-  //       await fetch(`${process.env.API_ENDPOINT}/helmvm/nodes`, {
-  //         headers: {
-  //           "Content-Type": "application/json",
-  //           Accept: "application/json",
-  //         },
-  //         credentials: "include",
-  //         method: "POST",
-  //       })
-  //     ).json();
-  //   },
-  // });
   // #endregion
 
   const onAddNodeClick = () => {
@@ -324,11 +304,6 @@ const HelmVMClusterManagement = ({
         size: 150,
       },
       {
-        accessorKey: "disk",
-        header: "Disk",
-        size: 150,
-      },
-      {
         accessorKey: "cpu",
         header: "CPU",
         size: 150,
@@ -336,6 +311,11 @@ const HelmVMClusterManagement = ({
       {
         accessorKey: "memory",
         header: "Memory",
+        size: 150,
+      },
+      {
+        accessorKey: "pods",
+        header: "Pods",
         size: 150,
       },
       {
@@ -352,31 +332,39 @@ const HelmVMClusterManagement = ({
     []
   );
 
+  const calculateUtilization = (capacity: number, available: number) => {
+    const used = capacity - available;
+    return Math.round((used / capacity) * 100);
+  };
+
   const mappedNodes = useMemo(() => {
     return (nodesData?.nodes || testData.nodes).map((n) => ({
       name: slug ? (
         <Link
           to={`${slug}/cluster/${n.name}`}
           className="tw-font-semibold tw-text-blue-300 hover:tw-underline"
-        />
+        >
+          {n.name}
+        </Link>
       ) : (
         n.name
       ),
       roles: (
         <div className="tw-w-full tw-flex tw-flex-wrap tw-gap-1">
           {n.labels.map((l) => (
-            <span className="tw-font-semibold tw-text-xs tw-px-1 tw-rounded-sm tw-border tw-border-solid tw-bg-white tw-border-gray-100">
+            <span
+              key={l}
+              className="tw-font-semibold tw-text-xs tw-px-1 tw-rounded-sm tw-border tw-border-solid tw-bg-white tw-border-gray-100"
+            >
               {l}
             </span>
           ))}
         </div>
       ),
       status: n.isReady ? "Ready" : "Not Ready",
-      disk: n.conditions.diskPressure ? "Disk Pressure" : "No Disk Pressure",
-      cpu: n.conditions.pidPressure ? "CPU Pressure" : "No CPU Pressure",
-      memory: n.conditions.memoryPressure
-        ? "Memory Pressure"
-        : "No Memory Pressure",
+      cpu: `${calculateUtilization(n.cpu.capacity, n.cpu.available)}%`,
+      memory: `${calculateUtilization(n.memory.capacity, n.memory.available)}%`,
+      pods: `${n.pods.capacity - n.pods.available} / ${n.pods.capacity}`,
       pause: (
         <>
           <button className="btn secondary">Pause</button>
@@ -536,7 +524,7 @@ const HelmVMClusterManagement = ({
             ))}
           </div>
           <div>
-            {generateAddNodeCommandLoading && (
+            {selectedNodeTypes.length > 0 && generateAddNodeCommandLoading && (
               <p className="tw-text-base tw-w-full tw-text-center tw-py-4 tw-text-gray-500 tw-font-semibold">
                 Generating command...
               </p>
@@ -547,16 +535,21 @@ const HelmVMClusterManagement = ({
               </p>
             )}
             {!generateAddNodeCommandLoading && generateAddNodeCommand?.command && (
-              <CodeSnippet
-                key={selectedNodeTypes.toString()}
-                language="bash"
-                canCopy={true}
-                onCopyText={
-                  <span className="u-textColor--success">Copied!</span>
-                }
-              >
-                {generateAddNodeCommand?.command || ""}
-              </CodeSnippet>
+              <>
+                <CodeSnippet
+                  key={selectedNodeTypes.toString()}
+                  language="bash"
+                  canCopy={true}
+                  onCopyText={
+                    <span className="u-textColor--success">Copied!</span>
+                  }
+                >
+                  {generateAddNodeCommand?.command}
+                </CodeSnippet>
+                <p className="tw-text-sm tw-text-gray-500 tw-font-semibold tw-mt-2">
+                  Command expires: {generateAddNodeCommand?.expiry}
+                </p>
+              </>
             )}
           </div>
           {/* buttons */}
