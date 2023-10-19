@@ -691,6 +691,7 @@ const Root = () => {
                     snapshotInProgressApps={state.snapshotInProgressApps}
                     ping={ping}
                     isHelmManaged={state.isHelmManaged}
+                    isHelmVM={Boolean(state.adminConsoleMetadata?.isHelmVM)}
                   />
                 }
               />
@@ -706,6 +707,7 @@ const Root = () => {
                     snapshotInProgressApps={state.snapshotInProgressApps}
                     ping={ping}
                     isHelmManaged={state.isHelmManaged}
+                    isHelmVM={Boolean(state.adminConsoleMetadata?.isHelmVM)}
                   />
                 }
               >
