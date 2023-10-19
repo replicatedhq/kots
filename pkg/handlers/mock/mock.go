@@ -442,7 +442,7 @@ func (mr *MockKOTSHandlerMockRecorder) GarbageCollectImages(w, r interface{}) *g
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GarbageCollectImages", reflect.TypeOf((*MockKOTSHandler)(nil).GarbageCollectImages), w, r)
 }
 
-// GenerateHelmVMNodeJoinCommand mocks base method.
+// GenerateK0sNodeJoinCommand mocks base method.
 func (m *MockKOTSHandler) GenerateK0sNodeJoinCommand(w http.ResponseWriter, r *http.Request) {
 	m.ctrl.T.Helper()
 	m.ctrl.Call(m, "GenerateK0sNodeJoinCommand", w, r)
@@ -778,18 +778,6 @@ func (mr *MockKOTSHandlerMockRecorder) GetHelmVMNodes(w, r interface{}) *gomock.
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetHelmVMNodes", reflect.TypeOf((*MockKOTSHandler)(nil).GetHelmVMNodes), w, r)
 }
 
-// GetK0sNodeJoinCommand mocks base method.
-func (m *MockKOTSHandler) GetK0sNodeJoinCommand(w http.ResponseWriter, r *http.Request) {
-	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "GetK0sNodeJoinCommand", w, r)
-}
-
-// GetK0sNodeJoinCommand indicates an expected call of GetK0sNodeJoinCommand.
-func (mr *MockKOTSHandlerMockRecorder) GetK0sNodeJoinCommand(w, r interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetK0sNodeJoinCommand", reflect.TypeOf((*MockKOTSHandler)(nil).GetHelmVMNode), w, r)
-}
-
 // GetIdentityServiceConfig mocks base method.
 func (m *MockKOTSHandler) GetIdentityServiceConfig(w http.ResponseWriter, r *http.Request) {
 	m.ctrl.T.Helper()
@@ -824,6 +812,18 @@ func (m *MockKOTSHandler) GetInstanceSnapshotConfig(w http.ResponseWriter, r *ht
 func (mr *MockKOTSHandlerMockRecorder) GetInstanceSnapshotConfig(w, r interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetInstanceSnapshotConfig", reflect.TypeOf((*MockKOTSHandler)(nil).GetInstanceSnapshotConfig), w, r)
+}
+
+// GetK0sNodeJoinCommand mocks base method.
+func (m *MockKOTSHandler) GetK0sNodeJoinCommand(w http.ResponseWriter, r *http.Request) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "GetK0sNodeJoinCommand", w, r)
+}
+
+// GetK0sNodeJoinCommand indicates an expected call of GetK0sNodeJoinCommand.
+func (mr *MockKOTSHandlerMockRecorder) GetK0sNodeJoinCommand(w, r interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetK0sNodeJoinCommand", reflect.TypeOf((*MockKOTSHandler)(nil).GetK0sNodeJoinCommand), w, r)
 }
 
 // GetKotsadmRegistry mocks base method.
