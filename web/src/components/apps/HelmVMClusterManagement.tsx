@@ -65,15 +65,15 @@ const HelmVMClusterManagement = ({
       kubeletVersion: string;
       cpu: {
         capacity: number;
-        available: number;
+        used: number;
       };
       memory: {
         capacity: number;
-        available: number;
+        used: number;
       };
       pods: {
         capacity: number;
-        available: number;
+        used: number;
       };
       labels: string[];
       conditions: {
@@ -233,24 +233,19 @@ const HelmVMClusterManagement = ({
         header: "Pods",
         size: 150,
       },
-      {
-        accessorKey: "pause",
-        header: "Pause",
-        size: 100,
-      },
-      {
-        accessorKey: "delete",
-        header: "Delete",
-        size: 100,
-      },
+      // {
+      //   accessorKey: "pause",
+      //   header: "Pause",
+      //   size: 100,
+      // },
+      // {
+      //   accessorKey: "delete",
+      //   header: "Delete",
+      //   size: 80,
+      // },
     ],
     []
   );
-
-  const calculateUtilization = (capacity: number, available: number) => {
-    const used = capacity - available;
-    return Math.round((used / capacity) * 100);
-  };
 
   const mappedNodes = useMemo(() => {
     return (
@@ -278,12 +273,11 @@ const HelmVMClusterManagement = ({
           </div>
         ),
         status: n.isReady ? "Ready" : "Not Ready",
-        cpu: `${calculateUtilization(n.cpu.capacity, n.cpu.available)}%`,
-        memory: `${calculateUtilization(
-          n.memory.capacity,
-          n.memory.available
-        )}%`,
-        pods: `${n.pods.capacity - n.pods.available} / ${n.pods.capacity}`,
+        cpu: `${n.cpu.used.toFixed(2)} / ${n.cpu.capacity.toFixed(2)}`,
+        memory: `${n.memory.used.toFixed(2)}GB / ${n.memory.capacity.toFixed(
+          2
+        )}GB`,
+        pods: `${n.pods.used} / ${n.pods.capacity}`,
         pause: (
           <>
             <button className="btn secondary">Pause</button>
@@ -300,93 +294,89 @@ const HelmVMClusterManagement = ({
   // #endregion
 
   return (
-    <div className="HelmVMClusterManagement--wrapper container flex-column flex1 u-overflow--auto u-paddingTop--50 tw-font-sans">
+    <div className="HelmVMClusterManagement--wrapper container u-overflow--auto u-paddingTop--50 tw-font-sans">
       <KotsPageTitle pageName="Cluster Management" />
-      <div className="flex-column flex1 alignItems--center u-paddingBottom--50">
-        <div className="centered-container tw-mb-10 tw-pb-6 tw-flex tw-flex-col tw-gap-4">
-          <p className="flex-auto u-fontSize--larger u-fontWeight--bold u-textColor--primary">
-            Cluster Nodes
+      <div className="flex1 tw-mb-10 tw-flex tw-flex-col tw-gap-4 card-bg">
+        <p className="flex-auto u-fontSize--larger u-fontWeight--bold u-textColor--primary">
+          Cluster Nodes
+        </p>
+        <div className="tw-flex tw-gap-6 tw-items-center">
+          <p className="tw-text-base tw-flex-1 tw-text-gray-600">
+            This page lists the nodes that are configured and shows the
+            status/health of each.
           </p>
-          <div className="tw-flex tw-gap-6 tw-items-center">
-            <p className="tw-text-base tw-flex-1 tw-text-gray-600">
-              This page lists the nodes that are configured and shows the
-              status/health of each.
-            </p>
-            {Utilities.sessionRolesHasOneOf([rbacRoles.CLUSTER_ADMIN]) && (
-              <button
-                className="btn primary tw-ml-auto tw-w-fit tw-h-fit"
-                onClick={onAddNodeClick}
-              >
-                Add node
-              </button>
-            )}
-          </div>
-          <div className="flex1 u-overflow--auto">
-            {nodesLoading && (
-              <p className="tw-text-base tw-w-full tw-text-center tw-py-4 tw-text-gray-500 tw-font-semibold">
-                Loading nodes...
-              </p>
-            )}
-            {!nodesData && nodesError && (
-              <p className="tw-text-base tw-w-full tw-text-center tw-py-4 tw-text-pink-500 tw-font-semibold">
-                {nodesError?.message}
-              </p>
-            )}
-            {nodesData?.nodes && (
-              <MaterialReactTable
-                columns={columns}
-                data={mappedNodes}
-                state={{
-                  columnPinning: { left: ["name"] },
-                }}
-                enableColumnResizing
-                enableColumnActions={false}
-                enableColumnOrdering
-                enableBottomToolbar={false}
-                muiTableHeadProps={{
-                  sx: {
-                    "& hr": {
-                      width: "0",
-                    },
-                  },
-                }}
-                muiTableBodyProps={{
-                  sx: {
-                    "& tr:nth-of-type(odd)": {
-                      backgroundColor: "#f5f5f5",
-                    },
-                  },
-                }}
-                muiTableBodyCellProps={{
-                  sx: {
-                    borderRight: "2px solid #e0e0e0",
-                  },
-                }}
-                muiTablePaperProps={{
-                  sx: {
-                    width: "100%",
-                    boxShadow: "none",
-                  },
-                }}
-                initialState={{ density: "compact" }}
-                enablePagination={false}
-                enableColumnFilters={false}
-              />
-            )}
-          </div>
-          {fromLicenseFlow && (
-            <Link
-              className="btn primary tw-w-fit tw-ml-auto"
-              to={
-                app?.isConfigurable
-                  ? `/${app?.slug}/config`
-                  : `/app/${app?.slug}`
-              }
+          {Utilities.sessionRolesHasOneOf([rbacRoles.CLUSTER_ADMIN]) && (
+            <button
+              className="btn primary tw-ml-auto tw-w-fit tw-h-fit"
+              onClick={onAddNodeClick}
             >
-              Continue
-            </Link>
+              Add node
+            </button>
           )}
         </div>
+        <div className="flex1 u-overflow--auto card-item">
+          {nodesLoading && (
+            <p className="tw-text-base tw-w-full tw-text-center tw-py-4 tw-text-gray-500 tw-font-semibold">
+              Loading nodes...
+            </p>
+          )}
+          {!nodesData && nodesError && (
+            <p className="tw-text-base tw-w-full tw-text-center tw-py-4 tw-text-pink-500 tw-font-semibold">
+              {nodesError?.message}
+            </p>
+          )}
+          {nodesData?.nodes && (
+            <MaterialReactTable
+              columns={columns}
+              data={mappedNodes}
+              state={{
+                columnPinning: { left: ["name"] },
+              }}
+              enableColumnResizing
+              enableColumnActions={false}
+              enableColumnOrdering
+              enableBottomToolbar={false}
+              muiTableHeadProps={{
+                sx: {
+                  "& hr": {
+                    width: "0",
+                  },
+                },
+              }}
+              muiTableBodyProps={{
+                sx: {
+                  "& tr:nth-of-type(odd)": {
+                    backgroundColor: "#f5f5f5",
+                  },
+                },
+              }}
+              muiTableBodyCellProps={{
+                sx: {
+                  borderRight: "2px solid #e0e0e0",
+                },
+              }}
+              muiTablePaperProps={{
+                sx: {
+                  width: "100%",
+                  boxShadow: "none",
+                },
+              }}
+              initialState={{ density: "compact" }}
+              enablePagination={false}
+              enableColumnFilters={false}
+            />
+          )}
+        </div>
+        {fromLicenseFlow && (
+          <Link
+            className="btn primary tw-w-fit tw-ml-auto"
+            to={
+              app?.isConfigurable ? `/${app?.slug}/config` : `/app/${app?.slug}`
+            }
+          >
+            Continue
+          </Link>
+        )}
       </div>
       {/* MODALS */}
       <Modal
