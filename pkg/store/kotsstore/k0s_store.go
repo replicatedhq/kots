@@ -3,15 +3,16 @@ package kotsstore
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/google/uuid"
-	"github.com/replicatedhq/kots/pkg/persistence"
 	"github.com/rqlite/gorqlite"
+
+	"github.com/replicatedhq/kots/pkg/persistence"
+	"github.com/replicatedhq/kots/pkg/rand"
 )
 
 func (s *KOTSStore) SetK0sInstallCommandRoles(roles []string) (string, error) {
 	db := persistence.MustGetDBSession()
 
-	installID := uuid.New().String()
+	installID := rand.StringWithCharset(24, rand.LOWER_CASE+rand.UPPER_CASE)
 
 	query := `delete from k0s_tokens where token = ?`
 	wr, err := db.WriteOneParameterized(gorqlite.ParameterizedStatement{
