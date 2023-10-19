@@ -202,6 +202,12 @@ func runAddNodeCommandPod(ctx context.Context, client kubernetes.Interface, node
 		return "", fmt.Errorf("failed to get pod logs: %w", err)
 	}
 
+	// delete the completed pod
+	err = client.CoreV1().Pods("kube-system").Delete(ctx, podName, metav1.DeleteOptions{})
+	if err != nil {
+		return "", fmt.Errorf("failed to delete pod: %w", err)
+	}
+
 	// the logs are just a join token, which needs to be added to other things to get a join command
 	return string(podLogs), nil
 }
