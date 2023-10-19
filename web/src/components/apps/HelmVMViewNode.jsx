@@ -2,10 +2,11 @@ import { MaterialReactTable } from "material-react-table";
 import React, { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link, useParams } from "react-router-dom";
+import Loader from "@components/shared/Loader";
 
 const HelmVMViewNode = () => {
   const { nodeName } = useParams();
-  const { data: nodeData } = useQuery({
+  const { data: nodeData, isLoading: nodeLoading } = useQuery({
     queryKey: ["helmVmNode", nodeName],
     queryFn: async ({ queryKey }) => {
       const [, nodeName] = queryKey;
@@ -58,11 +59,6 @@ const HelmVMViewNode = () => {
         size: 150,
       },
       {
-        accessorKey: "disk",
-        header: "Disk",
-        size: 150,
-      },
-      {
         accessorKey: "cpu",
         header: "CPU",
         size: 150,
@@ -72,11 +68,11 @@ const HelmVMViewNode = () => {
         header: "Memory",
         size: 150,
       },
-      {
-        accessorKey: "canDelete",
-        header: "Delete Pod",
-        size: 150,
-      },
+      // {
+      //   accessorKey: "delete",
+      //   header: "Delete",
+      //   size: 80,
+      // },
     ],
     []
   );
@@ -85,10 +81,9 @@ const HelmVMViewNode = () => {
     return node?.podList?.map((p) => ({
       name: p.metadata.name,
       status: p.status.phase,
-      disk: null,
       cpu: null,
       memory: null,
-      canDelete: (
+      delete: (
         <>
           <button className="btn red primary">Delete</button>
         </>
@@ -98,7 +93,7 @@ const HelmVMViewNode = () => {
   // #endregion
 
   return (
-    <div className="container u-paddingTop--50 tw-mb-10 tw-pb-6 tw-flex tw-flex-col tw-gap-6 tw-font-sans">
+    <div className="container u-paddingTop--50 tw-min-h-full tw-box-border tw-mb-10 tw-pb-6 tw-flex tw-flex-col tw-gap-6 tw-font-sans">
       {/* Breadcrumbs */}
       <p className="tw-text-sm tw-text-gray-400">
         <Link
@@ -107,88 +102,108 @@ const HelmVMViewNode = () => {
         >
           Cluster Nodes
         </Link>{" "}
-        / {node?.name}
+        / {nodeName}
       </p>
-      {/* Node Info */}
-      <div
-        className="tw-flex tw-flex-col tw-gap-2 tw-bg-white tw-border tw-border-solid tw-border-gray-100 tw-rounded 
-      tw-shadow-md tw-p-3"
-      >
-        <p className="tw-font-semibold tw-text-2xl tw-text-gray-800">
-          Node Info
-        </p>
-        <div className="tw-flex tw-gap-2">
-          <p className="tw-text-base tw-text-gray-800 tw-font-semibold">Name</p>
-          <p className="tw-text-base tw-text-gray-400">{node?.name}</p>
+
+      {nodeLoading && (
+        <div className="tw-w-full tw-h-full tw-flex tw-justify-center tw-items-center">
+          <Loader size="70" />
         </div>
-      </div>
-      {/* Pods table */}
-      <div
-        className="tw-bg-white tw-border tw-border-solid tw-border-gray-100 tw-rounded 
-      tw-shadow-md tw-p-3"
-      >
-        <p className="tw-font-semibold tw-text-2xl tw-text-gray-800">Pods</p>
-        <MaterialReactTable
-          columns={columns}
-          data={mappedPods}
-          state={{
-            columnPinning: { left: ["name"] },
-          }}
-          enableColumnResizing
-          enableColumnActions={false}
-          enableColumnOrdering
-          enableBottomToolbar={false}
-          muiTableHeadProps={{
-            sx: {
-              "& hr": {
-                width: "0",
-              },
-            },
-          }}
-          muiTableBodyProps={{
-            sx: {
-              "& tr:nth-of-type(odd)": {
-                backgroundColor: "#f5f5f5",
-              },
-            },
-          }}
-          muiTableBodyCellProps={{
-            sx: {
-              borderRight: "2px solid #e0e0e0",
-            },
-          }}
-          muiTablePaperProps={{
-            sx: {
-              width: "100%",
-              boxShadow: "none",
-            },
-          }}
-          initialState={{ density: "compact" }}
-          enablePagination={false}
-          enableColumnFilters={false}
-        />
-      </div>
-      {/* Troubleshooting */}
-      <div
-        className="tw-bg-white tw-border tw-border-solid tw-border-gray-100 tw-rounded 
-      tw-shadow-md tw-p-3"
-      >
-        <p className="tw-font-semibold tw-text-2xl tw-text-gray-800">
-          Troubleshooting
-        </p>
-      </div>
-      {/* Danger Zone */}
-      <div
-        className="tw-bg-white tw-border tw-border-solid tw-border-gray-100 tw-rounded 
-      tw-shadow-md tw-p-3 tw-flex tw-flex-col tw-gap-3"
-      >
-        <p className="tw-font-semibold tw-text-2xl tw-text-gray-800">
-          Danger Zone
-        </p>
-        <button className="btn red primary tw-w-fit">
-          Prepare node for delete
-        </button>
-      </div>
+      )}
+      {!nodeLoading && node && (
+        <>
+          {/* Node Info */}
+          <div className="tw-flex tw-flex-col tw-gap-2 tw-p-3 card-bg">
+            <p className="tw-font-semibold tw-text-xl tw-text-gray-800">
+              {node?.name}
+            </p>
+            <div className="tw-flex tw-flex-col tw-text-sm tw-gap-2 card-item">
+              <div className="tw-flex tw-gap-2">
+                <p className="tw-text-gray-800 tw-font-semibold">
+                  kubelet version
+                </p>
+                <p className="tw-text-gray-400">{node?.kubeletVersion}</p>
+              </div>
+              <div className="tw-flex tw-gap-2">
+                <p className="tw-text-gray-800 tw-font-semibold">
+                  kube-proxy version
+                </p>
+                <p className="tw-text-gray-400">{node?.kubeletVersion}</p>
+              </div>
+              <div className="tw-flex tw-gap-2">
+                <p className="tw-text-gray-800 tw-font-semibold">OS</p>
+                <p className="tw-text-gray-400">{node?.kubeletVersion}</p>
+              </div>
+              <div className="tw-flex tw-gap-2">
+                <p className="tw-text-gray-800 tw-font-semibold">
+                  kurl version
+                </p>
+                <p className="tw-text-gray-400">{node?.kubeletVersion}</p>
+              </div>
+            </div>
+          </div>
+          {/* Pods table */}
+          <div className="card-bg tw-p-3 tw-flex tw-flex-col tw-gap-2">
+            <p className="tw-font-semibold tw-text-xl tw-text-gray-800">Pods</p>
+            <div className="card-item">
+              <MaterialReactTable
+                columns={columns}
+                data={mappedPods}
+                state={{
+                  columnPinning: { left: ["name"] },
+                }}
+                enableColumnResizing
+                enableColumnActions={false}
+                enableColumnOrdering
+                enableBottomToolbar={false}
+                muiTableHeadProps={{
+                  sx: {
+                    "& hr": {
+                      width: "0",
+                    },
+                  },
+                }}
+                muiTableBodyProps={{
+                  sx: {
+                    "& tr:nth-of-type(odd)": {
+                      backgroundColor: "#f5f5f5",
+                    },
+                  },
+                }}
+                muiTableBodyCellProps={{
+                  sx: {
+                    borderRight: "2px solid #e0e0e0",
+                  },
+                }}
+                muiTablePaperProps={{
+                  sx: {
+                    width: "100%",
+                    boxShadow: "none",
+                  },
+                }}
+                initialState={{ density: "compact" }}
+                enablePagination={false}
+                enableColumnFilters={false}
+              />
+            </div>
+          </div>
+          {/* Troubleshooting */}
+          {/* <div className="card-bg tw-p-3">
+            <p className="tw-font-semibold tw-text-xl tw-text-gray-800">
+              Troubleshooting
+            </p>
+          </div> */}
+          {/* Danger Zone */}
+          {/* <div className="card-bg tw-p-3 tw-flex tw-flex-col tw-gap-3">
+            <p className="tw-font-semibold tw-text-xl tw-text-gray-800">
+              Danger Zone
+            </p>
+            <button className="btn red primary tw-w-fit">
+              Prepare node for delete
+            </button>
+          </div> */}
+        </>
+      )}
     </div>
   );
 };
