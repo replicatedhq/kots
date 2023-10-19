@@ -261,13 +261,13 @@ const UploadLicenseFile = (props: Props) => {
               return;
             }
 
-            if (data.isConfigurable) {
-              navigate(`/${data.slug}/config`, { replace: true });
+            if (props.isHelmVM) {
+              navigate(`/${data.slug}/cluster/manage`, { replace: true });
               return;
             }
 
-            if (props.isHelmVM) {
-              navigate(`/${data.slug}/cluster/manage`, { replace: true });
+            if (data.isConfigurable) {
+              navigate(`/${data.slug}/config`, { replace: true });
               return;
             }
 

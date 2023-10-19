@@ -79,10 +79,10 @@ const HelmVMViewNode = () => {
 
   const mappedPods = useMemo(() => {
     return node?.podList?.map((p) => ({
-      name: p.metadata.name,
-      status: p.status.phase,
-      cpu: null,
-      memory: null,
+      name: p.name,
+      status: p.status,
+      cpu: p.cpu,
+      memory: `${p.memory}GB`,
       delete: (
         <>
           <button className="btn red primary">Delete</button>

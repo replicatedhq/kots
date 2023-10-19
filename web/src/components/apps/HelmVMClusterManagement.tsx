@@ -65,15 +65,15 @@ const HelmVMClusterManagement = ({
       kubeletVersion: string;
       cpu: {
         capacity: number;
-        available: number;
+        used: number;
       };
       memory: {
         capacity: number;
-        available: number;
+        used: number;
       };
       pods: {
         capacity: number;
-        available: number;
+        used: number;
       };
       labels: string[];
       conditions: {
@@ -273,13 +273,11 @@ const HelmVMClusterManagement = ({
           </div>
         ),
         status: n.isReady ? "Ready" : "Not Ready",
-        cpu: `${(n.cpu.capacity - n.cpu.available).toFixed(
+        cpu: `${n.cpu.used.toFixed(2)} / ${n.cpu.capacity.toFixed(2)}`,
+        memory: `${n.memory.used.toFixed(2)}GB / ${n.memory.capacity.toFixed(
           2
-        )} / ${n.cpu.capacity.toFixed(2)}`,
-        memory: `${(n.memory.capacity - n.memory.available).toFixed(
-          2
-        )}GB / ${n.memory.capacity.toFixed(2)}GB`,
-        pods: `${n.pods.capacity - n.pods.available} / ${n.pods.capacity}`,
+        )}GB`,
+        pods: `${n.pods.used} / ${n.pods.capacity}`,
         pause: (
           <>
             <button className="btn secondary">Pause</button>
