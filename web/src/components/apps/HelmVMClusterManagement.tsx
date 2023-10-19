@@ -75,7 +75,7 @@ const HelmVMClusterManagement = ({
         capacity: number;
         used: number;
       };
-      labels: string[];
+      labels?: string[];
       conditions: {
         memoryPressure: boolean;
         diskPressure: boolean;
