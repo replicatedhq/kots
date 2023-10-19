@@ -1,8 +1,8 @@
+import { useQuery } from "@tanstack/react-query";
 import classNames from "classnames";
 import MaterialReactTable from "material-react-table";
 import React, { ChangeEvent, useMemo, useReducer, useState } from "react";
 import Modal from "react-modal";
-import { useQuery } from "@tanstack/react-query";
 import { Link, useParams } from "react-router-dom";
 
 import { KotsPageTitle } from "@components/Head";
@@ -13,82 +13,6 @@ import Icon from "../Icon";
 import CodeSnippet from "../shared/CodeSnippet";
 
 import "@src/scss/components/apps/HelmVMClusterManagement.scss";
-
-const testData = {
-  isHelmVMEnabled: true,
-  ha: false,
-  nodes: [
-    {
-      name: "test-helmvm-node",
-      isConnected: true,
-      isReady: true,
-      isPrimaryNode: true,
-      canDelete: false,
-      kubeletVersion: "v1.28.2",
-      cpu: {
-        capacity: 8,
-        available: 7.466876775,
-      },
-      memory: {
-        capacity: 31.33294677734375,
-        available: 24.23790740966797,
-      },
-      pods: {
-        capacity: 110,
-        available: 77,
-      },
-      labels: [
-        "beta.kubernetes.io/arch:amd64",
-        "beta.kubernetes.io/os:linux",
-        "node-role.kubernetes.io/master:",
-        "node.kubernetes.io/exclude-from-external-load-balancers:",
-        "kubernetes.io/arch:amd64",
-        "kubernetes.io/hostname:laverya-kurl",
-        "kubernetes.io/os:linux",
-        "node-role.kubernetes.io/control-plane:",
-      ],
-      conditions: {
-        memoryPressure: false,
-        diskPressure: false,
-        pidPressure: false,
-        ready: true,
-      },
-    },
-    {
-      name: "test-helmvm-worker",
-      isConnected: true,
-      isReady: true,
-      isPrimaryNode: false,
-      canDelete: false,
-      kubeletVersion: "v1.28.2",
-      cpu: {
-        capacity: 4,
-        available: 3.761070507,
-      },
-      memory: {
-        capacity: 15.50936508178711,
-        available: 11.742542266845703,
-      },
-      pods: {
-        capacity: 110,
-        available: 94,
-      },
-      labels: [
-        "beta.kubernetes.io/arch:amd64",
-        "beta.kubernetes.io/os:linux",
-        "kubernetes.io/arch:amd64",
-        "kubernetes.io/os:linux",
-        "kurl.sh/cluster:true",
-      ],
-      conditions: {
-        memoryPressure: false,
-        diskPressure: false,
-        pidPressure: false,
-        ready: true,
-      },
-    },
-  ],
-};
 
 type State = {
   displayAddNode: boolean;
@@ -260,15 +184,6 @@ const HelmVMClusterManagement = ({
   const NODE_TYPES = ["controller"];
 
   const determineDisabledState = () => {
-    // if (nodeType === "controller") {
-    //   const numControllers = testData.nodes.reduce((acc, node) => {
-    //     if (node.labels.includes("controller")) {
-    //       acc += 1;
-    //     }
-    //     return acc;
-    //   }, 0);
-    //   return numControllers === 3;
-    // }
     return false;
   };
 
@@ -338,44 +253,49 @@ const HelmVMClusterManagement = ({
   };
 
   const mappedNodes = useMemo(() => {
-    return (nodesData?.nodes || testData.nodes).map((n) => ({
-      name: slug ? (
-        n.name
-      ) : (
-        <Link
-          to={`/cluster/${n.name}`}
-          className="tw-font-semibold tw-text-blue-300 hover:tw-underline"
-        >
-          {n.name}
-        </Link>
-      ),
-      roles: (
-        <div className="tw-w-full tw-flex tw-flex-wrap tw-gap-1">
-          {n.labels.map((l) => (
-            <span
-              key={l}
-              className="tw-font-semibold tw-text-xs tw-px-1 tw-rounded-sm tw-border tw-border-solid tw-bg-white tw-border-gray-100"
-            >
-              {l}
-            </span>
-          ))}
-        </div>
-      ),
-      status: n.isReady ? "Ready" : "Not Ready",
-      cpu: `${calculateUtilization(n.cpu.capacity, n.cpu.available)}%`,
-      memory: `${calculateUtilization(n.memory.capacity, n.memory.available)}%`,
-      pods: `${n.pods.capacity - n.pods.available} / ${n.pods.capacity}`,
-      pause: (
-        <>
-          <button className="btn secondary">Pause</button>
-        </>
-      ),
-      delete: (
-        <>
-          <button className="btn red primary">Delete</button>
-        </>
-      ),
-    }));
+    return (
+      nodesData?.nodes?.map((n) => ({
+        name: slug ? (
+          n.name
+        ) : (
+          <Link
+            to={`/cluster/${n.name}`}
+            className="tw-font-semibold tw-text-blue-300 hover:tw-underline"
+          >
+            {n.name}
+          </Link>
+        ),
+        roles: (
+          <div className="tw-w-full tw-flex tw-flex-wrap tw-gap-1">
+            {n.labels.map((l) => (
+              <span
+                key={l}
+                className="tw-font-semibold tw-text-xs tw-px-1 tw-rounded-sm tw-border tw-border-solid tw-bg-white tw-border-gray-100"
+              >
+                {l}
+              </span>
+            ))}
+          </div>
+        ),
+        status: n.isReady ? "Ready" : "Not Ready",
+        cpu: `${calculateUtilization(n.cpu.capacity, n.cpu.available)}%`,
+        memory: `${calculateUtilization(
+          n.memory.capacity,
+          n.memory.available
+        )}%`,
+        pods: `${n.pods.capacity - n.pods.available} / ${n.pods.capacity}`,
+        pause: (
+          <>
+            <button className="btn secondary">Pause</button>
+          </>
+        ),
+        delete: (
+          <>
+            <button className="btn red primary">Delete</button>
+          </>
+        ),
+      })) || []
+    );
   }, [nodesData?.nodes?.toString()]);
   // #endregion
 
@@ -412,7 +332,7 @@ const HelmVMClusterManagement = ({
                 {nodesError?.message}
               </p>
             )}
-            {(nodesData?.nodes || testData?.nodes) && (
+            {nodesData?.nodes && (
               <MaterialReactTable
                 columns={columns}
                 data={mappedNodes}
