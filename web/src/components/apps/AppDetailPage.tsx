@@ -98,8 +98,6 @@ function AppDetailPage(props: Props) {
       navigate(`/app/${appsList[0].slug}`, { replace: true });
     } else if (props.isHelmManaged) {
       navigate("/install-with-helm", { replace: true });
-    } else if (props.isHelmVM) {
-      navigate(`/${selectedApp?.slug}/cluster/manage`, { replace: true });
     } else {
       navigate("/upload-license", { replace: true });
     }
@@ -324,6 +322,10 @@ function AppDetailPage(props: Props) {
       const firstVersion = downstream.pendingVersions.find(
         (version: Version) => version?.sequence === 0
       );
+      if (props.isHelmVM) {
+        navigate(`/${appNeedsConfiguration.slug}/cluster/manage`);
+        return;
+      }
       if (firstVersion?.status === "pending_config") {
         navigate(`/${appNeedsConfiguration.slug}/config`);
         return;

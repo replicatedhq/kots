@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import classNames from "classnames";
-import MaterialReactTable from "material-react-table";
+import MaterialReactTable, { MRT_ColumnDef } from "material-react-table";
 import React, { ChangeEvent, useMemo, useReducer, useState } from "react";
 import Modal from "react-modal";
 import { Link, useParams } from "react-router-dom";
@@ -199,7 +199,17 @@ const HelmVMClusterManagement = ({
   };
   // #endregion
 
-  const columns = useMemo(
+  type NodeColumns = {
+    name: string | JSX.Element;
+    roles: JSX.Element;
+    status: string;
+    cpu: string;
+    memory: string;
+    pause: JSX.Element;
+    delete: JSX.Element;
+  };
+
+  const columns = useMemo<MRT_ColumnDef<NodeColumns>[]>(
     () => [
       {
         accessorKey: "name",
@@ -211,7 +221,7 @@ const HelmVMClusterManagement = ({
       {
         accessorKey: "roles",
         header: "Role(s)",
-        size: 404,
+        size: 150,
       },
       {
         accessorKey: "status",
@@ -233,11 +243,6 @@ const HelmVMClusterManagement = ({
         muiTableBodyCellProps: {
           align: "right",
         },
-      },
-      {
-        accessorKey: "pods",
-        header: "Pods",
-        size: 150,
       },
       // {
       //   accessorKey: "pause",
@@ -280,10 +285,9 @@ const HelmVMClusterManagement = ({
         ),
         status: n.isReady ? "Ready" : "Not Ready",
         cpu: `${n.cpu.used.toFixed(2)} / ${n.cpu.capacity.toFixed(2)}`,
-        memory: `${n.memory.used.toFixed(2)}GB / ${n.memory.capacity.toFixed(
+        memory: `${n.memory.used.toFixed(2)} / ${n.memory.capacity.toFixed(
           2
-        )}GB`,
-        pods: `${n.pods.used} / ${n.pods.capacity}`,
+        )} GB`,
         pause: (
           <>
             <button className="btn secondary">Pause</button>
