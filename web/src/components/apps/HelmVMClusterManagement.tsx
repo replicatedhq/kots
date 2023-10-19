@@ -341,7 +341,7 @@ const HelmVMClusterManagement = ({
     return (nodesData?.nodes || testData.nodes).map((n) => ({
       name: slug ? (
         <Link
-          to={`${slug}/cluster/${n.name}`}
+          to={`/${slug}/cluster/${n.name}`}
           className="tw-font-semibold tw-text-blue-300 hover:tw-underline"
         >
           {n.name}
