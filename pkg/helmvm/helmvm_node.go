@@ -89,11 +89,6 @@ func nodeMetrics(ctx context.Context, client kubernetes.Interface, metricsClient
 
 	podCapacity.Used = float64(len(nodePods))
 
-	nodeLabelArray := []string{}
-	for k, v := range node.Labels {
-		nodeLabelArray = append(nodeLabelArray, fmt.Sprintf("%s:%s", k, v))
-	}
-
 	podInfo := []types.PodInfo{}
 
 	for _, pod := range nodePods {
@@ -135,8 +130,23 @@ func nodeMetrics(ctx context.Context, client kubernetes.Interface, metricsClient
 		CPU:              cpuCapacity,
 		Memory:           memoryCapacity,
 		Pods:             podCapacity,
-		Labels:           nodeLabelArray,
+		Labels:           nodeRolesFromLabels(node.Labels),
 		Conditions:       findNodeConditions(node.Status.Conditions),
 		PodList:          podInfo,
 	}, nil
+}
+
+func nodeRolesFromLabels(labels map[string]string) []string {
+	toReturn := []string{}
+
+	// detect if this is a controller node from the k8s labels
+	if val, ok := labels["node-role.kubernetes.io/control-plane"]; ok && val == "true" {
+		toReturn = append(toReturn, "controller")
+	}
+
+	if len(toReturn) == 0 {
+		toReturn = append(toReturn, "worker")
+	}
+
+	return toReturn
 }
