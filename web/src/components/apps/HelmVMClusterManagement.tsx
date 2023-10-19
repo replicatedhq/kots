@@ -340,14 +340,14 @@ const HelmVMClusterManagement = ({
   const mappedNodes = useMemo(() => {
     return (nodesData?.nodes || testData.nodes).map((n) => ({
       name: slug ? (
+        n.name
+      ) : (
         <Link
-          to={`${slug}/cluster/${n.name}`}
+          to={`/cluster/${n.name}`}
           className="tw-font-semibold tw-text-blue-300 hover:tw-underline"
         >
           {n.name}
         </Link>
-      ) : (
-        n.name
       ),
       roles: (
         <div className="tw-w-full tw-flex tw-flex-wrap tw-gap-1">
