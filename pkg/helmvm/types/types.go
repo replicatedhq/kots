@@ -1,7 +1,5 @@
 package types
 
-import corev1 "k8s.io/api/core/v1"
-
 type HelmVMNodes struct {
 	Nodes           []Node `json:"nodes"`
 	HA              bool   `json:"ha"`
@@ -9,23 +7,26 @@ type HelmVMNodes struct {
 }
 
 type Node struct {
-	Name           string            `json:"name"`
-	IsConnected    bool              `json:"isConnected"`
-	IsReady        bool              `json:"isReady"`
-	IsPrimaryNode  bool              `json:"isPrimaryNode"`
-	CanDelete      bool              `json:"canDelete"`
-	KubeletVersion string            `json:"kubeletVersion"`
-	CPU            CapacityAvailable `json:"cpu"`
-	Memory         CapacityAvailable `json:"memory"`
-	Pods           CapacityAvailable `json:"pods"`
-	Labels         []string          `json:"labels"`
-	Conditions     NodeConditions    `json:"conditions"`
-	PodList        []corev1.Pod      `json:"podList"`
+	Name             string         `json:"name"`
+	IsConnected      bool           `json:"isConnected"`
+	IsReady          bool           `json:"isReady"`
+	IsPrimaryNode    bool           `json:"isPrimaryNode"`
+	CanDelete        bool           `json:"canDelete"`
+	KubeletVersion   string         `json:"kubeletVersion"`
+	KubeProxyVersion string         `json:"kubeProxyVersion"`
+	OperatingSystem  string         `json:"operatingSystem"`
+	KernelVersion    string         `json:"kernelVersion"`
+	CPU              CapacityUsed   `json:"cpu"`
+	Memory           CapacityUsed   `json:"memory"`
+	Pods             CapacityUsed   `json:"pods"`
+	Labels           []string       `json:"labels"`
+	Conditions       NodeConditions `json:"conditions"`
+	PodList          []PodInfo      `json:"podList"`
 }
 
-type CapacityAvailable struct {
-	Capacity  float64 `json:"capacity"`
-	Available float64 `json:"available"`
+type CapacityUsed struct {
+	Capacity float64 `json:"capacity"`
+	Used     float64 `json:"used"`
 }
 
 type NodeConditions struct {
@@ -33,4 +34,12 @@ type NodeConditions struct {
 	DiskPressure   bool `json:"diskPressure"`
 	PidPressure    bool `json:"pidPressure"`
 	Ready          bool `json:"ready"`
+}
+
+type PodInfo struct {
+	Name      string  `json:"name"`
+	Status    string  `json:"status"`
+	Namespace string  `json:"namespace"`
+	CPU       float64 `json:"cpu"`
+	Memory    float64 `json:"memory"`
 }
