@@ -68,7 +68,6 @@ type Props = {
   logo: string | null;
   snapshot?: { name: string };
   isHelmVM: boolean;
-  isKurl: boolean;
 };
 
 const UploadLicenseFile = (props: Props) => {
@@ -267,7 +266,7 @@ const UploadLicenseFile = (props: Props) => {
               return;
             }
 
-            if (props.isHelmVM && !props.isKurl) {
+            if (props.isHelmVM) {
               navigate(`/${data.slug}/cluster/manage`, { replace: true });
               return;
             }
