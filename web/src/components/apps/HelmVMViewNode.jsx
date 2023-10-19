@@ -143,8 +143,10 @@ const HelmVMViewNode = () => {
                 <p className="tw-text-gray-400">{node?.kubeProxyVersion}</p>
               </div>
               <div className="tw-flex tw-gap-2">
-                <p className="tw-text-gray-800 tw-font-semibold">OS</p>
-                <p className="tw-text-gray-400">{node?.operatingSystem}</p>
+                <p className="tw-text-gray-800 tw-font-semibold">
+                  kernel version
+                </p>
+                <p className="tw-text-gray-400">{node?.kernelVersion}</p>
               </div>
             </div>
           </div>
