@@ -142,16 +142,15 @@ func nodeRolesFromLabels(labels map[string]string) []string {
 
 	numRolesStr, ok := labels[types.EMBEDDED_CLUSTER_ROLE_LABEL]
 	if !ok {
+		// the first node will not initially have a role label, but is a 'controller'
+		if val, ok := labels["node-role.kubernetes.io/control-plane"]; ok && val == "true" {
+			return []string{"controller"}
+		}
 		return nil
 	}
 	numRoles, err := strconv.Atoi(numRolesStr)
 	if err != nil {
 		fmt.Printf("failed to parse role label %q: %s", numRolesStr, err.Error())
-
-		// the first node will not initially have a role label, but is a 'controller'
-		if val, ok := labels["node-role.kubernetes.io/control-plane"]; ok && val == "true" {
-			return []string{"controller"}
-		}
 
 		return nil
 	}
