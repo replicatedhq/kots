@@ -54,6 +54,11 @@ const HelmVMViewNode = () => {
         size: 150,
       },
       {
+        accessorKey: "namespace",
+        header: "Namespace",
+        size: 150,
+      },
+      {
         accessorKey: "status",
         header: "Status",
         size: 150,
@@ -62,11 +67,17 @@ const HelmVMViewNode = () => {
         accessorKey: "cpu",
         header: "CPU",
         size: 150,
+        muiTableBodyCellProps: {
+          align: "right",
+        },
       },
       {
         accessorKey: "memory",
         header: "Memory",
         size: 150,
+        muiTableBodyCellProps: {
+          align: "right",
+        },
       },
       // {
       //   accessorKey: "delete",
@@ -80,9 +91,10 @@ const HelmVMViewNode = () => {
   const mappedPods = useMemo(() => {
     return node?.podList?.map((p) => ({
       name: p.name,
+      namespace: p.namespace,
       status: p.status,
       cpu: p.cpu,
-      memory: `${p.memory}GB`,
+      memory: p.memory,
       delete: (
         <>
           <button className="btn red primary">Delete</button>
@@ -128,17 +140,11 @@ const HelmVMViewNode = () => {
                 <p className="tw-text-gray-800 tw-font-semibold">
                   kube-proxy version
                 </p>
-                <p className="tw-text-gray-400">{node?.kubeletVersion}</p>
+                <p className="tw-text-gray-400">{node?.kubeProxyVersion}</p>
               </div>
               <div className="tw-flex tw-gap-2">
                 <p className="tw-text-gray-800 tw-font-semibold">OS</p>
-                <p className="tw-text-gray-400">{node?.kubeletVersion}</p>
-              </div>
-              <div className="tw-flex tw-gap-2">
-                <p className="tw-text-gray-800 tw-font-semibold">
-                  kurl version
-                </p>
-                <p className="tw-text-gray-400">{node?.kubeletVersion}</p>
+                <p className="tw-text-gray-400">{node?.operatingSystem}</p>
               </div>
             </div>
           </div>

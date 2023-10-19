@@ -36,7 +36,7 @@ class CodeSnippet extends Component {
     const { children, copyDelay } = this.props;
     const textToCopy = Array.isArray(children) ? children.join("\n") : children;
 
-    if (navigator.clipboard) {
+    if (navigator.clipboard && window.isSecureContext) {
       navigator.clipboard.writeText(textToCopy).then(() => {
         this.setState({ didCopy: true });
 
@@ -44,6 +44,29 @@ class CodeSnippet extends Component {
           this.setState({ didCopy: false });
         }, copyDelay);
       });
+    } else {
+      const textArea = document.createElement("textarea");
+      textArea.value = textToCopy;
+
+      textArea.style.position = "absolute";
+      textArea.style.opacity = 0;
+
+      document.body.prepend(textArea);
+      textArea.select();
+
+      try {
+        document.execCommand("copy");
+
+        this.setState({ didCopy: true });
+
+        setTimeout(() => {
+          this.setState({ didCopy: false });
+        }, copyDelay);
+      } catch (error) {
+        console.error(error);
+      } finally {
+        textArea.remove();
+      }
     }
   };
 
@@ -67,7 +90,6 @@ class CodeSnippet extends Component {
       language,
       preText,
       canCopy,
-      clipboardEnabled = !!navigator.clipboard,
       copyText,
       onCopyText,
       variant,
@@ -94,7 +116,7 @@ class CodeSnippet extends Component {
             </div>
           )}
           <Prism language={language}>{content}</Prism>
-          {clipboardEnabled && canCopy && (
+          {canCopy && (
             <span
               className={classNames("CodeSnippet-copy", {
                 "is-copied": didCopy,
