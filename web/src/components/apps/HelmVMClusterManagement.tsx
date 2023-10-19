@@ -273,7 +273,7 @@ const HelmVMClusterManagement = ({
         ),
         roles: (
           <div className="tw-w-full tw-flex tw-flex-wrap tw-gap-1">
-            {n.labels.map((l) => (
+            {n?.labels?.map((l) => (
               <span
                 key={l}
                 className="tw-font-semibold tw-text-xs tw-px-1 tw-rounded-sm tw-border tw-border-solid tw-bg-white tw-border-gray-100"
