@@ -222,11 +222,17 @@ const HelmVMClusterManagement = ({
         accessorKey: "cpu",
         header: "CPU",
         size: 150,
+        muiTableBodyCellProps: {
+          align: "right",
+        },
       },
       {
         accessorKey: "memory",
         header: "Memory",
         size: 150,
+        muiTableBodyCellProps: {
+          align: "right",
+        },
       },
       {
         accessorKey: "pods",

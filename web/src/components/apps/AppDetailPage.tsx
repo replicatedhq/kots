@@ -30,6 +30,7 @@ type Props = {
   refetchAppsList: () => void;
   refetchAppMetadata: () => void;
   snapshotInProgressApps: string[];
+  isHelmVM: boolean;
 };
 
 type State = {
@@ -97,6 +98,8 @@ function AppDetailPage(props: Props) {
       navigate(`/app/${appsList[0].slug}`, { replace: true });
     } else if (props.isHelmManaged) {
       navigate("/install-with-helm", { replace: true });
+    } else if (props.isHelmVM) {
+      navigate(`/${selectedApp?.slug}/cluster/manage`, { replace: true });
     } else {
       navigate("/upload-license", { replace: true });
     }
