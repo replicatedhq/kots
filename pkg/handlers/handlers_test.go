@@ -1210,12 +1210,12 @@ var HandlerPolicyTests = map[string][]HandlerPolicyTest{
 	},
 
 	"HelmVM": {}, // Not implemented
-	"GenerateHelmVMNodeJoinCommand": {
+	"GenerateK0sNodeJoinCommand": {
 		{
 			Roles:        []rbactypes.Role{rbac.ClusterAdminRole},
 			SessionRoles: []string{rbac.ClusterAdminRoleID},
 			Calls: func(storeRecorder *mock_store.MockStoreMockRecorder, handlerRecorder *mock_handlers.MockKOTSHandlerMockRecorder) {
-				handlerRecorder.GenerateHelmVMNodeJoinCommand(gomock.Any(), gomock.Any())
+				handlerRecorder.GenerateK0sNodeJoinCommand(gomock.Any(), gomock.Any())
 			},
 			ExpectStatus: http.StatusOK,
 		},

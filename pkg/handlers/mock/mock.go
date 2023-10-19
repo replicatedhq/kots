@@ -448,8 +448,8 @@ func (m *MockKOTSHandler) GenerateK0sNodeJoinCommand(w http.ResponseWriter, r *h
 	m.ctrl.Call(m, "GenerateK0sNodeJoinCommand", w, r)
 }
 
-// GenerateHelmVMNodeJoinCommand indicates an expected call of GenerateHelmVMNodeJoinCommand.
-func (mr *MockKOTSHandlerMockRecorder) GenerateHelmVMNodeJoinCommand(w, r interface{}) *gomock.Call {
+// GenerateK0sNodeJoinCommand indicates an expected call of GenerateK0sNodeJoinCommand.
+func (mr *MockKOTSHandlerMockRecorder) GenerateK0sNodeJoinCommand(w, r interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GenerateK0sNodeJoinCommand", reflect.TypeOf((*MockKOTSHandler)(nil).GenerateK0sNodeJoinCommand), w, r)
 }
