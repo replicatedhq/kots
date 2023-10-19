@@ -329,7 +329,7 @@ func getRoleNodeLabels(ctx context.Context, client kubernetes.Interface, role st
 // one label will be the number of roles, and then deterministic label names will be used to store the role names
 func getRoleListLabels(roles []string) []string {
 	toReturn := []string{}
-	toReturn = append(toReturn, fmt.Sprintf("%s:%d", types.EMBEDDED_CLUSTER_ROLE_LABEL, len(roles)))
+	toReturn = append(toReturn, fmt.Sprintf("%s:total-%d", types.EMBEDDED_CLUSTER_ROLE_LABEL, len(roles)))
 
 	for idx, role := range roles {
 		toReturn = append(toReturn, fmt.Sprintf("%s-%d:%s", types.EMBEDDED_CLUSTER_ROLE_LABEL, idx, role))

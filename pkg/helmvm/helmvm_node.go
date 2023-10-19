@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"math"
 	"strconv"
+	"strings"
 
 	"github.com/replicatedhq/kots/pkg/helmvm/types"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
@@ -148,7 +149,7 @@ func nodeRolesFromLabels(labels map[string]string) []string {
 		}
 		return nil
 	}
-	numRoles, err := strconv.Atoi(numRolesStr)
+	numRoles, err := strconv.Atoi(strings.TrimPrefix(numRolesStr, "total-"))
 	if err != nil {
 		fmt.Printf("failed to parse role label %q: %s", numRolesStr, err.Error())
 
