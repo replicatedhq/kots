@@ -109,14 +109,14 @@ func nodeMetrics(ctx context.Context, client kubernetes.Interface, metricsClient
 			podTotalCPU := 0.0
 			for _, container := range podMetrics.Containers {
 				if container.Usage.Memory() != nil {
-					podTotalMemory += float64(container.Usage.Memory().Value()) / math.Pow(2, 30)
+					podTotalMemory += float64(container.Usage.Memory().Value()) / math.Pow(2, 20)
 				}
 				if container.Usage.Cpu() != nil {
-					podTotalCPU += container.Usage.Cpu().AsApproximateFloat64()
+					podTotalCPU += container.Usage.Cpu().AsApproximateFloat64() * 1000
 				}
 			}
-			newInfo.Memory = podTotalMemory
-			newInfo.CPU = podTotalCPU
+			newInfo.Memory = fmt.Sprintf("%.1f MB", podTotalMemory)
+			newInfo.CPU = fmt.Sprintf("%.1f m", podTotalCPU)
 		}
 
 		podInfo = append(podInfo, newInfo)

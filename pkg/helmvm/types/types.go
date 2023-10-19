@@ -37,9 +37,9 @@ type NodeConditions struct {
 }
 
 type PodInfo struct {
-	Name      string  `json:"name"`
-	Status    string  `json:"status"`
-	Namespace string  `json:"namespace"`
-	CPU       float64 `json:"cpu"`
-	Memory    float64 `json:"memory"`
+	Name      string `json:"name"`
+	Status    string `json:"status"`
+	Namespace string `json:"namespace"`
+	CPU       string `json:"cpu"`
+	Memory    string `json:"memory"`
 }
