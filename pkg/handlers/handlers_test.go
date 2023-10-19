@@ -1254,6 +1254,7 @@ var HandlerPolicyTests = map[string][]HandlerPolicyTest{
 	},
 	"GetHelmVMNode": {
 		{
+			Vars:         map[string]string{"nodeName": "node-name"},
 			Roles:        []rbactypes.Role{rbac.ClusterAdminRole},
 			SessionRoles: []string{rbac.ClusterAdminRoleID},
 			Calls: func(storeRecorder *mock_store.MockStoreMockRecorder, handlerRecorder *mock_handlers.MockKOTSHandlerMockRecorder) {
