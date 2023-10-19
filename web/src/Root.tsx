@@ -607,10 +607,7 @@ const Root = () => {
               />
               {/* )} */}
               {/* {state.adminConsoleMetadata?.isHelmVM && ( */}
-              <Route
-                path="/:slug/cluster/:nodeName"
-                element={<HelmVMViewNode />}
-              />
+              <Route path="/cluster/:nodeName" element={<HelmVMViewNode />} />
               {/* )} */}
               <Route
                 path="/gitops"

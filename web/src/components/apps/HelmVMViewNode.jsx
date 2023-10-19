@@ -270,7 +270,7 @@ const testData = {
 };
 
 const HelmVMViewNode = () => {
-  const { slug, nodeName } = useParams();
+  const { nodeName } = useParams();
   const { data: nodeData } = useQuery({
     queryKey: ["helmVmNode", nodeName],
     queryFn: async ({ queryKey }) => {
@@ -368,7 +368,7 @@ const HelmVMViewNode = () => {
       {/* Breadcrumbs */}
       <p className="tw-text-sm tw-text-gray-400">
         <Link
-          to={`/${slug}/cluster/manage`}
+          to={`/cluster/manage`}
           className="!tw-text-blue-300 tw-font-semibold hover:tw-underline"
         >
           Cluster Nodes
