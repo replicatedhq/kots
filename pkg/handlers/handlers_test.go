@@ -1210,22 +1210,12 @@ var HandlerPolicyTests = map[string][]HandlerPolicyTest{
 	},
 
 	"HelmVM": {}, // Not implemented
-	"GenerateHelmVMNodeJoinCommandSecondary": {
+	"GenerateHelmVMNodeJoinCommand": {
 		{
 			Roles:        []rbactypes.Role{rbac.ClusterAdminRole},
 			SessionRoles: []string{rbac.ClusterAdminRoleID},
 			Calls: func(storeRecorder *mock_store.MockStoreMockRecorder, handlerRecorder *mock_handlers.MockKOTSHandlerMockRecorder) {
-				handlerRecorder.GenerateHelmVMNodeJoinCommandSecondary(gomock.Any(), gomock.Any())
-			},
-			ExpectStatus: http.StatusOK,
-		},
-	},
-	"GenerateHelmVMNodeJoinCommandPrimary": {
-		{
-			Roles:        []rbactypes.Role{rbac.ClusterAdminRole},
-			SessionRoles: []string{rbac.ClusterAdminRoleID},
-			Calls: func(storeRecorder *mock_store.MockStoreMockRecorder, handlerRecorder *mock_handlers.MockKOTSHandlerMockRecorder) {
-				handlerRecorder.GenerateHelmVMNodeJoinCommandPrimary(gomock.Any(), gomock.Any())
+				handlerRecorder.GenerateHelmVMNodeJoinCommand(gomock.Any(), gomock.Any())
 			},
 			ExpectStatus: http.StatusOK,
 		},
