@@ -60,9 +60,9 @@ func nodeMetrics(ctx context.Context, client kubernetes.Interface, metricsClient
 		return nil, fmt.Errorf("pods per node: %w", err)
 	}
 
-	cpuCapacity := types.CapacityAvailable{}
-	memoryCapacity := types.CapacityAvailable{}
-	podCapacity := types.CapacityAvailable{}
+	cpuCapacity := types.CapacityUsed{}
+	memoryCapacity := types.CapacityUsed{}
+	podCapacity := types.CapacityUsed{}
 
 	memoryCapacity.Capacity = float64(node.Status.Capacity.Memory().Value()) / math.Pow(2, 30) // capacity in GB
 
@@ -76,36 +76,67 @@ func nodeMetrics(ctx context.Context, client kubernetes.Interface, metricsClient
 	nodeUsageMetrics, err := metricsClient.MetricsV1beta1().NodeMetricses().Get(ctx, node.Name, metav1.GetOptions{})
 	if err == nil {
 		if nodeUsageMetrics.Usage.Memory() != nil {
-			memoryCapacity.Available = memoryCapacity.Capacity - float64(nodeUsageMetrics.Usage.Memory().Value())/math.Pow(2, 30)
+			memoryCapacity.Used = float64(nodeUsageMetrics.Usage.Memory().Value()) / math.Pow(2, 30)
 		}
 
 		if nodeUsageMetrics.Usage.Cpu() != nil {
-			cpuCapacity.Available = cpuCapacity.Capacity - nodeUsageMetrics.Usage.Cpu().AsApproximateFloat64()
+			cpuCapacity.Used = nodeUsageMetrics.Usage.Cpu().AsApproximateFloat64()
 		}
 	} else {
 		// if we can't get metrics, we'll do nothing for now
 		// in the future we may decide to retry or log a warning
 	}
 
-	podCapacity.Available = podCapacity.Capacity - float64(len(nodePods))
+	podCapacity.Used = float64(len(nodePods))
 
 	nodeLabelArray := []string{}
 	for k, v := range node.Labels {
 		nodeLabelArray = append(nodeLabelArray, fmt.Sprintf("%s:%s", k, v))
 	}
 
+	podInfo := []types.PodInfo{}
+
+	for _, pod := range nodePods {
+		newInfo := types.PodInfo{
+			Name:      pod.Name,
+			Namespace: pod.Namespace,
+			Status:    string(pod.Status.Phase),
+		}
+
+		podMetrics, err := metricsClient.MetricsV1beta1().PodMetricses(pod.Namespace).Get(ctx, pod.Name, metav1.GetOptions{})
+		if err == nil {
+			podTotalMemory := 0.0
+			podTotalCPU := 0.0
+			for _, container := range podMetrics.Containers {
+				if container.Usage.Memory() != nil {
+					podTotalMemory += float64(container.Usage.Memory().Value()) / math.Pow(2, 30)
+				}
+				if container.Usage.Cpu() != nil {
+					podTotalCPU += container.Usage.Cpu().AsApproximateFloat64()
+				}
+			}
+			newInfo.Memory = podTotalMemory
+			newInfo.CPU = podTotalCPU
+		}
+
+		podInfo = append(podInfo, newInfo)
+	}
+
 	return &types.Node{
-		Name:           node.Name,
-		IsConnected:    isConnected(node),
-		IsReady:        isReady(node),
-		IsPrimaryNode:  isPrimary(node),
-		CanDelete:      node.Spec.Unschedulable && !isConnected(node),
-		KubeletVersion: node.Status.NodeInfo.KubeletVersion,
-		CPU:            cpuCapacity,
-		Memory:         memoryCapacity,
-		Pods:           podCapacity,
-		Labels:         nodeLabelArray,
-		Conditions:     findNodeConditions(node.Status.Conditions),
-		PodList:        nodePods,
+		Name:             node.Name,
+		IsConnected:      isConnected(node),
+		IsReady:          isReady(node),
+		IsPrimaryNode:    isPrimary(node),
+		CanDelete:        node.Spec.Unschedulable && !isConnected(node),
+		KubeletVersion:   node.Status.NodeInfo.KubeletVersion,
+		KubeProxyVersion: node.Status.NodeInfo.KubeProxyVersion,
+		OperatingSystem:  node.Status.NodeInfo.OperatingSystem,
+		KernelVersion:    node.Status.NodeInfo.KernelVersion,
+		CPU:              cpuCapacity,
+		Memory:           memoryCapacity,
+		Pods:             podCapacity,
+		Labels:           nodeLabelArray,
+		Conditions:       findNodeConditions(node.Status.Conditions),
+		PodList:          podInfo,
 	}, nil
 }
