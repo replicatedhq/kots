@@ -322,11 +322,11 @@ function AppDetailPage(props: Props) {
       const firstVersion = downstream.pendingVersions.find(
         (version: Version) => version?.sequence === 0
       );
-      if (props.isHelmVM) {
-        navigate(`/${appNeedsConfiguration.slug}/cluster/manage`);
-        return;
-      }
       if (firstVersion?.status === "pending_config") {
+        if (props.isHelmVM) {
+          navigate(`/${appNeedsConfiguration.slug}/cluster/manage`);
+          return;
+        }
         navigate(`/${appNeedsConfiguration.slug}/config`);
         return;
       }

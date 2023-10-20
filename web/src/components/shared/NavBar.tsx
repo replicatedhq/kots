@@ -228,20 +228,21 @@ export class NavBar extends PureComponent<Props, State> {
                   </span>
                 </div>
               )}
-              {(isKurlEnabled || isHelmVMEnabled) && (
-                <div
-                  className={classNames("NavItem u-position--relative flex", {
-                    "is-active": selectedTab === "cluster_management",
-                  })}
-                >
-                  <span
-                    onClick={this.handleGoToClusterManagement}
-                    className="flex flex1 u-cursor--pointer text u-fontSize--normal u-fontWeight--medium flex-column justifyContent--center"
+              {(isKurlEnabled || isHelmVMEnabled) &&
+                location.pathname !== `${selectedApp?.slug}/cluster/manage` && (
+                  <div
+                    className={classNames("NavItem u-position--relative flex", {
+                      "is-active": selectedTab === "cluster_management",
+                    })}
                   >
-                    Cluster Management
-                  </span>
-                </div>
-              )}
+                    <span
+                      onClick={this.handleGoToClusterManagement}
+                      className="flex flex1 u-cursor--pointer text u-fontSize--normal u-fontWeight--medium flex-column justifyContent--center"
+                    >
+                      Cluster Management
+                    </span>
+                  </div>
+                )}
               {isSnapshotsSupported && (
                 <div
                   className={classNames("NavItem u-position--relative flex", {
