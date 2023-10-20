@@ -14,7 +14,6 @@ import (
 	"strings"
 
 	"github.com/pkg/errors"
-	"github.com/replicatedhq/kots/pkg/buildversion"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/upstream/types"
 	"gopkg.in/yaml.v3"
@@ -270,7 +269,6 @@ func buildReplicatedValues(u *types.Upstream, options types.WriteOptions) (map[s
 	replicatedValues := map[string]interface{}{
 		"replicatedID": options.KotsadmID,
 		"appID":        options.AppID,
-		"userAgent":    buildversion.GetUserAgent(),
 		"isAirgap":     options.IsAirgap,
 	}
 
