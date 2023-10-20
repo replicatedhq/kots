@@ -1,4 +1,4 @@
-import React from "react";
+import { ChangeEvent, Component } from "react";
 import dayjs from "dayjs";
 import localizedFormat from "dayjs/plugin/localizedFormat";
 import Handlebars from "handlebars";
@@ -40,7 +40,7 @@ type State = {
   savingPromValue: boolean;
   showConfigureGraphs: boolean;
 };
-export default class DashboardGraphsCard extends React.Component<Props, State> {
+export default class DashboardGraphsCard extends Component<Props, State> {
   constructor(props: Props) {
     super(props);
     this.state = {
@@ -102,7 +102,7 @@ export default class DashboardGraphsCard extends React.Component<Props, State> {
       });
   };
 
-  onPromValueChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  onPromValueChange = (e: ChangeEvent<HTMLInputElement>) => {
     const { value } = e.target;
     this.setState({
       promValue: value,

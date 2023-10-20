@@ -1,4 +1,4 @@
-import * as React from "react";
+import { Component } from "react";
 import Loader from "../shared/Loader";
 import isEmpty from "lodash/isEmpty";
 import filter from "lodash/filter";
@@ -6,7 +6,7 @@ import MarkdownRenderer from "@src/components/shared/MarkdownRenderer";
 import { sortAnalyzers, parseIconUri } from "../../utilities/utilities";
 import { withRouter } from "@src/utilities/react-router-utilities";
 
-export class AnalyzerInsights extends React.Component {
+export class AnalyzerInsights extends Component {
   constructor(props) {
     super(props);
     this.state = {

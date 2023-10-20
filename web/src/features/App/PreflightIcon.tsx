@@ -1,4 +1,3 @@
-import React from "react";
 import Icon from "@components/Icon";
 import { Link } from "react-router-dom";
 import { App, Version } from "@types";

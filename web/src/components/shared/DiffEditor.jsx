@@ -1,9 +1,9 @@
-import * as React from "react";
+import { Component } from "react";
 import { DiffEditor as MonacoDiffEditor } from "@monaco-editor/react";
 
 import { diffContent } from "../../utilities/utilities";
 
-export default class DiffEditor extends React.Component {
+export default class DiffEditor extends Component {
   state = {
     addedLines: 0,
     removedLines: 0,

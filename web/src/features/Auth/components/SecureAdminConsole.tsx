@@ -1,4 +1,4 @@
-import * as React from "react";
+import { Component, RefObject, createRef } from "react";
 import { KotsPageTitle } from "@components/Head";
 import { Utilities, dynamicallyResizeText } from "@src/utilities/utilities";
 import Loader from "@src/components/shared/Loader";
@@ -30,8 +30,8 @@ type LoginResponse = {
   expires?: number;
   sessionRoles: string;
 };
-class SecureAdminConsole extends React.Component<Props, State> {
-  loginText: React.RefObject<HTMLDivElement>;
+class SecureAdminConsole extends Component<Props, State> {
+  loginText: RefObject<HTMLDivElement>;
 
   constructor(props: Props) {
     super(props);
@@ -44,7 +44,7 @@ class SecureAdminConsole extends React.Component<Props, State> {
       loginInfo: null,
     };
 
-    this.loginText = React.createRef();
+    this.loginText = createRef();
   }
 
   completeLogin = async (data: LoginResponse) => {

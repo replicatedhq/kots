@@ -1,4 +1,4 @@
-import React, { useEffect, useReducer } from "react";
+import { useEffect, useReducer } from "react";
 import { Link, useParams, useNavigate } from "react-router-dom";
 import { KotsPageTitle } from "@components/Head";
 import AceEditor, { Marker } from "react-ace";

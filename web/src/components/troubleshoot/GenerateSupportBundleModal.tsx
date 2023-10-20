@@ -1,4 +1,4 @@
-import React, { useEffect, useReducer } from "react";
+import { useEffect, useReducer } from "react";
 import Modal from "react-modal";
 import CodeSnippet from "@components/shared/CodeSnippet";
 import { useNavigate, useParams } from "react-router-dom";

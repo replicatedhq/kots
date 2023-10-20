@@ -1,5 +1,4 @@
-import React from "react";
-import { Link } from "react-router-dom";
+import { Component } from "react";
 import ReactTooltip from "react-tooltip";
 import dayjs from "dayjs";
 import isSameOrAfter from "dayjs/plugin/isSameOrAfter";
@@ -9,7 +8,7 @@ import { Utilities } from "../../utilities/utilities";
 import Icon from "../Icon";
 import { withRouter } from "@src/utilities/react-router-utilities";
 
-class SnapshotRow extends React.Component {
+class SnapshotRow extends Component {
   handleDeleteClick = (e, snapshot) => {
     e.stopPropagation();
     this.props.toggleConfirmDeleteModal(snapshot);

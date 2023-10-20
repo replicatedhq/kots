@@ -1,4 +1,3 @@
-import React from "react";
 import Modal from "react-modal";
 // TODO: add type to CodeSnippet
 // @ts-ignore

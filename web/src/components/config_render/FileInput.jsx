@@ -1,10 +1,9 @@
-import React from "react";
-import map from "lodash/map";
+import { Component } from "react";
 import after from "lodash/after";
 import forEach from "lodash/forEach";
 import Icon from "../Icon";
 
-export default class FileInput extends React.Component {
+export default class FileInput extends Component {
   constructor(props) {
     super(props);
     this.state = {

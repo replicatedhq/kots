@@ -1,4 +1,4 @@
-import React, { Component } from "react";
+import { Component } from "react";
 import Icon from "../Icon";
 
 export default class SnapshotInstallationBox extends Component {

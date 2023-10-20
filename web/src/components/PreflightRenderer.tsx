@@ -1,4 +1,3 @@
-import React from "react";
 import classNames from "classnames";
 // TODO: find replacement for react-remarkable
 // @ts-ignore

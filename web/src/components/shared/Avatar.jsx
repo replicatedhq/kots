@@ -1,8 +1,7 @@
-import * as React from "react";
-
+import { Component } from "react";
 import "../../scss/components/shared/Avatar.scss";
 
-export default class Avatar extends React.Component {
+export default class Avatar extends Component {
   render() {
     return (
       <div

@@ -1,4 +1,4 @@
-import * as React from "react";
+import { Component } from "react";
 import classNames from "classnames";
 
 interface Props {
@@ -7,7 +7,7 @@ interface Props {
   size?: string;
 }
 
-export default class Loader extends React.Component<Props> {
+export default class Loader extends Component<Props> {
   render() {
     const { className, displayBlock, size } = this.props;
 

@@ -1,4 +1,4 @@
-import React from "react";
+import { Component } from "react";
 import { Link } from "react-router-dom";
 import InlineDropdown from "@src/components/shared/InlineDropdown";
 import isEmpty from "lodash/isEmpty";
@@ -28,7 +28,7 @@ type Props = {
 type State = {
   dropdownOptions: OptionLink[];
 };
-export default class AppStatus extends React.Component<Props, State> {
+export default class AppStatus extends Component<Props, State> {
   constructor(props: Props) {
     super(props);
     this.state = {

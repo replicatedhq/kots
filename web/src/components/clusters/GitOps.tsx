@@ -1,4 +1,4 @@
-import * as React from "react";
+import { Component } from "react";
 import { KotsPageTitle } from "@components/Head";
 import GitOpsDeploymentManager from "../../features/Gitops/GitOpsDeploymentManager";
 import { GitOpsProvider } from "../../features/Gitops/context";
@@ -9,7 +9,7 @@ import "../../scss/components/watches/WatchCard.scss";
 interface Props {
   appName: string;
 }
-export class GitOps extends React.Component<Props> {
+export class GitOps extends Component<Props> {
   render() {
     return (
       <GitOpsProvider>

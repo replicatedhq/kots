@@ -1,4 +1,4 @@
-import React, { useEffect, useContext } from "react";
+import { useEffect, useContext, useReducer } from "react";
 import Loader from "../shared/Loader";
 import dayjs from "dayjs";
 import filter from "lodash/filter";
@@ -57,7 +57,7 @@ export const SupportBundleRow = (props: Props) => {
 
   const params = useParams<KotsParams>();
 
-  const [state, setState] = React.useReducer(
+  const [state, setState] = useReducer(
     (currentState: State, newState: Partial<State>) => ({
       ...currentState,
       ...newState,

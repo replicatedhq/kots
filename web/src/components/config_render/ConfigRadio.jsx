@@ -1,7 +1,7 @@
-import React from "react";
+import { Component } from "react";
 import get from "lodash/get";
 
-export default class ConfigRadio extends React.Component {
+export default class ConfigRadio extends Component {
   handleOnChange = (e) => {
     const { group } = this.props;
     if (

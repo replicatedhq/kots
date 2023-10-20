@@ -1,10 +1,10 @@
+import { Component } from "react";
 import Icon from "@components/Icon";
-import React from "react";
 import { Link } from "react-router-dom";
 
 import { Utilities } from "../../utilities/utilities";
 
-class RedactorRow extends React.Component {
+class RedactorRow extends Component {
   state = {
     redactorEnabled: false,
   };

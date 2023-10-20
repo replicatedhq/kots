@@ -1,4 +1,3 @@
-import React from "react";
 import { ComponentStory, ComponentMeta } from "@storybook/react";
 import Toast from "@src/components/shared/Toast";
 import Icon from "@src/components/Icon";

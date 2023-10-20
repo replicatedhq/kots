@@ -1,4 +1,4 @@
-import React from "react";
+import { Component } from "react";
 import map from "lodash/map";
 import isEmpty from "lodash/isEmpty";
 
@@ -9,7 +9,7 @@ import { setOrder } from "./ConfigUtil";
 import { ConfigWrapper } from "./ConfigComponents";
 import Icon from "../Icon";
 
-export default class ConfigSelectOne extends React.Component {
+export default class ConfigSelectOne extends Component {
   handleOnChange = (itemName, val) => {
     if (
       this.props.handleOnChange &&

@@ -1,4 +1,4 @@
-import * as React from "react";
+import { Component } from "react";
 import Clipboard from "clipboard";
 import isEmpty from "lodash/isEmpty";
 import Dropzone from "react-dropzone";
@@ -6,7 +6,7 @@ import randomstring from "randomstring";
 
 import "../../scss/components/troubleshoot/UploadSupportBundleModal.scss";
 
-class UploadSupportBundleModal extends React.Component {
+class UploadSupportBundleModal extends Component {
   constructor() {
     super();
     this.state = {

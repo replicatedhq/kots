@@ -1,4 +1,3 @@
-import React from "react";
 import "../../scss/components/shared/Toggle.scss";
 
 interface Props {

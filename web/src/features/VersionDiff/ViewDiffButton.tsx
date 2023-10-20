@@ -1,4 +1,3 @@
-import React from "react";
 import { Version } from "@types";
 import { useSelectedApp } from "@features/App/hooks/useSelectedApp";
 import { useIsHelmManaged } from "@components/hooks";

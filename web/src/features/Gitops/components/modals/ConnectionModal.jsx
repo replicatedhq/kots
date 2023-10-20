@@ -1,4 +1,3 @@
-import React from "react";
 import Modal from "react-modal";
 import Loader from "../../../../components/shared/Loader";
 import { useNavigate } from "react-router-dom";

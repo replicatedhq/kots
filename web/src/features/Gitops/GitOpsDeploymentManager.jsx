@@ -1,4 +1,4 @@
-import React, { useContext } from "react";
+import { useContext } from "react";
 import find from "lodash/find";
 import Loader from "../../components/shared/Loader";
 import ErrorModal from "../../components/modals/ErrorModal";

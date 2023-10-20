@@ -1,6 +1,5 @@
-import React from "react";
+import { useState } from "react";
 import InputField from "../../shared/forms/InputField";
-import { Utilities } from "@src/utilities/utilities";
 
 import "@src/scss/components/modals/ChangePasswordModal/ChangePasswordForm.scss";
 
@@ -8,12 +7,12 @@ const ChangePasswordForm = ({
   handleClose,
   handleSetPasswordChangeSuccessful,
 }) => {
-  const [err, setErr] = React.useState({
+  const [err, setErr] = useState({
     status: false,
     message: "",
   });
-  const [loading, setLoading] = React.useState(false);
-  const [inputs, setInputs] = React.useState({
+  const [loading, setLoading] = useState(false);
+  const [inputs, setInputs] = useState({
     currentPassword: "",
     newPassword: "",
     confirmPassword: "",

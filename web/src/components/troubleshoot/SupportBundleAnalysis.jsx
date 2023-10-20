@@ -1,17 +1,13 @@
-import * as React from "react";
-import { Switch, Route, Link, Outlet } from "react-router-dom";
+import { Component, createRef } from "react";
+import { Link, Outlet } from "react-router-dom";
 import { withRouter } from "@src/utilities/react-router-utilities";
 import dayjs from "dayjs";
 import Modal from "react-modal";
 
 import Loader from "../shared/Loader";
-import AnalyzerInsights from "./AnalyzerInsights";
-import AnalyzerFileTree from "./AnalyzerFileTree";
-import AnalyzerRedactorReport from "./AnalyzerRedactorReport";
 import PodAnalyzerDetails from "./PodAnalyzerDetails";
 import ErrorModal from "../modals/ErrorModal";
 import { Utilities } from "../../utilities/utilities";
-import { Repeater } from "@src/utilities/repeater";
 import "../../scss/components/troubleshoot/SupportBundleAnalysis.scss";
 import "@src/scss/components/AirgapUploadProgress.scss";
 import download from "downloadjs";
@@ -19,10 +15,9 @@ import Icon from "../Icon";
 
 import { KotsPageTitle } from "@components/Head";
 import { isEmpty } from "lodash";
-import { useSelectedApp } from "@features/App";
 
 let percentage;
-export class SupportBundleAnalysis extends React.Component {
+export class SupportBundleAnalysis extends Component {
   constructor(props) {
     super();
     this.state = {
@@ -39,7 +34,7 @@ export class SupportBundleAnalysis extends React.Component {
       sendingBundleErrMsg: "",
       showPodAnalyzerDetailsModal: false,
     };
-    this.pollingRef = React.createRef();
+    this.pollingRef = createRef();
   }
 
   togglePodDetailsModal = (selectedPod) => {

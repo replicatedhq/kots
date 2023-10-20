@@ -1,4 +1,4 @@
-import React, { useContext, useState, useEffect } from "react";
+import { useContext, useState, useEffect } from "react";
 import { KotsPageTitle } from "@components/Head";
 import CodeSnippet from "@src/components/shared/CodeSnippet";
 import { getAddKeyUri, Utilities } from "../../../utilities/utilities";

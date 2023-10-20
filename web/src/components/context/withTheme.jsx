@@ -1,5 +1,5 @@
-import React from "react";
 import { ThemeContext } from "@src/Root";
+import { useContext } from "react";
 
 export default function withTheme(Component) {
   return function withThemeComponent(props) {
@@ -12,7 +12,7 @@ export default function withTheme(Component) {
 }
 
 function useTheme() {
-  const context = React.useContext(ThemeContext);
+  const context = useContext(ThemeContext);
   if (context === undefined) {
     throw new Error("useTheme must be used within a ThemeProvider");
   }

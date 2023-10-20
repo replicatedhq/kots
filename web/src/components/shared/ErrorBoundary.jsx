@@ -1,7 +1,7 @@
-import React from "react";
+import { Component } from "react";
 import Icon from "../Icon";
 
-export default class ErrorBoundaryComponent extends React.Component {
+export default class ErrorBoundaryComponent extends Component {
   constructor(props) {
     super(props);
     this.state = {

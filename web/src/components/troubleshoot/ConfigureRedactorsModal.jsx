@@ -1,4 +1,4 @@
-import React, { Component } from "react";
+import { Component } from "react";
 import Modal from "react-modal";
 import AceEditor from "react-ace";
 import yaml from "js-yaml";

@@ -1,11 +1,11 @@
-import React from "react";
+import { Component } from "react";
 import Markdown from "markdown-it";
 
 import "@src/scss/components/shared/MarkdownRenderer.scss";
 
 const md = Markdown();
 
-export default class MarkdownRenderer extends React.Component {
+export default class MarkdownRenderer extends Component {
   componentDidMount() {
     const anchors = document
       .getElementById(this.props.id)

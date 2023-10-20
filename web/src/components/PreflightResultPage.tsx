@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { KotsPageTitle } from "@components/Head";
 import { useParams, useLocation } from "react-router-dom";

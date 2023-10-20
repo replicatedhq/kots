@@ -1,4 +1,4 @@
-import * as React from "react";
+import { Component } from "react";
 import PropTypes from "prop-types";
 import { formatNumber } from "accounting";
 import Loader from "./Loader";
@@ -6,7 +6,7 @@ import Loader from "./Loader";
 import "../../scss/components/shared/Pager.scss";
 import Icon from "../Icon";
 
-class Pager extends React.Component {
+class Pager extends Component {
   pageCount() {
     return Math.ceil(this.props.totalCount / this.props.pageSize);
   }

@@ -1,4 +1,4 @@
-import React from "react";
+import { Component } from "react";
 import Modal from "react-modal";
 import semverjs from "semver";
 import SnapshotInstallationBox from "./SnapshotInstallationBox";
@@ -12,7 +12,7 @@ import Icon from "../Icon";
 const VELERO_IS_NOT_INSTALLED_TAB = "velero-not-installed";
 const VELERO_IS_INSTALLED_TAB = "velero-installed";
 
-class ConfigureSnapshots extends React.Component {
+class ConfigureSnapshots extends Component {
   constructor(props) {
     super(props);
 

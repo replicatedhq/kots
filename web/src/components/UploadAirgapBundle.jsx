@@ -1,4 +1,4 @@
-import * as React from "react";
+import { Component } from "react";
 import classNames from "classnames";
 import { KotsPageTitle } from "@components/Head";
 import isEmpty from "lodash/isEmpty";
@@ -8,7 +8,6 @@ import MountAware from "@src/components/shared/MountAware";
 import AirgapUploadProgress from "@features/Dashboard/components/AirgapUploadProgress";
 import LicenseUploadProgress from "./LicenseUploadProgress";
 import AirgapRegistrySettings from "./shared/AirgapRegistrySettings";
-import { Utilities } from "../utilities/utilities";
 import { AirgapUploader } from "../utilities/airgapUploader";
 import { withRouter } from "@src/utilities/react-router-utilities";
 
@@ -21,7 +20,7 @@ const COMMON_ERRORS = {
   "no such host": "No such host",
 };
 
-class UploadAirgapBundle extends React.Component {
+class UploadAirgapBundle extends Component {
   state = {
     bundleFile: {},
     fileUploading: false,

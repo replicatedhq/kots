@@ -1,5 +1,4 @@
 import Icon from "@src/components/Icon";
-import React from "react";
 
 const YamlErrors = ({ yamlErrors, handleShowDetailsClicked }) => {
   return (

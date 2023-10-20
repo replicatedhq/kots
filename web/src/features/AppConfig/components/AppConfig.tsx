@@ -1,4 +1,4 @@
-import React, { Component } from "react";
+import { Component } from "react";
 import { AppConfigRenderer } from "../../../components/AppConfigRenderer";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { withRouter } from "@src/utilities/react-router-utilities";

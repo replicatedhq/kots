@@ -1,8 +1,8 @@
-import * as React from "react";
-import { Utilities } from "./utilities/utilities";
+import { Component } from "react";
 import fetch from "./utilities/fetchWithTimeout";
+import { Utilities } from "./utilities/utilities";
 
-export default class ConnectionTerminated extends React.Component {
+export default class ConnectionTerminated extends Component {
   state = {
     seconds: 1,
     reconnectAttempts: 1,

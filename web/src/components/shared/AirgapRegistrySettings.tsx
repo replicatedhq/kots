@@ -1,4 +1,4 @@
-import React, { Component } from "react";
+import { ChangeEvent, Component } from "react";
 import { withRouter } from "@src/utilities/react-router-utilities";
 import get from "lodash/get";
 
@@ -510,7 +510,7 @@ class AirgapRegistrySettings extends Component<Props, State> {
                 className="tw-gap-0"
                 placeholder="password"
                 value={password || ""}
-                onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                onChange={(e: ChangeEvent<HTMLInputElement>) => {
                   this.handleFormChange("password", e.target.value);
                 }}
                 id={"airgap-registry-password"}

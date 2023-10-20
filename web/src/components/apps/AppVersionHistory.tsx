@@ -1,4 +1,4 @@
-import React, { Component } from "react";
+import { ChangeEvent, Component, Fragment } from "react";
 import { Link } from "react-router-dom";
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
@@ -365,7 +365,7 @@ class AppVersionHistory extends Component<Props, State> {
     }
   };
 
-  setPageSize = (e: React.ChangeEvent<HTMLSelectElement>) => {
+  setPageSize = (e: ChangeEvent<HTMLSelectElement>) => {
     this.setState(
       { pageSize: parseInt(e.target.value), currentPage: 0 },
       () => {
@@ -1456,7 +1456,7 @@ class AppVersionHistory extends Component<Props, State> {
     }
 
     return (
-      <React.Fragment key={index}>
+      <Fragment key={index}>
         <AppVersionHistoryRow
           navigate={this.props.navigate}
           adminConsoleMetadata={this.props.outletContext.adminConsoleMetadata}
@@ -1617,7 +1617,7 @@ class AppVersionHistory extends Component<Props, State> {
               }}
             </UseDownloadValues>
           )}
-      </React.Fragment>
+      </Fragment>
     );
   };
 

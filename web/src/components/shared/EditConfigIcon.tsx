@@ -1,6 +1,5 @@
 import { useSelectedApp } from "@features/App";
 import { Version } from "@types";
-import React from "react";
 import { Link } from "react-router-dom";
 import { useIsHelmManaged } from "@src/components//hooks";
 import Icon from "@components/Icon";

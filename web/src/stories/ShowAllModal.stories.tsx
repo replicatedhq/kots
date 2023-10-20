@@ -1,4 +1,3 @@
-import React from "react";
 import { ComponentMeta } from "@storybook/react";
 
 import ShowAllModal from "@src/components/modals/ShowAllModal";

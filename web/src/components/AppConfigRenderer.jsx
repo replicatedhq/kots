@@ -1,11 +1,11 @@
-import React from "react";
 import ConfigRender from "./config_render/ConfigRender";
 import PropTypes from "prop-types";
 import map from "lodash/map";
 import sortBy from "lodash/sortBy";
 import keyBy from "lodash/keyBy";
+import { Component } from "react";
 
-export class AppConfigRenderer extends React.Component {
+export class AppConfigRenderer extends Component {
   static propTypes = {
     groups: PropTypes.array.isRequired, // Config groups items to render
     handleChange: PropTypes.func,
