@@ -3,12 +3,12 @@ package types
 type DownstreamVersionStatus string
 
 const (
-	VersionUnknown          DownstreamVersionStatus = "unknown"
-	VersionPendingConfig    DownstreamVersionStatus = "pending_config"
-	VersionPending          DownstreamVersionStatus = "pending"
-	VersionPendingPreflight DownstreamVersionStatus = "pending_preflight"
-	VersionPendingDownload  DownstreamVersionStatus = "pending_download"
-	VersionDeploying        DownstreamVersionStatus = "deploying"
-	VersionDeployed         DownstreamVersionStatus = "deployed"
-	VersionFailed           DownstreamVersionStatus = "failed"
+	VersionUnknown          DownstreamVersionStatus = "unknown"           // we don't know
+	VersionPendingConfig    DownstreamVersionStatus = "pending_config"    // needs required configuration
+	VersionPendingDownload  DownstreamVersionStatus = "pending_download"  // needs to be downloaded from the upstream source
+	VersionPendingPreflight DownstreamVersionStatus = "pending_preflight" // waiting for preflights to finish
+	VersionPending          DownstreamVersionStatus = "pending"           // can be deployed, but is not yet
+	VersionDeploying        DownstreamVersionStatus = "deploying"         // is being deployed
+	VersionDeployed         DownstreamVersionStatus = "deployed"          // did deploy successfully
+	VersionFailed           DownstreamVersionStatus = "failed"            // did not deploy successfully
 )

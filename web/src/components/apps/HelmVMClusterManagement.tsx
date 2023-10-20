@@ -14,6 +14,38 @@ import CodeSnippet from "../shared/CodeSnippet";
 
 import "@src/scss/components/apps/HelmVMClusterManagement.scss";
 
+const testData = {
+  nodes: undefined,
+};
+// const testData = {
+//   nodes: [
+//     {
+//       name: "laverya-helmvm",
+//       isConnected: true,
+//       isReady: true,
+//       isPrimaryNode: true,
+//       canDelete: false,
+//       kubeletVersion: "v1.28.2+k0s",
+//       kubeProxyVersion: "v1.28.2+k0s",
+//       operatingSystem: "linux",
+//       kernelVersion: "5.10.0-26-cloud-amd64",
+//       cpu: { capacity: 4, used: 1.9364847660000002 },
+//       memory: { capacity: 15.633056640625, used: 3.088226318359375 },
+//       pods: { capacity: 110, used: 27 },
+//       labels: ["controller"],
+//       conditions: {
+//         memoryPressure: false,
+//         diskPressure: false,
+//         pidPressure: false,
+//         ready: true,
+//       },
+//       podList: [],
+//     },
+//   ],
+//   ha: true,
+//   isHelmVMEnabled: true,
+// };
+
 type State = {
   displayAddNode: boolean;
   confirmDeleteNode: string;
@@ -260,12 +292,10 @@ const HelmVMClusterManagement = ({
 
   const mappedNodes = useMemo(() => {
     return (
-      nodesData?.nodes?.map((n) => ({
-        name: slug ? (
-          n.name
-        ) : (
+      (nodesData?.nodes || testData?.nodes)?.map((n) => ({
+        name: (
           <Link
-            to={`/cluster/${n.name}`}
+            to={slug ? `/${slug}/cluster/${n.name}` : `/cluster/${n.name}`}
             className="tw-font-semibold tw-text-blue-300 hover:tw-underline"
           >
             {n.name}
@@ -335,7 +365,7 @@ const HelmVMClusterManagement = ({
               {nodesError?.message}
             </p>
           )}
-          {nodesData?.nodes && (
+          {(nodesData?.nodes || testData?.nodes) && (
             <MaterialReactTable
               columns={columns}
               data={mappedNodes}
