@@ -1,5 +1,5 @@
 import { isAwaitingResults } from "@src/utilities/utilities";
-import { useQuery } from "react-query";
+import { useQuery } from "@tanstack/react-query";
 import { useSelectedApp } from "@features/App";
 import { Downstream } from "@types";
 

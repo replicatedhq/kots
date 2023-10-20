@@ -3,8 +3,8 @@ package helmvm
 import (
 	"context"
 	"fmt"
-	corev1 "k8s.io/api/core/v1"
 
+	corev1 "k8s.io/api/core/v1"
 	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
@@ -41,5 +41,14 @@ func IsHelmVM(clientset kubernetes.Interface) (bool, error) {
 }
 
 func IsHA(clientset kubernetes.Interface) (bool, error) {
-	return false, nil
+	return true, nil
+}
+
+func ClusterID(client kubernetes.Interface) (string, error) {
+	configMap, err := ReadConfigMap(client)
+	if err != nil {
+		return "", fmt.Errorf("failed to read configmap: %w", err)
+	}
+
+	return configMap.Data["embedded-cluster-id"], nil
 }

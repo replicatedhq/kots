@@ -30,6 +30,7 @@ type Props = {
   refetchAppsList: () => void;
   refetchAppMetadata: () => void;
   snapshotInProgressApps: string[];
+  isHelmVM: boolean;
 };
 
 type State = {
@@ -321,6 +322,10 @@ function AppDetailPage(props: Props) {
       const firstVersion = downstream.pendingVersions.find(
         (version: Version) => version?.sequence === 0
       );
+      if (props.isHelmVM) {
+        navigate(`/${appNeedsConfiguration.slug}/cluster/manage`);
+        return;
+      }
       if (firstVersion?.status === "pending_config") {
         navigate(`/${appNeedsConfiguration.slug}/config`);
         return;

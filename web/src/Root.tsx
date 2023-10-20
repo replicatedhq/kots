@@ -22,7 +22,7 @@ import UploadAirgapBundle from "./components/UploadAirgapBundle";
 import RestoreCompleted from "./components/RestoreCompleted";
 import Access from "./components/identity/Access";
 import SnapshotsWrapper from "./components/snapshots/SnapshotsWrapper";
-import { QueryClient, QueryClientProvider } from "react-query";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { InstallWithHelm } from "@features/AddNewApp";
 import DownstreamTree from "./components/tree/KotsApplicationTree";
 import { Dashboard } from "@features/Dashboard/components/Dashboard";
@@ -58,6 +58,7 @@ import SnapshotDetails from "@components/snapshots/SnapshotDetails";
 import SnapshotRestore from "@components/snapshots/SnapshotRestore";
 import AppSnapshots from "@components/snapshots/AppSnapshots";
 import AppSnapshotRestore from "@components/snapshots/AppSnapshotRestore";
+import HelmVMViewNode from "@components/apps/HelmVMViewNode";
 
 // react-query client
 const queryClient = new QueryClient();
@@ -531,6 +532,7 @@ const Root = () => {
                     appSlugFromMetadata={state.appSlugFromMetadata || ""}
                     fetchingMetadata={state.fetchingMetadata}
                     onUploadSuccess={getAppsList}
+                    isHelmVM={Boolean(state.adminConsoleMetadata?.isHelmVM)}
                   />
                 }
               />
@@ -573,16 +575,33 @@ const Root = () => {
                 }
               />
               <Route path="/unsupported" element={<UnsupportedBrowser />} />
-              <Route
-                path="/cluster/manage"
-                element={
-                  state.adminConsoleMetadata?.isKurl ? (
-                    <KurlClusterManagement appName={state.selectedAppName} />
-                  ) : (
-                    <HelmVMClusterManagement appName={state.selectedAppName} />
-                  )
-                }
-              />
+              {state.adminConsoleMetadata?.isHelmVM && (
+                <Route
+                  path="/:slug/cluster/manage"
+                  element={
+                    <HelmVMClusterManagement
+                      fromLicenseFlow={true}
+                      appName={state.selectedAppName || undefined}
+                    />
+                  }
+                />
+              )}
+              {(state.adminConsoleMetadata?.isKurl ||
+                state.adminConsoleMetadata?.isHelmVM) && (
+                <Route
+                  path="/cluster/manage"
+                  element={
+                    state.adminConsoleMetadata?.isKurl ? (
+                      <KurlClusterManagement />
+                    ) : (
+                      <HelmVMClusterManagement />
+                    )
+                  }
+                />
+              )}
+              {state.adminConsoleMetadata?.isHelmVM && (
+                <Route path="/cluster/:nodeName" element={<HelmVMViewNode />} />
+              )}
               <Route
                 path="/gitops"
                 element={<GitOps appName={state.selectedAppName || ""} />}
@@ -672,6 +691,7 @@ const Root = () => {
                     snapshotInProgressApps={state.snapshotInProgressApps}
                     ping={ping}
                     isHelmManaged={state.isHelmManaged}
+                    isHelmVM={Boolean(state.adminConsoleMetadata?.isHelmVM)}
                   />
                 }
               />
@@ -687,6 +707,7 @@ const Root = () => {
                     snapshotInProgressApps={state.snapshotInProgressApps}
                     ping={ping}
                     isHelmManaged={state.isHelmManaged}
+                    isHelmVM={Boolean(state.adminConsoleMetadata?.isHelmVM)}
                   />
                 }
               >
@@ -761,12 +782,7 @@ const Root = () => {
                 <Route path=":slug/license" element={<AppLicense />} />
                 <Route
                   path=":slug/registry-settings"
-                  element={
-                    <AppRegistrySettings
-                    // app={selectedApp}
-                    // updateCallback={refetchData}
-                    />
-                  }
+                  element={<AppRegistrySettings />}
                 />
                 {/* WHERE IS SELECTEDAPP */}
                 {state.app?.isAppIdentityServiceSupported && (

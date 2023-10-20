@@ -1831,7 +1831,6 @@ class SnapshotStorageDestination extends Component<Props, State> {
             }
           />
         </div>
-
         {this.props.showConfigureSnapshotsModal && (
           <ConfigureSnapshots
             snapshotSettings={this.props.snapshotSettings}
@@ -1850,7 +1849,6 @@ class SnapshotStorageDestination extends Component<Props, State> {
             isKurlEnabled={isKurlEnabled}
           />
         )}
-
         {this.state.showConfigureFileSystemProviderModal && (
           <Modal
             isOpen={this.state.showConfigureFileSystemProviderModal}
@@ -1863,7 +1861,6 @@ class SnapshotStorageDestination extends Component<Props, State> {
             {this.renderConfigureFileSystemProviderModalContent()}
           </Modal>
         )}
-
         {this.state.showFileSystemProviderInstructionsModal && (
           <Modal
             isOpen={this.state.showFileSystemProviderInstructionsModal}
@@ -1894,7 +1891,6 @@ class SnapshotStorageDestination extends Component<Props, State> {
             </div>
           </Modal>
         )}
-
         {showResetFileSystemWarningModal && (
           <Modal
             isOpen={showResetFileSystemWarningModal}

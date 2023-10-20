@@ -277,16 +277,16 @@ func RegisterSessionAuthRoutes(r *mux.Router, kotsStore store.Store, handler KOT
 
 	// HelmVM
 	r.Name("HelmVM").Path("/api/v1/helmvm").HandlerFunc(NotImplemented)
-	r.Name("GenerateHelmVMNodeJoinCommandSecondary").Path("/api/v1/helmvm/generate-node-join-command-secondary").Methods("POST").
-		HandlerFunc(middleware.EnforceAccess(policy.ClusterWrite, handler.GenerateHelmVMNodeJoinCommandSecondary))
-	r.Name("GenerateHelmVMNodeJoinCommandPrimary").Path("/api/v1/helmvm/generate-node-join-command-primary").Methods("POST").
-		HandlerFunc(middleware.EnforceAccess(policy.ClusterWrite, handler.GenerateHelmVMNodeJoinCommandPrimary))
+	r.Name("GenerateK0sNodeJoinCommand").Path("/api/v1/helmvm/generate-node-join-command").Methods("POST").
+		HandlerFunc(middleware.EnforceAccess(policy.ClusterWrite, handler.GenerateK0sNodeJoinCommand))
 	r.Name("DrainHelmVMNode").Path("/api/v1/helmvm/nodes/{nodeName}/drain").Methods("POST").
 		HandlerFunc(middleware.EnforceAccess(policy.ClusterWrite, handler.DrainHelmVMNode))
 	r.Name("DeleteHelmVMNode").Path("/api/v1/helmvm/nodes/{nodeName}").Methods("DELETE").
 		HandlerFunc(middleware.EnforceAccess(policy.ClusterWrite, handler.DeleteHelmVMNode))
 	r.Name("GetHelmVMNodes").Path("/api/v1/helmvm/nodes").Methods("GET").
 		HandlerFunc(middleware.EnforceAccess(policy.ClusterRead, handler.GetHelmVMNodes))
+	r.Name("GetHelmVMNode").Path("/api/v1/helmvm/node/{nodeName}").Methods("GET").
+		HandlerFunc(middleware.EnforceAccess(policy.ClusterRead, handler.GetHelmVMNode))
 
 	// Prometheus
 	r.Name("SetPrometheusAddress").Path("/api/v1/prometheus").Methods("POST").
@@ -355,6 +355,9 @@ func RegisterUnauthenticatedRoutes(handler *Handler, kotsStore store.Store, debu
 	// These handlers should be called by the application only.
 	loggingRouter.Path("/license/v1/license").Methods("GET").HandlerFunc(handler.GetPlatformLicenseCompatibility)
 	loggingRouter.Path("/api/v1/app/custom-metrics").Methods("POST").HandlerFunc(handler.GetSendCustomAppMetricsHandler(kotsStore))
+
+	// This handler requires a valid token in the query
+	loggingRouter.Path("/api/v1/embedded-cluster/join").Methods("GET").HandlerFunc(handler.GetK0sNodeJoinCommand)
 }
 
 func RegisterLicenseIDAuthRoutes(r *mux.Router, kotsStore store.Store, handler KOTSHandler) {
