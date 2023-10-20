@@ -339,7 +339,7 @@ const HelmVMClusterManagement = ({
               enablePagination={false}
               enableColumnFilters={false}
               enableRowActions
-              renderRowActionMenuItems={({ closeMenu, row }) => [
+              renderRowActionMenuItems={({ closeMenu }) => [
                 <MenuItem
                   key="edit"
                   onClick={() => {
