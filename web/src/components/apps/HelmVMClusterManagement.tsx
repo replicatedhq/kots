@@ -1,17 +1,14 @@
 import { MenuItem } from "@mui/material";
 import { useQuery } from "@tanstack/react-query";
-import classNames from "classnames";
 import MaterialReactTable, { MRT_ColumnDef } from "material-react-table";
-import React, { ChangeEvent, useMemo, useReducer, useState } from "react";
-import Modal from "react-modal";
+import { useMemo, useReducer } from "react";
 import { Link, useParams } from "react-router-dom";
 
 import { KotsPageTitle } from "@components/Head";
 import { useApps } from "@features/App";
 import { rbacRoles } from "../../constants/rbac";
 import { Utilities } from "../../utilities/utilities";
-import Icon from "../Icon";
-import CodeSnippet from "../shared/CodeSnippet";
+import AddNodeModal from "./AddNodeModal";
 
 import "@src/scss/components/apps/HelmVMClusterManagement.scss";
 
@@ -48,7 +45,7 @@ const testData = {
 // };
 
 type State = {
-  displayAddNode: boolean;
+  displayAddNodeModal: boolean;
   confirmDeleteNode: string;
   deleteNodeError: string;
   showConfirmDrainModal: boolean;
@@ -68,7 +65,7 @@ const HelmVMClusterManagement = ({
       ...newState,
     }),
     {
-      displayAddNode: false,
+      displayAddNodeModal: false,
       confirmDeleteNode: "",
       deleteNodeError: "",
       showConfirmDrainModal: false,
@@ -77,7 +74,6 @@ const HelmVMClusterManagement = ({
       drainNodeSuccessful: false,
     }
   );
-  const [selectedNodeTypes, setSelectedNodeTypes] = useState<string[]>([]);
 
   const { data: appsData } = useApps();
   // we grab the first app because helmvm users should only ever have one app
@@ -154,83 +150,13 @@ const HelmVMClusterManagement = ({
     refetchInterval: (data) => (data ? 1000 : 0),
     retry: false,
   });
-
-  type AddNodeCommandResponse = {
-    command: string;
-    expiry: string;
-  };
-
-  const {
-    data: generateAddNodeCommand,
-    isLoading: generateAddNodeCommandLoading,
-    error: generateAddNodeCommandError,
-  } = useQuery<AddNodeCommandResponse, Error, AddNodeCommandResponse>({
-    queryKey: ["generateAddNodeCommand", selectedNodeTypes],
-    queryFn: async ({ queryKey }) => {
-      const [, nodeTypes] = queryKey;
-      const res = await fetch(
-        `${process.env.API_ENDPOINT}/helmvm/generate-node-join-command`,
-        {
-          headers: {
-            "Content-Type": "application/json",
-            Accept: "application/json",
-          },
-          credentials: "include",
-          method: "POST",
-          body: JSON.stringify({
-            roles: nodeTypes,
-          }),
-        }
-      );
-      if (!res.ok) {
-        if (res.status === 401) {
-          Utilities.logoutUser();
-        }
-        console.log(
-          "failed to get generate node command, unexpected status code",
-          res.status
-        );
-        try {
-          const error = await res.json();
-          throw new Error(
-            error?.error?.message || error?.error || error?.message
-          );
-        } catch (err) {
-          throw new Error(
-            "Unable to generate node join command, please try again later."
-          );
-        }
-      }
-      return res.json();
-    },
-    enabled: selectedNodeTypes.length > 0,
-  });
   // #endregion
 
   const onAddNodeClick = () => {
     setState({
-      displayAddNode: true,
+      displayAddNodeModal: true,
     });
   };
-
-  // #region node type logic
-  const NODE_TYPES = ["controller"];
-
-  const determineDisabledState = () => {
-    return false;
-  };
-
-  const handleSelectNodeType = (e: ChangeEvent<HTMLInputElement>) => {
-    let nodeType = e.currentTarget.value;
-    let types = selectedNodeTypes;
-
-    if (selectedNodeTypes.includes(nodeType)) {
-      setSelectedNodeTypes(types.filter((type) => type !== nodeType));
-    } else {
-      setSelectedNodeTypes([...types, nodeType]);
-    }
-  };
-  // #endregion
 
   // #region table logic
   type NodeColumns = {
@@ -335,6 +261,12 @@ const HelmVMClusterManagement = ({
   }, [nodesData?.nodes?.toString()]);
   // #endregion
 
+  const handleCloseModal = () => {
+    setState({
+      displayAddNodeModal: false,
+    });
+  };
+
   return (
     <div className="HelmVMClusterManagement--wrapper container u-overflow--auto u-paddingTop--50 tw-font-sans">
       <KotsPageTitle pageName="Cluster Management" />
@@ -407,14 +339,31 @@ const HelmVMClusterManagement = ({
               enablePagination={false}
               enableColumnFilters={false}
               enableRowActions
-              renderRowActionMenuItems={({ row }) => [
-                <MenuItem key="edit" onClick={() => console.info("Edit")}>
+              renderRowActionMenuItems={({ closeMenu, row }) => [
+                <MenuItem
+                  key="edit"
+                  onClick={() => {
+                    console.info("Edit");
+                    closeMenu();
+                  }}
+                >
                   Edit
                 </MenuItem>,
-                <MenuItem key="delete" onClick={() => console.info("Delete")}>
+                <MenuItem
+                  key="delete"
+                  onClick={() => {
+                    console.info("Delete");
+                    closeMenu();
+                  }}
+                >
                   Delete
                 </MenuItem>,
               ]}
+              displayColumnDefOptions={{
+                "mrt-row-actions": {
+                  size: 36,
+                },
+              }}
             />
           )}
         </div>
@@ -430,100 +379,10 @@ const HelmVMClusterManagement = ({
         )}
       </div>
       {/* MODALS */}
-      <Modal
-        isOpen={state.displayAddNode}
-        onRequestClose={() => setState({ displayAddNode: false })}
-        contentLabel="Add Node"
-        className="Modal"
-        ariaHideApp={false}
-      >
-        <div className="Modal-body tw-flex tw-flex-col tw-gap-4 tw-font-sans">
-          <div className="tw-flex">
-            <h1 className="u-fontSize--largest u-fontWeight--bold u-textColor--primary u-lineHeight--normal u-marginBottom--more">
-              Add a Node
-            </h1>
-            <Icon
-              icon="close"
-              size={14}
-              className="tw-ml-auto gray-color clickable close-icon"
-              onClick={() => setState({ displayAddNode: false })}
-            />
-          </div>
-          <p className="tw-text-base tw-text-gray-600">
-            To add a node to this cluster, select the type of node you'd like to
-            add. Once you've selected a node type, we will generate a node join
-            command for you to use in the CLI. When the node successfully joins
-            the cluster, you will see it appear in the list of nodes on this
-            page.
-          </p>
-          <div className="tw-grid tw-gap-2 tw-grid-cols-4 tw-auto-rows-auto">
-            {NODE_TYPES.map((nodeType) => (
-              <div
-                key={nodeType}
-                className={classNames("BoxedCheckbox", {
-                  "is-active": selectedNodeTypes.includes(nodeType),
-                  "is-disabled": determineDisabledState(),
-                })}
-              >
-                <input
-                  id={`${nodeType}NodeType`}
-                  className="u-cursor--pointer hidden-input"
-                  type="checkbox"
-                  name={`${nodeType}NodeType`}
-                  value={nodeType}
-                  disabled={determineDisabledState()}
-                  checked={selectedNodeTypes.includes(nodeType)}
-                  onChange={handleSelectNodeType}
-                />
-                <label
-                  htmlFor={`${nodeType}NodeType`}
-                  className="tw-block u-cursor--pointer u-userSelect--none u-textColor--primary u-fontSize--normal u-fontWeight--medium tw-text-center"
-                >
-                  {nodeType === "controller" ? "controlplane" : nodeType}
-                </label>
-              </div>
-            ))}
-          </div>
-          <div>
-            {selectedNodeTypes.length > 0 && generateAddNodeCommandLoading && (
-              <p className="tw-text-base tw-w-full tw-text-center tw-py-4 tw-text-gray-500 tw-font-semibold">
-                Generating command...
-              </p>
-            )}
-            {!generateAddNodeCommand && generateAddNodeCommandError && (
-              <p className="tw-text-base tw-w-full tw-text-center tw-py-4 tw-text-pink-500 tw-font-semibold">
-                {generateAddNodeCommandError?.message}
-              </p>
-            )}
-            {!generateAddNodeCommandLoading && generateAddNodeCommand?.command && (
-              <>
-                <CodeSnippet
-                  key={selectedNodeTypes.toString()}
-                  language="bash"
-                  canCopy={true}
-                  onCopyText={
-                    <span className="u-textColor--success">Copied!</span>
-                  }
-                >
-                  {generateAddNodeCommand?.command}
-                </CodeSnippet>
-                <p className="tw-text-sm tw-text-gray-500 tw-font-semibold tw-mt-2">
-                  Command expires: {generateAddNodeCommand?.expiry}
-                </p>
-              </>
-            )}
-          </div>
-          {/* buttons */}
-          <div className="tw-w-full tw-flex tw-justify-end tw-gap-2">
-            <button
-              className="btn secondary large"
-              onClick={() => setState({ displayAddNode: false })}
-            >
-              Close
-            </button>
-          </div>
-        </div>
-      </Modal>
+      <AddNodeModal
+        showModal={state.displayAddNodeModal}
+        handleCloseModal={handleCloseModal}
+      />
     </div>
   );
 };
