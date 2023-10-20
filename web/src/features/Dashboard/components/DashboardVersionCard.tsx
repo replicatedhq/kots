@@ -348,11 +348,7 @@ const DashboardVersionCard = (props: Props) => {
   };
 
   const getCurrentVersionStatus = (version: Version | null) => {
-    if (
-      version?.status === "deployed" ||
-      version?.status === "merged" ||
-      version?.status === "pending"
-    ) {
+    if (version?.status === "deployed" || version?.status === "pending") {
       return (
         <span className="status-tag success flex-auto">
           Currently {version?.status.replace("_", " ")} version
