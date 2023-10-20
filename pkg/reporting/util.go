@@ -1,12 +1,19 @@
 package reporting
 
 import (
+	"encoding/base64"
+	"encoding/json"
 	"net/http"
 	"os"
 	"regexp"
 	"strconv"
 
+	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/api/reporting/types"
+	"github.com/replicatedhq/kots/pkg/util"
+	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	apimachinerytypes "k8s.io/apimachinery/pkg/types"
 )
 
 func InjectReportingInfoHeaders(req *http.Request, reportingInfo *types.ReportingInfo) {
@@ -86,4 +93,63 @@ func canReport(endpoint string) bool {
 func isDevEndpoint(endpoint string) bool {
 	result, _ := regexp.MatchString(`replicated-app`, endpoint)
 	return result
+}
+
+func AirgapReportSecret(name string, namespace string, kotsadmUID apimachinerytypes.UID, data []byte) *corev1.Secret {
+	return &corev1.Secret{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: "v1",
+			Kind:       "Secret",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      name,
+			Namespace: namespace,
+			// since this secret is created by the kotsadm deployment, we should set the owner reference
+			// so that it is deleted when the kotsadm deployment is deleted
+			OwnerReferences: []metav1.OwnerReference{
+				{
+					APIVersion: "apps/v1",
+					Kind:       "Deployment",
+					Name:       "kotsadm",
+					UID:        kotsadmUID,
+				},
+			},
+		},
+		Data: map[string][]byte{
+			InstanceReportSecretKey: data,
+		},
+	}
+}
+
+// EncodeAirgapReport marshals, compresses, and base64 encodes the given report
+func EncodeAirgapReport(r any) ([]byte, error) {
+	data, err := json.Marshal(r)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to marshal airgap report")
+	}
+	compressedData, err := util.GzipData(data)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to gzip airgap report")
+	}
+	encodedData := base64.StdEncoding.EncodeToString(compressedData)
+
+	return []byte(encodedData), nil
+}
+
+// DecodeAirgapReport base64 decodes, uncompresses, and unmarshals the given report
+func DecodeAirgapReport(encodedData []byte, r any) error {
+	decodedData, err := base64.StdEncoding.DecodeString(string(encodedData))
+	if err != nil {
+		return errors.Wrap(err, "failed to decode airgap report")
+	}
+	decompressedData, err := util.GunzipData(decodedData)
+	if err != nil {
+		return errors.Wrap(err, "failed to gunzip airgap report")
+	}
+
+	if err := json.Unmarshal(decompressedData, r); err != nil {
+		return errors.Wrap(err, "failed to unmarshal airgap report")
+	}
+
+	return nil
 }

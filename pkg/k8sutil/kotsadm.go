@@ -14,6 +14,7 @@ import (
 	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
+	apimachinerytypes "k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes"
 )
 
@@ -571,4 +572,13 @@ func waitForDeleteServiceAccounts(ctx context.Context, clientset *kubernetes.Cli
 		}
 		time.Sleep(time.Second)
 	}
+}
+
+func GetKotsadmDeploymentUID(clientset kubernetes.Interface, namespace string) (apimachinerytypes.UID, error) {
+	deployment, err := clientset.AppsV1().Deployments(namespace).Get(context.TODO(), "kotsadm", metav1.GetOptions{})
+	if err != nil {
+		return "", errors.Wrap(err, "failed to get replicated deployment")
+	}
+
+	return deployment.ObjectMeta.UID, nil
 }

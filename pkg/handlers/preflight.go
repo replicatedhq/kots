@@ -366,7 +366,7 @@ func (h *Handler) PreflightsReports(w http.ResponseWriter, r *http.Request) {
 
 	go func() {
 		if err := reporting.GetReporter().SubmitPreflightData(license, foundApp.ID, clusterID, 0, true, "", false, "", ""); err != nil {
-			logger.Debugf("failed to send preflights data to replicated app: %v", err)
+			logger.Debugf("failed to submit preflight data: %v", err)
 			return
 		}
 	}()
