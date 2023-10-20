@@ -1,5 +1,5 @@
 import { MaterialReactTable } from "material-react-table";
-import React, { useMemo } from "react";
+import React, { useMemo, setState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link, useParams } from "react-router-dom";
 import Loader from "@components/shared/Loader";
@@ -61,16 +61,7 @@ const HelmVMViewNode = () => {
         "failed to get node status list, unexpected status code",
         err.status
       );
-    },
-    onSuccess: (data) => {
-      setState({
-        // if cluster doesn't support ha, then primary will be disabled. Force into secondary
-        selectedNodeType: !data.ha ? "secondary" : state.selectedNodeType,
-      });
-    },
-    config: {
-      retry: false,
-    },
+    }
   });
 
   const node = nodeData || testData;

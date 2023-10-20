@@ -81,7 +81,9 @@ const HelmVMClusterManagement = ({
   const [selectedNodeTypes, setSelectedNodeTypes] = useState<string[]>([]);
 
   const { data: appsData } = useApps();
-  const app = appsData?.apps?.find((a) => a.name === appName);
+  // we grab the first app because helmvm users should only ever have one app
+  const app = appsData?.apps?.[0];
+
   const { slug } = useParams();
 
   // #region queries
