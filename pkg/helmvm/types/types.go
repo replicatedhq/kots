@@ -1,5 +1,8 @@
 package types
 
+const EMBEDDED_CLUSTER_LABEL = "kots.io/embedded-cluster"
+const EMBEDDED_CLUSTER_ROLE_LABEL = EMBEDDED_CLUSTER_LABEL + "-role"
+
 type HelmVMNodes struct {
 	Nodes           []Node `json:"nodes"`
 	HA              bool   `json:"ha"`
