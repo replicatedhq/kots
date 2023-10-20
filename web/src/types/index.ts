@@ -252,13 +252,12 @@ export type VersionStatus =
   | "deployed"
   | "deploying"
   | "failed"
-  | "merged"
   | "pending"
   | "pending_config"
   | "pending_download"
   | "pending_preflight"
-  | "superseded"
-  | "waiting";
+  | "waiting"
+  | "unknown";
 
 export type LicenseFile = {
   preview: string;

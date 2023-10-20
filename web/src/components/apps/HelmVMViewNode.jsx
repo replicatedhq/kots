@@ -4,8 +4,40 @@ import { useQuery } from "@tanstack/react-query";
 import { Link, useParams } from "react-router-dom";
 import Loader from "@components/shared/Loader";
 
+const testData = undefined;
+// const testData = {
+//   name: "laverya-helmvm",
+//   isConnected: true,
+//   isReady: true,
+//   isPrimaryNode: true,
+//   canDelete: false,
+//   kubeletVersion: "v1.28.2+k0s",
+//   kubeProxyVersion: "v1.28.2+k0s",
+//   operatingSystem: "linux",
+//   kernelVersion: "5.10.0-26-cloud-amd64",
+//   cpu: { capacity: 4, used: 1.9364847660000002 },
+//   memory: { capacity: 15.633056640625, used: 3.088226318359375 },
+//   pods: { capacity: 110, used: 27 },
+//   labels: ["controller"],
+//   conditions: {
+//     memoryPressure: false,
+//     diskPressure: false,
+//     pidPressure: false,
+//     ready: true,
+//   },
+//   podList: [
+//     {
+//       name: "example-es-85fc9df74-8x8l6",
+//       status: "Running",
+//       namespace: "helmvm",
+//       cpu: "0.0345789345 GB",
+//       memory: 0,
+//     },
+//   ],
+// };
+
 const HelmVMViewNode = () => {
-  const { nodeName } = useParams();
+  const { slug, nodeName } = useParams();
   const { data: nodeData, isLoading: nodeLoading } = useQuery({
     queryKey: ["helmVmNode", nodeName],
     queryFn: async ({ queryKey }) => {
@@ -41,7 +73,7 @@ const HelmVMViewNode = () => {
     },
   });
 
-  const node = nodeData;
+  const node = nodeData || testData;
 
   // #region table data
   const columns = useMemo(
@@ -109,7 +141,7 @@ const HelmVMViewNode = () => {
       {/* Breadcrumbs */}
       <p className="tw-text-sm tw-text-gray-400">
         <Link
-          to={`/cluster/manage`}
+          to={slug ? `/${slug}/cluster/manage` : `/cluster/manage`}
           className="!tw-text-blue-300 tw-font-semibold hover:tw-underline"
         >
           Cluster Nodes

@@ -576,15 +576,21 @@ const Root = () => {
               />
               <Route path="/unsupported" element={<UnsupportedBrowser />} />
               {state.adminConsoleMetadata?.isHelmVM && (
-                <Route
-                  path="/:slug/cluster/manage"
-                  element={
-                    <HelmVMClusterManagement
-                      fromLicenseFlow={true}
-                      appName={state.selectedAppName || undefined}
-                    />
-                  }
-                />
+                <>
+                  <Route
+                    path="/:slug/cluster/manage"
+                    element={
+                      <HelmVMClusterManagement
+                        fromLicenseFlow={true}
+                        appName={state.selectedAppName || undefined}
+                      />
+                    }
+                  />
+                  <Route
+                    path="/:slug/cluster/:nodeName"
+                    element={<HelmVMViewNode />}
+                  />
+                </>
               )}
               {(state.adminConsoleMetadata?.isKurl ||
                 state.adminConsoleMetadata?.isHelmVM) && (
