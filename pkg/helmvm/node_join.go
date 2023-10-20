@@ -8,6 +8,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/replicatedhq/kots/pkg/helmvm/types"
 	corev1 "k8s.io/api/core/v1"
 	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -252,6 +253,12 @@ func GenerateK0sJoinCommand(ctx context.Context, client kubernetes.Interface, ro
 		cmd = append(cmd, "--enable-worker")
 	}
 
+	labels, err := getRolesNodeLabels(ctx, client, roles)
+	if err != nil {
+		return "", fmt.Errorf("failed to get role labels: %w", err)
+	}
+	cmd = append(cmd, "--labels", labels)
+
 	return strings.Join(cmd, " "), nil
 }
 
@@ -295,4 +302,38 @@ func getControllerNodeIP(ctx context.Context, client kubernetes.Interface) (stri
 	}
 
 	return "", fmt.Errorf("failed to find healthy controller node")
+}
+
+func getRolesNodeLabels(ctx context.Context, client kubernetes.Interface, roles []string) (string, error) {
+	roleLabels := getRoleListLabels(roles)
+
+	for _, role := range roles {
+		labels, err := getRoleNodeLabels(ctx, client, role)
+		if err != nil {
+			return "", fmt.Errorf("failed to get node labels for role %s: %w", role, err)
+		}
+		roleLabels = append(roleLabels, labels...)
+	}
+
+	return strings.Join(roleLabels, ","), nil
+}
+
+// TODO: look up role in cluster config, apply additional labels based on role
+func getRoleNodeLabels(ctx context.Context, client kubernetes.Interface, role string) ([]string, error) {
+	toReturn := []string{}
+
+	return toReturn, nil
+}
+
+// getRoleListLabels returns the labels needed to identify the roles of this node in the future
+// one label will be the number of roles, and then deterministic label names will be used to store the role names
+func getRoleListLabels(roles []string) []string {
+	toReturn := []string{}
+	toReturn = append(toReturn, fmt.Sprintf("%s=total-%d", types.EMBEDDED_CLUSTER_ROLE_LABEL, len(roles)))
+
+	for idx, role := range roles {
+		toReturn = append(toReturn, fmt.Sprintf("%s-%d=%s", types.EMBEDDED_CLUSTER_ROLE_LABEL, idx, role))
+	}
+
+	return toReturn
 }

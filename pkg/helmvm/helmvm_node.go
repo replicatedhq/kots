@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"math"
 	"strconv"
+	"strings"
 
 	"github.com/replicatedhq/kots/pkg/helmvm/types"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
@@ -136,16 +137,31 @@ func nodeMetrics(ctx context.Context, client kubernetes.Interface, metricsClient
 	}, nil
 }
 
+// nodeRolesFromLabels parses a map of k8s node labels, and returns the roles of the node
 func nodeRolesFromLabels(labels map[string]string) []string {
 	toReturn := []string{}
 
-	// detect if this is a controller node from the k8s labels
-	if val, ok := labels["node-role.kubernetes.io/control-plane"]; ok && val == "true" {
-		toReturn = append(toReturn, "controller")
+	numRolesStr, ok := labels[types.EMBEDDED_CLUSTER_ROLE_LABEL]
+	if !ok {
+		// the first node will not initially have a role label, but is a 'controller'
+		if val, ok := labels["node-role.kubernetes.io/control-plane"]; ok && val == "true" {
+			return []string{"controller"}
+		}
+		return nil
+	}
+	numRoles, err := strconv.Atoi(strings.TrimPrefix(numRolesStr, "total-"))
+	if err != nil {
+		fmt.Printf("failed to parse role label %q: %s", numRolesStr, err.Error())
+
+		return nil
 	}
 
-	if len(toReturn) == 0 {
-		toReturn = append(toReturn, "worker")
+	for i := 0; i < numRoles; i++ {
+		roleLabel, ok := labels[fmt.Sprintf("%s-%d", types.EMBEDDED_CLUSTER_ROLE_LABEL, i)]
+		if !ok {
+			fmt.Printf("failed to find role label %d", i)
+		}
+		toReturn = append(toReturn, roleLabel)
 	}
 
 	return toReturn
