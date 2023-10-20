@@ -579,12 +579,7 @@ const Root = () => {
                 <>
                   <Route
                     path="/:slug/cluster/manage"
-                    element={
-                      <HelmVMClusterManagement
-                        fromLicenseFlow={true}
-                        appName={state.selectedAppName || undefined}
-                      />
-                    }
+                    element={<HelmVMClusterManagement fromLicenseFlow={true} />}
                   />
                   <Route
                     path="/:slug/cluster/:nodeName"
