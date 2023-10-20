@@ -58,10 +58,8 @@ type State = {
 
 const HelmVMClusterManagement = ({
   fromLicenseFlow = false,
-  appName,
 }: {
   fromLicenseFlow?: boolean;
-  appName?: string;
 }) => {
   const [state, setState] = useReducer(
     (prevState: State, newState: Partial<State>) => ({

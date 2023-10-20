@@ -61,7 +61,7 @@ const HelmVMViewNode = () => {
         "failed to get node status list, unexpected status code",
         err.status
       );
-    }
+    },
   });
 
   const node = nodeData || testData;
