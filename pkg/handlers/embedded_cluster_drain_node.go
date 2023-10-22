@@ -2,10 +2,10 @@ package handlers
 
 import (
 	"context"
-	"github.com/replicatedhq/kots/pkg/embeddedcluster"
 	"net/http"
 
 	"github.com/gorilla/mux"
+	"github.com/replicatedhq/kots/pkg/embeddedcluster"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"k8s.io/apimachinery/pkg/api/errors"
