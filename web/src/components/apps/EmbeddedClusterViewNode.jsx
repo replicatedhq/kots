@@ -36,14 +36,14 @@ const testData = undefined;
 //   ],
 // };
 
-const HelmVMViewNode = () => {
+const EmbeddedClusterViewNode = () => {
   const { slug, nodeName } = useParams();
   const { data: nodeData, isLoading: nodeLoading } = useQuery({
-    queryKey: ["helmVmNode", nodeName],
+    queryKey: ["embeddedClusterNode", nodeName],
     queryFn: async ({ queryKey }) => {
       const [, nodeName] = queryKey;
       return (
-        await fetch(`${process.env.API_ENDPOINT}/helmvm/node/${nodeName}`, {
+        await fetch(`${process.env.API_ENDPOINT}/embedded-cluster/node/${nodeName}`, {
           headers: {
             Accept: "application/json",
           },
@@ -239,4 +239,4 @@ const HelmVMViewNode = () => {
   );
 };
 
-export default HelmVMViewNode;
+export default EmbeddedClusterViewNode;

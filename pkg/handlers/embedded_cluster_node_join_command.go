@@ -26,15 +26,15 @@ type GenerateEmbeddedClusterNodeJoinCommandRequest struct {
 }
 
 func (h *Handler) GenerateEmbeddedClusterNodeJoinCommand(w http.ResponseWriter, r *http.Request) {
-	generateHelmVMNodeJoinCommandRequest := GenerateEmbeddedClusterNodeJoinCommandRequest{}
-	if err := json.NewDecoder(r.Body).Decode(&generateHelmVMNodeJoinCommandRequest); err != nil {
+	generateEmbeddedClusterNodeJoinCommandRequest := GenerateEmbeddedClusterNodeJoinCommandRequest{}
+	if err := json.NewDecoder(r.Body).Decode(&generateEmbeddedClusterNodeJoinCommandRequest); err != nil {
 		logger.Error(fmt.Errorf("failed to decode request body: %w", err))
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
 	store := kotsstore.StoreFromEnv()
-	token, err := store.SetEmbeddedClusterInstallCommandRoles(generateHelmVMNodeJoinCommandRequest.Roles)
+	token, err := store.SetEmbeddedClusterInstallCommandRoles(generateEmbeddedClusterNodeJoinCommandRequest.Roles)
 	if err != nil {
 		logger.Error(fmt.Errorf("failed to set k0s install command roles: %w", err))
 		w.WriteHeader(http.StatusInternalServerError)

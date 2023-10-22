@@ -1,5 +1,5 @@
-import React, { useEffect, useReducer } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import React, {useEffect, useReducer} from "react";
+import {Link, useNavigate} from "react-router-dom";
 import yaml from "js-yaml";
 import isEmpty from "lodash/isEmpty";
 import keyBy from "lodash/keyBy";
@@ -10,8 +10,8 @@ import Dropzone from "react-dropzone";
 import Modal from "react-modal";
 import Select from "react-select";
 
-import { KotsPageTitle } from "@components/Head";
-import { getFileContent } from "../utilities/utilities";
+import {KotsPageTitle} from "@components/Head";
+import {getFileContent} from "../utilities/utilities";
 import Icon from "./Icon";
 import LicenseUploadProgress from "./LicenseUploadProgress";
 import CodeSnippet from "./shared/CodeSnippet";
@@ -67,7 +67,7 @@ type Props = {
   onUploadSuccess: () => Promise<void>;
   logo: string | null;
   snapshot?: { name: string };
-  isHelmVM: boolean;
+  isEmbeddedCluster: boolean;
 };
 
 const UploadLicenseFile = (props: Props) => {
@@ -261,7 +261,7 @@ const UploadLicenseFile = (props: Props) => {
               return;
             }
 
-            if (props.isHelmVM) {
+            if (props.isEmbeddedCluster) {
               navigate(`/${data.slug}/cluster/manage`, { replace: true });
               return;
             }

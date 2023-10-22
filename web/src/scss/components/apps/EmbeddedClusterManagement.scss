@@ -1,13 +1,13 @@
 @import "../../variables.scss";
 
-.HelmVMClusterManagement--wrapper {
+.EmbeddedClusterManagement--wrapper {
   .BoxedCheckbox {
     height: 85px;
     width: 200px;
   }
 }
 
-.HelmVMNodeRow--wrapper {
+.EmbeddedClusterNodeRow--wrapper {
   padding: 12px;
   border-top: 1px solid #dfdfdf;
 
@@ -30,7 +30,7 @@
   }
 }
 
-.HelmVMNodeRow--items p {
+.EmbeddedClusterNodeRow--items p {
   max-width: 180px;
 
   .icon {

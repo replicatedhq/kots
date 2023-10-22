@@ -1,14 +1,14 @@
-import React, { PureComponent } from "react";
+import React, {PureComponent} from "react";
 import PropTypes from "prop-types";
 import classNames from "classnames";
-import { withRouter, RouterProps } from "@src/utilities/react-router-utilities";
-import { Link } from "react-router-dom";
-import { Utilities } from "@src/utilities/utilities";
+import {RouterProps, withRouter} from "@src/utilities/react-router-utilities";
+import {Link} from "react-router-dom";
+import {Utilities} from "@src/utilities/utilities";
 import ErrorModal from "../modals/ErrorModal";
 import NavBarDropdown from "./NavBarDropdown";
 
 import "@src/scss/components/shared/NavBar.scss";
-import { App } from "@types";
+import {App} from "@types";
 
 type Props = {
   appsList: App[];
@@ -19,7 +19,7 @@ type Props = {
   isHelmManaged: boolean;
   isIdentityServiceSupported: boolean;
   isKurlEnabled: boolean;
-  isHelmVMEnabled: boolean;
+  isEmbeddedClusterEnabled: boolean;
   isSnapshotsSupported: boolean;
   logo: string | null;
   onLogoutError: (message: string) => void;
@@ -144,7 +144,7 @@ export class NavBar extends PureComponent<Props, State> {
       className,
       fetchingMetadata,
       isKurlEnabled,
-      isHelmVMEnabled,
+      isEmbeddedClusterEnabled,
       isGitOpsSupported,
       isIdentityServiceSupported,
       appsList,
@@ -228,7 +228,7 @@ export class NavBar extends PureComponent<Props, State> {
                   </span>
                 </div>
               )}
-              {(isKurlEnabled || isHelmVMEnabled) &&
+              {(isKurlEnabled || isEmbeddedClusterEnabled) &&
                 location.pathname !== `${selectedApp?.slug}/cluster/manage` && (
                   <div
                     className={classNames("NavItem u-position--relative flex", {

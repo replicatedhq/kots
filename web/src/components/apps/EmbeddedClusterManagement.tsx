@@ -12,7 +12,7 @@ import {Utilities} from "../../utilities/utilities";
 import Icon from "../Icon";
 import CodeSnippet from "../shared/CodeSnippet";
 
-import "@src/scss/components/apps/HelmVMClusterManagement.scss";
+import "@src/scss/components/apps/EmbeddedClusterManagement.scss";
 
 const testData = {
   nodes: undefined,
@@ -43,7 +43,7 @@ const testData = {
 //     },
 //   ],
 //   ha: true,
-//   isHelmVMEnabled: true,
+//   isEmbeddedClusterEnabled: true,
 // };
 
 type State = {
@@ -56,7 +56,7 @@ type State = {
   drainNodeSuccessful: boolean;
 };
 
-const HelmVMClusterManagement = ({
+const EmbeddedClusterManagement = ({
   fromLicenseFlow = false,
 }: {
   fromLicenseFlow?: boolean;
@@ -87,7 +87,7 @@ const HelmVMClusterManagement = ({
   // #region queries
   type NodesResponse = {
     ha: boolean;
-    isHelmVMEnabled: boolean;
+    isEmbeddedClusterEnabled: boolean;
     nodes: {
       name: string;
       isConnected: boolean;
@@ -122,9 +122,9 @@ const HelmVMClusterManagement = ({
     isInitialLoading: nodesLoading,
     error: nodesError,
   } = useQuery<NodesResponse, Error, NodesResponse>({
-    queryKey: ["helmVmNodes"],
+    queryKey: ["embeddedClusterNodes"],
     queryFn: async () => {
-      const res = await fetch(`${process.env.API_ENDPOINT}/helmvm/nodes`, {
+      const res = await fetch(`${process.env.API_ENDPOINT}/embedded-cluster/nodes`, {
         headers: {
           Accept: "application/json",
         },
@@ -168,7 +168,7 @@ const HelmVMClusterManagement = ({
     queryFn: async ({ queryKey }) => {
       const [, nodeTypes] = queryKey;
       const res = await fetch(
-        `${process.env.API_ENDPOINT}/helmvm/generate-node-join-command`,
+        `${process.env.API_ENDPOINT}/embedded-cluster/generate-node-join-command`,
         {
           headers: {
             "Content-Type": "application/json",
@@ -334,7 +334,7 @@ const HelmVMClusterManagement = ({
   // #endregion
 
   return (
-    <div className="HelmVMClusterManagement--wrapper container u-overflow--auto u-paddingTop--50 tw-font-sans">
+    <div className="EmbeddedClusterManagement--wrapper container u-overflow--auto u-paddingTop--50 tw-font-sans">
       <KotsPageTitle pageName="Cluster Management" />
       <div className="flex1 tw-mb-10 tw-flex tw-flex-col tw-gap-4 card-bg">
         <p className="flex-auto u-fontSize--larger u-fontWeight--bold u-textColor--primary">
@@ -517,4 +517,4 @@ const HelmVMClusterManagement = ({
   );
 };
 
-export default HelmVMClusterManagement;
+export default EmbeddedClusterManagement;
