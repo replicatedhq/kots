@@ -1,14 +1,14 @@
-import React, {PureComponent} from "react";
+import React, { PureComponent } from "react";
 import PropTypes from "prop-types";
 import classNames from "classnames";
-import {RouterProps, withRouter} from "@src/utilities/react-router-utilities";
-import {Link} from "react-router-dom";
-import {Utilities} from "@src/utilities/utilities";
+import { RouterProps, withRouter } from "@src/utilities/react-router-utilities";
+import { Link } from "react-router-dom";
+import { Utilities } from "@src/utilities/utilities";
 import ErrorModal from "../modals/ErrorModal";
 import NavBarDropdown from "./NavBarDropdown";
 
 import "@src/scss/components/shared/NavBar.scss";
-import {App} from "@types";
+import { App } from "@types";
 
 type Props = {
   appsList: App[];

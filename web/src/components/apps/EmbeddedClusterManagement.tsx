@@ -1,14 +1,14 @@
-import {useQuery} from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import classNames from "classnames";
-import MaterialReactTable, {MRT_ColumnDef} from "material-react-table";
-import React, {ChangeEvent, useMemo, useReducer, useState} from "react";
+import MaterialReactTable, { MRT_ColumnDef } from "material-react-table";
+import React, { ChangeEvent, useMemo, useReducer, useState } from "react";
 import Modal from "react-modal";
-import {Link, useParams} from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 
-import {KotsPageTitle} from "@components/Head";
-import {useApps} from "@features/App";
-import {rbacRoles} from "../../constants/rbac";
-import {Utilities} from "../../utilities/utilities";
+import { KotsPageTitle } from "@components/Head";
+import { useApps } from "@features/App";
+import { rbacRoles } from "../../constants/rbac";
+import { Utilities } from "../../utilities/utilities";
 import Icon from "../Icon";
 import CodeSnippet from "../shared/CodeSnippet";
 
@@ -124,13 +124,16 @@ const EmbeddedClusterManagement = ({
   } = useQuery<NodesResponse, Error, NodesResponse>({
     queryKey: ["embeddedClusterNodes"],
     queryFn: async () => {
-      const res = await fetch(`${process.env.API_ENDPOINT}/embedded-cluster/nodes`, {
-        headers: {
-          Accept: "application/json",
-        },
-        credentials: "include",
-        method: "GET",
-      });
+      const res = await fetch(
+        `${process.env.API_ENDPOINT}/embedded-cluster/nodes`,
+        {
+          headers: {
+            Accept: "application/json",
+          },
+          credentials: "include",
+          method: "GET",
+        }
+      );
       if (!res.ok) {
         if (res.status === 401) {
           Utilities.logoutUser();

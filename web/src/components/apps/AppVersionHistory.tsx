@@ -1,5 +1,5 @@
-import React, {Component} from "react";
-import {Link} from "react-router-dom";
+import React, { Component } from "react";
+import { Link } from "react-router-dom";
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
 import Modal from "react-modal";
@@ -14,7 +14,7 @@ import ShowDetailsModal from "@src/components/modals/ShowDetailsModal";
 import ShowLogsModal from "@src/components/modals/ShowLogsModal";
 import AirgapUploadProgress from "@src/features/Dashboard/components/AirgapUploadProgress";
 import ErrorModal from "../modals/ErrorModal";
-import {AppVersionHistoryRow} from "@features/AppVersionHistory/AppVersionHistoryRow";
+import { AppVersionHistoryRow } from "@features/AppVersionHistory/AppVersionHistoryRow";
 import DeployWarningModal from "../shared/modals/DeployWarningModal";
 import AutomaticUpdatesModal from "@src/components/modals/AutomaticUpdatesModal";
 import SkipPreflightsModal from "../shared/modals/SkipPreflightsModal";
@@ -26,19 +26,19 @@ import {
   secondsAgo,
   Utilities,
 } from "../../utilities/utilities";
-import {Repeater} from "../../utilities/repeater";
-import {AirgapUploader} from "../../utilities/airgapUploader";
+import { Repeater } from "../../utilities/repeater";
+import { AirgapUploader } from "../../utilities/airgapUploader";
 import ReactTooltip from "react-tooltip";
 import Pager from "../shared/Pager";
-import {HelmDeployModal} from "../shared/modals/HelmDeployModal";
-import {UseDownloadValues} from "../hooks";
-import {KotsPageTitle} from "@components/Head";
+import { HelmDeployModal } from "../shared/modals/HelmDeployModal";
+import { UseDownloadValues } from "../hooks";
+import { KotsPageTitle } from "@components/Head";
 
 import "@src/scss/components/apps/AppVersionHistory.scss";
-import {DashboardGitOpsCard} from "@features/Dashboard";
+import { DashboardGitOpsCard } from "@features/Dashboard";
 import Icon from "../Icon";
-import {App, Version, VersionDownloadStatus} from "@types";
-import {RouterProps, withRouter} from "@src/utilities/react-router-utilities";
+import { App, Version, VersionDownloadStatus } from "@types";
+import { RouterProps, withRouter } from "@src/utilities/react-router-utilities";
 import PreflightIcon from "@features/App/PreflightIcon";
 
 dayjs.extend(relativeTime);

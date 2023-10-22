@@ -1,7 +1,7 @@
-import {MaterialReactTable} from "material-react-table";
-import React, {useMemo} from "react";
-import {useQuery} from "@tanstack/react-query";
-import {Link, useParams} from "react-router-dom";
+import { MaterialReactTable } from "material-react-table";
+import React, { useMemo } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { Link, useParams } from "react-router-dom";
 import Loader from "@components/shared/Loader";
 
 const testData = undefined;
@@ -43,13 +43,16 @@ const EmbeddedClusterViewNode = () => {
     queryFn: async ({ queryKey }) => {
       const [, nodeName] = queryKey;
       return (
-        await fetch(`${process.env.API_ENDPOINT}/embedded-cluster/node/${nodeName}`, {
-          headers: {
-            Accept: "application/json",
-          },
-          credentials: "include",
-          method: "GET",
-        })
+        await fetch(
+          `${process.env.API_ENDPOINT}/embedded-cluster/node/${nodeName}`,
+          {
+            headers: {
+              Accept: "application/json",
+            },
+            credentials: "include",
+            method: "GET",
+          }
+        )
       ).json();
     },
     onError: (err) => {

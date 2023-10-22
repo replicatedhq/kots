@@ -1,10 +1,13 @@
-import React, {Fragment, useEffect, useReducer, useState} from "react";
+import React, { Fragment, useEffect, useReducer, useState } from "react";
 import classNames from "classnames";
-import {Outlet, useNavigate, useParams} from "react-router-dom";
+import { Outlet, useNavigate, useParams } from "react-router-dom";
 import Modal from "react-modal";
-import {useTheme} from "@src/components/context/withTheme";
-import {HelmChartSidebarItem, KotsSidebarItem} from "@src/components/watches/WatchSidebarItem";
-import {isAwaitingResults} from "../../utilities/utilities";
+import { useTheme } from "@src/components/context/withTheme";
+import {
+  HelmChartSidebarItem,
+  KotsSidebarItem,
+} from "@src/components/watches/WatchSidebarItem";
+import { isAwaitingResults } from "../../utilities/utilities";
 
 import SubNavBar from "@src/components/shared/SubNavBar";
 import SidebarLayout from "../layout/SidebarLayout/SidebarLayout";
@@ -14,8 +17,8 @@ import Loader from "../shared/Loader";
 import ErrorModal from "../modals/ErrorModal";
 
 // Types
-import {App, KotsParams, Metadata, Version} from "@types";
-import {useApps, useSelectedApp} from "@features/App";
+import { App, KotsParams, Metadata, Version } from "@types";
+import { useApps, useSelectedApp } from "@features/App";
 
 type Props = {
   adminConsoleMetadata?: Metadata;

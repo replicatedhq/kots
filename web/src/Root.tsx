@@ -1,31 +1,31 @@
-import React, {useEffect, useReducer} from "react";
-import {createBrowserHistory} from "history";
-import {Navigate, Route, Routes, useNavigate} from "react-router-dom";
-import {Helmet} from "react-helmet";
+import React, { useEffect, useReducer } from "react";
+import { createBrowserHistory } from "history";
+import { Navigate, Route, Routes, useNavigate } from "react-router-dom";
+import { Helmet } from "react-helmet";
 import Modal from "react-modal";
 import find from "lodash/find";
 import ConnectionTerminated from "./ConnectionTerminated";
 import GitOps from "./components/clusters/GitOps";
 import PreflightResultPage from "./components/PreflightResultPage";
 import AppConfig from "./features/AppConfig/components/AppConfig";
-import {AppDetailPage} from "./components/apps/AppDetailPage";
+import { AppDetailPage } from "./components/apps/AppDetailPage";
 import KurlClusterManagement from "./components/apps/KurlClusterManagement";
 import EmbeddedClusterManagement from "@components/apps/EmbeddedClusterManagement";
 import UnsupportedBrowser from "./components/static/UnsupportedBrowser";
 import NotFound from "./components/static/NotFound";
-import {parseUpstreamUri, Utilities} from "./utilities/utilities";
+import { parseUpstreamUri, Utilities } from "./utilities/utilities";
 import fetch from "./utilities/fetchWithTimeout";
-import {SecureAdminConsole} from "@features/Auth";
+import { SecureAdminConsole } from "@features/Auth";
 import UploadLicenseFile from "./components/UploadLicenseFile";
 import BackupRestore from "./components/BackupRestore";
 import UploadAirgapBundle from "./components/UploadAirgapBundle";
 import RestoreCompleted from "./components/RestoreCompleted";
 import Access from "./components/identity/Access";
 import SnapshotsWrapper from "./components/snapshots/SnapshotsWrapper";
-import {QueryClient, QueryClientProvider} from "@tanstack/react-query";
-import {InstallWithHelm} from "@features/AddNewApp";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { InstallWithHelm } from "@features/AddNewApp";
 import DownstreamTree from "./components/tree/KotsApplicationTree";
-import {Dashboard} from "@features/Dashboard/components/Dashboard";
+import { Dashboard } from "@features/Dashboard/components/Dashboard";
 import AppVersionHistory from "@components/apps/AppVersionHistory";
 import AppLicense from "@components/apps/AppLicense";
 import AppRegistrySettings from "@components/apps/AppRegistrySettings";
@@ -42,8 +42,8 @@ import "./index.css";
 import connectHistory from "./services/matomo";
 
 // types
-import {App, Metadata, ThemeState} from "@types";
-import {ToastProvider} from "./context/ToastContext";
+import { App, Metadata, ThemeState } from "@types";
+import { ToastProvider } from "./context/ToastContext";
 import Redactors from "@components/redactors/Redactors";
 import EditRedactor from "@components/redactors/EditRedactor";
 import SupportBundleAnalysis from "@components/troubleshoot/SupportBundleAnalysis";
@@ -467,7 +467,9 @@ const Root = () => {
             refetchAppsList={getAppsList}
             fetchingMetadata={state.fetchingMetadata}
             isKurlEnabled={Boolean(state.adminConsoleMetadata?.isKurl)}
-            isEmbeddedClusterEnabled={Boolean(state.adminConsoleMetadata?.isEmbeddedCluster)}
+            isEmbeddedClusterEnabled={Boolean(
+              state.adminConsoleMetadata?.isEmbeddedCluster
+            )}
             isGitOpsSupported={isGitOpsSupported()}
             isIdentityServiceSupported={isIdentityServiceSupported()}
             appsList={state.appsList}
@@ -532,7 +534,9 @@ const Root = () => {
                     appSlugFromMetadata={state.appSlugFromMetadata || ""}
                     fetchingMetadata={state.fetchingMetadata}
                     onUploadSuccess={getAppsList}
-                    isEmbeddedCluster={Boolean(state.adminConsoleMetadata?.isEmbeddedCluster)}
+                    isEmbeddedCluster={Boolean(
+                      state.adminConsoleMetadata?.isEmbeddedCluster
+                    )}
                   />
                 }
               />
@@ -579,7 +583,9 @@ const Root = () => {
                 <>
                   <Route
                     path="/:slug/cluster/manage"
-                    element={<EmbeddedClusterManagement fromLicenseFlow={true} />}
+                    element={
+                      <EmbeddedClusterManagement fromLicenseFlow={true} />
+                    }
                   />
                   <Route
                     path="/:slug/cluster/:nodeName"
@@ -601,7 +607,10 @@ const Root = () => {
                 />
               )}
               {state.adminConsoleMetadata?.isEmbeddedCluster && (
-                <Route path="/cluster/:nodeName" element={<EmbeddedClusterViewNode />} />
+                <Route
+                  path="/cluster/:nodeName"
+                  element={<EmbeddedClusterViewNode />}
+                />
               )}
               <Route
                 path="/gitops"
@@ -692,7 +701,9 @@ const Root = () => {
                     snapshotInProgressApps={state.snapshotInProgressApps}
                     ping={ping}
                     isHelmManaged={state.isHelmManaged}
-                    isEmbeddedCluster={Boolean(state.adminConsoleMetadata?.isEmbeddedCluster)}
+                    isEmbeddedCluster={Boolean(
+                      state.adminConsoleMetadata?.isEmbeddedCluster
+                    )}
                   />
                 }
               />
@@ -708,7 +719,9 @@ const Root = () => {
                     snapshotInProgressApps={state.snapshotInProgressApps}
                     ping={ping}
                     isHelmManaged={state.isHelmManaged}
-                    isEmbeddedCluster={Boolean(state.adminConsoleMetadata?.isEmbeddedCluster)}
+                    isEmbeddedCluster={Boolean(
+                      state.adminConsoleMetadata?.isEmbeddedCluster
+                    )}
                   />
                 }
               >
