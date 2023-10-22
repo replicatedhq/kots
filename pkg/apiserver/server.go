@@ -188,12 +188,6 @@ func Start(params *APIServerParams) {
 	handlers.RegisterTokenAuthRoutes(handler, debugRouter, loggingRouter)
 
 	/**********************************************************************
-	* License ID auth routes
-	**********************************************************************/
-
-	handlers.RegisterLicenseIDAuthRoutes(r.PathPrefix("").Subrouter(), kotsStore, handler)
-
-	/**********************************************************************
 	* Session auth routes
 	**********************************************************************/
 

@@ -360,12 +360,6 @@ func RegisterUnauthenticatedRoutes(handler *Handler, kotsStore store.Store, debu
 	loggingRouter.Path("/api/v1/embedded-cluster/join").Methods("GET").HandlerFunc(handler.GetK0sNodeJoinCommand)
 }
 
-func RegisterLicenseIDAuthRoutes(r *mux.Router, kotsStore store.Store, handler KOTSHandler) {
-	r.Use(LoggingMiddleware, RequireValidLicenseMiddleware(kotsStore))
-
-	r.Name("GetAppMetrics").Path("/api/v1/app/metrics").Methods("GET").HandlerFunc(handler.GetAppMetrics)
-}
-
 func StreamJSON(c *websocket.Conn, payload interface{}) {
 	response, err := json.Marshal(payload)
 	if err != nil {

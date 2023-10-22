@@ -163,7 +163,4 @@ type KOTSHandler interface {
 	// Helm
 	IsHelmManaged(w http.ResponseWriter, r *http.Request)
 	GetAppValuesFile(w http.ResponseWriter, r *http.Request)
-
-	// APIs available to applications (except legacy /license/v1/license)
-	GetAppMetrics(w http.ResponseWriter, r *http.Request)
 }
