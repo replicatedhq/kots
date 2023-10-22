@@ -1,9 +1,10 @@
-package helmvm
+package embeddedcluster
 
 import (
 	"context"
+
 	"github.com/pkg/errors"
-	"github.com/replicatedhq/kots/pkg/helmvm/types"
+	"github.com/replicatedhq/kots/pkg/embeddedcluster/types"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -12,7 +13,7 @@ import (
 )
 
 // GetNodes will get a list of nodes with stats
-func GetNodes(ctx context.Context, client kubernetes.Interface) (*types.HelmVMNodes, error) {
+func GetNodes(ctx context.Context, client kubernetes.Interface) (*types.EmbeddedClusterNodes, error) {
 	nodes, err := client.CoreV1().Nodes().List(ctx, metav1.ListOptions{})
 	if err != nil {
 		return nil, errors.Wrap(err, "list nodes")
@@ -28,7 +29,7 @@ func GetNodes(ctx context.Context, client kubernetes.Interface) (*types.HelmVMNo
 		return nil, errors.Wrap(err, "failed to create metrics client")
 	}
 
-	toReturn := types.HelmVMNodes{}
+	toReturn := types.EmbeddedClusterNodes{}
 
 	for _, node := range nodes.Items {
 		nodeMet, err := nodeMetrics(ctx, client, metricsClient, node)
@@ -39,11 +40,11 @@ func GetNodes(ctx context.Context, client kubernetes.Interface) (*types.HelmVMNo
 		toReturn.Nodes = append(toReturn.Nodes, *nodeMet)
 	}
 
-	isHelmVM, err := IsHelmVM(client)
+	isEmbeddedCluster, err := IsEmbeddedCluster(client)
 	if err != nil {
-		return nil, errors.Wrap(err, "is helmvm")
+		return nil, errors.Wrap(err, "is embeddedcluster")
 	}
-	toReturn.IsHelmVMEnabled = isHelmVM
+	toReturn.IsEmbeddedClusterEnabled = isEmbeddedCluster
 
 	isHA, err := IsHA(client)
 	if err != nil {

@@ -191,9 +191,9 @@ jobs:
             is_upgrade: "1"
           },
           {
-            name: "type=helmvm cluster, env=online, phase=new install, rbac=cluster admin",
-            backend_config: "helmvm-online-install-backend-config.tfvars",
-            terraform_script: "helmvm-online-install.sh"
+            name: "type=embeddedcluster cluster, env=online, phase=new install, rbac=cluster admin",
+            backend_config: "embeddedcluster-online-install-backend-config.tfvars",
+            terraform_script: "embeddedcluster-online-install.sh"
           }
         ]
     steps:

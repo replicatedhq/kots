@@ -1,4 +1,4 @@
-package helmvm
+package embeddedcluster
 
 import (
 	"context"
@@ -8,7 +8,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/replicatedhq/kots/pkg/helmvm/types"
+	"github.com/replicatedhq/kots/pkg/embeddedcluster/types"
 	corev1 "k8s.io/api/core/v1"
 	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -24,7 +24,7 @@ type joinTokenEntry struct {
 var joinTokenMapMut = sync.Mutex{}
 var joinTokenMap = map[string]*joinTokenEntry{}
 
-// GenerateAddNodeToken will generate the HelmVM node add command for a primary or secondary node
+// GenerateAddNodeToken will generate the embedded cluster node add command for a node with the specified roles
 // join commands will last for 24 hours, and will be cached for 1 hour after first generation
 func GenerateAddNodeToken(ctx context.Context, client kubernetes.Interface, nodeRole string) (string, error) {
 	// get the joinToken struct entry for this node role
@@ -214,7 +214,7 @@ func runAddNodeCommandPod(ctx context.Context, client kubernetes.Interface, node
 }
 
 // GenerateAddNodeCommand returns the command a user should run to add a node with the provided token
-// the command will be of the form 'helmvm node join ip:port UUID'
+// the command will be of the form 'embeddedcluster node join ip:port UUID'
 func GenerateAddNodeCommand(ctx context.Context, client kubernetes.Interface, token string) (string, error) {
 	cm, err := ReadConfigMap(client)
 	if err != nil {

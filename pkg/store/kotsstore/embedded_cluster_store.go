@@ -9,18 +9,18 @@ import (
 	"github.com/replicatedhq/kots/pkg/rand"
 )
 
-func (s *KOTSStore) SetK0sInstallCommandRoles(roles []string) (string, error) {
+func (s *KOTSStore) SetEmbeddedClusterInstallCommandRoles(roles []string) (string, error) {
 	db := persistence.MustGetDBSession()
 
 	installID := rand.StringWithCharset(24, rand.LOWER_CASE+rand.UPPER_CASE)
 
-	query := `delete from k0s_tokens where token = ?`
+	query := `delete from embedded_cluster_tokens where token = ?`
 	wr, err := db.WriteOneParameterized(gorqlite.ParameterizedStatement{
 		Query:     query,
 		Arguments: []interface{}{installID},
 	})
 	if err != nil {
-		return "", fmt.Errorf("delete k0s join token: %v: %v", err, wr.Err)
+		return "", fmt.Errorf("delete embedded_cluster join token: %v: %v", err, wr.Err)
 	}
 
 	jsonRoles, err := json.Marshal(roles)
@@ -28,21 +28,21 @@ func (s *KOTSStore) SetK0sInstallCommandRoles(roles []string) (string, error) {
 		return "", fmt.Errorf("failed to marshal roles: %w", err)
 	}
 
-	query = `insert into k0s_tokens (token, roles) values (?, ?)`
+	query = `insert into embedded_cluster_tokens (token, roles) values (?, ?)`
 	wr, err = db.WriteOneParameterized(gorqlite.ParameterizedStatement{
 		Query:     query,
 		Arguments: []interface{}{installID, string(jsonRoles)},
 	})
 	if err != nil {
-		return "", fmt.Errorf("insert k0s join token: %v: %v", err, wr.Err)
+		return "", fmt.Errorf("insert embedded_cluster join token: %v: %v", err, wr.Err)
 	}
 
 	return installID, nil
 }
 
-func (s *KOTSStore) GetK0sInstallCommandRoles(token string) ([]string, error) {
+func (s *KOTSStore) GetEmbeddedClusterInstallCommandRoles(token string) ([]string, error) {
 	db := persistence.MustGetDBSession()
-	query := `select roles from k0s_tokens where token = ?`
+	query := `select roles from embedded_cluster_tokens where token = ?`
 	rows, err := db.QueryOneParameterized(gorqlite.ParameterizedStatement{
 		Query:     query,
 		Arguments: []interface{}{token},

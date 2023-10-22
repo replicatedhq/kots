@@ -1,4 +1,4 @@
-package helmvm
+package embeddedcluster
 
 import (
 	"context"
@@ -18,7 +18,7 @@ func ReadConfigMap(client kubernetes.Interface) (*corev1.ConfigMap, error) {
 	return client.CoreV1().ConfigMaps(configMapNamespace).Get(context.TODO(), configMapName, metav1.GetOptions{})
 }
 
-func IsHelmVM(clientset kubernetes.Interface) (bool, error) {
+func IsEmbeddedCluster(clientset kubernetes.Interface) (bool, error) {
 	if clientset == nil {
 		return false, fmt.Errorf("clientset is nil")
 	}

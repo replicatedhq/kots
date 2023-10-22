@@ -1,14 +1,14 @@
-import { useQuery } from "@tanstack/react-query";
+import {useQuery} from "@tanstack/react-query";
 import classNames from "classnames";
-import MaterialReactTable, { MRT_ColumnDef } from "material-react-table";
-import React, { ChangeEvent, useMemo, useReducer, useState } from "react";
+import MaterialReactTable, {MRT_ColumnDef} from "material-react-table";
+import React, {ChangeEvent, useMemo, useReducer, useState} from "react";
 import Modal from "react-modal";
-import { Link, useParams } from "react-router-dom";
+import {Link, useParams} from "react-router-dom";
 
-import { KotsPageTitle } from "@components/Head";
-import { useApps } from "@features/App";
-import { rbacRoles } from "../../constants/rbac";
-import { Utilities } from "../../utilities/utilities";
+import {KotsPageTitle} from "@components/Head";
+import {useApps} from "@features/App";
+import {rbacRoles} from "../../constants/rbac";
+import {Utilities} from "../../utilities/utilities";
 import Icon from "../Icon";
 import CodeSnippet from "../shared/CodeSnippet";
 
@@ -20,7 +20,7 @@ const testData = {
 // const testData = {
 //   nodes: [
 //     {
-//       name: "laverya-helmvm",
+//       name: "laverya-embeddedcluster",
 //       isConnected: true,
 //       isReady: true,
 //       isPrimaryNode: true,
@@ -79,7 +79,7 @@ const HelmVMClusterManagement = ({
   const [selectedNodeTypes, setSelectedNodeTypes] = useState<string[]>([]);
 
   const { data: appsData } = useApps();
-  // we grab the first app because helmvm users should only ever have one app
+  // we grab the first app because embeddedcluster users should only ever have one app
   const app = appsData?.apps?.[0];
 
   const { slug } = useParams();

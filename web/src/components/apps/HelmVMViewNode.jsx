@@ -1,12 +1,12 @@
-import { MaterialReactTable } from "material-react-table";
-import React, { useMemo, setState } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { Link, useParams } from "react-router-dom";
+import {MaterialReactTable} from "material-react-table";
+import React, {useMemo} from "react";
+import {useQuery} from "@tanstack/react-query";
+import {Link, useParams} from "react-router-dom";
 import Loader from "@components/shared/Loader";
 
 const testData = undefined;
 // const testData = {
-//   name: "laverya-helmvm",
+//   name: "laverya-embeddedcluster",
 //   isConnected: true,
 //   isReady: true,
 //   isPrimaryNode: true,
@@ -29,7 +29,7 @@ const testData = undefined;
 //     {
 //       name: "example-es-85fc9df74-8x8l6",
 //       status: "Running",
-//       namespace: "helmvm",
+//       namespace: "embeddedcluster",
 //       cpu: "0.0345789345 GB",
 //       memory: 0,
 //     },
