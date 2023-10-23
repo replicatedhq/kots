@@ -8,7 +8,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/embeddedcluster"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/logger"
-	"github.com/replicatedhq/kots/pkg/store/kotsstore"
+	"github.com/replicatedhq/kots/pkg/store"
 )
 
 type GenerateEmbeddedClusterNodeJoinCommandResponse struct {
@@ -34,7 +34,7 @@ func (h *Handler) GenerateEmbeddedClusterNodeJoinCommand(w http.ResponseWriter, 
 	}
 
 	store := kotsstore.StoreFromEnv()
-	token, err := store.SetEmbeddedClusterInstallCommandRoles(generateEmbeddedClusterNodeJoinCommandRequest.Roles)
+	token, err := store.GetStore().SetEmbeddedClusterInstallCommandRoles(generateEmbeddedClusterNodeJoinCommandRequest.Roles)
 	if err != nil {
 		logger.Error(fmt.Errorf("failed to set k0s install command roles: %w", err))
 		w.WriteHeader(http.StatusInternalServerError)
