@@ -1,9 +1,9 @@
 apiVersion: schemas.schemahero.io/v1alpha4
 kind: Table
 metadata:
-  name: k0s-tokens
+  name: embedded-cluster-tokens
 spec:
-  name: k0s_tokens
+  name: embedded_cluster_tokens
   requires: []
   schema:
     rqlite:

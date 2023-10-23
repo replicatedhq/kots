@@ -1,10 +1,12 @@
-import React, { Fragment, useReducer, useEffect, useState } from "react";
+import React, { Fragment, useEffect, useReducer, useState } from "react";
 import classNames from "classnames";
-import { useNavigate, useParams, Outlet } from "react-router-dom";
+import { Outlet, useNavigate, useParams } from "react-router-dom";
 import Modal from "react-modal";
 import { useTheme } from "@src/components/context/withTheme";
-import { KotsSidebarItem } from "@src/components/watches/WatchSidebarItem";
-import { HelmChartSidebarItem } from "@src/components/watches/WatchSidebarItem";
+import {
+  HelmChartSidebarItem,
+  KotsSidebarItem,
+} from "@src/components/watches/WatchSidebarItem";
 import { isAwaitingResults } from "../../utilities/utilities";
 
 import SubNavBar from "@src/components/shared/SubNavBar";
@@ -15,7 +17,7 @@ import Loader from "../shared/Loader";
 import ErrorModal from "../modals/ErrorModal";
 
 // Types
-import { App, Metadata, KotsParams, Version } from "@types";
+import { App, KotsParams, Metadata, Version } from "@types";
 import { useApps, useSelectedApp } from "@features/App";
 
 type Props = {
@@ -30,7 +32,7 @@ type Props = {
   refetchAppsList: () => void;
   refetchAppMetadata: () => void;
   snapshotInProgressApps: string[];
-  isHelmVM: boolean;
+  isEmbeddedCluster: boolean;
 };
 
 type State = {
@@ -322,12 +324,12 @@ function AppDetailPage(props: Props) {
       const firstVersion = downstream.pendingVersions.find(
         (version: Version) => version?.sequence === 0
       );
-      if (firstVersion?.status === "unknown" && props.isHelmVM) {
+      if (firstVersion?.status === "unknown" && props.isEmbeddedCluster) {
         navigate(`/${appNeedsConfiguration.slug}/cluster/manage`);
         return;
       }
       if (firstVersion?.status === "pending_config") {
-        if (props.isHelmVM) {
+        if (props.isEmbeddedCluster) {
           navigate(`/${appNeedsConfiguration.slug}/cluster/manage`);
           return;
         }

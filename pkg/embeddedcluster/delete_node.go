@@ -1,4 +1,4 @@
-package helmvm
+package embeddedcluster
 
 import (
 	"context"

@@ -1,4 +1,4 @@
-package helmvm
+package embeddedcluster
 
 import (
 	"context"
@@ -7,7 +7,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/replicatedhq/kots/pkg/helmvm/types"
+	"github.com/replicatedhq/kots/pkg/embeddedcluster/types"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"

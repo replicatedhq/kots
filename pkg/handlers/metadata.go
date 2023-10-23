@@ -50,9 +50,9 @@ type MetadataResponseBranding struct {
 }
 
 type AdminConsoleMetadata struct {
-	IsAirgap bool `json:"isAirgap"`
-	IsKurl   bool `json:"isKurl"`
-	IsHelmVM bool `json:"isHelmVM"`
+	IsAirgap          bool `json:"isAirgap"`
+	IsKurl            bool `json:"isKurl"`
+	IsEmbeddedCluster bool `json:"isEmbeddedCluster"`
 }
 
 // GetMetadataHandler helper function that returns a http handler func that returns metadata. It takes a function that
@@ -73,7 +73,7 @@ func GetMetadataHandler(getK8sInfoFn MetadataK8sFn, kotsStore store.Store) http.
 			if kuberneteserrors.IsNotFound(err) {
 				metadataResponse.AdminConsoleMetadata.IsAirgap = kotsadmMetadata.IsAirgap
 				metadataResponse.AdminConsoleMetadata.IsKurl = kotsadmMetadata.IsKurl
-				metadataResponse.AdminConsoleMetadata.IsHelmVM = kotsadmMetadata.IsHelmVM
+				metadataResponse.AdminConsoleMetadata.IsEmbeddedCluster = kotsadmMetadata.IsEmbeddedCluster
 
 				logger.Info(fmt.Sprintf("config map %q not found", metadataConfigMapName))
 				JSON(w, http.StatusOK, &metadataResponse)
@@ -114,9 +114,9 @@ func GetMetadataHandler(getK8sInfoFn MetadataK8sFn, kotsStore store.Store) http.
 		metadataResponse.UpstreamURI = brandingConfigMap.Data[upstreamUriKey]
 		metadataResponse.ConsoleFeatureFlags = application.Spec.ConsoleFeatureFlags
 		metadataResponse.AdminConsoleMetadata = AdminConsoleMetadata{
-			IsAirgap: kotsadmMetadata.IsAirgap,
-			IsKurl:   kotsadmMetadata.IsKurl,
-			IsHelmVM: kotsadmMetadata.IsHelmVM,
+			IsAirgap:          kotsadmMetadata.IsAirgap,
+			IsKurl:            kotsadmMetadata.IsKurl,
+			IsEmbeddedCluster: kotsadmMetadata.IsEmbeddedCluster,
 		}
 
 		JSON(w, http.StatusOK, metadataResponse)

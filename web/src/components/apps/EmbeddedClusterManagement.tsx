@@ -12,7 +12,7 @@ import { Utilities } from "../../utilities/utilities";
 import Icon from "../Icon";
 import CodeSnippet from "../shared/CodeSnippet";
 
-import "@src/scss/components/apps/HelmVMClusterManagement.scss";
+import "@src/scss/components/apps/EmbeddedClusterManagement.scss";
 
 const testData = {
   nodes: undefined,
@@ -20,7 +20,7 @@ const testData = {
 // const testData = {
 //   nodes: [
 //     {
-//       name: "laverya-helmvm",
+//       name: "laverya-embeddedcluster",
 //       isConnected: true,
 //       isReady: true,
 //       isPrimaryNode: true,
@@ -43,7 +43,7 @@ const testData = {
 //     },
 //   ],
 //   ha: true,
-//   isHelmVMEnabled: true,
+//   isEmbeddedClusterEnabled: true,
 // };
 
 type State = {
@@ -56,7 +56,7 @@ type State = {
   drainNodeSuccessful: boolean;
 };
 
-const HelmVMClusterManagement = ({
+const EmbeddedClusterManagement = ({
   fromLicenseFlow = false,
 }: {
   fromLicenseFlow?: boolean;
@@ -79,7 +79,7 @@ const HelmVMClusterManagement = ({
   const [selectedNodeTypes, setSelectedNodeTypes] = useState<string[]>([]);
 
   const { data: appsData } = useApps();
-  // we grab the first app because helmvm users should only ever have one app
+  // we grab the first app because embeddedcluster users should only ever have one app
   const app = appsData?.apps?.[0];
 
   const { slug } = useParams();
@@ -87,7 +87,7 @@ const HelmVMClusterManagement = ({
   // #region queries
   type NodesResponse = {
     ha: boolean;
-    isHelmVMEnabled: boolean;
+    isEmbeddedClusterEnabled: boolean;
     nodes: {
       name: string;
       isConnected: boolean;
@@ -122,15 +122,18 @@ const HelmVMClusterManagement = ({
     isInitialLoading: nodesLoading,
     error: nodesError,
   } = useQuery<NodesResponse, Error, NodesResponse>({
-    queryKey: ["helmVmNodes"],
+    queryKey: ["embeddedClusterNodes"],
     queryFn: async () => {
-      const res = await fetch(`${process.env.API_ENDPOINT}/helmvm/nodes`, {
-        headers: {
-          Accept: "application/json",
-        },
-        credentials: "include",
-        method: "GET",
-      });
+      const res = await fetch(
+        `${process.env.API_ENDPOINT}/embedded-cluster/nodes`,
+        {
+          headers: {
+            Accept: "application/json",
+          },
+          credentials: "include",
+          method: "GET",
+        }
+      );
       if (!res.ok) {
         if (res.status === 401) {
           Utilities.logoutUser();
@@ -168,7 +171,7 @@ const HelmVMClusterManagement = ({
     queryFn: async ({ queryKey }) => {
       const [, nodeTypes] = queryKey;
       const res = await fetch(
-        `${process.env.API_ENDPOINT}/helmvm/generate-node-join-command`,
+        `${process.env.API_ENDPOINT}/embedded-cluster/generate-node-join-command`,
         {
           headers: {
             "Content-Type": "application/json",
@@ -334,7 +337,7 @@ const HelmVMClusterManagement = ({
   // #endregion
 
   return (
-    <div className="HelmVMClusterManagement--wrapper container u-overflow--auto u-paddingTop--50 tw-font-sans">
+    <div className="EmbeddedClusterManagement--wrapper container u-overflow--auto u-paddingTop--50 tw-font-sans">
       <KotsPageTitle pageName="Cluster Management" />
       <div className="flex1 tw-mb-10 tw-flex tw-flex-col tw-gap-4 card-bg">
         <p className="flex-auto u-fontSize--larger u-fontWeight--bold u-textColor--primary">
@@ -517,4 +520,4 @@ const HelmVMClusterManagement = ({
   );
 };
 
-export default HelmVMClusterManagement;
+export default EmbeddedClusterManagement;

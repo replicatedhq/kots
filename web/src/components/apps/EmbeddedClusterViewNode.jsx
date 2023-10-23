@@ -1,12 +1,12 @@
 import { MaterialReactTable } from "material-react-table";
-import React, { useMemo, setState } from "react";
+import React, { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link, useParams } from "react-router-dom";
 import Loader from "@components/shared/Loader";
 
 const testData = undefined;
 // const testData = {
-//   name: "laverya-helmvm",
+//   name: "laverya-embeddedcluster",
 //   isConnected: true,
 //   isReady: true,
 //   isPrimaryNode: true,
@@ -29,27 +29,30 @@ const testData = undefined;
 //     {
 //       name: "example-es-85fc9df74-8x8l6",
 //       status: "Running",
-//       namespace: "helmvm",
+//       namespace: "embeddedcluster",
 //       cpu: "0.0345789345 GB",
 //       memory: 0,
 //     },
 //   ],
 // };
 
-const HelmVMViewNode = () => {
+const EmbeddedClusterViewNode = () => {
   const { slug, nodeName } = useParams();
   const { data: nodeData, isLoading: nodeLoading } = useQuery({
-    queryKey: ["helmVmNode", nodeName],
+    queryKey: ["embeddedClusterNode", nodeName],
     queryFn: async ({ queryKey }) => {
       const [, nodeName] = queryKey;
       return (
-        await fetch(`${process.env.API_ENDPOINT}/helmvm/node/${nodeName}`, {
-          headers: {
-            Accept: "application/json",
-          },
-          credentials: "include",
-          method: "GET",
-        })
+        await fetch(
+          `${process.env.API_ENDPOINT}/embedded-cluster/node/${nodeName}`,
+          {
+            headers: {
+              Accept: "application/json",
+            },
+            credentials: "include",
+            method: "GET",
+          }
+        )
       ).json();
     },
     onError: (err) => {
@@ -239,4 +242,4 @@ const HelmVMViewNode = () => {
   );
 };
 
-export default HelmVMViewNode;
+export default EmbeddedClusterViewNode;

@@ -67,7 +67,7 @@ type Props = {
   onUploadSuccess: () => Promise<void>;
   logo: string | null;
   snapshot?: { name: string };
-  isHelmVM: boolean;
+  isEmbeddedCluster: boolean;
 };
 
 const UploadLicenseFile = (props: Props) => {
@@ -261,7 +261,7 @@ const UploadLicenseFile = (props: Props) => {
               return;
             }
 
-            if (props.isHelmVM) {
+            if (props.isEmbeddedCluster) {
               navigate(`/${data.slug}/cluster/manage`, { replace: true });
               return;
             }

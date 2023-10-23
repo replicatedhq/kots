@@ -130,7 +130,7 @@ export type Entitlement = {
 export type Metadata = {
   isAirgap: boolean;
   isKurl: boolean;
-  isHelmVM: boolean;
+  isEmbeddedCluster: boolean;
 };
 
 export type PreflightError = {

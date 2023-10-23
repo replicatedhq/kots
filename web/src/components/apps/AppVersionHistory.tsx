@@ -19,12 +19,12 @@ import DeployWarningModal from "../shared/modals/DeployWarningModal";
 import AutomaticUpdatesModal from "@src/components/modals/AutomaticUpdatesModal";
 import SkipPreflightsModal from "../shared/modals/SkipPreflightsModal";
 import {
-  Utilities,
+  getCommitHashFromUrl,
+  getGitProviderDiffUrl,
+  getPreflightResultState,
   isAwaitingResults,
   secondsAgo,
-  getPreflightResultState,
-  getGitProviderDiffUrl,
-  getCommitHashFromUrl,
+  Utilities,
 } from "../../utilities/utilities";
 import { Repeater } from "../../utilities/repeater";
 import { AirgapUploader } from "../../utilities/airgapUploader";
@@ -59,7 +59,7 @@ type Props = {
     adminConsoleMetadata: {
       isAirgap: boolean;
       isKurl: boolean;
-      isHelmVM: boolean;
+      isEmbeddedCluster: boolean;
     };
     app: App;
     displayErrorModal: boolean;

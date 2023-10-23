@@ -262,16 +262,16 @@ func (mr *MockKOTSHandlerMockRecorder) DeleteBackup(w, r interface{}) *gomock.Ca
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteBackup", reflect.TypeOf((*MockKOTSHandler)(nil).DeleteBackup), w, r)
 }
 
-// DeleteHelmVMNode mocks base method.
-func (m *MockKOTSHandler) DeleteHelmVMNode(w http.ResponseWriter, r *http.Request) {
+// DeleteEmbeddedClusterNode mocks base method.
+func (m *MockKOTSHandler) DeleteEmbeddedClusterNode(w http.ResponseWriter, r *http.Request) {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "DeleteHelmVMNode", w, r)
+	m.ctrl.Call(m, "DeleteEmbeddedClusterNode", w, r)
 }
 
-// DeleteHelmVMNode indicates an expected call of DeleteHelmVMNode.
-func (mr *MockKOTSHandlerMockRecorder) DeleteHelmVMNode(w, r interface{}) *gomock.Call {
+// DeleteEmbeddedClusterNode indicates an expected call of DeleteEmbeddedClusterNode.
+func (mr *MockKOTSHandlerMockRecorder) DeleteEmbeddedClusterNode(w, r interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteHelmVMNode", reflect.TypeOf((*MockKOTSHandler)(nil).DeleteHelmVMNode), w, r)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteEmbeddedClusterNode", reflect.TypeOf((*MockKOTSHandler)(nil).DeleteEmbeddedClusterNode), w, r)
 }
 
 // DeleteKurlNode mocks base method.
@@ -394,16 +394,16 @@ func (mr *MockKOTSHandlerMockRecorder) DownloadSupportBundle(w, r interface{}) *
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DownloadSupportBundle", reflect.TypeOf((*MockKOTSHandler)(nil).DownloadSupportBundle), w, r)
 }
 
-// DrainHelmVMNode mocks base method.
-func (m *MockKOTSHandler) DrainHelmVMNode(w http.ResponseWriter, r *http.Request) {
+// DrainEmbeddedClusterNode mocks base method.
+func (m *MockKOTSHandler) DrainEmbeddedClusterNode(w http.ResponseWriter, r *http.Request) {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "DrainHelmVMNode", w, r)
+	m.ctrl.Call(m, "DrainEmbeddedClusterNode", w, r)
 }
 
-// DrainHelmVMNode indicates an expected call of DrainHelmVMNode.
-func (mr *MockKOTSHandlerMockRecorder) DrainHelmVMNode(w, r interface{}) *gomock.Call {
+// DrainEmbeddedClusterNode indicates an expected call of DrainEmbeddedClusterNode.
+func (mr *MockKOTSHandlerMockRecorder) DrainEmbeddedClusterNode(w, r interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DrainHelmVMNode", reflect.TypeOf((*MockKOTSHandler)(nil).DrainHelmVMNode), w, r)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DrainEmbeddedClusterNode", reflect.TypeOf((*MockKOTSHandler)(nil).DrainEmbeddedClusterNode), w, r)
 }
 
 // DrainKurlNode mocks base method.
@@ -442,16 +442,16 @@ func (mr *MockKOTSHandlerMockRecorder) GarbageCollectImages(w, r interface{}) *g
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GarbageCollectImages", reflect.TypeOf((*MockKOTSHandler)(nil).GarbageCollectImages), w, r)
 }
 
-// GenerateK0sNodeJoinCommand mocks base method.
-func (m *MockKOTSHandler) GenerateK0sNodeJoinCommand(w http.ResponseWriter, r *http.Request) {
+// GenerateEmbeddedClusterNodeJoinCommand mocks base method.
+func (m *MockKOTSHandler) GenerateEmbeddedClusterNodeJoinCommand(w http.ResponseWriter, r *http.Request) {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "GenerateK0sNodeJoinCommand", w, r)
+	m.ctrl.Call(m, "GenerateEmbeddedClusterNodeJoinCommand", w, r)
 }
 
-// GenerateK0sNodeJoinCommand indicates an expected call of GenerateK0sNodeJoinCommand.
-func (mr *MockKOTSHandlerMockRecorder) GenerateK0sNodeJoinCommand(w, r interface{}) *gomock.Call {
+// GenerateEmbeddedClusterNodeJoinCommand indicates an expected call of GenerateEmbeddedClusterNodeJoinCommand.
+func (mr *MockKOTSHandlerMockRecorder) GenerateEmbeddedClusterNodeJoinCommand(w, r interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GenerateK0sNodeJoinCommand", reflect.TypeOf((*MockKOTSHandler)(nil).GenerateK0sNodeJoinCommand), w, r)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GenerateEmbeddedClusterNodeJoinCommand", reflect.TypeOf((*MockKOTSHandler)(nil).GenerateEmbeddedClusterNodeJoinCommand), w, r)
 }
 
 // GenerateKurlNodeJoinCommandMaster mocks base method.
@@ -706,6 +706,30 @@ func (mr *MockKOTSHandlerMockRecorder) GetDownstreamOutput(w, r interface{}) *go
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetDownstreamOutput", reflect.TypeOf((*MockKOTSHandler)(nil).GetDownstreamOutput), w, r)
 }
 
+// GetEmbeddedClusterNode mocks base method.
+func (m *MockKOTSHandler) GetEmbeddedClusterNode(w http.ResponseWriter, r *http.Request) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "GetEmbeddedClusterNode", w, r)
+}
+
+// GetEmbeddedClusterNode indicates an expected call of GetEmbeddedClusterNode.
+func (mr *MockKOTSHandlerMockRecorder) GetEmbeddedClusterNode(w, r interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetEmbeddedClusterNode", reflect.TypeOf((*MockKOTSHandler)(nil).GetEmbeddedClusterNode), w, r)
+}
+
+// GetEmbeddedClusterNodes mocks base method.
+func (m *MockKOTSHandler) GetEmbeddedClusterNodes(w http.ResponseWriter, r *http.Request) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "GetEmbeddedClusterNodes", w, r)
+}
+
+// GetEmbeddedClusterNodes indicates an expected call of GetEmbeddedClusterNodes.
+func (mr *MockKOTSHandlerMockRecorder) GetEmbeddedClusterNodes(w, r interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetEmbeddedClusterNodes", reflect.TypeOf((*MockKOTSHandler)(nil).GetEmbeddedClusterNodes), w, r)
+}
+
 // GetFileSystemSnapshotProviderInstructions mocks base method.
 func (m *MockKOTSHandler) GetFileSystemSnapshotProviderInstructions(w http.ResponseWriter, r *http.Request) {
 	m.ctrl.T.Helper()
@@ -742,30 +766,6 @@ func (mr *MockKOTSHandlerMockRecorder) GetGlobalSnapshotSettings(w, r interface{
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetGlobalSnapshotSettings", reflect.TypeOf((*MockKOTSHandler)(nil).GetGlobalSnapshotSettings), w, r)
 }
 
-// GetHelmVMNode mocks base method.
-func (m *MockKOTSHandler) GetHelmVMNode(w http.ResponseWriter, r *http.Request) {
-	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "GetHelmVMNode", w, r)
-}
-
-// GetHelmVMNode indicates an expected call of GetHelmVMNode.
-func (mr *MockKOTSHandlerMockRecorder) GetHelmVMNode(w, r interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetHelmVMNode", reflect.TypeOf((*MockKOTSHandler)(nil).GetHelmVMNode), w, r)
-}
-
-// GetHelmVMNodes mocks base method.
-func (m *MockKOTSHandler) GetHelmVMNodes(w http.ResponseWriter, r *http.Request) {
-	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "GetHelmVMNodes", w, r)
-}
-
-// GetHelmVMNodes indicates an expected call of GetHelmVMNodes.
-func (mr *MockKOTSHandlerMockRecorder) GetHelmVMNodes(w, r interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetHelmVMNodes", reflect.TypeOf((*MockKOTSHandler)(nil).GetHelmVMNodes), w, r)
-}
-
 // GetIdentityServiceConfig mocks base method.
 func (m *MockKOTSHandler) GetIdentityServiceConfig(w http.ResponseWriter, r *http.Request) {
 	m.ctrl.T.Helper()
@@ -800,18 +800,6 @@ func (m *MockKOTSHandler) GetInstanceSnapshotConfig(w http.ResponseWriter, r *ht
 func (mr *MockKOTSHandlerMockRecorder) GetInstanceSnapshotConfig(w, r interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetInstanceSnapshotConfig", reflect.TypeOf((*MockKOTSHandler)(nil).GetInstanceSnapshotConfig), w, r)
-}
-
-// GetK0sNodeJoinCommand mocks base method.
-func (m *MockKOTSHandler) GetK0sNodeJoinCommand(w http.ResponseWriter, r *http.Request) {
-	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "GetK0sNodeJoinCommand", w, r)
-}
-
-// GetK0sNodeJoinCommand indicates an expected call of GetK0sNodeJoinCommand.
-func (mr *MockKOTSHandlerMockRecorder) GetK0sNodeJoinCommand(w, r interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetK0sNodeJoinCommand", reflect.TypeOf((*MockKOTSHandler)(nil).GetK0sNodeJoinCommand), w, r)
 }
 
 // GetKotsadmRegistry mocks base method.
