@@ -47,6 +47,7 @@ type Store interface {
 	EmbeddedStore
 	BrandingStore
 	ReportingStore
+	EmbeddedClusterStore
 
 	Init() error // this may need options
 	WaitForReady(ctx context.Context) error
@@ -252,4 +253,9 @@ type BrandingStore interface {
 type ReportingStore interface {
 	SavePreflightReport(licenseID string, preflightStatus *reportingtypes.PreflightStatus) error
 	SaveReportingInfo(licenseID string, reportingInfo *reportingtypes.ReportingInfo) error
+}
+
+type EmbeddedClusterStore interface {
+	SetEmbeddedClusterInstallCommandRoles(roles []string) (string, error)
+	GetEmbeddedClusterInstallCommandRoles(token string) ([]string, error)
 }

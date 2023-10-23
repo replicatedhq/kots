@@ -3,12 +3,12 @@ package embeddedcluster
 import (
 	"context"
 	"fmt"
-	"os"
 	"strings"
 	"sync"
 	"time"
 
 	"github.com/replicatedhq/kots/pkg/embeddedcluster/types"
+	"github.com/replicatedhq/kots/pkg/util"
 	corev1 "k8s.io/api/core/v1"
 	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -68,6 +68,12 @@ func runAddNodeCommandPod(ctx context.Context, client kubernetes.Interface, node
 		if !kuberneteserrors.IsNotFound(err) {
 			return "", fmt.Errorf("failed to delete pod: %w", err)
 		}
+	}
+
+	// get the kotsadm image, as we know that will always exist
+	kotsadmImage, err := util.ThisImage(ctx, client)
+	if err != nil {
+		return "", fmt.Errorf("failed to get kotsadm image: %w", err)
 	}
 
 	hostPathFile := corev1.HostPathFile
@@ -143,7 +149,7 @@ func runAddNodeCommandPod(ctx context.Context, client kubernetes.Interface, node
 			Containers: []corev1.Container{
 				{
 					Name:    "k0s-token-generator",
-					Image:   "ubuntu:latest", // TODO use the kotsadm image here as we'll know it exists
+					Image:   kotsadmImage,
 					Command: []string{"/mnt/k0s"},
 					Args: []string{
 						"token",
@@ -264,7 +270,7 @@ func GenerateK0sJoinCommand(ctx context.Context, client kubernetes.Interface, ro
 
 // gets the port of the 'admin-console' service
 func getAdminConsolePort(ctx context.Context, client kubernetes.Interface) (int32, error) {
-	svc, err := client.CoreV1().Services(os.Getenv("POD_NAMESPACE")).Get(ctx, "admin-console", metav1.GetOptions{})
+	svc, err := client.CoreV1().Services(util.PodNamespace).Get(ctx, "admin-console", metav1.GetOptions{})
 	if err != nil {
 		return -1, fmt.Errorf("failed to get admin-console service: %w", err)
 	}

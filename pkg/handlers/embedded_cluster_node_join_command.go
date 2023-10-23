@@ -33,7 +33,6 @@ func (h *Handler) GenerateEmbeddedClusterNodeJoinCommand(w http.ResponseWriter, 
 		return
 	}
 
-	store := kotsstore.StoreFromEnv()
 	token, err := store.GetStore().SetEmbeddedClusterInstallCommandRoles(generateEmbeddedClusterNodeJoinCommandRequest.Roles)
 	if err != nil {
 		logger.Error(fmt.Errorf("failed to set k0s install command roles: %w", err))
@@ -63,8 +62,7 @@ func (h *Handler) GenerateEmbeddedClusterNodeJoinCommand(w http.ResponseWriter, 
 func (h *Handler) GetEmbeddedClusterNodeJoinCommand(w http.ResponseWriter, r *http.Request) {
 	// read query string, ensure that the token is valid
 	token := r.URL.Query().Get("token")
-	store := kotsstore.StoreFromEnv()
-	roles, err := store.GetEmbeddedClusterInstallCommandRoles(token)
+	roles, err := store.GetStore().GetEmbeddedClusterInstallCommandRoles(token)
 	if err != nil {
 		logger.Error(fmt.Errorf("failed to get k0s install command roles: %w", err))
 		w.WriteHeader(http.StatusInternalServerError)

@@ -160,6 +160,7 @@ func nodeRolesFromLabels(labels map[string]string) []string {
 		roleLabel, ok := labels[fmt.Sprintf("%s-%d", types.EMBEDDED_CLUSTER_ROLE_LABEL, i)]
 		if !ok {
 			fmt.Printf("failed to find role label %d", i)
+			continue
 		}
 		toReturn = append(toReturn, roleLabel)
 	}

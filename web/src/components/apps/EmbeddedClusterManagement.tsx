@@ -17,34 +17,6 @@ import "@src/scss/components/apps/EmbeddedClusterManagement.scss";
 const testData = {
   nodes: undefined,
 };
-// const testData = {
-//   nodes: [
-//     {
-//       name: "laverya-embeddedcluster",
-//       isConnected: true,
-//       isReady: true,
-//       isPrimaryNode: true,
-//       canDelete: false,
-//       kubeletVersion: "v1.28.2+k0s",
-//       kubeProxyVersion: "v1.28.2+k0s",
-//       operatingSystem: "linux",
-//       kernelVersion: "5.10.0-26-cloud-amd64",
-//       cpu: { capacity: 4, used: 1.9364847660000002 },
-//       memory: { capacity: 15.633056640625, used: 3.088226318359375 },
-//       pods: { capacity: 110, used: 27 },
-//       labels: ["controller"],
-//       conditions: {
-//         memoryPressure: false,
-//         diskPressure: false,
-//         pidPressure: false,
-//         ready: true,
-//       },
-//       podList: [],
-//     },
-//   ],
-//   ha: true,
-//   isEmbeddedClusterEnabled: true,
-// };
 
 type State = {
   displayAddNode: boolean;
