@@ -1,9 +1,5 @@
 import { useEffect, useReducer } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { KotsPageTitle } from "@components/Head";
-// TODO: upgrade this dependency
-// @ts-ignore
-import Dropzone from "react-dropzone";
 import yaml from "js-yaml";
 import isEmpty from "lodash/isEmpty";
 import keyBy from "lodash/keyBy";

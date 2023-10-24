@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import classNames from "classnames";
 import MaterialReactTable, { MRT_ColumnDef } from "material-react-table";
-import React, { ChangeEvent, useMemo, useReducer, useState } from "react";
+import { ChangeEvent, useMemo, useReducer, useState } from "react";
 import Modal from "react-modal";
 import { Link, useParams } from "react-router-dom";
 
