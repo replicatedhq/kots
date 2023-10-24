@@ -1,38 +1,13 @@
 @import "../../variables.scss";
 
-.HelmVMClusterManagement--wrapper {
+.EmbeddedClusterManagement--wrapper {
   .BoxedCheckbox {
     height: 85px;
     width: 200px;
   }
-
-  .timestamp {
-    position: relative;
-    margin-top: -10px;
-    z-index: -1;
-  }
-
-  .node-label {
-    font-size: 12px;
-    font-weight: 500;
-    line-height: 12px;
-    color: #577981;
-    padding: 4px 6px;
-    border-radius: 20px;
-    background-color: #ffffff;
-    white-space: nowrap;
-    border: 1px solid #577981;
-    margin-right: 8px;
-    display: inline-block;
-    margin-top: 8px;
-
-    &:last-child {
-      margin-right: 0;
-    }
-  }
 }
 
-.HelmVMNodeRow--wrapper {
+.EmbeddedClusterNodeRow--wrapper {
   padding: 12px;
   border-top: 1px solid #dfdfdf;
 
@@ -55,7 +30,7 @@
   }
 }
 
-.HelmVMNodeRow--items p {
+.EmbeddedClusterNodeRow--items p {
   max-width: 180px;
 
   .icon {

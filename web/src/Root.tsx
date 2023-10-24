@@ -1,6 +1,6 @@
-import React, { useReducer, useEffect } from "react";
+import React, { useEffect, useReducer } from "react";
 import { createBrowserHistory } from "history";
-import { Route, Routes, Navigate, useNavigate } from "react-router-dom";
+import { Navigate, Route, Routes, useNavigate } from "react-router-dom";
 import { Helmet } from "react-helmet";
 import Modal from "react-modal";
 import find from "lodash/find";
@@ -10,10 +10,10 @@ import PreflightResultPage from "./components/PreflightResultPage";
 import AppConfig from "./features/AppConfig/components/AppConfig";
 import { AppDetailPage } from "./components/apps/AppDetailPage";
 import KurlClusterManagement from "./components/apps/KurlClusterManagement";
-import HelmVMClusterManagement from "./components/apps/HelmVMClusterManagement";
+import EmbeddedClusterManagement from "@components/apps/EmbeddedClusterManagement";
 import UnsupportedBrowser from "./components/static/UnsupportedBrowser";
 import NotFound from "./components/static/NotFound";
-import { Utilities, parseUpstreamUri } from "./utilities/utilities";
+import { parseUpstreamUri, Utilities } from "./utilities/utilities";
 import fetch from "./utilities/fetchWithTimeout";
 import { SecureAdminConsole } from "@features/Auth";
 import UploadLicenseFile from "./components/UploadLicenseFile";
@@ -58,6 +58,7 @@ import SnapshotDetails from "@components/snapshots/SnapshotDetails";
 import SnapshotRestore from "@components/snapshots/SnapshotRestore";
 import AppSnapshots from "@components/snapshots/AppSnapshots";
 import AppSnapshotRestore from "@components/snapshots/AppSnapshotRestore";
+import EmbeddedClusterViewNode from "@components/apps/EmbeddedClusterViewNode";
 
 // react-query client
 const queryClient = new QueryClient();
@@ -466,7 +467,9 @@ const Root = () => {
             refetchAppsList={getAppsList}
             fetchingMetadata={state.fetchingMetadata}
             isKurlEnabled={Boolean(state.adminConsoleMetadata?.isKurl)}
-            isHelmVMEnabled={Boolean(state.adminConsoleMetadata?.isHelmVM)}
+            isEmbeddedClusterEnabled={Boolean(
+              state.adminConsoleMetadata?.isEmbeddedCluster
+            )}
             isGitOpsSupported={isGitOpsSupported()}
             isIdentityServiceSupported={isIdentityServiceSupported()}
             appsList={state.appsList}
@@ -531,6 +534,9 @@ const Root = () => {
                     appSlugFromMetadata={state.appSlugFromMetadata || ""}
                     fetchingMetadata={state.fetchingMetadata}
                     onUploadSuccess={getAppsList}
+                    isEmbeddedCluster={Boolean(
+                      state.adminConsoleMetadata?.isEmbeddedCluster
+                    )}
                   />
                 }
               />
@@ -573,16 +579,39 @@ const Root = () => {
                 }
               />
               <Route path="/unsupported" element={<UnsupportedBrowser />} />
-              <Route
-                path="/cluster/manage"
-                element={
-                  state.adminConsoleMetadata?.isKurl ? (
-                    <KurlClusterManagement appName={state.selectedAppName} />
-                  ) : (
-                    <HelmVMClusterManagement appName={state.selectedAppName} />
-                  )
-                }
-              />
+              {state.adminConsoleMetadata?.isEmbeddedCluster && (
+                <>
+                  <Route
+                    path="/:slug/cluster/manage"
+                    element={
+                      <EmbeddedClusterManagement fromLicenseFlow={true} />
+                    }
+                  />
+                  <Route
+                    path="/:slug/cluster/:nodeName"
+                    element={<EmbeddedClusterViewNode />}
+                  />
+                </>
+              )}
+              {(state.adminConsoleMetadata?.isKurl ||
+                state.adminConsoleMetadata?.isEmbeddedCluster) && (
+                <Route
+                  path="/cluster/manage"
+                  element={
+                    state.adminConsoleMetadata?.isKurl ? (
+                      <KurlClusterManagement />
+                    ) : (
+                      <EmbeddedClusterManagement />
+                    )
+                  }
+                />
+              )}
+              {state.adminConsoleMetadata?.isEmbeddedCluster && (
+                <Route
+                  path="/cluster/:nodeName"
+                  element={<EmbeddedClusterViewNode />}
+                />
+              )}
               <Route
                 path="/gitops"
                 element={<GitOps appName={state.selectedAppName || ""} />}
@@ -672,6 +701,9 @@ const Root = () => {
                     snapshotInProgressApps={state.snapshotInProgressApps}
                     ping={ping}
                     isHelmManaged={state.isHelmManaged}
+                    isEmbeddedCluster={Boolean(
+                      state.adminConsoleMetadata?.isEmbeddedCluster
+                    )}
                   />
                 }
               />
@@ -687,6 +719,9 @@ const Root = () => {
                     snapshotInProgressApps={state.snapshotInProgressApps}
                     ping={ping}
                     isHelmManaged={state.isHelmManaged}
+                    isEmbeddedCluster={Boolean(
+                      state.adminConsoleMetadata?.isEmbeddedCluster
+                    )}
                   />
                 }
               >
@@ -761,12 +796,7 @@ const Root = () => {
                 <Route path=":slug/license" element={<AppLicense />} />
                 <Route
                   path=":slug/registry-settings"
-                  element={
-                    <AppRegistrySettings
-                    // app={selectedApp}
-                    // updateCallback={refetchData}
-                    />
-                  }
+                  element={<AppRegistrySettings />}
                 />
                 {/* WHERE IS SELECTEDAPP */}
                 {state.app?.isAppIdentityServiceSupported && (

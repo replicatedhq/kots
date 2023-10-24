@@ -275,18 +275,18 @@ func RegisterSessionAuthRoutes(r *mux.Router, kotsStore store.Store, handler KOT
 	r.Name("GetKurlNodes").Path("/api/v1/kurl/nodes").Methods("GET").
 		HandlerFunc(middleware.EnforceAccess(policy.ClusterRead, handler.GetKurlNodes))
 
-	// HelmVM
-	r.Name("HelmVM").Path("/api/v1/helmvm").HandlerFunc(NotImplemented)
-	r.Name("GenerateHelmVMNodeJoinCommandSecondary").Path("/api/v1/helmvm/generate-node-join-command-secondary").Methods("POST").
-		HandlerFunc(middleware.EnforceAccess(policy.ClusterWrite, handler.GenerateHelmVMNodeJoinCommandSecondary))
-	r.Name("GenerateHelmVMNodeJoinCommandPrimary").Path("/api/v1/helmvm/generate-node-join-command-primary").Methods("POST").
-		HandlerFunc(middleware.EnforceAccess(policy.ClusterWrite, handler.GenerateHelmVMNodeJoinCommandPrimary))
-	r.Name("DrainHelmVMNode").Path("/api/v1/helmvm/nodes/{nodeName}/drain").Methods("POST").
-		HandlerFunc(middleware.EnforceAccess(policy.ClusterWrite, handler.DrainHelmVMNode))
-	r.Name("DeleteHelmVMNode").Path("/api/v1/helmvm/nodes/{nodeName}").Methods("DELETE").
-		HandlerFunc(middleware.EnforceAccess(policy.ClusterWrite, handler.DeleteHelmVMNode))
-	r.Name("GetHelmVMNodes").Path("/api/v1/helmvm/nodes").Methods("GET").
-		HandlerFunc(middleware.EnforceAccess(policy.ClusterRead, handler.GetHelmVMNodes))
+	// Embedded Cluster
+	r.Name("EmbeddedCluster").Path("/api/v1/embedded-cluster").HandlerFunc(NotImplemented)
+	r.Name("GenerateEmbeddedClusterNodeJoinCommand").Path("/api/v1/embedded-cluster/generate-node-join-command").Methods("POST").
+		HandlerFunc(middleware.EnforceAccess(policy.ClusterWrite, handler.GenerateEmbeddedClusterNodeJoinCommand))
+	r.Name("DrainEmbeddedClusterNode").Path("/api/v1/embedded-cluster/nodes/{nodeName}/drain").Methods("POST").
+		HandlerFunc(middleware.EnforceAccess(policy.ClusterWrite, handler.DrainEmbeddedClusterNode))
+	r.Name("DeleteEmbeddedClusterNode").Path("/api/v1/embedded-cluster/nodes/{nodeName}").Methods("DELETE").
+		HandlerFunc(middleware.EnforceAccess(policy.ClusterWrite, handler.DeleteEmbeddedClusterNode))
+	r.Name("GetEmbeddedClusterNodes").Path("/api/v1/embedded-cluster/nodes").Methods("GET").
+		HandlerFunc(middleware.EnforceAccess(policy.ClusterRead, handler.GetEmbeddedClusterNodes))
+	r.Name("GetEmbeddedClusterNode").Path("/api/v1/embedded-cluster/node/{nodeName}").Methods("GET").
+		HandlerFunc(middleware.EnforceAccess(policy.ClusterRead, handler.GetEmbeddedClusterNode))
 
 	// Prometheus
 	r.Name("SetPrometheusAddress").Path("/api/v1/prometheus").Methods("POST").
@@ -355,6 +355,9 @@ func RegisterUnauthenticatedRoutes(handler *Handler, kotsStore store.Store, debu
 	// These handlers should be called by the application only.
 	loggingRouter.Path("/license/v1/license").Methods("GET").HandlerFunc(handler.GetPlatformLicenseCompatibility)
 	loggingRouter.Path("/api/v1/app/custom-metrics").Methods("POST").HandlerFunc(handler.GetSendCustomAppMetricsHandler(kotsStore))
+
+	// This handler requires a valid token in the query
+	loggingRouter.Path("/api/v1/embedded-cluster/join").Methods("GET").HandlerFunc(handler.GetEmbeddedClusterNodeJoinCommand)
 }
 
 func StreamJSON(c *websocket.Conn, payload interface{}) {

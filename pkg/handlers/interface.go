@@ -138,12 +138,12 @@ type KOTSHandler interface {
 	DeleteKurlNode(w http.ResponseWriter, r *http.Request)
 	GetKurlNodes(w http.ResponseWriter, r *http.Request)
 
-	// HelmVM
-	GenerateHelmVMNodeJoinCommandSecondary(w http.ResponseWriter, r *http.Request)
-	GenerateHelmVMNodeJoinCommandPrimary(w http.ResponseWriter, r *http.Request)
-	DrainHelmVMNode(w http.ResponseWriter, r *http.Request)
-	DeleteHelmVMNode(w http.ResponseWriter, r *http.Request)
-	GetHelmVMNodes(w http.ResponseWriter, r *http.Request)
+	// EmbeddedCLuster
+	GenerateEmbeddedClusterNodeJoinCommand(w http.ResponseWriter, r *http.Request)
+	DrainEmbeddedClusterNode(w http.ResponseWriter, r *http.Request)
+	DeleteEmbeddedClusterNode(w http.ResponseWriter, r *http.Request)
+	GetEmbeddedClusterNodes(w http.ResponseWriter, r *http.Request)
+	GetEmbeddedClusterNode(w http.ResponseWriter, r *http.Request)
 
 	// Prometheus
 	SetPrometheusAddress(w http.ResponseWriter, r *http.Request)

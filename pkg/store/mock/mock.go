@@ -758,6 +758,21 @@ func (mr *MockStoreMockRecorder) GetEmbeddedClusterAuthToken() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetEmbeddedClusterAuthToken", reflect.TypeOf((*MockStore)(nil).GetEmbeddedClusterAuthToken))
 }
 
+// GetEmbeddedClusterInstallCommandRoles mocks base method.
+func (m *MockStore) GetEmbeddedClusterInstallCommandRoles(token string) ([]string, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetEmbeddedClusterInstallCommandRoles", token)
+	ret0, _ := ret[0].([]string)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetEmbeddedClusterInstallCommandRoles indicates an expected call of GetEmbeddedClusterInstallCommandRoles.
+func (mr *MockStoreMockRecorder) GetEmbeddedClusterInstallCommandRoles(token interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetEmbeddedClusterInstallCommandRoles", reflect.TypeOf((*MockStore)(nil).GetEmbeddedClusterInstallCommandRoles), token)
+}
+
 // GetIgnoreRBACErrors mocks base method.
 func (m *MockStore) GetIgnoreRBACErrors(appID string, sequence int64) (bool, error) {
 	m.ctrl.T.Helper()
@@ -1642,6 +1657,21 @@ func (m *MockStore) SetEmbeddedClusterAuthToken(token string) error {
 func (mr *MockStoreMockRecorder) SetEmbeddedClusterAuthToken(token interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetEmbeddedClusterAuthToken", reflect.TypeOf((*MockStore)(nil).SetEmbeddedClusterAuthToken), token)
+}
+
+// SetEmbeddedClusterInstallCommandRoles mocks base method.
+func (m *MockStore) SetEmbeddedClusterInstallCommandRoles(roles []string) (string, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SetEmbeddedClusterInstallCommandRoles", roles)
+	ret0, _ := ret[0].(string)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// SetEmbeddedClusterInstallCommandRoles indicates an expected call of SetEmbeddedClusterInstallCommandRoles.
+func (mr *MockStoreMockRecorder) SetEmbeddedClusterInstallCommandRoles(roles interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetEmbeddedClusterInstallCommandRoles", reflect.TypeOf((*MockStore)(nil).SetEmbeddedClusterInstallCommandRoles), roles)
 }
 
 // SetIgnorePreflightPermissionErrors mocks base method.
@@ -4431,4 +4461,57 @@ func (m *MockReportingStore) SaveReportingInfo(licenseID string, reportingInfo *
 func (mr *MockReportingStoreMockRecorder) SaveReportingInfo(licenseID, reportingInfo interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SaveReportingInfo", reflect.TypeOf((*MockReportingStore)(nil).SaveReportingInfo), licenseID, reportingInfo)
+}
+
+// MockEmbeddedClusterStore is a mock of EmbeddedClusterStore interface.
+type MockEmbeddedClusterStore struct {
+	ctrl     *gomock.Controller
+	recorder *MockEmbeddedClusterStoreMockRecorder
+}
+
+// MockEmbeddedClusterStoreMockRecorder is the mock recorder for MockEmbeddedClusterStore.
+type MockEmbeddedClusterStoreMockRecorder struct {
+	mock *MockEmbeddedClusterStore
+}
+
+// NewMockEmbeddedClusterStore creates a new mock instance.
+func NewMockEmbeddedClusterStore(ctrl *gomock.Controller) *MockEmbeddedClusterStore {
+	mock := &MockEmbeddedClusterStore{ctrl: ctrl}
+	mock.recorder = &MockEmbeddedClusterStoreMockRecorder{mock}
+	return mock
+}
+
+// EXPECT returns an object that allows the caller to indicate expected use.
+func (m *MockEmbeddedClusterStore) EXPECT() *MockEmbeddedClusterStoreMockRecorder {
+	return m.recorder
+}
+
+// GetEmbeddedClusterInstallCommandRoles mocks base method.
+func (m *MockEmbeddedClusterStore) GetEmbeddedClusterInstallCommandRoles(token string) ([]string, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetEmbeddedClusterInstallCommandRoles", token)
+	ret0, _ := ret[0].([]string)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetEmbeddedClusterInstallCommandRoles indicates an expected call of GetEmbeddedClusterInstallCommandRoles.
+func (mr *MockEmbeddedClusterStoreMockRecorder) GetEmbeddedClusterInstallCommandRoles(token interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetEmbeddedClusterInstallCommandRoles", reflect.TypeOf((*MockEmbeddedClusterStore)(nil).GetEmbeddedClusterInstallCommandRoles), token)
+}
+
+// SetEmbeddedClusterInstallCommandRoles mocks base method.
+func (m *MockEmbeddedClusterStore) SetEmbeddedClusterInstallCommandRoles(roles []string) (string, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SetEmbeddedClusterInstallCommandRoles", roles)
+	ret0, _ := ret[0].(string)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// SetEmbeddedClusterInstallCommandRoles indicates an expected call of SetEmbeddedClusterInstallCommandRoles.
+func (mr *MockEmbeddedClusterStoreMockRecorder) SetEmbeddedClusterInstallCommandRoles(roles interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetEmbeddedClusterInstallCommandRoles", reflect.TypeOf((*MockEmbeddedClusterStore)(nil).SetEmbeddedClusterInstallCommandRoles), roles)
 }
