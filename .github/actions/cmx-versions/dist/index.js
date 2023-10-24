@@ -7661,7 +7661,7 @@ async function getClusterVersions() {
     clusterVersions.forEach((distribution) => {
         const distroName = distribution.short_name;
 
-        if (distroName === 'embedded_cluster' || distroName === 'kurl') {
+        if (distroName === 'helmvm' || distroName === 'kurl') {
             // excluding the embedded distributions
             return;
         }
