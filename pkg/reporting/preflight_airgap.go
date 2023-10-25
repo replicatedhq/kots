@@ -19,22 +19,26 @@ func (r *AirgapReporter) SubmitPreflightData(license *kotsv1beta1.License, appID
 		return errors.Wrap(err, "failed to get airgapped app")
 	}
 
-	event := &PreflightReportEvent{
-		ReportedAt:      time.Now().UTC().UnixMilli(),
-		LicenseID:       license.Spec.LicenseID,
-		InstanceID:      appID,
-		ClusterID:       clusterID,
-		Sequence:        sequence,
-		SkipPreflights:  skipPreflights,
-		InstallStatus:   string(installStatus),
-		IsCLI:           isCLI,
-		PreflightStatus: preflightStatus,
-		AppStatus:       appStatus,
-		KotsVersion:     buildversion.Version(),
+	report := &PreflightReport{
+		Events: []PreflightReportEvent{
+			{
+				ReportedAt:      time.Now().UTC().UnixMilli(),
+				LicenseID:       license.Spec.LicenseID,
+				InstanceID:      appID,
+				ClusterID:       clusterID,
+				Sequence:        sequence,
+				SkipPreflights:  skipPreflights,
+				InstallStatus:   string(installStatus),
+				IsCLI:           isCLI,
+				PreflightStatus: preflightStatus,
+				AppStatus:       appStatus,
+				KotsVersion:     buildversion.Version(),
+			},
+		},
 	}
 
-	if err := CreateReportEvent(r.clientset, util.PodNamespace, app.Slug, event); err != nil {
-		return errors.Wrap(err, "failed to create preflight report event")
+	if err := AppendReport(r.clientset, util.PodNamespace, app.Slug, report); err != nil {
+		return errors.Wrap(err, "failed to append preflight report")
 	}
 
 	return nil

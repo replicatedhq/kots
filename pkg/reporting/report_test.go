@@ -17,9 +17,9 @@ func Test_EncodeDecodeAirgapReport(t *testing.T) {
 
 	// instance report
 	testDownstreamSequence := int64(123)
-	testInstanceReport := &Report{
-		Events: []ReportEvent{
-			&InstanceReportEvent{
+	testInstanceReport := &InstanceReport{
+		Events: []InstanceReportEvent{
+			{
 				ReportedAt:                1234567890,
 				LicenseID:                 "test-license-id",
 				InstanceID:                "test-instance-id",
@@ -52,16 +52,15 @@ func Test_EncodeDecodeAirgapReport(t *testing.T) {
 	encodedInstanceReport, err := EncodeReport(testInstanceReport)
 	req.NoError(err)
 
-	decodedInstanceReport := &Report{}
-	err = DecodeReport(encodedInstanceReport, decodedInstanceReport, "instance")
+	decodedInstanceReport, err := DecodeReport(encodedInstanceReport, testInstanceReport.GetType())
 	req.NoError(err)
 
 	req.Equal(testInstanceReport, decodedInstanceReport)
 
 	// preflight report
-	testPrelightReport := &Report{
-		Events: []ReportEvent{
-			&PreflightReportEvent{
+	testPrelightReport := &PreflightReport{
+		Events: []PreflightReportEvent{
+			{
 				ReportedAt:      1234567890,
 				LicenseID:       "test-license-id",
 				InstanceID:      "test-instance-id",
@@ -80,8 +79,7 @@ func Test_EncodeDecodeAirgapReport(t *testing.T) {
 	encodedPreflightReport, err := EncodeReport(testPrelightReport)
 	req.NoError(err)
 
-	decodedPreflightReport := &Report{}
-	err = DecodeReport(encodedPreflightReport, decodedPreflightReport, "preflight")
+	decodedPreflightReport, err := DecodeReport(encodedPreflightReport, testPrelightReport.GetType())
 	req.NoError(err)
 
 	req.Equal(testPrelightReport, decodedPreflightReport)
@@ -90,55 +88,64 @@ func Test_EncodeDecodeAirgapReport(t *testing.T) {
 func Test_CreateReportEvent(t *testing.T) {
 	// instance report
 	testDownstreamSequence := int64(123)
-	testInstanceReportEvent := &InstanceReportEvent{
-		ReportedAt:                1234567890,
-		LicenseID:                 "test-license-id",
-		InstanceID:                "test-instance-id",
-		ClusterID:                 "test-cluster-id",
-		AppStatus:                 "ready",
-		IsKurl:                    true,
-		KurlNodeCountTotal:        3,
-		KurlNodeCountReady:        3,
-		K8sVersion:                "1.28.0",
-		K8sDistribution:           "kurl",
-		KotsVersion:               "1.100.0",
-		KotsInstallID:             "test-kots-install-id",
-		KurlInstallID:             "test-kurl-install-id",
-		IsGitOpsEnabled:           true,
-		GitOpsProvider:            "test-gitops-provider",
-		DownstreamChannelID:       "test-downstream-channel-id",
-		DownstreamChannelSequence: 123,
-		DownstreamChannelName:     "test-downstream-channel-name",
-		DownstreamSequence:        &testDownstreamSequence,
-		DownstreamSource:          "test-downstream-source",
-		InstallStatus:             "installed",
-		PreflightState:            "passed",
-		SkipPreflights:            false,
-		ReplHelmInstalls:          1,
-		NativeHelmInstalls:        2,
+	testInstanceReport := &InstanceReport{
+		Events: []InstanceReportEvent{
+			{
+				ReportedAt:                1234567890,
+				LicenseID:                 "test-license-id",
+				InstanceID:                "test-instance-id",
+				ClusterID:                 "test-cluster-id",
+				AppStatus:                 "ready",
+				IsKurl:                    true,
+				KurlNodeCountTotal:        3,
+				KurlNodeCountReady:        3,
+				K8sVersion:                "1.28.0",
+				K8sDistribution:           "kurl",
+				KotsVersion:               "1.100.0",
+				KotsInstallID:             "test-kots-install-id",
+				KurlInstallID:             "test-kurl-install-id",
+				IsGitOpsEnabled:           true,
+				GitOpsProvider:            "test-gitops-provider",
+				DownstreamChannelID:       "test-downstream-channel-id",
+				DownstreamChannelSequence: 123,
+				DownstreamChannelName:     "test-downstream-channel-name",
+				DownstreamSequence:        &testDownstreamSequence,
+				DownstreamSource:          "test-downstream-source",
+				InstallStatus:             "installed",
+				PreflightState:            "passed",
+				SkipPreflights:            false,
+				ReplHelmInstalls:          1,
+				NativeHelmInstalls:        2,
+			},
+		},
 	}
 
-	testPreflightReportEvent := &PreflightReportEvent{
-		ReportedAt:      1234567890,
-		LicenseID:       "test-license-id",
-		InstanceID:      "test-instance-id",
-		ClusterID:       "test-cluster-id",
-		Sequence:        123,
-		SkipPreflights:  false,
-		InstallStatus:   "installed",
-		IsCLI:           true,
-		PreflightStatus: "pass",
-		AppStatus:       "ready",
-		KotsVersion:     "1.100.0",
+	// preflight report
+	testPreflightReport := &PreflightReport{
+		Events: []PreflightReportEvent{
+			{
+				ReportedAt:      1234567890,
+				LicenseID:       "test-license-id",
+				InstanceID:      "test-instance-id",
+				ClusterID:       "test-cluster-id",
+				Sequence:        123,
+				SkipPreflights:  false,
+				InstallStatus:   "installed",
+				IsCLI:           true,
+				PreflightStatus: "pass",
+				AppStatus:       "ready",
+				KotsVersion:     "1.100.0",
+			},
+		},
 	}
 
-	tests := append(createTestsForEvent(t, testInstanceReportEvent), createTestsForEvent(t, testPreflightReportEvent)...)
+	tests := append(createTestsForEvent(t, testInstanceReport), createTestsForEvent(t, testPreflightReport)...)
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			req := require.New(t)
 
-			err := CreateReportEvent(tt.args.clientset, tt.args.namespace, tt.args.appSlug, tt.args.event)
+			err := AppendReport(tt.args.clientset, tt.args.namespace, tt.args.appSlug, tt.args.report)
 			if tt.wantErr {
 				req.Error(err)
 				return
@@ -146,19 +153,13 @@ func Test_CreateReportEvent(t *testing.T) {
 			req.NoError(err)
 
 			// validate secret exists and has the expected data
-			secret, err := tt.args.clientset.CoreV1().Secrets(tt.args.namespace).Get(context.TODO(), tt.args.event.GetReportSecretName(tt.args.appSlug), metav1.GetOptions{})
+			secret, err := tt.args.clientset.CoreV1().Secrets(tt.args.namespace).Get(context.TODO(), tt.args.report.GetSecretName(tt.args.appSlug), metav1.GetOptions{})
 			req.NoError(err)
-			req.NotNil(secret.Data[tt.args.event.GetReportSecretKey()])
+			req.NotNil(secret.Data[tt.args.report.GetSecretKey()])
 
-			report := &Report{}
-			err = DecodeReport(secret.Data[tt.args.event.GetReportSecretKey()], report, tt.args.event.GetReportType())
+			report, err := DecodeReport(secret.Data[tt.args.report.GetSecretKey()], tt.args.report.GetType())
 			req.NoError(err)
-
-			req.Len(report.Events, tt.wantNumEvents)
-
-			for _, event := range report.Events {
-				req.Equal(tt.args.event, event)
-			}
+			req.Equal(tt.args.report, report)
 		})
 	}
 }
@@ -174,22 +175,19 @@ type CreateReportEventTestArgs struct {
 	clientset kubernetes.Interface
 	namespace string
 	appSlug   string
-	event     ReportEvent
+	report    Report
 }
 
-func createTestsForEvent(t *testing.T, testEvent ReportEvent) []CreateReportEventTest {
-	testReportWithOneEvent := &Report{
-		Events: []ReportEvent{testEvent},
-	}
-	testReportWithOneEventData, err := EncodeReport(testReportWithOneEvent)
+func createTestsForEvent(t *testing.T, testReport Report) []CreateReportEventTest {
+	testReportWithOneEventData, err := EncodeReport(testReport)
 	require.NoError(t, err)
 
-	// testReportWithMaxEvents := &Report{}
-	// for i := 0; i < testEvent.GetReportEventLimit(); i++ {
-	// 	testReportWithMaxEvents.Events = append(testReportWithMaxEvents.Events, testEvent)
-	// }
-	// testReportWithMaxEventsData, err := EncodeReport(testReportWithMaxEvents)
-	// require.NoError(t, err)
+	for i := 0; i < testReport.GetEventLimit(); i++ {
+		err := testReport.AppendEvents(testReport)
+		require.NoError(t, err)
+	}
+	testReportWithMaxEventsData, err := EncodeReport(testReport)
+	require.NoError(t, err)
 
 	type args struct {
 		clientset kubernetes.Interface
@@ -204,7 +202,7 @@ func createTestsForEvent(t *testing.T, testEvent ReportEvent) []CreateReportEven
 				clientset: fake.NewSimpleClientset(),
 				namespace: "default",
 				appSlug:   "test-app-slug",
-				event:     testEvent,
+				report:    testReport,
 			},
 			wantNumEvents: 1,
 		},
@@ -214,18 +212,18 @@ func createTestsForEvent(t *testing.T, testEvent ReportEvent) []CreateReportEven
 				clientset: fake.NewSimpleClientset(
 					&corev1.Secret{
 						ObjectMeta: metav1.ObjectMeta{
-							Name:      testEvent.GetReportSecretName("test-app-slug"),
+							Name:      testReport.GetSecretName("test-app-slug"),
 							Namespace: "default",
 							Labels:    kotsadmtypes.GetKotsadmLabels(),
 						},
 						Data: map[string][]byte{
-							testEvent.GetReportSecretKey(): testReportWithOneEventData,
+							testReport.GetSecretKey(): testReportWithOneEventData,
 						},
 					},
 				),
 				namespace: "default",
 				appSlug:   "test-app-slug",
-				event:     testEvent,
+				report:    testReport,
 			},
 			wantNumEvents: 2,
 		},
@@ -235,7 +233,7 @@ func createTestsForEvent(t *testing.T, testEvent ReportEvent) []CreateReportEven
 				clientset: fake.NewSimpleClientset(
 					&corev1.Secret{
 						ObjectMeta: metav1.ObjectMeta{
-							Name:      testEvent.GetReportSecretName("test-app-slug"),
+							Name:      testReport.GetSecretName("test-app-slug"),
 							Namespace: "default",
 							Labels:    kotsadmtypes.GetKotsadmLabels(),
 						},
@@ -243,31 +241,31 @@ func createTestsForEvent(t *testing.T, testEvent ReportEvent) []CreateReportEven
 				),
 				namespace: "default",
 				appSlug:   "test-app-slug",
-				event:     testEvent,
+				report:    testReport,
 			},
 			wantNumEvents: 1,
 		},
-		// {
-		// 	name: "secret exists with max number of events",
-		// 	args: CreateReportEventTestArgs{
-		// 		clientset: fake.NewSimpleClientset(
-		// 			&corev1.Secret{
-		// 				ObjectMeta: metav1.ObjectMeta{
-		// 					Name:      testEvent.GetReportSecretName("test-app-slug"),
-		// 					Namespace: "default",
-		// 					Labels:    kotsadmtypes.GetKotsadmLabels(),
-		// 				},
-		// 				Data: map[string][]byte{
-		// 					testEvent.GetReportSecretKey(): testReportWithMaxEventsData,
-		// 				},
-		// 			},
-		// 		),
-		// 		namespace: "default",
-		// 		appSlug:   "test-app-slug",
-		// 		event:     testEvent,
-		// 	},
-		// 	wantNumEvents: testEvent.GetReportEventLimit(),
-		// },
+		{
+			name: "secret exists with max number of events",
+			args: CreateReportEventTestArgs{
+				clientset: fake.NewSimpleClientset(
+					&corev1.Secret{
+						ObjectMeta: metav1.ObjectMeta{
+							Name:      testReport.GetSecretName("test-app-slug"),
+							Namespace: "default",
+							Labels:    kotsadmtypes.GetKotsadmLabels(),
+						},
+						Data: map[string][]byte{
+							testReport.GetSecretKey(): testReportWithMaxEventsData,
+						},
+					},
+				),
+				namespace: "default",
+				appSlug:   "test-app-slug",
+				report:    testReport,
+			},
+			wantNumEvents: ReportEventLimit,
+		},
 	}
 
 	return tests
