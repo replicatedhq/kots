@@ -54,7 +54,7 @@ func GetInstanceReport(licenseID string, reportingInfo *types.ReportingInfo) *In
 				KurlNodeCountReady:        reportingInfo.KurlNodeCountReady,
 				K8sVersion:                reportingInfo.K8sVersion,
 				K8sDistribution:           reportingInfo.K8sDistribution,
-				KotsVersion:               reportingInfo.KOTSVersion,
+				UserAgent:                 reportingInfo.UserAgent,
 				KotsInstallID:             reportingInfo.KOTSInstallID,
 				KurlInstallID:             reportingInfo.KURLInstallID,
 				IsGitOpsEnabled:           reportingInfo.IsGitOpsEnabled,

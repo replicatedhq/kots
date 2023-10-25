@@ -24,7 +24,7 @@ type PreflightReportEvent struct {
 	IsCLI           bool   `json:"is_cli"`
 	PreflightStatus string `json:"preflight_status"`
 	AppStatus       string `json:"app_status"`
-	KotsVersion     string `json:"kots_version"`
+	UserAgent       string `json:"user_agent"`
 }
 
 func (r *PreflightReport) GetType() ReportType {

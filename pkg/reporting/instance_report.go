@@ -24,7 +24,7 @@ type InstanceReportEvent struct {
 	KurlNodeCountReady        int    `json:"kurl_node_count_ready"`
 	K8sVersion                string `json:"k8s_version"`
 	K8sDistribution           string `json:"k8s_distribution,omitempty"`
-	KotsVersion               string `json:"kots_version"`
+	UserAgent                 string `json:"user_agent"`
 	KotsInstallID             string `json:"kots_install_id,omitempty"`
 	KurlInstallID             string `json:"kurl_install_id,omitempty"`
 	IsGitOpsEnabled           bool   `json:"is_gitops_enabled"`

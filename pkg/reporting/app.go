@@ -182,7 +182,7 @@ func GetReportingInfo(appID string) *types.ReportingInfo {
 		InstanceID:    appID,
 		KOTSInstallID: os.Getenv("KOTS_INSTALL_ID"),
 		KURLInstallID: os.Getenv("KURL_INSTALL_ID"),
-		KOTSVersion:   buildversion.Version(),
+		UserAgent:     buildversion.GetUserAgent(),
 	}
 
 	clientset, err := k8sutil.GetClientset()

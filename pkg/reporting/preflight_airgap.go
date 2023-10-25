@@ -32,7 +32,7 @@ func (r *AirgapReporter) SubmitPreflightData(license *kotsv1beta1.License, appID
 				IsCLI:           isCLI,
 				PreflightStatus: preflightStatus,
 				AppStatus:       appStatus,
-				KotsVersion:     buildversion.Version(),
+				UserAgent:       buildversion.GetUserAgent(),
 			},
 		},
 	}

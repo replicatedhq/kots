@@ -11,7 +11,7 @@ type ReportingInfo struct {
 	KurlNodeCountReady int            `json:"kurl_node_count_ready"`
 	K8sVersion         string         `json:"k8s_version"`
 	K8sDistribution    string         `json:"k8s_distribution"`
-	KOTSVersion        string         `json:"kots_version"`
+	UserAgent          string         `json:"user_agent"`
 	KOTSInstallID      string         `json:"kots_install_id"`
 	KURLInstallID      string         `json:"kurl_install_id"`
 	IsGitOpsEnabled    bool           `json:"is_gitops_enabled"`
