@@ -189,12 +189,6 @@ func createTestsForEvent(t *testing.T, testReport Report) []CreateReportEventTes
 	testReportWithMaxEventsData, err := EncodeReport(testReport)
 	require.NoError(t, err)
 
-	type args struct {
-		clientset kubernetes.Interface
-		namespace string
-		appSlug   string
-		event     ReportEvent
-	}
 	tests := []CreateReportEventTest{
 		{
 			name: "secret does not exist",

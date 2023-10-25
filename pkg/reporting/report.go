@@ -37,8 +37,6 @@ type Report interface {
 	GetMtx() *sync.Mutex
 }
 
-type ReportEvent interface{}
-
 var _ Report = &InstanceReport{}
 var _ Report = &PreflightReport{}
 
