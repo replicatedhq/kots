@@ -1,13 +1,13 @@
-import React from "react";
+import { Component, createRef } from "react";
 import ConfigItemTitle from "./ConfigItemTitle";
 import Markdown from "react-remarkable";
 import { setOrder } from "./ConfigUtil";
 import { ConfigWrapper } from "./ConfigComponents";
 
-export default class ConfigTextarea extends React.Component {
+export default class ConfigTextarea extends Component {
   constructor(props) {
     super(props);
-    this.textareaRef = React.createRef();
+    this.textareaRef = createRef();
     this.state = {
       textareaVal: "",
       focused: false,

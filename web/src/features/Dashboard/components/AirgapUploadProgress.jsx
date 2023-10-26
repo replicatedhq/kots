@@ -1,10 +1,8 @@
-import React from "react";
-import { withRouter } from "@src/utilities/react-router-utilities";
+import { Component } from "react";
 import Loader from "../../../components/shared/Loader";
 import {
   formatByteSize,
   calculateTimeDifference,
-  Utilities,
 } from "@src/utilities/utilities";
 import { Repeater } from "@src/utilities/repeater";
 import fetch from "../../../utilities/fetchWithTimeout";
@@ -13,7 +11,7 @@ import get from "lodash/get";
 import Icon from "../../../components/Icon";
 let processingImages = null;
 
-class AirgapUploadProgress extends React.Component {
+class AirgapUploadProgress extends Component {
   constructor(props) {
     super(props);
 

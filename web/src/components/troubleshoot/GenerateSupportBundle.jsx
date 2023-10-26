@@ -1,22 +1,19 @@
-import * as React from "react";
+import { Component } from "react";
 import { KotsPageTitle } from "@components/Head";
-import { Link } from "react-router-dom";
 import { withRouter } from "@src/utilities/react-router-utilities";
 import Modal from "react-modal";
 
 import Toggle from "../shared/Toggle";
-import SupportBundleCollectProgress from "../troubleshoot/SupportBundleCollectProgress";
 import CodeSnippet from "@src/components/shared/CodeSnippet";
 import UploadSupportBundleModal from "../troubleshoot/UploadSupportBundleModal";
 import ConfigureRedactorsModal from "./ConfigureRedactorsModal";
 import ErrorModal from "../modals/ErrorModal";
-import { Utilities } from "../../utilities/utilities";
 import { Repeater } from "../../utilities/repeater";
 
 import "../../scss/components/troubleshoot/GenerateSupportBundle.scss";
 import Icon from "../Icon";
 
-class GenerateSupportBundle extends React.Component {
+class GenerateSupportBundle extends Component {
   constructor(props) {
     super(props);
 

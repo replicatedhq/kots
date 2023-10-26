@@ -1,4 +1,4 @@
-import React, { useEffect, useReducer } from "react";
+import { useEffect, useReducer } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import yaml from "js-yaml";
 import isEmpty from "lodash/isEmpty";

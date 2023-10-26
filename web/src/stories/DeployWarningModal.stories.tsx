@@ -1,4 +1,3 @@
-import React from "react";
 import { ComponentStory, ComponentMeta } from "@storybook/react";
 import { MemoryRouter } from "react-router-dom";
 import DeployWarningModalModal from "@src/components/shared/modals/DeployWarningModal";

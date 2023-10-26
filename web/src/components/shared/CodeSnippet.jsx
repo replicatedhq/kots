@@ -1,4 +1,4 @@
-import React, { Component } from "react";
+import { Component, isValidElement } from "react";
 import classNames from "classnames";
 import PropTypes from "prop-types";
 import Prism from "@maji/react-prism";
@@ -108,7 +108,7 @@ class CodeSnippet extends Component {
         className={classNames("CodeSnippet", `variant-${variant}`, className)}
       >
         <div className="CodeSnippet-content">
-          {preText && React.isValidElement(preText) ? (
+          {preText && isValidElement(preText) ? (
             preText
           ) : (
             <div className="u-fontSize--small u-fontWeight--bold u-marginBottom--5">

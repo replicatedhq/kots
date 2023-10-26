@@ -1,4 +1,4 @@
-import React from "react";
+import { Component } from "react";
 import ConfigItemTitle from "./ConfigItemTitle";
 import Markdown from "react-remarkable";
 import { setOrder } from "./ConfigUtil";
@@ -6,7 +6,7 @@ import { ConfigWrapper } from "./ConfigComponents";
 import Icon from "../Icon";
 import InputField from "@components/shared/forms/InputField";
 
-export default class ConfigInput extends React.Component {
+export default class ConfigInput extends Component {
   constructor(props) {
     super(props);
     this.state = {

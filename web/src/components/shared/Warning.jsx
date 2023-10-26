@@ -1,5 +1,3 @@
-import React from "react";
-
 import "../../scss/components/shared/Warning.scss";
 
 const Warning = ({ children }) => {

@@ -1,4 +1,4 @@
-import React from "react";
+import { useEffect, useState } from "react";
 import Modal from "react-modal";
 import Warning from "../../shared/Warning";
 import ChangePasswordForm from "./ChangePasswordForm";
@@ -9,9 +9,8 @@ import Icon from "@src/components/Icon";
 
 const ChangePasswordModal = ({ closeModal, isOpen }) => {
   const [passwordChangeSuccessful, setPasswordChangeSuccessful] =
-    React.useState(false);
-  const [identityServiceEnabled, setIdentityServiceEnabled] =
-    React.useState(false);
+    useState(false);
+  const [identityServiceEnabled, setIdentityServiceEnabled] = useState(false);
 
   const handleClose = () => {
     closeModal();
@@ -21,7 +20,7 @@ const ChangePasswordModal = ({ closeModal, isOpen }) => {
   const handleSetPasswordChangeSuccessful = (val) =>
     setPasswordChangeSuccessful(val);
 
-  React.useEffect(() => {
+  useEffect(() => {
     const getLoginInfo = async () => {
       try {
         const response = await fetch(`${process.env.API_ENDPOINT}/login/info`, {

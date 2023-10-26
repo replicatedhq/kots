@@ -1,4 +1,3 @@
-import React from "react";
 import Loader from "../shared/Loader";
 import "@src/scss/components/AirgapUploadProgress.scss";
 

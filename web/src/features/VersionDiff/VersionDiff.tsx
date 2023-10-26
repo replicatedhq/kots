@@ -1,4 +1,4 @@
-import React from "react";
+import { Component } from "react";
 import { withRouter } from "@src/utilities/react-router-utilities";
 
 import Loader from "../../components/shared/Loader";
@@ -34,7 +34,7 @@ type ApplicationTree = {
     [key: string]: string;
   };
 };
-class VersionDiff extends React.Component<Props, State> {
+class VersionDiff extends Component<Props, State> {
   constructor(props: Props) {
     super(props);
     this.state = {

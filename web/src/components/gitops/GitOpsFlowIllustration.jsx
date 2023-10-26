@@ -1,7 +1,7 @@
-import * as React from "react";
+import { Component } from "react";
 import "../../scss/components/gitops/GitOpsFlowIllustration.scss";
 
-export default class GitOpsFlowIllustration extends React.Component {
+export default class GitOpsFlowIllustration extends Component {
   render() {
     const useTag1 = `<use xlink:href="#path-1"></use>`;
     const useTag2 = `<use id="Rectangle-30" stroke="#D7D7D7" mask="url(#mask-2)" stroke-width="4" fill="#FDFDFD" stroke-dasharray="5" xlink:href="#path-1"></use>`;

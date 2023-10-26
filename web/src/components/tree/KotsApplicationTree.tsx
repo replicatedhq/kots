@@ -1,4 +1,4 @@
-import * as React from "react";
+import { Component } from "react";
 import { withRouter } from "@src/utilities/react-router-utilities";
 import { Utilities } from "../../utilities/utilities";
 import { KotsPageTitle } from "@components/Head";
@@ -36,7 +36,7 @@ type State = {
   displayInstructionsModal: boolean;
   applicationTree: object[];
 };
-class KotsApplicationTree extends React.Component<Props, State> {
+class KotsApplicationTree extends Component<Props, State> {
   constructor(props: Props) {
     super(props);
     this.state = {

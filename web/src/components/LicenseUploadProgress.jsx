@@ -1,9 +1,8 @@
-import React from "react";
-import { Utilities } from "@src/utilities/utilities";
+import { Component } from "react";
 import { Repeater } from "@src/utilities/repeater";
 import "@src/scss/components/AirgapUploadProgress.scss";
 
-class LicenseUploadProgress extends React.Component {
+class LicenseUploadProgress extends Component {
   constructor(props) {
     super(props);
 

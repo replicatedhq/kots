@@ -1,8 +1,8 @@
-import * as React from "react";
+import { Component } from "react";
 import * as PropTypes from "prop-types";
 import "../../scss/components/shared/Tooltip.scss";
 
-export default class Tooltip extends React.Component {
+export default class Tooltip extends Component {
   static propTypes = {
     className: PropTypes.string,
     visible: PropTypes.bool,

@@ -1,9 +1,9 @@
-import React from "react";
+import { Component } from "react";
 import groupBy from "lodash/groupBy";
 import Icon from "../Icon";
 import { withRouter } from "@src/utilities/react-router-utilities";
 
-class AnalyzerRedactorReportRow extends React.Component {
+class AnalyzerRedactorReportRow extends Component {
   state = {
     toggleDetails: false,
   };

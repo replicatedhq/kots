@@ -1,18 +1,17 @@
-import * as React from "react";
 import { Link } from "react-router-dom";
 import { KotsPageTitle } from "@components/Head";
 import isEmpty from "lodash/isEmpty";
 
 import "../scss/components/UploadLicenseFile.scss";
-import { Utilities } from "../utilities/utilities";
 
 import RestoreSnapshotRow from "./RestoreSnapshotRow";
 import UploadLicenseFile from "./UploadLicenseFile";
 import Loader from "./shared/Loader";
 import ConfigureSnapshots from "./snapshots/ConfigureSnapshots";
 import Icon from "./Icon";
+import { Component } from "react";
 
-class BackupRestore extends React.Component {
+class BackupRestore extends Component {
   state = {
     backups: [],
     isLoadingBackups: false,

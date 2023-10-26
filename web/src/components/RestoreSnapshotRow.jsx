@@ -1,10 +1,9 @@
-import React from "react";
-
+import { Component } from "react";
 import { Utilities } from "../utilities/utilities";
 import "../scss/components/RestoreSnapshotRow.scss";
 import Icon from "./Icon";
 
-class RestoreSnapshotRow extends React.Component {
+class RestoreSnapshotRow extends Component {
   state = {
     toggleVolumes: false,
     isLoadingBackupInfo: false,

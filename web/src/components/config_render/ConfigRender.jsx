@@ -1,14 +1,13 @@
-import React from "react";
+import { Component } from "react";
 import keyBy from "lodash/keyBy";
 import find from "lodash/find";
 import debounce from "lodash/debounce";
-import uniqBy from "lodash/uniqBy";
 import _ from "lodash/core";
 
 import ConfigGroups from "./ConfigGroups";
 import { ConfigService } from "../../services/ConfigService";
 
-export default class ConfigRender extends React.Component {
+export default class ConfigRender extends Component {
   constructor(props) {
     super(props);
     this.state = {

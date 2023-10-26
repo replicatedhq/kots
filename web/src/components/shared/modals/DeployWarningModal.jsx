@@ -1,7 +1,7 @@
-import * as React from "react";
+import { Component } from "react";
 import Modal from "react-modal";
 
-class DeployWarningModal extends React.Component {
+class DeployWarningModal extends Component {
   render() {
     const {
       showDeployWarningModal,

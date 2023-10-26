@@ -1,5 +1,3 @@
-import React from "react";
-
 export default function DummySnapshotRow() {
   return (
     <div className="flex flex-auto DummySnapshotRow--wrapper alignItems--center">

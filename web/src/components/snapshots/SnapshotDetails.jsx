@@ -1,4 +1,4 @@
-import React, { Component } from "react";
+import { Component } from "react";
 import { withRouter } from "@src/utilities/react-router-utilities";
 import MonacoEditor from "@monaco-editor/react";
 import Modal from "react-modal";

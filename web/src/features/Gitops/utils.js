@@ -1,4 +1,3 @@
-import React from "react";
 import enabled from "../../images/enabled.svg";
 import not_enabled from "../../images/not_enabled.svg";
 import warning from "../../images/warning.svg";

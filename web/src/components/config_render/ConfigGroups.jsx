@@ -1,7 +1,7 @@
-import React from "react";
+import { Component } from "react";
 import ConfigGroup from "./ConfigGroup";
 
-export default class ConfigGroups extends React.Component {
+export default class ConfigGroups extends Component {
   handleGroupChange = (groupName, itemName, value, data) => {
     if (this.props.handleChange) {
       this.props.handleChange(groupName, itemName, value, data);

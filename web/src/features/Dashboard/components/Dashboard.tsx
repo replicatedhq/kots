@@ -1,4 +1,4 @@
-import React, { useEffect, useReducer, useRef } from "react";
+import { useEffect, useReducer, useRef } from "react";
 import { KotsPageTitle } from "@components/Head";
 import get from "lodash/get";
 import sortBy from "lodash/sortBy";

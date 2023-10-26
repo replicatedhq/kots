@@ -1,4 +1,4 @@
-import React, { Component } from "react";
+import { Component } from "react";
 import Select from "react-select";
 import { withRouter } from "@src/utilities/react-router-utilities";
 import {

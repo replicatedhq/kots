@@ -1,4 +1,4 @@
-import React, { useReducer } from "react";
+import { ReactNode, useReducer } from "react";
 import size from "lodash/size";
 // @ts-ignore
 import yaml from "js-yaml";
@@ -24,7 +24,7 @@ type Props = {
   appLicense: AppLicense | null;
   gettingAppLicenseErrMsg: string | null;
   syncCallback: () => void;
-  children: React.ReactNode;
+  children: ReactNode;
   refetchLicense: () => void;
 };
 

@@ -1,11 +1,11 @@
-import * as React from "react";
 import { Route, Routes } from "react-router-dom";
 import NotFound from "../static/NotFound";
 
 import GitHubAuthBegin from "./GitHubAuthBegin";
 import GitHubAuthCallback from "./GitHubAuthCallback";
+import { Component } from "react";
 
-export default class GitHubAuth extends React.Component {
+export default class GitHubAuth extends Component {
   render() {
     return (
       <div className="flex-column flex1 Login-wrapper">

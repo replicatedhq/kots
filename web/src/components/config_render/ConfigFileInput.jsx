@@ -1,11 +1,10 @@
-import React from "react";
+import { Component } from "react";
 import FileInput from "./FileInput";
 import ConfigItemTitle from "./ConfigItemTitle";
 import map from "lodash/map";
-import { Utilities } from "../../utilities/utilities";
 import Markdown from "react-remarkable";
 
-export default class ConfigFileInput extends React.Component {
+export default class ConfigFileInput extends Component {
   handleOnChange = (files) => {
     if (this.props.handleChange) {
       if (this.props.repeatable) {

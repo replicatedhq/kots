@@ -1,4 +1,4 @@
-import React, { useState, useContext } from "react";
+import { useState, useContext } from "react";
 import { GitOpsContext, withGitOpsConsumer } from "../context";
 import { Flex, Paragraph } from "../../../styles/common";
 import Loader from "../../../components/shared/Loader";

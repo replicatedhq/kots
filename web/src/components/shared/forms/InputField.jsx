@@ -1,7 +1,6 @@
-import React from "react";
-
 import "@src/scss/components/shared/forms/InputField.scss";
 import Icon from "@components/Icon";
+import { useState } from "react";
 
 const InputField = ({
   label,
@@ -20,7 +19,7 @@ const InputField = ({
   disabled = false,
   readOnly = false,
 }) => {
-  const [show, setShow] = React.useState(false);
+  const [show, setShow] = useState(false);
 
   const handleToggleShow = () => {
     setShow(!show);

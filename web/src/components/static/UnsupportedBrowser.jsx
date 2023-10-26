@@ -1,6 +1,5 @@
-import * as React from "react";
-
-export default class UnsupportedBrowser extends React.Component {
+import { Component } from "react";
+export default class UnsupportedBrowser extends Component {
   render() {
     return (
       <div className="u-width--full flex-column flex1 justifyContent--center u-position--relative">

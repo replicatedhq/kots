@@ -1,4 +1,4 @@
-import React, { Component } from "react";
+import { Component, createRef } from "react";
 import PropTypes from "prop-types";
 
 /**
@@ -8,7 +8,7 @@ export default class ClickOutsideAction extends Component {
   constructor(props) {
     super(props);
 
-    this.wrapperRef = React.createRef();
+    this.wrapperRef = createRef();
   }
 
   componentDidMount() {

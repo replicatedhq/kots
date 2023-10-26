@@ -1,4 +1,4 @@
-import React, { Component } from "react";
+import { Component } from "react";
 import { withRouter } from "@src/utilities/react-router-utilities";
 import { Link } from "react-router-dom";
 import { KotsPageTitle } from "@components/Head";

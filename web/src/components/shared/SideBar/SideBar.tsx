@@ -1,4 +1,4 @@
-import React, { Component, Fragment } from "react";
+import { Component, Fragment } from "react";
 import classNames from "classnames";
 
 import Loader from "@src/components/shared/Loader";

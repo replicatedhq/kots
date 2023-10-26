@@ -1,4 +1,4 @@
-import React, { PureComponent } from "react";
+import { ChangeEvent, PureComponent } from "react";
 import PropTypes from "prop-types";
 import classNames from "classnames";
 import { RouterProps, withRouter } from "@src/utilities/react-router-utilities";
@@ -47,7 +47,7 @@ export class NavBar extends PureComponent<Props, State> {
     refetchAppsList: PropTypes.func.isRequired,
   };
 
-  handleLogOut = async (e: React.ChangeEvent) => {
+  handleLogOut = async (e: ChangeEvent) => {
     const { onLogoutError } = this.props;
     e.preventDefault();
     try {

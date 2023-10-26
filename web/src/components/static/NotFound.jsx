@@ -1,7 +1,7 @@
-import * as React from "react";
+import { Component } from "react";
 import { Link } from "react-router-dom";
 
-export default class NotFound extends React.Component {
+export default class NotFound extends Component {
   render() {
     return (
       <div className="u-width--full flex-column flex1 justifyContent--center u-position--relative">

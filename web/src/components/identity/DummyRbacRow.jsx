@@ -1,5 +1,3 @@
-import React from "react";
-
 export default function DummyRbacRow() {
   return (
     <div className="flex flex-auto DummyRbacRow--wrapper alignItems--center">

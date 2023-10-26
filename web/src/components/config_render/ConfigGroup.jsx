@@ -1,6 +1,5 @@
-import React from "react";
+import { createRef } from "react";
 import Markdown from "react-remarkable";
-import each from "lodash/each";
 import some from "lodash/some";
 import isEmpty from "lodash/isEmpty";
 import { ConfigService } from "../../services/ConfigService";
@@ -12,11 +11,11 @@ import ConfigItemTitle from "./ConfigItemTitle";
 import ConfigCheckbox from "./ConfigCheckbox";
 import ConfigFileInput from "./ConfigFileInput";
 import { setOrder } from "./ConfigUtil";
-import { ConfigWrapper, ConfigItems } from "./ConfigComponents";
+import { ConfigWrapper } from "./ConfigComponents";
 import Icon from "../Icon";
 
 const ConfigGroup = (props) => {
-  const markdownNode = React.createRef();
+  const markdownNode = createRef();
 
   const handleItemChange = (itemName, value, data) => {
     if (props.handleChange) {

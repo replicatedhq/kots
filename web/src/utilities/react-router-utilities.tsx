@@ -1,6 +1,6 @@
 import { useSelectedApp } from "@features/App";
 import useApps from "@features/Gitops/hooks/useApps";
-import React, { ComponentType } from "react";
+import { ComponentType } from "react";
 import {
   useNavigate,
   useLocation,

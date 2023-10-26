@@ -1,12 +1,12 @@
-import React from "react";
 import { useNavigate } from "react-router-dom";
 import Icon from "../Icon";
 import ChangePasswordModal from "../modals/ChangePasswordModal/ChangePasswordModal";
+import { useEffect, useRef, useState } from "react";
 
 const NavBarDropdown = ({ handleLogOut, isHelmManaged }) => {
-  const [showDropdown, setShowDropdown] = React.useState(false);
-  const [showModal, setShowModal] = React.useState(false);
-  const testRef = React.useRef(null);
+  const [showDropdown, setShowDropdown] = useState(false);
+  const [showModal, setShowModal] = useState(false);
+  const testRef = useRef(null);
   const navigate = useNavigate();
   const closeModal = () => {
     setShowModal(false);
@@ -27,7 +27,7 @@ const NavBarDropdown = ({ handleLogOut, isHelmManaged }) => {
     setShowDropdown(false);
   };
 
-  React.useEffect(() => {
+  useEffect(() => {
     // focus the dropdown when open so when clicked outside,
     // the onBlur event triggers and closes the dropdown
     if (showDropdown) {

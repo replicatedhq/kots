@@ -1,4 +1,4 @@
-import React, { useEffect, useReducer } from "react";
+import { useReducer, useEffect, createContext } from "react";
 import { createBrowserHistory } from "history";
 import { Navigate, Route, Routes, useNavigate } from "react-router-dom";
 import { Helmet } from "react-helmet";
@@ -70,7 +70,7 @@ let history = connectHistory(browserHistory);
 
 // TODO:  pull in the react router hook
 
-const ThemeContext = React.createContext({
+const ThemeContext = createContext({
   setThemeState: (themeState?: ThemeState) => {
     console.log("setThemeState used before being set", themeState);
   },

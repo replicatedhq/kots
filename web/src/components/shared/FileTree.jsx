@@ -1,7 +1,7 @@
-import * as React from "react";
+import { Component } from "react";
 import { rootPath } from "../../utilities/utilities";
 
-export default class FileTree extends React.Component {
+export default class FileTree extends Component {
   state = {
     selected: {},
   };

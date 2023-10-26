@@ -1,4 +1,4 @@
-import React, { Component } from "react";
+import { Component } from "react";
 import { RouterProps, withRouter } from "@src/utilities/react-router-utilities";
 import { KotsPageTitle } from "@components/Head";
 import isEmpty from "lodash/isEmpty";
