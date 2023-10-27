@@ -1,8 +1,10 @@
 package reporting
 
 import (
+	"github.com/replicatedhq/kots/pkg/store"
 	storetypes "github.com/replicatedhq/kots/pkg/store/types"
 	kotsv1beta1 "github.com/replicatedhq/kotskinds/apis/kots/v1beta1"
+	"k8s.io/client-go/kubernetes"
 )
 
 type Distribution int64
@@ -33,6 +35,8 @@ type Reporter interface {
 var reporter Reporter
 
 type AirgapReporter struct {
+	clientset kubernetes.Interface
+	store     store.Store
 }
 
 var _ Reporter = &AirgapReporter{}

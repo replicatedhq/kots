@@ -47,7 +47,14 @@ func Init() error {
 	}
 
 	if kotsadm.IsAirgap() {
-		reporter = &AirgapReporter{}
+		clientset, err := k8sutil.GetClientset()
+		if err != nil {
+			return errors.Wrap(err, "failed to get clientset")
+		}
+		reporter = &AirgapReporter{
+			clientset: clientset,
+			store:     store.GetStore(),
+		}
 	} else {
 		reporter = &OnlineReporter{}
 	}
@@ -175,7 +182,7 @@ func GetReportingInfo(appID string) *types.ReportingInfo {
 		InstanceID:    appID,
 		KOTSInstallID: os.Getenv("KOTS_INSTALL_ID"),
 		KURLInstallID: os.Getenv("KURL_INSTALL_ID"),
-		KOTSVersion:   buildversion.Version(),
+		UserAgent:     buildversion.GetUserAgent(),
 	}
 
 	clientset, err := k8sutil.GetClientset()
