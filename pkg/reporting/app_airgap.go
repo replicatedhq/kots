@@ -25,7 +25,7 @@ func (r *AirgapReporter) SubmitAppInfo(appID string) error {
 	}
 	reportingInfo := GetReportingInfo(appID)
 
-	report := GetInstanceReport(license.Spec.LicenseID, reportingInfo)
+	report := BuildInstanceReport(license.Spec.LicenseID, reportingInfo)
 
 	if err := AppendReport(r.clientset, util.PodNamespace, a.Slug, report); err != nil {
 		return errors.Wrap(err, "failed to append instance report")
@@ -34,7 +34,7 @@ func (r *AirgapReporter) SubmitAppInfo(appID string) error {
 	return nil
 }
 
-func GetInstanceReport(licenseID string, reportingInfo *types.ReportingInfo) *InstanceReport {
+func BuildInstanceReport(licenseID string, reportingInfo *types.ReportingInfo) *InstanceReport {
 	// not using the "cursor" packages because it doesn't provide access to the underlying int64
 	downstreamSequence, err := strconv.ParseUint(reportingInfo.Downstream.Cursor, 10, 64)
 	if err != nil {

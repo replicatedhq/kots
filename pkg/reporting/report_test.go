@@ -85,7 +85,7 @@ func Test_EncodeDecodeAirgapReport(t *testing.T) {
 	req.Equal(testPrelightReport, decodedPreflightReport)
 }
 
-func Test_CreateReportEvent(t *testing.T) {
+func Test_AppendReport(t *testing.T) {
 	// instance report
 	testDownstreamSequence := int64(123)
 	testInstanceReport := &InstanceReport{
@@ -139,7 +139,7 @@ func Test_CreateReportEvent(t *testing.T) {
 		},
 	}
 
-	tests := append(createTestsForEvent(t, testInstanceReport), createTestsForEvent(t, testPreflightReport)...)
+	tests := append(createTestsForReport(t, testInstanceReport), createTestsForReport(t, testPreflightReport)...)
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -164,21 +164,21 @@ func Test_CreateReportEvent(t *testing.T) {
 	}
 }
 
-type CreateReportEventTest struct {
+type AppendReportTest struct {
 	name          string
-	args          CreateReportEventTestArgs
+	args          AppendReportTestArgs
 	wantNumEvents int
 	wantErr       bool
 }
 
-type CreateReportEventTestArgs struct {
+type AppendReportTestArgs struct {
 	clientset kubernetes.Interface
 	namespace string
 	appSlug   string
 	report    Report
 }
 
-func createTestsForEvent(t *testing.T, testReport Report) []CreateReportEventTest {
+func createTestsForReport(t *testing.T, testReport Report) []AppendReportTest {
 	testReportWithOneEventData, err := EncodeReport(testReport)
 	require.NoError(t, err)
 
@@ -189,10 +189,10 @@ func createTestsForEvent(t *testing.T, testReport Report) []CreateReportEventTes
 	testReportWithMaxEventsData, err := EncodeReport(testReport)
 	require.NoError(t, err)
 
-	tests := []CreateReportEventTest{
+	tests := []AppendReportTest{
 		{
 			name: "secret does not exist",
-			args: CreateReportEventTestArgs{
+			args: AppendReportTestArgs{
 				clientset: fake.NewSimpleClientset(),
 				namespace: "default",
 				appSlug:   "test-app-slug",
@@ -202,7 +202,7 @@ func createTestsForEvent(t *testing.T, testReport Report) []CreateReportEventTes
 		},
 		{
 			name: "secret exists with an existing event",
-			args: CreateReportEventTestArgs{
+			args: AppendReportTestArgs{
 				clientset: fake.NewSimpleClientset(
 					&corev1.Secret{
 						ObjectMeta: metav1.ObjectMeta{
@@ -223,7 +223,7 @@ func createTestsForEvent(t *testing.T, testReport Report) []CreateReportEventTes
 		},
 		{
 			name: "secret exists without data",
-			args: CreateReportEventTestArgs{
+			args: AppendReportTestArgs{
 				clientset: fake.NewSimpleClientset(
 					&corev1.Secret{
 						ObjectMeta: metav1.ObjectMeta{
@@ -241,7 +241,7 @@ func createTestsForEvent(t *testing.T, testReport Report) []CreateReportEventTes
 		},
 		{
 			name: "secret exists with max number of events",
-			args: CreateReportEventTestArgs{
+			args: AppendReportTestArgs{
 				clientset: fake.NewSimpleClientset(
 					&corev1.Secret{
 						ObjectMeta: metav1.ObjectMeta{
