@@ -70,12 +70,6 @@ func runAddNodeCommandPod(ctx context.Context, client kubernetes.Interface, node
 		}
 	}
 
-	// get the kotsadm image, as we know that will always exist
-	kotsadmImage, err := util.ThisImage(ctx, client)
-	if err != nil {
-		return "", fmt.Errorf("failed to get kotsadm image: %w", err)
-	}
-
 	hostPathFile := corev1.HostPathFile
 	hostPathDir := corev1.HostPathDirectory
 	_, err = client.CoreV1().Pods("kube-system").Create(ctx, &corev1.Pod{
@@ -149,7 +143,7 @@ func runAddNodeCommandPod(ctx context.Context, client kubernetes.Interface, node
 			Containers: []corev1.Container{
 				{
 					Name:    "k0s-token-generator",
-					Image:   kotsadmImage,
+					Image:   "ubuntu:jammy", // this will not work on airgap, but it needs to be debian based at the moment
 					Command: []string{"/mnt/k0s"},
 					Args: []string{
 						"token",
