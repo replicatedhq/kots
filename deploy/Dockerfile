@@ -148,6 +148,16 @@ RUN cd /tmp && curl -fsSL -o helm.tar.gz "${HELM3_URL}" \
   && ln -s "${KOTS_HELM_BIN_DIR}/helm3" "${KOTS_HELM_BIN_DIR}/helm" \
   && rm -rf helm.tar.gz linux-amd64
 
+# Install Minio client - See https://dl.minio.io/client/mc/release/linux-amd64/archive/ for latest version
+ENV KOTS_MC_BIN_DIR=/usr/local/bin
+ENV MC_VERSION=RELEASE.2023-10-24T21-42-22Z
+ENV MC_URL=https://dl.minio.io/client/mc/release/linux-amd64/archive/mc.${MC_VERSION}
+ENV MC_SHA256SUM=1609c149cf24eb6238e014e548ab0f66812bbc59d1ae51af8cfe7f006a809a8f
+RUN  cd /tmp && curl -fsSL -o mc "${MC_URL}" \
+  && echo "${MC_SHA256SUM} mc" | sha256sum -c - \
+  && chmod a+x mc \
+  && mv mc "${KOTS_MC_BIN_DIR}/mc"
+
 # Setup user
 RUN useradd -c 'kotsadm user' -m -d /home/kotsadm -s /bin/bash -u 1001 kotsadm
 USER kotsadm

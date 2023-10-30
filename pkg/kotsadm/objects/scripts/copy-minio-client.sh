@@ -21,4 +21,4 @@ fi
 
 echo "copying minio client binary to migration directory and preserving permissions"
 mkdir -p $KOTSADM_MINIO_MIGRATION_DIR/bin
-cp /usr/bin/mc $KOTSADM_MINIO_MIGRATION_DIR/bin/mc
+cp /usr/local/bin/mc $KOTSADM_MINIO_MIGRATION_DIR/bin/mc
