@@ -449,6 +449,23 @@ func getHttpsServer(upstream, dexUpstream *url.URL, tlsSecretName string, secret
 		}()
 	})
 
+	// these paths should not be exposed outside the cluster
+	r.PUT("/api/v1/troubleshoot/:appId/:bundleId", func(c *gin.Context) {
+		c.AbortWithStatus(http.StatusForbidden)
+	})
+	r.PUT("/api/v1/troubleshoot/supportbundle/:bundleId/redactions", func(c *gin.Context) {
+		c.AbortWithStatus(http.StatusForbidden)
+	})
+	r.POST("/api/v1/preflight/app/:appSlug/sequence/:sequence", func(c *gin.Context) {
+		c.AbortWithStatus(http.StatusForbidden)
+	})
+	r.GET("/license/v1/license", func(c *gin.Context) {
+		c.AbortWithStatus(http.StatusForbidden)
+	})
+	r.POST("/api/v1/app/custom-metrics", func(c *gin.Context) {
+		c.AbortWithStatus(http.StatusForbidden)
+	})
+
 	if dexUpstream != nil {
 		r.Any("/dex/*path", gin.WrapH(httputil.NewSingleHostReverseProxy(dexUpstream)))
 	}
