@@ -1,10 +1,10 @@
 include Makefile.build.mk
 CURRENT_USER := $(shell id -u -n)
-MINIO_TAG ?= RELEASE.2023-09-23T03-47-50Z
-MC_TAG ?= RELEASE.2023-09-22T05-07-46Z
+MINIO_TAG ?= RELEASE.2023-10-25T06-33-25Z
+MC_TAG ?= RELEASE.2023-10-14T01-57-03Z
 RQLITE_TAG ?= 7.21.4
 DEX_TAG ?= v2.37.0
-LVP_TAG ?= v0.5.4
+LVP_TAG ?= v0.5.5
 
 define sendMetrics
 @if [ -z "${PROJECT_NAME}" ]; then \
