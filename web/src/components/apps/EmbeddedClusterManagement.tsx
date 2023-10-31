@@ -443,7 +443,7 @@ const EmbeddedClusterManagement = ({
                   htmlFor={`${nodeType}NodeType`}
                   className="tw-block u-cursor--pointer u-userSelect--none u-textColor--primary u-fontSize--normal u-fontWeight--medium tw-text-center"
                 >
-                  {nodeType === "controller" ? "controlplane" : nodeType}
+                  {nodeType}
                 </label>
               </div>
             ))}
