@@ -22,6 +22,7 @@ const (
 	Kurl
 	MicroK8s
 	Minikube
+	OKE
 	OpenShift
 	RKE2
 	Tanzu
@@ -70,6 +71,8 @@ func (d Distribution) String() string {
 		return "microk8s"
 	case Minikube:
 		return "minikube"
+	case OKE:
+		return "oke"
 	case OpenShift:
 		return "openshift"
 	case RKE2:
