@@ -664,7 +664,7 @@ func Test_findSupportBundleSecrets(t *testing.T) {
 						Namespace: "kotsadm",
 						Labels: map[string]string{
 							"foo":                  "bar",
-							"troubleshoot.io/kind": "support-bundle",
+							"troubleshoot.sh/kind": "support-bundle",
 						},
 					},
 					Data: map[string][]byte{
@@ -677,7 +677,7 @@ func Test_findSupportBundleSecrets(t *testing.T) {
 						Namespace: "another",
 						Labels: map[string]string{
 							"foo":                  "bar",
-							"troubleshoot.io/kind": "support-bundle",
+							"troubleshoot.sh/kind": "support-bundle",
 						},
 					},
 					Data: map[string]string{
@@ -690,7 +690,7 @@ func Test_findSupportBundleSecrets(t *testing.T) {
 						Namespace: "kotsadm",
 						Labels: map[string]string{
 							"foo":                  "bar",
-							"troubleshoot.io/kind": "support-bundle",
+							"troubleshoot.sh/kind": "support-bundle",
 						},
 					},
 					Data: map[string][]byte{
@@ -708,7 +708,7 @@ func Test_findSupportBundleSecrets(t *testing.T) {
 						Name:      "kotsadm-my-app-supportbundle",
 						Namespace: "kotsadm",
 						Labels: map[string]string{
-							"troubleshoot.io/kind": "support-bundle",
+							"troubleshoot.sh/kind": "support-bundle",
 						},
 					},
 					Data: map[string][]byte{
@@ -720,7 +720,7 @@ func Test_findSupportBundleSecrets(t *testing.T) {
 						Name:      "cluster-wide-supportbundle",
 						Namespace: "default",
 						Labels: map[string]string{
-							"troubleshoot.io/kind": "support-bundle",
+							"troubleshoot.sh/kind": "support-bundle",
 						},
 					},
 				},

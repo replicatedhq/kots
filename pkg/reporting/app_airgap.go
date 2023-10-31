@@ -2,6 +2,7 @@ package reporting
 
 import (
 	"strconv"
+	"sync"
 	"time"
 
 	"github.com/pkg/errors"
@@ -10,7 +11,16 @@ import (
 	"github.com/replicatedhq/kots/pkg/util"
 )
 
+var airgapAppInfoMtx sync.Mutex
+
 func (r *AirgapReporter) SubmitAppInfo(appID string) error {
+	// make sure events are reported in order
+	airgapAppInfoMtx.Lock()
+	defer func() {
+		time.Sleep(1 * time.Second)
+		airgapAppInfoMtx.Unlock()
+	}()
+
 	a, err := r.store.GetApp(appID)
 	if err != nil {
 		if r.store.IsNotFound(err) {
