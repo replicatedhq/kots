@@ -176,7 +176,7 @@ metadata:
     app.kubernetes.io/instance: release-name
     app.kubernetes.io/version: "1.27.0"
     app.kubernetes.io/managed-by: Helm
-    troubleshoot.io/kind: preflight
+    troubleshoot.sh/kind: preflight
   annotations:
     "helm.sh/hook": pre-install, pre-upgrade
     "helm.sh/hook-weight": "-6"
