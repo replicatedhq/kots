@@ -89,6 +89,10 @@ func distributionFromLabels(clientset kubernetes.Interface) Distribution {
 			if k == "minikube.k8s.io/version" {
 				return Minikube
 			}
+			if k == "oci.oraclecloud.com/fault-domain" {
+				// Based on: https://docs.oracle.com/en-us/iaas/Content/ContEng/Reference/contengsupportedlabelsusecases.htm
+				return OKE
+			}
 		}
 	}
 	return UnknownDistribution
