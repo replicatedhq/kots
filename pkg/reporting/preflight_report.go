@@ -50,11 +50,31 @@ func (r *PreflightReport) AppendEvents(report Report) error {
 		r.Events = r.Events[len(r.Events)-r.GetEventLimit():]
 	}
 
+	// remove one event at a time until the report is under the size limit
+	encoded, err := EncodeReport(r)
+	if err != nil {
+		return errors.Wrap(err, "failed to encode report")
+	}
+	for len(encoded) > r.GetSizeLimit() {
+		r.Events = r.Events[1:]
+		if len(r.Events) == 0 {
+			return errors.Errorf("size of latest event exceeds report size limit")
+		}
+		encoded, err = EncodeReport(r)
+		if err != nil {
+			return errors.Wrap(err, "failed to encode report")
+		}
+	}
+
 	return nil
 }
 
 func (r *PreflightReport) GetEventLimit() int {
 	return ReportEventLimit
+}
+
+func (r *PreflightReport) GetSizeLimit() int {
+	return ReportSizeLimit
 }
 
 func (r *PreflightReport) GetMtx() *sync.Mutex {
