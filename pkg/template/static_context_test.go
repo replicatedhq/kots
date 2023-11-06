@@ -286,14 +286,14 @@ func TestDistribution(t *testing.T) {
 		want      string
 	}{
 		{
-			name: "openshift",
+			name: "openshift from api groups and resources",
 			clientset: mockClientsetForDistribution(&mockClientsetForDistributionOpts{
 				groupVersions: []string{"apps.openshift.io/v1"},
 			}),
 			want: "openShift",
 		},
 		{
-			name: "kurl",
+			name: "kurl from labels",
 			clientset: mockClientsetForDistribution(&mockClientsetForDistributionOpts{
 				objects: []runtime.Object{
 					&corev1.Node{
@@ -308,7 +308,7 @@ func TestDistribution(t *testing.T) {
 			want: "kurl",
 		},
 		{
-			name: "aks",
+			name: "aks from labels",
 			clientset: mockClientsetForDistribution(&mockClientsetForDistributionOpts{
 				objects: []runtime.Object{
 					&corev1.Node{
@@ -323,7 +323,7 @@ func TestDistribution(t *testing.T) {
 			want: "aks",
 		},
 		{
-			name: "eks",
+			name: "eks from provider id",
 			clientset: mockClientsetForDistribution(&mockClientsetForDistributionOpts{
 				objects: []runtime.Object{
 					&corev1.Node{
@@ -336,7 +336,7 @@ func TestDistribution(t *testing.T) {
 			want: "eks",
 		},
 		{
-			name: "gke",
+			name: "gke from provider id",
 			clientset: mockClientsetForDistribution(&mockClientsetForDistributionOpts{
 				objects: []runtime.Object{
 					&corev1.Node{
@@ -349,7 +349,7 @@ func TestDistribution(t *testing.T) {
 			want: "gke",
 		},
 		{
-			name: "ibm",
+			name: "ibm from provider id",
 			clientset: mockClientsetForDistribution(&mockClientsetForDistributionOpts{
 				objects: []runtime.Object{
 					&corev1.Node{
@@ -362,7 +362,7 @@ func TestDistribution(t *testing.T) {
 			want: "ibm",
 		},
 		{
-			name: "oke",
+			name: "oke from labels",
 			clientset: mockClientsetForDistribution(&mockClientsetForDistributionOpts{
 				objects: []runtime.Object{
 					&corev1.Node{
