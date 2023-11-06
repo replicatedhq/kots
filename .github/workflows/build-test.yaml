@@ -3389,6 +3389,316 @@ jobs:
           cluster-id: ${{ steps.create-cluster.outputs.cluster-id }}
 
 
+  validate-replicated-sdk:
+    runs-on: ubuntu-20.04
+    needs: [ enable-tests, can-run-ci, build-push-kotsadm-image, build-kurl-proxy, build-migrations, push-minio, push-mc, push-rqlite ]
+    strategy:
+      fail-fast: false
+      matrix:
+        cluster: [
+          {distribution: kind, version: v1.28.0},
+          {distribution: openshift, version: 4.13.0-okd}
+        ] 
+    env:
+      KOTS_NAMESPACE: replicated-sdk
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Create Cluster 
+        id: create-cluster 
+        uses: replicatedhq/replicated-actions/create-cluster@v1 
+        with:
+          api-token: ${{ secrets.C11Y_MATRIX_TOKEN }}
+          kubernetes-distribution: ${{ matrix.cluster.distribution }}
+          kubernetes-version: ${{ matrix.cluster.version }}
+          cluster-name: automated-kots-${{ github.run_id }}-${{ matrix.cluster.distribution }}-${{ matrix.cluster.version }}
+          timeout-minutes: '120'
+          ttl: 2h
+          export-kubeconfig: true
+
+      - name: download kots binary
+        uses: actions/download-artifact@v3
+        with:
+          name: kots
+          path: bin/
+
+      - run: chmod +x bin/kots
+
+      - name: create namespace and dockerhub secret
+        run: |
+          kubectl create ns "$KOTS_NAMESPACE"
+          kubectl create secret docker-registry kotsadm-dockerhub --docker-server index.docker.io --docker-username "${{ secrets.E2E_DOCKERHUB_USERNAME }}" --docker-password "${{ secrets.E2E_DOCKERHUB_PASSWORD }}" --namespace "$KOTS_NAMESPACE"
+
+      - name: run upgrade-to-replicated-sdk test
+        id: upgrade-to-replicated-sdk
+        env:
+          APP_SLUG: upgrade-to-replicated-sdk
+        run: |
+          set +e
+
+          echo ${{ secrets.UPGRADE_TO_REPLICATED_SDK_LICENSE }} | base64 -d > license.yaml
+          LICENSE_ID="$(grep -oP 'licenseID:\s*\K\w+' license.yaml)"
+          echo "license-id=$LICENSE_ID" >> "$GITHUB_OUTPUT"
+
+          ./bin/kots \
+            install "$APP_SLUG/automated" \
+            --license-file license.yaml \
+            --no-port-forward \
+            --namespace "$KOTS_NAMESPACE" \
+            --shared-password password \
+            --app-version-label v1.0.0 \
+            --kotsadm-registry ttl.sh \
+            --kotsadm-namespace automated-${{ github.run_id }} \
+            --kotsadm-tag 24h
+
+          EXIT_CODE=$?
+          if [ $EXIT_CODE -ne 0 ]; then
+            echo "------pods:"
+            kubectl -n "$KOTS_NAMESPACE" get pods
+            echo "------kotsadm logs"
+            kubectl logs -l app=kotsadm --tail=100 --namespace "$KOTS_NAMESPACE"
+            exit $EXIT_CODE
+          fi
+
+          # wait for the app to be ready
+          COUNTER=1
+          while [ "$(./bin/kots get apps --namespace "$KOTS_NAMESPACE" | awk 'NR>1{print $2}')" != "ready" ]; do
+            ((COUNTER += 1))
+            if [ $COUNTER -gt 120 ]; then
+              echo "Timed out waiting for app to be ready"
+              ./bin/kots get apps --namespace "$KOTS_NAMESPACE"
+              echo "kotsadm logs:"
+              kubectl logs -l app=kotsadm --tail=100 --namespace "$KOTS_NAMESPACE"
+              exit 1
+            fi
+            sleep 1
+          done
+
+          # upgrade the app to the new version
+          ./bin/kots upstream upgrade "$APP_SLUG" -n "$KOTS_NAMESPACE" --deploy
+          sleep 5
+
+          # wait for the app to be ready again
+          COUNTER=1
+          while [ "$(./bin/kots get apps --namespace "$KOTS_NAMESPACE" | awk 'NR>1{print $2}')" != "ready" ]; do
+            ((COUNTER += 1))
+            if [ $COUNTER -gt 120 ]; then
+              echo "Timed out waiting for app to be ready"
+              ./bin/kots get apps --namespace "$KOTS_NAMESPACE"
+              echo "kotsadm logs:"
+              kubectl logs -l app=kotsadm --tail=100 --namespace "$KOTS_NAMESPACE"
+              exit 1
+            fi
+            sleep 1
+          done
+
+          # get the version of the replicated-sdk that is running and set it as an output
+          REPLICATED_SDK_VERSION=$(kubectl get deploy replicated -n "$KOTS_NAMESPACE" -o jsonpath='{.spec.template.spec.containers[0].image}' | grep -oE '[^:]+$')
+          echo "replicated-sdk-version=$REPLICATED_SDK_VERSION" >> "$GITHUB_OUTPUT"
+
+      - run: rm -rf ./replicated-sdk
+      - name: Checkout replicated-sdk
+        uses: actions/checkout@v3
+        with:
+          repository: replicatedhq/replicated-sdk
+          path: replicated-sdk
+          ref: ${{ steps.upgrade-to-replicated-sdk.outputs.replicated-sdk-version }}
+
+      - name: Validate endpoints
+        uses: ./replicated-sdk/.github/actions/validate-endpoints
+        with:
+          license-id: ${{ steps.upgrade-to-replicated-sdk.outputs.license-id }}
+          license-fields: '[{"name":"expires_at","value": ""}]'
+          integration-enabled: true
+          namespace: "$KOTS_NAMESPACE"
+
+      - name: remove upgrade-to-replicated-sdk app
+        env:
+          APP_SLUG: upgrade-to-replicated-sdk
+        run: |
+          # remove the app
+          ./bin/kots remove "$APP_SLUG" -n "$KOTS_NAMESPACE" --undeploy
+
+          # validate that the app reference was removed
+          if [ "$(./bin/kots get apps --namespace "$KOTS_NAMESPACE" --output=json | tr -d '\n')" != "[]" ]; then
+            printf "App reference was not removed\n\n"
+            exit 1
+          fi
+
+      - name: run replicated-sdk-subchart-native-helm-v1 test
+        id: replicated-sdk-subchart-native-helm-v1
+        env:
+          APP_SLUG: replicated-sdk-subchart-native-helm-v1
+        run: |
+          set +e
+
+          echo ${{ secrets.REPLICATED_SDK_SUBCHART_NATIVE_HELM_V1 }} | base64 -d > license.yaml
+          LICENSE_ID="$(grep -oP 'licenseID:\s*\K\w+' license.yaml)"
+          echo "license-id=$LICENSE_ID" >> "$GITHUB_OUTPUT"
+
+          ./bin/kots \
+            install "$APP_SLUG/automated" \
+            --license-file license.yaml \
+            --no-port-forward \
+            --namespace "$KOTS_NAMESPACE" \
+            --shared-password password \
+            --kotsadm-registry ttl.sh \
+            --kotsadm-namespace automated-${{ github.run_id }} \
+            --kotsadm-tag 24h
+
+          EXIT_CODE=$?
+          if [ $EXIT_CODE -ne 0 ]; then
+            echo "------pods:"
+            kubectl -n "$KOTS_NAMESPACE" get pods
+            echo "------kotsadm logs"
+            kubectl logs -l app=kotsadm --tail=100 --namespace "$KOTS_NAMESPACE"
+            exit $EXIT_CODE
+          fi
+
+          # wait for the app to be ready
+          COUNTER=1
+          while [ "$(./bin/kots get apps --namespace "$KOTS_NAMESPACE" | awk 'NR>1{print $2}')" != "ready" ]; do
+            ((COUNTER += 1))
+            if [ $COUNTER -gt 120 ]; then
+              echo "Timed out waiting for app to be ready"
+              ./bin/kots get apps --namespace "$KOTS_NAMESPACE"
+              echo "kotsadm logs:"
+              kubectl logs -l app=kotsadm --tail=100 --namespace "$KOTS_NAMESPACE"
+              exit 1
+            fi
+            sleep 1
+          done
+
+          # get the version of the replicated-sdk that is running and set it as an output
+          REPLICATED_SDK_VERSION=$(kubectl get deploy replicated -n "$KOTS_NAMESPACE" -o jsonpath='{.spec.template.spec.containers[0].image}' | grep -oE '[^:]+$')
+          echo "replicated-sdk-version=$REPLICATED_SDK_VERSION" >> "$GITHUB_OUTPUT"
+
+      - run: rm -rf ./replicated-sdk
+      - name: Checkout replicated-sdk
+        uses: actions/checkout@v3
+        with:
+          repository: replicatedhq/replicated-sdk
+          path: replicated-sdk
+          ref: ${{ steps.replicated-sdk-subchart-native-helm-v1.outputs.replicated-sdk-version }}
+
+      - name: Validate endpoints
+        uses: ./replicated-sdk/.github/actions/validate-endpoints
+        with:
+          license-id: ${{ steps.replicated-sdk-subchart-native-helm-v1.outputs.license-id }}
+          license-fields: '[{"name":"expires_at","value": ""}]'
+          integration-enabled: true
+          namespace: "$KOTS_NAMESPACE"
+
+      - name: remove replicated-sdk-subchart-native-helm-v1 app
+        env:
+          APP_SLUG: replicated-sdk-subchart-native-helm-v1
+        run: |
+          # remove the app
+          ./bin/kots remove "$APP_SLUG" -n "$KOTS_NAMESPACE" --undeploy
+
+          # validate that the app reference was removed
+          if [ "$(./bin/kots get apps --namespace "$KOTS_NAMESPACE" --output=json | tr -d '\n')" != "[]" ]; then
+            printf "App reference was not removed\n\n"
+            exit 1
+          fi
+
+      - name: run replicated-sdk-subchart-replicated-helm test
+        id: replicated-sdk-subchart-replicated-helm
+        env:
+          APP_SLUG: replicated-sdk-subchart-replicated-helm
+        run: |
+          set +e
+
+          echo ${{ secrets.REPLICATED_SDK_SUBCHART_REPLICATED_HELM }} | base64 -d > license.yaml
+          LICENSE_ID="$(grep -oP 'licenseID:\s*\K\w+' license.yaml)"
+          echo "license-id=$LICENSE_ID" >> "$GITHUB_OUTPUT"
+
+          ./bin/kots \
+            install "$APP_SLUG/automated" \
+            --license-file license.yaml \
+            --no-port-forward \
+            --namespace "$KOTS_NAMESPACE" \
+            --shared-password password \
+            --kotsadm-registry ttl.sh \
+            --kotsadm-namespace automated-${{ github.run_id }} \
+            --kotsadm-tag 24h
+
+          EXIT_CODE=$?
+          if [ $EXIT_CODE -ne 0 ]; then
+            echo "------pods:"
+            kubectl -n "$KOTS_NAMESPACE" get pods
+            echo "------kotsadm logs"
+            kubectl logs -l app=kotsadm --tail=100 --namespace "$KOTS_NAMESPACE"
+            exit $EXIT_CODE
+          fi
+
+          # wait for the app to be ready
+          COUNTER=1
+          while [ "$(./bin/kots get apps --namespace "$KOTS_NAMESPACE" | awk 'NR>1{print $2}')" != "ready" ]; do
+            ((COUNTER += 1))
+            if [ $COUNTER -gt 120 ]; then
+              echo "Timed out waiting for app to be ready"
+              ./bin/kots get apps --namespace "$KOTS_NAMESPACE"
+              echo "kotsadm logs:"
+              kubectl logs -l app=kotsadm --tail=100 --namespace "$KOTS_NAMESPACE"
+              exit 1
+            fi
+            sleep 1
+          done
+
+          # get the version of the replicated-sdk that is running and set it as an output
+          REPLICATED_SDK_VERSION=$(kubectl get deploy replicated -n "$KOTS_NAMESPACE" -o jsonpath='{.spec.template.spec.containers[0].image}' | grep -oE '[^:]+$')
+          echo "replicated-sdk-version=$REPLICATED_SDK_VERSION" >> "$GITHUB_OUTPUT"
+
+      - run: rm -rf ./replicated-sdk
+      - name: Checkout replicated-sdk
+        uses: actions/checkout@v3
+        with:
+          repository: replicatedhq/replicated-sdk
+          path: replicated-sdk
+          ref: ${{ steps.replicated-sdk-subchart-replicated-helm.outputs.replicated-sdk-version }}
+
+      - name: Validate endpoints
+        uses: ./replicated-sdk/.github/actions/validate-endpoints
+        with:
+          license-id: ${{ steps.replicated-sdk-subchart-replicated-helm.outputs.license-id }}
+          license-fields: '[{"name":"expires_at","value": ""}]'
+          integration-enabled: true
+          namespace: "$KOTS_NAMESPACE"
+          deployed-via-kubectl: true
+
+      - name: remove replicated-sdk-subchart-replicated-helm app
+        env:
+          APP_SLUG: replicated-sdk-subchart-replicated-helm
+        run: |
+          # remove the app
+          ./bin/kots remove "$APP_SLUG" -n "$KOTS_NAMESPACE" --undeploy
+
+          # validate that the app reference was removed
+          if [ "$(./bin/kots get apps --namespace "$KOTS_NAMESPACE" --output=json | tr -d '\n')" != "[]" ]; then
+            printf "App reference was not removed\n\n"
+            exit 1
+          fi
+
+      - name: Generate support bundle on failure
+        if: failure()
+        uses: ./.github/actions/generate-support-bundle
+        with:
+          kots-namespace: "$APP_SLUG"
+          aws-access-key-id: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_ACCESS_KEY_ID }}'
+          aws-secret-access-key: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_SECRET_ACCESS_KEY }}'
+
+      - name: Remove Cluster
+        id: remove-cluster
+        uses: replicatedhq/replicated-actions/remove-cluster@v1
+        if: ${{ always() && steps.create-cluster.outputs.cluster-id != '' }}
+        continue-on-error: true
+        with:
+          api-token: ${{ secrets.C11Y_MATRIX_TOKEN }}
+          cluster-id: ${{ steps.create-cluster.outputs.cluster-id }}
+
+
   validate-pr-tests:
     runs-on: ubuntu-20.04
     needs:
@@ -3428,6 +3738,7 @@ jobs:
       - validate-kots-helm-release-secret-migration
       - validate-native-helm-v2
       - validate-deployment-orchestration
+      - validate-replicated-sdk
       # cli-only tests
       - validate-kots-push-images-anonymous
     steps:
