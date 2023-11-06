@@ -19,6 +19,7 @@ const (
 	ReportSecretNameFormat = "kotsadm-%s-report"
 	ReportSecretKey        = "report"
 	ReportEventLimit       = 4000
+	ReportSizeLimit        = 1 * 1024 * 1024 // 1MB
 )
 
 type ReportType string

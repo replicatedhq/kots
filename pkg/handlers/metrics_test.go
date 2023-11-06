@@ -77,7 +77,7 @@ func Test_validateCustomAppMetricsData(t *testing.T) {
 
 func Test_SendCustomAppMetrics(t *testing.T) {
 	req := require.New(t)
-	customMetricsData := []byte(`{"data":{"key1_string":"val1","key2_int":5,"key3_float":1.5,"key4_numeric_string":"1.6"}}`)
+	customAppMetricsData := []byte(`{"data":{"key1_string":"val1","key2_int":5,"key3_float":1.5,"key4_numeric_string":"1.6"}}`)
 	appID := "app-id-123"
 
 	// Mock server side
@@ -89,7 +89,7 @@ func Test_SendCustomAppMetrics(t *testing.T) {
 	serverRouter.Methods("POST").Path("/application/custom-metrics").HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		body, err := io.ReadAll(r.Body)
 		req.NoError(err)
-		req.Equal(string(customMetricsData), string(body))
+		req.Equal(string(customAppMetricsData), string(body))
 		req.Equal(appID, r.Header.Get("X-Replicated-InstanceID"))
 		w.WriteHeader(http.StatusOK)
 	})
@@ -117,7 +117,7 @@ spec:
 	handler := Handler{}
 	clientWriter := httptest.NewRecorder()
 	clientRequest := &http.Request{
-		Body: io.NopCloser(bytes.NewBuffer(customMetricsData)),
+		Body: io.NopCloser(bytes.NewBuffer(customAppMetricsData)),
 	}
 
 	// Validate
