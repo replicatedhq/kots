@@ -339,6 +339,9 @@ func RegisterTokenAuthRoutes(handler *Handler, debugRouter *mux.Router, loggingR
 }
 
 func RegisterUnauthenticatedRoutes(handler *Handler, kotsStore store.Store, debugRouter *mux.Router, loggingRouter *mux.Router) {
+	// These routes are not authenticated
+	// if the route does not need to be accessed from outside the cluster, it should be blocked in kurl-proxy
+
 	debugRouter.HandleFunc("/healthz", handler.Healthz)
 	loggingRouter.HandleFunc("/api/v1/login", handler.Login)
 	loggingRouter.HandleFunc("/api/v1/login/info", handler.GetLoginInfo)
