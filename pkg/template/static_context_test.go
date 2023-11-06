@@ -9,8 +9,14 @@ import (
 
 	"github.com/stretchr/testify/require"
 	"gopkg.in/yaml.v2"
+	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/version"
+	discoveryfake "k8s.io/client-go/discovery/fake"
 	fakediscovery "k8s.io/client-go/discovery/fake"
+	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/kubernetes/fake"
 	fakeclientset "k8s.io/client-go/kubernetes/fake"
 )
 
@@ -249,5 +255,138 @@ func TestKubernetesVersion(t *testing.T) {
 
 	if actualK8sMinorVersion := ctx.kubernetesMinorVersion(); actualK8sMinorVersion != wantK8sMinorVersion {
 		t.Errorf("expected kubernetes minor version to be %q, got %q", wantK8sMinorVersion, actualK8sMinorVersion)
+	}
+}
+
+type mockClientsetForDistributionOpts struct {
+	objects       []runtime.Object
+	k8sVersion    string
+	groupVersions []string
+}
+
+func mockClientsetForDistribution(opts *mockClientsetForDistributionOpts) kubernetes.Interface {
+	clientset := fake.NewSimpleClientset(opts.objects...)
+	resources := []*metav1.APIResourceList{}
+	for _, groupVersion := range opts.groupVersions {
+		resources = append(resources, &metav1.APIResourceList{
+			GroupVersion: groupVersion,
+		})
+	}
+	clientset.Discovery().(*discoveryfake.FakeDiscovery).Resources = resources
+	clientset.Discovery().(*discoveryfake.FakeDiscovery).FakedServerVersion = &version.Info{
+		GitVersion: opts.k8sVersion,
+	}
+	return clientset
+}
+
+func TestDistribution(t *testing.T) {
+	tests := []struct {
+		name      string
+		clientset kubernetes.Interface
+		want      string
+	}{
+		{
+			name: "openshift from api groups and resources",
+			clientset: mockClientsetForDistribution(&mockClientsetForDistributionOpts{
+				groupVersions: []string{"apps.openshift.io/v1"},
+			}),
+			want: "openShift",
+		},
+		{
+			name: "kurl from labels",
+			clientset: mockClientsetForDistribution(&mockClientsetForDistributionOpts{
+				objects: []runtime.Object{
+					&corev1.Node{
+						ObjectMeta: metav1.ObjectMeta{
+							Labels: map[string]string{
+								"kurl.sh/cluster": "true",
+							},
+						},
+					},
+				},
+			}),
+			want: "kurl",
+		},
+		{
+			name: "aks from labels",
+			clientset: mockClientsetForDistribution(&mockClientsetForDistributionOpts{
+				objects: []runtime.Object{
+					&corev1.Node{
+						ObjectMeta: metav1.ObjectMeta{
+							Labels: map[string]string{
+								"kubernetes.azure.com/role": "agent",
+							},
+						},
+					},
+				},
+			}),
+			want: "aks",
+		},
+		{
+			name: "eks from provider id",
+			clientset: mockClientsetForDistribution(&mockClientsetForDistributionOpts{
+				objects: []runtime.Object{
+					&corev1.Node{
+						Spec: corev1.NodeSpec{
+							ProviderID: "aws:providerid",
+						},
+					},
+				},
+			}),
+			want: "eks",
+		},
+		{
+			name: "gke from provider id",
+			clientset: mockClientsetForDistribution(&mockClientsetForDistributionOpts{
+				objects: []runtime.Object{
+					&corev1.Node{
+						Spec: corev1.NodeSpec{
+							ProviderID: "gce:providerid",
+						},
+					},
+				},
+			}),
+			want: "gke",
+		},
+		{
+			name: "ibm from provider id",
+			clientset: mockClientsetForDistribution(&mockClientsetForDistributionOpts{
+				objects: []runtime.Object{
+					&corev1.Node{
+						Spec: corev1.NodeSpec{
+							ProviderID: "ibm:providerid",
+						},
+					},
+				},
+			}),
+			want: "ibm",
+		},
+		{
+			name: "oke from labels",
+			clientset: mockClientsetForDistribution(&mockClientsetForDistributionOpts{
+				objects: []runtime.Object{
+					&corev1.Node{
+						ObjectMeta: metav1.ObjectMeta{
+							Labels: map[string]string{
+								"oci.oraclecloud.com/fault-domain": "domain-1",
+							},
+						},
+					},
+				},
+			}),
+			want: "oke",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ctx := StaticCtx{
+				clientset: tt.clientset,
+			}
+
+			if got := ctx.distribution(); got != tt.want {
+				t.Errorf("StaticCtx.distribution() = %v, want %v", got, tt.want)
+			}
+		})
 	}
 }
