@@ -864,13 +864,13 @@ jobs:
             --skip-preflights \
             --kotsadm-tag 24h | tee output.txt
 
-          if ! cat output.txt | grep -q 'The app was not deployed.'; then
+          if ! grep -q 'The app was not deployed.' output.txt; then
             printf "Expected to see message about app not being deployed, but did not\n"
             cat output.txt
             exit 1
           fi
 
-          if ! cat output.txt | grep -q FAIL | grep -q 'The application requires a Kubernetes 2.0.0 or later.'; then
+          if ! grep -q FAIL output.txt | grep -q 'The application requires a Kubernetes 2.0.0 or later.'; then
             printf "Expected to see a failure about kubernetes version, but did not\n"
             cat output.txt
             exit 1
