@@ -2,7 +2,7 @@ ARG SCHEMAHERO_TAG
 
 FROM schemahero/schemahero:${SCHEMAHERO_TAG} AS base
 
-FROM debian:bullseye
+FROM debian:bookworm
 WORKDIR /
 
 COPY --from=base /schemahero /schemahero

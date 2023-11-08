@@ -1,5 +1,5 @@
 # syntax=docker/dockerfile:1.3
-FROM node:18-bullseye-slim as dev
+FROM node:18-bookworm-slim as dev
 EXPOSE 8080 9229
 
 WORKDIR /src
