@@ -866,13 +866,18 @@ jobs:
 
           if ! grep -q 'The app was not deployed.' output.txt; then
             printf "Expected to see message about app not being deployed, but did not\n"
-            cat output.txt
             exit 1
           fi
 
-          if ! grep -q FAIL output.txt | grep -q 'The application requires a Kubernetes 2.0.0 or later.'; then
+          if ! grep FAIL output.txt | grep -q 'The application requires a Kubernetes 2.0.0 or later.'; then
             printf "Expected to see a failure about kubernetes version, but did not\n"
-            cat output.txt
+            exit 1
+          fi
+
+          if ! kubectl logs -l app=kotsadm --namespace "$APP_SLUG" | grep -q "preflights will not be skipped, strict preflights are set to true"; then
+            echo "Failed to find a log line about strict preflights not being skipped in kotsadm logs"
+            echo "kotsadm logs:"
+            kubectl logs -l app=kotsadm --all-containers --namespace "$APP_SLUG"
             exit 1
           fi
 
