@@ -56,15 +56,6 @@ func NewAirgapSmokeTest() Test {
 	}
 }
 
-func NewStrictPreflightChecks() Test {
-	return Test{
-		Name:        "Strict Preflight Checks",
-		Suite:       "strict-preflight-checks",
-		Namespace:   "strict-preflight-checks",
-		UpstreamURI: "strict-preflight-checks/automated",
-	}
-}
-
 func NewConfigValidation() Test {
 	return Test{
 		Name:        "Config Validation",

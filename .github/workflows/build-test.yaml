@@ -818,35 +818,104 @@ jobs:
         cluster: [
           {distribution: kind, version: v1.27}
         ]
+    env:
+      APP_SLUG: strict-preflight-checks
     steps:
       - name: Checkout
         uses: actions/checkout@v3
-      - name: download e2e deps
-        uses: actions/download-artifact@v3
+
+      - name: Create Cluster 
+        id: create-cluster 
+        uses: replicatedhq/replicated-actions/create-cluster@v1 
         with:
-          name: e2e
-          path: e2e/bin/
-      - run: docker load -i e2e/bin/e2e-deps.tar
-      - run: chmod +x e2e/bin/*
+          api-token: ${{ secrets.C11Y_MATRIX_TOKEN }}
+          kubernetes-distribution: ${{ matrix.cluster.distribution }}
+          kubernetes-version: ${{ matrix.cluster.version }}
+          cluster-name: automated-kots-${{ github.run_id }}-${{ matrix.cluster.distribution }}-${{ matrix.cluster.version }}
+          timeout-minutes: '120'
+          ttl: 2h
+          export-kubeconfig: true
+
       - name: download kots binary
         uses: actions/download-artifact@v3
         with:
           name: kots
           path: bin/
-      - run: chmod +x bin/*
-      - uses: ./.github/actions/kots-e2e
+
+      - run: chmod +x bin/kots
+
+      - name: create namespace and dockerhub secret
+        run: |
+          kubectl create ns "$APP_SLUG"
+          kubectl create secret docker-registry kotsadm-dockerhub --docker-server index.docker.io --docker-username "${{ secrets.E2E_DOCKERHUB_USERNAME }}" --docker-password "${{ secrets.E2E_DOCKERHUB_PASSWORD }}" --namespace "$APP_SLUG"
+
+      - name: run the test
+        run: |
+          set +e
+          echo ${{ secrets.STRICT_PREFLIGHT_CHECKS_LICENSE }} | base64 -d > license.yaml
+          ./bin/kots \
+            install "$APP_SLUG/automated" \
+            --license-file license.yaml \
+            --no-port-forward \
+            --namespace "$APP_SLUG" \
+            --shared-password password \
+            --kotsadm-registry ttl.sh \
+            --kotsadm-namespace automated-${{ github.run_id }} \
+            --skip-preflights \
+            --kotsadm-tag 24h | tee output.txt
+
+          if ! grep -q 'The app was not deployed.' output.txt; then
+            printf "Expected to see message about app not being deployed, but did not\n"
+            exit 1
+          fi
+
+          if ! grep FAIL output.txt | grep -q 'The application requires a Kubernetes 2.0.0 or later.'; then
+            printf "Expected to see a failure about kubernetes version, but did not\n"
+            exit 1
+          fi
+
+          if ! kubectl logs deploy/kotsadm -n "$APP_SLUG" | grep -q "preflights will not be skipped, strict preflights are set to true"; then
+            echo "Failed to find a log line about strict preflights not being skipped in kotsadm logs"
+            echo "kotsadm logs:"
+            kubectl logs deploy/kotsadm -n "$APP_SLUG"
+            exit 1
+          fi
+
+          # disable the strict preflight check and app should deploy successfully
+          ./bin/kots set config "$APP_SLUG" enable_failing_strict_analyzers="0" --namespace "$APP_SLUG" --deploy
+
+          COUNTER=1
+          while [ "$(./bin/kots get apps --namespace "$APP_SLUG" | awk 'NR>1{print $2}')" != "ready" ]; do
+            ((COUNTER += 1))
+            if [ $COUNTER -gt 120 ]; then
+              echo "Timed out waiting for app to be ready"
+              ./bin/kots get apps --namespace "$APP_SLUG"
+              echo "kotsadm logs:"
+              kubectl logs deploy/kotsadm --tail=100 -n "$APP_SLUG"
+              exit 1
+            fi
+            sleep 1
+          done
+
+          printf "App is installed successfully and is ready\n\n"
+          ./bin/kots get apps --namespace "$APP_SLUG"
+
+      - name: Generate support bundle on failure
+        if: failure()
+        uses: ./.github/actions/generate-support-bundle
         with:
-          test-focus: 'Strict Preflight Checks'
-          kots-namespace: 'strict-preflight-checks'
-          k8s-distribution: ${{ matrix.cluster.distribution }}
-          k8s-version: ${{ matrix.cluster.version }}
-          testim-access-token: '${{ secrets.TESTIM_ACCESS_TOKEN }}'
-          testim-branch: ${{ github.head_ref == 'main' && 'master' || github.head_ref }}
+          kots-namespace: "$APP_SLUG"
           aws-access-key-id: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_ACCESS_KEY_ID }}'
           aws-secret-access-key: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_SECRET_ACCESS_KEY }}'
-          replicated-api-token: '${{ secrets.C11Y_MATRIX_TOKEN }}'
-          kots-dockerhub-username: '${{ secrets.E2E_DOCKERHUB_USERNAME }}'
-          kots-dockerhub-password: '${{ secrets.E2E_DOCKERHUB_PASSWORD }}'
+
+      - name: Remove Cluster
+        id: remove-cluster
+        uses: replicatedhq/replicated-actions/remove-cluster@v1
+        if: ${{ always() && steps.create-cluster.outputs.cluster-id != '' }}
+        continue-on-error: true
+        with:
+          api-token: ${{ secrets.C11Y_MATRIX_TOKEN }}
+          cluster-id: ${{ steps.create-cluster.outputs.cluster-id }}
 
 
   validate-config:
@@ -3723,7 +3792,6 @@ jobs:
       - validate-multi-app-backup-and-restore
       - validate-multi-app-install
       - validate-airgap-smoke-test
-      - validate-strict-preflight-checks
       - validate-config
       # non-testim tests
       - validate-minimal-rbac-override
@@ -3740,6 +3808,7 @@ jobs:
       - validate-native-helm-v2
       - validate-deployment-orchestration
       - validate-replicated-sdk
+      - validate-strict-preflight-checks
       # cli-only tests
       - validate-kots-push-images-anonymous
     steps:
