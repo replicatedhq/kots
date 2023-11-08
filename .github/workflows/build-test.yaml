@@ -809,7 +809,7 @@ jobs:
           kots-dockerhub-password: '${{ secrets.E2E_DOCKERHUB_PASSWORD }}'
 
 
- validate-strict-preflight-checks:
+  validate-strict-preflight-checks:
     runs-on: ubuntu-20.04
     needs: [ enable-tests, can-run-ci, build-push-kotsadm-image, build-e2e, build-kurl-proxy, build-migrations, push-minio, push-mc, push-rqlite ]
     strategy:
