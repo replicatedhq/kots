@@ -874,10 +874,10 @@ jobs:
             exit 1
           fi
 
-          if ! kubectl logs -l app=kotsadm -n "$APP_SLUG" | grep -q "preflights will not be skipped, strict preflights are set to true"; then
+          if ! kubectl logs deploy/kotsadm -n "$APP_SLUG" | grep -q "preflights will not be skipped, strict preflights are set to true"; then
             echo "Failed to find a log line about strict preflights not being skipped in kotsadm logs"
             echo "kotsadm logs:"
-            kubectl logs -l app=kotsadm --all-containers --namespace "$APP_SLUG"
+            kubectl logs deploy/kotsadm -n "$APP_SLUG"
             exit 1
           fi
 
@@ -891,7 +891,7 @@ jobs:
               echo "Timed out waiting for app to be ready"
               ./bin/kots get apps --namespace "$APP_SLUG"
               echo "kotsadm logs:"
-              kubectl logs -l app=kotsadm --tail=100 --namespace "$APP_SLUG"
+              kubectl logs deploy/kotsadm --tail=100 -n "$APP_SLUG"
               exit 1
             fi
             sleep 1
