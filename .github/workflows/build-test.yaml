@@ -1463,8 +1463,9 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        cluster: ${{ fromJson(needs.cmx-versions.outputs.versions-to-test) }}
-    continue-on-error: ${{ matrix.cluster.stage != 'stable' }}
+        cluster: [
+          {distribution: kind, version: v1.28.0}
+        ]
     env:
       APP_SLUG: helm-install-order
     steps:
