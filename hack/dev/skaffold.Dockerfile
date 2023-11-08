@@ -14,7 +14,7 @@ ARG DEBUG_KOTSADM=0
 
 RUN make build kots
 
-FROM debian:bullseye
+FROM debian:bookworm
 
 RUN apt-get update && apt-get install -y --no-install-recommends curl gnupg2 \
   && apt-get update && apt-get install -y --no-install-recommends git \
