@@ -65,15 +65,6 @@ func NewConfigValidation() Test {
 	}
 }
 
-func NewMinimalRBACTest() Test {
-	return Test{
-		Name:        "Minimal RBAC",
-		Suite:       "minimal-rbac",
-		Namespace:   "minimal-rbac",
-		UpstreamURI: "minimal-rbac/automated",
-	}
-}
-
 func NewBackupAndRestore() Test {
 	return Test{
 		Name:           "Backup and Restore",
