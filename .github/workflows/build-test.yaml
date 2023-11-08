@@ -3786,7 +3786,6 @@ jobs:
       - validate-multi-app-backup-and-restore
       - validate-multi-app-install
       - validate-airgap-smoke-test
-      - validate-strict-preflight-checks
       - validate-config
       # non-testim tests
       - validate-minimal-rbac-override
@@ -3803,6 +3802,7 @@ jobs:
       - validate-native-helm-v2
       - validate-deployment-orchestration
       - validate-replicated-sdk
+      - validate-strict-preflight-checks
       # cli-only tests
       - validate-kots-push-images-anonymous
     steps:
