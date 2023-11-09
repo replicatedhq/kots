@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"time"
 
 	"github.com/pkg/errors"
 	apptypes "github.com/replicatedhq/kots/pkg/app/types"
@@ -276,6 +277,9 @@ func maybeDeployFirstVersion(appID string, sequence int64, preflightResults *typ
 	if err != nil {
 		return false, errors.Wrap(err, "failed to deploy version")
 	}
+
+	// this ensures the version status is updated before returning
+	time.Sleep(time.Second)
 
 	return true, nil
 }
