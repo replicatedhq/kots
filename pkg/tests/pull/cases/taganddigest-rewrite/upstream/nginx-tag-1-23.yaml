@@ -1,0 +1,28 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: example-nginx-tag-1-23
+  labels:
+    app: example
+    component: nginx-tag-1-23
+spec:
+  selector:
+    matchLabels:
+      app: example
+      component: nginx-tag-1-23
+  template:
+    metadata:
+      labels:
+        app: example
+        component: nginx-tag-1-23
+    spec:
+      containers:
+        - name: nginx
+          image: nginx:1.23
+          resources:
+            limits:
+              memory: '256Mi'
+              cpu: '500m'
+            requests:
+              memory: '32Mi'
+              cpu: '100m'

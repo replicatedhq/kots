@@ -1,0 +1,28 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: example-nginx-digest-single-arch
+  labels:
+    app: example
+    component: nginx-digest-single-arch
+spec:
+  selector:
+    matchLabels:
+      app: example
+      component: nginx-digest-single-arch
+  template:
+    metadata:
+      labels:
+        app: example
+        component: nginx-digest-single-arch
+    spec:
+      containers:
+        - name: nginx
+          image: nginx@sha256:f26fbadb0acab4a21ecb4e337a326907e61fbec36c9a9b52e725669d99ed1261
+          resources:
+            limits:
+              memory: '256Mi'
+              cpu: '500m'
+            requests:
+              memory: '32Mi'
+              cpu: '100m'

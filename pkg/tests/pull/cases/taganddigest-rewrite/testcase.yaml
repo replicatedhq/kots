@@ -1,0 +1,18 @@
+Name: test tag and digest with rewrite
+PullOptions:
+  Namespace: app-namespace
+  ExcludeAdminConsole: true
+  IsAirgap: true
+  Silent: true
+  LocalPath: cases/taganddigest-rewrite/upstream
+  RootDir: cases/taganddigest-rewrite/results
+  SharedPassword: dummy-pass
+  RewriteImages: true
+  RewriteImageOptions:
+    Hostname: ttl.sh
+    Namespace: test
+    Username: test
+    Password: fake-pass
+    IsReadOnly: true
+  Downstreams:
+    - this-cluster

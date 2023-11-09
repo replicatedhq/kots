@@ -1,0 +1,38 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    kots.io/app-slug: my-app
+  labels:
+    app: example
+    component: nginx-digest-single-arch
+    kots.io/app-slug: my-app
+    kots.io/backup: velero
+  name: example-nginx-digest-single-arch
+spec:
+  selector:
+    matchLabels:
+      app: example
+      component: nginx-digest-single-arch
+  template:
+    metadata:
+      annotations:
+        kots.io/app-slug: my-app
+      labels:
+        app: example
+        component: nginx-digest-single-arch
+        kots.io/app-slug: my-app
+        kots.io/backup: velero
+    spec:
+      containers:
+      - image: nginx@sha256:f26fbadb0acab4a21ecb4e337a326907e61fbec36c9a9b52e725669d99ed1261
+        name: nginx
+        resources:
+          limits:
+            cpu: 500m
+            memory: 256Mi
+          requests:
+            cpu: 100m
+            memory: 32Mi
+      imagePullSecrets:
+      - name: my-app-registry
