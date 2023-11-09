@@ -697,37 +697,110 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        cluster: ${{ fromJson(needs.cmx-versions.outputs.versions-to-test) }}
-    continue-on-error: ${{ matrix.cluster.stage != 'stable' }}
+        cluster: [
+          {distribution: kind, version: v1.28.0},
+          {distribution: openshift, version: 4.13.0-okd}
+        ]
+    env:
+      APP_SLUG: minimal-rbac
     steps:
       - name: Checkout
         uses: actions/checkout@v3
-      - name: download e2e deps
-        uses: actions/download-artifact@v3
+
+      - name: Create Cluster 
+        id: create-cluster 
+        uses: replicatedhq/replicated-actions/create-cluster@v1 
         with:
-          name: e2e
-          path: e2e/bin/
-      - run: docker load -i e2e/bin/e2e-deps.tar
-      - run: chmod +x e2e/bin/*
+          api-token: ${{ secrets.C11Y_MATRIX_TOKEN }}
+          kubernetes-distribution: ${{ matrix.cluster.distribution }}
+          kubernetes-version: ${{ matrix.cluster.version }}
+          cluster-name: automated-kots-${{ github.run_id }}-${{ matrix.cluster.distribution }}-${{ matrix.cluster.version }}
+          timeout-minutes: '120'
+          ttl: 2h
+          export-kubeconfig: true
+
       - name: download kots binary
         uses: actions/download-artifact@v3
         with:
           name: kots
           path: bin/
-      - run: chmod +x bin/*
-      - uses: ./.github/actions/kots-e2e
+
+      - run: chmod +x bin/kots
+
+      - name: create namespace and dockerhub secret
+        run: |
+          kubectl create ns "$APP_SLUG"
+          kubectl create secret docker-registry kotsadm-dockerhub --docker-server index.docker.io --docker-username "${{ secrets.E2E_DOCKERHUB_USERNAME }}" --docker-password "${{ secrets.E2E_DOCKERHUB_PASSWORD }}" --namespace "$APP_SLUG"
+
+      - name: run the test
+        run: |
+          set +e
+          echo ${{ secrets.MINIMAL_RBAC_LICENSE }} | base64 -d > license.yaml
+          ./bin/kots \
+            install "$APP_SLUG/automated" \
+            --license-file license.yaml \
+            --no-port-forward \
+            --namespace "$APP_SLUG" \
+            --shared-password password \
+            --kotsadm-registry ttl.sh \
+            --kotsadm-namespace automated-${{ github.run_id }} \
+            --kotsadm-tag 24h | tee output.txt
+
+          if ! grep -q "The Kubernetes RBAC policy that the Admin Console is running with does not have access to complete the Preflight Checks. It's recommended that you run these manually before proceeding." output.txt; then
+            echo "Expected to see an RBAC error for preflight checks, but did not" 
+            exit 1
+          fi
+
+          if ! grep -q 'The app was not deployed.' output.txt; then
+            printf "Expected to see message about app not being deployed, but did not\n"
+            exit 1
+          fi
+
+          if grep FAIL output.txt | grep -q 'This application requires at least 100 nodes'; then
+            printf "Did not expect to see a failure about number of nodes, but did\n"
+            exit 1
+          fi
+
+          if ! kubectl get role -n "$APP_SLUG" | grep -q kotsadm; then
+            echo "kotsadm role not found in namespace $APP_SLUG"
+            kubectl get role -n "$APP_SLUG"
+            exit 1
+          fi
+
+          if ! kubectl get rolebinding -n "$APP_SLUG" | grep -q kotsadm; then
+            echo "kotsadm rolebinding not found in namespace $APP_SLUG"
+            kubectl get rolebinding -n "$APP_SLUG"
+            exit 1
+          fi
+
+          if kubectl get clusterrole | grep -q kotsadm; then
+            echo "found kotsadm clusterrole in minimal RBAC install"
+            kubectl get clusterrole
+            exit 1
+          fi
+
+          if kubectl get clusterrolebinding | grep -q kotsadm; then
+            echo "found kotsadm clusterrolebinding in minimal RBAC install"
+            kubectl get clusterrolebinding
+            exit 1
+          fi
+
+      - name: Generate support bundle on failure
+        if: failure()
+        uses: ./.github/actions/generate-support-bundle
         with:
-          test-focus: 'Minimal RBAC'
-          kots-namespace: 'minimal-rbac'
-          k8s-distribution: ${{ matrix.cluster.distribution }}
-          k8s-version: ${{ matrix.cluster.version }}
-          testim-access-token: '${{ secrets.TESTIM_ACCESS_TOKEN }}'
-          testim-branch: ${{ github.head_ref == 'main' && 'master' || github.head_ref }}
+          kots-namespace: "$APP_SLUG"
           aws-access-key-id: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_ACCESS_KEY_ID }}'
           aws-secret-access-key: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_SECRET_ACCESS_KEY }}'
-          replicated-api-token: '${{ secrets.C11Y_MATRIX_TOKEN }}'
-          kots-dockerhub-username: '${{ secrets.E2E_DOCKERHUB_USERNAME }}'
-          kots-dockerhub-password: '${{ secrets.E2E_DOCKERHUB_PASSWORD }}'
+
+      - name: Remove Cluster
+        id: remove-cluster
+        uses: replicatedhq/replicated-actions/remove-cluster@v1
+        if: ${{ always() && steps.create-cluster.outputs.cluster-id != '' }}
+        continue-on-error: true
+        with:
+          api-token: ${{ secrets.C11Y_MATRIX_TOKEN }}
+          cluster-id: ${{ steps.create-cluster.outputs.cluster-id }}
 
 
   validate-backup-and-restore:
@@ -776,7 +849,7 @@ jobs:
       fail-fast: false
       matrix:
         cluster: [
-          {distribution: kind, version: v1.27}
+          {distribution: kind, version: v1.28.0}
         ]
     steps:
       - name: Checkout
@@ -816,7 +889,7 @@ jobs:
       fail-fast: false
       matrix:
         cluster: [
-          {distribution: kind, version: v1.27}
+          {distribution: kind, version: v1.28.0}
         ]
     env:
       APP_SLUG: strict-preflight-checks
@@ -925,7 +998,7 @@ jobs:
       fail-fast: false
       matrix:
         cluster: [
-          {distribution: kind, version: v1.27}
+          {distribution: kind, version: v1.28.0}
         ]
     steps:
       - name: Checkout
@@ -1004,7 +1077,7 @@ jobs:
       fail-fast: false
       matrix:
         cluster: [
-          {distribution: kind, version: v1.27}
+          {distribution: kind, version: v1.28.0}
         ]
     steps:
       - name: Checkout
@@ -1043,8 +1116,10 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        cluster: ${{ fromJson(needs.cmx-versions.outputs.versions-to-test) }}
-    continue-on-error: ${{ matrix.cluster.stage != 'stable' }}
+        cluster: [
+          {distribution: kind, version: v1.28.0},
+          {distribution: openshift, version: 4.13.0-okd}
+        ]
     env:
       APP_SLUG: minimal-rbac
       APP_VERSION_LABEL: "0.0.1"
@@ -1080,8 +1155,11 @@ jobs:
 
       - name: minimal rbac override on command line
         run: |
+          set +e
+          echo ${{ secrets.MINIMAL_RBAC_LICENSE }} | base64 -d > license.yaml
           ./bin/kots \
             install "$APP_SLUG/automated" \
+            --license-file license.yaml \
             --app-version-label "$APP_VERSION_LABEL" \
             --no-port-forward \
             --namespace "$APP_SLUG" \
@@ -1089,16 +1167,45 @@ jobs:
             --kotsadm-registry ttl.sh \
             --kotsadm-namespace automated-${{ github.run_id }} \
             --kotsadm-tag 24h \
-            --use-minimal-rbac
-          if kubectl get roles -n "$APP_SLUG" | grep -q kotsadm; then
-            echo "Found kotsadm role in ${APP_SLUG}"
-          else
-            echo "No kotsadm role found in appication namespace"
+            --use-minimal-rbac | tee output.txt
+
+          if ! grep -q "The Kubernetes RBAC policy that the Admin Console is running with does not have access to complete the Preflight Checks. It's recommended that you run these manually before proceeding." output.txt; then
+            echo "Expected to see an RBAC error for preflight checks, but did not" 
             exit 1
           fi
-          if kubectl get clusterroles | grep -q kotsadm; then
-            echo "Found kotsadm cluster roles in minimal RBAC install"
-            exit
+
+          if ! grep -q 'The app was not deployed.' output.txt; then
+            printf "Expected to see message about app not being deployed, but did not\n"
+            exit 1
+          fi
+
+          if grep FAIL output.txt | grep -q 'This application requires at least 100 nodes'; then
+            printf "Did not expect to see a failure about number of nodes, but did\n"
+            exit 1
+          fi
+
+          if ! kubectl get role -n "$APP_SLUG" | grep -q kotsadm; then
+            echo "kotsadm role not found in namespace $APP_SLUG"
+            kubectl get role -n "$APP_SLUG"
+            exit 1
+          fi
+
+          if ! kubectl get rolebinding -n "$APP_SLUG" | grep -q kotsadm; then
+            echo "kotsadm rolebinding not found in namespace $APP_SLUG"
+            kubectl get rolebinding -n "$APP_SLUG"
+            exit 1
+          fi
+
+          if kubectl get clusterrole | grep -q kotsadm; then
+            echo "found kotsadm clusterrole in minimal RBAC install"
+            kubectl get clusterrole
+            exit 1
+          fi
+
+          if kubectl get clusterrolebinding | grep -q kotsadm; then
+            echo "found kotsadm clusterrolebinding in minimal RBAC install"
+            kubectl get clusterrolebinding
+            exit 1
           fi
 
       - name: create namespace and dockerhub secret
@@ -1109,25 +1216,58 @@ jobs:
 
       - name: no minimal rbac override on command line
         run: |
+          set +e
+          echo ${{ secrets.MINIMAL_RBAC_LICENSE }} | base64 -d > license.yaml
           ./bin/kots \
             install "$APP_SLUG/automated" \
+            --license-file license.yaml \
             --app-version-label "$APP_VERSION_LABEL" \
             --no-port-forward \
             --namespace "$APP_SLUG" \
             --shared-password password \
             --kotsadm-registry ttl.sh \
             --kotsadm-namespace automated-${{ github.run_id }} \
-            --kotsadm-tag 24h
-          if kubectl get roles -n "$APP_SLUG" | grep -q kotsadm; then
-            echo "Found kotsadm role in cluster scoped install"
+            --kotsadm-tag 24h | tee output.txt
+
+          if grep -q "The Kubernetes RBAC policy that the Admin Console is running with does not have access to complete the Preflight Checks. It's recommended that you run these manually before proceeding." output.txt; then
+            echo "Did not expect to see an RBAC error for preflight checks, but did" 
             exit 1
           fi
-          if kubectl get clusterroles | grep -q kotsadm; then
-            echo "Found kotsadm cluster role in cluster scoped install"
-          else
-            echo "No kotsadm cluster role in cluster scoped install"
+
+          if ! grep -q 'The app was not deployed.' output.txt; then
+            printf "Expected to see message about app not being deployed, but did not\n"
             exit 1
           fi
+
+          if ! grep FAIL output.txt | grep -q 'This application requires at least 100 nodes'; then
+            printf "Expected to see a failure about number of nodes, but did not\n"
+            exit 1
+          fi
+
+          if kubectl get role -n "$APP_SLUG" | grep -q kotsadm; then
+            echo "kotsadm role found in cluster scoped install"
+            kubectl get role -n "$APP_SLUG"
+            exit 1
+          fi
+
+          if kubectl get rolebinding -n "$APP_SLUG" | grep -q kotsadm; then
+            echo "kotsadm rolebinding found in cluster scoped install"
+            kubectl get rolebinding -n "$APP_SLUG"
+            exit 1
+          fi
+
+          if ! kubectl get clusterrole | grep -q kotsadm; then
+            echo "No kotsadm clusterrole found in cluster scoped install"
+            kubectl get clusterrole
+            exit 1
+          fi
+
+          if ! kubectl get clusterrolebinding | grep -q kotsadm; then
+            echo "No kotsadm clusterrolebinding found in cluster scoped install"
+            kubectl get clusterrolebinding
+            exit 1
+          fi
+
       - name: Generate support bundle on failure
         if: failure()
         uses: ./.github/actions/generate-support-bundle
@@ -1375,7 +1515,7 @@ jobs:
       fail-fast: false
       matrix:
         cluster: [
-          {distribution: kind, version: v1.27.0}
+          {distribution: kind, version: v1.28.0}
         ] 
     env:
       APP_SLUG: app-version-label
@@ -1632,7 +1772,7 @@ jobs:
       fail-fast: false
       matrix:
         cluster: [
-          {distribution: kind, version: v1.27.0}
+          {distribution: kind, version: v1.28.0}
         ] 
     env:
       APP_SLUG: no-redeploy-on-restart
@@ -1754,7 +1894,7 @@ jobs:
       fail-fast: false
       matrix:
         cluster: [
-          {distribution: kind, version: v1.27.0}
+          {distribution: kind, version: v1.28.0}
         ] 
     env:
       APP_SLUG: kubernetes-installer-preflight
@@ -1891,7 +2031,7 @@ jobs:
       fail-fast: false
       matrix:
         cluster: [
-          {distribution: kind, version: v1.27}
+          {distribution: kind, version: v1.28.0}
         ]
     steps:
       - name: Checkout
@@ -1952,7 +2092,7 @@ jobs:
       fail-fast: false
       matrix:
         cluster: [
-          {distribution: kind, version: v1.27.0}
+          {distribution: kind, version: v1.28.0}
         ] 
     env:
       APP_SLUG: minimal-rbac
@@ -2149,7 +2289,7 @@ jobs:
       fail-fast: false
       matrix:
         cluster: [
-          {distribution: kind, version: v1.27}
+          {distribution: kind, version: v1.28.0}
         ]
     steps:
       - name: Checkout
@@ -2217,7 +2357,7 @@ jobs:
       fail-fast: false
       matrix:
         cluster: [
-          {distribution: kind, version: v1.27}
+          {distribution: kind, version: v1.28.0}
         ]
     steps:
       - name: Checkout
@@ -2284,7 +2424,7 @@ jobs:
       fail-fast: false
       matrix:
         cluster: [
-          {distribution: kind, version: v1.27}
+          {distribution: kind, version: v1.28.0}
         ]
     steps:
       - name: Checkout
@@ -2490,7 +2630,7 @@ jobs:
       fail-fast: false
       matrix:
         cluster: [
-          {distribution: kind, version: v1.27.0}
+          {distribution: kind, version: v1.28.0}
         ] 
     env:
       APP_SLUG: helm-release-secret-migration
@@ -2677,7 +2817,7 @@ jobs:
       fail-fast: false
       matrix:
         cluster: [
-          {distribution: kind, version: v1.27}
+          {distribution: kind, version: v1.28.0}
         ]
     steps:
       - name: Checkout
@@ -2717,7 +2857,7 @@ jobs:
       fail-fast: false
       matrix:
         cluster: [
-          {distribution: kind, version: v1.27}
+          {distribution: kind, version: v1.28.0}
         ]
     steps:
       - name: Checkout
@@ -2757,7 +2897,7 @@ jobs:
       fail-fast: false
       matrix:
         cluster: [
-          {distribution: kind, version: v1.27}
+          {distribution: kind, version: v1.28.0}
         ]
     steps:
       - name: Checkout
@@ -2798,7 +2938,7 @@ jobs:
       fail-fast: false
       matrix:
         cluster: [
-          {distribution: kind, version: v1.27, instance-type: r1.medium}
+          {distribution: kind, version: v1.28.0, instance-type: r1.medium}
         ]
     env:
       APP_SLUG: remove-app
@@ -2977,7 +3117,7 @@ jobs:
       fail-fast: false
       matrix:
         cluster: [
-          {distribution: kind, version: v1.27.0}
+          {distribution: kind, version: v1.28.0}
         ] 
     steps:
       - name: Checkout
@@ -3072,7 +3212,7 @@ jobs:
       fail-fast: false
       matrix:
         cluster: [
-          {distribution: kind, version: v1.27.0}
+          {distribution: kind, version: v1.28.0}
         ] 
     env:
       APP_SLUG: native-helm-v2
@@ -3298,7 +3438,7 @@ jobs:
       fail-fast: false
       matrix:
         cluster: [
-          {distribution: kind, version: v1.27.0}
+          {distribution: kind, version: v1.28.0}
         ] 
     env:
       APP_SLUG: deployment-orchestration
@@ -3468,7 +3608,7 @@ jobs:
         cluster: [
           {distribution: kind, version: v1.28.0},
           {distribution: openshift, version: 4.13.0-okd}
-        ] 
+        ]
     env:
       KOTS_NAMESPACE: replicated-sdk
     steps:
@@ -3780,7 +3920,6 @@ jobs:
       # testim tests
       - validate-existing-online-install-minimal
       - validate-smoke-test
-      - validate-minimal-rbac
       - validate-backup-and-restore
       - validate-no-required-config
       - validate-version-history-pagination
@@ -3794,6 +3933,7 @@ jobs:
       - validate-airgap-smoke-test
       - validate-config
       # non-testim tests
+      - validate-minimal-rbac
       - validate-minimal-rbac-override
       - validate-multi-namespace
       - validate-kots-pull
