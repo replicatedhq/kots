@@ -745,29 +745,22 @@ jobs:
             --kotsadm-registry ttl.sh \
             --kotsadm-namespace automated-${{ github.run_id }} \
             --skip-preflights \
-            --kotsadm-tag 24h
+            --kotsadm-tag 24h | tee output.txt
 
-          EXIT_CODE=$?
-          if [ $EXIT_CODE -ne 0 ]; then
-            echo "------pods:"
-            kubectl -n "$APP_SLUG" get pods
-            echo "------kotsadm logs"
-            kubectl logs -l app=kotsadm --tail=100 --namespace "$APP_SLUG"
-            exit $EXIT_CODE
+          if ! grep -q "The Kubernetes RBAC policy that the Admin Console is running with does not have access to complete the Preflight Checks. It's recommended that you run these manually before proceeding." output.txt; then
+            echo "Expected to see an RBAC error for preflight checks, but did not" 
+            exit 1
           fi
 
-          COUNTER=1
-          while [ "$(./bin/kots get apps --namespace "$APP_SLUG" | awk 'NR>1{print $2}')" != "ready" ]; do
-            ((COUNTER += 1))
-            if [ $COUNTER -gt 180 ]; then
-              echo "Timed out waiting for app to be ready"
-              ./bin/kots get apps --namespace "$APP_SLUG"
-              echo "kotsadm logs:"
-              kubectl logs -l app=kotsadm --tail=100 --namespace "$APP_SLUG"
-              exit 1
-            fi
-            sleep 1
-          done
+          if ! grep -q 'The app was not deployed.' output.txt; then
+            printf "Expected to see message about app not being deployed, but did not\n"
+            exit 1
+          fi
+
+          if grep FAIL output.txt | grep -q 'This application requires at least 100 nodes'; then
+            printf "Did not expect to see a failure about number of nodes, but did\n"
+            exit 1
+          fi
 
           if ! kubectl get role -n "$APP_SLUG" | grep -q kotsadm; then
             echo "kotsadm role not found in namespace $APP_SLUG"
@@ -1172,7 +1165,22 @@ jobs:
             --kotsadm-registry ttl.sh \
             --kotsadm-namespace automated-${{ github.run_id }} \
             --kotsadm-tag 24h \
-            --use-minimal-rbac
+            --use-minimal-rbac | tee output.txt
+
+          if ! grep -q "The Kubernetes RBAC policy that the Admin Console is running with does not have access to complete the Preflight Checks. It's recommended that you run these manually before proceeding." output.txt; then
+            echo "Expected to see an RBAC error for preflight checks, but did not" 
+            exit 1
+          fi
+
+          if ! grep -q 'The app was not deployed.' output.txt; then
+            printf "Expected to see message about app not being deployed, but did not\n"
+            exit 1
+          fi
+
+          if grep FAIL output.txt | grep -q 'This application requires at least 100 nodes'; then
+            printf "Did not expect to see a failure about number of nodes, but did\n"
+            exit 1
+          fi
 
           if ! kubectl get role -n "$APP_SLUG" | grep -q kotsadm; then
             echo "kotsadm role not found in namespace $APP_SLUG"
@@ -1214,7 +1222,22 @@ jobs:
             --shared-password password \
             --kotsadm-registry ttl.sh \
             --kotsadm-namespace automated-${{ github.run_id }} \
-            --kotsadm-tag 24h
+            --kotsadm-tag 24h | tee output.txt
+
+          if grep -q "The Kubernetes RBAC policy that the Admin Console is running with does not have access to complete the Preflight Checks. It's recommended that you run these manually before proceeding." output.txt; then
+            echo "Did not expect to see an RBAC error for preflight checks, but did" 
+            exit 1
+          fi
+
+          if ! grep -q 'The app was not deployed.' output.txt; then
+            printf "Expected to see message about app not being deployed, but did not\n"
+            exit 1
+          fi
+
+          if ! grep FAIL output.txt | grep -q 'This application requires at least 100 nodes'; then
+            printf "Expected to see a failure about number of nodes, but did not\n"
+            exit 1
+          fi
 
           if kubectl get role -n "$APP_SLUG" | grep -q kotsadm; then
             echo "kotsadm role found in cluster scoped install"
