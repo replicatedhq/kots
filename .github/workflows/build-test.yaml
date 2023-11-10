@@ -537,25 +537,12 @@ jobs:
           docker push ttl.sh/automated-${{ github.run_id }}/dex:${{ steps.dotenv.outputs.DEX_TAG }}
 
 
-  # only run validate-kurl-addon if changes to "deploy/kurl/kotsadm/template/**"
-  kurl-addon-changes-filter:
+  generate-kurl-addon:
     runs-on: ubuntu-20.04
-    needs: [ can-run-ci, enable-tests ]
+    needs: [ can-run-ci, enable-tests, generate-tag, build-kots, build-push-kotsadm-image, build-kurl-proxy, build-migrations, push-dex ]
     outputs:
-      ok-to-test: ${{ steps.filter.outputs.kurl-addon }}
-    steps:
-      - uses: actions/checkout@v3
-      - uses: dorny/paths-filter@v2
-        id: filter
-        with:
-          filters: |
-            kurl-addon:
-              - 'deploy/kurl/kotsadm/template/**'
-              - 'deploy/kurl/kotsadm/testgrid-os-spec.yaml'
-  validate-kurl-addon:
-    runs-on: ubuntu-20.04
-    if: ${{ needs.kurl-addon-changes-filter.outputs.ok-to-test == 'true' }}
-    needs: [ can-run-ci, enable-tests, generate-tag, kurl-addon-changes-filter, build-kots, build-push-kotsadm-image, build-kurl-proxy, build-migrations, push-dex ]
+      addon_version: ${{ steps.vars.outputs.addon_version }}
+      addon_package_url: ${{ steps.addon-generate.outputs.addon_package_url }}
     steps:
       - name: checkout
         uses: actions/checkout@v3
@@ -586,12 +573,34 @@ jobs:
           kotsadm_image_namespace: automated-${{ github.run_id }}
           kotsadm_image_tag: 24h
           kotsadm_binary_override: bin/kots.tar.gz
+  # only run validate-kurl-addon if changes to "deploy/kurl/kotsadm/template/**"
+  kurl-addon-changes-filter:
+    runs-on: ubuntu-20.04
+    needs: [ can-run-ci, enable-tests ]
+    outputs:
+      ok-to-test: ${{ steps.filter.outputs.kurl-addon }}
+    steps:
+      - uses: actions/checkout@v3
+      - uses: dorny/paths-filter@v2
+        id: filter
+        with:
+          filters: |
+            kurl-addon:
+              - 'deploy/kurl/kotsadm/template/**'
+              - 'deploy/kurl/kotsadm/testgrid-os-spec.yaml'
+  validate-kurl-addon:
+    runs-on: ubuntu-20.04
+    if: ${{ needs.kurl-addon-changes-filter.outputs.ok-to-test == 'true' }}
+    needs: [ can-run-ci, enable-tests, kurl-addon-changes-filter, generate-kurl-addon ]
+    steps:
+      - name: checkout
+        uses: actions/checkout@v3
       - name: test kurl add-on
         id: addon-test
         uses: ./.github/actions/kurl-addon-kots-test
         with:
-          addon_version: ${{ steps.vars.outputs.addon_version }}
-          addon_package_url: ${{ steps.addon-generate.outputs.addon_package_url }}
+          addon_version: ${{ needs.generate-kurl-addon.outputs.addon_version }}
+          addon_package_url: ${{ needs.generate-kurl-addon.outputs.addon_package_url }}
           testgrid_api_token: ${{ secrets.TESTGRID_PROD_API_TOKEN }}
       - name: comment testgrid url
         uses: mshick/add-pr-comment@v2
@@ -599,6 +608,63 @@ jobs:
           message: ${{ steps.addon-test.outputs.testgrid_run_message }}
           repo-token: ${{ secrets.GITHUB_TOKEN }}
           allow-repeats: false
+
+
+  create-kurl-installer:
+    runs-on: ubuntu-20.04
+    needs: [ can-run-ci, enable-tests, generate-kurl-addon ]
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      - name: create installer
+        id: create-installer
+        run: |
+          set +e
+
+          echo "apiVersion: cluster.kurl.sh/v1beta1
+          kind: Installer
+          metadata:
+            name: kots-ci-installer
+          spec:
+            kubernetes:
+              version: 1.28.x
+            flannel:
+              version: latest
+            minio: 
+              version: latest
+            openebs:
+              version: latest
+              isLocalPVEnabled: true
+              localPVStorageClassName: default
+              isCstorEnabled: false
+            contour:
+              version: latest
+            containerd:
+              version: latest
+            registry:
+              version: latest
+            kotsadm:
+              version: ${{ needs.generate-kurl-addon.outputs.addon_version }}
+              s3Override: ${{ needs.generate-kurl-addon.outputs.addon_package_url }}
+            ekco:
+              version: latest
+              enableInternalLoadBalancer: true" > installer.yaml
+
+          installer_url=$(curl -s -X POST https://k8s.kurl.sh/installer -H 'Content-Type: text/yaml' --data-binary @installer.yaml)
+          installer_id=${installer_url#"https://kurl.sh/"}
+          echo "installer_id=$installer_id" >> $GITHUB_OUTPUT
+    outputs:
+      installer_id: ${{ steps.create-installer.outputs.installer_id }}
+
+
+  echo-kurl-installer-id:
+    runs-on: ubuntu-20.04
+    needs: [ can-run-ci, enable-tests, create-kurl-installer ]
+    steps:
+      - name: echo installer id
+        run: |
+          echo "installer_id=${{ needs.create-kurl-installer.outputs.installer_id }}"
 
   
   cmx-versions:
