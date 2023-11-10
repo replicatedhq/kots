@@ -21,6 +21,9 @@ inputs:
     type: string
     description: "S3 key prefix."
 outputs:
+  s3_uri:
+    description: "S3 URI"
+    value: ${{ steps.s3-upload.outputs.s3_uri }}
   addon_package_url:
     description: "S3 package url"
     value: ${{ steps.s3-upload.outputs.addon_package_url }}
@@ -73,5 +76,7 @@ runs:
       shell: bash
       run: |
         out=${{ inputs.s3_prefix }}kotsadm-${{ inputs.addon_version }}-${GITHUB_SHA:0:7}.tar.gz
-        aws s3 cp kotsadm-${{ inputs.addon_version }}.tar.gz s3://kots-kurl-addons-production-1658439274/$out
+        s3_uri=s3://kots-kurl-addons-production-1658439274/$out
+        echo "s3_uri=$s3_uri" >> "$GITHUB_OUTPUT"
+        aws s3 cp kotsadm-${{ inputs.addon_version }}.tar.gz $s3_uri
         echo "addon_package_url=https://kots-kurl-addons-production-1658439274.s3.amazonaws.com/$out" >> "$GITHUB_OUTPUT"
