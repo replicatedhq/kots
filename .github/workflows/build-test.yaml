@@ -653,7 +653,7 @@ jobs:
 
           installer_url=$(curl -s -X POST https://k8s.kurl.sh/installer -H 'Content-Type: text/yaml' --data-binary @installer.yaml)
           installer_id=${installer_url#"https://kurl.sh/"}
-          echo "installer_id=$installer_id" >> $GITHUB_OUTPUT
+          echo "installer_id=$installer_id" >> "$GITHUB_OUTPUT"
     outputs:
       installer_id: ${{ steps.create-installer.outputs.installer_id }}
 
@@ -681,6 +681,34 @@ jobs:
           replicated-api-token: ${{ secrets.C11Y_MATRIX_TOKEN }}
     outputs:
       versions-to-test: ${{ steps.cmx-versions-to-test.outputs.versions-to-test }}
+
+
+  test-kurl-cluster:
+    runs-on: ubuntu-20.04
+    needs: [ enable-tests, can-run-ci, create-kurl-installer ]
+    strategy:
+      fail-fast: false
+      matrix:
+        cluster: [
+          {distribution: kurl, version: "${{ needs.create-kurl-installer.outputs.installer_id }}"}
+        ]
+    env:
+      APP_SLUG: minimal-rbac
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Create Cluster 
+        id: create-cluster 
+        uses: replicatedhq/replicated-actions/create-cluster@v1 
+        with:
+          api-token: ${{ secrets.C11Y_MATRIX_TOKEN }}
+          kubernetes-distribution: ${{ matrix.cluster.distribution }}
+          kubernetes-version: ${{ matrix.cluster.version }}
+          cluster-name: automated-kots-${{ github.run_id }}-${{ matrix.cluster.distribution }}-${{ matrix.cluster.version }}
+          timeout-minutes: '120'
+          ttl: 2h
+          export-kubeconfig: true
 
 
   # validate-existing-online-install-minimal:
