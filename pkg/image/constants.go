@@ -5,7 +5,7 @@ package image
 // image name.
 
 const (
-	Minio      = "minio/minio:RELEASE.2023-10-25T06-33-25Z"
+	Minio      = "minio/minio:RELEASE.2023-11-11T08-14-41Z"
 	Mc         = "minio/mc:RELEASE.2023-10-14T01-57-03Z"
 	Rqlite     = "rqlite/rqlite:7.21.4"
 	Dex        = "ghcr.io/dexidp/dex:v2.37.0"
