@@ -144,6 +144,7 @@ type KOTSHandler interface {
 	DeleteEmbeddedClusterNode(w http.ResponseWriter, r *http.Request)
 	GetEmbeddedClusterNodes(w http.ResponseWriter, r *http.Request)
 	GetEmbeddedClusterNode(w http.ResponseWriter, r *http.Request)
+	GetEmbeddedClusterRoles(w http.ResponseWriter, r *http.Request)
 
 	// Prometheus
 	SetPrometheusAddress(w http.ResponseWriter, r *http.Request)
