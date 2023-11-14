@@ -51,7 +51,7 @@ until $KOTSADM_MINIO_MIGRATION_DIR/bin/mc ready $KOTSADM_MINIO_NEW_ALIAS; do
 done
 
 # check if the bucket already exists
-if $KOTSADM_MINIO_MIGRATION_DIR/bin/mc ls $KOTSADM_MINIO_NEW_ALIAS | grep -q $KOTSADM_MINIO_BUCKET_NAME; then
+if $KOTSADM_MINIO_MIGRATION_DIR/bin/mc ls $KOTSADM_MINIO_NEW_ALIAS/$KOTSADM_MINIO_BUCKET_NAME; then
     echo "bucket already exists, skipping creation"
 else
     # create the bucket
