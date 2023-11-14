@@ -1,7 +1,6 @@
 include Makefile.build.mk
 CURRENT_USER := $(shell id -u -n)
 MINIO_TAG ?= RELEASE.2023-11-11T08-14-41Z
-MC_TAG ?= RELEASE.2023-10-14T01-57-03Z
 RQLITE_TAG ?= 7.21.4
 DEX_TAG ?= v2.37.0
 LVP_TAG ?= v0.5.5
@@ -123,10 +122,6 @@ all-ttl.sh: build-ttl.sh
 	docker tag minio/minio:${MINIO_TAG} ttl.sh/${CURRENT_USER}/minio:${MINIO_TAG}
 	docker push ttl.sh/${CURRENT_USER}/minio:${MINIO_TAG}
 
-	docker pull minio/mc:${MC_TAG}
-	docker tag minio/mc:${MC_TAG} ttl.sh/${CURRENT_USER}/mc:${MC_TAG}
-	docker push ttl.sh/${CURRENT_USER}/mc:${MC_TAG}
-
 	docker pull rqlite/rqlite:${RQLITE_TAG}
 	docker tag rqlite/rqlite:${RQLITE_TAG} ttl.sh/${CURRENT_USER}/rqlite:${RQLITE_TAG}
 	docker push ttl.sh/${CURRENT_USER}/rqlite:${RQLITE_TAG}
@@ -153,9 +148,6 @@ build-release:
 
 	mkdir -p bin/docker-archive/minio
 	skopeo copy docker://minio/minio:${MINIO_TAG} docker-archive:bin/docker-archive/minio/${MINIO_TAG}
-
-	mkdir -p bin/docker-archive/mc
-	skopeo copy docker://minio/mc:${MC_TAG} docker-archive:bin/docker-archive/mc/${MC_TAG}
 
 	mkdir -p bin/docker-archive/local-volume-provider
 	skopeo copy docker://replicated/local-volume-provider:${LVP_TAG} docker-archive:bin/docker-archive/local-volume-provider/${LVP_TAG}

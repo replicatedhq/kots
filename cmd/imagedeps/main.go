@@ -18,7 +18,6 @@ import (
 const (
 	schemaheroReference               = "schemahero"
 	minioReference                    = "minio"
-	minioClientReference              = "mc"
 	dexReference                      = "dex"
 	rqliteReference                   = "rqlite"
 	lvpReference                      = "lvp"
