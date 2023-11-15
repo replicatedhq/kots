@@ -109,7 +109,7 @@ func (h *Handler) GetEmbeddedClusterNodeJoinCommand(w http.ResponseWriter, r *ht
 		return
 	}
 
-	logger.Infof("k0s join command: \n%s", k0sJoinCommand)
+	logger.Infof("k0s join command: %q", k0sJoinCommand)
 
 	clusterID, err := embeddedcluster.ClusterID(client)
 	if err != nil {
