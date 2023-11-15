@@ -258,7 +258,7 @@ func GenerateK0sJoinCommand(ctx context.Context, client kubernetes.Interface, ro
 		cmd = append(cmd, "--enable-worker")
 	}
 
-	labels, err := getRolesNodeLabels(ctx, client, roles)
+	labels, err := getRolesNodeLabels(ctx, roles)
 	if err != nil {
 		return "", fmt.Errorf("failed to get role labels: %w", err)
 	}
@@ -309,25 +309,16 @@ func getControllerNodeIP(ctx context.Context, client kubernetes.Interface) (stri
 	return "", fmt.Errorf("failed to find healthy controller node")
 }
 
-func getRolesNodeLabels(ctx context.Context, client kubernetes.Interface, roles []string) (string, error) {
+func getRolesNodeLabels(ctx context.Context, roles []string) (string, error) {
 	roleLabels := getRoleListLabels(roles)
 
-	for _, role := range roles {
-		labels, err := getRoleNodeLabels(ctx, client, role)
-		if err != nil {
-			return "", fmt.Errorf("failed to get node labels for role %s: %w", role, err)
-		}
-		roleLabels = append(roleLabels, labels...)
+	labels, err := getRoleNodeLabels(ctx, roles)
+	if err != nil {
+		return "", fmt.Errorf("failed to get node labels for roles %v: %w", roles, err)
 	}
+	roleLabels = append(roleLabels, labels...)
 
 	return strings.Join(roleLabels, ","), nil
-}
-
-// TODO: look up role in cluster config, apply additional labels based on role
-func getRoleNodeLabels(ctx context.Context, client kubernetes.Interface, role string) ([]string, error) {
-	toReturn := []string{}
-
-	return toReturn, nil
 }
 
 // getRoleListLabels returns the labels needed to identify the roles of this node in the future

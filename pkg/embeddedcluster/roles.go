@@ -83,3 +83,36 @@ func SortRoles(controllerRole string, inputRoles []string) []string {
 
 	return roles
 }
+
+// getRoleNodeLabels looks up roles in the cluster config and determines the additional labels to be applied from that
+func getRoleNodeLabels(ctx context.Context, roles []string) ([]string, error) {
+	toReturn := []string{}
+
+	config, err := ClusterConfig(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get cluster config: %w", err)
+	}
+
+	if config == nil {
+		return toReturn, nil
+	}
+
+	for _, role := range roles {
+		if role == config.Controller.Name {
+			for k, v := range config.Controller.Labels {
+				toReturn = append(toReturn, fmt.Sprintf("%s=%s", k, v))
+			}
+		}
+		for _, customRole := range config.Custom {
+			if role == customRole.Name {
+				for k, v := range customRole.Labels {
+					toReturn = append(toReturn, fmt.Sprintf("%s=%s", k, v))
+				}
+			}
+		}
+	}
+
+	sort.Strings(toReturn)
+
+	return toReturn, nil
+}
