@@ -222,7 +222,7 @@ func migrateToMinioXlInitContainers(deployOptions types.DeployOptions, resourceR
 
 	return []corev1.Container{
 		{
-			Image:           GetAdminConsoleImage(deployOptions, "minio-client"),
+			Image:           GetAdminConsoleImage(deployOptions, "minio"),
 			ImagePullPolicy: corev1.PullIfNotPresent,
 			Name:            "copy-minio-client",
 			Command: []string{

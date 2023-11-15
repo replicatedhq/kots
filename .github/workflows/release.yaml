@@ -400,7 +400,6 @@ jobs:
     - name: Make kotsadm airgap archive without minio image
       run: |
         rm -rf ./docker-archive/minio
-        rm -rf ./docker-archive/mc
         rm -f ./kotsadm.tar.gz
         tar czf ./kotsadm-nominio.tar.gz -C ./ ./docker-archive
     - name: Upload airgap bundle without minio image
