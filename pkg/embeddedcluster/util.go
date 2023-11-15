@@ -89,17 +89,3 @@ func ClusterConfig(ctx context.Context) (*embeddedclusterv1beta1.ConfigSpec, err
 	latest := installationList.Items[0]
 	return latest.Spec.Config, nil
 }
-
-// ControllerRoleName determines the name for the 'controller' role
-// this might be part of the config, or it might be the default
-func ControllerRoleName(ctx context.Context) (string, error) {
-	conf, err := ClusterConfig(ctx)
-	if err != nil {
-		return "", fmt.Errorf("failed to get cluster config: %w", err)
-	}
-
-	if conf != nil && conf.Controller.Name != "" {
-		return conf.Controller.Name, nil
-	}
-	return DEFAULT_CONTROLLER_ROLE_NAME, nil
-}

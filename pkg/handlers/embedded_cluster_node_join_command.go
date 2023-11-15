@@ -92,6 +92,9 @@ func (h *Handler) GetEmbeddedClusterNodeJoinCommand(w http.ResponseWriter, r *ht
 		}
 	}
 
+	// sort roles by name, but put controller first
+	roles = embeddedcluster.SortRoles(controllerRoleName, roles)
+
 	k0sToken, err := embeddedcluster.GenerateAddNodeToken(r.Context(), client, k0sRole)
 	if err != nil {
 		logger.Error(fmt.Errorf("failed to generate add node token: %w", err))
