@@ -78,8 +78,15 @@ func (h *Handler) GetEmbeddedClusterNodeJoinCommand(w http.ResponseWriter, r *ht
 	}
 
 	k0sRole := "worker"
+	controllerRoleName, err := embeddedcluster.ControllerRoleName(r.Context())
+	if err != nil {
+		logger.Error(fmt.Errorf("failed to get controller role name: %w", err))
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
 	for _, role := range roles {
-		if role == "controller" {
+		if role == controllerRoleName {
 			k0sRole = "controller"
 			break
 		}

@@ -241,9 +241,14 @@ func GenerateAddNodeCommand(ctx context.Context, client kubernetes.Interface, to
 // GenerateK0sJoinCommand returns the k0s node join command, without the token but with all other required flags
 // (including node labels generated from the roles etc)
 func GenerateK0sJoinCommand(ctx context.Context, client kubernetes.Interface, roles []string) (string, error) {
+	controllerRoleName, err := ControllerRoleName(ctx)
+	if err != nil {
+		return "", fmt.Errorf("failed to get controller role name: %w", err)
+	}
+
 	k0sRole := "worker"
 	for _, role := range roles {
-		if role == "controller" {
+		if role == controllerRoleName {
 			k0sRole = "controller"
 		}
 	}

@@ -7,6 +7,8 @@ import (
 	embeddedclusterv1beta1 "github.com/replicatedhq/embedded-cluster-operator/api/v1beta1"
 )
 
+const DEFAULT_CONTROLLER_ROLE_NAME = "controller"
+
 // GetRoles will get a list of role names
 func GetRoles(ctx context.Context) ([]string, error) {
 	config, err := ClusterConfig(ctx)
@@ -24,7 +26,7 @@ func GetRoles(ctx context.Context) ([]string, error) {
 	if config.Controller.Name != "" {
 		roles = append(roles, config.Controller.Name)
 	} else {
-		roles = append(roles, "controller")
+		roles = append(roles, DEFAULT_CONTROLLER_ROLE_NAME)
 	}
 
 	for _, role := range config.Custom {
