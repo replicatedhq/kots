@@ -3,12 +3,16 @@ package embeddedcluster
 import (
 	"context"
 	"fmt"
+	"regexp"
 	"sort"
+	"strings"
 
 	embeddedclusterv1beta1 "github.com/replicatedhq/embedded-cluster-operator/api/v1beta1"
 )
 
 const DEFAULT_CONTROLLER_ROLE_NAME = "controller"
+
+var labelValueRegex = regexp.MustCompile(`[^a-zA-Z0-9-_.]+`)
 
 // GetRoles will get a list of role names
 func GetRoles(ctx context.Context) ([]string, error) {
@@ -86,27 +90,45 @@ func SortRoles(controllerRole string, inputRoles []string) []string {
 
 // getRoleNodeLabels looks up roles in the cluster config and determines the additional labels to be applied from that
 func getRoleNodeLabels(ctx context.Context, roles []string) ([]string, error) {
-	toReturn := []string{}
-
 	config, err := ClusterConfig(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get cluster config: %w", err)
 	}
 
+	return getRoleLabelsImpl(config, roles), nil
+}
+
+func labelify(s string) string {
+	// remove illegal characters
+	removechars := labelValueRegex.ReplaceAllString(s, "-")
+	// remove leading dashes
+	trimmed := strings.TrimPrefix(removechars, "-")
+	// restrict it to 63 characters
+	if len(trimmed) > 63 {
+		trimmed = trimmed[:63]
+	}
+	// remove trailing dashes
+	trimmed = strings.TrimSuffix(trimmed, "-")
+	return trimmed
+}
+
+func getRoleLabelsImpl(config *embeddedclusterv1beta1.ConfigSpec, roles []string) []string {
+	toReturn := []string{}
+
 	if config == nil {
-		return toReturn, nil
+		return toReturn
 	}
 
 	for _, role := range roles {
 		if role == config.Controller.Name {
 			for k, v := range config.Controller.Labels {
-				toReturn = append(toReturn, fmt.Sprintf("%s=%s", k, v))
+				toReturn = append(toReturn, fmt.Sprintf("%s=%s", labelify(k), labelify(v)))
 			}
 		}
 		for _, customRole := range config.Custom {
 			if role == customRole.Name {
 				for k, v := range customRole.Labels {
-					toReturn = append(toReturn, fmt.Sprintf("%s=%s", k, v))
+					toReturn = append(toReturn, fmt.Sprintf("%s=%s", labelify(k), labelify(v)))
 				}
 			}
 		}
@@ -114,5 +136,5 @@ func getRoleNodeLabels(ctx context.Context, roles []string) ([]string, error) {
 
 	sort.Strings(toReturn)
 
-	return toReturn, nil
+	return toReturn
 }

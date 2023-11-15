@@ -310,13 +310,13 @@ func getControllerNodeIP(ctx context.Context, client kubernetes.Interface) (stri
 }
 
 func getRolesNodeLabels(ctx context.Context, roles []string) (string, error) {
-	roleLabels := getRoleListLabels(roles)
+	roleListLabels := getRoleListLabels(roles)
 
 	labels, err := getRoleNodeLabels(ctx, roles)
 	if err != nil {
 		return "", fmt.Errorf("failed to get node labels for roles %v: %w", roles, err)
 	}
-	roleLabels = append(roleLabels, labels...)
+	roleLabels := append(roleListLabels, labels...)
 
 	return strings.Join(roleLabels, ","), nil
 }
@@ -328,7 +328,7 @@ func getRoleListLabels(roles []string) []string {
 	toReturn = append(toReturn, fmt.Sprintf("%s=total-%d", types.EMBEDDED_CLUSTER_ROLE_LABEL, len(roles)))
 
 	for idx, role := range roles {
-		toReturn = append(toReturn, fmt.Sprintf("%s-%d=%s", types.EMBEDDED_CLUSTER_ROLE_LABEL, idx, role))
+		toReturn = append(toReturn, fmt.Sprintf("%s-%d=%s", types.EMBEDDED_CLUSTER_ROLE_LABEL, idx, labelify(role)))
 	}
 
 	return toReturn
