@@ -36,12 +36,6 @@ echo "starting new minio instance"
 /bin/sh -ce "/usr/bin/docker-entrypoint.sh minio -C /home/minio/.minio/ server /export" &
 MINIO_PID=$!
 
-# wait for minio to be ready
-until curl -s $KOTSADM_MINIO_ENDPOINT/minio/health/ready; do
-    echo "waiting for minio to be ready"
-    sleep 1
-done
-
 # alias the minio instance
 echo "aliasing minio instance"
 until $KOTSADM_MINIO_MIGRATION_DIR/bin/mc alias set $KOTSADM_MINIO_NEW_ALIAS $KOTSADM_MINIO_ENDPOINT $MINIO_ACCESS_KEY $MINIO_SECRET_KEY; do
@@ -50,8 +44,14 @@ until $KOTSADM_MINIO_MIGRATION_DIR/bin/mc alias set $KOTSADM_MINIO_NEW_ALIAS $KO
     sleep 1
 done
 
+# wait for minio to be ready
+until $KOTSADM_MINIO_MIGRATION_DIR/bin/mc ready $KOTSADM_MINIO_NEW_ALIAS; do
+    echo "waiting for minio to be ready"
+    sleep 1
+done
+
 # check if the bucket already exists
-if $KOTSADM_MINIO_MIGRATION_DIR/bin/mc ls $KOTSADM_MINIO_NEW_ALIAS | grep -q $KOTSADM_MINIO_BUCKET_NAME; then
+if $KOTSADM_MINIO_MIGRATION_DIR/bin/mc ls $KOTSADM_MINIO_NEW_ALIAS/$KOTSADM_MINIO_BUCKET_NAME; then
     echo "bucket already exists, skipping creation"
 else
     # create the bucket

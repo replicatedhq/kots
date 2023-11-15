@@ -258,34 +258,6 @@ jobs:
           sarif_file: 'minio-scan-output.sarif'
 
 
-  scan_mc:
-    runs-on: ubuntu-20.04
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v3
-      - name: Read image tags from env file
-        uses: falti/dotenv-action@v1
-        id: dotenv
-        with:
-          path: .image.env
-      - name: Scan minio client for vulnerabilities
-        id: scan
-        uses: aquasecurity/trivy-action@master
-        with:
-          image-ref: "docker.io/minio/mc:${{ steps.dotenv.outputs.mc_tag }}"
-          format: 'template'
-          template: '@/contrib/sarif.tpl'
-          output: 'mc-scan-output.sarif'
-          exit-code: '0'
-          ignore-unfixed: true
-          severity: 'CRITICAL,HIGH,MEDIUM'
-
-      - name: Upload scan report
-        uses: github/codeql-action/upload-sarif@v2
-        with:
-          sarif_file: 'mc-scan-output.sarif'
-
-
   scan_dex:
     runs-on: ubuntu-20.04
     steps:
