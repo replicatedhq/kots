@@ -174,6 +174,14 @@ func TestKotsPull(t *testing.T) {
 						require.NoError(t, err, wantPath)
 					}
 
+					if strings.HasSuffix(wantPath, "pullsecrets.yaml") {
+						// pull secret patches are not generated in a deterministic order
+						gotPullSecrets := strings.Split(contentsString, "---\n")
+						wantPullSecrets := strings.Split(wantContentsString, "---\n")
+						require.ElementsMatch(t, wantPullSecrets, gotPullSecrets)
+						return nil
+					}
+
 					assert.Equal(t, wantContentsString, contentsString, wantPath)
 					return nil
 				})
