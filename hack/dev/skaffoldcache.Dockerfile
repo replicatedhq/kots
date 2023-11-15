@@ -1,4 +1,4 @@
-FROM golang:1.20 as deps
+FROM golang:1.21 as deps
 
 RUN go install github.com/go-delve/delve/cmd/dlv@v1.7.2
 
