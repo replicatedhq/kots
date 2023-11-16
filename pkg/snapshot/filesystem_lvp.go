@@ -11,6 +11,7 @@ import (
 	kotsadmtypes "github.com/replicatedhq/kots/pkg/kotsadm/types"
 	types "github.com/replicatedhq/kots/pkg/snapshot/types"
 	velerov1api "github.com/vmware-tanzu/velero/pkg/apis/velero/v1"
+	veleroclientv1 "github.com/vmware-tanzu/velero/pkg/generated/clientset/versioned/typed/velero/v1"
 	corev1 "k8s.io/api/core/v1"
 	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -45,7 +46,22 @@ func ValidateFileSystemDeployment(ctx context.Context, clientset kubernetes.Inte
 }
 
 func GetCurrentLvpFileSystemConfig(ctx context.Context, namespace string) (*types.FileSystemConfig, error) {
-	bsl, err := FindBackupStoreLocation(ctx, namespace)
+	cfg, err := k8sutil.GetClusterConfig()
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get cluster config")
+	}
+
+	clientset, err := kubernetes.NewForConfig(cfg)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to create clientset")
+	}
+
+	veleroClient, err := veleroclientv1.NewForConfig(cfg)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to create velero clientset")
+	}
+
+	bsl, err := FindBackupStoreLocation(ctx, clientset, veleroClient, namespace)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to find velero backup storage location")
 	}
@@ -70,11 +86,6 @@ func GetCurrentLvpFileSystemConfig(ctx context.Context, namespace string) (*type
 	}
 
 	// backup storage location does not exist, get file system config from the config map
-	clientset, err := k8sutil.GetClientset()
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to get k8s clientset")
-	}
-
 	fileSystemConfigMap, err := clientset.CoreV1().ConfigMaps(namespace).Get(ctx, FileSystemLVPConfigMapName, metav1.GetOptions{})
 	if err != nil {
 		if kuberneteserrors.IsNotFound(err) {
@@ -103,8 +114,8 @@ func GetCurrentLvpFileSystemConfig(ctx context.Context, namespace string) (*type
 
 // RevertToMinioFS will apply the spec of the previous BSL to the current one and then update.
 // Used for recovery during a failed migration from Minio to LVP.
-func RevertToMinioFS(ctx context.Context, kotsadmNamespace, veleroNamespace string, previousBsl *velerov1api.BackupStorageLocation) error {
-	bsl, err := FindBackupStoreLocation(context.TODO(), kotsadmNamespace)
+func RevertToMinioFS(ctx context.Context, clientset kubernetes.Interface, veleroClient veleroclientv1.VeleroV1Interface, kotsadmNamespace, veleroNamespace string, previousBsl *velerov1api.BackupStorageLocation) error {
+	bsl, err := FindBackupStoreLocation(context.TODO(), clientset, veleroClient, kotsadmNamespace)
 	if err != nil {
 		return errors.Wrap(err, "failed to find backupstoragelocations")
 	}

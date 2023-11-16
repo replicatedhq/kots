@@ -14,6 +14,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/snapshot"
 	velerov1api "github.com/vmware-tanzu/velero/pkg/apis/velero/v1"
+	veleroclientv1 "github.com/vmware-tanzu/velero/pkg/generated/clientset/versioned/typed/velero/v1"
 	corev1 "k8s.io/api/core/v1"
 	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -180,7 +181,22 @@ func MigrateExistingMinioFilesystemDeployments(log *logger.CLILogger, deployOpti
 	}
 	veleroNamespace := veleroStatus.Namespace
 
-	bsl, err := snapshot.FindBackupStoreLocation(context.TODO(), deployOptions.Namespace)
+	cfg, err := k8sutil.GetClusterConfig()
+	if err != nil {
+		return errors.Wrap(err, "failed to get cluster config")
+	}
+
+	clientset, err := kubernetes.NewForConfig(cfg)
+	if err != nil {
+		return errors.Wrap(err, "failed to create clientset")
+	}
+
+	veleroClient, err := veleroclientv1.NewForConfig(cfg)
+	if err != nil {
+		return errors.Wrap(err, "failed to create velero clientset")
+	}
+
+	bsl, err := snapshot.FindBackupStoreLocation(context.TODO(), clientset, veleroClient, deployOptions.Namespace)
 	if err != nil {
 		return errors.Wrap(err, "failed to find backupstoragelocations")
 	}
@@ -226,10 +242,6 @@ func MigrateExistingMinioFilesystemDeployments(log *logger.CLILogger, deployOpti
 	}
 
 	// Add the config map to configure the new plugin
-	clientset, err := k8sutil.GetClientset()
-	if err != nil {
-		return errors.Wrap(err, "failed to get k8s clientset")
-	}
 	fsDeployOptions := &snapshot.FileSystemDeployOptions{
 		Namespace:        deployOptions.Namespace,
 		IsOpenShift:      k8sutil.IsOpenShift(clientset),
@@ -250,7 +262,7 @@ func MigrateExistingMinioFilesystemDeployments(log *logger.CLILogger, deployOpti
 	success := false
 	defer func() {
 		if !success {
-			err := snapshot.RevertToMinioFS(context.TODO(), deployOptions.Namespace, veleroNamespace, previousBsl)
+			err := snapshot.RevertToMinioFS(context.TODO(), clientset, veleroClient, deployOptions.Namespace, veleroNamespace, previousBsl)
 			if err != nil {
 				log.Error(errors.Wrap(err, "Could not restore minio backup storage location"))
 				return
