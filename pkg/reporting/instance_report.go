@@ -29,6 +29,9 @@ type InstanceReportEvent struct {
 	KurlInstallID             string `json:"kurl_install_id,omitempty"`
 	IsGitOpsEnabled           bool   `json:"is_gitops_enabled"`
 	GitOpsProvider            string `json:"gitops_provider"`
+	SnapshotProvider          string `json:"snapshot_provider"`
+	SnapshotSchedule          string `json:"snapshot_schedule"`
+	SnapshotRetentionPolicy   string `json:"snapshot_retention_policy"`
 	DownstreamChannelID       string `json:"downstream_channel_id,omitempty"`
 	DownstreamChannelSequence uint64 `json:"downstream_channel_sequence,omitempty"`
 	DownstreamChannelName     string `json:"downstream_channel_name,omitempty"`

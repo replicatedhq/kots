@@ -19,10 +19,12 @@ import (
 	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/kurl"
 	"github.com/replicatedhq/kots/pkg/logger"
+	"github.com/replicatedhq/kots/pkg/snapshot"
 	"github.com/replicatedhq/kots/pkg/store"
 	"github.com/replicatedhq/kots/pkg/util"
 	troubleshootpreflight "github.com/replicatedhq/troubleshoot/pkg/preflight"
 	"github.com/segmentio/ksuid"
+	veleroclientv1 "github.com/vmware-tanzu/velero/pkg/generated/clientset/versioned/typed/velero/v1"
 	helmrelease "helm.sh/helm/v3/pkg/release"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
@@ -32,6 +34,12 @@ import (
 var (
 	clusterID string // set when in Helm managed mode
 )
+
+type SnapshotReport struct {
+	Provider        string
+	Schedule        string
+	RetentionPolicy string
+}
 
 func Init() error {
 	if util.IsHelmManaged() {
@@ -185,9 +193,14 @@ func GetReportingInfo(appID string) *types.ReportingInfo {
 		UserAgent:     buildversion.GetUserAgent(),
 	}
 
-	clientset, err := k8sutil.GetClientset()
+	cfg, err := k8sutil.GetClusterConfig()
 	if err != nil {
-		logger.Debugf(errors.Wrap(err, "failed to get kubernetes clientset").Error())
+		logger.Debugf("failed to get cluster config: %v", err.Error())
+	}
+
+	clientset, err := kubernetes.NewForConfig(cfg)
+	if err != nil {
+		logger.Debugf("failed to get clientset: %v", err.Error())
 	}
 
 	if util.IsHelmManaged() {
@@ -248,6 +261,23 @@ func GetReportingInfo(appID string) *types.ReportingInfo {
 	}
 
 	r.IsGitOpsEnabled, r.GitOpsProvider = getGitOpsReport(clientset, appID, r.ClusterID)
+
+	veleroClient, err := veleroclientv1.NewForConfig(cfg)
+	if err != nil {
+		logger.Debugf("failed to get velero client: %v", err.Error())
+	}
+
+	if clientset != nil && veleroClient != nil {
+		report, err := getSnapshotReport(store.GetStore(), clientset, veleroClient, appID)
+		if err != nil {
+			logger.Debugf("failed to get snapshot report: %v", err.Error())
+		} else {
+			r.SnapshotProvider = report.Provider
+			r.SnapshotSchedule = report.Schedule
+			r.SnapshotRetentionPolicy = report.RetentionPolicy
+		}
+	}
+
 	return &r
 }
 
@@ -324,4 +354,26 @@ func getGitOpsReport(clientset kubernetes.Interface, appID string, clusterID str
 		return gitOpsConfig.IsConnected, gitOpsConfig.Provider
 	}
 	return false, ""
+}
+
+func getSnapshotReport(kotsStore store.Store, clientset kubernetes.Interface, veleroClient veleroclientv1.VeleroV1Interface, appID string) (*SnapshotReport, error) {
+	report := &SnapshotReport{}
+
+	bsl, err := snapshot.FindBackupStoreLocation(context.TODO(), clientset, veleroClient, util.PodNamespace)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to find backup store location")
+	}
+	if bsl == nil {
+		return nil, errors.New("no backup store location found")
+	}
+	report.Provider = bsl.Spec.Provider
+
+	app, err := kotsStore.GetApp(appID)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get app")
+	}
+	report.Schedule = app.SnapshotSchedule
+	report.RetentionPolicy = app.SnapshotTTL
+
+	return report, nil
 }

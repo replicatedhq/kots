@@ -68,6 +68,10 @@ func GetReportingInfoHeaders(reportingInfo *types.ReportingInfo) map[string]stri
 	headers["X-Replicated-IsGitOpsEnabled"] = strconv.FormatBool(reportingInfo.IsGitOpsEnabled)
 	headers["X-Replicated-GitOpsProvider"] = reportingInfo.GitOpsProvider
 
+	headers["X-Replicated-SnapshotProvider"] = reportingInfo.SnapshotProvider
+	headers["X-Replicated-SnapshotSchedule"] = reportingInfo.SnapshotSchedule
+	headers["X-Replicated-SnapshotRetentionPolicy"] = reportingInfo.SnapshotRetentionPolicy
+
 	if reportingInfo.K8sDistribution != "" {
 		headers["X-Replicated-K8sDistribution"] = reportingInfo.K8sDistribution
 	}
