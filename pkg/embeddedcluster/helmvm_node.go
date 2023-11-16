@@ -143,10 +143,8 @@ func nodeRolesFromLabels(labels map[string]string) []string {
 
 	numRolesStr, ok := labels[types.EMBEDDED_CLUSTER_ROLE_LABEL]
 	if !ok {
-		// the first node will not initially have a role label, but is a 'controller'
-		if val, ok := labels["node-role.kubernetes.io/control-plane"]; ok && val == "true" {
-			return []string{"controller"}
-		}
+		// every node will have a label like this, so if it's missing, something is wrong
+		fmt.Printf("failed to find role label %q", types.EMBEDDED_CLUSTER_ROLE_LABEL)
 		return nil
 	}
 	numRoles, err := strconv.Atoi(strings.TrimPrefix(numRolesStr, "total-"))

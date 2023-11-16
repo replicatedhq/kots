@@ -78,12 +78,22 @@ func (h *Handler) GetEmbeddedClusterNodeJoinCommand(w http.ResponseWriter, r *ht
 	}
 
 	k0sRole := "worker"
+	controllerRoleName, err := embeddedcluster.ControllerRoleName(r.Context())
+	if err != nil {
+		logger.Error(fmt.Errorf("failed to get controller role name: %w", err))
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
 	for _, role := range roles {
-		if role == "controller" {
+		if role == controllerRoleName {
 			k0sRole = "controller"
 			break
 		}
 	}
+
+	// sort roles by name, but put controller first
+	roles = embeddedcluster.SortRoles(controllerRoleName, roles)
 
 	k0sToken, err := embeddedcluster.GenerateAddNodeToken(r.Context(), client, k0sRole)
 	if err != nil {
@@ -98,6 +108,8 @@ func (h *Handler) GetEmbeddedClusterNodeJoinCommand(w http.ResponseWriter, r *ht
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
+
+	logger.Infof("k0s join command: %q", k0sJoinCommand)
 
 	clusterID, err := embeddedcluster.ClusterID(client)
 	if err != nil {

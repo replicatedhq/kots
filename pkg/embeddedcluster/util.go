@@ -3,11 +3,16 @@ package embeddedcluster
 import (
 	"context"
 	"fmt"
+	"sort"
 
+	embeddedclusterv1beta1 "github.com/replicatedhq/embedded-cluster-operator/api/v1beta1"
+	"github.com/replicatedhq/kots/pkg/k8sutil"
 	corev1 "k8s.io/api/core/v1"
 	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes"
+	kbclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 const configMapName = "embedded-cluster-config"
@@ -51,4 +56,36 @@ func ClusterID(client kubernetes.Interface) (string, error) {
 	}
 
 	return configMap.Data["embedded-cluster-id"], nil
+}
+
+// ClusterConfig will get the list of installations, find the latest installation, and get that installation's config
+func ClusterConfig(ctx context.Context) (*embeddedclusterv1beta1.ConfigSpec, error) {
+	clientConfig, err := k8sutil.GetClusterConfig()
+	if err != nil {
+		return nil, fmt.Errorf("failed to get cluster config: %w", err)
+	}
+
+	scheme := runtime.NewScheme()
+	embeddedclusterv1beta1.AddToScheme(scheme)
+
+	kbClient, err := kbclient.New(clientConfig, kbclient.Options{
+		Scheme: scheme,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to get kubebuilder client: %w", err)
+	}
+
+	var installationList embeddedclusterv1beta1.InstallationList
+	err = kbClient.List(ctx, &installationList, &kbclient.ListOptions{})
+	if err != nil {
+		return nil, fmt.Errorf("failed to list installations: %w", err)
+	}
+
+	// determine which of these installations is the latest
+	sort.Slice(installationList.Items, func(i, j int) bool {
+		return installationList.Items[i].ObjectMeta.CreationTimestamp.After(installationList.Items[j].ObjectMeta.CreationTimestamp.Time)
+	})
+
+	latest := installationList.Items[0]
+	return latest.Spec.Config, nil
 }

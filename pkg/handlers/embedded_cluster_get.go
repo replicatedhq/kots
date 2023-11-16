@@ -9,6 +9,10 @@ import (
 	"github.com/replicatedhq/kots/pkg/logger"
 )
 
+type GetEmbeddedClusterRolesResponse struct {
+	Roles []string `json:"roles"`
+}
+
 func (h *Handler) GetEmbeddedClusterNodes(w http.ResponseWriter, r *http.Request) {
 	client, err := k8sutil.GetClientset()
 	if err != nil {
@@ -42,4 +46,14 @@ func (h *Handler) GetEmbeddedClusterNode(w http.ResponseWriter, r *http.Request)
 		return
 	}
 	JSON(w, http.StatusOK, node)
+}
+
+func (h *Handler) GetEmbeddedClusterRoles(w http.ResponseWriter, r *http.Request) {
+	roles, err := embeddedcluster.GetRoles(r.Context())
+	if err != nil {
+		logger.Error(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	JSON(w, http.StatusOK, GetEmbeddedClusterRolesResponse{Roles: roles})
 }

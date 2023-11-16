@@ -730,6 +730,18 @@ func (mr *MockKOTSHandlerMockRecorder) GetEmbeddedClusterNodes(w, r interface{})
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetEmbeddedClusterNodes", reflect.TypeOf((*MockKOTSHandler)(nil).GetEmbeddedClusterNodes), w, r)
 }
 
+// GetEmbeddedClusterRoles mocks base method.
+func (m *MockKOTSHandler) GetEmbeddedClusterRoles(w http.ResponseWriter, r *http.Request) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "GetEmbeddedClusterRoles", w, r)
+}
+
+// GetEmbeddedClusterRoles indicates an expected call of GetEmbeddedClusterRoles.
+func (mr *MockKOTSHandlerMockRecorder) GetEmbeddedClusterRoles(w, r interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetEmbeddedClusterRoles", reflect.TypeOf((*MockKOTSHandler)(nil).GetEmbeddedClusterRoles), w, r)
+}
+
 // GetFileSystemSnapshotProviderInstructions mocks base method.
 func (m *MockKOTSHandler) GetFileSystemSnapshotProviderInstructions(w http.ResponseWriter, r *http.Request) {
 	m.ctrl.T.Helper()

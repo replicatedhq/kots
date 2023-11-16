@@ -129,6 +129,49 @@ const EmbeddedClusterManagement = ({
     retry: false,
   });
 
+  type RolesResponse = {
+    roles: string[];
+  };
+
+  const {
+    data: rolesData,
+    isInitialLoading: rolesLoading,
+    error: rolesError,
+  } = useQuery<RolesResponse, Error, RolesResponse>({
+    queryKey: ["embeddedClusterRoles"],
+    queryFn: async () => {
+      const res = await fetch(
+        `${process.env.API_ENDPOINT}/embedded-cluster/roles`,
+        {
+          headers: {
+            Accept: "application/json",
+          },
+          credentials: "include",
+          method: "GET",
+        }
+      );
+      if (!res.ok) {
+        if (res.status === 401) {
+          Utilities.logoutUser();
+        }
+        console.log(
+          "failed to get role list, unexpected status code",
+          res.status
+        );
+        try {
+          const error = await res.json();
+          throw new Error(
+            error?.error?.message || error?.error || error?.message
+          );
+        } catch (err) {
+          throw new Error("Unable to fetch roles, please try again later.");
+        }
+      }
+      return res.json();
+    },
+    retry: false,
+  });
+
   type AddNodeCommandResponse = {
     command: string;
     expiry: string;
@@ -421,7 +464,17 @@ const EmbeddedClusterManagement = ({
             page.
           </p>
           <div className="tw-grid tw-gap-2 tw-grid-cols-4 tw-auto-rows-auto">
-            {NODE_TYPES.map((nodeType) => (
+            {rolesLoading && (
+              <p className="tw-text-base tw-w-full tw-text-center tw-py-4 tw-text-gray-500 tw-font-semibold">
+                Loading roles...
+              </p>
+            )}
+            {!rolesData && rolesError && (
+              <p className="tw-text-base tw-w-full tw-text-center tw-py-4 tw-text-pink-500 tw-font-semibold">
+                {rolesError?.message}
+              </p>
+            )}
+            {(rolesData?.roles || NODE_TYPES).map((nodeType) => (
               <div
                 key={nodeType}
                 className={classNames("BoxedCheckbox", {
