@@ -154,16 +154,11 @@
       version: "__testver__"
       s3Override: "__testdist__"
       disableS3: true
-  postInstallScript: |
-    # source helper functions
-    source /opt/kurl-testgrid/testhelpers.sh
-    # deploy sample app
-    install_and_customize_kurl_integration_test_application
   postUpgradeScript: |
     # source helper functions
     source /opt/kurl-testgrid/testhelpers.sh
     # ensure we can redeploy sample app
-    check_and_customize_kurl_integration_test_application
+    install_and_customize_kurl_integration_test_application
 - name: "minimal rook airgap"
   airgap: true
   installerSpec:
@@ -175,6 +170,8 @@
       version: "latest"
     rook:
       version: 1.12.x
+    registry:
+      version: "latest"
     kotsadm:
       version: "__testver__"
       s3Override: "__testdist__"
