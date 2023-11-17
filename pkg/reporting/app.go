@@ -11,6 +11,7 @@ import (
 	"path/filepath"
 
 	"github.com/pkg/errors"
+	downstreamtypes "github.com/replicatedhq/kots/pkg/api/downstream/types"
 	"github.com/replicatedhq/kots/pkg/api/reporting/types"
 	"github.com/replicatedhq/kots/pkg/buildversion"
 	"github.com/replicatedhq/kots/pkg/gitops"
@@ -37,8 +38,10 @@ var (
 
 type SnapshotReport struct {
 	Provider        string
-	Schedule        string
-	RetentionPolicy string
+	FullSchedule    string
+	FullTTL         string
+	PartialSchedule string
+	PartialTTL      string
 }
 
 func Init() error {
@@ -268,13 +271,15 @@ func GetReportingInfo(appID string) *types.ReportingInfo {
 	}
 
 	if clientset != nil && veleroClient != nil {
-		report, err := getSnapshotReport(store.GetStore(), clientset, veleroClient, appID)
+		report, err := getSnapshotReport(store.GetStore(), clientset, veleroClient, appID, clusterID)
 		if err != nil {
 			logger.Debugf("failed to get snapshot report: %v", err.Error())
 		} else {
 			r.SnapshotProvider = report.Provider
-			r.SnapshotSchedule = report.Schedule
-			r.SnapshotRetentionPolicy = report.RetentionPolicy
+			r.SnapshotFullSchedule = report.FullSchedule
+			r.SnapshotFullTTL = report.FullTTL
+			r.SnapshotPartialSchedule = report.PartialSchedule
+			r.SnapshotPartialTTL = report.PartialTTL
 		}
 	}
 
@@ -356,7 +361,7 @@ func getGitOpsReport(clientset kubernetes.Interface, appID string, clusterID str
 	return false, ""
 }
 
-func getSnapshotReport(kotsStore store.Store, clientset kubernetes.Interface, veleroClient veleroclientv1.VeleroV1Interface, appID string) (*SnapshotReport, error) {
+func getSnapshotReport(kotsStore store.Store, clientset kubernetes.Interface, veleroClient veleroclientv1.VeleroV1Interface, appID string, clusterID string) (*SnapshotReport, error) {
 	report := &SnapshotReport{}
 
 	bsl, err := snapshot.FindBackupStoreLocation(context.TODO(), clientset, veleroClient, util.PodNamespace)
@@ -368,12 +373,29 @@ func getSnapshotReport(kotsStore store.Store, clientset kubernetes.Interface, ve
 	}
 	report.Provider = bsl.Spec.Provider
 
+	clusters, err := kotsStore.ListClusters()
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to list clusters")
+	}
+	var downstream *downstreamtypes.Downstream
+	for _, cluster := range clusters {
+		if cluster.ClusterID == clusterID {
+			downstream = cluster
+			break
+		}
+	}
+	if downstream == nil {
+		return nil, errors.New("no downstream found")
+	}
+	report.FullSchedule = downstream.SnapshotSchedule
+	report.FullTTL = downstream.SnapshotTTL
+
 	app, err := kotsStore.GetApp(appID)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get app")
 	}
-	report.Schedule = app.SnapshotSchedule
-	report.RetentionPolicy = app.SnapshotTTL
+	report.PartialSchedule = app.SnapshotSchedule
+	report.PartialTTL = app.SnapshotTTL
 
 	return report, nil
 }

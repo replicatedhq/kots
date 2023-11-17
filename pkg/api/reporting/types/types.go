@@ -17,8 +17,10 @@ type ReportingInfo struct {
 	IsGitOpsEnabled         bool           `json:"is_gitops_enabled"`
 	GitOpsProvider          string         `json:"gitops_provider"`
 	SnapshotProvider        string         `json:"snapshot_provider"`
-	SnapshotSchedule        string         `json:"snapshot_schedule"`
-	SnapshotRetentionPolicy string         `json:"snapshot_retention_policy"`
+	SnapshotFullSchedule    string         `json:"snapshot_full_schedule"`
+	SnapshotFullTTL         string         `json:"snapshot_full_ttl"`
+	SnapshotPartialSchedule string         `json:"snapshot_partial_schedule"`
+	SnapshotPartialTTL      string         `json:"snapshot_partial_ttl"`
 }
 
 type DownstreamInfo struct {

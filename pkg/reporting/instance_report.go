@@ -30,8 +30,10 @@ type InstanceReportEvent struct {
 	IsGitOpsEnabled           bool   `json:"is_gitops_enabled"`
 	GitOpsProvider            string `json:"gitops_provider"`
 	SnapshotProvider          string `json:"snapshot_provider"`
-	SnapshotSchedule          string `json:"snapshot_schedule"`
-	SnapshotRetentionPolicy   string `json:"snapshot_retention_policy"`
+	SnapshotFullSchedule      string `json:"snapshot_full_schedule"`
+	SnapshotFullTTL           string `json:"snapshot_full_ttl"`
+	SnapshotPartialSchedule   string `json:"snapshot_partial_schedule"`
+	SnapshotPartialTTL        string `json:"snapshot_partial_ttl"`
 	DownstreamChannelID       string `json:"downstream_channel_id,omitempty"`
 	DownstreamChannelSequence uint64 `json:"downstream_channel_sequence,omitempty"`
 	DownstreamChannelName     string `json:"downstream_channel_name,omitempty"`

@@ -69,8 +69,10 @@ func GetReportingInfoHeaders(reportingInfo *types.ReportingInfo) map[string]stri
 	headers["X-Replicated-GitOpsProvider"] = reportingInfo.GitOpsProvider
 
 	headers["X-Replicated-SnapshotProvider"] = reportingInfo.SnapshotProvider
-	headers["X-Replicated-SnapshotSchedule"] = reportingInfo.SnapshotSchedule
-	headers["X-Replicated-SnapshotRetentionPolicy"] = reportingInfo.SnapshotRetentionPolicy
+	headers["X-Replicated-SnapshotFullSchedule"] = reportingInfo.SnapshotFullSchedule
+	headers["X-Replicated-SnapshotFullTTL"] = reportingInfo.SnapshotFullTTL
+	headers["X-Replicated-SnapshotPartialSchedule"] = reportingInfo.SnapshotPartialSchedule
+	headers["X-Replicated-SnapshotPartialTTL"] = reportingInfo.SnapshotPartialTTL
 
 	if reportingInfo.K8sDistribution != "" {
 		headers["X-Replicated-K8sDistribution"] = reportingInfo.K8sDistribution
