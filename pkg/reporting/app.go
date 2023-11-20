@@ -6,6 +6,7 @@ import (
 	"context"
 	"encoding/base64"
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -271,7 +272,7 @@ func GetReportingInfo(appID string) *types.ReportingInfo {
 	}
 
 	if clientset != nil && veleroClient != nil {
-		report, err := getSnapshotReport(store.GetStore(), clientset, veleroClient, appID, clusterID)
+		report, err := getSnapshotReport(store.GetStore(), clientset, veleroClient, appID, r.ClusterID)
 		if err != nil {
 			logger.Debugf("failed to get snapshot report: %v", err.Error())
 		} else {
@@ -385,7 +386,7 @@ func getSnapshotReport(kotsStore store.Store, clientset kubernetes.Interface, ve
 		}
 	}
 	if downstream == nil {
-		return nil, errors.New("no downstream found")
+		return nil, fmt.Errorf("cluster %s not found", clusterID)
 	}
 	report.FullSchedule = downstream.SnapshotSchedule
 	report.FullTTL = downstream.SnapshotTTL
