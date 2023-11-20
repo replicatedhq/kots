@@ -88,8 +88,10 @@ func Test_getRoleLabelsImpl(t *testing.T) {
 		{
 			name: "no roles",
 			config: &embeddedclusterv1beta1.ConfigSpec{
-				Controller: embeddedclusterv1beta1.NodeRole{
-					Name: "a",
+				Roles: embeddedclusterv1beta1.Roles{
+					Controller: embeddedclusterv1beta1.NodeRole{
+						Name: "a",
+					},
 				},
 			},
 			roles: []string{"a", "b", "c"},
@@ -98,28 +100,30 @@ func Test_getRoleLabelsImpl(t *testing.T) {
 		{
 			name: "roles with labels",
 			config: &embeddedclusterv1beta1.ConfigSpec{
-				Controller: embeddedclusterv1beta1.NodeRole{
-					Name: "a",
-					Labels: map[string]string{
-						"a-role": "a-role",
-					},
-				},
-				Custom: []embeddedclusterv1beta1.NodeRole{
-					{
-						Name: "b",
+				Roles: embeddedclusterv1beta1.Roles{
+					Controller: embeddedclusterv1beta1.NodeRole{
+						Name: "a",
 						Labels: map[string]string{
-							"b-role":  "b-role",
-							"b-role2": "b-role2",
+							"a-role": "a-role",
 						},
 					},
-					{
-						Name: "c", // no labels for c
-					},
-					{
-						Name: "d", // d is not in the list of roles to make labels for
-						Labels: map[string]string{
-							"d-role":  "d-role",
-							"d-role2": "d-role2",
+					Custom: []embeddedclusterv1beta1.NodeRole{
+						{
+							Name: "b",
+							Labels: map[string]string{
+								"b-role":  "b-role",
+								"b-role2": "b-role2",
+							},
+						},
+						{
+							Name: "c", // no labels for c
+						},
+						{
+							Name: "d", // d is not in the list of roles to make labels for
+							Labels: map[string]string{
+								"d-role":  "d-role",
+								"d-role2": "d-role2",
+							},
 						},
 					},
 				},
@@ -130,28 +134,30 @@ func Test_getRoleLabelsImpl(t *testing.T) {
 		{
 			name: "roles with labels with bad characters",
 			config: &embeddedclusterv1beta1.ConfigSpec{
-				Controller: embeddedclusterv1beta1.NodeRole{
-					Name: "a",
-					Labels: map[string]string{
-						"a-role": "this is the a role",
-					},
-				},
-				Custom: []embeddedclusterv1beta1.NodeRole{
-					{
-						Name: "b",
+				Roles: embeddedclusterv1beta1.Roles{
+					Controller: embeddedclusterv1beta1.NodeRole{
+						Name: "a",
 						Labels: map[string]string{
-							"b-role":  " this is the b role ",
-							"b-role2": "This! Is! The! Second! B! Role!",
+							"a-role": "this is the a role",
 						},
 					},
-					{
-						Name: "c", // no labels for c
-					},
-					{
-						Name: "d", // d is not in the list of roles to make labels for
-						Labels: map[string]string{
-							"d-role":  "d-role",
-							"d-role2": "d-role2",
+					Custom: []embeddedclusterv1beta1.NodeRole{
+						{
+							Name: "b",
+							Labels: map[string]string{
+								"b-role":  " this is the b role ",
+								"b-role2": "This! Is! The! Second! B! Role!",
+							},
+						},
+						{
+							Name: "c", // no labels for c
+						},
+						{
+							Name: "d", // d is not in the list of roles to make labels for
+							Labels: map[string]string{
+								"d-role":  "d-role",
+								"d-role2": "d-role2",
+							},
 						},
 					},
 				},
@@ -162,10 +168,12 @@ func Test_getRoleLabelsImpl(t *testing.T) {
 		{
 			name: "roles more than 63 character labels",
 			config: &embeddedclusterv1beta1.ConfigSpec{
-				Controller: embeddedclusterv1beta1.NodeRole{
-					Name: "a",
-					Labels: map[string]string{
-						"this is a more than 63 character label with a lot of filler to ensure that": "this is a more than 63 character value with a lot of filler to ensure that",
+				Roles: embeddedclusterv1beta1.Roles{
+					Controller: embeddedclusterv1beta1.NodeRole{
+						Name: "a",
+						Labels: map[string]string{
+							"this is a more than 63 character label with a lot of filler to ensure that": "this is a more than 63 character value with a lot of filler to ensure that",
+						},
 					},
 				},
 			},
