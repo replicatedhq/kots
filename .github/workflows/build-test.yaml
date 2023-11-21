@@ -284,13 +284,14 @@ jobs:
           envsubst "${GIT_TAG}" < deploy/apko.yaml.tmpl > deploy/apko.yaml
 
       # use chainguard-dev/actions/melange-build@main action below instead when caching support is added
-      - name: set up melange
-        uses: chainguard-dev/actions/setup-melange@main
+      - uses: chainguard-dev/actions/setup-melange@main
+      - uses: chainguard-dev/actions/melange-keygen@main
+        with:
+          signing-key-path: ${{ github.workspace }}/melange.rsa
 
       - name: build with melange
         run: |
-          melange build \
-            --config deploy/melange.yaml \
+          melange build deploy/melange.yaml \
             --archs x86_64 \
             --signing-key ${{ github.workspace }}/melange.rsa \
             --cache-dir "$(go env GOMODCACHE)"
