@@ -300,7 +300,7 @@ jobs:
         run: echo "cache_dir=$(go env GOMODCACHE)" >> "$GITHUB_OUTPUT"
 
       # - uses: chainguard-dev/actions/melange-build@main
-      - uses: sgalsaleh/chainguard-dev-actions/melange-build@59df1adb1d6ab2231335b89dd823fd4b3d9d8f9b
+      - uses: sgalsaleh/chainguard-dev-actions/melange-build@fb61b5d8f7aff4c207952cbabcd450eb9ee79380
         with:
           config: deploy/melange.yaml
           archs: x86_64
