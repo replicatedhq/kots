@@ -1,0 +1,38 @@
+name: 'Build and push kotsadm image'
+description: 'Composite action for building and pushing kotsadm image'
+inputs:
+  image-name:
+    description: 'Full destination kotsadm image name'
+    required: true
+
+  git-tag:
+    description: 'Git tag'
+    required: true
+
+runs:
+  using: "composite"
+  steps:
+    - name: template melange and apko configs
+      shell: bash
+      run: |
+        export GIT_TAG=${{ inputs.git-tag }}
+        envsubst "${GIT_TAG}" < deploy/melange.yaml.tmpl > deploy/melange.yaml
+        envsubst "${GIT_TAG}" < deploy/apko.yaml.tmpl > deploy/apko.yaml
+
+    - id: cache-dir
+      shell: bash
+      run: echo "cache_dir=$(go env GOMODCACHE)" >> "$GITHUB_OUTPUT"
+
+    - uses: chainguard-dev/actions/melange-build@main
+      with:
+        config: deploy/melange.yaml
+        archs: x86_64
+        sign-with-temporary-key: true
+        cache-dir: ${{ steps.cache-dir.outputs.cache_dir }}
+
+    - uses: chainguard-images/actions/apko-publish@main
+      with:
+        config: deploy/apko.yaml
+        archs: x86_64
+        tag: ${{ inputs.image-name }}
+        vcs-url: true

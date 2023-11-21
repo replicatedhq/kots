@@ -142,11 +142,10 @@ jobs:
     - name: Build tagged release
       working-directory: ./kurl_proxy
       run: |
-        docker build --pull -f deploy/Dockerfile -t "kotsadm/kurl-proxy:$GIT_TAG" -t kotsadm/kurl-proxy:v0.0.0-nightly .
+        docker build --pull -f deploy/Dockerfile -t "kotsadm/kurl-proxy:$GIT_TAG" .
         docker push "kotsadm/kurl-proxy:$GIT_TAG"
-        docker push kotsadm/kurl-proxy:v0.0.0-nightly
 
-  build-go-api:
+  build-kots:
     runs-on: ubuntu-20.04
     needs: [build-web, generate-tag]
     steps:
@@ -169,32 +168,27 @@ jobs:
       with:
         name: web
         path: ./web/dist
-    - name: Build Go API
+    - name: Build KOTS
       env:
         GIT_TAG: ${{ needs.generate-tag.outputs.tag }}
         SCOPE_DSN_PUBLIC: ""
-      run: mapfile -t envs < <(grep -v '#.*' < .image.env) && export "${envs[@]}" && make ci-test kots build
+      run: mapfile -t envs < <(grep -v '#.*' < .image.env) && export "${envs[@]}" && make ci-test kots
     - name: Upload Go API artifact
       uses: actions/upload-artifact@v3
       with:
-        name: go_api
-        path: ./bin
+        name: kots
+        path: ./bin/kots
 
-  release-go-api-tagged:
+  build-kotsadm:
     runs-on: ubuntu-20.04
-    needs: [build-go-api, generate-tag]
+    needs: [generate-tag]
     steps:
     - name: Checkout
-      uses: actions/checkout@v4
-    - name: Download go_api artifact
-      uses: actions/download-artifact@v3
+      uses: actions/checkout@v3
+    - uses: ./.github/actions/build-push-kotsadm-image
       with:
-        name: go_api
-        path: ./bin
-    - name: Add executable permissions
-      run: |
-        chmod a+x ./bin/kotsadm
-        chmod a+x ./bin/kots
+        image-name: kotsadm/kotsadm:${{ needs.generate-tag.outputs.tag }}
+        git-tag: ${{ needs.generate-tag.outputs.tag }}
     - uses: azure/docker-login@v1
       env:
         DOCKER_CONFIG: ./.docker
@@ -271,7 +265,7 @@ jobs:
 
   generate-kurl-addon:
     runs-on: ubuntu-20.04
-    needs: [ generate-tag, build-kurl-proxy, build-schema-migrations, release-go-api-tagged ]
+    needs: [ generate-tag, build-kurl-proxy, build-schema-migrations, build-kots, build-kotsadm ]
     outputs:
       addon_package_url: ${{ steps.addon-generate.outputs.addon_package_url }}
     env:
@@ -289,7 +283,7 @@ jobs:
       - name: download kots binary
         uses: actions/download-artifact@v3
         with:
-          name: go_api
+          name: kots
           path: bin/
       - name: prepare kots binary executable
         run: |
@@ -301,6 +295,7 @@ jobs:
           addon_version: ${{ steps.vars.outputs.addon_version }}
           s3_prefix: "${{ github.ref_type != 'branch' && '' || 'test/' }}"
           kotsadm_binary_override: bin/kots.tar.gz
+
   # only run validate-kurl-addon if changes to "deploy/kurl/kotsadm/template/**"
   kurl-addon-changes-filter:
     runs-on: ubuntu-20.04
@@ -315,6 +310,7 @@ jobs:
             kurl-addon:
               - 'deploy/kurl/kotsadm/template/**'
               - 'deploy/kurl/kotsadm/testgrid-os-spec.yaml'
+
   validate-kurl-addon:
     runs-on: ubuntu-20.04
     if: ${{ github.ref_type != 'branch' || needs.kurl-addon-changes-filter.outputs.ok-to-test == 'true' }}
@@ -333,6 +329,7 @@ jobs:
           addon_package_url: "${{ needs.generate-kurl-addon.outputs.addon_package_url }}"
           priority: ${{ github.ref_type != 'branch' && '1' || '0' }}
           testgrid_api_token: ${{ secrets.TESTGRID_PROD_API_TOKEN }}
+
   publish-kurl-addon:
     runs-on: ubuntu-20.04
     if: ${{ github.ref_type != 'branch' }}
@@ -377,7 +374,7 @@ jobs:
   build-airgap:
     runs-on: ubuntu-20.04
     if: github.ref_type != 'branch'
-    needs: [release-go-api-tagged, goreleaser, build-schema-migrations, generate-tag]
+    needs: [build-kotsadm, goreleaser, build-schema-migrations, generate-tag]
     steps:
     - name: Download migrations
       uses: actions/download-artifact@v3
@@ -435,7 +432,7 @@ jobs:
 
   regression-test:
     if: github.ref_type == 'branch'
-    needs: [ regression-test-setup, generate-tag, build-go-api, release-go-api-tagged, generate-kurl-addon ]
+    needs: [ regression-test-setup, generate-tag, build-kots, build-kotsadm, generate-kurl-addon ]
     uses: ./.github/workflows/regression.yaml
     with:
       version_tag_old: ${{ needs.regression-test-setup.outputs.last_release_tag }}
