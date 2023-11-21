@@ -297,7 +297,7 @@ jobs:
       #       --cache-dir "$(go env GOMODCACHE)"
 
       # - uses: chainguard-dev/actions/melange-build@main
-      - uses: sgalsaleh/chainguard-dev-actions@4824ef7293e21e9d66749bd24cfd2a11f9d05dfa
+      - uses: sgalsaleh/chainguard-dev-actions/melange-build@4824ef7293e21e9d66749bd24cfd2a11f9d05dfa
         with:
           config: deploy/melange.yaml
           archs: x86_64
