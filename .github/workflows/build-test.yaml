@@ -296,12 +296,16 @@ jobs:
       #       --signing-key ${{ github.workspace }}/melange.rsa \
       #       --cache-dir "$(go env GOMODCACHE)"
 
+      - id: cache-dir
+        run: echo "cache_dir=$(go env GOMODCACHE)" >> "$GITHUB_OUTPUT"
+
       # - uses: chainguard-dev/actions/melange-build@main
       - uses: sgalsaleh/chainguard-dev-actions/melange-build@4824ef7293e21e9d66749bd24cfd2a11f9d05dfa
         with:
           config: deploy/melange.yaml
           archs: x86_64
           sign-with-temporary-key: true
+          cache-dir: ${{ steps.cache-dir.outputs.cache_dir }}
 
       - uses: chainguard-images/actions/apko-publish@main
         with:
