@@ -518,7 +518,7 @@ func Test_isMinioMigration(t *testing.T) {
 }
 
 func TestFindBackupStoreLocation(t *testing.T) {
-
+	t.Setenv("POD_NAMESPACE", "default")
 	testVeleroNamespace := "velero"
 	testBsl := &velerov1.BackupStorageLocation{
 		ObjectMeta: metav1.ObjectMeta{

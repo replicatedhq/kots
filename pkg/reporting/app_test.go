@@ -19,8 +19,6 @@ func Test_getSnapshotReport(t *testing.T) {
 	defer ctrl.Finish()
 	mockStore := mock_store.NewMockStore(ctrl)
 
-	t.Setenv("POD_NAMESPACE", "default")
-
 	testVeleroNamespace := "velero"
 	testBsl := &velerov1.BackupStorageLocation{
 		ObjectMeta: metav1.ObjectMeta{
