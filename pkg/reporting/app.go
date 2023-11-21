@@ -26,6 +26,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/util"
 	troubleshootpreflight "github.com/replicatedhq/troubleshoot/pkg/preflight"
 	"github.com/segmentio/ksuid"
+	velerov1 "github.com/vmware-tanzu/velero/pkg/apis/velero/v1"
 	veleroclientv1 "github.com/vmware-tanzu/velero/pkg/generated/clientset/versioned/typed/velero/v1"
 	helmrelease "helm.sh/helm/v3/pkg/release"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -272,15 +273,20 @@ func GetReportingInfo(appID string) *types.ReportingInfo {
 	}
 
 	if clientset != nil && veleroClient != nil {
-		report, err := getSnapshotReport(store.GetStore(), clientset, veleroClient, appID, r.ClusterID)
+		bsl, err := snapshot.FindBackupStoreLocation(context.TODO(), clientset, veleroClient, util.PodNamespace)
 		if err != nil {
-			logger.Debugf("failed to get snapshot report: %v", err.Error())
+			logger.Debugf("failed to find backup store location: %v", err.Error())
 		} else {
-			r.SnapshotProvider = report.Provider
-			r.SnapshotFullSchedule = report.FullSchedule
-			r.SnapshotFullTTL = report.FullTTL
-			r.SnapshotPartialSchedule = report.PartialSchedule
-			r.SnapshotPartialTTL = report.PartialTTL
+			report, err := getSnapshotReport(store.GetStore(), bsl, appID, r.ClusterID)
+			if err != nil {
+				logger.Debugf("failed to get snapshot report: %v", err.Error())
+			} else {
+				r.SnapshotProvider = report.Provider
+				r.SnapshotFullSchedule = report.FullSchedule
+				r.SnapshotFullTTL = report.FullTTL
+				r.SnapshotPartialSchedule = report.PartialSchedule
+				r.SnapshotPartialTTL = report.PartialTTL
+			}
 		}
 	}
 
@@ -362,13 +368,9 @@ func getGitOpsReport(clientset kubernetes.Interface, appID string, clusterID str
 	return false, ""
 }
 
-func getSnapshotReport(kotsStore store.Store, clientset kubernetes.Interface, veleroClient veleroclientv1.VeleroV1Interface, appID string, clusterID string) (*SnapshotReport, error) {
+func getSnapshotReport(kotsStore store.Store, bsl *velerov1.BackupStorageLocation, appID string, clusterID string) (*SnapshotReport, error) {
 	report := &SnapshotReport{}
 
-	bsl, err := snapshot.FindBackupStoreLocation(context.TODO(), clientset, veleroClient, util.PodNamespace)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to find backup store location")
-	}
 	if bsl == nil {
 		return nil, errors.New("no backup store location found")
 	}
