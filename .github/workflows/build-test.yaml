@@ -292,7 +292,7 @@ jobs:
       - name: build with melange
         run: |
           melange build deploy/melange.yaml \
-            --archs x86_64 \
+            --arch x86_64 \
             --signing-key ${{ github.workspace }}/melange.rsa \
             --cache-dir "$(go env GOMODCACHE)"
 
