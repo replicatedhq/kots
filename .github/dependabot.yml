@@ -8,6 +8,9 @@ updates:
     schedule:
       interval: "daily"
     open-pull-requests-limit: 5
+    labels:
+      - "dependabot"
+      - "javascript"
 
   ## Go mod
 
@@ -17,6 +20,8 @@ updates:
       interval: "daily"
     labels:
       - "@actions/safe-to-test"
+      - "dependabot"
+      - "go"
 
   - package-ecosystem: "gomod"
     directory: "/kurl_proxy"
@@ -24,6 +29,8 @@ updates:
       interval: "daily"
     labels:
       - "@actions/safe-to-test"
+      - "dependabot"
+      - "go"
 
   ## GitHub Actions
 
@@ -33,6 +40,8 @@ updates:
       interval: "weekly"
     labels:
       - "@actions/safe-to-test"
+      - "dependabot"
+      - "github-actions"
 
   ## Dockerfiles
 
@@ -42,6 +51,8 @@ updates:
       interval: "weekly"
     labels:
       - "@actions/safe-to-test"
+      - "dependabot"
+      - "docker"
 
   - package-ecosystem: "docker"
     directory: "/kurl_proxy/deploy"
@@ -49,6 +60,8 @@ updates:
       interval: "weekly"
     labels:
       - "@actions/safe-to-test"
+      - "dependabot"
+      - "docker"
 
   - package-ecosystem: "docker"
     directory: "/migrations/deploy"
@@ -56,3 +69,5 @@ updates:
       interval: "weekly"
     labels:
       - "@actions/safe-to-test"
+      - "dependabot"
+      - "docker"
