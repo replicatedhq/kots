@@ -6,17 +6,44 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
+	"github.com/replicatedhq/kots/pkg/k8sutil"
 	snapshot "github.com/replicatedhq/kots/pkg/kotsadmsnapshot"
 	"github.com/replicatedhq/kots/pkg/logger"
 	kotssnapshot "github.com/replicatedhq/kots/pkg/snapshot"
 	"github.com/replicatedhq/kots/pkg/util"
 	velerov1 "github.com/vmware-tanzu/velero/pkg/apis/velero/v1"
+	veleroclientv1 "github.com/vmware-tanzu/velero/pkg/generated/clientset/versioned/typed/velero/v1"
+	"k8s.io/client-go/kubernetes"
 )
 
 func (h *Handler) DownloadSnapshotLogs(w http.ResponseWriter, r *http.Request) {
 	backupName := mux.Vars(r)["backup"]
 
-	bsl, err := kotssnapshot.FindBackupStoreLocation(r.Context(), util.PodNamespace)
+	cfg, err := k8sutil.GetClusterConfig()
+	if err != nil {
+		err = errors.Wrap(err, "failed to get cluster config")
+		logger.Error(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	clientset, err := kubernetes.NewForConfig(cfg)
+	if err != nil {
+		err = errors.Wrap(err, "failed to create clientset")
+		logger.Error(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	veleroClient, err := veleroclientv1.NewForConfig(cfg)
+	if err != nil {
+		err = errors.Wrap(err, "failed to create velero clientset")
+		logger.Error(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	bsl, err := kotssnapshot.FindBackupStoreLocation(r.Context(), clientset, veleroClient, util.PodNamespace)
 	if err != nil {
 		err = errors.Wrap(err, "failed to find backup store location")
 		logger.Error(err)
