@@ -36,12 +36,6 @@ type DownstreamInfo struct {
 	NativeHelmInstalls int    `json:"native_helm_installs"`
 }
 
-type SnapshotReport struct {
-	Provider        string
-	Schedule        string
-	RetentionPolicy string
-}
-
 // This type is mimicked in the preflight_report table.
 type PreflightStatus struct {
 	InstanceID      string `json:"instance_id"`
