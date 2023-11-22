@@ -2,13 +2,19 @@ package snapshot
 
 import (
 	"context"
+	"reflect"
 	"testing"
 
 	"github.com/replicatedhq/kots/pkg/snapshot/types"
 	"github.com/stretchr/testify/require"
+	velerov1 "github.com/vmware-tanzu/velero/pkg/apis/velero/v1"
+	velerofake "github.com/vmware-tanzu/velero/pkg/generated/clientset/versioned/fake"
+	veleroclientv1 "github.com/vmware-tanzu/velero/pkg/generated/clientset/versioned/typed/velero/v1"
+	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/kubernetes/fake"
 	testclient "k8s.io/client-go/kubernetes/fake"
 	"k8s.io/utils/pointer"
 )
@@ -507,6 +513,88 @@ func Test_isMinioMigration(t *testing.T) {
 
 			result := isMinioMigration(clientset, test.namespace)
 			req.Equal(test.hasArtifact, result)
+		})
+	}
+}
+
+func TestFindBackupStoreLocation(t *testing.T) {
+	t.Setenv("POD_NAMESPACE", "default")
+	testVeleroNamespace := "velero"
+	testBsl := &velerov1.BackupStorageLocation{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "default",
+			Namespace: testVeleroNamespace,
+		},
+		Spec: velerov1.BackupStorageLocationSpec{
+			Provider: "aws",
+			Default:  true,
+		},
+	}
+	veleroNamespaceConfigmap := &corev1.ConfigMap{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "kotsadm-velero-namespace",
+		},
+		Data: map[string]string{
+			"veleroNamespace": testVeleroNamespace,
+		},
+	}
+	veleroDeployment := &appsv1.Deployment{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "velero",
+			Namespace: testVeleroNamespace,
+		},
+	}
+
+	type args struct {
+		clientset        kubernetes.Interface
+		veleroClient     veleroclientv1.VeleroV1Interface
+		kotsadmNamespace string
+	}
+	tests := []struct {
+		name    string
+		args    args
+		want    *velerov1.BackupStorageLocation
+		wantErr bool
+	}{
+		{
+			name: "backup store location found",
+			args: args{
+				clientset:        fake.NewSimpleClientset(veleroNamespaceConfigmap, veleroDeployment),
+				veleroClient:     velerofake.NewSimpleClientset(testBsl).VeleroV1(),
+				kotsadmNamespace: "default",
+			},
+			want: testBsl,
+		},
+		{
+			name: "return nil if no backup store location found",
+			args: args{
+				clientset:        fake.NewSimpleClientset(veleroNamespaceConfigmap, veleroDeployment),
+				veleroClient:     velerofake.NewSimpleClientset().VeleroV1(),
+				kotsadmNamespace: "default",
+			},
+			want: nil,
+		},
+		{
+			name: "return nil if no velero deployment found",
+			args: args{
+				clientset:        fake.NewSimpleClientset(veleroNamespaceConfigmap),
+				veleroClient:     velerofake.NewSimpleClientset(testBsl).VeleroV1(),
+				kotsadmNamespace: "default",
+			},
+			want: nil,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ctx := context.Background()
+			got, err := FindBackupStoreLocation(ctx, tt.args.clientset, tt.args.veleroClient, tt.args.kotsadmNamespace)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("FindBackupStoreLocation() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("FindBackupStoreLocation() = %v, want %v", got, tt.want)
+			}
 		})
 	}
 }
