@@ -133,7 +133,7 @@
     "@tanstack/react-query-devtools": "^4.36.1",
     "accounting": "^0.4.1",
     "apexcharts": "^3.24.0",
-    "axios": "^1.1.2",
+    "axios": "^1.6.2",
     "brace": "^0.11.1",
     "classnames": "^2.2.6",
     "clipboard": "2.0.6",
@@ -173,7 +173,7 @@
     "react-tooltip": "4.2.6",
     "react-vis": "^1.11.7",
     "resumablejs": "^1.1.0",
-    "semver": "^7.3.5",
+    "semver": "^7.5.4",
     "styled-components": "^5.3.5",
     "tar-stream": "2.1.0",
     "universal-cookie": "^4.0.4"
