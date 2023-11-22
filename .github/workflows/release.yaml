@@ -41,7 +41,7 @@ jobs:
         run: |
           go run ./cmd/imagedeps
       - name: Create Pull Request # creates a PR if there are differences
-        uses: peter-evans/create-pull-request@v4
+        uses: peter-evans/create-pull-request@v5
         id: cpr
         with:
           token: ${{ secrets.NIGHTLY_GH_PAT }}
