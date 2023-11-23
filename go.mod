@@ -60,7 +60,7 @@ require (
 	github.com/schemahero/schemahero v0.13.6
 	github.com/segmentio/ksuid v1.0.4
 	github.com/sergi/go-diff v1.2.0
-	github.com/spf13/cobra v1.7.0
+	github.com/spf13/cobra v1.8.0
 	github.com/spf13/pflag v1.0.5
 	github.com/spf13/viper v1.17.0
 	github.com/stretchr/testify v1.8.4
