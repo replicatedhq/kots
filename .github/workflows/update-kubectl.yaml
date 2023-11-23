@@ -8,7 +8,7 @@ jobs:
   build-pr-kubectl:
     runs-on: ubuntu-20.04
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
       with:
         fetch-depth: 0
 
@@ -17,7 +17,7 @@ jobs:
       uses: ./.github/actions/kubectl-versions
 
     - name: Create Pull Request # creates a PR if there are differences
-      uses: peter-evans/create-pull-request@v4
+      uses: peter-evans/create-pull-request@v5
       id: cpr
       with:
         token: ${{ secrets.GH_PAT }}

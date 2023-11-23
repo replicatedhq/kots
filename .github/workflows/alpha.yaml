@@ -13,7 +13,7 @@ jobs:
       tag: ${{ steps.get_tag.outputs.GIT_TAG }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Get tags
         id: get_tag
         uses: ./.github/actions/version-tag
@@ -23,7 +23,7 @@ jobs:
     runs-on: ubuntu-20.04
     steps:
     - name: Checkout
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
 
     - uses: azure/docker-login@v1
       env:
@@ -47,7 +47,7 @@ jobs:
       options: --user root
     steps:
     - name: Checkout
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
 
     - name: Setup Node.js environment
       uses: actions/setup-node@v3
@@ -72,12 +72,12 @@ jobs:
     needs: [generate-tag]
     steps:
     - name: Setup Go
-      uses: actions/setup-go@v3
+      uses: actions/setup-go@v4
       with:
         go-version: '^1.20.0'
 
     - name: Checkout
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
 
     - name: Cache Go modules
       uses: actions/cache@v3
@@ -107,12 +107,12 @@ jobs:
     runs-on: ubuntu-20.04
     needs: [build_web, build_kurl_proxy, generate-tag]
     steps:
-    - uses: actions/setup-go@v3
+    - uses: actions/setup-go@v4
       with:
         go-version: '^1.20.0'
 
     - name: Checkout
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
 
     - name: Cache Go modules
       uses: actions/cache@v3
@@ -150,7 +150,7 @@ jobs:
     steps:
 
     - name: Checkout
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
 
     - name: Download go_api artifact
       uses: actions/download-artifact@v3
@@ -185,7 +185,7 @@ jobs:
         password: ${{ secrets.DOCKERHUB_PASSWORD }}
 
     - name: Checkout
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
 
     - name: Download kurl_proxy artifact
       uses: actions/download-artifact@v3
@@ -207,7 +207,7 @@ jobs:
     runs-on: ubuntu-20.04
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Read image tags from env file
         uses: falti/dotenv-action@v1
         id: dotenv
@@ -234,7 +234,7 @@ jobs:
     runs-on: ubuntu-20.04
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Read image tags from env file
         uses: falti/dotenv-action@v1
         id: dotenv
@@ -262,7 +262,7 @@ jobs:
     runs-on: ubuntu-20.04
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Read image tags from env file
         uses: falti/dotenv-action@v1
         id: dotenv
@@ -290,7 +290,7 @@ jobs:
     needs: [build_kurl_proxy_alpha]
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Scan kurl-proxy for vulnerabilities
         id: scan
         uses: aquasecurity/trivy-action@master
@@ -312,7 +312,7 @@ jobs:
     runs-on: ubuntu-20.04
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Read image tags from env file
         uses: falti/dotenv-action@v1
         id: dotenv
@@ -340,7 +340,7 @@ jobs:
     needs: [release_go_api_alpha]
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Scan kotsadm for vulnerabilities
         id: scan
         uses: aquasecurity/trivy-action@master
@@ -363,7 +363,7 @@ jobs:
     needs: [build-schema-migrations]
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Scan migrations for vulnerabilities
         id: scan
         uses: aquasecurity/trivy-action@master
