@@ -94,7 +94,7 @@ jobs:
     - name: Setup Node.js environment
       uses: actions/setup-node@v3
       with:
-        node-version: '17.x'
+        node-version: '18.x'
     - name: Build web
       env:
         GIT_TAG: ${{ needs.generate-tag.outputs.tag }}
