@@ -15,7 +15,7 @@ jobs:
       matrix:
         service: [[kots, deploy/okteto, .], [web, web, web], [kurl-proxy, kurl_proxy, kurl_proxy], [migrations, migrations, migrations]]
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - run: |
           docker build -t ${{ matrix.service[0] }} -f ${{ matrix.service[1] }}/okteto.Dockerfile ${{ matrix.service[2] }}/
           curl -X POST "https://api.datadoghq.com/api/v1/series" \

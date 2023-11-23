@@ -40,7 +40,7 @@ jobs:
     outputs:
       addon_package_url: ${{ steps.addon-generate.outputs.addon_package_url }}
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - id: addon-generate
         uses: ./.github/actions/kurl-addon-kots-generate
         with:

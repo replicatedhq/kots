@@ -14,7 +14,7 @@ jobs:
       tag: ${{ github.ref_type == 'branch' && steps.get_tag.outputs.GIT_TAG || github.ref_name }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Get tags
         id: get_tag
         uses: ./.github/actions/version-tag
@@ -30,9 +30,9 @@ jobs:
     runs-on: ubuntu-20.04
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Setup Go
-        uses: actions/setup-go@v3
+        uses: actions/setup-go@v4
         with:
           go-version: '^1.20.0'
       - name: Run Update Script
@@ -41,7 +41,7 @@ jobs:
         run: |
           go run ./cmd/imagedeps
       - name: Create Pull Request # creates a PR if there are differences
-        uses: peter-evans/create-pull-request@v4
+        uses: peter-evans/create-pull-request@v5
         id: cpr
         with:
           token: ${{ secrets.NIGHTLY_GH_PAT }}
@@ -67,7 +67,7 @@ jobs:
     needs: [generate-tag]
     steps:
     - name: Checkout
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
     - uses: azure/docker-login@v1
       env:
         DOCKER_CONFIG: ./migrations/.docker
@@ -90,7 +90,7 @@ jobs:
     needs: [generate-tag]
     steps:
     - name: Checkout
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
     - name: Setup Node.js environment
       uses: actions/setup-node@v3
       with:
@@ -111,11 +111,11 @@ jobs:
     env:
       GIT_TAG: ${{ needs.generate-tag.outputs.tag }}
     steps:
-    - uses: actions/setup-go@v3
+    - uses: actions/setup-go@v4
       with:
         go-version: '^1.20.0'
     - name: Checkout
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
     - name: Cache Go modules
       uses: actions/cache@v3
       with:
@@ -150,11 +150,11 @@ jobs:
     runs-on: ubuntu-20.04
     needs: [build-web, generate-tag]
     steps:
-    - uses: actions/setup-go@v3
+    - uses: actions/setup-go@v4
       with:
         go-version: '^1.20.0'
     - name: Checkout
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
     - name: Cache Go modules
       uses: actions/cache@v3
       with:
@@ -185,7 +185,7 @@ jobs:
     needs: [build-go-api, generate-tag]
     steps:
     - name: Checkout
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
     - name: Download go_api artifact
       uses: actions/download-artifact@v3
       with:
@@ -217,12 +217,12 @@ jobs:
     if: github.ref_type != 'branch'
     needs: [build-web]
     steps:
-    - uses: actions/setup-go@v3
+    - uses: actions/setup-go@v4
       with:
         go-version: '^1.20.0'
 
     - name: Checkout
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
 
     - name: Cache Go modules
       uses: actions/cache@v3
@@ -262,7 +262,7 @@ jobs:
       env:
         COSIGN_PASSWORD: ${{ secrets.COSIGN_PASSWORD }}
     - name: Run GoReleaser
-      uses: goreleaser/goreleaser-action@v3
+      uses: goreleaser/goreleaser-action@v5
       with:
         version: "v1.2.5"
         args: release --rm-dist --config deploy/.goreleaser.yaml
@@ -280,7 +280,7 @@ jobs:
       AWS_DEFAULT_REGION: us-east-1
     steps:
       - name: checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: set outputs
         id: vars
         run: |
@@ -307,7 +307,7 @@ jobs:
     outputs:
       ok-to-test: ${{ steps.filter.outputs.kurl-addon }}
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - uses: dorny/paths-filter@v2
         id: filter
         with:
@@ -321,7 +321,7 @@ jobs:
     needs: [ generate-tag, generate-kurl-addon, kurl-addon-changes-filter ]
     steps:
       - name: checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: set outputs
         id: vars
         run: |
@@ -343,7 +343,7 @@ jobs:
       AWS_DEFAULT_REGION: us-east-1
     steps:
       - name: checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: set outputs
         id: vars
         run: |
@@ -362,7 +362,7 @@ jobs:
     if: github.ref_type != 'branch'
     steps:
     - name: Checkout
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
 
     - name: Generate KOTS Release Notes PR
       env:
