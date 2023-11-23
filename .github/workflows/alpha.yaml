@@ -42,29 +42,22 @@ jobs:
   build_web:
     runs-on: ubuntu-20.04
     needs: [generate-tag]
-    container:
-      image: replicated/gitops-builder:buildkite
-      options: --user root
     steps:
-    - name: Checkout
-      uses: actions/checkout@v4
-
-    - name: Setup Node.js environment
-      uses: actions/setup-node@v3
-      with:
-        node-version: '17.x'
-
-    - name: Build web
-      env:
-        GIT_TAG: ${{ needs.generate-tag.outputs.tag }}
-      run: mapfile -t envs < <(grep -v '#.*' < .image.env) && export "${envs[@]}" && make -C web deps build-kotsadm
-      shell: bash
-
-    - name: Upload web artifact
-      uses: actions/upload-artifact@v3
-      with:
-        name: web
-        path: ./web/dist
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node.js environment
+        uses: actions/setup-node@v3
+        with:
+          node-version: '17.x'
+      - name: Build web
+        env:
+          GIT_TAG: ${{ needs.generate-tag.outputs.tag }}
+        run: mapfile -t envs < <(grep -v '#.*' < .image.env) && export "${envs[@]}" && make -C web deps build-kotsadm
+      - name: Upload web artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: web
+          path: ./web/dist
 
 
   build_kurl_proxy:
