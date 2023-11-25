@@ -16,8 +16,8 @@ runs:
       shell: bash
       run: |
         export GIT_TAG=${{ inputs.git-tag }}
-        envsubst "${GIT_TAG}" < deploy/melange.yaml.tmpl > deploy/melange.yaml
-        envsubst "${GIT_TAG}" < deploy/apko.yaml.tmpl > deploy/apko.yaml
+        envsubst '${GIT_TAG}' < deploy/melange.yaml.tmpl > deploy/melange.yaml
+        envsubst '${GIT_TAG}' < deploy/apko.yaml.tmpl > deploy/apko.yaml
 
     - id: cache-dir
       shell: bash
