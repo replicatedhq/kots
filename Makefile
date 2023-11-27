@@ -133,6 +133,9 @@ build-alpha:
 
 .PHONY: build-release
 build-release:
+	docker tag ttl.sh/salah/kotsadm:${GIT_TAG} kotsadm/kotsadm:${GIT_TAG}
+	docker push kotsadm/kotsadm:${GIT_TAG}
+
 	mkdir -p bin/docker-archive/kotsadm
 	skopeo copy docker-daemon:kotsadm/kotsadm:${GIT_TAG} docker-archive:bin/docker-archive/kotsadm/${GIT_TAG}
 
