@@ -186,18 +186,18 @@ jobs:
     steps:
     - name: Checkout
       uses: actions/checkout@v3
+    - uses: ./.github/actions/build-push-kotsadm-image
+      with:
+        image-name: kotsadm/kotsadm:${{ needs.generate-tag.outputs.tag }}
+        git-tag: ${{ needs.generate-tag.outputs.tag }}
+        registry-username: ${{ secrets.DOCKERHUB_USER }}
+        registry-password: ${{ secrets.DOCKERHUB_PASSWORD }}
     - uses: azure/docker-login@v1
       env:
         DOCKER_CONFIG: ./.docker
       with:
         username: ${{ secrets.DOCKERHUB_USER }}
         password: ${{ secrets.DOCKERHUB_PASSWORD }}
-    - uses: ./.github/actions/build-push-kotsadm-image
-      with:
-        image-name: kotsadm/kotsadm:${{ needs.generate-tag.outputs.tag }}
-        git-tag: ${{ needs.generate-tag.outputs.tag }}
-        # registry-username: ${{ secrets.DOCKERHUB_USER }}
-        # registry-password: ${{ secrets.DOCKERHUB_PASSWORD }}
     - name: Build tagged release
       env:
         GIT_TAG: ${{ needs.generate-tag.outputs.tag }}
