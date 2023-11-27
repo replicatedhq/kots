@@ -133,6 +133,7 @@ build-alpha:
 
 .PHONY: build-release
 build-release:
+	docker pull ttl.sh/salah/kotsadm:${GIT_TAG}
 	docker tag ttl.sh/salah/kotsadm:${GIT_TAG} kotsadm/kotsadm:${GIT_TAG}
 	docker push kotsadm/kotsadm:${GIT_TAG}
 
