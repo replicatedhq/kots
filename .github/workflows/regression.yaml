@@ -70,10 +70,10 @@ jobs:
           token: ${{ secrets.E2E_GH_PAT }}
           path: automation
           ref: main
-      - name: Download go_api artifact
+      - name: Download kots binary
         uses: actions/download-artifact@v3
         with:
-          name: go_api
+          name: kots
           path: ./automation/jumpbox/bin
       - name: Download kotsadm image
         uses: actions/download-artifact@v3
