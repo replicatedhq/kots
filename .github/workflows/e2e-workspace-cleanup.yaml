@@ -64,7 +64,7 @@ jobs:
           path: automation
           ref: main
       - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v2
+        uses: hashicorp/setup-terraform@v3
       - name: Initialize Terraform
         env:
           TF_WORKSPACE: default
@@ -92,7 +92,7 @@ jobs:
           path: automation
           ref: main
       - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v2
+        uses: hashicorp/setup-terraform@v3
       - name: Initialize Terraform
         env:
           TF_WORKSPACE: default
