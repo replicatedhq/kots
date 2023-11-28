@@ -44,10 +44,16 @@ jobs:
       - name: Get automation workspaces
         id: get-workspaces
         run: |
-          mapfile -t WORKSPACES < <(terraform workspace list | grep -o 'automation-\w*')
+          # automation workspace name is in the format automation-<id/sha>-<timestamp>
+          mapfile -t WORKSPACES < <(terraform workspace list | grep -o 'automation-.*')
           declare -a EXPIRED_WORKSPACES
           for workspace in "${WORKSPACES[@]}"; do
-            COMPLETION=$(date -d "$(TF_WORKSPACE="${workspace}" terraform output -no-color -raw completion_timestamp)" +%s) || continue
+            COMPLETION=$(echo "$workspace" | grep -o '[^-]*$' | grep -o '[0-9]*$')
+            if [ -z "$COMPLETION" ]; then
+              echo "Failed to parse completion date from workspace $workspace, adding to list of expired workspaces"
+              EXPIRED_WORKSPACES+=("${workspace}")
+              continue
+            fi
             [ $(($(date +%s) - COMPLETION)) -gt $((60 * 60 * CLEANUP_INTERVAL_HOURS)) ] && EXPIRED_WORKSPACES+=("${workspace}")
           done
           echo "workspaces=$(printf '%s\n' "${EXPIRED_WORKSPACES[@]}" | head -c -1 | jq -R . | jq -sc .)" >> "$GITHUB_OUTPUT"
