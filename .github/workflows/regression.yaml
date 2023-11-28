@@ -55,13 +55,28 @@ env:
   AWS_ACCESS_KEY_ID: ${{ secrets.E2E_TESTIM_AWS_ACCESS_KEY_ID }}
   AWS_SECRET_ACCESS_KEY: ${{ secrets.E2E_TESTIM_AWS_SECRET_ACCESS_KEY }}
   TF_VAR_testim_token: ${{ secrets.TESTIM_ACCESS_TOKEN }}
-  WORKSPACE: automation-${{ github.event.inputs.id || inputs.id }}
 
 jobs:
+  get-workspace-name:
+    runs-on: ubuntu-latest
+    outputs:
+      name: ${{ steps.workspace.outputs.name }}
+    env:
+      WORKSPACE_PREFIX: automation-${{ github.event.inputs.id || inputs.id }}
+    steps:
+    - name: Set the workspace name as output
+      id: workspace
+      run: |
+        CURRENT_TIMESTAMP=$(date +%s)
+        echo "name=${{ env.WORKSPACE_PREFIX }}-${CURRENT_TIMESTAMP}" >> $GITHUB_OUTPUT
+
   jumpbox:
+    needs: get-workspace-name
     runs-on: ubuntu-20.04
     container:
       image: hashicorp/terraform:1.0.11
+    env:
+      WORKSPACE: ${{ needs.get-workspace-name.outputs.name }}
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -116,10 +131,12 @@ jobs:
           SLACK_WEBHOOK_URL: ${{ secrets.KOTS_BUILD_STATUS_SLACK_WEBHOOK_URL }}
 
   tests:
-    needs: jumpbox
+    needs: [get-workspace-name, jumpbox]
     runs-on: ubuntu-20.04
     container:
       image: hashicorp/terraform:1.0.11
+    env:
+      WORKSPACE: ${{ needs.get-workspace-name.outputs.name }}
     strategy:
       fail-fast: false
       matrix:
@@ -263,8 +280,10 @@ jobs:
           SLACK_WEBHOOK_URL: ${{ secrets.KOTS_BUILD_STATUS_SLACK_WEBHOOK_URL }}
           MATRIX_CONTEXT: ${{ toJson(matrix) }}
   cleanup:
-    needs: tests
+    needs: [get-workspace-name, tests]
     runs-on: ubuntu-20.04
+    env:
+      WORKSPACE: ${{ needs.get-workspace-name.outputs.name }}
     steps:
       - name: Trigger workspace cleanup
         uses: peter-evans/repository-dispatch@v2
@@ -272,4 +291,4 @@ jobs:
           token: ${{ secrets.E2E_GH_PAT }}
           repository: replicatedhq/kots
           event-type: e2e-workspace-cleanup
-          client-payload: '{"workspace": "automation-${{ github.event.inputs.id || inputs.id }}"}'
+          client-payload: '{"workspace": "${{ env.WORKSPACE }}"}'
