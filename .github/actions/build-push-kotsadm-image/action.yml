@@ -2,15 +2,15 @@ name: 'Build and push kotsadm image'
 description: 'Composite action for building and pushing kotsadm image'
 inputs:
   chainguard-gcp-wif-pool:
-    description: 'Chainguard's GCP workload identity pool'
+    description: 'GCP workload identity pool for Chainguard'
     required: true
 
   chainguard-gcp-sa:
-    description: 'Chainguard's GCP service account'
+    description: 'GCP service account for Chainguard'
     required: true
 
   chainguard-gcp-project-id:
-    description: 'Chainguard's GCP project ID'
+    description: 'GCP project ID for Chainguard'
     required: true
 
   image-name:
