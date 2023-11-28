@@ -46,6 +46,7 @@ runs:
     - name: setup packages gcsfuse
       env:
         BUCKET: replicated-apk-registry
+      shell: bash
       run: |
         # Set up a gcsfuse RO mount to the bucket containing private packages. This is a cheap and
         # cheerful way to get access to objects we need, without having to fetch all of them.
