@@ -28,13 +28,13 @@ func GetRoles(ctx context.Context) ([]string, error) {
 
 	// determine role names
 	roles := []string{}
-	if config.Controller.Name != "" {
-		roles = append(roles, config.Controller.Name)
+	if config.Roles.Controller.Name != "" {
+		roles = append(roles, config.Roles.Controller.Name)
 	} else {
 		roles = append(roles, DEFAULT_CONTROLLER_ROLE_NAME)
 	}
 
-	for _, role := range config.Custom {
+	for _, role := range config.Roles.Custom {
 		if role.Name != "" {
 			roles = append(roles, role.Name)
 		}
@@ -51,8 +51,8 @@ func ControllerRoleName(ctx context.Context) (string, error) {
 		return "", fmt.Errorf("failed to get cluster config: %w", err)
 	}
 
-	if conf != nil && conf.Controller.Name != "" {
-		return conf.Controller.Name, nil
+	if conf != nil && conf.Roles.Controller.Name != "" {
+		return conf.Roles.Controller.Name, nil
 	}
 	return DEFAULT_CONTROLLER_ROLE_NAME, nil
 }
@@ -120,12 +120,12 @@ func getRoleLabelsImpl(config *embeddedclusterv1beta1.ConfigSpec, roles []string
 	}
 
 	for _, role := range roles {
-		if role == config.Controller.Name {
-			for k, v := range config.Controller.Labels {
+		if role == config.Roles.Controller.Name {
+			for k, v := range config.Roles.Controller.Labels {
 				toReturn = append(toReturn, fmt.Sprintf("%s=%s", labelify(k), labelify(v)))
 			}
 		}
-		for _, customRole := range config.Custom {
+		for _, customRole := range config.Roles.Custom {
 			if role == customRole.Name {
 				for k, v := range customRole.Labels {
 					toReturn = append(toReturn, fmt.Sprintf("%s=%s", labelify(k), labelify(v)))
