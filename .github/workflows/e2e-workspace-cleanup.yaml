@@ -55,6 +55,7 @@ jobs:
           - existing-online-install-minimum
           - existing-online-upgrade-admin
           - existing-online-upgrade-minimum
+          - helmvm-online-install
     steps:
       - name: Checkout
         uses: actions/checkout@v4
