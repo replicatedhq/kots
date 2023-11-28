@@ -74,6 +74,12 @@ pipeline:
       ln -s /usr/bin/kustomize ${DESTDIR}/usr/local/bin/kustomize5
 
       # TODO: this requires manual intervention whenever kubectl bumps its major version
+      ln -s /usr/bin/kubectl-1.19 ${DESTDIR}/usr/local/bin/kubectl-v1.19
+      ln -s /usr/bin/kubectl-1.20 ${DESTDIR}/usr/local/bin/kubectl-v1.20
+      ln -s /usr/bin/kubectl-1.21 ${DESTDIR}/usr/local/bin/kubectl-v1.21
+      ln -s /usr/bin/kubectl-1.22 ${DESTDIR}/usr/local/bin/kubectl-v1.22
+      ln -s /usr/bin/kubectl-1.23 ${DESTDIR}/usr/local/bin/kubectl-v1.23
+      ln -s /usr/bin/kubectl-1.24 ${DESTDIR}/usr/local/bin/kubectl-v1.24
       ln -s /usr/bin/kubectl-1.25 ${DESTDIR}/usr/local/bin/kubectl-v1.25
       ln -s /usr/bin/kubectl-1.26 ${DESTDIR}/usr/local/bin/kubectl-v1.26
       ln -s /usr/bin/kubectl-1.27 ${DESTDIR}/usr/local/bin/kubectl-v1.27

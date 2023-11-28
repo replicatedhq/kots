@@ -22,6 +22,33 @@ inputs:
 runs:
   using: "composite"
   steps:
+    - uses: google-github-actions/auth@35b0e87d162680511bf346c299f71c9c5c379033 # v1.1.1
+      with:
+        workload_identity_provider: ${{secrets.CHAINGUARD_GCP_WIF_POOL}}
+        service_account: ${{secrets.CHAINGUARD_GCP_SA}}
+
+    - uses: google-github-actions/setup-gcloud@e30db14379863a8c79331b04a9969f4c1e225e0b # v1.1.1
+      with:
+        project_id: ${{secrets.CHAINGUARD_GCP_PROJECT_ID}}
+
+    - name: setup packages gcsfuse
+      env:
+        BUCKET: replicated-apk-registry
+      run: |
+        # Set up a gcsfuse RO mount to the bucket containing private packages. This is a cheap and
+        # cheerful way to get access to objects we need, without having to fetch all of them.
+        mkdir -p /gcsfuse/apk-repo
+        gcsfuse -o ro --implicit-dirs --only-dir os ${BUCKET} /gcsfuse/apk-repo
+
+        # Symlink the gcsfuse mount to ./packages/$arch/*.apk
+        mkdir -p ./packages/x86_64
+        ln -s /gcsfuse/apk-repo/x86_64/*.apk ./packages/x86_64/
+
+        # Make a copy of the APKINDEX.* since we'll need to write to it on package builds
+        cp /gcsfuse/apk-repo/x86_64/APKINDEX.* ./packages/x86_64/
+
+        ls -lR ./packages/
+
     - name: template melange and apko configs
       shell: bash
       run: |
