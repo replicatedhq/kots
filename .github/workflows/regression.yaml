@@ -68,7 +68,7 @@ jobs:
       id: workspace
       run: |
         CURRENT_TIMESTAMP=$(date +%s)
-        echo "name=${{ env.WORKSPACE_PREFIX }}-${CURRENT_TIMESTAMP}" >> $GITHUB_OUTPUT
+        echo "name=${{ env.WORKSPACE_PREFIX }}-${CURRENT_TIMESTAMP}" >> "$GITHUB_OUTPUT"
 
   jumpbox:
     needs: get-workspace-name
