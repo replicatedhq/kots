@@ -376,7 +376,7 @@ func deploymentResource(issuerURL, configChecksum string, options Options) (*app
 	if err != nil {
 		return nil, err
 	}
-	image := fmt.Sprintf("kotsadm/dex:%s", dexVersion)
+	image := fmt.Sprintf("cgr.dev/chainguard/dex:%s", dexVersion)
 	imagePullSecrets := []corev1.LocalObjectReference{}
 	if options.ImageRewriteFn != nil {
 		var err error

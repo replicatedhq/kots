@@ -18,9 +18,9 @@ func GetAdminConsoleImages(deployOptions types.DeployOptions) map[string]string 
 	rqliteTag, _ := image.GetTag(image.Rqlite)
 	dexTag, _ := image.GetTag(image.Dex)
 
-	minioImage := fmt.Sprintf("minio/minio:%s", minioTag)
-	rqliteImage := fmt.Sprintf("rqlite/rqlite:%s", rqliteTag)
-	dexImage := fmt.Sprintf("kotsadm/dex:%s", dexTag)
+	minioImage := fmt.Sprintf("cgr.dev/chainguard/minio:%s", minioTag)
+	rqliteImage := fmt.Sprintf("cgr.dev/chainguard/rqlite:%s", rqliteTag)
+	dexImage := fmt.Sprintf("cgr.dev/chainguard/dex:%s", dexTag)
 
 	if s := kotsadmversion.KotsadmPullSecret(deployOptions.Namespace, deployOptions.RegistryConfig); s != nil {
 		minioImage = fmt.Sprintf("%s/minio:%s", kotsadmversion.KotsadmRegistry(deployOptions.RegistryConfig), minioTag)
@@ -43,12 +43,11 @@ func GetAdminConsoleImages(deployOptions types.DeployOptions) map[string]string 
 }
 
 func GetOriginalAdminConsoleImages(deployOptions types.DeployOptions) map[string]string {
-	dexTag, _ := image.GetTag(image.Dex) // dex image is special; we host a copy
 	return map[string]string{
 		"kotsadm-migrations": fmt.Sprintf("kotsadm/kotsadm-migrations:%s", kotsadmversion.KotsadmTag(deployOptions.RegistryConfig)),
 		"kotsadm":            fmt.Sprintf("kotsadm/kotsadm:%s", kotsadmversion.KotsadmTag(deployOptions.RegistryConfig)),
 		"minio":              image.Minio,
 		"rqlite":             image.Rqlite,
-		"dex":                fmt.Sprintf("kotsadm/dex:%s", dexTag),
+		"dex":                image.Dex,
 	}
 }

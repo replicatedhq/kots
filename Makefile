@@ -1,8 +1,8 @@
 include Makefile.build.mk
 CURRENT_USER := $(shell id -u -n)
-MINIO_TAG ?= RELEASE.2023-11-11T08-14-41Z
+MINIO_TAG ?= 0.20231025
 RQLITE_TAG ?= 7.21.4
-DEX_TAG ?= v2.37.0
+DEX_TAG ?= 2.37.0
 LVP_TAG ?= v0.5.5
 
 define sendMetrics
@@ -118,12 +118,12 @@ build-ttl.sh: build
 all-ttl.sh: build-ttl.sh
 	source .image.env && IMAGE=ttl.sh/${CURRENT_USER}/kotsadm-migrations:24h make -C migrations build_schema
 
-	docker pull minio/minio:${MINIO_TAG}
-	docker tag minio/minio:${MINIO_TAG} ttl.sh/${CURRENT_USER}/minio:${MINIO_TAG}
+	docker pull cgr.dev/chainguard/minio:${MINIO_TAG}
+	docker tag cgr.dev/chainguard/minio:${MINIO_TAG} ttl.sh/${CURRENT_USER}/minio:${MINIO_TAG}
 	docker push ttl.sh/${CURRENT_USER}/minio:${MINIO_TAG}
 
-	docker pull rqlite/rqlite:${RQLITE_TAG}
-	docker tag rqlite/rqlite:${RQLITE_TAG} ttl.sh/${CURRENT_USER}/rqlite:${RQLITE_TAG}
+	docker pull cgr.dev/chainguard/rqlite:${RQLITE_TAG}
+	docker tag cgr.dev/chainguard/rqlite:${RQLITE_TAG} ttl.sh/${CURRENT_USER}/rqlite:${RQLITE_TAG}
 	docker push ttl.sh/${CURRENT_USER}/rqlite:${RQLITE_TAG}
 
 .PHONY: build-alpha
@@ -136,13 +136,11 @@ build-release:
 	mkdir -p bin/docker-archive/kotsadm
 	skopeo copy docker://kotsadm/kotsadm:${GIT_TAG} docker-archive:bin/docker-archive/kotsadm/${GIT_TAG}
 
-	docker build --pull -f deploy/dex.Dockerfile -t kotsadm/dex:${DEX_TAG} --build-arg TAG=${DEX_TAG} .
-	docker push kotsadm/dex:${DEX_TAG}
 	mkdir -p bin/docker-archive/dex
-	skopeo copy docker://kotsadm/dex:${DEX_TAG} docker-archive:bin/docker-archive/dex/${DEX_TAG}
+	skopeo copy docker://cgr.dev/chainguard/dex:${DEX_TAG} docker-archive:bin/docker-archive/dex/${DEX_TAG}
 
 	mkdir -p bin/docker-archive/minio
-	skopeo copy docker://minio/minio:${MINIO_TAG} docker-archive:bin/docker-archive/minio/${MINIO_TAG}
+	skopeo copy docker://cgr.dev/chainguard/minio:${MINIO_TAG} docker-archive:bin/docker-archive/minio/${MINIO_TAG}
 
 	mkdir -p bin/docker-archive/local-volume-provider
 	skopeo copy docker://replicated/local-volume-provider:${LVP_TAG} docker-archive:bin/docker-archive/local-volume-provider/${LVP_TAG}

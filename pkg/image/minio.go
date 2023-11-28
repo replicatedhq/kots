@@ -36,6 +36,9 @@ func GetMinioImage(clientset kubernetes.Interface, kotsadmNamespace string) (str
 		if strings.Contains(container.Image, "minio/minio:RELEASE.") {
 			return container.Image, nil
 		}
+		if strings.Contains(container.Image, "cgr.dev/chainguard/minio:0.") {
+			return container.Image, nil
+		}
 	}
 
 	return "", nil

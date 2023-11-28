@@ -13,7 +13,7 @@ schema-release: build_schema
 	mkdir -p bin/docker-archive/${PROJECT_NAME}
 	skopeo copy docker-daemon:kotsadm/${PROJECT_NAME}:${GIT_TAG} docker-archive:bin/docker-archive/${PROJECT_NAME}/${GIT_TAG}
 	mkdir -p bin/docker-archive/rqlite
-	skopeo copy docker://rqlite/rqlite:${RQLITE_TAG} docker-archive:bin/docker-archive/rqlite/${RQLITE_TAG}
+	skopeo copy docker://cgr.dev/chainguard/rqlite:${RQLITE_TAG} docker-archive:bin/docker-archive/rqlite/${RQLITE_TAG}
 
 build_schema:
 	docker build --pull --build-arg SCHEMAHERO_TAG=${SCHEMAHERO_TAG} -f deploy/Dockerfile -t ${IMAGE} .

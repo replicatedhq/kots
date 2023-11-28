@@ -2,7 +2,9 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"os"
 	"path"
@@ -13,6 +15,7 @@ import (
 	semver "github.com/Masterminds/semver/v3"
 	"github.com/google/go-github/v39/github"
 	"github.com/heroku/docker-registry-client/registry"
+	"github.com/pkg/errors"
 	"golang.org/x/oauth2"
 )
 
@@ -119,17 +122,17 @@ func getTagFinder(opts ...func(c *configuration)) tagFinderFn {
 
 		switch imageName {
 		case minioReference:
-			latestReleaseTag, err = getLatestTagFromGithub(config.releaseFinder, "minio", "minio", matcherFn)
+			latestReleaseTag, err = getLatestTagFromRegistry("cgr.dev/chainguard/minio", config.repositoryTagsFinder, matcherFn)
 			if err != nil {
-				return nil, fmt.Errorf("failed to get release tag for minio/minio %w", err)
+				return nil, fmt.Errorf("failed to get release tag for %s %w", imageName, err)
 			}
 		case dexReference:
-			latestReleaseTag, err = getLatestTagFromGithub(config.releaseFinder, "dexidp", "dex", matcherFn)
+			latestReleaseTag, err = getLatestTagFromRegistry("cgr.dev/chainguard/dex", config.repositoryTagsFinder, matcherFn)
 			if err != nil {
-				return nil, fmt.Errorf("failed to get release tag for dexidp/dex %w", err)
+				return nil, fmt.Errorf("failed to get release tag for %s %w", imageName, err)
 			}
 		case rqliteReference:
-			latestReleaseTag, err = getLatestTagFromRegistry("rqlite/rqlite", config.repositoryTagsFinder, matcherFn)
+			latestReleaseTag, err = getLatestTagFromRegistry("cgr.dev/chainguard/rqlite", config.repositoryTagsFinder, matcherFn)
 			if err != nil {
 				return nil, fmt.Errorf("failed to get release tag for %s %w", imageName, err)
 			}
@@ -256,21 +259,120 @@ func getReleases(owner, repo string) ([]*github.RepositoryRelease, error) {
 
 // getRegistryTags queries a Docker Registry HTTP API V2 compliant registry to get the tags for an image.
 func getRegistryTags(untaggedRef string) ([]string, error) {
+	parts := strings.Split(untaggedRef, "/")
+
+	if len(parts) > 0 && parts[0] == "cgr.dev" {
+		// this is chainguard's registry and it only accepts a token (not username/password)
+		token, err := getCGRToken(untaggedRef)
+		if err != nil {
+			return nil, fmt.Errorf("could not get cgr token %w", err)
+		}
+		tags, err := getCGRImageTags(untaggedRef, token)
+		if err != nil {
+			return nil, fmt.Errorf("could not get tags from cgr %w", err)
+		}
+		return tags, nil
+	}
+
 	registryUri := dockerRegistryUrl
 	imageRef := untaggedRef
 	userName, password := "", ""
-	parts := strings.Split(untaggedRef, "/")
+
 	if len(parts) > 2 {
 		registryUri = fmt.Sprintf("https://%s", parts[0])
 		imageRef = path.Join(parts[1:]...)
 	}
+
 	hub, err := registry.New(registryUri, userName, password)
 	if err != nil {
 		return nil, fmt.Errorf("could not connect to registry %q %w", registryUri, err)
 	}
+
 	tags, err := hub.Tags(imageRef)
 	if err != nil {
 		return nil, fmt.Errorf("could not fetch tags for image %q %w", imageRef, err)
 	}
+
 	return tags, nil
+}
+
+func getCGRToken(untaggedRef string) (string, error) {
+	parts := strings.Split(untaggedRef, "/")
+	if len(parts) < 2 {
+		return "", fmt.Errorf("invalid ref %q", untaggedRef)
+	}
+
+	repo := strings.Join(parts[1:], "/")
+	scope := fmt.Sprintf("repository:%s:pull", repo)
+	url := fmt.Sprintf("https://cgr.dev/token?scope=%s", scope)
+
+	resp, err := http.Get(url)
+	if err != nil {
+		return "", errors.Wrap(err, "failed to get token")
+	}
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return "", fmt.Errorf("failed to read body %w", err)
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		return "", fmt.Errorf("failed to get token: %s", body)
+	}
+
+	var token struct {
+		Token string `json:"token"`
+	}
+	if err := json.Unmarshal(body, &token); err != nil {
+		return "", fmt.Errorf("failed to unmarshal body %w", err)
+	}
+
+	return token.Token, nil
+}
+
+func getCGRImageTags(untaggedRef string, token string) ([]string, error) {
+	parts := strings.Split(untaggedRef, "/")
+	if len(parts) < 2 {
+		return nil, fmt.Errorf("invalid ref %q", untaggedRef)
+	}
+
+	repo := strings.Join(parts[1:], "/")
+	url := fmt.Sprintf("https://cgr.dev/v2/%s/tags/list", repo)
+
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create request %w", err)
+	}
+
+	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get tags")
+	}
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read body %w", err)
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("failed to get tags: %s", body)
+	}
+
+	var tags struct {
+		Tags []string `json:"tags"`
+	}
+	if err := json.Unmarshal(body, &tags); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal body %w", err)
+	}
+
+	// reverse array order so that most recent is first
+	for i := len(tags.Tags)/2 - 1; i >= 0; i-- {
+		opp := len(tags.Tags) - 1 - i
+		tags.Tags[i], tags.Tags[opp] = tags.Tags[opp], tags.Tags[i]
+	}
+
+	return tags.Tags, nil
 }

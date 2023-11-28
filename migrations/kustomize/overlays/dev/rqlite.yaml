@@ -59,7 +59,7 @@ spec:
     spec:
       containers:
       - name: rqlite
-        image: rqlite/rqlite:7.9.2
+        image: cgr.dev/chainguard/rqlite:7.21.4
         imagePullPolicy: IfNotPresent
         args:
         - -disco-mode=dns

@@ -269,7 +269,7 @@ func fileSystemMinioDeploymentResource(clientset kubernetes.Interface, secretChe
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get minio image tag")
 	}
-	minioImage := fmt.Sprintf("minio/minio:%s", minioTag)
+	minioImage := fmt.Sprintf("cgr.dev/chainguard/minio:%s", minioTag)
 	imagePullSecrets := []corev1.LocalObjectReference{}
 
 	isKurl, err := kurl.IsKurl(clientset)
