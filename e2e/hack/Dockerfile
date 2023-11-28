@@ -4,7 +4,7 @@ ENV DEBIAN_FRONTEND=noninteractive
 
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
-        ca-certificates curl git sudo \
+        ca-certificates curl gnupg git sudo \
     && rm -rf /var/lib/apt/lists/*
 
 ENV INSTALL_DIR=/usr/local/bin

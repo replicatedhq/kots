@@ -249,11 +249,6 @@ func DetectVeleroNamespace(ctx context.Context, clientset kubernetes.Interface, 
 		veleroNamespace = TryGetVeleroNamespaceFromConfigMap(ctx, clientset, kotsadmNamespace)
 	}
 
-	clientset, err := k8sutil.GetClientset()
-	if err != nil {
-		return "", errors.Wrap(err, "failed to get k8s clientset")
-	}
-
 	deployments, err := clientset.AppsV1().Deployments(veleroNamespace).List(ctx, metav1.ListOptions{})
 	if kuberneteserrors.IsNotFound(err) {
 		return "", nil
