@@ -273,6 +273,9 @@ jobs:
       - uses: actions/checkout@v3
       - uses: ./.github/actions/build-push-kotsadm-image
         with:
+          chainguard-gcp-wif-pool: ${{ secrets.CHAINGUARD_GCP_WIF_POOL }}
+          chainguard-gcp-sa: ${{ secrets.CHAINGUARD_GCP_SA }}
+          chainguard-gcp-project-id: ${{ secrets.CHAINGUARD_GCP_PROJECT_ID }}
           image-name: ttl.sh/automated-${{ github.run_id }}/kotsadm:24h
           git-tag: ${{ needs.generate-tag.outputs.tag }}
 

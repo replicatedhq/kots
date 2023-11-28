@@ -190,6 +190,9 @@ jobs:
       uses: actions/checkout@v3
     - uses: ./.github/actions/build-push-kotsadm-image
       with:
+        chainguard-gcp-wif-pool: ${{ secrets.CHAINGUARD_GCP_WIF_POOL }}
+        chainguard-gcp-sa: ${{ secrets.CHAINGUARD_GCP_SA }}
+        chainguard-gcp-project-id: ${{ secrets.CHAINGUARD_GCP_PROJECT_ID }}
         image-name: index.docker.io/kotsadm/kotsadm:${{ needs.generate-tag.outputs.tag }}
         git-tag: ${{ needs.generate-tag.outputs.tag }}
         registry-username: ${{ secrets.DOCKERHUB_USER }}

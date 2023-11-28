@@ -1,6 +1,18 @@
 name: 'Build and push kotsadm image'
 description: 'Composite action for building and pushing kotsadm image'
 inputs:
+  chainguard-gcp-wif-pool:
+    description: 'Chainguard's GCP workload identity pool'
+    required: true
+
+  chainguard-gcp-sa:
+    description: 'Chainguard's GCP service account'
+    required: true
+
+  chainguard-gcp-project-id:
+    description: 'Chainguard's GCP project ID'
+    required: true
+
   image-name:
     description: 'Full destination kotsadm image name'
     required: true
@@ -24,12 +36,12 @@ runs:
   steps:
     - uses: google-github-actions/auth@35b0e87d162680511bf346c299f71c9c5c379033 # v1.1.1
       with:
-        workload_identity_provider: ${{ secrets.CHAINGUARD_GCP_WIF_POOL }}
-        service_account: ${{ secrets.CHAINGUARD_GCP_SA }}
+        workload_identity_provider: ${{ inputs.chainguard-gcp-wif-pool }}
+        service_account: ${{ inputs.chainguard-gcp-sa }}
 
     - uses: google-github-actions/setup-gcloud@e30db14379863a8c79331b04a9969f4c1e225e0b # v1.1.1
       with:
-        project_id: ${{ secrets.CHAINGUARD_GCP_PROJECT_ID }}
+        project_id: ${{ inputs.chainguard-gcp-project-id }}
 
     - name: setup packages gcsfuse
       env:
