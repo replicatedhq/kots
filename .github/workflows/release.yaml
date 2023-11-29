@@ -190,6 +190,7 @@ jobs:
       uses: actions/checkout@v3
     - uses: ./.github/actions/build-push-kotsadm-image
       with:
+        workspace: ${{ github.workspace }}
         chainguard-gcp-wif-pool: ${{ secrets.CHAINGUARD_GCP_WIF_POOL }}
         chainguard-gcp-sa: ${{ secrets.CHAINGUARD_GCP_SA }}
         chainguard-gcp-project-id: ${{ secrets.CHAINGUARD_GCP_PROJECT_ID }}

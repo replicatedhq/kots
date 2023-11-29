@@ -1,6 +1,10 @@
 name: 'Build and push kotsadm image'
 description: 'Composite action for building and pushing kotsadm image'
 inputs:
+  workspace:
+    description: 'Github workspace'
+    required: true
+
   chainguard-gcp-wif-pool:
     description: 'GCP workload identity pool for Chainguard'
     required: true
@@ -48,10 +52,6 @@ runs:
         BUCKET: replicated-apk-registry
       shell: bash
       run: |
-        whoami
-        id -u
-        id -g
-
         # Install gcsfuse
         export GCSFUSE_REPO=gcsfuse-`lsb_release -c -s`
         echo "deb [signed-by=/usr/share/keyrings/cloud.google.asc] https://packages.cloud.google.com/apt $GCSFUSE_REPO main" | sudo tee /etc/apt/sources.list.d/gcsfuse.list
@@ -72,9 +72,6 @@ runs:
         # Make a copy of the APKINDEX.* since we'll need to write to it on package builds
         cp /tmp/gcsfuse/apk-repo/x86_64/APKINDEX.* ./packages/x86_64/
 
-        # Set the owner of the packages dir to the runner user
-        sudo chown -R runner:runner ./packages/
-
         ls -lR ./packages/
 
     - name: template melange and apko configs
@@ -94,6 +91,7 @@ runs:
         archs: x86_64
         sign-with-temporary-key: true
         cache-dir: ${{ steps.cache-dir.outputs.cache_dir }}
+        keyring-append: ${{ inputs.workspace }}/packages/chainguard-enterprise.rsa.pub
 
     - uses: chainguard-images/actions/apko-publish@main
       with:
