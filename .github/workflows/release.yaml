@@ -216,8 +216,6 @@ jobs:
     runs-on: ubuntu-20.04
     if: github.ref_type != 'branch'
     needs: [generate-tag, build-web]
-    env:
-      GORELEASER_CURRENT_TAG: ${{ needs.generate-tag.outputs.tag }}
     steps:
     - uses: actions/setup-go@v4
       with:
@@ -270,6 +268,7 @@ jobs:
         args: release --rm-dist --config deploy/.goreleaser.yaml
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        GORELEASER_CURRENT_TAG: ${{ needs.generate-tag.outputs.tag }}
 
   generate-kurl-addon:
     runs-on: ubuntu-20.04
