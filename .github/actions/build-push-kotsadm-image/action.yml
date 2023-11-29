@@ -63,6 +63,7 @@ runs:
         # Symlink the gcsfuse mount to ./packages/$arch/*.apk
         mkdir -p ./packages/x86_64
         ln -s /tmp/gcsfuse/apk-repo/x86_64/*.apk ./packages/x86_64/
+        ln -s /tmp/gcsfuse/apk-repo/chainguard-enterprise.rsa.pub ./packages/
 
         # Make a copy of the APKINDEX.* since we'll need to write to it on package builds
         cp /tmp/gcsfuse/apk-repo/x86_64/APKINDEX.* ./packages/x86_64/
