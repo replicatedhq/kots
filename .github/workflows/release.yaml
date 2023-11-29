@@ -215,7 +215,9 @@ jobs:
   goreleaser:
     runs-on: ubuntu-20.04
     if: github.ref_type != 'branch'
-    needs: [build-web]
+    needs: [generate-tag, build-web]
+    env:
+      GORELEASER_CURRENT_TAG: ${{ needs.generate-tag.outputs.tag }}
     steps:
     - uses: actions/setup-go@v4
       with:
