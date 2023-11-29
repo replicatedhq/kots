@@ -48,6 +48,14 @@ runs:
         BUCKET: replicated-apk-registry
       shell: bash
       run: |
+        # Install gcsfuse
+        export GCSFUSE_REPO=gcsfuse-`lsb_release -c -s`
+        echo "deb [signed-by=/usr/share/keyrings/cloud.google.asc] https://packages.cloud.google.com/apt $GCSFUSE_REPO main" | sudo tee /etc/apt/sources.list.d/gcsfuse.list
+        curl https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo apt-key add -
+
+        sudo apt-get update -y
+        sudo apt-get install gcsfuse -y
+
         # Set up a gcsfuse RO mount to the bucket containing private packages. This is a cheap and
         # cheerful way to get access to objects we need, without having to fetch all of them.
         mkdir -p /tmp/gcsfuse/apk-repo
