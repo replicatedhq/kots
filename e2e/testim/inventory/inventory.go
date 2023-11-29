@@ -163,6 +163,15 @@ func NewRangeKotsVersion() Test {
 	}
 }
 
+func NewSupportBundle() Test {
+	return Test{
+		Name:        "Support Bundle",
+		Suite:       "support-bundle",
+		Namespace:   "support-bundle",
+		UpstreamURI: "support-bundle-halibut/automated",
+	}
+}
+
 func SetupRegressionTest(kubectlCLI *kubectl.CLI) TestimParams {
 	cmd := kubectlCLI.Command(
 		context.Background(),
