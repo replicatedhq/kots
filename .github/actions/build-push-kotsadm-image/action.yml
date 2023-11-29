@@ -47,31 +47,13 @@ runs:
       with:
         project_id: ${{ inputs.chainguard-gcp-project-id }}
 
-    - name: setup packages gcsfuse
+    - name: setup packages
       env:
         BUCKET: replicated-apk-registry
       shell: bash
       run: |
-        # Install gcsfuse
-        export GCSFUSE_REPO=gcsfuse-`lsb_release -c -s`
-        echo "deb [signed-by=/usr/share/keyrings/cloud.google.asc] https://packages.cloud.google.com/apt $GCSFUSE_REPO main" | sudo tee /etc/apt/sources.list.d/gcsfuse.list
-        curl https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo tee /usr/share/keyrings/cloud.google.asc
-        sudo apt-get update -y
-        sudo apt-get install gcsfuse -y
-
-        # Set up a gcsfuse RO mount to the bucket containing private packages. This is a cheap and
-        # cheerful way to get access to objects we need, without having to fetch all of them.
-        mkdir -p /tmp/gcsfuse/apk-repo
-        gcsfuse -o ro --implicit-dirs --only-dir os ${BUCKET} /tmp/gcsfuse/apk-repo
-
-        # Symlink the gcsfuse mount to ./packages/$arch/*.apk
-        mkdir -p ./packages/x86_64
-        ln -s /tmp/gcsfuse/apk-repo/x86_64/*.apk ./packages/x86_64/
-        ln -s /tmp/gcsfuse/apk-repo/chainguard-enterprise.rsa.pub ./packages/
-
-        # Make a copy of the APKINDEX.* since we'll need to write to it on package builds
-        cp /tmp/gcsfuse/apk-repo/x86_64/APKINDEX.* ./packages/x86_64/
-
+        mkdir ./packages/
+        gsutil -m cp -R gs://replicated-apk-registry/os/ ./packages/
         ls -lR ./packages/
 
     - name: template melange and apko configs
