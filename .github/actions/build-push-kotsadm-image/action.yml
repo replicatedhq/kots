@@ -1,10 +1,6 @@
 name: 'Build and push kotsadm image'
 description: 'Composite action for building and pushing kotsadm image'
 inputs:
-  workspace:
-    description: 'Github workspace'
-    required: true
-
   chainguard-gcp-wif-pool:
     description: 'GCP workload identity pool for Chainguard'
     required: true
@@ -73,7 +69,6 @@ runs:
         archs: x86_64
         sign-with-temporary-key: true
         cache-dir: ${{ steps.cache-dir.outputs.cache_dir }}
-        keyring-append: ${{ inputs.workspace }}/packages/chainguard-enterprise.rsa.pub
 
     - uses: chainguard-images/actions/apko-publish@main
       with:
