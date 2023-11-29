@@ -50,15 +50,15 @@ runs:
       run: |
         # Set up a gcsfuse RO mount to the bucket containing private packages. This is a cheap and
         # cheerful way to get access to objects we need, without having to fetch all of them.
-        mkdir -p /gcsfuse/apk-repo
-        gcsfuse -o ro --implicit-dirs --only-dir os ${BUCKET} /gcsfuse/apk-repo
+        mkdir -p /tmp/gcsfuse/apk-repo
+        gcsfuse -o ro --implicit-dirs --only-dir os ${BUCKET} /tmp/gcsfuse/apk-repo
 
         # Symlink the gcsfuse mount to ./packages/$arch/*.apk
         mkdir -p ./packages/x86_64
-        ln -s /gcsfuse/apk-repo/x86_64/*.apk ./packages/x86_64/
+        ln -s /tmp/gcsfuse/apk-repo/x86_64/*.apk ./packages/x86_64/
 
         # Make a copy of the APKINDEX.* since we'll need to write to it on package builds
-        cp /gcsfuse/apk-repo/x86_64/APKINDEX.* ./packages/x86_64/
+        cp /tmp/gcsfuse/apk-repo/x86_64/APKINDEX.* ./packages/x86_64/
 
         ls -lR ./packages/
 
