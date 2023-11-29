@@ -250,7 +250,11 @@ export class KurlClusterManagement extends Component {
         displayAddNode: true,
       },
       async () => {
-        await this.generateWorkerAddNodeCommand();
+        if (this.state.selectedNodeType === "secondary") {
+          await this.generateWorkerAddNodeCommand();
+        } else {
+          await this.generatePrimaryAddNodeCommand();
+        }
       }
     );
   };
