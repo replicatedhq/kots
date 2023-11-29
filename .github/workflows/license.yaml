@@ -24,7 +24,7 @@ jobs:
         run: go mod download
 
       - name: Setup Node.js
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
           cache: yarn
           cache-dependency-path: web/yarn.lock
