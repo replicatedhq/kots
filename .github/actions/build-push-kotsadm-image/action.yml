@@ -64,6 +64,7 @@ runs:
         mkdir -p ./packages/x86_64
         ln -s /tmp/gcsfuse/apk-repo/x86_64/*.apk ./packages/x86_64/
         ln -s /tmp/gcsfuse/apk-repo/chainguard-enterprise.rsa.pub ./packages/
+        chmod +r ./packages/chainguard-enterprise.rsa.pub
 
         # Make a copy of the APKINDEX.* since we'll need to write to it on package builds
         cp /tmp/gcsfuse/apk-repo/x86_64/APKINDEX.* ./packages/x86_64/
