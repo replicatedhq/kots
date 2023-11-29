@@ -68,6 +68,9 @@ runs:
         # Make a copy of the APKINDEX.* since we'll need to write to it on package builds
         cp /tmp/gcsfuse/apk-repo/x86_64/APKINDEX.* ./packages/x86_64/
 
+        # Set the owner of the packages dir to the runner user
+        sudo chown -R runner:runner ./packages/
+
         ls -lR ./packages/
 
     - name: template melange and apko configs
