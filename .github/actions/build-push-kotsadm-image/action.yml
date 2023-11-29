@@ -87,6 +87,7 @@ runs:
         archs: x86_64
         sign-with-temporary-key: true
         cache-dir: ${{ steps.cache-dir.outputs.cache_dir }}
+        keyring-append: ./packages/chainguard-enterprise.rsa.pub
 
     - uses: chainguard-images/actions/apko-publish@main
       with:
