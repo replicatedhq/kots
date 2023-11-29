@@ -3849,6 +3849,166 @@ jobs:
           api-token: ${{ secrets.C11Y_MATRIX_TOKEN }}
           cluster-id: ${{ steps.create-cluster.outputs.cluster-id }}
 
+  validate-support-bundle:
+    runs-on: ubuntu-20.04
+    needs: [ enable-tests, can-run-ci, build-push-kotsadm-image, build-kurl-proxy, build-migrations, push-minio, push-rqlite ]
+    strategy:
+      fail-fast: false
+      matrix:
+        cluster: [
+          {distribution: kind, version: v1.28.0},
+          {distribution: openshift, version: 4.13.0-okd}
+        ]
+    env:
+      APP_SLUG: support-bundle-halibut
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install jq
+        uses: dcarbone/install-jq-action@v1.0.1
+      
+      - name: Download support-bundle binary
+        run: |
+          RELEASE="$(
+            curl -sfL https://api.github.com/repos/replicatedhq/troubleshoot/releases/latest | \
+            grep '"tag_name":' | \
+            sed -E 's/.*"(v[^"]+)".*/\1/'
+          )"
+          curl -fsLO "https://github.com/replicatedhq/troubleshoot/releases/download/${RELEASE}/support-bundle_linux_amd64.tar.gz"
+          tar xzf support-bundle_linux_amd64.tar.gz
+
+      - name: Create Cluster 
+        id: create-cluster 
+        uses: replicatedhq/replicated-actions/create-cluster@v1 
+        with:
+          api-token: ${{ secrets.C11Y_MATRIX_TOKEN }}
+          kubernetes-distribution: ${{ matrix.cluster.distribution }}
+          kubernetes-version: ${{ matrix.cluster.version }}
+          cluster-name: automated-kots-${{ github.run_id }}-${{ matrix.cluster.distribution }}-${{ matrix.cluster.version }}
+          timeout-minutes: '120'
+          ttl: 2h
+          export-kubeconfig: true
+
+      - name: download kots binary
+        uses: actions/download-artifact@v3
+        with:
+          name: kots
+          path: bin/
+
+      - run: chmod +x bin/kots
+
+      - name: create namespace and dockerhub secret
+        run: |
+          kubectl create ns "$APP_SLUG"
+          kubectl create secret docker-registry kotsadm-dockerhub --docker-server index.docker.io --docker-username "${{ secrets.E2E_DOCKERHUB_USERNAME }}" --docker-password "${{ secrets.E2E_DOCKERHUB_PASSWORD }}" --namespace "$APP_SLUG"
+
+      - name: install kots and the application
+        run: |
+          set +e
+
+          echo ${{ secrets.SUPPORT_BUNDLE_LICENSE }} | base64 -d > license.yaml
+          ./bin/kots \
+            install "$APP_SLUG/automated" \
+            --license-file license.yaml \
+            --no-port-forward \
+            --namespace "$APP_SLUG" \
+            --shared-password password \
+            --kotsadm-registry ttl.sh \
+            --kotsadm-namespace automated-${{ github.run_id }} \
+            --kotsadm-tag 24h
+
+          EXIT_CODE=$?
+          if [ $EXIT_CODE -ne 0 ]; then
+            echo "------pods:"
+            kubectl -n "$APP_SLUG" get pods
+            echo "------kotsadm logs"
+            kubectl logs -l app=kotsadm --tail=100 --namespace "$APP_SLUG"
+            exit $EXIT_CODE
+          fi
+
+          # wait for the app to be ready
+          COUNTER=1
+          while [ "$(./bin/kots get apps --namespace "$APP_SLUG" | awk 'NR>1{print $2}')" != "ready" ]; do
+            ((COUNTER += 1))
+            if [ $COUNTER -gt 120 ]; then
+              echo "Timed out waiting for app to be ready"
+              ./bin/kots get apps --namespace "$APP_SLUG"
+              echo "kotsadm logs:"
+              kubectl logs -l app=kotsadm --tail=100 --namespace "$APP_SLUG"
+              exit 1
+            fi
+            sleep 1
+          done
+          
+          # port forward to kotsadm
+          kill -9 "$(sudo lsof -t -i:3000)" 2>/dev/null || true
+          kubectl port-forward -n "$APP_SLUG" svc/kotsadm 3000:3000 &
+          sleep 5
+          
+          # get the support bundle command
+          KOTSADM_AUTHSTRING=$(kubectl get secret kotsadm-authstring -n "$APP_SLUG" -o jsonpath='{.data.kotsadm-authstring}' | base64 -d)
+          SUPPORT_BUNDLE_COMMAND=$(curl -sSL -X POST "http://localhost:3000/api/v1/troubleshoot/app/$APP_SLUG/supportbundlecommand" --data '{"origin": "http://localhost:3000"}' -H "Authorization: $KOTSADM_AUTHSTRING" | jq -r .command[1])
+          SUPPORT_BUNDLE_COMMAND="./support-bundle ${SUPPORT_BUNDLE_COMMAND#kubectl support-bundle}"
+
+          # run support bundle command
+          $SUPPORT_BUNDLE_COMMAND --interactive=false || true
+          
+          # validate that the support bundle was generated
+          tar xzf support-bundle-*.tar.gz
+
+          # validate that bundle was uploaded to admin console
+          BUNDLE_COUNT=$(curl -sSL -X GET "http://localhost:3000/api/v1/troubleshoot/app/$APP_SLUG/supportbundles" -H "Authorization: $KOTSADM_AUTHSTRING" | jq -r '.supportBundles | length')
+          if [ "$BUNDLE_COUNT" != "1" ]; then
+            echo "Expected 1 support bundle to be uploaded to admin console, found $BUNDLE_COUNT"
+            exit 1
+          fi
+
+          # fetch the redactor report
+          BUNDLE_ID=$(curl -sSL -X GET "http://localhost:3000/api/v1/troubleshoot/app/$APP_SLUG/supportbundles" -H "Authorization: $KOTSADM_AUTHSTRING" | jq -r .supportBundles[0].id)
+          curl -sSL -X GET "http://localhost:3000/api/v1/troubleshoot/supportbundle/$BUNDLE_ID/redactions" -H "Authorization: $KOTSADM_AUTHSTRING" > redactions.json
+
+          # validate that ip address redaction was applied in redactor report
+          IP_ADDRESS_REDACTION_COUNT=$(jq '.redactions.byRedactor."IP Addresses.regex.0" | length' < redactions.json)
+          if [ "$IP_ADDRESS_REDACTION_COUNT" -eq "0" ]; then
+            echo "Expected IP address redaction count to be greater than 0"
+            exit 1
+          fi
+
+          # validate that custom collector was run
+          if ! ls support-bundle-*/static/ips.txt; then
+            echo "Expected file support-bundle-*/static/ips.txt to exist"
+            exit 1
+          fi
+
+          # validate that ip addresses are redacted
+          if ! grep -q "HIDDEN" support-bundle-*/static/ips.txt; then
+            echo "Expected IP address redaction to be applied in support bundle"
+            exit 1
+          fi
+
+      - name: Delete support bundle from the test
+        if: always()
+        run: |
+          rm -rf support-bundle-*.tar.gz
+
+      - name: Generate support bundle on failure
+        if: failure()
+        uses: ./.github/actions/generate-support-bundle
+        with:
+          kots-namespace: "$APP_SLUG"
+          aws-access-key-id: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_ACCESS_KEY_ID }}'
+          aws-secret-access-key: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_SECRET_ACCESS_KEY }}'
+
+      - name: Remove Cluster
+        id: remove-cluster
+        uses: replicatedhq/replicated-actions/remove-cluster@v1
+        if: ${{ always() && steps.create-cluster.outputs.cluster-id != '' }}
+        continue-on-error: true
+        with:
+          api-token: ${{ secrets.C11Y_MATRIX_TOKEN }}
+          cluster-id: ${{ steps.create-cluster.outputs.cluster-id }}
+
 
   validate-pr-tests:
     runs-on: ubuntu-20.04
@@ -3889,6 +4049,7 @@ jobs:
       - validate-deployment-orchestration
       - validate-replicated-sdk
       - validate-strict-preflight-checks
+      - validate-support-bundle
       # cli-only tests
       - validate-kots-push-images-anonymous
     steps:
