@@ -1,4 +1,4 @@
-minio cgr.dev/chainguard/minio ^\b0\.\d+\b$
+minio cgr.dev/chainguard/minio ^\b0\.\d+\b-dev$
 rqlite cgr.dev/chainguard/rqlite ^([0-9]|[1-9][0-9]*)\.([0-9]|[1-9][0-9]*)\.([0-9]|[1-9][0-9]*)$
 dex cgr.dev/chainguard/dex ^([0-9]|[1-9][0-9]*)\.([0-9]|[1-9][0-9]*)\.([0-9]|[1-9][0-9]*)$
 schemahero schemahero/schemahero ^([0-9]|[1-9][0-9]*)\.([0-9]|[1-9][0-9]*)\.([0-9]|[1-9][0-9]*)$

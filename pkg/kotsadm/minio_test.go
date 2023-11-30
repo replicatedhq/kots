@@ -93,9 +93,9 @@ func Test_IsMinioXlMigrationNeeded(t *testing.T) {
 		},
 		{
 			name:           "should not migrate cgr image",
-			clientset:      fake.NewSimpleClientset(minioStsWithImage("cgr.dev/chainguard/minio:0.20231025")),
+			clientset:      fake.NewSimpleClientset(minioStsWithImage("cgr.dev/chainguard/minio:0.20231025-dev")),
 			wantMigration:  false,
-			wantMinioImage: "cgr.dev/chainguard/minio:0.20231025",
+			wantMinioImage: "cgr.dev/chainguard/minio:0.20231025-dev",
 			wantErr:        false,
 		},
 		{

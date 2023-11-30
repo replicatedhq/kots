@@ -134,6 +134,8 @@ func MinioStatefulset(deployOptions types.DeployOptions, size resource.Quantity)
 							ImagePullPolicy: corev1.PullIfNotPresent,
 							Name:            "kotsadm-minio",
 							Command: []string{
+								"/bin/sh",
+								"-ce",
 								"minio -C /home/minio/.minio/ --quiet server /export",
 							},
 							Ports: []corev1.ContainerPort{

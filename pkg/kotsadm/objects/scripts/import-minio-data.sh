@@ -33,7 +33,7 @@ shopt -s dotglob
 rm -rfv /export/*
 
 echo "starting new minio instance"
-minio -C /home/minio/.minio/ server /export &
+/bin/sh -ce "/usr/bin/docker-entrypoint.sh minio -C /home/minio/.minio/ server /export" &
 MINIO_PID=$!
 
 # alias the minio instance

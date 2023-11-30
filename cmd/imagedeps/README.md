@@ -30,7 +30,7 @@ dex cgr.dev/chainguard/dex
 ```
 The preceding image spec will produce the following environment and Go files.
 ```shell
-MINIO_TAG='0.20231025'
+MINIO_TAG='0.20231025-dev'
 RQLITE_TAG='7.21.4'
 DEX_TAG='v2.30.0'
 ```
@@ -38,7 +38,7 @@ DEX_TAG='v2.30.0'
 package image
 
 const (
-	Minio = "cgr.dev/chainguard/minio:0.20231025"
+	Minio = "cgr.dev/chainguard/minio:0.20231025-dev"
 	Rqlite = "cgr.dev/chainguard/rqlite:7.21.4"
 	Dex = "cgr.dev/chainguard/dex:2.30.0"
 )
