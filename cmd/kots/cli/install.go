@@ -127,15 +127,15 @@ func InstallCmd() *cobra.Command {
 			if registryConfig.OverrideRegistry != "" && !v.GetBool("skip-registry-check") {
 				log.ActionWithSpinner("Validating registry information")
 
-				hostname, err := getHostnameFromEndpoint(registryConfig.OverrideRegistry)
+				host, err := getHostFromEndpoint(registryConfig.OverrideRegistry)
 				if err != nil {
 					log.FinishSpinnerWithError()
-					return errors.Wrap(err, "failed get hostname from endpoint")
+					return errors.Wrap(err, "failed get host from endpoint")
 				}
 
-				if err := dockerregistry.CheckAccess(hostname, registryConfig.Username, registryConfig.Password); err != nil {
+				if err := dockerregistry.CheckAccess(host, registryConfig.Username, registryConfig.Password); err != nil {
 					log.FinishSpinnerWithError()
-					return fmt.Errorf("Failed to test access to %q with user %q: %v", hostname, registryConfig.Username, err)
+					return fmt.Errorf("Failed to test access to %q with user %q: %v", host, registryConfig.Username, err)
 				}
 
 				log.FinishSpinner()

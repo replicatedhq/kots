@@ -46,3 +46,52 @@ func TestExpandDir(t *testing.T) {
 		})
 	}
 }
+
+func Test_getHostFromEndpoint(t *testing.T) {
+	type args struct {
+		endpoint string
+	}
+	tests := []struct {
+		name    string
+		args    args
+		want    string
+		wantErr bool
+	}{
+		{
+			"endpoint without scheme",
+			args{
+				endpoint: "localhost",
+			},
+			"localhost",
+			false,
+		},
+		{
+			"endpoint with scheme",
+			args{
+				endpoint: "https://localhost",
+			},
+			"localhost",
+			false,
+		},
+		{
+			"endpoint with port",
+			args{
+				endpoint: "localhost:3000",
+			},
+			"localhost:3000",
+			false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := getHostFromEndpoint(tt.args.endpoint)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("getHostFromEndpoint() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if got != tt.want {
+				t.Errorf("getHostFromEndpoint() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
