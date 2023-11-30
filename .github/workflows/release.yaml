@@ -6,7 +6,6 @@ on:
       - "v*.*.*"
     branches:
       - main
-      - integration-chainguard
 
 jobs:
   generate-tag:
