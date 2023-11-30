@@ -49,7 +49,7 @@ runs:
       shell: bash
       run: |
         mkdir ./packages/
-        gsutil -m cp -R gs://replicated-apk-registry/os/ ./packages/
+        gsutil -m cp -R gs://$BUCKET/os/* ./packages/
         ls -lR ./packages/
 
     - name: template melange and apko configs
