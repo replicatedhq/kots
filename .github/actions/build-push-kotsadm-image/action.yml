@@ -1,0 +1,80 @@
+name: 'Build and push kotsadm image'
+description: 'Composite action for building and pushing kotsadm image'
+inputs:
+  chainguard-gcp-wif-pool:
+    description: 'GCP workload identity pool for Chainguard'
+    required: true
+
+  chainguard-gcp-sa:
+    description: 'GCP service account for Chainguard'
+    required: true
+
+  chainguard-gcp-project-id:
+    description: 'GCP project ID for Chainguard'
+    required: true
+
+  image-name:
+    description: 'Full destination kotsadm image name'
+    required: true
+
+  git-tag:
+    description: 'Git tag'
+    required: true
+
+  registry-username:
+    description: 'Username to login to registry'
+    default: ''
+    required: false
+
+  registry-password:
+    description: 'Password to login to registry'
+    default: ''
+    required: false
+
+runs:
+  using: "composite"
+  steps:
+    - uses: google-github-actions/auth@35b0e87d162680511bf346c299f71c9c5c379033 # v1.1.1
+      with:
+        workload_identity_provider: ${{ inputs.chainguard-gcp-wif-pool }}
+        service_account: ${{ inputs.chainguard-gcp-sa }}
+
+    - uses: google-github-actions/setup-gcloud@e30db14379863a8c79331b04a9969f4c1e225e0b # v1.1.1
+      with:
+        project_id: ${{ inputs.chainguard-gcp-project-id }}
+
+    - name: setup packages
+      env:
+        BUCKET: replicated-apk-registry
+      shell: bash
+      run: |
+        mkdir ./packages/
+        gsutil -m cp -R gs://$BUCKET/os/* ./packages/
+        ls -lR ./packages/
+
+    - name: template melange and apko configs
+      shell: bash
+      run: |
+        export GIT_TAG=${{ inputs.git-tag }}
+        envsubst '${GIT_TAG}' < deploy/melange.yaml.tmpl > deploy/melange.yaml
+        envsubst '${GIT_TAG}' < deploy/apko.yaml.tmpl > deploy/apko.yaml
+
+    - id: cache-dir
+      shell: bash
+      run: echo "cache_dir=$(go env GOMODCACHE)" >> "$GITHUB_OUTPUT"
+
+    - uses: chainguard-dev/actions/melange-build@main
+      with:
+        config: deploy/melange.yaml
+        archs: x86_64
+        sign-with-temporary-key: true
+        cache-dir: ${{ steps.cache-dir.outputs.cache_dir }}
+
+    - uses: chainguard-images/actions/apko-publish@main
+      with:
+        config: deploy/apko.yaml
+        archs: x86_64
+        tag: ${{ inputs.image-name }}
+        vcs-url: true
+        generic-user: ${{ inputs.registry-username }}
+        generic-pass: ${{ inputs.registry-password }}

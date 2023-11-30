@@ -133,13 +133,8 @@ build-alpha:
 
 .PHONY: build-release
 build-release:
-	docker build --pull -f deploy/Dockerfile --build-arg version=${GIT_TAG} -t kotsadm/kotsadm:${GIT_TAG} .
-	docker push kotsadm/kotsadm:${GIT_TAG}
 	mkdir -p bin/docker-archive/kotsadm
-	skopeo copy docker-daemon:kotsadm/kotsadm:${GIT_TAG} docker-archive:bin/docker-archive/kotsadm/${GIT_TAG}
-
-	docker tag kotsadm/kotsadm:${GIT_TAG} kotsadm/kotsadm:v0.0.0-nightly
-	docker push kotsadm/kotsadm:v0.0.0-nightly
+	skopeo copy docker://kotsadm/kotsadm:${GIT_TAG} docker-archive:bin/docker-archive/kotsadm/${GIT_TAG}
 
 	docker build --pull -f deploy/dex.Dockerfile -t kotsadm/dex:${DEX_TAG} --build-arg TAG=${DEX_TAG} .
 	docker push kotsadm/dex:${DEX_TAG}
