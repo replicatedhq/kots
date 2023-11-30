@@ -431,8 +431,8 @@ jobs:
 
       - name: push minio for e2e
         run: |
-          docker pull minio/minio:${{ steps.dotenv.outputs.minio_tag }}
-          docker tag minio/minio:${{ steps.dotenv.outputs.minio_tag }} ttl.sh/automated-${{ github.run_id }}/minio:${{ steps.dotenv.outputs.minio_tag }}
+          docker pull cgr.dev/chainguard/minio:${{ steps.dotenv.outputs.minio_tag }}
+          docker tag cgr.dev/chainguard/minio:${{ steps.dotenv.outputs.minio_tag }} ttl.sh/automated-${{ github.run_id }}/minio:${{ steps.dotenv.outputs.minio_tag }}
           docker push ttl.sh/automated-${{ github.run_id }}/minio:${{ steps.dotenv.outputs.minio_tag }}
 
 
@@ -450,8 +450,8 @@ jobs:
 
       - name: push rqlite for CI
         run: |
-          docker pull rqlite/rqlite:${{ steps.dotenv.outputs.RQLITE_TAG }}
-          docker tag rqlite/rqlite:${{ steps.dotenv.outputs.RQLITE_TAG }} ttl.sh/automated-${{ github.run_id }}/rqlite:${{ steps.dotenv.outputs.RQLITE_TAG }}
+          docker pull cgr.dev/chainguard/rqlite:${{ steps.dotenv.outputs.RQLITE_TAG }}
+          docker tag cgr.dev/chainguard/rqlite:${{ steps.dotenv.outputs.RQLITE_TAG }} ttl.sh/automated-${{ github.run_id }}/rqlite:${{ steps.dotenv.outputs.RQLITE_TAG }}
           docker push ttl.sh/automated-${{ github.run_id }}/rqlite:${{ steps.dotenv.outputs.RQLITE_TAG }}
 
 
@@ -469,7 +469,8 @@ jobs:
 
       - name: push dex for CI
         run: |
-          docker build --pull -f deploy/dex.Dockerfile -t ttl.sh/automated-${{ github.run_id }}/dex:${{ steps.dotenv.outputs.DEX_TAG }} --build-arg TAG=${{ steps.dotenv.outputs.DEX_TAG }} .
+          docker pull cgr.dev/chainguard/dex:${{ steps.dotenv.outputs.DEX_TAG }}
+          docker tag cgr.dev/chainguard/dex:${{ steps.dotenv.outputs.DEX_TAG }} ttl.sh/automated-${{ github.run_id }}/dex:${{ steps.dotenv.outputs.DEX_TAG }}
           docker push ttl.sh/automated-${{ github.run_id }}/dex:${{ steps.dotenv.outputs.DEX_TAG }}
 
 

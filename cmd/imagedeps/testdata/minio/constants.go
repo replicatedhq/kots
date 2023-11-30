@@ -5,5 +5,5 @@ package image
 // image name.
 
 const (
-	Minio = "minio/minio:RELEASE.2021-09-09T21-37-06Z.xxx"
+	Minio = "cgr.dev/chainguard/minio:0.20231025"
 )
