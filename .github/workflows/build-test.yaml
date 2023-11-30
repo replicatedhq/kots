@@ -3807,7 +3807,7 @@ jobs:
 
   validate-support-bundle:
     runs-on: ubuntu-20.04
-    needs: [ enable-tests, can-run-ci, build-push-kotsadm-image, build-e2e, build-kurl-proxy, build-migrations, push-minio, push-rqlite ]
+    needs: [ enable-tests, can-run-ci, build-kots, build-kotsadm, build-e2e, build-kurl-proxy, build-migrations, push-minio, push-rqlite ]
     strategy:
       fail-fast: false
       matrix:
