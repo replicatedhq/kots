@@ -126,11 +126,6 @@ all-ttl.sh: build-ttl.sh
 	docker tag cgr.dev/chainguard/rqlite:${RQLITE_TAG} ttl.sh/${CURRENT_USER}/rqlite:${RQLITE_TAG}
 	docker push ttl.sh/${CURRENT_USER}/rqlite:${RQLITE_TAG}
 
-.PHONY: build-alpha
-build-alpha:
-	docker build --pull -f deploy/Dockerfile --build-arg version=${GIT_TAG} -t kotsadm/kotsadm:alpha .
-	docker push kotsadm/kotsadm:alpha
-
 .PHONY: build-release
 build-release:
 	mkdir -p bin/docker-archive/kotsadm

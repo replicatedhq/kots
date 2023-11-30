@@ -96,7 +96,7 @@ jobs:
         path: ./kurl_proxy/bin
 
 
-  build_go_api:
+  build-kots:
     runs-on: ubuntu-20.04
     needs: [build_web, build_kurl_proxy, generate-tag]
     steps:
@@ -133,39 +133,26 @@ jobs:
     - name: Upload Go API artifact
       uses: actions/upload-artifact@v3
       with:
-        name: go_api
+        name: kots
         path: ./bin
 
 
-  release_go_api_alpha:
+  build-kotsadm:
     runs-on: ubuntu-20.04
-    needs: [build_web, build_go_api, generate-tag]
+    needs: [ can-run-ci, generate-tag ]
+    permissions:
+      id-token: write # required to be able to assume the GCP SA identity to pull Chainguard packages.
     steps:
-
-    - name: Checkout
-      uses: actions/checkout@v4
-
-    - name: Download go_api artifact
-      uses: actions/download-artifact@v3
-      with:
-        name: go_api
-        path: ./bin
-
-    - name: Add executable permissions
-      run: |
-        chmod a+x ./bin/kotsadm
-        chmod a+x ./bin/kots
-
-    - uses: azure/docker-login@v1
-      with:
-        username: ${{ secrets.DOCKERHUB_USER }}
-        password: ${{ secrets.DOCKERHUB_PASSWORD }}
-
-    - name: Build alpha release
-      env:
-        GIT_TAG: ${{ needs.generate-tag.outputs.tag }}
-      run: |
-        mapfile -t envs < <(grep -v '#.*' < .image.env) && export "${envs[@]}" && make build-alpha
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/build-push-kotsadm-image
+        with:
+          chainguard-gcp-wif-pool: ${{ secrets.CHAINGUARD_GCP_WIF_POOL }}
+          chainguard-gcp-sa: ${{ secrets.CHAINGUARD_GCP_SA }}
+          chainguard-gcp-project-id: ${{ secrets.CHAINGUARD_GCP_PROJECT_ID }}
+          image-name: index.docker.io/kotsadm/kotsadm:alpha
+          git-tag: ${{ needs.generate-tag.outputs.tag }}
+          registry-username: ${{ secrets.DOCKERHUB_USER }}
+          registry-password: ${{ secrets.DOCKERHUB_PASSWORD }}
 
 
   build_kurl_proxy_alpha:
@@ -330,7 +317,7 @@ jobs:
 
   scan_kotsadm:
     runs-on: ubuntu-20.04
-    needs: [release_go_api_alpha]
+    needs: [build-kotsadm]
     steps:
       - name: Checkout
         uses: actions/checkout@v4
