@@ -431,9 +431,9 @@ jobs:
 
       - name: push minio for e2e
         run: |
-          docker pull cgr.dev/chainguard/minio:${{ steps.dotenv.outputs.minio_tag }}
-          docker tag cgr.dev/chainguard/minio:${{ steps.dotenv.outputs.minio_tag }} ttl.sh/automated-${{ github.run_id }}/minio:${{ steps.dotenv.outputs.minio_tag }}
-          docker push ttl.sh/automated-${{ github.run_id }}/minio:${{ steps.dotenv.outputs.minio_tag }}
+          docker pull cgr.dev/chainguard/minio:latest-dev
+          docker tag cgr.dev/chainguard/minio:latest-dev ttl.sh/automated-${{ github.run_id }}/minio:latest-dev
+          docker push ttl.sh/automated-${{ github.run_id }}/minio:latest-dev
 
 
   push-rqlite:
