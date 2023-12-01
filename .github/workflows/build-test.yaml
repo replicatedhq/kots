@@ -3846,6 +3846,46 @@ jobs:
           kots-dockerhub-password: '${{ secrets.E2E_DOCKERHUB_PASSWORD }}'
 
 
+  validate-gitops:
+    runs-on: ubuntu-20.04
+    needs: [ enable-tests, can-run-ci, build-kots, build-kotsadm, build-e2e, build-kurl-proxy, build-migrations, push-minio, push-rqlite ]
+    strategy:
+      fail-fast: false
+      matrix:
+        cluster: [
+          {distribution: kind, version: v1.28.0}
+        ]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: download e2e deps
+        uses: actions/download-artifact@v3
+        with:
+          name: e2e
+          path: e2e/bin/
+      - run: docker load -i e2e/bin/e2e-deps.tar
+      - run: chmod +x e2e/bin/*
+      - name: download kots binary
+        uses: actions/download-artifact@v3
+        with:
+          name: kots
+          path: bin/
+      - run: chmod +x bin/*
+      - uses: ./.github/actions/kots-e2e
+        with:
+          test-focus: 'GitOps'
+          kots-namespace: 'gitops'
+          k8s-distribution: ${{ matrix.cluster.distribution }}
+          k8s-version: ${{ matrix.cluster.version }}
+          testim-access-token: '${{ secrets.TESTIM_ACCESS_TOKEN }}'
+          testim-branch: ${{ github.head_ref == 'main' && 'master' || github.head_ref }}
+          aws-access-key-id: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_ACCESS_KEY_ID }}'
+          aws-secret-access-key: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_SECRET_ACCESS_KEY }}'
+          replicated-api-token: '${{ secrets.C11Y_MATRIX_TOKEN }}'
+          kots-dockerhub-username: '${{ secrets.E2E_DOCKERHUB_USERNAME }}'
+          kots-dockerhub-password: '${{ secrets.E2E_DOCKERHUB_PASSWORD }}'
+
+
   validate-pr-tests:
     runs-on: ubuntu-20.04
     needs:
@@ -3869,6 +3909,7 @@ jobs:
       - validate-airgap-smoke-test
       - validate-config
       - validate-support-bundle
+      - validate-gitops
       # non-testim tests
       - validate-minimal-rbac
       - validate-minimal-rbac-override
