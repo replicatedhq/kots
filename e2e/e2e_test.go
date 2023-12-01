@@ -221,6 +221,7 @@ var _ = Describe("E2E", func() {
 			Entry(nil, inventory.NewMultiAppBackupAndRestoreTest()),
 			Entry(nil, inventory.MultiAppTest()),
 			Entry(nil, inventory.NewSupportBundle()),
+			Entry(nil, inventory.NewGitOps()),
 		)
 
 	})
