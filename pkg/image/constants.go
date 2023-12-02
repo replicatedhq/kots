@@ -5,7 +5,7 @@ package image
 // image name.
 
 const (
-	Minio      = "cgr.dev/chainguard/minio:0.20231025-dev"
+	Minio      = "cgr.dev/chainguard/minio:0.20231101-dev"
 	Rqlite     = "cgr.dev/chainguard/rqlite:7.21.4"
 	Dex        = "cgr.dev/chainguard/dex:2.37.0"
 	Schemahero = "schemahero/schemahero:0.16.0"

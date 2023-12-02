@@ -14,8 +14,7 @@ func GetAdminConsoleImage(deployOptions types.DeployOptions, imageKey string) st
 
 func GetAdminConsoleImages(deployOptions types.DeployOptions) map[string]string {
 	// TODO: Add error handling to this function
-	// minioTag, _ := image.GetTag(image.Minio)
-	minioTag := "latest-dev"
+	minioTag, _ := image.GetTag(image.Minio)
 	rqliteTag, _ := image.GetTag(image.Rqlite)
 	dexTag, _ := image.GetTag(image.Dex)
 
@@ -44,8 +43,7 @@ func GetAdminConsoleImages(deployOptions types.DeployOptions) map[string]string 
 }
 
 func GetOriginalAdminConsoleImages(deployOptions types.DeployOptions) map[string]string {
-	// minioTag, _ := image.GetTag(image.Minio)
-	minioTag := "latest-dev"
+	minioTag, _ := image.GetTag(image.Minio)
 	rqliteTag, _ := image.GetTag(image.Rqlite)
 	dexTag, _ := image.GetTag(image.Dex)
 
