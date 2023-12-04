@@ -5,5 +5,5 @@ package image
 // image name.
 
 const (
-	Schemahero = "schemahero/schemahero:0.12.7"
+	Schemahero = "schemahero/schemahero:0.13.2"
 )

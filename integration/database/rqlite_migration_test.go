@@ -71,10 +71,13 @@ func TestMigrateFromPostgresToRqlite(t *testing.T) {
 	rqliteTag, _ := image.GetTag(image.Rqlite)
 	rqliteRunOptions := &dockertest.RunOptions{
 		Name:       "rqlite",
-		Repository: "rqlite/rqlite",
+		Repository: "cgr.dev/chainguard/rqlite",
 		Tag:        rqliteTag,
 		Mounts: []string{
 			fmt.Sprintf("%s:/auth/config.json", rqliteAuthConfigPath),
+		},
+		ExposedPorts: []string{
+			"4001/tcp",
 		},
 		PortBindings: map[docker.Port][]docker.PortBinding{
 			"4001/tcp": {
