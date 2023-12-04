@@ -39,104 +39,6 @@ jobs:
         mapfile -t envs < <(grep -v '#.*' < .image.env) && export "${envs[@]}" && make -C migrations schema-alpha
 
 
-  build_web:
-    runs-on: ubuntu-20.04
-    needs: [generate-tag]
-    steps:
-    - name: Checkout
-      uses: actions/checkout@v4
-    - name: Setup Node.js environment
-      uses: actions/setup-node@v4
-      with:
-        node-version: '18.x'
-    - name: Build web
-      env:
-        GIT_TAG: ${{ needs.generate-tag.outputs.tag }}
-      run: mapfile -t envs < <(grep -v '#.*' < .image.env) && export "${envs[@]}" && make -C web deps build-kotsadm
-    - name: Upload web artifact
-      uses: actions/upload-artifact@v3
-      with:
-        name: web
-        path: ./web/dist
-
-
-  build_kurl_proxy:
-    runs-on: ubuntu-20.04
-    needs: [generate-tag]
-    steps:
-    - name: Setup Go
-      uses: actions/setup-go@v4
-      with:
-        go-version: '^1.20.0'
-
-    - name: Checkout
-      uses: actions/checkout@v4
-
-    - name: Cache Go modules
-      uses: actions/cache@v3
-      with:
-        path: |
-          ~/.cache/go-build
-          ~/go/pkg/mod
-        key: ${{ runner.os }}-go-kurlproxy-${{ hashFiles('**/go.sum') }}
-        restore-keys: |
-          ${{ runner.os }}-go-kurlproxy-
-
-    - name: Build kurl_proxy
-      env:
-        GIT_TAG: ${{ needs.generate-tag.outputs.tag }}
-        SCOPE_DSN_PUBLIC: ""
-      run: mapfile -t envs < <(grep -v '#.*' < .image.env) && export "${envs[@]}" && make -C kurl_proxy test build
-      shell: bash
-
-    - name: Upload kurl_proxy artifact
-      uses: actions/upload-artifact@v3
-      with:
-        name: kurl_proxy
-        path: ./kurl_proxy/bin
-
-
-  build-kots:
-    runs-on: ubuntu-20.04
-    needs: [build_web, build_kurl_proxy, generate-tag]
-    steps:
-    - uses: actions/setup-go@v4
-      with:
-        go-version: '^1.20.0'
-
-    - name: Checkout
-      uses: actions/checkout@v4
-
-    - name: Cache Go modules
-      uses: actions/cache@v3
-      with:
-        path: |
-          ~/.cache/go-build
-          ~/go/pkg/mod
-        key: ${{ runner.os }}-go-kots-${{ hashFiles('**/go.sum') }}
-        restore-keys: |
-          ${{ runner.os }}-go-kots-
-
-    - name: Download web artifact
-      uses: actions/download-artifact@v3
-      with:
-        name: web
-        path: ./web/dist
-
-    - name: Build Go API
-      env:
-        GIT_TAG: ${{ needs.generate-tag.outputs.tag }}
-        SCOPE_DSN_PUBLIC: ""
-      run: mapfile -t envs < <(grep -v '#.*' < .image.env) && export "${envs[@]}" && make vet ci-test kots build
-      shell: bash
-
-    - name: Upload Go API artifact
-      uses: actions/upload-artifact@v3
-      with:
-        name: kots
-        path: ./bin
-
-
   build-kotsadm:
     runs-on: ubuntu-20.04
     needs: [generate-tag]
@@ -155,32 +57,17 @@ jobs:
           registry-password: ${{ secrets.DOCKERHUB_PASSWORD }}
 
 
-  build_kurl_proxy_alpha:
+  build-kurl-proxy:
     runs-on: ubuntu-20.04
-    needs: [build_kurl_proxy, generate-tag]
+    needs: [generate-tag]
     steps:
-    - uses: azure/docker-login@v1
-      with:
-        username: ${{ secrets.DOCKERHUB_USER }}
-        password: ${{ secrets.DOCKERHUB_PASSWORD }}
-
-    - name: Checkout
-      uses: actions/checkout@v4
-
-    - name: Download kurl_proxy artifact
-      uses: actions/download-artifact@v3
-      with:
-        name: kurl_proxy
-        path: ./kurl_proxy/bin
-
-    - name: Add executable permissions
-      run: chmod a+x ./kurl_proxy/bin/kurl_proxy
-
-    - name: Build alpha release
-      env:
-        GIT_TAG: ${{ needs.generate-tag.outputs.tag }}
-      run: |
-        mapfile -t envs < <(grep -v '#.*' < .image.env) && export "${envs[@]}" && make -C kurl_proxy build-alpha
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/build-push-kurl-proxy-image
+        with:
+          image-name: index.docker.io/kotsadm/kurl-proxy:alpha
+          git-tag: ${{ needs.generate-tag.outputs.tag }}
+          registry-username: ${{ secrets.DOCKERHUB_USER }}
+          registry-password: ${{ secrets.DOCKERHUB_PASSWORD }}
 
 
   scan_rqlite:
@@ -267,7 +154,7 @@ jobs:
 
   scan_kurl_proxy:
     runs-on: ubuntu-20.04
-    needs: [build_kurl_proxy_alpha]
+    needs: [build-kurl-proxy]
     steps:
       - name: Checkout
         uses: actions/checkout@v4

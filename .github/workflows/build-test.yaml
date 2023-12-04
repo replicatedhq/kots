@@ -270,7 +270,19 @@ jobs:
     permissions:
       id-token: write # required to be able to assume the GCP SA identity to pull Chainguard packages.
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/setup-go@v4
+        with:
+          go-version: '^1.20.0'
+          cache: true
+      - name: setup env
+        shell: bash
+        run: |
+          echo "GOPATH=$(go env GOPATH)" >> "$GITHUB_ENV"
+          echo "$(go env GOPATH)/bin" >> "$GITHUB_PATH"
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{github.event.pull_request.head.ref}}
+          repository: ${{github.event.pull_request.head.repo.full_name}}
       - uses: ./.github/actions/build-push-kotsadm-image
         with:
           chainguard-gcp-wif-pool: ${{ secrets.CHAINGUARD_GCP_WIF_POOL }}
@@ -342,11 +354,12 @@ jobs:
 
   build-kurl-proxy:
     runs-on: ubuntu-20.04
-    needs: [ can-run-ci ]
+    needs: [ can-run-ci, generate-tag ]
     steps:
       - uses: actions/setup-go@v4
         with:
           go-version: '^1.20.0'
+          cache: true
 
       - name: setup env
         run: |
@@ -362,25 +375,10 @@ jobs:
           ref: ${{github.event.pull_request.head.ref}}
           repository: ${{github.event.pull_request.head.repo.full_name}}
 
-      - name: Cache Go modules
-        uses: actions/cache@v3
+      - uses: ./.github/actions/build-push-kurl-proxy-image
         with:
-          path: |
-            ~/.cache/go-build
-            ~/go/pkg/mod
-          key: ${{ runner.os }}-go-kurlproxy-${{ hashFiles('**/go.sum') }}
-          restore-keys: |
-            ${{ runner.os }}-go-kurlproxy-
-
-      - run: mapfile -t envs < <(grep -v '#.*' < .image.env) && export "${envs[@]}" && make -C kurl_proxy test build
-
-      - name: build and push kurl_proxy for e2e
-        uses: docker/build-push-action@v5
-        with:
-          tags: ttl.sh/automated-${{ github.run_id }}/kurl-proxy:24h
-          context: ./kurl_proxy
-          file: ./kurl_proxy/deploy/Dockerfile
-          push: true
+          image-name: ttl.sh/automated-${{ github.run_id }}/kurl-proxy:24h
+          git-tag: ${{ needs.generate-tag.outputs.tag }}
 
 
   build-migrations:

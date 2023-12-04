@@ -108,42 +108,19 @@ jobs:
   build-kurl-proxy:
     runs-on: ubuntu-20.04
     needs: [generate-tag]
-    env:
-      GIT_TAG: ${{ needs.generate-tag.outputs.tag }}
     steps:
     - uses: actions/setup-go@v4
       with:
         go-version: '^1.20.0'
+        cache: true
     - name: Checkout
       uses: actions/checkout@v4
-    - name: Cache Go modules
-      uses: actions/cache@v3
+    - uses: ./.github/actions/build-push-kurl-proxy-image
       with:
-        path: |
-          ~/.cache/go-build
-          ~/go/pkg/mod
-        key: ${{ runner.os }}-go-kurlproxy-${{ hashFiles('**/go.sum') }}
-        restore-keys: |
-          ${{ runner.os }}-go-kurlproxy-
-    - name: Build kurl_proxy
-      env:
-        GIT_TAG: ${{ needs.generate-tag.outputs.tag }}
-        SCOPE_DSN_PUBLIC: ""
-      run: mapfile -t envs < <(grep -v '#.*' < .image.env) && export "${envs[@]}" && make -C kurl_proxy test build
-    - name: Upload kurl_proxy artifact
-      uses: actions/upload-artifact@v3
-      with:
-        name: kurl_proxy
-        path: ./kurl_proxy/bin
-    - uses: azure/docker-login@v1
-      with:
-        username: ${{ secrets.DOCKERHUB_USER }}
-        password: ${{ secrets.DOCKERHUB_PASSWORD }}
-    - name: Build tagged release
-      working-directory: ./kurl_proxy
-      run: |
-        docker build --pull -f deploy/Dockerfile -t "kotsadm/kurl-proxy:$GIT_TAG" .
-        docker push "kotsadm/kurl-proxy:$GIT_TAG"
+        image-name: index.docker.io/kotsadm/kurl-proxy:${{ needs.generate-tag.outputs.tag }}
+        git-tag: ${{ needs.generate-tag.outputs.tag }}
+        registry-username: ${{ secrets.DOCKERHUB_USER }}
+        registry-password: ${{ secrets.DOCKERHUB_PASSWORD }}
 
   build-kots:
     runs-on: ubuntu-20.04
