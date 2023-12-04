@@ -239,6 +239,8 @@ type KotsadmParamsStore interface {
 type EmbeddedStore interface {
 	GetEmbeddedClusterAuthToken() (string, error)
 	SetEmbeddedClusterAuthToken(token string) error
+	SetEmbeddedClusterState(state string) error
+	GetEmbeddedClusterState(appID string) (string, error)
 }
 
 type BrandingStore interface {

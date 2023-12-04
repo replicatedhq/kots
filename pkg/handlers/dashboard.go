@@ -15,9 +15,10 @@ import (
 )
 
 type GetAppDashboardResponse struct {
-	AppStatus         *appstatetypes.AppStatus `json:"appStatus"`
-	Metrics           []version.MetricChart    `json:"metrics"`
-	PrometheusAddress string                   `json:"prometheusAddress"`
+	AppStatus            *appstatetypes.AppStatus `json:"appStatus"`
+	Metrics              []version.MetricChart    `json:"metrics"`
+	PrometheusAddress    string                   `json:"prometheusAddress"`
+	EmbeddedClusterState string                   `json:"embeddedClusterState"`
 }
 
 func (h *Handler) GetAppDashboard(w http.ResponseWriter, r *http.Request) {
@@ -62,6 +63,13 @@ func (h *Handler) GetAppDashboard(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	ecState, err := store.GetStore().GetEmbeddedClusterState(a.ID)
+	if err != nil {
+		logger.Error(err)
+		w.WriteHeader(500)
+		return
+	}
+
 	parentSequence, err := store.GetStore().GetCurrentParentSequence(a.ID, clusterID)
 	if err != nil {
 		logger.Error(err)
@@ -89,9 +97,10 @@ func (h *Handler) GetAppDashboard(w http.ResponseWriter, r *http.Request) {
 	}
 
 	getAppDashboardResponse := GetAppDashboardResponse{
-		AppStatus:         appStatus,
-		Metrics:           metrics,
-		PrometheusAddress: prometheusAddress,
+		AppStatus:            appStatus,
+		Metrics:              metrics,
+		PrometheusAddress:    prometheusAddress,
+		EmbeddedClusterState: ecState,
 	}
 
 	JSON(w, 200, getAppDashboardResponse)

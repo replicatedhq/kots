@@ -526,6 +526,8 @@ const Dashboard = () => {
       setState({
         dashboard: {
           appStatus: selectedAppClusterDashboardResponse.appStatus,
+          embeddedClusterState:
+            selectedAppClusterDashboardResponse.embeddedClusterState,
           prometheusAddress:
             selectedAppClusterDashboardResponse.prometheusAddress,
           metrics: selectedAppClusterDashboardResponse.metrics,
@@ -658,6 +660,7 @@ const Dashboard = () => {
                     links={links}
                     app={app}
                     hasStatusInformers={hasStatusInformers}
+                    embeddedClusterState={state.dashboard.embeddedClusterState}
                   />
                 </div>
               </div>

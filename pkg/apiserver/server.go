@@ -13,6 +13,7 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/replicatedhq/kots/pkg/automation"
 	"github.com/replicatedhq/kots/pkg/binaries"
+	"github.com/replicatedhq/kots/pkg/embeddedcluster"
 	"github.com/replicatedhq/kots/pkg/handlers"
 	"github.com/replicatedhq/kots/pkg/helm"
 	identitymigrate "github.com/replicatedhq/kots/pkg/identity/migrate"
@@ -126,6 +127,11 @@ func Start(params *APIServerParams) {
 	}
 
 	supportbundle.StartServer()
+
+	// start the embedded cluster state monitor. moves on in case of failures but logs them.
+	if err := embeddedcluster.StartInstallationMonitor(context.Background()); err != nil {
+		log.Println("failed to start embedded cluster installation monitor:", err)
+	}
 
 	if err := informers.Start(); err != nil {
 		log.Println("Failed to start informers:", err)

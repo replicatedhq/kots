@@ -17,6 +17,7 @@ import (
 
 	"github.com/blang/semver"
 	"github.com/pkg/errors"
+	embeddedclusterv1beta1 "github.com/replicatedhq/embedded-cluster-operator/api/v1beta1"
 	"github.com/replicatedhq/kots/pkg/archives"
 	"github.com/replicatedhq/kots/pkg/binaries"
 	"github.com/replicatedhq/kots/pkg/buildversion"
@@ -51,6 +52,7 @@ func init() {
 	velerov1.AddToScheme(scheme.Scheme)
 	kurlscheme.AddToScheme(scheme.Scheme)
 	applicationv1beta1.AddToScheme(scheme.Scheme)
+	embeddedclusterv1beta1.AddToScheme(scheme.Scheme)
 }
 
 var (
@@ -105,6 +107,8 @@ type KotsKinds struct {
 	Installer *kurlv1beta1.Installer
 
 	LintConfig *kotsv1beta1.LintConfig
+
+	EmbeddedClusterConfig *embeddedclusterv1beta1.Config
 }
 
 func IsKotsKind(apiVersion string, kind string) bool {
@@ -127,6 +131,10 @@ func IsKotsKind(apiVersion string, kind string) bool {
 		return true
 	}
 	if apiVersion == "kurl.sh/v1beta1" {
+		return true
+	}
+	// In addition to kotskinds, we exclude the embedded cluster configuration.
+	if apiVersion == "embeddedcluster.replicated.com/v1beta1" {
 		return true
 	}
 	// In addition to kotskinds, we exclude the application crd for now
@@ -448,6 +456,17 @@ func (o KotsKinds) Marshal(g string, v string, k string) (string, error) {
 		}
 	}
 
+	if g == "embeddedcluster.replicated.com" && v == "v1beta1" && k == "Config" {
+		if o.EmbeddedClusterConfig == nil {
+			return "", nil
+		}
+		var b bytes.Buffer
+		if err := s.Encode(o.EmbeddedClusterConfig, &b); err != nil {
+			return "", errors.Wrap(err, "failed to encode embedded cluster config")
+		}
+		return string(b.Bytes()), nil
+	}
+
 	return "", errors.Errorf("unknown gvk %s/%s, Kind=%s", g, v, k)
 }
 
@@ -528,6 +547,8 @@ func (k *KotsKinds) addKotsKinds(content []byte) error {
 			k.Installer = decoded.(*kurlv1beta1.Installer)
 		case "app.k8s.io/v1beta1, Kind=Application":
 			k.Application = decoded.(*applicationv1beta1.Application)
+		case "embeddedcluster.replicated.com/v1beta1, Kind=Config":
+			k.EmbeddedClusterConfig = decoded.(*embeddedclusterv1beta1.Config)
 		}
 	}
 
@@ -911,6 +932,18 @@ func LoadLicenseFromBytes(data []byte) (*kotsv1beta1.License, error) {
 	}
 
 	return obj.(*kotsv1beta1.License), nil
+}
+
+func LoadEmbeddedClusterConfigFromBytes(data []byte) (*embeddedclusterv1beta1.Config, error) {
+	decode := scheme.Codecs.UniversalDeserializer().Decode
+	obj, gvk, err := decode([]byte(data), nil, nil)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to decode embedded cluster config data")
+	}
+	if gvk.Group != "embeddedcluster.replicated.com" || gvk.Version != "v1beta1" || gvk.Kind != "Config" {
+		return nil, errors.Errorf("unexpected GVK: %s", gvk.String())
+	}
+	return obj.(*embeddedclusterv1beta1.Config), nil
 }
 
 func LoadConfigValuesFromFile(configValuesFilePath string) (*kotsv1beta1.ConfigValues, error) {

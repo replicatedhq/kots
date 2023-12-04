@@ -3,6 +3,8 @@ package kotsstore
 import (
 	"encoding/json"
 	"fmt"
+
+	"github.com/pkg/errors"
 	"github.com/rqlite/gorqlite"
 
 	"github.com/replicatedhq/kots/pkg/persistence"
@@ -66,4 +68,37 @@ func (s *KOTSStore) GetEmbeddedClusterInstallCommandRoles(token string) ([]strin
 	}
 
 	return rolesArr, nil
+}
+
+func (s *KOTSStore) SetEmbeddedClusterState(state string) error {
+	db := persistence.MustGetDBSession()
+	query := "update app_status set embeddedcluster_state = ?"
+	wr, err := db.WriteOneParameterized(gorqlite.ParameterizedStatement{
+		Query:     query,
+		Arguments: []interface{}{state},
+	})
+	if err != nil {
+		return fmt.Errorf("failed to write: %v: %v", err, wr.Err)
+	}
+	return nil
+}
+
+func (s *KOTSStore) GetEmbeddedClusterState(appID string) (string, error) {
+	db := persistence.MustGetDBSession()
+	query := `select embeddedcluster_state from app_status where app_id = ?`
+	rows, err := db.QueryOneParameterized(gorqlite.ParameterizedStatement{
+		Query:     query,
+		Arguments: []interface{}{appID},
+	})
+	if err != nil {
+		return "", fmt.Errorf("failed to query: %v: %v", err, rows.Err)
+	}
+	if !rows.Next() {
+		return "", nil
+	}
+	var state gorqlite.NullString
+	if err := rows.Scan(&state); err != nil {
+		return "", errors.Wrap(err, "failed to scan")
+	}
+	return state.String, nil
 }

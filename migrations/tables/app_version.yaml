@@ -71,3 +71,5 @@ spec:
         type: text
       - name: branding_archive
         type: text
+      - name: embeddedcluster_config
+        type: text
