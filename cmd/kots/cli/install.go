@@ -531,7 +531,6 @@ func InstallCmd() *cobra.Command {
 	cmd.Flags().String("app-version-label", "", "the application version label to install. if not specified, the latest version will be installed")
 
 	cmd.Flags().String("repo", "", "repo uri to use when installing a helm chart")
-	cmd.Flags().StringSlice("set", []string{}, "values to pass to helm when running helm template")
 
 	registryFlags(cmd.Flags())
 

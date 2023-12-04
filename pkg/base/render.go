@@ -10,7 +10,6 @@ type RenderOptions struct {
 	SplitMultiDocYAML       bool
 	Namespace               string
 	HelmVersion             string
-	HelmOptions             []string
 	HelmValues              map[string]interface{}
 	LocalRegistryHost       string
 	LocalRegistryNamespace  string
