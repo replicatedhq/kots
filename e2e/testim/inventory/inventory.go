@@ -172,6 +172,15 @@ func NewSupportBundle() Test {
 	}
 }
 
+func NewGitOps() Test {
+	return Test{
+		Name:        "GitOps",
+		Suite:       "gitops",
+		Namespace:   "gitops",
+		UpstreamURI: "gitops-bobcat/automated",
+	}
+}
+
 func SetupRegressionTest(kubectlCLI *kubectl.CLI) TestimParams {
 	cmd := kubectlCLI.Command(
 		context.Background(),
