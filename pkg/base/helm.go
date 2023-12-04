@@ -14,7 +14,6 @@ import (
 	"github.com/replicatedhq/kots/pkg/logger"
 	upstreamtypes "github.com/replicatedhq/kots/pkg/upstream/types"
 	"github.com/replicatedhq/kots/pkg/util"
-	"helm.sh/helm/v3/pkg/strvals"
 	"sigs.k8s.io/kustomize/api/filesys"
 	"sigs.k8s.io/kustomize/api/krusty"
 	kustomizetypes "sigs.k8s.io/kustomize/api/types"
@@ -45,23 +44,16 @@ func RenderHelm(u *upstreamtypes.Upstream, renderOptions *RenderOptions) (*Base,
 		}
 	}
 
-	vals := renderOptions.HelmValues
-	for _, value := range renderOptions.HelmOptions {
-		if err := strvals.ParseInto(value, vals); err != nil {
-			return nil, errors.Wrapf(err, "failed to parse helm value %q", value)
-		}
-	}
-
 	var rendered []BaseFile
 	var additional []BaseFile
 	switch strings.ToLower(renderOptions.HelmVersion) {
 	case "v3", "":
-		rendered, additional, err = renderHelmV3(u.Name, chartPath, vals, renderOptions)
+		rendered, additional, err = renderHelmV3(u.Name, chartPath, renderOptions)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to render with helm v3")
 		}
 	case "v2":
-		rendered, additional, err = renderHelmV2(u.Name, chartPath, vals, renderOptions)
+		rendered, additional, err = renderHelmV2(u.Name, chartPath, renderOptions)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to render with helm v2")
 		}
