@@ -13,6 +13,7 @@ import (
 	apptypes "github.com/replicatedhq/kots/pkg/app/types"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/reporting"
+	"github.com/replicatedhq/kots/pkg/store"
 	"github.com/replicatedhq/kots/pkg/util"
 	kotsv1beta1 "github.com/replicatedhq/kotskinds/apis/kots/v1beta1"
 	"github.com/replicatedhq/kotskinds/client/kotsclientset/scheme"
@@ -148,6 +149,14 @@ func getApplicationMetadataFromHost(host string, endpoint string, upstream *url.
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to call newrequest")
 	}
+
+	appID, err := store.GetStore().GetAppIDFromSlug(r.AppSlug)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get app id from slug")
+	}
+
+	reportingInfo := reporting.GetReportingInfo(appID)
+	reporting.InjectReportingInfoHeaders(getReq, reportingInfo)
 
 	getResp, err := http.DefaultClient.Do(getReq)
 	if err != nil {
