@@ -60,6 +60,22 @@ func GetLatestLicenseForHelm(licenseID string) (*LicenseData, error) {
 	return licenseData, nil
 }
 
+func getLicenseById(licenseID string) (*kotsv1beta1.License, error) {
+
+	allLicenses, err := store.GetStore().GetAllAppLicenses()
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get all app licenses")
+	}
+
+	for _, l := range allLicenses {
+		if l.Spec.LicenseID == licenseID {
+			return l, nil
+		}
+	}
+
+	return nil, nil
+}
+
 func getLicenseFromAPI(url string, licenseID string) (*LicenseData, error) {
 	req, err := util.NewRequest("GET", url, nil)
 	if err != nil {
@@ -67,6 +83,16 @@ func getLicenseFromAPI(url string, licenseID string) (*LicenseData, error) {
 	}
 
 	req.SetBasicAuth(licenseID, licenseID)
+
+	l, err := getLicenseById(licenseID)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get license by id")
+	}
+
+	if l != nil {
+		reportingInfo := reporting.GetReportingInfoByAppSlug(l.Spec.AppSlug)
+		reporting.InjectReportingInfoHeaders(req, reportingInfo)
+	}
 
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {

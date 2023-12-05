@@ -184,6 +184,15 @@ func GetReporter() Reporter {
 	return reporter
 }
 
+func GetReportingInfoByAppSlug(appSlug string) *types.ReportingInfo {
+	appID, err := store.GetStore().GetAppIDFromSlug(appSlug)
+	if err != nil {
+		logger.Debugf("failed to get app id from slug: %v", err.Error())
+	}
+
+	return GetReportingInfo(appID)
+}
+
 func GetReportingInfo(appID string) *types.ReportingInfo {
 	if os.Getenv("USE_MOCK_REPORTING") == "1" {
 		return &types.ReportingInfo{
