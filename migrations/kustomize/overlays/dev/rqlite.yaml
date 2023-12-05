@@ -104,7 +104,10 @@ spec:
           valueFrom:
             secretKeyRef:
               name: kotsadm-rqlite
-              key: password          
+              key: password
+      securityContext:
+        runAsUser: 1001
+        fsGroup: 1001
       volumes:
       - name: authconfig
         secret:
