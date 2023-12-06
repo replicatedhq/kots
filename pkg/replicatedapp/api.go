@@ -60,20 +60,24 @@ func GetLatestLicenseForHelm(licenseID string) (*LicenseData, error) {
 	return licenseData, nil
 }
 
-func getLicenseById(licenseID string) (*kotsv1beta1.License, error) {
-
-	allLicenses, err := store.GetStore().GetAllAppLicenses()
+func getAppIdFromLicenseId(licenseID string) (string, error) {
+	apps, err := store.GetStore().ListInstalledApps()
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to get all app licenses")
+		return "", errors.Wrap(err, "failed to get all app licenses")
 	}
 
-	for _, l := range allLicenses {
+	for _, a := range apps {
+		l, err := store.GetStore().GetLatestLicenseForApp(a.ID)
+		if err != nil {
+			return "", errors.Wrap(err, "failed to get latest license for app")
+		}
+
 		if l.Spec.LicenseID == licenseID {
-			return l, nil
+			return a.ID, nil
 		}
 	}
 
-	return nil, nil
+	return "", nil
 }
 
 func getLicenseFromAPI(url string, licenseID string) (*LicenseData, error) {
@@ -84,13 +88,13 @@ func getLicenseFromAPI(url string, licenseID string) (*LicenseData, error) {
 
 	req.SetBasicAuth(licenseID, licenseID)
 
-	l, err := getLicenseById(licenseID)
+	appId, err := getAppIdFromLicenseId(licenseID)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get license by id")
 	}
 
-	if l != nil {
-		reportingInfo := reporting.GetReportingInfoByAppSlug(l.Spec.AppSlug)
+	if appId != "" {
+		reportingInfo := reporting.GetReportingInfo(appId)
 		reporting.InjectReportingInfoHeaders(req, reportingInfo)
 	}
 
