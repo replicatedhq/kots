@@ -1,7 +1,7 @@
 image kotsadm-migrations __KOTSADM_MIGRATIONS_IMAGE__
 image kotsadm __KOTSADM_IMAGE__
 image kurl-proxy __KURL_PROXY_IMAGE__
-image rqlite __RQLITE_IMAGE__
+image rqlite rqlite/rqlite:__RQLITE_TAG__
 image dex __DEX_IMAGE__
 
 asset kots.tar.gz __KOTSADM_BINARY__

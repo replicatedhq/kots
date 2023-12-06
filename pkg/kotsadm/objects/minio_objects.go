@@ -136,7 +136,7 @@ func MinioStatefulset(deployOptions types.DeployOptions, size resource.Quantity)
 							Command: []string{
 								"/bin/sh",
 								"-ce",
-								"minio -C /home/minio/.minio/ --quiet server /export",
+								"/usr/bin/docker-entrypoint.sh minio -C /home/minio/.minio/ --quiet server /export",
 							},
 							Ports: []corev1.ContainerPort{
 								{
