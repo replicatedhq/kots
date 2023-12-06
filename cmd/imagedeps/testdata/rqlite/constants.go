@@ -5,5 +5,5 @@ package image
 // image name.
 
 const (
-	Rqlite = "cgr.dev/chainguard/rqlite:7.7.0"
+	Rqlite = "rqlite/rqlite:7.7.0"
 )

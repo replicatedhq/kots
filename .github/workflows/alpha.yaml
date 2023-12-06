@@ -84,7 +84,7 @@ jobs:
         id: scan
         uses: aquasecurity/trivy-action@master
         with:
-          image-ref: "cgr.dev/chainguard/rqlite:${{ steps.dotenv.outputs.RQLITE_TAG }}"
+          image-ref: "rqlite/rqlite:${{ steps.dotenv.outputs.RQLITE_TAG }}"
           format: 'template'
           template: '@/contrib/sarif.tpl'
           output: 'rqlite-scan-output.sarif'
@@ -111,7 +111,7 @@ jobs:
         id: scan
         uses: aquasecurity/trivy-action@master
         with:
-          image-ref: "cgr.dev/chainguard/minio:${{ steps.dotenv.outputs.minio_tag }}"
+          image-ref: "minio/minio:${{ steps.dotenv.outputs.minio_tag }}"
           format: 'template'
           template: '@/contrib/sarif.tpl'
           output: 'minio-scan-output.sarif'
@@ -139,7 +139,7 @@ jobs:
         id: scan
         uses: aquasecurity/trivy-action@master
         with:
-          image-ref: "cgr.dev/chainguard/dex:${{ steps.dotenv.outputs.dex_tag }}"
+          image-ref: "ghcr.io/dexidp/dex:${{ steps.dotenv.outputs.dex_tag }}"
           format: 'template'
           template: '@/contrib/sarif.tpl'
           output: 'dex-scan-output.sarif'

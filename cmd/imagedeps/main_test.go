@@ -12,72 +12,16 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-var (
-	minioTags = []string{
-		"sha256-00428f99c05677c91ad393c3017376e800d601708baa36e51091df3b9a67b324.att",
-		"latest-dev",
-		"latest",
-		"0.20231025.063325-r0-dev",
-		"0.20231025.063325-r0",
-		"0.20231025.063325-dev",
-		"0.20231025.063325",
-		"0.20231025-dev",
-		"0.20231025",
-		"0.20230904.195737-r1-dev",
-		"0.20230904.195737-r1",
-		"0.20230904.195737-dev",
-		"0.20230904.195737",
-		"0.20230904-dev",
-		"0.20230904",
-		"0-dev",
-		"0",
-	}
-
-	schemaheroTags = []string{
-		"0.13.2",
-		"0.13.1",
-		"0.12.7",
-		"0.12.2",
-	}
-
-	rqliteTags = []string{
-		"sha256-00122e405b3fa3b5105b0468f1fb72dcb32474968a971c45906a702120d55b58.att",
-		"latest-dev",
-		"latest",
-		"7",
-		"7-dev",
-		"7.7.0",
-		"7.7.0-dev",
-		"7.7.0-r2",
-		"7.7.0-r2-dev",
-		"7.6.2",
-		"7.6.1",
-		"7.6.0",
-		"6.10.2",
-		"6.10.1",
-		"6.8.2",
-	}
-
-	dexTags = []string{
-		"sha256-002adc734b3d83bb6be291b49eb8f3f95b905c411d404c2f4b52a759140739c9.att",
-		"latest-dev",
-		"latest",
-		"2.37.0",
-		"2.37.0-r3-dev",
-		"2.37.0-r3",
-		"2.37.0-dev",
-		"2.36.0",
-		"2.35.3",
-		"2.35.2",
-		"2.35.1",
-	}
-
-	lvpTags = []string{
-		"v0.3.3",
-		"v0.3.2",
-		"v0.3.1",
-	}
-)
+var releaseTags = []string{
+	"RELEASE.2022-06-11T19-55-32Z.fips",
+	"RELEASE.2021-09-09T21-37-06Z.xxx",
+	"RELEASE.2021-09-09T21-37-05Z",
+	"RELEASE.2021-09-09T21-37-04Z",
+}
+var semVerTags = []string{
+	"0.12.7", "0.12.6", "0.12.5",
+	"0.12.4", "0.12.3", "0.12.2",
+}
 
 func makeReleases(tags []string) []*github.RepositoryRelease {
 	var releases []*github.RepositoryRelease
@@ -102,21 +46,29 @@ func TestFunctional(t *testing.T) {
 		expectError bool
 	}{
 		{
-			name: "minio",
+			name: "basic",
 			fn: getTagFinder(
-				withRepoGetTags(
-					func(_ string) ([]string, error) {
-						return minioTags, nil
+				withGithubReleaseTagFinder(
+					func(_ string, _ string) ([]*github.RepositoryRelease, error) {
+						return makeReleases(releaseTags), nil
 					},
 				),
 			),
 		},
 		{
-			name: "schemahero",
+			name: "with-overrides",
 			fn: getTagFinder(
 				withRepoGetTags(
 					func(_ string) ([]string, error) {
-						return schemaheroTags, nil
+						return []string{
+							"0.13.2", "0.13.1",
+							"0.12.7", "0.12.2",
+						}, nil
+					},
+				),
+				withGithubReleaseTagFinder(
+					func(_ string, _ string) ([]*github.RepositoryRelease, error) {
+						return makeReleases(releaseTags), nil
 					},
 				),
 			),
@@ -130,17 +82,30 @@ func TestFunctional(t *testing.T) {
 			fn: getTagFinder(
 				withRepoGetTags(
 					func(_ string) ([]string, error) {
-						return rqliteTags, nil
+						return []string{
+							"7.7.0", "7.6.1", "7.6.0",
+							"6.10.2", "6.10.1", "6.8.2",
+						}, nil
 					},
 				),
 			),
 		},
 		{
-			name: "dex",
+			name: "filter-github",
+			fn: getTagFinder(
+				withGithubReleaseTagFinder(
+					func(_ string, _ string) ([]*github.RepositoryRelease, error) {
+						return makeReleases(releaseTags), nil
+					},
+				),
+			),
+		},
+		{
+			name: "schemahero",
 			fn: getTagFinder(
 				withRepoGetTags(
 					func(_ string) ([]string, error) {
-						return dexTags, nil
+						return semVerTags, nil
 					},
 				),
 			),
@@ -150,7 +115,9 @@ func TestFunctional(t *testing.T) {
 			fn: getTagFinder(
 				withRepoGetTags(
 					func(_ string) ([]string, error) {
-						return lvpTags, nil
+						return []string{
+							"v0.3.3",
+						}, nil
 					},
 				),
 			),

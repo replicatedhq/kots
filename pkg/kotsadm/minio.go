@@ -25,7 +25,6 @@ import (
 )
 
 var (
-	MinioCGRImageTagRegexp  = regexp.MustCompile(`:0\.\d+`)
 	MinioImageTagDateRegexp = regexp.MustCompile(`RELEASE\.(\d{4}-\d{2}-\d{2}T\d{2}-\d{2}-\d{2}Z)`)
 	// MigrateToMinioXlBeforeTime is the time that the minio version was released that removed the legacy backend
 	// that we need to migrate from: https://github.com/minio/minio/releases/tag/RELEASE.2022-10-29T06-21-33Z
@@ -128,7 +127,6 @@ func ensureMinioStatefulset(deployOptions types.DeployOptions, clientset kuberne
 	existingMinio.Spec.Template.Spec.Volumes = desiredMinio.Spec.Template.Spec.DeepCopy().Volumes
 	existingMinio.Spec.Template.Spec.Containers[0].Image = desiredMinio.Spec.Template.Spec.Containers[0].Image
 	existingMinio.Spec.Template.Spec.Containers[0].VolumeMounts = desiredMinio.Spec.Template.Spec.Containers[0].DeepCopy().VolumeMounts
-	existingMinio.Spec.Template.Spec.Containers[0].Command = desiredMinio.Spec.Template.Spec.Containers[0].Command
 	existingMinio.Spec.Template.Spec.InitContainers = desiredMinio.Spec.Template.Spec.DeepCopy().InitContainers
 
 	_, err = clientset.AppsV1().StatefulSets(deployOptions.Namespace).Update(ctx, existingMinio, metav1.UpdateOptions{})
@@ -395,12 +393,6 @@ func IsMinioXlMigrationNeeded(clientset kubernetes.Interface, namespace string) 
 
 // imageNeedsMinioXlMigration returns true if the minio image is older than the migrate before time (2022-10-29T06-21-33Z).
 func imageNeedsMinioXlMigration(minioImage string) (bool, error) {
-	isCGRImage := len(MinioCGRImageTagRegexp.FindStringSubmatch(minioImage)) > 0
-	if isCGRImage {
-		// chainguard minio images are all new and don't need to be migrated
-		return false, nil
-	}
-
 	existingImageTagDateMatch := MinioImageTagDateRegexp.FindStringSubmatch(minioImage)
 	if len(existingImageTagDateMatch) != 2 {
 		return false, errors.New("failed to parse existing image tag date")

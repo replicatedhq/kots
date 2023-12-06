@@ -1,1 +1,0 @@
-minio cgr.dev/chainguard/minio ^\b0\.\d+\b-dev$

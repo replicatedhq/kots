@@ -5,5 +5,5 @@ package image
 // image name.
 
 const (
-	Dex = "cgr.dev/chainguard/dex:2.37.0"
+	Minio = "minio/minio:RELEASE.2022-06-11T19-55-32Z.fips"
 )
