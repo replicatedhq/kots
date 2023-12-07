@@ -773,9 +773,9 @@ func (mr *MockStoreMockRecorder) GetEmbeddedClusterInstallCommandRoles(token int
 }
 
 // GetEmbeddedClusterState mocks base method.
-func (m *MockStore) GetEmbeddedClusterState(appID string) (string, error) {
+func (m *MockStore) GetEmbeddedClusterState() (string, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetEmbeddedClusterState", appID)
+	ret := m.ctrl.Call(m, "GetEmbeddedClusterState")
 	ret0, _ := ret[0].(string)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1

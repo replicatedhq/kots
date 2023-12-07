@@ -21,5 +21,3 @@ spec:
         type: integer
       - name: sequence
         type: integer
-      - name: embeddedcluster_state
-        type: text

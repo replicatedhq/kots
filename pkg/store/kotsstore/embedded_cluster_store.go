@@ -3,6 +3,7 @@ package kotsstore
 import (
 	"encoding/json"
 	"fmt"
+	"time"
 
 	"github.com/pkg/errors"
 	"github.com/rqlite/gorqlite"
@@ -72,10 +73,14 @@ func (s *KOTSStore) GetEmbeddedClusterInstallCommandRoles(token string) ([]strin
 
 func (s *KOTSStore) SetEmbeddedClusterState(state string) error {
 	db := persistence.MustGetDBSession()
-	query := "update app_status set embeddedcluster_state = ?"
+	query := `
+insert into embedded_cluster_status (updated_at, status)
+values (?, ?)
+on conflict (updated_at) do update set
+	  status = EXCLUDED.status`
 	wr, err := db.WriteOneParameterized(gorqlite.ParameterizedStatement{
 		Query:     query,
-		Arguments: []interface{}{state},
+		Arguments: []interface{}{time.Now().Unix(), state},
 	})
 	if err != nil {
 		return fmt.Errorf("failed to write: %v: %v", err, wr.Err)
@@ -83,12 +88,12 @@ func (s *KOTSStore) SetEmbeddedClusterState(state string) error {
 	return nil
 }
 
-func (s *KOTSStore) GetEmbeddedClusterState(appID string) (string, error) {
+func (s *KOTSStore) GetEmbeddedClusterState() (string, error) {
 	db := persistence.MustGetDBSession()
-	query := `select embeddedcluster_state from app_status where app_id = ?`
+	query := `select status from embedded_cluster_status ORDER BY updated_at DESC LIMIT 1`
 	rows, err := db.QueryOneParameterized(gorqlite.ParameterizedStatement{
 		Query:     query,
-		Arguments: []interface{}{appID},
+		Arguments: []interface{}{},
 	})
 	if err != nil {
 		return "", fmt.Errorf("failed to query: %v: %v", err, rows.Err)

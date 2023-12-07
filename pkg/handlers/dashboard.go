@@ -63,7 +63,7 @@ func (h *Handler) GetAppDashboard(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	ecState, err := store.GetStore().GetEmbeddedClusterState(a.ID)
+	ecState, err := store.GetStore().GetEmbeddedClusterState()
 	if err != nil {
 		logger.Error(err)
 		w.WriteHeader(500)
