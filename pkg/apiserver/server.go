@@ -13,6 +13,7 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/replicatedhq/kots/pkg/automation"
 	"github.com/replicatedhq/kots/pkg/binaries"
+	"github.com/replicatedhq/kots/pkg/embeddedcluster"
 	"github.com/replicatedhq/kots/pkg/handlers"
 	"github.com/replicatedhq/kots/pkg/helm"
 	identitymigrate "github.com/replicatedhq/kots/pkg/identity/migrate"
@@ -127,7 +128,9 @@ func Start(params *APIServerParams) {
 
 	supportbundle.StartServer()
 
-	// TODO: trigger a single cluster state check here
+	if err := embeddedcluster.InitClusterState(context.TODO(), store.GetStore()); err != nil {
+		log.Println("Failed to initialize cluster state:", err)
+	}
 
 	if err := informers.Start(); err != nil {
 		log.Println("Failed to start informers:", err)

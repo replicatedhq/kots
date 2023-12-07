@@ -28,13 +28,20 @@ func MaybeStartClusterUpgrade(ctx context.Context, store store.Store, conf *v1be
 	} else if !upgrade {
 		return nil
 	}
-	if err := StartClusterUpgrade(ctx, spec); err != nil {
+	if err := startClusterUpgrade(ctx, spec); err != nil {
 		return fmt.Errorf("failed to start cluster upgrade: %w", err)
 	}
 
 	go watchClusterState(ctx, store)
 
 	return nil
+}
+
+// InitClusterState initializes the cluster state in the database. This should be called when the
+// server launches.
+func InitClusterState(ctx context.Context, store store.Store) error {
+	_, err := updateClusterState(ctx, store, "")
+	return err
 }
 
 // watchClusterState checks the status of the installation object and updates the cluster state

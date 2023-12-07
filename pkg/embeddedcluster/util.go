@@ -123,8 +123,8 @@ func ClusterConfig(ctx context.Context) (*embeddedclusterv1beta1.ConfigSpec, err
 	return latest.Spec.Config, nil
 }
 
-// StartClusterUpgrade will create a new installation with the provided config.
-func StartClusterUpgrade(ctx context.Context, newcfg embeddedclusterv1beta1.ConfigSpec) error {
+// startClusterUpgrade will create a new installation with the provided config.
+func startClusterUpgrade(ctx context.Context, newcfg embeddedclusterv1beta1.ConfigSpec) error {
 	clientConfig, err := k8sutil.GetClusterConfig()
 	if err != nil {
 		return fmt.Errorf("failed to get cluster config: %w", err)
