@@ -106,6 +106,10 @@ func Start(params *APIServerParams) {
 			panic(err)
 		}
 		defer op.Shutdown()
+
+		if err := embeddedcluster.InitClusterState(context.TODO(), k8sClientset, store); err != nil {
+			log.Println("Failed to initialize cluster state:", err)
+		}
 	}
 
 	if params.SharedPassword != "" {
@@ -127,10 +131,6 @@ func Start(params *APIServerParams) {
 	}
 
 	supportbundle.StartServer()
-
-	if err := embeddedcluster.InitClusterState(context.TODO(), store.GetStore()); err != nil {
-		log.Println("Failed to initialize cluster state:", err)
-	}
 
 	if err := informers.Start(); err != nil {
 		log.Println("Failed to start informers:", err)

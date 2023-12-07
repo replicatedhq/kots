@@ -9,6 +9,7 @@ import (
 	"github.com/replicatedhq/embedded-cluster-operator/api/v1beta1"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/store"
+	"k8s.io/client-go/kubernetes"
 )
 
 var stateMut = sync.Mutex{}
@@ -17,8 +18,16 @@ var stateMut = sync.Mutex{}
 // it starts the upgrade process. We only start an upgrade if the following conditions are met:
 // - The app has an embedded cluster configuration.
 // - The app embedded cluster configuration differs from the current embedded cluster config.
-func MaybeStartClusterUpgrade(ctx context.Context, store store.Store, conf *v1beta1.Config) error {
+func MaybeStartClusterUpgrade(ctx context.Context, client kubernetes.Interface, store store.Store, conf *v1beta1.Config) error {
 	if conf == nil {
+		return nil
+	}
+
+	isEC, err := IsEmbeddedCluster(client)
+	if err != nil {
+		return fmt.Errorf("failed to check if embedded cluster is enabled: %w", err)
+	}
+	if !isEC {
 		return nil
 	}
 
@@ -39,9 +48,16 @@ func MaybeStartClusterUpgrade(ctx context.Context, store store.Store, conf *v1be
 
 // InitClusterState initializes the cluster state in the database. This should be called when the
 // server launches.
-func InitClusterState(ctx context.Context, store store.Store) error {
-	_, err := updateClusterState(ctx, store, "")
-	return err
+func InitClusterState(ctx context.Context, client kubernetes.Interface, store store.Store) error {
+	isEC, err := IsEmbeddedCluster(client)
+	if err != nil {
+		return fmt.Errorf("failed to check if embedded cluster is enabled: %w", err)
+	}
+	if isEC {
+		_, err = updateClusterState(ctx, store, "")
+		return err
+	}
+	return nil
 }
 
 // watchClusterState checks the status of the installation object and updates the cluster state

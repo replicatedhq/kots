@@ -411,7 +411,7 @@ func (o *Operator) DeployApp(appID string, sequence int64) (deployed bool, deplo
 	if err != nil {
 		go func() {
 			logger.Info("app deploy failed, starting cluster upgrade in the background")
-			err2 := embeddedcluster.MaybeStartClusterUpgrade(context.Background(), o.store, kotsKinds.EmbeddedClusterConfig)
+			err2 := embeddedcluster.MaybeStartClusterUpgrade(context.Background(), o.k8sClientset, o.store, kotsKinds.EmbeddedClusterConfig)
 			if err2 != nil {
 				logger.Error(errors.Wrap(err2, "failed to start cluster upgrade"))
 			}
@@ -421,7 +421,7 @@ func (o *Operator) DeployApp(appID string, sequence int64) (deployed bool, deplo
 		return false, errors.Wrap(err, "failed to deploy app")
 	}
 
-	err = embeddedcluster.MaybeStartClusterUpgrade(context.TODO(), o.store, kotsKinds.EmbeddedClusterConfig)
+	err = embeddedcluster.MaybeStartClusterUpgrade(context.TODO(), o.k8sClientset, o.store, kotsKinds.EmbeddedClusterConfig)
 	if err != nil {
 		return false, errors.Wrap(err, "failed to start cluster upgrade")
 	}
