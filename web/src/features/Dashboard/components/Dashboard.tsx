@@ -124,6 +124,7 @@ const Dashboard = () => {
         appStatus: null,
         metrics: [],
         prometheusAddress: "",
+        embeddedClusterState: "",
       },
       currentVersion: null,
       displayErrorModal: false,
