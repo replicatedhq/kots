@@ -54,8 +54,8 @@ func InitClusterState(ctx context.Context, client kubernetes.Interface, store st
 		return fmt.Errorf("failed to check if embedded cluster is enabled: %w", err)
 	}
 	if isEC {
-		_, err = updateClusterState(ctx, store, "")
-		return err
+		go watchClusterState(ctx, store)
+		return nil
 	}
 	return nil
 }
