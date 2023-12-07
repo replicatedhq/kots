@@ -5,7 +5,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io"
 	"sort"
 	"time"
 
@@ -17,17 +16,10 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes"
 	kbclient "sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/log"
-	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 )
 
 const configMapName = "embedded-cluster-config"
 const configMapNamespace = "embedded-cluster"
-
-func init() {
-	k8slogger := zap.New(func(o *zap.Options) { o.DestWriter = io.Discard })
-	log.SetLogger(k8slogger)
-}
 
 // ReadConfigMap will read the Kurl config from a configmap
 func ReadConfigMap(client kubernetes.Interface) (*corev1.ConfigMap, error) {
