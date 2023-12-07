@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/pkg/errors"
 	"github.com/rqlite/gorqlite"
 
 	"github.com/replicatedhq/kots/pkg/persistence"
@@ -23,7 +22,7 @@ func (s *KOTSStore) SetEmbeddedClusterInstallCommandRoles(roles []string) (strin
 		Arguments: []interface{}{installID},
 	})
 	if err != nil {
-		return "", fmt.Errorf("delete embedded_cluster join token: %v: %v", err, wr.Err)
+		return "", fmt.Errorf("delete embedded_cluster join token: %w: %v", err, wr.Err)
 	}
 
 	jsonRoles, err := json.Marshal(roles)
@@ -37,7 +36,7 @@ func (s *KOTSStore) SetEmbeddedClusterInstallCommandRoles(roles []string) (strin
 		Arguments: []interface{}{installID, string(jsonRoles)},
 	})
 	if err != nil {
-		return "", fmt.Errorf("insert embedded_cluster join token: %v: %v", err, wr.Err)
+		return "", fmt.Errorf("insert embedded_cluster join token: %w: %v", err, wr.Err)
 	}
 
 	return installID, nil
@@ -51,7 +50,7 @@ func (s *KOTSStore) GetEmbeddedClusterInstallCommandRoles(token string) ([]strin
 		Arguments: []interface{}{token},
 	})
 	if err != nil {
-		return nil, fmt.Errorf("failed to query: %v: %v", err, rows.Err)
+		return nil, fmt.Errorf("failed to query: %w: %v", err, rows.Err)
 	}
 	if !rows.Next() {
 		return nil, ErrNotFound
@@ -83,7 +82,7 @@ on conflict (updated_at) do update set
 		Arguments: []interface{}{time.Now().Unix(), state},
 	})
 	if err != nil {
-		return fmt.Errorf("failed to write: %v: %v", err, wr.Err)
+		return fmt.Errorf("failed to write: %w: %v", err, wr.Err)
 	}
 	return nil
 }
@@ -96,14 +95,14 @@ func (s *KOTSStore) GetEmbeddedClusterState() (string, error) {
 		Arguments: []interface{}{},
 	})
 	if err != nil {
-		return "", fmt.Errorf("failed to query: %v: %v", err, rows.Err)
+		return "", fmt.Errorf("failed to query: %w: %v", err, rows.Err)
 	}
 	if !rows.Next() {
 		return "", nil
 	}
 	var state gorqlite.NullString
 	if err := rows.Scan(&state); err != nil {
-		return "", errors.Wrap(err, "failed to scan")
+		return "", fmt.Errorf("failed to scan: %w", err)
 	}
 	return state.String, nil
 }
