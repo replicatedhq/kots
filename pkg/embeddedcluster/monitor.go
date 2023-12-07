@@ -66,6 +66,7 @@ func InitClusterState(ctx context.Context, client kubernetes.Interface, store st
 // if it is called multiple times, only one instance will run.
 func watchClusterState(ctx context.Context, store store.Store) {
 	stateMut.Lock()
+	defer stateMut.Unlock()
 	numReady := 0
 	lastState := ""
 	for numReady < 6 {
