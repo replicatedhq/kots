@@ -412,7 +412,7 @@ jobs:
           context: ./migrations
           file: ./migrations/deploy/Dockerfile
           push: true
-          build-args: SCHEMAHERO_TAG=${{ steps.dotenv.outputs.schemahero_tag }}
+          build-args: SCHEMAHERO_TAG="2023.12.6-c073b3b-nightly"
 
 
   push-minio:
