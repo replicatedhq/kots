@@ -427,11 +427,9 @@ jobs:
         with:
           path: .image.env
 
-      - name: push minio for e2e
-        run: |
-          docker pull minio/minio:${{ steps.dotenv.outputs.minio_tag }}
-          docker tag minio/minio:${{ steps.dotenv.outputs.minio_tag }} ttl.sh/automated-${{ github.run_id }}/minio:${{ steps.dotenv.outputs.minio_tag }}
-          docker push ttl.sh/automated-${{ github.run_id }}/minio:${{ steps.dotenv.outputs.minio_tag }}
+      - uses: ./.github/actions/build-push-minio-image
+        with:
+          image-name: ttl.sh/automated-${{ github.run_id }}/minio:${{ steps.dotenv.outputs.minio_tag }}
 
 
   push-rqlite:

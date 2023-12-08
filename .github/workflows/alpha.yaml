@@ -43,9 +43,30 @@ jobs:
     runs-on: ubuntu-20.04
     steps:
       - uses: actions/checkout@v4
+      - name: Read image tags from env file
+        uses: falti/dotenv-action@v1
+        id: dotenv
+        with:
+          path: .image.env
       - uses: ./.github/actions/build-push-rqlite-image
         with:
-          image-name: index.docker.io/kotsadm/rqlite:alpha
+          image-name: index.docker.io/kotsadm/rqlite:${{ steps.dotenv.outputs.RQLITE_TAG }}
+          registry-username: ${{ secrets.DOCKERHUB_USER }}
+          registry-password: ${{ secrets.DOCKERHUB_PASSWORD }}
+
+
+  build-minio:
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Read image tags from env file
+        uses: falti/dotenv-action@v1
+        id: dotenv
+        with:
+          path: .image.env
+      - uses: ./.github/actions/build-push-minio-image
+        with:
+          image-name: index.docker.io/kotsadm/minio:${{ steps.dotenv.outputs.MINIO_TAG }}
           registry-username: ${{ secrets.DOCKERHUB_USER }}
           registry-password: ${{ secrets.DOCKERHUB_PASSWORD }}
 
@@ -95,7 +116,7 @@ jobs:
         id: scan
         uses: aquasecurity/trivy-action@master
         with:
-          image-ref: "rqlite/rqlite:${{ steps.dotenv.outputs.RQLITE_TAG }}"
+          image-ref: "docker.io/kotsadm/rqlite:${{ steps.dotenv.outputs.RQLITE_TAG }}"
           format: 'template'
           template: '@/contrib/sarif.tpl'
           output: 'rqlite-scan-output.sarif'
@@ -122,7 +143,7 @@ jobs:
         id: scan
         uses: aquasecurity/trivy-action@master
         with:
-          image-ref: "minio/minio:${{ steps.dotenv.outputs.minio_tag }}"
+          image-ref: "docker.io/kotsadm/minio:${{ steps.dotenv.outputs.MINIO_TAG }}"
           format: 'template'
           template: '@/contrib/sarif.tpl'
           output: 'minio-scan-output.sarif'

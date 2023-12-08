@@ -61,6 +61,8 @@ spec:
         ports:
         - name: rqlite
           containerPort: 4001
+        - name: raft
+          containerPort: 4002
         volumeMounts:
         - name: kotsadm-rqlite
           mountPath: /rqlite/file
