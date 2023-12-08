@@ -4,7 +4,7 @@ contents:
   keyring:
     - https://packages.wolfi.dev/os/wolfi-signing.rsa.pub
   packages:
-    - rqlite # TODO NOW: pin to a version
+    - rqlite-7.21.4
     - bash
     - busybox
     - wolfi-baselayout
@@ -19,10 +19,7 @@ accounts:
       gid: 1001
   run-as: rqlite
 
-entrypoint:
-  command: docker-entrypoint.sh
-
-cmd: /rqlite
+cmd: rqlite
 
 archs:
   - x86_64
