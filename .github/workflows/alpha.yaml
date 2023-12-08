@@ -39,6 +39,17 @@ jobs:
         mapfile -t envs < <(grep -v '#.*' < .image.env) && export "${envs[@]}" && make -C migrations schema-alpha
 
 
+  build-rqlite:
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/build-push-rqlite-image
+        with:
+          image-name: index.docker.io/kotsadm/rqlite:alpha
+          registry-username: ${{ secrets.DOCKERHUB_USER }}
+          registry-password: ${{ secrets.DOCKERHUB_PASSWORD }}
+
+
   build-kotsadm:
     runs-on: ubuntu-20.04
     needs: [generate-tag]

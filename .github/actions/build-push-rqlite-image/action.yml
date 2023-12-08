@@ -1,0 +1,28 @@
+name: 'Build and push rqlite image'
+description: 'Composite action for building and pushing rqlite image'
+inputs:
+  image-name:
+    description: 'Full destination rqlite image name'
+    required: true
+
+  registry-username:
+    description: 'Username to login to registry'
+    default: ''
+    required: false
+
+  registry-password:
+    description: 'Password to login to registry'
+    default: ''
+    required: false
+
+runs:
+  using: "composite"
+  steps:
+    - uses: chainguard-images/actions/apko-publish@main
+      with:
+        config: deploy/rqlite/apko.yaml
+        archs: x86_64
+        tag: ${{ inputs.image-name }}
+        vcs-url: true
+        generic-user: ${{ inputs.registry-username }}
+        generic-pass: ${{ inputs.registry-password }}
