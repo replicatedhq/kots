@@ -149,7 +149,7 @@
     "lodash": "4.17.21",
     "markdown-it": "^12.3.2",
     "material-react-table": "^1.15.1",
-    "monaco-editor": "^0.33.0",
+    "monaco-editor": "^0.45.0",
     "monaco-editor-webpack-plugin": "^7.0.1",
     "node-polyfill-webpack-plugin": "^1.1.4",
     "prettier": "^2.7.1",
