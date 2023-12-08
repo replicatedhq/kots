@@ -127,6 +127,7 @@ func ensureMinioStatefulset(deployOptions types.DeployOptions, clientset kuberne
 	existingMinio.Spec.Template.Spec.Volumes = desiredMinio.Spec.Template.Spec.DeepCopy().Volumes
 	existingMinio.Spec.Template.Spec.Containers[0].Image = desiredMinio.Spec.Template.Spec.Containers[0].Image
 	existingMinio.Spec.Template.Spec.Containers[0].VolumeMounts = desiredMinio.Spec.Template.Spec.Containers[0].DeepCopy().VolumeMounts
+	existingMinio.Spec.Template.Spec.Containers[0].Command = desiredMinio.Spec.Template.Spec.Containers[0].Command
 	existingMinio.Spec.Template.Spec.InitContainers = desiredMinio.Spec.Template.Spec.DeepCopy().InitContainers
 
 	_, err = clientset.AppsV1().StatefulSets(deployOptions.Namespace).Update(ctx, existingMinio, metav1.UpdateOptions{})
