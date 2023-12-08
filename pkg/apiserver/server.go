@@ -13,6 +13,7 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/replicatedhq/kots/pkg/automation"
 	"github.com/replicatedhq/kots/pkg/binaries"
+	"github.com/replicatedhq/kots/pkg/embeddedcluster"
 	"github.com/replicatedhq/kots/pkg/handlers"
 	"github.com/replicatedhq/kots/pkg/helm"
 	identitymigrate "github.com/replicatedhq/kots/pkg/identity/migrate"
@@ -105,6 +106,10 @@ func Start(params *APIServerParams) {
 			panic(err)
 		}
 		defer op.Shutdown()
+
+		if err := embeddedcluster.InitClusterState(context.TODO(), k8sClientset, store); err != nil {
+			log.Println("Failed to initialize cluster state:", err)
+		}
 	}
 
 	if params.SharedPassword != "" {

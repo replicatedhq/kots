@@ -18,6 +18,7 @@ import (
 	apptypes "github.com/replicatedhq/kots/pkg/app/types"
 	"github.com/replicatedhq/kots/pkg/apparchive"
 	appstatetypes "github.com/replicatedhq/kots/pkg/appstate/types"
+	"github.com/replicatedhq/kots/pkg/embeddedcluster"
 	identitydeploy "github.com/replicatedhq/kots/pkg/identity/deploy"
 	identitytypes "github.com/replicatedhq/kots/pkg/identity/types"
 	kotsadmobjects "github.com/replicatedhq/kots/pkg/kotsadm/objects"
@@ -382,6 +383,11 @@ func (o *Operator) DeployApp(appID string, sequence int64) (deployed bool, deplo
 		return false, errors.Wrap(err, "failed to apply status informers")
 	}
 
+	isEmbeddedCluster, err := embeddedcluster.IsEmbeddedCluster(o.k8sClientset)
+	if err != nil {
+		return false, errors.Wrap(err, "failed to check if this is an embedded cluster installation")
+	}
+
 	o.client.ApplyNamespacesInformer(kotsKinds.KotsApplication.Spec.AdditionalNamespaces, imagePullSecrets)
 	o.client.ApplyHooksInformer(kotsKinds.KotsApplication.Spec.AdditionalNamespaces)
 
@@ -408,7 +414,23 @@ func (o *Operator) DeployApp(appID string, sequence int64) (deployed bool, deplo
 	}
 	deployed, err = o.client.DeployApp(deployArgs)
 	if err != nil {
+		if isEmbeddedCluster {
+			go func() {
+				logger.Info("app deploy failed, starting cluster upgrade in the background")
+				err2 := embeddedcluster.MaybeStartClusterUpgrade(context.Background(), o.k8sClientset, o.store, kotsKinds.EmbeddedClusterConfig)
+				if err2 != nil {
+					logger.Error(errors.Wrap(err2, "failed to start cluster upgrade"))
+				}
+				logger.Info("cluster upgrade started")
+			}()
+		}
+
 		return false, errors.Wrap(err, "failed to deploy app")
+	}
+
+	err = embeddedcluster.MaybeStartClusterUpgrade(context.TODO(), o.k8sClientset, o.store, kotsKinds.EmbeddedClusterConfig)
+	if err != nil {
+		return false, errors.Wrap(err, "failed to start cluster upgrade")
 	}
 
 	return deployed, nil

@@ -1,9 +1,12 @@
 package embeddedcluster
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
 	"sort"
+	"time"
 
 	embeddedclusterv1beta1 "github.com/replicatedhq/embedded-cluster-operator/api/v1beta1"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
@@ -58,34 +61,89 @@ func ClusterID(client kubernetes.Interface) (string, error) {
 	return configMap.Data["embedded-cluster-id"], nil
 }
 
-// ClusterConfig will get the list of installations, find the latest installation, and get that installation's config
-func ClusterConfig(ctx context.Context) (*embeddedclusterv1beta1.ConfigSpec, error) {
+// RequiresUpgrade returns true if the provided configuration differs from the latest active configuration.
+func RequiresUpgrade(ctx context.Context, newcfg embeddedclusterv1beta1.ConfigSpec) (bool, error) {
+	curcfg, err := ClusterConfig(ctx)
+	if err != nil {
+		return false, fmt.Errorf("failed to get current cluster config: %w", err)
+	}
+	serializedCur, err := json.Marshal(curcfg)
+	if err != nil {
+		return false, err
+	}
+	serializedNew, err := json.Marshal(newcfg)
+	if err != nil {
+		return false, err
+	}
+	return !bytes.Equal(serializedCur, serializedNew), nil
+}
+
+// GetCurrentInstallation returns the most recent installation object from the cluster.
+func GetCurrentInstallation(ctx context.Context) (*embeddedclusterv1beta1.Installation, error) {
 	clientConfig, err := k8sutil.GetClusterConfig()
 	if err != nil {
 		return nil, fmt.Errorf("failed to get cluster config: %w", err)
 	}
-
 	scheme := runtime.NewScheme()
 	embeddedclusterv1beta1.AddToScheme(scheme)
-
-	kbClient, err := kbclient.New(clientConfig, kbclient.Options{
-		Scheme: scheme,
-	})
+	kbClient, err := kbclient.New(clientConfig, kbclient.Options{Scheme: scheme})
 	if err != nil {
 		return nil, fmt.Errorf("failed to get kubebuilder client: %w", err)
 	}
-
 	var installationList embeddedclusterv1beta1.InstallationList
 	err = kbClient.List(ctx, &installationList, &kbclient.ListOptions{})
 	if err != nil {
 		return nil, fmt.Errorf("failed to list installations: %w", err)
 	}
-
-	// determine which of these installations is the latest
-	sort.Slice(installationList.Items, func(i, j int) bool {
-		return installationList.Items[i].ObjectMeta.CreationTimestamp.After(installationList.Items[j].ObjectMeta.CreationTimestamp.Time)
+	if len(installationList.Items) == 0 {
+		return nil, fmt.Errorf("no installations found")
+	}
+	items := installationList.Items
+	sort.SliceStable(items, func(i, j int) bool {
+		return items[j].CreationTimestamp.Before(&items[i].CreationTimestamp)
 	})
+	return &installationList.Items[0], nil
+}
 
-	latest := installationList.Items[0]
+// ClusterConfig will extract the current cluster configuration from the latest installation
+// object found in the cluster.
+func ClusterConfig(ctx context.Context) (*embeddedclusterv1beta1.ConfigSpec, error) {
+	latest, err := GetCurrentInstallation(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get current installation: %w", err)
+	}
 	return latest.Spec.Config, nil
+}
+
+// startClusterUpgrade will create a new installation with the provided config.
+func startClusterUpgrade(ctx context.Context, newcfg embeddedclusterv1beta1.ConfigSpec) error {
+	clientConfig, err := k8sutil.GetClusterConfig()
+	if err != nil {
+		return fmt.Errorf("failed to get cluster config: %w", err)
+	}
+	scheme := runtime.NewScheme()
+	embeddedclusterv1beta1.AddToScheme(scheme)
+	kbClient, err := kbclient.New(clientConfig, kbclient.Options{Scheme: scheme})
+	if err != nil {
+		return fmt.Errorf("failed to get kubebuilder client: %w", err)
+	}
+	current, err := GetCurrentInstallation(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to get current installation: %w", err)
+	}
+	newins := embeddedclusterv1beta1.Installation{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: time.Now().Format("20060102150405"),
+		},
+		Spec: embeddedclusterv1beta1.InstallationSpec{
+			ClusterID:      current.Spec.ClusterID,
+			MetricsBaseURL: current.Spec.MetricsBaseURL,
+			AirGap:         current.Spec.AirGap,
+			Config:         &newcfg,
+		},
+	}
+	if err := kbClient.Create(ctx, &newins); err != nil {
+		return fmt.Errorf("failed to create installation: %w", err)
+	}
+	return nil
 }

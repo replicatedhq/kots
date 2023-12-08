@@ -87,6 +87,7 @@ export type DashboardResponse = {
   appStatus: AppStatus | null;
   metrics: Chart[];
   prometheusAddress: string;
+  embeddedClusterState: string;
 };
 
 export type Downstream = {
