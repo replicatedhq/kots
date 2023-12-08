@@ -21,7 +21,7 @@ accounts:
   run-as: rqlite
 
 entrypoint:
-  command: /usr/bin/docker-entrypoint.sh
+  command: docker-entrypoint.sh
 
 cmd: rqlite
 

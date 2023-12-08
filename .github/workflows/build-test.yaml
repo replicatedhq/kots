@@ -449,8 +449,6 @@ jobs:
       - uses: ./.github/actions/build-push-rqlite-image
         with:
           image-name: ttl.sh/automated-${{ github.run_id }}/rqlite:${{ steps.dotenv.outputs.RQLITE_TAG }}
-          registry-username: ${{ secrets.DOCKERHUB_USER }}
-          registry-password: ${{ secrets.DOCKERHUB_PASSWORD }}
 
 
   push-dex:
