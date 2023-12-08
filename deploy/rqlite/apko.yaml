@@ -5,6 +5,7 @@ contents:
     - https://packages.wolfi.dev/os/wolfi-signing.rsa.pub
   packages:
     - rqlite~7.21.4
+    - rqlite-oci-entrypoint
     - bash
     - busybox
     - wolfi-baselayout
@@ -18,6 +19,9 @@ accounts:
       uid: 1001
       gid: 1001
   run-as: rqlite
+
+entrypoint:
+  command: /usr/bin/docker-entrypoint.sh
 
 cmd: rqlite
 
