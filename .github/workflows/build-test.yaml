@@ -429,7 +429,7 @@ jobs:
 
       - uses: ./.github/actions/build-push-minio-image
         with:
-          image-name: ttl.sh/automated-${{ github.run_id }}/minio:${{ steps.dotenv.outputs.minio_tag }}
+          image-name: ttl.sh/automated-${{ github.run_id }}/minio:${{ steps.dotenv.outputs.MINIO_TAG }}
 
 
   push-rqlite:
@@ -461,10 +461,9 @@ jobs:
         with:
           path: .image.env
 
-      - name: push dex for CI
-        run: |
-          docker build --pull -f deploy/dex.Dockerfile -t ttl.sh/automated-${{ github.run_id }}/dex:${{ steps.dotenv.outputs.DEX_TAG }} --build-arg TAG=${{ steps.dotenv.outputs.DEX_TAG }} .
-          docker push ttl.sh/automated-${{ github.run_id }}/dex:${{ steps.dotenv.outputs.DEX_TAG }}
+      - uses: ./.github/actions/build-push-dex-image
+        with:
+          image-name: ttl.sh/automated-${{ github.run_id }}/dex:${{ steps.dotenv.outputs.DEX_TAG }}
 
 
   # only run validate-kurl-addon if changes to "deploy/kurl/kotsadm/template/**"

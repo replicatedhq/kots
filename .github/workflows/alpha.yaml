@@ -71,6 +71,22 @@ jobs:
           registry-password: ${{ secrets.DOCKERHUB_PASSWORD }}
 
 
+  build-dex:
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Read image tags from env file
+        uses: falti/dotenv-action@v1
+        id: dotenv
+        with:
+          path: .image.env
+      - uses: ./.github/actions/build-push-dex-image
+        with:
+          image-name: index.docker.io/kotsadm/dex:${{ steps.dotenv.outputs.DEX_TAG }}
+          registry-username: ${{ secrets.DOCKERHUB_USER }}
+          registry-password: ${{ secrets.DOCKERHUB_PASSWORD }}
+
+
   build-kotsadm:
     runs-on: ubuntu-20.04
     needs: [generate-tag]
@@ -171,7 +187,7 @@ jobs:
         id: scan
         uses: aquasecurity/trivy-action@master
         with:
-          image-ref: "ghcr.io/dexidp/dex:${{ steps.dotenv.outputs.dex_tag }}"
+          image-ref: "docker.io/kotsadm/dex:${{ steps.dotenv.outputs.dex_tag }}"
           format: 'template'
           template: '@/contrib/sarif.tpl'
           output: 'dex-scan-output.sarif'

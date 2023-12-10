@@ -6,6 +6,7 @@ on:
       - "v*.*.*"
     branches:
       - main
+      - build-rqlite-with-apko
 
 jobs:
   generate-tag:
@@ -164,6 +165,13 @@ jobs:
     steps:
     - name: Checkout
       uses: actions/checkout@v4
+
+    - name: Read image tags from env file
+      uses: falti/dotenv-action@v1
+      id: dotenv
+      with:
+        path: .image.env
+
     - uses: ./.github/actions/build-push-kotsadm-image
       with:
         chainguard-gcp-wif-pool: ${{ secrets.CHAINGUARD_GCP_WIF_POOL }}
@@ -173,17 +181,31 @@ jobs:
         git-tag: ${{ needs.generate-tag.outputs.tag }}
         registry-username: ${{ secrets.DOCKERHUB_USER }}
         registry-password: ${{ secrets.DOCKERHUB_PASSWORD }}
-    - uses: azure/docker-login@v1
-      env:
-        DOCKER_CONFIG: ./.docker
+
+    - uses: ./.github/actions/build-push-minio-image
       with:
-        username: ${{ secrets.DOCKERHUB_USER }}
-        password: ${{ secrets.DOCKERHUB_PASSWORD }}
+        image-name: index.docker.io/kotsadm/minio:${{ steps.dotenv.outputs.MINIO_TAG }}
+        registry-username: ${{ secrets.DOCKERHUB_USER }}
+        registry-password: ${{ secrets.DOCKERHUB_PASSWORD }}
+
+    - uses: ./.github/actions/build-push-rqlite-image
+      with:
+        image-name: index.docker.io/kotsadm/rqlite:${{ steps.dotenv.outputs.RQLITE_TAG }}
+        registry-username: ${{ secrets.DOCKERHUB_USER }}
+        registry-password: ${{ secrets.DOCKERHUB_PASSWORD }}
+
+    - uses: ./.github/actions/build-push-dex-image
+      with:
+        image-name: index.docker.io/kotsadm/dex:${{ steps.dotenv.outputs.DEX_TAG }}
+        registry-username: ${{ secrets.DOCKERHUB_USER }}
+        registry-password: ${{ secrets.DOCKERHUB_PASSWORD }}
+
     - name: Build tagged release
       env:
         GIT_TAG: ${{ needs.generate-tag.outputs.tag }}
         DOCKER_CONFIG: ./.docker
       run: mapfile -t envs < <(grep -v '#.*' < .image.env) && export "${envs[@]}" && make build-release
+
     - name: Upload airgap image
       uses: actions/upload-artifact@v3
       with:

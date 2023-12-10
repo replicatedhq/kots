@@ -25,7 +25,8 @@ import (
 )
 
 var (
-	MinioImageTagDateRegexp = regexp.MustCompile(`RELEASE\.(\d{4}-\d{2}-\d{2}T\d{2}-\d{2}-\d{2}Z)`)
+	MinioChainguardImageTagRegexp = regexp.MustCompile(`:0\.\d+`)
+	MinioImageTagDateRegexp       = regexp.MustCompile(`RELEASE\.(\d{4}-\d{2}-\d{2}T\d{2}-\d{2}-\d{2}Z)`)
 	// MigrateToMinioXlBeforeTime is the time that the minio version was released that removed the legacy backend
 	// that we need to migrate from: https://github.com/minio/minio/releases/tag/RELEASE.2022-10-29T06-21-33Z
 	MigrateToMinioXlBeforeTime = time.Date(2022, 10, 29, 6, 21, 33, 0, time.UTC)
@@ -394,6 +395,12 @@ func IsMinioXlMigrationNeeded(clientset kubernetes.Interface, namespace string) 
 
 // imageNeedsMinioXlMigration returns true if the minio image is older than the migrate before time (2022-10-29T06-21-33Z).
 func imageNeedsMinioXlMigration(minioImage string) (bool, error) {
+	isCGImage := len(MinioChainguardImageTagRegexp.FindStringSubmatch(minioImage)) > 0
+	if isCGImage {
+		// minio images built with chainguard are all new and don't need to be migrated
+		return false, nil
+	}
+
 	existingImageTagDateMatch := MinioImageTagDateRegexp.FindStringSubmatch(minioImage)
 	if len(existingImageTagDateMatch) != 2 {
 		return false, errors.New("failed to parse existing image tag date")

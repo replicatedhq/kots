@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"io"
 	"net/http"
 	"os"
 	"path"
@@ -14,6 +15,7 @@ import (
 	"github.com/google/go-github/v39/github"
 	"github.com/heroku/docker-registry-client/registry"
 	"golang.org/x/oauth2"
+	"gopkg.in/yaml.v2"
 )
 
 type ImageRef struct {
@@ -40,6 +42,11 @@ func (ir ImageRef) GetMakefileLine() string {
 // GetDockerfileLine generates a line of text intended for use in a Dockerfile file.
 func (ir ImageRef) GetDockerfileLine() string {
 	return fmt.Sprintf("ARG %s=%s", getDockerfileVarName(ir.name), ir.tag)
+}
+
+// GetApkoFileLine generates a line of text intended for use in an Apko file.
+func (ir ImageRef) GetApkoFileLine(pkg string) string {
+	return fmt.Sprintf("- %s~%s", pkg, ir.tag)
 }
 
 type getTagsFn func(string) ([]string, error)
@@ -119,19 +126,19 @@ func getTagFinder(opts ...func(c *configuration)) tagFinderFn {
 
 		switch imageName {
 		case minioReference:
-			latestReleaseTag, err = getLatestTagFromGithub(config.releaseFinder, "minio", "minio", matcherFn)
+			latestReleaseTag, err = getLatestTagFromWolfi("minio")
 			if err != nil {
-				return nil, fmt.Errorf("failed to get release tag for minio/minio %w", err)
+				return nil, fmt.Errorf("failed to get latest minio tag from wolfi %w", err)
 			}
 		case dexReference:
-			latestReleaseTag, err = getLatestTagFromGithub(config.releaseFinder, "dexidp", "dex", matcherFn)
+			latestReleaseTag, err = getLatestTagFromWolfi("dex")
 			if err != nil {
-				return nil, fmt.Errorf("failed to get release tag for dexidp/dex %w", err)
+				return nil, fmt.Errorf("failed to get latest dex tag from wolfi %w", err)
 			}
 		case rqliteReference:
-			latestReleaseTag, err = getLatestTagFromRegistry("rqlite/rqlite", config.repositoryTagsFinder, matcherFn)
+			latestReleaseTag, err = getLatestTagFromWolfi("rqlite")
 			if err != nil {
-				return nil, fmt.Errorf("failed to get release tag for %s %w", imageName, err)
+				return nil, fmt.Errorf("failed to get latest rqlite tag from wolfi %w", err)
 			}
 		case schemaheroReference:
 			latestReleaseTag, err = getLatestTagFromRegistry("schemahero/schemahero", config.repositoryTagsFinder, matcherFn)
@@ -273,4 +280,32 @@ func getRegistryTags(untaggedRef string) ([]string, error) {
 		return nil, fmt.Errorf("could not fetch tags for image %q %w", imageRef, err)
 	}
 	return tags, nil
+}
+
+func getLatestTagFromWolfi(pkg string) (string, error) {
+	resp, err := http.Get(fmt.Sprintf("https://raw.githubusercontent.com/wolfi-dev/os/main/%s.yaml", pkg))
+	if err != nil {
+		return "", fmt.Errorf("failed to get %s.yaml from wolfi-dev/os: %w", pkg, err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return "", fmt.Errorf("unexpected status code %d", resp.StatusCode)
+	}
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return "", fmt.Errorf("failed to read body %w", err)
+	}
+
+	var yamlData struct {
+		Package struct {
+			Version string `yaml:"version"`
+		} `yaml:"package"`
+	}
+	if err := yaml.Unmarshal(body, &yamlData); err != nil {
+		return "", fmt.Errorf("failed to unmarshal yaml %w", err)
+	}
+
+	return yamlData.Package.Version, nil
 }
