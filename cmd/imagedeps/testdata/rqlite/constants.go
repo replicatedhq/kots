@@ -5,5 +5,5 @@ package image
 // image name.
 
 const (
-	Rqlite = "rqlite/rqlite:7.7.0"
+	Rqlite = "rqlite/rqlite:8.0.1"
 )

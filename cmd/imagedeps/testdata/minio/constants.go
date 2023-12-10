@@ -5,5 +5,5 @@ package image
 // image name.
 
 const (
-	Minio = "minio/minio:RELEASE.2021-09-09T21-37-06Z.xxx"
+	Minio = "kotsadm/minio:0.20231101.183725"
 )

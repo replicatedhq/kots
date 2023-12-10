@@ -49,6 +49,7 @@ func (ir ImageRef) GetApkoFileLine(pkg string) string {
 	return fmt.Sprintf("- %s~%s", pkg, ir.tag)
 }
 
+type getTagFn func(string) (string, error)
 type getTagsFn func(string) ([]string, error)
 type getReleaseFn func(string, string) ([]*github.RepositoryRelease, error)
 type tagFinderFn func(inputLine string) (*ImageRef, error)
@@ -72,6 +73,7 @@ func getFilter(expression string) (filterFn, error) {
 type configuration struct {
 	repositoryTagsFinder getTagsFn
 	releaseFinder        getReleaseFn
+	wolfiTagFinder       getTagFn
 }
 
 // pass to getTagFinder to override the repository tag finder
@@ -88,12 +90,20 @@ func withGithubReleaseTagFinder(fn getReleaseFn) func(c *configuration) {
 	}
 }
 
+// pass to getTagFinder to override the wolfi tag finder
+func withWolfiGetTag(fn getTagFn) func(c *configuration) {
+	return func(c *configuration) {
+		c.wolfiTagFinder = fn
+	}
+}
+
 // returns a tag finder function that returns information about an image and it's latest tag.
 func getTagFinder(opts ...func(c *configuration)) tagFinderFn {
 	// set defaults
 	config := configuration{
 		repositoryTagsFinder: getRegistryTags,
 		releaseFinder:        getReleases,
+		wolfiTagFinder:       getLatestTagFromWolfi,
 	}
 	// apply options
 	for _, opt := range opts {
@@ -126,17 +136,17 @@ func getTagFinder(opts ...func(c *configuration)) tagFinderFn {
 
 		switch imageName {
 		case minioReference:
-			latestReleaseTag, err = getLatestTagFromWolfi("minio")
+			latestReleaseTag, err = config.wolfiTagFinder("minio")
 			if err != nil {
 				return nil, fmt.Errorf("failed to get latest minio tag from wolfi %w", err)
 			}
 		case dexReference:
-			latestReleaseTag, err = getLatestTagFromWolfi("dex")
+			latestReleaseTag, err = config.wolfiTagFinder("dex")
 			if err != nil {
 				return nil, fmt.Errorf("failed to get latest dex tag from wolfi %w", err)
 			}
 		case rqliteReference:
-			latestReleaseTag, err = getLatestTagFromWolfi("rqlite")
+			latestReleaseTag, err = config.wolfiTagFinder("rqlite")
 			if err != nil {
 				return nil, fmt.Errorf("failed to get latest rqlite tag from wolfi %w", err)
 			}
