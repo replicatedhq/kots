@@ -462,7 +462,7 @@ func deploymentResource(issuerURL, configChecksum string, options Options) (*app
 							Image:           image,
 							ImagePullPolicy: corev1.PullIfNotPresent,
 							Name:            "dex",
-							Command:         []string{"/usr/local/bin/dex", "serve", "/etc/dex/cfg/dexConfig.yaml"},
+							Command:         []string{"dex", "serve", "/etc/dex/cfg/dexConfig.yaml"},
 							Ports: []corev1.ContainerPort{
 								{Name: "http", ContainerPort: 5556},
 							},
