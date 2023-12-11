@@ -10,9 +10,10 @@ import (
 
 func Test_LoadTSKindsFromPath(t *testing.T) {
 	tests := []struct {
-		name             string
-		archiveDir       string
-		wantedPreflights int
+		name              string
+		archiveDir        string
+		wantedPreflights  int
+		wantNilPreflights bool
 	}{
 		{
 			name:             "load single preflight from path",
@@ -29,6 +30,12 @@ func Test_LoadTSKindsFromPath(t *testing.T) {
 			archiveDir:       "cases/no-preflights-in-helm-chart/rendered",
 			wantedPreflights: 0,
 		},
+		{
+			name:              "don't fail if path doesn't exist",
+			archiveDir:        "cases/not-a-real-dir/rendered",
+			wantedPreflights:  0,
+			wantNilPreflights: true,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -36,6 +43,10 @@ func Test_LoadTSKindsFromPath(t *testing.T) {
 			require.NoError(t, err)
 
 			assert.Equal(t, tt.wantedPreflights, len(got.PreflightsV1Beta2))
+
+			if tt.wantNilPreflights {
+				assert.Nil(t, got.PreflightsV1Beta2)
+			}
 		})
 	}
 }

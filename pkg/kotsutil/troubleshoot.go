@@ -10,6 +10,13 @@ import (
 )
 
 func LoadTSKindsFromPath(dir string) (*troubleshootloader.TroubleshootKinds, error) {
+	if _, err := os.Stat(dir); err != nil {
+		if !os.IsNotExist(err) {
+			return nil, errors.Wrapf(err, "failed to stat dir: %s", dir)
+		}
+		return &troubleshootloader.TroubleshootKinds{}, nil
+	}
+
 	var renderedFiles []string
 	err := filepath.Walk(dir,
 		func(path string, info os.FileInfo, err error) error {
