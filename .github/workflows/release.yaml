@@ -63,7 +63,7 @@ jobs:
           echo "Pull Request Number - ${{ steps.cpr.outputs.pull-request-number }}"
           echo "Pull Request URL - ${{ steps.cpr.outputs.pull-request-url }}"
 
-  build-schema-migrations:
+  build-kotsadm-migrations:
     runs-on: ubuntu-20.04
     needs: [generate-tag]
     steps:
@@ -80,11 +80,6 @@ jobs:
         GIT_TAG: ${{ needs.generate-tag.outputs.tag }}
         DOCKER_CONFIG: ./.docker
       run: mapfile -t envs < <(grep -v '#.*' < .image.env) && export "${envs[@]}" && make -C migrations schema-release
-    - name: Upload airgap image
-      uses: actions/upload-artifact@v3
-      with:
-        name: migrations-image
-        path: ./migrations/bin/docker-archive
 
   build-web:
     runs-on: ubuntu-20.04
@@ -157,11 +152,8 @@ jobs:
         name: kots
         path: ./bin/kots
 
-  build-kotsadm:
+  build-minio:
     runs-on: ubuntu-20.04
-    needs: [generate-tag]
-    permissions:
-      id-token: write # required to be able to assume the GCP SA identity to pull private Chainguard packages.
     steps:
     - name: Checkout
       uses: actions/checkout@v4
@@ -171,6 +163,60 @@ jobs:
       id: dotenv
       with:
         path: .image.env
+
+    - uses: ./.github/actions/build-push-image-with-apko
+      with:
+        apko-config: deploy/minio/apko.yaml
+        image-name: index.docker.io/kotsadm/minio:${{ steps.dotenv.outputs.MINIO_TAG }}
+        registry-username: ${{ secrets.DOCKERHUB_USER }}
+        registry-password: ${{ secrets.DOCKERHUB_PASSWORD }}
+
+  build-rqlite:
+    runs-on: ubuntu-20.04
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    - name: Read image tags from env file
+      uses: falti/dotenv-action@v1
+      id: dotenv
+      with:
+        path: .image.env
+
+    - uses: ./.github/actions/build-push-image-with-apko
+      with:
+        apko-config: deploy/rqlite/apko.yaml
+        image-name: index.docker.io/kotsadm/rqlite:${{ steps.dotenv.outputs.RQLITE_TAG }}
+        registry-username: ${{ secrets.DOCKERHUB_USER }}
+        registry-password: ${{ secrets.DOCKERHUB_PASSWORD }}
+
+  build-dex:
+    runs-on: ubuntu-20.04
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    - name: Read image tags from env file
+      uses: falti/dotenv-action@v1
+      id: dotenv
+      with:
+        path: .image.env
+
+    - uses: ./.github/actions/build-push-image-with-apko
+      with:
+        apko-config: deploy/dex/apko.yaml
+        image-name: index.docker.io/kotsadm/dex:${{ steps.dotenv.outputs.DEX_TAG }}
+        registry-username: ${{ secrets.DOCKERHUB_USER }}
+        registry-password: ${{ secrets.DOCKERHUB_PASSWORD }}
+
+  build-kotsadm:
+    runs-on: ubuntu-20.04
+    needs: [generate-tag]
+    permissions:
+      id-token: write # required to be able to assume the GCP SA identity to pull private Chainguard packages.
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
 
     - uses: ./.github/actions/build-push-kotsadm-image
       with:
@@ -182,26 +228,18 @@ jobs:
         registry-username: ${{ secrets.DOCKERHUB_USER }}
         registry-password: ${{ secrets.DOCKERHUB_PASSWORD }}
 
-    - uses: ./.github/actions/build-push-image-with-apko
-      with:
-        apko-config: deploy/minio/apko.yaml
-        image-name: index.docker.io/kotsadm/minio:${{ steps.dotenv.outputs.MINIO_TAG }}
-        registry-username: ${{ secrets.DOCKERHUB_USER }}
-        registry-password: ${{ secrets.DOCKERHUB_PASSWORD }}
+  build-release:
+    runs-on: ubuntu-20.04
+    needs: [build-kotsadm-migrations, build-kotsadm, build-minio, build-rqlite, build-dex]
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
 
-    - uses: ./.github/actions/build-push-image-with-apko
+    - name: Read image tags from env file
+      uses: falti/dotenv-action@v1
+      id: dotenv
       with:
-        apko-config: deploy/rqlite/apko.yaml
-        image-name: index.docker.io/kotsadm/rqlite:${{ steps.dotenv.outputs.RQLITE_TAG }}
-        registry-username: ${{ secrets.DOCKERHUB_USER }}
-        registry-password: ${{ secrets.DOCKERHUB_PASSWORD }}
-
-    - uses: ./.github/actions/build-push-image-with-apko
-      with:
-        apko-config: deploy/dex/apko.yaml
-        image-name: index.docker.io/kotsadm/dex:${{ steps.dotenv.outputs.DEX_TAG }}
-        registry-username: ${{ secrets.DOCKERHUB_USER }}
-        registry-password: ${{ secrets.DOCKERHUB_PASSWORD }}
+        path: .image.env
 
     - name: Build tagged release
       env:
@@ -209,10 +247,10 @@ jobs:
         DOCKER_CONFIG: ./.docker
       run: mapfile -t envs < <(grep -v '#.*' < .image.env) && export "${envs[@]}" && make build-release
 
-    - name: Upload airgap image
+    - name: Upload kotsadm release
       uses: actions/upload-artifact@v3
       with:
-        name: kotsadm-image
+        name: kotsadm-release
         path: ./bin/docker-archive
 
   goreleaser:
@@ -275,7 +313,7 @@ jobs:
 
   generate-kurl-addon:
     runs-on: ubuntu-20.04
-    needs: [ generate-tag, build-kurl-proxy, build-schema-migrations, build-kots, build-kotsadm ]
+    needs: [ generate-tag, build-kurl-proxy, build-kots, build-release ]
     outputs:
       addon_package_url: ${{ steps.addon-generate.outputs.addon_package_url }}
     env:
@@ -384,17 +422,12 @@ jobs:
   build-airgap:
     runs-on: ubuntu-20.04
     if: github.ref_type != 'branch'
-    needs: [build-kotsadm, goreleaser, build-schema-migrations, generate-tag]
+    needs: [goreleaser, generate-tag, build-release]
     steps:
-    - name: Download migrations
+    - name: Download kotsadm release
       uses: actions/download-artifact@v3
       with:
-        name: migrations-image
-        path: ./docker-archive
-    - name: Download kotsadm image
-      uses: actions/download-artifact@v3
-      with:
-        name: kotsadm-image
+        name: kotsadm-release
         path: ./docker-archive
     - name: Make kotsadm airgap archive with minio image
       run: |
@@ -442,7 +475,7 @@ jobs:
 
   regression-test:
     if: github.ref_type == 'branch'
-    needs: [ regression-test-setup, generate-tag, build-kots, build-kotsadm, generate-kurl-addon ]
+    needs: [ regression-test-setup, generate-tag, build-kots, generate-kurl-addon, build-release ]
     uses: ./.github/workflows/regression.yaml
     with:
       version_tag_old: ${{ needs.regression-test-setup.outputs.last_release_tag }}

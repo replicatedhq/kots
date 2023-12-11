@@ -131,6 +131,9 @@ build-release:
 	mkdir -p bin/docker-archive/kotsadm
 	skopeo copy docker://kotsadm/kotsadm:${GIT_TAG} docker-archive:bin/docker-archive/kotsadm/${GIT_TAG}
 
+	mkdir -p bin/docker-archive/kotsadm-migrations
+	skopeo copy docker://kotsadm/kotsadm-migrations:${GIT_TAG} docker-archive:bin/docker-archive/kotsadm-migrations/${GIT_TAG}
+
 	mkdir -p bin/docker-archive/dex
 	skopeo copy docker://kotsadm/dex:${DEX_TAG} docker-archive:bin/docker-archive/dex/${DEX_TAG}
 
