@@ -27,13 +27,13 @@ runs:
       run: |
         set -euo pipefail
         if docker manifest inspect ${{ inputs.image-name }} > /dev/null 2>&1; then
-          echo "image-exists='true'" >> "$GITHUB_ENV"
+          echo "image-exists=true" >> "$GITHUB_OUTPUT"
         else
-          echo "image-exists='false'" >> "$GITHUB_ENV"
+          echo "image-exists=false" >> "$GITHUB_OUTPUT"
         fi
 
     - uses: chainguard-images/actions/apko-publish@main
-      if: steps.check-image-exists.outputs.image-exists == 'false'
+      if: ${{ steps.check-image-exists.outputs.image-exists == 'false' }}
       with:
         config: ${{ inputs.apko-config }}
         archs: x86_64
