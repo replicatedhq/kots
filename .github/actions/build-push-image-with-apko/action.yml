@@ -1,0 +1,43 @@
+name: 'Build and push images with apko'
+description: 'Composite action for building and pushing images with apko'
+inputs:
+  apko-config:
+    description: 'Path to apko config'
+    required: true
+
+  image-name:
+    description: 'Full destination image name'
+    required: true
+
+  registry-username:
+    description: 'Username to login to registry'
+    default: ''
+    required: false
+
+  registry-password:
+    description: 'Password to login to registry'
+    default: ''
+    required: false
+
+runs:
+  using: "composite"
+  steps:
+    - id: check-image-exists
+      shell: bash
+      run: |
+        set -euo pipefail
+        if docker manifest inspect ${{ inputs.image-name }} > /dev/null 2>&1; then
+          echo "image-exists=true" >> $GITHUB_ENV
+        else
+          echo "image-exists=false" >> $GITHUB_ENV
+        fi
+
+    - uses: chainguard-images/actions/apko-publish@main
+      if: steps.check-image-exists.outputs.image-exists == 'false'
+      with:
+        config: ${{ inputs.apko-config }}
+        archs: x86_64
+        tag: ${{ inputs.image-name }}
+        vcs-url: true
+        generic-user: ${{ inputs.registry-username }}
+        generic-pass: ${{ inputs.registry-password }}

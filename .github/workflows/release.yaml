@@ -6,7 +6,6 @@ on:
       - "v*.*.*"
     branches:
       - main
-      - build-rqlite-with-apko
 
 jobs:
   generate-tag:
@@ -161,7 +160,7 @@ jobs:
     runs-on: ubuntu-20.04
     needs: [generate-tag]
     permissions:
-      id-token: write # required to be able to assume the GCP SA identity to pull Chainguard packages.
+      id-token: write # required to be able to assume the GCP SA identity to pull private Chainguard packages.
     steps:
     - name: Checkout
       uses: actions/checkout@v4
@@ -182,20 +181,23 @@ jobs:
         registry-username: ${{ secrets.DOCKERHUB_USER }}
         registry-password: ${{ secrets.DOCKERHUB_PASSWORD }}
 
-    - uses: ./.github/actions/build-push-minio-image
+    - uses: ./.github/actions/build-push-image-with-apko
       with:
+        apko-config: deploy/minio/apko.yaml
         image-name: index.docker.io/kotsadm/minio:${{ steps.dotenv.outputs.MINIO_TAG }}
         registry-username: ${{ secrets.DOCKERHUB_USER }}
         registry-password: ${{ secrets.DOCKERHUB_PASSWORD }}
 
-    - uses: ./.github/actions/build-push-rqlite-image
+    - uses: ./.github/actions/build-push-image-with-apko
       with:
+        apko-config: deploy/rqlite/apko.yaml
         image-name: index.docker.io/kotsadm/rqlite:${{ steps.dotenv.outputs.RQLITE_TAG }}
         registry-username: ${{ secrets.DOCKERHUB_USER }}
         registry-password: ${{ secrets.DOCKERHUB_PASSWORD }}
 
-    - uses: ./.github/actions/build-push-dex-image
+    - uses: ./.github/actions/build-push-image-with-apko
       with:
+        apko-config: deploy/dex/apko.yaml
         image-name: index.docker.io/kotsadm/dex:${{ steps.dotenv.outputs.DEX_TAG }}
         registry-username: ${{ secrets.DOCKERHUB_USER }}
         registry-password: ${{ secrets.DOCKERHUB_PASSWORD }}

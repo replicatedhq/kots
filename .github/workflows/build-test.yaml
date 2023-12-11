@@ -268,7 +268,7 @@ jobs:
     runs-on: ubuntu-20.04
     needs: [ can-run-ci, generate-tag ]
     permissions:
-      id-token: write # required to be able to assume the GCP SA identity to pull Chainguard packages.
+      id-token: write # required to be able to assume the GCP SA identity to pull private Chainguard packages.
     steps:
       - uses: actions/setup-go@v4
         with:
@@ -427,8 +427,9 @@ jobs:
         with:
           path: .image.env
 
-      - uses: ./.github/actions/build-push-minio-image
+      - uses: ./.github/actions/build-push-image-with-apko
         with:
+          apko-config: deploy/minio/apko.yaml
           image-name: ttl.sh/automated-${{ github.run_id }}/minio:${{ steps.dotenv.outputs.MINIO_TAG }}
 
 
@@ -444,8 +445,9 @@ jobs:
         with:
           path: .image.env
 
-      - uses: ./.github/actions/build-push-rqlite-image
+      - uses: ./.github/actions/build-push-image-with-apko
         with:
+          apko-config: deploy/rqlite/apko.yaml
           image-name: ttl.sh/automated-${{ github.run_id }}/rqlite:${{ steps.dotenv.outputs.RQLITE_TAG }}
 
 
@@ -461,8 +463,9 @@ jobs:
         with:
           path: .image.env
 
-      - uses: ./.github/actions/build-push-dex-image
+      - uses: ./.github/actions/build-push-image-with-apko
         with:
+          apko-config: deploy/dex/apko.yaml
           image-name: ttl.sh/automated-${{ github.run_id }}/dex:${{ steps.dotenv.outputs.DEX_TAG }}
 
 
