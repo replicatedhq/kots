@@ -230,7 +230,7 @@ jobs:
 
   build-release:
     runs-on: ubuntu-20.04
-    needs: [build-kotsadm-migrations, build-kotsadm, build-minio, build-rqlite, build-dex]
+    needs: [generate-tag, build-kotsadm-migrations, build-kotsadm, build-minio, build-rqlite, build-dex]
     steps:
     - name: Checkout
       uses: actions/checkout@v4
