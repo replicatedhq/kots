@@ -27,8 +27,10 @@ runs:
       run: |
         set -euo pipefail
         if docker manifest inspect ${{ inputs.image-name }} > /dev/null 2>&1; then
+          echo "Image already exists. Will not overwrite."
           echo "image-exists=true" >> "$GITHUB_OUTPUT"
         else
+          echo "Image does not exist. Will build and push."
           echo "image-exists=false" >> "$GITHUB_OUTPUT"
         fi
 
