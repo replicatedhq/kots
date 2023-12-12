@@ -19,24 +19,17 @@ jobs:
         uses: ./.github/actions/version-tag
 
 
-  build-schema-migrations:
+  build-kotsadm-migrations:
     runs-on: ubuntu-20.04
+    needs: [generate-tag]
     steps:
-    - name: Checkout
-      uses: actions/checkout@v4
-
-    - uses: azure/docker-login@v1
-      env:
-        DOCKER_CONFIG: ./migrations/.docker
-      with:
-        username: ${{ secrets.DOCKERHUB_USER }}
-        password: ${{ secrets.DOCKERHUB_PASSWORD }}
-
-    - name: Build
-      env:
-        DOCKER_CONFIG: ./.docker
-      run: |
-        mapfile -t envs < <(grep -v '#.*' < .image.env) && export "${envs[@]}" && make -C migrations schema-alpha
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/build-push-kotsadm-migrations-image
+        with:
+          image-name: index.docker.io/kotsadm/kotsadm-migrations:alpha
+          git-tag: ${{ needs.generate-tag.outputs.tag }}
+          registry-username: ${{ secrets.DOCKERHUB_USER }}
+          registry-password: ${{ secrets.DOCKERHUB_PASSWORD }}
 
 
   build-rqlite:
@@ -261,9 +254,9 @@ jobs:
           sarif_file: kotsadm-scan-output.sarif
 
 
-  scan_migrations:
+  scan_kotsadm_migrations:
     runs-on: ubuntu-20.04
-    needs: [build-schema-migrations]
+    needs: [build-kotsadm-migrations]
     steps:
       - name: Checkout
         uses: actions/checkout@v4

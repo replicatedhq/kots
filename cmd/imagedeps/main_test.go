@@ -14,7 +14,7 @@ import (
 
 var (
 	minioTag  = "0.20231101.183725"
-	rqliteTag = "8.0.1"
+	rqliteTag = "7.21.4"
 	dexTag    = "2.37.0"
 
 	schemaheroTags = []string{

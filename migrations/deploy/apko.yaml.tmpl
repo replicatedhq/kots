@@ -1,29 +1,35 @@
 contents:
   repositories:
     - https://packages.wolfi.dev/os
+    - ./packages/
   keyring:
     - https://packages.wolfi.dev/os/wolfi-signing.rsa.pub
+    - ./melange.rsa.pub
   packages:
-    - rqlite~7.21.4
-    - rqlite-oci-entrypoint
+    - kotsadm-migrations-head  # This is expected to be built locally by `melange`.
     - bash
     - busybox
+    - curl
+    - git
     - wolfi-baselayout
 
 accounts:
   groups:
-    - groupname: rqlite
+    - groupname: schemahero
       gid: 1001
   users:
-    - username: rqlite
+    - username: schemahero
       uid: 1001
       gid: 1001
-  run-as: rqlite
+  run-as: schemahero
+
+environment:
+  VERSION: ${GIT_TAG}
 
 entrypoint:
-  command: docker-entrypoint.sh
+  command: /schemahero
 
-cmd: rqlite
+cmd: apply
 
 archs:
   - x86_64
