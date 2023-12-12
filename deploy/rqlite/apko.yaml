@@ -24,7 +24,3 @@ entrypoint:
   command: docker-entrypoint.sh
 
 cmd: rqlite
-
-archs:
-  - x86_64
-  - aarch64

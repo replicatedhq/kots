@@ -24,7 +24,3 @@ entrypoint:
   command: docker-entrypoint
 
 cmd: dex serve /etc/dex/config.docker.yaml
-
-archs:
-  - x86_64
-  - aarch64
