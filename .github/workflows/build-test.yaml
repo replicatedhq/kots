@@ -383,7 +383,7 @@ jobs:
 
   build-migrations:
     runs-on: ubuntu-20.04
-    needs: [ can-run-ci ]
+    needs: [ can-run-ci, generate-tag ]
     steps:
       - name: setup env
         run: |
@@ -399,20 +399,10 @@ jobs:
           ref: ${{github.event.pull_request.head.ref}}
           repository: ${{github.event.pull_request.head.repo.full_name}}
 
-      - name: load environment variables from .image.env
-        uses: falti/dotenv-action@v1
-        id: dotenv
+      - uses: ./.github/actions/build-push-kotsadm-migrations-image
         with:
-          path: .image.env
-
-      - name: build and push migrations for e2e
-        uses: docker/build-push-action@v5
-        with:
-          tags: ttl.sh/automated-${{ github.run_id }}/kotsadm-migrations:24h
-          context: ./migrations
-          file: ./migrations/deploy/Dockerfile
-          push: true
-          build-args: SCHEMAHERO_TAG=${{ steps.dotenv.outputs.schemahero_tag }}
+          image-name: ttl.sh/automated-${{ github.run_id }}/kotsadm-migrations:24h
+          git-tag: ${{ needs.generate-tag.outputs.tag }}
 
 
   push-minio:
