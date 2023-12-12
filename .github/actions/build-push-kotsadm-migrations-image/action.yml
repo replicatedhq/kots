@@ -32,7 +32,7 @@ runs:
       with:
         image: schemahero/schemahero:${{ steps.dotenv.outputs.SCHEMAHERO_TAG }}
         path: /schemahero
-        destination: .
+        destination: migrations
 
     - name: template melange and apko configs
       shell: bash

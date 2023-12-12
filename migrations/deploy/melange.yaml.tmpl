@@ -26,5 +26,7 @@ pipeline:
       export DESTDIR="${{targets.destdir}}"
       mkdir -p "${DESTDIR}"
 
+      mv migrations/tables "${DESTDIR}/tables"
+
       # expected to have already beeen extracted from the schemahero image
-      mv schemahero "${DESTDIR}/schemahero"
+      mv migrations/schemahero "${DESTDIR}/schemahero"
