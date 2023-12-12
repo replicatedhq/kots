@@ -90,15 +90,10 @@ jobs:
         with:
           name: kots
           path: ./automation/jumpbox/bin
-      - name: Download kotsadm image
+      - name: Download kotsadm release
         uses: actions/download-artifact@v3
         with:
-          name: kotsadm-image
-          path: ./automation/jumpbox/docker-archive
-      - name: Download migrations
-        uses: actions/download-artifact@v3
-        with:
-          name: migrations-image
+          name: kotsadm-release
           path: ./automation/jumpbox/docker-archive
       - name: Make kotsadm airgap archive with minio image
         working-directory: automation/jumpbox

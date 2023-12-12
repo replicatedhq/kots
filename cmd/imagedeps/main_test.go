@@ -12,16 +12,24 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-var releaseTags = []string{
-	"RELEASE.2022-06-11T19-55-32Z.fips",
-	"RELEASE.2021-09-09T21-37-06Z.xxx",
-	"RELEASE.2021-09-09T21-37-05Z",
-	"RELEASE.2021-09-09T21-37-04Z",
-}
-var semVerTags = []string{
-	"0.12.7", "0.12.6", "0.12.5",
-	"0.12.4", "0.12.3", "0.12.2",
-}
+var (
+	minioTag  = "0.20231101.183725"
+	rqliteTag = "7.21.4"
+	dexTag    = "2.37.0"
+
+	schemaheroTags = []string{
+		"0.13.2",
+		"0.13.1",
+		"0.12.7",
+		"0.12.2",
+	}
+
+	lvpTags = []string{
+		"v0.3.3",
+		"v0.3.2",
+		"v0.3.1",
+	}
+)
 
 func makeReleases(tags []string) []*github.RepositoryRelease {
 	var releases []*github.RepositoryRelease
@@ -46,29 +54,21 @@ func TestFunctional(t *testing.T) {
 		expectError bool
 	}{
 		{
-			name: "basic",
+			name: "minio",
 			fn: getTagFinder(
-				withGithubReleaseTagFinder(
-					func(_ string, _ string) ([]*github.RepositoryRelease, error) {
-						return makeReleases(releaseTags), nil
+				withWolfiGetTag(
+					func(_ string) (string, error) {
+						return minioTag, nil
 					},
 				),
 			),
 		},
 		{
-			name: "with-overrides",
+			name: "schemahero",
 			fn: getTagFinder(
 				withRepoGetTags(
 					func(_ string) ([]string, error) {
-						return []string{
-							"0.13.2", "0.13.1",
-							"0.12.7", "0.12.2",
-						}, nil
-					},
-				),
-				withGithubReleaseTagFinder(
-					func(_ string, _ string) ([]*github.RepositoryRelease, error) {
-						return makeReleases(releaseTags), nil
+						return schemaheroTags, nil
 					},
 				),
 			),
@@ -80,32 +80,19 @@ func TestFunctional(t *testing.T) {
 		{
 			name: "rqlite",
 			fn: getTagFinder(
-				withRepoGetTags(
-					func(_ string) ([]string, error) {
-						return []string{
-							"7.7.0", "7.6.1", "7.6.0",
-							"6.10.2", "6.10.1", "6.8.2",
-						}, nil
+				withWolfiGetTag(
+					func(_ string) (string, error) {
+						return rqliteTag, nil
 					},
 				),
 			),
 		},
 		{
-			name: "filter-github",
+			name: "dex",
 			fn: getTagFinder(
-				withGithubReleaseTagFinder(
-					func(_ string, _ string) ([]*github.RepositoryRelease, error) {
-						return makeReleases(releaseTags), nil
-					},
-				),
-			),
-		},
-		{
-			name: "schemahero",
-			fn: getTagFinder(
-				withRepoGetTags(
-					func(_ string) ([]string, error) {
-						return semVerTags, nil
+				withWolfiGetTag(
+					func(_ string) (string, error) {
+						return dexTag, nil
 					},
 				),
 			),
@@ -115,9 +102,7 @@ func TestFunctional(t *testing.T) {
 			fn: getTagFinder(
 				withRepoGetTags(
 					func(_ string) ([]string, error) {
-						return []string{
-							"v0.3.3",
-						}, nil
+						return lvpTags, nil
 					},
 				),
 			),

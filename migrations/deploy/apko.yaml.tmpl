@@ -6,7 +6,7 @@ contents:
     - https://packages.wolfi.dev/os/wolfi-signing.rsa.pub
     - ./melange.rsa.pub
   packages:
-    - kurl-proxy-head  # This is expected to be built locally by `melange`.
+    - kotsadm-migrations-head  # This is expected to be built locally by `melange`.
     - bash
     - busybox
     - curl
@@ -15,15 +15,18 @@ contents:
 
 accounts:
   groups:
-    - groupname: kotsadm
+    - groupname: schemahero
       gid: 1001
   users:
-    - username: kotsadm
+    - username: schemahero
       uid: 1001
       gid: 1001
-  run-as: kotsadm
+  run-as: schemahero
 
 environment:
   VERSION: ${GIT_TAG}
 
-cmd: /kurl_proxy
+entrypoint:
+  command: /schemahero
+
+cmd: apply

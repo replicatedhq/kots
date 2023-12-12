@@ -19,31 +19,60 @@ jobs:
         uses: ./.github/actions/version-tag
 
 
-  build-schema-migrations:
+  build-kotsadm-migrations:
+    runs-on: ubuntu-20.04
+    needs: [generate-tag]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/build-push-kotsadm-migrations-image
+        with:
+          image-name: index.docker.io/kotsadm/kotsadm-migrations:alpha
+          git-tag: ${{ needs.generate-tag.outputs.tag }}
+          registry-username: ${{ secrets.DOCKERHUB_USER }}
+          registry-password: ${{ secrets.DOCKERHUB_PASSWORD }}
+
+
+  build-rqlite:
     runs-on: ubuntu-20.04
     steps:
-    - name: Checkout
-      uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/build-push-image-with-apko
+        with:
+          apko-config: deploy/rqlite/apko.yaml
+          image-name: index.docker.io/kotsadm/rqlite:alpha
+          registry-username: ${{ secrets.DOCKERHUB_USER }}
+          registry-password: ${{ secrets.DOCKERHUB_PASSWORD }}
 
-    - uses: azure/docker-login@v1
-      env:
-        DOCKER_CONFIG: ./migrations/.docker
-      with:
-        username: ${{ secrets.DOCKERHUB_USER }}
-        password: ${{ secrets.DOCKERHUB_PASSWORD }}
 
-    - name: Build
-      env:
-        DOCKER_CONFIG: ./.docker
-      run: |
-        mapfile -t envs < <(grep -v '#.*' < .image.env) && export "${envs[@]}" && make -C migrations schema-alpha
+  build-minio:
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/build-push-image-with-apko
+        with:
+          apko-config: deploy/minio/apko.yaml
+          image-name: index.docker.io/kotsadm/minio:alpha
+          registry-username: ${{ secrets.DOCKERHUB_USER }}
+          registry-password: ${{ secrets.DOCKERHUB_PASSWORD }}
+
+
+  build-dex:
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/build-push-image-with-apko
+        with:
+          apko-config: deploy/dex/apko.yaml
+          image-name: index.docker.io/kotsadm/dex:alpha
+          registry-username: ${{ secrets.DOCKERHUB_USER }}
+          registry-password: ${{ secrets.DOCKERHUB_PASSWORD }}
 
 
   build-kotsadm:
     runs-on: ubuntu-20.04
     needs: [generate-tag]
     permissions:
-      id-token: write # required to be able to assume the GCP SA identity to pull Chainguard packages.
+      id-token: write # required to be able to assume the GCP SA identity to pull private Chainguard packages.
     steps:
       - uses: actions/checkout@v4
       - uses: ./.github/actions/build-push-kotsadm-image
@@ -84,7 +113,7 @@ jobs:
         id: scan
         uses: aquasecurity/trivy-action@master
         with:
-          image-ref: "rqlite/rqlite:${{ steps.dotenv.outputs.RQLITE_TAG }}"
+          image-ref: "docker.io/kotsadm/rqlite:alpha"
           format: 'template'
           template: '@/contrib/sarif.tpl'
           output: 'rqlite-scan-output.sarif'
@@ -111,7 +140,7 @@ jobs:
         id: scan
         uses: aquasecurity/trivy-action@master
         with:
-          image-ref: "minio/minio:${{ steps.dotenv.outputs.minio_tag }}"
+          image-ref: "docker.io/kotsadm/minio:alpha"
           format: 'template'
           template: '@/contrib/sarif.tpl'
           output: 'minio-scan-output.sarif'
@@ -139,7 +168,7 @@ jobs:
         id: scan
         uses: aquasecurity/trivy-action@master
         with:
-          image-ref: "ghcr.io/dexidp/dex:${{ steps.dotenv.outputs.dex_tag }}"
+          image-ref: "docker.io/kotsadm/dex:alpha"
           format: 'template'
           template: '@/contrib/sarif.tpl'
           output: 'dex-scan-output.sarif'
@@ -225,9 +254,9 @@ jobs:
           sarif_file: kotsadm-scan-output.sarif
 
 
-  scan_migrations:
+  scan_kotsadm_migrations:
     runs-on: ubuntu-20.04
-    needs: [build-schema-migrations]
+    needs: [build-kotsadm-migrations]
     steps:
       - name: Checkout
         uses: actions/checkout@v4

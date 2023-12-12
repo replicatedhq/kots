@@ -1,29 +1,26 @@
 contents:
   repositories:
     - https://packages.wolfi.dev/os
-    - ./packages/
   keyring:
     - https://packages.wolfi.dev/os/wolfi-signing.rsa.pub
-    - ./melange.rsa.pub
   packages:
-    - kurl-proxy-head  # This is expected to be built locally by `melange`.
+    - rqlite~7.21.4
+    - rqlite-oci-entrypoint
     - bash
     - busybox
-    - curl
-    - git
     - wolfi-baselayout
 
 accounts:
   groups:
-    - groupname: kotsadm
+    - groupname: rqlite
       gid: 1001
   users:
-    - username: kotsadm
+    - username: rqlite
       uid: 1001
       gid: 1001
-  run-as: kotsadm
+  run-as: rqlite
 
-environment:
-  VERSION: ${GIT_TAG}
+entrypoint:
+  command: docker-entrypoint.sh
 
-cmd: /kurl_proxy
+cmd: rqlite

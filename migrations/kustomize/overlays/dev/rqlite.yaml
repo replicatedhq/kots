@@ -59,8 +59,8 @@ spec:
     spec:
       containers:
       - name: rqlite
-        image: rqlite/rqlite:7.9.2
-        imagePullPolicy: IfNotPresent
+        image: kotsadm/rqlite:alpha
+        imagePullPolicy: Always
         args:
         - -disco-mode=dns
         - -disco-config={"name":"kotsadm-rqlite-headless"}

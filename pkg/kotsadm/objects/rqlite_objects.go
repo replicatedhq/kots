@@ -128,6 +128,10 @@ func RqliteStatefulset(deployOptions types.DeployOptions, size resource.Quantity
 									Name:          "rqlite",
 									ContainerPort: 4001,
 								},
+								{
+									Name:          "raft",
+									ContainerPort: 4002,
+								},
 							},
 							VolumeMounts: volumeMounts,
 							Env:          getRqliteEnvs(),

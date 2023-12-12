@@ -1,29 +1,26 @@
 contents:
   repositories:
     - https://packages.wolfi.dev/os
-    - ./packages/
   keyring:
     - https://packages.wolfi.dev/os/wolfi-signing.rsa.pub
-    - ./melange.rsa.pub
   packages:
-    - kurl-proxy-head  # This is expected to be built locally by `melange`.
+    - dex~2.37.0
+    - gomplate
     - bash
     - busybox
-    - curl
-    - git
     - wolfi-baselayout
 
 accounts:
   groups:
-    - groupname: kotsadm
+    - groupname: dex
       gid: 1001
   users:
-    - username: kotsadm
+    - username: dex
       uid: 1001
       gid: 1001
-  run-as: kotsadm
+  run-as: dex
 
-environment:
-  VERSION: ${GIT_TAG}
+entrypoint:
+  command: docker-entrypoint
 
-cmd: /kurl_proxy
+cmd: dex serve /etc/dex/config.docker.yaml

@@ -1,29 +1,24 @@
 contents:
   repositories:
     - https://packages.wolfi.dev/os
-    - ./packages/
   keyring:
     - https://packages.wolfi.dev/os/wolfi-signing.rsa.pub
-    - ./melange.rsa.pub
   packages:
-    - kurl-proxy-head  # This is expected to be built locally by `melange`.
+    - minio~0.20231101.183725
+    - mc
     - bash
     - busybox
-    - curl
-    - git
     - wolfi-baselayout
 
 accounts:
   groups:
-    - groupname: kotsadm
+    - groupname: minio
       gid: 1001
   users:
-    - username: kotsadm
+    - username: minio
       uid: 1001
       gid: 1001
-  run-as: kotsadm
+  run-as: minio
 
-environment:
-  VERSION: ${GIT_TAG}
-
-cmd: /kurl_proxy
+entrypoint:
+  command: minio

@@ -50,7 +50,7 @@ spec:
                   - kotsadm-rqlite
             topologyKey: "kubernetes.io/hostname"
       containers:
-      - image: rqlite/rqlite:__RQLITE_TAG__
+      - image: __RQLITE_IMAGE__
         name: rqlite
         args:
         - -disco-mode=dns
@@ -61,6 +61,8 @@ spec:
         ports:
         - name: rqlite
           containerPort: 4001
+        - name: raft
+          containerPort: 4002
         volumeMounts:
         - name: kotsadm-rqlite
           mountPath: /rqlite/file

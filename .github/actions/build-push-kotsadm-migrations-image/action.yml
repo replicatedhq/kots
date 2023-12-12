@@ -1,0 +1,62 @@
+name: 'Build and push kotsadm-migrations image'
+description: 'Composite action for building and pushing kotsadm-migrations image'
+inputs:
+  image-name:
+    description: 'Full destination kotsadm-migrations image name'
+    required: true
+
+  git-tag:
+    description: 'Git tag'
+    required: true
+
+  registry-username:
+    description: 'Username to login to registry'
+    default: ''
+    required: false
+
+  registry-password:
+    description: 'Password to login to registry'
+    default: ''
+    required: false
+
+runs:
+  using: "composite"
+  steps:
+    - name: load environment variables from .image.env
+      uses: falti/dotenv-action@v1
+      id: dotenv
+      with:
+        path: .image.env
+
+    - uses: shrink/actions-docker-extract@v3
+      with:
+        image: schemahero/schemahero:${{ steps.dotenv.outputs.SCHEMAHERO_TAG }}
+        path: /schemahero
+        destination: migrations
+
+    - name: template melange and apko configs
+      shell: bash
+      run: |
+        export GIT_TAG=${{ inputs.git-tag }}
+        envsubst '${GIT_TAG}' < migrations/deploy/melange.yaml.tmpl > migrations/deploy/melange.yaml
+        envsubst '${GIT_TAG}' < migrations/deploy/apko.yaml.tmpl > migrations/deploy/apko.yaml
+
+    - id: cache-dir
+      shell: bash
+      run: echo "cache_dir=$(go env GOMODCACHE)" >> "$GITHUB_OUTPUT"
+
+    - uses: chainguard-dev/actions/melange-build@main
+      with:
+        config: migrations/deploy/melange.yaml
+        archs: x86_64
+        sign-with-temporary-key: true
+        cache-dir: ${{ steps.cache-dir.outputs.cache_dir }}
+
+    - uses: chainguard-images/actions/apko-publish@main
+      with:
+        config: migrations/deploy/apko.yaml
+        archs: x86_64
+        tag: ${{ inputs.image-name }}
+        vcs-url: true
+        generic-user: ${{ inputs.registry-username }}
+        generic-pass: ${{ inputs.registry-password }}

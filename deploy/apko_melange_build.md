@@ -30,10 +30,10 @@ melange build melange.yaml --arch=x86_64
 > 💡 Only building for your local platform makes builds faster, since it doesn't have to emulate with qemu.
 > If you're on an arm64 machine (e.g., Apple Silicon), use `--arch=aarch64` here and below.
 
-Then, build the image from the newly built `kots` package, and the other packages needed by the image, using `apko`:
+Then, build the image from the newly built `kotsadm` package, and the other packages needed by the image, using `apko`:
 
 ```sh
-apko publish apko.yaml ttl.sh/kots --arch=x86_64
+apko publish apko.yaml ttl.sh/kotsadm --arch=x86_64
 ```
 
 This will print the image to stdout, so you can run it:

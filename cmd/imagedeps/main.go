@@ -5,7 +5,6 @@ import (
 	"bytes"
 	"fmt"
 	"go/format"
-	"io/ioutil"
 	"log"
 	"os"
 	"regexp"
@@ -56,6 +55,9 @@ var (
 	replacers = []*replacer{
 		getMakefileReplacer("Makefile"),
 		getMakefileReplacer("migrations/Makefile"),
+		getApkoFileReplacer("deploy/minio/apko.yaml", "minio"),
+		getApkoFileReplacer("deploy/rqlite/apko.yaml", "rqlite"),
+		getApkoFileReplacer("deploy/dex/apko.yaml", "dex"),
 	}
 )
 
@@ -146,7 +148,7 @@ func generateOutput(filename, fileTemplate string, refs []*ImageRef, fn template
 		return err
 	}
 
-	if err := ioutil.WriteFile(filename, buff, 0644); err != nil {
+	if err := os.WriteFile(filename, buff, 0644); err != nil {
 		return err
 	}
 
@@ -154,7 +156,7 @@ func generateOutput(filename, fileTemplate string, refs []*ImageRef, fn template
 }
 
 func (r *replacer) replace(refs []*ImageRef) error {
-	b, err := ioutil.ReadFile(r.path)
+	b, err := os.ReadFile(r.path)
 	if err != nil {
 		return errors.Wrap(err, "failed to read file")
 	}
@@ -168,7 +170,7 @@ func (r *replacer) replace(refs []*ImageRef) error {
 		content = reg.ReplaceAllString(content, r.valueFn(ref))
 	}
 
-	if err := ioutil.WriteFile(r.path, []byte(content), 0644); err != nil {
+	if err := os.WriteFile(r.path, []byte(content), 0644); err != nil {
 		return errors.Wrap(err, "failed to write file")
 	}
 
@@ -198,7 +200,7 @@ func getMakefileVarName(s string) string {
 	return strings.ToUpper(strings.ReplaceAll(s, "-", "_")) + "_TAG"
 }
 
-// converts a name from the input string into an a makefile variable name
+// converts a name from the input string into an a dockerfile variable name
 // for example: foo_bar_baz -> FOO_BAR_BAZ
 func getDockerfileVarName(s string) string {
 	return strings.ToUpper(strings.ReplaceAll(s, "-", "_")) + "_TAG"
@@ -224,6 +226,18 @@ func getDockerfileReplacer(path string) *replacer {
 		},
 		valueFn: func(ir *ImageRef) string {
 			return ir.GetDockerfileLine()
+		},
+	}
+}
+
+func getApkoFileReplacer(path string, pkg string) *replacer {
+	return &replacer{
+		path: path,
+		regexFn: func(ir *ImageRef) string {
+			return fmt.Sprintf(`- %s~\d+\.\d+\.\d+`, ir.name)
+		},
+		valueFn: func(ir *ImageRef) string {
+			return ir.GetApkoFileLine(ir.name)
 		},
 	}
 }
