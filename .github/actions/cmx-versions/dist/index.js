@@ -7667,6 +7667,8 @@ async function getClusterVersions() {
         }
 
         if (distroName === 'openshift') {
+            // use new experimental openshift distribution
+            distroName = 'openshift-exp';
             // filtering out all versions except 4.13.0-okd for now per sc-90893
             distribution.versions = distribution.versions.filter((version) => version === '4.13.0-okd');
         }
