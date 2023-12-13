@@ -438,7 +438,9 @@ jobs:
       - uses: ./.github/actions/build-push-image-with-apko
         with:
           apko-config: deploy/rqlite/apko.yaml
-          image-name: ttl.sh/automated-${{ github.run_id }}/rqlite:${{ steps.dotenv.outputs.RQLITE_TAG }}
+          image-name: index.docker.io/kotsadm/rqlite:${{ steps.dotenv.outputs.RQLITE_TAG }}
+          registry-username: ${{ secrets.DOCKERHUB_USER }}
+          registry-password: ${{ secrets.DOCKERHUB_PASSWORD }}
 
 
   push-dex:
