@@ -409,7 +409,13 @@ jobs:
     runs-on: ubuntu-20.04
     needs: [ can-run-ci ]
     steps:
+      # This workflow trigger may lead to malicious PR authors being able to obtain repository write permissions or stealing repository secrets.
+      # Please read https://securitylab.github.com/research/github-actions-preventing-pwn-requests/
+      # this action creates a branch based on remote branch and runs the tests
       - uses: actions/checkout@v4
+        with:
+          ref: ${{github.event.pull_request.head.ref}}
+          repository: ${{github.event.pull_request.head.repo.full_name}}
 
       - name: load environment variables from .image.env
         uses: falti/dotenv-action@v1
@@ -427,7 +433,13 @@ jobs:
     runs-on: ubuntu-20.04
     needs: [ can-run-ci ]
     steps:
+      # This workflow trigger may lead to malicious PR authors being able to obtain repository write permissions or stealing repository secrets.
+      # Please read https://securitylab.github.com/research/github-actions-preventing-pwn-requests/
+      # this action creates a branch based on remote branch and runs the tests
       - uses: actions/checkout@v4
+        with:
+          ref: ${{github.event.pull_request.head.ref}}
+          repository: ${{github.event.pull_request.head.repo.full_name}}
 
       - name: load environment variables from .image.env
         uses: falti/dotenv-action@v1
@@ -445,7 +457,13 @@ jobs:
     runs-on: ubuntu-20.04
     needs: [ can-run-ci ]
     steps:
+      # This workflow trigger may lead to malicious PR authors being able to obtain repository write permissions or stealing repository secrets.
+      # Please read https://securitylab.github.com/research/github-actions-preventing-pwn-requests/
+      # this action creates a branch based on remote branch and runs the tests
       - uses: actions/checkout@v4
+        with:
+          ref: ${{github.event.pull_request.head.ref}}
+          repository: ${{github.event.pull_request.head.repo.full_name}}
 
       - name: load environment variables from .image.env
         uses: falti/dotenv-action@v1
