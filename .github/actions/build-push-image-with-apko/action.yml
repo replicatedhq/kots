@@ -28,6 +28,7 @@ runs:
   using: "composite"
   steps:
     - id: check-image-exists
+      if: ${{ inputs.overwrite == 'false' }}
       shell: bash
       run: |
         set -euo pipefail

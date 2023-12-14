@@ -55,9 +55,6 @@ var (
 	replacers = []*replacer{
 		getMakefileReplacer("Makefile"),
 		getMakefileReplacer("migrations/Makefile"),
-		getApkoFileReplacer("deploy/minio/apko.yaml"),
-		getApkoFileReplacer("deploy/rqlite/apko.yaml"),
-		getApkoFileReplacer("deploy/dex/apko.yaml"),
 	}
 )
 
@@ -226,18 +223,6 @@ func getDockerfileReplacer(path string) *replacer {
 		},
 		valueFn: func(ir *ImageRef) string {
 			return ir.GetDockerfileLine()
-		},
-	}
-}
-
-func getApkoFileReplacer(path string) *replacer {
-	return &replacer{
-		path: path,
-		regexFn: func(ir *ImageRef) string {
-			return fmt.Sprintf(`- %s~\d+\.\d+\.\d+(?:-\d+)?`, ir.name)
-		},
-		valueFn: func(ir *ImageRef) string {
-			return ir.GetApkoFileLine(ir.name)
 		},
 	}
 }

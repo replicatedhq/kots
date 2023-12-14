@@ -42,11 +42,6 @@ func (ir ImageRef) GetDockerfileLine() string {
 	return fmt.Sprintf("ARG %s=%s", getDockerfileVarName(ir.name), ir.tag)
 }
 
-// GetApkoFileLine generates a line of text intended for use in an Apko file.
-func (ir ImageRef) GetApkoFileLine(pkg string) string {
-	return fmt.Sprintf("- %s~%s", pkg, ir.tag)
-}
-
 type getTagsFn func(string) ([]string, error)
 type getReleaseFn func(string, string) ([]*github.RepositoryRelease, error)
 type tagFinderFn func(inputLine string) (*ImageRef, error)

@@ -4,23 +4,21 @@ contents:
   keyring:
     - https://packages.wolfi.dev/os/wolfi-signing.rsa.pub
   packages:
-    - dex~2.37.0
-    - gomplate
+    - minio=__MINIO_VERSION__
+    - mc
     - bash
     - busybox
     - wolfi-baselayout
 
 accounts:
   groups:
-    - groupname: dex
+    - groupname: minio
       gid: 1001
   users:
-    - username: dex
+    - username: minio
       uid: 1001
       gid: 1001
-  run-as: dex
+  run-as: minio
 
 entrypoint:
-  command: docker-entrypoint
-
-cmd: dex serve /etc/dex/config.docker.yaml
+  command: minio

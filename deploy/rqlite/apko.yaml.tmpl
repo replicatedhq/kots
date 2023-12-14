@@ -4,23 +4,23 @@ contents:
   keyring:
     - https://packages.wolfi.dev/os/wolfi-signing.rsa.pub
   packages:
-    - dex~2.36.0
-    - gomplate
+    - rqlite=__RQLITE_VERSION__
+    - rqlite-oci-entrypoint=__RQLITE_VERSION__
     - bash
     - busybox
     - wolfi-baselayout
 
 accounts:
   groups:
-    - groupname: dex
+    - groupname: rqlite
       gid: 1001
   users:
-    - username: dex
+    - username: rqlite
       uid: 1001
       gid: 1001
-  run-as: dex
+  run-as: rqlite
 
 entrypoint:
-  command: docker-entrypoint
+  command: docker-entrypoint.sh
 
-cmd: dex serve /etc/dex/config.docker.yaml
+cmd: rqlite
