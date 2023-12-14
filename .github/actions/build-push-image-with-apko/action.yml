@@ -19,6 +19,11 @@ inputs:
     default: ''
     required: false
 
+  overwrite:
+    description: 'Overwrite the existing image tag.'
+    default: 'false'
+    required: false
+
 runs:
   using: "composite"
   steps:
@@ -35,7 +40,7 @@ runs:
         fi
 
     - uses: chainguard-images/actions/apko-publish@main
-      if: ${{ steps.check-image-exists.outputs.image-exists == 'false' }}
+      if: ${{ inputs.overwrite == 'true' || steps.check-image-exists.outputs.image-exists == 'false' }}
       with:
         config: ${{ inputs.apko-config }}
         archs: x86_64

@@ -6,9 +6,9 @@ on:
   workflow_dispatch:
     inputs:
       overwrite:
-        description: "Overwrite the existing image tags."
+        description: 'Overwrite the existing image tags.'
         required: false
-        default: "false"
+        default: 'false'
 jobs:
   build-3rd-party-images:
     runs-on: ubuntu-20.04
@@ -44,6 +44,7 @@ jobs:
         image-name: index.docker.io/kotsadm/minio:${{ steps.get-tags.outputs.minio-tag }}
         registry-username: ${{ secrets.DOCKERHUB_USER }}
         registry-password: ${{ secrets.DOCKERHUB_PASSWORD }}
+        overwrite: ${{ github.event.inputs.overwrite }}
 
     - name: Build and push rqlite image
       uses: ./.github/actions/build-push-image-with-apko
@@ -52,6 +53,7 @@ jobs:
         image-name: index.docker.io/kotsadm/rqlite:${{ steps.get-tags.outputs.rqlite-tag }}
         registry-username: ${{ secrets.DOCKERHUB_USER }}
         registry-password: ${{ secrets.DOCKERHUB_PASSWORD }}
+        overwrite: ${{ github.event.inputs.overwrite }}
 
     - name: Build and push dex image
       uses: ./.github/actions/build-push-image-with-apko
@@ -60,6 +62,7 @@ jobs:
         image-name: index.docker.io/kotsadm/dex:${{ steps.get-tags.outputs.dex-tag }}
         registry-username: ${{ secrets.DOCKERHUB_USER }}
         registry-password: ${{ secrets.DOCKERHUB_PASSWORD }}
+        overwrite: ${{ github.event.inputs.overwrite }}
 
   update-image-deps:
     needs: [build-3rd-party-images]
