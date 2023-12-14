@@ -26,42 +26,6 @@ jobs:
           git tag "$GIT_TAG"
           git push origin "$GIT_TAG"
 
-  image-deps-updater:
-    runs-on: ubuntu-20.04
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-      - name: Setup Go
-        uses: actions/setup-go@v4
-        with:
-          go-version: '^1.20.0'
-      - name: Run Update Script
-        env:
-          GITHUB_AUTH_TOKEN: ${{ secrets.NIGHTLY_GH_PAT }}
-        run: |
-          go run ./cmd/imagedeps
-      - name: Create Pull Request # creates a PR if there are differences
-        uses: peter-evans/create-pull-request@v5
-        id: cpr
-        with:
-          token: ${{ secrets.NIGHTLY_GH_PAT }}
-          commit-message: update kots image dependency tags
-          title: 'Automated Kots Image Dependency Tag Update'
-          branch: automation/image-dependencies
-          delete-branch: true
-          labels: |
-            automated-pr
-            images
-            type::security
-          draft: false
-          base: "main"
-          body: "Automated changes by the [release](https://github.com/replicatedhq/kots/blob/main/.github/workflows/release.yaml) GitHub action"
-
-      - name: Check outputs
-        run: |
-          echo "Pull Request Number - ${{ steps.cpr.outputs.pull-request-number }}"
-          echo "Pull Request URL - ${{ steps.cpr.outputs.pull-request-url }}"
-
   build-kotsadm-migrations:
     runs-on: ubuntu-20.04
     needs: [generate-tag]
