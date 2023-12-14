@@ -43,8 +43,8 @@ spec:
               name: minio
         - name: MINIO_BROWSER
           value: "on"
-        image: kotsadm/minio:alpha
-        imagePullPolicy: Always
+        image: kotsadm/minio:0.20231101.183725
+        imagePullPolicy: IfNotPresent
         livenessProbe:
           failureThreshold: 3
           httpGet:
