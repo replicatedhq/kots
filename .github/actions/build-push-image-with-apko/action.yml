@@ -20,7 +20,7 @@ inputs:
     required: false
 
   overwrite:
-    description: 'Overwrite the existing image tag.'
+    description: 'Overwrite the existing image tag'
     default: 'false'
     required: false
 
