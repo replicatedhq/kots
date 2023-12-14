@@ -22,9 +22,9 @@ jobs:
         curl -LO --fail --show-error https://packages.wolfi.dev/os/x86_64/APKINDEX.tar.gz
         tar -xzvf APKINDEX.tar.gz
 
-        minio_version=$(cat APKINDEX | grep -A1 "^P:minio$" | tail -n 1 | sed -n -e 's/V://p' | tr -d '\n')
-        rqlite_version=$(cat APKINDEX | grep -A1 "^P:rqlite$" | tail -n 1 | sed -n -e 's/V://p' | tr -d '\n')
-        dex_version=$(cat APKINDEX | grep -A1 "^P:dex$" | tail -n 1 | sed -n -e 's/V://p' | tr -d '\n')
+        minio_version=$(< APKINDEX grep -A1 "^P:minio$" | tail -n 1 | sed -n -e 's/V://p' | tr -d '\n')
+        rqlite_version=$(< APKINDEX grep -A1 "^P:rqlite$" | tail -n 1 | sed -n -e 's/V://p' | tr -d '\n')
+        dex_version=$(< APKINDEX grep -A1 "^P:dex$" | tail -n 1 | sed -n -e 's/V://p' | tr -d '\n')
 
         sed "s/__MINIO_VERSION__/$minio_version/g" deploy/minio/apko.yaml.tmpl > deploy/minio/apko.yaml
         sed "s/__RQLITE_VERSION__/$rqlite_version/g" deploy/rqlite/apko.yaml.tmpl > deploy/rqlite/apko.yaml
