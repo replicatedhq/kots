@@ -13,9 +13,32 @@ import (
 )
 
 var (
-	minioTag  = "0.20231101.183725"
-	rqliteTag = "7.21.4"
-	dexTag    = "2.37.0"
+	minioTags = []string{
+		"0.20231101.183725-3",
+		"0.20231101.183725-2",
+		"0.20231101.183725-1",
+		"0.20231101.183725",
+		"0.20231100.183724",
+		"0.20231031.183723",
+		"0.20231030.183722",
+	}
+
+	rqliteTags = []string{
+		"7.21.4-2",
+		"7.21.4-1",
+		"7.21.4",
+		"7.20.3",
+		"7.19.2",
+		"6.18.1",
+	}
+
+	dexTags = []string{
+		"2.37.0-1",
+		"2.37.0",
+		"2.36.0",
+		"2.35.0",
+		"2.34.0",
+	}
 
 	schemaheroTags = []string{
 		"0.13.2",
@@ -56,12 +79,15 @@ func TestFunctional(t *testing.T) {
 		{
 			name: "minio",
 			fn: getTagFinder(
-				withWolfiGetTag(
-					func(_ string) (string, error) {
-						return minioTag, nil
+				withRepoGetTags(
+					func(_ string) ([]string, error) {
+						return minioTags, nil
 					},
 				),
 			),
+			replacers: []*replacer{
+				getApkoFileReplacer("test.apko.yaml"),
+			},
 		},
 		{
 			name: "schemahero",
@@ -80,22 +106,28 @@ func TestFunctional(t *testing.T) {
 		{
 			name: "rqlite",
 			fn: getTagFinder(
-				withWolfiGetTag(
-					func(_ string) (string, error) {
-						return rqliteTag, nil
+				withRepoGetTags(
+					func(_ string) ([]string, error) {
+						return rqliteTags, nil
 					},
 				),
 			),
+			replacers: []*replacer{
+				getApkoFileReplacer("test.apko.yaml"),
+			},
 		},
 		{
 			name: "dex",
 			fn: getTagFinder(
-				withWolfiGetTag(
-					func(_ string) (string, error) {
-						return dexTag, nil
+				withRepoGetTags(
+					func(_ string) ([]string, error) {
+						return dexTags, nil
 					},
 				),
 			),
+			replacers: []*replacer{
+				getApkoFileReplacer("test.apko.yaml"),
+			},
 		},
 		{
 			name: "lvp",

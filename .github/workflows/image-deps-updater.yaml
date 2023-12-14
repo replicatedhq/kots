@@ -1,0 +1,113 @@
+name: Update image deps
+
+on:
+  schedule:
+    - cron: '0 0 * * *'
+  workflow_dispatch:
+    inputs:
+      overwrite:
+        description: "Overwrite the existing image tags."
+        required: false
+        default: "false"
+jobs:
+  build-3rd-party-images:
+    runs-on: ubuntu-20.04
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    - name: Get tags
+      id: get-tags
+      run: |
+        export minio_yaml=$(curl -s --fail --show-error https://raw.githubusercontent.com/wolfi-dev/os/main/minio.yaml)
+        export minio_version=$(echo "$minio_yaml" | grep "version:" | awk '{print $2}' | tr -d '\n')
+        export minio_epoch=$(echo "$minio_yaml" | grep "epoch:" | awk '{print $2}' | tr -d '\n')
+
+        export rqlite_yaml=$(curl -s --fail --show-error https://raw.githubusercontent.com/wolfi-dev/os/main/rqlite.yaml)
+        export rqlite_version=$(echo "$rqlite_yaml" | grep "version:" | awk '{print $2}' | tr -d '\n')
+        export rqlite_epoch=$(echo "$rqlite_yaml" | grep "epoch:" | awk '{print $2}' | tr -d '\n')
+
+        export dex_yaml=$(curl -s --fail --show-error https://raw.githubusercontent.com/wolfi-dev/os/main/dex.yaml)
+        export dex_version=$(echo "$dex_yaml" | grep "version:" | awk '{print $2}' | tr -d '\n')
+        export dex_epoch=$(echo "$dex_yaml" | grep "epoch:" | awk '{print $2}' | tr -d '\n')
+
+        echo "minio-tag=$minio_version-$minio_epoch" >> "$GITHUB_OUTPUT"
+        echo "rqlite-tag=$rqlite_version-$rqlite_epoch" >> "$GITHUB_OUTPUT"
+        echo "dex-tag=$dex_version-$dex_epoch" >> "$GITHUB_OUTPUT"
+
+    - name: Build and push minio image
+      uses: ./.github/actions/build-push-image-with-apko
+      with:
+        apko-config: deploy/minio/apko.yaml
+        image-name: index.docker.io/kotsadm/minio:${{ steps.get-tags.outputs.minio-tag }}
+        registry-username: ${{ secrets.DOCKERHUB_USER }}
+        registry-password: ${{ secrets.DOCKERHUB_PASSWORD }}
+
+    - name: Build and push rqlite image
+      uses: ./.github/actions/build-push-image-with-apko
+      with:
+        apko-config: deploy/rqlite/apko.yaml
+        image-name: index.docker.io/kotsadm/rqlite:${{ steps.get-tags.outputs.rqlite-tag }}
+        registry-username: ${{ secrets.DOCKERHUB_USER }}
+        registry-password: ${{ secrets.DOCKERHUB_PASSWORD }}
+
+    - name: Build and push dex image
+      uses: ./.github/actions/build-push-image-with-apko
+      with:
+        apko-config: deploy/dex/apko.yaml
+        image-name: index.docker.io/kotsadm/dex:${{ steps.get-tags.outputs.dex-tag }}
+        registry-username: ${{ secrets.DOCKERHUB_USER }}
+        registry-password: ${{ secrets.DOCKERHUB_PASSWORD }}
+
+  update-image-deps:
+    needs: [build-3rd-party-images]
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: '^1.20.0'
+
+      - name: Run Update Script
+        env:
+          GITHUB_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          go run ./cmd/imagedeps
+
+      - name: Create Pull Request # creates a PR if there are differences
+        uses: peter-evans/create-pull-request@v5
+        id: cpr
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          commit-message: Update KOTS image dependency tags
+          title: 'Automated KOTS Image Dependency Tag Update'
+          branch: automation/image-dependencies
+          delete-branch: true
+          labels: |
+            automated-pr
+            images
+            type::security
+          draft: false
+          base: "main"
+          body: "Automated changes by the [image-deps-updater](https://github.com/replicatedhq/kots/blob/main/.github/workflows/image-deps-updater.yaml) GitHub action"
+
+      - name: Check outputs
+        if: ${{ steps.cpr.outputs.pull-request-number }}
+        run: |
+          echo "Pull Request Number - ${{ steps.cpr.outputs.pull-request-number }}"
+          echo "Pull Request URL - ${{ steps.cpr.outputs.pull-request-url }}"
+
+      - name: Slack Notification
+        if: ${{ steps.cpr.outputs.pull-request-number }}
+        uses: slackapi/slack-github-action@v1.24.0
+        with: 
+          payload: |
+            {
+              "version": "${{ github.event.client_payload.version }}",
+              "pull_request_url": "${{steps.cpr.outputs.pull-request-url}}"
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.KOTS_IMAGE_DEPS_SLACK_WEBHOOK }}
