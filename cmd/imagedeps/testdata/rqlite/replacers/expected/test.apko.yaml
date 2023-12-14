@@ -4,7 +4,7 @@ contents:
   keyring:
     - https://packages.wolfi.dev/os/wolfi-signing.rsa.pub
   packages:
-    - rqlite~7.21.4-2
+    - rqlite~7.21.4-1
     - rqlite-oci-entrypoint
     - bash
     - busybox
