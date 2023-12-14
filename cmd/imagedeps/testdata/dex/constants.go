@@ -5,5 +5,5 @@ package image
 // image name.
 
 const (
-	Dex = "kotsadm/dex:2.37.0"
+	Dex = "kotsadm/dex:2.37.0-0"
 )

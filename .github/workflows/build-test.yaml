@@ -423,10 +423,11 @@ jobs:
         with:
           path: .image.env
 
-      - uses: ./.github/actions/build-push-image-with-apko
-        with:
-          apko-config: deploy/minio/apko.yaml
-          image-name: ttl.sh/automated-${{ github.run_id }}/minio:${{ steps.dotenv.outputs.MINIO_TAG }}
+      - name: push minio
+        run: |
+          docker pull kotsadm/minio:${{ steps.dotenv.outputs.MINIO_TAG }}
+          docker tag kotsadm/minio:${{ steps.dotenv.outputs.MINIO_TAG }} ttl.sh/automated-${{ github.run_id }}/minio:${{ steps.dotenv.outputs.MINIO_TAG }}
+          docker push ttl.sh/automated-${{ github.run_id }}/minio:${{ steps.dotenv.outputs.MINIO_TAG }}
 
 
   push-rqlite:
@@ -447,11 +448,11 @@ jobs:
         with:
           path: .image.env
 
-      - uses: ./.github/actions/build-push-image-with-apko
-        with:
-          apko-config: deploy/rqlite/apko.yaml
-          image-name: ttl.sh/automated-${{ github.run_id }}/rqlite:${{ steps.dotenv.outputs.RQLITE_TAG }}
-
+      - name: push rqlite
+        run: |
+          docker pull kotsadm/rqlite:${{ steps.dotenv.outputs.RQLITE_TAG }}
+          docker tag kotsadm/rqlite:${{ steps.dotenv.outputs.RQLITE_TAG }} ttl.sh/automated-${{ github.run_id }}/rqlite:${{ steps.dotenv.outputs.RQLITE_TAG }}
+          docker push ttl.sh/automated-${{ github.run_id }}/rqlite:${{ steps.dotenv.outputs.RQLITE_TAG }}
 
   push-dex:
     runs-on: ubuntu-20.04
@@ -471,11 +472,11 @@ jobs:
         with:
           path: .image.env
 
-      - uses: ./.github/actions/build-push-image-with-apko
-        with:
-          apko-config: deploy/dex/apko.yaml
-          image-name: ttl.sh/automated-${{ github.run_id }}/dex:${{ steps.dotenv.outputs.DEX_TAG }}
-
+      - name: push dex
+        run: |
+          docker pull kotsadm/dex:${{ steps.dotenv.outputs.DEX_TAG }}
+          docker tag kotsadm/dex:${{ steps.dotenv.outputs.DEX_TAG }} ttl.sh/automated-${{ github.run_id }}/dex:${{ steps.dotenv.outputs.DEX_TAG }}
+          docker push ttl.sh/automated-${{ github.run_id }}/dex:${{ steps.dotenv.outputs.DEX_TAG }}
 
   # only run validate-kurl-addon if changes to "deploy/kurl/kotsadm/template/**"
   kurl-addon-changes-filter:

@@ -32,42 +32,6 @@ jobs:
           registry-password: ${{ secrets.DOCKERHUB_PASSWORD }}
 
 
-  build-rqlite:
-    runs-on: ubuntu-20.04
-    steps:
-      - uses: actions/checkout@v4
-      - uses: ./.github/actions/build-push-image-with-apko
-        with:
-          apko-config: deploy/rqlite/apko.yaml
-          image-name: index.docker.io/kotsadm/rqlite:alpha
-          registry-username: ${{ secrets.DOCKERHUB_USER }}
-          registry-password: ${{ secrets.DOCKERHUB_PASSWORD }}
-
-
-  build-minio:
-    runs-on: ubuntu-20.04
-    steps:
-      - uses: actions/checkout@v4
-      - uses: ./.github/actions/build-push-image-with-apko
-        with:
-          apko-config: deploy/minio/apko.yaml
-          image-name: index.docker.io/kotsadm/minio:alpha
-          registry-username: ${{ secrets.DOCKERHUB_USER }}
-          registry-password: ${{ secrets.DOCKERHUB_PASSWORD }}
-
-
-  build-dex:
-    runs-on: ubuntu-20.04
-    steps:
-      - uses: actions/checkout@v4
-      - uses: ./.github/actions/build-push-image-with-apko
-        with:
-          apko-config: deploy/dex/apko.yaml
-          image-name: index.docker.io/kotsadm/dex:alpha
-          registry-username: ${{ secrets.DOCKERHUB_USER }}
-          registry-password: ${{ secrets.DOCKERHUB_PASSWORD }}
-
-
   build-kotsadm:
     runs-on: ubuntu-20.04
     needs: [generate-tag]
@@ -113,7 +77,7 @@ jobs:
         id: scan
         uses: aquasecurity/trivy-action@master
         with:
-          image-ref: "docker.io/kotsadm/rqlite:alpha"
+          image-ref: "docker.io/kotsadm/rqlite:${{ steps.dotenv.outputs.RQLITE_TAG }}"
           format: 'template'
           template: '@/contrib/sarif.tpl'
           output: 'rqlite-scan-output.sarif'
@@ -140,7 +104,7 @@ jobs:
         id: scan
         uses: aquasecurity/trivy-action@master
         with:
-          image-ref: "docker.io/kotsadm/minio:alpha"
+          image-ref: "docker.io/kotsadm/minio:${{ steps.dotenv.outputs.MINIO_TAG }}"
           format: 'template'
           template: '@/contrib/sarif.tpl'
           output: 'minio-scan-output.sarif'
@@ -168,7 +132,7 @@ jobs:
         id: scan
         uses: aquasecurity/trivy-action@master
         with:
-          image-ref: "docker.io/kotsadm/dex:alpha"
+          image-ref: "docker.io/kotsadm/dex:${{ steps.dotenv.outputs.DEX_TAG }}"
           format: 'template'
           template: '@/contrib/sarif.tpl'
           output: 'dex-scan-output.sarif'
@@ -218,7 +182,7 @@ jobs:
         id: scan
         uses: aquasecurity/trivy-action@master
         with:
-          image-ref: "docker.io/replicated/local-volume-provider:${{ steps.dotenv.outputs.lvp_tag }}"
+          image-ref: "docker.io/replicated/local-volume-provider:${{ steps.dotenv.outputs.LVP_TAG }}"
           format: 'template'
           template: '@/contrib/sarif.tpl'
           output: 'scan-output.sarif'

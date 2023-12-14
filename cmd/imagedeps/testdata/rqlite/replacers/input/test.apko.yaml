@@ -1,0 +1,26 @@
+contents:
+  repositories:
+    - https://packages.wolfi.dev/os
+  keyring:
+    - https://packages.wolfi.dev/os/wolfi-signing.rsa.pub
+  packages:
+    - rqlite~7.21.4-0
+    - rqlite-oci-entrypoint
+    - bash
+    - busybox
+    - wolfi-baselayout
+
+accounts:
+  groups:
+    - groupname: rqlite
+      gid: 1001
+  users:
+    - username: rqlite
+      uid: 1001
+      gid: 1001
+  run-as: rqlite
+
+entrypoint:
+  command: docker-entrypoint.sh
+
+cmd: rqlite

@@ -26,42 +26,6 @@ jobs:
           git tag "$GIT_TAG"
           git push origin "$GIT_TAG"
 
-  image-deps-updater:
-    runs-on: ubuntu-20.04
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-      - name: Setup Go
-        uses: actions/setup-go@v4
-        with:
-          go-version: '^1.20.0'
-      - name: Run Update Script
-        env:
-          GITHUB_AUTH_TOKEN: ${{ secrets.NIGHTLY_GH_PAT }}
-        run: |
-          go run ./cmd/imagedeps
-      - name: Create Pull Request # creates a PR if there are differences
-        uses: peter-evans/create-pull-request@v5
-        id: cpr
-        with:
-          token: ${{ secrets.NIGHTLY_GH_PAT }}
-          commit-message: update kots image dependency tags
-          title: 'Automated Kots Image Dependency Tag Update'
-          branch: automation/image-dependencies
-          delete-branch: true
-          labels: |
-            automated-pr
-            images
-            type::security
-          draft: false
-          base: "main"
-          body: "Automated changes by the [release](https://github.com/replicatedhq/kots/blob/main/.github/workflows/release.yaml) GitHub action"
-
-      - name: Check outputs
-        run: |
-          echo "Pull Request Number - ${{ steps.cpr.outputs.pull-request-number }}"
-          echo "Pull Request URL - ${{ steps.cpr.outputs.pull-request-url }}"
-
   build-kotsadm-migrations:
     runs-on: ubuntu-20.04
     needs: [generate-tag]
@@ -146,63 +110,6 @@ jobs:
         name: kots
         path: ./bin/kots
 
-  build-minio:
-    runs-on: ubuntu-20.04
-    steps:
-    - name: Checkout
-      uses: actions/checkout@v4
-
-    - name: Read image tags from env file
-      uses: falti/dotenv-action@v1
-      id: dotenv
-      with:
-        path: .image.env
-
-    - uses: ./.github/actions/build-push-image-with-apko
-      with:
-        apko-config: deploy/minio/apko.yaml
-        image-name: index.docker.io/kotsadm/minio:${{ steps.dotenv.outputs.MINIO_TAG }}
-        registry-username: ${{ secrets.DOCKERHUB_USER }}
-        registry-password: ${{ secrets.DOCKERHUB_PASSWORD }}
-
-  build-rqlite:
-    runs-on: ubuntu-20.04
-    steps:
-    - name: Checkout
-      uses: actions/checkout@v4
-
-    - name: Read image tags from env file
-      uses: falti/dotenv-action@v1
-      id: dotenv
-      with:
-        path: .image.env
-
-    - uses: ./.github/actions/build-push-image-with-apko
-      with:
-        apko-config: deploy/rqlite/apko.yaml
-        image-name: index.docker.io/kotsadm/rqlite:${{ steps.dotenv.outputs.RQLITE_TAG }}
-        registry-username: ${{ secrets.DOCKERHUB_USER }}
-        registry-password: ${{ secrets.DOCKERHUB_PASSWORD }}
-
-  build-dex:
-    runs-on: ubuntu-20.04
-    steps:
-    - name: Checkout
-      uses: actions/checkout@v4
-
-    - name: Read image tags from env file
-      uses: falti/dotenv-action@v1
-      id: dotenv
-      with:
-        path: .image.env
-
-    - uses: ./.github/actions/build-push-image-with-apko
-      with:
-        apko-config: deploy/dex/apko.yaml
-        image-name: index.docker.io/kotsadm/dex:${{ steps.dotenv.outputs.DEX_TAG }}
-        registry-username: ${{ secrets.DOCKERHUB_USER }}
-        registry-password: ${{ secrets.DOCKERHUB_PASSWORD }}
-
   build-kotsadm:
     runs-on: ubuntu-20.04
     needs: [generate-tag]
@@ -224,7 +131,7 @@ jobs:
 
   build-release:
     runs-on: ubuntu-20.04
-    needs: [generate-tag, build-kotsadm-migrations, build-kotsadm, build-minio, build-rqlite, build-dex]
+    needs: [generate-tag, build-kotsadm-migrations, build-kotsadm]
     steps:
     - name: Checkout
       uses: actions/checkout@v4
