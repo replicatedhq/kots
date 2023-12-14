@@ -4,7 +4,7 @@ contents:
   keyring:
     - https://packages.wolfi.dev/os/wolfi-signing.rsa.pub
   packages:
-    - dex~2.37.0-1
+    - dex~2.37.0-0
     - gomplate
     - bash
     - busybox
