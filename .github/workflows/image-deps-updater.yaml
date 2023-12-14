@@ -111,7 +111,6 @@ jobs:
         with: 
           payload: |
             {
-              "version": "${{ github.event.client_payload.version }}",
               "pull_request_url": "${{steps.cpr.outputs.pull-request-url}}"
             }
         env:
