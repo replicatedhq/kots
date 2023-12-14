@@ -63,7 +63,7 @@ jobs:
     runs-on: ubuntu-20.04
     needs: [generate-tag]
     steps:
-    - uses: actions/setup-go@v4
+    - uses: actions/setup-go@v5
       with:
         go-version: '^1.20.0'
         cache: true
@@ -80,7 +80,7 @@ jobs:
     runs-on: ubuntu-20.04
     needs: [build-web, generate-tag]
     steps:
-    - uses: actions/setup-go@v4
+    - uses: actions/setup-go@v5
       with:
         go-version: '^1.20.0'
     - name: Checkout
@@ -159,7 +159,7 @@ jobs:
     if: github.ref_type != 'branch'
     needs: [generate-tag, build-web]
     steps:
-    - uses: actions/setup-go@v4
+    - uses: actions/setup-go@v5
       with:
         go-version: '^1.20.0'
 
