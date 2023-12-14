@@ -19,6 +19,8 @@ jobs:
     - name: Get tags
       id: get-tags
       run: |
+        set -euo pipefail
+
         curl -LO --fail --show-error https://packages.wolfi.dev/os/x86_64/APKINDEX.tar.gz
         tar -xzvf APKINDEX.tar.gz
 
