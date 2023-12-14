@@ -65,11 +65,6 @@ jobs:
         registry-password: ${{ secrets.DOCKERHUB_PASSWORD }}
         overwrite: ${{ github.event.inputs.overwrite }}
 
-    - name: Clean up templated configs
-      run: |
-        rm deploy/minio/apko.yaml
-        rm deploy/rqlite/apko.yaml
-        rm deploy/dex/apko.yaml
 
   update-image-deps:
     needs: [build-3rd-party-images]
