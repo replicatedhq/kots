@@ -31,6 +31,10 @@ jobs:
         dex_version=$(echo "$dex_yaml" | grep "version:" | awk '{print $2}' | tr -d '\n')
         dex_epoch=$(echo "$dex_yaml" | grep "epoch:" | awk '{print $2}' | tr -d '\n')
 
+        sed "s/__MINIO_VERSION__/$minio_version/g" deploy/minio/apko.yaml.tmpl > deploy/minio/apko.yaml
+        sed "s/__RQLITE_VERSION__/$rqlite_version/g" deploy/rqlite/apko.yaml.tmpl > deploy/rqlite/apko.yaml
+        sed "s/__DEX_VERSION__/$dex_version/g" deploy/dex/apko.yaml.tmpl > deploy/dex/apko.yaml
+
         {
           echo "minio-tag=$minio_version-$minio_epoch"
           echo "rqlite-tag=$rqlite_version-$rqlite_epoch"

@@ -4,21 +4,23 @@ contents:
   keyring:
     - https://packages.wolfi.dev/os/wolfi-signing.rsa.pub
   packages:
-    - minio~0.20231101.183725-1
-    - mc
+    - rqlite~__RQLITE_VERSION__
+    - rqlite-oci-entrypoint
     - bash
     - busybox
     - wolfi-baselayout
 
 accounts:
   groups:
-    - groupname: minio
+    - groupname: rqlite
       gid: 1001
   users:
-    - username: minio
+    - username: rqlite
       uid: 1001
       gid: 1001
-  run-as: minio
+  run-as: rqlite
 
 entrypoint:
-  command: minio
+  command: docker-entrypoint.sh
+
+cmd: rqlite

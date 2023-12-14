@@ -85,9 +85,6 @@ func TestFunctional(t *testing.T) {
 					},
 				),
 			),
-			replacers: []*replacer{
-				getApkoFileReplacer("test.apko.yaml"),
-			},
 		},
 		{
 			name: "schemahero",
@@ -112,9 +109,6 @@ func TestFunctional(t *testing.T) {
 					},
 				),
 			),
-			replacers: []*replacer{
-				getApkoFileReplacer("test.apko.yaml"),
-			},
 		},
 		{
 			name: "dex",
@@ -125,9 +119,6 @@ func TestFunctional(t *testing.T) {
 					},
 				),
 			),
-			replacers: []*replacer{
-				getApkoFileReplacer("test.apko.yaml"),
-			},
 		},
 		{
 			name: "lvp",
