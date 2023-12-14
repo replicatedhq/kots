@@ -19,17 +19,17 @@ jobs:
     - name: Get tags
       id: get-tags
       run: |
-        export minio_yaml=$(curl -s --fail --show-error https://raw.githubusercontent.com/wolfi-dev/os/main/minio.yaml)
-        export minio_version=$(echo "$minio_yaml" | grep "version:" | awk '{print $2}' | tr -d '\n')
-        export minio_epoch=$(echo "$minio_yaml" | grep "epoch:" | awk '{print $2}' | tr -d '\n')
+        minio_yaml=$(curl -s --fail --show-error https://raw.githubusercontent.com/wolfi-dev/os/main/minio.yaml)
+        minio_version=$(echo "$minio_yaml" | grep "version:" | awk '{print $2}' | tr -d '\n')
+        minio_epoch=$(echo "$minio_yaml" | grep "epoch:" | awk '{print $2}' | tr -d '\n')
 
-        export rqlite_yaml=$(curl -s --fail --show-error https://raw.githubusercontent.com/wolfi-dev/os/main/rqlite.yaml)
-        export rqlite_version=$(echo "$rqlite_yaml" | grep "version:" | awk '{print $2}' | tr -d '\n')
-        export rqlite_epoch=$(echo "$rqlite_yaml" | grep "epoch:" | awk '{print $2}' | tr -d '\n')
+        rqlite_yaml=$(curl -s --fail --show-error https://raw.githubusercontent.com/wolfi-dev/os/main/rqlite.yaml)
+        rqlite_version=$(echo "$rqlite_yaml" | grep "version:" | awk '{print $2}' | tr -d '\n')
+        rqlite_epoch=$(echo "$rqlite_yaml" | grep "epoch:" | awk '{print $2}' | tr -d '\n')
 
-        export dex_yaml=$(curl -s --fail --show-error https://raw.githubusercontent.com/wolfi-dev/os/main/dex.yaml)
-        export dex_version=$(echo "$dex_yaml" | grep "version:" | awk '{print $2}' | tr -d '\n')
-        export dex_epoch=$(echo "$dex_yaml" | grep "epoch:" | awk '{print $2}' | tr -d '\n')
+        dex_yaml=$(curl -s --fail --show-error https://raw.githubusercontent.com/wolfi-dev/os/main/dex.yaml)
+        dex_version=$(echo "$dex_yaml" | grep "version:" | awk '{print $2}' | tr -d '\n')
+        dex_epoch=$(echo "$dex_yaml" | grep "epoch:" | awk '{print $2}' | tr -d '\n')
 
         echo "minio-tag=$minio_version-$minio_epoch" >> "$GITHUB_OUTPUT"
         echo "rqlite-tag=$rqlite_version-$rqlite_epoch" >> "$GITHUB_OUTPUT"
