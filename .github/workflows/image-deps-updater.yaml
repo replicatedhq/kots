@@ -31,9 +31,11 @@ jobs:
         dex_version=$(echo "$dex_yaml" | grep "version:" | awk '{print $2}' | tr -d '\n')
         dex_epoch=$(echo "$dex_yaml" | grep "epoch:" | awk '{print $2}' | tr -d '\n')
 
-        echo "minio-tag=$minio_version-$minio_epoch" >> "$GITHUB_OUTPUT"
-        echo "rqlite-tag=$rqlite_version-$rqlite_epoch" >> "$GITHUB_OUTPUT"
-        echo "dex-tag=$dex_version-$dex_epoch" >> "$GITHUB_OUTPUT"
+        {
+          echo "minio-tag=$minio_version-$minio_epoch"
+          echo "rqlite-tag=$rqlite_version-$rqlite_epoch"
+          echo "dex-tag=$dex_version-$dex_epoch"
+        } >> "$GITHUB_OUTPUT"
 
     - name: Build and push minio image
       uses: ./.github/actions/build-push-image-with-apko
