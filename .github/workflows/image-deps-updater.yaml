@@ -2,7 +2,7 @@ name: Update image deps
 
 on:
   schedule:
-    - cron: '0 0 * * *'
+    - cron: '0 15 * * *'
   workflow_dispatch:
     inputs:
       overwrite:
@@ -80,7 +80,7 @@ jobs:
 
       - name: Run Update Script
         env:
-          GITHUB_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_AUTH_TOKEN: ${{ secrets.NIGHTLY_GH_PAT }}
         run: |
           go run ./cmd/imagedeps
 
@@ -88,7 +88,7 @@ jobs:
         uses: peter-evans/create-pull-request@v5
         id: cpr
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.NIGHTLY_GH_PAT }}
           commit-message: Update KOTS image dependency tags
           title: 'Automated KOTS Image Dependency Tag Update'
           branch: automation/image-dependencies
