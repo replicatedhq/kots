@@ -76,6 +76,10 @@ func TestMigrateFromPostgresToRqlite(t *testing.T) {
 		Mounts: []string{
 			fmt.Sprintf("%s:/auth/config.json", rqliteAuthConfigPath),
 		},
+		ExposedPorts: []string{
+			"4001/tcp",
+			"4002/tcp",
+		},
 		PortBindings: map[docker.Port][]docker.PortBinding{
 			"4001/tcp": {
 				{
