@@ -116,7 +116,7 @@ runs:
           KOTS_DOCKERHUB_USERNAME=${{ inputs.kots-dockerhub-username }} \
           KOTS_DOCKERHUB_PASSWORD=${{ inputs.kots-dockerhub-password }} \
           AIRGAP=${{ inputs.kots-airgap }} \
-          IS_OPENSHIFT=${{ inputs.k8s-distribution == 'openshift' && 'true' || 'false' }} \
+          IS_OPENSHIFT=${{ inputs.k8s-distribution == 'openshift-exp' && 'true' || 'false' }} \
           SKIP_TEARDOWN=1
       shell: bash
 
