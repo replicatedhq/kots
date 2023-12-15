@@ -180,14 +180,6 @@ func getApplicationMetadataFromHost(host string, endpoint string, upstream *url.
 		return nil, errors.Wrap(err, "failed to call newrequest")
 	}
 
-	appID, err := store.GetStore().GetAppIDFromSlug(r.AppSlug)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to get app id from slug")
-	}
-
-	reportingInfo := reporting.GetReportingInfo(appID)
-	reporting.InjectReportingInfoHeaders(getReq, reportingInfo)
-
 	getResp, err := http.DefaultClient.Do(getReq)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to execute get request")
