@@ -23,3 +23,12 @@ func GetStore() Store {
 func storeFromEnv() Store {
 	return kotsstore.StoreFromEnv()
 }
+
+func SetStore(s Store) {
+	if s == nil {
+		hasStore = false
+		globalStore = nil
+	}
+	hasStore = true
+	globalStore = s
+}

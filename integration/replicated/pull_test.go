@@ -5,14 +5,26 @@ import (
 	"path"
 	"testing"
 
+	"github.com/golang/mock/gomock"
 	"github.com/mholt/archiver/v3"
 	"github.com/replicatedhq/kots/integration/util"
 	"github.com/replicatedhq/kots/pkg/pull"
+	"github.com/replicatedhq/kots/pkg/store"
+	mock_store "github.com/replicatedhq/kots/pkg/store/mock"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 func Test_PullReplicated(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mockStore := mock_store.NewMockStore(ctrl)
+	store.SetStore(mockStore)
+	defer store.SetStore(nil)
+
+	mockStore.EXPECT().ListInstalledApps().MaxTimes(1)
+
 	namespace := "test_ns"
 
 	testDirs, err := ioutil.ReadDir("tests")
