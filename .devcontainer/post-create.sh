@@ -9,6 +9,30 @@ echo "$(date)    post-create start" >> "$HOME/status"
 
 touch $HOME/.bashrc
 
+echo "-----> Wait for docker daemon to start"
+
+# Maximum number of attempts
+MAX_ATTEMPTS=30
+SLEEP_INTERVAL=1
+
+docker_is_ready() {
+    docker info > /dev/null 2>&1
+}
+
+attempt=0
+until docker_is_ready || [ $attempt -eq $MAX_ATTEMPTS ]; do
+    attempt=$((attempt+1))
+    echo "Waiting for Docker daemon to start... Attempt $attempt"
+    sleep $SLEEP_INTERVAL
+done
+
+if docker_is_ready; then
+    echo "Docker daemon is ready!"
+else
+    echo "Timed out waiting for Docker daemon to start."
+    exit 1
+fi
+
 echo "-----> Install k3d"
 
 curl -s https://raw.githubusercontent.com/rancher/k3d/main/install.sh | bash
