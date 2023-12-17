@@ -36,7 +36,7 @@ fi
 echo "-----> Install k3d"
 
 curl -s https://raw.githubusercontent.com/rancher/k3d/main/install.sh | bash
-k3d cluster create mycluster --config k3d.yaml
+k3d cluster create mycluster --config .devcontainer/k3d.yaml
 export KUBECONFIG="$(k3d kubeconfig write mycluster)"
 echo "export KUBECONFIG=$KUBECONFIG" >> $HOME/.bashrc
 
