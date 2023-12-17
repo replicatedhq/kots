@@ -36,7 +36,7 @@ fi
 echo "-----> Install k3d"
 
 curl -s https://raw.githubusercontent.com/rancher/k3d/main/install.sh | bash
-k3d cluster create mycluster --config k3d.yaml
+k3d cluster create mycluster --config .devcontainer/k3d.yaml
 export KUBECONFIG="$(k3d kubeconfig write mycluster)"
 echo "export KUBECONFIG=$KUBECONFIG" >> $HOME/.bashrc
 
@@ -76,6 +76,14 @@ chmod a+x /tmp/velero-v1.12.2-linux-amd64/velero
 sudo mv /tmp/velero-v1.12.2-linux-amd64/velero /usr/local/bin
 rm /tmp/velero.tar.gz
 rm -rf /tmp/velero-v1.12.2-linux-amd64
+
+velero install \
+  --no-default-backup-location \
+  --no-secret \
+  --use-node-agent \
+  --uploader-type=restic \
+  --use-volume-snapshots=false \
+  --plugins replicated/local-volume-provider:v0.5.6
 
 echo "-----> Prepare cluster"
 
