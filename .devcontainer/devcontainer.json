@@ -17,14 +17,12 @@
 
 	// Install extensions
 	"extensions": [
-		"DanielSanMedium.dscodegpt",
 		"eamodio.gitlens",
 		"GitHub.copilot",
 		"golang.go",
 		"ms-azuretools.vscode-docker",
 		"ms-vscode.makefile-tools",
 		"ms-vsliveshare.vsliveshare",
-		"sourcegraph.cody-ai",
 		"timonwong.shellcheck",
 		"tsandall.opa",
 		"usernamehw.search"
@@ -33,8 +31,5 @@
 	"waitFor": "postCreateCommand",
 
 	// Use 'postCreateCommand' to run commands after the container is created.
-	"postCreateCommand": "/bin/bash -c .devcontainer/post-create.sh",
-
-	// Use 'postStartCommand' to run commands after the container starts.
-	"postStartCommand": "/bin/bash -c .devcontainer/post-start.sh"
+	"postCreateCommand": "/bin/bash -c .devcontainer/post-create.sh"
 }
