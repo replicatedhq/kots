@@ -76,6 +76,14 @@ rm /tmp/velero.tar.gz
 chmod a+x /tmp/velero
 sudo mv /tmp/velero /usr/local/bin
 
+velero install \
+  --no-default-backup-location \
+  --no-secret \
+  --use-node-agent \
+  --uploader-type=restic \
+  --use-volume-snapshots=false \
+  --plugins replicated/local-volume-provider:v0.5.6
+
 echo "-----> Prepare cluster"
 
 kubectl create ns test
