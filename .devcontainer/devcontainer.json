@@ -5,7 +5,7 @@
 	"forwardPorts": [
 		8800,
 		30880,
-		32000,
+		32000
 	],
 
 	// add labels

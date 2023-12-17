@@ -2,10 +2,10 @@
 
 set -eo pipefail
 
-# this runs as part of pre-build
+# this runs at Codespace creation - not part of pre-build
 
-echo "on-create start"
-echo "$(date +'%Y-%m-%d %H:%M:%S')    on-create start" >> "$HOME/status"
+echo "post-create start"
+echo "$(date)    post-create start" >> "$HOME/status"
 
 touch $HOME/.bashrc
 
@@ -56,5 +56,5 @@ echo "-----> Prepare cluster"
 kubectl create ns test
 make cache
 
-echo "on-create complete"
-echo "$(date +'%Y-%m-%d %H:%M:%S')    on-create complete" >> "$HOME/status"
+echo "post-create complete"
+echo "$(date +'%Y-%m-%d %H:%M:%S')    post-create complete" >> "$HOME/status"
