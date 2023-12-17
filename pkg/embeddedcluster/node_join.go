@@ -2,7 +2,9 @@ package embeddedcluster
 
 import (
 	"context"
+	"encoding/base64"
 	"fmt"
+	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"strings"
 	"sync"
 	"time"
@@ -24,6 +26,24 @@ type joinTokenEntry struct {
 var joinTokenMapMut = sync.Mutex{}
 var joinTokenMap = map[string]*joinTokenEntry{}
 
+const k0sTokenTemplate = `apiVersion: v1
+clusters:
+- cluster:
+    certificate-authority-data: %s
+    server: %s:6443
+  name: k0s
+contexts:
+- context:
+    cluster: k0s
+    user: kubelet-bootstrap
+  name: k0s
+current-context: k0s
+kind: Config
+users:
+- name: kubelet-bootstrap
+  user:
+    token: %s`
+
 // GenerateAddNodeToken will generate the embedded cluster node add command for a node with the specified roles
 // join commands will last for 24 hours, and will be cached for 1 hour after first generation
 func GenerateAddNodeToken(ctx context.Context, client kubernetes.Interface, nodeRole string) (string, error) {
@@ -44,9 +64,9 @@ func GenerateAddNodeToken(ctx context.Context, client kubernetes.Interface, node
 		return joinToken.Token, nil
 	}
 
-	newToken, err := runAddNodeCommandPod(ctx, client, nodeRole)
+	newToken, err := makeK0sToken(ctx, client, nodeRole)
 	if err != nil {
-		return "", fmt.Errorf("failed to run add node command pod: %w", err)
+		return "", fmt.Errorf("failed to generate k0s token: %w", err)
 	}
 
 	now := time.Now()
@@ -54,6 +74,55 @@ func GenerateAddNodeToken(ctx context.Context, client kubernetes.Interface, node
 	joinToken.Creation = &now
 
 	return newToken, nil
+}
+
+// TODO: figure out what to do with the nodeRole
+func makeK0sToken(ctx context.Context, client kubernetes.Interface, nodeRole string) (string, error) {
+	rawToken, err := k8sutil.GenerateBootstrapToken(client, time.Hour)
+	if err != nil {
+		return "", fmt.Errorf("failed to generate bootstrap token: %w", err)
+	}
+
+	cert, err := k8sutil.GetClusterCaCert(ctx, client)
+	if err != nil {
+		return "", fmt.Errorf("failed to get cluster ca cert: %w", err)
+	}
+
+	firstPrimary, err := firstPrimaryIpAddress(ctx, client)
+	if err != nil {
+		return "", fmt.Errorf("failed to get first primary ip address: %w", err)
+	}
+
+	fullToken := fmt.Sprintf(k0sTokenTemplate, cert, firstPrimary, rawToken)
+	gzipToken, err := util.GzipData([]byte(fullToken))
+	if err != nil {
+		return "", fmt.Errorf("failed to gzip token: %w", err)
+	}
+	b64Token := base64.StdEncoding.EncodeToString(gzipToken)
+
+	return b64Token, nil
+}
+
+func firstPrimaryIpAddress(ctx context.Context, client kubernetes.Interface) (string, error) {
+	nodes, err := client.CoreV1().Nodes().List(ctx, metav1.ListOptions{})
+	if err != nil {
+		return "", fmt.Errorf("failed to list nodes: %w", err)
+	}
+
+	for _, node := range nodes.Items {
+		if cp, ok := node.Labels["node-role.kubernetes.io/control-plane"]; !ok || cp != "true" {
+			continue
+		}
+
+		for _, address := range node.Status.Addresses {
+			if address.Type == "InternalIP" {
+				return address.Address, nil
+			}
+		}
+
+	}
+
+	return "", fmt.Errorf("failed to find controller node")
 }
 
 // run a pod that will generate the add node token

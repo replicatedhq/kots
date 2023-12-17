@@ -55,3 +55,17 @@ func GenerateBootstrapToken(client kubernetes.Interface, ttl time.Duration) (str
 
 	return token, nil
 }
+
+func GetClusterCaCert(ctx context.Context, client kubernetes.Interface) (string, error) {
+	cert, err := client.CoreV1().ConfigMaps("kube-system").Get(ctx, "kube-root-ca.crt", metav1.GetOptions{})
+	if err != nil {
+		return "", errors.Wrap(err, "failed to get kube-root-ca.crt")
+	}
+
+	caCert, ok := cert.Data["ca.crt"]
+	if !ok {
+		return "", fmt.Errorf("ca.crt not found in kube-root-ca.crt, actual data was %v", cert.Data)
+	}
+
+	return caCert, nil
+}
