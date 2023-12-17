@@ -12,7 +12,8 @@ touch $HOME/.bashrc
 echo "-----> Install k3d"
 
 curl -s https://raw.githubusercontent.com/rancher/k3d/main/install.sh | bash
-k3d cluster create mycluster --config k3d.yaml
+# k3d cluster create mycluster --config k3d.yaml
+k3d cluster create mycluster --port '32000:32000' --port '30880:30880' --port '8800:8800'
 export KUBECONFIG="$(k3d kubeconfig write mycluster)"
 echo "export KUBECONFIG=$KUBECONFIG" >> $HOME/.bashrc
 
