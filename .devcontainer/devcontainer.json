@@ -1,0 +1,40 @@
+{
+	"name": "kots-dev-container",
+
+	// forward ports for the app
+	"forwardPorts": [
+		8800,
+		30880,
+		32000,
+	],
+
+	// add labels
+	"portsAttributes": {
+		"8800": { "label": "KOTS Admin Console" },
+		"30880": { "label": "kURL Proxy" },
+		"32000": { "label": "Local Registry" }
+	},
+
+	// Install extensions
+	"extensions": [
+		"DanielSanMedium.dscodegpt",
+		"eamodio.gitlens",
+		"GitHub.copilot",
+		"golang.go",
+		"ms-azuretools.vscode-docker",
+		"ms-vscode.makefile-tools",
+		"ms-vsliveshare.vsliveshare",
+		"sourcegraph.cody-ai",
+		"timonwong.shellcheck",
+		"tsandall.opa",
+		"usernamehw.search"
+	],
+
+	"waitFor": "postStartCommand",
+
+	// Use 'onCreateCommand' to run commands as part of container creation.
+	"onCreateCommand": "/bin/bash -c .devcontainer/on-create.sh",
+
+	// Use 'postStartCommand' to run commands after the container starts.
+	"postStartCommand": "/bin/bash -c .devcontainer/post-start.sh"
+}
