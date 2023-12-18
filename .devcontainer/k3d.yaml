@@ -6,11 +6,6 @@ kubeAPI:
   hostIP: "0.0.0.0"
   hostPort: "6443"
 network: host
-registries:
-  create:
-    name: registry.localhost
-    host: "0.0.0.0"
-    hostPort: "32000"
 options:
   k3d:
     wait: true
