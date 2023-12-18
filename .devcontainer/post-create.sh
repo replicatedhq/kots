@@ -83,7 +83,7 @@ velero install \
   --use-node-agent \
   --uploader-type=restic \
   --use-volume-snapshots=false \
-  --plugins replicated/local-volume-provider:v0.5.6
+  --plugins velero/velero-plugin-for-aws:v1.8.2,velero/velero-plugin-for-gcp:v1.8.2,velero/velero-plugin-for-microsoft-azure:v1.8.2,replicated/local-volume-provider:v0.5.6
 
 echo "-----> Prepare cluster"
 
