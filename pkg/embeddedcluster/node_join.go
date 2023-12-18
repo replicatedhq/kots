@@ -92,6 +92,8 @@ func makeK0sToken(ctx context.Context, client kubernetes.Interface, nodeRole str
 		return "", fmt.Errorf("failed to get first primary ip address: %w", err)
 	}
 
+	fmt.Printf("generating bootstrap token for %q role\n", nodeRole)
+
 	userName := "kubelet-bootstrap"
 	if nodeRole == "controller" {
 		userName = "controller-bootstrap"
