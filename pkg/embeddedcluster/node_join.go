@@ -76,22 +76,27 @@ func GenerateAddNodeToken(ctx context.Context, client kubernetes.Interface, node
 	return newToken, nil
 }
 
-// TODO: figure out what to do with the nodeRole
 func makeK0sToken(ctx context.Context, client kubernetes.Interface, nodeRole string) (string, error) {
-	rawToken, err := k8sutil.GenerateBootstrapToken(client, time.Hour)
+	rawToken, err := k8sutil.GenerateK0sBootstrapToken(client, time.Hour, nodeRole)
 	if err != nil {
 		return "", fmt.Errorf("failed to generate bootstrap token: %w", err)
 	}
+
+	fmt.Printf("rawToken: %s\n", rawToken)
 
 	cert, err := k8sutil.GetClusterCaCert(ctx, client)
 	if err != nil {
 		return "", fmt.Errorf("failed to get cluster ca cert: %w", err)
 	}
 
+	fmt.Printf("cacert: %s\n", cert)
+
 	firstPrimary, err := firstPrimaryIpAddress(ctx, client)
 	if err != nil {
 		return "", fmt.Errorf("failed to get first primary ip address: %w", err)
 	}
+
+	fmt.Printf("firstPrimary: %s\n", firstPrimary)
 
 	fullToken := fmt.Sprintf(k0sTokenTemplate, cert, firstPrimary, rawToken)
 	gzipToken, err := util.GzipData([]byte(fullToken))
@@ -99,6 +104,8 @@ func makeK0sToken(ctx context.Context, client kubernetes.Interface, nodeRole str
 		return "", fmt.Errorf("failed to gzip token: %w", err)
 	}
 	b64Token := base64.StdEncoding.EncodeToString(gzipToken)
+
+	fmt.Printf("b64Token: %s\n", b64Token)
 
 	return b64Token, nil
 }
