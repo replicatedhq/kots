@@ -30,7 +30,7 @@ const k0sTokenTemplate = `apiVersion: v1
 clusters:
 - cluster:
     certificate-authority-data: %s
-    server: %s:6443
+    server: https://%s:6443
   name: k0s
 contexts:
 - context:
@@ -42,7 +42,8 @@ kind: Config
 users:
 - name: kubelet-bootstrap
   user:
-    token: %s`
+    token: %s
+`
 
 // GenerateAddNodeToken will generate the embedded cluster node add command for a node with the specified roles
 // join commands will last for 24 hours, and will be cached for 1 hour after first generation
