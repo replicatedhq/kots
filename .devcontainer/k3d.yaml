@@ -1,7 +1,7 @@
 apiVersion: k3d.io/v1alpha3
 kind: Simple
 servers: 1
-network: host
+network: bridge
 kubeAPI:
   hostIP: "0.0.0.0"
   hostPort: "6443"
