@@ -14,7 +14,6 @@ options:
       - arg: --tls-san=127.0.0.1
         nodeFilters:
           - server:*
-    extraAgentArgs: []
   kubeconfig:
     updateDefaultKubeconfig: true
     switchCurrentContext: true
