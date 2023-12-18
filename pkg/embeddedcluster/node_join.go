@@ -33,12 +33,12 @@ clusters:
 contexts:
 - context:
     cluster: k0s
-    user: kubelet-bootstrap
+    user: %s
   name: k0s
 current-context: k0s
 kind: Config
 users:
-- name: kubelet-bootstrap
+- name: %s
   user:
     token: %s
 `
@@ -92,7 +92,12 @@ func makeK0sToken(ctx context.Context, client kubernetes.Interface, nodeRole str
 		return "", fmt.Errorf("failed to get first primary ip address: %w", err)
 	}
 
-	fullToken := fmt.Sprintf(k0sTokenTemplate, cert, firstPrimary, rawToken)
+	userName := "kubelet-bootstrap"
+	if nodeRole == "controller" {
+		userName = "controller-bootstrap"
+	}
+
+	fullToken := fmt.Sprintf(k0sTokenTemplate, cert, firstPrimary, userName, userName, rawToken)
 	gzipToken, err := util.GzipData([]byte(fullToken))
 	if err != nil {
 		return "", fmt.Errorf("failed to gzip token: %w", err)
