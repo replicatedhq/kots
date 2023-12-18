@@ -40,13 +40,6 @@ k3d cluster create mycluster --config .devcontainer/k3d.yaml
 export KUBECONFIG="$(k3d kubeconfig write mycluster)"
 echo "export KUBECONFIG=$KUBECONFIG" >> $HOME/.bashrc
 
-echo "-----> Install Registry"
-
-helm repo add twuni https://helm.twun.io
-helm install --create-namespace --namespace docker-registry docker-registry twuni/docker-registry \
-  --set service.type=NodePort \
-  --set service.nodePort=32000
-
 echo "-----> Install kustomize"
 
 curl -L "https://github.com/kubernetes-sigs/kustomize/releases/download/kustomize%2Fv4.5.7/kustomize_v4.5.7_linux_amd64.tar.gz" > /tmp/kustomize.tar.gz

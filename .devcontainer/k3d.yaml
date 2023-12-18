@@ -1,28 +1,25 @@
-apiVersion: k3d.io/v1alpha2
+apiVersion: k3d.io/v1alpha3
 kind: Simple
 servers: 1
 network: k3d
 kubeAPI:
   hostIP: "0.0.0.0"
   hostPort: "6443"
-ports:
-  - port: 8800:8800
-    nodeFilters:
-      - server[0]
-  - port: 30880:30880
-    nodeFilters:
-      - server[0]
-  - port: 32000:32000
-    nodeFilters:
-      - server[0]
-
+network: host
+registries:
+  create:
+    name: registry.localhost
+    host: "0.0.0.0"
+    hostPort: "32000"
 options:
   k3d:
     wait: true
     timeout: "60s"
   k3s:
-    extraServerArgs:
-      - --tls-san=127.0.0.1
+    extraArgs:
+      - arg: --tls-san=127.0.0.1
+        nodeFilters:
+          - server:*
     extraAgentArgs: []
   kubeconfig:
     updateDefaultKubeconfig: true
