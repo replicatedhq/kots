@@ -3,12 +3,12 @@ package k8sutil
 import (
 	"context"
 	"fmt"
-	"github.com/pkg/errors"
-	"k8s.io/client-go/kubernetes"
 	"time"
 
+	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/kubernetes"
 	bootstrapapi "k8s.io/cluster-bootstrap/token/api"
 	bootstraputil "k8s.io/cluster-bootstrap/token/util"
 )
@@ -26,6 +26,8 @@ func GenerateBootstrapToken(client kubernetes.Interface, ttl time.Duration) (str
 	return generateJoinTokenInternal(client, ttl, data)
 }
 
+// GenerateK0sBootstrapToken will generate a node join token for k0s.
+// ttl defines the time to live for this token.
 func GenerateK0sBootstrapToken(client kubernetes.Interface, ttl time.Duration, role string) (string, error) {
 	data := make(map[string][]byte)
 
