@@ -1,4 +1,4 @@
-apiVersion: k3d.io/v1alpha3
+apiVersion: k3d.io/v1alpha5
 kind: Simple
 servers: 1
 network: k3d
@@ -8,13 +8,13 @@ kubeAPI:
 ports:
   - port: 30880:30880
     nodeFilters:
-      - server[0]
+      - server:*
   - port: 30881:30881
     nodeFilters:
-      - server[0]
+      - server:*
   - port: 32000:32000
     nodeFilters:
-      - server[0]
+      - server:*
 options:
   k3d:
     wait: true
