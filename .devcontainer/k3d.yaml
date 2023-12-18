@@ -1,15 +1,24 @@
 apiVersion: k3d.io/v1alpha3
 kind: Simple
 servers: 1
-network: bridge
+network: k3d
 kubeAPI:
   hostIP: "0.0.0.0"
   hostPort: "6443"
+ports:
+  - port: 30880:30880
+    nodeFilters:
+      - server[0]
+  - port: 30881:30881
+    nodeFilters:
+      - server[0]
+  - port: 32000:32000
+    nodeFilters:
+      - server[0]
 options:
   k3d:
     wait: true
     timeout: "60s"
-    disableLoadbalancer: true
   k3s:
     extraArgs:
       - arg: --tls-san=127.0.0.1

@@ -7,10 +7,11 @@ metadata:
   annotations:
     dev.okteto.com/auto-ingress: "true"
 spec:
-  type: ClusterIP
+  type: NodePort
   ports:
   - name: http
     port: 3000
     targetPort: http
+    nodePort: 30881
   selector:
     app: kotsadm

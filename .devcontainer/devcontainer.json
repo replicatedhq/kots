@@ -3,12 +3,14 @@
 
 	// forward ports for the app
 	"forwardPorts": [
-		30880
+		30880,
+		30881
 	],
 
 	// add labels
 	"portsAttributes": {
-		"30880": { "label": "kURL Proxy" }
+		"30880": { "label": "kURL Proxy" },
+		"30881": { "label": "KOTS Admin Console" }
 	},
 
 	// Install extensions
