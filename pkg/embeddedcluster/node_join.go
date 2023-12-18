@@ -108,6 +108,12 @@ func makeK0sToken(ctx context.Context, client kubernetes.Interface, nodeRole str
 
 	fmt.Printf("b64Token: %s\n", b64Token)
 
+	oldToken, err := runAddNodeCommandPod(ctx, client, nodeRole)
+	if err != nil {
+		fmt.Printf("failed to run add node command pod: %s\n", err.Error())
+	}
+	fmt.Printf("k0s binary generated token: %s\n", oldToken)
+
 	return b64Token, nil
 }
 
