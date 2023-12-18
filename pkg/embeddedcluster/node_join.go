@@ -90,6 +90,7 @@ func makeK0sToken(ctx context.Context, client kubernetes.Interface, nodeRole str
 	}
 
 	fmt.Printf("cacert: %s\n", cert)
+	cert = base64.StdEncoding.EncodeToString([]byte(cert))
 
 	firstPrimary, err := firstPrimaryIpAddress(ctx, client)
 	if err != nil {
