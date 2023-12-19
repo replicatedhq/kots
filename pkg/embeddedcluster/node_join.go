@@ -30,7 +30,7 @@ const k0sTokenTemplate = `apiVersion: v1
 clusters:
 - cluster:
     certificate-authority-data: %s
-    server: https://%s:6443
+    server: https://%s:%d
   name: k0s
 contexts:
 - context:
@@ -102,11 +102,13 @@ func makeK0sToken(ctx context.Context, client kubernetes.Interface, nodeRole str
 	fmt.Printf("generating bootstrap token for %q role\n", nodeRole)
 
 	userName := "kubelet-bootstrap"
+	port := 6443
 	if nodeRole == "controller" {
 		userName = "controller-bootstrap"
+		port = 9443
 	}
 
-	fullToken := fmt.Sprintf(k0sTokenTemplate, cert, firstPrimary, userName, userName, rawToken)
+	fullToken := fmt.Sprintf(k0sTokenTemplate, cert, firstPrimary, port, userName, userName, rawToken)
 	gzipToken, err := util.GzipData([]byte(fullToken))
 	if err != nil {
 		return "", fmt.Errorf("failed to gzip token: %w", err)
