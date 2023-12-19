@@ -113,13 +113,34 @@ func makeK0sToken(ctx context.Context, client kubernetes.Interface, nodeRole str
 	}
 	b64Token := base64.StdEncoding.EncodeToString(gzipToken)
 
-	fmt.Printf("b64Token: %s\n", b64Token)
+	fmt.Printf("b64TokenData: \n%s\n", fullToken)
+
+	// get our secret and print it
+	tokenParts := strings.Split(rawToken, ".")
+	ourSecret, err := client.CoreV1().Secrets("kube-system").Get(ctx, fmt.Sprintf("bootstrap-token-%s", tokenParts[0]), metav1.GetOptions{})
+	if err != nil {
+		fmt.Printf("failed to get our secret: %s\n", err.Error())
+	} else {
+		fmt.Printf("our secret: %v\n", ourSecret)
+	}
 
 	oldToken, err := runAddNodeCommandPod(ctx, client, nodeRole)
 	if err != nil {
 		fmt.Printf("failed to run add node command pod: %s\n", err.Error())
 	}
-	fmt.Printf("k0s binary generated token: %s\n", oldToken)
+
+	oldDecoded, err := base64.StdEncoding.DecodeString(oldToken)
+	if err != nil {
+		fmt.Printf("failed to decode old token: %s\n", err.Error())
+	} else {
+		// ungzip
+		unzipped, err := util.GunzipData(oldDecoded)
+		if err != nil {
+			fmt.Printf("failed to gunzip old token: %s\n", err.Error())
+		} else {
+			fmt.Printf("k0s generated token: \n%s\n", string(unzipped))
+		}
+	}
 
 	return b64Token, nil
 }
