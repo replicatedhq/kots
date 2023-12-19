@@ -89,7 +89,7 @@ func (h *Handler) UploadExistingApp(w http.ResponseWriter, r *http.Request) {
 	defer os.RemoveAll(archiveDir)
 
 	// encrypt any plain text values
-	kotsKinds, err := kotsutil.LoadKotsKindsFromPath(filepath.Join(archiveDir, "upstream"))
+	kotsKinds, err := kotsutil.LoadKotsKindsFromPath(archiveDir)
 	if err != nil {
 		uploadResponse.Error = util.StrPointer("failed to load kotskinds")
 		logger.Error(errors.Wrap(err, *uploadResponse.Error))

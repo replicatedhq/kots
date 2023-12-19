@@ -39,7 +39,7 @@ func RenderHelm(u *upstreamtypes.Upstream, renderOptions *RenderOptions) (*Base,
 			}
 		}
 
-		if err := ioutil.WriteFile(p, file.Content, 0644); err != nil {
+		if err := os.WriteFile(p, file.Content, 0644); err != nil {
 			return nil, errors.Wrap(err, "failed to write chart file")
 		}
 	}

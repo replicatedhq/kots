@@ -5,7 +5,6 @@ import (
 	"io"
 	"io/ioutil"
 	"os"
-	"path/filepath"
 	"time"
 
 	"github.com/pkg/errors"
@@ -194,7 +193,7 @@ func CreateAppFromOnline(opts CreateOnlineAppOpts) (_ *kotsutil.KotsKinds, final
 		return nil, errors.Wrap(err, "failed to create rendered support bundle spec")
 	}
 
-	kotsKinds, err := kotsutil.LoadKotsKindsFromPath(filepath.Join(tmpRoot, "upstream"))
+	kotsKinds, err := kotsutil.LoadKotsKindsFromPath(tmpRoot)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to load kotskinds from path")
 	}

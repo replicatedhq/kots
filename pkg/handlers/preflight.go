@@ -5,7 +5,6 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os"
-	"path/filepath"
 	"strconv"
 
 	"github.com/gorilla/mux"
@@ -274,7 +273,7 @@ func (h *Handler) GetPreflightCommand(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	kotsKinds, err := kotsutil.LoadKotsKindsFromPath(filepath.Join(archivePath, "upstream"))
+	kotsKinds, err := kotsutil.LoadKotsKindsFromPath(archivePath)
 	if err != nil {
 		logger.Error(errors.Wrap(err, "failed to load kots kinds"))
 		w.WriteHeader(http.StatusInternalServerError)

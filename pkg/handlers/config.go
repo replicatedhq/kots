@@ -358,7 +358,7 @@ func (h *Handler) LiveAppConfig(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		kotsKinds, err = kotsutil.LoadKotsKindsFromPath(filepath.Join(archiveDir, "upstream"))
+		kotsKinds, err = kotsutil.LoadKotsKindsFromPath(archiveDir)
 		if err != nil {
 			liveAppConfigResponse.Error = "failed to load kots kinds from path"
 			logger.Error(errors.Wrap(err, liveAppConfigResponse.Error))
@@ -607,7 +607,7 @@ func (h *Handler) CurrentAppConfig(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		kotsKinds, err = kotsutil.LoadKotsKindsFromPath(filepath.Join(archiveDir, "upstream"))
+		kotsKinds, err = kotsutil.LoadKotsKindsFromPath(archiveDir)
 		if err != nil {
 			currentAppConfigResponse.Error = "failed to load kots kinds from path"
 			logger.Error(errors.Wrap(err, currentAppConfigResponse.Error))
@@ -749,7 +749,7 @@ func getAppConfigValueForFile(downloadApp *apptypes.App, sequence int64, filenam
 		return "", errors.Wrap(err, "failed to get app version archive")
 	}
 
-	kotsKinds, err := kotsutil.LoadKotsKindsFromPath(filepath.Join(archiveDir, "upstream"))
+	kotsKinds, err := kotsutil.LoadKotsKindsFromPath(archiveDir)
 	if err != nil {
 		return "", errors.Wrap(err, "failed to load kots kinds from archive")
 	}
@@ -783,7 +783,7 @@ func updateAppConfig(updateApp *apptypes.App, sequence int64, configGroups []kot
 		return updateAppConfigResponse, err
 	}
 
-	kotsKinds, err := kotsutil.LoadKotsKindsFromPath(filepath.Join(archiveDir, "upstream"))
+	kotsKinds, err := kotsutil.LoadKotsKindsFromPath(archiveDir)
 	if err != nil {
 		updateAppConfigResponse.Error = "failed to load kots kinds from path"
 		return updateAppConfigResponse, err
@@ -1079,7 +1079,7 @@ func (h *Handler) SetAppConfigValues(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	kotsKinds, err := kotsutil.LoadKotsKindsFromPath(filepath.Join(archiveDir, "upstream"))
+	kotsKinds, err := kotsutil.LoadKotsKindsFromPath(archiveDir)
 	if err != nil {
 		setAppConfigValuesResponse.Error = "failed to load kots kinds from path"
 		logger.Error(errors.Wrap(err, setAppConfigValuesResponse.Error))

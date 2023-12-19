@@ -128,7 +128,7 @@ func (s *KOTSStore) IsSnapshotsSupportedForVersion(a *apptypes.App, sequence int
 		return false, errors.Wrap(err, "failed to get app version archive")
 	}
 
-	kotsKinds, err := kotsutil.LoadKotsKindsFromPath(filepath.Join(archiveDir, "upstream"))
+	kotsKinds, err := kotsutil.LoadKotsKindsFromPath(archiveDir)
 	if err != nil {
 		return false, errors.Wrap(err, "failed to load kots kinds from path")
 	}
@@ -498,7 +498,7 @@ func (s *KOTSStore) createAppVersionStatements(appID string, baseSequence *int64
 func (s *KOTSStore) upsertAppVersionStatements(appID string, sequence int64, baseSequence *int64, filesInDir string, source string, skipPreflights bool, gitops gitopstypes.DownstreamGitOps, renderer rendertypes.Renderer) ([]gorqlite.ParameterizedStatement, error) {
 	statements := []gorqlite.ParameterizedStatement{}
 
-	kotsKinds, err := kotsutil.LoadKotsKindsFromPath(filepath.Join(filesInDir, "upstream"))
+	kotsKinds, err := kotsutil.LoadKotsKindsFromPath(filesInDir)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to read kots kinds")
 	}
@@ -904,7 +904,7 @@ func (s *KOTSStore) UpdateNextAppVersionDiffSummary(appID string, baseSequence i
 		return errors.Wrap(err, "failed to get next archive dir")
 	}
 
-	nextKotsKinds, err := kotsutil.LoadKotsKindsFromPath(filepath.Join(nextArchiveDir, "upstream"))
+	nextKotsKinds, err := kotsutil.LoadKotsKindsFromPath(nextArchiveDir)
 	if err != nil {
 		return errors.Wrap(err, "failed to read kots kinds")
 	}

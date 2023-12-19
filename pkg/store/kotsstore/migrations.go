@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
-	"path/filepath"
 
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
@@ -97,7 +96,7 @@ func (s *KOTSStore) migrateKotsAppSpec() error {
 				return errors.Wrap(err, "failed to get app version archive")
 			}
 
-			kotsKinds, err := kotsutil.LoadKotsKindsFromPath(filepath.Join(archiveDir, "upstream"))
+			kotsKinds, err := kotsutil.LoadKotsKindsFromPath(archiveDir)
 			if err != nil {
 				return errors.Wrap(err, "failed to load kots kinds from path")
 			}
@@ -169,7 +168,7 @@ func (s *KOTSStore) migrateKotsInstallationSpec() error {
 				return errors.Wrap(err, "failed to get app version archive")
 			}
 
-			kotsKinds, err := kotsutil.LoadKotsKindsFromPath(filepath.Join(archiveDir, "upstream"))
+			kotsKinds, err := kotsutil.LoadKotsKindsFromPath(archiveDir)
 			if err != nil {
 				return errors.Wrap(err, "failed to load kots kinds from path")
 			}
@@ -241,7 +240,7 @@ func (s *KOTSStore) migrateSupportBundleSpec() error {
 				return errors.Wrap(err, "failed to get app version archive")
 			}
 
-			kotsKinds, err := kotsutil.LoadKotsKindsFromPath(filepath.Join(archiveDir, "upstream"))
+			kotsKinds, err := kotsutil.LoadKotsKindsFromPath(archiveDir)
 			if err != nil {
 				return errors.Wrap(err, "failed to load kots kinds from path")
 			}
@@ -313,7 +312,7 @@ func (s *KOTSStore) migratePreflightSpec() error {
 				return errors.Wrap(err, "failed to get app version archive")
 			}
 
-			kotsKinds, err := kotsutil.LoadKotsKindsFromPath(filepath.Join(archiveDir, "upstream"))
+			kotsKinds, err := kotsutil.LoadKotsKindsFromPath(archiveDir)
 			if err != nil {
 				return errors.Wrap(err, "failed to load kots kinds from path")
 			}
@@ -385,7 +384,7 @@ func (s *KOTSStore) migrateAnalyzerSpec() error {
 				return errors.Wrap(err, "failed to get app version archive")
 			}
 
-			kotsKinds, err := kotsutil.LoadKotsKindsFromPath(filepath.Join(archiveDir, "upstream"))
+			kotsKinds, err := kotsutil.LoadKotsKindsFromPath(archiveDir)
 			if err != nil {
 				return errors.Wrap(err, "failed to load kots kinds from path")
 			}
@@ -457,7 +456,7 @@ func (s *KOTSStore) migrateAppSpec() error {
 				return errors.Wrap(err, "failed to get app version archive")
 			}
 
-			kotsKinds, err := kotsutil.LoadKotsKindsFromPath(filepath.Join(archiveDir, "upstream"))
+			kotsKinds, err := kotsutil.LoadKotsKindsFromPath(archiveDir)
 			if err != nil {
 				return errors.Wrap(err, "failed to load kots kinds from path")
 			}

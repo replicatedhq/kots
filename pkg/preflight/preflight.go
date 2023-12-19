@@ -45,7 +45,7 @@ const (
 )
 
 func Run(appID string, appSlug string, sequence int64, isAirgap bool, archiveDir string) error {
-	upstreamKotsKinds, err := kotsutil.LoadKotsKindsFromPath(filepath.Join(archiveDir, "upstream"))
+	upstreamKotsKinds, err := kotsutil.LoadKotsKindsFromPath(archiveDir)
 	if err != nil {
 		return errors.Wrap(err, "failed to load rendered kots kinds")
 	}

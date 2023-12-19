@@ -211,7 +211,7 @@ func getKotsKindsForApp(app *apptypes.App, sequence int64) (*kotsutil.KotsKinds,
 		return nil, errors.Wrap(err, "failed to get current archive")
 	}
 
-	kotsKinds, err := kotsutil.LoadKotsKindsFromPath(filepath.Join(archivePath, "upstream"))
+	kotsKinds, err := kotsutil.LoadKotsKindsFromPath(archivePath)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to load current kotskinds")
 	}
@@ -341,7 +341,7 @@ func CreateSupportBundleAnalysis(appID string, archivePath string, bundle *types
 		return err
 	}
 
-	kotsKinds, err := kotsutil.LoadKotsKindsFromPath(filepath.Join(archiveDir, "upstream"))
+	kotsKinds, err := kotsutil.LoadKotsKindsFromPath(archiveDir)
 	if err != nil {
 		err = errors.Wrap(err, "failed to load kots kinds from archive")
 		logger.Error(err)

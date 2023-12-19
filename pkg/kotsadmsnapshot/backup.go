@@ -7,7 +7,6 @@ import (
 	"io/ioutil"
 	"math"
 	"os"
-	"path/filepath"
 	"strconv"
 	"time"
 
@@ -94,7 +93,7 @@ func CreateApplicationBackup(ctx context.Context, a *apptypes.App, isScheduled b
 		return nil, errors.New("no backup store location found")
 	}
 
-	kotsKinds, err := kotsutil.LoadKotsKindsFromPath(filepath.Join(archiveDir, "upstream"))
+	kotsKinds, err := kotsutil.LoadKotsKindsFromPath(archiveDir)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to load kots kinds from path")
 	}
@@ -268,7 +267,7 @@ func CreateInstanceBackup(ctx context.Context, cluster *downstreamtypes.Downstre
 			return nil, errors.Wrapf(err, "failed to get app version archive for app %s", a.Slug)
 		}
 
-		kotsKinds, err := kotsutil.LoadKotsKindsFromPath(filepath.Join(archiveDir, "upstream"))
+		kotsKinds, err := kotsutil.LoadKotsKindsFromPath(archiveDir)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to load kots kinds from path")
 		}

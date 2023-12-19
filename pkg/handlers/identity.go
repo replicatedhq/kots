@@ -279,7 +279,7 @@ func (h *Handler) ConfigureAppIdentityService(w http.ResponseWriter, r *http.Req
 		return
 	}
 
-	kotsKinds, err := kotsutil.LoadKotsKindsFromPath(filepath.Join(archiveDir, "upstream"))
+	kotsKinds, err := kotsutil.LoadKotsKindsFromPath(archiveDir)
 	if err != nil {
 		err = errors.Wrap(err, "failed to load kots kinds from path")
 		logger.Error(err)
@@ -680,7 +680,7 @@ func (h *Handler) GetAppIdentityServiceConfig(w http.ResponseWriter, r *http.Req
 		return
 	}
 
-	kotsKinds, err := kotsutil.LoadKotsKindsFromPath(filepath.Join(archiveDir, "upstream"))
+	kotsKinds, err := kotsutil.LoadKotsKindsFromPath(archiveDir)
 	if err != nil {
 		err = errors.Wrap(err, "failed to load kotskinds from path")
 		logger.Error(err)

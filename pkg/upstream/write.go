@@ -157,8 +157,13 @@ func WriteUpstream(u *types.Upstream, options types.WriteOptions) error {
 	}
 
 	installationBytes := kotsutil.MustMarshalInstallation(&installation)
-	err = os.WriteFile(path.Join(renderDir, "userdata", "installation.yaml"), installationBytes, 0644)
-	if err != nil {
+
+	u.Files = append(u.Files, types.UpstreamFile{
+		Path:    "userdata/installation.yaml",
+		Content: installationBytes,
+	})
+
+	if err := os.WriteFile(path.Join(renderDir, "userdata", "installation.yaml"), installationBytes, 0644); err != nil {
 		return errors.Wrap(err, "failed to write installation")
 	}
 

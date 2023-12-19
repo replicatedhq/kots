@@ -713,7 +713,7 @@ func getAuth(privateKey string) (transport.AuthMethod, error) {
 }
 
 func CreateGitOpsCommit(gitOpsConfig *GitOpsConfig, appSlug string, appName string, newSequence int, archiveDir string, downstreamName string) (string, error) {
-	kotsKinds, err := kotsutil.LoadKotsKindsFromPath(filepath.Join(archiveDir, "upstream"))
+	kotsKinds, err := kotsutil.LoadKotsKindsFromPath(archiveDir)
 	if err != nil {
 		return "", errors.Wrap(err, "failed to load kots kinds")
 	}

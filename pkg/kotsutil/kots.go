@@ -630,11 +630,20 @@ func EmptyKotsKinds() KotsKinds {
 	return kotsKinds
 }
 
-func LoadKotsKindsFromPath(fromDir string) (*KotsKinds, error) {
+func LoadKotsKindsFromPath(rootDir string) (*KotsKinds, error) {
 	kotsKinds := EmptyKotsKinds()
 
-	if fromDir == "" {
+	if rootDir == "" {
 		return &kotsKinds, nil
+	}
+
+	fromDir := rootDir
+	if _, err := os.Stat(filepath.Join(rootDir, "kotsKinds")); err == nil {
+		// contains the rendered kots kinds if exists, prioritize it over upstream. only newer versions of kots create this directory.
+		fromDir = filepath.Join(rootDir, "kotsKinds")
+	} else if _, err := os.Stat(filepath.Join(rootDir, "upstream")); err == nil {
+		// contains the non-rendered kots kinds, fallback to it if kotsKinds directory doesn't exist. this directory should always exist.
+		fromDir = filepath.Join(rootDir, "upstream")
 	}
 
 	err := filepath.Walk(fromDir,

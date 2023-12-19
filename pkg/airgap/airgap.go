@@ -271,7 +271,7 @@ func CreateAppFromAirgap(opts CreateAirgapAppOpts) (finalError error) {
 		return errors.Wrap(err, "failed to create support bundle dependencies")
 	}
 
-	kotsKinds, err := kotsutil.LoadKotsKindsFromPath(filepath.Join(tmpRoot, "upstream"))
+	kotsKinds, err := kotsutil.LoadKotsKindsFromPath(tmpRoot)
 	if err != nil {
 		return errors.Wrap(err, "failed to load kotskinds from path")
 	}
