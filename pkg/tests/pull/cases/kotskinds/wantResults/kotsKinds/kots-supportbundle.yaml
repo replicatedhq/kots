@@ -1,0 +1,55 @@
+apiVersion: troubleshoot.sh/v1beta2
+kind: SupportBundle
+metadata:
+  name: my-app
+spec:
+  collectors:
+    - exec:
+        collectorName: my-exec-collector-name
+        name: my-exec-name
+        selector:
+          - my-exec-selector-0
+        command:
+          - my-exec-command-0
+        timeout: 70s
+    - logs:
+        collectorName: my-logs-collector-name
+        name: my-logs-name
+        selector:
+          - my-logs-selector-0
+
+  analyzers:
+    - clusterVersion:
+        outcomes:
+          - fail:
+              when: < 1.16.0
+              message: Cluster version is too old
+          - pass:
+              message: Cluster version is new enough
+    - containerRuntime:
+        outcomes:
+          - fail:
+              when: == gvisor
+              message: Container runtime is gvisor
+          - pass:
+              message: Container runtime is not gvisor
+    - textAnalyze:
+        checkName: my-text-analyze-check-name
+        exclude: false
+        ignoreIfNoFiles: false
+        fileName: my-text-analyze-file-name
+        outcomes:
+          - fail:
+              when: contains
+              message: Text analyze failed
+          - pass:
+              message: Text analyze passed
+        regexGroups: my-text-analyze-regex-groups
+    - nodeResources:
+        checkName: my-node-resources-check-name
+        outcomes:
+          - fail:
+              when: < 1
+              message: Node resources are too low
+          - pass:
+              message: Node resources are high enough

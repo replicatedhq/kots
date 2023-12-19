@@ -1,0 +1,51 @@
+apiVersion: kots.io/v1beta1
+kind: Application
+metadata:
+  name: my-app
+  annotations:
+    kots.io/exclude: "true"
+spec:
+  title: repl{{ ConfigOption "kots_app_app_title" }}
+  icon: repl{{ ConfigOption "kots_app_app_icon" }}
+  branding:
+    css:
+      - repl{{ ConfigOption "kots_app_branding_css_1" }}
+    fonts:
+      - fontFamily: repl{{ ConfigOption "kots_app_branding_fonts_1_font_family" }}
+        sources:
+          - repl{{ ConfigOption "kots_app_branding_fonts_1_font_sources_1" }}
+  applicationPorts:
+    - serviceName: repl{{ ConfigOption "kots_app_application_ports_1_service_name" }}
+      servicePort: repl{{ ConfigOption "kots_app_application_ports_1_service_port" }}
+      localPort: repl{{ ConfigOption "kots_app_application_ports_1_local_port" }}
+      applicationUrl: repl{{ ConfigOption "kots_app_application_ports_1_application_url" }}
+  releaseNotes: repl{{ ConfigOption "kots_app_release_notes" }}
+  allowRollback: repl{{ ConfigOptionEquals "kots_app_allow_rollback" "1" }}
+  statusInformers:
+    - repl{{ ConfigOption "kots_app_status_informers_1" }}
+  graphs:
+    - title: repl{{ ConfigOption "kots_app_graphs_1_title" }}
+      query: repl{{ ConfigOption "kots_app_graphs_1_query" }}
+      legend: repl{{ ConfigOption "kots_app_graphs_1_legend" }}
+      queries:
+        - query: repl{{ ConfigOption "kots_app_graphs_1_queries_1_query" }}
+          legend: repl{{ ConfigOption "kots_app_graphs_1_queries_1_legend" }}
+        - query: repl{{ ConfigOption "kots_app_graphs_1_queries_2_query" }}
+          legend: repl{{ ConfigOption "kots_app_graphs_1_queries_2_legend" }}
+      durationSeconds: repl{{ ConfigOption "kots_app_graphs_1_duration_seconds" }}
+      yAxisFormat: repl{{ ConfigOption "kots_app_graphs_1_y_axis_format" }}
+      yAxisTemplate: repl{{ ConfigOption "kots_app_graphs_1_y_axis_template" }}
+  minKotsVersion: repl{{ ConfigOption "kots_app_min_kots_version" }}
+  targetKotsVersion: repl{{ ConfigOption "kots_app_target_kots_version" }}
+  kubectlVersion: repl{{ ConfigOption "kots_app_kubectl_version" }}
+  kustomizeVersion: repl{{ ConfigOption "kots_app_kustomize_version" }}
+  additionalImages:
+    - repl{{ ConfigOption "kots_app_additional_images_1" }}
+  additionalNamespaces:
+    - repl{{ ConfigOption "kots_app_additional_namespacse_1" }}
+  requireMinimalRBACPrivileges: repl{{ ConfigOptionEquals "kots_app_require_minimal_rbac_privileges" "1" }}
+  supportMinimalRBACPrivileges: repl{{ ConfigOptionEquals "kots_app_support_minimal_rbac_privileges" "1" }}
+  consoleFeatureFlags:
+    - repl{{ ConfigOption "kots_app_console_feature_flags_1" }}
+  replicatedRegistryDomain: repl{{ ConfigOption "kots_app_replicated_registry_domain" }}
+  proxyRegistryDomain: repl{{ ConfigOption "kots_app_proxy_registry_domain" }}

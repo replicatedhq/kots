@@ -743,7 +743,7 @@ func loadRuntimeObjectsFromPath(apiVersion, kind, fromDir string) ([]runtime.Obj
 				return nil
 			}
 
-			contents, err := ioutil.ReadFile(path)
+			contents, err := os.ReadFile(path)
 			if err != nil {
 				return errors.Wrap(err, "failed to read file")
 			}
@@ -754,7 +754,7 @@ func loadRuntimeObjectsFromPath(apiVersion, kind, fromDir string) ([]runtime.Obj
 
 			decoded, gvk, err := decode(contents, nil, nil)
 			if err != nil {
-				return errors.Wrap(err, "failed to decode")
+				return errors.Wrapf(err, "failed to decode: %v", contents)
 			}
 
 			if gvk.String() == fmt.Sprintf("%s, Kind=%s", apiVersion, kind) {
@@ -866,7 +866,7 @@ func LoadV1Beta1HelmChartFromContents(content []byte) (*kotsv1beta1.HelmChart, e
 	decode := scheme.Codecs.UniversalDeserializer().Decode
 	obj, gvk, err := decode(content, nil, nil)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to decode chart")
+		return nil, errors.Wrapf(err, "failed to decode chart: %v", string(content))
 	}
 
 	if gvk.Group != "kots.io" || gvk.Version != "v1beta1" || gvk.Kind != "HelmChart" {
@@ -880,7 +880,7 @@ func LoadV1Beta2HelmChartFromContents(content []byte) (*kotsv1beta2.HelmChart, e
 	decode := scheme.Codecs.UniversalDeserializer().Decode
 	obj, gvk, err := decode(content, nil, nil)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to decode chart")
+		return nil, errors.Wrapf(err, "failed to decode chart: %v", string(content))
 	}
 
 	if gvk.Group != "kots.io" || gvk.Version != "v1beta2" || gvk.Kind != "HelmChart" {

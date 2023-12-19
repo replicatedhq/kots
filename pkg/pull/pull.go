@@ -255,9 +255,13 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 	}
 
 	// the root directory contains the manifests of the previous version and gets rewritten when fetching the upstream, so we load previous charts before fetching the upstream.
-	prevHelmCharts, err := kotsutil.LoadV1Beta1HelmChartsFromPath(pullOptions.RootDir)
-	if err != nil {
-		return "", errors.Wrap(err, "failed to load previous helm charts")
+	prevHelmCharts := []*kotsv1beta1.HelmChart{}
+	if !pullOptions.SkipHelmChartCheck {
+		phc, err := kotsutil.LoadV1Beta1HelmChartsFromPath(pullOptions.RootDir)
+		if err != nil {
+			return "", errors.Wrap(err, "failed to load previous helm charts")
+		}
+		prevHelmCharts = phc
 	}
 
 	log.ActionWithSpinner("Pulling upstream")
