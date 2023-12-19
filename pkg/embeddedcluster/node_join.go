@@ -380,7 +380,7 @@ func GenerateK0sJoinCommand(ctx context.Context, client kubernetes.Interface, ro
 
 // gets the port of the 'admin-console' service
 func getAdminConsolePort(ctx context.Context, client kubernetes.Interface) (int32, error) {
-	svc, err := client.CoreV1().Services(util.PodNamespace).Get(ctx, "kotsadm-nodeport", metav1.GetOptions{})
+	svc, err := client.CoreV1().Services(util.PodNamespace).Get(ctx, "admin-console", metav1.GetOptions{})
 	if err != nil {
 		return -1, fmt.Errorf("failed to get admin-console service: %w", err)
 	}
