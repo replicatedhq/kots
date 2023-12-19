@@ -16,7 +16,6 @@ import (
 	kotsconfig "github.com/replicatedhq/kots/pkg/config"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/logger"
-	registrytypes "github.com/replicatedhq/kots/pkg/registry/types"
 	"github.com/replicatedhq/kots/pkg/template"
 	upstreamtypes "github.com/replicatedhq/kots/pkg/upstream/types"
 	"github.com/replicatedhq/kots/pkg/util"
@@ -61,18 +60,10 @@ func renderReplicated(u *upstreamtypes.Upstream, renderOptions *RenderOptions) (
 		return nil, nil, nil, errors.Wrap(err, "failed to find config file")
 	}
 
-	registry := registrytypes.RegistrySettings{
-		Hostname:   renderOptions.LocalRegistryHost,
-		Namespace:  renderOptions.LocalRegistryNamespace,
-		Username:   renderOptions.LocalRegistryUsername,
-		Password:   renderOptions.LocalRegistryPassword,
-		IsReadOnly: renderOptions.LocalRegistryIsReadOnly,
-	}
-
 	versionInfo := template.VersionInfoFromInstallationSpec(renderOptions.Sequence, renderOptions.IsAirgap, kotsKinds.Installation.Spec)
 	appInfo := template.ApplicationInfo{Slug: renderOptions.AppSlug}
 
-	renderedConfig, err := kotsconfig.TemplateConfigObjects(kotsKinds.Config, itemValues, kotsKinds.License, &kotsKinds.KotsApplication, registry, &versionInfo, &appInfo, kotsKinds.IdentityConfig, util.PodNamespace, true)
+	renderedConfig, err := kotsconfig.TemplateConfigObjects(kotsKinds.Config, itemValues, kotsKinds.License, &kotsKinds.KotsApplication, renderOptions.RegistrySettings, &versionInfo, &appInfo, kotsKinds.IdentityConfig, util.PodNamespace, true)
 	if err != nil {
 		return nil, nil, nil, errors.Wrap(err, "failed to template config objects")
 	}
@@ -181,8 +172,16 @@ func renderKotsKinds(upstreamFiles []upstreamtypes.UpstreamFile, renderedConfig 
 
 			switch gvkString {
 			case "kots.io/v1beta1, Kind=Installation":
-				// Installation manifests are generated later and will have a different filename.
-				continue
+				// Installation manifest does not need rendering.
+
+			case "kots.io/v1beta1, Kind=License":
+				// License manifest does not need rendering.
+
+			case "kots.io/v1beta1, Kind=IdentityConfig":
+				// IdentityConfig manifest does not need rendering.
+
+			case "kots.io/v1beta1, Kind=ConfigValues":
+				// ConfigValues manifest does not need rendering.
 
 			case "kots.io/v1beta1, Kind=Config":
 				// Use the rendered Config instead of the upstream.
@@ -192,9 +191,6 @@ func renderKotsKinds(upstreamFiles []upstreamtypes.UpstreamFile, renderedConfig 
 					return nil, errors.Wrap(err, "failed to marshal rendered config")
 				}
 				doc = []byte(config)
-
-			case "kots.io/v1beta1, Kind=ConfigValues":
-				// ConfigValues do not need rendering since they should already be valid values.
 
 			case "kots.io/v1beta1, Kind=HelmChart", "kots.io/v1beta2, Kind=HelmChart":
 				helmchart, err := builder.RenderTemplate(upstreamFile.Path, string(upstreamFile.Content))

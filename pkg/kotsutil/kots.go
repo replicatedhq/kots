@@ -555,22 +555,6 @@ func (k *KotsKinds) addKotsKinds(content []byte) error {
 	return nil
 }
 
-func GenUniqueKotsKindFilename(renderedKotsKinds map[string][]byte, prefix string) string {
-	filename := fmt.Sprintf("%s.yaml", prefix)
-	if _, exists := renderedKotsKinds[filename]; exists {
-		index := 1
-		for {
-			filename = fmt.Sprintf("%s-%d.yaml", prefix, index)
-			if _, exists := renderedKotsKinds[filename]; !exists {
-				break
-			}
-			index += 1
-		}
-	}
-
-	return filename
-}
-
 func GetImagesFromKotsKinds(kotsKinds *KotsKinds) []string {
 	if kotsKinds == nil {
 		return nil

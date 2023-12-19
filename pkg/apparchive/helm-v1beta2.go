@@ -106,7 +106,7 @@ func WriteV1Beta2HelmCharts(opts WriteV1Beta2HelmChartsOptions) error {
 		}
 
 		archivePath := path.Join(chartDir, fmt.Sprintf("%s-%s.tgz", helmChart.Spec.Chart.Name, helmChart.Spec.Chart.ChartVersion))
-		if err := ioutil.WriteFile(archivePath, archive, 0644); err != nil {
+		if err := os.WriteFile(archivePath, archive, 0644); err != nil {
 			return errors.Wrap(err, "failed to write helm chart archive")
 		}
 
@@ -142,7 +142,7 @@ func WriteV1Beta2HelmCharts(opts WriteV1Beta2HelmChartsOptions) error {
 		}
 
 		valuesPath := path.Join(chartDir, "values.yaml")
-		if err := ioutil.WriteFile(valuesPath, []byte(valuesContent), 0644); err != nil {
+		if err := os.WriteFile(valuesPath, []byte(valuesContent), 0644); err != nil {
 			return errors.Wrap(err, "failed to write values file")
 		}
 
@@ -159,16 +159,9 @@ func WriteV1Beta2HelmCharts(opts WriteV1Beta2HelmChartsOptions) error {
 			return errors.Wrap(err, "failed to process online images")
 		}
 
-		upstreamDir := opts.Upstream.GetUpstreamDir(opts.WriteUpstreamOptions)
+		opts.KotsKinds.Installation.Spec.KnownImages = append(opts.KotsKinds.Installation.Spec.KnownImages, result.CheckedImages...)
 
-		installation, err := kotsutil.LoadInstallationFromPath(filepath.Join(upstreamDir, "userdata", "installation.yaml"))
-		if err != nil {
-			return errors.Wrap(err, "failed to load kotskinds from new upstream")
-		}
-
-		installation.Spec.KnownImages = append(installation.Spec.KnownImages, result.CheckedImages...)
-
-		if err := SaveInstallation(installation, upstreamDir); err != nil {
+		if err := SaveInstallation(&opts.KotsKinds.Installation, opts.Upstream.GetUpstreamDir(opts.WriteUpstreamOptions)); err != nil {
 			return errors.Wrap(err, "failed to save installation")
 		}
 	}

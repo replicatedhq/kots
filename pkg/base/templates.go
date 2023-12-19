@@ -2,7 +2,6 @@ package base
 
 import (
 	"github.com/pkg/errors"
-	registrytypes "github.com/replicatedhq/kots/pkg/registry/types"
 	"github.com/replicatedhq/kots/pkg/template"
 	upstreamtypes "github.com/replicatedhq/kots/pkg/upstream/types"
 	kotsv1beta1 "github.com/replicatedhq/kotskinds/apis/kots/v1beta1"
@@ -35,14 +34,6 @@ func NewConfigContextTemplateBuilder(u *upstreamtypes.Upstream, renderOptions *R
 		configGroups = kotsKinds.Config.Spec.Groups
 	}
 
-	localRegistry := registrytypes.RegistrySettings{
-		Hostname:   renderOptions.LocalRegistryHost,
-		Namespace:  renderOptions.LocalRegistryNamespace,
-		Username:   renderOptions.LocalRegistryUsername,
-		Password:   renderOptions.LocalRegistryPassword,
-		IsReadOnly: renderOptions.LocalRegistryIsReadOnly,
-	}
-
 	appInfo := template.ApplicationInfo{
 		Slug: renderOptions.AppSlug,
 	}
@@ -62,7 +53,7 @@ func NewConfigContextTemplateBuilder(u *upstreamtypes.Upstream, renderOptions *R
 	builderOptions := template.BuilderOptions{
 		ConfigGroups:    configGroups,
 		ExistingValues:  templateContext,
-		LocalRegistry:   localRegistry,
+		LocalRegistry:   renderOptions.RegistrySettings,
 		License:         kotsKinds.License,
 		Application:     &kotsKinds.KotsApplication,
 		VersionInfo:     &versionInfo,

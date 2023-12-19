@@ -3,25 +3,22 @@ package base
 import (
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/logger"
+	registrytypes "github.com/replicatedhq/kots/pkg/registry/types"
 	upstreamtypes "github.com/replicatedhq/kots/pkg/upstream/types"
 )
 
 type RenderOptions struct {
-	SplitMultiDocYAML       bool
-	Namespace               string
-	HelmVersion             string
-	HelmValues              map[string]interface{}
-	LocalRegistryHost       string
-	LocalRegistryNamespace  string
-	LocalRegistryUsername   string
-	LocalRegistryPassword   string
-	LocalRegistryIsReadOnly bool
-	ExcludeKotsKinds        bool
-	AppSlug                 string
-	Sequence                int64
-	IsAirgap                bool
-	UseHelmInstall          bool
-	Log                     *logger.CLILogger
+	SplitMultiDocYAML bool
+	Namespace         string
+	HelmVersion       string
+	HelmValues        map[string]interface{}
+	RegistrySettings  registrytypes.RegistrySettings
+	ExcludeKotsKinds  bool
+	AppSlug           string
+	Sequence          int64
+	IsAirgap          bool
+	UseHelmInstall    bool
+	Log               *logger.CLILogger
 }
 
 // RenderUpstream is responsible for any conversions or transpilation steps are required
