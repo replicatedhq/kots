@@ -86,7 +86,7 @@ func GetCurrentInstallation(ctx context.Context) (*embeddedclusterv1beta1.Instal
 	}
 	scheme := runtime.NewScheme()
 	embeddedclusterv1beta1.AddToScheme(scheme)
-	kbClient, err := kbclient.New(clientConfig, kbclient.Options{Scheme: scheme})
+	kbClient, err := kbclient.New(clientConfig, kbclient.Options{Scheme: scheme, WarningHandler: kbclient.WarningHandlerOptions{SuppressWarnings: true}})
 	if err != nil {
 		return nil, fmt.Errorf("failed to get kubebuilder client: %w", err)
 	}
