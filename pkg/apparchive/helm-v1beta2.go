@@ -18,6 +18,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/logger"
 	upstreamtypes "github.com/replicatedhq/kots/pkg/upstream/types"
 	"github.com/replicatedhq/kots/pkg/util"
+	kotsv1beta1 "github.com/replicatedhq/kotskinds/apis/kots/v1beta1"
 	kotsv1beta2 "github.com/replicatedhq/kotskinds/apis/kots/v1beta2"
 	"gopkg.in/yaml.v2"
 	"helm.sh/helm/v3/pkg/action"
@@ -80,6 +81,8 @@ func WriteV1Beta2HelmCharts(opts WriteV1Beta2HelmChartsOptions) error {
 	if opts.KotsKinds == nil || opts.KotsKinds.V1Beta2HelmCharts == nil {
 		return nil
 	}
+
+	checkedImages := []kotsv1beta1.InstallationImage{}
 
 	for _, v1Beta2Chart := range opts.KotsKinds.V1Beta2HelmCharts.Items {
 		helmChart := v1Beta2Chart
@@ -159,7 +162,11 @@ func WriteV1Beta2HelmCharts(opts WriteV1Beta2HelmChartsOptions) error {
 			return errors.Wrap(err, "failed to process online images")
 		}
 
-		opts.KotsKinds.Installation.Spec.KnownImages = append(opts.KotsKinds.Installation.Spec.KnownImages, result.CheckedImages...)
+		checkedImages = append(checkedImages, result.CheckedImages...)
+	}
+
+	if len(checkedImages) > 0 {
+		opts.KotsKinds.Installation.Spec.KnownImages = append(opts.KotsKinds.Installation.Spec.KnownImages, checkedImages...)
 
 		if err := SaveInstallation(&opts.KotsKinds.Installation, opts.Upstream.GetUpstreamDir(opts.WriteUpstreamOptions)); err != nil {
 			return errors.Wrap(err, "failed to save installation")
