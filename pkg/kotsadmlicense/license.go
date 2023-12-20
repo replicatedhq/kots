@@ -71,7 +71,7 @@ func Sync(a *apptypes.App, licenseString string, failOnVersionCreate bool) (*kot
 		return nil, false, errors.Wrap(err, "failed to get latest app sequence")
 	}
 
-	kotsKinds, err := kotsutil.LoadKotsKindsFromPath(archiveDir)
+	kotsKinds, err := kotsutil.LoadKotsKinds(archiveDir)
 	if err != nil {
 		return nil, false, errors.Wrap(err, "failed to load kotskinds from path")
 	}

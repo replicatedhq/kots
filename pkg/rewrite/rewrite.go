@@ -38,7 +38,6 @@ type RewriteOptions struct {
 	Installation       *kotsv1beta1.Installation
 	License            *kotsv1beta1.License
 	ConfigValues       *kotsv1beta1.ConfigValues
-	KotsApplication    *kotsv1beta1.Application
 	ReportWriter       io.Writer
 	CopyImages         bool // can be false even if registry is not read-only
 	IsAirgap           bool

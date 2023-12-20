@@ -273,7 +273,7 @@ func (h *Handler) GetPreflightCommand(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	kotsKinds, err := kotsutil.LoadKotsKindsFromPath(archivePath)
+	kotsKinds, err := kotsutil.LoadKotsKinds(archivePath)
 	if err != nil {
 		logger.Error(errors.Wrap(err, "failed to load kots kinds"))
 		w.WriteHeader(http.StatusInternalServerError)

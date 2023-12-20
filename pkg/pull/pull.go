@@ -257,7 +257,7 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 	// the root directory contains the manifests of the previous version and gets rewritten when fetching the upstream, so we load previous charts before fetching the upstream.
 	prevHelmCharts := []*kotsv1beta1.HelmChart{}
 	if !pullOptions.SkipHelmChartCheck {
-		phc, err := kotsutil.LoadV1Beta1HelmChartsFromPath(pullOptions.RootDir)
+		phc, err := kotsutil.LoadV1Beta1HelmChartsFromPath(kotsutil.GetKotsKindsPath(pullOptions.RootDir))
 		if err != nil {
 			return "", errors.Wrap(err, "failed to load previous helm charts")
 		}
@@ -768,7 +768,7 @@ func GetAppMetadataFromAirgap(airgapArchive string) (*replicatedapp.ApplicationM
 		return nil, errors.Wrap(err, "failed to extract app archive")
 	}
 
-	tempDir, err := ioutil.TempDir("", "kotsadm")
+	tempDir, err := os.MkdirTemp("", "kotsadm")
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create temp dir")
 	}
@@ -779,15 +779,19 @@ func GetAppMetadataFromAirgap(airgapArchive string) (*replicatedapp.ApplicationM
 		return nil, errors.Wrap(err, "failed to extract app archive")
 	}
 
-	kotsKinds, err := kotsutil.LoadKotsKindsFromPath(tempDir)
+	kotsApp, err := kotsutil.FindKotsAppInPath(tempDir)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to read kots kinds")
+	}
+	if kotsApp == nil {
+		ka := kotsutil.EmptyKotsKinds().KotsApplication
+		kotsApp = &ka
 	}
 
 	s := k8sjson.NewYAMLSerializer(k8sjson.DefaultMetaFactory, scheme.Scheme, scheme.Scheme)
 
 	var b bytes.Buffer
-	if err := s.Encode(&kotsKinds.KotsApplication, &b); err != nil {
+	if err := s.Encode(kotsApp, &b); err != nil {
 		return nil, errors.Wrap(err, "failed to encode metadata")
 	}
 
@@ -803,7 +807,7 @@ func GetAppMetadataFromAirgap(airgapArchive string) (*replicatedapp.ApplicationM
 }
 
 func parseInstallationFromFile(filename string) (*kotsv1beta1.Installation, error) {
-	contents, err := ioutil.ReadFile(filename)
+	contents, err := os.ReadFile(filename)
 	if err != nil {
 		if os.IsNotExist(err) {
 			return nil, nil

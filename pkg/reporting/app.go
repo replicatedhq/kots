@@ -321,7 +321,7 @@ func getDownstreamInfo(appID string) (*types.DownstreamInfo, error) {
 			return nil, errors.Wrap(err, "failed to get app version archive")
 		}
 
-		deployedKotsKinds, err := kotsutil.LoadKotsKindsFromPath(deployedArchiveDir)
+		deployedKotsKinds, err := kotsutil.LoadKotsKinds(deployedArchiveDir)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to load kotskinds from path")
 		}

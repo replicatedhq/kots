@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -63,7 +62,7 @@ func (h *Handler) UploadExistingApp(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	tmpFile, err := ioutil.TempFile("", "kotsadm")
+	tmpFile, err := os.CreateTemp("", "kotsadm")
 	if err != nil {
 		uploadResponse.Error = util.StrPointer("failed to create temp file")
 		logger.Error(errors.Wrap(err, *uploadResponse.Error))
@@ -89,7 +88,7 @@ func (h *Handler) UploadExistingApp(w http.ResponseWriter, r *http.Request) {
 	defer os.RemoveAll(archiveDir)
 
 	// encrypt any plain text values
-	kotsKinds, err := kotsutil.LoadKotsKindsFromPath(archiveDir)
+	kotsKinds, err := kotsutil.LoadKotsKinds(archiveDir)
 	if err != nil {
 		uploadResponse.Error = util.StrPointer("failed to load kotskinds")
 		logger.Error(errors.Wrap(err, *uploadResponse.Error))
@@ -112,7 +111,7 @@ func (h *Handler) UploadExistingApp(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		if err := ioutil.WriteFile(filepath.Join(archiveDir, "upstream", "userdata", "config.yaml"), []byte(updated), 0644); err != nil {
+		if err := os.WriteFile(filepath.Join(archiveDir, "upstream", "userdata", "config.yaml"), []byte(updated), 0644); err != nil {
 			uploadResponse.Error = util.StrPointer("failed to write config values")
 			logger.Error(errors.Wrap(err, *uploadResponse.Error))
 			JSON(w, http.StatusInternalServerError, uploadResponse)

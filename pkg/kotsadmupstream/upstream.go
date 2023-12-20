@@ -128,7 +128,7 @@ func DownloadUpdate(appID string, update types.Update, skipPreflights bool, skip
 	}
 	defer os.RemoveAll(archiveDir)
 
-	beforeKotsKinds, err := kotsutil.LoadKotsKindsFromPath(archiveDir)
+	beforeKotsKinds, err := kotsutil.LoadKotsKinds(archiveDir)
 	if err != nil {
 		finalError = errors.Wrap(err, "failed to read kots kinds before update")
 		return
@@ -241,7 +241,7 @@ func DownloadUpdate(appID string, update types.Update, skipPreflights bool, skip
 	}
 
 	if update.AppSequence == nil {
-		afterKotsKinds, err := kotsutil.LoadKotsKindsFromPath(archiveDir)
+		afterKotsKinds, err := kotsutil.LoadKotsKinds(archiveDir)
 		if err != nil {
 			finalError = errors.Wrap(err, "failed to read kots kinds after update")
 			return

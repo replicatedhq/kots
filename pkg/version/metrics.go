@@ -97,7 +97,7 @@ func GetGraphs(app *types.App, sequence int64, kotsStore store.Store) ([]kotsv1b
 		return graphs, errors.Wrap(err, "failed to get app version archive")
 	}
 
-	kotsKinds, err := kotsutil.LoadKotsKindsFromPath(archiveDir)
+	kotsKinds, err := kotsutil.LoadKotsKinds(archiveDir)
 	if err != nil {
 		return graphs, errors.Wrap(err, "failed to load kots kinds from path")
 	}

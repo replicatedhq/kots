@@ -17,6 +17,205 @@ import (
 )
 
 var _ = Describe("Kots", func() {
+	Describe("GetKotsKindsPath()", func() {
+		It("returns the path to the kotsKinds directory if it exists", func() {
+			dir, err := os.MkdirTemp("", "kotsutil-test")
+			Expect(err).ToNot(HaveOccurred())
+			defer os.RemoveAll(dir)
+
+			kotsKindsDir := filepath.Join(dir, "kotsKinds")
+			err = os.MkdirAll(kotsKindsDir, 0755)
+			Expect(err).ToNot(HaveOccurred())
+
+			path := kotsutil.GetKotsKindsPath(dir)
+			Expect(path).To(Equal(kotsKindsDir))
+		})
+
+		It("returns the path to the upstream directory if kotsKinds does not exist", func() {
+			dir, err := os.MkdirTemp("", "kotsutil-test")
+			Expect(err).ToNot(HaveOccurred())
+			defer os.RemoveAll(dir)
+
+			upstreamDir := filepath.Join(dir, "upstream")
+			err = os.MkdirAll(upstreamDir, 0755)
+			Expect(err).ToNot(HaveOccurred())
+
+			path := kotsutil.GetKotsKindsPath(dir)
+			Expect(path).To(Equal(upstreamDir))
+		})
+
+		It("returns the path to the kotsKinds directory if both kotsKinds and upstream exist", func() {
+			dir, err := os.MkdirTemp("", "kotsutil-test")
+			Expect(err).ToNot(HaveOccurred())
+			defer os.RemoveAll(dir)
+
+			kotsKindsDir := filepath.Join(dir, "kotsKinds")
+			err = os.MkdirAll(kotsKindsDir, 0755)
+			Expect(err).ToNot(HaveOccurred())
+
+			upstreamDir := filepath.Join(dir, "upstream")
+			err = os.MkdirAll(upstreamDir, 0755)
+			Expect(err).ToNot(HaveOccurred())
+
+			path := kotsutil.GetKotsKindsPath(dir)
+			Expect(path).To(Equal(kotsKindsDir))
+		})
+
+		It("returns the path to root directory if neither kotsKinds nor upstream exist", func() {
+			dir, err := os.MkdirTemp("", "kotsutil-test")
+			Expect(err).ToNot(HaveOccurred())
+			defer os.RemoveAll(dir)
+
+			path := kotsutil.GetKotsKindsPath(dir)
+			Expect(path).To(Equal(dir))
+		})
+	})
+
+	Describe("LoadKotsKinds()", func() {
+		It("loads kots kinds from 'kotsKinds' directory if exists", func() {
+			dir, err := os.MkdirTemp("", "kotsutil-test")
+			Expect(err).ToNot(HaveOccurred())
+			defer os.RemoveAll(dir)
+
+			kotsKindsDir := filepath.Join(dir, "kotsKinds")
+			err = os.MkdirAll(kotsKindsDir, 0755)
+			Expect(err).ToNot(HaveOccurred())
+
+			err = os.WriteFile(filepath.Join(kotsKindsDir, "kots-app.yaml"), []byte("apiVersion: kots.io/v1beta1\nkind: Application\nmetadata:\n  name: foo\nspec:\n  title: foo"), 0644)
+			Expect(err).ToNot(HaveOccurred())
+
+			kotsKinds, err := kotsutil.LoadKotsKinds(dir)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(kotsKinds).ToNot(BeNil())
+			Expect(kotsKinds.KotsApplication.Spec.Title).To(Equal("foo"))
+		})
+
+		It("loads kots kinds from 'upstream' directory if 'kotsKinds' does not exist", func() {
+			dir, err := os.MkdirTemp("", "kotsutil-test")
+			Expect(err).ToNot(HaveOccurred())
+			defer os.RemoveAll(dir)
+
+			upstreamDir := filepath.Join(dir, "upstream")
+			err = os.MkdirAll(upstreamDir, 0755)
+			Expect(err).ToNot(HaveOccurred())
+
+			err = os.WriteFile(filepath.Join(upstreamDir, "kots-app.yaml"), []byte("apiVersion: kots.io/v1beta1\nkind: Application\nmetadata:\n  name: foo\nspec:\n  title: foo"), 0644)
+			Expect(err).ToNot(HaveOccurred())
+
+			kotsKinds, err := kotsutil.LoadKotsKinds(dir)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(kotsKinds).ToNot(BeNil())
+			Expect(kotsKinds.KotsApplication.Spec.Title).To(Equal("foo"))
+		})
+
+		It("loads kots kinds from 'kotsKinds' directory if both 'kotsKinds' and 'upstream' exist", func() {
+			dir, err := os.MkdirTemp("", "kotsutil-test")
+			Expect(err).ToNot(HaveOccurred())
+			defer os.RemoveAll(dir)
+
+			kotsKindsDir := filepath.Join(dir, "kotsKinds")
+			err = os.MkdirAll(kotsKindsDir, 0755)
+			Expect(err).ToNot(HaveOccurred())
+
+			upstreamDir := filepath.Join(dir, "upstream")
+			err = os.MkdirAll(upstreamDir, 0755)
+			Expect(err).ToNot(HaveOccurred())
+
+			err = os.WriteFile(filepath.Join(kotsKindsDir, "kots-app.yaml"), []byte("apiVersion: kots.io/v1beta1\nkind: Application\nmetadata:\n  name: foo\nspec:\n  title: foo"), 0644)
+			Expect(err).ToNot(HaveOccurred())
+
+			err = os.WriteFile(filepath.Join(upstreamDir, "kots-app.yaml"), []byte("apiVersion: kots.io/v1beta1\nkind: Application\nmetadata:\n  name: bar\nspec:\n  title: bar"), 0644)
+			Expect(err).ToNot(HaveOccurred())
+
+			kotsKinds, err := kotsutil.LoadKotsKinds(dir)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(kotsKinds).ToNot(BeNil())
+			Expect(kotsKinds.KotsApplication.Spec.Title).To(Equal("foo"))
+		})
+
+		It("loads kots kinds from root directory if neither 'kotsKinds' nor 'upstream' exist", func() {
+			dir, err := os.MkdirTemp("", "kotsutil-test")
+			Expect(err).ToNot(HaveOccurred())
+			defer os.RemoveAll(dir)
+
+			err = os.WriteFile(filepath.Join(dir, "kots-app.yaml"), []byte("apiVersion: kots.io/v1beta1\nkind: Application\nmetadata:\n  name: foo\nspec:\n  title: foo"), 0644)
+			Expect(err).ToNot(HaveOccurred())
+
+			kotsKinds, err := kotsutil.LoadKotsKinds(dir)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(kotsKinds).ToNot(BeNil())
+			Expect(kotsKinds.KotsApplication.Spec.Title).To(Equal("foo"))
+		})
+	})
+
+	Describe("FindKotsAppInPath()", func() {
+		It("returns nil if no kots app is found", func() {
+			dir, err := os.MkdirTemp("", "kotsutil-test")
+			Expect(err).ToNot(HaveOccurred())
+			defer os.RemoveAll(dir)
+
+			err = os.WriteFile(filepath.Join(dir, "foo.yaml"), []byte("apiVersion: custom.io/v1beta1\nkind: Foo\nmetadata:\n  name: foo"), 0644)
+			Expect(err).ToNot(HaveOccurred())
+
+			kotsApp, err := kotsutil.FindKotsAppInPath(dir)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(kotsApp).To(BeNil())
+		})
+
+		It("returns the kots app if found in the root directory", func() {
+			dir, err := os.MkdirTemp("", "kotsutil-test")
+			Expect(err).ToNot(HaveOccurred())
+			defer os.RemoveAll(dir)
+
+			err = os.WriteFile(filepath.Join(dir, "kots-app.yaml"), []byte("apiVersion: kots.io/v1beta1\nkind: Application\nmetadata:\n  name: foo\nspec:\n  title: foo"), 0644)
+			Expect(err).ToNot(HaveOccurred())
+
+			kotsApp, err := kotsutil.FindKotsAppInPath(dir)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(kotsApp).ToNot(BeNil())
+			Expect(kotsApp.Spec.Title).To(Equal("foo"))
+		})
+
+		It("returns the kots app if found in a subdirectory", func() {
+			dir, err := os.MkdirTemp("", "kotsutil-test")
+			Expect(err).ToNot(HaveOccurred())
+			defer os.RemoveAll(dir)
+
+			subDir := filepath.Join(dir, "subdir")
+			err = os.MkdirAll(subDir, 0755)
+			Expect(err).ToNot(HaveOccurred())
+
+			err = os.WriteFile(filepath.Join(subDir, "kots-app.yaml"), []byte("apiVersion: kots.io/v1beta1\nkind: Application\nmetadata:\n  name: foo\nspec:\n  title: foo"), 0644)
+			Expect(err).ToNot(HaveOccurred())
+
+			kotsApp, err := kotsutil.FindKotsAppInPath(dir)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(kotsApp).ToNot(BeNil())
+			Expect(kotsApp.Spec.Title).To(Equal("foo"))
+		})
+
+		It("returns only one kots app if multiple are found", func() {
+			dir, err := os.MkdirTemp("", "kotsutil-test")
+			Expect(err).ToNot(HaveOccurred())
+			defer os.RemoveAll(dir)
+
+			subDir := filepath.Join(dir, "subdir")
+			err = os.MkdirAll(subDir, 0755)
+			Expect(err).ToNot(HaveOccurred())
+
+			err = os.WriteFile(filepath.Join(dir, "kots-app.yaml"), []byte("apiVersion: kots.io/v1beta1\nkind: Application\nmetadata:\n  name: foo\nspec:\n  title: foo"), 0644)
+			Expect(err).ToNot(HaveOccurred())
+
+			err = os.WriteFile(filepath.Join(subDir, "kots-app.yaml"), []byte("apiVersion: kots.io/v1beta1\nkind: Application\nmetadata:\n  name: bar\nspec:\n  title: bar"), 0644)
+			Expect(err).ToNot(HaveOccurred())
+
+			kotsApp, err := kotsutil.FindKotsAppInPath(dir)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(kotsApp).ToNot(BeNil())
+			Expect(kotsApp.Spec.Title).To(Equal("foo"))
+		})
+	})
+
 	Describe("EncryptConfigValues()", func() {
 		It("does not error when the config field is missing", func() {
 			kotsKind := &kotsutil.KotsKinds{

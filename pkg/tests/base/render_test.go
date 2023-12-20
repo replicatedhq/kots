@@ -78,7 +78,7 @@ func TestRenderUpstream(t *testing.T) {
 
 		test.WantBase = baseFromDir(t, filepath.Join(path, "base"), false)
 
-		test.WantKotsKinds, err = kotsutil.LoadKotsKindsFromPath(path)
+		test.WantKotsKinds, err = kotsutil.LoadKotsKinds(path)
 		require.NoError(t, err, "kotsKinds")
 
 		chartsPath := filepath.Join(path, "base", "charts")

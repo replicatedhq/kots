@@ -73,7 +73,7 @@ func (h *Handler) DownloadApp(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if decryptPasswordValues {
-		kotsKinds, err := kotsutil.LoadKotsKindsFromPath(archivePath)
+		kotsKinds, err := kotsutil.LoadKotsKinds(archivePath)
 		if err != nil {
 			logger.Error(err)
 			w.WriteHeader(500)

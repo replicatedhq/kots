@@ -478,7 +478,7 @@ func (k *KotsKinds) addKotsKinds(content []byte) error {
 	for _, doc := range docs {
 		decoded, gvk, err := decode(doc, nil, nil)
 		if err != nil {
-			return errors.Wrap(err, "failed to decode yaml content")
+			return errors.Wrapf(err, "failed to decode: %v", string(content))
 		}
 
 		if strings.HasPrefix(gvk.String(), "troubleshoot.replicated.com/v1beta1,") {
@@ -488,7 +488,7 @@ func (k *KotsKinds) addKotsKinds(content []byte) error {
 			}
 			decoded, gvk, err = decode(doc, nil, nil)
 			if err != nil {
-				return err
+				return errors.Wrapf(err, "failed to decode troubleshoot doc: %v", string(content))
 			}
 		}
 
@@ -630,20 +630,31 @@ func EmptyKotsKinds() KotsKinds {
 	return kotsKinds
 }
 
-func LoadKotsKindsFromPath(rootDir string) (*KotsKinds, error) {
-	kotsKinds := EmptyKotsKinds()
-
-	if rootDir == "" {
-		return &kotsKinds, nil
+// GetKotsKindsPath returns the path to load kots kinds from in an app version archive created by kots
+func GetKotsKindsPath(archive string) string {
+	if archive == "" {
+		return ""
 	}
 
-	fromDir := rootDir
-	if _, err := os.Stat(filepath.Join(rootDir, "kotsKinds")); err == nil {
+	kotsKindsPath := archive
+	if _, err := os.Stat(filepath.Join(archive, "kotsKinds")); err == nil {
 		// contains the rendered kots kinds if exists, prioritize it over upstream. only newer versions of kots create this directory.
-		fromDir = filepath.Join(rootDir, "kotsKinds")
-	} else if _, err := os.Stat(filepath.Join(rootDir, "upstream")); err == nil {
+		kotsKindsPath = filepath.Join(archive, "kotsKinds")
+	} else if _, err := os.Stat(filepath.Join(archive, "upstream")); err == nil {
 		// contains the non-rendered kots kinds, fallback to it if kotsKinds directory doesn't exist. this directory should always exist.
-		fromDir = filepath.Join(rootDir, "upstream")
+		kotsKindsPath = filepath.Join(archive, "upstream")
+	}
+
+	return kotsKindsPath
+}
+
+// LoadKotsKinds loads kotskinds from an app version archive created by kots
+func LoadKotsKinds(archive string) (*KotsKinds, error) {
+	kotsKinds := EmptyKotsKinds()
+
+	fromDir := GetKotsKindsPath(archive)
+	if fromDir == "" {
+		return &kotsKinds, nil
 	}
 
 	err := filepath.Walk(fromDir,
@@ -754,7 +765,7 @@ func loadRuntimeObjectsFromPath(apiVersion, kind, fromDir string) ([]runtime.Obj
 
 			decoded, gvk, err := decode(contents, nil, nil)
 			if err != nil {
-				return errors.Wrapf(err, "failed to decode: %v", contents)
+				return errors.Wrapf(err, "failed to decode: %v", string(contents))
 			}
 
 			if gvk.String() == fmt.Sprintf("%s, Kind=%s", apiVersion, kind) {
@@ -812,7 +823,7 @@ func LoadV1Beta2HelmChartsFromPath(fromDir string) ([]*kotsv1beta2.HelmChart, er
 }
 
 func LoadInstallationFromPath(installationFilePath string) (*kotsv1beta1.Installation, error) {
-	installationData, err := ioutil.ReadFile(installationFilePath)
+	installationData, err := os.ReadFile(installationFilePath)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to read installation file")
 	}
@@ -824,7 +835,7 @@ func LoadSupportBundleFromContents(data []byte) (*troubleshootv1beta2.SupportBun
 	decode := scheme.Codecs.UniversalDeserializer().Decode
 	obj, gvk, err := decode([]byte(data), nil, nil)
 	if err != nil {
-		return nil, errors.Wrapf(err, "failed to decode support bundle data of length %d", len(data))
+		return nil, errors.Wrapf(err, "failed to decode: %v", string(data))
 	}
 
 	if gvk.Group != "troubleshoot.sh" || gvk.Version != "v1beta2" || gvk.Kind != "SupportBundle" {
@@ -834,11 +845,25 @@ func LoadSupportBundleFromContents(data []byte) (*troubleshootv1beta2.SupportBun
 	return obj.(*troubleshootv1beta2.SupportBundle), nil
 }
 
+func FindKotsAppInPath(fromDir string) (*kotsv1beta1.Application, error) {
+	objects, err := loadRuntimeObjectsFromPath("kots.io/v1beta1", "Application", fromDir)
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to load v1beta2 HelmCharts from %s", fromDir)
+	}
+
+	if len(objects) == 0 {
+		return nil, nil
+	}
+
+	// we only support having one kots app spec
+	return objects[0].(*kotsv1beta1.Application), nil
+}
+
 func LoadKotsAppFromContents(data []byte) (*kotsv1beta1.Application, error) {
 	decode := scheme.Codecs.UniversalDeserializer().Decode
 	obj, gvk, err := decode([]byte(data), nil, nil)
 	if err != nil {
-		return nil, errors.Wrapf(err, "failed to decode kots app data of length %d", len(data))
+		return nil, errors.Wrapf(err, "failed to decode: %v", string(data))
 	}
 
 	if gvk.Group != "kots.io" || gvk.Version != "v1beta1" || gvk.Kind != "Application" {
@@ -852,7 +877,7 @@ func LoadV1Beta1HelmChartListFromContents(data []byte) (*kotsv1beta1.HelmChartLi
 	decode := scheme.Codecs.UniversalDeserializer().Decode
 	obj, gvk, err := decode(data, nil, nil)
 	if err != nil {
-		return nil, errors.Wrapf(err, "failed to decode helm chart data of length %d", len(data))
+		return nil, errors.Wrapf(err, "failed to decode: %v", string(data))
 	}
 
 	if gvk.Group != "kots.io" || gvk.Version != "v1beta1" || gvk.Kind != "HelmChartList" {
@@ -866,7 +891,7 @@ func LoadV1Beta1HelmChartFromContents(content []byte) (*kotsv1beta1.HelmChart, e
 	decode := scheme.Codecs.UniversalDeserializer().Decode
 	obj, gvk, err := decode(content, nil, nil)
 	if err != nil {
-		return nil, errors.Wrapf(err, "failed to decode chart: %v", string(content))
+		return nil, errors.Wrapf(err, "failed to decode: %v", string(content))
 	}
 
 	if gvk.Group != "kots.io" || gvk.Version != "v1beta1" || gvk.Kind != "HelmChart" {
@@ -880,7 +905,7 @@ func LoadV1Beta2HelmChartFromContents(content []byte) (*kotsv1beta2.HelmChart, e
 	decode := scheme.Codecs.UniversalDeserializer().Decode
 	obj, gvk, err := decode(content, nil, nil)
 	if err != nil {
-		return nil, errors.Wrapf(err, "failed to decode chart: %v", string(content))
+		return nil, errors.Wrapf(err, "failed to decode: %v", string(content))
 	}
 
 	if gvk.Group != "kots.io" || gvk.Version != "v1beta2" || gvk.Kind != "HelmChart" {
@@ -894,7 +919,7 @@ func LoadInstallationFromContents(installationData []byte) (*kotsv1beta1.Install
 	decode := scheme.Codecs.UniversalDeserializer().Decode
 	obj, gvk, err := decode([]byte(installationData), nil, nil)
 	if err != nil {
-		return nil, errors.Wrapf(err, "failed to decode installation data of length %d", len(installationData))
+		return nil, errors.Wrapf(err, "failed to decode: %v", string(installationData))
 	}
 
 	if gvk.Group != "kots.io" || gvk.Version != "v1beta1" || gvk.Kind != "Installation" {
@@ -931,7 +956,7 @@ func LoadEmbeddedClusterConfigFromBytes(data []byte) (*embeddedclusterv1beta1.Co
 	decode := scheme.Codecs.UniversalDeserializer().Decode
 	obj, gvk, err := decode([]byte(data), nil, nil)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to decode embedded cluster config data")
+		return nil, errors.Wrapf(err, "failed to decode: %v", string(data))
 	}
 	if gvk.Group != "embeddedcluster.replicated.com" || gvk.Version != "v1beta1" || gvk.Kind != "Config" {
 		return nil, errors.Errorf("unexpected GVK: %s", gvk.String())
@@ -1016,7 +1041,7 @@ func LoadBackupFromContents(content []byte) (*velerov1.Backup, error) {
 
 	obj, gvk, err := decode(content, nil, nil)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to decode content")
+		return nil, errors.Wrapf(err, "failed to decode: %v", string(content))
 	}
 
 	if gvk.String() != "velero.io/v1, Kind=Backup" {
@@ -1031,7 +1056,7 @@ func LoadApplicationFromContents(content []byte) (*applicationv1beta1.Applicatio
 
 	obj, gvk, err := decode(content, nil, nil)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to decode content")
+		return nil, errors.Wrapf(err, "failed to decode: %v", string(content))
 	}
 
 	if gvk.String() != "app.k8s.io/v1beta1, Kind=Application" {
@@ -1046,7 +1071,7 @@ func LoadApplicationFromBytes(content []byte) (*kotsv1beta1.Application, error) 
 
 	obj, gvk, err := decode(content, nil, nil)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to decode content")
+		return nil, errors.Wrapf(err, "failed to decode: %v", string(content))
 	}
 
 	if gvk.String() != "kots.io/v1beta1, Kind=Application" {
@@ -1300,7 +1325,7 @@ func RemoveAppVersionLabelFromInstallationParams(configMapName string) error {
 }
 
 func FindAirgapMetaInDir(root string) (*kotsv1beta1.Airgap, error) {
-	files, err := ioutil.ReadDir(root)
+	files, err := os.ReadDir(root)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to read airgap directory content")
 	}
@@ -1310,7 +1335,7 @@ func FindAirgapMetaInDir(root string) (*kotsv1beta1.Airgap, error) {
 			continue
 		}
 
-		contents, err := ioutil.ReadFile(filepath.Join(root, file.Name()))
+		contents, err := os.ReadFile(filepath.Join(root, file.Name()))
 		if err != nil {
 			// TODO: log?
 			continue

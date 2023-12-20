@@ -57,7 +57,7 @@ func CreateApplicationBackup(ctx context.Context, a *apptypes.App, isScheduled b
 		zap.String("appID", a.ID),
 		zap.Int64("sequence", parentSequence))
 
-	archiveDir, err := ioutil.TempDir("", "kotsadm")
+	archiveDir, err := os.MkdirTemp("", "kotsadm")
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create temp dir")
 	}
@@ -93,7 +93,7 @@ func CreateApplicationBackup(ctx context.Context, a *apptypes.App, isScheduled b
 		return nil, errors.New("no backup store location found")
 	}
 
-	kotsKinds, err := kotsutil.LoadKotsKindsFromPath(archiveDir)
+	kotsKinds, err := kotsutil.LoadKotsKinds(archiveDir)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to load kots kinds from path")
 	}
@@ -267,7 +267,7 @@ func CreateInstanceBackup(ctx context.Context, cluster *downstreamtypes.Downstre
 			return nil, errors.Wrapf(err, "failed to get app version archive for app %s", a.Slug)
 		}
 
-		kotsKinds, err := kotsutil.LoadKotsKindsFromPath(archiveDir)
+		kotsKinds, err := kotsutil.LoadKotsKinds(archiveDir)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to load kots kinds from path")
 		}
