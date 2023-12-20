@@ -123,17 +123,28 @@ func Rewrite(rewriteOptions RewriteOptions) error {
 		Sequence:          rewriteOptions.AppSequence,
 		IsAirgap:          rewriteOptions.IsAirgap,
 	}
-	log.ActionWithSpinner("Creating base")
-	io.WriteString(rewriteOptions.ReportWriter, "Creating base\n")
+	log.ActionWithSpinner("Rendering KOTS custom resources")
+	io.WriteString(rewriteOptions.ReportWriter, "Rendering KOTS custom resources\n")
 
-	commonBase, helmBases, renderedKotsKindsMap, err := base.RenderUpstream(u, &renderOptions)
+	renderedKotsKindsMap, err := base.RenderKotsKinds(u, &renderOptions)
 	if err != nil {
+		log.FinishSpinnerWithError()
 		return errors.Wrap(err, "failed to render upstream")
 	}
 
 	renderedKotsKinds, err := kotsutil.KotsKindsFromMap(renderedKotsKindsMap)
 	if err != nil {
+		log.FinishSpinnerWithError()
 		return errors.Wrap(err, "failed to load rendered kotskinds from map")
+	}
+	log.FinishSpinner()
+
+	log.ActionWithSpinner("Creating base")
+	io.WriteString(rewriteOptions.ReportWriter, "Creating base\n")
+
+	commonBase, helmBases, err := base.RenderUpstream(u, &renderOptions, renderedKotsKinds)
+	if err != nil {
+		return errors.Wrap(err, "failed to render upstream")
 	}
 
 	errorFiles := []base.BaseFile{}

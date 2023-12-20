@@ -8,7 +8,7 @@ import (
 )
 
 func NewConfigContextTemplateBuilder(u *upstreamtypes.Upstream, renderOptions *RenderOptions) (*template.Builder, map[string]template.ItemValue, error) {
-	kotsKinds, err := getKotsKinds(u)
+	kotsKinds, err := getTemplatingKotsKinds(u)
 	if err != nil {
 		return nil, nil, err
 	}

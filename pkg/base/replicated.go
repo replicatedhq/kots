@@ -23,7 +23,6 @@ import (
 	kotsv1beta2 "github.com/replicatedhq/kotskinds/apis/kots/v1beta2"
 	kotsscheme "github.com/replicatedhq/kotskinds/client/kotsclientset/scheme"
 	"github.com/replicatedhq/kotskinds/pkg/helmchart"
-	troubleshootv1beta2 "github.com/replicatedhq/troubleshoot/pkg/apis/troubleshoot/v1beta2"
 	troubleshootscheme "github.com/replicatedhq/troubleshoot/pkg/client/troubleshootclientset/scheme"
 	velerov1 "github.com/vmware-tanzu/velero/pkg/apis/velero/v1"
 	"helm.sh/helm/v3/pkg/chart"
@@ -44,33 +43,15 @@ type Document struct {
 	Kind       string `yaml:"kind"`
 }
 
-func renderReplicated(u *upstreamtypes.Upstream, renderOptions *RenderOptions) (*Base, []Base, map[string][]byte, error) {
+func renderReplicated(u *upstreamtypes.Upstream, renderOptions *RenderOptions, renderedKotsKinds *kotsutil.KotsKinds) (*Base, []Base, error) {
 	commonBase := Base{
 		Files: []BaseFile{},
 		Bases: []Base{},
 	}
 
-	builder, itemValues, err := NewConfigContextTemplateBuilder(u, renderOptions)
+	builder, _, err := NewConfigContextTemplateBuilder(u, renderOptions)
 	if err != nil {
-		return nil, nil, nil, errors.Wrap(err, "failed to create new config context template builder")
-	}
-
-	kotsKinds, err := getKotsKinds(u)
-	if err != nil {
-		return nil, nil, nil, errors.Wrap(err, "failed to find config file")
-	}
-
-	versionInfo := template.VersionInfoFromInstallationSpec(renderOptions.Sequence, renderOptions.IsAirgap, kotsKinds.Installation.Spec)
-	appInfo := template.ApplicationInfo{Slug: renderOptions.AppSlug}
-
-	renderedConfig, err := kotsconfig.TemplateConfigObjects(kotsKinds.Config, itemValues, kotsKinds.License, &kotsKinds.KotsApplication, renderOptions.RegistrySettings, &versionInfo, &appInfo, kotsKinds.IdentityConfig, util.PodNamespace, true)
-	if err != nil {
-		return nil, nil, nil, errors.Wrap(err, "failed to template config objects")
-	}
-
-	renderedKotsKinds, err := renderKotsKinds(u.Files, renderedConfig, renderOptions, builder)
-	if err != nil {
-		return nil, nil, nil, errors.Wrap(err, "failed to render the kots kinds")
+		return nil, nil, errors.Wrap(err, "failed to create new config context template builder")
 	}
 
 	for _, upstreamFile := range u.Files {
@@ -94,15 +75,15 @@ func renderReplicated(u *upstreamtypes.Upstream, renderOptions *RenderOptions) (
 			upstreamFile.Content = bytes.Join(newContent, []byte("\n---\n"))
 		}
 
-		c, err := processVariadicConfig(&upstreamFile, renderedConfig, renderOptions.Log)
+		c, err := processVariadicConfig(&upstreamFile, renderedKotsKinds.Config, renderOptions.Log)
 		if err != nil {
-			return nil, nil, nil, errors.Wrapf(err, "failed to process variadic config in file %s", upstreamFile.Path)
+			return nil, nil, errors.Wrapf(err, "failed to process variadic config in file %s", upstreamFile.Path)
 		}
 		upstreamFile.Content = c
 
 		baseFile, err := upstreamFileToBaseFile(upstreamFile, *builder, renderOptions.Log)
 		if err != nil {
-			return nil, nil, nil, errors.Wrapf(err, "failed to convert upstream file %s to base", upstreamFile.Path)
+			return nil, nil, errors.Wrapf(err, "failed to convert upstream file %s to base", upstreamFile.Path)
 		}
 
 		baseFiles := convertToSingleDocBaseFiles([]BaseFile{baseFile})
@@ -110,7 +91,7 @@ func renderReplicated(u *upstreamtypes.Upstream, renderOptions *RenderOptions) (
 			include, err := f.ShouldBeIncludedInBaseKustomization(renderOptions.ExcludeKotsKinds)
 			if err != nil {
 				if _, ok := err.(ParseError); !ok {
-					return nil, nil, nil, errors.Wrapf(err, "failed to determine if file %s should be included in base", f.Path)
+					return nil, nil, errors.Wrapf(err, "failed to determine if file %s should be included in base", f.Path)
 				}
 			}
 			if include {
@@ -127,21 +108,21 @@ func renderReplicated(u *upstreamtypes.Upstream, renderOptions *RenderOptions) (
 	// NOTE: we only render v1beta1 HelmCharts to base
 	kotsV1Beta1HelmCharts, err := findAllKotsV1Beta1HelmCharts(u.Files, *builder, renderOptions.Log)
 	if err != nil {
-		return nil, nil, nil, errors.Wrap(err, "failed to find helm charts")
+		return nil, nil, errors.Wrap(err, "failed to find helm charts")
 	}
 
 	helmBases := []Base{}
 	for _, kotsHelmChart := range kotsV1Beta1HelmCharts {
 		helmBase, err := renderReplicatedHelmChart(&kotsHelmChart, u.Files, renderOptions, builder)
 		if err != nil {
-			return nil, nil, nil, errors.Wrapf(err, "failed to render helm chart %s", kotsHelmChart.Name)
+			return nil, nil, errors.Wrapf(err, "failed to render helm chart %s", kotsHelmChart.Name)
 		} else if helmBase == nil {
 			continue
 		}
 
 		renderedHelmBase, err := renderReplicatedHelmBase(u, renderOptions, *helmBase, *builder)
 		if err != nil {
-			return nil, nil, nil, errors.Wrapf(err, "failed to render helm chart base %s", helmBase.Path)
+			return nil, nil, errors.Wrapf(err, "failed to render helm chart base %s", helmBase.Path)
 		}
 
 		if kotsHelmChart.Spec.UseHelmInstall {
@@ -151,13 +132,31 @@ func renderReplicated(u *upstreamtypes.Upstream, renderOptions *RenderOptions) (
 		}
 	}
 
-	return &commonBase, helmBases, renderedKotsKinds, nil
+	return &commonBase, helmBases, nil
 }
 
-func renderKotsKinds(upstreamFiles []upstreamtypes.UpstreamFile, renderedConfig *kotsv1beta1.Config, renderOptions *RenderOptions, builder *template.Builder) (map[string][]byte, error) {
-	renderedKotsKinds := make(map[string][]byte)
+func renderKotsKinds(u *upstreamtypes.Upstream, renderOptions *RenderOptions) (map[string][]byte, error) {
+	renderedKotsKindsMap := make(map[string][]byte)
 
-	for _, upstreamFile := range upstreamFiles {
+	builder, itemValues, err := NewConfigContextTemplateBuilder(u, renderOptions)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to create new config context template builder")
+	}
+
+	kotsKinds, err := getTemplatingKotsKinds(u)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to find config file")
+	}
+
+	versionInfo := template.VersionInfoFromInstallationSpec(renderOptions.Sequence, renderOptions.IsAirgap, kotsKinds.Installation.Spec)
+	appInfo := template.ApplicationInfo{Slug: renderOptions.AppSlug}
+
+	renderedConfig, err := kotsconfig.TemplateConfigObjects(kotsKinds.Config, itemValues, kotsKinds.License, &kotsKinds.KotsApplication, renderOptions.RegistrySettings, &versionInfo, &appInfo, kotsKinds.IdentityConfig, util.PodNamespace, true)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to template config objects")
+	}
+
+	for _, upstreamFile := range u.Files {
 		for _, doc := range util.ConvertToSingleDocs(upstreamFile.Content) {
 			gvk := OverlySimpleGVK{}
 			if err := yaml.Unmarshal(doc, &gvk); err != nil {
@@ -212,15 +211,15 @@ func renderKotsKinds(upstreamFiles []upstreamtypes.UpstreamFile, renderedConfig 
 				doc = []byte(bytes)
 			}
 
-			if existing, exists := renderedKotsKinds[upstreamFile.Path]; exists {
+			if existing, exists := renderedKotsKindsMap[upstreamFile.Path]; exists {
 				doc = bytes.Join([][]byte{existing, doc}, []byte("\n---\n"))
 			}
 
-			renderedKotsKinds[upstreamFile.Path] = doc
+			renderedKotsKindsMap[upstreamFile.Path] = doc
 		}
 	}
 
-	return renderedKotsKinds, nil
+	return renderedKotsKindsMap, nil
 }
 
 func extractHelmBases(b Base) []Base {
@@ -440,7 +439,7 @@ func tryGetConfigFromFileContent(content []byte, log *logger.CLILogger) *kotsv1b
 	return nil
 }
 
-func getKotsKinds(u *upstreamtypes.Upstream) (*kotsutil.KotsKinds, error) {
+func getTemplatingKotsKinds(u *upstreamtypes.Upstream) (*kotsutil.KotsKinds, error) {
 	kotsKinds := &kotsutil.KotsKinds{}
 
 	for _, file := range u.Files {
@@ -455,7 +454,7 @@ func getKotsKinds(u *upstreamtypes.Upstream) (*kotsutil.KotsKinds, error) {
 			decoded, gvk, err := decode(doc, nil, nil)
 			if err != nil {
 				if document.APIVersion == "kots.io/v1beta1" && (document.Kind == "Config" || document.Kind == "License") {
-					errMessage := fmt.Sprintf("Failed to decode %s", file.Path)
+					errMessage := fmt.Sprintf("Failed to decode %s: %v", file.Path, string(doc))
 					return nil, errors.Wrap(err, errMessage)
 				}
 				continue
@@ -470,26 +469,10 @@ func getKotsKinds(u *upstreamtypes.Upstream) (*kotsutil.KotsKinds, error) {
 				kotsKinds.KotsApplication = *decoded.(*kotsv1beta1.Application)
 			case "kots.io/v1beta1, Kind=License":
 				kotsKinds.License = decoded.(*kotsv1beta1.License)
-			case "kots.io/v1beta1, Kind=Identity":
-				kotsKinds.Identity = decoded.(*kotsv1beta1.Identity)
 			case "kots.io/v1beta1, Kind=IdentityConfig":
 				kotsKinds.IdentityConfig = decoded.(*kotsv1beta1.IdentityConfig)
 			case "kots.io/v1beta1, Kind=Installation":
 				kotsKinds.Installation = *decoded.(*kotsv1beta1.Installation)
-			case "troubleshoot.sh/v1beta2, Kind=Collector":
-				kotsKinds.Collector = decoded.(*troubleshootv1beta2.Collector)
-			case "troubleshoot.sh/v1beta2, Kind=Analyzer":
-				kotsKinds.Analyzer = decoded.(*troubleshootv1beta2.Analyzer)
-			case "troubleshoot.sh/v1beta2, Kind=SupportBundle":
-				kotsKinds.SupportBundle = decoded.(*troubleshootv1beta2.SupportBundle)
-			case "troubleshoot.sh/v1beta2, Kind=Redactor":
-				kotsKinds.Redactor = decoded.(*troubleshootv1beta2.Redactor)
-			case "troubleshoot.sh/v1beta2, Kind=Preflight":
-				kotsKinds.Preflight = decoded.(*troubleshootv1beta2.Preflight)
-			case "velero.io/v1, Kind=Backup":
-				kotsKinds.Backup = decoded.(*velerov1.Backup)
-			case "app.k8s.io/v1beta1, Kind=Application":
-				kotsKinds.Application = decoded.(*applicationv1beta1.Application)
 			}
 		}
 	}

@@ -112,7 +112,27 @@ func TestRenderUpstream(t *testing.T) {
 			template.TestingDisableKurlValues = true
 			defer func() { template.TestingDisableKurlValues = false }()
 
-			gotBase, gotHelmBases, gotKotsKindsFiles, err := base.RenderUpstream(&tt.Upstream, &tt.RenderOptions)
+			gotKotsKindsFiles, err := base.RenderKotsKinds(&tt.Upstream, &tt.RenderOptions)
+			require.NoError(t, err)
+
+			gotKotsKinds, err := kotsutil.KotsKindsFromMap(gotKotsKindsFiles)
+			require.NoError(t, err, "kots kinds from map")
+
+			if tt.WantKotsKinds.V1Beta1HelmCharts != nil && gotKotsKinds.V1Beta1HelmCharts != nil {
+				require.ElementsMatch(t, tt.WantKotsKinds.V1Beta1HelmCharts.Items, gotKotsKinds.V1Beta1HelmCharts.Items)
+				tt.WantKotsKinds.V1Beta1HelmCharts.Items = nil
+				gotKotsKinds.V1Beta1HelmCharts.Items = nil
+			}
+
+			if tt.WantKotsKinds.V1Beta2HelmCharts != nil && gotKotsKinds.V1Beta2HelmCharts != nil {
+				require.ElementsMatch(t, tt.WantKotsKinds.V1Beta2HelmCharts.Items, gotKotsKinds.V1Beta2HelmCharts.Items)
+				tt.WantKotsKinds.V1Beta2HelmCharts.Items = nil
+				gotKotsKinds.V1Beta2HelmCharts.Items = nil
+			}
+
+			require.Equal(t, tt.WantKotsKinds, gotKotsKinds)
+
+			gotBase, gotHelmBases, err := base.RenderUpstream(&tt.Upstream, &tt.RenderOptions, gotKotsKinds)
 			require.NoError(t, err)
 
 			if len(tt.WantBase.Files) > 0 {
@@ -131,23 +151,6 @@ func TestRenderUpstream(t *testing.T) {
 					t.FailNow()
 				}
 			}
-
-			gotKotsKinds, err := kotsutil.KotsKindsFromMap(gotKotsKindsFiles)
-			require.NoError(t, err, "kots kinds from map")
-
-			if tt.WantKotsKinds.V1Beta1HelmCharts != nil && gotKotsKinds.V1Beta1HelmCharts != nil {
-				require.ElementsMatch(t, tt.WantKotsKinds.V1Beta1HelmCharts.Items, gotKotsKinds.V1Beta1HelmCharts.Items)
-				tt.WantKotsKinds.V1Beta1HelmCharts.Items = nil
-				gotKotsKinds.V1Beta1HelmCharts.Items = nil
-			}
-
-			if tt.WantKotsKinds.V1Beta2HelmCharts != nil && gotKotsKinds.V1Beta2HelmCharts != nil {
-				require.ElementsMatch(t, tt.WantKotsKinds.V1Beta2HelmCharts.Items, gotKotsKinds.V1Beta2HelmCharts.Items)
-				tt.WantKotsKinds.V1Beta2HelmCharts.Items = nil
-				gotKotsKinds.V1Beta2HelmCharts.Items = nil
-			}
-
-			require.Equal(t, tt.WantKotsKinds, gotKotsKinds)
 
 			// TODO: Need to test upstream with multiple Helm charts.
 			// HACK: Also right now "no files" in WantHelmBase implies test does not include any charts.

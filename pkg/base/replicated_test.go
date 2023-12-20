@@ -862,7 +862,17 @@ status: {}
 		t.Run(test.name, func(t *testing.T) {
 			req := require.New(t)
 
-			base, _, kotsKinds, err := renderReplicated(test.upstream, test.renderOptions)
+			renderedKotsKindsMap, err := renderKotsKinds(test.upstream, test.renderOptions)
+			req.NoError(err)
+
+			renderedKotsKinds, err := kotsutil.KotsKindsFromMap(renderedKotsKindsMap)
+			req.NoError(err)
+
+			expectedKotsKinds, err := kotsutil.KotsKindsFromMap(test.expectedKotsKinds)
+			req.NoError(err)
+			req.Equal(expectedKotsKinds, renderedKotsKinds)
+
+			base, _, err := renderReplicated(test.upstream, test.renderOptions, renderedKotsKinds)
 			req.NoError(err)
 
 			decode := scheme.Codecs.UniversalDeserializer().Decode
@@ -875,12 +885,6 @@ status: {}
 			req.NoError(err)
 
 			expectedMultidoc := multidocobj.(*corev1.ServiceAccount)
-
-			expKindsStruct, err := kotsutil.KotsKindsFromMap(test.expectedKotsKinds)
-			req.NoError(err)
-			kindsStruct, err := kotsutil.KotsKindsFromMap(kotsKinds)
-			req.NoError(err)
-			req.Equal(expKindsStruct, kindsStruct)
 
 			var unmarshaledSecrets []*corev1.Secret
 			for _, expectedSecret := range test.expectedSecrets {
@@ -1910,21 +1914,25 @@ version: 1.10.1
 		t.Run(test.name, func(t *testing.T) {
 			req := require.New(t)
 
-			base, helmBase, kotsKinds, err := renderReplicated(test.upstream, test.renderOptions)
+			renderedKotsKindsMap, err := renderKotsKinds(test.upstream, test.renderOptions)
+			req.NoError(err)
+
+			renderedKotsKinds, err := kotsutil.KotsKindsFromMap(renderedKotsKindsMap)
+			req.NoError(err)
+
+			expectedKotsKinds, err := kotsutil.KotsKindsFromMap(test.expectedKotsKinds)
+			req.NoError(err)
+			req.Equal(expectedKotsKinds, renderedKotsKinds)
+
+			base, helmBase, err := renderReplicated(test.upstream, test.renderOptions, renderedKotsKinds)
 			req.NoError(err)
 			req.ElementsMatch(test.expectedHelm, helmBase)
 			req.ElementsMatch(test.expectedBase.Files, base.Files)
-
-			expKindsStruct, err := kotsutil.KotsKindsFromMap(test.expectedKotsKinds)
-			req.NoError(err)
-			kindsStruct, err := kotsutil.KotsKindsFromMap(kotsKinds)
-			req.NoError(err)
-			req.Equal(expKindsStruct, kindsStruct)
 		})
 	}
 }
 
-func Test_getKotsKinds(t *testing.T) {
+func Test_getTemplatingKotsKinds(t *testing.T) {
 	type args struct {
 		u *upstreamtypes.Upstream
 	}
@@ -2142,13 +2150,13 @@ spec:
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := getKotsKinds(tt.args.u)
+			got, err := getTemplatingKotsKinds(tt.args.u)
 			if (err != nil) != tt.wantErr {
-				t.Errorf("getKotsKinds() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("getTemplatingKotsKinds() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
 			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("getKotsKinds() = %v, want %v", got, tt.want)
+				t.Errorf("getTemplatingKotsKinds() = %v, want %v", got, tt.want)
 			}
 		})
 	}

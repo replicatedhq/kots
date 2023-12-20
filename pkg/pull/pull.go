@@ -320,10 +320,10 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 		Sequence:          pullOptions.AppSequence,
 		IsAirgap:          pullOptions.AirgapRoot != "",
 	}
-	log.ActionWithSpinner("Creating base")
-	io.WriteString(pullOptions.ReportWriter, "Creating base\n")
+	log.ActionWithSpinner("Rendering KOTS custom resources")
+	io.WriteString(pullOptions.ReportWriter, "Rendering KOTS custom resources\n")
 
-	commonBase, helmBases, renderedKotsKindsMap, err := base.RenderUpstream(u, &renderOptions)
+	renderedKotsKindsMap, err := base.RenderKotsKinds(u, &renderOptions)
 	if err != nil {
 		log.FinishSpinnerWithError()
 		return "", errors.Wrap(err, "failed to render upstream")
@@ -331,8 +331,10 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 
 	renderedKotsKinds, err := kotsutil.KotsKindsFromMap(renderedKotsKindsMap)
 	if err != nil {
+		log.FinishSpinnerWithError()
 		return "", errors.Wrap(err, "failed to load rendered kotskinds from map")
 	}
+	log.FinishSpinner()
 
 	needsConfig, err := kotsadmconfig.NeedsConfiguration(pullOptions.AppSlug, pullOptions.AppSequence, pullOptions.AirgapRoot != "", renderedKotsKinds, registrySettings)
 	if err != nil {
@@ -407,6 +409,15 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 				}
 			}
 		}
+	}
+
+	log.ActionWithSpinner("Creating base")
+	io.WriteString(pullOptions.ReportWriter, "Creating base\n")
+
+	commonBase, helmBases, err := base.RenderUpstream(u, &renderOptions, renderedKotsKinds)
+	if err != nil {
+		log.FinishSpinnerWithError()
+		return "", errors.Wrap(err, "failed to render upstream")
 	}
 
 	errorFiles := []base.BaseFile{}
