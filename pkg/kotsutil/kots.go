@@ -144,6 +144,28 @@ func IsKotsKind(apiVersion string, kind string) bool {
 	return false
 }
 
+func IsTemplatingKotsKind(apiVersion string, kind string) bool {
+	if apiVersion == "kots.io/v1beta1" && kind == "Config" {
+		return true
+	}
+	if apiVersion == "kots.io/v1beta1" && kind == "ConfigValues" {
+		return true
+	}
+	if apiVersion == "kots.io/v1beta1" && kind == "Application" {
+		return true
+	}
+	if apiVersion == "kots.io/v1beta1" && kind == "License" {
+		return true
+	}
+	if apiVersion == "kots.io/v1beta1" && kind == "IdentityConfig" {
+		return true
+	}
+	if apiVersion == "kots.io/v1beta1" && kind == "Installation" {
+		return true
+	}
+	return false
+}
+
 func (k *KotsKinds) EncryptConfigValues() error {
 	if k.ConfigValues == nil || k.Config == nil {
 		return nil
@@ -470,7 +492,7 @@ func (o KotsKinds) Marshal(g string, v string, k string) (string, error) {
 	return "", errors.Errorf("unknown gvk %s/%s, Kind=%s", g, v, k)
 }
 
-func (k *KotsKinds) addKotsKinds(content []byte) error {
+func (k *KotsKinds) AddKotsKinds(content []byte) error {
 	decode := scheme.Codecs.UniversalDeserializer().Decode
 
 	// kots kinds could be part of a multi-yaml doc
@@ -648,7 +670,7 @@ func GetKotsKindsPath(archive string) string {
 	return kotsKindsPath
 }
 
-// LoadKotsKinds loads kotskinds from an app version archive created by kots
+// LoadKotsKinds loads kots kinds from an app version archive created by kots
 func LoadKotsKinds(archive string) (*KotsKinds, error) {
 	kotsKinds := EmptyKotsKinds()
 
@@ -686,7 +708,74 @@ func LoadKotsKinds(archive string) (*KotsKinds, error) {
 				return nil
 			}
 
-			if err := kotsKinds.addKotsKinds(contents); err != nil {
+			if err := kotsKinds.AddKotsKinds(contents); err != nil {
+				return errors.Wrapf(err, "failed to add kots kinds from %s", path)
+			}
+
+			return nil
+		})
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to walk upstream dir")
+	}
+
+	return &kotsKinds, nil
+}
+
+// GetTemplatingKotsKindsPath returns the path to load the kots kinds that are necessary for templating/rendering from an app version archive created by kots
+func GetTemplatingKotsKindsPath(archive string) string {
+	if archive == "" {
+		return ""
+	}
+
+	templatingKotsKindsPath := archive
+	if _, err := os.Stat(filepath.Join(archive, "upstream")); err == nil {
+		// contains the non-rendered kots kinds, this directory should always exist.
+		templatingKotsKindsPath = filepath.Join(archive, "upstream")
+	}
+
+	return templatingKotsKindsPath
+}
+
+// LoadTemplatingKotsKinds loads the non-rendered config and the kots kinds that are necessary for templating/rendering from an app version archive created by kots.
+// templating kots kinds must have valid schema before they're rendered because they're used to render the rest of the kots kinds and app manifests.
+func LoadTemplatingKotsKinds(archive string) (*KotsKinds, error) {
+	kotsKinds := EmptyKotsKinds()
+
+	fromDir := GetTemplatingKotsKindsPath(archive)
+	if fromDir == "" {
+		return &kotsKinds, nil
+	}
+
+	err := filepath.Walk(fromDir,
+		func(path string, info os.FileInfo, err error) error {
+			if err != nil {
+				return err
+			}
+
+			if info.IsDir() {
+				return nil
+			}
+
+			contents, err := os.ReadFile(path)
+			if err != nil {
+				return errors.Wrapf(err, "failed to read file %s", path)
+			}
+
+			o := OverlySimpleGVK{}
+
+			if err := yaml.Unmarshal(contents, &o); err != nil {
+				// can't parse as a simple GVK, most probably not a yaml file. log an error based on extension and continue
+				if ext := filepath.Ext(path); ext == ".yaml" || ext == ".yml" {
+					logger.Errorf("Failed to parse yaml file %s: %v", path, err)
+				}
+				return nil
+			}
+
+			if !IsTemplatingKotsKind(o.APIVersion, o.Kind) {
+				return nil
+			}
+
+			if err := kotsKinds.AddKotsKinds(contents); err != nil {
 				return errors.Wrapf(err, "failed to add kots kinds from %s", path)
 			}
 
@@ -703,7 +792,7 @@ func KotsKindsFromMap(kotsKindsMap map[string][]byte) (*KotsKinds, error) {
 	kotsKinds := EmptyKotsKinds()
 
 	for path, content := range kotsKindsMap {
-		if err := kotsKinds.addKotsKinds(content); err != nil {
+		if err := kotsKinds.AddKotsKinds(content); err != nil {
 			return nil, errors.Wrapf(err, "failed to parse kots kind %s", path)
 		}
 	}

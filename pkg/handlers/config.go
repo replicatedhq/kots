@@ -270,7 +270,7 @@ func (h *Handler) LiveAppConfig(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var kotsKinds *kotsutil.KotsKinds
+	var templatingKotsKinds *kotsutil.KotsKinds
 	var appLicense *kotsv1beta1.License
 	var app apptypes.AppType
 	var localRegistry registrytypes.RegistrySettings
@@ -294,8 +294,8 @@ func (h *Handler) LiveAppConfig(w http.ResponseWriter, r *http.Request) {
 				w.WriteHeader(http.StatusInternalServerError)
 				return
 			}
-			kotsKinds = &k
-			appLicense = kotsKinds.License
+			templatingKotsKinds = &k
+			appLicense = templatingKotsKinds.License
 			createNewVersion = true
 		} else {
 			licenseID := helm.GetKotsLicenseID(&helmApp.Release)
@@ -320,8 +320,8 @@ func (h *Handler) LiveAppConfig(w http.ResponseWriter, r *http.Request) {
 			}
 			k.License = licenseData.License
 
-			kotsKinds = &k
-			appLicense = kotsKinds.License
+			templatingKotsKinds = &k
+			appLicense = templatingKotsKinds.License
 		}
 	} else {
 		foundApp, err := store.GetStore().GetAppFromSlug(appSlug)
@@ -358,7 +358,7 @@ func (h *Handler) LiveAppConfig(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		kotsKinds, err = kotsutil.LoadKotsKinds(archiveDir)
+		templatingKotsKinds, err = kotsutil.LoadTemplatingKotsKinds(archiveDir)
 		if err != nil {
 			liveAppConfigResponse.Error = "failed to load kots kinds from path"
 			logger.Error(errors.Wrap(err, liveAppConfigResponse.Error))
@@ -390,9 +390,9 @@ func (h *Handler) LiveAppConfig(w http.ResponseWriter, r *http.Request) {
 		sequence += 1
 	}
 
-	versionInfo := template.VersionInfoFromInstallationSpec(sequence, app.GetIsAirgap(), kotsKinds.Installation.Spec) // sequence +1 because the sequence will be incremented on save (and we want the preview to be accurate)
+	versionInfo := template.VersionInfoFromInstallationSpec(sequence, app.GetIsAirgap(), templatingKotsKinds.Installation.Spec) // sequence +1 because the sequence will be incremented on save (and we want the preview to be accurate)
 	appInfo := template.ApplicationInfo{Slug: app.GetSlug()}
-	renderedConfig, err := kotsconfig.TemplateConfigObjects(kotsKinds.Config, configValues, appLicense, &kotsKinds.KotsApplication, localRegistry, &versionInfo, &appInfo, kotsKinds.IdentityConfig, app.GetNamespace(), false)
+	renderedConfig, err := kotsconfig.TemplateConfigObjects(templatingKotsKinds.Config, configValues, appLicense, &templatingKotsKinds.KotsApplication, localRegistry, &versionInfo, &appInfo, templatingKotsKinds.IdentityConfig, app.GetNamespace(), false)
 	if err != nil {
 		liveAppConfigResponse.Error = "failed to render templates"
 		logger.Error(errors.Wrap(err, liveAppConfigResponse.Error))
@@ -482,7 +482,7 @@ func (h *Handler) CurrentAppConfig(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var kotsKinds *kotsutil.KotsKinds
+	var templatingKotsKinds *kotsutil.KotsKinds
 	var license *kotsv1beta1.License
 	var localRegistry registrytypes.RegistrySettings
 	var app apptypes.AppType
@@ -519,8 +519,8 @@ func (h *Handler) CurrentAppConfig(w http.ResponseWriter, r *http.Request) {
 				w.WriteHeader(http.StatusInternalServerError)
 				return
 			}
-			kotsKinds = &k
-			license = kotsKinds.License
+			templatingKotsKinds = &k
+			license = templatingKotsKinds.License
 			createNewVersion = true
 		} else {
 			appKotsKinds, err := helm.GetKotsKindsFromHelmApp(helmApp)
@@ -554,8 +554,8 @@ func (h *Handler) CurrentAppConfig(w http.ResponseWriter, r *http.Request) {
 			}
 			k.License = licenseData.License
 
-			kotsKinds = &k
-			license = kotsKinds.License
+			templatingKotsKinds = &k
+			license = templatingKotsKinds.License
 		}
 	} else {
 		foundApp, err := store.GetStore().GetAppFromSlug(appSlug)
@@ -607,7 +607,7 @@ func (h *Handler) CurrentAppConfig(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		kotsKinds, err = kotsutil.LoadKotsKinds(archiveDir)
+		templatingKotsKinds, err = kotsutil.LoadTemplatingKotsKinds(archiveDir)
 		if err != nil {
 			currentAppConfigResponse.Error = "failed to load kots kinds from path"
 			logger.Error(errors.Wrap(err, currentAppConfigResponse.Error))
@@ -639,8 +639,8 @@ func (h *Handler) CurrentAppConfig(w http.ResponseWriter, r *http.Request) {
 	// get values from saved app version
 	configValues := map[string]template.ItemValue{}
 
-	if kotsKinds.ConfigValues != nil {
-		for key, value := range kotsKinds.ConfigValues.Spec.Values {
+	if templatingKotsKinds.ConfigValues != nil {
+		for key, value := range templatingKotsKinds.ConfigValues.Spec.Values {
 			generatedValue := template.ItemValue{
 				Default:        value.Default,
 				Value:          value.Value,
@@ -655,9 +655,9 @@ func (h *Handler) CurrentAppConfig(w http.ResponseWriter, r *http.Request) {
 		sequence += 1
 	}
 
-	versionInfo := template.VersionInfoFromInstallationSpec(sequence, app.GetIsAirgap(), kotsKinds.Installation.Spec) // sequence +1 because the sequence will be incremented on save (and we want the preview to be accurate)
+	versionInfo := template.VersionInfoFromInstallationSpec(sequence, app.GetIsAirgap(), templatingKotsKinds.Installation.Spec) // sequence +1 because the sequence will be incremented on save (and we want the preview to be accurate)
 	appInfo := template.ApplicationInfo{Slug: app.GetSlug()}
-	renderedConfig, err := kotsconfig.TemplateConfigObjects(kotsKinds.Config, configValues, license, &kotsKinds.KotsApplication, localRegistry, &versionInfo, &appInfo, kotsKinds.IdentityConfig, app.GetNamespace(), false)
+	renderedConfig, err := kotsconfig.TemplateConfigObjects(templatingKotsKinds.Config, configValues, license, &templatingKotsKinds.KotsApplication, localRegistry, &versionInfo, &appInfo, templatingKotsKinds.IdentityConfig, app.GetNamespace(), false)
 	if err != nil {
 		logger.Error(err)
 		currentAppConfigResponse.Error = "failed to render templates"
@@ -749,12 +749,12 @@ func getAppConfigValueForFile(downloadApp *apptypes.App, sequence int64, filenam
 		return "", errors.Wrap(err, "failed to get app version archive")
 	}
 
-	kotsKinds, err := kotsutil.LoadKotsKinds(archiveDir)
+	templatingKotsKinds, err := kotsutil.LoadTemplatingKotsKinds(archiveDir)
 	if err != nil {
 		return "", errors.Wrap(err, "failed to load kots kinds from archive")
 	}
 
-	for _, v := range kotsKinds.ConfigValues.Spec.Values {
+	for _, v := range templatingKotsKinds.ConfigValues.Spec.Values {
 		if v.Filename == filename {
 			return v.Value, nil
 		}
@@ -783,7 +783,7 @@ func updateAppConfig(updateApp *apptypes.App, sequence int64, configGroups []kot
 		return updateAppConfigResponse, err
 	}
 
-	kotsKinds, err := kotsutil.LoadKotsKinds(archiveDir)
+	templatingKotsKinds, err := kotsutil.LoadTemplatingKotsKinds(archiveDir)
 	if err != nil {
 		updateAppConfigResponse.Error = "failed to load kots kinds from path"
 		return updateAppConfigResponse, err
@@ -800,11 +800,11 @@ func updateAppConfig(updateApp *apptypes.App, sequence int64, configGroups []kot
 
 	// we don't merge, this is a wholesale replacement of the config values
 	// so we don't need the complex logic in kots, we can just write
-	if kotsKinds.ConfigValues != nil {
-		values := kotsKinds.ConfigValues.Spec.Values
-		kotsKinds.ConfigValues.Spec.Values = updateAppConfigValues(values, configGroups)
+	if templatingKotsKinds.ConfigValues != nil {
+		values := templatingKotsKinds.ConfigValues.Spec.Values
+		templatingKotsKinds.ConfigValues.Spec.Values = updateAppConfigValues(values, configGroups)
 
-		configValuesSpec, err := kotsKinds.Marshal("kots.io", "v1beta1", "ConfigValues")
+		configValuesSpec, err := templatingKotsKinds.Marshal("kots.io", "v1beta1", "ConfigValues")
 		if err != nil {
 			updateAppConfigResponse.Error = "failed to marshal config values spec"
 			return updateAppConfigResponse, err
@@ -1079,7 +1079,7 @@ func (h *Handler) SetAppConfigValues(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	kotsKinds, err := kotsutil.LoadKotsKinds(archiveDir)
+	templatingKotsKinds, err := kotsutil.LoadTemplatingKotsKinds(archiveDir)
 	if err != nil {
 		setAppConfigValuesResponse.Error = "failed to load kots kinds from path"
 		logger.Error(errors.Wrap(err, setAppConfigValuesResponse.Error))
@@ -1087,7 +1087,7 @@ func (h *Handler) SetAppConfigValues(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if kotsKinds.Config == nil {
+	if templatingKotsKinds.Config == nil {
 		setAppConfigValuesResponse.Error = fmt.Sprintf("app %s does not have a config", foundApp.Slug)
 		logger.Errorf(setAppConfigValuesResponse.Error)
 		JSON(w, http.StatusInternalServerError, setAppConfigValuesResponse)
@@ -1095,14 +1095,14 @@ func (h *Handler) SetAppConfigValues(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if setAppConfigValuesRequest.Merge {
-		if err := kotsKinds.DecryptConfigValues(); err != nil {
+		if err := templatingKotsKinds.DecryptConfigValues(); err != nil {
 			setAppConfigValuesResponse.Error = "failed to decrypt existing values"
 			logger.Error(errors.Wrap(err, setAppConfigValuesResponse.Error))
 			JSON(w, http.StatusInternalServerError, setAppConfigValuesResponse)
 			return
 		}
 
-		newConfigValues, err = mergeConfigValues(kotsKinds.Config, kotsKinds.ConfigValues, newConfigValues)
+		newConfigValues, err = mergeConfigValues(templatingKotsKinds.Config, templatingKotsKinds.ConfigValues, newConfigValues)
 		if err != nil {
 			setAppConfigValuesResponse.Error = "failed to create new config"
 			logger.Error(errors.Wrap(err, setAppConfigValuesResponse.Error))
@@ -1111,7 +1111,7 @@ func (h *Handler) SetAppConfigValues(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	newConfig, err := updateConfigObject(kotsKinds.Config, newConfigValues, setAppConfigValuesRequest.Merge)
+	newConfig, err := updateConfigObject(templatingKotsKinds.Config, newConfigValues, setAppConfigValuesRequest.Merge)
 	if err != nil {
 		setAppConfigValuesResponse.Error = "failed to create new config object"
 		logger.Error(errors.Wrap(err, setAppConfigValuesResponse.Error))
@@ -1149,9 +1149,9 @@ func (h *Handler) SetAppConfigValues(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	versionInfo := template.VersionInfoFromInstallationSpec(nextAppSequence, foundApp.IsAirgap, kotsKinds.Installation.Spec) // sequence +1 because the sequence will be incremented on save (and we want the preview to be accurate)
+	versionInfo := template.VersionInfoFromInstallationSpec(nextAppSequence, foundApp.IsAirgap, templatingKotsKinds.Installation.Spec) // sequence +1 because the sequence will be incremented on save (and we want the preview to be accurate)
 	appInfo := template.ApplicationInfo{Slug: foundApp.Slug}
-	renderedConfig, err := kotsconfig.TemplateConfigObjects(newConfig, configValueMap, kotsKinds.License, &kotsKinds.KotsApplication, registryInfo, &versionInfo, &appInfo, kotsKinds.IdentityConfig, util.PodNamespace, true)
+	renderedConfig, err := kotsconfig.TemplateConfigObjects(newConfig, configValueMap, templatingKotsKinds.License, &templatingKotsKinds.KotsApplication, registryInfo, &versionInfo, &appInfo, templatingKotsKinds.IdentityConfig, util.PodNamespace, true)
 	if err != nil {
 		setAppConfigValuesResponse.Error = "failed to render templates"
 		logger.Error(errors.Wrap(err, setAppConfigValuesResponse.Error))
