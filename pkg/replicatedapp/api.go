@@ -12,7 +12,9 @@ import (
 	"github.com/pkg/errors"
 	apptypes "github.com/replicatedhq/kots/pkg/app/types"
 	"github.com/replicatedhq/kots/pkg/logger"
+	"github.com/replicatedhq/kots/pkg/persistence"
 	"github.com/replicatedhq/kots/pkg/reporting"
+	"github.com/replicatedhq/kots/pkg/store"
 	"github.com/replicatedhq/kots/pkg/util"
 	kotsv1beta1 "github.com/replicatedhq/kotskinds/apis/kots/v1beta1"
 	"github.com/replicatedhq/kotskinds/client/kotsclientset/scheme"
@@ -59,6 +61,26 @@ func GetLatestLicenseForHelm(licenseID string) (*LicenseData, error) {
 	return licenseData, nil
 }
 
+func getAppIdFromLicenseId(s store.Store, licenseID string) (string, error) {
+	apps, err := s.ListInstalledApps()
+	if err != nil {
+		return "", errors.Wrap(err, "failed to get all app licenses")
+	}
+
+	for _, a := range apps {
+		l, err := s.GetLatestLicenseForApp(a.ID)
+		if err != nil {
+			return "", errors.Wrap(err, "failed to get latest license for app")
+		}
+
+		if l.Spec.LicenseID == licenseID {
+			return a.ID, nil
+		}
+	}
+
+	return "", nil
+}
+
 func getLicenseFromAPI(url string, licenseID string) (*LicenseData, error) {
 	req, err := util.NewRequest("GET", url, nil)
 	if err != nil {
@@ -66,6 +88,18 @@ func getLicenseFromAPI(url string, licenseID string) (*LicenseData, error) {
 	}
 
 	req.SetBasicAuth(licenseID, licenseID)
+
+	if persistence.IsInitialized() {
+		appId, err := getAppIdFromLicenseId(store.GetStore(), licenseID)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to get license by id")
+		}
+
+		if appId != "" {
+			reportingInfo := reporting.GetReportingInfo(appId)
+			reporting.InjectReportingInfoHeaders(req, reportingInfo)
+		}
+	}
 
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
