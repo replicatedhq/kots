@@ -16,11 +16,11 @@ spec:
           - https://cdn.example.com/my-app-font.woff
   applicationPorts:
     - serviceName: my-app
-      servicePort: 80
-      localPort: 80
+      servicePort: 80 # not templatable yet
+      localPort: 80 # not templatable yet
       applicationUrl: http://localhost:80
-  releaseNotes: my release notes
-  allowRollback: false
+  releaseNotes: "my release notes" # not templatable yet
+  allowRollback: false # not templatable yet
   statusInformers:
     - deployment/my-app
   graphs:
@@ -32,7 +32,7 @@ spec:
           legend: Memory
         - query: sum(kube_pod_container_resource_requests_storage_bytes)
           legend: Storage
-      durationSeconds: 3600
+      durationSeconds: 3600 # not templatable yet
       yAxisFormat: bytes
       yAxisTemplate: y-axis-template
   minKotsVersion: 1.0.0
@@ -43,9 +43,5 @@ spec:
     - my-app-image:1.0.0
   additionalNamespaces:
     - my-app-namespace
-  requireMinimalRBACPrivileges: false
-  supportMinimalRBACPrivileges: false
-  consoleFeatureFlags:
-    - my-app-feature
-  replicatedRegistryDomain: registry.example.com
-  proxyRegistryDomain: proxy.example.com
+  requireMinimalRBACPrivileges: false # not templatable yet
+  supportMinimalRBACPrivileges: false # not templatable yet

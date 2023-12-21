@@ -16,11 +16,11 @@ spec:
           - repl{{ ConfigOption "kots_app_branding_fonts_1_font_sources_1" }}
   applicationPorts:
     - serviceName: repl{{ ConfigOption "kots_app_application_ports_1_service_name" }}
-      servicePort: repl{{ ConfigOption "kots_app_application_ports_1_service_port" }}
-      localPort: repl{{ ConfigOption "kots_app_application_ports_1_local_port" }}
+      servicePort: 80 # not templatable yet
+      localPort: 80 # not templatable yet
       applicationUrl: repl{{ ConfigOption "kots_app_application_ports_1_application_url" }}
-  releaseNotes: repl{{ ConfigOption "kots_app_release_notes" }}
-  allowRollback: repl{{ ConfigOptionEquals "kots_app_allow_rollback" "1" }}
+  releaseNotes: "my release notes" # not templatable yet
+  allowRollback: false # not templatable yet
   statusInformers:
     - repl{{ ConfigOption "kots_app_status_informers_1" }}
   graphs:
@@ -32,7 +32,7 @@ spec:
           legend: repl{{ ConfigOption "kots_app_graphs_1_queries_1_legend" }}
         - query: repl{{ ConfigOption "kots_app_graphs_1_queries_2_query" }}
           legend: repl{{ ConfigOption "kots_app_graphs_1_queries_2_legend" }}
-      durationSeconds: repl{{ ConfigOption "kots_app_graphs_1_duration_seconds" }}
+      durationSeconds: 3600 # not templatable yet
       yAxisFormat: repl{{ ConfigOption "kots_app_graphs_1_y_axis_format" }}
       yAxisTemplate: repl{{ ConfigOption "kots_app_graphs_1_y_axis_template" }}
   minKotsVersion: repl{{ ConfigOption "kots_app_min_kots_version" }}
@@ -43,9 +43,5 @@ spec:
     - repl{{ ConfigOption "kots_app_additional_images_1" }}
   additionalNamespaces:
     - repl{{ ConfigOption "kots_app_additional_namespacse_1" }}
-  requireMinimalRBACPrivileges: repl{{ ConfigOptionEquals "kots_app_require_minimal_rbac_privileges" "1" }}
-  supportMinimalRBACPrivileges: repl{{ ConfigOptionEquals "kots_app_support_minimal_rbac_privileges" "1" }}
-  consoleFeatureFlags:
-    - repl{{ ConfigOption "kots_app_console_feature_flags_1" }}
-  replicatedRegistryDomain: repl{{ ConfigOption "kots_app_replicated_registry_domain" }}
-  proxyRegistryDomain: repl{{ ConfigOption "kots_app_proxy_registry_domain" }}
+  requireMinimalRBACPrivileges: false # not templatable yet
+  supportMinimalRBACPrivileges: false # not templatable yet

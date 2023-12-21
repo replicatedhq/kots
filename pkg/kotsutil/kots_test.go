@@ -216,6 +216,74 @@ var _ = Describe("Kots", func() {
 		})
 	})
 
+	Describe("FindConfigInPath()", func() {
+		It("returns nil if no config is found", func() {
+			dir, err := os.MkdirTemp("", "kotsutil-test")
+			Expect(err).ToNot(HaveOccurred())
+			defer os.RemoveAll(dir)
+
+			err = os.WriteFile(filepath.Join(dir, "foo.yaml"), []byte("apiVersion: custom.io/v1beta1\nkind: Foo\nmetadata:\n  name: foo"), 0644)
+			Expect(err).ToNot(HaveOccurred())
+
+			kotsConfig, err := kotsutil.FindConfigInPath(dir)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(kotsConfig).To(BeNil())
+		})
+
+		It("returns the config if found in the root directory", func() {
+			dir, err := os.MkdirTemp("", "kotsutil-test")
+			Expect(err).ToNot(HaveOccurred())
+			defer os.RemoveAll(dir)
+
+			err = os.WriteFile(filepath.Join(dir, "kots-config.yaml"), []byte("apiVersion: kots.io/v1beta1\nkind: Config\nmetadata:\n  name: foo"), 0644)
+			Expect(err).ToNot(HaveOccurred())
+
+			kotsConfig, err := kotsutil.FindConfigInPath(dir)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(kotsConfig).ToNot(BeNil())
+			Expect(kotsConfig.ObjectMeta.Name).To(Equal("foo"))
+		})
+
+		It("returns the config if found in a subdirectory", func() {
+			dir, err := os.MkdirTemp("", "kotsutil-test")
+			Expect(err).ToNot(HaveOccurred())
+			defer os.RemoveAll(dir)
+
+			subDir := filepath.Join(dir, "subdir")
+			err = os.MkdirAll(subDir, 0755)
+			Expect(err).ToNot(HaveOccurred())
+
+			err = os.WriteFile(filepath.Join(subDir, "kots-config.yaml"), []byte("apiVersion: kots.io/v1beta1\nkind: Config\nmetadata:\n  name: foo"), 0644)
+			Expect(err).ToNot(HaveOccurred())
+
+			kotsConfig, err := kotsutil.FindConfigInPath(dir)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(kotsConfig).ToNot(BeNil())
+			Expect(kotsConfig.ObjectMeta.Name).To(Equal("foo"))
+		})
+
+		It("returns only one config if multiple are found", func() {
+			dir, err := os.MkdirTemp("", "kotsutil-test")
+			Expect(err).ToNot(HaveOccurred())
+			defer os.RemoveAll(dir)
+
+			subDir := filepath.Join(dir, "subdir")
+			err = os.MkdirAll(subDir, 0755)
+			Expect(err).ToNot(HaveOccurred())
+
+			err = os.WriteFile(filepath.Join(dir, "kots-config.yaml"), []byte("apiVersion: kots.io/v1beta1\nkind: Config\nmetadata:\n  name: foo"), 0644)
+			Expect(err).ToNot(HaveOccurred())
+
+			err = os.WriteFile(filepath.Join(subDir, "kots-config.yaml"), []byte("apiVersion: kots.io/v1beta1\nkind: Config\nmetadata:\n  name: bar"), 0644)
+			Expect(err).ToNot(HaveOccurred())
+
+			kotsConfig, err := kotsutil.FindConfigInPath(dir)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(kotsConfig).ToNot(BeNil())
+			Expect(kotsConfig.ObjectMeta.Name).To(Equal("foo"))
+		})
+	})
+
 	Describe("EncryptConfigValues()", func() {
 		It("does not error when the config field is missing", func() {
 			kotsKind := &kotsutil.KotsKinds{

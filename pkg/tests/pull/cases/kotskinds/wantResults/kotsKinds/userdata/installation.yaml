@@ -2,13 +2,14 @@ apiVersion: kots.io/v1beta1
 kind: Installation
 metadata:
   creationTimestamp: null
-  name: replicated-kots-app
+  name: my-app
 spec:
   channelID: 1vusIYZLAVxMG6q760OJmRKj5i5
   channelName: My Channel
   knownImages:
-  - image: my-app-image:1.0.0
-    isPrivate: true
   - image: my-pod-spec-containers-0-image
     isPrivate: true
+  - image: my-app-image:1.0.0
+    isPrivate: true
+  releaseNotes: my release notes
 status: {}
