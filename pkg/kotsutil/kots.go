@@ -796,34 +796,6 @@ func IsApiVersionKind(content []byte, apiVersion, kind string) bool {
 	return false
 }
 
-func LoadV1Beta1HelmChartsFromPath(fromDir string) ([]*kotsv1beta1.HelmChart, error) {
-	objects, err := loadRuntimeObjectsFromPath("kots.io/v1beta1", "HelmChart", fromDir)
-	if err != nil {
-		return nil, errors.Wrapf(err, "failed to load v1beta1 HelmCharts from %s", fromDir)
-	}
-
-	charts := []*kotsv1beta1.HelmChart{}
-	for _, o := range objects {
-		charts = append(charts, o.(*kotsv1beta1.HelmChart))
-	}
-
-	return charts, nil
-}
-
-func LoadV1Beta2HelmChartsFromPath(fromDir string) ([]*kotsv1beta2.HelmChart, error) {
-	objects, err := loadRuntimeObjectsFromPath("kots.io/v1beta2", "HelmChart", fromDir)
-	if err != nil {
-		return nil, errors.Wrapf(err, "failed to load v1beta2 HelmCharts from %s", fromDir)
-	}
-
-	charts := []*kotsv1beta2.HelmChart{}
-	for _, o := range objects {
-		charts = append(charts, o.(*kotsv1beta2.HelmChart))
-	}
-
-	return charts, nil
-}
-
 func LoadInstallationFromPath(installationFilePath string) (*kotsv1beta1.Installation, error) {
 	installationData, err := os.ReadFile(installationFilePath)
 	if err != nil {

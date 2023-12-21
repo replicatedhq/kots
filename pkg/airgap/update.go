@@ -177,6 +177,7 @@ func UpdateAppFromPath(a *apptypes.App, airgapRoot string, airgapBundlePath stri
 		AppSlug:                a.Slug,
 		AppSequence:            appSequence,
 		SkipCompatibilityCheck: skipCompatibilityCheck,
+		KotsKinds:              beforeKotsKinds,
 	}
 
 	if _, err := pull.Pull(fmt.Sprintf("replicated://%s", beforeKotsKinds.License.Spec.AppSlug), pullOptions); err != nil {

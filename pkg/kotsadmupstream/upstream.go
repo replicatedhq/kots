@@ -230,6 +230,7 @@ func DownloadUpdate(appID string, update types.Update, skipPreflights bool, skip
 		RewriteImages:          registrySettings.IsValid(),
 		RewriteImageOptions:    registrySettings,
 		SkipCompatibilityCheck: skipCompatibilityCheck,
+		KotsKinds:              beforeKotsKinds,
 	}
 
 	_, err = pull.Pull(fmt.Sprintf("replicated://%s", beforeKotsKinds.License.Spec.AppSlug), pullOptions)

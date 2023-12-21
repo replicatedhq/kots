@@ -117,11 +117,10 @@ func CleanBaseArchive(path string) error {
 
 	// "overlays" contains manual kustomizations.
 	// "upstream" contains config values, known images, and other important installation info
-	// "kotsKinds" contains the rendered kotskinds which can be needed when processing incoming updates
 	// everything else should be deleted and generated again
 	for _, file := range files {
 		switch file.Name() {
-		case "overlays", "upstream", "kotsKinds":
+		case "overlays", "upstream":
 			continue
 		default:
 			err := os.RemoveAll(filepath.Join(path, file.Name()))

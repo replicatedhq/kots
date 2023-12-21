@@ -69,6 +69,7 @@ type PullOptions struct {
 	NoProxyEnvValue         string
 	ReportingInfo           *reportingtypes.ReportingInfo
 	SkipCompatibilityCheck  bool
+	KotsKinds               *kotsutil.KotsKinds
 }
 
 var (
@@ -254,14 +255,12 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 		fetchOptions.LocalPath = airgapAppFiles
 	}
 
-	// the root directory contains the manifests of the previous version and gets rewritten when fetching the upstream, so we load previous charts before fetching the upstream.
-	prevHelmCharts := []*kotsv1beta1.HelmChart{}
-	if !pullOptions.SkipHelmChartCheck {
-		phc, err := kotsutil.LoadV1Beta1HelmChartsFromPath(kotsutil.GetKotsKindsPath(pullOptions.RootDir))
-		if err != nil {
-			return "", errors.Wrap(err, "failed to load previous helm charts")
+	prevV1Beta1HelmCharts := []*kotsv1beta1.HelmChart{}
+	if pullOptions.KotsKinds != nil && pullOptions.KotsKinds.V1Beta1HelmCharts != nil {
+		for _, v1Beta1Chart := range pullOptions.KotsKinds.V1Beta1HelmCharts.Items {
+			kc := v1Beta1Chart
+			prevV1Beta1HelmCharts = append(prevV1Beta1HelmCharts, &kc)
 		}
-		prevHelmCharts = phc
 	}
 
 	log.ActionWithSpinner("Pulling upstream")
@@ -383,7 +382,7 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 	}
 
 	if !pullOptions.SkipHelmChartCheck {
-		for _, prevChart := range prevHelmCharts {
+		for _, prevChart := range prevV1Beta1HelmCharts {
 			if !prevChart.Spec.Exclude.IsEmpty() {
 				isExcluded, err := prevChart.Spec.Exclude.Boolean()
 				if err == nil && isExcluded {

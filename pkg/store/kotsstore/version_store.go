@@ -353,7 +353,7 @@ func (s *KOTSStore) GetAppVersionBaseArchive(appID string, versionLabel string) 
 		return "", -1, errors.Wrapf(err, "failed to get base sequence for version %s", versionLabel)
 	}
 
-	archiveDir, err := ioutil.TempDir("", "kotsadm")
+	archiveDir, err := os.MkdirTemp("", "kotsadm")
 	if err != nil {
 		return "", -1, errors.Wrap(err, "failed to create temp dir")
 	}
