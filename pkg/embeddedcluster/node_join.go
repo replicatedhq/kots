@@ -2,15 +2,15 @@ package embeddedcluster
 
 import (
 	"context"
+	"encoding/base64"
 	"fmt"
 	"strings"
 	"sync"
 	"time"
 
 	"github.com/replicatedhq/kots/pkg/embeddedcluster/types"
+	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/util"
-	corev1 "k8s.io/api/core/v1"
-	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 )
@@ -23,6 +23,25 @@ type joinTokenEntry struct {
 
 var joinTokenMapMut = sync.Mutex{}
 var joinTokenMap = map[string]*joinTokenEntry{}
+
+const k0sTokenTemplate = `apiVersion: v1
+clusters:
+- cluster:
+    certificate-authority-data: %s
+    server: https://%s:%d
+  name: k0s
+contexts:
+- context:
+    cluster: k0s
+    user: %s
+  name: k0s
+current-context: k0s
+kind: Config
+users:
+- name: %s
+  user:
+    token: %s
+`
 
 // GenerateAddNodeToken will generate the embedded cluster node add command for a node with the specified roles
 // join commands will last for 24 hours, and will be cached for 1 hour after first generation
@@ -44,9 +63,9 @@ func GenerateAddNodeToken(ctx context.Context, client kubernetes.Interface, node
 		return joinToken.Token, nil
 	}
 
-	newToken, err := runAddNodeCommandPod(ctx, client, nodeRole)
+	newToken, err := makeK0sToken(ctx, client, nodeRole)
 	if err != nil {
-		return "", fmt.Errorf("failed to run add node command pod: %w", err)
+		return "", fmt.Errorf("failed to generate k0s token: %w", err)
 	}
 
 	now := time.Now()
@@ -56,161 +75,60 @@ func GenerateAddNodeToken(ctx context.Context, client kubernetes.Interface, node
 	return newToken, nil
 }
 
-// run a pod that will generate the add node token
-func runAddNodeCommandPod(ctx context.Context, client kubernetes.Interface, nodeRole string) (string, error) {
-	podName := "k0s-token-generator-"
-	suffix := strings.Replace(nodeRole, "+", "-", -1)
-	podName += suffix
-
-	// cleanup the pod if it already exists
-	err := client.CoreV1().Pods("kube-system").Delete(ctx, podName, metav1.DeleteOptions{})
+func makeK0sToken(ctx context.Context, client kubernetes.Interface, nodeRole string) (string, error) {
+	rawToken, err := k8sutil.GenerateK0sBootstrapToken(client, time.Hour, nodeRole)
 	if err != nil {
-		if !kuberneteserrors.IsNotFound(err) {
-			return "", fmt.Errorf("failed to delete pod: %w", err)
-		}
+		return "", fmt.Errorf("failed to generate bootstrap token: %w", err)
 	}
 
-	hostPathFile := corev1.HostPathFile
-	hostPathDir := corev1.HostPathDirectory
-	_, err = client.CoreV1().Pods("kube-system").Create(ctx, &corev1.Pod{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      podName,
-			Namespace: "kube-system",
-			Labels: map[string]string{
-				"replicated.app/embedded-cluster": "true",
-			},
-		},
-		Spec: corev1.PodSpec{
-			RestartPolicy: corev1.RestartPolicyOnFailure,
-			HostNetwork:   true,
-			Volumes: []corev1.Volume{
-				{
-					Name: "bin",
-					VolumeSource: corev1.VolumeSource{
-						HostPath: &corev1.HostPathVolumeSource{
-							Path: "/usr/local/bin/k0s",
-							Type: &hostPathFile,
-						},
-					},
-				},
-				{
-					Name: "lib",
-					VolumeSource: corev1.VolumeSource{
-						HostPath: &corev1.HostPathVolumeSource{
-							Path: "/var/lib/k0s",
-							Type: &hostPathDir,
-						},
-					},
-				},
-				{
-					Name: "etc",
-					VolumeSource: corev1.VolumeSource{
-						HostPath: &corev1.HostPathVolumeSource{
-							Path: "/etc/k0s",
-							Type: &hostPathDir,
-						},
-					},
-				},
-				{
-					Name: "run",
-					VolumeSource: corev1.VolumeSource{
-						HostPath: &corev1.HostPathVolumeSource{
-							Path: "/run/k0s",
-							Type: &hostPathDir,
-						},
-					},
-				},
-			},
-			Affinity: &corev1.Affinity{
-				NodeAffinity: &corev1.NodeAffinity{
-					RequiredDuringSchedulingIgnoredDuringExecution: &corev1.NodeSelector{
-						NodeSelectorTerms: []corev1.NodeSelectorTerm{
-							{
-								MatchExpressions: []corev1.NodeSelectorRequirement{
-									{
-										Key:      "node.k0sproject.io/role",
-										Operator: corev1.NodeSelectorOpIn,
-										Values: []string{
-											"control-plane",
-										},
-									},
-								},
-							},
-						},
-					},
-				},
-			},
-			Containers: []corev1.Container{
-				{
-					Name:    "k0s-token-generator",
-					Image:   "ubuntu:jammy", // this will not work on airgap, but it needs to be debian based at the moment
-					Command: []string{"/mnt/k0s"},
-					Args: []string{
-						"token",
-						"create",
-						"--expiry",
-						"12h",
-						"--role",
-						nodeRole,
-					},
-					VolumeMounts: []corev1.VolumeMount{
-						{
-							Name:      "bin",
-							MountPath: "/mnt/k0s",
-						},
-						{
-							Name:      "lib",
-							MountPath: "/var/lib/k0s",
-						},
-						{
-							Name:      "etc",
-							MountPath: "/etc/k0s",
-						},
-						{
-							Name:      "run",
-							MountPath: "/run/k0s",
-						},
-					},
-				},
-			},
-		},
-	}, metav1.CreateOptions{})
+	cert, err := k8sutil.GetClusterCaCert(ctx, client)
 	if err != nil {
-		return "", fmt.Errorf("failed to create pod: %w", err)
+		return "", fmt.Errorf("failed to get cluster ca cert: %w", err)
+	}
+	cert = base64.StdEncoding.EncodeToString([]byte(cert))
+
+	firstPrimary, err := firstPrimaryIpAddress(ctx, client)
+	if err != nil {
+		return "", fmt.Errorf("failed to get first primary ip address: %w", err)
 	}
 
-	// wait for the pod to complete
-	for {
-		pod, err := client.CoreV1().Pods("kube-system").Get(ctx, podName, metav1.GetOptions{})
-		if err != nil {
-			return "", fmt.Errorf("failed to get pod: %w", err)
+	userName := "kubelet-bootstrap"
+	port := 6443
+	if nodeRole == "controller" {
+		userName = "controller-bootstrap"
+		port = 9443
+	}
+
+	fullToken := fmt.Sprintf(k0sTokenTemplate, cert, firstPrimary, port, userName, userName, rawToken)
+	gzipToken, err := util.GzipData([]byte(fullToken))
+	if err != nil {
+		return "", fmt.Errorf("failed to gzip token: %w", err)
+	}
+	b64Token := base64.StdEncoding.EncodeToString(gzipToken)
+
+	return b64Token, nil
+}
+
+func firstPrimaryIpAddress(ctx context.Context, client kubernetes.Interface) (string, error) {
+	nodes, err := client.CoreV1().Nodes().List(ctx, metav1.ListOptions{})
+	if err != nil {
+		return "", fmt.Errorf("failed to list nodes: %w", err)
+	}
+
+	for _, node := range nodes.Items {
+		if cp, ok := node.Labels["node-role.kubernetes.io/control-plane"]; !ok || cp != "true" {
+			continue
 		}
 
-		if pod.Status.Phase == corev1.PodSucceeded {
-			break
+		for _, address := range node.Status.Addresses {
+			if address.Type == "InternalIP" {
+				return address.Address, nil
+			}
 		}
 
-		if pod.Status.Phase == corev1.PodFailed {
-			return "", fmt.Errorf("pod failed")
-		}
-
-		time.Sleep(time.Second)
 	}
 
-	// get the logs from the completed pod
-	podLogs, err := client.CoreV1().Pods("kube-system").GetLogs(podName, &corev1.PodLogOptions{}).DoRaw(ctx)
-	if err != nil {
-		return "", fmt.Errorf("failed to get pod logs: %w", err)
-	}
-
-	// delete the completed pod
-	err = client.CoreV1().Pods("kube-system").Delete(ctx, podName, metav1.DeleteOptions{})
-	if err != nil {
-		return "", fmt.Errorf("failed to delete pod: %w", err)
-	}
-
-	// the logs are just a join token, which needs to be added to other things to get a join command
-	return string(podLogs), nil
+	return "", fmt.Errorf("failed to find controller node")
 }
 
 // GenerateAddNodeCommand returns the command a user should run to add a node with the provided token
