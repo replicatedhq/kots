@@ -336,7 +336,7 @@ func rewriteOneImage(srcRegistry, destRegistry dockerregistrytypes.RegistryOptio
 	}
 
 	if !copyImages {
-		return kustomizeImage(destRegistry, image)
+		return imageutil.KustomizeImage(destRegistry, image)
 	}
 
 	imageListSelection := copy.CopySystemImage
@@ -401,7 +401,7 @@ func rewriteOneImage(srcRegistry, destRegistry dockerregistrytypes.RegistryOptio
 		}
 	}
 
-	return kustomizeImage(destRegistry, image)
+	return imageutil.KustomizeImage(destRegistry, image)
 }
 
 func CopyImage(opts types.CopyImageOptions) error {

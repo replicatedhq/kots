@@ -286,7 +286,7 @@ func StripImageTagAndDigest(image string) string {
 	return image
 }
 
-func kustomizeImage(destRegistry registrytypes.RegistryOptions, image string) ([]kustomizetypes.Image, error) {
+func KustomizeImage(destRegistry registrytypes.RegistryOptions, image string) ([]kustomizetypes.Image, error) {
 	rewrittenImage, err := RewriteDockerRegistryImage(destRegistry, image)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to rewrite image")
