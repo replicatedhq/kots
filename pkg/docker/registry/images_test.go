@@ -94,6 +94,13 @@ func Test_MakeProxiedImageURL(t *testing.T) {
 			image:     "registry:5000/image:tag@digest",
 			want:      "host/proxy/slug/registry:5000/image",
 		},
+		{
+			name:      "tag and digest image on ported registry with namespace",
+			proxyHost: "host",
+			appSlug:   "slug",
+			image:     "registry:5000/namespace/image:tag@digest",
+			want:      "host/proxy/slug/registry:5000/namespace/image",
+		},
 		// ---- test cases for images that are already proxied ---- //
 		{
 			name:      "untagged proxied image",
@@ -178,6 +185,13 @@ func Test_MakeProxiedImageURL(t *testing.T) {
 			appSlug:   "slug",
 			image:     "host/proxy/slug/registry:5000/image:tag@digest",
 			want:      "host/proxy/slug/registry:5000/image",
+		},
+		{
+			name:      "tag and digest proxied image on ported registry with namespace",
+			proxyHost: "host",
+			appSlug:   "slug",
+			image:     "host/proxy/slug/registry:5000/namespace/image:tag@digest",
+			want:      "host/proxy/slug/registry:5000/namespace/image",
 		},
 	}
 	for _, tt := range tests {
