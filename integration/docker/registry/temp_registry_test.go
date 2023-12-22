@@ -1,7 +1,7 @@
 package replicated
 
 import (
-	"io/ioutil"
+	"os"
 	"path"
 	"reflect"
 	"testing"
@@ -221,7 +221,7 @@ func TestTempRegistry_GetImageLayers(t *testing.T) {
 
 	req := require.New(t)
 
-	manifestsContent, err := ioutil.ReadFile(path.Join("assets", "manifests.yaml"))
+	manifestsContent, err := os.ReadFile(path.Join("assets", "manifests.yaml"))
 	req.NoError(err)
 
 	var manifests map[string]string

@@ -93,7 +93,7 @@ func generateReplicatedAppArchive(rawArchivePath string) ([]byte, error) {
 	if err := tarGz.Archive([]string{rawArchivePath}, archiveFile); err != nil {
 		return nil, errors.Wrap(err, "failed to create archive")
 	}
-	b, err := ioutil.ReadFile(archiveFile)
+	b, err := os.ReadFile(archiveFile)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to read archive file")
 	}
@@ -152,7 +152,7 @@ func generateExpectedFilesystem(namespace, rawArchivePath string) ([]byte, error
 	if err := tarGz.Archive(paths, archiveFile); err != nil {
 		return nil, errors.Wrap(err, "failed to create archive")
 	}
-	b, err := ioutil.ReadFile(archiveFile)
+	b, err := os.ReadFile(archiveFile)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to read archive file")
 	}

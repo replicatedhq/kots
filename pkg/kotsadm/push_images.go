@@ -953,7 +953,7 @@ func isAppArchive(rootDir string) bool {
 			continue
 		}
 
-		contents, err := ioutil.ReadFile(filepath.Join(rootDir, info.Name()))
+		contents, err := os.ReadFile(filepath.Join(rootDir, info.Name()))
 		if err != nil {
 			continue
 		}

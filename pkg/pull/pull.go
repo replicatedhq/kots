@@ -890,7 +890,7 @@ func findConfig(localPath string) (*kotsv1beta1.Config, *kotsv1beta1.ConfigValue
 				return nil
 			}
 
-			content, err := ioutil.ReadFile(path)
+			content, err := os.ReadFile(path)
 			if err != nil {
 				return err
 			}

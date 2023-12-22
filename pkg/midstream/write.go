@@ -239,7 +239,7 @@ func ProcessAirgapImages(options image.ProcessImageOptions, kotsKinds *kotsutil.
 		processAirgapImageOptions.ReplicatedRegistry.Password = license.Spec.LicenseID
 	}
 
-	imagesData, err := ioutil.ReadFile(filepath.Join(options.AirgapRoot, "images.json"))
+	imagesData, err := os.ReadFile(filepath.Join(options.AirgapRoot, "images.json"))
 	if err != nil && !os.IsNotExist(err) {
 		return nil, errors.Wrap(err, "failed to load images file")
 	}
@@ -266,6 +266,11 @@ func findPrivateImages(opts WriteOptions, dockerHubRegistryCreds registry.Creden
 	replicatedRegistryInfo := registry.GetRegistryProxyInfo(opts.License, &opts.RenderedKotsKinds.Installation, &opts.RenderedKotsKinds.KotsApplication)
 	allPrivate := opts.RenderedKotsKinds.KotsApplication.Spec.ProxyPublicImages
 
+	kotsKindsImages, err := kotsutil.GetImagesFromKotsKinds(opts.RenderedKotsKinds, nil)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get images from kots kinds")
+	}
+
 	findPrivateImagesOptions := base.FindPrivateImagesOptions{
 		BaseDir: opts.BaseDir,
 		AppSlug: opts.License.Spec.AppSlug,
@@ -282,7 +287,7 @@ func findPrivateImages(opts WriteOptions, dockerHubRegistryCreds registry.Creden
 		AllImagesPrivate: allPrivate,
 		HelmChartPath:    opts.Base.Path,
 		UseHelmInstall:   opts.UseHelmInstall,
-		KotsKindsImages:  kotsutil.GetImagesFromKotsKinds(opts.RenderedKotsKinds),
+		KotsKindsImages:  kotsKindsImages,
 	}
 	findResult, err := base.FindPrivateImages(findPrivateImagesOptions)
 	if err != nil {

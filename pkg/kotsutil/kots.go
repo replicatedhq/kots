@@ -7,7 +7,6 @@ import (
 	"context"
 	"encoding/base64"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path"
 	"path/filepath"
@@ -16,12 +15,14 @@ import (
 	"time"
 
 	"github.com/blang/semver"
+	dockerref "github.com/containers/image/v5/docker/reference"
 	"github.com/pkg/errors"
 	embeddedclusterv1beta1 "github.com/replicatedhq/embedded-cluster-operator/api/v1beta1"
 	"github.com/replicatedhq/kots/pkg/archives"
 	"github.com/replicatedhq/kots/pkg/binaries"
 	"github.com/replicatedhq/kots/pkg/buildversion"
 	"github.com/replicatedhq/kots/pkg/crypto"
+	registrytypes "github.com/replicatedhq/kots/pkg/docker/registry/types"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/kurl"
 	"github.com/replicatedhq/kots/pkg/logger"
@@ -555,9 +556,9 @@ func (k *KotsKinds) addKotsKinds(content []byte) error {
 	return nil
 }
 
-func GetImagesFromKotsKinds(kotsKinds *KotsKinds) []string {
+func GetImagesFromKotsKinds(kotsKinds *KotsKinds, destRegistry *registrytypes.RegistryOptions) ([]string, error) {
 	if kotsKinds == nil {
-		return nil
+		return nil, nil
 	}
 
 	allImages := []string{}
@@ -598,16 +599,26 @@ func GetImagesFromKotsKinds(kotsKinds *KotsKinds) []string {
 			if image == "" {
 				continue
 			}
+			// Images that use templates like LocalImageName should be included in application's additionalImages list.
+			// We want the original image names here only, not the templated ones.
 			if strings.Contains(image, "repl{{") || strings.Contains(image, "{{repl") {
-				// Images that use templates like LocalImageName should be included in application's additionalImages list.
-				// We want the original image names here only, not the templated ones.
 				continue
+			}
+			if destRegistry != nil {
+				dockerRef, err := dockerref.ParseDockerRef(image)
+				if err != nil {
+					return nil, errors.Wrapf(err, "failed to parse docker ref %q", image)
+				}
+				if strings.HasPrefix(destRegistry.Endpoint, dockerref.Domain(dockerRef)) {
+					// image points to the destination registry
+					continue
+				}
 			}
 			allImages = append(allImages, image)
 		}
 	}
 
-	return allImages
+	return allImages, nil
 }
 
 // create a new kots kinds, ensuring that the require objets exist as empty defaults
@@ -904,7 +915,7 @@ func LoadInstallationFromContents(installationData []byte) (*kotsv1beta1.Install
 }
 
 func LoadLicenseFromPath(licenseFilePath string) (*kotsv1beta1.License, error) {
-	licenseData, err := ioutil.ReadFile(licenseFilePath)
+	licenseData, err := os.ReadFile(licenseFilePath)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to read license file")
 	}
@@ -939,7 +950,7 @@ func LoadEmbeddedClusterConfigFromBytes(data []byte) (*embeddedclusterv1beta1.Co
 }
 
 func LoadConfigValuesFromFile(configValuesFilePath string) (*kotsv1beta1.ConfigValues, error) {
-	configValuesData, err := ioutil.ReadFile(configValuesFilePath)
+	configValuesData, err := os.ReadFile(configValuesFilePath)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to read configvalues file")
 	}
@@ -1406,7 +1417,7 @@ func LoadBrandingArchiveFromPath(archivePath string) (*bytes.Buffer, error) {
 				return nil
 			}
 
-			contents, err := ioutil.ReadFile(path)
+			contents, err := os.ReadFile(path)
 			if err != nil {
 				return errors.Wrap(err, "failed to read file")
 			}

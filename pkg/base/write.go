@@ -270,7 +270,7 @@ func (b *Base) getErrorFiles() []BaseFile {
 func deduplicateResources(filePaths []string, baseDir string, excludeKotsKinds bool, baseNS string) ([]string, []kustomizetypes.PatchStrategicMerge, error) {
 	files := []BaseFile{}
 	for _, filePath := range filePaths {
-		content, err := ioutil.ReadFile(filepath.Join(baseDir, filePath))
+		content, err := os.ReadFile(filepath.Join(baseDir, filePath))
 		if err != nil {
 			return nil, nil, errors.Wrapf(err, "failed to read base file %s", filePath)
 		}

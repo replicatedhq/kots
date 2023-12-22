@@ -2,6 +2,7 @@ package k8sutil
 
 import (
 	"io/ioutil"
+	"os"
 	"sort"
 	"strings"
 
@@ -11,7 +12,7 @@ import (
 )
 
 func ReadKustomizationFromFile(file string) (*kustomizetypes.Kustomization, error) {
-	b, err := ioutil.ReadFile(file)
+	b, err := os.ReadFile(file)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to read kustomization file")
 	}

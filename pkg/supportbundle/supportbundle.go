@@ -281,7 +281,7 @@ func getAnalysisFromBundle(archivePath string) ([]byte, error) {
 		trimmedRelPath = strings.TrimPrefix(trimmedRelPath, string(os.PathSeparator)) // extra measure to ensure no leading slashes. for example: "/analysis.json"
 
 		if trimmedRelPath == "analysis.json" {
-			b, err := ioutil.ReadFile(path)
+			b, err := os.ReadFile(path)
 			if err != nil {
 				return errors.Wrap(err, "failed to read analysis file")
 			}

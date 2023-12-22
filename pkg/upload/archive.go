@@ -72,7 +72,7 @@ func findUpdateCursor(rootPath string) (string, error) {
 		return "", errors.Wrap(err, "failed to open file")
 	}
 
-	installationData, err := ioutil.ReadFile(installationFilePath)
+	installationData, err := os.ReadFile(installationFilePath)
 	if err != nil {
 		return "", errors.Wrap(err, "failed to read update installation file")
 	}
@@ -99,7 +99,7 @@ func findLicense(rootPath string) (*string, error) {
 		return nil, errors.Wrap(err, "failed to open file with license")
 	}
 
-	b, err := ioutil.ReadFile(licenseFilePath)
+	b, err := os.ReadFile(licenseFilePath)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to read license file")
 	}

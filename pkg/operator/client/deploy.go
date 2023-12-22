@@ -448,7 +448,7 @@ func getSortedCharts(v1Beta1ChartsDir string, v1Beta2ChartsDir string, kotsChart
 
 func findChartNameAndVersion(chartDir string) (string, string, error) {
 	chartfilePath := filepath.Join(chartDir, "Chart.yaml")
-	chartFile, err := ioutil.ReadFile(chartfilePath)
+	chartFile, err := os.ReadFile(chartfilePath)
 	if err != nil {
 		return "", "", errors.Wrapf(err, "failed to parse %s", chartfilePath)
 	}

@@ -131,7 +131,7 @@ func GetRenderedApp(versionArchive string, downstreamName, kustomizeBinPath stri
 					return nil
 				}
 
-				content, err := ioutil.ReadFile(path)
+				content, err := os.ReadFile(path)
 				if err != nil {
 					return errors.Wrapf(err, "failed to read file %s", path)
 				}
@@ -216,7 +216,7 @@ func cleanBaseApp(baseDir string, filter func(path string) (bool, error)) error 
 					}
 				}
 
-				content, err := ioutil.ReadFile(path)
+				content, err := os.ReadFile(path)
 				if err != nil {
 					return errors.Wrapf(err, "failed to read file %s", path)
 				}

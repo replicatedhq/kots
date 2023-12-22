@@ -1,7 +1,6 @@
 package cli
 
 import (
-	"io/ioutil"
 	"os"
 	"path"
 	"strings"
@@ -151,7 +150,7 @@ func getAppSlugForPull(uri string, licenseFile string) (string, error) {
 		return appSlug, nil
 	}
 
-	licenseData, err := ioutil.ReadFile(licenseFile)
+	licenseData, err := os.ReadFile(licenseFile)
 	if err != nil {
 		return "", errors.Wrap(err, "failed to read license file")
 	}

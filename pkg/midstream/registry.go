@@ -1,7 +1,6 @@
 package midstream
 
 import (
-	"io/ioutil"
 	"os"
 	"path/filepath"
 
@@ -14,7 +13,7 @@ import (
 
 func LoadPrivateRegistryInfo(archivePath string) (*registrytypes.RegistrySettings, error) {
 	filename := filepath.Join(archivePath, "overlays", "midstream", secretFilename)
-	secretData, err := ioutil.ReadFile(filename)
+	secretData, err := os.ReadFile(filename)
 	if err != nil {
 		if os.IsNotExist(err) {
 			return nil, nil

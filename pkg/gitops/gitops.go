@@ -764,7 +764,7 @@ func CreateGitOpsCommit(gitOpsConfig *GitOpsConfig, appSlug string, appName stri
 	filePath := filepath.Join(dirPath, fmt.Sprintf("%s.yaml", appSlug))
 	_, err = os.Stat(filePath)
 	if err == nil { // if the file has not changed, end now
-		currentRevision, err := ioutil.ReadFile(filePath)
+		currentRevision, err := os.ReadFile(filePath)
 		if err != nil {
 			return "", errors.Wrap(err, "failed to read current app yaml")
 		}

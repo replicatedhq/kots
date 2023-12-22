@@ -37,7 +37,12 @@ func RewriteImages(options RewriteImageOptions) (*RewriteImagesResult, error) {
 	checkedImages := make(map[string]imagetypes.ImageInfo)
 
 	if options.KotsKinds != nil {
-		additionalImages = kotsutil.GetImagesFromKotsKinds(options.KotsKinds)
+		kki, err := kotsutil.GetImagesFromKotsKinds(options.KotsKinds, &options.DestRegistry)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to get images from kots kinds")
+		}
+		additionalImages = kki
+
 		checkedImages = makeImageInfoMap(options.KotsKinds.Installation.Spec.KnownImages)
 		if options.KotsKinds.KotsApplication.Spec.ProxyPublicImages {
 			allImagesPrivate = true

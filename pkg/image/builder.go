@@ -40,11 +40,11 @@ var imagePolicy = []byte(`{
   "default": [{"type": "insecureAcceptAnything"}]
 }`)
 
-func RewriteImages(srcRegistry, destRegistry dockerregistrytypes.RegistryOptions, appSlug string, log *logger.CLILogger, reportWriter io.Writer, upstreamDir string, additionalImages []string, copyImages, allImagesPrivate bool, checkedImages map[string]types.ImageInfo, dockerHubRegistry dockerregistrytypes.RegistryOptions) ([]kustomizeimage.Image, error) {
+func RewriteImages(srcRegistry, destRegistry dockerregistrytypes.RegistryOptions, appSlug string, log *logger.CLILogger, reportWriter io.Writer, baseDir string, additionalImages []string, copyImages, allImagesPrivate bool, checkedImages map[string]types.ImageInfo, dockerHubRegistry dockerregistrytypes.RegistryOptions) ([]kustomizeimage.Image, error) {
 	newImages := []kustomizeimage.Image{}
 	savedImages := map[string]bool{}
 
-	err := filepath.Walk(upstreamDir,
+	err := filepath.Walk(baseDir,
 		func(path string, info os.FileInfo, err error) error {
 			if err != nil {
 				return err
@@ -54,7 +54,7 @@ func RewriteImages(srcRegistry, destRegistry dockerregistrytypes.RegistryOptions
 				return nil
 			}
 
-			contents, err := ioutil.ReadFile(path)
+			contents, err := os.ReadFile(path)
 			if err != nil {
 				return err
 			}
@@ -145,7 +145,7 @@ func GetPrivateImages(baseDir string, kotsKindsImages []string, checkedImages ma
 				return nil
 			}
 
-			contents, err := ioutil.ReadFile(path)
+			contents, err := os.ReadFile(path)
 			if err != nil {
 				logger.Debugf("Failed to read file %s: %v", path, err)
 				return err
@@ -657,7 +657,12 @@ func RewriteImagesBetweenRegistries(options RewriteImagesBetweenRegistriesOption
 	checkedImages := make(map[string]types.ImageInfo)
 
 	if options.KotsKinds != nil {
-		additionalImages = kotsutil.GetImagesFromKotsKinds(options.KotsKinds)
+		kki, err := kotsutil.GetImagesFromKotsKinds(options.KotsKinds, &options.DestRegistry)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to get images from kots kinds")
+		}
+		additionalImages = kki
+
 		checkedImages = makeImageInfoMap(options.KotsKinds.Installation.Spec.KnownImages)
 		if options.KotsKinds.KotsApplication.Spec.ProxyPublicImages {
 			allImagesPrivate = true

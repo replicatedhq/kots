@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/base64"
-	"io/ioutil"
+	"os"
 	"path/filepath"
 
 	"github.com/pkg/errors"
@@ -144,7 +144,7 @@ func ensureConfigFromFile(deployOptions types.DeployOptions, clientset *kubernet
 }
 
 func configMapFromFile(deployOptions types.DeployOptions, configMapName string, filename string) (*corev1.ConfigMap, error) {
-	fileData, err := ioutil.ReadFile(filename)
+	fileData, err := os.ReadFile(filename)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to load file")
 	}

@@ -42,7 +42,7 @@ func replaceSecretsWithSealedSecrets(archivePath string, config map[string][]byt
 
 	decode := scheme.Codecs.UniversalDeserializer().Decode
 	for _, secretPath := range secretPaths {
-		contents, err := ioutil.ReadFile(secretPath)
+		contents, err := os.ReadFile(secretPath)
 		if err != nil {
 			return errors.Wrap(err, "failed to read file")
 		}
