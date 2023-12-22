@@ -439,6 +439,7 @@ func tryGetConfigFromFileContent(content []byte, log *logger.CLILogger) *kotsv1b
 	return nil
 }
 
+// getTemplatingKotsKinds returns kots kinds that are necessary/used to populate the contexts of the template builder
 func getTemplatingKotsKinds(u *upstreamtypes.Upstream) (*kotsutil.KotsKinds, error) {
 	kotsKinds := &kotsutil.KotsKinds{}
 
