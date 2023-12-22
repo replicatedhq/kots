@@ -26,6 +26,7 @@ import (
 	dockerregistrytypes "github.com/replicatedhq/kots/pkg/docker/registry/types"
 	dockertypes "github.com/replicatedhq/kots/pkg/docker/types"
 	"github.com/replicatedhq/kots/pkg/image/types"
+	"github.com/replicatedhq/kots/pkg/imageutil"
 	"github.com/replicatedhq/kots/pkg/k8sdoc"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/logger"
@@ -300,7 +301,7 @@ func rewriteOneImage(srcRegistry, destRegistry dockerregistrytypes.RegistryOptio
 		return nil, errors.Wrapf(err, "failed to parse source image name %s", sourceImage)
 	}
 
-	destImage, err := DestImage(destRegistry, image)
+	destImage, err := imageutil.DestImage(destRegistry, image)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get destination image")
 	}

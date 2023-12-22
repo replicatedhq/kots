@@ -1,4 +1,4 @@
-package image
+package imageutil
 
 import (
 	"fmt"
@@ -71,8 +71,8 @@ func RewriteDockerRegistryImage(destRegistry registrytypes.RegistryOptions, srcI
 	}
 
 	rewrittenImage := kustomizetypes.Image{}
-	rewrittenImage.Name = stripImageTagAndDigest(srcImage)
-	rewrittenImage.NewName = stripImageTagAndDigest(destImage)
+	rewrittenImage.Name = StripImageTagAndDigest(srcImage)
+	rewrittenImage.NewName = StripImageTagAndDigest(destImage)
 
 	if can, ok := parsedSrc.(reference.Canonical); ok {
 		rewrittenImage.Digest = can.Digest().String()
@@ -269,9 +269,9 @@ func BuildImageAltNames(rewrittenImage kustomizetypes.Image) ([]kustomizetypes.I
 	return images, nil
 }
 
-// stripImageTagAndDigest removes the tag and digest from an image while preserving the original name.
+// StripImageTagAndDigest removes the tag and digest from an image while preserving the original name.
 // This can be helpful because parsing the image as a docker reference can modify the hostname (e.g. adds docker.io/library)
-func stripImageTagAndDigest(image string) string {
+func StripImageTagAndDigest(image string) string {
 	// grab last section of image name
 	imageParts := strings.Split(image, "/")
 	lastPart := imageParts[len(imageParts)-1]

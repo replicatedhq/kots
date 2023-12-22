@@ -10,6 +10,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/identity/types"
 	"github.com/replicatedhq/kots/pkg/image"
+	"github.com/replicatedhq/kots/pkg/imageutil"
 	"github.com/replicatedhq/kots/pkg/ingress"
 	kotsadmtypes "github.com/replicatedhq/kots/pkg/kotsadm/types"
 	kotsadmversion "github.com/replicatedhq/kots/pkg/kotsadm/version"
@@ -372,7 +373,7 @@ var (
 
 func deploymentResource(issuerURL, configChecksum string, options Options) (*appsv1.Deployment, error) {
 	// TODO: use GetAdminConsoleImage function
-	dexVersion, err := image.GetTag(image.Dex)
+	dexVersion, err := imageutil.GetTag(image.Dex)
 	if err != nil {
 		return nil, err
 	}

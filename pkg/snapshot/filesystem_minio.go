@@ -14,6 +14,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/image"
+	"github.com/replicatedhq/kots/pkg/imageutil"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	kotsadmresources "github.com/replicatedhq/kots/pkg/kotsadm/resources"
 	kotsadmtypes "github.com/replicatedhq/kots/pkg/kotsadm/types"
@@ -265,7 +266,7 @@ func fileSystemMinioDeploymentResource(clientset kubernetes.Interface, secretChe
 		return nil, errors.Wrap(err, "failed to find minio image")
 	}
 
-	minioTag, err := image.GetTag(existingImage)
+	minioTag, err := imageutil.GetTag(existingImage)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get minio image tag")
 	}

@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/replicatedhq/kots/pkg/image"
+	"github.com/replicatedhq/kots/pkg/imageutil"
 	"github.com/replicatedhq/kots/pkg/kotsadm/types"
 	kotsadmversion "github.com/replicatedhq/kots/pkg/kotsadm/version"
 )
@@ -14,9 +15,9 @@ func GetAdminConsoleImage(deployOptions types.DeployOptions, imageKey string) st
 
 func GetAdminConsoleImages(deployOptions types.DeployOptions) map[string]string {
 	// TODO: Add error handling to this function
-	minioTag, _ := image.GetTag(image.Minio)
-	rqliteTag, _ := image.GetTag(image.Rqlite)
-	dexTag, _ := image.GetTag(image.Dex)
+	minioTag, _ := imageutil.GetTag(image.Minio)
+	rqliteTag, _ := imageutil.GetTag(image.Rqlite)
+	dexTag, _ := imageutil.GetTag(image.Dex)
 
 	minioImage := image.Minio
 	rqliteImage := image.Rqlite
