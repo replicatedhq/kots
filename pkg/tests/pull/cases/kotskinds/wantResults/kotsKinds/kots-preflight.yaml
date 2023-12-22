@@ -1,0 +1,30 @@
+apiVersion: troubleshoot.sh/v1beta2
+kind: Preflight
+metadata:
+  name: my-app
+spec:
+  collectors:
+    - runPod:
+        name: my-run-pod-name
+        namespace: my-run-pod-namespace
+        podSpec: 
+          containers:
+          - name: my-pod-spec-containers-0-name
+            image: my-pod-spec-containers-0-image
+            securityContext:
+              allowPrivilegeEscalation: true
+            command:
+            - my-pod-spec-containers-0-command-0
+            args:
+            - my-pod-spec-containers-0-args-0
+  analyzers:
+    - textAnalyze:
+        checkName: my-text-analyze-check-name
+        fileName: my-text-analyze-file-name
+        regexGroups: my-text-analyze-regex-groups
+        outcomes:
+          - pass:
+              when: Loss < 5
+              message: my-text-analyze-outcomes-pass-message
+          - fail:
+              message: my-text-analyze-outcomes-fail-message

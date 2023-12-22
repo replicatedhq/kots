@@ -39,7 +39,7 @@ func RenderHelm(u *upstreamtypes.Upstream, renderOptions *RenderOptions) (*Base,
 			}
 		}
 
-		if err := ioutil.WriteFile(p, file.Content, 0644); err != nil {
+		if err := os.WriteFile(p, file.Content, 0644); err != nil {
 			return nil, errors.Wrap(err, "failed to write chart file")
 		}
 	}
@@ -570,7 +570,7 @@ func FindHelmSubChartsFromBase(baseDir, parentChartName string) (*HelmSubCharts,
 	// in the charts folder and need to be excluded when generating the pullsecrets.yaml. It feels like this
 	// could replace the logic below that's doing the file tree walking but I'm unsure.
 	parentChartPath := filepath.Join(searchDir, "Chart.yaml")
-	parentChartRaw, err := ioutil.ReadFile(parentChartPath)
+	parentChartRaw, err := os.ReadFile(parentChartPath)
 	if err == nil {
 		parentChart := new(HelmChartDependencies)
 		err = yaml.Unmarshal(parentChartRaw, parentChart)
@@ -597,7 +597,7 @@ func FindHelmSubChartsFromBase(baseDir, parentChartName string) (*HelmSubCharts,
 				return nil
 			}
 
-			contents, err := ioutil.ReadFile(path)
+			contents, err := os.ReadFile(path)
 			if err != nil {
 				return errors.Wrap(err, "failed to read file")
 			}

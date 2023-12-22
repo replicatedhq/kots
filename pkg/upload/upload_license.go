@@ -20,7 +20,7 @@ type UploadLicenseOptions struct {
 }
 
 func UploadLicense(path string, uploadLicenseOptions UploadLicenseOptions) error {
-	b, err := ioutil.ReadFile(path)
+	b, err := os.ReadFile(path)
 	if err != nil {
 		return errors.Wrap(err, "failed to read license file")
 	}

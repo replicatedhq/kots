@@ -37,20 +37,27 @@ const (
 )
 
 type WriteOptions struct {
-	MidstreamDir       string
-	BaseDir            string
-	AppSlug            string
-	IsGitOps           bool
-	IsOpenShift        bool
-	Builder            template.Builder
-	HTTPProxyEnvValue  string
-	HTTPSProxyEnvValue string
-	NoProxyEnvValue    string
-	UseHelmInstall     map[string]bool
-	NewHelmCharts      []*kotsv1beta1.HelmChart
+	MidstreamDir        string
+	Base                *base.Base
+	BaseDir             string
+	AppSlug             string
+	IsGitOps            bool
+	IsOpenShift         bool
+	Builder             template.Builder
+	HTTPProxyEnvValue   string
+	HTTPSProxyEnvValue  string
+	NoProxyEnvValue     string
+	UseHelmInstall      map[string]bool
+	NewHelmCharts       []*kotsv1beta1.HelmChart
+	ProcessImageOptions image.ProcessImageOptions
+	License             *kotsv1beta1.License
+	RenderedKotsKinds   *kotsutil.KotsKinds
+	IdentityConfig      *kotsv1beta1.IdentityConfig
+	UpstreamDir         string
+	Log                 *logger.CLILogger
 }
 
-func WriteMidstream(writeMidstreamOptions WriteOptions, processImageOptions image.ProcessImageOptions, b *base.Base, license *kotsv1beta1.License, identityConfig *kotsv1beta1.IdentityConfig, upstreamDir string, log *logger.CLILogger) (*Midstream, error) {
+func WriteMidstream(opts WriteOptions) (*Midstream, error) {
 	var images []kustomizetypes.Image
 	var objects []k8sdoc.K8sDoc
 	var pullSecretRegistries []string
@@ -62,85 +69,75 @@ func WriteMidstream(writeMidstreamOptions WriteOptions, processImageOptions imag
 		return nil, errors.Wrap(err, "failed to get k8s clientset")
 	}
 
-	newKotsKinds, err := kotsutil.LoadKotsKindsFromPath(upstreamDir)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to load kotskinds from new upstream")
-	}
-
-	identitySpec, err := upstream.LoadIdentity(upstreamDir)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to load identity")
-	}
-
 	// do not fail on being unable to get dockerhub credentials, since they're just used to increase the rate limit
 	var dockerHubRegistryCreds registry.Credentials
-	dockerhubSecret, _ := registry.GetDockerHubPullSecret(clientset, util.PodNamespace, processImageOptions.Namespace, processImageOptions.AppSlug)
+	dockerhubSecret, _ := registry.GetDockerHubPullSecret(clientset, util.PodNamespace, opts.ProcessImageOptions.Namespace, opts.ProcessImageOptions.AppSlug)
 	if dockerhubSecret != nil {
 		dockerHubRegistryCreds, _ = registry.GetCredentialsForRegistryFromConfigJSON(dockerhubSecret.Data[".dockerconfigjson"], registry.DockerHubRegistryName)
 	}
 
-	if processImageOptions.RewriteImages {
+	if opts.ProcessImageOptions.RewriteImages {
 		// A target registry is configured. Rewrite all images and copy them (if necessary) to the configured registry.
-		if processImageOptions.RegistrySettings.IsReadOnly {
-			log.ActionWithSpinner("Rewriting images")
-			io.WriteString(processImageOptions.ReportWriter, "Rewriting images\n")
+		if opts.ProcessImageOptions.RegistrySettings.IsReadOnly {
+			opts.Log.ActionWithSpinner("Rewriting images")
+			io.WriteString(opts.ProcessImageOptions.ReportWriter, "Rewriting images\n")
 		} else {
-			log.ActionWithSpinner("Copying images")
-			io.WriteString(processImageOptions.ReportWriter, "Copying images\n")
+			opts.Log.ActionWithSpinner("Copying images")
+			io.WriteString(opts.ProcessImageOptions.ReportWriter, "Copying images\n")
 		}
 
-		if processImageOptions.AirgapRoot == "" {
+		if opts.ProcessImageOptions.AirgapRoot == "" {
 			// This is an online installation. Pull and rewrite images from online and copy them (if necessary) to the configured registry.
-			rewriteResult, err := RewriteBaseImages(processImageOptions, writeMidstreamOptions.BaseDir, newKotsKinds, license, dockerHubRegistryCreds, log)
+			rewriteResult, err := RewriteBaseImages(opts.ProcessImageOptions, opts.BaseDir, opts.RenderedKotsKinds, opts.License, dockerHubRegistryCreds, opts.Log)
 			if err != nil {
 				return nil, errors.Wrap(err, "failed to rewrite base images")
 			}
 			images = rewriteResult.Images
-			newKotsKinds.Installation.Spec.KnownImages = rewriteResult.CheckedImages
+			opts.RenderedKotsKinds.Installation.Spec.KnownImages = rewriteResult.CheckedImages
 		} else {
 			// This is an airgapped installation. Copy and rewrite images from the airgap bundle to the configured registry.
-			result, err := ProcessAirgapImages(processImageOptions, newKotsKinds, license, log)
+			result, err := ProcessAirgapImages(opts.ProcessImageOptions, opts.RenderedKotsKinds, opts.License, opts.Log)
 			if err != nil {
 				return nil, errors.Wrap(err, "failed to process airgap images")
 			}
 			images = result.KustomizeImages
-			newKotsKinds.Installation.Spec.KnownImages = result.KnownImages
+			opts.RenderedKotsKinds.Installation.Spec.KnownImages = result.KnownImages
 		}
 
-		objects = base.FindObjectsWithImages(b)
+		objects = base.FindObjectsWithImages(opts.Base)
 
 		// Use target registry credentials to create image pull secrets for all objects that have images.
-		pullSecretRegistries = []string{processImageOptions.RegistrySettings.Hostname}
-		pullSecretUsername = processImageOptions.RegistrySettings.Username
-		pullSecretPassword = processImageOptions.RegistrySettings.Password
+		pullSecretRegistries = []string{opts.ProcessImageOptions.RegistrySettings.Hostname}
+		pullSecretUsername = opts.ProcessImageOptions.RegistrySettings.Username
+		pullSecretPassword = opts.ProcessImageOptions.RegistrySettings.Password
 		if pullSecretUsername == "" {
-			pullSecretUsername, pullSecretPassword, err = registry.LoadAuthForRegistry(processImageOptions.RegistrySettings.Hostname)
+			pullSecretUsername, pullSecretPassword, err = registry.LoadAuthForRegistry(opts.ProcessImageOptions.RegistrySettings.Hostname)
 			if err != nil {
-				return nil, errors.Wrapf(err, "failed to load registry auth for %q", processImageOptions.RegistrySettings.Hostname)
+				return nil, errors.Wrapf(err, "failed to load registry auth for %q", opts.ProcessImageOptions.RegistrySettings.Hostname)
 			}
 		}
-	} else if license != nil {
+	} else if opts.License != nil {
 		// A target registry is NOT configured. Find and rewrite private images to be proxied through proxy.replicated.com
-		findResult, err := findPrivateImages(writeMidstreamOptions, b, newKotsKinds, license, dockerHubRegistryCreds)
+		findResult, err := findPrivateImages(opts, dockerHubRegistryCreds)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to find private images")
 		}
 		images = findResult.Images
-		newKotsKinds.Installation.Spec.KnownImages = findResult.CheckedImages
+		opts.RenderedKotsKinds.Installation.Spec.KnownImages = findResult.CheckedImages
 		objects = findResult.Docs
 
 		// Use license to create image pull secrets for all objects that have private images.
-		pullSecretRegistries = registry.GetRegistryProxyInfo(license, &newKotsKinds.Installation, &newKotsKinds.KotsApplication).ToSlice()
-		pullSecretUsername = license.Spec.LicenseID
-		pullSecretPassword = license.Spec.LicenseID
+		pullSecretRegistries = registry.GetRegistryProxyInfo(opts.License, &opts.RenderedKotsKinds.Installation, &opts.RenderedKotsKinds.KotsApplication).ToSlice()
+		pullSecretUsername = opts.License.Spec.LicenseID
+		pullSecretPassword = opts.License.Spec.LicenseID
 	}
 
 	// For the newer style charts, create a new secret per chart as helm adds chart specific
 	// details to annotations and labels to it.
-	namePrefix := processImageOptions.AppSlug
-	for _, v := range writeMidstreamOptions.NewHelmCharts {
-		if v.Spec.UseHelmInstall && filepath.Base(b.Path) != "." {
-			namePrefix = fmt.Sprintf("%s-%s", processImageOptions.AppSlug, filepath.Base(b.Path))
+	namePrefix := opts.ProcessImageOptions.AppSlug
+	for _, v := range opts.NewHelmCharts {
+		if v.Spec.UseHelmInstall && filepath.Base(opts.Base.Path) != "." {
+			namePrefix = fmt.Sprintf("%s-%s", opts.ProcessImageOptions.AppSlug, filepath.Base(opts.Base.Path))
 			break
 		}
 	}
@@ -148,7 +145,7 @@ func WriteMidstream(writeMidstreamOptions WriteOptions, processImageOptions imag
 		pullSecretRegistries,
 		pullSecretUsername,
 		pullSecretPassword,
-		processImageOptions.Namespace,
+		opts.ProcessImageOptions.Namespace,
 		namePrefix,
 	)
 	if err != nil {
@@ -156,16 +153,16 @@ func WriteMidstream(writeMidstreamOptions WriteOptions, processImageOptions imag
 	}
 	pullSecrets.DockerHubSecret = dockerhubSecret
 
-	if err := apparchive.SaveInstallation(&newKotsKinds.Installation, upstreamDir); err != nil {
+	if err := apparchive.SaveInstallation(&opts.RenderedKotsKinds.Installation, opts.UpstreamDir); err != nil {
 		return nil, errors.Wrap(err, "failed to save installation")
 	}
 
-	m, err := CreateMidstream(b, images, objects, &pullSecrets, identitySpec, identityConfig)
+	m, err := CreateMidstream(opts.Base, images, objects, &pullSecrets, opts.RenderedKotsKinds.Identity, opts.IdentityConfig)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create midstream")
 	}
 
-	if err := m.Write(writeMidstreamOptions); err != nil {
+	if err := m.Write(opts); err != nil {
 		return nil, errors.Wrap(err, "failed to write common midstream")
 	}
 
@@ -242,7 +239,7 @@ func ProcessAirgapImages(options image.ProcessImageOptions, kotsKinds *kotsutil.
 		processAirgapImageOptions.ReplicatedRegistry.Password = license.Spec.LicenseID
 	}
 
-	imagesData, err := ioutil.ReadFile(filepath.Join(options.AirgapRoot, "images.json"))
+	imagesData, err := os.ReadFile(filepath.Join(options.AirgapRoot, "images.json"))
 	if err != nil && !os.IsNotExist(err) {
 		return nil, errors.Wrap(err, "failed to load images file")
 	}
@@ -265,13 +262,18 @@ func ProcessAirgapImages(options image.ProcessImageOptions, kotsKinds *kotsutil.
 }
 
 // findPrivateImages Finds and rewrites private images to be proxied through proxy.replicated.com
-func findPrivateImages(writeMidstreamOptions WriteOptions, b *base.Base, kotsKinds *kotsutil.KotsKinds, license *kotsv1beta1.License, dockerHubRegistryCreds registry.Credentials) (*base.FindPrivateImagesResult, error) {
-	replicatedRegistryInfo := registry.GetRegistryProxyInfo(license, &kotsKinds.Installation, &kotsKinds.KotsApplication)
-	allPrivate := kotsKinds.KotsApplication.Spec.ProxyPublicImages
+func findPrivateImages(opts WriteOptions, dockerHubRegistryCreds registry.Credentials) (*base.FindPrivateImagesResult, error) {
+	replicatedRegistryInfo := registry.GetRegistryProxyInfo(opts.License, &opts.RenderedKotsKinds.Installation, &opts.RenderedKotsKinds.KotsApplication)
+	allPrivate := opts.RenderedKotsKinds.KotsApplication.Spec.ProxyPublicImages
+
+	kotsKindsImages, err := kotsutil.GetImagesFromKotsKinds(opts.RenderedKotsKinds, nil)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get images from kots kinds")
+	}
 
 	findPrivateImagesOptions := base.FindPrivateImagesOptions{
-		BaseDir: writeMidstreamOptions.BaseDir,
-		AppSlug: license.Spec.AppSlug,
+		BaseDir: opts.BaseDir,
+		AppSlug: opts.License.Spec.AppSlug,
 		ReplicatedRegistry: dockerregistrytypes.RegistryOptions{
 			Endpoint:         replicatedRegistryInfo.Registry,
 			ProxyEndpoint:    replicatedRegistryInfo.Proxy,
@@ -281,11 +283,11 @@ func findPrivateImages(writeMidstreamOptions WriteOptions, b *base.Base, kotsKin
 			Username: dockerHubRegistryCreds.Username,
 			Password: dockerHubRegistryCreds.Password,
 		},
-		Installation:     &kotsKinds.Installation,
+		Installation:     &opts.RenderedKotsKinds.Installation,
 		AllImagesPrivate: allPrivate,
-		HelmChartPath:    b.Path,
-		UseHelmInstall:   writeMidstreamOptions.UseHelmInstall,
-		KotsKindsImages:  kotsutil.GetImagesFromKotsKinds(kotsKinds),
+		HelmChartPath:    opts.Base.Path,
+		UseHelmInstall:   opts.UseHelmInstall,
+		KotsKindsImages:  kotsKindsImages,
 	}
 	findResult, err := base.FindPrivateImages(findPrivateImagesOptions)
 	if err != nil {

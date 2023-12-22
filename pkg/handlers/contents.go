@@ -75,7 +75,7 @@ func (h *Handler) GetAppContents(w http.ResponseWriter, r *http.Request) {
 			return nil
 		}
 
-		contents, err := ioutil.ReadFile(path)
+		contents, err := os.ReadFile(path)
 		if err != nil {
 			return err
 		}

@@ -1,7 +1,7 @@
 package apparchive
 
 import (
-	"io/ioutil"
+	"os"
 	"path"
 
 	"github.com/pkg/errors"
@@ -11,7 +11,7 @@ import (
 
 func SaveInstallation(installation *kotsv1beta1.Installation, upstreamDir string) error {
 	filename := path.Join(upstreamDir, "userdata", "installation.yaml")
-	err := ioutil.WriteFile(filename, kotsutil.MustMarshalInstallation(installation), 0644)
+	err := os.WriteFile(filename, kotsutil.MustMarshalInstallation(installation), 0644)
 	if err != nil {
 		return errors.Wrap(err, "failed to write installation")
 	}

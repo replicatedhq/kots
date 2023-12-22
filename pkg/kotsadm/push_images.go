@@ -25,6 +25,7 @@ import (
 	dockertypes "github.com/replicatedhq/kots/pkg/docker/types"
 	"github.com/replicatedhq/kots/pkg/image"
 	imagetypes "github.com/replicatedhq/kots/pkg/image/types"
+	"github.com/replicatedhq/kots/pkg/imageutil"
 	"github.com/replicatedhq/kots/pkg/kotsadm/types"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"k8s.io/client-go/kubernetes/scheme"
@@ -327,7 +328,7 @@ func PushAppImagesFromTempRegistry(airgapRootDir string, imageList []string, opt
 			return nil, errors.Wrapf(err, "failed to parse source image %s", imageID)
 		}
 
-		destImage, err := image.DestImage(options.Registry, imageID)
+		destImage, err := imageutil.DestImage(options.Registry, imageID)
 		if err != nil {
 			return nil, errors.Wrapf(err, "failed to get destination image for %s", imageID)
 		}
@@ -337,7 +338,7 @@ func PushAppImagesFromTempRegistry(airgapRootDir string, imageList []string, opt
 			return nil, errors.Wrapf(err, "failed to parse dest image %s", destStr)
 		}
 
-		rewrittenImage, err := image.RewriteDockerRegistryImage(options.Registry, imageID)
+		rewrittenImage, err := imageutil.RewriteDockerRegistryImage(options.Registry, imageID)
 		if err != nil {
 			return nil, errors.Wrapf(err, "failed to rewrite image %s", imageID)
 		}
@@ -419,7 +420,7 @@ func PushAppImagesFromDockerArchivePath(airgapRootDir string, options types.Push
 	for imagePath, imageInfo := range imageInfos {
 		formatRoot := path.Join(imagesDir, imageInfo.Format)
 		pathWithoutRoot := imagePath[len(formatRoot)+1:]
-		rewrittenImage, err := image.RewriteDockerArchiveImage(options.Registry, strings.Split(pathWithoutRoot, string(os.PathSeparator)))
+		rewrittenImage, err := imageutil.RewriteDockerArchiveImage(options.Registry, strings.Split(pathWithoutRoot, string(os.PathSeparator)))
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to rewrite docker archive image")
 		}
@@ -430,7 +431,7 @@ func PushAppImagesFromDockerArchivePath(airgapRootDir string, options types.Push
 			return nil, errors.Wrap(err, "failed to parse src image name")
 		}
 
-		destStr := fmt.Sprintf("docker://%s", image.DestImageFromKustomizeImage(rewrittenImage))
+		destStr := fmt.Sprintf("docker://%s", imageutil.DestImageFromKustomizeImage(rewrittenImage))
 		destRef, err := alltransports.ParseImageName(destStr)
 		if err != nil {
 			return nil, errors.Wrapf(err, "failed to parse dest image name %s", destStr)
@@ -540,7 +541,7 @@ func PushAppImagesFromDockerArchiveBundle(airgapBundle string, options types.Pus
 			return nil, errors.Errorf("not enough path parts in %q", imagePath)
 		}
 
-		rewrittenImage, err := image.RewriteDockerArchiveImage(options.Registry, pathParts[2:])
+		rewrittenImage, err := imageutil.RewriteDockerArchiveImage(options.Registry, pathParts[2:])
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to rewrite docker archive image")
 		}
@@ -551,7 +552,7 @@ func PushAppImagesFromDockerArchiveBundle(airgapBundle string, options types.Pus
 			return nil, errors.Wrap(err, "failed to parse src image name")
 		}
 
-		destStr := fmt.Sprintf("docker://%s", image.DestImageFromKustomizeImage(rewrittenImage))
+		destStr := fmt.Sprintf("docker://%s", imageutil.DestImageFromKustomizeImage(rewrittenImage))
 		destRef, err := alltransports.ParseImageName(destStr)
 		if err != nil {
 			return nil, errors.Wrapf(err, "failed to parse dest image name %s", destStr)
@@ -637,7 +638,7 @@ func GetImagesFromBundle(airgapBundle string, options types.PushImagesOptions) (
 	switch airgap.Spec.Format {
 	case dockertypes.FormatDockerRegistry:
 		for _, savedImage := range airgap.Spec.SavedImages {
-			rewrittenImage, err := image.RewriteDockerRegistryImage(options.Registry, savedImage)
+			rewrittenImage, err := imageutil.RewriteDockerRegistryImage(options.Registry, savedImage)
 			if err != nil {
 				return nil, errors.Wrapf(err, "failed to rewrite image %s", savedImage)
 			}
@@ -653,7 +654,7 @@ func GetImagesFromBundle(airgapBundle string, options types.PushImagesOptions) (
 			if len(pathParts) < 3 {
 				return nil, errors.Errorf("not enough path parts in %q", imagePath)
 			}
-			rewrittenImage, err := image.RewriteDockerArchiveImage(options.Registry, pathParts[2:])
+			rewrittenImage, err := imageutil.RewriteDockerArchiveImage(options.Registry, pathParts[2:])
 			if err != nil {
 				return nil, errors.Wrap(err, "failed to rewrite docker archive image")
 			}
@@ -953,7 +954,7 @@ func isAppArchive(rootDir string) bool {
 			continue
 		}
 
-		contents, err := ioutil.ReadFile(filepath.Join(rootDir, info.Name()))
+		contents, err := os.ReadFile(filepath.Join(rootDir, info.Name()))
 		if err != nil {
 			continue
 		}

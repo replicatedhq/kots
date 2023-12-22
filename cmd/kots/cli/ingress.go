@@ -1,7 +1,7 @@
 package cli
 
 import (
-	"io/ioutil"
+	"os"
 
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/identity"
@@ -54,7 +54,7 @@ func IngressInstallCmd() *cobra.Command {
 
 			ingressConfig := kotsv1beta1.IngressConfig{}
 			if ingressConfigPath := v.GetString("ingress-config"); ingressConfigPath != "" {
-				content, err := ioutil.ReadFile(ingressConfigPath)
+				content, err := os.ReadFile(ingressConfigPath)
 				if err != nil {
 					return errors.Wrap(err, "failed to read ingress service config file")
 				}

@@ -1,4 +1,4 @@
-package image
+package imageutil
 
 import (
 	"fmt"
@@ -718,7 +718,7 @@ func Test_BuildImageAltNames(t *testing.T) {
 	}
 }
 
-func Test_kustomizeImage(t *testing.T) {
+func Test_KustomizeImage(t *testing.T) {
 	tests := []struct {
 		name         string
 		destRegistry registrytypes.RegistryOptions
@@ -1000,14 +1000,14 @@ func Test_kustomizeImage(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			req := require.New(t)
-			got, err := kustomizeImage(tt.destRegistry, tt.image)
+			got, err := KustomizeImage(tt.destRegistry, tt.image)
 			req.NoError(err)
 			req.Equal(tt.want, got)
 		})
 	}
 }
 
-func Test_stripImageTagAndDigest(t *testing.T) {
+func Test_StripImageTagAndDigest(t *testing.T) {
 	tests := []struct {
 		name  string
 		image string
@@ -1056,8 +1056,8 @@ func Test_stripImageTagAndDigest(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := stripImageTagAndDigest(tt.image); got != tt.want {
-				t.Errorf("stripImageTagAndDigest() = %v, want %v", got, tt.want)
+			if got := StripImageTagAndDigest(tt.image); got != tt.want {
+				t.Errorf("StripImageTagAndDigest() = %v, want %v", got, tt.want)
 			}
 		})
 	}

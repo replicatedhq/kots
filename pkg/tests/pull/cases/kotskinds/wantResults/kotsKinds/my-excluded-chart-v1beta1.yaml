@@ -1,0 +1,33 @@
+apiVersion: kots.io/v1beta1
+kind: HelmChart
+metadata:
+  name: my-excluded-chart
+  annotations:
+    kots.io/exclude: "true"
+spec:
+  chart:
+    name: my-chart
+    chartVersion: 0.1.0
+    releaseName: my-chart-release-name
+  useHelmInstall: true
+  values: 
+    foo: bar
+    bar: baz
+    
+  exclude: true
+  helmVersion: v3
+  namespace: my-namespace
+  optionalValues:
+    - when: 'true'
+      recursiveMerge: true
+      values: 
+        foo: bar
+        bar: baz
+        
+  builder: 
+    foo: bar
+    bar: baz
+    
+  weight: 1
+  helmUpgradeFlags:
+    - --timeout 60s

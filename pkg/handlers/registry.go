@@ -314,7 +314,7 @@ func registrySettingsChanged(app *apptypes.App, new UpdateAppRegistryRequest, cu
 		return false, errors.Wrap(err, "failed to get version archive")
 	}
 
-	secretData, err := ioutil.ReadFile(filepath.Join(archiveDir, "overlays", "midstream", "secret.yaml"))
+	secretData, err := os.ReadFile(filepath.Join(archiveDir, "overlays", "midstream", "secret.yaml"))
 	if err != nil {
 		if os.IsNotExist(err) {
 			if new.Hostname != "" {

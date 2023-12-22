@@ -16,6 +16,7 @@ import (
 	"github.com/ory/dockertest/v3/docker"
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/image"
+	"github.com/replicatedhq/kots/pkg/imageutil"
 	"github.com/replicatedhq/kots/pkg/persistence"
 	"github.com/rqlite/gorqlite"
 )
@@ -72,7 +73,7 @@ func TestMigrateFromPostgresToRqlite(t *testing.T) {
 	if err := os.WriteFile(rqliteAuthConfigPath, []byte(RQLITE_AUTH_CONFIG), 0644); err != nil {
 		t.Fatalf("Failed to write to file %s", rqliteAuthConfigPath)
 	}
-	rqliteTag, _ := image.GetTag(image.Rqlite)
+	rqliteTag, _ := imageutil.GetTag(image.Rqlite)
 	rqliteRunOptions := &dockertest.RunOptions{
 		Name:       "rqlite",
 		Repository: "kotsadm/rqlite",

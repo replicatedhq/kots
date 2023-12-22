@@ -7,7 +7,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
-	"path/filepath"
 	"strconv"
 	"sync"
 	"time"
@@ -235,7 +234,7 @@ func (o *Operator) DeployApp(appID string, sequence int64) (deployed bool, deplo
 		return false, errors.Wrap(err, "failed to ensure disaster recovery label transformer")
 	}
 
-	kotsKinds, err := kotsutil.LoadKotsKindsFromPath(filepath.Join(deployedVersionArchive, "upstream"))
+	kotsKinds, err := kotsutil.LoadKotsKinds(deployedVersionArchive)
 	if err != nil {
 		return false, errors.Wrap(err, "failed to load kotskinds")
 	}
@@ -356,7 +355,7 @@ func (o *Operator) DeployApp(appID string, sequence int64) (deployed bool, deplo
 				return false, errors.Wrap(err, "failed to get previously deployed app version archive")
 			}
 
-			previousKotsKinds, err = kotsutil.LoadKotsKindsFromPath(filepath.Join(previouslyDeployedVersionArchive, "upstream"))
+			previousKotsKinds, err = kotsutil.LoadKotsKinds(previouslyDeployedVersionArchive)
 			if err != nil {
 				return false, errors.Wrap(err, "failed to load kotskinds for previously deployed app version")
 			}
@@ -533,7 +532,7 @@ func (o *Operator) resumeInformersForApp(app *apptypes.App) error {
 		return errors.Wrap(err, "failed to get image pull secrets")
 	}
 
-	kotsKinds, err := kotsutil.LoadKotsKindsFromPath(filepath.Join(deployedVersionArchive, "upstream"))
+	kotsKinds, err := kotsutil.LoadKotsKinds(deployedVersionArchive)
 	if err != nil {
 		return errors.Wrap(err, "failed to load kotskinds")
 	}
@@ -750,7 +749,7 @@ func (o *Operator) UndeployApp(a *apptypes.App, d *downstreamtypes.Downstream, i
 		return errors.Wrap(err, "failed to get app version archive")
 	}
 
-	kotsKinds, err := kotsutil.LoadKotsKindsFromPath(filepath.Join(deployedVersionArchive, "upstream"))
+	kotsKinds, err := kotsutil.LoadKotsKinds(deployedVersionArchive)
 	if err != nil {
 		return errors.Wrap(err, "failed to load kotskinds")
 	}

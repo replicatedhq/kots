@@ -87,7 +87,7 @@ func UpdateAppFromPath(a *apptypes.App, airgapRoot string, airgapBundlePath stri
 	}
 	defer os.RemoveAll(archiveDir)
 
-	beforeKotsKinds, err := kotsutil.LoadKotsKindsFromPath(filepath.Join(archiveDir, "upstream"))
+	beforeKotsKinds, err := kotsutil.LoadKotsKinds(archiveDir)
 	if err != nil {
 		return errors.Wrap(err, "failed to load current kotskinds")
 	}
@@ -177,6 +177,7 @@ func UpdateAppFromPath(a *apptypes.App, airgapRoot string, airgapBundlePath stri
 		AppSlug:                a.Slug,
 		AppSequence:            appSequence,
 		SkipCompatibilityCheck: skipCompatibilityCheck,
+		KotsKinds:              beforeKotsKinds,
 	}
 
 	if _, err := pull.Pull(fmt.Sprintf("replicated://%s", beforeKotsKinds.License.Spec.AppSlug), pullOptions); err != nil {
@@ -185,7 +186,7 @@ func UpdateAppFromPath(a *apptypes.App, airgapRoot string, airgapBundlePath stri
 		}
 	}
 
-	afterKotsKinds, err := kotsutil.LoadKotsKindsFromPath(filepath.Join(archiveDir, "upstream"))
+	afterKotsKinds, err := kotsutil.LoadKotsKinds(archiveDir)
 	if err != nil {
 		return errors.Wrap(err, "failed to read after kotskinds")
 	}

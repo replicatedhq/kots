@@ -18,6 +18,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/logger"
 	upstreamtypes "github.com/replicatedhq/kots/pkg/upstream/types"
 	"github.com/replicatedhq/kots/pkg/util"
+	kotsv1beta1 "github.com/replicatedhq/kotskinds/apis/kots/v1beta1"
 	kotsv1beta2 "github.com/replicatedhq/kotskinds/apis/kots/v1beta2"
 	"gopkg.in/yaml.v2"
 	"helm.sh/helm/v3/pkg/action"
@@ -81,6 +82,8 @@ func WriteV1Beta2HelmCharts(opts WriteV1Beta2HelmChartsOptions) error {
 		return nil
 	}
 
+	checkedImages := []kotsv1beta1.InstallationImage{}
+
 	for _, v1Beta2Chart := range opts.KotsKinds.V1Beta2HelmCharts.Items {
 		helmChart := v1Beta2Chart
 
@@ -106,7 +109,7 @@ func WriteV1Beta2HelmCharts(opts WriteV1Beta2HelmChartsOptions) error {
 		}
 
 		archivePath := path.Join(chartDir, fmt.Sprintf("%s-%s.tgz", helmChart.Spec.Chart.Name, helmChart.Spec.Chart.ChartVersion))
-		if err := ioutil.WriteFile(archivePath, archive, 0644); err != nil {
+		if err := os.WriteFile(archivePath, archive, 0644); err != nil {
 			return errors.Wrap(err, "failed to write helm chart archive")
 		}
 
@@ -142,7 +145,7 @@ func WriteV1Beta2HelmCharts(opts WriteV1Beta2HelmChartsOptions) error {
 		}
 
 		valuesPath := path.Join(chartDir, "values.yaml")
-		if err := ioutil.WriteFile(valuesPath, []byte(valuesContent), 0644); err != nil {
+		if err := os.WriteFile(valuesPath, []byte(valuesContent), 0644); err != nil {
 			return errors.Wrap(err, "failed to write values file")
 		}
 
@@ -159,16 +162,13 @@ func WriteV1Beta2HelmCharts(opts WriteV1Beta2HelmChartsOptions) error {
 			return errors.Wrap(err, "failed to process online images")
 		}
 
-		upstreamDir := opts.Upstream.GetUpstreamDir(opts.WriteUpstreamOptions)
+		checkedImages = append(checkedImages, result.CheckedImages...)
+	}
 
-		installation, err := kotsutil.LoadInstallationFromPath(filepath.Join(upstreamDir, "userdata", "installation.yaml"))
-		if err != nil {
-			return errors.Wrap(err, "failed to load kotskinds from new upstream")
-		}
+	if len(checkedImages) > 0 {
+		opts.KotsKinds.Installation.Spec.KnownImages = append(opts.KotsKinds.Installation.Spec.KnownImages, checkedImages...)
 
-		installation.Spec.KnownImages = append(installation.Spec.KnownImages, result.CheckedImages...)
-
-		if err := SaveInstallation(installation, upstreamDir); err != nil {
+		if err := SaveInstallation(&opts.KotsKinds.Installation, opts.Upstream.GetUpstreamDir(opts.WriteUpstreamOptions)); err != nil {
 			return errors.Wrap(err, "failed to save installation")
 		}
 	}

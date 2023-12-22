@@ -549,7 +549,7 @@ type kotsadmApp struct {
 func kotsadmApplication() (kotsadmApp, error) {
 	app := kotsadmApp{}
 
-	data, err := ioutil.ReadFile("/etc/kotsadm/application.yaml")
+	data, err := os.ReadFile("/etc/kotsadm/application.yaml")
 	if err != nil {
 		return app, errors.Wrap(err, "read file /etc/kotsadm/application.yaml")
 	}

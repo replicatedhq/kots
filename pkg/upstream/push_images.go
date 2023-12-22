@@ -6,7 +6,7 @@ import (
 
 	"github.com/pkg/errors"
 	registrytypes "github.com/replicatedhq/kots/pkg/docker/registry/types"
-	"github.com/replicatedhq/kots/pkg/image"
+	"github.com/replicatedhq/kots/pkg/imageutil"
 	"github.com/replicatedhq/kots/pkg/kotsadm"
 	kotsadmtypes "github.com/replicatedhq/kots/pkg/kotsadm/types"
 	"github.com/replicatedhq/kots/pkg/logger"
@@ -75,7 +75,7 @@ func ProcessAirgapImages(options ProcessAirgapImagesOptions) (*ProcessAirgapImag
 
 	withAltNames := make([]kustomizetypes.Image, 0)
 	for _, i := range foundImages {
-		altNames, err := image.BuildImageAltNames(i)
+		altNames, err := imageutil.BuildImageAltNames(i)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to build image alt names")
 		}
@@ -121,7 +121,7 @@ func makeInstallationImages(images []kustomizetypes.Image) []kotsv1beta1.Install
 	result := make([]kotsv1beta1.InstallationImage, 0)
 	for _, i := range images {
 		result = append(result, kotsv1beta1.InstallationImage{
-			Image:     image.SrcImageFromKustomizeImage(i),
+			Image:     imageutil.SrcImageFromKustomizeImage(i),
 			IsPrivate: true,
 		})
 	}

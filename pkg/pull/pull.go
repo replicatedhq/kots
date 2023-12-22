@@ -30,6 +30,7 @@ import (
 	upstreamtypes "github.com/replicatedhq/kots/pkg/upstream/types"
 	"github.com/replicatedhq/kots/pkg/util"
 	kotsv1beta1 "github.com/replicatedhq/kotskinds/apis/kots/v1beta1"
+	kotsv1beta2 "github.com/replicatedhq/kotskinds/apis/kots/v1beta2"
 	k8sjson "k8s.io/apimachinery/pkg/runtime/serializer/json"
 	"k8s.io/client-go/kubernetes/scheme"
 )
@@ -68,6 +69,7 @@ type PullOptions struct {
 	NoProxyEnvValue         string
 	ReportingInfo           *reportingtypes.ReportingInfo
 	SkipCompatibilityCheck  bool
+	KotsKinds               *kotsutil.KotsKinds
 }
 
 var (
@@ -238,7 +240,7 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 			return "", errors.Wrap(err, "failed to validate app key")
 		}
 
-		airgapAppFiles, err := ioutil.TempDir("", "airgap-kots")
+		airgapAppFiles, err := os.MkdirTemp("", "airgap-kots")
 		if err != nil {
 			return "", errors.Wrap(err, "failed to create temp airgap dir")
 		}
@@ -253,10 +255,12 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 		fetchOptions.LocalPath = airgapAppFiles
 	}
 
-	// the root directory contains the manifests of the previous version and gets rewritten when fetching the upstream, so we load previous charts before fetching the upstream.
-	prevHelmCharts, err := kotsutil.LoadV1Beta1HelmChartsFromPath(pullOptions.RootDir)
-	if err != nil {
-		return "", errors.Wrap(err, "failed to load previous helm charts")
+	prevV1Beta1HelmCharts := []*kotsv1beta1.HelmChart{}
+	if pullOptions.KotsKinds != nil && pullOptions.KotsKinds.V1Beta1HelmCharts != nil {
+		for _, v1Beta1Chart := range pullOptions.KotsKinds.V1Beta1HelmCharts.Items {
+			kc := v1Beta1Chart
+			prevV1Beta1HelmCharts = append(prevV1Beta1HelmCharts, &kc)
+		}
 	}
 
 	log.ActionWithSpinner("Pulling upstream")
@@ -297,11 +301,6 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 	}
 	log.FinishSpinner()
 
-	kotsKinds, err := kotsutil.LoadKotsKindsFromPath(u.GetUpstreamDir(writeUpstreamOptions))
-	if err != nil {
-		return "", errors.Wrap(err, "failed to load kotskinds")
-	}
-
 	registrySettings := registrytypes.RegistrySettings{
 		Hostname:   pullOptions.RewriteImageOptions.Hostname,
 		Namespace:  pullOptions.RewriteImageOptions.Namespace,
@@ -310,7 +309,33 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 		IsReadOnly: pullOptions.RewriteImageOptions.IsReadOnly,
 	}
 
-	needsConfig, err := kotsadmconfig.NeedsConfiguration(pullOptions.AppSlug, pullOptions.AppSequence, pullOptions.AirgapRoot != "", kotsKinds, registrySettings)
+	renderOptions := base.RenderOptions{
+		SplitMultiDocYAML: true,
+		Namespace:         pullOptions.Namespace,
+		RegistrySettings:  registrySettings,
+		ExcludeKotsKinds:  pullOptions.ExcludeKotsKinds,
+		Log:               log,
+		AppSlug:           pullOptions.AppSlug,
+		Sequence:          pullOptions.AppSequence,
+		IsAirgap:          pullOptions.AirgapRoot != "",
+	}
+	log.ActionWithSpinner("Rendering KOTS custom resources")
+	io.WriteString(pullOptions.ReportWriter, "Rendering KOTS custom resources\n")
+
+	renderedKotsKindsMap, err := base.RenderKotsKinds(u, &renderOptions)
+	if err != nil {
+		log.FinishSpinnerWithError()
+		return "", errors.Wrap(err, "failed to render upstream")
+	}
+
+	renderedKotsKinds, err := kotsutil.KotsKindsFromMap(renderedKotsKindsMap)
+	if err != nil {
+		log.FinishSpinnerWithError()
+		return "", errors.Wrap(err, "failed to load rendered kotskinds from map")
+	}
+	log.FinishSpinner()
+
+	needsConfig, err := kotsadmconfig.NeedsConfiguration(pullOptions.AppSlug, pullOptions.AppSequence, pullOptions.AirgapRoot != "", renderedKotsKinds, registrySettings)
 	if err != nil {
 		return "", errors.Wrap(err, "failed to check if version needs configuration")
 	}
@@ -333,31 +358,31 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 	if needsConfig {
 		if processImageOptions.RewriteImages && processImageOptions.AirgapRoot != "" {
 			// if this is an airgap install, we still need to process the images
-			if _, err = midstream.ProcessAirgapImages(processImageOptions, kotsKinds, fetchOptions.License, log); err != nil {
+			if _, err = midstream.ProcessAirgapImages(processImageOptions, renderedKotsKinds, fetchOptions.License, log); err != nil {
 				return "", errors.Wrap(err, "failed to process airgap images")
 			}
 		}
-
 		return "", ErrConfigNeeded
 	}
 
-	renderDir := pullOptions.RootDir
-	if pullOptions.CreateAppDir {
-		renderDir = filepath.Join(pullOptions.RootDir, u.Name)
+	var v1Beta1HelmCharts []*kotsv1beta1.HelmChart
+	if renderedKotsKinds.V1Beta1HelmCharts != nil {
+		for _, v1Beta1Chart := range renderedKotsKinds.V1Beta1HelmCharts.Items {
+			kc := v1Beta1Chart
+			v1Beta1HelmCharts = append(v1Beta1HelmCharts, &kc)
+		}
 	}
 
-	v1Beta1HelmCharts, err := kotsutil.LoadV1Beta1HelmChartsFromPath(renderDir)
-	if err != nil {
-		return "", errors.Wrap(err, "failed to load new v1beta1 helm charts")
-	}
-
-	v1Beta2HelmCharts, err := kotsutil.LoadV1Beta2HelmChartsFromPath(renderDir)
-	if err != nil {
-		return "", errors.Wrap(err, "failed to load new v1beta2 helm charts")
+	var v1Beta2HelmCharts []*kotsv1beta2.HelmChart
+	if renderedKotsKinds.V1Beta2HelmCharts != nil {
+		for _, v1Beta2Chart := range renderedKotsKinds.V1Beta2HelmCharts.Items {
+			kc := v1Beta2Chart
+			v1Beta2HelmCharts = append(v1Beta2HelmCharts, &kc)
+		}
 	}
 
 	if !pullOptions.SkipHelmChartCheck {
-		for _, prevChart := range prevHelmCharts {
+		for _, prevChart := range prevV1Beta1HelmCharts {
 			if !prevChart.Spec.Exclude.IsEmpty() {
 				isExcluded, err := prevChart.Spec.Exclude.Boolean()
 				if err == nil && isExcluded {
@@ -378,7 +403,6 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 				if prevChart.GetReleaseName() != newChart.GetReleaseName() {
 					continue
 				}
-
 				if !prevChart.Spec.UseHelmInstall {
 					return "", errors.Errorf("cannot upgrade chart release %s to v1beta2 because useHelmInstall is false", newChart.GetReleaseName())
 				}
@@ -386,24 +410,10 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 		}
 	}
 
-	renderOptions := base.RenderOptions{
-		SplitMultiDocYAML:       true,
-		Namespace:               pullOptions.Namespace,
-		LocalRegistryHost:       pullOptions.RewriteImageOptions.Hostname,
-		LocalRegistryNamespace:  pullOptions.RewriteImageOptions.Namespace,
-		LocalRegistryUsername:   pullOptions.RewriteImageOptions.Username,
-		LocalRegistryPassword:   pullOptions.RewriteImageOptions.Password,
-		LocalRegistryIsReadOnly: pullOptions.RewriteImageOptions.IsReadOnly,
-		ExcludeKotsKinds:        pullOptions.ExcludeKotsKinds,
-		Log:                     log,
-		AppSlug:                 pullOptions.AppSlug,
-		Sequence:                pullOptions.AppSequence,
-		IsAirgap:                pullOptions.AirgapRoot != "",
-	}
 	log.ActionWithSpinner("Creating base")
 	io.WriteString(pullOptions.ReportWriter, "Creating base\n")
 
-	commonBase, helmBases, renderedKotsKindsMap, err := base.RenderUpstream(u, &renderOptions)
+	commonBase, helmBases, err := base.RenderUpstream(u, &renderOptions, renderedKotsKinds)
 	if err != nil {
 		log.FinishSpinnerWithError()
 		return "", errors.Wrap(err, "failed to render upstream")
@@ -427,14 +437,9 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 			files = append(files, file)
 		}
 
-		newKotsKinds, err := kotsutil.LoadKotsKindsFromPath(u.GetUpstreamDir(writeUpstreamOptions))
-		if err != nil {
-			return "", errors.Wrap(err, "failed to load kotskinds")
-		}
-		newKotsKinds.Installation.Spec.YAMLErrors = files
+		renderedKotsKinds.Installation.Spec.YAMLErrors = files
 
-		err = apparchive.SaveInstallation(&newKotsKinds.Installation, u.GetUpstreamDir(writeUpstreamOptions))
-		if err != nil {
+		if err := apparchive.SaveInstallation(&renderedKotsKinds.Installation, u.GetUpstreamDir(writeUpstreamOptions)); err != nil {
 			log.FinishSpinnerWithError()
 			return "", errors.Wrap(err, "failed to save installation")
 		}
@@ -480,14 +485,7 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 		return "", errors.Wrap(err, "failed to create new config context template builder")
 	}
 
-	newKotsKinds, err := kotsutil.LoadKotsKindsFromPath(u.GetUpstreamDir(writeUpstreamOptions))
-	if err != nil {
-		log.FinishSpinnerWithError()
-		return "", errors.Wrap(err, "failed to load kotskinds")
-	}
-
-	err = crypto.InitFromString(newKotsKinds.Installation.Spec.EncryptionKey)
-	if err != nil {
+	if err := crypto.InitFromString(renderedKotsKinds.Installation.Spec.EncryptionKey); err != nil {
 		log.FinishSpinnerWithError()
 		return "", errors.Wrap(err, "failed to load encryption cipher")
 	}
@@ -501,6 +499,11 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 		HTTPSProxyEnvValue: pullOptions.HTTPSProxyEnvValue,
 		NoProxyEnvValue:    pullOptions.NoProxyEnvValue,
 		NewHelmCharts:      v1Beta1HelmCharts,
+		License:            fetchOptions.License,
+		RenderedKotsKinds:  renderedKotsKinds,
+		IdentityConfig:     identityConfig,
+		UpstreamDir:        u.GetUpstreamDir(writeUpstreamOptions),
+		Log:                log,
 	}
 
 	// the UseHelmInstall map blocks visibility into charts and subcharts when searching for private images
@@ -526,8 +529,10 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 	writeMidstreamOptions := commonWriteMidstreamOptions
 	writeMidstreamOptions.MidstreamDir = filepath.Join(u.GetOverlaysDir(writeUpstreamOptions), "midstream")
 	writeMidstreamOptions.BaseDir = filepath.Join(u.GetBaseDir(writeUpstreamOptions), commonBase.Path)
+	writeMidstreamOptions.ProcessImageOptions = processImageOptions
+	writeMidstreamOptions.Base = commonBase
 
-	m, err := midstream.WriteMidstream(writeMidstreamOptions, processImageOptions, commonBase, fetchOptions.License, identityConfig, u.GetUpstreamDir(writeUpstreamOptions), log)
+	m, err := midstream.WriteMidstream(writeMidstreamOptions)
 	if err != nil {
 		log.FinishSpinnerWithError()
 		return "", errors.Wrap(err, "failed to write common midstream")
@@ -542,16 +547,18 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 		previousUseHelmInstall := writeMidstreamOptions.UseHelmInstall[helmBase.Path]
 		writeMidstreamOptions.UseHelmInstall[helmBase.Path] = false
 
-		writeMidstreamOptions.MidstreamDir = filepath.Join(u.GetOverlaysDir(writeUpstreamOptions), "midstream", helmBase.Path)
-		writeMidstreamOptions.BaseDir = filepath.Join(u.GetBaseDir(writeUpstreamOptions), helmBase.Path)
-
 		helmBaseCopy := helmBase.DeepCopy()
 
 		processImageOptionsCopy := processImageOptions
 		processImageOptionsCopy.Namespace = helmBaseCopy.Namespace
 		processImageOptionsCopy.PushImages = false // never push images more than once
 
-		helmMidstream, err := midstream.WriteMidstream(writeMidstreamOptions, processImageOptionsCopy, helmBaseCopy, fetchOptions.License, identityConfig, u.GetUpstreamDir(writeUpstreamOptions), log)
+		writeMidstreamOptions.MidstreamDir = filepath.Join(u.GetOverlaysDir(writeUpstreamOptions), "midstream", helmBaseCopy.Path)
+		writeMidstreamOptions.BaseDir = filepath.Join(u.GetBaseDir(writeUpstreamOptions), helmBaseCopy.Path)
+		writeMidstreamOptions.ProcessImageOptions = processImageOptionsCopy
+		writeMidstreamOptions.Base = helmBaseCopy
+
+		helmMidstream, err := midstream.WriteMidstream(writeMidstreamOptions)
 		if err != nil {
 			log.FinishSpinnerWithError()
 			return "", errors.Wrapf(err, "failed to write helm midstream %s", helmBase.Path)
@@ -567,12 +574,6 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 	if err != nil {
 		log.FinishSpinnerWithError()
 		return "", errors.Wrapf(err, "failed to remove unused helm midstreams")
-	}
-
-	renderedKotsKinds, err := kotsutil.KotsKindsFromMap(renderedKotsKindsMap)
-	if err != nil {
-		log.FinishSpinnerWithError()
-		return "", errors.Wrap(err, "failed to load rendered kotskinds from map")
 	}
 
 	writeV1Beta2HelmChartsOpts := apparchive.WriteV1Beta2HelmChartsOptions{
@@ -600,16 +601,14 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 		}
 	}
 
-	installationBytes, err := ioutil.ReadFile(filepath.Join(u.GetUpstreamDir(writeUpstreamOptions), "userdata", "installation.yaml"))
+	// installation spec gets updated during the process, ensure the map has the latest version
+	installationBytes, err := os.ReadFile(filepath.Join(u.GetUpstreamDir(writeUpstreamOptions), "userdata", "installation.yaml"))
 	if err != nil {
 		return "", errors.Wrap(err, "failed to read installation file")
 	}
+	renderedKotsKindsMap["userdata/installation.yaml"] = []byte(installationBytes)
 
-	installationFilename := kotsutil.GenUniqueKotsKindFilename(renderedKotsKindsMap, "installation")
-	renderedKotsKindsMap[installationFilename] = []byte(installationBytes)
-
-	err = kotsutil.WriteKotsKinds(renderedKotsKindsMap, u.GetKotsKindsDir(writeUpstreamOptions))
-	if err != nil {
+	if err := kotsutil.WriteKotsKinds(renderedKotsKindsMap, u.GetKotsKindsDir(writeUpstreamOptions)); err != nil {
 		return "", errors.Wrap(err, "failed to write the rendered kots kinds")
 	}
 
@@ -618,7 +617,7 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 		OverlaysDir:         u.GetOverlaysDir(writeUpstreamOptions),
 		RenderedDir:         u.GetRenderedDir(writeUpstreamOptions),
 		Downstreams:         pullOptions.Downstreams,
-		KustomizeBinPath:    kotsKinds.GetKustomizeBinaryPath(),
+		KustomizeBinPath:    renderedKotsKinds.GetKustomizeBinaryPath(),
 		HelmDir:             u.GetHelmDir(writeUpstreamOptions),
 		Log:                 log,
 		KotsKinds:           renderedKotsKinds,
@@ -726,7 +725,7 @@ func writeDownstreams(options PullOptions, overlaysDir string, m *midstream.Mids
 }
 
 func ParseConfigValuesFromFile(filename string) (*kotsv1beta1.ConfigValues, error) {
-	contents, err := ioutil.ReadFile(filename)
+	contents, err := os.ReadFile(filename)
 	if err != nil {
 		if os.IsNotExist(err) {
 			return nil, nil
@@ -750,7 +749,7 @@ func ParseConfigValuesFromFile(filename string) (*kotsv1beta1.ConfigValues, erro
 }
 
 func ParseIdentityConfigFromFile(filename string) (*kotsv1beta1.IdentityConfig, error) {
-	contents, err := ioutil.ReadFile(filename)
+	contents, err := os.ReadFile(filename)
 	if err != nil {
 		if os.IsNotExist(err) {
 			return nil, nil
@@ -779,7 +778,7 @@ func GetAppMetadataFromAirgap(airgapArchive string) (*replicatedapp.ApplicationM
 		return nil, errors.Wrap(err, "failed to extract app archive")
 	}
 
-	tempDir, err := ioutil.TempDir("", "kotsadm")
+	tempDir, err := os.MkdirTemp("", "kotsadm")
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create temp dir")
 	}
@@ -790,15 +789,19 @@ func GetAppMetadataFromAirgap(airgapArchive string) (*replicatedapp.ApplicationM
 		return nil, errors.Wrap(err, "failed to extract app archive")
 	}
 
-	kotsKinds, err := kotsutil.LoadKotsKindsFromPath(tempDir)
+	kotsApp, err := kotsutil.FindKotsAppInPath(tempDir)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to read kots kinds")
+	}
+	if kotsApp == nil {
+		ka := kotsutil.EmptyKotsKinds().KotsApplication
+		kotsApp = &ka
 	}
 
 	s := k8sjson.NewYAMLSerializer(k8sjson.DefaultMetaFactory, scheme.Scheme, scheme.Scheme)
 
 	var b bytes.Buffer
-	if err := s.Encode(&kotsKinds.KotsApplication, &b); err != nil {
+	if err := s.Encode(kotsApp, &b); err != nil {
 		return nil, errors.Wrap(err, "failed to encode metadata")
 	}
 
@@ -814,7 +817,7 @@ func GetAppMetadataFromAirgap(airgapArchive string) (*replicatedapp.ApplicationM
 }
 
 func parseInstallationFromFile(filename string) (*kotsv1beta1.Installation, error) {
-	contents, err := ioutil.ReadFile(filename)
+	contents, err := os.ReadFile(filename)
 	if err != nil {
 		if os.IsNotExist(err) {
 			return nil, nil
@@ -887,7 +890,7 @@ func findConfig(localPath string) (*kotsv1beta1.Config, *kotsv1beta1.ConfigValue
 				return nil
 			}
 
-			content, err := ioutil.ReadFile(path)
+			content, err := os.ReadFile(path)
 			if err != nil {
 				return err
 			}

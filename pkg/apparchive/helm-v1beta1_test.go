@@ -481,7 +481,7 @@ kind: Kustomization
 			req.NoError(err)
 
 			for wantPath, wantContent := range tt.wantRenderedFilesMap {
-				gotContent, err := ioutil.ReadFile(filepath.Join(extracted, "charts", wantPath))
+				gotContent, err := os.ReadFile(filepath.Join(extracted, "charts", wantPath))
 				require.Nil(t, err)
 
 				if !reflect.DeepEqual(gotContent, wantContent) {
@@ -517,7 +517,7 @@ kind: Kustomization
 			req.NoError(err)
 
 			for wantPath, wantContent := range tt.wantRenderedFilesMap {
-				gotContent, err := ioutil.ReadFile(filepath.Join(extracted, "charts", wantPath))
+				gotContent, err := os.ReadFile(filepath.Join(extracted, "charts", wantPath))
 				require.Nil(t, err)
 
 				if !reflect.DeepEqual(gotContent, wantContent) {

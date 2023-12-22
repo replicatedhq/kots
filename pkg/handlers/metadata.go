@@ -168,7 +168,7 @@ func getBrandingResponse(kotsStore store.Store, appID string) MetadataResponseBr
 		return response
 	}
 
-	applicationYaml, err := ioutil.ReadFile(filepath.Join(tmpDir, "application.yaml"))
+	applicationYaml, err := os.ReadFile(filepath.Join(tmpDir, "application.yaml"))
 	if err != nil {
 		logger.Error(errors.Wrap(err, "failed to read application.yaml"))
 		return response
@@ -188,7 +188,7 @@ func getBrandingResponse(kotsStore store.Store, appID string) MetadataResponseBr
 			continue
 		}
 
-		contents, err := ioutil.ReadFile(filepath.Join(tmpDir, source))
+		contents, err := os.ReadFile(filepath.Join(tmpDir, source))
 		if err != nil {
 			logger.Error(errors.Wrapf(err, "failed to read font file %s", source))
 			continue
@@ -212,7 +212,7 @@ func getBrandingResponse(kotsStore store.Store, appID string) MetadataResponseBr
 				continue
 			}
 
-			contents, err := ioutil.ReadFile(filepath.Join(tmpDir, source))
+			contents, err := os.ReadFile(filepath.Join(tmpDir, source))
 			if err != nil {
 				logger.Error(errors.Wrapf(err, "failed to read font file %s", source))
 				continue

@@ -94,7 +94,7 @@ func RenderChartsArchive(baseDir string, overlaysDir string, downstreamName stri
 			}
 
 			for _, filename := range metadataFiles {
-				content, err := ioutil.ReadFile(filepath.Join(sourceChartsDir, relPath, filename))
+				content, err := os.ReadFile(filepath.Join(sourceChartsDir, relPath, filename))
 				if err != nil {
 					if os.IsNotExist(err) {
 						continue

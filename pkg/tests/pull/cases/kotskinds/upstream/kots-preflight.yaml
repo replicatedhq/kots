@@ -1,0 +1,30 @@
+apiVersion: troubleshoot.sh/v1beta2
+kind: Preflight
+metadata:
+  name: my-app
+spec:
+  collectors:
+    - runPod:
+        name: repl{{ ConfigOption "v1beta2_preflight_collectors_run_pod_name" }}
+        namespace: repl{{ ConfigOption "v1beta2_preflight_collectors_run_pod_namespace" }}
+        podSpec: 
+          containers:
+          - name: repl{{ ConfigOption "v1beta2_preflight_collectors_run_pod_pod_spec_containers_0_name" }}
+            image: repl{{ ConfigOption "v1beta2_preflight_collectors_run_pod_pod_spec_containers_0_image" }}
+            securityContext:
+              allowPrivilegeEscalation: repl{{ ConfigOptionEquals "v1beta2_preflight_collectors_run_pod_pod_spec_containers_0_security_context_allow_privilege_escalation" "1" }}
+            command:
+            - repl{{ ConfigOption "v1beta2_preflight_collectors_run_pod_pod_spec_containers_0_command_0" }}
+            args:
+            - repl{{ ConfigOption "v1beta2_preflight_collectors_run_pod_pod_spec_containers_0_args_0" }}
+  analyzers:
+    - textAnalyze:
+        checkName: repl{{ ConfigOption "v1beta2_preflight_analyzers_text_analyze_check_name" }}
+        fileName: repl{{ ConfigOption "v1beta2_preflight_analyzers_text_analyze_file_name" }}
+        regexGroups: repl{{ ConfigOption "v1beta2_preflight_analyzers_text_analyze_regex_groups" }}
+        outcomes:
+          - pass:
+              when: repl{{ ConfigOption "v1beta2_preflight_analyzers_text_analyze_outcomes_pass_when" }}
+              message: repl{{ ConfigOption "v1beta2_preflight_analyzers_text_analyze_outcomes_pass_message" }}
+          - fail:
+              message: repl{{ ConfigOption "v1beta2_preflight_analyzers_text_analyze_outcomes_fail_message" }}

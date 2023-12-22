@@ -9,8 +9,8 @@ import (
 	"github.com/replicatedhq/kots/pkg/docker/registry"
 	registrytypes "github.com/replicatedhq/kots/pkg/docker/registry/types"
 	"github.com/replicatedhq/kots/pkg/image"
-	kotsimage "github.com/replicatedhq/kots/pkg/image"
 	imagetypes "github.com/replicatedhq/kots/pkg/image/types"
+	"github.com/replicatedhq/kots/pkg/imageutil"
 	"github.com/replicatedhq/kots/pkg/k8sdoc"
 	kotsv1beta1 "github.com/replicatedhq/kotskinds/apis/kots/v1beta1"
 	kustomizeimage "sigs.k8s.io/kustomize/api/types"
@@ -77,7 +77,7 @@ func FindPrivateImages(options FindPrivateImagesOptions) (*FindPrivateImagesResu
 			image.NewTag = "latest"
 		}
 
-		altNames, err := kotsimage.BuildImageAltNames(image)
+		altNames, err := imageutil.BuildImageAltNames(image)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed build alt names")
 		}

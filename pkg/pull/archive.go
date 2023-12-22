@@ -55,7 +55,7 @@ func writeArchiveAsConfigMap(pullOptions PullOptions, u *upstreamtypes.Upstream,
 		return errors.Wrap(err, "failed to create tar gz")
 	}
 
-	archive, err := ioutil.ReadFile(path.Join(tempDir, "kots-uploadable-archive.tar.gz"))
+	archive, err := os.ReadFile(path.Join(tempDir, "kots-uploadable-archive.tar.gz"))
 	if err != nil {
 		return errors.Wrap(err, "failed to read temp file")
 	}
@@ -110,7 +110,7 @@ func writeArchiveAsConfigMap(pullOptions PullOptions, u *upstreamtypes.Upstream,
 }
 
 func CleanBaseArchive(path string) error {
-	files, err := ioutil.ReadDir(path)
+	files, err := os.ReadDir(path)
 	if err != nil {
 		return errors.Wrap(err, "failed to read dir")
 	}

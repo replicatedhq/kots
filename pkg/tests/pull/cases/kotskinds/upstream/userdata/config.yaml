@@ -1,0 +1,210 @@
+apiVersion: kots.io/v1beta1
+kind: ConfigValues
+metadata:
+  creationTimestamp: null
+  name: my-app
+spec:
+  values:
+    hostname:
+      value: my-app.somebigbank.com
+    kots_app_additional_images_1:
+      default: my-app-image:1.0.0
+    kots_app_additional_namespacse_1:
+      default: my-app-namespace
+    kots_app_allow_rollback:
+      default: "0"
+    kots_app_app_icon:
+      default: https://cdn.example.com/my-app-icon.png
+    kots_app_app_title:
+      default: My Application
+    kots_app_application_ports_1_application_url:
+      default: http://localhost:80
+    kots_app_application_ports_1_local_port:
+      default: "80"
+    kots_app_application_ports_1_service_name:
+      default: my-app
+    kots_app_application_ports_1_service_port:
+      default: "80"
+    kots_app_branding_css_1:
+      default: https://cdn.example.com/my-app.css
+    kots_app_branding_fonts_1_font_family:
+      default: Arial
+    kots_app_branding_fonts_1_font_sources_1:
+      default: https://cdn.example.com/my-app-font.woff
+    kots_app_console_feature_flags_1:
+      default: my-app-feature
+    kots_app_graphs_1_duration_seconds:
+      default: "3600"
+    kots_app_graphs_1_legend:
+      default: CPU
+    kots_app_graphs_1_queries_1_legend:
+      default: Memory
+    kots_app_graphs_1_queries_1_query:
+      default: sum(kube_pod_container_resource_requests_memory_bytes)
+    kots_app_graphs_1_queries_2_legend:
+      default: Storage
+    kots_app_graphs_1_queries_2_query:
+      default: sum(kube_pod_container_resource_requests_storage_bytes)
+    kots_app_graphs_1_query:
+      default: sum(kube_pod_container_resource_requests_cpu_cores)
+    kots_app_graphs_1_title:
+      default: My Graph
+    kots_app_graphs_1_y_axis_format:
+      default: bytes
+    kots_app_graphs_1_y_axis_template:
+      default: y-axis-template
+    kots_app_kubectl_version:
+      default: 1.25.0
+    kots_app_kustomize_version:
+      default: 4.7.0
+    kots_app_min_kots_version:
+      default: 1.0.0
+    kots_app_proxy_registry_domain:
+      default: proxy.example.com
+    kots_app_release_notes:
+      default: my release notes
+    kots_app_replicated_registry_domain:
+      default: registry.example.com
+    kots_app_require_minimal_rbac_privileges:
+      default: "0"
+    kots_app_status_informers_1:
+      default: deployment/my-app
+    kots_app_support_minimal_rbac_privileges:
+      default: "0"
+    kots_app_target_kots_version:
+      default: 2.0.0
+    v1beta1_helmchart_builder:
+      default: |
+        foo: bar
+        bar: baz
+    v1beta1_helmchart_chart_release_name:
+      default: my-chart-release-name
+    v1beta1_helmchart_exclude:
+      default: "1"
+    v1beta1_helmchart_helm_upgrade_flags_1:
+      default: --timeout 60s
+    v1beta1_helmchart_helm_version:
+      default: v3
+    v1beta1_helmchart_namespace:
+      default: my-namespace
+    v1beta1_helmchart_optional_values_1_recursive_merge:
+      default: "1"
+    v1beta1_helmchart_optional_values_1_values:
+      default: |
+        foo: bar
+        bar: baz
+    v1beta1_helmchart_optional_values_1_when:
+      default: "1"
+    v1beta1_helmchart_use_helm_install:
+      default: "1"
+    v1beta1_helmchart_values:
+      default: |
+        foo: bar
+        bar: baz
+    v1beta1_helmchart_weight:
+      default: "1"
+    v1beta2_helmchart_builder:
+      default: |
+        foo: bar
+        bar: baz
+    v1beta2_helmchart_exclude:
+      default: "1"
+    v1beta2_helmchart_helm_upgrade_flags_1:
+      default: --timeout 70s
+    v1beta2_helmchart_namespace:
+      default: my-namespace
+    v1beta2_helmchart_optional_values_1_recursive_merge:
+      default: "1"
+    v1beta2_helmchart_optional_values_1_values:
+      default: |
+        foo: bar
+        bar: baz
+    v1beta2_helmchart_optional_values_1_when:
+      default: "1"
+    v1beta2_helmchart_release_name:
+      default: my-chart-release-name
+    v1beta2_helmchart_values:
+      default: |
+        foo: bar
+        bar: baz
+    v1beta2_helmchart_weight:
+      default: "1"
+    v1beta2_preflight_analyzers_text_analyze_check_name:
+      default: my-text-analyze-check-name
+    v1beta2_preflight_analyzers_text_analyze_file_name:
+      default: my-text-analyze-file-name
+    v1beta2_preflight_analyzers_text_analyze_outcomes_fail_message:
+      default: my-text-analyze-outcomes-fail-message
+    v1beta2_preflight_analyzers_text_analyze_outcomes_pass_message:
+      default: my-text-analyze-outcomes-pass-message
+    v1beta2_preflight_analyzers_text_analyze_outcomes_pass_when:
+      default: Loss < 5
+    v1beta2_preflight_analyzers_text_analyze_regex_groups:
+      default: my-text-analyze-regex-groups
+    v1beta2_preflight_collectors_run_pod_name:
+      default: my-run-pod-name
+    v1beta2_preflight_collectors_run_pod_namespace:
+      default: my-run-pod-namespace
+    v1beta2_preflight_collectors_run_pod_pod_spec_containers_0_args_0:
+      default: my-pod-spec-containers-0-args-0
+    v1beta2_preflight_collectors_run_pod_pod_spec_containers_0_command_0:
+      default: my-pod-spec-containers-0-command-0
+    v1beta2_preflight_collectors_run_pod_pod_spec_containers_0_image:
+      default: my-pod-spec-containers-0-image
+    v1beta2_preflight_collectors_run_pod_pod_spec_containers_0_name:
+      default: my-pod-spec-containers-0-name
+    v1beta2_preflight_collectors_run_pod_pod_spec_containers_0_security_context_allow_privilege_escalation:
+      default: "1"
+    v1beta2_supportbundle_analyzers_cluster_version_outcomes_fail_message:
+      default: Cluster version is too old
+    v1beta2_supportbundle_analyzers_cluster_version_outcomes_fail_when:
+      default: < 1.16.0
+    v1beta2_supportbundle_analyzers_cluster_version_outcomes_pass_message:
+      default: Cluster version is new enough
+    v1beta2_supportbundle_analyzers_container_runtime_outcomes_fail_message:
+      default: Container runtime is gvisor
+    v1beta2_supportbundle_analyzers_container_runtime_outcomes_fail_when:
+      default: == gvisor
+    v1beta2_supportbundle_analyzers_container_runtime_outcomes_pass_message:
+      default: Container runtime is not gvisor
+    v1beta2_supportbundle_analyzers_node_resources_check_name:
+      default: my-node-resources-check-name
+    v1beta2_supportbundle_analyzers_node_resources_outcomes_fail_message:
+      default: Node resources are too low
+    v1beta2_supportbundle_analyzers_node_resources_outcomes_fail_when:
+      default: < 1
+    v1beta2_supportbundle_analyzers_node_resources_outcomes_pass_message:
+      default: Node resources are high enough
+    v1beta2_supportbundle_analyzers_text_analyze_check_name:
+      default: my-text-analyze-check-name
+    v1beta2_supportbundle_analyzers_text_analyze_exclude:
+      default: "0"
+    v1beta2_supportbundle_analyzers_text_analyze_file_name:
+      default: my-text-analyze-file-name
+    v1beta2_supportbundle_analyzers_text_analyze_ignore_if_no_files:
+      default: "0"
+    v1beta2_supportbundle_analyzers_text_analyze_outcomes_fail_message:
+      default: Text analyze failed
+    v1beta2_supportbundle_analyzers_text_analyze_outcomes_fail_when:
+      default: contains
+    v1beta2_supportbundle_analyzers_text_analyze_outcomes_pass_message:
+      default: Text analyze passed
+    v1beta2_supportbundle_analyzers_text_analyze_regex_groups:
+      default: my-text-analyze-regex-groups
+    v1beta2_supportbundle_collectors_exec_collector_name:
+      default: my-exec-collector-name
+    v1beta2_supportbundle_collectors_exec_command_0:
+      default: my-exec-command-0
+    v1beta2_supportbundle_collectors_exec_name:
+      default: my-exec-name
+    v1beta2_supportbundle_collectors_exec_selector_0:
+      default: my-exec-selector-0
+    v1beta2_supportbundle_collectors_exec_timeout:
+      default: 70s
+    v1beta2_supportbundle_collectors_logs_collector_name:
+      default: my-logs-collector-name
+    v1beta2_supportbundle_collectors_logs_name:
+      default: my-logs-name
+    v1beta2_supportbundle_collectors_logs_selector_0:
+      default: my-logs-selector-0
+status: {}

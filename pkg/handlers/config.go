@@ -271,6 +271,7 @@ func (h *Handler) LiveAppConfig(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var kotsKinds *kotsutil.KotsKinds
+	var nonRenderedConfig *kotsv1beta1.Config
 	var appLicense *kotsv1beta1.License
 	var app apptypes.AppType
 	var localRegistry registrytypes.RegistrySettings
@@ -295,6 +296,7 @@ func (h *Handler) LiveAppConfig(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 			kotsKinds = &k
+			nonRenderedConfig = kotsKinds.Config
 			appLicense = kotsKinds.License
 			createNewVersion = true
 		} else {
@@ -321,6 +323,7 @@ func (h *Handler) LiveAppConfig(w http.ResponseWriter, r *http.Request) {
 			k.License = licenseData.License
 
 			kotsKinds = &k
+			nonRenderedConfig = kotsKinds.Config
 			appLicense = kotsKinds.License
 		}
 	} else {
@@ -341,7 +344,7 @@ func (h *Handler) LiveAppConfig(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		archiveDir, err := ioutil.TempDir("", "kotsadm")
+		archiveDir, err := os.MkdirTemp("", "kotsadm")
 		if err != nil {
 			liveAppConfigResponse.Error = "failed to create temp dir"
 			logger.Error(errors.Wrap(err, liveAppConfigResponse.Error))
@@ -358,9 +361,18 @@ func (h *Handler) LiveAppConfig(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		kotsKinds, err = kotsutil.LoadKotsKindsFromPath(filepath.Join(archiveDir, "upstream"))
+		kotsKinds, err = kotsutil.LoadKotsKinds(archiveDir)
 		if err != nil {
 			liveAppConfigResponse.Error = "failed to load kots kinds from path"
+			logger.Error(errors.Wrap(err, liveAppConfigResponse.Error))
+			JSON(w, http.StatusInternalServerError, liveAppConfigResponse)
+			return
+		}
+
+		// get the non-rendered config from the upstream directory because we have to re-render it with the new values
+		nonRenderedConfig, err = kotsutil.FindConfigInPath(filepath.Join(archiveDir, "upstream"))
+		if err != nil {
+			liveAppConfigResponse.Error = "failed to find non-rendered config"
 			logger.Error(errors.Wrap(err, liveAppConfigResponse.Error))
 			JSON(w, http.StatusInternalServerError, liveAppConfigResponse)
 			return
@@ -392,7 +404,7 @@ func (h *Handler) LiveAppConfig(w http.ResponseWriter, r *http.Request) {
 
 	versionInfo := template.VersionInfoFromInstallationSpec(sequence, app.GetIsAirgap(), kotsKinds.Installation.Spec) // sequence +1 because the sequence will be incremented on save (and we want the preview to be accurate)
 	appInfo := template.ApplicationInfo{Slug: app.GetSlug()}
-	renderedConfig, err := kotsconfig.TemplateConfigObjects(kotsKinds.Config, configValues, appLicense, &kotsKinds.KotsApplication, localRegistry, &versionInfo, &appInfo, kotsKinds.IdentityConfig, app.GetNamespace(), false)
+	renderedConfig, err := kotsconfig.TemplateConfigObjects(nonRenderedConfig, configValues, appLicense, &kotsKinds.KotsApplication, localRegistry, &versionInfo, &appInfo, kotsKinds.IdentityConfig, app.GetNamespace(), false)
 	if err != nil {
 		liveAppConfigResponse.Error = "failed to render templates"
 		logger.Error(errors.Wrap(err, liveAppConfigResponse.Error))
@@ -483,6 +495,7 @@ func (h *Handler) CurrentAppConfig(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var kotsKinds *kotsutil.KotsKinds
+	var nonRenderedConfig *kotsv1beta1.Config
 	var license *kotsv1beta1.License
 	var localRegistry registrytypes.RegistrySettings
 	var app apptypes.AppType
@@ -520,6 +533,7 @@ func (h *Handler) CurrentAppConfig(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 			kotsKinds = &k
+			nonRenderedConfig = kotsKinds.Config
 			license = kotsKinds.License
 			createNewVersion = true
 		} else {
@@ -555,6 +569,7 @@ func (h *Handler) CurrentAppConfig(w http.ResponseWriter, r *http.Request) {
 			k.License = licenseData.License
 
 			kotsKinds = &k
+			nonRenderedConfig = kotsKinds.Config
 			license = kotsKinds.License
 		}
 	} else {
@@ -590,7 +605,7 @@ func (h *Handler) CurrentAppConfig(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		archiveDir, err := ioutil.TempDir("", "kotsadm")
+		archiveDir, err := os.MkdirTemp("", "kotsadm")
 		if err != nil {
 			currentAppConfigResponse.Error = "failed to create temp dir"
 			logger.Error(errors.Wrap(err, currentAppConfigResponse.Error))
@@ -607,9 +622,18 @@ func (h *Handler) CurrentAppConfig(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		kotsKinds, err = kotsutil.LoadKotsKindsFromPath(filepath.Join(archiveDir, "upstream"))
+		kotsKinds, err = kotsutil.LoadKotsKinds(archiveDir)
 		if err != nil {
 			currentAppConfigResponse.Error = "failed to load kots kinds from path"
+			logger.Error(errors.Wrap(err, currentAppConfigResponse.Error))
+			JSON(w, http.StatusInternalServerError, currentAppConfigResponse)
+			return
+		}
+
+		// get the non-rendered config from the upstream directory because we have to re-render it with the new values
+		nonRenderedConfig, err = kotsutil.FindConfigInPath(filepath.Join(archiveDir, "upstream"))
+		if err != nil {
+			currentAppConfigResponse.Error = "failed to find non-rendered config"
 			logger.Error(errors.Wrap(err, currentAppConfigResponse.Error))
 			JSON(w, http.StatusInternalServerError, currentAppConfigResponse)
 			return
@@ -657,7 +681,7 @@ func (h *Handler) CurrentAppConfig(w http.ResponseWriter, r *http.Request) {
 
 	versionInfo := template.VersionInfoFromInstallationSpec(sequence, app.GetIsAirgap(), kotsKinds.Installation.Spec) // sequence +1 because the sequence will be incremented on save (and we want the preview to be accurate)
 	appInfo := template.ApplicationInfo{Slug: app.GetSlug()}
-	renderedConfig, err := kotsconfig.TemplateConfigObjects(kotsKinds.Config, configValues, license, &kotsKinds.KotsApplication, localRegistry, &versionInfo, &appInfo, kotsKinds.IdentityConfig, app.GetNamespace(), false)
+	renderedConfig, err := kotsconfig.TemplateConfigObjects(nonRenderedConfig, configValues, license, &kotsKinds.KotsApplication, localRegistry, &versionInfo, &appInfo, kotsKinds.IdentityConfig, app.GetNamespace(), false)
 	if err != nil {
 		logger.Error(err)
 		currentAppConfigResponse.Error = "failed to render templates"
@@ -749,7 +773,7 @@ func getAppConfigValueForFile(downloadApp *apptypes.App, sequence int64, filenam
 		return "", errors.Wrap(err, "failed to get app version archive")
 	}
 
-	kotsKinds, err := kotsutil.LoadKotsKindsFromPath(filepath.Join(archiveDir, "upstream"))
+	kotsKinds, err := kotsutil.LoadKotsKinds(archiveDir)
 	if err != nil {
 		return "", errors.Wrap(err, "failed to load kots kinds from archive")
 	}
@@ -770,7 +794,7 @@ func updateAppConfig(updateApp *apptypes.App, sequence int64, configGroups []kot
 		Success: false,
 	}
 
-	archiveDir, err := ioutil.TempDir("", "kotsadm")
+	archiveDir, err := os.MkdirTemp("", "kotsadm")
 	if err != nil {
 		updateAppConfigResponse.Error = "failed to create temp dir"
 		return updateAppConfigResponse, err
@@ -783,7 +807,7 @@ func updateAppConfig(updateApp *apptypes.App, sequence int64, configGroups []kot
 		return updateAppConfigResponse, err
 	}
 
-	kotsKinds, err := kotsutil.LoadKotsKindsFromPath(filepath.Join(archiveDir, "upstream"))
+	kotsKinds, err := kotsutil.LoadKotsKinds(archiveDir)
 	if err != nil {
 		updateAppConfigResponse.Error = "failed to load kots kinds from path"
 		return updateAppConfigResponse, err
@@ -810,7 +834,7 @@ func updateAppConfig(updateApp *apptypes.App, sequence int64, configGroups []kot
 			return updateAppConfigResponse, err
 		}
 
-		if err := ioutil.WriteFile(filepath.Join(archiveDir, "upstream", "userdata", "config.yaml"), []byte(configValuesSpec), 0644); err != nil {
+		if err := os.WriteFile(filepath.Join(archiveDir, "upstream", "userdata", "config.yaml"), []byte(configValuesSpec), 0644); err != nil {
 			updateAppConfigResponse.Error = "failed to write config.yaml to upstream/userdata"
 			return updateAppConfigResponse, err
 		}
@@ -1079,7 +1103,7 @@ func (h *Handler) SetAppConfigValues(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	kotsKinds, err := kotsutil.LoadKotsKindsFromPath(filepath.Join(archiveDir, "upstream"))
+	kotsKinds, err := kotsutil.LoadKotsKinds(archiveDir)
 	if err != nil {
 		setAppConfigValuesResponse.Error = "failed to load kots kinds from path"
 		logger.Error(errors.Wrap(err, setAppConfigValuesResponse.Error))
@@ -1087,7 +1111,16 @@ func (h *Handler) SetAppConfigValues(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if kotsKinds.Config == nil {
+	// get the non-rendered config from the upstream directory because we have to re-render it with the new values
+	nonRenderedConfig, err := kotsutil.FindConfigInPath(filepath.Join(archiveDir, "upstream"))
+	if err != nil {
+		setAppConfigValuesResponse.Error = "failed to find non-rendered config"
+		logger.Error(errors.Wrap(err, setAppConfigValuesResponse.Error))
+		JSON(w, http.StatusInternalServerError, setAppConfigValuesResponse)
+		return
+	}
+
+	if nonRenderedConfig == nil {
 		setAppConfigValuesResponse.Error = fmt.Sprintf("app %s does not have a config", foundApp.Slug)
 		logger.Errorf(setAppConfigValuesResponse.Error)
 		JSON(w, http.StatusInternalServerError, setAppConfigValuesResponse)
@@ -1102,7 +1135,7 @@ func (h *Handler) SetAppConfigValues(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		newConfigValues, err = mergeConfigValues(kotsKinds.Config, kotsKinds.ConfigValues, newConfigValues)
+		newConfigValues, err = mergeConfigValues(nonRenderedConfig, kotsKinds.ConfigValues, newConfigValues)
 		if err != nil {
 			setAppConfigValuesResponse.Error = "failed to create new config"
 			logger.Error(errors.Wrap(err, setAppConfigValuesResponse.Error))
@@ -1111,7 +1144,7 @@ func (h *Handler) SetAppConfigValues(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	newConfig, err := updateConfigObject(kotsKinds.Config, newConfigValues, setAppConfigValuesRequest.Merge)
+	newConfig, err := updateConfigObject(nonRenderedConfig, newConfigValues, setAppConfigValuesRequest.Merge)
 	if err != nil {
 		setAppConfigValuesResponse.Error = "failed to create new config object"
 		logger.Error(errors.Wrap(err, setAppConfigValuesResponse.Error))

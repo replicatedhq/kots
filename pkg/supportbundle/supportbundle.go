@@ -211,7 +211,7 @@ func getKotsKindsForApp(app *apptypes.App, sequence int64) (*kotsutil.KotsKinds,
 		return nil, errors.Wrap(err, "failed to get current archive")
 	}
 
-	kotsKinds, err := kotsutil.LoadKotsKindsFromPath(filepath.Join(archivePath, "upstream"))
+	kotsKinds, err := kotsutil.LoadKotsKinds(archivePath)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to load current kotskinds")
 	}
@@ -281,7 +281,7 @@ func getAnalysisFromBundle(archivePath string) ([]byte, error) {
 		trimmedRelPath = strings.TrimPrefix(trimmedRelPath, string(os.PathSeparator)) // extra measure to ensure no leading slashes. for example: "/analysis.json"
 
 		if trimmedRelPath == "analysis.json" {
-			b, err := ioutil.ReadFile(path)
+			b, err := os.ReadFile(path)
 			if err != nil {
 				return errors.Wrap(err, "failed to read analysis file")
 			}
@@ -341,7 +341,7 @@ func CreateSupportBundleAnalysis(appID string, archivePath string, bundle *types
 		return err
 	}
 
-	kotsKinds, err := kotsutil.LoadKotsKindsFromPath(filepath.Join(archiveDir, "upstream"))
+	kotsKinds, err := kotsutil.LoadKotsKinds(archiveDir)
 	if err != nil {
 		err = errors.Wrap(err, "failed to load kots kinds from archive")
 		logger.Error(err)
