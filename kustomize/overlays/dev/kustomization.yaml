@@ -4,6 +4,9 @@ bases:
   - ../../../web/kustomize/overlays/dev
   - ../../../kurl_proxy/kustomize/overlays/dev
 
+resources:
+  - ./namespace.yaml
+
 patchesStrategicMerge:
   - ./deployment.yaml
 
