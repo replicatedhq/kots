@@ -1,5 +1,5 @@
 FROM node:18
-EXPOSE 3000 9229
+EXPOSE 3000
 
 WORKDIR /src
 COPY ./Makefile ./

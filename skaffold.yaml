@@ -17,20 +17,8 @@ profiles:
         path: /build/artifacts/1/docker/buildArgs
         value:
           DEBUG_KOTSADM: 1
-  - name: codespace
-    activation:
-      - env: USER=codespace
-    build:
-      local:
-        concurrency: 0
-        useBuildkit: true
-        push: true
 
 build:
-  insecureRegistries:
-  - localhost:5000
-  - k3d-replicated-registry.localhost:5000
-
   local:
     concurrency: 0
     useBuildkit: true
@@ -79,10 +67,6 @@ portForward:
     resourceName: kotsadm
     port: 3000
     localPort: 30000
-  - resourceType: service
-    resourceName: kotsadm-dlv
-    port: 40000
-    localPort: 40000
   - resourceType: service
     resourceName: kurl-proxy
     port: 8800
