@@ -1,8 +1,7 @@
-bases:
-  - ../dev
-
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
 resources:
-  - ./distribution/distribution.yaml
-
-patchesStrategicMerge:
-  - ./deployment.yaml
+- ./distribution/distribution.yaml
+- ../dev
+patches:
+- path: ./deployment.yaml

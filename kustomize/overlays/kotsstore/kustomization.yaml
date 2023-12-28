@@ -1,7 +1,9 @@
-bases:
-  - ../dev
-  - ./minio
-  - ../../../migrations/kustomize/overlays/dev
 
-patchesStrategicMerge:
-  - ./deployment.yaml
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+- ../dev
+- ./minio
+- ../../../migrations/kustomize/overlays/dev
+patches:
+- path: ./deployment.yaml
