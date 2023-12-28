@@ -1,6 +1,6 @@
-bases:
-  - ../../base
-
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
 resources:
-  - ./rqlite.yaml
-  - ./job.yaml
+- ./rqlite.yaml
+- ./job.yaml
+- ../../base

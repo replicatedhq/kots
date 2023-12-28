@@ -1,13 +1,13 @@
-  # - ../../../kurl_proxy/kustomize/overlays/dev
-
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
 resources:
 - ../../base
 - ../../../web/kustomize/overlays/dev
 - ../../../migrations/kustomize/overlays/okteto
 - ../kotsstore/minio
-
-patchesStrategicMerge:
-- ./deployment.yaml
-
-commonLabels:
-  app.kubernetes.io/name: kotsadm
+labels:
+- includeSelectors: true
+  pairs:
+    app.kubernetes.io/name: kotsadm
+patches:
+- path: ./deployment.yaml
