@@ -8,7 +8,7 @@ import (
 	"io/ioutil"
 	"os"
 
-	sealedsecretsv1alpha1 "github.com/bitnami-labs/sealed-secrets/pkg/apis/sealed-secrets/v1alpha1"
+	sealedsecretsv1alpha1 "github.com/bitnami-labs/sealed-secrets/pkg/apis/sealedsecrets/v1alpha1"
 	sealedsecretsscheme "github.com/bitnami-labs/sealed-secrets/pkg/client/clientset/versioned/scheme"
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/util"
