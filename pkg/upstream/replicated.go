@@ -767,16 +767,18 @@ func findConfigInRelease(release *Release) *kotsv1beta1.Config {
 
 func findAppInRelease(release *Release) *kotsv1beta1.Application {
 	for _, content := range release.Manifests {
-		decode := scheme.Codecs.UniversalDeserializer().Decode
-		obj, gvk, err := decode(content, nil, nil)
-		if err != nil {
-			continue
-		}
+		for _, doc := range util.ConvertToSingleDocs(content) {
+			decode := scheme.Codecs.UniversalDeserializer().Decode
+			obj, gvk, err := decode(doc, nil, nil)
+			if err != nil {
+				continue
+			}
 
-		if gvk.Group == "kots.io" {
-			if gvk.Version == "v1beta1" {
-				if gvk.Kind == "Application" {
-					return obj.(*kotsv1beta1.Application)
+			if gvk.Group == "kots.io" {
+				if gvk.Version == "v1beta1" {
+					if gvk.Kind == "Application" {
+						return obj.(*kotsv1beta1.Application)
+					}
 				}
 			}
 		}

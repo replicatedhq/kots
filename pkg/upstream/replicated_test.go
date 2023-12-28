@@ -444,3 +444,135 @@ spec:
 		})
 	}
 }
+func Test_findAppInRelease(t *testing.T) {
+	tests := []struct {
+		name    string
+		release *Release
+		want    *kotsv1beta1.Application
+	}{
+		{
+			name: "find application in release",
+			release: &Release{
+				Manifests: map[string][]byte{
+					"k8s-app.yaml": []byte(`apiVersion: app.k8s.io/v1beta1
+kind: Application
+metadata:
+  name: "my-kots-app"
+  labels:
+    app.kubernetes.io/name: "my-kots-app"
+    app.kubernetes.io/version: "0.0.0"
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: "my-kots-app"
+`),
+					"kots-app.yaml": []byte(`apiVersion: kots.io/v1beta1
+kind: Application
+metadata:
+  name: my-kots-app
+spec:
+  title: My KOTS Application
+  icon: ""
+  minKotsVersion: "1.100.0"
+`),
+				},
+			},
+			want: &kotsv1beta1.Application{
+				TypeMeta: metav1.TypeMeta{
+					APIVersion: "kots.io/v1beta1",
+					Kind:       "Application",
+				},
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "my-kots-app",
+				},
+				Spec: kotsv1beta1.ApplicationSpec{
+					Title:          "My KOTS Application",
+					Icon:           "",
+					MinKotsVersion: "1.100.0",
+				},
+			},
+		},
+		{
+			name: "find application in release multi-doc",
+			release: &Release{
+				Manifests: map[string][]byte{
+					"kots-kinds.yaml": []byte(`apiVersion: app.k8s.io/v1beta1
+kind: Application
+metadata:
+  name: "my-kots-app"
+  labels:
+    app.kubernetes.io/name: "my-kots-app"
+    app.kubernetes.io/version: "0.0.0"
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: "my-kots-app"
+---
+apiVersion: kots.io/v1beta1
+kind: Application
+metadata:
+  name: my-kots-app
+spec:
+  title: My KOTS Application
+  icon: ""
+  minKotsVersion: "1.100.0"
+`),
+				},
+			},
+			want: &kotsv1beta1.Application{
+				TypeMeta: metav1.TypeMeta{
+					APIVersion: "kots.io/v1beta1",
+					Kind:       "Application",
+				},
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "my-kots-app",
+				},
+				Spec: kotsv1beta1.ApplicationSpec{
+					Title:          "My KOTS Application",
+					Icon:           "",
+					MinKotsVersion: "1.100.0",
+				},
+			},
+		},
+		{
+			name: "application not found in release, return default",
+			release: &Release{
+				Manifests: map[string][]byte{
+					"k8s-app.yaml": []byte(`apiVersion: app.k8s.io/v1beta1
+kind: Application
+metadata:
+  name: "my-kots-app"
+  labels:
+    app.kubernetes.io/name: "my-kots-app"
+    app.kubernetes.io/version: "0.0.0"
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: "my-kots-app"
+`),
+				},
+			},
+			want: &kotsv1beta1.Application{
+				TypeMeta: metav1.TypeMeta{
+					APIVersion: "kots.io/v1beta1",
+					Kind:       "Application",
+				},
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "replicated-kots-app",
+				},
+				Spec: kotsv1beta1.ApplicationSpec{
+					Title: "Replicated KOTS App",
+					Icon:  "",
+				},
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := findAppInRelease(tt.release); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("findAppInRelease() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
