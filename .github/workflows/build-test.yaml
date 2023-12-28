@@ -176,7 +176,7 @@ jobs:
         run: mapfile -t envs < <(grep -v '#.*' < .image.env) && export "${envs[@]}" && make -C web build-kotsadm
 
       - name: Upload web artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: web
           path: ./web/dist
@@ -258,7 +258,7 @@ jobs:
           GIT_TAG: ${{ needs.generate-tag.outputs.tag }}
         run: mapfile -t envs < <(grep -v '#.*' < .image.env) && export "${envs[@]}" && make kots
 
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         with:
           name: kots
           path: ./bin/kots
@@ -346,7 +346,7 @@ jobs:
             ${{ runner.os }}-go-e2e-
       - run: make -C e2e build deps
       - run: docker save e2e-deps -o e2e/bin/e2e-deps.tar
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         with:
           name: e2e
           path: e2e/bin/
