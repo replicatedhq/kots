@@ -191,10 +191,11 @@ func GetReportingInfo(appID string) *types.ReportingInfo {
 	}
 
 	r := types.ReportingInfo{
-		InstanceID:    appID,
-		KOTSInstallID: os.Getenv("KOTS_INSTALL_ID"),
-		KURLInstallID: os.Getenv("KURL_INSTALL_ID"),
-		UserAgent:     buildversion.GetUserAgent(),
+		InstanceID:        appID,
+		KOTSInstallID:     os.Getenv("KOTS_INSTALL_ID"),
+		KURLInstallID:     os.Getenv("KURL_INSTALL_ID"),
+		EmbeddedClusterID: os.Getenv("EMBEDDED_CLUSTER_ID"),
+		UserAgent:         buildversion.GetUserAgent(),
 	}
 
 	cfg, err := k8sutil.GetClusterConfig()
