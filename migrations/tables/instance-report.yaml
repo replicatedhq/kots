@@ -35,6 +35,8 @@ spec:
         type: text
       - name: kurl_install_id
         type: text
+      - name: embedded_cluster_id
+        type: text
       - name: is_gitops_enabled
         type: integer
       - name: gitops_provider
