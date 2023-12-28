@@ -248,7 +248,7 @@ jobs:
           cache: true
 
       - name: Download web artifact
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: web
           path: ./web/dist
@@ -506,7 +506,7 @@ jobs:
           addon_version=${{ needs.generate-tag.outputs.tag }}
           echo "addon_version=${addon_version#v}" >> "$GITHUB_OUTPUT"
       - name: download kots binary
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: kots
           path: bin/
@@ -565,12 +565,12 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
       - name: download e2e deps
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: e2e
           path: e2e/bin/
       - name: download kots binary
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: kots
           path: bin/
@@ -605,14 +605,14 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
       - name: download e2e deps
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: e2e
           path: e2e/bin/
       - run: docker load -i e2e/bin/e2e-deps.tar
       - run: chmod +x e2e/bin/*
       - name: download kots binary
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: kots
           path: bin/
@@ -661,7 +661,7 @@ jobs:
           export-kubeconfig: true
 
       - name: download kots binary
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: kots
           path: bin/
@@ -756,14 +756,14 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
       - name: download e2e deps
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: e2e
           path: e2e/bin/
       - run: docker load -i e2e/bin/e2e-deps.tar
       - run: chmod +x e2e/bin/*
       - name: download kots binary
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: kots
           path: bin/
@@ -796,14 +796,14 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
       - name: download e2e deps
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: e2e
           path: e2e/bin/
       - run: docker load -i e2e/bin/e2e-deps.tar
       - run: chmod +x e2e/bin/*
       - name: download kots binary
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: kots
           path: bin/
@@ -851,7 +851,7 @@ jobs:
           export-kubeconfig: true
 
       - name: download kots binary
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: kots
           path: bin/
@@ -945,14 +945,14 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
       - name: download e2e deps
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: e2e
           path: e2e/bin/
       - run: docker load -i e2e/bin/e2e-deps.tar
       - run: chmod +x e2e/bin/*
       - name: download kots binary
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: kots
           path: bin/
@@ -985,14 +985,14 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
       - name: download e2e deps
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: e2e
           path: e2e/bin/
       - run: docker load -i e2e/bin/e2e-deps.tar
       - run: chmod +x e2e/bin/*
       - name: download kots binary
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: kots
           path: bin/
@@ -1024,14 +1024,14 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
       - name: download e2e deps
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: e2e
           path: e2e/bin/
       - run: docker load -i e2e/bin/e2e-deps.tar
       - run: chmod +x e2e/bin/*
       - name: download kots binary
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: kots
           path: bin/
@@ -1082,7 +1082,7 @@ jobs:
           export-kubeconfig: true
 
       - name: download kots binary
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: kots
           path: bin/
@@ -1259,7 +1259,7 @@ jobs:
           export-kubeconfig: true
 
       - name: download kots binary
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: kots
           path: bin/
@@ -1368,7 +1368,7 @@ jobs:
           export-kubeconfig: true
 
       - name: download kots binary
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: kots
           path: bin/
@@ -1479,7 +1479,7 @@ jobs:
           export-kubeconfig: true
 
       - name: download kots binary
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: kots
           path: bin/
@@ -1636,7 +1636,7 @@ jobs:
           export-kubeconfig: true
 
       - name: download kots binary
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: kots
           path: bin/
@@ -1734,7 +1734,7 @@ jobs:
           export-kubeconfig: true
 
       - name: download kots binary
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: kots
           path: bin/
@@ -1855,7 +1855,7 @@ jobs:
           export-kubeconfig: true
 
       - name: download kots binary
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: kots
           path: bin/
@@ -1973,7 +1973,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: download kots binary
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: kots
           path: bin/
@@ -2004,7 +2004,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: download kots binary
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: kots
           path: bin/
@@ -2196,12 +2196,12 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
       - name: download e2e deps
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: e2e
           path: e2e/bin/
       - name: download kots binary
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: kots
           path: bin/
@@ -2264,12 +2264,12 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
       - name: download e2e deps
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: e2e
           path: e2e/bin/
       - name: download kots binary
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: kots
           path: bin/
@@ -2331,12 +2331,12 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
       - name: download e2e deps
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: e2e
           path: e2e/bin/
       - name: download kots binary
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: kots
           path: bin/
@@ -2420,7 +2420,7 @@ jobs:
             && mv kots "kots-$BASE_KOTS_VERSION"
 
       - name: download kots binary
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: kots
           path: bin/
@@ -2561,7 +2561,7 @@ jobs:
             && mv kots "kots-$BASE_KOTS_VERSION"
 
       - name: download kots binary
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: kots
           path: bin/
@@ -2724,14 +2724,14 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
       - name: download e2e deps
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: e2e
           path: e2e/bin/
       - run: docker load -i e2e/bin/e2e-deps.tar
       - run: chmod +x e2e/bin/*
       - name: download kots binary
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: kots
           path: bin/
@@ -2764,14 +2764,14 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
       - name: download e2e deps
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: e2e
           path: e2e/bin/
       - run: docker load -i e2e/bin/e2e-deps.tar
       - run: chmod +x e2e/bin/*
       - name: download kots binary
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: kots
           path: bin/
@@ -2804,14 +2804,14 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
       - name: download e2e deps
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: e2e
           path: e2e/bin/
       - run: docker load -i e2e/bin/e2e-deps.tar
       - run: chmod +x e2e/bin/*
       - name: download kots binary
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: kots
           path: bin/
@@ -2861,7 +2861,7 @@ jobs:
           export-kubeconfig: true
 
       - name: download kots binary
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: kots
           path: bin/
@@ -3037,7 +3037,7 @@ jobs:
           export-kubeconfig: true
 
       - name: download kots binary
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: kots
           path: bin/
@@ -3140,7 +3140,7 @@ jobs:
           export-kubeconfig: true
 
       - name: download kots binary
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: kots
           path: bin/
@@ -3364,7 +3364,7 @@ jobs:
           export-kubeconfig: true
 
       - name: download kots binary
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: kots
           path: bin/
@@ -3529,7 +3529,7 @@ jobs:
           export-kubeconfig: true
 
       - name: download kots binary
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: kots
           path: bin/
@@ -3824,14 +3824,14 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
       - name: download e2e deps
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: e2e
           path: e2e/bin/
       - run: docker load -i e2e/bin/e2e-deps.tar
       - run: chmod +x e2e/bin/*
       - name: download kots binary
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: kots
           path: bin/
@@ -3864,14 +3864,14 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
       - name: download e2e deps
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: e2e
           path: e2e/bin/
       - run: docker load -i e2e/bin/e2e-deps.tar
       - run: chmod +x e2e/bin/*
       - name: download kots binary
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: kots
           path: bin/
