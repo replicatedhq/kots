@@ -1,14 +1,14 @@
-bases:
-  - ../../base
-  - ../rbac
-  - ../../../web/kustomize/overlays/dev
-  - ../../../kurl_proxy/kustomize/overlays/dev
-
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
 resources:
-  - ./namespace.yaml
-
-patchesStrategicMerge:
-  - ./deployment.yaml
-
-commonLabels:
-  app.kubernetes.io/name: kotsadm
+- ./namespace.yaml
+- ../../base
+- ../rbac
+- ../../../web/kustomize/overlays/dev
+- ../../../kurl_proxy/kustomize/overlays/dev
+labels:
+- includeSelectors: true
+  pairs:
+    app.kubernetes.io/name: kotsadm
+patches:
+- path: ./deployment.yaml

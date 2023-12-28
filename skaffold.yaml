@@ -1,67 +1,45 @@
-apiVersion: skaffold/v2beta2
+apiVersion: skaffold/v4beta8
 kind: Config
-
-profiles:
-  - name: kotsstore
-    activation: 
-      - env: KOTSSTORE=
-    deploy:
-      kustomize:
-        paths: 
-          - "./kustomize/overlays/kotsstore"
-  - name: debug
-    activation:
-      - env: DEBUG_KOTSADM=1
-    patches:
-      - op: add
-        path: /build/artifacts/1/docker/buildArgs
-        value:
-          DEBUG_KOTSADM: 1
-
 build:
-  local:
-    concurrency: 0
-    useBuildkit: true
-
   artifacts:
     - image: kotsadm-web
-      context: "./web"
+      context: ./web
       sync:
         manual:
-          - src: "src/**/*.jsx"
-            dest: "./"
-          - src: "src/**/*.js"
-            dest: "./"
-          - src: "src/**/*.png"
-            dest: "./"
-          - src: "src/**/*.scss"
-            dest: "./"
-          - src: "src/**/*.css"
-            dest: "./"
+          - src: src/**/*.jsx
+            dest: ./
+          - src: src/**/*.js
+            dest: ./
+          - src: src/**/*.png
+            dest: ./
+          - src: src/**/*.scss
+            dest: ./
+          - src: src/**/*.css
+            dest: ./
       docker:
         dockerfile: ./skaffold.Dockerfile
-
-    - image: kotsadm
-      context: "./"
+    - image: kotsadm-api
+      context: ./
       docker:
         dockerfile: ./hack/dev/skaffold.Dockerfile
-
     - image: kotsadm-migrations
-      context: "./migrations"
+      context: ./migrations
       docker:
         dockerfile: ./skaffold.Dockerfile
-
     - image: kurl-proxy
-      context: "./kurl_proxy"
+      context: ./kurl_proxy
       docker:
         dockerfile: ./skaffold.Dockerfile
-
-deploy:
-  statusCheckDeadlineSeconds: 240
+  local:
+    useBuildkit: true
+    concurrency: 0
+manifests:
   kustomize:
     paths:
-      - "./kustomize/overlays/dev"
-
+      - ./kustomize/overlays/dev
+deploy:
+  kubectl: {}
+  statusCheckDeadlineSeconds: 240
 portForward:
   - resourceType: service
     resourceName: kotsadm
@@ -71,3 +49,21 @@ portForward:
     resourceName: kurl-proxy
     port: 8800
     localPort: 30880
+profiles:
+  - name: kotsstore
+    activation:
+      - env: KOTSSTORE=
+    manifests:
+      kustomize:
+        paths:
+          - ./kustomize/overlays/kotsstore
+    deploy:
+      kubectl: {}
+  - name: debug
+    activation:
+      - env: DEBUG_KOTSADM=1
+    patches:
+      - op: add
+        path: /build/artifacts/1/docker/buildArgs
+        value:
+          DEBUG_KOTSADM: 1
