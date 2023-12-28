@@ -16,7 +16,7 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Setup Go
-        uses: actions/setup-go@v4
+        uses: actions/setup-go@v5
         with:
           go-version: '^1.20.0'
 
@@ -42,7 +42,7 @@ jobs:
         run: trivy fs --scanners license --skip-dirs ".github" --skip-files "package-lock.json,bin/scan-images/package-lock.json" . | tee license-report.txt
 
       - name: Upload license report artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: license-report
           path: license-report.txt

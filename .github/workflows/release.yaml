@@ -54,7 +54,7 @@ jobs:
         GIT_TAG: ${{ needs.generate-tag.outputs.tag }}
       run: mapfile -t envs < <(grep -v '#.*' < .image.env) && export "${envs[@]}" && make -C web deps build-kotsadm
     - name: Upload web artifact
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: web
         path: ./web/dist
@@ -63,7 +63,7 @@ jobs:
     runs-on: ubuntu-20.04
     needs: [generate-tag]
     steps:
-    - uses: actions/setup-go@v4
+    - uses: actions/setup-go@v5
       with:
         go-version: '^1.20.0'
         cache: true
@@ -80,7 +80,7 @@ jobs:
     runs-on: ubuntu-20.04
     needs: [build-web, generate-tag]
     steps:
-    - uses: actions/setup-go@v4
+    - uses: actions/setup-go@v5
       with:
         go-version: '^1.20.0'
     - name: Checkout
@@ -95,7 +95,7 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-go-kots-
     - name: Download web artifact
-      uses: actions/download-artifact@v3
+      uses: actions/download-artifact@v4
       with:
         name: web
         path: ./web/dist
@@ -105,7 +105,7 @@ jobs:
         SCOPE_DSN_PUBLIC: ""
       run: mapfile -t envs < <(grep -v '#.*' < .image.env) && export "${envs[@]}" && make ci-test kots
     - name: Upload Go API artifact
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: kots
         path: ./bin/kots
@@ -149,7 +149,7 @@ jobs:
       run: mapfile -t envs < <(grep -v '#.*' < .image.env) && export "${envs[@]}" && make build-release
 
     - name: Upload kotsadm release
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: kotsadm-release
         path: ./bin/docker-archive
@@ -159,7 +159,7 @@ jobs:
     if: github.ref_type != 'branch'
     needs: [generate-tag, build-web]
     steps:
-    - uses: actions/setup-go@v4
+    - uses: actions/setup-go@v5
       with:
         go-version: '^1.20.0'
 
@@ -193,7 +193,7 @@ jobs:
       env:
         COSIGN_KEY: ${{ secrets.COSIGN_KEY }}
     - name: Download web artifact
-      uses: actions/download-artifact@v3
+      uses: actions/download-artifact@v4
       with:
         name: web
         path: ./web/dist
@@ -230,7 +230,7 @@ jobs:
           addon_version=${{ needs.generate-tag.outputs.tag }}
           echo "addon_version=${addon_version#v}" >> "$GITHUB_OUTPUT"
       - name: download kots binary
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: kots
           path: bin/
@@ -326,7 +326,7 @@ jobs:
     needs: [goreleaser, generate-tag, build-release]
     steps:
     - name: Download kotsadm release
-      uses: actions/download-artifact@v3
+      uses: actions/download-artifact@v4
       with:
         name: kotsadm-release
         path: ./docker-archive

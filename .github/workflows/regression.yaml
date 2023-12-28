@@ -86,12 +86,12 @@ jobs:
           path: automation
           ref: main
       - name: Download kots binary
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: kots
           path: ./automation/jumpbox/bin
       - name: Download kotsadm release
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: kotsadm-release
           path: ./automation/jumpbox/docker-archive

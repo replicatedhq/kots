@@ -64,7 +64,7 @@
     "@types/styled-components": "^5.1.26",
     "@typescript-eslint/eslint-plugin": "^5.49.0",
     "@typescript-eslint/parser": "^5.49.0",
-    "autoprefixer": "9.8.5",
+    "autoprefixer": "9.8.8",
     "babel-jest": "^29.7.0",
     "babel-loader": "^8.2.5",
     "babel-plugin-transform-class-properties": "^6.24.1",
@@ -118,7 +118,7 @@
     "webpack-bundle-analyzer": "^4.5.0",
     "webpack-cli": "^4.10.0",
     "webpack-dev-server": "^4.10.0",
-    "webpack-merge": "5.8.0"
+    "webpack-merge": "5.10.0"
   },
   "dependencies": {
     "@emotion/react": "^11.11.1",
@@ -149,7 +149,7 @@
     "lodash": "4.17.21",
     "markdown-it": "^12.3.2",
     "material-react-table": "^1.15.1",
-    "monaco-editor": "^0.33.0",
+    "monaco-editor": "^0.45.0",
     "monaco-editor-webpack-plugin": "^7.0.1",
     "node-polyfill-webpack-plugin": "^1.1.4",
     "prettier": "^2.7.1",
