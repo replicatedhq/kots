@@ -16,7 +16,7 @@ spec:
             - name: S3_BUCKET_NAME
               value: "shipbucket"
             - name: S3_ENDPOINT
-              value: http://kotsadm-s3:4569/
+              value: http://kotsadm-minio:4569/
             - name: S3_ACCESS_KEY_ID
               value: not-a-key
             - name: S3_SECRET_ACCESS_KEY
