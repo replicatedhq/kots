@@ -40,15 +40,6 @@ manifests:
 deploy:
   kubectl: {}
   statusCheckDeadlineSeconds: 240
-portForward:
-  - resourceType: service
-    resourceName: kotsadm
-    port: 3000
-    localPort: 30000
-  - resourceType: service
-    resourceName: kurl-proxy
-    port: 8800
-    localPort: 30880
 profiles:
   - name: kotsstore
     activation:

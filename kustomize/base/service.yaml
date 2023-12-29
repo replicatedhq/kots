@@ -3,6 +3,8 @@ kind: Service
 metadata:
   name: kotsadm
   labels:
+    kots.io/kotsadm: 'true'
+    kots.io/backup: velero
     app: kotsadm
   annotations:
     dev.okteto.com/auto-ingress: "true"
