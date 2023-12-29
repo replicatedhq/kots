@@ -11,7 +11,7 @@ endif
 
 .PHONY: deps
 deps:
-	yarn --silent --frozen-lockfile
+	yarn --silent --frozen-lockfile --network-timeout 600000
 
 .PHONY: publish-pact
 publish-pact:
