@@ -39,6 +39,7 @@ jobs:
       id-token: write # required to be able to assume the GCP SA identity to pull private Chainguard packages.
     steps:
       - uses: actions/checkout@v4
+      # TODO: need to build web as the image depends on the static assets
       - uses: ./.github/actions/build-push-kotsadm-image
         with:
           chainguard-gcp-wif-pool: ${{ secrets.CHAINGUARD_GCP_WIF_POOL }}

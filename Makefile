@@ -51,6 +51,8 @@ kots: capture-start-time kots-real report-metric
 
 .PHONY: kots-real
 kots-real:
+	mkdir -p web/dist
+	touch web/dist/THIS_IS_KOTS # we need this for go:embed in the api, but it's not actually used in the cli
 	go build ${LDFLAGS} -o bin/kots $(BUILDFLAGS) github.com/replicatedhq/kots/cmd/kots
 
 .PHONY: fmt

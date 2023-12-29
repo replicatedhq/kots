@@ -44,7 +44,7 @@ runs:
       if: ${{ inputs.overwrite == 'true' || steps.check-image-exists.outputs.image-exists == 'false' }}
       with:
         config: ${{ inputs.apko-config }}
-        archs: x86_64
+        archs: x86_64,arm64
         tag: ${{ inputs.image-name }}
         vcs-url: true
         generic-user: ${{ inputs.registry-username }}
