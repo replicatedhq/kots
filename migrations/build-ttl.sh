@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-CURRENT_USER=`id -u -n`
+CURRENT_USER=${GITHUB_USER:-$(id -u -n)}
 IMAGE=ttl.sh/${CURRENT_USER}/kotsadm-migrations:24h
 
 docker build -f deploy/Dockerfile -t ${IMAGE} .

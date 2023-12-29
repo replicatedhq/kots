@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-export CURRENT_USER=`id -u -n`
+export CURRENT_USER=${GITHUB_USER:-$(id -u -n)}
 
 make build-ttl.sh
 
