@@ -1,0 +1,78 @@
+name: Dependabot PRs Manager
+
+on:
+  # TODO NOW: remove pull_request and uncomment schedule
+  pull_request:
+  # schedule:
+  #   - cron: "0 0 * * *"
+
+jobs:
+  list-prs:
+    runs-on: ubuntu-latest
+    env:
+      GITHUB_TOKEN: ${{ secrets.NIGHTLY_GH_PAT }}
+    outputs:
+      prs: ${{ steps.dependabot-prs.outputs.prs }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: List Dependabot PRs
+        id: dependabot-prs
+        run: |
+          set -euo pipefail
+
+          echo "Open Dependabot PRs:"
+          gh pr list --label dependabot --json url -q '.[].url'
+
+          echo "prs=$(gh pr list --label dependabot --json number,headRefName)" >> "$GITHUB_OUTPUT"
+
+  process-prs:
+    needs: list-prs
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        pr: ${{ fromJson(needs.list-prs.outputs.prs) }}
+    env:
+      GITHUB_TOKEN: ${{ secrets.NIGHTLY_GH_PAT }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ matrix.pr.headRefName }}
+
+      - name: Process PR
+        run: |
+          set -euo pipefail
+
+          if gh pr checks ${{ matrix.pr.number }} --required; then
+            echo "All required checks passed. Approving and merging."
+            gh pr review ${{ matrix.pr.number }} --approve --comment "LGTM :thumbsup:"
+            gh pr merge ${{ matrix.pr.number }} --auto --squash --delete-branch
+            exit 0
+          fi
+
+          echo "Some required checks failed."
+          echo "Ensuring required labels..."
+          gh pr edit ${{ matrix.pr.number }} --add-label "type::security"
+
+          echo "Re-running tests..."
+          run_id=$(gh run list --branch ${{ matrix.pr.headRefName }} --workflow build-test --limit 1 --json databaseId -q '.[0].databaseId')
+
+          # If more than half of the validate-* jobs are successful, just re-run the failed jobs.
+          num_of_jobs=$(gh run view $run_id --json jobs -q '.jobs[] | select(.name | startswith("validate-")) | .name' | wc -l)
+          num_of_successful_jobs=$(gh run view $run_id --json jobs -q '.jobs[] | select((.name | startswith("validate-")) and (.conclusion == "success")) | .name' | wc -l)
+          if [ $num_of_successful_jobs -gt $((num_of_jobs / 2)) ]; then
+            echo "More than half of the validate-* jobs are successful. Re-running failed jobs."
+            gh run rerun $run_id --failed
+            exit 0
+          fi
+
+          # Otherwise, re-run all workflows.
+          repo="https://${{ github.actor }}:${{ secrets.NIGHTLY_GH_PAT }}@github.com/${{ github.repository }}.git"
+
+          git config --global user.email ${{ github.actor }}@users.noreply.github.com
+          git config --global user.name ${{ github.actor }}
+
+          git commit --allow-empty -m "[dependabot skip] Re-run workflows. [Triggered by the [dependabot-prs-manager](https://github.com/replicatedhq/kots/blob/main/.github/workflows/dependabot-prs-manager.yaml) GitHub action]"
+          git push $repo HEAD:"${{ matrix.pr.headRefName }}"
