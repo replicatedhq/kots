@@ -3954,11 +3954,9 @@ jobs:
     needs: [ validate-success ]
     if: github.actor == 'dependabot[bot]'
     steps:
-      - name: Approve PR
-        run: gh pr review --approve ${{ github.event.pull_request.html_url }} --comment "LGTM :thumbsup:"
+      - name: Approve & Merge PR
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      - name: Merge PR
-        run: gh pr merge --auto --squash ${{ github.event.pull_request.html_url }}
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh pr review --approve ${{ github.event.pull_request.html_url }} --comment "LGTM :thumbsup:"
+          gh pr merge --auto --squash ${{ github.event.pull_request.html_url }}
