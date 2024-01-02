@@ -18,8 +18,6 @@ environment:
       - busybox
       - git
       - go
-      - nodejs
-      - yarn
   environment:
     GOMODCACHE: '/var/cache/melange'
 
@@ -57,10 +55,6 @@ pipeline:
       # TODO: fix pact build error on arm https://github.com/pact-foundation/pact-js-core/issues/264
       export PACT_SKIP_BINARY_INSTALL=true
 
-      # Configure Yarn
-      yarn install --pure-lockfile --network-concurrency 1 --network-timeout 600000
-
-      make -C web deps build-kotsadm
       make kots build
 
       mv bin/kotsadm "${DESTDIR}/kotsadm"

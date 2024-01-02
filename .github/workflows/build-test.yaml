@@ -234,7 +234,7 @@ jobs:
 
   build-kots:
     runs-on: ubuntu-20.04
-    needs: [ can-run-ci, build-web, deps-kots, generate-tag ]
+    needs: [ can-run-ci, deps-kots, generate-tag ]
 
     steps:
       - uses: actions/checkout@v4
@@ -246,12 +246,6 @@ jobs:
         with:
           go-version: '^1.20.0'
           cache: true
-
-      - name: Download web artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: web
-          path: ./web/dist
 
       - name: Build kots
         env:
@@ -266,7 +260,7 @@ jobs:
 
   build-kotsadm:
     runs-on: ubuntu-20.04
-    needs: [ can-run-ci, generate-tag ]
+    needs: [ can-run-ci, build-web, generate-tag ]
     permissions:
       id-token: write # required to be able to assume the GCP SA identity to pull private Chainguard packages.
     steps:
@@ -283,6 +277,11 @@ jobs:
         with:
           ref: ${{github.event.pull_request.head.ref}}
           repository: ${{github.event.pull_request.head.repo.full_name}}
+      - name: Download web artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: web
+          path: ./web/dist
       - uses: ./.github/actions/build-push-kotsadm-image
         with:
           chainguard-gcp-wif-pool: ${{ secrets.CHAINGUARD_GCP_WIF_POOL }}
