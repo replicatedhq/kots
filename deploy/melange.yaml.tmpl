@@ -60,6 +60,7 @@ pipeline:
       # Configure Yarn
       yarn install --pure-lockfile --network-concurrency 1
 
+      make -C web deps build-kotsadm
       make kots build
 
       mv bin/kotsadm "${DESTDIR}/kotsadm"
