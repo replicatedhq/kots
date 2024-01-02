@@ -234,7 +234,7 @@ jobs:
 
   build-kots:
     runs-on: ubuntu-20.04
-    needs: [ can-run-ci, deps-kots, generate-tag ]
+    needs: [ can-run-ci, build-web, deps-kots, generate-tag ]
 
     steps:
       - uses: actions/checkout@v4
@@ -246,6 +246,12 @@ jobs:
         with:
           go-version: '^1.20.0'
           cache: true
+
+      - name: Download web artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: web
+          path: ./web/dist
 
       - name: Build kots
         env:

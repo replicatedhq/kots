@@ -78,7 +78,7 @@ jobs:
 
   build-kots:
     runs-on: ubuntu-20.04
-    needs: [generate-tag]
+    needs: [build-web, generate-tag]
     steps:
     - uses: actions/setup-go@v5
       with:
@@ -94,6 +94,11 @@ jobs:
         key: ${{ runner.os }}-go-kots-${{ hashFiles('**/go.sum') }}
         restore-keys: |
           ${{ runner.os }}-go-kots-
+    - name: Download web artifact
+      uses: actions/download-artifact@v4
+      with:
+        name: web
+        path: ./web/dist
     - name: Build KOTS
       env:
         GIT_TAG: ${{ needs.generate-tag.outputs.tag }}
