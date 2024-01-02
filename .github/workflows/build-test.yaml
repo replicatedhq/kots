@@ -3952,7 +3952,7 @@ jobs:
   dependabot:
     runs-on: ubuntu-20.04
     needs: [ validate-success ]
-    if: github.actor == 'dependabot[bot]'
+    if: github.event.pull_request.user.login == 'dependabot[bot]'
     permissions:
       contents: write
       pull-requests: write
