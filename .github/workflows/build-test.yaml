@@ -3952,6 +3952,9 @@ jobs:
   dependabot:
     runs-on: ubuntu-20.04
     needs: [ validate-success ]
+    permissions:
+      contents: write
+      pull-requests: write
     if: github.actor == 'dependabot[bot]'
     steps:
       - name: Approve & Merge PR
