@@ -15,8 +15,8 @@ jobs:
   can-run-ci:
     runs-on: ubuntu-20.04
     # if the event is pull_request and:
-    #   - it is not a fork OR it is from the dependabot
-    #   - Then must have the label '@actions/safe-to-test'
+    #   - it is not a fork OR
+    #   - it has the label '@actions/safe-to-test'
     #
     # The 'pull_request_target' workflow trigger may lead to malicious PR authors being able to obtain repository write permissions or stealing repository secrets.
     # Please read https://securitylab.github.com/research/github-actions-preventing-pwn-requests/
@@ -50,18 +50,6 @@ jobs:
         id: get_tag
         uses: ./.github/actions/version-tag
 
-
-  test-okteto-env:
-    runs-on: ubuntu-latest
-    needs: [ can-run-ci ]
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-      - name: Test Okteto development environment
-        uses: replicatedhq/action-okteto-test@main
-        with:
-          token: ${{ secrets.OKTETO_TOKEN }}
-          branch: ${{ github.head_ref }}
 
   deps-web:
     runs-on: ubuntu-20.04
@@ -3960,3 +3948,18 @@ jobs:
       - name: succeed if validate-pr-tests job succeeded
         if: needs.validate-pr-tests.result == 'success'
         run: echo "Validation succeeded"
+
+  dependabot:
+    runs-on: ubuntu-20.04
+    needs: [ validate-success ]
+    if: github.actor == 'dependabot[bot]'
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - name: Approve & Merge PR
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh pr review --approve ${{ github.event.pull_request.html_url }} --comment "LGTM :thumbsup:"
+          gh pr merge --auto --squash ${{ github.event.pull_request.html_url }}
