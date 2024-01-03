@@ -3962,5 +3962,5 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          gh pr review --approve ${{ github.event.pull_request.html_url }} --comment "LGTM :thumbsup:"
+          gh pr review --approve ${{ github.event.pull_request.html_url }} --body "LGTM :thumbsup:"
           gh pr merge --auto --squash ${{ github.event.pull_request.html_url }}
