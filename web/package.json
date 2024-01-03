@@ -34,7 +34,7 @@
     "@babel/preset-react": "^7.23.3",
     "@babel/preset-typescript": "^7.18.6",
     "@pact-foundation/pact": "^9.17.3",
-    "@pact-foundation/pact-node": "^10.17.2",
+    "@pact-foundation/pact-node": "^10.17.7",
     "@pmmmwh/react-refresh-webpack-plugin": "^0.5.11",
     "@storybook/addon-actions": "^7.6.7",
     "@storybook/addon-essentials": "^6.5.16",
