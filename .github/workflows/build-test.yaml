@@ -3952,7 +3952,8 @@ jobs:
   dependabot:
     runs-on: ubuntu-20.04
     needs: [ validate-success ]
-    if: github.event.pull_request.user.login == 'dependabot[bot]'
+    # Reference as to why this weird conditional is needed: https://github.com/actions/runner/issues/2205
+    if: always() && needs.validate-success.result == 'success' && github.event.pull_request.user.login == 'dependabot[bot]'
     permissions:
       contents: write
       pull-requests: write
