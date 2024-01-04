@@ -16,9 +16,11 @@ type GenerateEmbeddedClusterNodeJoinCommandResponse struct {
 }
 
 type GetEmbeddedClusterNodeJoinCommandResponse struct {
-	ClusterID      string `json:"clusterID"`
-	K0sJoinCommand string `json:"k0sJoinCommand"`
-	K0sToken       string `json:"k0sToken"`
+	ClusterID                 string `json:"clusterID"`
+	K0sJoinCommand            string `json:"k0sJoinCommand"`
+	K0sToken                  string `json:"k0sToken"`
+	K0sUnsupportedOverrides   string `json:"k0sUnsupportedOverrides"`
+	EndUserK0sConfigOverrides string `json:"endUserK0sConfigOverrides"`
 }
 
 type GenerateEmbeddedClusterNodeJoinCommandRequest struct {
@@ -118,9 +120,24 @@ func (h *Handler) GetEmbeddedClusterNodeJoinCommand(w http.ResponseWriter, r *ht
 		return
 	}
 
+	// extracts the configuration overrides from the current active installation object.
+	install, err := embeddedcluster.GetCurrentInstallation(r.Context())
+	if err != nil {
+		logger.Error(fmt.Errorf("failed to get current install: %w", err))
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	endUserK0sConfigOverrides := install.Spec.EndUserK0sConfigOverrides
+	var k0sUnsupportedOverrides string
+	if install.Spec.Config != nil {
+		k0sUnsupportedOverrides = install.Spec.Config.UnsupportedOverrides.K0s
+	}
+
 	JSON(w, http.StatusOK, GetEmbeddedClusterNodeJoinCommandResponse{
-		ClusterID:      clusterID,
-		K0sJoinCommand: k0sJoinCommand,
-		K0sToken:       k0sToken,
+		ClusterID:                 clusterID,
+		K0sJoinCommand:            k0sJoinCommand,
+		K0sToken:                  k0sToken,
+		K0sUnsupportedOverrides:   k0sUnsupportedOverrides,
+		EndUserK0sConfigOverrides: endUserK0sConfigOverrides,
 	})
 }
