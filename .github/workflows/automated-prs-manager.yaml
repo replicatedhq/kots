@@ -61,7 +61,7 @@ jobs:
 
           echo "Checking if we should re-run tests..."
           gh run list --branch ${{ matrix.pr.headRefName }} --workflow build-test --limit 1 --json databaseId -q '.[0].databaseId'
-          # run_id=$(gh run list --branch ${{ matrix.pr.headRefName }} --workflow build-test --limit 1 --json databaseId -q '.[0].databaseId')
+          run_id=$(gh run list --branch ${{ matrix.pr.headRefName }} --workflow build-test --limit 1 --json databaseId -q '.[0].databaseId')
 
           # num_of_pending_jobs=$(gh run view $run_id --json jobs -q '.jobs[] | select(.conclusion == "") | .name' | wc -l)
           # if [ $num_of_pending_jobs -gt 0 ]; then
