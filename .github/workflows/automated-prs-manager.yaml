@@ -1,0 +1,92 @@
+name: Automated PRs Manager
+
+on:
+  # TODO NOW: remove pull_request and uncomment schedule
+  pull_request:
+  # schedule:
+  #   - cron: "0 0 * * *"
+
+jobs:
+  list-prs:
+    runs-on: ubuntu-latest
+    outputs:
+      prs: ${{ steps.list-prs.outputs.prs }}
+    steps:
+      - name: List PRs
+        id: list-prs
+        env:
+          GH_TOKEN: ${{ secrets.NIGHTLY_GH_PAT }}
+        run: |
+          set -euo pipefail
+
+          # list dependabot and automated prs that are less than 24h old
+
+          dependabot_prs=$(gh pr list --label dependabot --json url,headRefName,createdAt -q '.[] | select(.createdAt | fromdateiso8601 > now - 86400)')
+          automated_prs=$(gh pr list --label automated-pr --json url,headRefName,createdAt -q '.[] | select(.createdAt | fromdateiso8601 > now - 86400)')
+          prs=$(echo "$dependabot_prs" "$automated_prs" | jq -s '. | unique')
+
+          echo "prs=$prs" >> "$GITHUB_OUTPUT"
+
+  process-prs:
+    needs: list-prs
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        pr: ${{ fromJson(needs.list-prs.outputs.prs) }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ matrix.pr.headRefName }}
+
+      - name: Process PR
+        env:
+          GH_TOKEN: ${{ secrets.NIGHTLY_GH_PAT }}
+        run: |
+          set -euo pipefail
+
+          if gh pr checks ${{ matrix.pr.url }} --required; then
+            echo "All required checks passed. Approving and merging."
+            gh pr review --approve ${{ matrix.pr.url } --body "LGTM :thumbsup:"
+            gh pr merge --auto --squash ${{ matrix.pr.url }}
+            exit 0
+          fi
+
+          echo "Some required checks failed."
+          echo "Ensuring required labels..."
+          gh pr edit ${{ matrix.pr.url }} --add-label "type::security"
+
+          echo "Checking if we should re-run tests..."
+          run_id=$(gh run list --branch ${{ matrix.pr.headRefName }} --workflow build-test --limit 1 --json databaseId -q '.[0].databaseId')
+
+          num_of_pending_jobs=$(gh run view $run_id --json jobs -q '.jobs[] | select(.conclusion == "") | .name' | wc -l)
+          if [ $num_of_pending_jobs -gt 0 ]; then
+            echo "There are still pending jobs. Skipping."
+            exit 0
+          fi
+
+          # If more than half of the validate-* jobs are successful, just re-run the failed jobs.
+          num_of_jobs=$(gh run view $run_id --json jobs -q '.jobs[] | select(.name | startswith("validate-")) | .name' | wc -l)
+          num_of_successful_jobs=$(gh run view $run_id --json jobs -q '.jobs[] | select((.name | startswith("validate-")) and (.conclusion == "success")) | .name' | wc -l)
+          if [ $num_of_successful_jobs -gt $((num_of_jobs / 2)) ]; then
+            echo "More than half of the validate-* jobs are successful. Re-running failed jobs."
+            gh run rerun $run_id --failed
+            exit 0
+          fi
+
+          echo "Re-running tests..."
+
+          run_id=$(gh run list --branch dependabot/npm_and_yarn/web/storybook/addon-interactions-7.6.7 --workflow build-test --limit 1 --json databaseId -q '.[0].databaseId')
+          num_of_pending_jobs=$(gh run view $run_id --json jobs -q '.jobs[] | select((.name | startswith("validate-")) and (.conclusion == "")) | .name' | wc -l)
+
+          # If more than half of the validate-* jobs are successful, just re-run the failed jobs.
+          num_of_jobs=$(gh run view $run_id --json jobs -q '.jobs[] | select(.name | startswith("validate-")) | .name' | wc -l)
+          num_of_successful_jobs=$(gh run view $run_id --json jobs -q '.jobs[] | select((.name | startswith("validate-")) and (.conclusion == "success")) | .name' | wc -l)
+
+          # get jobs that have not finished yet
+
+          if [ $num_of_successful_jobs -gt $((num_of_jobs / 2)) ]; then
+            echo "More than half of the validate-* jobs are successful. Re-running failed jobs."
+            gh run rerun $run_id --failed
+            exit 0
+          fi
