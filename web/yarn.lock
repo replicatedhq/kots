@@ -2462,11 +2462,6 @@
     "@jridgewell/sourcemap-codec" "^1.4.10"
     "@jridgewell/trace-mapping" "^0.3.9"
 
-"@jridgewell/resolve-uri@3.1.0", "@jridgewell/resolve-uri@^3.0.3":
-  version "3.1.0"
-  resolved "https://registry.yarnpkg.com/@jridgewell/resolve-uri/-/resolve-uri-3.1.0.tgz#2203b118c157721addfe69d47b70465463066d78"
-  integrity sha512-F2msla3tad+Mfht5cJq7LSXcdudKTWCVYUgw6pLFOOHSTtZlj6SWNYAp+AhuqLmWdBO2X5hPrLcu8cVP8fy28w==
-
 "@jridgewell/resolve-uri@^3.1.0":
   version "3.1.1"
   resolved "https://registry.yarnpkg.com/@jridgewell/resolve-uri/-/resolve-uri-3.1.1.tgz#c08679063f279615a3326583ba3a90d1d82cc721"
@@ -2477,14 +2472,6 @@
   resolved "https://registry.yarnpkg.com/@jridgewell/set-array/-/set-array-1.1.2.tgz#7c6cf998d6d20b914c0a55a91ae928ff25965e72"
   integrity sha512-xnkseuNADM0gt2bs+BvhO0p78Mk762YnZdsuzFV018NoG1Sj1SCQvpSqa7XUaTam5vAGasABV9qXASMKnFMwMw==
 
-"@jridgewell/source-map@^0.3.2":
-  version "0.3.2"
-  resolved "https://registry.yarnpkg.com/@jridgewell/source-map/-/source-map-0.3.2.tgz#f45351aaed4527a298512ec72f81040c998580fb"
-  integrity sha512-m7O9o2uR8k2ObDysZYzdfhb08VuEml5oWGiosa1VdaPZ/A6QyPkAJuwN0Q1lhULOf6B7MtQmHENS743hWtCrgw==
-  dependencies:
-    "@jridgewell/gen-mapping" "^0.3.0"
-    "@jridgewell/trace-mapping" "^0.3.9"
-
 "@jridgewell/source-map@^0.3.3":
   version "0.3.3"
   resolved "https://registry.yarnpkg.com/@jridgewell/source-map/-/source-map-0.3.3.tgz#8108265659d4c33e72ffe14e33d6cc5eb59f2fda"
@@ -2493,7 +2480,7 @@
     "@jridgewell/gen-mapping" "^0.3.0"
     "@jridgewell/trace-mapping" "^0.3.9"
 
-"@jridgewell/sourcemap-codec@1.4.14", "@jridgewell/sourcemap-codec@^1.4.10":
+"@jridgewell/sourcemap-codec@^1.4.10":
   version "1.4.14"
   resolved "https://registry.yarnpkg.com/@jridgewell/sourcemap-codec/-/sourcemap-codec-1.4.14.tgz#add4c98d341472a289190b424efbdb096991bb24"
   integrity sha512-XPSJHWmi394fuUuzDnGz1wiKqWfo1yXecHQMRf2l6hztTO+nPru658AyDngaBe7isIxEkRsPR3FZh+s7iVa4Uw==
@@ -2503,37 +2490,13 @@
   resolved "https://registry.yarnpkg.com/@jridgewell/sourcemap-codec/-/sourcemap-codec-1.4.15.tgz#d7c6e6755c78567a951e04ab52ef0fd26de59f32"
   integrity sha512-eF2rxCRulEKXHTRiDrDy6erMYWqNw4LPdQ8UQA4huuxaQsVeRPFl2oM8oDGxMFhJUWZf9McpLtJasDDZb/Bpeg==
 
-"@jridgewell/trace-mapping@^0.3.12", "@jridgewell/trace-mapping@^0.3.13":
-  version "0.3.14"
-  resolved "https://registry.npmjs.org/@jridgewell/trace-mapping/-/trace-mapping-0.3.14.tgz"
-  integrity sha512-bJWEfQ9lPTvm3SneWwRFVLzrh6nhjwqw7TUFFBEMzwvg7t7PCDenf2lDwqo4NQXzdpgBXyFgDWnQA+2vkruksQ==
-  dependencies:
-    "@jridgewell/resolve-uri" "^3.0.3"
-    "@jridgewell/sourcemap-codec" "^1.4.10"
-
-"@jridgewell/trace-mapping@^0.3.17", "@jridgewell/trace-mapping@^0.3.9":
-  version "0.3.17"
-  resolved "https://registry.yarnpkg.com/@jridgewell/trace-mapping/-/trace-mapping-0.3.17.tgz#793041277af9073b0951a7fe0f0d8c4c98c36985"
-  integrity sha512-MCNzAp77qzKca9+W/+I0+sEpaUnZoeasnghNeVc41VZCEKaCH73Vq3BZZ/SzWIgrqE4H4ceI+p+b6C0mHf9T4g==
-  dependencies:
-    "@jridgewell/resolve-uri" "3.1.0"
-    "@jridgewell/sourcemap-codec" "1.4.14"
-
-"@jridgewell/trace-mapping@^0.3.18":
+"@jridgewell/trace-mapping@^0.3.12", "@jridgewell/trace-mapping@^0.3.13", "@jridgewell/trace-mapping@^0.3.17", "@jridgewell/trace-mapping@^0.3.18", "@jridgewell/trace-mapping@^0.3.20", "@jridgewell/trace-mapping@^0.3.8", "@jridgewell/trace-mapping@^0.3.9":
   version "0.3.20"
   resolved "https://registry.yarnpkg.com/@jridgewell/trace-mapping/-/trace-mapping-0.3.20.tgz#72e45707cf240fa6b081d0366f8265b0cd10197f"
   integrity sha512-R8LcPeWZol2zR8mmH3JeKQ6QRCFb7XgUhV9ZlGhHLGyg4wpPiPZNQOOWhFZhxKw8u//yTbNGI42Bx/3paXEQ+Q==
   dependencies:
     "@jridgewell/resolve-uri" "^3.1.0"
     "@jridgewell/sourcemap-codec" "^1.4.14"
-
-"@jridgewell/trace-mapping@^0.3.8":
-  version "0.3.11"
-  resolved "https://registry.npmjs.org/@jridgewell/trace-mapping/-/trace-mapping-0.3.11.tgz"
-  integrity sha512-RllI476aSMsxzeI9TtlSMoNTgHDxEmnl6GkkHwhr0vdL8W+0WuesyI8Vd3rBOfrwtPXbPxdT9ADJdiOKgzxPQA==
-  dependencies:
-    "@jridgewell/resolve-uri" "^3.0.3"
-    "@jridgewell/sourcemap-codec" "^1.4.10"
 
 "@leichtgewicht/ip-codec@^2.0.1":
   version "2.0.4"
@@ -12525,11 +12488,6 @@ lodash.omitby@4.6.0:
   resolved "https://registry.npmjs.org/lodash.omitby/-/lodash.omitby-4.6.0.tgz"
   integrity sha1-XBX/R1StVVAWtTwEExHo8HkgR5E=
 
-lodash.sortby@^4.7.0:
-  version "4.7.0"
-  resolved "https://registry.npmjs.org/lodash.sortby/-/lodash.sortby-4.7.0.tgz"
-  integrity sha1-7dFMgk4sycHgsKG0K7UhBRakJDg=
-
 lodash.template@^4.4.0:
   version "4.5.0"
   resolved "https://registry.npmjs.org/lodash.template/-/lodash.template-4.5.0.tgz"
@@ -16116,13 +16074,6 @@ source-map@^0.7.2, source-map@^0.7.3:
   resolved "https://registry.npmjs.org/source-map/-/source-map-0.7.3.tgz"
   integrity sha512-CkCj6giN3S+n9qrYiBTX5gystlENnRW5jZeNLHpe6aue+SrHcG5VYwujhW9s4dY31mEGsxBDrHR6oI69fTXsaQ==
 
-source-map@~0.8.0-beta.0:
-  version "0.8.0-beta.0"
-  resolved "https://registry.npmjs.org/source-map/-/source-map-0.8.0-beta.0.tgz"
-  integrity sha512-2ymg6oRBpebeZi9UUNsgQ89bhx01TcTkmNTGnNO88imTmbSgy4nfujrgVEFKWpMTEGA11EDkTt7mqObTPdigIA==
-  dependencies:
-    whatwg-url "^7.0.0"
-
 space-separated-tokens@^1.0.0:
   version "1.1.5"
   resolved "https://registry.yarnpkg.com/space-separated-tokens/-/space-separated-tokens-1.1.5.tgz#85f32c3d10d9682007e917414ddc5c26d1aa6899"
@@ -16827,16 +16778,16 @@ terser-webpack-plugin@^4.2.3:
     terser "^5.3.4"
     webpack-sources "^1.4.3"
 
-terser-webpack-plugin@^5.0.3, terser-webpack-plugin@^5.3.1, terser-webpack-plugin@^5.3.6, terser-webpack-plugin@^5.3.7:
-  version "5.3.9"
-  resolved "https://registry.yarnpkg.com/terser-webpack-plugin/-/terser-webpack-plugin-5.3.9.tgz#832536999c51b46d468067f9e37662a3b96adfe1"
-  integrity sha512-ZuXsqE07EcggTWQjXUj+Aot/OMcD0bMKGgF63f7UxYcu5/AJF53aIpK1YoP5xR9l6s/Hy2b+t1AM0bLNPRuhwA==
+terser-webpack-plugin@^5.0.3, terser-webpack-plugin@^5.3.1, terser-webpack-plugin@^5.3.10, terser-webpack-plugin@^5.3.7:
+  version "5.3.10"
+  resolved "https://registry.yarnpkg.com/terser-webpack-plugin/-/terser-webpack-plugin-5.3.10.tgz#904f4c9193c6fd2a03f693a2150c62a92f40d199"
+  integrity sha512-BKFPWlPDndPs+NGGCr1U59t0XScL5317Y0UReNrHaw9/FwhPENlq6bfgs+4yPfyP51vqC1bQ4rp1EfXW5ZSH9w==
   dependencies:
-    "@jridgewell/trace-mapping" "^0.3.17"
+    "@jridgewell/trace-mapping" "^0.3.20"
     jest-worker "^27.4.5"
     schema-utils "^3.1.1"
     serialize-javascript "^6.0.1"
-    terser "^5.16.8"
+    terser "^5.26.0"
 
 terser@^4.1.2, terser@^4.6.3:
   version "4.8.1"
@@ -16847,33 +16798,13 @@ terser@^4.1.2, terser@^4.6.3:
     source-map "~0.6.1"
     source-map-support "~0.5.12"
 
-terser@^5.10.0:
-  version "5.13.1"
-  resolved "https://registry.npmjs.org/terser/-/terser-5.13.1.tgz"
-  integrity sha512-hn4WKOfwnwbYfe48NgrQjqNOH9jzLqRcIfbYytOXCOv46LBfWr9bDS17MQqOi+BWGD0sJK3Sj5NC/gJjiojaoA==
-  dependencies:
-    acorn "^8.5.0"
-    commander "^2.20.0"
-    source-map "~0.8.0-beta.0"
-    source-map-support "~0.5.20"
-
-terser@^5.16.8:
-  version "5.18.2"
-  resolved "https://registry.yarnpkg.com/terser/-/terser-5.18.2.tgz#ff3072a0faf21ffd38f99acc9a0ddf7b5f07b948"
-  integrity sha512-Ah19JS86ypbJzTzvUCX7KOsEIhDaRONungA4aYBjEP3JZRf4ocuDzTg4QWZnPn9DEMiMYGJPiSOy7aykoCc70w==
+terser@^5.10.0, terser@^5.26.0, terser@^5.3.4:
+  version "5.26.0"
+  resolved "https://registry.yarnpkg.com/terser/-/terser-5.26.0.tgz#ee9f05d929f4189a9c28a0feb889d96d50126fe1"
+  integrity sha512-dytTGoE2oHgbNV9nTzgBEPaqAWvcJNl66VZ0BkJqlvp71IjO8CxdBx/ykCNb47cLnCmCvRZ6ZR0tLkqvZCdVBQ==
   dependencies:
     "@jridgewell/source-map" "^0.3.3"
     acorn "^8.8.2"
-    commander "^2.20.0"
-    source-map-support "~0.5.20"
-
-terser@^5.3.4:
-  version "5.16.1"
-  resolved "https://registry.yarnpkg.com/terser/-/terser-5.16.1.tgz#5af3bc3d0f24241c7fb2024199d5c461a1075880"
-  integrity sha512-xvQfyfA1ayT0qdK47zskQgRZeWLoOQ8JQ6mIgRGVNwZKdQMU+5FkCBjmv4QjcrTzyZquRw2FVtlJSRUmMKQslw==
-  dependencies:
-    "@jridgewell/source-map" "^0.3.2"
-    acorn "^8.5.0"
     commander "^2.20.0"
     source-map-support "~0.5.20"
 
@@ -17024,13 +16955,6 @@ tough-cookie@^4.0.0:
     psl "^1.1.33"
     punycode "^2.1.1"
     universalify "^0.1.2"
-
-tr46@^1.0.1:
-  version "1.0.1"
-  resolved "https://registry.npmjs.org/tr46/-/tr46-1.0.1.tgz"
-  integrity sha1-qLE/1r/SSJUZZ0zN5VujaTtwbQk=
-  dependencies:
-    punycode "^2.1.0"
 
 tr46@^3.0.0:
   version "3.0.0"
@@ -17742,11 +17666,6 @@ webidl-conversions@^3.0.0:
   resolved "https://registry.yarnpkg.com/webidl-conversions/-/webidl-conversions-3.0.1.tgz#24534275e2a7bc6be7bc86611cc16ae0a5654871"
   integrity sha512-2JAn3z8AR6rjK8Sm8orRC0h/bcl/DqL7tRPdGZ4I1CjdF+EaMLmYxBHyXuKL849eucPFhvBoxMsflfOb8kxaeQ==
 
-webidl-conversions@^4.0.2:
-  version "4.0.2"
-  resolved "https://registry.npmjs.org/webidl-conversions/-/webidl-conversions-4.0.2.tgz"
-  integrity sha512-YQ+BmxuTgd6UXZW3+ICGfyqRyHXVlD5GtQr5+qjiNW7bF0cqrzX500HVXPBOvgXb5YnzDd+h0zqyv61KUD7+Sg==
-
 webidl-conversions@^7.0.0:
   version "7.0.0"
   resolved "https://registry.npmjs.org/webidl-conversions/-/webidl-conversions-7.0.0.tgz"
@@ -18035,15 +17954,6 @@ whatwg-url@^5.0.0:
   dependencies:
     tr46 "~0.0.3"
     webidl-conversions "^3.0.0"
-
-whatwg-url@^7.0.0:
-  version "7.1.0"
-  resolved "https://registry.npmjs.org/whatwg-url/-/whatwg-url-7.1.0.tgz"
-  integrity sha512-WUu7Rg1DroM7oQvGWfOiAK21n74Gg+T4elXEQYkOhtyLeWiJFoOGLXPKI/9gzIie9CtwVLm8wtw6YJdKyxSjeg==
-  dependencies:
-    lodash.sortby "^4.7.0"
-    tr46 "^1.0.1"
-    webidl-conversions "^4.0.2"
 
 which-boxed-primitive@^1.0.2:
   version "1.0.2"
