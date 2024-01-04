@@ -24,11 +24,11 @@ jobs:
 
           # list dependabot and automated prs that are less than 24h old
 
-          # dependabot_prs=$(gh pr list --label dependabot --json url,headRefName,createdAt -q '.[] | select(.createdAt | fromdateiso8601 > now - 86400)')
-          # automated_prs=$(gh pr list --label automated-pr --json url,headRefName,createdAt -q '.[] | select(.createdAt | fromdateiso8601 > now - 86400)')
-          # prs=$(echo "$dependabot_prs" "$automated_prs" | jq -s '. | unique')
+          dependabot_prs=$(gh pr list --label dependabot --json url,headRefName,createdAt -q '.[] | select(.createdAt | fromdateiso8601 > now - 86400)')
+          automated_prs=$(gh pr list --label automated-pr --json url,headRefName,createdAt -q '.[] | select(.createdAt | fromdateiso8601 > now - 86400)')
+          prs=$(echo "$dependabot_prs" "$automated_prs" | jq -sc '. | unique')
 
-          echo "prs=$(gh pr list --label dependabot --json url,headRefName,createdAt -q '.[] | select(.createdAt | fromdateiso8601 > now - 86400)')" >> "$GITHUB_OUTPUT"
+          echo "prs=$prs" >> "$GITHUB_OUTPUT"
 
   process-prs:
     needs: list-prs
