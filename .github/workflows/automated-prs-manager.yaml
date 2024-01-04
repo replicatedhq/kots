@@ -6,10 +6,6 @@ on:
   # schedule:
   #   - cron: "0 0 * * *"
 
-permissions:
-  contents: write
-  pull-requests: write
-
 jobs:
   list-prs:
     runs-on: ubuntu-latest
@@ -22,7 +18,7 @@ jobs:
       - name: List PRs
         id: list-prs
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.NIGHTLY_GH_PAT }}
         run: |
           set -euo pipefail
 
@@ -48,7 +44,7 @@ jobs:
 
       - name: Process PR
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.NIGHTLY_GH_PAT }}
         run: |
           set -euo pipefail
 
