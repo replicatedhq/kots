@@ -60,25 +60,22 @@ jobs:
           gh pr edit ${{ matrix.pr.url }} --add-label "type::security"
 
           echo "Checking if we should re-run tests..."
-          gh run list --branch ${{ matrix.pr.headRefName }} --workflow build-test --limit 1 --json databaseId -q '.[0].databaseId'
           run_id=$(gh run list --branch ${{ matrix.pr.headRefName }} --workflow build-test --limit 1 --json databaseId -q '.[0].databaseId')
 
-          # num_of_pending_jobs=$(gh run view $run_id --json jobs -q '.jobs[] | select(.conclusion == "") | .name' | wc -l)
-          # if [ $num_of_pending_jobs -gt 0 ]; then
-          #   echo "There are still pending jobs. Skipping."
-          #   exit 0
-          # fi
-          gh run view $run_id --json jobs -q '.jobs[] | select(.conclusion == "") | .name' | wc -l
+          num_of_pending_jobs=$(gh run view $run_id --json jobs -q '.jobs[] | select(.conclusion == "") | .name' | wc -l)
+          if [ $num_of_pending_jobs -gt 0 ]; then
+            echo "There are still pending jobs. Skipping."
+            exit 0
+          fi
 
           # If more than half of the validate-* jobs are successful, re-run the failed jobs.
-          # num_of_jobs=$(gh run view $run_id --json jobs -q '.jobs[] | select(.name | startswith("validate-")) | .name' | wc -l)
-          # num_of_successful_jobs=$(gh run view $run_id --json jobs -q '.jobs[] | select((.name | startswith("validate-")) and (.conclusion == "success")) | .name' | wc -l)
+          num_of_jobs=$(gh run view $run_id --json jobs -q '.jobs[] | select(.name | startswith("validate-")) | .name' | wc -l)
+          num_of_successful_jobs=$(gh run view $run_id --json jobs -q '.jobs[] | select((.name | startswith("validate-")) and (.conclusion == "success")) | .name' | wc -l)
 
-          # if [ $num_of_successful_jobs -gt $((num_of_jobs / 2)) ]; then
-          #   echo "More than half of the validate-* jobs are successful. Re-running failed jobs."
-          #   gh run rerun $run_id --failed
-          #   exit 0
-          # fi
-          gh run rerun $run_id --failed
+          if [ $num_of_successful_jobs -gt $((num_of_jobs / 2)) ]; then
+            echo "More than half of the validate-* jobs are successful. Re-running failed jobs."
+            gh run rerun $run_id --failed
+            exit 0
+          fi
 
           echo "Less than half of the validate-* jobs are successful. Skipping."
