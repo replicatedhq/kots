@@ -47,7 +47,7 @@ jobs:
 
           if gh pr checks ${{ matrix.pr.url }} --required; then
             echo "All required checks passed. Approving and merging."
-            gh pr review --approve ${{ matrix.pr.url } --body "LGTM :thumbsup:"
+            gh pr review --approve ${{ matrix.pr.url }} --body "LGTM :thumbsup:"
             gh pr merge --auto --squash ${{ matrix.pr.url }}
             exit 0
           fi
@@ -65,28 +65,14 @@ jobs:
             exit 0
           fi
 
-          # If more than half of the validate-* jobs are successful, just re-run the failed jobs.
+          # If more than half of the validate-* jobs are successful, re-run the failed jobs.
           num_of_jobs=$(gh run view $run_id --json jobs -q '.jobs[] | select(.name | startswith("validate-")) | .name' | wc -l)
           num_of_successful_jobs=$(gh run view $run_id --json jobs -q '.jobs[] | select((.name | startswith("validate-")) and (.conclusion == "success")) | .name' | wc -l)
+
           if [ $num_of_successful_jobs -gt $((num_of_jobs / 2)) ]; then
             echo "More than half of the validate-* jobs are successful. Re-running failed jobs."
             gh run rerun $run_id --failed
             exit 0
           fi
 
-          echo "Re-running tests..."
-
-          run_id=$(gh run list --branch dependabot/npm_and_yarn/web/storybook/addon-interactions-7.6.7 --workflow build-test --limit 1 --json databaseId -q '.[0].databaseId')
-          num_of_pending_jobs=$(gh run view $run_id --json jobs -q '.jobs[] | select((.name | startswith("validate-")) and (.conclusion == "")) | .name' | wc -l)
-
-          # If more than half of the validate-* jobs are successful, just re-run the failed jobs.
-          num_of_jobs=$(gh run view $run_id --json jobs -q '.jobs[] | select(.name | startswith("validate-")) | .name' | wc -l)
-          num_of_successful_jobs=$(gh run view $run_id --json jobs -q '.jobs[] | select((.name | startswith("validate-")) and (.conclusion == "success")) | .name' | wc -l)
-
-          # get jobs that have not finished yet
-
-          if [ $num_of_successful_jobs -gt $((num_of_jobs / 2)) ]; then
-            echo "More than half of the validate-* jobs are successful. Re-running failed jobs."
-            gh run rerun $run_id --failed
-            exit 0
-          fi
+          echo "Less than half of the validate-* jobs are successful. Skipping."
