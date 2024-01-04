@@ -136,10 +136,11 @@ func startClusterUpgrade(ctx context.Context, newcfg embeddedclusterv1beta1.Conf
 			Name: time.Now().Format("20060102150405"),
 		},
 		Spec: embeddedclusterv1beta1.InstallationSpec{
-			ClusterID:      current.Spec.ClusterID,
-			MetricsBaseURL: current.Spec.MetricsBaseURL,
-			AirGap:         current.Spec.AirGap,
-			Config:         &newcfg,
+			ClusterID:                 current.Spec.ClusterID,
+			MetricsBaseURL:            current.Spec.MetricsBaseURL,
+			AirGap:                    current.Spec.AirGap,
+			Config:                    &newcfg,
+			EndUserK0sConfigOverrides: current.Spec.EndUserK0sConfigOverrides,
 		},
 	}
 	if err := kbClient.Create(ctx, &newins); err != nil {
