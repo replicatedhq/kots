@@ -48,34 +48,37 @@ jobs:
         run: |
           set -euo pipefail
 
-          if gh pr checks ${{ matrix.pr.url }} --required; then
-            echo "All required checks passed. Approving and merging."
-            gh pr review --approve ${{ matrix.pr.url }} --body "LGTM :thumbsup:"
-            gh pr merge --auto --squash ${{ matrix.pr.url }}
-            exit 0
-          fi
+          # if gh pr checks ${{ matrix.pr.url }} --required; then
+          #   echo "All required checks passed. Approving and merging."
+          #   gh pr review --approve ${{ matrix.pr.url }} --body "LGTM :thumbsup:"
+          #   gh pr merge --auto --squash ${{ matrix.pr.url }}
+          #   exit 0
+          # fi
 
           echo "Some required checks failed."
           echo "Ensuring required labels..."
           gh pr edit ${{ matrix.pr.url }} --add-label "type::security"
 
           echo "Checking if we should re-run tests..."
-          run_id=$(gh run list --branch ${{ matrix.pr.headRefName }} --workflow build-test --limit 1 --json databaseId -q '.[0].databaseId')
+          gh run list --branch ${{ matrix.pr.headRefName }} --workflow build-test --limit 1 --json databaseId -q '.[0].databaseId'
+          # run_id=$(gh run list --branch ${{ matrix.pr.headRefName }} --workflow build-test --limit 1 --json databaseId -q '.[0].databaseId')
 
-          num_of_pending_jobs=$(gh run view $run_id --json jobs -q '.jobs[] | select(.conclusion == "") | .name' | wc -l)
-          if [ $num_of_pending_jobs -gt 0 ]; then
-            echo "There are still pending jobs. Skipping."
-            exit 0
-          fi
+          # num_of_pending_jobs=$(gh run view $run_id --json jobs -q '.jobs[] | select(.conclusion == "") | .name' | wc -l)
+          # if [ $num_of_pending_jobs -gt 0 ]; then
+          #   echo "There are still pending jobs. Skipping."
+          #   exit 0
+          # fi
+          gh run view $run_id --json jobs -q '.jobs[] | select(.conclusion == "") | .name' | wc -l
 
           # If more than half of the validate-* jobs are successful, re-run the failed jobs.
-          num_of_jobs=$(gh run view $run_id --json jobs -q '.jobs[] | select(.name | startswith("validate-")) | .name' | wc -l)
-          num_of_successful_jobs=$(gh run view $run_id --json jobs -q '.jobs[] | select((.name | startswith("validate-")) and (.conclusion == "success")) | .name' | wc -l)
+          # num_of_jobs=$(gh run view $run_id --json jobs -q '.jobs[] | select(.name | startswith("validate-")) | .name' | wc -l)
+          # num_of_successful_jobs=$(gh run view $run_id --json jobs -q '.jobs[] | select((.name | startswith("validate-")) and (.conclusion == "success")) | .name' | wc -l)
 
-          if [ $num_of_successful_jobs -gt $((num_of_jobs / 2)) ]; then
-            echo "More than half of the validate-* jobs are successful. Re-running failed jobs."
-            gh run rerun $run_id --failed
-            exit 0
-          fi
+          # if [ $num_of_successful_jobs -gt $((num_of_jobs / 2)) ]; then
+          #   echo "More than half of the validate-* jobs are successful. Re-running failed jobs."
+          #   gh run rerun $run_id --failed
+          #   exit 0
+          # fi
+          gh run rerun $run_id --failed
 
           echo "Less than half of the validate-* jobs are successful. Skipping."
