@@ -3948,19 +3948,3 @@ jobs:
       - name: succeed if validate-pr-tests job succeeded
         if: needs.validate-pr-tests.result == 'success'
         run: echo "Validation succeeded"
-
-  dependabot:
-    runs-on: ubuntu-20.04
-    needs: [ validate-success ]
-    # Reference as to why this weird conditional is needed: https://github.com/actions/runner/issues/2205
-    if: always() && needs.validate-success.result == 'success' && github.event.pull_request.user.login == 'dependabot[bot]'
-    permissions:
-      contents: write
-      pull-requests: write
-    steps:
-      - name: Approve & Merge PR
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          gh pr review --approve ${{ github.event.pull_request.html_url }} --body "LGTM :thumbsup:"
-          gh pr merge --auto --squash ${{ github.event.pull_request.html_url }}
