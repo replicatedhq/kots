@@ -6,6 +6,10 @@ on:
   # schedule:
   #   - cron: "0 0 * * *"
 
+permissions:
+  contents: write
+  pull-requests: write
+
 jobs:
   list-prs:
     runs-on: ubuntu-latest
@@ -18,7 +22,7 @@ jobs:
       - name: List PRs
         id: list-prs
         env:
-          GH_TOKEN: ${{ secrets.NIGHTLY_GH_PAT }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -euo pipefail
 
@@ -44,23 +48,17 @@ jobs:
 
       - name: Process PR
         env:
-          GH_TOKEN: ${{ secrets.NIGHTLY_GH_PAT }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -euo pipefail
 
-          # if gh pr checks ${{ matrix.pr.url }} --required; then
-          #   echo "All required checks passed. Approving and merging."
-          #   gh pr review --approve ${{ matrix.pr.url }} --body "LGTM :thumbsup:"
-          #   gh pr merge --auto --squash ${{ matrix.pr.url }}
-          #   exit 0
-          # fi
-
-          echo "Some required checks failed."
           echo "Ensuring required labels..."
           gh pr edit ${{ matrix.pr.url }} --add-label "type::security"
 
-          echo "Checking if we should re-run tests..."
+          echo "Checking status of tests..."
           run_id=$(gh run list --branch ${{ matrix.pr.headRefName }} --workflow build-test --limit 1 --json databaseId -q '.[0].databaseId')
+
+          # If there are still pending jobs, skip.
 
           num_of_pending_jobs=$(gh run view $run_id --json jobs -q '.jobs[] | select(.conclusion == "") | .name' | wc -l)
           if [ $num_of_pending_jobs -gt 0 ]; then
@@ -68,7 +66,22 @@ jobs:
             exit 0
           fi
 
+          # If all tests and required checks passed, approve and merge.
+
+          if gh run view $run_id --json jobs -q '.jobs[] | select(.name == "validate-success") | .conclusion' | grep -q "success"; then
+            if gh pr checks ${{ matrix.pr.url }} --required; then
+              echo "All tests and required checks passed. Approving and merging."
+              gh pr review --approve ${{ matrix.pr.url }} --body "LGTM :thumbsup:"
+              gh pr merge --auto --squash ${{ matrix.pr.url }}
+              exit 0
+            else
+              echo "All tests passed, but some required PR checks have not. Skipping."
+              exit 0
+            fi
+          fi
+
           # If more than half of the validate-* jobs are successful, re-run the failed jobs.
+
           num_of_jobs=$(gh run view $run_id --json jobs -q '.jobs[] | select(.name | startswith("validate-")) | .name' | wc -l)
           num_of_successful_jobs=$(gh run view $run_id --json jobs -q '.jobs[] | select((.name | startswith("validate-")) and (.conclusion == "success")) | .name' | wc -l)
 
