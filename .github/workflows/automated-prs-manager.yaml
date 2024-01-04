@@ -21,11 +21,11 @@ jobs:
         run: |
           set -euo pipefail
 
-          # list dependabot and automated prs that are less than 24h old
+          # list prs that are less than 24h old
 
           dependabot_prs=$(gh pr list --author 'dependabot[bot]' --json url,headRefName,createdAt -q '.[] | select(.createdAt | fromdateiso8601 > now - 24*60*60)')
-          automated_prs=$(gh pr list --author 'replicated-ci-kots' --json url,headRefName,createdAt -q '.[] | select(.createdAt | fromdateiso8601 > now - 24*60*60)')
-          prs=$(echo "$dependabot_prs" "$automated_prs" | jq -sc '. | unique')
+          replicated_ci_kots_prs=$(gh pr list --author 'replicated-ci-kots' --json url,headRefName,createdAt -q '.[] | select(.createdAt | fromdateiso8601 > now - 24*60*60)')
+          prs=$(echo "$dependabot_prs" "$replicated_ci_kots_prs" | jq -sc '. | unique')
 
           echo "prs=$prs" >> "$GITHUB_OUTPUT"
 
