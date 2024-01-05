@@ -7,17 +7,17 @@ updates:
     directory: "/web"
     schedule:
       interval: "daily"
-      time: "15:55"
+      time: "16:00"
     labels:
       - "dependabot"
       - "javascript"
       - "type::security"
     groups:
       all:
-        patterns:
-        - "@babel*"
-        - "@types*"
-        - "eslint*"
+        update-types:
+        - "patch"
+        - "minor"
+        - "major"
 
   ## Go mod
 
