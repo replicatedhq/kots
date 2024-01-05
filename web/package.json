@@ -132,7 +132,7 @@
     "@tanstack/react-query": "^4.36.1",
     "@tanstack/react-query-devtools": "^4.36.1",
     "accounting": "^0.4.1",
-    "apexcharts": "^3.24.0",
+    "apexcharts": "^3.45.1",
     "axios": "^1.6.2",
     "brace": "^0.11.1",
     "classnames": "^2.2.6",
