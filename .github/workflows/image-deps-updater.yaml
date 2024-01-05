@@ -2,7 +2,7 @@ name: Update image deps
 
 on:
   schedule:
-    - cron: '0 9 * * *'
+    - cron: '0 4 * * *'
   workflow_dispatch:
     inputs:
       overwrite:
