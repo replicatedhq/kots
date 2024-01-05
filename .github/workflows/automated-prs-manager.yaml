@@ -34,7 +34,7 @@ jobs:
             gh pr list \
               --author 'replicated-ci-kots' \
               --json url,createdAt,headRefName,headRepository,headRepositoryOwner \
-              -q '.[] | select(.createdAt | fromdateiso8601 > now - 24*60*60 and .headRepositoryOwner.login == "replicatedhq" and .headRepository.name == "kots")'
+              -q '.[] | select((.createdAt | fromdateiso8601 > now - 24*60*60) and .headRepositoryOwner.login == "replicatedhq" and .headRepository.name == "kots")'
           )
 
           prs=$(echo "$dependabot_prs" "$replicated_ci_kots_prs" | jq -sc '. | unique')
@@ -46,6 +46,8 @@ jobs:
     strategy:
       matrix:
         pr: ${{ fromJson(needs.list-prs.outputs.prs) }}
+      fail-fast: false
+      max-parallel: 1
     steps:
       - name: Checkout
         uses: actions/checkout@v4

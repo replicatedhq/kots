@@ -7,11 +7,16 @@ updates:
     directory: "/web"
     schedule:
       interval: "daily"
+      time: "15:00"
     open-pull-requests-limit: 5
     labels:
       - "dependabot"
       - "javascript"
       - "type::security"
+    groups:
+      all:
+        patterns:
+        - "*"
 
   ## Go mod
 
@@ -19,19 +24,29 @@ updates:
     directory: "/"
     schedule:
       interval: "daily"
+      time: "15:00"
     labels:
       - "dependabot"
       - "go"
       - "type::security"
+    groups:
+      all:
+        patterns:
+        - "*"
 
   - package-ecosystem: "gomod"
     directory: "/kurl_proxy"
     schedule:
       interval: "daily"
+      time: "15:00"
     labels:
       - "dependabot"
       - "go"
       - "type::security"
+    groups:
+      all:
+        patterns:
+        - "*"
 
   ## GitHub Actions
 
@@ -39,7 +54,12 @@ updates:
     directory: "/"
     schedule:
       interval: "weekly"
+      time: "15:00"
     labels:
       - "dependabot"
       - "github-actions"
       - "type::security"
+    groups:
+      all:
+        patterns:
+        - "*"
