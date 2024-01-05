@@ -121,7 +121,7 @@
     "webpack-merge": "5.10.0"
   },
   "dependencies": {
-    "@emotion/react": "^11.11.1",
+    "@emotion/react": "^11.11.3",
     "@emotion/styled": "^11.11.0",
     "@grafana/data": "^8.5.16",
     "@maji/react-prism": "^1.0.1",
