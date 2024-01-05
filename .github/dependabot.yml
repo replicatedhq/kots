@@ -7,7 +7,8 @@ updates:
     directory: "/web"
     schedule:
       interval: "daily"
-      time: "16:20"
+      time: "16:45"
+    open-pull-requests-limit: 2
     labels:
       - "dependabot"
       - "javascript"
@@ -15,11 +16,11 @@ updates:
     groups:
       dependencies:
         update-types:
-        - "patch"
-        - "minor"
-        - "major"
-    allow:
-      - dependency-type: "all"
+          - "patch"
+          - "minor"
+    ignore:
+      - update-types:
+          - "version-update:semver-major"
 
   ## Go mod
 
@@ -27,6 +28,7 @@ updates:
     directory: "/"
     schedule:
       interval: "daily"
+      time: "15:55"
     labels:
       - "dependabot"
       - "go"
