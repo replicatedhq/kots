@@ -7,7 +7,7 @@ updates:
     directory: "/web"
     schedule:
       interval: "daily"
-      time: "16:55"
+      time: "17:00"
     labels:
       - "dependabot"
       - "javascript"
@@ -17,9 +17,6 @@ updates:
         update-types:
           - "patch"
           - "minor"
-    ignore:
-      - update-types:
-          - "version-update:semver-major"
 
   ## Go mod
 
