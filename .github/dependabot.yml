@@ -7,7 +7,7 @@ updates:
     directory: "/web"
     schedule:
       interval: "daily"
-      time: "15:15"
+      time: "15:25"
     labels:
       - "dependabot"
       - "javascript"
@@ -23,7 +23,7 @@ updates:
     directory: "/"
     schedule:
       interval: "daily"
-      time: "15:00"
+      time: "15:25"
     labels:
       - "dependabot"
       - "go"
