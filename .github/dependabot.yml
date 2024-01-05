@@ -7,7 +7,7 @@ updates:
     directory: "/web"
     schedule:
       interval: "daily"
-      time: "15:25"
+      time: "15:45"
     labels:
       - "dependabot"
       - "javascript"
@@ -23,7 +23,7 @@ updates:
     directory: "/"
     schedule:
       interval: "daily"
-      time: "15:25"
+      time: "15:40"
     labels:
       - "dependabot"
       - "go"
@@ -32,15 +32,6 @@ updates:
       all:
         patterns:
         - "*"
-        exclude-patterns:
-        - "github.com/replicatedhq/troubleshoot"
-        - "github.com/vmware-tanzu/velero"
-      velero:
-        patterns:
-        - "github.com/vmware-tanzu/velero"
-      troubleshoot:
-        patterns:
-        - "github.com/replicatedhq/troubleshoot"
     ignore:
       - dependency-name: "github.com/dexidp/dex"
 
@@ -48,7 +39,7 @@ updates:
     directory: "/kurl_proxy"
     schedule:
       interval: "daily"
-      time: "15:00"
+      time: "15:45"
     labels:
       - "dependabot"
       - "go"
@@ -64,7 +55,7 @@ updates:
     directory: "/"
     schedule:
       interval: "weekly"
-      time: "15:00"
+      time: "15:45"
     labels:
       - "dependabot"
       - "github-actions"
