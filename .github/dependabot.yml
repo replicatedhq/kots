@@ -7,13 +7,13 @@ updates:
     directory: "/web"
     schedule:
       interval: "daily"
-      time: "17:00"
+      time: "17:10"
     labels:
       - "dependabot"
       - "javascript"
       - "type::security"
     groups:
-      dependencies:
+      security:
         update-types:
           - "patch"
           - "minor"
@@ -24,7 +24,7 @@ updates:
     directory: "/"
     schedule:
       interval: "daily"
-      time: "15:55"
+      time: "11:00"
     labels:
       - "dependabot"
       - "go"
