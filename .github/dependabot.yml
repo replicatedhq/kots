@@ -7,7 +7,7 @@ updates:
     directory: "/web"
     schedule:
       interval: "daily"
-      time: "17:10"
+      time: "17:20"
     labels:
       - "dependabot"
       - "javascript"
@@ -16,7 +16,6 @@ updates:
       security:
         update-types:
           - "patch"
-          - "minor"
 
   ## Go mod
 
@@ -24,11 +23,15 @@ updates:
     directory: "/"
     schedule:
       interval: "daily"
-      time: "11:00"
+      time: "17:20"
     labels:
       - "dependabot"
       - "go"
       - "type::security"
+    groups:
+      security:
+        update-types:
+          - "patch"
     ignore:
       - dependency-name: "github.com/dexidp/dex"
 
