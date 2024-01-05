@@ -14,10 +14,10 @@ updates:
       - "type::security"
     groups:
       all:
-        patterns:
-        - "@babel*"
-        - "@types*"
-        - "eslint*"
+        update-types:
+        - "patch"
+        - "minor"
+        - "major"
 
   ## Go mod
 
