@@ -7,17 +7,19 @@ updates:
     directory: "/web"
     schedule:
       interval: "daily"
-      time: "16:00"
+      time: "16:20"
     labels:
       - "dependabot"
       - "javascript"
       - "type::security"
     groups:
-      all:
+      dependencies:
         update-types:
         - "patch"
         - "minor"
         - "major"
+    allow:
+      - dependency-type: "all"
 
   ## Go mod
 
@@ -25,7 +27,6 @@ updates:
     directory: "/"
     schedule:
       interval: "daily"
-      time: "15:55"
     labels:
       - "dependabot"
       - "go"
