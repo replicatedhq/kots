@@ -7,7 +7,7 @@ updates:
     directory: "/web"
     schedule:
       interval: "daily"
-      time: "15:45"
+      time: "15:50"
     labels:
       - "dependabot"
       - "javascript"
@@ -15,7 +15,9 @@ updates:
     groups:
       all:
         patterns:
-        - "*"
+        - "@babel*"
+        - "@types*"
+        - "eslint*"
 
   ## Go mod
 
@@ -23,15 +25,11 @@ updates:
     directory: "/"
     schedule:
       interval: "daily"
-      time: "15:40"
+      time: "15:50"
     labels:
       - "dependabot"
       - "go"
       - "type::security"
-    groups:
-      all:
-        patterns:
-        - "*"
     ignore:
       - dependency-name: "github.com/dexidp/dex"
 
@@ -39,15 +37,10 @@ updates:
     directory: "/kurl_proxy"
     schedule:
       interval: "daily"
-      time: "15:45"
     labels:
       - "dependabot"
       - "go"
       - "type::security"
-    groups:
-      all:
-        patterns:
-        - "*"
 
   ## GitHub Actions
 
@@ -55,12 +48,7 @@ updates:
     directory: "/"
     schedule:
       interval: "weekly"
-      time: "15:45"
     labels:
       - "dependabot"
       - "github-actions"
       - "type::security"
-    groups:
-      all:
-        patterns:
-        - "*"
