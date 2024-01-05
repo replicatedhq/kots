@@ -126,7 +126,7 @@
     "@grafana/data": "^8.5.16",
     "@maji/react-prism": "^1.0.1",
     "@monaco-editor/react": "^4.6.0",
-    "@mui/icons-material": "^5.14.14",
+    "@mui/icons-material": "^5.15.3",
     "@mui/material": "^5.14.14",
     "@storybook/addon-storysource": "^6.5.16",
     "@tanstack/react-query": "^4.36.1",
