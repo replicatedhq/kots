@@ -6,8 +6,9 @@ updates:
   - package-ecosystem: "npm"
     directory: "/web"
     schedule:
-      interval: "daily"
-      time: "17:20"
+      interval: "weekly"
+      day: "saturday"
+      time: "01:00"
     labels:
       - "dependabot"
       - "javascript"
@@ -16,14 +17,16 @@ updates:
       security:
         update-types:
           - "patch"
+          - "minor"
 
   ## Go mod
 
   - package-ecosystem: "gomod"
     directory: "/"
     schedule:
-      interval: "daily"
-      time: "17:20"
+      interval: "weekly"
+      day: "saturday"
+      time: "02:30"
     labels:
       - "dependabot"
       - "go"
@@ -38,7 +41,9 @@ updates:
   - package-ecosystem: "gomod"
     directory: "/kurl_proxy"
     schedule:
-      interval: "daily"
+      interval: "weekly"
+      day: "saturday"
+      time: "02:30"
     labels:
       - "dependabot"
       - "go"
@@ -50,6 +55,8 @@ updates:
     directory: "/"
     schedule:
       interval: "weekly"
+      day: "saturday"
+      time: "02:30"
     labels:
       - "dependabot"
       - "github-actions"
