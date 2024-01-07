@@ -43,6 +43,7 @@ jobs:
   process-prs:
     needs: list-prs
     runs-on: ubuntu-latest
+    if: needs.list-prs.outputs.prs != '[]'
     strategy:
       matrix:
         pr: ${{ fromJson(needs.list-prs.outputs.prs) }}
