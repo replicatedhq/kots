@@ -1,0 +1,8 @@
+apiVersion: kots.io/v1beta1
+kind: Application
+metadata:
+  name: my-app
+  annotations:
+    kots.io/exclude: "true"
+spec:
+  title: My App

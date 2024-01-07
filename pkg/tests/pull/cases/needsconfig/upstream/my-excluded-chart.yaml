@@ -1,0 +1,22 @@
+apiVersion: kots.io/v1beta2
+kind: HelmChart
+metadata:
+  name: my-excluded-chart
+  annotations:
+    kots.io/exclude: "true"
+spec:
+  chart:
+    name: my-chart
+    chartVersion: 0.1.0
+  releaseName: repl{{ ConfigOption "helmchart_release_name" }}
+  values: repl{{ ConfigOption "helmchart_values" | nindent 4 }}
+  exclude: repl{{ ConfigOptionEquals "helmchart_exclude" "1" }}
+  namespace: repl{{ ConfigOption "helmchart_namespace" }}
+  optionalValues:
+    - when: '{{repl ConfigOptionEquals "helmchart_optional_values_1_when" "1" }}'
+      recursiveMerge: repl{{ ConfigOptionEquals "helmchart_optional_values_1_recursive_merge" "1" }}
+      values: repl{{ ConfigOption "helmchart_optional_values_1_values" | nindent 8 }}
+  builder: repl{{ ConfigOption "helmchart_builder" | nindent 4 }}
+  weight: repl{{ ConfigOption "helmchart_weight" }}
+  helmUpgradeFlags:
+    - repl{{ ConfigOption "helmchart_helm_upgrade_flags_1" }}

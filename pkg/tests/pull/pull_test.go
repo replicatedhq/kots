@@ -9,6 +9,7 @@ import (
 
 	envsubst "github.com/drone/envsubst/v2"
 	"github.com/ghodss/yaml"
+	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/pull"
 	upstreamtypes "github.com/replicatedhq/kots/pkg/upstream/types"
@@ -102,7 +103,9 @@ func TestKotsPull(t *testing.T) {
 
 			fmt.Printf("running test %s\n", tt.Name)
 			_, err := pull.Pull(tt.UpstreamURI, tt.PullOptions)
-			require.NoError(t, err)
+			if errors.Cause(err) != pull.ErrConfigNeeded {
+				require.NoError(t, err)
+			}
 
 			wantResultsDir := strings.Replace(tt.PullOptions.RootDir, "results", "wantResults", 1)
 			err = filepath.Walk(wantResultsDir,
