@@ -10,14 +10,14 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       prs: ${{ steps.list-prs.outputs.prs }}
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
       - name: List PRs
         id: list-prs
-        env:
-          GH_TOKEN: ${{ secrets.NIGHTLY_GH_PAT }}
         run: |
           set -euo pipefail
 
@@ -43,11 +43,14 @@ jobs:
   process-prs:
     needs: list-prs
     runs-on: ubuntu-latest
+    if: needs.list-prs.outputs.prs != '[]'
     strategy:
       matrix:
         pr: ${{ fromJson(needs.list-prs.outputs.prs) }}
       fail-fast: false
       max-parallel: 1
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -55,8 +58,6 @@ jobs:
           ref: ${{ matrix.pr.headRefName }}
 
       - name: Process PR
-        env:
-          GH_TOKEN: ${{ secrets.NIGHTLY_GH_PAT }}
         run: |
           set -euo pipefail
 
@@ -82,6 +83,7 @@ jobs:
               echo -e "LGTM :thumbsup: \n\nThis PR was automatically approved and merged by the [automated-prs-manager](https://github.com/replicatedhq/kots/blob/main/.github/workflows/automated-prs-manager.yaml) GitHub action" > body.txt
               gh pr review --approve "${{ matrix.pr.url }}" --body-file body.txt
               gh pr merge --auto --squash "${{ matrix.pr.url }}"
+              sleep 10
               exit 0
             else
               echo "All tests passed, but some required PR checks have not. Skipping."
