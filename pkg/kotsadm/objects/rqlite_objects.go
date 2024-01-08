@@ -92,6 +92,7 @@ func RqliteStatefulset(deployOptions types.DeployOptions, size resource.Quantity
 					ImagePullSecrets: pullSecrets,
 					Volumes:          volumes,
 					Affinity: &corev1.Affinity{
+						NodeAffinity: defaultKOTSNodeAffinity(),
 						PodAntiAffinity: &corev1.PodAntiAffinity{
 							RequiredDuringSchedulingIgnoredDuringExecution: []corev1.PodAffinityTerm{
 								{

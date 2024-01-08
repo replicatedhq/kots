@@ -124,6 +124,9 @@ func MinioStatefulset(deployOptions types.DeployOptions, size resource.Quantity)
 					},
 				},
 				Spec: corev1.PodSpec{
+					Affinity: &corev1.Affinity{
+						NodeAffinity: defaultKOTSNodeAffinity(),
+					},
 					SecurityContext:  securityContext,
 					ImagePullSecrets: pullSecrets,
 					InitContainers:   initContainers,
