@@ -1,0 +1,68 @@
+apiVersion: kots.io/v1beta1
+kind: Config
+metadata:
+  name: my-app
+spec:
+  groups:
+    - name: setup
+      title: Setup
+      items:
+        # ---- HelmChart v1beta2 ---- #
+        - name: helmchart_release_name
+          title: Release Name
+          type: text
+          default: "my-chart-release-name"
+        - name: helmchart_values
+          title: Values
+          type: textarea
+          default: |
+            foo: bar
+            bar: baz
+        - name: helmchart_exclude
+          title: Exclude
+          type: bool
+          default: "1"
+        - name: helmchart_namespace
+          title: Namespace
+          type: text
+          default: "my-namespace"
+        - name: helmchart_optional_values_1_when
+          title: Optional Values 1 When
+          type: bool
+          default: "1"
+        - name: helmchart_optional_values_1_recursive_merge
+          title: Optional Values 1 Recursive Merge
+          type: bool
+          default: "1"
+        - name: helmchart_optional_values_1_values
+          title: Optional Values 1 Values
+          type: textarea
+          default: |
+            foo: bar
+            bar: baz
+        - name: helmchart_builder
+          title: Builder
+          type: textarea
+          default: |
+            foo: bar
+            bar: baz
+        - name: helmchart_weight
+          title: Weight
+          type: text
+          default: "1"
+        - name: helmchart_helm_upgrade_flags_1
+          title: Helm Upgrade Flags 1
+          type: text
+          default: "--timeout 70s"
+
+        # ---- Preflight v1beta2 ---- #
+        - name: allow_privilege_escalation
+          title: Allow Privilege Escalation
+          type: bool
+          default: "1"
+
+        # ---- Other ---- #
+        - name: unset_required_config_item
+          title: Unset Required Config Item
+          type: text
+          required: true

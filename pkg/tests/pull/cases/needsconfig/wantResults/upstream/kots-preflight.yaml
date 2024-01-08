@@ -1,0 +1,12 @@
+apiVersion: troubleshoot.sh/v1beta2
+kind: Preflight
+metadata:
+  name: my-app
+spec:
+  collectors:
+    - runPod:
+        podSpec: 
+          containers:
+          - image: myimage
+            securityContext:
+              allowPrivilegeEscalation: repl{{ ConfigOptionEquals "allow_privilege_escalation" "1" }}

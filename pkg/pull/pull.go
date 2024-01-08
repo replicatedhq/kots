@@ -356,6 +356,9 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 	}
 
 	if needsConfig {
+		if err := kotsutil.WriteKotsKinds(renderedKotsKindsMap, u.GetKotsKindsDir(writeUpstreamOptions)); err != nil {
+			return "", errors.Wrap(err, "failed to write the rendered kots kinds")
+		}
 		if processImageOptions.RewriteImages && processImageOptions.AirgapRoot != "" {
 			// if this is an airgap install, we still need to process the images
 			if _, err = midstream.ProcessAirgapImages(processImageOptions, renderedKotsKinds, fetchOptions.License, log); err != nil {

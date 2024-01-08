@@ -1,0 +1,13 @@
+Name: test pulling with unset required config items
+PullOptions:
+  Namespace: app-namespace
+  ExcludeAdminConsole: true
+  IsAirgap: true
+  Silent: true
+  LocalPath: cases/needsconfig/upstream
+  RootDir: cases/needsconfig/results
+  SharedPassword: dummy-pass
+  RewriteImages: false
+  Downstreams:
+    - this-cluster
+  SkipHelmChartCheck: true
