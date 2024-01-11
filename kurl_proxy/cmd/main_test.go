@@ -1,6 +1,10 @@
 package main
 
 import (
+	"context"
+	"crypto/rsa"
+	"crypto/x509"
+	"encoding/pem"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
@@ -8,6 +12,9 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
+
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/kubernetes/fake"
 )
 
 const (
@@ -215,4 +222,52 @@ func Test_httpServerCSPHeaders(t *testing.T) {
 		}
 	}
 
+}
+
+func Test_generateDefaultCertSecret(t *testing.T) {
+	client := fake.NewSimpleClientset()
+	ns := "default"
+	secrets := client.CoreV1().Secrets(ns)
+	err := generateDefaultCertSecret(secrets, ns)
+	if err != nil {
+		t.Errorf("generateDefaultCertSecret() error = %v", err)
+	}
+
+	secret, err := secrets.Get(context.Background(), "kotsadm-tls", metav1.GetOptions{})
+	if err != nil {
+		t.Errorf("failed to get secret: %v", err)
+	}
+
+	// Check client cert
+	if secret.Data["tls.crt"] == nil {
+		t.Errorf("expected tls.crt to be set")
+	}
+
+	block, _ := pem.Decode(secret.Data["tls.crt"])
+	cert, err := x509.ParseCertificate(block.Bytes)
+	if err != nil {
+		t.Errorf("failed to parse tls.crt: %v", err)
+	}
+
+	// Check client key
+	if secret.Data["tls.key"] == nil {
+		t.Errorf("expected tls.key to be set")
+	}
+	block, _ = pem.Decode(secret.Data["tls.key"])
+	key, err := x509.ParsePKCS1PrivateKey(block.Bytes)
+	if err != nil {
+		t.Errorf("failed to parse tls.key: %v", err)
+	}
+
+	if !key.Public().(*rsa.PublicKey).Equal(cert.PublicKey) {
+		t.Errorf("expected public key to be equal")
+	}
+
+	if secret.StringData["hostname"] != "kotsadm.default.svc.cluster.local" {
+		t.Errorf("expected hostname to be set")
+	}
+
+	if secret.Annotations["acceptAnonymousUploads"] != "1" {
+		t.Errorf("expected acceptAnonymousUploads to be set to '1'")
+	}
 }

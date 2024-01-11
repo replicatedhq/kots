@@ -8,9 +8,8 @@ import (
 	"encoding/pem"
 	"fmt"
 	"html/template"
-	"io/ioutil"
+	"io"
 	"log"
-	"math/rand"
 	"net"
 	"net/http"
 	"net/http/httputil"
@@ -53,8 +52,6 @@ type cert struct {
 func main() {
 	log.Printf("Commit %s\n", os.Getenv("COMMIT"))
 
-	rand.Seed(time.Now().UnixNano())
-
 	upstreamOrigin := os.Getenv("UPSTREAM_ORIGIN")
 	dexUpstreamOrigin := os.Getenv("DEX_UPSTREAM_ORIGIN")
 	tlsSecretName := os.Getenv("TLS_SECRET_NAME")
@@ -86,16 +83,18 @@ func main() {
 	if err != nil {
 		log.Panic(err)
 	}
+	// TODO: Assert namespace not empty, else we get secrets from all namespaces
 	secrets := clientset.CoreV1().Secrets(namespace)
 
 	_, err = secrets.Get(context.Background(), tlsSecretName, metav1.GetOptions{})
 	if err != nil {
-		log.Print("creating tls secret")
+		log.Print("creating default tls secret")
 
 		err = generateDefaultCertSecret(secrets, namespace)
 		if err != nil {
 			log.Printf("Could not regenerate default certificate: %v", err)
 		}
+		// TODO: Why are we exiting here? It leads to a pod restart
 		return
 	}
 
@@ -332,7 +331,7 @@ func getHttpsServer(upstream, dexUpstream *url.URL, tlsSecretName string, secret
 			c.AbortWithStatus(http.StatusInternalServerError)
 			return
 		}
-		log.Printf("hostname=%v", hostString)
+		log.Printf("Skipping TLS cert upload. Generating self-signed cert for %q", hostString)
 
 		secret, err := secrets.Get(c.Request.Context(), tlsSecretName, metav1.GetOptions{})
 		if err != nil {
@@ -485,7 +484,7 @@ func getUploadedCerts(c *gin.Context) ([]byte, []byte, error) {
 		return nil, nil, errors.Wrapf(err, "open cert file")
 	}
 	defer certFile.Close()
-	certData, err := ioutil.ReadAll(certFile)
+	certData, err := io.ReadAll(certFile)
 	if err != nil {
 		return nil, nil, errors.Wrapf(err, "read cert file")
 	}
@@ -499,7 +498,7 @@ func getUploadedCerts(c *gin.Context) ([]byte, []byte, error) {
 		return nil, nil, errors.Wrapf(err, "open key file")
 	}
 	defer keyFile.Close()
-	keyData, err := ioutil.ReadAll(keyFile)
+	keyData, err := io.ReadAll(keyFile)
 	if err != nil {
 		return nil, nil, errors.Wrapf(err, "read key file")
 	}
@@ -621,7 +620,7 @@ func generateDefaultCertSecret(secrets corev1.SecretInterface, namespace string)
 			Name:      "kotsadm-tls",
 			Namespace: namespace,
 			Annotations: map[string]string{
-				"acceptAnonymousUploads": "0",
+				"acceptAnonymousUploads": "1",
 			},
 		},
 		Type:       "kubernetes.io/tls",
@@ -629,6 +628,9 @@ func generateDefaultCertSecret(secrets corev1.SecretInterface, namespace string)
 		StringData: make(map[string]string),
 	}
 
+	// TODO: Why is the namespace always "default"?
+	// Requests to kotsadm.embeddded-cluster.svc.cluster for example will
+	// fail with invalid cert errors
 	altNames := []string{
 		"kotsadm",
 		"kotsadm.default",
