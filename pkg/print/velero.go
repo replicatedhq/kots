@@ -5,7 +5,7 @@ import (
 	"strings"
 
 	"github.com/fatih/color"
-	"github.com/replicatedhq/kots/pkg/image"
+	"github.com/replicatedhq/kots/pkg/imageutil"
 	kotsadmtypes "github.com/replicatedhq/kots/pkg/kotsadm/types"
 	kotsadmversion "github.com/replicatedhq/kots/pkg/kotsadm/version"
 	"github.com/replicatedhq/kots/pkg/logger"
@@ -39,7 +39,7 @@ func VeleroInstallationInstructionsForCLI(log *logger.CLILogger, plugin snapshot
 	// this is an airgapped installation
 	registry := kotsadmversion.KotsadmRegistry(*registryConfig)
 	pluginName := strings.Split(strings.Split(string(plugin), "/")[1], ":")[0]
-	pluginTag, _ := image.GetTag(string(plugin))
+	pluginTag, _ := imageutil.GetTag(string(plugin))
 
 	veleroAirgapCommand := fmt.Sprintf(`velero install \
 	--no-default-backup-location \
@@ -102,7 +102,7 @@ func VeleroInstallationInstructionsForUI(plugin snapshottypes.VeleroPlugin, regi
 	// this is an airgapped installation
 	registry := kotsadmversion.KotsadmRegistry(*registryConfig)
 	pluginName := strings.Split(strings.Split(string(plugin), "/")[1], ":")[0]
-	pluginTag, _ := image.GetTag(string(plugin))
+	pluginTag, _ := imageutil.GetTag(string(plugin))
 
 	veleroAirgapCommand := fmt.Sprintf(`velero install --no-default-backup-location --no-secret --use-node-agent --uploader-type=restic --use-volume-snapshots=false --image %s/velero:%s --plugins %s/%s:%s`, registry, "<velero-version>", registry, pluginName, pluginTag)
 

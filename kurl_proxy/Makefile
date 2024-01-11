@@ -1,5 +1,6 @@
 include ./Makefile.build
-CURRENT_USER := $(shell id -u -n)
+
+CURRENT_USER := $(if $(GITHUB_USER),$(GITHUB_USER),$(shell id -u -n))
 
 .PHONY: test
 test:

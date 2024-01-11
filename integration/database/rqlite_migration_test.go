@@ -4,9 +4,10 @@ import (
 	"database/sql"
 	_ "embed"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"net/http"
+	"os"
+	"os/user"
 	"path"
 	"testing"
 
@@ -15,6 +16,7 @@ import (
 	"github.com/ory/dockertest/v3/docker"
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/image"
+	"github.com/replicatedhq/kots/pkg/imageutil"
 	"github.com/replicatedhq/kots/pkg/persistence"
 	"github.com/rqlite/gorqlite"
 )
@@ -63,18 +65,26 @@ func TestMigrateFromPostgresToRqlite(t *testing.T) {
 	}
 
 	// start rqlite db
-	rqliteAuthConfigPath := path.Join(t.TempDir(), "rqlite-auth-config.json")
-	err = ioutil.WriteFile(rqliteAuthConfigPath, []byte(RQLITE_AUTH_CONFIG), 0644)
+	currentUser, err := user.Current()
 	if err != nil {
+		log.Fatalf("Failed to get current user: %s", err)
+	}
+	rqliteAuthConfigPath := path.Join(t.TempDir(), "rqlite-auth-config.json")
+	if err := os.WriteFile(rqliteAuthConfigPath, []byte(RQLITE_AUTH_CONFIG), 0644); err != nil {
 		t.Fatalf("Failed to write to file %s", rqliteAuthConfigPath)
 	}
-	rqliteTag, _ := image.GetTag(image.Rqlite)
+	rqliteTag, _ := imageutil.GetTag(image.Rqlite)
 	rqliteRunOptions := &dockertest.RunOptions{
 		Name:       "rqlite",
-		Repository: "rqlite/rqlite",
+		Repository: "kotsadm/rqlite",
 		Tag:        rqliteTag,
 		Mounts: []string{
+			fmt.Sprintf("%s:/rqlite/file", t.TempDir()),
 			fmt.Sprintf("%s:/auth/config.json", rqliteAuthConfigPath),
+		},
+		ExposedPorts: []string{
+			"4001/tcp",
+			"4002/tcp",
 		},
 		PortBindings: map[docker.Port][]docker.PortBinding{
 			"4001/tcp": {
@@ -88,6 +98,7 @@ func TestMigrateFromPostgresToRqlite(t *testing.T) {
 			"-http-adv-addr=localhost:14001",
 			"-auth=/auth/config.json",
 		},
+		User: currentUser.Uid,
 	}
 	rqliteHostConfig := func(config *docker.HostConfig) {
 		config.AutoRemove = true

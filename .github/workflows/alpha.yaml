@@ -13,201 +13,61 @@ jobs:
       tag: ${{ steps.get_tag.outputs.GIT_TAG }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Get tags
         id: get_tag
         uses: ./.github/actions/version-tag
 
 
-  build-schema-migrations:
-    runs-on: ubuntu-20.04
-    steps:
-    - name: Checkout
-      uses: actions/checkout@v3
-
-    - uses: azure/docker-login@v1
-      env:
-        DOCKER_CONFIG: ./migrations/.docker
-      with:
-        username: ${{ secrets.DOCKERHUB_USER }}
-        password: ${{ secrets.DOCKERHUB_PASSWORD }}
-
-    - name: Build
-      env:
-        DOCKER_CONFIG: ./.docker
-      run: |
-        mapfile -t envs < <(grep -v '#.*' < .image.env) && export "${envs[@]}" && make -C migrations schema-alpha
-
-
-  build_web:
-    runs-on: ubuntu-20.04
-    needs: [generate-tag]
-    container:
-      image: replicated/gitops-builder:buildkite
-      options: --user root
-    steps:
-    - name: Checkout
-      uses: actions/checkout@v3
-
-    - name: Setup Node.js environment
-      uses: actions/setup-node@v3
-      with:
-        node-version: '17.x'
-
-    - name: Build web
-      env:
-        GIT_TAG: ${{ needs.generate-tag.outputs.tag }}
-      run: mapfile -t envs < <(grep -v '#.*' < .image.env) && export "${envs[@]}" && make -C web deps build-kotsadm
-      shell: bash
-
-    - name: Upload web artifact
-      uses: actions/upload-artifact@v3
-      with:
-        name: web
-        path: ./web/dist
-
-
-  build_kurl_proxy:
+  build-kotsadm-migrations:
     runs-on: ubuntu-20.04
     needs: [generate-tag]
     steps:
-    - name: Setup Go
-      uses: actions/setup-go@v3
-      with:
-        go-version: '^1.20.0'
-
-    - name: Checkout
-      uses: actions/checkout@v3
-
-    - name: Cache Go modules
-      uses: actions/cache@v3
-      with:
-        path: |
-          ~/.cache/go-build
-          ~/go/pkg/mod
-        key: ${{ runner.os }}-go-kurlproxy-${{ hashFiles('**/go.sum') }}
-        restore-keys: |
-          ${{ runner.os }}-go-kurlproxy-
-
-    - name: Build kurl_proxy
-      env:
-        GIT_TAG: ${{ needs.generate-tag.outputs.tag }}
-        SCOPE_DSN_PUBLIC: ""
-      run: mapfile -t envs < <(grep -v '#.*' < .image.env) && export "${envs[@]}" && make -C kurl_proxy test build
-      shell: bash
-
-    - name: Upload kurl_proxy artifact
-      uses: actions/upload-artifact@v3
-      with:
-        name: kurl_proxy
-        path: ./kurl_proxy/bin
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/build-push-kotsadm-migrations-image
+        with:
+          image-name: index.docker.io/kotsadm/kotsadm-migrations:alpha
+          git-tag: ${{ needs.generate-tag.outputs.tag }}
+          registry-username: ${{ secrets.DOCKERHUB_USER }}
+          registry-password: ${{ secrets.DOCKERHUB_PASSWORD }}
 
 
-  build_go_api:
+  build-kotsadm:
     runs-on: ubuntu-20.04
-    needs: [build_web, build_kurl_proxy, generate-tag]
+    needs: [generate-tag]
+    permissions:
+      id-token: write # required to be able to assume the GCP SA identity to pull private Chainguard packages.
     steps:
-    - uses: actions/setup-go@v3
-      with:
-        go-version: '^1.20.0'
-
-    - name: Checkout
-      uses: actions/checkout@v3
-
-    - name: Cache Go modules
-      uses: actions/cache@v3
-      with:
-        path: |
-          ~/.cache/go-build
-          ~/go/pkg/mod
-        key: ${{ runner.os }}-go-kots-${{ hashFiles('**/go.sum') }}
-        restore-keys: |
-          ${{ runner.os }}-go-kots-
-
-    - name: Download web artifact
-      uses: actions/download-artifact@v3
-      with:
-        name: web
-        path: ./web/dist
-
-    - name: Build Go API
-      env:
-        GIT_TAG: ${{ needs.generate-tag.outputs.tag }}
-        SCOPE_DSN_PUBLIC: ""
-      run: mapfile -t envs < <(grep -v '#.*' < .image.env) && export "${envs[@]}" && make vet ci-test kots build
-      shell: bash
-
-    - name: Upload Go API artifact
-      uses: actions/upload-artifact@v3
-      with:
-        name: go_api
-        path: ./bin
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/build-push-kotsadm-image
+        with:
+          chainguard-gcp-wif-pool: ${{ secrets.CHAINGUARD_GCP_WIF_POOL }}
+          chainguard-gcp-sa: ${{ secrets.CHAINGUARD_GCP_SA }}
+          chainguard-gcp-project-id: ${{ secrets.CHAINGUARD_GCP_PROJECT_ID }}
+          image-name: index.docker.io/kotsadm/kotsadm:alpha
+          git-tag: ${{ needs.generate-tag.outputs.tag }}
+          registry-username: ${{ secrets.DOCKERHUB_USER }}
+          registry-password: ${{ secrets.DOCKERHUB_PASSWORD }}
 
 
-  release_go_api_alpha:
+  build-kurl-proxy:
     runs-on: ubuntu-20.04
-    needs: [build_web, build_go_api, generate-tag]
+    needs: [generate-tag]
     steps:
-
-    - name: Checkout
-      uses: actions/checkout@v3
-
-    - name: Download go_api artifact
-      uses: actions/download-artifact@v3
-      with:
-        name: go_api
-        path: ./bin
-
-    - name: Add executable permissions
-      run: |
-        chmod a+x ./bin/kotsadm
-        chmod a+x ./bin/kots
-
-    - uses: azure/docker-login@v1
-      with:
-        username: ${{ secrets.DOCKERHUB_USER }}
-        password: ${{ secrets.DOCKERHUB_PASSWORD }}
-
-    - name: Build alpha release
-      env:
-        GIT_TAG: ${{ needs.generate-tag.outputs.tag }}
-      run: |
-        mapfile -t envs < <(grep -v '#.*' < .image.env) && export "${envs[@]}" && make build-alpha
-
-
-  build_kurl_proxy_alpha:
-    runs-on: ubuntu-20.04
-    needs: [build_kurl_proxy, generate-tag]
-    steps:
-    - uses: azure/docker-login@v1
-      with:
-        username: ${{ secrets.DOCKERHUB_USER }}
-        password: ${{ secrets.DOCKERHUB_PASSWORD }}
-
-    - name: Checkout
-      uses: actions/checkout@v3
-
-    - name: Download kurl_proxy artifact
-      uses: actions/download-artifact@v3
-      with:
-        name: kurl_proxy
-        path: ./kurl_proxy/bin
-
-    - name: Add executable permissions
-      run: chmod a+x ./kurl_proxy/bin/kurl_proxy
-
-    - name: Build alpha release
-      env:
-        GIT_TAG: ${{ needs.generate-tag.outputs.tag }}
-      run: |
-        mapfile -t envs < <(grep -v '#.*' < .image.env) && export "${envs[@]}" && make -C kurl_proxy build-alpha
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/build-push-kurl-proxy-image
+        with:
+          image-name: index.docker.io/kotsadm/kurl-proxy:alpha
+          git-tag: ${{ needs.generate-tag.outputs.tag }}
+          registry-username: ${{ secrets.DOCKERHUB_USER }}
+          registry-password: ${{ secrets.DOCKERHUB_PASSWORD }}
 
 
   scan_rqlite:
     runs-on: ubuntu-20.04
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Read image tags from env file
         uses: falti/dotenv-action@v1
         id: dotenv
@@ -217,7 +77,7 @@ jobs:
         id: scan
         uses: aquasecurity/trivy-action@master
         with:
-          image-ref: "rqlite/rqlite:${{ steps.dotenv.outputs.RQLITE_TAG }}"
+          image-ref: "docker.io/kotsadm/rqlite:${{ steps.dotenv.outputs.RQLITE_TAG }}"
           format: 'template'
           template: '@/contrib/sarif.tpl'
           output: 'rqlite-scan-output.sarif'
@@ -225,7 +85,7 @@ jobs:
           ignore-unfixed: true
           severity: 'CRITICAL,HIGH,MEDIUM'
       - name: Upload scan report
-        uses: github/codeql-action/upload-sarif@v2
+        uses: github/codeql-action/upload-sarif@v3
         with:
           sarif_file: rqlite-scan-output.sarif
 
@@ -234,7 +94,7 @@ jobs:
     runs-on: ubuntu-20.04
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Read image tags from env file
         uses: falti/dotenv-action@v1
         id: dotenv
@@ -244,7 +104,7 @@ jobs:
         id: scan
         uses: aquasecurity/trivy-action@master
         with:
-          image-ref: "docker.io/minio/minio:${{ steps.dotenv.outputs.minio_tag }}"
+          image-ref: "docker.io/kotsadm/minio:${{ steps.dotenv.outputs.MINIO_TAG }}"
           format: 'template'
           template: '@/contrib/sarif.tpl'
           output: 'minio-scan-output.sarif'
@@ -253,44 +113,16 @@ jobs:
           severity: 'CRITICAL,HIGH,MEDIUM'
 
       - name: Upload scan report
-        uses: github/codeql-action/upload-sarif@v2
+        uses: github/codeql-action/upload-sarif@v3
         with:
           sarif_file: 'minio-scan-output.sarif'
-
-
-  scan_mc:
-    runs-on: ubuntu-20.04
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v3
-      - name: Read image tags from env file
-        uses: falti/dotenv-action@v1
-        id: dotenv
-        with:
-          path: .image.env
-      - name: Scan minio client for vulnerabilities
-        id: scan
-        uses: aquasecurity/trivy-action@master
-        with:
-          image-ref: "docker.io/minio/mc:${{ steps.dotenv.outputs.mc_tag }}"
-          format: 'template'
-          template: '@/contrib/sarif.tpl'
-          output: 'mc-scan-output.sarif'
-          exit-code: '0'
-          ignore-unfixed: true
-          severity: 'CRITICAL,HIGH,MEDIUM'
-
-      - name: Upload scan report
-        uses: github/codeql-action/upload-sarif@v2
-        with:
-          sarif_file: 'mc-scan-output.sarif'
 
 
   scan_dex:
     runs-on: ubuntu-20.04
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Read image tags from env file
         uses: falti/dotenv-action@v1
         id: dotenv
@@ -300,7 +132,7 @@ jobs:
         id: scan
         uses: aquasecurity/trivy-action@master
         with:
-          image-ref: "ghcr.io/dexidp/dex:${{ steps.dotenv.outputs.dex_tag }}"
+          image-ref: "docker.io/kotsadm/dex:${{ steps.dotenv.outputs.DEX_TAG }}"
           format: 'template'
           template: '@/contrib/sarif.tpl'
           output: 'dex-scan-output.sarif'
@@ -308,17 +140,17 @@ jobs:
           ignore-unfixed: true
           severity: 'CRITICAL,HIGH,MEDIUM'
       - name: Upload scan report
-        uses: github/codeql-action/upload-sarif@v2
+        uses: github/codeql-action/upload-sarif@v3
         with:
           sarif_file: dex-scan-output.sarif
 
 
   scan_kurl_proxy:
     runs-on: ubuntu-20.04
-    needs: [build_kurl_proxy_alpha]
+    needs: [build-kurl-proxy]
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Scan kurl-proxy for vulnerabilities
         id: scan
         uses: aquasecurity/trivy-action@master
@@ -331,7 +163,7 @@ jobs:
           ignore-unfixed: true
           severity: 'CRITICAL,HIGH,MEDIUM'
       - name: Upload scan report
-        uses: github/codeql-action/upload-sarif@v2
+        uses: github/codeql-action/upload-sarif@v3
         with:
           sarif_file: kurl-proxy-scan-output.sarif
 
@@ -340,7 +172,7 @@ jobs:
     runs-on: ubuntu-20.04
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Read image tags from env file
         uses: falti/dotenv-action@v1
         id: dotenv
@@ -350,7 +182,7 @@ jobs:
         id: scan
         uses: aquasecurity/trivy-action@master
         with:
-          image-ref: "docker.io/replicated/local-volume-provider:${{ steps.dotenv.outputs.lvp_tag }}"
+          image-ref: "docker.io/replicated/local-volume-provider:${{ steps.dotenv.outputs.LVP_TAG }}"
           format: 'template'
           template: '@/contrib/sarif.tpl'
           output: 'scan-output.sarif'
@@ -358,17 +190,17 @@ jobs:
           ignore-unfixed: true
           severity: 'CRITICAL,HIGH,MEDIUM'
       - name: Upload scan report
-        uses: github/codeql-action/upload-sarif@v2
+        uses: github/codeql-action/upload-sarif@v3
         with:
           sarif_file: scan-output.sarif
 
 
   scan_kotsadm:
     runs-on: ubuntu-20.04
-    needs: [release_go_api_alpha]
+    needs: [build-kotsadm]
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Scan kotsadm for vulnerabilities
         id: scan
         uses: aquasecurity/trivy-action@master
@@ -381,17 +213,17 @@ jobs:
           ignore-unfixed: true
           severity: 'CRITICAL,HIGH,MEDIUM'
       - name: Upload scan report
-        uses: github/codeql-action/upload-sarif@v2
+        uses: github/codeql-action/upload-sarif@v3
         with:
           sarif_file: kotsadm-scan-output.sarif
 
 
-  scan_migrations:
+  scan_kotsadm_migrations:
     runs-on: ubuntu-20.04
-    needs: [build-schema-migrations]
+    needs: [build-kotsadm-migrations]
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Scan migrations for vulnerabilities
         id: scan
         uses: aquasecurity/trivy-action@master
@@ -404,6 +236,6 @@ jobs:
           ignore-unfixed: true
           severity: 'CRITICAL,HIGH,MEDIUM'
       - name: Upload scan report
-        uses: github/codeql-action/upload-sarif@v2
+        uses: github/codeql-action/upload-sarif@v3
         with:
           sarif_file: kotsadm-migration-scan-output.sarif

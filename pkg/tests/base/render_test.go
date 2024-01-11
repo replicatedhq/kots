@@ -3,7 +3,6 @@ package base
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
@@ -61,7 +60,7 @@ func TestRenderUpstream(t *testing.T) {
 			require.NoError(t, err, path)
 		}
 
-		b, err := ioutil.ReadFile(testcaseFilepath)
+		b, err := os.ReadFile(testcaseFilepath)
 		require.NoError(t, err, path)
 
 		var spec TestCaseSpec
@@ -78,7 +77,7 @@ func TestRenderUpstream(t *testing.T) {
 
 		test.WantBase = baseFromDir(t, filepath.Join(path, "base"), false)
 
-		test.WantKotsKinds, err = kotsutil.LoadKotsKindsFromPath(filepath.Join(path, "kotsKinds"))
+		test.WantKotsKinds, err = kotsutil.LoadKotsKinds(path)
 		require.NoError(t, err, "kotsKinds")
 
 		chartsPath := filepath.Join(path, "base", "charts")
@@ -112,7 +111,27 @@ func TestRenderUpstream(t *testing.T) {
 			template.TestingDisableKurlValues = true
 			defer func() { template.TestingDisableKurlValues = false }()
 
-			gotBase, gotHelmBases, gotKotsKindsFiles, err := base.RenderUpstream(&tt.Upstream, &tt.RenderOptions)
+			gotKotsKindsFiles, err := base.RenderKotsKinds(&tt.Upstream, &tt.RenderOptions)
+			require.NoError(t, err)
+
+			gotKotsKinds, err := kotsutil.KotsKindsFromMap(gotKotsKindsFiles)
+			require.NoError(t, err, "kots kinds from map")
+
+			if tt.WantKotsKinds.V1Beta1HelmCharts != nil && gotKotsKinds.V1Beta1HelmCharts != nil {
+				require.ElementsMatch(t, tt.WantKotsKinds.V1Beta1HelmCharts.Items, gotKotsKinds.V1Beta1HelmCharts.Items)
+				tt.WantKotsKinds.V1Beta1HelmCharts.Items = nil
+				gotKotsKinds.V1Beta1HelmCharts.Items = nil
+			}
+
+			if tt.WantKotsKinds.V1Beta2HelmCharts != nil && gotKotsKinds.V1Beta2HelmCharts != nil {
+				require.ElementsMatch(t, tt.WantKotsKinds.V1Beta2HelmCharts.Items, gotKotsKinds.V1Beta2HelmCharts.Items)
+				tt.WantKotsKinds.V1Beta2HelmCharts.Items = nil
+				gotKotsKinds.V1Beta2HelmCharts.Items = nil
+			}
+
+			require.Equal(t, tt.WantKotsKinds, gotKotsKinds)
+
+			gotBase, gotHelmBases, err := base.RenderUpstream(&tt.Upstream, &tt.RenderOptions, gotKotsKinds)
 			require.NoError(t, err)
 
 			if len(tt.WantBase.Files) > 0 {
@@ -131,23 +150,6 @@ func TestRenderUpstream(t *testing.T) {
 					t.FailNow()
 				}
 			}
-
-			gotKotsKinds, err := kotsutil.KotsKindsFromMap(gotKotsKindsFiles)
-			require.NoError(t, err, "kots kinds from map")
-
-			if tt.WantKotsKinds.V1Beta1HelmCharts != nil && gotKotsKinds.V1Beta1HelmCharts != nil {
-				require.ElementsMatch(t, tt.WantKotsKinds.V1Beta1HelmCharts.Items, gotKotsKinds.V1Beta1HelmCharts.Items)
-				tt.WantKotsKinds.V1Beta1HelmCharts.Items = nil
-				gotKotsKinds.V1Beta1HelmCharts.Items = nil
-			}
-
-			if tt.WantKotsKinds.V1Beta2HelmCharts != nil && gotKotsKinds.V1Beta2HelmCharts != nil {
-				require.ElementsMatch(t, tt.WantKotsKinds.V1Beta2HelmCharts.Items, gotKotsKinds.V1Beta2HelmCharts.Items)
-				tt.WantKotsKinds.V1Beta2HelmCharts.Items = nil
-				gotKotsKinds.V1Beta2HelmCharts.Items = nil
-			}
-
-			require.Equal(t, tt.WantKotsKinds, gotKotsKinds)
 
 			// TODO: Need to test upstream with multiple Helm charts.
 			// HACK: Also right now "no files" in WantHelmBase implies test does not include any charts.
@@ -251,7 +253,7 @@ func upstreamFilesFromDir(t *testing.T, root string) []upstreamtypes.UpstreamFil
 			return nil
 		}
 
-		b, err := ioutil.ReadFile(path)
+		b, err := os.ReadFile(path)
 		require.NoError(t, err, path)
 
 		relPath, err := filepath.Rel(root, path)
@@ -283,7 +285,7 @@ func baseFromDir(t *testing.T, root string, isHelm bool) base.Base {
 	for _, path := range additionalFiles {
 		additionalFile := filepath.Join(root, path)
 		if _, err := os.Stat(additionalFile); err == nil {
-			data, err := ioutil.ReadFile(additionalFile)
+			data, err := os.ReadFile(additionalFile)
 			require.NoError(t, err, additionalFile)
 
 			b.AdditionalFiles = append(b.AdditionalFiles, base.BaseFile{
@@ -316,7 +318,7 @@ func baseFilesFromDir(t *testing.T, root string, isHelm bool) []base.BaseFile {
 			return nil
 		}
 
-		b, err := ioutil.ReadFile(path)
+		b, err := os.ReadFile(path)
 		require.NoError(t, err, path)
 		var fPath string
 		fPath, err = filepath.Rel(root, path)

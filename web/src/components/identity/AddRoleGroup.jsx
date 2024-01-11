@@ -1,5 +1,3 @@
-import React from "react";
-
 export default function AddRoleGroup(props) {
   const { addGroup } = props;
 

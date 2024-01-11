@@ -2,7 +2,6 @@ package pull
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
@@ -10,6 +9,7 @@ import (
 
 	envsubst "github.com/drone/envsubst/v2"
 	"github.com/ghodss/yaml"
+	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/pull"
 	upstreamtypes "github.com/replicatedhq/kots/pkg/upstream/types"
@@ -68,7 +68,7 @@ func TestKotsPull(t *testing.T) {
 			require.NoError(t, err, path)
 		}
 
-		b, err := ioutil.ReadFile(testcaseFilepath)
+		b, err := os.ReadFile(testcaseFilepath)
 		require.NoError(t, err, path)
 
 		var spec TestCaseSpec
@@ -103,7 +103,9 @@ func TestKotsPull(t *testing.T) {
 
 			fmt.Printf("running test %s\n", tt.Name)
 			_, err := pull.Pull(tt.UpstreamURI, tt.PullOptions)
-			require.NoError(t, err)
+			if errors.Cause(err) != pull.ErrConfigNeeded {
+				require.NoError(t, err)
+			}
 
 			wantResultsDir := strings.Replace(tt.PullOptions.RootDir, "results", "wantResults", 1)
 			err = filepath.Walk(wantResultsDir,
@@ -153,14 +155,14 @@ func TestKotsPull(t *testing.T) {
 						return nil
 					}
 
-					contents, err := ioutil.ReadFile(path)
+					contents, err := os.ReadFile(path)
 					if err != nil {
 						return err
 					}
 
 					wantPath := strings.Replace(path, "results", "wantResults", 1)
 
-					wantContents, err := ioutil.ReadFile(wantPath)
+					wantContents, err := os.ReadFile(wantPath)
 					if err != nil {
 						fmt.Printf("unable to open file %s\n", wantPath)
 					}
@@ -172,6 +174,14 @@ func TestKotsPull(t *testing.T) {
 					if ext := filepath.Ext(wantPath); ext == ".yaml" || ext == ".yml" {
 						wantContentsString, err = envsubst.Eval(wantContentsString, util.TestGetenv)
 						require.NoError(t, err, wantPath)
+					}
+
+					if strings.HasSuffix(wantPath, "pullsecrets.yaml") {
+						// pull secret patches are not generated in a deterministic order
+						gotPullSecrets := strings.Split(contentsString, "---\n")
+						wantPullSecrets := strings.Split(wantContentsString, "---\n")
+						require.ElementsMatch(t, wantPullSecrets, gotPullSecrets)
+						return nil
 					}
 
 					assert.Equal(t, wantContentsString, contentsString, wantPath)
@@ -198,7 +208,7 @@ func TestKotsPull(t *testing.T) {
 						return nil
 					}
 
-					rawContents, err := ioutil.ReadFile(path)
+					rawContents, err := os.ReadFile(path)
 					if err != nil {
 						return err
 					}
@@ -214,7 +224,7 @@ func TestKotsPull(t *testing.T) {
 
 					wantPath := strings.Replace(path, "results", "wantResults", 1)
 
-					rawWantContents, err := ioutil.ReadFile(wantPath)
+					rawWantContents, err := os.ReadFile(wantPath)
 					if err != nil {
 						fmt.Printf("unable to open file %s\n", wantPath)
 					}
@@ -236,10 +246,10 @@ func TestKotsPull(t *testing.T) {
 
 			wantInstallationPath := strings.Replace(installationPath, "results", "wantResults", 1)
 
-			installationContents, err := ioutil.ReadFile(installationPath)
+			installationContents, err := os.ReadFile(installationPath)
 			require.NoError(t, err)
 
-			wantInstallationContents, err := ioutil.ReadFile(wantInstallationPath)
+			wantInstallationContents, err := os.ReadFile(wantInstallationPath)
 			require.NoError(t, err)
 
 			installation := kotsv1beta1.Installation{}

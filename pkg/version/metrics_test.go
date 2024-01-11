@@ -434,7 +434,7 @@ spec:
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			archiveDir, err := ioutil.TempDir("", fmt.Sprintf("kotsadm"))
+			archiveDir, err := ioutil.TempDir("", "kotsadm")
 			req.NoError(err)
 			defer os.RemoveAll(archiveDir)
 			mockStore := tt.mockStoreFn(tt.app, tt.sequence, archiveDir, tt.files)

@@ -8,7 +8,7 @@ import (
 	"io/ioutil"
 	"os"
 
-	sealedsecretsv1alpha1 "github.com/bitnami-labs/sealed-secrets/pkg/apis/sealed-secrets/v1alpha1"
+	sealedsecretsv1alpha1 "github.com/bitnami-labs/sealed-secrets/pkg/apis/sealedsecrets/v1alpha1"
 	sealedsecretsscheme "github.com/bitnami-labs/sealed-secrets/pkg/client/clientset/versioned/scheme"
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/util"
@@ -42,7 +42,7 @@ func replaceSecretsWithSealedSecrets(archivePath string, config map[string][]byt
 
 	decode := scheme.Codecs.UniversalDeserializer().Decode
 	for _, secretPath := range secretPaths {
-		contents, err := ioutil.ReadFile(secretPath)
+		contents, err := os.ReadFile(secretPath)
 		if err != nil {
 			return errors.Wrap(err, "failed to read file")
 		}

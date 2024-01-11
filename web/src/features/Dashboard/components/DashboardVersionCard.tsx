@@ -1,4 +1,4 @@
-import React, { useEffect, useReducer } from "react";
+import { RefObject, useEffect, useReducer } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import ReactTooltip from "react-tooltip";
 import DashboardGitOpsCard from "./DashboardGitOpsCard";
@@ -348,11 +348,7 @@ const DashboardVersionCard = (props: Props) => {
   };
 
   const getCurrentVersionStatus = (version: Version | null) => {
-    if (
-      version?.status === "deployed" ||
-      version?.status === "merged" ||
-      version?.status === "pending"
-    ) {
+    if (version?.status === "deployed" || version?.status === "pending") {
       return (
         <span className="status-tag success flex-auto">
           Currently {version?.status.replace("_", " ")} version
@@ -1798,7 +1794,7 @@ const DashboardVersionCard = (props: Props) => {
             error: string;
             isDownloading: boolean;
             name: string;
-            ref: React.RefObject<HTMLAnchorElement>;
+            ref: RefObject<HTMLAnchorElement>;
             url: string;
           }) => {
             const showDownloadValues =

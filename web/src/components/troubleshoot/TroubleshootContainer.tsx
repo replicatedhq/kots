@@ -1,4 +1,4 @@
-import React, { Component } from "react";
+import { Component } from "react";
 import { Outlet } from "react-router-dom";
 import { withRouter, RouterProps } from "@src/utilities/react-router-utilities";
 

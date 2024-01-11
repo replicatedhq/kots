@@ -113,7 +113,7 @@ func DistributionStatefulset(deployOptions types.DeployOptions, size resource.Qu
 						AccessModes: []corev1.PersistentVolumeAccessMode{
 							corev1.ReadWriteOnce,
 						},
-						Resources: corev1.ResourceRequirements{
+						Resources: corev1.VolumeResourceRequirements{
 							Requests: corev1.ResourceList{
 								corev1.ResourceName(corev1.ResourceStorage): size,
 							},

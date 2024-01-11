@@ -3,7 +3,6 @@ package cli
 import (
 	"context"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
@@ -394,7 +393,7 @@ func VeleroConfigureOtherS3Cmd() *cobra.Command {
 				if err != nil {
 					return err
 				}
-				caCertData, err = ioutil.ReadFile(realPath)
+				caCertData, err = os.ReadFile(realPath)
 				if err != nil {
 					return err
 				}
@@ -506,7 +505,7 @@ func VeleroConfigureGCPServiceAccount() *cobra.Command {
 
 			jsonFile := ""
 			if jsonFilePath := v.GetString("json-file"); jsonFilePath != "" {
-				content, err := ioutil.ReadFile(jsonFilePath)
+				content, err := os.ReadFile(jsonFilePath)
 				if err != nil {
 					return errors.Wrap(err, "failed to read json file")
 				}

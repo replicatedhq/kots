@@ -805,6 +805,28 @@ func getDefaultDynamicCollectors(app apptypes.AppType, imageName string, pullSec
 		},
 	})
 
+	collectors = append(collectors, &troubleshootv1beta2.Collect{
+		Secret: &troubleshootv1beta2.Secret{
+			CollectorMeta: troubleshootv1beta2.CollectorMeta{
+				CollectorName: fmt.Sprintf("kotsadm-%s-instance-report", app.GetSlug()),
+			},
+			Name:         fmt.Sprintf("kotsadm-%s-instance-report", app.GetSlug()),
+			Namespace:    util.PodNamespace,
+			Key:          "report",
+			IncludeValue: true,
+		},
+	}, &troubleshootv1beta2.Collect{
+		Secret: &troubleshootv1beta2.Secret{
+			CollectorMeta: troubleshootv1beta2.CollectorMeta{
+				CollectorName: fmt.Sprintf("kotsadm-%s-preflight-report", app.GetSlug()),
+			},
+			Name:         fmt.Sprintf("kotsadm-%s-preflight-report", app.GetSlug()),
+			Namespace:    util.PodNamespace,
+			Key:          "report",
+			IncludeValue: true,
+		},
+	})
+
 	collectors = append(collectors, makeVeleroCollectors()...)
 
 	if app, ok := app.(*apptypes.App); ok {

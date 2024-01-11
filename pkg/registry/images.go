@@ -18,7 +18,7 @@ import (
 	"github.com/pkg/errors"
 	downstreamtypes "github.com/replicatedhq/kots/pkg/api/downstream/types"
 	registrytypes "github.com/replicatedhq/kots/pkg/docker/registry/types"
-	"github.com/replicatedhq/kots/pkg/image"
+	"github.com/replicatedhq/kots/pkg/imageutil"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	kotsadmobjects "github.com/replicatedhq/kots/pkg/kotsadm/objects"
 	kotsadmtypes "github.com/replicatedhq/kots/pkg/kotsadm/types"
@@ -298,7 +298,7 @@ func deleteUnusedImages(ctx context.Context, registry types.RegistrySettings, us
 			Password:  registry.Password,
 		}
 
-		appImage, err := image.DestImage(registryOptions, usedImage)
+		appImage, err := imageutil.DestImage(registryOptions, usedImage)
 		if err != nil {
 			return errors.Wrapf(err, "failed to get destination image for %s", appImage)
 		}

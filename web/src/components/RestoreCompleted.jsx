@@ -1,8 +1,8 @@
-import * as React from "react";
+import { Component } from "react";
 import { Link } from "react-router-dom";
 import Icon from "./Icon";
 
-export default class RestoreCompleted extends React.Component {
+export default class RestoreCompleted extends Component {
   render() {
     return (
       <div className="u-width--full flex-column flex1 justifyContent--center u-position--relative">

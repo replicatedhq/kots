@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import find from "lodash/find";
 import classNames from "classnames";
@@ -258,10 +258,7 @@ function AppVersionHistoryRow(props: Props) {
       isCurrentVersion || isLatestVersion || isPendingVersion?.semver;
 
     const showDeployLogs =
-      (isPastVersion ||
-        isCurrentVersion ||
-        isPendingDeployedVersion ||
-        version?.status === "superseded") &&
+      (isPastVersion || isCurrentVersion || isPendingDeployedVersion) &&
       version?.status !== "pending";
 
     let tooltipTip;
@@ -468,7 +465,7 @@ function AppVersionHistoryRow(props: Props) {
     });
 
     if (!isPastVersion && !isPendingDeployedVersion) {
-      if (version.status === "deployed" || version.status === "merged") {
+      if (version.status === "deployed") {
         return (
           <div>
             <span
@@ -536,7 +533,7 @@ function AppVersionHistoryRow(props: Props) {
         );
       }
     } else {
-      if (version.status === "deployed" || version.status === "merged") {
+      if (version.status === "deployed") {
         return (
           <div>
             <span

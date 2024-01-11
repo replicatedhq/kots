@@ -1,7 +1,6 @@
 package cli
 
 import (
-	"fmt"
 	"os"
 	"strconv"
 	"strings"
@@ -33,7 +32,7 @@ func AdminConsoleUpgradeCmd() *cobra.Command {
 
 			if v.GetBool("force-upgrade-kurl") {
 				prompt := promptui.Prompt{
-					Label:     fmt.Sprintf("Upgrading a kotsadm instance created by kURL can result in data loss. Do you want to continue"),
+					Label:     "Upgrading a kotsadm instance created by kURL can result in data loss. Do you want to continue",
 					IsConfirm: true,
 				}
 

@@ -14,6 +14,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/snapshot"
 	velerov1api "github.com/vmware-tanzu/velero/pkg/apis/velero/v1"
+	veleroclientv1 "github.com/vmware-tanzu/velero/pkg/generated/clientset/versioned/typed/velero/v1"
 	corev1 "k8s.io/api/core/v1"
 	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -24,7 +25,8 @@ import (
 )
 
 var (
-	MinioImageTagDateRegexp = regexp.MustCompile(`RELEASE\.(\d{4}-\d{2}-\d{2}T\d{2}-\d{2}-\d{2}Z)`)
+	MinioChainguardImageTagRegexp = regexp.MustCompile(`:0\.\d+`)
+	MinioImageTagDateRegexp       = regexp.MustCompile(`RELEASE\.(\d{4}-\d{2}-\d{2}T\d{2}-\d{2}-\d{2}Z)`)
 	// MigrateToMinioXlBeforeTime is the time that the minio version was released that removed the legacy backend
 	// that we need to migrate from: https://github.com/minio/minio/releases/tag/RELEASE.2022-10-29T06-21-33Z
 	MigrateToMinioXlBeforeTime = time.Date(2022, 10, 29, 6, 21, 33, 0, time.UTC)
@@ -126,6 +128,7 @@ func ensureMinioStatefulset(deployOptions types.DeployOptions, clientset kuberne
 	existingMinio.Spec.Template.Spec.Volumes = desiredMinio.Spec.Template.Spec.DeepCopy().Volumes
 	existingMinio.Spec.Template.Spec.Containers[0].Image = desiredMinio.Spec.Template.Spec.Containers[0].Image
 	existingMinio.Spec.Template.Spec.Containers[0].VolumeMounts = desiredMinio.Spec.Template.Spec.Containers[0].DeepCopy().VolumeMounts
+	existingMinio.Spec.Template.Spec.Containers[0].Command = desiredMinio.Spec.Template.Spec.Containers[0].Command
 	existingMinio.Spec.Template.Spec.InitContainers = desiredMinio.Spec.Template.Spec.DeepCopy().InitContainers
 
 	_, err = clientset.AppsV1().StatefulSets(deployOptions.Namespace).Update(ctx, existingMinio, metav1.UpdateOptions{})
@@ -180,7 +183,22 @@ func MigrateExistingMinioFilesystemDeployments(log *logger.CLILogger, deployOpti
 	}
 	veleroNamespace := veleroStatus.Namespace
 
-	bsl, err := snapshot.FindBackupStoreLocation(context.TODO(), deployOptions.Namespace)
+	cfg, err := k8sutil.GetClusterConfig()
+	if err != nil {
+		return errors.Wrap(err, "failed to get cluster config")
+	}
+
+	clientset, err := kubernetes.NewForConfig(cfg)
+	if err != nil {
+		return errors.Wrap(err, "failed to create clientset")
+	}
+
+	veleroClient, err := veleroclientv1.NewForConfig(cfg)
+	if err != nil {
+		return errors.Wrap(err, "failed to create velero clientset")
+	}
+
+	bsl, err := snapshot.FindBackupStoreLocation(context.TODO(), clientset, veleroClient, deployOptions.Namespace)
 	if err != nil {
 		return errors.Wrap(err, "failed to find backupstoragelocations")
 	}
@@ -226,10 +244,6 @@ func MigrateExistingMinioFilesystemDeployments(log *logger.CLILogger, deployOpti
 	}
 
 	// Add the config map to configure the new plugin
-	clientset, err := k8sutil.GetClientset()
-	if err != nil {
-		return errors.Wrap(err, "failed to get k8s clientset")
-	}
 	fsDeployOptions := &snapshot.FileSystemDeployOptions{
 		Namespace:        deployOptions.Namespace,
 		IsOpenShift:      k8sutil.IsOpenShift(clientset),
@@ -250,7 +264,7 @@ func MigrateExistingMinioFilesystemDeployments(log *logger.CLILogger, deployOpti
 	success := false
 	defer func() {
 		if !success {
-			err := snapshot.RevertToMinioFS(context.TODO(), deployOptions.Namespace, veleroNamespace, previousBsl)
+			err := snapshot.RevertToMinioFS(context.TODO(), clientset, veleroClient, deployOptions.Namespace, veleroNamespace, previousBsl)
 			if err != nil {
 				log.Error(errors.Wrap(err, "Could not restore minio backup storage location"))
 				return
@@ -381,6 +395,12 @@ func IsMinioXlMigrationNeeded(clientset kubernetes.Interface, namespace string) 
 
 // imageNeedsMinioXlMigration returns true if the minio image is older than the migrate before time (2022-10-29T06-21-33Z).
 func imageNeedsMinioXlMigration(minioImage string) (bool, error) {
+	isCGImage := len(MinioChainguardImageTagRegexp.FindStringSubmatch(minioImage)) > 0
+	if isCGImage {
+		// minio images built with chainguard are all new and don't need to be migrated
+		return false, nil
+	}
+
 	existingImageTagDateMatch := MinioImageTagDateRegexp.FindStringSubmatch(minioImage)
 	if len(existingImageTagDateMatch) != 2 {
 		return false, errors.New("failed to parse existing image tag date")

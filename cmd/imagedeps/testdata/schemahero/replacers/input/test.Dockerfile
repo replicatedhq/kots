@@ -1,0 +1,6 @@
+ARG SCHEMAHERO_TAG=0.13.1
+FROM schemahero/schemahero:$SCHEMAHERO_TAG
+
+ENV ENV_VAR_1=fake
+ENV ENV_VAR_2=faker
+ENV ENV_VAR_3=fakest

@@ -1,40 +1,29 @@
-import React, { useEffect, useReducer } from "react";
-import { useNavigate } from "react-router-dom";
-import { Link } from "react-router-dom";
-import { KotsPageTitle } from "@components/Head";
+import { useEffect, useReducer } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import yaml from "js-yaml";
+import isEmpty from "lodash/isEmpty";
+import keyBy from "lodash/keyBy";
+import size from "lodash/size";
 // TODO: upgrade this dependency
 // @ts-ignore
 import Dropzone from "react-dropzone";
-import yaml from "js-yaml";
-import size from "lodash/size";
-import isEmpty from "lodash/isEmpty";
-import keyBy from "lodash/keyBy";
 import Modal from "react-modal";
 import Select from "react-select";
+
+import { KotsPageTitle } from "@components/Head";
 import { getFileContent } from "../utilities/utilities";
-import CodeSnippet from "./shared/CodeSnippet";
+import Icon from "./Icon";
 import LicenseUploadProgress from "./LicenseUploadProgress";
+import CodeSnippet from "./shared/CodeSnippet";
 
 import "../scss/components/troubleshoot/UploadSupportBundleModal.scss";
 import "../scss/components/UploadLicenseFile.scss";
-import Icon from "./Icon";
 
 type LicenseYaml = {
   spec: {
     appSlug: string;
     channelName: string;
   };
-};
-
-type Props = {
-  appsListLength: number;
-  appName: string;
-  appSlugFromMetadata: string;
-  fetchingMetadata: boolean;
-  isBackupRestore?: boolean;
-  onUploadSuccess: () => Promise<void>;
-  logo: string | null;
-  snapshot?: { name: string };
 };
 
 type SelectedAppToInstall = {
@@ -68,6 +57,19 @@ type UploadLicenseResponse = {
   slug: string;
   success?: boolean;
 };
+
+type Props = {
+  appsListLength: number;
+  appName: string;
+  appSlugFromMetadata: string;
+  fetchingMetadata: boolean;
+  isBackupRestore?: boolean;
+  onUploadSuccess: () => Promise<void>;
+  logo: string | null;
+  snapshot?: { name: string };
+  isEmbeddedCluster: boolean;
+};
+
 const UploadLicenseFile = (props: Props) => {
   const [state, setState] = useReducer(
     (currentState: State, newState: Partial<State>) => ({
@@ -256,6 +258,11 @@ const UploadLicenseFile = (props: Props) => {
               } else {
                 navigate(`/${data.slug}/airgap-bundle`, { replace: true });
               }
+              return;
+            }
+
+            if (props.isEmbeddedCluster) {
+              navigate(`/${data.slug}/cluster/manage`, { replace: true });
               return;
             }
 

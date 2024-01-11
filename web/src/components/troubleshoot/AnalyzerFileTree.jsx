@@ -1,7 +1,7 @@
-import * as React from "react";
+import { Component } from "react";
 import AceEditor from "react-ace";
 import { withRouter } from "@src/utilities/react-router-utilities";
-import { getFileFormat, rootPath, Utilities } from "../../utilities/utilities";
+import { getFileFormat, rootPath } from "../../utilities/utilities";
 import sortBy from "lodash/sortBy";
 import find from "lodash/find";
 import has from "lodash/has";
@@ -18,7 +18,7 @@ import "brace/mode/yaml";
 import "brace/theme/chrome";
 import Icon from "../Icon";
 
-class AnalyzerFileTree extends React.Component {
+class AnalyzerFileTree extends Component {
   constructor(props) {
     super();
     this.state = {

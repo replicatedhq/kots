@@ -27,7 +27,7 @@ func ExpandDir(input string) string {
 	return uploadPath
 }
 
-func getHostnameFromEndpoint(endpoint string) (string, error) {
+func getHostFromEndpoint(endpoint string) (string, error) {
 	if !strings.HasPrefix(endpoint, "http") {
 		// url.Parse doesn't work without scheme
 		endpoint = fmt.Sprintf("https://%s", endpoint)
@@ -38,5 +38,5 @@ func getHostnameFromEndpoint(endpoint string) (string, error) {
 		return "", errors.Wrap(err, "failed to parse endpoint")
 	}
 
-	return parsed.Hostname(), nil
+	return parsed.Host, nil
 }

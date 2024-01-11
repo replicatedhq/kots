@@ -449,6 +449,14 @@ func getHttpsServer(upstream, dexUpstream *url.URL, tlsSecretName string, secret
 		}()
 	})
 
+	// these paths should not be exposed outside the cluster
+	r.GET("/license/v1/license", func(c *gin.Context) {
+		c.AbortWithStatus(http.StatusForbidden)
+	})
+	r.POST("/api/v1/app/custom-metrics", func(c *gin.Context) {
+		c.AbortWithStatus(http.StatusForbidden)
+	})
+
 	if dexUpstream != nil {
 		r.Any("/dex/*path", gin.WrapH(httputil.NewSingleHostReverseProxy(dexUpstream)))
 	}
@@ -541,7 +549,7 @@ type kotsadmApp struct {
 func kotsadmApplication() (kotsadmApp, error) {
 	app := kotsadmApp{}
 
-	data, err := ioutil.ReadFile("/etc/kotsadm/application.yaml")
+	data, err := os.ReadFile("/etc/kotsadm/application.yaml")
 	if err != nil {
 		return app, errors.Wrap(err, "read file /etc/kotsadm/application.yaml")
 	}

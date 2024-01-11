@@ -1,9 +1,9 @@
-import React from "react";
+import { ReactNode } from "react";
 
 export interface ToastProps {
   isToastVisible: boolean;
   type: "success" | "error" | "warning";
-  children: React.ReactNode;
+  children: ReactNode;
 }
 
 const toastType = (type: "success" | "error" | "warning") => {

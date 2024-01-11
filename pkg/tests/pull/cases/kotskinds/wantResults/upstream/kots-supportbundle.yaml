@@ -1,0 +1,55 @@
+apiVersion: troubleshoot.sh/v1beta2
+kind: SupportBundle
+metadata:
+  name: my-app
+spec:
+  collectors:
+    - exec:
+        collectorName: repl{{ ConfigOption "v1beta2_supportbundle_collectors_exec_collector_name" }}
+        name: repl{{ ConfigOption "v1beta2_supportbundle_collectors_exec_name" }}
+        selector:
+          - repl{{ ConfigOption "v1beta2_supportbundle_collectors_exec_selector_0" }}
+        command:
+          - repl{{ ConfigOption "v1beta2_supportbundle_collectors_exec_command_0" }}
+        timeout: repl{{ ConfigOption "v1beta2_supportbundle_collectors_exec_timeout" }}
+    - logs:
+        collectorName: repl{{ ConfigOption "v1beta2_supportbundle_collectors_logs_collector_name" }}
+        name: repl{{ ConfigOption "v1beta2_supportbundle_collectors_logs_name" }}
+        selector:
+          - repl{{ ConfigOption "v1beta2_supportbundle_collectors_logs_selector_0" }}
+
+  analyzers:
+    - clusterVersion:
+        outcomes:
+          - fail:
+              when: repl{{ ConfigOption "v1beta2_supportbundle_analyzers_cluster_version_outcomes_fail_when" }}
+              message: repl{{ ConfigOption "v1beta2_supportbundle_analyzers_cluster_version_outcomes_fail_message" }}
+          - pass:
+              message: repl{{ ConfigOption "v1beta2_supportbundle_analyzers_cluster_version_outcomes_pass_message" }}
+    - containerRuntime:
+        outcomes:
+          - fail:
+              when: repl{{ ConfigOption "v1beta2_supportbundle_analyzers_container_runtime_outcomes_fail_when" }}
+              message: repl{{ ConfigOption "v1beta2_supportbundle_analyzers_container_runtime_outcomes_fail_message" }}
+          - pass:
+              message: repl{{ ConfigOption "v1beta2_supportbundle_analyzers_container_runtime_outcomes_pass_message" }}
+    - textAnalyze:
+        checkName: repl{{ ConfigOption "v1beta2_supportbundle_analyzers_text_analyze_check_name" }}
+        exclude: repl{{ ConfigOptionEquals "v1beta2_supportbundle_analyzers_text_analyze_exclude" "1" }}
+        ignoreIfNoFiles: repl{{ ConfigOptionEquals "v1beta2_supportbundle_analyzers_text_analyze_ignore_if_no_files" "1" }}
+        fileName: repl{{ ConfigOption "v1beta2_supportbundle_analyzers_text_analyze_file_name" }}
+        outcomes:
+          - fail:
+              when: repl{{ ConfigOption "v1beta2_supportbundle_analyzers_text_analyze_outcomes_fail_when" }}
+              message: repl{{ ConfigOption "v1beta2_supportbundle_analyzers_text_analyze_outcomes_fail_message" }}
+          - pass:
+              message: repl{{ ConfigOption "v1beta2_supportbundle_analyzers_text_analyze_outcomes_pass_message" }}
+        regexGroups: repl{{ ConfigOption "v1beta2_supportbundle_analyzers_text_analyze_regex_groups" }}
+    - nodeResources:
+        checkName: repl{{ ConfigOption "v1beta2_supportbundle_analyzers_node_resources_check_name" }}
+        outcomes:
+          - fail:
+              when: repl{{ ConfigOption "v1beta2_supportbundle_analyzers_node_resources_outcomes_fail_when" }}
+              message: repl{{ ConfigOption "v1beta2_supportbundle_analyzers_node_resources_outcomes_fail_message" }}
+          - pass:
+              message: repl{{ ConfigOption "v1beta2_supportbundle_analyzers_node_resources_outcomes_pass_message" }}

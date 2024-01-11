@@ -1,0 +1,38 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    kots.io/app-slug: my-app
+  labels:
+    app: example
+    component: nginx-tag-1-23
+    kots.io/app-slug: my-app
+    kots.io/backup: velero
+  name: example-nginx-tag-1-23
+spec:
+  selector:
+    matchLabels:
+      app: example
+      component: nginx-tag-1-23
+  template:
+    metadata:
+      annotations:
+        kots.io/app-slug: my-app
+      labels:
+        app: example
+        component: nginx-tag-1-23
+        kots.io/app-slug: my-app
+        kots.io/backup: velero
+    spec:
+      containers:
+      - image: nginx:1.23
+        name: nginx
+        resources:
+          limits:
+            cpu: 500m
+            memory: 256Mi
+          requests:
+            cpu: 100m
+            memory: 32Mi
+      imagePullSecrets:
+      - name: my-app-registry

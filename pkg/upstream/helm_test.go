@@ -378,7 +378,6 @@ some: value
 appID: app-id
 isAirgap: false
 replicatedID: kotsadm-id
-userAgent: KOTS/v0.0.0-unknown
 `,
 			},
 			wantErr: false,
@@ -462,7 +461,6 @@ some: value
 appID: app-id
 isAirgap: true
 replicatedID: kotsadm-id
-userAgent: KOTS/v0.0.0-unknown
 global:
   replicated:
     channelName: channel-name
@@ -573,7 +571,6 @@ image:
   appID: app-id
   isAirgap: false
   replicatedID: kotsadm-id
-  userAgent: KOTS/v0.0.0-unknown
 global:
   replicated:
     licenseID: online-license-id
@@ -702,7 +699,6 @@ image:
       signature: ""
     status: {}
   replicatedID: kotsadm-id
-  userAgent: KOTS/v0.0.0-unknown
 global:
   replicated:
     channelName: channel-name
@@ -854,7 +850,6 @@ global:
   appID: app-id
   isAirgap: false
   replicatedID: kotsadm-id
-  userAgent: KOTS/v0.0.0-unknown
 `, chartName),
 				"redis/charts/replicated/Chart.yaml": fmt.Sprintf(`apiVersion: v1
 name: %s
@@ -994,7 +989,6 @@ global:
       signature: ""
     status: {}
   replicatedID: kotsadm-id
-  userAgent: KOTS/v0.0.0-unknown
 `, chartName),
 				"redis/charts/replicated/Chart.yaml": fmt.Sprintf(`apiVersion: v1
 name: %s

@@ -1,4 +1,4 @@
-import { useQuery } from "react-query";
+import { useQuery } from "@tanstack/react-query";
 import { useSelectedApp } from "@features/App";
 
 export const getAirgapConfig = async (appSlug: string): Promise<number> => {

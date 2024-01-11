@@ -1,4 +1,3 @@
-import React from "react";
 import classNames from "classnames";
 import Loader from "../shared/Loader";
 import { rbacRoles } from "../../constants/rbac";

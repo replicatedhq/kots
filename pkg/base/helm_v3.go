@@ -25,7 +25,7 @@ var (
 
 const NamespaceTemplateConst = "repl{{ Namespace}}"
 
-func renderHelmV3(releaseName string, chartPath string, vals map[string]interface{}, renderOptions *RenderOptions) ([]BaseFile, []BaseFile, error) {
+func renderHelmV3(releaseName string, chartPath string, renderOptions *RenderOptions) ([]BaseFile, []BaseFile, error) {
 	cfg := &action.Configuration{
 		Log: renderOptions.Log.Debug,
 	}
@@ -51,7 +51,7 @@ func renderHelmV3(releaseName string, chartPath string, vals map[string]interfac
 		}
 	}
 
-	rel, err := client.Run(chartRequested, vals)
+	rel, err := client.Run(chartRequested, renderOptions.HelmValues)
 	if err != nil {
 		return nil, nil, util.ActionableError{
 			NoRetry: true,

@@ -128,7 +128,7 @@ func (s *KOTSStore) IsSnapshotsSupportedForVersion(a *apptypes.App, sequence int
 		return false, errors.Wrap(err, "failed to get app version archive")
 	}
 
-	kotsKinds, err := kotsutil.LoadKotsKindsFromPath(filepath.Join(archiveDir, "upstream"))
+	kotsKinds, err := kotsutil.LoadKotsKinds(archiveDir)
 	if err != nil {
 		return false, errors.Wrap(err, "failed to load kots kinds from path")
 	}
@@ -353,7 +353,7 @@ func (s *KOTSStore) GetAppVersionBaseArchive(appID string, versionLabel string) 
 		return "", -1, errors.Wrapf(err, "failed to get base sequence for version %s", versionLabel)
 	}
 
-	archiveDir, err := ioutil.TempDir("", "kotsadm")
+	archiveDir, err := os.MkdirTemp("", "kotsadm")
 	if err != nil {
 		return "", -1, errors.Wrap(err, "failed to create temp dir")
 	}
@@ -498,7 +498,7 @@ func (s *KOTSStore) createAppVersionStatements(appID string, baseSequence *int64
 func (s *KOTSStore) upsertAppVersionStatements(appID string, sequence int64, baseSequence *int64, filesInDir string, source string, skipPreflights bool, gitops gitopstypes.DownstreamGitOps, renderer rendertypes.Renderer) ([]gorqlite.ParameterizedStatement, error) {
 	statements := []gorqlite.ParameterizedStatement{}
 
-	kotsKinds, err := kotsutil.LoadKotsKindsFromPath(filepath.Join(filesInDir, "upstream"))
+	kotsKinds, err := kotsutil.LoadKotsKinds(filesInDir)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to read kots kinds")
 	}
@@ -701,6 +701,11 @@ func (s *KOTSStore) upsertAppVersionRecordStatements(appID string, sequence int6
 		return nil, errors.Wrap(err, "failed to marshal configvalues spec")
 	}
 
+	embeddedClusterConfig, err := kotsKinds.Marshal("embeddedcluster.replicated.com", "v1beta1", "Config")
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to marshal configvalues spec")
+	}
+
 	var releasedAt *int64
 	if kotsKinds.Installation.Spec.ReleasedAt != nil {
 		t := kotsKinds.Installation.Spec.ReleasedAt.Time.Unix()
@@ -708,8 +713,8 @@ func (s *KOTSStore) upsertAppVersionRecordStatements(appID string, sequence int6
 	}
 
 	query := `insert into app_version (app_id, sequence, created_at, version_label, is_required, release_notes, update_cursor, channel_id, channel_name, upstream_released_at, encryption_key,
-		supportbundle_spec, analyzer_spec, preflight_spec, app_spec, kots_app_spec, kots_installation_spec, kots_license, config_spec, config_values, backup_spec, identity_spec, branding_archive)
-		values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+		supportbundle_spec, analyzer_spec, preflight_spec, app_spec, kots_app_spec, kots_installation_spec, kots_license, config_spec, config_values, backup_spec, identity_spec, branding_archive, embeddedcluster_config)
+		values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 		ON CONFLICT(app_id, sequence) DO UPDATE SET
 		created_at = EXCLUDED.created_at,
 		version_label = EXCLUDED.version_label,
@@ -731,7 +736,8 @@ func (s *KOTSStore) upsertAppVersionRecordStatements(appID string, sequence int6
 		config_values = EXCLUDED.config_values,
 		backup_spec = EXCLUDED.backup_spec,
 		identity_spec = EXCLUDED.identity_spec,
-		branding_archive = EXCLUDED.branding_archive`
+		branding_archive = EXCLUDED.branding_archive,
+		embeddedcluster_config = EXCLUDED.embeddedcluster_config`
 
 	statements = append(statements, gorqlite.ParameterizedStatement{
 		Query: query,
@@ -759,6 +765,7 @@ func (s *KOTSStore) upsertAppVersionRecordStatements(appID string, sequence int6
 			backupSpec,
 			identitySpec,
 			base64.StdEncoding.EncodeToString(brandingArchive),
+			embeddedClusterConfig,
 		},
 	})
 
@@ -811,7 +818,7 @@ func (s *KOTSStore) upsertAppDownstreamVersionStatements(appID string, clusterID
 
 func (s *KOTSStore) GetAppVersion(appID string, sequence int64) (*versiontypes.AppVersion, error) {
 	db := persistence.MustGetDBSession()
-	query := `select app_id, sequence, update_cursor, channel_id, version_label, created_at, status, applied_at, kots_installation_spec, kots_app_spec, kots_license from app_version where app_id = ? and sequence = ?`
+	query := `select app_id, sequence, update_cursor, channel_id, version_label, created_at, status, applied_at, kots_installation_spec, kots_app_spec, kots_license, embeddedcluster_config from app_version where app_id = ? and sequence = ?`
 	rows, err := db.QueryOneParameterized(gorqlite.ParameterizedStatement{
 		Query:     query,
 		Arguments: []interface{}{appID, sequence},
@@ -897,7 +904,7 @@ func (s *KOTSStore) UpdateNextAppVersionDiffSummary(appID string, baseSequence i
 		return errors.Wrap(err, "failed to get next archive dir")
 	}
 
-	nextKotsKinds, err := kotsutil.LoadKotsKindsFromPath(filepath.Join(nextArchiveDir, "upstream"))
+	nextKotsKinds, err := kotsutil.LoadKotsKinds(nextArchiveDir)
 	if err != nil {
 		return errors.Wrap(err, "failed to read kots kinds")
 	}
@@ -1086,8 +1093,9 @@ func (s *KOTSStore) appVersionFromRow(row gorqlite.QueryResult) (*versiontypes.A
 	var updateCursor gorqlite.NullString
 	var channelID gorqlite.NullString
 	var versionLabel gorqlite.NullString
+	var embeddedClusterConfig gorqlite.NullString
 
-	if err := row.Scan(&v.AppID, &v.Sequence, &updateCursor, &channelID, &versionLabel, &createdAt, &status, &createdAt, &installationSpec, &kotsAppSpec, &licenseSpec); err != nil {
+	if err := row.Scan(&v.AppID, &v.Sequence, &updateCursor, &channelID, &versionLabel, &createdAt, &status, &createdAt, &installationSpec, &kotsAppSpec, &licenseSpec, &embeddedClusterConfig); err != nil {
 		return nil, errors.Wrap(err, "failed to scan")
 	}
 
@@ -1124,6 +1132,16 @@ func (s *KOTSStore) appVersionFromRow(row gorqlite.QueryResult) (*versiontypes.A
 		}
 		if license != nil {
 			v.KOTSKinds.License = license
+		}
+	}
+
+	if embeddedClusterConfig.Valid && embeddedClusterConfig.String != "" {
+		config, err := kotsutil.LoadEmbeddedClusterConfigFromBytes([]byte(embeddedClusterConfig.String))
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to read embedded cluster config")
+		}
+		if config != nil {
+			v.KOTSKinds.EmbeddedClusterConfig = config
 		}
 	}
 

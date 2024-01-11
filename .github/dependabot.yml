@@ -6,24 +6,48 @@ updates:
   - package-ecosystem: "npm"
     directory: "/web"
     schedule:
-      interval: "daily"
-    open-pull-requests-limit: 5
+      interval: "weekly"
+      day: "saturday"
+      time: "01:00"
+    labels:
+      - "dependabot"
+      - "javascript"
+      - "type::security"
+    groups:
+      security:
+        update-types:
+          - "patch"
+          - "minor"
 
   ## Go mod
 
   - package-ecosystem: "gomod"
     directory: "/"
     schedule:
-      interval: "daily"
+      interval: "weekly"
+      day: "saturday"
+      time: "02:30"
     labels:
-      - "@actions/safe-to-test"
+      - "dependabot"
+      - "go"
+      - "type::security"
+    groups:
+      security:
+        update-types:
+          - "patch"
+    ignore:
+      - dependency-name: "github.com/dexidp/dex"
 
   - package-ecosystem: "gomod"
     directory: "/kurl_proxy"
     schedule:
-      interval: "daily"
+      interval: "weekly"
+      day: "saturday"
+      time: "02:30"
     labels:
-      - "@actions/safe-to-test"
+      - "dependabot"
+      - "go"
+      - "type::security"
 
   ## GitHub Actions
 
@@ -31,28 +55,9 @@ updates:
     directory: "/"
     schedule:
       interval: "weekly"
+      day: "saturday"
+      time: "02:30"
     labels:
-      - "@actions/safe-to-test"
-
-  ## Dockerfiles
-
-  - package-ecosystem: "docker"
-    directory: "/deploy"
-    schedule:
-      interval: "weekly"
-    labels:
-      - "@actions/safe-to-test"
-
-  - package-ecosystem: "docker"
-    directory: "/kurl_proxy/deploy"
-    schedule:
-      interval: "weekly"
-    labels:
-      - "@actions/safe-to-test"
-
-  - package-ecosystem: "docker"
-    directory: "/migrations/deploy"
-    schedule:
-      interval: "weekly"
-    labels:
-      - "@actions/safe-to-test"
+      - "dependabot"
+      - "github-actions"
+      - "type::security"

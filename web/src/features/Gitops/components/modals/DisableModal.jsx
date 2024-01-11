@@ -1,4 +1,3 @@
-import React from "react";
 import Modal from "react-modal";
 
 const DisableModal = ({ isOpen, setOpen, disableGitOps, provider }) => {

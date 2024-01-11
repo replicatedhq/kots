@@ -1,10 +1,10 @@
-import * as React from "react";
+import { Component } from "react";
 import { Link } from "react-router-dom";
 import ClickOutsideAction from "./ClickOutsideAction";
 import "../../scss/components/shared/InlineDropdown.scss";
 import Icon from "../Icon";
 
-export default class InlineDropdown extends React.Component {
+export default class InlineDropdown extends Component {
   state = {
     showOptions: false,
   };

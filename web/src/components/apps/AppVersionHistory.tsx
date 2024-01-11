@@ -1,4 +1,4 @@
-import React, { Component } from "react";
+import { ChangeEvent, Component, Fragment } from "react";
 import { Link } from "react-router-dom";
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
@@ -19,12 +19,12 @@ import DeployWarningModal from "../shared/modals/DeployWarningModal";
 import AutomaticUpdatesModal from "@src/components/modals/AutomaticUpdatesModal";
 import SkipPreflightsModal from "../shared/modals/SkipPreflightsModal";
 import {
-  Utilities,
+  getCommitHashFromUrl,
+  getGitProviderDiffUrl,
+  getPreflightResultState,
   isAwaitingResults,
   secondsAgo,
-  getPreflightResultState,
-  getGitProviderDiffUrl,
-  getCommitHashFromUrl,
+  Utilities,
 } from "../../utilities/utilities";
 import { Repeater } from "../../utilities/repeater";
 import { AirgapUploader } from "../../utilities/airgapUploader";
@@ -59,7 +59,7 @@ type Props = {
     adminConsoleMetadata: {
       isAirgap: boolean;
       isKurl: boolean;
-      isHelmVM: boolean;
+      isEmbeddedCluster: boolean;
     };
     app: App;
     displayErrorModal: boolean;
@@ -365,7 +365,7 @@ class AppVersionHistory extends Component<Props, State> {
     }
   };
 
-  setPageSize = (e: React.ChangeEvent<HTMLSelectElement>) => {
+  setPageSize = (e: ChangeEvent<HTMLSelectElement>) => {
     this.setState(
       { pageSize: parseInt(e.target.value), currentPage: 0 },
       () => {
@@ -1456,7 +1456,7 @@ class AppVersionHistory extends Component<Props, State> {
     }
 
     return (
-      <React.Fragment key={index}>
+      <Fragment key={index}>
         <AppVersionHistoryRow
           navigate={this.props.navigate}
           adminConsoleMetadata={this.props.outletContext.adminConsoleMetadata}
@@ -1617,7 +1617,7 @@ class AppVersionHistory extends Component<Props, State> {
               }}
             </UseDownloadValues>
           )}
-      </React.Fragment>
+      </Fragment>
     );
   };
 

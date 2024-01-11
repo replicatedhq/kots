@@ -2,6 +2,7 @@ package base
 
 import (
 	"io/ioutil"
+	"os"
 	"path/filepath"
 	"testing"
 
@@ -56,6 +57,11 @@ func Test_RewriteImages(t *testing.T) {
 									},
 								},
 								{
+									Run: &troubleshootv1beta2.Run{
+										Image: "testing.registry.com:5000/testing-ns/random-image:2",
+									},
+								},
+								{
 									RunPod: &troubleshootv1beta2.RunPod{
 										PodSpec: corev1.PodSpec{
 											Containers: []corev1.Container{
@@ -77,6 +83,11 @@ func Test_RewriteImages(t *testing.T) {
 										Image: "quay.io/replicatedcom/qa-kots-2:alpine-3.4",
 									},
 								},
+								{
+									Run: &troubleshootv1beta2.Run{
+										Image: "testing.registry.com:5000/testing-ns/random-image:1",
+									},
+								},
 							},
 						},
 					},
@@ -84,7 +95,7 @@ func Test_RewriteImages(t *testing.T) {
 				CopyImages: false,
 				AppSlug:    "test-app-slug",
 				DestRegistry: registrytypes.RegistryOptions{
-					Endpoint:  "ttl.sh",
+					Endpoint:  "testing.registry.com:5000",
 					Namespace: "testing-ns",
 					Username:  "testing-user-name",
 					Password:  "testing-password",
@@ -94,87 +105,87 @@ func Test_RewriteImages(t *testing.T) {
 				Images: []kustomizeimage.Image{
 					{
 						Name:    "busybox",
-						NewName: "ttl.sh/testing-ns/busybox",
+						NewName: "testing.registry.com:5000/testing-ns/busybox",
 						NewTag:  "latest",
 					},
 					{
 						Name:    "docker.io/library/busybox",
-						NewName: "ttl.sh/testing-ns/busybox",
+						NewName: "testing.registry.com:5000/testing-ns/busybox",
 						NewTag:  "latest",
 					},
 					{
 						Name:    "library/busybox",
-						NewName: "ttl.sh/testing-ns/busybox",
+						NewName: "testing.registry.com:5000/testing-ns/busybox",
 						NewTag:  "latest",
 					},
 					{
 						Name:    "docker.io/busybox",
-						NewName: "ttl.sh/testing-ns/busybox",
+						NewName: "testing.registry.com:5000/testing-ns/busybox",
 						NewTag:  "latest",
 					},
 					{
 						Name:    "registry.replicated.com/appslug/image",
-						NewName: "ttl.sh/testing-ns/image",
+						NewName: "testing.registry.com:5000/testing-ns/image",
 						NewTag:  "version",
 					},
 					{
 						Name:    "quay.io/replicatedcom/qa-kots-1",
-						NewName: "ttl.sh/testing-ns/qa-kots-1",
+						NewName: "testing.registry.com:5000/testing-ns/qa-kots-1",
 						NewTag:  "alpine-3.5",
 					},
 					{
 						Name:    "quay.io/replicatedcom/qa-kots-2",
-						NewName: "ttl.sh/testing-ns/qa-kots-2",
+						NewName: "testing.registry.com:5000/testing-ns/qa-kots-2",
 						NewTag:  "alpine-3.4",
 					},
 					{
 						Name:    "quay.io/replicatedcom/qa-kots-3",
-						NewName: "ttl.sh/testing-ns/qa-kots-3",
+						NewName: "testing.registry.com:5000/testing-ns/qa-kots-3",
 						NewTag:  "alpine-3.6",
 					},
 					{
 						Name:    "quay.io/replicatedcom/someimage",
-						NewName: "ttl.sh/testing-ns/someimage",
+						NewName: "testing.registry.com:5000/testing-ns/someimage",
 						Digest:  "sha256:25dedae0aceb6b4fe5837a0acbacc6580453717f126a095aa05a3c6fcea14dd4",
 					},
 					{
 						Name:    "nginx",
-						NewName: "ttl.sh/testing-ns/nginx",
+						NewName: "testing.registry.com:5000/testing-ns/nginx",
 						NewTag:  "1",
 					},
 					{
 						Name:    "docker.io/library/nginx",
-						NewName: "ttl.sh/testing-ns/nginx",
+						NewName: "testing.registry.com:5000/testing-ns/nginx",
 						NewTag:  "1",
 					},
 					{
 						Name:    "library/nginx",
-						NewName: "ttl.sh/testing-ns/nginx",
+						NewName: "testing.registry.com:5000/testing-ns/nginx",
 						NewTag:  "1",
 					},
 					{
 						Name:    "docker.io/nginx",
-						NewName: "ttl.sh/testing-ns/nginx",
+						NewName: "testing.registry.com:5000/testing-ns/nginx",
 						NewTag:  "1",
 					},
 					{
 						Name:    "redis",
-						NewName: "ttl.sh/testing-ns/redis",
+						NewName: "testing.registry.com:5000/testing-ns/redis",
 						Digest:  "sha256:e96c03a6dda7d0f28e2de632048a3d34bb1636d0858b65ef9a554441c70f6633",
 					},
 					{
 						Name:    "docker.io/library/redis",
-						NewName: "ttl.sh/testing-ns/redis",
+						NewName: "testing.registry.com:5000/testing-ns/redis",
 						Digest:  "sha256:e96c03a6dda7d0f28e2de632048a3d34bb1636d0858b65ef9a554441c70f6633",
 					},
 					{
 						Name:    "library/redis",
-						NewName: "ttl.sh/testing-ns/redis",
+						NewName: "testing.registry.com:5000/testing-ns/redis",
 						Digest:  "sha256:e96c03a6dda7d0f28e2de632048a3d34bb1636d0858b65ef9a554441c70f6633",
 					},
 					{
 						Name:    "docker.io/redis",
-						NewName: "ttl.sh/testing-ns/redis",
+						NewName: "testing.registry.com:5000/testing-ns/redis",
 						Digest:  "sha256:e96c03a6dda7d0f28e2de632048a3d34bb1636d0858b65ef9a554441c70f6633",
 					},
 				},
@@ -258,6 +269,14 @@ func Test_RewriteImages(t *testing.T) {
 					},
 					{
 						Image:     "quay.io/replicatedcom/someimage:1@sha256:25dedae0aceb6b4fe5837a0acbacc6580453717f126a095aa05a3c6fcea14dd4",
+						IsPrivate: true,
+					},
+					{
+						Image:     "testing.registry.com:5000/testing-ns/random-image:2",
+						IsPrivate: true,
+					},
+					{
+						Image:     "testing.registry.com:5000/testing-ns/random-image:1",
 						IsPrivate: true,
 					},
 					{
@@ -490,13 +509,15 @@ func Test_RewriteImages(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			req := require.New(t)
 
-			gotUpstreamResult, err := RewriteImages(test.processOptions)
+			gotResult, err := RewriteImages(test.processOptions)
 			req.NoError(err)
 
-			assert.ElementsMatch(t, test.wantProcessResult.Images, gotUpstreamResult.Images)
-			assert.ElementsMatch(t, test.wantProcessResult.CheckedImages, gotUpstreamResult.CheckedImages)
+			assert.ElementsMatch(t, test.wantProcessResult.Images, gotResult.Images)
+			assert.ElementsMatch(t, test.wantProcessResult.CheckedImages, gotResult.CheckedImages)
 
-			test.findOptions.KotsKindsImages = kotsutil.GetImagesFromKotsKinds(test.processOptions.KotsKinds)
+			test.findOptions.KotsKindsImages, err = kotsutil.GetImagesFromKotsKinds(test.processOptions.KotsKinds, nil)
+			req.NoError(err)
+
 			gotFindResult, err := FindPrivateImages(test.findOptions)
 			req.NoError(err)
 
@@ -522,7 +543,7 @@ func loadDocs(basePath string) ([]k8sdoc.K8sDoc, error) {
 		if file.IsDir() {
 			continue
 		}
-		content, err := ioutil.ReadFile(filepath.Join(basePath, file.Name()))
+		content, err := os.ReadFile(filepath.Join(basePath, file.Name()))
 		if err != nil {
 			return nil, errors.Wrap(err, "read file")
 		}

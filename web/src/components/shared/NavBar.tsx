@@ -1,7 +1,7 @@
-import React, { PureComponent } from "react";
+import { ChangeEvent, PureComponent } from "react";
 import PropTypes from "prop-types";
 import classNames from "classnames";
-import { withRouter, RouterProps } from "@src/utilities/react-router-utilities";
+import { RouterProps, withRouter } from "@src/utilities/react-router-utilities";
 import { Link } from "react-router-dom";
 import { Utilities } from "@src/utilities/utilities";
 import ErrorModal from "../modals/ErrorModal";
@@ -19,7 +19,7 @@ type Props = {
   isHelmManaged: boolean;
   isIdentityServiceSupported: boolean;
   isKurlEnabled: boolean;
-  isHelmVMEnabled: boolean;
+  isEmbeddedClusterEnabled: boolean;
   isSnapshotsSupported: boolean;
   logo: string | null;
   onLogoutError: (message: string) => void;
@@ -47,7 +47,7 @@ export class NavBar extends PureComponent<Props, State> {
     refetchAppsList: PropTypes.func.isRequired,
   };
 
-  handleLogOut = async (e: React.ChangeEvent) => {
+  handleLogOut = async (e: ChangeEvent) => {
     const { onLogoutError } = this.props;
     e.preventDefault();
     try {
@@ -144,7 +144,7 @@ export class NavBar extends PureComponent<Props, State> {
       className,
       fetchingMetadata,
       isKurlEnabled,
-      isHelmVMEnabled,
+      isEmbeddedClusterEnabled,
       isGitOpsSupported,
       isIdentityServiceSupported,
       appsList,
@@ -228,20 +228,21 @@ export class NavBar extends PureComponent<Props, State> {
                   </span>
                 </div>
               )}
-              {(isKurlEnabled || isHelmVMEnabled) && (
-                <div
-                  className={classNames("NavItem u-position--relative flex", {
-                    "is-active": selectedTab === "cluster_management",
-                  })}
-                >
-                  <span
-                    onClick={this.handleGoToClusterManagement}
-                    className="flex flex1 u-cursor--pointer text u-fontSize--normal u-fontWeight--medium flex-column justifyContent--center"
+              {(isKurlEnabled || isEmbeddedClusterEnabled) &&
+                location.pathname !== `${selectedApp?.slug}/cluster/manage` && (
+                  <div
+                    className={classNames("NavItem u-position--relative flex", {
+                      "is-active": selectedTab === "cluster_management",
+                    })}
                   >
-                    Cluster Management
-                  </span>
-                </div>
-              )}
+                    <span
+                      onClick={this.handleGoToClusterManagement}
+                      className="flex flex1 u-cursor--pointer text u-fontSize--normal u-fontWeight--medium flex-column justifyContent--center"
+                    >
+                      Cluster Management
+                    </span>
+                  </div>
+                )}
               {isSnapshotsSupported && (
                 <div
                   className={classNames("NavItem u-position--relative flex", {

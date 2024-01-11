@@ -1,4 +1,4 @@
-import React, { Component } from "react";
+import { Component } from "react";
 import { KotsPageTitle } from "@components/Head";
 import Dropzone from "react-dropzone";
 import isEmpty from "lodash/isEmpty";

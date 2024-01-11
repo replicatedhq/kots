@@ -7,7 +7,6 @@ import (
 	"context"
 	"encoding/base64"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path"
 	"path/filepath"
@@ -16,11 +15,14 @@ import (
 	"time"
 
 	"github.com/blang/semver"
+	dockerref "github.com/containers/image/v5/docker/reference"
 	"github.com/pkg/errors"
+	embeddedclusterv1beta1 "github.com/replicatedhq/embedded-cluster-operator/api/v1beta1"
 	"github.com/replicatedhq/kots/pkg/archives"
 	"github.com/replicatedhq/kots/pkg/binaries"
 	"github.com/replicatedhq/kots/pkg/buildversion"
 	"github.com/replicatedhq/kots/pkg/crypto"
+	registrytypes "github.com/replicatedhq/kots/pkg/docker/registry/types"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/kurl"
 	"github.com/replicatedhq/kots/pkg/logger"
@@ -51,6 +53,7 @@ func init() {
 	velerov1.AddToScheme(scheme.Scheme)
 	kurlscheme.AddToScheme(scheme.Scheme)
 	applicationv1beta1.AddToScheme(scheme.Scheme)
+	embeddedclusterv1beta1.AddToScheme(scheme.Scheme)
 }
 
 var (
@@ -105,6 +108,8 @@ type KotsKinds struct {
 	Installer *kurlv1beta1.Installer
 
 	LintConfig *kotsv1beta1.LintConfig
+
+	EmbeddedClusterConfig *embeddedclusterv1beta1.Config
 }
 
 func IsKotsKind(apiVersion string, kind string) bool {
@@ -129,6 +134,7 @@ func IsKotsKind(apiVersion string, kind string) bool {
 	if apiVersion == "kurl.sh/v1beta1" {
 		return true
 	}
+	// In addition to kotskinds, we exclude the embedded cluster configuration.
 	if apiVersion == "embeddedcluster.replicated.com/v1beta1" {
 		return true
 	}
@@ -451,6 +457,17 @@ func (o KotsKinds) Marshal(g string, v string, k string) (string, error) {
 		}
 	}
 
+	if g == "embeddedcluster.replicated.com" && v == "v1beta1" && k == "Config" {
+		if o.EmbeddedClusterConfig == nil {
+			return "", nil
+		}
+		var b bytes.Buffer
+		if err := s.Encode(o.EmbeddedClusterConfig, &b); err != nil {
+			return "", errors.Wrap(err, "failed to encode embedded cluster config")
+		}
+		return string(b.Bytes()), nil
+	}
+
 	return "", errors.Errorf("unknown gvk %s/%s, Kind=%s", g, v, k)
 }
 
@@ -462,7 +479,7 @@ func (k *KotsKinds) addKotsKinds(content []byte) error {
 	for _, doc := range docs {
 		decoded, gvk, err := decode(doc, nil, nil)
 		if err != nil {
-			return errors.Wrap(err, "failed to decode yaml content")
+			return errors.Wrapf(err, "failed to decode: %v", string(content))
 		}
 
 		if strings.HasPrefix(gvk.String(), "troubleshoot.replicated.com/v1beta1,") {
@@ -472,7 +489,7 @@ func (k *KotsKinds) addKotsKinds(content []byte) error {
 			}
 			decoded, gvk, err = decode(doc, nil, nil)
 			if err != nil {
-				return err
+				return errors.Wrapf(err, "failed to decode troubleshoot doc: %v", string(content))
 			}
 		}
 
@@ -531,31 +548,17 @@ func (k *KotsKinds) addKotsKinds(content []byte) error {
 			k.Installer = decoded.(*kurlv1beta1.Installer)
 		case "app.k8s.io/v1beta1, Kind=Application":
 			k.Application = decoded.(*applicationv1beta1.Application)
+		case "embeddedcluster.replicated.com/v1beta1, Kind=Config":
+			k.EmbeddedClusterConfig = decoded.(*embeddedclusterv1beta1.Config)
 		}
 	}
 
 	return nil
 }
 
-func GenUniqueKotsKindFilename(renderedKotsKinds map[string][]byte, prefix string) string {
-	filename := fmt.Sprintf("%s.yaml", prefix)
-	if _, exists := renderedKotsKinds[filename]; exists {
-		index := 1
-		for {
-			filename = fmt.Sprintf("%s-%d.yaml", prefix, index)
-			if _, exists := renderedKotsKinds[filename]; !exists {
-				break
-			}
-			index += 1
-		}
-	}
-
-	return filename
-}
-
-func GetImagesFromKotsKinds(kotsKinds *KotsKinds) []string {
+func GetImagesFromKotsKinds(kotsKinds *KotsKinds, destRegistry *registrytypes.RegistryOptions) ([]string, error) {
 	if kotsKinds == nil {
-		return nil
+		return nil, nil
 	}
 
 	allImages := []string{}
@@ -596,16 +599,26 @@ func GetImagesFromKotsKinds(kotsKinds *KotsKinds) []string {
 			if image == "" {
 				continue
 			}
+			// Images that use templates like LocalImageName should be included in application's additionalImages list.
+			// We want the original image names here only, not the templated ones.
 			if strings.Contains(image, "repl{{") || strings.Contains(image, "{{repl") {
-				// Images that use templates like LocalImageName should be included in application's additionalImages list.
-				// We want the original image names here only, not the templated ones.
 				continue
+			}
+			if destRegistry != nil {
+				dockerRef, err := dockerref.ParseDockerRef(image)
+				if err != nil {
+					return nil, errors.Wrapf(err, "failed to parse docker ref %q", image)
+				}
+				if strings.HasPrefix(destRegistry.Endpoint, dockerref.Domain(dockerRef)) {
+					// image points to the destination registry
+					continue
+				}
 			}
 			allImages = append(allImages, image)
 		}
 	}
 
-	return allImages
+	return allImages, nil
 }
 
 // create a new kots kinds, ensuring that the require objets exist as empty defaults
@@ -628,9 +641,31 @@ func EmptyKotsKinds() KotsKinds {
 	return kotsKinds
 }
 
-func LoadKotsKindsFromPath(fromDir string) (*KotsKinds, error) {
+// GetKotsKindsPath returns the path to load kots kinds from in an app version archive created by kots
+func GetKotsKindsPath(archive string) string {
+	if archive == "" {
+		return ""
+	}
+
+	kotsKindsPath := archive
+	if _, err := os.Stat(filepath.Join(archive, "kotsKinds")); err == nil {
+		// contains the rendered kots kinds if exists, prioritize it over upstream. only newer versions of kots create this directory.
+		kotsKindsPath = filepath.Join(archive, "kotsKinds")
+	} else if _, err := os.Stat(filepath.Join(archive, "upstream")); err == nil {
+		// contains the non-rendered kots kinds, fallback to it if kotsKinds directory doesn't exist. this directory should always exist.
+		kotsKindsPath = filepath.Join(archive, "upstream")
+	}
+
+	return kotsKindsPath
+}
+
+// LoadKotsKinds loads kots kinds from an app version archive created by kots.
+// it loads the rendered kots kinds if they exist (should always be the case for app version archives created by newer kots versions).
+// otherwise it loads the non-rendered kots kinds (app version archives created by older kots versions).
+func LoadKotsKinds(archive string) (*KotsKinds, error) {
 	kotsKinds := EmptyKotsKinds()
 
+	fromDir := GetKotsKindsPath(archive)
 	if fromDir == "" {
 		return &kotsKinds, nil
 	}
@@ -732,7 +767,7 @@ func loadRuntimeObjectsFromPath(apiVersion, kind, fromDir string) ([]runtime.Obj
 				return nil
 			}
 
-			contents, err := ioutil.ReadFile(path)
+			contents, err := os.ReadFile(path)
 			if err != nil {
 				return errors.Wrap(err, "failed to read file")
 			}
@@ -743,7 +778,7 @@ func loadRuntimeObjectsFromPath(apiVersion, kind, fromDir string) ([]runtime.Obj
 
 			decoded, gvk, err := decode(contents, nil, nil)
 			if err != nil {
-				return errors.Wrap(err, "failed to decode")
+				return errors.Wrapf(err, "failed to decode: %v", string(contents))
 			}
 
 			if gvk.String() == fmt.Sprintf("%s, Kind=%s", apiVersion, kind) {
@@ -772,36 +807,8 @@ func IsApiVersionKind(content []byte, apiVersion, kind string) bool {
 	return false
 }
 
-func LoadV1Beta1HelmChartsFromPath(fromDir string) ([]*kotsv1beta1.HelmChart, error) {
-	objects, err := loadRuntimeObjectsFromPath("kots.io/v1beta1", "HelmChart", fromDir)
-	if err != nil {
-		return nil, errors.Wrapf(err, "failed to load v1beta1 HelmCharts from %s", fromDir)
-	}
-
-	charts := []*kotsv1beta1.HelmChart{}
-	for _, o := range objects {
-		charts = append(charts, o.(*kotsv1beta1.HelmChart))
-	}
-
-	return charts, nil
-}
-
-func LoadV1Beta2HelmChartsFromPath(fromDir string) ([]*kotsv1beta2.HelmChart, error) {
-	objects, err := loadRuntimeObjectsFromPath("kots.io/v1beta2", "HelmChart", fromDir)
-	if err != nil {
-		return nil, errors.Wrapf(err, "failed to load v1beta2 HelmCharts from %s", fromDir)
-	}
-
-	charts := []*kotsv1beta2.HelmChart{}
-	for _, o := range objects {
-		charts = append(charts, o.(*kotsv1beta2.HelmChart))
-	}
-
-	return charts, nil
-}
-
 func LoadInstallationFromPath(installationFilePath string) (*kotsv1beta1.Installation, error) {
-	installationData, err := ioutil.ReadFile(installationFilePath)
+	installationData, err := os.ReadFile(installationFilePath)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to read installation file")
 	}
@@ -813,7 +820,7 @@ func LoadSupportBundleFromContents(data []byte) (*troubleshootv1beta2.SupportBun
 	decode := scheme.Codecs.UniversalDeserializer().Decode
 	obj, gvk, err := decode([]byte(data), nil, nil)
 	if err != nil {
-		return nil, errors.Wrapf(err, "failed to decode support bundle data of length %d", len(data))
+		return nil, errors.Wrapf(err, "failed to decode: %v", string(data))
 	}
 
 	if gvk.Group != "troubleshoot.sh" || gvk.Version != "v1beta2" || gvk.Kind != "SupportBundle" {
@@ -823,11 +830,25 @@ func LoadSupportBundleFromContents(data []byte) (*troubleshootv1beta2.SupportBun
 	return obj.(*troubleshootv1beta2.SupportBundle), nil
 }
 
+func FindKotsAppInPath(fromDir string) (*kotsv1beta1.Application, error) {
+	objects, err := loadRuntimeObjectsFromPath("kots.io/v1beta1", "Application", fromDir)
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to load v1beta2 HelmCharts from %s", fromDir)
+	}
+
+	if len(objects) == 0 {
+		return nil, nil
+	}
+
+	// we only support having one kots app spec
+	return objects[0].(*kotsv1beta1.Application), nil
+}
+
 func LoadKotsAppFromContents(data []byte) (*kotsv1beta1.Application, error) {
 	decode := scheme.Codecs.UniversalDeserializer().Decode
 	obj, gvk, err := decode([]byte(data), nil, nil)
 	if err != nil {
-		return nil, errors.Wrapf(err, "failed to decode kots app data of length %d", len(data))
+		return nil, errors.Wrapf(err, "failed to decode: %v", string(data))
 	}
 
 	if gvk.Group != "kots.io" || gvk.Version != "v1beta1" || gvk.Kind != "Application" {
@@ -841,7 +862,7 @@ func LoadV1Beta1HelmChartListFromContents(data []byte) (*kotsv1beta1.HelmChartLi
 	decode := scheme.Codecs.UniversalDeserializer().Decode
 	obj, gvk, err := decode(data, nil, nil)
 	if err != nil {
-		return nil, errors.Wrapf(err, "failed to decode helm chart data of length %d", len(data))
+		return nil, errors.Wrapf(err, "failed to decode: %v", string(data))
 	}
 
 	if gvk.Group != "kots.io" || gvk.Version != "v1beta1" || gvk.Kind != "HelmChartList" {
@@ -855,7 +876,7 @@ func LoadV1Beta1HelmChartFromContents(content []byte) (*kotsv1beta1.HelmChart, e
 	decode := scheme.Codecs.UniversalDeserializer().Decode
 	obj, gvk, err := decode(content, nil, nil)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to decode chart")
+		return nil, errors.Wrapf(err, "failed to decode: %v", string(content))
 	}
 
 	if gvk.Group != "kots.io" || gvk.Version != "v1beta1" || gvk.Kind != "HelmChart" {
@@ -869,7 +890,7 @@ func LoadV1Beta2HelmChartFromContents(content []byte) (*kotsv1beta2.HelmChart, e
 	decode := scheme.Codecs.UniversalDeserializer().Decode
 	obj, gvk, err := decode(content, nil, nil)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to decode chart")
+		return nil, errors.Wrapf(err, "failed to decode: %v", string(content))
 	}
 
 	if gvk.Group != "kots.io" || gvk.Version != "v1beta2" || gvk.Kind != "HelmChart" {
@@ -883,7 +904,7 @@ func LoadInstallationFromContents(installationData []byte) (*kotsv1beta1.Install
 	decode := scheme.Codecs.UniversalDeserializer().Decode
 	obj, gvk, err := decode([]byte(installationData), nil, nil)
 	if err != nil {
-		return nil, errors.Wrapf(err, "failed to decode installation data of length %d", len(installationData))
+		return nil, errors.Wrapf(err, "failed to decode: %v", string(installationData))
 	}
 
 	if gvk.Group != "kots.io" || gvk.Version != "v1beta1" || gvk.Kind != "Installation" {
@@ -894,7 +915,7 @@ func LoadInstallationFromContents(installationData []byte) (*kotsv1beta1.Install
 }
 
 func LoadLicenseFromPath(licenseFilePath string) (*kotsv1beta1.License, error) {
-	licenseData, err := ioutil.ReadFile(licenseFilePath)
+	licenseData, err := os.ReadFile(licenseFilePath)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to read license file")
 	}
@@ -916,8 +937,20 @@ func LoadLicenseFromBytes(data []byte) (*kotsv1beta1.License, error) {
 	return obj.(*kotsv1beta1.License), nil
 }
 
+func LoadEmbeddedClusterConfigFromBytes(data []byte) (*embeddedclusterv1beta1.Config, error) {
+	decode := scheme.Codecs.UniversalDeserializer().Decode
+	obj, gvk, err := decode([]byte(data), nil, nil)
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to decode: %v", string(data))
+	}
+	if gvk.Group != "embeddedcluster.replicated.com" || gvk.Version != "v1beta1" || gvk.Kind != "Config" {
+		return nil, errors.Errorf("unexpected GVK: %s", gvk.String())
+	}
+	return obj.(*embeddedclusterv1beta1.Config), nil
+}
+
 func LoadConfigValuesFromFile(configValuesFilePath string) (*kotsv1beta1.ConfigValues, error) {
-	configValuesData, err := ioutil.ReadFile(configValuesFilePath)
+	configValuesData, err := os.ReadFile(configValuesFilePath)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to read configvalues file")
 	}
@@ -933,6 +966,20 @@ func LoadConfigValuesFromFile(configValuesFilePath string) (*kotsv1beta1.ConfigV
 	}
 
 	return obj.(*kotsv1beta1.ConfigValues), nil
+}
+
+func FindConfigInPath(fromDir string) (*kotsv1beta1.Config, error) {
+	objects, err := loadRuntimeObjectsFromPath("kots.io/v1beta1", "Config", fromDir)
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to load Config from %s", fromDir)
+	}
+
+	if len(objects) == 0 {
+		return nil, nil
+	}
+
+	// we only support having one config spec
+	return objects[0].(*kotsv1beta1.Config), nil
 }
 
 func LoadConfigFromBytes(data []byte) (*kotsv1beta1.Config, error) {
@@ -993,7 +1040,7 @@ func LoadBackupFromContents(content []byte) (*velerov1.Backup, error) {
 
 	obj, gvk, err := decode(content, nil, nil)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to decode content")
+		return nil, errors.Wrapf(err, "failed to decode: %v", string(content))
 	}
 
 	if gvk.String() != "velero.io/v1, Kind=Backup" {
@@ -1008,7 +1055,7 @@ func LoadApplicationFromContents(content []byte) (*applicationv1beta1.Applicatio
 
 	obj, gvk, err := decode(content, nil, nil)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to decode content")
+		return nil, errors.Wrapf(err, "failed to decode: %v", string(content))
 	}
 
 	if gvk.String() != "app.k8s.io/v1beta1, Kind=Application" {
@@ -1023,7 +1070,7 @@ func LoadApplicationFromBytes(content []byte) (*kotsv1beta1.Application, error) 
 
 	obj, gvk, err := decode(content, nil, nil)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to decode content")
+		return nil, errors.Wrapf(err, "failed to decode: %v", string(content))
 	}
 
 	if gvk.String() != "kots.io/v1beta1, Kind=Application" {
@@ -1277,7 +1324,7 @@ func RemoveAppVersionLabelFromInstallationParams(configMapName string) error {
 }
 
 func FindAirgapMetaInDir(root string) (*kotsv1beta1.Airgap, error) {
-	files, err := ioutil.ReadDir(root)
+	files, err := os.ReadDir(root)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to read airgap directory content")
 	}
@@ -1287,7 +1334,7 @@ func FindAirgapMetaInDir(root string) (*kotsv1beta1.Airgap, error) {
 			continue
 		}
 
-		contents, err := ioutil.ReadFile(filepath.Join(root, file.Name()))
+		contents, err := os.ReadFile(filepath.Join(root, file.Name()))
 		if err != nil {
 			// TODO: log?
 			continue
@@ -1370,7 +1417,7 @@ func LoadBrandingArchiveFromPath(archivePath string) (*bytes.Buffer, error) {
 				return nil
 			}
 
-			contents, err := ioutil.ReadFile(path)
+			contents, err := os.ReadFile(path)
 			if err != nil {
 				return errors.Wrap(err, "failed to read file")
 			}

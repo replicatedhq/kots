@@ -32,6 +32,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/kurl"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/metrics"
+	preflighttypes "github.com/replicatedhq/kots/pkg/preflight/types"
 	"github.com/replicatedhq/kots/pkg/print"
 	"github.com/replicatedhq/kots/pkg/pull"
 	"github.com/replicatedhq/kots/pkg/replicatedapp"
@@ -126,15 +127,15 @@ func InstallCmd() *cobra.Command {
 			if registryConfig.OverrideRegistry != "" && !v.GetBool("skip-registry-check") {
 				log.ActionWithSpinner("Validating registry information")
 
-				hostname, err := getHostnameFromEndpoint(registryConfig.OverrideRegistry)
+				host, err := getHostFromEndpoint(registryConfig.OverrideRegistry)
 				if err != nil {
 					log.FinishSpinnerWithError()
-					return errors.Wrap(err, "failed get hostname from endpoint")
+					return errors.Wrap(err, "failed get host from endpoint")
 				}
 
-				if err := dockerregistry.CheckAccess(hostname, registryConfig.Username, registryConfig.Password); err != nil {
+				if err := dockerregistry.CheckAccess(host, registryConfig.Username, registryConfig.Password); err != nil {
 					log.FinishSpinnerWithError()
-					return fmt.Errorf("Failed to test access to %q with user %q: %v", hostname, registryConfig.Username, err)
+					return fmt.Errorf("Failed to test access to %q with user %q: %v", host, registryConfig.Username, err)
 				}
 
 				log.FinishSpinner()
@@ -447,14 +448,14 @@ func InstallCmd() *cobra.Command {
 				log.FinishSpinner()
 
 				switch status {
-				case storetypes.VersionPendingPreflight:
+				case storetypes.VersionPendingPreflight, storetypes.VersionPending:
 					log.ActionWithSpinner("Waiting for preflight checks to complete")
 					if err := ValidatePreflightStatus(deployOptions, authSlug, apiEndpoint); err != nil {
 						perr := preflightError{}
 						if errors.As(err, &perr) {
 							log.FinishSpinner() // We succeeded waiting for the results. Don't finish with an error
 							log.Errorf(perr.Msg)
-							print.PreflightErrors(log, perr.Results)
+							print.PreflightResults(perr.Results)
 							cmd.SilenceErrors = true // Stop Cobra from printing the error, we format the message ourselves
 						} else {
 							log.FinishSpinnerWithError()
@@ -530,7 +531,6 @@ func InstallCmd() *cobra.Command {
 	cmd.Flags().String("app-version-label", "", "the application version label to install. if not specified, the latest version will be installed")
 
 	cmd.Flags().String("repo", "", "repo uri to use when installing a helm chart")
-	cmd.Flags().StringSlice("set", []string{}, "values to pass to helm when running helm template")
 
 	registryFlags(cmd.Flags())
 
@@ -1020,7 +1020,7 @@ func checkPreflightsComplete(response *handlers.GetPreflightResultResponse) (boo
 
 type preflightError struct {
 	Msg     string
-	Results []*preflight.UploadPreflightResult
+	Results preflighttypes.PreflightResults
 }
 
 func (e preflightError) Error() string {
@@ -1034,10 +1034,28 @@ func checkPreflightResults(response *handlers.GetPreflightResultResponse) (bool,
 		return false, nil
 	}
 
-	var results preflight.UploadPreflightResults
+	var results preflighttypes.PreflightResults
 	err := json.Unmarshal([]byte(response.PreflightResult.Result), &results)
 	if err != nil {
 		return false, errors.Wrap(err, fmt.Sprintf("failed to unmarshal upload preflight results from response: %v", response.PreflightResult.Result))
+	}
+
+	if len(results.Errors) > 0 {
+		isRBAC := false
+		for _, err := range results.Errors {
+			if err.IsRBAC {
+				isRBAC = true
+				break
+			}
+		}
+		msg := "There are preflight check errors for the application. The app was not deployed."
+		if isRBAC {
+			msg = "The Kubernetes RBAC policy that the Admin Console is running with does not have access to complete the Preflight Checks. It's recommended that you run these manually before proceeding. The app was not deployed."
+		}
+		return false, preflightError{
+			Msg:     msg,
+			Results: results,
+		}
 	}
 
 	var isWarn, isFail bool
@@ -1053,20 +1071,20 @@ func checkPreflightResults(response *handlers.GetPreflightResultResponse) (bool,
 	if isWarn && isFail {
 		return false, preflightError{
 			Msg:     "There are preflight check failures and warnings for the application. The app was not deployed.",
-			Results: results.Results,
+			Results: results,
 		}
 	}
 
 	if isWarn {
 		return false, preflightError{
 			Msg:     "There are preflight check warnings for the application. The app was not deployed.",
-			Results: results.Results,
+			Results: results,
 		}
 	}
 	if isFail {
 		return false, preflightError{
 			Msg:     "There are preflight check failures for the application. The app was not deployed.",
-			Results: results.Results,
+			Results: results,
 		}
 	}
 

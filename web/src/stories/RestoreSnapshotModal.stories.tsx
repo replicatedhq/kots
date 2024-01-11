@@ -1,7 +1,7 @@
-import React from "react";
 import { ComponentStory, ComponentMeta } from "@storybook/react";
 import { MemoryRouter } from "react-router-dom";
 import RestoreSnapshotModal from "@src/components/modals/RestoreSnapshotModal";
+import { ChangeEvent, useState } from "react";
 
 export default {
   title: "Example/RestoreSnapshotModal",
@@ -9,11 +9,9 @@ export default {
 } as ComponentMeta<typeof RestoreSnapshotModal>;
 
 const Template: ComponentStory<typeof RestoreSnapshotModal> = (args) => {
-  const [appSlugMismatch, setAppSlugMismatch] = React.useState(false);
-  const [appSlugToRestore, setAppSlugToRestore] = React.useState("");
-  const handleApplicationSlugChange = (
-    e: React.ChangeEvent<HTMLInputElement>
-  ) => {
+  const [appSlugMismatch, setAppSlugMismatch] = useState(false);
+  const [appSlugToRestore, setAppSlugToRestore] = useState("");
+  const handleApplicationSlugChange = (e: ChangeEvent<HTMLInputElement>) => {
     if (appSlugMismatch) {
       setAppSlugMismatch(false);
     }

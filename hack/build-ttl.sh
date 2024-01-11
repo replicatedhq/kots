@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-export CURRENT_USER=`id -u -n`
+export CURRENT_USER=${GITHUB_USER:-$(id -u -n)}
 
 make build-ttl.sh
 
@@ -12,4 +12,4 @@ printf "\n\n\n"
 printf "Run command:        ${GREEN}kubectl edit deployment kotsadm${NC}\n"
 printf "Replace image with: ${GREEN}ttl.sh/${CURRENT_USER}/kotsadm:24h${NC}\n"
 printf "\n"
-printf "These images are good for 12 hours\n"
+printf "These images are good for 24 hours\n"

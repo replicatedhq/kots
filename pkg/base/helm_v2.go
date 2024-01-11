@@ -17,8 +17,8 @@ import (
 	k8syaml "sigs.k8s.io/yaml"
 )
 
-func renderHelmV2(chartName string, chartPath string, vals map[string]interface{}, renderOptions *RenderOptions) ([]BaseFile, []BaseFile, error) {
-	marshalledVals, err := yaml.Marshal(vals)
+func renderHelmV2(chartName string, chartPath string, renderOptions *RenderOptions) ([]BaseFile, []BaseFile, error) {
+	marshalledVals, err := yaml.Marshal(renderOptions.HelmValues)
 	if err != nil {
 		return nil, nil, errors.Wrap(err, "failed to marshal helm values")
 	}

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect, createContext } from "react";
 import { isEmpty, find } from "lodash";
 import {
   getGitOpsUri,
@@ -11,7 +11,7 @@ import {
   BITBUCKET_SERVER_DEFAULT_SSH_PORT,
 } from "./constants";
 import useGitops from "./hooks/useGitops";
-const GitOpsContext = React.createContext();
+const GitOpsContext = createContext();
 
 const GitOpsProvider = ({ children }) => {
   const [step, setStep] = useState("provider");

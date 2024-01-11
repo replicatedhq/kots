@@ -1,4 +1,4 @@
-import { useQuery } from "react-query";
+import { useQuery } from "@tanstack/react-query";
 
 async function getMetadata({
   apiEndpoint = process.env.API_ENDPOINT,
@@ -19,7 +19,7 @@ async function getMetadata({
 }
 
 function useMetadata({ _getMetadata = getMetadata } = {}) {
-  return useQuery("metadata", () => _getMetadata(), {
+  return useQuery(["metadata"], () => _getMetadata(), {
     staleTime: Infinity,
   });
 }

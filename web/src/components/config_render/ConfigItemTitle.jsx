@@ -1,9 +1,8 @@
-import React from "react";
+import { Component } from "react";
 import Markdown from "react-remarkable";
 import classNames from "classnames";
-import { setOrder } from "./ConfigUtil";
 
-export default class ConfigItemTitle extends React.Component {
+export default class ConfigItemTitle extends Component {
   render() {
     const {
       title,

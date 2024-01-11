@@ -12,16 +12,47 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-var releaseTags = []string{
-	"RELEASE.2022-06-11T19-55-32Z.fips",
-	"RELEASE.2021-09-09T21-37-06Z.xxx",
-	"RELEASE.2021-09-09T21-37-05Z",
-	"RELEASE.2021-09-09T21-37-04Z",
-}
-var semVerTags = []string{
-	"0.12.7", "0.12.6", "0.12.5",
-	"0.12.4", "0.12.3", "0.12.2",
-}
+var (
+	minioTags = []string{
+		"0.20231101.183725-r2",
+		"0.20231101.183725-r1",
+		"0.20231101.183725-r0",
+		"0.20231101.183725",
+		"0.20231100.183724",
+		"0.20231031.183723",
+		"0.20231030.183722",
+	}
+
+	rqliteTags = []string{
+		"7.21.4-r1",
+		"7.21.4-r0",
+		"7.21.4",
+		"7.20.3",
+		"7.19.2",
+		"6.18.1",
+	}
+
+	dexTags = []string{
+		"2.37.0-r0",
+		"2.37.0",
+		"2.36.0",
+		"2.35.0",
+		"2.34.0",
+	}
+
+	schemaheroTags = []string{
+		"0.13.2",
+		"0.13.1",
+		"0.12.7",
+		"0.12.2",
+	}
+
+	lvpTags = []string{
+		"v0.3.3",
+		"v0.3.2",
+		"v0.3.1",
+	}
+)
 
 func makeReleases(tags []string) []*github.RepositoryRelease {
 	var releases []*github.RepositoryRelease
@@ -46,29 +77,21 @@ func TestFunctional(t *testing.T) {
 		expectError bool
 	}{
 		{
-			name: "basic",
+			name: "minio",
 			fn: getTagFinder(
-				withGithubReleaseTagFinder(
-					func(_ string, _ string) ([]*github.RepositoryRelease, error) {
-						return makeReleases(releaseTags), nil
+				withRepoGetTags(
+					func(_ string) ([]string, error) {
+						return minioTags, nil
 					},
 				),
 			),
 		},
 		{
-			name: "with-overrides",
+			name: "schemahero",
 			fn: getTagFinder(
 				withRepoGetTags(
 					func(_ string) ([]string, error) {
-						return []string{
-							"0.13.2", "0.13.1",
-							"0.12.7", "0.12.2",
-						}, nil
-					},
-				),
-				withGithubReleaseTagFinder(
-					func(_ string, _ string) ([]*github.RepositoryRelease, error) {
-						return makeReleases(releaseTags), nil
+						return schemaheroTags, nil
 					},
 				),
 			),
@@ -82,30 +105,17 @@ func TestFunctional(t *testing.T) {
 			fn: getTagFinder(
 				withRepoGetTags(
 					func(_ string) ([]string, error) {
-						return []string{
-							"7.7.0", "7.6.1", "7.6.0",
-							"6.10.2", "6.10.1", "6.8.2",
-						}, nil
+						return rqliteTags, nil
 					},
 				),
 			),
 		},
 		{
-			name: "filter-github",
-			fn: getTagFinder(
-				withGithubReleaseTagFinder(
-					func(_ string, _ string) ([]*github.RepositoryRelease, error) {
-						return makeReleases(releaseTags), nil
-					},
-				),
-			),
-		},
-		{
-			name: "schemahero",
+			name: "dex",
 			fn: getTagFinder(
 				withRepoGetTags(
 					func(_ string) ([]string, error) {
-						return semVerTags, nil
+						return dexTags, nil
 					},
 				),
 			),
@@ -115,9 +125,7 @@ func TestFunctional(t *testing.T) {
 			fn: getTagFinder(
 				withRepoGetTags(
 					func(_ string) ([]string, error) {
-						return []string{
-							"v0.3.3",
-						}, nil
+						return lvpTags, nil
 					},
 				),
 			),
@@ -128,10 +136,10 @@ func TestFunctional(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			rootDir := path.Join("testdata", tc.name)
 
-			expectedConstants, err := ioutil.ReadFile(path.Join(rootDir, "constants.go"))
+			expectedConstants, err := os.ReadFile(path.Join(rootDir, "constants.go"))
 			require.Nil(t, err)
 
-			expectedEnvs, err := ioutil.ReadFile(path.Join(rootDir, ".image.env"))
+			expectedEnvs, err := os.ReadFile(path.Join(rootDir, ".image.env"))
 			require.Nil(t, err)
 
 			tempDir := t.TempDir()
@@ -170,10 +178,10 @@ func TestFunctional(t *testing.T) {
 
 			require.Nil(t, err)
 
-			actualConstants, err := ioutil.ReadFile(constantFile)
+			actualConstants, err := os.ReadFile(constantFile)
 			require.Nil(t, err)
 
-			actualEnv, err := ioutil.ReadFile(envFile)
+			actualEnv, err := os.ReadFile(envFile)
 			require.Nil(t, err)
 
 			require.Equal(t, string(expectedConstants), string(actualConstants))
@@ -187,10 +195,10 @@ func TestFunctional(t *testing.T) {
 				require.Nil(t, err)
 
 				for _, f := range files {
-					expectedContent, err := ioutil.ReadFile(path.Join(expectedDir, f.Name()))
+					expectedContent, err := os.ReadFile(path.Join(expectedDir, f.Name()))
 					require.Nil(t, err)
 
-					actualContent, err := ioutil.ReadFile(path.Join(actualDir, f.Name()))
+					actualContent, err := os.ReadFile(path.Join(actualDir, f.Name()))
 					require.Nil(t, err)
 
 					require.Equal(t, string(expectedContent), string(actualContent))
@@ -212,7 +220,7 @@ func copyDirFiles(inputDir string, outputDir string) error {
 	}
 
 	for _, f := range files {
-		content, err := ioutil.ReadFile(path.Join(inputDir, f.Name()))
+		content, err := os.ReadFile(path.Join(inputDir, f.Name()))
 		if err != nil {
 			return errors.Wrapf(err, "failed to read file %s", path.Join(inputDir, f.Name()))
 		}

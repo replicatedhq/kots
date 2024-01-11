@@ -56,30 +56,12 @@ func NewAirgapSmokeTest() Test {
 	}
 }
 
-func NewStrictPreflightChecks() Test {
-	return Test{
-		Name:        "Strict Preflight Checks",
-		Suite:       "strict-preflight-checks",
-		Namespace:   "strict-preflight-checks",
-		UpstreamURI: "strict-preflight-checks/automated",
-	}
-}
-
 func NewConfigValidation() Test {
 	return Test{
 		Name:        "Config Validation",
 		Suite:       "config-validation",
 		Namespace:   "config-validation",
 		UpstreamURI: "config-validation-panda/automated",
-	}
-}
-
-func NewMinimalRBACTest() Test {
-	return Test{
-		Name:        "Minimal RBAC",
-		Suite:       "minimal-rbac",
-		Namespace:   "minimal-rbac",
-		UpstreamURI: "minimal-rbac/automated",
 	}
 }
 
@@ -151,15 +133,6 @@ func MultiAppTest() Test {
 	}
 }
 
-func NewTagAndDigest() Test {
-	return Test{
-		Name:        "Tag and Digest",
-		Suite:       "tag-and-digest",
-		Namespace:   "tag-and-digest",
-		UpstreamURI: "tag-and-digest/automated",
-	}
-}
-
 func NewMinKotsVersion() Test {
 	return Test{
 		Name:                   "Min KOTS Version",
@@ -187,6 +160,24 @@ func NewRangeKotsVersion() Test {
 		Namespace:              "range-kots-version",
 		UpstreamURI:            "range-kots-version/automated",
 		SkipCompatibilityCheck: true,
+	}
+}
+
+func NewSupportBundle() Test {
+	return Test{
+		Name:        "Support Bundle",
+		Suite:       "support-bundle",
+		Namespace:   "support-bundle",
+		UpstreamURI: "support-bundle-halibut/automated",
+	}
+}
+
+func NewGitOps() Test {
+	return Test{
+		Name:        "GitOps",
+		Suite:       "gitops",
+		Namespace:   "gitops",
+		UpstreamURI: "gitops-bobcat/automated",
 	}
 }
 

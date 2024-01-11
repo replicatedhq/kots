@@ -5,7 +5,6 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os"
-	"path/filepath"
 	"strconv"
 
 	"github.com/gorilla/mux"
@@ -274,7 +273,7 @@ func (h *Handler) GetPreflightCommand(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	kotsKinds, err := kotsutil.LoadKotsKindsFromPath(filepath.Join(archivePath, "upstream"))
+	kotsKinds, err := kotsutil.LoadKotsKinds(archivePath)
 	if err != nil {
 		logger.Error(errors.Wrap(err, "failed to load kots kinds"))
 		w.WriteHeader(http.StatusInternalServerError)
@@ -366,7 +365,7 @@ func (h *Handler) PreflightsReports(w http.ResponseWriter, r *http.Request) {
 
 	go func() {
 		if err := reporting.GetReporter().SubmitPreflightData(license, foundApp.ID, clusterID, 0, true, "", false, "", ""); err != nil {
-			logger.Debugf("failed to send preflights data to replicated app: %v", err)
+			logger.Debugf("failed to submit preflight data: %v", err)
 			return
 		}
 	}()

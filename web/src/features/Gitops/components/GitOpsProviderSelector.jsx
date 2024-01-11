@@ -1,4 +1,4 @@
-import React, { useContext } from "react";
+import { useContext } from "react";
 import { Flex, Paragraph } from "../../../styles/common";
 import Select from "react-select";
 import { GitOpsContext, withGitOpsConsumer } from "../context";

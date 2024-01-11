@@ -1,4 +1,4 @@
-import React from "react";
+import { Component } from "react";
 import Modal from "react-modal";
 import Select from "react-select";
 import find from "lodash/find";
@@ -96,10 +96,7 @@ type State = {
   updateCheckerSpec: string;
 };
 
-export default class AutomaticUpdatesModal extends React.Component<
-  Props,
-  State
-> {
+export default class AutomaticUpdatesModal extends Component<Props, State> {
   constructor(props: Props) {
     super(props);
     let selectedSchedule = find(SCHEDULES, { value: props.updateCheckerSpec });

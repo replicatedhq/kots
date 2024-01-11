@@ -1,8 +1,10 @@
 package reporting
 
 import (
+	"github.com/replicatedhq/kots/pkg/store"
 	storetypes "github.com/replicatedhq/kots/pkg/store/types"
 	kotsv1beta1 "github.com/replicatedhq/kotskinds/apis/kots/v1beta1"
+	"k8s.io/client-go/kubernetes"
 )
 
 type Distribution int64
@@ -20,6 +22,7 @@ const (
 	Kurl
 	MicroK8s
 	Minikube
+	OKE
 	OpenShift
 	RKE2
 	Tanzu
@@ -33,6 +36,8 @@ type Reporter interface {
 var reporter Reporter
 
 type AirgapReporter struct {
+	clientset kubernetes.Interface
+	store     store.Store
 }
 
 var _ Reporter = &AirgapReporter{}
@@ -66,6 +71,8 @@ func (d Distribution) String() string {
 		return "microk8s"
 	case Minikube:
 		return "minikube"
+	case OKE:
+		return "oke"
 	case OpenShift:
 		return "openshift"
 	case RKE2:

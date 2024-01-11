@@ -1,4 +1,4 @@
-import React, { Component, Fragment } from "react";
+import { Children, Component, Fragment } from "react";
 import PropTypes from "prop-types";
 import classNames from "classnames";
 
@@ -43,13 +43,13 @@ export default class TabView extends Component {
   render() {
     const { className, children, separator } = this.props;
     const { currentTab } = this.state;
-    const childToRender = React.Children.toArray(children).find(
+    const childToRender = Children.toArray(children).find(
       (child) => child.props.name === currentTab
     );
     return (
       <div className={classNames("tabview", className)}>
         <div className="tabview-tabwrapper">
-          {React.Children.map(children, (child, idx) => {
+          {Children.map(children, (child, idx) => {
             const { displayText, name } = child.props;
             return (
               <Fragment key={name}>

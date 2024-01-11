@@ -1,4 +1,3 @@
-import React from "react";
 import size from "lodash/size";
 import findIndex from "lodash/findIndex";
 import { Link } from "react-router-dom";

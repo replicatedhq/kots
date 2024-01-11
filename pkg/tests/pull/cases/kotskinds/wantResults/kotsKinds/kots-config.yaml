@@ -1,0 +1,493 @@
+apiVersion: kots.io/v1beta1
+kind: Config
+metadata:
+  creationTimestamp: null
+  name: my-app
+spec:
+  groups:
+  - items:
+    - default: My Application
+      name: kots_app_app_title
+      title: My Application
+      type: text
+      value: ""
+    - default: https://cdn.example.com/my-app-icon.png
+      name: kots_app_app_icon
+      title: Application Icon
+      type: text
+      value: ""
+    - default: https://cdn.example.com/my-app.css
+      name: kots_app_branding_css_1
+      title: Branding CSS 1
+      type: text
+      value: ""
+    - default: Arial
+      name: kots_app_branding_fonts_1_font_family
+      title: Branding Fonts 1 Font Family
+      type: text
+      value: ""
+    - default: https://cdn.example.com/my-app-font.woff
+      name: kots_app_branding_fonts_1_font_sources_1
+      title: Branding Fonts 1 Font Sources 1
+      type: text
+      value: ""
+    - default: my-app
+      name: kots_app_application_ports_1_service_name
+      title: Application Ports 1 Service Name
+      type: text
+      value: ""
+    - default: "80"
+      name: kots_app_application_ports_1_service_port
+      title: Application Ports 1 Service Port
+      type: text
+      value: ""
+    - default: "80"
+      name: kots_app_application_ports_1_local_port
+      title: Application Ports 1 Local Port
+      type: text
+      value: ""
+    - default: http://localhost:80
+      name: kots_app_application_ports_1_application_url
+      title: Application Ports 1 Application URL
+      type: text
+      value: ""
+    - default: my release notes
+      name: kots_app_release_notes
+      title: Release Notes
+      type: text
+      value: ""
+    - default: "0"
+      name: kots_app_allow_rollback
+      title: Allow Rollback
+      type: bool
+      value: ""
+    - default: deployment/my-app
+      name: kots_app_status_informers_1
+      title: Status Informers 1
+      type: text
+      value: ""
+    - default: My Graph
+      name: kots_app_graphs_1_title
+      title: Graphs 1 Title
+      type: text
+      value: ""
+    - default: sum(kube_pod_container_resource_requests_cpu_cores)
+      name: kots_app_graphs_1_query
+      title: Graphs 1 Query
+      type: text
+      value: ""
+    - default: CPU
+      name: kots_app_graphs_1_legend
+      title: Graphs 1 Legend
+      type: text
+      value: ""
+    - default: sum(kube_pod_container_resource_requests_memory_bytes)
+      name: kots_app_graphs_1_queries_1_query
+      title: Graphs 1 Queries 1 Query
+      type: text
+      value: ""
+    - default: Memory
+      name: kots_app_graphs_1_queries_1_legend
+      title: Graphs 1 Queries 1 Legend
+      type: text
+      value: ""
+    - default: sum(kube_pod_container_resource_requests_storage_bytes)
+      name: kots_app_graphs_1_queries_2_query
+      title: Graphs 1 Queries 2 Query
+      type: text
+      value: ""
+    - default: Storage
+      name: kots_app_graphs_1_queries_2_legend
+      title: Graphs 1 Queries 2 Legend
+      type: text
+      value: ""
+    - default: "3600"
+      name: kots_app_graphs_1_duration_seconds
+      title: Graphs 1 Duration Seconds
+      type: text
+      value: ""
+    - default: bytes
+      name: kots_app_graphs_1_y_axis_format
+      title: Graphs 1 Y Axis Format
+      type: text
+      value: ""
+    - default: y-axis-template
+      name: kots_app_graphs_1_y_axis_template
+      title: Graphs 1 Y Axis Template
+      type: text
+      value: ""
+    - default: 1.0.0
+      name: kots_app_min_kots_version
+      title: Min Kots Version
+      type: text
+      value: ""
+    - default: 2.0.0
+      name: kots_app_target_kots_version
+      title: Target Kots Version
+      type: text
+      value: ""
+    - default: 1.25.0
+      name: kots_app_kubectl_version
+      title: Kubectl Version
+      type: text
+      value: ""
+    - default: 4.7.0
+      name: kots_app_kustomize_version
+      title: Kustomize Version
+      type: text
+      value: ""
+    - default: my-app-image:1.0.0
+      name: kots_app_additional_images_1
+      title: Additional Images 1
+      type: text
+      value: ""
+    - default: my-app-namespace
+      name: kots_app_additional_namespacse_1
+      title: Additional Namespaces 1
+      type: text
+      value: ""
+    - default: "0"
+      name: kots_app_require_minimal_rbac_privileges
+      title: Require Minimal RBAC Privileges
+      type: bool
+      value: ""
+    - default: "0"
+      name: kots_app_support_minimal_rbac_privileges
+      title: Support Minimal RBAC Privileges
+      type: bool
+      value: ""
+    - default: my-app-feature
+      name: kots_app_console_feature_flags_1
+      title: Console Feature Flags 1
+      type: text
+      value: ""
+    - default: registry.example.com
+      name: kots_app_replicated_registry_domain
+      title: Replicated Registry Domain
+      type: text
+      value: ""
+    - default: proxy.example.com
+      name: kots_app_proxy_registry_domain
+      title: Proxy Registry Domain
+      type: text
+      value: ""
+    - default: my-chart-release-name
+      name: v1beta1_helmchart_chart_release_name
+      title: v1beta1 Chart Release Name
+      type: text
+      value: ""
+    - default: "1"
+      name: v1beta1_helmchart_use_helm_install
+      title: v1beta1 Use Helm Install
+      type: bool
+      value: ""
+    - default: |
+        foo: bar
+        bar: baz
+      name: v1beta1_helmchart_values
+      title: v1beta1 Values
+      type: textarea
+      value: ""
+    - default: "1"
+      name: v1beta1_helmchart_exclude
+      title: v1beta1 Exclude
+      type: bool
+      value: ""
+    - default: v3
+      name: v1beta1_helmchart_helm_version
+      title: v1beta1 Helm Version
+      type: text
+      value: ""
+    - default: my-namespace
+      name: v1beta1_helmchart_namespace
+      title: v1beta1 Namespace
+      type: text
+      value: ""
+    - default: "1"
+      name: v1beta1_helmchart_optional_values_1_when
+      title: v1beta1 Optional Values 1 When
+      type: bool
+      value: ""
+    - default: "1"
+      name: v1beta1_helmchart_optional_values_1_recursive_merge
+      title: v1beta1 Optional Values 1 Recursive Merge
+      type: bool
+      value: ""
+    - default: |
+        foo: bar
+        bar: baz
+      name: v1beta1_helmchart_optional_values_1_values
+      title: v1beta1 Optional Values 1 Values
+      type: textarea
+      value: ""
+    - default: |
+        foo: bar
+        bar: baz
+      name: v1beta1_helmchart_builder
+      title: v1beta1 Builder
+      type: textarea
+      value: ""
+    - default: "1"
+      name: v1beta1_helmchart_weight
+      title: v1beta1 Weight
+      type: text
+      value: ""
+    - default: --timeout 60s
+      name: v1beta1_helmchart_helm_upgrade_flags_1
+      title: v1beta1 Helm Upgrade Flags 1
+      type: text
+      value: ""
+    - default: my-chart-release-name
+      name: v1beta2_helmchart_release_name
+      title: v1beta2 Release Name
+      type: text
+      value: ""
+    - default: |
+        foo: bar
+        bar: baz
+      name: v1beta2_helmchart_values
+      title: v1beta2 Values
+      type: textarea
+      value: ""
+    - default: "1"
+      name: v1beta2_helmchart_exclude
+      title: v1beta2 Exclude
+      type: bool
+      value: ""
+    - default: my-namespace
+      name: v1beta2_helmchart_namespace
+      title: v1beta2 Namespace
+      type: text
+      value: ""
+    - default: "1"
+      name: v1beta2_helmchart_optional_values_1_when
+      title: v1beta2 Optional Values 1 When
+      type: bool
+      value: ""
+    - default: "1"
+      name: v1beta2_helmchart_optional_values_1_recursive_merge
+      title: v1beta2 Optional Values 1 Recursive Merge
+      type: bool
+      value: ""
+    - default: |
+        foo: bar
+        bar: baz
+      name: v1beta2_helmchart_optional_values_1_values
+      title: v1beta2 Optional Values 1 Values
+      type: textarea
+      value: ""
+    - default: |
+        foo: bar
+        bar: baz
+      name: v1beta2_helmchart_builder
+      title: v1beta2 Builder
+      type: textarea
+      value: ""
+    - default: "1"
+      name: v1beta2_helmchart_weight
+      title: v1beta2 Weight
+      type: text
+      value: ""
+    - default: --timeout 70s
+      name: v1beta2_helmchart_helm_upgrade_flags_1
+      title: v1beta2 Helm Upgrade Flags 1
+      type: text
+      value: ""
+    - default: my-exec-collector-name
+      name: v1beta2_supportbundle_collectors_exec_collector_name
+      title: v1beta2 Exec Collector Name
+      type: text
+      value: ""
+    - default: my-exec-name
+      name: v1beta2_supportbundle_collectors_exec_name
+      title: v1beta2 Exec Name
+      type: text
+      value: ""
+    - default: my-exec-selector-0
+      name: v1beta2_supportbundle_collectors_exec_selector_0
+      title: v1beta2 Exec Selector 0
+      type: text
+      value: ""
+    - default: my-exec-command-0
+      name: v1beta2_supportbundle_collectors_exec_command_0
+      title: v1beta2 Exec Command 0
+      type: text
+      value: ""
+    - default: 70s
+      name: v1beta2_supportbundle_collectors_exec_timeout
+      title: v1beta2 Exec Timeout
+      type: text
+      value: ""
+    - default: my-logs-collector-name
+      name: v1beta2_supportbundle_collectors_logs_collector_name
+      title: v1beta2 Logs Collector Name
+      type: text
+      value: ""
+    - default: my-logs-name
+      name: v1beta2_supportbundle_collectors_logs_name
+      title: v1beta2 Logs Name
+      type: text
+      value: ""
+    - default: my-logs-selector-0
+      name: v1beta2_supportbundle_collectors_logs_selector_0
+      title: v1beta2 Logs Selector 0
+      type: text
+      value: ""
+    - default: < 1.16.0
+      name: v1beta2_supportbundle_analyzers_cluster_version_outcomes_fail_when
+      title: v1beta2 Cluster Version Outcomes Fail When
+      type: text
+      value: ""
+    - default: Cluster version is too old
+      name: v1beta2_supportbundle_analyzers_cluster_version_outcomes_fail_message
+      title: v1beta2 Cluster Version Outcomes Fail Message
+      type: text
+      value: ""
+    - default: Cluster version is new enough
+      name: v1beta2_supportbundle_analyzers_cluster_version_outcomes_pass_message
+      title: v1beta2 Cluster Version Outcomes Pass Message
+      type: text
+      value: ""
+    - default: == gvisor
+      name: v1beta2_supportbundle_analyzers_container_runtime_outcomes_fail_when
+      title: v1beta2 Container Runtime Outcomes Fail When
+      type: text
+      value: ""
+    - default: Container runtime is gvisor
+      name: v1beta2_supportbundle_analyzers_container_runtime_outcomes_fail_message
+      title: v1beta2 Container Runtime Outcomes Fail Message
+      type: text
+      value: ""
+    - default: Container runtime is not gvisor
+      name: v1beta2_supportbundle_analyzers_container_runtime_outcomes_pass_message
+      title: v1beta2 Container Runtime Outcomes Pass Message
+      type: text
+      value: ""
+    - default: my-text-analyze-check-name
+      name: v1beta2_supportbundle_analyzers_text_analyze_check_name
+      title: v1beta2 Text Analyze Check Name
+      type: text
+      value: ""
+    - default: "0"
+      name: v1beta2_supportbundle_analyzers_text_analyze_exclude
+      title: v1beta2 Text Analyze Exclude
+      type: bool
+      value: ""
+    - default: "0"
+      name: v1beta2_supportbundle_analyzers_text_analyze_ignore_if_no_files
+      title: v1beta2 Text Analyze Ignore If No Files
+      type: bool
+      value: ""
+    - default: my-text-analyze-file-name
+      name: v1beta2_supportbundle_analyzers_text_analyze_file_name
+      title: v1beta2 Text Analyze File Name
+      type: text
+      value: ""
+    - default: contains
+      name: v1beta2_supportbundle_analyzers_text_analyze_outcomes_fail_when
+      title: v1beta2 Text Analyze Outcomes Fail When
+      type: text
+      value: ""
+    - default: Text analyze failed
+      name: v1beta2_supportbundle_analyzers_text_analyze_outcomes_fail_message
+      title: v1beta2 Text Analyze Outcomes Fail Message
+      type: text
+      value: ""
+    - default: Text analyze passed
+      name: v1beta2_supportbundle_analyzers_text_analyze_outcomes_pass_message
+      title: v1beta2 Text Analyze Outcomes Pass Message
+      type: text
+      value: ""
+    - default: my-text-analyze-regex-groups
+      name: v1beta2_supportbundle_analyzers_text_analyze_regex_groups
+      title: v1beta2 Text Analyze Regex Groups
+      type: text
+      value: ""
+    - default: my-node-resources-check-name
+      name: v1beta2_supportbundle_analyzers_node_resources_check_name
+      title: v1beta2 Node Resources Check Name
+      type: text
+      value: ""
+    - default: < 1
+      name: v1beta2_supportbundle_analyzers_node_resources_outcomes_fail_when
+      title: v1beta2 Node Resources Outcomes Fail When
+      type: text
+      value: ""
+    - default: Node resources are too low
+      name: v1beta2_supportbundle_analyzers_node_resources_outcomes_fail_message
+      title: v1beta2 Node Resources Outcomes Fail Message
+      type: text
+      value: ""
+    - default: Node resources are high enough
+      name: v1beta2_supportbundle_analyzers_node_resources_outcomes_pass_message
+      title: v1beta2 Node Resources Outcomes Pass Message
+      type: text
+      value: ""
+    - default: my-run-pod-name
+      name: v1beta2_preflight_collectors_run_pod_name
+      title: v1beta2 Run Pod Name
+      type: text
+      value: ""
+    - default: my-run-pod-namespace
+      name: v1beta2_preflight_collectors_run_pod_namespace
+      title: v1beta2 Run Pod Namespace
+      type: text
+      value: ""
+    - default: my-pod-spec-containers-0-name
+      name: v1beta2_preflight_collectors_run_pod_pod_spec_containers_0_name
+      title: v1beta2 Pod Spec Containers 0 Name
+      type: text
+      value: ""
+    - default: my-pod-spec-containers-0-image
+      name: v1beta2_preflight_collectors_run_pod_pod_spec_containers_0_image
+      title: v1beta2 Pod Spec Containers 0 Image
+      type: text
+      value: ""
+    - default: "1"
+      name: v1beta2_preflight_collectors_run_pod_pod_spec_containers_0_security_context_allow_privilege_escalation
+      title: v1beta2 Pod Spec Containers 0 Security Context Allow Privilege Escalation
+      type: bool
+      value: ""
+    - default: my-pod-spec-containers-0-command-0
+      name: v1beta2_preflight_collectors_run_pod_pod_spec_containers_0_command_0
+      title: v1beta2 Pod Spec Containers 0 Command 0
+      type: text
+      value: ""
+    - default: my-pod-spec-containers-0-args-0
+      name: v1beta2_preflight_collectors_run_pod_pod_spec_containers_0_args_0
+      title: v1beta2 Pod Spec Containers 0 Args 0
+      type: text
+      value: ""
+    - default: my-text-analyze-check-name
+      name: v1beta2_preflight_analyzers_text_analyze_check_name
+      title: v1beta2 Text Analyze Check Name
+      type: text
+      value: ""
+    - default: my-text-analyze-file-name
+      name: v1beta2_preflight_analyzers_text_analyze_file_name
+      title: v1beta2 Text Analyze File Name
+      type: text
+      value: ""
+    - default: my-text-analyze-regex-groups
+      name: v1beta2_preflight_analyzers_text_analyze_regex_groups
+      title: v1beta2 Text Analyze Regex Groups
+      type: text
+      value: ""
+    - default: Loss < 5
+      name: v1beta2_preflight_analyzers_text_analyze_outcomes_pass_when
+      title: v1beta2 Text Analyze Outcomes Pass When
+      type: text
+      value: ""
+    - default: my-text-analyze-outcomes-pass-message
+      name: v1beta2_preflight_analyzers_text_analyze_outcomes_pass_message
+      title: v1beta2 Text Analyze Outcomes Pass Message
+      type: text
+      value: ""
+    - default: my-text-analyze-outcomes-fail-message
+      name: v1beta2_preflight_analyzers_text_analyze_outcomes_fail_message
+      title: v1beta2 Text Analyze Outcomes Fail Message
+      type: text
+      value: ""
+    name: setup
+    title: Setup
+status: {}

@@ -4,13 +4,24 @@ import (
 	"encoding/base64"
 	"fmt"
 	"net/http"
+	"sync"
+	"time"
 
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/store"
 	"github.com/replicatedhq/kots/pkg/util"
 )
 
+var onlineAppInfoMtx sync.Mutex
+
 func (r *OnlineReporter) SubmitAppInfo(appID string) error {
+	// make sure events are reported in order
+	onlineAppInfoMtx.Lock()
+	defer func() {
+		time.Sleep(1 * time.Second)
+		onlineAppInfoMtx.Unlock()
+	}()
+
 	a, err := store.GetStore().GetApp(appID)
 	if err != nil {
 		if store.GetStore().IsNotFound(err) {

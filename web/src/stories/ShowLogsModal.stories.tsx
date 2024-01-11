@@ -1,7 +1,7 @@
-import React from "react";
 import { ComponentStory, ComponentMeta } from "@storybook/react";
 import { MemoryRouter } from "react-router-dom";
 import ShowLogsModal from "@src/components/modals/ShowLogsModal";
+import { useState } from "react";
 
 export default {
   title: "Example/ShowLogsModal",
@@ -9,7 +9,7 @@ export default {
 } as ComponentMeta<typeof ShowLogsModal>;
 
 const Template: ComponentStory<typeof ShowLogsModal> = (args) => {
-  const [selectedTab, setSelectedTab] = React.useState("dryrunStdout");
+  const [selectedTab, setSelectedTab] = useState("dryrunStdout");
   const renderLogsTab = () => {
     const isHelmManaged = false;
     const filterNonHelmTabs = (tab: string) => {

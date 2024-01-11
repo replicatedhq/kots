@@ -1,8 +1,8 @@
 // This hook has not been integrated yet.
-import React from "react";
-import { useQuery, UseQueryResult } from "react-query";
+import { useQuery, UseQueryResult } from "@tanstack/react-query";
 import { Utilities } from "../../../utilities/utilities";
 import { App } from "@types";
+import { ReactNode } from "react";
 
 async function getApps({
   apiEndpoint = process.env.API_ENDPOINT,
@@ -44,7 +44,7 @@ function useApps({
 }> {
   const query: UseQueryResult<{
     apps: App[] | null;
-  }> = useQuery("apps", () => _getApps(), {
+  }> = useQuery(["apps"], () => _getApps(), {
     refetchInterval,
   });
 
@@ -54,9 +54,7 @@ function useApps({
 function UseApps({
   children,
 }: {
-  children: (
-    props: UseQueryResult<{ apps: App[] | null }, Error>
-  ) => React.ReactNode;
+  children: (props: UseQueryResult<{ apps: App[] | null }, Error>) => ReactNode;
 }) {
   const query = useApps();
 

@@ -1,10 +1,10 @@
-import * as React from "react";
+import { Component } from "react";
 import semverjs from "semver";
 import { getBuildVersion } from "@src/utilities/utilities";
 import "@src/scss/components/shared/Footer.scss";
 import Icon from "../Icon";
 
-export class Footer extends React.Component {
+export class Footer extends Component {
   state = {
     targetKotsVersion: "",
   };

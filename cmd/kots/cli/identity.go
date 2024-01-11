@@ -3,7 +3,7 @@ package cli
 import (
 	"context"
 	"fmt"
-	"io/ioutil"
+	"os"
 
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/identity"
@@ -65,7 +65,7 @@ func IdentityServiceInstallCmd() *cobra.Command {
 
 			identityConfig := kotsv1beta1.IdentityConfig{}
 			if identityConfigPath := v.GetString("identity-config"); identityConfigPath != "" {
-				content, err := ioutil.ReadFile(identityConfigPath)
+				content, err := os.ReadFile(identityConfigPath)
 				if err != nil {
 					return errors.Wrap(err, "failed to read identity service config file")
 				}
@@ -132,7 +132,7 @@ func IdentityServiceConfigureCmd() *cobra.Command {
 
 			identityConfig := kotsv1beta1.IdentityConfig{}
 			if identityConfigPath := v.GetString("identity-config"); identityConfigPath != "" {
-				content, err := ioutil.ReadFile(identityConfigPath)
+				content, err := os.ReadFile(identityConfigPath)
 				if err != nil {
 					return errors.Wrap(err, "failed to read identity service config file")
 				}

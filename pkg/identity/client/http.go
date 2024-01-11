@@ -6,7 +6,6 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"encoding/base64"
-	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
@@ -95,5 +94,5 @@ func getKurlProxyTLSCert() ([]byte, error) {
 	if certPath == "" {
 		return nil, nil
 	}
-	return ioutil.ReadFile(certPath)
+	return os.ReadFile(certPath)
 }

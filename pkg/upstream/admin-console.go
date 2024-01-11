@@ -101,7 +101,7 @@ func GenerateAdminConsoleFiles(renderDir string, options types.WriteOptions) ([]
 
 func loadUpstreamSettingsFromFiles(settings *UpstreamSettings, renderDir string, files []os.FileInfo) error {
 	for _, fi := range files {
-		data, err := ioutil.ReadFile(path.Join(renderDir, "admin-console", fi.Name()))
+		data, err := os.ReadFile(path.Join(renderDir, "admin-console", fi.Name()))
 		if err != nil {
 			return errors.Wrap(err, "failed to read file")
 		}

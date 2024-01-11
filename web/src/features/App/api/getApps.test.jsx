@@ -1,8 +1,7 @@
 /**
  * @jest-environment jsdom
  */
-import React from "react";
-import { QueryClient, QueryClientProvider } from "react-query";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { renderHook } from "@testing-library/react-hooks";
 import { getApps, useApps } from "./getApps";
 
@@ -21,7 +20,7 @@ describe("getApps", () => {
       };
     });
     it("calls _getApps", async () => {
-      const getAppsSpy = jest.fn(() => Promise.resolve());
+      const getAppsSpy = jest.fn(() => Promise.resolve({}));
 
       const { result, waitFor } = renderHook(
         () => useApps({ _getApps: getAppsSpy }),

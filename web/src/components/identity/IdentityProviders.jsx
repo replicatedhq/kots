@@ -1,4 +1,4 @@
-import React, { Component } from "react";
+import { Component } from "react";
 import { KotsPageTitle } from "@components/Head";
 import ReactTooltip from "react-tooltip";
 import isEmpty from "lodash/isEmpty";

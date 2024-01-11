@@ -1,4 +1,4 @@
-import React, { Component, Fragment } from "react";
+import { Component, Fragment } from "react";
 import classNames from "classnames";
 import dayjs from "dayjs";
 import { KotsPageTitle } from "@components/Head";
@@ -250,7 +250,11 @@ export class KurlClusterManagement extends Component {
         displayAddNode: true,
       },
       async () => {
-        await this.generateWorkerAddNodeCommand();
+        if (this.state.selectedNodeType === "secondary") {
+          await this.generateWorkerAddNodeCommand();
+        } else {
+          await this.generatePrimaryAddNodeCommand();
+        }
       }
     );
   };

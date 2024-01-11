@@ -5,7 +5,7 @@ on:
   pull_request:
 
 env:
-  TRIVY_VERSION: 0.44.1
+  TRIVY_VERSION: 0.47.0
 
 name: License scan
 
@@ -13,16 +13,18 @@ jobs:
   license:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: Setup Go
-        uses: actions/setup-go@v4
+        uses: actions/setup-go@v5
+        with:
+          go-version: '^1.20.0'
 
       - name: Install Go deps
         run: go mod download
 
       - name: Setup Node.js
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
           cache: yarn
           cache-dependency-path: web/yarn.lock
@@ -40,7 +42,7 @@ jobs:
         run: trivy fs --scanners license --skip-dirs ".github" --skip-files "package-lock.json,bin/scan-images/package-lock.json" . | tee license-report.txt
 
       - name: Upload license report artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: license-report
           path: license-report.txt

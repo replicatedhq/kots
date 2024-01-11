@@ -1,0 +1,28 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: example-nginx-tag-digest
+  labels:
+    app: example
+    component: nginx-tag-digest
+spec:
+  selector:
+    matchLabels:
+      app: example
+      component: nginx-tag-digest
+  template:
+    metadata:
+      labels:
+        app: example
+        component: nginx-tag-digest
+    spec:
+      containers:
+        - name: nginx
+          image: nginx:1@sha256:f26fbadb0acab4a21ecb4e337a326907e61fbec36c9a9b52e725669d99ed1261
+          resources:
+            limits:
+              memory: '256Mi'
+              cpu: '500m'
+            requests:
+              memory: '32Mi'
+              cpu: '100m'

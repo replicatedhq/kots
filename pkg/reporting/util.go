@@ -61,12 +61,21 @@ func GetReportingInfoHeaders(reportingInfo *types.ReportingInfo) map[string]stri
 	if reportingInfo.KURLInstallID != "" {
 		headers["X-Replicated-KurlInstallID"] = reportingInfo.KURLInstallID
 	}
+	if reportingInfo.EmbeddedClusterID != "" {
+		headers["X-Replicated-EmbeddedClusterID"] = reportingInfo.EmbeddedClusterID
+	}
 
 	headers["X-Replicated-KurlNodeCountTotal"] = strconv.Itoa(reportingInfo.KurlNodeCountTotal)
 	headers["X-Replicated-KurlNodeCountReady"] = strconv.Itoa(reportingInfo.KurlNodeCountReady)
 
 	headers["X-Replicated-IsGitOpsEnabled"] = strconv.FormatBool(reportingInfo.IsGitOpsEnabled)
 	headers["X-Replicated-GitOpsProvider"] = reportingInfo.GitOpsProvider
+
+	headers["X-Replicated-SnapshotProvider"] = reportingInfo.SnapshotProvider
+	headers["X-Replicated-SnapshotFullSchedule"] = reportingInfo.SnapshotFullSchedule
+	headers["X-Replicated-SnapshotFullTTL"] = reportingInfo.SnapshotFullTTL
+	headers["X-Replicated-SnapshotPartialSchedule"] = reportingInfo.SnapshotPartialSchedule
+	headers["X-Replicated-SnapshotPartialTTL"] = reportingInfo.SnapshotPartialTTL
 
 	if reportingInfo.K8sDistribution != "" {
 		headers["X-Replicated-K8sDistribution"] = reportingInfo.K8sDistribution

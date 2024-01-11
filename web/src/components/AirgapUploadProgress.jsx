@@ -1,4 +1,3 @@
-import React from "react";
 import Loader from "./shared/Loader";
 import {
   formatByteSize,
@@ -10,9 +9,10 @@ import fetch from "../utilities/fetchWithTimeout";
 import "@src/scss/components/AirgapUploadProgress.scss";
 import get from "lodash/get";
 import Icon from "./Icon";
+import { Component } from "react";
 let processingImages = null;
 
-class AirgapUploadProgress extends React.Component {
+class AirgapUploadProgress extends Component {
   constructor(props) {
     super(props);
 

@@ -1,10 +1,9 @@
 include Makefile.build.mk
-CURRENT_USER := $(shell id -u -n)
-MINIO_TAG ?= RELEASE.2023-09-23T03-47-50Z
-MC_TAG ?= RELEASE.2023-09-22T05-07-46Z
-RQLITE_TAG ?= 7.21.4
-DEX_TAG ?= v2.37.0
-LVP_TAG ?= v0.5.4
+CURRENT_USER := $(if $(GITHUB_USER),$(GITHUB_USER),$(shell id -u -n))
+MINIO_TAG ?= 0.20231101.183725-r1
+RQLITE_TAG ?= 8.16.3-r0
+DEX_TAG ?= 2.37.0-r12
+LVP_TAG ?= v0.5.6
 
 define sendMetrics
 @if [ -z "${PROJECT_NAME}" ]; then \
@@ -110,7 +109,7 @@ debug: debug-build
 	LOG_LEVEL=$(LOG_LEVEL) dlv --listen=:2345 --headless=true --api-version=2 exec ./bin/kotsadm-debug api
 
 .PHONY: build-ttl.sh
-build-ttl.sh: build
+build-ttl.sh: kots build
 	source .image.env && ${MAKE} -C web build-kotsadm
 	docker build -f deploy/Dockerfile -t ttl.sh/${CURRENT_USER}/kotsadm:24h .
 	docker push ttl.sh/${CURRENT_USER}/kotsadm:24h
@@ -119,43 +118,30 @@ build-ttl.sh: build
 all-ttl.sh: build-ttl.sh
 	source .image.env && IMAGE=ttl.sh/${CURRENT_USER}/kotsadm-migrations:24h make -C migrations build_schema
 
-	docker pull minio/minio:${MINIO_TAG}
-	docker tag minio/minio:${MINIO_TAG} ttl.sh/${CURRENT_USER}/minio:${MINIO_TAG}
+	docker pull kotsadm/minio:${MINIO_TAG}
+	docker tag kotsadm/minio:${MINIO_TAG} ttl.sh/${CURRENT_USER}/minio:${MINIO_TAG}
 	docker push ttl.sh/${CURRENT_USER}/minio:${MINIO_TAG}
 
-	docker pull minio/mc:${MC_TAG}
-	docker tag minio/mc:${MC_TAG} ttl.sh/${CURRENT_USER}/mc:${MC_TAG}
-	docker push ttl.sh/${CURRENT_USER}/mc:${MC_TAG}
-
-	docker pull rqlite/rqlite:${RQLITE_TAG}
-	docker tag rqlite/rqlite:${RQLITE_TAG} ttl.sh/${CURRENT_USER}/rqlite:${RQLITE_TAG}
+	docker pull kotsadm/rqlite:${RQLITE_TAG}
+	docker tag kotsadm/rqlite:${RQLITE_TAG} ttl.sh/${CURRENT_USER}/rqlite:${RQLITE_TAG}
 	docker push ttl.sh/${CURRENT_USER}/rqlite:${RQLITE_TAG}
-
-.PHONY: build-alpha
-build-alpha:
-	docker build --pull -f deploy/Dockerfile --build-arg version=${GIT_TAG} -t kotsadm/kotsadm:alpha .
-	docker push kotsadm/kotsadm:alpha
 
 .PHONY: build-release
 build-release:
-	docker build --pull -f deploy/Dockerfile --build-arg version=${GIT_TAG} -t kotsadm/kotsadm:${GIT_TAG} .
-	docker push kotsadm/kotsadm:${GIT_TAG}
 	mkdir -p bin/docker-archive/kotsadm
-	skopeo copy docker-daemon:kotsadm/kotsadm:${GIT_TAG} docker-archive:bin/docker-archive/kotsadm/${GIT_TAG}
+	skopeo copy docker://kotsadm/kotsadm:${GIT_TAG} docker-archive:bin/docker-archive/kotsadm/${GIT_TAG}
 
-	docker tag kotsadm/kotsadm:${GIT_TAG} kotsadm/kotsadm:v0.0.0-nightly
-	docker push kotsadm/kotsadm:v0.0.0-nightly
+	mkdir -p bin/docker-archive/kotsadm-migrations
+	skopeo copy docker://kotsadm/kotsadm-migrations:${GIT_TAG} docker-archive:bin/docker-archive/kotsadm-migrations/${GIT_TAG}
 
-	docker build --pull -f deploy/dex.Dockerfile -t kotsadm/dex:${DEX_TAG} --build-arg TAG=${DEX_TAG} .
-	docker push kotsadm/dex:${DEX_TAG}
 	mkdir -p bin/docker-archive/dex
 	skopeo copy docker://kotsadm/dex:${DEX_TAG} docker-archive:bin/docker-archive/dex/${DEX_TAG}
 
 	mkdir -p bin/docker-archive/minio
-	skopeo copy docker://minio/minio:${MINIO_TAG} docker-archive:bin/docker-archive/minio/${MINIO_TAG}
+	skopeo copy docker://kotsadm/minio:${MINIO_TAG} docker-archive:bin/docker-archive/minio/${MINIO_TAG}
 
-	mkdir -p bin/docker-archive/mc
-	skopeo copy docker://minio/mc:${MC_TAG} docker-archive:bin/docker-archive/mc/${MC_TAG}
+	mkdir -p bin/docker-archive/rqlite
+	skopeo copy docker://kotsadm/rqlite:${RQLITE_TAG} docker-archive:bin/docker-archive/rqlite/${RQLITE_TAG}
 
 	mkdir -p bin/docker-archive/local-volume-provider
 	skopeo copy docker://replicated/local-volume-provider:${LVP_TAG} docker-archive:bin/docker-archive/local-volume-provider/${LVP_TAG}

@@ -1,4 +1,3 @@
-import React from "react";
 // TODO: add type checking support for styled components or add a global ignore
 // @ts-ignore
 import styled from "styled-components";

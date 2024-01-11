@@ -2,7 +2,6 @@ const ReactRefreshWebpackPlugin = require("@pmmmwh/react-refresh-webpack-plugin"
 const ESLintPlugin = require("eslint-webpack-plugin");
 const webpack = require("webpack");
 const path = require("path");
-const srcPath = path.join(__dirname, "src");
 
 module.exports = {
   mode: "development",

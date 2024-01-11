@@ -14,7 +14,7 @@ spec:
       restartPolicy: Always
       containers:
         - name: kotsadm
-          image: kotsadm
+          image: kotsadm-api
           imagePullPolicy: IfNotPresent
           resources:
             limits:
@@ -26,10 +26,11 @@ spec:
           ports:
             - name: http
               containerPort: 3000
-            - name: debug
-              containerPort: 9229
           env:
             - name: POD_NAMESPACE
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.namespace
+      securityContext:
+        runAsUser: 1001
+        fsGroup: 1001

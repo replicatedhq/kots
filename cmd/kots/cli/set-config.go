@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"net/url"
 	"os"
@@ -176,7 +175,7 @@ func getConfigValuesFromArgs(v *viper.Viper, args []string) ([]byte, error) {
 			return nil, errors.New("--config-file cannot be used with other key/value arguments")
 		}
 
-		data, err := ioutil.ReadFile(fileName)
+		data, err := os.ReadFile(fileName)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to load config from file")
 		}
@@ -206,7 +205,7 @@ func getConfigValuesFromArgs(v *viper.Viper, args []string) ([]byte, error) {
 				Value: value,
 			}
 		} else if valueFile != "" {
-			data, err := ioutil.ReadFile(valueFile)
+			data, err := os.ReadFile(valueFile)
 			if err != nil {
 				return nil, errors.Wrap(err, "failed to load value from file")
 			}

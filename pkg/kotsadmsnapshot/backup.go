@@ -7,7 +7,6 @@ import (
 	"io/ioutil"
 	"math"
 	"os"
-	"path/filepath"
 	"strconv"
 	"time"
 
@@ -58,7 +57,7 @@ func CreateApplicationBackup(ctx context.Context, a *apptypes.App, isScheduled b
 		zap.String("appID", a.ID),
 		zap.Int64("sequence", parentSequence))
 
-	archiveDir, err := ioutil.TempDir("", "kotsadm")
+	archiveDir, err := os.MkdirTemp("", "kotsadm")
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create temp dir")
 	}
@@ -69,8 +68,23 @@ func CreateApplicationBackup(ctx context.Context, a *apptypes.App, isScheduled b
 		return nil, errors.Wrap(err, "failed to get app version archive")
 	}
 
+	cfg, err := k8sutil.GetClusterConfig()
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get cluster config")
+	}
+
+	clientset, err := kubernetes.NewForConfig(cfg)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to create clientset")
+	}
+
+	veleroClient, err := veleroclientv1.NewForConfig(cfg)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to create velero clientset")
+	}
+
 	kotsadmNamespace := util.PodNamespace
-	kotsadmVeleroBackendStorageLocation, err := kotssnapshot.FindBackupStoreLocation(ctx, kotsadmNamespace)
+	kotsadmVeleroBackendStorageLocation, err := kotssnapshot.FindBackupStoreLocation(ctx, clientset, veleroClient, kotsadmNamespace)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to find backupstoragelocations")
 	}
@@ -79,7 +93,7 @@ func CreateApplicationBackup(ctx context.Context, a *apptypes.App, isScheduled b
 		return nil, errors.New("no backup store location found")
 	}
 
-	kotsKinds, err := kotsutil.LoadKotsKindsFromPath(filepath.Join(archiveDir, "upstream"))
+	kotsKinds, err := kotsutil.LoadKotsKinds(archiveDir)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to load kots kinds from path")
 	}
@@ -160,24 +174,9 @@ func CreateApplicationBackup(ctx context.Context, a *apptypes.App, isScheduled b
 		}
 	}
 
-	clientset, err := k8sutil.GetClientset()
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to create k8s clientset")
-	}
-
 	err = excludeShutdownPodsFromBackup(ctx, clientset, veleroBackup)
 	if err != nil {
 		logger.Error(errors.Wrap(err, "failed to exclude shutdown pods from backup"))
-	}
-
-	cfg, err := k8sutil.GetClusterConfig()
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to get cluster config")
-	}
-
-	veleroClient, err := veleroclientv1.NewForConfig(cfg)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to create clientset")
 	}
 
 	backup, err := veleroClient.Backups(kotsadmVeleroBackendStorageLocation.Namespace).Create(ctx, veleroBackup, metav1.CreateOptions{})
@@ -191,9 +190,14 @@ func CreateApplicationBackup(ctx context.Context, a *apptypes.App, isScheduled b
 func CreateInstanceBackup(ctx context.Context, cluster *downstreamtypes.Downstream, isScheduled bool) (*velerov1.Backup, error) {
 	logger.Debug("creating instance backup")
 
-	clientset, err := k8sutil.GetClientset()
+	cfg, err := k8sutil.GetClusterConfig()
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to create k8s clientset")
+		return nil, errors.Wrap(err, "failed to get cluster config")
+	}
+
+	clientset, err := kubernetes.NewForConfig(cfg)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to create clientset")
 	}
 
 	isKurl, err := kurl.IsKurl(clientset)
@@ -263,7 +267,7 @@ func CreateInstanceBackup(ctx context.Context, cluster *downstreamtypes.Downstre
 			return nil, errors.Wrapf(err, "failed to get app version archive for app %s", a.Slug)
 		}
 
-		kotsKinds, err := kotsutil.LoadKotsKindsFromPath(filepath.Join(archiveDir, "upstream"))
+		kotsKinds, err := kotsutil.LoadKotsKinds(archiveDir)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to load kots kinds from path")
 		}
@@ -310,7 +314,12 @@ func CreateInstanceBackup(ctx context.Context, cluster *downstreamtypes.Downstre
 		backupHooks.Resources = append(backupHooks.Resources, veleroBackup.Spec.Hooks.Resources...)
 	}
 
-	kotsadmVeleroBackendStorageLocation, err := kotssnapshot.FindBackupStoreLocation(ctx, kotsadmNamespace)
+	veleroClient, err := veleroclientv1.NewForConfig(cfg)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to create velero clientset")
+	}
+
+	kotsadmVeleroBackendStorageLocation, err := kotssnapshot.FindBackupStoreLocation(ctx, clientset, veleroClient, kotsadmNamespace)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to find backupstoragelocations")
 	}
@@ -398,16 +407,6 @@ func CreateInstanceBackup(ctx context.Context, cluster *downstreamtypes.Downstre
 		logger.Error(errors.Wrap(err, "failed to exclude shutdown pods from backup"))
 	}
 
-	cfg, err := k8sutil.GetClusterConfig()
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to get cluster config")
-	}
-
-	veleroClient, err := veleroclientv1.NewForConfig(cfg)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to create velero clientset")
-	}
-
 	backup, err := veleroClient.Backups(kotsadmVeleroBackendStorageLocation.Namespace).Create(ctx, veleroBackup, metav1.CreateOptions{})
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create velero backup")
@@ -422,12 +421,17 @@ func ListBackupsForApp(ctx context.Context, kotsadmNamespace string, appID strin
 		return nil, errors.Wrap(err, "failed to get cluster config")
 	}
 
-	veleroClient, err := veleroclientv1.NewForConfig(cfg)
+	clientset, err := kubernetes.NewForConfig(cfg)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create clientset")
 	}
 
-	backendStorageLocation, err := kotssnapshot.FindBackupStoreLocation(ctx, kotsadmNamespace)
+	veleroClient, err := veleroclientv1.NewForConfig(cfg)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to create velero clientset")
+	}
+
+	backendStorageLocation, err := kotssnapshot.FindBackupStoreLocation(ctx, clientset, veleroClient, kotsadmNamespace)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to find backupstoragelocations")
 	}
@@ -550,12 +554,17 @@ func ListInstanceBackups(ctx context.Context, kotsadmNamespace string) ([]*types
 		return nil, errors.Wrap(err, "failed to get cluster config")
 	}
 
-	veleroClient, err := veleroclientv1.NewForConfig(cfg)
+	clientset, err := kubernetes.NewForConfig(cfg)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create clientset")
 	}
 
-	backendStorageLocation, err := kotssnapshot.FindBackupStoreLocation(ctx, kotsadmNamespace)
+	veleroClient, err := veleroclientv1.NewForConfig(cfg)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to create velero clientset")
+	}
+
+	backendStorageLocation, err := kotssnapshot.FindBackupStoreLocation(ctx, clientset, veleroClient, kotsadmNamespace)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to find backupstoragelocations")
 	}
@@ -717,7 +726,22 @@ func getSnapshotVolumeSummary(ctx context.Context, veleroBackup *velerov1.Backup
 }
 
 func GetBackup(ctx context.Context, kotsadmNamespace string, snapshotName string) (*velerov1.Backup, error) {
-	bsl, err := kotssnapshot.FindBackupStoreLocation(ctx, kotsadmNamespace)
+	cfg, err := k8sutil.GetClusterConfig()
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get cluster config")
+	}
+
+	clientset, err := kubernetes.NewForConfig(cfg)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to create clientset")
+	}
+
+	veleroClient, err := veleroclientv1.NewForConfig(cfg)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to create velero clientset")
+	}
+
+	bsl, err := kotssnapshot.FindBackupStoreLocation(ctx, clientset, veleroClient, kotsadmNamespace)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get velero namespace")
 	}
@@ -728,16 +752,6 @@ func GetBackup(ctx context.Context, kotsadmNamespace string, snapshotName string
 	veleroNamespace := bsl.Namespace
 
 	// get the backup
-	cfg, err := k8sutil.GetClusterConfig()
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to get cluster config")
-	}
-
-	veleroClient, err := veleroclientv1.NewForConfig(cfg)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to create clientset")
-	}
-
 	backup, err := veleroClient.Backups(veleroNamespace).Get(ctx, snapshotName, metav1.GetOptions{})
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get backup")
@@ -747,7 +761,22 @@ func GetBackup(ctx context.Context, kotsadmNamespace string, snapshotName string
 }
 
 func DeleteBackup(ctx context.Context, kotsadmNamespace string, snapshotName string) error {
-	bsl, err := kotssnapshot.FindBackupStoreLocation(ctx, kotsadmNamespace)
+	cfg, err := k8sutil.GetClusterConfig()
+	if err != nil {
+		return errors.Wrap(err, "failed to get cluster config")
+	}
+
+	clientset, err := kubernetes.NewForConfig(cfg)
+	if err != nil {
+		return errors.Wrap(err, "failed to create clientset")
+	}
+
+	veleroClient, err := veleroclientv1.NewForConfig(cfg)
+	if err != nil {
+		return errors.Wrap(err, "failed to create velero clientset")
+	}
+
+	bsl, err := kotssnapshot.FindBackupStoreLocation(ctx, clientset, veleroClient, kotsadmNamespace)
 	if err != nil {
 		return errors.Wrap(err, "failed to get velero namespace")
 	}
@@ -764,16 +793,6 @@ func DeleteBackup(ctx context.Context, kotsadmNamespace string, snapshotName str
 		Spec: velerov1.DeleteBackupRequestSpec{
 			BackupName: snapshotName,
 		},
-	}
-
-	cfg, err := k8sutil.GetClusterConfig()
-	if err != nil {
-		return errors.Wrap(err, "failed to get cluster config")
-	}
-
-	veleroClient, err := veleroclientv1.NewForConfig(cfg)
-	if err != nil {
-		return errors.Wrap(err, "failed to create clientset")
 	}
 
 	_, err = veleroClient.DeleteBackupRequests(veleroNamespace).Create(context.TODO(), veleroDeleteBackupRequest, metav1.CreateOptions{})
@@ -820,12 +839,17 @@ func GetBackupDetail(ctx context.Context, kotsadmNamespace string, backupName st
 		return nil, errors.Wrap(err, "failed to get cluster config")
 	}
 
-	veleroClient, err := veleroclientv1.NewForConfig(cfg)
+	clientset, err := kubernetes.NewForConfig(cfg)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create clientset")
 	}
 
-	backendStorageLocation, err := kotssnapshot.FindBackupStoreLocation(ctx, kotsadmNamespace)
+	veleroClient, err := veleroclientv1.NewForConfig(cfg)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to create velero clientset")
+	}
+
+	backendStorageLocation, err := kotssnapshot.FindBackupStoreLocation(ctx, clientset, veleroClient, kotsadmNamespace)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to find backupstoragelocations")
 	}

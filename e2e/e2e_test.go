@@ -210,19 +210,18 @@ var _ = Describe("E2E", func() {
 			Entry(nil, inventory.NewSmokeTest()),
 			Entry(nil, inventory.NewAirgapSmokeTest()),
 			Entry(nil, inventory.NewConfigValidation()),
-			Entry(nil, inventory.NewStrictPreflightChecks()),
-			Entry(nil, inventory.NewMinimalRBACTest()),
 			Entry(nil, inventory.NewBackupAndRestore()),
 			Entry(nil, inventory.NewNoRequiredConfig()),
 			Entry(nil, inventory.NewVersionHistoryPagination()),
 			Entry(nil, inventory.NewChangeLicense()),
 			Entry(nil, inventory.NewHelmManagedMode()),
-			Entry(nil, inventory.NewTagAndDigest()),
 			Entry(nil, inventory.NewMinKotsVersion()),
 			Entry(nil, inventory.NewTargetKotsVersion()),
 			Entry(nil, inventory.NewRangeKotsVersion()),
 			Entry(nil, inventory.NewMultiAppBackupAndRestoreTest()),
 			Entry(nil, inventory.MultiAppTest()),
+			Entry(nil, inventory.NewSupportBundle()),
+			Entry(nil, inventory.NewGitOps()),
 		)
 
 	})

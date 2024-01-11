@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"time"
 
 	"github.com/pkg/errors"
 	apptypes "github.com/replicatedhq/kots/pkg/app/types"
@@ -44,7 +45,7 @@ const (
 )
 
 func Run(appID string, appSlug string, sequence int64, isAirgap bool, archiveDir string) error {
-	renderedKotsKinds, err := kotsutil.LoadKotsKindsFromPath(filepath.Join(archiveDir, "upstream"))
+	kotsKinds, err := kotsutil.LoadKotsKinds(archiveDir)
 	if err != nil {
 		return errors.Wrap(err, "failed to load rendered kots kinds")
 	}
@@ -88,7 +89,7 @@ func Run(appID string, appSlug string, sequence int64, isAirgap bool, archiveDir
 			preflight = troubleshootpreflight.ConcatPreflightSpec(preflight, &v)
 		}
 
-		injectDefaultPreflights(preflight, renderedKotsKinds, registrySettings)
+		injectDefaultPreflights(preflight, kotsKinds, registrySettings)
 
 		numAnalyzers := 0
 		for _, analyzer := range preflight.Spec.Analyzers {
@@ -98,15 +99,15 @@ func Run(appID string, appSlug string, sequence int64, isAirgap bool, archiveDir
 			}
 		}
 		runPreflights = numAnalyzers > 0
-	} else if renderedKotsKinds.Preflight != nil {
+	} else if kotsKinds.Preflight != nil {
 		// render the preflight file
 		// we need to convert to bytes first, so that we can reuse the renderfile function
-		renderedMarshalledPreflights, err := renderedKotsKinds.Marshal("troubleshoot.replicated.com", "v1beta1", "Preflight")
+		renderedMarshalledPreflights, err := kotsKinds.Marshal("troubleshoot.replicated.com", "v1beta1", "Preflight")
 		if err != nil {
 			return errors.Wrap(err, "failed to marshal rendered preflight")
 		}
 
-		renderedPreflight, err := render.RenderFile(renderedKotsKinds, registrySettings, appSlug, sequence, isAirgap, util.PodNamespace, []byte(renderedMarshalledPreflights))
+		renderedPreflight, err := render.RenderFile(kotsKinds, registrySettings, appSlug, sequence, isAirgap, util.PodNamespace, []byte(renderedMarshalledPreflights))
 		if err != nil {
 			return errors.Wrap(err, "failed to render preflights")
 		}
@@ -115,7 +116,7 @@ func Run(appID string, appSlug string, sequence int64, isAirgap bool, archiveDir
 			return errors.Wrap(err, "failed to load rendered preflight")
 		}
 
-		injectDefaultPreflights(preflight, renderedKotsKinds, registrySettings)
+		injectDefaultPreflights(preflight, kotsKinds, registrySettings)
 
 		numAnalyzers := 0
 		for _, analyzer := range preflight.Spec.Analyzers {
@@ -152,7 +153,7 @@ func Run(appID string, appSlug string, sequence int64, isAirgap bool, archiveDir
 			}
 		}
 
-		collectors, err := registry.UpdateCollectorSpecsWithRegistryData(preflight.Spec.Collectors, registrySettings, renderedKotsKinds.Installation, renderedKotsKinds.License, &renderedKotsKinds.KotsApplication)
+		collectors, err := registry.UpdateCollectorSpecsWithRegistryData(preflight.Spec.Collectors, registrySettings, kotsKinds.Installation, kotsKinds.License, &kotsKinds.KotsApplication)
 		if err != nil {
 			preflightErr = errors.Wrap(err, "failed to rewrite images in preflight")
 			return preflightErr
@@ -276,6 +277,9 @@ func maybeDeployFirstVersion(appID string, sequence int64, preflightResults *typ
 	if err != nil {
 		return false, errors.Wrap(err, "failed to deploy version")
 	}
+
+	// this ensures the version status is updated before returning
+	time.Sleep(time.Second)
 
 	return true, nil
 }

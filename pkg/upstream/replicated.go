@@ -325,7 +325,7 @@ func readReplicatedAppFromLocalPath(localPath string, localCursor replicatedapp.
 				return nil
 			}
 
-			contents, err := ioutil.ReadFile(path)
+			contents, err := os.ReadFile(path)
 			if err != nil {
 				return err
 			}
@@ -678,7 +678,7 @@ func createConfigValue(
 }
 
 func findConfigValuesInFile(filename string) (*kotsv1beta1.ConfigValues, error) {
-	content, err := ioutil.ReadFile(filename)
+	content, err := os.ReadFile(filename)
 	if err != nil {
 		if os.IsNotExist(err) {
 			return nil, nil
@@ -715,7 +715,7 @@ func mustMarshalIdentityConfig(identityConfig *kotsv1beta1.IdentityConfig) []byt
 }
 
 func findIdentityConfigInFile(filename string) (*kotsv1beta1.IdentityConfig, error) {
-	content, err := ioutil.ReadFile(filename)
+	content, err := os.ReadFile(filename)
 	if err != nil {
 		if os.IsNotExist(err) {
 			return nil, nil
@@ -767,16 +767,18 @@ func findConfigInRelease(release *Release) *kotsv1beta1.Config {
 
 func findAppInRelease(release *Release) *kotsv1beta1.Application {
 	for _, content := range release.Manifests {
-		decode := scheme.Codecs.UniversalDeserializer().Decode
-		obj, gvk, err := decode(content, nil, nil)
-		if err != nil {
-			continue
-		}
+		for _, doc := range util.ConvertToSingleDocs(content) {
+			decode := scheme.Codecs.UniversalDeserializer().Decode
+			obj, gvk, err := decode(doc, nil, nil)
+			if err != nil {
+				continue
+			}
 
-		if gvk.Group == "kots.io" {
-			if gvk.Version == "v1beta1" {
-				if gvk.Kind == "Application" {
-					return obj.(*kotsv1beta1.Application)
+			if gvk.Group == "kots.io" {
+				if gvk.Version == "v1beta1" {
+					if gvk.Kind == "Application" {
+						return obj.(*kotsv1beta1.Application)
+					}
 				}
 			}
 		}

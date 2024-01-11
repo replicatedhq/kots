@@ -1,14 +1,55 @@
-apiVersion: skaffold/v2beta2
+apiVersion: skaffold/v4beta8
 kind: Config
-
+build:
+  artifacts:
+    - image: kotsadm-web
+      context: ./web
+      sync:
+        manual:
+          - src: src/**/*.jsx
+            dest: ./
+          - src: src/**/*.js
+            dest: ./
+          - src: src/**/*.png
+            dest: ./
+          - src: src/**/*.scss
+            dest: ./
+          - src: src/**/*.css
+            dest: ./
+      docker:
+        dockerfile: ./skaffold.Dockerfile
+    - image: kotsadm-api
+      context: ./
+      docker:
+        dockerfile: ./hack/dev/skaffold.Dockerfile
+    - image: kotsadm-migrations
+      context: ./migrations
+      docker:
+        dockerfile: ./skaffold.Dockerfile
+    - image: kurl-proxy
+      context: ./kurl_proxy
+      docker:
+        dockerfile: ./skaffold.Dockerfile
+  local:
+    useBuildkit: true
+    concurrency: 0
+manifests:
+  kustomize:
+    paths:
+      - ./kustomize/overlays/dev
+deploy:
+  kubectl: {}
+  statusCheckDeadlineSeconds: 240
 profiles:
   - name: kotsstore
-    activation: 
+    activation:
       - env: KOTSSTORE=
-    deploy:
+    manifests:
       kustomize:
-        paths: 
-          - "./kustomize/overlays/kotsstore"
+        paths:
+          - ./kustomize/overlays/kotsstore
+    deploy:
+      kubectl: {}
   - name: debug
     activation:
       - env: DEBUG_KOTSADM=1
@@ -17,73 +58,3 @@ profiles:
         path: /build/artifacts/1/docker/buildArgs
         value:
           DEBUG_KOTSADM: 1
-  - name: codespace
-    activation:
-      - env: USER=codespace
-    build:
-      local:
-        concurrency: 0
-        useBuildkit: true
-        push: true
-
-build:
-  insecureRegistries:
-  - localhost:5000
-  - k3d-replicated-registry.localhost:5000
-
-  local:
-    concurrency: 0
-    useBuildkit: true
-
-  artifacts:
-    - image: kotsadm-web
-      context: "./web"
-      sync:
-        manual:
-          - src: "src/**/*.jsx"
-            dest: "./"
-          - src: "src/**/*.js"
-            dest: "./"
-          - src: "src/**/*.png"
-            dest: "./"
-          - src: "src/**/*.scss"
-            dest: "./"
-          - src: "src/**/*.css"
-            dest: "./"
-      docker:
-        dockerfile: ./skaffold.Dockerfile
-
-    - image: kotsadm
-      context: "./"
-      docker:
-        dockerfile: ./hack/dev/skaffold.Dockerfile
-
-    - image: kotsadm-migrations
-      context: "./migrations"
-      docker:
-        dockerfile: ./skaffold.Dockerfile
-
-    - image: kurl-proxy
-      context: "./kurl_proxy"
-      docker:
-        dockerfile: ./skaffold.Dockerfile
-
-deploy:
-  statusCheckDeadlineSeconds: 240
-  kustomize:
-    paths:
-      - "./kustomize/overlays/dev"
-
-portForward:
-  - resourceType: service
-    resourceName: kotsadm
-    port: 3000
-    localPort: 30000
-  - resourceType: service
-    resourceName: kotsadm-dlv
-    port: 40000
-    localPort: 40000
-  - resourceType: service
-    resourceName: kurl-proxy
-    port: 8800
-    localPort: 30880

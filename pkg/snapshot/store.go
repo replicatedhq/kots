@@ -427,7 +427,12 @@ func upsertGlobalStore(ctx context.Context, store *types.Store, kotsadmNamespace
 		return nil, errors.Wrap(err, "failed to create clientset")
 	}
 
-	bsl, err := FindBackupStoreLocation(ctx, kotsadmNamespace)
+	veleroClient, err := veleroclientv1.NewForConfig(cfg)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to create velero clientset")
+	}
+
+	bsl, err := FindBackupStoreLocation(ctx, clientset, veleroClient, kotsadmNamespace)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to find backupstoragelocations")
 	}
@@ -867,13 +872,23 @@ func updateLvpFileSystemStore(ctx context.Context, store *types.Store, bsl *vele
 // GetGlobalStore will return the global store from the current backup storage location
 // or will find it, if the param is nil
 func GetGlobalStore(ctx context.Context, kotsadmNamespace string, bsl *velerov1.BackupStorageLocation) (*types.Store, error) {
-	clientset, err := k8sutil.GetClientset()
+	cfg, err := k8sutil.GetClusterConfig()
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to get k8s clientset")
+		return nil, errors.Wrap(err, "failed to get cluster config")
+	}
+
+	clientset, err := kubernetes.NewForConfig(cfg)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to create clientset")
+	}
+
+	veleroClient, err := veleroclientv1.NewForConfig(cfg)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to create velero clientset")
 	}
 
 	if bsl == nil {
-		bsl, err = FindBackupStoreLocation(ctx, kotsadmNamespace)
+		bsl, err = FindBackupStoreLocation(ctx, clientset, veleroClient, kotsadmNamespace)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to find backupstoragelocations")
 		}
@@ -1055,17 +1070,7 @@ func mapAWSBackupStorageLocationToStore(kotsadmVeleroBackendStorageLocation *vel
 
 // FindBackupStoreLocation will find the backup storage location used by velero
 // kotsadmNamespace is only required in minimal rbac installations. if empty, cluster scope privileges will be needed to detect and validate velero
-func FindBackupStoreLocation(ctx context.Context, kotsadmNamespace string) (*velerov1.BackupStorageLocation, error) {
-	cfg, err := k8sutil.GetClusterConfig()
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to get cluster config")
-	}
-
-	clientset, err := kubernetes.NewForConfig(cfg)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to create clientset")
-	}
-
+func FindBackupStoreLocation(ctx context.Context, clientset kubernetes.Interface, veleroClient veleroclientv1.VeleroV1Interface, kotsadmNamespace string) (*velerov1.BackupStorageLocation, error) {
 	veleroNamespace, err := DetectVeleroNamespace(ctx, clientset, kotsadmNamespace)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to detect velero namespace")
@@ -1073,11 +1078,6 @@ func FindBackupStoreLocation(ctx context.Context, kotsadmNamespace string) (*vel
 
 	if veleroNamespace == "" {
 		return nil, nil
-	}
-
-	veleroClient, err := veleroclientv1.NewForConfig(cfg)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to create velero clientset")
 	}
 
 	backupStorageLocations, err := veleroClient.BackupStorageLocations(veleroNamespace).List(ctx, metav1.ListOptions{})

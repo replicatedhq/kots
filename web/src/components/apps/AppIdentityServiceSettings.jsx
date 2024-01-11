@@ -1,4 +1,4 @@
-import React, { Component } from "react";
+import { Component } from "react";
 import IdentityProviders from "@src/components/identity/IdentityProviders";
 
 import "@src/scss/components/identity/IdentityManagement.scss";

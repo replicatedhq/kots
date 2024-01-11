@@ -55,16 +55,17 @@ jobs:
           - existing-online-install-minimum
           - existing-online-upgrade-admin
           - existing-online-upgrade-minimum
+          - helmvm-online-install
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           repository: replicatedhq/kots-regression-automation
           token: ${{ secrets.E2E_GH_PAT }}
           path: automation
           ref: main
       - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v2
+        uses: hashicorp/setup-terraform@v3
       - name: Initialize Terraform
         env:
           TF_WORKSPACE: default
@@ -85,14 +86,14 @@ jobs:
         working-directory: automation/jumpbox
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           repository: replicatedhq/kots-regression-automation
           token: ${{ secrets.E2E_GH_PAT }}
           path: automation
           ref: main
       - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v2
+        uses: hashicorp/setup-terraform@v3
       - name: Initialize Terraform
         env:
           TF_WORKSPACE: default

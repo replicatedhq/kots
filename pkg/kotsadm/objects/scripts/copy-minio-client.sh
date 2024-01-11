@@ -3,7 +3,7 @@
 set -e
 
 # This script copies the minio client binary to a dedicated migration directory
-# This is necessary because the minio client binary is not available in the minio container
+# This is necessary because the minio client binary is not available in older versions of the minio image
 
 # check if the migration has already been completed
 if [ -f /export/.migration-complete ];

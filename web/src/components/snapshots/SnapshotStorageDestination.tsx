@@ -1,4 +1,4 @@
-import React, { Component } from "react";
+import React, { ChangeEvent, Component } from "react";
 import Select from "react-select";
 import MonacoEditor from "@monaco-editor/react";
 import find from "lodash/find";
@@ -572,10 +572,7 @@ class SnapshotStorageDestination extends Component<Props, State> {
     });
   };
 
-  handleFormChange = (
-    field: FieldName,
-    e: React.ChangeEvent<HTMLInputElement>
-  ) => {
+  handleFormChange = (field: FieldName, e: ChangeEvent<HTMLInputElement>) => {
     let nextState: {
       [K in FieldName]?: string | boolean;
     } = {};
@@ -615,7 +612,7 @@ class SnapshotStorageDestination extends Component<Props, State> {
     this.setState({ gcsJsonFile: value || "" });
   };
 
-  onSubmit = async (e: React.MouseEvent<HTMLButtonElement, MouseEvent>) => {
+  onSubmit = async (e: React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault();
     let s3CompatibleFieldErrors = this.state.s3CompatibleFieldErrors;
     switch (this.state.selectedDestination?.value) {
@@ -973,7 +970,7 @@ class SnapshotStorageDestination extends Component<Props, State> {
                     type="password"
                     placeholder="access key"
                     value={this.state.s3KeySecret}
-                    onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                    onChange={(e: ChangeEvent<HTMLInputElement>) =>
                       this.handleFormChange("s3KeySecret", e)
                     }
                     onFocus={undefined}
@@ -1070,7 +1067,7 @@ class SnapshotStorageDestination extends Component<Props, State> {
                   type="password"
                   placeholder="Client Secret"
                   value={this.state.azureClientSecret}
-                  onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                  onChange={(e: ChangeEvent<HTMLInputElement>) =>
                     this.handleFormChange("azureClientSecret", e)
                   }
                   onFocus={undefined}
@@ -1296,7 +1293,7 @@ class SnapshotStorageDestination extends Component<Props, State> {
                   type="password"
                   placeholder="access key"
                   value={this.state.s3CompatibleKeySecret}
-                  onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                  onChange={(e: ChangeEvent<HTMLInputElement>) =>
                     this.handleFormChange("s3CompatibleKeySecret", e)
                   }
                   onFocus={undefined}
@@ -1831,7 +1828,6 @@ class SnapshotStorageDestination extends Component<Props, State> {
             }
           />
         </div>
-
         {this.props.showConfigureSnapshotsModal && (
           <ConfigureSnapshots
             snapshotSettings={this.props.snapshotSettings}
@@ -1850,7 +1846,6 @@ class SnapshotStorageDestination extends Component<Props, State> {
             isKurlEnabled={isKurlEnabled}
           />
         )}
-
         {this.state.showConfigureFileSystemProviderModal && (
           <Modal
             isOpen={this.state.showConfigureFileSystemProviderModal}
@@ -1863,7 +1858,6 @@ class SnapshotStorageDestination extends Component<Props, State> {
             {this.renderConfigureFileSystemProviderModalContent()}
           </Modal>
         )}
-
         {this.state.showFileSystemProviderInstructionsModal && (
           <Modal
             isOpen={this.state.showFileSystemProviderInstructionsModal}
@@ -1894,7 +1888,6 @@ class SnapshotStorageDestination extends Component<Props, State> {
             </div>
           </Modal>
         )}
-
         {showResetFileSystemWarningModal && (
           <Modal
             isOpen={showResetFileSystemWarningModal}

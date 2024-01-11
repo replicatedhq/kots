@@ -163,6 +163,23 @@ func TestGetDistribution(t *testing.T) {
 			want: Minikube,
 		},
 		{
+			name: "OKE from labels",
+			args: args{
+				clientset: mockClientsetForDistribution(&mockClientsetForDistributionOpts{
+					objects: []runtime.Object{
+						&corev1.Node{
+							ObjectMeta: metav1.ObjectMeta{
+								Labels: map[string]string{
+									"oci.oraclecloud.com/fault-domain": "DOMAIN1",
+								},
+							},
+						},
+					},
+				}),
+			},
+			want: OKE,
+		},
+		{
 			name: "gke from version",
 			args: args{
 				clientset: mockClientsetForDistribution(&mockClientsetForDistributionOpts{

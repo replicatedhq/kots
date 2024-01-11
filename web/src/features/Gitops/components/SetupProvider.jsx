@@ -1,4 +1,4 @@
-import React, { useContext, useCallback, useEffect, useState } from "react";
+import { useContext, useCallback, useEffect, useState } from "react";
 import { Utilities } from "../../../utilities/utilities";
 import DisableModal from "./modals/DisableModal";
 import { GitOpsContext, withGitOpsConsumer } from "../context";

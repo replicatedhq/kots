@@ -1,4 +1,4 @@
-import React from "react";
+import { Component } from "react";
 import { Link } from "react-router-dom";
 import InlineDropdown from "@src/components/shared/InlineDropdown";
 import isEmpty from "lodash/isEmpty";
@@ -23,12 +23,13 @@ type Props = {
   links: PropLink[];
   onViewAppStatusDetails: () => void;
   url: string | undefined;
+  embeddedClusterState: string;
 };
 
 type State = {
   dropdownOptions: OptionLink[];
 };
-export default class AppStatus extends React.Component<Props, State> {
+export default class AppStatus extends Component<Props, State> {
   constructor(props: Props) {
     super(props);
     this.state = {
@@ -79,7 +80,7 @@ export default class AppStatus extends React.Component<Props, State> {
   };
 
   render() {
-    const { appStatus, url, links, app } = this.props;
+    const { appStatus, url, links, app, embeddedClusterState } = this.props;
     const { dropdownOptions } = this.state;
     const defaultDisplayText =
       dropdownOptions.length > 0 ? dropdownOptions[0].displayText : "";
@@ -108,6 +109,35 @@ export default class AppStatus extends React.Component<Props, State> {
             >
               {Utilities.toTitleCase(appStatus)}
             </span>
+            {!isEmpty(embeddedClusterState) && (
+              <>
+                <span className="tw-mr-1 tw-ml-4 tw-text-sm tw-text-gray-500">
+                  Cluster State:
+                </span>
+                <span
+                  className={`status-dot ${
+                    embeddedClusterState === "Installed"
+                      ? "u-color--success"
+                      : embeddedClusterState === "Installing" ||
+                        embeddedClusterState === "Enqueued"
+                      ? "u-color--warning"
+                      : "u-color--error"
+                  }`}
+                />
+                <span
+                  className={`u-fontSize--normal u-fontWeight--medium ${
+                    embeddedClusterState === "Installed"
+                      ? "u-textColor--bodyCopy"
+                      : embeddedClusterState === "Installing" ||
+                        embeddedClusterState === "Enqueued"
+                      ? "u-textColor--warning"
+                      : "u-textColor--error"
+                  }`}
+                >
+                  {Utilities.clusterState(embeddedClusterState)}
+                </span>
+              </>
+            )}
             {this.props.hasStatusInformers && (
               <span
                 onClick={this.props.onViewAppStatusDetails}

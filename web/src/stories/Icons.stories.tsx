@@ -1,4 +1,3 @@
-import React from "react";
 import { ComponentStory, ComponentMeta } from "@storybook/react";
 import Icon from "@src/components/Icon";
 import data from "../components/selection.json";

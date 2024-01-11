@@ -1,4 +1,4 @@
-import React, { useEffect, useReducer } from "react";
+import { useEffect, useReducer, useState } from "react";
 import { useParams } from "react-router-dom";
 import MonacoEditor from "@monaco-editor/react";
 import CodeSnippet from "./shared/CodeSnippet";
@@ -63,10 +63,10 @@ const PreflightResultErrors = (props: Props) => {
   const { slug, sequence = "0" } = useParams<keyof KotsParams>() as KotsParams;
   const selectedApp = useSelectedApp();
 
-  const [previousAppSlug, setPreviousAppSlug] = React.useState(slug);
-  const [previousSequence, setPreviousSequence] = React.useState<
-    string | undefined
-  >(sequence);
+  const [previousAppSlug, setPreviousAppSlug] = useState(slug);
+  const [previousSequence, setPreviousSequence] = useState<string | undefined>(
+    sequence
+  );
 
   const getPreflightCommand = async () => {
     try {

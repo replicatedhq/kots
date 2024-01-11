@@ -106,7 +106,7 @@ func MinioStatefulset(deployOptions types.DeployOptions, size resource.Quantity)
 						AccessModes: []corev1.PersistentVolumeAccessMode{
 							corev1.ReadWriteOnce,
 						},
-						Resources: corev1.ResourceRequirements{
+						Resources: corev1.VolumeResourceRequirements{
 							Requests: corev1.ResourceList{
 								corev1.ResourceName(corev1.ResourceStorage): size,
 							},
@@ -124,6 +124,9 @@ func MinioStatefulset(deployOptions types.DeployOptions, size resource.Quantity)
 					},
 				},
 				Spec: corev1.PodSpec{
+					Affinity: &corev1.Affinity{
+						NodeAffinity: defaultKOTSNodeAffinity(),
+					},
 					SecurityContext:  securityContext,
 					ImagePullSecrets: pullSecrets,
 					InitContainers:   initContainers,
@@ -136,7 +139,7 @@ func MinioStatefulset(deployOptions types.DeployOptions, size resource.Quantity)
 							Command: []string{
 								"/bin/sh",
 								"-ce",
-								"/usr/bin/docker-entrypoint.sh minio -C /home/minio/.minio/ --quiet server /export",
+								"minio -C /home/minio/.minio/ --quiet server /export",
 							},
 							Ports: []corev1.ContainerPort{
 								{
@@ -222,7 +225,7 @@ func migrateToMinioXlInitContainers(deployOptions types.DeployOptions, resourceR
 
 	return []corev1.Container{
 		{
-			Image:           GetAdminConsoleImage(deployOptions, "minio-client"),
+			Image:           GetAdminConsoleImage(deployOptions, "minio"),
 			ImagePullPolicy: corev1.PullIfNotPresent,
 			Name:            "copy-minio-client",
 			Command: []string{

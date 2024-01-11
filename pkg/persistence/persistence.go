@@ -7,6 +7,10 @@ var (
 	uri string
 )
 
+func IsInitialized() bool {
+	return db != nil
+}
+
 func SetDB(database *gorqlite.Connection) {
 	db = database
 }

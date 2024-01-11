@@ -2,17 +2,30 @@ package replicated
 
 import (
 	"io/ioutil"
+	"os"
 	"path"
 	"testing"
 
+	"github.com/golang/mock/gomock"
 	"github.com/mholt/archiver/v3"
 	"github.com/replicatedhq/kots/integration/util"
 	"github.com/replicatedhq/kots/pkg/pull"
+	"github.com/replicatedhq/kots/pkg/store"
+	mock_store "github.com/replicatedhq/kots/pkg/store/mock"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 func Test_PullReplicated(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mockStore := mock_store.NewMockStore(ctrl)
+	store.SetStore(mockStore)
+	defer store.SetStore(nil)
+
+	mockStore.EXPECT().ListInstalledApps().MaxTimes(1)
+
 	namespace := "test_ns"
 
 	testDirs, err := ioutil.ReadDir("tests")
@@ -30,11 +43,11 @@ func Test_PullReplicated(t *testing.T) {
 		t.Run(testDir.Name(), func(t *testing.T) {
 			req := require.New(t)
 
-			archiveData, err := ioutil.ReadFile(path.Join(testResourcePath, "archive.tar.gz"))
+			archiveData, err := os.ReadFile(path.Join(testResourcePath, "archive.tar.gz"))
 			req.NoError(err)
 
 			licenseFilepath := path.Join(testResourcePath, "license.yaml")
-			licenseFile, err := ioutil.ReadFile(licenseFilepath)
+			licenseFile, err := os.ReadFile(licenseFilepath)
 			req.NoError(err)
 
 			server, err := StartMockServer(archiveData, licenseFile)
@@ -72,7 +85,7 @@ func Test_PullReplicated(t *testing.T) {
 			err = tarGz.Archive(paths, path.Join(actualFilesystemDir, "archive.tar.gz"))
 			req.NoError(err)
 
-			actualFilesystemBytes, err := ioutil.ReadFile(path.Join(actualFilesystemDir, "archive.tar.gz"))
+			actualFilesystemBytes, err := os.ReadFile(path.Join(actualFilesystemDir, "archive.tar.gz"))
 			req.NoError(err)
 
 			// create an archive of the expected
@@ -86,7 +99,7 @@ func Test_PullReplicated(t *testing.T) {
 			err = tarGz.Archive(paths, path.Join(expectedFilesystemDir, "archive.tar.gz"))
 			req.NoError(err)
 
-			expectedFilesystemBytes, err := ioutil.ReadFile(path.Join(expectedFilesystemDir, "archive.tar.gz"))
+			expectedFilesystemBytes, err := os.ReadFile(path.Join(expectedFilesystemDir, "archive.tar.gz"))
 			req.NoError(err)
 
 			compareOptions := util.CompareOptions{

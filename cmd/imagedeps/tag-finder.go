@@ -119,22 +119,17 @@ func getTagFinder(opts ...func(c *configuration)) tagFinderFn {
 
 		switch imageName {
 		case minioReference:
-			latestReleaseTag, err = getLatestTagFromGithub(config.releaseFinder, "minio", "minio", matcherFn)
+			latestReleaseTag, err = getLatestTagFromRegistry("kotsadm/minio", config.repositoryTagsFinder, matcherFn)
 			if err != nil {
-				return nil, fmt.Errorf("failed to get release tag for minio/minio %w", err)
-			}
-		case minioClientReference:
-			latestReleaseTag, err = getLatestTagFromGithub(config.releaseFinder, "minio", "mc", matcherFn)
-			if err != nil {
-				return nil, fmt.Errorf("failed to get release tag for minio/mc %w", err)
+				return nil, fmt.Errorf("failed to get release tag for %s %w", imageName, err)
 			}
 		case dexReference:
-			latestReleaseTag, err = getLatestTagFromGithub(config.releaseFinder, "dexidp", "dex", matcherFn)
+			latestReleaseTag, err = getLatestTagFromRegistry("kotsadm/dex", config.repositoryTagsFinder, matcherFn)
 			if err != nil {
-				return nil, fmt.Errorf("failed to get release tag for dexidp/dex %w", err)
+				return nil, fmt.Errorf("failed to get release tag for %s %w", imageName, err)
 			}
 		case rqliteReference:
-			latestReleaseTag, err = getLatestTagFromRegistry("rqlite/rqlite", config.repositoryTagsFinder, matcherFn)
+			latestReleaseTag, err = getLatestTagFromRegistry("kotsadm/rqlite", config.repositoryTagsFinder, matcherFn)
 			if err != nil {
 				return nil, fmt.Errorf("failed to get release tag for %s %w", imageName, err)
 			}

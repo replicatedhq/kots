@@ -6,7 +6,6 @@ import (
 
 	airgaptypes "github.com/replicatedhq/kots/pkg/airgap/types"
 	downstreamtypes "github.com/replicatedhq/kots/pkg/api/downstream/types"
-	reportingtypes "github.com/replicatedhq/kots/pkg/api/reporting/types"
 	versiontypes "github.com/replicatedhq/kots/pkg/api/version/types"
 	apptypes "github.com/replicatedhq/kots/pkg/app/types"
 	appstatetypes "github.com/replicatedhq/kots/pkg/appstate/types"
@@ -46,7 +45,7 @@ type Store interface {
 	KotsadmParamsStore
 	EmbeddedStore
 	BrandingStore
-	ReportingStore
+	EmbeddedClusterStore
 
 	Init() error // this may need options
 	WaitForReady(ctx context.Context) error
@@ -240,6 +239,8 @@ type KotsadmParamsStore interface {
 type EmbeddedStore interface {
 	GetEmbeddedClusterAuthToken() (string, error)
 	SetEmbeddedClusterAuthToken(token string) error
+	SetEmbeddedClusterState(state string) error
+	GetEmbeddedClusterState() (string, error)
 }
 
 type BrandingStore interface {
@@ -249,7 +250,7 @@ type BrandingStore interface {
 	GetLatestBrandingForApp(appID string) ([]byte, error)
 }
 
-type ReportingStore interface {
-	SavePreflightReport(licenseID string, preflightStatus *reportingtypes.PreflightStatus) error
-	SaveReportingInfo(licenseID string, reportingInfo *reportingtypes.ReportingInfo) error
+type EmbeddedClusterStore interface {
+	SetEmbeddedClusterInstallCommandRoles(roles []string) (string, error)
+	GetEmbeddedClusterInstallCommandRoles(token string) ([]string, error)
 }

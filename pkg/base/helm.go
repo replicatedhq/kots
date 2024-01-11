@@ -14,7 +14,6 @@ import (
 	"github.com/replicatedhq/kots/pkg/logger"
 	upstreamtypes "github.com/replicatedhq/kots/pkg/upstream/types"
 	"github.com/replicatedhq/kots/pkg/util"
-	"helm.sh/helm/v3/pkg/strvals"
 	"sigs.k8s.io/kustomize/api/filesys"
 	"sigs.k8s.io/kustomize/api/krusty"
 	kustomizetypes "sigs.k8s.io/kustomize/api/types"
@@ -40,15 +39,8 @@ func RenderHelm(u *upstreamtypes.Upstream, renderOptions *RenderOptions) (*Base,
 			}
 		}
 
-		if err := ioutil.WriteFile(p, file.Content, 0644); err != nil {
+		if err := os.WriteFile(p, file.Content, 0644); err != nil {
 			return nil, errors.Wrap(err, "failed to write chart file")
-		}
-	}
-
-	vals := renderOptions.HelmValues
-	for _, value := range renderOptions.HelmOptions {
-		if err := strvals.ParseInto(value, vals); err != nil {
-			return nil, errors.Wrapf(err, "failed to parse helm value %q", value)
 		}
 	}
 
@@ -56,12 +48,12 @@ func RenderHelm(u *upstreamtypes.Upstream, renderOptions *RenderOptions) (*Base,
 	var additional []BaseFile
 	switch strings.ToLower(renderOptions.HelmVersion) {
 	case "v3", "":
-		rendered, additional, err = renderHelmV3(u.Name, chartPath, vals, renderOptions)
+		rendered, additional, err = renderHelmV3(u.Name, chartPath, renderOptions)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to render with helm v3")
 		}
 	case "v2":
-		rendered, additional, err = renderHelmV2(u.Name, chartPath, vals, renderOptions)
+		rendered, additional, err = renderHelmV2(u.Name, chartPath, renderOptions)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to render with helm v2")
 		}
@@ -578,7 +570,7 @@ func FindHelmSubChartsFromBase(baseDir, parentChartName string) (*HelmSubCharts,
 	// in the charts folder and need to be excluded when generating the pullsecrets.yaml. It feels like this
 	// could replace the logic below that's doing the file tree walking but I'm unsure.
 	parentChartPath := filepath.Join(searchDir, "Chart.yaml")
-	parentChartRaw, err := ioutil.ReadFile(parentChartPath)
+	parentChartRaw, err := os.ReadFile(parentChartPath)
 	if err == nil {
 		parentChart := new(HelmChartDependencies)
 		err = yaml.Unmarshal(parentChartRaw, parentChart)
@@ -605,7 +597,7 @@ func FindHelmSubChartsFromBase(baseDir, parentChartName string) (*HelmSubCharts,
 				return nil
 			}
 
-			contents, err := ioutil.ReadFile(path)
+			contents, err := os.ReadFile(path)
 			if err != nil {
 				return errors.Wrap(err, "failed to read file")
 			}

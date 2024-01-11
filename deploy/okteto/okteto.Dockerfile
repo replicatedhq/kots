@@ -1,5 +1,5 @@
 # syntax=docker/dockerfile:1.3
-FROM golang:1.20-bullseye as builder
+FROM golang:1.21-bookworm as builder
 
 EXPOSE 2345
 
@@ -64,50 +64,59 @@ RUN curl -fsSLO "${KUBECTL_1_23_URL}" \
   && mv kubectl "${KOTS_KUBECTL_BIN_DIR}/kubectl-v1.23"
 
 # Install Kubectl 1.24
-ENV KUBECTL_1_24_VERSION=v1.24.16
+ENV KUBECTL_1_24_VERSION=v1.24.17
 ENV KUBECTL_1_24_URL=https://dl.k8s.io/release/${KUBECTL_1_24_VERSION}/bin/linux/amd64/kubectl
-ENV KUBECTL_1_24_SHA256SUM=33f8179cd124ab97268ec0cf4c91a05514c8e82d7a341d337e92881401844d71
+ENV KUBECTL_1_24_SHA256SUM=3e9588e3326c7110a163103fc3ea101bb0e85f4d6fd228cf928fa9a2a20594d5
 RUN curl -fsSLO "${KUBECTL_1_24_URL}" \
   && echo "${KUBECTL_1_24_SHA256SUM} kubectl" | sha256sum -c - \
   && chmod +x kubectl \
   && mv kubectl "${KOTS_KUBECTL_BIN_DIR}/kubectl-v1.24"
 
 # Install Kubectl 1.25
-ENV KUBECTL_1_25_VERSION=v1.25.12
+ENV KUBECTL_1_25_VERSION=v1.25.15
 ENV KUBECTL_1_25_URL=https://dl.k8s.io/release/${KUBECTL_1_25_VERSION}/bin/linux/amd64/kubectl
-ENV KUBECTL_1_25_SHA256SUM=75842752ea07cb8ee2210df40faa7c61e1317e76d5c7968e380cae83447d4a0f
+ENV KUBECTL_1_25_SHA256SUM=6428297af0b06d1bb87601258fb61c13d82bf3187b2329b5f38b6f0fec5be575
 RUN curl -fsSLO "${KUBECTL_1_25_URL}" \
   && echo "${KUBECTL_1_25_SHA256SUM} kubectl" | sha256sum -c - \
   && chmod +x kubectl \
   && mv kubectl "${KOTS_KUBECTL_BIN_DIR}/kubectl-v1.25"
 
 # Install Kubectl 1.26
-ENV KUBECTL_1_26_VERSION=v1.26.7
+ENV KUBECTL_1_26_VERSION=v1.26.12
 ENV KUBECTL_1_26_URL=https://dl.k8s.io/release/${KUBECTL_1_26_VERSION}/bin/linux/amd64/kubectl
-ENV KUBECTL_1_26_SHA256SUM=d9dc7741e5f279c28ef32fbbe1daa8ebc36622391c33470efed5eb8426959971
+ENV KUBECTL_1_26_SHA256SUM=8e6af8d68e7b9d2a1eb43255c0da793276e549a34a2b9c3c87a9c26438e7fd71
 RUN curl -fsSLO "${KUBECTL_1_26_URL}" \
   && echo "${KUBECTL_1_26_SHA256SUM} kubectl" | sha256sum -c - \
   && chmod +x kubectl \
   && mv kubectl "${KOTS_KUBECTL_BIN_DIR}/kubectl-v1.26"
 
 # Install Kubectl 1.27
-ENV KUBECTL_1_27_VERSION=v1.27.4
+ENV KUBECTL_1_27_VERSION=v1.27.9
 ENV KUBECTL_1_27_URL=https://dl.k8s.io/release/${KUBECTL_1_27_VERSION}/bin/linux/amd64/kubectl
-ENV KUBECTL_1_27_SHA256SUM=4685bfcf732260f72fce58379e812e091557ef1dfc1bc8084226c7891dd6028f
+ENV KUBECTL_1_27_SHA256SUM=d0caae91072297b2915dd65f6ef3055d27646dce821ec67d18da35ba9a8dc85b
 RUN curl -fsSLO "${KUBECTL_1_27_URL}" \
   && echo "${KUBECTL_1_27_SHA256SUM} kubectl" | sha256sum -c - \
   && chmod +x kubectl \
   && mv kubectl "${KOTS_KUBECTL_BIN_DIR}/kubectl-v1.27"
 
 # Install Kubectl 1.28
-ENV KUBECTL_1_28_VERSION=v1.28.1
+ENV KUBECTL_1_28_VERSION=v1.28.5
 ENV KUBECTL_1_28_URL=https://dl.k8s.io/release/${KUBECTL_1_28_VERSION}/bin/linux/amd64/kubectl
-ENV KUBECTL_1_28_SHA256SUM=e7a7d6f9d06fab38b4128785aa80f65c54f6675a0d2abef655259ddd852274e1
+ENV KUBECTL_1_28_SHA256SUM=2a44c0841b794d85b7819b505da2ff3acd5950bd1bcd956863714acc80653574
 RUN curl -fsSLO "${KUBECTL_1_28_URL}" \
   && echo "${KUBECTL_1_28_SHA256SUM} kubectl" | sha256sum -c - \
   && chmod +x kubectl \
-  && mv kubectl "${KOTS_KUBECTL_BIN_DIR}/kubectl-v1.28" \
-  && ln -s "${KOTS_KUBECTL_BIN_DIR}/kubectl-v1.28" "${KOTS_KUBECTL_BIN_DIR}/kubectl"
+  && mv kubectl "${KOTS_KUBECTL_BIN_DIR}/kubectl-v1.28"
+
+# Install Kubectl 1.29
+ENV KUBECTL_1_29_VERSION=v1.29.0
+ENV KUBECTL_1_29_URL=https://dl.k8s.io/release/${KUBECTL_1_29_VERSION}/bin/linux/amd64/kubectl
+ENV KUBECTL_1_29_SHA256SUM=0e03ab096163f61ab610b33f37f55709d3af8e16e4dcc1eb682882ef80f96fd5
+RUN curl -fsSLO "${KUBECTL_1_29_URL}" \
+  && echo "${KUBECTL_1_29_SHA256SUM} kubectl" | sha256sum -c - \
+  && chmod +x kubectl \
+  && mv kubectl "${KOTS_KUBECTL_BIN_DIR}/kubectl-v1.29" \
+  && ln -s "${KOTS_KUBECTL_BIN_DIR}/kubectl-v1.29" "${KOTS_KUBECTL_BIN_DIR}/kubectl"
 
 
 ENV KOTS_KUSTOMIZE_BIN_DIR=/usr/local/bin
@@ -137,9 +146,9 @@ RUN curl -fsSL -o kustomize.tar.gz "${KUSTOMIZE5_URL}" \
 ENV KOTS_HELM_BIN_DIR=/usr/local/bin
 
 # Install helm v3
-ENV HELM3_VERSION=3.13.0
+ENV HELM3_VERSION=3.13.2
 ENV HELM3_URL=https://get.helm.sh/helm-v${HELM3_VERSION}-linux-amd64.tar.gz
-ENV HELM3_SHA256SUM=138676351483e61d12dfade70da6c03d471bbdcac84eaadeb5e1d06fa114a24f
+ENV HELM3_SHA256SUM=55a8e6dce87a1e52c61e0ce7a89bf85b38725ba3e8deb51d4a08ade8a2c70b2d
 RUN cd /tmp && curl -fsSL -o helm.tar.gz "${HELM3_URL}" \
   && echo "${HELM3_SHA256SUM} helm.tar.gz" | sha256sum -c - \
   && tar -xzvf helm.tar.gz \

@@ -611,6 +611,31 @@ export const Utilities = {
     }
   },
 
+  clusterState(state) {
+    switch (state) {
+      case "Waiting":
+        return "Waiting for a previous upgrade";
+      case "Enqueued":
+        return "Upgrading";
+      case "Installing":
+        return "Upgrading";
+      case "Installed":
+        return "Up to date";
+      case "Obsolete":
+        return "No active cluster upgrade found";
+      case "KubernetesInstalled":
+        return "Cluster version upgraded";
+      case "AdonsInstalling":
+        return "Upgrading addons";
+      case "HelmChartUpdateFailure":
+        return "Failed to upgrade addons";
+      case "Failed":
+        return "Failed";
+      default:
+        return "Unknown";
+    }
+  },
+
   // Converts string to titlecase i.e. 'hello' -> 'Hello'
   // @returns {String}
   toTitleCase(word) {

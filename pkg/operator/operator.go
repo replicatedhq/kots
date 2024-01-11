@@ -7,7 +7,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
-	"path/filepath"
 	"strconv"
 	"sync"
 	"time"
@@ -18,6 +17,7 @@ import (
 	apptypes "github.com/replicatedhq/kots/pkg/app/types"
 	"github.com/replicatedhq/kots/pkg/apparchive"
 	appstatetypes "github.com/replicatedhq/kots/pkg/appstate/types"
+	"github.com/replicatedhq/kots/pkg/embeddedcluster"
 	identitydeploy "github.com/replicatedhq/kots/pkg/identity/deploy"
 	identitytypes "github.com/replicatedhq/kots/pkg/identity/types"
 	kotsadmobjects "github.com/replicatedhq/kots/pkg/kotsadm/objects"
@@ -234,7 +234,7 @@ func (o *Operator) DeployApp(appID string, sequence int64) (deployed bool, deplo
 		return false, errors.Wrap(err, "failed to ensure disaster recovery label transformer")
 	}
 
-	kotsKinds, err := kotsutil.LoadKotsKindsFromPath(filepath.Join(deployedVersionArchive, "upstream"))
+	kotsKinds, err := kotsutil.LoadKotsKinds(deployedVersionArchive)
 	if err != nil {
 		return false, errors.Wrap(err, "failed to load kotskinds")
 	}
@@ -355,7 +355,7 @@ func (o *Operator) DeployApp(appID string, sequence int64) (deployed bool, deplo
 				return false, errors.Wrap(err, "failed to get previously deployed app version archive")
 			}
 
-			previousKotsKinds, err = kotsutil.LoadKotsKindsFromPath(filepath.Join(previouslyDeployedVersionArchive, "upstream"))
+			previousKotsKinds, err = kotsutil.LoadKotsKinds(previouslyDeployedVersionArchive)
 			if err != nil {
 				return false, errors.Wrap(err, "failed to load kotskinds for previously deployed app version")
 			}
@@ -380,6 +380,11 @@ func (o *Operator) DeployApp(appID string, sequence int64) (deployed bool, deplo
 
 	if err := o.applyStatusInformers(app, sequence, kotsKinds, builder); err != nil {
 		return false, errors.Wrap(err, "failed to apply status informers")
+	}
+
+	isEmbeddedCluster, err := embeddedcluster.IsEmbeddedCluster(o.k8sClientset)
+	if err != nil {
+		return false, errors.Wrap(err, "failed to check if this is an embedded cluster installation")
 	}
 
 	o.client.ApplyNamespacesInformer(kotsKinds.KotsApplication.Spec.AdditionalNamespaces, imagePullSecrets)
@@ -408,7 +413,23 @@ func (o *Operator) DeployApp(appID string, sequence int64) (deployed bool, deplo
 	}
 	deployed, err = o.client.DeployApp(deployArgs)
 	if err != nil {
+		if isEmbeddedCluster {
+			go func() {
+				logger.Info("app deploy failed, starting cluster upgrade in the background")
+				err2 := embeddedcluster.MaybeStartClusterUpgrade(context.Background(), o.k8sClientset, o.store, kotsKinds.EmbeddedClusterConfig)
+				if err2 != nil {
+					logger.Error(errors.Wrap(err2, "failed to start cluster upgrade"))
+				}
+				logger.Info("cluster upgrade started")
+			}()
+		}
+
 		return false, errors.Wrap(err, "failed to deploy app")
+	}
+
+	err = embeddedcluster.MaybeStartClusterUpgrade(context.TODO(), o.k8sClientset, o.store, kotsKinds.EmbeddedClusterConfig)
+	if err != nil {
+		return false, errors.Wrap(err, "failed to start cluster upgrade")
 	}
 
 	return deployed, nil
@@ -511,7 +532,7 @@ func (o *Operator) resumeInformersForApp(app *apptypes.App) error {
 		return errors.Wrap(err, "failed to get image pull secrets")
 	}
 
-	kotsKinds, err := kotsutil.LoadKotsKindsFromPath(filepath.Join(deployedVersionArchive, "upstream"))
+	kotsKinds, err := kotsutil.LoadKotsKinds(deployedVersionArchive)
 	if err != nil {
 		return errors.Wrap(err, "failed to load kotskinds")
 	}
@@ -728,7 +749,7 @@ func (o *Operator) UndeployApp(a *apptypes.App, d *downstreamtypes.Downstream, i
 		return errors.Wrap(err, "failed to get app version archive")
 	}
 
-	kotsKinds, err := kotsutil.LoadKotsKindsFromPath(filepath.Join(deployedVersionArchive, "upstream"))
+	kotsKinds, err := kotsutil.LoadKotsKinds(deployedVersionArchive)
 	if err != nil {
 		return errors.Wrap(err, "failed to load kotskinds")
 	}

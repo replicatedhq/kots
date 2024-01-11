@@ -22,9 +22,9 @@ func defaultKOTSNodeAffinity() *corev1.NodeAffinity {
 						},
 						{
 							Key:      "kubernetes.io/arch",
-							Operator: corev1.NodeSelectorOpNotIn,
+							Operator: corev1.NodeSelectorOpIn,
 							Values: []string{
-								"arm64",
+								"amd64",
 							},
 						},
 					},

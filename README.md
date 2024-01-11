@@ -106,7 +106,7 @@ This new iteration of our Okteto workspace has significant changes and requires 
 
 #### Why
 
-We've been trying to optimize our build times and make developing on Okteto as frictionless as possible.  However, we've realized that there are some fundemental issues with our current strategy, such as:
+We've been trying to optimize our build times and make developing on Okteto as frictionless as possible.  However, we've realized that there are some fundamental issues with our current strategy, such as:
 
 1. Builds take place in two places (buildkit, in dev containers).  This causes issues with cache sharing, image size, etc.
 2. Spike in resources for development containers.  Some of our apps put a heavy strain on resources when built, this require us to either give them a lot of resources while in development mode (which can be long-lasting) or starve them of resources and bottleneck builds.

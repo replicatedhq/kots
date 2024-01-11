@@ -6,7 +6,6 @@ import (
 	_ "embed"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
@@ -66,7 +65,7 @@ func RewriteImages(appID string, sequence int64, hostname string, username strin
 	}()
 
 	// get the archive and store it in a temporary location
-	appDir, err := ioutil.TempDir("", "kotsadm")
+	appDir, err := os.MkdirTemp("", "kotsadm")
 	if err != nil {
 		return "", errors.Wrap(err, "failed to create temp dir")
 	}
@@ -77,7 +76,7 @@ func RewriteImages(appID string, sequence int64, hostname string, username strin
 		return "", errors.Wrap(err, "failed to get app version archive")
 	}
 
-	kotsKinds, err := kotsutil.LoadKotsKindsFromPath(filepath.Join(appDir, "upstream"))
+	kotsKinds, err := kotsutil.LoadKotsKinds(appDir)
 	if err != nil {
 		return "", errors.Wrap(err, "failed to load kotskinds from path")
 	}
@@ -134,7 +133,6 @@ func RewriteImages(appID string, sequence int64, hostname string, username strin
 		ExcludeKotsKinds: true,
 		License:          kotsKinds.License,
 		ConfigValues:     configValues,
-		KotsApplication:  &kotsKinds.KotsApplication,
 		K8sNamespace:     appNamespace,
 		ReportWriter:     pipeWriter,
 		IsAirgap:         a.IsAirgap,

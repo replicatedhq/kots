@@ -1,4 +1,4 @@
-import React, { useReducer, useEffect } from "react";
+import { useReducer, useEffect, ReactNode } from "react";
 import { KotsPageTitle } from "@components/Head";
 // @ts-ignore
 import Dropzone from "react-dropzone";
@@ -323,7 +323,7 @@ const AppLicenseComponent = () => {
   const gitops = app.downstream?.gitops;
   const appName = app?.name || "Your application";
 
-  let nextModalBody: React.ReactNode;
+  let nextModalBody: ReactNode;
   if (isHelmManaged) {
     const sequence = app?.downstream?.currentVersion?.sequence;
     const versionLabel = app?.downstream?.currentVersion?.versionLabel;

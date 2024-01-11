@@ -1,0 +1,37 @@
+apiVersion: kots.io/v1beta1
+kind: ConfigValues
+metadata:
+  creationTimestamp: null
+  name: my-app
+spec:
+  values:
+    allow_privilege_escalation:
+      default: "1"
+    helmchart_builder:
+      default: |
+        foo: bar
+        bar: baz
+    helmchart_exclude:
+      default: "1"
+    helmchart_helm_upgrade_flags_1:
+      default: --timeout 70s
+    helmchart_namespace:
+      default: my-namespace
+    helmchart_optional_values_1_recursive_merge:
+      default: "1"
+    helmchart_optional_values_1_values:
+      default: |
+        foo: bar
+        bar: baz
+    helmchart_optional_values_1_when:
+      default: "1"
+    helmchart_release_name:
+      default: my-chart-release-name
+    helmchart_values:
+      default: |
+        foo: bar
+        bar: baz
+    helmchart_weight:
+      default: "1"
+    unset_required_config_item: {}
+status: {}

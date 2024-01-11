@@ -1,4 +1,4 @@
-import * as React from "react";
+import { ChangeEvent } from "react";
 
 const ConfigureGraphs = ({
   toggleConfigureGraphs,
@@ -14,7 +14,7 @@ const ConfigureGraphs = ({
   promValue?: string;
   savingPromValue?: boolean;
   savingPromError?: string;
-  onPromValueChange?: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  onPromValueChange?: (e: ChangeEvent<HTMLInputElement>) => void;
   placeholder?: string;
 }) => {
   return (

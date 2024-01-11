@@ -92,6 +92,13 @@ func Test_IsMinioXlMigrationNeeded(t *testing.T) {
 			wantErr:        false,
 		},
 		{
+			name:           "should not migrate image built with chainguard",
+			clientset:      fake.NewSimpleClientset(minioStsWithImage("kotsadm/minio:0.20231101.183725")),
+			wantMigration:  false,
+			wantMinioImage: "kotsadm/minio:0.20231101.183725",
+			wantErr:        false,
+		},
+		{
 			name:           "should not migrate if no minio",
 			clientset:      fake.NewSimpleClientset(),
 			wantMigration:  false,

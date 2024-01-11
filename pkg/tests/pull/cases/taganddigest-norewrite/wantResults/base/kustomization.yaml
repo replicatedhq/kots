@@ -1,0 +1,11 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+metadata:
+  annotations:
+    kots.io/kustomization: base
+resources:
+- nginx-digest-multi-arch.yaml
+- nginx-digest-single-arch.yaml
+- nginx-tag-1-23.yaml
+- nginx-tag-1.yaml
+- nginx-tag-digest.yaml

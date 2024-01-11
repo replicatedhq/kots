@@ -38,7 +38,6 @@ type RewriteOptions struct {
 	Installation       *kotsv1beta1.Installation
 	License            *kotsv1beta1.License
 	ConfigValues       *kotsv1beta1.ConfigValues
-	KotsApplication    *kotsv1beta1.Application
 	ReportWriter       io.Writer
 	CopyImages         bool // can be false even if registry is not read-only
 	IsAirgap           bool
@@ -115,23 +114,35 @@ func Rewrite(rewriteOptions RewriteOptions) error {
 	log.FinishSpinner()
 
 	renderOptions := base.RenderOptions{
-		SplitMultiDocYAML:       true,
-		Namespace:               rewriteOptions.K8sNamespace,
-		LocalRegistryHost:       rewriteOptions.RegistrySettings.Hostname,
-		LocalRegistryNamespace:  rewriteOptions.RegistrySettings.Namespace,
-		LocalRegistryUsername:   rewriteOptions.RegistrySettings.Username,
-		LocalRegistryPassword:   rewriteOptions.RegistrySettings.Password,
-		LocalRegistryIsReadOnly: rewriteOptions.RegistrySettings.IsReadOnly,
-		ExcludeKotsKinds:        rewriteOptions.ExcludeKotsKinds,
-		Log:                     log,
-		AppSlug:                 rewriteOptions.AppSlug,
-		Sequence:                rewriteOptions.AppSequence,
-		IsAirgap:                rewriteOptions.IsAirgap,
+		SplitMultiDocYAML: true,
+		Namespace:         rewriteOptions.K8sNamespace,
+		RegistrySettings:  rewriteOptions.RegistrySettings,
+		ExcludeKotsKinds:  rewriteOptions.ExcludeKotsKinds,
+		Log:               log,
+		AppSlug:           rewriteOptions.AppSlug,
+		Sequence:          rewriteOptions.AppSequence,
+		IsAirgap:          rewriteOptions.IsAirgap,
 	}
+	log.ActionWithSpinner("Rendering KOTS custom resources")
+	io.WriteString(rewriteOptions.ReportWriter, "Rendering KOTS custom resources\n")
+
+	renderedKotsKindsMap, err := base.RenderKotsKinds(u, &renderOptions)
+	if err != nil {
+		log.FinishSpinnerWithError()
+		return errors.Wrap(err, "failed to render upstream")
+	}
+
+	renderedKotsKinds, err := kotsutil.KotsKindsFromMap(renderedKotsKindsMap)
+	if err != nil {
+		log.FinishSpinnerWithError()
+		return errors.Wrap(err, "failed to load rendered kotskinds from map")
+	}
+	log.FinishSpinner()
+
 	log.ActionWithSpinner("Creating base")
 	io.WriteString(rewriteOptions.ReportWriter, "Creating base\n")
 
-	commonBase, helmBases, renderedKotsKindsMap, err := base.RenderUpstream(u, &renderOptions)
+	commonBase, helmBases, err := base.RenderUpstream(u, &renderOptions, renderedKotsKinds)
 	if err != nil {
 		return errors.Wrap(err, "failed to render upstream")
 	}
@@ -154,14 +165,9 @@ func Rewrite(rewriteOptions RewriteOptions) error {
 			files = append(files, file)
 		}
 
-		newKotsKinds, err := kotsutil.LoadKotsKindsFromPath(u.GetUpstreamDir(writeUpstreamOptions))
-		if err != nil {
-			return errors.Wrap(err, "failed to load installation")
-		}
-		newKotsKinds.Installation.Spec.YAMLErrors = files
+		renderedKotsKinds.Installation.Spec.YAMLErrors = files
 
-		err = apparchive.SaveInstallation(&newKotsKinds.Installation, u.GetUpstreamDir(writeUpstreamOptions))
-		if err != nil {
+		if err := apparchive.SaveInstallation(&renderedKotsKinds.Installation, u.GetUpstreamDir(writeUpstreamOptions)); err != nil {
 			return errors.Wrap(err, "failed to save installation")
 		}
 	}
@@ -203,14 +209,21 @@ func Rewrite(rewriteOptions RewriteOptions) error {
 		return errors.Wrap(err, "failed to create new config context template builder")
 	}
 
-	err = crypto.InitFromString(rewriteOptions.Installation.Spec.EncryptionKey)
-	if err != nil {
+	if err := crypto.InitFromString(rewriteOptions.Installation.Spec.EncryptionKey); err != nil {
 		return errors.Wrap(err, "failed to create cipher from installation spec")
 	}
 
-	v1Beta1HelmCharts, err := kotsutil.LoadV1Beta1HelmChartsFromPath(rewriteOptions.UpstreamPath)
+	identityConfig, err := upstream.LoadIdentityConfig(u.GetUpstreamDir(writeUpstreamOptions))
 	if err != nil {
-		return errors.Wrap(err, "failed to load v1beta1 helm charts")
+		return errors.Wrap(err, "failed to load identity config")
+	}
+
+	var v1Beta1HelmCharts []*kotsv1beta1.HelmChart
+	if renderedKotsKinds.V1Beta1HelmCharts != nil {
+		for _, v1Beta1Chart := range renderedKotsKinds.V1Beta1HelmCharts.Items {
+			kc := v1Beta1Chart
+			v1Beta1HelmCharts = append(v1Beta1HelmCharts, &kc)
+		}
 	}
 
 	commonWriteMidstreamOptions := midstream.WriteOptions{
@@ -222,6 +235,11 @@ func Rewrite(rewriteOptions RewriteOptions) error {
 		HTTPSProxyEnvValue: rewriteOptions.HTTPSProxyEnvValue,
 		NoProxyEnvValue:    rewriteOptions.NoProxyEnvValue,
 		NewHelmCharts:      v1Beta1HelmCharts,
+		License:            rewriteOptions.License,
+		RenderedKotsKinds:  renderedKotsKinds,
+		IdentityConfig:     identityConfig,
+		UpstreamDir:        u.GetUpstreamDir(writeUpstreamOptions),
+		Log:                log,
 	}
 
 	// the UseHelmInstall map blocks visibility into charts and subcharts when searching for private images
@@ -243,10 +261,6 @@ func Rewrite(rewriteOptions RewriteOptions) error {
 		}
 	}
 
-	writeMidstreamOptions := commonWriteMidstreamOptions
-	writeMidstreamOptions.MidstreamDir = filepath.Join(u.GetOverlaysDir(writeUpstreamOptions), "midstream")
-	writeMidstreamOptions.BaseDir = filepath.Join(u.GetBaseDir(writeUpstreamOptions), commonBase.Path)
-
 	processImageOptions := image.ProcessImageOptions{
 		AppSlug:          rewriteOptions.AppSlug,
 		Namespace:        rewriteOptions.K8sNamespace,
@@ -262,13 +276,13 @@ func Rewrite(rewriteOptions RewriteOptions) error {
 		ReportWriter:     rewriteOptions.ReportWriter,
 	}
 
-	upstreamDir := u.GetUpstreamDir(writeUpstreamOptions)
-	identityConfig, err := upstream.LoadIdentityConfig(upstreamDir)
-	if err != nil {
-		return errors.Wrap(err, "failed to load identity config")
-	}
+	writeMidstreamOptions := commonWriteMidstreamOptions
+	writeMidstreamOptions.MidstreamDir = filepath.Join(u.GetOverlaysDir(writeUpstreamOptions), "midstream")
+	writeMidstreamOptions.BaseDir = filepath.Join(u.GetBaseDir(writeUpstreamOptions), commonBase.Path)
+	writeMidstreamOptions.ProcessImageOptions = processImageOptions
+	writeMidstreamOptions.Base = commonBase
 
-	m, err := midstream.WriteMidstream(writeMidstreamOptions, processImageOptions, commonBase, rewriteOptions.License, identityConfig, upstreamDir, log)
+	m, err := midstream.WriteMidstream(writeMidstreamOptions)
 	if err != nil {
 		return errors.Wrap(err, "failed to write common midstream")
 	}
@@ -283,16 +297,18 @@ func Rewrite(rewriteOptions RewriteOptions) error {
 		previousUseHelmInstall := writeMidstreamOptions.UseHelmInstall[helmBase.Path]
 		writeMidstreamOptions.UseHelmInstall[helmBase.Path] = false
 
-		writeMidstreamOptions.MidstreamDir = filepath.Join(u.GetOverlaysDir(writeUpstreamOptions), "midstream", helmBase.Path)
-		writeMidstreamOptions.BaseDir = filepath.Join(u.GetBaseDir(writeUpstreamOptions), helmBase.Path)
-
 		helmBaseCopy := helmBase.DeepCopy()
 
 		processImageOptionsCopy := processImageOptions
 		processImageOptionsCopy.Namespace = helmBaseCopy.Namespace
 		processImageOptionsCopy.CopyImages = false // don't copy images more than once
 
-		helmMidstream, err := midstream.WriteMidstream(writeMidstreamOptions, processImageOptionsCopy, helmBaseCopy, rewriteOptions.License, identityConfig, upstreamDir, log)
+		writeMidstreamOptions.MidstreamDir = filepath.Join(u.GetOverlaysDir(writeUpstreamOptions), "midstream", helmBaseCopy.Path)
+		writeMidstreamOptions.BaseDir = filepath.Join(u.GetBaseDir(writeUpstreamOptions), helmBaseCopy.Path)
+		writeMidstreamOptions.ProcessImageOptions = processImageOptionsCopy
+		writeMidstreamOptions.Base = helmBaseCopy
+
+		helmMidstream, err := midstream.WriteMidstream(writeMidstreamOptions)
 		if err != nil {
 			return errors.Wrapf(err, "failed to write helm midstream %s", helmBase.Path)
 		}
@@ -301,11 +317,6 @@ func Rewrite(rewriteOptions RewriteOptions) error {
 		writeMidstreamOptions.UseHelmInstall[helmBase.Path] = previousUseHelmInstall
 
 		helmMidstreams = append(helmMidstreams, *helmMidstream)
-	}
-
-	renderedKotsKinds, err := kotsutil.KotsKindsFromMap(renderedKotsKindsMap)
-	if err != nil {
-		return errors.Wrap(err, "failed to load rendered kotskinds from map")
 	}
 
 	writeV1Beta2HelmChartsOpts := apparchive.WriteV1Beta2HelmChartsOptions{
@@ -325,23 +336,16 @@ func Rewrite(rewriteOptions RewriteOptions) error {
 		return errors.Wrap(err, "failed to write downstreams")
 	}
 
-	kotsKinds, err := kotsutil.LoadKotsKindsFromPath(rewriteOptions.UpstreamPath)
-	if err != nil {
-		return errors.Wrap(err, "failed to load kotskinds")
-	}
-
-	err = store.GetStore().UpdateAppVersionInstallationSpec(rewriteOptions.AppID, rewriteOptions.AppSequence, kotsKinds.Installation)
-	if err != nil {
+	if err := store.GetStore().UpdateAppVersionInstallationSpec(rewriteOptions.AppID, rewriteOptions.AppSequence, renderedKotsKinds.Installation); err != nil {
 		return errors.Wrap(err, "failed to update installation spec")
 	}
 
-	installationBytes, err := ioutil.ReadFile(filepath.Join(u.GetUpstreamDir(writeUpstreamOptions), "userdata", "installation.yaml"))
+	// installation spec gets updated during the process, ensure the map has the latest version
+	installationBytes, err := os.ReadFile(filepath.Join(u.GetUpstreamDir(writeUpstreamOptions), "userdata", "installation.yaml"))
 	if err != nil {
 		return errors.Wrap(err, "failed to read installation file")
 	}
-
-	installationFilename := kotsutil.GenUniqueKotsKindFilename(renderedKotsKindsMap, "installation")
-	renderedKotsKindsMap[installationFilename] = []byte(installationBytes)
+	renderedKotsKindsMap["userdata/installation.yaml"] = installationBytes
 
 	if err := kotsutil.WriteKotsKinds(renderedKotsKindsMap, u.GetKotsKindsDir(writeUpstreamOptions)); err != nil {
 		return errors.Wrap(err, "failed to write kots base")
@@ -352,7 +356,7 @@ func Rewrite(rewriteOptions RewriteOptions) error {
 		OverlaysDir:         u.GetOverlaysDir(writeUpstreamOptions),
 		RenderedDir:         u.GetRenderedDir(writeUpstreamOptions),
 		Downstreams:         rewriteOptions.Downstreams,
-		KustomizeBinPath:    kotsKinds.GetKustomizeBinaryPath(),
+		KustomizeBinPath:    renderedKotsKinds.GetKustomizeBinaryPath(),
 		HelmDir:             u.GetHelmDir(writeUpstreamOptions),
 		Log:                 log,
 		KotsKinds:           renderedKotsKinds,

@@ -335,7 +335,7 @@ var (
 
 func getUpdateChartFromCache(helmApp *apptypes.HelmApp, version string) (*bytes.Buffer, error) {
 	fileName := getUpdateChacheFileName(helmApp, version)
-	b, err := ioutil.ReadFile(fileName)
+	b, err := os.ReadFile(fileName)
 	if err != nil {
 		if os.IsNotExist(err) {
 			return nil, nil

@@ -1,4 +1,3 @@
-import React from "react";
 import Modal from "react-modal";
 import { Utilities } from "@src/utilities/utilities";
 import { Snapshot } from "@src/types";

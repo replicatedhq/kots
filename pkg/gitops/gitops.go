@@ -713,7 +713,7 @@ func getAuth(privateKey string) (transport.AuthMethod, error) {
 }
 
 func CreateGitOpsCommit(gitOpsConfig *GitOpsConfig, appSlug string, appName string, newSequence int, archiveDir string, downstreamName string) (string, error) {
-	kotsKinds, err := kotsutil.LoadKotsKindsFromPath(filepath.Join(archiveDir, "upstream"))
+	kotsKinds, err := kotsutil.LoadKotsKinds(archiveDir)
 	if err != nil {
 		return "", errors.Wrap(err, "failed to load kots kinds")
 	}
@@ -764,7 +764,7 @@ func CreateGitOpsCommit(gitOpsConfig *GitOpsConfig, appSlug string, appName stri
 	filePath := filepath.Join(dirPath, fmt.Sprintf("%s.yaml", appSlug))
 	_, err = os.Stat(filePath)
 	if err == nil { // if the file has not changed, end now
-		currentRevision, err := ioutil.ReadFile(filePath)
+		currentRevision, err := os.ReadFile(filePath)
 		if err != nil {
 			return "", errors.Wrap(err, "failed to read current app yaml")
 		}

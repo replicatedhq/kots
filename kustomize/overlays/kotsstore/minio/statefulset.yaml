@@ -1,27 +1,22 @@
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
+  name: kotsadm-minio
   labels:
-    app: minio
-    release: minio
-    kots.io/backup-type: admin-console
-  name: minio
+    kots.io/kotsadm: 'true'
+    kots.io/backup: velero
 spec:
-  serviceName: minio
+  serviceName: kotsadm-minio
   selector:
     matchLabels:
-      app: minio
-      release: minio
+      app: kotsadm-minio
   template:
     metadata:
       labels:
-        app: minio
-        release: minio
-        kots.io/backup-type: admin-console
-      annotations:
-        backup.velero.io/backup-volumes: miniodata
-        kots.io/backup-type: admin-console  
-      name: minio
+        kots.io/kotsadm: 'true'
+        kots.io/backup: velero
+        app: kotsadm-minio
+      name: kotsadm-minio
     spec:
       securityContext:
         runAsUser: 1001
@@ -35,16 +30,16 @@ spec:
           valueFrom:
             secretKeyRef:
               key: accesskey
-              name: minio
+              name: kotsadm-minio
         - name: MINIO_SECRET_KEY
           valueFrom:
             secretKeyRef:
               key: secretkey
-              name: minio
+              name: kotsadm-minio
         - name: MINIO_BROWSER
           value: "on"
-        image: kotsadm/minio:alpha
-        imagePullPolicy: Always
+        image: kotsadm/minio:0.20231101.183725
+        imagePullPolicy: IfNotPresent
         livenessProbe:
           failureThreshold: 3
           httpGet:
@@ -55,7 +50,7 @@ spec:
           periodSeconds: 30
           successThreshold: 1
           timeoutSeconds: 1
-        name: minio
+        name: kotsadm-minio
         ports:
           - containerPort: 9000
             name: service

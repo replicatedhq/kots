@@ -1,6 +1,6 @@
-import * as React from "react";
+import { Component } from "react";
 
-export default class MountAware extends React.Component {
+export default class MountAware extends Component {
   componentDidMount() {
     if (this.props.onMount) {
       const element = document.getElementById("mount-aware-wrapper");

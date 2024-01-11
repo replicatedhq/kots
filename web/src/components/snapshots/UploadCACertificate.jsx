@@ -1,4 +1,3 @@
-import React from "react";
 import Dropzone from "react-dropzone";
 import isEmpty from "lodash/isEmpty";
 import { getFileContent } from "../../utilities/utilities";

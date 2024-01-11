@@ -76,15 +76,15 @@ func AdminPushImagesCmd() *cobra.Command {
 }
 
 func genAndCheckPushOptions(endpoint string, namespace string, log *logger.CLILogger, v *viper.Viper) (*kotsadmtypes.PushImagesOptions, error) {
-	hostname, err := getHostnameFromEndpoint(endpoint)
+	host, err := getHostFromEndpoint(endpoint)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed get hostname from endpoint")
+		return nil, errors.Wrap(err, "failed get host from endpoint")
 	}
 
 	username := v.GetString("registry-username")
 	password := v.GetString("registry-password")
 	if username == "" && password == "" {
-		u, p, err := getRegistryCredentialsFromSecret(hostname, namespace)
+		u, p, err := getRegistryCredentialsFromSecret(host, namespace)
 		if err != nil {
 			if !kuberneteserrors.IsNotFound(err) {
 				log.Info("Failed to find registry credentials, will try to push anonymously: %v", err)
@@ -107,9 +107,9 @@ func genAndCheckPushOptions(endpoint string, namespace string, log *logger.CLILo
 	if !v.GetBool("skip-registry-check") {
 		log.ActionWithSpinner("Validating registry information")
 
-		if err := dockerregistry.CheckAccess(hostname, username, password); err != nil {
+		if err := dockerregistry.CheckAccess(host, username, password); err != nil {
 			log.FinishSpinnerWithError()
-			return nil, fmt.Errorf("Failed to test access to %q with user %q: %v", hostname, username, err)
+			return nil, fmt.Errorf("Failed to test access to %q with user %q: %v", host, username, err)
 		}
 		log.FinishSpinner()
 	}

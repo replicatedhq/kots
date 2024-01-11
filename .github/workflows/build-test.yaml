@@ -15,8 +15,8 @@ jobs:
   can-run-ci:
     runs-on: ubuntu-20.04
     # if the event is pull_request and:
-    #   - it is not a fork OR it is from the dependabot
-    #   - Then must have the label '@actions/safe-to-test'
+    #   - it is not a fork OR
+    #   - it has the label '@actions/safe-to-test'
     #
     # The 'pull_request_target' workflow trigger may lead to malicious PR authors being able to obtain repository write permissions or stealing repository secrets.
     # Please read https://securitylab.github.com/research/github-actions-preventing-pwn-requests/
@@ -45,36 +45,24 @@ jobs:
       tag: ${{ steps.get_tag.outputs.GIT_TAG }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Get tags
         id: get_tag
         uses: ./.github/actions/version-tag
 
-
-  test-okteto-env:
-    runs-on: ubuntu-latest
-    needs: [ can-run-ci ]
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v3
-      - name: Test Okteto development environment
-        uses: replicatedhq/action-okteto-test@main
-        with:
-          token: ${{ secrets.OKTETO_TOKEN }}
-          branch: ${{ github.head_ref }}
 
   deps-web:
     runs-on: ubuntu-20.04
     needs: [ can-run-ci ]
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           ref: ${{github.event.pull_request.head.ref}}
           repository: ${{github.event.pull_request.head.repo.full_name}}
 
       - name: Setup Node.js environment
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
           node-version: '18.x'
           cache: yarn
@@ -95,13 +83,13 @@ jobs:
     needs: [ can-run-ci, deps-web ]
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           ref: ${{github.event.pull_request.head.ref}}
           repository: ${{github.event.pull_request.head.repo.full_name}}
 
       - name: Setup Node.js environment
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
           node-version: '18.x'
           cache: yarn
@@ -122,13 +110,13 @@ jobs:
     needs: [ can-run-ci, deps-web ]
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           ref: ${{github.event.pull_request.head.ref}}
           repository: ${{github.event.pull_request.head.repo.full_name}}
 
       - name: Setup Node.js environment
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
           node-version: '18.x'
           cache: yarn
@@ -152,13 +140,13 @@ jobs:
       # Please read https://securitylab.github.com/research/github-actions-preventing-pwn-requests/
       # this action checks out the remote branch and runs CI
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           ref: ${{github.event.pull_request.head.ref}}
           repository: ${{github.event.pull_request.head.repo.full_name}}
 
       - name: Setup Node.js environment
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
           node-version: '18.x'
           cache: yarn
@@ -176,7 +164,7 @@ jobs:
         run: mapfile -t envs < <(grep -v '#.*' < .image.env) && export "${envs[@]}" && make -C web build-kotsadm
 
       - name: Upload web artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: web
           path: ./web/dist
@@ -185,12 +173,12 @@ jobs:
     runs-on: ubuntu-20.04
     needs: [ can-run-ci ]
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           ref: ${{github.event.pull_request.head.ref}}
           repository: ${{github.event.pull_request.head.repo.full_name}}
 
-      - uses: actions/setup-go@v3
+      - uses: actions/setup-go@v5
         with:
           go-version: '^1.20.0'
           cache: true
@@ -201,12 +189,12 @@ jobs:
     runs-on: ubuntu-20.04
     needs: [ can-run-ci, deps-kots ]
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           ref: ${{github.event.pull_request.head.ref}}
           repository: ${{github.event.pull_request.head.repo.full_name}}
 
-      - uses: actions/setup-go@v3
+      - uses: actions/setup-go@v5
         with:
           go-version: '^1.20.0'
           cache: true
@@ -218,12 +206,12 @@ jobs:
     runs-on: ubuntu-20.04
     needs: [ can-run-ci, deps-kots ]
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           ref: ${{github.event.pull_request.head.ref}}
           repository: ${{github.event.pull_request.head.repo.full_name}}
 
-      - uses: actions/setup-go@v3
+      - uses: actions/setup-go@v5
         with:
           go-version: '^1.20.0'
           cache: true
@@ -231,53 +219,24 @@ jobs:
       - name: test
         run: make ci-test
 
-  build-kotsadm:
-    runs-on: ubuntu-20.04
-    needs: [ can-run-ci, build-web, deps-kots, generate-tag ]
-    steps:
-      - uses: actions/checkout@v3
-        with:
-          ref: ${{github.event.pull_request.head.ref}}
-          repository: ${{github.event.pull_request.head.repo.full_name}}
-
-      - uses: actions/setup-go@v3
-        with:
-          go-version: '^1.20.0'
-          cache: true
-
-      - name: Download web artifact
-        uses: actions/download-artifact@v3
-        with:
-          name: web
-          path: ./web/dist
-
-      - name: Build
-        env:
-          GIT_TAG: ${{ needs.generate-tag.outputs.tag }}
-        run: mapfile -t envs < <(grep -v '#.*' < .image.env) && export "${envs[@]}" && make build
-
-      - uses: actions/upload-artifact@v3
-        with:
-          name: kotsadm
-          path: ./bin/kotsadm
 
   build-kots:
     runs-on: ubuntu-20.04
     needs: [ can-run-ci, build-web, deps-kots, generate-tag ]
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           ref: ${{github.event.pull_request.head.ref}}
           repository: ${{github.event.pull_request.head.repo.full_name}}
 
-      - uses: actions/setup-go@v3
+      - uses: actions/setup-go@v5
         with:
           go-version: '^1.20.0'
           cache: true
 
       - name: Download web artifact
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: web
           path: ./web/dist
@@ -287,42 +246,38 @@ jobs:
           GIT_TAG: ${{ needs.generate-tag.outputs.tag }}
         run: mapfile -t envs < <(grep -v '#.*' < .image.env) && export "${envs[@]}" && make kots
 
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         with:
           name: kots
           path: ./bin/kots
 
 
-  build-push-kotsadm-image:
+  build-kotsadm:
     runs-on: ubuntu-20.04
-    needs: [ can-run-ci, build-kotsadm, build-kots ]
+    needs: [ can-run-ci, generate-tag ]
+    permissions:
+      id-token: write # required to be able to assume the GCP SA identity to pull private Chainguard packages.
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '^1.20.0'
+          cache: true
+      - name: setup env
+        shell: bash
+        run: |
+          echo "GOPATH=$(go env GOPATH)" >> "$GITHUB_ENV"
+          echo "$(go env GOPATH)/bin" >> "$GITHUB_PATH"
+      - uses: actions/checkout@v4
         with:
           ref: ${{github.event.pull_request.head.ref}}
           repository: ${{github.event.pull_request.head.repo.full_name}}
-
-      - name: Download kots artifact
-        uses: actions/download-artifact@v3
+      - uses: ./.github/actions/build-push-kotsadm-image
         with:
-          name: kots
-          path: bin/
-
-      - name: Download kotsadm artifact
-        uses: actions/download-artifact@v3
-        with:
-          name: kotsadm
-          path: bin/
-
-      - run: chmod +x bin/kots bin/kotsadm
-
-      - name: build and push kotsadm for e2e
-        uses: docker/build-push-action@v3
-        with:
-          tags: ttl.sh/automated-${{ github.run_id }}/kotsadm:24h
-          context: ./
-          file: ./deploy/Dockerfile
-          push: true
+          chainguard-gcp-wif-pool: ${{ secrets.CHAINGUARD_GCP_WIF_POOL }}
+          chainguard-gcp-sa: ${{ secrets.CHAINGUARD_GCP_SA }}
+          chainguard-gcp-project-id: ${{ secrets.CHAINGUARD_GCP_PROJECT_ID }}
+          image-name: ttl.sh/automated-${{ github.run_id }}/kotsadm:24h
+          git-tag: ${{ needs.generate-tag.outputs.tag }}
 
 
   build-kots-helm:
@@ -330,7 +285,7 @@ jobs:
     needs: [ can-run-ci ]
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           ref: main
           repository: replicatedhq/kots-helm
@@ -359,11 +314,11 @@ jobs:
     runs-on: ubuntu-20.04
     needs: [ can-run-ci ]
     steps:
-      - uses: actions/setup-go@v3
+      - uses: actions/setup-go@v5
         with:
           go-version: '^1.20.0'
 
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           ref: ${{github.event.pull_request.head.ref}}
           repository: ${{github.event.pull_request.head.repo.full_name}}
@@ -379,7 +334,7 @@ jobs:
             ${{ runner.os }}-go-e2e-
       - run: make -C e2e build deps
       - run: docker save e2e-deps -o e2e/bin/e2e-deps.tar
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         with:
           name: e2e
           path: e2e/bin/
@@ -387,11 +342,12 @@ jobs:
 
   build-kurl-proxy:
     runs-on: ubuntu-20.04
-    needs: [ can-run-ci ]
+    needs: [ can-run-ci, generate-tag ]
     steps:
-      - uses: actions/setup-go@v3
+      - uses: actions/setup-go@v5
         with:
           go-version: '^1.20.0'
+          cache: true
 
       - name: setup env
         run: |
@@ -402,35 +358,20 @@ jobs:
       # This workflow trigger may lead to malicious PR authors being able to obtain repository write permissions or stealing repository secrets.
       # Please read https://securitylab.github.com/research/github-actions-preventing-pwn-requests/
       # this action creates a branch based on remote branch and runs the tests
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           ref: ${{github.event.pull_request.head.ref}}
           repository: ${{github.event.pull_request.head.repo.full_name}}
 
-      - name: Cache Go modules
-        uses: actions/cache@v3
+      - uses: ./.github/actions/build-push-kurl-proxy-image
         with:
-          path: |
-            ~/.cache/go-build
-            ~/go/pkg/mod
-          key: ${{ runner.os }}-go-kurlproxy-${{ hashFiles('**/go.sum') }}
-          restore-keys: |
-            ${{ runner.os }}-go-kurlproxy-
-
-      - run: mapfile -t envs < <(grep -v '#.*' < .image.env) && export "${envs[@]}" && make -C kurl_proxy test build
-
-      - name: build and push kurl_proxy for e2e
-        uses: docker/build-push-action@v3
-        with:
-          tags: ttl.sh/automated-${{ github.run_id }}/kurl-proxy:24h
-          context: ./kurl_proxy
-          file: ./kurl_proxy/deploy/Dockerfile
-          push: true
+          image-name: ttl.sh/automated-${{ github.run_id }}/kurl-proxy:24h
+          git-tag: ${{ needs.generate-tag.outputs.tag }}
 
 
   build-migrations:
     runs-on: ubuntu-20.04
-    needs: [ can-run-ci ]
+    needs: [ can-run-ci, generate-tag ]
     steps:
       - name: setup env
         run: |
@@ -441,32 +382,28 @@ jobs:
       # This workflow trigger may lead to malicious PR authors being able to obtain repository write permissions or stealing repository secrets.
       # Please read https://securitylab.github.com/research/github-actions-preventing-pwn-requests/
       # this action creates a branch based on remote branch and runs the tests
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           ref: ${{github.event.pull_request.head.ref}}
           repository: ${{github.event.pull_request.head.repo.full_name}}
 
-      - name: load environment variables from .image.env
-        uses: falti/dotenv-action@v1
-        id: dotenv
+      - uses: ./.github/actions/build-push-kotsadm-migrations-image
         with:
-          path: .image.env
-
-      - name: build and push migrations for e2e
-        uses: docker/build-push-action@v3
-        with:
-          tags: ttl.sh/automated-${{ github.run_id }}/kotsadm-migrations:24h
-          context: ./migrations
-          file: ./migrations/deploy/Dockerfile
-          push: true
-          build-args: SCHEMAHERO_TAG=${{ steps.dotenv.outputs.schemahero_tag }}
+          image-name: ttl.sh/automated-${{ github.run_id }}/kotsadm-migrations:24h
+          git-tag: ${{ needs.generate-tag.outputs.tag }}
 
 
   push-minio:
     runs-on: ubuntu-20.04
     needs: [ can-run-ci ]
     steps:
-      - uses: actions/checkout@v3
+      # This workflow trigger may lead to malicious PR authors being able to obtain repository write permissions or stealing repository secrets.
+      # Please read https://securitylab.github.com/research/github-actions-preventing-pwn-requests/
+      # this action creates a branch based on remote branch and runs the tests
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{github.event.pull_request.head.ref}}
+          repository: ${{github.event.pull_request.head.repo.full_name}}
 
       - name: load environment variables from .image.env
         uses: falti/dotenv-action@v1
@@ -474,37 +411,24 @@ jobs:
         with:
           path: .image.env
 
-      - name: push minio for e2e
+      - name: push minio
         run: |
-          docker pull minio/minio:${{ steps.dotenv.outputs.minio_tag }}
-          docker tag minio/minio:${{ steps.dotenv.outputs.minio_tag }} ttl.sh/automated-${{ github.run_id }}/minio:${{ steps.dotenv.outputs.minio_tag }}
-          docker push ttl.sh/automated-${{ github.run_id }}/minio:${{ steps.dotenv.outputs.minio_tag }}
-
-
-  push-mc:
-    runs-on: ubuntu-20.04
-    needs: [ can-run-ci ]
-    steps:
-      - uses: actions/checkout@v3
-
-      - name: load environment variables from .image.env
-        uses: falti/dotenv-action@v1
-        id: dotenv
-        with:
-          path: .image.env
-
-      - name: push minio client for e2e
-        run: |
-          docker pull minio/mc:${{ steps.dotenv.outputs.mc_tag }}
-          docker tag minio/mc:${{ steps.dotenv.outputs.mc_tag }} ttl.sh/automated-${{ github.run_id }}/mc:${{ steps.dotenv.outputs.mc_tag }}
-          docker push ttl.sh/automated-${{ github.run_id }}/mc:${{ steps.dotenv.outputs.mc_tag }}
+          docker pull kotsadm/minio:${{ steps.dotenv.outputs.MINIO_TAG }}
+          docker tag kotsadm/minio:${{ steps.dotenv.outputs.MINIO_TAG }} ttl.sh/automated-${{ github.run_id }}/minio:${{ steps.dotenv.outputs.MINIO_TAG }}
+          docker push ttl.sh/automated-${{ github.run_id }}/minio:${{ steps.dotenv.outputs.MINIO_TAG }}
 
 
   push-rqlite:
     runs-on: ubuntu-20.04
     needs: [ can-run-ci ]
     steps:
-      - uses: actions/checkout@v3
+      # This workflow trigger may lead to malicious PR authors being able to obtain repository write permissions or stealing repository secrets.
+      # Please read https://securitylab.github.com/research/github-actions-preventing-pwn-requests/
+      # this action creates a branch based on remote branch and runs the tests
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{github.event.pull_request.head.ref}}
+          repository: ${{github.event.pull_request.head.repo.full_name}}
 
       - name: load environment variables from .image.env
         uses: falti/dotenv-action@v1
@@ -512,18 +436,23 @@ jobs:
         with:
           path: .image.env
 
-      - name: push rqlite for CI
+      - name: push rqlite
         run: |
-          docker pull rqlite/rqlite:${{ steps.dotenv.outputs.RQLITE_TAG }}
-          docker tag rqlite/rqlite:${{ steps.dotenv.outputs.RQLITE_TAG }} ttl.sh/automated-${{ github.run_id }}/rqlite:${{ steps.dotenv.outputs.RQLITE_TAG }}
+          docker pull kotsadm/rqlite:${{ steps.dotenv.outputs.RQLITE_TAG }}
+          docker tag kotsadm/rqlite:${{ steps.dotenv.outputs.RQLITE_TAG }} ttl.sh/automated-${{ github.run_id }}/rqlite:${{ steps.dotenv.outputs.RQLITE_TAG }}
           docker push ttl.sh/automated-${{ github.run_id }}/rqlite:${{ steps.dotenv.outputs.RQLITE_TAG }}
-
 
   push-dex:
     runs-on: ubuntu-20.04
     needs: [ can-run-ci ]
     steps:
-      - uses: actions/checkout@v3
+      # This workflow trigger may lead to malicious PR authors being able to obtain repository write permissions or stealing repository secrets.
+      # Please read https://securitylab.github.com/research/github-actions-preventing-pwn-requests/
+      # this action creates a branch based on remote branch and runs the tests
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{github.event.pull_request.head.ref}}
+          repository: ${{github.event.pull_request.head.repo.full_name}}
 
       - name: load environment variables from .image.env
         uses: falti/dotenv-action@v1
@@ -531,11 +460,11 @@ jobs:
         with:
           path: .image.env
 
-      - name: push dex for CI
+      - name: push dex
         run: |
-          docker build --pull -f deploy/dex.Dockerfile -t ttl.sh/automated-${{ github.run_id }}/dex:${{ steps.dotenv.outputs.DEX_TAG }} --build-arg TAG=${{ steps.dotenv.outputs.DEX_TAG }} .
+          docker pull kotsadm/dex:${{ steps.dotenv.outputs.DEX_TAG }}
+          docker tag kotsadm/dex:${{ steps.dotenv.outputs.DEX_TAG }} ttl.sh/automated-${{ github.run_id }}/dex:${{ steps.dotenv.outputs.DEX_TAG }}
           docker push ttl.sh/automated-${{ github.run_id }}/dex:${{ steps.dotenv.outputs.DEX_TAG }}
-
 
   # only run validate-kurl-addon if changes to "deploy/kurl/kotsadm/template/**"
   kurl-addon-changes-filter:
@@ -544,7 +473,7 @@ jobs:
     outputs:
       ok-to-test: ${{ steps.filter.outputs.kurl-addon }}
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - uses: dorny/paths-filter@v2
         id: filter
         with:
@@ -555,17 +484,17 @@ jobs:
   validate-kurl-addon:
     runs-on: ubuntu-20.04
     if: ${{ needs.kurl-addon-changes-filter.outputs.ok-to-test == 'true' }}
-    needs: [ can-run-ci, enable-tests, generate-tag, kurl-addon-changes-filter, build-kots, build-push-kotsadm-image, build-kurl-proxy, build-migrations, push-dex ]
+    needs: [ can-run-ci, enable-tests, generate-tag, kurl-addon-changes-filter, build-kots, build-kotsadm, build-kurl-proxy, build-migrations, push-dex ]
     steps:
       - name: checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: set outputs
         id: vars
         run: |
           addon_version=${{ needs.generate-tag.outputs.tag }}
           echo "addon_version=${addon_version#v}" >> "$GITHUB_OUTPUT"
       - name: download kots binary
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: kots
           path: bin/
@@ -600,12 +529,12 @@ jobs:
           repo-token: ${{ secrets.GITHUB_TOKEN }}
           allow-repeats: false
 
-  
+
   cmx-versions:
     runs-on: ubuntu-20.04
     needs: [ enable-tests, can-run-ci ]
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 0
       - name: get CMX versions to test
@@ -619,17 +548,17 @@ jobs:
 
   validate-existing-online-install-minimal:
     runs-on: ubuntu-20.04
-    needs: [ enable-tests, can-run-ci, build-push-kotsadm-image, build-e2e, build-kurl-proxy, build-migrations, push-minio, push-mc, push-rqlite ]
+    needs: [ enable-tests, can-run-ci, build-kots, build-kotsadm, build-e2e, build-kurl-proxy, build-migrations, push-minio, push-rqlite ]
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: download e2e deps
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: e2e
           path: e2e/bin/
       - name: download kots binary
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: kots
           path: bin/
@@ -654,7 +583,7 @@ jobs:
 
   validate-smoke-test:
     runs-on: ubuntu-20.04
-    needs: [ enable-tests, can-run-ci, cmx-versions, build-push-kotsadm-image, build-e2e, build-kurl-proxy, build-migrations, push-minio, push-mc, push-rqlite ]
+    needs: [ enable-tests, can-run-ci, cmx-versions, build-kots, build-kotsadm, build-e2e, build-kurl-proxy, build-migrations, push-minio, push-rqlite ]
     strategy:
       fail-fast: false
       matrix:
@@ -662,16 +591,16 @@ jobs:
     continue-on-error: ${{ matrix.cluster.stage != 'stable' }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: download e2e deps
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: e2e
           path: e2e/bin/
       - run: docker load -i e2e/bin/e2e-deps.tar
       - run: chmod +x e2e/bin/*
       - name: download kots binary
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: kots
           path: bin/
@@ -693,46 +622,119 @@ jobs:
 
   validate-minimal-rbac:
     runs-on: ubuntu-20.04
-    needs: [ enable-tests, can-run-ci, cmx-versions, build-push-kotsadm-image, build-e2e, build-kurl-proxy, build-migrations, push-minio, push-mc, push-rqlite ]
+    needs: [ enable-tests, can-run-ci, cmx-versions, build-kots, build-kotsadm, build-e2e, build-kurl-proxy, build-migrations, push-minio, push-rqlite ]
     strategy:
       fail-fast: false
       matrix:
-        cluster: ${{ fromJson(needs.cmx-versions.outputs.versions-to-test) }}
-    continue-on-error: ${{ matrix.cluster.stage != 'stable' }}
+        cluster: [
+          {distribution: kind, version: v1.28.0},
+          {distribution: openshift, version: 4.13.0-okd}
+        ]
+    env:
+      APP_SLUG: minimal-rbac
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
-      - name: download e2e deps
-        uses: actions/download-artifact@v3
+        uses: actions/checkout@v4
+
+      - name: Create Cluster 
+        id: create-cluster 
+        uses: replicatedhq/replicated-actions/create-cluster@v1 
         with:
-          name: e2e
-          path: e2e/bin/
-      - run: docker load -i e2e/bin/e2e-deps.tar
-      - run: chmod +x e2e/bin/*
+          api-token: ${{ secrets.C11Y_MATRIX_TOKEN }}
+          kubernetes-distribution: ${{ matrix.cluster.distribution }}
+          kubernetes-version: ${{ matrix.cluster.version }}
+          cluster-name: automated-kots-${{ github.run_id }}-${{ matrix.cluster.distribution }}-${{ matrix.cluster.version }}
+          timeout-minutes: '120'
+          ttl: 2h
+          export-kubeconfig: true
+
       - name: download kots binary
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: kots
           path: bin/
-      - run: chmod +x bin/*
-      - uses: ./.github/actions/kots-e2e
+
+      - run: chmod +x bin/kots
+
+      - name: create namespace and dockerhub secret
+        run: |
+          kubectl create ns "$APP_SLUG"
+          kubectl create secret docker-registry kotsadm-dockerhub --docker-server index.docker.io --docker-username "${{ secrets.E2E_DOCKERHUB_USERNAME }}" --docker-password "${{ secrets.E2E_DOCKERHUB_PASSWORD }}" --namespace "$APP_SLUG"
+
+      - name: run the test
+        run: |
+          set +e
+          echo ${{ secrets.MINIMAL_RBAC_LICENSE }} | base64 -d > license.yaml
+          ./bin/kots \
+            install "$APP_SLUG/automated" \
+            --license-file license.yaml \
+            --no-port-forward \
+            --namespace "$APP_SLUG" \
+            --shared-password password \
+            --kotsadm-registry ttl.sh \
+            --kotsadm-namespace automated-${{ github.run_id }} \
+            --kotsadm-tag 24h | tee output.txt
+
+          if ! grep -q "The Kubernetes RBAC policy that the Admin Console is running with does not have access to complete the Preflight Checks. It's recommended that you run these manually before proceeding." output.txt; then
+            echo "Expected to see an RBAC error for preflight checks, but did not" 
+            exit 1
+          fi
+
+          if ! grep -q 'The app was not deployed.' output.txt; then
+            printf "Expected to see message about app not being deployed, but did not\n"
+            exit 1
+          fi
+
+          if grep FAIL output.txt | grep -q 'This application requires at least 100 nodes'; then
+            printf "Did not expect to see a failure about number of nodes, but did\n"
+            exit 1
+          fi
+
+          if ! kubectl get role -n "$APP_SLUG" | grep -q kotsadm; then
+            echo "kotsadm role not found in namespace $APP_SLUG"
+            kubectl get role -n "$APP_SLUG"
+            exit 1
+          fi
+
+          if ! kubectl get rolebinding -n "$APP_SLUG" | grep -q kotsadm; then
+            echo "kotsadm rolebinding not found in namespace $APP_SLUG"
+            kubectl get rolebinding -n "$APP_SLUG"
+            exit 1
+          fi
+
+          if kubectl get clusterrole | grep -q kotsadm; then
+            echo "found kotsadm clusterrole in minimal RBAC install"
+            kubectl get clusterrole
+            exit 1
+          fi
+
+          if kubectl get clusterrolebinding | grep -q kotsadm; then
+            echo "found kotsadm clusterrolebinding in minimal RBAC install"
+            kubectl get clusterrolebinding
+            exit 1
+          fi
+
+      - name: Generate support bundle on failure
+        if: failure()
+        uses: ./.github/actions/generate-support-bundle
         with:
-          test-focus: 'Minimal RBAC'
-          kots-namespace: 'minimal-rbac'
-          k8s-distribution: ${{ matrix.cluster.distribution }}
-          k8s-version: ${{ matrix.cluster.version }}
-          testim-access-token: '${{ secrets.TESTIM_ACCESS_TOKEN }}'
-          testim-branch: ${{ github.head_ref == 'main' && 'master' || github.head_ref }}
+          kots-namespace: "$APP_SLUG"
           aws-access-key-id: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_ACCESS_KEY_ID }}'
           aws-secret-access-key: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_SECRET_ACCESS_KEY }}'
-          replicated-api-token: '${{ secrets.C11Y_MATRIX_TOKEN }}'
-          kots-dockerhub-username: '${{ secrets.E2E_DOCKERHUB_USERNAME }}'
-          kots-dockerhub-password: '${{ secrets.E2E_DOCKERHUB_PASSWORD }}'
+
+      - name: Remove Cluster
+        id: remove-cluster
+        uses: replicatedhq/replicated-actions/remove-cluster@v1
+        if: ${{ always() && steps.create-cluster.outputs.cluster-id != '' }}
+        continue-on-error: true
+        with:
+          api-token: ${{ secrets.C11Y_MATRIX_TOKEN }}
+          cluster-id: ${{ steps.create-cluster.outputs.cluster-id }}
 
 
   validate-backup-and-restore:
     runs-on: ubuntu-20.04
-    needs: [ enable-tests, can-run-ci, cmx-versions, build-push-kotsadm-image, build-e2e, build-kurl-proxy, build-migrations, push-minio, push-mc, push-rqlite ]
+    needs: [ enable-tests, can-run-ci, cmx-versions, build-kots, build-kotsadm, build-e2e, build-kurl-proxy, build-migrations, push-minio, push-rqlite ]
     strategy:
       fail-fast: false
       matrix:
@@ -740,16 +742,16 @@ jobs:
     continue-on-error: ${{ matrix.cluster.stage != 'stable' }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: download e2e deps
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: e2e
           path: e2e/bin/
       - run: docker load -i e2e/bin/e2e-deps.tar
       - run: chmod +x e2e/bin/*
       - name: download kots binary
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: kots
           path: bin/
@@ -771,25 +773,25 @@ jobs:
 
   validate-no-required-config:
     runs-on: ubuntu-20.04
-    needs: [ enable-tests, can-run-ci, build-push-kotsadm-image, build-e2e, build-kurl-proxy, build-migrations, push-minio, push-mc, push-rqlite ]
+    needs: [ enable-tests, can-run-ci, build-kots, build-kotsadm, build-e2e, build-kurl-proxy, build-migrations, push-minio, push-rqlite ]
     strategy:
       fail-fast: false
       matrix:
         cluster: [
-          {distribution: kind, version: v1.27}
+          {distribution: kind, version: v1.28.0}
         ]
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: download e2e deps
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: e2e
           path: e2e/bin/
       - run: docker load -i e2e/bin/e2e-deps.tar
       - run: chmod +x e2e/bin/*
       - name: download kots binary
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: kots
           path: bin/
@@ -811,65 +813,134 @@ jobs:
 
   validate-strict-preflight-checks:
     runs-on: ubuntu-20.04
-    needs: [ enable-tests, can-run-ci, build-push-kotsadm-image, build-e2e, build-kurl-proxy, build-migrations, push-minio, push-mc, push-rqlite ]
+    needs: [ enable-tests, can-run-ci, build-kots, build-kotsadm, build-e2e, build-kurl-proxy, build-migrations, push-minio, push-rqlite ]
     strategy:
       fail-fast: false
       matrix:
         cluster: [
-          {distribution: kind, version: v1.27}
+          {distribution: kind, version: v1.28.0}
         ]
+    env:
+      APP_SLUG: strict-preflight-checks
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
-      - name: download e2e deps
-        uses: actions/download-artifact@v3
+        uses: actions/checkout@v4
+
+      - name: Create Cluster 
+        id: create-cluster 
+        uses: replicatedhq/replicated-actions/create-cluster@v1 
         with:
-          name: e2e
-          path: e2e/bin/
-      - run: docker load -i e2e/bin/e2e-deps.tar
-      - run: chmod +x e2e/bin/*
+          api-token: ${{ secrets.C11Y_MATRIX_TOKEN }}
+          kubernetes-distribution: ${{ matrix.cluster.distribution }}
+          kubernetes-version: ${{ matrix.cluster.version }}
+          cluster-name: automated-kots-${{ github.run_id }}-${{ matrix.cluster.distribution }}-${{ matrix.cluster.version }}
+          timeout-minutes: '120'
+          ttl: 2h
+          export-kubeconfig: true
+
       - name: download kots binary
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: kots
           path: bin/
-      - run: chmod +x bin/*
-      - uses: ./.github/actions/kots-e2e
+
+      - run: chmod +x bin/kots
+
+      - name: create namespace and dockerhub secret
+        run: |
+          kubectl create ns "$APP_SLUG"
+          kubectl create secret docker-registry kotsadm-dockerhub --docker-server index.docker.io --docker-username "${{ secrets.E2E_DOCKERHUB_USERNAME }}" --docker-password "${{ secrets.E2E_DOCKERHUB_PASSWORD }}" --namespace "$APP_SLUG"
+
+      - name: run the test
+        run: |
+          set +e
+          echo ${{ secrets.STRICT_PREFLIGHT_CHECKS_LICENSE }} | base64 -d > license.yaml
+          ./bin/kots \
+            install "$APP_SLUG/automated" \
+            --license-file license.yaml \
+            --no-port-forward \
+            --namespace "$APP_SLUG" \
+            --shared-password password \
+            --kotsadm-registry ttl.sh \
+            --kotsadm-namespace automated-${{ github.run_id }} \
+            --skip-preflights \
+            --kotsadm-tag 24h | tee output.txt
+
+          if ! grep -q 'The app was not deployed.' output.txt; then
+            printf "Expected to see message about app not being deployed, but did not\n"
+            exit 1
+          fi
+
+          if ! grep FAIL output.txt | grep -q 'The application requires a Kubernetes 2.0.0 or later.'; then
+            printf "Expected to see a failure about kubernetes version, but did not\n"
+            exit 1
+          fi
+
+          if ! kubectl logs deploy/kotsadm -n "$APP_SLUG" | grep -q "preflights will not be skipped, strict preflights are set to true"; then
+            echo "Failed to find a log line about strict preflights not being skipped in kotsadm logs"
+            echo "kotsadm logs:"
+            kubectl logs deploy/kotsadm -n "$APP_SLUG"
+            exit 1
+          fi
+
+          # disable the strict preflight check and app should deploy successfully
+          ./bin/kots set config "$APP_SLUG" enable_failing_strict_analyzers="0" --namespace "$APP_SLUG" --deploy
+
+          COUNTER=1
+          while [ "$(./bin/kots get apps --namespace "$APP_SLUG" | awk 'NR>1{print $2}')" != "ready" ]; do
+            ((COUNTER += 1))
+            if [ $COUNTER -gt 120 ]; then
+              echo "Timed out waiting for app to be ready"
+              ./bin/kots get apps --namespace "$APP_SLUG"
+              echo "kotsadm logs:"
+              kubectl logs deploy/kotsadm --tail=100 -n "$APP_SLUG"
+              exit 1
+            fi
+            sleep 1
+          done
+
+          printf "App is installed successfully and is ready\n\n"
+          ./bin/kots get apps --namespace "$APP_SLUG"
+
+      - name: Generate support bundle on failure
+        if: failure()
+        uses: ./.github/actions/generate-support-bundle
         with:
-          test-focus: 'Strict Preflight Checks'
-          kots-namespace: 'strict-preflight-checks'
-          k8s-distribution: ${{ matrix.cluster.distribution }}
-          k8s-version: ${{ matrix.cluster.version }}
-          testim-access-token: '${{ secrets.TESTIM_ACCESS_TOKEN }}'
-          testim-branch: ${{ github.head_ref == 'main' && 'master' || github.head_ref }}
+          kots-namespace: "$APP_SLUG"
           aws-access-key-id: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_ACCESS_KEY_ID }}'
           aws-secret-access-key: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_SECRET_ACCESS_KEY }}'
-          replicated-api-token: '${{ secrets.C11Y_MATRIX_TOKEN }}'
-          kots-dockerhub-username: '${{ secrets.E2E_DOCKERHUB_USERNAME }}'
-          kots-dockerhub-password: '${{ secrets.E2E_DOCKERHUB_PASSWORD }}'
+
+      - name: Remove Cluster
+        id: remove-cluster
+        uses: replicatedhq/replicated-actions/remove-cluster@v1
+        if: ${{ always() && steps.create-cluster.outputs.cluster-id != '' }}
+        continue-on-error: true
+        with:
+          api-token: ${{ secrets.C11Y_MATRIX_TOKEN }}
+          cluster-id: ${{ steps.create-cluster.outputs.cluster-id }}
 
 
   validate-config:
     runs-on: ubuntu-20.04
-    needs: [ enable-tests, can-run-ci, build-push-kotsadm-image, build-e2e, build-kurl-proxy, build-migrations, push-minio, push-mc, push-rqlite ]
+    needs: [ enable-tests, can-run-ci, build-kots, build-kotsadm, build-e2e, build-kurl-proxy, build-migrations, push-minio, push-rqlite ]
     strategy:
       fail-fast: false
       matrix:
         cluster: [
-          {distribution: kind, version: v1.27}
+          {distribution: kind, version: v1.28.0}
         ]
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: download e2e deps
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: e2e
           path: e2e/bin/
       - run: docker load -i e2e/bin/e2e-deps.tar
       - run: chmod +x e2e/bin/*
       - name: download kots binary
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: kots
           path: bin/
@@ -891,7 +962,7 @@ jobs:
 
   validate-version-history-pagination:
     runs-on: ubuntu-20.04
-    needs: [ enable-tests, can-run-ci, build-push-kotsadm-image, build-e2e, build-kurl-proxy, build-migrations, push-minio, push-mc, push-rqlite ]
+    needs: [ enable-tests, can-run-ci, build-kots, build-kotsadm, build-e2e, build-kurl-proxy, build-migrations, push-minio, push-rqlite ]
     strategy:
       fail-fast: false
       matrix:
@@ -900,16 +971,16 @@ jobs:
         ]
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: download e2e deps
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: e2e
           path: e2e/bin/
       - run: docker load -i e2e/bin/e2e-deps.tar
       - run: chmod +x e2e/bin/*
       - name: download kots binary
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: kots
           path: bin/
@@ -930,25 +1001,25 @@ jobs:
 
   validate-change-license:
     runs-on: ubuntu-20.04
-    needs: [ enable-tests, can-run-ci, build-push-kotsadm-image, build-e2e, build-kurl-proxy, build-migrations, push-minio, push-mc, push-rqlite ]
+    needs: [ enable-tests, can-run-ci, build-kots, build-kotsadm, build-e2e, build-kurl-proxy, build-migrations, push-minio, push-rqlite ]
     strategy:
       fail-fast: false
       matrix:
         cluster: [
-          {distribution: kind, version: v1.27}
+          {distribution: kind, version: v1.28.0}
         ]
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: download e2e deps
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: e2e
           path: e2e/bin/
       - run: docker load -i e2e/bin/e2e-deps.tar
       - run: chmod +x e2e/bin/*
       - name: download kots binary
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: kots
           path: bin/
@@ -970,18 +1041,20 @@ jobs:
 
   validate-minimal-rbac-override:
     runs-on: ubuntu-20.04
-    needs: [ enable-tests, can-run-ci, cmx-versions, build-push-kotsadm-image, build-e2e, build-kurl-proxy, build-migrations, push-minio, push-mc, push-rqlite ]
+    needs: [ enable-tests, can-run-ci, cmx-versions, build-kots, build-kotsadm, build-e2e, build-kurl-proxy, build-migrations, push-minio, push-rqlite ]
     strategy:
       fail-fast: false
       matrix:
-        cluster: ${{ fromJson(needs.cmx-versions.outputs.versions-to-test) }}
-    continue-on-error: ${{ matrix.cluster.stage != 'stable' }}
+        cluster: [
+          {distribution: kind, version: v1.28.0},
+          {distribution: openshift, version: 4.13.0-okd}
+        ]
     env:
       APP_SLUG: minimal-rbac
       APP_VERSION_LABEL: "0.0.1"
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Create Cluster 
         id: create-cluster 
@@ -997,7 +1070,7 @@ jobs:
           export-kubeconfig: true
 
       - name: download kots binary
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: kots
           path: bin/
@@ -1011,8 +1084,11 @@ jobs:
 
       - name: minimal rbac override on command line
         run: |
+          set +e
+          echo ${{ secrets.MINIMAL_RBAC_LICENSE }} | base64 -d > license.yaml
           ./bin/kots \
             install "$APP_SLUG/automated" \
+            --license-file license.yaml \
             --app-version-label "$APP_VERSION_LABEL" \
             --no-port-forward \
             --namespace "$APP_SLUG" \
@@ -1020,16 +1096,45 @@ jobs:
             --kotsadm-registry ttl.sh \
             --kotsadm-namespace automated-${{ github.run_id }} \
             --kotsadm-tag 24h \
-            --use-minimal-rbac
-          if kubectl get roles -n "$APP_SLUG" | grep -q kotsadm; then
-            echo "Found kotsadm role in ${APP_SLUG}"
-          else
-            echo "No kotsadm role found in appication namespace"
+            --use-minimal-rbac | tee output.txt
+
+          if ! grep -q "The Kubernetes RBAC policy that the Admin Console is running with does not have access to complete the Preflight Checks. It's recommended that you run these manually before proceeding." output.txt; then
+            echo "Expected to see an RBAC error for preflight checks, but did not" 
             exit 1
           fi
-          if kubectl get clusterroles | grep -q kotsadm; then
-            echo "Found kotsadm cluster roles in minimal RBAC install"
-            exit
+
+          if ! grep -q 'The app was not deployed.' output.txt; then
+            printf "Expected to see message about app not being deployed, but did not\n"
+            exit 1
+          fi
+
+          if grep FAIL output.txt | grep -q 'This application requires at least 100 nodes'; then
+            printf "Did not expect to see a failure about number of nodes, but did\n"
+            exit 1
+          fi
+
+          if ! kubectl get role -n "$APP_SLUG" | grep -q kotsadm; then
+            echo "kotsadm role not found in namespace $APP_SLUG"
+            kubectl get role -n "$APP_SLUG"
+            exit 1
+          fi
+
+          if ! kubectl get rolebinding -n "$APP_SLUG" | grep -q kotsadm; then
+            echo "kotsadm rolebinding not found in namespace $APP_SLUG"
+            kubectl get rolebinding -n "$APP_SLUG"
+            exit 1
+          fi
+
+          if kubectl get clusterrole | grep -q kotsadm; then
+            echo "found kotsadm clusterrole in minimal RBAC install"
+            kubectl get clusterrole
+            exit 1
+          fi
+
+          if kubectl get clusterrolebinding | grep -q kotsadm; then
+            echo "found kotsadm clusterrolebinding in minimal RBAC install"
+            kubectl get clusterrolebinding
+            exit 1
           fi
 
       - name: create namespace and dockerhub secret
@@ -1040,25 +1145,58 @@ jobs:
 
       - name: no minimal rbac override on command line
         run: |
+          set +e
+          echo ${{ secrets.MINIMAL_RBAC_LICENSE }} | base64 -d > license.yaml
           ./bin/kots \
             install "$APP_SLUG/automated" \
+            --license-file license.yaml \
             --app-version-label "$APP_VERSION_LABEL" \
             --no-port-forward \
             --namespace "$APP_SLUG" \
             --shared-password password \
             --kotsadm-registry ttl.sh \
             --kotsadm-namespace automated-${{ github.run_id }} \
-            --kotsadm-tag 24h
-          if kubectl get roles -n "$APP_SLUG" | grep -q kotsadm; then
-            echo "Found kotsadm role in cluster scoped install"
+            --kotsadm-tag 24h | tee output.txt
+
+          if grep -q "The Kubernetes RBAC policy that the Admin Console is running with does not have access to complete the Preflight Checks. It's recommended that you run these manually before proceeding." output.txt; then
+            echo "Did not expect to see an RBAC error for preflight checks, but did" 
             exit 1
           fi
-          if kubectl get clusterroles | grep -q kotsadm; then
-            echo "Found kotsadm cluster role in cluster scoped install"
-          else
-            echo "No kotsadm cluster role in cluster scoped install"
+
+          if ! grep -q 'The app was not deployed.' output.txt; then
+            printf "Expected to see message about app not being deployed, but did not\n"
             exit 1
           fi
+
+          if ! grep FAIL output.txt | grep -q 'This application requires at least 100 nodes'; then
+            printf "Expected to see a failure about number of nodes, but did not\n"
+            exit 1
+          fi
+
+          if kubectl get role -n "$APP_SLUG" | grep -q kotsadm; then
+            echo "kotsadm role found in cluster scoped install"
+            kubectl get role -n "$APP_SLUG"
+            exit 1
+          fi
+
+          if kubectl get rolebinding -n "$APP_SLUG" | grep -q kotsadm; then
+            echo "kotsadm rolebinding found in cluster scoped install"
+            kubectl get rolebinding -n "$APP_SLUG"
+            exit 1
+          fi
+
+          if ! kubectl get clusterrole | grep -q kotsadm; then
+            echo "No kotsadm clusterrole found in cluster scoped install"
+            kubectl get clusterrole
+            exit 1
+          fi
+
+          if ! kubectl get clusterrolebinding | grep -q kotsadm; then
+            echo "No kotsadm clusterrolebinding found in cluster scoped install"
+            kubectl get clusterrolebinding
+            exit 1
+          fi
+
       - name: Generate support bundle on failure
         if: failure()
         uses: ./.github/actions/generate-support-bundle
@@ -1079,7 +1217,7 @@ jobs:
 
   validate-multi-namespace:
     runs-on: ubuntu-20.04
-    needs: [ enable-tests, can-run-ci, cmx-versions, build-push-kotsadm-image, build-e2e, build-kurl-proxy, build-migrations, push-minio, push-mc, push-rqlite ]
+    needs: [ enable-tests, can-run-ci, cmx-versions, build-kots, build-kotsadm, build-e2e, build-kurl-proxy, build-migrations, push-minio, push-rqlite ]
     strategy:
       fail-fast: false
       matrix:
@@ -1089,7 +1227,7 @@ jobs:
       APP_SLUG: multi-namespace-yeti
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - uses: azure/setup-helm@v3
         with:
@@ -1109,7 +1247,7 @@ jobs:
           export-kubeconfig: true
 
       - name: download kots binary
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: kots
           path: bin/
@@ -1191,7 +1329,7 @@ jobs:
 
   validate-kots-pull:
     runs-on: ubuntu-20.04
-    needs: [ enable-tests, can-run-ci, cmx-versions, build-push-kotsadm-image, build-e2e, build-kurl-proxy, build-migrations, push-minio, push-mc, push-rqlite ]
+    needs: [ enable-tests, can-run-ci, cmx-versions, build-kots, build-kotsadm, build-e2e, build-kurl-proxy, build-migrations, push-minio, push-rqlite ]
     strategy:
       fail-fast: false
       matrix:
@@ -1202,7 +1340,7 @@ jobs:
       APP_SLUG: multi-namespace
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Create Cluster 
         id: create-cluster 
@@ -1218,7 +1356,7 @@ jobs:
           export-kubeconfig: true
 
       - name: download kots binary
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: kots
           path: bin/
@@ -1301,12 +1439,12 @@ jobs:
 
   validate-app-version-label:
     runs-on: ubuntu-20.04
-    needs: [ enable-tests, can-run-ci, build-push-kotsadm-image, build-kurl-proxy, build-migrations, push-minio, push-mc, push-rqlite ]
+    needs: [ enable-tests, can-run-ci, build-kots, build-kotsadm, build-kurl-proxy, build-migrations, push-minio, push-rqlite ]
     strategy:
       fail-fast: false
       matrix:
         cluster: [
-          {distribution: kind, version: v1.27.0}
+          {distribution: kind, version: v1.28.0}
         ] 
     env:
       APP_SLUG: app-version-label
@@ -1314,7 +1452,7 @@ jobs:
       LATEST_APP_VERSION_LABEL: v1.0.1
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Create Cluster 
         id: create-cluster 
@@ -1329,7 +1467,7 @@ jobs:
           export-kubeconfig: true
 
       - name: download kots binary
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: kots
           path: bin/
@@ -1459,17 +1597,18 @@ jobs:
 
   validate-helm-install-order:
     runs-on: ubuntu-20.04
-    needs: [ enable-tests, can-run-ci, cmx-versions, build-push-kotsadm-image, build-e2e, build-kurl-proxy, build-migrations, push-minio, push-mc, push-rqlite ]
+    needs: [ enable-tests, can-run-ci, cmx-versions, build-kots, build-kotsadm, build-e2e, build-kurl-proxy, build-migrations, push-minio, push-rqlite ]
     strategy:
       fail-fast: false
       matrix:
-        cluster: ${{ fromJson(needs.cmx-versions.outputs.versions-to-test) }}
-    continue-on-error: ${{ matrix.cluster.stage != 'stable' }}
+        cluster: [
+          {distribution: kind, version: v1.28.0}
+        ]
     env:
       APP_SLUG: helm-install-order
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Create Cluster 
         id: create-cluster 
@@ -1485,7 +1624,7 @@ jobs:
           export-kubeconfig: true
 
       - name: download kots binary
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: kots
           path: bin/
@@ -1555,118 +1694,20 @@ jobs:
           cluster-id: ${{ steps.create-cluster.outputs.cluster-id }}
 
 
-  validate-yamlescape:
-    runs-on: ubuntu-20.04
-    needs: [ enable-tests, can-run-ci, cmx-versions, build-push-kotsadm-image, build-e2e, build-kurl-proxy, build-migrations, push-minio, push-mc, push-rqlite ]
-    strategy:
-      fail-fast: false
-      matrix:
-        cluster: ${{ fromJson(needs.cmx-versions.outputs.versions-to-test) }}
-    continue-on-error: ${{ matrix.cluster.stage != 'stable' }}
-    env:
-      APP_SLUG: yamlescape
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v3
-
-      - name: Create Cluster 
-        id: create-cluster 
-        uses: replicatedhq/replicated-actions/create-cluster@v1 
-        with:
-          api-token: ${{ secrets.C11Y_MATRIX_TOKEN }}
-          kubernetes-distribution: ${{ matrix.cluster.distribution }}
-          kubernetes-version: ${{ matrix.cluster.version }}
-          cluster-name: automated-kots-${{ github.run_id }}-${{ matrix.cluster.distribution }}-${{ matrix.cluster.version }}
-          timeout-minutes: '120'
-          ttl: 2h
-          instance-type: ${{ matrix.cluster.distribution == 'gke' && 'n2-standard-4' || '' }}
-          export-kubeconfig: true
-
-      - name: download kots binary
-        uses: actions/download-artifact@v3
-        with:
-          name: kots
-          path: bin/
-
-      - run: chmod +x bin/kots
-
-      - name: create namespace and dockerhub secret
-        run: |
-          kubectl create ns "$APP_SLUG"
-          kubectl create secret docker-registry kotsadm-dockerhub --docker-server index.docker.io --docker-username "${{ secrets.E2E_DOCKERHUB_USERNAME }}" --docker-password "${{ secrets.E2E_DOCKERHUB_PASSWORD }}" --namespace "$APP_SLUG"
-
-      - name: run the test
-        run: |
-          set +e
-          echo ${{ secrets.YAMLESCAPE_LICENSE }} | base64 -d > license.yaml
-          ./bin/kots \
-            install "$APP_SLUG/automated" \
-            --license-file license.yaml \
-            --no-port-forward \
-            --namespace "$APP_SLUG" \
-            --shared-password password \
-            --kotsadm-registry ttl.sh \
-            --kotsadm-namespace automated-${{ github.run_id }} \
-            --skip-preflights \
-            --kotsadm-tag 24h
-
-          EXIT_CODE=$?
-          if [ $EXIT_CODE -ne 0 ]; then
-            echo "------pods:"
-            kubectl -n "$APP_SLUG" get pods
-            echo "------kotsadm logs"
-            kubectl logs -l app=kotsadm --tail=100 --namespace "$APP_SLUG"
-            exit $EXIT_CODE
-          fi
-
-          COUNTER=1
-          while [ "$(./bin/kots get apps --namespace "$APP_SLUG" | awk 'NR>1{print $2}')" != "ready" ]; do
-            ((COUNTER += 1))
-            if [ $COUNTER -gt 120 ]; then
-              echo "Timed out waiting for app to be ready"
-              ./bin/kots get apps --namespace "$APP_SLUG"
-              echo "kotsadm logs:"
-              kubectl logs -l app=kotsadm --tail=100 --namespace "$APP_SLUG"
-              exit 1
-            fi
-            sleep 1
-          done
-
-          printf "App is installed successfully and is ready\n\n"
-          ./bin/kots get apps --namespace "$APP_SLUG"
-
-      - name: Generate support bundle on failure
-        if: failure()
-        uses: ./.github/actions/generate-support-bundle
-        with:
-          kots-namespace: "$APP_SLUG"
-          aws-access-key-id: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_ACCESS_KEY_ID }}'
-          aws-secret-access-key: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_SECRET_ACCESS_KEY }}'
-
-      - name: Remove Cluster
-        id: remove-cluster
-        uses: replicatedhq/replicated-actions/remove-cluster@v1
-        if: ${{ always() && steps.create-cluster.outputs.cluster-id != '' }}
-        continue-on-error: true
-        with:
-          api-token: ${{ secrets.C11Y_MATRIX_TOKEN }}
-          cluster-id: ${{ steps.create-cluster.outputs.cluster-id }}
-
-
   validate-no-redeploy-on-restart:
     runs-on: ubuntu-20.04
-    needs: [ enable-tests, can-run-ci, build-push-kotsadm-image, build-kurl-proxy, build-migrations, push-minio, push-mc, push-rqlite ]
+    needs: [ enable-tests, can-run-ci, build-kots, build-kotsadm, build-kurl-proxy, build-migrations, push-minio, push-rqlite ]
     strategy:
       fail-fast: false
       matrix:
         cluster: [
-          {distribution: kind, version: v1.27.0}
+          {distribution: kind, version: v1.28.0}
         ] 
     env:
       APP_SLUG: no-redeploy-on-restart
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Create Cluster 
         id: create-cluster 
@@ -1681,7 +1722,7 @@ jobs:
           export-kubeconfig: true
 
       - name: download kots binary
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: kots
           path: bin/
@@ -1777,17 +1818,17 @@ jobs:
 
   validate-kubernetes-installer-preflight:
     runs-on: ubuntu-20.04
-    needs: [ enable-tests, can-run-ci, build-push-kotsadm-image, build-kurl-proxy, build-migrations, push-minio, push-mc, push-rqlite ]
+    needs: [ enable-tests, can-run-ci, build-kots, build-kotsadm, build-kurl-proxy, build-migrations, push-minio, push-rqlite ]
     strategy:
       fail-fast: false
       matrix:
         cluster: [
-          {distribution: kind, version: v1.27.0}
+          {distribution: kind, version: v1.28.0}
         ] 
     env:
       APP_SLUG: kubernetes-installer-preflight
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: Create Cluster 
         id: create-cluster 
@@ -1802,7 +1843,7 @@ jobs:
           export-kubeconfig: true
 
       - name: download kots binary
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: kots
           path: bin/
@@ -1912,55 +1953,15 @@ jobs:
           cluster-id: ${{ steps.create-cluster.outputs.cluster-id }}
 
 
-  validate-tag-and-digest:
-    runs-on: ubuntu-20.04
-    needs: [ enable-tests, can-run-ci, build-push-kotsadm-image, build-e2e, build-kurl-proxy, build-migrations, push-minio, push-mc, push-rqlite ]
-    strategy:
-      fail-fast: false
-      matrix:
-        cluster: [
-          {distribution: kind, version: v1.27}
-        ]
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v3
-      - name: download e2e deps
-        uses: actions/download-artifact@v3
-        with:
-          name: e2e
-          path: e2e/bin/
-      - run: docker load -i e2e/bin/e2e-deps.tar
-      - run: chmod +x e2e/bin/*
-      - name: download kots binary
-        uses: actions/download-artifact@v3
-        with:
-          name: kots
-          path: bin/
-      - run: chmod +x bin/*
-      - uses: ./.github/actions/kots-e2e
-        with:
-          test-focus: 'Tag and Digest'
-          kots-namespace: 'tag-and-digest'
-          k8s-distribution: ${{ matrix.cluster.distribution }}
-          k8s-version: ${{ matrix.cluster.version }}
-          testim-access-token: '${{ secrets.TESTIM_ACCESS_TOKEN }}'
-          testim-branch: ${{ github.head_ref == 'main' && 'master' || github.head_ref }}
-          aws-access-key-id: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_ACCESS_KEY_ID }}'
-          aws-secret-access-key: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_SECRET_ACCESS_KEY }}'
-          replicated-api-token: '${{ secrets.C11Y_MATRIX_TOKEN }}'
-          kots-dockerhub-username: '${{ secrets.E2E_DOCKERHUB_USERNAME }}'
-          kots-dockerhub-password: '${{ secrets.E2E_DOCKERHUB_PASSWORD }}'
-
-
   validate-kots-push-images-anonymous:
     runs-on: ubuntu-20.04
-    needs: [ enable-tests, can-run-ci, build-push-kotsadm-image, build-kurl-proxy, build-migrations, push-minio, push-mc, push-rqlite ]
+    needs: [ enable-tests, can-run-ci, build-kots, build-kotsadm, build-kurl-proxy, build-migrations, push-minio, push-rqlite ]
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: download kots binary
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: kots
           path: bin/
@@ -1975,12 +1976,12 @@ jobs:
 
   validate-kots-admin-console-generate-manifests:
     runs-on: ubuntu-20.04
-    needs: [ enable-tests, can-run-ci, build-push-kotsadm-image, build-kurl-proxy, build-migrations, push-minio, push-mc, push-rqlite ]
+    needs: [ enable-tests, can-run-ci, build-kots, build-kotsadm, build-kurl-proxy, build-migrations, push-minio, push-rqlite ]
     strategy:
       fail-fast: false
       matrix:
         cluster: [
-          {distribution: kind, version: v1.27.0}
+          {distribution: kind, version: v1.28.0}
         ] 
     env:
       APP_SLUG: minimal-rbac
@@ -1988,10 +1989,10 @@ jobs:
       NAMESPACE: generate-manifests
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: download kots binary
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: kots
           path: bin/
@@ -2170,25 +2171,25 @@ jobs:
 
   validate-min-kots-version:
     runs-on: ubuntu-20.04
-    needs: [ enable-tests, can-run-ci, build-e2e, build-push-kotsadm-image, build-kurl-proxy, build-migrations, push-minio, push-mc, push-rqlite, generate-tag ]
+    needs: [ enable-tests, can-run-ci, build-e2e, build-kots, build-kotsadm, build-kurl-proxy, build-migrations, push-minio, push-rqlite, generate-tag ]
     env:
       APP_SLUG: min-kots-version
     strategy:
       fail-fast: false
       matrix:
         cluster: [
-          {distribution: kind, version: v1.27}
+          {distribution: kind, version: v1.28.0}
         ]
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: download e2e deps
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: e2e
           path: e2e/bin/
       - name: download kots binary
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: kots
           path: bin/
@@ -2240,23 +2241,23 @@ jobs:
 
   validate-target-kots-version:
     runs-on: ubuntu-20.04
-    needs: [ enable-tests, can-run-ci, build-e2e, build-push-kotsadm-image, build-kurl-proxy, build-migrations, push-minio, push-mc, push-rqlite, generate-tag ]
+    needs: [ enable-tests, can-run-ci, build-e2e, build-kots, build-kotsadm, build-kurl-proxy, build-migrations, push-minio, push-rqlite, generate-tag ]
     strategy:
       fail-fast: false
       matrix:
         cluster: [
-          {distribution: kind, version: v1.27}
+          {distribution: kind, version: v1.28.0}
         ]
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: download e2e deps
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: e2e
           path: e2e/bin/
       - name: download kots binary
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: kots
           path: bin/
@@ -2307,23 +2308,23 @@ jobs:
 
   validate-range-kots-version:
     runs-on: ubuntu-20.04
-    needs: [ enable-tests, can-run-ci, build-e2e, build-push-kotsadm-image, build-kurl-proxy, build-migrations, push-minio, push-mc, push-rqlite, generate-tag ]
+    needs: [ enable-tests, can-run-ci, build-e2e, build-kots, build-kotsadm, build-kurl-proxy, build-migrations, push-minio, push-rqlite, generate-tag ]
     strategy:
       fail-fast: false
       matrix:
         cluster: [
-          {distribution: kind, version: v1.27}
+          {distribution: kind, version: v1.28.0}
         ]
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: download e2e deps
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: e2e
           path: e2e/bin/
       - name: download kots binary
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: kots
           path: bin/
@@ -2374,7 +2375,7 @@ jobs:
 
   validate-kots-upgrade:
     runs-on: ubuntu-20.04
-    needs: [ enable-tests, can-run-ci, cmx-versions, build-push-kotsadm-image, build-e2e, build-kurl-proxy, build-migrations, push-minio, push-mc, push-rqlite ]
+    needs: [ enable-tests, can-run-ci, cmx-versions, build-kots, build-kotsadm, build-e2e, build-kurl-proxy, build-migrations, push-minio, push-rqlite ]
     strategy:
       fail-fast: false
       matrix:
@@ -2385,7 +2386,7 @@ jobs:
       BASE_KOTS_VERSION: v1.57.0
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Create Cluster 
         id: create-cluster 
@@ -2407,7 +2408,7 @@ jobs:
             && mv kots "kots-$BASE_KOTS_VERSION"
 
       - name: download kots binary
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: kots
           path: bin/
@@ -2513,12 +2514,12 @@ jobs:
 
   validate-kots-helm-release-secret-migration:
     runs-on: ubuntu-20.04
-    needs: [ enable-tests, can-run-ci, build-push-kotsadm-image, build-kurl-proxy, build-migrations, push-minio, push-mc, push-rqlite ]
+    needs: [ enable-tests, can-run-ci, build-kots, build-kotsadm, build-kurl-proxy, build-migrations, push-minio, push-rqlite ]
     strategy:
       fail-fast: false
       matrix:
         cluster: [
-          {distribution: kind, version: v1.27.0}
+          {distribution: kind, version: v1.28.0}
         ] 
     env:
       APP_SLUG: helm-release-secret-migration
@@ -2527,7 +2528,7 @@ jobs:
       BASE_KOTS_VERSION: v1.94.0
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Create Cluster 
         id: create-cluster 
@@ -2548,7 +2549,7 @@ jobs:
             && mv kots "kots-$BASE_KOTS_VERSION"
 
       - name: download kots binary
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: kots
           path: bin/
@@ -2700,25 +2701,25 @@ jobs:
 
   validate-multi-app-backup-and-restore:
     runs-on: ubuntu-20.04
-    needs: [ enable-tests, can-run-ci, build-push-kotsadm-image, build-e2e, build-kurl-proxy, build-migrations, push-minio, push-mc, push-rqlite ]
+    needs: [ enable-tests, can-run-ci, build-kots, build-kotsadm, build-e2e, build-kurl-proxy, build-migrations, push-minio, push-rqlite ]
     strategy:
       fail-fast: false
       matrix:
         cluster: [
-          {distribution: kind, version: v1.27}
+          {distribution: kind, version: v1.28.0}
         ]
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: download e2e deps
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: e2e
           path: e2e/bin/
       - run: docker load -i e2e/bin/e2e-deps.tar
       - run: chmod +x e2e/bin/*
       - name: download kots binary
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: kots
           path: bin/
@@ -2740,25 +2741,25 @@ jobs:
 
   validate-multi-app-install:
     runs-on: ubuntu-20.04
-    needs: [ enable-tests, can-run-ci, build-push-kotsadm-image, build-e2e, build-kurl-proxy, build-migrations, push-minio, push-mc, push-rqlite ]
+    needs: [ enable-tests, can-run-ci, build-kots, build-kotsadm, build-e2e, build-kurl-proxy, build-migrations, push-minio, push-rqlite ]
     strategy:
       fail-fast: false
       matrix:
         cluster: [
-          {distribution: kind, version: v1.27}
+          {distribution: kind, version: v1.28.0}
         ]
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: download e2e deps
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: e2e
           path: e2e/bin/
       - run: docker load -i e2e/bin/e2e-deps.tar
       - run: chmod +x e2e/bin/*
       - name: download kots binary
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: kots
           path: bin/
@@ -2780,25 +2781,25 @@ jobs:
 
   validate-airgap-smoke-test:
     runs-on: ubuntu-20.04
-    needs: [ enable-tests, can-run-ci, build-push-kotsadm-image, build-e2e, build-kurl-proxy, build-migrations, push-minio, push-mc, push-rqlite ]
+    needs: [ enable-tests, can-run-ci, build-kots, build-kotsadm, build-e2e, build-kurl-proxy, build-migrations, push-minio, push-rqlite ]
     strategy:
       fail-fast: false
       matrix:
         cluster: [
-          {distribution: kind, version: v1.27}
+          {distribution: kind, version: v1.28.0}
         ]
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: download e2e deps
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: e2e
           path: e2e/bin/
       - run: docker load -i e2e/bin/e2e-deps.tar
       - run: chmod +x e2e/bin/*
       - name: download kots binary
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: kots
           path: bin/
@@ -2821,18 +2822,18 @@ jobs:
 
   validate-remove-app:
     runs-on: ubuntu-20.04
-    needs: [ enable-tests, can-run-ci, build-push-kotsadm-image, build-kurl-proxy, build-migrations, push-minio, push-rqlite ]
+    needs: [ enable-tests, can-run-ci, build-kots, build-kotsadm, build-kurl-proxy, build-migrations, push-minio, push-rqlite ]
     strategy:
       fail-fast: false
       matrix:
         cluster: [
-          {distribution: kind, version: v1.27, instance-type: r1.medium}
+          {distribution: kind, version: v1.28.0, instance-type: r1.medium}
         ]
     env:
       APP_SLUG: remove-app
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Create Cluster 
         id: create-cluster 
@@ -2848,7 +2849,7 @@ jobs:
           export-kubeconfig: true
 
       - name: download kots binary
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: kots
           path: bin/
@@ -3000,16 +3001,16 @@ jobs:
 
   validate-registry-check:
     runs-on: ubuntu-20.04
-    needs: [ enable-tests, can-run-ci, build-push-kotsadm-image, build-kurl-proxy, build-migrations, push-minio, push-rqlite ]
+    needs: [ enable-tests, can-run-ci, build-kots, build-kotsadm, build-kurl-proxy, build-migrations, push-minio, push-rqlite ]
     strategy:
       fail-fast: false
       matrix:
         cluster: [
-          {distribution: kind, version: v1.27.0}
+          {distribution: kind, version: v1.28.0}
         ] 
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Create Cluster 
         id: create-cluster 
@@ -3024,7 +3025,7 @@ jobs:
           export-kubeconfig: true
 
       - name: download kots binary
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: kots
           path: bin/
@@ -3095,12 +3096,12 @@ jobs:
 
   validate-native-helm-v2:
     runs-on: ubuntu-20.04
-    needs: [ enable-tests, can-run-ci, build-push-kotsadm-image, build-kurl-proxy, build-migrations, push-minio, push-mc, push-rqlite ]
+    needs: [ enable-tests, can-run-ci, build-kots, build-kotsadm, build-kurl-proxy, build-migrations, push-minio, push-rqlite ]
     strategy:
       fail-fast: false
       matrix:
         cluster: [
-          {distribution: kind, version: v1.27.0}
+          {distribution: kind, version: v1.28.0}
         ] 
     env:
       APP_SLUG: native-helm-v2
@@ -3108,7 +3109,7 @@ jobs:
       UPGRADE_VERSION: '0.2.1'
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - uses: azure/setup-helm@v3
         with:
@@ -3127,7 +3128,7 @@ jobs:
           export-kubeconfig: true
 
       - name: download kots binary
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: kots
           path: bin/
@@ -3321,18 +3322,18 @@ jobs:
 
   validate-deployment-orchestration:
     runs-on: ubuntu-20.04
-    needs: [ enable-tests, can-run-ci, build-push-kotsadm-image, build-kurl-proxy, build-migrations, push-minio, push-mc, push-rqlite ]
+    needs: [ enable-tests, can-run-ci, build-kots, build-kotsadm, build-kurl-proxy, build-migrations, push-minio, push-rqlite ]
     strategy:
       fail-fast: false
       matrix:
         cluster: [
-          {distribution: kind, version: v1.27.0}
+          {distribution: kind, version: v1.28.0}
         ] 
     env:
       APP_SLUG: deployment-orchestration
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - uses: azure/setup-helm@v3
         with:
@@ -3351,7 +3352,7 @@ jobs:
           export-kubeconfig: true
 
       - name: download kots binary
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: kots
           path: bin/
@@ -3487,6 +3488,397 @@ jobs:
           cluster-id: ${{ steps.create-cluster.outputs.cluster-id }}
 
 
+  validate-replicated-sdk:
+    runs-on: ubuntu-20.04
+    needs: [ enable-tests, can-run-ci, build-kots, build-kotsadm, build-kurl-proxy, build-migrations, push-minio, push-rqlite ]
+    strategy:
+      fail-fast: false
+      matrix:
+        cluster: [
+          {distribution: kind, version: v1.28.0},
+          {distribution: openshift, version: 4.13.0-okd}
+        ]
+    env:
+      KOTS_NAMESPACE: replicated-sdk
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Create Cluster 
+        id: create-cluster 
+        uses: replicatedhq/replicated-actions/create-cluster@v1 
+        with:
+          api-token: ${{ secrets.C11Y_MATRIX_TOKEN }}
+          kubernetes-distribution: ${{ matrix.cluster.distribution }}
+          kubernetes-version: ${{ matrix.cluster.version }}
+          cluster-name: automated-kots-${{ github.run_id }}-${{ matrix.cluster.distribution }}-${{ matrix.cluster.version }}
+          timeout-minutes: '120'
+          ttl: 2h
+          export-kubeconfig: true
+
+      - name: download kots binary
+        uses: actions/download-artifact@v4
+        with:
+          name: kots
+          path: bin/
+
+      - run: chmod +x bin/kots
+
+      - name: create namespace and dockerhub secret
+        run: |
+          kubectl create ns "$KOTS_NAMESPACE"
+          kubectl create secret docker-registry kotsadm-dockerhub --docker-server index.docker.io --docker-username "${{ secrets.E2E_DOCKERHUB_USERNAME }}" --docker-password "${{ secrets.E2E_DOCKERHUB_PASSWORD }}" --namespace "$KOTS_NAMESPACE"
+
+      - name: run upgrade-to-replicated-sdk test
+        id: upgrade-to-replicated-sdk
+        env:
+          APP_SLUG: upgrade-to-replicated-sdk
+        run: |
+          set +e
+
+          echo ${{ secrets.UPGRADE_TO_REPLICATED_SDK_LICENSE }} | base64 -d > license.yaml
+          LICENSE_ID="$(grep -oP 'licenseID:\s*\K\w+' license.yaml)"
+          echo "license-id=$LICENSE_ID" >> "$GITHUB_OUTPUT"
+
+          ./bin/kots \
+            install "$APP_SLUG/automated" \
+            --license-file license.yaml \
+            --no-port-forward \
+            --namespace "$KOTS_NAMESPACE" \
+            --shared-password password \
+            --app-version-label v1.0.0 \
+            --kotsadm-registry ttl.sh \
+            --kotsadm-namespace automated-${{ github.run_id }} \
+            --kotsadm-tag 24h
+
+          EXIT_CODE=$?
+          if [ $EXIT_CODE -ne 0 ]; then
+            echo "------pods:"
+            kubectl -n "$KOTS_NAMESPACE" get pods
+            echo "------kotsadm logs"
+            kubectl logs -l app=kotsadm --tail=100 --namespace "$KOTS_NAMESPACE"
+            exit $EXIT_CODE
+          fi
+
+          # wait for the app to be ready
+          COUNTER=1
+          while [ "$(./bin/kots get apps --namespace "$KOTS_NAMESPACE" | awk 'NR>1{print $2}')" != "ready" ]; do
+            ((COUNTER += 1))
+            if [ $COUNTER -gt 120 ]; then
+              echo "Timed out waiting for app to be ready"
+              ./bin/kots get apps --namespace "$KOTS_NAMESPACE"
+              echo "kotsadm logs:"
+              kubectl logs -l app=kotsadm --tail=100 --namespace "$KOTS_NAMESPACE"
+              exit 1
+            fi
+            sleep 1
+          done
+
+          # upgrade the app to the new version
+          ./bin/kots upstream upgrade "$APP_SLUG" -n "$KOTS_NAMESPACE" --deploy
+          sleep 5
+
+          # wait for the app to be ready again
+          COUNTER=1
+          while [ "$(./bin/kots get apps --namespace "$KOTS_NAMESPACE" | awk 'NR>1{print $2}')" != "ready" ]; do
+            ((COUNTER += 1))
+            if [ $COUNTER -gt 120 ]; then
+              echo "Timed out waiting for app to be ready"
+              ./bin/kots get apps --namespace "$KOTS_NAMESPACE"
+              echo "kotsadm logs:"
+              kubectl logs -l app=kotsadm --tail=100 --namespace "$KOTS_NAMESPACE"
+              exit 1
+            fi
+            sleep 1
+          done
+
+          # get the version of the replicated-sdk that is running and set it as an output
+          REPLICATED_SDK_VERSION=$(kubectl get deploy replicated -n "$KOTS_NAMESPACE" -o jsonpath='{.spec.template.spec.containers[0].image}' | grep -oE '[^:]+$')
+          echo "replicated-sdk-version=$REPLICATED_SDK_VERSION" >> "$GITHUB_OUTPUT"
+
+      - run: rm -rf ./replicated-sdk
+      - name: Checkout replicated-sdk
+        uses: actions/checkout@v4
+        with:
+          repository: replicatedhq/replicated-sdk
+          path: replicated-sdk
+          ref: ${{ steps.upgrade-to-replicated-sdk.outputs.replicated-sdk-version }}
+
+      - name: Validate endpoints
+        uses: ./replicated-sdk/.github/actions/validate-endpoints
+        with:
+          license-id: ${{ steps.upgrade-to-replicated-sdk.outputs.license-id }}
+          license-fields: '[{"name":"expires_at","value": ""}]'
+          integration-enabled: true
+          namespace: "$KOTS_NAMESPACE"
+
+      - name: remove upgrade-to-replicated-sdk app
+        env:
+          APP_SLUG: upgrade-to-replicated-sdk
+        run: |
+          # remove the app
+          ./bin/kots remove "$APP_SLUG" -n "$KOTS_NAMESPACE" --undeploy
+
+          # validate that the app reference was removed
+          if [ "$(./bin/kots get apps --namespace "$KOTS_NAMESPACE" --output=json | tr -d '\n')" != "[]" ]; then
+            printf "App reference was not removed\n\n"
+            exit 1
+          fi
+
+      - name: run replicated-sdk-subchart-native-helm-v1 test
+        id: replicated-sdk-subchart-native-helm-v1
+        env:
+          APP_SLUG: replicated-sdk-subchart-native-helm-v1
+        run: |
+          set +e
+
+          echo ${{ secrets.REPLICATED_SDK_SUBCHART_NATIVE_HELM_V1 }} | base64 -d > license.yaml
+          LICENSE_ID="$(grep -oP 'licenseID:\s*\K\w+' license.yaml)"
+          echo "license-id=$LICENSE_ID" >> "$GITHUB_OUTPUT"
+
+          ./bin/kots \
+            install "$APP_SLUG/automated" \
+            --license-file license.yaml \
+            --no-port-forward \
+            --namespace "$KOTS_NAMESPACE" \
+            --shared-password password \
+            --kotsadm-registry ttl.sh \
+            --kotsadm-namespace automated-${{ github.run_id }} \
+            --kotsadm-tag 24h
+
+          EXIT_CODE=$?
+          if [ $EXIT_CODE -ne 0 ]; then
+            echo "------pods:"
+            kubectl -n "$KOTS_NAMESPACE" get pods
+            echo "------kotsadm logs"
+            kubectl logs -l app=kotsadm --tail=100 --namespace "$KOTS_NAMESPACE"
+            exit $EXIT_CODE
+          fi
+
+          # wait for the app to be ready
+          COUNTER=1
+          while [ "$(./bin/kots get apps --namespace "$KOTS_NAMESPACE" | awk 'NR>1{print $2}')" != "ready" ]; do
+            ((COUNTER += 1))
+            if [ $COUNTER -gt 120 ]; then
+              echo "Timed out waiting for app to be ready"
+              ./bin/kots get apps --namespace "$KOTS_NAMESPACE"
+              echo "kotsadm logs:"
+              kubectl logs -l app=kotsadm --tail=100 --namespace "$KOTS_NAMESPACE"
+              exit 1
+            fi
+            sleep 1
+          done
+
+          # get the version of the replicated-sdk that is running and set it as an output
+          REPLICATED_SDK_VERSION=$(kubectl get deploy replicated -n "$KOTS_NAMESPACE" -o jsonpath='{.spec.template.spec.containers[0].image}' | grep -oE '[^:]+$')
+          echo "replicated-sdk-version=$REPLICATED_SDK_VERSION" >> "$GITHUB_OUTPUT"
+
+      - run: rm -rf ./replicated-sdk
+      - name: Checkout replicated-sdk
+        uses: actions/checkout@v4
+        with:
+          repository: replicatedhq/replicated-sdk
+          path: replicated-sdk
+          ref: ${{ steps.replicated-sdk-subchart-native-helm-v1.outputs.replicated-sdk-version }}
+
+      - name: Validate endpoints
+        uses: ./replicated-sdk/.github/actions/validate-endpoints
+        with:
+          license-id: ${{ steps.replicated-sdk-subchart-native-helm-v1.outputs.license-id }}
+          license-fields: '[{"name":"expires_at","value": ""}]'
+          integration-enabled: true
+          namespace: "$KOTS_NAMESPACE"
+
+      - name: remove replicated-sdk-subchart-native-helm-v1 app
+        env:
+          APP_SLUG: replicated-sdk-subchart-native-helm-v1
+        run: |
+          # remove the app
+          ./bin/kots remove "$APP_SLUG" -n "$KOTS_NAMESPACE" --undeploy
+
+          # validate that the app reference was removed
+          if [ "$(./bin/kots get apps --namespace "$KOTS_NAMESPACE" --output=json | tr -d '\n')" != "[]" ]; then
+            printf "App reference was not removed\n\n"
+            exit 1
+          fi
+
+      - name: run replicated-sdk-subchart-replicated-helm test
+        id: replicated-sdk-subchart-replicated-helm
+        env:
+          APP_SLUG: replicated-sdk-subchart-replicated-helm
+        run: |
+          set +e
+
+          echo ${{ secrets.REPLICATED_SDK_SUBCHART_REPLICATED_HELM }} | base64 -d > license.yaml
+          LICENSE_ID="$(grep -oP 'licenseID:\s*\K\w+' license.yaml)"
+          echo "license-id=$LICENSE_ID" >> "$GITHUB_OUTPUT"
+
+          ./bin/kots \
+            install "$APP_SLUG/automated" \
+            --license-file license.yaml \
+            --no-port-forward \
+            --namespace "$KOTS_NAMESPACE" \
+            --shared-password password \
+            --kotsadm-registry ttl.sh \
+            --kotsadm-namespace automated-${{ github.run_id }} \
+            --kotsadm-tag 24h
+
+          EXIT_CODE=$?
+          if [ $EXIT_CODE -ne 0 ]; then
+            echo "------pods:"
+            kubectl -n "$KOTS_NAMESPACE" get pods
+            echo "------kotsadm logs"
+            kubectl logs -l app=kotsadm --tail=100 --namespace "$KOTS_NAMESPACE"
+            exit $EXIT_CODE
+          fi
+
+          # wait for the app to be ready
+          COUNTER=1
+          while [ "$(./bin/kots get apps --namespace "$KOTS_NAMESPACE" | awk 'NR>1{print $2}')" != "ready" ]; do
+            ((COUNTER += 1))
+            if [ $COUNTER -gt 120 ]; then
+              echo "Timed out waiting for app to be ready"
+              ./bin/kots get apps --namespace "$KOTS_NAMESPACE"
+              echo "kotsadm logs:"
+              kubectl logs -l app=kotsadm --tail=100 --namespace "$KOTS_NAMESPACE"
+              exit 1
+            fi
+            sleep 1
+          done
+
+          # get the version of the replicated-sdk that is running and set it as an output
+          REPLICATED_SDK_VERSION=$(kubectl get deploy replicated -n "$KOTS_NAMESPACE" -o jsonpath='{.spec.template.spec.containers[0].image}' | grep -oE '[^:]+$')
+          echo "replicated-sdk-version=$REPLICATED_SDK_VERSION" >> "$GITHUB_OUTPUT"
+
+      - run: rm -rf ./replicated-sdk
+      - name: Checkout replicated-sdk
+        uses: actions/checkout@v4
+        with:
+          repository: replicatedhq/replicated-sdk
+          path: replicated-sdk
+          ref: ${{ steps.replicated-sdk-subchart-replicated-helm.outputs.replicated-sdk-version }}
+
+      - name: Validate endpoints
+        uses: ./replicated-sdk/.github/actions/validate-endpoints
+        with:
+          license-id: ${{ steps.replicated-sdk-subchart-replicated-helm.outputs.license-id }}
+          license-fields: '[{"name":"expires_at","value": ""}]'
+          integration-enabled: true
+          namespace: "$KOTS_NAMESPACE"
+          deployed-via-kubectl: true
+
+      - name: remove replicated-sdk-subchart-replicated-helm app
+        env:
+          APP_SLUG: replicated-sdk-subchart-replicated-helm
+        run: |
+          # remove the app
+          ./bin/kots remove "$APP_SLUG" -n "$KOTS_NAMESPACE" --undeploy
+
+          # validate that the app reference was removed
+          if [ "$(./bin/kots get apps --namespace "$KOTS_NAMESPACE" --output=json | tr -d '\n')" != "[]" ]; then
+            printf "App reference was not removed\n\n"
+            exit 1
+          fi
+
+      - name: Generate support bundle on failure
+        if: failure()
+        uses: ./.github/actions/generate-support-bundle
+        with:
+          kots-namespace: "$APP_SLUG"
+          aws-access-key-id: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_ACCESS_KEY_ID }}'
+          aws-secret-access-key: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_SECRET_ACCESS_KEY }}'
+
+      - name: Remove Cluster
+        id: remove-cluster
+        uses: replicatedhq/replicated-actions/remove-cluster@v1
+        if: ${{ always() && steps.create-cluster.outputs.cluster-id != '' }}
+        continue-on-error: true
+        with:
+          api-token: ${{ secrets.C11Y_MATRIX_TOKEN }}
+          cluster-id: ${{ steps.create-cluster.outputs.cluster-id }}
+
+
+  validate-support-bundle:
+    runs-on: ubuntu-20.04
+    needs: [ enable-tests, can-run-ci, build-kots, build-kotsadm, build-e2e, build-kurl-proxy, build-migrations, push-minio, push-rqlite ]
+    strategy:
+      fail-fast: false
+      matrix:
+        cluster: [
+          {distribution: kind, version: v1.28.0},
+          {distribution: openshift, version: 4.13.0-okd}
+        ]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: download e2e deps
+        uses: actions/download-artifact@v4
+        with:
+          name: e2e
+          path: e2e/bin/
+      - run: docker load -i e2e/bin/e2e-deps.tar
+      - run: chmod +x e2e/bin/*
+      - name: download kots binary
+        uses: actions/download-artifact@v4
+        with:
+          name: kots
+          path: bin/
+      - run: chmod +x bin/*
+      - uses: ./.github/actions/kots-e2e
+        with:
+          test-focus: 'Support Bundle'
+          kots-namespace: 'support-bundle'
+          k8s-distribution: ${{ matrix.cluster.distribution }}
+          k8s-version: ${{ matrix.cluster.version }}
+          testim-access-token: '${{ secrets.TESTIM_ACCESS_TOKEN }}'
+          testim-branch: ${{ github.head_ref == 'main' && 'master' || github.head_ref }}
+          aws-access-key-id: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_ACCESS_KEY_ID }}'
+          aws-secret-access-key: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_SECRET_ACCESS_KEY }}'
+          replicated-api-token: '${{ secrets.C11Y_MATRIX_TOKEN }}'
+          kots-dockerhub-username: '${{ secrets.E2E_DOCKERHUB_USERNAME }}'
+          kots-dockerhub-password: '${{ secrets.E2E_DOCKERHUB_PASSWORD }}'
+
+
+  validate-gitops:
+    runs-on: ubuntu-20.04
+    needs: [ enable-tests, can-run-ci, build-kots, build-kotsadm, build-e2e, build-kurl-proxy, build-migrations, push-minio, push-rqlite ]
+    strategy:
+      fail-fast: false
+      matrix:
+        cluster: [
+          {distribution: kind, version: v1.28.0}
+        ]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: download e2e deps
+        uses: actions/download-artifact@v4
+        with:
+          name: e2e
+          path: e2e/bin/
+      - run: docker load -i e2e/bin/e2e-deps.tar
+      - run: chmod +x e2e/bin/*
+      - name: download kots binary
+        uses: actions/download-artifact@v4
+        with:
+          name: kots
+          path: bin/
+      - run: chmod +x bin/*
+      - uses: ./.github/actions/kots-e2e
+        with:
+          test-focus: 'GitOps'
+          kots-namespace: 'gitops'
+          k8s-distribution: ${{ matrix.cluster.distribution }}
+          k8s-version: ${{ matrix.cluster.version }}
+          testim-access-token: '${{ secrets.TESTIM_ACCESS_TOKEN }}'
+          testim-branch: ${{ github.head_ref == 'main' && 'master' || github.head_ref }}
+          aws-access-key-id: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_ACCESS_KEY_ID }}'
+          aws-secret-access-key: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_SECRET_ACCESS_KEY }}'
+          replicated-api-token: '${{ secrets.C11Y_MATRIX_TOKEN }}'
+          kots-dockerhub-username: '${{ secrets.E2E_DOCKERHUB_USERNAME }}'
+          kots-dockerhub-password: '${{ secrets.E2E_DOCKERHUB_PASSWORD }}'
+
+
   validate-pr-tests:
     runs-on: ubuntu-20.04
     needs:
@@ -3498,27 +3890,26 @@ jobs:
       # testim tests
       - validate-existing-online-install-minimal
       - validate-smoke-test
-      - validate-minimal-rbac
       - validate-backup-and-restore
       - validate-no-required-config
       - validate-version-history-pagination
       - validate-change-license
-      - validate-tag-and-digest
       - validate-min-kots-version
       - validate-target-kots-version
       - validate-range-kots-version
       - validate-multi-app-backup-and-restore
       - validate-multi-app-install
       - validate-airgap-smoke-test
-      - validate-strict-preflight-checks
       - validate-config
+      - validate-support-bundle
+      - validate-gitops
       # non-testim tests
+      - validate-minimal-rbac
       - validate-minimal-rbac-override
       - validate-multi-namespace
       - validate-kots-pull
       - validate-app-version-label
       - validate-helm-install-order
-      - validate-yamlescape
       - validate-no-redeploy-on-restart
       - validate-kubernetes-installer-preflight
       - validate-kots-upgrade
@@ -3527,6 +3918,8 @@ jobs:
       - validate-kots-helm-release-secret-migration
       - validate-native-helm-v2
       - validate-deployment-orchestration
+      - validate-replicated-sdk
+      - validate-strict-preflight-checks
       # cli-only tests
       - validate-kots-push-images-anonymous
     steps:

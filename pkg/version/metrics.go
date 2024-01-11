@@ -7,7 +7,6 @@ import (
 	"net/http"
 	"net/url"
 	"os"
-	"path/filepath"
 	"strconv"
 	"time"
 
@@ -98,7 +97,7 @@ func GetGraphs(app *types.App, sequence int64, kotsStore store.Store) ([]kotsv1b
 		return graphs, errors.Wrap(err, "failed to get app version archive")
 	}
 
-	kotsKinds, err := kotsutil.LoadKotsKindsFromPath(filepath.Join(archiveDir, "upstream"))
+	kotsKinds, err := kotsutil.LoadKotsKinds(archiveDir)
 	if err != nil {
 		return graphs, errors.Wrap(err, "failed to load kots kinds from path")
 	}
@@ -144,9 +143,7 @@ func GetMetricCharts(graphs []kotsv1beta1.MetricGraph, prometheusAddress string)
 			queries = append(queries, query)
 		}
 
-		for _, query := range graph.Queries {
-			queries = append(queries, query)
-		}
+		queries = append(queries, graph.Queries...)
 
 		series := []Series{}
 		for _, query := range queries {

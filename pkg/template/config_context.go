@@ -11,6 +11,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/docker/registry"
 	dockerregistrytypes "github.com/replicatedhq/kots/pkg/docker/registry/types"
 	"github.com/replicatedhq/kots/pkg/image"
+	"github.com/replicatedhq/kots/pkg/imageutil"
 	registrytypes "github.com/replicatedhq/kots/pkg/registry/types"
 	kotsv1beta1 "github.com/replicatedhq/kotskinds/apis/kots/v1beta1"
 	corev1 "k8s.io/api/core/v1"
@@ -292,7 +293,7 @@ func (ctx ConfigCtx) localImageName(imageRef string) string {
 			Endpoint:  ctx.localRegistryHost(),
 			Namespace: ctx.localRegistryNamespace(),
 		}
-		destImage, err := image.DestImage(destRegistry, imageRef)
+		destImage, err := imageutil.DestImage(destRegistry, imageRef)
 		if err != nil {
 			// TODO: log
 			return ""

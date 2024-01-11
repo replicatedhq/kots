@@ -69,10 +69,12 @@ main() {
         && tar xzf velero.tar.gz \
         && install -m 0755 velero-*/velero $INSTALL_DIR/velero
 
-    curl -sL https://deb.nodesource.com/setup_18.x | runAsRoot bash -e \
-        && runAsRoot apt-get install -y --no-install-recommends nodejs \
-        && runAsRoot rm -rf /var/lib/apt/lists/* \
-        && npm install --prefix $INSTALL_DIR @testim/testim-cli
+    runAsRoot mkdir -p /etc/apt/keyrings
+    curl -fsSL https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key | runAsRoot gpg --dearmor -o /etc/apt/keyrings/nodesource.gpg
+    NODE_MAJOR=18
+    echo "deb [signed-by=/etc/apt/keyrings/nodesource.gpg] https://deb.nodesource.com/node_$NODE_MAJOR.x nodistro main" | runAsRoot tee /etc/apt/sources.list.d/nodesource.list
+    runAsRoot apt-get update && runAsRoot apt-get install nodejs -y
+    npm install --prefix $INSTALL_DIR @testim/testim-cli
 
     rm -rf $tmpdir
 }

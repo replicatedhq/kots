@@ -1,5 +1,5 @@
 import { SnapshotSettings } from "@types";
-import { useQuery } from "react-query";
+import { useQuery } from "@tanstack/react-query";
 
 const getSnapshotSettings = async () => {
   const res = await fetch(`${process.env.API_ENDPOINT}/snapshots/settings`, {

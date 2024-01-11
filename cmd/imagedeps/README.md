@@ -20,27 +20,27 @@ is useful to restrict release tags to a major version, or to filter out garbage 
 
 | Name | Image URI | Matcher Regexp (Optional) |
 |------|--------------------|----------|
-| Name of the image for example **minio** | Untagged image reference **ghcr.io/dexidp/dex**| An optional regular expression, only matching tags will be included.  |
+| Name of the image for example **minio** | Untagged image reference **kotsadm/minio**| An optional regular expression, only matching tags will be included.  |
 
 ### Sample image-spec
 ```text
-minio minio/minio
-rqlite rqlite/rqlite
-dex ghcr.io/dexidp/dex
+minio kotsadm/minio
+rqlite kotsadm/rqlite
+dex kotsadm/dex
 ```
 The preceding image spec will produce the following environment and Go files.
 ```shell
-MINIO_TAG='RELEASE.2021-09-15T04-54-25Z'
-RQLITE_TAG='7.7.0'
-DEX_TAG='v2.30.0'
+MINIO_TAG='0.20231101.183725'
+RQLITE_TAG='7.21.4'
+DEX_TAG='2.37.0'
 ```
 ```go
 package image
 
 const (
-	Minio = "minio/minio:RELEASE.2021-09-15T04-54-25Z"
-	Rqlite = "rqlite/rqlite:7.7.0"
-	Dex = "ghcr.io/dexidp/dex:v2.30.0"
+	Minio = "kotsadm/minio:0.20231101.183725"
+	Rqlite = "kotsadm/rqlite:7.21.4"
+	Dex = "kotsadm/dex:2.37.0"
 )
 ```
 

@@ -1209,55 +1209,66 @@ var HandlerPolicyTests = map[string][]HandlerPolicyTest{
 		},
 	},
 
-	"HelmVM": {}, // Not implemented
-	"GenerateHelmVMNodeJoinCommandSecondary": {
+	"EmbeddedCluster": {}, // Not implemented
+	"GenerateEmbeddedClusterNodeJoinCommand": {
 		{
 			Roles:        []rbactypes.Role{rbac.ClusterAdminRole},
 			SessionRoles: []string{rbac.ClusterAdminRoleID},
 			Calls: func(storeRecorder *mock_store.MockStoreMockRecorder, handlerRecorder *mock_handlers.MockKOTSHandlerMockRecorder) {
-				handlerRecorder.GenerateHelmVMNodeJoinCommandSecondary(gomock.Any(), gomock.Any())
+				handlerRecorder.GenerateEmbeddedClusterNodeJoinCommand(gomock.Any(), gomock.Any())
 			},
 			ExpectStatus: http.StatusOK,
 		},
 	},
-	"GenerateHelmVMNodeJoinCommandPrimary": {
-		{
-			Roles:        []rbactypes.Role{rbac.ClusterAdminRole},
-			SessionRoles: []string{rbac.ClusterAdminRoleID},
-			Calls: func(storeRecorder *mock_store.MockStoreMockRecorder, handlerRecorder *mock_handlers.MockKOTSHandlerMockRecorder) {
-				handlerRecorder.GenerateHelmVMNodeJoinCommandPrimary(gomock.Any(), gomock.Any())
-			},
-			ExpectStatus: http.StatusOK,
-		},
-	},
-	"DrainHelmVMNode": {
+	"DrainEmbeddedClusterNode": {
 		{
 			Vars:         map[string]string{"nodeName": "node-name"},
 			Roles:        []rbactypes.Role{rbac.ClusterAdminRole},
 			SessionRoles: []string{rbac.ClusterAdminRoleID},
 			Calls: func(storeRecorder *mock_store.MockStoreMockRecorder, handlerRecorder *mock_handlers.MockKOTSHandlerMockRecorder) {
-				handlerRecorder.DrainHelmVMNode(gomock.Any(), gomock.Any())
+				handlerRecorder.DrainEmbeddedClusterNode(gomock.Any(), gomock.Any())
 			},
 			ExpectStatus: http.StatusOK,
 		},
 	},
-	"DeleteHelmVMNode": {
+	"DeleteEmbeddedClusterNode": {
 		{
 			Vars:         map[string]string{"nodeName": "node-name"},
 			Roles:        []rbactypes.Role{rbac.ClusterAdminRole},
 			SessionRoles: []string{rbac.ClusterAdminRoleID},
 			Calls: func(storeRecorder *mock_store.MockStoreMockRecorder, handlerRecorder *mock_handlers.MockKOTSHandlerMockRecorder) {
-				handlerRecorder.DeleteHelmVMNode(gomock.Any(), gomock.Any())
+				handlerRecorder.DeleteEmbeddedClusterNode(gomock.Any(), gomock.Any())
 			},
 			ExpectStatus: http.StatusOK,
 		},
 	},
-	"GetHelmVMNodes": {
+	"GetEmbeddedClusterNodes": {
 		{
 			Roles:        []rbactypes.Role{rbac.ClusterAdminRole},
 			SessionRoles: []string{rbac.ClusterAdminRoleID},
 			Calls: func(storeRecorder *mock_store.MockStoreMockRecorder, handlerRecorder *mock_handlers.MockKOTSHandlerMockRecorder) {
-				handlerRecorder.GetHelmVMNodes(gomock.Any(), gomock.Any())
+				handlerRecorder.GetEmbeddedClusterNodes(gomock.Any(), gomock.Any())
+			},
+			ExpectStatus: http.StatusOK,
+		},
+	},
+	"GetEmbeddedClusterNode": {
+		{
+			Vars:         map[string]string{"nodeName": "node-name"},
+			Roles:        []rbactypes.Role{rbac.ClusterAdminRole},
+			SessionRoles: []string{rbac.ClusterAdminRoleID},
+			Calls: func(storeRecorder *mock_store.MockStoreMockRecorder, handlerRecorder *mock_handlers.MockKOTSHandlerMockRecorder) {
+				handlerRecorder.GetEmbeddedClusterNode(gomock.Any(), gomock.Any())
+			},
+			ExpectStatus: http.StatusOK,
+		},
+	},
+	"GetEmbeddedClusterRoles": {
+		{
+			Roles:        []rbactypes.Role{rbac.ClusterAdminRole},
+			SessionRoles: []string{rbac.ClusterAdminRoleID},
+			Calls: func(storeRecorder *mock_store.MockStoreMockRecorder, handlerRecorder *mock_handlers.MockKOTSHandlerMockRecorder) {
+				handlerRecorder.GetEmbeddedClusterRoles(gomock.Any(), gomock.Any())
 			},
 			ExpectStatus: http.StatusOK,
 		},

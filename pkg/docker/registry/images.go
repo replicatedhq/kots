@@ -2,17 +2,18 @@ package registry
 
 import (
 	"strings"
+
+	"github.com/replicatedhq/kots/pkg/imageutil"
 )
 
 func MakeProxiedImageURL(proxyHost string, appSlug string, image string) string {
-	parts := strings.Split(image, "@")
-	if len(parts) == 2 {
-		// we have a digest, but need to also check for a tag
-		parts = strings.Split(parts[0], ":")
-		return strings.Join([]string{proxyHost, "proxy", appSlug, parts[0]}, "/")
+	untagged := imageutil.StripImageTagAndDigest(image)
+
+	registryHost := strings.Split(untagged, "/")[0]
+	if registryHost == proxyHost {
+		// already proxied
+		return untagged
 	}
 
-	// TODO: host with a port breaks this
-	parts = strings.Split(image, ":")
-	return strings.Join([]string{proxyHost, "proxy", appSlug, parts[0]}, "/")
+	return strings.Join([]string{proxyHost, "proxy", appSlug, untagged}, "/")
 }
