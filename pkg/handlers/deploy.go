@@ -83,7 +83,7 @@ func (h *Handler) DeployAppVersion(w http.ResponseWriter, r *http.Request) {
 
 	deployedSequence, err := store.GetStore().GetCurrentParentSequence(a.ID, downstreams[0].ClusterID)
 	if err != nil {
-		errMsg := fmt.Sprintf("failed to get deployed sequence")
+		errMsg := "failed to get deployed sequence"
 		logger.Error(errors.Wrap(err, errMsg))
 		deployAppVersionResponse.Error = errMsg
 		JSON(w, http.StatusInternalServerError, deployAppVersionResponse)
