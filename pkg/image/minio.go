@@ -25,16 +25,28 @@ func GetMinioImage(clientset kubernetes.Interface, kotsadmNamespace string) (str
 	}
 
 	deployment, err := clientset.AppsV1().Deployments("minio").Get(context.TODO(), "minio", metav1.GetOptions{})
-	if err != nil {
-		if kuberneteserrors.IsNotFound(err) {
-			return "", nil
-		}
+	if err != nil && !kuberneteserrors.IsNotFound(err) {
 		return "", errors.Wrap(err, "failed to get minio deployment")
 	}
+	if err == nil {
+		for _, container := range deployment.Spec.Template.Spec.Containers {
+			if strings.Contains(container.Image, "minio/minio:RELEASE.") {
+				return container.Image, nil
+			}
+		}
+	}
 
-	for _, container := range deployment.Spec.Template.Spec.Containers {
-		if strings.Contains(container.Image, "minio/minio:RELEASE.") {
-			return container.Image, nil
+	// minio deployment doesn't exist, check if ha-minio statefulset exists
+
+	statefulset, err := clientset.AppsV1().StatefulSets("minio").Get(context.TODO(), "ha-minio", metav1.GetOptions{})
+	if err != nil && !kuberneteserrors.IsNotFound(err) {
+		return "", errors.Wrap(err, "failed to get ha-minio statefulset")
+	}
+	if err == nil {
+		for _, container := range statefulset.Spec.Template.Spec.Containers {
+			if strings.Contains(container.Image, "minio/minio:RELEASE.") {
+				return container.Image, nil
+			}
 		}
 	}
 
