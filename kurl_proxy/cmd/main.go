@@ -43,6 +43,8 @@ var (
 	}
 )
 
+const DEFAULT_KOTSADM_CERT_CN = "kotsadm.default.svc.cluster.local"
+
 type cert struct {
 	tlsCert                tls.Certificate
 	fingerprint            string
@@ -95,6 +97,7 @@ func main() {
 			log.Printf("Could not regenerate default certificate: %v", err)
 		}
 		// TODO: Why are we exiting here? It leads to a pod restart
+		// Leaving as-is for now to avoid unwanted regressions
 		return
 	}
 
@@ -576,17 +579,17 @@ func regenerateCertWithHostname(certData []byte, hostname string) ([]byte, []byt
 	// will be empty. If already rotated by ekco then Subject will be like
 	// "kotsadm.default.svc.cluster.local@1604697213" and Issuer like
 	// "kotsadm.default.svc.cluster.local-ca@1604697213"
-	if cert.Issuer.CommonName != "" && !strings.HasPrefix(cert.Issuer.CommonName, "kotsadm.default.svc.cluster.local") {
-		return nil, nil, errors.New("cert issuer common name is not kotsadm.default.svc.cluster.local")
+	if cert.Issuer.CommonName != "" && !strings.HasPrefix(cert.Issuer.CommonName, DEFAULT_KOTSADM_CERT_CN) {
+		return nil, nil, errors.Errorf("cert issuer common name is not %s", DEFAULT_KOTSADM_CERT_CN)
 	}
-	if !strings.HasPrefix(cert.Subject.CommonName, "kotsadm.default.svc.cluster.local") {
-		return nil, nil, errors.New("cert common name is not kotsadm.default.svc.cluster.local")
+	if !strings.HasPrefix(cert.Subject.CommonName, DEFAULT_KOTSADM_CERT_CN) {
+		return nil, nil, errors.Errorf("cert common name is not %s", DEFAULT_KOTSADM_CERT_CN)
 	}
 
 	dnsNames := cleanStringSlice(append(cert.DNSNames, hostname))
 
 	// Generate a new self-signed cert
-	certData, keyData, err := certutil.GenerateSelfSignedCertKey("kotsadm.default.svc.cluster.local", cert.IPAddresses, dnsNames)
+	certData, keyData, err := certutil.GenerateSelfSignedCertKey(DEFAULT_KOTSADM_CERT_CN, cert.IPAddresses, dnsNames)
 	if err != nil {
 		return nil, nil, errors.Wrapf(err, "generate self-signed cert")
 	}
@@ -628,18 +631,7 @@ func generateDefaultCertSecret(secrets corev1.SecretInterface, namespace string)
 		StringData: make(map[string]string),
 	}
 
-	// TODO: Why is the namespace always "default"?
-	// Requests to kotsadm.embeddded-cluster.svc.cluster for example will
-	// fail with invalid cert errors
-	altNames := []string{
-		"kotsadm",
-		"kotsadm.default",
-		"kotsadm.default.svc",
-		"kotsadm.default.svc.cluster",
-		"kotsadm.default.svc.cluster.local",
-	}
-
-	hostname := "kotsadm.default.svc.cluster.local"
+	hostname, altNames := generateCertHostnames(namespace)
 
 	// Generate a new self-signed cert
 	certData, keyData, err := certutil.GenerateSelfSignedCertKey(hostname, nil, altNames)
@@ -657,4 +649,31 @@ func generateDefaultCertSecret(secrets corev1.SecretInterface, namespace string)
 	}
 
 	return nil
+}
+
+func generateCertHostnames(namespace string) (string, []string) {
+	if namespace == "" {
+		namespace = "default"
+	}
+
+	// Since ecko relies on the hostname being kotsadm.default.svc.cluster.local
+	// we should leave this as-is. Lets also leave the old hostname in the altNames
+	altNames := []string{
+		"kotsadm",
+		"kotsadm.default",
+		"kotsadm.default.svc",
+		"kotsadm.default.svc.cluster",
+		DEFAULT_KOTSADM_CERT_CN,
+	}
+
+	// If the kurl-proxy is deployed in another namespace, add the DNS alt names
+	// to allow verifying a TLS connection to "kotsadm.mynamespace.svc.cluster.local"
+	if namespace != "default" {
+		altNames = append(altNames, fmt.Sprintf("kotsadm.%s", namespace))
+		altNames = append(altNames, fmt.Sprintf("kotsadm.%s.svc", namespace))
+		altNames = append(altNames, fmt.Sprintf("kotsadm.%s.svc.cluster", namespace))
+		altNames = append(altNames, fmt.Sprintf("kotsadm.%s.svc.cluster.local", namespace))
+	}
+
+	return DEFAULT_KOTSADM_CERT_CN, altNames
 }

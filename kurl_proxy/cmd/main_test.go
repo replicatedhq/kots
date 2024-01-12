@@ -11,6 +11,7 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"reflect"
 	"testing"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -269,5 +270,53 @@ func Test_generateDefaultCertSecret(t *testing.T) {
 
 	if secret.Annotations["acceptAnonymousUploads"] != "1" {
 		t.Errorf("expected acceptAnonymousUploads to be set to '1'")
+	}
+}
+
+func Test_generateCertHostnames(t *testing.T) {
+	tests := []struct {
+		name  string
+		namespace string
+		hostname  string
+		altNames []string
+	}{
+		{
+			name:  "with no namespace",
+			hostname:  "kotsadm.default.svc.cluster.local",
+			altNames : []string{
+				"kotsadm",
+				"kotsadm.default",
+				"kotsadm.default.svc",
+				"kotsadm.default.svc.cluster",
+				"kotsadm.default.svc.cluster.local",
+			},
+		},
+		{
+			name:  "with some other namespace",
+			namespace: "somecluster",
+			hostname:  "kotsadm.default.svc.cluster.local",
+			altNames : []string{
+				"kotsadm",
+				"kotsadm.default",
+				"kotsadm.default.svc",
+				"kotsadm.default.svc.cluster",
+				"kotsadm.default.svc.cluster.local",
+				"kotsadm.somecluster",
+				"kotsadm.somecluster.svc",
+				"kotsadm.somecluster.svc.cluster",
+				"kotsadm.somecluster.svc.cluster.local",
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			hostname, altNames := generateCertHostnames(tt.namespace)
+			if hostname != tt.hostname {
+				t.Errorf("generateCertHostnames() hostname = %v, want %v", hostname, tt.hostname)
+			}
+			if !reflect.DeepEqual(altNames, tt.altNames) {
+				t.Errorf("generateCertHostnames() altNames = %v, want %v", altNames, tt.altNames)
+			}
+		})
 	}
 }
