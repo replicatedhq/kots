@@ -36,7 +36,7 @@ func Test_IsKurl(t *testing.T) {
 		},
 		{
 			name: "expect false when configmap is not found",
-			args: mockClientWithError(kuberneteserrors.NewNotFound(corev1.Resource("configmaps"), configMapName)),
+			args: mockClientWithError(kuberneteserrors.NewNotFound(corev1.Resource("configmaps"), ConfigMapName)),
 			want: false,
 		},
 		{
@@ -46,7 +46,7 @@ func Test_IsKurl(t *testing.T) {
 		},
 		{
 			name: "expect false when client is forbidden",
-			args: mockClientWithError(kuberneteserrors.NewForbidden(corev1.Resource("configmaps"), configMapName, errors.New("Forbidden"))),
+			args: mockClientWithError(kuberneteserrors.NewForbidden(corev1.Resource("configmaps"), ConfigMapName, errors.New("Forbidden"))),
 			want: false,
 		},
 		{
@@ -59,7 +59,7 @@ func Test_IsKurl(t *testing.T) {
 			name: "expect true when configmap is found",
 			args: fake.NewSimpleClientset(&corev1.ConfigMap{
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      configMapName,
+					Name:      ConfigMapName,
 					Namespace: metav1.NamespaceSystem,
 				},
 			}),
