@@ -1,13 +1,21 @@
 package main
 
 import (
+	"context"
+	"crypto/rsa"
+	"crypto/x509"
+	"encoding/pem"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
 	"os"
 	"path/filepath"
+	"reflect"
 	"testing"
+
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/kubernetes/fake"
 )
 
 const (
@@ -215,4 +223,100 @@ func Test_httpServerCSPHeaders(t *testing.T) {
 		}
 	}
 
+}
+
+func Test_generateDefaultCertSecret(t *testing.T) {
+	client := fake.NewSimpleClientset()
+	ns := "default"
+	secrets := client.CoreV1().Secrets(ns)
+	err := generateDefaultCertSecret(secrets, ns)
+	if err != nil {
+		t.Errorf("generateDefaultCertSecret() error = %v", err)
+	}
+
+	secret, err := secrets.Get(context.Background(), "kotsadm-tls", metav1.GetOptions{})
+	if err != nil {
+		t.Errorf("failed to get secret: %v", err)
+	}
+
+	// Check client cert
+	if secret.Data["tls.crt"] == nil {
+		t.Errorf("expected tls.crt to be set")
+	}
+
+	block, _ := pem.Decode(secret.Data["tls.crt"])
+	cert, err := x509.ParseCertificate(block.Bytes)
+	if err != nil {
+		t.Errorf("failed to parse tls.crt: %v", err)
+	}
+
+	// Check client key
+	if secret.Data["tls.key"] == nil {
+		t.Errorf("expected tls.key to be set")
+	}
+	block, _ = pem.Decode(secret.Data["tls.key"])
+	key, err := x509.ParsePKCS1PrivateKey(block.Bytes)
+	if err != nil {
+		t.Errorf("failed to parse tls.key: %v", err)
+	}
+
+	if !key.Public().(*rsa.PublicKey).Equal(cert.PublicKey) {
+		t.Errorf("expected public key to be equal")
+	}
+
+	if secret.StringData["hostname"] != "kotsadm.default.svc.cluster.local" {
+		t.Errorf("expected hostname to be set")
+	}
+
+	if secret.Annotations["acceptAnonymousUploads"] != "1" {
+		t.Errorf("expected acceptAnonymousUploads to be set to '1'")
+	}
+}
+
+func Test_generateCertHostnames(t *testing.T) {
+	tests := []struct {
+		name  string
+		namespace string
+		hostname  string
+		altNames []string
+	}{
+		{
+			name:  "with no namespace",
+			hostname:  "kotsadm.default.svc.cluster.local",
+			altNames : []string{
+				"kotsadm",
+				"kotsadm.default",
+				"kotsadm.default.svc",
+				"kotsadm.default.svc.cluster",
+				"kotsadm.default.svc.cluster.local",
+			},
+		},
+		{
+			name:  "with some other namespace",
+			namespace: "somecluster",
+			hostname:  "kotsadm.default.svc.cluster.local",
+			altNames : []string{
+				"kotsadm",
+				"kotsadm.default",
+				"kotsadm.default.svc",
+				"kotsadm.default.svc.cluster",
+				"kotsadm.default.svc.cluster.local",
+				"kotsadm.somecluster",
+				"kotsadm.somecluster.svc",
+				"kotsadm.somecluster.svc.cluster",
+				"kotsadm.somecluster.svc.cluster.local",
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			hostname, altNames := generateCertHostnames(tt.namespace)
+			if hostname != tt.hostname {
+				t.Errorf("generateCertHostnames() hostname = %v, want %v", hostname, tt.hostname)
+			}
+			if !reflect.DeepEqual(altNames, tt.altNames) {
+				t.Errorf("generateCertHostnames() altNames = %v, want %v", altNames, tt.altNames)
+			}
+		})
+	}
 }
