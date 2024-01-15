@@ -19,7 +19,7 @@ var stateMut = sync.Mutex{}
 // it starts the upgrade process. We only start an upgrade if the following conditions are met:
 // - The app has an embedded cluster configuration.
 // - The app embedded cluster configuration differs from the current embedded cluster config.
-// - The current cluster config already exists in the cluster.
+// - The current cluster config (as part of the Installation object) already exists in the cluster.
 func MaybeStartClusterUpgrade(ctx context.Context, client kubernetes.Interface, store store.Store, conf *v1beta1.Config) error {
 	if conf == nil {
 		return nil
