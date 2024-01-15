@@ -21,6 +21,9 @@ import (
 const configMapName = "embedded-cluster-config"
 const configMapNamespace = "embedded-cluster"
 
+// ErrNoInstallations is returned when no installation object is found in the cluster.
+var ErrNoInstallations = fmt.Errorf("no installations found")
+
 // ReadConfigMap will read the Kurl config from a configmap
 func ReadConfigMap(client kubernetes.Interface) (*corev1.ConfigMap, error) {
 	return client.CoreV1().ConfigMaps(configMapNamespace).Get(context.TODO(), configMapName, metav1.GetOptions{})
@@ -96,7 +99,7 @@ func GetCurrentInstallation(ctx context.Context) (*embeddedclusterv1beta1.Instal
 		return nil, fmt.Errorf("failed to list installations: %w", err)
 	}
 	if len(installationList.Items) == 0 {
-		return nil, fmt.Errorf("no installations found")
+		return nil, ErrNoInstallations
 	}
 	items := installationList.Items
 	sort.SliceStable(items, func(i, j int) bool {

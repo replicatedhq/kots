@@ -2,6 +2,7 @@ package embeddedcluster
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"sync"
 	"time"
@@ -18,6 +19,7 @@ var stateMut = sync.Mutex{}
 // it starts the upgrade process. We only start an upgrade if the following conditions are met:
 // - The app has an embedded cluster configuration.
 // - The app embedded cluster configuration differs from the current embedded cluster config.
+// - The current cluster config already exists in the cluster.
 func MaybeStartClusterUpgrade(ctx context.Context, client kubernetes.Interface, store store.Store, conf *v1beta1.Config) error {
 	if conf == nil {
 		return nil
@@ -33,6 +35,12 @@ func MaybeStartClusterUpgrade(ctx context.Context, client kubernetes.Interface, 
 
 	spec := conf.Spec
 	if upgrade, err := RequiresUpgrade(ctx, spec); err != nil {
+		// if there is no installation object we can't start an upgrade. this is a valid
+		// scenario specially during cluster bootstrap. as we do not need to upgrade the
+		// cluster just after its installation we can return nil here.
+		if errors.Is(err, ErrNoInstallations) {
+			return nil
+		}
 		return fmt.Errorf("failed to check if upgrade is required: %w", err)
 	} else if !upgrade {
 		return nil
