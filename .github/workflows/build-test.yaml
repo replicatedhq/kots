@@ -252,21 +252,11 @@ jobs:
           path: ./bin/kots
 
 
-  self-hosted-working-directory:
-    runs-on: [ self-hosted, linux, ARM64 ]
-    steps:
-      - name: create working directory
-        run: mkdir -p ${{ github.workspace }}/run-${{ github.run_id }}
-
   build-kotsadm:
     runs-on: [ self-hosted, linux, ARM64 ]
-    needs: [ can-run-ci, generate-tag, self-hosted-working-directory ]
+    needs: [ can-run-ci, generate-tag ]
     permissions:
       id-token: write # required to be able to assume the GCP SA identity to pull private Chainguard packages.
-    defaults:
-      run:
-        shell: bash
-        working-directory: ${{ github.workspace }}/run-${{ github.run_id }}
     steps:
       - uses: actions/setup-go@v5
         with:
