@@ -253,7 +253,7 @@ jobs:
 
 
   build-kotsadm:
-    runs-on: ubuntu-20.04
+    runs-on: [ self-hosted, linux, ARM64 ]
     needs: [ can-run-ci, generate-tag ]
     permissions:
       id-token: write # required to be able to assume the GCP SA identity to pull private Chainguard packages.
