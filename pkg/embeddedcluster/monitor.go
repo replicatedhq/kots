@@ -38,6 +38,7 @@ func MaybeStartClusterUpgrade(ctx context.Context, client kubernetes.Interface, 
 		// if there is no installation object we can't start an upgrade. this is a valid
 		// scenario specially during cluster bootstrap. as we do not need to upgrade the
 		// cluster just after its installation we can return nil here.
+		// (the cluster in the first kots version will match the cluster installed during bootstrap)
 		if errors.Is(err, ErrNoInstallations) {
 			return nil
 		}
