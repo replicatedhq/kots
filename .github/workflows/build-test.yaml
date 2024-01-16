@@ -271,9 +271,9 @@ jobs:
         with:
           ref: ${{github.event.pull_request.head.ref}}
           repository: ${{github.event.pull_request.head.repo.full_name}}
-      - name: install pkg-config
+      - name: echo user
         shell: bash
-        run: sudo apt-get install pkg-config
+        run: echo whoami
       - uses: ./.github/actions/build-push-kotsadm-image
         with:
           chainguard-gcp-wif-pool: ${{ secrets.CHAINGUARD_GCP_WIF_POOL }}
