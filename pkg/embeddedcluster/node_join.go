@@ -201,7 +201,7 @@ func getAdminConsolePort(ctx context.Context, client kubernetes.Interface) (int3
 			return port.NodePort, nil
 		}
 	}
-	return -1, fmt.Errorf("did not find port 'http' in service 'admin-console'")
+	return -1, fmt.Errorf("did not find port 'http' in service 'kurl-proxy-kotsadm'")
 }
 
 // getControllerNodeIP gets the IP of a healthy controller node
