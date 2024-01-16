@@ -258,27 +258,29 @@ jobs:
     permissions:
       id-token: write # required to be able to assume the GCP SA identity to pull private Chainguard packages.
     steps:
-      - name: create subdirectory
+      - name: create working directory
+        id: working-directory
         run: |
           mkdir -p ${{ github.run_id }}
-          cd ${{ github.run_id }}
+          echo "working-directory=$(pwd)" >> "$GITHUB_OUTPUT"
       - uses: actions/setup-go@v5
+        working-directory: ${{ steps.working-directory.outputs.working-directory }}
         with:
           go-version: '^1.20.0'
           cache: true
       - name: setup env
+        working-directory: ${{ steps.working-directory.outputs.working-directory }}
         shell: bash
         run: |
           echo "GOPATH=$(go env GOPATH)" >> "$GITHUB_ENV"
           echo "$(go env GOPATH)/bin" >> "$GITHUB_PATH"
       - uses: actions/checkout@v4
+        working-directory: ${{ steps.working-directory.outputs.working-directory }}
         with:
           ref: ${{github.event.pull_request.head.ref}}
           repository: ${{github.event.pull_request.head.repo.full_name}}
-      - name: echo user
-        shell: bash
-        run: echo whoami
       - uses: ./.github/actions/build-push-kotsadm-image
+        working-directory: ${{ steps.working-directory.outputs.working-directory }}
         with:
           chainguard-gcp-wif-pool: ${{ secrets.CHAINGUARD_GCP_WIF_POOL }}
           chainguard-gcp-sa: ${{ secrets.CHAINGUARD_GCP_SA }}
