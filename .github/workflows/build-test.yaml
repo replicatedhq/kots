@@ -272,7 +272,6 @@ jobs:
           echo "GOPATH=$(go env GOPATH)" >> "$GITHUB_ENV"
           echo "$(go env GOPATH)/bin" >> "$GITHUB_PATH"
       - uses: actions/checkout@v4
-        path: ${{ github.run_id }}
         with:
           ref: ${{github.event.pull_request.head.ref}}
           repository: ${{github.event.pull_request.head.repo.full_name}}
