@@ -66,14 +66,14 @@ runs:
     - uses: chainguard-dev/actions/melange-build@main
       with:
         config: deploy/melange.yaml
-        archs: x86_64
+        archs: arm64
         sign-with-temporary-key: true
         cache-dir: ${{ steps.cache-dir.outputs.cache_dir }}
 
     - uses: chainguard-images/actions/apko-publish@main
       with:
         config: deploy/apko.yaml
-        archs: x86_64
+        archs: arm64
         tag: ${{ inputs.image-name }}
         vcs-url: true
         generic-user: ${{ inputs.registry-username }}
