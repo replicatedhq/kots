@@ -34,23 +34,23 @@ inputs:
 runs:
   using: "composite"
   steps:
-    - uses: google-github-actions/auth@35b0e87d162680511bf346c299f71c9c5c379033 # v1.1.1
-      with:
-        workload_identity_provider: ${{ inputs.chainguard-gcp-wif-pool }}
-        service_account: ${{ inputs.chainguard-gcp-sa }}
+    # - uses: google-github-actions/auth@35b0e87d162680511bf346c299f71c9c5c379033 # v1.1.1
+    #   with:
+    #     workload_identity_provider: ${{ inputs.chainguard-gcp-wif-pool }}
+    #     service_account: ${{ inputs.chainguard-gcp-sa }}
 
-    - uses: google-github-actions/setup-gcloud@e30db14379863a8c79331b04a9969f4c1e225e0b # v1.1.1
-      with:
-        project_id: ${{ inputs.chainguard-gcp-project-id }}
+    # - uses: google-github-actions/setup-gcloud@e30db14379863a8c79331b04a9969f4c1e225e0b # v1.1.1
+    #   with:
+    #     project_id: ${{ inputs.chainguard-gcp-project-id }}
 
-    - name: setup packages
-      env:
-        BUCKET: replicated-apk-registry
-      shell: bash
-      run: |
-        mkdir ./packages/
-        gsutil -m cp -R gs://$BUCKET/os/* ./packages/
-        ls -lR ./packages/
+    # - name: setup packages
+    #   env:
+    #     BUCKET: replicated-apk-registry
+    #   shell: bash
+    #   run: |
+    #     mkdir ./packages/
+    #     gsutil -m cp -R gs://$BUCKET/os/* ./packages/
+    #     ls -lR ./packages/
 
     - name: template melange and apko configs
       shell: bash
