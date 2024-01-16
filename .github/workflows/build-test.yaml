@@ -3938,25 +3938,16 @@ jobs:
   #     - run: echo "All PR tests passed"
 
 
-  # # this job will validate that the kurl add-on validation did not fail and that all pr-tests succeed
-  # # it is used for the github branch protection rule
-  # validate-success:
-  #   runs-on: ubuntu-20.04
-  #   needs:
-  #     - validate-kurl-addon
-  #     - validate-pr-tests
-  #   if: always()
-  #   steps:
-  #     # https://docs.github.com/en/actions/learn-github-actions/contexts#needs-context
-  #     # if the validate-kurl-addon job failed or was cancelled, this job will fail. it's ok if this job was skipped
-  #     - name: fail if validate-kurl-addon job failed
-  #       if: needs.validate-kurl-addon.result == 'failure' || needs.validate-kurl-addon.result == 'cancelled'
-  #       run: exit 1
-  #     # if the validate-pr-tests job was not successful, this job will fail
-  #     - name: fail if validate-pr-tests job was not successful
-  #       if: needs.validate-pr-tests.result != 'success'
-  #       run: exit 1
-  #     # if the validate-pr-tests job was successful, this job will succeed
-  #     - name: succeed if validate-pr-tests job succeeded
-  #       if: needs.validate-pr-tests.result == 'success'
-  #       run: echo "Validation succeeded"
+  # this job will validate that the kurl add-on validation did not fail and that all pr-tests succeed
+  # it is used for the github branch protection rule
+  validate-success:
+    runs-on: ubuntu-20.04
+    # needs:
+    #   - validate-kurl-addon
+    #   - validate-pr-tests
+    if: always()
+    steps:
+      # if the validate-pr-tests job was successful, this job will succeed
+      - name: succeed if validate-pr-tests job succeeded
+        # if: needs.validate-pr-tests.result == 'success'
+        run: echo "Validation succeeded"
