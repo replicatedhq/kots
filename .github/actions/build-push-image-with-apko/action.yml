@@ -40,7 +40,7 @@ runs:
           echo "image-exists=false" >> "$GITHUB_OUTPUT"
         fi
 
-    - uses: chainguard-images/actions/apko-publish@main
+    - uses: cbodonnell/cgr-actions/apko-publish@afcbc86480e2804ef1e2f47d1c913e9c8e33dbb8
       if: ${{ inputs.overwrite == 'true' || steps.check-image-exists.outputs.image-exists == 'false' }}
       with:
         config: ${{ inputs.apko-config }}

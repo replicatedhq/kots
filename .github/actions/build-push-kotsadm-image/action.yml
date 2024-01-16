@@ -70,7 +70,7 @@ runs:
         sign-with-temporary-key: true
         cache-dir: ${{ steps.cache-dir.outputs.cache_dir }}
 
-    - uses: chainguard-images/actions/apko-publish@main
+    - uses: cbodonnell/cgr-actions/apko-publish@afcbc86480e2804ef1e2f47d1c913e9c8e33dbb8
       with:
         config: deploy/apko.yaml
         archs: x86_64
