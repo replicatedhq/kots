@@ -11,6 +11,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/embeddedcluster/types"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/util"
+	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 )
@@ -185,11 +186,30 @@ func GenerateK0sJoinCommand(ctx context.Context, client kubernetes.Interface, ro
 	return strings.Join(cmd, " "), nil
 }
 
-// gets the port of the 'admin-console' service
+// gets the port of the 'admin-console' or 'kurl-proxy-kotsadm' service
 func getAdminConsolePort(ctx context.Context, client kubernetes.Interface) (int32, error) {
-	svc, err := client.CoreV1().Services(util.PodNamespace).Get(ctx, "admin-console", metav1.GetOptions{})
+	kurlProxyPort, err := getAdminConsolePortImpl(ctx, client, "kurl-proxy-kotsadm")
 	if err != nil {
-		return -1, fmt.Errorf("failed to get admin-console service: %w", err)
+		if errors.IsNotFound(err) {
+			adminConsolePort, err := getAdminConsolePortImpl(ctx, client, "admin-console")
+			if err != nil {
+				return -1, fmt.Errorf("failed to get admin-console port: %w", err)
+			}
+			return adminConsolePort, nil
+		}
+		return -1, fmt.Errorf("failed to get kurl-proxy-kotsadm port: %w", err)
+	}
+	return kurlProxyPort, nil
+}
+
+func getAdminConsolePortImpl(ctx context.Context, client kubernetes.Interface, svcName string) (int32, error) {
+	svc, err := client.CoreV1().Services(util.PodNamespace).Get(ctx, svcName, metav1.GetOptions{})
+	if err != nil {
+		return -1, fmt.Errorf("failed to get %s service: %w", svcName, err)
+	}
+
+	if len(svc.Spec.Ports) == 1 {
+		return svc.Spec.Ports[0].NodePort, nil
 	}
 
 	for _, port := range svc.Spec.Ports {
@@ -197,7 +217,7 @@ func getAdminConsolePort(ctx context.Context, client kubernetes.Interface) (int3
 			return port.NodePort, nil
 		}
 	}
-	return -1, fmt.Errorf("did not find port 'http' in service 'admin-console'")
+	return -1, fmt.Errorf("did not find port 'http' in service '%s'", svcName)
 }
 
 // getControllerNodeIP gets the IP of a healthy controller node
