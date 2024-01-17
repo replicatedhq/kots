@@ -109,35 +109,6 @@ export default class AppStatus extends Component<Props, State> {
             >
               {Utilities.toTitleCase(appStatus)}
             </span>
-            {!isEmpty(embeddedClusterState) && (
-              <>
-                <span className="tw-mr-1 tw-ml-4 tw-text-sm tw-text-gray-500">
-                  Cluster State:
-                </span>
-                <span
-                  className={`status-dot ${
-                    embeddedClusterState === "Installed"
-                      ? "u-color--success"
-                      : embeddedClusterState === "Installing" ||
-                        embeddedClusterState === "Enqueued"
-                      ? "u-color--warning"
-                      : "u-color--error"
-                  }`}
-                />
-                <span
-                  className={`u-fontSize--normal u-fontWeight--medium ${
-                    embeddedClusterState === "Installed"
-                      ? "u-textColor--bodyCopy"
-                      : embeddedClusterState === "Installing" ||
-                        embeddedClusterState === "Enqueued"
-                      ? "u-textColor--warning"
-                      : "u-textColor--error"
-                  }`}
-                >
-                  {Utilities.clusterState(embeddedClusterState)}
-                </span>
-              </>
-            )}
             {this.props.hasStatusInformers && (
               <span
                 onClick={this.props.onViewAppStatusDetails}
@@ -146,6 +117,35 @@ export default class AppStatus extends Component<Props, State> {
                 {" "}
                 Details{" "}
               </span>
+            )}
+            {!isEmpty(embeddedClusterState) && (
+                <>
+                <span className="tw-mr-1 tw-ml-4 tw-text-sm tw-text-gray-500">
+                  Cluster State:
+                </span>
+                  <span
+                      className={`status-dot ${
+                          embeddedClusterState === "Installed"
+                              ? "u-color--success"
+                              : embeddedClusterState === "Installing" ||
+                              embeddedClusterState === "Enqueued"
+                                  ? "u-color--warning"
+                                  : "u-color--error"
+                      }`}
+                  />
+                  <span
+                      className={`u-fontSize--normal u-fontWeight--medium ${
+                          embeddedClusterState === "Installed"
+                              ? "u-textColor--bodyCopy"
+                              : embeddedClusterState === "Installing" ||
+                              embeddedClusterState === "Enqueued"
+                                  ? "u-textColor--warning"
+                                  : "u-textColor--error"
+                      }`}
+                  >
+                  {Utilities.clusterState(embeddedClusterState)}
+                </span>
+                </>
             )}
             <Link
               to={`${url}/config/${app?.downstream?.currentVersion?.sequence}`}
