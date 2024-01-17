@@ -109,6 +109,15 @@ export default class AppStatus extends Component<Props, State> {
             >
               {Utilities.toTitleCase(appStatus)}
             </span>
+            {this.props.hasStatusInformers && (
+              <span
+                onClick={this.props.onViewAppStatusDetails}
+                className="link u-marginLeft--10 u-fontSize--small"
+              >
+                {" "}
+                Details{" "}
+              </span>
+            )}
             {!isEmpty(embeddedClusterState) && (
               <>
                 <span className="tw-mr-1 tw-ml-4 tw-text-sm tw-text-gray-500">
@@ -137,15 +146,6 @@ export default class AppStatus extends Component<Props, State> {
                   {Utilities.clusterState(embeddedClusterState)}
                 </span>
               </>
-            )}
-            {this.props.hasStatusInformers && (
-              <span
-                onClick={this.props.onViewAppStatusDetails}
-                className="link u-marginLeft--10 u-fontSize--small"
-              >
-                {" "}
-                Details{" "}
-              </span>
             )}
             <Link
               to={`${url}/config/${app?.downstream?.currentVersion?.sequence}`}
