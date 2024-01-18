@@ -361,7 +361,7 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 		}
 		if processImageOptions.RewriteImages && processImageOptions.AirgapRoot != "" {
 			// if this is an airgap install, we still need to process the images
-			if _, err = midstream.ProcessAirgapImages(processImageOptions, renderedKotsKinds, fetchOptions.License, log); err != nil {
+			if _, err = midstream.ProcessAirgapImages(processImageOptions, nil, nil, renderedKotsKinds, fetchOptions.License, log); err != nil {
 				return "", errors.Wrap(err, "failed to process airgap images")
 			}
 		}
@@ -442,7 +442,7 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 
 		renderedKotsKinds.Installation.Spec.YAMLErrors = files
 
-		if err := apparchive.SaveInstallation(&renderedKotsKinds.Installation, u.GetUpstreamDir(writeUpstreamOptions)); err != nil {
+		if err := kotsutil.SaveInstallation(&renderedKotsKinds.Installation, u.GetUpstreamDir(writeUpstreamOptions)); err != nil {
 			log.FinishSpinnerWithError()
 			return "", errors.Wrap(err, "failed to save installation")
 		}
@@ -509,26 +509,6 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 		Log:                log,
 	}
 
-	// the UseHelmInstall map blocks visibility into charts and subcharts when searching for private images
-	// any chart name listed here will be skipped when writing midstream kustomization.yaml and pullsecret.yaml
-	// when using Helm Install, each chart gets it's own kustomization and pullsecret yaml and MUST be skipped when processing higher level directories!
-	// for writing Common Midstream, every chart and subchart is in this map as Helm Midstreams will be processed later in the code
-	commonWriteMidstreamOptions.UseHelmInstall = map[string]bool{}
-	for _, v := range v1Beta1HelmCharts {
-		chartBaseName := v.GetDirName()
-		commonWriteMidstreamOptions.UseHelmInstall[chartBaseName] = v.Spec.UseHelmInstall
-		if v.Spec.UseHelmInstall {
-			subcharts, err := base.FindHelmSubChartsFromBase(writeBaseOptions.BaseDir, chartBaseName)
-			if err != nil {
-				log.FinishSpinnerWithError()
-				return "", errors.Wrapf(err, "failed to find subcharts for parent chart %s", chartBaseName)
-			}
-			for _, subchart := range subcharts.SubCharts {
-				commonWriteMidstreamOptions.UseHelmInstall[subchart] = v.Spec.UseHelmInstall
-			}
-		}
-	}
-
 	writeMidstreamOptions := commonWriteMidstreamOptions
 	writeMidstreamOptions.MidstreamDir = filepath.Join(u.GetOverlaysDir(writeUpstreamOptions), "midstream")
 	writeMidstreamOptions.BaseDir = filepath.Join(u.GetBaseDir(writeUpstreamOptions), commonBase.Path)
@@ -543,13 +523,6 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 
 	helmMidstreams := []midstream.Midstream{}
 	for _, helmBase := range helmBases {
-		// we must look at the current chart for private images, but must ignore subcharts
-		// to do this, we remove only the current helmBase name from the UseHelmInstall map to unblock visibility into the chart directory
-		// this ensures only the current chart resources are added to kustomization.yaml and pullsecret.yaml
-		// copy the bool setting in the map to restore it after this process loop
-		previousUseHelmInstall := writeMidstreamOptions.UseHelmInstall[helmBase.Path]
-		writeMidstreamOptions.UseHelmInstall[helmBase.Path] = false
-
 		helmBaseCopy := helmBase.DeepCopy()
 
 		processImageOptionsCopy := processImageOptions
@@ -566,9 +539,6 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 			log.FinishSpinnerWithError()
 			return "", errors.Wrapf(err, "failed to write helm midstream %s", helmBase.Path)
 		}
-
-		// add this chart back into UseHelmInstall to make sure it's not processed again
-		writeMidstreamOptions.UseHelmInstall[helmBase.Path] = previousUseHelmInstall
 
 		helmMidstreams = append(helmMidstreams, *helmMidstream)
 	}

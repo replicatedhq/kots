@@ -12,15 +12,15 @@ import (
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/docker/registry"
 	"github.com/replicatedhq/kots/pkg/image"
+	imagetypes "github.com/replicatedhq/kots/pkg/image/types"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	kotsadmobjects "github.com/replicatedhq/kots/pkg/kotsadm/objects"
-	"github.com/replicatedhq/kots/pkg/kotsadm/types"
 	kotsadmtypes "github.com/replicatedhq/kots/pkg/kotsadm/types"
 	"k8s.io/client-go/kubernetes"
 )
 
 // Copies Admin Console images from public registry to private registry
-func CopyImages(options types.PushImagesOptions, kotsNamespace string) error {
+func CopyImages(options imagetypes.PushImagesOptions, kotsNamespace string) error {
 	clientset, err := k8sutil.GetClientset()
 	if err != nil {
 		return errors.Wrap(err, "failed to get clientset")
@@ -45,7 +45,7 @@ func CopyImages(options types.PushImagesOptions, kotsNamespace string) error {
 			return errors.Errorf("failed to find image %s in destination list", imageName)
 		}
 
-		writeProgressLine(options.ProgressWriter, fmt.Sprintf("Copying %s to %s", sourceImage, destImage))
+		image.WriteProgressLine(options.ProgressWriter, fmt.Sprintf("Copying %s to %s", sourceImage, destImage))
 
 		sourceCtx, err := getCopyImagesSourceContext(clientset, kotsNamespace)
 		if err != nil {

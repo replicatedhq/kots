@@ -2,7 +2,6 @@ package midstream
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -10,7 +9,6 @@ import (
 	"path/filepath"
 
 	"github.com/pkg/errors"
-	"github.com/replicatedhq/kots/pkg/apparchive"
 	"github.com/replicatedhq/kots/pkg/base"
 	"github.com/replicatedhq/kots/pkg/disasterrecovery"
 	"github.com/replicatedhq/kots/pkg/docker/registry"
@@ -21,7 +19,6 @@ import (
 	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/template"
-	"github.com/replicatedhq/kots/pkg/upstream"
 	"github.com/replicatedhq/kots/pkg/util"
 	kotsv1beta1 "github.com/replicatedhq/kotskinds/apis/kots/v1beta1"
 	yaml "gopkg.in/yaml.v2"
@@ -47,7 +44,6 @@ type WriteOptions struct {
 	HTTPProxyEnvValue   string
 	HTTPSProxyEnvValue  string
 	NoProxyEnvValue     string
-	UseHelmInstall      map[string]bool
 	NewHelmCharts       []*kotsv1beta1.HelmChart
 	ProcessImageOptions image.ProcessImageOptions
 	License             *kotsv1beta1.License
@@ -76,6 +72,26 @@ func WriteMidstream(opts WriteOptions) (*Midstream, error) {
 		dockerHubRegistryCreds, _ = registry.GetCredentialsForRegistryFromConfigJSON(dockerhubSecret.Data[".dockerconfigjson"], registry.DockerHubRegistryName)
 	}
 
+	var destRegistry *dockerregistrytypes.RegistryOptions
+	if opts.ProcessImageOptions.RewriteImages {
+		destRegistry = &dockerregistrytypes.RegistryOptions{
+			Endpoint:  opts.ProcessImageOptions.RegistrySettings.Hostname,
+			Namespace: opts.ProcessImageOptions.RegistrySettings.Namespace,
+			Username:  opts.ProcessImageOptions.RegistrySettings.Username,
+			Password:  opts.ProcessImageOptions.RegistrySettings.Password,
+		}
+	}
+
+	baseImages, objects, err := base.FindImages(opts.Base)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to find base images")
+	}
+
+	kotsKindsImages, err := kotsutil.GetImagesFromKotsKinds(opts.RenderedKotsKinds, destRegistry)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get images from kots kinds")
+	}
+
 	if opts.ProcessImageOptions.RewriteImages {
 		// A target registry is configured. Rewrite all images and copy them (if necessary) to the configured registry.
 		if opts.ProcessImageOptions.RegistrySettings.IsReadOnly {
@@ -88,7 +104,7 @@ func WriteMidstream(opts WriteOptions) (*Midstream, error) {
 
 		if opts.ProcessImageOptions.AirgapRoot == "" {
 			// This is an online installation. Pull and rewrite images from online and copy them (if necessary) to the configured registry.
-			rewriteResult, err := RewriteBaseImages(opts.ProcessImageOptions, opts.BaseDir, opts.RenderedKotsKinds, opts.License, dockerHubRegistryCreds, opts.Log)
+			rewriteResult, err := RewriteBaseImages(opts.ProcessImageOptions, baseImages, kotsKindsImages, opts.RenderedKotsKinds, opts.License, dockerHubRegistryCreds, opts.Log)
 			if err != nil {
 				return nil, errors.Wrap(err, "failed to rewrite base images")
 			}
@@ -96,15 +112,13 @@ func WriteMidstream(opts WriteOptions) (*Midstream, error) {
 			opts.RenderedKotsKinds.Installation.Spec.KnownImages = rewriteResult.CheckedImages
 		} else {
 			// This is an airgapped installation. Copy and rewrite images from the airgap bundle to the configured registry.
-			result, err := ProcessAirgapImages(opts.ProcessImageOptions, opts.RenderedKotsKinds, opts.License, opts.Log)
+			result, err := ProcessAirgapImages(opts.ProcessImageOptions, baseImages, kotsKindsImages, opts.RenderedKotsKinds, opts.License, opts.Log)
 			if err != nil {
 				return nil, errors.Wrap(err, "failed to process airgap images")
 			}
 			images = result.KustomizeImages
 			opts.RenderedKotsKinds.Installation.Spec.KnownImages = result.KnownImages
 		}
-
-		objects = base.FindObjectsWithImages(opts.Base)
 
 		// Use target registry credentials to create image pull secrets for all objects that have images.
 		pullSecretRegistries = []string{opts.ProcessImageOptions.RegistrySettings.Hostname}
@@ -118,13 +132,12 @@ func WriteMidstream(opts WriteOptions) (*Midstream, error) {
 		}
 	} else if opts.License != nil {
 		// A target registry is NOT configured. Find and rewrite private images to be proxied through proxy.replicated.com
-		findResult, err := findPrivateImages(opts, dockerHubRegistryCreds)
+		findResult, err := findPrivateImages(opts, baseImages, kotsKindsImages, dockerHubRegistryCreds)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to find private images")
 		}
 		images = findResult.Images
 		opts.RenderedKotsKinds.Installation.Spec.KnownImages = findResult.CheckedImages
-		objects = findResult.Docs
 
 		// Use license to create image pull secrets for all objects that have private images.
 		pullSecretRegistries = registry.GetRegistryProxyInfo(opts.License, &opts.RenderedKotsKinds.Installation, &opts.RenderedKotsKinds.KotsApplication).ToSlice()
@@ -153,7 +166,7 @@ func WriteMidstream(opts WriteOptions) (*Midstream, error) {
 	}
 	pullSecrets.DockerHubSecret = dockerhubSecret
 
-	if err := apparchive.SaveInstallation(&opts.RenderedKotsKinds.Installation, opts.UpstreamDir); err != nil {
+	if err := kotsutil.SaveInstallation(&opts.RenderedKotsKinds.Installation, opts.UpstreamDir); err != nil {
 		return nil, errors.Wrap(err, "failed to save installation")
 	}
 
@@ -170,12 +183,13 @@ func WriteMidstream(opts WriteOptions) (*Midstream, error) {
 }
 
 // RewriteBaseImages Will rewrite images found in base and copy them (if necessary) to the configured registry.
-func RewriteBaseImages(options image.ProcessImageOptions, baseDir string, kotsKinds *kotsutil.KotsKinds, license *kotsv1beta1.License, dockerHubRegistryCreds registry.Credentials, log *logger.CLILogger) (*base.RewriteImagesResult, error) {
+func RewriteBaseImages(options image.ProcessImageOptions, baseImages []string, kotsKindsImages []string, kotsKinds *kotsutil.KotsKinds, license *kotsv1beta1.License, dockerHubRegistryCreds registry.Credentials, log *logger.CLILogger) (*base.RewriteImagesResult, error) {
 	replicatedRegistryInfo := registry.GetRegistryProxyInfo(license, &kotsKinds.Installation, &kotsKinds.KotsApplication)
 
 	rewriteImageOptions := base.RewriteImageOptions{
-		BaseDir: baseDir,
-		Log:     log,
+		BaseImages:      baseImages,
+		KotsKindsImages: kotsKindsImages,
+		Log:             log,
 		SourceRegistry: dockerregistrytypes.RegistryOptions{
 			Endpoint:         replicatedRegistryInfo.Registry,
 			ProxyEndpoint:    replicatedRegistryInfo.Proxy,
@@ -211,16 +225,18 @@ func RewriteBaseImages(options image.ProcessImageOptions, baseDir string, kotsKi
 }
 
 // processAirgapImages Will rewrite images found in the airgap bundle/airgap root and copy them (if necessary) to the configured registry.
-func ProcessAirgapImages(options image.ProcessImageOptions, kotsKinds *kotsutil.KotsKinds, license *kotsv1beta1.License, log *logger.CLILogger) (*upstream.ProcessAirgapImagesResult, error) {
+func ProcessAirgapImages(options image.ProcessImageOptions, baseImages []string, kotsKindsImages []string, kotsKinds *kotsutil.KotsKinds, license *kotsv1beta1.License, log *logger.CLILogger) (*base.ProcessAirgapImagesResult, error) {
 	replicatedRegistryInfo := registry.GetRegistryProxyInfo(license, &kotsKinds.Installation, &kotsKinds.KotsApplication)
 
-	processAirgapImageOptions := upstream.ProcessAirgapImagesOptions{
-		RootDir:      options.RootDir,
-		AirgapRoot:   options.AirgapRoot,
-		AirgapBundle: options.AirgapBundle,
-		CreateAppDir: options.CreateAppDir,
-		PushImages:   !options.RegistrySettings.IsReadOnly && options.PushImages,
-		Log:          log,
+	processAirgapImageOptions := base.ProcessAirgapImagesOptions{
+		BaseImages:      baseImages,
+		KotsKindsImages: kotsKindsImages,
+		RootDir:         options.RootDir,
+		AirgapRoot:      options.AirgapRoot,
+		AirgapBundle:    options.AirgapBundle,
+		CreateAppDir:    options.CreateAppDir,
+		PushImages:      !options.RegistrySettings.IsReadOnly && options.PushImages,
+		Log:             log,
 		ReplicatedRegistry: dockerregistrytypes.RegistryOptions{
 			Endpoint:         replicatedRegistryInfo.Registry,
 			ProxyEndpoint:    replicatedRegistryInfo.Proxy,
@@ -233,27 +249,15 @@ func ProcessAirgapImages(options image.ProcessImageOptions, kotsKinds *kotsutil.
 			Username:  options.RegistrySettings.Username,
 			Password:  options.RegistrySettings.Password,
 		},
+		KotsKinds: kotsKinds,
 	}
 	if license != nil {
 		processAirgapImageOptions.ReplicatedRegistry.Username = license.Spec.LicenseID
 		processAirgapImageOptions.ReplicatedRegistry.Password = license.Spec.LicenseID
 	}
 
-	imagesData, err := os.ReadFile(filepath.Join(options.AirgapRoot, "images.json"))
-	if err != nil && !os.IsNotExist(err) {
-		return nil, errors.Wrap(err, "failed to load images file")
-	}
-	if err == nil {
-		var images []kustomizetypes.Image
-		err := json.Unmarshal(imagesData, &images)
-		if err != nil && !os.IsNotExist(err) {
-			return nil, errors.Wrap(err, "failed to unmarshal images data")
-		}
-		processAirgapImageOptions.UseKnownImages = true
-		processAirgapImageOptions.KnownImages = images
-	}
-
-	result, err := upstream.ProcessAirgapImages(processAirgapImageOptions)
+	// TODO NOW: move this to base package
+	result, err := base.ProcessAirgapImages(processAirgapImageOptions)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to process airgap images")
 	}
@@ -262,18 +266,14 @@ func ProcessAirgapImages(options image.ProcessImageOptions, kotsKinds *kotsutil.
 }
 
 // findPrivateImages Finds and rewrites private images to be proxied through proxy.replicated.com
-func findPrivateImages(opts WriteOptions, dockerHubRegistryCreds registry.Credentials) (*base.FindPrivateImagesResult, error) {
+func findPrivateImages(opts WriteOptions, baseImages []string, kotsKindsImages []string, dockerHubRegistryCreds registry.Credentials) (*base.FindPrivateImagesResult, error) {
 	replicatedRegistryInfo := registry.GetRegistryProxyInfo(opts.License, &opts.RenderedKotsKinds.Installation, &opts.RenderedKotsKinds.KotsApplication)
 	allPrivate := opts.RenderedKotsKinds.KotsApplication.Spec.ProxyPublicImages
 
-	kotsKindsImages, err := kotsutil.GetImagesFromKotsKinds(opts.RenderedKotsKinds, nil)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to get images from kots kinds")
-	}
-
 	findPrivateImagesOptions := base.FindPrivateImagesOptions{
-		BaseDir: opts.BaseDir,
-		AppSlug: opts.License.Spec.AppSlug,
+		BaseImages:      baseImages,
+		KotsKindsImages: kotsKindsImages,
+		AppSlug:         opts.License.Spec.AppSlug,
 		ReplicatedRegistry: dockerregistrytypes.RegistryOptions{
 			Endpoint:         replicatedRegistryInfo.Registry,
 			ProxyEndpoint:    replicatedRegistryInfo.Proxy,
@@ -285,9 +285,6 @@ func findPrivateImages(opts WriteOptions, dockerHubRegistryCreds registry.Creden
 		},
 		Installation:     &opts.RenderedKotsKinds.Installation,
 		AllImagesPrivate: allPrivate,
-		HelmChartPath:    opts.Base.Path,
-		UseHelmInstall:   opts.UseHelmInstall,
-		KotsKindsImages:  kotsKindsImages,
 	}
 	findResult, err := base.FindPrivateImages(findPrivateImagesOptions)
 	if err != nil {

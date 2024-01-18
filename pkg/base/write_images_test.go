@@ -8,6 +8,7 @@ import (
 
 	"github.com/pkg/errors"
 	registrytypes "github.com/replicatedhq/kots/pkg/docker/registry/types"
+	"github.com/replicatedhq/kots/pkg/image"
 	"github.com/replicatedhq/kots/pkg/k8sdoc"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
 	kotsv1beta1 "github.com/replicatedhq/kotskinds/apis/kots/v1beta1"
@@ -33,7 +34,6 @@ func Test_RewriteImages(t *testing.T) {
 			baseDir: "./testdata/base-specs",
 			appSlug: "test-app-slug",
 			processOptions: RewriteImageOptions{
-				BaseDir: "./testdata/base-specs",
 				SourceRegistry: registrytypes.RegistryOptions{
 					Endpoint:      "registry.replicated.com",
 					ProxyEndpoint: "proxy.replicated.com",
@@ -226,7 +226,6 @@ func Test_RewriteImages(t *testing.T) {
 			},
 
 			findOptions: FindPrivateImagesOptions{
-				BaseDir: "./testdata/base-specs",
 				AppSlug: "test-app-slug",
 				ReplicatedRegistry: registrytypes.RegistryOptions{
 					Endpoint:      "registry.replicated.com",
@@ -299,7 +298,6 @@ func Test_RewriteImages(t *testing.T) {
 			baseDir: "./testdata/replicated-registry",
 			appSlug: "test-app-slug",
 			processOptions: RewriteImageOptions{
-				BaseDir: "./testdata/replicated-registry",
 				SourceRegistry: registrytypes.RegistryOptions{
 					Endpoint:         "my-registry.example.com",
 					ProxyEndpoint:    "my-proxy.example.com",
@@ -358,7 +356,6 @@ func Test_RewriteImages(t *testing.T) {
 			},
 
 			findOptions: FindPrivateImagesOptions{
-				BaseDir: "./testdata/replicated-registry",
 				AppSlug: "test-app-slug",
 				ReplicatedRegistry: registrytypes.RegistryOptions{
 					Endpoint:         "my-registry.example.com",
@@ -404,7 +401,6 @@ func Test_RewriteImages(t *testing.T) {
 			baseDir: "./testdata/replicated-registry",
 			appSlug: "test-app-slug",
 			processOptions: RewriteImageOptions{
-				BaseDir: "./testdata/replicated-registry",
 				SourceRegistry: registrytypes.RegistryOptions{
 					Endpoint:         "registry.replicated.com",
 					ProxyEndpoint:    "proxy.replicated.com",
@@ -463,7 +459,6 @@ func Test_RewriteImages(t *testing.T) {
 			},
 
 			findOptions: FindPrivateImagesOptions{
-				BaseDir: "./testdata/replicated-registry",
 				AppSlug: "test-app-slug",
 				ReplicatedRegistry: registrytypes.RegistryOptions{
 					Endpoint:      "registry.replicated.com",
@@ -509,23 +504,29 @@ func Test_RewriteImages(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			req := require.New(t)
 
+			kotsKindsImages, err := kotsutil.GetImagesFromKotsKinds(test.processOptions.KotsKinds, &test.processOptions.DestRegistry)
+			req.NoError(err)
+			test.processOptions.KotsKindsImages = kotsKindsImages
+
+			baseImages, err := image.FindImagesInDir(test.baseDir)
+			req.NoError(err)
+			test.processOptions.BaseImages = baseImages
+
 			gotResult, err := RewriteImages(test.processOptions)
 			req.NoError(err)
 
 			assert.ElementsMatch(t, test.wantProcessResult.Images, gotResult.Images)
 			assert.ElementsMatch(t, test.wantProcessResult.CheckedImages, gotResult.CheckedImages)
 
-			test.findOptions.KotsKindsImages, err = kotsutil.GetImagesFromKotsKinds(test.processOptions.KotsKinds, nil)
+			kotsKindsImages, err = kotsutil.GetImagesFromKotsKinds(test.processOptions.KotsKinds, nil) // no dest registry
 			req.NoError(err)
+			test.findOptions.KotsKindsImages = kotsKindsImages
+			test.findOptions.BaseImages = baseImages
 
 			gotFindResult, err := FindPrivateImages(test.findOptions)
 			req.NoError(err)
 
-			wantDocs, err := loadDocs(test.baseDir)
-			req.NoError(err)
-
 			assert.ElementsMatch(t, test.wantFindResult.Images, gotFindResult.Images)
-			assert.ElementsMatch(t, wantDocs, gotFindResult.Docs)
 			assert.ElementsMatch(t, test.wantFindResult.CheckedImages, gotFindResult.CheckedImages)
 		})
 	}

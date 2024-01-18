@@ -14,7 +14,8 @@ import (
 )
 
 type RewriteImageOptions struct {
-	BaseDir           string
+	BaseImages        []string
+	KotsKindsImages   []string
 	AppSlug           string
 	SourceRegistry    registrytypes.RegistryOptions
 	DestRegistry      registrytypes.RegistryOptions
@@ -33,29 +34,22 @@ type RewriteImagesResult struct {
 
 func RewriteImages(options RewriteImageOptions) (*RewriteImagesResult, error) {
 	allImagesPrivate := options.IsAirgap
-	additionalImages := make([]string, 0)
-	checkedImages := make(map[string]imagetypes.ImageInfo)
+	checkedImages := make(map[string]imagetypes.InstallationImageInfo)
 
 	if options.KotsKinds != nil {
-		kki, err := kotsutil.GetImagesFromKotsKinds(options.KotsKinds, &options.DestRegistry)
-		if err != nil {
-			return nil, errors.Wrap(err, "failed to get images from kots kinds")
-		}
-		additionalImages = kki
-
-		checkedImages = makeImageInfoMap(options.KotsKinds.Installation.Spec.KnownImages)
+		checkedImages = makeInstallationImageInfoMap(options.KotsKinds.Installation.Spec.KnownImages)
 		if options.KotsKinds.KotsApplication.Spec.ProxyPublicImages {
 			allImagesPrivate = true
 		}
 	}
 
-	newImages, err := image.RewriteImages(options.SourceRegistry, options.DestRegistry, options.AppSlug, options.Log, options.ReportWriter, options.BaseDir, additionalImages, options.CopyImages, allImagesPrivate, checkedImages, options.DockerHubRegistry)
+	newImages, err := image.RewriteImages(options.SourceRegistry, options.DestRegistry, options.AppSlug, options.Log, options.ReportWriter, options.BaseImages, options.KotsKindsImages, options.CopyImages, allImagesPrivate, checkedImages, options.DockerHubRegistry)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to save images")
 	}
 
 	return &RewriteImagesResult{
 		Images:        newImages,
-		CheckedImages: makeInstallationImages(checkedImages),
+		CheckedImages: installationImagesFromInfoMap(checkedImages),
 	}, nil
 }

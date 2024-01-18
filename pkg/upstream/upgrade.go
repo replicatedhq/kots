@@ -15,12 +15,12 @@ import (
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/auth"
 	registrytypes "github.com/replicatedhq/kots/pkg/docker/registry/types"
+	"github.com/replicatedhq/kots/pkg/image"
+	imagetypes "github.com/replicatedhq/kots/pkg/image/types"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
-	"github.com/replicatedhq/kots/pkg/kotsadm"
 	kotsadmtypes "github.com/replicatedhq/kots/pkg/kotsadm/types"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/util"
-	kustomizetypes "sigs.k8s.io/kustomize/api/types"
 )
 
 type UpgradeResponse struct {
@@ -58,7 +58,6 @@ func Upgrade(appSlug string, options UpgradeOptions) (*UpgradeResponse, error) {
 	}
 
 	airgapPath := ""
-	var images []kustomizetypes.Image
 	if options.AirgapBundle != "" {
 		airgapRootDir, err := ioutil.TempDir("", "kotsadm-airgap")
 		if err != nil {
@@ -68,12 +67,12 @@ func Upgrade(appSlug string, options UpgradeOptions) (*UpgradeResponse, error) {
 
 		airgapPath = airgapRootDir
 
-		err = kotsadm.ExtractAppAirgapArchive(options.AirgapBundle, airgapRootDir, options.DisableImagePush, os.Stdout)
+		err = image.ExtractAppAirgapArchive(options.AirgapBundle, airgapRootDir, options.DisableImagePush, os.Stdout)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to extract images")
 		}
 
-		pushOptions := kotsadmtypes.PushImagesOptions{
+		pushOptions := imagetypes.PushImagesOptions{
 			Registry: registrytypes.RegistryOptions{
 				Endpoint:  options.RegistryConfig.OverrideRegistry,
 				Namespace: options.RegistryConfig.OverrideNamespace,
@@ -84,12 +83,7 @@ func Upgrade(appSlug string, options UpgradeOptions) (*UpgradeResponse, error) {
 		}
 
 		if options.DisableImagePush {
-			images, err = kotsadm.GetImagesFromBundle(options.AirgapBundle, pushOptions)
-			if err != nil {
-				return nil, errors.Wrap(err, "failed to get images from bundle")
-			}
-		} else {
-			images, err = kotsadm.TagAndPushAppImagesFromPath(airgapRootDir, pushOptions)
+			err := image.TagAndPushAppImagesFromPath(airgapRootDir, pushOptions)
 			if err != nil {
 				return nil, errors.Wrap(err, "failed to tag and push app images from path")
 			}
@@ -118,20 +112,7 @@ func Upgrade(appSlug string, options UpgradeOptions) (*UpgradeResponse, error) {
 			return nil, errors.Wrap(err, "failed to create part from app.tar.gz")
 		}
 
-		b, err := json.Marshal(images)
-		if err != nil {
-			return nil, errors.Wrap(err, "failed to marshal images data")
-		}
-		err = ioutil.WriteFile(filepath.Join(airgapPath, "images.json"), b, 0644)
-		if err != nil {
-			return nil, errors.Wrap(err, "failed to write images data")
-		}
-
-		if err := createPartFromFile(writer, airgapPath, "images.json"); err != nil {
-			return nil, errors.Wrap(err, "failed to create part from images.json")
-		}
-
-		err = writer.Close()
+		err := writer.Close()
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to close multi-part writer")
 		}

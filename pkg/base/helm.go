@@ -537,11 +537,6 @@ func kustomizeHelmNamespace(baseFiles []BaseFile, renderOptions *RenderOptions) 
 	return updatedBaseFiles, nil
 }
 
-type HelmSubCharts struct {
-	ParentName string
-	SubCharts  []string
-}
-
 type HelmChartDependency struct {
 	Alias      string `yaml:"alias"`
 	Name       string `yaml:"name"`
@@ -549,89 +544,4 @@ type HelmChartDependency struct {
 }
 type HelmChartDependencies struct {
 	Dependencies []HelmChartDependency `yaml:"dependencies"`
-}
-
-// Returns a list of HelmSubCharts, each of which contains the name of the parent chart and a list of subcharts
-// Each item in the subcharts list is a string of repeating terms the form "charts/<chart name>".
-// The first item is just the top level chart (TODO: this should be removed)
-// For example:
-//   - top-level-chart
-//   - charts/top-level-chart
-//   - charts/top-level-chart/charts/cool-sub-chart
-func FindHelmSubChartsFromBase(baseDir, parentChartName string) (*HelmSubCharts, error) {
-	type helmName struct {
-		Name string `yaml:"name"`
-	}
-
-	charts := make([]string, 0)
-	searchDir := filepath.Join(baseDir, "charts", parentChartName)
-
-	// If dependencies in the chart are aliased, they will create new directories with the alias name
-	// in the charts folder and need to be excluded when generating the pullsecrets.yaml. It feels like this
-	// could replace the logic below that's doing the file tree walking but I'm unsure.
-	parentChartPath := filepath.Join(searchDir, "Chart.yaml")
-	parentChartRaw, err := os.ReadFile(parentChartPath)
-	if err == nil {
-		parentChart := new(HelmChartDependencies)
-		err = yaml.Unmarshal(parentChartRaw, parentChart)
-		if err != nil {
-			return nil, errors.Wrapf(err, "failed to unmarshal parent chart %s", parentChartPath)
-		}
-		for _, dep := range parentChart.Dependencies {
-			if dep.Alias != "" {
-				charts = append(charts, dep.Alias)
-			} else {
-				charts = append(charts, dep.Name)
-			}
-		}
-	}
-
-	err = filepath.Walk(searchDir,
-		func(path string, info os.FileInfo, err error) error {
-			if err != nil {
-				return err
-			}
-
-			// ignore anything that's not a chart yaml
-			if info.Name() != "Chart.yaml" {
-				return nil
-			}
-
-			contents, err := os.ReadFile(path)
-			if err != nil {
-				return errors.Wrap(err, "failed to read file")
-			}
-
-			// unmarshal just the name of the chart
-			var chartInfo helmName
-			err = yaml.Unmarshal(contents, &chartInfo)
-			if err != nil {
-				return nil
-			}
-
-			if chartInfo.Name == "" {
-				// probably not a valid chart file
-				return nil
-			}
-
-			// use directory names because they are unique
-			chartName, err := filepath.Rel(baseDir, filepath.Dir(path))
-			if err != nil {
-				return errors.Wrap(err, "failed to get chart name from path")
-			}
-
-			charts = append(charts, chartName)
-
-			return nil
-		})
-	if err != nil {
-		if !strings.Contains(err.Error(), "no such file or directory") {
-			return nil, errors.Wrap(err, "failed to walk upstream dir")
-		}
-	}
-
-	return &HelmSubCharts{
-		ParentName: parentChartName,
-		SubCharts:  charts,
-	}, nil
 }

@@ -4,14 +4,6 @@ bases:
 commonAnnotations:
   kots.io/app-slug: my-app
 images:
-- name: nginx
-  newName: proxy.replicated.com/nginx
-- name: docker.io/library/nginx
-  newName: proxy.replicated.com/nginx
-- name: library/nginx
-  newName: proxy.replicated.com/nginx
-- name: docker.io/nginx
-  newName: proxy.replicated.com/nginx
 - name: alpine
   newName: proxy.replicated.com/alpine
 - name: docker.io/library/alpine
@@ -28,6 +20,14 @@ images:
   newName: proxy.replicated.com/busybox
 - name: docker.io/busybox
   newName: proxy.replicated.com/busybox
+- name: nginx
+  newName: proxy.replicated.com/nginx
+- name: docker.io/library/nginx
+  newName: proxy.replicated.com/nginx
+- name: library/nginx
+  newName: proxy.replicated.com/nginx
+- name: docker.io/nginx
+  newName: proxy.replicated.com/nginx
 kind: Kustomization
 patchesStrategicMerge:
 - pullsecrets.yaml

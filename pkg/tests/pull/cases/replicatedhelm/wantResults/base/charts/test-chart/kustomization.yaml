@@ -1,0 +1,12 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+metadata:
+  annotations:
+    kots.io/kustomization: base
+resources:
+- chartHelmSecret.yaml
+- test-1.yaml
+- test-2.yaml
+- test-3.yaml
+- test-4.yaml
+- test-5.yaml

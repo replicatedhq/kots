@@ -1,0 +1,18 @@
+apiVersion: kots.io/v1beta1
+kind: Installation
+metadata:
+  creationTimestamp: null
+  name: replicated-kots-app
+spec:
+  channelID: 1vusIYZLAVxMG6q760OJmRKj5i5
+  channelName: My Channel
+  knownImages:
+  - image: quay.io/replicatedcom/qa-kots-3:alpine-3.6
+    isPrivate: true
+  - image: quay.io/replicatedcom/qa-kots-1:alpine-3.5
+    isPrivate: true
+  - image: alpine:3.4
+  - image: alpine
+  - image: nginx:latest
+  - image: busybox
+status: {}
