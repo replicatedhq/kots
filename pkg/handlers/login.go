@@ -82,7 +82,11 @@ func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 		JSON(w, http.StatusUnauthorized, loginResponse)
 		return
 	} else if err == user.ErrTooManyAttempts {
-		loginResponse.Error = "Admin Console has been locked.  Please reset password using the \"kubectl kots reset-password\" command."
+		resetPasswordCmd := "kubectl kots reset-password"
+		if util.PodNamespace != "" {
+			resetPasswordCmd = fmt.Sprintf("%s -n %s", resetPasswordCmd, util.PodNamespace)
+		}
+		loginResponse.Error = fmt.Sprintf("Admin Console has been locked.  Please reset password using the \"%s\" command.", resetPasswordCmd)
 		JSON(w, http.StatusUnauthorized, loginResponse)
 		return
 	} else if err != nil {
