@@ -109,7 +109,7 @@ jobs:
         if: always()
         working-directory: automation/jumpbox
         run: |
-          TF_VAR_expires_on="$(date -d '2 days' '+%Y-%m-%d')"
+          TF_VAR_expires_on="$(date -d '+2 days' '+%Y-%m-%d')"
           export TF_VAR_expires_on
           terraform apply --auto-approve
       - name: Notify Slack
@@ -245,7 +245,7 @@ jobs:
           fi
           export TF_VAR_kots_addon_package_url="${{ github.event.inputs.addon_package_url || inputs.addon_package_url }}"
           export TF_VAR_testim_branch="master"
-          TF_VAR_expires_on="$(date -d '2 days' '+%Y-%m-%d')"
+          TF_VAR_expires_on="$(date -d '+2 days' '+%Y-%m-%d')"
           export TF_VAR_expires_on
           ./${{ matrix.test.terraform_script }} apply
       - name: Wait for instance to be ready
