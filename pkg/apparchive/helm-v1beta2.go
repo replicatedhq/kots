@@ -317,14 +317,11 @@ func processV1Beta2HelmChartImages(opts WriteV1Beta2HelmChartsOptions, helmChart
 		dockerHubRegistryCreds, _ = registry.GetCredentialsForRegistryFromConfigJSON(dockerhubSecret.Data[".dockerconfigjson"], registry.DockerHubRegistryName)
 	}
 
-	var destRegistry *dockerregistrytypes.RegistryOptions
-	if opts.ProcessImageOptions.RewriteImages {
-		destRegistry = &dockerregistrytypes.RegistryOptions{
-			Endpoint:  opts.ProcessImageOptions.RegistrySettings.Hostname,
-			Namespace: opts.ProcessImageOptions.RegistrySettings.Namespace,
-			Username:  opts.ProcessImageOptions.RegistrySettings.Username,
-			Password:  opts.ProcessImageOptions.RegistrySettings.Password,
-		}
+	destRegistry := &dockerregistrytypes.RegistryOptions{
+		Endpoint:  opts.ProcessImageOptions.RegistrySettings.Hostname,
+		Namespace: opts.ProcessImageOptions.RegistrySettings.Namespace,
+		Username:  opts.ProcessImageOptions.RegistrySettings.Username,
+		Password:  opts.ProcessImageOptions.RegistrySettings.Password,
 	}
 
 	baseImages, err := image.FindImagesInDir(templatedOutputDir)
