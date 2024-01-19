@@ -80,36 +80,36 @@ RUN curl -fsSLO "${KUBECTL_1_25_URL}" \
   && mv kubectl "${KOTS_KUBECTL_BIN_DIR}/kubectl-v1.25"
 
 # Install Kubectl 1.26
-ENV KUBECTL_1_26_VERSION=v1.26.12
+ENV KUBECTL_1_26_VERSION=v1.26.13
 ENV KUBECTL_1_26_URL=https://dl.k8s.io/release/${KUBECTL_1_26_VERSION}/bin/linux/amd64/kubectl
-ENV KUBECTL_1_26_SHA256SUM=8e6af8d68e7b9d2a1eb43255c0da793276e549a34a2b9c3c87a9c26438e7fd71
+ENV KUBECTL_1_26_SHA256SUM=e4bad4273431f9f5f05f27f5c2054cbbad6d9ee00b85e0810cb4ef0489b02571
 RUN curl -fsSLO "${KUBECTL_1_26_URL}" \
   && echo "${KUBECTL_1_26_SHA256SUM} kubectl" | sha256sum -c - \
   && chmod +x kubectl \
   && mv kubectl "${KOTS_KUBECTL_BIN_DIR}/kubectl-v1.26"
 
 # Install Kubectl 1.27
-ENV KUBECTL_1_27_VERSION=v1.27.9
+ENV KUBECTL_1_27_VERSION=v1.27.10
 ENV KUBECTL_1_27_URL=https://dl.k8s.io/release/${KUBECTL_1_27_VERSION}/bin/linux/amd64/kubectl
-ENV KUBECTL_1_27_SHA256SUM=d0caae91072297b2915dd65f6ef3055d27646dce821ec67d18da35ba9a8dc85b
+ENV KUBECTL_1_27_SHA256SUM=bfb219643c28d9842fceae51590776f06987835d93fc3cb9b0149c9111c741ac
 RUN curl -fsSLO "${KUBECTL_1_27_URL}" \
   && echo "${KUBECTL_1_27_SHA256SUM} kubectl" | sha256sum -c - \
   && chmod +x kubectl \
   && mv kubectl "${KOTS_KUBECTL_BIN_DIR}/kubectl-v1.27"
 
 # Install Kubectl 1.28
-ENV KUBECTL_1_28_VERSION=v1.28.5
+ENV KUBECTL_1_28_VERSION=v1.28.6
 ENV KUBECTL_1_28_URL=https://dl.k8s.io/release/${KUBECTL_1_28_VERSION}/bin/linux/amd64/kubectl
-ENV KUBECTL_1_28_SHA256SUM=2a44c0841b794d85b7819b505da2ff3acd5950bd1bcd956863714acc80653574
+ENV KUBECTL_1_28_SHA256SUM=c8351fe0611119fd36634dd3f53eb94ec1a2d43ef9e78b92b4846df5cc7aa7e3
 RUN curl -fsSLO "${KUBECTL_1_28_URL}" \
   && echo "${KUBECTL_1_28_SHA256SUM} kubectl" | sha256sum -c - \
   && chmod +x kubectl \
   && mv kubectl "${KOTS_KUBECTL_BIN_DIR}/kubectl-v1.28"
 
 # Install Kubectl 1.29
-ENV KUBECTL_1_29_VERSION=v1.29.0
+ENV KUBECTL_1_29_VERSION=v1.29.1
 ENV KUBECTL_1_29_URL=https://dl.k8s.io/release/${KUBECTL_1_29_VERSION}/bin/linux/amd64/kubectl
-ENV KUBECTL_1_29_SHA256SUM=0e03ab096163f61ab610b33f37f55709d3af8e16e4dcc1eb682882ef80f96fd5
+ENV KUBECTL_1_29_SHA256SUM=69ab3a931e826bf7ac14d38ba7ca637d66a6fcb1ca0e3333a2cafdf15482af9f
 RUN curl -fsSLO "${KUBECTL_1_29_URL}" \
   && echo "${KUBECTL_1_29_SHA256SUM} kubectl" | sha256sum -c - \
   && chmod +x kubectl \
