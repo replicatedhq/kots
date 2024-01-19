@@ -256,7 +256,6 @@ func ProcessAirgapImages(options image.ProcessImageOptions, baseImages []string,
 		processAirgapImageOptions.ReplicatedRegistry.Password = license.Spec.LicenseID
 	}
 
-	// TODO NOW: move this to base package
 	result, err := base.ProcessAirgapImages(processAirgapImageOptions)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to process airgap images")
