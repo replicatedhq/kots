@@ -86,7 +86,7 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v4
     - name: Cache Go modules
-      uses: actions/cache@v3
+      uses: actions/cache@v4
       with:
         path: |
           ~/.cache/go-build
@@ -167,7 +167,7 @@ jobs:
       uses: actions/checkout@v4
 
     - name: Cache Go modules
-      uses: actions/cache@v3
+      uses: actions/cache@v4
       with:
         path: |
           ~/.cache/go-build
