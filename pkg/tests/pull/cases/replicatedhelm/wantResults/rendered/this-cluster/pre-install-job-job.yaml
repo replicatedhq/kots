@@ -1,0 +1,32 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  annotations:
+    kots.io/app-slug: my-app
+  labels:
+    kots.io/app-slug: my-app
+    kots.io/backup: velero
+  name: pre-install-job
+  namespace: helmns
+spec:
+  backoffLimit: 3
+  template:
+    metadata:
+      annotations:
+        kots.io/app-slug: my-app
+      labels:
+        kots.io/app-slug: my-app
+        kots.io/backup: velero
+      name: security-test
+    spec:
+      containers:
+      - command:
+        - sh
+        - -c
+        - sleep 10
+        image: alpine
+        imagePullPolicy: IfNotPresent
+        name: hook-test
+      imagePullSecrets:
+      - name: my-app-registry
+      restartPolicy: Never

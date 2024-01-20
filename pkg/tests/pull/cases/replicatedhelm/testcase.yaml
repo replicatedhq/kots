@@ -1,0 +1,12 @@
+Name: test replicated helm pull without rewrite
+PullOptions:
+  Namespace: app-namespace
+  ExcludeAdminConsole: true
+  IsAirgap: true
+  Silent: true
+  LocalPath: cases/replicatedhelm/upstream
+  RootDir: cases/replicatedhelm/results
+  SharedPassword: dummy-pass
+  RewriteImages: false
+  Downstreams:
+    - this-cluster

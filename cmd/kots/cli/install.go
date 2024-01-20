@@ -24,6 +24,7 @@ import (
 	dockerregistry "github.com/replicatedhq/kots/pkg/docker/registry"
 	"github.com/replicatedhq/kots/pkg/handlers"
 	"github.com/replicatedhq/kots/pkg/identity"
+	"github.com/replicatedhq/kots/pkg/image"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	k8sutiltypes "github.com/replicatedhq/kots/pkg/k8sutil/types"
 	"github.com/replicatedhq/kots/pkg/kotsadm"
@@ -332,7 +333,7 @@ func InstallCmd() *cobra.Command {
 				}
 				defer os.RemoveAll(airgapRootDir)
 
-				err = kotsadm.ExtractAppAirgapArchive(airgapArchive, airgapRootDir, v.GetBool("disable-image-push"), deployOptions.ProgressWriter)
+				err = image.ExtractAppAirgapArchive(airgapArchive, airgapRootDir, v.GetBool("disable-image-push"), deployOptions.ProgressWriter)
 				if err != nil {
 					return errors.Wrap(err, "failed to extract images")
 				}

@@ -1,4 +1,4 @@
-package upstream
+package base
 
 import (
 	"reflect"
@@ -8,7 +8,7 @@ import (
 	kustomizetypes "sigs.k8s.io/kustomize/api/types"
 )
 
-func Test_makeInstallationImages(t *testing.T) {
+func Test_installationImagesFromKustomizeImages(t *testing.T) {
 	tests := []struct {
 		name   string
 		images []kustomizetypes.Image
@@ -49,8 +49,8 @@ func Test_makeInstallationImages(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := makeInstallationImages(tt.images); !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("makeInstallationImages() = %v, want %v", got, tt.want)
+			if got := installationImagesFromKustomizeImages(tt.images); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("installationImagesFromKustomizeImages() = %v, want %v", got, tt.want)
 			}
 		})
 	}

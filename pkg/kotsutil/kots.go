@@ -1496,3 +1496,13 @@ func MustMarshalInstallation(installation *kotsv1beta1.Installation) []byte {
 
 	return b.Bytes()
 }
+
+// this is here to avoid a circular dependency
+func SaveInstallation(installation *kotsv1beta1.Installation, upstreamDir string) error {
+	filename := path.Join(upstreamDir, "userdata", "installation.yaml")
+	err := os.WriteFile(filename, MustMarshalInstallation(installation), 0644)
+	if err != nil {
+		return errors.Wrap(err, "failed to write installation")
+	}
+	return nil
+}

@@ -2,8 +2,6 @@ package kotsadm
 
 import (
 	"context"
-	"encoding/json"
-	"io/ioutil"
 	"os"
 	"path"
 	"path/filepath"
@@ -15,6 +13,8 @@ import (
 	"github.com/replicatedhq/kots/pkg/docker/registry"
 	registrytypes "github.com/replicatedhq/kots/pkg/docker/registry/types"
 	"github.com/replicatedhq/kots/pkg/identity"
+	"github.com/replicatedhq/kots/pkg/image"
+	imagetypes "github.com/replicatedhq/kots/pkg/image/types"
 	"github.com/replicatedhq/kots/pkg/ingress"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/kotsadm/types"
@@ -30,7 +30,6 @@ import (
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/scheme"
-	kustomizetypes "sigs.k8s.io/kustomize/api/types"
 )
 
 func init() {
@@ -153,11 +152,9 @@ func Upgrade(clientset *kubernetes.Clientset, upgradeOptions types.UpgradeOption
 
 func Deploy(deployOptions types.DeployOptions, log *logger.CLILogger) error {
 	airgapPath := ""
-	var images []kustomizetypes.Image
 
 	if deployOptions.AirgapRootDir != "" && deployOptions.RegistryConfig.OverrideRegistry != "" {
-		var err error
-		pushOptions := types.PushImagesOptions{
+		pushOptions := imagetypes.PushImagesOptions{
 			Registry: registrytypes.RegistryOptions{
 				Endpoint:  deployOptions.RegistryConfig.OverrideRegistry,
 				Namespace: deployOptions.RegistryConfig.OverrideNamespace,
@@ -167,13 +164,8 @@ func Deploy(deployOptions types.DeployOptions, log *logger.CLILogger) error {
 			ProgressWriter: deployOptions.ProgressWriter,
 		}
 
-		if deployOptions.DisableImagePush {
-			images, err = GetImagesFromBundle(deployOptions.AirgapBundle, pushOptions)
-			if err != nil {
-				return errors.Wrap(err, "failed to get images from bundle")
-			}
-		} else {
-			images, err = TagAndPushAppImagesFromPath(deployOptions.AirgapRootDir, pushOptions)
+		if !deployOptions.DisableImagePush {
+			err := image.TagAndPushAppImagesFromPath(deployOptions.AirgapRootDir, pushOptions)
 			if err != nil {
 				return errors.Wrap(err, "failed to tag and push app images from path")
 			}
@@ -227,20 +219,8 @@ func Deploy(deployOptions types.DeployOptions, log *logger.CLILogger) error {
 	if airgapPath != "" {
 		deployOptions.AppImagesPushed = true
 
-		b, err := json.Marshal(images)
-		if err != nil {
-			return errors.Wrap(err, "failed to marshal images data")
-		}
-		err = ioutil.WriteFile(filepath.Join(airgapPath, "images.json"), b, 0644)
-		if err != nil {
-			return errors.Wrap(err, "failed to write images data")
-		}
-
 		if err := ensureConfigFromFile(deployOptions, clientset, "kotsadm-airgap-meta", filepath.Join(airgapPath, "airgap.yaml")); err != nil {
 			return errors.Wrap(err, "failed to create config from airgap.yaml")
-		}
-		if err := ensureConfigFromFile(deployOptions, clientset, "kotsadm-airgap-images", filepath.Join(airgapPath, "images.json")); err != nil {
-			return errors.Wrap(err, "failed to create config from images.json")
 		}
 		if err := ensureWaitForAirgapConfig(deployOptions, clientset, "kotsadm-airgap-app"); err != nil {
 			return errors.Wrap(err, "failed to create config from app.tar.gz")

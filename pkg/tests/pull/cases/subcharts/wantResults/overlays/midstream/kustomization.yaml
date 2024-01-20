@@ -3,25 +3,6 @@ bases:
 - ../../base
 commonAnnotations:
   kots.io/app-slug: my-app
-images:
-- name: nginx
-  newName: fake-docker-proxy/nginx
-- name: docker.io/library/nginx
-  newName: fake-docker-proxy/nginx
-- name: library/nginx
-  newName: fake-docker-proxy/nginx
-- name: docker.io/nginx
-  newName: fake-docker-proxy/nginx
-- name: busybox
-  newName: fake-docker-proxy/busybox
-- name: docker.io/library/busybox
-  newName: fake-docker-proxy/busybox
-- name: library/busybox
-  newName: fake-docker-proxy/busybox
-- name: docker.io/busybox
-  newName: fake-docker-proxy/busybox
-- name: cr.fluentbit.io/fluent/fluent-bit
-  newName: fake-docker-proxy/fluent-bit
 kind: Kustomization
 resources:
 - secret.yaml

@@ -4,14 +4,6 @@ bases:
 commonAnnotations:
   kots.io/app-slug: my-app
 images:
-- name: nginx
-  newName: fake-docker-proxy/nginx
-- name: docker.io/library/nginx
-  newName: fake-docker-proxy/nginx
-- name: library/nginx
-  newName: fake-docker-proxy/nginx
-- name: docker.io/nginx
-  newName: fake-docker-proxy/nginx
 - name: alpine
   newName: fake-docker-proxy/alpine
 - name: docker.io/library/alpine
@@ -28,6 +20,14 @@ images:
   newName: fake-docker-proxy/busybox
 - name: docker.io/busybox
   newName: fake-docker-proxy/busybox
+- name: nginx
+  newName: fake-docker-proxy/nginx
+- name: docker.io/library/nginx
+  newName: fake-docker-proxy/nginx
+- name: library/nginx
+  newName: fake-docker-proxy/nginx
+- name: docker.io/nginx
+  newName: fake-docker-proxy/nginx
 kind: Kustomization
 patchesStrategicMerge:
 - pullsecrets.yaml

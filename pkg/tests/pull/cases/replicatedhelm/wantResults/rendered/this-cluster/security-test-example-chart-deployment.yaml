@@ -1,0 +1,44 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    kots.io/app-slug: my-app
+  labels:
+    kots.io/app-slug: my-app
+    kots.io/backup: velero
+  name: security-test-example-chart
+  namespace: helmns
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/instance: security-test
+      app.kubernetes.io/name: example-chart
+  template:
+    metadata:
+      annotations:
+        kots.io/app-slug: my-app
+      labels:
+        app.kubernetes.io/instance: security-test
+        app.kubernetes.io/name: example-chart
+        kots.io/app-slug: my-app
+        kots.io/backup: velero
+    spec:
+      containers:
+      - env:
+        - name: SECURITY_SCANNER_KEY_001
+          valueFrom:
+            secretKeyRef:
+              key: key
+              name: security-scanner
+        image: nginx:latest
+        name: my-security-container
+      - command:
+        - /bin/sleep
+        - "9000"
+        image: alpine:3.4
+        name: waiter
+      imagePullSecrets:
+      - name: my-app-registry
+      initContainers:
+      - image: proxy.replicated.com/proxy/my-app/quay.io/replicatedcom/qa-kots-3:alpine-3.6

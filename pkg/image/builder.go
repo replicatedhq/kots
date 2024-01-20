@@ -28,11 +28,9 @@ import (
 	"github.com/replicatedhq/kots/pkg/image/types"
 	"github.com/replicatedhq/kots/pkg/imageutil"
 	"github.com/replicatedhq/kots/pkg/k8sdoc"
-	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/logger"
 	regsitrytypes "github.com/replicatedhq/kots/pkg/registry/types"
 	"github.com/replicatedhq/kots/pkg/util"
-	kotsv1beta1 "github.com/replicatedhq/kotskinds/apis/kots/v1beta1"
 	"golang.org/x/sync/errgroup"
 	kustomizeimage "sigs.k8s.io/kustomize/api/types"
 )
@@ -41,53 +39,38 @@ var imagePolicy = []byte(`{
   "default": [{"type": "insecureAcceptAnything"}]
 }`)
 
-func RewriteImages(srcRegistry, destRegistry dockerregistrytypes.RegistryOptions, appSlug string, log *logger.CLILogger, reportWriter io.Writer, baseDir string, additionalImages []string, copyImages, allImagesPrivate bool, checkedImages map[string]types.ImageInfo, dockerHubRegistry dockerregistrytypes.RegistryOptions) ([]kustomizeimage.Image, error) {
-	newImages := []kustomizeimage.Image{}
+func RewriteImages(srcRegistry, destRegistry dockerregistrytypes.RegistryOptions, appSlug string, log *logger.CLILogger, reportWriter io.Writer, baseImages []string, kotsKindsImages []string, copyImages, allImagesPrivate bool, checkedImages map[string]types.InstallationImageInfo, dockerHubRegistry dockerregistrytypes.RegistryOptions) ([]kustomizeimage.Image, error) {
+	rewrittenImages := []kustomizeimage.Image{}
 	savedImages := map[string]bool{}
 
-	err := filepath.Walk(baseDir,
-		func(path string, info os.FileInfo, err error) error {
-			if err != nil {
-				return err
-			}
-
-			if info.IsDir() {
-				return nil
-			}
-
-			contents, err := os.ReadFile(path)
-			if err != nil {
-				return err
-			}
-
-			newImagesSubset, err := rewriteImagesInFileBetweenRegistries(srcRegistry, destRegistry, appSlug, log, reportWriter, contents, copyImages, allImagesPrivate, checkedImages, savedImages, dockerHubRegistry)
-			if err != nil {
-				return errors.Wrapf(err, "failed to copy images mentioned in %s", path)
-			}
-
-			newImages = append(newImages, newImagesSubset...)
-			return nil
-		})
-
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to walk upstream dir")
-	}
-
-	for _, additionalImage := range additionalImages {
-		newImage, err := rewriteOneImage(srcRegistry, destRegistry, additionalImage, appSlug, reportWriter, log, copyImages, allImagesPrivate, checkedImages, dockerHubRegistry)
-		if err != nil {
-			return nil, errors.Wrapf(err, "failed to process addditional image %s", additionalImage)
+	for _, baseImage := range baseImages {
+		if _, saved := savedImages[baseImage]; saved {
+			continue
 		}
-		newImages = append(newImages, newImage...)
+		rewrittenImage, err := rewriteOneImage(srcRegistry, destRegistry, baseImage, appSlug, reportWriter, log, copyImages, allImagesPrivate, checkedImages, dockerHubRegistry)
+		if err != nil {
+			return nil, errors.Wrapf(err, "failed to process base image %s", baseImage)
+		}
+		rewrittenImages = append(rewrittenImages, rewrittenImage...)
+		savedImages[baseImage] = true
 	}
 
-	return newImages, nil
+	for _, kotsKindImage := range kotsKindsImages {
+		if _, saved := savedImages[kotsKindImage]; saved {
+			continue
+		}
+		rewrittenImage, err := rewriteOneImage(srcRegistry, destRegistry, kotsKindImage, appSlug, reportWriter, log, copyImages, allImagesPrivate, checkedImages, dockerHubRegistry)
+		if err != nil {
+			return nil, errors.Wrapf(err, "failed to process kots kind image %s", kotsKindImage)
+		}
+		rewrittenImages = append(rewrittenImages, rewrittenImage...)
+		savedImages[kotsKindImage] = true
+	}
+
+	return rewrittenImages, nil
 }
 
-func GetPrivateImages(baseDir string, kotsKindsImages []string, checkedImages map[string]types.ImageInfo, allPrivate bool, dockerHubRegistry dockerregistrytypes.RegistryOptions, parentHelmChartPath string, useHelmInstall map[string]bool) ([]string, []k8sdoc.K8sDoc, error) {
-	uniqueImages := make(map[string]bool)
-	objectsWithImages := make([]k8sdoc.K8sDoc, 0) // all objects where images are referenced from
-
+func GetPrivateImages(baseImages []string, kotsKindsImages []string, checkedImages map[string]types.InstallationImageInfo, allPrivate bool, dockerHubRegistry dockerregistrytypes.RegistryOptions) ([]string, error) {
 	var mtx sync.Mutex
 	const concurrencyLimit = 10
 	g, _ := errgroup.WithContext(context.Background())
@@ -120,70 +103,69 @@ func GetPrivateImages(baseDir string, kotsKindsImages []string, checkedImages ma
 					return errors.Wrapf(err, "failed to check if kotskinds image %s is private", image)
 				}
 				mtx.Lock()
-				checkedImages[image] = types.ImageInfo{IsPrivate: isPrivate}
+				checkedImages[image] = types.InstallationImageInfo{IsPrivate: isPrivate}
 				mtx.Unlock()
 				return nil
 			})
 		}(image)
 	}
 
-	err := filepath.Walk(baseDir,
+	privateImages := []string{}
+	for _, image := range baseImages {
+		func(image string) {
+			g.Go(func() error {
+				isPrivate, err := isPrivateImage(image)
+				if err != nil {
+					return errors.Wrapf(err, "failed to check if image %s is private", image)
+				}
+				mtx.Lock()
+				checkedImages[image] = types.InstallationImageInfo{IsPrivate: isPrivate}
+				if isPrivate {
+					privateImages = append(privateImages, image)
+				}
+				mtx.Unlock()
+				return nil
+			})
+		}(image)
+	}
+
+	if err := g.Wait(); err != nil {
+		return nil, errors.Wrap(err, "failed to wait for image checks")
+	}
+
+	// sort the images to get an ordered and reproducible output for easier testing
+	sort.Strings(privateImages)
+
+	return privateImages, nil
+}
+
+func FindImagesInDir(dir string) ([]string, error) {
+	uniqueImages := make(map[string]bool)
+
+	err := filepath.Walk(dir,
 		func(path string, info os.FileInfo, err error) error {
 			if err != nil {
 				return err
 			}
 
 			if info.IsDir() {
-				chartName, err := filepath.Rel(baseDir, path)
-				if err != nil {
-					logger.Debugf("Failed to remove prefix from %s: %v", path, err)
-					return nil
-				}
-				chartName = filepath.Join(parentHelmChartPath, chartName)
-				if useHelmInstall[chartName] {
-					return filepath.SkipDir
-				}
 				return nil
 			}
 
 			contents, err := os.ReadFile(path)
 			if err != nil {
-				logger.Debugf("Failed to read file %s: %v", path, err)
-				return err
+				return errors.Wrapf(err, "failed to read file %s", path)
 			}
 
 			return listImagesInFile(contents, func(images []string, doc k8sdoc.K8sDoc) error {
 				for _, image := range images {
-					func(image string) {
-						g.Go(func() error {
-							isPrivate, err := isPrivateImage(image)
-							if err != nil {
-								return errors.Wrapf(err, "failed to check if image %s is private", image)
-							}
-							mtx.Lock()
-							checkedImages[image] = types.ImageInfo{IsPrivate: isPrivate}
-							if isPrivate {
-								uniqueImages[image] = true
-							}
-							mtx.Unlock()
-							return nil
-						})
-					}(image)
-				}
-
-				if len(images) > 0 {
-					objectsWithImages = append(objectsWithImages, doc)
+					uniqueImages[image] = true
 				}
 				return nil
 			})
 		})
-
 	if err != nil {
-		return nil, nil, errors.Wrap(err, "failed to walk upstream dir")
-	}
-
-	if err := g.Wait(); err != nil {
-		return nil, nil, errors.Wrap(err, "failed to wait for image checks")
+		return nil, errors.Wrap(err, "failed to walk dir")
 	}
 
 	result := make([]string, 0, len(uniqueImages))
@@ -192,42 +174,7 @@ func GetPrivateImages(baseDir string, kotsKindsImages []string, checkedImages ma
 	}
 	sort.Strings(result) // sort the images to get an ordered and reproducible output for easier testing
 
-	return result, objectsWithImages, nil
-}
-
-func rewriteImagesInFileBetweenRegistries(srcRegistry, destRegistry dockerregistrytypes.RegistryOptions, appSlug string, log *logger.CLILogger, reportWriter io.Writer, fileData []byte, copyImages, allImagesPrivate bool, checkedImages map[string]types.ImageInfo, savedImages map[string]bool, dockerHubRegistry dockerregistrytypes.RegistryOptions) ([]kustomizeimage.Image, error) {
-	newImages := []kustomizeimage.Image{}
-
-	err := listImagesInFile(fileData, func(images []string, doc k8sdoc.K8sDoc) error {
-		for _, image := range images {
-			if _, saved := savedImages[image]; saved {
-				continue
-			}
-
-			if copyImages {
-				log.ChildActionWithSpinner("Transferring image %s", image)
-			} else {
-				log.ChildActionWithSpinner("Found image %s", image)
-			}
-
-			newImage, err := rewriteOneImage(srcRegistry, destRegistry, image, appSlug, reportWriter, log, copyImages, allImagesPrivate, checkedImages, dockerHubRegistry)
-			if err != nil {
-				log.FinishChildSpinner()
-				return errors.Wrapf(err, "failed to transfer image %s", image)
-			}
-
-			if newImage != nil {
-				newImages = append(newImages, newImage...)
-			}
-
-			log.FinishChildSpinner()
-			savedImages[image] = true
-		}
-
-		return nil
-	})
-
-	return newImages, err
+	return result, nil
 }
 
 type processImagesFunc func([]string, k8sdoc.K8sDoc) error
@@ -250,7 +197,7 @@ func listImagesInFile(contents []byte, handler processImagesFunc) error {
 	return nil
 }
 
-func rewriteOneImage(srcRegistry, destRegistry dockerregistrytypes.RegistryOptions, image string, appSlug string, reportWriter io.Writer, log *logger.CLILogger, copyImages, allImagesPrivate bool, checkedImages map[string]types.ImageInfo, dockerHubRegistry dockerregistrytypes.RegistryOptions) ([]kustomizeimage.Image, error) {
+func rewriteOneImage(srcRegistry, destRegistry dockerregistrytypes.RegistryOptions, image string, appSlug string, reportWriter io.Writer, log *logger.CLILogger, copyImages, allImagesPrivate bool, checkedImages map[string]types.InstallationImageInfo, dockerHubRegistry dockerregistrytypes.RegistryOptions) ([]kustomizeimage.Image, error) {
 	sourceCtx := &containerstypes.SystemContext{DockerDisableV1Ping: true}
 
 	// allow pulling images from http/invalid https docker repos
@@ -270,7 +217,7 @@ func rewriteOneImage(srcRegistry, destRegistry dockerregistrytypes.RegistryOptio
 			}
 			isPrivate = p
 		}
-		checkedImages[image] = types.ImageInfo{
+		checkedImages[image] = types.InstallationImageInfo{
 			IsPrivate: isPrivate,
 		}
 	}
@@ -292,7 +239,7 @@ func rewriteOneImage(srcRegistry, destRegistry dockerregistrytypes.RegistryOptio
 	// normalize image to make sure only either a digest or a tag exist but not both
 	parsedSrc, err := reference.ParseDockerRef(sourceImage)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to normalize source image")
+		return nil, errors.Wrapf(err, "failed to normalize source image %s", sourceImage)
 	}
 	sourceImage = parsedSrc.String()
 
@@ -512,7 +459,7 @@ func IsPrivateImage(image string, dockerHubRegistry dockerregistrytypes.Registry
 			continue
 		}
 
-		logger.Debugf("Marking image '%s' as private because: %v", image, err.Error())
+		logger.Infof("Marking image '%s' as private because: %v", image, err.Error())
 
 		// if the registry is unreachable (which might be due to a firewall, proxy, etc..),
 		// we won't be able to determine if the error is due to a missing auth or not.
@@ -592,112 +539,4 @@ type ProcessImageOptions struct {
 	PushImages       bool
 	CreateAppDir     bool
 	ReportWriter     io.Writer
-}
-
-// RewriteBaseImages Will rewrite images found in base and copy them (if necessary) to the configured registry.
-func RewriteBaseImages(options ProcessImageOptions, baseDir string, kotsKinds *kotsutil.KotsKinds, license *kotsv1beta1.License, dockerHubRegistryCreds registry.Credentials, log *logger.CLILogger) (*RewriteImagesResult, error) {
-	replicatedRegistryInfo := registry.GetRegistryProxyInfo(license, &kotsKinds.Installation, &kotsKinds.KotsApplication)
-
-	rewriteImageOptions := RewriteImagesBetweenRegistriesOptions{
-		BaseDir: baseDir,
-		Log:     log,
-		SourceRegistry: dockerregistrytypes.RegistryOptions{
-			Endpoint:      replicatedRegistryInfo.Registry,
-			ProxyEndpoint: replicatedRegistryInfo.Proxy,
-		},
-		DockerHubRegistry: dockerregistrytypes.RegistryOptions{
-			Username: dockerHubRegistryCreds.Username,
-			Password: dockerHubRegistryCreds.Password,
-		},
-		DestRegistry: dockerregistrytypes.RegistryOptions{
-			Endpoint:  options.RegistrySettings.Hostname,
-			Namespace: options.RegistrySettings.Namespace,
-			Username:  options.RegistrySettings.Username,
-			Password:  options.RegistrySettings.Password,
-		},
-		ReportWriter: options.ReportWriter,
-		KotsKinds:    kotsKinds,
-		IsAirgap:     options.IsAirgap,
-		CopyImages:   options.CopyImages,
-	}
-	if license != nil {
-		rewriteImageOptions.AppSlug = license.Spec.AppSlug
-		rewriteImageOptions.SourceRegistry.Username = license.Spec.LicenseID
-		rewriteImageOptions.SourceRegistry.Password = license.Spec.LicenseID
-	}
-
-	rewriteResult, err := RewriteImagesBetweenRegistries(rewriteImageOptions)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to rewrite images")
-	}
-
-	return rewriteResult, nil
-}
-
-type RewriteImagesBetweenRegistriesOptions struct {
-	BaseDir           string
-	AppSlug           string
-	SourceRegistry    dockerregistrytypes.RegistryOptions
-	DestRegistry      dockerregistrytypes.RegistryOptions
-	DockerHubRegistry dockerregistrytypes.RegistryOptions
-	CopyImages        bool
-	IsAirgap          bool
-	Log               *logger.CLILogger
-	ReportWriter      io.Writer
-	KotsKinds         *kotsutil.KotsKinds
-}
-
-type RewriteImagesResult struct {
-	Images        []kustomizeimage.Image          // images to be rewritten
-	CheckedImages []kotsv1beta1.InstallationImage // all images found in the installation
-}
-
-func RewriteImagesBetweenRegistries(options RewriteImagesBetweenRegistriesOptions) (*RewriteImagesResult, error) {
-	allImagesPrivate := options.IsAirgap
-	additionalImages := make([]string, 0)
-	checkedImages := make(map[string]types.ImageInfo)
-
-	if options.KotsKinds != nil {
-		kki, err := kotsutil.GetImagesFromKotsKinds(options.KotsKinds, &options.DestRegistry)
-		if err != nil {
-			return nil, errors.Wrap(err, "failed to get images from kots kinds")
-		}
-		additionalImages = kki
-
-		checkedImages = makeImageInfoMap(options.KotsKinds.Installation.Spec.KnownImages)
-		if options.KotsKinds.KotsApplication.Spec.ProxyPublicImages {
-			allImagesPrivate = true
-		}
-	}
-
-	newImages, err := RewriteImages(options.SourceRegistry, options.DestRegistry, options.AppSlug, options.Log, options.ReportWriter, options.BaseDir, additionalImages, options.CopyImages, allImagesPrivate, checkedImages, options.DockerHubRegistry)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to save images")
-	}
-
-	return &RewriteImagesResult{
-		Images:        newImages,
-		CheckedImages: makeInstallationImages(checkedImages),
-	}, nil
-}
-
-func makeImageInfoMap(images []kotsv1beta1.InstallationImage) map[string]types.ImageInfo {
-	result := make(map[string]types.ImageInfo)
-	for _, i := range images {
-		result[i.Image] = types.ImageInfo{
-			IsPrivate: i.IsPrivate,
-		}
-	}
-	return result
-}
-
-func makeInstallationImages(images map[string]types.ImageInfo) []kotsv1beta1.InstallationImage {
-	result := make([]kotsv1beta1.InstallationImage, 0)
-	for image, info := range images {
-		result = append(result, kotsv1beta1.InstallationImage{
-			Image:     image,
-			IsPrivate: info.IsPrivate,
-		})
-	}
-	return result
 }

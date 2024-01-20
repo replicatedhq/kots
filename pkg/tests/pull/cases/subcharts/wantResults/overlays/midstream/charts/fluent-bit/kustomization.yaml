@@ -3,17 +3,6 @@ bases:
 - ../../../../base/charts/fluent-bit
 commonAnnotations:
   kots.io/app-slug: my-app
-images:
-- name: cr.fluentbit.io/fluent/fluent-bit
-  newName: fake-docker-proxy/fluent-bit
-- name: busybox
-  newName: fake-docker-proxy/busybox
-- name: docker.io/library/busybox
-  newName: fake-docker-proxy/busybox
-- name: library/busybox
-  newName: fake-docker-proxy/busybox
-- name: docker.io/busybox
-  newName: fake-docker-proxy/busybox
 kind: Kustomization
 resources:
 - secret.yaml

@@ -10,8 +10,9 @@ import (
 	"github.com/replicatedhq/kots/pkg/docker/registry"
 	dockerregistry "github.com/replicatedhq/kots/pkg/docker/registry"
 	registrytypes "github.com/replicatedhq/kots/pkg/docker/registry/types"
+	"github.com/replicatedhq/kots/pkg/image"
+	imagetypes "github.com/replicatedhq/kots/pkg/image/types"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
-	"github.com/replicatedhq/kots/pkg/kotsadm"
 	kotsadmtypes "github.com/replicatedhq/kots/pkg/kotsadm/types"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/spf13/cobra"
@@ -53,7 +54,7 @@ func AdminPushImagesCmd() *cobra.Command {
 			}
 
 			if _, err := os.Stat(imageSource); err == nil {
-				err = kotsadm.PushImages(imageSource, *options)
+				err = image.PushImages(imageSource, *options)
 				if err != nil {
 					return errors.Wrap(err, "failed to push images")
 				}
@@ -75,7 +76,7 @@ func AdminPushImagesCmd() *cobra.Command {
 	return cmd
 }
 
-func genAndCheckPushOptions(endpoint string, namespace string, log *logger.CLILogger, v *viper.Viper) (*kotsadmtypes.PushImagesOptions, error) {
+func genAndCheckPushOptions(endpoint string, namespace string, log *logger.CLILogger, v *viper.Viper) (*imagetypes.PushImagesOptions, error) {
 	host, err := getHostFromEndpoint(endpoint)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed get host from endpoint")
@@ -114,7 +115,7 @@ func genAndCheckPushOptions(endpoint string, namespace string, log *logger.CLILo
 		log.FinishSpinner()
 	}
 
-	options := kotsadmtypes.PushImagesOptions{
+	options := imagetypes.PushImagesOptions{
 		KotsadmTag: v.GetString("kotsadm-tag"),
 		Registry: registrytypes.RegistryOptions{
 			Endpoint: endpoint,

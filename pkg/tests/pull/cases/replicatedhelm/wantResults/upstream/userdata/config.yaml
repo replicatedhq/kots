@@ -1,0 +1,12 @@
+apiVersion: kots.io/v1beta1
+kind: ConfigValues
+metadata:
+  creationTimestamp: null
+  name: replicated-kots-app
+spec:
+  values:
+    helm:
+      default: "no"
+    hostname:
+      value: my-app.somebigbank.com
+status: {}
