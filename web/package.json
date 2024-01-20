@@ -37,7 +37,7 @@
     "@pact-foundation/pact-node": "^10.17.7",
     "@pmmmwh/react-refresh-webpack-plugin": "^0.5.11",
     "@storybook/addon-actions": "^7.6.10",
-    "@storybook/addon-essentials": "^6.5.16",
+    "@storybook/addon-essentials": "^7.6.10",
     "@storybook/addon-interactions": "^7.6.10",
     "@storybook/addon-links": "^7.6.10",
     "@storybook/builder-webpack5": "^7.6.10",
