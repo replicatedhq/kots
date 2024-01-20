@@ -69,7 +69,7 @@ jobs:
           cache-dependency-path: web/yarn.lock
 
       - name: Cache node_modules
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: ${{ github.workspace }}/web/node_modules
           key: ${{ runner.os }}-${{ runner.arch }}-yarn-node_modules-${{ hashFiles('web/yarn.lock') }}
@@ -96,7 +96,7 @@ jobs:
           cache-dependency-path: web/yarn.lock
 
       - name: Cache node_modules
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: ${{ github.workspace }}/web/node_modules
           key: ${{ runner.os }}-${{ runner.arch }}-yarn-node_modules-${{ hashFiles('web/yarn.lock') }}
@@ -123,7 +123,7 @@ jobs:
           cache-dependency-path: web/yarn.lock
 
       - name: Cache node_modules
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: ${{ github.workspace }}/web/node_modules
           key: ${{ runner.os }}-${{ runner.arch }}-yarn-node_modules-${{ hashFiles('web/yarn.lock') }}
@@ -153,7 +153,7 @@ jobs:
           cache-dependency-path: web/yarn.lock
 
       - name: Cache node_modules
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: ${{ github.workspace }}/web/node_modules
           key: ${{ runner.os }}-${{ runner.arch }}-yarn-node_modules-${{ hashFiles('web/yarn.lock') }}
@@ -324,7 +324,7 @@ jobs:
           repository: ${{github.event.pull_request.head.repo.full_name}}
 
       - name: Cache Go modules
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: |
             ~/.cache/go-build
