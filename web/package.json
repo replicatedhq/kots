@@ -128,7 +128,7 @@
     "@monaco-editor/react": "^4.6.0",
     "@mui/icons-material": "^5.15.5",
     "@mui/material": "^5.15.5",
-    "@storybook/addon-storysource": "^6.5.16",
+    "@storybook/addon-storysource": "^7.6.10",
     "@tanstack/react-query": "^4.36.1",
     "@tanstack/react-query-devtools": "^4.36.1",
     "accounting": "^0.4.1",
