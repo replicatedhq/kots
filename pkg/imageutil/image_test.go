@@ -542,66 +542,6 @@ func TestDestImageFromKustomizeImage(t *testing.T) {
 	}
 }
 
-func TestSrcImageFromKustomizeImage(t *testing.T) {
-	type args struct {
-		image kustomizetypes.Image
-	}
-	tests := []struct {
-		name string
-		args args
-		want string
-	}{
-		{
-			name: "latest tag",
-			args: args{
-				image: kustomizetypes.Image{
-					Name:   "replicated.registry.com/replicatedcom/alpine",
-					NewTag: "latest",
-				},
-			},
-			want: "replicated.registry.com/replicatedcom/alpine:latest",
-		},
-		{
-			name: "tag only",
-			args: args{
-				image: kustomizetypes.Image{
-					Name:   "replicated.registry.com/replicatedcom/alpine",
-					NewTag: "3.14",
-				},
-			},
-			want: "replicated.registry.com/replicatedcom/alpine:3.14",
-		},
-		{
-			name: "digest only",
-			args: args{
-				image: kustomizetypes.Image{
-					Name:   "replicated.registry.com/replicatedcom/alpine",
-					Digest: "sha256:06b5d462c92fc39303e6363c65e074559f8d6b1363250027ed5053557e3398c5",
-				},
-			},
-			want: "replicated.registry.com/replicatedcom/alpine@sha256:06b5d462c92fc39303e6363c65e074559f8d6b1363250027ed5053557e3398c5",
-		},
-		{
-			name: "tag and digest",
-			args: args{
-				image: kustomizetypes.Image{
-					Name:   "replicated.registry.com/replicatedcom/alpine",
-					NewTag: "3.14",
-					Digest: "sha256:06b5d462c92fc39303e6363c65e074559f8d6b1363250027ed5053557e3398c5",
-				},
-			},
-			want: "replicated.registry.com/replicatedcom/alpine@sha256:06b5d462c92fc39303e6363c65e074559f8d6b1363250027ed5053557e3398c5",
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if got := SrcImageFromKustomizeImage(tt.args.image); got != tt.want {
-				t.Errorf("SrcImageFromKustomizeImage() = %v, want %v", got, tt.want)
-			}
-		})
-	}
-}
-
 func Test_BuildImageAltNames(t *testing.T) {
 	tests := []struct {
 		name           string

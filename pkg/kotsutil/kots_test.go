@@ -10,10 +10,14 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"github.com/replicatedhq/kots/pkg/crypto"
+	dockerregistrytypes "github.com/replicatedhq/kots/pkg/docker/registry/types"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/util"
-	kotsv1beta "github.com/replicatedhq/kotskinds/apis/kots/v1beta1"
+	kotsv1beta1 "github.com/replicatedhq/kotskinds/apis/kots/v1beta1"
 	troubleshootv1beta2 "github.com/replicatedhq/troubleshoot/pkg/apis/troubleshoot/v1beta2"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+	corev1 "k8s.io/api/core/v1"
 )
 
 var _ = Describe("Kots", func() {
@@ -287,7 +291,7 @@ var _ = Describe("Kots", func() {
 	Describe("EncryptConfigValues()", func() {
 		It("does not error when the config field is missing", func() {
 			kotsKind := &kotsutil.KotsKinds{
-				ConfigValues: &kotsv1beta.ConfigValues{},
+				ConfigValues: &kotsv1beta1.ConfigValues{},
 			}
 			err := kotsKind.EncryptConfigValues()
 			Expect(err).ToNot(HaveOccurred())
@@ -295,24 +299,24 @@ var _ = Describe("Kots", func() {
 
 		It("does not error when the configValues field is missing", func() {
 			kotsKind := &kotsutil.KotsKinds{
-				Config: &kotsv1beta.Config{},
+				Config: &kotsv1beta1.Config{},
 			}
 			err := kotsKind.EncryptConfigValues()
 			Expect(err).ToNot(HaveOccurred())
 		})
 
 		It("returns an error if the configItemType is not found", func() {
-			configValues := make(map[string]kotsv1beta.ConfigValue)
-			configValues["name"] = kotsv1beta.ConfigValue{
+			configValues := make(map[string]kotsv1beta1.ConfigValue)
+			configValues["name"] = kotsv1beta1.ConfigValue{
 				ValuePlaintext: "valuePlaintext",
 			}
 
 			kotsKind := &kotsutil.KotsKinds{
-				Config: &kotsv1beta.Config{
-					Spec: kotsv1beta.ConfigSpec{
-						Groups: []kotsv1beta.ConfigGroup{
+				Config: &kotsv1beta1.Config{
+					Spec: kotsv1beta1.ConfigSpec{
+						Groups: []kotsv1beta1.ConfigGroup{
 							{
-								Items: []kotsv1beta.ConfigItem{
+								Items: []kotsv1beta1.ConfigItem{
 									{
 										Name: "item1",
 										Type: "",
@@ -322,8 +326,8 @@ var _ = Describe("Kots", func() {
 						},
 					},
 				},
-				ConfigValues: &kotsv1beta.ConfigValues{
-					Spec: kotsv1beta.ConfigValuesSpec{
+				ConfigValues: &kotsv1beta1.ConfigValues{
+					Spec: kotsv1beta1.ConfigValuesSpec{
 						Values: configValues,
 					},
 				},
@@ -336,17 +340,17 @@ var _ = Describe("Kots", func() {
 		It("returns an error if the configItemType is not a password", func() {
 			configItemType := "notAPassword"
 			itemName := "some-item"
-			configValues := make(map[string]kotsv1beta.ConfigValue)
-			configValues[itemName] = kotsv1beta.ConfigValue{
+			configValues := make(map[string]kotsv1beta1.ConfigValue)
+			configValues[itemName] = kotsv1beta1.ConfigValue{
 				ValuePlaintext: "valuePlainText",
 			}
 
 			kotsKind := &kotsutil.KotsKinds{
-				Config: &kotsv1beta.Config{
-					Spec: kotsv1beta.ConfigSpec{
-						Groups: []kotsv1beta.ConfigGroup{
+				Config: &kotsv1beta1.Config{
+					Spec: kotsv1beta1.ConfigSpec{
+						Groups: []kotsv1beta1.ConfigGroup{
 							{
-								Items: []kotsv1beta.ConfigItem{
+								Items: []kotsv1beta1.ConfigItem{
 									{
 										Name: itemName,
 										Type: configItemType,
@@ -356,8 +360,8 @@ var _ = Describe("Kots", func() {
 						},
 					},
 				},
-				ConfigValues: &kotsv1beta.ConfigValues{
-					Spec: kotsv1beta.ConfigValuesSpec{
+				ConfigValues: &kotsv1beta1.ConfigValues{
+					Spec: kotsv1beta1.ConfigValuesSpec{
 						Values: configValues,
 					},
 				},
@@ -371,18 +375,18 @@ var _ = Describe("Kots", func() {
 			configItemType := "password"
 			itemName := "some-item"
 			nonEncryptedValue := "not-encrypted"
-			configValues := make(map[string]kotsv1beta.ConfigValue)
-			configValues[itemName] = kotsv1beta.ConfigValue{
+			configValues := make(map[string]kotsv1beta1.ConfigValue)
+			configValues[itemName] = kotsv1beta1.ConfigValue{
 				Value:          nonEncryptedValue,
 				ValuePlaintext: "some-nonEncryptedValue-in-plain-text",
 			}
 
 			kotsKind := &kotsutil.KotsKinds{
-				Config: &kotsv1beta.Config{
-					Spec: kotsv1beta.ConfigSpec{
-						Groups: []kotsv1beta.ConfigGroup{
+				Config: &kotsv1beta1.Config{
+					Spec: kotsv1beta1.ConfigSpec{
+						Groups: []kotsv1beta1.ConfigGroup{
 							{
-								Items: []kotsv1beta.ConfigItem{
+								Items: []kotsv1beta1.ConfigItem{
 									{
 										Name: itemName,
 										Type: configItemType,
@@ -392,8 +396,8 @@ var _ = Describe("Kots", func() {
 						},
 					},
 				},
-				ConfigValues: &kotsv1beta.ConfigValues{
-					Spec: kotsv1beta.ConfigValuesSpec{
+				ConfigValues: &kotsv1beta1.ConfigValues{
+					Spec: kotsv1beta1.ConfigValuesSpec{
 						Values: configValues,
 					},
 				},
@@ -407,7 +411,7 @@ var _ = Describe("Kots", func() {
 	Describe("DecryptConfigValues()", func() {
 		It("does not error when config values are empty", func() {
 			kotsKind := &kotsutil.KotsKinds{
-				Config: &kotsv1beta.Config{},
+				Config: &kotsv1beta1.Config{},
 			}
 			err := kotsKind.DecryptConfigValues()
 			Expect(err).ToNot(HaveOccurred())
@@ -415,15 +419,15 @@ var _ = Describe("Kots", func() {
 
 		It("does not change the value if it is missing", func() {
 			itemName := "some-item"
-			configValues := make(map[string]kotsv1beta.ConfigValue)
-			configValues[itemName] = kotsv1beta.ConfigValue{
+			configValues := make(map[string]kotsv1beta1.ConfigValue)
+			configValues[itemName] = kotsv1beta1.ConfigValue{
 				Value:          "",
 				ValuePlaintext: "some-nonEncryptedValue-in-plain-text",
 			}
 
 			kotsKind := &kotsutil.KotsKinds{
-				ConfigValues: &kotsv1beta.ConfigValues{
-					Spec: kotsv1beta.ConfigValuesSpec{
+				ConfigValues: &kotsv1beta1.ConfigValues{
+					Spec: kotsv1beta1.ConfigValuesSpec{
 						Values: configValues,
 					},
 				},
@@ -438,15 +442,15 @@ var _ = Describe("Kots", func() {
 			encryptedValue := crypto.Encrypt([]byte("someEncryptedValueInPlainText"))
 			encodedValue := base64.StdEncoding.EncodeToString(encryptedValue)
 			valuePlainText := "someEncryptedValueInPlainText"
-			configValues := make(map[string]kotsv1beta.ConfigValue)
-			configValues[itemName] = kotsv1beta.ConfigValue{
+			configValues := make(map[string]kotsv1beta1.ConfigValue)
+			configValues[itemName] = kotsv1beta1.ConfigValue{
 				Value:          encodedValue,
 				ValuePlaintext: "",
 			}
 
 			kotsKind := &kotsutil.KotsKinds{
-				ConfigValues: &kotsv1beta.ConfigValues{
-					Spec: kotsv1beta.ConfigValuesSpec{
+				ConfigValues: &kotsv1beta1.ConfigValues{
+					Spec: kotsv1beta1.ConfigValuesSpec{
 						Values: configValues,
 					},
 				},
@@ -459,15 +463,15 @@ var _ = Describe("Kots", func() {
 
 		It("does not change the value if it cannot be decoded", func() {
 			itemName := "some-item"
-			configValues := make(map[string]kotsv1beta.ConfigValue)
-			configValues[itemName] = kotsv1beta.ConfigValue{
+			configValues := make(map[string]kotsv1beta1.ConfigValue)
+			configValues[itemName] = kotsv1beta1.ConfigValue{
 				Value:          "not-an-encoded-value",
 				ValuePlaintext: "",
 			}
 
 			kotsKind := &kotsutil.KotsKinds{
-				ConfigValues: &kotsv1beta.ConfigValues{
-					Spec: kotsv1beta.ConfigValuesSpec{
+				ConfigValues: &kotsv1beta1.ConfigValues{
+					Spec: kotsv1beta1.ConfigValuesSpec{
 						Values: configValues,
 					},
 				},
@@ -480,15 +484,15 @@ var _ = Describe("Kots", func() {
 		It("does not change the value if it cannot be decrypted", func() {
 			itemName := "some-item"
 			encodedButNotEncryptedValue := base64.StdEncoding.EncodeToString([]byte("someEncryptedValueInPlainText"))
-			configValues := make(map[string]kotsv1beta.ConfigValue)
-			configValues[itemName] = kotsv1beta.ConfigValue{
+			configValues := make(map[string]kotsv1beta1.ConfigValue)
+			configValues[itemName] = kotsv1beta1.ConfigValue{
 				Value:          encodedButNotEncryptedValue,
 				ValuePlaintext: "",
 			}
 
 			kotsKind := &kotsutil.KotsKinds{
-				ConfigValues: &kotsv1beta.ConfigValues{
-					Spec: kotsv1beta.ConfigValuesSpec{
+				ConfigValues: &kotsv1beta1.ConfigValues{
+					Spec: kotsv1beta1.ConfigValuesSpec{
 						Values: configValues,
 					},
 				},
@@ -514,9 +518,9 @@ var _ = Describe("Kots", func() {
 
 		It("returns false when the length of groups is zero", func() {
 			kotsKind := &kotsutil.KotsKinds{
-				Config: &kotsv1beta.Config{
-					Spec: kotsv1beta.ConfigSpec{
-						Groups: []kotsv1beta.ConfigGroup{},
+				Config: &kotsv1beta1.Config{
+					Spec: kotsv1beta1.ConfigSpec{
+						Groups: []kotsv1beta1.ConfigGroup{},
 					},
 				},
 			}
@@ -526,9 +530,9 @@ var _ = Describe("Kots", func() {
 
 		It("returns true when the length of the groups is greater than zero", func() {
 			kotsKind := &kotsutil.KotsKinds{
-				Config: &kotsv1beta.Config{
-					Spec: kotsv1beta.ConfigSpec{
-						Groups: []kotsv1beta.ConfigGroup{
+				Config: &kotsv1beta1.Config{
+					Spec: kotsv1beta1.ConfigSpec{
+						Groups: []kotsv1beta1.ConfigGroup{
 							{
 								Name: "group-item",
 							},
@@ -738,6 +742,152 @@ func TestIsKotsKind(t *testing.T) {
 			if got := kotsutil.IsKotsKind(tt.args.apiVersion, tt.args.kind); got != tt.want {
 				t.Errorf("IsKotsKind() = %v, want %v", got, tt.want)
 			}
+		})
+	}
+}
+
+func TestGetImagesFromKotsKinds(t *testing.T) {
+	type args struct {
+		kotsKinds    *kotsutil.KotsKinds
+		destRegistry *dockerregistrytypes.RegistryOptions
+	}
+	tests := []struct {
+		name    string
+		args    args
+		want    []string
+		wantErr bool
+	}{
+		{
+			name: "basic",
+			args: args{
+				kotsKinds: &kotsutil.KotsKinds{
+					KotsApplication: kotsv1beta1.Application{
+						Spec: kotsv1beta1.ApplicationSpec{
+							AdditionalImages: []string{
+								"registry.replicated.com/appslug/image:version",
+							},
+						},
+					},
+					Preflight: &troubleshootv1beta2.Preflight{
+						Spec: troubleshootv1beta2.PreflightSpec{
+							Collectors: []*troubleshootv1beta2.Collect{
+								{
+									Run: &troubleshootv1beta2.Run{
+										Image: "quay.io/replicatedcom/qa-kots-1:alpine-3.5",
+									},
+								},
+								{
+									RunPod: &troubleshootv1beta2.RunPod{
+										PodSpec: corev1.PodSpec{
+											Containers: []corev1.Container{
+												{
+													Image: "nginx:1",
+												},
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+					SupportBundle: &troubleshootv1beta2.SupportBundle{
+						Spec: troubleshootv1beta2.SupportBundleSpec{
+							Collectors: []*troubleshootv1beta2.Collect{
+								{
+									Run: &troubleshootv1beta2.Run{
+										Image: "quay.io/replicatedcom/qa-kots-2:alpine-3.4",
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			want: []string{
+				"registry.replicated.com/appslug/image:version",
+				"quay.io/replicatedcom/qa-kots-1:alpine-3.5",
+				"nginx:1",
+				"quay.io/replicatedcom/qa-kots-2:alpine-3.4",
+			},
+		},
+		{
+			name: "excludes images that already point to the destination registry",
+			args: args{
+				kotsKinds: &kotsutil.KotsKinds{
+					KotsApplication: kotsv1beta1.Application{
+						Spec: kotsv1beta1.ApplicationSpec{
+							AdditionalImages: []string{
+								"registry.replicated.com/appslug/image:version",
+							},
+						},
+					},
+					Preflight: &troubleshootv1beta2.Preflight{
+						Spec: troubleshootv1beta2.PreflightSpec{
+							Collectors: []*troubleshootv1beta2.Collect{
+								{
+									Run: &troubleshootv1beta2.Run{
+										Image: "quay.io/replicatedcom/qa-kots-1:alpine-3.5",
+									},
+								},
+								{
+									Run: &troubleshootv1beta2.Run{
+										Image: "testing.registry.com:5000/testing-ns/random-image:2",
+									},
+								},
+								{
+									RunPod: &troubleshootv1beta2.RunPod{
+										PodSpec: corev1.PodSpec{
+											Containers: []corev1.Container{
+												{
+													Image: "nginx:1",
+												},
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+					SupportBundle: &troubleshootv1beta2.SupportBundle{
+						Spec: troubleshootv1beta2.SupportBundleSpec{
+							Collectors: []*troubleshootv1beta2.Collect{
+								{
+									Run: &troubleshootv1beta2.Run{
+										Image: "quay.io/replicatedcom/qa-kots-2:alpine-3.4",
+									},
+								},
+								{
+									Run: &troubleshootv1beta2.Run{
+										Image: "testing.registry.com:5000/testing-ns/random-image:1",
+									},
+								},
+							},
+						},
+					},
+				},
+				destRegistry: &dockerregistrytypes.RegistryOptions{
+					Endpoint:  "testing.registry.com:5000",
+					Namespace: "testing-ns",
+					Username:  "testing-user-name",
+					Password:  "testing-password",
+				},
+			},
+			want: []string{
+				"registry.replicated.com/appslug/image:version",
+				"quay.io/replicatedcom/qa-kots-1:alpine-3.5",
+				"nginx:1",
+				"quay.io/replicatedcom/qa-kots-2:alpine-3.4",
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			req := require.New(t)
+
+			got, err := kotsutil.GetImagesFromKotsKinds(tt.args.kotsKinds, tt.args.destRegistry)
+			req.NoError(err)
+
+			assert.ElementsMatch(t, tt.want, got)
 		})
 	}
 }

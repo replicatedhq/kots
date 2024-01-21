@@ -3,7 +3,7 @@ package rendered
 import (
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/apparchive"
-	"github.com/replicatedhq/kots/pkg/image"
+	imagetypes "github.com/replicatedhq/kots/pkg/image/types"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"k8s.io/client-go/kubernetes"
@@ -18,7 +18,7 @@ type WriteOptions struct {
 	HelmDir             string
 	Log                 *logger.CLILogger
 	KotsKinds           *kotsutil.KotsKinds
-	ProcessImageOptions image.ProcessImageOptions
+	ProcessImageOptions imagetypes.ProcessImageOptions
 	Clientset           kubernetes.Interface
 }
 

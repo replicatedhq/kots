@@ -118,22 +118,6 @@ func DestImageFromKustomizeImage(image kustomizetypes.Image) string {
 	return destImage
 }
 
-// SrcImageFromKustomizeImage returns the location of the source image from a kustomize image type
-// Note: if image name contains both a tag and a digest, only the digest is used, so the result might not exactly match the original image name.
-func SrcImageFromKustomizeImage(image kustomizetypes.Image) string {
-	srcImage := image.Name
-
-	if image.Digest != "" {
-		srcImage += "@"
-		srcImage += image.Digest
-	} else if image.NewTag != "" {
-		srcImage += ":"
-		srcImage += image.NewTag
-	}
-
-	return srcImage
-}
-
 func BuildImageAltNames(rewrittenImage kustomizetypes.Image) ([]kustomizetypes.Image, error) {
 	// kustomize does string based comparison, so all of these are treated as different images:
 	// docker.io/library/redis:latest

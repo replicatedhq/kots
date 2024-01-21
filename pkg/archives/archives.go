@@ -28,6 +28,42 @@ func ExtractTGZArchiveFromFile(tgzFile string, destDir string) error {
 	return nil
 }
 
+func DirExistsInAirgap(dirToCheck string, archive string) (bool, error) {
+	fileReader, err := os.Open(archive)
+	if err != nil {
+		return false, errors.Wrap(err, "failed to open file")
+	}
+	defer fileReader.Close()
+
+	gzipReader, err := gzip.NewReader(fileReader)
+	if err != nil {
+		return false, errors.Wrap(err, "failed to get new gzip reader")
+	}
+	defer gzipReader.Close()
+
+	tarReader := tar.NewReader(gzipReader)
+	for {
+		header, err := tarReader.Next()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			return false, errors.Wrap(err, "failed to get read archive")
+		}
+
+		if header.Typeflag != tar.TypeDir {
+			continue
+		}
+		if header.Name != dirToCheck {
+			continue
+		}
+
+		return true, nil
+	}
+
+	return false, nil
+}
+
 func GetFileFromAirgap(fileToGet string, archive string) ([]byte, error) {
 	fileReader, err := os.Open(archive)
 	if err != nil {
