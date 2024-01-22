@@ -15,11 +15,6 @@ import (
 	kustomizetypes "sigs.k8s.io/kustomize/api/types"
 )
 
-type RewriteImagesOptions struct {
-	Images              []string
-	DestinationRegistry dockerregistrytypes.RegistryOptions
-}
-
 // RewriteImages rewrites all images to point to the configured destination registry.
 func RewriteImages(images []string, destRegistry dockerregistrytypes.RegistryOptions) ([]kustomizetypes.Image, error) {
 	rewrittenImages := []kustomizetypes.Image{}
