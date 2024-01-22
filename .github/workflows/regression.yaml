@@ -70,8 +70,18 @@ jobs:
         CURRENT_TIMESTAMP=$(date +%s)
         echo "name=${{ env.WORKSPACE_PREFIX }}-${CURRENT_TIMESTAMP}" >> "$GITHUB_OUTPUT"
 
+  get-workspace-expiration:
+    runs-on: ubuntu-latest
+    outputs:
+      expiration: ${{ steps.workspace.outputs.expiration }}
+    steps:
+    - name: Set the workspace expiration as output
+      id: workspace
+      run: |
+        echo "expiration=$(date -d '+2 days' '+%Y-%m-%d')" >> "$GITHUB_OUTPUT"
+
   jumpbox:
-    needs: get-workspace-name
+    needs: [get-workspace-name, get-workspace-expiration]
     runs-on: ubuntu-20.04
     container:
       image: hashicorp/terraform:1.0.11
@@ -109,8 +119,7 @@ jobs:
         if: always()
         working-directory: automation/jumpbox
         run: |
-          TF_VAR_expires_on="$(date -d '+2 days' '+%Y-%m-%d')"
-          export TF_VAR_expires_on
+          export TF_VAR_expires_on="${{ needs.get-workspace-expiration.outputs.expiration }}"
           terraform apply --auto-approve
       - name: Notify Slack
         if: failure() && github.ref_name == 'main'
@@ -129,7 +138,7 @@ jobs:
           SLACK_WEBHOOK_URL: ${{ secrets.KOTS_BUILD_STATUS_SLACK_WEBHOOK_URL }}
 
   tests:
-    needs: [get-workspace-name, jumpbox]
+    needs: [get-workspace-name, get-workspace-expiration, jumpbox]
     runs-on: ubuntu-20.04
     container:
       image: hashicorp/terraform:1.0.11
@@ -245,8 +254,7 @@ jobs:
           fi
           export TF_VAR_kots_addon_package_url="${{ github.event.inputs.addon_package_url || inputs.addon_package_url }}"
           export TF_VAR_testim_branch="master"
-          TF_VAR_expires_on="$(date -d '+2 days' '+%Y-%m-%d')"
-          export TF_VAR_expires_on
+          export TF_VAR_expires_on="${{ needs.get-workspace-expiration.outputs.expiration }}"
           ./${{ matrix.test.terraform_script }} apply
       - name: Wait for instance to be ready
         working-directory: automation/cluster
