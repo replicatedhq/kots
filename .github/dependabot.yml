@@ -5,6 +5,7 @@ updates:
   # Npm
   - package-ecosystem: "npm"
     directory: "/web"
+    open-pull-requests-limit: 2
     schedule:
       interval: "weekly"
       day: "saturday"
@@ -23,6 +24,7 @@ updates:
 
   - package-ecosystem: "gomod"
     directory: "/"
+    open-pull-requests-limit: 2
     schedule:
       interval: "weekly"
       day: "saturday"
@@ -40,6 +42,7 @@ updates:
 
   - package-ecosystem: "gomod"
     directory: "/kurl_proxy"
+    open-pull-requests-limit: 2
     schedule:
       interval: "weekly"
       day: "saturday"
@@ -48,11 +51,17 @@ updates:
       - "dependabot"
       - "go"
       - "type::security"
+    groups:
+      security:
+        update-types:
+          - "patch"
+          - "minor"
 
   ## GitHub Actions
 
   - package-ecosystem: "github-actions"
     directory: "/"
+    open-pull-requests-limit: 2
     schedule:
       interval: "weekly"
       day: "saturday"
