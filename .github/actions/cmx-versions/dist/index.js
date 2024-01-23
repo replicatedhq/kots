@@ -7651,6 +7651,12 @@ async function getClusterVersions() {
         return;
     }
 
+    let distrosToTest = new Set(); // tests all distros if empty
+    const distrosInput = core.getInput('distros') || '';
+    if (distrosInput !== '') {
+        distrosToTest = new Set(distrosInput.split(','));
+    }
+
     // versions to test looks like this:
     // [
     //   {distribution: k3s, version: v1.24, stage: 'stable'},
@@ -7660,6 +7666,11 @@ async function getClusterVersions() {
 
     clusterVersions.forEach((distribution) => {
         const distroName = distribution.short_name;
+
+        if (distrosToTest.size > 0 && !distrosToTest.has(distroName)) {
+            // distribution is not in the distros array, skip it
+            return;
+        }
 
         if (distroName === 'helmvm' || distroName === 'kurl') {
             // excluding the embedded distributions
