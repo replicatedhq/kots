@@ -1,7 +1,7 @@
 include Makefile.build.mk
 CURRENT_USER := $(if $(GITHUB_USER),$(GITHUB_USER),$(shell id -u -n))
 MINIO_TAG ?= 0.20231101.183725-r1
-RQLITE_TAG ?= 8.16.8-r0
+RQLITE_TAG ?= 8.17.0-r0
 DEX_TAG ?= 2.37.0-r12
 LVP_TAG ?= v0.5.6
 
