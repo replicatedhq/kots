@@ -5,9 +5,11 @@ import (
 	"fmt"
 	"path"
 	"path/filepath"
+	"sort"
 	"strconv"
 
 	"github.com/pkg/errors"
+	"github.com/replicatedhq/kots/pkg/k8sdoc"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
 	kotsscheme "github.com/replicatedhq/kotskinds/client/kotsclientset/scheme"
 	troubleshootscheme "github.com/replicatedhq/troubleshoot/pkg/client/troubleshootclientset/scheme"
@@ -294,4 +296,46 @@ func PrependBaseFilesPath(files []BaseFile, prefix string) []BaseFile {
 		next = append(next, file)
 	}
 	return next
+}
+
+func FindImages(b *Base) ([]string, []k8sdoc.K8sDoc, error) {
+	uniqueImages := make(map[string]bool)
+	objectsWithImages := make([]k8sdoc.K8sDoc, 0) // all objects where images are referenced from
+
+	for _, file := range b.Files {
+		parsed, err := k8sdoc.ParseYAML(file.Content)
+		if err != nil {
+			continue
+		}
+
+		images := parsed.ListImages()
+		if len(images) > 0 {
+			objectsWithImages = append(objectsWithImages, parsed)
+		}
+
+		for _, image := range images {
+			uniqueImages[image] = true
+		}
+	}
+
+	for _, subBase := range b.Bases {
+		subImages, subObjects, err := FindImages(&subBase)
+		if err != nil {
+			return nil, nil, errors.Wrapf(err, "failed to find images in sub base %s", subBase.Path)
+		}
+
+		objectsWithImages = append(objectsWithImages, subObjects...)
+
+		for _, subImage := range subImages {
+			uniqueImages[subImage] = true
+		}
+	}
+
+	result := make([]string, 0, len(uniqueImages))
+	for i := range uniqueImages {
+		result = append(result, i)
+	}
+	sort.Strings(result) // sort the images to get an ordered and reproducible output for easier testing
+
+	return result, objectsWithImages, nil
 }

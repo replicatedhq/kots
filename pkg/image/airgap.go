@@ -20,16 +20,19 @@ import (
 	containerstypes "github.com/containers/image/v5/types"
 	"github.com/mholt/archiver/v3"
 	"github.com/pkg/errors"
+	"github.com/replicatedhq/kots/pkg/archives"
 	dockerarchive "github.com/replicatedhq/kots/pkg/docker/archive"
 	dockerregistry "github.com/replicatedhq/kots/pkg/docker/registry"
+	dockerregistrytypes "github.com/replicatedhq/kots/pkg/docker/registry/types"
 	dockertypes "github.com/replicatedhq/kots/pkg/docker/types"
 	imagetypes "github.com/replicatedhq/kots/pkg/image/types"
 	"github.com/replicatedhq/kots/pkg/imageutil"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
+	"github.com/replicatedhq/kots/pkg/logger"
 	"k8s.io/client-go/kubernetes/scheme"
 )
 
-// Pushes Admin Console images from airgap bundle to private registry
+// PushImages detects if airgap bundle is a KOTS or app bundle, then pushes images from airgap bundle to private registry accordingly
 func PushImages(airgapArchive string, options imagetypes.PushImagesOptions) error {
 	airgapRootDir, err := ioutil.TempDir("", "kotsadm-airgap")
 	if err != nil {
@@ -236,6 +239,35 @@ func WriteProgressLine(progressWriter io.Writer, line string) {
 	fmt.Fprint(progressWriter, fmt.Sprintf("%s\n", line))
 }
 
+// CopyAirgapImages pushes images found in the app airgap bundle/airgap root to the configured registry.
+func CopyAirgapImages(opts imagetypes.ProcessImageOptions, log *logger.CLILogger) error {
+	pushOpts := imagetypes.PushImagesOptions{
+		Registry: dockerregistrytypes.RegistryOptions{
+			Endpoint:  opts.RegistrySettings.Hostname,
+			Namespace: opts.RegistrySettings.Namespace,
+			Username:  opts.RegistrySettings.Username,
+			Password:  opts.RegistrySettings.Password,
+		},
+		Log:            log,
+		ProgressWriter: opts.ReportWriter,
+		LogForUI:       true,
+	}
+
+	if opts.AirgapBundle != "" {
+		err := TagAndPushAppImagesFromBundle(opts.AirgapBundle, pushOpts)
+		if err != nil {
+			return errors.Wrap(err, "failed to push images from bundle")
+		}
+	} else {
+		err := TagAndPushAppImagesFromPath(opts.AirgapRoot, pushOpts)
+		if err != nil {
+			return errors.Wrap(err, "failed to push images from dir")
+		}
+	}
+
+	return nil
+}
+
 func TagAndPushAppImagesFromPath(airgapRootDir string, options imagetypes.PushImagesOptions) error {
 	airgap, err := kotsutil.FindAirgapMetaInDir(airgapRootDir)
 	if err != nil {
@@ -283,8 +315,13 @@ func TagAndPushAppImagesFromBundle(airgapBundle string, options imagetypes.PushI
 }
 
 func PushAppImagesFromTempRegistry(airgapRootDir string, imageList []string, options imagetypes.PushImagesOptions) error {
+	imagesDir := filepath.Join(airgapRootDir, "images")
+	if _, err := os.Stat(imagesDir); os.IsNotExist(err) {
+		return nil
+	}
+
 	tempRegistry := &dockerregistry.TempRegistry{}
-	if err := tempRegistry.Start(filepath.Join(airgapRootDir, "images")); err != nil {
+	if err := tempRegistry.Start(imagesDir); err != nil {
 		return errors.Wrap(err, "failed to start temp registry")
 	}
 	defer tempRegistry.Stop()
@@ -352,8 +389,10 @@ func PushAppImagesFromTempRegistry(airgapRootDir string, imageList []string, opt
 					Password: options.Registry.Password,
 				},
 				CopyAll:           rewrittenImage.Digest != "", // we only support multi-arch images using digests
-				SkipSrcTLSVerify:  true,
-				SkipDestTLSVerify: true,
+				SrcDisableV1Ping:  true,
+				SrcSkipTLSVerify:  true,
+				DestDisableV1Ping: true,
+				DestSkipTLSVerify: true,
 				ReportWriter:      reportWriter,
 			},
 		}
@@ -366,9 +405,13 @@ func PushAppImagesFromTempRegistry(airgapRootDir string, imageList []string, opt
 }
 
 func PushAppImagesFromDockerArchivePath(airgapRootDir string, options imagetypes.PushImagesOptions) error {
+	imagesDir := filepath.Join(airgapRootDir, "images")
+	if _, err := os.Stat(imagesDir); os.IsNotExist(err) {
+		return nil
+	}
+
 	imageInfos := make(map[string]*imagetypes.ImageInfo)
 
-	imagesDir := filepath.Join(airgapRootDir, "images")
 	walkErr := filepath.Walk(imagesDir,
 		func(path string, info os.FileInfo, err error) error {
 			if err != nil {
@@ -443,7 +486,8 @@ func PushAppImagesFromDockerArchivePath(airgapRootDir string, options imagetypes
 					Password: options.Registry.Password,
 				},
 				CopyAll:           false, // docker-archive format does not support multi-arch images
-				SkipDestTLSVerify: true,
+				DestSkipTLSVerify: true,
+				DestDisableV1Ping: true,
 				ReportWriter:      reportWriter,
 			},
 		}
@@ -456,6 +500,12 @@ func PushAppImagesFromDockerArchivePath(airgapRootDir string, options imagetypes
 }
 
 func PushAppImagesFromDockerArchiveBundle(airgapBundle string, options imagetypes.PushImagesOptions) error {
+	if exists, err := archives.DirExistsInAirgap("images", airgapBundle); err != nil {
+		return errors.Wrap(err, "failed to check if images dir exists in airgap bundle")
+	} else if !exists {
+		return nil
+	}
+
 	if options.LogForUI {
 		WriteProgressLine(options.ProgressWriter, "Reading image information from bundle...")
 	}
@@ -561,7 +611,8 @@ func PushAppImagesFromDockerArchiveBundle(airgapBundle string, options imagetype
 					Password: options.Registry.Password,
 				},
 				CopyAll:           false, // docker-archive format does not support multi-arch images
-				SkipDestTLSVerify: true,
+				DestSkipTLSVerify: true,
+				DestDisableV1Ping: true,
 				ReportWriter:      reportWriter,
 			},
 		}

@@ -5,9 +5,24 @@ import (
 	"time"
 
 	"github.com/containers/image/v5/types"
-	registrytypes "github.com/replicatedhq/kots/pkg/docker/registry/types"
+	dockerregistrytypes "github.com/replicatedhq/kots/pkg/docker/registry/types"
 	"github.com/replicatedhq/kots/pkg/logger"
+	registrytypes "github.com/replicatedhq/kots/pkg/registry/types"
 )
+
+type ProcessImageOptions struct {
+	AppSlug          string
+	Namespace        string
+	RewriteImages    bool
+	CopyImages       bool
+	RegistrySettings registrytypes.RegistrySettings
+	RootDir          string
+	IsAirgap         bool
+	AirgapRoot       string
+	AirgapBundle     string
+	CreateAppDir     bool
+	ReportWriter     io.Writer
+}
 
 type RegistryAuth struct {
 	Username string
@@ -21,15 +36,18 @@ type InstallationImageInfo struct {
 type CopyImageOptions struct {
 	SrcRef            types.ImageReference
 	DestRef           types.ImageReference
+	SrcAuth           RegistryAuth
 	DestAuth          RegistryAuth
 	CopyAll           bool
-	SkipSrcTLSVerify  bool
-	SkipDestTLSVerify bool
+	SrcDisableV1Ping  bool
+	SrcSkipTLSVerify  bool
+	DestDisableV1Ping bool
+	DestSkipTLSVerify bool
 	ReportWriter      io.Writer
 }
 
 type PushImagesOptions struct {
-	Registry       registrytypes.RegistryOptions
+	Registry       dockerregistrytypes.RegistryOptions
 	KotsadmTag     string
 	Log            *logger.CLILogger
 	ProgressWriter io.Writer

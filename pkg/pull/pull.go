@@ -17,6 +17,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/crypto"
 	"github.com/replicatedhq/kots/pkg/downstream"
 	"github.com/replicatedhq/kots/pkg/image"
+	imagetypes "github.com/replicatedhq/kots/pkg/image/types"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/kotsadmconfig"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
@@ -340,7 +341,7 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 		return "", errors.Wrap(err, "failed to check if version needs configuration")
 	}
 
-	processImageOptions := image.ProcessImageOptions{
+	processImageOptions := imagetypes.ProcessImageOptions{
 		AppSlug:          pullOptions.AppSlug,
 		Namespace:        pullOptions.Namespace,
 		RewriteImages:    pullOptions.RewriteImages,
@@ -350,7 +351,6 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 		IsAirgap:         pullOptions.AirgapRoot != "",
 		AirgapRoot:       pullOptions.AirgapRoot,
 		AirgapBundle:     pullOptions.AirgapBundle,
-		PushImages:       pullOptions.RewriteImageOptions.Hostname != "",
 		CreateAppDir:     pullOptions.CreateAppDir,
 		ReportWriter:     pullOptions.ReportWriter,
 	}
@@ -361,8 +361,8 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 		}
 		if processImageOptions.RewriteImages && processImageOptions.AirgapRoot != "" {
 			// if this is an airgap install, we still need to process the images
-			if _, err = midstream.ProcessAirgapImages(processImageOptions, nil, nil, renderedKotsKinds, fetchOptions.License, log); err != nil {
-				return "", errors.Wrap(err, "failed to process airgap images")
+			if err := image.CopyAirgapImages(processImageOptions, log); err != nil {
+				return "", errors.Wrap(err, "failed to copy airgap images")
 			}
 		}
 		return "", ErrConfigNeeded
@@ -503,7 +503,7 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 		NoProxyEnvValue:    pullOptions.NoProxyEnvValue,
 		NewHelmCharts:      v1Beta1HelmCharts,
 		License:            fetchOptions.License,
-		RenderedKotsKinds:  renderedKotsKinds,
+		KotsKinds:          renderedKotsKinds,
 		IdentityConfig:     identityConfig,
 		UpstreamDir:        u.GetUpstreamDir(writeUpstreamOptions),
 		Log:                log,
@@ -527,7 +527,10 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 
 		processImageOptionsCopy := processImageOptions
 		processImageOptionsCopy.Namespace = helmBaseCopy.Namespace
-		processImageOptionsCopy.PushImages = false // never push images more than once
+		if processImageOptions.IsAirgap {
+			// don't copy images if airgap, as all images would've been pushed from the airgap bundle.
+			processImageOptionsCopy.CopyImages = false
+		}
 
 		writeMidstreamOptions.MidstreamDir = filepath.Join(u.GetOverlaysDir(writeUpstreamOptions), "midstream", helmBaseCopy.Path)
 		writeMidstreamOptions.BaseDir = filepath.Join(u.GetBaseDir(writeUpstreamOptions), helmBaseCopy.Path)

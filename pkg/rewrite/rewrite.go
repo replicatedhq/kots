@@ -13,7 +13,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/base"
 	"github.com/replicatedhq/kots/pkg/crypto"
 	"github.com/replicatedhq/kots/pkg/downstream"
-	"github.com/replicatedhq/kots/pkg/image"
+	imagetypes "github.com/replicatedhq/kots/pkg/image/types"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/logger"
@@ -236,13 +236,13 @@ func Rewrite(rewriteOptions RewriteOptions) error {
 		NoProxyEnvValue:    rewriteOptions.NoProxyEnvValue,
 		NewHelmCharts:      v1Beta1HelmCharts,
 		License:            rewriteOptions.License,
-		RenderedKotsKinds:  renderedKotsKinds,
+		KotsKinds:          renderedKotsKinds,
 		IdentityConfig:     identityConfig,
 		UpstreamDir:        u.GetUpstreamDir(writeUpstreamOptions),
 		Log:                log,
 	}
 
-	processImageOptions := image.ProcessImageOptions{
+	processImageOptions := imagetypes.ProcessImageOptions{
 		AppSlug:          rewriteOptions.AppSlug,
 		Namespace:        rewriteOptions.K8sNamespace,
 		RewriteImages:    rewriteOptions.RegistrySettings.Hostname != "",
@@ -252,7 +252,6 @@ func Rewrite(rewriteOptions RewriteOptions) error {
 		IsAirgap:         rewriteOptions.IsAirgap,
 		AirgapRoot:       "",
 		AirgapBundle:     "",
-		PushImages:       rewriteOptions.RegistrySettings.Hostname != "",
 		CreateAppDir:     false,
 		ReportWriter:     rewriteOptions.ReportWriter,
 	}
@@ -274,7 +273,10 @@ func Rewrite(rewriteOptions RewriteOptions) error {
 
 		processImageOptionsCopy := processImageOptions
 		processImageOptionsCopy.Namespace = helmBaseCopy.Namespace
-		processImageOptionsCopy.CopyImages = false // don't copy images more than once
+		if processImageOptions.IsAirgap {
+			// don't copy images if airgap, as all images would've been pushed from the airgap bundle.
+			processImageOptionsCopy.CopyImages = false
+		}
 
 		writeMidstreamOptions.MidstreamDir = filepath.Join(u.GetOverlaysDir(writeUpstreamOptions), "midstream", helmBaseCopy.Path)
 		writeMidstreamOptions.BaseDir = filepath.Join(u.GetBaseDir(writeUpstreamOptions), helmBaseCopy.Path)
