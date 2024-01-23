@@ -95,19 +95,23 @@ jobs:
           token: ${{ secrets.E2E_GH_PAT }}
           path: automation
           ref: main
+
       - name: Download kots binary
         uses: actions/download-artifact@v4
         with:
           name: kots
           path: ./automation/jumpbox/bin
-      - name: Download kotsadm release
+
+      - name: Download kotsadm bundle
         uses: actions/download-artifact@v4
         with:
-          name: kotsadm-release
-          path: ./automation/jumpbox/docker-archive
-      - name: Make kotsadm airgap archive with minio image
-        working-directory: automation/jumpbox
-        run: tar czf ./kotsadm.tar.gz -C ./ ./docker-archive
+          name: kotsadm-bundle
+          path: ./automation/jumpbox/kotsadm-bundle
+
+      - name: Make kotsadm airgap archive
+        working-directory: automation/jumpbox/kotsadm-bundle
+        run: tar -czf ../kotsadm.tar.gz *
+
       - name: Initialize terraform
         if: always()
         working-directory: automation/jumpbox
@@ -115,12 +119,14 @@ jobs:
           terraform init
           terraform workspace new "$WORKSPACE" || true
           terraform workspace select "$WORKSPACE"
+
       - name: Create Jumpbox Environment
         if: always()
         working-directory: automation/jumpbox
         run: |
           export TF_VAR_expires_on="${{ needs.get-workspace-expiration.outputs.expiration }}"
           terraform apply --auto-approve
+
       - name: Notify Slack
         if: failure() && github.ref_name == 'main'
         uses: 8398a7/action-slack@v3
@@ -228,6 +234,7 @@ jobs:
           token: ${{ secrets.E2E_GH_PAT }}
           path: automation
           ref: main
+
       - name: Initialize terraform
         if: always()
         working-directory: automation/cluster
@@ -235,10 +242,12 @@ jobs:
           terraform init -backend-config ${{ matrix.test.backend_config }}
           terraform workspace new "$WORKSPACE" || true
           terraform workspace select "$WORKSPACE"
+
       - name: Destroy test environment before re-run
         if: always() && github.run_attempt > 1
         working-directory: automation/cluster
         run: ./${{ matrix.test.terraform_script }} destroy
+
       - name: Create test environment
         if: always()
         working-directory: automation/cluster
@@ -256,6 +265,7 @@ jobs:
           export TF_VAR_testim_branch="master"
           export TF_VAR_expires_on="${{ needs.get-workspace-expiration.outputs.expiration }}"
           ./${{ matrix.test.terraform_script }} apply
+
       - name: Wait for instance to be ready
         working-directory: automation/cluster
         run: |
@@ -265,12 +275,14 @@ jobs:
           do
           echo "waiting for instance to become ready" && sleep 1
           done
+
       - name: Run the test
         working-directory: automation/cluster
         run: |
           terraform output -raw jumpbox_private_key > ssh.pem
           chmod 600 ssh.pem
           ssh -i ssh.pem "ubuntu@$(terraform output -raw jumpbox_public_ip)" -oStrictHostKeyChecking=no -oServerAliveInterval=60 -oServerAliveCountMax=10 "ssh -tt ubuntu@$(terraform output -raw control_plane_private_ip) -oServerAliveInterval=60 -oServerAliveCountMax=10 -oConnectionAttempts=30 \"sudo /tmp/start.sh\""
+
       - name: Notify Slack
         if: always() && github.ref_name == 'main'
         uses: 8398a7/action-slack@v3
@@ -287,6 +299,7 @@ jobs:
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.KOTS_BUILD_STATUS_SLACK_WEBHOOK_URL }}
           MATRIX_CONTEXT: ${{ toJson(matrix) }}
+
   cleanup:
     needs: [get-workspace-name, tests]
     runs-on: ubuntu-20.04

@@ -82,7 +82,7 @@ func TestCanRunHA(t *testing.T) {
 			wantErr:    false,
 		},
 		{
-			name: "3 nodes available",
+			name: "3 amd64 nodes available",
 			args: args{
 				ctx: context.Background(),
 				clientset: fake.NewSimpleClientset(&corev1.NodeList{
@@ -111,6 +111,46 @@ func TestCanRunHA(t *testing.T) {
 								Labels: map[string]string{
 									"kubernetes.io/os":   "linux",
 									"kubernetes.io/arch": "amd64",
+								},
+							},
+						},
+					},
+				}),
+			},
+			want:       true,
+			wantReason: "",
+			wantErr:    false,
+		},
+		{
+			name: "3 arm64 nodes available",
+			args: args{
+				ctx: context.Background(),
+				clientset: fake.NewSimpleClientset(&corev1.NodeList{
+					Items: []corev1.Node{
+						{
+							ObjectMeta: metav1.ObjectMeta{
+								Name: "node1",
+								Labels: map[string]string{
+									"kubernetes.io/os":   "linux",
+									"kubernetes.io/arch": "arm64",
+								},
+							},
+						},
+						{
+							ObjectMeta: metav1.ObjectMeta{
+								Name: "node2",
+								Labels: map[string]string{
+									"kubernetes.io/os":   "linux",
+									"kubernetes.io/arch": "arm64",
+								},
+							},
+						},
+						{
+							ObjectMeta: metav1.ObjectMeta{
+								Name: "node3",
+								Labels: map[string]string{
+									"kubernetes.io/os":   "linux",
+									"kubernetes.io/arch": "arm64",
 								},
 							},
 						},
@@ -150,7 +190,7 @@ func TestCanRunHA(t *testing.T) {
 								Name: "node3",
 								Labels: map[string]string{
 									"kubernetes.io/os":   "linux",
-									"kubernetes.io/arch": "amd64",
+									"kubernetes.io/arch": "arm64",
 								},
 							},
 						},
@@ -159,7 +199,7 @@ func TestCanRunHA(t *testing.T) {
 								Name: "node4",
 								Labels: map[string]string{
 									"kubernetes.io/os":   "linux",
-									"kubernetes.io/arch": "amd64",
+									"kubernetes.io/arch": "arm64",
 								},
 							},
 						},
@@ -190,7 +230,7 @@ func TestCanRunHA(t *testing.T) {
 								Name: "node2",
 								Labels: map[string]string{
 									"kubernetes.io/os":   "linux",
-									"kubernetes.io/arch": "amd64",
+									"kubernetes.io/arch": "arm64",
 								},
 							},
 						},
@@ -199,7 +239,7 @@ func TestCanRunHA(t *testing.T) {
 								Name: "node3",
 								Labels: map[string]string{
 									"kubernetes.io/os":   "linux",
-									"kubernetes.io/arch": "arm64",
+									"kubernetes.io/arch": "ppc64le",
 								},
 							},
 						},
@@ -208,7 +248,7 @@ func TestCanRunHA(t *testing.T) {
 								Name: "node4",
 								Labels: map[string]string{
 									"kubernetes.io/os":   "linux",
-									"kubernetes.io/arch": "arm64",
+									"kubernetes.io/arch": "ppc64le",
 								},
 							},
 						},

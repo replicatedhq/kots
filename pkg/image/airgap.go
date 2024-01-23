@@ -4,20 +4,16 @@ import (
 	"archive/tar"
 	"bufio"
 	"compress/gzip"
-	"context"
 	"encoding/json"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 	"path"
 	"path/filepath"
 	"strings"
 	"time"
 
-	"github.com/containers/image/v5/copy"
 	"github.com/containers/image/v5/transports/alltransports"
-	containerstypes "github.com/containers/image/v5/types"
 	"github.com/mholt/archiver/v3"
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/archives"
@@ -29,36 +25,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/imageutil"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/logger"
-	"k8s.io/client-go/kubernetes/scheme"
 )
-
-// PushImages detects if airgap bundle is a KOTS or app bundle, then pushes images from airgap bundle to private registry accordingly
-func PushImages(airgapArchive string, options imagetypes.PushImagesOptions) error {
-	airgapRootDir, err := ioutil.TempDir("", "kotsadm-airgap")
-	if err != nil {
-		return errors.Wrap(err, "failed to create temp dir")
-	}
-	defer os.RemoveAll(airgapRootDir)
-
-	err = ExtractAppAirgapArchive(airgapArchive, airgapRootDir, false, options.ProgressWriter)
-	if err != nil {
-		return errors.Wrap(err, "failed to extract images")
-	}
-
-	if isAppArchive(airgapRootDir) {
-		err := TagAndPushAppImagesFromPath(airgapRootDir, options)
-		if err != nil {
-			return errors.Wrap(err, "failed to push app images")
-		}
-	} else {
-		err := pushKotsadmImagesFromPath(airgapRootDir, options)
-		if err != nil {
-			return errors.Wrap(err, "failed to push kotsadm images")
-		}
-	}
-
-	return nil
-}
 
 func ExtractAppAirgapArchive(archive string, destDir string, excludeImages bool, progressWriter io.Writer) error {
 	reader, err := os.Open(archive)
@@ -124,122 +91,11 @@ func ExtractAppAirgapArchive(archive string, destDir string, excludeImages bool,
 	return nil
 }
 
-func pushKotsadmImagesFromPath(rootDir string, options imagetypes.PushImagesOptions) error {
-	fileInfos, err := ioutil.ReadDir(rootDir)
-	if err != nil {
-		return errors.Wrap(err, "failed to read dir")
-	}
-
-	for _, info := range fileInfos {
-		if !info.IsDir() {
-			continue
-		}
-
-		err = processImageNames(rootDir, info.Name(), options)
-		if err != nil {
-			return errors.Wrapf(err, "failed list images names for format %s", info.Name())
-		}
-	}
-
-	return nil
-}
-
-func processImageNames(rootDir string, format string, options imagetypes.PushImagesOptions) error {
-	fileInfos, err := ioutil.ReadDir(filepath.Join(rootDir, format))
-	if err != nil {
-		return errors.Wrap(err, "failed to read dir")
-	}
-
-	for _, info := range fileInfos {
-		if !info.IsDir() {
-			continue
-		}
-
-		err = processImageTags(rootDir, format, info.Name(), options)
-		if err != nil {
-			return errors.Wrapf(err, "failed list tags for image %s", info.Name())
-		}
-	}
-
-	return nil
-}
-
-func processImageTags(rootDir string, format string, imageName string, options imagetypes.PushImagesOptions) error {
-	fileInfos, err := ioutil.ReadDir(filepath.Join(rootDir, format, imageName))
-	if err != nil {
-		return errors.Wrap(err, "failed to read dir")
-	}
-
-	for _, info := range fileInfos {
-		if info.IsDir() {
-			continue
-		}
-
-		err = pushOneImage(rootDir, format, imageName, info.Name(), options)
-		if err != nil {
-			return errors.Wrapf(err, "failed push image %s:%s", imageName, info.Name())
-		}
-	}
-
-	return nil
-}
-
-func pushOneImage(rootDir string, format string, imageName string, tag string, options imagetypes.PushImagesOptions) error {
-	destCtx := &containerstypes.SystemContext{
-		DockerInsecureSkipTLSVerify: containerstypes.OptionalBoolTrue,
-		DockerDisableV1Ping:         true,
-	}
-	if options.Registry.Username != "" && options.Registry.Password != "" {
-		destCtx.DockerAuthConfig = &containerstypes.DockerAuthConfig{
-			Username: options.Registry.Username,
-			Password: options.Registry.Password,
-		}
-	}
-	if os.Getenv("KOTSADM_INSECURE_SRCREGISTRY") == "true" {
-		// allow pulling images from http/invalid https docker repos
-		// intended for development only, _THIS MAKES THINGS INSECURE_
-		destCtx.DockerInsecureSkipTLSVerify = containerstypes.OptionalBoolTrue
-	}
-
-	dstTag := tag
-	if options.KotsadmTag != "" {
-		dstTag = options.KotsadmTag
-	}
-
-	destStr := fmt.Sprintf("%s/%s:%s", options.Registry.Endpoint, imageName, dstTag)
-	destRef, err := alltransports.ParseImageName(fmt.Sprintf("docker://%s", destStr))
-	if err != nil {
-		return errors.Wrapf(err, "failed to parse dest image name %s", destStr)
-	}
-
-	imageFile := filepath.Join(rootDir, format, imageName, tag)
-	localRef, err := alltransports.ParseImageName(fmt.Sprintf("%s:%s", format, imageFile))
-	if err != nil {
-		return errors.Wrapf(err, "failed to parse local image name: %s:%s", format, imageFile)
-	}
-
-	WriteProgressLine(options.ProgressWriter, fmt.Sprintf("Pushing %s", destStr))
-
-	_, err = CopyImageWithGC(context.Background(), destRef, localRef, &copy.Options{
-		RemoveSignatures:      true,
-		SignBy:                "",
-		ReportWriter:          options.ProgressWriter,
-		SourceCtx:             nil,
-		DestinationCtx:        destCtx,
-		ForceManifestMIMEType: "",
-	})
-	if err != nil {
-		return errors.Wrapf(err, "failed to push image")
-	}
-
-	return nil
-}
-
 func WriteProgressLine(progressWriter io.Writer, line string) {
 	fmt.Fprint(progressWriter, fmt.Sprintf("%s\n", line))
 }
 
-// CopyAirgapImages pushes images found in the app airgap bundle/airgap root to the configured registry.
+// CopyAirgapImages pushes images found in the airgap bundle/airgap root to the configured registry.
 func CopyAirgapImages(opts imagetypes.ProcessImageOptions, log *logger.CLILogger) error {
 	pushOpts := imagetypes.PushImagesOptions{
 		Registry: dockerregistrytypes.RegistryOptions{
@@ -254,12 +110,12 @@ func CopyAirgapImages(opts imagetypes.ProcessImageOptions, log *logger.CLILogger
 	}
 
 	if opts.AirgapBundle != "" {
-		err := TagAndPushAppImagesFromBundle(opts.AirgapBundle, pushOpts)
+		err := TagAndPushImagesFromBundle(opts.AirgapBundle, pushOpts)
 		if err != nil {
 			return errors.Wrap(err, "failed to push images from bundle")
 		}
 	} else {
-		err := TagAndPushAppImagesFromPath(opts.AirgapRoot, pushOpts)
+		err := TagAndPushImagesFromPath(opts.AirgapRoot, pushOpts)
 		if err != nil {
 			return errors.Wrap(err, "failed to push images from dir")
 		}
@@ -268,7 +124,7 @@ func CopyAirgapImages(opts imagetypes.ProcessImageOptions, log *logger.CLILogger
 	return nil
 }
 
-func TagAndPushAppImagesFromPath(airgapRootDir string, options imagetypes.PushImagesOptions) error {
+func TagAndPushImagesFromPath(airgapRootDir string, options imagetypes.PushImagesOptions) error {
 	airgap, err := kotsutil.FindAirgapMetaInDir(airgapRootDir)
 	if err != nil {
 		return errors.Wrap(err, "failed to find airgap meta")
@@ -276,15 +132,15 @@ func TagAndPushAppImagesFromPath(airgapRootDir string, options imagetypes.PushIm
 
 	switch airgap.Spec.Format {
 	case dockertypes.FormatDockerRegistry:
-		return PushAppImagesFromTempRegistry(airgapRootDir, airgap.Spec.SavedImages, options)
+		return PushImagesFromTempRegistry(airgapRootDir, airgap.Spec.SavedImages, options)
 	case dockertypes.FormatDockerArchive, "":
-		return PushAppImagesFromDockerArchivePath(airgapRootDir, options)
+		return PushImagesFromDockerArchivePath(airgapRootDir, options)
 	default:
 		return errors.Errorf("Airgap bundle format '%s' is not supported", airgap.Spec.Format)
 	}
 }
 
-func TagAndPushAppImagesFromBundle(airgapBundle string, options imagetypes.PushImagesOptions) error {
+func TagAndPushImagesFromBundle(airgapBundle string, options imagetypes.PushImagesOptions) error {
 	airgap, err := kotsutil.FindAirgapMetaInBundle(airgapBundle)
 	if err != nil {
 		return errors.Wrap(err, "failed to find airgap meta")
@@ -292,7 +148,7 @@ func TagAndPushAppImagesFromBundle(airgapBundle string, options imagetypes.PushI
 
 	switch airgap.Spec.Format {
 	case dockertypes.FormatDockerRegistry:
-		extractedBundle, err := ioutil.TempDir("", "extracted-airgap-kots")
+		extractedBundle, err := os.MkdirTemp("", "extracted-airgap-kots")
 		if err != nil {
 			return errors.Wrap(err, "failed to create temp dir for unarchived airgap bundle")
 		}
@@ -306,17 +162,18 @@ func TagAndPushAppImagesFromBundle(airgapBundle string, options imagetypes.PushI
 		if err := tarGz.Unarchive(airgapBundle, extractedBundle); err != nil {
 			return errors.Wrap(err, "falied to unarchive airgap bundle")
 		}
-		return PushAppImagesFromTempRegistry(extractedBundle, airgap.Spec.SavedImages, options)
+		return PushImagesFromTempRegistry(extractedBundle, airgap.Spec.SavedImages, options)
 	case dockertypes.FormatDockerArchive, "":
-		return PushAppImagesFromDockerArchiveBundle(airgapBundle, options)
+		return PushImagesFromDockerArchiveBundle(airgapBundle, options)
 	default:
 		return errors.Errorf("Airgap bundle format '%s' is not supported", airgap.Spec.Format)
 	}
 }
 
-func PushAppImagesFromTempRegistry(airgapRootDir string, imageList []string, options imagetypes.PushImagesOptions) error {
+func PushImagesFromTempRegistry(airgapRootDir string, imageList []string, options imagetypes.PushImagesOptions) error {
 	imagesDir := filepath.Join(airgapRootDir, "images")
 	if _, err := os.Stat(imagesDir); os.IsNotExist(err) {
+		// this can either be because images were already pushed from the CLI, or it's a diff airgap bundle with no images
 		return nil
 	}
 
@@ -360,6 +217,15 @@ func PushAppImagesFromTempRegistry(airgapRootDir string, imageList []string, opt
 			return errors.Wrapf(err, "failed to parse source image %s", imageID)
 		}
 
+		// if kotsadm tag is set, change the tag of the kotsadm/kotsadm and kotsadm/kotsadm-migrations images
+		if options.KotsadmTag != "" && strings.HasPrefix(imageID, "kotsadm/kotsadm") {
+			i, err := imageutil.ChangeImageTag(imageID, options.KotsadmTag)
+			if err != nil {
+				return errors.Wrap(err, "failed to change kotsadm dest image tag")
+			}
+			imageID = i
+		}
+
 		destImage, err := imageutil.DestImage(options.Registry, imageID)
 		if err != nil {
 			return errors.Wrapf(err, "failed to get destination image for %s", imageID)
@@ -370,12 +236,11 @@ func PushAppImagesFromTempRegistry(airgapRootDir string, imageList []string, opt
 			return errors.Wrapf(err, "failed to parse dest image %s", destStr)
 		}
 
-		rewrittenImage, err := imageutil.RewriteDockerRegistryImage(options.Registry, imageID)
-		if err != nil {
-			return errors.Wrapf(err, "failed to rewrite image %s", imageID)
-		}
+		// copy all architecures available in the bundle.
+		// this also handles kotsadm airgap bundles that have multi-arch images but are referenced by tag.
+		copyAll := true
 
-		pushAppImageOpts := imagetypes.PushAppImageOptions{
+		pushImageOpts := imagetypes.PushImageOptions{
 			ImageID:      imageID,
 			ImageInfo:    imageInfo,
 			Log:          options.Log,
@@ -388,7 +253,7 @@ func PushAppImagesFromTempRegistry(airgapRootDir string, imageList []string, opt
 					Username: options.Registry.Username,
 					Password: options.Registry.Password,
 				},
-				CopyAll:           rewrittenImage.Digest != "", // we only support multi-arch images using digests
+				CopyAll:           copyAll,
 				SrcDisableV1Ping:  true,
 				SrcSkipTLSVerify:  true,
 				DestDisableV1Ping: true,
@@ -396,17 +261,18 @@ func PushAppImagesFromTempRegistry(airgapRootDir string, imageList []string, opt
 				ReportWriter:      reportWriter,
 			},
 		}
-		if err := pushAppImage(pushAppImageOpts); err != nil {
-			return errors.Wrapf(err, "failed to push app image %s", imageID)
+		if err := pushImage(pushImageOpts); err != nil {
+			return errors.Wrapf(err, "failed to push image %s", imageID)
 		}
 	}
 
 	return nil
 }
 
-func PushAppImagesFromDockerArchivePath(airgapRootDir string, options imagetypes.PushImagesOptions) error {
+func PushImagesFromDockerArchivePath(airgapRootDir string, options imagetypes.PushImagesOptions) error {
 	imagesDir := filepath.Join(airgapRootDir, "images")
 	if _, err := os.Stat(imagesDir); os.IsNotExist(err) {
+		// images were already pushed from the CLI
 		return nil
 	}
 
@@ -472,7 +338,7 @@ func PushAppImagesFromDockerArchivePath(airgapRootDir string, options imagetypes
 			return errors.Wrapf(err, "failed to parse dest image name %s", destStr)
 		}
 
-		pushAppImageOpts := imagetypes.PushAppImageOptions{
+		pushImageOpts := imagetypes.PushImageOptions{
 			ImageID:      imagePath,
 			ImageInfo:    imageInfo,
 			Log:          options.Log,
@@ -491,18 +357,19 @@ func PushAppImagesFromDockerArchivePath(airgapRootDir string, options imagetypes
 				ReportWriter:      reportWriter,
 			},
 		}
-		if err := pushAppImage(pushAppImageOpts); err != nil {
-			return errors.Wrapf(err, "failed to push app image %s", imagePath)
+		if err := pushImage(pushImageOpts); err != nil {
+			return errors.Wrapf(err, "failed to push image %s", imagePath)
 		}
 	}
 
 	return nil
 }
 
-func PushAppImagesFromDockerArchiveBundle(airgapBundle string, options imagetypes.PushImagesOptions) error {
+func PushImagesFromDockerArchiveBundle(airgapBundle string, options imagetypes.PushImagesOptions) error {
 	if exists, err := archives.DirExistsInAirgap("images", airgapBundle); err != nil {
 		return errors.Wrap(err, "failed to check if images dir exists in airgap bundle")
 	} else if !exists {
+		// images were already pushed from the CLI
 		return nil
 	}
 
@@ -559,7 +426,7 @@ func PushAppImagesFromDockerArchiveBundle(airgapBundle string, options imagetype
 			WriteProgressLine(reportWriter, fmt.Sprintf("Extracting image %s", imagePath))
 		}
 
-		tmpFile, err := ioutil.TempFile("", "kotsadm-app-image-")
+		tmpFile, err := os.CreateTemp("", "kotsadm-image-")
 		if err != nil {
 			return errors.Wrap(err, "failed to create temp file")
 		}
@@ -597,7 +464,7 @@ func PushAppImagesFromDockerArchiveBundle(airgapBundle string, options imagetype
 			return errors.Wrapf(err, "failed to parse dest image name %s", destStr)
 		}
 
-		pushAppImageOpts := imagetypes.PushAppImageOptions{
+		pushImageOpts := imagetypes.PushImageOptions{
 			ImageID:      imagePath,
 			ImageInfo:    imageInfo,
 			Log:          options.Log,
@@ -616,15 +483,15 @@ func PushAppImagesFromDockerArchiveBundle(airgapBundle string, options imagetype
 				ReportWriter:      reportWriter,
 			},
 		}
-		if err := pushAppImage(pushAppImageOpts); err != nil {
-			return errors.Wrapf(err, "failed to push app image %s", imagePath)
+		if err := pushImage(pushImageOpts); err != nil {
+			return errors.Wrapf(err, "failed to push image %s", imagePath)
 		}
 	}
 
 	return nil
 }
 
-func pushAppImage(opts imagetypes.PushAppImageOptions) error {
+func pushImage(opts imagetypes.PushImageOptions) error {
 	opts.ImageInfo.UploadStart = time.Now()
 	if opts.LogForUI {
 		fmt.Printf("Pushing image %s\n", opts.ImageID) // still log in console for future reference
@@ -937,34 +804,4 @@ func countLayersUploaded(image *imagetypes.ImageInfo) int64 {
 		}
 	}
 	return count
-}
-
-func isAppArchive(rootDir string) bool {
-	fileInfos, err := ioutil.ReadDir(rootDir)
-	if err != nil {
-		return false
-	}
-
-	for _, info := range fileInfos {
-		if info.IsDir() || filepath.Ext(info.Name()) != ".yaml" {
-			continue
-		}
-
-		contents, err := os.ReadFile(filepath.Join(rootDir, info.Name()))
-		if err != nil {
-			continue
-		}
-
-		decode := scheme.Codecs.UniversalDeserializer().Decode
-		_, gvk, err := decode(contents, nil, nil)
-		if err != nil {
-			continue
-		}
-
-		if gvk.Group == "kots.io" && gvk.Version == "v1beta1" && gvk.Kind == "Airgap" {
-			return true
-		}
-	}
-
-	return false
 }

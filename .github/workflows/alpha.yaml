@@ -19,46 +19,104 @@ jobs:
         uses: ./.github/actions/version-tag
 
 
-  build-kotsadm-migrations:
-    runs-on: ubuntu-20.04
+  build-migrations-melange-packages:
     needs: [generate-tag]
+    strategy:
+      fail-fast: true
+      matrix:
+        runner: [
+          {name: ubuntu-20.04, arch: amd64},
+          {name: arm64-runner-set, arch: arm64}
+        ]
+    runs-on: ${{ matrix.runner.name }}
     steps:
       - uses: actions/checkout@v4
-      - uses: ./.github/actions/build-push-kotsadm-migrations-image
+      - uses: ./.github/actions/build-custom-melange-package
         with:
-          image-name: index.docker.io/kotsadm/kotsadm-migrations:alpha
+          context: migrations/deploy
+          component: kotsadm-migrations
           git-tag: ${{ needs.generate-tag.outputs.tag }}
+          arch: ${{ matrix.runner.arch }}
+
+  build-migrations:
+    runs-on: ubuntu-20.04
+    needs: [generate-tag, build-migrations-melange-packages]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/build-custom-image-with-apko
+        with:
+          context: migrations/deploy
+          component: kotsadm-migrations
+          git-tag: ${{ needs.generate-tag.outputs.tag }}
+          image-name: index.docker.io/kotsadm/kotsadm-migrations:alpha
           registry-username: ${{ secrets.DOCKERHUB_USER }}
           registry-password: ${{ secrets.DOCKERHUB_PASSWORD }}
 
+
+  build-kotsadm-melange-packages:
+    needs: [generate-tag]
+    strategy:
+      fail-fast: true
+      matrix:
+        runner: [
+          {name: ubuntu-20.04, arch: amd64},
+          {name: arm64-runner-set, arch: arm64}
+        ]
+    runs-on: ${{ matrix.runner.name }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/build-custom-melange-package
+        with:
+          context: deploy
+          component: kotsadm
+          git-tag: ${{ needs.generate-tag.outputs.tag }}
+          arch: ${{ matrix.runner.arch }}
 
   build-kotsadm:
     runs-on: ubuntu-20.04
-    needs: [generate-tag]
-    permissions:
-      id-token: write # required to be able to assume the GCP SA identity to pull private Chainguard packages.
+    needs: [generate-tag, build-kotsadm-melange-packages]
     steps:
       - uses: actions/checkout@v4
-      - uses: ./.github/actions/build-push-kotsadm-image
+      - uses: ./.github/actions/build-custom-image-with-apko
         with:
-          chainguard-gcp-wif-pool: ${{ secrets.CHAINGUARD_GCP_WIF_POOL }}
-          chainguard-gcp-sa: ${{ secrets.CHAINGUARD_GCP_SA }}
-          chainguard-gcp-project-id: ${{ secrets.CHAINGUARD_GCP_PROJECT_ID }}
-          image-name: index.docker.io/kotsadm/kotsadm:alpha
+          context: deploy
+          component: kotsadm
           git-tag: ${{ needs.generate-tag.outputs.tag }}
+          image-name: index.docker.io/kotsadm/kotsadm:alpha
           registry-username: ${{ secrets.DOCKERHUB_USER }}
           registry-password: ${{ secrets.DOCKERHUB_PASSWORD }}
 
 
-  build-kurl-proxy:
-    runs-on: ubuntu-20.04
+  build-kurl-proxy-melange-packages:
     needs: [generate-tag]
+    strategy:
+      fail-fast: true
+      matrix:
+        runner: [
+          {name: ubuntu-20.04, arch: amd64},
+          {name: arm64-runner-set, arch: arm64}
+        ]
+    runs-on: ${{ matrix.runner.name }}
     steps:
       - uses: actions/checkout@v4
-      - uses: ./.github/actions/build-push-kurl-proxy-image
+      - uses: ./.github/actions/build-custom-melange-package
         with:
-          image-name: index.docker.io/kotsadm/kurl-proxy:alpha
+          context: kurl_proxy/deploy
+          component: kurl-proxy
           git-tag: ${{ needs.generate-tag.outputs.tag }}
+          arch: ${{ matrix.runner.arch }}
+
+  build-kurl-proxy:
+    runs-on: ubuntu-20.04
+    needs: [generate-tag, build-kurl-proxy-melange-packages]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/build-custom-image-with-apko
+        with:
+          context: kurl_proxy/deploy
+          component: kurl-proxy
+          git-tag: ${{ needs.generate-tag.outputs.tag }}
+          image-name: index.docker.io/kotsadm/kurl-proxy:alpha
           registry-username: ${{ secrets.DOCKERHUB_USER }}
           registry-password: ${{ secrets.DOCKERHUB_PASSWORD }}
 
@@ -220,7 +278,7 @@ jobs:
 
   scan_kotsadm_migrations:
     runs-on: ubuntu-20.04
-    needs: [build-kotsadm-migrations]
+    needs: [build-migrations]
     steps:
       - name: Checkout
         uses: actions/checkout@v4

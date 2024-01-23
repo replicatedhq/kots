@@ -26,18 +26,38 @@ jobs:
           git tag "$GIT_TAG"
           git push origin "$GIT_TAG"
 
-  build-kotsadm-migrations:
-    runs-on: ubuntu-20.04
+  build-migrations-melange-packages:
     needs: [generate-tag]
+    strategy:
+      fail-fast: true
+      matrix:
+        runner: [
+          {name: ubuntu-20.04, arch: amd64},
+          {name: arm64-runner-set, arch: arm64}
+        ]
+    runs-on: ${{ matrix.runner.name }}
     steps:
-    - name: Checkout
-      uses: actions/checkout@v4
-    - uses: ./.github/actions/build-push-kotsadm-migrations-image
-      with:
-        image-name: index.docker.io/kotsadm/kotsadm-migrations:${{ needs.generate-tag.outputs.tag }}
-        git-tag: ${{ needs.generate-tag.outputs.tag }}
-        registry-username: ${{ secrets.DOCKERHUB_USER }}
-        registry-password: ${{ secrets.DOCKERHUB_PASSWORD }}
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/build-custom-melange-package
+        with:
+          context: migrations/deploy
+          component: kotsadm-migrations
+          git-tag: ${{ needs.generate-tag.outputs.tag }}
+          arch: ${{ matrix.runner.arch }}
+
+  build-migrations:
+    runs-on: ubuntu-20.04
+    needs: [generate-tag, build-migrations-melange-packages]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/build-custom-image-with-apko
+        with:
+          context: migrations/deploy
+          component: kotsadm-migrations
+          git-tag: ${{ needs.generate-tag.outputs.tag }}
+          image-name: index.docker.io/kotsadm/kotsadm-migrations:${{ needs.generate-tag.outputs.tag }}
+          registry-username: ${{ secrets.DOCKERHUB_USER }}
+          registry-password: ${{ secrets.DOCKERHUB_PASSWORD }}
 
   build-web:
     runs-on: ubuntu-20.04
@@ -59,22 +79,38 @@ jobs:
         name: web
         path: ./web/dist
 
+  build-kurl-proxy-melange-packages:
+    needs: [generate-tag]
+    strategy:
+      fail-fast: true
+      matrix:
+        runner: [
+          {name: ubuntu-20.04, arch: amd64},
+          {name: arm64-runner-set, arch: arm64}
+        ]
+    runs-on: ${{ matrix.runner.name }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/build-custom-melange-package
+        with:
+          context: kurl_proxy/deploy
+          component: kurl-proxy
+          git-tag: ${{ needs.generate-tag.outputs.tag }}
+          arch: ${{ matrix.runner.arch }}
+
   build-kurl-proxy:
     runs-on: ubuntu-20.04
-    needs: [generate-tag]
+    needs: [generate-tag, build-kurl-proxy-melange-packages]
     steps:
-    - uses: actions/setup-go@v5
-      with:
-        go-version: '^1.20.0'
-        cache: true
-    - name: Checkout
-      uses: actions/checkout@v4
-    - uses: ./.github/actions/build-push-kurl-proxy-image
-      with:
-        image-name: index.docker.io/kotsadm/kurl-proxy:${{ needs.generate-tag.outputs.tag }}
-        git-tag: ${{ needs.generate-tag.outputs.tag }}
-        registry-username: ${{ secrets.DOCKERHUB_USER }}
-        registry-password: ${{ secrets.DOCKERHUB_PASSWORD }}
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/build-custom-image-with-apko
+        with:
+          context: kurl_proxy/deploy
+          component: kurl-proxy
+          git-tag: ${{ needs.generate-tag.outputs.tag }}
+          image-name: index.docker.io/kotsadm/kurl-proxy:${{ needs.generate-tag.outputs.tag }}
+          registry-username: ${{ secrets.DOCKERHUB_USER }}
+          registry-password: ${{ secrets.DOCKERHUB_PASSWORD }}
 
   build-kots:
     runs-on: ubuntu-20.04
@@ -110,49 +146,78 @@ jobs:
         name: kots
         path: ./bin/kots
 
+  build-kotsadm-melange-packages:
+    needs: [generate-tag]
+    strategy:
+      fail-fast: true
+      matrix:
+        runner: [
+          {name: ubuntu-20.04, arch: amd64},
+          {name: arm64-runner-set, arch: arm64}
+        ]
+    runs-on: ${{ matrix.runner.name }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/build-custom-melange-package
+        with:
+          context: deploy
+          component: kotsadm
+          git-tag: ${{ needs.generate-tag.outputs.tag }}
+          arch: ${{ matrix.runner.arch }}
+
   build-kotsadm:
     runs-on: ubuntu-20.04
-    needs: [generate-tag]
-    permissions:
-      id-token: write # required to be able to assume the GCP SA identity to pull private Chainguard packages.
+    needs: [generate-tag, build-kotsadm-melange-packages]
     steps:
-    - name: Checkout
-      uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/build-custom-image-with-apko
+        with:
+          context: deploy
+          component: kotsadm
+          git-tag: ${{ needs.generate-tag.outputs.tag }}
+          image-name: index.docker.io/kotsadm/kotsadm:${{ needs.generate-tag.outputs.tag }}
+          registry-username: ${{ secrets.DOCKERHUB_USER }}
+          registry-password: ${{ secrets.DOCKERHUB_PASSWORD }}
 
-    - uses: ./.github/actions/build-push-kotsadm-image
-      with:
-        chainguard-gcp-wif-pool: ${{ secrets.CHAINGUARD_GCP_WIF_POOL }}
-        chainguard-gcp-sa: ${{ secrets.CHAINGUARD_GCP_SA }}
-        chainguard-gcp-project-id: ${{ secrets.CHAINGUARD_GCP_PROJECT_ID }}
-        image-name: index.docker.io/kotsadm/kotsadm:${{ needs.generate-tag.outputs.tag }}
-        git-tag: ${{ needs.generate-tag.outputs.tag }}
-        registry-username: ${{ secrets.DOCKERHUB_USER }}
-        registry-password: ${{ secrets.DOCKERHUB_PASSWORD }}
-
-  build-release:
+  build-kotsadm-bundle:
     runs-on: ubuntu-20.04
-    needs: [generate-tag, build-kotsadm-migrations, build-kotsadm]
+    needs: [generate-tag, build-migrations, build-kotsadm]
     steps:
     - name: Checkout
       uses: actions/checkout@v4
 
-    - name: Read image tags from env file
-      uses: falti/dotenv-action@v1
-      id: dotenv
-      with:
-        path: .image.env
+    - name: Run bundle registry
+      run: |
+        mkdir -p kotsadm-bundle/images
+        mkdir -p kotsadm-bundle-nominio/images
+        docker run -d -p 5000:5000 --restart=always --name registry -v "$(pwd)/kotsadm-bundle/images":/var/lib/registry registry:2
+        docker run -d -p 5001:5000 --restart=always --name registry-nominio -v "$(pwd)/kotsadm-bundle-nominio/images":/var/lib/registry registry:2
 
-    - name: Build tagged release
+    - name: Build kotsadm bundle
       env:
+        BUNDLE_DIR: kotsadm-bundle
+        BUNDLE_REGISTRY: localhost:5000
         GIT_TAG: ${{ needs.generate-tag.outputs.tag }}
-        DOCKER_CONFIG: ./.docker
-      run: mapfile -t envs < <(grep -v '#.*' < .image.env) && export "${envs[@]}" && make build-release
+      run: mapfile -t envs < <(grep -v '#.*' < .image.env) && export "${envs[@]}" && make kotsadm-bundle
 
-    - name: Upload kotsadm release
+    - name: Build kotsadm bundle without minio
+      env:
+        BUNDLE_DIR: kotsadm-bundle-nominio
+        BUNDLE_REGISTRY: localhost:5001
+        GIT_TAG: ${{ needs.generate-tag.outputs.tag }}
+      run: mapfile -t envs < <(grep -v '#.*' < .image.env) && export "${envs[@]}" && make kotsadm-bundle-nominio
+
+    - name: Upload kotsadm bundle
       uses: actions/upload-artifact@v4
       with:
-        name: kotsadm-release
-        path: ./bin/docker-archive
+        name: kotsadm-bundle
+        path: kotsadm-bundle
+
+    - name: Upload kotsadm bundle without minio
+      uses: actions/upload-artifact@v4
+      with:
+        name: kotsadm-bundle-nominio
+        path: kotsadm-bundle-nominio
 
   goreleaser:
     runs-on: ubuntu-20.04
@@ -214,7 +279,7 @@ jobs:
 
   generate-kurl-addon:
     runs-on: ubuntu-20.04
-    needs: [ generate-tag, build-kurl-proxy, build-kots, build-release ]
+    needs: [ generate-tag, build-kurl-proxy, build-kots, build-kotsadm-bundle ]
     outputs:
       addon_package_url: ${{ steps.addon-generate.outputs.addon_package_url }}
     env:
@@ -323,27 +388,35 @@ jobs:
   build-airgap:
     runs-on: ubuntu-20.04
     if: github.ref_type != 'branch'
-    needs: [goreleaser, generate-tag, build-release]
+    needs: [goreleaser, generate-tag, build-kotsadm-bundle]
     steps:
-    - name: Download kotsadm release
+    - name: Download kotsadm bundle
       uses: actions/download-artifact@v4
       with:
-        name: kotsadm-release
-        path: ./docker-archive
-    - name: Make kotsadm airgap archive with minio image
-      run: |
-        tar czf ./kotsadm.tar.gz -C ./ ./docker-archive
-    - name: Upload airgap bundle with minio image
+        name: kotsadm-bundle
+        path: kotsadm-bundle
+
+    - name: Download kotsadm bundle without minio
+      uses: actions/download-artifact@v4
+      with:
+        name: kotsadm-bundle-nominio
+        path: kotsadm-bundle-nominio
+
+    - name: Make kotsadm airgap archive
+      working-directory: kotsadm-bundle
+      run: tar -czvf ../kotsadm.tar.gz *
+
+    - name: Make kotsadm airgap archive without minio
+      working-directory: kotsadm-bundle-nominio
+      run: tar -czvf ../kotsadm-nominio.tar.gz *
+
+    - name: Upload airgap archive
       uses: softprops/action-gh-release@v1
       with:
         tag_name: ${{ needs.generate-tag.outputs.tag }}
         files: ./kotsadm.tar.gz
-    - name: Make kotsadm airgap archive without minio image
-      run: |
-        rm -rf ./docker-archive/minio
-        rm -f ./kotsadm.tar.gz
-        tar czf ./kotsadm-nominio.tar.gz -C ./ ./docker-archive
-    - name: Upload airgap bundle without minio image
+
+    - name: Upload airgap archive without minio
       uses: softprops/action-gh-release@v1
       with:
         tag_name: ${{ needs.generate-tag.outputs.tag }}
@@ -376,7 +449,7 @@ jobs:
 
   regression-test:
     if: github.ref_type == 'branch'
-    needs: [ regression-test-setup, generate-tag, build-kots, generate-kurl-addon, build-release ]
+    needs: [ regression-test-setup, generate-tag, build-kots, generate-kurl-addon, build-kotsadm-bundle ]
     uses: ./.github/workflows/regression.yaml
     with:
       version_tag_old: ${{ needs.regression-test-setup.outputs.last_release_tag }}

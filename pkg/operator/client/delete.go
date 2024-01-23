@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
-	"github.com/replicatedhq/kots/pkg/binaries"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/operator/applier"
@@ -27,8 +26,6 @@ type DiffAndDeleteOptions struct {
 	AdditionalNamespaces []string
 	IsRestore            bool
 	RestoreLabelSelector *metav1.LabelSelector
-	KubectlVersion       string
-	KustomizeVersion     string
 	Wait                 bool
 }
 
@@ -96,22 +93,12 @@ func (c *Client) diffAndDeleteManifests(opts DiffAndDeleteOptions) error {
 		decodedCurrentMap[k] = string(decodedCurrentDoc)
 	}
 
-	kubectl, err := binaries.GetKubectlPathForVersion(opts.KubectlVersion)
-	if err != nil {
-		return errors.Wrap(err, "failed to find kubectl")
-	}
-	kustomize, err := binaries.GetKustomizePathForVersion(opts.KustomizeVersion)
-	if err != nil {
-		return errors.Wrap(err, "failed to find kustomize")
-	}
-	config, err := k8sutil.GetClusterConfig()
-	if err != nil {
-		return errors.Wrap(err, "failed to get cluster config")
-	}
-
 	// this is pretty raw, and required kubectl...  we should
 	// consider some other options here?
-	kubernetesApplier := applier.NewKubectl(kubectl, kustomize, config)
+	kubernetesApplier, err := c.getApplier()
+	if err != nil {
+		return errors.Wrap(err, "failed to get applier")
+	}
 
 	// now remove anything that's in previous but not in current
 	manifestsToDelete := [][]byte{}

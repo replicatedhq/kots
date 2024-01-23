@@ -11,6 +11,7 @@ import (
 	reportingtypes "github.com/replicatedhq/kots/pkg/api/reporting/types"
 	"github.com/replicatedhq/kots/pkg/apparchive"
 	"github.com/replicatedhq/kots/pkg/base"
+	"github.com/replicatedhq/kots/pkg/binaries"
 	"github.com/replicatedhq/kots/pkg/crypto"
 	"github.com/replicatedhq/kots/pkg/downstream"
 	imagetypes "github.com/replicatedhq/kots/pkg/image/types"
@@ -328,7 +329,7 @@ func Rewrite(rewriteOptions RewriteOptions) error {
 		OverlaysDir:         u.GetOverlaysDir(writeUpstreamOptions),
 		RenderedDir:         u.GetRenderedDir(writeUpstreamOptions),
 		Downstreams:         rewriteOptions.Downstreams,
-		KustomizeBinPath:    renderedKotsKinds.GetKustomizeBinaryPath(),
+		KustomizeBinPath:    binaries.GetKustomizeBinPath(),
 		HelmDir:             u.GetHelmDir(writeUpstreamOptions),
 		Log:                 log,
 		KotsKinds:           renderedKotsKinds,

@@ -37,8 +37,6 @@ spec:
       yAxisTemplate: repl{{ ConfigOption "kots_app_graphs_1_y_axis_template" }}
   minKotsVersion: repl{{ ConfigOption "kots_app_min_kots_version" }}
   targetKotsVersion: repl{{ ConfigOption "kots_app_target_kots_version" }}
-  kubectlVersion: repl{{ ConfigOption "kots_app_kubectl_version" }}
-  kustomizeVersion: repl{{ ConfigOption "kots_app_kustomize_version" }}
   additionalImages:
     - repl{{ ConfigOption "kots_app_additional_images_1" }}
   additionalNamespaces:

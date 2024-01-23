@@ -573,15 +573,6 @@ var _ = Describe("Kots", func() {
 		})
 	})
 
-	Describe("GetKustomizeBinaryPath()", func() {
-		It("returns unusable path 'kustomize' if the Kustomize Version cannot be found", func() {
-			kotsKind := &kotsutil.KotsKinds{}
-
-			binaryPath := kotsKind.GetKustomizeBinaryPath()
-			Expect(binaryPath).To(Equal("kustomize"))
-		})
-	})
-
 	Describe("LoadBrandingArchiveFromPath()", func() {
 		It("returns an error when the path does not exist", func() {
 			_, err := kotsutil.LoadBrandingArchiveFromPath("/does/not/exist")

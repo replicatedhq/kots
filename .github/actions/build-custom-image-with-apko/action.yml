@@ -1,0 +1,57 @@
+name: 'Build and push a custom image with apko'
+description: 'Composite action for building and pushing a custom image with apko'
+inputs:
+  context:
+    description: 'Path to the context directory'
+    required: true
+
+  component:
+    description: 'Name of the component (e.g. kotsadm, kurl-proxy, etc...)'
+    required: true
+
+  git-tag:
+    description: 'Git tag'
+    required: true
+
+  image-name:
+    description: 'Full destination image name'
+    required: true
+
+  registry-username:
+    description: 'Username to login to registry'
+    default: ''
+    required: false
+
+  registry-password:
+    description: 'Password to login to registry'
+    default: ''
+    required: false
+
+runs:
+  using: "composite"
+  steps:
+    - uses: actions/download-artifact@v4
+      with:
+        pattern: ${{ inputs.component }}-melange-packages-*
+        path: ./packages/
+        merge-multiple: true
+
+    - uses: actions/download-artifact@v4
+      with:
+        pattern: ${{ inputs.component }}-melange-rsa-pub-*
+        merge-multiple: true
+
+    - name: template apko config
+      shell: bash
+      run: |
+        export GIT_TAG=${{ inputs.git-tag }}
+        envsubst '${GIT_TAG}' < ${{ inputs.context }}/apko.yaml.tmpl > ${{ inputs.context }}/apko.yaml
+
+    - uses: chainguard-images/actions/apko-publish@main
+      with:
+        config: ${{ inputs.context }}/apko.yaml
+        archs: amd64,arm64
+        tag: ${{ inputs.image-name }}
+        vcs-url: true
+        generic-user: ${{ inputs.registry-username }}
+        generic-pass: ${{ inputs.registry-password }}

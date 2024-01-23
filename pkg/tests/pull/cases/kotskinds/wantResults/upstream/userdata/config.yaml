@@ -53,10 +53,6 @@ spec:
       default: bytes
     kots_app_graphs_1_y_axis_template:
       default: y-axis-template
-    kots_app_kubectl_version:
-      default: 1.25.0
-    kots_app_kustomize_version:
-      default: 4.7.0
     kots_app_min_kots_version:
       default: 1.0.0
     kots_app_proxy_registry_domain:

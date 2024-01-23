@@ -1,5 +1,5 @@
-name: 'Build and push images with apko'
-description: 'Composite action for building and pushing images with apko'
+name: 'Build and push a dep image with apko'
+description: 'Composite action for building and pushing a dep image with apko'
 inputs:
   apko-config:
     description: 'Path to apko config'
@@ -44,7 +44,7 @@ runs:
       if: ${{ inputs.overwrite == 'true' || steps.check-image-exists.outputs.image-exists == 'false' }}
       with:
         config: ${{ inputs.apko-config }}
-        archs: x86_64
+        archs: amd64,arm64
         tag: ${{ inputs.image-name }}
         vcs-url: true
         generic-user: ${{ inputs.registry-username }}

@@ -30,7 +30,7 @@ dex kotsadm/dex
 ```
 The preceding image spec will produce the following environment and Go files.
 ```shell
-MINIO_TAG='0.20231101.183725'
+MINIO_TAG='0.20231220.010002'
 RQLITE_TAG='7.21.4'
 DEX_TAG='2.37.0'
 ```
@@ -38,7 +38,7 @@ DEX_TAG='2.37.0'
 package image
 
 const (
-	Minio = "kotsadm/minio:0.20231101.183725"
+	Minio = "kotsadm/minio:0.20231220.010002"
 	Rqlite = "kotsadm/rqlite:7.21.4"
 	Dex = "kotsadm/dex:2.37.0"
 )

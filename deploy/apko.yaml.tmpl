@@ -4,24 +4,11 @@ contents:
     - ./packages/
   keyring:
     - https://packages.wolfi.dev/os/wolfi-signing.rsa.pub
-    - ./melange.rsa.pub
+    - ./melange-arm64.rsa.pub
+    - ./melange-amd64.rsa.pub
   packages:
     - kotsadm-head  # This is expected to be built locally by `melange`.
-
-    # All currently supported kubectl versions.
-    # TODO: this requires manual intervention whenever there are new kubectl releases.
-    - kubectl-1.19
-    - kubectl-1.20
-    - kubectl-1.21
-    - kubectl-1.22
-    - kubectl-1.23
-    - kubectl-1.24
-    - kubectl-1.25
-    - kubectl-1.26
-    - kubectl-1.27
-    - kubectl-1.28
-    - kubectl-1.29
-
+    - kubectl
     - bash
     - busybox
     - curl
@@ -45,9 +32,6 @@ accounts:
 
 environment:
   VERSION: ${GIT_TAG}
-  KOTS_KUBECTL_BIN_DIR: /usr/local/bin
-  KOTS_HELM_BIN_DIR: /usr/local/bin
-  KOTS_KUSTOMIZE_BIN_DIR: /usr/local/bin
 
 entrypoint:
   command: /kotsadm

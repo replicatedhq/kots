@@ -119,7 +119,7 @@ func (c *Client) ensureImagePullSecretsPresent(namespace string, imagePullSecret
 func (c *Client) ensureResourcesPresent(deployArgs operatortypes.DeployAppArgs) (*deployResult, error) {
 	var deployRes deployResult
 
-	kubernetesApplier, err := c.getApplier(deployArgs.KubectlVersion, deployArgs.KustomizeVersion)
+	kubernetesApplier, err := c.getApplier()
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get applier")
 	}
@@ -256,7 +256,6 @@ func (c *Client) installWithHelm(v1Beta1ChartsDir, v1beta2ChartsDir string, kots
 		return nil, errors.Wrap(err, "failed to get sorted charts")
 	}
 
-	version := "3"
 	var hasErr bool
 	var multiStdout, multiStderr [][]byte
 
@@ -295,7 +294,7 @@ func (c *Client) installWithHelm(v1Beta1ChartsDir, v1beta2ChartsDir string, kots
 		}
 
 		logger.Infof("running helm with arguments %v", args)
-		cmd := exec.Command(fmt.Sprintf("helm%s", version), args...)
+		cmd := exec.Command("helm", args...)
 		stdout, stderr, err := applier.Run(cmd)
 		if err != nil {
 			logger.Infof("stdout (helm install) = %s", stdout)
@@ -511,8 +510,6 @@ func (c *Client) uninstallWithHelm(v1Beta1ChartsDir, v1Beta2ChartsDir string, ko
 		return errors.Wrap(err, "failed to get sorted charts")
 	}
 
-	version := "3"
-
 	for _, dir := range orderedDirs {
 		args := []string{"uninstall", dir.ReleaseName}
 
@@ -521,7 +518,7 @@ func (c *Client) uninstallWithHelm(v1Beta1ChartsDir, v1Beta2ChartsDir string, ko
 		}
 
 		logger.Infof("running helm with arguments %v", args)
-		cmd := exec.Command(fmt.Sprintf("helm%s", version), args...)
+		cmd := exec.Command("helm", args...)
 		stdout, stderr, err := applier.Run(cmd)
 		logger.Infof("stdout (helm uninstall) = %s", stdout)
 		logger.Infof("stderr (helm uninstall) = %s", stderr)
