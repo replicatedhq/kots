@@ -169,6 +169,10 @@ func IsHelmManaged() bool {
 	return os.Getenv("IS_HELM_MANAGED") == "true"
 }
 
+func IsEmbeddedCluster() bool {
+	return os.Getenv("EMBEDDED_CLUSTER_ID") != ""
+}
+
 func GetValueFromMapPath(m interface{}, path []string) interface{} {
 	if len(path) == 0 {
 		return nil
