@@ -33,7 +33,9 @@ type Props = {
   refetchAppMetadata: () => void;
   snapshotInProgressApps: string[];
   isEmbeddedCluster: boolean;
-  setShouldShowClusterUpgradeModal: (shouldShowClusterUpgradeModal: boolean) => void;
+  setShouldShowClusterUpgradeModal: (
+    shouldShowClusterUpgradeModal: boolean
+  ) => void;
 };
 
 type State = {

@@ -711,7 +711,8 @@ const Root = () => {
                       shouldShowClusterUpgradeModal: boolean
                     ) => {
                       setState({
-                        shouldShowClusterUpgradeModal: shouldShowClusterUpgradeModal,
+                        shouldShowClusterUpgradeModal:
+                          shouldShowClusterUpgradeModal,
                       });
                     }}
                   />
@@ -732,7 +733,9 @@ const Root = () => {
                     isEmbeddedCluster={Boolean(
                       state.adminConsoleMetadata?.isEmbeddedCluster
                     )}
-                    setShouldShowClusterUpgradeModal={(showUpgradeModal: boolean) => {
+                    setShouldShowClusterUpgradeModal={(
+                      showUpgradeModal: boolean
+                    ) => {
                       setState({
                         shouldShowClusterUpgradeModal: showUpgradeModal,
                       });

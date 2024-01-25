@@ -8,14 +8,12 @@ interface Props {
 
 const EmbeddedClusterUpgrading = (props: Props) => {
   const ping = async () => {
-    await fetch(
-      `${process.env.API_ENDPOINT}/ping`,
-      {
-        headers: {
-          "Content-Type": "application/json",
-        },
-        credentials: "include",
-      })
+    await fetch(`${process.env.API_ENDPOINT}/ping`, {
+      headers: {
+        "Content-Type": "application/json",
+      },
+      credentials: "include",
+    })
       .then(async (res) => {
         if (res.status === 401) {
           Utilities.logoutUser();
