@@ -625,7 +625,7 @@ export const Utilities = {
         return "No active cluster upgrade found";
       case "KubernetesInstalled":
         return "Cluster version upgraded";
-      case "AdonsInstalling":
+      case "AddonsInstalling":
         return "Upgrading addons";
       case "HelmChartUpdateFailure":
         return "Failed to upgrade addons";
