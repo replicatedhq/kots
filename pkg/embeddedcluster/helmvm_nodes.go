@@ -2,6 +2,7 @@ package embeddedcluster
 
 import (
 	"context"
+	"github.com/replicatedhq/kots/pkg/util"
 
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/embeddedcluster/types"
@@ -29,7 +30,9 @@ func GetNodes(ctx context.Context, client kubernetes.Interface) (*types.Embedded
 		return nil, errors.Wrap(err, "failed to create metrics client")
 	}
 
-	toReturn := types.EmbeddedClusterNodes{}
+	toReturn := types.EmbeddedClusterNodes{
+		IsEmbeddedClusterEnabled: util.IsEmbeddedCluster(),
+	}
 
 	for _, node := range nodes.Items {
 		nodeMet, err := nodeMetrics(ctx, client, metricsClient, node)
@@ -39,12 +42,6 @@ func GetNodes(ctx context.Context, client kubernetes.Interface) (*types.Embedded
 
 		toReturn.Nodes = append(toReturn.Nodes, *nodeMet)
 	}
-
-	isEmbeddedCluster, err := IsEmbeddedCluster(client)
-	if err != nil {
-		return nil, errors.Wrap(err, "is embeddedcluster")
-	}
-	toReturn.IsEmbeddedClusterEnabled = isEmbeddedCluster
 
 	isHA, err := IsHA(client)
 	if err != nil {

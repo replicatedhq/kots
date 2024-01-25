@@ -281,6 +281,11 @@ func responseAppFromApp(a *apptypes.App) (*types.ResponseApp, error) {
 		return nil, errors.Wrap(err, "failed to check if snapshots is allowed")
 	}
 	allowSnapshots := s && license.Spec.IsSnapshotSupported
+	if allowSnapshots {
+		if util.IsEmbeddedCluster() {
+			allowSnapshots = false // snapshots are not allowed in embedded cluster installations today
+		}
+	}
 
 	links, err := version.GetRealizedLinksFromAppSpec(a.ID, parentSequence)
 	if err != nil {
