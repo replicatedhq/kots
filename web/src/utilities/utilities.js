@@ -643,7 +643,7 @@ export const Utilities = {
     );
   },
 
-  showClusterUpgradeModal(apps) {
+  shouldShowClusterUpgradeModal(apps) {
     if (!apps || apps.length === 0) {
       return false;
     }

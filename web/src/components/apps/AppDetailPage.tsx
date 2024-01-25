@@ -33,7 +33,7 @@ type Props = {
   refetchAppMetadata: () => void;
   snapshotInProgressApps: string[];
   isEmbeddedCluster: boolean;
-  setShowClusterUpgradeModal: (showClusterUpgradeModal: boolean) => void;
+  setShouldShowClusterUpgradeModal: (shouldShowClusterUpgradeModal: boolean) => void;
 };
 
 type State = {
@@ -114,8 +114,8 @@ function AppDetailPage(props: Props) {
       });
     } else {
       const shouldShowUpgradeModal =
-        Utilities.showClusterUpgradeModal(appsList);
-      props.setShowClusterUpgradeModal(shouldShowUpgradeModal);
+        Utilities.shouldShowClusterUpgradeModal(appsList);
+      props.setShouldShowClusterUpgradeModal(shouldShowUpgradeModal);
       if (!appsIsError) {
         if (appsList?.length === 0 || !params.slug) {
           redirectToFirstAppOrInstall();
@@ -367,7 +367,7 @@ function AppDetailPage(props: Props) {
   if (
     appIsFetching &&
     !selectedApp &&
-    !Utilities.showClusterUpgradeModal(appsList)
+    !Utilities.shouldShowClusterUpgradeModal(appsList)
   ) {
     return centeredLoader;
   }
@@ -377,7 +377,7 @@ function AppDetailPage(props: Props) {
   if (
     (downstream?.currentVersion &&
       isAwaitingResults([downstream.currentVersion])) ||
-    Utilities.showClusterUpgradeModal(appsList)
+    Utilities.shouldShowClusterUpgradeModal(appsList)
   ) {
     if (appsRefetchInterval === false) {
       setAppsRefetchInterval(2000);

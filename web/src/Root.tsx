@@ -94,7 +94,7 @@ type State = {
   appSlugFromMetadata: string | null;
   adminConsoleMetadata: Metadata | null;
   connectionTerminated: boolean;
-  showClusterUpgradeModal: boolean;
+  shouldShowClusterUpgradeModal: boolean;
   errLoggingOut: string;
   featureFlags: object;
   fetchingMetadata: boolean;
@@ -121,7 +121,7 @@ const Root = () => {
       appNameSpace: null,
       adminConsoleMetadata: null,
       connectionTerminated: false,
-      showClusterUpgradeModal: false,
+      shouldShowClusterUpgradeModal: false,
       errLoggingOut: "",
       featureFlags: {},
       isHelmManaged: false,
@@ -707,11 +707,11 @@ const Root = () => {
                     isEmbeddedCluster={Boolean(
                       state.adminConsoleMetadata?.isEmbeddedCluster
                     )}
-                    setShowClusterUpgradeModal={(
-                      showClusterUpgradeModal: boolean
+                    setShouldShowClusterUpgradeModal={(
+                      shouldShowClusterUpgradeModal: boolean
                     ) => {
                       setState({
-                        showClusterUpgradeModal: showClusterUpgradeModal,
+                        shouldShowClusterUpgradeModal: shouldShowClusterUpgradeModal,
                       });
                     }}
                   />
@@ -732,9 +732,9 @@ const Root = () => {
                     isEmbeddedCluster={Boolean(
                       state.adminConsoleMetadata?.isEmbeddedCluster
                     )}
-                    setShowClusterUpgradeModal={(showUpgradeModal: boolean) => {
+                    setShouldShowClusterUpgradeModal={(showUpgradeModal: boolean) => {
                       setState({
-                        showClusterUpgradeModal: showUpgradeModal,
+                        shouldShowClusterUpgradeModal: showUpgradeModal,
                       });
                     }}
                   />
@@ -866,7 +866,7 @@ const Root = () => {
         ariaHideApp={false}
         className="ConnectionTerminated--wrapper Modal DefaultSize"
       >
-        {!state.showClusterUpgradeModal && (
+        {!state.shouldShowClusterUpgradeModal && (
           <ConnectionTerminated
             connectionTerminated={state.connectionTerminated}
             appLogo={state.appLogo}
@@ -875,7 +875,7 @@ const Root = () => {
             }
           />
         )}
-        {state.showClusterUpgradeModal && (
+        {state.shouldShowClusterUpgradeModal && (
           <EmbeddedClusterUpgrading
             setTerminatedState={(status: boolean) =>
               setState({ connectionTerminated: status })

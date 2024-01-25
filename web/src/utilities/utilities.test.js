@@ -15,10 +15,10 @@ describe("Utilities", () => {
     });
   });
 
-  describe("showClusterUpgradeModal", () => {
+  describe("shouldShowClusterUpgradeModal", () => {
     it("should return false if apps is null or empty", () => {
-      expect(Utilities.showClusterUpgradeModal(null)).toBe(false);
-      expect(Utilities.showClusterUpgradeModal([])).toBe(false);
+      expect(Utilities.shouldShowClusterUpgradeModal(null)).toBe(false);
+      expect(Utilities.shouldShowClusterUpgradeModal([])).toBe(false);
     });
 
     it("should return false if the user has not tried to deploy the current version", () => {
@@ -31,7 +31,7 @@ describe("Utilities", () => {
           },
         },
       ];
-      expect(Utilities.showClusterUpgradeModal(apps)).toBe(false);
+      expect(Utilities.shouldShowClusterUpgradeModal(apps)).toBe(false);
     });
 
     it("should return false if the user has tried to deploy the current version, but a cluster upgrade is not required", () => {
@@ -47,7 +47,7 @@ describe("Utilities", () => {
           },
         },
       ];
-      expect(Utilities.showClusterUpgradeModal(apps)).toBe(false);
+      expect(Utilities.shouldShowClusterUpgradeModal(apps)).toBe(false);
     });
 
     it("should return false if the user has tried to deploy the current version and a cluster upgrade is already completed", () => {
@@ -64,7 +64,7 @@ describe("Utilities", () => {
           },
         },
       ];
-      expect(Utilities.showClusterUpgradeModal(apps)).toBe(false);
+      expect(Utilities.shouldShowClusterUpgradeModal(apps)).toBe(false);
     });
 
     it("should return true if the user has tried to deploy the current version and a cluster upgrade is required", () => {
@@ -81,7 +81,7 @@ describe("Utilities", () => {
           },
         },
       ];
-      expect(Utilities.showClusterUpgradeModal(apps)).toBe(true);
+      expect(Utilities.shouldShowClusterUpgradeModal(apps)).toBe(true);
     });
 
     it("should return true if the user has tried to deploy the current version and a cluster upgrade is in progress", () => {
@@ -98,7 +98,7 @@ describe("Utilities", () => {
           },
         },
       ];
-      expect(Utilities.showClusterUpgradeModal(apps)).toBe(true);
+      expect(Utilities.shouldShowClusterUpgradeModal(apps)).toBe(true);
     });
   });
 });
