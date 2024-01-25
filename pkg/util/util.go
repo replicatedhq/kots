@@ -170,7 +170,7 @@ func IsHelmManaged() bool {
 }
 
 func IsEmbeddedCluster() bool {
-	return os.Getenv("IS_EMBEDDED_CLUSTER") == "true"
+	return os.Getenv("EMBEDDED_CLUSTER_ID") != ""
 }
 
 func GetValueFromMapPath(m interface{}, path []string) interface{} {
