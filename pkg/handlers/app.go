@@ -287,6 +287,8 @@ func responseAppFromApp(a *apptypes.App) (*types.ResponseApp, error) {
 		}
 	}
 
+	isGitopsSupported := license.Spec.IsGitOpsSupported && !util.IsEmbeddedCluster() // gitops is not allowed in embedded cluster installations today
+
 	links, err := version.GetRealizedLinksFromAppSpec(a.ID, parentSequence)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get realized links from app spec")
@@ -345,7 +347,7 @@ func responseAppFromApp(a *apptypes.App) (*types.ResponseApp, error) {
 		IsConfigurable:                 a.IsConfigurable,
 		UpdateCheckerSpec:              a.UpdateCheckerSpec,
 		AutoDeploy:                     a.AutoDeploy,
-		IsGitOpsSupported:              license.Spec.IsGitOpsSupported,
+		IsGitOpsSupported:              isGitopsSupported,
 		IsIdentityServiceSupported:     license.Spec.IsIdentityServiceSupported,
 		IsAppIdentityServiceSupported:  isAppIdentityServiceSupported,
 		IsGeoaxisSupported:             license.Spec.IsGeoaxisSupported,
