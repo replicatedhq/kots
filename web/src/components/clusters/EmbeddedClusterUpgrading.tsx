@@ -1,5 +1,4 @@
-import { useEffect, useReducer } from "react";
-import fetch from "../../utilities/fetchWithTimeout";
+import { useEffect } from "react";
 import { Utilities } from "../../utilities/utilities";
 import Loader from "@components/shared/Loader";
 
@@ -7,43 +6,8 @@ interface Props {
   setTerminatedState: (terminated: boolean) => void;
 }
 
-interface State {
-  seconds: number;
-  reconnectAttempts: number;
-}
-
 const EmbeddedClusterUpgrading = (props: Props) => {
-  const [state, setState] = useReducer(
-    (currentState: State, newState: Partial<State>) => ({
-      ...currentState,
-      ...newState,
-    }),
-    {
-      seconds: 1,
-      reconnectAttempts: 1,
-    }
-  );
-
-  let countdown: (seconds: number) => void;
-  let ping: () => Promise<void>;
-
-  countdown = (seconds: number) => {
-    setState({ seconds });
-    if (seconds === 0) {
-      setState({
-        reconnectAttempts: state.reconnectAttempts + 1,
-      });
-      ping();
-    } else {
-      const nextCount = seconds - 1;
-      setTimeout(() => {
-        countdown(nextCount);
-      }, 1000);
-    }
-  };
-
-  ping = async () => {
-    const { reconnectAttempts } = state;
+  const ping = async () => {
     await fetch(
       `${process.env.API_ENDPOINT}/ping`,
       {
@@ -51,9 +15,7 @@ const EmbeddedClusterUpgrading = (props: Props) => {
           "Content-Type": "application/json",
         },
         credentials: "include",
-      },
-      10000
-    )
+      })
       .then(async (res) => {
         if (res.status === 401) {
           Utilities.logoutUser();
@@ -63,13 +25,14 @@ const EmbeddedClusterUpgrading = (props: Props) => {
       })
       .catch(() => {
         props.setTerminatedState(true);
-        const seconds = reconnectAttempts > 10 ? 10 : reconnectAttempts;
-        countdown(seconds);
       });
   };
 
   useEffect(() => {
-    ping();
+    const interval = setInterval(() => {
+      ping();
+    }, 10000);
+    return () => clearInterval(interval);
   }, []);
 
   return (
