@@ -707,7 +707,9 @@ const Root = () => {
                     isEmbeddedCluster={Boolean(
                       state.adminConsoleMetadata?.isEmbeddedCluster
                     )}
-                    setShowClusterUpgradeModal={(showClusterUpgradeModal: boolean) => {
+                    setShowClusterUpgradeModal={(
+                      showClusterUpgradeModal: boolean
+                    ) => {
                       setState({
                         showClusterUpgradeModal: showClusterUpgradeModal,
                       });

@@ -113,7 +113,8 @@ function AppDetailPage(props: Props) {
         loadingApp: true,
       });
     } else {
-      const shouldShowUpgradeModal = Utilities.showClusterUpgradeModal(appsList);
+      const shouldShowUpgradeModal =
+        Utilities.showClusterUpgradeModal(appsList);
       props.setShowClusterUpgradeModal(shouldShowUpgradeModal);
       if (!appsIsError) {
         if (appsList?.length === 0 || !params.slug) {
@@ -363,7 +364,11 @@ function AppDetailPage(props: Props) {
     </div>
   );
 
-  if (appIsFetching && !selectedApp && !Utilities.showClusterUpgradeModal(appsList)) {
+  if (
+    appIsFetching &&
+    !selectedApp &&
+    !Utilities.showClusterUpgradeModal(appsList)
+  ) {
     return centeredLoader;
   }
 
