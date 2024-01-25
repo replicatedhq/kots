@@ -4,13 +4,13 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/replicatedhq/kots/pkg/util"
 	"sync"
 	"time"
 
 	"github.com/replicatedhq/embedded-cluster-operator/api/v1beta1"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/store"
+	"github.com/replicatedhq/kots/pkg/util"
 	"k8s.io/client-go/kubernetes"
 )
 
