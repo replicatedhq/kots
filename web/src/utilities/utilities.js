@@ -636,6 +636,37 @@ export const Utilities = {
     }
   },
 
+  isClusterUpgrading(state) {
+    const normalizedState = this.clusterState(state);
+    return (
+      normalizedState === "Upgrading" || normalizedState === "Upgrading addons"
+    );
+  },
+
+  showClusterUpgradeModal(apps) {
+    if (!apps || apps.length === 0) {
+      return false;
+    }
+
+    // embedded cluster can only have one app
+    const app = apps[0];
+
+    const triedToDeploy =
+      app.downstream?.currentVersion?.status === "deploying" ||
+      app.downstream?.currentVersion?.status === "deployed" ||
+      app.downstream?.currentVersion?.status === "failed";
+    if (!triedToDeploy) {
+      return false;
+    }
+
+    // show the upgrade modal if the user has tried to deploy the current version
+    // and the cluster will upgrade or is already upgrading
+    return (
+      app.downstream?.cluster?.requiresUpgrade ||
+      Utilities.isClusterUpgrading(app.downstream?.cluster?.state)
+    );
+  },
+
   // Converts string to titlecase i.e. 'hello' -> 'Hello'
   // @returns {String}
   toTitleCase(word) {

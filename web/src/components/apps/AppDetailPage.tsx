@@ -7,7 +7,7 @@ import {
   HelmChartSidebarItem,
   KotsSidebarItem,
 } from "@src/components/watches/WatchSidebarItem";
-import { isAwaitingResults } from "../../utilities/utilities";
+import { Utilities, isAwaitingResults } from "../../utilities/utilities";
 
 import SubNavBar from "@src/components/shared/SubNavBar";
 import SidebarLayout from "../layout/SidebarLayout/SidebarLayout";
@@ -33,6 +33,7 @@ type Props = {
   refetchAppMetadata: () => void;
   snapshotInProgressApps: string[];
   isEmbeddedCluster: boolean;
+  setShowClusterUpgradeModal: (showClusterUpgradeModal: boolean) => void;
 };
 
 type State = {
@@ -112,6 +113,8 @@ function AppDetailPage(props: Props) {
         loadingApp: true,
       });
     } else {
+      const shouldShowUpgradeModal = Utilities.showClusterUpgradeModal(appsList);
+      props.setShowClusterUpgradeModal(shouldShowUpgradeModal);
       if (!appsIsError) {
         if (appsList?.length === 0 || !params.slug) {
           redirectToFirstAppOrInstall();
@@ -129,13 +132,20 @@ function AppDetailPage(props: Props) {
           });
         }
       } else {
+        let gettingAppErrMsg =
+          appsError instanceof Error
+            ? appsError.message
+            : "Unexpected error when fetching apps";
+        let displayErrorModal = true;
+        if (shouldShowUpgradeModal) {
+          // don't show apps error modal if cluster is upgrading
+          gettingAppErrMsg = "";
+          displayErrorModal = false;
+        }
         setState({
           loadingApp: false,
-          gettingAppErrMsg:
-            appsError instanceof Error
-              ? appsError.message
-              : "Unexpected error when fetching apps",
-          displayErrorModal: true,
+          gettingAppErrMsg: gettingAppErrMsg,
+          displayErrorModal: displayErrorModal,
         });
       }
     }
@@ -353,15 +363,16 @@ function AppDetailPage(props: Props) {
     </div>
   );
 
-  if (appIsFetching && !selectedApp) {
+  if (appIsFetching && !selectedApp && !Utilities.showClusterUpgradeModal(appsList)) {
     return centeredLoader;
   }
 
-  // poll version status if it's awaiting results
+  // poll version status if it's awaiting results or if the cluster is upgrading
   const downstream = selectedApp?.downstream;
   if (
-    downstream?.currentVersion &&
-    isAwaitingResults([downstream.currentVersion])
+    (downstream?.currentVersion &&
+      isAwaitingResults([downstream.currentVersion])) ||
+    Utilities.showClusterUpgradeModal(appsList)
   ) {
     if (appsRefetchInterval === false) {
       setAppsRefetchInterval(2000);

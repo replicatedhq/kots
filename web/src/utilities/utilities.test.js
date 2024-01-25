@@ -14,4 +14,91 @@ describe("Utilities", () => {
       expect(Utilities.checkIsDateExpired(timestamp)).toBe(false);
     });
   });
+
+  describe("showClusterUpgradeModal", () => {
+    it("should return false if apps is null or empty", () => {
+      expect(Utilities.showClusterUpgradeModal(null)).toBe(false);
+      expect(Utilities.showClusterUpgradeModal([])).toBe(false);
+    });
+
+    it("should return false if the user has not tried to deploy the current version", () => {
+      const apps = [
+        {
+          downstream: {
+            currentVersion: {
+              status: "pending",
+            },
+          },
+        },
+      ];
+      expect(Utilities.showClusterUpgradeModal(apps)).toBe(false);
+    });
+
+    it("should return false if the user has tried to deploy the current version, but a cluster upgrade is not required", () => {
+      const apps = [
+        {
+          downstream: {
+            currentVersion: {
+              status: "deployed",
+            },
+            cluster: {
+              requiresUpgrade: false,
+            },
+          },
+        },
+      ];
+      expect(Utilities.showClusterUpgradeModal(apps)).toBe(false);
+    });
+
+    it("should return false if the user has tried to deploy the current version and a cluster upgrade is already completed", () => {
+      const apps = [
+        {
+          downstream: {
+            currentVersion: {
+              status: "deployed",
+            },
+            cluster: {
+              requiresUpgrade: false,
+              state: "Installed",
+            },
+          },
+        },
+      ];
+      expect(Utilities.showClusterUpgradeModal(apps)).toBe(false);
+    });
+
+    it("should return true if the user has tried to deploy the current version and a cluster upgrade is required", () => {
+      const apps = [
+        {
+          downstream: {
+            currentVersion: {
+              status: "deployed",
+            },
+            cluster: {
+              requiresUpgrade: true,
+              state: "Installed",
+            },
+          },
+        },
+      ];
+      expect(Utilities.showClusterUpgradeModal(apps)).toBe(true);
+    });
+
+    it("should return true if the user has tried to deploy the current version and a cluster upgrade is in progress", () => {
+      const apps = [
+        {
+          downstream: {
+            currentVersion: {
+              status: "deployed",
+            },
+            cluster: {
+              requiresUpgrade: true,
+              state: "Installing",
+            },
+          },
+        },
+      ];
+      expect(Utilities.showClusterUpgradeModal(apps)).toBe(true);
+    });
+  });
 });

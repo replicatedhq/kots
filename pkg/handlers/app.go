@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -13,8 +14,10 @@ import (
 	downstreamtypes "github.com/replicatedhq/kots/pkg/api/downstream/types"
 	"github.com/replicatedhq/kots/pkg/api/handlers/types"
 	apptypes "github.com/replicatedhq/kots/pkg/app/types"
+	"github.com/replicatedhq/kots/pkg/embeddedcluster"
 	"github.com/replicatedhq/kots/pkg/gitops"
 	"github.com/replicatedhq/kots/pkg/helm"
+	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/operator"
@@ -312,6 +315,36 @@ func responseAppFromApp(a *apptypes.App) (*types.ResponseApp, error) {
 	cluster := types.ResponseCluster{
 		ID:   d.ClusterID,
 		Slug: d.ClusterSlug,
+	}
+
+	clientset, err := k8sutil.GetClientset()
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get clientset")
+	}
+
+	isEmbeddedCluster, err := embeddedcluster.IsEmbeddedCluster(clientset)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to check if cluster is embedded")
+	}
+
+	if isEmbeddedCluster {
+		embeddedClusterConfig, err := store.GetStore().GetEmbeddedClusterConfigForVersion(a.ID, a.CurrentSequence)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to get embedded cluster config")
+		}
+
+		if embeddedClusterConfig != nil {
+			cluster.RequiresUpgrade, err = embeddedcluster.RequiresUpgrade(context.TODO(), embeddedClusterConfig.Spec)
+			if err != nil {
+				return nil, errors.Wrap(err, "failed to check if cluster requires upgrade")
+			}
+
+			embeddedClusterInstallation, err := embeddedcluster.GetCurrentInstallation(context.TODO())
+			if err != nil {
+				return nil, errors.Wrap(err, "failed to get current installation")
+			}
+			cluster.State = string(embeddedClusterInstallation.Status.State)
+		}
 	}
 
 	responseDownstream := types.ResponseDownstream{
