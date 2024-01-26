@@ -110,7 +110,7 @@ jobs:
 
       - name: Make kotsadm airgap archive
         working-directory: automation/jumpbox/kotsadm-bundle
-        run: tar -czf ../kotsadm.tar.gz *
+        run: tar -czf ../kotsadm.tar.gz -- *
 
       - name: Initialize terraform
         if: always()

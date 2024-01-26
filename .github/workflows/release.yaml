@@ -404,11 +404,11 @@ jobs:
 
     - name: Make kotsadm airgap archive
       working-directory: kotsadm-bundle
-      run: tar -czvf ../kotsadm.tar.gz *
+      run: tar -czvf ../kotsadm.tar.gz -- *
 
     - name: Make kotsadm airgap archive without minio
       working-directory: kotsadm-bundle-nominio
-      run: tar -czvf ../kotsadm-nominio.tar.gz *
+      run: tar -czvf ../kotsadm-nominio.tar.gz -- *
 
     - name: Upload airgap archive
       uses: softprops/action-gh-release@v1
