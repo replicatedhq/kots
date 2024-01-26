@@ -3,7 +3,7 @@ CURRENT_USER := $(if $(GITHUB_USER),$(GITHUB_USER),$(shell id -u -n))
 MINIO_TAG ?= 0.20231101.183725-r1
 RQLITE_TAG ?= 8.17.0-r0
 DEX_TAG ?= 2.37.0-r12
-LVP_TAG ?= v0.5.6
+LVP_TAG ?= v0.6.0
 
 define sendMetrics
 @if [ -z "${PROJECT_NAME}" ]; then \
