@@ -10,6 +10,7 @@ import (
 	time "time"
 
 	gomock "github.com/golang/mock/gomock"
+	v1beta1 "github.com/replicatedhq/embedded-cluster-operator/api/v1beta1"
 	types "github.com/replicatedhq/kots/pkg/airgap/types"
 	types0 "github.com/replicatedhq/kots/pkg/api/downstream/types"
 	types1 "github.com/replicatedhq/kots/pkg/api/version/types"
@@ -26,7 +27,7 @@ import (
 	types12 "github.com/replicatedhq/kots/pkg/supportbundle/types"
 	types13 "github.com/replicatedhq/kots/pkg/upstream/types"
 	types14 "github.com/replicatedhq/kots/pkg/user/types"
-	v1beta1 "github.com/replicatedhq/kotskinds/apis/kots/v1beta1"
+	v1beta10 "github.com/replicatedhq/kotskinds/apis/kots/v1beta1"
 	redact "github.com/replicatedhq/troubleshoot/pkg/redact"
 )
 
@@ -198,7 +199,7 @@ func (mr *MockStoreMockRecorder) CreateNewCluster(userID, isAllUsers, title, tok
 }
 
 // CreatePendingDownloadAppVersion mocks base method.
-func (m *MockStore) CreatePendingDownloadAppVersion(appID string, update types13.Update, kotsApplication *v1beta1.Application, license *v1beta1.License) (int64, error) {
+func (m *MockStore) CreatePendingDownloadAppVersion(appID string, update types13.Update, kotsApplication *v1beta10.Application, license *v1beta10.License) (int64, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "CreatePendingDownloadAppVersion", appID, update, kotsApplication, license)
 	ret0, _ := ret[0].(int64)
@@ -413,10 +414,10 @@ func (mr *MockStoreMockRecorder) GetAirgapInstallStatus(appID interface{}) *gomo
 }
 
 // GetAllAppLicenses mocks base method.
-func (m *MockStore) GetAllAppLicenses() ([]*v1beta1.License, error) {
+func (m *MockStore) GetAllAppLicenses() ([]*v1beta10.License, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetAllAppLicenses")
-	ret0, _ := ret[0].([]*v1beta1.License)
+	ret0, _ := ret[0].([]*v1beta10.License)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -757,6 +758,21 @@ func (mr *MockStoreMockRecorder) GetEmbeddedClusterAuthToken() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetEmbeddedClusterAuthToken", reflect.TypeOf((*MockStore)(nil).GetEmbeddedClusterAuthToken))
 }
 
+// GetEmbeddedClusterConfigForVersion mocks base method.
+func (m *MockStore) GetEmbeddedClusterConfigForVersion(appID string, sequence int64) (*v1beta1.Config, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetEmbeddedClusterConfigForVersion", appID, sequence)
+	ret0, _ := ret[0].(*v1beta1.Config)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetEmbeddedClusterConfigForVersion indicates an expected call of GetEmbeddedClusterConfigForVersion.
+func (mr *MockStoreMockRecorder) GetEmbeddedClusterConfigForVersion(appID, sequence interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetEmbeddedClusterConfigForVersion", reflect.TypeOf((*MockStore)(nil).GetEmbeddedClusterConfigForVersion), appID, sequence)
+}
+
 // GetEmbeddedClusterInstallCommandRoles mocks base method.
 func (m *MockStore) GetEmbeddedClusterInstallCommandRoles(token string) ([]string, error) {
 	m.ctrl.T.Helper()
@@ -782,9 +798,9 @@ func (m *MockStore) GetEmbeddedClusterState() (string, error) {
 }
 
 // GetEmbeddedClusterState indicates an expected call of GetEmbeddedClusterState.
-func (mr *MockStoreMockRecorder) GetEmbeddedClusterState(appID interface{}) *gomock.Call {
+func (mr *MockStoreMockRecorder) GetEmbeddedClusterState() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetEmbeddedClusterState", reflect.TypeOf((*MockStore)(nil).GetEmbeddedClusterState), appID)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetEmbeddedClusterState", reflect.TypeOf((*MockStore)(nil).GetEmbeddedClusterState))
 }
 
 // GetIgnoreRBACErrors mocks base method.
@@ -880,10 +896,10 @@ func (mr *MockStoreMockRecorder) GetLatestDeployableDownstreamVersion(appID, clu
 }
 
 // GetLatestLicenseForApp mocks base method.
-func (m *MockStore) GetLatestLicenseForApp(appID string) (*v1beta1.License, error) {
+func (m *MockStore) GetLatestLicenseForApp(appID string) (*v1beta10.License, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetLatestLicenseForApp", appID)
-	ret0, _ := ret[0].(*v1beta1.License)
+	ret0, _ := ret[0].(*v1beta10.License)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -895,10 +911,10 @@ func (mr *MockStoreMockRecorder) GetLatestLicenseForApp(appID interface{}) *gomo
 }
 
 // GetLicenseForAppVersion mocks base method.
-func (m *MockStore) GetLicenseForAppVersion(appID string, sequence int64) (*v1beta1.License, error) {
+func (m *MockStore) GetLicenseForAppVersion(appID string, sequence int64) (*v1beta10.License, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetLicenseForAppVersion", appID, sequence)
-	ret0, _ := ret[0].(*v1beta1.License)
+	ret0, _ := ret[0].(*v1beta10.License)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -1857,7 +1873,7 @@ func (mr *MockStoreMockRecorder) SetUpdateCheckerSpec(appID, updateCheckerSpec i
 }
 
 // UpdateAppLicense mocks base method.
-func (m *MockStore) UpdateAppLicense(appID string, sequence int64, archiveDir string, newLicense *v1beta1.License, originalLicenseData string, channelChanged, failOnVersionCreate bool, gitops types4.DownstreamGitOps, renderer types9.Renderer) (int64, error) {
+func (m *MockStore) UpdateAppLicense(appID string, sequence int64, archiveDir string, newLicense *v1beta10.License, originalLicenseData string, channelChanged, failOnVersionCreate bool, gitops types4.DownstreamGitOps, renderer types9.Renderer) (int64, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "UpdateAppLicense", appID, sequence, archiveDir, newLicense, originalLicenseData, channelChanged, failOnVersionCreate, gitops, renderer)
 	ret0, _ := ret[0].(int64)
@@ -1900,7 +1916,7 @@ func (mr *MockStoreMockRecorder) UpdateAppVersion(appID, sequence, baseSequence,
 }
 
 // UpdateAppVersionInstallationSpec mocks base method.
-func (m *MockStore) UpdateAppVersionInstallationSpec(appID string, sequence int64, spec v1beta1.Installation) error {
+func (m *MockStore) UpdateAppVersionInstallationSpec(appID string, sequence int64, spec v1beta10.Installation) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "UpdateAppVersionInstallationSpec", appID, sequence, spec)
 	ret0, _ := ret[0].(error)
@@ -3662,7 +3678,7 @@ func (mr *MockVersionStoreMockRecorder) CreateAppVersionArchive(appID, sequence,
 }
 
 // CreatePendingDownloadAppVersion mocks base method.
-func (m *MockVersionStore) CreatePendingDownloadAppVersion(appID string, update types13.Update, kotsApplication *v1beta1.Application, license *v1beta1.License) (int64, error) {
+func (m *MockVersionStore) CreatePendingDownloadAppVersion(appID string, update types13.Update, kotsApplication *v1beta10.Application, license *v1beta10.License) (int64, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "CreatePendingDownloadAppVersion", appID, update, kotsApplication, license)
 	ret0, _ := ret[0].(int64)
@@ -3749,6 +3765,21 @@ func (m *MockVersionStore) GetCurrentUpdateCursor(appID, channelID string) (stri
 func (mr *MockVersionStoreMockRecorder) GetCurrentUpdateCursor(appID, channelID interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetCurrentUpdateCursor", reflect.TypeOf((*MockVersionStore)(nil).GetCurrentUpdateCursor), appID, channelID)
+}
+
+// GetEmbeddedClusterConfigForVersion mocks base method.
+func (m *MockVersionStore) GetEmbeddedClusterConfigForVersion(appID string, sequence int64) (*v1beta1.Config, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetEmbeddedClusterConfigForVersion", appID, sequence)
+	ret0, _ := ret[0].(*v1beta1.Config)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetEmbeddedClusterConfigForVersion indicates an expected call of GetEmbeddedClusterConfigForVersion.
+func (mr *MockVersionStoreMockRecorder) GetEmbeddedClusterConfigForVersion(appID, sequence interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetEmbeddedClusterConfigForVersion", reflect.TypeOf((*MockVersionStore)(nil).GetEmbeddedClusterConfigForVersion), appID, sequence)
 }
 
 // GetLatestAppSequence mocks base method.
@@ -3871,7 +3902,7 @@ func (mr *MockVersionStoreMockRecorder) UpdateAppVersion(appID, sequence, baseSe
 }
 
 // UpdateAppVersionInstallationSpec mocks base method.
-func (m *MockVersionStore) UpdateAppVersionInstallationSpec(appID string, sequence int64, spec v1beta1.Installation) error {
+func (m *MockVersionStore) UpdateAppVersionInstallationSpec(appID string, sequence int64, spec v1beta10.Installation) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "UpdateAppVersionInstallationSpec", appID, sequence, spec)
 	ret0, _ := ret[0].(error)
@@ -3922,10 +3953,10 @@ func (m *MockLicenseStore) EXPECT() *MockLicenseStoreMockRecorder {
 }
 
 // GetAllAppLicenses mocks base method.
-func (m *MockLicenseStore) GetAllAppLicenses() ([]*v1beta1.License, error) {
+func (m *MockLicenseStore) GetAllAppLicenses() ([]*v1beta10.License, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetAllAppLicenses")
-	ret0, _ := ret[0].([]*v1beta1.License)
+	ret0, _ := ret[0].([]*v1beta10.License)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -3937,10 +3968,10 @@ func (mr *MockLicenseStoreMockRecorder) GetAllAppLicenses() *gomock.Call {
 }
 
 // GetLatestLicenseForApp mocks base method.
-func (m *MockLicenseStore) GetLatestLicenseForApp(appID string) (*v1beta1.License, error) {
+func (m *MockLicenseStore) GetLatestLicenseForApp(appID string) (*v1beta10.License, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetLatestLicenseForApp", appID)
-	ret0, _ := ret[0].(*v1beta1.License)
+	ret0, _ := ret[0].(*v1beta10.License)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -3952,10 +3983,10 @@ func (mr *MockLicenseStoreMockRecorder) GetLatestLicenseForApp(appID interface{}
 }
 
 // GetLicenseForAppVersion mocks base method.
-func (m *MockLicenseStore) GetLicenseForAppVersion(appID string, sequence int64) (*v1beta1.License, error) {
+func (m *MockLicenseStore) GetLicenseForAppVersion(appID string, sequence int64) (*v1beta10.License, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetLicenseForAppVersion", appID, sequence)
-	ret0, _ := ret[0].(*v1beta1.License)
+	ret0, _ := ret[0].(*v1beta10.License)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -3967,7 +3998,7 @@ func (mr *MockLicenseStoreMockRecorder) GetLicenseForAppVersion(appID, sequence 
 }
 
 // UpdateAppLicense mocks base method.
-func (m *MockLicenseStore) UpdateAppLicense(appID string, sequence int64, archiveDir string, newLicense *v1beta1.License, originalLicenseData string, channelChanged, failOnVersionCreate bool, gitops types4.DownstreamGitOps, renderer types9.Renderer) (int64, error) {
+func (m *MockLicenseStore) UpdateAppLicense(appID string, sequence int64, archiveDir string, newLicense *v1beta10.License, originalLicenseData string, channelChanged, failOnVersionCreate bool, gitops types4.DownstreamGitOps, renderer types9.Renderer) (int64, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "UpdateAppLicense", appID, sequence, archiveDir, newLicense, originalLicenseData, channelChanged, failOnVersionCreate, gitops, renderer)
 	ret0, _ := ret[0].(int64)
@@ -4316,18 +4347,18 @@ func (mr *MockEmbeddedStoreMockRecorder) GetEmbeddedClusterAuthToken() *gomock.C
 }
 
 // GetEmbeddedClusterState mocks base method.
-func (m *MockEmbeddedStore) GetEmbeddedClusterState(appID string) (string, error) {
+func (m *MockEmbeddedStore) GetEmbeddedClusterState() (string, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetEmbeddedClusterState", appID)
+	ret := m.ctrl.Call(m, "GetEmbeddedClusterState")
 	ret0, _ := ret[0].(string)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetEmbeddedClusterState indicates an expected call of GetEmbeddedClusterState.
-func (mr *MockEmbeddedStoreMockRecorder) GetEmbeddedClusterState(appID interface{}) *gomock.Call {
+func (mr *MockEmbeddedStoreMockRecorder) GetEmbeddedClusterState() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetEmbeddedClusterState", reflect.TypeOf((*MockEmbeddedStore)(nil).GetEmbeddedClusterState), appID)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetEmbeddedClusterState", reflect.TypeOf((*MockEmbeddedStore)(nil).GetEmbeddedClusterState))
 }
 
 // SetEmbeddedClusterAuthToken mocks base method.

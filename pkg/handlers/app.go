@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -13,6 +14,7 @@ import (
 	downstreamtypes "github.com/replicatedhq/kots/pkg/api/downstream/types"
 	"github.com/replicatedhq/kots/pkg/api/handlers/types"
 	apptypes "github.com/replicatedhq/kots/pkg/app/types"
+	"github.com/replicatedhq/kots/pkg/embeddedcluster"
 	"github.com/replicatedhq/kots/pkg/gitops"
 	"github.com/replicatedhq/kots/pkg/helm"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
@@ -281,6 +283,9 @@ func responseAppFromApp(a *apptypes.App) (*types.ResponseApp, error) {
 		return nil, errors.Wrap(err, "failed to check if snapshots is allowed")
 	}
 	allowSnapshots := s && license.Spec.IsSnapshotSupported
+	allowSnapshots = allowSnapshots && !util.IsEmbeddedCluster() // snapshots are not allowed in embedded cluster installations today
+
+	isGitopsSupported := license.Spec.IsGitOpsSupported && !util.IsEmbeddedCluster() // gitops is not allowed in embedded cluster installations today
 
 	links, err := version.GetRealizedLinksFromAppSpec(a.ID, parentSequence)
 	if err != nil {
@@ -314,6 +319,26 @@ func responseAppFromApp(a *apptypes.App) (*types.ResponseApp, error) {
 		Slug: d.ClusterSlug,
 	}
 
+	if util.IsEmbeddedCluster() {
+		embeddedClusterConfig, err := store.GetStore().GetEmbeddedClusterConfigForVersion(a.ID, a.CurrentSequence)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to get embedded cluster config")
+		}
+
+		if embeddedClusterConfig != nil {
+			cluster.RequiresUpgrade, err = embeddedcluster.RequiresUpgrade(context.TODO(), embeddedClusterConfig.Spec)
+			if err != nil {
+				return nil, errors.Wrap(err, "failed to check if cluster requires upgrade")
+			}
+
+			embeddedClusterInstallation, err := embeddedcluster.GetCurrentInstallation(context.TODO())
+			if err != nil {
+				return nil, errors.Wrap(err, "failed to get current installation")
+			}
+			cluster.State = string(embeddedClusterInstallation.Status.State)
+		}
+	}
+
 	responseDownstream := types.ResponseDownstream{
 		Name:            d.Name,
 		Links:           links,
@@ -340,7 +365,7 @@ func responseAppFromApp(a *apptypes.App) (*types.ResponseApp, error) {
 		IsConfigurable:                 a.IsConfigurable,
 		UpdateCheckerSpec:              a.UpdateCheckerSpec,
 		AutoDeploy:                     a.AutoDeploy,
-		IsGitOpsSupported:              license.Spec.IsGitOpsSupported,
+		IsGitOpsSupported:              isGitopsSupported,
 		IsIdentityServiceSupported:     license.Spec.IsIdentityServiceSupported,
 		IsAppIdentityServiceSupported:  isAppIdentityServiceSupported,
 		IsGeoaxisSupported:             license.Spec.IsGeoaxisSupported,

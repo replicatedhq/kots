@@ -76,6 +76,8 @@ export type AppStatusState =
 type Cluster = {
   id: number;
   slug: string;
+  state?: string;
+  requiresUpgrade?: boolean;
 };
 
 export type Credentials = {

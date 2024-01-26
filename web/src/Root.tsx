@@ -59,6 +59,7 @@ import SnapshotRestore from "@components/snapshots/SnapshotRestore";
 import AppSnapshots from "@components/snapshots/AppSnapshots";
 import AppSnapshotRestore from "@components/snapshots/AppSnapshotRestore";
 import EmbeddedClusterViewNode from "@components/apps/EmbeddedClusterViewNode";
+import EmbeddedClusterUpgrading from "@components/clusters/EmbeddedClusterUpgrading";
 
 // react-query client
 const queryClient = new QueryClient();
@@ -93,6 +94,7 @@ type State = {
   appSlugFromMetadata: string | null;
   adminConsoleMetadata: Metadata | null;
   connectionTerminated: boolean;
+  shouldShowClusterUpgradeModal: boolean;
   errLoggingOut: string;
   featureFlags: object;
   fetchingMetadata: boolean;
@@ -119,6 +121,7 @@ const Root = () => {
       appNameSpace: null,
       adminConsoleMetadata: null,
       connectionTerminated: false,
+      shouldShowClusterUpgradeModal: false,
       errLoggingOut: "",
       featureFlags: {},
       isHelmManaged: false,
@@ -704,6 +707,14 @@ const Root = () => {
                     isEmbeddedCluster={Boolean(
                       state.adminConsoleMetadata?.isEmbeddedCluster
                     )}
+                    setShouldShowClusterUpgradeModal={(
+                      shouldShowClusterUpgradeModal: boolean
+                    ) => {
+                      setState({
+                        shouldShowClusterUpgradeModal:
+                          shouldShowClusterUpgradeModal,
+                      });
+                    }}
                   />
                 }
               />
@@ -722,6 +733,13 @@ const Root = () => {
                     isEmbeddedCluster={Boolean(
                       state.adminConsoleMetadata?.isEmbeddedCluster
                     )}
+                    setShouldShowClusterUpgradeModal={(
+                      showUpgradeModal: boolean
+                    ) => {
+                      setState({
+                        shouldShowClusterUpgradeModal: showUpgradeModal,
+                      });
+                    }}
                   />
                 }
               >
@@ -851,13 +869,22 @@ const Root = () => {
         ariaHideApp={false}
         className="ConnectionTerminated--wrapper Modal DefaultSize"
       >
-        <ConnectionTerminated
-          connectionTerminated={state.connectionTerminated}
-          appLogo={state.appLogo}
-          setTerminatedState={(status: boolean) =>
-            setState({ connectionTerminated: status })
-          }
-        />
+        {!state.shouldShowClusterUpgradeModal && (
+          <ConnectionTerminated
+            connectionTerminated={state.connectionTerminated}
+            appLogo={state.appLogo}
+            setTerminatedState={(status: boolean) =>
+              setState({ connectionTerminated: status })
+            }
+          />
+        )}
+        {state.shouldShowClusterUpgradeModal && (
+          <EmbeddedClusterUpgrading
+            setTerminatedState={(status: boolean) =>
+              setState({ connectionTerminated: status })
+            }
+          />
+        )}
       </Modal>
     </QueryClientProvider>
   );

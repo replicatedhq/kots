@@ -10,6 +10,7 @@ import (
 	"github.com/replicatedhq/embedded-cluster-operator/api/v1beta1"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/store"
+	"github.com/replicatedhq/kots/pkg/util"
 	"k8s.io/client-go/kubernetes"
 )
 
@@ -25,11 +26,7 @@ func MaybeStartClusterUpgrade(ctx context.Context, client kubernetes.Interface, 
 		return nil
 	}
 
-	isEC, err := IsEmbeddedCluster(client)
-	if err != nil {
-		return fmt.Errorf("failed to check if embedded cluster is enabled: %w", err)
-	}
-	if !isEC {
+	if !util.IsEmbeddedCluster() {
 		return nil
 	}
 
@@ -58,11 +55,7 @@ func MaybeStartClusterUpgrade(ctx context.Context, client kubernetes.Interface, 
 // InitClusterState initializes the cluster state in the database. This should be called when the
 // server launches.
 func InitClusterState(ctx context.Context, client kubernetes.Interface, store store.Store) error {
-	isEC, err := IsEmbeddedCluster(client)
-	if err != nil {
-		return fmt.Errorf("failed to check if embedded cluster is enabled: %w", err)
-	}
-	if isEC {
+	if util.IsEmbeddedCluster() {
 		go watchClusterState(ctx, store)
 		return nil
 	}

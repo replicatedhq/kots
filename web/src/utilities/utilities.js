@@ -625,7 +625,7 @@ export const Utilities = {
         return "No active cluster upgrade found";
       case "KubernetesInstalled":
         return "Cluster version upgraded";
-      case "AdonsInstalling":
+      case "AddonsInstalling":
         return "Upgrading addons";
       case "HelmChartUpdateFailure":
         return "Failed to upgrade addons";
@@ -634,6 +634,37 @@ export const Utilities = {
       default:
         return "Unknown";
     }
+  },
+
+  isClusterUpgrading(state) {
+    const normalizedState = this.clusterState(state);
+    return (
+      normalizedState === "Upgrading" || normalizedState === "Upgrading addons"
+    );
+  },
+
+  shouldShowClusterUpgradeModal(apps) {
+    if (!apps || apps.length === 0) {
+      return false;
+    }
+
+    // embedded cluster can only have one app
+    const app = apps[0];
+
+    const triedToDeploy =
+      app.downstream?.currentVersion?.status === "deploying" ||
+      app.downstream?.currentVersion?.status === "deployed" ||
+      app.downstream?.currentVersion?.status === "failed";
+    if (!triedToDeploy) {
+      return false;
+    }
+
+    // show the upgrade modal if the user has tried to deploy the current version
+    // and the cluster will upgrade or is already upgrading
+    return (
+      app.downstream?.cluster?.requiresUpgrade ||
+      Utilities.isClusterUpgrading(app.downstream?.cluster?.state)
+    );
   },
 
   // Converts string to titlecase i.e. 'hello' -> 'Hello'
