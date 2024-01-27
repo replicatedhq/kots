@@ -294,7 +294,7 @@ jobs:
       WORKSPACE: ${{ needs.get-workspace-name.outputs.name }}
     steps:
       - name: Trigger workspace cleanup
-        uses: peter-evans/repository-dispatch@v2
+        uses: peter-evans/repository-dispatch@v3
         with:
           token: ${{ secrets.E2E_GH_PAT }}
           repository: replicatedhq/kots
