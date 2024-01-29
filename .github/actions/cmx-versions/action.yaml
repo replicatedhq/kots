@@ -8,10 +8,6 @@ inputs:
   replicated-api-token:
     description: 'Replicated API token for CMX'
     required: true
-  distros:
-    description: 'A comma-separated list of distros to test against. If not provided, all distros will be tested.'
-    required: false
-    default: ''
 
 outputs:
   versions-to-test:

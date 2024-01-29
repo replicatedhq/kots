@@ -565,7 +565,6 @@ jobs:
         uses: ./.github/actions/cmx-versions
         with:
           replicated-api-token: ${{ secrets.C11Y_MATRIX_TOKEN }}
-          distros: 'k3s,openshift'
     outputs:
       versions-to-test: ${{ steps.cmx-versions-to-test.outputs.versions-to-test }}
 

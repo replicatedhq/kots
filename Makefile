@@ -135,7 +135,7 @@ kotsadm-bundle:
 	skopeo copy --all --dest-tls-verify=false docker://kotsadm/rqlite:${RQLITE_TAG} docker://${BUNDLE_REGISTRY}/rqlite:${RQLITE_TAG}
 	skopeo copy --all --dest-tls-verify=false docker://replicated/local-volume-provider:${LVP_TAG} docker://${BUNDLE_REGISTRY}/local-volume-provider:${LVP_TAG}
 
-	./scripts/create-airgap-file.sh
+	go run ./scripts/create-airgap-file.go true
 
 .PHONY: kotsadm-bundle-nominio
 kotsadm-bundle-nominio:
@@ -145,7 +145,7 @@ kotsadm-bundle-nominio:
 	skopeo copy --all --dest-tls-verify=false docker://kotsadm/rqlite:${RQLITE_TAG} docker://${BUNDLE_REGISTRY}/rqlite:${RQLITE_TAG}
 	skopeo copy --all --dest-tls-verify=false docker://replicated/local-volume-provider:${LVP_TAG} docker://${BUNDLE_REGISTRY}/local-volume-provider:${LVP_TAG}
 
-	./scripts/create-airgap-file.sh true
+	go run ./scripts/create-airgap-file.go false
 
 .PHONY: cache
 cache:

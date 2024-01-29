@@ -31,15 +31,24 @@ async function getClusterVersions() {
         return;
     }
 
-    let distrosToTest = new Set(); // tests all distros if empty
-    const distrosInput = core.getInput('distros') || '';
-    if (distrosInput !== '') {
-        distrosToTest = new Set(distrosInput.split(','));
+    let filters = {
+        k3s: {
+            latest_minor_versions: true,
+        },
+        eks: {
+            latest_version: true,
+            instance_type: "m7g.large" // arm64
+        },
+        openshift: {
+            // filtering out all versions except 4.13.0-okd for now per sc-90893
+            versions: new Set(["4.13.0-okd"])
+        }
     }
 
     // versions to test looks like this:
     // [
-    //   {distribution: k3s, version: v1.24, stage: 'stable'},
+    //   {distribution: k3s, version: v1.24, stage: 'stable', instance_type: '']},
+    //   {distribution: eks, version: v1.28, stage: 'stable', instance_type: 'm7g.large']},
     //   ...
     // ]
     const versionsToTest = [];
@@ -47,52 +56,82 @@ async function getClusterVersions() {
     clusterVersions.forEach((distribution) => {
         const distroName = distribution.short_name;
 
-        if (distrosToTest.size > 0 && !distrosToTest.has(distroName)) {
-            // distribution is not in the distros array, skip it
+        if (filters[distroName] === undefined) {
+            // no filters for this distribution, skip it
             return;
         }
 
-        if (distroName === 'helmvm' || distroName === 'kurl') {
-            // excluding the embedded distributions
-            return;
+        let stage = 'stable';
+        if (distroName === 'aks') {
+            stage = 'alpha';
         }
 
-        if (distroName === 'openshift') {
-            // filtering out all versions except 4.13.0-okd for now per sc-90893
-            distribution.versions = distribution.versions.filter((version) => version === '4.13.0-okd');
+        let instanceType = '';
+        if (filters[distroName].instance_type !== undefined) {
+            instanceType = filters[distroName].instance_type;
         }
 
-        const latestMinorVersions = {};
-        distribution.versions.forEach((version) => {
-            const parsed = semverCoerce(version);
-            const majorMinor = `${semverMajor(parsed)}.${semverMinor(parsed)}`;
-            if (latestMinorVersions[distroName] === undefined) {
-                latestMinorVersions[distroName] = {
-                    [majorMinor]: version,
-                };
-            } else if (latestMinorVersions[distroName][majorMinor] === undefined) {
-                latestMinorVersions[distroName][majorMinor] = version;
-            } else {
-                const currentVersion = latestMinorVersions[distroName][majorMinor];
-                if (semverGt(parsed, semverCoerce(currentVersion))) {
-                    latestMinorVersions[distroName][majorMinor] = version;
+        if (filters[distroName].versions !== undefined) {
+            // specific versions
+            const filterVersions = filters[distroName].versions;
+            distribution.versions.forEach((version) => {
+                if (filterVersions.has(version)) {
+                    versionsToTest.push({ distribution: distroName, version, instanceType, stage });
                 }
-            }
-        });
+            });
+        }
 
-        Object.keys(latestMinorVersions[distroName]).forEach((minorVersion) => {
-            let stage = 'stable';
+        if (!!filters[distroName].latest_version) {
+            // latest version
+            const latestVersion = getLatestVersion(distribution);
+            versionsToTest.push({ distribution: distroName, version: latestVersion, instanceType, stage });
+        }
 
-            if (distroName === 'aks') {
-                stage = 'alpha';
-            }
-
-            versionsToTest.push({ distribution: distroName, version: latestMinorVersions[distroName][minorVersion], stage });
-        });
+        if (!!filters[distroName].latest_minor_versions) {
+            // latest minor versions
+            const latestMinorVersions = getLatestMinorVersions(distribution);
+            Object.keys(latestMinorVersions).forEach((minorVersion) => {
+                versionsToTest.push({ distribution: distroName, version: latestMinorVersions[minorVersion], instanceType, stage });
+            });
+        }
     });
 
     console.log(versionsToTest);
     core.setOutput('versions-to-test', JSON.stringify(versionsToTest));
+}
+
+function getLatestVersion(distribution) {
+    let latestVersion = undefined;
+    distribution.versions.forEach((version) => {
+        if (latestVersion === undefined) {
+            latestVersion = version;
+        } else {
+            const parsed = semverCoerce(version);
+            if (semverGt(parsed, semverCoerce(latestVersion))) {
+                latestVersion = version;
+            }
+        }
+    });
+
+    return latestVersion;
+}
+
+function getLatestMinorVersions(distribution) {
+    const latestMinorVersions = {};
+    distribution.versions.forEach((version) => {
+        const parsed = semverCoerce(version);
+        const majorMinor = `${semverMajor(parsed)}.${semverMinor(parsed)}`;
+        if (latestMinorVersions[majorMinor] === undefined) {
+            latestMinorVersions[majorMinor] = version;
+        } else {
+            const currentVersion = latestMinorVersions[majorMinor];
+            if (semverGt(parsed, semverCoerce(currentVersion))) {
+                latestMinorVersions[majorMinor] = version;
+            }
+        }
+    });
+
+    return latestMinorVersions;
 }
 
 getClusterVersions();
