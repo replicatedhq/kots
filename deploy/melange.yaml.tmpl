@@ -12,7 +12,6 @@ environment:
       - https://packages.wolfi.dev/os
     keyring:
       - https://packages.wolfi.dev/os/wolfi-signing.rsa.pub
-      - ./packages/chainguard-enterprise.rsa.pub
     packages:
       - ca-certificates-bundle
       - busybox
@@ -20,8 +19,6 @@ environment:
       - go
       - nodejs
       - yarn
-  environment:
-    GOMODCACHE: '/var/cache/melange'
 
 pipeline:
   - runs: |
@@ -50,10 +47,6 @@ pipeline:
       # Set environment variables from repository
       source .image.env
 
-      KOTS_KUBECTL_BIN_DIR=/usr/local/bin
-      KOTS_KUSTOMIZE_BIN_DIR=/usr/local/bin
-      KOTS_HELM_BIN_DIR=/usr/local/bin
-
       # TODO: fix pact build error on arm https://github.com/pact-foundation/pact-js-core/issues/264
       export PACT_SKIP_BINARY_INSTALL=true
 
@@ -66,24 +59,6 @@ pipeline:
       mv bin/kotsadm "${DESTDIR}/kotsadm"
       mv bin/kots "${DESTDIR}/kots"
 
-      # TODO: this requires manual intervention whenever helm bumps its major version
       ln -s /usr/bin/helm ${DESTDIR}/usr/local/bin/helm
-      ln -s /usr/bin/helm ${DESTDIR}/usr/local/bin/helm3
-
-      # TODO: this requires manual intervention whenever kustomize bumps its major version
       ln -s /usr/bin/kustomize ${DESTDIR}/usr/local/bin/kustomize
-      ln -s /usr/bin/kustomize ${DESTDIR}/usr/local/bin/kustomize5
-
-      # TODO: this requires manual intervention whenever kubectl bumps its major version
-      ln -s /usr/bin/kubectl-1.19 ${DESTDIR}/usr/local/bin/kubectl-v1.19
-      ln -s /usr/bin/kubectl-1.20 ${DESTDIR}/usr/local/bin/kubectl-v1.20
-      ln -s /usr/bin/kubectl-1.21 ${DESTDIR}/usr/local/bin/kubectl-v1.21
-      ln -s /usr/bin/kubectl-1.22 ${DESTDIR}/usr/local/bin/kubectl-v1.22
-      ln -s /usr/bin/kubectl-1.23 ${DESTDIR}/usr/local/bin/kubectl-v1.23
-      ln -s /usr/bin/kubectl-1.24 ${DESTDIR}/usr/local/bin/kubectl-v1.24
-      ln -s /usr/bin/kubectl-1.25 ${DESTDIR}/usr/local/bin/kubectl-v1.25
-      ln -s /usr/bin/kubectl-1.26 ${DESTDIR}/usr/local/bin/kubectl-v1.26
-      ln -s /usr/bin/kubectl-1.27 ${DESTDIR}/usr/local/bin/kubectl-v1.27
-      ln -s /usr/bin/kubectl-1.28 ${DESTDIR}/usr/local/bin/kubectl-v1.28
-      ln -s /usr/bin/kubectl-1.29 ${DESTDIR}/usr/local/bin/kubectl-v1.29
-      ln -s /usr/bin/kubectl-1.29 ${DESTDIR}/usr/local/bin/kubectl
+      ln -s /usr/bin/kubectl ${DESTDIR}/usr/local/bin/kubectl

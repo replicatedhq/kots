@@ -15,6 +15,9 @@ inputs:
     description: 'Kubernetes version'
     default: 'v1.26'
     required: false
+  k8s-instance-type:
+    description: 'Instance type for c11y matrix clusters'
+    required: false
   k8s-cluster-ttl:
     description: 'TTL for c11y matrix clusters'
     default: '2h'
@@ -96,7 +99,7 @@ runs:
         cluster-name: automated-kots-${{ github.run_id }}-${{ inputs.k8s-distribution }}-${{ inputs.k8s-version }}
         timeout-minutes: '120'
         ttl: ${{ inputs.k8s-cluster-ttl }}
-        instance-type: ${{ inputs.k8s-distribution == 'gke' && 'n2-standard-4' || inputs.k8s-distribution == 'kind' && 'r1.medium' || '' }}
+        instance-type: ${{ inputs.k8s-instance-type }}
         export-kubeconfig: true
 
     - name: execute suite "${{ inputs.test-focus }}"

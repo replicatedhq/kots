@@ -54,7 +54,7 @@ type PushImagesOptions struct {
 	LogForUI       bool
 }
 
-type PushAppImageOptions struct {
+type PushImageOptions struct {
 	ImageID          string
 	ImageInfo        *ImageInfo
 	Log              *logger.CLILogger

@@ -1,6 +1,0 @@
-name: 'Generate Kubectl Versions'
-description: 'Generate kubectl version updates'
-# TODO: Can make the minimum supported version an input to this action?
-runs:
-  using: 'node16'
-  main: 'dist/index.js'

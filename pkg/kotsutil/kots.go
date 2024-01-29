@@ -19,7 +19,6 @@ import (
 	"github.com/pkg/errors"
 	embeddedclusterv1beta1 "github.com/replicatedhq/embedded-cluster-operator/api/v1beta1"
 	"github.com/replicatedhq/kots/pkg/archives"
-	"github.com/replicatedhq/kots/pkg/binaries"
 	"github.com/replicatedhq/kots/pkg/buildversion"
 	"github.com/replicatedhq/kots/pkg/crypto"
 	registrytypes "github.com/replicatedhq/kots/pkg/docker/registry/types"
@@ -239,17 +238,6 @@ func (k *KotsKinds) HasPreflights() bool {
 		return false
 	}
 	return len(k.Preflight.Spec.Analyzers) > 0
-}
-
-// GetKustomizeBinaryPath will return the kustomize binary version to use for this application
-// applying the default, if there is one, for the current version of kots
-func (k KotsKinds) GetKustomizeBinaryPath() string {
-	path, err := binaries.GetKustomizePathForVersion(k.KotsApplication.Spec.KustomizeVersion)
-	if err != nil {
-		logger.Infof("Failed to get kustomize path: %v", err)
-		return "kustomize"
-	}
-	return path
 }
 
 func (o KotsKinds) Marshal(g string, v string, k string) (string, error) {

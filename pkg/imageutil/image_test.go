@@ -1049,3 +1049,51 @@ func TestGetTag(t *testing.T) {
 		})
 	}
 }
+
+func TestChangeImageTag(t *testing.T) {
+	tests := []struct {
+		name   string
+		image  string
+		newTag string
+		want   string
+	}{
+		{
+			name:   "valid image with tag",
+			image:  "myregistry.com/myimage:oldtag",
+			newTag: "newtag",
+			want:   "myregistry.com/myimage:newtag",
+		},
+		{
+			name:   "valid image without tag",
+			image:  "myregistry.com/myimage",
+			newTag: "newtag",
+			want:   "myregistry.com/myimage:newtag",
+		},
+		{
+			name:   "valid image with digest",
+			image:  "myregistry.com/myimage@sha256:a3e387f1517c3629c2a2513591c60d22320548762f06270d085f668dbdb9c5d4",
+			newTag: "newtag",
+			want:   "myregistry.com/myimage@sha256:a3e387f1517c3629c2a2513591c60d22320548762f06270d085f668dbdb9c5d4",
+		},
+		{
+			name:   "valid image with tag and digest - not yet supported",
+			image:  "myregistry.com/myimage:oldtag@sha256:a3e387f1517c3629c2a2513591c60d22320548762f06270d085f668dbdb9c5d4",
+			newTag: "newtag",
+			want:   "myregistry.com/myimage:oldtag@sha256:a3e387f1517c3629c2a2513591c60d22320548762f06270d085f668dbdb9c5d4",
+		},
+		{
+			name:   "registry with a port",
+			image:  "myregistry.com:5000/myimage:oldtag",
+			newTag: "newtag",
+			want:   "myregistry.com:5000/myimage:newtag",
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			result, err := ChangeImageTag(test.image, test.newTag)
+			require.NoError(t, err)
+			assert.Equal(t, test.want, result)
+		})
+	}
+}

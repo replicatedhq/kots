@@ -252,32 +252,42 @@ jobs:
           path: ./bin/kots
 
 
-  build-kotsadm:
-    runs-on: ubuntu-20.04
+  build-kotsadm-melange-packages:
     needs: [ can-run-ci, generate-tag ]
-    permissions:
-      id-token: write # required to be able to assume the GCP SA identity to pull private Chainguard packages.
+    strategy:
+      fail-fast: true
+      matrix:
+        runner: [
+          {name: ubuntu-20.04, arch: amd64},
+          {name: arm64-runner-set, arch: arm64}
+        ]
+    runs-on: ${{ matrix.runner.name }}
     steps:
-      - uses: actions/setup-go@v5
-        with:
-          go-version: '^1.20.0'
-          cache: true
-      - name: setup env
-        shell: bash
-        run: |
-          echo "GOPATH=$(go env GOPATH)" >> "$GITHUB_ENV"
-          echo "$(go env GOPATH)/bin" >> "$GITHUB_PATH"
       - uses: actions/checkout@v4
         with:
           ref: ${{github.event.pull_request.head.ref}}
           repository: ${{github.event.pull_request.head.repo.full_name}}
-      - uses: ./.github/actions/build-push-kotsadm-image
+      - uses: ./.github/actions/build-custom-melange-package
         with:
-          chainguard-gcp-wif-pool: ${{ secrets.CHAINGUARD_GCP_WIF_POOL }}
-          chainguard-gcp-sa: ${{ secrets.CHAINGUARD_GCP_SA }}
-          chainguard-gcp-project-id: ${{ secrets.CHAINGUARD_GCP_PROJECT_ID }}
-          image-name: ttl.sh/automated-${{ github.run_id }}/kotsadm:24h
+          context: deploy
+          component: kotsadm
           git-tag: ${{ needs.generate-tag.outputs.tag }}
+          arch: ${{ matrix.runner.arch }}
+
+  build-kotsadm:
+    runs-on: ubuntu-20.04
+    needs: [ can-run-ci, generate-tag, build-kotsadm-melange-packages ]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{github.event.pull_request.head.ref}}
+          repository: ${{github.event.pull_request.head.repo.full_name}}
+      - uses: ./.github/actions/build-custom-image-with-apko
+        with:
+          context: deploy
+          component: kotsadm
+          git-tag: ${{ needs.generate-tag.outputs.tag }}
+          image-name: ttl.sh/automated-${{ github.run_id }}/kotsadm:24h
 
 
   build-kots-helm:
@@ -340,58 +350,80 @@ jobs:
           path: e2e/bin/
 
 
-  build-kurl-proxy:
-    runs-on: ubuntu-20.04
+  build-kurl-proxy-melange-packages:
     needs: [ can-run-ci, generate-tag ]
+    strategy:
+      fail-fast: true
+      matrix:
+        runner: [
+          {name: ubuntu-20.04, arch: amd64},
+          {name: arm64-runner-set, arch: arm64}
+        ]
+    runs-on: ${{ matrix.runner.name }}
     steps:
-      - uses: actions/setup-go@v5
-        with:
-          go-version: '^1.20.0'
-          cache: true
-
-      - name: setup env
-        run: |
-          echo "GOPATH=$(go env GOPATH)" >> "$GITHUB_ENV"
-          echo "$(go env GOPATH)/bin" >> "$GITHUB_PATH"
-        shell: bash
-
-      # This workflow trigger may lead to malicious PR authors being able to obtain repository write permissions or stealing repository secrets.
-      # Please read https://securitylab.github.com/research/github-actions-preventing-pwn-requests/
-      # this action creates a branch based on remote branch and runs the tests
       - uses: actions/checkout@v4
         with:
           ref: ${{github.event.pull_request.head.ref}}
           repository: ${{github.event.pull_request.head.repo.full_name}}
-
-      - uses: ./.github/actions/build-push-kurl-proxy-image
+      - uses: ./.github/actions/build-custom-melange-package
         with:
-          image-name: ttl.sh/automated-${{ github.run_id }}/kurl-proxy:24h
+          context: kurl_proxy/deploy
+          component: kurl-proxy
           git-tag: ${{ needs.generate-tag.outputs.tag }}
+          arch: ${{ matrix.runner.arch }}
 
+  build-kurl-proxy:
+    runs-on: ubuntu-20.04
+    needs: [ can-run-ci, generate-tag, build-kurl-proxy-melange-packages ]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{github.event.pull_request.head.ref}}
+          repository: ${{github.event.pull_request.head.repo.full_name}}
+      - uses: ./.github/actions/build-custom-image-with-apko
+        with:
+          context: kurl_proxy/deploy
+          component: kurl-proxy
+          git-tag: ${{ needs.generate-tag.outputs.tag }}
+          image-name: ttl.sh/automated-${{ github.run_id }}/kurl-proxy:24h
+
+
+  build-migrations-melange-packages:
+    needs: [ can-run-ci, generate-tag ]
+    strategy:
+      fail-fast: true
+      matrix:
+        runner: [
+          {name: ubuntu-20.04, arch: amd64},
+          {name: arm64-runner-set, arch: arm64}
+        ]
+    runs-on: ${{ matrix.runner.name }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{github.event.pull_request.head.ref}}
+          repository: ${{github.event.pull_request.head.repo.full_name}}
+      - uses: ./.github/actions/build-custom-melange-package
+        with:
+          context: migrations/deploy
+          component: kotsadm-migrations
+          git-tag: ${{ needs.generate-tag.outputs.tag }}
+          arch: ${{ matrix.runner.arch }}
 
   build-migrations:
     runs-on: ubuntu-20.04
-    needs: [ can-run-ci, generate-tag ]
+    needs: [ can-run-ci, generate-tag, build-migrations-melange-packages ]
     steps:
-      - name: setup env
-        run: |
-          echo "GOPATH=$(go env GOPATH)" >> "$GITHUB_ENV"
-          echo "$(go env GOPATH)/bin" >> "$GITHUB_PATH"
-        shell: bash
-
-      # This workflow trigger may lead to malicious PR authors being able to obtain repository write permissions or stealing repository secrets.
-      # Please read https://securitylab.github.com/research/github-actions-preventing-pwn-requests/
-      # this action creates a branch based on remote branch and runs the tests
       - uses: actions/checkout@v4
         with:
           ref: ${{github.event.pull_request.head.ref}}
           repository: ${{github.event.pull_request.head.repo.full_name}}
-
-      - uses: ./.github/actions/build-push-kotsadm-migrations-image
+      - uses: ./.github/actions/build-custom-image-with-apko
         with:
-          image-name: ttl.sh/automated-${{ github.run_id }}/kotsadm-migrations:24h
+          context: migrations/deploy
+          component: kotsadm-migrations
           git-tag: ${{ needs.generate-tag.outputs.tag }}
-
+          image-name: ttl.sh/automated-${{ github.run_id }}/kotsadm-migrations:24h
 
   push-minio:
     runs-on: ubuntu-20.04
@@ -412,10 +444,7 @@ jobs:
           path: .image.env
 
       - name: push minio
-        run: |
-          docker pull kotsadm/minio:${{ steps.dotenv.outputs.MINIO_TAG }}
-          docker tag kotsadm/minio:${{ steps.dotenv.outputs.MINIO_TAG }} ttl.sh/automated-${{ github.run_id }}/minio:${{ steps.dotenv.outputs.MINIO_TAG }}
-          docker push ttl.sh/automated-${{ github.run_id }}/minio:${{ steps.dotenv.outputs.MINIO_TAG }}
+        run: skopeo copy --all docker://kotsadm/minio:${{ steps.dotenv.outputs.MINIO_TAG }} docker://ttl.sh/automated-${{ github.run_id }}/minio:${{ steps.dotenv.outputs.MINIO_TAG }}
 
 
   push-rqlite:
@@ -437,10 +466,7 @@ jobs:
           path: .image.env
 
       - name: push rqlite
-        run: |
-          docker pull kotsadm/rqlite:${{ steps.dotenv.outputs.RQLITE_TAG }}
-          docker tag kotsadm/rqlite:${{ steps.dotenv.outputs.RQLITE_TAG }} ttl.sh/automated-${{ github.run_id }}/rqlite:${{ steps.dotenv.outputs.RQLITE_TAG }}
-          docker push ttl.sh/automated-${{ github.run_id }}/rqlite:${{ steps.dotenv.outputs.RQLITE_TAG }}
+        run: skopeo copy --all docker://kotsadm/rqlite:${{ steps.dotenv.outputs.RQLITE_TAG }} docker://ttl.sh/automated-${{ github.run_id }}/rqlite:${{ steps.dotenv.outputs.RQLITE_TAG }}
 
   push-dex:
     runs-on: ubuntu-20.04
@@ -461,10 +487,7 @@ jobs:
           path: .image.env
 
       - name: push dex
-        run: |
-          docker pull kotsadm/dex:${{ steps.dotenv.outputs.DEX_TAG }}
-          docker tag kotsadm/dex:${{ steps.dotenv.outputs.DEX_TAG }} ttl.sh/automated-${{ github.run_id }}/dex:${{ steps.dotenv.outputs.DEX_TAG }}
-          docker push ttl.sh/automated-${{ github.run_id }}/dex:${{ steps.dotenv.outputs.DEX_TAG }}
+        run: skopeo copy --all docker://kotsadm/dex:${{ steps.dotenv.outputs.DEX_TAG }} docker://ttl.sh/automated-${{ github.run_id }}/dex:${{ steps.dotenv.outputs.DEX_TAG }}
 
   # only run validate-kurl-addon if changes to "deploy/kurl/kotsadm/template/**"
   kurl-addon-changes-filter:
@@ -542,7 +565,6 @@ jobs:
         uses: ./.github/actions/cmx-versions
         with:
           replicated-api-token: ${{ secrets.C11Y_MATRIX_TOKEN }}
-          distros: 'k3s,openshift'
     outputs:
       versions-to-test: ${{ steps.cmx-versions-to-test.outputs.versions-to-test }}
 
@@ -612,6 +634,7 @@ jobs:
           kots-namespace: 'smoke-test'
           k8s-distribution: ${{ matrix.cluster.distribution }}
           k8s-version: ${{ matrix.cluster.version }}
+          k8s-instance-type: ${{ matrix.cluster.instance_type }}
           testim-access-token: '${{ secrets.TESTIM_ACCESS_TOKEN }}'
           testim-branch: ${{ github.head_ref == 'main' && 'master' || github.head_ref }}
           aws-access-key-id: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_ACCESS_KEY_ID }}'
@@ -763,6 +786,7 @@ jobs:
           kots-namespace: 'backup-and-restore'
           k8s-distribution: ${{ matrix.cluster.distribution }}
           k8s-version: ${{ matrix.cluster.version }}
+          k8s-instance-type: ${{ matrix.cluster.instance_type }}
           testim-access-token: '${{ secrets.TESTIM_ACCESS_TOKEN }}'
           testim-branch: ${{ github.head_ref == 'main' && 'master' || github.head_ref }}
           aws-access-key-id: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_ACCESS_KEY_ID }}'
@@ -1067,7 +1091,6 @@ jobs:
           cluster-name: automated-kots-${{ github.run_id }}-${{ matrix.cluster.distribution }}-${{ matrix.cluster.version }}
           timeout-minutes: '120'
           ttl: 2h
-          instance-type: ${{ matrix.cluster.distribution == 'gke' && 'n2-standard-4' || '' }}
           export-kubeconfig: true
 
       - name: download kots binary
@@ -1244,7 +1267,7 @@ jobs:
           cluster-name: automated-kots-${{ github.run_id }}-${{ matrix.cluster.distribution }}-${{ matrix.cluster.version }}
           timeout-minutes: '120'
           ttl: 2h
-          instance-type: ${{ matrix.cluster.distribution == 'gke' && 'n2-standard-4' || '' }}
+          instance-type: ${{ matrix.cluster.instance_type }}
           export-kubeconfig: true
 
       - name: download kots binary
@@ -1353,7 +1376,7 @@ jobs:
           cluster-name: automated-kots-${{ github.run_id }}-${{ matrix.cluster.distribution }}-${{ matrix.cluster.version }}
           timeout-minutes: '120'
           ttl: 2h
-          instance-type: ${{ matrix.cluster.distribution == 'gke' && 'n2-standard-4' || '' }}
+          instance-type: ${{ matrix.cluster.instance_type }}
           export-kubeconfig: true
 
       - name: download kots binary
@@ -1621,7 +1644,6 @@ jobs:
           cluster-name: automated-kots-${{ github.run_id }}-${{ matrix.cluster.distribution }}-${{ matrix.cluster.version }}
           timeout-minutes: '120'
           ttl: 2h
-          instance-type: ${{ matrix.cluster.distribution == 'gke' && 'n2-standard-4' || '' }}
           export-kubeconfig: true
 
       - name: download kots binary
@@ -2381,6 +2403,9 @@ jobs:
       fail-fast: false
       matrix:
         cluster: ${{ fromJson(needs.cmx-versions.outputs.versions-to-test) }}
+        exclude:
+          - cluster:
+              instance_type: m7g.large # old kots versions do not support arm64
     continue-on-error: ${{ matrix.cluster.stage != 'stable' }}
     env:
       APP_SLUG: postgres-to-rqlite
@@ -2399,7 +2424,7 @@ jobs:
           cluster-name: automated-kots-${{ github.run_id }}-${{ matrix.cluster.distribution }}-${{ matrix.cluster.version }}
           timeout-minutes: '120'
           ttl: 2h
-          instance-type: ${{ matrix.cluster.distribution == 'gke' && 'n2-standard-4' || '' }}
+          instance-type: ${{ matrix.cluster.instance_type }}
           export-kubeconfig: true
 
       - name: download base kots version
@@ -2828,7 +2853,7 @@ jobs:
       fail-fast: false
       matrix:
         cluster: [
-          {distribution: kind, version: v1.28.0, instance-type: r1.medium}
+          {distribution: kind, version: v1.28.0, instance_type: r1.medium}
         ]
     env:
       APP_SLUG: remove-app
@@ -2846,7 +2871,7 @@ jobs:
           cluster-name: automated-kots-${{ github.run_id }}-${{ matrix.cluster.distribution }}-${{ matrix.cluster.version }}
           timeout-minutes: '120'
           ttl: 2h
-          instance-type: ${{ matrix.cluster.instance-type }}
+          instance-type: ${{ matrix.cluster.instance_type }}
           export-kubeconfig: true
 
       - name: download kots binary

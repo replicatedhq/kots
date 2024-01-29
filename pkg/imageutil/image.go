@@ -281,3 +281,27 @@ func KustomizeImage(destRegistry registrytypes.RegistryOptions, image string) ([
 	}
 	return rewrittenImages, nil
 }
+
+func ChangeImageTag(image string, newTag string) (string, error) {
+	parsed, err := reference.ParseDockerRef(image)
+	if err != nil {
+		return "", errors.Wrap(err, "failed to parse image")
+	}
+
+	if _, ok := parsed.(reference.Canonical); ok {
+		// TODO: change tag for digested image that also has a tag
+		return image, nil
+	}
+
+	if _, ok := parsed.(reference.Tagged); !ok {
+		// image is not tagged, just append the tag
+		return fmt.Sprintf("%s:%s", image, newTag), nil
+	}
+
+	imageParts := strings.Split(image, "/")
+	lastPart := imageParts[len(imageParts)-1]
+	lastPart = fmt.Sprintf("%s:%s", strings.Split(lastPart, ":")[0], newTag)
+	imageParts[len(imageParts)-1] = lastPart
+
+	return strings.Join(imageParts, "/"), nil
+}

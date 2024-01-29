@@ -25,6 +25,7 @@ func defaultKOTSNodeAffinity() *corev1.NodeAffinity {
 							Operator: corev1.NodeSelectorOpIn,
 							Values: []string{
 								"amd64",
+								"arm64",
 							},
 						},
 					},
@@ -40,7 +41,7 @@ func DefaultKOTSNodeLabelSelector() (labels.Selector, error) {
 		return nil, errors.Wrap(err, "failed to create os requirement")
 	}
 
-	archReq, err := labels.NewRequirement("kubernetes.io/arch", selection.NotIn, []string{"arm64"})
+	archReq, err := labels.NewRequirement("kubernetes.io/arch", selection.In, []string{"amd64", "arm64"})
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create arch requirement")
 	}

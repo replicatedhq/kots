@@ -17,6 +17,7 @@ import (
 	apptypes "github.com/replicatedhq/kots/pkg/app/types"
 	"github.com/replicatedhq/kots/pkg/apparchive"
 	appstatetypes "github.com/replicatedhq/kots/pkg/appstate/types"
+	"github.com/replicatedhq/kots/pkg/binaries"
 	"github.com/replicatedhq/kots/pkg/embeddedcluster"
 	identitydeploy "github.com/replicatedhq/kots/pkg/identity/deploy"
 	identitytypes "github.com/replicatedhq/kots/pkg/identity/types"
@@ -305,7 +306,7 @@ func (o *Operator) DeployApp(appID string, sequence int64) (deployed bool, deplo
 		return false, errors.New("identity service is required but is not enabled")
 	}
 
-	kustomizeBinPath := kotsKinds.GetKustomizeBinaryPath()
+	kustomizeBinPath := binaries.GetKustomizeBinPath()
 
 	renderedManifests, _, err := apparchive.GetRenderedApp(deployedVersionArchive, downstreams.Name, kustomizeBinPath)
 	if err != nil {
@@ -390,8 +391,6 @@ func (o *Operator) DeployApp(appID string, sequence int64) (deployed bool, deplo
 		AppSlug:                      app.Slug,
 		ClusterID:                    o.clusterID,
 		Sequence:                     sequence,
-		KubectlVersion:               kotsKinds.KotsApplication.Spec.KubectlVersion,
-		KustomizeVersion:             kotsKinds.KotsApplication.Spec.KustomizeVersion,
 		AdditionalNamespaces:         kotsKinds.KotsApplication.Spec.AdditionalNamespaces,
 		ImagePullSecrets:             imagePullSecrets,
 		Manifests:                    base64EncodedManifests,
@@ -749,13 +748,13 @@ func (o *Operator) UndeployApp(a *apptypes.App, d *downstreamtypes.Downstream, i
 		return errors.Wrap(err, "failed to load kotskinds")
 	}
 
-	renderedManifests, _, err := apparchive.GetRenderedApp(deployedVersionArchive, d.Name, kotsKinds.GetKustomizeBinaryPath())
+	renderedManifests, _, err := apparchive.GetRenderedApp(deployedVersionArchive, d.Name, binaries.GetKustomizeBinPath())
 	if err != nil {
 		return errors.Wrap(err, "failed to get rendered app")
 	}
 	base64EncodedManifests := base64.StdEncoding.EncodeToString(renderedManifests)
 
-	v1Beta1ChartsArchive, _, err := apparchive.GetRenderedV1Beta1ChartsArchive(deployedVersionArchive, d.Name, kotsKinds.GetKustomizeBinaryPath())
+	v1Beta1ChartsArchive, _, err := apparchive.GetRenderedV1Beta1ChartsArchive(deployedVersionArchive, d.Name, binaries.GetKustomizeBinPath())
 	if err != nil {
 		return errors.Wrap(err, "failed to get v1beta1 charts archive")
 	}
@@ -796,8 +795,6 @@ func (o *Operator) UndeployApp(a *apptypes.App, d *downstreamtypes.Downstream, i
 		AppID:                a.ID,
 		AppSlug:              a.Slug,
 		ClusterID:            o.clusterID,
-		KubectlVersion:       kotsKinds.KotsApplication.Spec.KubectlVersion,
-		KustomizeVersion:     kotsKinds.KotsApplication.Spec.KustomizeVersion,
 		AdditionalNamespaces: kotsKinds.KotsApplication.Spec.AdditionalNamespaces,
 		Manifests:            base64EncodedManifests,
 		V1Beta1ChartsArchive: v1Beta1ChartsArchive,

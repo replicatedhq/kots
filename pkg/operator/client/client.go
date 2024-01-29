@@ -238,8 +238,6 @@ func (c *Client) deployManifests(deployArgs operatortypes.DeployAppArgs) (*deplo
 			AdditionalNamespaces: deployArgs.AdditionalNamespaces,
 			IsRestore:            deployArgs.IsRestore,
 			RestoreLabelSelector: deployArgs.RestoreLabelSelector,
-			KubectlVersion:       deployArgs.KubectlVersion,
-			KustomizeVersion:     deployArgs.KustomizeVersion,
 			Wait:                 deployArgs.Wait,
 		}
 		if err := c.diffAndDeleteManifests(opts); err != nil {
@@ -416,8 +414,6 @@ func (c *Client) undeployManifests(undeployArgs operatortypes.UndeployAppArgs) e
 			AdditionalNamespaces: undeployArgs.AdditionalNamespaces,
 			IsRestore:            undeployArgs.IsRestore,
 			RestoreLabelSelector: undeployArgs.RestoreLabelSelector,
-			KubectlVersion:       undeployArgs.KubectlVersion,
-			KustomizeVersion:     undeployArgs.KustomizeVersion,
 			Wait:                 undeployArgs.Wait,
 		}
 		if err := c.diffAndDeleteManifests(opts); err != nil {
@@ -634,16 +630,9 @@ func (c *Client) setAppStatus(newAppStatus appstatetypes.AppStatus) error {
 	return nil
 }
 
-func (c *Client) getApplier(kubectlVersion, kustomizeVersion string) (applier.KubectlInterface, error) {
-	kubectl, err := binaries.GetKubectlPathForVersion(kubectlVersion)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to find kubectl")
-	}
-
-	kustomize, err := binaries.GetKustomizePathForVersion(kustomizeVersion)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to find kustomize")
-	}
+func (c *Client) getApplier() (applier.KubectlInterface, error) {
+	kubectl := binaries.GetKubectlBinPath()
+	kustomize := binaries.GetKustomizeBinPath()
 
 	config, err := k8sutil.GetClusterConfig()
 	if err != nil {

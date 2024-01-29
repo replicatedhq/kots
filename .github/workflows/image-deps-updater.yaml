@@ -21,6 +21,8 @@ jobs:
       run: |
         set -euo pipefail
 
+        # We're only using the APKINDEX files to get the versions, so it doesn't matter which arch we use
+
         curl -LO --fail --show-error https://packages.wolfi.dev/os/x86_64/APKINDEX.tar.gz
         tar -xzvf APKINDEX.tar.gz
 
@@ -39,7 +41,7 @@ jobs:
         } >> "$GITHUB_OUTPUT"
 
     - name: Build and push minio image
-      uses: ./.github/actions/build-push-image-with-apko
+      uses: ./.github/actions/build-dep-image-with-apko
       with:
         apko-config: deploy/minio/apko.yaml
         image-name: index.docker.io/kotsadm/minio:${{ steps.get-tags.outputs.minio-tag }}
@@ -48,7 +50,7 @@ jobs:
         overwrite: ${{ github.event.inputs.overwrite }}
 
     - name: Build and push rqlite image
-      uses: ./.github/actions/build-push-image-with-apko
+      uses: ./.github/actions/build-dep-image-with-apko
       with:
         apko-config: deploy/rqlite/apko.yaml
         image-name: index.docker.io/kotsadm/rqlite:${{ steps.get-tags.outputs.rqlite-tag }}
@@ -57,7 +59,7 @@ jobs:
         overwrite: ${{ github.event.inputs.overwrite }}
 
     - name: Build and push dex image
-      uses: ./.github/actions/build-push-image-with-apko
+      uses: ./.github/actions/build-dep-image-with-apko
       with:
         apko-config: deploy/dex/apko.yaml
         image-name: index.docker.io/kotsadm/dex:${{ steps.get-tags.outputs.dex-tag }}

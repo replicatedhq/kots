@@ -26,8 +26,6 @@ type DeployAppArgs struct {
 	AppSlug                      string                `json:"app_slug"`
 	ClusterID                    string                `json:"cluster_id"`
 	Sequence                     int64                 `json:"sequence"`
-	KubectlVersion               string                `json:"kubectl_version"`
-	KustomizeVersion             string                `json:"kustomize_version"`
 	AdditionalNamespaces         []string              `json:"additional_namespaces"`
 	ImagePullSecrets             []string              `json:"image_pull_secrets"`
 	PreviousManifests            string                `json:"previous_manifests"`
@@ -51,8 +49,6 @@ type UndeployAppArgs struct {
 	AppID                string                `json:"app_id"`
 	AppSlug              string                `json:"app_slug"`
 	ClusterID            string                `json:"cluster_id"`
-	KubectlVersion       string                `json:"kubectl_version"`
-	KustomizeVersion     string                `json:"kustomize_version"`
 	AdditionalNamespaces []string              `json:"additional_namespaces"`
 	Manifests            string                `json:"manifests"`
 	V1Beta1ChartsArchive []byte                `json:"v1Beta1ChartsArchive"`

@@ -21,10 +21,10 @@ import (
 	"github.com/mikesmitty/edkey"
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/apparchive"
+	"github.com/replicatedhq/kots/pkg/binaries"
 	"github.com/replicatedhq/kots/pkg/crypto"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/kotsadm/types"
-	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/util"
 	"golang.org/x/crypto/ssh"
 	v1 "k8s.io/api/core/v1"
@@ -713,12 +713,7 @@ func getAuth(privateKey string) (transport.AuthMethod, error) {
 }
 
 func CreateGitOpsCommit(gitOpsConfig *GitOpsConfig, appSlug string, appName string, newSequence int, archiveDir string, downstreamName string) (string, error) {
-	kotsKinds, err := kotsutil.LoadKotsKinds(archiveDir)
-	if err != nil {
-		return "", errors.Wrap(err, "failed to load kots kinds")
-	}
-
-	out, _, err := apparchive.GetRenderedApp(archiveDir, downstreamName, kotsKinds.GetKustomizeBinaryPath())
+	out, _, err := apparchive.GetRenderedApp(archiveDir, downstreamName, binaries.GetKustomizeBinPath())
 	if err != nil {
 		return "", errors.Wrap(err, "failed to get rendered app")
 	}

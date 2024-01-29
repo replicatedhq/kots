@@ -1,6 +1,6 @@
 include Makefile.build.mk
 CURRENT_USER := $(if $(GITHUB_USER),$(GITHUB_USER),$(shell id -u -n))
-MINIO_TAG ?= 0.20231101.183725-r1
+MINIO_TAG ?= 0.20231220.010002-r1
 RQLITE_TAG ?= 8.18.2-r0
 DEX_TAG ?= 2.38.0-r0
 LVP_TAG ?= v0.6.0
@@ -126,25 +126,26 @@ all-ttl.sh: build-ttl.sh
 	docker tag kotsadm/rqlite:${RQLITE_TAG} ttl.sh/${CURRENT_USER}/rqlite:${RQLITE_TAG}
 	docker push ttl.sh/${CURRENT_USER}/rqlite:${RQLITE_TAG}
 
-.PHONY: build-release
-build-release:
-	mkdir -p bin/docker-archive/kotsadm
-	skopeo copy docker://kotsadm/kotsadm:${GIT_TAG} docker-archive:bin/docker-archive/kotsadm/${GIT_TAG}
+.PHONY: kotsadm-bundle
+kotsadm-bundle:
+	skopeo copy --all --dest-tls-verify=false docker://kotsadm/kotsadm:${GIT_TAG} docker://${BUNDLE_REGISTRY}/kotsadm:${GIT_TAG}
+	skopeo copy --all --dest-tls-verify=false docker://kotsadm/kotsadm-migrations:${GIT_TAG} docker://${BUNDLE_REGISTRY}/kotsadm-migrations:${GIT_TAG}
+	skopeo copy --all --dest-tls-verify=false docker://kotsadm/dex:${DEX_TAG} docker://${BUNDLE_REGISTRY}/dex:${DEX_TAG}
+	skopeo copy --all --dest-tls-verify=false docker://kotsadm/minio:${MINIO_TAG} docker://${BUNDLE_REGISTRY}/minio:${MINIO_TAG}
+	skopeo copy --all --dest-tls-verify=false docker://kotsadm/rqlite:${RQLITE_TAG} docker://${BUNDLE_REGISTRY}/rqlite:${RQLITE_TAG}
+	skopeo copy --all --dest-tls-verify=false docker://replicated/local-volume-provider:${LVP_TAG} docker://${BUNDLE_REGISTRY}/local-volume-provider:${LVP_TAG}
 
-	mkdir -p bin/docker-archive/kotsadm-migrations
-	skopeo copy docker://kotsadm/kotsadm-migrations:${GIT_TAG} docker-archive:bin/docker-archive/kotsadm-migrations/${GIT_TAG}
+	go run ./scripts/create-airgap-file.go true
 
-	mkdir -p bin/docker-archive/dex
-	skopeo copy docker://kotsadm/dex:${DEX_TAG} docker-archive:bin/docker-archive/dex/${DEX_TAG}
+.PHONY: kotsadm-bundle-nominio
+kotsadm-bundle-nominio:
+	skopeo copy --all --dest-tls-verify=false docker://kotsadm/kotsadm:${GIT_TAG} docker://${BUNDLE_REGISTRY}/kotsadm:${GIT_TAG}
+	skopeo copy --all --dest-tls-verify=false docker://kotsadm/kotsadm-migrations:${GIT_TAG} docker://${BUNDLE_REGISTRY}/kotsadm-migrations:${GIT_TAG}
+	skopeo copy --all --dest-tls-verify=false docker://kotsadm/dex:${DEX_TAG} docker://${BUNDLE_REGISTRY}/dex:${DEX_TAG}
+	skopeo copy --all --dest-tls-verify=false docker://kotsadm/rqlite:${RQLITE_TAG} docker://${BUNDLE_REGISTRY}/rqlite:${RQLITE_TAG}
+	skopeo copy --all --dest-tls-verify=false docker://replicated/local-volume-provider:${LVP_TAG} docker://${BUNDLE_REGISTRY}/local-volume-provider:${LVP_TAG}
 
-	mkdir -p bin/docker-archive/minio
-	skopeo copy docker://kotsadm/minio:${MINIO_TAG} docker-archive:bin/docker-archive/minio/${MINIO_TAG}
-
-	mkdir -p bin/docker-archive/rqlite
-	skopeo copy docker://kotsadm/rqlite:${RQLITE_TAG} docker-archive:bin/docker-archive/rqlite/${RQLITE_TAG}
-
-	mkdir -p bin/docker-archive/local-volume-provider
-	skopeo copy docker://replicated/local-volume-provider:${LVP_TAG} docker-archive:bin/docker-archive/local-volume-provider/${LVP_TAG}
+	go run ./scripts/create-airgap-file.go false
 
 .PHONY: cache
 cache:

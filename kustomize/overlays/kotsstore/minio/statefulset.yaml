@@ -38,7 +38,7 @@ spec:
               name: kotsadm-minio
         - name: MINIO_BROWSER
           value: "on"
-        image: kotsadm/minio:0.20231101.183725
+        image: kotsadm/minio:0.20231220.010002
         imagePullPolicy: IfNotPresent
         livenessProbe:
           failureThreshold: 3

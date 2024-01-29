@@ -54,7 +54,7 @@ func AdminPushImagesCmd() *cobra.Command {
 			}
 
 			if _, err := os.Stat(imageSource); err == nil {
-				err = image.PushImages(imageSource, *options)
+				err = image.TagAndPushImagesFromBundle(imageSource, *options)
 				if err != nil {
 					return errors.Wrap(err, "failed to push images")
 				}

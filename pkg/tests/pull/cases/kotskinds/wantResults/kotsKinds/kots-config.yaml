@@ -126,16 +126,6 @@ spec:
       title: Target Kots Version
       type: text
       value: ""
-    - default: 1.25.0
-      name: kots_app_kubectl_version
-      title: Kubectl Version
-      type: text
-      value: ""
-    - default: 4.7.0
-      name: kots_app_kustomize_version
-      title: Kustomize Version
-      type: text
-      value: ""
     - default: my-app-image:1.0.0
       name: kots_app_additional_images_1
       title: Additional Images 1

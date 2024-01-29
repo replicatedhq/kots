@@ -37,8 +37,6 @@ spec:
       yAxisTemplate: y-axis-template
   minKotsVersion: 1.0.0
   targetKotsVersion: 2.0.0
-  kubectlVersion: 1.25.0
-  kustomizeVersion: 4.7.0
   additionalImages:
     - my-app-image:1.0.0
   additionalNamespaces:
