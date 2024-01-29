@@ -634,6 +634,7 @@ jobs:
           kots-namespace: 'smoke-test'
           k8s-distribution: ${{ matrix.cluster.distribution }}
           k8s-version: ${{ matrix.cluster.version }}
+          k8s-instance-type: ${{ matrix.cluster.instance_type }}
           testim-access-token: '${{ secrets.TESTIM_ACCESS_TOKEN }}'
           testim-branch: ${{ github.head_ref == 'main' && 'master' || github.head_ref }}
           aws-access-key-id: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_ACCESS_KEY_ID }}'
@@ -785,6 +786,7 @@ jobs:
           kots-namespace: 'backup-and-restore'
           k8s-distribution: ${{ matrix.cluster.distribution }}
           k8s-version: ${{ matrix.cluster.version }}
+          k8s-instance-type: ${{ matrix.cluster.instance_type }}
           testim-access-token: '${{ secrets.TESTIM_ACCESS_TOKEN }}'
           testim-branch: ${{ github.head_ref == 'main' && 'master' || github.head_ref }}
           aws-access-key-id: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_ACCESS_KEY_ID }}'
@@ -1089,7 +1091,6 @@ jobs:
           cluster-name: automated-kots-${{ github.run_id }}-${{ matrix.cluster.distribution }}-${{ matrix.cluster.version }}
           timeout-minutes: '120'
           ttl: 2h
-          instance-type: ${{ matrix.cluster.distribution == 'gke' && 'n2-standard-4' || '' }}
           export-kubeconfig: true
 
       - name: download kots binary
@@ -1266,7 +1267,7 @@ jobs:
           cluster-name: automated-kots-${{ github.run_id }}-${{ matrix.cluster.distribution }}-${{ matrix.cluster.version }}
           timeout-minutes: '120'
           ttl: 2h
-          instance-type: ${{ matrix.cluster.distribution == 'gke' && 'n2-standard-4' || '' }}
+          instance-type: ${{ matrix.cluster.instance_type }}
           export-kubeconfig: true
 
       - name: download kots binary
@@ -1375,7 +1376,7 @@ jobs:
           cluster-name: automated-kots-${{ github.run_id }}-${{ matrix.cluster.distribution }}-${{ matrix.cluster.version }}
           timeout-minutes: '120'
           ttl: 2h
-          instance-type: ${{ matrix.cluster.distribution == 'gke' && 'n2-standard-4' || '' }}
+          instance-type: ${{ matrix.cluster.instance_type }}
           export-kubeconfig: true
 
       - name: download kots binary
@@ -1643,7 +1644,6 @@ jobs:
           cluster-name: automated-kots-${{ github.run_id }}-${{ matrix.cluster.distribution }}-${{ matrix.cluster.version }}
           timeout-minutes: '120'
           ttl: 2h
-          instance-type: ${{ matrix.cluster.distribution == 'gke' && 'n2-standard-4' || '' }}
           export-kubeconfig: true
 
       - name: download kots binary
@@ -2421,7 +2421,7 @@ jobs:
           cluster-name: automated-kots-${{ github.run_id }}-${{ matrix.cluster.distribution }}-${{ matrix.cluster.version }}
           timeout-minutes: '120'
           ttl: 2h
-          instance-type: ${{ matrix.cluster.distribution == 'gke' && 'n2-standard-4' || '' }}
+          instance-type: ${{ matrix.cluster.instance_type }}
           export-kubeconfig: true
 
       - name: download base kots version
@@ -2850,7 +2850,7 @@ jobs:
       fail-fast: false
       matrix:
         cluster: [
-          {distribution: kind, version: v1.28.0, instance-type: r1.medium}
+          {distribution: kind, version: v1.28.0, instance_type: r1.medium}
         ]
     env:
       APP_SLUG: remove-app
@@ -2868,7 +2868,7 @@ jobs:
           cluster-name: automated-kots-${{ github.run_id }}-${{ matrix.cluster.distribution }}-${{ matrix.cluster.version }}
           timeout-minutes: '120'
           ttl: 2h
-          instance-type: ${{ matrix.cluster.instance-type }}
+          instance-type: ${{ matrix.cluster.instance_type }}
           export-kubeconfig: true
 
       - name: download kots binary

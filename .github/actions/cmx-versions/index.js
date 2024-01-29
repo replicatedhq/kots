@@ -76,7 +76,7 @@ async function getClusterVersions() {
             const filterVersions = filters[distroName].versions;
             distribution.versions.forEach((version) => {
                 if (filterVersions.has(version)) {
-                    versionsToTest.push({ distribution: distroName, version, instanceType, stage });
+                    versionsToTest.push({ distribution: distroName, version, instance_type: instanceType, stage });
                 }
             });
         }
@@ -84,14 +84,14 @@ async function getClusterVersions() {
         if (!!filters[distroName].latest_version) {
             // latest version
             const latestVersion = getLatestVersion(distribution);
-            versionsToTest.push({ distribution: distroName, version: latestVersion, instanceType, stage });
+            versionsToTest.push({ distribution: distroName, version: latestVersion, instance_type: instanceType, stage });
         }
 
         if (!!filters[distroName].latest_minor_versions) {
             // latest minor versions
             const latestMinorVersions = getLatestMinorVersions(distribution);
             Object.keys(latestMinorVersions).forEach((minorVersion) => {
-                versionsToTest.push({ distribution: distroName, version: latestMinorVersions[minorVersion], instanceType, stage });
+                versionsToTest.push({ distribution: distroName, version: latestMinorVersions[minorVersion], instance_type: instanceType, stage });
             });
         }
     });
