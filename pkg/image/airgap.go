@@ -217,19 +217,23 @@ func PushImagesFromTempRegistry(airgapRootDir string, imageList []string, option
 			return errors.Wrapf(err, "failed to parse source image %s", imageID)
 		}
 
-		// if kotsadm tag is set, change the tag of the kotsadm/kotsadm and kotsadm/kotsadm-migrations images
-		if options.KotsadmTag != "" && strings.HasPrefix(imageID, "kotsadm/kotsadm") {
-			i, err := imageutil.ChangeImageTag(imageID, options.KotsadmTag)
-			if err != nil {
-				return errors.Wrap(err, "failed to change kotsadm dest image tag")
-			}
-			imageID = i
-		}
-
 		destImage, err := imageutil.DestImage(options.Registry, imageID)
 		if err != nil {
 			return errors.Wrapf(err, "failed to get destination image for %s", imageID)
 		}
+
+		if options.KotsadmTag != "" {
+			// kotsadm tag is set, change the tag of the kotsadm and kotsadm-migrations images
+			imageName := imageutil.GetImageName(destImage)
+			if imageName == "kotsadm" || imageName == "kotsadm-migrations" {
+				di, err := imageutil.ChangeImageTag(destImage, options.KotsadmTag)
+				if err != nil {
+					return errors.Wrap(err, "failed to change kotsadm dest image tag")
+				}
+				destImage = di
+			}
+		}
+
 		destStr := fmt.Sprintf("docker://%s", destImage)
 		destRef, err := alltransports.ParseImageName(destStr)
 		if err != nil {

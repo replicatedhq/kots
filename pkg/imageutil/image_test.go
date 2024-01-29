@@ -1050,6 +1050,47 @@ func TestGetTag(t *testing.T) {
 	}
 }
 
+func Test_GetImageName(t *testing.T) {
+	tests := []struct {
+		name     string
+		image    string
+		expected string
+	}{
+		{
+			name:     "image with tag",
+			image:    "quay.io/someorg/myimage:0.1",
+			expected: "myimage",
+		},
+		{
+			name:     "image with digest",
+			image:    "quay.io/someorg/myimage@sha256:1234567890abcdef",
+			expected: "myimage",
+		},
+		{
+			name:     "image without tag or digest",
+			image:    "quay.io/someorg/myimage",
+			expected: "myimage",
+		},
+		{
+			name:     "image with tag and digest",
+			image:    "quay.io/someorg/myimage:0.1@sha256:1234567890abcdef",
+			expected: "myimage",
+		},
+		{
+			name:     "image with registry and port",
+			image:    "myregistry.com:5000/someorg/myimage:0.1",
+			expected: "myimage",
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			result := GetImageName(test.image)
+			assert.Equal(t, test.expected, result)
+		})
+	}
+}
+
 func TestChangeImageTag(t *testing.T) {
 	tests := []struct {
 		name   string
