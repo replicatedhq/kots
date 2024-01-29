@@ -69,7 +69,7 @@ jobs:
         workspace: ${{ fromJSON(needs.find-expired-workspaces.outputs.workspaces) }}
     steps:
       - name: Trigger workspace cleanup
-        uses: peter-evans/repository-dispatch@v2
+        uses: peter-evans/repository-dispatch@v3
         with:
           token: ${{ secrets.E2E_GH_PAT }}
           repository: replicatedhq/kots
