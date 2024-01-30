@@ -1,0 +1,29 @@
+---
+# Source: my-preflight-chart/templates/my-chart-preflight.yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  labels:
+    troubleshoot.sh/kind: preflight
+  name: "my-preflight-chart-preflight-config"
+stringData:
+  preflight.yaml: |
+    apiVersion: troubleshoot.sh/v1beta2
+    kind: Preflight
+    metadata:
+      name: airgap-smoke-test-preflight
+    spec:
+      collectors: []
+      analyzers:
+        - clusterVersion:
+            outcomes:
+              - fail:
+                  when: "< 1.13.0"
+                  message: The application requires at Kubernetes 1.13.0 or later, and recommends 1.15.0.
+                  uri: https://www.kubernetes.io
+              - warn:
+                  when: "< 1.15.0"
+                  message: Your cluster meets the minimum version of Kubernetes, but we recommend you update to 1.15.0 or later.
+                  uri: https://kubernetes.io
+              - pass:
+                  message: Your cluster meets the minimum version of Kubernetes recommended by the application.

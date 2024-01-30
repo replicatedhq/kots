@@ -25,6 +25,8 @@ import (
 	"github.com/replicatedhq/kots/pkg/upstream"
 	upstreamtypes "github.com/replicatedhq/kots/pkg/upstream/types"
 	kotsv1beta1 "github.com/replicatedhq/kotskinds/apis/kots/v1beta1"
+	troubleshootv1beta2 "github.com/replicatedhq/troubleshoot/pkg/apis/troubleshoot/v1beta2"
+	troubleshootpreflight "github.com/replicatedhq/troubleshoot/pkg/preflight"
 )
 
 type RewriteOptions struct {
@@ -320,10 +322,6 @@ func Rewrite(rewriteOptions RewriteOptions) error {
 	}
 	renderedKotsKindsMap["userdata/installation.yaml"] = installationBytes
 
-	if err := kotsutil.WriteKotsKinds(renderedKotsKindsMap, u.GetKotsKindsDir(writeUpstreamOptions)); err != nil {
-		return errors.Wrap(err, "failed to write kots base")
-	}
-
 	if err := rendered.WriteRenderedApp(&rendered.WriteOptions{
 		BaseDir:             u.GetBaseDir(writeUpstreamOptions),
 		OverlaysDir:         u.GetOverlaysDir(writeUpstreamOptions),
@@ -337,6 +335,31 @@ func Rewrite(rewriteOptions RewriteOptions) error {
 		Clientset:           clientset,
 	}); err != nil {
 		return errors.Wrap(err, "failed to write rendered")
+	}
+
+	// preflights may also be included within helm chart templates, so load any from the rendered dir
+	tsKinds, err := kotsutil.LoadTSKindsFromPath(u.GetRenderedDir(writeUpstreamOptions))
+	if err != nil {
+		return errors.Wrap(err, fmt.Sprintf("failed to load troubleshoot kinds from path: %s", u.GetRenderedDir(writeUpstreamOptions)))
+	}
+
+	if tsKinds.PreflightsV1Beta2 != nil {
+		var renderedPreflight *troubleshootv1beta2.Preflight
+		for _, v := range tsKinds.PreflightsV1Beta2 {
+			renderedPreflight = troubleshootpreflight.ConcatPreflightSpec(renderedPreflight, &v)
+		}
+
+		if renderedPreflight != nil {
+			renderedPreflightBytes, err := kotsutil.MarshalRuntimeObject(renderedPreflight)
+			if err != nil {
+				return errors.Wrap(err, "failed to marshal rendered preflight")
+			}
+			renderedKotsKindsMap["helm-preflight.yaml"] = renderedPreflightBytes
+		}
+	}
+
+	if err := kotsutil.WriteKotsKinds(renderedKotsKindsMap, u.GetKotsKindsDir(writeUpstreamOptions)); err != nil {
+		return errors.Wrap(err, "failed to write the rendered kots kinds")
 	}
 
 	log.FinishSpinner()
