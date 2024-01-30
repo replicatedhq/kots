@@ -282,6 +282,14 @@ func KustomizeImage(destRegistry registrytypes.RegistryOptions, image string) ([
 	return rewrittenImages, nil
 }
 
+// GetImageName returns the name of the image without the tag, digest, or registry
+func GetImageName(image string) string {
+	imageParts := strings.Split(image, "/")
+	lastPart := imageParts[len(imageParts)-1]
+	return StripImageTagAndDigest(lastPart)
+}
+
+// ChangeImageTag changes the tag of an image to the provided new tag
 func ChangeImageTag(image string, newTag string) (string, error) {
 	parsed, err := reference.ParseDockerRef(image)
 	if err != nil {
