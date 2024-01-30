@@ -24,10 +24,19 @@ ENV GO111MODULE=on
 ENV PATH="/usr/local/bin:$PATH"
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    curl ca-certificates git gnupg2 s3cmd kubectl \
+    curl ca-certificates git gnupg2 s3cmd \
   && for i in 1 2 3 4 5 6 7 8; do mkdir -p "/usr/share/man/man$i"; done \
   && rm -rf /var/lib/apt/lists/* \
   && rm -rf /usr/share/man/man*
+
+# Install Kubectl 1.29
+ENV KUBECTL_1_29_VERSION=v1.29.0
+ENV KUBECTL_1_29_URL=https://dl.k8s.io/release/${KUBECTL_1_29_VERSION}/bin/linux/amd64/kubectl
+ENV KUBECTL_1_29_SHA256SUM=0e03ab096163f61ab610b33f37f55709d3af8e16e4dcc1eb682882ef80f96fd5
+RUN curl -fsSLO "${KUBECTL_1_29_URL}" \
+  && echo "${KUBECTL_1_29_SHA256SUM} kubectl" | sha256sum -c - \
+  && chmod +x kubectl \
+  && mv kubectl /usr/local/bin//kubectl
 
 # Install kustomize 5
 ENV KUSTOMIZE5_VERSION=5.1.1
