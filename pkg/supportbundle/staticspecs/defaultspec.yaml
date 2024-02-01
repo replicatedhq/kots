@@ -6,29 +6,6 @@ spec:
   collectors:
     - clusterInfo: {}
     - clusterResources: {}
-    - exec: # this is removable when we don't need to support kots <= 1.87
-        args:
-          - "-U"
-          - kotsadm
-        collectorName: kotsadm-postgres-db
-        command:
-          - pg_dump
-        containerName: kotsadm-postgres
-        name: kots/admin_console
-        selector:
-          - app=kotsadm-postgres
-        timeout: 10s
-    - exec:
-        collectorName: kotsadm-rqlite-db
-        name: kots/admin_console
-        selector:
-          - app=kotsadm-rqlite
-        command:
-          - sh
-          - -c
-          - |
-            wget -qO- kotsadm:${RQLITE_PASSWORD}@localhost:4001/db/backup?fmt=sql  
-        timeout: 10s
     - exec:
         args:
           - "http://localhost:3030/goroutines"
