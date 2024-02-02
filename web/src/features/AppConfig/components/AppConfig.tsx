@@ -141,8 +141,10 @@ class AppConfig extends Component<Props, State> {
     }
     window.addEventListener("resize", this.determineSidebarHeight);
 
-    if (!this.props.app) {
-      this.getApp();
+    if (!app) {
+      this.fetchApp();
+    } else {
+      this.setState({ app });
     }
     this.getConfig();
   }
@@ -204,11 +206,7 @@ class AppConfig extends Component<Props, State> {
     }
   };
 
-  getApp = async () => {
-    if (this.props.app) {
-      return;
-    }
-
+  fetchApp = async (): Promise<App | undefined> => {
     try {
       const { slug } = this.props.params;
       const res = await fetch(`${process.env.API_ENDPOINT}/app/${slug}`, {
@@ -221,6 +219,7 @@ class AppConfig extends Component<Props, State> {
       if (res.ok && res.status == 200) {
         const app = await res.json();
         this.setState({ app });
+        return app;
       }
     } catch (err) {
       console.log(err);
@@ -416,7 +415,8 @@ class AppConfig extends Component<Props, State> {
         }
 
         if (fromLicenseFlow) {
-          const hasPreflight = this.props.app.hasPreflight;
+          const app = await this.fetchApp();
+          const hasPreflight = app?.hasPreflight;
 
           if (hasPreflight) {
             navigate(`/${slug}/preflight`, { replace: true });
@@ -661,6 +661,7 @@ class AppConfig extends Component<Props, State> {
 
   render() {
     const {
+      app,
       changed,
       showConfigError,
       configErrorMessage,
@@ -675,7 +676,6 @@ class AppConfig extends Component<Props, State> {
       showValidationError,
     } = this.state;
     const { fromLicenseFlow, params, isHelmManaged } = this.props;
-    const app = this.props.app;
 
     if (configLoading || !app) {
       return (
