@@ -627,6 +627,8 @@ export const Utilities = {
         return "Cluster version upgraded";
       case "AddonsInstalling":
         return "Upgrading addons";
+      case "PendingChartCreation":
+        return "Creating addons";
       case "HelmChartUpdateFailure":
         return "Failed to upgrade addons";
       case "Failed":
