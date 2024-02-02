@@ -1,0 +1,11 @@
+# this chart validates that preflights inside helm chart templates are processed correctly as kotskinds
+apiVersion: kots.io/v1beta2
+kind: HelmChart
+metadata:
+  name: my-preflight-chart
+  annotations:
+    kots.io/exclude: "true"
+spec:
+  chart:
+    name: my-preflight-chart
+    chartVersion: 0.1.0

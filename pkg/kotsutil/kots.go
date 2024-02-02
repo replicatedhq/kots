@@ -1475,14 +1475,22 @@ func FilterV1Beta1ChartsWithV1Beta2Charts(v1Beta1Charts []kotsv1beta1.HelmChart,
 }
 
 func MustMarshalInstallation(installation *kotsv1beta1.Installation) []byte {
+	b, err := MarshalRuntimeObject(installation)
+	if err != nil {
+		panic(err)
+	}
+	return b
+}
+
+func MarshalRuntimeObject(obj runtime.Object) ([]byte, error) {
 	s := json.NewYAMLSerializer(json.DefaultMetaFactory, scheme.Scheme, scheme.Scheme)
 
 	var b bytes.Buffer
-	if err := s.Encode(installation, &b); err != nil {
-		panic(err)
+	if err := s.Encode(obj, &b); err != nil {
+		return nil, errors.Wrap(err, "failed to encode object")
 	}
 
-	return b.Bytes()
+	return b.Bytes(), nil
 }
 
 // this is here to avoid a circular dependency
