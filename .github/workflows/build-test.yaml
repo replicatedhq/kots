@@ -34,8 +34,8 @@ jobs:
   enable-tests:
     runs-on: ubuntu-20.04
     outputs:
-      cmx_api_token: ${{ steps.vars.outputs.cmx_token }}
-      cmx_api_endpoint: ${{ steps.vars.outputs.cmx_endpoint }}
+      cmx_api_token: ${{ steps.vars.outputs.cmx_api_token }}
+      cmx_api_endpoint: ${{ steps.vars.outputs.cmx_api_endpoint }}
     steps:
       - name: ok
         # change 0 to a positive interger to prevent all tests from running
