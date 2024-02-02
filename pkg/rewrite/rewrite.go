@@ -315,13 +315,6 @@ func Rewrite(rewriteOptions RewriteOptions) error {
 		return errors.Wrap(err, "failed to update installation spec")
 	}
 
-	// installation spec gets updated during the process, ensure the map has the latest version
-	installationBytes, err := os.ReadFile(filepath.Join(u.GetUpstreamDir(writeUpstreamOptions), "userdata", "installation.yaml"))
-	if err != nil {
-		return errors.Wrap(err, "failed to read installation file")
-	}
-	renderedKotsKindsMap["userdata/installation.yaml"] = installationBytes
-
 	if err := rendered.WriteRenderedApp(&rendered.WriteOptions{
 		BaseDir:             u.GetBaseDir(writeUpstreamOptions),
 		OverlaysDir:         u.GetOverlaysDir(writeUpstreamOptions),
@@ -357,6 +350,13 @@ func Rewrite(rewriteOptions RewriteOptions) error {
 			renderedKotsKindsMap["helm-preflight.yaml"] = renderedPreflightBytes
 		}
 	}
+
+	// installation spec gets updated during the process, ensure the map has the latest version
+	installationBytes, err := os.ReadFile(filepath.Join(u.GetUpstreamDir(writeUpstreamOptions), "userdata", "installation.yaml"))
+	if err != nil {
+		return errors.Wrap(err, "failed to read installation file")
+	}
+	renderedKotsKindsMap["userdata/installation.yaml"] = installationBytes
 
 	if err := kotsutil.WriteKotsKinds(renderedKotsKindsMap, u.GetKotsKindsDir(writeUpstreamOptions)); err != nil {
 		return errors.Wrap(err, "failed to write the rendered kots kinds")
