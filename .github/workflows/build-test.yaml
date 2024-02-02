@@ -33,10 +33,18 @@ jobs:
   # Use this to disable tests when iteratig on a specific test to save time
   enable-tests:
     runs-on: ubuntu-20.04
+    outputs:
+      cmx_api_token: ${{ steps.vars.outputs.cmx_token }}
+      cmx_api_endpoint: ${{ steps.vars.outputs.cmx_endpoint }}
     steps:
       - name: ok
         # change 0 to a positive interger to prevent all tests from running
         run: exit 0
+      - name: set outputs
+        id: vars
+        run: |
+          echo "cmx_api_endpoint=" >> "$GITHUB_OUTPUT"
+          echo "cmx_api_token=${{ secrets.C11Y_MATRIX_TOKEN }}" >> "$GITHUB_OUTPUT"
 
 
   generate-tag:
@@ -564,7 +572,8 @@ jobs:
         id: cmx-versions-to-test
         uses: ./.github/actions/cmx-versions
         with:
-          replicated-api-token: ${{ secrets.C11Y_MATRIX_TOKEN }}
+          replicated-api-endpoint: ${{ needs.enable-tests.outputs.cmx_api_endpoint }}
+          replicated-api-token: ${{ needs.enable-tests.outputs.cmx_api_token }}
     outputs:
       versions-to-test: ${{ steps.cmx-versions-to-test.outputs.versions-to-test }}
 
@@ -599,7 +608,8 @@ jobs:
           testim-access-token: '${{ secrets.TESTIM_ACCESS_TOKEN }}'
           aws-access-key-id: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_ACCESS_KEY_ID }}'
           aws-secret-access-key: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_SECRET_ACCESS_KEY }}'
-          replicated-api-token: '${{ secrets.C11Y_MATRIX_TOKEN }}'
+          replicated-api-endpoint: ${{ needs.enable-tests.outputs.cmx_api_endpoint }}
+          replicated-api-token: ${{ needs.enable-tests.outputs.cmx_api_token }}
           kots-dockerhub-username: '${{ secrets.E2E_DOCKERHUB_USERNAME }}'
           kots-dockerhub-password: '${{ secrets.E2E_DOCKERHUB_PASSWORD }}'
 
@@ -639,7 +649,8 @@ jobs:
           testim-branch: ${{ github.head_ref == 'main' && 'master' || github.head_ref }}
           aws-access-key-id: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_ACCESS_KEY_ID }}'
           aws-secret-access-key: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_SECRET_ACCESS_KEY }}'
-          replicated-api-token: '${{ secrets.C11Y_MATRIX_TOKEN }}'
+          replicated-api-endpoint: ${{ needs.enable-tests.outputs.cmx_api_endpoint }}
+          replicated-api-token: ${{ needs.enable-tests.outputs.cmx_api_token }}
           kots-dockerhub-username: '${{ secrets.E2E_DOCKERHUB_USERNAME }}'
           kots-dockerhub-password: '${{ secrets.E2E_DOCKERHUB_PASSWORD }}'
 
@@ -791,7 +802,8 @@ jobs:
           testim-branch: ${{ github.head_ref == 'main' && 'master' || github.head_ref }}
           aws-access-key-id: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_ACCESS_KEY_ID }}'
           aws-secret-access-key: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_SECRET_ACCESS_KEY }}'
-          replicated-api-token: '${{ secrets.C11Y_MATRIX_TOKEN }}'
+          replicated-api-endpoint: ${{ needs.enable-tests.outputs.cmx_api_endpoint }}
+          replicated-api-token: ${{ needs.enable-tests.outputs.cmx_api_token }}
           kots-dockerhub-username: '${{ secrets.E2E_DOCKERHUB_USERNAME }}'
           kots-dockerhub-password: '${{ secrets.E2E_DOCKERHUB_PASSWORD }}'
 
@@ -831,7 +843,8 @@ jobs:
           testim-branch: ${{ github.head_ref == 'main' && 'master' || github.head_ref }}
           aws-access-key-id: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_ACCESS_KEY_ID }}'
           aws-secret-access-key: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_SECRET_ACCESS_KEY }}'
-          replicated-api-token: '${{ secrets.C11Y_MATRIX_TOKEN }}'
+          replicated-api-endpoint: ${{ needs.enable-tests.outputs.cmx_api_endpoint }}
+          replicated-api-token: ${{ needs.enable-tests.outputs.cmx_api_token }}
           kots-dockerhub-username: '${{ secrets.E2E_DOCKERHUB_USERNAME }}'
           kots-dockerhub-password: '${{ secrets.E2E_DOCKERHUB_PASSWORD }}'
 
@@ -980,7 +993,8 @@ jobs:
           testim-branch: ${{ github.head_ref == 'main' && 'master' || github.head_ref }}
           aws-access-key-id: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_ACCESS_KEY_ID }}'
           aws-secret-access-key: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_SECRET_ACCESS_KEY }}'
-          replicated-api-token: '${{ secrets.C11Y_MATRIX_TOKEN }}'
+          replicated-api-endpoint: ${{ needs.enable-tests.outputs.cmx_api_endpoint }}
+          replicated-api-token: ${{ needs.enable-tests.outputs.cmx_api_token }}
           kots-dockerhub-username: '${{ secrets.E2E_DOCKERHUB_USERNAME }}'
           kots-dockerhub-password: '${{ secrets.E2E_DOCKERHUB_PASSWORD }}'
 
@@ -1059,7 +1073,8 @@ jobs:
           testim-branch: ${{ github.head_ref == 'main' && 'master' || github.head_ref }}
           aws-access-key-id: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_ACCESS_KEY_ID }}'
           aws-secret-access-key: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_SECRET_ACCESS_KEY }}'
-          replicated-api-token: '${{ secrets.C11Y_MATRIX_TOKEN }}'
+          replicated-api-endpoint: ${{ needs.enable-tests.outputs.cmx_api_endpoint }}
+          replicated-api-token: ${{ needs.enable-tests.outputs.cmx_api_token }}
           kots-dockerhub-username: '${{ secrets.E2E_DOCKERHUB_USERNAME }}'
           kots-dockerhub-password: '${{ secrets.E2E_DOCKERHUB_PASSWORD }}'
 
@@ -2234,7 +2249,8 @@ jobs:
           kotsadm-image-registry: ttl.sh
           aws-access-key-id: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_ACCESS_KEY_ID }}'
           aws-secret-access-key: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_SECRET_ACCESS_KEY }}'
-          replicated-api-token: '${{ secrets.C11Y_MATRIX_TOKEN }}'
+          replicated-api-endpoint: ${{ needs.enable-tests.outputs.cmx_api_endpoint }}
+          replicated-api-token: ${{ needs.enable-tests.outputs.cmx_api_token }}
           kots-dockerhub-username: '${{ secrets.E2E_DOCKERHUB_USERNAME }}'
           kots-dockerhub-password: '${{ secrets.E2E_DOCKERHUB_PASSWORD }}'
           k8s-cluster-skip-teardown: true
@@ -2301,7 +2317,8 @@ jobs:
           testim-branch: ${{ github.head_ref == 'main' && 'master' || github.head_ref }}
           aws-access-key-id: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_ACCESS_KEY_ID }}'
           aws-secret-access-key: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_SECRET_ACCESS_KEY }}'
-          replicated-api-token: '${{ secrets.C11Y_MATRIX_TOKEN }}'
+          replicated-api-endpoint: ${{ needs.enable-tests.outputs.cmx_api_endpoint }}
+          replicated-api-token: ${{ needs.enable-tests.outputs.cmx_api_token }}
           kots-dockerhub-username: '${{ secrets.E2E_DOCKERHUB_USERNAME }}'
           kots-dockerhub-password: '${{ secrets.E2E_DOCKERHUB_PASSWORD }}'
           k8s-cluster-skip-teardown: true
@@ -2368,7 +2385,8 @@ jobs:
           testim-branch: ${{ github.head_ref == 'main' && 'master' || github.head_ref }}
           aws-access-key-id: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_ACCESS_KEY_ID }}'
           aws-secret-access-key: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_SECRET_ACCESS_KEY }}'
-          replicated-api-token: '${{ secrets.C11Y_MATRIX_TOKEN }}'
+          replicated-api-endpoint: ${{ needs.enable-tests.outputs.cmx_api_endpoint }}
+          replicated-api-token: ${{ needs.enable-tests.outputs.cmx_api_token }}
           kots-dockerhub-username: '${{ secrets.E2E_DOCKERHUB_USERNAME }}'
           kots-dockerhub-password: '${{ secrets.E2E_DOCKERHUB_PASSWORD }}'
           k8s-cluster-skip-teardown: true
@@ -2760,7 +2778,8 @@ jobs:
           testim-branch: ${{ github.head_ref == 'main' && 'master' || github.head_ref }}
           aws-access-key-id: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_ACCESS_KEY_ID }}'
           aws-secret-access-key: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_SECRET_ACCESS_KEY }}'
-          replicated-api-token: '${{ secrets.C11Y_MATRIX_TOKEN }}'
+          replicated-api-endpoint: ${{ needs.enable-tests.outputs.cmx_api_endpoint }}
+          replicated-api-token: ${{ needs.enable-tests.outputs.cmx_api_token }}
           kots-dockerhub-username: '${{ secrets.E2E_DOCKERHUB_USERNAME }}'
           kots-dockerhub-password: '${{ secrets.E2E_DOCKERHUB_PASSWORD }}'
 
@@ -2800,7 +2819,8 @@ jobs:
           testim-branch: ${{ github.head_ref == 'main' && 'master' || github.head_ref }}
           aws-access-key-id: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_ACCESS_KEY_ID }}'
           aws-secret-access-key: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_SECRET_ACCESS_KEY }}'
-          replicated-api-token: '${{ secrets.C11Y_MATRIX_TOKEN }}'
+          replicated-api-endpoint: ${{ needs.enable-tests.outputs.cmx_api_endpoint }}
+          replicated-api-token: ${{ needs.enable-tests.outputs.cmx_api_token }}
           kots-dockerhub-username: '${{ secrets.E2E_DOCKERHUB_USERNAME }}'
           kots-dockerhub-password: '${{ secrets.E2E_DOCKERHUB_PASSWORD }}'
 
@@ -2841,7 +2861,8 @@ jobs:
           kots-airgap: true
           aws-access-key-id: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_ACCESS_KEY_ID }}'
           aws-secret-access-key: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_SECRET_ACCESS_KEY }}'
-          replicated-api-token: '${{ secrets.C11Y_MATRIX_TOKEN }}'
+          replicated-api-endpoint: ${{ needs.enable-tests.outputs.cmx_api_endpoint }}
+          replicated-api-token: ${{ needs.enable-tests.outputs.cmx_api_token }}
           kots-dockerhub-username: '${{ secrets.E2E_DOCKERHUB_USERNAME }}'
           kots-dockerhub-password: '${{ secrets.E2E_DOCKERHUB_PASSWORD }}'
 
@@ -3860,7 +3881,8 @@ jobs:
           testim-branch: ${{ github.head_ref == 'main' && 'master' || github.head_ref }}
           aws-access-key-id: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_ACCESS_KEY_ID }}'
           aws-secret-access-key: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_SECRET_ACCESS_KEY }}'
-          replicated-api-token: '${{ secrets.C11Y_MATRIX_TOKEN }}'
+          replicated-api-endpoint: ${{ needs.enable-tests.outputs.cmx_api_endpoint }}
+          replicated-api-token: ${{ needs.enable-tests.outputs.cmx_api_token }}
           kots-dockerhub-username: '${{ secrets.E2E_DOCKERHUB_USERNAME }}'
           kots-dockerhub-password: '${{ secrets.E2E_DOCKERHUB_PASSWORD }}'
 
@@ -3900,7 +3922,8 @@ jobs:
           testim-branch: ${{ github.head_ref == 'main' && 'master' || github.head_ref }}
           aws-access-key-id: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_ACCESS_KEY_ID }}'
           aws-secret-access-key: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_SECRET_ACCESS_KEY }}'
-          replicated-api-token: '${{ secrets.C11Y_MATRIX_TOKEN }}'
+          replicated-api-endpoint: ${{ needs.enable-tests.outputs.cmx_api_endpoint }}
+          replicated-api-token: ${{ needs.enable-tests.outputs.cmx_api_token }}
           kots-dockerhub-username: '${{ secrets.E2E_DOCKERHUB_USERNAME }}'
           kots-dockerhub-password: '${{ secrets.E2E_DOCKERHUB_PASSWORD }}'
 

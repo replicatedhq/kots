@@ -73,6 +73,9 @@ inputs:
   replicated-api-token:
     description: 'Replicated API token for C11y matrix'
     required: false
+  replicated-api-endpoint:
+    description: 'Replicated API endpoint for C11y matrix'
+    required: false
 
 outputs:
   cluster-id:
@@ -93,6 +96,7 @@ runs:
       uses: replicatedhq/replicated-actions/create-cluster@v1
       if: ${{ inputs.k8s-distribution != 'k3s-local' }}
       with: 
+        replicated-api-endpoint: ${{ inputs.replicated-api-endpoint }}
         api-token: ${{ inputs.replicated-api-token }}
         kubernetes-distribution: ${{ inputs.k8s-distribution }}
         kubernetes-version: ${{ inputs.k8s-version }}
@@ -160,5 +164,6 @@ runs:
       if: ${{ always() && inputs.k8s-cluster-skip-teardown != 'true' && steps.create-cluster.outputs.cluster-id != '' }}
       continue-on-error: true
       with:
+        replicated-api-endpoint: ${{ inputs.replicated-api-endpoint }}
         api-token: ${{ inputs.replicated-api-token }}
         cluster-id: ${{ steps.create-cluster.outputs.cluster-id }}
