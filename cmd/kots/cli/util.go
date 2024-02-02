@@ -10,6 +10,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/util"
 )
 
+// trigger tests
 func ExpandDir(input string) string {
 	if input == "" {
 		return ""
