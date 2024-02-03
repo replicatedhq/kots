@@ -497,7 +497,7 @@ jobs:
       ok-to-test: ${{ steps.filter.outputs.kurl-addon }}
     steps:
       - uses: actions/checkout@v4
-      - uses: dorny/paths-filter@v2
+      - uses: dorny/paths-filter@v3
         id: filter
         with:
           filters: |
