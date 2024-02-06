@@ -645,13 +645,10 @@ export const Utilities = {
     );
   },
 
-  shouldShowClusterUpgradeModal(apps) {
-    if (!apps || apps.length === 0) {
+  isPendingClusterUpgrade(app) {
+    if (!app) {
       return false;
     }
-
-    // embedded cluster can only have one app
-    const app = apps[0];
 
     const triedToDeploy =
       app.downstream?.currentVersion?.status === "deploying" ||
@@ -661,12 +658,22 @@ export const Utilities = {
       return false;
     }
 
-    // show the upgrade modal if the user has tried to deploy the current version
+    // return true if the user has tried to deploy the current version
     // and the cluster will upgrade or is already upgrading
     return (
       app.downstream?.cluster?.requiresUpgrade ||
       Utilities.isClusterUpgrading(app.downstream?.cluster?.state)
     );
+  },
+
+  shouldShowClusterUpgradeModal(apps) {
+    if (!apps || apps.length === 0) {
+      return false;
+    }
+
+    // embedded cluster can only have one app
+    const app = apps[0];
+    return this.isPendingClusterUpgrade(app);
   },
 
   // Converts string to titlecase i.e. 'hello' -> 'Hello'

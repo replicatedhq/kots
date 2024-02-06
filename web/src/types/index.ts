@@ -26,6 +26,7 @@ export type App = {
   needsRegistry?: boolean;
   slug: string;
   updateCheckerSpec: string;
+  appState: string;
 };
 
 export type AppLicense = {

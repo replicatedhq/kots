@@ -228,6 +228,11 @@ const Dashboard = () => {
   };
 
   const onUpdateDownloadStatusError = (data: Error) => {
+    if (Utilities.isPendingClusterUpgrade(app)) {
+      // if the cluster is upgrading, we don't want to show an error
+      return;
+    }
+
     setState({
       checkingForUpdates: false,
       checkingForUpdateError: true,
@@ -586,6 +591,11 @@ const Dashboard = () => {
   };
 
   const onError = (err: Error) => {
+    if (Utilities.isPendingClusterUpgrade(app)) {
+      // if the cluster is upgrading, we don't want to show an error
+      return;
+    }
+
     setState({
       checkingForUpdateError: true,
       checkingForUpdates: false,
