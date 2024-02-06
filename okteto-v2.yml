@@ -18,7 +18,7 @@ build:
 deploy:
   - |
     cd kustomize/overlays/okteto
-    kustomize edit set image kotsadm=${OKTETO_BUILD_KOTSADM_IMAGE}
+    kustomize edit set image kotsadm-api=${OKTETO_BUILD_KOTSADM_IMAGE}
     kustomize edit set image kotsadm-web=${OKTETO_BUILD_KOTSADM_WEB_IMAGE}
     kustomize edit set image migrations=${OKTETO_BUILD_KOTSADM_MIGRATIONS_IMAGE}
 #  kustomize edit set image kurl_proxy=${OKTETO_BUILD_KOTSADM_IMAGE}
