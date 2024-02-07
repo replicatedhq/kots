@@ -175,6 +175,12 @@ function AppVersionHistoryRow(props: Props) {
     if (isHelmManaged) {
       return false;
     }
+    if (
+      Utilities.isPendingClusterUpgrade(selectedApp) &&
+      version.status === "deployed"
+    ) {
+      return true;
+    }
     if (version.status === "deploying") {
       return true;
     }
@@ -465,6 +471,23 @@ function AppVersionHistoryRow(props: Props) {
     });
 
     if (!isPastVersion && !isPendingDeployedVersion) {
+      if (
+        Utilities.isPendingClusterUpgrade(selectedApp) &&
+        version.status === "deployed"
+      ) {
+        return (
+          <span className="flex alignItems--center u-fontSize--small u-lineHeight--normal u-textColor--bodyCopy u-fontWeight--medium">
+            <Loader
+              className="flex alignItems--center u-marginRight--5"
+              size="16"
+            />
+            {selectedApp?.appState !== "ready"
+              ? "Waiting for app to be ready"
+              : "Updating cluster"}
+          </span>
+        );
+      }
+
       if (version.status === "deployed") {
         return (
           <div>

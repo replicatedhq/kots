@@ -37,6 +37,7 @@ type ResponseApp struct {
 	UpdateCheckerSpec string              `json:"updateCheckerSpec"`
 	AutoDeploy        apptypes.AutoDeploy `json:"autoDeploy"`
 	Namespace         string              `json:"namespace"`
+	AppState          string              `json:"appState"`
 
 	IsGitOpsSupported              bool   `json:"isGitOpsSupported"`
 	IsIdentityServiceSupported     bool   `json:"isIdentityServiceSupported"`

@@ -10,6 +10,7 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
+	embeddedclusterv1beta1 "github.com/replicatedhq/embedded-cluster-operator/api/v1beta1"
 	"github.com/replicatedhq/kots/pkg/airgap"
 	downstreamtypes "github.com/replicatedhq/kots/pkg/api/downstream/types"
 	"github.com/replicatedhq/kots/pkg/api/handlers/types"
@@ -228,6 +229,12 @@ func responseAppFromApp(a *apptypes.App) (*types.ResponseApp, error) {
 		return nil, errors.Wrap(err, "failed to get license")
 	}
 
+	appStatus, err := store.GetStore().GetAppStatus(a.ID)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get app status")
+	}
+	appState := string(appStatus.State)
+
 	downstreams, err := store.GetStore().ListDownstreamsForApp(a.ID)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to list downstreams for app")
@@ -320,9 +327,12 @@ func responseAppFromApp(a *apptypes.App) (*types.ResponseApp, error) {
 	}
 
 	if util.IsEmbeddedCluster() {
-		embeddedClusterConfig, err := store.GetStore().GetEmbeddedClusterConfigForVersion(a.ID, a.CurrentSequence)
-		if err != nil {
-			return nil, errors.Wrap(err, "failed to get embedded cluster config")
+		var embeddedClusterConfig *embeddedclusterv1beta1.Config
+		if appVersions.CurrentVersion != nil {
+			embeddedClusterConfig, err = store.GetStore().GetEmbeddedClusterConfigForVersion(a.ID, appVersions.CurrentVersion.Sequence)
+			if err != nil {
+				return nil, errors.Wrap(err, "failed to get embedded cluster config")
+			}
 		}
 
 		if embeddedClusterConfig != nil {
@@ -365,6 +375,7 @@ func responseAppFromApp(a *apptypes.App) (*types.ResponseApp, error) {
 		IsConfigurable:                 a.IsConfigurable,
 		UpdateCheckerSpec:              a.UpdateCheckerSpec,
 		AutoDeploy:                     a.AutoDeploy,
+		AppState:                       appState,
 		IsGitOpsSupported:              isGitopsSupported,
 		IsIdentityServiceSupported:     license.Spec.IsIdentityServiceSupported,
 		IsAppIdentityServiceSupported:  isAppIdentityServiceSupported,

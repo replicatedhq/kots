@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/replicatedhq/embedded-cluster-operator/api/v1beta1"
+	appstatetypes "github.com/replicatedhq/kots/pkg/appstate/types"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/store"
 	"github.com/replicatedhq/kots/pkg/util"
@@ -21,7 +22,7 @@ var stateMut = sync.Mutex{}
 // - The app has an embedded cluster configuration.
 // - The app embedded cluster configuration differs from the current embedded cluster config.
 // - The current cluster config (as part of the Installation object) already exists in the cluster.
-func MaybeStartClusterUpgrade(ctx context.Context, client kubernetes.Interface, store store.Store, conf *v1beta1.Config) error {
+func MaybeStartClusterUpgrade(ctx context.Context, store store.Store, conf *v1beta1.Config, appID string) error {
 	if conf == nil {
 		return nil
 	}
@@ -43,13 +44,37 @@ func MaybeStartClusterUpgrade(ctx context.Context, client kubernetes.Interface, 
 	} else if !upgrade {
 		return nil
 	}
-	if err := startClusterUpgrade(ctx, spec); err != nil {
-		return fmt.Errorf("failed to start cluster upgrade: %w", err)
+
+	// we need to wait for the application to be ready before we can start the upgrade.
+	ticker := time.NewTicker(5 * time.Second)
+	defer ticker.Stop()
+
+	for {
+		select {
+		case <-ctx.Done():
+			return nil
+		case <-ticker.C:
+		}
+
+		appStatus, err := store.GetAppStatus(appID)
+		if err != nil {
+			return fmt.Errorf("failed to get app status: %w", err)
+		}
+
+		if appStatus.State != appstatetypes.StateReady {
+			logger.Infof("waiting for app to be ready before starting cluster upgrade. current state: %s", appStatus.State)
+			continue
+		}
+
+		if err := startClusterUpgrade(ctx, spec); err != nil {
+			return fmt.Errorf("failed to start cluster upgrade: %w", err)
+		}
+		logger.Info("started cluster upgrade")
+
+		go watchClusterState(ctx, store)
+
+		return nil
 	}
-
-	go watchClusterState(ctx, store)
-
-	return nil
 }
 
 // InitClusterState initializes the cluster state in the database. This should be called when the
