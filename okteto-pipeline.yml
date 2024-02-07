@@ -5,7 +5,7 @@ deploy:
   - okteto build -f ./migrations/okteto.Dockerfile -t okteto.dev/kotsadm-migrations:${OKTETO_GIT_COMMIT} migrations
   - okteto build -f ./kurl_proxy/okteto.Dockerfile -t okteto.dev/kurl_proxy:${OKTETO_GIT_COMMIT} kurl_proxy
 
-  - cd kustomize/overlays/okteto && kustomize edit set image kotsadm=okteto.dev/kotsadm:${OKTETO_GIT_COMMIT}
+  - cd kustomize/overlays/okteto && kustomize edit set image kotsadm-api=okteto.dev/kotsadm:${OKTETO_GIT_COMMIT}
   - cd kustomize/overlays/okteto && kustomize edit set image kotsadm-web=okteto.dev/kotsadm-web:${OKTETO_GIT_COMMIT}
   - cd kustomize/overlays/okteto && kustomize edit set image migrations=okteto.dev/kotsadm-migrations:${OKTETO_GIT_COMMIT}
   - cd kustomize/overlays/okteto && kustomize edit set image kurl_proxy=okteto.dev/kurl_proxy:${OKTETO_GIT_COMMIT}
