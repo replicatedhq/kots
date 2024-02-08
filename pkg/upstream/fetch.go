@@ -31,6 +31,7 @@ func downloadUpstream(upstreamURI string, fetchOptions *types.FetchOptions) (*ty
 		}
 	}
 
+	// change somehting
 	u, err := url.ParseRequestURI(upstreamURI)
 	if err != nil {
 		return nil, errors.Wrap(err, "parse request uri failed")
