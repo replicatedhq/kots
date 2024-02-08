@@ -11,7 +11,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/kotsadmsnapshot/types"
 	velerov1 "github.com/vmware-tanzu/velero/pkg/apis/velero/v1"
 	"github.com/vmware-tanzu/velero/pkg/cmd/util/downloadrequest"
-	pkgrestore "github.com/vmware-tanzu/velero/pkg/restore"
+	pkgresults "github.com/vmware-tanzu/velero/pkg/util/results"
 	"k8s.io/apimachinery/pkg/runtime"
 	kbclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -23,7 +23,7 @@ func DownloadRestoreResults(ctx context.Context, veleroNamespace, restoreName st
 	}
 	defer r.Close()
 
-	resultMap := map[string]pkgrestore.Result{}
+	resultMap := map[string]pkgresults.Result{}
 	if err := json.NewDecoder(r).Decode(&resultMap); err != nil {
 		return nil, nil, errors.Wrap(err, "failed to decode restore results")
 	}
