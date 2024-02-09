@@ -1342,6 +1342,8 @@ github.com/replicatedhq/embedded-cluster-operator v0.20.0 h1:s9tlPeeOn6faj76bmW5
 github.com/replicatedhq/embedded-cluster-operator v0.20.0/go.mod h1:qkCOGMKxiCzSkqM+3IWACbAB/32G0V67HYreJ5iaa30=
 github.com/replicatedhq/kotskinds v0.0.0-20231004174055-e6676d808a82 h1:QniKgIpcXu4wBMM4xIXGz+lkAU+hSIXFuVM+vxkNk0Y=
 github.com/replicatedhq/kotskinds v0.0.0-20231004174055-e6676d808a82/go.mod h1:QjhIUu3+OmHZ09u09j3FCoTt8F3BYtQglS+OLmftu9I=
+github.com/replicatedhq/kotskinds v0.0.0-20240209205029-4b4312dee0e4 h1:gVPYIjTxxtPs58pc+9euQNmI1jA/xExfam7bAYNUH5c=
+github.com/replicatedhq/kotskinds v0.0.0-20240209205029-4b4312dee0e4/go.mod h1:QjhIUu3+OmHZ09u09j3FCoTt8F3BYtQglS+OLmftu9I=
 github.com/replicatedhq/kurlkinds v1.3.6 h1:/dhS32cSSZR4yS4vA8EquBvz+VgJCyTqBO9Xw+6eI4M=
 github.com/replicatedhq/kurlkinds v1.3.6/go.mod h1:c5+hoAkuARgftB2Ft3RCyWRZZPhL0clHEaw7XoGDAg4=
 github.com/replicatedhq/termui/v3 v3.1.1-0.20200811145416-f40076d26851 h1:eRlNDHxGfVkPCRXbA4BfQJvt5DHjFiTtWy3R/t4djyY=
