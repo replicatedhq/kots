@@ -468,7 +468,7 @@ const EmbeddedClusterManagement = ({
           </div>
           <p className="tw-text-base tw-text-gray-600">
             {rolesData?.roles &&
-              rolesData?.roles?.length > 1 &&
+              rolesData.roles.length > 1 &&
               "Select one or more roles to assign to the new node. "}
             Copy the join command and run it on the machine you'd like to join
             to the cluster.
@@ -483,9 +483,9 @@ const EmbeddedClusterManagement = ({
               {rolesError?.message || "Unable to fetch roles"}
             </p>
           )}
-          {rolesData?.roles && rolesData?.roles.length > 1 && (
+          {rolesData?.roles && rolesData.roles.length > 1 && (
             <div className="tw-grid tw-gap-2 tw-grid-cols-4 tw-auto-rows-auto">
-              {rolesData?.roles.map((nodeType) => (
+              {rolesData.roles.map((nodeType) => (
                 <div
                   key={nodeType}
                   className={classNames("BoxedCheckbox", {
