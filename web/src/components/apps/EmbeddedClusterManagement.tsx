@@ -238,6 +238,8 @@ const EmbeddedClusterManagement = ({
     if (nodeTypes.length === 1) {
       // if there's only one node type, select it by default
       setSelectedNodeTypes(nodeTypes);
+    } else {
+      setSelectedNodeTypes([]);
     }
   }, [rolesData]);
 
