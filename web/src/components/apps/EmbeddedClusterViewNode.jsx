@@ -108,7 +108,7 @@ const EmbeddedClusterViewNode = () => {
           to={slug ? `/${slug}/cluster/manage` : `/cluster/manage`}
           className="!tw-text-blue-300 tw-font-semibold hover:tw-underline"
         >
-          Cluster Nodes
+          Nodes
         </Link>{" "}
         / {nodeName}
       </p>
@@ -121,30 +121,10 @@ const EmbeddedClusterViewNode = () => {
       {!nodeLoading && node && (
         <>
           {/* Node Info */}
-          <div className="tw-flex tw-flex-col tw-gap-2 tw-p-3 card-bg">
+          <div className="tw-p-3">
             <p className="tw-font-semibold tw-text-xl tw-text-gray-800">
               {node?.name}
             </p>
-            <div className="tw-flex tw-flex-col tw-text-sm tw-gap-2 card-item">
-              <div className="tw-flex tw-gap-2">
-                <p className="tw-text-gray-800 tw-font-semibold">
-                  kubelet version
-                </p>
-                <p className="tw-text-gray-400">{node?.kubeletVersion}</p>
-              </div>
-              <div className="tw-flex tw-gap-2">
-                <p className="tw-text-gray-800 tw-font-semibold">
-                  kube-proxy version
-                </p>
-                <p className="tw-text-gray-400">{node?.kubeProxyVersion}</p>
-              </div>
-              <div className="tw-flex tw-gap-2">
-                <p className="tw-text-gray-800 tw-font-semibold">
-                  kernel version
-                </p>
-                <p className="tw-text-gray-400">{node?.kernelVersion}</p>
-              </div>
-            </div>
           </div>
           {/* Pods table */}
           <div className="card-bg tw-p-3 tw-flex tw-flex-col tw-gap-2">
@@ -165,6 +145,11 @@ const EmbeddedClusterViewNode = () => {
                     "& hr": {
                       width: "0",
                     },
+                  },
+                }}
+                muiTableHeadCellProps={{
+                  sx: {
+                    borderRight: "2px solid #e0e0e0",
                   },
                 }}
                 muiTableBodyProps={{

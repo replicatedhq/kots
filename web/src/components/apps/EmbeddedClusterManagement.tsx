@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import classNames from "classnames";
 import MaterialReactTable, { MRT_ColumnDef } from "material-react-table";
-import { ChangeEvent, useMemo, useReducer, useState } from "react";
+import { ChangeEvent, useEffect, useMemo, useReducer, useState } from "react";
 import Modal from "react-modal";
 import { Link, useParams } from "react-router-dom";
 
@@ -233,6 +233,16 @@ const EmbeddedClusterManagement = ({
   // #region node type logic
   const NODE_TYPES = ["controller"];
 
+  useEffect(() => {
+    const nodeTypes = rolesData?.roles || NODE_TYPES;
+    if (nodeTypes.length === 1) {
+      // if there's only one node type, select it by default
+      setSelectedNodeTypes(nodeTypes);
+    } else {
+      setSelectedNodeTypes([]);
+    }
+  }, [rolesData]);
+
   const determineDisabledState = () => {
     return false;
   };
@@ -250,13 +260,11 @@ const EmbeddedClusterManagement = ({
   // #endregion
 
   type NodeColumns = {
-    name: string | JSX.Element;
-    roles: JSX.Element;
+    name: string;
+    roles: string;
     status: string;
     cpu: string;
     memory: string;
-    pause: JSX.Element;
-    delete: JSX.Element;
   };
 
   const columns = useMemo<MRT_ColumnDef<NodeColumns>[]>(
@@ -267,11 +275,40 @@ const EmbeddedClusterManagement = ({
         enableHiding: false,
         enableColumnDragging: false,
         size: 150,
+        Cell: ({ cell }) => {
+          const value = cell.getValue<string>();
+          return (
+            <Link
+              to={slug ? `/${slug}/cluster/${value}` : `/cluster/${value}`}
+              className="tw-font-semibold tw-text-blue-300 hover:tw-underline"
+            >
+              {value}
+            </Link>
+          );
+        },
       },
       {
         accessorKey: "roles",
         header: "Role(s)",
         size: 150,
+        Cell: ({ cell }) => {
+          const value = cell.getValue<string>();
+          if (!value) {
+            return "";
+          }
+          return (
+            <div className="tw-w-full tw-flex tw-flex-wrap tw-gap-1">
+              {value.split(" ").map((l) => (
+                <span
+                  key={l}
+                  className="tw-font-semibold tw-text-xs tw-px-1 tw-rounded-sm tw-border tw-border-solid tw-bg-white tw-border-gray-100"
+                >
+                  {l}
+                </span>
+              ))}
+            </div>
+          );
+        },
       },
       {
         accessorKey: "status",
@@ -294,16 +331,6 @@ const EmbeddedClusterManagement = ({
           align: "right",
         },
       },
-      // {
-      //   accessorKey: "pause",
-      //   header: "Pause",
-      //   size: 100,
-      // },
-      // {
-      //   accessorKey: "delete",
-      //   header: "Delete",
-      //   size: 80,
-      // },
     ],
     []
   );
@@ -311,26 +338,8 @@ const EmbeddedClusterManagement = ({
   const mappedNodes = useMemo(() => {
     return (
       (nodesData?.nodes || testData?.nodes)?.map((n) => ({
-        name: (
-          <Link
-            to={slug ? `/${slug}/cluster/${n.name}` : `/cluster/${n.name}`}
-            className="tw-font-semibold tw-text-blue-300 hover:tw-underline"
-          >
-            {n.name}
-          </Link>
-        ),
-        roles: (
-          <div className="tw-w-full tw-flex tw-flex-wrap tw-gap-1">
-            {n?.labels?.map((l) => (
-              <span
-                key={l}
-                className="tw-font-semibold tw-text-xs tw-px-1 tw-rounded-sm tw-border tw-border-solid tw-bg-white tw-border-gray-100"
-              >
-                {l}
-              </span>
-            ))}
-          </div>
-        ),
+        name: n.name,
+        roles: n.labels?.join(" ") || "",
         status: n.isReady ? "Ready" : "Not Ready",
         cpu: `${n.cpu.used.toFixed(2)} / ${n.cpu.capacity.toFixed(2)}`,
         memory: `${n.memory.used.toFixed(2)} / ${n.memory.capacity.toFixed(
@@ -356,13 +365,9 @@ const EmbeddedClusterManagement = ({
       <KotsPageTitle pageName="Cluster Management" />
       <div className="flex1 tw-mb-10 tw-flex tw-flex-col tw-gap-4 card-bg">
         <p className="flex-auto u-fontSize--larger u-fontWeight--bold u-textColor--primary">
-          Cluster Nodes
+          Nodes
         </p>
         <div className="tw-flex tw-gap-6 tw-items-center">
-          <p className="tw-text-base tw-flex-1 tw-text-gray-600">
-            This page lists the nodes that are configured and shows the
-            status/health of each.
-          </p>
           {Utilities.sessionRolesHasOneOf([rbacRoles.CLUSTER_ADMIN]) && (
             <button
               className="btn primary tw-ml-auto tw-w-fit tw-h-fit"
@@ -399,6 +404,11 @@ const EmbeddedClusterManagement = ({
                   "& hr": {
                     width: "0",
                   },
+                },
+              }}
+              muiTableHeadCellProps={{
+                sx: {
+                  borderRight: "2px solid #e0e0e0",
                 },
               }}
               muiTableBodyProps={{
@@ -457,50 +467,52 @@ const EmbeddedClusterManagement = ({
             />
           </div>
           <p className="tw-text-base tw-text-gray-600">
-            To add a node to this cluster, select the type of node you'd like to
-            add. Once you've selected a node type, we will generate a node join
-            command for you to use in the CLI. When the node successfully joins
-            the cluster, you will see it appear in the list of nodes on this
-            page.
+            {rolesData?.roles &&
+              rolesData.roles.length > 1 &&
+              "Select one or more roles to assign to the new node. "}
+            Copy the join command and run it on the machine you'd like to join
+            to the cluster.
           </p>
-          <div className="tw-grid tw-gap-2 tw-grid-cols-4 tw-auto-rows-auto">
-            {rolesLoading && (
-              <p className="tw-text-base tw-w-full tw-text-center tw-py-4 tw-text-gray-500 tw-font-semibold">
-                Loading roles...
-              </p>
-            )}
-            {!rolesData && rolesError && (
-              <p className="tw-text-base tw-w-full tw-text-center tw-py-4 tw-text-pink-500 tw-font-semibold">
-                {rolesError?.message}
-              </p>
-            )}
-            {(rolesData?.roles || NODE_TYPES).map((nodeType) => (
-              <div
-                key={nodeType}
-                className={classNames("BoxedCheckbox", {
-                  "is-active": selectedNodeTypes.includes(nodeType),
-                  "is-disabled": determineDisabledState(),
-                })}
-              >
-                <input
-                  id={`${nodeType}NodeType`}
-                  className="u-cursor--pointer hidden-input"
-                  type="checkbox"
-                  name={`${nodeType}NodeType`}
-                  value={nodeType}
-                  disabled={determineDisabledState()}
-                  checked={selectedNodeTypes.includes(nodeType)}
-                  onChange={handleSelectNodeType}
-                />
-                <label
-                  htmlFor={`${nodeType}NodeType`}
-                  className="tw-block u-cursor--pointer u-userSelect--none u-textColor--primary u-fontSize--normal u-fontWeight--medium tw-text-center"
+          {rolesLoading && (
+            <p className="tw-text-base tw-w-full tw-text-center tw-py-4 tw-text-gray-500 tw-font-semibold">
+              Loading roles...
+            </p>
+          )}
+          {!rolesData && rolesError && (
+            <p className="tw-text-base tw-w-full tw-text-center tw-py-4 tw-text-pink-500 tw-font-semibold">
+              {rolesError?.message || "Unable to fetch roles"}
+            </p>
+          )}
+          {rolesData?.roles && rolesData.roles.length > 1 && (
+            <div className="tw-grid tw-gap-2 tw-grid-cols-4 tw-auto-rows-auto">
+              {rolesData.roles.map((nodeType) => (
+                <div
+                  key={nodeType}
+                  className={classNames("BoxedCheckbox", {
+                    "is-active": selectedNodeTypes.includes(nodeType),
+                    "is-disabled": determineDisabledState(),
+                  })}
                 >
-                  {nodeType}
-                </label>
-              </div>
-            ))}
-          </div>
+                  <input
+                    id={`${nodeType}NodeType`}
+                    className="u-cursor--pointer hidden-input"
+                    type="checkbox"
+                    name={`${nodeType}NodeType`}
+                    value={nodeType}
+                    disabled={determineDisabledState()}
+                    checked={selectedNodeTypes.includes(nodeType)}
+                    onChange={handleSelectNodeType}
+                  />
+                  <label
+                    htmlFor={`${nodeType}NodeType`}
+                    className="tw-block u-cursor--pointer u-userSelect--none u-textColor--primary u-fontSize--normal u-fontWeight--medium tw-text-center"
+                  >
+                    {nodeType}
+                  </label>
+                </div>
+              ))}
+            </div>
+          )}
           <div>
             {selectedNodeTypes.length > 0 && generateAddNodeCommandLoading && (
               <p className="tw-text-base tw-w-full tw-text-center tw-py-4 tw-text-gray-500 tw-font-semibold">
@@ -524,9 +536,6 @@ const EmbeddedClusterManagement = ({
                 >
                   {generateAddNodeCommand?.command}
                 </CodeSnippet>
-                <p className="tw-text-sm tw-text-gray-500 tw-font-semibold tw-mt-2">
-                  Command expires: {generateAddNodeCommand?.expiry}
-                </p>
               </>
             )}
           </div>
