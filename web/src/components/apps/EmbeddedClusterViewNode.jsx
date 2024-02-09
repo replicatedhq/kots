@@ -108,7 +108,7 @@ const EmbeddedClusterViewNode = () => {
           to={slug ? `/${slug}/cluster/manage` : `/cluster/manage`}
           className="!tw-text-blue-300 tw-font-semibold hover:tw-underline"
         >
-          Cluster Nodes
+          Nodes
         </Link>{" "}
         / {nodeName}
       </p>
@@ -165,6 +165,11 @@ const EmbeddedClusterViewNode = () => {
                     "& hr": {
                       width: "0",
                     },
+                  },
+                }}
+                muiTableHeadCellProps={{
+                  sx: {
+                    borderRight: "2px solid #e0e0e0",
                   },
                 }}
                 muiTableBodyProps={{

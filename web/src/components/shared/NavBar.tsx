@@ -99,7 +99,7 @@ export class NavBar extends PureComponent<Props, State> {
     let selectedTab = "";
     if (this.props.location?.pathname === "/gitops") {
       selectedTab = "gitops";
-    } else if (this.props.location?.pathname === "/cluster/manage") {
+    } else if (this.props.location?.pathname.startsWith("/cluster")) {
       selectedTab = "cluster_management";
     } else if (this.props.location?.pathname.startsWith("/app")) {
       selectedTab = "dashboard";
