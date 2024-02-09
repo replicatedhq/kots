@@ -467,8 +467,10 @@ const EmbeddedClusterManagement = ({
             />
           </div>
           <p className="tw-text-base tw-text-gray-600">
-            Select one or more roles to assign to the new node. Copy the join
-            command and run it on the machine you'd like to join to the cluster.
+            {(rolesData?.roles || NODE_TYPES).length > 1 &&
+              "Select one or more roles to assign to the new node. "}
+            Copy the join command and run it on the machine you'd like to join
+            to the cluster.
           </p>
           {rolesLoading && (
             <p className="tw-text-base tw-w-full tw-text-center tw-py-4 tw-text-gray-500 tw-font-semibold">
