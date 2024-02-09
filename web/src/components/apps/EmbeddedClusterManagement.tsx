@@ -238,8 +238,6 @@ const EmbeddedClusterManagement = ({
     if (nodeTypes.length === 1) {
       // if there's only one node type, select it by default
       setSelectedNodeTypes(nodeTypes);
-    } else {
-      setSelectedNodeTypes([]);
     }
   }, [rolesData]);
 
@@ -467,7 +465,7 @@ const EmbeddedClusterManagement = ({
             />
           </div>
           <p className="tw-text-base tw-text-gray-600">
-            {(rolesData?.roles || NODE_TYPES).length > 1 &&
+            {rolesData?.roles && rolesData?.roles?.length > 1 &&
               "Select one or more roles to assign to the new node. "}
             Copy the join command and run it on the machine you'd like to join
             to the cluster.
@@ -479,12 +477,12 @@ const EmbeddedClusterManagement = ({
           )}
           {!rolesData && rolesError && (
             <p className="tw-text-base tw-w-full tw-text-center tw-py-4 tw-text-pink-500 tw-font-semibold">
-              {rolesError?.message}
+              {rolesError?.message || "Unable to fetch roles"}
             </p>
           )}
-          {(rolesData?.roles || NODE_TYPES).length > 1 && (
+          {rolesData?.roles && rolesData?.roles.length > 1 && (
             <div className="tw-grid tw-gap-2 tw-grid-cols-4 tw-auto-rows-auto">
-              {(rolesData?.roles || NODE_TYPES).map((nodeType) => (
+              {rolesData?.roles.map((nodeType) => (
                 <div
                   key={nodeType}
                   className={classNames("BoxedCheckbox", {
