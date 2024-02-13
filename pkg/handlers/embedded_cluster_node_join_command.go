@@ -21,6 +21,7 @@ type GetEmbeddedClusterNodeJoinCommandResponse struct {
 	K0sToken                  string `json:"k0sToken"`
 	K0sUnsupportedOverrides   string `json:"k0sUnsupportedOverrides"`
 	EndUserK0sConfigOverrides string `json:"endUserK0sConfigOverrides"`
+	MetricsBaseURL            string `json:"metricsBaseURL"`
 }
 
 type GenerateEmbeddedClusterNodeJoinCommandRequest struct {
@@ -139,5 +140,6 @@ func (h *Handler) GetEmbeddedClusterNodeJoinCommand(w http.ResponseWriter, r *ht
 		K0sToken:                  k0sToken,
 		K0sUnsupportedOverrides:   k0sUnsupportedOverrides,
 		EndUserK0sConfigOverrides: endUserK0sConfigOverrides,
+		MetricsBaseURL:            install.Spec.MetricsBaseURL,
 	})
 }
