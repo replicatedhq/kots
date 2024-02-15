@@ -15,6 +15,7 @@ type ReportingInfo struct {
 	KOTSInstallID           string         `json:"kots_install_id"`
 	KURLInstallID           string         `json:"kurl_install_id"`
 	EmbeddedClusterID       string         `json:"embedded_cluster_id"`
+	EmbeddedClusterVersion  string         `json:"embedded_cluster_version"`
 	IsGitOpsEnabled         bool           `json:"is_gitops_enabled"`
 	GitOpsProvider          string         `json:"gitops_provider"`
 	SnapshotProvider        string         `json:"snapshot_provider"`

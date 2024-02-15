@@ -37,6 +37,8 @@ spec:
         type: text
       - name: embedded_cluster_id
         type: text
+      - name: embedded_cluster_version
+        type: text
       - name: is_gitops_enabled
         type: integer
       - name: gitops_provider
