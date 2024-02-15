@@ -352,6 +352,7 @@ func createTestInstanceEvent(reportedAt int64) InstanceReportEvent {
 		KotsInstallID:             "test-kots-install-id",
 		KurlInstallID:             "test-kurl-install-id",
 		EmbeddedClusterID:         "test-embedded-cluster-id",
+		EmbeddedClusterVersion:    "test-embedded-cluster-version",
 		IsGitOpsEnabled:           true,
 		GitOpsProvider:            "test-gitops-provider",
 		SnapshotProvider:          "test-snapshot-provider",

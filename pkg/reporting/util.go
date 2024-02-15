@@ -64,6 +64,9 @@ func GetReportingInfoHeaders(reportingInfo *types.ReportingInfo) map[string]stri
 	if reportingInfo.EmbeddedClusterID != "" {
 		headers["X-Replicated-EmbeddedClusterID"] = reportingInfo.EmbeddedClusterID
 	}
+	if reportingInfo.EmbeddedClusterVersion != "" {
+		headers["X-Replicated-EmbeddedClusterVersion"] = reportingInfo.EmbeddedClusterVersion
+	}
 
 	headers["X-Replicated-KurlNodeCountTotal"] = strconv.Itoa(reportingInfo.KurlNodeCountTotal)
 	headers["X-Replicated-KurlNodeCountReady"] = strconv.Itoa(reportingInfo.KurlNodeCountReady)

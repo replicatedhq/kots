@@ -68,6 +68,7 @@ func BuildInstanceReport(licenseID string, reportingInfo *types.ReportingInfo) *
 				KotsInstallID:             reportingInfo.KOTSInstallID,
 				KurlInstallID:             reportingInfo.KURLInstallID,
 				EmbeddedClusterID:         reportingInfo.EmbeddedClusterID,
+				EmbeddedClusterVersion:    reportingInfo.EmbeddedClusterVersion,
 				IsGitOpsEnabled:           reportingInfo.IsGitOpsEnabled,
 				GitOpsProvider:            reportingInfo.GitOpsProvider,
 				SnapshotProvider:          reportingInfo.SnapshotProvider,

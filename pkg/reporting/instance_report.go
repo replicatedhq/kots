@@ -28,6 +28,7 @@ type InstanceReportEvent struct {
 	KotsInstallID             string `json:"kots_install_id,omitempty"`
 	KurlInstallID             string `json:"kurl_install_id,omitempty"`
 	EmbeddedClusterID         string `json:"embedded_cluster_id,omitempty"`
+	EmbeddedClusterVersion    string `json:"embedded_cluster_version,omitempty"`
 	IsGitOpsEnabled           bool   `json:"is_gitops_enabled"`
 	GitOpsProvider            string `json:"gitops_provider"`
 	SnapshotProvider          string `json:"snapshot_provider"`
