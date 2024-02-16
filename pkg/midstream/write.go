@@ -111,15 +111,15 @@ func WriteMidstream(opts WriteOptions) (*Midstream, error) {
 			opts.Log.ActionWithSpinner("Copying images")
 			io.WriteString(opts.ProcessImageOptions.ReportWriter, "Copying images\n")
 
-			if opts.ProcessImageOptions.AirgapRoot == "" {
-				err := image.CopyOnlineImages(opts.ProcessImageOptions, allImages, opts.KotsKinds, opts.License, dockerHubRegistryCreds, opts.Log)
-				if err != nil {
-					return nil, errors.Wrap(err, "failed to copy online images")
-				}
-			} else {
+			if opts.ProcessImageOptions.IsAirgap {
 				err := image.CopyAirgapImages(opts.ProcessImageOptions, opts.Log)
 				if err != nil {
 					return nil, errors.Wrap(err, "failed to copy airgap images")
+				}
+			} else {
+				err := image.CopyOnlineImages(opts.ProcessImageOptions, allImages, opts.KotsKinds, opts.License, dockerHubRegistryCreds, opts.Log)
+				if err != nil {
+					return nil, errors.Wrap(err, "failed to copy online images")
 				}
 			}
 		}
