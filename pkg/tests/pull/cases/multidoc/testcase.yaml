@@ -2,7 +2,6 @@ Name: test multiple docs in a single file
 PullOptions:
   Namespace: app-namespace
   ExcludeAdminConsole: true
-  IsAirgap: true
   Silent: true
   LocalPath: cases/multidoc/upstream
   RootDir: cases/multidoc/results

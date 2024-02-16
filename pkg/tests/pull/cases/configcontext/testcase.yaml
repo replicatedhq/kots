@@ -2,7 +2,6 @@ Name: test helm pull
 PullOptions:
   Namespace: app-namespace
   ExcludeAdminConsole: true
-  IsAirgap: true
   Silent: true
   LocalPath: cases/configcontext/upstream
   RootDir: cases/configcontext/results

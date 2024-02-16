@@ -2,7 +2,6 @@ Name: subchart alias
 PullOptions:
   Namespace: app-namespace
   ExcludeAdminConsole: true
-  IsAirgap: true
   Silent: true
   LocalPath: cases/subchart-alias/upstream
   RootDir: cases/subchart-alias/results

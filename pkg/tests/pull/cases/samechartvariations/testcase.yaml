@@ -4,7 +4,6 @@ Name: test deploying variations of same helm chart
 PullOptions:
   Namespace: app-namespace
   ExcludeAdminConsole: true
-  IsAirgap: true
   Silent: true
   LocalPath: cases/samechartvariations/upstream
   RootDir: cases/samechartvariations/results

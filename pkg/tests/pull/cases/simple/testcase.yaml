@@ -2,7 +2,6 @@ Name: test simple pull
 PullOptions:
   Namespace: app-namespace
   ExcludeAdminConsole: true
-  IsAirgap: true
   Silent: true
   LocalPath: cases/simple/upstream
   RootDir: cases/simple/results
