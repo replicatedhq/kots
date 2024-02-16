@@ -2,7 +2,6 @@ Name: test custom hostnames
 PullOptions:
   Namespace: app-namespace
   ExcludeAdminConsole: true
-  IsAirgap: true
   Silent: true
   LocalPath: cases/customhostnames/upstream
   RootDir: cases/customhostnames/results

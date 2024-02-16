@@ -2,7 +2,6 @@ Name: test tag and digest no rewrite
 PullOptions:
   Namespace: app-namespace
   ExcludeAdminConsole: true
-  IsAirgap: true
   Silent: true
   LocalPath: cases/taganddigest-norewrite/upstream
   RootDir: cases/taganddigest-norewrite/results

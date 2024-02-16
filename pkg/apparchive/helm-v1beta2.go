@@ -146,7 +146,7 @@ func WriteV1Beta2HelmCharts(opts WriteV1Beta2HelmChartsOptions) error {
 			return errors.Wrap(err, "failed to write values file")
 		}
 
-		if !opts.ProcessImageOptions.RewriteImages || opts.ProcessImageOptions.AirgapRoot != "" {
+		if !opts.ProcessImageOptions.RewriteImages || opts.ProcessImageOptions.IsAirgap {
 			// if an on-prem registry is not configured (which means it's an online installation)
 			// there's no need to process/copy the images as they will be pulled from their original registries or through the replicated proxy.
 			// if an on-prem registry is configured, but it's an airgap installation, we also don't need to process/copy the images

@@ -114,7 +114,7 @@ func CopyAirgapImages(opts imagetypes.ProcessImageOptions, log *logger.CLILogger
 		if err != nil {
 			return errors.Wrap(err, "failed to push images from bundle")
 		}
-	} else {
+	} else if opts.AirgapRoot != "" {
 		err := TagAndPushImagesFromPath(opts.AirgapRoot, pushOpts)
 		if err != nil {
 			return errors.Wrap(err, "failed to push images from dir")

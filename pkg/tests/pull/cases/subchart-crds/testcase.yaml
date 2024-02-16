@@ -2,7 +2,6 @@ Name: test subchart crds
 PullOptions:
   Namespace: app-namespace
   ExcludeAdminConsole: true
-  IsAirgap: true
   Silent: true
   LocalPath: cases/subchart-crds/upstream
   RootDir: cases/subchart-crds/results

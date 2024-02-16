@@ -161,6 +161,7 @@ func UpdateAppFromPath(a *apptypes.App, airgapRoot string, airgapBundlePath stri
 		Namespace:              appNamespace,
 		ConfigFile:             filepath.Join(archiveDir, "upstream", "userdata", "config.yaml"),
 		IdentityConfigFile:     identityConfigFile,
+		IsAirgap:               true,
 		AirgapRoot:             airgapRoot,
 		AirgapBundle:           airgapBundlePath,
 		InstallationFile:       filepath.Join(archiveDir, "upstream", "userdata", "installation.yaml"),

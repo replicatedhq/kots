@@ -2,7 +2,6 @@ Name: test subcharts pull
 PullOptions:
   Namespace: app-namespace
   ExcludeAdminConsole: true
-  IsAirgap: true
   Silent: true
   LocalPath: cases/subcharts/upstream
   RootDir: cases/subcharts/results

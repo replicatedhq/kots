@@ -2,7 +2,6 @@ Name: test templating kots kinds
 PullOptions:
   Namespace: app-namespace
   ExcludeAdminConsole: true
-  IsAirgap: true
   Silent: true
   LocalPath: cases/kotskinds/upstream
   RootDir: cases/kotskinds/results

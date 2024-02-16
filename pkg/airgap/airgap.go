@@ -212,6 +212,7 @@ func CreateAppFromAirgap(opts CreateAirgapAppOpts) (finalError error) {
 		LicenseFile:         licenseFile.Name(),
 		ConfigFile:          configFile,
 		IdentityConfigFile:  identityConfigFile,
+		IsAirgap:            true,
 		AirgapRoot:          archiveDir,
 		AirgapBundle:        airgapBundle,
 		Silent:              !opts.IsAutomated,
