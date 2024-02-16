@@ -48,6 +48,7 @@ type PullOptions struct {
 	LicenseFile             string
 	LicenseEndpointOverride string // only used for testing
 	InstallationFile        string
+	IsAirgap                bool
 	AirgapRoot              string
 	AirgapBundle            string
 	ConfigFile              string
@@ -295,7 +296,7 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 		IsOpenShift:         k8sutil.IsOpenShift(clientset),
 		IsGKEAutopilot:      k8sutil.IsGKEAutopilot(clientset),
 		IncludeMinio:        pullOptions.IncludeMinio,
-		IsAirgap:            pullOptions.AirgapRoot != "",
+		IsAirgap:            pullOptions.IsAirgap,
 		KotsadmID:           k8sutil.GetKotsadmID(clientset),
 		AppID:               pullOptions.AppID,
 	}
@@ -321,7 +322,7 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 		Log:               log,
 		AppSlug:           pullOptions.AppSlug,
 		Sequence:          pullOptions.AppSequence,
-		IsAirgap:          pullOptions.AirgapRoot != "",
+		IsAirgap:          pullOptions.IsAirgap,
 	}
 	log.ActionWithSpinner("Rendering KOTS custom resources")
 	io.WriteString(pullOptions.ReportWriter, "Rendering KOTS custom resources\n")
@@ -339,7 +340,7 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 	}
 	log.FinishSpinner()
 
-	needsConfig, err := kotsadmconfig.NeedsConfiguration(pullOptions.AppSlug, pullOptions.AppSequence, pullOptions.AirgapRoot != "", renderedKotsKinds, registrySettings)
+	needsConfig, err := kotsadmconfig.NeedsConfiguration(pullOptions.AppSlug, pullOptions.AppSequence, pullOptions.IsAirgap, renderedKotsKinds, registrySettings)
 	if err != nil {
 		return "", errors.Wrap(err, "failed to check if version needs configuration")
 	}
@@ -351,7 +352,7 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 		RegistrySettings: pullOptions.RewriteImageOptions,
 		CopyImages:       !pullOptions.RewriteImageOptions.IsReadOnly,
 		RootDir:          pullOptions.RootDir,
-		IsAirgap:         pullOptions.AirgapRoot != "",
+		IsAirgap:         pullOptions.IsAirgap,
 		AirgapRoot:       pullOptions.AirgapRoot,
 		AirgapBundle:     pullOptions.AirgapBundle,
 		CreateAppDir:     pullOptions.CreateAppDir,
