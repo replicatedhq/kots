@@ -1,0 +1,24 @@
+apiVersion: kots.io/v1beta1
+kind: Installation
+metadata:
+  creationTimestamp: null
+  name: my-app
+spec:
+  channelID: 1vusIYZLAVxMG6q760OJmRKj5i5
+  channelName: My Channel
+  knownImages:
+  - image: alpine
+    isPrivate: true
+  - image: alpine:3.4
+    isPrivate: true
+  - image: busybox
+    isPrivate: true
+  - image: nginx:1.23
+    isPrivate: true
+  - image: nginx:1.24
+    isPrivate: true
+  - image: nginx:latest
+    isPrivate: true
+  - image: replicated/replicated-sdk:v1.0.0-beta.12
+    isPrivate: true
+status: {}

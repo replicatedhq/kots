@@ -1,0 +1,18 @@
+Name: test airgap
+PullOptions:
+  Namespace: app-namespace
+  ExcludeAdminConsole: true
+  IsAirgap: true
+  Silent: true
+  LocalPath: cases/airgap/upstream
+  RootDir: cases/airgap/results
+  SharedPassword: dummy-pass
+  RewriteImages: true
+  RewriteImageOptions:
+    Hostname: ttl.sh
+    Namespace: test
+    Username: test
+    Password: fake-pass
+    IsReadOnly: true
+  Downstreams:
+    - this-cluster
