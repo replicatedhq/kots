@@ -8,5 +8,7 @@ spec:
   channelName: My Channel
   knownImages:
   - image: nginx:1.23
+    isPrivate: true
   - image: nginx:1.24
+    isPrivate: true
 status: {}

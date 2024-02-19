@@ -146,14 +146,6 @@ func WriteV1Beta2HelmCharts(opts WriteV1Beta2HelmChartsOptions) error {
 			return errors.Wrap(err, "failed to write values file")
 		}
 
-		if !opts.ProcessImageOptions.RewriteImages || opts.ProcessImageOptions.IsAirgap {
-			// if an on-prem registry is not configured (which means it's an online installation)
-			// there's no need to process/copy the images as they will be pulled from their original registries or through the replicated proxy.
-			// if an on-prem registry is configured, but it's an airgap installation, we also don't need to process/copy the images
-			// as they will be pushed from the airgap bundle.
-			continue
-		}
-
 		if err := processOnlineV1Beta2HelmChartImages(opts, &helmChart, chartDir); err != nil {
 			return errors.Wrap(err, "failed to process online images")
 		}
@@ -315,6 +307,14 @@ func processOnlineV1Beta2HelmChartImages(opts WriteV1Beta2HelmChartsOptions, hel
 		DockerHubRegistryCreds: dockerHubRegistryCreds,
 	}); err != nil {
 		return errors.Wrap(err, "failed to update installation images")
+	}
+
+	if !opts.ProcessImageOptions.RewriteImages || opts.ProcessImageOptions.IsAirgap {
+		// if an on-prem registry is not configured (which means it's an online installation)
+		// there's no need to process/copy the images as they will be pulled from their original registries or through the replicated proxy.
+		// if an on-prem registry is configured, but it's an airgap installation, we also don't need to process/copy the images
+		// as they will be pushed from the airgap bundle.
+		return nil
 	}
 
 	if err := image.CopyOnlineImages(opts.ProcessImageOptions, chartImages, opts.KotsKinds, opts.KotsKinds.License, dockerHubRegistryCreds, opts.RenderOptions.Log); err != nil {
