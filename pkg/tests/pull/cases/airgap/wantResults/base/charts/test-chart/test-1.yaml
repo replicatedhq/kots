@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: Secret
+metadata:
+  annotations:
+    owned-by: security-team
+  labels:
+    owner: a-generated-owner-name
+  name: security-scanner
+  namespace: helmns
+stringData:
+  key: a super duper secret key

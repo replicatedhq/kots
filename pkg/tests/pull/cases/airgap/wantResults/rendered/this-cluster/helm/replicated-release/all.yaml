@@ -1,0 +1,330 @@
+---
+# Source: replicated/templates/replicated-serviceaccount.yaml
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  labels:
+    helm.sh/chart: replicated-1.0.0-beta.12
+    app.kubernetes.io/name: replicated
+    app.kubernetes.io/instance: replicated-release
+    app.kubernetes.io/version: "v1.0.0-beta.12"
+    app.kubernetes.io/managed-by: Helm
+  name: replicated
+  namespace: ""
+---
+# Source: replicated/templates/replicated-secret.yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  labels:
+    helm.sh/chart: replicated-1.0.0-beta.12
+    app.kubernetes.io/name: replicated
+    app.kubernetes.io/instance: replicated-release
+    app.kubernetes.io/version: "v1.0.0-beta.12"
+    app.kubernetes.io/managed-by: Helm
+  name: replicated
+  namespace: ""
+type: Opaque
+stringData:
+  config.yaml: |
+    license:    |
+      apiVersion: kots.io/v1beta1
+      kind: License
+      metadata:
+          name: kotssdkcustomer
+      spec:
+          appSlug: kots-sdk-demo
+          channelID: 2MqOAm2LeY9gsaqFwczXAoSfRtD
+          channelName: Beta
+          customerEmail: salah+qa@replicated.com
+          customerName: KOTS SDK Customer
+          endpoint: https://replicated.app
+          entitlements:
+              expires_at:
+                  description: License Expiration
+                  signature: {}
+                  title: Expiration
+                  value: ""
+                  valueType: String
+          isAirgapSupported: true
+          isGitOpsSupported: true
+          isKotsInstallEnabled: true
+          isSemverRequired: true
+          isSnapshotSupported: true
+          licenseID: 2MqOPWspoqXLAIBchNPJA87GOzM
+          licenseSequence: 28
+          licenseType: dev
+          signature: eyJsaWNlbnNlRGF0YSI6ImV5SmhjR2xXWlhKemFXOXVJam9pYTI5MGN5NXBieTkyTVdKbGRHRXhJaXdpYTJsdVpDSTZJa3hwWTJWdWMyVWlMQ0p0WlhSaFpHRjBZU0k2ZXlKdVlXMWxJam9pYTI5MGMzTmthMk4xYzNSdmJXVnlJbjBzSW5Od1pXTWlPbnNpYkdsalpXNXpaVWxFSWpvaU1rMXhUMUJYYzNCdmNWaE1RVWxDWTJoT1VFcEJPRGRIVDNwTklpd2liR2xqWlc1elpWUjVjR1VpT2lKa1pYWWlMQ0pqZFhOMGIyMWxjazVoYldVaU9pSkxUMVJUSUZORVN5QkRkWE4wYjIxbGNpSXNJbU4xYzNSdmJXVnlSVzFoYVd3aU9pSnpZV3hoYUN0eFlVQnlaWEJzYVdOaGRHVmtMbU52YlNJc0ltRndjRk5zZFdjaU9pSnJiM1J6TFhOa2F5MWtaVzF2SWl3aVkyaGhibTVsYkVsRUlqb2lNazF4VDBGdE1reGxXVGxuYzJGeFJuZGplbGhCYjFObVVuUkVJaXdpWTJoaGJtNWxiRTVoYldVaU9pSkNaWFJoSWl3aWJHbGpaVzV6WlZObGNYVmxibU5sSWpveU9Dd2laVzVrY0c5cGJuUWlPaUpvZEhSd2N6b3ZMM0psY0d4cFkyRjBaV1F1WVhCd0lpd2laVzUwYVhSc1pXMWxiblJ6SWpwN0ltVjRjR2x5WlhOZllYUWlPbnNpZEdsMGJHVWlPaUpGZUhCcGNtRjBhVzl1SWl3aVpHVnpZM0pwY0hScGIyNGlPaUpNYVdObGJuTmxJRVY0Y0dseVlYUnBiMjRpTENKMllXeDFaU0k2SWlJc0luWmhiSFZsVkhsd1pTSTZJbE4wY21sdVp5SXNJbk5wWjI1aGRIVnlaU0k2ZTMxOWZTd2lhWE5CYVhKbllYQlRkWEJ3YjNKMFpXUWlPblJ5ZFdVc0ltbHpSMmwwVDNCelUzVndjRzl5ZEdWa0lqcDBjblZsTENKcGMxTnVZWEJ6YUc5MFUzVndjRzl5ZEdWa0lqcDBjblZsTENKcGMwdHZkSE5KYm5OMFlXeHNSVzVoWW14bFpDSTZkSEoxWlN3aWFYTlRaVzEyWlhKU1pYRjFhWEpsWkNJNmRISjFaWDE5IiwiaW5uZXJTaWduYXR1cmUiOiJleUpzYVdObGJuTmxVMmxuYm1GMGRYSmxJam9pUzNablZEQm9aSFkxWlM4eFZYUkJUelV6Y0VOcWEyZHBWM0EyY21GTFVEVnNXV3cyU2xWMGFHeEJNVVUzZDB0RVUzVlpNV2RQVVVZMVlYUjVRMjFJT1Zkd2JUUlBRMHMzVm1oelZIWk1ObUphUlhZMmJUQTNXRk01V2tWR1VqRnhla3N2VEhZekwyZHliWG95WVV0WlNsRnpaMUpNWW5CR1VsQllNRWM1YUdzNGVWazBkbkV6Y0d4V1VEbDZNMVpMV1ROa2ExVTNVbkEwVFZGUk9WSTJOa2xJTHpWM1N5dDZTbTQ1YTNOblIwcDNVbVY0TlRsdVZWQm1Za296ZUVoMFRqZFdPVEpFVEhOMWRrRTFlaTh4ZDBKbVMzbG9MM3BYV1UwM1FrbDZZV2hxT1Zac1NFRTJhblUzYm0wdk9IWlBTV0kyTW13clNqRTBUMVJoTW5KTVZ6VllkekZhYXpSSGVFVm9UMjVQYkc1dWNHSlVXVkYyVGpCYUsxaFpWR3BQZUdkS1EySm5RMUZLZUZoMFJXOUtZVXBrUVRaUk1WSklaVFFyVWtvNVZUWjNhME40VkZwVVMzUmxTa015VGs1SVJWa3pUREpSUFQwaUxDSndkV0pzYVdOTFpYa2lPaUl0TFMwdExVSkZSMGxPSUZCVlFreEpReUJMUlZrdExTMHRMVnh1VFVsSlFrbHFRVTVDWjJ0eGFHdHBSemwzTUVKQlVVVkdRVUZQUTBGUk9FRk5TVWxDUTJkTFEwRlJSVUYzUTBSRlVrbHFkbUkxVUZwcVltbExlVUpqYzF4dVZIVk9jRkZHZHpKdFpuRlBSbFJ5ZDFGSE9HdzFXVVJ2VUhCeFNuTnpPU3RCYVRWTE9WaElWelZzY0hsQlVHSmxObmQzZGpkaUwzUXdNMFV5VnpJd1NseHVlblJOVjBSRk5VcDNhRFF5WTNKT1ZqUnhaM2xNU25jd1lUUkNXblZwVlRORFVUSnBNbVZSWkhGVVNGaExOaTlwV1ZCc1F6QlRhbmhZUTNjcmFIVm5UbHh1YldoS2MwRlpRVnBZUVdKeVYybEtSemh2UVhwT0t6WktaV3cwYTJKeVRVVjRSMjEyWTB4RU0xWnZSazV3VTNSdk5EaERTSGs0VjJOWWFYWnhWVVZuUTF4dUsxWTBkSEJFYUV4NlIySnFUWEpFZUUxdU0xZFhjV3RTWmxGWGJ6bGpSMlJIVG1kSlFXTldURlpZVFhGMlJ6ZHlRa05PZUV0NGVVeGtZa3AxZERkM1FWeHVkVnBGWnpGQ1RuZDVVMnh3V0VseVFsTjZVMHRTVFdneFMwSmFVR0ZqWjFsb0wwdGpRMjQyVW01ek0wTTJRV0p4YXpodFNWWXZTRzVqZWtoRlpHTlRhVnh1ZUZGSlJFRlJRVUpjYmkwdExTMHRSVTVFSUZCVlFreEpReUJMUlZrdExTMHRMVnh1SWl3aWEyVjVVMmxuYm1GMGRYSmxJam9pWlhsS2VtRlhaSFZaV0ZJeFkyMVZhVTlwU2pKTU1rcEpZVVJTYmxGdFRqRlJNV1JIWTFVeFlXVnVjRlpqU0U1b1ZrUmFNbFY1T1hWa01FcHhWREJvZEZKRlpGTmtWVkUwV1RGYVNWSkdaSFJoUkZKWlZFUmpNRTFyTVd4bFYwcDVWa1pPYTFVeFJsQmxWVlp6VFRCNGRrNUVXVFJoTTBGNlVXMHhVRTlFUW5sWGJWazFVVEZOZVdFeFFsTmpWWGN6VDBkb1lXUldRbnBqUjNCUVYydEZlbEZyWkZCT2F6VktUbXRTVkUxSGN6SmFSR2hYVTIxYVJsWXdWWGRqTTJzelZFVmFlR05GZEZoTE1WSnNVVk01V0U0eWVGSlVTR055VVZabk1FOVZTWFpPUm5CTFRsUm9hMk5JU1hwVlJFSlVUVEpLUmxVemFETmFibHBSVkZaU1dXUllRbmhNZW14TVVWUkplRTVGUmxaTk1HdzBXbFp3VVZGVVozWk5NRTVTV2tSc2IxbHRPVTVrTVVad1ZqSmFSMVl3YUVWaFZXTnlXVEprVTJKVlZsTlZNMFpPV2tSb2JGVjVPWGxPU0hCVlpXNVNXbUpxVGtwVFZFSjBWVlprTWxKWGMzbFhSbXhIVjJ0d1NWWkRPSHBVYmxKdFRtdGpNMkZGVWs5V2JrNVNWRmhPVkdKSE1YRlZSVFV6V2tod2RGUkdiek5SVjBwdFpHNWtiVkZxUmpCUFdFcHdWVlYwZFZRd1duSlVSMXBUVlZWMFRHSjZVakprYlRoM1dqSjRVVkV6U205UFZ6bE1Uak5XVG1FeFRtcGhiR1JEVkcxT2FFOVZSVGxRVTBselNXMWtjMkl5U21oaVJYUnNaVlZzYTBscWIybFpiVkpzV2xSVk1rNVVXWGRaTWxwcFRrUk9hazlYU1hsUFIwcHRUMVJvYkZsWFRtaGFiVVV5VGtSWmFXWlJQVDBpZlE9PSJ9
+    licenseFields:
+      expires_at:
+        description: License Expiration
+        name: expires_at
+        signature:
+          v1: eKrZjLra37s9U83uq/U9DEdhxe8UziWarH6myd8wvE/lJwPc+M1IPUQHRSVnQBCruCFUEbEYPLYJ0ylguyD6gZt3Ab7Vgv2Nu2r1cFm41N5LSjFYQiO1VDVCX6WMGgdTliL59BB0Olug9hYXCxPAAWsp/fIZZA1ewBA3zwloYoEwRu1L0e14o9okBTo9sRN7518I0SMAme/AMdU/dYdrKI9rw3TtJHc/ddWG9CKFUXfLtwkVwocsgsytQm2fA/QmnNOalyNzmfpkkgSx1mAmpifLDsxOQV9WWV5zpea8k5p/wxf0uSOJCPqVjWn+0qdhPXetbx+D4XGj2eJarYCHCg==
+        title: Expiration
+        value: ""
+        valueType: String
+    appName: "kots-sdk-demo"
+    channelID: "2MqOAm2LeY9gsaqFwczXAoSfRtD"
+    channelName: "Beta"
+    channelSequence: -1
+    releaseSequence: -1
+    releaseCreatedAt: ""
+    releaseNotes: |-
+      
+    versionLabel: ""
+    replicatedAppEndpoint: "https://replicated.app"
+    statusInformers: null
+    replicatedID: ""
+    appID: ""
+  # kindIs "invalid" indicates that the value is nil and the user did not provide a value
+---
+# Source: replicated/templates/replicated-supportbundle.yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  labels:
+    helm.sh/chart: replicated-1.0.0-beta.12
+    app.kubernetes.io/name: replicated
+    app.kubernetes.io/instance: replicated-release
+    app.kubernetes.io/version: "v1.0.0-beta.12"
+    app.kubernetes.io/managed-by: Helm
+    troubleshoot.sh/kind: support-bundle
+  name: replicated-supportbundle
+  namespace: ""
+stringData:
+  support-bundle-spec: |-
+    apiVersion: troubleshoot.sh/v1beta2
+    kind: SupportBundle
+    metadata:
+      name: replicated-supportbundle
+    spec:
+      collectors:
+        - logs:
+            collectorName: replicated-logs
+            selector:
+              - app.kubernetes.io/instance=replicated-release
+              - app.kubernetes.io/managed-by=Helm
+              - app.kubernetes.io/name=replicated
+              - app.kubernetes.io/version=v1.0.0-beta.12
+              - helm.sh/chart=replicated-1.0.0-beta.12
+            name: replicated/logs
+        - http:
+            collectorName: replicated-app-info
+            get:
+              url: http://replicated.:3000/api/v1/app/info
+              headers:
+                User-Agent: "troubleshoot.sh/support-bundle"
+              timeout: 5s
+        - http:
+            collectorName: replicated-license-info
+            get:
+              url: http://replicated.:3000/api/v1/license/info
+              headers:
+                User-Agent: "troubleshoot.sh/support-bundle"
+              timeout: 5s
+        - secret:
+            namespace: 
+            name: replicated-instance-report
+            includeValue: true
+            key: report
+        - secret:
+            namespace: 
+            name: replicated-custom-app-metrics-report
+            includeValue: true
+            key: report
+      analyzers:
+        - jsonCompare:
+            checkName: Replicated SDK App Status
+            fileName: replicated-app-info.json
+            path: "appStatus"
+            value: "ready"
+            outcomes:
+              - warn:
+                  when: "false"
+                  message: Replicated SDK App status is not ready.
+              - pass:
+                  when: "true"
+                  message: Replicated SDK App status is not ready.
+---
+# Source: replicated/templates/replicated-role.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  labels:
+    helm.sh/chart: replicated-1.0.0-beta.12
+    app.kubernetes.io/name: replicated
+    app.kubernetes.io/instance: replicated-release
+    app.kubernetes.io/version: "v1.0.0-beta.12"
+    app.kubernetes.io/managed-by: Helm
+  name: replicated-role
+  namespace: ""
+rules:
+- apiGroups:
+  - '*'
+  resources:
+  - '*'
+  verbs:
+  - 'get'
+  - 'list'
+  - 'watch'
+- apiGroups:
+  - ''
+  resources:
+  - 'secrets'
+  verbs:
+  - 'create'
+- apiGroups:
+  - ''
+  resources:
+  - 'secrets'
+  verbs:
+  - 'update'
+  resourceNames:
+  - replicated
+  - replicated-instance-report
+  - replicated-custom-app-metrics-report
+---
+# Source: replicated/templates/replicated-rolebinding.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  labels:
+    helm.sh/chart: replicated-1.0.0-beta.12
+    app.kubernetes.io/name: replicated
+    app.kubernetes.io/instance: replicated-release
+    app.kubernetes.io/version: "v1.0.0-beta.12"
+    app.kubernetes.io/managed-by: Helm
+  name: replicated-rolebinding
+  namespace: ""
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: replicated-role
+subjects:
+- kind: ServiceAccount
+  name: replicated
+  namespace: ""
+---
+# Source: replicated/templates/replicated-service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    helm.sh/chart: replicated-1.0.0-beta.12
+    app.kubernetes.io/name: replicated
+    app.kubernetes.io/instance: replicated-release
+    app.kubernetes.io/version: "v1.0.0-beta.12"
+    app.kubernetes.io/managed-by: Helm
+  name: replicated
+  namespace: ""
+spec:
+  ports:
+  - name: http
+    port: 3000
+    targetPort: 3000
+  selector:
+    app.kubernetes.io/name: replicated
+    app.kubernetes.io/instance: replicated-release
+  type: ClusterIP
+---
+# Source: replicated/templates/replicated-deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    helm.sh/chart: replicated-1.0.0-beta.12
+    app.kubernetes.io/name: replicated
+    app.kubernetes.io/instance: replicated-release
+    app.kubernetes.io/version: "v1.0.0-beta.12"
+    app.kubernetes.io/managed-by: Helm
+  name: replicated
+  namespace: ""
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: replicated
+      app.kubernetes.io/instance: replicated-release
+  template:
+    metadata:
+      annotations:
+        checksum/replicated-secret: 32c3b8c2724a47a8cda8dbf71d0bcbd600f6dd6031dbe4eb92a4c4ffcb36bdb1
+      labels:
+        helm.sh/chart: replicated-1.0.0-beta.12
+        app.kubernetes.io/name: replicated
+        app.kubernetes.io/instance: replicated-release
+        app.kubernetes.io/version: "v1.0.0-beta.12"
+        app.kubernetes.io/managed-by: Helm
+    spec:
+      securityContext:
+        runAsGroup: 1001
+        runAsUser: 1001
+        seccompProfile:
+          type: RuntimeDefault
+      volumes:
+      - name: replicated
+        secret:
+          secretName: replicated
+      containers:
+      - name: replicated
+        image: replicated/replicated-sdk:v1.0.0-beta.12
+        imagePullPolicy: IfNotPresent
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+          readOnlyRootFilesystem: true
+          runAsNonRoot: true
+        volumeMounts:
+        - name: replicated
+          mountPath: /etc/replicated/config.yaml
+          readOnly: true
+          subPath: config.yaml
+        env:
+        - name: REPLICATED_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        - name: REPLICATED_POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: DISABLE_OUTBOUND_CONNECTIONS
+          value: "false"
+        - name: IS_HELM_MANAGED
+          value: "true"
+        - name: HELM_RELEASE_NAME
+          value: replicated-release
+        - name: HELM_RELEASE_NAMESPACE
+          value: 
+        - name: HELM_PARENT_CHART_URL
+          value: "oci://registry.replicated.com/kots-sdk-demo/beta/replicated"
+        - name: HELM_DRIVER
+          value: secret # TODO: support other drivers
+        - name: REPLICATED_SECRET_NAME
+          value: replicated
+        - name: REPLICATED_DEPLOYMENT_NAME
+          value: replicated
+        - name: REPLICATED_CONFIG_FILE
+          value: /etc/replicated/config.yaml
+        ports:
+        - containerPort: 3000
+          name: http
+        readinessProbe:
+          failureThreshold: 3
+          httpGet:
+            path: /healthz
+            port: 3000
+            scheme: HTTP
+          initialDelaySeconds: 10
+          periodSeconds: 10
+        resources:
+          limits:
+            cpu: 500m
+            memory: 500Mi
+          requests:
+            cpu: 100m
+            memory: 100Mi
+      restartPolicy: Always
+      serviceAccountName: replicated

@@ -1,0 +1,37 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+bases:
+- ../../base
+commonAnnotations:
+  kots.io/app-slug: my-app
+images:
+- name: alpine
+  newName: ttl.sh/test/alpine
+- name: docker.io/library/alpine
+  newName: ttl.sh/test/alpine
+- name: library/alpine
+  newName: ttl.sh/test/alpine
+- name: docker.io/alpine
+  newName: ttl.sh/test/alpine
+- name: busybox
+  newName: ttl.sh/test/busybox
+- name: docker.io/library/busybox
+  newName: ttl.sh/test/busybox
+- name: library/busybox
+  newName: ttl.sh/test/busybox
+- name: docker.io/busybox
+  newName: ttl.sh/test/busybox
+- name: nginx
+  newName: ttl.sh/test/nginx
+- name: docker.io/library/nginx
+  newName: ttl.sh/test/nginx
+- name: library/nginx
+  newName: ttl.sh/test/nginx
+- name: docker.io/nginx
+  newName: ttl.sh/test/nginx
+kind: Kustomization
+patchesStrategicMerge:
+- pullsecrets.yaml
+resources:
+- secret.yaml
+transformers:
+- backup-label-transformer.yaml

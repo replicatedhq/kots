@@ -146,6 +146,27 @@ func WriteV1Beta2HelmCharts(opts WriteV1Beta2HelmChartsOptions) error {
 			return errors.Wrap(err, "failed to write values file")
 		}
 
+		chartImages, err := findV1Beta2HelmChartImages(opts, &helmChart, chartDir)
+		if err != nil {
+			return errors.Wrap(err, "failed to find chart images")
+		}
+
+		var dockerHubRegistryCreds registry.Credentials
+		dockerhubSecret, _ := registry.GetDockerHubPullSecret(opts.Clientset, util.PodNamespace, opts.ProcessImageOptions.Namespace, opts.ProcessImageOptions.AppSlug)
+		if dockerhubSecret != nil {
+			dockerHubRegistryCreds, _ = registry.GetCredentialsForRegistryFromConfigJSON(dockerhubSecret.Data[".dockerconfigjson"], registry.DockerHubRegistryName)
+		}
+
+		if err := image.UpdateInstallationImages(image.UpdateInstallationImagesOptions{
+			Images:                 chartImages,
+			KotsKinds:              opts.KotsKinds,
+			IsAirgap:               opts.ProcessImageOptions.IsAirgap,
+			UpstreamDir:            opts.Upstream.GetUpstreamDir(opts.WriteUpstreamOptions),
+			DockerHubRegistryCreds: dockerHubRegistryCreds,
+		}); err != nil {
+			return errors.Wrap(err, "failed to update installation images")
+		}
+
 		if !opts.ProcessImageOptions.RewriteImages || opts.ProcessImageOptions.IsAirgap {
 			// if an on-prem registry is not configured (which means it's an online installation)
 			// there's no need to process/copy the images as they will be pulled from their original registries or through the replicated proxy.
@@ -154,8 +175,8 @@ func WriteV1Beta2HelmCharts(opts WriteV1Beta2HelmChartsOptions) error {
 			continue
 		}
 
-		if err := processOnlineV1Beta2HelmChartImages(opts, &helmChart, chartDir); err != nil {
-			return errors.Wrap(err, "failed to process online images")
+		if err := image.CopyOnlineImages(opts.ProcessImageOptions, chartImages, opts.KotsKinds, opts.KotsKinds.License, dockerHubRegistryCreds, opts.RenderOptions.Log); err != nil {
+			return errors.Wrap(err, "failed to copy online images")
 		}
 	}
 
@@ -264,62 +285,42 @@ func templateV1Beta2HelmChartWithValuesToDir(helmChart *kotsv1beta2.HelmChart, c
 	return nil
 }
 
-func processOnlineV1Beta2HelmChartImages(opts WriteV1Beta2HelmChartsOptions, helmChart *kotsv1beta2.HelmChart, chartDir string) error {
+func findV1Beta2HelmChartImages(opts WriteV1Beta2HelmChartsOptions, helmChart *kotsv1beta2.HelmChart, chartDir string) ([]string, error) {
 	// template the chart with the builder values to a temp dir and then process images
 	tmpDir, err := os.MkdirTemp("", fmt.Sprintf("kots-images-%s", helmChart.GetDirName()))
 	if err != nil {
-		return errors.Wrap(err, "failed to create temp dir for image processing")
+		return nil, errors.Wrap(err, "failed to create temp dir for image processing")
 	}
 	defer os.RemoveAll(tmpDir)
 
 	builderHelmValues, err := helmChart.GetBuilderValues()
 	if err != nil {
-		return errors.Wrap(err, "failed to get builder values for chart")
+		return nil, errors.Wrap(err, "failed to get builder values for chart")
 	}
 
 	builderValuesContent, err := yaml.Marshal(builderHelmValues)
 	if err != nil {
-		return errors.Wrap(err, "failed to marshal builder values")
+		return nil, errors.Wrap(err, "failed to marshal builder values")
 	}
 
 	builderValuesPath := path.Join(tmpDir, "builder-values.yaml")
 	if err := os.WriteFile(builderValuesPath, builderValuesContent, 0644); err != nil {
-		return errors.Wrap(err, "failed to write builder values file")
+		return nil, errors.Wrap(err, "failed to write builder values file")
 	}
 
 	templatedOutputDir := path.Join(tmpDir, helmChart.GetDirName())
 	if err := os.Mkdir(templatedOutputDir, 0755); err != nil {
-		return errors.Wrap(err, "failed to create temp dir for image processing")
+		return nil, errors.Wrap(err, "failed to create temp dir for image processing")
 	}
 
 	if err := templateV1Beta2HelmChartWithValuesToDir(helmChart, chartDir, builderValuesPath, templatedOutputDir, opts.RenderOptions.Log.Debug); err != nil {
-		return errors.Wrap(err, "failed to template helm chart for image processing")
-	}
-
-	var dockerHubRegistryCreds registry.Credentials
-	dockerhubSecret, _ := registry.GetDockerHubPullSecret(opts.Clientset, util.PodNamespace, opts.ProcessImageOptions.Namespace, opts.ProcessImageOptions.AppSlug)
-	if dockerhubSecret != nil {
-		dockerHubRegistryCreds, _ = registry.GetCredentialsForRegistryFromConfigJSON(dockerhubSecret.Data[".dockerconfigjson"], registry.DockerHubRegistryName)
+		return nil, errors.Wrap(err, "failed to template helm chart for image processing")
 	}
 
 	chartImages, err := image.FindImagesInDir(templatedOutputDir)
 	if err != nil {
-		return errors.Wrap(err, "failed to find base images")
+		return nil, errors.Wrap(err, "failed to find images in dir")
 	}
 
-	if err := image.UpdateInstallationImages(image.UpdateInstallationImagesOptions{
-		Images:                 chartImages,
-		KotsKinds:              opts.KotsKinds,
-		IsAirgap:               opts.ProcessImageOptions.IsAirgap,
-		UpstreamDir:            opts.Upstream.GetUpstreamDir(opts.WriteUpstreamOptions),
-		DockerHubRegistryCreds: dockerHubRegistryCreds,
-	}); err != nil {
-		return errors.Wrap(err, "failed to update installation images")
-	}
-
-	if err := image.CopyOnlineImages(opts.ProcessImageOptions, chartImages, opts.KotsKinds, opts.KotsKinds.License, dockerHubRegistryCreds, opts.RenderOptions.Log); err != nil {
-		return errors.Wrap(err, "failed to rewrite base images")
-	}
-
-	return nil
+	return chartImages, nil
 }
