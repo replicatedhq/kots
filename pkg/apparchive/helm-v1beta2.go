@@ -319,7 +319,7 @@ func findV1Beta2HelmChartImages(opts WriteV1Beta2HelmChartsOptions, helmChart *k
 
 	chartImages, err := image.FindImagesInDir(templatedOutputDir)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to find base images")
+		return nil, errors.Wrap(err, "failed to find images in dir")
 	}
 
 	return chartImages, nil
