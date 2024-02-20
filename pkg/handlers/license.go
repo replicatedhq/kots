@@ -414,7 +414,7 @@ func (h *Handler) UploadNewLicense(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if !verifiedLicense.Spec.IsAirgapSupported {
+	if !verifiedLicense.Spec.IsAirgapSupported || util.IsEmbeddedCluster() {
 		// complete the install online
 		createAppOpts := online.CreateOnlineAppOpts{
 			PendingApp: &installationtypes.PendingApp{
