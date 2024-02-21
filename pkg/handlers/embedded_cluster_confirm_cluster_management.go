@@ -11,6 +11,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/preflight"
 	"github.com/replicatedhq/kots/pkg/store"
 	storetypes "github.com/replicatedhq/kots/pkg/store/types"
+	"github.com/replicatedhq/kots/pkg/util"
 )
 
 type ConfirmEmbeddedClusterManagementResponse struct {
@@ -18,6 +19,12 @@ type ConfirmEmbeddedClusterManagementResponse struct {
 }
 
 func (h *Handler) ConfirmEmbeddedClusterManagement(w http.ResponseWriter, r *http.Request) {
+	if !util.IsEmbeddedCluster() {
+		logger.Errorf("not an embedded cluster")
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
 	apps, err := store.GetStore().ListInstalledApps()
 	if err != nil {
 		logger.Error(fmt.Errorf("failed to list installed apps: %w", err))
@@ -46,50 +53,53 @@ func (h *Handler) ConfirmEmbeddedClusterManagement(w http.ResponseWriter, r *htt
 	}
 	pendingVersion := downstreamVersions.PendingVersions[0]
 
-	if pendingVersion.Status == storetypes.VersionPendingClusterManagement {
-		archiveDir, err := os.MkdirTemp("", "kotsadm")
-		if err != nil {
-			logger.Error(fmt.Errorf("failed to create temp dir: %w", err))
-			w.WriteHeader(http.StatusInternalServerError)
-			return
-		}
-		defer os.RemoveAll(archiveDir)
+	if pendingVersion.Status != storetypes.VersionPendingClusterManagement {
+		logger.Error(fmt.Errorf("pending version is not in pending_cluster_management status"))
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
 
-		err = store.GetStore().GetAppVersionArchive(app.ID, pendingVersion.Sequence, archiveDir)
-		if err != nil {
-			logger.Error(fmt.Errorf("failed to get app version archive: %w", err))
-			w.WriteHeader(http.StatusInternalServerError)
-			return
-		}
+	archiveDir, err := os.MkdirTemp("", "kotsadm")
+	if err != nil {
+		logger.Error(fmt.Errorf("failed to create temp dir: %w", err))
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	defer os.RemoveAll(archiveDir)
 
-		kotsKinds, err := kotsutil.LoadKotsKinds(archiveDir)
-		if err != nil {
-			logger.Error(fmt.Errorf("failed to load kots kinds: %w", err))
-			w.WriteHeader(http.StatusInternalServerError)
-			return
-		}
+	err = store.GetStore().GetAppVersionArchive(app.ID, pendingVersion.Sequence, archiveDir)
+	if err != nil {
+		logger.Error(fmt.Errorf("failed to get app version archive: %w", err))
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
 
-		downstreamVersionStatus := storetypes.VersionPending
-		if kotsKinds.IsConfigurable() {
-			downstreamVersionStatus = storetypes.VersionPendingConfig
-		} else if kotsKinds.HasPreflights() {
-			downstreamVersionStatus = storetypes.VersionPendingPreflight
-			if err := preflight.Run(app.ID, app.Slug, pendingVersion.Sequence, false, archiveDir); err != nil {
-				logger.Error(errors.Wrap(err, "failed to start preflights"))
-				w.WriteHeader(http.StatusInternalServerError)
-				return
-			}
-		}
-		pendingVersion.Status = downstreamVersionStatus
+	kotsKinds, err := kotsutil.LoadKotsKinds(archiveDir)
+	if err != nil {
+		logger.Error(fmt.Errorf("failed to load kots kinds: %w", err))
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
 
-		if err := store.GetStore().SetDownstreamVersionStatus(app.ID, pendingVersion.Sequence, pendingVersion.Status, ""); err != nil {
-			logger.Error(fmt.Errorf("failed to set downstream version status: %w", err))
+	downstreamVersionStatus := storetypes.VersionPending
+	if kotsKinds.IsConfigurable() {
+		downstreamVersionStatus = storetypes.VersionPendingConfig
+	} else if kotsKinds.HasPreflights() {
+		downstreamVersionStatus = storetypes.VersionPendingPreflight
+		if err := preflight.Run(app.ID, app.Slug, pendingVersion.Sequence, false, archiveDir); err != nil {
+			logger.Error(errors.Wrap(err, "failed to start preflights"))
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
 	}
 
+	if err := store.GetStore().SetDownstreamVersionStatus(app.ID, pendingVersion.Sequence, downstreamVersionStatus, ""); err != nil {
+		logger.Error(fmt.Errorf("failed to set downstream version status: %w", err))
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
 	JSON(w, http.StatusOK, ConfirmEmbeddedClusterManagementResponse{
-		VersionStatus: string(pendingVersion.Status),
+		VersionStatus: string(downstreamVersionStatus),
 	})
 }

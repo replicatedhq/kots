@@ -9,6 +9,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/store"
+	"github.com/replicatedhq/kots/pkg/util"
 )
 
 type GenerateEmbeddedClusterNodeJoinCommandResponse struct {
@@ -29,6 +30,12 @@ type GenerateEmbeddedClusterNodeJoinCommandRequest struct {
 }
 
 func (h *Handler) GenerateEmbeddedClusterNodeJoinCommand(w http.ResponseWriter, r *http.Request) {
+	if !util.IsEmbeddedCluster() {
+		logger.Errorf("not an embedded cluster")
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
 	generateEmbeddedClusterNodeJoinCommandRequest := GenerateEmbeddedClusterNodeJoinCommandRequest{}
 	if err := json.NewDecoder(r.Body).Decode(&generateEmbeddedClusterNodeJoinCommandRequest); err != nil {
 		logger.Error(fmt.Errorf("failed to decode request body: %w", err))
@@ -63,6 +70,12 @@ func (h *Handler) GenerateEmbeddedClusterNodeJoinCommand(w http.ResponseWriter, 
 
 // this function relies on the token being valid for authentication
 func (h *Handler) GetEmbeddedClusterNodeJoinCommand(w http.ResponseWriter, r *http.Request) {
+	if !util.IsEmbeddedCluster() {
+		logger.Errorf("not an embedded cluster")
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
 	// read query string, ensure that the token is valid
 	token := r.URL.Query().Get("token")
 	roles, err := store.GetStore().GetEmbeddedClusterInstallCommandRoles(token)
