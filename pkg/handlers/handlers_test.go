@@ -1210,6 +1210,16 @@ var HandlerPolicyTests = map[string][]HandlerPolicyTest{
 	},
 
 	"EmbeddedCluster": {}, // Not implemented
+	"ConfirmEmbeddedClusterManagement": {
+		{
+			Roles:        []rbactypes.Role{rbac.ClusterAdminRole},
+			SessionRoles: []string{rbac.ClusterAdminRoleID},
+			Calls: func(storeRecorder *mock_store.MockStoreMockRecorder, handlerRecorder *mock_handlers.MockKOTSHandlerMockRecorder) {
+				handlerRecorder.ConfirmEmbeddedClusterManagement(gomock.Any(), gomock.Any())
+			},
+			ExpectStatus: http.StatusOK,
+		},
+	},
 	"GenerateEmbeddedClusterNodeJoinCommand": {
 		{
 			Roles:        []rbactypes.Role{rbac.ClusterAdminRole},

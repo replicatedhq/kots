@@ -277,7 +277,7 @@ func RegisterSessionAuthRoutes(r *mux.Router, kotsStore store.Store, handler KOT
 
 	// Embedded Cluster
 	r.Name("EmbeddedCluster").Path("/api/v1/embedded-cluster").HandlerFunc(NotImplemented)
-	r.Name("GenerateEmbeddedClusterNodeJoinCommand").Path("/api/v1/embedded-cluster/confirm").Methods("POST").
+	r.Name("ConfirmEmbeddedClusterManagement").Path("/api/v1/embedded-cluster/confirm").Methods("POST").
 		HandlerFunc(middleware.EnforceAccess(policy.ClusterWrite, handler.ConfirmEmbeddedClusterManagement))
 	r.Name("GenerateEmbeddedClusterNodeJoinCommand").Path("/api/v1/embedded-cluster/generate-node-join-command").Methods("POST").
 		HandlerFunc(middleware.EnforceAccess(policy.ClusterWrite, handler.GenerateEmbeddedClusterNodeJoinCommand))
