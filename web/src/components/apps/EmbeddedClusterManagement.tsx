@@ -364,7 +364,7 @@ const EmbeddedClusterManagement = ({
 
   const onContinueClick = async () => {
     const res = await fetch(
-      `${process.env.API_ENDPOINT}/embedded-cluster/confirm`,
+      `${process.env.API_ENDPOINT}/embedded-cluster/management`,
       {
         headers: {
           Accept: "application/json",
