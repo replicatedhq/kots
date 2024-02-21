@@ -337,7 +337,11 @@ function AppDetailPage(props: Props) {
       const firstVersion = downstream.pendingVersions.find(
         (version: Version) => version?.sequence === 0
       );
-      if ((firstVersion?.status === "unknown"  || firstVersion?.status === "pending_cluster_management") && props.isEmbeddedCluster) {
+      if (
+        (firstVersion?.status === "unknown" ||
+          firstVersion?.status === "pending_cluster_management") &&
+        props.isEmbeddedCluster
+      ) {
         navigate(`/${appNeedsConfiguration.slug}/cluster/manage`);
         return;
       }

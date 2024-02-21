@@ -13,7 +13,6 @@ import Icon from "../Icon";
 import CodeSnippet from "../shared/CodeSnippet";
 
 import "@src/scss/components/apps/EmbeddedClusterManagement.scss";
-import { on } from "events";
 
 const testData = {
   nodes: undefined,
@@ -51,10 +50,7 @@ const EmbeddedClusterManagement = ({
   );
   const [selectedNodeTypes, setSelectedNodeTypes] = useState<string[]>([]);
 
-  const {
-    data: appsData,
-    refetch: refetchApps
-  } = useApps();
+  const { data: appsData, refetch: refetchApps } = useApps();
   // we grab the first app because embeddedcluster users should only ever have one app
   const app = appsData?.apps?.[0];
 
@@ -382,7 +378,7 @@ const EmbeddedClusterManagement = ({
         Utilities.logoutUser();
       }
       console.log(
-        "failed to update cluster management, unexpected status code",
+        "failed to confirm cluster management, unexpected status code",
         res.status
       );
       try {
@@ -391,7 +387,9 @@ const EmbeddedClusterManagement = ({
           error?.error?.message || error?.error || error?.message
         );
       } catch (err) {
-        throw new Error("Unable to update cluster management, please try again later.");
+        throw new Error(
+          "Unable to confirm cluster management, please try again later."
+        );
       }
     }
 
