@@ -619,7 +619,10 @@ func (s *KOTSStore) upsertAppVersionStatements(appID string, sequence int64, bas
 			return nil, errors.Wrap(err, "failed to check strict preflights from spec")
 		}
 		downstreamStatus := types.VersionPending
-		if baseSequence == nil && kotsKinds.IsConfigurable() { // initial version should always require configuration (if exists) even if all required items are already set and have values (except for automated installs, which can override this later)
+		if baseSequence == nil && util.IsEmbeddedCluster() {
+			// embedded clusters always require cluster management on initial install
+			downstreamStatus = types.VersionPendingClusterManagement
+		} else if baseSequence == nil && kotsKinds.IsConfigurable() { // initial version should always require configuration (if exists) even if all required items are already set and have values (except for automated installs, which can override this later)
 			downstreamStatus = types.VersionPendingConfig
 		} else if kotsKinds.HasPreflights() && (!skipPreflights || hasStrictPreflights) {
 			downstreamStatus = types.VersionPendingPreflight

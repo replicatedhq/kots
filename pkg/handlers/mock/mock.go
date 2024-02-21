@@ -178,6 +178,18 @@ func (mr *MockKOTSHandlerMockRecorder) ConfigureIdentityService(w, r interface{}
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ConfigureIdentityService", reflect.TypeOf((*MockKOTSHandler)(nil).ConfigureIdentityService), w, r)
 }
 
+// ConfirmEmbeddedClusterManagement mocks base method.
+func (m *MockKOTSHandler) ConfirmEmbeddedClusterManagement(w http.ResponseWriter, r *http.Request) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "ConfirmEmbeddedClusterManagement", w, r)
+}
+
+// ConfirmEmbeddedClusterManagement indicates an expected call of ConfirmEmbeddedClusterManagement.
+func (mr *MockKOTSHandlerMockRecorder) ConfirmEmbeddedClusterManagement(w, r interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ConfirmEmbeddedClusterManagement", reflect.TypeOf((*MockKOTSHandler)(nil).ConfirmEmbeddedClusterManagement), w, r)
+}
+
 // CreateAppFromAirgap mocks base method.
 func (m *MockKOTSHandler) CreateAppFromAirgap(w http.ResponseWriter, r *http.Request) {
 	m.ctrl.T.Helper()

@@ -139,6 +139,7 @@ type KOTSHandler interface {
 	GetKurlNodes(w http.ResponseWriter, r *http.Request)
 
 	// EmbeddedCLuster
+	ConfirmEmbeddedClusterManagement(w http.ResponseWriter, r *http.Request)
 	GenerateEmbeddedClusterNodeJoinCommand(w http.ResponseWriter, r *http.Request)
 	DrainEmbeddedClusterNode(w http.ResponseWriter, r *http.Request)
 	DeleteEmbeddedClusterNode(w http.ResponseWriter, r *http.Request)

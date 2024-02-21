@@ -198,6 +198,16 @@ func CreateAppFromOnline(opts CreateOnlineAppOpts) (_ *kotsutil.KotsKinds, final
 		return nil, errors.Wrap(err, "failed to load kotskinds from path")
 	}
 
+	status, err := store.GetStore().GetDownstreamVersionStatus(opts.PendingApp.ID, newSequence)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get downstream version status")
+	}
+
+	if status == storetypes.VersionPendingClusterManagement {
+		// if pending cluster management, we don't want to deploy the app
+		return kotsKinds, nil
+	}
+
 	hasStrictPreflights, err := store.GetStore().HasStrictPreflights(opts.PendingApp.ID, newSequence)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to check if app preflight has strict analyzers")
