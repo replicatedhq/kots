@@ -174,7 +174,7 @@ func GenerateK0sJoinCommand(ctx context.Context, client kubernetes.Interface, ro
 
 	cmd := []string{"/usr/local/bin/k0s", "install", k0sRole}
 	if k0sRole == "controller" {
-		cmd = append(cmd, "--enable-worker")
+		cmd = append(cmd, "--enable-worker", "--no-taints")
 	}
 
 	labels, err := getRolesNodeLabels(ctx, roles)
