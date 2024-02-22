@@ -3,7 +3,7 @@ import classNames from "classnames";
 import MaterialReactTable, { MRT_ColumnDef } from "material-react-table";
 import { ChangeEvent, useEffect, useMemo, useReducer, useState } from "react";
 import Modal from "react-modal";
-import { Link, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 
 import { KotsPageTitle } from "@components/Head";
 import { useApps } from "@features/App";
@@ -50,11 +50,13 @@ const EmbeddedClusterManagement = ({
   );
   const [selectedNodeTypes, setSelectedNodeTypes] = useState<string[]>([]);
 
-  const { data: appsData } = useApps();
+  const { data: appsData, refetch: refetchApps } = useApps();
   // we grab the first app because embeddedcluster users should only ever have one app
   const app = appsData?.apps?.[0];
 
   const { slug } = useParams();
+
+  const navigate = useNavigate();
 
   // #region queries
   type NodesResponse = {
@@ -360,6 +362,50 @@ const EmbeddedClusterManagement = ({
   }, [nodesData?.nodes?.toString()]);
   // #endregion
 
+  const onContinueClick = async () => {
+    const res = await fetch(
+      `${process.env.API_ENDPOINT}/embedded-cluster/management`,
+      {
+        headers: {
+          Accept: "application/json",
+        },
+        credentials: "include",
+        method: "POST",
+      }
+    );
+    if (!res.ok) {
+      if (res.status === 401) {
+        Utilities.logoutUser();
+      }
+      console.log(
+        "failed to confirm cluster management, unexpected status code",
+        res.status
+      );
+      try {
+        const error = await res.json();
+        throw new Error(
+          error?.error?.message || error?.error || error?.message
+        );
+      } catch (err) {
+        throw new Error(
+          "Unable to confirm cluster management, please try again later."
+        );
+      }
+    }
+
+    await refetchApps();
+
+    const data = await res.json();
+
+    if (data.versionStatus === "pending_config") {
+      navigate(`/${app?.slug}/config`);
+    } else if (data.versionStatus === "pending_preflight") {
+      navigate(`/${app?.slug}/preflight`);
+    } else {
+      navigate(`/app/${app?.slug}`);
+    }
+  };
+
   return (
     <div className="EmbeddedClusterManagement--wrapper container u-overflow--auto u-paddingTop--50 tw-font-sans">
       <KotsPageTitle pageName="Cluster Management" />
@@ -436,14 +482,12 @@ const EmbeddedClusterManagement = ({
           )}
         </div>
         {fromLicenseFlow && (
-          <Link
+          <button
             className="btn primary tw-w-fit tw-ml-auto"
-            to={
-              app?.isConfigurable ? `/${app?.slug}/config` : `/app/${app?.slug}`
-            }
+            onClick={() => onContinueClick()}
           >
             Continue
-          </Link>
+          </button>
         )}
       </div>
       {/* MODALS */}

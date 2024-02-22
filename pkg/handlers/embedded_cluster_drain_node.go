@@ -8,11 +8,18 @@ import (
 	"github.com/replicatedhq/kots/pkg/embeddedcluster"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/logger"
+	"github.com/replicatedhq/kots/pkg/util"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 func (h *Handler) DrainEmbeddedClusterNode(w http.ResponseWriter, r *http.Request) {
+	if !util.IsEmbeddedCluster() {
+		logger.Errorf("not an embedded cluster")
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
 	client, err := k8sutil.GetClientset()
 	if err != nil {
 		logger.Error(err)

@@ -7,6 +7,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/embeddedcluster"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/logger"
+	"github.com/replicatedhq/kots/pkg/util"
 )
 
 type GetEmbeddedClusterRolesResponse struct {
@@ -14,6 +15,12 @@ type GetEmbeddedClusterRolesResponse struct {
 }
 
 func (h *Handler) GetEmbeddedClusterNodes(w http.ResponseWriter, r *http.Request) {
+	if !util.IsEmbeddedCluster() {
+		logger.Errorf("not an embedded cluster")
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
 	client, err := k8sutil.GetClientset()
 	if err != nil {
 		logger.Error(err)
@@ -31,6 +38,12 @@ func (h *Handler) GetEmbeddedClusterNodes(w http.ResponseWriter, r *http.Request
 }
 
 func (h *Handler) GetEmbeddedClusterNode(w http.ResponseWriter, r *http.Request) {
+	if !util.IsEmbeddedCluster() {
+		logger.Errorf("not an embedded cluster")
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
 	client, err := k8sutil.GetClientset()
 	if err != nil {
 		logger.Error(err)
@@ -49,6 +62,12 @@ func (h *Handler) GetEmbeddedClusterNode(w http.ResponseWriter, r *http.Request)
 }
 
 func (h *Handler) GetEmbeddedClusterRoles(w http.ResponseWriter, r *http.Request) {
+	if !util.IsEmbeddedCluster() {
+		logger.Errorf("not an embedded cluster")
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
 	roles, err := embeddedcluster.GetRoles(r.Context())
 	if err != nil {
 		logger.Error(err)

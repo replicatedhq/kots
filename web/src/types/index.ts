@@ -257,6 +257,7 @@ export type VersionStatus =
   | "deploying"
   | "failed"
   | "pending"
+  | "pending_cluster_management"
   | "pending_config"
   | "pending_download"
   | "pending_preflight"
