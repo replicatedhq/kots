@@ -410,6 +410,7 @@ function AppDetailPage(props: Props) {
     displayErrorModal: state.displayErrorModal,
     isBundleUploading: isBundleUploading,
     isHelmManaged: props.isHelmManaged,
+    isEmbeddedCluster: props.isEmbeddedCluster,
     isVeleroInstalled: isVeleroInstalled,
     logo: selectedApp?.iconUri,
     makeCurrentVersion: makeCurrentRelease,

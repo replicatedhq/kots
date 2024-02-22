@@ -54,6 +54,7 @@ type OutletContext = {
   };
   isBundleUploading: boolean;
   isHelmManaged: boolean;
+  isEmbeddedCluster: boolean;
   isVeleroInstalled: boolean;
   makeCurrentVersion: (
     slug: string,
@@ -155,9 +156,9 @@ const Dashboard = () => {
 
   const {
     app,
-    //cluster,
     isBundleUploading,
     isHelmManaged,
+    isEmbeddedCluster,
     isVeleroInstalled,
     makeCurrentVersion,
     ping,
@@ -167,7 +168,6 @@ const Dashboard = () => {
     updateCallback,
   }: OutletContext = useOutletContext();
   const params = useParams();
-  // const { app, isBundleUploading, isVeleroInstalled } = props;
   const airgapUploader = useRef<AirgapUploader | null>(null);
 
   const timer = useRef<NodeJS.Timeout[]>([]);
@@ -722,24 +722,18 @@ const Dashboard = () => {
                     syncCallback={() => getAppLicense()}
                     refetchLicense={getAppLicense}
                     gettingAppLicenseErrMsg={state.gettingAppLicenseErrMsg}
-                  >
-                    {/* leaving this here as an example: please delete later */}
-                    {/* <LicenseTester
-                      appSlug={app.slug}
-                      setLoader={(e: boolean) =>
-                        setState({ slowLoader: e })
-                      }
-                    /> */}
-                  </DashboardLicenseCard>
+                  />
                 </div>
               </div>
-              <div className="u-marginTop--30 flex flex1">
-                <DashboardGraphsCard
-                  prometheusAddress={state.dashboard?.prometheusAddress}
-                  metrics={state.dashboard?.metrics}
-                  isHelmManaged={isHelmManaged}
-                />
-              </div>
+              {!isEmbeddedCluster && (
+                <div className="u-marginTop--30 flex flex1">
+                  <DashboardGraphsCard
+                    prometheusAddress={state.dashboard?.prometheusAddress}
+                    metrics={state.dashboard?.metrics}
+                    isHelmManaged={isHelmManaged}
+                  />
+                </div>
+              )}
             </div>
           </div>
           {state.viewAirgapUploadError && (

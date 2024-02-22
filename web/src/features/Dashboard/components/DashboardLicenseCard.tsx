@@ -1,4 +1,4 @@
-import { ReactNode, useReducer } from "react";
+import { useReducer } from "react";
 import size from "lodash/size";
 // @ts-ignore
 import yaml from "js-yaml";
@@ -24,7 +24,6 @@ type Props = {
   appLicense: AppLicense | null;
   gettingAppLicenseErrMsg: string | null;
   syncCallback: () => void;
-  children: ReactNode;
   refetchLicense: () => void;
 };
 
@@ -280,8 +279,6 @@ const DashboardLicenseCard = (props: Props) => {
         )}
       </div>
       <div className="card-item u-marginTop--10">
-        {/* license tester component to try out the useLicense hook! */}
-        {props.children}
         {size(appLicense) > 0 ? (
           <div className="flex">
             <div className="flex-column flex1">
