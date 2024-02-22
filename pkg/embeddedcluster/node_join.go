@@ -154,7 +154,7 @@ func GenerateAddNodeCommand(ctx context.Context, client kubernetes.Interface, to
 		return "", fmt.Errorf("failed to get admin console port: %w", err)
 	}
 
-	return fmt.Sprintf("sudo ./%s node join %s:%d %s", binaryName, nodeIP, port, token), nil
+	return fmt.Sprintf("sudo ./%s join %s:%d %s", binaryName, nodeIP, port, token), nil
 }
 
 // GenerateK0sJoinCommand returns the k0s node join command, without the token but with all other required flags
