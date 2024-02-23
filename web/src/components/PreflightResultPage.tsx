@@ -229,16 +229,16 @@ function PreflightResultPage(props: Props) {
                   </>
                 )}
               </div>
-              {preflightCheck?.showIgnorePreflight && (
-                <div className="flex flex1 justifyContent--center alignItems--center">
-                  <span
-                    className="u-fontSize--normal u-fontWeight--medium u-textDecoration--underline u-textColor--bodyCopy u-marginTop--15 u-cursor--pointer"
-                    onClick={() => setShowConfirmIgnorePreflightsModal(true)}
-                  >
-                    Ignore Preflights{" "}
-                  </span>
-                </div>
-              )}
+            </div>
+          )}
+          {preflightCheck?.showIgnorePreflight && (
+            <div className="flex flex0 justifyContent--center alignItems--center">
+              <span
+                className="u-fontSize--normal u-fontWeight--medium u-textDecoration--underline u-textColor--bodyCopy u-marginTop--15 u-cursor--pointer"
+                onClick={() => setShowConfirmIgnorePreflightsModal(true)}
+              >
+                Ignore Preflights{" "}
+              </span>
             </div>
           )}
         </div>
