@@ -105,7 +105,7 @@ func TestKotsRenderDir(t *testing.T) {
 
 			// Comment out this line to review the generated results.
 			// Just be sure to delete the 'results' directory in each test manually when finished!
-			// defer func() { os.RemoveAll(resultsDir) }()
+			defer func() { os.RemoveAll(resultsDir) }()
 
 			fmt.Printf("running test %s\n", tt.Name)
 			err = render.RenderDir(tt.RenderDirOptions)
