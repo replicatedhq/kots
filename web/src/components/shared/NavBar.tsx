@@ -169,6 +169,11 @@ export class NavBar extends PureComponent<Props, State> {
       licenseType = "";
     }
 
+    let isInitialEmbeddedInstall = false;
+    if (isEmbeddedClusterEnabled && appsList.length > 0) {
+      isInitialEmbeddedInstall = Utilities.isInitialAppInstall(appsList[0]);
+    }
+
     const isClusterScope =
       this.props.location?.pathname.includes("/clusterscope");
     return (
@@ -200,79 +205,85 @@ export class NavBar extends PureComponent<Props, State> {
               </Link>
             </div>
           </div>
-          {Utilities.isLoggedIn() && appsList?.length > 0 && (
-            <div className="flex flex-auto left-items">
-              <div
-                className={classNames("NavItem u-position--relative flex", {
-                  "is-active": selectedTab === "dashboard",
-                })}
-              >
-                <span
-                  onClick={this.redirectToDashboard}
-                  className="flex flex1 u-cursor--pointer text u-fontSize--normal u-fontWeight--medium flex-column justifyContent--center"
-                >
-                  Application
-                </span>
-              </div>
-              {isGitOpsSupported && (
+          {Utilities.isLoggedIn() &&
+            appsList?.length > 0 &&
+            !isInitialEmbeddedInstall && (
+              <div className="flex flex-auto left-items">
                 <div
                   className={classNames("NavItem u-position--relative flex", {
-                    "is-active": selectedTab === "gitops",
+                    "is-active": selectedTab === "dashboard",
                   })}
                 >
                   <span
-                    onClick={this.handleGoToGitOps}
+                    onClick={this.redirectToDashboard}
                     className="flex flex1 u-cursor--pointer text u-fontSize--normal u-fontWeight--medium flex-column justifyContent--center"
                   >
-                    GitOps
+                    Application
                   </span>
                 </div>
-              )}
-              {(isKurlEnabled || isEmbeddedClusterEnabled) &&
-                location.pathname !== `${selectedApp?.slug}/cluster/manage` && (
+                {isGitOpsSupported && (
                   <div
                     className={classNames("NavItem u-position--relative flex", {
-                      "is-active": selectedTab === "cluster_management",
+                      "is-active": selectedTab === "gitops",
                     })}
                   >
                     <span
-                      onClick={this.handleGoToClusterManagement}
+                      onClick={this.handleGoToGitOps}
                       className="flex flex1 u-cursor--pointer text u-fontSize--normal u-fontWeight--medium flex-column justifyContent--center"
                     >
-                      Cluster Management
+                      GitOps
                     </span>
                   </div>
                 )}
-              {isSnapshotsSupported && (
-                <div
-                  className={classNames("NavItem u-position--relative flex", {
-                    "is-active": selectedTab === "snapshots",
-                  })}
-                >
-                  <span
-                    onClick={this.handleGoToSnapshots}
-                    className="flex flex1 u-cursor--pointer alignItems--center text u-fontSize--normal u-fontWeight--medium flex"
+                {(isKurlEnabled || isEmbeddedClusterEnabled) &&
+                  location.pathname !==
+                    `${selectedApp?.slug}/cluster/manage` && (
+                    <div
+                      className={classNames(
+                        "NavItem u-position--relative flex",
+                        {
+                          "is-active": selectedTab === "cluster_management",
+                        }
+                      )}
+                    >
+                      <span
+                        onClick={this.handleGoToClusterManagement}
+                        className="flex flex1 u-cursor--pointer text u-fontSize--normal u-fontWeight--medium flex-column justifyContent--center"
+                      >
+                        Cluster Management
+                      </span>
+                    </div>
+                  )}
+                {isSnapshotsSupported && (
+                  <div
+                    className={classNames("NavItem u-position--relative flex", {
+                      "is-active": selectedTab === "snapshots",
+                    })}
                   >
-                    Snapshots
-                  </span>
-                </div>
-              )}
-              {isIdentityServiceSupported && isKurlEnabled && (
-                <div
-                  className={classNames("NavItem u-position--relative flex", {
-                    "is-active": selectedTab === "access",
-                  })}
-                >
-                  <span
-                    onClick={this.handleGoToAccess}
-                    className="flex flex1 u-cursor--pointer alignItems--center text u-fontSize--normal u-fontWeight--medium flex"
+                    <span
+                      onClick={this.handleGoToSnapshots}
+                      className="flex flex1 u-cursor--pointer alignItems--center text u-fontSize--normal u-fontWeight--medium flex"
+                    >
+                      Snapshots
+                    </span>
+                  </div>
+                )}
+                {isIdentityServiceSupported && isKurlEnabled && (
+                  <div
+                    className={classNames("NavItem u-position--relative flex", {
+                      "is-active": selectedTab === "access",
+                    })}
                   >
-                    Access
-                  </span>
-                </div>
-              )}
-            </div>
-          )}
+                    <span
+                      onClick={this.handleGoToAccess}
+                      className="flex flex1 u-cursor--pointer alignItems--center text u-fontSize--normal u-fontWeight--medium flex"
+                    >
+                      Access
+                    </span>
+                  </div>
+                )}
+              </div>
+            )}
         </div>
         {Utilities.isLoggedIn() && (
           <>
