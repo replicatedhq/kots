@@ -231,7 +231,7 @@ function PreflightResultPage(props: Props) {
               </div>
             </div>
           )}
-          {props.fromLicenseFlow && preflightCheck?.showIgnorePreflight && (
+          {preflightCheck?.showIgnorePreflight && (
             <div className="flex flex0 justifyContent--center alignItems--center">
               <span
                 className="u-fontSize--normal u-fontWeight--medium u-textDecoration--underline u-textColor--bodyCopy u-marginTop--15 u-cursor--pointer"
