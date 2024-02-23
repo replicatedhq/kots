@@ -141,7 +141,15 @@ func (s *KOTSStore) IsSnapshotsSupportedForVersion(a *apptypes.App, sequence int
 	}
 
 	// as far as I can tell, this is the only place within pkg/store that uses templating
-	rendered, err := renderer.RenderFile(kotsKinds, registrySettings, a.Slug, sequence, a.IsAirgap, util.PodNamespace, []byte(backupSpecStr.String))
+	rendered, err := renderer.RenderFile(rendertypes.RenderFileOptions{
+		KotsKinds:        kotsKinds,
+		RegistrySettings: registrySettings,
+		AppSlug:          a.Slug,
+		Sequence:         sequence,
+		IsAirgap:         a.IsAirgap,
+		Namespace:        util.PodNamespace,
+		InputContent:     []byte(backupSpecStr.String),
+	})
 	if err != nil {
 		return false, errors.Wrap(err, "failed to render backup spec")
 	}
@@ -1070,7 +1078,15 @@ func (s *KOTSStore) renderPreflightSpec(appID string, appSlug string, sequence i
 			return nil, errors.Wrap(err, "failed to get registry settings for app")
 		}
 
-		renderedPreflight, err := renderer.RenderFile(kotsKinds, registrySettings, appSlug, sequence, isAirgap, util.PodNamespace, []byte(renderedMarshalledPreflights))
+		renderedPreflight, err := renderer.RenderFile(rendertypes.RenderFileOptions{
+			KotsKinds:        kotsKinds,
+			RegistrySettings: registrySettings,
+			AppSlug:          appSlug,
+			Sequence:         sequence,
+			IsAirgap:         isAirgap,
+			Namespace:        util.PodNamespace,
+			InputContent:     []byte(renderedMarshalledPreflights),
+		})
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to render preflights")
 		}
@@ -1098,7 +1114,15 @@ func (s *KOTSStore) renderApplicationSpec(appID string, appSlug string, sequence
 			return nil, errors.Wrap(err, "failed to get registry settings for app")
 		}
 
-		renderedApplication, err := renderer.RenderFile(kotsKinds, registrySettings, appSlug, sequence, isAirgap, util.PodNamespace, []byte(renderedMarshalledPreflights))
+		renderedApplication, err := renderer.RenderFile(rendertypes.RenderFileOptions{
+			KotsKinds:        kotsKinds,
+			RegistrySettings: registrySettings,
+			AppSlug:          appSlug,
+			Sequence:         sequence,
+			IsAirgap:         isAirgap,
+			Namespace:        util.PodNamespace,
+			InputContent:     []byte(renderedMarshalledPreflights),
+		})
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to render application")
 		}

@@ -185,7 +185,13 @@ func (s *KOTSStore) createNewVersionForLicenseChangeStatements(appID string, bas
 		return nil, int64(0), errors.Wrap(err, "failed to get next app sequence")
 	}
 
-	if err := renderer.RenderDir(archiveDir, app, downstreams, registrySettings, nextAppSequence); err != nil {
+	if err := renderer.RenderDir(rendertypes.RenderDirOptions{
+		ArchiveDir:       archiveDir,
+		App:              app,
+		Downstreams:      downstreams,
+		RegistrySettings: registrySettings,
+		Sequence:         nextAppSequence,
+	}); err != nil {
 		return nil, int64(0), errors.Wrap(err, "failed to render new version")
 	}
 

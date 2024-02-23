@@ -15,6 +15,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/preflight"
 	"github.com/replicatedhq/kots/pkg/render"
+	rendertypes "github.com/replicatedhq/kots/pkg/render/types"
 	"github.com/replicatedhq/kots/pkg/store"
 	storetypes "github.com/replicatedhq/kots/pkg/store/types"
 	"github.com/replicatedhq/kots/pkg/util"
@@ -158,7 +159,13 @@ func (h *Handler) UploadExistingApp(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = render.RenderDir(archiveDir, a, downstreams, registrySettings, nextAppSequence)
+	err = render.RenderDir(rendertypes.RenderDirOptions{
+		ArchiveDir:       archiveDir,
+		App:              a,
+		Downstreams:      downstreams,
+		RegistrySettings: registrySettings,
+		Sequence:         nextAppSequence,
+	})
 	if err != nil {
 		cause := errors.Cause(err)
 		if _, ok := cause.(util.ActionableError); ok {

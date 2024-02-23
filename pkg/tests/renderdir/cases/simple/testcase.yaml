@@ -1,0 +1,9 @@
+Name: test simple renderdir
+RenderDirOptions:
+  ArchiveDir: cases/simple/archiveDir
+  App:
+    ID: app-id
+    Slug: my-app
+  Downstreams:
+    - Name: this-cluster
+  Sequence: 1

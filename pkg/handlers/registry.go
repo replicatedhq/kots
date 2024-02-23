@@ -238,7 +238,7 @@ func (h *Handler) UpdateAppRegistry(w http.ResponseWriter, r *http.Request) {
 		appDir, err := registry.RewriteImages(
 			foundApp.ID, latestSequence, updateAppRegistryRequest.Hostname,
 			updateAppRegistryRequest.Username, registryPassword,
-			updateAppRegistryRequest.Namespace, skipImagePush, nil)
+			updateAppRegistryRequest.Namespace, skipImagePush)
 		if err != nil {
 			// log credential errors at info level
 			causeErr := errors.Cause(err)

@@ -886,7 +886,15 @@ func (o *Operator) renderKotsApplicationSpec(app *apptypes.App, sequence int64, 
 		return nil, errors.Wrap(err, "failed to marshal kots app spec")
 	}
 
-	renderedKotsAppSpec, err := renderer.RenderFile(kotsKinds, registrySettings, app.Slug, sequence, app.IsAirgap, namespace, []byte(marshalledKotsAppSpec))
+	renderedKotsAppSpec, err := renderer.RenderFile(rendertypes.RenderFileOptions{
+		KotsKinds:        kotsKinds,
+		RegistrySettings: registrySettings,
+		AppSlug:          app.Slug,
+		Sequence:         sequence,
+		IsAirgap:         app.IsAirgap,
+		Namespace:        namespace,
+		InputContent:     []byte(marshalledKotsAppSpec),
+	})
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to render preflights")
 	}

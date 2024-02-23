@@ -6,6 +6,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/kotsutil"
 	registrytypes "github.com/replicatedhq/kots/pkg/registry/types"
 	"github.com/replicatedhq/kots/pkg/render"
+	rendertypes "github.com/replicatedhq/kots/pkg/render/types"
 	"github.com/replicatedhq/kots/pkg/store"
 	"github.com/replicatedhq/kots/pkg/util"
 )
@@ -33,5 +34,13 @@ func RenderAppFile(a types.AppType, overrideSequence *int64, inputContent []byte
 		registrySettings = s
 	}
 
-	return render.RenderFile(kotsKinds, registrySettings, a.GetSlug(), sequence, a.GetIsAirgap(), namespace, inputContent)
+	return render.RenderFile(rendertypes.RenderFileOptions{
+		KotsKinds:        kotsKinds,
+		RegistrySettings: registrySettings,
+		AppSlug:          a.GetSlug(),
+		Sequence:         sequence,
+		IsAirgap:         a.GetIsAirgap(),
+		Namespace:        namespace,
+		InputContent:     []byte(inputContent),
+	})
 }

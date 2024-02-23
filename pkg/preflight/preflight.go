@@ -20,6 +20,7 @@ import (
 	registrytypes "github.com/replicatedhq/kots/pkg/registry/types"
 	"github.com/replicatedhq/kots/pkg/render"
 	"github.com/replicatedhq/kots/pkg/render/helper"
+	rendertypes "github.com/replicatedhq/kots/pkg/render/types"
 	"github.com/replicatedhq/kots/pkg/reporting"
 	"github.com/replicatedhq/kots/pkg/store"
 	storetypes "github.com/replicatedhq/kots/pkg/store/types"
@@ -107,7 +108,15 @@ func Run(appID string, appSlug string, sequence int64, isAirgap bool, archiveDir
 			return errors.Wrap(err, "failed to marshal rendered preflight")
 		}
 
-		renderedPreflight, err := render.RenderFile(kotsKinds, registrySettings, appSlug, sequence, isAirgap, util.PodNamespace, []byte(renderedMarshalledPreflights))
+		renderedPreflight, err := render.RenderFile(rendertypes.RenderFileOptions{
+			KotsKinds:        kotsKinds,
+			RegistrySettings: registrySettings,
+			AppSlug:          appSlug,
+			Sequence:         sequence,
+			IsAirgap:         isAirgap,
+			Namespace:        util.PodNamespace,
+			InputContent:     []byte(renderedMarshalledPreflights),
+		})
 		if err != nil {
 			return errors.Wrap(err, "failed to render preflights")
 		}

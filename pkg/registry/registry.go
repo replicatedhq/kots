@@ -21,7 +21,6 @@ import (
 	"github.com/replicatedhq/kots/pkg/rewrite"
 	"github.com/replicatedhq/kots/pkg/store"
 	"github.com/replicatedhq/kots/pkg/util"
-	kotsv1beta1 "github.com/replicatedhq/kotskinds/apis/kots/v1beta1"
 	corev1 "k8s.io/api/core/v1"
 	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -30,7 +29,7 @@ import (
 // RewriteImages will use the app (a) and send the images to the registry specified. It will create patches for these
 // and create a new version of the application
 // the caller is responsible for deleting the appDir returned
-func RewriteImages(appID string, sequence int64, hostname string, username string, password string, namespace string, isReadOnly bool, configValues *kotsv1beta1.ConfigValues) (appDir string, finalError error) {
+func RewriteImages(appID string, sequence int64, hostname string, username string, password string, namespace string, isReadOnly bool) (appDir string, finalError error) {
 	if err := store.GetStore().SetTaskStatus("image-rewrite", "Updating registry settings", "running"); err != nil {
 		return "", errors.Wrap(err, "failed to set task status")
 	}
@@ -76,15 +75,6 @@ func RewriteImages(appID string, sequence int64, hostname string, username strin
 		return "", errors.Wrap(err, "failed to get app version archive")
 	}
 
-	kotsKinds, err := kotsutil.LoadKotsKinds(appDir)
-	if err != nil {
-		return "", errors.Wrap(err, "failed to load kotskinds from path")
-	}
-
-	if configValues == nil {
-		configValues = kotsKinds.ConfigValues
-	}
-
 	// get the downstream names only
 	downstreams, err := store.GetStore().ListDownstreamsForApp(appID)
 	if err != nil {
@@ -123,15 +113,30 @@ func RewriteImages(appID string, sequence int64, hostname string, username strin
 		return "", errors.Wrap(err, "failed to get next app sequence")
 	}
 
+	installation, err := kotsutil.LoadInstallationFromPath(filepath.Join(appDir, "upstream", "userdata", "installation.yaml"))
+	if err != nil {
+		return "", errors.Wrap(err, "failed to load installation from path")
+	}
+
+	license, err := kotsutil.LoadLicenseFromPath(filepath.Join(appDir, "upstream", "userdata", "license.yaml"))
+	if err != nil {
+		return "", errors.Wrap(err, "failed to load license from path")
+	}
+
+	configValues, err := kotsutil.LoadConfigValuesFromFile(filepath.Join(appDir, "upstream", "userdata", "config.yaml"))
+	if err != nil && !os.IsNotExist(errors.Cause(err)) {
+		return "", errors.Wrap(err, "failed to load config values from path")
+	}
+
 	options := rewrite.RewriteOptions{
 		RootDir:          appDir,
-		UpstreamURI:      fmt.Sprintf("replicated://%s", kotsKinds.License.Spec.AppSlug),
+		UpstreamURI:      fmt.Sprintf("replicated://%s", license.Spec.AppSlug),
 		UpstreamPath:     filepath.Join(appDir, "upstream"),
-		Installation:     &kotsKinds.Installation,
+		Installation:     installation,
 		Downstreams:      downstreamNames,
 		CreateAppDir:     false,
 		ExcludeKotsKinds: true,
-		License:          kotsKinds.License,
+		License:          license,
 		ConfigValues:     configValues,
 		K8sNamespace:     appNamespace,
 		ReportWriter:     pipeWriter,
