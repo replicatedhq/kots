@@ -1,6 +1,6 @@
-Name: test simple renderdir
+Name: test outdated kots kinds
 RenderDirOptions:
-  ArchiveDir: cases/simple/archiveDir
+  ArchiveDir: cases/outdated-kotskinds/archiveDir
   App:
     ID: app-id
     Slug: my-app

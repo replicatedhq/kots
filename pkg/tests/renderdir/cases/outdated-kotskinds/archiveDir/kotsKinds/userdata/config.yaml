@@ -1,9 +1,10 @@
 apiVersion: kots.io/v1beta1
-kind: Installation
+kind: ConfigValues
 metadata:
   creationTimestamp: null
   name: replicated-kots-app
 spec:
-  channelID: 1vusIYZLAVxMG6q760OJmRKj5i5
-  channelName: My Channel
+  values:
+    hostname:
+      value: old-my-app.somebigbank.com
 status: {}
