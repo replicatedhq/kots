@@ -15,6 +15,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/render"
+	rendertypes "github.com/replicatedhq/kots/pkg/render/types"
 	"github.com/replicatedhq/kots/pkg/store"
 	"github.com/replicatedhq/kots/pkg/util"
 	kotsv1beta1 "github.com/replicatedhq/kotskinds/apis/kots/v1beta1"
@@ -112,7 +113,15 @@ func GetGraphs(app *types.App, sequence int64, kotsStore store.Store) ([]kotsv1b
 		return graphs, errors.Wrap(err, "failed to marshal kots application")
 	}
 
-	renderedKotsApplication, err := render.RenderFile(kotsKinds, registrySettings, app.Slug, sequence, app.IsAirgap, util.PodNamespace, []byte(templatedKotsApplication))
+	renderedKotsApplication, err := render.RenderFile(rendertypes.RenderFileOptions{
+		KotsKinds:        kotsKinds,
+		RegistrySettings: registrySettings,
+		AppSlug:          app.Slug,
+		Sequence:         sequence,
+		IsAirgap:         app.IsAirgap,
+		Namespace:        util.PodNamespace,
+		InputContent:     []byte(templatedKotsApplication),
+	})
 	if err != nil {
 		return graphs, errors.Wrap(err, "failed to render kots application")
 	}

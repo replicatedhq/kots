@@ -1,0 +1,9 @@
+Name: test outdated kots kinds
+RenderDirOptions:
+  ArchiveDir: cases/outdated-kotskinds/archiveDir
+  App:
+    ID: app-id
+    Slug: my-app
+  Downstreams:
+    - Name: this-cluster
+  Sequence: 1

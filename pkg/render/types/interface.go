@@ -7,7 +7,25 @@ import (
 	registrytypes "github.com/replicatedhq/kots/pkg/registry/types"
 )
 
+type RenderFileOptions struct {
+	KotsKinds        *kotsutil.KotsKinds
+	RegistrySettings registrytypes.RegistrySettings
+	AppSlug          string
+	Sequence         int64
+	IsAirgap         bool
+	Namespace        string
+	InputContent     []byte
+}
+
+type RenderDirOptions struct {
+	ArchiveDir       string
+	App              *apptypes.App
+	Downstreams      []downstreamtypes.Downstream
+	RegistrySettings registrytypes.RegistrySettings
+	Sequence         int64
+}
+
 type Renderer interface {
-	RenderFile(kotsKinds *kotsutil.KotsKinds, registrySettings registrytypes.RegistrySettings, appSlug string, sequence int64, isAirgap bool, namespace string, inputContent []byte) ([]byte, error)
-	RenderDir(archiveDir string, a *apptypes.App, downstreams []downstreamtypes.Downstream, registrySettings registrytypes.RegistrySettings, sequence int64) error
+	RenderFile(opts RenderFileOptions) ([]byte, error)
+	RenderDir(opts RenderDirOptions) error
 }

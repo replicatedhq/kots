@@ -28,6 +28,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/preflight"
 	registrytypes "github.com/replicatedhq/kots/pkg/registry/types"
 	"github.com/replicatedhq/kots/pkg/render"
+	rendertypes "github.com/replicatedhq/kots/pkg/render/types"
 	"github.com/replicatedhq/kots/pkg/replicatedapp"
 	"github.com/replicatedhq/kots/pkg/store"
 	storetypes "github.com/replicatedhq/kots/pkg/store/types"
@@ -893,7 +894,13 @@ func updateAppConfig(updateApp *apptypes.App, sequence int64, configGroups []kot
 		renderSequence = nextAppSequence
 	}
 
-	err = render.RenderDir(archiveDir, app, downstreams, registrySettings, renderSequence)
+	err = render.RenderDir(rendertypes.RenderDirOptions{
+		ArchiveDir:       archiveDir,
+		App:              app,
+		Downstreams:      downstreams,
+		RegistrySettings: registrySettings,
+		Sequence:         renderSequence,
+	})
 	if err != nil {
 		cause := errors.Cause(err)
 		if _, ok := cause.(util.ActionableError); ok {

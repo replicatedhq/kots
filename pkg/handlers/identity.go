@@ -25,6 +25,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/preflight"
 	"github.com/replicatedhq/kots/pkg/rbac"
 	"github.com/replicatedhq/kots/pkg/render"
+	rendertypes "github.com/replicatedhq/kots/pkg/render/types"
 	"github.com/replicatedhq/kots/pkg/store"
 	"github.com/replicatedhq/kots/pkg/util"
 	"github.com/replicatedhq/kots/pkg/version"
@@ -455,7 +456,13 @@ func (h *Handler) ConfigureAppIdentityService(w http.ResponseWriter, r *http.Req
 		return
 	}
 
-	err = render.RenderDir(archiveDir, a, downstreams, registrySettings, nextAppSequence)
+	err = render.RenderDir(rendertypes.RenderDirOptions{
+		ArchiveDir:       archiveDir,
+		App:              a,
+		Downstreams:      downstreams,
+		RegistrySettings: registrySettings,
+		Sequence:         nextAppSequence,
+	})
 	if err != nil {
 		err = errors.Wrap(err, "failed to render archive directory")
 		logger.Error(err)

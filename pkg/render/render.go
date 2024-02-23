@@ -6,11 +6,10 @@ import (
 	"path/filepath"
 
 	"github.com/pkg/errors"
-	downstreamtypes "github.com/replicatedhq/kots/pkg/api/downstream/types"
-	apptypes "github.com/replicatedhq/kots/pkg/app/types"
 	"github.com/replicatedhq/kots/pkg/crypto"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
 	registrytypes "github.com/replicatedhq/kots/pkg/registry/types"
+	types "github.com/replicatedhq/kots/pkg/render/types"
 	"github.com/replicatedhq/kots/pkg/reporting"
 	"github.com/replicatedhq/kots/pkg/rewrite"
 	"github.com/replicatedhq/kots/pkg/template"
@@ -23,28 +22,29 @@ type Renderer struct {
 
 // RenderFile renders a single file
 // this is useful for upstream/kotskinds files that are not rendered in the dir
-func (r Renderer) RenderFile(kotsKinds *kotsutil.KotsKinds, registrySettings registrytypes.RegistrySettings, appSlug string, sequence int64, isAirgap bool, namespace string, inputContent []byte) ([]byte, error) {
-	return RenderFile(kotsKinds, registrySettings, appSlug, sequence, isAirgap, namespace, inputContent)
+func (r Renderer) RenderFile(opts types.RenderFileOptions) ([]byte, error) {
+	return RenderFile(opts)
 }
 
-func RenderFile(kotsKinds *kotsutil.KotsKinds, registrySettings registrytypes.RegistrySettings, appSlug string, sequence int64, isAirgap bool, namespace string, inputContent []byte) ([]byte, error) {
-	fixedUpContent, err := kotsutil.FixUpYAML(inputContent)
+func RenderFile(opts types.RenderFileOptions) ([]byte, error) {
+	fixedUpContent, err := kotsutil.FixUpYAML(opts.InputContent)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to fix up yaml")
 	}
+	opts.InputContent = fixedUpContent
 
-	return RenderContent(kotsKinds, registrySettings, appSlug, sequence, isAirgap, namespace, fixedUpContent)
+	return RenderContent(opts)
 }
 
 // RenderContent renders any string/content
 // this is useful for rendering single values, like a status informer
-func RenderContent(kotsKinds *kotsutil.KotsKinds, registrySettings registrytypes.RegistrySettings, appSlug string, sequence int64, isAirgap bool, namespace string, inputContent []byte) ([]byte, error) {
-	builder, err := NewBuilder(kotsKinds, registrySettings, appSlug, sequence, isAirgap, namespace)
+func RenderContent(opts types.RenderFileOptions) ([]byte, error) {
+	builder, err := NewBuilder(opts.KotsKinds, opts.RegistrySettings, opts.AppSlug, opts.Sequence, opts.IsAirgap, opts.Namespace)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create builder")
 	}
 
-	rendered, err := builder.RenderTemplate(string(inputContent), string(inputContent))
+	rendered, err := builder.RenderTemplate(string(opts.InputContent), string(opts.InputContent))
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to render")
 	}
@@ -97,18 +97,28 @@ func NewBuilder(kotsKinds *kotsutil.KotsKinds, registrySettings registrytypes.Re
 
 // RenderDir renders an app archive dir
 // this is useful for when the license/config have updated, and template functions need to be evaluated again
-func (r Renderer) RenderDir(archiveDir string, a *apptypes.App, downstreams []downstreamtypes.Downstream, registrySettings registrytypes.RegistrySettings, sequence int64) error {
-	return RenderDir(archiveDir, a, downstreams, registrySettings, sequence)
+func (r Renderer) RenderDir(opts types.RenderDirOptions) error {
+	return RenderDir(opts)
 }
 
-func RenderDir(archiveDir string, a *apptypes.App, downstreams []downstreamtypes.Downstream, registrySettings registrytypes.RegistrySettings, sequence int64) error {
-	kotsKinds, err := kotsutil.LoadKotsKinds(archiveDir)
+func RenderDir(opts types.RenderDirOptions) error {
+	installation, err := kotsutil.LoadInstallationFromPath(filepath.Join(opts.ArchiveDir, "upstream", "userdata", "installation.yaml"))
 	if err != nil {
-		return errors.Wrap(err, "failed to load kotskinds from path")
+		return errors.Wrap(err, "failed to load installation from path")
+	}
+
+	license, err := kotsutil.LoadLicenseFromPath(filepath.Join(opts.ArchiveDir, "upstream", "userdata", "license.yaml"))
+	if err != nil {
+		return errors.Wrap(err, "failed to load license from path")
+	}
+
+	configValues, err := kotsutil.LoadConfigValuesFromFile(filepath.Join(opts.ArchiveDir, "upstream", "userdata", "config.yaml"))
+	if err != nil && !os.IsNotExist(errors.Cause(err)) {
+		return errors.Wrap(err, "failed to load config values from path")
 	}
 
 	downstreamNames := []string{}
-	for _, d := range downstreams {
+	for _, d := range opts.Downstreams {
 		downstreamNames = append(downstreamNames, d.Name)
 	}
 
@@ -118,25 +128,25 @@ func RenderDir(archiveDir string, a *apptypes.App, downstreams []downstreamtypes
 	}
 
 	reOptions := rewrite.RewriteOptions{
-		RootDir:          archiveDir,
-		UpstreamURI:      fmt.Sprintf("replicated://%s", kotsKinds.License.Spec.AppSlug),
-		UpstreamPath:     filepath.Join(archiveDir, "upstream"),
-		Installation:     &kotsKinds.Installation,
+		RootDir:          opts.ArchiveDir,
+		UpstreamURI:      fmt.Sprintf("replicated://%s", license.Spec.AppSlug),
+		UpstreamPath:     filepath.Join(opts.ArchiveDir, "upstream"),
+		Installation:     installation,
 		Downstreams:      downstreamNames,
 		Silent:           true,
 		CreateAppDir:     false,
 		ExcludeKotsKinds: true,
-		License:          kotsKinds.License,
-		ConfigValues:     kotsKinds.ConfigValues,
+		License:          license,
+		ConfigValues:     configValues,
 		K8sNamespace:     appNamespace,
 		CopyImages:       false,
-		IsAirgap:         a.IsAirgap,
-		AppID:            a.ID,
-		AppSlug:          a.Slug,
-		IsGitOps:         a.IsGitOps,
-		AppSequence:      sequence,
-		ReportingInfo:    reporting.GetReportingInfo(a.ID),
-		RegistrySettings: registrySettings,
+		IsAirgap:         opts.App.IsAirgap,
+		AppID:            opts.App.ID,
+		AppSlug:          opts.App.Slug,
+		IsGitOps:         opts.App.IsGitOps,
+		AppSequence:      opts.Sequence,
+		ReportingInfo:    reporting.GetReportingInfo(opts.App.ID),
+		RegistrySettings: opts.RegistrySettings,
 
 		// TODO: pass in as arguments if this is ever called from CLI
 		HTTPProxyEnvValue:  os.Getenv("HTTP_PROXY"),

@@ -28,6 +28,7 @@ func SetStore(s Store) {
 	if s == nil {
 		hasStore = false
 		globalStore = nil
+		return
 	}
 	hasStore = true
 	globalStore = s
