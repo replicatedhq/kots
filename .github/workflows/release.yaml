@@ -6,7 +6,6 @@ on:
       - "v*.*.*"
     branches:
       - main
-      - remove-dex-dependency
 
 jobs:
   generate-tag:

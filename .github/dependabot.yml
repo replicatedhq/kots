@@ -37,8 +37,6 @@ updates:
       security:
         update-types:
           - "patch"
-    ignore:
-      - dependency-name: "github.com/dexidp/dex"
 
   - package-ecosystem: "gomod"
     directory: "/kurl_proxy"
