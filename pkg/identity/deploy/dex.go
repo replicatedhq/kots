@@ -5,14 +5,9 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/dexidp/dex/connector/oidc"
-	"github.com/dexidp/dex/server"
-	dexserver "github.com/dexidp/dex/server"
-	dexstorage "github.com/dexidp/dex/storage"
-	dexkubernetes "github.com/dexidp/dex/storage/kubernetes"
 	ghodssyaml "github.com/ghodss/yaml"
 	"github.com/pkg/errors"
-	dextypes "github.com/replicatedhq/kots/pkg/identity/types/dex"
+	dextypes "github.com/replicatedhq/kots/pkg/dex/types"
 	"github.com/replicatedhq/kots/pkg/template"
 	kotsv1beta1 "github.com/replicatedhq/kotskinds/apis/kots/v1beta1"
 )
@@ -32,7 +27,7 @@ func getDexConfig(ctx context.Context, issuerURL string, options Options) ([]byt
 		webConfigIssuer = identitySpec.WebConfig.Title
 	}
 
-	frontend := dexserver.WebConfig{
+	frontend := dextypes.WebConfig{
 		Issuer:  webConfigIssuer,
 		LogoURL: "theme/logo.png",
 	}
@@ -45,7 +40,7 @@ func getDexConfig(ctx context.Context, issuerURL string, options Options) ([]byt
 
 	storage := dextypes.Storage{
 		Type: "kubernetes",
-		Config: dexkubernetes.Config{
+		Config: dextypes.KubernetesConfig{
 			InCluster: true,
 		},
 	}
@@ -64,7 +59,7 @@ func getDexConfig(ctx context.Context, issuerURL string, options Options) ([]byt
 			IDTokens:    identitySpec.IDTokensExpiration,
 			SigningKeys: identitySpec.SigningKeysExpiration,
 		},
-		StaticClients: []dexstorage.Client{
+		StaticClients: []dextypes.StorageClient{
 			{
 				ID:           identityConfigSpec.ClientID,
 				Name:         identityConfigSpec.ClientID,
@@ -115,7 +110,7 @@ func dexConfigReplaceDynamicValues(issuerURL string, connectors []dextypes.Conne
 	next := make([]dextypes.Connector, len(connectors))
 	for i, connector := range connectors {
 		switch c := connector.Config.(type) {
-		case *oidc.Config:
+		case *dextypes.OIDCConfig:
 			c.RedirectURI = dexCallbackURL(issuerURL)
 		}
 		next[i] = connector
@@ -126,7 +121,7 @@ func dexConfigReplaceDynamicValues(issuerURL string, connectors []dextypes.Conne
 func DexConnectorsToDexTypeConnectors(conns []kotsv1beta1.DexConnector) ([]dextypes.Connector, error) {
 	dexConnectors := []dextypes.Connector{}
 	for _, conn := range conns {
-		f, ok := server.ConnectorsConfig[conn.Type]
+		f, ok := dextypes.ConnectorsConfig[conn.Type]
 		if !ok {
 			return nil, errors.Errorf("unknown connector type %q", conn.Type)
 		}

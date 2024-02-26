@@ -9,13 +9,12 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/dexidp/dex/connector/oidc"
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
+	dextypes "github.com/replicatedhq/kots/pkg/dex/types"
 	"github.com/replicatedhq/kots/pkg/handlers/types"
 	"github.com/replicatedhq/kots/pkg/identity"
 	identitydeploy "github.com/replicatedhq/kots/pkg/identity/deploy"
-	dextypes "github.com/replicatedhq/kots/pkg/identity/types/dex"
 	"github.com/replicatedhq/kots/pkg/ingress"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/kotsadm"
@@ -764,7 +763,7 @@ func dexConnectorsToIDPConfigs(dexConnectors []kotsv1beta1.DexConnector) ([]IDPC
 	idpConfigs := []IDPConfig{}
 	for _, conn := range conns {
 		switch c := conn.Config.(type) {
-		case *oidc.Config:
+		case *dextypes.OIDCConfig:
 			oidcConfig := oidcConfigToIdentityOIDC(c, &conn)
 			idpConfig := IDPConfig{}
 			if conn.ID == "geoaxis" {
@@ -785,8 +784,8 @@ func getDefaultIDPConfig() IDPConfig {
 	return idpConfig
 }
 
-func getDefaultOIDCConfig(isGeoAxis bool) *oidc.Config {
-	c := oidc.Config{
+func getDefaultOIDCConfig(isGeoAxis bool) *dextypes.OIDCConfig {
+	c := dextypes.OIDCConfig{
 		GetUserInfo:               true,
 		InsecureSkipEmailVerified: false,
 		InsecureEnableGroups:      true,
@@ -809,7 +808,7 @@ func getDefaultOIDCConfig(isGeoAxis bool) *oidc.Config {
 	return &c
 }
 
-func identityOIDCToOIDCConfig(identityOIDC *OIDCConfig, idpConfigs []IDPConfig, isGeoAxis bool) *oidc.Config {
+func identityOIDCToOIDCConfig(identityOIDC *OIDCConfig, idpConfigs []IDPConfig, isGeoAxis bool) *dextypes.OIDCConfig {
 	c := getDefaultOIDCConfig(isGeoAxis)
 
 	if identityOIDC.Issuer != "" {
@@ -864,7 +863,7 @@ func identityOIDCToOIDCConfig(identityOIDC *OIDCConfig, idpConfigs []IDPConfig, 
 	return c
 }
 
-func oidcConfigToIdentityOIDC(c *oidc.Config, conn *dextypes.Connector) *OIDCConfig {
+func oidcConfigToIdentityOIDC(c *dextypes.OIDCConfig, conn *dextypes.Connector) *OIDCConfig {
 	claimMapping := OIDCClaimMapping{
 		PreferredUsernameKey: c.ClaimMapping.PreferredUsernameKey,
 		EmailKey:             c.ClaimMapping.EmailKey,

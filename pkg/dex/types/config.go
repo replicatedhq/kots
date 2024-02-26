@@ -1,22 +1,10 @@
+// Note: This is a modified version of: https://github.com/dexidp/dex/blob/ed920dc27ad79c3593037ad658552e8e80bab928/cmd/dex/config.go
 package types
 
-/*
-This file has been copied from dex repo and MODIFIED because it was part
-of the "main" package and could not be imported.
-link: https://github.com/dexidp/dex/blob/master/cmd/dex/config.go
-*/
-
 import (
-	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"os"
 	"strings"
-
-	"golang.org/x/crypto/bcrypt"
-
-	"github.com/dexidp/dex/server"
-	"github.com/dexidp/dex/storage"
 )
 
 // Config is the config format for the main application.
@@ -28,9 +16,9 @@ type Config struct {
 	OAuth2    OAuth2    `json:"oauth2"`
 	GRPC      GRPC      `json:"grpc"`
 	Expiry    Expiry    `json:"expiry"`
-	Logger    Logger    `json:"logger"`
+	Logger    logger    `json:"logger"`
 
-	Frontend server.WebConfig `json:"frontend"`
+	Frontend WebConfig `json:"frontend"`
 
 	// StaticConnectors are user defined connectors specified in the ConfigMap
 	// Write operations, like updating a connector, will fail.
@@ -38,7 +26,7 @@ type Config struct {
 
 	// StaticClients cause the server to use this list of clients rather than
 	// querying the storage. Write operations, like creating a client, will fail.
-	StaticClients []storage.Client `json:"staticClients"`
+	StaticClients []StorageClient `json:"staticClients"`
 
 	// If enabled, the server will maintain a list of passwords which can be used
 	// to identify a user.
@@ -47,7 +35,7 @@ type Config struct {
 	// StaticPasswords cause the server use this list of passwords rather than
 	// querying the storage. Cannot be specified without enabling a passwords
 	// database.
-	StaticPasswords []password `json:"staticPasswords"`
+	StaticPasswords []StoragePassword `json:"staticPasswords"`
 }
 
 // Validate the configuration
@@ -78,50 +66,6 @@ func (c Config) Validate() error {
 	if len(checkErrors) != 0 {
 		return fmt.Errorf("invalid Config:\n\t-\t%s", strings.Join(checkErrors, "\n\t-\t"))
 	}
-	return nil
-}
-
-type password storage.Password
-
-func (p *password) UnmarshalJSON(b []byte) error {
-	var data struct {
-		Email       string `json:"email"`
-		Username    string `json:"username"`
-		UserID      string `json:"userID"`
-		Hash        string `json:"hash"`
-		HashFromEnv string `json:"hashFromEnv"`
-	}
-	if err := json.Unmarshal(b, &data); err != nil {
-		return err
-	}
-	*p = password(storage.Password{
-		Email:    data.Email,
-		Username: data.Username,
-		UserID:   data.UserID,
-	})
-	if len(data.Hash) == 0 && len(data.HashFromEnv) > 0 {
-		data.Hash = os.Getenv(data.HashFromEnv)
-	}
-	if len(data.Hash) == 0 {
-		return fmt.Errorf("no password hash provided")
-	}
-
-	// If this value is a valid bcrypt, use it.
-	_, bcryptErr := bcrypt.Cost([]byte(data.Hash))
-	if bcryptErr == nil {
-		p.Hash = []byte(data.Hash)
-		return nil
-	}
-
-	// For backwards compatibility try to base64 decode this value.
-	hashBytes, err := base64.StdEncoding.DecodeString(data.Hash)
-	if err != nil {
-		return fmt.Errorf("malformed bcrypt hash: %v", bcryptErr)
-	}
-	if _, err := bcrypt.Cost(hashBytes); err != nil {
-		return fmt.Errorf("malformed bcrypt hash: %v", err)
-	}
-	p.Hash = hashBytes
 	return nil
 }
 
@@ -174,7 +118,7 @@ type Connector struct {
 	Name string `json:"name"`
 	ID   string `json:"id"`
 
-	Config server.ConnectorConfig `json:"config"`
+	Config ConnectorConfig `json:"config"`
 }
 
 // UnmarshalJSON allows Connector to implement the unmarshaler interface to
@@ -190,7 +134,7 @@ func (c *Connector) UnmarshalJSON(b []byte) error {
 	if err := json.Unmarshal(b, &conn); err != nil {
 		return fmt.Errorf("parse connector: %v", err)
 	}
-	f, ok := server.ConnectorsConfig[conn.Type]
+	f, ok := ConnectorsConfig[conn.Type]
 	if !ok {
 		return fmt.Errorf("unknown connector type %q", conn.Type)
 	}
@@ -225,8 +169,8 @@ type Expiry struct {
 	DeviceRequests string `json:"deviceRequests"`
 }
 
-// Logger holds configuration required to customize logging for dex.
-type Logger struct {
+// logger holds configuration required to customize logging for dex.
+type logger struct {
 	// Level sets logging level severity.
 	Level string `json:"level"`
 
