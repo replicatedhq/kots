@@ -7,10 +7,10 @@ import (
 	"crypto/tls"
 
 	"github.com/coreos/go-oidc"
-	dexoidc "github.com/dexidp/dex/connector/oidc"
 	ghodssyaml "github.com/ghodss/yaml"
 	"github.com/hashicorp/go-cleanhttp"
 	"github.com/pkg/errors"
+	dextypes "github.com/replicatedhq/kots/pkg/dex/types"
 	identitydeploy "github.com/replicatedhq/kots/pkg/identity/deploy"
 	"github.com/replicatedhq/kots/pkg/ingress"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
@@ -294,7 +294,7 @@ func ValidateConnection(ctx context.Context, namespace string, identityConfig ko
 	}
 	for _, conn := range conns {
 		switch c := conn.Config.(type) {
-		case *dexoidc.Config:
+		case *dextypes.OIDCConfig:
 			_, err = oidc.NewProvider(ctx, c.Issuer)
 			if err != nil {
 				err = errors.Wrapf(err, "failed to query provider %q", c.Issuer)

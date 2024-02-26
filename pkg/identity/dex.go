@@ -4,17 +4,16 @@ import (
 	"context"
 	"strings"
 
-	dexstorage "github.com/dexidp/dex/storage"
 	ghodssyaml "github.com/ghodss/yaml"
 	"github.com/pkg/errors"
+	dextypes "github.com/replicatedhq/kots/pkg/dex/types"
 	identitydeploy "github.com/replicatedhq/kots/pkg/identity/deploy"
-	dextypes "github.com/replicatedhq/kots/pkg/identity/types/dex"
 	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 )
 
-func getOIDCClient(ctx context.Context, clientset kubernetes.Interface, namespace string) (*dexstorage.Client, error) {
+func getOIDCClient(ctx context.Context, clientset kubernetes.Interface, namespace string) (*dextypes.StorageClient, error) {
 	client, err := getKotsadmOIDCClientFromDexConfig(ctx, clientset, namespace)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get existing oidc client from dex config")
@@ -37,7 +36,7 @@ func getOIDCClient(ctx context.Context, clientset kubernetes.Interface, namespac
 	return client, nil
 }
 
-func getKotsadmOIDCClientFromDexConfig(ctx context.Context, clientset kubernetes.Interface, namespace string) (*dexstorage.Client, error) {
+func getKotsadmOIDCClientFromDexConfig(ctx context.Context, clientset kubernetes.Interface, namespace string) (*dextypes.StorageClient, error) {
 	existingConfig, err := getKotsadmDexConfig(ctx, clientset, namespace)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get existing dex config")
