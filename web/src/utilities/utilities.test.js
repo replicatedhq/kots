@@ -175,6 +175,7 @@ describe("Utilities", () => {
           ],
         },
       };
+      expect(Utilities.isInitialAppInstall(app)).toBe(true);
     });
 
     it("should return false if first pending version does not have status `pending_cluster_management`, `pending_config`, `pending_preflight`, or `pending_download`", () => {
