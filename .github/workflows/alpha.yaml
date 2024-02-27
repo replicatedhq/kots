@@ -142,6 +142,8 @@ jobs:
           exit-code: '0'
           ignore-unfixed: true
           severity: 'CRITICAL,HIGH,MEDIUM'
+      - name: Print scan report
+        run: cat rqlite-scan-output.sarif
       - name: Upload scan report
         uses: github/codeql-action/upload-sarif@v3
         with:
@@ -169,7 +171,8 @@ jobs:
           exit-code: '0'
           ignore-unfixed: true
           severity: 'CRITICAL,HIGH,MEDIUM'
-
+      - name: Print scan report
+        run: cat minio-scan-output.sarif
       - name: Upload scan report
         uses: github/codeql-action/upload-sarif@v3
         with:
@@ -197,6 +200,8 @@ jobs:
           exit-code: '0'
           ignore-unfixed: true
           severity: 'CRITICAL,HIGH,MEDIUM'
+      - name: Print scan report
+        run: cat dex-scan-output.sarif
       - name: Upload scan report
         uses: github/codeql-action/upload-sarif@v3
         with:
@@ -220,6 +225,8 @@ jobs:
           exit-code: '0'
           ignore-unfixed: true
           severity: 'CRITICAL,HIGH,MEDIUM'
+      - name: Print scan report
+        run: cat kurl-proxy-scan-output.sarif
       - name: Upload scan report
         uses: github/codeql-action/upload-sarif@v3
         with:
@@ -247,6 +254,8 @@ jobs:
           exit-code: '0'
           ignore-unfixed: true
           severity: 'CRITICAL,HIGH,MEDIUM'
+      - name: Print scan report
+        run: cat scan-output.sarif
       - name: Upload scan report
         uses: github/codeql-action/upload-sarif@v3
         with:
@@ -270,6 +279,8 @@ jobs:
           exit-code: '0'
           ignore-unfixed: true
           severity: 'CRITICAL,HIGH,MEDIUM'
+      - name: Print scan report
+        run: cat kotsadm-scan-output.sarif
       - name: Upload scan report
         uses: github/codeql-action/upload-sarif@v3
         with:
@@ -293,6 +304,8 @@ jobs:
           exit-code: '0'
           ignore-unfixed: true
           severity: 'CRITICAL,HIGH,MEDIUM'
+      - name: Print scan report
+        run: cat kotsadm-migration-scan-output.sarif
       - name: Upload scan report
         uses: github/codeql-action/upload-sarif@v3
         with:
