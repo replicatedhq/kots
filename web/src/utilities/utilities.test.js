@@ -132,6 +132,22 @@ describe("Utilities", () => {
       expect(Utilities.isInitialAppInstall(app)).toBe(true);
     });
 
+    it("should return false if there is more than one pending version", () => {
+      const app = {
+        downstream: {
+          pendingVersions: [
+            {
+              status: "pending_config",
+            },
+            {
+              status: "pending_config",
+            },
+          ],
+        },
+      };
+      expect(Utilities.isInitialAppInstall(app)).toBe(false);
+    });
+
     it("should return true if first pending version has status `pending_cluster_management`, `pending_config`, `pending_preflight`, or `pending_download`", () => {
       let app = {
         downstream: {

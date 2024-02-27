@@ -626,6 +626,11 @@ export const Utilities = {
       return true;
     }
 
+    if (app.downstream.pendingVersions.length > 1) {
+      // there's more than one pending version, so it's not an initial install
+      return false;
+    }
+
     const firstPendingVersion = app.downstream.pendingVersions[0];
     if (
       firstPendingVersion.status === "pending_cluster_management" ||
