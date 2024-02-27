@@ -103,8 +103,8 @@ describe("Utilities", () => {
   });
 
   describe("isInitialAppInstall", () => {
-    it("should return false if app is null", () => {
-      expect(Utilities.isInitialAppInstall(null)).toBe(false);
+    it("should return true if app is null", () => {
+      expect(Utilities.isInitialAppInstall(null)).toBe(true);
     });
 
     it("should return false if there is a current version", () => {

@@ -613,7 +613,7 @@ export const Utilities = {
 
   isInitialAppInstall(app) {
     if (!app) {
-      return false;
+      return true;
     }
 
     if (app.downstream?.currentVersion) {
@@ -621,10 +621,7 @@ export const Utilities = {
       return false;
     }
 
-    if (
-      !app.downstream?.pendingVersions ||
-      app.downstream.pendingVersions.length === 0
-    ) {
+    if (!app.downstream?.pendingVersions?.length) {
       // there's no version that's been deployed or is pending, so it's an initial install
       return true;
     }
