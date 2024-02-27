@@ -123,7 +123,7 @@
   "dependencies": {
     "@emotion/react": "^11.11.3",
     "@emotion/styled": "^11.11.0",
-    "@grafana/data": "^8.5.16",
+    "@grafana/data": "^10.3.3",
     "@maji/react-prism": "^1.0.1",
     "@monaco-editor/react": "^4.6.0",
     "@mui/icons-material": "^5.15.11",
