@@ -101,4 +101,121 @@ describe("Utilities", () => {
       expect(Utilities.shouldShowClusterUpgradeModal(apps)).toBe(true);
     });
   });
+
+  describe("isInitialAppInstall", () => {
+    it("should return true if app is null", () => {
+      expect(Utilities.isInitialAppInstall(null)).toBe(true);
+    });
+
+    it("should return false if there is a current version", () => {
+      const app = {
+        downstream: {
+          currentVersion: {
+            status: "deployed",
+          },
+        },
+      };
+      expect(Utilities.isInitialAppInstall(app)).toBe(false);
+    });
+
+    it("should return true if there is no pending versions", () => {
+      let app = {
+        downstream: {
+          pendingVersions: [],
+        },
+      };
+      expect(Utilities.isInitialAppInstall(app)).toBe(true);
+
+      app = {
+        downstream: {},
+      };
+      expect(Utilities.isInitialAppInstall(app)).toBe(true);
+    });
+
+    it("should return false if there is more than one pending version", () => {
+      const app = {
+        downstream: {
+          pendingVersions: [
+            {
+              status: "pending_config",
+            },
+            {
+              status: "pending_config",
+            },
+          ],
+        },
+      };
+      expect(Utilities.isInitialAppInstall(app)).toBe(false);
+    });
+
+    it("should return true if first pending version has status `pending_cluster_management`, `pending_config`, `pending_preflight`, or `pending_download`", () => {
+      let app = {
+        downstream: {
+          pendingVersions: [
+            {
+              status: "pending_cluster_management",
+            },
+          ],
+        },
+      };
+      expect(Utilities.isInitialAppInstall(app)).toBe(true);
+
+      app = {
+        downstream: {
+          pendingVersions: [
+            {
+              status: "pending_config",
+            },
+          ],
+        },
+      };
+      expect(Utilities.isInitialAppInstall(app)).toBe(true);
+
+      app = {
+        downstream: {
+          pendingVersions: [
+            {
+              status: "pending_preflight",
+            },
+          ],
+        },
+      };
+      expect(Utilities.isInitialAppInstall(app)).toBe(true);
+
+      app = {
+        downstream: {
+          pendingVersions: [
+            {
+              status: "pending_download",
+            },
+          ],
+        },
+      };
+      expect(Utilities.isInitialAppInstall(app)).toBe(true);
+    });
+
+    it("should return false if first pending version does not have status `pending_cluster_management`, `pending_config`, `pending_preflight`, or `pending_download`", () => {
+      let app = {
+        downstream: {
+          pendingVersions: [
+            {
+              status: "pending",
+            },
+          ],
+        },
+      };
+      expect(Utilities.isInitialAppInstall(app)).toBe(false);
+
+      app = {
+        downstream: {
+          pendingVersions: [
+            {
+              status: "unknown",
+            },
+          ],
+        },
+      };
+      expect(Utilities.isInitialAppInstall(app)).toBe(false);
+    });
+  });
 });

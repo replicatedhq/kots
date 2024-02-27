@@ -611,6 +611,40 @@ export const Utilities = {
     }
   },
 
+  isInitialAppInstall(app) {
+    if (!app) {
+      return true;
+    }
+
+    if (app.downstream?.currentVersion) {
+      // a version has already been deployed
+      return false;
+    }
+
+    if (!app.downstream?.pendingVersions?.length) {
+      // there's no version that's been deployed or is pending, so it's an initial install
+      return true;
+    }
+
+    if (app.downstream.pendingVersions.length > 1) {
+      // there's more than one pending version, so it's not an initial install
+      return false;
+    }
+
+    const firstPendingVersion = app.downstream.pendingVersions[0];
+    if (
+      firstPendingVersion.status === "pending_cluster_management" ||
+      firstPendingVersion.status === "pending_config" ||
+      firstPendingVersion.status === "pending_preflight" ||
+      firstPendingVersion.status === "pending_download"
+    ) {
+      // the first pending version is still in the process of being installed
+      return true;
+    }
+
+    return false;
+  },
+
   clusterState(state) {
     switch (state) {
       case "Waiting":
