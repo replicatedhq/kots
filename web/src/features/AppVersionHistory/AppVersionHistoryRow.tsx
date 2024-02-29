@@ -386,10 +386,7 @@ function AppVersionHistoryRow(props: Props) {
         {version.hasConfig && (
           <div className="flex alignItems--center">
             <Link to={configScreenURL} data-tip="Edit config">
-              <Icon
-                icon="edit-config"
-                size={22}
-              />
+              <Icon icon="edit-config" size={22} />
             </Link>
             <ReactTooltip effect="solid" className="replicated-tooltip" />
           </div>
