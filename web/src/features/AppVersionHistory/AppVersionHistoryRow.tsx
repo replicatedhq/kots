@@ -238,10 +238,6 @@ function AppVersionHistoryRow(props: Props) {
 
     const isCurrentVersion =
       version.sequence === downstream?.currentVersion?.sequence;
-    const isLatestVersion = version.sequence === selectedApp?.currentSequence;
-    const isPendingVersion = find(downstream?.pendingVersions, {
-      sequence: version.sequence,
-    });
     const isPastVersion = find(downstream?.pastVersions, {
       sequence: version.sequence,
     });
