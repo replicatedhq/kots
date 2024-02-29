@@ -260,19 +260,10 @@ function AppVersionHistoryRow(props: Props) {
     const isSecondaryBtn =
       isPastVersion || needsConfiguration || (isRedeploy && !isRollback);
     const isPrimaryButton = !isSecondaryBtn && !isRedeploy && !isRollback;
-    const editableConfig =
-      isCurrentVersion || isLatestVersion || isPendingVersion?.semver;
 
     const showDeployLogs =
       (isPastVersion || isCurrentVersion || isPendingDeployedVersion) &&
       version?.status !== "pending";
-
-    let tooltipTip;
-    if (editableConfig) {
-      tooltipTip = "Edit config";
-    } else {
-      tooltipTip = "View config";
-    }
 
     const preflightState = getPreflightState(version);
 
@@ -394,9 +385,9 @@ function AppVersionHistoryRow(props: Props) {
         </div>
         {version.hasConfig && (
           <div className="flex alignItems--center">
-            <Link to={configScreenURL} data-tip={tooltipTip}>
+            <Link to={configScreenURL} data-tip="Edit config">
               <Icon
-                icon={editableConfig ? "edit-config" : "view-config"}
+                icon="edit-config"
                 size={22}
               />
             </Link>

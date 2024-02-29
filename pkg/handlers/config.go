@@ -182,21 +182,6 @@ func (h *Handler) UpdateAppConfig(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	isEditbale, err := isVersionConfigEditable(foundApp, updateAppConfigRequest.Sequence)
-	if err != nil {
-		updateAppConfigResponse.Error = "failed to check if version is editable"
-		logger.Error(errors.Wrap(err, updateAppConfigResponse.Error))
-		JSON(w, http.StatusInternalServerError, updateAppConfigResponse)
-		return
-	}
-
-	if !isEditbale {
-		updateAppConfigResponse.Error = "this version cannot be edited"
-		logger.Error(errors.Wrap(err, updateAppConfigResponse.Error))
-		JSON(w, http.StatusForbidden, updateAppConfigResponse)
-		return
-	}
-
 	validationErrors, err := configvalidation.ValidateConfigSpec(kotsv1beta1.ConfigSpec{Groups: updateAppConfigRequest.ConfigGroups})
 	if err != nil {
 		updateAppConfigResponse.Error = "failed to validate config spec."
@@ -700,41 +685,6 @@ func (h *Handler) CurrentAppConfig(w http.ResponseWriter, r *http.Request) {
 	JSON(w, http.StatusOK, currentAppConfigResponse)
 }
 
-func isVersionConfigEditable(app *apptypes.App, sequence int64) (bool, error) {
-	// Only latest and currently deployed versions can be edited
-	downstreams, err := store.GetStore().ListDownstreamsForApp(app.ID)
-	if err != nil {
-		return false, errors.Wrap(err, "failed to get downstreams")
-	}
-
-	for _, d := range downstreams {
-		versions, err := store.GetStore().GetDownstreamVersions(app.ID, d.ClusterID, true)
-		if err != nil {
-			return false, errors.Wrap(err, "failed to get downstream versions")
-		}
-
-		if versions.CurrentVersion != nil && versions.CurrentVersion.ParentSequence == sequence {
-			return true, nil
-		}
-
-		if len(versions.PendingVersions) > 0 && versions.PendingVersions[0].ParentSequence == sequence {
-			return true, nil
-		}
-
-		for _, v := range versions.PendingVersions {
-			if v.ParentSequence != sequence {
-				continue
-			}
-			if v.Semver != nil {
-				return true, nil
-			}
-			return false, nil
-		}
-	}
-
-	return false, nil
-}
-
 func shouldCreateNewAppVersion(archiveDir string, appID string, sequence int64) (bool, error) {
 	// Updates are allowed for any version that does not have base rendered.
 	if _, err := os.Stat(filepath.Join(archiveDir, "base")); err != nil {
@@ -1039,6 +989,8 @@ type SetAppConfigValuesRequest struct {
 	Merge          bool   `json:"merge"`
 	Deploy         bool   `json:"deploy"`
 	SkipPreflights bool   `json:"skipPreflights"`
+	Current        bool   `json:"current"`
+	Sequence       int64  `json:"sequence"`
 }
 
 type SetAppConfigValuesResponse struct {
@@ -1085,15 +1037,53 @@ func (h *Handler) SetAppConfigValues(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	latestSequence, err := store.GetStore().GetLatestAppSequence(foundApp.ID, true)
-	if err != nil {
-		setAppConfigValuesResponse.Error = "failed to get latest app sequence"
-		logger.Error(errors.Wrap(err, setAppConfigValuesResponse.Error))
-		JSON(w, http.StatusInternalServerError, setAppConfigValuesResponse)
-		return
+	baseSequence := setAppConfigValuesRequest.Sequence
+
+	if baseSequence == -1 && setAppConfigValuesRequest.Current {
+		// use the currently deployed version as the base
+		downstreams, err := store.GetStore().ListDownstreamsForApp(foundApp.ID)
+		if err != nil {
+			setAppConfigValuesResponse.Error = "failed to list downstreams for app"
+			logger.Error(errors.Wrap(err, setAppConfigValuesResponse.Error))
+			JSON(w, http.StatusInternalServerError, setAppConfigValuesResponse)
+			return
+		}
+
+		if len(downstreams) == 0 {
+			setAppConfigValuesResponse.Error = "no downstreams found for app"
+			logger.Error(errors.New(setAppConfigValuesResponse.Error))
+			JSON(w, http.StatusInternalServerError, setAppConfigValuesResponse)
+			return
+		}
+
+		versions, err := store.GetStore().GetDownstreamVersions(foundApp.ID, downstreams[0].ClusterID, true)
+		if err != nil {
+			setAppConfigValuesResponse.Error = "failed to get downstream versions"
+			logger.Error(errors.Wrap(err, setAppConfigValuesResponse.Error))
+			JSON(w, http.StatusInternalServerError, setAppConfigValuesResponse)
+			return
+		}
+
+		if versions.CurrentVersion != nil {
+			baseSequence = versions.CurrentVersion.Sequence
+		} else {
+			logger.Warnf("no deployed version found for app %s", foundApp.Slug)
+		}
 	}
 
-	archiveDir, err := ioutil.TempDir("", "kotsadm")
+	if baseSequence == -1 {
+		// no sequence was specified, fall back to the latest
+		latestSequence, err := store.GetStore().GetLatestAppSequence(foundApp.ID, true)
+		if err != nil {
+			setAppConfigValuesResponse.Error = "failed to get latest app sequence"
+			logger.Error(errors.Wrap(err, setAppConfigValuesResponse.Error))
+			JSON(w, http.StatusInternalServerError, setAppConfigValuesResponse)
+			return
+		}
+		baseSequence = latestSequence
+	}
+
+	archiveDir, err := os.MkdirTemp("", "kotsadm")
 	if err != nil {
 		setAppConfigValuesResponse.Error = "failed to create temp dir"
 		logger.Error(errors.Wrap(err, setAppConfigValuesResponse.Error))
@@ -1102,7 +1092,7 @@ func (h *Handler) SetAppConfigValues(w http.ResponseWriter, r *http.Request) {
 	}
 	defer os.RemoveAll(archiveDir)
 
-	err = store.GetStore().GetAppVersionArchive(foundApp.ID, latestSequence, archiveDir)
+	err = store.GetStore().GetAppVersionArchive(foundApp.ID, baseSequence, archiveDir)
 	if err != nil {
 		setAppConfigValuesResponse.Error = "failed to get app version archive"
 		logger.Error(errors.Wrap(err, setAppConfigValuesResponse.Error))
@@ -1224,7 +1214,7 @@ func (h *Handler) SetAppConfigValues(w http.ResponseWriter, r *http.Request) {
 
 	createNewVersion := true
 	isPrimaryVersion := true // see comment in updateAppConfig
-	resp, err := updateAppConfig(foundApp, latestSequence, renderedConfig.Spec.Groups, createNewVersion, isPrimaryVersion, setAppConfigValuesRequest.SkipPreflights, setAppConfigValuesRequest.Deploy)
+	resp, err := updateAppConfig(foundApp, baseSequence, renderedConfig.Spec.Groups, createNewVersion, isPrimaryVersion, setAppConfigValuesRequest.SkipPreflights, setAppConfigValuesRequest.Deploy)
 	if err != nil {
 		logger.Error(errors.Wrap(err, "failed to create new version"))
 		JSON(w, http.StatusInternalServerError, resp)

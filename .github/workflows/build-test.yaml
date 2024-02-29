@@ -3905,6 +3905,210 @@ jobs:
           kots-dockerhub-password: '${{ secrets.E2E_DOCKERHUB_PASSWORD }}'
 
 
+  validate-get-set-config:
+    runs-on: ubuntu-20.04
+    needs: [ enable-tests, can-run-ci, build-kots, build-kotsadm, build-kurl-proxy, build-migrations, push-minio, push-rqlite ]
+    strategy:
+      fail-fast: false
+      matrix:
+        cluster: [
+          {distribution: kind, version: v1.28.0}
+        ] 
+    env:
+      APP_SLUG: get-set-config
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Create Cluster 
+        id: create-cluster 
+        uses: replicatedhq/replicated-actions/create-cluster@v1 
+        with:
+          api-token: ${{ secrets.C11Y_MATRIX_TOKEN }}
+          kubernetes-distribution: ${{ matrix.cluster.distribution }}
+          kubernetes-version: ${{ matrix.cluster.version }}
+          cluster-name: automated-kots-${{ github.run_id }}-${{ matrix.cluster.distribution }}-${{ matrix.cluster.version }}
+          timeout-minutes: '120'
+          ttl: 2h
+          export-kubeconfig: true
+
+      - name: download kots binary
+        uses: actions/download-artifact@v4
+        with:
+          name: kots
+          path: bin/
+
+      - run: chmod +x bin/kots
+
+      - name: create namespace and dockerhub secret
+        run: |
+          kubectl create ns "$APP_SLUG"
+          kubectl create secret docker-registry kotsadm-dockerhub --docker-server index.docker.io --docker-username "${{ secrets.E2E_DOCKERHUB_USERNAME }}" --docker-password "${{ secrets.E2E_DOCKERHUB_PASSWORD }}" --namespace "$APP_SLUG"
+
+      - name: install yq
+        run: |
+          wget https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64 -O /usr/bin/yq
+          chmod +x /usr/bin/yq
+
+      - name: run the test
+        run: |
+          set -e
+          echo ${{ secrets.GET_SET_CONFIG_LICENSE }} | base64 -d > license.yaml
+
+          ./bin/kots \
+            install "$APP_SLUG/automated" \
+            --license-file license.yaml \
+            --no-port-forward \
+            --namespace "$APP_SLUG" \
+            --shared-password password \
+            --kotsadm-registry ttl.sh \
+            --kotsadm-namespace automated-${{ github.run_id }} \
+            --kotsadm-tag 24h
+          
+          function validate_configmap {
+            local key="$1"
+            local expected_value="$2"
+
+            if [ "$(kubectl get configmap config-values -n "$APP_SLUG" -o jsonpath="{.data.$key}")" != "$expected_value" ]; then
+              printf "expected %s value in configmap to be %s. got:\n\n" "$key" "$expected_value"
+              kubectl get configmap config-values -n "$APP_SLUG" -oyaml
+              exit 1
+            fi
+          }
+
+          function validate_configvalues {
+            local config_values="$1"
+            local key="$2"
+            local expected_default="$3"
+            local expected_value="$4"
+
+            if [ "$(echo "$config_values" | yq -r ".spec.values.$key.default")" != "$expected_default" ]; then
+              printf "expected %s default in configvalues to be %s. got:\n\n" "$key" "$expected_default"
+              echo "$config_values"
+              exit 1
+            fi
+
+            if [ "$(echo "$config_values" | yq -r ".spec.values.$key.value")" != "$expected_value" ]; then
+              printf "expected %s value in configvalues to be %s. got:\n\n" "$key" "$expected_value"
+              echo "$config_values"
+              exit 1
+            fi
+          }
+
+          # give time for initial configmap to be created/deployed
+          sleep 5
+
+          validate_configmap "username" ""
+          validate_configmap "email" ""
+          validate_configmap "password" ""
+          validate_configmap "sequence" "0"
+
+          ./bin/kots set config "$APP_SLUG" --key=password --value=example-password --namespace "$APP_SLUG" --deploy
+          sleep 5
+
+          validate_configmap "username" ""
+          validate_configmap "password" "example-password"
+          validate_configmap "email" ""
+          validate_configmap "sequence" "1"
+
+          ./bin/kots set config "$APP_SLUG" --key=username --value=example-username --namespace "$APP_SLUG" --deploy
+          sleep 5
+
+          validate_configmap "username" "example-username"
+          validate_configmap "password" "example-password"
+          validate_configmap "email" ""
+          validate_configmap "sequence" "2"
+
+          ./bin/kots set config "$APP_SLUG" --key=email --value=example-email --namespace "$APP_SLUG" # don't deploy
+          sleep 5
+
+          validate_configmap "username" "example-username"
+          validate_configmap "password" "example-password"
+          validate_configmap "email" ""
+          validate_configmap "sequence" "2"
+
+          # validate getting config values (returned sequence is +1 for some reason :shrug:)
+
+          config_values=$(./bin/kots get config "$APP_SLUG" --namespace "$APP_SLUG" --decrypt --sequence=0)
+
+          validate_configvalues "$config_values" "username" "null" "null"
+          validate_configvalues "$config_values" "password" "null" "null"
+          validate_configvalues "$config_values" "email" "null" "null"
+          validate_configvalues "$config_values" "sequence" "1" "null"
+
+          config_values=$(./bin/kots get config "$APP_SLUG" --namespace "$APP_SLUG" --decrypt --sequence=1)
+
+          validate_configvalues "$config_values" "username" "null" "null"
+          validate_configvalues "$config_values" "password" "null" "example-password"
+          validate_configvalues "$config_values" "email" "null" "null"
+          validate_configvalues "$config_values" "sequence" "2" "null"
+
+          config_values=$(./bin/kots get config "$APP_SLUG" --namespace "$APP_SLUG" --decrypt --sequence=2)
+
+          validate_configvalues "$config_values" "username" "null" "example-username"
+          validate_configvalues "$config_values" "password" "null" "example-password"
+          validate_configvalues "$config_values" "email" "null" "null"
+          validate_configvalues "$config_values" "sequence" "3" "null"
+
+          config_values=$(./bin/kots get config "$APP_SLUG" --namespace "$APP_SLUG" --decrypt --sequence=3)
+
+          validate_configvalues "$config_values" "username" "null" "example-username"
+          validate_configvalues "$config_values" "password" "null" "example-password"
+          validate_configvalues "$config_values" "email" "null" "example-email"
+          validate_configvalues "$config_values" "sequence" "4" "null"
+
+          config_values=$(./bin/kots get config "$APP_SLUG" --namespace "$APP_SLUG" --decrypt) # latest sequence
+
+          validate_configvalues "$config_values" "username" "null" "example-username"
+          validate_configvalues "$config_values" "password" "null" "example-password"
+          validate_configvalues "$config_values" "email" "null" "example-email"
+          validate_configvalues "$config_values" "sequence" "4" "null"
+
+          config_values=$(./bin/kots get config "$APP_SLUG" --namespace "$APP_SLUG" --decrypt --current) # currently deployed sequence
+
+          validate_configvalues "$config_values" "username" "null" "example-username"
+          validate_configvalues "$config_values" "password" "null" "example-password"
+          validate_configvalues "$config_values" "email" "null" "null"
+          validate_configvalues "$config_values" "sequence" "3" "null"
+
+          # validate updating currently deployed config
+
+          ./bin/kots set config "$APP_SLUG" --key=password --value=updated-password --namespace "$APP_SLUG" --current --deploy
+          sleep 5
+
+          validate_configmap "username" "example-username"
+          validate_configmap "password" "updated-password"
+          validate_configmap "email" ""
+          validate_configmap "sequence" "4"
+
+          # validate updating specific sequence
+
+          ./bin/kots set config "$APP_SLUG" --key=username --value=updated-username --namespace "$APP_SLUG" --sequence=0 --deploy
+          sleep 5
+
+          validate_configmap "username" "updated-username"
+          validate_configmap "password" ""
+          validate_configmap "email" ""
+          validate_configmap "sequence" "5"
+
+      - name: Generate support bundle on failure
+        if: failure()
+        uses: ./.github/actions/generate-support-bundle
+        with:
+          kots-namespace: "$APP_SLUG"
+          aws-access-key-id: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_ACCESS_KEY_ID }}'
+          aws-secret-access-key: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_SECRET_ACCESS_KEY }}'
+
+      - name: Remove Cluster
+        id: remove-cluster
+        uses: replicatedhq/replicated-actions/remove-cluster@v1
+        if: ${{ always() && steps.create-cluster.outputs.cluster-id != '' }}
+        continue-on-error: true
+        with:
+          api-token: ${{ secrets.C11Y_MATRIX_TOKEN }}
+          cluster-id: ${{ steps.create-cluster.outputs.cluster-id }}
+
+
   validate-pr-tests:
     runs-on: ubuntu-20.04
     needs:
@@ -3946,6 +4150,7 @@ jobs:
       - validate-deployment-orchestration
       - validate-replicated-sdk
       - validate-strict-preflight-checks
+      - validate-get-set-config
       # cli-only tests
       - validate-kots-push-images-anonymous
     steps:

@@ -620,21 +620,6 @@ class AppConfig extends Component<Props, State> {
     this.setState({ showNextStepModal: false });
   };
 
-  isConfigReadOnly = (app: App) => {
-    const { params } = this.props;
-    if (!params.sequence) {
-      return false;
-    }
-    const sequence = parseInt(params.sequence);
-    const isCurrentVersion =
-      app.downstream?.currentVersion?.sequence === sequence;
-    const isLatestVersion = app.currentSequence === sequence;
-    const pendingVersion = find(app.downstream?.pendingVersions, {
-      sequence: sequence,
-    });
-    return !isLatestVersion && !isCurrentVersion && !pendingVersion?.semver;
-  };
-
   toggleActiveGroups = (name: string) => {
     let groupsArr = this.state.activeGroups;
     if (groupsArr.includes(name)) {
@@ -867,7 +852,6 @@ class AppConfig extends Component<Props, State> {
                           <AppConfigRenderer
                             groups={configGroups}
                             getData={this.handleConfigChange}
-                            readonly={this.isConfigReadOnly(app)}
                             configSequence={params.sequence}
                             appSlug={app.slug}
                           />
@@ -890,8 +874,7 @@ class AppConfig extends Component<Props, State> {
                                 className="btn primary blue"
                                 disabled={
                                   showValidationError ||
-                                  (!changed && !fromLicenseFlow) ||
-                                  this.isConfigReadOnly(app)
+                                  (!changed && !fromLicenseFlow)
                                 }
                                 onClick={this.handleSave}
                               >

@@ -40,6 +40,7 @@ func GetConfigCmd() *cobra.Command {
 	cmd.Flags().Int64("sequence", -1, "app sequence to retrieve config for")
 	cmd.Flags().String("appslug", "", "app slug to retrieve config for")
 	cmd.Flags().Bool("decrypt", false, "decrypt encrypted config items")
+	cmd.Flags().Bool("current", false, "get config values for the currently deployed version of the app")
 
 	return cmd
 }
@@ -69,6 +70,7 @@ func getConfigCmd(cmd *cobra.Command, args []string) error {
 	appSlug := v.GetString("appslug")
 	appSequence := v.GetInt64("sequence")
 	decrypt := v.GetBool("decrypt")
+	current := v.GetBool("current")
 
 	localPort, errChan, err := k8sutil.PortForward(0, 3000, namespace, getPodName, false, stopCh, log)
 	if err != nil {
@@ -121,7 +123,11 @@ func getConfigCmd(cmd *cobra.Command, args []string) error {
 	}
 
 	if appSequence == -1 {
-		appSequence = foundApp.CurrentSequence
+		if current && foundApp.Downstream.CurrentVersion != nil {
+			appSequence = foundApp.Downstream.CurrentVersion.ParentSequence // this is the sequence of the currently deployed version
+		} else {
+			appSequence = foundApp.CurrentSequence // this is the sequence of the latest available version
+		}
 	}
 
 	getConfigURL := fmt.Sprintf("http://localhost:%d/api/v1/app/%s/config/%d", localPort, appSlug, appSequence)
