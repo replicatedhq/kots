@@ -103,8 +103,10 @@ function AppDetailPage(props: Props) {
       navigate(`/app/${appsList[0].slug}`, { replace: true });
     } else if (props.isHelmManaged) {
       navigate("/install-with-helm", { replace: true });
-    } else {
+    } else if (Utilities.isLoggedIn()) {
       navigate("/upload-license", { replace: true });
+    } else {
+      navigate("/secure-console", { replace: true });
     }
   };
 
