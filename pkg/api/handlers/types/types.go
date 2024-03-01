@@ -97,6 +97,8 @@ type ResponseCluster struct {
 	RequiresUpgrade bool `json:"requiresUpgrade"`
 	// State represents the current state of the most recently deployed embedded cluster config
 	State string `json:"state,omitempty"`
+	// NumInstallations represents the number of installation objects in the cluster
+	NumInstallations int `json:"numInstallations"`
 }
 
 type GetPendingAppResponse struct {
