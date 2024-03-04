@@ -60,6 +60,20 @@ func RequiresUpgrade(ctx context.Context, newcfg embeddedclusterv1beta1.ConfigSp
 
 // GetCurrentInstallation returns the most recent installation object from the cluster.
 func GetCurrentInstallation(ctx context.Context) (*embeddedclusterv1beta1.Installation, error) {
+	installations, err := ListInstallations(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to list installations: %w", err)
+	}
+	if len(installations) == 0 {
+		return nil, ErrNoInstallations
+	}
+	sort.SliceStable(installations, func(i, j int) bool {
+		return installations[j].CreationTimestamp.Before(&installations[i].CreationTimestamp)
+	})
+	return &installations[0], nil
+}
+
+func ListInstallations(ctx context.Context) ([]embeddedclusterv1beta1.Installation, error) {
 	clientConfig, err := k8sutil.GetClusterConfig()
 	if err != nil {
 		return nil, fmt.Errorf("failed to get cluster config: %w", err)
@@ -75,14 +89,7 @@ func GetCurrentInstallation(ctx context.Context) (*embeddedclusterv1beta1.Instal
 	if err != nil {
 		return nil, fmt.Errorf("failed to list installations: %w", err)
 	}
-	if len(installationList.Items) == 0 {
-		return nil, ErrNoInstallations
-	}
-	items := installationList.Items
-	sort.SliceStable(items, func(i, j int) bool {
-		return items[j].CreationTimestamp.Before(&items[i].CreationTimestamp)
-	})
-	return &installationList.Items[0], nil
+	return installationList.Items, nil
 }
 
 // ClusterConfig will extract the current cluster configuration from the latest installation

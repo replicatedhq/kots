@@ -672,11 +672,25 @@ export const Utilities = {
     }
   },
 
-  isClusterUpgrading(state) {
-    const normalizedState = this.clusterState(state);
-    return (
-      normalizedState === "Upgrading" || normalizedState === "Upgrading addons"
-    );
+  isClusterUpgrading(cluster) {
+    if (!cluster) {
+      return false;
+    }
+    const normalizedState = this.clusterState(cluster.state);
+    if (
+      normalizedState === "Upgrading" ||
+      normalizedState === "Upgrading addons"
+    ) {
+      return true;
+    }
+
+    if (cluster.numInstallations > 1 && !cluster.state) {
+      // if there multiple installations and no state, assume it's upgrading
+      // as it's possible the downtime begins before a state is reported
+      return true;
+    }
+
+    return false;
   },
 
   isPendingClusterUpgrade(app) {
@@ -696,7 +710,7 @@ export const Utilities = {
     // and the cluster will upgrade or is already upgrading
     return (
       app.downstream?.cluster?.requiresUpgrade ||
-      Utilities.isClusterUpgrading(app.downstream?.cluster?.state)
+      Utilities.isClusterUpgrading(app.downstream?.cluster)
     );
   },
 

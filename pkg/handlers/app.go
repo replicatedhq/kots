@@ -341,11 +341,21 @@ func responseAppFromApp(a *apptypes.App) (*types.ResponseApp, error) {
 				return nil, errors.Wrap(err, "failed to check if cluster requires upgrade")
 			}
 
-			embeddedClusterInstallation, err := embeddedcluster.GetCurrentInstallation(context.TODO())
+			embeddedClusterInstallations, err := embeddedcluster.ListInstallations(context.TODO())
 			if err != nil {
-				return nil, errors.Wrap(err, "failed to get current installation")
+				return nil, errors.Wrap(err, "failed to list installations")
 			}
-			cluster.State = string(embeddedClusterInstallation.Status.State)
+
+			cluster.NumInstallations = len(embeddedClusterInstallations)
+
+			currentInstallation, err := embeddedcluster.GetCurrentInstallation(context.TODO())
+			if err != nil {
+				return nil, errors.Wrap(err, "failed to get latest installation")
+			}
+
+			if currentInstallation != nil {
+				cluster.State = string(currentInstallation.Status.State)
+			}
 		}
 	}
 

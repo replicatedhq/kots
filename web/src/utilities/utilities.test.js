@@ -100,6 +100,40 @@ describe("Utilities", () => {
       ];
       expect(Utilities.shouldShowClusterUpgradeModal(apps)).toBe(true);
     });
+
+    it("should return false if there are is one installation that does not have a state", () => {
+      const apps = [
+        {
+          downstream: {
+            currentVersion: {
+              status: "deployed",
+            },
+            cluster: {
+              requiresUpgrade: false,
+              numInstallations: 1,
+            },
+          },
+        },
+      ];
+      expect(Utilities.shouldShowClusterUpgradeModal(apps)).toBe(false);
+    });
+
+    it("should return true if there are multiple installations, but the latest does not have a state", () => {
+      const apps = [
+        {
+          downstream: {
+            currentVersion: {
+              status: "deployed",
+            },
+            cluster: {
+              requiresUpgrade: false,
+              numInstallations: 2,
+            },
+          },
+        },
+      ];
+      expect(Utilities.shouldShowClusterUpgradeModal(apps)).toBe(true);
+    });
   });
 
   describe("isInitialAppInstall", () => {
