@@ -1039,7 +1039,7 @@ func (h *Handler) SetAppConfigValues(w http.ResponseWriter, r *http.Request) {
 
 	baseSequence := setAppConfigValuesRequest.Sequence
 
-	if baseSequence == -1 && setAppConfigValuesRequest.Current {
+	if setAppConfigValuesRequest.Current {
 		// use the currently deployed version as the base
 		downstreams, err := store.GetStore().ListDownstreamsForApp(foundApp.ID)
 		if err != nil {
@@ -1064,11 +1064,14 @@ func (h *Handler) SetAppConfigValues(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		if versions.CurrentVersion != nil {
-			baseSequence = versions.CurrentVersion.Sequence
-		} else {
-			logger.Warnf("no deployed version found for app %s", foundApp.Slug)
+		if versions.CurrentVersion == nil {
+			setAppConfigValuesResponse.Error = fmt.Sprintf("no deployed version found for app %s", foundApp.Slug)
+			logger.Error(errors.New(setAppConfigValuesResponse.Error))
+			JSON(w, http.StatusBadRequest, setAppConfigValuesResponse)
+			return
 		}
+
+		baseSequence = versions.CurrentVersion.Sequence
 	}
 
 	if baseSequence == -1 {

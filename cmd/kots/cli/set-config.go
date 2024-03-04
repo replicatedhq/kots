@@ -57,6 +57,10 @@ func SetConfigCmd() *cobra.Command {
 				log.Info("--skip-preflights will be ignored because --deploy is not set")
 			}
 
+			if v.GetBool("current") && v.GetInt64("sequence") != -1 {
+				return errors.New("cannot use --current and --sequence together")
+			}
+
 			configValues, err := getConfigValuesFromArgs(v, args)
 			if err != nil {
 				return errors.Wrap(err, "failed to create config values from arguments")

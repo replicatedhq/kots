@@ -72,6 +72,10 @@ func getConfigCmd(cmd *cobra.Command, args []string) error {
 	decrypt := v.GetBool("decrypt")
 	current := v.GetBool("current")
 
+	if current && appSequence != -1 {
+		return errors.New("cannot use --current and --sequence together")
+	}
+
 	localPort, errChan, err := k8sutil.PortForward(0, 3000, namespace, getPodName, false, stopCh, log)
 	if err != nil {
 		log.FinishSpinnerWithError()
@@ -122,12 +126,15 @@ func getConfigCmd(cmd *cobra.Command, args []string) error {
 		return errors.Errorf("app %s not found", appSlug)
 	}
 
-	if appSequence == -1 {
-		if current && foundApp.Downstream.CurrentVersion != nil {
-			appSequence = foundApp.Downstream.CurrentVersion.ParentSequence // this is the sequence of the currently deployed version
-		} else {
-			appSequence = foundApp.CurrentSequence // this is the sequence of the latest available version
+	if current {
+		if foundApp.Downstream.CurrentVersion == nil {
+			return errors.Errorf("no deployed version found for app %s", appSlug)
 		}
+		appSequence = foundApp.Downstream.CurrentVersion.ParentSequence // this is the sequence of the currently deployed version
+	}
+
+	if appSequence == -1 {
+		appSequence = foundApp.CurrentSequence // this is the sequence of the latest available version
 	}
 
 	getConfigURL := fmt.Sprintf("http://localhost:%d/api/v1/app/%s/config/%d", localPort, appSlug, appSequence)

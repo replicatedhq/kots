@@ -4003,13 +4003,13 @@ jobs:
           validate_configmap "password" ""
           validate_configmap "sequence" "0"
 
-          ./bin/kots set config "$APP_SLUG" --key=password --value=example-password --namespace "$APP_SLUG" --deploy
+          ./bin/kots set config "$APP_SLUG" --key=password --value=example-password --namespace "$APP_SLUG" # don't deploy
           sleep 5
 
           validate_configmap "username" ""
-          validate_configmap "password" "example-password"
+          validate_configmap "password" ""
           validate_configmap "email" ""
-          validate_configmap "sequence" "1"
+          validate_configmap "sequence" "0"
 
           ./bin/kots set config "$APP_SLUG" --key=username --value=example-username --namespace "$APP_SLUG" --deploy
           sleep 5
@@ -4090,6 +4090,18 @@ jobs:
           validate_configmap "password" ""
           validate_configmap "email" ""
           validate_configmap "sequence" "5"
+
+          # should not be able to use --current and --sequence together
+
+          if ./bin/kots get config "$APP_SLUG" --namespace "$APP_SLUG" --decrypt --sequence=0 --current; then
+            echo "expected error when using --current and --sequence together in get config"
+            exit 1
+          fi
+
+          if ./bin/kots set config "$APP_SLUG" --key=username --value=updated-username --namespace "$APP_SLUG" --sequence=0 --current --deploy; then
+            echo "expected error when using --current and --sequence together in set config"
+            exit 1
+          fi
 
       - name: Generate support bundle on failure
         if: failure()
