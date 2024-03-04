@@ -64,11 +64,13 @@ func GetCurrentInstallation(ctx context.Context) (*embeddedclusterv1beta1.Instal
 	if err != nil {
 		return nil, fmt.Errorf("failed to list installations: %w", err)
 	}
-	latest, err := GetLatestInstallation(ctx, installations)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get latest installation: %w", err)
+	if len(installations) == 0 {
+		return nil, ErrNoInstallations
 	}
-	return latest, nil
+	sort.SliceStable(installations, func(i, j int) bool {
+		return installations[j].CreationTimestamp.Before(&installations[i].CreationTimestamp)
+	})
+	return &installations[0], nil
 }
 
 func ListInstallations(ctx context.Context) ([]embeddedclusterv1beta1.Installation, error) {
@@ -88,16 +90,6 @@ func ListInstallations(ctx context.Context) ([]embeddedclusterv1beta1.Installati
 		return nil, fmt.Errorf("failed to list installations: %w", err)
 	}
 	return installationList.Items, nil
-}
-
-func GetLatestInstallation(ctx context.Context, installations []embeddedclusterv1beta1.Installation) (*embeddedclusterv1beta1.Installation, error) {
-	if len(installations) == 0 {
-		return nil, ErrNoInstallations
-	}
-	sort.SliceStable(installations, func(i, j int) bool {
-		return installations[j].CreationTimestamp.Before(&installations[i].CreationTimestamp)
-	})
-	return &installations[0], nil
 }
 
 // ClusterConfig will extract the current cluster configuration from the latest installation

@@ -348,13 +348,13 @@ func responseAppFromApp(a *apptypes.App) (*types.ResponseApp, error) {
 
 			cluster.NumInstallations = len(embeddedClusterInstallations)
 
-			latestEmbeddedClusterInstallation, err := embeddedcluster.GetLatestInstallation(context.TODO(), embeddedClusterInstallations)
+			currentInstallation, err := embeddedcluster.GetCurrentInstallation(context.TODO())
 			if err != nil {
 				return nil, errors.Wrap(err, "failed to get latest installation")
 			}
 
-			if latestEmbeddedClusterInstallation != nil {
-				cluster.State = string(latestEmbeddedClusterInstallation.Status.State)
+			if currentInstallation != nil {
+				cluster.State = string(currentInstallation.Status.State)
 			}
 		}
 	}
