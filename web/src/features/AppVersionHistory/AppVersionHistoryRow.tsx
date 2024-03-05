@@ -238,10 +238,6 @@ function AppVersionHistoryRow(props: Props) {
 
     const isCurrentVersion =
       version.sequence === downstream?.currentVersion?.sequence;
-    const isLatestVersion = version.sequence === selectedApp?.currentSequence;
-    const isPendingVersion = find(downstream?.pendingVersions, {
-      sequence: version.sequence,
-    });
     const isPastVersion = find(downstream?.pastVersions, {
       sequence: version.sequence,
     });
@@ -260,19 +256,10 @@ function AppVersionHistoryRow(props: Props) {
     const isSecondaryBtn =
       isPastVersion || needsConfiguration || (isRedeploy && !isRollback);
     const isPrimaryButton = !isSecondaryBtn && !isRedeploy && !isRollback;
-    const editableConfig =
-      isCurrentVersion || isLatestVersion || isPendingVersion?.semver;
 
     const showDeployLogs =
       (isPastVersion || isCurrentVersion || isPendingDeployedVersion) &&
       version?.status !== "pending";
-
-    let tooltipTip;
-    if (editableConfig) {
-      tooltipTip = "Edit config";
-    } else {
-      tooltipTip = "View config";
-    }
 
     const preflightState = getPreflightState(version);
 
@@ -394,11 +381,8 @@ function AppVersionHistoryRow(props: Props) {
         </div>
         {version.hasConfig && (
           <div className="flex alignItems--center">
-            <Link to={configScreenURL} data-tip={tooltipTip}>
-              <Icon
-                icon={editableConfig ? "edit-config" : "view-config"}
-                size={22}
-              />
+            <Link to={configScreenURL} data-tip="Edit config">
+              <Icon icon="edit-config" size={22} />
             </Link>
             <ReactTooltip effect="solid" className="replicated-tooltip" />
           </div>

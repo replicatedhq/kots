@@ -57,6 +57,10 @@ func SetConfigCmd() *cobra.Command {
 				log.Info("--skip-preflights will be ignored because --deploy is not set")
 			}
 
+			if v.GetBool("current") && v.GetInt64("sequence") != -1 {
+				return errors.New("cannot use --current and --sequence together")
+			}
+
 			configValues, err := getConfigValuesFromArgs(v, args)
 			if err != nil {
 				return errors.Wrap(err, "failed to create config values from arguments")
@@ -106,6 +110,8 @@ func SetConfigCmd() *cobra.Command {
 				"merge":          merge,
 				"deploy":         v.GetBool("deploy"),
 				"skipPreflights": v.GetBool("skip-preflights"),
+				"current":        v.GetBool("current"),
+				"sequence":       v.GetInt64("sequence"),
 			}
 
 			requestBody, err := json.Marshal(requestPayload)
@@ -163,8 +169,10 @@ func SetConfigCmd() *cobra.Command {
 	cmd.Flags().String("config-file", "", "path to a manifest containing config values (must be apiVersion: kots.io/v1beta1, kind: ConfigValues)")
 	cmd.Flags().Bool("merge", false, "when set to true, only keys specified in config file will be updated. This flag can only be used when --config-file flag is used.")
 
-	cmd.Flags().Bool("deploy", false, "when set, automatically deploy the latest version with the new configuration")
+	cmd.Flags().Bool("deploy", false, "when set, automatically deploy the version with the new configuration")
 	cmd.Flags().Bool("skip-preflights", false, "set to true to skip preflight checks when deploying new version")
+	cmd.Flags().Bool("current", false, "set to true to use the currently deployed version of the app as the base for the new version")
+	cmd.Flags().Int64("sequence", -1, "sequence of the app version to use as the base for the new version (defaults to the latest version unless --current flag is set)")
 
 	return cmd
 }
