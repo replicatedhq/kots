@@ -1,8 +1,11 @@
 package cli
 
 import (
+	"io"
 	"os"
+	"strings"
 
+	"github.com/chzyer/readline"
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/pull"
@@ -12,6 +15,11 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
+
+type templateReplSession struct {
+	b *template.Builder
+	l *logger.CLILogger
+}
 
 func TemplateCmd() *cobra.Command {
 	cmd := &cobra.Command{
@@ -26,14 +34,14 @@ func TemplateCmd() *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			v := viper.GetViper()
 
-			if len(args) == 0 {
+			licenseFile := v.GetString("license-file")
+			configFile := v.GetString("config-values")
+			interactive := v.GetBool("interactive")
+
+			if len(args) == 0 && !interactive {
 				cmd.Help()
 				os.Exit(1)
 			}
-
-			licenseFile := v.GetString("license-file")
-			configFile := v.GetString("config-values")
-			// interactive := v.GetBool("interactive")
 
 			license, err := parseLicenseFile(licenseFile)
 			if err != nil {
@@ -61,13 +69,24 @@ func TemplateCmd() *cobra.Command {
 			if err != nil {
 				return errors.Wrap(err, "failed to create template builder")
 			}
+
+			log := logger.NewCLILogger(cmd.OutOrStdout())
+			log.Initialize()
+
+			if interactive {
+				err := runInteractive(&builder, log)
+				if err != nil {
+					return errors.Wrap(err, "failed to run interactive mode")
+				}
+				return nil
+			}
+
+			// non-interactive mode
 			rendered, err := builder.String(args[0])
 			if err != nil {
 				return errors.Wrap(err, "failed to render template")
 			}
 
-			log := logger.NewCLILogger(cmd.OutOrStdout())
-			log.Initialize()
 			log.Info(rendered)
 
 			return nil
@@ -119,4 +138,74 @@ func createConfigContext(configValues *kotsv1beta1.ConfigValues) (map[string]tem
 		}
 	}
 	return ctx, nil
+}
+
+func createReplSession(builder *template.Builder, log *logger.CLILogger) *templateReplSession {
+	return &templateReplSession{
+		b: builder,
+		l: log,
+	}
+}
+
+func runInteractive(b *template.Builder, log *logger.CLILogger) error {
+	repl := createReplSession(b, log)
+	return repl.run()
+}
+
+func (r *templateReplSession) run() error {
+	rl, err := readline.NewEx(&readline.Config{
+		Prompt:            "> ",
+		InterruptPrompt:   "^C",
+		EOFPrompt:         "exit",
+		HistorySearchFold: true,
+		Stdin:             os.Stdin,
+		Stdout:            os.Stdout,
+		Stderr:            os.Stderr,
+	})
+	if err != nil {
+		return errors.Wrap(err, "failed to initialize console")
+	}
+	defer rl.Close()
+
+	for {
+		line, err := rl.Readline()
+		if err == readline.ErrInterrupt {
+			if len(line) == 0 {
+				break
+			} else {
+				continue
+			}
+		} else if err == io.EOF {
+			break
+		}
+
+		out, exit, err := r.handle(line)
+		if exit {
+			break
+		}
+		r.l.Info(out)
+	}
+
+	return nil
+}
+
+func (r *templateReplSession) handle(line string) (string, bool, error) {
+	switch {
+	case strings.TrimSpace(line) == "exit":
+		return "", true, nil
+	case strings.TrimSpace(line) == "help":
+		return r.help(), false, nil
+	default:
+		rendered, err := r.b.String(line)
+		return rendered, false, err
+	}
+}
+
+func (r *templateReplSession) help() string {
+	return `
+	Go to https://docs.replicated.com/reference/template-functions-about for a list of available template functions.
+	Available commands:
+ 		help - display this help message
+  		exit - exit the interactive console
+`
 }
