@@ -1,8 +1,10 @@
 package cli
 
 import (
+	"fmt"
 	"io"
 	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/chzyer/readline"
@@ -38,11 +40,6 @@ func TemplateCmd() *cobra.Command {
 			configFile := v.GetString("config-values")
 			interactive := v.GetBool("interactive")
 
-			if len(args) == 0 && !interactive {
-				cmd.Help()
-				os.Exit(1)
-			}
-
 			license, err := parseLicenseFile(licenseFile)
 			if err != nil {
 				return errors.Wrap(err, "failed to parse --license-file")
@@ -58,6 +55,17 @@ func TemplateCmd() *cobra.Command {
 				return errors.Wrap(err, "failed to create config context")
 			}
 
+			// when no args are provided, render all mode, similar to helm template
+			// we will utilize pull command to fetch and render manifests from upstream
+			if len(args) == 0 {
+				err := pullAndRender(license.Spec.AppSlug, licenseFile, configFile)
+				if err != nil {
+					return errors.Wrap(err, "failed to render all templates")
+				}
+				return nil
+			}
+
+			// interactive mode
 			// TODO: support other contexts
 			builderOptions := template.BuilderOptions{
 				ExistingValues: configCtx,
@@ -208,4 +216,52 @@ func (r *templateReplSession) help() string {
  		help - display this help message
   		exit - exit the interactive console
 `
+}
+
+func pullAndRender(appSlug string, licensePath string, configPath string) error {
+	tempDir, err := os.MkdirTemp("", "kots-template")
+	if err != nil {
+		return errors.Wrap(err, "failed to create temp directory to render templates")
+	}
+	defer os.RemoveAll(tempDir)
+
+	pullOptions := pull.PullOptions{
+		RootDir:             tempDir,
+		AppSlug:             appSlug,
+		LicenseFile:         ExpandDir(licensePath),
+		ConfigFile:          ExpandDir(configPath),
+		Silent:              true,
+		ExcludeAdminConsole: true,
+	}
+
+	upstream := pull.RewriteUpstream(appSlug)
+	_, err = pull.Pull(upstream, pullOptions)
+
+	if err != nil && err != pull.ErrConfigNeeded {
+		return errors.Wrap(err, "failed to pull upstream")
+	}
+
+	// iterate over kotsKinds directory in tempDir and print all YAML contents
+	kotsKindsDir := filepath.Join(tempDir, "kotsKinds")
+	files, err := os.ReadDir(kotsKindsDir)
+	if err != nil {
+		return errors.Wrap(err, "failed to read kotsKinds directory")
+	}
+
+	var manifetsToRender []string
+	for _, file := range files {
+		if file.IsDir() {
+			continue
+		}
+		content, err := os.ReadFile(filepath.Join(kotsKindsDir, file.Name()))
+		if err != nil {
+			return errors.Wrap(err, "failed to read file")
+		}
+		manifetsToRender = append(manifetsToRender, string(content))
+	}
+	for _, m := range manifetsToRender {
+		fmt.Printf("---\n%s\n", m)
+	}
+
+	return nil
 }
