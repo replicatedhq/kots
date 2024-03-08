@@ -57,7 +57,7 @@ func TemplateCmd() *cobra.Command {
 
 			// when no args are provided, render all mode, similar to helm template
 			// we will utilize pull command to fetch and render manifests from upstream
-			if len(args) == 0 {
+			if len(args) == 0 && !interactive {
 				err := pullAndRender(license.Spec.AppSlug, licenseFile, configFile)
 				if err != nil {
 					return errors.Wrap(err, "failed to render all templates")
