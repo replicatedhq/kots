@@ -18,6 +18,10 @@ inputs:
   k8s-instance-type:
     description: 'Instance type for c11y matrix clusters'
     required: false
+  k8s-nodes:
+    description: 'Number of nodes for c11y matrix clusters'
+    default: '1'
+    required: false
   k8s-cluster-ttl:
     description: 'TTL for c11y matrix clusters'
     default: '2h'
@@ -100,6 +104,7 @@ runs:
         timeout-minutes: '120'
         ttl: ${{ inputs.k8s-cluster-ttl }}
         instance-type: ${{ inputs.k8s-instance-type }}
+        nodes: ${{ inputs.k8s-nodes }}
         export-kubeconfig: true
 
     - name: execute suite "${{ inputs.test-focus }}"
