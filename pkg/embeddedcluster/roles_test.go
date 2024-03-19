@@ -180,6 +180,36 @@ func Test_getRoleLabelsImpl(t *testing.T) {
 			roles: []string{"a"},
 			want:  []string{"this-is-a-more-than-63-character-label-with-a-lot-of-filler-to=this-is-a-more-than-63-character-value-with-a-lot-of-filler-to"},
 		},
+		{
+			name: "roles with a dns prefix",
+			config: &embeddedclusterv1beta1.ConfigSpec{
+				Roles: embeddedclusterv1beta1.Roles{
+					Controller: embeddedclusterv1beta1.NodeRole{
+						Name: "a",
+						Labels: map[string]string{
+							"test-label.example.com/a-role": "a-role",
+						},
+					},
+				},
+			},
+			roles: []string{"a"},
+			want:  []string{"test-label.example.com/a-role=a-role"},
+		},
+		{
+			name: "roles with a dns prefix and name that is more than 63 characters",
+			config: &embeddedclusterv1beta1.ConfigSpec{
+				Roles: embeddedclusterv1beta1.Roles{
+					Controller: embeddedclusterv1beta1.NodeRole{
+						Name: "a",
+						Labels: map[string]string{
+							"test-label.example.com/this-is-a-more-than-63-character-label-with-a-lot-of-filler-to-ensure-that": "this is a more than 63 character value with a lot of filler to ensure that",
+						},
+					},
+				},
+			},
+			roles: []string{"a"},
+			want:  []string{"test-label.example.com/this-is-a-more-than-63-character-label-with-a-lot-of-filler-to=this-is-a-more-than-63-character-value-with-a-lot-of-filler-to"},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
