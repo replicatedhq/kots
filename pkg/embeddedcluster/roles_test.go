@@ -210,6 +210,23 @@ func Test_getRoleLabelsImpl(t *testing.T) {
 			roles: []string{"a"},
 			want:  []string{"test-label.example.com/this-is-a-more-than-63-character-label-with-a-lot-of-filler-to=this-is-a-more-than-63-character-value-with-a-lot-of-filler-to"},
 		},
+		{
+			name: "roles with an invalid dns prefix",
+			config: &embeddedclusterv1beta1.ConfigSpec{
+				Roles: embeddedclusterv1beta1.Roles{
+					Controller: embeddedclusterv1beta1.NodeRole{
+						Name: "a",
+						Labels: map[string]string{
+							"this.is.not.valid-/test1":  "value1",
+							".this.is.not.valid./test2": "value2",
+							"!this.is.not.valid/test3":  "value3",
+						},
+					},
+				},
+			},
+			roles: []string{"a"},
+			want:  []string{"this.is.not.valid/test1=value1", "this.is.not.valid/test2=value2", "this.is.not.valid/test3=value3"},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

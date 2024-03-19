@@ -150,13 +150,13 @@ func IsValidRFC1123(value string) bool {
 
 var dns1123IllegalStartRegex = regexp.MustCompile(`^[^0-9a-z]+`)
 var dns1123IllegalEndRegex = regexp.MustCompile(`[^0-9a-z]+$`)
-var dns1123IllegalCharsRegex = regexp.MustCompile(`[^0-9a-z-]`)
+var dns1123IllegalCharsRegex = regexp.MustCompile(`[^0-9a-z-.]`)
 
 func ConvertToRFC1123(value string, args ...int) string {
 	value = strings.ToLower(value)
 
 	if len(value) == 0 || IsValidRFC1123(value) {
-		return strings.ToLower(value)
+		return value
 	}
 
 	// failsafe
