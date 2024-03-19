@@ -4,6 +4,7 @@ import (
 	"archive/tar"
 	"bufio"
 	"compress/gzip"
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -15,6 +16,7 @@ import (
 
 	"github.com/containers/image/v5/transports/alltransports"
 	"github.com/mholt/archiver/v3"
+	imagespecsv1 "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/archives"
 	dockerarchive "github.com/replicatedhq/kots/pkg/docker/archive"
@@ -25,6 +27,16 @@ import (
 	"github.com/replicatedhq/kots/pkg/imageutil"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/logger"
+	oras "oras.land/oras-go/v2"
+	orasfile "oras.land/oras-go/v2/content/file"
+	orasremote "oras.land/oras-go/v2/registry/remote"
+	orasauth "oras.land/oras-go/v2/registry/remote/auth"
+	orasretry "oras.land/oras-go/v2/registry/remote/retry"
+)
+
+const (
+	EmbeddedClusterArtifactType = "application/vnd.embeddedcluster.artifact"
+	EmbeddedClusterMediaType    = "application/vnd.embeddedcluster.file"
 )
 
 func ExtractAppAirgapArchive(archive string, destDir string, excludeImages bool, progressWriter io.Writer) error {
@@ -162,12 +174,22 @@ func TagAndPushImagesFromBundle(airgapBundle string, options imagetypes.PushImag
 		if err := tarGz.Unarchive(airgapBundle, extractedBundle); err != nil {
 			return errors.Wrap(err, "falied to unarchive airgap bundle")
 		}
-		return PushImagesFromTempRegistry(extractedBundle, airgap.Spec.SavedImages, options)
+		if err := PushImagesFromTempRegistry(extractedBundle, airgap.Spec.SavedImages, options); err != nil {
+			return errors.Wrap(err, "failed to push images from temp registry")
+		}
+
+		artifactTag := fmt.Sprintf("%s-%s", airgap.Spec.ChannelID, airgap.Spec.UpdateCursor)
+		if err := PushEmbeddedClusterArtifacts(extractedBundle, artifactTag, options); err != nil {
+			return errors.Wrap(err, "failed to push embedded cluster artifacts")
+		}
+
+		return nil
 	case dockertypes.FormatDockerArchive, "":
 		return PushImagesFromDockerArchiveBundle(airgapBundle, options)
 	default:
 		return errors.Errorf("Airgap bundle format '%s' is not supported", airgap.Spec.Format)
 	}
+
 }
 
 func PushImagesFromTempRegistry(airgapRootDir string, imageList []string, options imagetypes.PushImagesOptions) error {
@@ -673,6 +695,114 @@ func reportWriterWithProgress(imageInfos map[string]*imagetypes.ImageInfo, repor
 	}()
 
 	return pipeWriter
+}
+
+type OCIArtifactFile struct {
+	Name      string
+	Path      string
+	MediaType string
+}
+
+func PushEmbeddedClusterArtifacts(airgapBundle string, tag string, options imagetypes.PushImagesOptions) error {
+	embeddedClusterDir := filepath.Join(airgapBundle, "embedded-cluster")
+	if _, err := os.Stat(embeddedClusterDir); err != nil {
+		if os.IsNotExist(err) {
+			// no embedded-cluster dir, nothing to do
+			return nil
+		}
+		return errors.Wrap(err, "failed to stat embedded-cluster dir")
+	}
+
+	err := filepath.Walk(embeddedClusterDir, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+
+		if !info.Mode().IsRegular() {
+			return nil
+		}
+
+		repo := "binary"
+		if info.Name() == "charts.tar.gz" {
+			repo = "charts"
+		} else if info.Name() == "images-amd64.tar" {
+			repo = "images"
+		}
+		repo = filepath.Join("embedded-cluster", repo)
+
+		// push each file as an oci artifact to the registry
+		descriptor := OCIArtifactFile{
+			Name:      info.Name(),
+			Path:      path,
+			MediaType: EmbeddedClusterMediaType,
+		}
+		fmt.Printf("Pushing embedded-cluster artifact %s:%s\n", filepath.Join(options.Registry.Endpoint, options.Registry.Namespace, repo), tag)
+		if err := pushOCIArtifact([]OCIArtifactFile{descriptor}, EmbeddedClusterMediaType, repo, tag, options); err != nil {
+			return errors.Wrapf(err, "failed to push embedded-cluster artifact %s", info.Name())
+		}
+
+		return nil
+	})
+	if err != nil {
+		return errors.Wrap(err, "failed to walk embedded-cluster dir")
+	}
+
+	return nil
+}
+
+func pushOCIArtifact(files []OCIArtifactFile, artifactType string, repo string, tag string, options imagetypes.PushImagesOptions) error {
+	orasWorkspace, err := os.MkdirTemp("", "oras")
+	if err != nil {
+		return errors.Wrap(err, "failed to create temp directory")
+	}
+	defer os.RemoveAll(orasWorkspace)
+
+	orasFS, err := orasfile.New(orasWorkspace)
+	if err != nil {
+		return errors.Wrap(err, "failed to create oras file store")
+	}
+	defer orasFS.Close()
+
+	fileDescriptors := make([]imagespecsv1.Descriptor, 0)
+	for _, f := range files {
+		fileDescriptor, err := orasFS.Add(context.TODO(), f.Name, f.MediaType, f.Path)
+		if err != nil {
+			return errors.Wrapf(err, "failed to add file %s to oras file store", f.Name)
+		}
+		fileDescriptors = append(fileDescriptors, fileDescriptor)
+	}
+
+	packOpts := oras.PackManifestOptions{
+		Layers: fileDescriptors,
+	}
+	manifestDescriptor, err := oras.PackManifest(context.TODO(), orasFS, oras.PackManifestVersion1_1_RC4, artifactType, packOpts)
+	if err != nil {
+		return errors.Wrap(err, "failed to pack manifest")
+	}
+
+	if err = orasFS.Tag(context.TODO(), manifestDescriptor, tag); err != nil {
+		return errors.Wrap(err, "failed to tag manifest")
+	}
+
+	repository, err := orasremote.NewRepository(filepath.Join(options.Registry.Endpoint, options.Registry.Namespace, repo))
+	if err != nil {
+		return errors.Wrap(err, "failed to create remote repository")
+	}
+	repository.Client = &orasauth.Client{
+		Client: orasretry.DefaultClient,
+		Cache:  orasauth.DefaultCache,
+		Credential: orasauth.StaticCredential(options.Registry.Endpoint, orasauth.Credential{
+			Username: options.Registry.Username,
+			Password: options.Registry.Password,
+		}),
+	}
+
+	_, err = oras.Copy(context.TODO(), orasFS, tag, repository, tag, oras.DefaultCopyOptions)
+	if err != nil {
+		return errors.Wrap(err, "failed to copy")
+	}
+
+	return nil
 }
 
 type ProgressReport struct {
