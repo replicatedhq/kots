@@ -2,6 +2,7 @@ package types
 
 import (
 	"io"
+	"net/http"
 	"time"
 
 	"github.com/containers/image/v5/types"
@@ -77,4 +78,10 @@ type LayerInfo struct {
 	Size        int64
 	UploadStart time.Time
 	UploadEnd   time.Time
+}
+
+type PushEmbeddedArtifactsOptions struct {
+	Registry   dockerregistrytypes.RegistryOptions
+	Tag        string
+	HTTPClient *http.Client
 }

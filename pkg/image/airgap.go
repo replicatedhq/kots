@@ -178,8 +178,12 @@ func TagAndPushImagesFromBundle(airgapBundle string, options imagetypes.PushImag
 			return errors.Wrap(err, "failed to push images from temp registry")
 		}
 
-		artifactTag := fmt.Sprintf("%s-%s", airgap.Spec.ChannelID, airgap.Spec.UpdateCursor)
-		if err := PushEmbeddedClusterArtifacts(extractedBundle, artifactTag, options); err != nil {
+		pushEmbeddedArtifactsOpts := imagetypes.PushEmbeddedArtifactsOptions{
+			Registry:   options.Registry,
+			Tag:        fmt.Sprintf("%s-%s", airgap.Spec.ChannelID, airgap.Spec.UpdateCursor),
+			HTTPClient: orasretry.DefaultClient,
+		}
+		if err := PushEmbeddedClusterArtifacts(extractedBundle, pushEmbeddedArtifactsOpts); err != nil {
 			return errors.Wrap(err, "failed to push embedded cluster artifacts")
 		}
 
@@ -189,7 +193,6 @@ func TagAndPushImagesFromBundle(airgapBundle string, options imagetypes.PushImag
 	default:
 		return errors.Errorf("Airgap bundle format '%s' is not supported", airgap.Spec.Format)
 	}
-
 }
 
 func PushImagesFromTempRegistry(airgapRootDir string, imageList []string, options imagetypes.PushImagesOptions) error {
@@ -703,7 +706,7 @@ type OCIArtifactFile struct {
 	MediaType string
 }
 
-func PushEmbeddedClusterArtifacts(airgapBundle string, tag string, options imagetypes.PushImagesOptions) error {
+func PushEmbeddedClusterArtifacts(airgapBundle string, opts imagetypes.PushEmbeddedArtifactsOptions) error {
 	embeddedClusterDir := filepath.Join(airgapBundle, "embedded-cluster")
 	if _, err := os.Stat(embeddedClusterDir); err != nil {
 		if os.IsNotExist(err) {
@@ -736,8 +739,8 @@ func PushEmbeddedClusterArtifacts(airgapBundle string, tag string, options image
 			Path:      path,
 			MediaType: EmbeddedClusterMediaType,
 		}
-		fmt.Printf("Pushing embedded-cluster artifact %s:%s\n", filepath.Join(options.Registry.Endpoint, options.Registry.Namespace, repo), tag)
-		if err := pushOCIArtifact([]OCIArtifactFile{descriptor}, EmbeddedClusterMediaType, repo, tag, options); err != nil {
+		fmt.Printf("Pushing embedded-cluster artifact %s:%s\n", filepath.Join(opts.Registry.Endpoint, opts.Registry.Namespace, repo), opts.Tag)
+		if err := pushOCIArtifact([]OCIArtifactFile{descriptor}, EmbeddedClusterMediaType, repo, opts); err != nil {
 			return errors.Wrapf(err, "failed to push embedded-cluster artifact %s", info.Name())
 		}
 
@@ -750,7 +753,7 @@ func PushEmbeddedClusterArtifacts(airgapBundle string, tag string, options image
 	return nil
 }
 
-func pushOCIArtifact(files []OCIArtifactFile, artifactType string, repo string, tag string, options imagetypes.PushImagesOptions) error {
+func pushOCIArtifact(files []OCIArtifactFile, artifactType string, repo string, opts imagetypes.PushEmbeddedArtifactsOptions) error {
 	orasWorkspace, err := os.MkdirTemp("", "oras")
 	if err != nil {
 		return errors.Wrap(err, "failed to create temp directory")
@@ -780,24 +783,24 @@ func pushOCIArtifact(files []OCIArtifactFile, artifactType string, repo string, 
 		return errors.Wrap(err, "failed to pack manifest")
 	}
 
-	if err = orasFS.Tag(context.TODO(), manifestDescriptor, tag); err != nil {
+	if err = orasFS.Tag(context.TODO(), manifestDescriptor, opts.Tag); err != nil {
 		return errors.Wrap(err, "failed to tag manifest")
 	}
 
-	repository, err := orasremote.NewRepository(filepath.Join(options.Registry.Endpoint, options.Registry.Namespace, repo))
+	repository, err := orasremote.NewRepository(filepath.Join(opts.Registry.Endpoint, opts.Registry.Namespace, repo))
 	if err != nil {
 		return errors.Wrap(err, "failed to create remote repository")
 	}
 	repository.Client = &orasauth.Client{
-		Client: orasretry.DefaultClient,
+		Client: opts.HTTPClient,
 		Cache:  orasauth.DefaultCache,
-		Credential: orasauth.StaticCredential(options.Registry.Endpoint, orasauth.Credential{
-			Username: options.Registry.Username,
-			Password: options.Registry.Password,
+		Credential: orasauth.StaticCredential(opts.Registry.Endpoint, orasauth.Credential{
+			Username: opts.Registry.Username,
+			Password: opts.Registry.Password,
 		}),
 	}
 
-	_, err = oras.Copy(context.TODO(), orasFS, tag, repository, tag, oras.DefaultCopyOptions)
+	_, err = oras.Copy(context.TODO(), orasFS, opts.Tag, repository, opts.Tag, oras.DefaultCopyOptions)
 	if err != nil {
 		return errors.Wrap(err, "failed to copy")
 	}
