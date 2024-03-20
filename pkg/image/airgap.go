@@ -700,8 +700,8 @@ func reportWriterWithProgress(imageInfos map[string]*imagetypes.ImageInfo, repor
 	return pipeWriter
 }
 
-func PushEmbeddedClusterArtifacts(airgapBundle string, opts imagetypes.PushEmbeddedClusterArtifactsOptions) error {
-	embeddedClusterDir := filepath.Join(airgapBundle, "embedded-cluster")
+func PushEmbeddedClusterArtifacts(airgapRootDir string, opts imagetypes.PushEmbeddedClusterArtifactsOptions) error {
+	embeddedClusterDir := filepath.Join(airgapRootDir, "embedded-cluster")
 	if _, err := os.Stat(embeddedClusterDir); err != nil {
 		if os.IsNotExist(err) {
 			// no embedded-cluster dir, nothing to do
