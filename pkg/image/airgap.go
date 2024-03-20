@@ -180,7 +180,7 @@ func TagAndPushImagesFromBundle(airgapBundle string, options imagetypes.PushImag
 
 		pushEmbeddedArtifactsOpts := imagetypes.PushEmbeddedArtifactsOptions{
 			Registry:   options.Registry,
-			Tag:        fmt.Sprintf("%s-%s", airgap.Spec.ChannelID, airgap.Spec.UpdateCursor),
+			Tag:        airgap.Spec.VersionLabel,
 			HTTPClient: orasretry.DefaultClient,
 		}
 		if err := PushEmbeddedClusterArtifacts(extractedBundle, pushEmbeddedArtifactsOpts); err != nil {
