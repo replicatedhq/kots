@@ -80,8 +80,23 @@ type LayerInfo struct {
 	UploadEnd   time.Time
 }
 
-type PushEmbeddedArtifactsOptions struct {
+type PushEmbeddedClusterArtifactsOptions struct {
 	Registry   dockerregistrytypes.RegistryOptions
 	Tag        string
 	HTTPClient *http.Client
+}
+
+type PushOCIArtifactOptions struct {
+	Files        []OCIArtifactFile
+	ArtifactType string
+	Registry     dockerregistrytypes.RegistryOptions
+	Repository   string
+	Tag          string
+	HTTPClient   *http.Client
+}
+
+type OCIArtifactFile struct {
+	Name      string
+	Path      string
+	MediaType string
 }

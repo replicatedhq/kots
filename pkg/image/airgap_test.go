@@ -64,7 +64,7 @@ func TestPushEmbeddedClusterArtifacts(t *testing.T) {
 				t.Fatalf("Failed to parse mock server URL: %v", err)
 			}
 
-			opts := types.PushEmbeddedArtifactsOptions{
+			opts := types.PushEmbeddedClusterArtifactsOptions{
 				Registry: dockerregistrytypes.RegistryOptions{
 					Endpoint:  u.Host,
 					Namespace: "test-app",

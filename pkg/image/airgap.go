@@ -178,7 +178,7 @@ func TagAndPushImagesFromBundle(airgapBundle string, options imagetypes.PushImag
 			return errors.Wrap(err, "failed to push images from temp registry")
 		}
 
-		pushEmbeddedArtifactsOpts := imagetypes.PushEmbeddedArtifactsOptions{
+		pushEmbeddedArtifactsOpts := imagetypes.PushEmbeddedClusterArtifactsOptions{
 			Registry:   options.Registry,
 			Tag:        imageutil.SanitizeTag(fmt.Sprintf("%s-%s-%s", airgap.Spec.ChannelID, airgap.Spec.UpdateCursor, airgap.Spec.VersionLabel)),
 			HTTPClient: orasretry.DefaultClient,
@@ -700,13 +700,7 @@ func reportWriterWithProgress(imageInfos map[string]*imagetypes.ImageInfo, repor
 	return pipeWriter
 }
 
-type OCIArtifactFile struct {
-	Name      string
-	Path      string
-	MediaType string
-}
-
-func PushEmbeddedClusterArtifacts(airgapBundle string, opts imagetypes.PushEmbeddedArtifactsOptions) error {
+func PushEmbeddedClusterArtifacts(airgapBundle string, opts imagetypes.PushEmbeddedClusterArtifactsOptions) error {
 	embeddedClusterDir := filepath.Join(airgapBundle, "embedded-cluster")
 	if _, err := os.Stat(embeddedClusterDir); err != nil {
 		if os.IsNotExist(err) {
@@ -726,15 +720,25 @@ func PushEmbeddedClusterArtifacts(airgapBundle string, opts imagetypes.PushEmbed
 		}
 
 		// push each file as an oci artifact to the registry
-		repo := filepath.Join("embedded-cluster", imageutil.SanitizeRepo(info.Name()))
-		descriptor := OCIArtifactFile{
+		repository := filepath.Join("embedded-cluster", imageutil.SanitizeRepo(info.Name()))
+		artifactFile := imagetypes.OCIArtifactFile{
 			Name:      info.Name(),
 			Path:      path,
 			MediaType: EmbeddedClusterMediaType,
 		}
-		fmt.Printf("Pushing embedded-cluster artifact %s:%s\n", filepath.Join(opts.Registry.Endpoint, opts.Registry.Namespace, repo), opts.Tag)
-		if err := pushOCIArtifact([]OCIArtifactFile{descriptor}, EmbeddedClusterMediaType, repo, opts); err != nil {
-			return errors.Wrapf(err, "failed to push embedded-cluster artifact %s", info.Name())
+
+		pushOCIArtifactOpts := imagetypes.PushOCIArtifactOptions{
+			Files:        []imagetypes.OCIArtifactFile{artifactFile},
+			ArtifactType: EmbeddedClusterArtifactType,
+			Registry:     opts.Registry,
+			Repository:   repository,
+			Tag:          opts.Tag,
+			HTTPClient:   opts.HTTPClient,
+		}
+
+		fmt.Printf("Pushing artifact %s:%s\n", filepath.Join(opts.Registry.Endpoint, opts.Registry.Namespace, repository), opts.Tag)
+		if err := pushOCIArtifact(pushOCIArtifactOpts); err != nil {
+			return errors.Wrapf(err, "failed to push oci artifact %s", info.Name())
 		}
 
 		return nil
@@ -746,7 +750,7 @@ func PushEmbeddedClusterArtifacts(airgapBundle string, opts imagetypes.PushEmbed
 	return nil
 }
 
-func pushOCIArtifact(files []OCIArtifactFile, artifactType string, repo string, opts imagetypes.PushEmbeddedArtifactsOptions) error {
+func pushOCIArtifact(opts imagetypes.PushOCIArtifactOptions) error {
 	orasWorkspace, err := os.MkdirTemp("", "oras")
 	if err != nil {
 		return errors.Wrap(err, "failed to create temp directory")
@@ -760,7 +764,7 @@ func pushOCIArtifact(files []OCIArtifactFile, artifactType string, repo string, 
 	defer orasFS.Close()
 
 	fileDescriptors := make([]imagespecsv1.Descriptor, 0)
-	for _, f := range files {
+	for _, f := range opts.Files {
 		fileDescriptor, err := orasFS.Add(context.TODO(), f.Name, f.MediaType, f.Path)
 		if err != nil {
 			return errors.Wrapf(err, "failed to add file %s to oras file store", f.Name)
@@ -771,7 +775,7 @@ func pushOCIArtifact(files []OCIArtifactFile, artifactType string, repo string, 
 	packOpts := oras.PackManifestOptions{
 		Layers: fileDescriptors,
 	}
-	manifestDescriptor, err := oras.PackManifest(context.TODO(), orasFS, oras.PackManifestVersion1_1_RC4, artifactType, packOpts)
+	manifestDescriptor, err := oras.PackManifest(context.TODO(), orasFS, oras.PackManifestVersion1_1_RC4, opts.ArtifactType, packOpts)
 	if err != nil {
 		return errors.Wrap(err, "failed to pack manifest")
 	}
@@ -780,7 +784,7 @@ func pushOCIArtifact(files []OCIArtifactFile, artifactType string, repo string, 
 		return errors.Wrap(err, "failed to tag manifest")
 	}
 
-	repository, err := orasremote.NewRepository(filepath.Join(opts.Registry.Endpoint, opts.Registry.Namespace, repo))
+	repository, err := orasremote.NewRepository(filepath.Join(opts.Registry.Endpoint, opts.Registry.Namespace, opts.Repository))
 	if err != nil {
 		return errors.Wrap(err, "failed to create remote repository")
 	}
