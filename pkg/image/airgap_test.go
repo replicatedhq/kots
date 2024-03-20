@@ -20,13 +20,13 @@ func TestPushEmbeddedClusterArtifacts(t *testing.T) {
 	tests := []struct {
 		name                 string
 		embeddedClusterFiles map[string][]byte
-		wantArtifacts        map[string]bool
+		wantArtifacts        map[string]string
 		wantErr              bool
 	}{
 		{
 			name:                 "no embedded cluster files",
 			embeddedClusterFiles: map[string][]byte{},
-			wantArtifacts:        map[string]bool{},
+			wantArtifacts:        map[string]string{},
 			wantErr:              false,
 		},
 		{
@@ -35,11 +35,13 @@ func TestPushEmbeddedClusterArtifacts(t *testing.T) {
 				"test-app":         []byte("this-is-the-binary"),
 				"charts.tar.gz":    []byte("this-is-the-charts-bundle"),
 				"images-amd64.tar": []byte("this-is-the-images-bundle"),
+				"some-file-TBD":    []byte("this-is-an-arbitrary-file"),
 			},
-			wantArtifacts: map[string]bool{
-				"binary": true,
-				"charts": true,
-				"images": true,
+			wantArtifacts: map[string]string{
+				"test-app":         "test-tag",
+				"charts.tar.gz":    "test-tag",
+				"images-amd64.tar": "test-tag",
+				"some-file-tbd":    "test-tag",
 			},
 			wantErr: false,
 		},
@@ -53,7 +55,7 @@ func TestPushEmbeddedClusterArtifacts(t *testing.T) {
 				t.Fatalf("Failed to create airgap bundle: %v", err)
 			}
 
-			pushedArtifacts := make(map[string]bool)
+			pushedArtifacts := make(map[string]string)
 			mockRegistryServer := newMockRegistryServer(pushedArtifacts)
 			defer mockRegistryServer.Close()
 
@@ -67,7 +69,7 @@ func TestPushEmbeddedClusterArtifacts(t *testing.T) {
 					Endpoint:  u.Host,
 					Namespace: "test-app",
 				},
-				Tag:        "v1",
+				Tag:        "test-tag",
 				HTTPClient: mockRegistryServer.Client(),
 			}
 			if err := PushEmbeddedClusterArtifacts(airgapBundle, opts); (err != nil) != tt.wantErr {
@@ -81,7 +83,7 @@ func TestPushEmbeddedClusterArtifacts(t *testing.T) {
 			}
 
 			// validate that each of the expected artifacts were pushed to the registry
-			req.Equal(pushedArtifacts, tt.wantArtifacts)
+			req.Equal(tt.wantArtifacts, pushedArtifacts)
 		})
 	}
 }
@@ -109,18 +111,19 @@ func createTestAirgapBundle(airgapBundle string, embeddedClusterFiles map[string
 	return nil
 }
 
-func newMockRegistryServer(pushedArtifacts map[string]bool) *httptest.Server {
+func newMockRegistryServer(pushedArtifacts map[string]string) *httptest.Server {
 	return httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		blobsRegex := regexp.MustCompile(`/v2/test-app/embedded-cluster/([^/]+)/blobs/(.*)`)
 		manifestsRegex := regexp.MustCompile(`/v2/test-app/embedded-cluster/([^/]+)/manifests/(.*)`)
 
 		switch {
 		case r.Method == http.MethodHead && blobsRegex.MatchString(r.URL.Path):
-			w.Header().Set("Content-Length", "0")
+			w.Header().Set("Content-Length", "123")
 			w.WriteHeader(http.StatusOK)
 		case r.Method == http.MethodPut && manifestsRegex.MatchString(r.URL.Path):
-			artifact := manifestsRegex.FindStringSubmatch(r.URL.Path)[1] // binary, charts, or images
-			pushedArtifacts[artifact] = true
+			repo := manifestsRegex.FindStringSubmatch(r.URL.Path)[1]
+			tag := manifestsRegex.FindStringSubmatch(r.URL.Path)[2]
+			pushedArtifacts[repo] = tag
 			w.WriteHeader(http.StatusCreated)
 		default:
 			w.WriteHeader(http.StatusNotFound)

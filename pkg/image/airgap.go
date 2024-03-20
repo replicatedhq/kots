@@ -180,7 +180,7 @@ func TagAndPushImagesFromBundle(airgapBundle string, options imagetypes.PushImag
 
 		pushEmbeddedArtifactsOpts := imagetypes.PushEmbeddedArtifactsOptions{
 			Registry:   options.Registry,
-			Tag:        airgap.Spec.VersionLabel,
+			Tag:        imageutil.SanitizeTag(fmt.Sprintf("%s-%s-%s", airgap.Spec.ChannelID, airgap.Spec.UpdateCursor, airgap.Spec.VersionLabel)),
 			HTTPClient: orasretry.DefaultClient,
 		}
 		if err := PushEmbeddedClusterArtifacts(extractedBundle, pushEmbeddedArtifactsOpts); err != nil {
@@ -725,15 +725,8 @@ func PushEmbeddedClusterArtifacts(airgapBundle string, opts imagetypes.PushEmbed
 			return nil
 		}
 
-		repo := "binary"
-		if info.Name() == "charts.tar.gz" {
-			repo = "charts"
-		} else if info.Name() == "images-amd64.tar" {
-			repo = "images"
-		}
-		repo = filepath.Join("embedded-cluster", repo)
-
 		// push each file as an oci artifact to the registry
+		repo := filepath.Join("embedded-cluster", imageutil.SanitizeRepo(info.Name()))
 		descriptor := OCIArtifactFile{
 			Name:      info.Name(),
 			Path:      path,
