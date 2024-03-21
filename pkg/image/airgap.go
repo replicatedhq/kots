@@ -158,41 +158,44 @@ func TagAndPushImagesFromBundle(airgapBundle string, options imagetypes.PushImag
 		return errors.Wrap(err, "failed to find airgap meta")
 	}
 
+	extractedBundle, err := os.MkdirTemp("", "extracted-airgap-kots")
+	if err != nil {
+		return errors.Wrap(err, "failed to create temp dir for unarchived airgap bundle")
+	}
+	defer os.RemoveAll(extractedBundle)
+
+	tarGz := archiver.TarGz{
+		Tar: &archiver.Tar{
+			ImplicitTopLevelFolder: false,
+		},
+	}
+	if err := tarGz.Unarchive(airgapBundle, extractedBundle); err != nil {
+		return errors.Wrap(err, "falied to unarchive airgap bundle")
+	}
+
 	switch airgap.Spec.Format {
 	case dockertypes.FormatDockerRegistry:
-		extractedBundle, err := os.MkdirTemp("", "extracted-airgap-kots")
-		if err != nil {
-			return errors.Wrap(err, "failed to create temp dir for unarchived airgap bundle")
-		}
-		defer os.RemoveAll(extractedBundle)
-
-		tarGz := archiver.TarGz{
-			Tar: &archiver.Tar{
-				ImplicitTopLevelFolder: false,
-			},
-		}
-		if err := tarGz.Unarchive(airgapBundle, extractedBundle); err != nil {
-			return errors.Wrap(err, "falied to unarchive airgap bundle")
-		}
 		if err := PushImagesFromTempRegistry(extractedBundle, airgap.Spec.SavedImages, options); err != nil {
-			return errors.Wrap(err, "failed to push images from temp registry")
+			return errors.Wrap(err, "failed to push images from docker registry bundle")
 		}
-
-		pushEmbeddedArtifactsOpts := imagetypes.PushEmbeddedClusterArtifactsOptions{
-			Registry:   options.Registry,
-			Tag:        imageutil.SanitizeTag(fmt.Sprintf("%s-%s-%s", airgap.Spec.ChannelID, airgap.Spec.UpdateCursor, airgap.Spec.VersionLabel)),
-			HTTPClient: orasretry.DefaultClient,
-		}
-		if err := PushEmbeddedClusterArtifacts(extractedBundle, pushEmbeddedArtifactsOpts); err != nil {
-			return errors.Wrap(err, "failed to push embedded cluster artifacts")
-		}
-
-		return nil
 	case dockertypes.FormatDockerArchive, "":
-		return PushImagesFromDockerArchiveBundle(airgapBundle, options)
+		if err := PushImagesFromDockerArchiveBundle(airgapBundle, options); err != nil {
+			return errors.Wrap(err, "failed to push images from docker archive bundle")
+		}
 	default:
 		return errors.Errorf("Airgap bundle format '%s' is not supported", airgap.Spec.Format)
 	}
+
+	pushEmbeddedArtifactsOpts := imagetypes.PushEmbeddedClusterArtifactsOptions{
+		Registry:   options.Registry,
+		Tag:        imageutil.SanitizeTag(fmt.Sprintf("%s-%s-%s", airgap.Spec.ChannelID, airgap.Spec.UpdateCursor, airgap.Spec.VersionLabel)),
+		HTTPClient: orasretry.DefaultClient,
+	}
+	if err := PushEmbeddedClusterArtifacts(extractedBundle, pushEmbeddedArtifactsOpts); err != nil {
+		return errors.Wrap(err, "failed to push embedded cluster artifacts")
+	}
+
+	return nil
 }
 
 func PushImagesFromTempRegistry(airgapRootDir string, imageList []string, options imagetypes.PushImagesOptions) error {
