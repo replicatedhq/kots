@@ -731,7 +731,7 @@ func PushEmbeddedClusterArtifacts(airgapBundle string, opts imagetypes.PushEmbed
 			return errors.Wrap(err, "failed to get read archive")
 		}
 
-		if header.Typeflag == tar.TypeDir {
+		if header.Typeflag != tar.TypeReg {
 			continue
 		}
 
