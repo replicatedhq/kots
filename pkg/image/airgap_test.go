@@ -1,7 +1,8 @@
 package image
 
 import (
-	"fmt"
+	"archive/tar"
+	"compress/gzip"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -10,7 +11,6 @@ import (
 	"regexp"
 	"testing"
 
-	"github.com/pkg/errors"
 	dockerregistrytypes "github.com/replicatedhq/kots/pkg/docker/registry/types"
 	"github.com/replicatedhq/kots/pkg/image/types"
 	"github.com/stretchr/testify/require"
@@ -18,24 +18,31 @@ import (
 
 func TestPushEmbeddedClusterArtifacts(t *testing.T) {
 	tests := []struct {
-		name                 string
-		embeddedClusterFiles map[string][]byte
-		wantArtifacts        map[string]string
-		wantErr              bool
+		name          string
+		airgapFiles   map[string][]byte
+		wantArtifacts map[string]string
+		wantErr       bool
 	}{
 		{
-			name:                 "no embedded cluster files",
-			embeddedClusterFiles: map[string][]byte{},
-			wantArtifacts:        map[string]string{},
-			wantErr:              false,
+			name: "no embedded cluster files",
+			airgapFiles: map[string][]byte{
+				"airgap.yaml":      []byte("this-is-the-airgap-metadata"),
+				"app.tar.gz":       []byte("this-is-the-app-archive"),
+				"images/something": []byte("this-is-an-image"),
+			},
+			wantArtifacts: map[string]string{},
+			wantErr:       false,
 		},
 		{
 			name: "has embedded cluster files",
-			embeddedClusterFiles: map[string][]byte{
-				"test-app":         []byte("this-is-the-binary"),
-				"charts.tar.gz":    []byte("this-is-the-charts-bundle"),
-				"images-amd64.tar": []byte("this-is-the-images-bundle"),
-				"some-file-TBD":    []byte("this-is-an-arbitrary-file"),
+			airgapFiles: map[string][]byte{
+				"airgap.yaml":                       []byte("this-is-the-airgap-metadata"),
+				"app.tar.gz":                        []byte("this-is-the-app-archive"),
+				"images/something":                  []byte("this-is-an-image"),
+				"embedded-cluster/test-app":         []byte("this-is-the-binary"),
+				"embedded-cluster/charts.tar.gz":    []byte("this-is-the-charts-bundle"),
+				"embedded-cluster/images-amd64.tar": []byte("this-is-the-images-bundle"),
+				"embedded-cluster/some-file-TBD":    []byte("this-is-an-arbitrary-file"),
 			},
 			wantArtifacts: map[string]string{
 				"test-app":         "test-tag",
@@ -49,9 +56,8 @@ func TestPushEmbeddedClusterArtifacts(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			req := require.New(t)
-			tmp := t.TempDir()
-			airgapBundle := fmt.Sprintf("%s/airgap-bundle", tmp)
-			if err := createTestAirgapBundle(airgapBundle, tt.embeddedClusterFiles); err != nil {
+			airgapBundle := filepath.Join(t.TempDir(), "application.airgap")
+			if err := createTestAirgapBundle(tt.airgapFiles, airgapBundle); err != nil {
 				t.Fatalf("Failed to create airgap bundle: %v", err)
 			}
 
@@ -88,23 +94,28 @@ func TestPushEmbeddedClusterArtifacts(t *testing.T) {
 	}
 }
 
-func createTestAirgapBundle(airgapBundle string, embeddedClusterFiles map[string][]byte) error {
-	if err := os.MkdirAll(airgapBundle, 0755); err != nil {
-		return errors.Wrap(err, "failed to create airgap bundle directory")
+func createTestAirgapBundle(airgapFiles map[string][]byte, dstPath string) error {
+	dstFile, err := os.Create(dstPath)
+	if err != nil {
+		return err
 	}
+	defer dstFile.Close()
 
-	if len(embeddedClusterFiles) == 0 {
-		return nil
-	}
+	gzipWriter := gzip.NewWriter(dstFile)
+	defer gzipWriter.Close()
+	tarWriter := tar.NewWriter(gzipWriter)
+	defer tarWriter.Close()
 
-	embeddedClusterDir := filepath.Join(airgapBundle, "embedded-cluster")
-	if err := os.MkdirAll(embeddedClusterDir, 0755); err != nil {
-		return errors.Wrap(err, "failed to create embedded-cluster directory")
-	}
-
-	for name, data := range embeddedClusterFiles {
-		if err := os.WriteFile(filepath.Join(embeddedClusterDir, name), data, 0644); err != nil {
-			return errors.Wrap(err, "failed to write file")
+	for name, data := range airgapFiles {
+		header := &tar.Header{
+			Name: name,
+			Size: int64(len(data)),
+		}
+		if err := tarWriter.WriteHeader(header); err != nil {
+			return err
+		}
+		if _, err := tarWriter.Write(data); err != nil {
+			return err
 		}
 	}
 

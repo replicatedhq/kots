@@ -158,23 +158,22 @@ func TagAndPushImagesFromBundle(airgapBundle string, options imagetypes.PushImag
 		return errors.Wrap(err, "failed to find airgap meta")
 	}
 
-	extractedBundle, err := os.MkdirTemp("", "extracted-airgap-kots")
-	if err != nil {
-		return errors.Wrap(err, "failed to create temp dir for unarchived airgap bundle")
-	}
-	defer os.RemoveAll(extractedBundle)
-
-	tarGz := archiver.TarGz{
-		Tar: &archiver.Tar{
-			ImplicitTopLevelFolder: false,
-		},
-	}
-	if err := tarGz.Unarchive(airgapBundle, extractedBundle); err != nil {
-		return errors.Wrap(err, "falied to unarchive airgap bundle")
-	}
-
 	switch airgap.Spec.Format {
 	case dockertypes.FormatDockerRegistry:
+		extractedBundle, err := os.MkdirTemp("", "extracted-airgap-kots")
+		if err != nil {
+			return errors.Wrap(err, "failed to create temp dir for unarchived airgap bundle")
+		}
+		defer os.RemoveAll(extractedBundle)
+
+		tarGz := archiver.TarGz{
+			Tar: &archiver.Tar{
+				ImplicitTopLevelFolder: false,
+			},
+		}
+		if err := tarGz.Unarchive(airgapBundle, extractedBundle); err != nil {
+			return errors.Wrap(err, "falied to unarchive airgap bundle")
+		}
 		if err := PushImagesFromTempRegistry(extractedBundle, airgap.Spec.SavedImages, options); err != nil {
 			return errors.Wrap(err, "failed to push images from docker registry bundle")
 		}
@@ -191,7 +190,7 @@ func TagAndPushImagesFromBundle(airgapBundle string, options imagetypes.PushImag
 		Tag:        imageutil.SanitizeTag(fmt.Sprintf("%s-%s-%s", airgap.Spec.ChannelID, airgap.Spec.UpdateCursor, airgap.Spec.VersionLabel)),
 		HTTPClient: orasretry.DefaultClient,
 	}
-	if err := PushEmbeddedClusterArtifacts(extractedBundle, pushEmbeddedArtifactsOpts); err != nil {
+	if err := PushEmbeddedClusterArtifacts(airgapBundle, pushEmbeddedArtifactsOpts); err != nil {
 		return errors.Wrap(err, "failed to push embedded cluster artifacts")
 	}
 
@@ -703,51 +702,87 @@ func reportWriterWithProgress(imageInfos map[string]*imagetypes.ImageInfo, repor
 	return pipeWriter
 }
 
-func PushEmbeddedClusterArtifacts(airgapRootDir string, opts imagetypes.PushEmbeddedClusterArtifactsOptions) error {
-	embeddedClusterDir := filepath.Join(airgapRootDir, "embedded-cluster")
-	if _, err := os.Stat(embeddedClusterDir); err != nil {
-		if os.IsNotExist(err) {
-			// no embedded-cluster dir, nothing to do
-			return nil
-		}
-		return errors.Wrap(err, "failed to stat embedded-cluster dir")
+func PushEmbeddedClusterArtifacts(airgapBundle string, opts imagetypes.PushEmbeddedClusterArtifactsOptions) error {
+	tmpDir, err := os.MkdirTemp("", "embedded-cluster-artifacts")
+	if err != nil {
+		return errors.Wrap(err, "failed to create temp directory")
 	}
+	defer os.RemoveAll(tmpDir)
 
-	err := filepath.Walk(embeddedClusterDir, func(path string, info os.FileInfo, err error) error {
+	fileReader, err := os.Open(airgapBundle)
+	if err != nil {
+		return errors.Wrap(err, "failed to open file")
+	}
+	defer fileReader.Close()
+
+	gzipReader, err := gzip.NewReader(fileReader)
+	if err != nil {
+		return errors.Wrap(err, "failed to get new gzip reader")
+	}
+	defer gzipReader.Close()
+
+	tarReader := tar.NewReader(gzipReader)
+	for {
+		header, err := tarReader.Next()
+		if err == io.EOF {
+			break
+		}
 		if err != nil {
+			return errors.Wrap(err, "failed to get read archive")
+		}
+
+		if header.Typeflag == tar.TypeDir {
+			continue
+		}
+
+		if filepath.Dir(header.Name) != "embedded-cluster" {
+			continue
+		}
+
+		if err := func() error {
+			dstFilePath := filepath.Join(tmpDir, header.Name)
+			if err := os.MkdirAll(filepath.Dir(dstFilePath), 0755); err != nil {
+				return errors.Wrap(err, "failed to create path")
+			}
+			defer os.RemoveAll(dstFilePath)
+
+			dstFile, err := os.Create(dstFilePath)
+			if err != nil {
+				return errors.Wrap(err, "failed to create file")
+			}
+			defer dstFile.Close()
+
+			if _, err := io.Copy(dstFile, tarReader); err != nil {
+				return errors.Wrap(err, "failed to copy file data")
+			}
+
+			// push each file as an oci artifact to the registry
+			name := filepath.Base(dstFilePath)
+			repository := filepath.Join("embedded-cluster", imageutil.SanitizeRepo(name))
+			artifactFile := imagetypes.OCIArtifactFile{
+				Name:      name,
+				Path:      dstFilePath,
+				MediaType: EmbeddedClusterMediaType,
+			}
+
+			pushOCIArtifactOpts := imagetypes.PushOCIArtifactOptions{
+				Files:        []imagetypes.OCIArtifactFile{artifactFile},
+				ArtifactType: EmbeddedClusterArtifactType,
+				Registry:     opts.Registry,
+				Repository:   repository,
+				Tag:          opts.Tag,
+				HTTPClient:   opts.HTTPClient,
+			}
+
+			fmt.Printf("Pushing artifact %s:%s\n", filepath.Join(opts.Registry.Endpoint, opts.Registry.Namespace, repository), opts.Tag)
+			if err := pushOCIArtifact(pushOCIArtifactOpts); err != nil {
+				return errors.Wrapf(err, "failed to push oci artifact %s", name)
+			}
+
+			return nil
+		}(); err != nil {
 			return err
 		}
-
-		if !info.Mode().IsRegular() {
-			return nil
-		}
-
-		// push each file as an oci artifact to the registry
-		repository := filepath.Join("embedded-cluster", imageutil.SanitizeRepo(info.Name()))
-		artifactFile := imagetypes.OCIArtifactFile{
-			Name:      info.Name(),
-			Path:      path,
-			MediaType: EmbeddedClusterMediaType,
-		}
-
-		pushOCIArtifactOpts := imagetypes.PushOCIArtifactOptions{
-			Files:        []imagetypes.OCIArtifactFile{artifactFile},
-			ArtifactType: EmbeddedClusterArtifactType,
-			Registry:     opts.Registry,
-			Repository:   repository,
-			Tag:          opts.Tag,
-			HTTPClient:   opts.HTTPClient,
-		}
-
-		fmt.Printf("Pushing artifact %s:%s\n", filepath.Join(opts.Registry.Endpoint, opts.Registry.Namespace, repository), opts.Tag)
-		if err := pushOCIArtifact(pushOCIArtifactOpts); err != nil {
-			return errors.Wrapf(err, "failed to push oci artifact %s", info.Name())
-		}
-
-		return nil
-	})
-	if err != nil {
-		return errors.Wrap(err, "failed to walk embedded-cluster dir")
 	}
 
 	return nil
