@@ -7660,8 +7660,8 @@ async function getClusterVersions() {
             instance_type: "m7g.large" // arm64
         },
         openshift: {
-            // filtering out all versions except 4.14.0-okd for now per sc-90893
-            versions: new Set(["4.14.0-okd"])
+            // filtering out all versions except 4.15.0-okd for now per sc-90893
+            versions: new Set(["4.15.0-okd"])
         }
     }
 
@@ -7691,12 +7691,17 @@ async function getClusterVersions() {
             instanceType = filters[distroName].instance_type;
         }
 
+        let nodes = '1';
+        if (distroName === 'openshift') {
+            nodes = '2';
+        }
+
         if (filters[distroName].versions !== undefined) {
             // specific versions
             const filterVersions = filters[distroName].versions;
             distribution.versions.forEach((version) => {
                 if (filterVersions.has(version)) {
-                    versionsToTest.push({ distribution: distroName, version, instance_type: instanceType, stage });
+                    versionsToTest.push({ distribution: distroName, version, instance_type: instanceType, stage, nodes: nodes });
                 }
             });
         }
@@ -7704,14 +7709,14 @@ async function getClusterVersions() {
         if (!!filters[distroName].latest_version) {
             // latest version
             const latestVersion = getLatestVersion(distribution);
-            versionsToTest.push({ distribution: distroName, version: latestVersion, instance_type: instanceType, stage });
+            versionsToTest.push({ distribution: distroName, version: latestVersion, instance_type: instanceType, stage, nodes: nodes });
         }
 
         if (!!filters[distroName].latest_minor_versions) {
             // latest minor versions
             const latestMinorVersions = getLatestMinorVersions(distribution);
             Object.keys(latestMinorVersions).forEach((minorVersion) => {
-                versionsToTest.push({ distribution: distroName, version: latestMinorVersions[minorVersion], instance_type: instanceType, stage });
+                versionsToTest.push({ distribution: distroName, version: latestMinorVersions[minorVersion], instance_type: instanceType, stage, nodes: nodes });
             });
         }
     });

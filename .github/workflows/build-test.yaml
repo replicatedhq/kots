@@ -635,6 +635,7 @@ jobs:
           k8s-distribution: ${{ matrix.cluster.distribution }}
           k8s-version: ${{ matrix.cluster.version }}
           k8s-instance-type: ${{ matrix.cluster.instance_type }}
+          k8s-nodes: ${{ matrix.cluster.nodes }}
           testim-access-token: '${{ secrets.TESTIM_ACCESS_TOKEN }}'
           testim-branch: ${{ github.head_ref == 'main' && 'master' || github.head_ref }}
           aws-access-key-id: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_ACCESS_KEY_ID }}'
@@ -651,8 +652,8 @@ jobs:
       fail-fast: false
       matrix:
         cluster: [
-          {distribution: kind, version: v1.28.0},
-          {distribution: openshift, version: 4.14.0-okd}
+          {distribution: kind, version: v1.28.0, nodes: 1},
+          {distribution: openshift, version: 4.15.0-okd, nodes: 2}
         ]
     env:
       APP_SLUG: minimal-rbac
@@ -667,6 +668,7 @@ jobs:
           api-token: ${{ secrets.C11Y_MATRIX_TOKEN }}
           kubernetes-distribution: ${{ matrix.cluster.distribution }}
           kubernetes-version: ${{ matrix.cluster.version }}
+          nodes: ${{ matrix.cluster.nodes || 1 }}
           cluster-name: automated-kots-${{ github.run_id }}-${{ matrix.cluster.distribution }}-${{ matrix.cluster.version }}
           timeout-minutes: '120'
           ttl: 2h
@@ -787,6 +789,7 @@ jobs:
           k8s-distribution: ${{ matrix.cluster.distribution }}
           k8s-version: ${{ matrix.cluster.version }}
           k8s-instance-type: ${{ matrix.cluster.instance_type }}
+          k8s-nodes: ${{ matrix.cluster.nodes }}
           testim-access-token: '${{ secrets.TESTIM_ACCESS_TOKEN }}'
           testim-branch: ${{ github.head_ref == 'main' && 'master' || github.head_ref }}
           aws-access-key-id: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_ACCESS_KEY_ID }}'
@@ -803,7 +806,7 @@ jobs:
       fail-fast: false
       matrix:
         cluster: [
-          {distribution: kind, version: v1.28.0}
+          {distribution: kind, version: v1.28.0, nodes: 1}
         ]
     steps:
       - name: Checkout
@@ -843,7 +846,7 @@ jobs:
       fail-fast: false
       matrix:
         cluster: [
-          {distribution: kind, version: v1.28.0}
+          {distribution: kind, version: v1.28.0, nodes: 1}
         ]
     env:
       APP_SLUG: strict-preflight-checks
@@ -858,6 +861,7 @@ jobs:
           api-token: ${{ secrets.C11Y_MATRIX_TOKEN }}
           kubernetes-distribution: ${{ matrix.cluster.distribution }}
           kubernetes-version: ${{ matrix.cluster.version }}
+          nodes: ${{ matrix.cluster.nodes || 1 }}
           cluster-name: automated-kots-${{ github.run_id }}-${{ matrix.cluster.distribution }}-${{ matrix.cluster.version }}
           timeout-minutes: '120'
           ttl: 2h
@@ -952,7 +956,7 @@ jobs:
       fail-fast: false
       matrix:
         cluster: [
-          {distribution: kind, version: v1.28.0}
+          {distribution: kind, version: v1.28.0, nodes: 1}
         ]
     steps:
       - name: Checkout
@@ -992,7 +996,7 @@ jobs:
       fail-fast: false
       matrix:
         cluster: [
-          {distribution: k3s-local, version: v1.27.1-k3s1}
+          {distribution: k3s-local, version: v1.27.1-k3s1, nodes: 1}
         ]
     steps:
       - name: Checkout
@@ -1031,7 +1035,7 @@ jobs:
       fail-fast: false
       matrix:
         cluster: [
-          {distribution: kind, version: v1.28.0}
+          {distribution: kind, version: v1.28.0, nodes: 1}
         ]
     steps:
       - name: Checkout
@@ -1071,8 +1075,8 @@ jobs:
       fail-fast: false
       matrix:
         cluster: [
-          {distribution: kind, version: v1.28.0},
-          {distribution: openshift, version: 4.14.0-okd}
+          {distribution: kind, version: v1.28.0, nodes: 1},
+          {distribution: openshift, version: 4.15.0-okd, nodes: 2}
         ]
     env:
       APP_SLUG: minimal-rbac
@@ -1088,6 +1092,7 @@ jobs:
           api-token: ${{ secrets.C11Y_MATRIX_TOKEN }}
           kubernetes-distribution: ${{ matrix.cluster.distribution }}
           kubernetes-version: ${{ matrix.cluster.version }}
+          nodes: ${{ matrix.cluster.nodes || 1 }}
           cluster-name: automated-kots-${{ github.run_id }}-${{ matrix.cluster.distribution }}-${{ matrix.cluster.version }}
           timeout-minutes: '120'
           ttl: 2h
@@ -1264,6 +1269,7 @@ jobs:
           api-token: ${{ secrets.C11Y_MATRIX_TOKEN }}
           kubernetes-distribution: ${{ matrix.cluster.distribution }}
           kubernetes-version: ${{ matrix.cluster.version }}
+          nodes: ${{ matrix.cluster.nodes || 1 }}
           cluster-name: automated-kots-${{ github.run_id }}-${{ matrix.cluster.distribution }}-${{ matrix.cluster.version }}
           timeout-minutes: '120'
           ttl: 2h
@@ -1373,6 +1379,7 @@ jobs:
           api-token: ${{ secrets.C11Y_MATRIX_TOKEN }}
           kubernetes-distribution: ${{ matrix.cluster.distribution }}
           kubernetes-version: ${{ matrix.cluster.version }}
+          nodes: ${{ matrix.cluster.nodes || 1 }}
           cluster-name: automated-kots-${{ github.run_id }}-${{ matrix.cluster.distribution }}-${{ matrix.cluster.version }}
           timeout-minutes: '120'
           ttl: 2h
@@ -1468,7 +1475,7 @@ jobs:
       fail-fast: false
       matrix:
         cluster: [
-          {distribution: kind, version: v1.28.0}
+          {distribution: kind, version: v1.28.0, nodes: 1}
         ] 
     env:
       APP_SLUG: app-version-label
@@ -1485,6 +1492,7 @@ jobs:
           api-token: ${{ secrets.C11Y_MATRIX_TOKEN }}
           kubernetes-distribution: ${{ matrix.cluster.distribution }}
           kubernetes-version: ${{ matrix.cluster.version }}
+          nodes: ${{ matrix.cluster.nodes || 1 }}
           cluster-name: automated-kots-${{ github.run_id }}-${{ matrix.cluster.distribution }}-${{ matrix.cluster.version }}
           timeout-minutes: '120'
           ttl: 2h
@@ -1626,7 +1634,7 @@ jobs:
       fail-fast: false
       matrix:
         cluster: [
-          {distribution: kind, version: v1.28.0}
+          {distribution: kind, version: v1.28.0, nodes: 1}
         ]
     env:
       APP_SLUG: helm-install-order
@@ -1641,6 +1649,7 @@ jobs:
           api-token: ${{ secrets.C11Y_MATRIX_TOKEN }}
           kubernetes-distribution: ${{ matrix.cluster.distribution }}
           kubernetes-version: ${{ matrix.cluster.version }}
+          nodes: ${{ matrix.cluster.nodes || 1 }}
           cluster-name: automated-kots-${{ github.run_id }}-${{ matrix.cluster.distribution }}-${{ matrix.cluster.version }}
           timeout-minutes: '120'
           ttl: 2h
@@ -1724,7 +1733,7 @@ jobs:
       fail-fast: false
       matrix:
         cluster: [
-          {distribution: kind, version: v1.28.0}
+          {distribution: kind, version: v1.28.0, nodes: 1}
         ] 
     env:
       APP_SLUG: no-redeploy-on-restart
@@ -1739,6 +1748,7 @@ jobs:
           api-token: ${{ secrets.C11Y_MATRIX_TOKEN }}
           kubernetes-distribution: ${{ matrix.cluster.distribution }}
           kubernetes-version: ${{ matrix.cluster.version }}
+          nodes: ${{ matrix.cluster.nodes || 1 }}
           cluster-name: automated-kots-${{ github.run_id }}-${{ matrix.cluster.distribution }}-${{ matrix.cluster.version }}
           timeout-minutes: '120'
           ttl: 2h
@@ -1846,7 +1856,7 @@ jobs:
       fail-fast: false
       matrix:
         cluster: [
-          {distribution: kind, version: v1.28.0}
+          {distribution: kind, version: v1.28.0, nodes: 1}
         ] 
     env:
       APP_SLUG: kubernetes-installer-preflight
@@ -1860,6 +1870,7 @@ jobs:
           api-token: ${{ secrets.C11Y_MATRIX_TOKEN }}
           kubernetes-distribution: ${{ matrix.cluster.distribution }}
           kubernetes-version: ${{ matrix.cluster.version }}
+          nodes: ${{ matrix.cluster.nodes || 1 }}
           cluster-name: automated-kots-${{ github.run_id }}-${{ matrix.cluster.distribution }}-${{ matrix.cluster.version }}
           timeout-minutes: '120'
           ttl: 2h
@@ -2004,7 +2015,7 @@ jobs:
       fail-fast: false
       matrix:
         cluster: [
-          {distribution: kind, version: v1.28.0}
+          {distribution: kind, version: v1.28.0, nodes: 1}
         ] 
     env:
       APP_SLUG: minimal-rbac
@@ -2049,6 +2060,7 @@ jobs:
           api-token: ${{ secrets.C11Y_MATRIX_TOKEN }}
           kubernetes-distribution: ${{ matrix.cluster.distribution }}
           kubernetes-version: ${{ matrix.cluster.version }}
+          nodes: ${{ matrix.cluster.nodes || 1 }}
           cluster-name: automated-kots-${{ github.run_id }}-${{ matrix.cluster.distribution }}-${{ matrix.cluster.version }}
           timeout-minutes: '120'
           ttl: 2h
@@ -2421,6 +2433,7 @@ jobs:
           api-token: ${{ secrets.C11Y_MATRIX_TOKEN }}
           kubernetes-distribution: ${{ matrix.cluster.distribution }}
           kubernetes-version: ${{ matrix.cluster.version }}
+          nodes: ${{ matrix.cluster.nodes || 1 }}
           cluster-name: automated-kots-${{ github.run_id }}-${{ matrix.cluster.distribution }}-${{ matrix.cluster.version }}
           timeout-minutes: '120'
           ttl: 2h
@@ -2545,7 +2558,7 @@ jobs:
       fail-fast: false
       matrix:
         cluster: [
-          {distribution: kind, version: v1.28.0}
+          {distribution: kind, version: v1.28.0, nodes: 1}
         ] 
     env:
       APP_SLUG: helm-release-secret-migration
@@ -2563,6 +2576,7 @@ jobs:
           api-token: ${{ secrets.C11Y_MATRIX_TOKEN }}
           kubernetes-distribution: ${{ matrix.cluster.distribution }}
           kubernetes-version: ${{ matrix.cluster.version }}
+          nodes: ${{ matrix.cluster.nodes || 1 }}
           cluster-name: automated-kots-${{ github.run_id }}-${{ matrix.cluster.distribution }}-${{ matrix.cluster.version }}
           timeout-minutes: '120'
           ttl: 2h
@@ -2732,7 +2746,7 @@ jobs:
       fail-fast: false
       matrix:
         cluster: [
-          {distribution: kind, version: v1.28.0}
+          {distribution: kind, version: v1.28.0, nodes: 1}
         ]
     steps:
       - name: Checkout
@@ -2772,7 +2786,7 @@ jobs:
       fail-fast: false
       matrix:
         cluster: [
-          {distribution: kind, version: v1.28.0}
+          {distribution: kind, version: v1.28.0, nodes: 1}
         ]
     steps:
       - name: Checkout
@@ -2812,7 +2826,7 @@ jobs:
       fail-fast: false
       matrix:
         cluster: [
-          {distribution: kind, version: v1.28.0}
+          {distribution: kind, version: v1.28.0, nodes: 1}
         ]
     steps:
       - name: Checkout
@@ -2853,7 +2867,7 @@ jobs:
       fail-fast: false
       matrix:
         cluster: [
-          {distribution: kind, version: v1.28.0, instance_type: r1.medium}
+          {distribution: kind, version: v1.28.0, instance_type: r1.medium, nodes: 1}
         ]
     env:
       APP_SLUG: remove-app
@@ -2868,6 +2882,7 @@ jobs:
           api-token: ${{ secrets.C11Y_MATRIX_TOKEN }}
           kubernetes-distribution: ${{ matrix.cluster.distribution }}
           kubernetes-version: ${{ matrix.cluster.version }}
+          nodes: ${{ matrix.cluster.nodes || 1 }}
           cluster-name: automated-kots-${{ github.run_id }}-${{ matrix.cluster.distribution }}-${{ matrix.cluster.version }}
           timeout-minutes: '120'
           ttl: 2h
@@ -3032,7 +3047,7 @@ jobs:
       fail-fast: false
       matrix:
         cluster: [
-          {distribution: kind, version: v1.28.0}
+          {distribution: kind, version: v1.28.0, nodes: 1}
         ] 
     steps:
       - name: Checkout
@@ -3045,6 +3060,7 @@ jobs:
           api-token: ${{ secrets.C11Y_MATRIX_TOKEN }}
           kubernetes-distribution: ${{ matrix.cluster.distribution }}
           kubernetes-version: ${{ matrix.cluster.version }}
+          nodes: ${{ matrix.cluster.nodes || 1 }}
           cluster-name: automated-kots-${{ github.run_id }}-${{ matrix.cluster.distribution }}-${{ matrix.cluster.version }}
           timeout-minutes: '120'
           ttl: 2h
@@ -3127,7 +3143,7 @@ jobs:
       fail-fast: false
       matrix:
         cluster: [
-          {distribution: kind, version: v1.28.0}
+          {distribution: kind, version: v1.28.0, nodes: 1}
         ] 
     env:
       APP_SLUG: native-helm-v2
@@ -3148,6 +3164,7 @@ jobs:
           api-token: ${{ secrets.C11Y_MATRIX_TOKEN }}
           kubernetes-distribution: ${{ matrix.cluster.distribution }}
           kubernetes-version: ${{ matrix.cluster.version }}
+          nodes: ${{ matrix.cluster.nodes || 1 }}
           cluster-name: automated-kots-${{ github.run_id }}-${{ matrix.cluster.distribution }}-${{ matrix.cluster.version }}
           timeout-minutes: '120'
           ttl: 2h
@@ -3353,7 +3370,7 @@ jobs:
       fail-fast: false
       matrix:
         cluster: [
-          {distribution: kind, version: v1.28.0}
+          {distribution: kind, version: v1.28.0, nodes: 1}
         ] 
     env:
       APP_SLUG: deployment-orchestration
@@ -3372,6 +3389,7 @@ jobs:
           api-token: ${{ secrets.C11Y_MATRIX_TOKEN }}
           kubernetes-distribution: ${{ matrix.cluster.distribution }}
           kubernetes-version: ${{ matrix.cluster.version }}
+          nodes: ${{ matrix.cluster.nodes || 1 }}
           cluster-name: automated-kots-${{ github.run_id }}-${{ matrix.cluster.distribution }}-${{ matrix.cluster.version }}
           timeout-minutes: '120'
           ttl: 2h
@@ -3521,8 +3539,8 @@ jobs:
       fail-fast: false
       matrix:
         cluster: [
-          {distribution: kind, version: v1.28.0},
-          {distribution: openshift, version: 4.14.0-okd}
+          {distribution: kind, version: v1.28.0, nodes: 1},
+          {distribution: openshift, version: 4.15.0-okd, nodes: 2}
         ]
     env:
       KOTS_NAMESPACE: replicated-sdk
@@ -3537,6 +3555,7 @@ jobs:
           api-token: ${{ secrets.C11Y_MATRIX_TOKEN }}
           kubernetes-distribution: ${{ matrix.cluster.distribution }}
           kubernetes-version: ${{ matrix.cluster.version }}
+          nodes: ${{ matrix.cluster.nodes || 1 }}
           cluster-name: automated-kots-${{ github.run_id }}-${{ matrix.cluster.distribution }}-${{ matrix.cluster.version }}
           timeout-minutes: '120'
           ttl: 2h
@@ -3831,8 +3850,8 @@ jobs:
       fail-fast: false
       matrix:
         cluster: [
-          {distribution: kind, version: v1.28.0},
-          {distribution: openshift, version: 4.14.0-okd}
+          {distribution: kind, version: v1.28.0, nodes: 1},
+          {distribution: openshift, version: 4.15.0-okd, nodes: 2}
         ]
     steps:
       - name: Checkout
@@ -3872,7 +3891,7 @@ jobs:
       fail-fast: false
       matrix:
         cluster: [
-          {distribution: kind, version: v1.28.0}
+          {distribution: kind, version: v1.28.0, nodes: 1}
         ]
     steps:
       - name: Checkout
@@ -3912,7 +3931,7 @@ jobs:
       fail-fast: false
       matrix:
         cluster: [
-          {distribution: kind, version: v1.28.0}
+          {distribution: kind, version: v1.28.0, nodes: 1}
         ] 
     env:
       APP_SLUG: get-set-config
@@ -3927,6 +3946,7 @@ jobs:
           api-token: ${{ secrets.C11Y_MATRIX_TOKEN }}
           kubernetes-distribution: ${{ matrix.cluster.distribution }}
           kubernetes-version: ${{ matrix.cluster.version }}
+          nodes: ${{ matrix.cluster.nodes || 1 }}
           cluster-name: automated-kots-${{ github.run_id }}-${{ matrix.cluster.distribution }}-${{ matrix.cluster.version }}
           timeout-minutes: '120'
           ttl: 2h
