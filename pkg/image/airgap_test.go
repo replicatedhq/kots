@@ -3,6 +3,7 @@ package image
 import (
 	"archive/tar"
 	"compress/gzip"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -17,6 +18,9 @@ import (
 )
 
 func TestPushEmbeddedClusterArtifacts(t *testing.T) {
+	testAppSlug := "test-app"
+	testTag := "test-tag"
+
 	tests := []struct {
 		name          string
 		airgapFiles   map[string][]byte
@@ -45,10 +49,10 @@ func TestPushEmbeddedClusterArtifacts(t *testing.T) {
 				"embedded-cluster/some-file-TBD":    []byte("this-is-an-arbitrary-file"),
 			},
 			wantArtifacts: map[string]string{
-				"test-app":         "test-tag",
-				"charts.tar.gz":    "test-tag",
-				"images-amd64.tar": "test-tag",
-				"some-file-tbd":    "test-tag",
+				fmt.Sprintf("%s/embedded-cluster/test-app", testAppSlug):         testTag,
+				fmt.Sprintf("%s/embedded-cluster/charts.tar.gz", testAppSlug):    testTag,
+				fmt.Sprintf("%s/embedded-cluster/images-amd64.tar", testAppSlug): testTag,
+				fmt.Sprintf("%s/embedded-cluster/some-file-tbd", testAppSlug):    testTag,
 			},
 			wantErr: false,
 		},
@@ -73,9 +77,9 @@ func TestPushEmbeddedClusterArtifacts(t *testing.T) {
 			opts := types.PushEmbeddedClusterArtifactsOptions{
 				Registry: dockerregistrytypes.RegistryOptions{
 					Endpoint:  u.Host,
-					Namespace: "test-app",
+					Namespace: testAppSlug,
 				},
-				Tag:        "test-tag",
+				Tag:        testTag,
 				HTTPClient: mockRegistryServer.Client(),
 			}
 			if err := PushEmbeddedClusterArtifacts(airgapBundle, opts); (err != nil) != tt.wantErr {
@@ -124,8 +128,8 @@ func createTestAirgapBundle(airgapFiles map[string][]byte, dstPath string) error
 
 func newMockRegistryServer(pushedArtifacts map[string]string) *httptest.Server {
 	return httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		blobsRegex := regexp.MustCompile(`/v2/test-app/embedded-cluster/([^/]+)/blobs/(.*)`)
-		manifestsRegex := regexp.MustCompile(`/v2/test-app/embedded-cluster/([^/]+)/manifests/(.*)`)
+		blobsRegex := regexp.MustCompile(`/v2/(.+)/blobs/(.*)`)
+		manifestsRegex := regexp.MustCompile(`/v2/(.+)/manifests/(.*)`)
 
 		switch {
 		case r.Method == http.MethodHead && blobsRegex.MatchString(r.URL.Path):
