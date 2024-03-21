@@ -2,6 +2,7 @@ package types
 
 import (
 	"io"
+	"net/http"
 	"time"
 
 	"github.com/containers/image/v5/types"
@@ -77,4 +78,25 @@ type LayerInfo struct {
 	Size        int64
 	UploadStart time.Time
 	UploadEnd   time.Time
+}
+
+type PushEmbeddedClusterArtifactsOptions struct {
+	Registry   dockerregistrytypes.RegistryOptions
+	Tag        string
+	HTTPClient *http.Client
+}
+
+type PushOCIArtifactOptions struct {
+	Files        []OCIArtifactFile
+	ArtifactType string
+	Registry     dockerregistrytypes.RegistryOptions
+	Repository   string
+	Tag          string
+	HTTPClient   *http.Client
+}
+
+type OCIArtifactFile struct {
+	Name      string
+	Path      string
+	MediaType string
 }

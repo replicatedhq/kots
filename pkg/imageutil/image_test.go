@@ -1138,3 +1138,63 @@ func TestChangeImageTag(t *testing.T) {
 		})
 	}
 }
+
+func TestSanitizeTag(t *testing.T) {
+	tests := []struct {
+		input    string
+		expected string
+	}{
+		// Valid repos
+		{"1.0.1", "1.0.1"},
+		{"my-App123", "my-App123"},
+		{"123-456", "123-456"},
+		{"my-App123.-", "my-App123.-"},
+		{"my-App123-.", "my-App123-."},
+
+		// Invalid repos
+		{".invalid", "invalid"},
+		{"-invalid", "invalid"},
+		{"not valid!", "notvalid"},
+
+		// Tags longer than 128 characters
+		{"0123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789", "01234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567"},
+	}
+
+	for _, test := range tests {
+		t.Run(test.input, func(t *testing.T) {
+			sanitized := SanitizeTag(test.input)
+			if sanitized != test.expected {
+				t.Errorf("got: %s, expected: %s", sanitized, test.expected)
+			}
+		})
+	}
+}
+
+func TestSanitizeRepo(t *testing.T) {
+	tests := []struct {
+		input    string
+		expected string
+	}{
+		// Valid repos
+		{"nginx", "nginx"},
+		{"my-app-123", "my-app-123"},
+		{"my_app_123", "my_app_123"},
+		{"charts.tar.gz", "charts.tar.gz"},
+
+		// Invalid repos
+		{"My-App-123", "my-app-123"},
+		{"-invalid", "invalid"},
+		{"_invalid", "invalid"},
+		{".invalid", "invalid"},
+		{"not valid!", "notvalid"},
+	}
+
+	for _, test := range tests {
+		t.Run(test.input, func(t *testing.T) {
+			sanitized := SanitizeRepo(test.input)
+			if sanitized != test.expected {
+				t.Errorf("got: %s, expected: %s", sanitized, test.expected)
+			}
+		})
+	}
+}

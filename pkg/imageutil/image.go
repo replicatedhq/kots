@@ -313,3 +313,24 @@ func ChangeImageTag(image string, newTag string) (string, error) {
 
 	return strings.Join(imageParts, "/"), nil
 }
+
+// A valid tag must be valid ASCII and can contain lowercase and uppercase letters, digits, underscores, periods, and hyphens.
+// It can't start with a period or hyphen and must be no longer than 128 characters.
+// ref: https://docs.docker.com/reference/cli/docker/image/tag/#description
+func SanitizeTag(tag string) string {
+	tag = strings.Join(dockerref.TagRegexp.FindAllString(tag, -1), "")
+	if len(tag) > 128 {
+		tag = tag[:128]
+	}
+	return tag
+}
+
+// A valid repo may contain lowercase letters, digits and separators.
+// A separator is defined as a period, one or two underscores, or one or more hyphens.
+// A component may not start or end with a separator.
+// ref: https://docs.docker.com/reference/cli/docker/image/tag/#description
+func SanitizeRepo(repo string) string {
+	repo = strings.ToLower(repo)
+	repo = strings.Join(dockerref.NameRegexp.FindAllString(repo, -1), "")
+	return repo
+}
