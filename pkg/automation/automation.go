@@ -293,7 +293,7 @@ func installLicenseSecret(clientset *kubernetes.Clientset, licenseSecret corev1.
 				Name:        a.Name,
 				LicenseData: string(license),
 			},
-			AirgapPath:             airgapFilesDir,
+			AirgapRootDir:          airgapFilesDir,
 			RegistryHost:           registryConfig.OverrideRegistry,
 			RegistryNamespace:      registryConfig.OverrideNamespace,
 			RegistryUsername:       registryConfig.Username,

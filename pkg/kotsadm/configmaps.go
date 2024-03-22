@@ -3,9 +3,6 @@ package kotsadm
 import (
 	"bytes"
 	"context"
-	"encoding/base64"
-	"os"
-	"path/filepath"
 
 	"github.com/pkg/errors"
 	kotsadmobjects "github.com/replicatedhq/kots/pkg/kotsadm/objects"
@@ -120,8 +117,8 @@ func ensureWaitForAirgapConfig(deployOptions types.DeployOptions, clientset *kub
 	return nil
 }
 
-func ensureConfigFromFile(deployOptions types.DeployOptions, clientset *kubernetes.Clientset, configMapName string, filename string) error {
-	configMap, err := configMapFromFile(deployOptions, configMapName, filename)
+func ensureConfigMapWithData(deployOptions types.DeployOptions, clientset *kubernetes.Clientset, configMapName string, data map[string]string) error {
+	configMap, err := configMapWithData(deployOptions, configMapName, data)
 	if err != nil {
 		return errors.Wrap(err, "failed to build config map")
 	}
@@ -143,19 +140,7 @@ func ensureConfigFromFile(deployOptions types.DeployOptions, clientset *kubernet
 	return nil
 }
 
-func configMapFromFile(deployOptions types.DeployOptions, configMapName string, filename string) (*corev1.ConfigMap, error) {
-	fileData, err := os.ReadFile(filename)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to load file")
-	}
-
-	key := filepath.Base(filename)
-	value := base64.StdEncoding.EncodeToString(fileData)
-
-	data := map[string]string{
-		key: value,
-	}
-
+func configMapWithData(deployOptions types.DeployOptions, configMapName string, data map[string]string) (*corev1.ConfigMap, error) {
 	additionalLabels := map[string]string{
 		"kots.io/automation": "airgap",
 	}

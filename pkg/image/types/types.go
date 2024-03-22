@@ -19,7 +19,6 @@ type ProcessImageOptions struct {
 	RegistrySettings registrytypes.RegistrySettings
 	RootDir          string
 	IsAirgap         bool
-	AirgapRoot       string
 	AirgapBundle     string
 	CreateAppDir     bool
 	ReportWriter     io.Writer

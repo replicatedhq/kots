@@ -9,7 +9,6 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
-	"strings"
 	"time"
 
 	"github.com/pkg/errors"
@@ -37,7 +36,8 @@ import (
 
 type CreateAirgapAppOpts struct {
 	PendingApp             *types.PendingApp
-	AirgapPath             string
+	AirgapBundle           string
+	AirgapRootDir          string
 	RegistryHost           string
 	RegistryNamespace      string
 	RegistryUsername       string
@@ -100,17 +100,15 @@ func CreateAppFromAirgap(opts CreateAirgapAppOpts) (finalError error) {
 		return errors.Wrap(err, "failed to set task status")
 	}
 
-	airgapBundle := ""
-	archiveDir := opts.AirgapPath
-	if strings.ToLower(filepath.Ext(opts.AirgapPath)) == ".airgap" {
+	archiveDir := opts.AirgapRootDir
+	if opts.AirgapBundle != "" {
 		// on the api side, headless intalls don't have the airgap file
-		dir, err := extractAppMetaFromAirgapBundle(opts.AirgapPath)
+		dir, err := extractAppMetaFromAirgapBundle(opts.AirgapBundle)
 		if err != nil {
 			return errors.Wrap(err, "failed to extract archive")
 		}
 		defer os.RemoveAll(dir)
 
-		airgapBundle = opts.AirgapPath
 		archiveDir = dir
 	}
 
@@ -213,8 +211,7 @@ func CreateAppFromAirgap(opts CreateAirgapAppOpts) (finalError error) {
 		ConfigFile:          configFile,
 		IdentityConfigFile:  identityConfigFile,
 		IsAirgap:            true,
-		AirgapRoot:          archiveDir,
-		AirgapBundle:        airgapBundle,
+		AirgapBundle:        opts.AirgapBundle,
 		Silent:              !opts.IsAutomated,
 		ExcludeKotsKinds:    true,
 		RootDir:             tmpRoot,

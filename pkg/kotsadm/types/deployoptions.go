@@ -28,7 +28,6 @@ type DeployOptions struct {
 	ConfigValues           *kotsv1beta1.ConfigValues
 	AppVersionLabel        string
 	Airgap                 bool
-	AirgapRootDir          string
 	AirgapBundle           string
 	AppImagesPushed        bool
 	ProgressWriter         io.Writer
