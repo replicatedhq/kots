@@ -16,6 +16,9 @@ func HasEmbeddedRegistry(clientset kubernetes.Interface) bool {
 	var secret *corev1.Secret
 	var err error
 
+	// kURL registry secret is always in the 'default' namespace
+	// Embedded cluster registry secret is always in the 'kotsadm' namespace
+
 	for _, ns := range []string{"default", "kotsadm"} {
 		secret, err = clientset.CoreV1().Secrets(ns).Get(context.TODO(), "registry-creds", metav1.GetOptions{})
 		if err == nil {
@@ -35,6 +38,9 @@ func HasEmbeddedRegistry(clientset kubernetes.Interface) bool {
 func GetEmbeddedRegistryCreds(clientset kubernetes.Interface) (hostname string, username string, password string) {
 	var secret *corev1.Secret
 	var err error
+
+	// kURL registry secret is always in the 'default' namespace
+	// Embedded cluster registry secret is always in the 'kotsadm' namespace
 
 	for _, ns := range []string{"default", "kotsadm"} {
 		secret, err = clientset.CoreV1().Secrets(ns).Get(context.TODO(), "registry-creds", metav1.GetOptions{})
