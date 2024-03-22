@@ -315,7 +315,7 @@ func InstallCmd() *cobra.Command {
 				}
 			}
 
-			if isKurl && deployOptions.Namespace == metav1.NamespaceDefault {
+			if v.GetBool("exclude-admin-console") || (isKurl && deployOptions.Namespace == metav1.NamespaceDefault) {
 				deployOptions.ExcludeAdminConsole = true
 				deployOptions.EnsureKotsadmConfig = true
 			}
@@ -530,6 +530,7 @@ func InstallCmd() *cobra.Command {
 	cmd.Flags().Bool("strict-security-context", false, "set to explicitly enable explicit security contexts for all kots pods and containers (may not work for some storage providers)")
 	cmd.Flags().Bool("skip-compatibility-check", false, "set to true to skip compatibility checks between the current kots version and the app")
 	cmd.Flags().String("app-version-label", "", "the application version label to install. if not specified, the latest version will be installed")
+	cmd.Flags().Bool("exclude-admin-console", false, "set to true to exclude the admin console and only install the application")
 
 	cmd.Flags().String("repo", "", "repo uri to use when installing a helm chart")
 
