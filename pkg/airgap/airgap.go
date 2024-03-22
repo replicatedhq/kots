@@ -211,6 +211,7 @@ func CreateAppFromAirgap(opts CreateAirgapAppOpts) (finalError error) {
 		ConfigFile:          configFile,
 		IdentityConfigFile:  identityConfigFile,
 		IsAirgap:            true,
+		AirgapRoot:          archiveDir,
 		AirgapBundle:        opts.AirgapBundle,
 		Silent:              !opts.IsAutomated,
 		ExcludeKotsKinds:    true,
