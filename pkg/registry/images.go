@@ -46,7 +46,7 @@ func (e AppRollbackError) Error() string {
 	return fmt.Sprintf("app:%s, version:%d", e.AppID, e.Sequence)
 }
 
-func shouldGarbageCollectImages(isKurl bool, kurlRegistryHost string, installParams kotsutil.InstallationParams, registrySettings types.RegistrySettings) bool {
+func shouldGarbageCollectImages(isKurl bool, embeddedRegistryHost string, installParams kotsutil.InstallationParams, registrySettings types.RegistrySettings) bool {
 	if !installParams.EnableImageDeletion {
 		logger.Info("ignoring image garbage collection because image deletion is disabled")
 		return false
@@ -62,7 +62,7 @@ func shouldGarbageCollectImages(isKurl bool, kurlRegistryHost string, installPar
 		return false
 	}
 
-	if kurlRegistryHost != registrySettings.Hostname {
+	if embeddedRegistryHost != registrySettings.Hostname {
 		logger.Info("ignoring image garbage collection because registry is not kurl registry")
 		return false
 	}
@@ -91,12 +91,9 @@ func DeleteUnusedImages(appID string, ignoreRollback bool) error {
 		return errors.Wrap(err, "failed to check if cluster is kurl")
 	}
 
-	kurlRegistryHost, _, _, err := kotsutil.GetKurlRegistryCreds()
-	if err != nil {
-		return errors.Wrap(err, "failed to get kurl registry creds")
-	}
+	embeddedRegistryHost, _, _ := kotsutil.GetEmbeddedRegistryCreds(clientset)
 
-	if !shouldGarbageCollectImages(isKurl, kurlRegistryHost, installParams, registrySettings) {
+	if !shouldGarbageCollectImages(isKurl, embeddedRegistryHost, installParams, registrySettings) {
 		return nil
 	}
 

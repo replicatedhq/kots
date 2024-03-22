@@ -15,6 +15,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/airgap"
 	"github.com/replicatedhq/kots/pkg/automation"
+	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/store"
@@ -363,16 +364,18 @@ func (h *Handler) CreateAppFromAirgap(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var registryHost, namespace, username, password string
-	var isReadOnly bool
-	registryHost, username, password, err = kotsutil.GetKurlRegistryCreds()
+	clientset, err := k8sutil.GetClientset()
 	if err != nil {
-		logger.Error(err)
+		logger.Error(errors.Wrap(err, "failed to get k8s clientset"))
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
-	// if found kurl registry creds, use kurl registry
+	var namespace string
+	var isReadOnly bool
+	registryHost, username, password := kotsutil.GetEmbeddedRegistryCreds(clientset)
+
+	// if found embedded registry creds, use embedded registry
 	if registryHost != "" {
 		namespace = pendingApp.Slug
 	} else {

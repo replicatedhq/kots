@@ -9,18 +9,40 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/kubernetes"
 )
 
-func GetKurlRegistryCreds() (hostname string, username string, password string, finalErr error) {
-	clientset, err := k8sutil.GetClientset()
-	if err != nil {
-		finalErr = errors.Wrap(err, "failed to get k8s clientset")
-		return
+func HasEmbeddedRegistry(clientset kubernetes.Interface) bool {
+	var secret *corev1.Secret
+	var err error
+
+	for _, ns := range []string{"default", "kotsadm"} {
+		secret, err = clientset.CoreV1().Secrets(ns).Get(context.TODO(), "registry-creds", metav1.GetOptions{})
+		if err == nil {
+			break
+		}
 	}
 
-	// kURL registry secret is always in default namespace
-	secret, err := clientset.CoreV1().Secrets("default").Get(context.TODO(), "registry-creds", metav1.GetOptions{})
-	if err != nil {
+	if secret != nil {
+		if secret.Type == corev1.SecretTypeDockerConfigJson {
+			return true
+		}
+	}
+
+	return false
+}
+
+func GetEmbeddedRegistryCreds(clientset kubernetes.Interface) (hostname string, username string, password string) {
+	var secret *corev1.Secret
+	var err error
+
+	for _, ns := range []string{"default", "kotsadm"} {
+		secret, err = clientset.CoreV1().Secrets(ns).Get(context.TODO(), "registry-creds", metav1.GetOptions{})
+		if err == nil {
+			break
+		}
+	}
+	if secret == nil {
 		return
 	}
 
@@ -44,7 +66,7 @@ func GetKurlRegistryCreds() (hostname string, username string, password string, 
 	}
 
 	for host, auth := range dockerConfig.Auths {
-		if auth.Username == "kurl" {
+		if auth.Username == "kurl" || auth.Username == "embedded-cluster" {
 			hostname = host
 			username = auth.Username
 			password = auth.Password

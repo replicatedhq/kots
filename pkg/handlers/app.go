@@ -18,11 +18,11 @@ import (
 	"github.com/replicatedhq/kots/pkg/embeddedcluster"
 	"github.com/replicatedhq/kots/pkg/gitops"
 	"github.com/replicatedhq/kots/pkg/helm"
+	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/operator"
 	"github.com/replicatedhq/kots/pkg/rbac"
-	"github.com/replicatedhq/kots/pkg/registry"
 	"github.com/replicatedhq/kots/pkg/render"
 	"github.com/replicatedhq/kots/pkg/session"
 	"github.com/replicatedhq/kots/pkg/store"
@@ -73,10 +73,9 @@ func (h *Handler) GetPendingApp(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	// Carefully now, peek at registry credentials to see if we need to prompt for them
-	hasKurlRegistry, err := registry.HasKurlRegistry()
+	clientset, err := k8sutil.GetClientset()
 	if err != nil {
-		logger.Error(errors.Wrapf(err, "failed to check registry status for pending app %s", papp.Slug))
+		logger.Error(errors.Wrap(err, "failed to get clientset"))
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
@@ -87,7 +86,7 @@ func (h *Handler) GetPendingApp(w http.ResponseWriter, r *http.Request) {
 			Slug:          papp.Slug,
 			Name:          papp.Name,
 			LicenseData:   papp.LicenseData,
-			NeedsRegistry: !hasKurlRegistry,
+			NeedsRegistry: !kotsutil.HasEmbeddedRegistry(clientset),
 		},
 	}
 	JSON(w, http.StatusOK, pendingAppResponse)

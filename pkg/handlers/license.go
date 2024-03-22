@@ -13,6 +13,7 @@ import (
 	"github.com/pkg/errors"
 	apptypes "github.com/replicatedhq/kots/pkg/app/types"
 	"github.com/replicatedhq/kots/pkg/helm"
+	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/kotsadm"
 	kotsadmtypes "github.com/replicatedhq/kots/pkg/kotsadm/types"
 	license "github.com/replicatedhq/kots/pkg/kotsadmlicense"
@@ -21,7 +22,6 @@ import (
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/online"
 	installationtypes "github.com/replicatedhq/kots/pkg/online/types"
-	"github.com/replicatedhq/kots/pkg/registry"
 	"github.com/replicatedhq/kots/pkg/replicatedapp"
 	"github.com/replicatedhq/kots/pkg/store"
 	"github.com/replicatedhq/kots/pkg/updatechecker"
@@ -457,18 +457,14 @@ func (h *Handler) UploadNewLicense(w http.ResponseWriter, r *http.Request) {
 	uploadLicenseResponse.IsAirgap = true
 	uploadLicenseResponse.Slug = a.Slug
 
-	// This is the comment from the typescript implementation \
-	// and i thought it should remain
-
-	// Carefully now, peek at registry credentials to see if we need to prompt for them
-	hasKurlRegistry, err := registry.HasKurlRegistry()
+	clientset, err := k8sutil.GetClientset()
 	if err != nil {
 		logger.Error(err)
 		uploadLicenseResponse.Error = err.Error()
-		JSON(w, 300, uploadLicenseRequest)
+		JSON(w, http.StatusInternalServerError, uploadLicenseRequest)
 		return
 	}
-	uploadLicenseResponse.NeedsRegistry = !hasKurlRegistry
+	uploadLicenseResponse.NeedsRegistry = !kotsutil.HasEmbeddedRegistry(clientset)
 
 	JSON(w, 200, uploadLicenseResponse)
 }
