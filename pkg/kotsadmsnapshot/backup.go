@@ -384,12 +384,9 @@ func CreateInstanceBackup(ctx context.Context, cluster *downstreamtypes.Downstre
 		},
 	}
 
-	if isKurl {
-		registryHost, _, _, err := kotsutil.GetKurlRegistryCreds()
-		if err != nil {
-			return nil, errors.Wrap(err, "failed to get kurl registry host")
-		}
-		veleroBackup.ObjectMeta.Annotations["kots.io/kurl-registry"] = registryHost
+	embeddedRegistryHost, _, _ := kotsutil.GetEmbeddedRegistryCreds(clientset)
+	if embeddedRegistryHost != "" {
+		veleroBackup.ObjectMeta.Annotations["kots.io/embedded-registry"] = embeddedRegistryHost
 	}
 
 	if cluster.SnapshotTTL != "" {

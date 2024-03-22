@@ -2,7 +2,6 @@ package registry
 
 import (
 	"bufio"
-	"context"
 	_ "embed"
 	"fmt"
 	"io"
@@ -21,9 +20,6 @@ import (
 	"github.com/replicatedhq/kots/pkg/rewrite"
 	"github.com/replicatedhq/kots/pkg/store"
 	"github.com/replicatedhq/kots/pkg/util"
-	corev1 "k8s.io/api/core/v1"
-	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 // RewriteImages will use the app (a) and send the images to the registry specified. It will create patches for these
@@ -170,32 +166,6 @@ func RewriteImages(appID string, sequence int64, hostname string, username strin
 	}
 
 	return appDir, nil
-}
-
-func HasKurlRegistry() (bool, error) {
-	clientset, err := k8sutil.GetClientset()
-	if err != nil {
-		return false, errors.Wrap(err, "failed to get k8s clientset")
-	}
-
-	registryCredsSecret, err := clientset.CoreV1().Secrets(metav1.NamespaceDefault).Get(context.TODO(), "registry-creds", metav1.GetOptions{})
-	if kuberneteserrors.IsNotFound(err) {
-		return false, nil
-	}
-
-	if err != nil {
-		// this is not an error, it could be rbac
-		// don't even log it, normal operations
-		return false, nil
-	}
-
-	if registryCredsSecret != nil {
-		if registryCredsSecret.Type == corev1.SecretTypeDockerConfigJson {
-			return true, nil
-		}
-	}
-
-	return false, nil
 }
 
 func GetKotsadmRegistry() (*types.RegistrySettings, error) {

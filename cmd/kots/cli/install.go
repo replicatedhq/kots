@@ -760,21 +760,17 @@ func getRegistryConfig(v *viper.Viper, clientset kubernetes.Interface, appSlug s
 		}
 	}
 
-	isKurl, err := kurl.IsKurl(clientset)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to check if cluster is kurl")
-	}
-
 	isAirgap := false
 	if v.GetString("airgap-bundle") != "" || v.GetBool("airgap") {
 		isAirgap = true
 	}
 
-	if registryEndpoint == "" && isKurl && isAirgap {
-		registryEndpoint, registryUsername, registryPassword, err = kotsutil.GetKurlRegistryCreds()
+	if registryEndpoint == "" && isAirgap {
+		clientset, err := k8sutil.GetClientset()
 		if err != nil {
-			return nil, errors.Wrap(err, "failed to get kURL registry info")
+			return nil, errors.Wrap(err, "failed to get clientset")
 		}
+		registryEndpoint, registryUsername, registryPassword = kotsutil.GetEmbeddedRegistryCreds(clientset)
 		if registryNamespace == "" {
 			registryNamespace = appSlug
 		}
