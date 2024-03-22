@@ -275,6 +275,16 @@ func CreateAppFromAirgap(opts CreateAirgapAppOpts) (finalError error) {
 		return errors.Wrap(err, "failed to load kotskinds from path")
 	}
 
+	status, err := store.GetStore().GetDownstreamVersionStatus(opts.PendingApp.ID, newSequence)
+	if err != nil {
+		return errors.Wrap(err, "failed to get downstream version status")
+	}
+
+	if status == storetypes.VersionPendingClusterManagement {
+		// if pending cluster management, we don't want to deploy the app
+		return nil
+	}
+
 	hasStrictPreflights, err := store.GetStore().HasStrictPreflights(a.ID, newSequence)
 	if err != nil {
 		return errors.Wrap(err, "failed to check if app preflight has strict analyzers")
