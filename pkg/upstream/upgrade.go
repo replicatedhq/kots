@@ -9,10 +9,10 @@ import (
 	"mime/multipart"
 	"net/http"
 	"os"
-	"path/filepath"
 	"strings"
 
 	"github.com/pkg/errors"
+	"github.com/replicatedhq/kots/pkg/archives"
 	"github.com/replicatedhq/kots/pkg/auth"
 	registrytypes "github.com/replicatedhq/kots/pkg/docker/registry/types"
 	"github.com/replicatedhq/kots/pkg/image"
@@ -57,21 +57,7 @@ func Upgrade(appSlug string, options UpgradeOptions) (*UpgradeResponse, error) {
 		log.Silence()
 	}
 
-	airgapPath := ""
 	if options.AirgapBundle != "" {
-		airgapRootDir, err := ioutil.TempDir("", "kotsadm-airgap")
-		if err != nil {
-			return nil, errors.Wrap(err, "failed to create temp dir")
-		}
-		defer os.RemoveAll(airgapRootDir)
-
-		airgapPath = airgapRootDir
-
-		err = image.ExtractAppAirgapArchive(options.AirgapBundle, airgapRootDir, options.DisableImagePush, os.Stdout)
-		if err != nil {
-			return nil, errors.Wrap(err, "failed to extract images")
-		}
-
 		pushOptions := imagetypes.PushImagesOptions{
 			Registry: registrytypes.RegistryOptions{
 				Endpoint:  options.RegistryConfig.OverrideRegistry,
@@ -83,14 +69,14 @@ func Upgrade(appSlug string, options UpgradeOptions) (*UpgradeResponse, error) {
 		}
 
 		if !options.DisableImagePush {
-			err := image.TagAndPushImagesFromPath(airgapRootDir, pushOptions)
+			err := image.TagAndPushImagesFromBundle(options.AirgapBundle, pushOptions)
 			if err != nil {
 				return nil, errors.Wrap(err, "failed to tag and push app images from path")
 			}
 		}
 	}
 
-	if airgapPath == "" {
+	if options.AirgapBundle == "" {
 		log.ActionWithSpinner("Checking for application updates")
 	} else {
 		log.ActionWithSpinner("Uploading application update")
@@ -99,16 +85,16 @@ func Upgrade(appSlug string, options UpgradeOptions) (*UpgradeResponse, error) {
 	contentType := "application/json"
 
 	var requestBody io.Reader
-	if airgapPath == "" {
+	if options.AirgapBundle == "" {
 		requestBody = strings.NewReader("{}")
 	} else {
 		buffer := &bytes.Buffer{}
 		writer := multipart.NewWriter(buffer)
 
-		if err := createPartFromFile(writer, airgapPath, "airgap.yaml"); err != nil {
+		if err := createPartFromFile(writer, options.AirgapBundle, "airgap.yaml"); err != nil {
 			return nil, errors.Wrap(err, "failed to create part from airgap.yaml")
 		}
-		if err := createPartFromFile(writer, airgapPath, "app.tar.gz"); err != nil {
+		if err := createPartFromFile(writer, options.AirgapBundle, "app.tar.gz"); err != nil {
 			return nil, errors.Wrap(err, "failed to create part from app.tar.gz")
 		}
 
@@ -179,7 +165,7 @@ func Upgrade(appSlug string, options UpgradeOptions) (*UpgradeResponse, error) {
 	log.FinishSpinner()
 
 	if options.Deploy || options.DeployVersionLabel != "" {
-		if airgapPath != "" {
+		if options.AirgapBundle != "" {
 			log.ActionWithoutSpinner("")
 			log.ActionWithoutSpinner("Update has been uploaded and is being deployed")
 			return &ur, nil
@@ -217,7 +203,7 @@ func Upgrade(appSlug string, options UpgradeOptions) (*UpgradeResponse, error) {
 		return &ur, nil
 	}
 
-	if airgapPath != "" {
+	if options.AirgapBundle != "" {
 		log.ActionWithoutSpinner("")
 		log.ActionWithoutSpinner("Update has been uploaded")
 	} else {
@@ -239,19 +225,19 @@ func Upgrade(appSlug string, options UpgradeOptions) (*UpgradeResponse, error) {
 }
 
 func createPartFromFile(partWriter *multipart.Writer, path string, fileName string) error {
-	file, err := os.Open(filepath.Join(path, fileName))
+	contents, err := archives.GetFileFromAirgap(fileName, path)
 	if err != nil {
-		return errors.Wrap(err, "failed to open file")
+		return errors.Wrapf(err, "failed to get file %s from airgap", fileName)
 	}
-	defer file.Close()
 
 	part, err := partWriter.CreateFormFile(fileName, fileName)
 	if err != nil {
 		return errors.Wrap(err, "failed to create form file")
 	}
-	_, err = io.Copy(part, file)
+
+	_, err = part.Write(contents)
 	if err != nil {
-		return errors.Wrap(err, "failed to copy file to upload")
+		return errors.Wrap(err, "failed to write part")
 	}
 
 	return nil

@@ -2,14 +2,15 @@ package kotsadm
 
 import (
 	"context"
+	"encoding/base64"
 	"os"
 	"path"
-	"path/filepath"
 	"strconv"
 	"strings"
 
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
+	"github.com/replicatedhq/kots/pkg/archives"
 	"github.com/replicatedhq/kots/pkg/docker/registry"
 	registrytypes "github.com/replicatedhq/kots/pkg/docker/registry/types"
 	"github.com/replicatedhq/kots/pkg/identity"
@@ -151,9 +152,7 @@ func Upgrade(clientset *kubernetes.Clientset, upgradeOptions types.UpgradeOption
 }
 
 func Deploy(deployOptions types.DeployOptions, log *logger.CLILogger) error {
-	airgapPath := ""
-
-	if deployOptions.AirgapRootDir != "" && deployOptions.RegistryConfig.OverrideRegistry != "" {
+	if deployOptions.AirgapBundle != "" && deployOptions.RegistryConfig.OverrideRegistry != "" {
 		pushOptions := imagetypes.PushImagesOptions{
 			Registry: registrytypes.RegistryOptions{
 				Endpoint:  deployOptions.RegistryConfig.OverrideRegistry,
@@ -165,13 +164,13 @@ func Deploy(deployOptions types.DeployOptions, log *logger.CLILogger) error {
 		}
 
 		if !deployOptions.DisableImagePush {
-			err := image.TagAndPushImagesFromPath(deployOptions.AirgapRootDir, pushOptions)
+			err := image.TagAndPushImagesFromBundle(deployOptions.AirgapBundle, pushOptions)
 			if err != nil {
 				return errors.Wrap(err, "failed to tag and push app images from path")
 			}
 		}
 
-		airgapPath = deployOptions.AirgapRootDir
+		deployOptions.AppImagesPushed = true
 	}
 
 	clientset, err := k8sutil.GetClientset()
@@ -179,7 +178,7 @@ func Deploy(deployOptions types.DeployOptions, log *logger.CLILogger) error {
 		return errors.Wrap(err, "failed to get clientset")
 	}
 
-	if deployOptions.AirgapRootDir != "" && deployOptions.RegistryConfig.OverrideRegistry == "" {
+	if deployOptions.AirgapBundle != "" && deployOptions.RegistryConfig.OverrideRegistry == "" {
 		log.Info("not pushing airgapped app images as no registry was provided")
 	}
 
@@ -216,10 +215,15 @@ func Deploy(deployOptions types.DeployOptions, log *logger.CLILogger) error {
 		deployOptions.LimitRange = limitRange
 	}
 
-	if airgapPath != "" {
-		deployOptions.AppImagesPushed = true
-
-		if err := ensureConfigFromFile(deployOptions, clientset, "kotsadm-airgap-meta", filepath.Join(airgapPath, "airgap.yaml")); err != nil {
+	if deployOptions.AppImagesPushed {
+		airgapMetadata, err := archives.GetFileFromAirgap("airgap.yaml", deployOptions.AirgapBundle)
+		if err != nil {
+			return errors.Wrap(err, "failed to get airgap.yaml from bundle")
+		}
+		data := map[string]string{
+			"airgap.yaml": base64.StdEncoding.EncodeToString(airgapMetadata),
+		}
+		if err := ensureConfigMapWithData(deployOptions, clientset, "kotsadm-airgap-meta", data); err != nil {
 			return errors.Wrap(err, "failed to create config from airgap.yaml")
 		}
 		if err := ensureWaitForAirgapConfig(deployOptions, clientset, "kotsadm-airgap-app"); err != nil {

@@ -126,30 +126,9 @@ func CopyAirgapImages(opts imagetypes.ProcessImageOptions, log *logger.CLILogger
 		if err != nil {
 			return errors.Wrap(err, "failed to push images from bundle")
 		}
-	} else if opts.AirgapRoot != "" {
-		err := TagAndPushImagesFromPath(opts.AirgapRoot, pushOpts)
-		if err != nil {
-			return errors.Wrap(err, "failed to push images from dir")
-		}
 	}
 
 	return nil
-}
-
-func TagAndPushImagesFromPath(airgapRootDir string, options imagetypes.PushImagesOptions) error {
-	airgap, err := kotsutil.FindAirgapMetaInDir(airgapRootDir)
-	if err != nil {
-		return errors.Wrap(err, "failed to find airgap meta")
-	}
-
-	switch airgap.Spec.Format {
-	case dockertypes.FormatDockerRegistry:
-		return PushImagesFromTempRegistry(airgapRootDir, airgap.Spec.SavedImages, options)
-	case dockertypes.FormatDockerArchive, "":
-		return PushImagesFromDockerArchivePath(airgapRootDir, options)
-	default:
-		return errors.Errorf("Airgap bundle format '%s' is not supported", airgap.Spec.Format)
-	}
 }
 
 func TagAndPushImagesFromBundle(airgapBundle string, options imagetypes.PushImagesOptions) error {

@@ -253,7 +253,6 @@ func Rewrite(rewriteOptions RewriteOptions) error {
 		CopyImages:       rewriteOptions.CopyImages,
 		RootDir:          rewriteOptions.RootDir,
 		IsAirgap:         rewriteOptions.IsAirgap,
-		AirgapRoot:       "",
 		AirgapBundle:     "",
 		CreateAppDir:     false,
 		ReportWriter:     rewriteOptions.ReportWriter,

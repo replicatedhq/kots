@@ -397,7 +397,7 @@ func (h *Handler) CreateAppFromAirgap(w http.ResponseWriter, r *http.Request) {
 	go func() {
 		createAppOpts := airgap.CreateAirgapAppOpts{
 			PendingApp:         pendingApp,
-			AirgapPath:         airgapBundlePath,
+			AirgapBundle:       airgapBundlePath,
 			RegistryHost:       registryHost,
 			RegistryNamespace:  namespace,
 			RegistryUsername:   username,

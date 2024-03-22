@@ -19,12 +19,12 @@ import (
 	cursor "github.com/ahmetalpbalkan/go-cursor"
 	"github.com/manifoldco/promptui"
 	"github.com/pkg/errors"
+	"github.com/replicatedhq/kots/pkg/archives"
 	"github.com/replicatedhq/kots/pkg/auth"
 	"github.com/replicatedhq/kots/pkg/automation"
 	dockerregistry "github.com/replicatedhq/kots/pkg/docker/registry"
 	"github.com/replicatedhq/kots/pkg/handlers"
 	"github.com/replicatedhq/kots/pkg/identity"
-	"github.com/replicatedhq/kots/pkg/image"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	k8sutiltypes "github.com/replicatedhq/kots/pkg/k8sutil/types"
 	"github.com/replicatedhq/kots/pkg/kotsadm"
@@ -315,33 +315,22 @@ func InstallCmd() *cobra.Command {
 				}
 			}
 
-			if v.GetBool("exclude-admin-console") || (isKurl && deployOptions.Namespace == metav1.NamespaceDefault) {
-				deployOptions.ExcludeAdminConsole = true
-				deployOptions.EnsureKotsadmConfig = true
-			}
-
 			if airgapArchive := v.GetString("airgap-bundle"); airgapArchive != "" {
 				if deployOptions.License == nil {
 					return errors.New("license is required when airgap bundle is specified")
 				}
 
-				log.ActionWithoutSpinner("Extracting airgap bundle")
-
-				airgapRootDir, err := os.MkdirTemp("", "kotsadm-airgap")
-				if err != nil {
-					return errors.Wrap(err, "failed to create temp dir")
-				}
-				defer os.RemoveAll(airgapRootDir)
-
-				err = image.ExtractAppAirgapArchive(airgapArchive, airgapRootDir, v.GetBool("disable-image-push"), deployOptions.ProgressWriter)
-				if err != nil {
-					return errors.Wrap(err, "failed to extract images")
-				}
-
-				deployOptions.AirgapRootDir = airgapRootDir
+				deployOptions.AirgapBundle = airgapArchive
 			}
 
-			log.ActionWithoutSpinner("Deploying Admin Console")
+			if v.GetBool("exclude-admin-console") || (isKurl && deployOptions.Namespace == metav1.NamespaceDefault) {
+				deployOptions.ExcludeAdminConsole = true
+				deployOptions.EnsureKotsadmConfig = true
+				log.ActionWithoutSpinner("Deploying application")
+			} else {
+				log.ActionWithoutSpinner("Deploying Admin Console")
+			}
+
 			if err := kotsadm.Deploy(deployOptions, log); err != nil {
 				if _, ok := errors.Cause(err).(*k8sutiltypes.ErrorTimeout); ok {
 					return errors.Errorf("Failed to deploy: %s. Use the --wait-duration flag to increase timeout.", err)
@@ -396,14 +385,14 @@ func InstallCmd() *cobra.Command {
 				}
 			}
 
-			if deployOptions.AirgapRootDir != "" {
+			if deployOptions.AirgapBundle != "" {
 				log.ActionWithoutSpinner("Uploading app archive")
 
 				var tryAgain bool
 				var err error
 
 				for i := 0; i < 5; i++ {
-					tryAgain, err = uploadAirgapArchive(deployOptions, authSlug, apiEndpoint, filepath.Join(deployOptions.AirgapRootDir, "app.tar.gz"))
+					tryAgain, err = uploadAirgapArchive(deployOptions, authSlug, apiEndpoint, "app.tar.gz")
 					if err == nil {
 						break
 					}
@@ -422,9 +411,6 @@ func InstallCmd() *cobra.Command {
 				if tryAgain {
 					return errors.Wrap(err, "giving up uploading app.tar.gz")
 				}
-
-				// remove here in case CLI is killed and defer doesn't run
-				_ = os.RemoveAll(deployOptions.AirgapRootDir)
 			}
 
 			go func() {
@@ -662,15 +648,13 @@ func uploadAirgapArchive(deployOptions kotsadmtypes.DeployOptions, authSlug stri
 		return false, errors.Wrap(err, "failed to create form from file")
 	}
 
-	fileReader, err := os.Open(filename)
+	contents, err := archives.GetFileFromAirgap(filename, deployOptions.AirgapBundle)
 	if err != nil {
-		return false, errors.Wrap(err, "failed to open app archive")
+		return false, errors.Wrap(err, "failed to get file from airgap")
 	}
-	defer fileReader.Close()
 
-	_, err = io.Copy(fileWriter, fileReader)
-	if err != nil {
-		return false, errors.Wrap(err, "failed to copy app archive")
+	if _, err := fileWriter.Write(contents); err != nil {
+		return false, errors.Wrap(err, "failed to copy airgap archive")
 	}
 
 	contentType := bodyWriter.FormDataContentType()

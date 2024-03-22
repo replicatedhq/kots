@@ -353,7 +353,6 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 		CopyImages:       !pullOptions.RewriteImageOptions.IsReadOnly,
 		RootDir:          pullOptions.RootDir,
 		IsAirgap:         pullOptions.IsAirgap,
-		AirgapRoot:       pullOptions.AirgapRoot,
 		AirgapBundle:     pullOptions.AirgapBundle,
 		CreateAppDir:     pullOptions.CreateAppDir,
 		ReportWriter:     pullOptions.ReportWriter,
