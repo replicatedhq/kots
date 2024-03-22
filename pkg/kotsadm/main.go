@@ -152,8 +152,6 @@ func Upgrade(clientset *kubernetes.Clientset, upgradeOptions types.UpgradeOption
 }
 
 func Deploy(deployOptions types.DeployOptions, log *logger.CLILogger) error {
-	airgapPath := ""
-
 	if deployOptions.AirgapBundle != "" && deployOptions.RegistryConfig.OverrideRegistry != "" {
 		pushOptions := imagetypes.PushImagesOptions{
 			Registry: registrytypes.RegistryOptions{
@@ -172,7 +170,7 @@ func Deploy(deployOptions types.DeployOptions, log *logger.CLILogger) error {
 			}
 		}
 
-		airgapPath = deployOptions.AirgapBundle
+		deployOptions.AppImagesPushed = true
 	}
 
 	clientset, err := k8sutil.GetClientset()
@@ -217,10 +215,8 @@ func Deploy(deployOptions types.DeployOptions, log *logger.CLILogger) error {
 		deployOptions.LimitRange = limitRange
 	}
 
-	if airgapPath != "" {
-		deployOptions.AppImagesPushed = true
-
-		airgapMetadata, err := archives.GetFileFromAirgap("airgap.yaml", airgapPath)
+	if deployOptions.AirgapBundle != "" {
+		airgapMetadata, err := archives.GetFileFromAirgap("airgap.yaml", deployOptions.AirgapBundle)
 		if err != nil {
 			return errors.Wrap(err, "failed to get airgap.yaml from bundle")
 		}
