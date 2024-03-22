@@ -225,7 +225,7 @@ func Upgrade(appSlug string, options UpgradeOptions) (*UpgradeResponse, error) {
 }
 
 func createPartFromFile(partWriter *multipart.Writer, path string, fileName string) error {
-	contents, err := archives.GetFileFromAirgap(path, fileName)
+	contents, err := archives.GetFileFromAirgap(fileName, path)
 	if err != nil {
 		return errors.Wrapf(err, "failed to get file %s from airgap", fileName)
 	}
