@@ -1120,14 +1120,6 @@
     "@babel/helper-create-regexp-features-plugin" "^7.22.15"
     "@babel/helper-plugin-utils" "^7.24.0"
 
-"@babel/polyfill@^7.4.4":
-  version "7.12.1"
-  resolved "https://registry.npmjs.org/@babel/polyfill/-/polyfill-7.12.1.tgz"
-  integrity sha512-X0pi0V6gxLi6lFZpGmeNa4zxtwEmCs42isWLNjZZDE0Y8yVfgu0T2OAHlzBbdYlqbW/YXVvoBHpATEM+goCj8g==
-  dependencies:
-    core-js "^2.6.5"
-    regenerator-runtime "^0.13.4"
-
 "@babel/preset-env@^7.12.11", "@babel/preset-env@^7.24.3":
   version "7.24.3"
   resolved "https://registry.yarnpkg.com/@babel/preset-env/-/preset-env-7.24.3.tgz#f3f138c844ffeeac372597b29c51b5259e8323a3"
@@ -4872,6 +4864,11 @@ accounting@^0.4.1:
   resolved "https://registry.npmjs.org/accounting/-/accounting-0.4.1.tgz"
   integrity sha1-h91BA+/39EYPHhhvXGd+1s9WaIM=
 
+ace-builds@^1.4.14:
+  version "1.32.8"
+  resolved "https://registry.yarnpkg.com/ace-builds/-/ace-builds-1.32.8.tgz#62a056096c51560f112b3ad8b2803246796b32c7"
+  integrity sha512-thjKTlZlW2/9tU6eSOD2mOoEh5A4aUb1c8joWrwwlaA/zmFgEATNhy0W1UORzW60Hg9BeGAjQ3kSX8UuMkZKXg==
+
 acorn-globals@^6.0.0:
   version "6.0.0"
   resolved "https://registry.npmjs.org/acorn-globals/-/acorn-globals-6.0.0.tgz"
@@ -7133,7 +7130,7 @@ core-js-pure@^3.23.3:
   resolved "https://registry.yarnpkg.com/core-js-pure/-/core-js-pure-3.26.1.tgz#653f4d7130c427820dcecd3168b594e8bb095a33"
   integrity sha512-VVXcDpp/xJ21KdULRq/lXdLzQAtX7+37LzpyfFM973il0tWSsDEoyzG38G14AjTpK9VTfiNM9jnFauq/CpaWGQ==
 
-core-js@^2.4.0, core-js@^2.5.0, core-js@^2.6.5:
+core-js@^2.4.0, core-js@^2.5.0:
   version "2.6.12"
   resolved "https://registry.npmjs.org/core-js/-/core-js-2.6.12.tgz"
   integrity sha512-Kb2wC0fvsWfQrgk8HU5lW6U/Lcs8+9aaYcy4ZFc6DDlo4nZ7n70dEgE5rtR0oG6ufKDUnrwfWL1mXR5ljDatrQ==
@@ -7840,9 +7837,9 @@ didyoumean@^1.2.2:
   resolved "https://registry.yarnpkg.com/didyoumean/-/didyoumean-1.2.2.tgz#989346ffe9e839b4555ecf5666edea0d3e8ad037"
   integrity sha512-gxtyfqMg7GKyhQmb056K7M3xszy/myH8w+B4RT+QXBQsvAOdc3XymqDDPHx1BgPgsdAA5SIifona89YtRATDzw==
 
-diff-match-patch@^1.0.4:
+diff-match-patch@^1.0.5:
   version "1.0.5"
-  resolved "https://registry.npmjs.org/diff-match-patch/-/diff-match-patch-1.0.5.tgz"
+  resolved "https://registry.yarnpkg.com/diff-match-patch/-/diff-match-patch-1.0.5.tgz#abb584d5f10cd1196dfc55aa03701592ae3f7b37"
   integrity sha512-IayShXAgj/QMXgB0IWmKx+rOPuGMhqm5w6jvFxmVenXKIzRqTAAsbBPT3kWQeGANj3jGgvcvv4yK6SxqYmikgw==
 
 diff-sequences@^28.1.1:
@@ -14368,14 +14365,13 @@ rc-progress@^2.5.2:
     babel-runtime "6.x"
     prop-types "^15.5.8"
 
-react-ace@^6.2.0:
-  version "6.6.0"
-  resolved "https://registry.npmjs.org/react-ace/-/react-ace-6.6.0.tgz"
-  integrity sha512-Jehhp8bxa8kqiXk07Jzy+uD5qZMBwo43O+raniGHjdX7Qk93xFkKaAz8LxtUVZPJGlRnV5ODMNj0qHwDSN+PBw==
+react-ace@^10.1.0:
+  version "10.1.0"
+  resolved "https://registry.yarnpkg.com/react-ace/-/react-ace-10.1.0.tgz#d348eac2b16475231779070b6cd16768deed565f"
+  integrity sha512-VkvUjZNhdYTuKOKQpMIZi7uzZZVgzCjM7cLYu6F64V0mejY8a2XTyPUIMszC6A4trbeMIHbK5fYFcT/wkP/8VA==
   dependencies:
-    "@babel/polyfill" "^7.4.4"
-    brace "^0.11.1"
-    diff-match-patch "^1.0.4"
+    ace-builds "^1.4.14"
+    diff-match-patch "^1.0.5"
     lodash.get "^4.4.2"
     lodash.isequal "^4.5.0"
     prop-types "^15.7.2"
@@ -14818,7 +14814,7 @@ regenerator-runtime@^0.11.0:
   resolved "https://registry.npmjs.org/regenerator-runtime/-/regenerator-runtime-0.11.1.tgz"
   integrity sha512-MguG95oij0fC3QV3URf4V2SDYGJhJnJGqvIIgdECeODCT98wSWDAJ94SSuVpYQUoTcGUIL6L4yNB7j1DFFHSBg==
 
-regenerator-runtime@^0.13.4, regenerator-runtime@^0.13.7:
+regenerator-runtime@^0.13.7:
   version "0.13.11"
   resolved "https://registry.yarnpkg.com/regenerator-runtime/-/regenerator-runtime-0.13.11.tgz#f6dca3e7ceec20590d07ada785636a90cdca17f9"
   integrity sha512-kY1AZVr2Ra+t+piVaJ4gxaFaReZVH40AKNo7UCX6W+dEwBo/2oZJzqfuN1qLq1oL45o56cPaTXELwrTh8Fpggg==
