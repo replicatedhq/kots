@@ -1,8 +1,6 @@
 module github.com/replicatedhq/kots
 
-go 1.21.0
-
-toolchain go1.21.3
+go 1.21.7
 
 require (
 	cloud.google.com/go/storage v1.35.1
@@ -43,13 +41,14 @@ require (
 	github.com/onsi/ginkgo/v2 v2.15.0
 	github.com/onsi/gomega v1.31.1
 	github.com/open-policy-agent/opa v0.60.0
+	github.com/opencontainers/image-spec v1.1.0-rc6
 	github.com/ory/dockertest/v3 v3.10.0
 	github.com/otiai10/copy v1.14.0
 	github.com/phayes/freeport v0.0.0-20220201140144-74d24b5ae9f5
 	github.com/pkg/errors v0.9.1
 	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2
-	github.com/replicatedhq/embedded-cluster-operator v0.20.0
-	github.com/replicatedhq/kotskinds v0.0.0-20240209205029-4b4312dee0e4
+	github.com/replicatedhq/embedded-cluster-kinds v1.1.0
+	github.com/replicatedhq/kotskinds v0.0.0-20240325180316-69fa87e77a40
 	github.com/replicatedhq/kurlkinds v1.3.6
 	github.com/replicatedhq/troubleshoot v0.83.0
 	github.com/replicatedhq/yaml/v3 v3.0.0-beta5-replicatedhq
@@ -62,7 +61,7 @@ require (
 	github.com/spf13/cobra v1.8.0
 	github.com/spf13/pflag v1.0.5
 	github.com/spf13/viper v1.18.2
-	github.com/stretchr/testify v1.8.4
+	github.com/stretchr/testify v1.9.0
 	github.com/tj/go-spin v1.1.0
 	github.com/vmware-tanzu/velero v1.10.3
 	go.uber.org/multierr v1.11.0
@@ -291,7 +290,6 @@ require (
 	github.com/nwaples/rardecode v1.1.2 // indirect
 	github.com/oklog/ulid v1.3.1 // indirect
 	github.com/opencontainers/go-digest v1.0.0 // indirect
-	github.com/opencontainers/image-spec v1.1.0-rc6 // indirect
 	github.com/opencontainers/runc v1.1.12 // indirect
 	github.com/opencontainers/runtime-spec v1.1.0 // indirect
 	github.com/opencontainers/selinux v1.11.0 // indirect
