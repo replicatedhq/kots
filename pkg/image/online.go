@@ -45,6 +45,12 @@ type UpdateInstallationImagesOptions struct {
 	DockerHubRegistryCreds registry.Credentials
 }
 
+type UpdateInstallationAirgapArtifactsOptions struct {
+	Artifacts   []string
+	KotsKinds   *kotsutil.KotsKinds
+	UpstreamDir string
+}
+
 func UpdateInstallationImages(opts UpdateInstallationImagesOptions) error {
 	if opts.KotsKinds == nil {
 		return nil
@@ -124,6 +130,20 @@ func UpdateInstallationImages(opts UpdateInstallationImagesOptions) error {
 	})
 
 	opts.KotsKinds.Installation.Spec.KnownImages = installationImages
+
+	if err := kotsutil.SaveInstallation(&opts.KotsKinds.Installation, opts.UpstreamDir); err != nil {
+		return errors.Wrap(err, "failed to save installation")
+	}
+
+	return nil
+}
+
+func UpdateInstallationAirgapArtifacts(opts UpdateInstallationAirgapArtifactsOptions) error {
+	if opts.KotsKinds == nil {
+		return nil
+	}
+
+	opts.KotsKinds.Installation.Spec.AirgapArtifacts = opts.Artifacts
 
 	if err := kotsutil.SaveInstallation(&opts.KotsKinds.Installation, opts.UpstreamDir); err != nil {
 		return errors.Wrap(err, "failed to save installation")
