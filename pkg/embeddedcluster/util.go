@@ -26,8 +26,9 @@ const configMapNamespace = "embedded-cluster"
 // ErrNoInstallations is returned when no installation object is found in the cluster.
 var ErrNoInstallations = fmt.Errorf("no installations found")
 
-var chartsArtifactRegex = regexp.MustCompile(`embedded-cluster\/charts\.tar\.gz`)
-var imagesArtifactRegex = regexp.MustCompile(`embedded-cluster\/images-.+\.tar`)
+var chartsArtifactRegex = regexp.MustCompile(`\/embedded-cluster\/(charts\.tar\.gz):`)
+var imagesArtifactRegex = regexp.MustCompile(`\/embedded-cluster\/(images-.+\.tar):`)
+var binaryArtifactRegex = regexp.MustCompile(`\/embedded-cluster\/(embedded-cluster-.+):`)
 
 // ReadConfigMap will read the Kurl config from a configmap
 func ReadConfigMap(client kubernetes.Interface) (*corev1.ConfigMap, error) {
@@ -108,14 +109,9 @@ func ClusterConfig(ctx context.Context) (*embeddedclusterv1beta1.ConfigSpec, err
 	return latest.Spec.Config, nil
 }
 
-func getArtifactsFromInstallation(installation kotsv1beta1.Installation, appSlug string) (*embeddedclusterv1beta1.ArtifactsLocation, error) {
+func getArtifactsFromInstallation(installation kotsv1beta1.Installation, appSlug string) *embeddedclusterv1beta1.ArtifactsLocation {
 	if len(installation.Spec.AirgapArtifacts) == 0 {
-		return nil, nil
-	}
-
-	appSlugRegex, err := regexp.Compile(fmt.Sprintf(`embedded-cluster\/%s`, appSlug))
-	if err != nil {
-		return nil, fmt.Errorf("failed to compile app slug regex: %w", err)
+		return nil
 	}
 
 	artifacts := &embeddedclusterv1beta1.ArtifactsLocation{}
@@ -125,14 +121,14 @@ func getArtifactsFromInstallation(installation kotsv1beta1.Installation, appSlug
 			artifacts.HelmCharts = artifact
 		case imagesArtifactRegex.MatchString(artifact):
 			artifacts.Images = artifact
-		case appSlugRegex.MatchString(artifact):
+		case binaryArtifactRegex.MatchString(artifact):
 			artifacts.EmbeddedClusterBinary = artifact
 		default:
 			logger.Warnf("unknown artifact in installation: %s", artifact)
 		}
 	}
 
-	return artifacts, nil
+	return artifacts
 }
 
 // startClusterUpgrade will create a new installation with the provided config.
