@@ -109,6 +109,10 @@ func WriteProgressLine(progressWriter io.Writer, line string) {
 
 // CopyAirgapImages pushes images found in the airgap bundle/airgap root to the configured registry.
 func CopyAirgapImages(opts imagetypes.ProcessImageOptions, log *logger.CLILogger) (*imagetypes.CopyAirgapImagesResult, error) {
+	if opts.AirgapBundle == "" {
+		return &imagetypes.CopyAirgapImagesResult{}, nil
+	}
+
 	pushOpts := imagetypes.PushImagesOptions{
 		Registry: dockerregistrytypes.RegistryOptions{
 			Endpoint:  opts.RegistrySettings.Hostname,
@@ -121,16 +125,14 @@ func CopyAirgapImages(opts imagetypes.ProcessImageOptions, log *logger.CLILogger
 		LogForUI:       true,
 	}
 
-	result := &imagetypes.CopyAirgapImagesResult{}
-	if opts.AirgapBundle != "" {
-		copyResult, err := TagAndPushImagesFromBundle(opts.AirgapBundle, pushOpts)
-		if err != nil {
-			return nil, errors.Wrap(err, "failed to push images from bundle")
-		}
-		result.Artifacts = copyResult.Artifacts
+	copyResult, err := TagAndPushImagesFromBundle(opts.AirgapBundle, pushOpts)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to push images from bundle")
 	}
 
-	return result, nil
+	return &imagetypes.CopyAirgapImagesResult{
+		EmbeddedClusterArtifacts: copyResult.EmbeddedClusterArtifacts,
+	}, nil
 }
 
 func TagAndPushImagesFromBundle(airgapBundle string, options imagetypes.PushImagesOptions) (*imagetypes.CopyAirgapImagesResult, error) {
@@ -177,7 +179,7 @@ func TagAndPushImagesFromBundle(airgapBundle string, options imagetypes.PushImag
 	}
 
 	result := &imagetypes.CopyAirgapImagesResult{
-		Artifacts: pushedArtifacts,
+		EmbeddedClusterArtifacts: pushedArtifacts,
 	}
 
 	return result, nil

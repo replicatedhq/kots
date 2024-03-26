@@ -47,7 +47,7 @@ type CopyImageOptions struct {
 }
 
 type CopyAirgapImagesResult struct {
-	Artifacts []string
+	EmbeddedClusterArtifacts []string
 }
 
 type PushImagesOptions struct {

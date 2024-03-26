@@ -45,7 +45,7 @@ type UpdateInstallationImagesOptions struct {
 	DockerHubRegistryCreds registry.Credentials
 }
 
-type UpdateInstallationAirgapArtifactsOptions struct {
+type UpdateInstallationEmbeddedClusterArtifactsOptions struct {
 	Artifacts   []string
 	KotsKinds   *kotsutil.KotsKinds
 	UpstreamDir string
@@ -138,7 +138,7 @@ func UpdateInstallationImages(opts UpdateInstallationImagesOptions) error {
 	return nil
 }
 
-func UpdateInstallationAirgapArtifacts(opts UpdateInstallationAirgapArtifactsOptions) error {
+func UpdateInstallationEmbeddedClusterArtifacts(opts UpdateInstallationEmbeddedClusterArtifactsOptions) error {
 	if opts.KotsKinds == nil {
 		return nil
 	}

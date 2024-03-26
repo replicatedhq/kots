@@ -117,8 +117,8 @@ func WriteMidstream(opts WriteOptions) (*Midstream, error) {
 					return nil, errors.Wrap(err, "failed to copy airgap images")
 				}
 
-				if err := image.UpdateInstallationAirgapArtifacts(image.UpdateInstallationAirgapArtifactsOptions{
-					Artifacts:   copyResult.Artifacts,
+				if err := image.UpdateInstallationEmbeddedClusterArtifacts(image.UpdateInstallationEmbeddedClusterArtifactsOptions{
+					Artifacts:   copyResult.EmbeddedClusterArtifacts,
 					KotsKinds:   opts.KotsKinds,
 					UpstreamDir: opts.UpstreamDir,
 				}); err != nil {
