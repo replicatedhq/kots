@@ -31,7 +31,7 @@ func Test_getArtifactsFromInstallation(t *testing.T) {
 			args: args{
 				installation: kotsv1beta1.Installation{
 					Spec: kotsv1beta1.InstallationSpec{
-						AirgapArtifacts: []string{
+						EmbeddedClusterArtifacts: []string{
 							"onprem.registry.com/my-app/embedded-cluster/charts.tar.gz:v1",
 							"onprem.registry.com/my-app/embedded-cluster/images-amd64.tar:v1",
 							"onprem.registry.com/my-app/embedded-cluster/embedded-cluster-amd64:v1",

@@ -48,7 +48,7 @@ require (
 	github.com/pkg/errors v0.9.1
 	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2
 	github.com/replicatedhq/embedded-cluster-kinds v1.1.0
-	github.com/replicatedhq/kotskinds v0.0.0-20240325180316-69fa87e77a40
+	github.com/replicatedhq/kotskinds v0.0.0-20240326192117-c171d8810b55
 	github.com/replicatedhq/kurlkinds v1.3.6
 	github.com/replicatedhq/troubleshoot v0.83.0
 	github.com/replicatedhq/yaml/v3 v3.0.0-beta5-replicatedhq

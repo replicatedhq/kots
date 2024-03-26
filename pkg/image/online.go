@@ -143,7 +143,7 @@ func UpdateInstallationAirgapArtifacts(opts UpdateInstallationAirgapArtifactsOpt
 		return nil
 	}
 
-	opts.KotsKinds.Installation.Spec.AirgapArtifacts = opts.Artifacts
+	opts.KotsKinds.Installation.Spec.EmbeddedClusterArtifacts = opts.Artifacts
 
 	if err := kotsutil.SaveInstallation(&opts.KotsKinds.Installation, opts.UpstreamDir); err != nil {
 		return errors.Wrap(err, "failed to save installation")

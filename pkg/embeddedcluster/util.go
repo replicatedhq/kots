@@ -110,12 +110,12 @@ func ClusterConfig(ctx context.Context) (*embeddedclusterv1beta1.ConfigSpec, err
 }
 
 func getArtifactsFromInstallation(installation kotsv1beta1.Installation, appSlug string) *embeddedclusterv1beta1.ArtifactsLocation {
-	if len(installation.Spec.AirgapArtifacts) == 0 {
+	if len(installation.Spec.EmbeddedClusterArtifacts) == 0 {
 		return nil
 	}
 
 	artifacts := &embeddedclusterv1beta1.ArtifactsLocation{}
-	for _, artifact := range installation.Spec.AirgapArtifacts {
+	for _, artifact := range installation.Spec.EmbeddedClusterArtifacts {
 		switch {
 		case chartsArtifactRegex.MatchString(artifact):
 			artifacts.HelmCharts = artifact
