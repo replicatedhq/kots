@@ -813,6 +813,7 @@ func pushOCIArtifact(opts imagetypes.PushOCIArtifactOptions) error {
 			Password: opts.Registry.Password,
 		}),
 	}
+	repository.PlainHTTP = true
 
 	_, err = oras.Copy(context.TODO(), orasFS, opts.Tag, repository, opts.Tag, oras.DefaultCopyOptions)
 	if err != nil {
