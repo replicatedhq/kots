@@ -109,9 +109,9 @@ func ClusterConfig(ctx context.Context) (*embeddedclusterv1beta1.ConfigSpec, err
 	return latest.Spec.Config, nil
 }
 
-func getArtifactsFromInstallation(installation kotsv1beta1.Installation, appSlug string) (*embeddedclusterv1beta1.ArtifactsLocation, error) {
+func getArtifactsFromInstallation(installation kotsv1beta1.Installation, appSlug string) *embeddedclusterv1beta1.ArtifactsLocation {
 	if len(installation.Spec.AirgapArtifacts) == 0 {
-		return nil, nil
+		return nil
 	}
 
 	artifacts := &embeddedclusterv1beta1.ArtifactsLocation{}
@@ -128,15 +128,7 @@ func getArtifactsFromInstallation(installation kotsv1beta1.Installation, appSlug
 		}
 	}
 
-	if artifacts.HelmCharts == "" {
-		return nil, fmt.Errorf("no charts artifact found in installation")
-	} else if artifacts.Images == "" {
-		return nil, fmt.Errorf("no images artifact found in installation")
-	} else if artifacts.EmbeddedClusterBinary == "" {
-		return nil, fmt.Errorf("no embedded-cluster binary artifact found in installation")
-	}
-
-	return artifacts, nil
+	return artifacts
 }
 
 // startClusterUpgrade will create a new installation with the provided config.
