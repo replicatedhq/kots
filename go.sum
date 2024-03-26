@@ -1309,10 +1309,8 @@ github.com/quasilyte/go-consistent v0.0.0-20190521200055-c6f3937de18c/go.mod h1:
 github.com/rcrowley/go-metrics v0.0.0-20201227073835-cf1acfcdf475 h1:N/ElC8H3+5XpJzTSTfLsJV/mx9Q9g7kxmchpfZyxgzM=
 github.com/rcrowley/go-metrics v0.0.0-20201227073835-cf1acfcdf475/go.mod h1:bCqnVzQkZxMG4s8nGwiZ5l3QUCyqpo9Y+/ZMZ9VjZe4=
 github.com/remyoudompheng/bigfft v0.0.0-20170806203942-52369c62f446/go.mod h1:uYEyJGbgTkfkS4+E/PavXkNJcbFIpEtjt2B0KDQ5+9M=
-github.com/replicatedhq/embedded-cluster-kinds v1.1.0 h1:brGxyi/mG7pEohE4ZNRbeYBVOcDFBaMP/jt9VdcKTWY=
-github.com/replicatedhq/embedded-cluster-kinds v1.1.0/go.mod h1:LheSDOgMngMRAbwAj0sVZUVv2ciKIVR2bYTMeOBGwlg=
-github.com/replicatedhq/kotskinds v0.0.0-20240325180316-69fa87e77a40 h1:m0IcD1NP0t1ZmJWnUzjiIQ6/pOqJBBkAKn6a8Fw+TXk=
-github.com/replicatedhq/kotskinds v0.0.0-20240325180316-69fa87e77a40/go.mod h1:QjhIUu3+OmHZ09u09j3FCoTt8F3BYtQglS+OLmftu9I=
+github.com/replicatedhq/embedded-cluster-kinds v1.1.1 h1:300bVpCBHtZ9acJgEHL3/S4CapvxCRfcSwg/adMNWW8=
+github.com/replicatedhq/embedded-cluster-kinds v1.1.1/go.mod h1:LheSDOgMngMRAbwAj0sVZUVv2ciKIVR2bYTMeOBGwlg=
 github.com/replicatedhq/kotskinds v0.0.0-20240326192117-c171d8810b55 h1:jMMARRH885QgPR8LBFGjRxYGBQgzADsyjZyQLZ/TKlc=
 github.com/replicatedhq/kotskinds v0.0.0-20240326192117-c171d8810b55/go.mod h1:QjhIUu3+OmHZ09u09j3FCoTt8F3BYtQglS+OLmftu9I=
 github.com/replicatedhq/kurlkinds v1.3.6 h1:/dhS32cSSZR4yS4vA8EquBvz+VgJCyTqBO9Xw+6eI4M=
