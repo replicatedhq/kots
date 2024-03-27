@@ -46,6 +46,10 @@ type CopyImageOptions struct {
 	ReportWriter      io.Writer
 }
 
+type CopyAirgapImagesResult struct {
+	EmbeddedClusterArtifacts []string
+}
+
 type PushImagesOptions struct {
 	Registry       dockerregistrytypes.RegistryOptions
 	KotsadmTag     string

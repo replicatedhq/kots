@@ -7,8 +7,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/replicatedhq/embedded-cluster-operator/api/v1beta1"
+	embeddedclusterv1beta1 "github.com/replicatedhq/embedded-cluster-kinds/apis/v1beta1"
 	appstatetypes "github.com/replicatedhq/kots/pkg/appstate/types"
+	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/store"
 	"github.com/replicatedhq/kots/pkg/util"
@@ -22,8 +23,8 @@ var stateMut = sync.Mutex{}
 // - The app has an embedded cluster configuration.
 // - The app embedded cluster configuration differs from the current embedded cluster config.
 // - The current cluster config (as part of the Installation object) already exists in the cluster.
-func MaybeStartClusterUpgrade(ctx context.Context, store store.Store, conf *v1beta1.Config, appID string) error {
-	if conf == nil {
+func MaybeStartClusterUpgrade(ctx context.Context, store store.Store, kotsKinds *kotsutil.KotsKinds, appID string) error {
+	if kotsKinds == nil || kotsKinds.EmbeddedClusterConfig == nil {
 		return nil
 	}
 
@@ -31,7 +32,7 @@ func MaybeStartClusterUpgrade(ctx context.Context, store store.Store, conf *v1be
 		return nil
 	}
 
-	spec := conf.Spec
+	spec := kotsKinds.EmbeddedClusterConfig.Spec
 	if upgrade, err := RequiresUpgrade(ctx, spec); err != nil {
 		// if there is no installation object we can't start an upgrade. this is a valid
 		// scenario specially during cluster bootstrap. as we do not need to upgrade the
@@ -66,7 +67,9 @@ func MaybeStartClusterUpgrade(ctx context.Context, store store.Store, conf *v1be
 			continue
 		}
 
-		if err := startClusterUpgrade(ctx, spec); err != nil {
+		artifacts := getArtifactsFromInstallation(kotsKinds.Installation, kotsKinds.License.Spec.AppSlug)
+
+		if err := startClusterUpgrade(ctx, spec, artifacts); err != nil {
 			return fmt.Errorf("failed to start cluster upgrade: %w", err)
 		}
 		logger.Info("started cluster upgrade")
@@ -107,7 +110,7 @@ func watchClusterState(ctx context.Context, store store.Store) {
 			logger.Errorf("embeddedcluster monitor: fail updating state: %v", err)
 		}
 
-		if state == v1beta1.InstallationStateInstalled {
+		if state == embeddedclusterv1beta1.InstallationStateInstalled {
 			numReady++
 		} else {
 			numReady = 0
@@ -124,7 +127,7 @@ func updateClusterState(ctx context.Context, store store.Store, lastState string
 	if err != nil {
 		return "", fmt.Errorf("failed to get current installation: %w", err)
 	}
-	state := v1beta1.InstallationStateUnknown
+	state := embeddedclusterv1beta1.InstallationStateUnknown
 	if installation.Status.State != "" {
 		state = installation.Status.State
 	}

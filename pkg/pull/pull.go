@@ -364,7 +364,7 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 		}
 		if processImageOptions.RewriteImages && processImageOptions.IsAirgap {
 			// if this is an airgap install, we still need to process the images
-			if err := image.CopyAirgapImages(processImageOptions, log); err != nil {
+			if _, err := image.CopyAirgapImages(processImageOptions, log); err != nil {
 				return "", errors.Wrap(err, "failed to copy airgap images")
 			}
 		}

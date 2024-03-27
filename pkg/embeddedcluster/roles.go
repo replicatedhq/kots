@@ -7,7 +7,7 @@ import (
 	"sort"
 	"strings"
 
-	embeddedclusterv1beta1 "github.com/replicatedhq/embedded-cluster-operator/api/v1beta1"
+	embeddedclusterv1beta1 "github.com/replicatedhq/embedded-cluster-kinds/apis/v1beta1"
 )
 
 const DEFAULT_CONTROLLER_ROLE_NAME = "controller"
