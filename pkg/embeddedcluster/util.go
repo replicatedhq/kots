@@ -26,9 +26,12 @@ const configMapNamespace = "embedded-cluster"
 // ErrNoInstallations is returned when no installation object is found in the cluster.
 var ErrNoInstallations = fmt.Errorf("no installations found")
 
-var chartsArtifactRegex = regexp.MustCompile(`\/embedded-cluster\/(charts\.tar\.gz):`)
-var imagesArtifactRegex = regexp.MustCompile(`\/embedded-cluster\/(images-.+\.tar):`)
-var binaryArtifactRegex = regexp.MustCompile(`\/embedded-cluster\/(embedded-cluster-.+):`)
+var (
+	chartsArtifactRegex   = regexp.MustCompile(`\/embedded-cluster\/(charts\.tar\.gz):`)
+	imagesArtifactRegex   = regexp.MustCompile(`\/embedded-cluster\/(images-.+\.tar):`)
+	binaryArtifactRegex   = regexp.MustCompile(`\/embedded-cluster\/(embedded-cluster-.+):`)
+	metadataArtifactRegex = regexp.MustCompile(`\/embedded-cluster\/(version-metadata\.json):`)
+)
 
 // ReadConfigMap will read the Kurl config from a configmap
 func ReadConfigMap(client kubernetes.Interface) (*corev1.ConfigMap, error) {
@@ -123,6 +126,8 @@ func getArtifactsFromInstallation(installation kotsv1beta1.Installation, appSlug
 			artifacts.Images = artifact
 		case binaryArtifactRegex.MatchString(artifact):
 			artifacts.EmbeddedClusterBinary = artifact
+		case metadataArtifactRegex.MatchString(artifact):
+			artifacts.EmbeddedClusterMetadata = artifact
 		default:
 			logger.Warnf("unknown artifact in installation: %s", artifact)
 		}
