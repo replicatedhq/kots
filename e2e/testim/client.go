@@ -84,6 +84,7 @@ func (t *Client) NewRun(kubeconfig string, test inventory.Test, runOptions RunOp
 			args,
 			"--tunnel",
 			fmt.Sprintf("--tunnel-port=%s", runOptions.TunnelPort),
+			fmt.Sprintf("--base-url=http://localhost:%s", runOptions.TunnelPort), // TODO: this is a temportary workaround for a testim issue with ngrok tunnels
 		)
 	}
 	cmd := exec.Command("testim", args...)
