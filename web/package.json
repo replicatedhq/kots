@@ -161,7 +161,7 @@
     "react-ace": "^6.2.0",
     "react-apexcharts": "1.4.1",
     "react-dom": "^18.2.0",
-    "react-dropzone": "^4.2.9",
+    "react-dropzone": "^14.2.3",
     "react-helmet": "^6.1.0",
     "react-icomoon": "^2.5.7",
     "react-modal": "3.16.1",
