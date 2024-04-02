@@ -14,6 +14,7 @@ import (
 
 	dockerregistrytypes "github.com/replicatedhq/kots/pkg/docker/registry/types"
 	"github.com/replicatedhq/kots/pkg/image/types"
+	kotsv1beta1 "github.com/replicatedhq/kotskinds/apis/kots/v1beta1"
 	"github.com/stretchr/testify/require"
 )
 
@@ -22,10 +23,11 @@ func TestPushEmbeddedClusterArtifacts(t *testing.T) {
 	testTag := "test-tag"
 
 	tests := []struct {
-		name          string
-		airgapFiles   map[string][]byte
-		wantArtifacts map[string]string
-		wantErr       bool
+		name                     string
+		airgapFiles              map[string][]byte
+		embeddedClusterArtifacts []kotsv1beta1.EmbeddedClusterArtifact
+		wantArtifacts            map[string]string
+		wantErr                  bool
 	}{
 		{
 			name: "no embedded cluster files",
@@ -34,8 +36,9 @@ func TestPushEmbeddedClusterArtifacts(t *testing.T) {
 				"app.tar.gz":       []byte("this-is-the-app-archive"),
 				"images/something": []byte("this-is-an-image"),
 			},
-			wantArtifacts: map[string]string{},
-			wantErr:       false,
+			embeddedClusterArtifacts: []kotsv1beta1.EmbeddedClusterArtifact{},
+			wantArtifacts:            map[string]string{},
+			wantErr:                  false,
 		},
 		{
 			name: "has embedded cluster files",
@@ -46,13 +49,17 @@ func TestPushEmbeddedClusterArtifacts(t *testing.T) {
 				"embedded-cluster/test-app":         []byte("this-is-the-binary"),
 				"embedded-cluster/charts.tar.gz":    []byte("this-is-the-charts-bundle"),
 				"embedded-cluster/images-amd64.tar": []byte("this-is-the-images-bundle"),
-				"embedded-cluster/some-file-TBD":    []byte("this-is-an-arbitrary-file"),
+				"embedded-cluster/some-file-TBD":    []byte("this-is-an-arbitrary-file"), // should be ignored since it's not in the list of artifacts
+			},
+			embeddedClusterArtifacts: []kotsv1beta1.EmbeddedClusterArtifact{
+				{Path: "embedded-cluster/test-app"},
+				{Path: "embedded-cluster/charts.tar.gz"},
+				{Path: "embedded-cluster/images-amd64.tar"},
 			},
 			wantArtifacts: map[string]string{
 				fmt.Sprintf("%s/embedded-cluster/test-app", testAppSlug):         testTag,
 				fmt.Sprintf("%s/embedded-cluster/charts.tar.gz", testAppSlug):    testTag,
 				fmt.Sprintf("%s/embedded-cluster/images-amd64.tar", testAppSlug): testTag,
-				fmt.Sprintf("%s/embedded-cluster/some-file-tbd", testAppSlug):    testTag,
 			},
 			wantErr: false,
 		},
@@ -82,7 +89,7 @@ func TestPushEmbeddedClusterArtifacts(t *testing.T) {
 				Tag:        testTag,
 				HTTPClient: mockRegistryServer.Client(),
 			}
-			if err := PushEmbeddedClusterArtifacts(airgapBundle, opts); (err != nil) != tt.wantErr {
+			if err := PushEmbeddedClusterArtifacts(airgapBundle, tt.embeddedClusterArtifacts, opts); (err != nil) != tt.wantErr {
 				t.Errorf("PushEmbeddedClusterArtifacts() error = %v, wantErr %v", err, tt.wantErr)
 			}
 

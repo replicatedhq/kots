@@ -50,7 +50,7 @@ require (
 	github.com/pkg/errors v0.9.1
 	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2
 	github.com/replicatedhq/embedded-cluster-operator v0.20.0
-	github.com/replicatedhq/kotskinds v0.0.0-20240209205029-4b4312dee0e4
+	github.com/replicatedhq/kotskinds v0.0.0-20240401201638-20abbb78828f
 	github.com/replicatedhq/kurlkinds v1.3.6
 	github.com/replicatedhq/troubleshoot v0.83.0
 	github.com/replicatedhq/yaml/v3 v3.0.0-beta5-replicatedhq

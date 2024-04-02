@@ -27,6 +27,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/imageutil"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/logger"
+	kotsv1beta1 "github.com/replicatedhq/kotskinds/apis/kots/v1beta1"
 	oras "oras.land/oras-go/v2"
 	orasfile "oras.land/oras-go/v2/content/file"
 	orasremote "oras.land/oras-go/v2/registry/remote"
@@ -169,7 +170,7 @@ func TagAndPushImagesFromBundle(airgapBundle string, options imagetypes.PushImag
 		Tag:        imageutil.SanitizeTag(fmt.Sprintf("%s-%s-%s", airgap.Spec.ChannelID, airgap.Spec.UpdateCursor, airgap.Spec.VersionLabel)),
 		HTTPClient: orasretry.DefaultClient,
 	}
-	if err := PushEmbeddedClusterArtifacts(airgapBundle, pushEmbeddedArtifactsOpts); err != nil {
+	if err := PushEmbeddedClusterArtifacts(airgapBundle, airgap.Spec.EmbeddedClusterArtifacts, pushEmbeddedArtifactsOpts); err != nil {
 		return errors.Wrap(err, "failed to push embedded cluster artifacts")
 	}
 
@@ -681,7 +682,7 @@ func reportWriterWithProgress(imageInfos map[string]*imagetypes.ImageInfo, repor
 	return pipeWriter
 }
 
-func PushEmbeddedClusterArtifacts(airgapBundle string, opts imagetypes.PushEmbeddedClusterArtifactsOptions) error {
+func PushEmbeddedClusterArtifacts(airgapBundle string, embeddedClusterArtifacts []kotsv1beta1.EmbeddedClusterArtifact, opts imagetypes.PushEmbeddedClusterArtifactsOptions) error {
 	tmpDir, err := os.MkdirTemp("", "embedded-cluster-artifacts")
 	if err != nil {
 		return errors.Wrap(err, "failed to create temp directory")
@@ -700,6 +701,11 @@ func PushEmbeddedClusterArtifacts(airgapBundle string, opts imagetypes.PushEmbed
 	}
 	defer gzipReader.Close()
 
+	pushedArtifacts := make(map[string]bool)
+	for _, artifact := range embeddedClusterArtifacts {
+		pushedArtifacts[artifact.Path] = false
+	}
+
 	tarReader := tar.NewReader(gzipReader)
 	for {
 		header, err := tarReader.Next()
@@ -714,12 +720,14 @@ func PushEmbeddedClusterArtifacts(airgapBundle string, opts imagetypes.PushEmbed
 			continue
 		}
 
-		if filepath.Dir(header.Name) != "embedded-cluster" {
+		artifactPath := header.Name
+		_, ok := pushedArtifacts[artifactPath]
+		if !ok {
 			continue
 		}
 
 		if err := func() error {
-			dstFilePath := filepath.Join(tmpDir, header.Name)
+			dstFilePath := filepath.Join(tmpDir, artifactPath)
 			if err := os.MkdirAll(filepath.Dir(dstFilePath), 0755); err != nil {
 				return errors.Wrap(err, "failed to create path")
 			}
@@ -760,7 +768,15 @@ func PushEmbeddedClusterArtifacts(airgapBundle string, opts imagetypes.PushEmbed
 
 			return nil
 		}(); err != nil {
-			return err
+			return fmt.Errorf("failed to process artifact %s: %v", artifactPath, err)
+		}
+
+		pushedArtifacts[artifactPath] = true
+	}
+
+	for artifactPath, pushed := range pushedArtifacts {
+		if !pushed {
+			fmt.Printf("Warning: artifact %s was not found in the airgap bundle\n", artifactPath)
 		}
 	}
 
