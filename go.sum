@@ -1317,6 +1317,8 @@ github.com/replicatedhq/kotskinds v0.0.0-20240209205029-4b4312dee0e4 h1:gVPYIjTx
 github.com/replicatedhq/kotskinds v0.0.0-20240209205029-4b4312dee0e4/go.mod h1:QjhIUu3+OmHZ09u09j3FCoTt8F3BYtQglS+OLmftu9I=
 github.com/replicatedhq/kotskinds v0.0.0-20240401201638-20abbb78828f h1:U6FBTsdwMFsgVktmIDrbp6zqwTGEFatKv9QnJuhnIXg=
 github.com/replicatedhq/kotskinds v0.0.0-20240401201638-20abbb78828f/go.mod h1:QjhIUu3+OmHZ09u09j3FCoTt8F3BYtQglS+OLmftu9I=
+github.com/replicatedhq/kotskinds v0.0.0-20240402193250-4b3e23bbf0fc h1:WGC171DQeZsiBHBJQ1hgKkrFhl+2TkKj2IXen1ECSww=
+github.com/replicatedhq/kotskinds v0.0.0-20240402193250-4b3e23bbf0fc/go.mod h1:QjhIUu3+OmHZ09u09j3FCoTt8F3BYtQglS+OLmftu9I=
 github.com/replicatedhq/kurlkinds v1.3.6 h1:/dhS32cSSZR4yS4vA8EquBvz+VgJCyTqBO9Xw+6eI4M=
 github.com/replicatedhq/kurlkinds v1.3.6/go.mod h1:c5+hoAkuARgftB2Ft3RCyWRZZPhL0clHEaw7XoGDAg4=
 github.com/replicatedhq/termui/v3 v3.1.1-0.20200811145416-f40076d26851 h1:eRlNDHxGfVkPCRXbA4BfQJvt5DHjFiTtWy3R/t4djyY=

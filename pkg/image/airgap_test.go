@@ -25,7 +25,7 @@ func TestPushEmbeddedClusterArtifacts(t *testing.T) {
 	tests := []struct {
 		name                     string
 		airgapFiles              map[string][]byte
-		embeddedClusterArtifacts []kotsv1beta1.EmbeddedClusterArtifact
+		embeddedClusterArtifacts *kotsv1beta1.EmbeddedClusterArtifacts
 		wantArtifacts            map[string]string
 		wantErr                  bool
 	}{
@@ -36,30 +36,33 @@ func TestPushEmbeddedClusterArtifacts(t *testing.T) {
 				"app.tar.gz":       []byte("this-is-the-app-archive"),
 				"images/something": []byte("this-is-an-image"),
 			},
-			embeddedClusterArtifacts: []kotsv1beta1.EmbeddedClusterArtifact{},
+			embeddedClusterArtifacts: &kotsv1beta1.EmbeddedClusterArtifacts{},
 			wantArtifacts:            map[string]string{},
 			wantErr:                  false,
 		},
 		{
 			name: "has embedded cluster files",
 			airgapFiles: map[string][]byte{
-				"airgap.yaml":                       []byte("this-is-the-airgap-metadata"),
-				"app.tar.gz":                        []byte("this-is-the-app-archive"),
-				"images/something":                  []byte("this-is-an-image"),
-				"embedded-cluster/test-app":         []byte("this-is-the-binary"),
-				"embedded-cluster/charts.tar.gz":    []byte("this-is-the-charts-bundle"),
-				"embedded-cluster/images-amd64.tar": []byte("this-is-the-images-bundle"),
-				"embedded-cluster/some-file-TBD":    []byte("this-is-an-arbitrary-file"), // should be ignored since it's not in the list of artifacts
+				"airgap.yaml":                            []byte("this-is-the-airgap-metadata"),
+				"app.tar.gz":                             []byte("this-is-the-app-archive"),
+				"images/something":                       []byte("this-is-an-image"),
+				"embedded-cluster/test-app":              []byte("this-is-the-binary"),
+				"embedded-cluster/charts.tar.gz":         []byte("this-is-the-charts-bundle"),
+				"embedded-cluster/images-amd64.tar":      []byte("this-is-the-images-bundle"),
+				"embedded-cluster/version-metadata.json": []byte("this-is-the-version-metadata"),
+				"embedded-cluster/some-file-TBD":         []byte("this-is-an-arbitrary-file"), // should be ignored since it's not in the list of artifacts
 			},
-			embeddedClusterArtifacts: []kotsv1beta1.EmbeddedClusterArtifact{
-				{Path: "embedded-cluster/test-app"},
-				{Path: "embedded-cluster/charts.tar.gz"},
-				{Path: "embedded-cluster/images-amd64.tar"},
+			embeddedClusterArtifacts: &kotsv1beta1.EmbeddedClusterArtifacts{
+				Binary:   "embedded-cluster/test-app",
+				Charts:   "embedded-cluster/charts.tar.gz",
+				Images:   "embedded-cluster/images-amd64.tar",
+				Metadata: "embedded-cluster/version-metadata.json",
 			},
 			wantArtifacts: map[string]string{
-				fmt.Sprintf("%s/embedded-cluster/test-app", testAppSlug):         testTag,
-				fmt.Sprintf("%s/embedded-cluster/charts.tar.gz", testAppSlug):    testTag,
-				fmt.Sprintf("%s/embedded-cluster/images-amd64.tar", testAppSlug): testTag,
+				fmt.Sprintf("%s/embedded-cluster/test-app", testAppSlug):              testTag,
+				fmt.Sprintf("%s/embedded-cluster/charts.tar.gz", testAppSlug):         testTag,
+				fmt.Sprintf("%s/embedded-cluster/images-amd64.tar", testAppSlug):      testTag,
+				fmt.Sprintf("%s/embedded-cluster/version-metadata.json", testAppSlug): testTag,
 			},
 			wantErr: false,
 		},

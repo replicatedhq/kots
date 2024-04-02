@@ -682,7 +682,7 @@ func reportWriterWithProgress(imageInfos map[string]*imagetypes.ImageInfo, repor
 	return pipeWriter
 }
 
-func PushEmbeddedClusterArtifacts(airgapBundle string, embeddedClusterArtifacts []kotsv1beta1.EmbeddedClusterArtifact, opts imagetypes.PushEmbeddedClusterArtifactsOptions) error {
+func PushEmbeddedClusterArtifacts(airgapBundle string, embeddedClusterArtifacts *kotsv1beta1.EmbeddedClusterArtifacts, opts imagetypes.PushEmbeddedClusterArtifactsOptions) error {
 	tmpDir, err := os.MkdirTemp("", "embedded-cluster-artifacts")
 	if err != nil {
 		return errors.Wrap(err, "failed to create temp directory")
@@ -702,8 +702,11 @@ func PushEmbeddedClusterArtifacts(airgapBundle string, embeddedClusterArtifacts 
 	defer gzipReader.Close()
 
 	pushedArtifacts := make(map[string]bool)
-	for _, artifact := range embeddedClusterArtifacts {
-		pushedArtifacts[artifact.Path] = false
+	if embeddedClusterArtifacts != nil {
+		pushedArtifacts[embeddedClusterArtifacts.Charts] = false
+		pushedArtifacts[embeddedClusterArtifacts.Images] = false
+		pushedArtifacts[embeddedClusterArtifacts.Binary] = false
+		pushedArtifacts[embeddedClusterArtifacts.Metadata] = false
 	}
 
 	tarReader := tar.NewReader(gzipReader)
@@ -720,14 +723,21 @@ func PushEmbeddedClusterArtifacts(airgapBundle string, embeddedClusterArtifacts 
 			continue
 		}
 
-		artifactPath := header.Name
-		_, ok := pushedArtifacts[artifactPath]
-		if !ok {
-			continue
+		if embeddedClusterArtifacts == nil {
+			// if embeddedClusterArtifacts is nil, we push everything in the "embedded-cluster" directory
+			if filepath.Dir(header.Name) != "embedded-cluster" {
+				continue
+			}
+		} else {
+			// if embeddedClusterArtifacts is not nil, we only push the files specified in the embeddedClusterArtifacts
+			_, ok := pushedArtifacts[header.Name]
+			if !ok {
+				continue
+			}
 		}
 
 		if err := func() error {
-			dstFilePath := filepath.Join(tmpDir, artifactPath)
+			dstFilePath := filepath.Join(tmpDir, header.Name)
 			if err := os.MkdirAll(filepath.Dir(dstFilePath), 0755); err != nil {
 				return errors.Wrap(err, "failed to create path")
 			}
@@ -768,10 +778,10 @@ func PushEmbeddedClusterArtifacts(airgapBundle string, embeddedClusterArtifacts 
 
 			return nil
 		}(); err != nil {
-			return fmt.Errorf("failed to process artifact %s: %v", artifactPath, err)
+			return fmt.Errorf("failed to process artifact %s: %v", header.Name, err)
 		}
 
-		pushedArtifacts[artifactPath] = true
+		pushedArtifacts[header.Name] = true
 	}
 
 	for artifactPath, pushed := range pushedArtifacts {
