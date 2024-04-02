@@ -39,6 +39,7 @@ func TemplateCmd() *cobra.Command {
 			licenseFile := v.GetString("license-file")
 			configFile := v.GetString("config-values")
 			interactive := v.GetBool("interactive")
+			data := v.GetString("data")
 
 			license, err := parseLicenseFile(licenseFile)
 			if err != nil {
@@ -55,17 +56,6 @@ func TemplateCmd() *cobra.Command {
 				return errors.Wrap(err, "failed to create config context")
 			}
 
-			// when no args are provided, render all mode, similar to helm template
-			// we will utilize pull command to fetch and render manifests from upstream
-			if len(args) == 0 && !interactive {
-				err := pullAndRender(license.Spec.AppSlug, licenseFile, configFile)
-				if err != nil {
-					return errors.Wrap(err, "failed to render all templates")
-				}
-				return nil
-			}
-
-			// interactive mode
 			// TODO: support other contexts
 			builderOptions := template.BuilderOptions{
 				ExistingValues: configCtx,
@@ -81,6 +71,28 @@ func TemplateCmd() *cobra.Command {
 			log := logger.NewCLILogger(cmd.OutOrStdout())
 			log.Initialize()
 
+			// when no args are provided
+			if len(args) == 0 && !interactive {
+				// render --data if provided
+				if data != "" {
+					rendered, err := builder.String(data)
+					if err != nil {
+						return errors.Wrap(err, "failed to render raw template")
+					}
+					fmt.Println(rendered)
+					return nil
+				}
+
+				// render all mode, similar to helm template
+				// we will utilize pull command to fetch and render manifests from upstream
+				err := pullAndRender(license.Spec.AppSlug, licenseFile, configFile)
+				if err != nil {
+					return errors.Wrap(err, "failed to render all templates")
+				}
+				return nil
+			}
+
+			// interactive mode
 			if interactive {
 				err := runInteractive(&builder, log)
 				if err != nil {
@@ -90,12 +102,23 @@ func TemplateCmd() *cobra.Command {
 			}
 
 			// non-interactive mode
-			rendered, err := builder.String(args[0])
+			// first argument is path to template file
+			templateFile := args[0]
+			if _, err := os.Stat(templateFile); os.IsNotExist(err) {
+				return errors.Wrap(err, "file does not exist")
+			}
+
+			templateContent, err := os.ReadFile(templateFile)
+			if err != nil {
+				return errors.Wrap(err, "failed to read template file")
+			}
+
+			rendered, err := builder.String(string(templateContent))
 			if err != nil {
 				return errors.Wrap(err, "failed to render template")
 			}
 
-			log.Info(rendered)
+			fmt.Print(rendered)
 
 			return nil
 		},
@@ -103,6 +126,7 @@ func TemplateCmd() *cobra.Command {
 
 	cmd.Flags().String("license-file", "", "path to a license file to use when download a replicated app")
 	cmd.Flags().String("config-values", "", "path to a manifest containing config values (must be apiVersion: kots.io/v1beta1, kind: ConfigValues)")
+	cmd.Flags().String("data", "", "raw template data to render")
 	cmd.Flags().Bool("interactive", false, "provides an interactive command-line console for evaluating template values")
 
 	cmd.MarkFlagRequired("license-file")
