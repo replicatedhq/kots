@@ -556,7 +556,6 @@ func getImageInfosFromBundle(airgapBundle string, getLayerInfo bool) (map[string
 	imageInfos := make(map[string]*imagetypes.ImageInfo)
 
 	tarReader := tar.NewReader(gzipReader)
-	foundImagesFolder := false
 	for {
 		header, err := tarReader.Next()
 		if err == io.EOF {
@@ -566,20 +565,12 @@ func getImageInfosFromBundle(airgapBundle string, getLayerInfo bool) (map[string
 			return nil, errors.Wrap(err, "failed to get read archive")
 		}
 
-		// Airgap bundle will have some small files in the beginning.
-		// The rest of it will be images in folders.
-		if !foundImagesFolder {
-			if header.Name == "." {
-				continue
-			}
-			if header.Typeflag == tar.TypeReg {
-				continue
-			}
-			foundImagesFolder = true
+		if header.Typeflag != tar.TypeReg {
 			continue
 		}
-
-		if header.Typeflag != tar.TypeReg {
+		// check that the file is in the images directory
+		pathParts := strings.Split(header.Name, string(os.PathSeparator))
+		if len(pathParts) < 2 || pathParts[0] != "images" {
 			continue
 		}
 
@@ -595,7 +586,6 @@ func getImageInfosFromBundle(airgapBundle string, getLayerInfo bool) (map[string
 			}
 		}
 
-		pathParts := strings.Split(header.Name, string(os.PathSeparator))
 		if len(pathParts) < 3 {
 			return nil, errors.Errorf("not enough parts in image path: %q", header.Name)
 		}
