@@ -365,7 +365,7 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 		ReportWriter:     pullOptions.ReportWriter,
 	}
 
-	if needsConfig {
+	if needsConfig && pullOptions.ConfigFile == "" {
 		if err := kotsutil.WriteKotsKinds(renderedKotsKindsMap, u.GetKotsKindsDir(writeUpstreamOptions)); err != nil {
 			return "", errors.Wrap(err, "failed to write the rendered kots kinds")
 		}
