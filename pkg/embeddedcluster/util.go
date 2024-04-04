@@ -5,11 +5,14 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"regexp"
 	"sort"
 	"time"
 
-	embeddedclusterv1beta1 "github.com/replicatedhq/embedded-cluster-operator/api/v1beta1"
+	embeddedclusterv1beta1 "github.com/replicatedhq/embedded-cluster-kinds/apis/v1beta1"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
+	"github.com/replicatedhq/kots/pkg/logger"
+	kotsv1beta1 "github.com/replicatedhq/kotskinds/apis/kots/v1beta1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -22,6 +25,13 @@ const configMapNamespace = "embedded-cluster"
 
 // ErrNoInstallations is returned when no installation object is found in the cluster.
 var ErrNoInstallations = fmt.Errorf("no installations found")
+
+var (
+	chartsArtifactRegex   = regexp.MustCompile(`\/embedded-cluster\/(charts\.tar\.gz):`)
+	imagesArtifactRegex   = regexp.MustCompile(`\/embedded-cluster\/(images-.+\.tar):`)
+	binaryArtifactRegex   = regexp.MustCompile(`\/embedded-cluster\/(embedded-cluster-.+):`)
+	metadataArtifactRegex = regexp.MustCompile(`\/embedded-cluster\/(version-metadata\.json):`)
+)
 
 // ReadConfigMap will read the Kurl config from a configmap
 func ReadConfigMap(client kubernetes.Interface) (*corev1.ConfigMap, error) {
@@ -102,8 +112,32 @@ func ClusterConfig(ctx context.Context) (*embeddedclusterv1beta1.ConfigSpec, err
 	return latest.Spec.Config, nil
 }
 
+func getArtifactsFromInstallation(installation kotsv1beta1.Installation, appSlug string) *embeddedclusterv1beta1.ArtifactsLocation {
+	if len(installation.Spec.EmbeddedClusterArtifacts) == 0 {
+		return nil
+	}
+
+	artifacts := &embeddedclusterv1beta1.ArtifactsLocation{}
+	for _, artifact := range installation.Spec.EmbeddedClusterArtifacts {
+		switch {
+		case chartsArtifactRegex.MatchString(artifact):
+			artifacts.HelmCharts = artifact
+		case imagesArtifactRegex.MatchString(artifact):
+			artifacts.Images = artifact
+		case binaryArtifactRegex.MatchString(artifact):
+			artifacts.EmbeddedClusterBinary = artifact
+		case metadataArtifactRegex.MatchString(artifact):
+			artifacts.EmbeddedClusterMetadata = artifact
+		default:
+			logger.Warnf("unknown artifact in installation: %s", artifact)
+		}
+	}
+
+	return artifacts
+}
+
 // startClusterUpgrade will create a new installation with the provided config.
-func startClusterUpgrade(ctx context.Context, newcfg embeddedclusterv1beta1.ConfigSpec) error {
+func startClusterUpgrade(ctx context.Context, newcfg embeddedclusterv1beta1.ConfigSpec, artifacts *embeddedclusterv1beta1.ArtifactsLocation) error {
 	clientConfig, err := k8sutil.GetClusterConfig()
 	if err != nil {
 		return fmt.Errorf("failed to get cluster config: %w", err)
@@ -126,6 +160,7 @@ func startClusterUpgrade(ctx context.Context, newcfg embeddedclusterv1beta1.Conf
 			ClusterID:                 current.Spec.ClusterID,
 			MetricsBaseURL:            current.Spec.MetricsBaseURL,
 			AirGap:                    current.Spec.AirGap,
+			Artifacts:                 artifacts,
 			Config:                    &newcfg,
 			EndUserK0sConfigOverrides: current.Spec.EndUserK0sConfigOverrides,
 		},

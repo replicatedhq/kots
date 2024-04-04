@@ -10,7 +10,7 @@ import (
 	time "time"
 
 	gomock "github.com/golang/mock/gomock"
-	v1beta1 "github.com/replicatedhq/embedded-cluster-operator/api/v1beta1"
+	v1beta1 "github.com/replicatedhq/embedded-cluster-kinds/apis/v1beta1"
 	types "github.com/replicatedhq/kots/pkg/airgap/types"
 	types0 "github.com/replicatedhq/kots/pkg/api/downstream/types"
 	types1 "github.com/replicatedhq/kots/pkg/api/version/types"

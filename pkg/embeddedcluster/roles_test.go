@@ -3,7 +3,7 @@ package embeddedcluster
 import (
 	"testing"
 
-	embeddedclusterv1beta1 "github.com/replicatedhq/embedded-cluster-operator/api/v1beta1"
+	embeddedclusterv1beta1 "github.com/replicatedhq/embedded-cluster-kinds/apis/v1beta1"
 	"github.com/stretchr/testify/require"
 )
 

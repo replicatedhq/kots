@@ -112,9 +112,17 @@ func WriteMidstream(opts WriteOptions) (*Midstream, error) {
 			io.WriteString(opts.ProcessImageOptions.ReportWriter, "Copying images\n")
 
 			if opts.ProcessImageOptions.IsAirgap {
-				err := image.CopyAirgapImages(opts.ProcessImageOptions, opts.Log)
+				copyResult, err := image.CopyAirgapImages(opts.ProcessImageOptions, opts.Log)
 				if err != nil {
 					return nil, errors.Wrap(err, "failed to copy airgap images")
+				}
+
+				if err := image.UpdateInstallationEmbeddedClusterArtifacts(image.UpdateInstallationEmbeddedClusterArtifactsOptions{
+					Artifacts:   copyResult.EmbeddedClusterArtifacts,
+					KotsKinds:   opts.KotsKinds,
+					UpstreamDir: opts.UpstreamDir,
+				}); err != nil {
+					return nil, errors.Wrap(err, "failed to update installation airgap artifacts")
 				}
 			} else {
 				err := image.CopyOnlineImages(opts.ProcessImageOptions, allImages, opts.KotsKinds, opts.License, dockerHubRegistryCreds, opts.Log)
