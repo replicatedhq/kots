@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 
@@ -79,16 +80,20 @@ func TemplateCmd() *cobra.Command {
 					if err != nil {
 						return errors.Wrap(err, "failed to render raw template")
 					}
-					fmt.Println(rendered)
+					log.Info(rendered)
 					return nil
 				}
 
 				// render all mode, similar to helm template
 				// we will utilize pull command to fetch and render manifests from upstream
+				log.ActionWithSpinner("Pulling app from upstream and rendering templates...")
 				err := pullAndRender(license.Spec.AppSlug, licenseFile, configFile)
+				log.FinishSpinner()
+
 				if err != nil {
 					return errors.Wrap(err, "failed to render all templates")
 				}
+
 				return nil
 			}
 
@@ -118,7 +123,7 @@ func TemplateCmd() *cobra.Command {
 				return errors.Wrap(err, "failed to render template")
 			}
 
-			fmt.Print(rendered)
+			log.Info(rendered)
 
 			return nil
 		},
@@ -272,7 +277,7 @@ func pullAndRender(appSlug string, licensePath string, configPath string) error 
 		return errors.Wrap(err, "failed to read kotsKinds directory")
 	}
 
-	var manifetsToRender []string
+	manifetsToRender := make(map[string]string)
 	for _, file := range files {
 		if file.IsDir() {
 			continue
@@ -281,10 +286,53 @@ func pullAndRender(appSlug string, licensePath string, configPath string) error 
 		if err != nil {
 			return errors.Wrap(err, "failed to read file")
 		}
-		manifetsToRender = append(manifetsToRender, string(content))
+		manifetsToRender[file.Name()] = string(content)
 	}
-	for _, m := range manifetsToRender {
-		fmt.Printf("---\n%s\n", m)
+	for k, m := range manifetsToRender {
+		fmt.Println("---")
+		fmt.Printf("# Source: %s\n", k)
+		fmt.Println(m)
+	}
+
+	// also render helm charts with helm template if any
+	helmChartsDir := filepath.Join(tempDir, "helm")
+	if _, err := os.Stat(helmChartsDir); err == nil {
+		var chartPath string
+		var valuesPath string
+
+		err := filepath.Walk(helmChartsDir, func(path string, info os.FileInfo, err error) error {
+			if err != nil {
+				return err
+			}
+
+			if info.IsDir() {
+				return nil
+			}
+
+			if filepath.Ext(path) == ".tgz" {
+				chartPath = path
+			}
+
+			if info.Name() == "values.yaml" {
+				valuesPath = path
+			}
+
+			return nil
+		})
+
+		if err != nil {
+			return errors.Wrap(err, "failed to walk helm charts directory")
+		}
+
+		if chartPath != "" && valuesPath != "" {
+			args := []string{"template", "tmp-release", chartPath, "--values", valuesPath}
+			cmd := exec.Command("helm", args...)
+			output, err := cmd.CombinedOutput()
+			if err != nil {
+				return errors.Wrap(err, "failed to run helm template")
+			}
+			fmt.Println(string(output))
+		}
 	}
 
 	return nil
