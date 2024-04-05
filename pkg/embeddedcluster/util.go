@@ -163,6 +163,7 @@ func startClusterUpgrade(ctx context.Context, newcfg embeddedclusterv1beta1.Conf
 			Artifacts:                 artifacts,
 			Config:                    &newcfg,
 			EndUserK0sConfigOverrides: current.Spec.EndUserK0sConfigOverrides,
+			BinaryName:                current.Spec.BinaryName,
 		},
 	}
 	if err := kbClient.Create(ctx, &newins); err != nil {
