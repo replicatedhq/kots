@@ -41,6 +41,7 @@ func TemplateCmd() *cobra.Command {
 			configFile := v.GetString("config-values")
 			interactive := v.GetBool("interactive")
 			data := v.GetString("data")
+			localPath := v.GetString("local-path")
 
 			license, err := parseLicenseFile(licenseFile)
 			if err != nil {
@@ -87,7 +88,7 @@ func TemplateCmd() *cobra.Command {
 				// render all mode, similar to helm template
 				// we will utilize pull command to fetch and render manifests from upstream
 				log.ActionWithSpinner("Pulling app from upstream and rendering templates...")
-				err := pullAndRender(license.Spec.AppSlug, licenseFile, configFile)
+				err := pullAndRender(license.Spec.AppSlug, licenseFile, configFile, localPath)
 				log.FinishSpinner()
 
 				if err != nil {
@@ -133,6 +134,7 @@ func TemplateCmd() *cobra.Command {
 	cmd.Flags().String("config-values", "", "path to a manifest containing config values (must be apiVersion: kots.io/v1beta1, kind: ConfigValues)")
 	cmd.Flags().String("data", "", "raw template data to render")
 	cmd.Flags().Bool("interactive", false, "provides an interactive command-line console for evaluating template values")
+	cmd.Flags().String("local-path", "", "specify a local-path to pull a locally available replicated app (only supported on replicated app types currently)")
 
 	cmd.MarkFlagRequired("license-file")
 	cmd.MarkFlagRequired("config-values")
@@ -247,7 +249,7 @@ func (r *templateReplSession) help() string {
 `
 }
 
-func pullAndRender(appSlug string, licensePath string, configPath string) error {
+func pullAndRender(appSlug string, licensePath string, configPath string, localPath string) error {
 	tempDir, err := os.MkdirTemp("", "kots-template")
 	if err != nil {
 		return errors.Wrap(err, "failed to create temp directory to render templates")
@@ -261,6 +263,7 @@ func pullAndRender(appSlug string, licensePath string, configPath string) error 
 		ConfigFile:          ExpandDir(configPath),
 		Silent:              true,
 		ExcludeAdminConsole: true,
+		LocalPath:           ExpandDir(localPath),
 	}
 
 	upstream := pull.RewriteUpstream(appSlug)
