@@ -4,7 +4,7 @@ import (
 	"strings"
 
 	dockerref "github.com/containers/image/v5/docker/reference"
-	"github.com/distribution/distribution/v3/reference"
+	"github.com/distribution/reference"
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/docker/registry"
 	dockerregistrytypes "github.com/replicatedhq/kots/pkg/docker/registry/types"
