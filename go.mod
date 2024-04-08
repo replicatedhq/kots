@@ -403,7 +403,8 @@ require (
 	github.com/c9s/goprocinfo v0.0.0-20190309065803-0b2ad9ac246b // indirect
 	github.com/containers/storage v1.53.0 // indirect
 	github.com/gregjones/httpcache v0.0.0-20190611155906-901d90724c79 // indirect
-	github.com/kubernetes-csi/external-snapshotter/client/v7 v7.0.0 // indirect
+	github.com/kopia/kopia v0.10.7 // indirect
+	github.com/kubernetes-csi/external-snapshotter/client/v4 v4.2.0 // indirect
 	github.com/shopspring/decimal v1.3.1 // indirect
 	github.com/tchap/go-patricia/v2 v2.3.1 // indirect
 )
@@ -432,9 +433,7 @@ replace (
 // This is the only way I could get these two to play nice together
 // When getting github.com/replicatedhq/troubleshoot@0.86.0, it pulls in github.com/replicatedhq/velero@v1.13.1 which fails with the following error:
 // ../../../../pkg/mod/github.com/vmware-tanzu/velero@v1.13.1/pkg/builder/persistent_volume_claim_builder.go:104:32: cannot use dataSourceRef (variable of type *"k8s.io/api/core/v1".TypedLocalObjectReference) as *"k8s.io/api/core/v1".TypedObjectReference value in assignment
-//
-// v1.10.0-rc.1.0.20240408090904-54462c4f7bb5 is the latest commit in main at the time (ahead of v1.13.1, go is just being weird)
 replace (
 	github.com/replicatedhq/troubleshoot => github.com/replicatedhq/troubleshoot v0.86.0
-	github.com/vmware-tanzu/velero => github.com/vmware-tanzu/velero v1.10.0-rc.1.0.20240408090904-54462c4f7bb5
+	github.com/vmware-tanzu/velero => github.com/vmware-tanzu/velero v1.10.3
 )
