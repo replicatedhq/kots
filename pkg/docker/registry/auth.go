@@ -11,8 +11,8 @@ import (
 
 	"github.com/containers/image/v5/pkg/docker/config"
 	"github.com/containers/image/v5/types"
-	"github.com/distribution/distribution/v3/registry/client/auth/challenge"
 	"github.com/pkg/errors"
+	"github.com/replicatedhq/kots/pkg/docker/registry/challenge"
 	"github.com/replicatedhq/kots/pkg/util"
 )
 

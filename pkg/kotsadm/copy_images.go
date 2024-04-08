@@ -8,7 +8,7 @@ import (
 	"github.com/containers/image/v5/copy"
 	"github.com/containers/image/v5/transports/alltransports"
 	imagev5types "github.com/containers/image/v5/types"
-	"github.com/distribution/distribution/v3/reference"
+	"github.com/distribution/reference"
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/docker/registry"
 	"github.com/replicatedhq/kots/pkg/image"
