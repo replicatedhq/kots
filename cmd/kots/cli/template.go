@@ -87,9 +87,8 @@ func TemplateCmd() *cobra.Command {
 
 				// render all mode, similar to helm template
 				// we will utilize pull command to fetch and render manifests from upstream
-				log.ActionWithSpinner("Pulling app from upstream and rendering templates...")
+				log.Info("Pulling app from upstream and rendering templates...")
 				err := pullAndRender(license.Spec.AppSlug, licenseFile, configFile, localPath)
-				log.FinishSpinner()
 
 				if err != nil {
 					return errors.Wrap(err, "failed to render all templates")
@@ -264,6 +263,7 @@ func pullAndRender(appSlug string, licensePath string, configPath string, localP
 		Silent:              true,
 		ExcludeAdminConsole: true,
 		LocalPath:           ExpandDir(localPath),
+		Downstreams:         []string{"this-cluster"},
 	}
 
 	upstream := pull.RewriteUpstream(appSlug)
@@ -273,25 +273,41 @@ func pullAndRender(appSlug string, licensePath string, configPath string, localP
 		return errors.Wrap(err, "failed to pull upstream")
 	}
 
-	// iterate over kotsKinds directory in tempDir and print all YAML contents
+	// iterate over kotsKinds + rendered directory in tempDir and print all YAML contents
 	kotsKindsDir := filepath.Join(tempDir, "kotsKinds")
-	files, err := os.ReadDir(kotsKindsDir)
-	if err != nil {
-		return errors.Wrap(err, "failed to read kotsKinds directory")
+	renderedDir := filepath.Join(tempDir, "rendered")
+	dirs := []string{kotsKindsDir, renderedDir}
+
+	manifestsToRender := make(map[string]string)
+
+	for _, dir := range dirs {
+		err := filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
+			if err != nil {
+				return err
+			}
+			if info.IsDir() {
+				return nil
+			}
+
+			// ignore kotsadm- manifests
+			if strings.HasPrefix(info.Name(), "kotsadm-") {
+				return nil
+			}
+
+			content, err := os.ReadFile(path)
+			if err != nil {
+				return errors.Wrap(err, "failed to read file")
+			}
+			manifestsToRender[info.Name()] = string(content)
+
+			return nil
+		})
+		if err != nil {
+			return errors.Wrap(err, "failed to walk directory to render manifests")
+		}
 	}
 
-	manifetsToRender := make(map[string]string)
-	for _, file := range files {
-		if file.IsDir() {
-			continue
-		}
-		content, err := os.ReadFile(filepath.Join(kotsKindsDir, file.Name()))
-		if err != nil {
-			return errors.Wrap(err, "failed to read file")
-		}
-		manifetsToRender[file.Name()] = string(content)
-	}
-	for k, m := range manifetsToRender {
+	for k, m := range manifestsToRender {
 		fmt.Println("---")
 		fmt.Printf("# Source: %s\n", k)
 		fmt.Println(m)
@@ -300,6 +316,7 @@ func pullAndRender(appSlug string, licensePath string, configPath string, localP
 	// also render helm charts with helm template if any
 	helmChartsDir := filepath.Join(tempDir, "helm")
 	if _, err := os.Stat(helmChartsDir); err == nil {
+		logger.Info("Rendering Helm charts with helm template...")
 		var chartPath string
 		var valuesPath string
 
