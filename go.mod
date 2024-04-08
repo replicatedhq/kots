@@ -430,6 +430,10 @@ replace (
 )
 
 // This is the only way I could get these two to play nice together
+// When getting github.com/replicatedhq/troubleshoot@0.86.0, it pulls in github.com/replicatedhq/velero@v1.13.1 which fails with the following error:
+// ../../../../pkg/mod/github.com/vmware-tanzu/velero@v1.13.1/pkg/builder/persistent_volume_claim_builder.go:104:32: cannot use dataSourceRef (variable of type *"k8s.io/api/core/v1".TypedLocalObjectReference) as *"k8s.io/api/core/v1".TypedObjectReference value in assignment
+//
+// v1.10.0-rc.1.0.20240408090904-54462c4f7bb5 is the latest commit in main at the time (ahead of v1.13.1, go is just being weird)
 replace (
 	github.com/replicatedhq/troubleshoot => github.com/replicatedhq/troubleshoot v0.86.0
 	github.com/vmware-tanzu/velero => github.com/vmware-tanzu/velero v1.10.0-rc.1.0.20240408090904-54462c4f7bb5
