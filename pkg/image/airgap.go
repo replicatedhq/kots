@@ -11,6 +11,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"time"
 
@@ -27,6 +28,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/imageutil"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/logger"
+	kotsv1beta1 "github.com/replicatedhq/kotskinds/apis/kots/v1beta1"
 	oras "oras.land/oras-go/v2"
 	orasfile "oras.land/oras-go/v2/content/file"
 	orasremote "oras.land/oras-go/v2/registry/remote"
@@ -37,6 +39,13 @@ import (
 const (
 	EmbeddedClusterArtifactType = "application/vnd.embeddedcluster.artifact"
 	EmbeddedClusterMediaType    = "application/vnd.embeddedcluster.file"
+)
+
+var (
+	ChartsArtifactRegex   = regexp.MustCompile(`\/embedded-cluster\/(charts\.tar\.gz):`)
+	ImagesArtifactRegex   = regexp.MustCompile(`\/embedded-cluster\/(images-.+\.tar):`)
+	BinaryArtifactRegex   = regexp.MustCompile(`\/embedded-cluster\/(embedded-cluster-.+):`)
+	MetadataArtifactRegex = regexp.MustCompile(`\/embedded-cluster\/(version-metadata\.json):`)
 )
 
 func ExtractAppAirgapArchive(archive string, destDir string, excludeImages bool, progressWriter io.Writer) error {
@@ -173,7 +182,7 @@ func TagAndPushImagesFromBundle(airgapBundle string, options imagetypes.PushImag
 		Tag:        imageutil.SanitizeTag(fmt.Sprintf("%s-%s-%s", airgap.Spec.ChannelID, airgap.Spec.UpdateCursor, airgap.Spec.VersionLabel)),
 		HTTPClient: orasretry.DefaultClient,
 	}
-	pushedArtifacts, err := PushEmbeddedClusterArtifacts(airgapBundle, pushEmbeddedArtifactsOpts)
+	pushedArtifacts, err := PushEmbeddedClusterArtifacts(airgapBundle, airgap.Spec.EmbeddedClusterArtifacts, pushEmbeddedArtifactsOpts)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to push embedded cluster artifacts")
 	}
@@ -684,7 +693,7 @@ func reportWriterWithProgress(imageInfos map[string]*imagetypes.ImageInfo, repor
 	return pipeWriter
 }
 
-func PushEmbeddedClusterArtifacts(airgapBundle string, opts imagetypes.PushEmbeddedClusterArtifactsOptions) ([]string, error) {
+func PushEmbeddedClusterArtifacts(airgapBundle string, bundleArtifacts *kotsv1beta1.EmbeddedClusterArtifacts, opts imagetypes.PushEmbeddedClusterArtifactsOptions) (*kotsv1beta1.EmbeddedClusterArtifacts, error) {
 	tmpDir, err := os.MkdirTemp("", "embedded-cluster-artifacts")
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create temp directory")
@@ -706,7 +715,14 @@ func PushEmbeddedClusterArtifacts(airgapBundle string, opts imagetypes.PushEmbed
 	var artifacts []string
 
 	tarReader := tar.NewReader(gzipReader)
-	pushedArtifacts := make([]string, 0)
+	// store pushed artifact bundle source and oci destination
+	pushedArtifacts := make(map[string]string)
+	if bundleArtifacts != nil {
+		pushedArtifacts[bundleArtifacts.Binary] = ""
+		pushedArtifacts[bundleArtifacts.Charts] = ""
+		pushedArtifacts[bundleArtifacts.Images] = ""
+		pushedArtifacts[bundleArtifacts.Metadata] = ""
+	}
 	for {
 		header, err := tarReader.Next()
 		if err == io.EOF {
@@ -720,8 +736,17 @@ func PushEmbeddedClusterArtifacts(airgapBundle string, opts imagetypes.PushEmbed
 			continue
 		}
 
-		if filepath.Dir(header.Name) != "embedded-cluster" {
-			continue
+		if bundleArtifacts == nil {
+			// if embeddedClusterArtifacts is not in the airgap metadata, we push everything in the "embedded-cluster" directory
+			if filepath.Dir(header.Name) != "embedded-cluster" {
+				continue
+			}
+		} else {
+			// if embeddedClusterArtifacts is not nil, we only push the files specified in the embeddedClusterArtifacts
+			_, ok := pushedArtifacts[header.Name]
+			if !ok {
+				continue
+			}
 		}
 
 		dstFilePath := filepath.Join(tmpDir, header.Name)
@@ -769,7 +794,49 @@ func PushEmbeddedClusterArtifacts(airgapBundle string, opts imagetypes.PushEmbed
 		pushedArtifacts = append(pushedArtifacts, artifact)
 	}
 
-	return pushedArtifacts, nil
+	embeddedClusterOCIArtifacts, err := embeddedClusterArtifactsFromPushedArtifacts(bundleArtifacts, pushedArtifacts)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get embedded cluster artifacts from pushed artifacts")
+	}
+
+	return embeddedClusterOCIArtifacts, nil
+}
+
+func embeddedClusterArtifactsFromPushedArtifacts(bundleArtifacts *kotsv1beta1.EmbeddedClusterArtifacts, pushedArtifacts map[string]string) (*kotsv1beta1.EmbeddedClusterArtifacts, error) {
+	if len(pushedArtifacts) == 0 {
+		return nil, nil
+	}
+
+	embeddedClusterOCIArtifacts := &kotsv1beta1.EmbeddedClusterArtifacts{}
+	if bundleArtifacts != nil {
+		// validate that all expected embedded cluster artifacts were found in the bundle and pushed
+		for airgapSource, ociDestination := range pushedArtifacts {
+			if ociDestination == "" {
+				return nil, fmt.Errorf("expected embedded cluster artifact %s was not pushed from the airgap bundle", airgapSource)
+			}
+		}
+
+		embeddedClusterOCIArtifacts.Binary = pushedArtifacts[bundleArtifacts.Binary]
+		embeddedClusterOCIArtifacts.Charts = pushedArtifacts[bundleArtifacts.Charts]
+		embeddedClusterOCIArtifacts.Images = pushedArtifacts[bundleArtifacts.Images]
+		embeddedClusterOCIArtifacts.Metadata = pushedArtifacts[bundleArtifacts.Metadata]
+	} else {
+		embeddedClusterOCIArtifacts = &kotsv1beta1.EmbeddedClusterArtifacts{}
+		for _, ociDestination := range pushedArtifacts {
+			switch {
+			case BinaryArtifactRegex.MatchString(ociDestination):
+				embeddedClusterOCIArtifacts.Binary = ociDestination
+			case ChartsArtifactRegex.MatchString(ociDestination):
+				embeddedClusterOCIArtifacts.Charts = ociDestination
+			case ImagesArtifactRegex.MatchString(ociDestination):
+				embeddedClusterOCIArtifacts.Images = ociDestination
+			case MetadataArtifactRegex.MatchString(ociDestination):
+				embeddedClusterOCIArtifacts.Metadata = ociDestination
+			}
+		}
+	}
+
+	return embeddedClusterOCIArtifacts, nil
 }
 
 func pushOCIArtifact(opts imagetypes.PushOCIArtifactOptions) error {

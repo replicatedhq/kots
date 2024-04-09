@@ -46,7 +46,7 @@ type UpdateInstallationImagesOptions struct {
 }
 
 type UpdateInstallationEmbeddedClusterArtifactsOptions struct {
-	Artifacts   []string
+	Artifacts   *kotsv1beta1.EmbeddedClusterArtifacts
 	KotsKinds   *kotsutil.KotsKinds
 	UpstreamDir string
 }

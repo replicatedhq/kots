@@ -16,6 +16,7 @@ import (
 	dockertypes "github.com/replicatedhq/kots/pkg/docker/types"
 	"github.com/replicatedhq/kots/pkg/image/types"
 	imagetypes "github.com/replicatedhq/kots/pkg/image/types"
+	kotsv1beta1 "github.com/replicatedhq/kotskinds/apis/kots/v1beta1"
 	"github.com/stretchr/testify/require"
 )
 
@@ -24,10 +25,15 @@ func TestPushEmbeddedClusterArtifacts(t *testing.T) {
 	testTag := "test-tag"
 
 	tests := []struct {
-		name                  string
-		airgapFiles           map[string][]byte
-		wantRegistryArtifacts map[string]string
-		wantErr               bool
+		name        string
+		airgapFiles map[string][]byte
+		// airgapMetadataArtifacts is the field in the airgap metadata that specifies the paths to the embedded cluster artifacts
+		airgapMetadataArtifacts *kotsv1beta1.EmbeddedClusterArtifacts
+		// wantEmbeddedClusterArtifacts is the expected return value from PushEmbeddedClusterArtifacts
+		wantEmbeddedClusterArtifacts *kotsv1beta1.EmbeddedClusterArtifacts
+		// wantPushedArtifacts is the expected map of registry artifacts that should be pushed to the registry
+		wantPushedArtifacts map[string]string
+		wantErr             bool
 	}{
 		{
 			name: "no embedded cluster files",
@@ -36,27 +42,68 @@ func TestPushEmbeddedClusterArtifacts(t *testing.T) {
 				"app.tar.gz":       []byte("this-is-the-app-archive"),
 				"images/something": []byte("this-is-an-image"),
 			},
-			wantRegistryArtifacts: map[string]string{},
-			wantErr:               false,
+			airgapMetadataArtifacts:      nil,
+			wantEmbeddedClusterArtifacts: nil,
+			wantPushedArtifacts:          map[string]string{},
+			wantErr:                      false,
 		},
 		{
-			name: "has embedded cluster files",
+			name: "has embedded cluster files and embeddedClusterArtifacts field in airgap metadata",
 			airgapFiles: map[string][]byte{
-				"airgap.yaml":                            []byte("this-is-the-airgap-metadata"),
-				"app.tar.gz":                             []byte("this-is-the-app-archive"),
-				"images/something":                       []byte("this-is-an-image"),
-				"embedded-cluster/test-app":              []byte("this-is-the-binary"),
-				"embedded-cluster/charts.tar.gz":         []byte("this-is-the-charts-bundle"),
-				"embedded-cluster/images-amd64.tar":      []byte("this-is-the-images-bundle"),
-				"embedded-cluster/version-metadata.json": []byte("this-is-the-metadata"),
-				"embedded-cluster/some-file-TBD":         []byte("this-is-an-arbitrary-file"),
+				"airgap.yaml":      []byte("this-is-the-airgap-metadata"),
+				"app.tar.gz":       []byte("this-is-the-app-archive"),
+				"images/something": []byte("this-is-an-image"),
+				"embedded-cluster/embedded-cluster-amd64": []byte("this-is-the-binary"),
+				"embedded-cluster/charts.tar.gz":          []byte("this-is-the-charts-bundle"),
+				"embedded-cluster/images-amd64.tar":       []byte("this-is-the-images-bundle"),
+				"embedded-cluster/version-metadata.json":  []byte("this-is-the-metadata"),
+				"embedded-cluster/some-file-TBD":          []byte("this-is-an-arbitrary-file"),
 			},
-			wantRegistryArtifacts: map[string]string{
-				fmt.Sprintf("%s/embedded-cluster/test-app", testAppSlug):              testTag,
-				fmt.Sprintf("%s/embedded-cluster/charts.tar.gz", testAppSlug):         testTag,
-				fmt.Sprintf("%s/embedded-cluster/images-amd64.tar", testAppSlug):      testTag,
-				fmt.Sprintf("%s/embedded-cluster/version-metadata.json", testAppSlug): testTag,
-				fmt.Sprintf("%s/embedded-cluster/some-file-tbd", testAppSlug):         testTag,
+			airgapMetadataArtifacts: &kotsv1beta1.EmbeddedClusterArtifacts{
+				Charts:   "embedded-cluster/charts.tar.gz",
+				Images:   "embedded-cluster/images-amd64.tar",
+				Binary:   "embedded-cluster/embedded-cluster-amd64",
+				Metadata: "embedded-cluster/version-metadata.json",
+			},
+			wantEmbeddedClusterArtifacts: &kotsv1beta1.EmbeddedClusterArtifacts{
+				Binary:   fmt.Sprintf("%s/embedded-cluster/embedded-cluster-amd64:%s", testAppSlug, testTag),
+				Charts:   fmt.Sprintf("%s/embedded-cluster/charts.tar.gz:%s", testAppSlug, testTag),
+				Images:   fmt.Sprintf("%s/embedded-cluster/images-amd64.tar:%s", testAppSlug, testTag),
+				Metadata: fmt.Sprintf("%s/embedded-cluster/version-metadata.json:%s", testAppSlug, testTag),
+			},
+			wantPushedArtifacts: map[string]string{
+				fmt.Sprintf("%s/embedded-cluster/embedded-cluster-amd64", testAppSlug): testTag,
+				fmt.Sprintf("%s/embedded-cluster/charts.tar.gz", testAppSlug):          testTag,
+				fmt.Sprintf("%s/embedded-cluster/images-amd64.tar", testAppSlug):       testTag,
+				fmt.Sprintf("%s/embedded-cluster/version-metadata.json", testAppSlug):  testTag,
+			},
+			wantErr: false,
+		},
+		{
+			name: "has embedded cluster files, but no embeddedClusterArtifacts field in airgap metadata",
+			airgapFiles: map[string][]byte{
+				"airgap.yaml":      []byte("this-is-the-airgap-metadata"),
+				"app.tar.gz":       []byte("this-is-the-app-archive"),
+				"images/something": []byte("this-is-an-image"),
+				"embedded-cluster/embedded-cluster-amd64": []byte("this-is-the-binary"),
+				"embedded-cluster/charts.tar.gz":          []byte("this-is-the-charts-bundle"),
+				"embedded-cluster/images-amd64.tar":       []byte("this-is-the-images-bundle"),
+				"embedded-cluster/version-metadata.json":  []byte("this-is-the-metadata"),
+				"embedded-cluster/some-file-TBD":          []byte("this-is-an-arbitrary-file"),
+			},
+			airgapMetadataArtifacts: nil,
+			wantEmbeddedClusterArtifacts: &kotsv1beta1.EmbeddedClusterArtifacts{
+				Binary:   fmt.Sprintf("%s/embedded-cluster/embedded-cluster-amd64:%s", testAppSlug, testTag),
+				Charts:   fmt.Sprintf("%s/embedded-cluster/charts.tar.gz:%s", testAppSlug, testTag),
+				Images:   fmt.Sprintf("%s/embedded-cluster/images-amd64.tar:%s", testAppSlug, testTag),
+				Metadata: fmt.Sprintf("%s/embedded-cluster/version-metadata.json:%s", testAppSlug, testTag),
+			},
+			wantPushedArtifacts: map[string]string{
+				fmt.Sprintf("%s/embedded-cluster/embedded-cluster-amd64", testAppSlug): testTag,
+				fmt.Sprintf("%s/embedded-cluster/charts.tar.gz", testAppSlug):          testTag,
+				fmt.Sprintf("%s/embedded-cluster/images-amd64.tar", testAppSlug):       testTag,
+				fmt.Sprintf("%s/embedded-cluster/version-metadata.json", testAppSlug):  testTag,
+				fmt.Sprintf("%s/embedded-cluster/some-file-tbd", testAppSlug):          testTag,
 			},
 			wantErr: false,
 		},
@@ -69,13 +116,21 @@ func TestPushEmbeddedClusterArtifacts(t *testing.T) {
 				t.Fatalf("Failed to create airgap bundle: %v", err)
 			}
 
-			pushedRegistryArtifacts := make(map[string]string)
-			mockRegistryServer := newMockRegistryServer(pushedRegistryArtifacts)
+			pushedArtifacts := make(map[string]string)
+			mockRegistryServer := newMockRegistryServer(pushedArtifacts)
 			defer mockRegistryServer.Close()
 
 			u, err := url.Parse(mockRegistryServer.URL)
 			if err != nil {
 				t.Fatalf("Failed to parse mock server URL: %v", err)
+			}
+
+			// prepend the registry url to the expected pushed artifacts
+			if tt.wantEmbeddedClusterArtifacts != nil {
+				tt.wantEmbeddedClusterArtifacts.Binary = fmt.Sprintf("%s/%s", u.Host, tt.wantEmbeddedClusterArtifacts.Binary)
+				tt.wantEmbeddedClusterArtifacts.Charts = fmt.Sprintf("%s/%s", u.Host, tt.wantEmbeddedClusterArtifacts.Charts)
+				tt.wantEmbeddedClusterArtifacts.Images = fmt.Sprintf("%s/%s", u.Host, tt.wantEmbeddedClusterArtifacts.Images)
+				tt.wantEmbeddedClusterArtifacts.Metadata = fmt.Sprintf("%s/%s", u.Host, tt.wantEmbeddedClusterArtifacts.Metadata)
 			}
 
 			opts := types.PushEmbeddedClusterArtifactsOptions{
@@ -86,7 +141,7 @@ func TestPushEmbeddedClusterArtifacts(t *testing.T) {
 				Tag:        testTag,
 				HTTPClient: mockRegistryServer.Client(),
 			}
-			gotArtifacts, err := PushEmbeddedClusterArtifacts(airgapBundle, opts)
+			gotEmbeddedClusterArtfacts, err := PushEmbeddedClusterArtifacts(airgapBundle, tt.airgapMetadataArtifacts, opts)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("PushEmbeddedClusterArtifacts() error = %v, wantErr %v", err, tt.wantErr)
 			}
@@ -97,14 +152,10 @@ func TestPushEmbeddedClusterArtifacts(t *testing.T) {
 				req.NoError(err)
 			}
 
-			wantArtifacts := make([]string, 0)
-			for repo, tag := range tt.wantRegistryArtifacts {
-				wantArtifacts = append(wantArtifacts, fmt.Sprintf("%s/%s:%s", u.Host, repo, tag))
-			}
-			req.ElementsMatch(wantArtifacts, gotArtifacts)
+			req.Equal(tt.wantEmbeddedClusterArtifacts, gotEmbeddedClusterArtfacts)
 
 			// validate that each of the expected artifacts were pushed to the registry
-			req.Equal(tt.wantRegistryArtifacts, pushedRegistryArtifacts)
+			req.Equal(tt.wantPushedArtifacts, pushedArtifacts)
 		})
 	}
 }

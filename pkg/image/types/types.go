@@ -9,6 +9,7 @@ import (
 	dockerregistrytypes "github.com/replicatedhq/kots/pkg/docker/registry/types"
 	"github.com/replicatedhq/kots/pkg/logger"
 	registrytypes "github.com/replicatedhq/kots/pkg/registry/types"
+	kotsv1beta1 "github.com/replicatedhq/kotskinds/apis/kots/v1beta1"
 )
 
 type ProcessImageOptions struct {
@@ -47,7 +48,7 @@ type CopyImageOptions struct {
 }
 
 type CopyAirgapImagesResult struct {
-	EmbeddedClusterArtifacts []string
+	EmbeddedClusterArtifacts *kotsv1beta1.EmbeddedClusterArtifacts
 }
 
 type PushImagesOptions struct {
