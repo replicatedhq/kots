@@ -649,6 +649,8 @@ export const Utilities = {
     switch (state) {
       case "Waiting":
         return "Waiting for a previous upgrade";
+      case "CopyingArtifacts":
+        return "Upgrading";
       case "Enqueued":
         return "Upgrading";
       case "Installing":
