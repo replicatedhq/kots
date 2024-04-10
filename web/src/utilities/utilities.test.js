@@ -85,20 +85,28 @@ describe("Utilities", () => {
     });
 
     it("should return true if the user has tried to deploy the current version and a cluster upgrade is in progress", () => {
-      const apps = [
-        {
-          downstream: {
-            currentVersion: {
-              status: "deployed",
-            },
-            cluster: {
-              requiresUpgrade: true,
-              state: "Installing",
+      for (const installationState of [
+        "CopyingArtifacts",
+        "Enqueued",
+        "Installing",
+        "AddonsInstalling",
+        "PendingChartCreation",
+      ]) {
+        const apps = [
+          {
+            downstream: {
+              currentVersion: {
+                status: "deployed",
+              },
+              cluster: {
+                requiresUpgrade: true,
+                state: installationState,
+              },
             },
           },
-        },
-      ];
-      expect(Utilities.shouldShowClusterUpgradeModal(apps)).toBe(true);
+        ];
+        expect(Utilities.shouldShowClusterUpgradeModal(apps)).toBe(true);
+      }
     });
 
     it("should return false if there are is one installation that does not have a state", () => {

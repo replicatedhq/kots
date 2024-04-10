@@ -681,7 +681,8 @@ export const Utilities = {
     const normalizedState = this.clusterState(cluster.state);
     if (
       normalizedState === "Upgrading" ||
-      normalizedState === "Upgrading addons"
+      normalizedState === "Upgrading addons" ||
+      normalizedState === "Creating addons"
     ) {
       return true;
     }
