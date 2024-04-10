@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"strings"
 
@@ -311,48 +310,6 @@ func pullAndRender(appSlug string, licensePath string, configPath string, localP
 		fmt.Println("---")
 		fmt.Printf("# Source: %s\n", k)
 		fmt.Println(m)
-	}
-
-	// also render helm charts with helm template if any
-	helmChartsDir := filepath.Join(tempDir, "helm")
-	if _, err := os.Stat(helmChartsDir); err == nil {
-		logger.Info("Rendering Helm charts with helm template...")
-		var chartPath string
-		var valuesPath string
-
-		err := filepath.Walk(helmChartsDir, func(path string, info os.FileInfo, err error) error {
-			if err != nil {
-				return err
-			}
-
-			if info.IsDir() {
-				return nil
-			}
-
-			if filepath.Ext(path) == ".tgz" {
-				chartPath = path
-			}
-
-			if info.Name() == "values.yaml" {
-				valuesPath = path
-			}
-
-			return nil
-		})
-
-		if err != nil {
-			return errors.Wrap(err, "failed to walk helm charts directory")
-		}
-
-		if chartPath != "" && valuesPath != "" {
-			args := []string{"template", "tmp-release", chartPath, "--values", valuesPath}
-			cmd := exec.Command("helm", args...)
-			output, err := cmd.CombinedOutput()
-			if err != nil {
-				return errors.Wrap(err, "failed to run helm template")
-			}
-			fmt.Println(string(output))
-		}
 	}
 
 	return nil
