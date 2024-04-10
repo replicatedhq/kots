@@ -51,7 +51,7 @@ require (
 	github.com/replicatedhq/embedded-cluster-kinds v1.1.2
 	github.com/replicatedhq/kotskinds v0.0.0-20240326213823-6a0ed11e7397
 	github.com/replicatedhq/kurlkinds v1.5.0
-	github.com/replicatedhq/troubleshoot v0.86.0
+	github.com/replicatedhq/troubleshoot v0.87.0
 	github.com/replicatedhq/yaml/v3 v3.0.0-beta5-replicatedhq
 	github.com/robfig/cron v1.2.0
 	github.com/robfig/cron/v3 v3.0.1
@@ -67,9 +67,9 @@ require (
 	github.com/vmware-tanzu/velero v1.13.1
 	go.uber.org/multierr v1.11.0
 	go.uber.org/zap v1.27.0
-	golang.org/x/crypto v0.21.0
+	golang.org/x/crypto v0.22.0
 	golang.org/x/oauth2 v0.18.0
-	golang.org/x/sync v0.6.0
+	golang.org/x/sync v0.7.0
 	google.golang.org/api v0.170.0
 	gopkg.in/go-playground/assert.v1 v1.2.1
 	gopkg.in/ini.v1 v1.67.0
@@ -87,7 +87,7 @@ require (
 	k8s.io/utils v0.0.0-20230726121419-3b25d923346b
 	oras.land/oras-go/v2 v2.4.0
 	sigs.k8s.io/application v0.8.3
-	sigs.k8s.io/controller-runtime v0.17.2
+	sigs.k8s.io/controller-runtime v0.17.3
 	sigs.k8s.io/kustomize/api v0.16.0
 	sigs.k8s.io/kustomize/kyaml v0.16.0
 	sigs.k8s.io/yaml v1.4.0
@@ -352,7 +352,7 @@ require (
 	go.opentelemetry.io/contrib/exporters/autoexport v0.46.1 // indirect
 	go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc v0.49.0 // indirect
 	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.49.0 // indirect
-	go.opentelemetry.io/otel v1.24.0 // indirect
+	go.opentelemetry.io/otel v1.25.0 // indirect
 	go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetricgrpc v0.44.0 // indirect
 	go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetrichttp v0.44.0 // indirect
 	go.opentelemetry.io/otel/exporters/otlp/otlptrace v1.21.0 // indirect
@@ -361,17 +361,17 @@ require (
 	go.opentelemetry.io/otel/exporters/prometheus v0.44.0 // indirect
 	go.opentelemetry.io/otel/exporters/stdout/stdoutmetric v0.44.0 // indirect
 	go.opentelemetry.io/otel/exporters/stdout/stdouttrace v1.21.0 // indirect
-	go.opentelemetry.io/otel/metric v1.24.0 // indirect
-	go.opentelemetry.io/otel/sdk v1.24.0 // indirect
+	go.opentelemetry.io/otel/metric v1.25.0 // indirect
+	go.opentelemetry.io/otel/sdk v1.25.0 // indirect
 	go.opentelemetry.io/otel/sdk/metric v1.21.0 // indirect
-	go.opentelemetry.io/otel/trace v1.24.0 // indirect
+	go.opentelemetry.io/otel/trace v1.25.0 // indirect
 	go.opentelemetry.io/proto/otlp v1.0.0 // indirect
 	go.starlark.net v0.0.0-20230525235612-a134d8f9ddca // indirect
 	golang.org/x/exp v0.0.0-20240222234643-814bf88cf225 // indirect
-	golang.org/x/mod v0.16.0 // indirect
-	golang.org/x/net v0.22.0 // indirect
-	golang.org/x/sys v0.18.0 // indirect
-	golang.org/x/term v0.18.0 // indirect
+	golang.org/x/mod v0.17.0 // indirect
+	golang.org/x/net v0.24.0 // indirect
+	golang.org/x/sys v0.19.0 // indirect
+	golang.org/x/term v0.19.0 // indirect
 	golang.org/x/text v0.14.0 // indirect
 	golang.org/x/time v0.5.0 // indirect
 	golang.org/x/tools v0.18.0 // indirect
@@ -431,9 +431,6 @@ replace (
 )
 
 // This is the only way I could get these two to play nice together
-// When getting github.com/replicatedhq/troubleshoot@0.86.0, it pulls in github.com/replicatedhq/velero@v1.13.1 which fails with the following error:
+// When getting github.com/replicatedhq/troubleshoot@0.86.0 or later, it pulls in github.com/replicatedhq/velero@v1.13.1 which fails with the following error:
 // ../../../../pkg/mod/github.com/vmware-tanzu/velero@v1.13.1/pkg/builder/persistent_volume_claim_builder.go:104:32: cannot use dataSourceRef (variable of type *"k8s.io/api/core/v1".TypedLocalObjectReference) as *"k8s.io/api/core/v1".TypedObjectReference value in assignment
-replace (
-	github.com/replicatedhq/troubleshoot => github.com/replicatedhq/troubleshoot v0.86.0
-	github.com/vmware-tanzu/velero => github.com/vmware-tanzu/velero v1.10.3
-)
+replace github.com/vmware-tanzu/velero => github.com/vmware-tanzu/velero v1.10.3
