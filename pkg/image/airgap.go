@@ -283,7 +283,7 @@ func PushImagesFromTempRegistry(airgapRootDir string, imageList []string, option
 			},
 		}
 		imageCounter++
-		fmt.Printf("Pushing image %d/%d\n", imageCounter, totalImages)
+		fmt.Printf("Pushing application images (%d/%d)\n", imageCounter, totalImages)
 		if err := pushImage(pushImageOpts); err != nil {
 			return errors.Wrapf(err, "failed to push image %s", imageID)
 		}
@@ -761,7 +761,7 @@ func PushEmbeddedClusterArtifacts(airgapBundle string, opts imagetypes.PushEmbed
 			HTTPClient:   opts.HTTPClient,
 		}
 
-		fmt.Printf("Pushing embedded cluster artifact %d/%d\n", i+1, len(artifacts))
+		fmt.Printf("Pushing embedded cluster artifacts (%d/%d)\n", i+1, len(artifacts))
 		artifact := fmt.Sprintf("%s:%s", filepath.Join(opts.Registry.Endpoint, opts.Registry.Namespace, repository), opts.Tag)
 		if err := pushOCIArtifact(pushOCIArtifactOpts); err != nil {
 			return nil, errors.Wrapf(err, "failed to push oci artifact %s", name)
