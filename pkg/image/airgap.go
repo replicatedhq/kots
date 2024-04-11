@@ -226,6 +226,8 @@ func PushImagesFromTempRegistry(airgapRootDir string, imageList []string, option
 		defer wc.Close()
 	}
 
+	totalImages := len(imageInfos)
+	var imageCounter int
 	for imageID, imageInfo := range imageInfos {
 		srcRef, err := tempRegistry.SrcRef(imageID)
 		if err != nil {
@@ -280,6 +282,8 @@ func PushImagesFromTempRegistry(airgapRootDir string, imageList []string, option
 				ReportWriter:      reportWriter,
 			},
 		}
+		imageCounter++
+		fmt.Printf("Pushing application images (%d/%d)\n", imageCounter, totalImages)
 		if err := pushImage(pushImageOpts); err != nil {
 			return errors.Wrapf(err, "failed to push image %s", imageID)
 		}
@@ -699,6 +703,8 @@ func PushEmbeddedClusterArtifacts(airgapBundle string, opts imagetypes.PushEmbed
 	}
 	defer gzipReader.Close()
 
+	var artifacts []string
+
 	tarReader := tar.NewReader(gzipReader)
 	pushedArtifacts := make([]string, 0)
 	for {
@@ -718,52 +724,49 @@ func PushEmbeddedClusterArtifacts(airgapBundle string, opts imagetypes.PushEmbed
 			continue
 		}
 
-		if err := func() error {
-			dstFilePath := filepath.Join(tmpDir, header.Name)
-			if err := os.MkdirAll(filepath.Dir(dstFilePath), 0755); err != nil {
-				return errors.Wrap(err, "failed to create path")
-			}
-			defer os.RemoveAll(dstFilePath)
-
-			dstFile, err := os.Create(dstFilePath)
-			if err != nil {
-				return errors.Wrap(err, "failed to create file")
-			}
-			defer dstFile.Close()
-
-			if _, err := io.Copy(dstFile, tarReader); err != nil {
-				return errors.Wrap(err, "failed to copy file data")
-			}
-
-			// push each file as an oci artifact to the registry
-			name := filepath.Base(dstFilePath)
-			repository := filepath.Join("embedded-cluster", imageutil.SanitizeRepo(name))
-			artifactFile := imagetypes.OCIArtifactFile{
-				Name:      name,
-				Path:      dstFilePath,
-				MediaType: EmbeddedClusterMediaType,
-			}
-
-			pushOCIArtifactOpts := imagetypes.PushOCIArtifactOptions{
-				Files:        []imagetypes.OCIArtifactFile{artifactFile},
-				ArtifactType: EmbeddedClusterArtifactType,
-				Registry:     opts.Registry,
-				Repository:   repository,
-				Tag:          opts.Tag,
-				HTTPClient:   opts.HTTPClient,
-			}
-
-			artifact := fmt.Sprintf("%s:%s", filepath.Join(opts.Registry.Endpoint, opts.Registry.Namespace, repository), opts.Tag)
-			fmt.Printf("Pushing artifact %s\n", artifact)
-			if err := pushOCIArtifact(pushOCIArtifactOpts); err != nil {
-				return errors.Wrapf(err, "failed to push oci artifact %s", name)
-			}
-			pushedArtifacts = append(pushedArtifacts, artifact)
-
-			return nil
-		}(); err != nil {
-			return nil, err
+		dstFilePath := filepath.Join(tmpDir, header.Name)
+		if err := os.MkdirAll(filepath.Dir(dstFilePath), 0755); err != nil {
+			return nil, errors.Wrap(err, "failed to create path")
 		}
+
+		dstFile, err := os.Create(dstFilePath)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to create file")
+		}
+
+		if _, err := io.Copy(dstFile, tarReader); err != nil {
+			dstFile.Close()
+			return nil, errors.Wrap(err, "failed to copy file data")
+		}
+
+		dstFile.Close()
+		artifacts = append(artifacts, dstFilePath)
+	}
+
+	for i, dstFilePath := range artifacts {
+		name := filepath.Base(dstFilePath)
+		repository := filepath.Join("embedded-cluster", imageutil.SanitizeRepo(name))
+		artifactFile := imagetypes.OCIArtifactFile{
+			Name:      name,
+			Path:      dstFilePath,
+			MediaType: EmbeddedClusterMediaType,
+		}
+
+		pushOCIArtifactOpts := imagetypes.PushOCIArtifactOptions{
+			Files:        []imagetypes.OCIArtifactFile{artifactFile},
+			ArtifactType: EmbeddedClusterArtifactType,
+			Registry:     opts.Registry,
+			Repository:   repository,
+			Tag:          opts.Tag,
+			HTTPClient:   opts.HTTPClient,
+		}
+
+		fmt.Printf("Pushing embedded cluster artifacts (%d/%d)\n", i+1, len(artifacts))
+		artifact := fmt.Sprintf("%s:%s", filepath.Join(opts.Registry.Endpoint, opts.Registry.Namespace, repository), opts.Tag)
+		if err := pushOCIArtifact(pushOCIArtifactOpts); err != nil {
+			return nil, errors.Wrapf(err, "failed to push oci artifact %s", name)
+		}
+		pushedArtifacts = append(pushedArtifacts, artifact)
 	}
 
 	return pushedArtifacts, nil
