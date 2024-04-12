@@ -712,9 +712,9 @@ func PushEmbeddedClusterArtifacts(airgapBundle string, bundleArtifacts *kotsv1be
 	}
 	defer gzipReader.Close()
 
-	var artifacts []string
+	// store extracted artifacts for progress reporting
+	extractedArtifacts := make(map[string]string)
 
-	tarReader := tar.NewReader(gzipReader)
 	// store pushed artifact bundle source and oci destination
 	pushedArtifacts := make(map[string]string)
 	if bundleArtifacts != nil {
@@ -723,6 +723,8 @@ func PushEmbeddedClusterArtifacts(airgapBundle string, bundleArtifacts *kotsv1be
 		pushedArtifacts[bundleArtifacts.Images] = ""
 		pushedArtifacts[bundleArtifacts.Metadata] = ""
 	}
+
+	tarReader := tar.NewReader(gzipReader)
 	for {
 		header, err := tarReader.Next()
 		if err == io.EOF {
@@ -765,10 +767,11 @@ func PushEmbeddedClusterArtifacts(airgapBundle string, bundleArtifacts *kotsv1be
 		}
 
 		dstFile.Close()
-		artifacts = append(artifacts, dstFilePath)
+		extractedArtifacts[header.Name] = dstFilePath
 	}
 
-	for i, dstFilePath := range artifacts {
+	artifactCounter := 0
+	for airgapSource, dstFilePath := range extractedArtifacts {
 		name := filepath.Base(dstFilePath)
 		repository := filepath.Join("embedded-cluster", imageutil.SanitizeRepo(name))
 		artifactFile := imagetypes.OCIArtifactFile{
@@ -786,12 +789,13 @@ func PushEmbeddedClusterArtifacts(airgapBundle string, bundleArtifacts *kotsv1be
 			HTTPClient:   opts.HTTPClient,
 		}
 
-		fmt.Printf("Pushing embedded cluster artifacts (%d/%d)\n", i+1, len(artifacts))
+		artifactCounter++
+		fmt.Printf("Pushing embedded cluster artifacts (%d/%d)\n", artifactCounter, len(extractedArtifacts))
 		artifact := fmt.Sprintf("%s:%s", filepath.Join(opts.Registry.Endpoint, opts.Registry.Namespace, repository), opts.Tag)
 		if err := pushOCIArtifact(pushOCIArtifactOpts); err != nil {
 			return nil, errors.Wrapf(err, "failed to push oci artifact %s", name)
 		}
-		pushedArtifacts = append(pushedArtifacts, artifact)
+		pushedArtifacts[airgapSource] = artifact
 	}
 
 	embeddedClusterOCIArtifacts, err := embeddedClusterArtifactsFromPushedArtifacts(bundleArtifacts, pushedArtifacts)

@@ -31,9 +31,9 @@ func TestPushEmbeddedClusterArtifacts(t *testing.T) {
 		airgapMetadataArtifacts *kotsv1beta1.EmbeddedClusterArtifacts
 		// wantEmbeddedClusterArtifacts is the expected return value from PushEmbeddedClusterArtifacts
 		wantEmbeddedClusterArtifacts *kotsv1beta1.EmbeddedClusterArtifacts
-		// wantPushedArtifacts is the expected map of registry artifacts that should be pushed to the registry
-		wantPushedArtifacts map[string]string
-		wantErr             bool
+		// wantArtifactsInRegistry is the expected map of registry artifacts that should be pushed to the registry
+		wantArtifactsInRegistry map[string]string
+		wantErr                 bool
 	}{
 		{
 			name: "no embedded cluster files",
@@ -44,7 +44,7 @@ func TestPushEmbeddedClusterArtifacts(t *testing.T) {
 			},
 			airgapMetadataArtifacts:      nil,
 			wantEmbeddedClusterArtifacts: nil,
-			wantPushedArtifacts:          map[string]string{},
+			wantArtifactsInRegistry:      map[string]string{},
 			wantErr:                      false,
 		},
 		{
@@ -60,9 +60,9 @@ func TestPushEmbeddedClusterArtifacts(t *testing.T) {
 				"embedded-cluster/some-file-TBD":          []byte("this-is-an-arbitrary-file"),
 			},
 			airgapMetadataArtifacts: &kotsv1beta1.EmbeddedClusterArtifacts{
+				Binary:   "embedded-cluster/embedded-cluster-amd64",
 				Charts:   "embedded-cluster/charts.tar.gz",
 				Images:   "embedded-cluster/images-amd64.tar",
-				Binary:   "embedded-cluster/embedded-cluster-amd64",
 				Metadata: "embedded-cluster/version-metadata.json",
 			},
 			wantEmbeddedClusterArtifacts: &kotsv1beta1.EmbeddedClusterArtifacts{
@@ -71,7 +71,7 @@ func TestPushEmbeddedClusterArtifacts(t *testing.T) {
 				Images:   fmt.Sprintf("%s/embedded-cluster/images-amd64.tar:%s", testAppSlug, testTag),
 				Metadata: fmt.Sprintf("%s/embedded-cluster/version-metadata.json:%s", testAppSlug, testTag),
 			},
-			wantPushedArtifacts: map[string]string{
+			wantArtifactsInRegistry: map[string]string{
 				fmt.Sprintf("%s/embedded-cluster/embedded-cluster-amd64", testAppSlug): testTag,
 				fmt.Sprintf("%s/embedded-cluster/charts.tar.gz", testAppSlug):          testTag,
 				fmt.Sprintf("%s/embedded-cluster/images-amd64.tar", testAppSlug):       testTag,
@@ -98,7 +98,7 @@ func TestPushEmbeddedClusterArtifacts(t *testing.T) {
 				Images:   fmt.Sprintf("%s/embedded-cluster/images-amd64.tar:%s", testAppSlug, testTag),
 				Metadata: fmt.Sprintf("%s/embedded-cluster/version-metadata.json:%s", testAppSlug, testTag),
 			},
-			wantPushedArtifacts: map[string]string{
+			wantArtifactsInRegistry: map[string]string{
 				fmt.Sprintf("%s/embedded-cluster/embedded-cluster-amd64", testAppSlug): testTag,
 				fmt.Sprintf("%s/embedded-cluster/charts.tar.gz", testAppSlug):          testTag,
 				fmt.Sprintf("%s/embedded-cluster/images-amd64.tar", testAppSlug):       testTag,
@@ -116,8 +116,8 @@ func TestPushEmbeddedClusterArtifacts(t *testing.T) {
 				t.Fatalf("Failed to create airgap bundle: %v", err)
 			}
 
-			pushedArtifacts := make(map[string]string)
-			mockRegistryServer := newMockRegistryServer(pushedArtifacts)
+			artifactsInRegistry := make(map[string]string)
+			mockRegistryServer := newMockRegistryServer(artifactsInRegistry)
 			defer mockRegistryServer.Close()
 
 			u, err := url.Parse(mockRegistryServer.URL)
@@ -155,7 +155,7 @@ func TestPushEmbeddedClusterArtifacts(t *testing.T) {
 			req.Equal(tt.wantEmbeddedClusterArtifacts, gotEmbeddedClusterArtfacts)
 
 			// validate that each of the expected artifacts were pushed to the registry
-			req.Equal(tt.wantPushedArtifacts, pushedArtifacts)
+			req.Equal(tt.wantArtifactsInRegistry, artifactsInRegistry)
 		})
 	}
 }
@@ -188,7 +188,7 @@ func createTestAirgapBundle(airgapFiles map[string][]byte, dstPath string) error
 	return nil
 }
 
-func newMockRegistryServer(pushedRegistryArtifacts map[string]string) *httptest.Server {
+func newMockRegistryServer(artifactsInRegistry map[string]string) *httptest.Server {
 	return httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		blobsRegex := regexp.MustCompile(`/v2/(.+)/blobs/(.*)`)
 		manifestsRegex := regexp.MustCompile(`/v2/(.+)/manifests/(.*)`)
@@ -200,7 +200,7 @@ func newMockRegistryServer(pushedRegistryArtifacts map[string]string) *httptest.
 		case r.Method == http.MethodPut && manifestsRegex.MatchString(r.URL.Path):
 			repo := manifestsRegex.FindStringSubmatch(r.URL.Path)[1]
 			tag := manifestsRegex.FindStringSubmatch(r.URL.Path)[2]
-			pushedRegistryArtifacts[repo] = tag
+			artifactsInRegistry[repo] = tag
 			w.WriteHeader(http.StatusCreated)
 		default:
 			w.WriteHeader(http.StatusNotFound)
