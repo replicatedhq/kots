@@ -141,6 +141,7 @@ func WriteUpstream(u *types.Upstream, options types.WriteOptions) error {
 			ReplicatedRegistryDomain: u.ReplicatedRegistryDomain,
 			ReplicatedProxyDomain:    u.ReplicatedProxyDomain,
 			ReplicatedChartNames:     u.ReplicatedChartNames,
+			EmbeddedClusterArtifacts: u.EmbeddedClusterArtifacts,
 			EncryptionKey:            encryptionKey,
 		},
 	}

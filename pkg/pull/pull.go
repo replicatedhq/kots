@@ -216,6 +216,7 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 		fetchOptions.CurrentVersionIsRequired = installation.Spec.IsRequired
 		fetchOptions.CurrentReplicatedRegistryDomain = installation.Spec.ReplicatedRegistryDomain
 		fetchOptions.CurrentReplicatedProxyDomain = installation.Spec.ReplicatedProxyDomain
+		fetchOptions.CurrentEmbeddedClusterArtifacts = installation.Spec.EmbeddedClusterArtifacts
 	}
 
 	if pullOptions.AirgapRoot != "" {

@@ -5,6 +5,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/crypto"
+	"github.com/replicatedhq/kots/pkg/embeddedcluster"
 	"github.com/replicatedhq/kots/pkg/replicatedapp"
 	"github.com/replicatedhq/kots/pkg/upstream/types"
 	"github.com/replicatedhq/kots/pkg/util"
@@ -50,6 +51,7 @@ func downloadUpstream(upstreamURI string, fetchOptions *types.FetchOptions) (*ty
 			pickReplicatedRegistryDomain(fetchOptions),
 			pickReplicatedProxyDomain(fetchOptions),
 			pickReplicatedChartNames(fetchOptions),
+			pickEmbeddedClusterArtifacts(fetchOptions),
 			fetchOptions.AppSlug,
 			fetchOptions.AppSequence,
 			fetchOptions.Airgap != nil,
@@ -117,4 +119,23 @@ func pickReplicatedChartNames(fetchOptions *types.FetchOptions) []string {
 		return fetchOptions.Airgap.Spec.ReplicatedChartNames
 	}
 	return fetchOptions.CurrentReplicatedChartNames
+}
+
+func pickEmbeddedClusterArtifacts(fetchOptions *types.FetchOptions) []string {
+	if fetchOptions.Airgap != nil {
+		opts := embeddedcluster.EmbeddedClusterArtifactOCIPathOptions{
+			RegistryHost:      fetchOptions.LocalRegistry.Hostname,
+			RegistryNamespace: fetchOptions.LocalRegistry.Namespace,
+			ChannelID:         fetchOptions.Airgap.Spec.ChannelID,
+			UpdateCursor:      fetchOptions.Airgap.Spec.UpdateCursor,
+			VersionLabel:      fetchOptions.Airgap.Spec.VersionLabel,
+		}
+		return []string{
+			embeddedcluster.EmbeddedClusterArtifactOCIPath(fetchOptions.Airgap.Spec.EmbeddedClusterArtifacts.Binary, opts),
+			embeddedcluster.EmbeddedClusterArtifactOCIPath(fetchOptions.Airgap.Spec.EmbeddedClusterArtifacts.Charts, opts),
+			embeddedcluster.EmbeddedClusterArtifactOCIPath(fetchOptions.Airgap.Spec.EmbeddedClusterArtifacts.Images, opts),
+			embeddedcluster.EmbeddedClusterArtifactOCIPath(fetchOptions.Airgap.Spec.EmbeddedClusterArtifacts.Metadata, opts),
+		}
+	}
+	return fetchOptions.CurrentEmbeddedClusterArtifacts
 }

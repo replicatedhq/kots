@@ -56,6 +56,7 @@ type Release struct {
 	ReplicatedRegistryDomain string
 	ReplicatedProxyDomain    string
 	ReplicatedChartNames     []string
+	EmbeddedClusterArtifacts []string
 	Manifests                map[string][]byte
 }
 
@@ -127,6 +128,7 @@ func downloadReplicated(
 	replicatedRegistryDomain string,
 	replicatedProxyDomain string,
 	replicatedChartNames []string,
+	embeddedClusterArtifacts []string,
 	appSlug string,
 	appSequence int64,
 	isAirgap bool,
@@ -138,7 +140,7 @@ func downloadReplicated(
 	var release *Release
 
 	if localPath != "" {
-		parsedLocalRelease, err := readReplicatedAppFromLocalPath(localPath, updateCursor, versionLabel, isRequired, replicatedRegistryDomain, replicatedProxyDomain, replicatedChartNames)
+		parsedLocalRelease, err := readReplicatedAppFromLocalPath(localPath, updateCursor, versionLabel, isRequired, replicatedRegistryDomain, replicatedProxyDomain, replicatedChartNames, embeddedClusterArtifacts)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to read replicated app from local path")
 		}
@@ -299,12 +301,13 @@ func downloadReplicated(
 		ReplicatedRegistryDomain: release.ReplicatedRegistryDomain,
 		ReplicatedProxyDomain:    release.ReplicatedProxyDomain,
 		ReplicatedChartNames:     release.ReplicatedChartNames,
+		EmbeddedClusterArtifacts: embeddedClusterArtifacts,
 	}
 
 	return upstream, nil
 }
 
-func readReplicatedAppFromLocalPath(localPath string, localCursor replicatedapp.ReplicatedCursor, versionLabel string, isRequired bool, replicatedRegistryDomain string, replicatedProxyDomain string, replicatedChartNames []string) (*Release, error) {
+func readReplicatedAppFromLocalPath(localPath string, localCursor replicatedapp.ReplicatedCursor, versionLabel string, isRequired bool, replicatedRegistryDomain string, replicatedProxyDomain string, replicatedChartNames []string, embeddedClusterArtifacts []string) (*Release, error) {
 	release := Release{
 		Manifests:                make(map[string][]byte),
 		UpdateCursor:             localCursor,
@@ -313,6 +316,7 @@ func readReplicatedAppFromLocalPath(localPath string, localCursor replicatedapp.
 		ReplicatedRegistryDomain: replicatedRegistryDomain,
 		ReplicatedProxyDomain:    replicatedProxyDomain,
 		ReplicatedChartNames:     replicatedChartNames,
+		EmbeddedClusterArtifacts: embeddedClusterArtifacts,
 	}
 
 	err := filepath.Walk(localPath,

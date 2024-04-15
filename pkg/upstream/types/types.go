@@ -37,6 +37,7 @@ type Upstream struct {
 	ReplicatedRegistryDomain string
 	ReplicatedProxyDomain    string
 	ReplicatedChartNames     []string
+	EmbeddedClusterArtifacts []string
 	EncryptionKey            string
 }
 
@@ -104,6 +105,7 @@ type FetchOptions struct {
 	CurrentReplicatedRegistryDomain string
 	CurrentReplicatedProxyDomain    string
 	CurrentReplicatedChartNames     []string
+	CurrentEmbeddedClusterArtifacts []string
 	ChannelChanged                  bool
 	AppSlug                         string
 	AppSequence                     int64

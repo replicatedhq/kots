@@ -5,11 +5,13 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"path/filepath"
 	"regexp"
 	"sort"
 	"time"
 
 	embeddedclusterv1beta1 "github.com/replicatedhq/embedded-cluster-kinds/apis/v1beta1"
+	"github.com/replicatedhq/kots/pkg/imageutil"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/logger"
 	kotsv1beta1 "github.com/replicatedhq/kotskinds/apis/kots/v1beta1"
@@ -170,4 +172,22 @@ func startClusterUpgrade(ctx context.Context, newcfg embeddedclusterv1beta1.Conf
 		return fmt.Errorf("failed to create installation: %w", err)
 	}
 	return nil
+}
+
+type EmbeddedClusterArtifactOCIPathOptions struct {
+	RegistryHost      string
+	RegistryNamespace string
+	ChannelID         string
+	UpdateCursor      string
+	VersionLabel      string
+}
+
+// EmbeddedClusterArtifactOCIPath returns the OCI path for an embedded cluster artifact given
+// the artifact filename and details about the configured registry and channel release.
+func EmbeddedClusterArtifactOCIPath(filename string, opts EmbeddedClusterArtifactOCIPathOptions) string {
+	name := filepath.Base(filename)
+	repository := filepath.Join("embedded-cluster", imageutil.SanitizeRepo(name))
+	tag := imageutil.SanitizeTag(fmt.Sprintf("%s-%s-%s", opts.ChannelID, opts.UpdateCursor, opts.VersionLabel))
+	artifact := fmt.Sprintf("%s:%s", filepath.Join(opts.RegistryHost, opts.RegistryNamespace, repository), tag)
+	return artifact
 }
