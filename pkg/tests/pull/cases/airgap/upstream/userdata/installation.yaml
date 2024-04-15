@@ -1,0 +1,11 @@
+apiVersion: kots.io/v1beta1
+kind: Installation
+metadata:
+  creationTimestamp: null
+  name: my-app
+spec:
+  channelID: 1vusIYZLAVxMG6q760OJmRKj5i5
+  channelName: My Channel
+  embeddedClusterArtifacts:
+  - ttl.sh/replicated/charts.tar.gz:v1
+status: {}
