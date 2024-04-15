@@ -58,3 +58,107 @@ func Test_getArtifactsFromInstallation(t *testing.T) {
 		})
 	}
 }
+
+func TestEmbeddedClusterArtifactOCIPath(t *testing.T) {
+	type args struct {
+		filename string
+		opts     EmbeddedClusterArtifactOCIPathOptions
+	}
+	tests := []struct {
+		name string
+		args args
+		want string
+	}{
+		{
+			name: "happy path for binary",
+			args: args{
+				filename: "embedded-cluster/embedded-cluster-amd64",
+				opts: EmbeddedClusterArtifactOCIPathOptions{
+					RegistryHost:      "registry.example.com",
+					RegistryNamespace: "my-app",
+					ChannelID:         "test-channel-id",
+					UpdateCursor:      "1",
+					VersionLabel:      "1.0.0",
+				},
+			},
+			want: "registry.example.com/my-app/embedded-cluster/embedded-cluster-amd64:test-channel-id-1-1.0.0",
+		},
+		{
+			name: "happy path for charts bundle",
+			args: args{
+				filename: "embedded-cluster/charts.tar.gz",
+				opts: EmbeddedClusterArtifactOCIPathOptions{
+					RegistryHost:      "registry.example.com",
+					RegistryNamespace: "my-app",
+					ChannelID:         "test-channel-id",
+					UpdateCursor:      "1",
+					VersionLabel:      "1.0.0",
+				},
+			},
+			want: "registry.example.com/my-app/embedded-cluster/charts.tar.gz:test-channel-id-1-1.0.0",
+		},
+		{
+			name: "happy path for image bundle",
+			args: args{
+				filename: "embedded-cluster/images-amd64.tar",
+				opts: EmbeddedClusterArtifactOCIPathOptions{
+					RegistryHost:      "registry.example.com",
+					RegistryNamespace: "my-app",
+					ChannelID:         "test-channel-id",
+					UpdateCursor:      "1",
+					VersionLabel:      "1.0.0",
+				},
+			},
+			want: "registry.example.com/my-app/embedded-cluster/images-amd64.tar:test-channel-id-1-1.0.0",
+		},
+		{
+			name: "happy path for version metadata",
+			args: args{
+				filename: "embedded-cluster/version-metadata.json",
+				opts: EmbeddedClusterArtifactOCIPathOptions{
+					RegistryHost:      "registry.example.com",
+					RegistryNamespace: "my-app",
+					ChannelID:         "test-channel-id",
+					UpdateCursor:      "1",
+					VersionLabel:      "1.0.0",
+				},
+			},
+			want: "registry.example.com/my-app/embedded-cluster/version-metadata.json:test-channel-id-1-1.0.0",
+		},
+		{
+			name: "file with name that needs to be sanitized",
+			args: args{
+				filename: "A file with spaces.tar.gz",
+				opts: EmbeddedClusterArtifactOCIPathOptions{
+					RegistryHost:      "registry.example.com",
+					RegistryNamespace: "my-app",
+					ChannelID:         "test-channel-id",
+					UpdateCursor:      "1",
+					VersionLabel:      "1.0.0",
+				},
+			},
+			want: "registry.example.com/my-app/embedded-cluster/afilewithspaces.tar.gz:test-channel-id-1-1.0.0",
+		},
+		{
+			name: "version label name that needs to be sanitized",
+			args: args{
+				filename: "test.txt",
+				opts: EmbeddedClusterArtifactOCIPathOptions{
+					RegistryHost:      "registry.example.com",
+					RegistryNamespace: "my-app",
+					ChannelID:         "test-channel-id",
+					UpdateCursor:      "1",
+					VersionLabel:      "A version with spaces",
+				},
+			},
+			want: "registry.example.com/my-app/embedded-cluster/test.txt:test-channel-id-1-Aversionwithspaces",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := EmbeddedClusterArtifactOCIPath(tt.args.filename, tt.args.opts); got != tt.want {
+				t.Errorf("EmbeddedClusterArtifactOCIPath() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
