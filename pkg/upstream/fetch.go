@@ -135,9 +135,9 @@ func pickEmbeddedClusterArtifacts(fetchOptions *types.FetchOptions) []string {
 			VersionLabel:      fetchOptions.Airgap.Spec.VersionLabel,
 		}
 		return []string{
-			embeddedcluster.EmbeddedClusterArtifactOCIPath(fetchOptions.Airgap.Spec.EmbeddedClusterArtifacts.Binary, opts),
+			embeddedcluster.EmbeddedClusterArtifactOCIPath(fetchOptions.Airgap.Spec.EmbeddedClusterArtifacts.BinaryAmd64, opts),
 			embeddedcluster.EmbeddedClusterArtifactOCIPath(fetchOptions.Airgap.Spec.EmbeddedClusterArtifacts.Charts, opts),
-			embeddedcluster.EmbeddedClusterArtifactOCIPath(fetchOptions.Airgap.Spec.EmbeddedClusterArtifacts.Images, opts),
+			embeddedcluster.EmbeddedClusterArtifactOCIPath(fetchOptions.Airgap.Spec.EmbeddedClusterArtifacts.ImagesAmd64, opts),
 			embeddedcluster.EmbeddedClusterArtifactOCIPath(fetchOptions.Airgap.Spec.EmbeddedClusterArtifacts.Metadata, opts),
 		}
 	}
