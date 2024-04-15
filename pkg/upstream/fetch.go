@@ -123,6 +123,10 @@ func pickReplicatedChartNames(fetchOptions *types.FetchOptions) []string {
 
 func pickEmbeddedClusterArtifacts(fetchOptions *types.FetchOptions) []string {
 	if fetchOptions.Airgap != nil {
+		if fetchOptions.Airgap.Spec.EmbeddedClusterArtifacts == nil {
+			return nil
+		}
+
 		opts := embeddedcluster.EmbeddedClusterArtifactOCIPathOptions{
 			RegistryHost:      fetchOptions.LocalRegistry.Hostname,
 			RegistryNamespace: fetchOptions.LocalRegistry.Namespace,
