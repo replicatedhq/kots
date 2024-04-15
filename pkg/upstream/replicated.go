@@ -301,7 +301,7 @@ func downloadReplicated(
 		ReplicatedRegistryDomain: release.ReplicatedRegistryDomain,
 		ReplicatedProxyDomain:    release.ReplicatedProxyDomain,
 		ReplicatedChartNames:     release.ReplicatedChartNames,
-		EmbeddedClusterArtifacts: embeddedClusterArtifacts,
+		EmbeddedClusterArtifacts: release.EmbeddedClusterArtifacts,
 	}
 
 	return upstream, nil

@@ -164,7 +164,7 @@ func Deploy(deployOptions types.DeployOptions, log *logger.CLILogger) error {
 		}
 
 		if !deployOptions.DisableImagePush {
-			_, err := image.TagAndPushImagesFromBundle(deployOptions.AirgapBundle, pushOptions)
+			err := image.TagAndPushImagesFromBundle(deployOptions.AirgapBundle, pushOptions)
 			if err != nil {
 				return errors.Wrap(err, "failed to tag and push app images from path")
 			}

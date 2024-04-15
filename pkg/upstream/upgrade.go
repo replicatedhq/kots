@@ -69,7 +69,7 @@ func Upgrade(appSlug string, options UpgradeOptions) (*UpgradeResponse, error) {
 		}
 
 		if !options.DisableImagePush {
-			_, err := image.TagAndPushImagesFromBundle(options.AirgapBundle, pushOptions)
+			err := image.TagAndPushImagesFromBundle(options.AirgapBundle, pushOptions)
 			if err != nil {
 				return nil, errors.Wrap(err, "failed to tag and push app images from path")
 			}
