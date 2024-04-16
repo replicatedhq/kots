@@ -134,7 +134,7 @@ func firstPrimaryIpAddress(ctx context.Context, client kubernetes.Interface) (st
 
 // GenerateAddNodeCommand returns the command a user should run to add a node with the provided token
 // the command will be of the form 'embeddedcluster node join ip:port UUID'
-func GenerateAddNodeCommand(ctx context.Context, client kubernetes.Interface, token string) (string, error) {
+func GenerateAddNodeCommand(ctx context.Context, client kubernetes.Interface, token string, isAirgap bool) (string, error) {
 	cm, err := ReadConfigMap(client)
 	if err != nil {
 		return "", fmt.Errorf("failed to read configmap: %w", err)
@@ -154,7 +154,13 @@ func GenerateAddNodeCommand(ctx context.Context, client kubernetes.Interface, to
 		return "", fmt.Errorf("failed to get admin console port: %w", err)
 	}
 
-	return fmt.Sprintf("sudo ./%s join %s:%d %s", binaryName, nodeIP, port, token), nil
+	// if airgap, add the airgap bundle flag
+	airgapBundleFlag := ""
+	if isAirgap {
+		airgapBundleFlag = fmt.Sprintf(" --airgap-bundle %s.airgap", binaryName)
+	}
+
+	return fmt.Sprintf("sudo ./%s join%s %s:%d %s", binaryName, airgapBundleFlag, nodeIP, port, token), nil
 }
 
 // GenerateK0sJoinCommand returns the k0s node join command, without the token but with all other required flags
