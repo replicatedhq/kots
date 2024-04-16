@@ -1,0 +1,71 @@
+name: Amd64 ARC Runner Set
+
+on:
+  schedule:
+  - cron: "0 17 * * 0" # 5pm UTC on Sundays
+  workflow_dispatch: {}
+  pull_request: {}
+
+jobs:
+  create-controller:
+    runs-on: ubuntu-latest
+    env:
+      CLUSTER_NAME: kots-amd64-arc
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install replicated CLI
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release download --repo replicatedhq/replicated --pattern '*_linux_amd64.tar.gz' --output /tmp/replicated.tar.gz --clobber
+          tar -xzf /tmp/replicated.tar.gz -C /tmp
+          mv /tmp/replicated /usr/local/bin/replicated
+
+      - name: Remove existing CMX Cluster
+        run: replicated cluster rm --name "$CLUSTER_NAME" --token '${{ secrets.C11Y_MATRIX_TOKEN }}'
+
+      - name: Create new CMX Cluster
+        run: |
+          set -euo pipefail
+
+          replicated cluster create \
+            --token '${{ secrets.C11Y_MATRIX_TOKEN }}' \
+            --distribution k3s \
+            --name "$CLUSTER_NAME" \
+            --ttl 168h \
+            --wait 120m
+
+          replicated cluster kubeconfig \
+            --token '${{ secrets.C11Y_MATRIX_TOKEN }}' \
+            --name "$CLUSTER_NAME"
+
+      # reference: https://docs.github.com/en/actions/hosting-your-own-runners/managing-self-hosted-runners-with-actions-runner-controller/quickstart-for-actions-runner-controller
+      - name: Setup Actions Runner Controller (ARC)
+        run: |
+          set -euo pipefail
+
+          helm install arc \
+            --namespace arc-systems \
+            --create-namespace \
+            oci://ghcr.io/actions/actions-runner-controller-charts/gha-runner-scale-set-controller
+
+          kubectl create namespace arc-runners
+          kubectl create secret generic github-config-secret \
+            --namespace=arc-runners \
+            --from-literal=github_token="${{ secrets.GH_PAT }}"
+
+          helm install amd64-runner-set \
+            --namespace arc-runners \
+            --set githubConfigUrl="https://github.com/replicatedhq/kots" \
+            --set githubConfigSecret="github-config-secret" \
+            oci://ghcr.io/actions/actions-runner-controller-charts/gha-runner-scale-set
+
+          # bubblewrap (which is a sandbox tool used by melange) requires privileged docker containers.
+          # issue reference: https://github.com/containers/bubblewrap/issues/505
+
+          kubectl patch autoscalingrunnerset amd64-runner-set \
+            --namespace arc-runners \
+            --type json \
+            --patch '[{"op": "add", "path": "/spec/template/spec/containers/0/securityContext", "value": {"privileged": true}}]'

@@ -8,7 +8,7 @@ on:
 jobs:
 
   generate-tag:
-    runs-on: ubuntu-20.04
+    runs-on: amd64-runner-set
     outputs:
       tag: ${{ steps.get_tag.outputs.GIT_TAG }}
     steps:
@@ -25,7 +25,7 @@ jobs:
       fail-fast: true
       matrix:
         runner: [
-          {name: ubuntu-20.04, arch: amd64},
+          {name: amd64-runner-set, arch: amd64},
           {name: arm64-runner-set, arch: arm64}
         ]
     runs-on: ${{ matrix.runner.name }}
@@ -39,7 +39,7 @@ jobs:
           arch: ${{ matrix.runner.arch }}
 
   build-migrations:
-    runs-on: ubuntu-20.04
+    runs-on: amd64-runner-set
     needs: [generate-tag, build-migrations-melange-packages]
     steps:
       - uses: actions/checkout@v4
@@ -59,7 +59,7 @@ jobs:
       fail-fast: true
       matrix:
         runner: [
-          {name: ubuntu-20.04, arch: amd64},
+          {name: amd64-runner-set, arch: amd64},
           {name: arm64-runner-set, arch: arm64}
         ]
     runs-on: ${{ matrix.runner.name }}
@@ -73,7 +73,7 @@ jobs:
           arch: ${{ matrix.runner.arch }}
 
   build-kotsadm:
-    runs-on: ubuntu-20.04
+    runs-on: amd64-runner-set
     needs: [generate-tag, build-kotsadm-melange-packages]
     steps:
       - uses: actions/checkout@v4
@@ -93,7 +93,7 @@ jobs:
       fail-fast: true
       matrix:
         runner: [
-          {name: ubuntu-20.04, arch: amd64},
+          {name: amd64-runner-set, arch: amd64},
           {name: arm64-runner-set, arch: arm64}
         ]
     runs-on: ${{ matrix.runner.name }}
@@ -107,7 +107,7 @@ jobs:
           arch: ${{ matrix.runner.arch }}
 
   build-kurl-proxy:
-    runs-on: ubuntu-20.04
+    runs-on: amd64-runner-set
     needs: [generate-tag, build-kurl-proxy-melange-packages]
     steps:
       - uses: actions/checkout@v4
@@ -122,7 +122,7 @@ jobs:
 
 
   scan_rqlite:
-    runs-on: ubuntu-20.04
+    runs-on: amd64-runner-set
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -151,7 +151,7 @@ jobs:
 
 
   scan_minio:
-    runs-on: ubuntu-20.04
+    runs-on: amd64-runner-set
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -180,7 +180,7 @@ jobs:
 
 
   scan_dex:
-    runs-on: ubuntu-20.04
+    runs-on: amd64-runner-set
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -209,7 +209,7 @@ jobs:
 
 
   scan_kurl_proxy:
-    runs-on: ubuntu-20.04
+    runs-on: amd64-runner-set
     needs: [build-kurl-proxy]
     steps:
       - name: Checkout
@@ -234,7 +234,7 @@ jobs:
 
 
   scan_local_volume_provider:
-    runs-on: ubuntu-20.04
+    runs-on: amd64-runner-set
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -263,7 +263,7 @@ jobs:
 
 
   scan_kotsadm:
-    runs-on: ubuntu-20.04
+    runs-on: amd64-runner-set
     needs: [build-kotsadm]
     steps:
       - name: Checkout
@@ -288,7 +288,7 @@ jobs:
 
 
   scan_kotsadm_migrations:
-    runs-on: ubuntu-20.04
+    runs-on: amd64-runner-set
     needs: [build-migrations]
     steps:
       - name: Checkout
