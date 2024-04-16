@@ -138,20 +138,6 @@ func UpdateInstallationImages(opts UpdateInstallationImagesOptions) error {
 	return nil
 }
 
-func UpdateInstallationEmbeddedClusterArtifacts(opts UpdateInstallationEmbeddedClusterArtifactsOptions) error {
-	if opts.KotsKinds == nil {
-		return nil
-	}
-
-	opts.KotsKinds.Installation.Spec.EmbeddedClusterArtifacts = opts.Artifacts
-
-	if err := kotsutil.SaveInstallation(&opts.KotsKinds.Installation, opts.UpstreamDir); err != nil {
-		return errors.Wrap(err, "failed to save installation")
-	}
-
-	return nil
-}
-
 func CopyOnlineImages(opts imagetypes.ProcessImageOptions, images []string, kotsKinds *kotsutil.KotsKinds, license *kotsv1beta1.License, dockerHubRegistryCreds registry.Credentials, log *logger.CLILogger) error {
 	installationImages := make(map[string]imagetypes.InstallationImageInfo)
 	for _, i := range kotsKinds.Installation.Spec.KnownImages {

@@ -5,9 +5,11 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/crypto"
+	"github.com/replicatedhq/kots/pkg/imageutil"
 	"github.com/replicatedhq/kots/pkg/replicatedapp"
 	"github.com/replicatedhq/kots/pkg/upstream/types"
 	"github.com/replicatedhq/kots/pkg/util"
+	kotsv1beta1 "github.com/replicatedhq/kotskinds/apis/kots/v1beta1"
 )
 
 func FetchUpstream(upstreamURI string, fetchOptions *types.FetchOptions) (*types.Upstream, error) {
@@ -50,6 +52,7 @@ func downloadUpstream(upstreamURI string, fetchOptions *types.FetchOptions) (*ty
 			pickReplicatedRegistryDomain(fetchOptions),
 			pickReplicatedProxyDomain(fetchOptions),
 			pickReplicatedChartNames(fetchOptions),
+			pickEmbeddedClusterArtifacts(fetchOptions),
 			fetchOptions.AppSlug,
 			fetchOptions.AppSequence,
 			fetchOptions.Airgap != nil,
@@ -117,4 +120,27 @@ func pickReplicatedChartNames(fetchOptions *types.FetchOptions) []string {
 		return fetchOptions.Airgap.Spec.ReplicatedChartNames
 	}
 	return fetchOptions.CurrentReplicatedChartNames
+}
+
+func pickEmbeddedClusterArtifacts(fetchOptions *types.FetchOptions) *kotsv1beta1.EmbeddedClusterArtifacts {
+	if fetchOptions.Airgap != nil {
+		if fetchOptions.Airgap.Spec.EmbeddedClusterArtifacts == nil {
+			return nil
+		}
+
+		opts := imageutil.EmbeddedClusterArtifactOCIPathOptions{
+			RegistryHost:      fetchOptions.LocalRegistry.Hostname,
+			RegistryNamespace: fetchOptions.LocalRegistry.Namespace,
+			ChannelID:         fetchOptions.Airgap.Spec.ChannelID,
+			UpdateCursor:      fetchOptions.Airgap.Spec.UpdateCursor,
+			VersionLabel:      fetchOptions.Airgap.Spec.VersionLabel,
+		}
+		return &kotsv1beta1.EmbeddedClusterArtifacts{
+			BinaryAmd64: imageutil.NewEmbeddedClusterOCIArtifactPath(fetchOptions.Airgap.Spec.EmbeddedClusterArtifacts.BinaryAmd64, opts).String(),
+			Charts:      imageutil.NewEmbeddedClusterOCIArtifactPath(fetchOptions.Airgap.Spec.EmbeddedClusterArtifacts.Charts, opts).String(),
+			ImagesAmd64: imageutil.NewEmbeddedClusterOCIArtifactPath(fetchOptions.Airgap.Spec.EmbeddedClusterArtifacts.ImagesAmd64, opts).String(),
+			Metadata:    imageutil.NewEmbeddedClusterOCIArtifactPath(fetchOptions.Airgap.Spec.EmbeddedClusterArtifacts.Metadata, opts).String(),
+		}
+	}
+	return fetchOptions.CurrentEmbeddedClusterArtifacts
 }

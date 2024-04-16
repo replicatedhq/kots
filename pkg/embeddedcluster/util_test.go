@@ -31,11 +31,11 @@ func Test_getArtifactsFromInstallation(t *testing.T) {
 			args: args{
 				installation: kotsv1beta1.Installation{
 					Spec: kotsv1beta1.InstallationSpec{
-						EmbeddedClusterArtifacts: []string{
-							"onprem.registry.com/my-app/embedded-cluster/charts.tar.gz:v1",
-							"onprem.registry.com/my-app/embedded-cluster/images-amd64.tar:v1",
-							"onprem.registry.com/my-app/embedded-cluster/embedded-cluster-amd64:v1",
-							"onprem.registry.com/my-app/embedded-cluster/version-metadata.json:v1",
+						EmbeddedClusterArtifacts: &kotsv1beta1.EmbeddedClusterArtifacts{
+							Charts:      "onprem.registry.com/my-app/embedded-cluster/charts.tar.gz:v1",
+							ImagesAmd64: "onprem.registry.com/my-app/embedded-cluster/images-amd64.tar:v1",
+							BinaryAmd64: "onprem.registry.com/my-app/embedded-cluster/embedded-cluster-amd64:v1",
+							Metadata:    "onprem.registry.com/my-app/embedded-cluster/version-metadata.json:v1",
 						},
 					},
 				},

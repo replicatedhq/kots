@@ -216,6 +216,7 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 		fetchOptions.CurrentVersionIsRequired = installation.Spec.IsRequired
 		fetchOptions.CurrentReplicatedRegistryDomain = installation.Spec.ReplicatedRegistryDomain
 		fetchOptions.CurrentReplicatedProxyDomain = installation.Spec.ReplicatedProxyDomain
+		fetchOptions.CurrentEmbeddedClusterArtifacts = installation.Spec.EmbeddedClusterArtifacts
 	}
 
 	if pullOptions.AirgapRoot != "" {
@@ -364,7 +365,7 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 		}
 		if processImageOptions.RewriteImages && processImageOptions.IsAirgap {
 			// if this is an airgap install, we still need to process the images
-			if _, err := image.CopyAirgapImages(processImageOptions, log); err != nil {
+			if err := image.CopyAirgapImages(processImageOptions, log); err != nil {
 				return "", errors.Wrap(err, "failed to copy airgap images")
 			}
 		}

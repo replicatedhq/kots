@@ -77,6 +77,7 @@ func Rewrite(rewriteOptions RewriteOptions) error {
 		CurrentReplicatedRegistryDomain: rewriteOptions.Installation.Spec.ReplicatedRegistryDomain,
 		CurrentReplicatedProxyDomain:    rewriteOptions.Installation.Spec.ReplicatedProxyDomain,
 		CurrentReplicatedChartNames:     rewriteOptions.Installation.Spec.ReplicatedChartNames,
+		CurrentEmbeddedClusterArtifacts: rewriteOptions.Installation.Spec.EmbeddedClusterArtifacts,
 		EncryptionKey:                   rewriteOptions.Installation.Spec.EncryptionKey,
 		License:                         rewriteOptions.License,
 		AppSequence:                     rewriteOptions.AppSequence,

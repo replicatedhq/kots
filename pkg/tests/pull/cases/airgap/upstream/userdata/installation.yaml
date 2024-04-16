@@ -11,19 +11,4 @@ spec:
     imagesAmd64: ttl.sh/replicated/images-amd64:v1
     charts: ttl.sh/replicated/charts.tar.gz:v1
     metadata: ttl.sh/replicated/metadata.json:v1
-  knownImages:
-  - image: alpine
-    isPrivate: true
-  - image: alpine:3.4
-    isPrivate: true
-  - image: busybox
-    isPrivate: true
-  - image: nginx:1.23
-    isPrivate: true
-  - image: nginx:1.24
-    isPrivate: true
-  - image: nginx:latest
-    isPrivate: true
-  - image: replicated/replicated-sdk:v1.0.0-beta.12
-    isPrivate: true
 status: {}

@@ -3,6 +3,7 @@ package imageutil
 import (
 	"fmt"
 	"path"
+	"path/filepath"
 	"strings"
 
 	"github.com/containers/image/v5/docker/reference"
@@ -333,4 +334,42 @@ func SanitizeRepo(repo string) string {
 	repo = strings.ToLower(repo)
 	repo = strings.Join(dockerref.NameRegexp.FindAllString(repo, -1), "")
 	return repo
+}
+
+type OCIArtifactPath struct {
+	Name              string
+	RegistryHost      string
+	RegistryNamespace string
+	Repository        string
+	Tag               string
+}
+
+func (p *OCIArtifactPath) String() string {
+	if p.RegistryNamespace == "" {
+		return fmt.Sprintf("%s:%s", filepath.Join(p.RegistryHost, p.Repository), p.Tag)
+	}
+	return fmt.Sprintf("%s:%s", filepath.Join(p.RegistryHost, p.RegistryNamespace, p.Repository), p.Tag)
+}
+
+type EmbeddedClusterArtifactOCIPathOptions struct {
+	RegistryHost      string
+	RegistryNamespace string
+	ChannelID         string
+	UpdateCursor      string
+	VersionLabel      string
+}
+
+// NewEmbeddedClusterOCIArtifactPath returns the OCI path for an embedded cluster artifact given
+// the artifact filename and details about the configured registry and channel release.
+func NewEmbeddedClusterOCIArtifactPath(filename string, opts EmbeddedClusterArtifactOCIPathOptions) *OCIArtifactPath {
+	name := filepath.Base(filename)
+	repository := filepath.Join("embedded-cluster", SanitizeRepo(name))
+	tag := SanitizeTag(fmt.Sprintf("%s-%s-%s", opts.ChannelID, opts.UpdateCursor, opts.VersionLabel))
+	return &OCIArtifactPath{
+		Name:              name,
+		RegistryHost:      opts.RegistryHost,
+		RegistryNamespace: opts.RegistryNamespace,
+		Repository:        repository,
+		Tag:               tag,
+	}
 }

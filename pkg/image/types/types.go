@@ -84,9 +84,11 @@ type LayerInfo struct {
 }
 
 type PushEmbeddedClusterArtifactsOptions struct {
-	Registry   dockerregistrytypes.RegistryOptions
-	Tag        string
-	HTTPClient *http.Client
+	Registry     dockerregistrytypes.RegistryOptions
+	ChannelID    string
+	UpdateCursor string
+	VersionLabel string
+	HTTPClient   *http.Client
 }
 
 type PushOCIArtifactOptions struct {
