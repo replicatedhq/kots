@@ -7,7 +7,10 @@ spec:
   channelID: 1vusIYZLAVxMG6q760OJmRKj5i5
   channelName: My Channel
   embeddedClusterArtifacts:
-  - ttl.sh/replicated/charts.tar.gz:v1
+    binaryAmd64: ttl.sh/replicated/binary-amd64:v1
+    imagesAmd64: ttl.sh/replicated/images-amd64:v1
+    charts: ttl.sh/replicated/charts.tar.gz:v1
+    metadata: ttl.sh/replicated/metadata.json:v1
   knownImages:
   - image: alpine
     isPrivate: true

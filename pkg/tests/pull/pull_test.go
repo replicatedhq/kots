@@ -263,9 +263,6 @@ func TestKotsPull(t *testing.T) {
 			require.ElementsMatch(t, wantInstallation.Spec.KnownImages, installation.Spec.KnownImages)
 			wantInstallation.Spec.KnownImages = nil
 			installation.Spec.KnownImages = nil
-			require.ElementsMatch(t, wantInstallation.Spec.EmbeddedClusterArtifacts, installation.Spec.EmbeddedClusterArtifacts)
-			wantInstallation.Spec.EmbeddedClusterArtifacts = nil
-			installation.Spec.EmbeddedClusterArtifacts = nil
 			require.Equal(t, wantInstallation, installation)
 		})
 	}
