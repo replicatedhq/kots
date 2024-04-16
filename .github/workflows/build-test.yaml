@@ -443,6 +443,11 @@ jobs:
         with:
           path: .image.env
 
+      - name: Install skopeo
+        run: |
+          sudo apt-get -y update
+          sudo apt-get -y install skopeo
+
       - name: push minio
         run: skopeo copy --all docker://kotsadm/minio:${{ steps.dotenv.outputs.MINIO_TAG }} docker://ttl.sh/automated-${{ github.run_id }}/minio:${{ steps.dotenv.outputs.MINIO_TAG }}
 
@@ -465,6 +470,11 @@ jobs:
         with:
           path: .image.env
 
+      - name: Install skopeo
+        run: |
+          sudo apt-get -y update
+          sudo apt-get -y install skopeo
+
       - name: push rqlite
         run: skopeo copy --all docker://kotsadm/rqlite:${{ steps.dotenv.outputs.RQLITE_TAG }} docker://ttl.sh/automated-${{ github.run_id }}/rqlite:${{ steps.dotenv.outputs.RQLITE_TAG }}
 
@@ -485,6 +495,11 @@ jobs:
         id: dotenv
         with:
           path: .image.env
+
+      - name: Install skopeo
+        run: |
+          sudo apt-get -y update
+          sudo apt-get -y install skopeo
 
       - name: push dex
         run: skopeo copy --all docker://kotsadm/dex:${{ steps.dotenv.outputs.DEX_TAG }} docker://ttl.sh/automated-${{ github.run_id }}/dex:${{ steps.dotenv.outputs.DEX_TAG }}

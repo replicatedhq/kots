@@ -190,6 +190,11 @@ jobs:
       with:
         go-version: '^1.20.0'
 
+    - name: Install skopeo
+      run: |
+        sudo apt-get -y update
+        sudo apt-get -y install skopeo
+
     - name: Run bundle registry
       run: |
         mkdir -p kotsadm-bundle/images
