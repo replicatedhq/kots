@@ -57,7 +57,21 @@ func (h *Handler) GenerateEmbeddedClusterNodeJoinCommand(w http.ResponseWriter, 
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
-	nodeJoinCommand, err := embeddedcluster.GenerateAddNodeCommand(r.Context(), client, token)
+
+	apps, err := store.GetStore().ListInstalledApps()
+	if err != nil {
+		logger.Error(fmt.Errorf("failed to list installed apps: %w", err))
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	if len(apps) == 0 {
+		logger.Error(fmt.Errorf("no installed apps found"))
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	app := apps[0]
+
+	nodeJoinCommand, err := embeddedcluster.GenerateAddNodeCommand(r.Context(), client, token, app.IsAirgap)
 	if err != nil {
 		logger.Error(fmt.Errorf("failed to generate add node command: %w", err))
 		w.WriteHeader(http.StatusInternalServerError)
