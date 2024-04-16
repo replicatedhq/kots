@@ -16,16 +16,20 @@ import (
 	dockertypes "github.com/replicatedhq/kots/pkg/docker/types"
 	"github.com/replicatedhq/kots/pkg/image/types"
 	imagetypes "github.com/replicatedhq/kots/pkg/image/types"
+	kotsv1beta1 "github.com/replicatedhq/kotskinds/apis/kots/v1beta1"
 	"github.com/stretchr/testify/require"
 )
 
 func TestPushEmbeddedClusterArtifacts(t *testing.T) {
 	testAppSlug := "test-app"
-	testTag := "test-tag"
+	testChannelID := "test-tag"
+	testUpdateCursor := "test-cursor"
+	testVersionLabel := "test-version"
 
 	tests := []struct {
 		name                  string
 		airgapFiles           map[string][]byte
+		artifactsToPush       *kotsv1beta1.EmbeddedClusterArtifacts
 		wantRegistryArtifacts map[string]string
 		wantErr               bool
 	}{
@@ -36,6 +40,7 @@ func TestPushEmbeddedClusterArtifacts(t *testing.T) {
 				"app.tar.gz":       []byte("this-is-the-app-archive"),
 				"images/something": []byte("this-is-an-image"),
 			},
+			artifactsToPush:       nil,
 			wantRegistryArtifacts: map[string]string{},
 			wantErr:               false,
 		},
@@ -51,12 +56,17 @@ func TestPushEmbeddedClusterArtifacts(t *testing.T) {
 				"embedded-cluster/version-metadata.json": []byte("this-is-the-metadata"),
 				"embedded-cluster/some-file-TBD":         []byte("this-is-an-arbitrary-file"),
 			},
+			artifactsToPush: &kotsv1beta1.EmbeddedClusterArtifacts{
+				BinaryAmd64: "embedded-cluster/test-app",
+				ImagesAmd64: "embedded-cluster/images-amd64.tar",
+				Charts:      "embedded-cluster/charts.tar.gz",
+				Metadata:    "embedded-cluster/version-metadata.json",
+			},
 			wantRegistryArtifacts: map[string]string{
-				fmt.Sprintf("%s/embedded-cluster/test-app", testAppSlug):              testTag,
-				fmt.Sprintf("%s/embedded-cluster/charts.tar.gz", testAppSlug):         testTag,
-				fmt.Sprintf("%s/embedded-cluster/images-amd64.tar", testAppSlug):      testTag,
-				fmt.Sprintf("%s/embedded-cluster/version-metadata.json", testAppSlug): testTag,
-				fmt.Sprintf("%s/embedded-cluster/some-file-tbd", testAppSlug):         testTag,
+				fmt.Sprintf("%s/embedded-cluster/test-app", testAppSlug):              fmt.Sprintf("%s-%s-%s", testChannelID, testUpdateCursor, testVersionLabel),
+				fmt.Sprintf("%s/embedded-cluster/charts.tar.gz", testAppSlug):         fmt.Sprintf("%s-%s-%s", testChannelID, testUpdateCursor, testVersionLabel),
+				fmt.Sprintf("%s/embedded-cluster/images-amd64.tar", testAppSlug):      fmt.Sprintf("%s-%s-%s", testChannelID, testUpdateCursor, testVersionLabel),
+				fmt.Sprintf("%s/embedded-cluster/version-metadata.json", testAppSlug): fmt.Sprintf("%s-%s-%s", testChannelID, testUpdateCursor, testVersionLabel),
 			},
 			wantErr: false,
 		},
@@ -83,25 +93,17 @@ func TestPushEmbeddedClusterArtifacts(t *testing.T) {
 					Endpoint:  u.Host,
 					Namespace: testAppSlug,
 				},
-				Tag:        testTag,
-				HTTPClient: mockRegistryServer.Client(),
+				ChannelID:    testChannelID,
+				UpdateCursor: testUpdateCursor,
+				VersionLabel: testVersionLabel,
+				HTTPClient:   mockRegistryServer.Client(),
 			}
-			gotArtifacts, err := PushEmbeddedClusterArtifacts(airgapBundle, opts)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("PushEmbeddedClusterArtifacts() error = %v, wantErr %v", err, tt.wantErr)
-			}
-
+			err = PushEmbeddedClusterArtifacts(airgapBundle, tt.artifactsToPush, opts)
 			if tt.wantErr {
 				req.Error(err)
 			} else {
 				req.NoError(err)
 			}
-
-			wantArtifacts := make([]string, 0)
-			for repo, tag := range tt.wantRegistryArtifacts {
-				wantArtifacts = append(wantArtifacts, fmt.Sprintf("%s/%s:%s", u.Host, repo, tag))
-			}
-			req.ElementsMatch(wantArtifacts, gotArtifacts)
 
 			// validate that each of the expected artifacts were pushed to the registry
 			req.Equal(tt.wantRegistryArtifacts, pushedRegistryArtifacts)

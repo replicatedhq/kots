@@ -56,7 +56,7 @@ type Release struct {
 	ReplicatedRegistryDomain string
 	ReplicatedProxyDomain    string
 	ReplicatedChartNames     []string
-	EmbeddedClusterArtifacts []string
+	EmbeddedClusterArtifacts *kotsv1beta1.EmbeddedClusterArtifacts
 	Manifests                map[string][]byte
 }
 
@@ -128,7 +128,7 @@ func downloadReplicated(
 	replicatedRegistryDomain string,
 	replicatedProxyDomain string,
 	replicatedChartNames []string,
-	embeddedClusterArtifacts []string,
+	embeddedClusterArtifacts *kotsv1beta1.EmbeddedClusterArtifacts,
 	appSlug string,
 	appSequence int64,
 	isAirgap bool,
@@ -307,7 +307,7 @@ func downloadReplicated(
 	return upstream, nil
 }
 
-func readReplicatedAppFromLocalPath(localPath string, localCursor replicatedapp.ReplicatedCursor, versionLabel string, isRequired bool, replicatedRegistryDomain string, replicatedProxyDomain string, replicatedChartNames []string, embeddedClusterArtifacts []string) (*Release, error) {
+func readReplicatedAppFromLocalPath(localPath string, localCursor replicatedapp.ReplicatedCursor, versionLabel string, isRequired bool, replicatedRegistryDomain string, replicatedProxyDomain string, replicatedChartNames []string, embeddedClusterArtifacts *kotsv1beta1.EmbeddedClusterArtifacts) (*Release, error) {
 	release := Release{
 		Manifests:                make(map[string][]byte),
 		UpdateCursor:             localCursor,
