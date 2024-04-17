@@ -60,8 +60,6 @@ jobs:
             --namespace arc-runners \
             --set githubConfigUrl="https://github.com/replicatedhq/kots" \
             --set githubConfigSecret="github-config-secret" \
-            --set template.spec.containers[0].name="runner" \
-            --set template.spec.containers[0].image="ghcr.io/quipper/actions-runner:2.315.0-ubuntu20" \
             oci://ghcr.io/actions/actions-runner-controller-charts/gha-runner-scale-set
 
           # bubblewrap (which is a sandbox tool used by melange) requires privileged docker containers.

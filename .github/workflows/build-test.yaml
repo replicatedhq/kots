@@ -300,6 +300,11 @@ jobs:
           ref: main
           repository: replicatedhq/kots-helm
 
+      - name: configure packages
+        run: |
+          sudo apt-get update -y
+          sudo apt-get install -y curl gettext-base pkg-config
+
       - name: Build KOTS Helm chart
         env:
           GIT_COMMIT: ${{ github.sha }}
