@@ -7,10 +7,10 @@ import (
 
 	"github.com/replicatedhq/kots/pkg/embeddedcluster"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
+	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/store"
 	"github.com/replicatedhq/kots/pkg/util"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 type GenerateEmbeddedClusterNodeJoinCommandResponse struct {
@@ -168,13 +168,7 @@ func (h *Handler) GetEmbeddedClusterNodeJoinCommand(w http.ResponseWriter, r *ht
 
 	airgapRegistryAddress := ""
 	if install.Spec.AirGap {
-		airgapRegistrySvc, err := client.CoreV1().Services("registry").Get(r.Context(), "registry", metav1.GetOptions{})
-		if err != nil {
-			logger.Error(fmt.Errorf("failed to get airgap registry service: %w", err))
-			w.WriteHeader(http.StatusInternalServerError)
-			return
-		}
-		airgapRegistryAddress = fmt.Sprintf("%s:5000", airgapRegistrySvc.Spec.ClusterIP)
+		airgapRegistryAddress, _, _ = kotsutil.GetEmbeddedRegistryCreds(client)
 	}
 
 	JSON(w, http.StatusOK, GetEmbeddedClusterNodeJoinCommandResponse{
