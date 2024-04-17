@@ -4,6 +4,7 @@ on:
   schedule:
   - cron: "0 17 * * 0" # 5pm UTC on Sundays
   workflow_dispatch: {}
+  pull_request: {}
 
 jobs:
   create-controller:
