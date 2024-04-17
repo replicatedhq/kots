@@ -10,6 +10,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/store"
 	"github.com/replicatedhq/kots/pkg/util"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 type GenerateEmbeddedClusterNodeJoinCommandResponse struct {
@@ -24,6 +25,8 @@ type GetEmbeddedClusterNodeJoinCommandResponse struct {
 	EndUserK0sConfigOverrides string `json:"endUserK0sConfigOverrides"`
 	MetricsBaseURL            string `json:"metricsBaseURL"`
 	EmbeddedClusterVersion    string `json:"embeddedClusterVersion"`
+	AirgapRegistryAddress     string `json:"airgapRegistryAddress"`
+	IsAirgap                  bool   `json:"isAirgap"`
 }
 
 type GenerateEmbeddedClusterNodeJoinCommandRequest struct {
@@ -163,6 +166,17 @@ func (h *Handler) GetEmbeddedClusterNodeJoinCommand(w http.ResponseWriter, r *ht
 		ecVersion = install.Spec.Config.Version
 	}
 
+	airgapRegistryAddress := ""
+	if install.Spec.AirGap {
+		airgapRegistrySvc, err := client.CoreV1().Services("registry").Get(r.Context(), "registry", metav1.GetOptions{})
+		if err != nil {
+			logger.Error(fmt.Errorf("failed to get airgap registry service: %w", err))
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+		airgapRegistryAddress = fmt.Sprintf("%s:5000", airgapRegistrySvc.Spec.ClusterIP)
+	}
+
 	JSON(w, http.StatusOK, GetEmbeddedClusterNodeJoinCommandResponse{
 		ClusterID:                 clusterID,
 		K0sJoinCommand:            k0sJoinCommand,
@@ -171,5 +185,7 @@ func (h *Handler) GetEmbeddedClusterNodeJoinCommand(w http.ResponseWriter, r *ht
 		EndUserK0sConfigOverrides: endUserK0sConfigOverrides,
 		MetricsBaseURL:            install.Spec.MetricsBaseURL,
 		EmbeddedClusterVersion:    ecVersion,
+		AirgapRegistryAddress:     airgapRegistryAddress,
+		IsAirgap:                  install.Spec.AirGap,
 	})
 }
