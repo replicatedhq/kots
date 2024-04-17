@@ -61,6 +61,11 @@ jobs:
           ref: ${{github.event.pull_request.head.ref}}
           repository: ${{github.event.pull_request.head.repo.full_name}}
 
+      - name: configure packages
+        run: |
+          sudo apt-get update -y
+          sudo apt-get install -y make nodejs
+
       - name: Setup Node.js environment
         uses: actions/setup-node@v4
         with:
@@ -88,6 +93,11 @@ jobs:
           ref: ${{github.event.pull_request.head.ref}}
           repository: ${{github.event.pull_request.head.repo.full_name}}
 
+      - name: configure packages
+        run: |
+          sudo apt-get update -y
+          sudo apt-get install -y make nodejs
+
       - name: Setup Node.js environment
         uses: actions/setup-node@v4
         with:
@@ -114,6 +124,11 @@ jobs:
         with:
           ref: ${{github.event.pull_request.head.ref}}
           repository: ${{github.event.pull_request.head.repo.full_name}}
+
+      - name: configure packages
+        run: |
+          sudo apt-get update -y
+          sudo apt-get install -y make nodejs
 
       - name: Setup Node.js environment
         uses: actions/setup-node@v4
@@ -144,6 +159,11 @@ jobs:
         with:
           ref: ${{github.event.pull_request.head.ref}}
           repository: ${{github.event.pull_request.head.repo.full_name}}
+
+      - name: configure packages
+        run: |
+          sudo apt-get update -y
+          sudo apt-get install -y make nodejs
 
       - name: Setup Node.js environment
         uses: actions/setup-node@v4
@@ -199,6 +219,11 @@ jobs:
           go-version: '^1.20.0'
           cache: true
 
+      - name: configure packages
+        run: |
+          sudo apt-get update -y
+          sudo apt-get install -y make
+
       - name: vet
         run: make vet
 
@@ -215,6 +240,11 @@ jobs:
         with:
           go-version: '^1.20.0'
           cache: true
+
+      - name: configure packages
+        run: |
+          sudo apt-get update -y
+          sudo apt-get install -y make
 
       - name: test
         run: make ci-test
@@ -305,6 +335,10 @@ jobs:
           sudo apt-get update -y
           sudo apt-get install -y curl gettext-base pkg-config
 
+      - uses: azure/setup-helm@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Build KOTS Helm chart
         env:
           GIT_COMMIT: ${{ github.sha }}
@@ -332,6 +366,11 @@ jobs:
       - uses: actions/setup-go@v5
         with:
           go-version: '^1.20.0'
+
+      - name: configure packages
+        run: |
+          sudo apt-get update -y
+          sudo apt-get install -y make
 
       - uses: actions/checkout@v4
         with:
