@@ -718,6 +718,18 @@ func (mr *MockKOTSHandlerMockRecorder) GetDownstreamOutput(w, r interface{}) *go
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetDownstreamOutput", reflect.TypeOf((*MockKOTSHandler)(nil).GetDownstreamOutput), w, r)
 }
 
+// GetEmbeddedClusterArtifact mocks base method.
+func (m *MockKOTSHandler) GetEmbeddedClusterArtifact(w http.ResponseWriter, r *http.Request) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "GetEmbeddedClusterArtifact", w, r)
+}
+
+// GetEmbeddedClusterArtifact indicates an expected call of GetEmbeddedClusterArtifact.
+func (mr *MockKOTSHandlerMockRecorder) GetEmbeddedClusterArtifact(w, r interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetEmbeddedClusterArtifact", reflect.TypeOf((*MockKOTSHandler)(nil).GetEmbeddedClusterArtifact), w, r)
+}
+
 // GetEmbeddedClusterNode mocks base method.
 func (m *MockKOTSHandler) GetEmbeddedClusterNode(w http.ResponseWriter, r *http.Request) {
 	m.ctrl.T.Helper()

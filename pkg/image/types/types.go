@@ -105,3 +105,10 @@ type OCIArtifactFile struct {
 	Path      string
 	MediaType string
 }
+
+type PullOCIArtifactOptions struct {
+	Registry   dockerregistrytypes.RegistryOptions
+	Repository string
+	Tag        string
+	HTTPClient *http.Client
+}

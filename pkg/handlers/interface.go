@@ -146,6 +146,7 @@ type KOTSHandler interface {
 	GetEmbeddedClusterNodes(w http.ResponseWriter, r *http.Request)
 	GetEmbeddedClusterNode(w http.ResponseWriter, r *http.Request)
 	GetEmbeddedClusterRoles(w http.ResponseWriter, r *http.Request)
+	GetEmbeddedClusterArtifact(w http.ResponseWriter, r *http.Request)
 
 	// Prometheus
 	SetPrometheusAddress(w http.ResponseWriter, r *http.Request)

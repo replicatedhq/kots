@@ -841,6 +841,46 @@ func pushOCIArtifact(opts imagetypes.PushOCIArtifactOptions) error {
 	return nil
 }
 
+func PullOCIArtifact(opts imagetypes.PullOCIArtifactOptions) (io.ReadCloser, error) {
+	orasWorkspace, err := os.MkdirTemp("", "oras")
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to create temp directory")
+	}
+	defer os.RemoveAll(orasWorkspace)
+
+	orasFS, err := orasfile.New(orasWorkspace)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to create oras file store")
+	}
+	defer orasFS.Close()
+
+	repository, err := orasremote.NewRepository(filepath.Join(opts.Registry.Endpoint, opts.Registry.Namespace, opts.Repository))
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to create remote repository")
+	}
+	repository.Client = &orasauth.Client{
+		Client: opts.HTTPClient,
+		Cache:  orasauth.DefaultCache,
+		Credential: orasauth.StaticCredential(opts.Registry.Endpoint, orasauth.Credential{
+			Username: opts.Registry.Username,
+			Password: opts.Registry.Password,
+		}),
+	}
+	repository.PlainHTTP = true
+
+	manifestDescriptor, err := oras.Copy(context.TODO(), orasFS, opts.Tag, repository, opts.Tag, oras.DefaultCopyOptions)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to copy")
+	}
+
+	f, err := orasFS.Fetch(context.TODO(), manifestDescriptor)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to fetch")
+	}
+
+	return f, nil
+}
+
 type ProgressReport struct {
 	// set to "progressReport"
 	Type string `json:"type"`

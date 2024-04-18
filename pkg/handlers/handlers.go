@@ -291,6 +291,8 @@ func RegisterSessionAuthRoutes(r *mux.Router, kotsStore store.Store, handler KOT
 		HandlerFunc(middleware.EnforceAccess(policy.ClusterRead, handler.GetEmbeddedClusterNode))
 	r.Name("GetEmbeddedClusterRoles").Path("/api/v1/embedded-cluster/roles").Methods("GET").
 		HandlerFunc(middleware.EnforceAccess(policy.ClusterRead, handler.GetEmbeddedClusterRoles))
+	r.Name("GetEmbeddedClusterArtifact").Path("/api/v1/embedded-cluster/artifacts/{artifactType}").Methods("GET").
+		HandlerFunc(middleware.EnforceAccess(policy.ClusterRead, handler.GetEmbeddedClusterArtifact))
 
 	// Prometheus
 	r.Name("SetPrometheusAddress").Path("/api/v1/prometheus").Methods("POST").
