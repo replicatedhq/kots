@@ -268,7 +268,10 @@ func pullAndRender(appSlug string, licensePath string, configPath string, localP
 	upstream := pull.RewriteUpstream(appSlug)
 	_, err = pull.Pull(upstream, pullOptions)
 
-	if err != nil && err != pull.ErrConfigNeeded {
+	if err != nil {
+		if err == pull.ErrConfigNeeded {
+			return errors.New("missing required config values to render templates")
+		}
 		return errors.Wrap(err, "failed to pull upstream")
 	}
 
