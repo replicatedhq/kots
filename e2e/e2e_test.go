@@ -16,19 +16,21 @@ import (
 	"github.com/onsi/gomega/gexec"
 	"github.com/replicatedhq/kots/e2e/cluster"
 	"github.com/replicatedhq/kots/e2e/helm"
+	"github.com/replicatedhq/kots/e2e/inventory"
 	"github.com/replicatedhq/kots/e2e/kots"
 	"github.com/replicatedhq/kots/e2e/kubectl"
 	"github.com/replicatedhq/kots/e2e/minio"
+	"github.com/replicatedhq/kots/e2e/playwright"
 	"github.com/replicatedhq/kots/e2e/prometheus"
 	"github.com/replicatedhq/kots/e2e/registry"
 	"github.com/replicatedhq/kots/e2e/testim"
-	"github.com/replicatedhq/kots/e2e/testim/inventory"
 	"github.com/replicatedhq/kots/e2e/util"
 	"github.com/replicatedhq/kots/e2e/velero"
 	"github.com/replicatedhq/kots/e2e/workspace"
 )
 
 var testimClient *testim.Client
+var playwrightClient *playwright.Client
 var helmCLI *helm.CLI
 var veleroCLI *velero.CLI
 var kotsInstaller *kots.Installer
@@ -73,9 +75,6 @@ func TestE2E(t *testing.T) {
 }
 
 var _ = BeforeSuite(func() {
-	testimAccessToken := os.Getenv("TESTIM_ACCESS_TOKEN")
-	Expect(testimAccessToken).ShouldNot(BeEmpty(), "TESTIM_ACCESS_TOKEN required")
-
 	Expect(util.CommandExists("kubectl")).To(BeTrue(), "kubectl required")
 	Expect(util.CommandExists("helm")).To(BeTrue(), "helm required")
 	Expect(util.CommandExists("velero")).To(BeTrue(), "velero required")
@@ -86,11 +85,13 @@ var _ = BeforeSuite(func() {
 	DeferCleanup(w.Teardown)
 
 	testimClient = testim.NewClient(
-		testimAccessToken,
+		os.Getenv("TESTIM_ACCESS_TOKEN"),
 		util.EnvOrDefault("TESTIM_PROJECT_ID", "wpYAooUimFDgQxY73r17"),
 		"Testim-grid",
 		testimBranch,
 	)
+
+	playwrightClient = playwright.NewClient()
 
 	helmCLI = helm.NewCLI(w.GetDir())
 
@@ -190,12 +191,20 @@ var _ = Describe("E2E", func() {
 					adminConsolePort = kotsInstaller.Install(c.GetKubeconfig(), test, kotsadmForwardPort)
 				}
 
+				GinkgoWriter.Println("Running E2E tests")
+
+				if playwrightClient.HasTest(test) {
+					playwrightRun := playwrightClient.NewRun(c.GetKubeconfig(), test, playwright.RunOptions{
+						Port: adminConsolePort,
+					})
+					playwrightRun.ShouldSucceed()
+					return
+				}
+
 				var testimParams inventory.TestimParams
 				if test.Setup != nil {
 					testimParams = test.Setup(kubectlCLI)
 				}
-
-				GinkgoWriter.Println("Running E2E tests")
 				testimRun = testimClient.NewRun(c.GetKubeconfig(), test, testim.RunOptions{
 					TunnelPort: adminConsolePort,
 					BaseUrl:    testimBaseUrl,
