@@ -111,7 +111,7 @@ jobs:
 
       - name: Slack Notification
         if: ${{ steps.cpr.outputs.pull-request-number }}
-        uses: slackapi/slack-github-action@v1.25.0
+        uses: slackapi/slack-github-action@v1.26.0
         with: 
           payload: |
             {
