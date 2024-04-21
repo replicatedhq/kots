@@ -827,8 +827,6 @@ jobs:
           kots-namespace: 'no-required-config'
           k8s-distribution: ${{ matrix.cluster.distribution }}
           k8s-version: ${{ matrix.cluster.version }}
-          testim-access-token: '${{ secrets.TESTIM_ACCESS_TOKEN }}'
-          testim-branch: ${{ github.head_ref == 'main' && 'master' || github.head_ref }}
           aws-access-key-id: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_ACCESS_KEY_ID }}'
           aws-secret-access-key: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_SECRET_ACCESS_KEY }}'
           replicated-api-token: '${{ secrets.C11Y_MATRIX_TOKEN }}'
