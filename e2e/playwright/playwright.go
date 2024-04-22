@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"time"
 
 	//lint:ignore ST1001 since Ginkgo and Gomega are DSLs this makes the tests more natural to read
@@ -29,7 +30,10 @@ func NewClient() *Client {
 }
 
 func (t *Client) HasTest(test inventory.Test) bool {
-	_, err := os.Stat(fmt.Sprintf("/playwright/tests/%s", test.Suite))
+	if test.ID == "" {
+		return false
+	}
+	_, err := os.Stat(fmt.Sprintf("/playwright/tests/%s", test.ID))
 	return err == nil
 }
 
@@ -37,7 +41,7 @@ func (t *Client) NewRun(kubeconfig string, test inventory.Test, runOptions RunOp
 	args := []string{
 		"playwright",
 		"test",
-		test.Suite,
+		test.ID,
 	}
 
 	cmd := exec.Command("npx", args...)
@@ -46,6 +50,8 @@ func (t *Client) NewRun(kubeconfig string, test inventory.Test, runOptions RunOp
 	cmd.Env = append(cmd.Env, fmt.Sprintf("KUBECONFIG=%s", kubeconfig))
 	cmd.Env = append(cmd.Env, fmt.Sprintf("PORT=%s", runOptions.Port))
 	cmd.Env = append(cmd.Env, fmt.Sprintf("NAMESPACE=%s", test.Namespace))
+	cmd.Env = append(cmd.Env, fmt.Sprintf("APP_SLUG=%s", test.AppSlug))
+	cmd.Env = append(cmd.Env, fmt.Sprintf("TEST_PATH=%s", filepath.Join("tests", test.ID)))
 	cmd.Env = append(cmd.Env, "NODE_OPTIONS=--max-old-space-size=4096")
 	session, err := util.RunCommand(cmd)
 	Expect(err).WithOffset(1).Should(Succeed(), "Run playwright test failed")
