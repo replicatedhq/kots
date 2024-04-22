@@ -666,7 +666,6 @@ const Dashboard = () => {
                   </p>
                   <AppStatus
                     appStatus={appStatus?.state}
-                    url={params.url}
                     onViewAppStatusDetails={toggleAppStatusModal}
                     links={links}
                     app={app}
