@@ -35,9 +35,10 @@ func NewRegressionTest() Test {
 
 func NewSmokeTest() Test {
 	return Test{
+		ID:             "smoke-test",
 		Name:           "Smoke Test",
-		TestimSuite:    "smoke-test",
 		Namespace:      "smoke-test",
+		AppSlug:        "qakotstestim",
 		UpstreamURI:    "qakotstestim/github-actions-qa",
 		NeedsSnapshots: true,
 	}
