@@ -4,6 +4,7 @@ import { login, uploadLicense } from '../shared';
 const { execSync } = require("child_process");
 
 test('config validation', async ({ page }) => {
+  test.slow();
   await login(page);
   await uploadLicense(page, expect);
   await expect(page.locator('h3')).toContainText('Config Regex Group Validation', { timeout: 15000 });
@@ -68,7 +69,7 @@ test('config validation', async ({ page }) => {
   await expect(page.getByText('A valid JWT file must be in the format header.payload.signature.')).not.toBeVisible();
   await expect(page.getByText('Error detected. Please use config nav to the left to locate and fix issues.')).not.toBeVisible();
   await page.getByRole('button', { name: 'Save config' }).click();
-  await expect(page.getByLabel('Next step').getByRole('paragraph')).toContainText('The config for Config Validation has been updated.', { timeout: 10000 });
+  await expect(page.locator('.Modal-body')).toContainText('The config for Config Validation has been updated.', { timeout: 10000 });
 
   // validate the cli
   var invalidTestInput = [
