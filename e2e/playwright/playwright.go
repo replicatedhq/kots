@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"time"
 
 	//lint:ignore ST1001 since Ginkgo and Gomega are DSLs this makes the tests more natural to read
@@ -46,6 +47,8 @@ func (t *Client) NewRun(kubeconfig string, test inventory.Test, runOptions RunOp
 	cmd.Env = append(cmd.Env, fmt.Sprintf("KUBECONFIG=%s", kubeconfig))
 	cmd.Env = append(cmd.Env, fmt.Sprintf("PORT=%s", runOptions.Port))
 	cmd.Env = append(cmd.Env, fmt.Sprintf("NAMESPACE=%s", test.Namespace))
+	cmd.Env = append(cmd.Env, fmt.Sprintf("APP_SLUG=%s", test.Suite))
+	cmd.Env = append(cmd.Env, fmt.Sprintf("TEST_PATH=%s", filepath.Join("tests", test.Suite)))
 	cmd.Env = append(cmd.Env, "NODE_OPTIONS=--max-old-space-size=4096")
 	session, err := util.RunCommand(cmd)
 	Expect(err).WithOffset(1).Should(Succeed(), "Run playwright test failed")
