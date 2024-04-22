@@ -9,6 +9,8 @@
   "license": "ISC",
   "devDependencies": {
     "@playwright/test": "^1.43.1",
-    "@types/node": "^20.12.7"
+    "@types/node": "^20.12.7",
+    "parse-duration": "^1.1.0",
+    "ts-retry": "^4.2.5"
   }
 }
