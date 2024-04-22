@@ -64,9 +64,10 @@ func NewConfigValidation() Test {
 
 func NewBackupAndRestore() Test {
 	return Test{
+		ID:             "backup-and-restore",
 		Name:           "Backup and Restore",
-		TestimSuite:    "backup-and-restore",
 		Namespace:      "backup-and-restore",
+		AppSlug:        "backup-and-restore",
 		UpstreamURI:    "backup-and-restore/automated",
 		NeedsSnapshots: true,
 	}
