@@ -30,6 +30,9 @@ func NewClient() *Client {
 }
 
 func (t *Client) HasTest(test inventory.Test) bool {
+	if test.ID == "" {
+		return false
+	}
 	_, err := os.Stat(fmt.Sprintf("/playwright/tests/%s", test.ID))
 	return err == nil
 }
