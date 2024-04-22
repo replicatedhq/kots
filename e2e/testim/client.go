@@ -8,7 +8,7 @@ import (
 
 	//lint:ignore ST1001 since Ginkgo and Gomega are DSLs this makes the tests more natural to read
 	. "github.com/onsi/gomega"
-	"github.com/replicatedhq/kots/e2e/testim/inventory"
+	"github.com/replicatedhq/kots/e2e/inventory"
 	"github.com/replicatedhq/kots/e2e/util"
 )
 

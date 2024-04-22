@@ -76,6 +76,9 @@ main() {
     runAsRoot apt-get update && runAsRoot apt-get install nodejs -y
     npm install --prefix $INSTALL_DIR @testim/testim-cli
 
+    npm --prefix /playwright ci
+    npx playwright install --with-deps
+
     rm -rf $tmpdir
 }
 

@@ -11,7 +11,8 @@ ENV INSTALL_DIR=/usr/local/bin
 ENV KREW_ROOT=$INSTALL_DIR/krew
 ENV PATH=$INSTALL_DIR/node_modules/.bin:$KREW_ROOT/bin:$PATH
 
-COPY deps.sh /usr/local/bin/deps.sh
+COPY ./playwright /playwright
+COPY ./scripts/deps.sh /usr/local/bin/deps.sh
 
 RUN /usr/local/bin/deps.sh
 

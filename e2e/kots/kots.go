@@ -12,7 +12,7 @@ import (
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/gexec"
 	"github.com/pkg/errors"
-	"github.com/replicatedhq/kots/e2e/testim/inventory"
+	"github.com/replicatedhq/kots/e2e/inventory"
 	"github.com/replicatedhq/kots/e2e/util"
 )
 
@@ -45,9 +45,11 @@ func (i *Installer) Install(kubeconfig string, test inventory.Test, adminConsole
 	Expect(err).WithOffset(1).Should(Succeed(), "Kots install failed")
 	Eventually(session).WithOffset(1).WithTimeout(InstallWaitDuration).Should(gexec.Exit(0), "Kots install failed with non-zero exit code")
 
-	session, err = i.ensureSecret(kubeconfig, test)
-	Expect(err).WithOffset(1).Should(Succeed(), "Kots docker ensure-secret failed")
-	Eventually(session).WithOffset(1).WithTimeout(InstallWaitDuration).Should(gexec.Exit(0), "Kots docker ensure-secret failed with non-zero exit code")
+	if i.dockerhubUsername != "" && i.dockerhubPassword != "" {
+		session, err = i.ensureSecret(kubeconfig, test)
+		Expect(err).WithOffset(1).Should(Succeed(), "Kots docker ensure-secret failed")
+		Eventually(session).WithOffset(1).WithTimeout(InstallWaitDuration).Should(gexec.Exit(0), "Kots docker ensure-secret failed with non-zero exit code")
+	}
 
 	return i.AdminConsolePortForward(kubeconfig, test, adminConsolePort)
 }
