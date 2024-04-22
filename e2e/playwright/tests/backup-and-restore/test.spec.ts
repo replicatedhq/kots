@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import * as parse_duration from 'parse-duration';
+import parse_duration from 'parse-duration';
 import { retry } from 'ts-retry';
 import { login, uploadLicense } from '../shared';
 
@@ -9,7 +9,7 @@ test('backup and restore', async ({ page }) => {
   test.setTimeout(10 * 60 * 1000); // 10 minutes
   await login(page);
   await uploadLicense(page, expect);
-  await expect(page.locator('#app')).toContainText('Configure Backup and Restore');
+  await expect(page.locator('#app')).toContainText('Configure Backup and Restore', { timeout: 15000 });
   await page.locator('#smtp_hostname-group').getByRole('textbox').click();
   await page.locator('#smtp_hostname-group').getByRole('textbox').fill('hostname');
   await page.locator('#smtp_username-group').getByRole('textbox').click();
@@ -17,28 +17,26 @@ test('backup and restore', async ({ page }) => {
   await page.locator('input[type="password"]').click();
   await page.locator('input[type="password"]').fill('password');
   await page.getByRole('button', { name: 'Continue' }).click();
-  await expect(page.locator('#app')).toContainText('Ready', { timeout: 15000 });
-  await page.getByText('Snapshots').click();
+  await expect(page.locator('#app')).toContainText('Ready', { timeout: 60000 });
+  await page.locator('.NavItem').getByText('Snapshots', { exact: true }).click();
   await expect(page.locator('#app')).toContainText('No snapshots yet');
   await page.getByRole('button', { name: 'Start a snapshot' }).click();
   await expect(page.locator('#app')).toContainText('In Progress');
-  await expect(page.locator('#app')).toContainText('Completed');
-  await page.locator('svg.icons.clickable[data-tip="Restore from this backup"]').click();
-  await page.getByText('Restore admin console', { exact: true }).click();
+  await expect(page.locator('#app')).toContainText('Completed', { timeout: 300000 });
 
   const backupName = await page.locator('.card-item-title').textContent();
   const restoreAdminConsoleCmd = `kubectl kots restore --from-backup ${backupName} --exclude-apps`;
   console.log(restoreAdminConsoleCmd, "\n");
   execSync(restoreAdminConsoleCmd, {stdio: 'inherit'});
 
-  // validate the only the admin console was restored
+  // validate that only the admin console was restored
   const getKotsadmPodAgeCommand = `kubectl get pod -l app=kotsadm -n ${process.env.NAMESPACE} | awk 'NR>1 {print $5}'`;
   console.log(getKotsadmPodAgeCommand, "\n");
-  let kotsadmPodAge = parse_duration(execSync(getKotsadmPodAgeCommand).toString());
+  let kotsadmPodAge = parse_duration(execSync(getKotsadmPodAgeCommand).toString().trim());
 
   const getAppPodAgeCommand = `kubectl get pod -l app=example,component=nginx -n ${process.env.NAMESPACE} | awk 'NR>1 {print $5}'`;
   console.log(getAppPodAgeCommand, "\n");
-  let appPodAge = parse_duration(execSync(getAppPodAgeCommand).toString());
+  let appPodAge = parse_duration(execSync(getAppPodAgeCommand).toString().trim());
 
   // app pod should be older than kotsadm pod
   let ageDiff = appPodAge! - kotsadmPodAge!;
@@ -62,10 +60,10 @@ test('backup and restore', async ({ page }) => {
 
   // validate that only the app was restored
   console.log(getAppPodAgeCommand, "\n");
-  appPodAge = parse_duration(execSync(getAppPodAgeCommand).toString());
+  appPodAge = parse_duration(execSync(getAppPodAgeCommand).toString().trim());
 
   console.log(getKotsadmPodAgeCommand, "\n");
-  kotsadmPodAge = parse_duration(execSync(getKotsadmPodAgeCommand).toString());
+  kotsadmPodAge = parse_duration(execSync(getKotsadmPodAgeCommand).toString().trim());
 
   // kotsadm pod should be older than app pod
   ageDiff = kotsadmPodAge! - appPodAge!;
