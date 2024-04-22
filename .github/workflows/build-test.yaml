@@ -4126,8 +4126,6 @@ jobs:
       # testim tests
       - validate-existing-online-install-minimal
       - validate-smoke-test
-      - validate-backup-and-restore
-      - validate-no-required-config
       - validate-version-history-pagination
       - validate-change-license
       - validate-min-kots-version
@@ -4136,9 +4134,12 @@ jobs:
       - validate-multi-app-backup-and-restore
       - validate-multi-app-install
       - validate-airgap-smoke-test
-      - validate-config
       - validate-support-bundle
       - validate-gitops
+      # playwright tests
+      - validate-backup-and-restore
+      - validate-no-required-config
+      - validate-config
       # non-testim tests
       - validate-minimal-rbac
       - validate-minimal-rbac-override
