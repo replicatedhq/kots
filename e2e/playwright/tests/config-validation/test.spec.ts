@@ -80,7 +80,7 @@ test('config validation', async ({ page }) => {
     const setConfigEmailCmd = `kubectl kots set config ${process.env.APP_SLUG} -n=${process.env.NAMESPACE} --key=${i.key} --value=${i.invalidValue} --merge | grep -A1 "Errors:" | grep -v "Errors:"  | sed 's/^[[:space:]]*//;s/[-]*//g'`;
     const setConfigResult = execSync(setConfigEmailCmd).toString().trim();
     if (setConfigResult !== i.error) {
-      throw new Error(setConfigEmailCmd + "returned " + setConfigResult);
+      throw new Error(`Expected error message "${i.error}" but got "${setConfigResult}"`);
     }
   }
 });
