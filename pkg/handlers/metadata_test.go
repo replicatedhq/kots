@@ -51,7 +51,6 @@ metadata:
 
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
-	mockStore := mock_store.NewMockStore(ctrl)
 
 	tests := []struct {
 		name                 string
@@ -652,6 +651,8 @@ metadata:
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
+			mockStore := mock_store.NewMockStore(ctrl)
+
 			mockStore.EXPECT().GetLatestBranding().AnyTimes().DoAndReturn(func() ([]byte, error) {
 				if test.getBrandingArchiveFn != nil {
 					return test.getBrandingArchiveFn()

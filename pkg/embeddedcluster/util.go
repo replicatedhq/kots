@@ -117,7 +117,7 @@ func getArtifactsFromInstallation(installation kotsv1beta1.Installation, appSlug
 }
 
 // startClusterUpgrade will create a new installation with the provided config.
-func startClusterUpgrade(ctx context.Context, newcfg embeddedclusterv1beta1.ConfigSpec, artifacts *embeddedclusterv1beta1.ArtifactsLocation) error {
+func startClusterUpgrade(ctx context.Context, newcfg embeddedclusterv1beta1.ConfigSpec, artifacts *embeddedclusterv1beta1.ArtifactsLocation, license kotsv1beta1.License) error {
 	clientConfig, err := k8sutil.GetClusterConfig()
 	if err != nil {
 		return fmt.Errorf("failed to get cluster config: %w", err)
@@ -144,6 +144,7 @@ func startClusterUpgrade(ctx context.Context, newcfg embeddedclusterv1beta1.Conf
 			Config:                    &newcfg,
 			EndUserK0sConfigOverrides: current.Spec.EndUserK0sConfigOverrides,
 			BinaryName:                current.Spec.BinaryName,
+			LicenseInfo:               &embeddedclusterv1beta1.LicenseInfo{IsSnapshotSupported: license.Spec.IsSnapshotSupported},
 		},
 	}
 	if err := kbClient.Create(ctx, &newins); err != nil {
