@@ -28,7 +28,7 @@ inputs:
     required: false
   testim-access-token:
     description: 'Testim access token'
-    required: true
+    required: false
   testim-branch:
     description: 'Testim branch'
     default: 'master'

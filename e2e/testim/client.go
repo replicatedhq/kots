@@ -8,7 +8,7 @@ import (
 
 	//lint:ignore ST1001 since Ginkgo and Gomega are DSLs this makes the tests more natural to read
 	. "github.com/onsi/gomega"
-	"github.com/replicatedhq/kots/e2e/testim/inventory"
+	"github.com/replicatedhq/kots/e2e/inventory"
 	"github.com/replicatedhq/kots/e2e/util"
 )
 
@@ -54,16 +54,16 @@ func (t *Client) NewRun(kubeconfig string, test inventory.Test, runOptions RunOp
 	Expect(err).WithOffset(1).Should(Succeed(), "Create testim params")
 	args = append(args, fmt.Sprintf(`--params=%s`, paramsJson))
 
-	if test.Suite != "" {
+	if test.TestimSuite != "" {
 		args = append(
 			args,
-			fmt.Sprintf("--suite=%s", test.Suite),
+			fmt.Sprintf("--suite=%s", test.TestimSuite),
 		)
 	}
-	if test.Label != "" {
+	if test.TestimLabel != "" {
 		args = append(
 			args,
-			fmt.Sprintf("--label=%s", test.Label),
+			fmt.Sprintf("--label=%s", test.TestimLabel),
 		)
 	}
 	if test.Browser != "" {

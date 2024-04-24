@@ -22,7 +22,6 @@ type Props = {
   hasStatusInformers?: boolean;
   links: PropLink[];
   onViewAppStatusDetails: () => void;
-  url: string | undefined;
   embeddedClusterState: string;
 };
 
@@ -80,7 +79,7 @@ export default class AppStatus extends Component<Props, State> {
   };
 
   render() {
-    const { appStatus, url, links, app, embeddedClusterState } = this.props;
+    const { appStatus, links, app, embeddedClusterState } = this.props;
     const { dropdownOptions } = this.state;
     const defaultDisplayText =
       dropdownOptions.length > 0 ? dropdownOptions[0].displayText : "";
@@ -148,7 +147,7 @@ export default class AppStatus extends Component<Props, State> {
               </>
             )}
             <Link
-              to={`${url}/config/${app?.downstream?.currentVersion?.sequence}`}
+              to={`config/${app?.downstream?.currentVersion?.sequence}`}
               className="link u-marginLeft--10 u-borderLeft--gray u-paddingLeft--10 u-fontSize--small"
             >
               Edit config
