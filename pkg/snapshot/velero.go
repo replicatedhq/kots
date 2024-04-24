@@ -12,6 +12,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	kotsadmresources "github.com/replicatedhq/kots/pkg/kotsadm/resources"
 	kotsadmtypes "github.com/replicatedhq/kots/pkg/kotsadm/types"
+	"github.com/replicatedhq/kots/pkg/util"
 	velerov1api "github.com/vmware-tanzu/velero/pkg/apis/velero/v1"
 	"github.com/vmware-tanzu/velero/pkg/cmd/cli/serverstatus"
 	veleroclientv1 "github.com/vmware-tanzu/velero/pkg/generated/clientset/versioned/typed/velero/v1"
@@ -388,9 +389,16 @@ func getVeleroPod(ctx context.Context, clientset *kubernetes.Clientset, namespac
 		"component": "velero",
 		"deploy":    "velero",
 	}
+	labelSelector := labels.SelectorFromSet(veleroLabels)
+
+	if util.IsEmbeddedCluster() {
+		labelSelector = labels.SelectorFromSet(map[string]string{
+			"name": "velero",
+		})
+	}
 
 	veleroPods, err := clientset.CoreV1().Pods(namespace).List(context.TODO(), metav1.ListOptions{
-		LabelSelector: labels.SelectorFromSet(veleroLabels).String(),
+		LabelSelector: labelSelector.String(),
 	})
 	if err != nil {
 		return "", errors.Wrap(err, "failed to list velero pods before restarting")
@@ -420,6 +428,12 @@ func getNodeAgentPods(ctx context.Context, clientset *kubernetes.Clientset, name
 
 	labelSelector := labels.NewSelector()
 	labelSelector = labelSelector.Add(*componentReq, *nameReq)
+
+	if util.IsEmbeddedCluster() {
+		labelSelector = labels.SelectorFromSet(map[string]string{
+			"name": "node-agent",
+		})
+	}
 
 	nodeAgentPods, err := clientset.CoreV1().Pods(namespace).List(context.TODO(), metav1.ListOptions{
 		LabelSelector: labelSelector.String(),

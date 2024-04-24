@@ -16,7 +16,7 @@ import AppSnapshotRestore from "@src/components/snapshots/AppSnapshotRestore";
 
 class SnapshotsWrapper extends Component {
   render() {
-    const { appsList } = this.props;
+    const { appsList, isEmbeddedCluster } = this.props;
 
     const snapshotsApps = appsList.filter((app) => app.allowSnapshots);
     const selectedApp =
@@ -36,6 +36,7 @@ class SnapshotsWrapper extends Component {
               <SubNavBar
                 className="flex"
                 isSnapshots={true}
+                isEmbeddedCluster={isEmbeddedCluster}
                 activeTab={
                   tab ? (tab === "details" ? "snapshots" : tab) : "snapshots"
                 }

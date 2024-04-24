@@ -13,7 +13,7 @@ const DESTINATIONS = [
   },
   {
     value: "other",
-    label: "Other S3-Compatible Storage",
+    label: "S3-Compatible Storage",
   },
   {
     value: "internal",

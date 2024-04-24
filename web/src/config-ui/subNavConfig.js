@@ -71,7 +71,8 @@ export default [
     tabName: "registry-settings",
     displayName: "Registry settings",
     to: (slug) => `/app/${slug}/registry-settings`,
-    displayRule: ({ isHelmManaged }) => !isHelmManaged,
+    displayRule: ({ isHelmManaged, isEmbeddedCluster }) =>
+      !isHelmManaged && !isEmbeddedCluster,
   },
   {
     tabName: "access",

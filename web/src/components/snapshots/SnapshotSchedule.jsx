@@ -397,7 +397,8 @@ class SnapshotSchedule extends Component {
   };
 
   render() {
-    const { isVeleroInstalled, updatingSettings } = this.props;
+    const { isVeleroInstalled, updatingSettings, isEmbeddedCluster } =
+      this.props;
     const {
       hasValidCron,
       updatingSchedule,
@@ -425,6 +426,11 @@ class SnapshotSchedule extends Component {
       "/snapshots/settings"
     );
 
+    let featureName = "snapshot";
+    if (isEmbeddedCluster) {
+      featureName = "backup";
+    }
+
     return (
       <div className="flex-auto">
         <div className="flex flex-column">
@@ -449,33 +455,35 @@ class SnapshotSchedule extends Component {
             </div>
           )}
           <div className="flex flex-column snapshot-form-wrapper card-bg u-padding--15">
-            <p className="card-title">Automatic snapshots</p>
+            <p className="card-title">Automatic {featureName}s</p>
             <div className="u-marginBottom--10">
               <p className="u-fontSize--normal u-fontWeight--normal u-lineHeight--normal u-textColor--bodyCopy u-marginTop--12 schedule">
-                Set up a custom schedule and retention policy for automatic
-                snapshots of the Admin Console and all application data.
+                Configure a schedule and retention policy for automatic
+                {featureName}s of the admin console and all application data.
               </p>
             </div>
-            <div className="SnapshotScheduleTabs--wrapper flex1 flex-column">
-              <div className="tab-items flex justifyContent--spaceBetween">
-                <span
-                  className={`${
-                    this.state.activeTab === "full" ? "is-active" : ""
-                  } tab-item blue`}
-                  onClick={() => this.toggleScheduleAction("full")}
-                >
-                  Full snapshots (Instance)
-                </span>
-                <span
-                  className={`${
-                    this.state.activeTab === "partial" ? "is-active" : ""
-                  } tab-item blue`}
-                  onClick={() => this.toggleScheduleAction("partial")}
-                >
-                  Partial snapshots (Application)
-                </span>
+            {!isEmbeddedCluster && (
+              <div className="SnapshotScheduleTabs--wrapper flex1 flex-column">
+                <div className="tab-items flex justifyContent--spaceBetween">
+                  <span
+                    className={`${
+                      this.state.activeTab === "full" ? "is-active" : ""
+                    } tab-item blue`}
+                    onClick={() => this.toggleScheduleAction("full")}
+                  >
+                    Full snapshots (Instance)
+                  </span>
+                  <span
+                    className={`${
+                      this.state.activeTab === "partial" ? "is-active" : ""
+                    } tab-item blue`}
+                    onClick={() => this.toggleScheduleAction("partial")}
+                  >
+                    Partial snapshots (Application)
+                  </span>
+                </div>
               </div>
-            </div>
+            )}
             {this.state.activeTab === "partial" && (
               <div className="flex u-marginTop--12 u-marginBottom--15">
                 <Select
@@ -492,8 +500,6 @@ class SnapshotSchedule extends Component {
                 />
               </div>
             )}
-          </div>
-          <div className="flex flex-column snapshot-form-wrapper u-marginTop--20">
             <div
               className={`flex-column card-item u-padding--15 ${
                 !isAppConfig ? "u-marginTop--12" : "u-marginBottom--20"
@@ -521,7 +527,7 @@ class SnapshotSchedule extends Component {
                     >
                       <div className="flex1">
                         <p className="u-textColor--primary u-fontSize--normal u-fontWeight--medium u-marginLeft--5">
-                          Enable automatic scheduled snapshots
+                          Enable automatic scheduled {featureName}s
                         </p>
                       </div>
                     </label>
@@ -587,10 +593,11 @@ class SnapshotSchedule extends Component {
                 </p>
                 <p className="u-fontSize--small u-textColor--bodyCopy u-fontWeight--normal u-lineHeight--normal u-marginBottom--10">
                   The Admin Console can reclaim space by automatically deleting
-                  older scheduled snapshots.
+                  older scheduled {featureName}s.
                 </p>
                 <p className="u-fontSize--small u-textColor--bodyCopy u-fontWeight--normal u-lineHeight--normal u-marginBottom--10">
-                  Snapshots older than this will be deleted.
+                  {Utilities.toTitleCase(featureName)}s older than this will be
+                  deleted.
                 </p>
                 <div className="flex u-marginBottom--20">
                   <div className="flex-auto u-paddingRight--5">

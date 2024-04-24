@@ -3,6 +3,7 @@ import { Utilities } from "@src/utilities/utilities";
 import { Snapshot } from "@src/types";
 
 interface DeleteSnapshotModalProps {
+  featureName: string;
   deleteSnapshotModal: boolean;
   toggleConfirmDeleteModal: (snapshot: Snapshot | {}) => void;
   snapshotToDelete: Snapshot;
@@ -14,6 +15,7 @@ interface DeleteSnapshotModalProps {
 
 export default function DeleteSnapshotModal(props: DeleteSnapshotModalProps) {
   const {
+    featureName,
     deleteSnapshotModal,
     toggleConfirmDeleteModal,
     snapshotToDelete,
@@ -37,7 +39,7 @@ export default function DeleteSnapshotModal(props: DeleteSnapshotModalProps) {
       <div className="Modal-body">
         <div className="flex flex-column">
           <p className="u-fontSize--largest u-fontWeight--bold u-textColor--primary u-lineHeight--normal u-marginBottom--more">
-            Delete snapshot
+            Delete {featureName}
           </p>
           {deleteErr ? (
             <p className="u-textColor--error u-fontSize--small u-fontWeight--medium u-lineHeight--normal">
@@ -45,8 +47,8 @@ export default function DeleteSnapshotModal(props: DeleteSnapshotModalProps) {
             </p>
           ) : null}
           <p className="u-fontSize--normal u-fontWeight--normal u-textColor--bodyCopy u-lineHeight--normal">
-            Are you sure you want do permanently delete a snapshot? This action
-            cannot be reversed.
+            Are you sure you want to permanently delete a {featureName}? This
+            action cannot be reversed.
           </p>
           <div className="flex flex1 justifyContent--spaceBetween u-marginTop--20">
             <div className="flex flex-column">
@@ -87,7 +89,9 @@ export default function DeleteSnapshotModal(props: DeleteSnapshotModalProps) {
               }}
               disabled={deletingSnapshot}
             >
-              {deletingSnapshot ? "Deleting snapshot" : "Delete snapshot"}
+              {deletingSnapshot
+                ? `Deleting ${featureName}`
+                : `Delete ${featureName}`}
             </button>
           </div>
         </div>

@@ -20,6 +20,7 @@ import {
   FILE_SYSTEM_HOSTPATH_TYPE,
 } from "./SnapshotStorageDestination.data";
 import InputField from "@components/shared/forms/InputField";
+import { Utilities } from "@src/utilities/utilities";
 
 type ValueType = {
   value?: string;
@@ -205,6 +206,7 @@ type Props = {
   isEmptyView?: boolean;
   isLicenseUpload: boolean;
   isKurlEnabled?: boolean;
+  isEmbeddedCluster?: boolean;
   kotsadmRequiresVeleroAccess: boolean;
   minimalRBACKotsadmNamespace: string;
   openConfigureSnapshotsMinimalRBACModal: (
@@ -482,6 +484,8 @@ class SnapshotStorageDestination extends Component<Props, State> {
     }
     const { store } = snapshotSettings;
 
+    console.log("snapshotSettings", snapshotSettings);
+
     if (store?.aws) {
       return this.setState({
         determiningDestination: false,
@@ -566,9 +570,13 @@ class SnapshotStorageDestination extends Component<Props, State> {
     }
 
     // if nothing exists yet, we've determined default state is good
+    let defaultDestination = "aws";
+    if (this.props.isEmbeddedCluster) {
+      defaultDestination = "other";
+    }
     this.setState({
       determiningDestination: false,
-      selectedDestination: find(DESTINATIONS, ["value", "aws"]),
+      selectedDestination: find(DESTINATIONS, ["value", defaultDestination]),
     });
   };
 
@@ -1604,6 +1612,7 @@ class SnapshotStorageDestination extends Component<Props, State> {
       updatingSettings,
       updateConfirm,
       updateErrorMsg,
+      isEmbeddedCluster,
       isKurlEnabled,
       checkForVeleroAndNodeAgent,
     } = this.props;
@@ -1611,6 +1620,16 @@ class SnapshotStorageDestination extends Component<Props, State> {
     const availableDestinations = [];
     if (snapshotSettings?.veleroPlugins) {
       for (const veleroPlugin of snapshotSettings?.veleroPlugins) {
+        if (isEmbeddedCluster) {
+          if (veleroPlugin.includes("velero-plugin-for-aws")) {
+            availableDestinations.push({
+              value: "other",
+              label: "S3-Compatible Storage",
+            });
+          }
+          continue;
+        }
+
         if (veleroPlugin.includes("velero-plugin-for-gcp")) {
           availableDestinations.push({
             value: "gcp",
@@ -1623,7 +1642,7 @@ class SnapshotStorageDestination extends Component<Props, State> {
           });
           availableDestinations.push({
             value: "other",
-            label: "Other S3-Compatible Storage",
+            label: "S3-Compatible Storage",
           });
           if (snapshotSettings.isKurl && !snapshotSettings?.isMinioDisabled) {
             availableDestinations.push({
@@ -1679,6 +1698,11 @@ class SnapshotStorageDestination extends Component<Props, State> {
     const resetFileSystemWarningMessage =
       this.props.resetFileSystemWarningMessage;
 
+    let featureName = "snapshot";
+    if (isEmbeddedCluster) {
+      featureName = "backup";
+    }
+
     return (
       <div className="flex1 flex-column u-marginTop--40">
         <div className="flex" style={{ gap: "30px" }}>
@@ -1688,23 +1712,29 @@ class SnapshotStorageDestination extends Component<Props, State> {
           >
             <div className="flex justifyContent--spaceBetween">
               <p className="card-title u-paddingBottom--15">
-                Snapshot settings
+                {Utilities.toTitleCase(featureName)} settings
               </p>
-              <span
-                className="link u-fontSize--small flex justifyContent--flexEnd u-cursor--pointer"
-                onClick={this.props.toggleConfigureSnapshotsModal}
-              >
-                + Add a new destination
-              </span>
-            </div>
-            <div className="flex flex-auto u-marginBottom--15">
-              <div className="flex flex-column">
-                <span className="u-fontSize--normal u-fontWeight--normal u-lineHeight--normal u-textColor--bodyCopy">
-                  Full (Instance) and Partial (Application) snapshots share
-                  share the same Velero configuration and storage destination.
-                </span>
+              <div>
+                {!isEmbeddedCluster && (
+                  <span
+                    className="link u-fontSize--small flex justifyContent--flexEnd u-cursor--pointer"
+                    onClick={this.props.toggleConfigureSnapshotsModal}
+                  >
+                    + Add a new destination
+                  </span>
+                )}
               </div>
             </div>
+            {!isEmbeddedCluster && (
+              <div className="flex flex-auto u-marginBottom--15">
+                <div className="flex flex-column">
+                  <span className="u-fontSize--normal u-fontWeight--normal u-lineHeight--normal u-textColor--bodyCopy">
+                    Full (Instance) and Partial (Application) snapshots share
+                    the same Velero configuration and storage destination.
+                  </span>
+                </div>
+              </div>
+            )}
             <div className="flex flex-column card-item u-padding--15">
               <p className="u-fontSize--normal card-item-title u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">
                 Destination
@@ -1809,17 +1839,20 @@ class SnapshotStorageDestination extends Component<Props, State> {
                     </div>
                   </>
                 )}
-                <span className="u-fontSize--small u-fontWeight--normal u-lineHeight--normal u-textColor--bodyCopy u-marginTop--15">
-                  All data in your snapshots will be deduplicated. Snapshots
-                  makes use of Restic, a fast and secure backup technology with
-                  native deduplication.
-                </span>
+                {!isEmbeddedCluster && (
+                  <span className="u-fontSize--small u-fontWeight--normal u-lineHeight--normal u-textColor--bodyCopy u-marginTop--15">
+                    All data in your snapshots will be deduplicated. Snapshots
+                    makes use of Restic, a fast and secure backup technology
+                    with native deduplication.
+                  </span>
+                )}
               </form>
             </div>
           </div>
           <SnapshotSchedule
             apps={this.props.apps}
             isKurlEnabled={this.props.isKurlEnabled}
+            isEmbeddedCluster={isEmbeddedCluster}
             isVeleroRunning={snapshotSettings?.isVeleroRunning}
             isVeleroInstalled={!!snapshotSettings?.veleroVersion}
             updatingSettings={updatingSettings}

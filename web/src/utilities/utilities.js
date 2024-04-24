@@ -516,24 +516,6 @@ export function isVeleroCorrectVersion(snapshotSettings) {
   return false;
 }
 
-/**
- * Get readable label for a snapshot storage destination
- * @param {String} provider - storage provider string
- * @return {String}
- */
-export function getSnapshotDestinationLabel(provider) {
-  const DESTINATIONS = {
-    aws: "Amazon S3",
-    azure: "Azure Blob Storage",
-    gcp: "Google Cloud Storage",
-    other: "Other S3-Compatible Storage",
-    internal: "Internal Storage (Default)",
-    nfs: "Network File System (NFS)",
-    hostpath: "Host Path",
-  };
-  return DESTINATIONS[provider] || "Unknown storage provider";
-}
-
 export const Utilities = {
   getSessionRoles() {
     if (this.localStorageEnabled()) {
