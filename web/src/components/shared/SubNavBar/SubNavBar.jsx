@@ -58,6 +58,7 @@ export default function SubNavBar({
       tabName: "partial",
       displayName: "Partial Snapshots (Application)",
       to: (slug) => `/snapshots/partial/${slug}`,
+      hide: isEmbeddedCluster,
     },
     {
       tabName: "settings",
@@ -65,11 +66,6 @@ export default function SubNavBar({
       to: () => `/snapshots/settings`,
     },
   ];
-
-  if (isEmbeddedCluster) {
-    // remove partial snapshots tab
-    snapshotsConfig.splice(1, 1);
-  }
 
   return (
     <div className={classNames("details-subnav", className)}>
@@ -92,6 +88,7 @@ export default function SubNavBar({
               .filter(Boolean)
           : isSnapshots
           ? snapshotsConfig
+              .filter((link) => !link.hide)
               .map((link, idx) => {
                 const generatedMenuItem = (
                   <li

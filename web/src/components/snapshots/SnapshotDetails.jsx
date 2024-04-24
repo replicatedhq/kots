@@ -360,7 +360,9 @@ class SnapshotDetails extends Component {
             key={tab}
             onClick={() => this.setState({ selectedScriptTab: tab })}
           >
-            {this.props.isEmbeddedCluster ? tab.replace("snapshot", "backup") : tab}
+            {this.props.isEmbeddedCluster
+              ? tab.replace("snapshot", "backup")
+              : tab}
           </div>
         ))}
       </div>
