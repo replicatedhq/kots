@@ -1,6 +1,6 @@
 module github.com/replicatedhq/kots
 
-go 1.21.7
+go 1.22.0
 
 require (
 	cloud.google.com/go/storage v1.39.1
@@ -48,7 +48,7 @@ require (
 	github.com/phayes/freeport v0.0.0-20220201140144-74d24b5ae9f5
 	github.com/pkg/errors v0.9.1
 	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2
-	github.com/replicatedhq/embedded-cluster-kinds v1.1.2
+	github.com/replicatedhq/embedded-cluster-kinds v1.1.5
 	github.com/replicatedhq/kotskinds v0.0.0-20240416132840-4e646b87f7a1
 	github.com/replicatedhq/kurlkinds v1.5.0
 	github.com/replicatedhq/troubleshoot v0.88.0
@@ -77,7 +77,7 @@ require (
 	gopkg.in/yaml.v3 v3.0.1
 	helm.sh/helm/v3 v3.14.4
 	k8s.io/api v0.29.3
-	k8s.io/apimachinery v0.29.3
+	k8s.io/apimachinery v0.30.0
 	k8s.io/cli-runtime v0.29.3
 	k8s.io/client-go v0.29.3
 	k8s.io/cluster-bootstrap v0.29.3
@@ -388,7 +388,7 @@ require (
 	k8s.io/apiserver v0.29.3 // indirect
 	k8s.io/component-base v0.29.3 // indirect
 	k8s.io/klog/v2 v2.120.1 // indirect
-	k8s.io/kube-openapi v0.0.0-20231010175941-2dd684a91f00 // indirect
+	k8s.io/kube-openapi v0.0.0-20240228011516-70dd3763d340 // indirect
 	k8s.io/kubectl v0.29.0 // indirect
 	oras.land/oras-go v1.2.5 // indirect
 	periph.io/x/host/v3 v3.8.2 // indirect

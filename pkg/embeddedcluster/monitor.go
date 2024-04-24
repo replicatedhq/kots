@@ -69,7 +69,7 @@ func MaybeStartClusterUpgrade(ctx context.Context, store store.Store, kotsKinds 
 
 		artifacts := getArtifactsFromInstallation(kotsKinds.Installation, kotsKinds.License.Spec.AppSlug)
 
-		if err := startClusterUpgrade(ctx, spec, artifacts); err != nil {
+		if err := startClusterUpgrade(ctx, spec, artifacts, *kotsKinds.License); err != nil {
 			return fmt.Errorf("failed to start cluster upgrade: %w", err)
 		}
 		logger.Info("started cluster upgrade")
