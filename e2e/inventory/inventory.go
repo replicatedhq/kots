@@ -1,12 +1,8 @@
 package inventory
 
 import (
-	"bytes"
 	"context"
-	"encoding/base64"
 	"fmt"
-	"io/ioutil"
-	"strings"
 	"time"
 
 	"github.com/onsi/gomega/gexec"
@@ -26,7 +22,7 @@ const (
 func NewRegressionTest() Test {
 	return Test{
 		Name:            "Regression",
-		Label:           "type=existing cluster, env=online, phase=new install, rbac=minimal rbac",
+		TestimLabel:     "type=existing cluster, env=online, phase=new install, rbac=minimal rbac",
 		Namespace:       "qakotsregression",
 		UpstreamURI:     "qakotsregression/type-existing-cluster-env-on-2",
 		Browser:         "firefox",
@@ -39,9 +35,10 @@ func NewRegressionTest() Test {
 
 func NewSmokeTest() Test {
 	return Test{
+		ID:             "smoke-test",
 		Name:           "Smoke Test",
-		Suite:          "smoke-test",
 		Namespace:      "smoke-test",
+		AppSlug:        "qakotstestim",
 		UpstreamURI:    "qakotstestim/github-actions-qa",
 		NeedsSnapshots: true,
 	}
@@ -50,7 +47,7 @@ func NewSmokeTest() Test {
 func NewAirgapSmokeTest() Test {
 	return Test{
 		Name:        "airgap-smoke-test",
-		Suite:       "airgap-smoke-test",
+		TestimSuite: "airgap-smoke-test",
 		Namespace:   "airgap-smoke-test",
 		UpstreamURI: "airgap-smoke-test/automated",
 	}
@@ -58,18 +55,20 @@ func NewAirgapSmokeTest() Test {
 
 func NewConfigValidation() Test {
 	return Test{
+		ID:          "config-validation",
 		Name:        "Config Validation",
-		Suite:       "config-validation",
 		Namespace:   "config-validation",
+		AppSlug:     "config-validation-panda",
 		UpstreamURI: "config-validation-panda/automated",
 	}
 }
 
 func NewBackupAndRestore() Test {
 	return Test{
+		ID:             "backup-and-restore",
 		Name:           "Backup and Restore",
-		Suite:          "backup-and-restore",
 		Namespace:      "backup-and-restore",
+		AppSlug:        "backup-and-restore",
 		UpstreamURI:    "backup-and-restore/automated",
 		NeedsSnapshots: true,
 	}
@@ -77,18 +76,18 @@ func NewBackupAndRestore() Test {
 
 func NewNoRequiredConfig() Test {
 	return Test{
+		ID:          "no-required-config",
 		Name:        "No Required Config",
-		Suite:       "no-required-config",
 		Namespace:   "no-required-config",
+		AppSlug:     "no-required-config",
 		UpstreamURI: "no-required-config/automated",
-		Setup:       SetupNoRequiredConfig,
 	}
 }
 
 func NewVersionHistoryPagination() Test {
 	return Test{
 		Name:        "Version History Pagination",
-		Suite:       "version-history-pagination",
+		TestimSuite: "version-history-pagination",
 		Namespace:   "version-history-pagination",
 		UpstreamURI: "version-history-pagination/automated",
 	}
@@ -97,7 +96,7 @@ func NewVersionHistoryPagination() Test {
 func NewChangeLicense() Test {
 	return Test{
 		Name:        "Change License",
-		Suite:       "change-license",
+		TestimSuite: "change-license",
 		Namespace:   "change-license",
 		UpstreamURI: "change-license/automated",
 	}
@@ -106,7 +105,7 @@ func NewChangeLicense() Test {
 func NewHelmManagedMode() Test {
 	return Test{
 		Name:          "Helm Managed",
-		Suite:         "helm-managed",
+		TestimSuite:   "helm-managed",
 		Namespace:     "helm-managed",
 		UpstreamURI:   "helm-managed/automated",
 		IsHelmManaged: true,
@@ -117,7 +116,7 @@ func NewHelmManagedMode() Test {
 func NewMultiAppBackupAndRestoreTest() Test {
 	return Test{
 		Name:           "multi-app-backup-and-restore",
-		Suite:          "multi-app-backup-and-restore",
+		TestimSuite:    "multi-app-backup-and-restore",
 		Namespace:      "multi-app-backup-and-restore",
 		UpstreamURI:    "multi-app-backup-and-restore/automated",
 		NeedsSnapshots: true,
@@ -127,7 +126,7 @@ func NewMultiAppBackupAndRestoreTest() Test {
 func MultiAppTest() Test {
 	return Test{
 		Name:        "multi-app-install",
-		Suite:       "multi-app-install",
+		TestimSuite: "multi-app-install",
 		Namespace:   "multi-app-install",
 		UpstreamURI: "multi-app-install/automated",
 	}
@@ -136,7 +135,7 @@ func MultiAppTest() Test {
 func NewMinKotsVersion() Test {
 	return Test{
 		Name:                   "Min KOTS Version",
-		Suite:                  "min-kots-version",
+		TestimSuite:            "min-kots-version",
 		Namespace:              "min-kots-version",
 		UpstreamURI:            "min-kots-version/automated",
 		SkipCompatibilityCheck: true,
@@ -146,7 +145,7 @@ func NewMinKotsVersion() Test {
 func NewTargetKotsVersion() Test {
 	return Test{
 		Name:                   "Target KOTS Version",
-		Suite:                  "target-kots-version",
+		TestimSuite:            "target-kots-version",
 		Namespace:              "target-kots-version",
 		UpstreamURI:            "target-kots-version/automated",
 		SkipCompatibilityCheck: true,
@@ -156,7 +155,7 @@ func NewTargetKotsVersion() Test {
 func NewRangeKotsVersion() Test {
 	return Test{
 		Name:                   "Range KOTS Version",
-		Suite:                  "range-kots-version",
+		TestimSuite:            "range-kots-version",
 		Namespace:              "range-kots-version",
 		UpstreamURI:            "range-kots-version/automated",
 		SkipCompatibilityCheck: true,
@@ -166,7 +165,7 @@ func NewRangeKotsVersion() Test {
 func NewSupportBundle() Test {
 	return Test{
 		Name:        "Support Bundle",
-		Suite:       "support-bundle",
+		TestimSuite: "support-bundle",
 		Namespace:   "support-bundle",
 		UpstreamURI: "support-bundle-halibut/automated",
 	}
@@ -175,7 +174,7 @@ func NewSupportBundle() Test {
 func NewGitOps() Test {
 	return Test{
 		Name:        "GitOps",
-		Suite:       "gitops",
+		TestimSuite: "gitops",
 		Namespace:   "gitops",
 		UpstreamURI: "gitops-bobcat/automated",
 	}
@@ -196,28 +195,6 @@ func SetupRegressionTest(kubectlCLI *kubectl.CLI) TestimParams {
 	session, err := gexec.Start(cmd, GinkgoWriter, GinkgoWriter)
 	Expect(err).WithOffset(1).Should(Succeed(), "Create registry-creds secret failed")
 	Eventually(session).WithOffset(1).WithTimeout(30*time.Minute).Should(gexec.Exit(0), "Create registry-creds secret failed with non-zero exit code")
-	return nil
-}
-
-func SetupNoRequiredConfig(kubectlCLI *kubectl.CLI) TestimParams {
-	cmd := kubectlCLI.Command(
-		context.Background(),
-		"--namespace=no-required-config",
-		"get",
-		"secret",
-		"kotsadm-authstring",
-		`--template='{{ index .data "kotsadm-authstring" }}'`,
-	)
-	buf := bytes.NewBuffer(nil)
-	session, err := gexec.Start(cmd, buf, GinkgoWriter)
-	Expect(err).WithOffset(1).Should(Succeed(), "Get kotsadm-authstring secret failed")
-	Eventually(session).WithOffset(1).WithTimeout(30*time.Minute).Should(gexec.Exit(0), "Get kotsadm-authstring secret failed with non-zero exit code")
-
-	kotsadmAPIToken, err := base64.StdEncoding.DecodeString(strings.Trim(buf.String(), `"' `))
-	Expect(err).WithOffset(1).Should(Succeed(), "Decode kotsadm-authstring secret failed")
-
-	err = ioutil.WriteFile(".env", []byte(fmt.Sprintf("KOTSADM_API_TOKEN=%s", string(kotsadmAPIToken))), 0600)
-	Expect(err).WithOffset(1).Should(Succeed(), "Create .env file failed")
 	return nil
 }
 
