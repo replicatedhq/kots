@@ -70,6 +70,7 @@ export default [
     tabName: "registry-settings",
     displayName: "Registry settings",
     to: (slug) => `/app/${slug}/registry-settings`,
+    displayRule: ({ isEmbeddedCluster }) => !isEmbeddedCluster,
   },
   {
     tabName: "access",

@@ -597,6 +597,9 @@ const Root = () => {
                   <SnapshotsWrapper
                     appName={state.selectedAppName}
                     isKurlEnabled={state.adminConsoleMetadata?.isKurl}
+                    isEmbeddedCluster={
+                      state.adminConsoleMetadata?.isEmbeddedCluster
+                    }
                     appsList={state.appsList}
                   />
                 }
@@ -606,6 +609,9 @@ const Root = () => {
                   element={
                     <Snapshots
                       isKurlEnabled={state.adminConsoleMetadata?.isKurl}
+                      isEmbeddedCluster={
+                        state.adminConsoleMetadata?.isEmbeddedCluster
+                      }
                       appsList={state.appsList}
                     />
                   }
@@ -617,6 +623,9 @@ const Root = () => {
                     // @ts-ignore
                     <SnapshotSettings
                       isKurlEnabled={state.adminConsoleMetadata?.isKurl}
+                      isEmbeddedCluster={
+                        state.adminConsoleMetadata?.isEmbeddedCluster
+                      }
                       appsList={state.appsList}
                     />
                   }
@@ -626,6 +635,9 @@ const Root = () => {
                   element={
                     <SnapshotDetails
                       isKurlEnabled={state.adminConsoleMetadata?.isKurl}
+                      isEmbeddedCluster={
+                        state.adminConsoleMetadata?.isEmbeddedCluster
+                      }
                       appsList={state.appsList}
                     />
                   }

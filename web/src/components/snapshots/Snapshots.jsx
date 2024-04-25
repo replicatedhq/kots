@@ -134,7 +134,7 @@ class Snapshots extends Component {
 
   startInstanceSnapshot = () => {
     const fakeProgressSnapshot = {
-      name: "Preparing snapshot",
+      name: `Preparing ${this.props.isEmbeddedCluster ? "backup" : "snapshot"}`,
       status: "InProgress",
       trigger: "manual",
       sequence: "",
@@ -519,7 +519,10 @@ class Snapshots extends Component {
 
     return (
       <div className="flex1 flex-column u-overflow--auto">
-        <KotsPageTitle pageName="Full Snapshots" showAppSlug />
+        <KotsPageTitle
+          pageName={this.props.isEmbeddedCluster ? "Backups" : "Full Snapshots"}
+          showAppSlug
+        />
         {!isVeleroCorrectVersion(snapshotSettings) ? (
           <div className="VeleroWarningBlock">
             <Icon icon={"warning"} size={24} className="warning-color" />
@@ -538,7 +541,9 @@ class Snapshots extends Component {
               <div className="flex1 flex-column">
                 <div className="flex justifyContent--spaceBetween">
                   <p className="u-fontWeight--bold card-title u-fontSize--larger u-lineHeight--normal">
-                    Full Snapshots (Instance){" "}
+                    {this.props.isEmbeddedCluster
+                      ? "Backups"
+                      : "Full Snapshots (Instance)"}
                   </p>
 
                   <div className="flex alignSelf--flexEnd">
@@ -569,7 +574,11 @@ class Snapshots extends Component {
                         >
                           {startingSnapshot
                             ? "Starting a snapshot..."
-                            : "Start a snapshot"}
+                            : `Start a ${
+                                this.props.isEmbeddedCluster
+                                  ? "backup"
+                                  : "snapshot"
+                              }`}
                         </button>
                       </span>
                     )}
@@ -588,18 +597,19 @@ class Snapshots extends Component {
                   </div>
                 </div>
                 <p className="u-marginTop--10 u-fontSize--normal u-lineHeight--more u-fontWeight--medium u-textColor--bodyCopy">
-                  {" "}
-                  Full snapshots (Instance) back up the Admin Console and all
-                  application data. They can be used for full Disaster Recovery;
-                  by restoring over top of this instance, or into a new cluster.
-                  <span
-                    className="link"
-                    onClick={this.toggleSnaphotDifferencesModal}
-                  >
-                    {" "}
-                    Learn more
-                  </span>
-                  .
+                  Back up the admin console and all application data for
+                  disaster recovery.{" "}
+                  {!this.props.isEmbeddedCluster && (
+                    <>
+                      <span
+                        className="link"
+                        onClick={this.toggleSnaphotDifferencesModal}
+                      >
+                        Learn more
+                      </span>
+                      .
+                    </>
+                  )}
                 </p>
               </div>
             </div>
@@ -618,6 +628,7 @@ class Snapshots extends Component {
                     snapshot={snapshot}
                     toggleConfirmDeleteModal={this.toggleConfirmDeleteModal}
                     toggleRestoreModal={this.toggleRestoreModal}
+                    hideRestore={this.props.isEmbeddedCluster}
                   />
                 ))}
               </div>
@@ -628,12 +639,14 @@ class Snapshots extends Component {
                   isVeleroInstalled={!!snapshotSettings?.veleroVersion}
                   history={this.props.history}
                   startInstanceSnapshot={this.startInstanceSnapshot}
+                  isEmbeddedCluster={this.props.isEmbeddedCluster}
                 />
               </div>
             )}
           </div>
           {this.state.deleteSnapshotModal && (
             <DeleteSnapshotModal
+              featureName={this.props.isEmbeddedCluster ? "backup" : "snapshot"}
               deleteSnapshotModal={this.state.deleteSnapshotModal}
               toggleConfirmDeleteModal={this.toggleConfirmDeleteModal}
               handleDeleteSnapshot={this.handleDeleteSnapshot}

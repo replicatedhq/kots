@@ -483,6 +483,7 @@ function AppDetailPage(props: Props) {
                 activeTab={lastItem === params.slug ? "app" : lastItem}
                 app={selectedApp}
                 isVeleroInstalled={isVeleroInstalled}
+                isEmbeddedCluster={props.isEmbeddedCluster}
               />
               <Outlet context={context} />
             </Fragment>

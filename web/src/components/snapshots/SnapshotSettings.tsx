@@ -16,6 +16,7 @@ import Icon from "../Icon";
 type Props = {
   appsList: App[];
   isKurlEnabled?: boolean;
+  isEmbeddedCluster?: boolean;
 } & RouterProps;
 
 type State = {
@@ -399,6 +400,7 @@ class SnapshotSettings extends Component<Props, State> {
               this.hideResetFileSystemWarningModal
             }
             isKurlEnabled={this.props.isKurlEnabled}
+            isEmbeddedCluster={this.props.isEmbeddedCluster}
             apps={this.props.appsList}
           />
         </div>

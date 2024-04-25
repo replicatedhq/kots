@@ -360,7 +360,9 @@ class SnapshotDetails extends Component {
             key={tab}
             onClick={() => this.setState({ selectedScriptTab: tab })}
           >
-            {tab}
+            {this.props.isEmbeddedCluster
+              ? tab.replace("snapshot", "backup")
+              : tab}
           </div>
         ))}
       </div>
@@ -641,6 +643,8 @@ class SnapshotDetails extends Component {
   };
 
   render() {
+    const { isEmbeddedCluster } = this.props;
+
     const {
       loading,
       showScriptsOutput,
@@ -659,6 +663,11 @@ class SnapshotDetails extends Component {
       errorTitle,
     } = this.state;
 
+    let featureName = "snapshot";
+    if (isEmbeddedCluster) {
+      featureName = "backup";
+    }
+
     if (loading) {
       return (
         <div className="flex-column flex1 alignItems--center justifyContent--center">
@@ -671,7 +680,7 @@ class SnapshotDetails extends Component {
       <div className="container flex-column u-overflow--auto u-paddingTop--30 u-paddingBottom--20">
         <p className="u-marginBottom--30 u-fontSize--small u-textColor--accent u-fontWeight--medium">
           <span className="link" onClick={() => this.props.navigate(-1)}>
-            Snapshots
+            {Utilities.toTitleCase(featureName)}s
           </span>
           <span className="u-textColor--bodyCopy"> &gt; </span>
           {snapshotDetails?.name}
@@ -715,7 +724,7 @@ class SnapshotDetails extends Component {
               <span className="icon blueWarningIcon" />
               <p className="u-fontSize--larger u-fontWeight--bold u-textColor--primary u-marginTop--20">
                 {" "}
-                This snapshot has not completed yet, check back soon{" "}
+                This {featureName} has not completed yet, check back soon{" "}
               </p>
             </div>
           ) : (
@@ -725,7 +734,7 @@ class SnapshotDetails extends Component {
               !isEmpty(this.postSnapshotScripts()) ? (
                 <div className="flex-column flex-auto card-item u-padding--15 u-marginBottom--30">
                   <p className="u-fontSize--larger u-fontWeight--bold u-textColor--primary u-marginBottom--10">
-                    Snapshot timeline
+                    {Utilities.toTitleCase(featureName)} timeline
                   </p>
                   <div className="flex1" id="chart">
                     <ReactApexChart
@@ -815,7 +824,7 @@ class SnapshotDetails extends Component {
                           <div className="flex flex1 u-paddingTop--20 alignItems--center justifyContent--center">
                             <p className="u-fontSize--large u-fontWeight--normal u-textColor--bodyCopy">
                               {" "}
-                              No pre-snapshot scripts to display{" "}
+                              No pre-{featureName} scripts to display{" "}
                             </p>
                           </div>
                         )
@@ -828,7 +837,7 @@ class SnapshotDetails extends Component {
                         <div className="flex flex1 u-paddingTop--20 alignItems--center justifyContent--center">
                           <p className="u-fontSize--large u-fontWeight--normal u-textColor--bodyCopy">
                             {" "}
-                            No post-snapshot scripts to display{" "}
+                            No post-{featureName} scripts to display{" "}
                           </p>
                         </div>
                       )}
@@ -969,7 +978,7 @@ class SnapshotDetails extends Component {
             displayShowAllModal={showAllPreSnapshotScripts}
             toggleShowAllModal={this.toggleShowAllPreScripts}
             dataToShow={this.renderShowAllScripts(this.preSnapshotScripts())}
-            name="Pre-snapshot scripts"
+            name={`Pre-${featureName} scripts`}
           />
         )}
         {showAllPostSnapshotScripts && (
@@ -977,7 +986,7 @@ class SnapshotDetails extends Component {
             displayShowAllModal={showAllPostSnapshotScripts}
             toggleShowAllModal={this.toggleShowAllPostScripts}
             dataToShow={this.renderShowAllScripts(this.postSnapshotScripts())}
-            name="Post-snapshot scripts"
+            name={`Post-${featureName} scripts`}
           />
         )}
         {showAllWarnings && (

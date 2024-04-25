@@ -263,7 +263,9 @@ export class NavBar extends PureComponent<Props, State> {
                       onClick={this.handleGoToSnapshots}
                       className="flex flex1 u-cursor--pointer alignItems--center text u-fontSize--normal u-fontWeight--medium flex"
                     >
-                      Snapshots
+                      {isEmbeddedClusterEnabled
+                        ? "Disaster Recovery"
+                        : "Snapshots"}
                     </span>
                   </div>
                 )}
@@ -286,7 +288,10 @@ export class NavBar extends PureComponent<Props, State> {
         </div>
         {Utilities.isLoggedIn() && (
           <>
-            <NavBarDropdown handleLogOut={this.handleLogOut} />
+            <NavBarDropdown
+              handleLogOut={this.handleLogOut}
+              isEmbeddedCluster={isEmbeddedClusterEnabled}
+            />
           </>
         )}
         {this.props.errLoggingOut && this.props.errLoggingOut.length > 0 && (

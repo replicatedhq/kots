@@ -34,6 +34,12 @@ func (h *Handler) CreateApplicationBackup(w http.ResponseWriter, r *http.Request
 		Success: false,
 	}
 
+	if util.IsEmbeddedCluster() {
+		createApplicationBackupResponse.Error = "application backups are not supported in embedded clusters"
+		JSON(w, http.StatusForbidden, createApplicationBackupResponse)
+		return
+	}
+
 	// check minimal rbac
 	if err := requiresKotsadmVeleroAccess(w, r); err != nil {
 		return

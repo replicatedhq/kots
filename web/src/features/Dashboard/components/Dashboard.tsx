@@ -710,6 +710,7 @@ const Dashboard = () => {
                         isSnapshotAllowed={
                           app.allowSnapshots && isVeleroInstalled
                         }
+                        isEmbeddedCluster={isEmbeddedCluster}
                       />
                     </div>
                   ) : null}
