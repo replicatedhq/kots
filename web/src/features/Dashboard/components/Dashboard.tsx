@@ -53,7 +53,6 @@ type OutletContext = {
     id: "" | number;
   };
   isBundleUploading: boolean;
-  isHelmManaged: boolean;
   isEmbeddedCluster: boolean;
   isVeleroInstalled: boolean;
   makeCurrentVersion: (
@@ -157,7 +156,6 @@ const Dashboard = () => {
   const {
     app,
     isBundleUploading,
-    isHelmManaged,
     isEmbeddedCluster,
     isVeleroInstalled,
     makeCurrentVersion,
@@ -729,7 +727,6 @@ const Dashboard = () => {
                   <DashboardGraphsCard
                     prometheusAddress={state.dashboard?.prometheusAddress}
                     metrics={state.dashboard?.metrics}
-                    isHelmManaged={isHelmManaged}
                   />
                 </div>
               )}
@@ -864,7 +861,6 @@ const Dashboard = () => {
                 hideAutomaticUpdatesModal();
                 refreshAppData();
               }}
-              isHelmManaged={isHelmManaged}
             />
           )}
         </div>

@@ -9,7 +9,6 @@ import (
 	"github.com/replicatedhq/kots/pkg/crypto"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/store"
-	"github.com/replicatedhq/kots/pkg/util"
 )
 
 type BootstrapParams struct {
@@ -21,13 +20,11 @@ func bootstrap(params BootstrapParams) error {
 		return errors.Wrap(err, "failed to init store")
 	}
 
-	if !util.IsHelmManaged() {
-		if err := bootstrapClusterToken(params.AutoCreateClusterToken); err != nil {
-			return errors.Wrap(err, "failed to bootstrap cluster token")
-		}
-		if err := loadEncryptionKeys(); err != nil {
-			return errors.Wrap(err, "failed to load encryption keys")
-		}
+	if err := bootstrapClusterToken(params.AutoCreateClusterToken); err != nil {
+		return errors.Wrap(err, "failed to bootstrap cluster token")
+	}
+	if err := loadEncryptionKeys(); err != nil {
+		return errors.Wrap(err, "failed to load encryption keys")
 	}
 
 	return nil

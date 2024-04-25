@@ -4,7 +4,6 @@ import { Utilities } from "../../../utilities/utilities";
 import { useParams } from "react-router-dom";
 import { useSelectedApp } from "@features/App";
 import { useMetadata } from "@src/stores";
-import { useIsHelmManaged } from "@src/components/hooks";
 import { App, KotsParams, Metadata, Version } from "@types";
 
 async function getVersions({
@@ -125,60 +124,16 @@ function getVersionsSelectorForAirgapped({
   return getVersionsSelectorForKotsManaged({ versions, selectedApp, metadata });
 }
 
-function getVersionsSelectorForHelmManaged({
-  versions,
-}: {
-  versions: { versionHistory: Version[] };
-}) {
-  const deployedSequence = versions?.versionHistory?.find(
-    (v) => v.status === "deployed"
-  )?.sequence;
-
-  const versionHistory = versions?.versionHistory.map((version) => {
-    let statusLabel = "Redeploy";
-
-    if (deployedSequence === undefined)
-      return {
-        ...version,
-        statusLabel,
-      };
-
-    if (version.sequence > deployedSequence) {
-      statusLabel = "Deploy";
-    }
-
-    if (version.sequence < deployedSequence) {
-      statusLabel = "Rollback";
-    }
-    return {
-      ...version,
-      statusLabel,
-    };
-  });
-
-  return {
-    ...versions,
-    versionHistory,
-  };
-}
-
 function chooseVersionsSelector({
   isAirgap,
   isKurl,
-  isHelmManaged,
 }: {
   isAirgap?: boolean;
   isKurl?: boolean;
-  isHelmManaged?: boolean;
 }) {
   // if airgapped
   if (isAirgap && isKurl) {
     return getVersionsSelectorForAirgapped;
-  }
-
-  // if helm managed
-  if (isHelmManaged) {
-    return getVersionsSelectorForHelmManaged;
   }
 
   // if kots managed
@@ -195,12 +150,10 @@ function useVersions({
   let { slug } = useParams<KotsParams>();
   let selectedApp = useSelectedApp();
   let { data: metadata } = useMetadata();
-  let { data: isHelmManaged } = useIsHelmManaged();
 
   const versionSelector = chooseVersionsSelector({
     // labels differ by installation manager and if airgapped
     isAirgap: metadata?.isAirgap,
-    isHelmManaged,
     isKurl: metadata?.isKurl,
   });
 

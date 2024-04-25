@@ -18,6 +18,5 @@ type Test struct {
 	NeedsSnapshots         bool
 	NeedsMonitoring        bool
 	NeedsRegistry          bool
-	IsHelmManaged          bool
 	Setup                  func(kubectlCLI *kubectl.CLI) TestimParams
 }

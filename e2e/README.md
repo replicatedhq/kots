@@ -44,17 +44,6 @@ make e2e \
     KOTSADM_IMAGE_TAG=24h
 ```
 
-To run a helm-managed mode test:
-
-*Note the admin console helm chart is maintained in a [separate repo](https://github.com/replicatedhq/kots-helm)*
-
-```bash
-make e2e \
-    FOCUS="Helm Managed"
-    KOTS_HELM_CHART_URL=oci://ttl.sh/$USER/admin-console
-    KOTS_HELM_CHART_VERSION=$VERSION
-```
-
 To run using a specific testim branch:
 ```bash
 make e2e \

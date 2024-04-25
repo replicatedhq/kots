@@ -102,17 +102,6 @@ func NewChangeLicense() Test {
 	}
 }
 
-func NewHelmManagedMode() Test {
-	return Test{
-		Name:          "Helm Managed",
-		TestimSuite:   "helm-managed",
-		Namespace:     "helm-managed",
-		UpstreamURI:   "helm-managed/automated",
-		IsHelmManaged: true,
-		Setup:         SetupHelmManagedMode,
-	}
-}
-
 func NewMultiAppBackupAndRestoreTest() Test {
 	return Test{
 		Name:           "multi-app-backup-and-restore",
@@ -196,11 +185,4 @@ func SetupRegressionTest(kubectlCLI *kubectl.CLI) TestimParams {
 	Expect(err).WithOffset(1).Should(Succeed(), "Create registry-creds secret failed")
 	Eventually(session).WithOffset(1).WithTimeout(30*time.Minute).Should(gexec.Exit(0), "Create registry-creds secret failed with non-zero exit code")
 	return nil
-}
-
-func SetupHelmManagedMode(kubectlCLI *kubectl.CLI) TestimParams {
-	return TestimParams{
-		"kotsadmPassword":  HelmPassword,
-		"kotsadmNamespace": "helm-managed",
-	}
 }

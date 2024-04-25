@@ -15,7 +15,6 @@ import (
 	"github.com/replicatedhq/kots/pkg/binaries"
 	"github.com/replicatedhq/kots/pkg/embeddedcluster"
 	"github.com/replicatedhq/kots/pkg/handlers"
-	"github.com/replicatedhq/kots/pkg/helm"
 	identitymigrate "github.com/replicatedhq/kots/pkg/identity/migrate"
 	"github.com/replicatedhq/kots/pkg/informers"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
@@ -44,24 +43,20 @@ type APIServerParams struct {
 func Start(params *APIServerParams) {
 	log.Printf("kotsadm version %s\n", params.Version)
 
-	if !util.IsHelmManaged() {
-		// set some persistence variables
-		persistence.InitDB(params.RqliteURI)
+	// set some persistence variables
+	persistence.InitDB(params.RqliteURI)
 
-		ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-		if err := store.GetStore().WaitForReady(ctx); err != nil {
-			log.Println("error waiting for ready")
-			panic(err)
-		}
-		cancel()
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+	if err := store.GetStore().WaitForReady(ctx); err != nil {
+		log.Println("error waiting for ready")
+		panic(err)
 	}
+	cancel()
 
 	// check if we need to migrate from postgres before doing anything else
-	if !util.IsHelmManaged() {
-		if err := persistence.MigrateFromPostgresToRqlite(); err != nil {
-			log.Println("error migrating from postgres to rqlite")
-			panic(err)
-		}
+	if err := persistence.MigrateFromPostgresToRqlite(); err != nil {
+		log.Println("error migrating from postgres to rqlite")
+		panic(err)
 	}
 
 	if err := bootstrap(BootstrapParams{
@@ -71,11 +66,9 @@ func Start(params *APIServerParams) {
 		panic(err)
 	}
 
-	if !util.IsHelmManaged() {
-		store.GetStore().RunMigrations()
-		if err := identitymigrate.RunMigrations(context.TODO(), util.PodNamespace); err != nil {
-			log.Println("Failed to run identity migrations: ", err)
-		}
+	store.GetStore().RunMigrations()
+	if err := identitymigrate.RunMigrations(context.TODO(), util.PodNamespace); err != nil {
+		log.Println("Failed to run identity migrations: ", err)
 	}
 
 	if err := binaries.InitKubectl(); err != nil {
@@ -88,28 +81,26 @@ func Start(params *APIServerParams) {
 		panic(err)
 	}
 
-	if !util.IsHelmManaged() {
-		client := &client.Client{
-			TargetNamespace:       util.AppNamespace(),
-			ExistingHookInformers: map[string]bool{},
-			HookStopChans:         []chan struct{}{},
-		}
-		store := store.GetStore()
-		k8sClientset, err := k8sutil.GetClientset()
-		if err != nil {
-			log.Println("error getting k8s clientset")
-			panic(err)
-		}
-		op := operator.Init(client, store, params.AutocreateClusterToken, k8sClientset)
-		if err := op.Start(); err != nil {
-			log.Println("error starting the operator")
-			panic(err)
-		}
-		defer op.Shutdown()
+	client := &client.Client{
+		TargetNamespace:       util.AppNamespace(),
+		ExistingHookInformers: map[string]bool{},
+		HookStopChans:         []chan struct{}{},
+	}
+	store := store.GetStore()
+	k8sClientset, err := k8sutil.GetClientset()
+	if err != nil {
+		log.Println("error getting k8s clientset")
+		panic(err)
+	}
+	op := operator.Init(client, store, params.AutocreateClusterToken, k8sClientset)
+	if err := op.Start(); err != nil {
+		log.Println("error starting the operator")
+		panic(err)
+	}
+	defer op.Shutdown()
 
-		if err := embeddedcluster.InitClusterState(context.TODO(), k8sClientset, store); err != nil {
-			log.Println("Failed to initialize cluster state:", err)
-		}
+	if err := embeddedcluster.InitClusterState(context.TODO(), k8sClientset, store); err != nil {
+		log.Println("Failed to initialize cluster state:", err)
 	}
 
 	if params.SharedPassword != "" {
@@ -136,13 +127,11 @@ func Start(params *APIServerParams) {
 		log.Println("Failed to start informers:", err)
 	}
 
-	if !util.IsHelmManaged() {
-		if err := updatechecker.Start(); err != nil {
-			log.Println("Failed to start update checker:", err)
-		}
-		if err := snapshotscheduler.Start(); err != nil {
-			log.Println("Failed to start snapshot scheduler:", err)
-		}
+	if err := updatechecker.Start(); err != nil {
+		log.Println("Failed to start update checker:", err)
+	}
+	if err := snapshotscheduler.Start(); err != nil {
+		log.Println("Failed to start snapshot scheduler:", err)
 	}
 
 	if err := session.StartSessionPurgeCronJob(); err != nil {
@@ -156,12 +145,6 @@ func Start(params *APIServerParams) {
 		opts := automation.AutomateInstallOptions{}
 		if err := automation.AutomateInstall(opts); err != nil {
 			log.Println("Failed to run automated installs:", err)
-		}
-	}
-
-	if util.IsHelmManaged() {
-		if err := helm.Init(context.TODO()); err != nil {
-			log.Println("Failed to initialize helm data: ", err)
 		}
 	}
 

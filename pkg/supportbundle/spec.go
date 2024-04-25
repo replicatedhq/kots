@@ -24,7 +24,6 @@ import (
 	"github.com/replicatedhq/kots/pkg/kurl"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/registry"
-	registrytypes "github.com/replicatedhq/kots/pkg/registry/types"
 	"github.com/replicatedhq/kots/pkg/render/helper"
 	"github.com/replicatedhq/kots/pkg/reporting"
 	"github.com/replicatedhq/kots/pkg/snapshot"
@@ -197,13 +196,9 @@ func createSupportBundleSpecConfigMap(app apptypes.AppType, sequence int64, kots
 		return errors.Wrap(err, "failed to unmarshal rendered support bundle spec")
 	}
 
-	var registrySettings registrytypes.RegistrySettings
-	if !util.IsHelmManaged() {
-		s, err := store.GetStore().GetRegistryDetailsForApp(app.GetID())
-		if err != nil {
-			return errors.Wrap(err, "failed to get registry settings for app")
-		}
-		registrySettings = s
+	registrySettings, err := store.GetStore().GetRegistryDetailsForApp(app.GetID())
+	if err != nil {
+		return errors.Wrap(err, "failed to get registry settings for app")
 	}
 
 	collectors, err := registry.UpdateCollectorSpecsWithRegistryData(supportBundle.Spec.Collectors, registrySettings, kotsKinds.Installation, kotsKinds.License, &kotsKinds.KotsApplication)
@@ -282,13 +277,9 @@ func createSupportBundleSpecSecret(app apptypes.AppType, sequence int64, kotsKin
 		return errors.Wrap(err, "failed to unmarshal rendered support bundle spec")
 	}
 
-	var registrySettings registrytypes.RegistrySettings
-	if !util.IsHelmManaged() {
-		s, err := store.GetStore().GetRegistryDetailsForApp(app.GetID())
-		if err != nil {
-			return errors.Wrap(err, "failed to get registry settings for app")
-		}
-		registrySettings = s
+	registrySettings, err := store.GetStore().GetRegistryDetailsForApp(app.GetID())
+	if err != nil {
+		return errors.Wrap(err, "failed to get registry settings for app")
 	}
 
 	collectors, err := registry.UpdateCollectorSpecsWithRegistryData(supportBundle.Spec.Collectors, registrySettings, kotsKinds.Installation, kotsKinds.License, &kotsKinds.KotsApplication)

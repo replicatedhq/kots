@@ -15,7 +15,6 @@ import (
 	"github.com/replicatedhq/kots/pkg/kotsadmconfig"
 	license "github.com/replicatedhq/kots/pkg/kotsadmlicense"
 	upstream "github.com/replicatedhq/kots/pkg/kotsadmupstream"
-	kotslicense "github.com/replicatedhq/kots/pkg/license"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/preflight"
 	"github.com/replicatedhq/kots/pkg/preflight/types"
@@ -211,96 +210,13 @@ func CheckForUpdates(opts CheckForUpdatesOpts) (ucr *UpdateCheckResponse, finalE
 
 	tasks.StartUpdateTaskMonitor("update-download", finishedChan)
 
-	if util.IsHelmManaged() {
-		ucr, finalError = checkForHelmAppUpdates(opts, finishedChan)
-		if finalError != nil {
-			finalError = errors.Wrap(finalError, "failed to get helm app updates")
-			return
-		}
-	} else {
-		ucr, finalError = checkForKotsAppUpdates(opts, finishedChan)
-		if finalError != nil {
-			finalError = errors.Wrap(finalError, "failed to get kots app updates")
-			return
-		}
+	ucr, finalError = checkForKotsAppUpdates(opts, finishedChan)
+	if finalError != nil {
+		finalError = errors.Wrap(finalError, "failed to get kots app updates")
+		return
 	}
 
 	return
-}
-
-func checkForHelmAppUpdates(opts CheckForUpdatesOpts, finishedChan chan<- error) (*UpdateCheckResponse, error) {
-	helmApp := helm.GetHelmApp(opts.AppID)
-
-	license, err := helm.GetChartLicenseFromSecretOrDownload(helmApp)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to get license for helm app")
-	}
-
-	if license == nil {
-		return nil, errors.Wrap(err, "license not found for helm app")
-	}
-
-	currentVersion, err := semver.ParseTolerant(helmApp.Release.Chart.Metadata.Version)
-	if err != nil {
-		return nil, errors.Wrap(err, fmt.Sprintf("failed to get parse current version %s", helmApp.Release.Chart.Metadata.Version))
-	}
-
-	availableUpdateTags, err := helm.CheckForUpdates(helmApp, license, &currentVersion)
-	if err != nil {
-		expiredErr := util.ActionableError{
-			NoRetry: true,
-			Message: "License is expired",
-		}
-		isExpired := false
-
-		newLicense, _ := helm.GetChartLicenseFromSecretOrDownload(helmApp)
-		if newLicense != nil {
-			isExpired, _ = kotslicense.LicenseIsExpired(newLicense)
-		} else {
-			isExpired, _ = kotslicense.LicenseIsExpired(license)
-		}
-
-		if isExpired {
-			return nil, expiredErr
-		}
-
-		return nil, errors.Wrap(err, "failed to get available updates")
-	}
-
-	var updates []UpdateCheckRelease
-	for _, update := range availableUpdateTags {
-		updates = append(updates, UpdateCheckRelease{
-			Sequence: 0, // TODO
-			Version:  update.Tag,
-		})
-	}
-
-	ucr := UpdateCheckResponse{
-		AvailableUpdates:  int64(len(updates)),
-		AvailableReleases: updates,
-		DeployingRelease:  nil,
-	}
-
-	status := fmt.Sprintf("%d Updates available...", ucr.AvailableUpdates)
-	if err := store.SetTaskStatus("update-download", status, "running"); err != nil {
-		return nil, errors.Wrap(err, "failed to set task status")
-	}
-
-	if opts.Wait {
-		if err := downloadHelmAppUpdates(opts, helmApp, license.Spec.LicenseID, updates); err != nil {
-			return nil, errors.Wrap(err, "failed to process updates")
-		}
-	} else if ucr.AvailableUpdates > 0 {
-		go func() {
-			defer close(finishedChan)
-			if err := downloadHelmAppUpdates(opts, helmApp, license.Spec.LicenseID, updates); err != nil {
-				logger.Error(errors.Wrap(err, "failed to process updates"))
-			}
-			finishedChan <- err
-		}()
-	}
-
-	return &ucr, nil
 }
 
 func checkForKotsAppUpdates(opts CheckForUpdatesOpts, finishedChan chan<- error) (*UpdateCheckResponse, error) {
@@ -511,7 +427,7 @@ func ensureDesiredVersionIsDeployed(opts CheckForUpdatesOpts, clusterID string) 
 		return nil
 	}
 
-	if !opts.IsAutomatic || util.IsHelmManaged() {
+	if !opts.IsAutomatic {
 		return nil
 	}
 

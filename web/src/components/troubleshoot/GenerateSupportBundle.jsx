@@ -256,11 +256,7 @@ class GenerateSupportBundle extends Component {
   collectBundle = (clusterId) => {
     const { navigate } = this.props;
 
-    let url = `${process.env.API_ENDPOINT}/troubleshoot/supportbundle/app/${this.props.outletContext?.watch?.id}/cluster/${clusterId}/collect`;
-    if (!this.props.outletContext?.watch.id) {
-      // TODO: check if helm managed, not if id is missing
-      url = `${process.env.API_ENDPOINT}/troubleshoot/supportbundle/app/${this.props.outletContext?.watch?.slug}/collect`;
-    }
+    const url = `${process.env.API_ENDPOINT}/troubleshoot/supportbundle/app/${this.props.outletContext?.watch?.id}/cluster/${clusterId}/collect`;
 
     fetch(url, {
       headers: {

@@ -1,5 +1,4 @@
 import { useQuery } from "@tanstack/react-query";
-import { useIsHelmManaged } from "@components/hooks";
 import { useSelectedApp } from "@features/App";
 import { DashboardResponse } from "@types";
 import axios from "axios";
@@ -9,11 +8,9 @@ axios.defaults.withCredentials = true;
 export const getSelectedAppClusterDashboard = async ({
   appSlug,
   clusterId,
-  isHelmManaged,
 }: {
   appSlug: string;
   clusterId: string;
-  isHelmManaged: boolean;
 }): Promise<DashboardResponse | void> => {
   const config = {
     headers: {
@@ -21,10 +18,9 @@ export const getSelectedAppClusterDashboard = async ({
     },
     withCredentials: true,
   };
-  const clusterIdToQuery = isHelmManaged && clusterId === "" ? 0 : clusterId;
   try {
     const res = await axios.get(
-      `${process.env.API_ENDPOINT}/app/${appSlug}/cluster/${clusterIdToQuery}/dashboard`,
+      `${process.env.API_ENDPOINT}/app/${appSlug}/cluster/${clusterId}/dashboard`,
       config
     );
 
@@ -48,8 +44,6 @@ export const useSelectedAppClusterDashboard = ({
 }: {
   refetchInterval: number | false;
 }) => {
-  const { data: isHelmManaged = false } = useIsHelmManaged();
-
   const selectedApp = useSelectedApp();
   const { slug } = selectedApp || { slug: "" };
   const clusterId = selectedApp?.downstream?.cluster?.id.toString() || "";
@@ -59,7 +53,6 @@ export const useSelectedAppClusterDashboard = ({
       getSelectedAppClusterDashboard({
         appSlug: slug,
         clusterId,
-        isHelmManaged,
       }),
     {
       refetchInterval,

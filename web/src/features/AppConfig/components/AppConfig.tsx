@@ -12,7 +12,6 @@ import Loader from "../../../components/shared/Loader";
 import ErrorModal from "../../../components/modals/ErrorModal";
 import { HelmDeployModal } from "../../../components/shared/modals/HelmDeployModal";
 import {
-  UseIsHelmManaged,
   useDownloadValues,
   useSaveConfig,
 } from "../../../components/hooks";
@@ -31,7 +30,6 @@ type Props = {
   params: KotsParams;
   app: App;
   fromLicenseFlow: boolean;
-  isHelmManaged: boolean;
   refreshAppData: () => void;
   refetchApps: () => void;
   navigate: ReturnType<typeof useNavigate>;
@@ -349,7 +347,7 @@ class AppConfig extends Component<Props, State> {
       configErrorMessage: "",
     });
 
-    const { fromLicenseFlow, navigate, params, isHelmManaged } = this.props;
+    const { fromLicenseFlow, navigate, params } = this.props;
     const sequence = this.getSequence();
     const { slug } = this.props.params;
     const createNewVersion = !fromLicenseFlow && params.sequence == undefined;
@@ -405,13 +403,6 @@ class AppConfig extends Component<Props, State> {
 
         if (this.props.refreshAppData) {
           await this.props.refreshAppData();
-        }
-
-        if (isHelmManaged) {
-          this.setState({
-            showHelmDeployModal: true,
-          });
-          return;
         }
 
         if (fromLicenseFlow) {
@@ -660,7 +651,7 @@ class AppConfig extends Component<Props, State> {
       showNextStepModal,
       showValidationError,
     } = this.state;
-    const { fromLicenseFlow, params, isHelmManaged } = this.props;
+    const { fromLicenseFlow, params } = this.props;
 
     if (configLoading || !app) {
       return (
@@ -684,9 +675,6 @@ class AppConfig extends Component<Props, State> {
     const isPending = urlParams.get("isPending") === "true";
 
     let saveButtonText = fromLicenseFlow ? "Continue" : "Save config";
-    if (isHelmManaged) {
-      saveButtonText = "Generate Upgrade Command";
-    }
 
     const sections = document.querySelectorAll(".observe-elements");
 
@@ -730,6 +718,19 @@ class AppConfig extends Component<Props, State> {
     sections.forEach((section) => {
       observer.observe(section);
     });
+
+    const { isError: saveError } = useSaveConfig({
+      appSlug: this.props.params.slug,
+    });
+
+    const { download, clearError: clearDownloadError } =
+      useDownloadValues({
+        appSlug: this.props.params.slug,
+        fileName: "values.yaml",
+        sequence: params.sequence,
+        versionLabel: downstreamVersionLabel,
+        isPending: isPending,
+      });
 
     return (
       <div className="flex flex-column u-paddingLeft--20 u-paddingBottom--20 u-paddingRight--20 alignItems--center">
@@ -819,104 +820,81 @@ class AppConfig extends Component<Props, State> {
               })}
             </div>
             <div className="ConfigArea--wrapper">
-              <UseIsHelmManaged>
-                {({ data: isHelmManagedFromHook }) => {
-                  const { isError: saveError } = useSaveConfig({
-                    appSlug: this.props.params.slug,
-                  });
-
-                  const { download, clearError: clearDownloadError } =
-                    useDownloadValues({
-                      appSlug: this.props.params.slug,
-                      fileName: "values.yaml",
-                      sequence: params.sequence,
-                      versionLabel: downstreamVersionLabel,
-                      isPending: isPending,
-                    });
-
-                  return (
-                    <>
-                      {!isHelmManagedFromHook && (
-                        <ConfigInfo
-                          app={app}
-                          fromLicenseFlow={this.props.fromLicenseFlow}
-                        />
+              <ConfigInfo
+                app={app}
+                fromLicenseFlow={this.props.fromLicenseFlow}
+              />
+              <div
+                className={classNames(
+                  "ConfigOuterWrapper card-bg u-padding--15",
+                  { "u-marginTop--20": fromLicenseFlow }
+                )}
+              >
+                <div className="ConfigInnerWrapper">
+                  <AppConfigRenderer
+                    groups={configGroups}
+                    getData={this.handleConfigChange}
+                    configSequence={params.sequence}
+                    appSlug={app.slug}
+                  />
+                </div>
+                <div className="flex alignItems--flexStart">
+                  {savingConfig && (
+                    <div className="u-paddingBottom--30">
+                      <Loader size="30" />
+                    </div>
+                  )}
+                  {!savingConfig && (
+                    <div className="ConfigError--wrapper flex-column alignItems--flexStart">
+                      {(showConfigError ||
+                        this.state.showValidationError) && (
+                        <span className="u-textColor--error tw-mb-2 tw-text-xs">
+                          {configErrorMessage || validationErrorMessage}
+                        </span>
                       )}
-                      <div
-                        className={classNames(
-                          "ConfigOuterWrapper card-bg u-padding--15",
-                          { "u-marginTop--20": fromLicenseFlow }
-                        )}
+                      <button
+                        className="btn primary blue"
+                        disabled={
+                          showValidationError ||
+                          (!changed && !fromLicenseFlow)
+                        }
+                        onClick={this.handleSave}
                       >
-                        <div className="ConfigInnerWrapper">
-                          <AppConfigRenderer
-                            groups={configGroups}
-                            getData={this.handleConfigChange}
-                            configSequence={params.sequence}
-                            appSlug={app.slug}
-                          />
-                        </div>
-                        <div className="flex alignItems--flexStart">
-                          {savingConfig && (
-                            <div className="u-paddingBottom--30">
-                              <Loader size="30" />
-                            </div>
-                          )}
-                          {!savingConfig && (
-                            <div className="ConfigError--wrapper flex-column alignItems--flexStart">
-                              {(showConfigError ||
-                                this.state.showValidationError) && (
-                                <span className="u-textColor--error tw-mb-2 tw-text-xs">
-                                  {configErrorMessage || validationErrorMessage}
-                                </span>
-                              )}
-                              <button
-                                className="btn primary blue"
-                                disabled={
-                                  showValidationError ||
-                                  (!changed && !fromLicenseFlow)
-                                }
-                                onClick={this.handleSave}
-                              >
-                                {saveButtonText}
-                              </button>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                      {this.state.showHelmDeployModal && (
-                        <>
-                          <HelmDeployModal
-                            appSlug={this.props?.app?.slug}
-                            chartPath={this.props?.app?.chartPath || ""}
-                            downloadClicked={download}
-                            hideHelmDeployModal={() => {
-                              this.setState({ showHelmDeployModal: false });
-                              clearDownloadError();
-                            }}
-                            registryUsername={
-                              this.props?.app?.credentials?.username || ""
-                            }
-                            registryPassword={
-                              this.props?.app?.credentials?.password || ""
-                            }
-                            saveError={saveError}
-                            showHelmDeployModal={true}
-                            showDownloadValues={true}
-                            subtitle="Follow the steps below to upgrade the release with your new values.yaml."
-                            title={`Upgrade ${this.props?.app?.slug}`}
-                            upgradeTitle="Upgrade release"
-                            version={downstreamVersionLabel || ""}
-                            namespace={this.props?.app?.namespace || ""}
-                            downloadError={false}
-                            revision={null}
-                          />
-                        </>
-                      )}
-                    </>
-                  );
-                }}
-              </UseIsHelmManaged>
+                        {saveButtonText}
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
+              {this.state.showHelmDeployModal && (
+                <>
+                  <HelmDeployModal
+                    appSlug={this.props?.app?.slug}
+                    chartPath={this.props?.app?.chartPath || ""}
+                    downloadClicked={download}
+                    hideHelmDeployModal={() => {
+                      this.setState({ showHelmDeployModal: false });
+                      clearDownloadError();
+                    }}
+                    registryUsername={
+                      this.props?.app?.credentials?.username || ""
+                    }
+                    registryPassword={
+                      this.props?.app?.credentials?.password || ""
+                    }
+                    saveError={saveError}
+                    showHelmDeployModal={true}
+                    showDownloadValues={true}
+                    subtitle="Follow the steps below to upgrade the release with your new values.yaml."
+                    title={`Upgrade ${this.props?.app?.slug}`}
+                    upgradeTitle="Upgrade release"
+                    version={downstreamVersionLabel || ""}
+                    namespace={this.props?.app?.namespace || ""}
+                    downloadError={false}
+                    revision={null}
+                  />
+                </>
+              )}
             </div>{" "}
           </div>
         </div>

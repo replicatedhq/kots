@@ -43,10 +43,9 @@ export default [
     tabName: "license",
     displayName: "License",
     to: (slug) => `/app/${slug}/license`,
-    displayRule: ({ app, isHelmManaged }) =>
+    displayRule: ({ app }) =>
       app?.upstreamUri?.startsWith("replicated://") ||
-      getApplicationType(app) === "replicated.app" ||
-      isHelmManaged,
+      getApplicationType(app) === "replicated.app"
   },
   {
     tabName: "state",
@@ -71,7 +70,6 @@ export default [
     tabName: "registry-settings",
     displayName: "Registry settings",
     to: (slug) => `/app/${slug}/registry-settings`,
-    displayRule: ({ isHelmManaged }) => !isHelmManaged,
   },
   {
     tabName: "access",

@@ -99,7 +99,6 @@ type State = {
   featureFlags: object;
   fetchingMetadata: boolean;
   initSessionId: string | null;
-  isHelmManaged: boolean;
   selectedAppName: string | null;
   snapshotInProgressApps: string[];
   themeState: ThemeState;
@@ -124,7 +123,6 @@ const Root = () => {
       shouldShowClusterUpgradeModal: false,
       errLoggingOut: "",
       featureFlags: {},
-      isHelmManaged: false,
       fetchingMetadata: false,
       initSessionId: Utilities.localStorageEnabled()
         ? localStorage.getItem(INIT_SESSION_ID_STORAGE_KEY)
@@ -180,38 +178,6 @@ const Root = () => {
       localStorage.setItem(INIT_SESSION_ID_STORAGE_KEY, initSessionId);
     }
     setState({ initSessionId });
-  };
-
-  // TODO: delete if not used
-  // const handleActiveInitSessionCompleted = () => {
-  //   if (Utilities.localStorageEnabled()) {
-  //     localStorage.removeItem(INIT_SESSION_ID_STORAGE_KEY);
-  //   }
-  //   setState({ initSessionId: "" });
-  // };
-
-  const checkIsHelmManaged = async () => {
-    try {
-      const res = await fetch(`${process.env.API_ENDPOINT}/is-helm-managed`, {
-        headers: {
-          "Content-Type": "application/json",
-        },
-        method: "GET",
-        credentials: "include",
-      });
-      if (res.ok && res.status === 200) {
-        const response = await res.json();
-        setState({ isHelmManaged: response.isHelmManaged });
-        return response.isHelmManaged;
-      } else {
-        setState({ isHelmManaged: false });
-      }
-      return false;
-    } catch (err) {
-      console.log(err);
-      setState({ isHelmManaged: false });
-      return false;
-    }
   };
 
   const getPendingApp = async () => {
@@ -360,7 +326,6 @@ const Root = () => {
     fetchKotsAppMetadata();
     if (Utilities.isLoggedIn()) {
       ping();
-      checkIsHelmManaged();
       getAppsList().then((appsList) => {
         if (appsList?.length > 0 && window.location.pathname === "/apps") {
           const { slug } = appsList[0];
@@ -479,7 +444,6 @@ const Root = () => {
             onLogoutError={onLogoutError}
             isSnapshotsSupported={isSnapshotsSupported()}
             errLoggingOut={state.errLoggingOut}
-            isHelmManaged={state.isHelmManaged}
           />
           <div className="flex1 flex-column u-overflow--auto tw-relative">
             <Routes>
@@ -502,7 +466,6 @@ const Root = () => {
                     pendingApp={getPendingApp}
                     onLoginSuccess={getAppsList}
                     fetchingMetadata={state.fetchingMetadata}
-                    checkIsHelmManaged={checkIsHelmManaged}
                     navigate={navigate}
                   />
                 }
@@ -523,7 +486,6 @@ const Root = () => {
                   <AppConfig
                     fromLicenseFlow={true}
                     refetchAppsList={getAppsList}
-                    isHelmManaged={state.isHelmManaged}
                   />
                 }
               />
@@ -703,7 +665,6 @@ const Root = () => {
                     refetchAppsList={getAppsList}
                     snapshotInProgressApps={state.snapshotInProgressApps}
                     ping={ping}
-                    isHelmManaged={state.isHelmManaged}
                     isEmbeddedCluster={Boolean(
                       state.adminConsoleMetadata?.isEmbeddedCluster
                     )}
@@ -729,7 +690,6 @@ const Root = () => {
                     refetchAppsList={getAppsList}
                     snapshotInProgressApps={state.snapshotInProgressApps}
                     ping={ping}
-                    isHelmManaged={state.isHelmManaged}
                     isEmbeddedCluster={Boolean(
                       state.adminConsoleMetadata?.isEmbeddedCluster
                     )}
@@ -779,7 +739,6 @@ const Root = () => {
                     <AppConfig
                       fromLicenseFlow={false}
                       refetchAppsList={getAppsList}
-                      isHelmManaged={state.isHelmManaged}
                     />
                   }
                 />

@@ -16,7 +16,6 @@ type Props = {
   errLoggingOut: string;
   fetchingMetadata: boolean;
   isGitOpsSupported: boolean;
-  isHelmManaged: boolean;
   isIdentityServiceSupported: boolean;
   isKurlEnabled: boolean;
   isEmbeddedClusterEnabled: boolean;
@@ -289,7 +288,6 @@ export class NavBar extends PureComponent<Props, State> {
           <>
             <NavBarDropdown
               handleLogOut={this.handleLogOut}
-              isHelmManaged={this.props.isHelmManaged}
             />
           </>
         )}

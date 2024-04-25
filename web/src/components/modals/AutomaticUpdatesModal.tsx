@@ -81,7 +81,6 @@ type Props = {
   appSlug: string;
   autoDeploy: string;
   gitopsIsConnected: boolean | undefined;
-  isHelmManaged: boolean;
   isOpen: boolean;
   isSemverRequired: boolean;
   onAutomaticUpdatesConfigured: () => void;
@@ -273,7 +272,6 @@ export default class AutomaticUpdatesModal extends Component<Props, State> {
       onRequestClose,
       isSemverRequired,
       gitopsIsConnected,
-      isHelmManaged,
     } = this.props;
     const {
       updateCheckerSpec,
@@ -288,13 +286,7 @@ export default class AutomaticUpdatesModal extends Component<Props, State> {
         and whether updates will be deployed automatically.
       </p>
     );
-    if (isHelmManaged) {
-      configureText = (
-        <p className="u-fontSize--normal u-lineHeight--normal u-textColor--bodyCopy u-marginBottom--20">
-          Configure how often you would like to automatically check for updates.
-        </p>
-      );
-    } else if (gitopsIsConnected) {
+    if (gitopsIsConnected) {
       configureText = (
         <p className="u-fontSize--normal u-lineHeight--normal u-textColor--bodyCopy u-marginBottom--20">
           Configure how often you would like to automatically check for updates.
@@ -367,7 +359,7 @@ export default class AutomaticUpdatesModal extends Component<Props, State> {
               </div>
             </div>
           </div>
-          {!gitopsIsConnected && !isHelmManaged && (
+          {!gitopsIsConnected && (
             <div className="flex-column flex1 u-marginTop--15">
               <p className="u-fontSize--normal u-textColor--primary u-fontWeight--bold u-lineHeight--normal">
                 Automatically deploy new versions
