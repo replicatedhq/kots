@@ -1949,8 +1949,7 @@ class AppVersionHistory extends Component<Props, State> {
                                   </div>
                                 )}
                               </div>
-                              {versionHistory.length > 1 &&
-                              !gitopsIsConnected
+                              {versionHistory.length > 1 && !gitopsIsConnected
                                 ? this.renderDiffBtn()
                                 : null}
                             </div>

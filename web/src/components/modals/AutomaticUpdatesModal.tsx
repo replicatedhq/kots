@@ -267,12 +267,8 @@ export default class AutomaticUpdatesModal extends Component<Props, State> {
   };
 
   render() {
-    const {
-      isOpen,
-      onRequestClose,
-      isSemverRequired,
-      gitopsIsConnected,
-    } = this.props;
+    const { isOpen, onRequestClose, isSemverRequired, gitopsIsConnected } =
+      this.props;
     const {
       updateCheckerSpec,
       selectedSchedule,

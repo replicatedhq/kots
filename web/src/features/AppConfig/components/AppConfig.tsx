@@ -11,10 +11,7 @@ import Modal from "react-modal";
 import Loader from "../../../components/shared/Loader";
 import ErrorModal from "../../../components/modals/ErrorModal";
 import { HelmDeployModal } from "../../../components/shared/modals/HelmDeployModal";
-import {
-  useDownloadValues,
-  useSaveConfig,
-} from "../../../components/hooks";
+import { useDownloadValues, useSaveConfig } from "../../../components/hooks";
 import ConfigInfo from "./ConfigInfo";
 
 import "../../../scss/components/watches/WatchConfig.scss";
@@ -723,14 +720,13 @@ class AppConfig extends Component<Props, State> {
       appSlug: this.props.params.slug,
     });
 
-    const { download, clearError: clearDownloadError } =
-      useDownloadValues({
-        appSlug: this.props.params.slug,
-        fileName: "values.yaml",
-        sequence: params.sequence,
-        versionLabel: downstreamVersionLabel,
-        isPending: isPending,
-      });
+    const { download, clearError: clearDownloadError } = useDownloadValues({
+      appSlug: this.props.params.slug,
+      fileName: "values.yaml",
+      sequence: params.sequence,
+      versionLabel: downstreamVersionLabel,
+      isPending: isPending,
+    });
 
     return (
       <div className="flex flex-column u-paddingLeft--20 u-paddingBottom--20 u-paddingRight--20 alignItems--center">
@@ -846,8 +842,7 @@ class AppConfig extends Component<Props, State> {
                   )}
                   {!savingConfig && (
                     <div className="ConfigError--wrapper flex-column alignItems--flexStart">
-                      {(showConfigError ||
-                        this.state.showValidationError) && (
+                      {(showConfigError || this.state.showValidationError) && (
                         <span className="u-textColor--error tw-mb-2 tw-text-xs">
                           {configErrorMessage || validationErrorMessage}
                         </span>
@@ -855,8 +850,7 @@ class AppConfig extends Component<Props, State> {
                       <button
                         className="btn primary blue"
                         disabled={
-                          showValidationError ||
-                          (!changed && !fromLicenseFlow)
+                          showValidationError || (!changed && !fromLicenseFlow)
                         }
                         onClick={this.handleSave}
                       >

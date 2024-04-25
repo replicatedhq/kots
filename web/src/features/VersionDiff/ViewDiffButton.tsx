@@ -40,8 +40,7 @@ function ViewDiffButton(props: Props) {
   const selectedApp = useSelectedApp();
 
   // TODO: flatten in selector
-  const showViewDiffButton =
-    !selectedApp?.downstream.gitops?.isConnected;
+  const showViewDiffButton = !selectedApp?.downstream.gitops?.isConnected;
   const showDiffSummaryError =
     props.version?.diffSummaryError?.length > 0 ? true : false;
   const numberOfFilesChanged = props.version?.diffSummary

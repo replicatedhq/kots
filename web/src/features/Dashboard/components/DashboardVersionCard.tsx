@@ -1141,7 +1141,9 @@ const DashboardVersionCard = (props: Props) => {
             disabled={isActionButtonDisabled(version)}
             onClick={() => {
               if (needsConfiguration) {
-                navigate(`/app/${selectedApp?.slug}/config/${version.sequence}`);
+                navigate(
+                  `/app/${selectedApp?.slug}/config/${version.sequence}`
+                );
                 return;
               }
               if (version.needsKotsUpgrade) {

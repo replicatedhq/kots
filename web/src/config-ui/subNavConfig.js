@@ -45,7 +45,7 @@ export default [
     to: (slug) => `/app/${slug}/license`,
     displayRule: ({ app }) =>
       app?.upstreamUri?.startsWith("replicated://") ||
-      getApplicationType(app) === "replicated.app"
+      getApplicationType(app) === "replicated.app",
   },
   {
     tabName: "state",
