@@ -89,7 +89,7 @@ export const DashboardSnapshotsCard = (props: Props) => {
       startSnapshotErrorMsg: "",
     }
   );
-  const { app, ping, isSnapshotAllowed } = props;
+  const { app, ping, isSnapshotAllowed, isEmbeddedCluster } = props;
   const { selectedDestination } = state;
 
   const setCurrentProvider = (
@@ -149,7 +149,7 @@ export const DashboardSnapshotsCard = (props: Props) => {
 
     // if nothing exists yet, we've determined default state is good
     let defaultDestination = "aws";
-    if (props.isEmbeddedCluster) {
+    if (isEmbeddedCluster) {
       defaultDestination = "other";
     }
     setState({
@@ -227,7 +227,7 @@ export const DashboardSnapshotsCard = (props: Props) => {
     <div className="flex-column flex1 dashboard-card card-bg">
       <div className="flex flex1 justifyContent--spaceBetween alignItems--center">
         <p className="card-title">
-          {props.isEmbeddedCluster ? "Disaster Recovery" : "Snapshots"}
+          {isEmbeddedCluster ? "Disaster Recovery" : "Snapshots"}
         </p>
         <div className="u-fontSize--small u-fontWeight--medium flex flex-auto alignItems--center">
           <Link
@@ -239,9 +239,9 @@ export const DashboardSnapshotsCard = (props: Props) => {
               size={16}
               className="clickable u-marginRight--5"
             />
-            {props.isEmbeddedCluster ? "Backup settings" : "Snapshot settings"}
+            {isEmbeddedCluster ? "Backup settings" : "Snapshot settings"}
           </Link>
-          {!props.isEmbeddedCluster && (
+          {!isEmbeddedCluster && (
             <>
               <Icon
                 icon="schedule-update"
@@ -267,7 +267,7 @@ export const DashboardSnapshotsCard = (props: Props) => {
               />
             </>
           )}
-          {props.isEmbeddedCluster && (
+          {isEmbeddedCluster && (
             <Link
               className="link u-marginRight--20 flex alignItems--center"
               onClick={() => createSnapshot("full")}
@@ -285,21 +285,25 @@ export const DashboardSnapshotsCard = (props: Props) => {
       </div>
       <div className="SnapshotsCard-content--wrapper u-marginTop--10 flex flex1">
         <div className="flex1">
-          <span
-            className={`status-dot ${
-              isSnapshotAllowed ? "u-color--success" : "u-color--warning"
-            }`}
-          />
-          <span
-            className={`u-fontSize--small u-fontWeight--medium ${
-              isSnapshotAllowed
-                ? "u-textColor--success"
-                : "u-textColor--warning"
-            }`}
-          >
-            {isSnapshotAllowed ? "Enabled" : "Disabled"}
-          </span>
-          <div className="flex alignItems--center u-marginTop--10">
+          {!isEmbeddedCluster && (
+            <>
+              <span
+                className={`status-dot ${
+                  isSnapshotAllowed ? "u-color--success" : "u-color--warning"
+                }`}
+              />
+              <span
+                className={`u-fontSize--small u-fontWeight--medium u-marginBottom--10 ${
+                  isSnapshotAllowed
+                    ? "u-textColor--success"
+                    : "u-textColor--warning"
+                }`}
+              >
+                {isSnapshotAllowed ? "Enabled" : "Disabled"}
+              </span>
+            </>
+          )}
+          <div className="flex alignItems--center">
             <span
               className={`icon snapshotDestination--${selectedDestination?.value} u-marginRight--5`}
             />
@@ -321,7 +325,7 @@ export const DashboardSnapshotsCard = (props: Props) => {
       </div>
       <div className="u-marginTop--10">
         <Link to={`/snapshots`} className="link u-fontSize--small">
-          See all {props.isEmbeddedCluster ? "backups" : "snapshots"}
+          See all {isEmbeddedCluster ? "backups" : "snapshots"}
           <Icon
             icon="next-arrow"
             size={10}
