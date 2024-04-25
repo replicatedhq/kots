@@ -592,12 +592,7 @@ class SnapshotSchedule extends Component {
                   Retention policy
                 </p>
                 <p className="u-fontSize--small u-textColor--bodyCopy u-fontWeight--normal u-lineHeight--normal u-marginBottom--10">
-                  The Admin Console can reclaim space by automatically deleting
-                  older scheduled {featureName}s.
-                </p>
-                <p className="u-fontSize--small u-textColor--bodyCopy u-fontWeight--normal u-lineHeight--normal u-marginBottom--10">
-                  {Utilities.toTitleCase(featureName)}s older than this will be
-                  deleted.
+                  Choose how long to retain {featureName}s before they are automatically deleted.
                 </p>
                 <div className="flex u-marginBottom--20">
                   <div className="flex-auto u-paddingRight--5">
