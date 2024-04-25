@@ -1,4 +1,4 @@
-import { RefObject, useEffect, useReducer } from "react";
+import { useEffect, useReducer } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import ReactTooltip from "react-tooltip";
 import DashboardGitOpsCard from "./DashboardGitOpsCard";
