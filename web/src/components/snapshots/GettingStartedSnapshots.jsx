@@ -38,8 +38,6 @@ export default function GettingStartedSnapshots(props) {
         </p>
       ) : isVeleroInstalled ? (
         <p className="u-marginTop--10 u-fontSize--normal u-lineHeight--more u-fontWeight--medium u-textColor--bodyCopy">
-          Now that Velero is configured, you can start making {featureName}s.
-          You can{" "}
           <Link to="/snapshots/settings" className="link u-fontSize--normal">
             create a schedule
           </Link>{" "}
