@@ -21,7 +21,6 @@ interface Props {
   deployVersion: (version: Version) => void;
   downloadVersion: (version: Version) => void;
   gitopsEnabled: boolean;
-  handleActionButtonClicked: () => void;
   handleSelectReleasesToDiff: (version: Version, isChecked: boolean) => void;
   handleViewLogs: (version: Version | null, isFailing: boolean) => void;
   isChecked: boolean;
@@ -380,7 +379,6 @@ function AppVersionHistoryRow(props: Props) {
               })}
               disabled={isActionButtonDisabled(version)}
               onClick={() => {
-                props.handleActionButtonClicked();
                 if (needsConfiguration) {
                   props?.navigate(configScreenURL);
                   return null;
