@@ -289,7 +289,6 @@ func responseAppFromApp(a *apptypes.App) (*types.ResponseApp, error) {
 		return nil, errors.Wrap(err, "failed to check if snapshots is allowed")
 	}
 	allowSnapshots := s && license.Spec.IsSnapshotSupported
-	allowSnapshots = allowSnapshots && !util.IsEmbeddedCluster() // snapshots are not allowed in embedded cluster installations today
 
 	isGitopsSupported := license.Spec.IsGitOpsSupported && !util.IsEmbeddedCluster() // gitops is not allowed in embedded cluster installations today
 

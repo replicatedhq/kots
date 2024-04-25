@@ -9,15 +9,21 @@ import (
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+	embeddedclusterv1beta1 "github.com/replicatedhq/embedded-cluster-kinds/apis/v1beta1"
 	"github.com/replicatedhq/kots/pkg/crypto"
 	dockerregistrytypes "github.com/replicatedhq/kots/pkg/docker/registry/types"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/util"
 	kotsv1beta1 "github.com/replicatedhq/kotskinds/apis/kots/v1beta1"
+	kotsv1beta2 "github.com/replicatedhq/kotskinds/apis/kots/v1beta2"
+	kurlv1beta1 "github.com/replicatedhq/kurlkinds/pkg/apis/cluster/v1beta1"
 	troubleshootv1beta2 "github.com/replicatedhq/troubleshoot/pkg/apis/troubleshoot/v1beta2"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	velerov1 "github.com/vmware-tanzu/velero/pkg/apis/velero/v1"
 	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	applicationv1beta1 "sigs.k8s.io/application/api/v1beta1"
 )
 
 var _ = Describe("Kots", func() {
@@ -879,6 +885,175 @@ func TestGetImagesFromKotsKinds(t *testing.T) {
 			req.NoError(err)
 
 			assert.ElementsMatch(t, tt.want, got)
+		})
+	}
+}
+
+func TestKotsKinds_Marshal(t *testing.T) {
+	type fields struct {
+		KotsApplication       kotsv1beta1.Application
+		Application           *applicationv1beta1.Application
+		V1Beta1HelmCharts     *kotsv1beta1.HelmChartList
+		V1Beta2HelmCharts     *kotsv1beta2.HelmChartList
+		Collector             *troubleshootv1beta2.Collector
+		Preflight             *troubleshootv1beta2.Preflight
+		Analyzer              *troubleshootv1beta2.Analyzer
+		SupportBundle         *troubleshootv1beta2.SupportBundle
+		Redactor              *troubleshootv1beta2.Redactor
+		HostPreflight         *troubleshootv1beta2.HostPreflight
+		Config                *kotsv1beta1.Config
+		ConfigValues          *kotsv1beta1.ConfigValues
+		Installation          kotsv1beta1.Installation
+		License               *kotsv1beta1.License
+		Identity              *kotsv1beta1.Identity
+		IdentityConfig        *kotsv1beta1.IdentityConfig
+		Backup                *velerov1.Backup
+		Installer             *kurlv1beta1.Installer
+		LintConfig            *kotsv1beta1.LintConfig
+		EmbeddedClusterConfig *embeddedclusterv1beta1.Config
+	}
+	type args struct {
+		g string
+		v string
+		k string
+	}
+	tests := []struct {
+		name    string
+		fields  fields
+		args    args
+		preInit func()
+		postRun func()
+		want    string
+	}{
+		{
+			name: "backup exists, not EC",
+			fields: fields{
+				Backup: &velerov1.Backup{
+					ObjectMeta: metav1.ObjectMeta{Name: "backup-name"},
+					TypeMeta:   metav1.TypeMeta{APIVersion: "velero.io/v1", Kind: "Backup"},
+				},
+			},
+			args: args{
+				g: "velero.io",
+				v: "v1",
+				k: "Backup",
+			},
+			want: `apiVersion: velero.io/v1
+kind: Backup
+metadata:
+  creationTimestamp: null
+  name: backup-name
+spec:
+  csiSnapshotTimeout: 0s
+  hooks: {}
+  metadata: {}
+  ttl: 0s
+status: {}
+`,
+		},
+		{
+			name: "no backup exists, not EC",
+			args: args{
+				g: "velero.io",
+				v: "v1",
+				k: "Backup",
+			},
+			want: "",
+		},
+		{
+			name: "no backup exists, EC",
+			preInit: func() {
+				os.Setenv("EMBEDDED_CLUSTER_ID", "test")
+			},
+			postRun: func() {
+				os.Setenv("EMBEDDED_CLUSTER_ID", "")
+			},
+			args: args{
+				g: "velero.io",
+				v: "v1",
+				k: "Backup",
+			},
+			want: `apiVersion: velero.io/v1
+kind: Backup
+metadata:
+  creationTimestamp: null
+  name: backup
+spec:
+  csiSnapshotTimeout: 0s
+  hooks: {}
+  metadata: {}
+  ttl: 0s
+status: {}
+`,
+		},
+		{
+			name: "backup exists, EC",
+			fields: fields{
+				Backup: &velerov1.Backup{
+					ObjectMeta: metav1.ObjectMeta{Name: "backup-name"},
+					TypeMeta:   metav1.TypeMeta{APIVersion: "velero.io/v1", Kind: "Backup"},
+				},
+			},
+			preInit: func() {
+				os.Setenv("EMBEDDED_CLUSTER_ID", "test")
+			},
+			postRun: func() {
+				os.Setenv("EMBEDDED_CLUSTER_ID", "")
+			},
+			args: args{
+				g: "velero.io",
+				v: "v1",
+				k: "Backup",
+			},
+			want: `apiVersion: velero.io/v1
+kind: Backup
+metadata:
+  creationTimestamp: null
+  name: backup-name
+spec:
+  csiSnapshotTimeout: 0s
+  hooks: {}
+  metadata: {}
+  ttl: 0s
+status: {}
+`,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			o := kotsutil.KotsKinds{
+				KotsApplication:       tt.fields.KotsApplication,
+				Application:           tt.fields.Application,
+				V1Beta1HelmCharts:     tt.fields.V1Beta1HelmCharts,
+				V1Beta2HelmCharts:     tt.fields.V1Beta2HelmCharts,
+				Collector:             tt.fields.Collector,
+				Preflight:             tt.fields.Preflight,
+				Analyzer:              tt.fields.Analyzer,
+				SupportBundle:         tt.fields.SupportBundle,
+				Redactor:              tt.fields.Redactor,
+				HostPreflight:         tt.fields.HostPreflight,
+				Config:                tt.fields.Config,
+				ConfigValues:          tt.fields.ConfigValues,
+				Installation:          tt.fields.Installation,
+				License:               tt.fields.License,
+				Identity:              tt.fields.Identity,
+				IdentityConfig:        tt.fields.IdentityConfig,
+				Backup:                tt.fields.Backup,
+				Installer:             tt.fields.Installer,
+				LintConfig:            tt.fields.LintConfig,
+				EmbeddedClusterConfig: tt.fields.EmbeddedClusterConfig,
+			}
+
+			req := require.New(t)
+			if tt.preInit != nil {
+				tt.preInit()
+			}
+			got, err := o.Marshal(tt.args.g, tt.args.v, tt.args.k)
+			if tt.postRun != nil {
+				tt.postRun()
+			}
+			req.NoError(err)
+			req.Equal(tt.want, got)
 		})
 	}
 }
