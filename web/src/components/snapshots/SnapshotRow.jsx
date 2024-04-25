@@ -34,7 +34,7 @@ class SnapshotRow extends Component {
   };
 
   render() {
-    const { snapshot, app } = this.props;
+    const { snapshot, app, hideRestore } = this.props;
     const isExpired = dayjs(new Date()).isSameOrAfter(snapshot?.expiresAt);
 
     return (
@@ -114,7 +114,7 @@ class SnapshotRow extends Component {
         </div>
         {!isExpired && snapshot?.status !== "Deleting" && (
           <div className="flex flex-auto">
-            {snapshot?.status === "Completed" && (
+            {snapshot?.status === "Completed" && !hideRestore && (
               <div className="flex">
                 <Icon
                   icon="sync"

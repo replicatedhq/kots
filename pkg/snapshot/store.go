@@ -35,6 +35,7 @@ import (
 	kotss3 "github.com/replicatedhq/kots/pkg/s3"
 	"github.com/replicatedhq/kots/pkg/snapshot/providers"
 	"github.com/replicatedhq/kots/pkg/snapshot/types"
+	"github.com/replicatedhq/kots/pkg/util"
 	velerov1 "github.com/vmware-tanzu/velero/pkg/apis/velero/v1"
 	veleroclientv1 "github.com/vmware-tanzu/velero/pkg/generated/clientset/versioned/typed/velero/v1"
 	"google.golang.org/api/option"
@@ -1023,7 +1024,12 @@ func mapAWSBackupStorageLocationToStore(kotsadmVeleroBackendStorageLocation *vel
 		return errors.Wrap(err, "failed to parse s3 url")
 	}
 	// without endpoint, the ui has no logic to figure if it is amazon-s3 or other-s3 compatible storages
-	if !isS3Compatible || strings.HasSuffix(u.Hostname(), ".amazonaws.com") {
+	shouldMapToAWS := !isS3Compatible || strings.HasSuffix(u.Hostname(), ".amazonaws.com")
+	if util.IsEmbeddedCluster() {
+		// embedded clusters only support other s3 compatible storage
+		shouldMapToAWS = false
+	}
+	if shouldMapToAWS {
 		store.AWS = &types.StoreAWS{
 			Region: kotsadmVeleroBackendStorageLocation.Spec.Config["region"],
 		}

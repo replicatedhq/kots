@@ -3,7 +3,7 @@ import Icon from "../Icon";
 import ChangePasswordModal from "../modals/ChangePasswordModal/ChangePasswordModal";
 import { useEffect, useRef, useState } from "react";
 
-const NavBarDropdown = ({ handleLogOut, isHelmManaged }) => {
+const NavBarDropdown = ({ handleLogOut, isHelmManaged, isEmbeddedCluster }) => {
   const [showDropdown, setShowDropdown] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const testRef = useRef(null);
@@ -49,7 +49,7 @@ const NavBarDropdown = ({ handleLogOut, isHelmManaged }) => {
         <li>
           <p onClick={() => setShowModal(true)}>Change password</p>
         </li>
-        {!isHelmManaged && (
+        {!isHelmManaged && !isEmbeddedCluster && (
           <li onMouseDown={handleNav}>
             <p>Add new application</p>
           </li>

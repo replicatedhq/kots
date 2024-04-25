@@ -13,6 +13,7 @@ export default function SubNavBar({
   isAccess = false,
   isSnapshots = false,
   isHelmManaged,
+  isEmbeddedCluster,
 }) {
   let { slug } = app;
 
@@ -50,13 +51,14 @@ export default function SubNavBar({
   const snapshotsConfig = [
     {
       tabName: activeTab === slug ? slug : "snapshots",
-      displayName: "Full Snapshots (Instance)",
+      displayName: isEmbeddedCluster ? "Backups" : "Full Snapshots (Instance)",
       to: () => `/snapshots`,
     },
     {
       tabName: "partial",
       displayName: "Partial Snapshots (Application)",
       to: (slug) => `/snapshots/partial/${slug}`,
+      hide: isEmbeddedCluster,
     },
     {
       tabName: "settings",
@@ -86,6 +88,7 @@ export default function SubNavBar({
               .filter(Boolean)
           : isSnapshots
           ? snapshotsConfig
+              .filter((link) => !link.hide)
               .map((link, idx) => {
                 const generatedMenuItem = (
                   <li
@@ -124,6 +127,7 @@ export default function SubNavBar({
                     link.displayRule({
                       app: app || {},
                       isHelmManaged,
+                      isEmbeddedCluster,
                       isIdentityServiceSupported:
                         app.isAppIdentityServiceSupported,
                       isVeleroInstalled,

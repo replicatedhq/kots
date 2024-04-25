@@ -488,6 +488,7 @@ function AppDetailPage(props: Props) {
                 app={selectedApp}
                 isVeleroInstalled={isVeleroInstalled}
                 isHelmManaged={props.isHelmManaged}
+                isEmbeddedCluster={props.isEmbeddedCluster}
               />
               <Outlet context={context} />
             </Fragment>

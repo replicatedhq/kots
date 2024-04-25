@@ -781,6 +781,7 @@ class AppSnapshots extends Component {
           )}
           {deleteSnapshotModal && (
             <DeleteSnapshotModal
+              featureName="snapshot"
               deleteSnapshotModal={deleteSnapshotModal}
               toggleConfirmDeleteModal={this.toggleConfirmDeleteModal}
               handleDeleteSnapshot={this.handleDeleteSnapshot}

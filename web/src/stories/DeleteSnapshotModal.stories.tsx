@@ -16,6 +16,7 @@ const Template: ComponentStory<typeof DeleteSnapshotModal> = (args) => (
 export const DeleteSnapshotModalExample = Template.bind({});
 
 DeleteSnapshotModalExample.args = {
+  featureName: "snapshot",
   deleteSnapshotModal: true,
   toggleConfirmDeleteModal: () => alert("toggle modal"),
   snapshotToDelete: {
