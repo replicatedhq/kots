@@ -191,6 +191,6 @@ test('smoke test', async ({ page }) => {
   await page.locator('div').filter({ hasText: /^Change passwordAdd new applicationLog out$/ }).getByRole('img').click();
   await page.getByText('Log out', { exact: true }).click();
   await expect(page.getByPlaceholder('password')).toBeVisible({ timeout: 30000 });
-  await expect(page.locator('#app')).toContainText('Enter the password to access the App Name admin consolee.');
+  await expect(page.locator('#app')).toContainText('Enter the password to access the App Name admin console.');
   await expect(page.getByRole('button')).toContainText('Log in');
 });
