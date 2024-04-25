@@ -419,7 +419,22 @@ func (o KotsKinds) Marshal(g string, v string, k string) (string, error) {
 		if v == "v1" {
 			if k == "Backup" {
 				if o.Backup == nil {
-					return "", nil
+					if util.IsEmbeddedCluster() {
+						// return the default backup object
+						backup := &velerov1.Backup{
+							TypeMeta: metav1.TypeMeta{
+								APIVersion: "velero.io/v1",
+								Kind:       "Backup",
+							},
+							ObjectMeta: metav1.ObjectMeta{
+								Name: "backup",
+							},
+						}
+						o.Backup = backup
+					} else {
+						return "", nil
+					}
+
 				}
 				var b bytes.Buffer
 				if err := s.Encode(o.Backup, &b); err != nil {
