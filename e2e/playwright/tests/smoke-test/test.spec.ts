@@ -41,6 +41,7 @@ test('smoke test', async ({ page }) => {
   await expect(page.locator('.ConfigureUpdatesModal')).toContainText('At 12:00 AM, only on Sunday');
   await page.getByRole('button', { name: 'Update', exact: true }).click();
   await expect(page.getByText('Automatically check for updates', { exact: true })).not.toBeVisible();
+  await page.waitForTimeout(2000);
   await page.locator('span[data-tip="View deploy logs"]').first().click();
   await validateDeployLogs(page, expect);
   await page.reload();
