@@ -7,7 +7,7 @@ test('smoke test', async ({ page }) => {
   test.setTimeout(5 * 60 * 1000); // 5 minutes
   await login(page);
   await uploadLicense(page, expect);
-  await expect(page.locator('#app')).toContainText('Install in airgapped environmentt', { timeout: 15000 });
+  await expect(page.locator('#app')).toContainText('Install in airgapped environment', { timeout: 15000 });
   await page.getByText('download App Name from the Internet').click();
   await expect(page.locator('#app')).toContainText('Installing your license');
   await expect(page.locator('h3')).toContainText('My Example Config', { timeout: 30000 });
@@ -191,6 +191,6 @@ test('smoke test', async ({ page }) => {
   await page.locator('div').filter({ hasText: /^Change passwordAdd new applicationLog out$/ }).getByRole('img').click();
   await page.getByText('Log out', { exact: true }).click();
   await expect(page.getByPlaceholder('password')).toBeVisible({ timeout: 30000 });
-  await expect(page.locator('#app')).toContainText('Enter the password to access the App Name admin console.');
+  await expect(page.locator('#app')).toContainText('Enter the password to access the App Name admin consolee.');
   await expect(page.getByRole('button')).toContainText('Log in');
 });
