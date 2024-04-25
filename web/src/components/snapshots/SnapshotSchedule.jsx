@@ -458,7 +458,7 @@ class SnapshotSchedule extends Component {
             <p className="card-title">Automatic {featureName}s</p>
             <div className="u-marginBottom--10">
               <p className="u-fontSize--normal u-fontWeight--normal u-lineHeight--normal u-textColor--bodyCopy u-marginTop--12 schedule">
-                Configure a schedule and retention policy for automatic{" "}
+                Configure a schedule and retention policy for {" "}
                 {featureName}s of the admin console and all application data.
               </p>
             </div>
