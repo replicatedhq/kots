@@ -597,12 +597,8 @@ class Snapshots extends Component {
                   </div>
                 </div>
                 <p className="u-marginTop--10 u-fontSize--normal u-lineHeight--more u-fontWeight--medium u-textColor--bodyCopy">
-                  {this.props.isEmbeddedCluster
-                    ? "Backups"
-                    : "Full snapshots (Instance)"}{" "}
-                  back up the Admin Console and all application data. They can
-                  be used for full Disaster Recovery; by restoring over top of
-                  this instance, or into a new cluster.{" "}
+                  Back up the admin console and all application data
+                  for disaster recovery.{" "}
                   {!this.props.isEmbeddedCluster && (
                     <>
                       <span
