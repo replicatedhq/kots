@@ -2,6 +2,7 @@ include ../Makefile.build.mk
 
 BIN_DIR := $(shell pwd)/bin
 KOTS_BIN_DIR := $(shell dirname $(shell pwd))/bin
+PLAYWRIGHT_DIR := $(shell pwd)/playwright
 
 SHELL := /bin/bash
 
@@ -32,6 +33,7 @@ test:
 		-v $(BIN_DIR)/e2e.test:/usr/local/bin/e2e.test \
 		-v $(KOTS_BIN_DIR)/kots:/usr/local/bin/kots \
 		-v $(KOTS_BIN_DIR)/kots:/usr/local/bin/kubectl-kots \
+		-v $(PLAYWRIGHT_DIR)/playwright-report:/playwright/playwright-report \
 		$(EXISTING_KUBECONFIG_VOLUME_MOUNT) \
 		-v /var/run/docker.sock:/var/run/docker.sock \
 		e2e-deps \

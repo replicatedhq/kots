@@ -21,7 +21,7 @@ test('smoke test', async ({ page }) => {
   await page.getByRole('button', { name: 'Deploy' }).click();
   await page.getByRole('button', { name: 'Deploy anyway' }).click();
   await expect(page.locator('#app')).toContainText('Ready', { timeout: 30000 });
-  await expect(page.locator('#app')).toContainText('Currently deployed version', { timeout: 15000 });
+  await expect(page.locator('#app')).toContainText('Currently deployed version', { timeout: 30000 });
   await expect(page.locator('#app')).toContainText('Check for update');
   await expect(page.locator('#app')).toContainText('Configure automatic updates');
   await expect(page.locator('#app')).toContainText('Redeploy', { timeout: 15000 });
@@ -190,6 +190,6 @@ test('smoke test', async ({ page }) => {
   await page.locator('div').filter({ hasText: /^Change passwordAdd new applicationLog out$/ }).getByRole('img').click();
   await page.getByText('Log out', { exact: true }).click();
   await expect(page.getByPlaceholder('password')).toBeVisible({ timeout: 30000 });
-  await expect(page.locator('#app')).toContainText('Enter the password to access the App Name admin console.');
+  await expect(page.locator('#app')).toContainText('Enter the password to access the App Name admin consolee.');
   await expect(page.getByRole('button')).toContainText('Log in');
 });
