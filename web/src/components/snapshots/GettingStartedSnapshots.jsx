@@ -39,10 +39,9 @@ export default function GettingStartedSnapshots(props) {
       ) : isVeleroInstalled ? (
         <p className="u-marginTop--10 u-fontSize--normal u-lineHeight--more u-fontWeight--medium u-textColor--bodyCopy">
           <Link to="/snapshots/settings" className="link u-fontSize--normal">
-            create a schedule
+            Create a schedule
           </Link>{" "}
-          for automatic {featureName}s or you can trigger one manually whenever
-          you’d like.
+          for automatic {featureName}s or take a {featureName} manually.
         </p>
       ) : (
         <p className="u-marginTop--10 u-fontSize--normal u-lineHeight--more u-fontWeight--medium u-textColor--bodyCopy">
