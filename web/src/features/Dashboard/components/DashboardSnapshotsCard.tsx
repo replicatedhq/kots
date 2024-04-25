@@ -102,7 +102,7 @@ export const DashboardSnapshotsCard = (props: Props) => {
 
     if (store?.aws) {
       return setState({
-        readableName: find(DESTINATIONS, ["value", "aws"])?.label,
+        selectedDestination: find(DESTINATIONS, ["value", "aws"]),
         locationStr: `${store?.bucket}${store?.path ? `/${store?.path}` : ""}`,
       });
     }
@@ -293,7 +293,7 @@ export const DashboardSnapshotsCard = (props: Props) => {
                 }`}
               />
               <span
-                className={`u-fontSize--small u-fontWeight--medium u-marginBottom--10 ${
+                className={`u-fontSize--small u-fontWeight--medium ${
                   isSnapshotAllowed
                     ? "u-textColor--success"
                     : "u-textColor--warning"
@@ -303,7 +303,11 @@ export const DashboardSnapshotsCard = (props: Props) => {
               </span>
             </>
           )}
-          <div className="flex alignItems--center">
+          <div
+            className={`flex alignItems--center ${
+              !isEmbeddedCluster && "u-marginTop--10"
+            }`}
+          >
             <span
               className={`icon snapshotDestination--${selectedDestination?.value} u-marginRight--5`}
             />
