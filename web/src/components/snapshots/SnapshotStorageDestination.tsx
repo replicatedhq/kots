@@ -484,8 +484,6 @@ class SnapshotStorageDestination extends Component<Props, State> {
     }
     const { store } = snapshotSettings;
 
-    console.log("snapshotSettings", snapshotSettings);
-
     if (store?.aws) {
       return this.setState({
         determiningDestination: false,
