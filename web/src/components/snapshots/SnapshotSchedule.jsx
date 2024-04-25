@@ -458,8 +458,8 @@ class SnapshotSchedule extends Component {
             <p className="card-title">Automatic {featureName}s</p>
             <div className="u-marginBottom--10">
               <p className="u-fontSize--normal u-fontWeight--normal u-lineHeight--normal u-textColor--bodyCopy u-marginTop--12 schedule">
-                Configure a schedule and retention policy for {" "}
-                {featureName}s of the admin console and all application data.
+                Configure a schedule and retention policy for {featureName}s of
+                the admin console and all application data.
               </p>
             </div>
             {!isEmbeddedCluster && (
@@ -592,7 +592,8 @@ class SnapshotSchedule extends Component {
                   Retention policy
                 </p>
                 <p className="u-fontSize--small u-textColor--bodyCopy u-fontWeight--normal u-lineHeight--normal u-marginBottom--10">
-                  Choose how long to retain {featureName}s before they are automatically deleted.
+                  Choose how long to retain {featureName}s before they are
+                  automatically deleted.
                 </p>
                 <div className="flex u-marginBottom--20">
                   <div className="flex-auto u-paddingRight--5">
