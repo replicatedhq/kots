@@ -12,7 +12,6 @@ import (
 	"github.com/mholt/archiver/v3"
 	"github.com/pkg/errors"
 	apptypes "github.com/replicatedhq/kots/pkg/app/types"
-	"github.com/replicatedhq/kots/pkg/helm"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/kurl"
@@ -53,29 +52,6 @@ func Collect(app *apptypes.App, clusterID string) (string, error) {
 		DisableUpload: true,
 	}
 	supportBundle, err := CreateSupportBundleDependencies(app, sequence, opts)
-	if err != nil {
-		return "", errors.Wrap(err, "could not generate support bundle dependencies")
-	}
-
-	supportBundle.ID = strings.ToLower(ksuid.New().String())
-	supportBundle.Slug = supportBundle.ID
-
-	err = store.GetStore().CreateInProgressSupportBundle(supportBundle)
-	if err != nil {
-		return "", errors.Wrap(err, "could not generate support bundle in progress")
-	}
-
-	progressChan := executeUpdateRoutine(supportBundle)
-	executeSupportBundleCollectRoutine(supportBundle, progressChan)
-
-	return supportBundle.ID, nil
-}
-
-func CollectHelm(app *apptypes.HelmApp) (string, error) {
-	opts := types.TroubleshootOptions{
-		DisableUpload: true,
-	}
-	supportBundle, err := CreateSupportBundleDependencies(app, app.Version, opts)
 	if err != nil {
 		return "", errors.Wrap(err, "could not generate support bundle dependencies")
 	}
@@ -137,23 +113,10 @@ func GetBundleCommand(appSlug string) []string {
 
 // CreateSupportBundleDependencies generates k8s secrets and configmaps for the support bundle spec and redactors.
 // These resources will be used when executing a support bundle collection
-func CreateSupportBundleDependencies(app apptypes.AppType, sequence int64, opts types.TroubleshootOptions) (*types.SupportBundle, error) {
-	var kotsKinds *kotsutil.KotsKinds
-	switch a := app.(type) {
-	case *apptypes.App:
-		k, err := getKotsKindsForApp(a, sequence)
-		if err != nil {
-			return nil, errors.Wrap(err, "failed to get kots kinds for app")
-		}
-		kotsKinds = k
-	case *apptypes.HelmApp:
-		k, err := getKotsKindsForHelmApp(a)
-		if err != nil {
-			return nil, errors.Wrap(err, "failed to get kots kinds for helm")
-		}
-		kotsKinds = k
-	default:
-		return nil, errors.Errorf("cannot get kotskinds for app type %T", app)
+func CreateSupportBundleDependencies(app *apptypes.App, sequence int64, opts types.TroubleshootOptions) (*types.SupportBundle, error) {
+	kotsKinds, err := getKotsKindsForApp(app, sequence)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get kots kinds for app")
 	}
 
 	supportBundle, err := CreateRenderedSpec(app, sequence, kotsKinds, opts)
@@ -217,32 +180,6 @@ func getKotsKindsForApp(app *apptypes.App, sequence int64) (*kotsutil.KotsKinds,
 	}
 
 	return kotsKinds, nil
-}
-
-func getKotsKindsForHelmApp(app *apptypes.HelmApp) (*kotsutil.KotsKinds, error) {
-	license, err := helm.GetChartLicenseFromSecretOrDownload(app)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to get license from secret")
-	}
-
-	specURL := strings.TrimSuffix(app.ChartPath, fmt.Sprintf("/%s", app.Release.Chart.Name()))
-	upstreamSupportBundle, upstreamRedactors, err := getSupportBundleSpecFromOCI(license.Spec.LicenseID, specURL)
-	if err != nil {
-		// don't return; use default collectors/analyzers when spec cannot be downloaded
-		logger.Infof("failed to download support bundle spec from %s: %v", specURL, err)
-	}
-
-	kotsKinds := kotsutil.EmptyKotsKinds()
-	kotsKinds.License = license
-
-	if upstreamSupportBundle != nil {
-		kotsKinds.SupportBundle = upstreamSupportBundle
-	}
-	if upstreamRedactors != nil {
-		kotsKinds.Redactor = upstreamRedactors
-	}
-
-	return &kotsKinds, nil
 }
 
 func getAnalysisFromBundle(archivePath string) ([]byte, error) {

@@ -11,15 +11,12 @@ import (
 	downstreamtypes "github.com/replicatedhq/kots/pkg/api/downstream/types"
 	"github.com/replicatedhq/kots/pkg/app"
 	apptypes "github.com/replicatedhq/kots/pkg/app/types"
-	"github.com/replicatedhq/kots/pkg/helm"
-	"github.com/replicatedhq/kots/pkg/kotsadmconfig"
 	license "github.com/replicatedhq/kots/pkg/kotsadmlicense"
 	upstream "github.com/replicatedhq/kots/pkg/kotsadmupstream"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/preflight"
 	"github.com/replicatedhq/kots/pkg/preflight/types"
 	kotspull "github.com/replicatedhq/kots/pkg/pull"
-	registrytypes "github.com/replicatedhq/kots/pkg/registry/types"
 	"github.com/replicatedhq/kots/pkg/reporting"
 	kotssemver "github.com/replicatedhq/kots/pkg/semver"
 	storepkg "github.com/replicatedhq/kots/pkg/store"
@@ -65,7 +62,7 @@ func Start() error {
 // if enabled, and a cron job was found, update the existing cron job with the latest cron spec
 // if disabled: stop the current running cron job (if exists)
 // no-op for airgap applications
-func Configure(a apptypes.AppType, updateCheckerSpec string) error {
+func Configure(a *apptypes.App, updateCheckerSpec string) error {
 	appId := a.GetID()
 	appSlug := a.GetSlug()
 	isAirgap := a.GetIsAirgap()
@@ -319,13 +316,13 @@ func checkForKotsAppUpdates(opts CheckForUpdatesOpts, finishedChan chan<- error)
 	}
 
 	if opts.Wait {
-		if err := downloadKotsAppUpdates(opts, a.ID, d.ClusterID, filteredUpdates, updates.UpdateCheckTime); err != nil {
+		if err := downloadAppUpdates(opts, a.ID, d.ClusterID, filteredUpdates, updates.UpdateCheckTime); err != nil {
 			return nil, errors.Wrap(err, "failed to download updates synchronously")
 		}
 	} else if ucr.AvailableUpdates > 0 {
 		go func() {
 			defer close(finishedChan)
-			err := downloadKotsAppUpdates(opts, a.ID, d.ClusterID, filteredUpdates, updates.UpdateCheckTime)
+			err := downloadAppUpdates(opts, a.ID, d.ClusterID, filteredUpdates, updates.UpdateCheckTime)
 			if err != nil {
 				logger.Error(errors.Wrap(err, "failed to download updates asynchronously"))
 			}
@@ -336,55 +333,7 @@ func checkForKotsAppUpdates(opts CheckForUpdatesOpts, finishedChan chan<- error)
 	return &ucr, nil
 }
 
-func downloadHelmAppUpdates(opts CheckForUpdatesOpts, helmApp *apptypes.HelmApp, licenseID string, updates []UpdateCheckRelease) error {
-	currentKotsKinds, err := helm.GetKotsKindsFromHelmApp(helmApp)
-	if err != nil {
-		return errors.Wrapf(err, "failed to get current config values")
-	}
-
-	// Download in reverse order, from oldest to newest
-	for i := len(updates) - 1; i >= 0; i-- {
-		update := updates[i]
-		status := fmt.Sprintf("Downloading release %s...", update.Version)
-		if err := store.SetTaskStatus("update-download", status, "running"); err != nil {
-			logger.Info("failed to set task status", zap.String("error", err.Error()))
-		}
-
-		kotsKinds, err := helm.GetKotsKindsFromUpstreamChartVersion(helmApp, licenseID, update.Version)
-		if err != nil {
-			return errors.Wrapf(err, "failed to pull update %s for chart", update.Version)
-		}
-		kotsKinds.ConfigValues = currentKotsKinds.ConfigValues.DeepCopy()
-
-		downstreamStatus := storetypes.VersionPending
-		// TODO: preflight handling
-		// if kotsKinds.HasPreflights() {
-		// 	downstreamStatus = types.VersionPendingPreflight
-		// }
-
-		sequence := int64(-1)                                // TODO: do something sensible, this value isn't used
-		registrySettings := registrytypes.RegistrySettings{} // TODO: private registries aren't supported yet
-		t, err := kotsadmconfig.NeedsConfiguration(helmApp.GetSlug(), sequence, helmApp.GetIsAirgap(), &kotsKinds, registrySettings)
-		if err != nil {
-			return errors.Wrap(err, "failed to check if version needs configuration")
-		}
-		if t {
-			downstreamStatus = storetypes.VersionPendingConfig
-		}
-
-		replicatedMetadata, err := helm.GetReplicatedMetadataFromUpstreamChartVersion(helmApp, licenseID, update.Version)
-		if err != nil {
-			return errors.Wrap(err, "failed to replicated metadata")
-		}
-
-		helm.SetCachedUpdateStatus(helmApp.ChartPath, update.Version, downstreamStatus)
-		helm.SetCachedUpdateMetadata(helmApp.ChartPath, update.Version, replicatedMetadata)
-	}
-
-	return nil
-}
-
-func downloadKotsAppUpdates(opts CheckForUpdatesOpts, appID string, clusterID string, updates []upstreamtypes.Update, updateCheckTime time.Time) error {
+func downloadAppUpdates(opts CheckForUpdatesOpts, appID string, clusterID string, updates []upstreamtypes.Update, updateCheckTime time.Time) error {
 	for index, update := range updates {
 		appSequence, err := upstream.DownloadUpdate(appID, update, opts.SkipPreflights, opts.SkipCompatibilityCheck)
 		if appSequence != nil {

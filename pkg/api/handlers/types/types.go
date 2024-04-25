@@ -13,10 +13,6 @@ type ListAppsResponse struct {
 	Apps []ResponseApp `json:"apps"`
 }
 
-type ListAppsHelmResponse struct {
-	Apps []HelmResponseApp `json:"apps"`
-}
-
 type AppStatusResponse struct {
 	AppStatus *appstatetypes.AppStatus `json:"appstatus"`
 }
@@ -56,12 +52,6 @@ type ResponseApp struct {
 type Credentials struct {
 	Username string `json:"username"`
 	Password string `json:"password"`
-}
-
-type HelmResponseApp struct {
-	ResponseApp
-	ChartPath   string      `json:"chartPath,omitempty"`
-	Credentials Credentials `json:"credentials"`
 }
 
 type ResponseDownstream struct {

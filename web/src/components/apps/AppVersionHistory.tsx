@@ -30,8 +30,6 @@ import { Repeater } from "../../utilities/repeater";
 import { AirgapUploader } from "../../utilities/airgapUploader";
 import ReactTooltip from "react-tooltip";
 import Pager from "../shared/Pager";
-import { HelmDeployModal } from "../shared/modals/HelmDeployModal";
-import { UseDownloadValues } from "../hooks";
 import { KotsPageTitle } from "@components/Head";
 
 import "@src/scss/components/apps/AppVersionHistory.scss";
@@ -131,8 +129,6 @@ type State = {
   showDeployWarningModal: boolean;
   showDiffErrModal: boolean;
   showDiffOverlay: boolean;
-  showHelmDeployModalForSequence: number | null;
-  showHelmDeployModalForVersionLabel: string;
   showLogsModal: boolean;
   showNoChangesModal: boolean;
   showSkipModal: boolean;
@@ -200,8 +196,6 @@ class AppVersionHistory extends Component<Props, State> {
       showDeployWarningModal: false,
       showDiffErrModal: false,
       showDiffOverlay: false,
-      showHelmDeployModalForSequence: null,
-      showHelmDeployModalForVersionLabel: "",
       showLogsModal: false,
       showNoChangesModal: false,
       showSkipModal: false,
@@ -1461,97 +1455,6 @@ class AppVersionHistory extends Component<Props, State> {
           }
           versionHistory={this.state.versionHistory}
         />
-        {this.state.showHelmDeployModalForVersionLabel ===
-          version.versionLabel &&
-          this.state.showHelmDeployModalForSequence === version.sequence && (
-            <UseDownloadValues
-              appSlug={this.props?.outletContext.app?.slug}
-              fileName="values.yaml"
-              sequence={version.parentSequence}
-              versionLabel={version.versionLabel}
-              isPending={false}
-            >
-              {({
-                download,
-                clearError: clearDownloadError,
-                downloadError: downloadError,
-                // isDownloading,
-                name,
-                ref,
-                url,
-              }: {
-                download: () => void;
-                clearError: () => void;
-                downloadError: boolean;
-                //  isDownloading: boolean;
-                name: string;
-                ref: string;
-                url: string;
-              }) => {
-                return (
-                  <>
-                    <HelmDeployModal
-                      appSlug={this.props?.outletContext.app?.slug}
-                      chartPath={this.props?.outletContext.app?.chartPath || ""}
-                      downloadClicked={download}
-                      downloadError={downloadError}
-                      //isDownloading={isDownloading}
-                      hideHelmDeployModal={() => {
-                        this.setState({
-                          showHelmDeployModalForVersionLabel: "",
-                        });
-                        clearDownloadError();
-                      }}
-                      registryUsername={
-                        this.props?.outletContext.app?.credentials?.username
-                      }
-                      registryPassword={
-                        this.props?.outletContext.app?.credentials?.password
-                      }
-                      revision={
-                        this.deployButtonStatus(version) === "Rollback"
-                          ? version.sequence
-                          : null
-                      }
-                      showHelmDeployModal={true}
-                      showDownloadValues={
-                        this.deployButtonStatus(version) === "Deploy"
-                      }
-                      subtitle={
-                        this.deployButtonStatus(version) === "Rollback"
-                          ? `Follow the steps below to rollback to revision ${version.sequence}.`
-                          : this.deployButtonStatus(version) === "Redeploy"
-                          ? "Follow the steps below to redeploy the release using the currently deployed chart version and values."
-                          : "Follow the steps below to upgrade the release."
-                      }
-                      title={` ${this.deployButtonStatus(version)} ${
-                        this.props?.outletContext.app.slug
-                      } ${
-                        this.deployButtonStatus(version) === "Deploy"
-                          ? version.versionLabel
-                          : ""
-                      }`}
-                      upgradeTitle={
-                        this.deployButtonStatus(version) === "Rollback"
-                          ? "Rollback release"
-                          : this.deployButtonStatus(version) === "Redeploy"
-                          ? "Redeploy release"
-                          : "Upgrade release"
-                      }
-                      version={version.versionLabel}
-                      namespace={this.props?.outletContext.app?.namespace}
-                    />
-                    <a
-                      href={url}
-                      download={name}
-                      className="hidden"
-                      ref={ref}
-                    />
-                  </>
-                );
-              }}
-            </UseDownloadValues>
-          )}
       </Fragment>
     );
   };

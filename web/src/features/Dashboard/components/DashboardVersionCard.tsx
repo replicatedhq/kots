@@ -12,9 +12,7 @@ import ShowDetailsModal from "@src/components/modals/ShowDetailsModal";
 import ShowLogsModal from "@src/components/modals/ShowLogsModal";
 import DeployWarningModal from "@src/components/shared/modals/DeployWarningModal";
 import SkipPreflightsModal from "@src/components/shared/modals/SkipPreflightsModal";
-import { HelmDeployModal } from "@src/components/shared/modals/HelmDeployModal";
 import classNames from "classnames";
-import { UseDownloadValues } from "@src/components//hooks";
 import { getReadableGitOpsProviderName } from "@src/utilities/utilities";
 import { useNextAppVersionWithIntercept } from "../api/useNextAppVersion";
 import { useSelectedApp } from "@features/App";
@@ -101,8 +99,6 @@ type State = {
   showDeployWarningModal: boolean;
   showDiffErrModal: boolean;
   showDiffModal: boolean;
-  showHelmDeployModal: boolean;
-  showHelmDeployModalWithVersionLabel?: string;
   showLogsModal: boolean;
   showNoChangesModal: boolean;
   showReleaseNotes: boolean;
@@ -151,8 +147,6 @@ const DashboardVersionCard = (props: Props) => {
       showDiffErrModal: false,
       showDiffModal: false,
       showDeployWarningModal: false,
-      showHelmDeployModal: false,
-      showHelmDeployModalWithVersionLabel: "",
       showLogsModal: false,
       showNoChangesModal: false,
       showReleaseNotes: false,
@@ -1756,70 +1750,6 @@ const DashboardVersionCard = (props: Props) => {
           hideSkipModal={() => setState({ showSkipModal: false })}
           onForceDeployClick={onForceDeployClick}
         />
-      )}
-      {state.showHelmDeployModal && (
-        <UseDownloadValues
-          appSlug={selectedApp?.slug}
-          fileName="values.yaml"
-          sequence={latestDeployableVersion?.parentSequence}
-          versionLabel={latestDeployableVersion?.versionLabel}
-          isPending={false}
-        >
-          {({
-            download,
-            error: downloadError,
-            name,
-            ref,
-            url,
-          }: {
-            download: () => void;
-            clearError: () => void;
-            error: string;
-            isDownloading: boolean;
-            name: string;
-            ref: RefObject<HTMLAnchorElement>;
-            url: string;
-          }) => {
-            const showDownloadValues =
-              state.showHelmDeployModalWithVersionLabel ===
-              latestDeployableVersion?.versionLabel;
-            return (
-              <>
-                <HelmDeployModal
-                  appSlug={selectedApp?.slug || ""}
-                  chartPath={selectedApp?.chartPath || ""}
-                  downloadClicked={download}
-                  downloadError={!!downloadError}
-                  hideHelmDeployModal={() => {
-                    setState({
-                      showHelmDeployModal: false,
-                    });
-                  }}
-                  registryUsername={selectedApp?.credentials?.username || ""}
-                  registryPassword={selectedApp?.credentials?.password || ""}
-                  showHelmDeployModal={true}
-                  showDownloadValues={showDownloadValues}
-                  subtitle={
-                    showDownloadValues
-                      ? "Follow the steps below to upgrade the release."
-                      : "Follow the steps below to redeploy the release using the currently deployed chart version and values."
-                  }
-                  title={
-                    showDownloadValues
-                      ? `Deploy ${selectedApp?.slug} ${state.showHelmDeployModalWithVersionLabel}`
-                      : `Redeploy ${selectedApp?.slug}`
-                  }
-                  upgradeTitle={
-                    showDownloadValues ? "Upgrade release" : "Redeploy release"
-                  }
-                  version={state.showHelmDeployModalWithVersionLabel || ""}
-                  namespace={selectedApp?.namespace || ""}
-                />
-                <a href={url} download={name} className="hidden" ref={ref} />
-              </>
-            );
-          }}
-        </UseDownloadValues>
       )}
       {state.showDiffModal && (
         <Modal

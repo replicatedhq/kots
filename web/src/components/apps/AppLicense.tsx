@@ -22,8 +22,6 @@ import "@src/scss/components/apps/AppLicense.scss";
 import { LicenseFields } from "@features/Dashboard";
 import { useLicenseWithIntercept } from "@features/App";
 import Icon from "../Icon";
-import { UseDownloadValues } from "../hooks";
-import { HelmDeployModal } from "../shared/modals/HelmDeployModal";
 
 type Props = {
   app: App;

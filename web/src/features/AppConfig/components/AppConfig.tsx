@@ -10,8 +10,6 @@ import map from "lodash/map";
 import Modal from "react-modal";
 import Loader from "../../../components/shared/Loader";
 import ErrorModal from "../../../components/modals/ErrorModal";
-import { HelmDeployModal } from "../../../components/shared/modals/HelmDeployModal";
-import { useDownloadValues, useSaveConfig } from "../../../components/hooks";
 import ConfigInfo from "./ConfigInfo";
 
 import "../../../scss/components/watches/WatchConfig.scss";
@@ -83,7 +81,6 @@ type State = {
   initialConfigGroups: ConfigGroup[];
   savingConfig: boolean;
   showConfigError: boolean;
-  showHelmDeployModal: boolean;
   showNextStepModal: boolean;
   showValidationError: boolean;
 };
@@ -114,7 +111,6 @@ class AppConfig extends Component<Props, State> {
       showValidationError: false,
       initialConfigGroups: [],
       savingConfig: false,
-      showHelmDeployModal: false,
       showNextStepModal: false,
     };
 
@@ -669,8 +665,6 @@ class AppConfig extends Component<Props, State> {
       downstreamVersionLabel = urlParams.get("semver") || "";
     }
 
-    const isPending = urlParams.get("isPending") === "true";
-
     let saveButtonText = fromLicenseFlow ? "Continue" : "Save config";
 
     const sections = document.querySelectorAll(".observe-elements");
@@ -714,18 +708,6 @@ class AppConfig extends Component<Props, State> {
 
     sections.forEach((section) => {
       observer.observe(section);
-    });
-
-    const { isError: saveError } = useSaveConfig({
-      appSlug: this.props.params.slug,
-    });
-
-    const { download, clearError: clearDownloadError } = useDownloadValues({
-      appSlug: this.props.params.slug,
-      fileName: "values.yaml",
-      sequence: params.sequence,
-      versionLabel: downstreamVersionLabel,
-      isPending: isPending,
     });
 
     return (
@@ -860,35 +842,6 @@ class AppConfig extends Component<Props, State> {
                   )}
                 </div>
               </div>
-              {this.state.showHelmDeployModal && (
-                <>
-                  <HelmDeployModal
-                    appSlug={this.props?.app?.slug}
-                    chartPath={this.props?.app?.chartPath || ""}
-                    downloadClicked={download}
-                    hideHelmDeployModal={() => {
-                      this.setState({ showHelmDeployModal: false });
-                      clearDownloadError();
-                    }}
-                    registryUsername={
-                      this.props?.app?.credentials?.username || ""
-                    }
-                    registryPassword={
-                      this.props?.app?.credentials?.password || ""
-                    }
-                    saveError={saveError}
-                    showHelmDeployModal={true}
-                    showDownloadValues={true}
-                    subtitle="Follow the steps below to upgrade the release with your new values.yaml."
-                    title={`Upgrade ${this.props?.app?.slug}`}
-                    upgradeTitle="Upgrade release"
-                    version={downstreamVersionLabel || ""}
-                    namespace={this.props?.app?.namespace || ""}
-                    downloadError={false}
-                    revision={null}
-                  />
-                </>
-              )}
             </div>{" "}
           </div>
         </div>

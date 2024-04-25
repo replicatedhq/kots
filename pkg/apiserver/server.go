@@ -19,7 +19,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/informers"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/operator"
-	"github.com/replicatedhq/kots/pkg/operator/client"
+	operatorclient "github.com/replicatedhq/kots/pkg/operator/client"
 	"github.com/replicatedhq/kots/pkg/persistence"
 	"github.com/replicatedhq/kots/pkg/policy"
 	"github.com/replicatedhq/kots/pkg/rbac"
@@ -81,25 +81,26 @@ func Start(params *APIServerParams) {
 		panic(err)
 	}
 
-	client := &client.Client{
+	kotsStore := store.GetStore()
+
+	operatorClient := &operatorclient.Client{
 		TargetNamespace:       util.AppNamespace(),
 		ExistingHookInformers: map[string]bool{},
 		HookStopChans:         []chan struct{}{},
 	}
-	store := store.GetStore()
 	k8sClientset, err := k8sutil.GetClientset()
 	if err != nil {
 		log.Println("error getting k8s clientset")
 		panic(err)
 	}
-	op := operator.Init(client, store, params.AutocreateClusterToken, k8sClientset)
+	op := operator.Init(operatorClient, kotsStore, params.AutocreateClusterToken, k8sClientset)
 	if err := op.Start(); err != nil {
 		log.Println("error starting the operator")
 		panic(err)
 	}
 	defer op.Shutdown()
 
-	if err := embeddedcluster.InitClusterState(context.TODO(), k8sClientset, store); err != nil {
+	if err := embeddedcluster.InitClusterState(context.TODO(), k8sClientset, kotsStore); err != nil {
 		log.Println("Failed to initialize cluster state:", err)
 	}
 
@@ -160,8 +161,6 @@ func Start(params *APIServerParams) {
 	loggingRouter.Use(handlers.LoggingMiddleware)
 
 	handler := &handlers.Handler{}
-
-	kotsStore := store.GetStore()
 
 	/**********************************************************************
 	* Unauthenticated routes

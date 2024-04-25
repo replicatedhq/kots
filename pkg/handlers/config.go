@@ -233,7 +233,6 @@ func (h *Handler) LiveAppConfig(w http.ResponseWriter, r *http.Request) {
 	var kotsKinds *kotsutil.KotsKinds
 	var nonRenderedConfig *kotsv1beta1.Config
 	var appLicense *kotsv1beta1.License
-	var app apptypes.AppType
 	var localRegistry registrytypes.RegistrySettings
 
 	configValues := configValuesFromConfigGroups(liveAppConfigRequest.ConfigGroups)
@@ -245,7 +244,6 @@ func (h *Handler) LiveAppConfig(w http.ResponseWriter, r *http.Request) {
 		JSON(w, http.StatusInternalServerError, liveAppConfigResponse)
 		return
 	}
-	app = foundApp
 
 	appLicense, err = store.GetStore().GetLatestLicenseForApp(foundApp.ID)
 	if err != nil {
@@ -312,9 +310,9 @@ func (h *Handler) LiveAppConfig(w http.ResponseWriter, r *http.Request) {
 		sequence += 1
 	}
 
-	versionInfo := template.VersionInfoFromInstallationSpec(sequence, app.GetIsAirgap(), kotsKinds.Installation.Spec) // sequence +1 because the sequence will be incremented on save (and we want the preview to be accurate)
-	appInfo := template.ApplicationInfo{Slug: app.GetSlug()}
-	renderedConfig, err := kotsconfig.TemplateConfigObjects(nonRenderedConfig, configValues, appLicense, &kotsKinds.KotsApplication, localRegistry, &versionInfo, &appInfo, kotsKinds.IdentityConfig, app.GetNamespace(), false)
+	versionInfo := template.VersionInfoFromInstallationSpec(sequence, foundApp.IsAirgap, kotsKinds.Installation.Spec) // sequence +1 because the sequence will be incremented on save (and we want the preview to be accurate)
+	appInfo := template.ApplicationInfo{Slug: foundApp.Slug}
+	renderedConfig, err := kotsconfig.TemplateConfigObjects(nonRenderedConfig, configValues, appLicense, &kotsKinds.KotsApplication, localRegistry, &versionInfo, &appInfo, kotsKinds.IdentityConfig, foundApp.GetNamespace(), false)
 	if err != nil {
 		liveAppConfigResponse.Error = "failed to render templates"
 		logger.Error(errors.Wrap(err, liveAppConfigResponse.Error))
@@ -408,7 +406,6 @@ func (h *Handler) CurrentAppConfig(w http.ResponseWriter, r *http.Request) {
 	var nonRenderedConfig *kotsv1beta1.Config
 	var license *kotsv1beta1.License
 	var localRegistry registrytypes.RegistrySettings
-	var app apptypes.AppType
 	var downstreamVersion *downstreamtypes.DownstreamVersion
 
 	foundApp, err := store.GetStore().GetAppFromSlug(appSlug)
@@ -418,7 +415,6 @@ func (h *Handler) CurrentAppConfig(w http.ResponseWriter, r *http.Request) {
 		JSON(w, http.StatusInternalServerError, currentAppConfigResponse)
 		return
 	}
-	app = foundApp
 
 	status, err := store.GetStore().GetDownstreamVersionStatus(foundApp.ID, sequence)
 	if err != nil {
@@ -516,9 +512,9 @@ func (h *Handler) CurrentAppConfig(w http.ResponseWriter, r *http.Request) {
 		sequence += 1
 	}
 
-	versionInfo := template.VersionInfoFromInstallationSpec(sequence, app.GetIsAirgap(), kotsKinds.Installation.Spec) // sequence +1 because the sequence will be incremented on save (and we want the preview to be accurate)
-	appInfo := template.ApplicationInfo{Slug: app.GetSlug()}
-	renderedConfig, err := kotsconfig.TemplateConfigObjects(nonRenderedConfig, configValues, license, &kotsKinds.KotsApplication, localRegistry, &versionInfo, &appInfo, kotsKinds.IdentityConfig, app.GetNamespace(), false)
+	versionInfo := template.VersionInfoFromInstallationSpec(sequence, foundApp.GetIsAirgap(), kotsKinds.Installation.Spec) // sequence +1 because the sequence will be incremented on save (and we want the preview to be accurate)
+	appInfo := template.ApplicationInfo{Slug: foundApp.GetSlug()}
+	renderedConfig, err := kotsconfig.TemplateConfigObjects(nonRenderedConfig, configValues, license, &kotsKinds.KotsApplication, localRegistry, &versionInfo, &appInfo, kotsKinds.IdentityConfig, foundApp.GetNamespace(), false)
 	if err != nil {
 		logger.Error(err)
 		currentAppConfigResponse.Error = "failed to render templates"
@@ -1033,8 +1029,8 @@ func (h *Handler) SetAppConfigValues(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	versionInfo := template.VersionInfoFromInstallationSpec(nextAppSequence, foundApp.IsAirgap, kotsKinds.Installation.Spec) // sequence +1 because the sequence will be incremented on save (and we want the preview to be accurate)
-	appInfo := template.ApplicationInfo{Slug: foundApp.Slug}
+	versionInfo := template.VersionInfoFromInstallationSpec(nextAppSequence, foundApp.GetIsAirgap(), kotsKinds.Installation.Spec) // sequence +1 because the sequence will be incremented on save (and we want the preview to be accurate)
+	appInfo := template.ApplicationInfo{Slug: foundApp.GetSlug()}
 	renderedConfig, err := kotsconfig.TemplateConfigObjects(newConfig, configValueMap, kotsKinds.License, &kotsKinds.KotsApplication, registryInfo, &versionInfo, &appInfo, kotsKinds.IdentityConfig, util.PodNamespace, true)
 	if err != nil {
 		setAppConfigValuesResponse.Error = "failed to render templates"

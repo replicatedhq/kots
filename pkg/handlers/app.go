@@ -17,7 +17,6 @@ import (
 	apptypes "github.com/replicatedhq/kots/pkg/app/types"
 	"github.com/replicatedhq/kots/pkg/embeddedcluster"
 	"github.com/replicatedhq/kots/pkg/gitops"
-	"github.com/replicatedhq/kots/pkg/helm"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/logger"
@@ -669,21 +668,4 @@ func (h *Handler) GetAutomatedInstallStatus(w http.ResponseWriter, r *http.Reque
 	}
 
 	JSON(w, http.StatusOK, response)
-}
-
-func helmReleaseToDownsreamVersion(installedRelease *helm.InstalledRelease) *downstreamtypes.DownstreamVersion {
-	return &downstreamtypes.DownstreamVersion{
-		VersionLabel:       installedRelease.Version,
-		Semver:             installedRelease.Semver,
-		UpdateCursor:       installedRelease.Version,
-		CreatedOn:          nil,
-		DeployedAt:         installedRelease.DeployedOn,
-		UpstreamReleasedAt: installedRelease.ReleasedOn,
-		IsDeployable:       false,               // TODO: implement
-		NonDeployableCause: "already installed", // TODO: implement
-		HasConfig:          true,                // TODO: implement
-		ParentSequence:     int64(installedRelease.Revision),
-		Sequence:           int64(installedRelease.Revision),
-		Status:             storetypes.DownstreamVersionStatus(installedRelease.Status.String()),
-	}
 }

@@ -128,7 +128,7 @@ func (h *Handler) AppUpdateCheck(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if contentType == "multipart/form-data" {
-		if !kotsApp.IsAirgap {
+		if !app.IsAirgap {
 			logger.Error(errors.New("not an airgap app"))
 			w.WriteHeader(http.StatusBadRequest)
 			w.Write([]byte("Cannot update an online install using an airgap bundle"))
@@ -184,7 +184,7 @@ func (h *Handler) AppUpdateCheck(w http.ResponseWriter, r *http.Request) {
 
 		tasks.StartUpdateTaskMonitor("update-download", finishedChan)
 
-		err = airgap.UpdateAppFromPath(kotsApp, rootDir, "", deploy, skipPreflights, skipCompatibilityCheck)
+		err = airgap.UpdateAppFromPath(app, rootDir, "", deploy, skipPreflights, skipCompatibilityCheck)
 		if err != nil {
 			finishedChan <- err
 
