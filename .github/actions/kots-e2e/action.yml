@@ -130,11 +130,11 @@ runs:
         name: ${{ github.job }}-${{ inputs.k8s-distribution }}-${{ inputs.k8s-version }}-playwright-report
         path: ./e2e/playwright/playwright-report/
 
-    - name: Print instructions to view playwright report
+    - name: Print instructions to view Playwright report
       if: ${{ failure() && steps.upload-playwright-report.outputs.artifact-url != '' }}
       run: |
         echo -e "\e[1;33m┌──────────────────────────────────────────────────────────────────────────────────────────────────────┐\e[0m"
-        echo -e "\e[1;33m│                                 To view the Playwright test report:                                  │\e[0m"
+        echo -e "\e[1;33m                                  To view the Playwright test report:                                   \e[0m"
         echo -e "\e[1;33m                                                                                                        \e[0m"
         echo -e "\e[1;33m   1- Download & extract the report from:                                                               \e[0m"
         echo -e "\e[1;33m                                                                                                        \e[0m"
@@ -143,7 +143,7 @@ runs:
         echo -e "\e[1;33m   2- From inside the extracted directory, run:                                                         \e[0m"
         echo -e "\e[1;33m                                                                                                        \e[0m"
         echo -e "\e[1;32m      npx playwright show-report .                                                                      \e[0m"
-        echo -e "\e[1;33m│                                                                                                      │\e[0m"
+        echo -e "\e[1;33m                                                                                                        \e[0m"
         echo -e "\e[1;33m└──────────────────────────────────────────────────────────────────────────────────────────────────────┘\e[0m"
       shell: bash
 
