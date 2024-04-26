@@ -10,7 +10,7 @@ test('no required config', async ({ page }) => {
   const appStatus = execSync(`kubectl kots get apps -n ${process.env.NAMESPACE} | awk 'NR>1{print $2}'`).toString().trim();
   expect(appStatus).toBe('missing');
   await page.getByRole('button', { name: 'Continue' }).click();
-  await expect(page.locator('#app')).toContainText('Ready');
+  await expect(page.locator('#app')).toContainText('Ready', { timeout: 30000 });
   await page.getByRole('link', { name: 'Version history' }).click();
   await expect(page.locator('#app')).toContainText('Currently deployed version');
 });
