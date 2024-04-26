@@ -100,7 +100,7 @@ test('smoke test', async ({ page }) => {
   await page.getByRole('button', { name: 'Deploy this version' }).click();
   await expect(page.locator('#app')).toContainText('Deploying');
   await expect(page.locator('#app')).toContainText('Currently deployed version');
-  await expect(page.locator('#app')).toContainText('Application upppp to date.');
+  await expect(page.locator('#app')).toContainText('Application up to date.');
   await expect(page.locator('.currentVersion--wrapper')).toContainText('Sequence 1');
   await page.getByRole('link', { name: 'Registry settings' }).click();
   await page.getByPlaceholder('artifactory.some-big-bank.com').click();
