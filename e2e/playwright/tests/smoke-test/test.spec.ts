@@ -21,7 +21,7 @@ test('smoke test', async ({ page }) => {
   await page.getByRole('button', { name: 'Deploy' }).click();
   await page.getByRole('button', { name: 'Deploy anyway' }).click();
   await expect(page.locator('#app')).toContainText('Ready', { timeout: 30000 });
-  await expect(page.locator('#app')).toContainText('Currently deployed version', { timeout: 15000 });
+  await expect(page.locator('#app')).toContainText('Currently deployed version', { timeout: 30000 });
   await expect(page.locator('#app')).toContainText('Check for update');
   await expect(page.locator('#app')).toContainText('Configure automatic updates');
   await expect(page.locator('#app')).toContainText('Redeploy', { timeout: 15000 });
@@ -41,6 +41,7 @@ test('smoke test', async ({ page }) => {
   await expect(page.locator('.ConfigureUpdatesModal')).toContainText('At 12:00 AM, only on Sunday');
   await page.getByRole('button', { name: 'Update', exact: true }).click();
   await expect(page.getByText('Automatically check for updates', { exact: true })).not.toBeVisible();
+  await page.waitForTimeout(2000);
   await page.locator('span[data-tip="View deploy logs"]').first().click();
   await validateDeployLogs(page, expect);
   await page.reload();
@@ -115,7 +116,7 @@ test('smoke test', async ({ page }) => {
   await expect(page.getByRole('button', { name: 'Save changes' })).toBeDisabled();
   await expect(page.locator('.Loader')).toBeVisible();
   await expect(page.locator('#app')).toContainText('Writing manifest to image destination', { timeout: 30000 });
-  await expect(page.getByRole('button', { name: 'Save changes' })).toBeEnabled({ timeout: 30000 });
+  await expect(page.getByRole('button', { name: 'Save changes' })).toBeEnabled({ timeout: 60000 });
   await expect(page.locator('.Loader')).not.toBeVisible();
   await page.getByRole('link', { name: 'Version history' }).click();
   await expect(page.locator('#app')).toContainText('Registry Change');

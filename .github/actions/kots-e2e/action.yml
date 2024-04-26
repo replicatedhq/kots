@@ -123,6 +123,12 @@ runs:
           SKIP_TEARDOWN=1
       shell: bash
 
+    - uses: actions/upload-artifact@v4
+      if: ${{ failure() }}
+      with:
+        name: ${{ github.job }}-${{ inputs.k8s-distribution }}-${{ inputs.k8s-version }}-playwright-report
+        path: ./e2e/playwright/playwright-report/
+
     - name: Print logs on failure
       if: ${{ failure() }}
       env:
