@@ -27,5 +27,4 @@ AutomaticUpdatesModalExample.args = {
   isSemverRequired: false,
   gitopsIsConnected: false,
   onAutomaticUpdatesConfigured: () => {},
-  isHelmManaged: false,
 };

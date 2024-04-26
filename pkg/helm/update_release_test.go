@@ -141,7 +141,7 @@ func TestMigrateExistingHelmReleaseSecrets(t *testing.T) {
 					t.Errorf("expected helm release secret to be in namespace %s, but was in %s", tt.args.releaseNamespace, secret.Namespace)
 				}
 
-				release, err := HelmReleaseFromSecretData(secret.Data["release"])
+				release, err := helmReleaseFromSecretData(secret.Data["release"])
 				if err != nil {
 					t.Errorf("failed to get helm release from secret data: %v", err)
 				}

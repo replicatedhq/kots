@@ -174,11 +174,7 @@ const GenerateSupportBundleModal = ({
   }, [state.supportBundles]);
 
   const collectBundle = (clusterId: number | undefined) => {
-    let url = `${process.env.API_ENDPOINT}/troubleshoot/supportbundle/app/${selectedApp?.id}/cluster/${clusterId}/collect`;
-    if (!selectedApp?.id) {
-      // TODO: check if helm managed, not if id is missing
-      url = `${process.env.API_ENDPOINT}/troubleshoot/supportbundle/app/${selectedApp?.slug}/collect`;
-    }
+    const url = `${process.env.API_ENDPOINT}/troubleshoot/supportbundle/app/${selectedApp?.id}/cluster/${clusterId}/collect`;
 
     fetch(url, {
       headers: {

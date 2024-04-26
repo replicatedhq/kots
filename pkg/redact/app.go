@@ -29,7 +29,7 @@ func GetAppRedactSpecURI(appSlug string) string {
 }
 
 // CreateRenderedAppRedactSpec creates a configmap that contains the redaction yaml spec included in the application release
-func CreateRenderedAppRedactSpec(clientset kubernetes.Interface, app apptypes.AppType, sequence int64, kotsKinds *kotsutil.KotsKinds) error {
+func CreateRenderedAppRedactSpec(clientset kubernetes.Interface, app *apptypes.App, sequence int64, kotsKinds *kotsutil.KotsKinds) error {
 	builtRedactor := kotsKinds.Redactor.DeepCopy()
 	if builtRedactor == nil {
 		builtRedactor = &troubleshootv1beta2.Redactor{

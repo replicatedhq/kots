@@ -176,17 +176,6 @@ var HandlerPolicyTests = map[string][]HandlerPolicyTest{
 			ExpectStatus: http.StatusOK,
 		},
 	},
-	"CollectHelmSupportBundle": {
-		{
-			Vars:         map[string]string{"appSlug": "my-app"},
-			Roles:        []rbactypes.Role{rbac.ClusterAdminRole},
-			SessionRoles: []string{rbac.ClusterAdminRoleID},
-			Calls: func(storeRecorder *mock_store.MockStoreMockRecorder, handlerRecorder *mock_handlers.MockKOTSHandlerMockRecorder) {
-				handlerRecorder.CollectHelmSupportBundle(gomock.Any(), gomock.Any())
-			},
-			ExpectStatus: http.StatusOK,
-		},
-	},
 	"ShareSupportBundle": {
 		{
 			Vars:         map[string]string{"appSlug": "my-app", "bundleId": "234"},
@@ -1379,27 +1368,6 @@ var HandlerPolicyTests = map[string][]HandlerPolicyTest{
 			SessionRoles: []string{rbac.ClusterAdminRoleID},
 			Calls: func(storeRecorder *mock_store.MockStoreMockRecorder, handlerRecorder *mock_handlers.MockKOTSHandlerMockRecorder) {
 				handlerRecorder.ChangePassword(gomock.Any(), gomock.Any())
-			},
-			ExpectStatus: http.StatusOK,
-		},
-	},
-	"IsHelmManaged": {
-		{
-			Roles:        []rbactypes.Role{rbac.ClusterAdminRole},
-			SessionRoles: []string{rbac.ClusterAdminRoleID},
-			Calls: func(storeRecorder *mock_store.MockStoreMockRecorder, handlerRecorder *mock_handlers.MockKOTSHandlerMockRecorder) {
-				handlerRecorder.IsHelmManaged(gomock.Any(), gomock.Any())
-			},
-			ExpectStatus: http.StatusOK,
-		},
-	},
-	"GetAppValuesFile": {
-		{
-			Vars:         map[string]string{"appSlug": "123", "sequence": "1"},
-			Roles:        []rbactypes.Role{rbac.ClusterAdminRole},
-			SessionRoles: []string{rbac.ClusterAdminRoleID},
-			Calls: func(storeRecorder *mock_store.MockStoreMockRecorder, handlerRecorder *mock_handlers.MockKOTSHandlerMockRecorder) {
-				handlerRecorder.GetAppValuesFile(gomock.Any(), gomock.Any())
 			},
 			ExpectStatus: http.StatusOK,
 		},

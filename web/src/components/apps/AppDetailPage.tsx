@@ -24,7 +24,6 @@ type Props = {
   adminConsoleMetadata?: Metadata;
   appNameSpace: string | null;
   appName: string | null;
-  isHelmManaged: boolean;
   onActiveInitSession: (session: string) => void;
   ping: () => void;
   // TODO: remove this after adding app hook to Root-
@@ -101,8 +100,6 @@ function AppDetailPage(props: Props) {
     // navigate to first app if available
     if (appsList && appsList?.length > 0) {
       navigate(`/app/${appsList[0].slug}`, { replace: true });
-    } else if (props.isHelmManaged) {
-      navigate("/install-with-helm", { replace: true });
     } else if (Utilities.isLoggedIn()) {
       navigate("/upload-license", { replace: true });
     } else {
@@ -411,7 +408,6 @@ function AppDetailPage(props: Props) {
     cluster: selectedApp?.downstream?.cluster,
     displayErrorModal: state.displayErrorModal,
     isBundleUploading: isBundleUploading,
-    isHelmManaged: props.isHelmManaged,
     isEmbeddedCluster: props.isEmbeddedCluster,
     isVeleroInstalled: isVeleroInstalled,
     logo: selectedApp?.iconUri,
@@ -487,7 +483,6 @@ function AppDetailPage(props: Props) {
                 activeTab={lastItem === params.slug ? "app" : lastItem}
                 app={selectedApp}
                 isVeleroInstalled={isVeleroInstalled}
-                isHelmManaged={props.isHelmManaged}
                 isEmbeddedCluster={props.isEmbeddedCluster}
               />
               <Outlet context={context} />

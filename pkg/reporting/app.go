@@ -1,10 +1,7 @@
 package reporting
 
 import (
-	"bytes"
-	"compress/gzip"
 	"context"
-	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -27,14 +24,7 @@ import (
 	"github.com/segmentio/ksuid"
 	velerov1 "github.com/vmware-tanzu/velero/pkg/apis/velero/v1"
 	veleroclientv1 "github.com/vmware-tanzu/velero/pkg/generated/clientset/versioned/typed/velero/v1"
-	helmrelease "helm.sh/helm/v3/pkg/release"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/client-go/kubernetes"
-)
-
-var (
-	clusterID string // set when in Helm managed mode
 )
 
 type SnapshotReport struct {
@@ -46,16 +36,9 @@ type SnapshotReport struct {
 }
 
 func Init() error {
-	if util.IsHelmManaged() {
-		err := initFromHelm()
-		if err != nil {
-			return errors.Wrap(err, "failed to init from Helm")
-		}
-	} else {
-		err := initFromDownstream()
-		if err != nil {
-			return errors.Wrap(err, "failed to init from downstream")
-		}
+	err := initFromDownstream()
+	if err != nil {
+		return errors.Wrap(err, "failed to init from downstream")
 	}
 
 	if kotsadm.IsAirgap() {
@@ -72,69 +55,6 @@ func Init() error {
 	}
 
 	return nil
-}
-
-func initFromHelm() error {
-	// ClusterID in reporting will be the UID of the v1 of Admin Console secret
-	clientSet, err := k8sutil.GetClientset()
-	if err != nil {
-		return errors.Wrap(err, "failed to get clientset")
-	}
-
-	selectorLabels := map[string]string{
-		"owner":   "helm",
-		"version": "1",
-	}
-	listOpts := metav1.ListOptions{
-		LabelSelector: labels.SelectorFromSet(selectorLabels).String(),
-	}
-
-	secrets, err := clientSet.CoreV1().Secrets(util.PodNamespace).List(context.TODO(), listOpts)
-	if err != nil {
-		return errors.Wrap(err, "failed to list secrets")
-	}
-
-	for _, secret := range secrets.Items {
-		helmRelease, err := helmReleaseFromSecretData(secret.Data["release"])
-		if err != nil {
-			logger.Warnf("failed to parse helm chart in secret %s: %v", &secret.ObjectMeta.Name, err)
-			continue
-		}
-
-		if helmRelease.Chart == nil || helmRelease.Chart.Metadata == nil {
-			continue
-		}
-		if helmRelease.Chart.Metadata.Name != "admin-console" {
-			continue
-		}
-
-		clusterID = string(secret.ObjectMeta.UID)
-		return nil
-	}
-
-	return errors.New("admin-console secret v1 not found")
-}
-
-func helmReleaseFromSecretData(data []byte) (*helmrelease.Release, error) {
-	base64Reader := base64.NewDecoder(base64.StdEncoding, bytes.NewReader(data))
-	gzreader, err := gzip.NewReader(base64Reader)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to create gzip reader")
-	}
-	defer gzreader.Close()
-
-	releaseData, err := ioutil.ReadAll(gzreader)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to read from gzip reader")
-	}
-
-	release := &helmrelease.Release{}
-	err = json.Unmarshal(releaseData, &release)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to unmarshal release data")
-	}
-
-	return release, nil
 }
 
 func initFromDownstream() error {
@@ -208,19 +128,14 @@ func GetReportingInfo(appID string) *types.ReportingInfo {
 	if err != nil {
 		logger.Debugf("failed to get clientset: %v", err.Error())
 	}
+	r.ClusterID = k8sutil.GetKotsadmID(clientset)
 
-	if util.IsHelmManaged() {
-		r.ClusterID = clusterID
-	} else {
-		r.ClusterID = k8sutil.GetKotsadmID(clientset)
-
-		di, err := getDownstreamInfo(appID)
-		if err != nil {
-			logger.Debugf("failed to get downstream info: %v", err.Error())
-		}
-		if di != nil {
-			r.Downstream = *di
-		}
+	di, err := getDownstreamInfo(appID)
+	if err != nil {
+		logger.Debugf("failed to get downstream info: %v", err.Error())
+	}
+	if di != nil {
+		r.Downstream = *di
 	}
 
 	// get kubernetes cluster version
@@ -236,15 +151,11 @@ func GetReportingInfo(appID string) *types.ReportingInfo {
 	}
 
 	// get app status
-	if util.IsHelmManaged() {
-		logger.Infof("TODO: get app status in Helm managed mode")
+	appStatus, err := store.GetStore().GetAppStatus(appID)
+	if err != nil {
+		logger.Debugf("failed to get app status: %v", err.Error())
 	} else {
-		appStatus, err := store.GetStore().GetAppStatus(appID)
-		if err != nil {
-			logger.Debugf("failed to get app status: %v", err.Error())
-		} else {
-			r.AppStatus = string(appStatus.State)
-		}
+		r.AppStatus = string(appStatus.State)
 	}
 
 	r.IsKurl, err = kurl.IsKurl(clientset)

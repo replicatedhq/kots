@@ -1,4 +1,4 @@
-import { RefObject, useEffect, useReducer } from "react";
+import { useEffect, useReducer } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import ReactTooltip from "react-tooltip";
 import DashboardGitOpsCard from "./DashboardGitOpsCard";
@@ -12,13 +12,10 @@ import ShowDetailsModal from "@src/components/modals/ShowDetailsModal";
 import ShowLogsModal from "@src/components/modals/ShowLogsModal";
 import DeployWarningModal from "@src/components/shared/modals/DeployWarningModal";
 import SkipPreflightsModal from "@src/components/shared/modals/SkipPreflightsModal";
-import { HelmDeployModal } from "@src/components/shared/modals/HelmDeployModal";
 import classNames from "classnames";
-import { UseDownloadValues } from "@src/components//hooks";
 import { getReadableGitOpsProviderName } from "@src/utilities/utilities";
 import { useNextAppVersionWithIntercept } from "../api/useNextAppVersion";
 import { useSelectedApp } from "@features/App";
-import { useIsHelmManaged } from "@src/components//hooks";
 
 import {
   Utilities,
@@ -102,8 +99,6 @@ type State = {
   showDeployWarningModal: boolean;
   showDiffErrModal: boolean;
   showDiffModal: boolean;
-  showHelmDeployModal: boolean;
-  showHelmDeployModalWithVersionLabel?: string;
   showLogsModal: boolean;
   showNoChangesModal: boolean;
   showReleaseNotes: boolean;
@@ -115,13 +110,6 @@ type State = {
   versionToDeploy: Version | null;
   viewLogsErrMsg: string;
   yamlErrorDetails: string[];
-};
-
-const filterNonHelmTabs = (tab: string, isHelmManaged: boolean) => {
-  if (isHelmManaged) {
-    return tab.startsWith("helm");
-  }
-  return true;
 };
 
 const DashboardVersionCard = (props: Props) => {
@@ -159,8 +147,6 @@ const DashboardVersionCard = (props: Props) => {
       showDiffErrModal: false,
       showDiffModal: false,
       showDeployWarningModal: false,
-      showHelmDeployModal: false,
-      showHelmDeployModalWithVersionLabel: "",
       showLogsModal: false,
       showNoChangesModal: false,
       showReleaseNotes: false,
@@ -181,8 +167,6 @@ const DashboardVersionCard = (props: Props) => {
     refetch: refetchNextAppVersionWithIntercept,
   } = useNextAppVersionWithIntercept();
   const { latestDeployableVersion } = newAppVersionWithInterceptData || {};
-
-  const { data: isHelmManaged = false } = useIsHelmManaged();
 
   // moving this out of the state because new repeater instances were getting created
   // and it doesn't really affect the UI
@@ -270,7 +254,6 @@ const DashboardVersionCard = (props: Props) => {
       <div className="flex action-tab-bar u-marginTop--10">
         {tabs
           .filter((tab) => tab !== "renderError")
-          .filter((tab) => filterNonHelmTabs(tab, isHelmManaged))
           .map((tab) => (
             <div
               className={`tab-item blue ${tab === selectedTab && "is-active"}`}
@@ -293,9 +276,7 @@ const DashboardVersionCard = (props: Props) => {
     }
     try {
       let clusterId = selectedApp?.downstream?.cluster?.id;
-      if (isHelmManaged) {
-        clusterId = 0;
-      }
+
       setState({
         logsLoading: true,
         showLogsModal: true,
@@ -319,9 +300,7 @@ const DashboardVersionCard = (props: Props) => {
         if (isFailing) {
           selectedTab = Utilities.getDeployErrorTab(response.logs);
         } else {
-          selectedTab = Object.keys(response.logs).filter((tab) =>
-            filterNonHelmTabs(tab, isHelmManaged)
-          )[0];
+          selectedTab = Object.keys(response.logs)[0];
         }
         setState({
           logs: response.logs,
@@ -597,13 +576,6 @@ const DashboardVersionCard = (props: Props) => {
     continueWithFailedPreflights = false,
     redeploy = false
   ) => {
-    if (isHelmManaged) {
-      setState({
-        showHelmDeployModal: true,
-        showHelmDeployModalWithVersionLabel: version?.versionLabel,
-      });
-      return;
-    }
     const clusterSlug = selectedApp?.downstream?.cluster?.slug;
     if (!clusterSlug) {
       return;
@@ -655,11 +627,6 @@ const DashboardVersionCard = (props: Props) => {
   const renderCurrentVersion = () => {
     const { currentVersion } = props;
 
-    let sequenceLabel = "Sequence";
-    if (isHelmManaged) {
-      sequenceLabel = "Revision";
-    }
-
     return (
       <div className="flex1 flex-column">
         <div className="flex">
@@ -669,7 +636,7 @@ const DashboardVersionCard = (props: Props) => {
                 {currentVersion?.versionLabel || currentVersion?.appTitle}
               </p>
               <p className="u-fontSize--small u-textColor--bodyCopy u-fontWeight--medium u-marginLeft--10">
-                {sequenceLabel} {currentVersion?.sequence}
+                Sequence {currentVersion?.sequence}
               </p>
             </div>
             <div>{getCurrentVersionStatus(currentVersion)}</div>
@@ -763,12 +730,12 @@ const DashboardVersionCard = (props: Props) => {
     } else if (diffSummary) {
       return (
         <div className="u-fontSize--small u-fontWeight--medium u-lineHeight--normal u-marginTop--5">
-          {!isHelmManaged && diffSummary.filesChanged > 0 ? (
+          {diffSummary.filesChanged > 0 ? (
             <div className="DiffSummary u-marginRight--10">
               <span className="files">
                 {diffSummary.filesChanged} files changed{" "}
               </span>
-              {!isHelmManaged && !downstream?.gitops?.isConnected && (
+              {!downstream?.gitops?.isConnected && (
                 <Link
                   className="u-fontSize--small link u-marginLeft--5"
                   to={`${location.pathname}?diff/${props.currentVersion?.sequence}/${version.parentSequence}`}
@@ -1040,9 +1007,6 @@ const DashboardVersionCard = (props: Props) => {
   };
 
   const isActionButtonDisabled = (version: Version) => {
-    if (isHelmManaged) {
-      return false;
-    }
     if (state.versionDownloadStatuses?.[version.sequence]?.downloadingVersion) {
       return true;
     }
@@ -1157,11 +1121,6 @@ const DashboardVersionCard = (props: Props) => {
     const isPendingDownload = version.status === "pending_download";
     const isSecondaryActionBtn = needsConfiguration || isPendingDownload;
 
-    let url = `/app/${selectedApp?.slug}/config/${version.sequence}`;
-    if (isHelmManaged) {
-      url = `${url}?isPending=true&semver=${version.versionLabel}`;
-    }
-
     return (
       <div className="flex flex1 alignItems--center justifyContent--flexEnd">
         {renderReleaseNotes(version)}
@@ -1176,7 +1135,9 @@ const DashboardVersionCard = (props: Props) => {
             disabled={isActionButtonDisabled(version)}
             onClick={() => {
               if (needsConfiguration) {
-                navigate(url);
+                navigate(
+                  `/app/${selectedApp?.slug}/config/${version.sequence}`
+                );
                 return;
               }
               if (version.needsKotsUpgrade) {
@@ -1405,11 +1366,9 @@ const DashboardVersionCard = (props: Props) => {
                   {latestDeployableVersion.versionLabel ||
                     latestDeployableVersion.title}
                 </p>
-                {isHelmManaged || (
-                  <p className="u-fontSize--small u-textColor--bodyCopy u-fontWeight--medium u-marginLeft--10">
-                    Sequence {latestDeployableVersion.sequence}
-                  </p>
-                )}
+                <p className="u-fontSize--small u-textColor--bodyCopy u-fontWeight--medium u-marginLeft--10">
+                  Sequence {latestDeployableVersion.sequence}
+                </p>
                 {latestDeployableVersion.isRequired && (
                   <span className="status-tag required u-marginLeft--10">
                     {" "}
@@ -1496,11 +1455,6 @@ const DashboardVersionCard = (props: Props) => {
         showAutomaticUpdatesModal={props.showAutomaticUpdatesModal}
       />
     );
-  }
-
-  let isPending = false;
-  if (isHelmManaged && latestDeployableVersion?.status?.startsWith("pending")) {
-    isPending = true;
   }
 
   return (
@@ -1796,70 +1750,6 @@ const DashboardVersionCard = (props: Props) => {
           hideSkipModal={() => setState({ showSkipModal: false })}
           onForceDeployClick={onForceDeployClick}
         />
-      )}
-      {state.showHelmDeployModal && (
-        <UseDownloadValues
-          appSlug={selectedApp?.slug}
-          fileName="values.yaml"
-          sequence={latestDeployableVersion?.parentSequence}
-          versionLabel={latestDeployableVersion?.versionLabel}
-          isPending={isPending}
-        >
-          {({
-            download,
-            error: downloadError,
-            name,
-            ref,
-            url,
-          }: {
-            download: () => void;
-            clearError: () => void;
-            error: string;
-            isDownloading: boolean;
-            name: string;
-            ref: RefObject<HTMLAnchorElement>;
-            url: string;
-          }) => {
-            const showDownloadValues =
-              state.showHelmDeployModalWithVersionLabel ===
-              latestDeployableVersion?.versionLabel;
-            return (
-              <>
-                <HelmDeployModal
-                  appSlug={selectedApp?.slug || ""}
-                  chartPath={selectedApp?.chartPath || ""}
-                  downloadClicked={download}
-                  downloadError={!!downloadError}
-                  hideHelmDeployModal={() => {
-                    setState({
-                      showHelmDeployModal: false,
-                    });
-                  }}
-                  registryUsername={selectedApp?.credentials?.username || ""}
-                  registryPassword={selectedApp?.credentials?.password || ""}
-                  showHelmDeployModal={true}
-                  showDownloadValues={showDownloadValues}
-                  subtitle={
-                    showDownloadValues
-                      ? "Follow the steps below to upgrade the release."
-                      : "Follow the steps below to redeploy the release using the currently deployed chart version and values."
-                  }
-                  title={
-                    showDownloadValues
-                      ? `Deploy ${selectedApp?.slug} ${state.showHelmDeployModalWithVersionLabel}`
-                      : `Redeploy ${selectedApp?.slug}`
-                  }
-                  upgradeTitle={
-                    showDownloadValues ? "Upgrade release" : "Redeploy release"
-                  }
-                  version={state.showHelmDeployModalWithVersionLabel || ""}
-                  namespace={selectedApp?.namespace || ""}
-                />
-                <a href={url} download={name} className="hidden" ref={ref} />
-              </>
-            );
-          }}
-        </UseDownloadValues>
       )}
       {state.showDiffModal && (
         <Modal

@@ -18,11 +18,3 @@ const (
 	AutoDeploySemverMajorMinorPatch AutoDeploy = "semver-major-minor-patch"
 	AutoDeploySequence              AutoDeploy = "sequence"
 )
-
-type AppType interface {
-	GetID() string
-	GetSlug() string
-	GetCurrentSequence() int64
-	GetIsAirgap() bool
-	GetNamespace() string
-}

@@ -130,18 +130,6 @@ func (mr *MockKOTSHandlerMockRecorder) CheckAirgapBundleChunk(w, r interface{}) 
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CheckAirgapBundleChunk", reflect.TypeOf((*MockKOTSHandler)(nil).CheckAirgapBundleChunk), w, r)
 }
 
-// CollectHelmSupportBundle mocks base method.
-func (m *MockKOTSHandler) CollectHelmSupportBundle(w http.ResponseWriter, r *http.Request) {
-	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "CollectHelmSupportBundle", w, r)
-}
-
-// CollectHelmSupportBundle indicates an expected call of CollectHelmSupportBundle.
-func (mr *MockKOTSHandlerMockRecorder) CollectHelmSupportBundle(w, r interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CollectHelmSupportBundle", reflect.TypeOf((*MockKOTSHandler)(nil).CollectHelmSupportBundle), w, r)
-}
-
 // CollectSupportBundle mocks base method.
 func (m *MockKOTSHandler) CollectSupportBundle(w http.ResponseWriter, r *http.Request) {
 	m.ctrl.T.Helper()
@@ -634,18 +622,6 @@ func (mr *MockKOTSHandlerMockRecorder) GetAppStatus(w, r interface{}) *gomock.Ca
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAppStatus", reflect.TypeOf((*MockKOTSHandler)(nil).GetAppStatus), w, r)
 }
 
-// GetAppValuesFile mocks base method.
-func (m *MockKOTSHandler) GetAppValuesFile(w http.ResponseWriter, r *http.Request) {
-	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "GetAppValuesFile", w, r)
-}
-
-// GetAppValuesFile indicates an expected call of GetAppValuesFile.
-func (mr *MockKOTSHandlerMockRecorder) GetAppValuesFile(w, r interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAppValuesFile", reflect.TypeOf((*MockKOTSHandler)(nil).GetAppValuesFile), w, r)
-}
-
 // GetAppVersionDownloadStatus mocks base method.
 func (m *MockKOTSHandler) GetAppVersionDownloadStatus(w http.ResponseWriter, r *http.Request) {
 	m.ctrl.T.Helper()
@@ -1112,18 +1088,6 @@ func (m *MockKOTSHandler) InitGitOpsConnection(w http.ResponseWriter, r *http.Re
 func (mr *MockKOTSHandlerMockRecorder) InitGitOpsConnection(w, r interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "InitGitOpsConnection", reflect.TypeOf((*MockKOTSHandler)(nil).InitGitOpsConnection), w, r)
-}
-
-// IsHelmManaged mocks base method.
-func (m *MockKOTSHandler) IsHelmManaged(w http.ResponseWriter, r *http.Request) {
-	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "IsHelmManaged", w, r)
-}
-
-// IsHelmManaged indicates an expected call of IsHelmManaged.
-func (mr *MockKOTSHandlerMockRecorder) IsHelmManaged(w, r interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsHelmManaged", reflect.TypeOf((*MockKOTSHandler)(nil).IsHelmManaged), w, r)
 }
 
 // ListApps mocks base method.

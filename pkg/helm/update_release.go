@@ -6,9 +6,11 @@ import (
 	"context"
 	"encoding/base64"
 	"encoding/json"
+	"io"
 
 	"github.com/pkg/errors"
 	"helm.sh/helm/v3/pkg/release"
+	helmrelease "helm.sh/helm/v3/pkg/release"
 	corev1 "k8s.io/api/core/v1"
 	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -58,7 +60,7 @@ func MigrateExistingHelmReleaseSecrets(clientset kubernetes.Interface, releaseNa
 
 // moveHelmReleaseSecret will create a new secret in the releaseNamespace and delete the old one from the kotsadmNamespace
 func moveHelmReleaseSecret(clientset kubernetes.Interface, secret corev1.Secret, releaseNamespace string, kotsadmNamespace string) error {
-	release, err := HelmReleaseFromSecretData(secret.Data["release"])
+	release, err := helmReleaseFromSecretData(secret.Data["release"])
 	if err != nil {
 		return errors.Wrapf(err, "failed to get release from secret data")
 	}
@@ -104,4 +106,26 @@ func encodeRelease(helmRelease *release.Release) (string, error) {
 	w.Close()
 
 	return base64.StdEncoding.EncodeToString(buf.Bytes()), nil
+}
+
+func helmReleaseFromSecretData(data []byte) (*helmrelease.Release, error) {
+	base64Reader := base64.NewDecoder(base64.StdEncoding, bytes.NewReader(data))
+	gzreader, err := gzip.NewReader(base64Reader)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to create gzip reader")
+	}
+	defer gzreader.Close()
+
+	releaseData, err := io.ReadAll(gzreader)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to read from gzip reader")
+	}
+
+	release := &helmrelease.Release{}
+	err = json.Unmarshal(releaseData, &release)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to unmarshal release data")
+	}
+
+	return release, nil
 }

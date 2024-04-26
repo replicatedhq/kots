@@ -3,7 +3,6 @@ package e2e
 import (
 	"context"
 	"flag"
-	"fmt"
 	"os"
 	"testing"
 	"time"
@@ -178,18 +177,8 @@ var _ = Describe("E2E", func() {
 					prometheus.Install(helmCLI, c.GetKubeconfig())
 				}
 
-				var adminConsolePort string
-				if test.IsHelmManaged {
-					GinkgoWriter.Println("Installing KOTS Helm chart")
-					session, err := helmCLI.Install(c.GetKubeconfig(), "-n", test.Namespace, "admin-console", kotsHelmChartURL, "--set", fmt.Sprintf("password=%s", inventory.HelmPassword), "--version", kotsHelmChartVersion, "--create-namespace", "--wait")
-					Expect(err).WithOffset(1).Should(Succeed(), "helm install")
-					Eventually(session).WithOffset(1).WithTimeout(time.Minute).Should(gexec.Exit(0), "helm install failed with non-zero exit code")
-
-					adminConsolePort = kotsInstaller.AdminConsolePortForward(c.GetKubeconfig(), test, kotsadmForwardPort)
-				} else {
-					GinkgoWriter.Println("Installing KOTS")
-					adminConsolePort = kotsInstaller.Install(c.GetKubeconfig(), test, kotsadmForwardPort)
-				}
+				GinkgoWriter.Println("Installing KOTS")
+				adminConsolePort := kotsInstaller.Install(c.GetKubeconfig(), test, kotsadmForwardPort)
 
 				GinkgoWriter.Println("Running E2E tests")
 
@@ -223,7 +212,6 @@ var _ = Describe("E2E", func() {
 			Entry(nil, inventory.NewNoRequiredConfig()),
 			Entry(nil, inventory.NewVersionHistoryPagination()),
 			Entry(nil, inventory.NewChangeLicense()),
-			Entry(nil, inventory.NewHelmManagedMode()),
 			Entry(nil, inventory.NewMinKotsVersion()),
 			Entry(nil, inventory.NewTargetKotsVersion()),
 			Entry(nil, inventory.NewRangeKotsVersion()),

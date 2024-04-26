@@ -3,7 +3,6 @@ package policy
 import (
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/store"
-	"github.com/replicatedhq/kots/pkg/util"
 )
 
 func appSlugFromAppIDGetter(kotsStore store.Store, vars map[string]string) (map[string]string, error) {
@@ -15,19 +14,13 @@ func appSlugFromAppIDGetter(kotsStore store.Store, vars map[string]string) (map[
 		return map[string]string{}, nil
 	}
 
-	var appSlug string
-	if util.IsHelmManaged() {
-		appSlug = appIDOrSlug
-	} else {
-		app, err := kotsStore.GetApp(appIDOrSlug)
-		if err != nil {
-			return nil, errors.Wrap(err, "failed to get app")
-		}
-		appSlug = app.Slug
+	app, err := kotsStore.GetApp(appIDOrSlug)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get app")
 	}
 
 	return map[string]string{
-		"appSlug": appSlug,
+		"appSlug": app.Slug,
 	}, nil
 }
 
@@ -52,17 +45,12 @@ func appSlugFromSupportbundleGetter(kotsStore store.Store, vars map[string]strin
 		return nil, nil
 	}
 
-	var appSlug string
-	if util.IsHelmManaged() {
-		appSlug = appIDOrSlug
-	} else {
-		app, err := kotsStore.GetApp(appIDOrSlug)
-		if err != nil {
-			return nil, errors.Wrap(err, "failed to get app")
-		}
-		appSlug = app.Slug
+	app, err := kotsStore.GetApp(appIDOrSlug)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get app")
 	}
+
 	return map[string]string{
-		"appSlug": appSlug,
+		"appSlug": app.Slug,
 	}, nil
 }

@@ -165,10 +165,6 @@ func HomeDir() string {
 	return os.Getenv("USERPROFILE")
 }
 
-func IsHelmManaged() bool {
-	return os.Getenv("IS_HELM_MANAGED") == "true"
-}
-
 func IsEmbeddedCluster() bool {
 	return os.Getenv("EMBEDDED_CLUSTER_ID") != ""
 }

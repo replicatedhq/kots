@@ -30,8 +30,6 @@ import { Repeater } from "../../utilities/repeater";
 import { AirgapUploader } from "../../utilities/airgapUploader";
 import ReactTooltip from "react-tooltip";
 import Pager from "../shared/Pager";
-import { HelmDeployModal } from "../shared/modals/HelmDeployModal";
-import { UseDownloadValues } from "../hooks";
 import { KotsPageTitle } from "@components/Head";
 
 import "@src/scss/components/apps/AppVersionHistory.scss";
@@ -64,7 +62,6 @@ type Props = {
     app: App;
     displayErrorModal: boolean;
     isBundleUploading: boolean;
-    isHelmManaged: boolean;
     makeCurrentVersion: (
       slug: string,
       version: Version | null,
@@ -132,8 +129,6 @@ type State = {
   showDeployWarningModal: boolean;
   showDiffErrModal: boolean;
   showDiffOverlay: boolean;
-  showHelmDeployModalForSequence: number | null;
-  showHelmDeployModalForVersionLabel: string;
   showLogsModal: boolean;
   showNoChangesModal: boolean;
   showSkipModal: boolean;
@@ -151,13 +146,6 @@ type State = {
   versionToDeploy: Version | null;
   viewLogsErrMsg: string;
   yamlErrorDetails: string[];
-};
-
-const filterNonHelmTabs = (tab: string, isHelmManaged: boolean) => {
-  if (isHelmManaged) {
-    return tab.startsWith("helm");
-  }
-  return true;
 };
 
 class AppVersionHistory extends Component<Props, State> {
@@ -208,8 +196,6 @@ class AppVersionHistory extends Component<Props, State> {
       showDeployWarningModal: false,
       showDiffErrModal: false,
       showDiffOverlay: false,
-      showHelmDeployModalForSequence: null,
-      showHelmDeployModalForVersionLabel: "",
       showLogsModal: false,
       showNoChangesModal: false,
       showSkipModal: false,
@@ -506,9 +492,6 @@ class AppVersionHistory extends Component<Props, State> {
       <div className="flex action-tab-bar u-marginTop--10">
         {tabs
           .filter((tab) => tab !== "renderError")
-          .filter((tab) =>
-            filterNonHelmTabs(tab, this.props.outletContext.isHelmManaged)
-          )
           .map((tab) => (
             <div
               className={`tab-item blue ${tab === selectedTab && "is-active"}`}
@@ -999,9 +982,6 @@ class AppVersionHistory extends Component<Props, State> {
     try {
       const { app } = this.props.outletContext;
       let clusterId = app.downstream.cluster?.id;
-      if (this.props.outletContext.isHelmManaged) {
-        clusterId = 0;
-      }
       this.setState({
         logsLoading: true,
         showLogsModal: true,
@@ -1024,9 +1004,7 @@ class AppVersionHistory extends Component<Props, State> {
         if (isFailing) {
           selectedTab = Utilities.getDeployErrorTab(response.logs);
         } else {
-          selectedTab = Object.keys(response.logs).filter((tab) =>
-            filterNonHelmTabs(tab, this.props.outletContext.isHelmManaged)
-          )[0];
+          selectedTab = Object.keys(response.logs)[0];
         }
         this.setState({
           logs: response.logs,
@@ -1292,17 +1270,8 @@ class AppVersionHistory extends Component<Props, State> {
     let allVersions = this.state.versionHistory;
 
     // exclude pinned version
-    if (this.props.outletContext.isHelmManaged) {
-      // Only show pending versions in the "New version available" card. Helm, unlike kots, always adds a new version, even when we rollback.
-      if (this.state.updatesAvailable && allVersions?.length > 0) {
-        if (allVersions[0].status.startsWith("pending")) {
-          allVersions = allVersions?.slice(1);
-        }
-      }
-    } else {
-      if (this.state.updatesAvailable) {
-        allVersions = this.state.versionHistory?.slice(1);
-      }
+    if (this.state.updatesAvailable) {
+      allVersions = this.state.versionHistory?.slice(1);
     }
 
     if (!allVersions?.length) {
@@ -1353,34 +1322,7 @@ class AppVersionHistory extends Component<Props, State> {
     });
   };
 
-  handleActionButtonClicked = (
-    versionLabel: string | null | undefined,
-    sequence: number
-  ) => {
-    if (this.props.outletContext.isHelmManaged && versionLabel) {
-      this.setState({
-        showHelmDeployModalForVersionLabel: versionLabel,
-        showHelmDeployModalForSequence: sequence,
-      });
-    }
-  };
-
   deployButtonStatus = (version: Version) => {
-    if (this.props.outletContext.isHelmManaged) {
-      const deployedSequence =
-        this.props.outletContext.app?.downstream?.currentVersion?.sequence;
-
-      if (version.sequence > deployedSequence) {
-        return "Deploy";
-      }
-
-      if (version.sequence < deployedSequence) {
-        return "Rollback";
-      }
-
-      return "Redeploy";
-    }
-
     const app = this.props.outletContext.app;
     const downstream = app?.downstream;
 
@@ -1447,13 +1389,6 @@ class AppVersionHistory extends Component<Props, State> {
     if (version.preflightResultCreatedAt) {
       newPreflightResults = secondsAgo(version.preflightResultCreatedAt) < 12;
     }
-    let isPending = false;
-    if (
-      this.props.outletContext.isHelmManaged &&
-      version.status.startsWith("pending")
-    ) {
-      isPending = true;
-    }
 
     return (
       <Fragment key={index}>
@@ -1463,12 +1398,6 @@ class AppVersionHistory extends Component<Props, State> {
           deployVersion={this.deployVersion}
           downloadVersion={this.downloadVersion}
           gitopsEnabled={gitopsIsConnected}
-          handleActionButtonClicked={() =>
-            this.handleActionButtonClicked(
-              version.versionLabel,
-              version.sequence
-            )
-          }
           handleSelectReleasesToDiff={this.handleSelectReleasesToDiff}
           handleViewLogs={this.handleViewLogs}
           isChecked={isChecked}
@@ -1526,97 +1455,6 @@ class AppVersionHistory extends Component<Props, State> {
           }
           versionHistory={this.state.versionHistory}
         />
-        {this.state.showHelmDeployModalForVersionLabel ===
-          version.versionLabel &&
-          this.state.showHelmDeployModalForSequence === version.sequence && (
-            <UseDownloadValues
-              appSlug={this.props?.outletContext.app?.slug}
-              fileName="values.yaml"
-              sequence={version.parentSequence}
-              versionLabel={version.versionLabel}
-              isPending={isPending}
-            >
-              {({
-                download,
-                clearError: clearDownloadError,
-                downloadError: downloadError,
-                // isDownloading,
-                name,
-                ref,
-                url,
-              }: {
-                download: () => void;
-                clearError: () => void;
-                downloadError: boolean;
-                //  isDownloading: boolean;
-                name: string;
-                ref: string;
-                url: string;
-              }) => {
-                return (
-                  <>
-                    <HelmDeployModal
-                      appSlug={this.props?.outletContext.app?.slug}
-                      chartPath={this.props?.outletContext.app?.chartPath || ""}
-                      downloadClicked={download}
-                      downloadError={downloadError}
-                      //isDownloading={isDownloading}
-                      hideHelmDeployModal={() => {
-                        this.setState({
-                          showHelmDeployModalForVersionLabel: "",
-                        });
-                        clearDownloadError();
-                      }}
-                      registryUsername={
-                        this.props?.outletContext.app?.credentials?.username
-                      }
-                      registryPassword={
-                        this.props?.outletContext.app?.credentials?.password
-                      }
-                      revision={
-                        this.deployButtonStatus(version) === "Rollback"
-                          ? version.sequence
-                          : null
-                      }
-                      showHelmDeployModal={true}
-                      showDownloadValues={
-                        this.deployButtonStatus(version) === "Deploy"
-                      }
-                      subtitle={
-                        this.deployButtonStatus(version) === "Rollback"
-                          ? `Follow the steps below to rollback to revision ${version.sequence}.`
-                          : this.deployButtonStatus(version) === "Redeploy"
-                          ? "Follow the steps below to redeploy the release using the currently deployed chart version and values."
-                          : "Follow the steps below to upgrade the release."
-                      }
-                      title={` ${this.deployButtonStatus(version)} ${
-                        this.props?.outletContext.app.slug
-                      } ${
-                        this.deployButtonStatus(version) === "Deploy"
-                          ? version.versionLabel
-                          : ""
-                      }`}
-                      upgradeTitle={
-                        this.deployButtonStatus(version) === "Rollback"
-                          ? "Rollback release"
-                          : this.deployButtonStatus(version) === "Redeploy"
-                          ? "Redeploy release"
-                          : "Upgrade release"
-                      }
-                      version={version.versionLabel}
-                      namespace={this.props?.outletContext.app?.namespace}
-                    />
-                    <a
-                      href={url}
-                      download={name}
-                      className="hidden"
-                      ref={ref}
-                    />
-                  </>
-                );
-              }}
-            </UseDownloadValues>
-          )}
       </Fragment>
     );
   };
@@ -1703,23 +1541,10 @@ class AppVersionHistory extends Component<Props, State> {
     }
 
     let sequenceLabel = "Sequence";
-    if (this.props.outletContext.isHelmManaged) {
-      sequenceLabel = "Revision";
-    }
 
-    // In Helm, only pending versions are updates.  In kots native, a deployed version can be an update after a rollback.
     let pendingVersion;
-    if (this.props.outletContext.isHelmManaged) {
-      if (
-        this.state.updatesAvailable &&
-        versionHistory[0].status.startsWith("pending")
-      ) {
-        pendingVersion = versionHistory[0];
-      }
-    } else {
-      if (this.state.updatesAvailable) {
-        pendingVersion = versionHistory[0];
-      }
+    if (this.state.updatesAvailable) {
+      pendingVersion = versionHistory[0];
     }
 
     const renderVersionLabel = () => {
@@ -2027,9 +1852,7 @@ class AppVersionHistory extends Component<Props, State> {
                                   </div>
                                 )}
                               </div>
-                              {versionHistory.length > 1 &&
-                              !gitopsIsConnected &&
-                              !this.props.outletContext.isHelmManaged
+                              {versionHistory.length > 1 && !gitopsIsConnected
                                 ? this.renderDiffBtn()
                                 : null}
                             </div>
@@ -2353,7 +2176,6 @@ class AppVersionHistory extends Component<Props, State> {
             appSlug={app?.slug}
             autoDeploy={app?.autoDeploy}
             gitopsIsConnected={downstream?.gitops?.isConnected}
-            isHelmManaged={this.props.outletContext.isHelmManaged}
             isOpen={this.state.showAutomaticUpdatesModal}
             isSemverRequired={app?.isSemverRequired}
             onAutomaticUpdatesConfigured={() => {

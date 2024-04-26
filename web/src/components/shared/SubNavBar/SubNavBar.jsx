@@ -12,7 +12,6 @@ export default function SubNavBar({
   isVeleroInstalled,
   isAccess = false,
   isSnapshots = false,
-  isHelmManaged,
   isEmbeddedCluster,
 }) {
   let { slug } = app;
@@ -126,7 +125,6 @@ export default function SubNavBar({
                   return (
                     link.displayRule({
                       app: app || {},
-                      isHelmManaged,
                       isEmbeddedCluster,
                       isIdentityServiceSupported:
                         app.isAppIdentityServiceSupported,

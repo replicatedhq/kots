@@ -17,7 +17,6 @@ import (
 	apptypes "github.com/replicatedhq/kots/pkg/app/types"
 	"github.com/replicatedhq/kots/pkg/embeddedcluster"
 	"github.com/replicatedhq/kots/pkg/gitops"
-	"github.com/replicatedhq/kots/pkg/helm"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/logger"
@@ -39,11 +38,6 @@ func (h *Handler) GetPendingApp(w http.ResponseWriter, r *http.Request) {
 	if sess == nil {
 		logger.Error(errors.New("invalid session"))
 		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-
-	if util.IsHelmManaged() {
-		w.WriteHeader(http.StatusNotFound)
 		return
 	}
 
@@ -100,33 +94,6 @@ func (h *Handler) ListApps(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	responseApps := []types.ResponseApp{}
-	if util.IsHelmManaged() {
-		helmResponseApps := []types.HelmResponseApp{}
-
-		for _, releaseName := range helm.GetCachedHelmApps() {
-			release := helm.GetHelmApp(releaseName)
-			if release == nil {
-				continue
-			}
-
-			app, err := helm.ResponseAppFromHelmApp(release)
-			if err != nil {
-				logger.Error(errors.Wrap(err, "failed to convert release to app"))
-				w.WriteHeader(http.StatusInternalServerError)
-				return
-			}
-
-			helmResponseApps = append(helmResponseApps, *app)
-		}
-
-		listAppsResponse := types.ListAppsHelmResponse{
-			Apps: helmResponseApps,
-		}
-
-		JSON(w, http.StatusOK, listAppsResponse)
-		return
-	}
 	apps, err := store.GetStore().ListInstalledApps()
 	if err != nil {
 		logger.Error(err)
@@ -134,6 +101,7 @@ func (h *Handler) ListApps(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	responseApps := []types.ResponseApp{}
 	defaultRoles := rbac.DefaultRoles() // TODO (ethan): this should be set in the handler
 
 	for _, a := range apps {
@@ -188,31 +156,13 @@ func (h *Handler) GetAppStatus(w http.ResponseWriter, r *http.Request) {
 
 func (h *Handler) GetApp(w http.ResponseWriter, r *http.Request) {
 	appSlug := mux.Vars(r)["appSlug"]
-	responseApp := new(types.ResponseApp)
-	if util.IsHelmManaged() {
-		release := helm.GetHelmApp(appSlug)
-		if release == nil {
-			w.WriteHeader(http.StatusNotFound)
-			return
-		}
-
-		app, err := helm.ResponseAppFromHelmApp(release)
-		if err != nil {
-			logger.Error(errors.Wrap(err, "failed to convert release to app"))
-			w.WriteHeader(http.StatusInternalServerError)
-			return
-		}
-
-		JSON(w, http.StatusOK, app)
-		return
-	}
 	a, err := store.GetStore().GetAppFromSlug(appSlug)
 	if err != nil {
 		logger.Error(err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
-	responseApp, err = responseAppFromApp(a)
+	responseApp, err := responseAppFromApp(a)
 	if err != nil {
 		logger.Error(err)
 		w.WriteHeader(http.StatusInternalServerError)
@@ -432,87 +382,37 @@ func (h *Handler) GetAppVersionHistory(w http.ResponseWriter, r *http.Request) {
 	}
 
 	appSlug := mux.Vars(r)["appSlug"]
-	history := new(downstreamtypes.DownstreamVersionHistory)
-	if util.IsHelmManaged() {
-		release := helm.GetHelmApp(appSlug)
-		if release == nil {
-			w.WriteHeader(http.StatusNotFound)
-			return
-		}
-
-		history.NumOfRemainingVersions = 0
-		chartUpdates := helm.GetDownloadedUpdates(release.ChartPath)
-
-		installedReleases, err := helm.ListChartVersions(appSlug, release.Namespace)
-		if err != nil {
-			err = errors.Wrapf(err, "failed to get installed releases of %s", appSlug)
-			logger.Error(err)
-			w.WriteHeader(http.StatusInternalServerError)
-			return
-		}
-
-		installedVersions := []*downstreamtypes.DownstreamVersion{}
-		for _, installedRelease := range installedReleases {
-			installedVersions = append(installedVersions, helmReleaseToDownsreamVersion(&installedRelease))
-		}
-
-		// Parity with Helm history output, which lists revisions sorted by revision number in descending order.
-		downstreamtypes.SortDownstreamVersions(installedVersions, false)
-
-		lastInstalledSequence := 0
-		if len(installedVersions) > 0 {
-			lastInstalledSequence = int(installedVersions[0].ParentSequence)
-		}
-
-		newVersions := make([]*downstreamtypes.DownstreamVersion, len(chartUpdates), len(chartUpdates))
-		nextUpdateSequence := lastInstalledSequence + 1
-		for i := len(chartUpdates) - 1; i >= 0; i-- {
-			newVersions[i] = helm.HelmUpdateToDownsreamVersion(chartUpdates[i], int64(nextUpdateSequence))
-			nextUpdateSequence = nextUpdateSequence + 1
-		}
-
-		numSkippedVersions := len(newVersions) - 1 // looks like this is what getLatestDeployableDownstreamVersion does
-		if pinLatestDeployable && len(newVersions) > 0 {
-			// TODO: this should be UI logic. the response here should have no duplicates on the list
-			newVersions = append([]*downstreamtypes.DownstreamVersion{newVersions[0]}, newVersions...)
-		}
-		versions := append(newVersions, installedVersions...)
-
-		history.VersionHistory = versions
-		history.TotalCount = len(versions)
-		history.NumOfSkippedVersions = numSkippedVersions
-	} else {
-		foundApp, err := store.GetStore().GetAppFromSlug(appSlug)
-		if err != nil {
-			err = errors.Wrap(err, "failed to get app from slug")
-			logger.Error(err)
-			w.WriteHeader(http.StatusInternalServerError)
-			return
-		}
-
-		downstreams, err := store.GetStore().ListDownstreamsForApp(foundApp.ID)
-		if err != nil {
-			err = errors.Wrap(err, "failed to list downstreams for app")
-			logger.Error(err)
-			w.WriteHeader(http.StatusInternalServerError)
-			return
-		} else if len(downstreams) == 0 {
-			err = errors.New("no downstreams for app")
-			logger.Error(err)
-			w.WriteHeader(http.StatusInternalServerError)
-			return
-		}
-
-		clusterID := downstreams[0].ClusterID
-
-		history, err = store.GetStore().GetDownstreamVersionHistory(foundApp.ID, clusterID, currentPage, pageSize, pinLatest, pinLatestDeployable)
-		if err != nil {
-			err = errors.Wrap(err, "failed to get downstream versions")
-			logger.Error(err)
-			w.WriteHeader(http.StatusInternalServerError)
-			return
-		}
+	foundApp, err := store.GetStore().GetAppFromSlug(appSlug)
+	if err != nil {
+		err = errors.Wrap(err, "failed to get app from slug")
+		logger.Error(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
 	}
+
+	downstreams, err := store.GetStore().ListDownstreamsForApp(foundApp.ID)
+	if err != nil {
+		err = errors.Wrap(err, "failed to list downstreams for app")
+		logger.Error(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	} else if len(downstreams) == 0 {
+		err = errors.New("no downstreams for app")
+		logger.Error(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	clusterID := downstreams[0].ClusterID
+
+	history, err := store.GetStore().GetDownstreamVersionHistory(foundApp.ID, clusterID, currentPage, pageSize, pinLatest, pinLatestDeployable)
+	if err != nil {
+		err = errors.Wrap(err, "failed to get downstream versions")
+		logger.Error(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
 	response := GetAppVersionHistoryResponse{
 		DownstreamVersionHistory: *history,
 	}
@@ -714,39 +614,6 @@ func (h *Handler) GetLatestDeployableVersion(w http.ResponseWriter, r *http.Requ
 	getLatestDeployableVersionResponse := GetLatestDeployableVersionResponse{}
 
 	appSlug := mux.Vars(r)["appSlug"]
-
-	if util.IsHelmManaged() {
-		helmApp := helm.GetHelmApp(appSlug)
-		if helmApp == nil {
-			w.WriteHeader(http.StatusNotFound)
-			return
-		}
-
-		availableUpdates := helm.GetCachedUpdates(helmApp.ChartPath)
-		if len(availableUpdates) == 0 {
-			JSON(w, http.StatusOK, getLatestDeployableVersionResponse)
-			return
-		}
-
-		installedReleases, err := helm.ListChartVersions(appSlug, helmApp.Namespace)
-		if err != nil {
-			errMsg := "failed to get installed releases"
-			logger.Error(errors.Wrap(err, errMsg))
-			getLatestDeployableVersionResponse.Error = errMsg
-			JSON(w, http.StatusInternalServerError, getLatestDeployableVersionResponse)
-			return
-		}
-
-		getLatestDeployableVersionResponse.Error = ""
-		sequence := len(installedReleases) + len(availableUpdates) // helm revisions are 1-based
-		getLatestDeployableVersionResponse.LatestDeployableVersion = helm.HelmUpdateToDownsreamVersion(availableUpdates[0], int64(sequence))
-		getLatestDeployableVersionResponse.NumOfSkippedVersions = 0   // TODO
-		getLatestDeployableVersionResponse.NumOfRemainingVersions = 0 // TODO
-
-		JSON(w, http.StatusOK, getLatestDeployableVersionResponse)
-		return
-	}
-
 	a, err := store.GetStore().GetAppFromSlug(appSlug)
 	if err != nil {
 		errMsg := "failed to get app from slug"
@@ -801,21 +668,4 @@ func (h *Handler) GetAutomatedInstallStatus(w http.ResponseWriter, r *http.Reque
 	}
 
 	JSON(w, http.StatusOK, response)
-}
-
-func helmReleaseToDownsreamVersion(installedRelease *helm.InstalledRelease) *downstreamtypes.DownstreamVersion {
-	return &downstreamtypes.DownstreamVersion{
-		VersionLabel:       installedRelease.Version,
-		Semver:             installedRelease.Semver,
-		UpdateCursor:       installedRelease.Version,
-		CreatedOn:          nil,
-		DeployedAt:         installedRelease.DeployedOn,
-		UpstreamReleasedAt: installedRelease.ReleasedOn,
-		IsDeployable:       false,               // TODO: implement
-		NonDeployableCause: "already installed", // TODO: implement
-		HasConfig:          true,                // TODO: implement
-		ParentSequence:     int64(installedRelease.Revision),
-		Sequence:           int64(installedRelease.Revision),
-		Status:             storetypes.DownstreamVersionStatus(installedRelease.Status.String()),
-	}
 }
