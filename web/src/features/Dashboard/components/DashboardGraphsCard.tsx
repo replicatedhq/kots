@@ -27,7 +27,6 @@ dayjs.extend(localizedFormat);
 
 type Props = {
   prometheusAddress: string;
-  isHelmManaged: boolean;
   metrics: Chart[];
 };
 
@@ -279,9 +278,6 @@ export default class DashboardGraphsCard extends Component<Props, State> {
   };
 
   render() {
-    if (this.props.isHelmManaged === true) {
-      return <div></div>;
-    }
     const { prometheusAddress, metrics } = this.props;
     const { promValue, showConfigureGraphs, savingPromError, savingPromValue } =
       this.state;

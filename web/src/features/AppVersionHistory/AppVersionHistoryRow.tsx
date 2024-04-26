@@ -13,7 +13,6 @@ import Icon from "@src/components/Icon";
 
 import { ViewDiffButton } from "@features/VersionDiff/ViewDiffButton";
 import { Metadata, Version, VersionDownloadStatus } from "@types";
-import { useIsHelmManaged } from "@components/hooks";
 import { useSelectedApp } from "@features/App/hooks/useSelectedApp";
 import PreflightIcon from "@features/App/PreflightIcon";
 
@@ -22,7 +21,6 @@ interface Props {
   deployVersion: (version: Version) => void;
   downloadVersion: (version: Version) => void;
   gitopsEnabled: boolean;
-  handleActionButtonClicked: () => void;
   handleSelectReleasesToDiff: (version: Version, isChecked: boolean) => void;
   handleViewLogs: (version: Version | null, isFailing: boolean) => void;
   isChecked: boolean;
@@ -56,7 +54,6 @@ function AppVersionHistoryRow(props: Props) {
       !props.version.source?.includes("Online Install")
   );
 
-  const { data: isHelmManaged } = useIsHelmManaged();
   const selectedApp = useSelectedApp();
 
   useEffect(() => {
@@ -77,23 +74,6 @@ function AppVersionHistoryRow(props: Props) {
   };
 
   const deployButtonStatus = (version: Version) => {
-    if (isHelmManaged) {
-      const deployedSequence =
-        selectedApp?.downstream?.currentVersion?.sequence;
-
-      if (!deployedSequence) throw new Error("deployedSequence is undefined");
-
-      if (version.sequence > deployedSequence) {
-        return "Deploy";
-      }
-
-      if (version.sequence < deployedSequence) {
-        return "Rollback";
-      }
-
-      return "Redeploy";
-    }
-
     const downstream = selectedApp?.downstream;
 
     const isCurrentVersion =
@@ -172,9 +152,6 @@ function AppVersionHistoryRow(props: Props) {
   };
 
   const isActionButtonDisabled = (version: Version) => {
-    if (isHelmManaged) {
-      return false;
-    }
     if (
       Utilities.isPendingClusterUpgrade(selectedApp) &&
       version.status === "deployed"
@@ -200,11 +177,7 @@ function AppVersionHistoryRow(props: Props) {
 
     // useDeployAppVersion
     let actionFn = props.deployVersion;
-    if (isHelmManaged) {
-      actionFn = () => {};
-      // TODO: conditionally fetch the admin console update status when mounting the hook
-      // by using verision.needsKotsUpgrade
-    } else if (version.needsKotsUpgrade) {
+    if (version.needsKotsUpgrade) {
       // postUpdateAdminConsole
       actionFn = props.upgradeAdminConsole;
     } else if (version.status === "pending_download") {
@@ -263,10 +236,7 @@ function AppVersionHistoryRow(props: Props) {
 
     const preflightState = getPreflightState(version);
 
-    let configScreenURL = `/app/${selectedApp?.slug}/config/${version.sequence}`;
-    if (isHelmManaged && version.status.startsWith("pending")) {
-      configScreenURL = `${configScreenURL}?isPending=true&semver=${version.semver}`;
-    }
+    const configScreenURL = `/app/${selectedApp?.slug}/config/${version.sequence}`;
 
     // CONNECTED TO GITOPS //
     if (downstream?.gitops?.isConnected) {
@@ -409,7 +379,6 @@ function AppVersionHistoryRow(props: Props) {
               })}
               disabled={isActionButtonDisabled(version)}
               onClick={() => {
-                props.handleActionButtonClicked();
                 if (needsConfiguration) {
                   props?.navigate(configScreenURL);
                   return null;
@@ -616,16 +585,6 @@ function AppVersionHistoryRow(props: Props) {
     newPreflightResults,
   } = props;
 
-  let showSequence = true;
-  if (isHelmManaged && version.status.startsWith("pending")) {
-    showSequence = false;
-  }
-
-  let sequenceLabel = "Sequence";
-  if (isHelmManaged) {
-    sequenceLabel = "Revision";
-  }
-
   // Old Helm charts will not have any timestamps, so don't show current time when they are missing because it's misleading.
   let releasedTs = "";
   const tsFormat = "MM/DD/YY @ hh:mm a z";
@@ -677,14 +636,12 @@ function AppVersionHistoryRow(props: Props) {
                 </span>
               )}
             </div>{" "}
-            {showSequence && (
-              <p
-                className="u-fontSize--small u-textColor--bodyCopy u-fontWeight--medium"
-                style={{ marginTop: "2px" }}
-              >
-                {sequenceLabel} {version.sequence}
-              </p>
-            )}
+            <p
+              className="u-fontSize--small u-textColor--bodyCopy u-fontWeight--medium"
+              style={{ marginTop: "2px" }}
+            >
+              Sequence {version.sequence}
+            </p>
             {releasedTs && (
               <p className="u-fontSize--small u-fontWeight--medium u-textColor--bodyCopy u-marginTop--5">
                 {" "}

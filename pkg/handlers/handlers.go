@@ -59,8 +59,6 @@ func RegisterSessionAuthRoutes(r *mux.Router, kotsStore store.Store, handler KOT
 		HandlerFunc(middleware.EnforceAccess(policy.AppSupportbundleRead, handler.DownloadSupportBundle)) // TODO: appSlug
 	r.Name("CollectSupportBundle").Path("/api/v1/troubleshoot/supportbundle/app/{appId}/cluster/{clusterId}/collect").Methods("POST").
 		HandlerFunc(middleware.EnforceAccess(policy.AppSupportbundleWrite, handler.CollectSupportBundle))
-	r.Name("CollectHelmSupportBundle").Path("/api/v1/troubleshoot/supportbundle/app/{appSlug}/collect").Methods("POST").
-		HandlerFunc(middleware.EnforceAccess(policy.AppSupportbundleWrite, handler.CollectHelmSupportBundle))
 	r.Name("ShareSupportBundle").Path("/api/v1/troubleshoot/app/{appSlug}/supportbundle/{bundleId}/share").Methods("POST").
 		HandlerFunc(middleware.EnforceAccess(policy.AppSupportbundleWrite, handler.ShareSupportBundle))
 	r.Name("DeleteSupportBundle").Path("/api/v1/troubleshoot/app/{appSlug}/supportbundle/{bundleId}").Methods("DELETE").
@@ -313,12 +311,6 @@ func RegisterSessionAuthRoutes(r *mux.Router, kotsStore store.Store, handler KOT
 	// Password change
 	r.Name("ChangePassword").Path("/api/v1/password/change").Methods("PUT").
 		HandlerFunc(middleware.EnforceAccess(policy.PasswordChange, handler.ChangePassword))
-
-	// Helm
-	r.Name("IsHelmManaged").Path("/api/v1/is-helm-managed").Methods("GET").
-		HandlerFunc(middleware.EnforceAccess(policy.IsHelmManaged, handler.IsHelmManaged))
-	r.Name("GetAppValuesFile").Path("/api/v1/app/{appSlug}/values/{sequence}").Methods("GET").
-		HandlerFunc(middleware.EnforceAccess(policy.GetAppValuesFile, handler.GetAppValuesFile))
 }
 
 func JSON(w http.ResponseWriter, code int, payload interface{}) {

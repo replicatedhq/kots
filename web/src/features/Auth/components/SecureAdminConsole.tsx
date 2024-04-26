@@ -12,7 +12,6 @@ type Props = {
   fetchingMetadata: boolean;
   onLoginSuccess: () => Promise<App[]>;
   pendingApp: () => Promise<App>;
-  checkIsHelmManaged: () => Promise<boolean>;
   logo: string | null;
   navigate: ReturnType<typeof useNavigate>;
 };
@@ -53,7 +52,6 @@ class SecureAdminConsole extends Component<Props, State> {
       if (Utilities.localStorageEnabled()) {
         loggedIn = true;
         window.localStorage.setItem("isLoggedIn", "true");
-        const isHelmManaged = await this.props.checkIsHelmManaged();
 
         if (data.sessionRoles) {
           window.localStorage.setItem("session_roles", data.sessionRoles);
@@ -70,8 +68,6 @@ class SecureAdminConsole extends Component<Props, State> {
           this.props.navigate(`/${pendingApp.slug}/airgap-bundle`, {
             replace: true,
           });
-        } else if (isHelmManaged) {
-          this.props.navigate("install-with-helm", { replace: true });
         } else {
           this.props.navigate("upload-license", { replace: true });
         }

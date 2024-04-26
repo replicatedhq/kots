@@ -11,7 +11,6 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
-	"github.com/replicatedhq/kots/pkg/helm"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/reporting"
 	"github.com/replicatedhq/kots/pkg/store"
@@ -171,18 +170,14 @@ func (h *Handler) GetSupportBundleFiles(w http.ResponseWriter, r *http.Request) 
 func (h *Handler) ListSupportBundles(w http.ResponseWriter, r *http.Request) {
 	appSlug := mux.Vars(r)["appSlug"]
 
-	appIDOrSlug := appSlug
-	if !util.IsHelmManaged() {
-		a, err := store.GetStore().GetAppFromSlug(appSlug)
-		if err != nil {
-			logger.Error(err)
-			w.WriteHeader(http.StatusInternalServerError)
-			return
-		}
-		appIDOrSlug = a.ID
+	a, err := store.GetStore().GetAppFromSlug(appSlug)
+	if err != nil {
+		logger.Error(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
 	}
 
-	supportBundles, err := store.GetStore().ListSupportBundles(appIDOrSlug)
+	supportBundles, err := store.GetStore().ListSupportBundles(a.ID)
 	if err != nil {
 		logger.Error(err)
 		w.WriteHeader(http.StatusInternalServerError)
@@ -229,34 +224,6 @@ func (h *Handler) GetSupportBundleCommand(w http.ResponseWriter, r *http.Request
 	getSupportBundleCommandRequest := GetSupportBundleCommandRequest{}
 	if err := json.NewDecoder(r.Body).Decode(&getSupportBundleCommandRequest); err != nil {
 		logger.Error(errors.Wrap(err, "failed to decode request"))
-		JSON(w, http.StatusOK, response)
-		return
-	}
-
-	if util.IsHelmManaged() {
-		helmApp := helm.GetHelmApp(appSlug)
-		if helmApp == nil {
-			w.WriteHeader(http.StatusNotFound)
-			return
-		}
-
-		response.Command = []string{
-			"curl https://krew.sh/support-bundle | bash",
-			"kubectl support-bundle --load-cluster-specs",
-		}
-
-		opts := types.TroubleshootOptions{
-			Origin:    getSupportBundleCommandRequest.Origin,
-			InCluster: false,
-		}
-
-		if _, err := supportbundle.CreateSupportBundleDependencies(helmApp, helmApp.GetCurrentSequence(), opts); err != nil {
-			logger.Error(errors.Wrap(err, "failed to create support bundle spec"))
-			JSON(w, http.StatusOK, response)
-			return
-		}
-
-		response.Command = supportbundle.GetBundleCommand(helmApp.GetSlug())
 		JSON(w, http.StatusOK, response)
 		return
 	}
@@ -472,11 +439,6 @@ func (h *Handler) DeleteSupportBundle(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) CollectSupportBundle(w http.ResponseWriter, r *http.Request) {
-	if util.IsHelmManaged() {
-		w.WriteHeader(http.StatusBadRequest)
-		return
-	}
-
 	a, err := store.GetStore().GetApp(mux.Vars(r)["appId"])
 	if err != nil {
 		logger.Error(err)
@@ -495,35 +457,6 @@ func (h *Handler) CollectSupportBundle(w http.ResponseWriter, r *http.Request) {
 		ID:    bundleID,
 		Slug:  bundleID,
 		AppID: a.ID,
-	}
-
-	JSON(w, http.StatusAccepted, collectSupportBundlesResponse)
-}
-
-func (h *Handler) CollectHelmSupportBundle(w http.ResponseWriter, r *http.Request) {
-	appSlug := mux.Vars(r)["appSlug"]
-
-	if !util.IsHelmManaged() {
-		w.WriteHeader(http.StatusBadRequest)
-		return
-	}
-
-	helmApp := helm.GetHelmApp(appSlug)
-	if helmApp == nil {
-		w.WriteHeader(http.StatusNotFound)
-		return
-	}
-
-	bundleID, err := supportbundle.CollectHelm(helmApp)
-	if err != nil {
-		logger.Error(errors.Wrap(err, "failed to collect helm support bundle"))
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-
-	collectSupportBundlesResponse := CollectSupportBundlesResponse{
-		ID:   bundleID,
-		Slug: bundleID,
 	}
 
 	JSON(w, http.StatusAccepted, collectSupportBundlesResponse)

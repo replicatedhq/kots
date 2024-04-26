@@ -1,6 +1,5 @@
 import { Version } from "@types";
 import { useSelectedApp } from "@features/App/hooks/useSelectedApp";
-import { useIsHelmManaged } from "@components/hooks";
 
 interface Props {
   onWhyNoGeneratedDiffClicked: (version: Version) => void;
@@ -39,11 +38,9 @@ function getPreviousSequence(versionHistory: Version[], version: Version) {
 
 function ViewDiffButton(props: Props) {
   const selectedApp = useSelectedApp();
-  const { data: isHelmManaged = false } = useIsHelmManaged();
 
   // TODO: flatten in selector
-  const showViewDiffButton =
-    !isHelmManaged && !selectedApp?.downstream.gitops?.isConnected;
+  const showViewDiffButton = !selectedApp?.downstream.gitops?.isConnected;
   const showDiffSummaryError =
     props.version?.diffSummaryError?.length > 0 ? true : false;
   const numberOfFilesChanged = props.version?.diffSummary

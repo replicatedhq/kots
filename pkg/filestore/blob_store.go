@@ -9,7 +9,6 @@ import (
 	"strings"
 
 	"github.com/pkg/errors"
-	"github.com/replicatedhq/kots/pkg/util"
 )
 
 var (
@@ -20,16 +19,6 @@ type BlobStore struct {
 }
 
 func (s *BlobStore) Init() error {
-	if util.IsHelmManaged() {
-		// Helm managed mode does not have any persisten storage.
-		dir, err := ioutil.TempDir("", "kotsadmdata-archives-")
-		if err != nil {
-			return errors.Wrapf(err, "failed to create ephemeral archives directory")
-		}
-		ArchivesDir = dir
-		return nil
-	}
-
 	err := os.MkdirAll(ArchivesDir, 0755)
 	if err != nil {
 		return errors.Wrapf(err, "failed to create archives directory")

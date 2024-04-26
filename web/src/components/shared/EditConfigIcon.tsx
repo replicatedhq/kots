@@ -1,7 +1,6 @@
 import { useSelectedApp } from "@features/App";
 import { Version } from "@types";
 import { Link } from "react-router-dom";
-import { useIsHelmManaged } from "@src/components//hooks";
 import Icon from "@components/Icon";
 import ReactTooltip from "react-tooltip";
 
@@ -12,8 +11,6 @@ const EditConfigIcon = ({
   version: Version | null;
   isPending: boolean;
 }) => {
-  const { data: isHelmManagedResponse } = useIsHelmManaged();
-  const isHelmManaged = isHelmManagedResponse || {};
   const selectedApp = useSelectedApp();
 
   if (!version) {
@@ -31,7 +28,7 @@ const EditConfigIcon = ({
   }
 
   let url = `/app/${selectedApp?.slug}/config/${version.sequence}`;
-  if (isHelmManaged && version.status.startsWith("pending")) {
+  if (version.status.startsWith("pending")) {
     url = `${url}?isPending=${isPending}&semver=${version.semver}`;
   }
 

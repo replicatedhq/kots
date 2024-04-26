@@ -15,8 +15,6 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/airgap"
-	apptypes "github.com/replicatedhq/kots/pkg/app/types"
-	"github.com/replicatedhq/kots/pkg/helm"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/kotsadm"
 	"github.com/replicatedhq/kots/pkg/kurl"
@@ -57,25 +55,11 @@ func (h *Handler) AppUpdateCheck(w http.ResponseWriter, r *http.Request) {
 	contentType := strings.Split(r.Header.Get("Content-Type"), ";")[0]
 	contentType = strings.TrimSpace(contentType)
 
-	var app apptypes.AppType
-	var kotsApp *apptypes.App
-	var err error
-
-	if util.IsHelmManaged() {
-		helmApp := helm.GetHelmApp(appSlug)
-		if helmApp == nil {
-			w.WriteHeader(http.StatusNotFound)
-			return
-		}
-		app = helmApp
-	} else {
-		kotsApp, err = store.GetStore().GetAppFromSlug(appSlug)
-		if err != nil {
-			logger.Error(errors.Wrapf(err, "failed to get app for slug %q", appSlug))
-			w.WriteHeader(http.StatusNotFound)
-			return
-		}
-		app = kotsApp
+	app, err := store.GetStore().GetAppFromSlug(appSlug)
+	if err != nil {
+		logger.Error(errors.Wrapf(err, "failed to get app for slug %q", appSlug))
+		w.WriteHeader(http.StatusNotFound)
+		return
 	}
 
 	if contentType == "application/json" {
@@ -100,15 +84,12 @@ func (h *Handler) AppUpdateCheck(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		if !util.IsHelmManaged() {
-			// refresh the app to get the correct sequence
-			kotsApp, err = store.GetStore().GetApp(app.GetID())
-			if err != nil {
-				logger.Error(errors.Wrap(err, "failed to get app"))
-				w.WriteHeader(http.StatusNotFound)
-				return
-			}
-			app = kotsApp
+		// refresh the app to get the correct sequence
+		app, err = store.GetStore().GetApp(app.GetID())
+		if err != nil {
+			logger.Error(errors.Wrap(err, "failed to get app"))
+			w.WriteHeader(http.StatusNotFound)
+			return
 		}
 
 		var appUpdateCheckResponse AppUpdateCheckResponse
@@ -147,7 +128,7 @@ func (h *Handler) AppUpdateCheck(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if contentType == "multipart/form-data" {
-		if !kotsApp.IsAirgap {
+		if !app.IsAirgap {
 			logger.Error(errors.New("not an airgap app"))
 			w.WriteHeader(http.StatusBadRequest)
 			w.Write([]byte("Cannot update an online install using an airgap bundle"))
@@ -203,7 +184,7 @@ func (h *Handler) AppUpdateCheck(w http.ResponseWriter, r *http.Request) {
 
 		tasks.StartUpdateTaskMonitor("update-download", finishedChan)
 
-		err = airgap.UpdateAppFromPath(kotsApp, rootDir, "", deploy, skipPreflights, skipCompatibilityCheck)
+		err = airgap.UpdateAppFromPath(app, rootDir, "", deploy, skipPreflights, skipCompatibilityCheck)
 		if err != nil {
 			finishedChan <- err
 

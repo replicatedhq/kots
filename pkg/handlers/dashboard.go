@@ -7,10 +7,8 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
 	appstatetypes "github.com/replicatedhq/kots/pkg/appstate/types"
-	"github.com/replicatedhq/kots/pkg/helm"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/store"
-	"github.com/replicatedhq/kots/pkg/util"
 	"github.com/replicatedhq/kots/pkg/version"
 )
 
@@ -24,30 +22,6 @@ type GetAppDashboardResponse struct {
 func (h *Handler) GetAppDashboard(w http.ResponseWriter, r *http.Request) {
 	appSlug := mux.Vars(r)["appSlug"]
 	clusterID := mux.Vars(r)["clusterId"]
-	appStatus := new(appstatetypes.AppStatus)
-	if util.IsHelmManaged() {
-		release := helm.GetHelmApp(appSlug)
-		if release == nil {
-			logger.Errorf("release for app: %s does not exist\n", appSlug)
-			w.WriteHeader(http.StatusNotFound)
-			return
-		}
-
-		// we have received informer data
-		if len(release.Status.ResourceStates) > 0 {
-			getAppDashboardResponse := GetAppDashboardResponse{
-				AppStatus:         &release.Status,
-				Metrics:           nil,
-				PrometheusAddress: "",
-			}
-
-			JSON(w, 200, getAppDashboardResponse)
-			return
-		}
-
-		w.WriteHeader(http.StatusNotFound)
-		return
-	}
 
 	a, err := store.GetStore().GetAppFromSlug(appSlug)
 	if err != nil {
@@ -56,7 +30,7 @@ func (h *Handler) GetAppDashboard(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	appStatus, err = store.GetStore().GetAppStatus(a.ID)
+	appStatus, err := store.GetStore().GetAppStatus(a.ID)
 	if err != nil {
 		logger.Error(err)
 		w.WriteHeader(500)

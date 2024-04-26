@@ -17,14 +17,12 @@ import (
 
 	"github.com/pkg/errors"
 	apptypes "github.com/replicatedhq/kots/pkg/app/types"
-	"github.com/replicatedhq/kots/pkg/helm"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	kotstypes "github.com/replicatedhq/kots/pkg/kotsadm/types"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/kurl"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/registry"
-	registrytypes "github.com/replicatedhq/kots/pkg/registry/types"
 	"github.com/replicatedhq/kots/pkg/render/helper"
 	"github.com/replicatedhq/kots/pkg/reporting"
 	"github.com/replicatedhq/kots/pkg/snapshot"
@@ -34,7 +32,6 @@ import (
 	"github.com/replicatedhq/kots/pkg/supportbundle/staticspecs"
 	"github.com/replicatedhq/kots/pkg/supportbundle/types"
 	"github.com/replicatedhq/kots/pkg/util"
-	"github.com/replicatedhq/kotskinds/apis/kots/v1beta1"
 	"github.com/replicatedhq/kotskinds/client/kotsclientset/scheme"
 	troubleshootv1beta2 "github.com/replicatedhq/troubleshoot/pkg/apis/troubleshoot/v1beta2"
 	sb "github.com/replicatedhq/troubleshoot/pkg/supportbundle"
@@ -56,7 +53,7 @@ func init() {
 }
 
 // CreateRenderedSpec creates the support bundle specification from defaults and the kots app
-func CreateRenderedSpec(app apptypes.AppType, sequence int64, kotsKinds *kotsutil.KotsKinds, opts types.TroubleshootOptions) (*troubleshootv1beta2.SupportBundle, error) {
+func CreateRenderedSpec(app *apptypes.App, sequence int64, kotsKinds *kotsutil.KotsKinds, opts types.TroubleshootOptions) (*troubleshootv1beta2.SupportBundle, error) {
 	builtBundle := kotsKinds.SupportBundle.DeepCopy()
 	if builtBundle == nil {
 		builtBundle = &troubleshootv1beta2.SupportBundle{
@@ -176,7 +173,7 @@ func mergeSupportBundleSpecs(builtBundles map[string]*troubleshootv1beta2.Suppor
 }
 
 // createSupportBundleSpecConfigMap creates a configmap containing the support bundle spec
-func createSupportBundleSpecConfigMap(app apptypes.AppType, sequence int64, kotsKinds *kotsutil.KotsKinds, configMapName string, builtBundle *troubleshootv1beta2.SupportBundle, opts types.TroubleshootOptions, clientset kubernetes.Interface) error {
+func createSupportBundleSpecConfigMap(app *apptypes.App, sequence int64, kotsKinds *kotsutil.KotsKinds, configMapName string, builtBundle *troubleshootv1beta2.SupportBundle, opts types.TroubleshootOptions, clientset kubernetes.Interface) error {
 	s := serializer.NewYAMLSerializer(serializer.DefaultMetaFactory, scheme.Scheme, scheme.Scheme)
 	var b bytes.Buffer
 	if err := s.Encode(builtBundle, &b); err != nil {
@@ -197,13 +194,9 @@ func createSupportBundleSpecConfigMap(app apptypes.AppType, sequence int64, kots
 		return errors.Wrap(err, "failed to unmarshal rendered support bundle spec")
 	}
 
-	var registrySettings registrytypes.RegistrySettings
-	if !util.IsHelmManaged() {
-		s, err := store.GetStore().GetRegistryDetailsForApp(app.GetID())
-		if err != nil {
-			return errors.Wrap(err, "failed to get registry settings for app")
-		}
-		registrySettings = s
+	registrySettings, err := store.GetStore().GetRegistryDetailsForApp(app.GetID())
+	if err != nil {
+		return errors.Wrap(err, "failed to get registry settings for app")
 	}
 
 	collectors, err := registry.UpdateCollectorSpecsWithRegistryData(supportBundle.Spec.Collectors, registrySettings, kotsKinds.Installation, kotsKinds.License, &kotsKinds.KotsApplication)
@@ -261,7 +254,7 @@ func createSupportBundleSpecConfigMap(app apptypes.AppType, sequence int64, kots
 }
 
 // createSupportBundleSpecSecret creates a secret containing the support bundle spec
-func createSupportBundleSpecSecret(app apptypes.AppType, sequence int64, kotsKinds *kotsutil.KotsKinds, secretName string, builtBundle *troubleshootv1beta2.SupportBundle, opts types.TroubleshootOptions, clientset kubernetes.Interface) error {
+func createSupportBundleSpecSecret(app *apptypes.App, sequence int64, kotsKinds *kotsutil.KotsKinds, secretName string, builtBundle *troubleshootv1beta2.SupportBundle, opts types.TroubleshootOptions, clientset kubernetes.Interface) error {
 	s := serializer.NewYAMLSerializer(serializer.DefaultMetaFactory, scheme.Scheme, scheme.Scheme)
 	var b bytes.Buffer
 	if err := s.Encode(builtBundle, &b); err != nil {
@@ -282,13 +275,9 @@ func createSupportBundleSpecSecret(app apptypes.AppType, sequence int64, kotsKin
 		return errors.Wrap(err, "failed to unmarshal rendered support bundle spec")
 	}
 
-	var registrySettings registrytypes.RegistrySettings
-	if !util.IsHelmManaged() {
-		s, err := store.GetStore().GetRegistryDetailsForApp(app.GetID())
-		if err != nil {
-			return errors.Wrap(err, "failed to get registry settings for app")
-		}
-		registrySettings = s
+	registrySettings, err := store.GetStore().GetRegistryDetailsForApp(app.GetID())
+	if err != nil {
+		return errors.Wrap(err, "failed to get registry settings for app")
 	}
 
 	collectors, err := registry.UpdateCollectorSpecsWithRegistryData(supportBundle.Spec.Collectors, registrySettings, kotsKinds.Installation, kotsKinds.License, &kotsKinds.KotsApplication)
@@ -346,7 +335,7 @@ func createSupportBundleSpecSecret(app apptypes.AppType, sequence int64, kotsKin
 }
 
 // addAfterCollectionSpec adds cluster specific and upload results URI to the support bundle
-func addAfterCollectionSpec(app apptypes.AppType, b *troubleshootv1beta2.SupportBundle, opts types.TroubleshootOptions) *troubleshootv1beta2.SupportBundle {
+func addAfterCollectionSpec(app *apptypes.App, b *troubleshootv1beta2.SupportBundle, opts types.TroubleshootOptions) *troubleshootv1beta2.SupportBundle {
 	supportBundle := b.DeepCopy()
 
 	// determine an upload URL
@@ -398,7 +387,7 @@ func createVendorSpec(b *troubleshootv1beta2.SupportBundle) (*troubleshootv1beta
 }
 
 // createClusterSpecificSupportBundle creates a support bundle spec with only cluster specific collectors, analyzers and upload result URI.
-func createClusterSpecificSpec(app apptypes.AppType, b *troubleshootv1beta2.SupportBundle, clientset kubernetes.Interface) (*troubleshootv1beta2.SupportBundle, error) {
+func createClusterSpecificSpec(app *apptypes.App, b *troubleshootv1beta2.SupportBundle, clientset kubernetes.Interface) (*troubleshootv1beta2.SupportBundle, error) {
 	supportBundle, err := staticspecs.GetClusterSpecificSpec()
 	if err != nil {
 		logger.Errorf("Failed to load cluster specific support bundle spec: %v", err)
@@ -410,7 +399,7 @@ func createClusterSpecificSpec(app apptypes.AppType, b *troubleshootv1beta2.Supp
 }
 
 // createDefaultSpec creates a default support bundle spec that includes the default collectors and analyzers and add kurl specific collectors and analyzers if the cluster is a kurl cluster
-func createDefaultSpec(app apptypes.AppType, b *troubleshootv1beta2.SupportBundle, opts types.TroubleshootOptions, namespacesToCollect []string, namespacesToAnalyze []string, clientset *kubernetes.Clientset) (*troubleshootv1beta2.SupportBundle, error) {
+func createDefaultSpec(app *apptypes.App, b *troubleshootv1beta2.SupportBundle, opts types.TroubleshootOptions, namespacesToCollect []string, namespacesToAnalyze []string, clientset *kubernetes.Clientset) (*troubleshootv1beta2.SupportBundle, error) {
 	supportBundle, err := staticspecs.GetDefaultSpec()
 	if err != nil {
 		logger.Errorf("Failed to load default support bundle spec: %v", err)
@@ -456,7 +445,7 @@ func createDefaultSpec(app apptypes.AppType, b *troubleshootv1beta2.SupportBundl
 }
 
 func addDiscoveredSpecs(
-	supportBundle *troubleshootv1beta2.SupportBundle, app apptypes.AppType, clientset kubernetes.Interface,
+	supportBundle *troubleshootv1beta2.SupportBundle, app *apptypes.App, clientset kubernetes.Interface,
 ) *troubleshootv1beta2.SupportBundle {
 	specs, err := findSupportBundleSpecs(clientset)
 	if err != nil {
@@ -725,29 +714,19 @@ func getDefaultAnalyzers(isKurl bool) []*troubleshootv1beta2.Analyze {
 
 // addDefaultDynamicTroubleshoot adds dynamic spec to the support bundle.
 // prefer addDefaultTroubleshoot unless absolutely necessary to encourage consistency across built-in and kots.io specs.
-func addDefaultDynamicTroubleshoot(supportBundle *troubleshootv1beta2.SupportBundle, app apptypes.AppType, imageName string, pullSecret *troubleshootv1beta2.ImagePullSecrets) *troubleshootv1beta2.SupportBundle {
+func addDefaultDynamicTroubleshoot(supportBundle *troubleshootv1beta2.SupportBundle, app *apptypes.App, imageName string, pullSecret *troubleshootv1beta2.ImagePullSecrets) *troubleshootv1beta2.SupportBundle {
 	next := supportBundle.DeepCopy()
 	next.Spec.Collectors = append(next.Spec.Collectors, getDefaultDynamicCollectors(app, imageName, pullSecret)...)
 	next.Spec.Analyzers = append(next.Spec.Analyzers, getDefaultDynamicAnalyzers(app)...)
 	return next
 }
 
-func getDefaultDynamicCollectors(app apptypes.AppType, imageName string, pullSecret *troubleshootv1beta2.ImagePullSecrets) []*troubleshootv1beta2.Collect {
+func getDefaultDynamicCollectors(app *apptypes.App, imageName string, pullSecret *troubleshootv1beta2.ImagePullSecrets) []*troubleshootv1beta2.Collect {
 	collectors := make([]*troubleshootv1beta2.Collect, 0)
 
-	var err error
-	var license *v1beta1.License
-	switch a := app.(type) {
-	case *apptypes.App:
-		license, err = store.GetStore().GetLatestLicenseForApp(app.GetID())
-		if err != nil {
-			logger.Errorf("Failed to load license data from store: %v", err)
-		}
-	case *apptypes.HelmApp:
-		license, err = helm.GetChartLicenseFromSecretOrDownload(a)
-		if err != nil {
-			logger.Errorf("Failed to load license data from helm: %v", err)
-		}
+	license, err := store.GetStore().GetLatestLicenseForApp(app.GetID())
+	if err != nil {
+		logger.Errorf("Failed to load license data from store: %v", err)
 	}
 
 	if license != nil {
@@ -829,25 +808,23 @@ func getDefaultDynamicCollectors(app apptypes.AppType, imageName string, pullSec
 
 	collectors = append(collectors, makeVeleroCollectors()...)
 
-	if app, ok := app.(*apptypes.App); ok {
-		apps := []*apptypes.App{}
-		if app != nil {
-			apps = append(apps, app)
-		} else {
-			var err error
-			apps, err = store.GetStore().ListInstalledApps()
-			if err != nil {
-				logger.Errorf("Failed to list installed apps: %v", err)
-			}
+	apps := []*apptypes.App{}
+	if app != nil {
+		apps = append(apps, app)
+	} else {
+		var err error
+		apps, err = store.GetStore().ListInstalledApps()
+		if err != nil {
+			logger.Errorf("Failed to list installed apps: %v", err)
 		}
+	}
 
-		if len(apps) > 0 {
-			appVersionArchiveCollectors, err := makeAppVersionArchiveCollectors(apps)
-			if err != nil {
-				logger.Errorf("Failed to make app version archive collectors: %v", err)
-			}
-			collectors = append(collectors, appVersionArchiveCollectors...)
+	if len(apps) > 0 {
+		appVersionArchiveCollectors, err := makeAppVersionArchiveCollectors(apps)
+		if err != nil {
+			logger.Errorf("Failed to make app version archive collectors: %v", err)
 		}
+		collectors = append(collectors, appVersionArchiveCollectors...)
 	}
 
 	clientset, err := k8sutil.GetClientset()
@@ -890,7 +867,7 @@ func getDefaultDynamicCollectors(app apptypes.AppType, imageName string, pullSec
 	return collectors
 }
 
-func getDefaultDynamicAnalyzers(app apptypes.AppType) []*troubleshootv1beta2.Analyze {
+func getDefaultDynamicAnalyzers(app *apptypes.App) []*troubleshootv1beta2.Analyze {
 	analyzers := make([]*troubleshootv1beta2.Analyze, 0)
 	analyzers = append(analyzers, makeAPIReplicaAnalyzer())
 

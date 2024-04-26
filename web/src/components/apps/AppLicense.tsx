@@ -22,14 +22,11 @@ import "@src/scss/components/apps/AppLicense.scss";
 import { LicenseFields } from "@features/Dashboard";
 import { useLicenseWithIntercept } from "@features/App";
 import Icon from "../Icon";
-import { UseDownloadValues } from "../hooks";
-import { HelmDeployModal } from "../shared/modals/HelmDeployModal";
 
 type Props = {
   app: App;
   changeCallback: () => void;
   syncCallback: () => void;
-  isHelmManaged: boolean;
 };
 
 type State = {
@@ -318,65 +315,13 @@ const AppLicenseComponent = () => {
     );
   }
 
-  const { app, isHelmManaged } = outletContext;
+  const { app } = outletContext;
   const expiresAt = getLicenseExpiryDate(appLicense);
   const gitops = app.downstream?.gitops;
   const appName = app?.name || "Your application";
 
   let nextModalBody: ReactNode;
-  if (isHelmManaged) {
-    const sequence = app?.downstream?.currentVersion?.sequence;
-    const versionLabel = app?.downstream?.currentVersion?.versionLabel;
-
-    nextModalBody = (
-      <UseDownloadValues
-        appSlug={app?.slug}
-        fileName="values.yaml"
-        sequence={sequence}
-        versionLabel={versionLabel}
-        isPending={false}
-      >
-        {({
-          download,
-          downloadError: downloadError,
-          name,
-          ref,
-          url,
-        }: {
-          download: () => void;
-          clearError: () => void;
-          downloadError: boolean;
-          name: string;
-          ref: string;
-          url: string;
-        }) => {
-          return (
-            <>
-              <HelmDeployModal
-                appSlug={app?.slug}
-                chartPath={app?.chartPath || ""}
-                downloadClicked={download}
-                downloadError={downloadError}
-                hideHelmDeployModal={hideNextStepModal}
-                registryUsername={app?.credentials?.username}
-                registryPassword={app?.credentials?.password}
-                showHelmDeployModal={true}
-                showDownloadValues={true}
-                subtitle={
-                  "Follow the steps below to redeploy the release using the new license."
-                }
-                title={` Redeploy ${app?.slug}`}
-                upgradeTitle={"Redeploy release"}
-                version={versionLabel}
-                namespace={app?.namespace}
-              />
-              <a href={url} download={name} className="hidden" ref={ref} />
-            </>
-          );
-        }}
-      </UseDownloadValues>
-    );
-  } else if (gitops?.isConnected) {
+  if (gitops?.isConnected) {
     nextModalBody = (
       <div className="Modal-body">
         <p className="u-fontSize--large u-textColor--primary u-lineHeight--medium u-marginBottom--20">

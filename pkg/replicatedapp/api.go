@@ -51,16 +51,6 @@ func GetLatestLicense(license *kotsv1beta1.License) (*LicenseData, error) {
 	return licenseData, nil
 }
 
-func GetLatestLicenseForHelm(licenseID string) (*LicenseData, error) {
-	url := fmt.Sprintf("%s/license", util.GetReplicatedAPIEndpoint())
-	licenseData, err := getLicenseFromAPI(url, licenseID)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to get helm license from api")
-	}
-
-	return licenseData, nil
-}
-
 func getAppIdFromLicenseId(s store.Store, licenseID string) (string, error) {
 	apps, err := s.ListInstalledApps()
 	if err != nil {

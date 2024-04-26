@@ -11,21 +11,12 @@ export default {
 const Template: ComponentStory<typeof ShowLogsModal> = (args) => {
   const [selectedTab, setSelectedTab] = useState("dryrunStdout");
   const renderLogsTab = () => {
-    const isHelmManaged = false;
-    const filterNonHelmTabs = (tab: string) => {
-      if (isHelmManaged) {
-        return tab.startsWith("helm");
-      }
-      return true;
-    };
-
     const tabs = Object.keys(args.logs);
 
     return (
       <div className="flex action-tab-bar u-marginTop--10">
         {tabs
           .filter((tab) => tab !== "renderError")
-          .filter((tab) => filterNonHelmTabs(tab))
           .map((tab) => (
             <div
               className={`tab-item blue ${tab === selectedTab && "is-active"}`}
