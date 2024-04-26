@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { login, uploadLicense, validateDeployLogs } from '../shared';
+import { login, uploadLicense } from '../shared';
 
 const { execSync } = require("child_process");
 
@@ -23,8 +23,27 @@ test('smoke test', async ({ page }) => {
   await expect(page.locator('#app')).toContainText('Ready', { timeout: 30000 });
   await expect(page.locator('#app')).toContainText('Currently deployed version', { timeout: 30000 });
   await expect(page.locator('#app')).toContainText('Check for update');
-  await expect(page.locator('#app')).toContainText('Configure automatic updates');
   await expect(page.locator('#app')).toContainText('Redeploy', { timeout: 15000 });
+  await expect(page.getByText('App Name')).toBeVisible();
+  await expect(page.locator('.Dashboard--appIcon')).toBeVisible();
+  await expect(page.locator('p').filter({ hasText: 'License' })).toBeVisible();
+  await page.getByText('Configure automatic updates').click();
+  await expect(page.locator('.ConfigureUpdatesModal')).toContainText('Default');
+  await expect(page.locator('.ConfigureUpdatesModal')).toContainText('Every 4 hours');
+  await expect(page.locator('label')).toContainText('Enable automatic deployment');
+  await page.locator('.replicated-select__control').click();
+  await page.waitForTimeout(1000);
+  await page.locator('.replicated-select__option').getByText('Weekly', { exact: true }).click();
+  await page.waitForTimeout(1000);
+  await expect(page.locator('.ConfigureUpdatesModal')).toContainText('Weekly');
+  await expect(page.locator('.ConfigureUpdatesModal')).toContainText('At 12:00 AM, only on Sunday');
+  await page.getByRole('button', { name: 'Update', exact: true }).click();
+  await expect(page.getByText('Automatically check for updates', { exact: true })).not.toBeVisible();
+  await page.locator('svg.icons.clickable[data-tip="View release notes"]').click();
+  await expect(page.getByLabel('Release Notes').getByRole('paragraph')).toContainText('release notes - updates');
+  await page.getByRole('button', { name: 'Close' }).click();
+  await page.locator('span[data-tip="View deploy logs"]').click();
+  await validateDeployLogs(page, expect);
   await page.getByRole('link', { name: 'Version history' }).click();
   await expect(page.locator('.currentVersion--wrapper')).toContainText('Sequence 0');
   await expect(page.locator('#app')).toContainText('Currently deployed version');
@@ -32,32 +51,12 @@ test('smoke test', async ({ page }) => {
   await expect(page.locator('#app')).toContainText('Configure automatic updates');
   await expect(page.getByRole('button')).toContainText('Redeploy');
   await page.getByText('Configure automatic updates').click();
-  await expect(page.locator('.ConfigureUpdatesModal')).toContainText('Default');
-  await expect(page.locator('.ConfigureUpdatesModal')).toContainText('Every 4 hours');
-  await expect(page.locator('label')).toContainText('Enable automatic deployment');
-  await page.locator('.replicated-select__control').click();
-  await page.locator('.replicated-select__option').getByText('Weekly', { exact: true }).click();
-  await expect(page.locator('.ConfigureUpdatesModal')).toContainText('Weekly');
-  await expect(page.locator('.ConfigureUpdatesModal')).toContainText('At 12:00 AM, only on Sunday');
-  await page.getByRole('button', { name: 'Update', exact: true }).click();
-  await expect(page.getByText('Automatically check for updates', { exact: true })).not.toBeVisible();
-  await page.waitForTimeout(2000);
-  await page.locator('span[data-tip="View deploy logs"]').first().click();
-  await validateDeployLogs(page, expect);
-  await page.reload();
-  await page.getByRole('link', { name: 'Dashboard' }).click();
-  await expect(page.getByText('App Name')).toBeVisible();
-  await expect(page.locator('.Dashboard--appIcon')).toBeVisible();
-  await expect(page.locator('p').filter({ hasText: 'License' })).toBeVisible();
-  await page.getByText('Configure automatic updates').click();
   await expect(page.locator('.ConfigureUpdatesModal')).toContainText('Weekly');
   await expect(page.locator('.ConfigureUpdatesModal')).toContainText('At 12:00 AM, only on Sunday');
   await expect(page.locator('label')).toContainText('Enable automatic deployment');
   await page.getByRole('button', { name: 'Cancel' }).click();
-  await page.locator('svg.icons.clickable[data-tip="View release notes"]').click();
-  await expect(page.getByLabel('Release Notes').getByRole('paragraph')).toContainText('release notes - updates');
-  await page.getByRole('button', { name: 'Close' }).click();
-  await page.locator('span[data-tip="View deploy logs"]').click();
+  await expect(page.getByText('Automatically check for updates', { exact: true })).not.toBeVisible();
+  await page.locator('span[data-tip="View deploy logs"]').first().click();
   await validateDeployLogs(page, expect);
   await page.getByRole('link', { name: 'Config', exact: true }).click();
   await expect(page.locator('h3')).toContainText('My Example Config');
@@ -194,3 +193,16 @@ test('smoke test', async ({ page }) => {
   await expect(page.locator('#app')).toContainText('Enter the password to access the App Name admin console.');
   await expect(page.getByRole('button')).toContainText('Log in');
 });
+
+const validateDeployLogs = async (page, expect) => {
+  await expect(page.getByText('dryrunStdout')).toBeVisible();
+  await expect(page.getByText('dryrunStderr')).toBeVisible();
+  await expect(page.getByText('applyStdout')).toBeVisible();
+  await expect(page.getByText('applyStderr')).toBeVisible();
+  await expect(page.getByText('helmStdout')).toBeVisible();
+  await expect(page.getByText('helmStderr')).toBeVisible();
+  await page.getByText('dryrunStderr').click();
+  await page.getByText('applyStdout').click();
+  await expect(page.locator('.view-lines')).toContainText('created');
+  await page.getByRole('button', { name: 'Ok, got it!' }).click();
+};
