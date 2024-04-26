@@ -32,7 +32,9 @@ test('smoke test', async ({ page }) => {
   await expect(page.locator('.ConfigureUpdatesModal')).toContainText('Every 4 hours');
   await expect(page.locator('label')).toContainText('Enable automatic deployment');
   await page.locator('.replicated-select__control').click();
+  await page.waitForTimeout(1000);
   await page.locator('.replicated-select__option').getByText('Weekly', { exact: true }).click();
+  await page.waitForTimeout(1000);
   await expect(page.locator('.ConfigureUpdatesModal')).toContainText('Weekly');
   await expect(page.locator('.ConfigureUpdatesModal')).toContainText('At 12:00 AM, only on Sunday');
   await page.getByRole('button', { name: 'Update', exact: true }).click();
