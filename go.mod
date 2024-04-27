@@ -48,7 +48,7 @@ require (
 	github.com/phayes/freeport v0.0.0-20220201140144-74d24b5ae9f5
 	github.com/pkg/errors v0.9.1
 	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2
-	github.com/replicatedhq/embedded-cluster-kinds v1.1.5
+	github.com/replicatedhq/embedded-cluster-kinds v1.1.6
 	github.com/replicatedhq/kotskinds v0.0.0-20240416132840-4e646b87f7a1
 	github.com/replicatedhq/kurlkinds v1.5.0
 	github.com/replicatedhq/troubleshoot v0.88.1
@@ -56,7 +56,7 @@ require (
 	github.com/robfig/cron v1.2.0
 	github.com/robfig/cron/v3 v3.0.1
 	github.com/rqlite/gorqlite v0.0.0-20221028154453-256f31831ff3
-	github.com/schemahero/schemahero v0.17.6
+	github.com/schemahero/schemahero v0.17.7
 	github.com/segmentio/ksuid v1.0.4
 	github.com/sergi/go-diff v1.3.2-0.20230802210424-5b0b94c5c0d3
 	github.com/spf13/cobra v1.8.0
