@@ -1308,8 +1308,8 @@ github.com/redis/go-redis/v9 v9.0.5/go.mod h1:WqMKv5vnQbRuZstUwxQI195wHy+t4PuXDO
 github.com/redis/go-redis/v9 v9.1.0 h1:137FnGdk+EQdCbye1FW+qOEcY5S+SpY9T0NiuqvtfMY=
 github.com/redis/go-redis/v9 v9.1.0/go.mod h1:urWj3He21Dj5k4TK1y59xH8Uj6ATueP8AH1cY3lZl4c=
 github.com/remyoudompheng/bigfft v0.0.0-20170806203942-52369c62f446/go.mod h1:uYEyJGbgTkfkS4+E/PavXkNJcbFIpEtjt2B0KDQ5+9M=
-github.com/replicatedhq/embedded-cluster-kinds v1.1.5 h1:BSaIwHOxIpl+BZCd7Yp+DWs85hd/0eEhzqlz3VPjMx8=
-github.com/replicatedhq/embedded-cluster-kinds v1.1.5/go.mod h1:BYwgiKbCBMkHKqjz6AkHnbbPI0LeNqmFd7uFR7qZJqw=
+github.com/replicatedhq/embedded-cluster-kinds v1.1.6 h1:eJgXyo981RiNM2thKhXKxs/pq9rD0yqQY6zEZ12WPWM=
+github.com/replicatedhq/embedded-cluster-kinds v1.1.6/go.mod h1:tj418fVUIy1xzxKacfoMx0SG4Oy5HF7RYC6Sy1mXgcU=
 github.com/replicatedhq/kotskinds v0.0.0-20240416132840-4e646b87f7a1 h1:+RvMZ646tQTRzWFZTy6mnmgWJZOLFu6B9PXv8tcIcFY=
 github.com/replicatedhq/kotskinds v0.0.0-20240416132840-4e646b87f7a1/go.mod h1:QjhIUu3+OmHZ09u09j3FCoTt8F3BYtQglS+OLmftu9I=
 github.com/replicatedhq/kurlkinds v1.5.0 h1:zZ0PKNeh4kXvSzVGkn62DKTo314GxhXg1TSB3azURMc=
@@ -1350,8 +1350,8 @@ github.com/sagikazarmark/locafero v0.4.0/go.mod h1:Pe1W6UlPYUk/+wc/6KFhbORCfqzgY
 github.com/sagikazarmark/slog-shim v0.1.0 h1:diDBnUNK9N/354PgrxMywXnAwEr1QZcOr6gto+ugjYE=
 github.com/sagikazarmark/slog-shim v0.1.0/go.mod h1:SrcSrq8aKtyuqEI1uvTDTK1arOWRIczQRv+GVI1AkeQ=
 github.com/satori/go.uuid v1.2.0/go.mod h1:dA0hQrYB0VpLJoorglMZABFdXlWrHn1NEOzdhQKdks0=
-github.com/schemahero/schemahero v0.17.6 h1:+IznJ2Q1GpH6j5asFMY8DQGLV+JQeEY5w65QmYk+oS8=
-github.com/schemahero/schemahero v0.17.6/go.mod h1:wwsh+dFSPLHX3rwIc4ptylnCQzEgd6T+cq4IM49/re8=
+github.com/schemahero/schemahero v0.17.7 h1:OranhbEYgkf/f7dOn3XwatepUbMu/ro5DefJQN/mNE4=
+github.com/schemahero/schemahero v0.17.7/go.mod h1:wwsh+dFSPLHX3rwIc4ptylnCQzEgd6T+cq4IM49/re8=
 github.com/sebdah/goldie/v2 v2.5.3 h1:9ES/mNN+HNUbNWpVAlrzuZ7jE+Nrczbj8uFRjM7624Y=
 github.com/sebdah/goldie/v2 v2.5.3/go.mod h1:oZ9fp0+se1eapSRjfYbsV/0Hqhbuu3bJVvKI/NNtssI=
 github.com/secure-systems-lab/go-securesystemslib v0.8.0 h1:mr5An6X45Kb2nddcFlbmfHkLguCE9laoZCUzEEpIZXA=
