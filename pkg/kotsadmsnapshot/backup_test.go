@@ -2,6 +2,7 @@ package snapshot
 
 import (
 	"context"
+	"os"
 	"testing"
 
 	kotsadmtypes "github.com/replicatedhq/kots/pkg/kotsadm/types"
@@ -23,6 +24,7 @@ func TestPrepareIncludedNamespaces(t *testing.T) {
 		name       string
 		namespaces []string
 		want       []string
+		isEC       bool
 	}{
 		{
 			name:       "empty",
@@ -74,13 +76,33 @@ func TestPrepareIncludedNamespaces(t *testing.T) {
 			namespaces: []string{"*", "", "test"},
 			want:       []string{"*"},
 		},
+		{
+			name:       "wildcard with embedded cluster",
+			namespaces: []string{"*", "test"},
+			want:       []string{"*"},
+			isEC:       true,
+		},
+		{
+			name:       "embedded-cluster install",
+			namespaces: []string{"test", "abcapp"},
+			want:       []string{"test", "abcapp", "embedded-cluster", "kube-system"},
+			isEC:       true,
+		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			if tt.isEC {
+				err := os.Setenv("EMBEDDED_CLUSTER_ID", "test")
+				assert.NoError(t, err)
+			}
 			got := prepareIncludedNamespaces(tt.namespaces)
 			if !assert.ElementsMatch(t, tt.want, got) {
 				t.Errorf("prepareIncludedNamespaces() = %v, want %v", got, tt.want)
+			}
+			if tt.isEC {
+				err := os.Setenv("EMBEDDED_CLUSTER_ID", "")
+				assert.NoError(t, err)
 			}
 		})
 	}

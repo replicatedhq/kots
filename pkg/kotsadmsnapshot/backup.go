@@ -951,6 +951,7 @@ func mergeLabelSelector(kots metav1.LabelSelector, app metav1.LabelSelector) met
 // Prepares the list of unique namespaces that will be included in a backup. Empty namespaces are excluded.
 // If a wildcard is specified, any specific namespaces will not be included since the backup will include all namespaces.
 // Velero does not allow for both a wildcard and specific namespaces and will consider the backup invalid if both are present.
+// If this is an embedded-cluster installation, the "embedded-cluster" and "kube-system" namespaces will be included.
 func prepareIncludedNamespaces(namespaces []string) []string {
 	uniqueNamespaces := make(map[string]bool)
 	for _, n := range namespaces {
@@ -960,6 +961,11 @@ func prepareIncludedNamespaces(namespaces []string) []string {
 			return []string{n}
 		}
 		uniqueNamespaces[n] = true
+	}
+
+	if util.IsEmbeddedCluster() {
+		uniqueNamespaces["embedded-cluster"] = true
+		uniqueNamespaces["kube-system"] = true
 	}
 
 	includedNamespaces := make([]string, len(uniqueNamespaces))
