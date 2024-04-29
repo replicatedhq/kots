@@ -39,3 +39,6 @@ pkg/tests/renderdir/cases/*/results
 melange.rsa
 melange.rsa.pub
 packages/*
+
+# precommit
+.pre-commit-config.yaml
