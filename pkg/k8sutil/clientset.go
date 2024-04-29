@@ -1,11 +1,15 @@
 package k8sutil
 
 import (
+	"fmt"
 	"strconv"
 
 	"github.com/pkg/errors"
+	embeddedclusterv1beta1 "github.com/replicatedhq/embedded-cluster-kinds/apis/v1beta1"
 	flag "github.com/spf13/pflag"
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/cli-runtime/pkg/genericclioptions"
 	"k8s.io/client-go/discovery"
@@ -14,6 +18,7 @@ import (
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/restmapper"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
 )
 
@@ -79,6 +84,27 @@ func GetDynamicClient() (dynamic.Interface, error) {
 		return nil, errors.Wrap(err, "failed to create dynamic client")
 	}
 	return dynamicClient, nil
+}
+
+// GetControllerRuntimeClient gets a controller-runtime kubernetes client. This function
+// also register some of our CRDs into the client's scheme.
+func GetControllerRuntimeClient() (client.Client, error) {
+	clientConfig, err := GetClusterConfig()
+	if err != nil {
+		return nil, fmt.Errorf("failed to get cluster config: %w", err)
+	}
+	scheme := runtime.NewScheme()
+	embeddedclusterv1beta1.AddToScheme(scheme)
+	corev1.AddToScheme(scheme)
+	return client.New(
+		clientConfig,
+		client.Options{
+			Scheme: scheme,
+			WarningHandler: client.WarningHandlerOptions{
+				SuppressWarnings: true,
+			},
+		},
+	)
 }
 
 func GetK8sVersion(clientset kubernetes.Interface) (string, error) {

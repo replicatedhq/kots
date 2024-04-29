@@ -10,7 +10,6 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
-	embeddedclusterv1beta1 "github.com/replicatedhq/embedded-cluster-kinds/apis/v1beta1"
 	"github.com/replicatedhq/kots/pkg/airgap"
 	downstreamtypes "github.com/replicatedhq/kots/pkg/api/downstream/types"
 	"github.com/replicatedhq/kots/pkg/api/handlers/types"
@@ -275,7 +274,7 @@ func responseAppFromApp(a *apptypes.App) (*types.ResponseApp, error) {
 	}
 
 	if util.IsEmbeddedCluster() {
-		var embeddedClusterConfig *embeddedclusterv1beta1.Config
+		var embeddedClusterConfig string
 		if appVersions.CurrentVersion != nil {
 			embeddedClusterConfig, err = store.GetStore().GetEmbeddedClusterConfigForVersion(a.ID, appVersions.CurrentVersion.Sequence)
 			if err != nil {
@@ -283,8 +282,8 @@ func responseAppFromApp(a *apptypes.App) (*types.ResponseApp, error) {
 			}
 		}
 
-		if embeddedClusterConfig != nil {
-			cluster.RequiresUpgrade, err = embeddedcluster.RequiresUpgrade(context.TODO(), embeddedClusterConfig.Spec)
+		if embeddedClusterConfig != "" {
+			cluster.RequiresUpgrade, err = embeddedcluster.RequiresUpgrade(context.TODO(), embeddedClusterConfig)
 			if err != nil {
 				return nil, errors.Wrap(err, "failed to check if cluster requires upgrade")
 			}

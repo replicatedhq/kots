@@ -108,7 +108,7 @@ type KotsKinds struct {
 
 	LintConfig *kotsv1beta1.LintConfig
 
-	EmbeddedClusterConfig *embeddedclusterv1beta1.Config
+	EmbeddedClusterConfig string
 }
 
 func IsKotsKind(apiVersion string, kind string) bool {
@@ -461,14 +461,7 @@ func (o KotsKinds) Marshal(g string, v string, k string) (string, error) {
 	}
 
 	if g == "embeddedcluster.replicated.com" && v == "v1beta1" && k == "Config" {
-		if o.EmbeddedClusterConfig == nil {
-			return "", nil
-		}
-		var b bytes.Buffer
-		if err := s.Encode(o.EmbeddedClusterConfig, &b); err != nil {
-			return "", errors.Wrap(err, "failed to encode embedded cluster config")
-		}
-		return string(b.Bytes()), nil
+		return o.EmbeddedClusterConfig, nil
 	}
 
 	return "", errors.Errorf("unknown gvk %s/%s, Kind=%s", g, v, k)
@@ -552,7 +545,7 @@ func (k *KotsKinds) addKotsKinds(content []byte) error {
 		case "app.k8s.io/v1beta1, Kind=Application":
 			k.Application = decoded.(*applicationv1beta1.Application)
 		case "embeddedcluster.replicated.com/v1beta1, Kind=Config":
-			k.EmbeddedClusterConfig = decoded.(*embeddedclusterv1beta1.Config)
+			k.EmbeddedClusterConfig = string(doc)
 		}
 	}
 
@@ -938,18 +931,6 @@ func LoadLicenseFromBytes(data []byte) (*kotsv1beta1.License, error) {
 	}
 
 	return obj.(*kotsv1beta1.License), nil
-}
-
-func LoadEmbeddedClusterConfigFromBytes(data []byte) (*embeddedclusterv1beta1.Config, error) {
-	decode := scheme.Codecs.UniversalDeserializer().Decode
-	obj, gvk, err := decode([]byte(data), nil, nil)
-	if err != nil {
-		return nil, errors.Wrapf(err, "failed to decode: %v", string(data))
-	}
-	if gvk.Group != "embeddedcluster.replicated.com" || gvk.Version != "v1beta1" || gvk.Kind != "Config" {
-		return nil, errors.Errorf("unexpected GVK: %s", gvk.String())
-	}
-	return obj.(*embeddedclusterv1beta1.Config), nil
 }
 
 func LoadConfigValuesFromFile(configValuesFilePath string) (*kotsv1beta1.ConfigValues, error) {

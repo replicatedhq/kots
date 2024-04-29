@@ -4,7 +4,6 @@ import (
 	"context"
 	"time"
 
-	embeddedclusterv1beta1 "github.com/replicatedhq/embedded-cluster-kinds/apis/v1beta1"
 	airgaptypes "github.com/replicatedhq/kots/pkg/airgap/types"
 	downstreamtypes "github.com/replicatedhq/kots/pkg/api/downstream/types"
 	versiontypes "github.com/replicatedhq/kots/pkg/api/version/types"
@@ -200,7 +199,7 @@ type VersionStore interface {
 	GetNextAppSequence(appID string) (int64, error)
 	GetCurrentUpdateCursor(appID string, channelID string) (string, error)
 	HasStrictPreflights(appID string, sequence int64) (bool, error)
-	GetEmbeddedClusterConfigForVersion(appID string, sequence int64) (*embeddedclusterv1beta1.Config, error)
+	GetEmbeddedClusterConfigForVersion(appID string, sequence int64) (string, error)
 }
 
 type LicenseStore interface {

@@ -24,7 +24,7 @@ var stateMut = sync.Mutex{}
 // - The app embedded cluster configuration differs from the current embedded cluster config.
 // - The current cluster config (as part of the Installation object) already exists in the cluster.
 func MaybeStartClusterUpgrade(ctx context.Context, store store.Store, kotsKinds *kotsutil.KotsKinds, appID string) error {
-	if kotsKinds == nil || kotsKinds.EmbeddedClusterConfig == nil {
+	if kotsKinds == nil || kotsKinds.EmbeddedClusterConfig == "" {
 		return nil
 	}
 
@@ -32,8 +32,7 @@ func MaybeStartClusterUpgrade(ctx context.Context, store store.Store, kotsKinds 
 		return nil
 	}
 
-	spec := kotsKinds.EmbeddedClusterConfig.Spec
-	if upgrade, err := RequiresUpgrade(ctx, spec); err != nil {
+	if upgrade, err := RequiresUpgrade(ctx, kotsKinds.EmbeddedClusterConfig); err != nil {
 		// if there is no installation object we can't start an upgrade. this is a valid
 		// scenario specially during cluster bootstrap. as we do not need to upgrade the
 		// cluster just after its installation we can return nil here.
@@ -69,7 +68,7 @@ func MaybeStartClusterUpgrade(ctx context.Context, store store.Store, kotsKinds 
 
 		artifacts := getArtifactsFromInstallation(kotsKinds.Installation, kotsKinds.License.Spec.AppSlug)
 
-		if err := startClusterUpgrade(ctx, spec, artifacts, *kotsKinds.License); err != nil {
+		if err := startClusterUpgrade(ctx, kotsKinds.EmbeddedClusterConfig, artifacts, *kotsKinds.License); err != nil {
 			return fmt.Errorf("failed to start cluster upgrade: %w", err)
 		}
 		logger.Info("started cluster upgrade")

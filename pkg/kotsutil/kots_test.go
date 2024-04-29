@@ -9,7 +9,6 @@ import (
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	embeddedclusterv1beta1 "github.com/replicatedhq/embedded-cluster-kinds/apis/v1beta1"
 	"github.com/replicatedhq/kots/pkg/crypto"
 	dockerregistrytypes "github.com/replicatedhq/kots/pkg/docker/registry/types"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
@@ -910,7 +909,7 @@ func TestKotsKinds_Marshal(t *testing.T) {
 		Backup                *velerov1.Backup
 		Installer             *kurlv1beta1.Installer
 		LintConfig            *kotsv1beta1.LintConfig
-		EmbeddedClusterConfig *embeddedclusterv1beta1.Config
+		EmbeddedClusterConfig string
 	}
 	type args struct {
 		g string

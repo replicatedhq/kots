@@ -14,7 +14,6 @@ import (
 	"github.com/blang/semver"
 	"github.com/mholt/archiver/v3"
 	"github.com/pkg/errors"
-	embeddedclusterv1beta1 "github.com/replicatedhq/embedded-cluster-kinds/apis/v1beta1"
 	downstreamtypes "github.com/replicatedhq/kots/pkg/api/downstream/types"
 	versiontypes "github.com/replicatedhq/kots/pkg/api/version/types"
 	apptypes "github.com/replicatedhq/kots/pkg/app/types"
@@ -213,7 +212,7 @@ func (s *KOTSStore) GetTargetKotsVersionForVersion(appID string, sequence int64)
 	return kotsAppSpec.Spec.TargetKotsVersion, nil
 }
 
-func (s *KOTSStore) GetEmbeddedClusterConfigForVersion(appID string, sequence int64) (*embeddedclusterv1beta1.Config, error) {
+func (s *KOTSStore) GetEmbeddedClusterConfigForVersion(appID string, sequence int64) (string, error) {
 	db := persistence.MustGetDBSession()
 	query := `select embeddedcluster_config from app_version where app_id = ? and sequence = ?`
 	rows, err := db.QueryOneParameterized(gorqlite.ParameterizedStatement{
@@ -221,27 +220,18 @@ func (s *KOTSStore) GetEmbeddedClusterConfigForVersion(appID string, sequence in
 		Arguments: []interface{}{appID, sequence},
 	})
 	if err != nil {
-		return nil, fmt.Errorf("failed to query: %v: %v", err, rows.Err)
+		return "", fmt.Errorf("failed to query: %v: %v", err, rows.Err)
 	}
 	if !rows.Next() {
-		return nil, nil
+		return "", nil
 	}
 
 	var embeddedClusterSpecStr gorqlite.NullString
 	if err := rows.Scan(&embeddedClusterSpecStr); err != nil {
-		return nil, errors.Wrap(err, "failed to scan")
+		return "", errors.Wrap(err, "failed to scan")
 	}
 
-	if embeddedClusterSpecStr.String == "" {
-		return nil, nil
-	}
-
-	embeddedClusterConfig, err := kotsutil.LoadEmbeddedClusterConfigFromBytes([]byte(embeddedClusterSpecStr.String))
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to load embedded cluster config from contents")
-	}
-
-	return embeddedClusterConfig, nil
+	return embeddedClusterSpecStr.String, nil
 }
 
 // CreateAppVersion takes an unarchived app, makes an archive and then uploads it
@@ -1195,13 +1185,7 @@ func (s *KOTSStore) appVersionFromRow(row gorqlite.QueryResult) (*versiontypes.A
 	}
 
 	if embeddedClusterConfig.Valid && embeddedClusterConfig.String != "" {
-		config, err := kotsutil.LoadEmbeddedClusterConfigFromBytes([]byte(embeddedClusterConfig.String))
-		if err != nil {
-			return nil, errors.Wrap(err, "failed to read embedded cluster config")
-		}
-		if config != nil {
-			v.KOTSKinds.EmbeddedClusterConfig = config
-		}
+		v.KOTSKinds.EmbeddedClusterConfig = embeddedClusterConfig.String
 	}
 
 	v.CreatedOn = createdAt.Time
