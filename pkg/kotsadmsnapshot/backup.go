@@ -373,7 +373,7 @@ func CreateInstanceBackup(ctx context.Context, cluster *downstreamtypes.Downstre
 			IncludedNamespaces:      prepareIncludedNamespaces(includedNamespaces, util.IsEmbeddedCluster()),
 			ExcludedNamespaces:      excludedNamespaces,
 			IncludeClusterResources: &includeClusterResources,
-			LabelSelector:           instanceBackupLabelSelector(util.IsEmbeddedCluster()),
+			OrLabelSelectors:        instanceBackupLabelSelectors(util.IsEmbeddedCluster()),
 			OrderedResources:        backupOrderedResources,
 			Hooks:                   backupHooks,
 		},
@@ -1026,26 +1026,26 @@ func excludeShutdownPodsFromBackupInNamespace(ctx context.Context, clientset kub
 	return nil
 }
 
-func instanceBackupLabelSelector(isEmbeddedCluster bool) *metav1.LabelSelector {
+func instanceBackupLabelSelectors(isEmbeddedCluster bool) []*metav1.LabelSelector {
+	labelSelectors := []*metav1.LabelSelector{
+		{
+			MatchLabels: map[string]string{
+				kotsadmtypes.BackupLabel: kotsadmtypes.BackupLabelValue,
+			},
+		},
+	}
+
 	if isEmbeddedCluster { // match everything with the backup label, regardless of its value
-		return &metav1.LabelSelector{
+		labelSelectors = append(labelSelectors, &metav1.LabelSelector{
 			MatchLabels: map[string]string{},
 			MatchExpressions: []metav1.LabelSelectorRequirement{
 				{
-					Key:      kotsadmtypes.BackupLabel,
-					Operator: metav1.LabelSelectorOpIn,
-					Values: []string{
-						kotsadmtypes.BackupLabelValue,
-						kotsadmtypes.BackupLabelInfra,
-					},
+					Key:      "kots.io/embedded-cluster/backup",
+					Operator: metav1.LabelSelectorOpExists,
 				},
 			},
-		}
+		})
 	}
 
-	return &metav1.LabelSelector{
-		MatchLabels: map[string]string{
-			kotsadmtypes.BackupLabel: kotsadmtypes.BackupLabelValue,
-		},
-	}
+	return labelSelectors
 }

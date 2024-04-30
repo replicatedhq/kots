@@ -479,27 +479,35 @@ func Test_instanceBackupLabelSelector(t *testing.T) {
 	tests := []struct {
 		name              string
 		isEmbeddedCluster bool
-		want              *metav1.LabelSelector
+		want              []*metav1.LabelSelector
 	}{
 		{
 			name:              "not embedded cluster",
 			isEmbeddedCluster: false,
-			want: &metav1.LabelSelector{
-				MatchLabels: map[string]string{
-					"kots.io/backup": "velero",
+			want: []*metav1.LabelSelector{
+				{
+					MatchLabels: map[string]string{
+						"kots.io/backup": "velero",
+					},
 				},
 			},
 		},
 		{
 			name:              "embedded cluster",
 			isEmbeddedCluster: true,
-			want: &metav1.LabelSelector{
-				MatchLabels: map[string]string{},
-				MatchExpressions: []metav1.LabelSelectorRequirement{
-					{
-						Key:      "kots.io/backup",
-						Operator: metav1.LabelSelectorOpIn,
-						Values:   []string{"velero", "infrastructure"},
+			want: []*metav1.LabelSelector{
+				{
+					MatchLabels: map[string]string{
+						"kots.io/backup": "velero",
+					},
+				},
+				{
+					MatchLabels: map[string]string{},
+					MatchExpressions: []metav1.LabelSelectorRequirement{
+						{
+							Key:      "kots.io/embedded-cluster/backup",
+							Operator: metav1.LabelSelectorOpExists,
+						},
 					},
 				},
 			},
@@ -507,7 +515,7 @@ func Test_instanceBackupLabelSelector(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			assert.Equalf(t, tt.want, instanceBackupLabelSelector(tt.isEmbeddedCluster), "instanceBackupLabelSelector(%v)", tt.isEmbeddedCluster)
+			assert.Equalf(t, tt.want, instanceBackupLabelSelectors(tt.isEmbeddedCluster), "instanceBackupLabelSelector(%v)", tt.isEmbeddedCluster)
 		})
 	}
 }
