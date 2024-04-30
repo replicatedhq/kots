@@ -462,7 +462,7 @@ func Test_excludeShutdownPodsFromBackup(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			name: "expect no error when shutdown pods are found and updated for kotsadm backup label and nanespace is *",
+			name: "expect no error when shutdown pods are found and updated for kotsadm backup label and namespace is *",
 			args: args{
 				ctx:       context.TODO(),
 				clientset: mockK8sClientWithShutdownPods(),

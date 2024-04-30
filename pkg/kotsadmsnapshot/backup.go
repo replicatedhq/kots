@@ -983,7 +983,7 @@ func excludeShutdownPodsFromBackup(ctx context.Context, clientset kubernetes.Int
 	}
 
 	labelSets := []string{}
-	if veleroBackup.Spec.LabelSelector.MatchLabels != nil {
+	if veleroBackup.Spec.LabelSelector.MatchLabels != nil && len(veleroBackup.Spec.LabelSelector.MatchLabels) != 0 {
 		labelSets = []string{labels.SelectorFromSet(veleroBackup.Spec.LabelSelector.MatchLabels).String()}
 	} else {
 		for _, expr := range veleroBackup.Spec.LabelSelector.MatchExpressions {
