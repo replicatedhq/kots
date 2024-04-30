@@ -359,7 +359,9 @@ func CreateInstanceBackup(ctx context.Context, cluster *downstreamtypes.Downstre
 	backupAnnotations["kots.io/kotsadm-image"] = kotsadmImage
 	backupAnnotations["kots.io/kotsadm-deploy-namespace"] = kotsadmNamespace
 	backupAnnotations["kots.io/apps-sequences"] = marshalledAppsSequences
-	backupAnnotations["kots.io/embedded-cluster"] = fmt.Sprintf("%t", util.IsEmbeddedCluster())
+	if util.IsEmbeddedCluster() {
+		backupAnnotations["kots.io/embedded-cluster"] = "true"
+	}
 
 	includeClusterResources := true
 	veleroBackup := &velerov1.Backup{
