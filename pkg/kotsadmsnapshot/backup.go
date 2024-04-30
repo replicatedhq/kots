@@ -1040,7 +1040,7 @@ func instanceBackupLabelSelectors(isEmbeddedCluster bool) []*metav1.LabelSelecto
 			MatchLabels: map[string]string{},
 			MatchExpressions: []metav1.LabelSelectorRequirement{
 				{
-					Key:      "kots.io/embedded-cluster/backup",
+					Key:      "kots.io/embedded-cluster-backup",
 					Operator: metav1.LabelSelectorOpExists,
 				},
 			},
