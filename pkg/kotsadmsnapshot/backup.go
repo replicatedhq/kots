@@ -31,7 +31,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/fields"
-	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/client-go/kubernetes"
 )
 
@@ -981,7 +980,7 @@ func excludeShutdownPodsFromBackup(ctx context.Context, clientset kubernetes.Int
 	}
 
 	podListOption := metav1.ListOptions{
-		LabelSelector: labels.SelectorFromSet(veleroBackup.Spec.LabelSelector.MatchLabels).String(),
+		LabelSelector: veleroBackup.Spec.LabelSelector.String(),
 		FieldSelector: fields.SelectorFromSet(selectorMap).String(),
 	}
 
