@@ -251,6 +251,16 @@ var appSlugLabelSelector = &metav1.LabelSelector{
 	},
 }
 
+var appSlugMatchExpression = &metav1.LabelSelector{
+	MatchExpressions: []metav1.LabelSelectorRequirement{
+		{
+			Key:      "kots.io/app-slug",
+			Operator: metav1.LabelSelectorOpIn,
+			Values:   []string{"abc-slug", "test-slug", "xyz-slug"},
+		},
+	},
+}
+
 var appSlugPodListOption = metav1.ListOptions{
 	LabelSelector: labels.SelectorFromSet(appSlugLabelSelector.MatchLabels).String(),
 	FieldSelector: fields.SelectorFromSet(selectorMap).String(),
@@ -460,6 +470,20 @@ func Test_excludeShutdownPodsFromBackup(t *testing.T) {
 					Spec: velerov1.BackupSpec{
 						IncludedNamespaces: []string{"*"},
 						LabelSelector:      appSlugLabelSelector,
+					},
+				},
+			},
+			wantErr: false,
+		},
+		{
+			name: "expect no error when shutdown pods are found and updated for app slug match expression",
+			args: args{
+				ctx:       context.TODO(),
+				clientset: mockK8sClientWithShutdownPods(),
+				veleroBackup: &velerov1.Backup{
+					Spec: velerov1.BackupSpec{
+						IncludedNamespaces: []string{"test"},
+						LabelSelector:      appSlugMatchExpression,
 					},
 				},
 			},

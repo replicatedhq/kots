@@ -31,6 +31,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/fields"
+	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/client-go/kubernetes"
 )
 
@@ -979,18 +980,34 @@ func excludeShutdownPodsFromBackup(ctx context.Context, clientset kubernetes.Int
 		"status.phase": string(corev1.PodFailed),
 	}
 
-	podListOption := metav1.ListOptions{
-		LabelSelector: veleroBackup.Spec.LabelSelector.String(),
-		FieldSelector: fields.SelectorFromSet(selectorMap).String(),
+	labelSets := []string{}
+	if veleroBackup.Spec.LabelSelector.MatchLabels != nil {
+		labelSets = []string{labels.SelectorFromSet(veleroBackup.Spec.LabelSelector.MatchLabels).String()}
+	} else {
+		for _, expr := range veleroBackup.Spec.LabelSelector.MatchExpressions {
+			if expr.Operator != metav1.LabelSelectorOpIn {
+				return fmt.Errorf("unsupported operator %s in label selector %q", expr.Operator, veleroBackup.Spec.LabelSelector.String())
+			}
+			for _, value := range expr.Values {
+				labelSets = append(labelSets, fmt.Sprintf("%s=%s", expr.Key, value))
+			}
+		}
 	}
 
-	for _, namespace := range veleroBackup.Spec.IncludedNamespaces {
-		if namespace == "*" {
-			namespace = "" // specifying an empty ("") namespace in client-go retrieves resources from all namespaces
+	for _, labelSet := range labelSets {
+		podListOption := metav1.ListOptions{
+			LabelSelector: labelSet,
+			FieldSelector: fields.SelectorFromSet(selectorMap).String(),
 		}
 
-		if err := excludeShutdownPodsFromBackupInNamespace(ctx, clientset, namespace, podListOption); err != nil {
-			return errors.Wrap(err, "failed to exclude shutdown pods from backup")
+		for _, namespace := range veleroBackup.Spec.IncludedNamespaces {
+			if namespace == "*" {
+				namespace = "" // specifying an empty ("") namespace in client-go retrieves resources from all namespaces
+			}
+
+			if err := excludeShutdownPodsFromBackupInNamespace(ctx, clientset, namespace, podListOption); err != nil {
+				return errors.Wrap(err, "failed to exclude shutdown pods from backup")
+			}
 		}
 	}
 
