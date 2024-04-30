@@ -502,6 +502,7 @@ func Test_instanceBackupLabelSelector(t *testing.T) {
 						Values: []string{
 							"infra",
 							"app",
+							"ec-install",
 						},
 					},
 				},

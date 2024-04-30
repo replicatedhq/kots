@@ -1038,6 +1038,7 @@ func instanceBackupLabelSelector(isEmbeddedCluster bool) *metav1.LabelSelector {
 					Values: []string{
 						"infra",
 						"app",
+						"ec-install",
 					},
 				},
 			},
