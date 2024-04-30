@@ -137,7 +137,8 @@ func startClusterUpgrade(ctx context.Context, newcfg embeddedclusterv1beta1.Conf
 		ObjectMeta: metav1.ObjectMeta{
 			Name: time.Now().Format("20060102150405"),
 			Labels: map[string]string{
-				kotsadmtypes.BackupLabel: kotsadmtypes.BackupLabelValue,
+				kotsadmtypes.BackupLabel:        "infrastructure",
+				"kots.io/embedded-cluster-type": "installation",
 			},
 		},
 		Spec: embeddedclusterv1beta1.InstallationSpec{
