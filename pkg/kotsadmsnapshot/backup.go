@@ -374,7 +374,7 @@ func CreateInstanceBackup(ctx context.Context, cluster *downstreamtypes.Downstre
 			IncludedNamespaces:      prepareIncludedNamespaces(includedNamespaces, util.IsEmbeddedCluster()),
 			ExcludedNamespaces:      excludedNamespaces,
 			IncludeClusterResources: &includeClusterResources,
-			OrLabelSelectors:        instanceBackupLabelSelectors(util.IsEmbeddedCluster()),
+			LabelSelector:           instanceBackupLabelSelector(util.IsEmbeddedCluster()),
 			OrderedResources:        backupOrderedResources,
 			Hooks:                   backupHooks,
 		},
@@ -1027,26 +1027,26 @@ func excludeShutdownPodsFromBackupInNamespace(ctx context.Context, clientset kub
 	return nil
 }
 
-func instanceBackupLabelSelectors(isEmbeddedCluster bool) []*metav1.LabelSelector {
-	labelSelectors := []*metav1.LabelSelector{
-		{
-			MatchLabels: map[string]string{
-				kotsadmtypes.BackupLabel: kotsadmtypes.BackupLabelValue,
-			},
-		},
-	}
-
-	if isEmbeddedCluster { // match everything with the backup label, regardless of its value
-		labelSelectors = append(labelSelectors, &metav1.LabelSelector{
+func instanceBackupLabelSelector(isEmbeddedCluster bool) *metav1.LabelSelector {
+	if isEmbeddedCluster { // only DR on embedded-cluster
+		return &metav1.LabelSelector{
 			MatchLabels: map[string]string{},
 			MatchExpressions: []metav1.LabelSelectorRequirement{
 				{
-					Key:      "replicated.com/embedded-cluster-backup",
-					Operator: metav1.LabelSelectorOpExists,
+					Key:      "replicated.com/disaster-recovery",
+					Operator: metav1.LabelSelectorOpIn,
+					Values: []string{
+						"infra",
+						"app",
+					},
 				},
 			},
-		})
+		}
 	}
 
-	return labelSelectors
+	return &metav1.LabelSelector{
+		MatchLabels: map[string]string{
+			kotsadmtypes.BackupLabel: kotsadmtypes.BackupLabelValue,
+		},
+	}
 }
