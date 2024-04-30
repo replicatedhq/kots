@@ -373,14 +373,9 @@ func CreateInstanceBackup(ctx context.Context, cluster *downstreamtypes.Downstre
 			IncludedNamespaces:      prepareIncludedNamespaces(includedNamespaces),
 			ExcludedNamespaces:      excludedNamespaces,
 			IncludeClusterResources: &includeClusterResources,
-			LabelSelector: &metav1.LabelSelector{
-				// app label selectors are not supported and we can't merge them since that might exclude kotsadm components
-				MatchLabels: map[string]string{
-					kotsadmtypes.BackupLabel: kotsadmtypes.BackupLabelValue,
-				},
-			},
-			OrderedResources: backupOrderedResources,
-			Hooks:            backupHooks,
+			LabelSelector:           instanceBackupLabelSelector(util.IsEmbeddedCluster()),
+			OrderedResources:        backupOrderedResources,
+			Hooks:                   backupHooks,
 		},
 	}
 
@@ -1028,4 +1023,24 @@ func excludeShutdownPodsFromBackupInNamespace(ctx context.Context, clientset kub
 		}
 	}
 	return nil
+}
+
+func instanceBackupLabelSelector(isEmbeddedCluster bool) *metav1.LabelSelector {
+	if isEmbeddedCluster { // match everything with the backup label, regardless of its value
+		return &metav1.LabelSelector{
+			MatchLabels: map[string]string{},
+			MatchExpressions: []metav1.LabelSelectorRequirement{
+				{
+					Key:      kotsadmtypes.BackupLabel,
+					Operator: metav1.LabelSelectorOpExists,
+				},
+			},
+		}
+	}
+
+	return &metav1.LabelSelector{
+		MatchLabels: map[string]string{
+			kotsadmtypes.BackupLabel: kotsadmtypes.BackupLabelValue,
+		},
+	}
 }
