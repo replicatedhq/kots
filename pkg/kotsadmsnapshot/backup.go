@@ -126,7 +126,7 @@ func CreateApplicationBackup(ctx context.Context, a *apptypes.App, isScheduled b
 	includedNamespaces = append(includedNamespaces, veleroBackup.Spec.IncludedNamespaces...)
 	includedNamespaces = append(includedNamespaces, kotsKinds.KotsApplication.Spec.AdditionalNamespaces...)
 
-	veleroBackup.Spec.IncludedNamespaces = prepareIncludedNamespaces(includedNamespaces)
+	veleroBackup.Spec.IncludedNamespaces = prepareIncludedNamespaces(includedNamespaces, util.IsEmbeddedCluster())
 
 	snapshotTrigger := "manual"
 	if isScheduled {
@@ -370,7 +370,7 @@ func CreateInstanceBackup(ctx context.Context, cluster *downstreamtypes.Downstre
 		},
 		Spec: velerov1.BackupSpec{
 			StorageLocation:         "default",
-			IncludedNamespaces:      prepareIncludedNamespaces(includedNamespaces),
+			IncludedNamespaces:      prepareIncludedNamespaces(includedNamespaces, util.IsEmbeddedCluster()),
 			ExcludedNamespaces:      excludedNamespaces,
 			IncludeClusterResources: &includeClusterResources,
 			LabelSelector:           instanceBackupLabelSelector(util.IsEmbeddedCluster()),
@@ -946,8 +946,8 @@ func mergeLabelSelector(kots metav1.LabelSelector, app metav1.LabelSelector) met
 // Prepares the list of unique namespaces that will be included in a backup. Empty namespaces are excluded.
 // If a wildcard is specified, any specific namespaces will not be included since the backup will include all namespaces.
 // Velero does not allow for both a wildcard and specific namespaces and will consider the backup invalid if both are present.
-// If this is an embedded-cluster installation, the "embedded-cluster" and "kube-system" namespaces will be included.
-func prepareIncludedNamespaces(namespaces []string) []string {
+// If this is an embedded-cluster installation, the "embedded-cluster", "openebs" and "kube-system" namespaces will be included.
+func prepareIncludedNamespaces(namespaces []string, isEC bool) []string {
 	uniqueNamespaces := make(map[string]bool)
 	for _, n := range namespaces {
 		if n == "" {
@@ -958,9 +958,10 @@ func prepareIncludedNamespaces(namespaces []string) []string {
 		uniqueNamespaces[n] = true
 	}
 
-	if util.IsEmbeddedCluster() {
+	if isEC {
 		uniqueNamespaces["embedded-cluster"] = true
 		uniqueNamespaces["kube-system"] = true
+		uniqueNamespaces["openebs"] = true
 	}
 
 	includedNamespaces := make([]string, len(uniqueNamespaces))
@@ -1032,7 +1033,11 @@ func instanceBackupLabelSelector(isEmbeddedCluster bool) *metav1.LabelSelector {
 			MatchExpressions: []metav1.LabelSelectorRequirement{
 				{
 					Key:      kotsadmtypes.BackupLabel,
-					Operator: metav1.LabelSelectorOpExists,
+					Operator: metav1.LabelSelectorOpIn,
+					Values: []string{
+						kotsadmtypes.BackupLabelValue,
+						kotsadmtypes.BackupLabelInfra,
+					},
 				},
 			},
 		}

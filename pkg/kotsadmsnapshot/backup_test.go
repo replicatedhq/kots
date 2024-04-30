@@ -2,7 +2,6 @@ package snapshot
 
 import (
 	"context"
-	"os"
 	"testing"
 
 	kotsadmtypes "github.com/replicatedhq/kots/pkg/kotsadm/types"
@@ -85,24 +84,16 @@ func TestPrepareIncludedNamespaces(t *testing.T) {
 		{
 			name:       "embedded-cluster install",
 			namespaces: []string{"test", "abcapp"},
-			want:       []string{"test", "abcapp", "embedded-cluster", "kube-system"},
+			want:       []string{"test", "abcapp", "embedded-cluster", "kube-system", "openebs"},
 			isEC:       true,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if tt.isEC {
-				err := os.Setenv("EMBEDDED_CLUSTER_ID", "test")
-				assert.NoError(t, err)
-			}
-			got := prepareIncludedNamespaces(tt.namespaces)
+			got := prepareIncludedNamespaces(tt.namespaces, tt.isEC)
 			if !assert.ElementsMatch(t, tt.want, got) {
 				t.Errorf("prepareIncludedNamespaces() = %v, want %v", got, tt.want)
-			}
-			if tt.isEC {
-				err := os.Setenv("EMBEDDED_CLUSTER_ID", "")
-				assert.NoError(t, err)
 			}
 		})
 	}
@@ -507,7 +498,8 @@ func Test_instanceBackupLabelSelector(t *testing.T) {
 				MatchExpressions: []metav1.LabelSelectorRequirement{
 					{
 						Key:      "kots.io/backup",
-						Operator: metav1.LabelSelectorOpExists,
+						Operator: metav1.LabelSelectorOpIn,
+						Values:   []string{"velero", "infrastructure"},
 					},
 				},
 			},
