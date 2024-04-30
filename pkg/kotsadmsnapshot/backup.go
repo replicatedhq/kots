@@ -359,6 +359,7 @@ func CreateInstanceBackup(ctx context.Context, cluster *downstreamtypes.Downstre
 	backupAnnotations["kots.io/kotsadm-image"] = kotsadmImage
 	backupAnnotations["kots.io/kotsadm-deploy-namespace"] = kotsadmNamespace
 	backupAnnotations["kots.io/apps-sequences"] = marshalledAppsSequences
+	backupAnnotations["kots.io/embedded-cluster"] = fmt.Sprintf("%t", util.IsEmbeddedCluster())
 
 	includeClusterResources := true
 	veleroBackup := &velerov1.Backup{
@@ -1040,7 +1041,7 @@ func instanceBackupLabelSelectors(isEmbeddedCluster bool) []*metav1.LabelSelecto
 			MatchLabels: map[string]string{},
 			MatchExpressions: []metav1.LabelSelectorRequirement{
 				{
-					Key:      "kots.io/embedded-cluster-backup",
+					Key:      "replicated.com/embedded-cluster-backup",
 					Operator: metav1.LabelSelectorOpExists,
 				},
 			},

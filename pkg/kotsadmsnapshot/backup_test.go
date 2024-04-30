@@ -505,7 +505,7 @@ func Test_instanceBackupLabelSelector(t *testing.T) {
 					MatchLabels: map[string]string{},
 					MatchExpressions: []metav1.LabelSelectorRequirement{
 						{
-							Key:      "kots.io/embedded-cluster-backup",
+							Key:      "replicated.com/embedded-cluster-backup",
 							Operator: metav1.LabelSelectorOpExists,
 						},
 					},
