@@ -42,9 +42,9 @@ type MetadataResponse struct {
 	Namespace   string                   `json:"namespace"`
 	UpstreamURI string                   `json:"upstreamUri"`
 	// ConsoleFeatureFlags optional flags from application.yaml used to enable ui features
-	ConsoleFeatureFlags                []string             `json:"consoleFeatureFlags"`
-	AdminConsoleMetadata               AdminConsoleMetadata `json:"adminConsoleMetadata"`
-	IsEmbeddedClusterRestoreInProgress bool                 `json:"isEmbeddedClusterRestoreInProgress"`
+	ConsoleFeatureFlags              []string             `json:"consoleFeatureFlags"`
+	AdminConsoleMetadata             AdminConsoleMetadata `json:"adminConsoleMetadata"`
+	IsEmbeddedClusterWaitingForNodes bool                 `json:"isEmbeddedClusterWaitingForNodes"`
 }
 
 type MetadataResponseBranding struct {
@@ -128,7 +128,7 @@ func GetMetadataHandler(getK8sInfoFn MetadataK8sFn, kotsStore store.Store) http.
 				return
 			}
 
-			metadataResponse.IsEmbeddedClusterRestoreInProgress, err = isEmbeddedClusterRestoreInProgress(r.Context(), clientset)
+			metadataResponse.IsEmbeddedClusterWaitingForNodes, err = isEmbeddedClusterWaitingForNodes(r.Context(), clientset)
 			if err != nil {
 				logger.Error(errors.Wrap(err, "failed to check if embedded cluster restore is in progress"))
 				w.WriteHeader(http.StatusInternalServerError)
@@ -267,7 +267,7 @@ func GetMetaDataConfig() (*v1.ConfigMap, types.Metadata, error) {
 
 type MetadataK8sFn func() (*v1.ConfigMap, types.Metadata, error)
 
-func isEmbeddedClusterRestoreInProgress(ctx context.Context, clientset kubernetes.Interface) (bool, error) {
+func isEmbeddedClusterWaitingForNodes(ctx context.Context, clientset kubernetes.Interface) (bool, error) {
 	_, err := clientset.CoreV1().ConfigMaps("embedded-cluster").Get(ctx, embeddedClusterRestoreConfigMapName, metav1.GetOptions{})
 	if err != nil {
 		if kuberneteserrors.IsNotFound(err) {

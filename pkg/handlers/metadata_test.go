@@ -709,7 +709,7 @@ func createBrandingArchiveWithFiles(files []brandingArchiveFile) (*bytes.Buffer,
 	return buf, nil
 }
 
-func Test_isEmbeddedClusterRestoreInProgress(t *testing.T) {
+func Test_isEmbeddedClusterWaitingForNodes(t *testing.T) {
 	tests := []struct {
 		name      string
 		clientset kubernetes.Interface
@@ -737,13 +737,13 @@ func Test_isEmbeddedClusterRestoreInProgress(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			ctx := context.Background()
-			got, err := isEmbeddedClusterRestoreInProgress(ctx, tt.clientset)
+			got, err := isEmbeddedClusterWaitingForNodes(ctx, tt.clientset)
 			if (err != nil) != tt.wantErr {
-				t.Errorf("isEmbeddedClusterRestoreInProgress() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("isEmbeddedClusterWaitingForNodes() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
 			if got != tt.want {
-				t.Errorf("isEmbeddedClusterRestoreInProgress() = %v, want %v", got, tt.want)
+				t.Errorf("isEmbeddedClusterWaitingForNodes() = %v, want %v", got, tt.want)
 			}
 		})
 	}
