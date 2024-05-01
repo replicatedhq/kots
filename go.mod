@@ -51,7 +51,7 @@ require (
 	github.com/replicatedhq/embedded-cluster-kinds v1.1.6
 	github.com/replicatedhq/kotskinds v0.0.0-20240416132840-4e646b87f7a1
 	github.com/replicatedhq/kurlkinds v1.5.0
-	github.com/replicatedhq/troubleshoot v0.90.0
+	github.com/replicatedhq/troubleshoot v0.91.0
 	github.com/replicatedhq/yaml/v3 v3.0.0-beta5-replicatedhq
 	github.com/robfig/cron v1.2.0
 	github.com/robfig/cron/v3 v3.0.1
