@@ -21,15 +21,17 @@ import (
 	v1 "k8s.io/api/core/v1"
 	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/scheme"
 )
 
 const (
-	appYamlKey            = "application.yaml"
-	iconURI               = "https://cdn2.iconfinder.com/data/icons/mixd/512/16_kubernetes-512.png"
-	metadataConfigMapName = "kotsadm-application-metadata"
-	upstreamUriKey        = "upstreamUri"
-	defaultAppName        = "the application"
+	appYamlKey                          = "application.yaml"
+	iconURI                             = "https://cdn2.iconfinder.com/data/icons/mixd/512/16_kubernetes-512.png"
+	metadataConfigMapName               = "kotsadm-application-metadata"
+	upstreamUriKey                      = "upstreamUri"
+	defaultAppName                      = "the application"
+	embeddedClusterRestoreConfigMapName = "embedded-cluster-wait-for-nodes"
 )
 
 // MetadataResponse non sensitive information to be used by ui pre-login
@@ -40,8 +42,9 @@ type MetadataResponse struct {
 	Namespace   string                   `json:"namespace"`
 	UpstreamURI string                   `json:"upstreamUri"`
 	// ConsoleFeatureFlags optional flags from application.yaml used to enable ui features
-	ConsoleFeatureFlags  []string             `json:"consoleFeatureFlags"`
-	AdminConsoleMetadata AdminConsoleMetadata `json:"adminConsoleMetadata"`
+	ConsoleFeatureFlags                []string             `json:"consoleFeatureFlags"`
+	AdminConsoleMetadata               AdminConsoleMetadata `json:"adminConsoleMetadata"`
+	IsEmbeddedClusterRestoreInProgress bool                 `json:"isEmbeddedClusterRestoreInProgress"`
 }
 
 type MetadataResponseBranding struct {
@@ -115,6 +118,23 @@ func GetMetadataHandler(getK8sInfoFn MetadataK8sFn, kotsStore store.Store) http.
 			IsAirgap:          kotsadmMetadata.IsAirgap,
 			IsKurl:            kotsadmMetadata.IsKurl,
 			IsEmbeddedCluster: kotsadmMetadata.IsEmbeddedCluster,
+		}
+
+		if kotsadmMetadata.IsEmbeddedCluster {
+			clientset, err := k8sutil.GetClientset()
+			if err != nil {
+				logger.Error(errors.Wrap(err, "failed to get k8s clientset"))
+				w.WriteHeader(http.StatusInternalServerError)
+				return
+			}
+
+			isEmbeddedClusterRestoreInProgress, err := isEmbeddedClusterRestoreInProgress(r.Context(), clientset)
+			if err != nil {
+				logger.Error(errors.Wrap(err, "failed to check if embedded cluster restore is in progress"))
+				w.WriteHeader(http.StatusInternalServerError)
+				return
+			}
+			metadataResponse.IsEmbeddedClusterRestoreInProgress = isEmbeddedClusterRestoreInProgress
 		}
 
 		JSON(w, http.StatusOK, metadataResponse)
@@ -247,3 +267,15 @@ func GetMetaDataConfig() (*v1.ConfigMap, types.Metadata, error) {
 }
 
 type MetadataK8sFn func() (*v1.ConfigMap, types.Metadata, error)
+
+func isEmbeddedClusterRestoreInProgress(ctx context.Context, clientset kubernetes.Interface) (bool, error) {
+	_, err := clientset.CoreV1().ConfigMaps("embedded-cluster").Get(ctx, embeddedClusterRestoreConfigMapName, metav1.GetOptions{})
+	if err != nil {
+		if kuberneteserrors.IsNotFound(err) {
+			return false, nil
+		}
+		return false, errors.Wrapf(err, "failed to get configmap %s", embeddedClusterRestoreConfigMapName)
+	}
+
+	return true, nil
+}

@@ -101,6 +101,7 @@ type State = {
   initSessionId: string | null;
   selectedAppName: string | null;
   snapshotInProgressApps: string[];
+  isEmbeddedClusterRestoreInProgress: boolean;
   themeState: ThemeState;
 };
 
@@ -129,6 +130,7 @@ const Root = () => {
         : "",
       selectedAppName: null,
       snapshotInProgressApps: [],
+      isEmbeddedClusterRestoreInProgress: false,
       themeState: {
         navbarLogo: null,
       },
@@ -272,6 +274,8 @@ const Root = () => {
           adminConsoleMetadata: data.adminConsoleMetadata,
           featureFlags: data.consoleFeatureFlags,
           fetchingMetadata: false,
+          isEmbeddedClusterRestoreInProgress:
+            data.isEmbeddedClusterRestoreInProgress,
         });
       })
       .catch((err) => {
@@ -467,6 +471,9 @@ const Root = () => {
                     onLoginSuccess={getAppsList}
                     fetchingMetadata={state.fetchingMetadata}
                     navigate={navigate}
+                    isEmbeddedClusterRestoreInProgress={
+                      state.isEmbeddedClusterRestoreInProgress
+                    }
                   />
                 }
               />

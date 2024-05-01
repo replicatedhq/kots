@@ -14,6 +14,7 @@ type Props = {
   pendingApp: () => Promise<App>;
   logo: string | null;
   navigate: ReturnType<typeof useNavigate>;
+  isEmbeddedClusterRestoreInProgress: boolean;
 };
 
 type State = {
@@ -60,6 +61,12 @@ class SecureAdminConsole extends Component<Props, State> {
         const apps = await this.props.onLoginSuccess();
         const pendingApp = await this.props.pendingApp();
         this.setState({ authLoading: false });
+
+        if (this.props.isEmbeddedClusterRestoreInProgress) {
+          this.props.navigate("/cluster/manage", { replace: true });
+          return loggedIn;
+        }
+
         if (apps.length > 0) {
           this.props.navigate(`/app/${apps[0].slug}`, { replace: true });
         } else if (pendingApp?.slug && pendingApp?.needsRegistry) {
