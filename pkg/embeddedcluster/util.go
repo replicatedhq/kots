@@ -135,6 +135,9 @@ func startClusterUpgrade(ctx context.Context, newcfg embeddedclusterv1beta1.Conf
 	newins := embeddedclusterv1beta1.Installation{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: time.Now().Format("20060102150405"),
+			Labels: map[string]string{
+				"replicated.com/disaster-recovery": "ec-install",
+			},
 		},
 		Spec: embeddedclusterv1beta1.InstallationSpec{
 			ClusterID:                 current.Spec.ClusterID,

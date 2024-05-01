@@ -126,7 +126,7 @@ func CreateApplicationBackup(ctx context.Context, a *apptypes.App, isScheduled b
 	includedNamespaces = append(includedNamespaces, veleroBackup.Spec.IncludedNamespaces...)
 	includedNamespaces = append(includedNamespaces, kotsKinds.KotsApplication.Spec.AdditionalNamespaces...)
 
-	veleroBackup.Spec.IncludedNamespaces = prepareIncludedNamespaces(includedNamespaces)
+	veleroBackup.Spec.IncludedNamespaces = prepareIncludedNamespaces(includedNamespaces, util.IsEmbeddedCluster())
 
 	snapshotTrigger := "manual"
 	if isScheduled {
@@ -359,6 +359,10 @@ func CreateInstanceBackup(ctx context.Context, cluster *downstreamtypes.Downstre
 	backupAnnotations["kots.io/kotsadm-image"] = kotsadmImage
 	backupAnnotations["kots.io/kotsadm-deploy-namespace"] = kotsadmNamespace
 	backupAnnotations["kots.io/apps-sequences"] = marshalledAppsSequences
+	if util.IsEmbeddedCluster() {
+		backupAnnotations["kots.io/embedded-cluster"] = "true"
+		backupAnnotations["kots.io/embedded-cluster-id"] = util.EmbeddedClusterID()
+	}
 
 	includeClusterResources := true
 	veleroBackup := &velerov1.Backup{
@@ -370,17 +374,12 @@ func CreateInstanceBackup(ctx context.Context, cluster *downstreamtypes.Downstre
 		},
 		Spec: velerov1.BackupSpec{
 			StorageLocation:         "default",
-			IncludedNamespaces:      prepareIncludedNamespaces(includedNamespaces),
+			IncludedNamespaces:      prepareIncludedNamespaces(includedNamespaces, util.IsEmbeddedCluster()),
 			ExcludedNamespaces:      excludedNamespaces,
 			IncludeClusterResources: &includeClusterResources,
-			LabelSelector: &metav1.LabelSelector{
-				// app label selectors are not supported and we can't merge them since that might exclude kotsadm components
-				MatchLabels: map[string]string{
-					kotsadmtypes.BackupLabel: kotsadmtypes.BackupLabelValue,
-				},
-			},
-			OrderedResources: backupOrderedResources,
-			Hooks:            backupHooks,
+			LabelSelector:           instanceBackupLabelSelector(util.IsEmbeddedCluster()),
+			OrderedResources:        backupOrderedResources,
+			Hooks:                   backupHooks,
 		},
 	}
 
@@ -951,7 +950,8 @@ func mergeLabelSelector(kots metav1.LabelSelector, app metav1.LabelSelector) met
 // Prepares the list of unique namespaces that will be included in a backup. Empty namespaces are excluded.
 // If a wildcard is specified, any specific namespaces will not be included since the backup will include all namespaces.
 // Velero does not allow for both a wildcard and specific namespaces and will consider the backup invalid if both are present.
-func prepareIncludedNamespaces(namespaces []string) []string {
+// If this is an embedded-cluster installation, the "embedded-cluster", "openebs" and "kube-system" namespaces will be included.
+func prepareIncludedNamespaces(namespaces []string, isEC bool) []string {
 	uniqueNamespaces := make(map[string]bool)
 	for _, n := range namespaces {
 		if n == "" {
@@ -960,6 +960,12 @@ func prepareIncludedNamespaces(namespaces []string) []string {
 			return []string{n}
 		}
 		uniqueNamespaces[n] = true
+	}
+
+	if isEC {
+		uniqueNamespaces["embedded-cluster"] = true
+		uniqueNamespaces["kube-system"] = true
+		uniqueNamespaces["openebs"] = true
 	}
 
 	includedNamespaces := make([]string, len(uniqueNamespaces))
@@ -977,18 +983,34 @@ func excludeShutdownPodsFromBackup(ctx context.Context, clientset kubernetes.Int
 		"status.phase": string(corev1.PodFailed),
 	}
 
-	podListOption := metav1.ListOptions{
-		LabelSelector: labels.SelectorFromSet(veleroBackup.Spec.LabelSelector.MatchLabels).String(),
-		FieldSelector: fields.SelectorFromSet(selectorMap).String(),
+	labelSets := []string{}
+	if veleroBackup.Spec.LabelSelector.MatchLabels != nil && len(veleroBackup.Spec.LabelSelector.MatchLabels) != 0 {
+		labelSets = []string{labels.SelectorFromSet(veleroBackup.Spec.LabelSelector.MatchLabels).String()}
+	} else {
+		for _, expr := range veleroBackup.Spec.LabelSelector.MatchExpressions {
+			if expr.Operator != metav1.LabelSelectorOpIn {
+				return fmt.Errorf("unsupported operator %s in label selector %q", expr.Operator, veleroBackup.Spec.LabelSelector.String())
+			}
+			for _, value := range expr.Values {
+				labelSets = append(labelSets, fmt.Sprintf("%s=%s", expr.Key, value))
+			}
+		}
 	}
 
-	for _, namespace := range veleroBackup.Spec.IncludedNamespaces {
-		if namespace == "*" {
-			namespace = "" // specifying an empty ("") namespace in client-go retrieves resources from all namespaces
+	for _, labelSet := range labelSets {
+		podListOption := metav1.ListOptions{
+			LabelSelector: labelSet,
+			FieldSelector: fields.SelectorFromSet(selectorMap).String(),
 		}
 
-		if err := excludeShutdownPodsFromBackupInNamespace(ctx, clientset, namespace, podListOption); err != nil {
-			return errors.Wrap(err, "failed to exclude shutdown pods from backup")
+		for _, namespace := range veleroBackup.Spec.IncludedNamespaces {
+			if namespace == "*" {
+				namespace = "" // specifying an empty ("") namespace in client-go retrieves resources from all namespaces
+			}
+
+			if err := excludeShutdownPodsFromBackupInNamespace(ctx, clientset, namespace, podListOption); err != nil {
+				return errors.Wrap(err, "failed to exclude shutdown pods from backup")
+			}
 		}
 	}
 
@@ -1022,4 +1044,29 @@ func excludeShutdownPodsFromBackupInNamespace(ctx context.Context, clientset kub
 		}
 	}
 	return nil
+}
+
+func instanceBackupLabelSelector(isEmbeddedCluster bool) *metav1.LabelSelector {
+	if isEmbeddedCluster { // only DR on embedded-cluster
+		return &metav1.LabelSelector{
+			MatchLabels: map[string]string{},
+			MatchExpressions: []metav1.LabelSelectorRequirement{
+				{
+					Key:      "replicated.com/disaster-recovery",
+					Operator: metav1.LabelSelectorOpIn,
+					Values: []string{
+						"infra",
+						"app",
+						"ec-install",
+					},
+				},
+			},
+		}
+	}
+
+	return &metav1.LabelSelector{
+		MatchLabels: map[string]string{
+			kotsadmtypes.BackupLabel: kotsadmtypes.BackupLabelValue,
+		},
+	}
 }
