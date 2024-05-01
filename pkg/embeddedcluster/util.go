@@ -69,7 +69,7 @@ func GetCurrentInstallation(ctx context.Context) (*embeddedclusterv1beta1.Instal
 		return nil, ErrNoInstallations
 	}
 	sort.SliceStable(installations, func(i, j int) bool {
-		return installations[j].CreationTimestamp.Before(&installations[i].CreationTimestamp)
+		return installations[j].Name < installations[i].Name
 	})
 	return &installations[0], nil
 }
