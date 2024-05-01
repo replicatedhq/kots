@@ -10,6 +10,7 @@ import { App, SnapshotSettings } from "@types";
 import { usePrevious } from "@src/hooks/usePrevious";
 import { useCreateSnapshot } from "../api/createSnapshot";
 import { useSnapshotSettings } from "../api/getSnapshotSettings";
+import { Utilities } from "@src/utilities/utilities";
 
 const DESTINATIONS = [
   {
@@ -103,28 +104,28 @@ export const DashboardSnapshotsCard = (props: Props) => {
     if (store?.aws) {
       return setState({
         selectedDestination: find(DESTINATIONS, ["value", "aws"]),
-        locationStr: `${store?.bucket}${store?.path ? `/${store?.path}` : ""}`,
+        locationStr: Utilities.snapshotLocationStr(store?.bucket, store?.path),
       });
     }
 
     if (store?.azure) {
       return setState({
         selectedDestination: find(DESTINATIONS, ["value", "azure"]),
-        locationStr: `${store?.bucket}${store?.path ? `/${store?.path}` : ""}`,
+        locationStr: Utilities.snapshotLocationStr(store?.bucket, store?.path),
       });
     }
 
     if (store?.gcp) {
       return setState({
         selectedDestination: find(DESTINATIONS, ["value", "gcp"]),
-        locationStr: `${store?.bucket}${store?.path ? `/${store?.path}` : ""}`,
+        locationStr: Utilities.snapshotLocationStr(store?.bucket, store?.path),
       });
     }
 
     if (store?.other) {
       return setState({
         selectedDestination: find(DESTINATIONS, ["value", "other"]),
-        locationStr: `${store?.bucket}${store?.path ? `/${store?.path}` : ""}`,
+        locationStr: Utilities.snapshotLocationStr(store?.bucket, store?.path),
       });
     }
 

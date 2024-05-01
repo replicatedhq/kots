@@ -260,4 +260,22 @@ describe("Utilities", () => {
       expect(Utilities.isInitialAppInstall(app)).toBe(false);
     });
   });
+
+  describe("snapshotLocationStr", () => {
+    it("should return bucket name if path is empty", () => {
+      expect(Utilities.snapshotLocationStr("my-bucket", "")).toBe("my-bucket");
+    });
+
+    it("should return bucket name and path if path is not empty", () => {
+      expect(Utilities.snapshotLocationStr("my-bucket", "my-path")).toBe(
+        "my-bucket/my-path"
+      );
+    });
+
+    it("should return bucket name and path if path is not empty and begins with a slash", () => {
+      expect(Utilities.snapshotLocationStr("my-bucket", "/my-path")).toBe(
+        "my-bucket/my-path"
+      );
+    });
+  });
 });

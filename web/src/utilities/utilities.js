@@ -1032,4 +1032,12 @@ export const Utilities = {
       }
     }
   },
+
+  snapshotLocationStr(bucket, path) {
+    let prefix = path;
+    if (prefix.startsWith("/")) {
+      prefix = prefix.slice(1);
+    }
+    return `${bucket}${prefix ? `/${prefix}` : ""}`;
+  },
 };
