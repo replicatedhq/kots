@@ -14,6 +14,7 @@ import (
 	"github.com/pkg/errors"
 	downstreamtypes "github.com/replicatedhq/kots/pkg/api/downstream/types"
 	apptypes "github.com/replicatedhq/kots/pkg/app/types"
+	"github.com/replicatedhq/kots/pkg/embeddedcluster"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	kotsadmtypes "github.com/replicatedhq/kots/pkg/kotsadm/types"
 	"github.com/replicatedhq/kots/pkg/kotsadmsnapshot/types"
@@ -207,6 +208,7 @@ func CreateInstanceBackup(ctx context.Context, cluster *downstreamtypes.Downstre
 
 	kotsadmNamespace := util.PodNamespace
 	appsSequences := map[string]int64{}
+	appVersions := map[string]string{}
 	includedNamespaces := []string{kotsadmNamespace}
 	excludedNamespaces := []string{}
 	backupAnnotations := map[string]string{}
@@ -282,6 +284,7 @@ func CreateInstanceBackup(ctx context.Context, cluster *downstreamtypes.Downstre
 		}
 
 		appsSequences[a.Slug] = parentSequence
+		appVersions[a.Slug] = kotsKinds.Installation.Spec.VersionLabel
 
 		renderedBackup, err := helper.RenderAppFile(a, nil, []byte(backupSpec), kotsKinds, kotsadmNamespace)
 		if err != nil {
@@ -352,6 +355,13 @@ func CreateInstanceBackup(ctx context.Context, cluster *downstreamtypes.Downstre
 	}
 	marshalledAppsSequences := string(b)
 
+	// marshal apps versions map
+	b, err = json.Marshal(appVersions)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to marshal apps versions")
+	}
+	marshalledAppVersions := string(b)
+
 	// add kots annotations
 	backupAnnotations["kots.io/snapshot-trigger"] = snapshotTrigger
 	backupAnnotations["kots.io/snapshot-requested"] = time.Now().UTC().Format(time.RFC3339)
@@ -359,9 +369,18 @@ func CreateInstanceBackup(ctx context.Context, cluster *downstreamtypes.Downstre
 	backupAnnotations["kots.io/kotsadm-image"] = kotsadmImage
 	backupAnnotations["kots.io/kotsadm-deploy-namespace"] = kotsadmNamespace
 	backupAnnotations["kots.io/apps-sequences"] = marshalledAppsSequences
+	backupAnnotations["kots.io/apps-versions"] = marshalledAppVersions
 	if util.IsEmbeddedCluster() {
 		backupAnnotations["kots.io/embedded-cluster"] = "true"
 		backupAnnotations["kots.io/embedded-cluster-id"] = util.EmbeddedClusterID()
+		clusterConfig, err := embeddedcluster.ClusterConfig(ctx)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to get embedded cluster config")
+		} else if clusterConfig == nil {
+			return nil, errors.New("embedded cluster config is nil")
+		}
+
+		backupAnnotations["kots.io/embedded-cluster-version"] = clusterConfig.Version
 	}
 
 	includeClusterResources := true
