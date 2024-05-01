@@ -1034,10 +1034,16 @@ export const Utilities = {
   },
 
   snapshotLocationStr(bucket, path) {
+    if (!bucket) {
+      return "";
+    }
+    if (!path) {
+      return bucket;
+    }
     let prefix = path;
-    if (prefix.startsWith("/")) {
+    if (prefix && prefix.startsWith("/")) {
       prefix = prefix.slice(1);
     }
-    return `${bucket}${prefix ? `/${prefix}` : ""}`;
+    return `${bucket}/${prefix}`;
   },
 };
