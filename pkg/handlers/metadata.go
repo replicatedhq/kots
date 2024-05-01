@@ -128,13 +128,12 @@ func GetMetadataHandler(getK8sInfoFn MetadataK8sFn, kotsStore store.Store) http.
 				return
 			}
 
-			isEmbeddedClusterRestoreInProgress, err := isEmbeddedClusterRestoreInProgress(r.Context(), clientset)
+			metadataResponse.IsEmbeddedClusterRestoreInProgress, err = isEmbeddedClusterRestoreInProgress(r.Context(), clientset)
 			if err != nil {
 				logger.Error(errors.Wrap(err, "failed to check if embedded cluster restore is in progress"))
 				w.WriteHeader(http.StatusInternalServerError)
 				return
 			}
-			metadataResponse.IsEmbeddedClusterRestoreInProgress = isEmbeddedClusterRestoreInProgress
 		}
 
 		JSON(w, http.StatusOK, metadataResponse)
