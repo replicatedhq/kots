@@ -361,6 +361,7 @@ func CreateInstanceBackup(ctx context.Context, cluster *downstreamtypes.Downstre
 	backupAnnotations["kots.io/apps-sequences"] = marshalledAppsSequences
 	if util.IsEmbeddedCluster() {
 		backupAnnotations["kots.io/embedded-cluster"] = "true"
+		backupAnnotations["kots.io/embedded-cluster-id"] = util.EmbeddedClusterID()
 	}
 
 	includeClusterResources := true

@@ -169,6 +169,10 @@ func IsEmbeddedCluster() bool {
 	return os.Getenv("EMBEDDED_CLUSTER_ID") != ""
 }
 
+func EmbeddedClusterID() string {
+	return os.Getenv("EMBEDDED_CLUSTER_ID")
+}
+
 func GetValueFromMapPath(m interface{}, path []string) interface{} {
 	if len(path) == 0 {
 		return nil
