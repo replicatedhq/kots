@@ -1,5 +1,5 @@
 # syntax=docker/dockerfile:1.3
-FROM golang:1.21.3
+FROM golang:1.22
 
 EXPOSE 2345
 
