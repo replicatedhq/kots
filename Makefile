@@ -83,6 +83,10 @@ build-real:
 	touch web/dist/THIS_IS_OKTETO  # we need this for go:embed, but it's not actually used in dev
 	go build ${LDFLAGS} ${GCFLAGS} -v -o bin/kotsadm $(BUILDFLAGS) ./cmd/kotsadm
 
+.PHONY: tidy
+tidy:
+	go mod tidy
+
 .PHONY: run
 run:
 	./bin/kotsadm api
@@ -176,7 +180,7 @@ sbom: sbom/kots-sbom.tgz
 
 # npm packages scans are ignored(only go modules are scanned)
 .PHONY: scan
-scan: 
+scan:
 	trivy fs \
 		--scanners vuln \
 		--exit-code=1 \
@@ -190,5 +194,5 @@ scan:
 		./
 
 .PHONY: generate-kubectl-versions
-generate-kubectl-versions: 
+generate-kubectl-versions:
 	node .github/actions/kubectl-versions/dist/index.js
