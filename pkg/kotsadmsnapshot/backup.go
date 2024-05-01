@@ -14,6 +14,7 @@ import (
 	"github.com/pkg/errors"
 	downstreamtypes "github.com/replicatedhq/kots/pkg/api/downstream/types"
 	apptypes "github.com/replicatedhq/kots/pkg/app/types"
+	"github.com/replicatedhq/kots/pkg/embeddedcluster"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	kotsadmtypes "github.com/replicatedhq/kots/pkg/kotsadm/types"
 	"github.com/replicatedhq/kots/pkg/kotsadmsnapshot/types"
@@ -362,6 +363,14 @@ func CreateInstanceBackup(ctx context.Context, cluster *downstreamtypes.Downstre
 	if util.IsEmbeddedCluster() {
 		backupAnnotations["kots.io/embedded-cluster"] = "true"
 		backupAnnotations["kots.io/embedded-cluster-id"] = util.EmbeddedClusterID()
+		clusterConfig, err := embeddedcluster.ClusterConfig(ctx)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to get embedded cluster config")
+		} else if clusterConfig == nil {
+			return nil, errors.New("embedded cluster config is nil")
+		}
+
+		backupAnnotations["kots.io/embedded-cluster-version"] = clusterConfig.Version
 	}
 
 	includeClusterResources := true
