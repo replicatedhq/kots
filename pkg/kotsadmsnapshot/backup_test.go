@@ -6,6 +6,7 @@ import (
 
 	kotsadmtypes "github.com/replicatedhq/kots/pkg/kotsadm/types"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	velerov1 "github.com/vmware-tanzu/velero/pkg/apis/velero/v1"
 	corev1 "k8s.io/api/core/v1"
 	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
@@ -495,6 +496,140 @@ func Test_excludeShutdownPodsFromBackup(t *testing.T) {
 			if err := excludeShutdownPodsFromBackup(tt.args.ctx, tt.args.clientset, tt.args.veleroBackup); (err != nil) != tt.wantErr {
 				t.Errorf("excludeShutdownPodsFromBackup() error = %v, wantErr %v", err, tt.wantErr)
 			}
+		})
+	}
+}
+
+func Test_excludeShutdownPodsFromBackup_check(t *testing.T) {
+	res := []runtime.Object{
+		&corev1.Pod{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "different-app-test-pod",
+				Namespace: "test",
+				Labels: map[string]string{
+					"kots.io/app-slug": "not-test-slug",
+				},
+			},
+			Spec: corev1.PodSpec{},
+			Status: corev1.PodStatus{
+				Phase:  "Failed",
+				Reason: "Shutdown",
+			},
+		},
+		&corev1.Pod{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "other-included-app-test-pod",
+				Namespace: "test",
+				Labels: map[string]string{
+					"kots.io/app-slug": "abc-slug",
+				},
+			},
+			Spec: corev1.PodSpec{},
+			Status: corev1.PodStatus{
+				Phase:  "Failed",
+				Reason: "Shutdown",
+			},
+		},
+		&corev1.Pod{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "running-test-pod",
+				Namespace: "test",
+				Labels: map[string]string{
+					"kots.io/app-slug": "test-slug",
+				},
+			},
+			Spec: corev1.PodSpec{},
+			Status: corev1.PodStatus{
+				Phase: "Running",
+			},
+		},
+		&corev1.Pod{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "already-labelled-test-pod",
+				Namespace: "test",
+				Labels: map[string]string{
+					"kots.io/app-slug":              "test-slug",
+					"velero.io/exclude-from-backup": "true",
+				},
+			},
+			Spec: corev1.PodSpec{},
+			Status: corev1.PodStatus{
+				Phase:  "Failed",
+				Reason: "Shutdown",
+			},
+		},
+		&corev1.Pod{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "needs-label-test-pod",
+				Namespace: "test",
+				Labels: map[string]string{
+					"kots.io/app-slug": "test-slug",
+				},
+			},
+			Spec: corev1.PodSpec{},
+			Status: corev1.PodStatus{
+				Phase:  "Failed",
+				Reason: "Shutdown",
+			},
+		},
+	}
+
+	type args struct {
+		veleroBackup *velerov1.Backup
+	}
+	tests := []struct {
+		name         string
+		args         args
+		resources    []runtime.Object
+		wantExcluded []string
+	}{
+		{
+			name:         "expect label selector to work",
+			wantExcluded: []string{"already-labelled-test-pod", "needs-label-test-pod"},
+			args: args{
+				veleroBackup: &velerov1.Backup{
+					Spec: velerov1.BackupSpec{
+						IncludedNamespaces: []string{"test"},
+						LabelSelector:      appSlugLabelSelector,
+					},
+				},
+			},
+			resources: res,
+		},
+		{
+			name:         "expect match expression to work",
+			wantExcluded: []string{"other-included-app-test-pod", "already-labelled-test-pod", "needs-label-test-pod"},
+			args: args{
+				veleroBackup: &velerov1.Backup{
+					Spec: velerov1.BackupSpec{
+						IncludedNamespaces: []string{"test"},
+						LabelSelector:      appSlugMatchExpression,
+					},
+				},
+			},
+			resources: res,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			req := require.New(t)
+			mockClient := fake.NewSimpleClientset(tt.resources...)
+
+			err := excludeShutdownPodsFromBackup(context.TODO(), mockClient, tt.args.veleroBackup)
+			req.NoError(err)
+
+			// count the number of pods with exclude annotation
+			testPods, err := mockClient.CoreV1().Pods("test").List(context.TODO(), metav1.ListOptions{})
+			req.NoError(err)
+
+			foundExcluded := []string{}
+			for _, pod := range testPods.Items {
+				if _, ok := pod.Labels["velero.io/exclude-from-backup"]; ok {
+					foundExcluded = append(foundExcluded, pod.Name)
+				}
+			}
+
+			req.ElementsMatch(tt.wantExcluded, foundExcluded)
 		})
 	}
 }
