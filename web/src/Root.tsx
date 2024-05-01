@@ -101,6 +101,7 @@ type State = {
   initSessionId: string | null;
   selectedAppName: string | null;
   snapshotInProgressApps: string[];
+  isEmbeddedClusterWaitingForNodes: boolean;
   themeState: ThemeState;
 };
 
@@ -129,6 +130,7 @@ const Root = () => {
         : "",
       selectedAppName: null,
       snapshotInProgressApps: [],
+      isEmbeddedClusterWaitingForNodes: false,
       themeState: {
         navbarLogo: null,
       },
@@ -272,6 +274,8 @@ const Root = () => {
           adminConsoleMetadata: data.adminConsoleMetadata,
           featureFlags: data.consoleFeatureFlags,
           fetchingMetadata: false,
+          isEmbeddedClusterWaitingForNodes:
+            data.isEmbeddedClusterWaitingForNodes,
         });
       })
       .catch((err) => {
@@ -467,6 +471,9 @@ const Root = () => {
                     onLoginSuccess={getAppsList}
                     fetchingMetadata={state.fetchingMetadata}
                     navigate={navigate}
+                    isEmbeddedClusterWaitingForNodes={
+                      state.isEmbeddedClusterWaitingForNodes
+                    }
                   />
                 }
               />

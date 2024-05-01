@@ -4,6 +4,7 @@ import (
 	"archive/tar"
 	"bytes"
 	"compress/gzip"
+	"context"
 	"encoding/json"
 	"errors"
 	"net/http"
@@ -17,6 +18,8 @@ import (
 	"github.com/stretchr/testify/require"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/kubernetes/fake"
 	"k8s.io/client-go/kubernetes/scheme"
 )
 
@@ -704,4 +707,44 @@ func createBrandingArchiveWithFiles(files []brandingArchiveFile) (*bytes.Buffer,
 	}
 
 	return buf, nil
+}
+
+func Test_isEmbeddedClusterWaitingForNodes(t *testing.T) {
+	tests := []struct {
+		name      string
+		clientset kubernetes.Interface
+		want      bool
+		wantErr   bool
+	}{
+		{
+			name:      "no restore in progress",
+			clientset: fake.NewSimpleClientset(),
+			want:      false,
+			wantErr:   false,
+		},
+		{
+			name: "restore in progress",
+			clientset: fake.NewSimpleClientset(&v1.ConfigMap{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      embeddedClusterRestoreConfigMapName,
+					Namespace: "embedded-cluster",
+				},
+			}),
+			want:    true,
+			wantErr: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ctx := context.Background()
+			got, err := isEmbeddedClusterWaitingForNodes(ctx, tt.clientset)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("isEmbeddedClusterWaitingForNodes() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if got != tt.want {
+				t.Errorf("isEmbeddedClusterWaitingForNodes() = %v, want %v", got, tt.want)
+			}
+		})
+	}
 }
