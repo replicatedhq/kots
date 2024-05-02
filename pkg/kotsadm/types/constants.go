@@ -1,5 +1,7 @@
 package types
 
+import "github.com/replicatedhq/kots/pkg/util"
+
 const KotsadmKey = "kots.io/kotsadm"
 const KotsadmLabelValue = "true"
 
@@ -13,6 +15,9 @@ const ExcludeValue = "true"
 const BackupLabel = "kots.io/backup"
 const BackupLabelValue = "velero"
 
+const DisasterRecoveryLabel = "replicated.com/disaster-recovery"
+const DisasterRecoveryLabelValue = "infra"
+
 const TroubleshootKey = "troubleshoot.sh/kind"
 const TroubleshootValue = "support-bundle"
 
@@ -24,6 +29,10 @@ func GetKotsadmLabels(additionalLabels ...map[string]string) map[string]string {
 	labels := map[string]string{
 		KotsadmKey:  KotsadmLabelValue,
 		BackupLabel: BackupLabelValue,
+	}
+
+	if util.IsEmbeddedCluster() {
+		labels[DisasterRecoveryLabel] = DisasterRecoveryLabelValue
 	}
 
 	for _, l := range additionalLabels {
