@@ -616,7 +616,7 @@ class SnapshotSchedule extends Component {
                 </div>
               </div>
               {this.state.autoEnabled && (
-                <div className="flex-column flex1 u-position--relative u-marginBottom--50">
+                <div className="flex-column flex1 u-position--relative u-marginBottom--40">
                   <div className="flex flex1">
                     <div className="flex1 u-paddingRight--5">
                       <p className="u-fontSize--normal card-item-title u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">
@@ -758,8 +758,8 @@ class SnapshotSchedule extends Component {
                   onClick={this.saveRetentionConfig}
                 >
                   {updatingRetention
-                    ? "Updating retention"
-                    : "Update retention"}
+                    ? "Updating retention policy"
+                    : "Update retention policy"}
                 </button>
                 {updateRetentionConfirm && (
                   <div className="u-marginLeft--10 flex alignItems--center">
