@@ -707,9 +707,8 @@ class SnapshotSchedule extends Component {
             <div className="u-marginBottom--10">
               <p className="u-fontSize--normal u-fontWeight--normal u-lineHeight--normal u-textColor--bodyCopy u-marginTop--12 retention">
                 Configure the retention policy for {featureName}s of the admin
-                console and all application data.
-
-                This applies to both manual and scheduled {featureName}s.
+                console and all application data. This applies to both manual
+                and scheduled {featureName}s.
               </p>
             </div>
             <div
