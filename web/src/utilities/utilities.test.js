@@ -282,7 +282,7 @@ describe("Utilities", () => {
     });
 
     it("should not error if bucket and path are undefined", () => {
-      expect(Utilities.snapshotLocationStr(undefined, undefined)).to("");
+      expect(Utilities.snapshotLocationStr(undefined, undefined)).toBe("");
     });
   });
 });
