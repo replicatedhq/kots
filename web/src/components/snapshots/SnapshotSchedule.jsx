@@ -1,12 +1,7 @@
-import { Component } from "react";
+import {Component} from "react";
 import Select from "react-select";
-import { withRouter } from "@src/utilities/react-router-utilities";
-import {
-  Utilities,
-  getCronFrequency,
-  getCronInterval,
-  getReadableCronDescriptor,
-} from "../../utilities/utilities";
+import {withRouter} from "@src/utilities/react-router-utilities";
+import {getCronFrequency, getCronInterval, getReadableCronDescriptor, Utilities,} from "../../utilities/utilities";
 import ErrorModal from "../modals/ErrorModal";
 import Loader from "../shared/Loader";
 import find from "lodash/find";
@@ -458,8 +453,7 @@ class SnapshotSchedule extends Component {
             <p className="card-title">Automatic {featureName}s</p>
             <div className="u-marginBottom--10">
               <p className="u-fontSize--normal u-fontWeight--normal u-lineHeight--normal u-textColor--bodyCopy u-marginTop--12 schedule">
-                Configure a schedule and retention policy for {featureName}s of
-                the admin console and all application data.
+                Configure a schedule for {featureName}s of the admin console and all application data.
               </p>
             </div>
             {!isEmbeddedCluster && (
@@ -587,9 +581,52 @@ class SnapshotSchedule extends Component {
                   )}
                 </div>
               )}
+              <div className="flex">
+                <button
+                  className="btn primary blue"
+                  disabled={updatingSchedule}
+                  onClick={this.saveSnapshotConfig}
+                >
+                  {updatingSchedule ? "Updating schedule" : "Update schedule"}
+                </button>
+                {updateConfirm && (
+                  <div className="u-marginLeft--10 flex alignItems--center">
+                    <Icon
+                      icon="check-circle-filled"
+                      size={16}
+                      className="success-color"
+                    />
+                    <span className="u-marginLeft--5 u-fontSize--small u-fontWeight--medium u-textColor--success">
+                      Schedule updated
+                    </span>
+                  </div>
+                )}
+                {updateScheduleErrMsg && (
+                  <div className="u-marginLeft--10 flex alignItems--center">
+                    <span className="u-marginLeft--5 u-fontSize--small u-fontWeight--medium u-textColor--error">
+                      {updateScheduleErrMsg}
+                    </span>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+          <div className="flex flex-column snapshot-form-wrapper card-bg u-padding--15">
+            <p className="card-title">{featureName}s Retention Policy</p>
+            <div className="u-marginBottom--10">
+              <p
+                className="u-fontSize--normal u-fontWeight--normal u-lineHeight--normal u-textColor--bodyCopy u-marginTop--12 schedule">
+                Configure the retention policy for {featureName}s of
+                the admin console and all application data.
+              </p>
+            </div>
+            <div
+              className={`flex-column card-item u-padding--15 ${
+                !isAppConfig ? "u-marginTop--12" : "u-marginBottom--20"
+              }`}
+            >
               <div>
                 <p className="u-fontSize--normal card-item-title u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">
-                  Retention policy
                 </p>
                 <p className="u-fontSize--small u-textColor--bodyCopy u-fontWeight--normal u-lineHeight--normal u-marginBottom--10">
                   Choose how long to retain {featureName}s before they are
@@ -630,7 +667,7 @@ class SnapshotSchedule extends Component {
                   disabled={updatingSchedule}
                   onClick={this.saveSnapshotConfig}
                 >
-                  {updatingSchedule ? "Updating schedule" : "Update schedule"}
+                  {updatingSchedule ? "Updating retention" : "Update retention"}
                 </button>
                 {updateConfirm && (
                   <div className="u-marginLeft--10 flex alignItems--center">
@@ -640,7 +677,7 @@ class SnapshotSchedule extends Component {
                       className="success-color"
                     />
                     <span className="u-marginLeft--5 u-fontSize--small u-fontWeight--medium u-textColor--success">
-                      Schedule updated
+                      Retention updated
                     </span>
                   </div>
                 )}
@@ -664,7 +701,7 @@ class SnapshotSchedule extends Component {
           loading={loadingConfig}
         />
         {!isAppConfig && !isSettingsPage && (
-          <GettingStartedSnapshots isVeleroInstalled={isVeleroInstalled} />
+          <GettingStartedSnapshots isVeleroInstalled={isVeleroInstalled}/>
         )}
       </div>
     );
