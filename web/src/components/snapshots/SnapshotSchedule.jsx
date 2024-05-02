@@ -1,7 +1,12 @@
-import {Component} from "react";
+import { Component } from "react";
 import Select from "react-select";
-import {withRouter} from "@src/utilities/react-router-utilities";
-import {getCronFrequency, getCronInterval, getReadableCronDescriptor, Utilities,} from "../../utilities/utilities";
+import { withRouter } from "@src/utilities/react-router-utilities";
+import {
+  getCronFrequency,
+  getCronInterval,
+  getReadableCronDescriptor,
+  Utilities,
+} from "../../utilities/utilities";
 import ErrorModal from "../modals/ErrorModal";
 import Loader from "../shared/Loader";
 import find from "lodash/find";
@@ -453,7 +458,8 @@ class SnapshotSchedule extends Component {
             <p className="card-title">Automatic {featureName}s</p>
             <div className="u-marginBottom--10">
               <p className="u-fontSize--normal u-fontWeight--normal u-lineHeight--normal u-textColor--bodyCopy u-marginTop--12 schedule">
-                Configure a schedule for {featureName}s of the admin console and all application data.
+                Configure a schedule for {featureName}s of the admin console and
+                all application data.
               </p>
             </div>
             {!isEmbeddedCluster && (
@@ -614,10 +620,9 @@ class SnapshotSchedule extends Component {
           <div className="flex flex-column snapshot-form-wrapper card-bg u-padding--15">
             <p className="card-title">{featureName}s Retention Policy</p>
             <div className="u-marginBottom--10">
-              <p
-                className="u-fontSize--normal u-fontWeight--normal u-lineHeight--normal u-textColor--bodyCopy u-marginTop--12 schedule">
-                Configure the retention policy for {featureName}s of
-                the admin console and all application data.
+              <p className="u-fontSize--normal u-fontWeight--normal u-lineHeight--normal u-textColor--bodyCopy u-marginTop--12 schedule">
+                Configure the retention policy for {featureName}s of the admin
+                console and all application data.
               </p>
             </div>
             <div
@@ -626,8 +631,7 @@ class SnapshotSchedule extends Component {
               }`}
             >
               <div>
-                <p className="u-fontSize--normal card-item-title u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">
-                </p>
+                <p className="u-fontSize--normal card-item-title u-fontWeight--bold u-lineHeight--normal u-marginBottom--10"></p>
                 <p className="u-fontSize--small u-textColor--bodyCopy u-fontWeight--normal u-lineHeight--normal u-marginBottom--10">
                   Choose how long to retain {featureName}s before they are
                   automatically deleted.
@@ -701,7 +705,7 @@ class SnapshotSchedule extends Component {
           loading={loadingConfig}
         />
         {!isAppConfig && !isSettingsPage && (
-          <GettingStartedSnapshots isVeleroInstalled={isVeleroInstalled}/>
+          <GettingStartedSnapshots isVeleroInstalled={isVeleroInstalled} />
         )}
       </div>
     );
