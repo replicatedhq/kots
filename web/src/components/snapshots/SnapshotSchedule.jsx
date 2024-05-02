@@ -423,7 +423,7 @@ class SnapshotSchedule extends Component {
 
         this.setState({
           updatingRetention: false,
-          updateConfirm: true,
+          updateRetentionConfirm: true,
           updateRetentionErrMsg: " ",
         });
 
@@ -431,7 +431,7 @@ class SnapshotSchedule extends Component {
           clearTimeout(this.confirmTimeout);
         }
         this.confirmTimeout = setTimeout(() => {
-          this.setState({ updateConfirm: false });
+          this.setState({ updateRetentionConfirm: false });
         }, 5000);
       })
       .catch((err) => {
