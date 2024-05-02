@@ -264,7 +264,9 @@ describe("Utilities", () => {
   describe("snapshotLocationStr", () => {
     it("should return bucket name if path is empty or undefined", () => {
       expect(Utilities.snapshotLocationStr("my-bucket", "")).toBe("my-bucket");
-      expect(Utilities.snapshotLocationStr("my-bucket", undefined)).toBe("my-bucket");
+      expect(Utilities.snapshotLocationStr("my-bucket", undefined)).toBe(
+        "my-bucket"
+      );
     });
 
     it("should return bucket name and path if path is not empty", () => {
@@ -278,9 +280,9 @@ describe("Utilities", () => {
         "my-bucket/my-path"
       );
     });
-  
+
     it("should not error if bucket and path are undefined", () => {
       expect(Utilities.snapshotLocationStr(undefined, undefined)).to("");
-    })
+    });
   });
 });
