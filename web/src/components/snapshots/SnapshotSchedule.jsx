@@ -699,6 +699,7 @@ class SnapshotSchedule extends Component {
             </div>
           </div>
         </div>
+        <div>&nbsp</div>
         {/*start of retention box*/}
         <div className="flex flex-column">
           <div className="flex flex-column snapshot-form-wrapper card-bg u-padding--15">
