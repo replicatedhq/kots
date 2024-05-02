@@ -278,5 +278,9 @@ describe("Utilities", () => {
         "my-bucket/my-path"
       );
     });
+  
+    it("should not error if bucket and path are undefined", () => {
+      expect(Utilities.snapshotLocationStr(undefined, undefined)).to("");
+    })
   });
 });
