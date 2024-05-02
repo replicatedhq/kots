@@ -1,7 +1,12 @@
-import {Component} from "react";
+import { Component } from "react";
 import Select from "react-select";
-import {withRouter} from "@src/utilities/react-router-utilities";
-import {getCronFrequency, getCronInterval, getReadableCronDescriptor, Utilities,} from "../../utilities/utilities";
+import { withRouter } from "@src/utilities/react-router-utilities";
+import {
+  getCronFrequency,
+  getCronInterval,
+  getReadableCronDescriptor,
+  Utilities,
+} from "../../utilities/utilities";
 import ErrorModal from "../modals/ErrorModal";
 import Loader from "../shared/Loader";
 import find from "lodash/find";
@@ -439,7 +444,6 @@ class SnapshotSchedule extends Component {
       });
   };
 
-
   toggleErrorModal = () => {
     this.setState({ displayErrorModal: !this.state.displayErrorModal });
   };
@@ -534,8 +538,7 @@ class SnapshotSchedule extends Component {
           <div className="flex flex-column snapshot-form-wrapper card-bg u-padding--15">
             <p className="card-title">Automatic {featureName}s</p>
             <div className="u-marginBottom--10">
-              <p
-                className="u-fontSize--normal u-fontWeight--normal u-lineHeight--normal u-textColor--bodyCopy u-marginTop--12 schedule">
+              <p className="u-fontSize--normal u-fontWeight--normal u-lineHeight--normal u-textColor--bodyCopy u-marginTop--12 schedule">
                 Configure a schedule for {featureName}s of the admin console and
                 all application data.
               </p>
@@ -616,8 +619,7 @@ class SnapshotSchedule extends Component {
                 <div className="flex-column flex1 u-position--relative u-marginBottom--50">
                   <div className="flex flex1">
                     <div className="flex1 u-paddingRight--5">
-                      <p
-                        className="u-fontSize--normal card-item-title u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">
+                      <p className="u-fontSize--normal card-item-title u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">
                         Schedule
                       </p>
                       <Select
@@ -635,8 +637,7 @@ class SnapshotSchedule extends Component {
                       />
                     </div>
                     <div className="flex1 u-paddingLeft--5">
-                      <p
-                        className="u-fontSize--normal card-item-title u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">
+                      <p className="u-fontSize--normal card-item-title u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">
                         Cron expression
                       </p>
                       <input
@@ -703,8 +704,7 @@ class SnapshotSchedule extends Component {
           <div className="flex flex-column snapshot-form-wrapper card-bg u-padding--15">
             <p className="card-title">Retention policy</p>
             <div className="u-marginBottom--10">
-              <p
-                className="u-fontSize--normal u-fontWeight--normal u-lineHeight--normal u-textColor--bodyCopy u-marginTop--12 retention">
+              <p className="u-fontSize--normal u-fontWeight--normal u-lineHeight--normal u-textColor--bodyCopy u-marginTop--12 retention">
                 Configure the retention policy for {featureName}s of the admin
                 console and all application data.
               </p>
@@ -715,10 +715,8 @@ class SnapshotSchedule extends Component {
               }`}
             >
               <div>
-                <p
-                  className="u-fontSize--normal card-item-title u-fontWeight--bold u-lineHeight--normal u-marginBottom--10"></p>
-                <p
-                  className="u-fontSize--small u-textColor--bodyCopy u-fontWeight--normal u-lineHeight--normal u-marginBottom--10">
+                <p className="u-fontSize--normal card-item-title u-fontWeight--bold u-lineHeight--normal u-marginBottom--10"></p>
+                <p className="u-fontSize--small u-textColor--bodyCopy u-fontWeight--normal u-lineHeight--normal u-marginBottom--10">
                   Choose how long to retain {featureName}s before they are
                   automatically deleted.
                 </p>
@@ -757,7 +755,9 @@ class SnapshotSchedule extends Component {
                   disabled={updatingRetention}
                   onClick={this.saveRetentionConfig}
                 >
-                  {updatingRetention ? "Updating retention" : "Update retention"}
+                  {updatingRetention
+                    ? "Updating retention"
+                    : "Update retention"}
                 </button>
                 {updateRetentionConfirm && (
                   <div className="u-marginLeft--10 flex alignItems--center">
@@ -791,7 +791,7 @@ class SnapshotSchedule extends Component {
           loading={loadingConfig}
         />
         {!isAppConfig && !isSettingsPage && (
-          <GettingStartedSnapshots isVeleroInstalled={isVeleroInstalled}/>
+          <GettingStartedSnapshots isVeleroInstalled={isVeleroInstalled} />
         )}
       </div>
     );
