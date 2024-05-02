@@ -536,7 +536,7 @@ class SnapshotSchedule extends Component {
             </div>
           )}
           <div className="flex flex-column snapshot-form-wrapper card-bg u-padding--15">
-            <p className="card-title">Automatic {featureName}s</p>
+            <p className="card-title">Scheduled {featureName}s</p>
             <div className="u-marginBottom--10">
               <p className="u-fontSize--normal u-fontWeight--normal u-lineHeight--normal u-textColor--bodyCopy u-marginTop--12 schedule">
                 Configure a schedule for {featureName}s of the admin console and
@@ -608,7 +608,7 @@ class SnapshotSchedule extends Component {
                     >
                       <div className="flex1">
                         <p className="u-textColor--primary u-fontSize--normal u-fontWeight--medium u-marginLeft--5">
-                          Enable automatic scheduled {featureName}s
+                          Enable scheduled {featureName}s
                         </p>
                       </div>
                     </label>
