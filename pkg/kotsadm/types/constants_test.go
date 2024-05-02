@@ -10,6 +10,7 @@ func Test_getKotsadmLabels(t *testing.T) {
 	tests := []struct {
 		name         string
 		labels       []map[string]string
+		env          map[string]string
 		expectLabels map[string]string
 	}{
 		{
@@ -19,16 +20,37 @@ func Test_getKotsadmLabels(t *testing.T) {
 					"foo": "foo",
 				},
 			},
+			env: map[string]string{},
 			expectLabels: map[string]string{
 				"kots.io/kotsadm": "true",
 				"kots.io/backup":  "velero",
 				"foo":             "foo",
 			},
 		},
+		{
+			name: "pass case with additional labels in embedded-cluster",
+			labels: []map[string]string{
+				{
+					"foo": "foo",
+				},
+			},
+			env: map[string]string{
+				"EMBEDDED_CLUSTER_ID": "foo",
+			},
+			expectLabels: map[string]string{
+				"kots.io/kotsadm":                  "true",
+				"kots.io/backup":                   "velero",
+				"replicated.com/disaster-recovery": "infra",
+				"foo":                              "foo",
+			},
+		},
 	}
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
+			for k, v := range test.env {
+				t.Setenv(k, v)
+			}
 			labels := GetKotsadmLabels(test.labels...)
 			assert.Equal(t, test.expectLabels, labels)
 		})
