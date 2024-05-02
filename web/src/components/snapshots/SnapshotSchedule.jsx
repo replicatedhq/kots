@@ -717,7 +717,6 @@ class SnapshotSchedule extends Component {
               }`}
             >
               <div>
-                <p className="u-fontSize--normal card-item-title u-fontWeight--bold u-lineHeight--normal u-marginBottom--10"></p>
                 <p className="u-fontSize--small u-textColor--bodyCopy u-fontWeight--normal u-lineHeight--normal u-marginBottom--10">
                   Choose how long to retain {featureName}s before they are
                   automatically deleted.
