@@ -1258,28 +1258,52 @@ func (mr *MockKOTSHandlerMockRecorder) ResumeInstallOnline(w, r interface{}) *go
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ResumeInstallOnline", reflect.TypeOf((*MockKOTSHandler)(nil).ResumeInstallOnline), w, r)
 }
 
-// SaveInstanceSnapshotConfig mocks base method.
-func (m *MockKOTSHandler) SaveInstanceSnapshotConfig(w http.ResponseWriter, r *http.Request) {
+// SaveInstanceSnapshotRetention mocks base method.
+func (m *MockKOTSHandler) SaveInstanceSnapshotRetention(w http.ResponseWriter, r *http.Request) {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "SaveInstanceSnapshotConfig", w, r)
+	m.ctrl.Call(m, "SaveInstanceSnapshotRetention", w, r)
 }
 
-// SaveInstanceSnapshotConfig indicates an expected call of SaveInstanceSnapshotConfig.
-func (mr *MockKOTSHandlerMockRecorder) SaveInstanceSnapshotConfig(w, r interface{}) *gomock.Call {
+// SaveInstanceSnapshotRetention indicates an expected call of SaveInstanceSnapshotRetention.
+func (mr *MockKOTSHandlerMockRecorder) SaveInstanceSnapshotRetention(w, r interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SaveInstanceSnapshotConfig", reflect.TypeOf((*MockKOTSHandler)(nil).SaveInstanceSnapshotConfig), w, r)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SaveInstanceSnapshotRetention", reflect.TypeOf((*MockKOTSHandler)(nil).SaveInstanceSnapshotRetention), w, r)
 }
 
-// SaveSnapshotConfig mocks base method.
-func (m *MockKOTSHandler) SaveSnapshotConfig(w http.ResponseWriter, r *http.Request) {
+// SaveInstanceSnapshotSchedule mocks base method.
+func (m *MockKOTSHandler) SaveInstanceSnapshotSchedule(w http.ResponseWriter, r *http.Request) {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "SaveSnapshotConfig", w, r)
+	m.ctrl.Call(m, "SaveInstanceSnapshotSchedule", w, r)
 }
 
-// SaveSnapshotConfig indicates an expected call of SaveSnapshotConfig.
-func (mr *MockKOTSHandlerMockRecorder) SaveSnapshotConfig(w, r interface{}) *gomock.Call {
+// SaveInstanceSnapshotSchedule indicates an expected call of SaveInstanceSnapshotSchedule.
+func (mr *MockKOTSHandlerMockRecorder) SaveInstanceSnapshotSchedule(w, r interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SaveSnapshotConfig", reflect.TypeOf((*MockKOTSHandler)(nil).SaveSnapshotConfig), w, r)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SaveInstanceSnapshotSchedule", reflect.TypeOf((*MockKOTSHandler)(nil).SaveInstanceSnapshotSchedule), w, r)
+}
+
+// SaveSnapshotRetention mocks base method.
+func (m *MockKOTSHandler) SaveSnapshotRetention(w http.ResponseWriter, r *http.Request) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "SaveSnapshotRetention", w, r)
+}
+
+// SaveSnapshotRetention indicates an expected call of SaveSnapshotRetention.
+func (mr *MockKOTSHandlerMockRecorder) SaveSnapshotRetention(w, r interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SaveSnapshotRetention", reflect.TypeOf((*MockKOTSHandler)(nil).SaveSnapshotRetention), w, r)
+}
+
+// SaveSnapshotSchedule mocks base method.
+func (m *MockKOTSHandler) SaveSnapshotSchedule(w http.ResponseWriter, r *http.Request) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "SaveSnapshotSchedule", w, r)
+}
+
+// SaveSnapshotSchedule indicates an expected call of SaveSnapshotSchedule.
+func (mr *MockKOTSHandlerMockRecorder) SaveSnapshotSchedule(w, r interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SaveSnapshotSchedule", reflect.TypeOf((*MockKOTSHandler)(nil).SaveSnapshotSchedule), w, r)
 }
 
 // SetAppConfigValues mocks base method.

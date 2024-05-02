@@ -225,8 +225,10 @@ func RegisterSessionAuthRoutes(r *mux.Router, kotsStore store.Store, handler KOT
 		HandlerFunc(middleware.EnforceAccess(policy.AppBackupRead, handler.ListBackups))
 	r.Name("GetSnapshotConfig").Path("/api/v1/app/{appSlug}/snapshot/config").Methods("GET").
 		HandlerFunc(middleware.EnforceAccess(policy.AppSnapshotsettingsRead, handler.GetSnapshotConfig))
-	r.Name("SaveSnapshotConfig").Path("/api/v1/app/{appSlug}/snapshot/config").Methods("PUT").
-		HandlerFunc(middleware.EnforceAccess(policy.AppSnapshotsettingsWrite, handler.SaveSnapshotConfig))
+	r.Name("SaveSnapshotSchedule").Path("/api/v1/app/{appSlug}/snapshot/schedule").Methods("PUT").
+		HandlerFunc(middleware.EnforceAccess(policy.AppSnapshotsettingsWrite, handler.SaveSnapshotSchedule))
+	r.Name("SaveSnapshotRetention").Path("/api/v1/app/{appSlug}/snapshot/retention").Methods("PUT").
+		HandlerFunc(middleware.EnforceAccess(policy.AppSnapshotsettingsWrite, handler.SaveSnapshotRetention))
 
 	// Global snapshot routes
 	r.Name("ListInstanceBackups").Path("/api/v1/snapshots").Methods("GET").
@@ -235,8 +237,10 @@ func RegisterSessionAuthRoutes(r *mux.Router, kotsStore store.Store, handler KOT
 		HandlerFunc(middleware.EnforceAccess(policy.BackupWrite, handler.CreateInstanceBackup))
 	r.Name("GetInstanceSnapshotConfig").Path("/api/v1/snapshot/config").Methods("GET").
 		HandlerFunc(middleware.EnforceAccess(policy.SnapshotsettingsRead, handler.GetInstanceSnapshotConfig))
-	r.Name("SaveInstanceSnapshotConfig").Path("/api/v1/snapshot/config").Methods("PUT").
-		HandlerFunc(middleware.EnforceAccess(policy.SnapshotsettingsWrite, handler.SaveInstanceSnapshotConfig))
+	r.Name("SaveInstanceSnapshotSchedule").Path("/api/v1/snapshot/schedule").Methods("PUT").
+		HandlerFunc(middleware.EnforceAccess(policy.SnapshotsettingsWrite, handler.SaveInstanceSnapshotSchedule))
+	r.Name("SaveInstanceSnapshotSchedule").Path("/api/v1/snapshot/retention").Methods("PUT").
+		HandlerFunc(middleware.EnforceAccess(policy.SnapshotsettingsWrite, handler.SaveInstanceSnapshotRetention))
 	r.Name("GetGlobalSnapshotSettings").Path("/api/v1/snapshots/settings").Methods("GET").
 		HandlerFunc(middleware.EnforceAccess(policy.SnapshotsettingsRead, handler.GetGlobalSnapshotSettings))
 	r.Name("UpdateGlobalSnapshotSettings").Path("/api/v1/snapshots/settings").Methods("PUT").
