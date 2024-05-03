@@ -2,10 +2,10 @@ import { Component } from "react";
 import Select from "react-select";
 import { withRouter } from "@src/utilities/react-router-utilities";
 import {
-  Utilities,
   getCronFrequency,
   getCronInterval,
   getReadableCronDescriptor,
+  Utilities,
 } from "../../utilities/utilities";
 import ErrorModal from "../modals/ErrorModal";
 import Loader from "../shared/Loader";
@@ -289,20 +289,16 @@ class SnapshotSchedule extends Component {
     if (isAppConfig) {
       body = {
         appId: this.state.selectedApp.id,
-        inputValue: this.state.retentionInput,
-        inputTimeUnit: this.state.selectedRetentionUnit?.value,
         schedule: this.state.frequency,
         autoEnabled: this.state.autoEnabled,
       };
-      url = `${process.env.API_ENDPOINT}/app/${this.state.selectedApp.slug}/snapshot/config`;
+      url = `${process.env.API_ENDPOINT}/app/${this.state.selectedApp.slug}/snapshot/schedule`;
     } else {
       body = {
-        inputValue: this.state.retentionInput,
-        inputTimeUnit: this.state.selectedRetentionUnit?.value,
         schedule: this.state.frequency,
         autoEnabled: this.state.autoEnabled,
       };
-      url = `${process.env.API_ENDPOINT}/snapshot/config`;
+      url = `${process.env.API_ENDPOINT}/snapshot/schedule`;
     }
     fetch(url, {
       headers: {
@@ -336,7 +332,7 @@ class SnapshotSchedule extends Component {
           }
           this.setState({
             updateScheduleErrMsg:
-              data.error || "Failed to save snapshot config",
+              data.error || "Failed to save snapshot schedule",
             messageType: "error",
             updatingSchedule: false,
           });
@@ -362,6 +358,88 @@ class SnapshotSchedule extends Component {
           updateScheduleErrMsg: err ? err.message : "Failed to connect to API",
           messageType: "error",
           updatingSchedule: false,
+        });
+      });
+  };
+
+  saveRetentionConfig = () => {
+    const isAppConfig = this.checkIsAppConfig();
+
+    this.setState({ updatingRetention: true });
+    let body;
+    let url;
+    if (isAppConfig) {
+      body = {
+        appId: this.state.selectedApp.id,
+        inputValue: this.state.retentionInput,
+        inputTimeUnit: this.state.selectedRetentionUnit?.value,
+      };
+      url = `${process.env.API_ENDPOINT}/app/${this.state.selectedApp.slug}/snapshot/retention`;
+    } else {
+      body = {
+        inputValue: this.state.retentionInput,
+        inputTimeUnit: this.state.selectedRetentionUnit?.value,
+      };
+      url = `${process.env.API_ENDPOINT}/snapshot/retention`;
+    }
+    fetch(url, {
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      },
+      credentials: "include",
+      method: "PUT",
+      body: JSON.stringify(body),
+    })
+      .then(async (res) => {
+        if (!res.ok && res.status === 409) {
+          const result = await res.json();
+          if (result.kotsadmRequiresVeleroAccess) {
+            this.setState({
+              updatingRetention: false,
+            });
+            this.props.openConfigureSnapshotsMinimalRBACModal(
+              result.kotsadmRequiresVeleroAccess,
+              result.kotsadmNamespace
+            );
+            return;
+          }
+        }
+
+        const data = await res.json();
+        if (!res.ok || !data.success) {
+          if (res.status === 401) {
+            Utilities.logoutUser();
+            return;
+          }
+          this.setState({
+            updateRetentionErrMsg:
+              data.error || "Failed to save snapshot retention",
+            messageType: "error",
+            updatingRetention: false,
+          });
+          return;
+        }
+
+        this.setState({
+          updatingRetention: false,
+          updateRetentionConfirm: true,
+          updateRetentionErrMsg: " ",
+        });
+
+        if (this.confirmTimeout) {
+          clearTimeout(this.confirmTimeout);
+        }
+        this.confirmTimeout = setTimeout(() => {
+          this.setState({ updateRetentionConfirm: false });
+        }, 5000);
+      })
+      .catch((err) => {
+        console.log(err);
+        this.setState({
+          updateRetentionErrMsg: err ? err.message : "Failed to connect to API",
+          messageType: "error",
+          updatingRetention: false,
         });
       });
   };
@@ -402,9 +480,12 @@ class SnapshotSchedule extends Component {
     const {
       hasValidCron,
       updatingSchedule,
+      updatingRetention,
       updateConfirm,
+      updateRetentionConfirm,
       loadingConfig,
       updateScheduleErrMsg,
+      updateRetentionErrMsg,
     } = this.state;
     const selectedRetentionUnit = RETENTION_UNITS.find((ru) => {
       return ru.value === this.state.selectedRetentionUnit?.value;
@@ -455,11 +536,11 @@ class SnapshotSchedule extends Component {
             </div>
           )}
           <div className="flex flex-column snapshot-form-wrapper card-bg u-padding--15">
-            <p className="card-title">Automatic {featureName}s</p>
+            <p className="card-title">Scheduled {featureName}s</p>
             <div className="u-marginBottom--10">
               <p className="u-fontSize--normal u-fontWeight--normal u-lineHeight--normal u-textColor--bodyCopy u-marginTop--12 schedule">
-                Configure a schedule and retention policy for {featureName}s of
-                the admin console and all application data.
+                Configure a schedule for {featureName}s of the admin console and
+                all application data.
               </p>
             </div>
             {!isEmbeddedCluster && (
@@ -527,7 +608,7 @@ class SnapshotSchedule extends Component {
                     >
                       <div className="flex1">
                         <p className="u-textColor--primary u-fontSize--normal u-fontWeight--medium u-marginLeft--5">
-                          Enable automatic scheduled {featureName}s
+                          Enable scheduled {featureName}s
                         </p>
                       </div>
                     </label>
@@ -535,7 +616,7 @@ class SnapshotSchedule extends Component {
                 </div>
               </div>
               {this.state.autoEnabled && (
-                <div className="flex-column flex1 u-position--relative u-marginBottom--50">
+                <div className="flex-column flex1 u-position--relative u-marginBottom--40">
                   <div className="flex flex1">
                     <div className="flex1 u-paddingRight--5">
                       <p className="u-fontSize--normal card-item-title u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">
@@ -587,10 +668,55 @@ class SnapshotSchedule extends Component {
                   )}
                 </div>
               )}
+              <div className="flex">
+                <button
+                  className="btn primary blue"
+                  disabled={updatingSchedule}
+                  onClick={this.saveSnapshotConfig}
+                >
+                  {updatingSchedule ? "Updating schedule" : "Update schedule"}
+                </button>
+                {updateConfirm && (
+                  <div className="u-marginLeft--10 flex alignItems--center">
+                    <Icon
+                      icon="check-circle-filled"
+                      size={16}
+                      className="success-color"
+                    />
+                    <span className="u-marginLeft--5 u-fontSize--small u-fontWeight--medium u-textColor--success">
+                      Schedule updated
+                    </span>
+                  </div>
+                )}
+                {updateScheduleErrMsg && (
+                  <div className="u-marginLeft--10 flex alignItems--center">
+                    <span className="u-marginLeft--5 u-fontSize--small u-fontWeight--medium u-textColor--error">
+                      {updateScheduleErrMsg}
+                    </span>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+        <div> &nbsp; </div>
+        {/*start of retention box*/}
+        <div className="flex flex-column">
+          <div className="flex flex-column snapshot-form-wrapper card-bg u-padding--15">
+            <p className="card-title">Retention policy</p>
+            <div className="u-marginBottom--10">
+              <p className="u-fontSize--normal u-fontWeight--normal u-lineHeight--normal u-textColor--bodyCopy u-marginTop--12 retention">
+                Configure the retention policy for {featureName}s of the admin
+                console and all application data. This applies to both manual
+                and scheduled {featureName}s.
+              </p>
+            </div>
+            <div
+              className={`flex-column card-item u-padding--15 ${
+                !isAppConfig ? "u-marginTop--12" : "u-marginBottom--20"
+              }`}
+            >
               <div>
-                <p className="u-fontSize--normal card-item-title u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">
-                  Retention policy
-                </p>
                 <p className="u-fontSize--small u-textColor--bodyCopy u-fontWeight--normal u-lineHeight--normal u-marginBottom--10">
                   Choose how long to retain {featureName}s before they are
                   automatically deleted.
@@ -627,12 +753,14 @@ class SnapshotSchedule extends Component {
               <div className="flex">
                 <button
                   className="btn primary blue"
-                  disabled={updatingSchedule}
-                  onClick={this.saveSnapshotConfig}
+                  disabled={updatingRetention}
+                  onClick={this.saveRetentionConfig}
                 >
-                  {updatingSchedule ? "Updating schedule" : "Update schedule"}
+                  {updatingRetention
+                    ? "Updating retention policy"
+                    : "Update retention policy"}
                 </button>
-                {updateConfirm && (
+                {updateRetentionConfirm && (
                   <div className="u-marginLeft--10 flex alignItems--center">
                     <Icon
                       icon="check-circle-filled"
@@ -640,14 +768,14 @@ class SnapshotSchedule extends Component {
                       className="success-color"
                     />
                     <span className="u-marginLeft--5 u-fontSize--small u-fontWeight--medium u-textColor--success">
-                      Schedule updated
+                      Retention updated
                     </span>
                   </div>
                 )}
-                {updateScheduleErrMsg && (
+                {updateRetentionErrMsg && (
                   <div className="u-marginLeft--10 flex alignItems--center">
                     <span className="u-marginLeft--5 u-fontSize--small u-fontWeight--medium u-textColor--error">
-                      {updateScheduleErrMsg}
+                      {updateRetentionErrMsg}
                     </span>
                   </div>
                 )}

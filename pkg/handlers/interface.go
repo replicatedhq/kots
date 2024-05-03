@@ -111,13 +111,15 @@ type KOTSHandler interface {
 	GetRestoreDetails(w http.ResponseWriter, r *http.Request)
 	ListBackups(w http.ResponseWriter, r *http.Request)
 	GetSnapshotConfig(w http.ResponseWriter, r *http.Request)
-	SaveSnapshotConfig(w http.ResponseWriter, r *http.Request)
+	SaveSnapshotSchedule(w http.ResponseWriter, r *http.Request)
+	SaveSnapshotRetention(w http.ResponseWriter, r *http.Request)
 
 	// Global snapshot routes
 	ListInstanceBackups(w http.ResponseWriter, r *http.Request)
 	CreateInstanceBackup(w http.ResponseWriter, r *http.Request)
 	GetInstanceSnapshotConfig(w http.ResponseWriter, r *http.Request)
-	SaveInstanceSnapshotConfig(w http.ResponseWriter, r *http.Request)
+	SaveInstanceSnapshotSchedule(w http.ResponseWriter, r *http.Request)
+	SaveInstanceSnapshotRetention(w http.ResponseWriter, r *http.Request)
 	GetGlobalSnapshotSettings(w http.ResponseWriter, r *http.Request)
 	UpdateGlobalSnapshotSettings(w http.ResponseWriter, r *http.Request)
 	GetFileSystemSnapshotProviderInstructions(w http.ResponseWriter, r *http.Request)

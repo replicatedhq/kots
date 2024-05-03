@@ -552,12 +552,10 @@ func (h *Handler) GetVeleroStatus(w http.ResponseWriter, r *http.Request) {
 	JSON(w, http.StatusOK, getVeleroStatusResponse)
 }
 
-type SaveSnapshotConfigRequest struct {
-	AppID         string `json:"appId"`
-	InputValue    string `json:"inputValue"`
-	InputTimeUnit string `json:"inputTimeUnit"`
-	Schedule      string `json:"schedule"`
-	AutoEnabled   bool   `json:"autoEnabled"`
+type SaveSnapshotScheduleRequest struct {
+	AppID       string `json:"appId"`
+	Schedule    string `json:"schedule"`
+	AutoEnabled bool   `json:"autoEnabled"`
 }
 
 type SaveSnapshotConfigResponse struct {
@@ -565,7 +563,7 @@ type SaveSnapshotConfigResponse struct {
 	Error   string `json:"error,omitempty"`
 }
 
-func (h *Handler) SaveSnapshotConfig(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) SaveSnapshotSchedule(w http.ResponseWriter, r *http.Request) {
 	responseBody := SaveSnapshotConfigResponse{}
 
 	// check minimal rbac
@@ -573,7 +571,7 @@ func (h *Handler) SaveSnapshotConfig(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	requestBody := SaveSnapshotConfigRequest{}
+	requestBody := SaveSnapshotScheduleRequest{}
 	if err := json.NewDecoder(r.Body).Decode(&requestBody); err != nil {
 		logger.Error(err)
 		responseBody.Error = "failed to decode request body"
@@ -587,24 +585,6 @@ func (h *Handler) SaveSnapshotConfig(w http.ResponseWriter, r *http.Request) {
 		responseBody.Error = "Failed to get app"
 		JSON(w, http.StatusInternalServerError, responseBody)
 		return
-	}
-
-	retention, err := snapshot.FormatTTL(requestBody.InputValue, requestBody.InputTimeUnit)
-	if err != nil {
-		logger.Error(err)
-		responseBody.Error = fmt.Sprintf("Invalid snapshot retention: %s %s", requestBody.InputValue, requestBody.InputTimeUnit)
-		JSON(w, http.StatusBadRequest, responseBody)
-		return
-	}
-
-	if app.SnapshotTTL != retention {
-		app.SnapshotTTL = retention
-		if err := store.GetStore().SetSnapshotTTL(app.ID, retention); err != nil {
-			logger.Error(err)
-			responseBody.Error = "Failed to set snapshot retention"
-			JSON(w, http.StatusInternalServerError, responseBody)
-			return
-		}
 	}
 
 	if !requestBody.AutoEnabled {
@@ -651,6 +631,58 @@ func (h *Handler) SaveSnapshotConfig(w http.ResponseWriter, r *http.Request) {
 		if err := store.GetStore().CreateScheduledSnapshot(id, app.ID, queued); err != nil {
 			logger.Error(err)
 			responseBody.Error = "Failed to create first scheduled snapshot"
+			JSON(w, http.StatusInternalServerError, responseBody)
+			return
+		}
+	}
+
+	responseBody.Success = true
+	JSON(w, http.StatusOK, responseBody)
+}
+
+type SaveSnapshotRetentionRequest struct {
+	AppID         string `json:"appId"`
+	InputValue    string `json:"inputValue"`
+	InputTimeUnit string `json:"inputTimeUnit"`
+}
+
+func (h *Handler) SaveSnapshotRetention(w http.ResponseWriter, r *http.Request) {
+	responseBody := SaveSnapshotConfigResponse{}
+
+	// check minimal rbac
+	if err := requiresKotsadmVeleroAccess(w, r); err != nil {
+		return
+	}
+
+	requestBody := SaveSnapshotRetentionRequest{}
+	if err := json.NewDecoder(r.Body).Decode(&requestBody); err != nil {
+		logger.Error(err)
+		responseBody.Error = "failed to decode request body"
+		JSON(w, http.StatusBadRequest, responseBody)
+		return
+	}
+
+	app, err := store.GetStore().GetApp(requestBody.AppID)
+	if err != nil {
+		logger.Error(err)
+		responseBody.Error = "Failed to get app"
+		JSON(w, http.StatusInternalServerError, responseBody)
+		return
+	}
+
+	retention, err := snapshot.FormatTTL(requestBody.InputValue, requestBody.InputTimeUnit)
+	if err != nil {
+		logger.Error(err)
+		responseBody.Error = fmt.Sprintf("Invalid snapshot retention: %s %s", requestBody.InputValue, requestBody.InputTimeUnit)
+		JSON(w, http.StatusBadRequest, responseBody)
+		return
+	}
+
+	if app.SnapshotTTL != retention {
+		app.SnapshotTTL = retention
+		if err := store.GetStore().SetSnapshotTTL(app.ID, retention); err != nil {
+			logger.Error(err)
+			responseBody.Error = "Failed to set snapshot retention"
 			JSON(w, http.StatusInternalServerError, responseBody)
 			return
 		}
@@ -713,11 +745,9 @@ func (h *Handler) GetInstanceSnapshotConfig(w http.ResponseWriter, r *http.Reque
 	JSON(w, http.StatusOK, getInstanceSnapshotConfigResponse)
 }
 
-type SaveInstanceSnapshotConfigRequest struct {
-	InputValue    string `json:"inputValue"`
-	InputTimeUnit string `json:"inputTimeUnit"`
-	Schedule      string `json:"schedule"`
-	AutoEnabled   bool   `json:"autoEnabled"`
+type SaveInstanceSnapshotScheduleRequest struct {
+	Schedule    string `json:"schedule"`
+	AutoEnabled bool   `json:"autoEnabled"`
 }
 
 type SaveInstanceSnapshotConfigResponse struct {
@@ -725,7 +755,7 @@ type SaveInstanceSnapshotConfigResponse struct {
 	Error   string `json:"error,omitempty"`
 }
 
-func (h *Handler) SaveInstanceSnapshotConfig(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) SaveInstanceSnapshotSchedule(w http.ResponseWriter, r *http.Request) {
 	responseBody := SaveInstanceSnapshotConfigResponse{}
 
 	// check minimal rbac
@@ -733,7 +763,7 @@ func (h *Handler) SaveInstanceSnapshotConfig(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
-	requestBody := SaveInstanceSnapshotConfigRequest{}
+	requestBody := SaveInstanceSnapshotScheduleRequest{}
 	if err := json.NewDecoder(r.Body).Decode(&requestBody); err != nil {
 		logger.Error(err)
 		responseBody.Error = "failed to decode request body"
@@ -756,24 +786,6 @@ func (h *Handler) SaveInstanceSnapshotConfig(w http.ResponseWriter, r *http.Requ
 		return
 	}
 	c := clusters[0]
-
-	retention, err := snapshot.FormatTTL(requestBody.InputValue, requestBody.InputTimeUnit)
-	if err != nil {
-		logger.Error(err)
-		responseBody.Error = fmt.Sprintf("Invalid instance snapshot retention: %s %s", requestBody.InputValue, requestBody.InputTimeUnit)
-		JSON(w, http.StatusBadRequest, responseBody)
-		return
-	}
-
-	if c.SnapshotTTL != retention {
-		c.SnapshotTTL = retention
-		if err := store.GetStore().SetInstanceSnapshotTTL(c.ClusterID, retention); err != nil {
-			logger.Error(err)
-			responseBody.Error = "Failed to set instance snapshot retention"
-			JSON(w, http.StatusInternalServerError, responseBody)
-			return
-		}
-	}
 
 	if !requestBody.AutoEnabled {
 		if err := store.GetStore().SetInstanceSnapshotSchedule(c.ClusterID, ""); err != nil {
@@ -819,6 +831,65 @@ func (h *Handler) SaveInstanceSnapshotConfig(w http.ResponseWriter, r *http.Requ
 		if err := store.GetStore().CreateScheduledInstanceSnapshot(id, c.ClusterID, queued); err != nil {
 			logger.Error(err)
 			responseBody.Error = "Failed to create first scheduled instance snapshot"
+			JSON(w, http.StatusInternalServerError, responseBody)
+			return
+		}
+	}
+
+	responseBody.Success = true
+	JSON(w, http.StatusOK, responseBody)
+}
+
+type SaveInstanceSnapshotRetentionRequest struct {
+	InputValue    string `json:"inputValue"`
+	InputTimeUnit string `json:"inputTimeUnit"`
+}
+
+func (h *Handler) SaveInstanceSnapshotRetention(w http.ResponseWriter, r *http.Request) {
+	responseBody := SaveInstanceSnapshotConfigResponse{}
+
+	// check minimal rbac
+	if err := requiresKotsadmVeleroAccess(w, r); err != nil {
+		return
+	}
+
+	requestBody := SaveInstanceSnapshotRetentionRequest{}
+	if err := json.NewDecoder(r.Body).Decode(&requestBody); err != nil {
+		logger.Error(err)
+		responseBody.Error = "failed to decode request body"
+		JSON(w, http.StatusBadRequest, responseBody)
+		return
+	}
+
+	clusters, err := store.GetStore().ListClusters()
+	if err != nil {
+		logger.Error(err)
+		responseBody.Error = "Failed to list clusters"
+		JSON(w, http.StatusInternalServerError, responseBody)
+		return
+	}
+	if len(clusters) == 0 {
+		err := errors.New("No clusters found")
+		logger.Error(err)
+		responseBody.Error = err.Error()
+		JSON(w, http.StatusInternalServerError, responseBody)
+		return
+	}
+	c := clusters[0]
+
+	retention, err := snapshot.FormatTTL(requestBody.InputValue, requestBody.InputTimeUnit)
+	if err != nil {
+		logger.Error(err)
+		responseBody.Error = fmt.Sprintf("Invalid instance snapshot retention: %s %s", requestBody.InputValue, requestBody.InputTimeUnit)
+		JSON(w, http.StatusBadRequest, responseBody)
+		return
+	}
+
+	if c.SnapshotTTL != retention {
+		c.SnapshotTTL = retention
+		if err := store.GetStore().SetInstanceSnapshotTTL(c.ClusterID, retention); err != nil {
+			logger.Error(err)
+			responseBody.Error = "Failed to set instance snapshot retention"
 			JSON(w, http.StatusInternalServerError, responseBody)
 			return
 		}
