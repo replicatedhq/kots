@@ -396,7 +396,7 @@ func CreateInstanceBackup(ctx context.Context, cluster *downstreamtypes.Downstre
 			IncludedNamespaces:      prepareIncludedNamespaces(includedNamespaces, util.IsEmbeddedCluster()),
 			ExcludedNamespaces:      excludedNamespaces,
 			IncludeClusterResources: &includeClusterResources,
-			LabelSelector:           instanceBackupLabelSelector(util.IsEmbeddedCluster()),
+			OrLabelSelectors:        instanceBackupLabelSelectors(util.IsEmbeddedCluster()),
 			OrderedResources:        backupOrderedResources,
 			Hooks:                   backupHooks,
 		},
@@ -1065,27 +1065,39 @@ func excludeShutdownPodsFromBackupInNamespace(ctx context.Context, clientset kub
 	return nil
 }
 
-func instanceBackupLabelSelector(isEmbeddedCluster bool) *metav1.LabelSelector {
+func instanceBackupLabelSelectors(isEmbeddedCluster bool) []*metav1.LabelSelector {
 	if isEmbeddedCluster { // only DR on embedded-cluster
-		return &metav1.LabelSelector{
-			MatchLabels: map[string]string{},
-			MatchExpressions: []metav1.LabelSelectorRequirement{
-				{
-					Key:      "replicated.com/disaster-recovery",
-					Operator: metav1.LabelSelectorOpIn,
-					Values: []string{
-						"infra",
-						"app",
-						"ec-install",
+		return []*metav1.LabelSelector{
+			{
+				MatchLabels: map[string]string{},
+				MatchExpressions: []metav1.LabelSelectorRequirement{
+					{
+						Key:      "replicated.com/disaster-recovery",
+						Operator: metav1.LabelSelectorOpIn,
+						Values: []string{
+							"infra",
+							"app",
+							"ec-install",
+						},
 					},
+				},
+			},
+			{
+				// we cannot add new labels to the docker-registry chart as of May 7th 2024
+				// so we need to add a label selector for the docker-registry app
+				// https://github.com/twuni/docker-registry.helm/blob/main/templates/deployment.yaml
+				MatchLabels: map[string]string{
+					"app": "docker-registry",
 				},
 			},
 		}
 	}
 
-	return &metav1.LabelSelector{
-		MatchLabels: map[string]string{
-			kotsadmtypes.BackupLabel: kotsadmtypes.BackupLabelValue,
+	return []*metav1.LabelSelector{
+		{
+			MatchLabels: map[string]string{
+				kotsadmtypes.BackupLabel: kotsadmtypes.BackupLabelValue,
+			},
 		},
 	}
 }
