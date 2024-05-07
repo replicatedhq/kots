@@ -1003,17 +1003,35 @@ func excludeShutdownPodsFromBackup(ctx context.Context, clientset kubernetes.Int
 	}
 
 	labelSets := []string{}
-	if veleroBackup.Spec.LabelSelector.MatchLabels != nil && len(veleroBackup.Spec.LabelSelector.MatchLabels) != 0 {
+	if veleroBackup.Spec.LabelSelector != nil && veleroBackup.Spec.LabelSelector.MatchLabels != nil && len(veleroBackup.Spec.LabelSelector.MatchLabels) != 0 {
 		labelSets = []string{labels.SelectorFromSet(veleroBackup.Spec.LabelSelector.MatchLabels).String()}
 	} else {
-		for _, expr := range veleroBackup.Spec.LabelSelector.MatchExpressions {
-			if expr.Operator != metav1.LabelSelectorOpIn {
-				return fmt.Errorf("unsupported operator %s in label selector %q", expr.Operator, veleroBackup.Spec.LabelSelector.String())
+		if veleroBackup.Spec.LabelSelector != nil {
+			for _, expr := range veleroBackup.Spec.LabelSelector.MatchExpressions {
+				if expr.Operator != metav1.LabelSelectorOpIn {
+					return fmt.Errorf("unsupported operator %s in label selector %q", expr.Operator, veleroBackup.Spec.LabelSelector.String())
+				}
+				for _, value := range expr.Values {
+					labelSets = append(labelSets, fmt.Sprintf("%s=%s", expr.Key, value))
+				}
 			}
-			for _, value := range expr.Values {
-				labelSets = append(labelSets, fmt.Sprintf("%s=%s", expr.Key, value))
+		} else {
+			for _, orLabel := range veleroBackup.Spec.OrLabelSelectors {
+				if orLabel.MatchLabels != nil {
+					labelSets = append(labelSets, labels.SelectorFromSet(orLabel.MatchLabels).String())
+					continue
+				}
+				for _, expr := range orLabel.MatchExpressions {
+					if expr.Operator != metav1.LabelSelectorOpIn {
+						return fmt.Errorf("unsupported operator %s in label selector %q", expr.Operator, veleroBackup.Spec.LabelSelector.String())
+					}
+					for _, value := range expr.Values {
+						labelSets = append(labelSets, fmt.Sprintf("%s=%s", expr.Key, value))
+					}
+				}
 			}
 		}
+
 	}
 
 	for _, labelSet := range labelSets {
