@@ -1106,7 +1106,7 @@ func instanceBackupLabelSelectors(isEmbeddedCluster bool) []*metav1.LabelSelecto
 				// so we need to add a label selector for the docker-registry app
 				// https://github.com/twuni/docker-registry.helm/blob/main/templates/deployment.yaml
 				MatchLabels: map[string]string{
-					"app": "docker-registry",
+					"release": "docker-registry",
 				},
 			},
 		}

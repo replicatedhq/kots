@@ -671,7 +671,7 @@ func Test_instanceBackupLabelSelectors(t *testing.T) {
 				},
 				{
 					MatchLabels: map[string]string{
-						"app": "docker-registry",
+						"release": "docker-registry",
 					},
 				},
 			},
