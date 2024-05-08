@@ -1004,35 +1004,18 @@ func excludeShutdownPodsFromBackup(ctx context.Context, clientset kubernetes.Int
 	}
 
 	labelSets := []string{}
-	if veleroBackup.Spec.LabelSelector != nil && veleroBackup.Spec.LabelSelector.MatchLabels != nil && len(veleroBackup.Spec.LabelSelector.MatchLabels) != 0 {
-		labelSets = []string{labels.SelectorFromSet(veleroBackup.Spec.LabelSelector.MatchLabels).String()}
-	} else {
-		if veleroBackup.Spec.LabelSelector != nil {
-			for _, expr := range veleroBackup.Spec.LabelSelector.MatchExpressions {
-				if expr.Operator != metav1.LabelSelectorOpIn {
-					return fmt.Errorf("unsupported operator %s in label selector %q", expr.Operator, veleroBackup.Spec.LabelSelector.String())
-				}
-				for _, value := range expr.Values {
-					labelSets = append(labelSets, fmt.Sprintf("%s=%s", expr.Key, value))
-				}
-			}
-		} else {
-			for _, orLabel := range veleroBackup.Spec.OrLabelSelectors {
-				if orLabel.MatchLabels != nil {
-					labelSets = append(labelSets, labels.SelectorFromSet(orLabel.MatchLabels).String())
-					continue
-				}
-				for _, expr := range orLabel.MatchExpressions {
-					if expr.Operator != metav1.LabelSelectorOpIn {
-						return fmt.Errorf("unsupported operator %s in label selector %q", expr.Operator, veleroBackup.Spec.LabelSelector.String())
-					}
-					for _, value := range expr.Values {
-						labelSets = append(labelSets, fmt.Sprintf("%s=%s", expr.Key, value))
-					}
-				}
-			}
-		}
+	staticSet, err := getLabelSetsForLabelSelector(veleroBackup.Spec.LabelSelector)
+	if err != nil {
+		return errors.Wrap(err, "failed to get label sets for label selector")
+	}
+	labelSets = append(labelSets, staticSet...)
 
+	for _, sel := range veleroBackup.Spec.OrLabelSelectors {
+		orLabelSet, err := getLabelSetsForLabelSelector(sel)
+		if err != nil {
+			return errors.Wrap(err, "failed to get label sets for or label selector")
+		}
+		labelSets = append(labelSets, orLabelSet...)
 	}
 
 	for _, labelSet := range labelSets {
@@ -1119,4 +1102,24 @@ func instanceBackupLabelSelectors(isEmbeddedCluster bool) []*metav1.LabelSelecto
 			},
 		},
 	}
+}
+
+func getLabelSetsForLabelSelector(labelSelector *metav1.LabelSelector) ([]string, error) {
+	if labelSelector == nil {
+		return nil, nil
+	}
+
+	labelSets := []string{}
+	if labelSelector.MatchLabels != nil {
+		labelSets = append(labelSets, labels.SelectorFromSet(labelSelector.MatchLabels).String())
+	}
+	for _, expr := range labelSelector.MatchExpressions {
+		if expr.Operator != metav1.LabelSelectorOpIn {
+			return nil, fmt.Errorf("unsupported operator %s in label selector %q", expr.Operator, labelSelector.String())
+		}
+		for _, value := range expr.Values {
+			labelSets = append(labelSets, fmt.Sprintf("%s=%s", expr.Key, value))
+		}
+	}
+	return labelSets, nil
 }
