@@ -1110,7 +1110,7 @@ func getLabelSetsForLabelSelector(labelSelector *metav1.LabelSelector) ([]string
 	}
 
 	labelSets := []string{}
-	if labelSelector.MatchLabels != nil {
+	if labelSelector.MatchLabels != nil && len(labelSelector.MatchLabels) > 0 {
 		labelSets = append(labelSets, labels.SelectorFromSet(labelSelector.MatchLabels).String())
 	}
 	for _, expr := range labelSelector.MatchExpressions {
