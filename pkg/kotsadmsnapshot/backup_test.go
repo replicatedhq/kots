@@ -85,7 +85,7 @@ func TestPrepareIncludedNamespaces(t *testing.T) {
 		{
 			name:       "embedded-cluster install",
 			namespaces: []string{"test", "abcapp"},
-			want:       []string{"test", "abcapp", "embedded-cluster", "kube-system", "openebs"},
+			want:       []string{"test", "abcapp", "embedded-cluster", "kube-system", "openebs", "registry"},
 			isEC:       true,
 		},
 	}
