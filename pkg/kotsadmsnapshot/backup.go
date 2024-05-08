@@ -985,6 +985,7 @@ func prepareIncludedNamespaces(namespaces []string, isEC bool) []string {
 		uniqueNamespaces["embedded-cluster"] = true
 		uniqueNamespaces["kube-system"] = true
 		uniqueNamespaces["openebs"] = true
+		uniqueNamespaces["registry"] = true
 	}
 
 	includedNamespaces := make([]string, len(uniqueNamespaces))
