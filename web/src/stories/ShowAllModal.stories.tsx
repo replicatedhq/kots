@@ -20,6 +20,9 @@ export const Volumes = () => {
         sizeBytesHuman: "582B",
         startedAt: "2022-12-03T00:00:20Z",
         timeRemainingSeconds: 0,
+        podName: "podName",
+        podNamespace: "podNamespace",
+        podVolumeName: "podVolumeName",
       },
       {
         completionPercent: 100,
@@ -30,6 +33,9 @@ export const Volumes = () => {
         sizeBytesHuman: "582B",
         startedAt: "2022-12-03T00:00:20Z",
         timeRemainingSeconds: 0,
+        podName: "podName",
+        podNamespace: "podNamespace",
+        podVolumeName: "podVolumeName",
       },
       {
         completionPercent: 100,
@@ -40,6 +46,9 @@ export const Volumes = () => {
         sizeBytesHuman: "582B",
         startedAt: "2022-12-03T00:00:20Z",
         timeRemainingSeconds: 0,
+        podName: "podName",
+        podNamespace: "podNamespace",
+        podVolumeName: "podVolumeName",
       },
     ];
     return volumes.map((volume) => {
