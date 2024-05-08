@@ -396,7 +396,7 @@ func CreateInstanceBackup(ctx context.Context, cluster *downstreamtypes.Downstre
 			IncludedNamespaces:      prepareIncludedNamespaces(includedNamespaces, util.IsEmbeddedCluster()),
 			ExcludedNamespaces:      excludedNamespaces,
 			IncludeClusterResources: &includeClusterResources,
-			LabelSelector:           instanceBackupLabelSelector(util.IsEmbeddedCluster()),
+			OrLabelSelectors:        instanceBackupLabelSelectors(util.IsEmbeddedCluster()),
 			OrderedResources:        backupOrderedResources,
 			Hooks:                   backupHooks,
 		},
@@ -985,6 +985,7 @@ func prepareIncludedNamespaces(namespaces []string, isEC bool) []string {
 		uniqueNamespaces["embedded-cluster"] = true
 		uniqueNamespaces["kube-system"] = true
 		uniqueNamespaces["openebs"] = true
+		uniqueNamespaces["registry"] = true
 	}
 
 	includedNamespaces := make([]string, len(uniqueNamespaces))
@@ -1003,17 +1004,18 @@ func excludeShutdownPodsFromBackup(ctx context.Context, clientset kubernetes.Int
 	}
 
 	labelSets := []string{}
-	if veleroBackup.Spec.LabelSelector.MatchLabels != nil && len(veleroBackup.Spec.LabelSelector.MatchLabels) != 0 {
-		labelSets = []string{labels.SelectorFromSet(veleroBackup.Spec.LabelSelector.MatchLabels).String()}
-	} else {
-		for _, expr := range veleroBackup.Spec.LabelSelector.MatchExpressions {
-			if expr.Operator != metav1.LabelSelectorOpIn {
-				return fmt.Errorf("unsupported operator %s in label selector %q", expr.Operator, veleroBackup.Spec.LabelSelector.String())
-			}
-			for _, value := range expr.Values {
-				labelSets = append(labelSets, fmt.Sprintf("%s=%s", expr.Key, value))
-			}
+	staticSet, err := getLabelSetsForLabelSelector(veleroBackup.Spec.LabelSelector)
+	if err != nil {
+		return errors.Wrap(err, "failed to get label sets for label selector")
+	}
+	labelSets = append(labelSets, staticSet...)
+
+	for _, sel := range veleroBackup.Spec.OrLabelSelectors {
+		orLabelSet, err := getLabelSetsForLabelSelector(sel)
+		if err != nil {
+			return errors.Wrap(err, "failed to get label sets for or label selector")
 		}
+		labelSets = append(labelSets, orLabelSet...)
 	}
 
 	for _, labelSet := range labelSets {
@@ -1065,27 +1067,59 @@ func excludeShutdownPodsFromBackupInNamespace(ctx context.Context, clientset kub
 	return nil
 }
 
-func instanceBackupLabelSelector(isEmbeddedCluster bool) *metav1.LabelSelector {
+func instanceBackupLabelSelectors(isEmbeddedCluster bool) []*metav1.LabelSelector {
 	if isEmbeddedCluster { // only DR on embedded-cluster
-		return &metav1.LabelSelector{
-			MatchLabels: map[string]string{},
-			MatchExpressions: []metav1.LabelSelectorRequirement{
-				{
-					Key:      "replicated.com/disaster-recovery",
-					Operator: metav1.LabelSelectorOpIn,
-					Values: []string{
-						"infra",
-						"app",
-						"ec-install",
+		return []*metav1.LabelSelector{
+			{
+				MatchLabels: map[string]string{},
+				MatchExpressions: []metav1.LabelSelectorRequirement{
+					{
+						Key:      "replicated.com/disaster-recovery",
+						Operator: metav1.LabelSelectorOpIn,
+						Values: []string{
+							"infra",
+							"app",
+							"ec-install",
+						},
 					},
+				},
+			},
+			{
+				// we cannot add new labels to the docker-registry chart as of May 7th 2024
+				// so we need to add a label selector for the docker-registry app
+				// https://github.com/twuni/docker-registry.helm/blob/main/templates/deployment.yaml
+				MatchLabels: map[string]string{
+					"app": "docker-registry",
 				},
 			},
 		}
 	}
 
-	return &metav1.LabelSelector{
-		MatchLabels: map[string]string{
-			kotsadmtypes.BackupLabel: kotsadmtypes.BackupLabelValue,
+	return []*metav1.LabelSelector{
+		{
+			MatchLabels: map[string]string{
+				kotsadmtypes.BackupLabel: kotsadmtypes.BackupLabelValue,
+			},
 		},
 	}
+}
+
+func getLabelSetsForLabelSelector(labelSelector *metav1.LabelSelector) ([]string, error) {
+	if labelSelector == nil {
+		return nil, nil
+	}
+
+	labelSets := []string{}
+	if labelSelector.MatchLabels != nil && len(labelSelector.MatchLabels) > 0 {
+		labelSets = append(labelSets, labels.SelectorFromSet(labelSelector.MatchLabels).String())
+	}
+	for _, expr := range labelSelector.MatchExpressions {
+		if expr.Operator != metav1.LabelSelectorOpIn {
+			return nil, fmt.Errorf("unsupported operator %s in label selector %q", expr.Operator, labelSelector.String())
+		}
+		for _, value := range expr.Values {
+			labelSets = append(labelSets, fmt.Sprintf("%s=%s", expr.Key, value))
+		}
+	}
+	return labelSets, nil
 }

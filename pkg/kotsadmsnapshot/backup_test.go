@@ -85,7 +85,7 @@ func TestPrepareIncludedNamespaces(t *testing.T) {
 		{
 			name:       "embedded-cluster install",
 			namespaces: []string{"test", "abcapp"},
-			want:       []string{"test", "abcapp", "embedded-cluster", "kube-system", "openebs"},
+			want:       []string{"test", "abcapp", "embedded-cluster", "kube-system", "openebs", "registry"},
 			isEC:       true,
 		},
 	}
@@ -634,35 +634,44 @@ func Test_excludeShutdownPodsFromBackup_check(t *testing.T) {
 	}
 }
 
-func Test_instanceBackupLabelSelector(t *testing.T) {
+func Test_instanceBackupLabelSelectors(t *testing.T) {
 	tests := []struct {
 		name              string
 		isEmbeddedCluster bool
-		want              *metav1.LabelSelector
+		want              []*metav1.LabelSelector
 	}{
 		{
 			name:              "not embedded cluster",
 			isEmbeddedCluster: false,
-			want: &metav1.LabelSelector{
-				MatchLabels: map[string]string{
-					"kots.io/backup": "velero",
+			want: []*metav1.LabelSelector{
+				{
+					MatchLabels: map[string]string{
+						"kots.io/backup": "velero",
+					},
 				},
 			},
 		},
 		{
 			name:              "embedded cluster",
 			isEmbeddedCluster: true,
-			want: &metav1.LabelSelector{
-				MatchLabels: map[string]string{},
-				MatchExpressions: []metav1.LabelSelectorRequirement{
-					{
-						Key:      "replicated.com/disaster-recovery",
-						Operator: metav1.LabelSelectorOpIn,
-						Values: []string{
-							"infra",
-							"app",
-							"ec-install",
+			want: []*metav1.LabelSelector{
+				{
+					MatchLabels: map[string]string{},
+					MatchExpressions: []metav1.LabelSelectorRequirement{
+						{
+							Key:      "replicated.com/disaster-recovery",
+							Operator: metav1.LabelSelectorOpIn,
+							Values: []string{
+								"infra",
+								"app",
+								"ec-install",
+							},
 						},
+					},
+				},
+				{
+					MatchLabels: map[string]string{
+						"app": "docker-registry",
 					},
 				},
 			},
@@ -670,7 +679,9 @@ func Test_instanceBackupLabelSelector(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			assert.Equalf(t, tt.want, instanceBackupLabelSelector(tt.isEmbeddedCluster), "instanceBackupLabelSelector(%v)", tt.isEmbeddedCluster)
+			req := require.New(t)
+			got := instanceBackupLabelSelectors(tt.isEmbeddedCluster)
+			req.ElementsMatch(tt.want, got)
 		})
 	}
 }
