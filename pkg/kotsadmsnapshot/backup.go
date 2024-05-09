@@ -16,6 +16,7 @@ import (
 	apptypes "github.com/replicatedhq/kots/pkg/app/types"
 	"github.com/replicatedhq/kots/pkg/embeddedcluster"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
+	"github.com/replicatedhq/kots/pkg/kotsadm"
 	kotsadmtypes "github.com/replicatedhq/kots/pkg/kotsadm/types"
 	"github.com/replicatedhq/kots/pkg/kotsadmsnapshot/types"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
@@ -370,6 +371,7 @@ func CreateInstanceBackup(ctx context.Context, cluster *downstreamtypes.Downstre
 	backupAnnotations["kots.io/kotsadm-deploy-namespace"] = kotsadmNamespace
 	backupAnnotations["kots.io/apps-sequences"] = marshalledAppsSequences
 	backupAnnotations["kots.io/apps-versions"] = marshalledAppVersions
+	backupAnnotations["kots.io/is-airgap"] = strconv.FormatBool(kotsadm.IsAirgap())
 	if util.IsEmbeddedCluster() {
 		backupAnnotations["kots.io/embedded-cluster"] = "true"
 		backupAnnotations["kots.io/embedded-cluster-id"] = util.EmbeddedClusterID()
