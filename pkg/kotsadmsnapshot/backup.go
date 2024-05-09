@@ -16,6 +16,7 @@ import (
 	apptypes "github.com/replicatedhq/kots/pkg/app/types"
 	"github.com/replicatedhq/kots/pkg/embeddedcluster"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
+	"github.com/replicatedhq/kots/pkg/kotsadm"
 	kotsadmtypes "github.com/replicatedhq/kots/pkg/kotsadm/types"
 	"github.com/replicatedhq/kots/pkg/kotsadmsnapshot/types"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
@@ -238,8 +239,6 @@ func CreateInstanceBackup(ctx context.Context, cluster *downstreamtypes.Downstre
 		return nil, errors.Wrap(err, "failed to list installed apps")
 	}
 
-	isAirgap := false
-
 	for _, a := range apps {
 		downstreams, err := store.GetStore().ListDownstreamsForApp(a.ID)
 		if err != nil {
@@ -317,8 +316,6 @@ func CreateInstanceBackup(ctx context.Context, cluster *downstreamtypes.Downstre
 
 		// backup hooks
 		backupHooks.Resources = append(backupHooks.Resources, veleroBackup.Spec.Hooks.Resources...)
-
-		isAirgap = isAirgap || a.GetIsAirgap() // if any app is airgap, mark the entire backup as being airgap
 	}
 
 	veleroClient, err := veleroclientv1.NewForConfig(cfg)
@@ -374,7 +371,7 @@ func CreateInstanceBackup(ctx context.Context, cluster *downstreamtypes.Downstre
 	backupAnnotations["kots.io/kotsadm-deploy-namespace"] = kotsadmNamespace
 	backupAnnotations["kots.io/apps-sequences"] = marshalledAppsSequences
 	backupAnnotations["kots.io/apps-versions"] = marshalledAppVersions
-	backupAnnotations["kots.io/is-airgap"] = strconv.FormatBool(isAirgap)
+	backupAnnotations["kots.io/is-airgap"] = strconv.FormatBool(kotsadm.IsAirgap())
 	if util.IsEmbeddedCluster() {
 		backupAnnotations["kots.io/embedded-cluster"] = "true"
 		backupAnnotations["kots.io/embedded-cluster-id"] = util.EmbeddedClusterID()
