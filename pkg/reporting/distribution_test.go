@@ -163,6 +163,23 @@ func TestGetDistribution(t *testing.T) {
 			want: Minikube,
 		},
 		{
+			name: "EmbeddedCluster from labels",
+			args: args{
+				clientset: mockClientsetForDistribution(&mockClientsetForDistributionOpts{
+					objects: []runtime.Object{
+						&corev1.Node{
+							ObjectMeta: metav1.ObjectMeta{
+								Labels: map[string]string{
+									"kots.io/embedded-cluster-role": "foo",
+								},
+							},
+						},
+					},
+				}),
+			},
+			want: EmbeddedCluster,
+		},
+		{
 			name: "OKE from labels",
 			args: args{
 				clientset: mockClientsetForDistribution(&mockClientsetForDistributionOpts{
