@@ -26,6 +26,7 @@ const (
 	OpenShift
 	RKE2
 	Tanzu
+	EmbeddedCluster
 )
 
 type Reporter interface {
@@ -79,6 +80,8 @@ func (d Distribution) String() string {
 		return "rke2"
 	case Tanzu:
 		return "tanzu"
+	case EmbeddedCluster:
+		return "embedded-cluster"
 	}
 	return "unknown"
 }

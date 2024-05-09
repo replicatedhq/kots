@@ -93,6 +93,9 @@ func distributionFromLabels(clientset kubernetes.Interface) Distribution {
 				// Based on: https://docs.oracle.com/en-us/iaas/Content/ContEng/Reference/contengsupportedlabelsusecases.htm
 				return OKE
 			}
+			if k == "kots.io/embedded-cluster-role" {
+				return EmbeddedCluster
+			}
 		}
 	}
 	return UnknownDistribution
