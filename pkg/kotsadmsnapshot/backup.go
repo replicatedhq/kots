@@ -917,6 +917,9 @@ func listBackupVolumes(backupVolumes []velerov1.PodVolumeBackup) []types.Snapsho
 	for _, backupVolume := range backupVolumes {
 		v := types.SnapshotVolume{
 			Name:           backupVolume.Name,
+			PodName:        backupVolume.Spec.Pod.Name,
+			PodNamespace:   backupVolume.Spec.Pod.Namespace,
+			PodVolumeName:  backupVolume.Spec.Volume,
 			SizeBytesHuman: units.HumanSize(float64(backupVolume.Status.Progress.TotalBytes)),
 			DoneBytesHuman: units.HumanSize(float64(backupVolume.Status.Progress.BytesDone)),
 			Phase:          string(backupVolume.Status.Phase),

@@ -13,6 +13,7 @@ import ShowAllModal from "../modals/ShowAllModal";
 import ViewSnapshotLogsModal from "../modals/ViewSnapshotLogsModal";
 import ErrorModal from "../modals/ErrorModal";
 import { Utilities } from "../../utilities/utilities";
+
 dayjs.extend(minMax);
 dayjs.extend(duration);
 
@@ -318,7 +319,13 @@ class SnapshotDetails extends Component {
         >
           <div className="flex1 u-paddingBottom--15 u-paddingTop--15 u-paddingLeft--10">
             <p className="flex1 u-fontSize--large u-textColor--primary u-fontWeight--bold u-lineHeight--bold u-marginBottom--8">
-              {volume.name}
+              {volume.podNamespace}
+              {"/"}
+              {volume.podName} {volume.podVolumeName}
+              <span className="u-fontWeight--normal u-textColor--bodyCopy">
+                {" "}
+                {volume.name}
+              </span>
             </p>
             <p className="u-fontSize--normal u-textColor--accent u-fontWeight--bold u-lineHeight--normal u-marginRight--20">
               Size:

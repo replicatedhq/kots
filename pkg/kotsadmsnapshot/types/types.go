@@ -66,6 +66,9 @@ type SnapshotHook struct {
 
 type SnapshotVolume struct {
 	Name                 string     `json:"name"`
+	PodName              string     `json:"podName"`
+	PodNamespace         string     `json:"podNamespace"`
+	PodVolumeName        string     `json:"podVolumeName"`
 	SizeBytesHuman       string     `json:"sizeBytesHuman"`
 	DoneBytesHuman       string     `json:"doneBytesHuman"`
 	CompletionPercent    int        `json:"completionPercent"`
