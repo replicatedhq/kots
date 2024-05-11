@@ -173,7 +173,7 @@
     "react-tooltip": "4.2.6",
     "react-vis": "^1.12.1",
     "resumablejs": "^1.1.0",
-    "semver": "^7.6.0",
+    "semver": "^7.6.1",
     "styled-components": "^5.3.5",
     "tar-stream": "3.1.7",
     "universal-cookie": "^6.1.1"
