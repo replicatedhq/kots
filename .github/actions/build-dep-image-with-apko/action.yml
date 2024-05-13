@@ -43,6 +43,7 @@ runs:
     - uses: chainguard-images/actions/apko-publish@main
       if: ${{ inputs.overwrite == 'true' || steps.check-image-exists.outputs.image-exists == 'false' }}
       with:
+        apko-image: cgr.dev/chainguard/apko:latest
         config: ${{ inputs.apko-config }}
         archs: amd64,arm64
         tag: ${{ inputs.image-name }}
