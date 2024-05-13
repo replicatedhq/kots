@@ -1,4 +1,5 @@
 name: Test kURL Add-On
+description: Test kURL Add-On
 
 inputs:
   addon_version:
