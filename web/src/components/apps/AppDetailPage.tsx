@@ -425,8 +425,9 @@ function AppDetailPage(props: Props) {
     updateCallback: refetchData,
   };
 
-  const lastItem = location.pathname.substring(
-    location.pathname.lastIndexOf("/") + 1
+  const lastItem = Utilities.getSubnavItemForRoute(
+    location.pathname,
+    params.slug
   );
 
   return (
@@ -480,7 +481,7 @@ function AppDetailPage(props: Props) {
             <Fragment>
               <SubNavBar
                 className="flex"
-                activeTab={lastItem === params.slug ? "app" : lastItem}
+                activeTab={!lastItem ? "app" : lastItem}
                 app={selectedApp}
                 isVeleroInstalled={isVeleroInstalled}
                 isEmbeddedCluster={props.isEmbeddedCluster}

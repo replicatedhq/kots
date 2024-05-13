@@ -1046,4 +1046,17 @@ export const Utilities = {
     }
     return `${bucket}/${prefix}`;
   },
+
+  getSubnavItemForRoute(route, appSlug) {
+    if (!route || !appSlug) {
+      return "";
+    }
+    const searchStr = `/app/${appSlug}/`;
+    const index = route.indexOf(searchStr);
+    if (index === -1) {
+      return "";
+    }
+    const path = route.substring(index + searchStr.length);
+    return path.split("/")[0];
+  },
 };

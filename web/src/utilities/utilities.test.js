@@ -285,4 +285,43 @@ describe("Utilities", () => {
       expect(Utilities.snapshotLocationStr(undefined, undefined)).toBe("");
     });
   });
+
+  describe("getSubnavItemForRoute", () => {
+    it("should return an empty string if there is no route", () => {
+      expect(Utilities.getSubnavItemForRoute(undefined, "my-app")).toBe("");
+    });
+
+    it("should return an empty string if there is no app slug", () => {
+      expect(
+        Utilities.getSubnavItemForRoute("/app/my-app/config", undefined)
+      ).toBe("");
+    });
+
+    it("should return an empty string if there is no subnav item", () => {
+      expect(Utilities.getSubnavItemForRoute("/app/my-app/", "my-app")).toBe(
+        ""
+      );
+    });
+
+    it("should return the subnav item for the route", () => {
+      expect(
+        Utilities.getSubnavItemForRoute("/app/my-app/config", "my-app")
+      ).toBe("config");
+    });
+
+    it("should return the subnav item for the route with a subpath", () => {
+      expect(
+        Utilities.getSubnavItemForRoute("/app/my-app/config/1", "my-app")
+      ).toBe("config");
+    });
+
+    it("should return the subnav item for the route with multiple subpaths", () => {
+      expect(
+        Utilities.getSubnavItemForRoute(
+          "/app/my-app/troubleshoot/analyze/abcdefg",
+          "my-app"
+        )
+      ).toBe("troubleshoot");
+    });
+  });
 });
