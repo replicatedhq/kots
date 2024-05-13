@@ -49,7 +49,7 @@ runs:
 
     - uses: chainguard-images/actions/apko-publish@main
       with:
-        apko-image: cgr.dev/chainguard/apko:latest
+        apko-image: ghcr.io/wolfi-dev/apko@sha256:87b47283433066d19b71e1cb4401be8d04b7d51f4f4263fde1977c3043b9754f
         config: ${{ inputs.context }}/apko.yaml
         archs: amd64,arm64
         tag: ${{ inputs.image-name }}
