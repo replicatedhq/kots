@@ -26,12 +26,12 @@ import (
 )
 
 const (
-	appYamlKey                          = "application.yaml"
-	iconURI                             = "https://cdn2.iconfinder.com/data/icons/mixd/512/16_kubernetes-512.png"
-	metadataConfigMapName               = "kotsadm-application-metadata"
-	upstreamUriKey                      = "upstreamUri"
-	defaultAppName                      = "the application"
-	embeddedClusterRestoreConfigMapName = "embedded-cluster-wait-for-nodes"
+	appYamlKey                  = "application.yaml"
+	iconURI                     = "https://cdn2.iconfinder.com/data/icons/mixd/512/16_kubernetes-512.png"
+	metadataConfigMapName       = "kotsadm-application-metadata"
+	upstreamUriKey              = "upstreamUri"
+	defaultAppName              = "the application"
+	ecRestoreStateConfigMapName = "embedded-cluster-restore-state"
 )
 
 // MetadataResponse non sensitive information to be used by ui pre-login
@@ -268,13 +268,19 @@ func GetMetaDataConfig() (*v1.ConfigMap, types.Metadata, error) {
 type MetadataK8sFn func() (*v1.ConfigMap, types.Metadata, error)
 
 func isEmbeddedClusterWaitingForNodes(ctx context.Context, clientset kubernetes.Interface) (bool, error) {
-	_, err := clientset.CoreV1().ConfigMaps("embedded-cluster").Get(ctx, embeddedClusterRestoreConfigMapName, metav1.GetOptions{})
+	cm, err := clientset.CoreV1().ConfigMaps("embedded-cluster").Get(ctx, ecRestoreStateConfigMapName, metav1.GetOptions{})
 	if err != nil {
 		if kuberneteserrors.IsNotFound(err) {
 			return false, nil
 		}
-		return false, errors.Wrapf(err, "failed to get configmap %s", embeddedClusterRestoreConfigMapName)
+		return false, errors.Wrapf(err, "failed to get configmap %s", ecRestoreStateConfigMapName)
 	}
-
-	return true, nil
+	if cm.Data == nil {
+		return false, nil
+	}
+	state, ok := cm.Data["state"]
+	if !ok {
+		return false, nil
+	}
+	return state == "wait-for-nodes", nil
 }
