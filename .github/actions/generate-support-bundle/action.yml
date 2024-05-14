@@ -1,27 +1,17 @@
 name: 'Generate Support Bundle'
 description: 'Composite action for generating a support bundle'
 inputs:
-  aws-access-key-id:
-    description: 'AWS access key id for uploading support bundle'
+  artifact-name:
+    description: 'Name of the artifact to be uploaded'
     required: true
-  aws-secret-access-key:
-    description: 'AWS secret access key for uploading support bundle'
-    required: true
-  aws-region:
-    description: 'AWS region for uploading support bundle'
-    default: 'us-east-1'
-    required: false
   kots-namespace:
     description: 'KOTS namespace'
     required: true
 runs:
   using: "composite"
   steps:
-    - name: Generate support bundle on failure
+    - id: generate-support-bundle
       env:
-        AWS_ACCESS_KEY_ID: ${{ inputs.aws-access-key-id }}
-        AWS_SECRET_ACCESS_KEY: ${{ inputs.aws-secret-access-key }}
-        AWS_DEFAULT_REGION: ${{ inputs.aws-region }}
         KOTS_NAMESPACE: ${{ inputs.kots-namespace }}
       run: |
         RELEASE="$(
@@ -33,6 +23,16 @@ runs:
         tar xzf support-bundle_linux_amd64.tar.gz
         ./support-bundle https://kots.io
         BUNDLE="$(ls -1 | grep 'support-bundle-.*.tar.gz')"
-        aws s3 cp "${BUNDLE}" "s3://kots-e2e-build-test-support-bundles/${BUNDLE}"
-        echo "::notice ::support bundle uploaded to aws replicated-dev account s3://kots-e2e-build-test-support-bundles/${BUNDLE}"
+        echo "bundle-name=$BUNDLE" >> "$GITHUB_OUTPUT"
       shell: bash
+
+    - id: upload-support-bundle
+      uses: actions/upload-artifact@v4
+      with:
+        name: ${{ inputs.artifact-name }}
+        path: ${{ steps.generate-support-bundle.outputs.bundle-name }}
+
+    - name: Print support bundle URL
+      shell: bash
+      run: |
+        echo "::notice ::support bundle can be downloaded from: ${{ steps.upload-support-bundle.outputs.artifact-url }}"

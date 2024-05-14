@@ -597,8 +597,6 @@ jobs:
           k8s-version: v1.26
           testim-branch: ${{ github.head_ref == 'main' && 'master' || github.head_ref }}
           testim-access-token: '${{ secrets.TESTIM_ACCESS_TOKEN }}'
-          aws-access-key-id: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_ACCESS_KEY_ID }}'
-          aws-secret-access-key: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_SECRET_ACCESS_KEY }}'
           replicated-api-token: '${{ secrets.C11Y_MATRIX_TOKEN }}'
           kots-dockerhub-username: '${{ secrets.E2E_DOCKERHUB_USERNAME }}'
           kots-dockerhub-password: '${{ secrets.E2E_DOCKERHUB_PASSWORD }}'
@@ -635,8 +633,6 @@ jobs:
           k8s-distribution: ${{ matrix.cluster.distribution }}
           k8s-version: ${{ matrix.cluster.version }}
           k8s-instance-type: ${{ matrix.cluster.instance_type }}
-          aws-access-key-id: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_ACCESS_KEY_ID }}'
-          aws-secret-access-key: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_SECRET_ACCESS_KEY }}'
           replicated-api-token: '${{ secrets.C11Y_MATRIX_TOKEN }}'
           kots-dockerhub-username: '${{ secrets.E2E_DOCKERHUB_USERNAME }}'
           kots-dockerhub-password: '${{ secrets.E2E_DOCKERHUB_PASSWORD }}'
@@ -741,8 +737,7 @@ jobs:
         uses: ./.github/actions/generate-support-bundle
         with:
           kots-namespace: "$APP_SLUG"
-          aws-access-key-id: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_ACCESS_KEY_ID }}'
-          aws-secret-access-key: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_SECRET_ACCESS_KEY }}'
+          artifact-name: ${{ github.job }}-${{ matrix.cluster.distribution }}-${{ matrix.cluster.version }}-support-bundle
 
       - name: Remove Cluster
         id: remove-cluster
@@ -785,8 +780,6 @@ jobs:
           k8s-distribution: ${{ matrix.cluster.distribution }}
           k8s-version: ${{ matrix.cluster.version }}
           k8s-instance-type: ${{ matrix.cluster.instance_type }}
-          aws-access-key-id: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_ACCESS_KEY_ID }}'
-          aws-secret-access-key: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_SECRET_ACCESS_KEY }}'
           replicated-api-token: '${{ secrets.C11Y_MATRIX_TOKEN }}'
           kots-dockerhub-username: '${{ secrets.E2E_DOCKERHUB_USERNAME }}'
           kots-dockerhub-password: '${{ secrets.E2E_DOCKERHUB_PASSWORD }}'
@@ -823,8 +816,6 @@ jobs:
           kots-namespace: 'no-required-config'
           k8s-distribution: ${{ matrix.cluster.distribution }}
           k8s-version: ${{ matrix.cluster.version }}
-          aws-access-key-id: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_ACCESS_KEY_ID }}'
-          aws-secret-access-key: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_SECRET_ACCESS_KEY }}'
           replicated-api-token: '${{ secrets.C11Y_MATRIX_TOKEN }}'
           kots-dockerhub-username: '${{ secrets.E2E_DOCKERHUB_USERNAME }}'
           kots-dockerhub-password: '${{ secrets.E2E_DOCKERHUB_PASSWORD }}'
@@ -926,8 +917,7 @@ jobs:
         uses: ./.github/actions/generate-support-bundle
         with:
           kots-namespace: "$APP_SLUG"
-          aws-access-key-id: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_ACCESS_KEY_ID }}'
-          aws-secret-access-key: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_SECRET_ACCESS_KEY }}'
+          artifact-name: ${{ github.job }}-${{ matrix.cluster.distribution }}-${{ matrix.cluster.version }}-support-bundle
 
       - name: Remove Cluster
         id: remove-cluster
@@ -970,8 +960,6 @@ jobs:
           kots-namespace: 'config-validation'
           k8s-distribution: ${{ matrix.cluster.distribution }}
           k8s-version: ${{ matrix.cluster.version }}
-          aws-access-key-id: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_ACCESS_KEY_ID }}'
-          aws-secret-access-key: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_SECRET_ACCESS_KEY }}'
           replicated-api-token: '${{ secrets.C11Y_MATRIX_TOKEN }}'
           kots-dockerhub-username: '${{ secrets.E2E_DOCKERHUB_USERNAME }}'
           kots-dockerhub-password: '${{ secrets.E2E_DOCKERHUB_PASSWORD }}'
@@ -1010,8 +998,6 @@ jobs:
           k8s-version: ${{ matrix.cluster.version }}
           testim-access-token: '${{ secrets.TESTIM_ACCESS_TOKEN }}'
           testim-branch: ${{ github.head_ref == 'main' && 'master' || github.head_ref }}
-          aws-access-key-id: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_ACCESS_KEY_ID }}'
-          aws-secret-access-key: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_SECRET_ACCESS_KEY }}'
           kots-dockerhub-username: '${{ secrets.E2E_DOCKERHUB_USERNAME }}'
           kots-dockerhub-password: '${{ secrets.E2E_DOCKERHUB_PASSWORD }}'
 
@@ -1049,8 +1035,6 @@ jobs:
           k8s-version: ${{ matrix.cluster.version }}
           testim-access-token: '${{ secrets.TESTIM_ACCESS_TOKEN }}'
           testim-branch: ${{ github.head_ref == 'main' && 'master' || github.head_ref }}
-          aws-access-key-id: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_ACCESS_KEY_ID }}'
-          aws-secret-access-key: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_SECRET_ACCESS_KEY }}'
           replicated-api-token: '${{ secrets.C11Y_MATRIX_TOKEN }}'
           kots-dockerhub-username: '${{ secrets.E2E_DOCKERHUB_USERNAME }}'
           kots-dockerhub-password: '${{ secrets.E2E_DOCKERHUB_PASSWORD }}'
@@ -1218,8 +1202,7 @@ jobs:
         uses: ./.github/actions/generate-support-bundle
         with:
           kots-namespace: "$APP_SLUG"
-          aws-access-key-id: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_ACCESS_KEY_ID }}'
-          aws-secret-access-key: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_SECRET_ACCESS_KEY }}'
+          artifact-name: ${{ github.job }}-${{ matrix.cluster.distribution }}-${{ matrix.cluster.version }}-support-bundle
 
       - name: Remove Cluster
         id: remove-cluster
@@ -1330,8 +1313,7 @@ jobs:
         uses: ./.github/actions/generate-support-bundle
         with:
           kots-namespace: "$APP_SLUG"
-          aws-access-key-id: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_ACCESS_KEY_ID }}'
-          aws-secret-access-key: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_SECRET_ACCESS_KEY }}'
+          artifact-name: ${{ github.job }}-${{ matrix.cluster.distribution }}-${{ matrix.cluster.version }}-support-bundle
   
       - name: Remove Cluster
         id: remove-cluster
@@ -1440,8 +1422,7 @@ jobs:
         uses: ./.github/actions/generate-support-bundle
         with:
           kots-namespace: "$APP_NAME"
-          aws-access-key-id: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_ACCESS_KEY_ID }}'
-          aws-secret-access-key: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_SECRET_ACCESS_KEY }}'
+          artifact-name: ${{ github.job }}-${{ matrix.cluster.distribution }}-${{ matrix.cluster.version }}-support-bundle
 
       - name: Remove Cluster
         id: remove-cluster
@@ -1598,8 +1579,7 @@ jobs:
         uses: ./.github/actions/generate-support-bundle
         with:
           kots-namespace: "$APP_SLUG"
-          aws-access-key-id: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_ACCESS_KEY_ID }}'
-          aws-secret-access-key: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_SECRET_ACCESS_KEY }}'
+          artifact-name: ${{ github.job }}-${{ matrix.cluster.distribution }}-${{ matrix.cluster.version }}-support-bundle
 
       - name: Remove Cluster
         id: remove-cluster
@@ -1696,8 +1676,7 @@ jobs:
         uses: ./.github/actions/generate-support-bundle
         with:
           kots-namespace: "$APP_SLUG"
-          aws-access-key-id: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_ACCESS_KEY_ID }}'
-          aws-secret-access-key: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_SECRET_ACCESS_KEY }}'
+          artifact-name: ${{ github.job }}-${{ matrix.cluster.distribution }}-${{ matrix.cluster.version }}-support-bundle
 
       - name: Remove Cluster
         id: remove-cluster
@@ -1818,8 +1797,7 @@ jobs:
         uses: ./.github/actions/generate-support-bundle
         with:
           kots-namespace: "$APP_SLUG"
-          aws-access-key-id: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_ACCESS_KEY_ID }}'
-          aws-secret-access-key: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_SECRET_ACCESS_KEY }}'
+          artifact-name: ${{ github.job }}-${{ matrix.cluster.distribution }}-${{ matrix.cluster.version }}-support-bundle
 
       - name: Remove Cluster
         id: remove-cluster
@@ -1955,8 +1933,7 @@ jobs:
         uses: ./.github/actions/generate-support-bundle
         with:
           kots-namespace: "$APP_SLUG"
-          aws-access-key-id: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_ACCESS_KEY_ID }}'
-          aws-secret-access-key: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_SECRET_ACCESS_KEY }}'
+          artifact-name: ${{ github.job }}-${{ matrix.cluster.distribution }}-${{ matrix.cluster.version }}-support-bundle
 
       - name: Remove Cluster
         id: remove-cluster
@@ -2171,8 +2148,7 @@ jobs:
         uses: ./.github/actions/generate-support-bundle
         with:
           kots-namespace: automated-${{ github.run_id }}
-          aws-access-key-id: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_ACCESS_KEY_ID }}'
-          aws-secret-access-key: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_SECRET_ACCESS_KEY }}'
+          artifact-name: ${{ github.job }}-${{ matrix.cluster.distribution }}-${{ matrix.cluster.version }}-support-bundle
 
       - name: Remove Cluster
         id: remove-cluster
@@ -2224,8 +2200,6 @@ jobs:
           testim-access-token: '${{ secrets.TESTIM_ACCESS_TOKEN }}'
           testim-branch: ${{ github.head_ref == 'main' && 'master' || github.head_ref }}
           kotsadm-image-registry: ttl.sh
-          aws-access-key-id: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_ACCESS_KEY_ID }}'
-          aws-secret-access-key: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_SECRET_ACCESS_KEY }}'
           replicated-api-token: '${{ secrets.C11Y_MATRIX_TOKEN }}'
           kots-dockerhub-username: '${{ secrets.E2E_DOCKERHUB_USERNAME }}'
           kots-dockerhub-password: '${{ secrets.E2E_DOCKERHUB_PASSWORD }}'
@@ -2291,8 +2265,6 @@ jobs:
           k8s-version: ${{ matrix.cluster.version }}
           testim-access-token: '${{ secrets.TESTIM_ACCESS_TOKEN }}'
           testim-branch: ${{ github.head_ref == 'main' && 'master' || github.head_ref }}
-          aws-access-key-id: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_ACCESS_KEY_ID }}'
-          aws-secret-access-key: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_SECRET_ACCESS_KEY }}'
           replicated-api-token: '${{ secrets.C11Y_MATRIX_TOKEN }}'
           kots-dockerhub-username: '${{ secrets.E2E_DOCKERHUB_USERNAME }}'
           kots-dockerhub-password: '${{ secrets.E2E_DOCKERHUB_PASSWORD }}'
@@ -2358,8 +2330,6 @@ jobs:
           k8s-version: ${{ matrix.cluster.version }}
           testim-access-token: '${{ secrets.TESTIM_ACCESS_TOKEN }}'
           testim-branch: ${{ github.head_ref == 'main' && 'master' || github.head_ref }}
-          aws-access-key-id: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_ACCESS_KEY_ID }}'
-          aws-secret-access-key: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_SECRET_ACCESS_KEY }}'
           replicated-api-token: '${{ secrets.C11Y_MATRIX_TOKEN }}'
           kots-dockerhub-username: '${{ secrets.E2E_DOCKERHUB_USERNAME }}'
           kots-dockerhub-password: '${{ secrets.E2E_DOCKERHUB_PASSWORD }}'
@@ -2517,8 +2487,7 @@ jobs:
         uses: ./.github/actions/generate-support-bundle
         with:
           kots-namespace: "$APP_SLUG"
-          aws-access-key-id: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_ACCESS_KEY_ID }}'
-          aws-secret-access-key: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_SECRET_ACCESS_KEY }}'
+          artifact-name: ${{ github.job }}-${{ matrix.cluster.distribution }}-${{ matrix.cluster.version }}-support-bundle
 
       - name: Remove Cluster
         id: remove-cluster
@@ -2704,8 +2673,7 @@ jobs:
         uses: ./.github/actions/generate-support-bundle
         with:
           kots-namespace: "$APP_SLUG"
-          aws-access-key-id: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_ACCESS_KEY_ID }}'
-          aws-secret-access-key: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_SECRET_ACCESS_KEY }}'
+          artifact-name: ${{ github.job }}-${{ matrix.cluster.distribution }}-${{ matrix.cluster.version }}-support-bundle
 
       - name: Remove Cluster
         id: remove-cluster
@@ -2750,8 +2718,6 @@ jobs:
           k8s-version: ${{ matrix.cluster.version }}
           testim-access-token: '${{ secrets.TESTIM_ACCESS_TOKEN }}'
           testim-branch: ${{ github.head_ref == 'main' && 'master' || github.head_ref }}
-          aws-access-key-id: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_ACCESS_KEY_ID }}'
-          aws-secret-access-key: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_SECRET_ACCESS_KEY }}'
           replicated-api-token: '${{ secrets.C11Y_MATRIX_TOKEN }}'
           kots-dockerhub-username: '${{ secrets.E2E_DOCKERHUB_USERNAME }}'
           kots-dockerhub-password: '${{ secrets.E2E_DOCKERHUB_PASSWORD }}'
@@ -2790,8 +2756,6 @@ jobs:
           k8s-version: ${{ matrix.cluster.version }}
           testim-access-token: '${{ secrets.TESTIM_ACCESS_TOKEN }}'
           testim-branch: ${{ github.head_ref == 'main' && 'master' || github.head_ref }}
-          aws-access-key-id: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_ACCESS_KEY_ID }}'
-          aws-secret-access-key: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_SECRET_ACCESS_KEY }}'
           replicated-api-token: '${{ secrets.C11Y_MATRIX_TOKEN }}'
           kots-dockerhub-username: '${{ secrets.E2E_DOCKERHUB_USERNAME }}'
           kots-dockerhub-password: '${{ secrets.E2E_DOCKERHUB_PASSWORD }}'
@@ -2831,8 +2795,6 @@ jobs:
           testim-access-token: '${{ secrets.TESTIM_ACCESS_TOKEN }}'
           testim-branch: ${{ github.head_ref == 'main' && 'master' || github.head_ref }}
           kots-airgap: true
-          aws-access-key-id: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_ACCESS_KEY_ID }}'
-          aws-secret-access-key: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_SECRET_ACCESS_KEY }}'
           replicated-api-token: '${{ secrets.C11Y_MATRIX_TOKEN }}'
           kots-dockerhub-username: '${{ secrets.E2E_DOCKERHUB_USERNAME }}'
           kots-dockerhub-password: '${{ secrets.E2E_DOCKERHUB_PASSWORD }}'
@@ -3004,8 +2966,7 @@ jobs:
         uses: ./.github/actions/generate-support-bundle
         with:
           kots-namespace: "$APP_SLUG"
-          aws-access-key-id: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_ACCESS_KEY_ID }}'
-          aws-secret-access-key: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_SECRET_ACCESS_KEY }}'
+          artifact-name: ${{ github.job }}-${{ matrix.cluster.distribution }}-${{ matrix.cluster.version }}-support-bundle
 
       - name: Remove Cluster
         id: remove-cluster
@@ -3099,8 +3060,7 @@ jobs:
         uses: ./.github/actions/generate-support-bundle
         with:
           kots-namespace: "$APP_SLUG"
-          aws-access-key-id: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_ACCESS_KEY_ID }}'
-          aws-secret-access-key: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_SECRET_ACCESS_KEY }}'
+          artifact-name: ${{ github.job }}-${{ matrix.cluster.distribution }}-${{ matrix.cluster.version }}-support-bundle
 
       - name: Remove Cluster
         id: remove-cluster
@@ -3325,8 +3285,7 @@ jobs:
         uses: ./.github/actions/generate-support-bundle
         with:
           kots-namespace: "$APP_SLUG"
-          aws-access-key-id: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_ACCESS_KEY_ID }}'
-          aws-secret-access-key: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_SECRET_ACCESS_KEY }}'
+          artifact-name: ${{ github.job }}-${{ matrix.cluster.distribution }}-${{ matrix.cluster.version }}-support-bundle
 
       - name: Remove Cluster
         id: remove-cluster
@@ -3493,8 +3452,7 @@ jobs:
         uses: ./.github/actions/generate-support-bundle
         with:
           kots-namespace: "$APP_SLUG"
-          aws-access-key-id: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_ACCESS_KEY_ID }}'
-          aws-secret-access-key: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_SECRET_ACCESS_KEY }}'
+          artifact-name: ${{ github.job }}-${{ matrix.cluster.distribution }}-${{ matrix.cluster.version }}-support-bundle
 
       - name: Remove Cluster
         id: remove-cluster
@@ -3803,8 +3761,7 @@ jobs:
         uses: ./.github/actions/generate-support-bundle
         with:
           kots-namespace: "$APP_SLUG"
-          aws-access-key-id: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_ACCESS_KEY_ID }}'
-          aws-secret-access-key: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_SECRET_ACCESS_KEY }}'
+          artifact-name: ${{ github.job }}-${{ matrix.cluster.distribution }}-${{ matrix.cluster.version }}-support-bundle
 
       - name: Remove Cluster
         id: remove-cluster
@@ -3850,8 +3807,6 @@ jobs:
           k8s-version: ${{ matrix.cluster.version }}
           testim-access-token: '${{ secrets.TESTIM_ACCESS_TOKEN }}'
           testim-branch: ${{ github.head_ref == 'main' && 'master' || github.head_ref }}
-          aws-access-key-id: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_ACCESS_KEY_ID }}'
-          aws-secret-access-key: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_SECRET_ACCESS_KEY }}'
           replicated-api-token: '${{ secrets.C11Y_MATRIX_TOKEN }}'
           kots-dockerhub-username: '${{ secrets.E2E_DOCKERHUB_USERNAME }}'
           kots-dockerhub-password: '${{ secrets.E2E_DOCKERHUB_PASSWORD }}'
@@ -3890,8 +3845,6 @@ jobs:
           k8s-version: ${{ matrix.cluster.version }}
           testim-access-token: '${{ secrets.TESTIM_ACCESS_TOKEN }}'
           testim-branch: ${{ github.head_ref == 'main' && 'master' || github.head_ref }}
-          aws-access-key-id: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_ACCESS_KEY_ID }}'
-          aws-secret-access-key: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_SECRET_ACCESS_KEY }}'
           replicated-api-token: '${{ secrets.C11Y_MATRIX_TOKEN }}'
           kots-dockerhub-username: '${{ secrets.E2E_DOCKERHUB_USERNAME }}'
           kots-dockerhub-password: '${{ secrets.E2E_DOCKERHUB_PASSWORD }}'
@@ -4100,8 +4053,7 @@ jobs:
         uses: ./.github/actions/generate-support-bundle
         with:
           kots-namespace: "$APP_SLUG"
-          aws-access-key-id: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_ACCESS_KEY_ID }}'
-          aws-secret-access-key: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_SECRET_ACCESS_KEY }}'
+          artifact-name: ${{ github.job }}-${{ matrix.cluster.distribution }}-${{ matrix.cluster.version }}-support-bundle
 
       - name: Remove Cluster
         id: remove-cluster
