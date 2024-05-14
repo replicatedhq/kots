@@ -1,0 +1,18 @@
+apiVersion: kots.io/v1beta2
+kind: HelmChart
+metadata:
+  name: my-required-chart
+  annotations:
+    kots.io/exclude: "true"
+spec:
+  chart:
+    name: my-required-chart
+    chartVersion: 0.1.0
+  releaseName: my-required-chart-release
+  values:
+    requiredvalue: this is a required value
+  optionalValues:
+    - when: 'true'
+      recursiveMerge: true
+      values:
+        my-optional-value: my-optional-value

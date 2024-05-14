@@ -1,0 +1,20 @@
+---
+# Source: my-required-chart/templates/my-chart-configmap.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: my-chart-configmap
+data:
+  requiredkey: this is a required value
+---
+# Source: my-required-chart/templates/my-chart-pod.yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: my-chart-pod
+spec:
+  containers:
+  - name: my-chart-container
+    image: nginx:1.23
+    ports:
+    - containerPort: 80

@@ -146,6 +146,12 @@ func WriteV1Beta2HelmCharts(opts WriteV1Beta2HelmChartsOptions) error {
 			return errors.Wrap(err, "failed to write values file")
 		}
 
+		if !opts.ProcessImageOptions.RewriteImages {
+			// a registry is not configured (which means it's an online installation)
+			// there's no need to process/copy/track the images as they will be pulled from the internet.
+			continue
+		}
+
 		chartImages, err := findV1Beta2HelmChartImages(opts, &helmChart, chartDir)
 		if err != nil {
 			return errors.Wrap(err, "failed to find chart images")
@@ -167,11 +173,14 @@ func WriteV1Beta2HelmCharts(opts WriteV1Beta2HelmChartsOptions) error {
 			return errors.Wrap(err, "failed to update installation images")
 		}
 
-		if !opts.ProcessImageOptions.RewriteImages || opts.ProcessImageOptions.IsAirgap {
-			// if an on-prem registry is not configured (which means it's an online installation)
-			// there's no need to process/copy the images as they will be pulled from their original registries or through the replicated proxy.
-			// if an on-prem registry is configured, but it's an airgap installation, we also don't need to process/copy the images
-			// as they will be pushed from the airgap bundle.
+		if !opts.ProcessImageOptions.CopyImages {
+			// registry is read-only, skip copying images.
+			continue
+		}
+
+		if opts.ProcessImageOptions.IsAirgap {
+			// a registry is configured but it's an airgap installation.
+			// we don't need to process/copy the images as they will be pushed from the airgap bundle.
 			continue
 		}
 
