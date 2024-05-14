@@ -723,11 +723,28 @@ func Test_isEmbeddedClusterWaitingForNodes(t *testing.T) {
 			wantErr:   false,
 		},
 		{
-			name: "restore in progress",
+			name: "restore in progress but not waiting for nodes",
 			clientset: fake.NewSimpleClientset(&v1.ConfigMap{
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      embeddedClusterRestoreConfigMapName,
+					Name:      ecRestoreStateConfigMapName,
 					Namespace: "embedded-cluster",
+				},
+				Data: map[string]string{
+					"state": "some-other-state",
+				},
+			}),
+			want:    false,
+			wantErr: false,
+		},
+		{
+			name: "restore in progress and waiting for nodes",
+			clientset: fake.NewSimpleClientset(&v1.ConfigMap{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      ecRestoreStateConfigMapName,
+					Namespace: "embedded-cluster",
+				},
+				Data: map[string]string{
+					"state": "wait-for-nodes",
 				},
 			}),
 			want:    true,
