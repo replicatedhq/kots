@@ -1,0 +1,11 @@
+Name: test required helm values
+PullOptions:
+  Namespace: app-namespace
+  ExcludeAdminConsole: true
+  Silent: true
+  LocalPath: cases/required-helm-values/upstream
+  RootDir: cases/required-helm-values/results
+  SharedPassword: dummy-pass
+  RewriteImages: false
+  Downstreams:
+    - this-cluster
