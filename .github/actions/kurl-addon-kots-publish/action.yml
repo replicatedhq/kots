@@ -1,4 +1,5 @@
 name: Publish kURL Add-On
+description: Publish kURL Add-On
 
 inputs:
   addon_version:

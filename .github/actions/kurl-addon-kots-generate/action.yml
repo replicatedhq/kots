@@ -1,4 +1,5 @@
 name: Generate kURL Add-On
+description: Generate kURL Add-On
 
 inputs:
   addon_version:
