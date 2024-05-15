@@ -60,16 +60,6 @@ inputs:
     description: 'Run KOTS with the --airgap flag'
     default: "false"
     required: false
-  aws-access-key-id:
-    description: 'AWS access key id for uploading support bundle'
-    required: false
-  aws-secret-access-key:
-    description: 'AWS secret access key for uploading support bundle'
-    required: false
-  aws-region:
-    description: 'AWS region for uploading support bundle'
-    default: 'us-east-1'
-    required: false
   replicated-api-token:
     description: 'Replicated API token for C11y matrix'
     required: false
@@ -171,12 +161,10 @@ runs:
       shell: bash
 
     - name: Generate support bundle on failure
-      if: ${{ failure() && inputs.aws-access-key-id && inputs.aws-secret-access-key }}
+      if: ${{ failure() }}
       uses: ./.github/actions/generate-support-bundle
       with:
-        aws-access-key-id: ${{ inputs.aws-access-key-id }}
-        aws-secret-access-key: ${{ inputs.aws-secret-access-key }}
-        aws-region: ${{ inputs.aws-region }}
+        artifact-name: ${{ github.job }}-${{ inputs.k8s-distribution }}-${{ inputs.k8s-version }}-support-bundle
 
     - name: Remove Cluster
       id: remove-cluster

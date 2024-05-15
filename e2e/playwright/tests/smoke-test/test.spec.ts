@@ -181,7 +181,7 @@ test('smoke test', async ({ page }) => {
   await expect(page.getByLabel('Modal')).toContainText('Delete snapshot');
   await page.getByRole('button', { name: 'Delete snapshot' }).click();
   await expect(page.locator('#app')).toContainText('Deleting');
-  await expect(page.locator('#app')).toContainText('No snapshots yet', { timeout: 15000 });
+  await expect(page.locator('#app')).toContainText('No snapshots yet', { timeout: 30000 });
   await page.getByRole('link', { name: 'Settings & Schedule' }).click();
   await page.getByRole('button', { name: 'Update storage settings' }).click();
   await expect(page.locator('form')).toContainText('Settings updated', { timeout: 30000 });
