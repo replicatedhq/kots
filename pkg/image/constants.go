@@ -8,6 +8,6 @@ const (
 	Minio      = "kotsadm/minio:0.20240510.014138-r0"
 	Rqlite     = "kotsadm/rqlite:8.24.7-r0"
 	Dex        = "kotsadm/dex:2.39.1-r2"
-	Schemahero = "schemahero/schemahero:0.17.7"
-	Lvp        = "replicated/local-volume-provider:v0.6.2"
+	Schemahero = "schemahero/schemahero:0.17.8"
+	Lvp        = "replicated/local-volume-provider:v0.6.3"
 )

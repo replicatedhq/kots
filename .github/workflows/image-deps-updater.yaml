@@ -8,7 +8,7 @@ on:
       overwrite:
         description: 'Overwrite the existing image tags'
         required: false
-        default: 'false'
+        default: 'true'
 jobs:
   build-3rd-party-images:
     runs-on: ubuntu-20.04
