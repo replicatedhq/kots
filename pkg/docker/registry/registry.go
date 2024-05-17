@@ -212,13 +212,6 @@ func PullSecretForRegistries(registries []string, username, password string, app
 		return secrets, nil
 	}
 
-	var secretLabels map[string]string
-	if util.IsEmbeddedCluster() {
-		secretLabels = map[string]string{
-			kotsadmtypes.DisasterRecoveryLabel: kotsadmtypes.DisasterRecoveryLabelValueApp,
-		}
-	}
-
 	secrets.AppSecret = &corev1.Secret{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "v1",
@@ -228,7 +221,7 @@ func PullSecretForRegistries(registries []string, username, password string, app
 			Name:        SecretNameFromPrefix(namePrefix),
 			Namespace:   appNamespace,
 			Annotations: secretAnnotations,
-			Labels:      secretLabels,
+			Labels:      applicationPullSecretLabels(),
 		},
 		Type: corev1.SecretTypeDockerConfigJson,
 		Data: map[string][]byte{
@@ -237,6 +230,19 @@ func PullSecretForRegistries(registries []string, username, password string, app
 	}
 
 	return secrets, nil
+}
+
+// applicationPullSecretLabels returns the labels that should be applied to app-specific pull secrets.
+// It will return nil if there are no labels to apply.
+func applicationPullSecretLabels() map[string]string {
+	var secretLabels map[string]string
+	if util.IsEmbeddedCluster() {
+		secretLabels = map[string]string{
+			kotsadmtypes.DisasterRecoveryLabel: kotsadmtypes.DisasterRecoveryLabelValueApp,
+		}
+	}
+
+	return secretLabels
 }
 
 func EnsureDockerHubSecret(username string, password string, namespace string, clientset *kubernetes.Clientset) error {
@@ -341,13 +347,6 @@ func GetDockerHubPullSecret(clientset kubernetes.Interface, namespace string, ap
 		return nil, errors.Wrap(err, "failed to get existing dockerhub secret")
 	}
 
-	var secretLabels map[string]string
-	if util.IsEmbeddedCluster() {
-		secretLabels = map[string]string{
-			kotsadmtypes.DisasterRecoveryLabel: kotsadmtypes.DisasterRecoveryLabelValueApp,
-		}
-	}
-
 	cleanSecret := &corev1.Secret{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "v1",
@@ -357,7 +356,7 @@ func GetDockerHubPullSecret(clientset kubernetes.Interface, namespace string, ap
 			Name:        fmt.Sprintf("%s-%s", namePrefix, DockerHubSecretName),
 			Namespace:   appNamespace,
 			Annotations: secretAnnotations,
-			Labels:      secretLabels,
+			Labels:      applicationPullSecretLabels(),
 		},
 		Type: corev1.SecretTypeDockerConfigJson,
 		Data: secret.DeepCopy().Data,
