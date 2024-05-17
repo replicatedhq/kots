@@ -10,6 +10,8 @@ import (
 	"sync"
 
 	"github.com/pkg/errors"
+	kotsadmtypes "github.com/replicatedhq/kots/pkg/kotsadm/types"
+	"github.com/replicatedhq/kots/pkg/util"
 	kotsv1beta1 "github.com/replicatedhq/kotskinds/apis/kots/v1beta1"
 	corev1 "k8s.io/api/core/v1"
 	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
@@ -210,6 +212,13 @@ func PullSecretForRegistries(registries []string, username, password string, app
 		return secrets, nil
 	}
 
+	var secretLabels map[string]string
+	if util.IsEmbeddedCluster() {
+		secretLabels = map[string]string{
+			kotsadmtypes.DisasterRecoveryLabel: kotsadmtypes.DisasterRecoveryLabelValueApp,
+		}
+	}
+
 	secrets.AppSecret = &corev1.Secret{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "v1",
@@ -219,6 +228,7 @@ func PullSecretForRegistries(registries []string, username, password string, app
 			Name:        SecretNameFromPrefix(namePrefix),
 			Namespace:   appNamespace,
 			Annotations: secretAnnotations,
+			Labels:      secretLabels,
 		},
 		Type: corev1.SecretTypeDockerConfigJson,
 		Data: map[string][]byte{
@@ -331,6 +341,13 @@ func GetDockerHubPullSecret(clientset kubernetes.Interface, namespace string, ap
 		return nil, errors.Wrap(err, "failed to get existing dockerhub secret")
 	}
 
+	var secretLabels map[string]string
+	if util.IsEmbeddedCluster() {
+		secretLabels = map[string]string{
+			kotsadmtypes.DisasterRecoveryLabel: kotsadmtypes.DisasterRecoveryLabelValueApp,
+		}
+	}
+
 	cleanSecret := &corev1.Secret{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "v1",
@@ -340,6 +357,7 @@ func GetDockerHubPullSecret(clientset kubernetes.Interface, namespace string, ap
 			Name:        fmt.Sprintf("%s-%s", namePrefix, DockerHubSecretName),
 			Namespace:   appNamespace,
 			Annotations: secretAnnotations,
+			Labels:      secretLabels,
 		},
 		Type: corev1.SecretTypeDockerConfigJson,
 		Data: secret.DeepCopy().Data,

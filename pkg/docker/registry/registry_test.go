@@ -1,10 +1,17 @@
 package registry
 
 import (
+	"encoding/base64"
+	"fmt"
 	"reflect"
 	"testing"
 
 	kotsv1beta1 "github.com/replicatedhq/kotskinds/apis/kots/v1beta1"
+	"github.com/stretchr/testify/require"
+	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/kubernetes/fake"
 )
 
 func TestGetRegistryProxyInfo(t *testing.T) {
@@ -295,6 +302,275 @@ func Test_SecretNameFromPrefix(t *testing.T) {
 			if res := SecretNameFromPrefix(tt.namePrefix); res != tt.want {
 				t.Errorf("SecretNameFromPrefix() = %v, want %v", res, tt.want)
 			}
+		})
+	}
+}
+
+func TestPullSecretForRegistries(t *testing.T) {
+	type args struct {
+		registries   []string
+		username     string
+		password     string
+		appNamespace string
+		namePrefix   string
+	}
+	tests := []struct {
+		name string
+		args args
+		env  map[string]string
+		want ImagePullSecrets
+	}{
+		{
+			name: "not embedded-cluster",
+			args: args{
+				registries:   []string{"registry.replicated.com"},
+				username:     "username",
+				password:     "password",
+				appNamespace: "test-namespace",
+				namePrefix:   "my-app",
+			},
+			want: ImagePullSecrets{
+				AdminConsoleSecret: &corev1.Secret{
+					TypeMeta: metav1.TypeMeta{
+						APIVersion: "v1",
+						Kind:       "Secret",
+					},
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "kotsadm-replicated-registry",
+						Namespace: "test-namespace",
+						Annotations: map[string]string{
+							"kots.io/creation-phase": "-9999",
+							"helm.sh/hook":           "pre-install,pre-upgrade",
+							"helm.sh/hook-weight":    "-9999",
+						},
+					},
+					Type: corev1.SecretTypeDockerConfigJson,
+					Data: map[string][]byte{
+						".dockerconfigjson": []byte(fmt.Sprintf(`{"auths":{"registry.replicated.com":{"auth":"%s"}}}`, base64.StdEncoding.EncodeToString([]byte("username:password")))),
+					},
+				},
+				AppSecret: &corev1.Secret{
+					TypeMeta: metav1.TypeMeta{
+						APIVersion: "v1",
+						Kind:       "Secret",
+					},
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "my-app-registry",
+						Namespace: "test-namespace",
+						Annotations: map[string]string{
+							"kots.io/creation-phase": "-9999",
+							"helm.sh/hook":           "pre-install,pre-upgrade",
+							"helm.sh/hook-weight":    "-9999",
+						},
+					},
+					Type: corev1.SecretTypeDockerConfigJson,
+					Data: map[string][]byte{
+						".dockerconfigjson": []byte(fmt.Sprintf(`{"auths":{"registry.replicated.com":{"auth":"%s"}}}`, base64.StdEncoding.EncodeToString([]byte("username:password")))),
+					},
+				},
+			},
+		},
+		{
+			name: "embedded-cluster",
+			args: args{
+				registries:   []string{"registry.replicated.com"},
+				username:     "username",
+				password:     "password",
+				appNamespace: "test-namespace",
+				namePrefix:   "my-app",
+			},
+			env: map[string]string{
+				"EMBEDDED_CLUSTER_ID": "embedded-cluster-id",
+			},
+			want: ImagePullSecrets{
+				AdminConsoleSecret: &corev1.Secret{
+					TypeMeta: metav1.TypeMeta{
+						APIVersion: "v1",
+						Kind:       "Secret",
+					},
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "kotsadm-replicated-registry",
+						Namespace: "test-namespace",
+						Annotations: map[string]string{
+							"kots.io/creation-phase": "-9999",
+							"helm.sh/hook":           "pre-install,pre-upgrade",
+							"helm.sh/hook-weight":    "-9999",
+						},
+					},
+					Type: corev1.SecretTypeDockerConfigJson,
+					Data: map[string][]byte{
+						".dockerconfigjson": []byte(fmt.Sprintf(`{"auths":{"registry.replicated.com":{"auth":"%s"}}}`, base64.StdEncoding.EncodeToString([]byte("username:password")))),
+					},
+				},
+				AppSecret: &corev1.Secret{
+					TypeMeta: metav1.TypeMeta{
+						APIVersion: "v1",
+						Kind:       "Secret",
+					},
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "my-app-registry",
+						Namespace: "test-namespace",
+						Annotations: map[string]string{
+							"kots.io/creation-phase": "-9999",
+							"helm.sh/hook":           "pre-install,pre-upgrade",
+							"helm.sh/hook-weight":    "-9999",
+						},
+						Labels: map[string]string{
+							"replicated.com/disaster-recovery": "app",
+						},
+					},
+					Type: corev1.SecretTypeDockerConfigJson,
+					Data: map[string][]byte{
+						".dockerconfigjson": []byte(fmt.Sprintf(`{"auths":{"registry.replicated.com":{"auth":"%s"}}}`, base64.StdEncoding.EncodeToString([]byte("username:password")))),
+					},
+				},
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			req := require.New(t)
+			for k, v := range tt.env {
+				t.Setenv(k, v)
+			}
+			got, err := PullSecretForRegistries(tt.args.registries, tt.args.username, tt.args.password, tt.args.appNamespace, tt.args.namePrefix)
+			req.NoError(err)
+			req.Equal(tt.want, got)
+		})
+	}
+}
+
+func TestGetDockerHubPullSecret(t *testing.T) {
+	type args struct {
+		clientset    kubernetes.Interface
+		namespace    string
+		appNamespace string
+		namePrefix   string
+	}
+	tests := []struct {
+		name string
+		args args
+		env  map[string]string
+		want *corev1.Secret
+	}{
+		{
+			name: "name prefix is empty",
+			args: args{
+				clientset:    fake.NewSimpleClientset(),
+				namespace:    "test-namespace",
+				appNamespace: "test-namespace",
+				namePrefix:   "",
+			},
+			want: nil,
+		},
+		{
+			name: "dockerhub secret does not exist",
+			args: args{
+				clientset:    fake.NewSimpleClientset(),
+				namespace:    "test-namespace",
+				appNamespace: "test-namespace",
+				namePrefix:   "my-app",
+			},
+			want: nil,
+		},
+		{
+			name: "dockerhub secret exists - not embedded-cluster",
+			args: args{
+				clientset: fake.NewSimpleClientset(&corev1.Secret{
+					TypeMeta: metav1.TypeMeta{
+						APIVersion: "v1",
+						Kind:       "Secret",
+					},
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "kotsadm-dockerhub",
+						Namespace: "test-namespace",
+					},
+					Type: corev1.SecretTypeDockerConfigJson,
+					Data: map[string][]byte{
+						".dockerconfigjson": []byte(`this would be a base64 encoded docker config json`),
+					},
+				}),
+				namespace:    "test-namespace",
+				appNamespace: "test-namespace",
+				namePrefix:   "my-app",
+			},
+			want: &corev1.Secret{
+				TypeMeta: metav1.TypeMeta{
+					APIVersion: "v1",
+					Kind:       "Secret",
+				},
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "my-app-kotsadm-dockerhub",
+					Namespace: "test-namespace",
+					Annotations: map[string]string{
+						"kots.io/creation-phase": "-9999",
+						"helm.sh/hook":           "pre-install,pre-upgrade",
+						"helm.sh/hook-weight":    "-9999",
+					},
+				},
+				Type: corev1.SecretTypeDockerConfigJson,
+				Data: map[string][]byte{
+					".dockerconfigjson": []byte(`this would be a base64 encoded docker config json`),
+				},
+			},
+		},
+		{
+			name: "dockerhub secret exists - embedded-cluster",
+			args: args{
+				clientset: fake.NewSimpleClientset(&corev1.Secret{
+					TypeMeta: metav1.TypeMeta{
+						APIVersion: "v1",
+						Kind:       "Secret",
+					},
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "kotsadm-dockerhub",
+						Namespace: "test-namespace",
+					},
+					Type: corev1.SecretTypeDockerConfigJson,
+					Data: map[string][]byte{
+						".dockerconfigjson": []byte(`this would be a base64 encoded docker config json`),
+					},
+				}),
+				namespace:    "test-namespace",
+				appNamespace: "test-namespace",
+				namePrefix:   "my-app",
+			},
+			env: map[string]string{
+				"EMBEDDED_CLUSTER_ID": "embedded-cluster-id",
+			},
+			want: &corev1.Secret{
+				TypeMeta: metav1.TypeMeta{
+					APIVersion: "v1",
+					Kind:       "Secret",
+				},
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "my-app-kotsadm-dockerhub",
+					Namespace: "test-namespace",
+					Annotations: map[string]string{
+						"kots.io/creation-phase": "-9999",
+						"helm.sh/hook":           "pre-install,pre-upgrade",
+						"helm.sh/hook-weight":    "-9999",
+					},
+					Labels: map[string]string{
+						"replicated.com/disaster-recovery": "app",
+					},
+				},
+				Type: corev1.SecretTypeDockerConfigJson,
+				Data: map[string][]byte{
+					".dockerconfigjson": []byte(`this would be a base64 encoded docker config json`),
+				},
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			req := require.New(t)
+			for k, v := range tt.env {
+				t.Setenv(k, v)
+			}
+			got, err := GetDockerHubPullSecret(tt.args.clientset, tt.args.namespace, tt.args.appNamespace, tt.args.namePrefix)
+			req.NoError(err)
+			req.Equal(tt.want, got)
 		})
 	}
 }
