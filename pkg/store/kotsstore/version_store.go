@@ -1,7 +1,6 @@
 package kotsstore
 
 import (
-	"bytes"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
@@ -38,7 +37,6 @@ import (
 	"github.com/rqlite/gorqlite"
 	velerov1 "github.com/vmware-tanzu/velero/pkg/apis/velero/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	serializer "k8s.io/apimachinery/pkg/runtime/serializer/json"
 	"k8s.io/client-go/kubernetes/scheme"
 	"sigs.k8s.io/application/api/v1beta1"
 )
@@ -974,24 +972,6 @@ func (s *KOTSStore) UpdateNextAppVersionDiffSummary(appID string, baseSequence i
 		return fmt.Errorf("failed to write: %v: %v", err, wr.Err)
 	}
 
-	return nil
-}
-
-func (s *KOTSStore) UpdateAppVersionInstallationSpec(appID string, sequence int64, installation kotsv1beta1.Installation) error {
-	ser := serializer.NewYAMLSerializer(serializer.DefaultMetaFactory, scheme.Scheme, scheme.Scheme)
-	var b bytes.Buffer
-	if err := ser.Encode(&installation, &b); err != nil {
-		return errors.Wrap(err, "failed to encode installation")
-	}
-
-	db := persistence.MustGetDBSession()
-	wr, err := db.WriteOneParameterized(gorqlite.ParameterizedStatement{
-		Query:     `UPDATE app_version SET kots_installation_spec = ? WHERE app_id = ? AND sequence = ?`,
-		Arguments: []interface{}{b.String(), appID, sequence},
-	})
-	if err != nil {
-		return fmt.Errorf("failed to write: %v: %v", err, wr.Err)
-	}
 	return nil
 }
 

@@ -3,6 +3,7 @@ package updatechecker
 import (
 	"encoding/json"
 	"fmt"
+	"strings"
 	"sync"
 	"time"
 
@@ -15,16 +16,19 @@ import (
 	upstream "github.com/replicatedhq/kots/pkg/kotsadmupstream"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/preflight"
-	"github.com/replicatedhq/kots/pkg/preflight/types"
+	preflighttypes "github.com/replicatedhq/kots/pkg/preflight/types"
 	kotspull "github.com/replicatedhq/kots/pkg/pull"
 	"github.com/replicatedhq/kots/pkg/reporting"
 	kotssemver "github.com/replicatedhq/kots/pkg/semver"
 	storepkg "github.com/replicatedhq/kots/pkg/store"
 	storetypes "github.com/replicatedhq/kots/pkg/store/types"
 	"github.com/replicatedhq/kots/pkg/tasks"
+	"github.com/replicatedhq/kots/pkg/updatechecker/types"
+	upstreampkg "github.com/replicatedhq/kots/pkg/upstream"
 	upstreamtypes "github.com/replicatedhq/kots/pkg/upstream/types"
 	"github.com/replicatedhq/kots/pkg/util"
 	"github.com/replicatedhq/kots/pkg/version"
+	kotsv1beta1 "github.com/replicatedhq/kotskinds/apis/kots/v1beta1"
 	cron "github.com/robfig/cron/v3"
 	"go.uber.org/zap"
 	"k8s.io/apimachinery/pkg/util/wait"
@@ -112,7 +116,7 @@ func Configure(a *apptypes.App, updateCheckerSpec string) error {
 	_, err := job.AddFunc(cronSpec, func() {
 		logger.Debug("checking updates for app", zap.String("slug", jobAppSlug))
 
-		opts := CheckForUpdatesOpts{
+		opts := types.CheckForUpdatesOpts{
 			AppID:       jobAppID,
 			IsAutomatic: true,
 		}
@@ -154,36 +158,13 @@ func Stop(appID string) {
 	}
 }
 
-type CheckForUpdatesOpts struct {
-	AppID                  string
-	DeployLatest           bool
-	DeployVersionLabel     string
-	IsAutomatic            bool
-	SkipPreflights         bool
-	SkipCompatibilityCheck bool
-	IsCLI                  bool
-	Wait                   bool
-}
-
-type UpdateCheckResponse struct {
-	AvailableUpdates  int64
-	CurrentRelease    *UpdateCheckRelease
-	AvailableReleases []UpdateCheckRelease
-	DeployingRelease  *UpdateCheckRelease
-}
-
-type UpdateCheckRelease struct {
-	Sequence int64
-	Version  string
-}
-
 // CheckForUpdates checks, downloads, and makes sure the desired version for a specific app is deployed.
 // if "DeployLatest" is set to true, the latest version will be deployed.
 // otherwise, if "DeployVersionLabel" is set to true, then the version with the corresponding version label will be deployed (if found).
 // otherwise, if "IsAutomatic" is set to true (which means it's an automatic update check), then the version that matches the auto deploy configuration (if enabled) will be deployed.
 // returns the number of available updates.
-func CheckForUpdates(opts CheckForUpdatesOpts) (ucr *UpdateCheckResponse, finalError error) {
-	currentStatus, _, err := store.GetTaskStatus("update-download")
+func CheckForUpdates(opts types.CheckForUpdatesOpts) (ucr *types.UpdateCheckResponse, finalError error) {
+	currentStatus, _, err := tasks.GetTaskStatus("update-download")
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get task status")
 	}
@@ -192,7 +173,7 @@ func CheckForUpdates(opts CheckForUpdatesOpts) (ucr *UpdateCheckResponse, finalE
 		return nil, nil
 	}
 
-	if err := store.SetTaskStatus("update-download", "Checking for updates...", "running"); err != nil {
+	if err := tasks.SetTaskStatus("update-download", "Checking for updates...", "running"); err != nil {
 		return nil, errors.Wrap(err, "failed to set task status")
 	}
 
@@ -216,7 +197,7 @@ func CheckForUpdates(opts CheckForUpdatesOpts) (ucr *UpdateCheckResponse, finalE
 	return
 }
 
-func checkForKotsAppUpdates(opts CheckForUpdatesOpts, finishedChan chan<- error) (*UpdateCheckResponse, error) {
+func checkForKotsAppUpdates(opts types.CheckForUpdatesOpts, finishedChan chan<- error) (*types.UpdateCheckResponse, error) {
 	a, err := store.GetApp(opts.AppID)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get app")
@@ -276,24 +257,24 @@ func checkForKotsAppUpdates(opts CheckForUpdatesOpts, finishedChan chan<- error)
 
 	filteredUpdates := removeOldUpdates(updates.Updates, appVersions, latestLicense.Spec.IsSemverRequired)
 
-	var availableReleases []UpdateCheckRelease
+	var availableReleases []types.UpdateCheckRelease
 	availableSequence := appVersions.AllVersions[0].Sequence + 1
 	for _, u := range filteredUpdates {
-		availableReleases = append(availableReleases, UpdateCheckRelease{
+		availableReleases = append(availableReleases, types.UpdateCheckRelease{
 			Sequence: availableSequence,
 			Version:  u.VersionLabel,
 		})
 		availableSequence++
 	}
 
-	ucr := UpdateCheckResponse{
+	ucr := types.UpdateCheckResponse{
 		AvailableUpdates:  int64(len(filteredUpdates)),
 		AvailableReleases: availableReleases,
 		DeployingRelease:  getVersionToDeploy(opts, d.ClusterID, availableReleases),
 	}
 
 	if appVersions.CurrentVersion != nil {
-		ucr.CurrentRelease = &UpdateCheckRelease{
+		ucr.CurrentRelease = &types.UpdateCheckRelease{
 			Sequence: appVersions.CurrentVersion.Sequence,
 			Version:  appVersions.CurrentVersion.VersionLabel,
 		}
@@ -311,7 +292,7 @@ func checkForKotsAppUpdates(opts CheckForUpdatesOpts, finishedChan chan<- error)
 
 	// this is to avoid a race condition where the UI polls the task status before it is set by the goroutine
 	status := fmt.Sprintf("%d Updates available...", ucr.AvailableUpdates)
-	if err := store.SetTaskStatus("update-download", status, "running"); err != nil {
+	if err := tasks.SetTaskStatus("update-download", status, "running"); err != nil {
 		return nil, errors.Wrap(err, "failed to set task status")
 	}
 
@@ -333,7 +314,7 @@ func checkForKotsAppUpdates(opts CheckForUpdatesOpts, finishedChan chan<- error)
 	return &ucr, nil
 }
 
-func downloadAppUpdates(opts CheckForUpdatesOpts, appID string, clusterID string, updates []upstreamtypes.Update, updateCheckTime time.Time) error {
+func downloadAppUpdates(opts types.CheckForUpdatesOpts, appID string, clusterID string, updates []upstreamtypes.Update, updateCheckTime time.Time) error {
 	for index, update := range updates {
 		appSequence, err := upstream.DownloadUpdate(appID, update, opts.SkipPreflights, opts.SkipCompatibilityCheck)
 		if appSequence != nil {
@@ -361,7 +342,7 @@ func downloadAppUpdates(opts CheckForUpdatesOpts, appID string, clusterID string
 	return nil
 }
 
-func ensureDesiredVersionIsDeployed(opts CheckForUpdatesOpts, clusterID string) error {
+func ensureDesiredVersionIsDeployed(opts types.CheckForUpdatesOpts, clusterID string) error {
 	if opts.DeployLatest {
 		if err := deployLatestVersion(opts, clusterID); err != nil {
 			return errors.Wrap(err, "failed to deploy latest version")
@@ -390,7 +371,7 @@ func ensureDesiredVersionIsDeployed(opts CheckForUpdatesOpts, clusterID string) 
 	return nil
 }
 
-func getVersionToDeploy(opts CheckForUpdatesOpts, clusterID string, availableReleases []UpdateCheckRelease) *UpdateCheckRelease {
+func getVersionToDeploy(opts types.CheckForUpdatesOpts, clusterID string, availableReleases []types.UpdateCheckRelease) *types.UpdateCheckRelease {
 	appVersions, err := store.GetDownstreamVersions(opts.AppID, clusterID, true)
 	if err != nil {
 		return nil
@@ -405,7 +386,7 @@ func getVersionToDeploy(opts CheckForUpdatesOpts, clusterID string, availableRel
 	}
 
 	if opts.DeployLatest && appVersions.AllVersions[0].Sequence != appVersions.CurrentVersion.Sequence {
-		return &UpdateCheckRelease{
+		return &types.UpdateCheckRelease{
 			Sequence: appVersions.AllVersions[0].Sequence,
 			Version:  appVersions.AllVersions[0].VersionLabel,
 		}
@@ -421,7 +402,7 @@ func getVersionToDeploy(opts CheckForUpdatesOpts, clusterID string, availableRel
 		}
 
 		if versionToDeploy != nil && versionToDeploy.Sequence != appVersions.CurrentVersion.Sequence {
-			return &UpdateCheckRelease{
+			return &types.UpdateCheckRelease{
 				Sequence: versionToDeploy.Sequence,
 				Version:  versionToDeploy.VersionLabel,
 			}
@@ -433,7 +414,7 @@ func getVersionToDeploy(opts CheckForUpdatesOpts, clusterID string, availableRel
 	return nil
 }
 
-func deployLatestVersion(opts CheckForUpdatesOpts, clusterID string) error {
+func deployLatestVersion(opts types.CheckForUpdatesOpts, clusterID string) error {
 	appVersions, err := store.GetDownstreamVersions(opts.AppID, clusterID, true)
 	if err != nil {
 		return errors.Wrapf(err, "failed to get app versions for app %s", opts.AppID)
@@ -450,7 +431,7 @@ func deployLatestVersion(opts CheckForUpdatesOpts, clusterID string) error {
 	return nil
 }
 
-func deployVersionLabel(opts CheckForUpdatesOpts, clusterID string, versionLabel string) error {
+func deployVersionLabel(opts types.CheckForUpdatesOpts, clusterID string, versionLabel string) error {
 	appVersions, err := store.GetDownstreamVersions(opts.AppID, clusterID, true)
 	if err != nil {
 		return errors.Wrapf(err, "failed to get app versions for app %s", opts.AppID)
@@ -479,7 +460,7 @@ func deployVersionLabel(opts CheckForUpdatesOpts, clusterID string, versionLabel
 	return nil
 }
 
-func autoDeploy(opts CheckForUpdatesOpts, clusterID string, autoDeploy apptypes.AutoDeploy) error {
+func autoDeploy(opts types.CheckForUpdatesOpts, clusterID string, autoDeploy apptypes.AutoDeploy) error {
 	if autoDeploy == "" || autoDeploy == apptypes.AutoDeployDisabled {
 		return nil
 	}
@@ -589,7 +570,7 @@ func waitForPreflightsToFinish(appID string, sequence int64) error {
 		return errors.New("failed to find a preflight spec")
 	}
 
-	var preflightResults *types.PreflightResults
+	var preflightResults *preflighttypes.PreflightResults
 	if err = json.Unmarshal([]byte(preflightResult.Result), &preflightResults); err != nil {
 		return errors.Wrap(err, "failed to parse preflight results")
 	}
@@ -602,7 +583,7 @@ func waitForPreflightsToFinish(appID string, sequence int64) error {
 	return nil
 }
 
-func deployVersion(opts CheckForUpdatesOpts, clusterID string, appVersions *downstreamtypes.DownstreamVersions, versionToDeploy *downstreamtypes.DownstreamVersion) error {
+func deployVersion(opts types.CheckForUpdatesOpts, clusterID string, appVersions *downstreamtypes.DownstreamVersions, versionToDeploy *downstreamtypes.DownstreamVersion) error {
 	if appVersions.CurrentVersion != nil {
 		isPastVersion := false
 		for _, p := range appVersions.PastVersions {
@@ -727,4 +708,69 @@ func removeOldUpdates(updates []upstreamtypes.Update, appVersions *downstreamtyp
 	}
 
 	return fileteredUpdates
+}
+
+func GetAvailableUpdates(kotsStore storepkg.Store, app *apptypes.App, license *kotsv1beta1.License) ([]types.AvailableUpdate, error) {
+	updateCursor, err := kotsStore.GetCurrentUpdateCursor(app.ID, license.Spec.ChannelID)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get current update cursor")
+	}
+
+	upstreamURI := fmt.Sprintf("replicated://%s", license.Spec.AppSlug)
+	fetchOptions := &upstreamtypes.FetchOptions{
+		License:            license,
+		LastUpdateCheckAt:  app.LastUpdateCheckAt,
+		CurrentCursor:      updateCursor,
+		CurrentChannelID:   license.Spec.ChannelID,
+		CurrentChannelName: license.Spec.ChannelName,
+		ChannelChanged:     app.ChannelChanged,
+		SortOrder:          "desc", // get the latest updates first
+		ReportingInfo:      reporting.GetReportingInfo(app.ID),
+	}
+	updates, err := upstreampkg.GetUpdatesUpstream(upstreamURI, fetchOptions)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get updates")
+	}
+
+	availableUpdates := []types.AvailableUpdate{}
+	for _, u := range updates.Updates {
+		deployable, cause := isUpdateDeployable(u.Cursor, updates.Updates)
+		availableUpdates = append(availableUpdates, types.AvailableUpdate{
+			VersionLabel:       u.VersionLabel,
+			UpdateCursor:       u.Cursor,
+			ChannelID:          u.ChannelID,
+			IsRequired:         u.IsRequired,
+			UpstreamReleasedAt: u.ReleasedAt,
+			ReleaseNotes:       u.ReleaseNotes,
+			IsDeployable:       deployable,
+			NonDeployableCause: cause,
+		})
+	}
+
+	return availableUpdates, nil
+}
+
+func isUpdateDeployable(updateCursor string, updates []upstreamtypes.Update) (bool, string) {
+	// iterate over updates in reverse since they are sorted in descending order
+	requiredUpdates := []upstreamtypes.Update{}
+	for i := len(updates) - 1; i >= 0; i-- {
+		if updates[i].Cursor == updateCursor {
+			break
+		}
+		if updates[i].IsRequired {
+			requiredUpdates = append(requiredUpdates, updates[i])
+		}
+	}
+	if len(requiredUpdates) > 0 {
+		versionLabels := []string{}
+		for _, v := range requiredUpdates {
+			versionLabels = append([]string{v.VersionLabel}, versionLabels...)
+		}
+		versionLabelsStr := strings.Join(versionLabels, ", ")
+		if len(requiredUpdates) == 1 {
+			return false, fmt.Sprintf("This version cannot be deployed because version %s is required and must be deployed first.", versionLabelsStr)
+		}
+		return false, fmt.Sprintf("This version cannot be deployed because versions %s are required and must be deployed first.", versionLabelsStr)
+	}
+	return true, ""
 }

@@ -181,8 +181,8 @@ func Test_httpServerCSPHeaders(t *testing.T) {
 			httpServer: getHttpServer("some-fingerprint", true, tmpDir),
 			path:       "/assets/index.html",
 			wantHeaders: map[string]string{
-				"Content-Security-Policy": "frame-ancestors 'none';",
-				"X-Frame-Options":         "DENY",
+				"Content-Security-Policy": "frame-ancestors 'self';",
+				"X-Frame-Options":         "SAMEORIGIN",
 			},
 		},
 		{
@@ -191,8 +191,8 @@ func Test_httpServerCSPHeaders(t *testing.T) {
 			isHttps:    true,
 			path:       "/tls/assets/index.html",
 			wantHeaders: map[string]string{
-				"Content-Security-Policy": "frame-ancestors 'none';",
-				"X-Frame-Options":         "DENY",
+				"Content-Security-Policy": "frame-ancestors 'self';",
+				"X-Frame-Options":         "SAMEORIGIN",
 			},
 		},
 	}
@@ -275,15 +275,15 @@ func Test_generateDefaultCertSecret(t *testing.T) {
 
 func Test_generateCertHostnames(t *testing.T) {
 	tests := []struct {
-		name  string
+		name      string
 		namespace string
 		hostname  string
-		altNames []string
+		altNames  []string
 	}{
 		{
-			name:  "with no namespace",
-			hostname:  "kotsadm.default.svc.cluster.local",
-			altNames : []string{
+			name:     "with no namespace",
+			hostname: "kotsadm.default.svc.cluster.local",
+			altNames: []string{
 				"kotsadm",
 				"kotsadm.default",
 				"kotsadm.default.svc",
@@ -292,10 +292,10 @@ func Test_generateCertHostnames(t *testing.T) {
 			},
 		},
 		{
-			name:  "with some other namespace",
+			name:      "with some other namespace",
 			namespace: "somecluster",
 			hostname:  "kotsadm.default.svc.cluster.local",
-			altNames : []string{
+			altNames: []string{
 				"kotsadm",
 				"kotsadm.default",
 				"kotsadm.default.svc",

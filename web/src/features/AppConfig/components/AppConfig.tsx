@@ -25,6 +25,7 @@ type Props = {
   params: KotsParams;
   app: App;
   fromLicenseFlow: boolean;
+  isEmbeddedCluster: boolean;
   refreshAppData: () => void;
   refetchApps: () => void;
   navigate: ReturnType<typeof useNavigate>;
@@ -600,8 +601,54 @@ class AppConfig extends Component<Props, State> {
       });
   };
 
+  handleDownloadFile = async (fileName: string) => {
+    const sequence = this.getSequence();
+    const { slug } = this.props.params;
+    const url = `${process.env.API_ENDPOINT}/app/${slug}/config/${sequence}/${fileName}/download`;
+    fetch(url, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/octet-stream",
+      },
+      credentials: "include",
+    })
+      .then((response) => {
+        if (!response.ok) {
+          throw Error(response.statusText); // TODO: handle error
+        }
+        return response.blob();
+      })
+      .then((blob) => {
+        const downloadURL = window.URL.createObjectURL(new Blob([blob]));
+        const link = document.createElement("a");
+        link.href = downloadURL;
+        link.setAttribute("download", fileName);
+        document.body.appendChild(link);
+        link.click();
+        link.parentNode?.removeChild(link);
+      })
+      .catch(function (error) {
+        console.log(error); // TODO handle error
+      });
+  };
+
   hideNextStepModal = () => {
     this.setState({ showNextStepModal: false });
+  };
+
+  isConfigReadOnly = (app: App) => {
+    const { params, isEmbeddedCluster } = this.props;
+    if (!params.sequence) {
+      return false;
+    }
+    if (!isEmbeddedCluster) {
+      return false;
+    }
+    // in embedded cluster, past versions cannot be edited
+    const isPastVersion = find(app.downstream?.pastVersions, {
+      sequence: parseInt(params.sequence),
+    });
+    return !!isPastVersion;
   };
 
   toggleActiveGroups = (name: string) => {
@@ -812,6 +859,8 @@ class AppConfig extends Component<Props, State> {
                   <AppConfigRenderer
                     groups={configGroups}
                     getData={this.handleConfigChange}
+                    handleDownloadFile={this.handleDownloadFile}
+                    readonly={this.isConfigReadOnly(app)}
                     configSequence={params.sequence}
                     appSlug={app.slug}
                   />
@@ -832,7 +881,9 @@ class AppConfig extends Component<Props, State> {
                       <button
                         className="btn primary blue"
                         disabled={
-                          showValidationError || (!changed && !fromLicenseFlow)
+                          showValidationError ||
+                          (!changed && !fromLicenseFlow) ||
+                          this.isConfigReadOnly(app)
                         }
                         onClick={this.handleSave}
                       >

@@ -7,6 +7,7 @@ import (
 	embeddedclusterv1beta1 "github.com/replicatedhq/embedded-cluster-kinds/apis/v1beta1"
 	airgaptypes "github.com/replicatedhq/kots/pkg/airgap/types"
 	downstreamtypes "github.com/replicatedhq/kots/pkg/api/downstream/types"
+	reportingtypes "github.com/replicatedhq/kots/pkg/api/reporting/types"
 	versiontypes "github.com/replicatedhq/kots/pkg/api/version/types"
 	apptypes "github.com/replicatedhq/kots/pkg/app/types"
 	appstatetypes "github.com/replicatedhq/kots/pkg/appstate/types"
@@ -32,7 +33,6 @@ type Store interface {
 	PreflightStore
 	PrometheusStore
 	AirgapStore
-	TaskStore
 	SessionStore
 	AppStatusStore
 	AppStore
@@ -97,13 +97,6 @@ type AirgapStore interface {
 	GetAirgapInstallStatus(appID string) (*airgaptypes.InstallStatus, error)
 	ResetAirgapInstallInProgress(appID string) error
 	SetAppIsAirgap(appID string, isAirgap bool) error
-}
-
-type TaskStore interface {
-	SetTaskStatus(taskID string, message string, status string) error
-	UpdateTaskStatusTimestamp(taskID string) error
-	ClearTaskStatus(taskID string) error
-	GetTaskStatus(taskID string) (status string, message string, err error)
 }
 
 type SessionStore interface {
@@ -196,7 +189,6 @@ type VersionStore interface {
 	GetAppVersion(appID string, sequence int64) (*versiontypes.AppVersion, error)
 	GetLatestAppSequence(appID string, downloadedOnly bool) (int64, error)
 	UpdateNextAppVersionDiffSummary(appID string, baseSequence int64) error
-	UpdateAppVersionInstallationSpec(appID string, sequence int64, spec kotsv1beta1.Installation) error
 	GetNextAppSequence(appID string) (int64, error)
 	GetCurrentUpdateCursor(appID string, channelID string) (string, error)
 	HasStrictPreflights(appID string, sequence int64) (bool, error)
@@ -209,7 +201,7 @@ type LicenseStore interface {
 	GetAllAppLicenses() ([]*kotsv1beta1.License, error)
 
 	// originalLicenseData is the data received from the replicated API that was never marshalled locally so all fields are intact
-	UpdateAppLicense(appID string, sequence int64, archiveDir string, newLicense *kotsv1beta1.License, originalLicenseData string, channelChanged bool, failOnVersionCreate bool, gitops gitopstypes.DownstreamGitOps, renderer rendertypes.Renderer) (int64, error)
+	UpdateAppLicense(appID string, sequence int64, archiveDir string, newLicense *kotsv1beta1.License, originalLicenseData string, channelChanged bool, failOnVersionCreate bool, gitops gitopstypes.DownstreamGitOps, renderer rendertypes.Renderer, reportingInfo *reportingtypes.ReportingInfo) (int64, error)
 	UpdateAppLicenseSyncNow(appID string) error
 }
 

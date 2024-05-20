@@ -18,6 +18,7 @@ import PreflightIcon from "@features/App/PreflightIcon";
 
 interface Props {
   adminConsoleMetadata: Metadata;
+  isEmbeddedCluster: boolean;
   deployVersion: (version: Version) => void;
   downloadVersion: (version: Version) => void;
   gitopsEnabled: boolean;
@@ -234,6 +235,15 @@ function AppVersionHistoryRow(props: Props) {
       (isPastVersion || isCurrentVersion || isPendingDeployedVersion) &&
       version?.status !== "pending";
 
+    // in embedded cluster, past versions cannot be edited
+    const isConfigReadOnly = props.isEmbeddedCluster && isPastVersion;
+    let configTooltip;
+    if (isConfigReadOnly) {
+      configTooltip = "View config";
+    } else {
+      configTooltip = "Edit config";
+    }
+
     const preflightState = getPreflightState(version);
 
     const configScreenURL = `/app/${selectedApp?.slug}/config/${version.sequence}`;
@@ -351,8 +361,11 @@ function AppVersionHistoryRow(props: Props) {
         </div>
         {version.hasConfig && (
           <div className="flex alignItems--center">
-            <Link to={configScreenURL} data-tip="Edit config">
-              <Icon icon="edit-config" size={22} />
+            <Link to={configScreenURL} data-tip={configTooltip}>
+              <Icon
+                icon={isConfigReadOnly ? "view-config" : "edit-config"}
+                size={22}
+              />
             </Link>
             <ReactTooltip effect="solid" className="replicated-tooltip" />
           </div>

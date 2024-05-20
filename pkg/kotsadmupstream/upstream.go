@@ -17,6 +17,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/render"
 	"github.com/replicatedhq/kots/pkg/reporting"
 	"github.com/replicatedhq/kots/pkg/store"
+	"github.com/replicatedhq/kots/pkg/tasks"
 	"github.com/replicatedhq/kots/pkg/upstream"
 	"github.com/replicatedhq/kots/pkg/upstream/types"
 	"github.com/replicatedhq/kots/pkg/util"
@@ -37,7 +38,7 @@ func DownloadUpdate(appID string, update types.Update, skipPreflights bool, skip
 			for {
 				select {
 				case <-time.After(time.Second):
-					if err := store.GetStore().UpdateTaskStatusTimestamp(taskID); err != nil {
+					if err := tasks.UpdateTaskStatusTimestamp(taskID); err != nil {
 						logger.Error(errors.Wrapf(err, "failed to update %s task status timestamp", taskID))
 					}
 				case <-finishedCh:
@@ -47,7 +48,7 @@ func DownloadUpdate(appID string, update types.Update, skipPreflights bool, skip
 		}()
 	}
 
-	if err := store.GetStore().SetTaskStatus(taskID, "Fetching update...", "running"); err != nil {
+	if err := tasks.SetTaskStatus(taskID, "Fetching update...", "running"); err != nil {
 		finalError = errors.Wrap(err, "failed to set task status")
 		return
 	}
@@ -66,7 +67,7 @@ func DownloadUpdate(appID string, update types.Update, skipPreflights bool, skip
 					logger.Error(errors.Wrapf(err, "failed to update next app version diff summary for base sequence %d", *update.AppSequence))
 				}
 			}
-			err := store.GetStore().ClearTaskStatus(taskID)
+			err := tasks.ClearTaskStatus(taskID)
 			if err != nil {
 				logger.Error(errors.Wrapf(err, "failed to clear %s task status", taskID))
 			}
@@ -92,7 +93,7 @@ func DownloadUpdate(appID string, update types.Update, skipPreflights bool, skip
 
 		if update.AppSequence != nil || finalSequence != nil {
 			// a version already exists or has been created
-			err := store.GetStore().SetTaskStatus(taskID, errMsg, "failed")
+			err := tasks.SetTaskStatus(taskID, errMsg, "failed")
 			if err != nil {
 				logger.Error(errors.Wrapf(err, "failed to set %s task status", taskID))
 			}
@@ -103,7 +104,7 @@ func DownloadUpdate(appID string, update types.Update, skipPreflights bool, skip
 		newSequence, err := store.GetStore().CreatePendingDownloadAppVersion(appID, update, kotsApplication, license)
 		if err != nil {
 			logger.Error(errors.Wrapf(err, "failed to create pending download app version for update %s", update.VersionLabel))
-			if err := store.GetStore().SetTaskStatus(taskID, errMsg, "failed"); err != nil {
+			if err := tasks.SetTaskStatus(taskID, errMsg, "failed"); err != nil {
 				logger.Error(errors.Wrapf(err, "failed to set %s task status", taskID))
 			}
 			return
@@ -113,10 +114,10 @@ func DownloadUpdate(appID string, update types.Update, skipPreflights bool, skip
 		// a pending download version has been created, bind the download error to it
 		// clear the global task status at the end to avoid a race condition with the UI
 		sequenceTaskID := fmt.Sprintf("update-download.%d", *finalSequence)
-		if err := store.GetStore().SetTaskStatus(sequenceTaskID, errMsg, "failed"); err != nil {
+		if err := tasks.SetTaskStatus(sequenceTaskID, errMsg, "failed"); err != nil {
 			logger.Error(errors.Wrapf(err, "failed to set %s task status", sequenceTaskID))
 		}
-		if err := store.GetStore().ClearTaskStatus(taskID); err != nil {
+		if err := tasks.ClearTaskStatus(taskID); err != nil {
 			logger.Error(errors.Wrapf(err, "failed to clear %s task status", taskID))
 		}
 	}()
@@ -143,7 +144,7 @@ func DownloadUpdate(appID string, update types.Update, skipPreflights bool, skip
 	go func() {
 		scanner := bufio.NewScanner(pipeReader)
 		for scanner.Scan() {
-			if err := store.GetStore().SetTaskStatus(taskID, scanner.Text(), "running"); err != nil {
+			if err := tasks.SetTaskStatus(taskID, scanner.Text(), "running"); err != nil {
 				logger.Error(err)
 			}
 		}

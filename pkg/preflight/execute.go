@@ -1,7 +1,6 @@
 package preflight
 
 import (
-	"encoding/json"
 	"strings"
 	"sync"
 	"time"
@@ -10,45 +9,16 @@ import (
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/preflight/types"
-	"github.com/replicatedhq/kots/pkg/store"
 	troubleshootanalyze "github.com/replicatedhq/troubleshoot/pkg/analyze"
 	troubleshootv1beta2 "github.com/replicatedhq/troubleshoot/pkg/apis/troubleshoot/v1beta2"
 	troubleshootcollect "github.com/replicatedhq/troubleshoot/pkg/collect"
 	"github.com/replicatedhq/troubleshoot/pkg/preflight"
 	troubleshootpreflight "github.com/replicatedhq/troubleshoot/pkg/preflight"
-	"go.uber.org/zap"
 )
 
-func setPreflightResult(appID string, sequence int64, preflightResults *types.PreflightResults, preflightRunError error) error {
-	if preflightRunError != nil {
-		if preflightResults.Errors == nil {
-			preflightResults.Errors = []*types.PreflightError{}
-		}
-		preflightResults.Errors = append(preflightResults.Errors, &types.PreflightError{
-			Error:  preflightRunError.Error(),
-			IsRBAC: false,
-		})
-	}
-
-	b, err := json.Marshal(preflightResults)
-	if err != nil {
-		return errors.Wrap(err, "failed to marshal preflight results")
-	}
-
-	if err := store.GetStore().SetPreflightResults(appID, sequence, b); err != nil {
-		return errors.Wrap(err, "failed to set preflight results")
-	}
-
-	return nil
-}
-
-// execute will execute the preflights using spec in preflightSpec.
+// Execute will Execute the preflights using spec in preflightSpec.
 // This spec should be rendered, no template functions remaining
-func execute(appID string, sequence int64, preflightSpec *troubleshootv1beta2.Preflight, ignorePermissionErrors bool) (*types.PreflightResults, error) {
-	logger.Info("executing preflight checks",
-		zap.String("appID", appID),
-		zap.Int64("sequence", sequence))
-
+func Execute(preflightSpec *troubleshootv1beta2.Preflight, ignorePermissionErrors bool, setProgress func(progress map[string]interface{}) error, setResults func(results *types.PreflightResults) error) (*types.PreflightResults, error) {
 	progressChan := make(chan interface{}, 0) // non-zero buffer will result in missed messages
 	defer close(progressChan)
 
@@ -73,26 +43,25 @@ func execute(appID string, sequence int64, preflightSpec *troubleshootv1beta2.Pr
 				}
 			}
 
-			progress, ok := msg.(preflight.CollectProgress)
+			collectProgress, ok := msg.(preflight.CollectProgress)
 			if !ok {
 				continue
 			}
 
 			// TODO: We need a nice title to display
-			progressBytes, err := json.Marshal(map[string]interface{}{
-				"completedCount": progress.CompletedCount,
-				"totalCount":     progress.TotalCount,
-				"currentName":    progress.CurrentName,
-				"currentStatus":  progress.CurrentStatus,
+			progress := map[string]interface{}{
+				"completedCount": collectProgress.CompletedCount,
+				"totalCount":     collectProgress.TotalCount,
+				"currentName":    collectProgress.CurrentName,
+				"currentStatus":  collectProgress.CurrentStatus,
 				"updatedAt":      time.Now().Format(time.RFC3339),
-			})
-			if err != nil {
-				continue
 			}
 
 			completeMx.Lock()
 			if !isComplete {
-				_ = store.GetStore().SetPreflightProgress(appID, sequence, string(progressBytes))
+				if err := setProgress(progress); err != nil {
+					logger.Error(errors.Wrap(err, "failed to set preflight progress"))
+				}
 			}
 			completeMx.Unlock()
 		}
@@ -104,7 +73,17 @@ func execute(appID string, sequence int64, preflightSpec *troubleshootv1beta2.Pr
 		defer completeMx.Unlock()
 
 		isComplete = true
-		if err := setPreflightResult(appID, sequence, uploadPreflightResults, preflightRunError); err != nil {
+
+		if preflightRunError != nil {
+			if uploadPreflightResults.Errors == nil {
+				uploadPreflightResults.Errors = []*types.PreflightError{}
+			}
+			uploadPreflightResults.Errors = append(uploadPreflightResults.Errors, &types.PreflightError{
+				Error:  preflightRunError.Error(),
+				IsRBAC: false,
+			})
+		}
+		if err := setResults(uploadPreflightResults); err != nil {
 			logger.Error(errors.Wrap(err, "failed to set preflight results"))
 			return
 		}
