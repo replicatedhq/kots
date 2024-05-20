@@ -107,6 +107,7 @@ func AdminConsoleCmd() *cobra.Command {
 	cmd.AddCommand(AdminCopyPublicImagesCmd())
 	cmd.AddCommand(GarbageCollectImagesCmd())
 	cmd.AddCommand(AdminGenerateManifestsCmd())
+	cmd.AddCommand(AdminConsoleUpgraderCmd())
 
 	return cmd
 }

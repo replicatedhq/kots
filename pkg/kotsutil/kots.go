@@ -7,6 +7,8 @@ import (
 	"context"
 	"encoding/base64"
 	"fmt"
+	"io"
+	"net/http"
 	"os"
 	"path"
 	"path/filepath"
@@ -1516,4 +1518,54 @@ func SaveInstallation(installation *kotsv1beta1.Installation, upstreamDir string
 		return errors.Wrap(err, "failed to write installation")
 	}
 	return nil
+}
+
+// TODO NOW: download via replicated.app
+func DownloadKOTSBinary(version string) (string, error) {
+	url := fmt.Sprintf("https://github.com/replicatedhq/kots/releases/download/%s/kots_linux_amd64.tar.gz", version)
+	resp, err := http.Get(url)
+	if err != nil {
+		return "", errors.Wrap(err, "failed to get")
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return "", errors.Errorf("unexpected status code %d", resp.StatusCode)
+	}
+
+	tmpFile, err := os.CreateTemp("", "kots")
+	if err != nil {
+		return "", errors.Wrap(err, "failed to create temp file")
+	}
+
+	gzipReader, err := gzip.NewReader(resp.Body)
+	if err != nil {
+		return "", errors.Wrap(err, "failed to get new gzip reader")
+	}
+	defer gzipReader.Close()
+
+	tarReader := tar.NewReader(gzipReader)
+	for {
+		header, err := tarReader.Next()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			return "", errors.Wrap(err, "failed to get read archive")
+		}
+
+		if header.Typeflag != tar.TypeReg {
+			continue
+		}
+		if header.Name != "kots" {
+			continue
+		}
+
+		if _, err := io.Copy(tmpFile, tarReader); err != nil {
+			return "", errors.Wrap(err, "failed to copy kots binary")
+		}
+		break
+	}
+
+	return "", errors.New("kots binary not found in archive")
 }
