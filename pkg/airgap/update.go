@@ -36,7 +36,7 @@ func UpdateAppFromAirgap(a *apptypes.App, airgapBundlePath string, deploy bool, 
 		finishedChan <- finalError
 	}()
 
-	if err := store.GetStore().SetTaskStatus("update-download", "Extracting files...", "running"); err != nil {
+	if err := tasks.SetTaskStatus("update-download", "Extracting files...", "running"); err != nil {
 		return errors.Wrap(err, "failed to set task status")
 	}
 
@@ -55,7 +55,7 @@ func UpdateAppFromAirgap(a *apptypes.App, airgapBundlePath string, deploy bool, 
 }
 
 func UpdateAppFromPath(a *apptypes.App, airgapRoot string, airgapBundlePath string, deploy bool, skipPreflights bool, skipCompatibilityCheck bool) error {
-	if err := store.GetStore().SetTaskStatus("update-download", "Processing package...", "running"); err != nil {
+	if err := tasks.SetTaskStatus("update-download", "Processing package...", "running"); err != nil {
 		return errors.Wrap(err, "failed to set tasks status")
 	}
 
@@ -97,7 +97,7 @@ func UpdateAppFromPath(a *apptypes.App, airgapRoot string, airgapBundlePath stri
 		return err
 	}
 
-	if err := store.GetStore().SetTaskStatus("update-download", "Processing app package...", "running"); err != nil {
+	if err := tasks.SetTaskStatus("update-download", "Processing app package...", "running"); err != nil {
 		return errors.Wrap(err, "failed to set task status")
 	}
 
@@ -113,7 +113,7 @@ func UpdateAppFromPath(a *apptypes.App, airgapRoot string, airgapBundlePath stri
 		downstreamNames = append(downstreamNames, d.Name)
 	}
 
-	if err := store.GetStore().SetTaskStatus("update-download", "Creating app version...", "running"); err != nil {
+	if err := tasks.SetTaskStatus("update-download", "Creating app version...", "running"); err != nil {
 		return errors.Wrap(err, "failed to set task status")
 	}
 
@@ -126,7 +126,7 @@ func UpdateAppFromPath(a *apptypes.App, airgapRoot string, airgapBundlePath stri
 	go func() {
 		scanner := bufio.NewScanner(pipeReader)
 		for scanner.Scan() {
-			if err := store.GetStore().SetTaskStatus("update-download", scanner.Text(), "running"); err != nil {
+			if err := tasks.SetTaskStatus("update-download", scanner.Text(), "running"); err != nil {
 				logger.Error(errors.Wrap(err, "failed to update download status"))
 			}
 		}

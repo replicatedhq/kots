@@ -107,6 +107,7 @@ type FetchOptions struct {
 	CurrentReplicatedChartNames     []string
 	CurrentEmbeddedClusterArtifacts *kotsv1beta1.EmbeddedClusterArtifacts
 	ChannelChanged                  bool
+	SortOrder                       string
 	AppSlug                         string
 	AppSequence                     int64
 	AppVersionLabel                 string

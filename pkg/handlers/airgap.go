@@ -19,6 +19,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/store"
+	"github.com/replicatedhq/kots/pkg/tasks"
 	"github.com/replicatedhq/kots/pkg/util"
 )
 
@@ -322,7 +323,7 @@ func (h *Handler) UpdateAppFromAirgap(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// this is to avoid a race condition where the UI polls the task status before it is set by the goroutine
-	if err := store.GetStore().SetTaskStatus("update-download", "Processing...", "running"); err != nil {
+	if err := tasks.SetTaskStatus("update-download", "Processing...", "running"); err != nil {
 		logger.Error(errors.Wrap(err, "failed to set task status"))
 		w.WriteHeader(http.StatusInternalServerError)
 		return

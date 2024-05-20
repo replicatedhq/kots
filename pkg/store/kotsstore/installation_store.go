@@ -6,6 +6,7 @@ import (
 	"github.com/pkg/errors"
 	installationtypes "github.com/replicatedhq/kots/pkg/online/types"
 	"github.com/replicatedhq/kots/pkg/persistence"
+	"github.com/replicatedhq/kots/pkg/tasks"
 	"github.com/rqlite/gorqlite"
 )
 
@@ -29,7 +30,7 @@ func (s *KOTSStore) GetPendingInstallationStatus() (*installationtypes.InstallSt
 		return nil, errors.Wrap(err, "failed to scan")
 	}
 
-	_, message, err := s.GetTaskStatus("online-install")
+	_, message, err := tasks.GetTaskStatus("online-install")
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get task status")
 	}

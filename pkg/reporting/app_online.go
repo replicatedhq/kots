@@ -8,8 +8,10 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
+	"github.com/replicatedhq/kots/pkg/api/reporting/types"
 	"github.com/replicatedhq/kots/pkg/store"
 	"github.com/replicatedhq/kots/pkg/util"
+	kotsv1beta1 "github.com/replicatedhq/kotskinds/apis/kots/v1beta1"
 )
 
 var onlineAppInfoMtx sync.Mutex
@@ -35,11 +37,20 @@ func (r *OnlineReporter) SubmitAppInfo(appID string) error {
 		return errors.Wrap(err, "failed to get license for app")
 	}
 
+	reportingInfo := GetReportingInfo(a.ID)
+
+	if err := SendOnlineAppInfo(license, reportingInfo); err != nil {
+		return errors.Wrap(err, "failed to send online app info")
+	}
+
+	return nil
+}
+
+func SendOnlineAppInfo(license *kotsv1beta1.License, reportingInfo *types.ReportingInfo) error {
 	endpoint := license.Spec.Endpoint
 	if !canReport(endpoint) {
 		return nil
 	}
-
 	url := fmt.Sprintf("%s/kots_metrics/license_instance/info", endpoint)
 
 	postReq, err := util.NewRequest("POST", url, nil)
@@ -49,7 +60,6 @@ func (r *OnlineReporter) SubmitAppInfo(appID string) error {
 	postReq.Header.Set("Authorization", fmt.Sprintf("Basic %s", base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("%s:%s", license.Spec.LicenseID, license.Spec.LicenseID)))))
 	postReq.Header.Set("Content-Type", "application/json")
 
-	reportingInfo := GetReportingInfo(a.ID)
 	InjectReportingInfoHeaders(postReq, reportingInfo)
 
 	resp, err := http.DefaultClient.Do(postReq)

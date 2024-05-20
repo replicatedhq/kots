@@ -28,6 +28,7 @@ import (
 	registrytypes "github.com/replicatedhq/kots/pkg/registry/types"
 	"github.com/replicatedhq/kots/pkg/render"
 	rendertypes "github.com/replicatedhq/kots/pkg/render/types"
+	"github.com/replicatedhq/kots/pkg/reporting"
 	"github.com/replicatedhq/kots/pkg/store"
 	storetypes "github.com/replicatedhq/kots/pkg/store/types"
 	"github.com/replicatedhq/kots/pkg/template"
@@ -153,6 +154,21 @@ func (h *Handler) UpdateAppConfig(w http.ResponseWriter, r *http.Request) {
 		logger.Error(err)
 		updateAppConfigResponse.Error = "failed to get app from app slug"
 		JSON(w, http.StatusInternalServerError, updateAppConfigResponse)
+		return
+	}
+
+	isEditable, err := isVersionConfigEditable(foundApp, updateAppConfigRequest.Sequence)
+	if err != nil {
+		updateAppConfigResponse.Error = "failed to check if version is editable"
+		logger.Error(errors.Wrap(err, updateAppConfigResponse.Error))
+		JSON(w, http.StatusInternalServerError, updateAppConfigResponse)
+		return
+	}
+
+	if !isEditable {
+		updateAppConfigResponse.Error = "this version cannot be edited"
+		logger.Error(errors.Wrap(err, updateAppConfigResponse.Error))
+		JSON(w, http.StatusForbidden, updateAppConfigResponse)
 		return
 	}
 
@@ -532,6 +548,30 @@ func (h *Handler) CurrentAppConfig(w http.ResponseWriter, r *http.Request) {
 	JSON(w, http.StatusOK, currentAppConfigResponse)
 }
 
+func isVersionConfigEditable(app *apptypes.App, sequence int64) (bool, error) {
+	if !util.IsEmbeddedCluster() {
+		return true, nil
+	}
+	// in embedded cluster, past versions cannot be edited
+	downstreams, err := store.GetStore().ListDownstreamsForApp(app.ID)
+	if err != nil {
+		return false, errors.Wrap(err, "failed to list downstreams for app")
+	}
+	if len(downstreams) == 0 {
+		return false, errors.New("no downstreams found for app")
+	}
+	versions, err := store.GetStore().GetDownstreamVersions(app.ID, downstreams[0].ClusterID, true)
+	if err != nil {
+		return false, errors.Wrap(err, "failed to get downstream versions")
+	}
+	for _, v := range versions.PastVersions {
+		if v.Sequence == sequence {
+			return false, nil
+		}
+	}
+	return true, nil
+}
+
 func shouldCreateNewAppVersion(archiveDir string, appID string, sequence int64) (bool, error) {
 	// Updates are allowed for any version that does not have base rendered.
 	if _, err := os.Stat(filepath.Join(archiveDir, "base")); err != nil {
@@ -611,7 +651,7 @@ func updateAppConfig(updateApp *apptypes.App, sequence int64, configGroups []kot
 		return updateAppConfigResponse, err
 	}
 
-	requiredItems, requiredItemsTitles := getMissingRequiredConfig(configGroups)
+	requiredItems, requiredItemsTitles := kotsadmconfig.GetMissingRequiredConfig(configGroups)
 
 	// not having all the required items is only a failure for the version that the user intended to edit
 	if len(requiredItems) > 0 && isPrimaryVersion {
@@ -624,7 +664,7 @@ func updateAppConfig(updateApp *apptypes.App, sequence int64, configGroups []kot
 	// so we don't need the complex logic in kots, we can just write
 	if kotsKinds.ConfigValues != nil {
 		values := kotsKinds.ConfigValues.Spec.Values
-		kotsKinds.ConfigValues.Spec.Values = updateAppConfigValues(values, configGroups)
+		kotsKinds.ConfigValues.Spec.Values = kotsadmconfig.UpdateAppConfigValues(values, configGroups)
 
 		configValuesSpec, err := kotsKinds.Marshal("kots.io", "v1beta1", "ConfigValues")
 		if err != nil {
@@ -697,6 +737,7 @@ func updateAppConfig(updateApp *apptypes.App, sequence int64, configGroups []kot
 		Downstreams:      downstreams,
 		RegistrySettings: registrySettings,
 		Sequence:         renderSequence,
+		ReportingInfo:    reporting.GetReportingInfo(app.ID),
 	})
 	if err != nil {
 		cause := errors.Cause(err)
@@ -759,28 +800,6 @@ func updateAppConfig(updateApp *apptypes.App, sequence int64, configGroups []kot
 
 	updateAppConfigResponse.Success = true
 	return updateAppConfigResponse, nil
-}
-
-func getMissingRequiredConfig(configGroups []kotsv1beta1.ConfigGroup) ([]string, []string) {
-	requiredItems := make([]string, 0, 0)
-	requiredItemsTitles := make([]string, 0, 0)
-	for _, group := range configGroups {
-		if group.When == "false" {
-			continue
-		}
-		for _, item := range group.Items {
-			if kotsadmconfig.IsRequiredItem(item) && kotsadmconfig.IsUnsetItem(item) {
-				requiredItems = append(requiredItems, item.Name)
-				if item.Title != "" {
-					requiredItemsTitles = append(requiredItemsTitles, item.Title)
-				} else {
-					requiredItemsTitles = append(requiredItemsTitles, item.Name)
-				}
-			}
-		}
-	}
-
-	return requiredItems, requiredItemsTitles
 }
 
 func updateAppConfigValues(values map[string]kotsv1beta1.ConfigValue, configGroups []kotsv1beta1.ConfigGroup) map[string]kotsv1beta1.ConfigValue {
