@@ -10,6 +10,7 @@ export class AppConfigRenderer extends Component {
     groups: PropTypes.array.isRequired, // Config groups items to render
     handleChange: PropTypes.func,
     getData: PropTypes.func,
+    handleDownloadFile: PropTypes.func,
   };
 
   static defaultProps = {
@@ -40,6 +41,12 @@ export class AppConfigRenderer extends Component {
           }
           getData={
             this.props.getData ||
+            (() => {
+              return;
+            })
+          }
+          handleDownloadFile={
+            this.props.handleDownloadFile ||
             (() => {
               return;
             })

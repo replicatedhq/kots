@@ -49,6 +49,7 @@ type KOTSHandler interface {
 	GetLatestDeployableVersion(w http.ResponseWriter, r *http.Request)
 	GetUpdateDownloadStatus(w http.ResponseWriter, r *http.Request) // NOTE: appSlug is unused
 	GetPendingApp(w http.ResponseWriter, r *http.Request)
+	GetAvailableUpdates(w http.ResponseWriter, r *http.Request)
 
 	// Airgap
 	AirgapBundleProgress(w http.ResponseWriter, r *http.Request)
@@ -161,4 +162,7 @@ type KOTSHandler interface {
 
 	// Password change
 	ChangePassword(w http.ResponseWriter, r *http.Request)
+
+	// Upgrade service
+	StartUpgradeService(w http.ResponseWriter, r *http.Request)
 }

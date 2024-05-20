@@ -34,11 +34,6 @@ import TroubleshootContainer from "@components/troubleshoot/TroubleshootContaine
 
 import Footer from "./components/shared/Footer";
 import NavBar from "./components/shared/NavBar";
-
-// scss
-import "./scss/index.scss";
-// tailwind
-import "./index.css";
 import connectHistory from "./services/matomo";
 
 // types
@@ -103,6 +98,7 @@ type State = {
   snapshotInProgressApps: string[];
   isEmbeddedClusterWaitingForNodes: boolean;
   themeState: ThemeState;
+  shouldShowUpgradeServiceModal: boolean;
 };
 
 let interval: ReturnType<typeof setInterval> | undefined;
@@ -135,6 +131,7 @@ const Root = () => {
         navbarLogo: null,
       },
       app: null,
+      shouldShowUpgradeServiceModal: false,
     }
   );
 
@@ -493,6 +490,9 @@ const Root = () => {
                   <AppConfig
                     fromLicenseFlow={true}
                     refetchAppsList={getAppsList}
+                    isEmbeddedCluster={
+                      state.adminConsoleMetadata?.isEmbeddedCluster
+                    }
                   />
                 }
               />
@@ -758,6 +758,9 @@ const Root = () => {
                     <AppConfig
                       fromLicenseFlow={false}
                       refetchAppsList={getAppsList}
+                      isEmbeddedCluster={
+                        state.adminConsoleMetadata?.isEmbeddedCluster
+                      }
                     />
                   }
                 />
@@ -891,6 +894,17 @@ const Root = () => {
             }
           />
         )}
+      </Modal>
+      <Modal
+        isOpen={state.shouldShowUpgradeServiceModal}
+        onRequestClose={() => {
+          setState({ shouldShowUpgradeServiceModal: false });
+        }}
+        contentLabel="KOTS Upgrade Service Modal"
+        ariaHideApp={false}
+        className="Modal LargeSize"
+      >
+        <iframe src="/upgrade-service" title="KOTS Upgrade Service" />
       </Modal>
     </QueryClientProvider>
   );

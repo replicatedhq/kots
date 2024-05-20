@@ -17,7 +17,6 @@ type ReplicatedUpstream struct {
 	Channel      *string
 	AppSlug      string
 	VersionLabel *string
-	Sequence     *int
 }
 
 func ParseReplicatedURL(u *url.URL) (*ReplicatedUpstream, error) {
