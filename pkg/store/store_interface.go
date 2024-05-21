@@ -23,6 +23,13 @@ import (
 	usertypes "github.com/replicatedhq/kots/pkg/user/types"
 	kotsv1beta1 "github.com/replicatedhq/kotskinds/apis/kots/v1beta1"
 	troubleshootredact "github.com/replicatedhq/troubleshoot/pkg/redact"
+
+	// this is to prevent the "upgrader" package from importing the store.
+	// any store related information should be passed to the upgrader as:
+	// - start-upgrader cli command flags
+	// - files in the filesystem via the shared pod volumes
+	// - environment variables
+	_ "github.com/replicatedhq/kots/pkg/upgrader"
 )
 
 type Store interface {

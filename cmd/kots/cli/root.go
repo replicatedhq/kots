@@ -55,6 +55,7 @@ func RootCmd() *cobra.Command {
 	cmd.AddCommand(CompletionCmd())
 	cmd.AddCommand(DockerRegistryCmd())
 	cmd.AddCommand(EnableHACmd())
+	cmd.AddCommand(StartUpgraderCmd())
 
 	viper.BindPFlags(cmd.Flags())
 

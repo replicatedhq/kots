@@ -112,8 +112,10 @@ debug-build:
 debug: debug-build
 	LOG_LEVEL=$(LOG_LEVEL) dlv --listen=:2345 --headless=true --api-version=2 exec ./bin/kotsadm-debug api
 
+# TODO NOW: make web part of kots cli
 .PHONY: build-ttl.sh
-build-ttl.sh: kots build
+# build-ttl.sh: kots build
+build-ttl.sh: build
 	source .image.env && ${MAKE} -C web build-kotsadm
 	docker build -f deploy/Dockerfile -t ttl.sh/${CURRENT_USER}/kotsadm:24h .
 	docker push ttl.sh/${CURRENT_USER}/kotsadm:24h

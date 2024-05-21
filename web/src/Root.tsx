@@ -103,6 +103,7 @@ type State = {
   snapshotInProgressApps: string[];
   isEmbeddedClusterWaitingForNodes: boolean;
   themeState: ThemeState;
+  shouldShowUpgraderModal: boolean;
 };
 
 let interval: ReturnType<typeof setInterval> | undefined;
@@ -135,6 +136,7 @@ const Root = () => {
         navbarLogo: null,
       },
       app: null,
+      shouldShowUpgraderModal: false,
     }
   );
 
@@ -328,15 +330,39 @@ const Root = () => {
 
   const onRootMounted = () => {
     fetchKotsAppMetadata();
-    if (Utilities.isLoggedIn()) {
-      ping();
-      getAppsList().then((appsList) => {
-        if (appsList?.length > 0 && window.location.pathname === "/apps") {
-          const { slug } = appsList[0];
-          history.replace(`/app/${slug}`);
+  
+    if (window.location.pathname !== "/upgrader") {
+      fetch(`${process.env.API_ENDPOINT}/init-upgrader`, {
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+        },
+        credentials: "include",
+        method: "POST",
+      }).then(async (res) => {
+        if (res.ok) {
+          setState({
+            shouldShowUpgraderModal: true,
+          });
+          return;
         }
+        const text = await res.text();
+        console.log("failed to init upgrader", text);
+      })
+      .catch((err) => {
+        console.log(err);
       });
+      if (Utilities.isLoggedIn()) {
+        ping();
+        getAppsList().then((appsList) => {
+          if (appsList?.length > 0 && window.location.pathname === "/apps") {
+            const { slug } = appsList[0];
+            history.replace(`/app/${slug}`);
+          }
+        });
+      }
     }
+
   };
 
   useEffect(() => {
@@ -461,6 +487,26 @@ const Root = () => {
               />
               <Route path="/crashz" element={<Crashz />} />{" "}
               <Route path="*" element={<NotFound />} />
+              {/* <Route
+                path="/upgrader"
+                element={
+                  <div style={{ height: "100vh", width: "100vw", background: "white" }}>
+                    <h1 style={{ color: "black" }}>
+                      Hello from KOTS Upgrader!
+                    </h1>
+                  </div>
+                }
+              />
+              <Route
+                path="/upgrader/test"
+                element={
+                  <div style={{ height: "100vh", width: "100vw", background: "white" }}>
+                    <h1 style={{ color: "black" }}>
+                      Hello from test in KOTS Upgrader!
+                    </h1>
+                  </div>
+                }
+              /> */}
               <Route
                 path="/secure-console"
                 element={
@@ -863,6 +909,17 @@ const Root = () => {
             }
           />
         )}
+      </Modal>
+      <Modal
+        isOpen={state.shouldShowUpgraderModal}
+        contentLabel="KOTS Upgrader Modal"
+        ariaHideApp={false}
+        className="Modal LargeSize"
+      >
+        <iframe
+          src="/upgrader"
+          title="KOTS Upgrader"
+        />
       </Modal>
     </QueryClientProvider>
   );

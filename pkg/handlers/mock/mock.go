@@ -1390,6 +1390,18 @@ func (mr *MockKOTSHandlerMockRecorder) StartPreflightChecks(w, r interface{}) *g
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "StartPreflightChecks", reflect.TypeOf((*MockKOTSHandler)(nil).StartPreflightChecks), w, r)
 }
 
+// StartUpgrader mocks base method.
+func (m *MockKOTSHandler) StartUpgrader(w http.ResponseWriter, r *http.Request) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "StartUpgrader", w, r)
+}
+
+// StartUpgrader indicates an expected call of StartUpgrader.
+func (mr *MockKOTSHandlerMockRecorder) StartUpgrader(w, r interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "StartUpgrader", reflect.TypeOf((*MockKOTSHandler)(nil).StartUpgrader), w, r)
+}
+
 // SyncLicense mocks base method.
 func (m *MockKOTSHandler) SyncLicense(w http.ResponseWriter, r *http.Request) {
 	m.ctrl.T.Helper()

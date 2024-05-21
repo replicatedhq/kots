@@ -9,6 +9,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/policy"
 	"github.com/replicatedhq/kots/pkg/store"
+	"github.com/replicatedhq/kots/pkg/upgrader"
 	kotsscheme "github.com/replicatedhq/kotskinds/client/kotsclientset/scheme"
 	troubleshootscheme "github.com/replicatedhq/troubleshoot/pkg/client/troubleshootclientset/scheme"
 	yaml "github.com/replicatedhq/yaml/v3"
@@ -315,6 +316,15 @@ func RegisterSessionAuthRoutes(r *mux.Router, kotsStore store.Store, handler KOT
 	// Password change
 	r.Name("ChangePassword").Path("/api/v1/password/change").Methods("PUT").
 		HandlerFunc(middleware.EnforceAccess(policy.PasswordChange, handler.ChangePassword))
+
+	// Proxy upgrader requests to the upgrader service
+	// CAUTION: modifying this route WILL break backwards compatibility
+	r.Name("UpgraderProxy").Path("/api/v1/upgrader").Methods("GET", "POST", "PUT").
+		HandlerFunc(middleware.EnforceAccess(policy.AppUpdate, upgrader.Proxy))
+
+	// Start upgrader
+	r.Name("StartUpgrader").Path("/api/v1/start-upgrader").Methods("POST").
+		HandlerFunc(middleware.EnforceAccess(policy.AppUpdate, handler.StartUpgrader))
 }
 
 func JSON(w http.ResponseWriter, code int, payload interface{}) {

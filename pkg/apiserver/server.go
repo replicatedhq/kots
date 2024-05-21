@@ -163,10 +163,6 @@ func Start(params *APIServerParams) {
 
 	handler := &handlers.Handler{}
 
-	// TODO NOW: auth
-	r.Path("/api/v1/init-upgrader").Methods("POST").HandlerFunc(upgrader.Init)
-	r.Path("/api/v1/upgrader").Methods("GET", "POST").HandlerFunc(upgrader.Proxy)
-
 	/**********************************************************************
 	* Unauthenticated routes
 	**********************************************************************/
@@ -199,6 +195,11 @@ func Start(params *APIServerParams) {
 	* Static routes
 	**********************************************************************/
 
+	// serve the upgrader UI from the upgrader service
+	// CAUTION: modifying this route WILL break backwards compatibility
+	r.Path("/upgrader").Methods("GET").HandlerFunc(upgrader.Proxy)
+
+	// TODO NOW: move this to a shared function
 	// to avoid confusion, we don't serve this in the dev env...
 	if os.Getenv("DISABLE_SPA_SERVING") != "1" {
 		spa := handlers.SPAHandler{}

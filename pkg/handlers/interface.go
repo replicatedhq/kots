@@ -161,4 +161,7 @@ type KOTSHandler interface {
 
 	// Password change
 	ChangePassword(w http.ResponseWriter, r *http.Request)
+
+	// Upgrader
+	StartUpgrader(w http.ResponseWriter, r *http.Request)
 }
