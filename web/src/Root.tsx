@@ -337,6 +337,9 @@ const Root = () => {
         "Content-Type": "application/json",
         Accept: "application/json",
       },
+      body: JSON.stringify({
+        kotsVersion: "v1.109.3",
+      }),
       credentials: "include",
       method: "POST",
     }).then(async (res) => {

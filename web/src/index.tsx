@@ -15,7 +15,7 @@ root.render(
     <BrowserRouter>
       <Routes>
         <Route
-          path="/upgrader"
+          path="/upgrader" // TODO NOW: add app slug to path?
           element={
             <div style={{ height: "100vh", width: "100vw", background: "white" }}>
               <h1 style={{ color: "black" }}>
