@@ -27,7 +27,7 @@ func AdminConsoleUpgraderCmd() *cobra.Command {
 		},
 	}
 
-	cmd.Flags().IntP("port", "p", 30001, "local port to listen on")
+	cmd.Flags().IntP("port", "p", 30000, "local port to listen on")
 
 	return cmd
 }

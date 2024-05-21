@@ -28,6 +28,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/store"
 	"github.com/replicatedhq/kots/pkg/supportbundle"
 	"github.com/replicatedhq/kots/pkg/updatechecker"
+	"github.com/replicatedhq/kots/pkg/upgrader"
 	"github.com/replicatedhq/kots/pkg/upgradeservice"
 	"github.com/replicatedhq/kots/pkg/util"
 	"golang.org/x/crypto/bcrypt"
@@ -153,6 +154,10 @@ func Start(params *APIServerParams) {
 	loggingRouter.Use(handlers.LoggingMiddleware)
 
 	handler := &handlers.Handler{}
+
+	// TODO NOW: auth
+	r.Path("/api/v1/init-upgrader").Methods("POST").HandlerFunc(upgrader.Init)
+	r.Path("/api/v1/upgrader").Methods("GET", "POST").HandlerFunc(upgrader.Proxy)
 
 	/**********************************************************************
 	* Unauthenticated routes
