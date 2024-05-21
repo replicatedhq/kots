@@ -319,12 +319,12 @@ func RegisterSessionAuthRoutes(r *mux.Router, kotsStore store.Store, handler KOT
 
 	// Proxy upgrader requests to the upgrader service
 	// CAUTION: modifying this route WILL break backwards compatibility
-	r.Name("UpgraderProxy").Path("/api/v1/upgrader").Methods("GET", "POST", "PUT").
-		HandlerFunc(middleware.EnforceAccess(policy.AppUpdate, upgrader.Proxy))
+	r.Name("UpgraderProxy").PathPrefix("/api/v1/upgrader").Methods("GET", "POST", "PUT").
+		HandlerFunc(upgrader.Proxy) // TODO NOW: enforce access
 
 	// Start upgrader
 	r.Name("StartUpgrader").Path("/api/v1/start-upgrader").Methods("POST").
-		HandlerFunc(middleware.EnforceAccess(policy.AppUpdate, handler.StartUpgrader))
+		HandlerFunc(handler.StartUpgrader) // TODO NOW: enforce access
 }
 
 func JSON(w http.ResponseWriter, code int, payload interface{}) {

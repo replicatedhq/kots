@@ -22,9 +22,6 @@ func Serve(params types.ServerParams) error {
 	r.Use(handlers.ParamsMiddleware(params))
 
 	handler := &handlers.Handler{}
-
-	r.Path("/api/v1/upgrader/ping").Methods("GET").HandlerFunc(handler.Ping)
-
 	handlers.RegisterRoutes(r, handler)
 
 	// Prevent API requests that don't match anything in this router from returning UI content

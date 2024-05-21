@@ -1,5 +1,5 @@
 import { createRoot } from "react-dom/client";
-import { BrowserRouter } from "react-router-dom";
+import { BrowserRouter, Route, Routes } from "react-router-dom";
 import ReplicatedErrorBoundary from "./components/shared/ErrorBoundary";
 import { Root } from "./Root";
 
@@ -13,7 +13,19 @@ const root = createRoot(container); // createRoot(container!) if you use TypeScr
 root.render(
   <ReplicatedErrorBoundary>
     <BrowserRouter>
-      <Root />
+      <Routes>
+        <Route
+          path="/upgrader"
+          element={
+            <div style={{ height: "100vh", width: "100vw", background: "white" }}>
+              <h1 style={{ color: "black" }}>
+                Hello from KOTS Upgrader!
+              </h1>
+            </div>
+          }
+        />
+        <Route path="/*" element={<Root />}/>
+      </Routes>
     </BrowserRouter>
   </ReplicatedErrorBoundary>
 );
