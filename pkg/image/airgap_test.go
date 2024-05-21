@@ -140,7 +140,7 @@ func createTestAirgapBundle(airgapFiles map[string][]byte, dstPath string) error
 }
 
 func newMockRegistryServer(pushedRegistryArtifacts map[string]string) *httptest.Server {
-	return httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	return httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		blobsRegex := regexp.MustCompile(`/v2/(.+)/blobs/(.*)`)
 		manifestsRegex := regexp.MustCompile(`/v2/(.+)/manifests/(.*)`)
 
