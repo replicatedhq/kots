@@ -56,7 +56,7 @@ require (
 	github.com/robfig/cron v1.2.0
 	github.com/robfig/cron/v3 v3.0.1
 	github.com/rqlite/gorqlite v0.0.0-20221028154453-256f31831ff3
-	github.com/schemahero/schemahero v0.17.7
+	github.com/schemahero/schemahero v0.17.8
 	github.com/segmentio/ksuid v1.0.4
 	github.com/sergi/go-diff v1.3.2-0.20230802210424-5b0b94c5c0d3
 	github.com/spf13/cobra v1.8.0
@@ -76,14 +76,14 @@ require (
 	gopkg.in/yaml.v2 v2.4.0
 	gopkg.in/yaml.v3 v3.0.1
 	helm.sh/helm/v3 v3.14.4
-	k8s.io/api v0.30.0
-	k8s.io/apimachinery v0.30.0
-	k8s.io/cli-runtime v0.30.0
-	k8s.io/client-go v0.30.0
-	k8s.io/cluster-bootstrap v0.30.0
+	k8s.io/api v0.30.1
+	k8s.io/apimachinery v0.30.1
+	k8s.io/cli-runtime v0.30.1
+	k8s.io/client-go v0.30.1
+	k8s.io/cluster-bootstrap v0.30.1
 	k8s.io/helm v2.17.0+incompatible
-	k8s.io/kubelet v0.30.0
-	k8s.io/metrics v0.30.0
+	k8s.io/kubelet v0.30.1
+	k8s.io/metrics v0.30.1
 	k8s.io/utils v0.0.0-20230726121419-3b25d923346b
 	oras.land/oras-go/v2 v2.5.0
 	sigs.k8s.io/application v0.8.3
@@ -384,8 +384,8 @@ require (
 	gopkg.in/square/go-jose.v2 v2.6.0 // indirect
 	gopkg.in/warnings.v0 v0.1.2 // indirect
 	k8s.io/apiextensions-apiserver v0.30.0 // indirect
-	k8s.io/apiserver v0.30.0 // indirect
-	k8s.io/component-base v0.30.0 // indirect
+	k8s.io/apiserver v0.30.1 // indirect
+	k8s.io/component-base v0.30.1 // indirect
 	k8s.io/klog/v2 v2.120.1 // indirect
 	k8s.io/kube-openapi v0.0.0-20240228011516-70dd3763d340 // indirect
 	k8s.io/kubectl v0.29.0 // indirect
