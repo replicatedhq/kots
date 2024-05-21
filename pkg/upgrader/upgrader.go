@@ -4,6 +4,8 @@ import (
 	_ "embed"
 	"fmt"
 	"net/http"
+	"net/http/httputil"
+	"net/url"
 	"os"
 	"os/exec"
 	"time"
@@ -14,22 +16,56 @@ import (
 	"github.com/replicatedhq/kots/pkg/logger"
 )
 
-type Upgrader struct {
-	process *os.Process
-	port    string
+var upgraderProcess *os.Process
+var upgraderPort string
+
+// Init will spin up an upgrader service in the background on a random port.
+// If an upgrader is already running, it will be stopped and a new one will be started.
+// The KOTS binary of the specified version will be used to start the upgrader.
+func Init(w http.ResponseWriter, r *http.Request) {
+	// TODO NOW: get these from the request
+	kotsVersion := "v1.109.3"
+
+	// stop the upgrader if it's already running.
+	// don't bail if not able to stop, and start a new one
+	stop()
+
+	if err := start(kotsVersion); err != nil {
+		logger.Error(errors.Wrap(err, "failed to start upgrader"))
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
 }
 
-// Start will spin up an upgrader service in the background on a random port.
-// Caller is responsible for stopping the upgrader.
-// The KOTS binary of the specified version will be downloaded and used to start the upgrader.
-func (u *Upgrader) Start(kotsVersion string) (finalError error) {
-	if u.port != "" {
-		return errors.Errorf("upgrader is already running on port %s", u.port)
+// Proxy will proxy the request to the upgrader service.
+func Proxy(w http.ResponseWriter, r *http.Request) {
+	if upgraderPort == "" {
+		logger.Error(errors.New("upgrader port is not set"))
+		w.WriteHeader(http.StatusServiceUnavailable)
+		return
+	}
+
+	remote, err := url.Parse(fmt.Sprintf("http://localhost:%s", upgraderPort))
+	if err != nil {
+		logger.Error(errors.Wrap(err, "failed to parse upgrader url"))
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	proxy := httputil.NewSingleHostReverseProxy(remote)
+	proxy.ServeHTTP(w, r)
+}
+
+func start(kotsVersion string) (finalError error) {
+	if upgraderPort != "" {
+		return errors.Errorf("upgrader is already running on port %s", upgraderPort)
 	}
 
 	defer func() {
 		if finalError != nil {
-			u.Stop()
+			stop()
 		}
 	}()
 
@@ -44,36 +80,43 @@ func (u *Upgrader) Start(kotsVersion string) (finalError error) {
 		return errors.Wrapf(err, "failed to download kots binary version %s", kotsVersion)
 	}
 
-	cmd := exec.Command(kotsBin, "upgrader", "--port", freePort)
+	cmd := exec.Command(
+		kotsBin,
+		"admin-console",
+		"upgrader",
+		"--port",
+		freePort,
+	)
+
 	if err := cmd.Start(); err != nil {
 		return errors.Wrap(err, "failed to start")
 	}
 
-	u.port = freePort
-	u.process = cmd.Process
+	upgraderPort = freePort
+	upgraderProcess = cmd.Process
 
-	if err := u.WaitForReady(time.Second * 30); err != nil {
+	if err := waitForReady(time.Second * 30); err != nil {
 		return errors.Wrap(err, "failed to wait for upgrader to become ready")
 	}
 
 	return nil
 }
 
-func (r *Upgrader) Stop() {
-	if r.process != nil {
-		if err := r.process.Signal(os.Interrupt); err != nil {
-			logger.Debugf("Failed to stop upgrader process on port %s", r.port)
+func stop() {
+	if upgraderProcess != nil {
+		if err := upgraderProcess.Signal(os.Interrupt); err != nil {
+			logger.Errorf("Failed to stop upgrader process on port %s", upgraderPort)
 		}
 	}
-	r.port = ""
-	r.process = nil
+	upgraderPort = ""
+	upgraderProcess = nil
 }
 
-func (r *Upgrader) WaitForReady(timeout time.Duration) error {
+func waitForReady(timeout time.Duration) error {
 	start := time.Now()
 
 	for {
-		url := fmt.Sprintf("http://localhost:%s", r.port)
+		url := fmt.Sprintf("http://localhost:%s", upgraderPort)
 		newRequest, err := http.NewRequest("GET", url, nil)
 		if err == nil {
 			resp, err := http.DefaultClient.Do(newRequest)
@@ -87,12 +130,7 @@ func (r *Upgrader) WaitForReady(timeout time.Duration) error {
 		time.Sleep(time.Second)
 
 		if time.Since(start) > timeout {
-			return errors.Errorf("Timeout waiting for upgrader to become ready on port %s", r.port)
+			return errors.Errorf("Timeout waiting for upgrader to become ready on port %s", upgraderPort)
 		}
 	}
-}
-
-// This is only used for integration tests
-func (r *Upgrader) OverridePort(port string) {
-	r.port = port
 }
