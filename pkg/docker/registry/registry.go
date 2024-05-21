@@ -10,6 +10,8 @@ import (
 	"sync"
 
 	"github.com/pkg/errors"
+	kotsadmtypes "github.com/replicatedhq/kots/pkg/kotsadm/types"
+	"github.com/replicatedhq/kots/pkg/util"
 	kotsv1beta1 "github.com/replicatedhq/kotskinds/apis/kots/v1beta1"
 	corev1 "k8s.io/api/core/v1"
 	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
@@ -219,6 +221,7 @@ func PullSecretForRegistries(registries []string, username, password string, app
 			Name:        SecretNameFromPrefix(namePrefix),
 			Namespace:   appNamespace,
 			Annotations: secretAnnotations,
+			Labels:      applicationPullSecretLabels(),
 		},
 		Type: corev1.SecretTypeDockerConfigJson,
 		Data: map[string][]byte{
@@ -227,6 +230,19 @@ func PullSecretForRegistries(registries []string, username, password string, app
 	}
 
 	return secrets, nil
+}
+
+// applicationPullSecretLabels returns the labels that should be applied to app-specific pull secrets.
+// It will return nil if there are no labels to apply.
+func applicationPullSecretLabels() map[string]string {
+	var secretLabels map[string]string
+	if util.IsEmbeddedCluster() {
+		secretLabels = map[string]string{
+			kotsadmtypes.DisasterRecoveryLabel: kotsadmtypes.DisasterRecoveryLabelValueApp,
+		}
+	}
+
+	return secretLabels
 }
 
 func EnsureDockerHubSecret(username string, password string, namespace string, clientset *kubernetes.Clientset) error {
@@ -340,6 +356,7 @@ func GetDockerHubPullSecret(clientset kubernetes.Interface, namespace string, ap
 			Name:        fmt.Sprintf("%s-%s", namePrefix, DockerHubSecretName),
 			Namespace:   appNamespace,
 			Annotations: secretAnnotations,
+			Labels:      applicationPullSecretLabels(),
 		},
 		Type: corev1.SecretTypeDockerConfigJson,
 		Data: secret.DeepCopy().Data,

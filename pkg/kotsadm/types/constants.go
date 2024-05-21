@@ -16,7 +16,8 @@ const BackupLabel = "kots.io/backup"
 const BackupLabelValue = "velero"
 
 const DisasterRecoveryLabel = "replicated.com/disaster-recovery"
-const DisasterRecoveryLabelValue = "infra"
+const DisasterRecoveryLabelValueInfra = "infra"
+const DisasterRecoveryLabelValueApp = "app"
 
 const TroubleshootKey = "troubleshoot.sh/kind"
 const TroubleshootValue = "support-bundle"
@@ -32,7 +33,7 @@ func GetKotsadmLabels(additionalLabels ...map[string]string) map[string]string {
 	}
 
 	if util.IsEmbeddedCluster() {
-		labels[DisasterRecoveryLabel] = DisasterRecoveryLabelValue
+		labels[DisasterRecoveryLabel] = DisasterRecoveryLabelValueInfra
 	}
 
 	for _, l := range additionalLabels {
