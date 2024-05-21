@@ -356,7 +356,23 @@ const Root = () => {
             history.replace(`/app/${slug}`);
           }
         });
+        return;
       }
+      const text = await res.text();
+      console.log("failed to init upgrader", text);
+    })
+    .catch((err) => {
+      console.log(err);
+    });
+
+    if (Utilities.isLoggedIn()) {
+      ping();
+      getAppsList().then((appsList) => {
+        if (appsList?.length > 0 && window.location.pathname === "/apps") {
+          const { slug } = appsList[0];
+          history.replace(`/app/${slug}`);
+        }
+      });
     }
   };
 
