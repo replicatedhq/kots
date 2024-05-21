@@ -11,30 +11,21 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/buildversion"
-	"github.com/replicatedhq/kots/pkg/handlers"
+	"github.com/replicatedhq/kots/pkg/upgrader/handlers"
+	"github.com/replicatedhq/kots/pkg/upgrader/types"
 )
 
-type ServerParams struct {
-	Port string
-}
-
-func Serve(params ServerParams) error {
-	log.Printf("KOTS version %s\n", buildversion.Version())
+func Serve(params types.ServerParams) error {
+	log.Printf("KOTS Upgrader version %s\n", buildversion.Version())
 
 	r := mux.NewRouter()
+	r.Use(handlers.ParamsMiddleware(params))
 
-	r.Use(handlers.CorsMiddleware)
-	r.Methods("OPTIONS").HandlerFunc(handlers.CORS)
+	handler := &handlers.Handler{}
 
-	debugRouter := r.NewRoute().Subrouter()
-	debugRouter.Use(handlers.DebugLoggingMiddleware)
+	r.Path("/api/v1/upgrader/ping").Methods("GET").HandlerFunc(handler.Ping)
 
-	loggingRouter := r.NewRoute().Subrouter()
-	loggingRouter.Use(handlers.LoggingMiddleware)
-
-	// handler := &handlers.Handler{}
-
-	// TODO NOW: auth by authSlug token the cli typically uses?
+	handlers.RegisterRoutes(r, handler)
 
 	// Prevent API requests that don't match anything in this router from returning UI content
 	r.PathPrefix("/api").Handler(handlers.StatusNotFoundHandler{})
@@ -67,7 +58,7 @@ func Serve(params ServerParams) error {
 		Addr:    fmt.Sprintf(":%s", params.Port),
 	}
 
-	fmt.Printf("Starting upgrader on port %s...\n", params.Port)
+	fmt.Printf("Starting KOTS Upgrader on port %s...\n", params.Port)
 
 	if err := srv.ListenAndServe(); err != nil {
 		return errors.Wrap(err, "failed to listen and serve")

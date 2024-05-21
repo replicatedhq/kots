@@ -1,0 +1,43 @@
+package handlers
+
+import (
+	"encoding/json"
+	"net/http"
+
+	"github.com/gorilla/mux"
+	"github.com/replicatedhq/kots/pkg/logger"
+	kotsscheme "github.com/replicatedhq/kotskinds/client/kotsclientset/scheme"
+	troubleshootscheme "github.com/replicatedhq/troubleshoot/pkg/client/troubleshootclientset/scheme"
+	veleroscheme "github.com/vmware-tanzu/velero/pkg/generated/clientset/versioned/scheme"
+	"k8s.io/client-go/kubernetes/scheme"
+)
+
+var _ UpgraderHandler = (*Handler)(nil)
+
+type Handler struct {
+}
+
+func init() {
+	kotsscheme.AddToScheme(scheme.Scheme)
+	troubleshootscheme.AddToScheme(scheme.Scheme)
+	veleroscheme.AddToScheme(scheme.Scheme)
+}
+
+func RegisterRoutes(r *mux.Router, handler UpgraderHandler) {
+	r.Use(LoggingMiddleware)
+
+	r.Path("/api/v1/upgrader/app/{appSlug}/liveconfig").Methods("POST").HandlerFunc(handler.LiveAppConfig)
+}
+
+func JSON(w http.ResponseWriter, code int, payload interface{}) {
+	response, err := json.Marshal(payload)
+	if err != nil {
+		logger.Error(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(code)
+	w.Write(response)
+}

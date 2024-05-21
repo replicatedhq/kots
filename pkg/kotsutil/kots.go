@@ -1549,6 +1549,7 @@ func DownloadKOTSBinary(version string) (string, error) {
 	if err != nil {
 		return "", errors.Wrap(err, "failed to create temp file")
 	}
+	defer tmpFile.Close()
 
 	gzipReader, err := gzip.NewReader(resp.Body)
 	if err != nil {
@@ -1576,7 +1577,11 @@ func DownloadKOTSBinary(version string) (string, error) {
 		if _, err := io.Copy(tmpFile, tarReader); err != nil {
 			return "", errors.Wrap(err, "failed to copy kots binary")
 		}
-		break
+		if err := os.Chmod(tmpFile.Name(), 0755); err != nil {
+			return "", errors.Wrap(err, "failed to set file permissions")
+		}
+
+		return tmpFile.Name(), nil
 	}
 
 	return "", errors.New("kots binary not found in archive")
