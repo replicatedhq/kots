@@ -666,6 +666,16 @@ func GetKotsKindsPath(archive string) string {
 // it loads the rendered kots kinds if they exist (should always be the case for app version archives created by newer kots versions).
 // otherwise it loads the non-rendered kots kinds (app version archives created by older kots versions).
 func LoadKotsKinds(archive string) (*KotsKinds, error) {
+	return LoadKotsKindsWithOpts(archive, LoadKotsKindsOptions{Strict: true})
+}
+
+// When strict is true, it returns an error if it fails to load any kotskinds file.
+// When strict is false, kotskinds with errors will be ignored if they cannot be parsed.
+type LoadKotsKindsOptions struct {
+	Strict bool
+}
+
+func LoadKotsKindsWithOpts(archive string, opts LoadKotsKindsOptions) (*KotsKinds, error) {
 	kotsKinds := EmptyKotsKinds()
 
 	fromDir := GetKotsKindsPath(archive)
@@ -703,7 +713,9 @@ func LoadKotsKinds(archive string) (*KotsKinds, error) {
 			}
 
 			if err := kotsKinds.addKotsKinds(contents); err != nil {
-				return errors.Wrapf(err, "failed to add kots kinds from %s", path)
+				if opts.Strict {
+					return errors.Wrapf(err, "failed to add kots kinds from %s", path)
+				}
 			}
 
 			return nil
