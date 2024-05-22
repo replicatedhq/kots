@@ -18,7 +18,7 @@ func GetUpdatesUpstream(upstreamURI string, fetchOptions *types.FetchOptions) (*
 		return nil, errors.Wrap(err, "parse request uri failed")
 	}
 	if u.Scheme == "replicated" {
-		return getUpdatesReplicated(u, fetchOptions)
+		return getUpdatesReplicated(fetchOptions)
 	}
 
 	return nil, errors.Errorf("unknown protocol scheme %q", u.Scheme)

@@ -85,7 +85,7 @@ func Start(opts types.StartOptions) (finalError error) {
 // Proxy will proxy the request to the upgrader service.
 func Proxy(w http.ResponseWriter, r *http.Request) {
 	if upgraderPort == "" {
-		logger.Error(errors.New("upgrader port is not set"))
+		logger.Error(errors.New("upgrader is not running"))
 		w.WriteHeader(http.StatusServiceUnavailable)
 		return
 	}
@@ -115,7 +115,7 @@ func waitForReady(timeout time.Duration) error {
 	start := time.Now()
 
 	for {
-		url := fmt.Sprintf("http://localhost:%s/ping", upgraderPort)
+		url := fmt.Sprintf("http://localhost:%s/api/v1/upgrader/ping", upgraderPort)
 		newRequest, err := http.NewRequest("GET", url, nil)
 		if err == nil {
 			resp, err := http.DefaultClient.Do(newRequest)

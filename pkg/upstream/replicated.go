@@ -69,7 +69,7 @@ type ChannelRelease struct {
 	ReleaseNotes    string `json:"releaseNotes"`
 }
 
-func getUpdatesReplicated(u *url.URL, fetchOptions *types.FetchOptions) (*types.UpdateCheckResult, error) {
+func getUpdatesReplicated(fetchOptions *types.FetchOptions) (*types.UpdateCheckResult, error) {
 	currentCursor := replicatedapp.ReplicatedCursor{
 		ChannelID:   fetchOptions.CurrentChannelID,
 		ChannelName: fetchOptions.CurrentChannelName,
@@ -81,12 +81,7 @@ func getUpdatesReplicated(u *url.URL, fetchOptions *types.FetchOptions) (*types.
 		return nil, errors.New("No license was provided")
 	}
 
-	replicatedUpstream, err := replicatedapp.ParseReplicatedURL(u)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to parse replicated upstream")
-	}
-
-	pendingReleases, updateCheckTime, err := listPendingChannelReleases(replicatedUpstream, fetchOptions.License, fetchOptions.LastUpdateCheckAt, currentCursor, fetchOptions.ChannelChanged, fetchOptions.ReportingInfo)
+	pendingReleases, updateCheckTime, err := listPendingChannelReleases(fetchOptions.License, fetchOptions.LastUpdateCheckAt, currentCursor, fetchOptions.ChannelChanged, fetchOptions.ReportingInfo)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to list replicated app releases")
 	}
@@ -446,7 +441,7 @@ func downloadReplicatedApp(replicatedUpstream *replicatedapp.ReplicatedUpstream,
 	return &release, nil
 }
 
-func listPendingChannelReleases(replicatedUpstream *replicatedapp.ReplicatedUpstream, license *kotsv1beta1.License, lastUpdateCheckAt *time.Time, currentCursor replicatedapp.ReplicatedCursor, channelChanged bool, reportingInfo *reportingtypes.ReportingInfo) ([]ChannelRelease, *time.Time, error) {
+func listPendingChannelReleases(license *kotsv1beta1.License, lastUpdateCheckAt *time.Time, currentCursor replicatedapp.ReplicatedCursor, channelChanged bool, reportingInfo *reportingtypes.ReportingInfo) ([]ChannelRelease, *time.Time, error) {
 	u, err := url.Parse(license.Spec.Endpoint)
 	if err != nil {
 		return nil, nil, errors.Wrap(err, "failed to parse endpoint from license")
