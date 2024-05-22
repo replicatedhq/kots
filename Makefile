@@ -112,7 +112,7 @@ debug-build:
 debug: debug-build
 	LOG_LEVEL=$(LOG_LEVEL) dlv --listen=:2345 --headless=true --api-version=2 exec ./bin/kotsadm-debug api
 
-# TODO NOW: make web part of kots cli
+# TODO NOW: make web part of kots cli in dev?
 .PHONY: build-ttl.sh
 # build-ttl.sh: kots build
 build-ttl.sh: build

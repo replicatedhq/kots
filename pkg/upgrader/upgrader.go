@@ -46,17 +46,22 @@ func Start(opts types.StartOptions) (finalError error) {
 	// }
 
 	cmd := exec.Command(
-		// kotsBin,
+		// kotsBin, // TODO NOW: use target binary
 		"/kots",
 		"start-upgrader",
 		"--port", freePort,
 
 		"--app-id", opts.App.ID,
 		"--app-slug", opts.App.Slug,
-		"--app-sequence", fmt.Sprintf("%d", opts.App.CurrentSequence),
 		"--app-is-airgap", fmt.Sprintf("%t", opts.App.IsAirgap),
-		"--app-license", opts.App.License,
-		"--app-archive", opts.AppArchive,
+		"--app-is-gitops", fmt.Sprintf("%t", opts.App.IsGitOps),
+		"--app-license", opts.App.License, // TODO NOW: change to base64
+
+		"--base-archive", opts.BaseArchive,
+		"--base-sequence", fmt.Sprintf("%d", opts.BaseSequence),
+		"--next-sequence", fmt.Sprintf("%d", opts.NextSequence),
+
+		"--update-cursor", opts.UpdateCursor,
 
 		"--registry-endpoint", opts.RegistrySettings.Hostname,
 		"--registry-username", opts.RegistrySettings.Username,

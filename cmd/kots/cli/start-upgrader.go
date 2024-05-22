@@ -26,10 +26,15 @@ func StartUpgraderCmd() *cobra.Command {
 
 				AppID:       v.GetString("app-id"),
 				AppSlug:     v.GetString("app-slug"),
-				AppSequence: v.GetInt64("app-sequence"),
 				AppIsAirgap: v.GetBool("app-is-airgap"),
+				AppIsGitOps: v.GetBool("app-is-gitops"),
 				AppLicense:  v.GetString("app-license"),
-				AppArchive:  v.GetString("app-archive"),
+
+				BaseArchive:  v.GetString("base-archive"),
+				BaseSequence: v.GetInt64("base-sequence"),
+				NextSequence: v.GetInt64("next-sequence"),
+
+				UpdateCursor: v.GetString("update-cursor"),
 
 				RegistryEndpoint:   v.GetString("registry-endpoint"),
 				RegistryUsername:   v.GetString("registry-username"),
@@ -50,10 +55,17 @@ func StartUpgraderCmd() *cobra.Command {
 	// app flags
 	cmd.Flags().String("app-id", "", "the app id")
 	cmd.Flags().String("app-slug", "", "the app slug")
-	cmd.Flags().Int64("app-sequence", -1, "the app sequence")
 	cmd.Flags().Bool("app-is-airgap", false, "whether the app is airgap")
+	cmd.Flags().Bool("app-is-gitops", false, "whether the app is gitops")
 	cmd.Flags().String("app-license", "", "the app license")
-	cmd.Flags().String("app-archive", "", "path to the app archive")
+
+	// app version flags
+	cmd.Flags().String("base-archive", "", "path to the base app version archive")
+	cmd.Flags().String("base-sequence", "", "the local base app version sequence")
+	cmd.Flags().String("next-sequence", "", "the local next app version sequence")
+
+	// release flags
+	cmd.Flags().String("update-cursor", "", "the channel sequence of the target release")
 
 	// registry flags
 	cmd.Flags().String("registry-endpoint", "", "the registry endpoint")

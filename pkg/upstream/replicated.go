@@ -359,7 +359,7 @@ func downloadReplicatedApp(replicatedUpstream *replicatedapp.ReplicatedUpstream,
 	defer getResp.Body.Close()
 
 	if getResp.StatusCode >= 300 {
-		body, _ := ioutil.ReadAll(getResp.Body)
+		body, _ := io.ReadAll(getResp.Body)
 		if len(body) > 0 {
 			return nil, util.ActionableError{Message: string(body)}
 		}

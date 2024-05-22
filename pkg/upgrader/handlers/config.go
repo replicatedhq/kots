@@ -28,7 +28,6 @@ type CurrentAppConfigResponse struct {
 }
 
 type LiveAppConfigRequest struct {
-	Sequence     int64                     `json:"sequence"`
 	ConfigGroups []kotsv1beta1.ConfigGroup `json:"configGroups"`
 }
 
@@ -101,8 +100,7 @@ func (h *Handler) CurrentAppConfig(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	sequence := params.AppSequence + 1
-	versionInfo := template.VersionInfoFromInstallationSpec(sequence, params.AppIsAirgap, kotsKinds.Installation.Spec)
+	versionInfo := template.VersionInfoFromInstallationSpec(params.NextSequence, params.AppIsAirgap, kotsKinds.Installation.Spec)
 	appInfo := template.ApplicationInfo{Slug: params.AppSlug}
 	renderedConfig, err := kotsconfig.TemplateConfigObjects(nonRenderedConfig, configValues, appLicense, &kotsKinds.KotsApplication, localRegistry, &versionInfo, &appInfo, kotsKinds.IdentityConfig, util.PodNamespace, false)
 	if err != nil {
@@ -177,9 +175,8 @@ func (h *Handler) LiveAppConfig(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// sequence +1 because the sequence will be incremented on save (and we want the preview to be accurate)
-	sequence := liveAppConfigRequest.Sequence + 1
 	configValues := configValuesFromConfigGroups(liveAppConfigRequest.ConfigGroups)
-	versionInfo := template.VersionInfoFromInstallationSpec(sequence, params.AppIsAirgap, kotsKinds.Installation.Spec)
+	versionInfo := template.VersionInfoFromInstallationSpec(params.NextSequence, params.AppIsAirgap, kotsKinds.Installation.Spec)
 	appInfo := template.ApplicationInfo{Slug: params.AppSlug}
 
 	renderedConfig, err := kotsconfig.TemplateConfigObjects(nonRenderedConfig, configValues, appLicense, &kotsKinds.KotsApplication, localRegistry, &versionInfo, &appInfo, kotsKinds.IdentityConfig, util.PodNamespace, false)

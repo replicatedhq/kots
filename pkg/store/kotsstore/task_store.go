@@ -83,6 +83,7 @@ func (s *KOTSStore) migrateTasksFromRqlite() error {
 	return nil
 }
 
+// TODO NOW: move this outside the store
 func (s *KOTSStore) SetTaskStatus(id string, message string, status string) error {
 	taskStatusLock.Lock()
 	defer taskStatusLock.Unlock()
