@@ -8,7 +8,10 @@ import (
 type StartOptions struct {
 	KOTSVersion      string
 	App              *apptypes.App
-	AppArchive       string
+	BaseArchive      string
+	BaseSequence     int64
+	NextSequence     int64
+	UpdateCursor     string
 	RegistrySettings registrytypes.RegistrySettings
 }
 
@@ -17,10 +20,15 @@ type ServerParams struct {
 
 	AppID       string
 	AppSlug     string
-	AppSequence int64
 	AppIsAirgap bool
+	AppIsGitOps bool
 	AppLicense  string
-	AppArchive  string
+
+	BaseArchive  string
+	BaseSequence int64
+	NextSequence int64
+
+	UpdateCursor string
 
 	RegistryEndpoint   string
 	RegistryUsername   string
