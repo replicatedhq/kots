@@ -195,9 +195,9 @@ func Start(params *APIServerParams) {
 	* Static routes
 	**********************************************************************/
 
-	// serve the upgrader UI from the upgrader service
+	// Serve the upgrader UI from the upgrader service
 	// CAUTION: modifying this route WILL break backwards compatibility
-	r.Path("/upgrader").Methods("GET").HandlerFunc(upgrader.Proxy)
+	r.PathPrefix("/upgrader").Methods("GET").HandlerFunc(upgrader.Proxy)
 
 	// TODO NOW: move this to a shared function
 	// to avoid confusion, we don't serve this in the dev env...

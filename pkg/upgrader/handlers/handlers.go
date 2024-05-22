@@ -29,6 +29,8 @@ func RegisterRoutes(r *mux.Router, handler UpgraderHandler) {
 	// TODO NOW: move "/api/v1/upgrader" to a subrouter and add a caution statement
 
 	r.Path("/api/v1/upgrader/ping").Methods("GET").HandlerFunc(handler.Ping)
+
+	r.Path("/api/v1/upgrader/app/{appSlug}/config").Methods("GET").HandlerFunc(handler.CurrentAppConfig)
 	r.Path("/api/v1/upgrader/app/{appSlug}/liveconfig").Methods("POST").HandlerFunc(handler.LiveAppConfig)
 }
 

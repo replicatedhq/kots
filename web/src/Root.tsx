@@ -34,11 +34,6 @@ import TroubleshootContainer from "@components/troubleshoot/TroubleshootContaine
 
 import Footer from "./components/shared/Footer";
 import NavBar from "./components/shared/NavBar";
-
-// scss
-import "./scss/index.scss";
-// tailwind
-import "./index.css";
 import connectHistory from "./services/matomo";
 
 // types
@@ -330,32 +325,6 @@ const Root = () => {
 
   const onRootMounted = () => {
     fetchKotsAppMetadata();
-  
-    // TODO NOW: remove this
-    fetch(`${process.env.API_ENDPOINT}/start-upgrader`, {
-      headers: {
-        "Content-Type": "application/json",
-        Accept: "application/json",
-      },
-      body: JSON.stringify({
-        kotsVersion: "v1.109.3",
-      }),
-      credentials: "include",
-      method: "POST",
-    }).then(async (res) => {
-      if (res.ok) {
-        setState({
-          shouldShowUpgraderModal: true,
-        });
-        return;
-      }
-      const text = await res.text();
-      console.log("failed to init upgrader", text);
-    })
-    .catch((err) => {
-      console.log(err);
-    });
-
     if (Utilities.isLoggedIn()) {
       ping();
       getAppsList().then((appsList) => {
@@ -365,7 +334,6 @@ const Root = () => {
         }
       });
     }
-
   };
 
   useEffect(() => {

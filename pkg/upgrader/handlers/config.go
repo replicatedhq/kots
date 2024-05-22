@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"net/http"
 	"path/filepath"
-	"strconv"
 
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
@@ -50,20 +49,6 @@ func (h *Handler) CurrentAppConfig(w http.ResponseWriter, r *http.Request) {
 
 	if params.AppSlug != appSlug {
 		currentAppConfigResponse.Error = "app slug does not match"
-		JSON(w, http.StatusForbidden, currentAppConfigResponse)
-		return
-	}
-
-	sequence, err := strconv.ParseInt(mux.Vars(r)["sequence"], 10, 64)
-	if err != nil {
-		logger.Error(err)
-		currentAppConfigResponse.Error = "failed to parse app sequence"
-		JSON(w, http.StatusInternalServerError, currentAppConfigResponse)
-		return
-	}
-
-	if params.AppSequence != sequence {
-		currentAppConfigResponse.Error = "app sequence does not match"
 		JSON(w, http.StatusForbidden, currentAppConfigResponse)
 		return
 	}
@@ -116,8 +101,8 @@ func (h *Handler) CurrentAppConfig(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	sequence = sequence + 1
-	versionInfo := template.VersionInfoFromInstallationSpec(sequence, params.AppIsAirgap, kotsKinds.Installation.Spec) // sequence +1 because the sequence will be incremented on save (and we want the preview to be accurate)
+	sequence := params.AppSequence + 1
+	versionInfo := template.VersionInfoFromInstallationSpec(sequence, params.AppIsAirgap, kotsKinds.Installation.Spec)
 	appInfo := template.ApplicationInfo{Slug: params.AppSlug}
 	renderedConfig, err := kotsconfig.TemplateConfigObjects(nonRenderedConfig, configValues, appLicense, &kotsKinds.KotsApplication, localRegistry, &versionInfo, &appInfo, kotsKinds.IdentityConfig, util.PodNamespace, false)
 	if err != nil {
