@@ -5,9 +5,11 @@ import (
 	"bufio"
 	"compress/gzip"
 	"context"
+	"crypto/tls"
 	"encoding/json"
 	"fmt"
 	"io"
+	"net/http"
 	"os"
 	"path"
 	"path/filepath"
@@ -167,12 +169,15 @@ func TagAndPushImagesFromBundle(airgapBundle string, options imagetypes.PushImag
 		return errors.Errorf("Airgap bundle format '%s' is not supported", airgap.Spec.Format)
 	}
 
+	transport := http.DefaultTransport.(*http.Transport).Clone()
+	transport.TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
+
 	pushEmbeddedArtifactsOpts := imagetypes.PushEmbeddedClusterArtifactsOptions{
 		Registry:     options.Registry,
 		ChannelID:    airgap.Spec.ChannelID,
 		UpdateCursor: airgap.Spec.UpdateCursor,
 		VersionLabel: airgap.Spec.VersionLabel,
-		HTTPClient:   orasretry.DefaultClient,
+		HTTPClient:   &http.Client{Transport: orasretry.NewTransport(transport)},
 	}
 	err = PushEmbeddedClusterArtifacts(airgapBundle, airgap.Spec.EmbeddedClusterArtifacts, pushEmbeddedArtifactsOpts)
 	if err != nil {
@@ -831,14 +836,20 @@ func pushOCIArtifact(opts imagetypes.PushOCIArtifactOptions) error {
 			Password: opts.Registry.Password,
 		}),
 	}
-	repository.PlainHTTP = true
 
-	_, err = oras.Copy(context.TODO(), orasFS, opts.Tag, repository, opts.Tag, oras.DefaultCopyOptions)
-	if err != nil {
-		return errors.Wrap(err, "failed to copy")
+	_, err1 := oras.Copy(context.TODO(), orasFS, opts.Tag, repository, opts.Tag, oras.DefaultCopyOptions)
+	if err1 == nil {
+		return nil
 	}
 
-	return nil
+	// try again with plain http
+	repository.PlainHTTP = true
+	_, err2 := oras.Copy(context.TODO(), orasFS, opts.Tag, repository, opts.Tag, oras.DefaultCopyOptions)
+	if err2 == nil {
+		return nil
+	}
+
+	return errors.Wrap(fmt.Errorf("https: %s, http: %s", err1, err2), "failed to copy")
 }
 
 type ProgressReport struct {
