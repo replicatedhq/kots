@@ -837,12 +837,19 @@ func pushOCIArtifact(opts imagetypes.PushOCIArtifactOptions) error {
 		}),
 	}
 
-	_, err = oras.Copy(context.TODO(), orasFS, opts.Tag, repository, opts.Tag, oras.DefaultCopyOptions)
-	if err != nil {
-		return errors.Wrap(err, "failed to copy")
+	_, err1 := oras.Copy(context.TODO(), orasFS, opts.Tag, repository, opts.Tag, oras.DefaultCopyOptions)
+	if err1 == nil {
+		return nil
 	}
 
-	return nil
+	// try again with plain http
+	repository.PlainHTTP = true
+	_, err2 := oras.Copy(context.TODO(), orasFS, opts.Tag, repository, opts.Tag, oras.DefaultCopyOptions)
+	if err2 == nil {
+		return nil
+	}
+
+	return errors.Wrap(fmt.Errorf("https: %s, http: %s", err1, err2), "failed to copy")
 }
 
 type ProgressReport struct {
