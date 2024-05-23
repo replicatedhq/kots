@@ -789,7 +789,16 @@ const Root = () => {
                   />
                   <Route element={<NotFound />} />
                 </Route>
-                <Route path=":slug/license" element={<AppLicense />} />
+                <Route
+                  path=":slug/license"
+                  element={
+                    <AppLicense
+                      isEmbeddedCluster={Boolean(
+                        state.adminConsoleMetadata?.isEmbeddedCluster
+                      )}
+                    />
+                  } 
+                />
                 <Route
                   path=":slug/registry-settings"
                   element={<AppRegistrySettings />}

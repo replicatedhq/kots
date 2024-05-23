@@ -406,8 +406,8 @@ github.com/cockroachdb/apd v1.1.0/go.mod h1:8Sl8LxpKi29FqWXR16WEFZRNSz3SoPzUzeMe
 github.com/cockroachdb/datadriven v0.0.0-20190809214429-80d97fb3cbaa/go.mod h1:zn76sxSg3SzpJ0PPJaLDCu+Bu0Lg3sKTORVIj19EIF8=
 github.com/containerd/cgroups/v3 v3.0.2 h1:f5WFqIVSgo5IZmtTT3qVBo6TzI1ON6sycSBKkymb9L0=
 github.com/containerd/cgroups/v3 v3.0.2/go.mod h1:JUgITrzdFqp42uI2ryGA+ge0ap/nxzYgkGmIcetmErE=
-github.com/containerd/containerd v1.7.13 h1:wPYKIeGMN8vaggSKuV1X0wZulpMz4CrgEsZdaCyB6Is=
-github.com/containerd/containerd v1.7.13/go.mod h1:zT3up6yTRfEUa6+GsITYIJNgSVL9NQ4x4h1RPzk0Wu4=
+github.com/containerd/containerd v1.7.16 h1:7Zsfe8Fkj4Wi2My6DXGQ87hiqIrmOXolm72ZEkFU5Mg=
+github.com/containerd/containerd v1.7.16/go.mod h1:NL49g7A/Fui7ccmxV6zkBWwqMgmMxFWzujYCc+JLt7k=
 github.com/containerd/continuity v0.4.2 h1:v3y/4Yz5jwnvqPKJJ+7Wf93fyWoCB3F5EclWG023MDM=
 github.com/containerd/continuity v0.4.2/go.mod h1:F6PTNCKepoxEaXLQp3wDAjygEnImnZ/7o4JzpodfroQ=
 github.com/containerd/errdefs v0.1.0 h1:m0wCRBiu1WJT/Fr+iOoQHMQS/eP5myQ8lCv4Dz5ZURM=
@@ -1013,8 +1013,8 @@ github.com/json-iterator/go v1.1.12/go.mod h1:e30LSqwooZae/UwlEbR2852Gd8hjQvJoHm
 github.com/jstemmer/go-junit-report v0.0.0-20190106144839-af01ea7f8024/go.mod h1:6v2b51hI/fHJwM22ozAgKL4VKDeJcHhJFhtBdhmNjmU=
 github.com/jstemmer/go-junit-report v0.9.1/go.mod h1:Brl9GWCQeLvo8nXZwPNNblvFj/XSXhF0NWZEnDohbsk=
 github.com/julienschmidt/httprouter v1.2.0/go.mod h1:SYymIcj16QtmaHHD7aYtjjsJG7VTCxuUUipMqKk8s4w=
-github.com/k0sproject/k0s v1.28.5-0.20231116142149-82f76181191c h1:rL7cCMTRv92zDbVQtkItOtp0p97GsuPCya0rTXYQxug=
-github.com/k0sproject/k0s v1.28.5-0.20231116142149-82f76181191c/go.mod h1:4+Y6RiiR9Up/rU/3SirRNlrdPhIo3TCZUZiInuaCQus=
+github.com/k0sproject/k0s v1.28.10-0.20240418084644-c99e4b437507 h1:P0fdgZ7haUEH4dUZHKk0VvgbmaBul0L8cIYrln/ScVI=
+github.com/k0sproject/k0s v1.28.10-0.20240418084644-c99e4b437507/go.mod h1:bJe0YdBjheJhuLsTteYy00PdWOeY/AM4m0WPRtYCBTA=
 github.com/karrick/godirwalk v1.8.0/go.mod h1:H5KPZjojv4lE+QYImBI8xVtrBRgYrIVsaRPx4tDPEn4=
 github.com/karrick/godirwalk v1.10.3/go.mod h1:RoGL9dQei4vP9ilrpETWE8CLOZ1kiN0LhBygSwrAsHA=
 github.com/karrick/godirwalk v1.16.1 h1:DynhcF+bztK8gooS0+NDJFrdNZjJ3gzVzC545UNA9iw=
@@ -1308,8 +1308,8 @@ github.com/redis/go-redis/v9 v9.0.5/go.mod h1:WqMKv5vnQbRuZstUwxQI195wHy+t4PuXDO
 github.com/redis/go-redis/v9 v9.1.0 h1:137FnGdk+EQdCbye1FW+qOEcY5S+SpY9T0NiuqvtfMY=
 github.com/redis/go-redis/v9 v9.1.0/go.mod h1:urWj3He21Dj5k4TK1y59xH8Uj6ATueP8AH1cY3lZl4c=
 github.com/remyoudompheng/bigfft v0.0.0-20170806203942-52369c62f446/go.mod h1:uYEyJGbgTkfkS4+E/PavXkNJcbFIpEtjt2B0KDQ5+9M=
-github.com/replicatedhq/embedded-cluster-kinds v1.1.11 h1:M4a8TPINV8jILw85Pk24lcEqrTbSVg2+mdmAi5M6ZZQ=
-github.com/replicatedhq/embedded-cluster-kinds v1.1.11/go.mod h1:EBLOLIx/5GQsA1KB7Wrv98nfydBRP7V+5PFMRb1AGnU=
+github.com/replicatedhq/embedded-cluster-kinds v1.2.2 h1:KW9fSCTt4xr3MpcCQpgwHcwmZp+mz7uA2JOVR+2TD9Q=
+github.com/replicatedhq/embedded-cluster-kinds v1.2.2/go.mod h1:NIwwkFGoNHIxx+5mHRihvQU6RqZ/xt/A5RzaHpBh2ZY=
 github.com/replicatedhq/kotskinds v0.0.0-20240523174825-f4d441adb453 h1:g8CQQ9R4gjIdoHuBX1LN1hmF3Omq2JfA040JfpfNVC8=
 github.com/replicatedhq/kotskinds v0.0.0-20240523174825-f4d441adb453/go.mod h1:QjhIUu3+OmHZ09u09j3FCoTt8F3BYtQglS+OLmftu9I=
 github.com/replicatedhq/kurlkinds v1.5.0 h1:zZ0PKNeh4kXvSzVGkn62DKTo314GxhXg1TSB3azURMc=

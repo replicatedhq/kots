@@ -27,6 +27,7 @@ type Props = {
   app: App;
   changeCallback: () => void;
   syncCallback: () => void;
+  isEmbeddedCluster: boolean;
 };
 
 type State = {
@@ -44,7 +45,7 @@ type State = {
   isViewingLicenseEntitlements: boolean;
 };
 
-const AppLicenseComponent = () => {
+const AppLicenseComponent = (props: Props) => {
   const [state, setState] = useReducer(
     (currentState: State, newState: Partial<State>) => ({
       ...currentState,
@@ -457,7 +458,13 @@ const AppLicenseComponent = () => {
                       <span className="icon licenseAirgapIcon" /> Airgap enabled{" "}
                     </span>
                   ) : null}
-                  {appLicense?.isSnapshotSupported ? (
+                  {props.isEmbeddedCluster && appLicense?.isDisasterRecoverySupported ? (
+                    <span className="flex alignItems--center">
+                      <span className="icon licenseVeleroIcon" /> Disaster Recovery
+                      enabled{" "}
+                    </span>
+                  ) : null}
+                  {!props.isEmbeddedCluster && appLicense?.isSnapshotSupported ? (
                     <span className="flex alignItems--center">
                       <span className="icon licenseVeleroIcon" /> Snapshots
                       enabled{" "}
