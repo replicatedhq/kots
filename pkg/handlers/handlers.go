@@ -317,6 +317,7 @@ func RegisterSessionAuthRoutes(r *mux.Router, kotsStore store.Store, handler KOT
 	r.Name("ChangePassword").Path("/api/v1/password/change").Methods("PUT").
 		HandlerFunc(middleware.EnforceAccess(policy.PasswordChange, handler.ChangePassword))
 
+	// TODO NOW: calling this again will cancel in progress updates. add endpoint to cancel updates?
 	// Start upgrader
 	r.Name("StartUpgrader").Path("/api/v1/app/{appSlug}/start-upgrader").Methods("POST").
 		HandlerFunc(middleware.EnforceAccess(policy.AppUpdate, handler.StartUpgrader))

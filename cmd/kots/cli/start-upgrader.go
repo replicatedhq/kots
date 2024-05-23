@@ -12,9 +12,10 @@ import (
 // TODO NOW: rename to updater?
 func StartUpgraderCmd() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "start-upgrader",
-		Short: "Starts the KOTS upgrader service",
-		Long:  `Starts the KOTS upgrader service`,
+		Use:    "start-upgrader",
+		Short:  "Starts the KOTS upgrader service",
+		Long:   `Starts the KOTS upgrader service`,
+		Hidden: true,
 		PreRun: func(cmd *cobra.Command, args []string) {
 			viper.BindPFlags(cmd.Flags())
 		},
