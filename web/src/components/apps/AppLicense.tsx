@@ -465,8 +465,7 @@ const AppLicenseComponent = () => {
                       Recovery enabled{" "}
                     </span>
                   ) : null}
-                  {!isEmbeddedCluster &&
-                  appLicense?.isSnapshotSupported ? (
+                  {!isEmbeddedCluster && appLicense?.isSnapshotSupported ? (
                     <span className="flex alignItems--center">
                       <span className="icon licenseVeleroIcon" /> Snapshots
                       enabled{" "}
