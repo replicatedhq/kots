@@ -45,7 +45,7 @@ type State = {
   isViewingLicenseEntitlements: boolean;
 };
 
-const AppLicenseComponent = (props: Props) => {
+const AppLicenseComponent = () => {
   const [state, setState] = useReducer(
     (currentState: State, newState: Partial<State>) => ({
       ...currentState,
@@ -316,7 +316,7 @@ const AppLicenseComponent = (props: Props) => {
     );
   }
 
-  const { app } = outletContext;
+  const { app, isEmbeddedCluster } = outletContext;
   const expiresAt = getLicenseExpiryDate(appLicense);
   const gitops = app.downstream?.gitops;
   const appName = app?.name || "Your application";
@@ -458,14 +458,14 @@ const AppLicenseComponent = (props: Props) => {
                       <span className="icon licenseAirgapIcon" /> Airgap enabled{" "}
                     </span>
                   ) : null}
-                  {props.isEmbeddedCluster &&
+                  {isEmbeddedCluster &&
                   appLicense?.isDisasterRecoverySupported ? (
                     <span className="flex alignItems--center">
                       <span className="icon licenseVeleroIcon" /> Disaster
                       Recovery enabled{" "}
                     </span>
                   ) : null}
-                  {!props.isEmbeddedCluster &&
+                  {!isEmbeddedCluster &&
                   appLicense?.isSnapshotSupported ? (
                     <span className="flex alignItems--center">
                       <span className="icon licenseVeleroIcon" /> Snapshots
