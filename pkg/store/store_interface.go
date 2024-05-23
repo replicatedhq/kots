@@ -28,6 +28,7 @@ import (
 	// - start-upgrader cli command flags
 	// - files in the filesystem via the shared pod volumes
 	// - environment variables
+	// TODO NOW: use a tool to enforce this?
 	// TODO NOW: resolve cycle dependencies and uncomment this
 	// _ "github.com/replicatedhq/kots/pkg/upgrader"
 )
