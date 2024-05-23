@@ -251,7 +251,7 @@ class AppConfig extends Component<Props, State> {
   };
 
   handleNext = async () => {
-    // TODO NOW: validating config from api before moving on
+    // TODO NOW: validate config from api before moving on
   };
 
   isConfigChanged = (newGroups: ConfigGroup[]) => {

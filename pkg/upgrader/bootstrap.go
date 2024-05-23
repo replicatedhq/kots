@@ -32,8 +32,6 @@ func pullArchiveFromOnline(params types.ServerParams) (finalError error) {
 		return errors.Wrap(err, "failed to load license from bytes")
 	}
 
-	// TODO NOW: get latest license from replicated.app
-
 	beforeKotsKinds, err := kotsutil.LoadKotsKinds(params.BaseArchive)
 	if err != nil {
 		return errors.Wrap(err, "failed to load current kotskinds")
