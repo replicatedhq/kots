@@ -254,6 +254,16 @@ func TestLicenseCtx_licenseFieldValue(t *testing.T) {
 			want:      "true",
 		},
 		{
+			name: "built-in IsDisasterRecoverySupported",
+			License: &kotsv1beta1.License{
+				Spec: kotsv1beta1.LicenseSpec{
+					IsDisasterRecoverySupported: true,
+				},
+			},
+			fieldName: "IsDisasterRecoverySupported",
+			want:      "true",
+		},
+		{
 			name: "built-in isGeoaxisSupported",
 			License: &kotsv1beta1.License{
 				Spec: kotsv1beta1.LicenseSpec{

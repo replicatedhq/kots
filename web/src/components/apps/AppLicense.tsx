@@ -25,8 +25,7 @@ import Icon from "../Icon";
 
 type Props = {
   app: App;
-  changeCallback: () => void;
-  syncCallback: () => void;
+  isEmbeddedCluster: boolean;
 };
 
 type State = {
@@ -83,7 +82,7 @@ const AppLicenseComponent = () => {
   }, [licenseWithInterceptResponse]);
 
   const syncAppLicense = (licenseData: string) => {
-    const { app, syncCallback } = outletContext;
+    const { app } = outletContext;
     setState({
       loading: true,
       message: "",
@@ -132,10 +131,6 @@ const AppLicenseComponent = () => {
           messageType: "info",
           showNextStepModal: licenseResponse.synced,
         });
-
-        if (syncCallback) {
-          syncCallback();
-        }
       })
       .catch((err) => {
         console.log(err);
@@ -209,7 +204,7 @@ const AppLicenseComponent = () => {
       licenseChangeMessageType: "info",
     });
 
-    const { app, changeCallback } = outletContext;
+    const { app } = outletContext;
 
     const payload = {
       licenseData,
@@ -242,10 +237,6 @@ const AppLicenseComponent = () => {
           licenseChangeFile: null,
           licenseChangeMessage: "",
         });
-
-        if (changeCallback) {
-          changeCallback();
-        }
       })
       .catch((err) => {
         console.log(err);
@@ -315,7 +306,7 @@ const AppLicenseComponent = () => {
     );
   }
 
-  const { app } = outletContext;
+  const { app, isEmbeddedCluster } = outletContext;
   const expiresAt = getLicenseExpiryDate(appLicense);
   const gitops = app.downstream?.gitops;
   const appName = app?.name || "Your application";
@@ -457,7 +448,14 @@ const AppLicenseComponent = () => {
                       <span className="icon licenseAirgapIcon" /> Airgap enabled{" "}
                     </span>
                   ) : null}
-                  {appLicense?.isSnapshotSupported ? (
+                  {isEmbeddedCluster &&
+                  appLicense?.isDisasterRecoverySupported ? (
+                    <span className="flex alignItems--center">
+                      <span className="icon licenseVeleroIcon" /> Disaster
+                      Recovery enabled{" "}
+                    </span>
+                  ) : null}
+                  {!isEmbeddedCluster && appLicense?.isSnapshotSupported ? (
                     <span className="flex alignItems--center">
                       <span className="icon licenseVeleroIcon" /> Snapshots
                       enabled{" "}

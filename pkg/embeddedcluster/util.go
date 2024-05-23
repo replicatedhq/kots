@@ -147,7 +147,7 @@ func startClusterUpgrade(ctx context.Context, newcfg embeddedclusterv1beta1.Conf
 			Config:                    &newcfg,
 			EndUserK0sConfigOverrides: current.Spec.EndUserK0sConfigOverrides,
 			BinaryName:                current.Spec.BinaryName,
-			LicenseInfo:               &embeddedclusterv1beta1.LicenseInfo{IsSnapshotSupported: license.Spec.IsSnapshotSupported},
+			LicenseInfo:               &embeddedclusterv1beta1.LicenseInfo{IsDisasterRecoverySupported: license.Spec.IsDisasterRecoverySupported},
 		},
 	}
 	if err := kbClient.Create(ctx, &newins); err != nil {

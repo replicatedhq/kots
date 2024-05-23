@@ -41,6 +41,7 @@ export type AppLicense = {
   isIdentityServiceSupported: boolean;
   isSemverRequired: boolean;
   isSnapshotSupported: boolean;
+  isDisasterRecoverySupported: boolean;
   isSupportBundleUploadSupported: boolean;
   lastSyncedAt: string;
   licenseSequence: number;
