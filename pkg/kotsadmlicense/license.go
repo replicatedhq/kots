@@ -161,7 +161,7 @@ func Change(a *apptypes.App, newLicenseString string) (*kotsv1beta1.License, err
 		return nil, errors.Wrap(err, "failed to check if license exists")
 	}
 	if existingLicense != nil {
-		resolved, err := kotslicense.ResolveExistingLicense(newLicense)
+		resolved, err := ResolveExistingLicense(newLicense)
 		if err != nil {
 			logger.Error(errors.Wrap(err, "failed to resolve existing license conflict"))
 		}
@@ -222,4 +222,41 @@ func CheckIfLicenseExists(license []byte) (*kotsv1beta1.License, error) {
 	}
 
 	return nil, nil
+}
+
+func ResolveExistingLicense(newLicense *kotsv1beta1.License) (bool, error) {
+	notInstalledApps, err := store.GetStore().ListFailedApps()
+	if err != nil {
+		logger.Error(errors.Wrap(err, "failed to list failed apps"))
+		return false, err
+	}
+
+	for _, app := range notInstalledApps {
+		decode := scheme.Codecs.UniversalDeserializer().Decode
+		obj, _, err := decode([]byte(app.License), nil, nil)
+		if err != nil {
+			continue
+		}
+		license := obj.(*kotsv1beta1.License)
+		if license.Spec.LicenseID != newLicense.Spec.LicenseID {
+			continue
+		}
+
+		if err := store.GetStore().RemoveApp(app.ID); err != nil {
+			return false, errors.Wrap(err, "failed to remove existing app record")
+		}
+	}
+
+	// check if license still exists
+	allLicenses, err := store.GetStore().GetAllAppLicenses()
+	if err != nil {
+		return false, errors.Wrap(err, "failed to get all app licenses")
+	}
+	for _, l := range allLicenses {
+		if l.Spec.LicenseID == newLicense.Spec.LicenseID {
+			return false, nil
+		}
+	}
+
+	return true, nil
 }

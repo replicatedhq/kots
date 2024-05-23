@@ -15,7 +15,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/kotsadm"
 	kotsadmtypes "github.com/replicatedhq/kots/pkg/kotsadm/types"
-	license "github.com/replicatedhq/kots/pkg/kotsadmlicense"
+	kotsadmlicense "github.com/replicatedhq/kots/pkg/kotsadmlicense"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
 	kotslicense "github.com/replicatedhq/kots/pkg/license"
 	"github.com/replicatedhq/kots/pkg/logger"
@@ -134,7 +134,7 @@ func (h *Handler) SyncLicense(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	latestLicense, isSynced, err := license.Sync(foundApp, syncLicenseRequest.LicenseData, true)
+	latestLicense, isSynced, err := kotsadmlicense.Sync(foundApp, syncLicenseRequest.LicenseData, true)
 	if err != nil {
 		syncLicenseResponse.Error = "failed to sync license"
 		logger.Error(errors.Wrap(err, syncLicenseResponse.Error))
@@ -299,7 +299,7 @@ func (h *Handler) UploadNewLicense(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// check if license already exists
-	existingLicense, err := license.CheckIfLicenseExists([]byte(licenseString))
+	existingLicense, err := kotsadmlicense.CheckIfLicenseExists([]byte(licenseString))
 	if err != nil {
 		logger.Error(errors.Wrap(err, "failed to check if license already exists"))
 		uploadLicenseResponse.Error = err.Error()
@@ -308,7 +308,7 @@ func (h *Handler) UploadNewLicense(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if existingLicense != nil {
-		resolved, err := kotslicense.ResolveExistingLicense(verifiedLicense)
+		resolved, err := kotsadmlicense.ResolveExistingLicense(verifiedLicense)
 		if err != nil {
 			logger.Error(errors.Wrap(err, "failed to resolve existing license conflict"))
 		}
@@ -619,7 +619,7 @@ func (h *Handler) ChangeLicense(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	newLicense, err := license.Change(foundApp, changeLicenseRequest.LicenseData)
+	newLicense, err := kotsadmlicense.Change(foundApp, changeLicenseRequest.LicenseData)
 	if err != nil {
 		logger.Error(errors.Wrap(err, "failed to change license"))
 		changeLicenseResponse.Error = errors.Cause(err).Error()

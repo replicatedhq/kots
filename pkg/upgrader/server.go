@@ -2,7 +2,6 @@ package upgrader
 
 import (
 	"fmt"
-	"log"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
@@ -16,7 +15,11 @@ import (
 )
 
 func Serve(params types.ServerParams) error {
-	log.Printf("KOTS Upgrader version %s\n", buildversion.Version())
+	fmt.Printf("Starting KOTS Upgrader version %s on port %s\n", buildversion.Version(), params.Port)
+
+	if err := bootstrap(params); err != nil {
+		return errors.Wrap(err, "failed to bootstrap")
+	}
 
 	r := mux.NewRouter()
 	r.Use(handlers.ParamsMiddleware(params))
@@ -38,7 +41,7 @@ func Serve(params types.ServerParams) error {
 	} else if os.Getenv("ENABLE_WEB_PROXY") == "1" { // for dev env
 		u, err := url.Parse("http://kotsadm-web:8080")
 		if err != nil {
-			panic(err)
+			return errors.Wrap(err, "failed to parse kotsadm-web url")
 		}
 		upstream := httputil.NewSingleHostReverseProxy(u)
 		webProxy := func(upstream *httputil.ReverseProxy) func(http.ResponseWriter, *http.Request) {
@@ -54,8 +57,6 @@ func Serve(params types.ServerParams) error {
 		Handler: r,
 		Addr:    fmt.Sprintf(":%s", params.Port),
 	}
-
-	fmt.Printf("Starting KOTS Upgrader on port %s...\n", params.Port)
 
 	if err := srv.ListenAndServe(); err != nil {
 		return errors.Wrap(err, "failed to listen and serve")

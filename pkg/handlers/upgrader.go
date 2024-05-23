@@ -13,7 +13,9 @@ import (
 )
 
 type StartUpgraderRequest struct {
-	KOTSVersion string `json:"kotsVersion"`
+	KOTSVersion  string `json:"kotsVersion"`
+	VersionLabel string `json:"versionLabel"`
+	UpdateCursor string `json:"updateCursor"`
 }
 
 type StartUpgraderResponse struct {
@@ -25,6 +27,8 @@ func (h *Handler) StartUpgrader(w http.ResponseWriter, r *http.Request) {
 	response := StartUpgraderResponse{
 		Success: false,
 	}
+
+	// TODO NOW: required releases
 
 	request := StartUpgraderRequest{}
 	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
@@ -52,8 +56,8 @@ func (h *Handler) StartUpgrader(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// TODO NOW: get version label from request
-	baseArchive, baseSequence, err := store.GetStore().GetAppVersionBaseArchive(foundApp.ID, airgap.Spec.VersionLabel)
+	// TODO NOW: send version label in request
+	baseArchive, baseSequence, err := store.GetStore().GetAppVersionBaseArchive(foundApp.ID, request.VersionLabel)
 	if err != nil {
 		response.Error = "failed to get app version base archive"
 		logger.Error(errors.Wrap(err, response.Error))
@@ -69,27 +73,14 @@ func (h *Handler) StartUpgrader(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// TODO NOW: get latest license? if done here, remove the one in upgrader bootstrap
-
-	updateCursor, err := store.GetStore().GetCurrentUpdateCursor(foundApp.ID, latestLicense.Spec.ChannelID)
-	if err != nil {
-		response.Error = "failed to get current update cursor"
-		logger.Error(errors.Wrap(err, response.Error))
-		JSON(w, http.StatusInternalServerError, response)
-		return
-	}
-
-	// TODO NOW: get cursor from request
-	// TODO NOW: download archive from replicated.app in online mode
-	// TODO NOW: extract archive in airgap mode
-
+	// TODO NOW: send cursor in request
 	err = upgrader.Start(upgradertypes.StartOptions{
 		KOTSVersion:      request.KOTSVersion,
 		App:              foundApp,
 		BaseArchive:      baseArchive,
 		BaseSequence:     baseSequence,
 		NextSequence:     nextSequence,
-		UpdateCursor:     updateCursor,
+		UpdateCursor:     request.UpdateCursor,
 		RegistrySettings: registrySettings,
 		// TODO NOW: reporting info
 	})

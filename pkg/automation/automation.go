@@ -226,7 +226,7 @@ func installLicenseSecret(clientset *kubernetes.Clientset, licenseSecret corev1.
 		return errors.Wrapf(err, "failed to check if license already exists for app %s", appSlug)
 	}
 	if existingLicense != nil {
-		resolved, err := kotslicense.ResolveExistingLicense(verifiedLicense)
+		resolved, err := kotsadmlicense.ResolveExistingLicense(verifiedLicense)
 		if err != nil {
 			logger.Error(errors.Wrap(err, "failed to resolve existing license conflict"))
 		}

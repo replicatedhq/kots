@@ -263,6 +263,8 @@ class AppVersionHistory extends Component<Props, State> {
       },
       body: JSON.stringify({
         kotsVersion: "v1.109.3",
+        versionLabel: "0.0.268",
+        updateCursor: "895",
       }),
       credentials: "include",
       method: "POST",
@@ -2221,11 +2223,14 @@ class AppVersionHistory extends Component<Props, State> {
           }}
           contentLabel="KOTS Upgrader Modal"
           ariaHideApp={false}
-          className="Modal LargeSize"
+          className="Modal UpgraderModal"
         >
           <iframe
             src={`/upgrader/app/${app?.slug}`}
             title="KOTS Upgrader"
+            width="100%" 
+            height="100%"
+            allowFullScreen={true}
           />
         </Modal>
       </div>

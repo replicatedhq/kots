@@ -55,7 +55,7 @@ func Start(opts types.StartOptions) (finalError error) {
 		"--app-slug", opts.App.Slug,
 		"--app-is-airgap", fmt.Sprintf("%t", opts.App.IsAirgap),
 		"--app-is-gitops", fmt.Sprintf("%t", opts.App.IsGitOps),
-		"--app-license", opts.App.License, // TODO NOW: change to base64
+		"--app-license", opts.App.License, // TODO NOW: change to base64 or a file?
 
 		"--base-archive", opts.BaseArchive,
 		"--base-sequence", fmt.Sprintf("%d", opts.BaseSequence),
