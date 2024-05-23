@@ -17,6 +17,8 @@ import (
 )
 
 func bootstrap(params types.ServerParams) error {
+	// TODO NOW: airgap mode
+
 	if err := pullArchiveFromOnline(params); err != nil {
 		return errors.Wrap(err, "failed to bootstrap cluster token")
 	}

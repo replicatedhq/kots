@@ -60,7 +60,7 @@ func (h *Handler) CurrentAppConfig(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	kotsKinds, err := kotsutil.LoadKotsKinds(params.AppArchive)
+	kotsKinds, err := kotsutil.LoadKotsKinds(params.BaseArchive) // TODO NOW: rename BaseArchive
 	if err != nil {
 		currentAppConfigResponse.Error = "failed to load kots kinds from path"
 		logger.Error(errors.Wrap(err, currentAppConfigResponse.Error))
@@ -69,7 +69,7 @@ func (h *Handler) CurrentAppConfig(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// get the non-rendered config from the upstream directory because we have to re-render it with the new values
-	nonRenderedConfig, err := kotsutil.FindConfigInPath(filepath.Join(params.AppArchive, "upstream"))
+	nonRenderedConfig, err := kotsutil.FindConfigInPath(filepath.Join(params.BaseArchive, "upstream"))
 	if err != nil {
 		currentAppConfigResponse.Error = "failed to find non-rendered config"
 		logger.Error(errors.Wrap(err, currentAppConfigResponse.Error))
@@ -149,7 +149,7 @@ func (h *Handler) LiveAppConfig(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	kotsKinds, err := kotsutil.LoadKotsKinds(params.AppArchive)
+	kotsKinds, err := kotsutil.LoadKotsKinds(params.BaseArchive)
 	if err != nil {
 		liveAppConfigResponse.Error = "failed to load kots kinds from path"
 		logger.Error(errors.Wrap(err, liveAppConfigResponse.Error))
@@ -158,7 +158,7 @@ func (h *Handler) LiveAppConfig(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// get the non-rendered config from the upstream directory because we have to re-render it with the new values
-	nonRenderedConfig, err := kotsutil.FindConfigInPath(filepath.Join(params.AppArchive, "upstream"))
+	nonRenderedConfig, err := kotsutil.FindConfigInPath(filepath.Join(params.BaseArchive, "upstream"))
 	if err != nil {
 		liveAppConfigResponse.Error = "failed to find non-rendered config"
 		logger.Error(errors.Wrap(err, liveAppConfigResponse.Error))

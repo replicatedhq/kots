@@ -498,26 +498,6 @@ const Root = () => {
               />
               <Route path="/crashz" element={<Crashz />} />{" "}
               <Route path="*" element={<NotFound />} />
-              {/* <Route
-                path="/upgrader"
-                element={
-                  <div style={{ height: "100vh", width: "100vw", background: "white" }}>
-                    <h1 style={{ color: "black" }}>
-                      Hello from KOTS Upgrader!
-                    </h1>
-                  </div>
-                }
-              />
-              <Route
-                path="/upgrader/test"
-                element={
-                  <div style={{ height: "100vh", width: "100vw", background: "white" }}>
-                    <h1 style={{ color: "black" }}>
-                      Hello from test in KOTS Upgrader!
-                    </h1>
-                  </div>
-                }
-              /> */}
               <Route
                 path="/secure-console"
                 element={
