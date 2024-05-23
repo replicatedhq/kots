@@ -797,7 +797,7 @@ const Root = () => {
                         state.adminConsoleMetadata?.isEmbeddedCluster
                       )}
                     />
-                  } 
+                  }
                 />
                 <Route
                   path=":slug/registry-settings"

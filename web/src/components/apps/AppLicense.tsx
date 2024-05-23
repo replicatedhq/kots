@@ -458,13 +458,15 @@ const AppLicenseComponent = (props: Props) => {
                       <span className="icon licenseAirgapIcon" /> Airgap enabled{" "}
                     </span>
                   ) : null}
-                  {props.isEmbeddedCluster && appLicense?.isDisasterRecoverySupported ? (
+                  {props.isEmbeddedCluster &&
+                  appLicense?.isDisasterRecoverySupported ? (
                     <span className="flex alignItems--center">
-                      <span className="icon licenseVeleroIcon" /> Disaster Recovery
-                      enabled{" "}
+                      <span className="icon licenseVeleroIcon" /> Disaster
+                      Recovery enabled{" "}
                     </span>
                   ) : null}
-                  {!props.isEmbeddedCluster && appLicense?.isSnapshotSupported ? (
+                  {!props.isEmbeddedCluster &&
+                  appLicense?.isSnapshotSupported ? (
                     <span className="flex alignItems--center">
                       <span className="icon licenseVeleroIcon" /> Snapshots
                       enabled{" "}
