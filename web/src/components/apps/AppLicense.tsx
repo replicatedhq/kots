@@ -25,8 +25,6 @@ import Icon from "../Icon";
 
 type Props = {
   app: App;
-  changeCallback: () => void;
-  syncCallback: () => void;
   isEmbeddedCluster: boolean;
 };
 
@@ -84,7 +82,7 @@ const AppLicenseComponent = () => {
   }, [licenseWithInterceptResponse]);
 
   const syncAppLicense = (licenseData: string) => {
-    const { app, syncCallback } = outletContext;
+    const { app } = outletContext;
     setState({
       loading: true,
       message: "",
@@ -133,10 +131,6 @@ const AppLicenseComponent = () => {
           messageType: "info",
           showNextStepModal: licenseResponse.synced,
         });
-
-        if (syncCallback) {
-          syncCallback();
-        }
       })
       .catch((err) => {
         console.log(err);
@@ -210,7 +204,7 @@ const AppLicenseComponent = () => {
       licenseChangeMessageType: "info",
     });
 
-    const { app, changeCallback } = outletContext;
+    const { app } = outletContext;
 
     const payload = {
       licenseData,
@@ -243,10 +237,6 @@ const AppLicenseComponent = () => {
           licenseChangeFile: null,
           licenseChangeMessage: "",
         });
-
-        if (changeCallback) {
-          changeCallback();
-        }
       })
       .catch((err) => {
         console.log(err);

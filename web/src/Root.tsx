@@ -793,6 +793,7 @@ const Root = () => {
                   path=":slug/license"
                   element={
                     <AppLicense
+                      //@ts-ignore
                       isEmbeddedCluster={Boolean(
                         state.adminConsoleMetadata?.isEmbeddedCluster
                       )}
