@@ -175,7 +175,7 @@ func buildNewStore(ctx context.Context, clientset kubernetes.Interface, existing
 	}
 
 	oldBucket := store.Bucket
-	needsVeleroRestart := true
+	needsVeleroRestart := false
 
 	store.Provider = options.Provider
 	store.Bucket = options.Bucket
