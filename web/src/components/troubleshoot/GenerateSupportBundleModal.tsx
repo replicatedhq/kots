@@ -17,6 +17,7 @@ type Props = {
   toggleModal: () => void;
   selectedApp: App | null;
   updateBundleSlug: (value: string) => void;
+  isEmbeddedClusterEnabled: boolean;
 };
 
 type State = {
@@ -36,8 +37,8 @@ type State = {
 const GenerateSupportBundleModal = ({
   isOpen,
   toggleModal,
-
   updateBundleSlug,
+  isEmbeddedClusterEnabled,
 }: Props) => {
   const [state, setState] = useReducer(
     (currentState: State, newState: Partial<State>) => ({
@@ -62,6 +63,7 @@ const GenerateSupportBundleModal = ({
   const toggleShowGetBundleSpec = () => {
     setState({ showGetBundleSpec: !state.showGetBundleSpec });
   };
+  console.log("isEmbeddedClusterEnabled", isEmbeddedClusterEnabled);
 
   const navigate = useNavigate();
   const params = useParams();
@@ -301,7 +303,7 @@ const GenerateSupportBundleModal = ({
             </div>
           </div>
         </div>
-        {state.showGetBundleSpec ? (
+        {state.showGetBundleSpec && (
           <div className="u-marginTop--15 command-modal">
             <span className="u-fontWeight--bold u-textColor--primary">
               Run a command to generate a support bundle
@@ -346,7 +348,9 @@ const GenerateSupportBundleModal = ({
               ></div>
             </div>
           </div>
-        ) : (
+        )}
+
+        {!isEmbeddedClusterEnabled && (
           <div className="u-marginTop--15">
             <span className="u-fontSize--normal">
               Or{" "}
@@ -358,7 +362,6 @@ const GenerateSupportBundleModal = ({
             </span>
           </div>
         )}
-
         <div
           className={`u-marginTop--30 FileUpload-wrapper ${
             hasFile ? "has-file" : ""
