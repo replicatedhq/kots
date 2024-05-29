@@ -142,7 +142,7 @@ func startClusterUpgrade(ctx context.Context, newcfg embeddedclusterv1beta1.Conf
 		Spec: embeddedclusterv1beta1.InstallationSpec{
 			ClusterID:                 current.Spec.ClusterID,
 			MetricsBaseURL:            current.Spec.MetricsBaseURL,
-			IsHighAvailability:        current.Spec.IsHighAvailability,
+			HighAvailability:          current.Spec.HighAvailability,
 			AirGap:                    current.Spec.AirGap,
 			Artifacts:                 artifacts,
 			Config:                    &newcfg,
