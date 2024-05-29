@@ -916,7 +916,7 @@ class SnapshotStorageDestination extends Component<Props, State> {
             <div className="flex flex-column u-marginBottom--30">
               <div className="u-marginBottom--5">
                 <p className="u-fontSize--normal card-item-title u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">
-                  Path
+                  Prefix
                 </p>
                 <input
                   type="text"
@@ -1012,7 +1012,7 @@ class SnapshotStorageDestination extends Component<Props, State> {
             <div className="flex u-marginBottom--15">
               <div className="flex1 u-paddingRight--5">
                 <p className="u-fontSize--normal card-item-title u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">
-                  Path
+                  Prefix
                 </p>
                 <input
                   type="text"
@@ -1163,7 +1163,7 @@ class SnapshotStorageDestination extends Component<Props, State> {
             <div className="flex u-marginBottom--5">
               <div className="flex1 u-paddingRight--5">
                 <p className="u-fontSize--normal card-item-title u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">
-                  Path
+                  Prefix
                 </p>
                 <input
                   type="text"
@@ -1264,7 +1264,7 @@ class SnapshotStorageDestination extends Component<Props, State> {
             <div className="flex u-marginBottom--15">
               <div className="flex1 u-paddingRight--5">
                 <p className="u-fontSize--normal card-item-title u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">
-                  Path
+                  Prefix
                 </p>
                 <input
                   type="text"
