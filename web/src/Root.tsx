@@ -778,7 +778,16 @@ const Root = () => {
                       />
                     }
                   />
-                  <Route path="generate" element={<GenerateSupportBundle />} />
+                  <Route
+                    path="generate"
+                    element={
+                      <GenerateSupportBundle
+                        isEmbeddedClusterEnabled={Boolean(
+                          state.adminConsoleMetadata?.isEmbeddedCluster
+                        )}
+                      />
+                    }
+                  />
                   <Route
                     path="analyze/:bundleSlug"
                     element={<SupportBundleAnalysis />}

@@ -279,6 +279,7 @@ export const SupportBundleList = (props: Props) => {
           pollForBundleAnalysisProgress={
             outletContext.pollForBundleAnalysisProgress
           }
+          isEmbeddedClusterEnabled={props.isEmbeddedClusterEnabled}
         />
       );
     }

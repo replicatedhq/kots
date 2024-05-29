@@ -303,7 +303,7 @@ const GenerateSupportBundleModal = ({
             </div>
           </div>
         </div>
-        {state.showGetBundleSpec && (
+        {state.showGetBundleSpec ? (
           <div className="u-marginTop--15 command-modal">
             <span className="u-fontWeight--bold u-textColor--primary">
               Run a command to generate a support bundle
@@ -348,19 +348,19 @@ const GenerateSupportBundleModal = ({
               ></div>
             </div>
           </div>
-        )}
-
-        {!isEmbeddedClusterEnabled && (
-          <div className="u-marginTop--15">
-            <span className="u-fontSize--normal">
-              Or{" "}
-              <a href="#" onClick={toggleShowGetBundleSpec}>
-                click here
-              </a>{" "}
-              to get a command to manually generate a support bundle. This is
-              useful if the admin console is inaccessible.
-            </span>
-          </div>
+        ) : (
+          !isEmbeddedClusterEnabled && (
+            <div className="u-marginTop--15">
+              <span className="u-fontSize--normal">
+                Or{" "}
+                <a href="#" onClick={toggleShowGetBundleSpec}>
+                  click here
+                </a>{" "}
+                to get a command to manually generate a support bundle. This is
+                useful if the admin console is inaccessible.
+              </span>
+            </div>
+          )
         )}
         <div
           className={`u-marginTop--30 FileUpload-wrapper ${
