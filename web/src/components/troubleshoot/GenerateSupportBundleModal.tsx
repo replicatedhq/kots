@@ -63,7 +63,6 @@ const GenerateSupportBundleModal = ({
   const toggleShowGetBundleSpec = () => {
     setState({ showGetBundleSpec: !state.showGetBundleSpec });
   };
-  console.log("isEmbeddedClusterEnabled", isEmbeddedClusterEnabled);
 
   const navigate = useNavigate();
   const params = useParams();
