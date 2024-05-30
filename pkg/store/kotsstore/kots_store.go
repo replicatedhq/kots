@@ -119,7 +119,7 @@ func (s *KOTSStore) IsNotFound(err error) bool {
 	}
 
 	cause := errors.Cause(err)
-	if cause == ErrNotFound {
+	if cause == ErrNotFound || cause == filestore.ErrNotFound {
 		return true
 	}
 
