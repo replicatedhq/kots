@@ -17,6 +17,7 @@ type Props = {
   toggleModal: () => void;
   selectedApp: App | null;
   updateBundleSlug: (value: string) => void;
+  isEmbeddedClusterEnabled: boolean;
 };
 
 type State = {
@@ -36,8 +37,8 @@ type State = {
 const GenerateSupportBundleModal = ({
   isOpen,
   toggleModal,
-
   updateBundleSlug,
+  isEmbeddedClusterEnabled,
 }: Props) => {
   const [state, setState] = useReducer(
     (currentState: State, newState: Partial<State>) => ({
@@ -347,80 +348,86 @@ const GenerateSupportBundleModal = ({
             </div>
           </div>
         ) : (
-          <div className="u-marginTop--15">
-            <span className="u-fontSize--normal">
-              Or{" "}
-              <a href="#" onClick={toggleShowGetBundleSpec}>
-                click here
-              </a>{" "}
-              to get a command to manually generate a support bundle. This is
-              useful if the admin console is inaccessible.
-            </span>
-          </div>
+          !isEmbeddedClusterEnabled && (
+            <div className="u-marginTop--15">
+              <span className="u-fontSize--normal">
+                Or{" "}
+                <a href="#" onClick={toggleShowGetBundleSpec}>
+                  click here
+                </a>{" "}
+                to get a command to manually generate a support bundle. This is
+                useful if the admin console is inaccessible.
+              </span>
+            </div>
+          )
         )}
 
-        <div
-          className={`u-marginTop--30 FileUpload-wrapper ${
-            hasFile ? "has-file" : ""
-          }`}
-        >
-          {state.uploadBundleErrMsg && (
-            <p className="u-textColor--error u-fontSize--normal u-fontWeight--medium u-lineHeight--normal u-marginBottom--10">
-              {state.uploadBundleErrMsg}
-            </p>
-          )}
-          <Dropzone
-            className="Dropzone-wrapper"
-            accept="application/gzip, .gz"
-            onDropAccepted={onDrop}
-            multiple={false}
+        {!isEmbeddedClusterEnabled && (
+          <div
+            className={`u-marginTop--30 FileUpload-wrapper ${
+              hasFile ? "has-file" : ""
+            }`}
           >
-            {!hasFile && (
-              <div className="u-textAlign--center">
-                <Icon
-                  icon="yaml-icon"
-                  size={40}
-                  className="u-marginBottom--10 gray-color"
-                />
-                <p className="u-fontSize--normal u-textColor--secondary u-fontWeight--medium u-lineHeight--normal">
-                  Drag your bundle here or{" "}
-                  <span className="u-linkColor u-fontWeight--medium u-textDecoration--underlineOnHover">
-                    choose a file to upload
+            {state.uploadBundleErrMsg && (
+              <p className="u-textColor--error u-fontSize--normal u-fontWeight--medium u-lineHeight--normal u-marginBottom--10">
+                {state.uploadBundleErrMsg}
+              </p>
+            )}
+            <Dropzone
+              className="Dropzone-wrapper"
+              accept="application/gzip, .gz"
+              onDropAccepted={onDrop}
+              multiple={false}
+            >
+              {!hasFile && (
+                <div className="u-textAlign--center">
+                  <Icon
+                    icon="yaml-icon"
+                    size={40}
+                    className="u-marginBottom--10 gray-color"
+                  />
+                  <p className="u-fontSize--normal u-textColor--secondary u-fontWeight--medium u-lineHeight--normal">
+                    Drag your bundle here or{" "}
+                    <span className="u-linkColor u-fontWeight--medium u-textDecoration--underlineOnHover">
+                      choose a file to upload
+                    </span>
+                  </p>
+                </div>
+              )}
+            </Dropzone>
+            {hasFile && (
+              <div
+                className="flex flexDirection--column justifyContent--spaceBetween"
+                style={{ gap: "15px" }}
+              >
+                <div className={`${hasFile ? "has-file-border" : ""}`}>
+                  <p className="u-fontSize--normal u-fontWeight--medium ">
+                    {state.supportBundleFile?.name}
+                  </p>
+                </div>
+
+                <div className="flex flex-column justifyContent--center">
+                  <button
+                    type="button"
+                    className="btn secondary blue nowrap"
+                    onClick={uploadAndAnalyze}
+                    disabled={state.fileUploading || !hasFile}
+                  >
+                    {state.fileUploading
+                      ? "Uploading"
+                      : "Upload support bundle"}
+                  </button>
+                  <span
+                    className="replicated-link u-fontSize--small u-marginTop--10 u-textAlign--center"
+                    onClick={clearFile}
+                  >
+                    Select a different file
                   </span>
-                </p>
+                </div>
               </div>
             )}
-          </Dropzone>
-          {hasFile && (
-            <div
-              className="flex flexDirection--column justifyContent--spaceBetween"
-              style={{ gap: "15px" }}
-            >
-              <div className={`${hasFile ? "has-file-border" : ""}`}>
-                <p className="u-fontSize--normal u-fontWeight--medium ">
-                  {state.supportBundleFile?.name}
-                </p>
-              </div>
-
-              <div className="flex flex-column justifyContent--center">
-                <button
-                  type="button"
-                  className="btn secondary blue nowrap"
-                  onClick={uploadAndAnalyze}
-                  disabled={state.fileUploading || !hasFile}
-                >
-                  {state.fileUploading ? "Uploading" : "Upload support bundle"}
-                </button>
-                <span
-                  className="replicated-link u-fontSize--small u-marginTop--10 u-textAlign--center"
-                  onClick={clearFile}
-                >
-                  Select a different file
-                </span>
-              </div>
-            </div>
-          )}
-        </div>
+          </div>
+        )}
 
         <div className="flex u-marginTop--30">
           <button className="btn primary" onClick={toggleModal}>
