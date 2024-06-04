@@ -2,7 +2,6 @@ package embeddedcluster
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"sync"
 	"time"
@@ -34,13 +33,6 @@ func MaybeStartClusterUpgrade(ctx context.Context, store store.Store, kotsKinds 
 
 	spec := kotsKinds.EmbeddedClusterConfig.Spec
 	if upgrade, err := RequiresUpgrade(ctx, spec); err != nil {
-		// if there is no installation object we can't start an upgrade. this is a valid
-		// scenario specially during cluster bootstrap. as we do not need to upgrade the
-		// cluster just after its installation we can return nil here.
-		// (the cluster in the first kots version will match the cluster installed during bootstrap)
-		if errors.Is(err, ErrNoInstallations) {
-			return nil
-		}
 		return fmt.Errorf("failed to check if upgrade is required: %w", err)
 	} else if !upgrade {
 		return nil
@@ -128,7 +120,7 @@ func updateClusterState(ctx context.Context, store store.Store, lastState string
 		return "", fmt.Errorf("failed to get current installation: %w", err)
 	}
 	state := embeddedclusterv1beta1.InstallationStateUnknown
-	if installation.Status.State != "" {
+	if installation != nil && installation.Status.State != "" {
 		state = installation.Status.State
 	}
 	// only update the state if it has changed

@@ -48,6 +48,13 @@ func RequiresUpgrade(ctx context.Context, newcfg embeddedclusterv1beta1.ConfigSp
 	if err != nil {
 		return false, fmt.Errorf("failed to get current cluster config: %w", err)
 	}
+	if curcfg == nil {
+		// if there is no installation object we can't start an upgrade. this is a valid
+		// scenario specially during cluster bootstrap. as we do not need to upgrade the
+		// cluster just after its installation we can return nil here.
+		// (the cluster in the first kots version will match the cluster installed during bootstrap)
+		return false, nil
+	}
 	serializedCur, err := json.Marshal(curcfg)
 	if err != nil {
 		return false, err
@@ -66,7 +73,7 @@ func GetCurrentInstallation(ctx context.Context) (*embeddedclusterv1beta1.Instal
 		return nil, fmt.Errorf("failed to list installations: %w", err)
 	}
 	if len(installations) == 0 {
-		return nil, ErrNoInstallations
+		return nil, nil
 	}
 	sort.SliceStable(installations, func(i, j int) bool {
 		return installations[j].Name < installations[i].Name
@@ -100,6 +107,9 @@ func ClusterConfig(ctx context.Context) (*embeddedclusterv1beta1.ConfigSpec, err
 	if err != nil {
 		return nil, fmt.Errorf("failed to get current installation: %w", err)
 	}
+	if latest == nil {
+		return nil, nil
+	}
 	return latest.Spec.Config, nil
 }
 
@@ -131,6 +141,9 @@ func startClusterUpgrade(ctx context.Context, newcfg embeddedclusterv1beta1.Conf
 	current, err := GetCurrentInstallation(ctx)
 	if err != nil {
 		return fmt.Errorf("failed to get current installation: %w", err)
+	}
+	if current == nil {
+		return ErrNoInstallations
 	}
 	newins := embeddedclusterv1beta1.Installation{
 		ObjectMeta: metav1.ObjectMeta{

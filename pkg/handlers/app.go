@@ -306,7 +306,6 @@ func responseAppFromApp(a *apptypes.App) (*types.ResponseApp, error) {
 			if err != nil {
 				return nil, errors.Wrap(err, "failed to get latest installation")
 			}
-
 			if currentInstallation != nil {
 				cluster.State = string(currentInstallation.Status.State)
 			}

@@ -159,6 +159,12 @@ func (h *Handler) GetEmbeddedClusterNodeJoinCommand(w http.ResponseWriter, r *ht
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
+	if install == nil {
+		logger.Error(embeddedcluster.ErrNoInstallations)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
 	endUserK0sConfigOverrides := install.Spec.EndUserK0sConfigOverrides
 	var k0sUnsupportedOverrides, ecVersion string
 	if install.Spec.Config != nil {
