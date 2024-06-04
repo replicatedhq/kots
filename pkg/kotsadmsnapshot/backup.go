@@ -991,6 +991,7 @@ func prepareIncludedNamespaces(namespaces []string, isEC bool) []string {
 		uniqueNamespaces["kube-system"] = true
 		uniqueNamespaces["openebs"] = true
 		uniqueNamespaces["registry"] = true
+		uniqueNamespaces["seaweedfs"] = true
 	}
 
 	includedNamespaces := make([]string, len(uniqueNamespaces))
