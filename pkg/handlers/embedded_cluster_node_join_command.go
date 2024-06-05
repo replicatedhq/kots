@@ -17,6 +17,12 @@ type GenerateEmbeddedClusterNodeJoinCommandResponse struct {
 	Command []string `json:"command"`
 }
 
+type Proxy struct {
+	HTTPProxy  string `json:"httpProxy"`
+	HTTPSProxy string `json:"httpsProxy"`
+	NoProxy    string `json:"noProxy"`
+}
+
 type GetEmbeddedClusterNodeJoinCommandResponse struct {
 	ClusterID                 string `json:"clusterID"`
 	K0sJoinCommand            string `json:"k0sJoinCommand"`
@@ -27,6 +33,7 @@ type GetEmbeddedClusterNodeJoinCommandResponse struct {
 	EmbeddedClusterVersion    string `json:"embeddedClusterVersion"`
 	AirgapRegistryAddress     string `json:"airgapRegistryAddress"`
 	IsAirgap                  bool   `json:"isAirgap"`
+	Proxy                     Proxy  `json:"proxy"`
 }
 
 type GenerateEmbeddedClusterNodeJoinCommandRequest struct {
@@ -172,6 +179,18 @@ func (h *Handler) GetEmbeddedClusterNodeJoinCommand(w http.ResponseWriter, r *ht
 		airgapRegistryAddress, _, _ = kotsutil.GetEmbeddedRegistryCreds(clientset)
 	}
 
+	httpProxy := util.HTTPProxy()
+	httpsProxy := util.HTTPSProxy()
+	noProxy := util.NoProxy()
+	var proxy Proxy
+	if httpProxy != "" || httpsProxy != "" || noProxy != "" {
+		proxy = Proxy{
+			HTTPProxy:  httpProxy,
+			HTTPSProxy: httpsProxy,
+			NoProxy:    noProxy,
+		}
+	}
+
 	JSON(w, http.StatusOK, GetEmbeddedClusterNodeJoinCommandResponse{
 		ClusterID:                 install.Spec.ClusterID,
 		K0sJoinCommand:            k0sJoinCommand,
@@ -182,5 +201,6 @@ func (h *Handler) GetEmbeddedClusterNodeJoinCommand(w http.ResponseWriter, r *ht
 		EmbeddedClusterVersion:    ecVersion,
 		AirgapRegistryAddress:     airgapRegistryAddress,
 		IsAirgap:                  install.Spec.AirGap,
+		Proxy:                     proxy,
 	})
 }
