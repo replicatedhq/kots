@@ -18,6 +18,8 @@ const BackupLabelValue = "velero"
 const DisasterRecoveryLabel = "replicated.com/disaster-recovery"
 const DisasterRecoveryLabelValueInfra = "infra"
 const DisasterRecoveryLabelValueApp = "app"
+const DisasterRecoveryChartLabel = "replicated.com/disaster-recovery-chart"
+const DisasterRecoveryChartValue = "kotsadm"
 
 const TroubleshootKey = "troubleshoot.sh/kind"
 const TroubleshootValue = "support-bundle"
@@ -34,6 +36,7 @@ func GetKotsadmLabels(additionalLabels ...map[string]string) map[string]string {
 
 	if util.IsEmbeddedCluster() {
 		labels[DisasterRecoveryLabel] = DisasterRecoveryLabelValueInfra
+		labels[DisasterRecoveryChartLabel] = DisasterRecoveryChartValue
 	}
 
 	for _, l := range additionalLabels {
