@@ -172,17 +172,21 @@ func (s *KOTSStore) preflightResultFromRow(row gorqlite.QueryResult) (*preflight
 }
 
 func (s *KOTSStore) hasFailingStrictPreflights(preflightSpecStr gorqlite.NullString, preflightResultStr gorqlite.NullString) (bool, error) {
-	hasFailingStrictPreflights, err := s.hasStrictPreflights(preflightSpecStr)
+	hasStrictPreflights, err := s.hasStrictPreflights(preflightSpecStr)
 	if err != nil {
 		return false, errors.Wrap(err, "failed to check for strict preflight")
 	}
+	if !hasStrictPreflights {
+		return false, nil
+	}
 
+	hasFailingStrictPreflights := false
 	if preflightResultStr.Valid && preflightResultStr.String != "" {
 		preflightResult := troubleshootpreflight.UploadPreflightResults{}
 		if err := json.Unmarshal([]byte(preflightResultStr.String), &preflightResult); err != nil {
 			return false, errors.Wrap(err, "failed to unmarshal preflightResults")
 		}
-		hasFailingStrictPreflights = hasFailingStrictPreflights && troubleshootpreflight.HasStrictAnalyzersFailed(&preflightResult)
+		hasFailingStrictPreflights = troubleshootpreflight.HasStrictAnalyzersFailed(&preflightResult)
 	}
 	return hasFailingStrictPreflights, nil
 }
