@@ -85,7 +85,7 @@ func TestPrepareIncludedNamespaces(t *testing.T) {
 		{
 			name:       "embedded-cluster install",
 			namespaces: []string{"test", "abcapp"},
-			want:       []string{"test", "abcapp", "embedded-cluster", "kube-system", "openebs", "registry"},
+			want:       []string{"test", "abcapp", "embedded-cluster", "kube-system", "openebs", "registry", "seaweedfs"},
 			isEC:       true,
 		},
 	}
@@ -672,6 +672,11 @@ func Test_instanceBackupLabelSelectors(t *testing.T) {
 				{
 					MatchLabels: map[string]string{
 						"app": "docker-registry",
+					},
+				},
+				{
+					MatchLabels: map[string]string{
+						"app.kubernetes.io/name": "seaweedfs",
 					},
 				},
 			},
