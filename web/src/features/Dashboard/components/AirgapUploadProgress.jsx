@@ -125,7 +125,7 @@ class AirgapUploadProgress extends Component {
 
     if (progress > 0) {
       uploadComplete = progress === 1;
-      percentage = Math.round(progress * 100) + "%";
+      percentage = (progress * 100).toFixed(2) + "%";
       progressBar = (
         <div
           className={`progressbar ${smallSize ? "small" : ""} ${
@@ -214,8 +214,10 @@ class AirgapUploadProgress extends Component {
                   let percentage;
 
                   if (image.total > 0 && image.current > 0) {
-                    percentage =
-                      Math.round((image.current / image.total) * 100) + "%";
+                    (percentage = Math.floor(
+                      (image.current / image.total) * 100
+                    )),
+                      toFixed() + "%";
                     imageProgressBar = (
                       <div className="progressbar">
                         <div
