@@ -337,14 +337,14 @@ const EmbeddedClusterManagement = ({
     ],
     []
   );
-  const hasNodesChanged = (prevNodes, currentNodes) => {
-    // Implement your comparison logic here, e.g., deep comparison
-    // You can check for specific property changes like isReady
-    return !isEqual(prevNodes, currentNodes); // Replace with your logic
+  const hasNodesChanged = (
+    prevNodes: NodesResponse,
+    currentNodes: NodesResponse
+  ) => {
+    return !isEqual(prevNodes, currentNodes);
   };
 
   const mappedNodes = useMemo(() => {
-    console.log("mapp nodes");
     return (
       (nodesData?.nodes || testData?.nodes)?.map((n) => ({
         name: n.name,
