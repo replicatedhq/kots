@@ -173,6 +173,10 @@ func EmbeddedClusterID() string {
 	return os.Getenv("EMBEDDED_CLUSTER_ID")
 }
 
+func EmbeddedClusterVersion() string {
+	return os.Getenv("EMBEDDED_CLUSTER_VERSION")
+}
+
 func GetValueFromMapPath(m interface{}, path []string) interface{} {
 	if len(path) == 0 {
 		return nil
