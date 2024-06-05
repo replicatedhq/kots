@@ -447,7 +447,10 @@ export function getPreflightResultState(preflightResults) {
 }
 
 export function formatByteSize(bytes) {
-  if (bytes < 1024) {
+  if (bytes === 0) {
+    return ``;
+  }
+  if (bytes > 0 && bytes < 1024) {
     return `${bytes} B`;
   }
   if (bytes < 1048576) {
