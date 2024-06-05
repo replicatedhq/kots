@@ -19,7 +19,7 @@ const DisasterRecoveryLabel = "replicated.com/disaster-recovery"
 const DisasterRecoveryLabelValueInfra = "infra"
 const DisasterRecoveryLabelValueApp = "app"
 const DisasterRecoveryChartLabel = "replicated.com/disaster-recovery-chart"
-const DisasterRecoveryChartValue = "kotsadm"
+const DisasterRecoveryChartValue = "admin-console"
 
 const TroubleshootKey = "troubleshoot.sh/kind"
 const TroubleshootValue = "support-bundle"
