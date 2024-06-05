@@ -991,6 +991,7 @@ func prepareIncludedNamespaces(namespaces []string, isEC bool) []string {
 		uniqueNamespaces["kube-system"] = true
 		uniqueNamespaces["openebs"] = true
 		uniqueNamespaces["registry"] = true
+		uniqueNamespaces["seaweedfs"] = true
 	}
 
 	includedNamespaces := make([]string, len(uniqueNamespaces))
@@ -1095,6 +1096,13 @@ func instanceBackupLabelSelectors(isEmbeddedCluster bool) []*metav1.LabelSelecto
 				// https://github.com/twuni/docker-registry.helm/blob/main/templates/deployment.yaml
 				MatchLabels: map[string]string{
 					"app": "docker-registry",
+				},
+			},
+			{
+				// we cannot add new labels to the seaweedfs chart as of June 6th 2024
+				// so we need to add a label selector for the seaweedfs app
+				MatchLabels: map[string]string{
+					"app.kubernetes.io/name": "seaweedfs",
 				},
 			},
 		}
