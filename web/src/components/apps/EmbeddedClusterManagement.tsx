@@ -13,6 +13,7 @@ import Icon from "../Icon";
 import CodeSnippet from "../shared/CodeSnippet";
 
 import "@src/scss/components/apps/EmbeddedClusterManagement.scss";
+import { isEqual } from "lodash";
 
 const testData = {
   nodes: undefined,
@@ -336,8 +337,14 @@ const EmbeddedClusterManagement = ({
     ],
     []
   );
+  const hasNodesChanged = (prevNodes, currentNodes) => {
+    // Implement your comparison logic here, e.g., deep comparison
+    // You can check for specific property changes like isReady
+    return !isEqual(prevNodes, currentNodes); // Replace with your logic
+  };
 
   const mappedNodes = useMemo(() => {
+    console.log("mapp nodes");
     return (
       (nodesData?.nodes || testData?.nodes)?.map((n) => ({
         name: n.name,
@@ -359,7 +366,7 @@ const EmbeddedClusterManagement = ({
         ),
       })) || []
     );
-  }, [nodesData?.nodes?.toString()]);
+  }, [nodesData?.nodes?.toString(), hasNodesChanged]);
   // #endregion
 
   const onContinueClick = async () => {
