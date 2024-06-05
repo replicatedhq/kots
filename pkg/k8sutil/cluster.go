@@ -3,14 +3,17 @@ package k8sutil
 import (
 	"context"
 	"fmt"
-	"github.com/pkg/errors"
-	"k8s.io/client-go/kubernetes"
 	"time"
+
+	"github.com/pkg/errors"
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	k8stypes "k8s.io/apimachinery/pkg/types"
+	"k8s.io/client-go/kubernetes"
 	bootstrapapi "k8s.io/cluster-bootstrap/token/api"
 	bootstraputil "k8s.io/cluster-bootstrap/token/util"
+	kbclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 // GenerateBootstrapToken will generate a node join token for kubeadm.
@@ -23,10 +26,17 @@ func GenerateBootstrapToken(client kubernetes.Interface, ttl time.Duration) (str
 	}
 	data[bootstrapapi.BootstrapTokenExtraGroupsKey] = []byte("system:bootstrappers:kubeadm:default-node-token")
 
-	return generateJoinTokenInternal(client, ttl, data)
+	token, secret, err := generateJoinToken(ttl, data)
+	if err != nil {
+		return "", errors.Wrap(err, "failed to generate join token")
+	}
+	if _, err := client.CoreV1().Secrets(metav1.NamespaceSystem).Create(context.TODO(), secret, metav1.CreateOptions{}); err != nil {
+		return "", errors.Wrapf(err, "failed to create bootstrap token secret with name %s", secret.ObjectMeta.Name)
+	}
+	return token, nil
 }
 
-func GenerateK0sBootstrapToken(client kubernetes.Interface, ttl time.Duration, role string) (string, error) {
+func GenerateK0sBootstrapToken(client kbclient.Client, ttl time.Duration, role string) (string, error) {
 	data := make(map[string][]byte)
 
 	// these 'data' entries are taken from k0s: https://github.com/replicatedhq/k0s/blob/7bc57553ea8ccb6847fdd8249701554ee8be1ab0/pkg/token/manager.go#L69
@@ -41,13 +51,21 @@ func GenerateK0sBootstrapToken(client kubernetes.Interface, ttl time.Duration, r
 		data["usage-bootstrap-signing"] = []byte("false")
 		data["usage-controller-join"] = []byte("true")
 	}
-	return generateJoinTokenInternal(client, ttl, data)
+
+	token, secret, err := generateJoinToken(ttl, data)
+	if err != nil {
+		return "", errors.Wrap(err, "failed to generate join token")
+	}
+	if err := client.Create(context.TODO(), secret); err != nil {
+		return "", errors.Wrapf(err, "failed to create bootstrap token secret with name %s", secret.ObjectMeta.Name)
+	}
+	return token, nil
 }
 
-func generateJoinTokenInternal(client kubernetes.Interface, ttl time.Duration, data map[string][]byte) (string, error) {
+func generateJoinToken(ttl time.Duration, data map[string][]byte) (string, *corev1.Secret, error) {
 	token, err := bootstraputil.GenerateBootstrapToken()
 	if err != nil {
-		return "", errors.Wrap(err, "generate kubeadm token")
+		return "", nil, errors.Wrap(err, "generate bootstrap token")
 	}
 	substrs := bootstraputil.BootstrapTokenRegexp.FindStringSubmatch(token)
 	tokenID := substrs[1]
@@ -60,7 +78,7 @@ func generateJoinTokenInternal(client kubernetes.Interface, ttl time.Duration, d
 	data[bootstrapapi.BootstrapTokenExpirationKey] = []byte(expirationString)
 
 	secretName := fmt.Sprintf("%s%s", bootstrapapi.BootstrapTokenSecretPrefix, tokenID)
-	bootstrapToken := &corev1.Secret{
+	secret := &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      secretName,
 			Namespace: metav1.NamespaceSystem,
@@ -69,16 +87,12 @@ func generateJoinTokenInternal(client kubernetes.Interface, ttl time.Duration, d
 		Data: data,
 	}
 
-	if _, err := client.CoreV1().Secrets(metav1.NamespaceSystem).Create(context.TODO(), bootstrapToken, metav1.CreateOptions{}); err != nil {
-		return "", errors.Wrapf(err, "failed to create bootstrap token with name %s", secretName)
-	}
-
-	return token, nil
+	return token, secret, nil
 }
 
-func GetClusterCaCert(ctx context.Context, client kubernetes.Interface) (string, error) {
-	cert, err := client.CoreV1().ConfigMaps("kube-system").Get(ctx, "kube-root-ca.crt", metav1.GetOptions{})
-	if err != nil {
+func GetClusterCaCert(ctx context.Context, client kbclient.Client) (string, error) {
+	var cert corev1.ConfigMap
+	if err := client.Get(ctx, k8stypes.NamespacedName{Name: "kube-root-ca.crt", Namespace: "kube-system"}, &cert); err != nil {
 		return "", errors.Wrap(err, "failed to get kube-root-ca.crt")
 	}
 

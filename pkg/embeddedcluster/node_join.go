@@ -11,9 +11,10 @@ import (
 	"github.com/replicatedhq/kots/pkg/embeddedcluster/types"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/util"
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/kubernetes"
+	k8stypes "k8s.io/apimachinery/pkg/types"
+	kbclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 type joinTokenEntry struct {
@@ -46,7 +47,7 @@ users:
 
 // GenerateAddNodeToken will generate the embedded cluster node add command for a node with the specified roles
 // join commands will last for 24 hours, and will be cached for 1 hour after first generation
-func GenerateAddNodeToken(ctx context.Context, client kubernetes.Interface, nodeRole string) (string, error) {
+func GenerateAddNodeToken(ctx context.Context, client kbclient.Client, nodeRole string) (string, error) {
 	// get the joinToken struct entry for this node role
 	joinTokenMapMut.Lock()
 	if _, ok := joinTokenMap[nodeRole]; !ok {
@@ -76,7 +77,7 @@ func GenerateAddNodeToken(ctx context.Context, client kubernetes.Interface, node
 	return newToken, nil
 }
 
-func makeK0sToken(ctx context.Context, client kubernetes.Interface, nodeRole string) (string, error) {
+func makeK0sToken(ctx context.Context, client kbclient.Client, nodeRole string) (string, error) {
 	rawToken, err := k8sutil.GenerateK0sBootstrapToken(client, time.Hour, nodeRole)
 	if err != nil {
 		return "", fmt.Errorf("failed to generate bootstrap token: %w", err)
@@ -110,9 +111,9 @@ func makeK0sToken(ctx context.Context, client kubernetes.Interface, nodeRole str
 	return b64Token, nil
 }
 
-func firstPrimaryIpAddress(ctx context.Context, client kubernetes.Interface) (string, error) {
-	nodes, err := client.CoreV1().Nodes().List(ctx, metav1.ListOptions{})
-	if err != nil {
+func firstPrimaryIpAddress(ctx context.Context, client kbclient.Client) (string, error) {
+	var nodes corev1.NodeList
+	if err := client.List(ctx, &nodes); err != nil {
 		return "", fmt.Errorf("failed to list nodes: %w", err)
 	}
 
@@ -126,7 +127,6 @@ func firstPrimaryIpAddress(ctx context.Context, client kubernetes.Interface) (st
 				return address.Address, nil
 			}
 		}
-
 	}
 
 	return "", fmt.Errorf("failed to find controller node")
@@ -134,22 +134,22 @@ func firstPrimaryIpAddress(ctx context.Context, client kubernetes.Interface) (st
 
 // GenerateAddNodeCommand returns the command a user should run to add a node with the provided token
 // the command will be of the form 'embeddedcluster node join ip:port UUID'
-func GenerateAddNodeCommand(ctx context.Context, client kubernetes.Interface, token string, isAirgap bool) (string, error) {
-	cm, err := ReadConfigMap(client)
+func GenerateAddNodeCommand(ctx context.Context, kbClient kbclient.Client, token string, isAirgap bool) (string, error) {
+	installation, err := GetCurrentInstallation(ctx, kbClient)
 	if err != nil {
-		return "", fmt.Errorf("failed to read configmap: %w", err)
+		return "", fmt.Errorf("failed to get current installation: %w", err)
 	}
 
-	binaryName := cm.Data["embedded-binary-name"]
+	binaryName := installation.Spec.BinaryName
 
 	// get the IP of a controller node
-	nodeIP, err := getControllerNodeIP(ctx, client)
+	nodeIP, err := getControllerNodeIP(ctx, kbClient)
 	if err != nil {
 		return "", fmt.Errorf("failed to get controller node IP: %w", err)
 	}
 
 	// get the port of the 'admin-console' service
-	port, err := getAdminConsolePort(ctx, client)
+	port, err := getAdminConsolePort(ctx, kbClient)
 	if err != nil {
 		return "", fmt.Errorf("failed to get admin console port: %w", err)
 	}
@@ -165,8 +165,8 @@ func GenerateAddNodeCommand(ctx context.Context, client kubernetes.Interface, to
 
 // GenerateK0sJoinCommand returns the k0s node join command, without the token but with all other required flags
 // (including node labels generated from the roles etc)
-func GenerateK0sJoinCommand(ctx context.Context, client kubernetes.Interface, roles []string) (string, error) {
-	controllerRoleName, err := ControllerRoleName(ctx)
+func GenerateK0sJoinCommand(ctx context.Context, kbClient kbclient.Client, roles []string) (string, error) {
+	controllerRoleName, err := ControllerRoleName(ctx, kbClient)
 	if err != nil {
 		return "", fmt.Errorf("failed to get controller role name: %w", err)
 	}
@@ -183,7 +183,7 @@ func GenerateK0sJoinCommand(ctx context.Context, client kubernetes.Interface, ro
 		cmd = append(cmd, "--enable-worker", "--no-taints")
 	}
 
-	labels, err := getRolesNodeLabels(ctx, roles)
+	labels, err := getRolesNodeLabels(ctx, kbClient, roles)
 	if err != nil {
 		return "", fmt.Errorf("failed to get role labels: %w", err)
 	}
@@ -193,11 +193,11 @@ func GenerateK0sJoinCommand(ctx context.Context, client kubernetes.Interface, ro
 }
 
 // gets the port of the 'admin-console' or 'kurl-proxy-kotsadm' service
-func getAdminConsolePort(ctx context.Context, client kubernetes.Interface) (int32, error) {
-	kurlProxyPort, err := getAdminConsolePortImpl(ctx, client, "kurl-proxy-kotsadm")
+func getAdminConsolePort(ctx context.Context, kbClient kbclient.Client) (int32, error) {
+	kurlProxyPort, err := getAdminConsolePortImpl(ctx, kbClient, "kurl-proxy-kotsadm")
 	if err != nil {
 		if errors.IsNotFound(err) {
-			adminConsolePort, err := getAdminConsolePortImpl(ctx, client, "admin-console")
+			adminConsolePort, err := getAdminConsolePortImpl(ctx, kbClient, "admin-console")
 			if err != nil {
 				return -1, fmt.Errorf("failed to get admin-console port: %w", err)
 			}
@@ -208,9 +208,9 @@ func getAdminConsolePort(ctx context.Context, client kubernetes.Interface) (int3
 	return kurlProxyPort, nil
 }
 
-func getAdminConsolePortImpl(ctx context.Context, client kubernetes.Interface, svcName string) (int32, error) {
-	svc, err := client.CoreV1().Services(util.PodNamespace).Get(ctx, svcName, metav1.GetOptions{})
-	if err != nil {
+func getAdminConsolePortImpl(ctx context.Context, kbClient kbclient.Client, svcName string) (int32, error) {
+	var svc corev1.Service
+	if err := kbClient.Get(ctx, k8stypes.NamespacedName{Name: svcName, Namespace: util.PodNamespace}, &svc); err != nil {
 		return -1, fmt.Errorf("failed to get %s service: %w", svcName, err)
 	}
 
@@ -227,9 +227,9 @@ func getAdminConsolePortImpl(ctx context.Context, client kubernetes.Interface, s
 }
 
 // getControllerNodeIP gets the IP of a healthy controller node
-func getControllerNodeIP(ctx context.Context, client kubernetes.Interface) (string, error) {
-	nodes, err := client.CoreV1().Nodes().List(ctx, metav1.ListOptions{})
-	if err != nil {
+func getControllerNodeIP(ctx context.Context, kbClient kbclient.Client) (string, error) {
+	var nodes corev1.NodeList
+	if err := kbClient.List(ctx, &nodes); err != nil {
 		return "", fmt.Errorf("failed to list nodes: %w", err)
 	}
 
@@ -247,16 +247,15 @@ func getControllerNodeIP(ctx context.Context, client kubernetes.Interface) (stri
 				}
 			}
 		}
-
 	}
 
 	return "", fmt.Errorf("failed to find healthy controller node")
 }
 
-func getRolesNodeLabels(ctx context.Context, roles []string) (string, error) {
+func getRolesNodeLabels(ctx context.Context, kbClient kbclient.Client, roles []string) (string, error) {
 	roleListLabels := getRoleListLabels(roles)
 
-	labels, err := getRoleNodeLabels(ctx, roles)
+	labels, err := getRoleNodeLabels(ctx, kbClient, roles)
 	if err != nil {
 		return "", fmt.Errorf("failed to get node labels for roles %v: %w", roles, err)
 	}
