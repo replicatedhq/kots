@@ -477,7 +477,7 @@ func (h *Handler) ConfigureAppIdentityService(w http.ResponseWriter, r *http.Req
 		return
 	}
 
-	if err := preflight.Run(a.ID, a.Slug, newSequence, a.IsAirgap, archiveDir); err != nil {
+	if err := preflight.Run(a.ID, a.Slug, newSequence, a.IsAirgap, false, archiveDir); err != nil {
 		err = errors.Wrap(err, "failed to run preflights")
 		logger.Error(err)
 		w.WriteHeader(http.StatusInternalServerError)

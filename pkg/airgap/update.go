@@ -212,7 +212,7 @@ func UpdateAppFromPath(a *apptypes.App, airgapRoot string, airgapBundlePath stri
 	}
 
 	if !skipPreflights || hasStrictPreflights {
-		if err := preflight.Run(a.ID, a.Slug, newSequence, true, archiveDir); err != nil {
+		if err := preflight.Run(a.ID, a.Slug, newSequence, true, skipPreflights, archiveDir); err != nil {
 			return errors.Wrap(err, "failed to start preflights")
 		}
 	}

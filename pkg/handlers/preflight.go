@@ -157,7 +157,7 @@ func (h *Handler) IgnorePreflightRBACErrors(w http.ResponseWriter, r *http.Reque
 	removeArchiveDir = false
 	go func() {
 		defer os.RemoveAll(archiveDir)
-		if err := preflight.Run(foundApp.ID, foundApp.Slug, int64(sequence), foundApp.IsAirgap, archiveDir); err != nil {
+		if err := preflight.Run(foundApp.ID, foundApp.Slug, int64(sequence), foundApp.IsAirgap, false, archiveDir); err != nil {
 			logger.Error(errors.Wrap(err, "failed to run preflights"))
 			return
 		}
@@ -224,7 +224,7 @@ func (h *Handler) StartPreflightChecks(w http.ResponseWriter, r *http.Request) {
 	removeArchiveDir = false
 	go func() {
 		defer os.RemoveAll(archiveDir)
-		if err := preflight.Run(foundApp.ID, foundApp.Slug, int64(sequence), foundApp.IsAirgap, archiveDir); err != nil {
+		if err := preflight.Run(foundApp.ID, foundApp.Slug, int64(sequence), foundApp.IsAirgap, false, archiveDir); err != nil {
 			logger.Error(errors.Wrap(err, "failed to run preflights"))
 			return
 		}

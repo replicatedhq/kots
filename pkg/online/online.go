@@ -250,7 +250,7 @@ func CreateAppFromOnline(opts CreateOnlineAppOpts) (_ *kotsutil.KotsKinds, final
 	}
 
 	if !opts.SkipPreflights || hasStrictPreflights {
-		if err := preflight.Run(opts.PendingApp.ID, opts.PendingApp.Slug, newSequence, false, tmpRoot); err != nil {
+		if err := preflight.Run(opts.PendingApp.ID, opts.PendingApp.Slug, newSequence, false, opts.SkipPreflights, tmpRoot); err != nil {
 			return nil, errors.Wrap(err, "failed to start preflights")
 		}
 	}
