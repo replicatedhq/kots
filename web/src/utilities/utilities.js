@@ -447,16 +447,19 @@ export function getPreflightResultState(preflightResults) {
 }
 
 export function formatByteSize(bytes) {
-  if (bytes < 1024) {
-    return `${bytes}b`;
+  if (bytes === 0) {
+    return ``;
+  }
+  if (bytes > 0 && bytes < 1024) {
+    return `${bytes} B`;
   }
   if (bytes < 1048576) {
-    return `${(bytes / 1024).toFixed(2)}kb`;
+    return `${(bytes / 1024).toFixed(2)} KB`;
   }
   if (bytes < 1073741824) {
-    return `${(bytes / 1048576).toFixed(2)}mb`;
+    return `${(bytes / 1048576).toFixed(2)} MB`;
   }
-  return `${(bytes / 1073741824).toFixed(2)}gb`;
+  return `${(bytes / 1073741824).toFixed(2)} GB`;
 }
 
 export function getGitProviderDiffUrl(
