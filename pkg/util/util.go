@@ -177,6 +177,10 @@ func EmbeddedClusterVersion() string {
 	return os.Getenv("EMBEDDED_CLUSTER_VERSION")
 }
 
+func EmbeddedClusterIsHA() bool {
+	return os.Getenv("IS_HA") == "true"
+}
+
 func GetValueFromMapPath(m interface{}, path []string) interface{} {
 	if len(path) == 0 {
 		return nil

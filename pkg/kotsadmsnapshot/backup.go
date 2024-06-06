@@ -375,6 +375,7 @@ func CreateInstanceBackup(ctx context.Context, cluster *downstreamtypes.Downstre
 		backupAnnotations["kots.io/embedded-cluster"] = "true"
 		backupAnnotations["kots.io/embedded-cluster-id"] = util.EmbeddedClusterID()
 		backupAnnotations["kots.io/embedded-cluster-version"] = util.EmbeddedClusterVersion()
+		backupAnnotations["kots.io/embedded-cluster-is-ha"] = strconv.FormatBool(util.EmbeddedClusterIsHA())
 	}
 
 	includeClusterResources := true
