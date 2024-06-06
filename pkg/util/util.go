@@ -177,6 +177,18 @@ func EmbeddedClusterVersion() string {
 	return os.Getenv("EMBEDDED_CLUSTER_VERSION")
 }
 
+func HTTPProxy() string {
+	return os.Getenv("HTTP_PROXY")
+}
+
+func HTTPSProxy() string {
+	return os.Getenv("HTTPS_PROXY")
+}
+
+func NoProxy() string {
+	return os.Getenv("NO_PROXY")
+}
+
 func GetValueFromMapPath(m interface{}, path []string) interface{} {
 	if len(path) == 0 {
 		return nil
