@@ -13,6 +13,7 @@ import Icon from "../Icon";
 import CodeSnippet from "../shared/CodeSnippet";
 
 import "@src/scss/components/apps/EmbeddedClusterManagement.scss";
+import { isEqual } from "lodash";
 
 const testData = {
   nodes: undefined,
@@ -336,6 +337,12 @@ const EmbeddedClusterManagement = ({
     ],
     []
   );
+  const hasNodesChanged = (
+    prevNodes: NodesResponse,
+    currentNodes: NodesResponse
+  ) => {
+    return !isEqual(prevNodes, currentNodes);
+  };
 
   const mappedNodes = useMemo(() => {
     return (
@@ -359,7 +366,7 @@ const EmbeddedClusterManagement = ({
         ),
       })) || []
     );
-  }, [nodesData?.nodes?.toString()]);
+  }, [nodesData?.nodes?.toString(), hasNodesChanged]);
   // #endregion
 
   const onContinueClick = async () => {
