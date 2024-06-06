@@ -28,6 +28,7 @@ func RootCmd() *cobra.Command {
 	cmd.PersistentFlags().String("log-level", "info", "set the log level")
 
 	cmd.AddCommand(APICmd())
+	cmd.AddCommand(MigrateCmd())
 	cmd.AddCommand(CompletionCmd())
 
 	viper.SetEnvKeyReplacer(strings.NewReplacer("-", "_"))

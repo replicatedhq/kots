@@ -19,8 +19,11 @@ func GetStore() FileStore {
 }
 
 func storeFromEnv() FileStore {
-	if os.Getenv("S3_ENDPOINT") == "" {
+	if os.Getenv("S3_ENDPOINT") != "" {
+		return &S3Store{}
+	}
+	if _, err := os.Stat("/kotsadmdata"); err == nil {
 		return &BlobStore{}
 	}
-	return &S3Store{}
+	return &RqliteStore{}
 }

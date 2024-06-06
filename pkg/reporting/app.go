@@ -114,8 +114,8 @@ func GetReportingInfo(appID string) *types.ReportingInfo {
 		InstanceID:             appID,
 		KOTSInstallID:          os.Getenv("KOTS_INSTALL_ID"),
 		KURLInstallID:          os.Getenv("KURL_INSTALL_ID"),
-		EmbeddedClusterID:      os.Getenv("EMBEDDED_CLUSTER_ID"),
-		EmbeddedClusterVersion: os.Getenv("EMBEDDED_CLUSTER_VERSION"),
+		EmbeddedClusterID:      util.EmbeddedClusterID(),
+		EmbeddedClusterVersion: util.EmbeddedClusterVersion(),
 		UserAgent:              buildversion.GetUserAgent(),
 	}
 

@@ -1,9 +1,12 @@
 package k8sutil
 
 import (
+	"context"
+	"io"
 	"strconv"
 
 	"github.com/pkg/errors"
+	embeddedclusterv1beta1 "github.com/replicatedhq/embedded-cluster-kinds/apis/v1beta1"
 	flag "github.com/spf13/pflag"
 	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -14,7 +17,10 @@ import (
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/restmapper"
+	kbclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
+	"sigs.k8s.io/controller-runtime/pkg/log"
+	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 )
 
 const (
@@ -133,4 +139,21 @@ func GetDynamicResourceInterface(gvk *schema.GroupVersionKind, namespace string)
 	}
 
 	return dr, nil
+}
+
+func GetKubeClient(ctx context.Context) (kbclient.Client, error) {
+	k8slogger := zap.New(func(o *zap.Options) {
+		o.DestWriter = io.Discard
+	})
+	log.SetLogger(k8slogger)
+	cfg, err := GetClusterConfig()
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get cluster config")
+	}
+	kcli, err := kbclient.New(cfg, kbclient.Options{})
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to create kubebuilder client")
+	}
+	embeddedclusterv1beta1.AddToScheme(kcli.Scheme())
+	return kcli, nil
 }

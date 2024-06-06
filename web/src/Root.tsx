@@ -768,8 +768,26 @@ const Root = () => {
                     <TroubleshootContainer />
                   }
                 >
-                  <Route index element={<SupportBundleList />} />
-                  <Route path="generate" element={<GenerateSupportBundle />} />
+                  <Route
+                    index
+                    element={
+                      <SupportBundleList
+                        isEmbeddedClusterEnabled={Boolean(
+                          state.adminConsoleMetadata?.isEmbeddedCluster
+                        )}
+                      />
+                    }
+                  />
+                  <Route
+                    path="generate"
+                    element={
+                      <GenerateSupportBundle
+                        isEmbeddedClusterEnabled={Boolean(
+                          state.adminConsoleMetadata?.isEmbeddedCluster
+                        )}
+                      />
+                    }
+                  />
                   <Route
                     path="analyze/:bundleSlug"
                     element={<SupportBundleAnalysis />}

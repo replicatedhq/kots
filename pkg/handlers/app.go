@@ -290,23 +290,26 @@ func responseAppFromApp(a *apptypes.App) (*types.ResponseApp, error) {
 		}
 
 		if embeddedClusterConfig != nil {
-			cluster.RequiresUpgrade, err = embeddedcluster.RequiresUpgrade(context.TODO(), embeddedClusterConfig.Spec)
+			kbClient, err := k8sutil.GetKubeClient(context.TODO())
+			if err != nil {
+				return nil, fmt.Errorf("failed to get kubeclient: %w", err)
+			}
+
+			cluster.RequiresUpgrade, err = embeddedcluster.RequiresUpgrade(context.TODO(), kbClient, embeddedClusterConfig.Spec)
 			if err != nil {
 				return nil, errors.Wrap(err, "failed to check if cluster requires upgrade")
 			}
 
-			embeddedClusterInstallations, err := embeddedcluster.ListInstallations(context.TODO())
+			embeddedClusterInstallations, err := embeddedcluster.ListInstallations(context.TODO(), kbClient)
 			if err != nil {
 				return nil, errors.Wrap(err, "failed to list installations")
 			}
-
 			cluster.NumInstallations = len(embeddedClusterInstallations)
 
-			currentInstallation, err := embeddedcluster.GetCurrentInstallation(context.TODO())
+			currentInstallation, err := embeddedcluster.GetCurrentInstallation(context.TODO(), kbClient)
 			if err != nil {
 				return nil, errors.Wrap(err, "failed to get latest installation")
 			}
-
 			if currentInstallation != nil {
 				cluster.State = string(currentInstallation.Status.State)
 			}
