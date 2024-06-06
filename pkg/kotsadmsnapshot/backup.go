@@ -14,6 +14,7 @@ import (
 	"github.com/pkg/errors"
 	downstreamtypes "github.com/replicatedhq/kots/pkg/api/downstream/types"
 	apptypes "github.com/replicatedhq/kots/pkg/app/types"
+	"github.com/replicatedhq/kots/pkg/embeddedcluster"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/kotsadm"
 	kotsadmtypes "github.com/replicatedhq/kots/pkg/kotsadm/types"
@@ -371,10 +372,20 @@ func CreateInstanceBackup(ctx context.Context, cluster *downstreamtypes.Downstre
 	backupAnnotations["kots.io/apps-sequences"] = marshalledAppsSequences
 	backupAnnotations["kots.io/apps-versions"] = marshalledAppVersions
 	backupAnnotations["kots.io/is-airgap"] = strconv.FormatBool(kotsadm.IsAirgap())
+
 	if util.IsEmbeddedCluster() {
+		kbClient, err := k8sutil.GetKubeClient(ctx)
+		if err != nil {
+			return nil, fmt.Errorf("failed to get kubeclient: %w", err)
+		}
+		installation, err := embeddedcluster.GetCurrentInstallation(ctx, kbClient)
+		if err != nil {
+			return nil, fmt.Errorf("failed to get current installation: %w", err)
+		}
 		backupAnnotations["kots.io/embedded-cluster"] = "true"
 		backupAnnotations["kots.io/embedded-cluster-id"] = util.EmbeddedClusterID()
 		backupAnnotations["kots.io/embedded-cluster-version"] = util.EmbeddedClusterVersion()
+		backupAnnotations["kots.io/embedded-cluster-is-ha"] = strconv.FormatBool(installation.Spec.HighAvailability)
 	}
 
 	includeClusterResources := true
