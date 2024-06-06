@@ -33,7 +33,7 @@ type GetEmbeddedClusterNodeJoinCommandResponse struct {
 	EmbeddedClusterVersion    string `json:"embeddedClusterVersion"`
 	AirgapRegistryAddress     string `json:"airgapRegistryAddress"`
 	IsAirgap                  bool   `json:"isAirgap"`
-	Proxy                     Proxy  `json:"proxy"`
+	Proxy                     *Proxy `json:"proxy,omitempty"`
 }
 
 type GenerateEmbeddedClusterNodeJoinCommandRequest struct {
@@ -182,9 +182,9 @@ func (h *Handler) GetEmbeddedClusterNodeJoinCommand(w http.ResponseWriter, r *ht
 	httpProxy := util.HTTPProxy()
 	httpsProxy := util.HTTPSProxy()
 	noProxy := util.NoProxy()
-	var proxy Proxy
+	var proxy *Proxy
 	if httpProxy != "" || httpsProxy != "" || noProxy != "" {
-		proxy = Proxy{
+		proxy = &Proxy{
 			HTTPProxy:  httpProxy,
 			HTTPSProxy: httpsProxy,
 			NoProxy:    noProxy,
