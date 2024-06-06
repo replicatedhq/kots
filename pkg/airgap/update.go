@@ -246,11 +246,13 @@ func UpdateAppFromPath(a *apptypes.App, airgapRoot string, airgapBundlePath stri
 
 func canInstall(beforeKotsKinds *kotsutil.KotsKinds, afterKotsKinds *kotsutil.KotsKinds) error {
 	var beforeSemver, afterSemver *semver.Version
-	if v, err := semver.ParseTolerant(beforeKotsKinds.Installation.Spec.VersionLabel); err == nil {
-		beforeSemver = &v
-	}
-	if v, err := semver.ParseTolerant(afterKotsKinds.Installation.Spec.VersionLabel); err == nil {
-		afterSemver = &v
+	if afterKotsKinds.License != nil && afterKotsKinds.License.Spec.IsSemverRequired {
+		if v, err := semver.ParseTolerant(beforeKotsKinds.Installation.Spec.VersionLabel); err == nil {
+			beforeSemver = &v
+		}
+		if v, err := semver.ParseTolerant(afterKotsKinds.Installation.Spec.VersionLabel); err == nil {
+			afterSemver = &v
+		}
 	}
 
 	isSameVersion := false

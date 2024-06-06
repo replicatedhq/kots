@@ -6,6 +6,7 @@ import (
 	"github.com/blang/semver"
 	downstreamtypes "github.com/replicatedhq/kots/pkg/api/downstream/types"
 	"github.com/replicatedhq/kots/pkg/cursor"
+	"github.com/replicatedhq/kots/pkg/kotsutil"
 	kotsv1beta1 "github.com/replicatedhq/kotskinds/apis/kots/v1beta1"
 	"github.com/stretchr/testify/require"
 )
@@ -200,6 +201,27 @@ func Test_getMissingRequiredVersions(t *testing.T) {
 			got, err = getMissingRequiredVersions(tt.airgap, tt.license, tt.installedVersions)
 			req.NoError(err)
 			req.Equal(tt.wantSemver, got)
+		})
+	}
+}
+
+func Test_canInstall(t *testing.T) {
+	type args struct {
+		beforeKotsKinds *kotsutil.KotsKinds
+		afterKotsKinds  *kotsutil.KotsKinds
+	}
+	tests := []struct {
+		name    string
+		args    args
+		wantErr bool
+	}{
+		// TODO: Add test cases.
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if err := canInstall(tt.args.beforeKotsKinds, tt.args.afterKotsKinds); (err != nil) != tt.wantErr {
+				t.Errorf("canInstall() error = %v, wantErr %v", err, tt.wantErr)
+			}
 		})
 	}
 }
