@@ -126,7 +126,7 @@ func Test_hasFailingStrictPreflights(t *testing.T) {
 			name:               "expect false, error when preflightSpec with strict:true analyzer and preflightResultSpec has a empty string",
 			preflightSpecStr:   toSqlString(t, strictTruePreflightSpec),
 			preflightResultStr: gorqlite.NullString{Valid: true, String: ""},
-			want:               true,
+			want:               false,
 			wantErr:            false,
 		}, {
 			name:               "expect false, error when preflightSpec with strict:false analyzer and preflightResultSpec has a empty string",

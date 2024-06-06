@@ -86,7 +86,7 @@ func (h *Handler) ConfirmEmbeddedClusterManagement(w http.ResponseWriter, r *htt
 		downstreamVersionStatus = storetypes.VersionPendingConfig
 	} else if kotsKinds.HasPreflights() {
 		downstreamVersionStatus = storetypes.VersionPendingPreflight
-		if err := preflight.Run(app.ID, app.Slug, pendingVersion.Sequence, false, archiveDir); err != nil {
+		if err := preflight.Run(app.ID, app.Slug, pendingVersion.Sequence, false, false, archiveDir); err != nil {
 			logger.Error(errors.Wrap(err, "failed to start preflights"))
 			w.WriteHeader(http.StatusInternalServerError)
 			return

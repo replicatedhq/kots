@@ -912,6 +912,52 @@ jobs:
           printf "App is installed successfully and is ready\n\n"
           ./bin/kots get apps --namespace "$APP_SLUG"
 
+          # enable the failing non-strict preflight check
+          ./bin/kots set config "$APP_SLUG" enable_failing_non_strict_analyzers="1" --namespace "$APP_SLUG"
+
+          # download the config
+          ./bin/kots get config --namespace "$APP_SLUG" > config.yaml
+
+          # remove the app
+          ./bin/kots remove "$APP_SLUG" --namespace "$APP_SLUG" --undeploy
+
+          # install the app and skip preflights
+          ./bin/kots \
+            install "$APP_SLUG/automated" \
+            --license-file license.yaml \
+            --config-values config.yaml \
+            --no-port-forward \
+            --namespace "$APP_SLUG" \
+            --shared-password password \
+            --kotsadm-registry ttl.sh \
+            --kotsadm-namespace automated-${{ github.run_id }} \
+            --skip-preflights \
+            --kotsadm-tag 24h
+
+          if ! kubectl logs deploy/kotsadm -n "$APP_SLUG" | grep -q "preflights will not be skipped, strict preflights are set to true"; then
+            echo "Failed to find a log line about strict preflights not being skipped in kotsadm logs"
+            echo "kotsadm logs:"
+            kubectl logs deploy/kotsadm -n "$APP_SLUG"
+            exit 1
+          fi
+
+          COUNTER=1
+          while [ "$(./bin/kots get apps --namespace "$APP_SLUG" | awk 'NR>1{print $2}')" != "ready" ]; do
+            ((COUNTER += 1))
+            if [ $COUNTER -gt 120 ]; then
+              echo "Timed out waiting for app to be ready"
+              ./bin/kots get apps --namespace "$APP_SLUG"
+              echo "kotsadm logs:"
+              kubectl logs deploy/kotsadm --tail=100 -n "$APP_SLUG"
+              exit 1
+            fi
+            sleep 1
+          done
+
+          printf "App is installed successfully and is ready\n\n"
+          ./bin/kots get apps --namespace "$APP_SLUG"
+
+
       - name: Generate support bundle on failure
         if: failure()
         uses: ./.github/actions/generate-support-bundle

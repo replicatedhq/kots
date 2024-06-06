@@ -57,7 +57,7 @@ var _ = Describe("Install", func() {
 				License:           validLicense,
 			}
 
-			inProgressPreflightResponse, err := createPreflightResponse(false, false, true, false)
+			inProgressPreflightResponse, err := createPreflightResponse(false, false, false, true, false)
 			Expect(err).ToNot(HaveOccurred())
 
 			server.AppendHandlers(
@@ -155,10 +155,10 @@ var _ = Describe("Install", func() {
 			}
 			server.AllowUnhandledRequests = false
 
-			pendingResults, err := createPreflightResponse(false, false, false, true)
+			pendingResults, err := createPreflightResponse(false, false, false, false, true)
 			Expect(err).ToNot(HaveOccurred())
 
-			completedPreflightResponse, err := createPreflightResponse(false, false, false, false)
+			completedPreflightResponse, err := createPreflightResponse(false, false, false, false, false)
 			Expect(err).ToNot(HaveOccurred())
 
 			server.AppendHandlers(
@@ -193,10 +193,10 @@ var _ = Describe("Install", func() {
 			}
 			server.AllowUnhandledRequests = false
 
-			inProgressPreflightResponse, err := createPreflightResponse(false, false, true, false)
+			inProgressPreflightResponse, err := createPreflightResponse(false, false, false, true, false)
 			Expect(err).ToNot(HaveOccurred())
 
-			completedPreflightResponse, err := createPreflightResponse(false, false, false, false)
+			completedPreflightResponse, err := createPreflightResponse(false, false, false, false, false)
 			Expect(err).ToNot(HaveOccurred())
 
 			server.AppendHandlers(
@@ -267,8 +267,8 @@ var _ = Describe("Install", func() {
 			Expect(err.Error()).To(ContainSubstring("failed to unmarshal upload preflight results"))
 		})
 
-		DescribeTable("warning and failure preflight states", func(isFail bool, isWarn bool, expectedErr string) {
-			preflightResponse, err := createPreflightResponse(isFail, isWarn, false, false)
+		DescribeTable("warning and failure preflight states when not skipping preflights", func(isFail bool, isWarn bool, expectedErr string) {
+			preflightResponse, err := createPreflightResponse(isFail, isWarn, false, false, false)
 			Expect(err).ToNot(HaveOccurred())
 
 			server.AppendHandlers(
@@ -291,8 +291,29 @@ var _ = Describe("Install", func() {
 			Entry("failures only", true, false, "There are preflight check failures for the application"),
 		)
 
+		It("does not return an error if there are no warnings and failures for strict preflights when skipping preflights", func() {
+			validPreflightResponse, err := createPreflightResponse(true, true, true, false, false)
+			Expect(err).ToNot(HaveOccurred())
+
+			server.AppendHandlers(
+				ghttp.CombineHandlers(
+					ghttp.VerifyRequest("GET", fmt.Sprintf("/app/%s/preflight/result", appSlug)),
+					ghttp.VerifyHeader(http.Header{
+						"Authorization": []string{authSlug},
+						"Content-Type":  []string{"application/json"},
+					}),
+					ghttp.RespondWith(http.StatusOK, validPreflightResponse),
+				),
+			)
+
+			deployOptions := validDeployOptions
+			deployOptions.SkipPreflights = true
+			err = ValidatePreflightStatus(deployOptions, authSlug, server.URL())
+			Expect(err).ToNot(HaveOccurred())
+		})
+
 		It("does not return an error if there are no warnings and failures", func() {
-			validPreflightResponse, err := createPreflightResponse(false, false, false, false)
+			validPreflightResponse, err := createPreflightResponse(false, false, false, false, false)
 			Expect(err).ToNot(HaveOccurred())
 
 			server.AppendHandlers(
@@ -514,7 +535,7 @@ var _ = Describe("Install", func() {
 	})
 })
 
-func createPreflightResponse(isFail bool, isWarn bool, pendingCompletion bool, pendingResults bool) ([]byte, error) {
+func createPreflightResponse(isFail bool, isWarn bool, hasPassingStrict bool, pendingCompletion bool, pendingResults bool) ([]byte, error) {
 	var preflightProgress = ""
 	if pendingCompletion {
 		collectProgress := preflight.CollectProgress{
@@ -535,8 +556,15 @@ func createPreflightResponse(isFail bool, isWarn bool, pendingCompletion bool, p
 
 	var uploadPreflightResults = ""
 	if !pendingResults {
+		results := []*preflight.UploadPreflightResult{uploadPreflightResult}
+		if hasPassingStrict {
+			results = append(results, &preflight.UploadPreflightResult{
+				Strict: true,
+				IsPass: true,
+			})
+		}
 		uploadPreflightResultsBytes, err := json.Marshal(preflight.UploadPreflightResults{
-			Results: []*preflight.UploadPreflightResult{uploadPreflightResult},
+			Results: results,
 			Errors:  nil,
 		})
 		if err != nil {

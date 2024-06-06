@@ -269,7 +269,7 @@ func (h *Handler) UpdateAppRegistry(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		if err := preflight.Run(foundApp.ID, foundApp.Slug, newSequence, foundApp.IsAirgap, appDir); err != nil {
+		if err := preflight.Run(foundApp.ID, foundApp.Slug, newSequence, foundApp.IsAirgap, false, appDir); err != nil {
 			logger.Error(errors.Wrap(err, "failed to run preflights"))
 			return
 		}

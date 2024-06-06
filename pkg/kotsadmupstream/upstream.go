@@ -276,7 +276,7 @@ func DownloadUpdate(appID string, update types.Update, skipPreflights bool, skip
 	}
 
 	if !skipPreflights || hasStrictPreflights {
-		if err := preflight.Run(appID, a.Slug, *finalSequence, a.IsAirgap, archiveDir); err != nil {
+		if err := preflight.Run(appID, a.Slug, *finalSequence, a.IsAirgap, skipPreflights, archiveDir); err != nil {
 			finalError = errors.Wrap(err, "failed to run preflights")
 			return
 		}

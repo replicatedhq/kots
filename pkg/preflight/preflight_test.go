@@ -12,10 +12,11 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func Test_getPreflightState(t *testing.T) {
+func Test_GetPreflightState(t *testing.T) {
 	tests := []struct {
 		name             string
 		preflightResults *types.PreflightResults
+		ignoreNonStrict  bool
 		want             string
 	}{
 		{
@@ -52,6 +53,30 @@ func Test_getPreflightState(t *testing.T) {
 			want: "fail",
 		},
 		{
+			name: "pass ignoring non-strict preflights",
+			preflightResults: &types.PreflightResults{
+				Results: []*troubleshootpreflight.UploadPreflightResult{
+					{},
+					{IsFail: true},
+					{},
+				},
+			},
+			ignoreNonStrict: true,
+			want:            "pass",
+		},
+		{
+			name: "fail ignoring non-strict preflights",
+			preflightResults: &types.PreflightResults{
+				Results: []*troubleshootpreflight.UploadPreflightResult{
+					{},
+					{Strict: true, IsFail: true},
+					{},
+				},
+			},
+			ignoreNonStrict: true,
+			want:            "fail",
+		},
+		{
 			name: "error",
 			preflightResults: &types.PreflightResults{
 				Results: []*troubleshootpreflight.UploadPreflightResult{
@@ -74,7 +99,7 @@ func Test_getPreflightState(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			if got := GetPreflightState(test.preflightResults); got != test.want {
+			if got := GetPreflightState(test.preflightResults, test.ignoreNonStrict); got != test.want {
 				t.Errorf("GetPreflightState() = %v, want %v", got, test.want)
 			}
 		})

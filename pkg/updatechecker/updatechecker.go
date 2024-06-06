@@ -594,7 +594,7 @@ func waitForPreflightsToFinish(appID string, sequence int64) error {
 		return errors.Wrap(err, "failed to parse preflight results")
 	}
 
-	state := preflight.GetPreflightState(preflightResults)
+	state := preflight.GetPreflightState(preflightResults, false)
 	if state == "fail" {
 		return errors.New(fmt.Sprintf("errors in the preflight state results: %v", preflightResults))
 	}
