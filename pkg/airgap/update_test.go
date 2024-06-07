@@ -215,12 +215,195 @@ func Test_canInstall(t *testing.T) {
 		args    args
 		wantErr bool
 	}{
-		// TODO: Add test cases.
+		{
+			name: "semver not enabled, version labels are dfferent, and cursors are different",
+			args: args{
+				beforeKotsKinds: &kotsutil.KotsKinds{
+					License: &kotsv1beta1.License{
+						Spec: kotsv1beta1.LicenseSpec{
+							ChannelID:        "test-channel-id",
+							IsSemverRequired: false,
+						},
+					},
+					Installation: kotsv1beta1.Installation{
+						Spec: kotsv1beta1.InstallationSpec{
+							ChannelID:    "test-channel-id",
+							UpdateCursor: "1",
+							VersionLabel: "0.1.1",
+						},
+					},
+				},
+				afterKotsKinds: &kotsutil.KotsKinds{
+					License: &kotsv1beta1.License{
+						Spec: kotsv1beta1.LicenseSpec{
+							ChannelID:        "test-channel-id",
+							IsSemverRequired: false,
+						},
+					},
+					Installation: kotsv1beta1.Installation{
+						Spec: kotsv1beta1.InstallationSpec{
+							ChannelID:    "test-channel-id",
+							UpdateCursor: "2",
+							VersionLabel: "0.1.2",
+						},
+					},
+				},
+			},
+			wantErr: false,
+		},
+		{
+			name: "semver not enabled, version labels match, and cursors are different",
+			args: args{
+				beforeKotsKinds: &kotsutil.KotsKinds{
+					License: &kotsv1beta1.License{
+						Spec: kotsv1beta1.LicenseSpec{
+							ChannelID:        "test-channel-id",
+							IsSemverRequired: false,
+						},
+					},
+					Installation: kotsv1beta1.Installation{
+						Spec: kotsv1beta1.InstallationSpec{
+							ChannelID:    "test-channel-id",
+							UpdateCursor: "1",
+							VersionLabel: "0.1.1",
+						},
+					},
+				},
+				afterKotsKinds: &kotsutil.KotsKinds{
+					License: &kotsv1beta1.License{
+						Spec: kotsv1beta1.LicenseSpec{
+							ChannelID:        "test-channel-id",
+							IsSemverRequired: false,
+						},
+					},
+					Installation: kotsv1beta1.Installation{
+						Spec: kotsv1beta1.InstallationSpec{
+							ChannelID:    "test-channel-id",
+							UpdateCursor: "2",
+							VersionLabel: "0.1.1",
+						},
+					},
+				},
+			},
+			wantErr: false,
+		},
+		{
+			name: "semver not enabled, version labels match, and cursors match",
+			args: args{
+				beforeKotsKinds: &kotsutil.KotsKinds{
+					License: &kotsv1beta1.License{
+						Spec: kotsv1beta1.LicenseSpec{
+							ChannelID:        "test-channel-id",
+							IsSemverRequired: false,
+						},
+					},
+					Installation: kotsv1beta1.Installation{
+						Spec: kotsv1beta1.InstallationSpec{
+							ChannelID:    "test-channel-id",
+							UpdateCursor: "1",
+							VersionLabel: "0.1.1",
+						},
+					},
+				},
+				afterKotsKinds: &kotsutil.KotsKinds{
+					License: &kotsv1beta1.License{
+						Spec: kotsv1beta1.LicenseSpec{
+							ChannelID:        "test-channel-id",
+							IsSemverRequired: false,
+						},
+					},
+					Installation: kotsv1beta1.Installation{
+						Spec: kotsv1beta1.InstallationSpec{
+							ChannelID:    "test-channel-id",
+							UpdateCursor: "1",
+							VersionLabel: "0.1.1",
+						},
+					},
+				},
+			},
+			wantErr: true,
+		},
+		{
+			name: "semver enabled, version labels are dfferent, and cursors are different",
+			args: args{
+				beforeKotsKinds: &kotsutil.KotsKinds{
+					License: &kotsv1beta1.License{
+						Spec: kotsv1beta1.LicenseSpec{
+							ChannelID:        "test-channel-id",
+							IsSemverRequired: true,
+						},
+					},
+					Installation: kotsv1beta1.Installation{
+						Spec: kotsv1beta1.InstallationSpec{
+							ChannelID:    "test-channel-id",
+							UpdateCursor: "1",
+							VersionLabel: "0.1.1",
+						},
+					},
+				},
+				afterKotsKinds: &kotsutil.KotsKinds{
+					License: &kotsv1beta1.License{
+						Spec: kotsv1beta1.LicenseSpec{
+							ChannelID:        "test-channel-id",
+							IsSemverRequired: true,
+						},
+					},
+					Installation: kotsv1beta1.Installation{
+						Spec: kotsv1beta1.InstallationSpec{
+							ChannelID:    "test-channel-id",
+							UpdateCursor: "2",
+							VersionLabel: "0.1.2",
+						},
+					},
+				},
+			},
+			wantErr: false,
+		},
+		{
+			name: "semver enabled, version labels match, and cursors are different",
+			args: args{
+				beforeKotsKinds: &kotsutil.KotsKinds{
+					License: &kotsv1beta1.License{
+						Spec: kotsv1beta1.LicenseSpec{
+							ChannelID:        "test-channel-id",
+							IsSemverRequired: true,
+						},
+					},
+					Installation: kotsv1beta1.Installation{
+						Spec: kotsv1beta1.InstallationSpec{
+							ChannelID:    "test-channel-id",
+							UpdateCursor: "1",
+							VersionLabel: "0.1.1",
+						},
+					},
+				},
+				afterKotsKinds: &kotsutil.KotsKinds{
+					License: &kotsv1beta1.License{
+						Spec: kotsv1beta1.LicenseSpec{
+							ChannelID:        "test-channel-id",
+							IsSemverRequired: true,
+						},
+					},
+					Installation: kotsv1beta1.Installation{
+						Spec: kotsv1beta1.InstallationSpec{
+							ChannelID:    "test-channel-id",
+							UpdateCursor: "2",
+							VersionLabel: "0.1.1",
+						},
+					},
+				},
+			},
+			wantErr: true,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if err := canInstall(tt.args.beforeKotsKinds, tt.args.afterKotsKinds); (err != nil) != tt.wantErr {
-				t.Errorf("canInstall() error = %v, wantErr %v", err, tt.wantErr)
+			req := require.New(t)
+			err := canInstall(tt.args.beforeKotsKinds, tt.args.afterKotsKinds)
+			if tt.wantErr {
+				req.Error(err)
+			} else {
+				req.NoError(err)
 			}
 		})
 	}
