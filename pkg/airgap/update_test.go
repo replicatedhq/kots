@@ -209,6 +209,7 @@ func Test_canInstall(t *testing.T) {
 	type args struct {
 		beforeKotsKinds *kotsutil.KotsKinds
 		afterKotsKinds  *kotsutil.KotsKinds
+		license         *kotsv1beta1.License
 	}
 	tests := []struct {
 		name    string
@@ -221,8 +222,7 @@ func Test_canInstall(t *testing.T) {
 				beforeKotsKinds: &kotsutil.KotsKinds{
 					License: &kotsv1beta1.License{
 						Spec: kotsv1beta1.LicenseSpec{
-							ChannelID:        "test-channel-id",
-							IsSemverRequired: false,
+							ChannelID: "test-channel-id",
 						},
 					},
 					Installation: kotsv1beta1.Installation{
@@ -236,8 +236,7 @@ func Test_canInstall(t *testing.T) {
 				afterKotsKinds: &kotsutil.KotsKinds{
 					License: &kotsv1beta1.License{
 						Spec: kotsv1beta1.LicenseSpec{
-							ChannelID:        "test-channel-id",
-							IsSemverRequired: false,
+							ChannelID: "test-channel-id",
 						},
 					},
 					Installation: kotsv1beta1.Installation{
@@ -246,6 +245,11 @@ func Test_canInstall(t *testing.T) {
 							UpdateCursor: "2",
 							VersionLabel: "0.1.2",
 						},
+					},
+				},
+				license: &kotsv1beta1.License{
+					Spec: kotsv1beta1.LicenseSpec{
+						IsSemverRequired: false,
 					},
 				},
 			},
@@ -257,8 +261,7 @@ func Test_canInstall(t *testing.T) {
 				beforeKotsKinds: &kotsutil.KotsKinds{
 					License: &kotsv1beta1.License{
 						Spec: kotsv1beta1.LicenseSpec{
-							ChannelID:        "test-channel-id",
-							IsSemverRequired: false,
+							ChannelID: "test-channel-id",
 						},
 					},
 					Installation: kotsv1beta1.Installation{
@@ -272,8 +275,7 @@ func Test_canInstall(t *testing.T) {
 				afterKotsKinds: &kotsutil.KotsKinds{
 					License: &kotsv1beta1.License{
 						Spec: kotsv1beta1.LicenseSpec{
-							ChannelID:        "test-channel-id",
-							IsSemverRequired: false,
+							ChannelID: "test-channel-id",
 						},
 					},
 					Installation: kotsv1beta1.Installation{
@@ -282,6 +284,11 @@ func Test_canInstall(t *testing.T) {
 							UpdateCursor: "2",
 							VersionLabel: "0.1.1",
 						},
+					},
+				},
+				license: &kotsv1beta1.License{
+					Spec: kotsv1beta1.LicenseSpec{
+						IsSemverRequired: false,
 					},
 				},
 			},
@@ -293,8 +300,7 @@ func Test_canInstall(t *testing.T) {
 				beforeKotsKinds: &kotsutil.KotsKinds{
 					License: &kotsv1beta1.License{
 						Spec: kotsv1beta1.LicenseSpec{
-							ChannelID:        "test-channel-id",
-							IsSemverRequired: false,
+							ChannelID: "test-channel-id",
 						},
 					},
 					Installation: kotsv1beta1.Installation{
@@ -308,8 +314,7 @@ func Test_canInstall(t *testing.T) {
 				afterKotsKinds: &kotsutil.KotsKinds{
 					License: &kotsv1beta1.License{
 						Spec: kotsv1beta1.LicenseSpec{
-							ChannelID:        "test-channel-id",
-							IsSemverRequired: false,
+							ChannelID: "test-channel-id",
 						},
 					},
 					Installation: kotsv1beta1.Installation{
@@ -318,6 +323,11 @@ func Test_canInstall(t *testing.T) {
 							UpdateCursor: "1",
 							VersionLabel: "0.1.1",
 						},
+					},
+				},
+				license: &kotsv1beta1.License{
+					Spec: kotsv1beta1.LicenseSpec{
+						IsSemverRequired: false,
 					},
 				},
 			},
@@ -329,8 +339,7 @@ func Test_canInstall(t *testing.T) {
 				beforeKotsKinds: &kotsutil.KotsKinds{
 					License: &kotsv1beta1.License{
 						Spec: kotsv1beta1.LicenseSpec{
-							ChannelID:        "test-channel-id",
-							IsSemverRequired: true,
+							ChannelID: "test-channel-id",
 						},
 					},
 					Installation: kotsv1beta1.Installation{
@@ -344,8 +353,7 @@ func Test_canInstall(t *testing.T) {
 				afterKotsKinds: &kotsutil.KotsKinds{
 					License: &kotsv1beta1.License{
 						Spec: kotsv1beta1.LicenseSpec{
-							ChannelID:        "test-channel-id",
-							IsSemverRequired: true,
+							ChannelID: "test-channel-id",
 						},
 					},
 					Installation: kotsv1beta1.Installation{
@@ -354,6 +362,11 @@ func Test_canInstall(t *testing.T) {
 							UpdateCursor: "2",
 							VersionLabel: "0.1.2",
 						},
+					},
+				},
+				license: &kotsv1beta1.License{
+					Spec: kotsv1beta1.LicenseSpec{
+						IsSemverRequired: true,
 					},
 				},
 			},
@@ -365,8 +378,7 @@ func Test_canInstall(t *testing.T) {
 				beforeKotsKinds: &kotsutil.KotsKinds{
 					License: &kotsv1beta1.License{
 						Spec: kotsv1beta1.LicenseSpec{
-							ChannelID:        "test-channel-id",
-							IsSemverRequired: true,
+							ChannelID: "test-channel-id",
 						},
 					},
 					Installation: kotsv1beta1.Installation{
@@ -380,8 +392,7 @@ func Test_canInstall(t *testing.T) {
 				afterKotsKinds: &kotsutil.KotsKinds{
 					License: &kotsv1beta1.License{
 						Spec: kotsv1beta1.LicenseSpec{
-							ChannelID:        "test-channel-id",
-							IsSemverRequired: true,
+							ChannelID: "test-channel-id",
 						},
 					},
 					Installation: kotsv1beta1.Installation{
@@ -392,6 +403,11 @@ func Test_canInstall(t *testing.T) {
 						},
 					},
 				},
+				license: &kotsv1beta1.License{
+					Spec: kotsv1beta1.LicenseSpec{
+						IsSemverRequired: true,
+					},
+				},
 			},
 			wantErr: true,
 		},
@@ -399,7 +415,7 @@ func Test_canInstall(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			req := require.New(t)
-			err := canInstall(tt.args.beforeKotsKinds, tt.args.afterKotsKinds)
+			err := canInstall(tt.args.beforeKotsKinds, tt.args.afterKotsKinds, tt.args.license)
 			if tt.wantErr {
 				req.Error(err)
 			} else {
