@@ -192,7 +192,12 @@ func UpdateAppFromPath(a *apptypes.App, airgapRoot string, airgapBundlePath stri
 		return errors.Wrap(err, "failed to read after kotskinds")
 	}
 
-	if err := canInstall(beforeKotsKinds, afterKotsKinds); err != nil {
+	license, err = store.GetStore().GetLatestLicenseForApp(a.ID)
+	if err != nil {
+		return errors.Wrap(err, "failed to get latest license")
+	}
+
+	if err := canInstall(beforeKotsKinds, afterKotsKinds, license); err != nil {
 		return errors.Wrap(err, "cannot install")
 	}
 
@@ -244,13 +249,15 @@ func UpdateAppFromPath(a *apptypes.App, airgapRoot string, airgapBundlePath stri
 	return nil
 }
 
-func canInstall(beforeKotsKinds *kotsutil.KotsKinds, afterKotsKinds *kotsutil.KotsKinds) error {
+func canInstall(beforeKotsKinds *kotsutil.KotsKinds, afterKotsKinds *kotsutil.KotsKinds, license *kotsv1beta1.License) error {
 	var beforeSemver, afterSemver *semver.Version
-	if v, err := semver.ParseTolerant(beforeKotsKinds.Installation.Spec.VersionLabel); err == nil {
-		beforeSemver = &v
-	}
-	if v, err := semver.ParseTolerant(afterKotsKinds.Installation.Spec.VersionLabel); err == nil {
-		afterSemver = &v
+	if license.Spec.IsSemverRequired {
+		if v, err := semver.ParseTolerant(beforeKotsKinds.Installation.Spec.VersionLabel); err == nil {
+			beforeSemver = &v
+		}
+		if v, err := semver.ParseTolerant(afterKotsKinds.Installation.Spec.VersionLabel); err == nil {
+			afterSemver = &v
+		}
 	}
 
 	isSameVersion := false
