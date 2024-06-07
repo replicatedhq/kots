@@ -382,6 +382,13 @@ func CreateInstanceBackup(ctx context.Context, cluster *downstreamtypes.Downstre
 		if err != nil {
 			return nil, fmt.Errorf("failed to get current installation: %w", err)
 		}
+		seaweedFSS3ServiceIP, err := embeddedcluster.GetSeaweedFSS3ServiceIP(ctx, kbClient)
+		if err != nil {
+			return nil, fmt.Errorf("failed to get seaweedfs s3 service ip: %w", err)
+		}
+		if seaweedFSS3ServiceIP != "" {
+			backupAnnotations["kots.io/embedded-cluster-seaweedfs-s3-ip"] = seaweedFSS3ServiceIP
+		}
 		backupAnnotations["kots.io/embedded-cluster"] = "true"
 		backupAnnotations["kots.io/embedded-cluster-id"] = util.EmbeddedClusterID()
 		backupAnnotations["kots.io/embedded-cluster-version"] = util.EmbeddedClusterVersion()

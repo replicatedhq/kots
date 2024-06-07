@@ -11,9 +11,17 @@ import (
 	embeddedclusterv1beta1 "github.com/replicatedhq/embedded-cluster-kinds/apis/v1beta1"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	kotsv1beta1 "github.com/replicatedhq/kotskinds/apis/kots/v1beta1"
+	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	k8stypes "k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes"
 	kbclient "sigs.k8s.io/controller-runtime/pkg/client"
+)
+
+const (
+	seaweedfsNamespace = "seaweedfs"
+	seaweedfsS3SVCName = "ec-seaweedfs-s3"
 )
 
 // ErrNoInstallations is returned when no installation object is found in the cluster.
@@ -71,6 +79,17 @@ func ClusterConfig(ctx context.Context, kbClient kbclient.Client) (*embeddedclus
 		return nil, fmt.Errorf("failed to get current installation: %w", err)
 	}
 	return latest.Spec.Config, nil
+}
+
+func GetSeaweedFSS3ServiceIP(ctx context.Context, kbClient kbclient.Client) (string, error) {
+	nsn := k8stypes.NamespacedName{Name: seaweedfsS3SVCName, Namespace: seaweedfsNamespace}
+	var svc corev1.Service
+	if err := kbClient.Get(ctx, nsn, &svc); err != nil && !errors.IsNotFound(err) {
+		return "", fmt.Errorf("failed to get seaweedfs s3 service: %w", err)
+	} else if errors.IsNotFound(err) {
+		return "", nil
+	}
+	return svc.Spec.ClusterIP, nil
 }
 
 func getArtifactsFromInstallation(installation kotsv1beta1.Installation, appSlug string) *embeddedclusterv1beta1.ArtifactsLocation {
