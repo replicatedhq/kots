@@ -176,7 +176,7 @@
     "semver": "^7.6.2",
     "styled-components": "^5.3.5",
     "tar-stream": "3.1.7",
-    "universal-cookie": "^6.1.1"
+    "universal-cookie": "^7.1.4"
   },
   "resolutions": {
     "d3-color": "^3.1.0",
