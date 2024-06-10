@@ -427,6 +427,12 @@ replace (
 	github.com/longhorn/longhorn-manager => github.com/replicatedhq/longhorn-manager v1.1.2-0.20210622201804-05b01947b99d
 	github.com/microsoft/go-mssqldb => github.com/microsoft/go-mssqldb v1.5.0 // pinned for troubleshoot
 	github.com/sergi/go-diff => github.com/sergi/go-diff v1.1.0
+
+	// go.opentelemetry.io/otel/sdk/metric dependency depends on go.opentelemetry.io/otel/metric v1.26.0 or older
+	// This dep is part of github.com/distribution/distribution/v3
+	go.opentelemetry.io/otel => go.opentelemetry.io/otel v1.26.0
+	go.opentelemetry.io/otel/metric => go.opentelemetry.io/otel/metric v1.26.0
+
 	golang.org/x/crypto v0.0.0-20220112180741-5e0467b6c7ce => github.com/dmacvicar/golang-x-crypto v0.0.0-20220126233154-a96af8f07497
 	gopkg.in/square/go-jose.v2 => gopkg.in/square/go-jose.v2 v2.2.2
 )
