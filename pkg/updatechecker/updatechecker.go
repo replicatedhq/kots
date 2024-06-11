@@ -22,9 +22,11 @@ import (
 	storepkg "github.com/replicatedhq/kots/pkg/store"
 	storetypes "github.com/replicatedhq/kots/pkg/store/types"
 	"github.com/replicatedhq/kots/pkg/tasks"
+	upstreampkg "github.com/replicatedhq/kots/pkg/upstream"
 	upstreamtypes "github.com/replicatedhq/kots/pkg/upstream/types"
 	"github.com/replicatedhq/kots/pkg/util"
 	"github.com/replicatedhq/kots/pkg/version"
+	kotsv1beta1 "github.com/replicatedhq/kotskinds/apis/kots/v1beta1"
 	cron "github.com/robfig/cron/v3"
 	"go.uber.org/zap"
 	"k8s.io/apimachinery/pkg/util/wait"
@@ -727,4 +729,42 @@ func removeOldUpdates(updates []upstreamtypes.Update, appVersions *downstreamtyp
 	}
 
 	return fileteredUpdates
+}
+
+func GetAvailableUpdates(kotsStore storepkg.Store, app *apptypes.App, license *kotsv1beta1.License) ([]*downstreamtypes.DownstreamVersion, error) {
+	updateCursor, err := kotsStore.GetCurrentUpdateCursor(app.ID, license.Spec.ChannelID)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get current update cursor")
+	}
+
+	upstreamURI := fmt.Sprintf("replicated://%s", license.Spec.AppSlug)
+	fetchOptions := &upstreamtypes.FetchOptions{
+		License:            license,
+		LastUpdateCheckAt:  app.LastUpdateCheckAt,
+		CurrentCursor:      updateCursor,
+		CurrentChannelID:   license.Spec.ChannelID,
+		CurrentChannelName: license.Spec.ChannelName,
+		ChannelChanged:     app.ChannelChanged,
+		SortOrder:          "desc", // get the latest updates first
+		ReportingInfo:      reporting.GetReportingInfo(app.ID),
+	}
+	updates, err := upstreampkg.GetUpdatesUpstream(upstreamURI, fetchOptions)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get updates")
+	}
+
+	pendingVersions := []*downstreamtypes.DownstreamVersion{}
+	for _, u := range updates.Updates {
+		pendingVersions = append(pendingVersions, &downstreamtypes.DownstreamVersion{
+			VersionLabel:       u.VersionLabel,
+			UpdateCursor:       u.Cursor,
+			ChannelID:          u.ChannelID,
+			IsRequired:         u.IsRequired,
+			Status:             storetypes.VersionPendingDownload,
+			UpstreamReleasedAt: u.ReleasedAt,
+			ReleaseNotes:       u.ReleaseNotes,
+		})
+	}
+
+	return pendingVersions, nil
 }

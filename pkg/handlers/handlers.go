@@ -110,6 +110,8 @@ func RegisterSessionAuthRoutes(r *mux.Router, kotsStore store.Store, handler KOT
 		HandlerFunc(middleware.EnforceAccess(policy.AppRead, handler.GetLatestDeployableVersion))
 	r.Name("GetUpdateDownloadStatus").Path("/api/v1/app/{appSlug}/task/updatedownload").Methods("GET").
 		HandlerFunc(middleware.EnforceAccess(policy.AppRead, handler.GetUpdateDownloadStatus)) // NOTE: appSlug is unused
+	r.Name("GetPendingUpdates").Path("/api/v1/app/{appSlug}/updates").Methods("GET").
+		HandlerFunc(middleware.EnforceAccess(policy.AppDownstreamRead, handler.GetAvailableUpdates))
 
 	// Airgap
 	r.Name("AirgapBundleProgress").Path("/api/v1/app/{appSlug}/airgap/bundleprogress/{identifier}/{totalChunks}").Methods("GET").

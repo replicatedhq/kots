@@ -670,6 +670,18 @@ func (mr *MockKOTSHandlerMockRecorder) GetAutomaticUpdatesConfig(w, r interface{
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAutomaticUpdatesConfig", reflect.TypeOf((*MockKOTSHandler)(nil).GetAutomaticUpdatesConfig), w, r)
 }
 
+// GetAvailableUpdates mocks base method.
+func (m *MockKOTSHandler) GetAvailableUpdates(w http.ResponseWriter, r *http.Request) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "GetAvailableUpdates", w, r)
+}
+
+// GetAvailableUpdates indicates an expected call of GetAvailableUpdates.
+func (mr *MockKOTSHandlerMockRecorder) GetAvailableUpdates(w, r interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAvailableUpdates", reflect.TypeOf((*MockKOTSHandler)(nil).GetAvailableUpdates), w, r)
+}
+
 // GetBackup mocks base method.
 func (m *MockKOTSHandler) GetBackup(w http.ResponseWriter, r *http.Request) {
 	m.ctrl.T.Helper()

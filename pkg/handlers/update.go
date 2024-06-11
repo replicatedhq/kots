@@ -15,8 +15,10 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/airgap"
+	downstreamtypes "github.com/replicatedhq/kots/pkg/api/downstream/types"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/kotsadm"
+	license "github.com/replicatedhq/kots/pkg/kotsadmlicense"
 	"github.com/replicatedhq/kots/pkg/kurl"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/reporting"
@@ -205,6 +207,55 @@ func (h *Handler) AppUpdateCheck(w http.ResponseWriter, r *http.Request) {
 
 	logger.Error(errors.Errorf("unsupported content type: %s", r.Header.Get("Content-Type")))
 	w.WriteHeader(http.StatusBadRequest)
+}
+
+type AvailableUpdatesResponse struct {
+	Success bool                                 `json:"success"`
+	Updates []*downstreamtypes.DownstreamVersion `json:"updates,omitempty"`
+}
+
+func (h *Handler) GetAvailableUpdates(w http.ResponseWriter, r *http.Request) {
+	if kotsadm.IsAirgap() {
+		w.WriteHeader(http.StatusForbidden)
+		return
+	}
+
+	availableUpdatesResponse := AvailableUpdatesResponse{
+		Success: false,
+	}
+
+	appSlug, ok := mux.Vars(r)["appSlug"]
+	if !ok {
+		logger.Error(errors.New("appSlug is required"))
+		JSON(w, http.StatusBadRequest, availableUpdatesResponse)
+		return
+	}
+
+	store := store.GetStore()
+	app, err := store.GetAppFromSlug(appSlug)
+	if err != nil {
+		logger.Error(errors.Wrap(err, "failed to get app from slug"))
+		JSON(w, http.StatusInternalServerError, availableUpdatesResponse)
+		return
+	}
+
+	latestLicense, _, err := license.Sync(app, "", false)
+	if err != nil {
+		logger.Error(errors.Wrap(err, "failed to sync license"))
+		JSON(w, http.StatusInternalServerError, availableUpdatesResponse)
+		return
+	}
+
+	updates, err := updatechecker.GetAvailableUpdates(store, app, latestLicense)
+	if err != nil {
+		logger.Error(errors.Wrap(err, "failed to get pending app updates"))
+		JSON(w, http.StatusInternalServerError, availableUpdatesResponse)
+		return
+	}
+
+	availableUpdatesResponse.Success = true
+	availableUpdatesResponse.Updates = updates
+	JSON(w, http.StatusOK, availableUpdatesResponse)
 }
 
 type UpdateAdminConsoleResponse struct {
