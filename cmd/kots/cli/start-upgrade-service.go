@@ -9,7 +9,6 @@ import (
 	"github.com/spf13/viper"
 )
 
-// TODO NOW: rename to updater?
 func StartUpgradeServiceCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:    "start-upgrade-service",
