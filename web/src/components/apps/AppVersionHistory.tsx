@@ -268,19 +268,20 @@ class AppVersionHistory extends Component<Props, State> {
       }),
       credentials: "include",
       method: "POST",
-    }).then(async (res) => {
-      if (res.ok) {
-        this.setState({
-          shouldShowUpgradeServiceModal: true,
-        });
-        return;
-      }
-      const text = await res.text();
-      console.log("failed to init upgrade service", text);
     })
-    .catch((err) => {
-      console.log(err);
-    });
+      .then(async (res) => {
+        if (res.ok) {
+          this.setState({
+            shouldShowUpgradeServiceModal: true,
+          });
+          return;
+        }
+        const text = await res.text();
+        console.log("failed to init upgrade service", text);
+      })
+      .catch((err) => {
+        console.log(err);
+      });
 
     this._mounted = true;
   }
@@ -2228,7 +2229,7 @@ class AppVersionHistory extends Component<Props, State> {
           <iframe
             src={`/upgrade-service/app/${app?.slug}`}
             title="KOTS Upgrade Service"
-            width="100%" 
+            width="100%"
             height="100%"
             allowFullScreen={true}
           />

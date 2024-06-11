@@ -185,7 +185,7 @@ type UpdateCheckRelease struct {
 // otherwise, if "IsAutomatic" is set to true (which means it's an automatic update check), then the version that matches the auto deploy configuration (if enabled) will be deployed.
 // returns the number of available updates.
 func CheckForUpdates(opts CheckForUpdatesOpts) (ucr *UpdateCheckResponse, finalError error) {
-	currentStatus, _, err := store.GetTaskStatus("update-download")
+	currentStatus, _, err := tasks.GetTaskStatus("update-download")
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get task status")
 	}
@@ -194,7 +194,7 @@ func CheckForUpdates(opts CheckForUpdatesOpts) (ucr *UpdateCheckResponse, finalE
 		return nil, nil
 	}
 
-	if err := store.SetTaskStatus("update-download", "Checking for updates...", "running"); err != nil {
+	if err := tasks.SetTaskStatus("update-download", "Checking for updates...", "running"); err != nil {
 		return nil, errors.Wrap(err, "failed to set task status")
 	}
 
@@ -313,7 +313,7 @@ func checkForKotsAppUpdates(opts CheckForUpdatesOpts, finishedChan chan<- error)
 
 	// this is to avoid a race condition where the UI polls the task status before it is set by the goroutine
 	status := fmt.Sprintf("%d Updates available...", ucr.AvailableUpdates)
-	if err := store.SetTaskStatus("update-download", status, "running"); err != nil {
+	if err := tasks.SetTaskStatus("update-download", status, "running"); err != nil {
 		return nil, errors.Wrap(err, "failed to set task status")
 	}
 

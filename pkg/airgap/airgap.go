@@ -28,6 +28,7 @@ import (
 	storetypes "github.com/replicatedhq/kots/pkg/store/types"
 	"github.com/replicatedhq/kots/pkg/supportbundle"
 	supportbundletypes "github.com/replicatedhq/kots/pkg/supportbundle/types"
+	"github.com/replicatedhq/kots/pkg/tasks"
 	"github.com/replicatedhq/kots/pkg/util"
 	"github.com/replicatedhq/kots/pkg/version"
 	kotsv1beta1 "github.com/replicatedhq/kotskinds/apis/kots/v1beta1"
@@ -54,7 +55,7 @@ type CreateAirgapAppOpts struct {
 // will also have a version
 func CreateAppFromAirgap(opts CreateAirgapAppOpts) (finalError error) {
 	taskID := fmt.Sprintf("airgap-install-slug-%s", opts.PendingApp.Slug)
-	if err := store.GetStore().SetTaskStatus(taskID, "Processing package...", "running"); err != nil {
+	if err := tasks.SetTaskStatus(taskID, "Processing package...", "running"); err != nil {
 		return errors.Wrap(err, "failed to set task status")
 	}
 
@@ -64,7 +65,7 @@ func CreateAppFromAirgap(opts CreateAirgapAppOpts) (finalError error) {
 		for {
 			select {
 			case <-time.After(time.Second):
-				if err := store.GetStore().UpdateTaskStatusTimestamp(taskID); err != nil {
+				if err := tasks.UpdateTaskStatusTimestamp(taskID); err != nil {
 					logger.Error(errors.Wrapf(err, "failed to update task %s", taskID))
 				}
 			case <-finishedCh:
@@ -75,14 +76,14 @@ func CreateAppFromAirgap(opts CreateAirgapAppOpts) (finalError error) {
 
 	defer func() {
 		if finalError == nil {
-			if err := store.GetStore().ClearTaskStatus(taskID); err != nil {
+			if err := tasks.ClearTaskStatus(taskID); err != nil {
 				logger.Error(errors.Wrap(err, "failed to clear install task status"))
 			}
 			if err := store.GetStore().SetAppInstallState(opts.PendingApp.ID, "installed"); err != nil {
 				logger.Error(errors.Wrap(err, "failed to set app status to installed"))
 			}
 		} else {
-			if err := store.GetStore().SetTaskStatus(taskID, finalError.Error(), "failed"); err != nil {
+			if err := tasks.SetTaskStatus(taskID, finalError.Error(), "failed"); err != nil {
 				logger.Error(errors.Wrap(err, "failed to set error on install task status"))
 			}
 			if err := store.GetStore().SetAppInstallState(opts.PendingApp.ID, "airgap_upload_error"); err != nil {
@@ -96,7 +97,7 @@ func CreateAppFromAirgap(opts CreateAirgapAppOpts) (finalError error) {
 	}
 
 	// Extract it
-	if err := store.GetStore().SetTaskStatus(taskID, "Extracting files...", "running"); err != nil {
+	if err := tasks.SetTaskStatus(taskID, "Extracting files...", "running"); err != nil {
 		return errors.Wrap(err, "failed to set task status")
 	}
 
@@ -130,7 +131,7 @@ func CreateAppFromAirgap(opts CreateAirgapAppOpts) (finalError error) {
 	}
 	defer os.RemoveAll(tmpRoot)
 
-	if err := store.GetStore().SetTaskStatus(taskID, "Reading license data...", "running"); err != nil {
+	if err := tasks.SetTaskStatus(taskID, "Reading license data...", "running"); err != nil {
 		return errors.Wrap(err, "failed to set task status")
 	}
 
@@ -154,7 +155,7 @@ func CreateAppFromAirgap(opts CreateAirgapAppOpts) (finalError error) {
 	go func() {
 		scanner := bufio.NewScanner(pipeReader)
 		for scanner.Scan() {
-			if err := store.GetStore().SetTaskStatus(taskID, scanner.Text(), "running"); err != nil {
+			if err := tasks.SetTaskStatus(taskID, scanner.Text(), "running"); err != nil {
 				logger.Error(errors.Wrapf(err, "failed to set status for task %s", taskID))
 			}
 		}

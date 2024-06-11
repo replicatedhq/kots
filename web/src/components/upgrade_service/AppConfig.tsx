@@ -122,8 +122,8 @@ class AppConfig extends Component<Props, State> {
   componentDidUpdate(lastProps: Props, lastState: State) {
     const { location } = this.props;
     // if (app && !app.isConfigurable) {
-      // app not configurable - redirect
-      // TODO NOW: what to do here?
+    // app not configurable - redirect
+    // TODO NOW: what to do here?
     // }
     if (
       this.state.configGroups &&
@@ -585,7 +585,11 @@ class AppConfig extends Component<Props, State> {
               })}
             </div>
             <div className="ConfigArea--wrapper">
-              <div className={classNames("ConfigOuterWrapper card-bg u-padding--15")}>
+              <div
+                className={classNames(
+                  "ConfigOuterWrapper card-bg u-padding--15"
+                )}
+              >
                 <div className="ConfigInnerWrapper">
                   <AppConfigRenderer
                     groups={configGroups}
@@ -603,9 +607,7 @@ class AppConfig extends Component<Props, State> {
                     )}
                     <button
                       className="btn primary blue"
-                      disabled={
-                        showValidationError || !changed
-                      }
+                      disabled={showValidationError || !changed}
                       onClick={this.handleNext}
                     >
                       Next

@@ -96,20 +96,6 @@ func (mr *MockStoreMockRecorder) AddDownstreamVersionsDetails(appID, clusterID, 
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddDownstreamVersionsDetails", reflect.TypeOf((*MockStore)(nil).AddDownstreamVersionsDetails), appID, clusterID, versions, checkIfDeployable)
 }
 
-// ClearTaskStatus mocks base method.
-func (m *MockStore) ClearTaskStatus(taskID string) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ClearTaskStatus", taskID)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// ClearTaskStatus indicates an expected call of ClearTaskStatus.
-func (mr *MockStoreMockRecorder) ClearTaskStatus(taskID interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ClearTaskStatus", reflect.TypeOf((*MockStore)(nil).ClearTaskStatus), taskID)
-}
-
 // CreateApp mocks base method.
 func (m *MockStore) CreateApp(name, upstreamURI, licenseData string, isAirgapEnabled, skipImagePush, registryIsReadOnly bool) (*types2.App, error) {
 	m.ctrl.T.Helper()
@@ -1195,22 +1181,6 @@ func (mr *MockStoreMockRecorder) GetTargetKotsVersionForVersion(appID, sequence 
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTargetKotsVersionForVersion", reflect.TypeOf((*MockStore)(nil).GetTargetKotsVersionForVersion), appID, sequence)
 }
 
-// GetTaskStatus mocks base method.
-func (m *MockStore) GetTaskStatus(taskID string) (string, string, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetTaskStatus", taskID)
-	ret0, _ := ret[0].(string)
-	ret1, _ := ret[1].(string)
-	ret2, _ := ret[2].(error)
-	return ret0, ret1, ret2
-}
-
-// GetTaskStatus indicates an expected call of GetTaskStatus.
-func (mr *MockStoreMockRecorder) GetTaskStatus(taskID interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTaskStatus", reflect.TypeOf((*MockStore)(nil).GetTaskStatus), taskID)
-}
-
 // HasStrictPreflights mocks base method.
 func (m *MockStore) HasStrictPreflights(appID string, sequence int64) (bool, error) {
 	m.ctrl.T.Helper()
@@ -1844,20 +1814,6 @@ func (mr *MockStoreMockRecorder) SetSupportBundleAnalysis(bundleID, insights int
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetSupportBundleAnalysis", reflect.TypeOf((*MockStore)(nil).SetSupportBundleAnalysis), bundleID, insights)
 }
 
-// SetTaskStatus mocks base method.
-func (m *MockStore) SetTaskStatus(taskID, message, status string) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "SetTaskStatus", taskID, message, status)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// SetTaskStatus indicates an expected call of SetTaskStatus.
-func (mr *MockStoreMockRecorder) SetTaskStatus(taskID, message, status interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetTaskStatus", reflect.TypeOf((*MockStore)(nil).SetTaskStatus), taskID, message, status)
-}
-
 // SetUpdateCheckerSpec mocks base method.
 func (m *MockStore) SetUpdateCheckerSpec(appID, updateCheckerSpec string) error {
 	m.ctrl.T.Helper()
@@ -2025,20 +1981,6 @@ func (m *MockStore) UpdateSupportBundle(bundle *types12.SupportBundle) error {
 func (mr *MockStoreMockRecorder) UpdateSupportBundle(bundle interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateSupportBundle", reflect.TypeOf((*MockStore)(nil).UpdateSupportBundle), bundle)
-}
-
-// UpdateTaskStatusTimestamp mocks base method.
-func (m *MockStore) UpdateTaskStatusTimestamp(taskID string) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "UpdateTaskStatusTimestamp", taskID)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// UpdateTaskStatusTimestamp indicates an expected call of UpdateTaskStatusTimestamp.
-func (mr *MockStoreMockRecorder) UpdateTaskStatusTimestamp(taskID interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateTaskStatusTimestamp", reflect.TypeOf((*MockStore)(nil).UpdateTaskStatusTimestamp), taskID)
 }
 
 // UploadSupportBundle mocks base method.
@@ -2608,87 +2550,6 @@ func (m *MockAirgapStore) SetAppIsAirgap(appID string, isAirgap bool) error {
 func (mr *MockAirgapStoreMockRecorder) SetAppIsAirgap(appID, isAirgap interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetAppIsAirgap", reflect.TypeOf((*MockAirgapStore)(nil).SetAppIsAirgap), appID, isAirgap)
-}
-
-// MockTaskStore is a mock of TaskStore interface.
-type MockTaskStore struct {
-	ctrl     *gomock.Controller
-	recorder *MockTaskStoreMockRecorder
-}
-
-// MockTaskStoreMockRecorder is the mock recorder for MockTaskStore.
-type MockTaskStoreMockRecorder struct {
-	mock *MockTaskStore
-}
-
-// NewMockTaskStore creates a new mock instance.
-func NewMockTaskStore(ctrl *gomock.Controller) *MockTaskStore {
-	mock := &MockTaskStore{ctrl: ctrl}
-	mock.recorder = &MockTaskStoreMockRecorder{mock}
-	return mock
-}
-
-// EXPECT returns an object that allows the caller to indicate expected use.
-func (m *MockTaskStore) EXPECT() *MockTaskStoreMockRecorder {
-	return m.recorder
-}
-
-// ClearTaskStatus mocks base method.
-func (m *MockTaskStore) ClearTaskStatus(taskID string) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ClearTaskStatus", taskID)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// ClearTaskStatus indicates an expected call of ClearTaskStatus.
-func (mr *MockTaskStoreMockRecorder) ClearTaskStatus(taskID interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ClearTaskStatus", reflect.TypeOf((*MockTaskStore)(nil).ClearTaskStatus), taskID)
-}
-
-// GetTaskStatus mocks base method.
-func (m *MockTaskStore) GetTaskStatus(taskID string) (string, string, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetTaskStatus", taskID)
-	ret0, _ := ret[0].(string)
-	ret1, _ := ret[1].(string)
-	ret2, _ := ret[2].(error)
-	return ret0, ret1, ret2
-}
-
-// GetTaskStatus indicates an expected call of GetTaskStatus.
-func (mr *MockTaskStoreMockRecorder) GetTaskStatus(taskID interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTaskStatus", reflect.TypeOf((*MockTaskStore)(nil).GetTaskStatus), taskID)
-}
-
-// SetTaskStatus mocks base method.
-func (m *MockTaskStore) SetTaskStatus(taskID, message, status string) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "SetTaskStatus", taskID, message, status)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// SetTaskStatus indicates an expected call of SetTaskStatus.
-func (mr *MockTaskStoreMockRecorder) SetTaskStatus(taskID, message, status interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetTaskStatus", reflect.TypeOf((*MockTaskStore)(nil).SetTaskStatus), taskID, message, status)
-}
-
-// UpdateTaskStatusTimestamp mocks base method.
-func (m *MockTaskStore) UpdateTaskStatusTimestamp(taskID string) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "UpdateTaskStatusTimestamp", taskID)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// UpdateTaskStatusTimestamp indicates an expected call of UpdateTaskStatusTimestamp.
-func (mr *MockTaskStoreMockRecorder) UpdateTaskStatusTimestamp(taskID interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateTaskStatusTimestamp", reflect.TypeOf((*MockTaskStore)(nil).UpdateTaskStatusTimestamp), taskID)
 }
 
 // MockSessionStore is a mock of SessionStore interface.

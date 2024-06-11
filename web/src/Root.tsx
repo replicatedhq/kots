@@ -870,10 +870,7 @@ const Root = () => {
         ariaHideApp={false}
         className="Modal LargeSize"
       >
-        <iframe
-          src="/upgrade-service"
-          title="KOTS Upgrade Service"
-        />
+        <iframe src="/upgrade-service" title="KOTS Upgrade Service" />
       </Modal>
     </QueryClientProvider>
   );

@@ -10,8 +10,10 @@ import (
 	"github.com/pkg/errors"
 	identity "github.com/replicatedhq/kots/pkg/kotsadmidentity"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
+	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/pull"
 	registrytypes "github.com/replicatedhq/kots/pkg/registry/types"
+	"github.com/replicatedhq/kots/pkg/tasks"
 	"github.com/replicatedhq/kots/pkg/upgradeservice/types"
 	"github.com/replicatedhq/kots/pkg/util"
 )
@@ -20,7 +22,7 @@ func bootstrap(params types.ServerParams) error {
 	// TODO NOW: airgap mode
 
 	if err := pullArchiveFromOnline(params); err != nil {
-		return errors.Wrap(err, "failed to bootstrap cluster token")
+		return errors.Wrap(err, "failed to pull archive from online")
 	}
 
 	return nil
@@ -68,10 +70,9 @@ func pullArchiveFromOnline(params types.ServerParams) (finalError error) {
 	go func() {
 		scanner := bufio.NewScanner(pipeReader)
 		for scanner.Scan() {
-			// TODO NOW: update task status when it's moved outside the store
-			// if err := store.GetStore().SetTaskStatus(taskID, scanner.Text(), "running"); err != nil {
-			// 	logger.Error(err)
-			// }
+			if err := tasks.SetTaskStatus("update-download", scanner.Text(), "running"); err != nil {
+				logger.Error(err)
+			}
 		}
 		pipeReader.CloseWithError(scanner.Err())
 	}()

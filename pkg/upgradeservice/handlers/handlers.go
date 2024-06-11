@@ -24,14 +24,14 @@ func init() {
 }
 
 func RegisterRoutes(r *mux.Router, handler UpgradeServiceHandler) {
-	r.Use(LoggingMiddleware)
+	// CAUTION: modifying this prefix WILL break backwards compatibility
+	subRouter := r.PathPrefix("/api/v1/upgrade-service").Subrouter()
+	subRouter.Use(LoggingMiddleware)
 
-	// TODO NOW: move "/api/v1/upgrade-service" to a subrouter and add a caution statement
+	subRouter.Path("/ping").Methods("GET").HandlerFunc(handler.Ping)
 
-	r.Path("/api/v1/upgrade-service/ping").Methods("GET").HandlerFunc(handler.Ping)
-
-	r.Path("/api/v1/upgrade-service/app/{appSlug}/config").Methods("GET").HandlerFunc(handler.CurrentAppConfig)
-	r.Path("/api/v1/upgrade-service/app/{appSlug}/liveconfig").Methods("POST").HandlerFunc(handler.LiveAppConfig)
+	subRouter.Path("/app/{appSlug}/config").Methods("GET").HandlerFunc(handler.CurrentAppConfig)
+	subRouter.Path("/app/{appSlug}/liveconfig").Methods("POST").HandlerFunc(handler.LiveAppConfig)
 }
 
 func JSON(w http.ResponseWriter, code int, payload interface{}) {

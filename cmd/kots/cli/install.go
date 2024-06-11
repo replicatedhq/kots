@@ -37,8 +37,8 @@ import (
 	"github.com/replicatedhq/kots/pkg/print"
 	"github.com/replicatedhq/kots/pkg/pull"
 	"github.com/replicatedhq/kots/pkg/replicatedapp"
-	"github.com/replicatedhq/kots/pkg/store/kotsstore"
 	storetypes "github.com/replicatedhq/kots/pkg/store/types"
+	"github.com/replicatedhq/kots/pkg/tasks"
 	kotsv1beta1 "github.com/replicatedhq/kotskinds/apis/kots/v1beta1"
 	"github.com/replicatedhq/troubleshoot/pkg/preflight"
 	"github.com/spf13/cobra"
@@ -887,7 +887,7 @@ func ValidateAutomatedInstall(deployOptions kotsadmtypes.DeployOptions, authSlug
 	return "", errors.New("timeout waiting for automated install. Use the --wait-duration flag to increase timeout.")
 }
 
-func getAutomatedInstallStatus(url string, authSlug string) (*kotsstore.TaskStatus, error) {
+func getAutomatedInstallStatus(url string, authSlug string) (*tasks.TaskStatus, error) {
 	newReq, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create request")
@@ -910,7 +910,7 @@ func getAutomatedInstallStatus(url string, authSlug string) (*kotsstore.TaskStat
 		return nil, errors.Wrap(err, "failed to read response body")
 	}
 
-	taskStatus := kotsstore.TaskStatus{}
+	taskStatus := tasks.TaskStatus{}
 	if err := json.Unmarshal(b, &taskStatus); err != nil {
 		return nil, errors.Wrap(err, "failed to unmarshal task status")
 	}

@@ -40,7 +40,6 @@ type Store interface {
 	PreflightStore
 	PrometheusStore
 	AirgapStore
-	TaskStore
 	SessionStore
 	AppStatusStore
 	AppStore
@@ -105,13 +104,6 @@ type AirgapStore interface {
 	GetAirgapInstallStatus(appID string) (*airgaptypes.InstallStatus, error)
 	ResetAirgapInstallInProgress(appID string) error
 	SetAppIsAirgap(appID string, isAirgap bool) error
-}
-
-type TaskStore interface {
-	SetTaskStatus(taskID string, message string, status string) error
-	UpdateTaskStatusTimestamp(taskID string) error
-	ClearTaskStatus(taskID string) error
-	GetTaskStatus(taskID string) (status string, message string, err error)
 }
 
 type SessionStore interface {

@@ -20,7 +20,8 @@ root.render(
   <BrowserRouter>
     <Routes>
       <Route path="/upgrade-service/*" element={<UpgradeService />} />
-      <Route path="/*"
+      <Route
+        path="/*"
         element={
           <ReplicatedErrorBoundary>
             <Root />

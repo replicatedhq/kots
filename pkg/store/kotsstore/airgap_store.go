@@ -7,6 +7,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/airgap/types"
 	airgaptypes "github.com/replicatedhq/kots/pkg/airgap/types"
 	"github.com/replicatedhq/kots/pkg/persistence"
+	"github.com/replicatedhq/kots/pkg/tasks"
 	"github.com/rqlite/gorqlite"
 )
 
@@ -71,7 +72,7 @@ func (s *KOTSStore) GetAirgapInstallStatus(appID string) (*airgaptypes.InstallSt
 		return nil, errors.Wrap(err, "failed to scan")
 	}
 
-	_, message, err := s.GetTaskStatus(fmt.Sprintf("airgap-install-slug-%s", slug))
+	_, message, err := tasks.GetTaskStatus(fmt.Sprintf("airgap-install-slug-%s", slug))
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get task status")
 	}

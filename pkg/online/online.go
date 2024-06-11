@@ -22,6 +22,7 @@ import (
 	storetypes "github.com/replicatedhq/kots/pkg/store/types"
 	"github.com/replicatedhq/kots/pkg/supportbundle"
 	supportbundletypes "github.com/replicatedhq/kots/pkg/supportbundle/types"
+	"github.com/replicatedhq/kots/pkg/tasks"
 	"github.com/replicatedhq/kots/pkg/updatechecker"
 	"github.com/replicatedhq/kots/pkg/util"
 	"github.com/replicatedhq/kots/pkg/version"
@@ -40,7 +41,7 @@ func CreateAppFromOnline(opts CreateOnlineAppOpts) (_ *kotsutil.KotsKinds, final
 	logger.Debug("creating app from online",
 		zap.String("upstreamURI", opts.UpstreamURI))
 
-	if err := store.GetStore().SetTaskStatus("online-install", "Uploading license...", "running"); err != nil {
+	if err := tasks.SetTaskStatus("online-install", "Uploading license...", "running"); err != nil {
 		return nil, errors.Wrap(err, "failed to set task status")
 	}
 
@@ -50,7 +51,7 @@ func CreateAppFromOnline(opts CreateOnlineAppOpts) (_ *kotsutil.KotsKinds, final
 		for {
 			select {
 			case <-time.After(time.Second):
-				if err := store.GetStore().UpdateTaskStatusTimestamp("online-install"); err != nil {
+				if err := tasks.UpdateTaskStatusTimestamp("online-install"); err != nil {
 					logger.Error(err)
 				}
 			case <-finishedCh:
@@ -62,7 +63,7 @@ func CreateAppFromOnline(opts CreateOnlineAppOpts) (_ *kotsutil.KotsKinds, final
 	var app *apptypes.App
 	defer func() {
 		if finalError == nil {
-			if err := store.GetStore().ClearTaskStatus("online-install"); err != nil {
+			if err := tasks.ClearTaskStatus("online-install"); err != nil {
 				logger.Error(errors.Wrap(err, "failed to clear install task status"))
 			}
 			if err := store.GetStore().SetAppInstallState(opts.PendingApp.ID, "installed"); err != nil {
@@ -72,7 +73,7 @@ func CreateAppFromOnline(opts CreateOnlineAppOpts) (_ *kotsutil.KotsKinds, final
 				logger.Error(errors.Wrap(err, "failed to configure update checker"))
 			}
 		} else {
-			if err := store.GetStore().SetTaskStatus("online-install", finalError.Error(), "failed"); err != nil {
+			if err := tasks.SetTaskStatus("online-install", finalError.Error(), "failed"); err != nil {
 				logger.Error(errors.Wrap(err, "failed to set error on install task status"))
 			}
 			if err := store.GetStore().SetAppInstallState(opts.PendingApp.ID, "install_error"); err != nil {
@@ -85,7 +86,7 @@ func CreateAppFromOnline(opts CreateOnlineAppOpts) (_ *kotsutil.KotsKinds, final
 	go func() {
 		scanner := bufio.NewScanner(pipeReader)
 		for scanner.Scan() {
-			if err := store.GetStore().SetTaskStatus("online-install", scanner.Text(), "running"); err != nil {
+			if err := tasks.SetTaskStatus("online-install", scanner.Text(), "running"); err != nil {
 				logger.Error(err)
 			}
 		}
