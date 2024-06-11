@@ -1,8 +1,12 @@
 package updatechecker
 
 import (
+	"encoding/json"
+	"net/http"
+	"net/http/httptest"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/blang/semver"
 	"github.com/golang/mock/gomock"
@@ -11,9 +15,12 @@ import (
 	apptypes "github.com/replicatedhq/kots/pkg/app/types"
 	"github.com/replicatedhq/kots/pkg/cursor"
 	preflighttypes "github.com/replicatedhq/kots/pkg/preflight/types"
+	storepkg "github.com/replicatedhq/kots/pkg/store"
 	mock_store "github.com/replicatedhq/kots/pkg/store/mock"
 	storetypes "github.com/replicatedhq/kots/pkg/store/types"
+	"github.com/replicatedhq/kots/pkg/upstream"
 	upstreamtypes "github.com/replicatedhq/kots/pkg/upstream/types"
+	kotsv1beta1 "github.com/replicatedhq/kotskinds/apis/kots/v1beta1"
 	"github.com/stretchr/testify/require"
 )
 
@@ -917,4 +924,169 @@ func Test_removeOldUpdates(t *testing.T) {
 		got := removeOldUpdates(test.updates, test.appVersions, test.useSemver)
 		req.Equal(test.want, got)
 	}
+}
+
+func TestGetAvailableUpdates(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	mockStore := mock_store.NewMockStore(ctrl)
+
+	testTime := time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC)
+
+	type args struct {
+		kotsStore storepkg.Store
+		app       *apptypes.App
+		license   *kotsv1beta1.License
+	}
+	tests := []struct {
+		name            string
+		args            args
+		channelReleases []upstream.ChannelRelease
+		setup           func(t *testing.T, args args, mockServerEndpoint string)
+		want            []*downstreamtypes.DownstreamVersion
+		wantErr         bool
+	}{
+		{
+			name: "no updates",
+			args: args{
+				kotsStore: mockStore,
+				app: &apptypes.App{
+					ID: "app-id",
+				},
+				license: &kotsv1beta1.License{
+					Spec: kotsv1beta1.LicenseSpec{
+						ChannelID:   "channel-id",
+						ChannelName: "channel-name",
+						AppSlug:     "app-slug",
+						LicenseID:   "license-id",
+					},
+				},
+			},
+			channelReleases: []upstream.ChannelRelease{},
+			setup: func(t *testing.T, args args, licenseEndpoint string) {
+				t.Setenv("USE_MOCK_REPORTING", "1")
+				args.license.Spec.Endpoint = licenseEndpoint
+				mockStore.EXPECT().GetCurrentUpdateCursor(args.app.ID, args.license.Spec.ChannelID).Return("1", nil)
+			},
+			want:    []*downstreamtypes.DownstreamVersion{},
+			wantErr: false,
+		},
+		{
+			name: "has updates",
+			args: args{
+				kotsStore: mockStore,
+				app: &apptypes.App{
+					ID: "app-id",
+				},
+				license: &kotsv1beta1.License{
+					Spec: kotsv1beta1.LicenseSpec{
+						ChannelID:   "channel-id",
+						ChannelName: "channel-name",
+						AppSlug:     "app-slug",
+						LicenseID:   "license-id",
+					},
+				},
+			},
+			channelReleases: []upstream.ChannelRelease{
+				{
+					ChannelSequence: 2,
+					ReleaseSequence: 2,
+					VersionLabel:    "0.0.2",
+					IsRequired:      false,
+					CreatedAt:       testTime.Format(time.RFC3339),
+					ReleaseNotes:    "release notes",
+				},
+				{
+					ChannelSequence: 1,
+					ReleaseSequence: 1,
+					VersionLabel:    "0.0.1",
+					IsRequired:      false,
+					CreatedAt:       testTime.Format(time.RFC3339),
+					ReleaseNotes:    "release notes",
+				},
+			},
+			setup: func(t *testing.T, args args, licenseEndpoint string) {
+				t.Setenv("USE_MOCK_REPORTING", "1")
+				args.license.Spec.Endpoint = licenseEndpoint
+				mockStore.EXPECT().GetCurrentUpdateCursor(args.app.ID, args.license.Spec.ChannelID).Return("1", nil)
+			},
+			want: []*downstreamtypes.DownstreamVersion{
+				{
+					VersionLabel:       "0.0.2",
+					UpdateCursor:       "2",
+					ChannelID:          "channel-id",
+					IsRequired:         false,
+					Status:             storetypes.VersionPendingDownload,
+					UpstreamReleasedAt: &testTime,
+					ReleaseNotes:       "release notes",
+				},
+				{
+					VersionLabel:       "0.0.1",
+					UpdateCursor:       "1",
+					ChannelID:          "channel-id",
+					IsRequired:         false,
+					Status:             storetypes.VersionPendingDownload,
+					UpstreamReleasedAt: &testTime,
+					ReleaseNotes:       "release notes",
+				},
+			},
+			wantErr: false,
+		},
+		{
+			name: "fails to fetch updates",
+			args: args{
+				kotsStore: mockStore,
+				app: &apptypes.App{
+					ID: "app-id",
+				},
+				license: &kotsv1beta1.License{
+					Spec: kotsv1beta1.LicenseSpec{
+						ChannelID:   "channel-id",
+						ChannelName: "channel-name",
+						AppSlug:     "app-slug",
+						LicenseID:   "license-id",
+					},
+				},
+			},
+			channelReleases: []upstream.ChannelRelease{},
+			setup: func(t *testing.T, args args, licenseEndpoint string) {
+				t.Setenv("USE_MOCK_REPORTING", "1")
+				args.license.Spec.Endpoint = licenseEndpoint
+				mockStore.EXPECT().GetCurrentUpdateCursor(args.app.ID, args.license.Spec.ChannelID).Return("1", nil)
+			},
+			want:    []*downstreamtypes.DownstreamVersion{},
+			wantErr: true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			req := require.New(t)
+			mockServer := newMockServerWithReleases(tt.channelReleases, tt.wantErr)
+			defer mockServer.Close()
+			tt.setup(t, tt.args, mockServer.URL)
+			got, err := GetAvailableUpdates(tt.args.kotsStore, tt.args.app, tt.args.license)
+			if tt.wantErr {
+				req.Error(err)
+				return
+			}
+			req.NoError(err)
+			req.Equal(tt.want, got)
+		})
+	}
+}
+
+func newMockServerWithReleases(channelReleases []upstream.ChannelRelease, wantErr bool) *httptest.Server {
+	return httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if wantErr {
+			http.Error(w, "error", http.StatusInternalServerError)
+			return
+		}
+		var response struct {
+			ChannelReleases []upstream.ChannelRelease `json:"channelReleases"`
+		}
+		response.ChannelReleases = channelReleases
+		w.Header().Set("X-Replicated-UpdateCheckAt", time.Now().Format(time.RFC3339))
+		if err := json.NewEncoder(w).Encode(response); err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
+	}))
 }

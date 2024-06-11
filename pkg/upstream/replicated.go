@@ -81,7 +81,7 @@ func getUpdatesReplicated(fetchOptions *types.FetchOptions) (*types.UpdateCheckR
 		return nil, errors.New("No license was provided")
 	}
 
-	pendingReleases, updateCheckTime, err := listPendingChannelReleases(fetchOptions.License, fetchOptions.LastUpdateCheckAt, currentCursor, fetchOptions.ChannelChanged, fetchOptions.ReportingInfo)
+	pendingReleases, updateCheckTime, err := listPendingChannelReleases(fetchOptions.License, fetchOptions.LastUpdateCheckAt, currentCursor, fetchOptions.ChannelChanged, fetchOptions.SortOrder, fetchOptions.ReportingInfo)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to list replicated app releases")
 	}
@@ -441,7 +441,7 @@ func downloadReplicatedApp(replicatedUpstream *replicatedapp.ReplicatedUpstream,
 	return &release, nil
 }
 
-func listPendingChannelReleases(license *kotsv1beta1.License, lastUpdateCheckAt *time.Time, currentCursor replicatedapp.ReplicatedCursor, channelChanged bool, reportingInfo *reportingtypes.ReportingInfo) ([]ChannelRelease, *time.Time, error) {
+func listPendingChannelReleases(license *kotsv1beta1.License, lastUpdateCheckAt *time.Time, currentCursor replicatedapp.ReplicatedCursor, channelChanged bool, sortOrder string, reportingInfo *reportingtypes.ReportingInfo) ([]ChannelRelease, *time.Time, error) {
 	u, err := url.Parse(license.Spec.Endpoint)
 	if err != nil {
 		return nil, nil, errors.Wrap(err, "failed to parse endpoint from license")
@@ -464,6 +464,10 @@ func listPendingChannelReleases(license *kotsv1beta1.License, lastUpdateCheckAt 
 
 	if lastUpdateCheckAt != nil {
 		urlValues.Add("lastUpdateCheckAt", lastUpdateCheckAt.UTC().Format(time.RFC3339))
+	}
+
+	if sortOrder != "" {
+		urlValues.Add("sortOrder", sortOrder)
 	}
 
 	url := fmt.Sprintf("%s://%s/release/%s/pending?%s", u.Scheme, hostname, license.Spec.AppSlug, urlValues.Encode())
