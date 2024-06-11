@@ -29,7 +29,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/store"
 	"github.com/replicatedhq/kots/pkg/supportbundle"
 	"github.com/replicatedhq/kots/pkg/updatechecker"
-	"github.com/replicatedhq/kots/pkg/upgrader"
+	"github.com/replicatedhq/kots/pkg/upgradeservice"
 	"github.com/replicatedhq/kots/pkg/util"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -195,9 +195,9 @@ func Start(params *APIServerParams) {
 	* Static routes
 	**********************************************************************/
 
-	// Serve the upgrader UI from the upgrader service
+	// Serve the upgrade UI from the upgrade service
 	// CAUTION: modifying this route WILL break backwards compatibility
-	r.PathPrefix("/upgrader").Methods("GET").HandlerFunc(upgrader.Proxy)
+	r.PathPrefix("/upgrade-service").Methods("GET").HandlerFunc(upgradeservice.Proxy)
 
 	// TODO NOW: move this to a shared function
 	// to avoid confusion, we don't serve this in the dev env...

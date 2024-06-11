@@ -3,7 +3,7 @@ import { Helmet } from "react-helmet";
 import NotFound from "@components/static/NotFound";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
-import AppConfig from "@components/upgrader/AppConfig";
+import AppConfig from "@components/upgrade_service/AppConfig";
 
 // types
 import { ToastProvider } from "@src/context/ToastContext";

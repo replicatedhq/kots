@@ -1,4 +1,4 @@
-package upgrader
+package upgradeservice
 
 import (
 	_ "embed"
@@ -13,15 +13,15 @@ import (
 	"github.com/phayes/freeport"
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/logger"
-	"github.com/replicatedhq/kots/pkg/upgrader/types"
+	"github.com/replicatedhq/kots/pkg/upgradeservice/types"
 )
 
-var upgraderProcess *os.Process
-var upgraderPort string
+var upgradeServiceProcess *os.Process
+var upgradeServicePort string
 
-// Start will spin up an upgrader service in the background on a random port.
-// If an upgrader is already running, it will be stopped and a new one will be started.
-// The KOTS binary of the specified version will be used to start the upgrader.
+// Start will spin up an upgrade service in the background on a random port.
+// If an upgrade service is already running, it will be stopped and a new one will be started.
+// The KOTS binary of the specified version will be used to start the upgrade service.
 func Start(opts types.StartOptions) (finalError error) {
 	defer func() {
 		if finalError != nil {
@@ -29,7 +29,7 @@ func Start(opts types.StartOptions) (finalError error) {
 		}
 	}()
 
-	// stop the upgrader if it's already running.
+	// stop the upgrade service if it's already running.
 	// don't bail if not able to stop, and start a new one
 	stop()
 
@@ -48,7 +48,7 @@ func Start(opts types.StartOptions) (finalError error) {
 	cmd := exec.Command(
 		// kotsBin, // TODO NOW: use target binary
 		"/kots",
-		"start-upgrader",
+		"start-upgrade-service",
 		"--port", freePort,
 
 		"--app-id", opts.App.ID,
@@ -77,27 +77,27 @@ func Start(opts types.StartOptions) (finalError error) {
 		return errors.Wrap(err, "failed to start")
 	}
 
-	upgraderPort = freePort
-	upgraderProcess = cmd.Process
+	upgradeServicePort = freePort
+	upgradeServiceProcess = cmd.Process
 
 	if err := waitForReady(time.Second * 30); err != nil {
-		return errors.Wrap(err, "failed to wait for upgrader to become ready")
+		return errors.Wrap(err, "failed to wait for upgrade service to become ready")
 	}
 
 	return nil
 }
 
-// Proxy will proxy the request to the upgrader service.
+// Proxy will proxy the request to the upgrade service.
 func Proxy(w http.ResponseWriter, r *http.Request) {
-	if upgraderPort == "" {
-		logger.Error(errors.New("upgrader is not running"))
+	if upgradeServicePort == "" {
+		logger.Error(errors.New("upgrade service is not running"))
 		w.WriteHeader(http.StatusServiceUnavailable)
 		return
 	}
 
-	remote, err := url.Parse(fmt.Sprintf("http://localhost:%s", upgraderPort))
+	remote, err := url.Parse(fmt.Sprintf("http://localhost:%s", upgradeServicePort))
 	if err != nil {
-		logger.Error(errors.Wrap(err, "failed to parse upgrader url"))
+		logger.Error(errors.Wrap(err, "failed to parse upgrade service url"))
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
@@ -107,20 +107,21 @@ func Proxy(w http.ResponseWriter, r *http.Request) {
 }
 
 func stop() {
-	if upgraderProcess != nil {
-		if err := upgraderProcess.Signal(os.Interrupt); err != nil {
-			logger.Errorf("Failed to stop upgrader process on port %s", upgraderPort)
+	if upgradeServiceProcess != nil {
+		if err := upgradeServiceProcess.Signal(os.Interrupt); err != nil {
+			logger.Errorf("Failed to stop upgrade service process on port %s", upgradeServicePort)
 		}
 	}
-	upgraderPort = ""
-	upgraderProcess = nil
+	upgradeServicePort = ""
+	upgradeServiceProcess = nil
 }
 
 func waitForReady(timeout time.Duration) error {
 	start := time.Now()
 
+	// TODO NOW: return last error
 	for {
-		url := fmt.Sprintf("http://localhost:%s/api/v1/upgrader/ping", upgraderPort)
+		url := fmt.Sprintf("http://localhost:%s/api/v1/upgrade-service/ping", upgradeServicePort)
 		newRequest, err := http.NewRequest("GET", url, nil)
 		if err == nil {
 			resp, err := http.DefaultClient.Do(newRequest)
@@ -134,7 +135,7 @@ func waitForReady(timeout time.Duration) error {
 		time.Sleep(time.Second)
 
 		if time.Since(start) > timeout {
-			return errors.Errorf("Timeout waiting for upgrader to become ready on port %s", upgraderPort)
+			return errors.Errorf("Timeout waiting for upgrade-service to become ready on port %s", upgradeServicePort)
 		}
 	}
 }

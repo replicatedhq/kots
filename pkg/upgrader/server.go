@@ -1,4 +1,4 @@
-package upgrader
+package upgradeservice
 
 import (
 	"fmt"
@@ -10,12 +10,12 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/buildversion"
-	"github.com/replicatedhq/kots/pkg/upgrader/handlers"
-	"github.com/replicatedhq/kots/pkg/upgrader/types"
+	"github.com/replicatedhq/kots/pkg/upgradeservice/handlers"
+	"github.com/replicatedhq/kots/pkg/upgradeservice/types"
 )
 
 func Serve(params types.ServerParams) error {
-	fmt.Printf("Starting KOTS Upgrader version %s on port %s\n", buildversion.Version(), params.Port)
+	fmt.Printf("Starting KOTS Upgrade Service version %s on port %s\n", buildversion.Version(), params.Port)
 
 	if err := bootstrap(params); err != nil {
 		return errors.Wrap(err, "failed to bootstrap")

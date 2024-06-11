@@ -1,7 +1,7 @@
 import { createRoot } from "react-dom/client";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 import ReplicatedErrorBoundary from "./components/shared/ErrorBoundary";
-import { Upgrader } from "@components/upgrader/Upgrader";
+import { UpgradeService } from "@components/upgrade_service/UpgradeService";
 import { Root } from "./Root";
 
 // scss
@@ -19,7 +19,7 @@ const root = createRoot(container); // createRoot(container!) if you use TypeScr
 root.render(
   <BrowserRouter>
     <Routes>
-      <Route path="/upgrader/*" element={<Upgrader />} />
+      <Route path="/upgrade-service/*" element={<UpgradeService />} />
       <Route path="/*"
         element={
           <ReplicatedErrorBoundary>

@@ -9,7 +9,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/policy"
 	"github.com/replicatedhq/kots/pkg/store"
-	"github.com/replicatedhq/kots/pkg/upgrader"
+	"github.com/replicatedhq/kots/pkg/upgradeservice"
 	kotsscheme "github.com/replicatedhq/kotskinds/client/kotsclientset/scheme"
 	troubleshootscheme "github.com/replicatedhq/troubleshoot/pkg/client/troubleshootclientset/scheme"
 	yaml "github.com/replicatedhq/yaml/v3"
@@ -318,15 +318,15 @@ func RegisterSessionAuthRoutes(r *mux.Router, kotsStore store.Store, handler KOT
 		HandlerFunc(middleware.EnforceAccess(policy.PasswordChange, handler.ChangePassword))
 
 	// TODO NOW: calling this again will cancel in progress updates. add endpoint to cancel updates?
-	// Start upgrader
-	r.Name("StartUpgrader").Path("/api/v1/app/{appSlug}/start-upgrader").Methods("POST").
-		HandlerFunc(middleware.EnforceAccess(policy.AppUpdate, handler.StartUpgrader))
+	// Start upgrade service
+	r.Name("StartUpgradeService").Path("/api/v1/app/{appSlug}/start-upgrade-service").Methods("POST").
+		HandlerFunc(middleware.EnforceAccess(policy.AppUpdate, handler.StartUpgradeService))
 
-	// TODO NOW: support an upgrader service for each app? yes because of automated updates? or block updates if an upgrader is running?
-	// Proxy upgrader requests to the upgrader service
+	// TODO NOW: support an upgrade service for each app? yes because of automated updates? or block updates if an upgrade service is running?
+	// Proxy upgrade service requests to the upgrade service
 	// CAUTION: modifying this route WILL break backwards compatibility
-	r.Name("UpgraderProxy").PathPrefix("/api/v1/upgrader").Methods("GET", "POST", "PUT").
-		HandlerFunc(upgrader.Proxy) // TODO NOW: enforce access
+	r.Name("UpgradeServiceProxy").PathPrefix("/api/v1/upgrade-service").Methods("GET", "POST", "PUT").
+		HandlerFunc(upgradeservice.Proxy) // TODO NOW: enforce access
 }
 
 func JSON(w http.ResponseWriter, code int, payload interface{}) {

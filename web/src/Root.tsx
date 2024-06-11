@@ -98,7 +98,7 @@ type State = {
   snapshotInProgressApps: string[];
   isEmbeddedClusterWaitingForNodes: boolean;
   themeState: ThemeState;
-  shouldShowUpgraderModal: boolean;
+  shouldShowUpgradeServiceModal: boolean;
 };
 
 let interval: ReturnType<typeof setInterval> | undefined;
@@ -131,7 +131,7 @@ const Root = () => {
         navbarLogo: null,
       },
       app: null,
-      shouldShowUpgraderModal: false,
+      shouldShowUpgradeServiceModal: false,
     }
   );
 
@@ -862,17 +862,17 @@ const Root = () => {
         )}
       </Modal>
       <Modal
-        isOpen={state.shouldShowUpgraderModal}
+        isOpen={state.shouldShowUpgradeServiceModal}
         onRequestClose={() => {
-          setState({ shouldShowUpgraderModal: false });
+          setState({ shouldShowUpgradeServiceModal: false });
         }}
-        contentLabel="KOTS Upgrader Modal"
+        contentLabel="KOTS Upgrade Service Modal"
         ariaHideApp={false}
         className="Modal LargeSize"
       >
         <iframe
-          src="/upgrader"
-          title="KOTS Upgrader"
+          src="/upgrade-service"
+          title="KOTS Upgrade Service"
         />
       </Modal>
     </QueryClientProvider>

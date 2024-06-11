@@ -29,7 +29,7 @@ export default class ConfigFileInput extends Component {
   };
 
   handleDownloadFile = async (fileName) => {
-    // TODO NOW: download from upgrader if rendered in upgrader and use a different sequence!
+    // TODO NOW: download from upgrade service if rendered in upgrade service and use a different sequence!
     const url = `${process.env.API_ENDPOINT}/app/${this.props.appSlug}/config/${this.props.configSequence}/${fileName}/download`;
     fetch(url, {
       method: "GET",

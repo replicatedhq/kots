@@ -2,7 +2,7 @@ package handlers
 
 import "net/http"
 
-type UpgraderHandler interface {
+type UpgradeServiceHandler interface {
 	Ping(w http.ResponseWriter, r *http.Request)
 
 	CurrentAppConfig(w http.ResponseWriter, r *http.Request)

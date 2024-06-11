@@ -8,7 +8,7 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/replicatedhq/kots/pkg/logger"
-	"github.com/replicatedhq/kots/pkg/upgrader/types"
+	"github.com/replicatedhq/kots/pkg/upgradeservice/types"
 )
 
 type paramsKey struct{}

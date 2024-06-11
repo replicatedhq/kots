@@ -146,7 +146,7 @@ type State = {
   versionToDeploy: Version | null;
   viewLogsErrMsg: string;
   yamlErrorDetails: string[];
-  shouldShowUpgraderModal: boolean;
+  shouldShowUpgradeServiceModal: boolean;
 };
 
 class AppVersionHistory extends Component<Props, State> {
@@ -212,7 +212,7 @@ class AppVersionHistory extends Component<Props, State> {
       versionToDeploy: null,
       viewLogsErrMsg: "",
       yamlErrorDetails: [],
-      shouldShowUpgraderModal: false,
+      shouldShowUpgradeServiceModal: false,
     };
   }
 
@@ -256,7 +256,7 @@ class AppVersionHistory extends Component<Props, State> {
 
     // TODO NOW: remove this
     const appSlug = this.props.params.slug;
-    fetch(`${process.env.API_ENDPOINT}/app/${appSlug}/start-upgrader`, {
+    fetch(`${process.env.API_ENDPOINT}/app/${appSlug}/start-upgrade-service`, {
       headers: {
         "Content-Type": "application/json",
         Accept: "application/json",
@@ -271,12 +271,12 @@ class AppVersionHistory extends Component<Props, State> {
     }).then(async (res) => {
       if (res.ok) {
         this.setState({
-          shouldShowUpgraderModal: true,
+          shouldShowUpgradeServiceModal: true,
         });
         return;
       }
       const text = await res.text();
-      console.log("failed to init upgrader", text);
+      console.log("failed to init upgrade service", text);
     })
     .catch((err) => {
       console.log(err);
@@ -2217,17 +2217,17 @@ class AppVersionHistory extends Component<Props, State> {
           />
         )}
         <Modal
-          isOpen={this.state.shouldShowUpgraderModal}
+          isOpen={this.state.shouldShowUpgradeServiceModal}
           onRequestClose={() => {
-            this.setState({ shouldShowUpgraderModal: false });
+            this.setState({ shouldShowUpgradeServiceModal: false });
           }}
-          contentLabel="KOTS Upgrader Modal"
+          contentLabel="KOTS Upgrade Service Modal"
           ariaHideApp={false}
-          className="Modal UpgraderModal"
+          className="Modal UpgradeServiceModal"
         >
           <iframe
-            src={`/upgrader/app/${app?.slug}`}
-            title="KOTS Upgrader"
+            src={`/upgrade-service/app/${app?.slug}`}
+            title="KOTS Upgrade Service"
             width="100%" 
             height="100%"
             allowFullScreen={true}
