@@ -1,4 +1,4 @@
-package upgrader
+package upgradeservice
 
 import (
 	"bufio"
@@ -12,7 +12,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/pull"
 	registrytypes "github.com/replicatedhq/kots/pkg/registry/types"
-	"github.com/replicatedhq/kots/pkg/upgrader/types"
+	"github.com/replicatedhq/kots/pkg/upgradeservice/types"
 	"github.com/replicatedhq/kots/pkg/util"
 )
 

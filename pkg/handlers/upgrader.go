@@ -8,29 +8,29 @@ import (
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/store"
-	"github.com/replicatedhq/kots/pkg/upgrader"
-	upgradertypes "github.com/replicatedhq/kots/pkg/upgrader/types"
+	"github.com/replicatedhq/kots/pkg/upgradeservice"
+	upgradeservicetypes "github.com/replicatedhq/kots/pkg/upgradeservice/types"
 )
 
-type StartUpgraderRequest struct {
+type StartUpgradeServiceRequest struct {
 	KOTSVersion  string `json:"kotsVersion"`
 	VersionLabel string `json:"versionLabel"`
 	UpdateCursor string `json:"updateCursor"`
 }
 
-type StartUpgraderResponse struct {
+type StartUpgradeServiceResponse struct {
 	Success bool   `json:"success"`
 	Error   string `json:"error,omitempty"`
 }
 
-func (h *Handler) StartUpgrader(w http.ResponseWriter, r *http.Request) {
-	response := StartUpgraderResponse{
+func (h *Handler) StartUpgradeService(w http.ResponseWriter, r *http.Request) {
+	response := StartUpgradeServiceResponse{
 		Success: false,
 	}
 
 	// TODO NOW: required releases
 
-	request := StartUpgraderRequest{}
+	request := StartUpgradeServiceRequest{}
 	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
 		response.Error = "failed to decode request body"
 		logger.Error(errors.Wrap(err, response.Error))
@@ -74,7 +74,7 @@ func (h *Handler) StartUpgrader(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// TODO NOW: send cursor in request
-	err = upgrader.Start(upgradertypes.StartOptions{
+	err = upgradeservice.Start(upgradeservicetypes.StartOptions{
 		KOTSVersion:      request.KOTSVersion,
 		App:              foundApp,
 		BaseArchive:      baseArchive,
@@ -85,7 +85,7 @@ func (h *Handler) StartUpgrader(w http.ResponseWriter, r *http.Request) {
 		// TODO NOW: reporting info
 	})
 	if err != nil {
-		response.Error = "failed to start upgrader"
+		response.Error = "failed to start upgrade service"
 		logger.Error(errors.Wrap(err, response.Error))
 		JSON(w, http.StatusInternalServerError, response)
 		return

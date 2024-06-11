@@ -3,18 +3,18 @@ package cli
 import (
 	"fmt"
 
-	"github.com/replicatedhq/kots/pkg/upgrader"
-	"github.com/replicatedhq/kots/pkg/upgrader/types"
+	"github.com/replicatedhq/kots/pkg/upgradeservice"
+	"github.com/replicatedhq/kots/pkg/upgradeservice/types"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
 
 // TODO NOW: rename to updater?
-func StartUpgraderCmd() *cobra.Command {
+func StartUpgradeServiceCmd() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:    "start-upgrader",
-		Short:  "Starts the KOTS upgrader service",
-		Long:   `Starts the KOTS upgrader service`,
+		Use:    "start-upgrade-service",
+		Short:  "Starts the KOTS upgrade service",
+		Long:   `Starts the KOTS upgrade service`,
 		Hidden: true,
 		PreRun: func(cmd *cobra.Command, args []string) {
 			viper.BindPFlags(cmd.Flags())
@@ -43,7 +43,7 @@ func StartUpgraderCmd() *cobra.Command {
 				RegistryNamespace:  v.GetString("registry-namespace"),
 				RegistryIsReadOnly: v.GetBool("registry-is-readonly"),
 			}
-			if err := upgrader.Serve(params); err != nil {
+			if err := upgradeservice.Serve(params); err != nil {
 				return err
 			}
 
