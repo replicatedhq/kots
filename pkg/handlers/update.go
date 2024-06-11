@@ -248,7 +248,7 @@ func (h *Handler) GetAvailableUpdates(w http.ResponseWriter, r *http.Request) {
 
 	updates, err := updatechecker.GetAvailableUpdates(store, app, latestLicense)
 	if err != nil {
-		logger.Error(errors.Wrap(err, "failed to get pending app updates"))
+		logger.Error(errors.Wrap(err, "failed to get available app updates"))
 		JSON(w, http.StatusInternalServerError, availableUpdatesResponse)
 		return
 	}

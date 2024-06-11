@@ -753,9 +753,9 @@ func GetAvailableUpdates(kotsStore storepkg.Store, app *apptypes.App, license *k
 		return nil, errors.Wrap(err, "failed to get updates")
 	}
 
-	pendingVersions := []*downstreamtypes.DownstreamVersion{}
+	availableVersions := []*downstreamtypes.DownstreamVersion{}
 	for _, u := range updates.Updates {
-		pendingVersions = append(pendingVersions, &downstreamtypes.DownstreamVersion{
+		availableVersions = append(availableVersions, &downstreamtypes.DownstreamVersion{
 			VersionLabel:       u.VersionLabel,
 			UpdateCursor:       u.Cursor,
 			ChannelID:          u.ChannelID,
@@ -766,5 +766,5 @@ func GetAvailableUpdates(kotsStore storepkg.Store, app *apptypes.App, license *k
 		})
 	}
 
-	return pendingVersions, nil
+	return availableVersions, nil
 }
