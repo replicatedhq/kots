@@ -183,7 +183,7 @@ class AppConfig extends Component<Props, State> {
     });
 
     fetch(
-      `${process.env.API_ENDPOINT}/upgrader/app/${slug}/config${window.location.search}`,
+      `${process.env.API_ENDPOINT}/upgrade-service/app/${slug}/config${window.location.search}`,
       {
         method: "GET",
         headers: {
@@ -351,7 +351,7 @@ class AppConfig extends Component<Props, State> {
     const signal = this.fetchController.signal;
 
     fetch(
-      `${process.env.API_ENDPOINT}/upgrader/app/${slug}/liveconfig${window.location.search}`,
+      `${process.env.API_ENDPOINT}/upgrade-service/app/${slug}/liveconfig${window.location.search}`,
       {
         signal,
         headers: {

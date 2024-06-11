@@ -11,7 +11,7 @@ import { ToastProvider } from "@src/context/ToastContext";
 // react-query client
 const queryClient = new QueryClient();
 
-const Upgrader = () => {
+const UpgradeService = () => {
   const Crashz = () => {
     throw new Error("Crashz!");
   };
@@ -42,4 +42,4 @@ const Upgrader = () => {
   );
 };
 
-export { Upgrader };
+export { UpgradeService };
