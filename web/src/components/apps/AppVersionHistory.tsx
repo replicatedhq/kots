@@ -254,36 +254,41 @@ class AppVersionHistory extends Component<Props, State> {
       }
     }
 
+    // fetch for available updates
+    this.fetchAvailableUpdates();
     // TODO NOW: remove this
-    const appSlug = this.props.params.slug;
-    fetch(`${process.env.API_ENDPOINT}/app/${appSlug}/start-upgrade-service`, {
-      headers: {
-        "Content-Type": "application/json",
-        Accept: "application/json",
-      },
-      body: JSON.stringify({
-        kotsVersion: "v1.109.3",
-        versionLabel: "0.0.268",
-        updateCursor: "895",
-      }),
-      credentials: "include",
-      method: "POST",
-    })
-      .then(async (res) => {
-        if (res.ok) {
-          this.setState({
-            shouldShowUpgradeServiceModal: true,
-          });
-          return;
-        }
-        const text = await res.text();
-        console.log("failed to init upgrade service", text);
-      })
-      .catch((err) => {
-        console.log(err);
-      });
+    // const appSlug = this.props.params.slug;
+    // fetch(`${process.env.API_ENDPOINT}/app/${appSlug}/start-upgrade-service`, {
+    //   headers: {
+    //     "Content-Type": "application/json",
+    //     Accept: "application/json",
+    //   },
+    //   body: JSON.stringify({
+    //     // not used// doesn't matter right now
+    //     kotsVersion: "v1.109.3",
 
-    this._mounted = true;
+    //     versionLabel: "0.1.24",
+    //     // channel sequence
+    //     updateCursor: "25",
+    //   }),
+    //   credentials: "include",
+    //   method: "POST",
+    // })
+    //   .then(async (res) => {
+    //     if (res.ok) {
+    //       this.setState({
+    //         shouldShowUpgradeServiceModal: true,
+    //       });
+    //       return;
+    //     }
+    //     const text = await res.text();
+    //     console.log("failed to init upgrade service", text);
+    //   })
+    //   .catch((err) => {
+    //     console.log(err);
+    //   });
+
+    // this._mounted = true;
   }
 
   componentDidUpdate = async (lastProps: Props) => {
@@ -315,6 +320,26 @@ class AppVersionHistory extends Component<Props, State> {
     }
     this._mounted = false;
   }
+
+  fetchAvailableUpdates = async () => {
+    const appSlug = this.props.params.slug;
+    const res = await fetch(
+      `${process.env.API_ENDPOINT}/app/${appSlug}/updates`,
+      {
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include",
+        method: "GET",
+      }
+    );
+    if (!res.ok) {
+      return;
+    }
+    const response = await res.json();
+    console.log(response, " resposne");
+    return response;
+  };
 
   fetchKotsDownstreamHistory = async () => {
     const appSlug = this.props.params.slug;
