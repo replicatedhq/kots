@@ -14,7 +14,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/upgradeservice/types"
 )
 
-func Serve(params types.ServerParams) error {
+func Serve(params types.UpgradeServiceParams) error {
 	fmt.Printf("Starting KOTS Upgrade Service version %s on port %s\n", buildversion.Version(), params.Port)
 
 	if err := bootstrap(params); err != nil {
@@ -34,8 +34,7 @@ func Serve(params types.ServerParams) error {
 	* Static routes
 	**********************************************************************/
 
-	// to avoid confusion, we don't serve this in the dev env...
-	if os.Getenv("DISABLE_SPA_SERVING") != "1" {
+	if os.Getenv("DISABLE_SPA_SERVING") != "1" { // we don't serve this in the dev env
 		spa := handlers.SPAHandler{}
 		r.PathPrefix("/").Handler(spa)
 	} else if os.Getenv("ENABLE_WEB_PROXY") == "1" { // for dev env

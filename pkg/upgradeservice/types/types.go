@@ -1,38 +1,29 @@
 package types
 
 import (
-	apptypes "github.com/replicatedhq/kots/pkg/app/types"
-	registrytypes "github.com/replicatedhq/kots/pkg/registry/types"
+	reportingtypes "github.com/replicatedhq/kots/pkg/api/reporting/types"
 )
 
-type StartOptions struct {
-	KOTSVersion      string
-	App              *apptypes.App
-	BaseArchive      string
-	BaseSequence     int64
-	NextSequence     int64
-	UpdateCursor     string
-	RegistrySettings registrytypes.RegistrySettings
-}
+type UpgradeServiceParams struct {
+	Port string `yaml:"port"`
 
-type ServerParams struct {
-	Port string
+	AppID       string `yaml:"appID"`
+	AppSlug     string `yaml:"appSlug"`
+	AppIsAirgap bool   `yaml:"appIsAirgap"`
+	AppIsGitOps bool   `yaml:"appIsGitOps"`
+	AppLicense  string `yaml:"appLicense"`
 
-	AppID       string
-	AppSlug     string
-	AppIsAirgap bool
-	AppIsGitOps bool
-	AppLicense  string
+	BaseArchive  string `yaml:"baseArchive"`
+	BaseSequence int64  `yaml:"baseSequence"`
+	NextSequence int64  `yaml:"nextSequence"`
 
-	BaseArchive  string
-	BaseSequence int64
-	NextSequence int64
+	UpdateCursor string `yaml:"updateCursor"`
 
-	UpdateCursor string
+	RegistryEndpoint   string `yaml:"registryEndpoint"`
+	RegistryUsername   string `yaml:"registryUsername"`
+	RegistryPassword   string `yaml:"registryPassword"`
+	RegistryNamespace  string `yaml:"registryNamespace"`
+	RegistryIsReadOnly bool   `yaml:"registryIsReadOnly"`
 
-	RegistryEndpoint   string
-	RegistryUsername   string
-	RegistryPassword   string
-	RegistryNamespace  string
-	RegistryIsReadOnly bool
+	ReportingInfo *reportingtypes.ReportingInfo `yaml:"reportingInfo"`
 }

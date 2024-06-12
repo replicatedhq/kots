@@ -197,11 +197,9 @@ func Start(params *APIServerParams) {
 
 	// Serve the upgrade UI from the upgrade service
 	// CAUTION: modifying this route WILL break backwards compatibility
-	r.PathPrefix("/upgrade-service").Methods("GET").HandlerFunc(upgradeservice.Proxy)
+	r.PathPrefix("/upgrade-service/app/{appSlug}").Methods("GET").HandlerFunc(upgradeservice.Proxy)
 
-	// TODO NOW: move this to a shared function
-	// to avoid confusion, we don't serve this in the dev env...
-	if os.Getenv("DISABLE_SPA_SERVING") != "1" {
+	if os.Getenv("DISABLE_SPA_SERVING") != "1" { // we don't serve this in the dev env
 		spa := handlers.SPAHandler{}
 		r.PathPrefix("/").Handler(spa)
 	} else if os.Getenv("ENABLE_WEB_PROXY") == "1" { // for dev env

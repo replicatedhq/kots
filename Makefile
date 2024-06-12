@@ -51,6 +51,8 @@ kots: capture-start-time kots-real report-metric
 
 .PHONY: kots-real
 kots-real:
+	mkdir -p web/dist
+	touch web/dist/README.md
 	go build ${LDFLAGS} -o bin/kots $(BUILDFLAGS) github.com/replicatedhq/kots/cmd/kots
 
 .PHONY: fmt
@@ -80,7 +82,7 @@ build: capture-start-time build-real report-metric
 .PHONY: build-real
 build-real:
 	mkdir -p web/dist
-	touch web/dist/THIS_IS_OKTETO  # we need this for go:embed, but it's not actually used in dev
+	touch web/dist/README.md
 	go build ${LDFLAGS} ${GCFLAGS} -v -o bin/kotsadm $(BUILDFLAGS) ./cmd/kotsadm
 
 .PHONY: tidy
@@ -112,11 +114,12 @@ debug-build:
 debug: debug-build
 	LOG_LEVEL=$(LOG_LEVEL) dlv --listen=:2345 --headless=true --api-version=2 exec ./bin/kotsadm-debug api
 
-# TODO NOW: make web part of kots cli in dev?
-.PHONY: build-ttl.sh
-# build-ttl.sh: kots build
-build-ttl.sh: build
+.PHONY: web
+web:
 	source .image.env && ${MAKE} -C web build-kotsadm
+
+.PHONY: build-ttl.sh
+build-ttl.sh: web kots build
 	docker build -f deploy/Dockerfile -t ttl.sh/${CURRENT_USER}/kotsadm:24h .
 	docker push ttl.sh/${CURRENT_USER}/kotsadm:24h
 

@@ -319,16 +319,15 @@ func RegisterSessionAuthRoutes(r *mux.Router, kotsStore store.Store, handler KOT
 	r.Name("ChangePassword").Path("/api/v1/password/change").Methods("PUT").
 		HandlerFunc(middleware.EnforceAccess(policy.PasswordChange, handler.ChangePassword))
 
-	// TODO NOW: calling this again will cancel in progress updates. add endpoint to cancel updates?
+	// TODO NOW: when to stop this upgrade service?
 	// Start upgrade service
 	r.Name("StartUpgradeService").Path("/api/v1/app/{appSlug}/start-upgrade-service").Methods("POST").
 		HandlerFunc(middleware.EnforceAccess(policy.AppUpdate, handler.StartUpgradeService))
 
-	// TODO NOW: support an upgrade service for each app? yes because of automated updates? or block updates if an upgrade service is running?
 	// Proxy upgrade service requests to the upgrade service
 	// CAUTION: modifying this route WILL break backwards compatibility
-	r.Name("UpgradeServiceProxy").PathPrefix("/api/v1/upgrade-service").Methods("GET", "POST", "PUT").
-		HandlerFunc(upgradeservice.Proxy) // TODO NOW: enforce access
+	r.Name("UpgradeServiceProxy").PathPrefix("/api/v1/upgrade-service/app/{appSlug}").Methods("GET", "POST", "PUT").
+		HandlerFunc(middleware.EnforceAccess(policy.AppUpdate, upgradeservice.Proxy))
 }
 
 func JSON(w http.ResponseWriter, code int, payload interface{}) {
