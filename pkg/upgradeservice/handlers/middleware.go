@@ -13,17 +13,17 @@ import (
 
 type paramsKey struct{}
 
-func SetContextParams(r *http.Request, params types.ServerParams) *http.Request {
+func SetContextParams(r *http.Request, params types.UpgradeServiceParams) *http.Request {
 	return r.WithContext(context.WithValue(r.Context(), paramsKey{}, params))
 }
 
-func GetContextParams(r *http.Request) types.ServerParams {
+func GetContextParams(r *http.Request) types.UpgradeServiceParams {
 	val := r.Context().Value(paramsKey{})
-	sess, _ := val.(types.ServerParams)
-	return sess
+	params, _ := val.(types.UpgradeServiceParams)
+	return params
 }
 
-func ParamsMiddleware(params types.ServerParams) mux.MiddlewareFunc {
+func ParamsMiddleware(params types.UpgradeServiceParams) mux.MiddlewareFunc {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			r = SetContextParams(r, params)

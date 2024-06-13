@@ -18,7 +18,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/util"
 )
 
-func bootstrap(params types.ServerParams) error {
+func bootstrap(params types.UpgradeServiceParams) error {
 	// TODO NOW: airgap mode
 
 	if err := pullArchiveFromOnline(params); err != nil {
@@ -28,7 +28,7 @@ func bootstrap(params types.ServerParams) error {
 	return nil
 }
 
-func pullArchiveFromOnline(params types.ServerParams) (finalError error) {
+func pullArchiveFromOnline(params types.UpgradeServiceParams) (finalError error) {
 	license, err := kotsutil.LoadLicenseFromBytes([]byte(params.AppLicense))
 	if err != nil {
 		return errors.Wrap(err, "failed to load license from bytes")
@@ -94,7 +94,7 @@ func pullArchiveFromOnline(params types.ServerParams) (finalError error) {
 		AppSlug:             params.AppSlug,
 		AppSequence:         params.NextSequence,
 		IsGitOps:            params.AppIsGitOps,
-		ReportingInfo:       nil, // TODO NOW
+		ReportingInfo:       params.ReportingInfo,
 		RewriteImages:       registrySettings.IsValid(),
 		RewriteImageOptions: registrySettings,
 		KotsKinds:           beforeKotsKinds,

@@ -7,6 +7,7 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/logger"
+	"github.com/replicatedhq/kots/pkg/reporting"
 	"github.com/replicatedhq/kots/pkg/store"
 	"github.com/replicatedhq/kots/pkg/upgradeservice"
 	upgradeservicetypes "github.com/replicatedhq/kots/pkg/upgradeservice/types"
@@ -56,7 +57,6 @@ func (h *Handler) StartUpgradeService(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// TODO NOW: send version label in request
 	baseArchive, baseSequence, err := store.GetStore().GetAppVersionBaseArchive(foundApp.ID, request.VersionLabel)
 	if err != nil {
 		response.Error = "failed to get app version base archive"
@@ -73,16 +73,26 @@ func (h *Handler) StartUpgradeService(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// TODO NOW: send cursor in request
-	err = upgradeservice.Start(upgradeservicetypes.StartOptions{
-		KOTSVersion:      request.KOTSVersion,
-		App:              foundApp,
-		BaseArchive:      baseArchive,
-		BaseSequence:     baseSequence,
-		NextSequence:     nextSequence,
-		UpdateCursor:     request.UpdateCursor,
-		RegistrySettings: registrySettings,
-		// TODO NOW: reporting info
+	err = upgradeservice.Start(upgradeservicetypes.UpgradeServiceParams{
+		AppID:       foundApp.ID,
+		AppSlug:     foundApp.Slug,
+		AppIsAirgap: foundApp.IsAirgap,
+		AppIsGitOps: foundApp.IsGitOps,
+		AppLicense:  foundApp.License,
+
+		BaseArchive:  baseArchive,
+		BaseSequence: baseSequence,
+		NextSequence: nextSequence,
+
+		UpdateCursor: request.UpdateCursor,
+
+		RegistryEndpoint:   registrySettings.Hostname,
+		RegistryUsername:   registrySettings.Username,
+		RegistryPassword:   registrySettings.Password,
+		RegistryNamespace:  registrySettings.Namespace,
+		RegistryIsReadOnly: registrySettings.IsReadOnly,
+
+		ReportingInfo: reporting.GetReportingInfo(foundApp.ID),
 	})
 	if err != nil {
 		response.Error = "failed to start upgrade service"
