@@ -1840,7 +1840,7 @@ class AppVersionHistory extends Component<Props, State> {
                   {(versionHistory.length === 0 && gitopsIsConnected) ||
                   versionHistory?.length > 0 ? (
                     <>
-                      {gitopsIsConnected ? (
+                      {gitopsIsConnected && (
                         <div
                           style={{ maxWidth: "1030px" }}
                           className="u-width--full u-marginBottom--30"
@@ -1864,7 +1864,8 @@ class AppVersionHistory extends Component<Props, State> {
                             }
                           />
                         </div>
-                      ) : (
+                      )}
+                      {!gitopsIsConnected && (
                         <div className="TableDiff--Wrapper card-bg u-marginBottom--30">
                           {!this.props.outletContext.isEmbeddedCluster && (
                             <div className="flex justifyContent--spaceBetween alignItems--center u-marginBottom--15">
@@ -1983,12 +1984,12 @@ class AppVersionHistory extends Component<Props, State> {
                           )}
                         </div>
                       )}
-                      {versionHistory?.length > 0 ? (
+                      {versionHistory?.length > 0 && (
                         <>
                           {this.renderUpdateProgress()}
                           {this.renderAllVersions()}
                         </>
-                      ) : null}
+                      )}
                     </>
                   ) : (
                     <div className="flex-column flex1 alignItems--center justifyContent--center">
