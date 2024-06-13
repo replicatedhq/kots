@@ -1,26 +1,17 @@
-import { Component } from "react";
 import { AppConfigRenderer } from "@src/components/AppConfigRenderer";
-import { useLocation, useNavigate } from "react-router-dom";
+import Icon from "@src/components/Icon";
+import ErrorModal from "@src/components/modals/ErrorModal";
+import Loader from "@src/components/shared/Loader";
 import { withRouter } from "@src/utilities/react-router-utilities";
 import classNames from "classnames";
 import debounce from "lodash/debounce";
 import find from "lodash/find";
 import map from "lodash/map";
-import Loader from "@src/components/shared/Loader";
-import ErrorModal from "@src/components/modals/ErrorModal";
+import { useEffect, useReducer, useRef, useState } from "react";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
 
 import "@src/scss/components/watches/WatchConfig.scss";
-
-import Icon from "@src/components/Icon";
-
-// Types
-import { KotsParams } from "@types";
-
-type Props = {
-  location: ReturnType<typeof useLocation>;
-  params: KotsParams;
-  navigate: ReturnType<typeof useNavigate>;
-};
+import { useUpgradeServiceContext } from "./UpgradeServiceContext";
 
 // This was typed from the implementation of the component so it might be wrong
 type ConfigGroup = {
@@ -75,15 +66,24 @@ type State = {
 const validationErrorMessage =
   "Error detected. Please use config nav to the left to locate and fix issues.";
 
-class AppConfig extends Component<Props, State> {
-  sidebarWrapper: HTMLElement;
+export const AppConfig = ({
+  setCurrentStep,
+}: {
+  setCurrentStep: (step: Number) => void;
+}) => {
+  const location = useLocation();
+  const navigate = useNavigate();
+  const params = useParams();
+  const [lastLocation, setLastLocation] = useState("");
+  const { config, setConfig } = useUpgradeServiceContext();
 
-  fetchController: AbortController | null;
+  useEffect(() => {
+    setLastLocation(location.hash);
+  }, [location.hash]);
 
-  constructor(props: Props) {
-    super(props);
-
-    this.state = {
+  const [state, setState] = useReducer(
+    (state: any, newState: any) => ({ ...state, ...newState }),
+    {
       activeGroups: [],
       showConfigError: false,
       configErrorMessage: "",
@@ -94,13 +94,15 @@ class AppConfig extends Component<Props, State> {
       gettingConfigErrMsg: "",
       showValidationError: false,
       initialConfigGroups: [],
-    };
+    }
+  );
 
-    this.handleConfigChange = debounce(this.handleConfigChange, 250);
-    this.determineSidebarHeight = debounce(this.determineSidebarHeight, 250);
-    this.sidebarWrapper = document.createElement("div");
-    this.fetchController = null;
-  }
+  useEffect(() => {
+    window.addEventListener("resize", determineSidebarHeight);
+    getConfig();
+    setCurrentStep(0);
+    return window.removeEventListener("resize", determineSidebarHeight);
+  }, []);
 
   componentWillUnmount() {
     window.removeEventListener("resize", this.determineSidebarHeight);
@@ -114,15 +116,15 @@ class AppConfig extends Component<Props, State> {
   componentDidUpdate(lastProps: Props, lastState: State) {
     const { location } = this.props;
     if (
-      this.state.configGroups &&
-      this.state.configGroups !== lastState.configGroups
+      state.configGroups &&
+      state.configGroups !== state.initialConfigGroups
     ) {
-      this.determineSidebarHeight();
+      // determineSidebarHeight();
     }
     // need to dig into this more
-    if (location.hash !== lastProps.location.hash && location.hash) {
+    if (location.hash !== lastLocation && location.hash) {
       // navigate to error if there is one
-      if (this.state.showConfigError) {
+      if (state.showConfigError) {
         const hash = location.hash.slice(1);
         const element = document.getElementById(hash);
         if (element) {
@@ -130,23 +132,48 @@ class AppConfig extends Component<Props, State> {
         }
       }
     }
-  }
+  }, [state.configGroups]);
 
-  determineSidebarHeight = () => {
+  // componentDidUpdate(lastProps: Props, lastState: State) {
+  //   const { location } = this.props;
+  //   // if (app && !app.isConfigurable) {
+  //   // app not configurable - redirect
+  //   // TODO NOW: what to do here?
+  //   // }
+  //   if (
+  //     this.state.configGroups &&
+  //     this.state.configGroups !== lastState.configGroups
+  //   ) {
+  //     this.determineSidebarHeight();
+  //   }
+  //   // need to dig into this more
+  //   if (location.hash !== lastProps.location.hash && location.hash) {
+  //     // navigate to error if there is one
+  //     if (this.state.showConfigError) {
+  //       const hash = location.hash.slice(1);
+  //       const element = document.getElementById(hash);
+  //       if (element) {
+  //         element.scrollIntoView();
+  //       }
+  //     }
+  //   }
+  // }
+  const sidebarWrapperRef = useRef(null);
+  const determineSidebarHeight = debounce(() => {
     // TODO: use a ref for this instead of setting HTMLElement.style
     const windowHeight = window.innerHeight;
-    const sidebarEl = this.sidebarWrapper;
-    if (sidebarEl) {
-      sidebarEl.style.maxHeight = `${windowHeight - 225}px`;
-    }
-  };
+    const sidebarEl = sidebarWrapperRef.current;
+    // if (sidebarEl) {
+    //   sidebarEl.style.maxHeight = `${windowHeight - 225}px`;
+    // }
+  }, 250);
 
-  navigateToCurrentHash = () => {
-    const hash = this.props.location.hash.slice(1);
+  const navigateToCurrentHash = () => {
+    const hash = location.hash.slice(1);
     // slice `-group` off the end of the hash
     const slicedHash = hash.slice(0, -6);
     let activeGroupName = null;
-    this.state.configGroups.map((group) => {
+    state.configGroups.map((group: ConfigGroup) => {
       const activeItem = find(group.items, ["name", slicedHash]);
       if (activeItem) {
         activeGroupName = group.name;
@@ -154,14 +181,14 @@ class AppConfig extends Component<Props, State> {
     });
 
     if (activeGroupName) {
-      this.setState({ activeGroups: [activeGroupName], configLoading: false });
+      setState({ activeGroups: [activeGroupName], configLoading: false });
       // TODO: add error handling for when the element with this hash id is not found
       document.getElementById(hash)?.scrollIntoView();
     }
   };
 
-  getConfig = async () => {
-    const { slug } = this.props.params;
+  const getConfig = async () => {
+    const { slug } = params;
 
     this.setState({
       configLoading: true,
@@ -213,36 +240,89 @@ class AppConfig extends Component<Props, State> {
             : "Something went wrong, please try again.",
         });
       });
+    } else {
+      setState({
+        configLoading: true,
+        gettingConfigErrMsg: "",
+        showConfigError: false,
+        configErrorMessage: "",
+      });
+      fetch(
+        `${process.env.API_ENDPOINT}/upgrade-service/app/${slug}/config${window.location.search}`,
+        {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          credentials: "include",
+        }
+      )
+        .then(async (response) => {
+          if (!response.ok) {
+            const res = await response.json();
+            throw new Error(res.error);
+          }
+          const data = await response.json();
+          if (!data.configGroups?.length) {
+            throw new Error("No config data found");
+          }
+          setState({
+            configGroups: data.configGroups,
+            changed: false,
+            configLoading: false,
+          });
+          if (location.hash.length > 0) {
+            navigateToCurrentHash();
+          } else {
+            setState({
+              activeGroups: [data.configGroups[0].name],
+              configLoading: false,
+              gettingConfigErrMsg: "",
+            });
+          }
+        })
+        .catch((err) => {
+          setState({
+            configLoading: false,
+            errorTitle: `Failed to get config data`,
+            displayErrorModal: true,
+            gettingConfigErrMsg: err
+              ? err.message
+              : "Something went wrong, please try again.",
+          });
+        });
+    }
   };
 
-  updateUrlWithErrorId = (requiredItems: RequiredItems) => {
-    const { slug } = this.props.params;
-    this.props.navigate(
+  const updateUrlWithErrorId = (requiredItems: RequiredItems) => {
+    const { slug } = params;
+    navigate(
       `/app/${slug}/config${window.location.search}#${requiredItems[0]}-group`
     );
   };
 
-  markRequiredItems = (requiredItems: RequiredItems) => {
-    const configGroups = this.state.configGroups;
+  const markRequiredItems = (requiredItems: RequiredItems) => {
+    const configGroups = state.configGroups;
     requiredItems.forEach((requiredItem) => {
-      configGroups.forEach((configGroup) => {
+      configGroups.forEach((configGroup: ConfigGroup) => {
+        console.log(configGroup, "groups");
         const item = configGroup.items.find((i) => i.name === requiredItem);
         if (item) {
           item.error = "This item is required";
         }
       });
     });
-    this.setState({ configGroups, showConfigError: true }, () => {
-      this.updateUrlWithErrorId(requiredItems);
-    });
+    setState({ configGroups, showConfigError: true });
+    updateUrlWithErrorId(requiredItems);
   };
 
-  handleNext = async () => {
+  const handleNext = async () => {
     // TODO NOW: validate config from api before moving on
 
     // Where this the config data save to? does it stay in state until we deploy?
-    const { slug } = this.props.params;
-    this.props.navigate(`/upgrade-service/app/${slug}/preflight`, {
+    setConfig(configGroups);
+    const { slug } = params;
+    navigate(`/upgrade-service/app/${slug}/preflight`, {
       replace: true,
     });
   };
@@ -265,7 +345,7 @@ class AppConfig extends Component<Props, State> {
   // this runs on config update and when save is clicked but before the request is submitted
   // on update it uses the errors from the liveconfig endpoint
   // on save it's mostly used to find required field errors
-  mergeConfigGroupsAndValidationErrors = (
+  const mergeConfigGroupsAndValidationErrors = (
     groups: ConfigGroup[],
     validationErrors: ConfigGroupItemValidationErrors[]
   ): [ConfigGroup[], boolean] => {
@@ -306,21 +386,23 @@ class AppConfig extends Component<Props, State> {
     return [newGroups, hasValidationError];
   };
 
-  handleConfigChange = (groups: ConfigGroup[]) => {
-    const { slug } = this.props.params;
+  let fetchController: AbortController | null = null;
+
+  const handleConfigChange = debounce((groups: ConfigGroup[]) => {
+    const { slug } = params;
 
     // cancel current request (if any)
-    if (this.fetchController) {
-      this.fetchController.abort();
+    if (fetchController) {
+      fetchController.abort();
     }
 
-    this.setState({
+    setState({
       showConfigError: false,
       configErrorMessage: "",
     });
 
-    this.fetchController = new AbortController();
-    const signal = this.fetchController.signal;
+    fetchController = new AbortController();
+    const signal = fetchController.signal;
 
     fetch(
       `${process.env.API_ENDPOINT}/upgrade-service/app/${slug}/liveconfig${window.location.search}`,
@@ -338,7 +420,7 @@ class AppConfig extends Component<Props, State> {
       .then(async (response) => {
         if (!response.ok) {
           const res = await response.json();
-          this.setState({
+          setState({
             showConfigError: Boolean(res?.error),
             configErrorMessage: res?.error,
           });
@@ -346,21 +428,21 @@ class AppConfig extends Component<Props, State> {
         }
 
         const data = await response.json();
-        const oldGroups = this.state.configGroups;
+        const oldGroups = state.configGroups;
         const validationErrors: ConfigGroupItemValidationErrors[] =
           data.validationErrors;
 
         // track errors at the form level
-        this.setState({ showValidationError: false });
+        setState({ showValidationError: false });
 
         // merge validation errors and config group
         const [newGroups, hasValidationError] =
-          this.mergeConfigGroupsAndValidationErrors(
+          mergeConfigGroupsAndValidationErrors(
             data.configGroups,
             validationErrors
           );
 
-        this.setState({
+        setState({
           showValidationError: hasValidationError,
         });
 
@@ -370,10 +452,7 @@ class AppConfig extends Component<Props, State> {
           }
           group.items.forEach((newItem: ConfigGroupItem) => {
             if (newItem.type === "password") {
-              const oldItem = this.getItemInConfigGroups(
-                oldGroups,
-                newItem.name
-              );
+              const oldItem = getItemInConfigGroups(oldGroups, newItem.name);
               if (oldItem) {
                 newItem.value = oldItem.value;
               }
@@ -385,13 +464,13 @@ class AppConfig extends Component<Props, State> {
       .catch((error) => {
         if (error?.name !== "AbortError") {
           console.log(error);
-          this.setState({
+          setState({
             showConfigError: Boolean(error?.message),
             configErrorMessage: error?.message,
           });
         }
       });
-  };
+  }, 250);
 
   handleDownloadFile = async (fileName: string) => {
     const { slug } = this.props.params;
@@ -426,16 +505,16 @@ class AppConfig extends Component<Props, State> {
   toggleActiveGroups = (name: string) => {
     let groupsArr = this.state.activeGroups;
     if (groupsArr.includes(name)) {
-      let updatedGroupsArr = groupsArr.filter((n) => n !== name);
-      this.setState({ activeGroups: updatedGroupsArr });
+      let updatedGroupsArr = groupsArr.filter((n: string) => n !== name);
+      setState({ activeGroups: updatedGroupsArr });
     } else {
       groupsArr.push(name);
-      this.setState({ activeGroups: groupsArr });
+      setState({ activeGroups: groupsArr });
     }
   };
 
-  toggleErrorModal = () => {
-    this.setState({ displayErrorModal: !this.state.displayErrorModal });
+  const toggleErrorModal = () => {
+    setState({ displayErrorModal: !state.displayErrorModal });
   };
 
   render() {
@@ -503,64 +582,112 @@ class AppConfig extends Component<Props, State> {
       observer.observe(section);
     });
 
+  if (configLoading) {
     return (
-      <div className="flex flex-column u-paddingLeft--20 u-paddingBottom--20 u-paddingRight--20 alignItems--center">
-        <div className="tw-flex tw-flex-col tw-mx-48">
-          <div className="tw-flex tw-justify-center" style={{ gap: "20px" }}>
-            <div
-              id="configSidebarWrapper"
-              className="config-sidebar-wrapper card-bg clickable"
-            >
-              {configGroups?.map((group, i) => {
-                if (
-                  group.title === "" ||
-                  group.title.length === 0 ||
-                  group.hidden ||
-                  group.when === "false"
-                ) {
-                  return;
-                }
-                return (
+      <div className="flex-column flex1 alignItems--center justifyContent--center">
+        <Loader size="60" />
+      </div>
+    );
+  }
+
+  const sections = document.querySelectorAll(".observe-elements");
+
+  const callback = (entries: IntersectionObserverEntry[]) => {
+    entries.forEach(({ isIntersecting, target }) => {
+      // find the group nav link that matches the current section in view
+      const groupNav = document.querySelector(`#config-group-nav-${target.id}`);
+      // find the active link in the group nav
+      const activeLink = document.querySelector(".active-item");
+      const hash = location.hash.slice(1);
+      const activeLinkByHash = document.querySelector(`a[href='#${hash}']`);
+      if (isIntersecting) {
+        groupNav?.classList.add("is-active");
+        // if your group is active, item will be active
+        if (activeLinkByHash && groupNav?.contains(activeLinkByHash)) {
+          activeLinkByHash.classList.add("active-item");
+        }
+      } else {
+        // if the section is not in view, remove the highlight from the active link
+        if (groupNav?.contains(activeLink) && activeLink) {
+          activeLink.classList.remove("active-item");
+        }
+        // remove the highlight from the group nav link
+        groupNav?.classList.remove("is-active");
+      }
+    });
+  };
+
+  const options = {
+    root: document,
+    // rootMargin is the amount of space around the root element that the intersection observer will look for intersections
+    rootMargin: "20% 0% -75% 0%",
+    // threshold: the proportion of the element that must be within the root bounds for it to be considered intersecting
+    threshold: 0.15,
+  };
+
+  const observer = new IntersectionObserver(callback, options);
+
+  sections.forEach((section) => {
+    observer.observe(section);
+  });
+
+  return (
+    <div className="flex flex-column u-paddingLeft--20 u-paddingBottom--20 u-paddingRight--20 alignItems--center">
+      <div className="tw-flex tw-flex-col tw-mx-48">
+        <div className="tw-flex tw-justify-center" style={{ gap: "20px" }}>
+          <div
+            id="configSidebarWrapper"
+            className="config-sidebar-wrapper card-bg clickable"
+          >
+            {configGroups?.map((group: ConfigGroup, i: string) => {
+              if (
+                group.title === "" ||
+                group.title.length === 0 ||
+                group.hidden ||
+                group.when === "false"
+              ) {
+                return;
+              }
+              return (
+                <div
+                  key={`${i}-${group.name}-${group.title}`}
+                  className={`side-nav-group ${
+                    state.activeGroups.includes(group.name) || group.hasError
+                      ? "group-open"
+                      : ""
+                  }`}
+                  id={`config-group-nav-${group.name}`}
+                >
                   <div
-                    key={`${i}-${group.name}-${group.title}`}
-                    className={`side-nav-group ${
-                      this.state.activeGroups.includes(group.name) ||
-                      group.hasError
-                        ? "group-open"
-                        : ""
-                    }`}
-                    id={`config-group-nav-${group.name}`}
+                    className="flex alignItems--center"
+                    onClick={() => toggleActiveGroups(group.name)}
                   >
-                    <div
-                      className="flex alignItems--center"
-                      onClick={() => this.toggleActiveGroups(group.name)}
-                    >
-                      <div className="u-lineHeight--normal group-title u-fontSize--normal">
-                        {group.title}
-                      </div>
-                      {/* adding the arrow-down classes, will rotate the icon when clicked */}
-                      <Icon
-                        icon="down-arrow"
-                        className="darkGray-color clickable flex-auto u-marginLeft--5 arrow-down"
-                        size={12}
-                        style={{}}
-                        color={""}
-                        disableFill={false}
-                        removeInlineStyle={false}
-                      />
+                    <div className="u-lineHeight--normal group-title u-fontSize--normal">
+                      {group.title}
                     </div>
-                    {group.items ? (
-                      <div className="side-nav-items">
-                        {group.items
-                          ?.filter((item) => item.type !== "label")
-                          ?.map((item, j) => {
-                            const hash = this.props.location.hash.slice(1);
-                            if (item.hidden || item.when === "false") {
-                              return;
-                            }
-                            return (
-                              <a
-                                className={`u-fontSize--normal u-lineHeight--normal
+                    {/* adding the arrow-down classes, will rotate the icon when clicked */}
+                    <Icon
+                      icon="down-arrow"
+                      className="darkGray-color clickable flex-auto u-marginLeft--5 arrow-down"
+                      size={12}
+                      style={{}}
+                      color={""}
+                      disableFill={false}
+                      removeInlineStyle={false}
+                    />
+                  </div>
+                  {group.items ? (
+                    <div className="side-nav-items">
+                      {group.items
+                        ?.filter((item) => item.type !== "label")
+                        ?.map((item, j) => {
+                          const hash = location.hash.slice(1);
+                          if (item.hidden || item.when === "false") {
+                            return;
+                          }
+                          return (
+                            <a
+                              className={`u-fontSize--normal u-lineHeight--normal
                                 ${
                                   item.validationError || item.error
                                     ? "has-error"
@@ -615,22 +742,22 @@ class AppConfig extends Component<Props, State> {
                   </div>
                 </div>
               </div>
-            </div>{" "}
-          </div>
+            </div>
+          </div>{" "}
         </div>
-        {gettingConfigErrMsg && (
-          <ErrorModal
-            errorModal={displayErrorModal}
-            toggleErrorModal={this.toggleErrorModal}
-            err={errorTitle}
-            errMsg={gettingConfigErrMsg}
-            tryAgain={this.getConfig}
-          />
-        )}
       </div>
-    );
-  }
-}
+      {gettingConfigErrMsg && (
+        <ErrorModal
+          errorModal={displayErrorModal}
+          toggleErrorModal={toggleErrorModal}
+          err={errorTitle}
+          errMsg={gettingConfigErrMsg}
+          tryAgain={getConfig}
+        />
+      )}
+    </div>
+  );
+};
 
 /* eslint-disable */
 // @ts-ignore

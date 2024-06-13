@@ -31,8 +31,8 @@ const StepIndicator = ({ items, value, className }: StepIndicatorProps) => {
                 <div
                   className={`tw-h-5 tw-w-5 tw-flex tw-justify-center tw-items-center tw-my-2 tw-p-1 tw-rounded-full ${
                     isActive
-                      ? "tw-bg-[#6A77FB] tw-text-white"
-                      : "tw-bg-[#F0F1FF] tw-text-[#C2C7FD]"
+                      ? "tw-bg-[#326DE6] tw-text-white"
+                      : "tw-bg-white tw-text-[#326DE6] tw-border-[#326DE6] tw-border tw-border-solid tw-border-[1px]"
                   }`}
                 >
                   <div>{index + 1}</div>

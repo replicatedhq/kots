@@ -1396,7 +1396,12 @@ class AppVersionHistory extends Component<Props, State> {
 
   startUpgraderService = (version: Version) => {
     //  needs to be for the specific version not all of them
-    this.setState({ isStartingUpgradeService: true });
+    this.setState({
+      isStartingUpgradeService: {
+        version: version.versionLabel,
+        isLoading: true,
+      },
+    });
     const appSlug = this.props.params.slug;
     fetch(`${process.env.API_ENDPOINT}/app/${appSlug}/start-upgrade-service`, {
       headers: {
@@ -1415,8 +1420,12 @@ class AppVersionHistory extends Component<Props, State> {
         if (res.ok) {
           this.setState({
             shouldShowUpgradeServiceModal: true,
-            isStartingUpgradeService: false,
+            isStartingUpgradeService: {
+              version: version.versionLabel,
+              isLoading: false,
+            },
           });
+
           return;
         }
         const text = await res.text();
@@ -1448,7 +1457,9 @@ class AppVersionHistory extends Component<Props, State> {
                 className={"btn tw-ml-2 primary blue"}
                 onClick={() => this.startUpgraderService(version)}
               >
-                {this.state.isStartingUpgradeService
+                {this.state.isStartingUpgradeService?.version ===
+                  version.versionLabel &&
+                this.state.isStartingUpgradeService.isLoading
                   ? "Deploying..."
                   : "Deploy"}
               </button>
@@ -1871,7 +1882,7 @@ class AppVersionHistory extends Component<Props, State> {
                       )}
                       {!gitopsIsConnected && (
                         <div className="TableDiff--Wrapper card-bg u-marginBottom--30">
-                          {!this.props.outletContext.isEmbeddedCluster && (
+                          {false && (
                             <div className="flex justifyContent--spaceBetween alignItems--center u-marginBottom--15">
                               <p className="u-fontSize--normal u-fontWeight--medium u-textColor--info">
                                 {this.state.updatesAvailable
