@@ -239,6 +239,12 @@ class AppConfig extends Component<Props, State> {
 
   handleNext = async () => {
     // TODO NOW: validate config from api before moving on
+
+    // Where this the config data save to? does it stay in state until we deploy?
+    const { slug } = this.props.params;
+    this.props.navigate(`/upgrade-service/app/${slug}/preflight`, {
+      replace: true,
+    });
   };
 
   getItemInConfigGroups = (

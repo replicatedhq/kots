@@ -1395,6 +1395,8 @@ class AppVersionHistory extends Component<Props, State> {
   };
 
   startUpgraderService = (version: Version) => {
+    //  needs to be for the specific version not all of them
+    this.setState({ isStartingUpgradeService: true });
     const appSlug = this.props.params.slug;
     fetch(`${process.env.API_ENDPOINT}/app/${appSlug}/start-upgrade-service`, {
       headers: {
@@ -1413,6 +1415,7 @@ class AppVersionHistory extends Component<Props, State> {
         if (res.ok) {
           this.setState({
             shouldShowUpgradeServiceModal: true,
+            isStartingUpgradeService: false,
           });
           return;
         }
@@ -1445,7 +1448,9 @@ class AppVersionHistory extends Component<Props, State> {
                 className={"btn tw-ml-2 primary blue"}
                 onClick={() => this.startUpgraderService(version)}
               >
-                Deploy
+                {this.state.isStartingUpgradeService
+                  ? "Deploying..."
+                  : "Deploy"}
               </button>
             </div>
           ))}
@@ -1949,11 +1954,17 @@ class AppVersionHistory extends Component<Props, State> {
                               </div>
                             </div>
                           )}
-                          {this.state.availableUpdates &&
+                          {/* {this.state.availableUpdates &&
                             this.props.outletContext.isEmbeddedCluster &&
                             this.renderAvailableECUpdatesRow(
                               this.state.availableUpdates
+                            )} */}
+
+                          {this.state.availableUpdates &&
+                            this.renderAvailableECUpdatesRow(
+                              this.state.availableUpdates
                             )}
+                          {/* 
                           {!this.props.outletContext.isEmbeddedCluster &&
                             (pendingVersion ? (
                               this.renderAppVersionHistoryRow(pendingVersion)
@@ -1963,7 +1974,7 @@ class AppVersionHistory extends Component<Props, State> {
                                   Application up to date.
                                 </p>
                               </div>
-                            ))}
+                            ))} */}
                           {(this.state.numOfSkippedVersions > 0 ||
                             this.state.numOfRemainingVersions > 0) && (
                             <p className="u-fontSize--small u-fontWeight--medium u-lineHeight--more u-textColor--info u-marginTop--10">
