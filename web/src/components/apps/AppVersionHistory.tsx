@@ -226,7 +226,6 @@ class AppVersionHistory extends Component<Props, State> {
   _mounted: boolean | undefined;
 
   componentDidMount() {
-    console.log(this.props.outletContext, "outlet cnotext");
     this.getPreflightState(
       this.props.outletContext.app.downstream.currentVersion
     );
