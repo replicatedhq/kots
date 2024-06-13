@@ -472,8 +472,8 @@ func getHttpsServer(upstream, dexUpstream *url.URL, tlsSecretName string, secret
 
 // CSPMiddleware adds Content-Security-Policy and X-Frame-Options headers to the response.
 func CSPMiddleware(c *gin.Context) {
-	c.Writer.Header().Set("Content-Security-Policy", "frame-ancestors 'none';")
-	c.Writer.Header().Set("X-Frame-Options", "DENY")
+	c.Writer.Header().Set("Content-Security-Policy", "frame-ancestors 'self';")
+	c.Writer.Header().Set("X-Frame-Options", "SAMEORIGIN")
 	c.Next()
 }
 
