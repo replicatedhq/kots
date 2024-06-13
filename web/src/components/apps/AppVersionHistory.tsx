@@ -1430,9 +1430,8 @@ class AppVersionHistory extends Component<Props, State> {
   };
 
   renderAvailableECUpdatesRow = (versions: Version[]) => {
-    console.log(versions, "versions");
     return (
-      <div>
+      <div className="tw-max-h-[275px] tw-overflow-auto">
         <p className="u-fontSize--normal u-fontWeight--medium tw-color-gray-800 tw-mb-2">
           Available Updates
         </p>
