@@ -170,22 +170,3 @@ func (s *UpgradeService) waitForReady(appSlug string) error {
 		return nil
 	}
 }
-
-func addUpgradeService(appSlug string, upgradeService UpgradeService) {
-	upgradeServiceMtx.Lock()
-	upgradeServiceMap[appSlug] = upgradeService
-	upgradeServiceMtx.Unlock()
-}
-
-func removeUpgradeService(appSlug string) {
-	upgradeServiceMtx.Lock()
-	delete(upgradeServiceMap, appSlug)
-	upgradeServiceMtx.Unlock()
-}
-
-func getUpgradeService(appSlug string) (UpgradeService, bool) {
-	upgradeServiceMtx.Lock()
-	upgradeService, ok := upgradeServiceMap[appSlug]
-	upgradeServiceMtx.Unlock()
-	return upgradeService, ok
-}
