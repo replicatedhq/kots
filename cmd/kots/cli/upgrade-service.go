@@ -2,6 +2,7 @@ package cli
 
 import (
 	"fmt"
+	"io"
 	"os"
 
 	"github.com/replicatedhq/kots/pkg/upgradeservice"
@@ -39,7 +40,7 @@ func UpgradeServiceStartCmd() *cobra.Command {
 				os.Exit(1)
 			}
 
-			paramsYAML, err := os.ReadFile(args[0])
+			paramsYAML, err := readUpgradeServiceParams(args[0])
 			if err != nil {
 				return fmt.Errorf("failed to read config file: %v", err)
 			}
@@ -58,4 +59,19 @@ func UpgradeServiceStartCmd() *cobra.Command {
 	}
 
 	return cmd
+}
+
+func readUpgradeServiceParams(path string) ([]byte, error) {
+	if path == "-" {
+		b, err := io.ReadAll(os.Stdin)
+		if err != nil {
+			return nil, fmt.Errorf("read stdin: %w", err)
+		}
+		return b, nil
+	}
+	b, err := os.ReadFile(path)
+	if err != nil {
+		return nil, fmt.Errorf("read file: %w", err)
+	}
+	return b, nil
 }

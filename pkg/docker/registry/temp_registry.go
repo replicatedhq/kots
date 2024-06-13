@@ -25,8 +25,8 @@ import (
 var tempRegistryConfigYML string
 
 type TempRegistry struct {
-	process *os.Process
-	port    string
+	cmd  *exec.Cmd
+	port string
 }
 
 // Start will spin up a docker registry service in the background on a random port.
@@ -52,11 +52,11 @@ func (r *TempRegistry) Start(rootDir string) (finalError error) {
 	configYMLCopy := strings.Replace(tempRegistryConfigYML, "__ROOT_DIR__", rootDir, 1)
 	configYMLCopy = strings.Replace(configYMLCopy, "__PORT__", freePort, 1)
 
-	configFile, err := ioutil.TempFile("", "registryconfig")
+	configFile, err := os.CreateTemp("", "registryconfig")
 	if err != nil {
 		return errors.Wrap(err, "failed to create temp file for config")
 	}
-	if err := ioutil.WriteFile(configFile.Name(), []byte(configYMLCopy), 0644); err != nil {
+	if err := os.WriteFile(configFile.Name(), []byte(configYMLCopy), 0644); err != nil {
 		return errors.Wrap(err, "failed to write config to temp file")
 	}
 	defer os.RemoveAll(configFile.Name())
@@ -70,8 +70,11 @@ func (r *TempRegistry) Start(rootDir string) (finalError error) {
 		return errors.Wrap(err, "failed to start")
 	}
 
+	// calling wait helps reap the zombie process
+	go cmd.Wait()
+
+	r.cmd = cmd
 	r.port = freePort
-	r.process = cmd.Process
 
 	if err := r.WaitForReady(time.Second * 30); err != nil {
 		return errors.Wrap(err, "failed to wait for registry to become ready")
@@ -81,35 +84,37 @@ func (r *TempRegistry) Start(rootDir string) (finalError error) {
 }
 
 func (r *TempRegistry) Stop() {
-	if r.process != nil {
-		if err := r.process.Signal(os.Interrupt); err != nil {
-			logger.Debugf("Failed to stop registry process on port %s", r.port)
+	if r.cmd != nil && r.cmd.ProcessState == nil {
+		if err := r.cmd.Process.Signal(os.Interrupt); err != nil {
+			logger.Errorf("Failed to stop registry process on port %s", r.port)
 		}
 	}
+	r.cmd = nil
 	r.port = ""
-	r.process = nil
 }
 
 func (r *TempRegistry) WaitForReady(timeout time.Duration) error {
 	start := time.Now()
-
+	var lasterr error
 	for {
-		url := fmt.Sprintf("http://localhost:%s", r.port)
-		newRequest, err := http.NewRequest("GET", url, nil)
-		if err == nil {
-			resp, err := http.DefaultClient.Do(newRequest)
-			if err == nil {
-				if resp.StatusCode == http.StatusOK {
-					return nil
-				}
-			}
+		if time.Sleep(time.Second); time.Since(start) > timeout {
+			return errors.Errorf("Timeout waiting for registry to become ready on port %s. last error: %v", r.port, lasterr)
 		}
-
-		time.Sleep(time.Second)
-
-		if time.Since(start) > timeout {
-			return errors.Errorf("Timeout waiting for registry to become ready on port %s", r.port)
+		request, err := http.NewRequest("GET", fmt.Sprintf("http://localhost:%s", r.port), nil)
+		if err != nil {
+			lasterr = errors.Wrap(err, "failed to create request")
+			continue
 		}
+		response, err := http.DefaultClient.Do(request)
+		if err != nil {
+			lasterr = errors.Wrap(err, "failed to do request")
+			continue
+		}
+		if response.StatusCode != http.StatusOK {
+			lasterr = errors.Errorf("unexpected status code %d", response.StatusCode)
+			continue
+		}
+		return nil
 	}
 }
 
