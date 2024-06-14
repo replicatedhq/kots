@@ -236,12 +236,12 @@ function AppVersionHistoryRow(props: Props) {
       version?.status !== "pending";
 
     // in embedded cluster, past versions cannot be edited
-    const editableConfig = !props.isEmbeddedCluster || !isPastVersion;
+    const isConfigReadOnly = props.isEmbeddedCluster && isPastVersion;
     let configTooltip;
-    if (editableConfig) {
-      configTooltip = "Edit config";
-    } else {
+    if (isConfigReadOnly) {
       configTooltip = "View config";
+    } else {
+      configTooltip = "Edit config";
     }
 
     const preflightState = getPreflightState(version);
@@ -363,7 +363,7 @@ function AppVersionHistoryRow(props: Props) {
           <div className="flex alignItems--center">
             <Link to={configScreenURL} data-tip={configTooltip}>
               <Icon
-                icon={editableConfig ? "edit-config" : "view-config"}
+                icon={isConfigReadOnly ? "view-config" : "edit-config"}
                 size={22}
               />
             </Link>
