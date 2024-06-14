@@ -109,22 +109,12 @@ class AppConfig extends Component<Props, State> {
   }
 
   componentDidMount() {
-    // TODO NOW: what to do here?
-    // const { app, navigate } = this.props;
-    // if (app && !app.isConfigurable) {
-    //   // app not configurable - redirect
-    //   navigate(`/app/${app.slug}`, { replace: true });
-    // }
     window.addEventListener("resize", this.determineSidebarHeight);
     this.getConfig();
   }
 
   componentDidUpdate(lastProps: Props, lastState: State) {
     const { location } = this.props;
-    // if (app && !app.isConfigurable) {
-    // app not configurable - redirect
-    // TODO NOW: what to do here?
-    // }
     if (
       this.state.configGroups &&
       this.state.configGroups !== lastState.configGroups
