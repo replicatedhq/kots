@@ -142,23 +142,7 @@ func Run(appID string, appSlug string, sequence int64, isAirgap bool, archiveDir
 		var preflightErr error
 		defer func() {
 			if preflightErr != nil {
-				preflightResults := &types.PreflightResults{
-					Results: []*troubleshootpreflight.UploadPreflightResult{},
-					Errors: []*types.PreflightError{
-						&types.PreflightError{
-							Error:  preflightErr.Error(),
-							IsRBAC: false,
-						},
-					},
-				}
-
-				b, err := json.Marshal(preflightResults)
-				if err != nil {
-					logger.Error(errors.Wrap(err, "failed to marshal preflight results"))
-					return
-				}
-
-				if err := store.GetStore().SetPreflightResults(appID, sequence, b); err != nil {
+				if err := setPreflightResults(appID, sequence, &types.PreflightResults{}, preflightErr); err != nil {
 					logger.Error(errors.Wrap(err, "failed to set preflight results"))
 					return
 				}
@@ -191,18 +175,10 @@ func Run(appID string, appSlug string, sequence int64, isAirgap bool, archiveDir
 				zap.Int64("sequence", sequence))
 
 			setProgress := func(progress map[string]interface{}) error {
-				b, err := json.Marshal(progress)
-				if err != nil {
-					return errors.Wrap(err, "failed to marshal preflight progress")
-				}
-				return store.GetStore().SetPreflightProgress(appID, sequence, string(b))
+				return setPreflightProgress(appID, sequence, progress)
 			}
-			setResults := func(results *types.PreflightResults) error {
-				b, err := json.Marshal(results)
-				if err != nil {
-					return errors.Wrap(err, "failed to marshal preflight results")
-				}
-				return store.GetStore().SetPreflightResults(appID, sequence, b)
+			setResults := func(results *types.PreflightResults, runError error) error {
+				return setPreflightResults(appID, sequence, results, runError)
 			}
 			uploadPreflightResults, err := Execute(preflight, ignoreRBAC, setProgress, setResults)
 			if err != nil {
@@ -269,6 +245,37 @@ func Run(appID string, appSlug string, sequence int64, isAirgap bool, archiveDir
 		}
 	}
 
+	return nil
+}
+
+func setPreflightProgress(appID string, sequence int64, progress map[string]interface{}) error {
+	b, err := json.Marshal(progress)
+	if err != nil {
+		return errors.Wrap(err, "failed to marshal preflight progress")
+	}
+	if err := store.GetStore().SetPreflightProgress(appID, sequence, string(b)); err != nil {
+		return errors.Wrap(err, "failed to set preflight progress")
+	}
+	return nil
+}
+
+func setPreflightResults(appID string, sequence int64, preflightResults *types.PreflightResults, preflightRunError error) error {
+	if preflightRunError != nil {
+		if preflightResults.Errors == nil {
+			preflightResults.Errors = []*types.PreflightError{}
+		}
+		preflightResults.Errors = append(preflightResults.Errors, &types.PreflightError{
+			Error:  preflightRunError.Error(),
+			IsRBAC: false,
+		})
+	}
+	b, err := json.Marshal(preflightResults)
+	if err != nil {
+		return errors.Wrap(err, "failed to marshal preflight results")
+	}
+	if err := store.GetStore().SetPreflightResults(appID, sequence, b); err != nil {
+		return errors.Wrap(err, "failed to set preflight results")
+	}
 	return nil
 }
 
