@@ -734,7 +734,7 @@ func GetAvailableUpdates(kotsStore storepkg.Store, app *apptypes.App, license *k
 
 	availableUpdates := []types.AvailableUpdate{}
 	for _, u := range updates.Updates {
-		deployable, cause := isUpdateDeployable(updates.Updates, u)
+		deployable, cause := isUpdateDeployable(u.Cursor, updates.Updates)
 		availableUpdates = append(availableUpdates, types.AvailableUpdate{
 			VersionLabel:       u.VersionLabel,
 			UpdateCursor:       u.Cursor,
@@ -750,11 +750,11 @@ func GetAvailableUpdates(kotsStore storepkg.Store, app *apptypes.App, license *k
 	return availableUpdates, nil
 }
 
-func isUpdateDeployable(updates []upstreamtypes.Update, u upstreamtypes.Update) (bool, string) {
+func isUpdateDeployable(updateCursor string, updates []upstreamtypes.Update) (bool, string) {
 	// iterate over updates in reverse since they are sorted in descending order
 	requiredUpdates := []upstreamtypes.Update{}
 	for i := len(updates) - 1; i >= 0; i-- {
-		if updates[i].Cursor == u.Cursor {
+		if updates[i].Cursor == updateCursor {
 			break
 		}
 		if updates[i].IsRequired {

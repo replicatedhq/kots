@@ -319,7 +319,6 @@ func RegisterSessionAuthRoutes(r *mux.Router, kotsStore store.Store, handler KOT
 	r.Name("ChangePassword").Path("/api/v1/password/change").Methods("PUT").
 		HandlerFunc(middleware.EnforceAccess(policy.PasswordChange, handler.ChangePassword))
 
-	// TODO NOW: when to stop this upgrade service?
 	// Start upgrade service
 	r.Name("StartUpgradeService").Path("/api/v1/app/{appSlug}/start-upgrade-service").Methods("POST").
 		HandlerFunc(middleware.EnforceAccess(policy.AppUpdate, handler.StartUpgradeService))

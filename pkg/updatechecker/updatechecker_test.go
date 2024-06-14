@@ -1095,66 +1095,66 @@ func newMockServerWithReleases(channelReleases []upstream.ChannelRelease, wantEr
 }
 func TestIsUpdateDeployable(t *testing.T) {
 	tests := []struct {
-		name      string
-		updates   []upstreamtypes.Update
-		u         upstreamtypes.Update
-		want      bool
-		wantCause string
+		name         string
+		updateCursor string
+		updates      []upstreamtypes.Update
+		want         bool
+		wantCause    string
 	}{
 		{
-			name: "one update",
+			name:         "one update",
+			updateCursor: "3",
 			updates: []upstreamtypes.Update{
 				{VersionLabel: "1.0.3", Cursor: "3", IsRequired: false},
 			},
-			u:         upstreamtypes.Update{VersionLabel: "1.0.3", Cursor: "3", IsRequired: false},
 			want:      true,
 			wantCause: "",
 		},
 		{
-			name: "no required updates",
+			name:         "no required updates",
+			updateCursor: "3",
 			updates: []upstreamtypes.Update{
 				{VersionLabel: "1.0.4", Cursor: "4", IsRequired: false},
 				{VersionLabel: "1.0.3", Cursor: "3", IsRequired: false},
 				{VersionLabel: "1.0.2", Cursor: "2", IsRequired: false},
 				{VersionLabel: "1.0.1", Cursor: "1", IsRequired: false},
 			},
-			u:         upstreamtypes.Update{VersionLabel: "1.0.3", Cursor: "3", IsRequired: false},
 			want:      true,
 			wantCause: "",
 		},
 		{
-			name: "no required releases before it",
+			name:         "no required releases before it",
+			updateCursor: "3",
 			updates: []upstreamtypes.Update{
 				{VersionLabel: "1.0.4", Cursor: "4", IsRequired: true},
 				{VersionLabel: "1.0.3", Cursor: "3", IsRequired: false},
 				{VersionLabel: "1.0.2", Cursor: "2", IsRequired: false},
 				{VersionLabel: "1.0.1", Cursor: "1", IsRequired: false},
 			},
-			u:         upstreamtypes.Update{VersionLabel: "1.0.3", Cursor: "3", IsRequired: false},
 			want:      true,
 			wantCause: "",
 		},
 		{
-			name: "one required release before it",
+			name:         "one required release before it",
+			updateCursor: "3",
 			updates: []upstreamtypes.Update{
 				{VersionLabel: "1.0.4", Cursor: "4", IsRequired: false},
 				{VersionLabel: "1.0.3", Cursor: "3", IsRequired: false},
 				{VersionLabel: "1.0.2", Cursor: "2", IsRequired: true},
 				{VersionLabel: "1.0.1", Cursor: "1", IsRequired: false},
 			},
-			u:         upstreamtypes.Update{VersionLabel: "1.0.3", Cursor: "3", IsRequired: false},
 			want:      false,
 			wantCause: "This version cannot be deployed because version 1.0.2 is required and must be deployed first.",
 		},
 		{
-			name: "two required releases before it",
+			name:         "two required releases before it",
+			updateCursor: "3",
 			updates: []upstreamtypes.Update{
 				{VersionLabel: "1.0.4", Cursor: "4", IsRequired: false},
 				{VersionLabel: "1.0.3", Cursor: "3", IsRequired: false},
 				{VersionLabel: "1.0.2", Cursor: "2", IsRequired: true},
 				{VersionLabel: "1.0.1", Cursor: "1", IsRequired: true},
 			},
-			u:         upstreamtypes.Update{VersionLabel: "1.0.3", Cursor: "3", IsRequired: false},
 			want:      false,
 			wantCause: "This version cannot be deployed because versions 1.0.2, 1.0.1 are required and must be deployed first.",
 		},
@@ -1162,7 +1162,7 @@ func TestIsUpdateDeployable(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			result, msg := isUpdateDeployable(tt.updates, tt.u)
+			result, msg := isUpdateDeployable(tt.updateCursor, tt.updates)
 			assert.Equal(t, tt.want, result)
 			assert.Equal(t, tt.wantCause, msg)
 		})

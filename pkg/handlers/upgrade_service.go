@@ -6,9 +6,11 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
+	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/reporting"
 	"github.com/replicatedhq/kots/pkg/store"
+	"github.com/replicatedhq/kots/pkg/updatechecker"
 	"github.com/replicatedhq/kots/pkg/upgradeservice"
 	upgradeservicetypes "github.com/replicatedhq/kots/pkg/upgradeservice/types"
 )
@@ -29,8 +31,6 @@ func (h *Handler) StartUpgradeService(w http.ResponseWriter, r *http.Request) {
 		Success: false,
 	}
 
-	// TODO NOW: required releases
-
 	request := StartUpgradeServiceRequest{}
 	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
 		response.Error = "failed to decode request body"
@@ -46,6 +46,35 @@ func (h *Handler) StartUpgradeService(w http.ResponseWriter, r *http.Request) {
 		response.Error = "failed to get app from app slug"
 		logger.Error(errors.Wrap(err, response.Error))
 		JSON(w, http.StatusInternalServerError, response)
+		return
+	}
+
+	license, err := kotsutil.LoadLicenseFromBytes([]byte(foundApp.License))
+	if err != nil {
+		response.Error = "failed to parse app license"
+		logger.Error(errors.Wrap(err, response.Error))
+		JSON(w, http.StatusInternalServerError, response)
+		return
+	}
+
+	updates, err := updatechecker.GetAvailableUpdates(store.GetStore(), foundApp, license)
+	if err != nil {
+		response.Error = "failed to get available updates"
+		logger.Error(errors.Wrap(err, response.Error))
+		JSON(w, http.StatusInternalServerError, response)
+		return
+	}
+
+	isDeployable, nonDeployableCause := false, "update not found"
+	for _, u := range updates {
+		if u.UpdateCursor == request.UpdateCursor {
+			isDeployable, nonDeployableCause = u.IsDeployable, u.NonDeployableCause
+			break
+		}
+	}
+	if !isDeployable {
+		response.Error = nonDeployableCause
+		JSON(w, http.StatusBadRequest, response)
 		return
 	}
 
