@@ -142,7 +142,15 @@ func Run(appID string, appSlug string, sequence int64, isAirgap bool, archiveDir
 		var preflightErr error
 		defer func() {
 			if preflightErr != nil {
-				if err := setPreflightResults(appID, sequence, &types.PreflightResults{}, preflightErr); err != nil {
+				preflightResults := &types.PreflightResults{
+					Errors: []*types.PreflightError{
+						&types.PreflightError{
+							Error:  preflightErr.Error(),
+							IsRBAC: false,
+						},
+					},
+				}
+				if err := setPreflightResults(appID, sequence, preflightResults); err != nil {
 					logger.Error(errors.Wrap(err, "failed to set preflight results"))
 					return
 				}
@@ -177,8 +185,8 @@ func Run(appID string, appSlug string, sequence int64, isAirgap bool, archiveDir
 			setProgress := func(progress map[string]interface{}) error {
 				return setPreflightProgress(appID, sequence, progress)
 			}
-			setResults := func(results *types.PreflightResults, runError error) error {
-				return setPreflightResults(appID, sequence, results, runError)
+			setResults := func(results *types.PreflightResults) error {
+				return setPreflightResults(appID, sequence, results)
 			}
 			uploadPreflightResults, err := Execute(preflight, ignoreRBAC, setProgress, setResults)
 			if err != nil {
@@ -259,16 +267,7 @@ func setPreflightProgress(appID string, sequence int64, progress map[string]inte
 	return nil
 }
 
-func setPreflightResults(appID string, sequence int64, preflightResults *types.PreflightResults, preflightRunError error) error {
-	if preflightRunError != nil {
-		if preflightResults.Errors == nil {
-			preflightResults.Errors = []*types.PreflightError{}
-		}
-		preflightResults.Errors = append(preflightResults.Errors, &types.PreflightError{
-			Error:  preflightRunError.Error(),
-			IsRBAC: false,
-		})
-	}
+func setPreflightResults(appID string, sequence int64, preflightResults *types.PreflightResults) error {
 	b, err := json.Marshal(preflightResults)
 	if err != nil {
 		return errors.Wrap(err, "failed to marshal preflight results")

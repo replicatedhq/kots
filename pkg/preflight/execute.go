@@ -18,7 +18,7 @@ import (
 
 // Execute will Execute the preflights using spec in preflightSpec.
 // This spec should be rendered, no template functions remaining
-func Execute(preflightSpec *troubleshootv1beta2.Preflight, ignorePermissionErrors bool, setProgress func(progress map[string]interface{}) error, setResults func(results *types.PreflightResults, runError error) error) (*types.PreflightResults, error) {
+func Execute(preflightSpec *troubleshootv1beta2.Preflight, ignorePermissionErrors bool, setProgress func(progress map[string]interface{}) error, setResults func(results *types.PreflightResults) error) (*types.PreflightResults, error) {
 	progressChan := make(chan interface{}, 0) // non-zero buffer will result in missed messages
 	defer close(progressChan)
 
@@ -74,7 +74,16 @@ func Execute(preflightSpec *troubleshootv1beta2.Preflight, ignorePermissionError
 
 		isComplete = true
 
-		if err := setResults(uploadPreflightResults, preflightRunError); err != nil {
+		if preflightRunError != nil {
+			if uploadPreflightResults.Errors == nil {
+				uploadPreflightResults.Errors = []*types.PreflightError{}
+			}
+			uploadPreflightResults.Errors = append(uploadPreflightResults.Errors, &types.PreflightError{
+				Error:  preflightRunError.Error(),
+				IsRBAC: false,
+			})
+		}
+		if err := setResults(uploadPreflightResults); err != nil {
 			logger.Error(errors.Wrap(err, "failed to set preflight results"))
 			return
 		}

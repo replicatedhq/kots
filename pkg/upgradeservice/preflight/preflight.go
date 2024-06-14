@@ -99,7 +99,15 @@ func Run(app *apptypes.App, archiveDir string, sequence int64, registrySettings 
 	var preflightErr error
 	defer func() {
 		if preflightErr != nil {
-			if err := setPreflightResults(&types.PreflightResults{}, preflightErr); err != nil {
+			preflightResults := &types.PreflightResults{
+				Errors: []*types.PreflightError{
+					&types.PreflightError{
+						Error:  preflightErr.Error(),
+						IsRBAC: false,
+					},
+				},
+			}
+			if err := setPreflightResults(preflightResults); err != nil {
 				logger.Error(errors.Wrap(err, "failed to set preflight results"))
 				return
 			}
@@ -134,21 +142,12 @@ func Run(app *apptypes.App, archiveDir string, sequence int64, registrySettings 
 	return nil
 }
 
-func setPreflightResults(results *types.PreflightResults, runError error) error {
+func setPreflightResults(results *types.PreflightResults) error {
 	preflightData, err := getPreflightData()
 	if err != nil {
 		return errors.Wrap(err, "failed to get preflight data")
 	}
 	preflightData.Results = results
-	if runError != nil {
-		if preflightData.Results.Errors == nil {
-			preflightData.Results.Errors = []*types.PreflightError{}
-		}
-		preflightData.Results.Errors = append(preflightData.Results.Errors, &types.PreflightError{
-			Error:  runError.Error(),
-			IsRBAC: false,
-		})
-	}
 	if err := setPreflightData(preflightData); err != nil {
 		return errors.Wrap(err, "failed to set preflight results")
 	}
