@@ -23,7 +23,6 @@ import (
 	"go.uber.org/zap"
 )
 
-// TODO: change this so that it's not byte arrays, but the real types
 type PreflightData struct {
 	Progress map[string]interface{}  `json:"progress"`
 	Results  *types.PreflightResults `json:"results"`
