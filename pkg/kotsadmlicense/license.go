@@ -12,6 +12,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/preflight"
 	"github.com/replicatedhq/kots/pkg/render"
 	"github.com/replicatedhq/kots/pkg/replicatedapp"
+	"github.com/replicatedhq/kots/pkg/reporting"
 	"github.com/replicatedhq/kots/pkg/store"
 	"github.com/replicatedhq/kots/pkg/version"
 	kotsv1beta1 "github.com/replicatedhq/kotskinds/apis/kots/v1beta1"
@@ -84,7 +85,8 @@ func Sync(a *apptypes.App, licenseString string, failOnVersionCreate bool) (*kot
 		if updatedLicense.Spec.ChannelID != currentLicense.Spec.ChannelID {
 			channelChanged = true
 		}
-		newSequence, err := store.GetStore().UpdateAppLicense(a.ID, latestSequence, archiveDir, updatedLicense, licenseString, channelChanged, failOnVersionCreate, &version.DownstreamGitOps{}, &render.Renderer{})
+		reportingInfo := reporting.GetReportingInfo(a.ID)
+		newSequence, err := store.GetStore().UpdateAppLicense(a.ID, latestSequence, archiveDir, updatedLicense, licenseString, channelChanged, failOnVersionCreate, &version.DownstreamGitOps{}, &render.Renderer{}, reportingInfo)
 		if err != nil {
 			return nil, false, errors.Wrap(err, "failed to update license")
 		}
@@ -190,7 +192,8 @@ func Change(a *apptypes.App, newLicenseString string) (*kotsv1beta1.License, err
 	if newLicense.Spec.ChannelID != currentLicense.Spec.ChannelID {
 		channelChanged = true
 	}
-	newSequence, err := store.GetStore().UpdateAppLicense(a.ID, latestSequence, archiveDir, newLicense, newLicenseString, channelChanged, true, &version.DownstreamGitOps{}, &render.Renderer{})
+	reportingInfo := reporting.GetReportingInfo(a.ID)
+	newSequence, err := store.GetStore().UpdateAppLicense(a.ID, latestSequence, archiveDir, newLicense, newLicenseString, channelChanged, true, &version.DownstreamGitOps{}, &render.Renderer{}, reportingInfo)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to update license")
 	}

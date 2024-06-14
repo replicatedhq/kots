@@ -3,6 +3,7 @@ package preflight
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -90,7 +91,7 @@ func Run(appID string, appSlug string, sequence int64, isAirgap bool, archiveDir
 			preflight = troubleshootpreflight.ConcatPreflightSpec(preflight, &v)
 		}
 
-		injectDefaultPreflights(preflight, kotsKinds, registrySettings)
+		InjectDefaultPreflights(preflight, kotsKinds, registrySettings)
 
 		numAnalyzers := 0
 		for _, analyzer := range preflight.Spec.Analyzers {
@@ -125,7 +126,7 @@ func Run(appID string, appSlug string, sequence int64, isAirgap bool, archiveDir
 			return errors.Wrap(err, "failed to load rendered preflight")
 		}
 
-		injectDefaultPreflights(preflight, kotsKinds, registrySettings)
+		InjectDefaultPreflights(preflight, kotsKinds, registrySettings)
 
 		numAnalyzers := 0
 		for _, analyzer := range preflight.Spec.Analyzers {
@@ -141,8 +142,15 @@ func Run(appID string, appSlug string, sequence int64, isAirgap bool, archiveDir
 		var preflightErr error
 		defer func() {
 			if preflightErr != nil {
-				err := setPreflightResult(appID, sequence, &types.PreflightResults{}, preflightErr)
-				if err != nil {
+				preflightResults := &types.PreflightResults{
+					Errors: []*types.PreflightError{
+						&types.PreflightError{
+							Error:  preflightErr.Error(),
+							IsRBAC: false,
+						},
+					},
+				}
+				if err := setPreflightResults(appID, sequence, preflightResults); err != nil {
 					logger.Error(errors.Wrap(err, "failed to set preflight results"))
 					return
 				}
@@ -170,8 +178,17 @@ func Run(appID string, appSlug string, sequence int64, isAirgap bool, archiveDir
 		preflight.Spec.Collectors = collectors
 
 		go func() {
-			logger.Info("preflight checks beginning")
-			uploadPreflightResults, err := execute(appID, sequence, preflight, ignoreRBAC)
+			logger.Info("preflight checks beginning",
+				zap.String("appID", appID),
+				zap.Int64("sequence", sequence))
+
+			setProgress := func(progress map[string]interface{}) error {
+				return setPreflightProgress(appID, sequence, progress)
+			}
+			setResults := func(results *types.PreflightResults) error {
+				return setPreflightResults(appID, sequence, results)
+			}
+			uploadPreflightResults, err := Execute(preflight, ignoreRBAC, setProgress, setResults)
 			if err != nil {
 				logger.Error(errors.Wrap(err, "failed to run preflight checks"))
 				return
@@ -236,6 +253,28 @@ func Run(appID string, appSlug string, sequence int64, isAirgap bool, archiveDir
 		}
 	}
 
+	return nil
+}
+
+func setPreflightProgress(appID string, sequence int64, progress map[string]interface{}) error {
+	b, err := json.Marshal(progress)
+	if err != nil {
+		return errors.Wrap(err, "failed to marshal preflight progress")
+	}
+	if err := store.GetStore().SetPreflightProgress(appID, sequence, string(b)); err != nil {
+		return errors.Wrap(err, "failed to set preflight progress")
+	}
+	return nil
+}
+
+func setPreflightResults(appID string, sequence int64, preflightResults *types.PreflightResults) error {
+	b, err := json.Marshal(preflightResults)
+	if err != nil {
+		return errors.Wrap(err, "failed to marshal preflight results")
+	}
+	if err := store.GetStore().SetPreflightResults(appID, sequence, b); err != nil {
+		return errors.Wrap(err, "failed to set preflight results")
+	}
 	return nil
 }
 
@@ -371,7 +410,7 @@ func CreateRenderedSpec(app *apptypes.App, sequence int64, origin string, inClus
 		return errors.Wrap(err, "failed to get registry settings for app")
 	}
 
-	injectDefaultPreflights(builtPreflight, kotsKinds, registrySettings)
+	InjectDefaultPreflights(builtPreflight, kotsKinds, registrySettings)
 
 	collectors, err := registry.UpdateCollectorSpecsWithRegistryData(builtPreflight.Spec.Collectors, registrySettings, kotsKinds.Installation, kotsKinds.License, &kotsKinds.KotsApplication)
 	if err != nil {
@@ -448,7 +487,7 @@ func CreateRenderedSpec(app *apptypes.App, sequence int64, origin string, inClus
 	return nil
 }
 
-func injectDefaultPreflights(preflight *troubleshootv1beta2.Preflight, kotskinds *kotsutil.KotsKinds, registrySettings registrytypes.RegistrySettings) {
+func InjectDefaultPreflights(preflight *troubleshootv1beta2.Preflight, kotskinds *kotsutil.KotsKinds, registrySettings registrytypes.RegistrySettings) {
 	if registrySettings.IsValid() && registrySettings.IsReadOnly {
 		// Get images from Installation.KnownImages, see UpdateCollectorSpecsWithRegistryData
 		images := []string{}

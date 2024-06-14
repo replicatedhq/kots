@@ -10,7 +10,6 @@ import (
 	"github.com/replicatedhq/kots/pkg/kotsutil"
 	registrytypes "github.com/replicatedhq/kots/pkg/registry/types"
 	types "github.com/replicatedhq/kots/pkg/render/types"
-	"github.com/replicatedhq/kots/pkg/reporting"
 	"github.com/replicatedhq/kots/pkg/rewrite"
 	"github.com/replicatedhq/kots/pkg/template"
 	"github.com/replicatedhq/kots/pkg/util"
@@ -145,7 +144,7 @@ func RenderDir(opts types.RenderDirOptions) error {
 		AppSlug:          opts.App.Slug,
 		IsGitOps:         opts.App.IsGitOps,
 		AppSequence:      opts.Sequence,
-		ReportingInfo:    reporting.GetReportingInfo(opts.App.ID),
+		ReportingInfo:    opts.ReportingInfo,
 		RegistrySettings: opts.RegistrySettings,
 
 		// TODO: pass in as arguments if this is ever called from CLI
