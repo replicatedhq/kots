@@ -33,7 +33,7 @@ var PreflightDataFilepath string
 func init() {
 	tmpDir, err := os.MkdirTemp("", "preflights")
 	if err != nil {
-		panic(errors.Wrap(err, "failed to create temp dir"))
+		panic(errors.Wrap(err, "failed to create preflights data dir"))
 	}
 	PreflightDataFilepath = filepath.Join(tmpDir, "preflights.json")
 }
