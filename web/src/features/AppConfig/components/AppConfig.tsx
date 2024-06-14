@@ -25,6 +25,7 @@ type Props = {
   params: KotsParams;
   app: App;
   fromLicenseFlow: boolean;
+  isEmbeddedCluster: boolean;
   refreshAppData: () => void;
   refetchApps: () => void;
   navigate: ReturnType<typeof useNavigate>;
@@ -604,6 +605,21 @@ class AppConfig extends Component<Props, State> {
     this.setState({ showNextStepModal: false });
   };
 
+  isConfigReadOnly = (app: App) => {
+    const { params, isEmbeddedCluster } = this.props;
+    if (!params.sequence) {
+      return false;
+    }
+    if (!isEmbeddedCluster) {
+      return false;
+    }
+    // in embedded cluster, past versions cannot be edited
+    const isPastVersion = find(app.downstream?.pastVersions, {
+      sequence: parseInt(params.sequence),
+    });
+    return !!isPastVersion;
+  };
+
   toggleActiveGroups = (name: string) => {
     let groupsArr = this.state.activeGroups;
     if (groupsArr.includes(name)) {
@@ -812,6 +828,7 @@ class AppConfig extends Component<Props, State> {
                   <AppConfigRenderer
                     groups={configGroups}
                     getData={this.handleConfigChange}
+                    readonly={this.isConfigReadOnly(app)}
                     configSequence={params.sequence}
                     appSlug={app.slug}
                   />
@@ -832,7 +849,9 @@ class AppConfig extends Component<Props, State> {
                       <button
                         className="btn primary blue"
                         disabled={
-                          showValidationError || (!changed && !fromLicenseFlow)
+                          showValidationError ||
+                          (!changed && !fromLicenseFlow) ||
+                          this.isConfigReadOnly(app)
                         }
                         onClick={this.handleSave}
                       >

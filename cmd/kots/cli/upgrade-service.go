@@ -33,6 +33,7 @@ func UpgradeServiceStartCmd() *cobra.Command {
 		SilenceErrors: false,
 		PreRun: func(cmd *cobra.Command, args []string) {
 			viper.BindPFlags(cmd.Flags())
+			os.Setenv("IS_UPGRADE_SERVICE", "true")
 		},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if len(args) != 1 {

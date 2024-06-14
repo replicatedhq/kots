@@ -24,6 +24,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/replicatedapp"
 	"github.com/replicatedhq/kots/pkg/store"
 	"github.com/replicatedhq/kots/pkg/updatechecker"
+	updatecheckertypes "github.com/replicatedhq/kots/pkg/updatechecker/types"
 	"github.com/replicatedhq/kots/pkg/util"
 	kotsv1beta1 "github.com/replicatedhq/kotskinds/apis/kots/v1beta1"
 	serializer "k8s.io/apimachinery/pkg/runtime/serializer/json"
@@ -145,7 +146,7 @@ func (h *Handler) SyncLicense(w http.ResponseWriter, r *http.Request) {
 	if !foundApp.IsAirgap && currentLicense.Spec.ChannelID != latestLicense.Spec.ChannelID {
 		// channel changed and this is an online installation, fetch the latest release for the new channel
 		go func(appID string) {
-			opts := updatechecker.CheckForUpdatesOpts{
+			opts := updatecheckertypes.CheckForUpdatesOpts{
 				AppID: appID,
 			}
 			_, err := updatechecker.CheckForUpdates(opts)
@@ -630,7 +631,7 @@ func (h *Handler) ChangeLicense(w http.ResponseWriter, r *http.Request) {
 	if !foundApp.IsAirgap && currentLicense.Spec.ChannelID != newLicense.Spec.ChannelID {
 		// channel changed and this is an online installation, fetch the latest release for the new channel
 		go func(appID string) {
-			opts := updatechecker.CheckForUpdatesOpts{
+			opts := updatecheckertypes.CheckForUpdatesOpts{
 				AppID: appID,
 			}
 			_, err := updatechecker.CheckForUpdates(opts)

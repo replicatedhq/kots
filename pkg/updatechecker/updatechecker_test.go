@@ -18,15 +18,17 @@ import (
 	storepkg "github.com/replicatedhq/kots/pkg/store"
 	mock_store "github.com/replicatedhq/kots/pkg/store/mock"
 	storetypes "github.com/replicatedhq/kots/pkg/store/types"
+	"github.com/replicatedhq/kots/pkg/updatechecker/types"
 	"github.com/replicatedhq/kots/pkg/upstream"
 	upstreamtypes "github.com/replicatedhq/kots/pkg/upstream/types"
 	kotsv1beta1 "github.com/replicatedhq/kotskinds/apis/kots/v1beta1"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 func TestAutoDeployDoesNotExecuteIfDisabled(t *testing.T) {
 	var autoDeployType = apptypes.AutoDeployDisabled
-	var opts = CheckForUpdatesOpts{}
+	var opts = types.CheckForUpdatesOpts{}
 
 	err := autoDeploy(opts, "cluster-id", autoDeployType)
 	if err != nil {
@@ -35,7 +37,7 @@ func TestAutoDeployDoesNotExecuteIfDisabled(t *testing.T) {
 }
 
 func TestAutoDeployDoesNotExecuteIfNotSet(t *testing.T) {
-	var opts = CheckForUpdatesOpts{}
+	var opts = types.CheckForUpdatesOpts{}
 	var clusterID = "some-cluster-id"
 
 	err := autoDeploy(opts, clusterID, "")
@@ -48,7 +50,7 @@ func TestAutoDeployFailedToGetAppVersionsErrors(t *testing.T) {
 	var autoDeployType = apptypes.AutoDeploySemverPatch
 	var appID = "some-app"
 	var clusterID = "some-cluster-id"
-	var opts = CheckForUpdatesOpts{AppID: appID}
+	var opts = types.CheckForUpdatesOpts{AppID: appID}
 	var downstreamVersions = &downstreamtypes.DownstreamVersions{}
 
 	ctrl := gomock.NewController(t)
@@ -71,7 +73,7 @@ func TestAutoDeployAppVersionsIsEmptyErrors(t *testing.T) {
 	var autoDeployType = apptypes.AutoDeploySemverPatch
 	var appID = "some-app"
 	var clusterID = "some-cluster-id"
-	var opts = CheckForUpdatesOpts{AppID: appID}
+	var opts = types.CheckForUpdatesOpts{AppID: appID}
 	var downstreamVersions = &downstreamtypes.DownstreamVersions{
 		AllVersions: []*downstreamtypes.DownstreamVersion{},
 	}
@@ -93,7 +95,7 @@ func TestAutoDeployCurrentVersionIsNilDoesNothing(t *testing.T) {
 	var autoDeployType = apptypes.AutoDeploySemverPatch
 	var appID = "some-app"
 	var clusterID = "some-cluster-id"
-	var opts = CheckForUpdatesOpts{AppID: appID}
+	var opts = types.CheckForUpdatesOpts{AppID: appID}
 	var downstreamVersions = &downstreamtypes.DownstreamVersions{
 		CurrentVersion: nil,
 		AllVersions: []*downstreamtypes.DownstreamVersion{
@@ -118,7 +120,7 @@ func TestAutoDeployCurrentVersionSemverIsNilDoesNothing(t *testing.T) {
 	var autoDeployType = apptypes.AutoDeploySemverPatch
 	var appID = "some-app"
 	var clusterID = "some-cluster-id"
-	var opts = CheckForUpdatesOpts{AppID: appID}
+	var opts = types.CheckForUpdatesOpts{AppID: appID}
 	var downstreamVersions = &downstreamtypes.DownstreamVersions{
 		CurrentVersion: &downstreamtypes.DownstreamVersion{
 			Semver: nil,
@@ -147,7 +149,7 @@ func TestAutoDeploySequenceQuitsIfCurrentVersionSequenceIsGreaterThanOrEqualToMo
 	var clusterID = "some-cluster-id"
 	var currentSequence = int64(1)
 	var upgradeSequence = int64(1)
-	var opts = CheckForUpdatesOpts{AppID: appID}
+	var opts = types.CheckForUpdatesOpts{AppID: appID}
 	var downstreamVersions = &downstreamtypes.DownstreamVersions{
 		CurrentVersion: &downstreamtypes.DownstreamVersion{
 			Semver:   &semver.Version{},
@@ -177,7 +179,7 @@ func TestAutoDeploySequenceDeploysSequenceUpgradeIfCurrentVersionLessThanMostRec
 	var autoDeployType = apptypes.AutoDeploySequence
 	var appID = "some-app"
 	var clusterID = "some-cluster-id"
-	var opts = CheckForUpdatesOpts{AppID: appID}
+	var opts = types.CheckForUpdatesOpts{AppID: appID}
 	var currentCursor = cursor.MustParse("1")
 	var upgradeCursor = cursor.MustParse("2")
 	var downstreamVersions = &downstreamtypes.DownstreamVersions{
@@ -211,7 +213,7 @@ func TestAutoDeploySequenceDoesNotDeployIfCurrentVersionIsSameUpstream(t *testin
 	var autoDeployType = apptypes.AutoDeploySequence
 	var appID = "some-app"
 	var clusterID = "some-cluster-id"
-	var opts = CheckForUpdatesOpts{AppID: appID}
+	var opts = types.CheckForUpdatesOpts{AppID: appID}
 	var currentCursor = cursor.MustParse("2")
 	var upgradeCursor = cursor.MustParse("2")
 	var downstreamVersions = &downstreamtypes.DownstreamVersions{
@@ -244,7 +246,7 @@ func TestAutoDeploySemverRequiredAllVersionsIndexIsNil(t *testing.T) {
 	var autoDeployType = apptypes.AutoDeploySemverPatch
 	var appID = "some-app"
 	var clusterID = "some-cluster-id"
-	var opts = CheckForUpdatesOpts{AppID: appID}
+	var opts = types.CheckForUpdatesOpts{AppID: appID}
 	var downstreamVersions = &downstreamtypes.DownstreamVersions{
 		CurrentVersion: &downstreamtypes.DownstreamVersion{
 			Semver: &semver.Version{},
@@ -270,7 +272,7 @@ func TestAutoDeploySemverRequiredAllVersionsHasNilSemver(t *testing.T) {
 	var autoDeployType = apptypes.AutoDeploySemverPatch
 	var appID = "some-app"
 	var clusterID = "some-cluster-id"
-	var opts = CheckForUpdatesOpts{AppID: appID}
+	var opts = types.CheckForUpdatesOpts{AppID: appID}
 	var downstreamVersions = &downstreamtypes.DownstreamVersions{
 		CurrentVersion: &downstreamtypes.DownstreamVersion{
 			Semver: &semver.Version{},
@@ -303,7 +305,7 @@ func TestAutoDeploySemverRequiredNoNewVersionToDeploy(t *testing.T) {
 	var major = uint64(1)
 	var minor = uint64(2)
 	var patch = uint64(1)
-	var opts = CheckForUpdatesOpts{AppID: appID}
+	var opts = types.CheckForUpdatesOpts{AppID: appID}
 	var downstreamVersions = &downstreamtypes.DownstreamVersions{
 		CurrentVersion: &downstreamtypes.DownstreamVersion{
 			Semver: &semver.Version{
@@ -343,7 +345,7 @@ func TestAutoDeploySemverRequiredPatchUpdateMajorsDontMatch(t *testing.T) {
 	var clusterID = "some-cluster-id"
 	var currentMajor = uint64(1)
 	var updateMajor = uint64(2)
-	var opts = CheckForUpdatesOpts{AppID: appID}
+	var opts = types.CheckForUpdatesOpts{AppID: appID}
 	var downstreamVersions = &downstreamtypes.DownstreamVersions{
 		CurrentVersion: &downstreamtypes.DownstreamVersion{
 			Semver: &semver.Version{
@@ -380,7 +382,7 @@ func TestAutoDeploySemverRequiredPatchUpdateMajorsMatchMinorsDontMatch(t *testin
 	var major = uint64(1)
 	var currentMinor = uint64(2)
 	var updateMinor = uint64(2)
-	var opts = CheckForUpdatesOpts{AppID: appID}
+	var opts = types.CheckForUpdatesOpts{AppID: appID}
 	var downstreamVersions = &downstreamtypes.DownstreamVersions{
 		CurrentVersion: &downstreamtypes.DownstreamVersion{
 			Semver: &semver.Version{
@@ -421,7 +423,7 @@ func TestAutoDeploySemverRequiredPatchUpdateMajorsMatchMinorsMatchWillUpgrade(t 
 	var minor = uint64(2)
 	var currentPatch = uint64(1)
 	var upgradePatch = uint64(2)
-	var opts = CheckForUpdatesOpts{AppID: appID}
+	var opts = types.CheckForUpdatesOpts{AppID: appID}
 	var downstreamVersions = &downstreamtypes.DownstreamVersions{
 		CurrentVersion: &downstreamtypes.DownstreamVersion{
 			Semver: &semver.Version{
@@ -463,7 +465,7 @@ func TestAutoDeploySemverRequiredMinorUpdateMajorsDontMatch(t *testing.T) {
 	var sequence = int64(0)
 	var currentMajor = uint64(1)
 	var upgradeMajor = uint64(2)
-	var opts = CheckForUpdatesOpts{AppID: appID}
+	var opts = types.CheckForUpdatesOpts{AppID: appID}
 	var downstreamVersions = &downstreamtypes.DownstreamVersions{
 		CurrentVersion: &downstreamtypes.DownstreamVersion{
 			Semver: &semver.Version{
@@ -502,7 +504,7 @@ func TestAutoDeploySemverRequiredMinorUpdateMajorsMatchWillUpgrade(t *testing.T)
 	var major = uint64(1)
 	var currentMinor = uint64(1)
 	var upgradeMinor = uint64(2)
-	var opts = CheckForUpdatesOpts{AppID: appID}
+	var opts = types.CheckForUpdatesOpts{AppID: appID}
 	var downstreamVersions = &downstreamtypes.DownstreamVersions{
 		CurrentVersion: &downstreamtypes.DownstreamVersion{
 			Semver: &semver.Version{
@@ -542,7 +544,7 @@ func TestAutoDeploySemverRequiredMajorUpdateWillUpgrade(t *testing.T) {
 	var sequence = int64(0)
 	var currentMajor = uint64(1)
 	var upgradeMajor = uint64(2)
-	var opts = CheckForUpdatesOpts{AppID: appID}
+	var opts = types.CheckForUpdatesOpts{AppID: appID}
 	var downstreamVersions = &downstreamtypes.DownstreamVersions{
 		CurrentVersion: &downstreamtypes.DownstreamVersion{
 			Semver: &semver.Version{
@@ -942,7 +944,7 @@ func TestGetAvailableUpdates(t *testing.T) {
 		args            args
 		channelReleases []upstream.ChannelRelease
 		setup           func(t *testing.T, args args, mockServerEndpoint string)
-		want            []*downstreamtypes.DownstreamVersion
+		want            []types.AvailableUpdate
 		wantErr         bool
 	}{
 		{
@@ -967,7 +969,7 @@ func TestGetAvailableUpdates(t *testing.T) {
 				args.license.Spec.Endpoint = licenseEndpoint
 				mockStore.EXPECT().GetCurrentUpdateCursor(args.app.ID, args.license.Spec.ChannelID).Return("1", nil)
 			},
-			want:    []*downstreamtypes.DownstreamVersion{},
+			want:    []types.AvailableUpdate{},
 			wantErr: false,
 		},
 		{
@@ -999,7 +1001,7 @@ func TestGetAvailableUpdates(t *testing.T) {
 					ChannelSequence: 1,
 					ReleaseSequence: 1,
 					VersionLabel:    "0.0.1",
-					IsRequired:      false,
+					IsRequired:      true,
 					CreatedAt:       testTime.Format(time.RFC3339),
 					ReleaseNotes:    "release notes",
 				},
@@ -1009,24 +1011,25 @@ func TestGetAvailableUpdates(t *testing.T) {
 				args.license.Spec.Endpoint = licenseEndpoint
 				mockStore.EXPECT().GetCurrentUpdateCursor(args.app.ID, args.license.Spec.ChannelID).Return("1", nil)
 			},
-			want: []*downstreamtypes.DownstreamVersion{
+			want: []types.AvailableUpdate{
 				{
 					VersionLabel:       "0.0.2",
 					UpdateCursor:       "2",
 					ChannelID:          "channel-id",
 					IsRequired:         false,
-					Status:             storetypes.VersionPendingDownload,
 					UpstreamReleasedAt: &testTime,
 					ReleaseNotes:       "release notes",
+					IsDeployable:       false,
+					NonDeployableCause: "This version cannot be deployed because version 0.0.1 is required and must be deployed first.",
 				},
 				{
 					VersionLabel:       "0.0.1",
 					UpdateCursor:       "1",
 					ChannelID:          "channel-id",
-					IsRequired:         false,
-					Status:             storetypes.VersionPendingDownload,
+					IsRequired:         true,
 					UpstreamReleasedAt: &testTime,
 					ReleaseNotes:       "release notes",
+					IsDeployable:       true,
 				},
 			},
 			wantErr: false,
@@ -1053,7 +1056,7 @@ func TestGetAvailableUpdates(t *testing.T) {
 				args.license.Spec.Endpoint = licenseEndpoint
 				mockStore.EXPECT().GetCurrentUpdateCursor(args.app.ID, args.license.Spec.ChannelID).Return("1", nil)
 			},
-			want:    []*downstreamtypes.DownstreamVersion{},
+			want:    []types.AvailableUpdate{},
 			wantErr: true,
 		},
 	}
@@ -1089,4 +1092,79 @@ func newMockServerWithReleases(channelReleases []upstream.ChannelRelease, wantEr
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 		}
 	}))
+}
+func TestIsUpdateDeployable(t *testing.T) {
+	tests := []struct {
+		name      string
+		updates   []upstreamtypes.Update
+		u         upstreamtypes.Update
+		want      bool
+		wantCause string
+	}{
+		{
+			name: "one update",
+			updates: []upstreamtypes.Update{
+				{VersionLabel: "1.0.3", Cursor: "3", IsRequired: false},
+			},
+			u:         upstreamtypes.Update{VersionLabel: "1.0.3", Cursor: "3", IsRequired: false},
+			want:      true,
+			wantCause: "",
+		},
+		{
+			name: "no required updates",
+			updates: []upstreamtypes.Update{
+				{VersionLabel: "1.0.4", Cursor: "4", IsRequired: false},
+				{VersionLabel: "1.0.3", Cursor: "3", IsRequired: false},
+				{VersionLabel: "1.0.2", Cursor: "2", IsRequired: false},
+				{VersionLabel: "1.0.1", Cursor: "1", IsRequired: false},
+			},
+			u:         upstreamtypes.Update{VersionLabel: "1.0.3", Cursor: "3", IsRequired: false},
+			want:      true,
+			wantCause: "",
+		},
+		{
+			name: "no required releases before it",
+			updates: []upstreamtypes.Update{
+				{VersionLabel: "1.0.4", Cursor: "4", IsRequired: true},
+				{VersionLabel: "1.0.3", Cursor: "3", IsRequired: false},
+				{VersionLabel: "1.0.2", Cursor: "2", IsRequired: false},
+				{VersionLabel: "1.0.1", Cursor: "1", IsRequired: false},
+			},
+			u:         upstreamtypes.Update{VersionLabel: "1.0.3", Cursor: "3", IsRequired: false},
+			want:      true,
+			wantCause: "",
+		},
+		{
+			name: "one required release before it",
+			updates: []upstreamtypes.Update{
+				{VersionLabel: "1.0.4", Cursor: "4", IsRequired: false},
+				{VersionLabel: "1.0.3", Cursor: "3", IsRequired: false},
+				{VersionLabel: "1.0.2", Cursor: "2", IsRequired: true},
+				{VersionLabel: "1.0.1", Cursor: "1", IsRequired: false},
+			},
+			u:         upstreamtypes.Update{VersionLabel: "1.0.3", Cursor: "3", IsRequired: false},
+			want:      false,
+			wantCause: "This version cannot be deployed because version 1.0.2 is required and must be deployed first.",
+		},
+		{
+			name: "two required releases before it",
+			updates: []upstreamtypes.Update{
+				{VersionLabel: "1.0.4", Cursor: "4", IsRequired: false},
+				{VersionLabel: "1.0.3", Cursor: "3", IsRequired: false},
+				{VersionLabel: "1.0.2", Cursor: "2", IsRequired: true},
+				{VersionLabel: "1.0.1", Cursor: "1", IsRequired: true},
+			},
+			u:         upstreamtypes.Update{VersionLabel: "1.0.3", Cursor: "3", IsRequired: false},
+			want:      false,
+			wantCause: "This version cannot be deployed because versions 1.0.2, 1.0.1 are required and must be deployed first.",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result, msg := isUpdateDeployable(tt.updates, tt.u)
+			assert.Equal(t, tt.want, result)
+			assert.Equal(t, tt.wantCause, msg)
+		})
+	}
 }

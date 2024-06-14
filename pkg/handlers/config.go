@@ -156,6 +156,21 @@ func (h *Handler) UpdateAppConfig(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	isEditable, err := isVersionConfigEditable(foundApp, updateAppConfigRequest.Sequence)
+	if err != nil {
+		updateAppConfigResponse.Error = "failed to check if version is editable"
+		logger.Error(errors.Wrap(err, updateAppConfigResponse.Error))
+		JSON(w, http.StatusInternalServerError, updateAppConfigResponse)
+		return
+	}
+
+	if !isEditable {
+		updateAppConfigResponse.Error = "this version cannot be edited"
+		logger.Error(errors.Wrap(err, updateAppConfigResponse.Error))
+		JSON(w, http.StatusForbidden, updateAppConfigResponse)
+		return
+	}
+
 	validationErrors, err := configvalidation.ValidateConfigSpec(kotsv1beta1.ConfigSpec{Groups: updateAppConfigRequest.ConfigGroups})
 	if err != nil {
 		updateAppConfigResponse.Error = "failed to validate config spec."
@@ -530,6 +545,30 @@ func (h *Handler) CurrentAppConfig(w http.ResponseWriter, r *http.Request) {
 	currentAppConfigResponse.Success = true
 	currentAppConfigResponse.DownstreamVersion = downstreamVersion
 	JSON(w, http.StatusOK, currentAppConfigResponse)
+}
+
+func isVersionConfigEditable(app *apptypes.App, sequence int64) (bool, error) {
+	if !util.IsEmbeddedCluster() {
+		return true, nil
+	}
+	// in embedded cluster, past versions cannot be edited
+	downstreams, err := store.GetStore().ListDownstreamsForApp(app.ID)
+	if err != nil {
+		return false, errors.Wrap(err, "failed to list downstreams for app")
+	}
+	if len(downstreams) == 0 {
+		return false, errors.New("no downstreams found for app")
+	}
+	versions, err := store.GetStore().GetDownstreamVersions(app.ID, downstreams[0].ClusterID, true)
+	if err != nil {
+		return false, errors.Wrap(err, "failed to get downstream versions")
+	}
+	for _, v := range versions.PastVersions {
+		if v.Sequence == sequence {
+			return false, nil
+		}
+	}
+	return true, nil
 }
 
 func shouldCreateNewAppVersion(archiveDir string, appID string, sequence int64) (bool, error) {

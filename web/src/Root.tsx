@@ -490,6 +490,9 @@ const Root = () => {
                   <AppConfig
                     fromLicenseFlow={true}
                     refetchAppsList={getAppsList}
+                    isEmbeddedCluster={
+                      state.adminConsoleMetadata?.isEmbeddedCluster
+                    }
                   />
                 }
               />
@@ -755,6 +758,9 @@ const Root = () => {
                     <AppConfig
                       fromLicenseFlow={false}
                       refetchAppsList={getAppsList}
+                      isEmbeddedCluster={
+                        state.adminConsoleMetadata?.isEmbeddedCluster
+                      }
                     />
                   }
                 />

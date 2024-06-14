@@ -15,7 +15,6 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/airgap"
-	downstreamtypes "github.com/replicatedhq/kots/pkg/api/downstream/types"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/kotsadm"
 	license "github.com/replicatedhq/kots/pkg/kotsadmlicense"
@@ -25,6 +24,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/store"
 	"github.com/replicatedhq/kots/pkg/tasks"
 	"github.com/replicatedhq/kots/pkg/updatechecker"
+	updatecheckertypes "github.com/replicatedhq/kots/pkg/updatechecker/types"
 	"github.com/replicatedhq/kots/pkg/util"
 	kotsv1beta1 "github.com/replicatedhq/kotskinds/apis/kots/v1beta1"
 )
@@ -65,7 +65,7 @@ func (h *Handler) AppUpdateCheck(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if contentType == "application/json" {
-		opts := updatechecker.CheckForUpdatesOpts{
+		opts := updatecheckertypes.CheckForUpdatesOpts{
 			AppID:                  app.GetID(),
 			DeployLatest:           deploy,
 			DeployVersionLabel:     deployVersionLabel,
@@ -211,7 +211,7 @@ func (h *Handler) AppUpdateCheck(w http.ResponseWriter, r *http.Request) {
 
 type AvailableUpdatesResponse struct {
 	Success bool                                 `json:"success"`
-	Updates []*downstreamtypes.DownstreamVersion `json:"updates,omitempty"`
+	Updates []updatecheckertypes.AvailableUpdate `json:"updates,omitempty"`
 }
 
 func (h *Handler) GetAvailableUpdates(w http.ResponseWriter, r *http.Request) {
