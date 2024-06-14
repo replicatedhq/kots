@@ -750,7 +750,6 @@ func GetAvailableUpdates(kotsStore storepkg.Store, app *apptypes.App, license *k
 	return availableUpdates, nil
 }
 
-// TODO NOW: only allow editing current config for EC
 func isUpdateDeployable(updates []upstreamtypes.Update, u upstreamtypes.Update) (bool, string) {
 	// iterate over updates in reverse since they are sorted in descending order
 	requiredUpdates := []upstreamtypes.Update{}
