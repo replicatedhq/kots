@@ -188,15 +188,15 @@ function useGetPrelightResults({
 
       setRefetchCount(0);
     },
-    refetchInterval: (preflightCheck: PreflightCheck | undefined) => {
-      if (!preflightCheck) return false;
+    // refetchInterval: (preflightCheck: PreflightCheck | undefined) => {
+    //   if (!preflightCheck) return false;
 
-      const refetchInterval = makeRefetchInterval(preflightCheck);
+    //   const refetchInterval = makeRefetchInterval(preflightCheck);
 
-      if (!refetchInterval) setRefetchCount(0);
+    //   if (!refetchInterval) setRefetchCount(0);
 
-      return refetchInterval;
-    },
+    //   return refetchInterval;
+    // },
     select: (response: PreflightResponse) =>
       flattenPreflightResponse({ response, refetchCount }),
     staleTime: 500,

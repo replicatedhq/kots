@@ -15,11 +15,11 @@ import { useApps } from "@features/App";
 import {
   useGetPrelightResults,
   useIgnorePermissionErrors,
-  useRerunPreflights,
 } from "@features/PreflightChecks/api";
 
 import { useDeployAppVersion } from "@features/App/api";
 import Icon from "@components/Icon";
+import Markdown from "react-remarkable";
 
 const ConfirmAndDeploy = ({ setCurrentStep }) => {
   useEffect(() => {
@@ -44,8 +44,6 @@ const ConfirmAndDeploy = ({ setCurrentStep }) => {
     useIgnorePermissionErrors({ sequence, slug });
   const { data: preflightCheck, error: getPreflightResultsError } =
     useGetPrelightResults({ sequence, slug });
-  const { mutate: rerunPreflights, error: rerunPreflightsError } =
-    useRerunPreflights({ sequence, slug });
 
   if (!preflightCheck?.showPreflightCheckPending) {
     if (showConfirmIgnorePreflightsModal) {
@@ -53,13 +51,104 @@ const ConfirmAndDeploy = ({ setCurrentStep }) => {
     }
   }
 
+  const PreflightResult = ({ results }) => {
+    console.log(results, "res");
+    function hasAllPassed(data) {
+      return data.every((item) => item.showPass);
+    }
+
+    function hasWarning(data) {
+      return data.some((item) => item.showWarn);
+    }
+    function hasFailed(data) {
+      return data.some((item) => item.showFail);
+    }
+
+    const warnings = results.filter((result) => result.showWarn);
+    const errors = results.filter((result) => result.showFail);
+
+    // go through and find out if there are warnings
+    if (hasAllPassed(results)) {
+      return (
+        <div className="flex justifyContent--space-between preflight-check-row tw-my-2 tw-py-2">
+          <Icon
+            className="success-color"
+            icon="check-circle-filled"
+            size={16}
+          />
+          <div className="u-textColor--primary u-fontWeight--bold u-fontSize--large tw-ml-2">
+            All preflight checks passed
+          </div>
+        </div>
+      );
+    } else if (hasFailed(results)) {
+      return (
+        <div>
+          <div className="tw-flex tw-my-2 tw-py-2">
+            <Icon
+              className="error-color"
+              icon="warning-circle-filled"
+              size={16}
+            />
+            <div className="u-textColor--error u-fontWeight--bold u-fontSize--large tw-ml-2">
+              Preflight checks failed
+            </div>
+          </div>
+          {errors.map((error, i) => {
+            return (
+              <div className="flex justifyContent--space-between preflight-check-row tw-my-2 tw-py-2">
+                <div className="flex1">
+                  <p className="u-textColor--primary u-fontSize--large u-fontWeight--bold">
+                    {error.title}
+                  </p>
+                  <div className="PreflightMessageRow u-marginTop--10">
+                    <Markdown source={error.message} />
+                  </div>
+                  {error.showCannotFail && (
+                    <p className="u-textColor--error u-fontSize--small u-fontWeight--medium u-marginTop--10">
+                      To deploy the application, this check cannot fail.
+                    </p>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      );
+    } else if (hasWarning(results)) {
+      return (
+        <div>
+          <div className="tw-flex tw-my-2 tw-py-2">
+            <Icon className="warning-color" icon="warning" size={16} />
+            <div className="u-textColor--warning u-fontWeight--bold u-fontSize--large tw-ml-2">
+              Preflight checks passed with warnings
+            </div>
+          </div>
+          {warnings.map((warning, i) => {
+            return (
+              <div className="flex justifyContent--space-between preflight-check-row tw-my-2 tw-py-2">
+                <div className="flex1">
+                  <p className="u-textColor--primary u-fontSize--large u-fontWeight--bold">
+                    {warning.title}
+                  </p>
+                  <div className="PreflightMessageRow u-marginTop--10">
+                    <Markdown source={warning.message} />
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      );
+    }
+    // go thorugh and find out if there are errors
+
+    // if there aren't, then show the success message
+    return <div></div>;
+  };
   const location = useLocation();
 
   const { refetch: refetchApps } = useApps();
-
-  useEffect(() => {
-    setCurrentStep(1);
-  }, []);
 
   return (
     <div className="flex-column flex1 container">
@@ -99,15 +188,7 @@ const ConfirmAndDeploy = ({ setCurrentStep }) => {
               </div>
             </div>
           )}
-          {rerunPreflightsError?.message && (
-            <div className="ErrorWrapper flex-auto flex alignItems--center u-marginBottom--20">
-              <div className="icon redWarningIcon u-marginRight--10" />
-              <div>
-                <p className="title">Encountered an error</p>
-                <p className="error">{rerunPreflightsError.message}</p>
-              </div>
-            </div>
-          )}
+
           <p className="u-fontSize--jumbo2 u-textColor--primary u-fontWeight--bold">
             Confirm and Deploy
           </p>
@@ -124,28 +205,34 @@ const ConfirmAndDeploy = ({ setCurrentStep }) => {
               />
             </div>
           )}
+          <div className="tw-mt-6">
+            <div className="flex flex1 tw-justify-between tw-items-end">
+              <p className="u-fontSize--large u-textColor--primary u-fontWeight--bold">
+                Config
+              </p>
+            </div>
+            {/* TODO: WILL NEED TO UPDATE THIS BASED ON THE RESPONSE FROM API */}
+            <div className="flex justifyContent--space-between preflight-check-row tw-my-2 tw-py-2">
+              <Icon
+                className="success-color"
+                icon="check-circle-filled"
+                size={16}
+              />
+              <div className="u-textColor--primary u-fontWeight--bold u-fontSize--large tw-ml-2">
+                1 value changed. No errors detected.
+              </div>
+            </div>
+          </div>
 
           {preflightCheck?.showPreflightResults && (
             <div className="tw-mt-6">
               <div className="flex flex1 tw-justify-between tw-items-end">
                 <p className="u-fontSize--large u-textColor--primary u-fontWeight--bold">
-                  Results
+                  Preflight checks
                 </p>
-                {preflightCheck?.shouldShowRerunPreflight && (
-                  <button
-                    type="button"
-                    className="btn primary blue"
-                    onClick={() => rerunPreflights()}
-                  >
-                    Re-run
-                  </button>
-                )}
               </div>
               <div className="flex-column">
-                <PreflightRenderer
-                  results={preflightCheck?.preflightResults}
-                  skipped={preflightCheck?.showPreflightSkipped}
-                />
+                <PreflightResult results={preflightCheck?.preflightResults} />
               </div>
             </div>
           )}
@@ -170,7 +257,14 @@ const ConfirmAndDeploy = ({ setCurrentStep }) => {
           </button>
           <button
             className="btn primary blue"
-            onClick={() => navigate(`/upgrade-service/app/${slug}/deploy`)}
+            disabled={preflightCheck?.showDeploymentBlocked}
+            onClick={() =>
+              preflightCheck?.shouldShowConfirmContinueWithFailedPreflights
+                ? setShowContinueWithFailedPreflightsModal(true)
+                : deployKotsDownstream({
+                    continueWithFailedPreflights: true,
+                  })
+            }
           >
             Deploy
           </button>
