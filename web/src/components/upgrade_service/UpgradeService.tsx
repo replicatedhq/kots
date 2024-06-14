@@ -23,40 +23,9 @@ const UpgradeService = () => {
     throw new Error("Crashz!");
   };
   const [currentStep, setCurrentStep] = useState(0); // Initial step
+  console.log(currentStep, "currentstep");
   const location = useLocation();
   const params = useParams();
-
-  // Update currentStep based on route
-  // useEffect(() => {
-  //   console.log("slug", params);
-  //   console.log(
-  //     location.pathname,
-  //     " location.pathname",
-  //     location.pathname === `/upgrade-service/app/:slug/preflight`
-  //   );
-  //   if (location.pathname === `/upgrade-service/app/:slug/config`) {
-  //     setCurrentStep(0);
-  //   } else if (
-  //     location.pathname === `/upgrade-service/app/airgap-seagull/preflight`
-  //   ) {
-  //     setCurrentStep(1);
-  //   } else if (
-  //     location.pathname === `/upgrade-service/app/airgap-seagull/deploy`
-  //   ) {
-  //     setCurrentStep(2);
-  //   }
-  //   // const newStep = {
-  //   //   "/upgrade-service/app/:slug/config": 0,
-  //   //   "/upgrade-service/app/:slug/preflight": 1,
-  //   //   "/upgrade-service/app/:slug/deploy": 2,
-  //   // }[location.pathname];
-
-  //   // if (typeof newStep !== "undefined") {
-  //   //   setCurrentStep(newStep);
-  //   // }
-  //   console.log(location, " location");
-  //   console.log(currentStep, " currentStep");
-  // }, [location]);
 
   return (
     <QueryClientProvider client={queryClient}>

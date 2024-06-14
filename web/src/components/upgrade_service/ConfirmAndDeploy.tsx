@@ -109,13 +109,7 @@ const ConfirmAndDeploy = ({ setCurrentStep }) => {
             </div>
           )}
           <p className="u-fontSize--jumbo2 u-textColor--primary u-fontWeight--bold">
-            Preflight checks
-          </p>
-          <p className="u-fontWeight--medium u-lineHeight--more u-marginTop--5 u-marginBottom--15">
-            Preflight checks validate that your cluster meets the minimum
-            requirements. Required checks must pass in order to deploy the
-            application. Optional checks are recommended to ensure that the
-            application will work as intended.
+            Confirm and Deploy
           </p>
 
           {preflightCheck?.showPreflightCheckPending && (
@@ -131,28 +125,6 @@ const ConfirmAndDeploy = ({ setCurrentStep }) => {
             </div>
           )}
 
-          {preflightCheck?.showPreflightResultErrors && (
-            <>
-              <PreflightResultErrors
-                errors={preflightCheck.errors}
-                ignorePermissionErrors={ignorePermissionErrors}
-                // logo={props.logo}
-                preflightResultData={preflightCheck.preflightResults}
-                showRbacError={preflightCheck.showRbacError}
-              />
-              <div className="flex justifyContent--flexEnd tw-gap-6">
-                <button
-                  className="btn primary blue"
-                  onClick={() => ignorePermissionErrors()}
-                >
-                  {!location.pathname.includes("version-history")
-                    ? "Proceed"
-                    : "Re-run"}{" "}
-                  with limited Preflights
-                </button>
-              </div>
-            </>
-          )}
           {preflightCheck?.showPreflightResults && (
             <div className="tw-mt-6">
               <div className="flex flex1 tw-justify-between tw-items-end">
