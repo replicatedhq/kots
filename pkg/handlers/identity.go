@@ -25,6 +25,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/rbac"
 	"github.com/replicatedhq/kots/pkg/render"
 	rendertypes "github.com/replicatedhq/kots/pkg/render/types"
+	"github.com/replicatedhq/kots/pkg/reporting"
 	"github.com/replicatedhq/kots/pkg/store"
 	"github.com/replicatedhq/kots/pkg/util"
 	"github.com/replicatedhq/kots/pkg/version"
@@ -461,6 +462,7 @@ func (h *Handler) ConfigureAppIdentityService(w http.ResponseWriter, r *http.Req
 		Downstreams:      downstreams,
 		RegistrySettings: registrySettings,
 		Sequence:         nextAppSequence,
+		ReportingInfo:    reporting.GetReportingInfo(a.ID),
 	})
 	if err != nil {
 		err = errors.Wrap(err, "failed to render archive directory")

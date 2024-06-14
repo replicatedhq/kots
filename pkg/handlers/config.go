@@ -28,6 +28,7 @@ import (
 	registrytypes "github.com/replicatedhq/kots/pkg/registry/types"
 	"github.com/replicatedhq/kots/pkg/render"
 	rendertypes "github.com/replicatedhq/kots/pkg/render/types"
+	"github.com/replicatedhq/kots/pkg/reporting"
 	"github.com/replicatedhq/kots/pkg/store"
 	storetypes "github.com/replicatedhq/kots/pkg/store/types"
 	"github.com/replicatedhq/kots/pkg/template"
@@ -650,7 +651,7 @@ func updateAppConfig(updateApp *apptypes.App, sequence int64, configGroups []kot
 		return updateAppConfigResponse, err
 	}
 
-	requiredItems, requiredItemsTitles := getMissingRequiredConfig(configGroups)
+	requiredItems, requiredItemsTitles := kotsadmconfig.GetMissingRequiredConfig(configGroups)
 
 	// not having all the required items is only a failure for the version that the user intended to edit
 	if len(requiredItems) > 0 && isPrimaryVersion {
@@ -663,7 +664,7 @@ func updateAppConfig(updateApp *apptypes.App, sequence int64, configGroups []kot
 	// so we don't need the complex logic in kots, we can just write
 	if kotsKinds.ConfigValues != nil {
 		values := kotsKinds.ConfigValues.Spec.Values
-		kotsKinds.ConfigValues.Spec.Values = updateAppConfigValues(values, configGroups)
+		kotsKinds.ConfigValues.Spec.Values = kotsadmconfig.UpdateAppConfigValues(values, configGroups)
 
 		configValuesSpec, err := kotsKinds.Marshal("kots.io", "v1beta1", "ConfigValues")
 		if err != nil {
@@ -736,6 +737,7 @@ func updateAppConfig(updateApp *apptypes.App, sequence int64, configGroups []kot
 		Downstreams:      downstreams,
 		RegistrySettings: registrySettings,
 		Sequence:         renderSequence,
+		ReportingInfo:    reporting.GetReportingInfo(app.ID),
 	})
 	if err != nil {
 		cause := errors.Cause(err)
@@ -798,28 +800,6 @@ func updateAppConfig(updateApp *apptypes.App, sequence int64, configGroups []kot
 
 	updateAppConfigResponse.Success = true
 	return updateAppConfigResponse, nil
-}
-
-func getMissingRequiredConfig(configGroups []kotsv1beta1.ConfigGroup) ([]string, []string) {
-	requiredItems := make([]string, 0, 0)
-	requiredItemsTitles := make([]string, 0, 0)
-	for _, group := range configGroups {
-		if group.When == "false" {
-			continue
-		}
-		for _, item := range group.Items {
-			if kotsadmconfig.IsRequiredItem(item) && kotsadmconfig.IsUnsetItem(item) {
-				requiredItems = append(requiredItems, item.Name)
-				if item.Title != "" {
-					requiredItemsTitles = append(requiredItemsTitles, item.Title)
-				} else {
-					requiredItemsTitles = append(requiredItemsTitles, item.Name)
-				}
-			}
-		}
-	}
-
-	return requiredItems, requiredItemsTitles
 }
 
 func updateAppConfigValues(values map[string]kotsv1beta1.ConfigValue, configGroups []kotsv1beta1.ConfigGroup) map[string]kotsv1beta1.ConfigValue {
