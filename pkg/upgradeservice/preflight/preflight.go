@@ -23,9 +23,10 @@ import (
 	"go.uber.org/zap"
 )
 
+// TODO: change this so that it's not byte arrays, but the real types
 type PreflightData struct {
-	Progress []byte `json:"progress"`
-	Results  []byte `json:"results"`
+	Progress map[string]interface{}  `json:"progress"`
+	Results  *types.PreflightResults `json:"results"`
 }
 
 var PreflightDataFilepath string
@@ -109,13 +110,7 @@ func Run(app *apptypes.App, archiveDir string, sequence int64, registrySettings 
 				},
 			}
 
-			b, err := json.Marshal(preflightResults)
-			if err != nil {
-				logger.Error(errors.Wrap(err, "failed to marshal preflight results"))
-				return
-			}
-
-			if err := setPreflightResult(b); err != nil {
+			if err := setPreflightResults(preflightResults); err != nil {
 				logger.Error(errors.Wrap(err, "failed to set preflight results"))
 				return
 			}
@@ -134,7 +129,7 @@ func Run(app *apptypes.App, archiveDir string, sequence int64, registrySettings 
 			zap.String("appID", app.ID),
 			zap.Int64("sequence", sequence))
 
-		_, err := preflightpkg.Execute(preflight, ignoreRBAC, setPreflightProgress, setPreflightResult)
+		_, err := preflightpkg.Execute(preflight, ignoreRBAC, setPreflightProgress, setPreflightResults)
 		if err != nil {
 			logger.Error(errors.Wrap(err, "failed to run preflight checks"))
 			return
@@ -147,6 +142,30 @@ func Run(app *apptypes.App, archiveDir string, sequence int64, registrySettings 
 		}()
 	}()
 
+	return nil
+}
+
+func setPreflightResults(results *types.PreflightResults) error {
+	preflightData, err := getPreflightData()
+	if err != nil {
+		return errors.Wrap(err, "failed to get preflight data")
+	}
+	preflightData.Results = results
+	if err := setPreflightData(preflightData); err != nil {
+		return errors.Wrap(err, "failed to set preflight results")
+	}
+	return nil
+}
+
+func setPreflightProgress(progress map[string]interface{}) error {
+	preflightData, err := getPreflightData()
+	if err != nil {
+		return errors.Wrap(err, "failed to get preflight data")
+	}
+	preflightData.Progress = progress
+	if err := setPreflightData(preflightData); err != nil {
+		return errors.Wrap(err, "failed to set preflight progress")
+	}
 	return nil
 }
 
@@ -169,26 +188,13 @@ func getPreflightData() (*PreflightData, error) {
 	return preflightData, nil
 }
 
-func setPreflightResult(b []byte) error {
-	preflightData, err := getPreflightData()
+func setPreflightData(preflightData *PreflightData) error {
+	b, err := json.Marshal(preflightData)
 	if err != nil {
-		return errors.Wrap(err, "failed to get preflight data")
+		return errors.Wrap(err, "failed to marshal preflight data")
 	}
-	preflightData.Results = b
 	if err := os.WriteFile(PreflightDataFilepath, b, 0644); err != nil {
-		return errors.Wrap(err, "failed to write preflight results")
-	}
-	return nil
-}
-
-func setPreflightProgress(b []byte) error {
-	preflightData, err := getPreflightData()
-	if err != nil {
-		return errors.Wrap(err, "failed to get preflight data")
-	}
-	preflightData.Progress = b
-	if err := os.WriteFile(PreflightDataFilepath, b, 0644); err != nil {
-		return errors.Wrap(err, "failed to write preflight progress")
+		return errors.Wrap(err, "failed to write preflight data")
 	}
 	return nil
 }

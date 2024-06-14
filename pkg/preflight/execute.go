@@ -1,7 +1,6 @@
 package preflight
 
 import (
-	"encoding/json"
 	"strings"
 	"sync"
 	"time"
@@ -19,7 +18,7 @@ import (
 
 // Execute will Execute the preflights using spec in preflightSpec.
 // This spec should be rendered, no template functions remaining
-func Execute(preflightSpec *troubleshootv1beta2.Preflight, ignorePermissionErrors bool, setProgress, setResults func(b []byte) error) (*types.PreflightResults, error) {
+func Execute(preflightSpec *troubleshootv1beta2.Preflight, ignorePermissionErrors bool, setProgress func(progress map[string]interface{}) error, setResults func(results *types.PreflightResults) error) (*types.PreflightResults, error) {
 	progressChan := make(chan interface{}, 0) // non-zero buffer will result in missed messages
 	defer close(progressChan)
 
@@ -44,26 +43,23 @@ func Execute(preflightSpec *troubleshootv1beta2.Preflight, ignorePermissionError
 				}
 			}
 
-			progress, ok := msg.(preflight.CollectProgress)
+			collectProgress, ok := msg.(preflight.CollectProgress)
 			if !ok {
 				continue
 			}
 
 			// TODO: We need a nice title to display
-			progressBytes, err := json.Marshal(map[string]interface{}{
-				"completedCount": progress.CompletedCount,
-				"totalCount":     progress.TotalCount,
-				"currentName":    progress.CurrentName,
-				"currentStatus":  progress.CurrentStatus,
+			progress := map[string]interface{}{
+				"completedCount": collectProgress.CompletedCount,
+				"totalCount":     collectProgress.TotalCount,
+				"currentName":    collectProgress.CurrentName,
+				"currentStatus":  collectProgress.CurrentStatus,
 				"updatedAt":      time.Now().Format(time.RFC3339),
-			})
-			if err != nil {
-				continue
 			}
 
 			completeMx.Lock()
 			if !isComplete {
-				if err := setProgress(progressBytes); err != nil {
+				if err := setProgress(progress); err != nil {
 					logger.Error(errors.Wrap(err, "failed to set preflight progress"))
 				}
 			}
@@ -88,13 +84,7 @@ func Execute(preflightSpec *troubleshootv1beta2.Preflight, ignorePermissionError
 			})
 		}
 
-		b, err := json.Marshal(uploadPreflightResults)
-		if err != nil {
-			logger.Error(errors.Wrap(err, "failed to marshal preflight results"))
-			return
-		}
-
-		if err := setResults(b); err != nil {
+		if err := setResults(uploadPreflightResults); err != nil {
 			logger.Error(errors.Wrap(err, "failed to set preflight results"))
 			return
 		}

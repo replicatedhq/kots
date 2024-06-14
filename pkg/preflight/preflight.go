@@ -190,10 +190,18 @@ func Run(appID string, appSlug string, sequence int64, isAirgap bool, archiveDir
 				zap.String("appID", appID),
 				zap.Int64("sequence", sequence))
 
-			setProgress := func(b []byte) error {
+			setProgress := func(progress map[string]interface{}) error {
+				b, err := json.Marshal(progress)
+				if err != nil {
+					return errors.Wrap(err, "failed to marshal preflight progress")
+				}
 				return store.GetStore().SetPreflightProgress(appID, sequence, string(b))
 			}
-			setResults := func(b []byte) error {
+			setResults := func(results *types.PreflightResults) error {
+				b, err := json.Marshal(results)
+				if err != nil {
+					return errors.Wrap(err, "failed to marshal preflight results")
+				}
 				return store.GetStore().SetPreflightResults(appID, sequence, b)
 			}
 			uploadPreflightResults, err := Execute(preflight, ignoreRBAC, setProgress, setResults)
