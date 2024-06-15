@@ -7,8 +7,9 @@ import (
 type UpgradeServiceParams struct {
 	Port string `yaml:"port"`
 
-	AppID       string `yaml:"appID"`
+	AppID       string `yaml:"appId"`
 	AppSlug     string `yaml:"appSlug"`
+	AppName     string `yaml:"appName"`
 	AppIsAirgap bool   `yaml:"appIsAirgap"`
 	AppIsGitOps bool   `yaml:"appIsGitOps"`
 	AppLicense  string `yaml:"appLicense"`
@@ -17,7 +18,9 @@ type UpgradeServiceParams struct {
 	BaseSequence int64  `yaml:"baseSequence"`
 	NextSequence int64  `yaml:"nextSequence"`
 
-	UpdateCursor string `yaml:"updateCursor"`
+	UpdateVersionLabel string `yaml:"updateVersionLabel"`
+	UpdateCursor       string `yaml:"updateCursor"`
+	UpdateChannelID    string `yaml:"updateChannelID"`
 
 	RegistryEndpoint   string `yaml:"registryEndpoint"`
 	RegistryUsername   string `yaml:"registryUsername"`

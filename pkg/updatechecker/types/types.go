@@ -28,7 +28,7 @@ type UpdateCheckRelease struct {
 type AvailableUpdate struct {
 	VersionLabel       string     `json:"versionLabel"`
 	UpdateCursor       string     `json:"updateCursor"`
-	ChannelID          string     `json:"channelId,omitempty"`
+	ChannelID          string     `json:"channelId"`
 	IsRequired         bool       `json:"isRequired"`
 	UpstreamReleasedAt *time.Time `json:"upstreamReleasedAt,omitempty"`
 	ReleaseNotes       string     `json:"releaseNotes,omitempty"`

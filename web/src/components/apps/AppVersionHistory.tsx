@@ -1402,11 +1402,9 @@ class AppVersionHistory extends Component<Props, State> {
         Accept: "application/json",
       },
       body: JSON.stringify({
-        // not used// doesn't matter right now
-        kotsVersion: "v1.109.3",
         versionLabel: version.versionLabel,
-        // channel sequence
         updateCursor: version.updateCursor,
+        channelId: version.channelId,
       }),
       credentials: "include",
       method: "POST",

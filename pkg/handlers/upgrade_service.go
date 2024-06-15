@@ -6,8 +6,10 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
+	apptypes "github.com/replicatedhq/kots/pkg/app/types"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/logger"
+	"github.com/replicatedhq/kots/pkg/replicatedapp"
 	"github.com/replicatedhq/kots/pkg/reporting"
 	"github.com/replicatedhq/kots/pkg/store"
 	"github.com/replicatedhq/kots/pkg/updatechecker"
@@ -16,9 +18,9 @@ import (
 )
 
 type StartUpgradeServiceRequest struct {
-	KOTSVersion  string `json:"kotsVersion"`
 	VersionLabel string `json:"versionLabel"`
 	UpdateCursor string `json:"updateCursor"`
+	ChannelID    string `json:"channelId"`
 }
 
 type StartUpgradeServiceResponse struct {
@@ -49,81 +51,29 @@ func (h *Handler) StartUpgradeService(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	license, err := kotsutil.LoadLicenseFromBytes([]byte(foundApp.License))
+	canStart, reason, err := canStartUpgradeService(foundApp, request)
 	if err != nil {
-		response.Error = "failed to parse app license"
+		response.Error = "failed to check if upgrade service can start"
 		logger.Error(errors.Wrap(err, response.Error))
 		JSON(w, http.StatusInternalServerError, response)
 		return
 	}
-
-	updates, err := updatechecker.GetAvailableUpdates(store.GetStore(), foundApp, license)
-	if err != nil {
-		response.Error = "failed to get available updates"
-		logger.Error(errors.Wrap(err, response.Error))
-		JSON(w, http.StatusInternalServerError, response)
-		return
-	}
-
-	isDeployable, nonDeployableCause := false, "update not found"
-	for _, u := range updates {
-		if u.UpdateCursor == request.UpdateCursor {
-			isDeployable, nonDeployableCause = u.IsDeployable, u.NonDeployableCause
-			break
-		}
-	}
-	if !isDeployable {
-		response.Error = nonDeployableCause
+	if !canStart {
+		response.Error = reason
+		logger.Error(errors.New(response.Error))
 		JSON(w, http.StatusBadRequest, response)
 		return
 	}
 
-	registrySettings, err := store.GetStore().GetRegistryDetailsForApp(foundApp.ID)
+	params, err := getUpgradeServiceParams(foundApp, request)
 	if err != nil {
-		response.Error = "failed to get registry details for app"
+		response.Error = err.Error()
 		logger.Error(errors.Wrap(err, response.Error))
 		JSON(w, http.StatusInternalServerError, response)
 		return
 	}
 
-	baseArchive, baseSequence, err := store.GetStore().GetAppVersionBaseArchive(foundApp.ID, request.VersionLabel)
-	if err != nil {
-		response.Error = "failed to get app version base archive"
-		logger.Error(errors.Wrap(err, response.Error))
-		JSON(w, http.StatusInternalServerError, response)
-		return
-	}
-
-	nextSequence, err := store.GetStore().GetNextAppSequence(foundApp.ID)
-	if err != nil {
-		response.Error = "failed to get next app sequence"
-		logger.Error(errors.Wrap(err, response.Error))
-		JSON(w, http.StatusInternalServerError, response)
-		return
-	}
-
-	err = upgradeservice.Start(upgradeservicetypes.UpgradeServiceParams{
-		AppID:       foundApp.ID,
-		AppSlug:     foundApp.Slug,
-		AppIsAirgap: foundApp.IsAirgap,
-		AppIsGitOps: foundApp.IsGitOps,
-		AppLicense:  foundApp.License,
-
-		BaseArchive:  baseArchive,
-		BaseSequence: baseSequence,
-		NextSequence: nextSequence,
-
-		UpdateCursor: request.UpdateCursor,
-
-		RegistryEndpoint:   registrySettings.Hostname,
-		RegistryUsername:   registrySettings.Username,
-		RegistryPassword:   registrySettings.Password,
-		RegistryNamespace:  registrySettings.Namespace,
-		RegistryIsReadOnly: registrySettings.IsReadOnly,
-
-		ReportingInfo: reporting.GetReportingInfo(foundApp.ID),
-	})
-	if err != nil {
+	if err := upgradeservice.Start(*params); err != nil {
 		response.Error = "failed to start upgrade service"
 		logger.Error(errors.Wrap(err, response.Error))
 		JSON(w, http.StatusInternalServerError, response)
@@ -133,4 +83,78 @@ func (h *Handler) StartUpgradeService(w http.ResponseWriter, r *http.Request) {
 	response.Success = true
 
 	JSON(w, http.StatusOK, response)
+}
+
+func canStartUpgradeService(a *apptypes.App, r StartUpgradeServiceRequest) (bool, string, error) {
+	currLicense, err := kotsutil.LoadLicenseFromBytes([]byte(a.License))
+	if err != nil {
+		return false, "", errors.Wrap(err, "failed to parse app license")
+	}
+	ll, err := replicatedapp.GetLatestLicense(currLicense)
+	if err != nil {
+		return false, "", errors.Wrap(err, "failed to get latest license")
+	}
+	if currLicense.Spec.ChannelID != ll.License.Spec.ChannelID || r.ChannelID != ll.License.Spec.ChannelID {
+		return false, "license channel has changed, please sync the license", nil
+	}
+
+	updates, err := updatechecker.GetAvailableUpdates(store.GetStore(), a, currLicense)
+	if err != nil {
+		return false, "", errors.Wrap(err, "failed to get available updates")
+	}
+
+	isDeployable, nonDeployableCause := false, "update not found"
+	for _, u := range updates {
+		if u.UpdateCursor == r.UpdateCursor {
+			isDeployable, nonDeployableCause = u.IsDeployable, u.NonDeployableCause
+			break
+		}
+	}
+	if !isDeployable {
+		return false, nonDeployableCause, nil
+	}
+
+	return true, "", nil
+}
+
+func getUpgradeServiceParams(a *apptypes.App, r StartUpgradeServiceRequest) (*upgradeservicetypes.UpgradeServiceParams, error) {
+	registrySettings, err := store.GetStore().GetRegistryDetailsForApp(a.ID)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get registry details for app")
+	}
+
+	baseArchive, baseSequence, err := store.GetStore().GetAppVersionBaseArchive(a.ID, r.VersionLabel)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get app version base archive")
+	}
+
+	nextSequence, err := store.GetStore().GetNextAppSequence(a.ID)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get next app sequence")
+	}
+
+	return &upgradeservicetypes.UpgradeServiceParams{
+		AppID:       a.ID,
+		AppSlug:     a.Slug,
+		AppName:     a.Name,
+		AppIsAirgap: a.IsAirgap,
+		AppIsGitOps: a.IsGitOps,
+		AppLicense:  a.License,
+
+		BaseArchive:  baseArchive,
+		BaseSequence: baseSequence,
+		NextSequence: nextSequence,
+
+		UpdateVersionLabel: r.VersionLabel,
+		UpdateCursor:       r.UpdateCursor,
+		UpdateChannelID:    r.ChannelID,
+
+		RegistryEndpoint:   registrySettings.Hostname,
+		RegistryUsername:   registrySettings.Username,
+		RegistryPassword:   registrySettings.Password,
+		RegistryNamespace:  registrySettings.Namespace,
+		RegistryIsReadOnly: registrySettings.IsReadOnly,
+
+		ReportingInfo: reporting.GetReportingInfo(a.ID),
+	}, nil
 }
