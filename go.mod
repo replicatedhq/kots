@@ -29,7 +29,7 @@ require (
 	github.com/google/go-github/v39 v39.2.0
 	github.com/google/uuid v1.6.0
 	github.com/gorilla/mux v1.8.1
-	github.com/gorilla/websocket v1.5.1
+	github.com/gorilla/websocket v1.5.3
 	github.com/gosimple/slug v1.13.1
 	github.com/hashicorp/go-cleanhttp v0.5.2
 	github.com/heroku/docker-registry-client v0.0.0-20190909225348-afc9e1acc3d5
@@ -48,7 +48,7 @@ require (
 	github.com/phayes/freeport v0.0.0-20220201140144-74d24b5ae9f5
 	github.com/pkg/errors v0.9.1
 	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2
-	github.com/replicatedhq/embedded-cluster-kinds v1.3.4
+	github.com/replicatedhq/embedded-cluster-kinds v1.3.9
 	github.com/replicatedhq/kotskinds v0.0.0-20240523174825-f4d441adb453
 	github.com/replicatedhq/kurlkinds v1.5.0
 	github.com/replicatedhq/troubleshoot v0.92.2
@@ -59,7 +59,7 @@ require (
 	github.com/schemahero/schemahero v0.17.8
 	github.com/segmentio/ksuid v1.0.4
 	github.com/sergi/go-diff v1.3.2-0.20230802210424-5b0b94c5c0d3
-	github.com/spf13/cobra v1.8.0
+	github.com/spf13/cobra v1.8.1
 	github.com/spf13/pflag v1.0.5
 	github.com/spf13/viper v1.18.2
 	github.com/stretchr/testify v1.9.0
@@ -67,7 +67,7 @@ require (
 	github.com/vmware-tanzu/velero v1.13.2
 	go.uber.org/multierr v1.11.0
 	go.uber.org/zap v1.27.0
-	golang.org/x/crypto v0.23.0
+	golang.org/x/crypto v0.24.0
 	golang.org/x/oauth2 v0.20.0
 	golang.org/x/sync v0.7.0
 	google.golang.org/api v0.175.0
@@ -75,15 +75,15 @@ require (
 	gopkg.in/ini.v1 v1.67.0
 	gopkg.in/yaml.v2 v2.4.0
 	gopkg.in/yaml.v3 v3.0.1
-	helm.sh/helm/v3 v3.15.1
-	k8s.io/api v0.30.1
-	k8s.io/apimachinery v0.30.1
-	k8s.io/cli-runtime v0.30.1
-	k8s.io/client-go v0.30.1
-	k8s.io/cluster-bootstrap v0.30.1
+	helm.sh/helm/v3 v3.15.2
+	k8s.io/api v0.30.2
+	k8s.io/apimachinery v0.30.2
+	k8s.io/cli-runtime v0.30.2
+	k8s.io/client-go v0.30.2
+	k8s.io/cluster-bootstrap v0.30.2
 	k8s.io/helm v2.17.0+incompatible
-	k8s.io/kubelet v0.30.1
-	k8s.io/metrics v0.30.1
+	k8s.io/kubelet v0.30.2
+	k8s.io/metrics v0.30.2
 	k8s.io/utils v0.0.0-20230726121419-3b25d923346b
 	oras.land/oras-go/v2 v2.5.0
 	sigs.k8s.io/application v0.8.3
@@ -367,12 +367,12 @@ require (
 	go.starlark.net v0.0.0-20230525235612-a134d8f9ddca // indirect
 	golang.org/x/exp v0.0.0-20240222234643-814bf88cf225 // indirect
 	golang.org/x/mod v0.17.0 // indirect
-	golang.org/x/net v0.25.0 // indirect
-	golang.org/x/sys v0.20.0 // indirect
-	golang.org/x/term v0.20.0 // indirect
-	golang.org/x/text v0.15.0 // indirect
+	golang.org/x/net v0.26.0 // indirect
+	golang.org/x/sys v0.21.0 // indirect
+	golang.org/x/term v0.21.0 // indirect
+	golang.org/x/text v0.16.0 // indirect
 	golang.org/x/time v0.5.0 // indirect
-	golang.org/x/tools v0.20.0 // indirect
+	golang.org/x/tools v0.21.1-0.20240508182429-e35e4ccd0d2d // indirect
 	google.golang.org/genproto v0.0.0-20240227224415-6ceb2ff114de // indirect
 	google.golang.org/genproto/googleapis/api v0.0.0-20240318140521-94a12d6c2237 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20240415180920-8c6c420018be // indirect
@@ -384,8 +384,8 @@ require (
 	gopkg.in/square/go-jose.v2 v2.6.0 // indirect
 	gopkg.in/warnings.v0 v0.1.2 // indirect
 	k8s.io/apiextensions-apiserver v0.30.1 // indirect
-	k8s.io/apiserver v0.30.1 // indirect
-	k8s.io/component-base v0.30.1 // indirect
+	k8s.io/apiserver v0.30.2 // indirect
+	k8s.io/component-base v0.30.2 // indirect
 	k8s.io/klog/v2 v2.120.1 // indirect
 	k8s.io/kube-openapi v0.0.0-20240228011516-70dd3763d340 // indirect
 	k8s.io/kubectl v0.30.0 // indirect
