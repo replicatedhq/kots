@@ -34,6 +34,9 @@ func RegisterRoutes(r *mux.Router, handler UpgradeServiceHandler) {
 	subRouter.Path("/liveconfig").Methods("POST").HandlerFunc(handler.LiveAppConfig)
 	subRouter.Path("/config").Methods("PUT").HandlerFunc(handler.SaveAppConfig)
 	subRouter.Path("/config/{filename}/download").Methods("GET").HandlerFunc(handler.DownloadFileFromConfig)
+
+	// TODO: subRouter.Path("/preflight/run").Methods("POST").HandlerFunc(handler.StartPreflightChecks)
+	subRouter.Path("/preflight/result").Methods("GET").HandlerFunc(handler.GetPreflightResult)
 }
 
 func JSON(w http.ResponseWriter, code int, payload interface{}) {
