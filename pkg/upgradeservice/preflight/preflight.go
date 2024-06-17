@@ -232,7 +232,7 @@ func setPreflightData(preflightData *PreflightData) error {
 }
 
 func ResetPreflightData() error {
-	if err := os.Remove(PreflightDataFilepath); err != nil {
+	if err := os.RemoveAll(PreflightDataFilepath); err != nil {
 		return errors.Wrap(err, "failed to remove preflight data")
 	}
 	return nil
