@@ -140,6 +140,10 @@ func pickEmbeddedClusterArtifacts(fetchOptions *types.FetchOptions) *kotsv1beta1
 			Charts:      imageutil.NewEmbeddedClusterOCIArtifactPath(fetchOptions.Airgap.Spec.EmbeddedClusterArtifacts.Charts, opts).String(),
 			ImagesAmd64: imageutil.NewEmbeddedClusterOCIArtifactPath(fetchOptions.Airgap.Spec.EmbeddedClusterArtifacts.ImagesAmd64, opts).String(),
 			Metadata:    imageutil.NewEmbeddedClusterOCIArtifactPath(fetchOptions.Airgap.Spec.EmbeddedClusterArtifacts.Metadata, opts).String(),
+			AdditionalArtifacts: map[string]string{
+				"kots":     imageutil.NewEmbeddedClusterOCIArtifactPath(fetchOptions.Airgap.Spec.EmbeddedClusterArtifacts.AdditionalArtifacts["kots"], opts).String(),
+				"operator": imageutil.NewEmbeddedClusterOCIArtifactPath(fetchOptions.Airgap.Spec.EmbeddedClusterArtifacts.AdditionalArtifacts["operator"], opts).String(),
+			},
 		}
 	}
 	return fetchOptions.CurrentEmbeddedClusterArtifacts
