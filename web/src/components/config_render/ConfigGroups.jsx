@@ -22,10 +22,9 @@ export default class ConfigGroups extends Component {
 
   handleDownloadFile = (filename) => {
     if (this.props.handleDownloadFile) {
-      this.props.handleDownloadFile(filename
-      );
+      this.props.handleDownloadFile(filename);
     }
-  }
+  };
 
   render() {
     const { fieldsList, fields, readonly } = this.props;

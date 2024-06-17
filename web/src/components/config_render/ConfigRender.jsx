@@ -127,10 +127,9 @@ export default class ConfigRender extends Component {
 
   handleDownloadFile = (filename) => {
     if (this.props.handleDownloadFile) {
-      this.props.handleDownloadFile(filename
-      );
+      this.props.handleDownloadFile(filename);
     }
-  }
+  };
 
   componentDidUpdate(lastProps) {
     if (this.props.fields !== lastProps.fields) {
