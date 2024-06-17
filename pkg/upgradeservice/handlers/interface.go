@@ -8,4 +8,5 @@ type UpgradeServiceHandler interface {
 	CurrentAppConfig(w http.ResponseWriter, r *http.Request)
 	LiveAppConfig(w http.ResponseWriter, r *http.Request)
 	SaveAppConfig(w http.ResponseWriter, r *http.Request)
+	DownloadFileFromConfig(w http.ResponseWriter, r *http.Request)
 }

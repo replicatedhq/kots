@@ -1481,9 +1481,7 @@ class AppVersionHistory extends Component<Props, State> {
         <AppVersionHistoryRow
           navigate={this.props.navigate}
           adminConsoleMetadata={this.props.outletContext.adminConsoleMetadata}
-          isEmbeddedCluster={
-            this.props.outletContext.isEmbeddedCluster
-          }
+          isEmbeddedCluster={this.props.outletContext.isEmbeddedCluster}
           deployVersion={this.deployVersion}
           downloadVersion={this.downloadVersion}
           gitopsEnabled={gitopsIsConnected}

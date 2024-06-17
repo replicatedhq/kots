@@ -1,11 +1,13 @@
 package handlers
 
 import (
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"net/http"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 
 	"github.com/gorilla/mux"
@@ -57,6 +59,11 @@ type SaveAppConfigResponse struct {
 	Error            string                                   `json:"error,omitempty"`
 	RequiredItems    []string                                 `json:"requiredItems,omitempty"`
 	ValidationErrors []configtypes.ConfigGroupValidationError `json:"validationErrors,omitempty"`
+}
+
+type DownloadFileFromConfigResponse struct {
+	Success bool   `json:"success"`
+	Error   string `json:"error,omitempty"`
 }
 
 func (h *Handler) CurrentAppConfig(w http.ResponseWriter, r *http.Request) {
@@ -419,4 +426,61 @@ func (h *Handler) SaveAppConfig(w http.ResponseWriter, r *http.Request) {
 
 	saveAppConfigResponse.Success = true
 	JSON(w, http.StatusOK, saveAppConfigResponse)
+}
+
+func (h *Handler) DownloadFileFromConfig(w http.ResponseWriter, r *http.Request) {
+	downloadFileFromConfigResponse := DownloadFileFromConfigResponse{
+		Success: false,
+	}
+
+	params := GetContextParams(r)
+	appSlug := mux.Vars(r)["appSlug"]
+
+	if params.AppSlug != appSlug {
+		downloadFileFromConfigResponse.Error = "app slug does not match"
+		JSON(w, http.StatusForbidden, downloadFileFromConfigResponse)
+		return
+	}
+
+	filename := mux.Vars(r)["filename"]
+	if filename == "" {
+		logger.Error(errors.New("filename parameter is empty"))
+		downloadFileFromConfigResponse.Error = "failed to parse filename, parameter was empty"
+		JSON(w, http.StatusInternalServerError, downloadFileFromConfigResponse)
+		return
+	}
+
+	kotsKinds, err := kotsutil.LoadKotsKinds(params.BaseArchive)
+	if err != nil {
+		downloadFileFromConfigResponse.Error = "failed to load kots kinds from path"
+		logger.Error(errors.Wrap(err, downloadFileFromConfigResponse.Error))
+		JSON(w, http.StatusInternalServerError, downloadFileFromConfigResponse)
+		return
+	}
+
+	var configValue *string
+	for _, v := range kotsKinds.ConfigValues.Spec.Values {
+		if v.Filename == filename {
+			configValue = &v.Value
+			break
+		}
+	}
+	if configValue == nil {
+		logger.Error(errors.New("could not find requested file"))
+		downloadFileFromConfigResponse.Error = "could not find requested file"
+		JSON(w, http.StatusInternalServerError, downloadFileFromConfigResponse)
+		return
+	}
+
+	decoded, err := base64.StdEncoding.DecodeString(*configValue)
+	if err != nil {
+		logger.Error(err)
+		downloadFileFromConfigResponse.Error = "failed to decode config value"
+		JSON(w, http.StatusInternalServerError, downloadFileFromConfigResponse)
+	}
+	w.Header().Set("Content-Type", "application/octet-stream")
+	w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=%s", filename))
+	w.Header().Set("Content-Length", strconv.Itoa(len(decoded)))
+	w.WriteHeader(http.StatusOK)
+	w.Write(decoded)
 }
