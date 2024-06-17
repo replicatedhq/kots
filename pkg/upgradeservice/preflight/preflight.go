@@ -148,25 +148,22 @@ func Run(app *apptypes.App, archiveDir string, sequence int64, registrySettings 
 }
 
 func setPreflightResults(appSlug string, results *types.PreflightResults) error {
-	preflightData, err := GetPreflightData()
-	if err != nil {
-		return errors.Wrap(err, "failed to get preflight data")
-	}
 	resultsBytes, err := json.Marshal(results)
 	if err != nil {
 		return errors.Wrap(err, "failed to marshal preflight results")
 	}
 	createdAt := time.Now()
-	preflightData.Result = &types.PreflightResult{
-		Result:                     string(resultsBytes),
-		CreatedAt:                  &createdAt,
-		AppSlug:                    appSlug,
-		ClusterSlug:                "this-cluster",
-		Skipped:                    false,
-		HasFailingStrictPreflights: hasFailingStrictPreflights(results),
+	preflightData := &PreflightData{
+		Result: &types.PreflightResult{
+			Result:                     string(resultsBytes),
+			CreatedAt:                  &createdAt,
+			AppSlug:                    appSlug,
+			ClusterSlug:                "this-cluster",
+			Skipped:                    false,
+			HasFailingStrictPreflights: hasFailingStrictPreflights(results),
+		},
+		Progress: "", // clear the progress once the results are set
 	}
-	// clear the progress once the results are set
-	preflightData.Progress = ""
 	if err := setPreflightData(preflightData); err != nil {
 		return errors.Wrap(err, "failed to set preflight results")
 	}
