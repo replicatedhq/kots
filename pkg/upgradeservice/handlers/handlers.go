@@ -35,7 +35,7 @@ func RegisterRoutes(r *mux.Router, handler UpgradeServiceHandler) {
 	subRouter.Path("/config").Methods("PUT").HandlerFunc(handler.SaveAppConfig)
 	subRouter.Path("/config/{filename}/download").Methods("GET").HandlerFunc(handler.DownloadFileFromConfig)
 
-	// TODO: subRouter.Path("/preflight/run").Methods("POST").HandlerFunc(handler.StartPreflightChecks)
+	subRouter.Path("/preflight/run").Methods("POST").HandlerFunc(handler.StartPreflightChecks)
 	subRouter.Path("/preflight/result").Methods("GET").HandlerFunc(handler.GetPreflightResult)
 }
 

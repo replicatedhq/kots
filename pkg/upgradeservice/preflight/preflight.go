@@ -165,6 +165,8 @@ func setPreflightResults(appSlug string, results *types.PreflightResults) error 
 		Skipped:                    false,
 		HasFailingStrictPreflights: hasFailingStrictPreflights(results),
 	}
+	// clear the progress once the results are set
+	preflightData.Progress = ""
 	if err := setPreflightData(preflightData); err != nil {
 		return errors.Wrap(err, "failed to set preflight results")
 	}
@@ -225,6 +227,13 @@ func setPreflightData(preflightData *PreflightData) error {
 	}
 	if err := os.WriteFile(PreflightDataFilepath, b, 0644); err != nil {
 		return errors.Wrap(err, "failed to write preflight data")
+	}
+	return nil
+}
+
+func ResetPreflightData() error {
+	if err := os.Remove(PreflightDataFilepath); err != nil {
+		return errors.Wrap(err, "failed to remove preflight data")
 	}
 	return nil
 }

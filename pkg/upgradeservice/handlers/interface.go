@@ -10,5 +10,6 @@ type UpgradeServiceHandler interface {
 	SaveAppConfig(w http.ResponseWriter, r *http.Request)
 	DownloadFileFromConfig(w http.ResponseWriter, r *http.Request)
 
+	StartPreflightChecks(w http.ResponseWriter, r *http.Request)
 	GetPreflightResult(w http.ResponseWriter, r *http.Request)
 }
