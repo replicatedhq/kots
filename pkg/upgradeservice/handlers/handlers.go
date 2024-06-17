@@ -33,6 +33,7 @@ func RegisterRoutes(r *mux.Router, handler UpgradeServiceHandler) {
 	subRouter.Path("/config").Methods("GET").HandlerFunc(handler.CurrentAppConfig)
 	subRouter.Path("/liveconfig").Methods("POST").HandlerFunc(handler.LiveAppConfig)
 	subRouter.Path("/config").Methods("PUT").HandlerFunc(handler.SaveAppConfig)
+	subRouter.Path("/config/{filename}/download").Methods("GET").HandlerFunc(handler.DownloadFileFromConfig)
 }
 
 func JSON(w http.ResponseWriter, code int, payload interface{}) {

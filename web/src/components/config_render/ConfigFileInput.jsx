@@ -28,36 +28,6 @@ export default class ConfigFileInput extends Component {
     }
   };
 
-  handleDownloadFile = async (fileName) => {
-    // TODO NOW: download from upgrade service if rendered in upgrade service and use a different sequence!
-    const url = `${process.env.API_ENDPOINT}/app/${this.props.appSlug}/config/${this.props.configSequence}/${fileName}/download`;
-    fetch(url, {
-      method: "GET",
-      headers: {
-        "Content-Type": "application/octet-stream",
-      },
-      credentials: "include",
-    })
-      .then((response) => {
-        if (!response.ok) {
-          throw Error(response.statusText); // TODO: handle error
-        }
-        return response.blob();
-      })
-      .then((blob) => {
-        const downloadURL = window.URL.createObjectURL(new Blob([blob]));
-        const link = document.createElement("a");
-        link.href = downloadURL;
-        link.setAttribute("download", fileName);
-        document.body.appendChild(link);
-        link.click();
-        link.parentNode.removeChild(link);
-      })
-      .catch(function (error) {
-        console.log(error); // TODO handle error
-      });
-  };
-
   getFilenamesText = () => {
     if (this.props.repeatable) {
       if (
@@ -128,7 +98,7 @@ export default class ConfigFileInput extends Component {
                   this.props.handleRemoveItem(itemName, itemToRemove)
                 }
                 handleDownloadFile={(fileName) =>
-                  this.handleDownloadFile(fileName)
+                  this.props.handleDownloadFile(fileName)
                 }
               />
             </span>

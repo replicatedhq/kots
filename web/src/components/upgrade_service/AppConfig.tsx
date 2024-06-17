@@ -412,6 +412,36 @@ class AppConfig extends Component<Props, State> {
       });
   };
 
+  handleDownloadFile = async (fileName: string) => {
+    const { slug } = this.props.params;
+    const url = `${process.env.API_ENDPOINT}/upgrade-service/app/${slug}/config/${fileName}/download${window.location.search}`;
+    fetch(url, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/octet-stream",
+      },
+      credentials: "include",
+    })
+      .then((response) => {
+        if (!response.ok) {
+          throw Error(response.statusText); // TODO: handle error
+        }
+        return response.blob();
+      })
+      .then((blob) => {
+        const downloadURL = window.URL.createObjectURL(new Blob([blob]));
+        const link = document.createElement("a");
+        link.href = downloadURL;
+        link.setAttribute("download", fileName);
+        document.body.appendChild(link);
+        link.click();
+        link.parentNode?.removeChild(link);
+      })
+      .catch(function (error) {
+        console.log(error); // TODO handle error
+      });
+  };
+
   toggleActiveGroups = (name: string) => {
     let groupsArr = this.state.activeGroups;
     if (groupsArr.includes(name)) {
@@ -584,7 +614,7 @@ class AppConfig extends Component<Props, State> {
                   <AppConfigRenderer
                     groups={configGroups}
                     getData={this.handleConfigChange}
-                    // configSequence={params.sequence}
+                    handleDownloadFile={this.handleDownloadFile}
                     appSlug={params.slug}
                   />
                 </div>

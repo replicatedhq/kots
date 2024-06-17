@@ -125,6 +125,13 @@ export default class ConfigRender extends Component {
     this.triggerChange(groups);
   };
 
+  handleDownloadFile = (filename) => {
+    if (this.props.handleDownloadFile) {
+      this.props.handleDownloadFile(filename
+      );
+    }
+  }
+
   componentDidUpdate(lastProps) {
     if (this.props.fields !== lastProps.fields) {
       this.setState({
@@ -147,6 +154,7 @@ export default class ConfigRender extends Component {
           handleChange={this.handleGroupsChange}
           handleAddItem={this.handleAddItem}
           handleRemoveItem={this.handleRemoveItem}
+          handleDownloadFile={this.handleDownloadFile}
           readonly={readonly}
           configSequence={this.props.configSequence}
           appSlug={this.props.appSlug}
