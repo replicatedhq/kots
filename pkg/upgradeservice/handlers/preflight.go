@@ -5,12 +5,8 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
-	apptypes "github.com/replicatedhq/kots/pkg/app/types"
-	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/logger"
 	preflighttypes "github.com/replicatedhq/kots/pkg/preflight/types"
-	registrytypes "github.com/replicatedhq/kots/pkg/registry/types"
-	"github.com/replicatedhq/kots/pkg/reporting"
 	upgradepreflight "github.com/replicatedhq/kots/pkg/upgradeservice/preflight"
 )
 
@@ -29,44 +25,14 @@ func (h *Handler) StartPreflightChecks(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	appLicense, err := kotsutil.LoadLicenseFromBytes([]byte(params.AppLicense))
-	if err != nil {
-		logger.Error(errors.Wrap(err, "failed to load license from bytes"))
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-
-	app := &apptypes.App{
-		ID:       params.AppID,
-		Slug:     params.AppSlug,
-		IsAirgap: params.AppIsAirgap,
-		IsGitOps: params.AppIsGitOps,
-	}
-
-	localRegistry := registrytypes.RegistrySettings{
-		Hostname:   params.RegistryEndpoint,
-		Username:   params.RegistryUsername,
-		Password:   params.RegistryPassword,
-		Namespace:  params.RegistryNamespace,
-		IsReadOnly: params.RegistryIsReadOnly,
-	}
-
 	if err := upgradepreflight.ResetPreflightData(); err != nil {
 		logger.Error(errors.Wrap(err, "failed to reset preflight data"))
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
-	reportingFn := func() error {
-		if params.AppIsAirgap {
-			// TODO NOW: airgap reporting
-			return nil
-		}
-		return reporting.SendOnlineAppInfo(appLicense, params.ReportingInfo)
-	}
-
 	go func() {
-		if err := upgradepreflight.Run(app, params.BaseArchive, params.NextSequence, localRegistry, false, reportingFn); err != nil {
+		if err := upgradepreflight.Run(params); err != nil {
 			logger.Error(errors.Wrap(err, "failed to run preflights"))
 			return
 		}
