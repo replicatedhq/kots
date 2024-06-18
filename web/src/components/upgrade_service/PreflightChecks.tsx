@@ -20,6 +20,7 @@ import {
 
 import { useDeployAppVersion } from "@features/App/api";
 import Icon from "@components/Icon";
+import { useMutation, useQuery } from "@tanstack/react-query";
 
 const PreflightCheck = ({ setCurrentStep }) => {
   const navigate = useNavigate();
@@ -39,10 +40,44 @@ const PreflightCheck = ({ setCurrentStep }) => {
   });
   const { mutate: ignorePermissionErrors, error: ignorePermissionError } =
     useIgnorePermissionErrors({ sequence, slug });
-  const { data: preflightCheck, error: getPreflightResultsError } =
-    useGetPrelightResults({ sequence, slug });
-  const { mutate: rerunPreflights, error: rerunPreflightsError } =
-    useRerunPreflights({ sequence, slug });
+  const { data: preflightCheck, error: getPreflightResultsError } = useQuery({
+    queryFn: async () => {
+      const path = `${process.env.API_ENDPOINT}/upgrade-service/app/${slug}/preflight/result`;
+      await fetch(path, {
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include",
+      });
+    },
+    onSuccess: (data) => {
+      console.log("preflight results", data);
+    },
+    onError: () => {
+      // TODO: handle error
+      // show error message
+    },
+  });
+  const { mutate: rerunPreflights, error: rerunPreflightsError } = useMutation({
+    mutationFn: async () => {
+      const path = `${process.env.API_ENDPOINT}/upgrade-service/app/${slug}/preflight/run`;
+      await fetch(path, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include",
+        // body: JSON.stringify(payload),
+      });
+    },
+    onSuccess: (data) => {
+      console.log(data, "ran preflights ");
+    },
+    onError: () => {
+      // TODO: handle error
+      // show error message
+    },
+  });
 
   if (!preflightCheck?.showPreflightCheckPending) {
     if (showConfirmIgnorePreflightsModal) {
@@ -56,6 +91,7 @@ const PreflightCheck = ({ setCurrentStep }) => {
 
   useEffect(() => {
     setCurrentStep(1);
+    rerunPreflights();
   }, []);
 
   return (

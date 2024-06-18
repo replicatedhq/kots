@@ -339,6 +339,7 @@ export const AppConfig = ({
     },
     onError: () => {
       // TODO: handle error
+      // show error message
     },
   });
 
