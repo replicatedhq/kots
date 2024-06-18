@@ -12,6 +12,7 @@ import { useLocation, useNavigate, useParams } from "react-router-dom";
 
 import "@src/scss/components/watches/WatchConfig.scss";
 import { useUpgradeServiceContext } from "./UpgradeServiceContext";
+import { useMutation } from "@tanstack/react-query";
 
 // This was typed from the implementation of the component so it might be wrong
 type ConfigGroup = {
@@ -316,15 +317,33 @@ export const AppConfig = ({
     updateUrlWithErrorId(requiredItems);
   };
 
-  const handleNext = async () => {
-    // TODO NOW: validate config from api before moving on
+  const { mutate: valdiateConfig } = useMutation({
+    mutationFn: async (payload) => {
+      const { slug } = params;
+      const path = `${process.env.API_ENDPOINT}/upgrade-service/app/${slug}/config${window.location.search}`;
+      await fetch(path, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include",
+        body: JSON.stringify(payload),
+      });
+    },
+    onSuccess: () => {
+      setConfig(configGroups);
+      const { slug } = params;
+      navigate(`/upgrade-service/app/${slug}/preflight`, {
+        replace: true,
+      });
+    },
+    onError: () => {
+      // TODO: handle error
+    },
+  });
 
-    // Where this the config data save to? does it stay in state until we deploy?
-    setConfig(configGroups);
-    const { slug } = params;
-    navigate(`/upgrade-service/app/${slug}/preflight`, {
-      replace: true,
-    });
+  const handleNext = async () => {
+    valdiateConfig({ configGroup: state.configGroups });
   };
 
   getItemInConfigGroups = (
