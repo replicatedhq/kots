@@ -16,6 +16,7 @@ import (
 	apptypes "github.com/replicatedhq/kots/pkg/app/types"
 	"github.com/replicatedhq/kots/pkg/config"
 	kotsconfig "github.com/replicatedhq/kots/pkg/config"
+	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/kotsadmconfig"
 	configtypes "github.com/replicatedhq/kots/pkg/kotsadmconfig/types"
 	configvalidation "github.com/replicatedhq/kots/pkg/kotsadmconfig/validation"
@@ -411,8 +412,12 @@ func (h *Handler) SaveAppConfig(w http.ResponseWriter, r *http.Request) {
 
 	reportingFn := func() error {
 		if params.AppIsAirgap {
-			// TODO NOW: airgap reporting
-			return nil
+			clientset, err := k8sutil.GetClientset()
+			if err != nil {
+				return errors.Wrap(err, "failed to get clientset")
+			}
+			report := reporting.BuildInstanceReport(appLicense.Spec.LicenseID, params.ReportingInfo)
+			return reporting.AppendReport(clientset, util.PodNamespace, app.Slug, report)
 		}
 		return reporting.SendOnlineAppInfo(appLicense, params.ReportingInfo)
 	}
