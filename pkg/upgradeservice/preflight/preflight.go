@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"time"
 
 	"github.com/pkg/errors"
 	apptypes "github.com/replicatedhq/kots/pkg/app/types"
@@ -24,8 +25,8 @@ import (
 )
 
 type PreflightData struct {
-	Progress map[string]interface{}  `json:"progress"`
-	Results  *types.PreflightResults `json:"results"`
+	Progress string                 `json:"progress,omitempty"`
+	Result   *types.PreflightResult `json:"result"`
 }
 
 var PreflightDataFilepath string
@@ -107,7 +108,7 @@ func Run(app *apptypes.App, archiveDir string, sequence int64, registrySettings 
 					},
 				},
 			}
-			if err := setPreflightResults(preflightResults); err != nil {
+			if err := setPreflightResults(app.Slug, preflightResults); err != nil {
 				logger.Error(errors.Wrap(err, "failed to set preflight results"))
 				return
 			}
@@ -126,7 +127,11 @@ func Run(app *apptypes.App, archiveDir string, sequence int64, registrySettings 
 			zap.String("appID", app.ID),
 			zap.Int64("sequence", sequence))
 
-		_, err := preflightpkg.Execute(preflight, ignoreRBAC, setPreflightProgress, setPreflightResults)
+		setResults := func(results *types.PreflightResults) error {
+			return setPreflightResults(app.Slug, results)
+		}
+
+		_, err := preflightpkg.Execute(preflight, ignoreRBAC, setPreflightProgress, setResults)
 		if err != nil {
 			logger.Error(errors.Wrap(err, "failed to run preflight checks"))
 			return
@@ -142,31 +147,58 @@ func Run(app *apptypes.App, archiveDir string, sequence int64, registrySettings 
 	return nil
 }
 
-func setPreflightResults(results *types.PreflightResults) error {
-	preflightData, err := getPreflightData()
+func setPreflightResults(appSlug string, results *types.PreflightResults) error {
+	resultsBytes, err := json.Marshal(results)
 	if err != nil {
-		return errors.Wrap(err, "failed to get preflight data")
+		return errors.Wrap(err, "failed to marshal preflight results")
 	}
-	preflightData.Results = results
+	createdAt := time.Now()
+	preflightData := &PreflightData{
+		Result: &types.PreflightResult{
+			Result:                     string(resultsBytes),
+			CreatedAt:                  &createdAt,
+			AppSlug:                    appSlug,
+			ClusterSlug:                "this-cluster",
+			Skipped:                    false,
+			HasFailingStrictPreflights: hasFailingStrictPreflights(results),
+		},
+		Progress: "", // clear the progress once the results are set
+	}
 	if err := setPreflightData(preflightData); err != nil {
 		return errors.Wrap(err, "failed to set preflight results")
 	}
 	return nil
 }
 
+func hasFailingStrictPreflights(results *types.PreflightResults) bool {
+	// convert to troubleshoot type so we can use the existing function
+	uploadResults := &troubleshootpreflight.UploadPreflightResults{}
+	uploadResults.Results = results.Results
+	for _, e := range results.Errors {
+		uploadResults.Errors = append(uploadResults.Errors, &troubleshootpreflight.UploadPreflightError{
+			Error: e.Error,
+		})
+	}
+	return troubleshootpreflight.HasStrictAnalyzersFailed(uploadResults)
+}
+
 func setPreflightProgress(progress map[string]interface{}) error {
-	preflightData, err := getPreflightData()
+	preflightData, err := GetPreflightData()
 	if err != nil {
 		return errors.Wrap(err, "failed to get preflight data")
 	}
-	preflightData.Progress = progress
+	progressBytes, err := json.Marshal(progress)
+	if err != nil {
+		return errors.Wrap(err, "failed to marshal preflight progress")
+	}
+	preflightData.Progress = string(progressBytes)
 	if err := setPreflightData(preflightData); err != nil {
 		return errors.Wrap(err, "failed to set preflight progress")
 	}
 	return nil
 }
 
-func getPreflightData() (*PreflightData, error) {
+func GetPreflightData() (*PreflightData, error) {
 	var preflightData *PreflightData
 	if _, err := os.Stat(PreflightDataFilepath); err != nil {
 		if !os.IsNotExist(err) {
@@ -192,6 +224,13 @@ func setPreflightData(preflightData *PreflightData) error {
 	}
 	if err := os.WriteFile(PreflightDataFilepath, b, 0644); err != nil {
 		return errors.Wrap(err, "failed to write preflight data")
+	}
+	return nil
+}
+
+func ResetPreflightData() error {
+	if err := os.RemoveAll(PreflightDataFilepath); err != nil {
+		return errors.Wrap(err, "failed to remove preflight data")
 	}
 	return nil
 }
