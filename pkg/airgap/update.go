@@ -318,18 +318,20 @@ func GetMissingRequiredVersions(app *apptypes.App, airgap *kotsv1beta1.Airgap) (
 		return nil, errors.Wrap(err, "failed to load license")
 	}
 
-	return getMissingRequiredVersions(airgap, license, appVersions.AllVersions)
+	return getMissingRequiredVersions(airgap, license, appVersions)
 }
 
-func getMissingRequiredVersions(airgap *kotsv1beta1.Airgap, license *kotsv1beta1.License, installedVersions []*downstreamtypes.DownstreamVersion) ([]string, error) {
+func getMissingRequiredVersions(airgap *kotsv1beta1.Airgap, license *kotsv1beta1.License, installedVersions *downstreamtypes.DownstreamVersions) ([]string, error) {
 	missingVersions := make([]string, 0)
-	if len(installedVersions) == 0 {
+	// If no versions are installed, we can consider this an initial install.
+	// If the current installed version is from a different channel, we can consider this an initial install.
+	if len(installedVersions.AllVersions) == 0 || (installedVersions.CurrentVersion != nil && installedVersions.CurrentVersion.ChannelID != airgap.Spec.ChannelID) {
 		return missingVersions, nil
 	}
 
 	for _, requiredRelease := range airgap.Spec.RequiredReleases {
 		laterReleaseInstalled := false
-		for _, appVersion := range installedVersions {
+		for _, appVersion := range installedVersions.AllVersions {
 			requiredSemver, requiredSemverErr := semver.ParseTolerant(requiredRelease.VersionLabel)
 
 			// semvers can be compared across channels

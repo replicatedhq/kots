@@ -14,12 +14,12 @@ import (
 func Test_getMissingRequiredVersions(t *testing.T) {
 	channelID := "channel-id"
 	tests := []struct {
-		name              string
-		airgap            *kotsv1beta1.Airgap
-		license           *kotsv1beta1.License
-		installedVersions []*downstreamtypes.DownstreamVersion
-		wantSemver        []string
-		wantNoSemver      []string
+		name               string
+		airgap             *kotsv1beta1.Airgap
+		license            *kotsv1beta1.License
+		downstreamVersions *downstreamtypes.DownstreamVersions
+		wantSemver         []string
+		wantNoSemver       []string
 	}{
 		{
 			name: "nothing is installed yet",
@@ -37,9 +37,11 @@ func Test_getMissingRequiredVersions(t *testing.T) {
 			license: &kotsv1beta1.License{
 				Spec: kotsv1beta1.LicenseSpec{},
 			},
-			installedVersions: []*downstreamtypes.DownstreamVersion{},
-			wantNoSemver:      []string{},
-			wantSemver:        []string{},
+			downstreamVersions: &downstreamtypes.DownstreamVersions{
+				AllVersions: []*downstreamtypes.DownstreamVersion{},
+			},
+			wantNoSemver: []string{},
+			wantSemver:   []string{},
 		},
 		{
 			name: "latest satisfies all prerequsites",
@@ -65,11 +67,13 @@ func Test_getMissingRequiredVersions(t *testing.T) {
 			license: &kotsv1beta1.License{
 				Spec: kotsv1beta1.LicenseSpec{},
 			},
-			installedVersions: []*downstreamtypes.DownstreamVersion{
-				{
-					ChannelID:    channelID,
-					VersionLabel: "0.1.124",
-					UpdateCursor: "124",
+			downstreamVersions: &downstreamtypes.DownstreamVersions{
+				AllVersions: []*downstreamtypes.DownstreamVersion{
+					{
+						ChannelID:    channelID,
+						VersionLabel: "0.1.124",
+						UpdateCursor: "124",
+					},
 				},
 			},
 			wantNoSemver: []string{},
@@ -99,11 +103,13 @@ func Test_getMissingRequiredVersions(t *testing.T) {
 			license: &kotsv1beta1.License{
 				Spec: kotsv1beta1.LicenseSpec{},
 			},
-			installedVersions: []*downstreamtypes.DownstreamVersion{
-				{
-					ChannelID:    channelID,
-					VersionLabel: "0.1.117",
-					UpdateCursor: "117",
+			downstreamVersions: &downstreamtypes.DownstreamVersions{
+				AllVersions: []*downstreamtypes.DownstreamVersion{
+					{
+						ChannelID:    channelID,
+						VersionLabel: "0.1.117",
+						UpdateCursor: "117",
+					},
 				},
 			},
 			wantNoSemver: []string{"0.1.120", "0.1.123"},
@@ -133,11 +139,13 @@ func Test_getMissingRequiredVersions(t *testing.T) {
 			license: &kotsv1beta1.License{
 				Spec: kotsv1beta1.LicenseSpec{},
 			},
-			installedVersions: []*downstreamtypes.DownstreamVersion{
-				{
-					ChannelID:    channelID,
-					VersionLabel: "0.1.113",
-					UpdateCursor: "113",
+			downstreamVersions: &downstreamtypes.DownstreamVersions{
+				AllVersions: []*downstreamtypes.DownstreamVersion{
+					{
+						ChannelID:    channelID,
+						VersionLabel: "0.1.113",
+						UpdateCursor: "113",
+					},
 				},
 			},
 			wantNoSemver: []string{"0.1.115", "0.1.120", "0.1.123"},
@@ -167,22 +175,29 @@ func Test_getMissingRequiredVersions(t *testing.T) {
 			license: &kotsv1beta1.License{
 				Spec: kotsv1beta1.LicenseSpec{},
 			},
-			installedVersions: []*downstreamtypes.DownstreamVersion{
-				{
+			downstreamVersions: &downstreamtypes.DownstreamVersions{
+				CurrentVersion: &downstreamtypes.DownstreamVersion{
 					ChannelID:    "different-channel",
 					VersionLabel: "0.1.117",
 					UpdateCursor: "117",
 				},
+				AllVersions: []*downstreamtypes.DownstreamVersion{
+					{
+						ChannelID:    "different-channel",
+						VersionLabel: "0.1.117",
+						UpdateCursor: "117",
+					},
+				},
 			},
-			wantNoSemver: []string{"0.1.115", "0.1.120", "0.1.123"},
-			wantSemver:   []string{"0.1.120", "0.1.123"},
+			wantNoSemver: []string{},
+			wantSemver:   []string{},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			req := require.New(t)
 
-			for _, v := range tt.installedVersions {
+			for _, v := range tt.downstreamVersions.AllVersions {
 				s := semver.MustParse(v.VersionLabel)
 				v.Semver = &s
 
@@ -192,13 +207,13 @@ func Test_getMissingRequiredVersions(t *testing.T) {
 
 			// cursor based
 			tt.license.Spec.IsSemverRequired = false
-			got, err := getMissingRequiredVersions(tt.airgap, tt.license, tt.installedVersions)
+			got, err := getMissingRequiredVersions(tt.airgap, tt.license, tt.downstreamVersions)
 			req.NoError(err)
 			req.Equal(tt.wantNoSemver, got)
 
 			// semver based
 			tt.license.Spec.IsSemverRequired = true
-			got, err = getMissingRequiredVersions(tt.airgap, tt.license, tt.installedVersions)
+			got, err = getMissingRequiredVersions(tt.airgap, tt.license, tt.downstreamVersions)
 			req.NoError(err)
 			req.Equal(tt.wantSemver, got)
 		})
