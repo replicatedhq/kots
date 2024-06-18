@@ -15,6 +15,7 @@ import (
 	memory "k8s.io/client-go/discovery/cached"
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/restmapper"
 	kbclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -32,6 +33,7 @@ var kubernetesConfigFlags *genericclioptions.ConfigFlags
 
 func init() {
 	kubernetesConfigFlags = genericclioptions.NewConfigFlags(false)
+	embeddedclusterv1beta1.AddToScheme(scheme.Scheme)
 }
 
 func AddFlags(flags *flag.FlagSet) {
@@ -154,6 +156,5 @@ func GetKubeClient(ctx context.Context) (kbclient.Client, error) {
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create kubebuilder client")
 	}
-	embeddedclusterv1beta1.AddToScheme(kcli.Scheme())
 	return kcli, nil
 }
