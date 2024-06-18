@@ -6,16 +6,21 @@ import (
 	"net/http/httputil"
 	"net/url"
 	"os"
+	"path/filepath"
 
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/buildversion"
 	"github.com/replicatedhq/kots/pkg/upgradeservice/handlers"
+	upgradepreflight "github.com/replicatedhq/kots/pkg/upgradeservice/preflight"
 	"github.com/replicatedhq/kots/pkg/upgradeservice/types"
 )
 
 func Serve(params types.UpgradeServiceParams) error {
 	fmt.Printf("Starting KOTS Upgrade Service version %s on port %s\n", buildversion.Version(), params.Port)
+
+	// cleanup on shutdown
+	defer cleanup(params)
 
 	if err := bootstrap(params); err != nil {
 		return errors.Wrap(err, "failed to bootstrap")
@@ -56,10 +61,14 @@ func Serve(params types.UpgradeServiceParams) error {
 		Handler: r,
 		Addr:    fmt.Sprintf(":%s", params.Port),
 	}
-
 	if err := srv.ListenAndServe(); err != nil {
 		return errors.Wrap(err, "failed to listen and serve")
 	}
 
 	return nil
+}
+
+func cleanup(params types.UpgradeServiceParams) {
+	os.RemoveAll(params.AppArchive)
+	os.RemoveAll(filepath.Dir(upgradepreflight.PreflightDataFilepath))
 }

@@ -2,11 +2,14 @@ package handlers
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 
 	"github.com/gorilla/mux"
+	"github.com/phayes/freeport"
 	"github.com/pkg/errors"
 	apptypes "github.com/replicatedhq/kots/pkg/app/types"
+	"github.com/replicatedhq/kots/pkg/buildversion"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/replicatedapp"
@@ -133,21 +136,41 @@ func getUpgradeServiceParams(a *apptypes.App, r StartUpgradeServiceRequest) (*up
 		return nil, errors.Wrap(err, "failed to get next app sequence")
 	}
 
+	license, err := kotsutil.LoadLicenseFromBytes([]byte(a.License))
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to parse app license")
+	}
+
+	updateKOTSVersion, err := replicatedapp.GetKOTSVersionForRelease(license, r.VersionLabel)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get kots version for release")
+	}
+
+	port, err := freeport.GetFreePort()
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get free port")
+	}
+
 	return &upgradeservicetypes.UpgradeServiceParams{
+		Port: fmt.Sprintf("%d", port),
+
 		AppID:       a.ID,
 		AppSlug:     a.Slug,
 		AppName:     a.Name,
 		AppIsAirgap: a.IsAirgap,
 		AppIsGitOps: a.IsGitOps,
 		AppLicense:  a.License,
+		AppArchive:  baseArchive,
 
-		BaseArchive:  baseArchive,
 		BaseSequence: baseSequence,
 		NextSequence: nextSequence,
 
 		UpdateVersionLabel: r.VersionLabel,
 		UpdateCursor:       r.UpdateCursor,
 		UpdateChannelID:    r.ChannelID,
+
+		CurrentKOTSVersion: buildversion.Version(),
+		UpdateKOTSVersion:  updateKOTSVersion,
 
 		RegistryEndpoint:   registrySettings.Hostname,
 		RegistryUsername:   registrySettings.Username,

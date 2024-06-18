@@ -13,7 +13,6 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/replicatedhq/kots/pkg/automation"
 	"github.com/replicatedhq/kots/pkg/binaries"
-	"github.com/replicatedhq/kots/pkg/embeddedcluster"
 	"github.com/replicatedhq/kots/pkg/handlers"
 	identitymigrate "github.com/replicatedhq/kots/pkg/identity/migrate"
 	"github.com/replicatedhq/kots/pkg/informers"
@@ -36,16 +35,12 @@ import (
 
 type APIServerParams struct {
 	Version                string
-	RqliteURI              string
 	AutocreateClusterToken string
 	SharedPassword         string
 }
 
 func Start(params *APIServerParams) {
 	log.Printf("kotsadm version %s\n", params.Version)
-
-	// set some persistence variables
-	persistence.InitDB(params.RqliteURI)
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	if err := store.GetStore().WaitForReady(ctx); err != nil {
@@ -100,10 +95,6 @@ func Start(params *APIServerParams) {
 		panic(err)
 	}
 	defer op.Shutdown()
-
-	if err := embeddedcluster.InitClusterState(context.TODO(), k8sClientset, kotsStore); err != nil {
-		log.Println("Failed to initialize cluster state:", err)
-	}
 
 	if params.SharedPassword != "" {
 		// TODO: this won't override the password in the database

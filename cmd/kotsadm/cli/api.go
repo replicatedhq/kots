@@ -32,7 +32,6 @@ func APICmd() *cobra.Command {
 
 			params := apiserver.APIServerParams{
 				Version:                buildversion.Version(),
-				RqliteURI:              os.Getenv("RQLITE_URI"),
 				AutocreateClusterToken: os.Getenv("AUTO_CREATE_CLUSTER_TOKEN"),
 			}
 

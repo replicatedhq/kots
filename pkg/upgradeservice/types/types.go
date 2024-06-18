@@ -13,14 +13,17 @@ type UpgradeServiceParams struct {
 	AppIsAirgap bool   `yaml:"appIsAirgap"`
 	AppIsGitOps bool   `yaml:"appIsGitOps"`
 	AppLicense  string `yaml:"appLicense"`
+	AppArchive  string `yaml:"appArchive"`
 
-	BaseArchive  string `yaml:"baseArchive"`
-	BaseSequence int64  `yaml:"baseSequence"`
-	NextSequence int64  `yaml:"nextSequence"`
+	BaseSequence int64 `yaml:"baseSequence"`
+	NextSequence int64 `yaml:"nextSequence"`
 
 	UpdateVersionLabel string `yaml:"updateVersionLabel"`
 	UpdateCursor       string `yaml:"updateCursor"`
 	UpdateChannelID    string `yaml:"updateChannelID"`
+
+	CurrentKOTSVersion string `yaml:"currentKotsVersion"`
+	UpdateKOTSVersion  string `yaml:"updateKotsVersion"`
 
 	RegistryEndpoint   string `yaml:"registryEndpoint"`
 	RegistryUsername   string `yaml:"registryUsername"`

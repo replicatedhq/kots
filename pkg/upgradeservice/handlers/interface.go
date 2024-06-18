@@ -12,4 +12,6 @@ type UpgradeServiceHandler interface {
 
 	StartPreflightChecks(w http.ResponseWriter, r *http.Request)
 	GetPreflightResult(w http.ResponseWriter, r *http.Request)
+
+	DeployApp(w http.ResponseWriter, r *http.Request)
 }

@@ -11,7 +11,6 @@ import (
 func Test_getArtifactsFromInstallation(t *testing.T) {
 	type args struct {
 		installation kotsv1beta1.Installation
-		appSlug      string
 	}
 	tests := []struct {
 		name string
@@ -22,7 +21,6 @@ func Test_getArtifactsFromInstallation(t *testing.T) {
 			name: "no artifacts",
 			args: args{
 				installation: kotsv1beta1.Installation{},
-				appSlug:      "my-app",
 			},
 			want: nil,
 		},
@@ -39,7 +37,6 @@ func Test_getArtifactsFromInstallation(t *testing.T) {
 						},
 					},
 				},
-				appSlug: "my-app",
 			},
 			want: &embeddedclusterv1beta1.ArtifactsLocation{
 				Images:                  "onprem.registry.com/my-app/embedded-cluster/images-amd64.tar:v1",
@@ -51,7 +48,7 @@ func Test_getArtifactsFromInstallation(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := getArtifactsFromInstallation(tt.args.installation, tt.args.appSlug)
+			got := getArtifactsFromInstallation(tt.args.installation)
 			if !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("getArtifactsFromInstallation() = %v, want %v", got, tt.want)
 			}

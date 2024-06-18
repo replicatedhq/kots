@@ -18,9 +18,12 @@ import (
 	"github.com/replicatedhq/kots/pkg/apparchive"
 	appstatetypes "github.com/replicatedhq/kots/pkg/appstate/types"
 	"github.com/replicatedhq/kots/pkg/binaries"
+	"github.com/replicatedhq/kots/pkg/buildversion"
 	"github.com/replicatedhq/kots/pkg/embeddedcluster"
+	"github.com/replicatedhq/kots/pkg/filestore"
 	identitydeploy "github.com/replicatedhq/kots/pkg/identity/deploy"
 	identitytypes "github.com/replicatedhq/kots/pkg/identity/types"
+	"github.com/replicatedhq/kots/pkg/k8sutil"
 	kotsadmobjects "github.com/replicatedhq/kots/pkg/kotsadm/objects"
 	snapshot "github.com/replicatedhq/kots/pkg/kotsadmsnapshot"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
@@ -43,9 +46,12 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/labels"
 	serializer "k8s.io/apimachinery/pkg/runtime/serializer/json"
+	"k8s.io/client-go/informers"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/scheme"
+	"k8s.io/client-go/tools/cache"
 )
 
 var (
@@ -94,6 +100,7 @@ func (o *Operator) Start() error {
 
 	go o.resumeInformers()
 	go o.resumeDeployments()
+	o.watchPendingDeployments()
 	startLoop(o.restoreLoop, 2)
 
 	return nil
@@ -408,15 +415,6 @@ func (o *Operator) DeployApp(appID string, sequence int64) (deployed bool, deplo
 	deployed, err = o.client.DeployApp(deployArgs)
 	if err != nil {
 		return false, errors.Wrap(err, "failed to deploy app")
-	}
-
-	if deployed {
-		go func() {
-			err = embeddedcluster.MaybeStartClusterUpgrade(context.TODO(), o.store, kotsKinds, app.ID)
-			if err != nil {
-				logger.Error(errors.Wrap(err, "failed to start cluster upgrade"))
-			}
-		}()
 	}
 
 	return deployed, nil
@@ -900,4 +898,113 @@ func (o *Operator) renderKotsApplicationSpec(app *apptypes.App, sequence int64, 
 	}
 
 	return renderedKotsAppSpec, nil
+}
+
+func (o *Operator) watchPendingDeployments() {
+	factory := informers.NewSharedInformerFactoryWithOptions(
+		o.k8sClientset,
+		0,
+		informers.WithNamespace(util.PodNamespace),
+		informers.WithTweakListOptions(func(options *metav1.ListOptions) {
+			options.LabelSelector = labels.SelectorFromSet(
+				labels.Set{"kots.io/pending-deployment": "true"},
+			).String()
+		}),
+	)
+
+	cmInformer := factory.Core().V1().ConfigMaps().Informer()
+	cmInformer.AddEventHandler(cache.ResourceEventHandlerFuncs{
+		AddFunc: func(obj interface{}) {
+			cm := obj.(*corev1.ConfigMap)
+			if err := o.reconcilePendingDeployment(cm); err != nil {
+				logger.Error(errors.Wrapf(err, "failed to reconcile pending deployment in (%s) configmap", cm.Name))
+			}
+		},
+		UpdateFunc: func(oldObj, newObj interface{}) {
+			cm := newObj.(*corev1.ConfigMap)
+			if err := o.reconcilePendingDeployment(cm); err != nil {
+				logger.Error(errors.Wrapf(err, "failed to reconcile pending deployment in (%s) configmap", cm.Name))
+			}
+		},
+	})
+
+	go cmInformer.Run(context.Background().Done())
+}
+
+func (o *Operator) reconcilePendingDeployment(cm *corev1.ConfigMap) error {
+	// TODO NOW: record status somewhere instead of just logs?
+	// CAUTION: changes to the kots version field can break backwards compatibility
+	kotsVersion := cm.Data["kots-version"]
+	if kotsVersion == "" {
+		return errors.New("kots version not found in pending deployment configmap")
+	}
+	if kotsVersion != buildversion.Version() {
+		logger.Infof("pending deployment has kots version (%s) which does not match current kots version (%s). will not reconcile...", kotsVersion, buildversion.Version())
+		return nil
+	}
+
+	logger.Infof("reconciling pending deployment (%s) for app (%s)", cm.Data["version-label"], cm.Data["app-slug"])
+
+	ecInstallationName := cm.Data["ec-installation-name"]
+	if ecInstallationName != "" {
+		logger.Infof("waiting for embedded cluster installation (%s) to complete", ecInstallationName)
+
+		kbClient, err := k8sutil.GetKubeClient(context.Background())
+		if err != nil {
+			return errors.Wrap(err, "failed to get kube client")
+		}
+		if err := embeddedcluster.WaitForInstallation(context.Background(), kbClient, ecInstallationName); err != nil {
+			return errors.Wrap(err, "failed to wait for embedded cluster installation")
+		}
+	}
+
+	appID := cm.Data["app-id"]
+	source := cm.Data["source"]
+
+	baseSequence, err := strconv.ParseInt(cm.Data["base-sequence"], 10, 64)
+	if err != nil {
+		return errors.Wrap(err, "failed to parse base sequence")
+	}
+
+	skipPreflights, err := strconv.ParseBool(cm.Data["is-skip-preflights"])
+	if err != nil {
+		return errors.Wrap(err, "failed to parse is skip preflights")
+	}
+
+	tgzArchive, err := filestore.GetStore().ReadArchive(cm.Data["app-version-archive"])
+	if err != nil {
+		return errors.Wrap(err, "failed to read archive")
+	}
+	defer os.RemoveAll(tgzArchive)
+
+	archiveDir, err := os.MkdirTemp("", "kotsadm")
+	if err != nil {
+		return errors.Wrap(err, "failed to create temp dir")
+	}
+	defer os.RemoveAll(archiveDir)
+
+	if err := util.ExtractTGZArchive(tgzArchive, archiveDir); err != nil {
+		return errors.Wrap(err, "failed to extract app archive")
+	}
+
+	// delete configmap to indicate that it's been processed
+	err = o.k8sClientset.CoreV1().ConfigMaps(util.PodNamespace).Delete(context.Background(), cm.Name, metav1.DeleteOptions{})
+	if err != nil && !kuberneteserrors.IsNotFound(err) {
+		return errors.Wrap(err, "failed to delete configmap")
+	}
+
+	sequence, err := store.GetStore().CreateAppVersion(appID, &baseSequence, archiveDir, source, skipPreflights, render.Renderer{})
+	if err != nil {
+		return errors.Wrap(err, "failed to create app version")
+	}
+
+	if err := store.GetStore().MarkAsCurrentDownstreamVersion(appID, sequence); err != nil {
+		return errors.Wrap(err, "failed to mark as current downstream version")
+	}
+
+	if _, err := o.DeployApp(appID, sequence); err != nil {
+		return errors.Wrap(err, "failed to deploy app")
+	}
+
+	return nil
 }

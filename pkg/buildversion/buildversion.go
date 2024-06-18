@@ -80,6 +80,7 @@ func getGoInfo() GoInfo {
 	}
 }
 
+// TODO NOW: which kots version to use in upgrade service?
 func GetUserAgent() string {
 	return fmt.Sprintf("KOTS/%s", Version())
 }
