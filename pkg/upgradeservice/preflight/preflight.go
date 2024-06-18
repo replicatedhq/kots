@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
-	apptypes "github.com/replicatedhq/kots/pkg/app/types"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/logger"
 	preflightpkg "github.com/replicatedhq/kots/pkg/preflight"
@@ -17,6 +16,8 @@ import (
 	registrytypes "github.com/replicatedhq/kots/pkg/registry/types"
 	"github.com/replicatedhq/kots/pkg/render"
 	rendertypes "github.com/replicatedhq/kots/pkg/render/types"
+	upgradereporting "github.com/replicatedhq/kots/pkg/upgradeservice/reporting"
+	upgradeservicetypes "github.com/replicatedhq/kots/pkg/upgradeservice/types"
 	"github.com/replicatedhq/kots/pkg/util"
 	troubleshootanalyze "github.com/replicatedhq/troubleshoot/pkg/analyze"
 	troubleshootv1beta2 "github.com/replicatedhq/troubleshoot/pkg/apis/troubleshoot/v1beta2"
@@ -39,15 +40,23 @@ func init() {
 	PreflightDataFilepath = filepath.Join(tmpDir, "preflights.json")
 }
 
-func Run(app *apptypes.App, archiveDir string, sequence int64, registrySettings registrytypes.RegistrySettings, ignoreRBAC bool, reportingFn func() error) error {
-	kotsKinds, err := kotsutil.LoadKotsKinds(archiveDir)
+func Run(params upgradeservicetypes.UpgradeServiceParams) error {
+	kotsKinds, err := kotsutil.LoadKotsKinds(params.BaseArchive)
 	if err != nil {
 		return errors.Wrap(err, "failed to load rendered kots kinds")
 	}
 
-	tsKinds, err := kotsutil.LoadTSKindsFromPath(filepath.Join(archiveDir, "rendered"))
+	tsKinds, err := kotsutil.LoadTSKindsFromPath(filepath.Join(params.BaseArchive, "rendered"))
 	if err != nil {
-		return errors.Wrap(err, fmt.Sprintf("failed to load troubleshoot kinds from path: %s", filepath.Join(archiveDir, "rendered")))
+		return errors.Wrap(err, fmt.Sprintf("failed to load troubleshoot kinds from path: %s", filepath.Join(params.BaseArchive, "rendered")))
+	}
+
+	registrySettings := registrytypes.RegistrySettings{
+		Hostname:   params.RegistryEndpoint,
+		Username:   params.RegistryUsername,
+		Password:   params.RegistryPassword,
+		Namespace:  params.RegistryNamespace,
+		IsReadOnly: params.RegistryIsReadOnly,
 	}
 
 	var preflight *troubleshootv1beta2.Preflight
@@ -63,9 +72,9 @@ func Run(app *apptypes.App, archiveDir string, sequence int64, registrySettings 
 		renderedPreflight, err := render.RenderFile(rendertypes.RenderFileOptions{
 			KotsKinds:        kotsKinds,
 			RegistrySettings: registrySettings,
-			AppSlug:          app.Slug,
-			Sequence:         sequence,
-			IsAirgap:         app.IsAirgap,
+			AppSlug:          params.AppSlug,
+			Sequence:         params.NextSequence,
+			IsAirgap:         params.AppIsAirgap,
 			Namespace:        util.PodNamespace,
 			InputContent:     []byte(renderedMarshalledPreflights),
 		})
@@ -108,7 +117,7 @@ func Run(app *apptypes.App, archiveDir string, sequence int64, registrySettings 
 					},
 				},
 			}
-			if err := setPreflightResults(app.Slug, preflightResults); err != nil {
+			if err := setPreflightResults(params.AppSlug, preflightResults); err != nil {
 				logger.Error(errors.Wrap(err, "failed to set preflight results"))
 				return
 			}
@@ -124,22 +133,22 @@ func Run(app *apptypes.App, archiveDir string, sequence int64, registrySettings 
 
 	go func() {
 		logger.Info("preflight checks beginning",
-			zap.String("appID", app.ID),
-			zap.Int64("sequence", sequence))
+			zap.String("appID", params.AppID),
+			zap.Int64("sequence", params.NextSequence))
 
 		setResults := func(results *types.PreflightResults) error {
-			return setPreflightResults(app.Slug, results)
+			return setPreflightResults(params.AppSlug, results)
 		}
 
-		_, err := preflightpkg.Execute(preflight, ignoreRBAC, setPreflightProgress, setResults)
+		_, err := preflightpkg.Execute(preflight, false, setPreflightProgress, setResults)
 		if err != nil {
 			logger.Error(errors.Wrap(err, "failed to run preflight checks"))
 			return
 		}
 
 		go func() {
-			if err := reportingFn(); err != nil {
-				logger.Debugf("failed to report app info: %v", err)
+			if err := upgradereporting.SubmitAppInfo(params); err != nil {
+				logger.Debugf("failed to submit app info: %v", err)
 			}
 		}()
 	}()
