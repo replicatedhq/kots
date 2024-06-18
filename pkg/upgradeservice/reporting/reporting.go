@@ -2,21 +2,26 @@ package reporting
 
 import (
 	"github.com/pkg/errors"
-	reportingtypes "github.com/replicatedhq/kots/pkg/api/reporting/types"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
+	"github.com/replicatedhq/kots/pkg/kotsutil"
 	reportingpkg "github.com/replicatedhq/kots/pkg/reporting"
+	upgradeservicetypes "github.com/replicatedhq/kots/pkg/upgradeservice/types"
 	"github.com/replicatedhq/kots/pkg/util"
-	kotsv1beta1 "github.com/replicatedhq/kotskinds/apis/kots/v1beta1"
 )
 
-func SubmitAppInfo(reportingInfo *reportingtypes.ReportingInfo, appSlug string, license *kotsv1beta1.License, isAirgap bool) error {
-	if isAirgap {
+func SubmitAppInfo(params upgradeservicetypes.UpgradeServiceParams) error {
+	license, err := kotsutil.LoadLicenseFromBytes([]byte(params.AppLicense))
+	if err != nil {
+		return errors.Wrap(err, "failed to load license from bytes")
+	}
+
+	if params.AppIsAirgap {
 		clientset, err := k8sutil.GetClientset()
 		if err != nil {
 			return errors.Wrap(err, "failed to get clientset")
 		}
-		report := reportingpkg.BuildInstanceReport(license.Spec.LicenseID, reportingInfo)
-		return reportingpkg.AppendReport(clientset, util.PodNamespace, appSlug, report)
+		report := reportingpkg.BuildInstanceReport(license.Spec.LicenseID, params.ReportingInfo)
+		return reportingpkg.AppendReport(clientset, util.PodNamespace, params.AppSlug, report)
 	}
-	return reportingpkg.SendOnlineAppInfo(license, reportingInfo)
+	return reportingpkg.SendOnlineAppInfo(license, params.ReportingInfo)
 }

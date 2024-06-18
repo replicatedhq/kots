@@ -296,14 +296,6 @@ func (h *Handler) SaveAppConfig(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	appLicense, err := kotsutil.LoadLicenseFromBytes([]byte(params.AppLicense))
-	if err != nil {
-		saveAppConfigResponse.Error = "failed to load license from bytes"
-		logger.Error(errors.Wrap(err, saveAppConfigResponse.Error))
-		JSON(w, http.StatusInternalServerError, saveAppConfigResponse)
-		return
-	}
-
 	saveAppConfigRequest := SaveAppConfigRequest{}
 	if err := json.NewDecoder(r.Body).Decode(&saveAppConfigRequest); err != nil {
 		logger.Error(err)
@@ -408,7 +400,7 @@ func (h *Handler) SaveAppConfig(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	if err := upgradepreflight.Run(app, params.BaseArchive, int64(params.NextSequence), localRegistry, false, appLicense, params.ReportingInfo); err != nil {
+	if err := upgradepreflight.Run(params); err != nil {
 		saveAppConfigResponse.Error = "failed to run preflights"
 		logger.Error(errors.Wrap(err, saveAppConfigResponse.Error))
 		JSON(w, http.StatusInternalServerError, saveAppConfigResponse)
