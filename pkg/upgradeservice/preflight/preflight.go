@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
+	reportingtypes "github.com/replicatedhq/kots/pkg/api/reporting/types"
 	apptypes "github.com/replicatedhq/kots/pkg/app/types"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/logger"
@@ -17,7 +18,9 @@ import (
 	registrytypes "github.com/replicatedhq/kots/pkg/registry/types"
 	"github.com/replicatedhq/kots/pkg/render"
 	rendertypes "github.com/replicatedhq/kots/pkg/render/types"
+	upgradereporting "github.com/replicatedhq/kots/pkg/upgradeservice/reporting"
 	"github.com/replicatedhq/kots/pkg/util"
+	kotsv1beta1 "github.com/replicatedhq/kotskinds/apis/kots/v1beta1"
 	troubleshootanalyze "github.com/replicatedhq/troubleshoot/pkg/analyze"
 	troubleshootv1beta2 "github.com/replicatedhq/troubleshoot/pkg/apis/troubleshoot/v1beta2"
 	troubleshootpreflight "github.com/replicatedhq/troubleshoot/pkg/preflight"
@@ -39,7 +42,7 @@ func init() {
 	PreflightDataFilepath = filepath.Join(tmpDir, "preflights.json")
 }
 
-func Run(app *apptypes.App, archiveDir string, sequence int64, registrySettings registrytypes.RegistrySettings, ignoreRBAC bool, reportingFn func() error) error {
+func Run(app *apptypes.App, archiveDir string, sequence int64, registrySettings registrytypes.RegistrySettings, ignoreRBAC bool, license *kotsv1beta1.License, reportingInfo *reportingtypes.ReportingInfo) error {
 	kotsKinds, err := kotsutil.LoadKotsKinds(archiveDir)
 	if err != nil {
 		return errors.Wrap(err, "failed to load rendered kots kinds")
@@ -138,8 +141,8 @@ func Run(app *apptypes.App, archiveDir string, sequence int64, registrySettings 
 		}
 
 		go func() {
-			if err := reportingFn(); err != nil {
-				logger.Debugf("failed to report app info: %v", err)
+			if err := upgradereporting.SubmitAppInfo(reportingInfo, app.Slug, license, app.IsAirgap); err != nil {
+				logger.Debugf("failed to submit app info: %v", err)
 			}
 		}()
 	}()

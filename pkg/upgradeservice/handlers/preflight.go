@@ -6,14 +6,11 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
 	apptypes "github.com/replicatedhq/kots/pkg/app/types"
-	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/logger"
 	preflighttypes "github.com/replicatedhq/kots/pkg/preflight/types"
 	registrytypes "github.com/replicatedhq/kots/pkg/registry/types"
-	"github.com/replicatedhq/kots/pkg/reporting"
 	upgradepreflight "github.com/replicatedhq/kots/pkg/upgradeservice/preflight"
-	"github.com/replicatedhq/kots/pkg/util"
 )
 
 type GetPreflightResultResponse struct {
@@ -59,20 +56,8 @@ func (h *Handler) StartPreflightChecks(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	reportingFn := func() error {
-		if params.AppIsAirgap {
-			clientset, err := k8sutil.GetClientset()
-			if err != nil {
-				return errors.Wrap(err, "failed to get clientset")
-			}
-			report := reporting.BuildInstanceReport(appLicense.Spec.LicenseID, params.ReportingInfo)
-			return reporting.AppendReport(clientset, util.PodNamespace, app.Slug, report)
-		}
-		return reporting.SendOnlineAppInfo(appLicense, params.ReportingInfo)
-	}
-
 	go func() {
-		if err := upgradepreflight.Run(app, params.BaseArchive, params.NextSequence, localRegistry, false, reportingFn); err != nil {
+		if err := upgradepreflight.Run(app, params.BaseArchive, params.NextSequence, localRegistry, false, appLicense, params.ReportingInfo); err != nil {
 			logger.Error(errors.Wrap(err, "failed to run preflights"))
 			return
 		}
