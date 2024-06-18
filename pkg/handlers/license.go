@@ -49,6 +49,7 @@ type LicenseResponse struct {
 	IsGeoaxisSupported             bool                  `json:"isGeoaxisSupported"`
 	IsSemverRequired               bool                  `json:"isSemverRequired"`
 	IsSnapshotSupported            bool                  `json:"isSnapshotSupported"`
+	IsDisasterRecoverySupported    bool                  `json:"isDisasterRecoverySupported"`
 	LastSyncedAt                   string                `json:"lastSyncedAt"`
 	IsSupportBundleUploadSupported bool                  `json:"isSupportBundleUploadSupported"`
 }
@@ -680,6 +681,7 @@ func licenseResponseFromLicense(license *kotsv1beta1.License, app *apptypes.App)
 		IsGeoaxisSupported:             license.Spec.IsGeoaxisSupported,
 		IsSemverRequired:               license.Spec.IsSemverRequired,
 		IsSnapshotSupported:            license.Spec.IsSnapshotSupported,
+		IsDisasterRecoverySupported:    license.Spec.IsDisasterRecoverySupported,
 		LastSyncedAt:                   app.LastLicenseSync,
 		IsSupportBundleUploadSupported: license.Spec.IsSupportBundleUploadSupported,
 	}

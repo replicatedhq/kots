@@ -449,16 +449,18 @@ class GenerateSupportBundle extends Component {
                     </div>
                   </div>
                 ) : (
-                  <div className="u-marginTop--15 u-fontSize--normal">
-                    If you'd prefer,{" "}
-                    <a
-                      href="#"
-                      onClick={(e) => this.fetchSupportBundleCommand()}
-                    >
-                      click here
-                    </a>{" "}
-                    to get a command to manually generate a support bundle.
-                  </div>
+                  !this.props.isEmbeddedClusterEnabled && (
+                    <div className="u-marginTop--15 u-fontSize--normal">
+                      If you'd prefer,{" "}
+                      <a
+                        href="#"
+                        onClick={(e) => this.fetchSupportBundleCommand()}
+                      >
+                        click here
+                      </a>{" "}
+                      to get a command to manually generate a support bundle.
+                    </div>
+                  )
                 )}
               </div>
             </div>

@@ -784,7 +784,7 @@ func updateAppConfig(updateApp *apptypes.App, sequence int64, configGroups []kot
 	}
 
 	if !skipPreflights || hasStrictPreflights {
-		if err := preflight.Run(updateApp.ID, updateApp.Slug, int64(sequence), updateApp.IsAirgap, archiveDir); err != nil {
+		if err := preflight.Run(updateApp.ID, updateApp.Slug, int64(sequence), updateApp.IsAirgap, skipPreflights, archiveDir); err != nil {
 			updateAppConfigResponse.Error = errors.Cause(err).Error()
 			return updateAppConfigResponse, err
 		}

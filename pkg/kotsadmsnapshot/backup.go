@@ -372,17 +372,27 @@ func CreateInstanceBackup(ctx context.Context, cluster *downstreamtypes.Downstre
 	backupAnnotations["kots.io/apps-sequences"] = marshalledAppsSequences
 	backupAnnotations["kots.io/apps-versions"] = marshalledAppVersions
 	backupAnnotations["kots.io/is-airgap"] = strconv.FormatBool(kotsadm.IsAirgap())
+
 	if util.IsEmbeddedCluster() {
+		kbClient, err := k8sutil.GetKubeClient(ctx)
+		if err != nil {
+			return nil, fmt.Errorf("failed to get kubeclient: %w", err)
+		}
+		installation, err := embeddedcluster.GetCurrentInstallation(ctx, kbClient)
+		if err != nil {
+			return nil, fmt.Errorf("failed to get current installation: %w", err)
+		}
+		seaweedFSS3ServiceIP, err := embeddedcluster.GetSeaweedFSS3ServiceIP(ctx, kbClient)
+		if err != nil {
+			return nil, fmt.Errorf("failed to get seaweedfs s3 service ip: %w", err)
+		}
+		if seaweedFSS3ServiceIP != "" {
+			backupAnnotations["kots.io/embedded-cluster-seaweedfs-s3-ip"] = seaweedFSS3ServiceIP
+		}
 		backupAnnotations["kots.io/embedded-cluster"] = "true"
 		backupAnnotations["kots.io/embedded-cluster-id"] = util.EmbeddedClusterID()
-		clusterConfig, err := embeddedcluster.ClusterConfig(ctx)
-		if err != nil {
-			return nil, errors.Wrap(err, "failed to get embedded cluster config")
-		} else if clusterConfig == nil {
-			return nil, errors.New("embedded cluster config is nil")
-		}
-
-		backupAnnotations["kots.io/embedded-cluster-version"] = clusterConfig.Version
+		backupAnnotations["kots.io/embedded-cluster-version"] = util.EmbeddedClusterVersion()
+		backupAnnotations["kots.io/embedded-cluster-is-ha"] = strconv.FormatBool(installation.Spec.HighAvailability)
 	}
 
 	includeClusterResources := true
@@ -991,6 +1001,7 @@ func prepareIncludedNamespaces(namespaces []string, isEC bool) []string {
 		uniqueNamespaces["kube-system"] = true
 		uniqueNamespaces["openebs"] = true
 		uniqueNamespaces["registry"] = true
+		uniqueNamespaces["seaweedfs"] = true
 	}
 
 	includedNamespaces := make([]string, len(uniqueNamespaces))
@@ -1095,6 +1106,13 @@ func instanceBackupLabelSelectors(isEmbeddedCluster bool) []*metav1.LabelSelecto
 				// https://github.com/twuni/docker-registry.helm/blob/main/templates/deployment.yaml
 				MatchLabels: map[string]string{
 					"app": "docker-registry",
+				},
+			},
+			{
+				// we cannot add new labels to the seaweedfs chart as of June 6th 2024
+				// so we need to add a label selector for the seaweedfs app
+				MatchLabels: map[string]string{
+					"app.kubernetes.io/name": "seaweedfs",
 				},
 			},
 		}

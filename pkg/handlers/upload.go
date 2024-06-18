@@ -211,7 +211,7 @@ func (h *Handler) UploadExistingApp(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if !uploadExistingAppRequest.SkipPreflights || hasStrictPreflights {
-		if err := preflight.Run(a.ID, a.Slug, newSequence, a.IsAirgap, archiveDir); err != nil {
+		if err := preflight.Run(a.ID, a.Slug, newSequence, a.IsAirgap, uploadExistingAppRequest.SkipPreflights, archiveDir); err != nil {
 			uploadResponse.Error = util.StrPointer("failed to get run preflights")
 			logger.Error(errors.Wrap(err, *uploadResponse.Error))
 			JSON(w, http.StatusInternalServerError, uploadResponse)

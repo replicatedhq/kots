@@ -1,9 +1,9 @@
 include Makefile.build.mk
 CURRENT_USER := $(if $(GITHUB_USER),$(GITHUB_USER),$(shell id -u -n))
-MINIO_TAG ?= 0.20240510.014138-r0
-RQLITE_TAG ?= 8.24.7-r0
-DEX_TAG ?= 2.39.1-r2
-LVP_TAG ?= v0.6.3
+MINIO_TAG ?= 0.20240606.093642-r0
+RQLITE_TAG ?= 8.26.0-r0
+DEX_TAG ?= 2.40.0-r1
+LVP_TAG ?= v0.6.4
 
 define sendMetrics
 @if [ -z "${PROJECT_NAME}" ]; then \

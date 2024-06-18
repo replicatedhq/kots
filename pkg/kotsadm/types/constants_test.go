@@ -38,10 +38,11 @@ func Test_getKotsadmLabels(t *testing.T) {
 				"EMBEDDED_CLUSTER_ID": "foo",
 			},
 			expectLabels: map[string]string{
-				"kots.io/kotsadm":                  "true",
-				"kots.io/backup":                   "velero",
-				"replicated.com/disaster-recovery": "infra",
-				"foo":                              "foo",
+				"kots.io/kotsadm":                        "true",
+				"kots.io/backup":                         "velero",
+				"replicated.com/disaster-recovery":       "infra",
+				"replicated.com/disaster-recovery-chart": "admin-console",
+				"foo":                                    "foo",
 			},
 		},
 	}

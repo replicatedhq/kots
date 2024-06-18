@@ -771,8 +771,26 @@ const Root = () => {
                     <TroubleshootContainer />
                   }
                 >
-                  <Route index element={<SupportBundleList />} />
-                  <Route path="generate" element={<GenerateSupportBundle />} />
+                  <Route
+                    index
+                    element={
+                      <SupportBundleList
+                        isEmbeddedClusterEnabled={Boolean(
+                          state.adminConsoleMetadata?.isEmbeddedCluster
+                        )}
+                      />
+                    }
+                  />
+                  <Route
+                    path="generate"
+                    element={
+                      <GenerateSupportBundle
+                        isEmbeddedClusterEnabled={Boolean(
+                          state.adminConsoleMetadata?.isEmbeddedCluster
+                        )}
+                      />
+                    }
+                  />
                   <Route
                     path="analyze/:bundleSlug"
                     element={<SupportBundleAnalysis />}
@@ -792,7 +810,17 @@ const Root = () => {
                   />
                   <Route element={<NotFound />} />
                 </Route>
-                <Route path=":slug/license" element={<AppLicense />} />
+                <Route
+                  path=":slug/license"
+                  element={
+                    <AppLicense
+                      //@ts-ignore
+                      isEmbeddedCluster={Boolean(
+                        state.adminConsoleMetadata?.isEmbeddedCluster
+                      )}
+                    />
+                  }
+                />
                 <Route
                   path=":slug/registry-settings"
                   element={<AppRegistrySettings />}

@@ -326,7 +326,7 @@ func CreateAppFromAirgap(opts CreateAirgapAppOpts) (finalError error) {
 	}
 
 	if !opts.SkipPreflights || hasStrictPreflights {
-		if err := preflight.Run(opts.PendingApp.ID, opts.PendingApp.Slug, newSequence, true, tmpRoot); err != nil {
+		if err := preflight.Run(opts.PendingApp.ID, opts.PendingApp.Slug, newSequence, true, opts.SkipPreflights, tmpRoot); err != nil {
 			return errors.Wrap(err, "failed to start preflights")
 		}
 	}

@@ -9,6 +9,7 @@ import (
 
 	embeddedclusterv1beta1 "github.com/replicatedhq/embedded-cluster-kinds/apis/v1beta1"
 	appstatetypes "github.com/replicatedhq/kots/pkg/appstate/types"
+	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/store"
@@ -32,8 +33,13 @@ func MaybeStartClusterUpgrade(ctx context.Context, store store.Store, kotsKinds 
 		return nil
 	}
 
+	kbClient, err := k8sutil.GetKubeClient(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to get kubeclient: %w", err)
+	}
+
 	spec := kotsKinds.EmbeddedClusterConfig.Spec
-	if upgrade, err := RequiresUpgrade(ctx, spec); err != nil {
+	if upgrade, err := RequiresUpgrade(ctx, kbClient, spec); err != nil {
 		// if there is no installation object we can't start an upgrade. this is a valid
 		// scenario specially during cluster bootstrap. as we do not need to upgrade the
 		// cluster just after its installation we can return nil here.
@@ -123,7 +129,11 @@ func watchClusterState(ctx context.Context, store store.Store) {
 // by reading the latest embedded cluster installation CRD.
 // If the lastState is the same as the current state, it will not update the database.
 func updateClusterState(ctx context.Context, store store.Store, lastState string) (string, error) {
-	installation, err := GetCurrentInstallation(ctx)
+	kbClient, err := k8sutil.GetKubeClient(ctx)
+	if err != nil {
+		return "", fmt.Errorf("failed to get kubeclient: %w", err)
+	}
+	installation, err := GetCurrentInstallation(ctx, kbClient)
 	if err != nil {
 		return "", fmt.Errorf("failed to get current installation: %w", err)
 	}

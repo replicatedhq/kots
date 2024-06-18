@@ -91,7 +91,7 @@ func Sync(a *apptypes.App, licenseString string, failOnVersionCreate bool) (*kot
 			return nil, false, errors.Wrap(err, "failed to update license")
 		}
 
-		if err := preflight.Run(a.ID, a.Slug, newSequence, a.IsAirgap, archiveDir); err != nil {
+		if err := preflight.Run(a.ID, a.Slug, newSequence, a.IsAirgap, false, archiveDir); err != nil {
 			return nil, false, errors.Wrap(err, "failed to run preflights")
 		}
 		synced = true
@@ -198,7 +198,7 @@ func Change(a *apptypes.App, newLicenseString string) (*kotsv1beta1.License, err
 		return nil, errors.Wrap(err, "failed to update license")
 	}
 
-	if err := preflight.Run(a.ID, a.Slug, newSequence, a.IsAirgap, archiveDir); err != nil {
+	if err := preflight.Run(a.ID, a.Slug, newSequence, a.IsAirgap, false, archiveDir); err != nil {
 		return nil, errors.Wrap(err, "failed to run preflights")
 	}
 

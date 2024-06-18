@@ -30,6 +30,7 @@ type Props = {
   updateBundleSlug: (slug: string) => void;
   updateState: (value: Object) => void;
   watch: App | null;
+  isEmbeddedClusterEnabled: boolean;
 };
 
 type State = {
@@ -278,6 +279,7 @@ export const SupportBundleList = (props: Props) => {
           pollForBundleAnalysisProgress={
             outletContext.pollForBundleAnalysisProgress
           }
+          isEmbeddedClusterEnabled={props.isEmbeddedClusterEnabled}
         />
       );
     }
@@ -376,6 +378,7 @@ export const SupportBundleList = (props: Props) => {
           toggleModal={toggleGenerateBundleModal}
           selectedApp={selectedApp}
           updateBundleSlug={outletContext.updateBundleSlug}
+          isEmbeddedClusterEnabled={props.isEmbeddedClusterEnabled}
         />
       </div>
 

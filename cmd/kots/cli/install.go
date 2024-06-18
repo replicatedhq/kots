@@ -937,7 +937,7 @@ func ValidatePreflightStatus(deployOptions kotsadmtypes.DeployOptions, authSlug 
 			continue
 		}
 
-		resultsAvailable, err := checkPreflightResults(response)
+		resultsAvailable, err := checkPreflightResults(response, deployOptions.SkipPreflights)
 		if err != nil {
 			return err
 		}
@@ -1011,7 +1011,7 @@ func (e preflightError) Error() string {
 
 func (e preflightError) Unwrap() error { return fmt.Errorf(e.Msg) }
 
-func checkPreflightResults(response *handlers.GetPreflightResultResponse) (bool, error) {
+func checkPreflightResults(response *handlers.GetPreflightResultResponse, skipPreflights bool) (bool, error) {
 	if response.PreflightResult.Result == "" {
 		return false, nil
 	}
@@ -1042,6 +1042,10 @@ func checkPreflightResults(response *handlers.GetPreflightResultResponse) (bool,
 
 	var isWarn, isFail bool
 	for _, result := range results.Results {
+		if skipPreflights && !result.Strict {
+			// if we're skipping preflights, we should only check the strict preflight results
+			continue
+		}
 		if result.IsWarn {
 			isWarn = true
 		}

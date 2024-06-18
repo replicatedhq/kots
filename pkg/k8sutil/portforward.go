@@ -217,7 +217,7 @@ func PortForward(localPort int, remotePort int, namespace string, getPodName fun
 		if err == nil && response.StatusCode == http.StatusOK {
 			break
 		}
-		if time.Now().Sub(start) > time.Duration(time.Second*10) {
+		if time.Since(start) > time.Duration(time.Second*10) {
 			if err == nil {
 				err = errors.Errorf("service responded with status %s", response.Status)
 			}
@@ -225,9 +225,7 @@ func PortForward(localPort int, remotePort int, namespace string, getPodName fun
 		}
 
 		time.Sleep(time.Millisecond * 100)
-		if quickClient.Timeout < time.Second {
-			quickClient.Timeout = quickClient.Timeout + time.Millisecond*100
-		}
+		quickClient.Timeout *= 2 // 200ms, 400ms, 800ms, 1.6s, 3.2s, 6.4s
 	}
 
 	if pollForAdditionalPorts {

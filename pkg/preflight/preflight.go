@@ -46,7 +46,7 @@ const (
 	SpecDataKey = "preflight-spec"
 )
 
-func Run(appID string, appSlug string, sequence int64, isAirgap bool, archiveDir string) error {
+func Run(appID string, appSlug string, sequence int64, isAirgap bool, ignoreNonStrict bool, archiveDir string) error {
 	kotsKinds, err := kotsutil.LoadKotsKinds(archiveDir)
 	if err != nil {
 		return errors.Wrap(err, "failed to load rendered kots kinds")
@@ -193,20 +193,7 @@ func Run(appID string, appSlug string, sequence int64, isAirgap bool, archiveDir
 				logger.Error(errors.Wrap(err, "failed to run preflight checks"))
 				return
 			}
-
-			// Log the preflight results if there are any warnings or errors
-			// The app may not get installed so we need to see this info for debugging
-			if GetPreflightState(uploadPreflightResults) != "pass" {
-				logger.Warnf("Preflight checks completed with warnings or errors. The application will not get deployed")
-				for _, result := range uploadPreflightResults.Results {
-					if result == nil {
-						continue
-					}
-					logger.Infof("preflight state=%s title=%q message=%q", GetPreflightCheckState(result), result.Title, result.Message)
-				}
-			} else {
-				logger.Info("preflight checks completed")
-			}
+			logger.Info("preflight checks completed")
 
 			go func() {
 				err := reporting.GetReporter().SubmitAppInfo(appID) // send app and preflight info when preflights finish
@@ -225,7 +212,7 @@ func Run(appID string, appSlug string, sequence int64, isAirgap bool, archiveDir
 				return
 			}
 
-			isDeployed, err := maybeDeployFirstVersion(appID, sequence, uploadPreflightResults)
+			isDeployed, err := maybeDeployFirstVersion(appID, sequence, uploadPreflightResults, ignoreNonStrict)
 			if err != nil {
 				logger.Error(errors.Wrap(err, "failed to deploy first version"))
 				return
@@ -241,7 +228,7 @@ func Run(appID string, appSlug string, sequence int64, isAirgap bool, archiveDir
 		}()
 	} else if status != storetypes.VersionDeployed && status != storetypes.VersionFailed {
 		if sequence == 0 {
-			_, err := maybeDeployFirstVersion(appID, sequence, &types.PreflightResults{})
+			_, err := maybeDeployFirstVersion(appID, sequence, &types.PreflightResults{}, ignoreNonStrict)
 			if err != nil {
 				return errors.Wrap(err, "failed to deploy first version")
 			}
@@ -299,7 +286,7 @@ func GetPreflightCheckState(p *troubleshootpreflight.UploadPreflightResult) stri
 }
 
 // maybeDeployFirstVersion will deploy the first version if preflight checks pass
-func maybeDeployFirstVersion(appID string, sequence int64, preflightResults *types.PreflightResults) (bool, error) {
+func maybeDeployFirstVersion(appID string, sequence int64, preflightResults *types.PreflightResults, ignoreNonStrictPreflights bool) (bool, error) {
 	if sequence != 0 {
 		return false, nil
 	}
@@ -314,8 +301,16 @@ func maybeDeployFirstVersion(appID string, sequence int64, preflightResults *typ
 		return false, nil
 	}
 
-	preflightState := GetPreflightState(preflightResults)
+	preflightState := GetPreflightState(preflightResults, ignoreNonStrictPreflights)
 	if preflightState != "pass" {
+		// log the preflight results if there are any warnings or errors as this is useful for debugging
+		logger.Warnf("Preflight checks completed with warnings or errors. The application will not get deployed")
+		for _, result := range preflightResults.Results {
+			if result == nil {
+				continue
+			}
+			logger.Infof("preflight state=%s title=%q message=%q", GetPreflightCheckState(result), result.Title, result.Message)
+		}
 		return false, nil
 	}
 
@@ -336,7 +331,7 @@ func maybeDeployFirstVersion(appID string, sequence int64, preflightResults *typ
 // preflight checks results. If there are any errors, the state is fail.
 // If there are no errors and any warnings, the state is warn.
 // Otherwise, the state is pass.
-func GetPreflightState(preflightResults *types.PreflightResults) string {
+func GetPreflightState(preflightResults *types.PreflightResults, ignoreNonStrict bool) string {
 	if len(preflightResults.Errors) > 0 {
 		return "fail"
 	}
@@ -347,6 +342,9 @@ func GetPreflightState(preflightResults *types.PreflightResults) string {
 
 	state := "pass"
 	for _, result := range preflightResults.Results {
+		if ignoreNonStrict && !result.Strict {
+			continue
+		}
 		if result.IsFail {
 			return "fail"
 		} else if result.IsWarn {

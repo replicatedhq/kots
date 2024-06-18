@@ -13,8 +13,8 @@ import (
 )
 
 var (
-	ErrSignatureInvalid = errors.New("signature is invalid")
-	ErrSignatureMissing = errors.New("signature is missing")
+	ErrSignatureInvalid = fmt.Errorf("signature is invalid")
+	ErrSignatureMissing = fmt.Errorf("signature is missing")
 )
 
 type InnerSignature struct {
@@ -64,7 +64,7 @@ func VerifySignature(license *kotsv1beta1.License) (*kotsv1beta1.License, error)
 
 	globalKeyPEM, ok := PublicKeys[keySignature.GlobalKeyId]
 	if !ok {
-		return nil, errors.New("unknown global key")
+		return nil, fmt.Errorf("unknown global key")
 	}
 
 	// verify that the app public key is properly signed with a replicated private key
@@ -117,77 +117,80 @@ func Verify(message, signature, publicKeyPEM []byte) error {
 
 func verifyLicenseData(outerLicense *kotsv1beta1.License, innerLicense *kotsv1beta1.License) error {
 	if outerLicense.Spec.AppSlug != innerLicense.Spec.AppSlug {
-		return errors.New("\"appSlug\" field has changed")
+		return fmt.Errorf("\"appSlug\" field has changed to %q (license) from %q (within signature)", outerLicense.Spec.AppSlug, innerLicense.Spec.AppSlug)
 	}
 	if outerLicense.Spec.Endpoint != innerLicense.Spec.Endpoint {
-		return errors.New("\"endpoint\" field has changed")
+		return fmt.Errorf("\"endpoint\" field has changed to %q (license) from %q (within signature)", outerLicense.Spec.Endpoint, innerLicense.Spec.Endpoint)
 	}
 	if outerLicense.Spec.CustomerName != innerLicense.Spec.CustomerName {
-		return errors.New("\"CustomerName\" field has changed")
+		return fmt.Errorf("\"CustomerName\" field has changed to %q (license) from %q (within signature)", outerLicense.Spec.CustomerName, innerLicense.Spec.CustomerName)
 	}
 	if outerLicense.Spec.CustomerEmail != innerLicense.Spec.CustomerEmail {
-		return errors.New("\"CustomerEmail\" field has changed")
+		return fmt.Errorf("\"CustomerEmail\" field has changed to %q (license) from %q (within signature)", outerLicense.Spec.CustomerEmail, innerLicense.Spec.CustomerEmail)
 	}
 	if outerLicense.Spec.ChannelID != innerLicense.Spec.ChannelID {
-		return errors.New("\"channelID\" field has changed")
+		return fmt.Errorf("\"channelID\" field has changed to %q (license) from %q (within signature)", outerLicense.Spec.ChannelID, innerLicense.Spec.ChannelID)
 	}
 	if outerLicense.Spec.ChannelName != innerLicense.Spec.ChannelName {
-		return errors.New("\"channelName\" field has changed")
+		return fmt.Errorf("\"channelName\" field has changed to %q (license) from %q (within signature)", outerLicense.Spec.ChannelName, innerLicense.Spec.ChannelName)
 	}
 	if outerLicense.Spec.LicenseSequence != innerLicense.Spec.LicenseSequence {
-		return errors.New("\"licenseSequence\" field has changed")
+		return fmt.Errorf("\"licenseSequence\" field has changed to %q (license) from %q (within signature)", outerLicense.Spec.LicenseSequence, innerLicense.Spec.LicenseSequence)
 	}
 	if outerLicense.Spec.LicenseID != innerLicense.Spec.LicenseID {
-		return errors.New("\"licenseID\" field has changed")
+		return fmt.Errorf("\"licenseID\" field has changed to %q (license) from %q (within signature)", outerLicense.Spec.LicenseID, innerLicense.Spec.LicenseID)
 	}
 	if outerLicense.Spec.LicenseType != innerLicense.Spec.LicenseType {
-		return errors.New("\"LicenseType\" field has changed")
+		return fmt.Errorf("\"LicenseType\" field has changed to %q (license) from %q (within signature)", outerLicense.Spec.LicenseType, innerLicense.Spec.LicenseType)
 	}
 	if outerLicense.Spec.IsAirgapSupported != innerLicense.Spec.IsAirgapSupported {
-		return errors.New("\"IsAirgapSupported\" field has changed")
+		return fmt.Errorf("\"IsAirgapSupported\" field has changed to %t (license) from %t (within signature)", outerLicense.Spec.IsAirgapSupported, innerLicense.Spec.IsAirgapSupported)
 	}
 	if outerLicense.Spec.IsGitOpsSupported != innerLicense.Spec.IsGitOpsSupported {
-		return errors.New("\"IsGitOpsSupported\" field has changed")
+		return fmt.Errorf("\"IsGitOpsSupported\" field has changed to %t (license) from %t (within signature)", outerLicense.Spec.IsGitOpsSupported, innerLicense.Spec.IsGitOpsSupported)
 	}
 	if outerLicense.Spec.IsIdentityServiceSupported != innerLicense.Spec.IsIdentityServiceSupported {
-		return errors.New("\"IsIdentityServiceSupported\" field has changed")
+		return fmt.Errorf("\"IsIdentityServiceSupported\" field has changed to %t (license) from %t (within signature)", outerLicense.Spec.IsIdentityServiceSupported, innerLicense.Spec.IsIdentityServiceSupported)
 	}
 	if outerLicense.Spec.IsGeoaxisSupported != innerLicense.Spec.IsGeoaxisSupported {
-		return errors.New("\"IsGeoaxisSupported\" field has changed")
+		return fmt.Errorf("\"IsGeoaxisSupported\" field has changed to %t (license) from %t (within signature)", outerLicense.Spec.IsGeoaxisSupported, innerLicense.Spec.IsGeoaxisSupported)
 	}
 	if outerLicense.Spec.IsSnapshotSupported != innerLicense.Spec.IsSnapshotSupported {
-		return errors.New("\"IsSnapshotSupported\" field has changed")
+		return fmt.Errorf("\"IsSnapshotSupported\" field has changed to %t (license) from %t (within signature)", outerLicense.Spec.IsSnapshotSupported, innerLicense.Spec.IsSnapshotSupported)
+	}
+	if outerLicense.Spec.IsDisasterRecoverySupported != innerLicense.Spec.IsDisasterRecoverySupported {
+		return fmt.Errorf("\"IsDisasterRecoverySupported\" field has changed to %t (license) from %t (within signature)", outerLicense.Spec.IsDisasterRecoverySupported, innerLicense.Spec.IsDisasterRecoverySupported)
 	}
 	if outerLicense.Spec.IsSupportBundleUploadSupported != innerLicense.Spec.IsSupportBundleUploadSupported {
-		return errors.New("\"IsSupportBundleUploadSupported\" field has changed")
+		return fmt.Errorf("\"IsSupportBundleUploadSupported\" field has changed to %t (license) from %t (within signature)", outerLicense.Spec.IsSupportBundleUploadSupported, innerLicense.Spec.IsSupportBundleUploadSupported)
 	}
 	if outerLicense.Spec.IsSemverRequired != innerLicense.Spec.IsSemverRequired {
-		return errors.New("\"IsSemverRequired\" field has changed")
+		return fmt.Errorf("\"IsSemverRequired\" field has changed to %t (license) from %t (within signature)", outerLicense.Spec.IsSemverRequired, innerLicense.Spec.IsSemverRequired)
 	}
 
 	// Check entitlements
 	if len(outerLicense.Spec.Entitlements) != len(innerLicense.Spec.Entitlements) {
-		return errors.New("\"entitlements\" field has changed")
+		return fmt.Errorf("\"entitlements\" field length has changed to %d (license) from %d (within signature)", len(outerLicense.Spec.Entitlements), len(innerLicense.Spec.Entitlements))
 	}
 	for k, outerEntitlement := range outerLicense.Spec.Entitlements {
 		innerEntitlement, ok := innerLicense.Spec.Entitlements[k]
 		if !ok {
-			return errors.New("entitlement not found in the inner license")
+			return fmt.Errorf("entitlement %q not found in the inner license", k)
 		}
 		if outerEntitlement.Value.Value() != innerEntitlement.Value.Value() {
-			return errors.New("one or more of the entitlements values have changed")
+			return fmt.Errorf("entitlement %q value has changed to %q (license) from %q (witin signature)", k, outerEntitlement.Value.Value(), innerEntitlement.Value.Value())
 		}
 		if outerEntitlement.Title != innerEntitlement.Title {
-			return errors.New("one or more of the entitlements titles have changed")
+			return fmt.Errorf("entitlement %q title has changed to %q (license) from %q (witin signature)", k, outerEntitlement.Title, innerEntitlement.Title)
 		}
 		if outerEntitlement.Description != innerEntitlement.Description {
-			return errors.New("one or more of the entitlements descriptions have changed")
+			return fmt.Errorf("entitlement %q description has changed to %q (license) from %q (witin signature)", k, outerEntitlement.Description, innerEntitlement.Description)
 		}
 		if outerEntitlement.IsHidden != innerEntitlement.IsHidden {
-			return errors.New("one or more of the entitlements hidden flags have changed")
+			return fmt.Errorf("entitlement %q hidden has changed to %t (license) from %t (witin signature)", k, outerEntitlement.IsHidden, innerEntitlement.IsHidden)
 		}
 		if outerEntitlement.ValueType != innerEntitlement.ValueType {
-			return errors.New("one or more of the entitlements value types have changed")
+			return fmt.Errorf("entitlement %q value type has changed to %q (license) from %q (witin signature)", k, outerEntitlement.ValueType, innerEntitlement.ValueType)
 		}
 	}
 
@@ -211,7 +214,7 @@ func verifyOldSignature(license *kotsv1beta1.License) (*kotsv1beta1.License, err
 
 	globalKeyPEM, ok := PublicKeys[keySignature.GlobalKeyId]
 	if !ok {
-		return nil, errors.New("unknown global key")
+		return nil, fmt.Errorf("unknown global key")
 	}
 
 	if err := Verify([]byte(signature.PublicKey), keySignature.Signature, globalKeyPEM); err != nil {

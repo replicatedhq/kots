@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	embeddedclusterv1beta1 "github.com/replicatedhq/embedded-cluster-kinds/apis/v1beta1"
+	kbclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 const DEFAULT_CONTROLLER_ROLE_NAME = "controller"
@@ -15,8 +16,8 @@ const DEFAULT_CONTROLLER_ROLE_NAME = "controller"
 var labelValueRegex = regexp.MustCompile(`[^a-zA-Z0-9-_.]+`)
 
 // GetRoles will get a list of role names
-func GetRoles(ctx context.Context) ([]string, error) {
-	config, err := ClusterConfig(ctx)
+func GetRoles(ctx context.Context, kbClient kbclient.Client) ([]string, error) {
+	config, err := ClusterConfig(ctx, kbClient)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get cluster config: %w", err)
 	}
@@ -45,8 +46,8 @@ func GetRoles(ctx context.Context) ([]string, error) {
 
 // ControllerRoleName determines the name for the 'controller' role
 // this might be part of the config, or it might be the default
-func ControllerRoleName(ctx context.Context) (string, error) {
-	conf, err := ClusterConfig(ctx)
+func ControllerRoleName(ctx context.Context, kbClient kbclient.Client) (string, error) {
+	conf, err := ClusterConfig(ctx, kbClient)
 	if err != nil {
 		return "", fmt.Errorf("failed to get cluster config: %w", err)
 	}
@@ -89,8 +90,8 @@ func SortRoles(controllerRole string, inputRoles []string) []string {
 }
 
 // getRoleNodeLabels looks up roles in the cluster config and determines the additional labels to be applied from that
-func getRoleNodeLabels(ctx context.Context, roles []string) ([]string, error) {
-	config, err := ClusterConfig(ctx)
+func getRoleNodeLabels(ctx context.Context, kbClient kbclient.Client, roles []string) ([]string, error) {
+	config, err := ClusterConfig(ctx, kbClient)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get cluster config: %w", err)
 	}

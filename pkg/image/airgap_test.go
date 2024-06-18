@@ -30,6 +30,7 @@ func TestPushEmbeddedClusterArtifacts(t *testing.T) {
 		name                  string
 		airgapFiles           map[string][]byte
 		artifactsToPush       *kotsv1beta1.EmbeddedClusterArtifacts
+		useTLS                bool
 		wantRegistryArtifacts map[string]string
 		wantErr               bool
 	}{
@@ -70,6 +71,33 @@ func TestPushEmbeddedClusterArtifacts(t *testing.T) {
 			},
 			wantErr: false,
 		},
+		{
+			name: "has embedded cluster files and registry has TLS",
+			airgapFiles: map[string][]byte{
+				"airgap.yaml":                            []byte("this-is-the-airgap-metadata"),
+				"app.tar.gz":                             []byte("this-is-the-app-archive"),
+				"images/something":                       []byte("this-is-an-image"),
+				"embedded-cluster/test-app":              []byte("this-is-the-binary"),
+				"embedded-cluster/charts.tar.gz":         []byte("this-is-the-charts-bundle"),
+				"embedded-cluster/images-amd64.tar":      []byte("this-is-the-images-bundle"),
+				"embedded-cluster/version-metadata.json": []byte("this-is-the-metadata"),
+				"embedded-cluster/some-file-TBD":         []byte("this-is-an-arbitrary-file"),
+			},
+			artifactsToPush: &kotsv1beta1.EmbeddedClusterArtifacts{
+				BinaryAmd64: "embedded-cluster/test-app",
+				ImagesAmd64: "embedded-cluster/images-amd64.tar",
+				Charts:      "embedded-cluster/charts.tar.gz",
+				Metadata:    "embedded-cluster/version-metadata.json",
+			},
+			useTLS: true,
+			wantRegistryArtifacts: map[string]string{
+				fmt.Sprintf("%s/embedded-cluster/test-app", testAppSlug):              fmt.Sprintf("%s-%s-%s", testChannelID, testUpdateCursor, testVersionLabel),
+				fmt.Sprintf("%s/embedded-cluster/charts.tar.gz", testAppSlug):         fmt.Sprintf("%s-%s-%s", testChannelID, testUpdateCursor, testVersionLabel),
+				fmt.Sprintf("%s/embedded-cluster/images-amd64.tar", testAppSlug):      fmt.Sprintf("%s-%s-%s", testChannelID, testUpdateCursor, testVersionLabel),
+				fmt.Sprintf("%s/embedded-cluster/version-metadata.json", testAppSlug): fmt.Sprintf("%s-%s-%s", testChannelID, testUpdateCursor, testVersionLabel),
+			},
+			wantErr: false,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -80,7 +108,7 @@ func TestPushEmbeddedClusterArtifacts(t *testing.T) {
 			}
 
 			pushedRegistryArtifacts := make(map[string]string)
-			mockRegistryServer := newMockRegistryServer(pushedRegistryArtifacts)
+			mockRegistryServer := newMockRegistryServer(pushedRegistryArtifacts, tt.useTLS)
 			defer mockRegistryServer.Close()
 
 			u, err := url.Parse(mockRegistryServer.URL)
@@ -139,8 +167,13 @@ func createTestAirgapBundle(airgapFiles map[string][]byte, dstPath string) error
 	return nil
 }
 
-func newMockRegistryServer(pushedRegistryArtifacts map[string]string) *httptest.Server {
-	return httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+func newMockRegistryServer(pushedRegistryArtifacts map[string]string, useTLS bool) *httptest.Server {
+	newServerFn := httptest.NewServer
+	if useTLS {
+		newServerFn = httptest.NewTLSServer
+	}
+
+	return newServerFn(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		blobsRegex := regexp.MustCompile(`/v2/(.+)/blobs/(.*)`)
 		manifestsRegex := regexp.MustCompile(`/v2/(.+)/manifests/(.*)`)
 
