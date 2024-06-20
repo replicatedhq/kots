@@ -33,6 +33,9 @@ type PreflightData struct {
 var PreflightDataFilepath string
 
 func init() {
+	if !util.IsUpgradeService() {
+		return
+	}
 	tmpDir, err := os.MkdirTemp("", "preflights")
 	if err != nil {
 		panic(errors.Wrap(err, "failed to create preflights data dir"))

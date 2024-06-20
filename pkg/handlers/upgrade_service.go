@@ -15,7 +15,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/replicatedapp"
 	"github.com/replicatedhq/kots/pkg/reporting"
 	"github.com/replicatedhq/kots/pkg/store"
-	"github.com/replicatedhq/kots/pkg/updatechecker"
+	"github.com/replicatedhq/kots/pkg/update"
 	"github.com/replicatedhq/kots/pkg/upgradeservice"
 	upgradeservicetypes "github.com/replicatedhq/kots/pkg/upgradeservice/types"
 )
@@ -101,7 +101,7 @@ func canStartUpgradeService(a *apptypes.App, r StartUpgradeServiceRequest) (bool
 		return false, "license channel has changed, please sync the license", nil
 	}
 
-	updates, err := updatechecker.GetAvailableUpdates(store.GetStore(), a, currLicense)
+	updates, err := update.GetAvailableUpdates(store.GetStore(), a, currLicense)
 	if err != nil {
 		return false, "", errors.Wrap(err, "failed to get available updates")
 	}

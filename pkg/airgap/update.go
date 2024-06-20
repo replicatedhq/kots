@@ -5,13 +5,13 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"os/exec"
 	"path/filepath"
-	"strings"
 
 	"github.com/blang/semver"
 	"github.com/pkg/errors"
-	downstreamtypes "github.com/replicatedhq/kots/pkg/api/downstream/types"
 	apptypes "github.com/replicatedhq/kots/pkg/app/types"
+	"github.com/replicatedhq/kots/pkg/archives"
 	"github.com/replicatedhq/kots/pkg/cursor"
 	identity "github.com/replicatedhq/kots/pkg/kotsadmidentity"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
@@ -22,10 +22,62 @@ import (
 	"github.com/replicatedhq/kots/pkg/store"
 	storetypes "github.com/replicatedhq/kots/pkg/store/types"
 	"github.com/replicatedhq/kots/pkg/tasks"
+	"github.com/replicatedhq/kots/pkg/update"
 	"github.com/replicatedhq/kots/pkg/util"
 	"github.com/replicatedhq/kots/pkg/version"
 	kotsv1beta1 "github.com/replicatedhq/kotskinds/apis/kots/v1beta1"
 )
+
+func UpdateAppFromECBundle(appSlug string, airgapBundlePath string) (finalError error) {
+	finishedChan := make(chan error)
+	defer close(finishedChan)
+
+	tasks.StartUpdateTaskMonitor("update-download", finishedChan)
+	defer func() {
+		finishedChan <- finalError
+	}()
+
+	kotsTGZ, err := archives.GetFileFromAirgap("embedded-cluster/artifacts/kots.tar.gz", airgapBundlePath)
+	if err != nil {
+		return errors.Wrap(err, "failed to get kots binary from airgap bundle")
+	}
+	defer os.Remove(kotsTGZ)
+
+	kotsDir, err := os.MkdirTemp("", "kots")
+	if err != nil {
+		return errors.Wrap(err, "failed to create temp kots dir")
+	}
+	defer os.RemoveAll(kotsDir)
+
+	if err := util.ExtractTGZArchive(kotsTGZ, kotsDir); err != nil {
+		return errors.Wrap(err, "failed to extract kots tarball")
+	}
+
+	kotsBin := filepath.Join(kotsDir, "kots")
+	if err := os.Chmod(kotsBin, 0755); err != nil {
+		return errors.Wrap(err, "failed to chmod kots binary")
+	}
+
+	cmd := exec.Command(kotsBin,
+		"airgap-update",
+		appSlug,
+		"--namespace",
+		util.PodNamespace,
+		"--airgap-bundle",
+		airgapBundlePath,
+		"--updates-dir",
+		update.GetAvailableUpdatesDir(),
+		"--from-api",
+	)
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+
+	if err := cmd.Run(); err != nil {
+		return errors.Wrap(err, "failed to run airgap update")
+	}
+
+	return nil
+}
 
 func UpdateAppFromAirgap(a *apptypes.App, airgapBundlePath string, deploy bool, skipPreflights bool, skipCompatibilityCheck bool) (finalError error) {
 	finishedChan := make(chan error)
@@ -40,7 +92,7 @@ func UpdateAppFromAirgap(a *apptypes.App, airgapBundlePath string, deploy bool, 
 		return errors.Wrap(err, "failed to set task status")
 	}
 
-	airgapRoot, err := extractAppMetaFromAirgapBundle(airgapBundlePath)
+	airgapRoot, err := ExtractAppMetaFromAirgapBundle(airgapBundlePath)
 	if err != nil {
 		return errors.Wrap(err, "failed to extract archive")
 	}
@@ -69,15 +121,14 @@ func UpdateAppFromPath(a *apptypes.App, airgapRoot string, airgapBundlePath stri
 		return errors.Wrap(err, "failed to find airgap meta")
 	}
 
-	missingPrereqs, err := GetMissingRequiredVersions(a, airgap)
+	deployable, nonDeployableCause, err := update.IsAirgapUpdateDeployable(a, airgap)
 	if err != nil {
-		return errors.Wrapf(err, "failed to check required versions")
+		return errors.Wrapf(err, "failed to check if airgap update is deployable")
 	}
-
-	if len(missingPrereqs) > 0 {
+	if !deployable {
 		return util.ActionableError{
 			NoRetry: true,
-			Message: fmt.Sprintf("This airgap bundle cannot be uploaded because versions %s are required and must be uploaded first.", strings.Join(missingPrereqs, ", ")),
+			Message: nonDeployableCause,
 		}
 	}
 
@@ -310,67 +361,4 @@ func canInstall(beforeKotsKinds *kotsutil.KotsKinds, afterKotsKinds *kotsutil.Ko
 	}
 
 	return nil
-}
-
-func GetMissingRequiredVersions(app *apptypes.App, airgap *kotsv1beta1.Airgap) ([]string, error) {
-	appVersions, err := store.GetStore().FindDownstreamVersions(app.ID, true)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to get downstream versions")
-	}
-
-	license, err := kotsutil.LoadLicenseFromBytes([]byte(app.License))
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to load license")
-	}
-
-	return getMissingRequiredVersions(airgap, license, appVersions.AllVersions, app.ChannelChanged)
-}
-
-func getMissingRequiredVersions(airgap *kotsv1beta1.Airgap, license *kotsv1beta1.License, installedVersions []*downstreamtypes.DownstreamVersion, channelChanged bool) ([]string, error) {
-	missingVersions := make([]string, 0)
-	// If no versions are installed, we can consider this an initial install.
-	// If the channel changed, we can consider this an initial install.
-	if len(installedVersions) == 0 || channelChanged {
-		return missingVersions, nil
-	}
-
-	for _, requiredRelease := range airgap.Spec.RequiredReleases {
-		laterReleaseInstalled := false
-		for _, appVersion := range installedVersions {
-			requiredSemver, requiredSemverErr := semver.ParseTolerant(requiredRelease.VersionLabel)
-
-			// semvers can be compared across channels
-			// if a semmver is missing, fallback to comparing the cursor but only if channel is the same
-			if license.Spec.IsSemverRequired && appVersion.Semver != nil && requiredSemverErr == nil {
-				if requiredSemver.LE(*appVersion.Semver) {
-					laterReleaseInstalled = true
-					break
-				}
-			} else {
-				// cursors can only be compared on the same channel
-				if appVersion.ChannelID != airgap.Spec.ChannelID {
-					continue
-				}
-				if appVersion.Cursor == nil {
-					return nil, errors.Errorf("cursor required but version %s does not have cursor", appVersion.UpdateCursor)
-				}
-				requiredCursor, err := cursor.NewCursor(requiredRelease.UpdateCursor)
-				if err != nil {
-					return nil, errors.Wrapf(err, "failed to parse required update cursor %q", requiredRelease.UpdateCursor)
-				}
-				if requiredCursor.Before(*appVersion.Cursor) || requiredCursor.Equal(*appVersion.Cursor) {
-					laterReleaseInstalled = true
-					break
-				}
-			}
-		}
-
-		if !laterReleaseInstalled {
-			missingVersions = append([]string{requiredRelease.VersionLabel}, missingVersions...)
-		} else {
-			break
-		}
-	}
-
-	return missingVersions, nil
 }

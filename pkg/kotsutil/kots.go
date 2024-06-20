@@ -1368,7 +1368,7 @@ func FindAirgapMetaInDir(root string) (*kotsv1beta1.Airgap, error) {
 }
 
 func FindAirgapMetaInBundle(airgapBundle string) (*kotsv1beta1.Airgap, error) {
-	content, err := archives.GetFileFromAirgap("airgap.yaml", airgapBundle)
+	content, err := archives.GetFileContentFromAirgap("airgap.yaml", airgapBundle)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to extract airgap.yaml file")
 	}

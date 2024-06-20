@@ -191,15 +191,6 @@ func TagAndPushImagesFromBundle(airgapBundle string, options imagetypes.PushImag
 	return nil
 }
 
-func PathToRegistryECImage(srcImage, registryNamespace string) (string, error) {
-	imageParts := strings.Split(srcImage, "/")
-	imageName := imageParts[len(imageParts)-1]
-	if imageName == "" {
-		return "", errors.New("empty image name")
-	}
-	return filepath.Join(registryNamespace, "embedded-cluster", imageName), nil
-}
-
 func PushECImagesFromTempRegistry(airgapRootDir string, airgap *kotsv1beta1.Airgap, options imagetypes.PushImagesOptions) error {
 	artifacts := airgap.Spec.EmbeddedClusterArtifacts
 	if artifacts == nil || artifacts.Registry.Dir == "" || len(artifacts.Registry.SavedImages) == 0 {
@@ -207,6 +198,11 @@ func PushECImagesFromTempRegistry(airgapRootDir string, airgap *kotsv1beta1.Airg
 	}
 
 	imagesDir := filepath.Join(airgapRootDir, artifacts.Registry.Dir)
+	if _, err := os.Stat(imagesDir); os.IsNotExist(err) {
+		// images were already pushed from the CLI
+		return nil
+	}
+
 	tempRegistry := &dockerregistry.TempRegistry{}
 	if err := tempRegistry.Start(imagesDir); err != nil {
 		return errors.Wrap(err, "failed to start temp registry")
@@ -254,12 +250,12 @@ func PushECImagesFromTempRegistry(airgapRootDir string, airgap *kotsv1beta1.Airg
 		}
 		srcImage := parsed.String()
 
-		imagePath, err := PathToRegistryECImage(srcImage, options.Registry.Namespace)
+		destImage, err := imageutil.DestECImage(options.Registry, srcImage)
 		if err != nil {
 			return errors.Wrap(err, "failed to get registry image path")
 		}
 
-		destStr := fmt.Sprintf("docker://%s/%s", options.Registry.Endpoint, imagePath)
+		destStr := fmt.Sprintf("docker://%s", destImage)
 		destRef, err := alltransports.ParseImageName(destStr)
 		if err != nil {
 			return errors.Wrapf(err, "failed to parse dest image %s", destStr)

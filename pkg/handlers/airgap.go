@@ -9,6 +9,7 @@ import (
 	"os"
 	"path/filepath"
 	"strconv"
+	"strings"
 	"sync"
 
 	"github.com/gorilla/mux"
@@ -20,6 +21,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/store"
 	"github.com/replicatedhq/kots/pkg/tasks"
+	"github.com/replicatedhq/kots/pkg/update"
 	"github.com/replicatedhq/kots/pkg/util"
 )
 
@@ -330,16 +332,22 @@ func (h *Handler) UpdateAppFromAirgap(w http.ResponseWriter, r *http.Request) {
 	}
 
 	go func() {
-		if err := airgap.UpdateAppFromAirgap(a, airgapBundlePath, false, false, false); err != nil {
-			logger.Error(errors.Wrap(err, "failed to update app from airgap bundle"))
-
-			// if NoRetry is set, we stll want to clean up immediately
-			cause := errors.Cause(err)
-			if err, ok := cause.(util.ActionableError); !ok || !err.NoRetry {
+		if util.IsEmbeddedCluster() {
+			if err := airgap.UpdateAppFromECBundle(a.Slug, airgapBundlePath); err != nil {
+				logger.Error(errors.Wrap(err, "failed to update app from ec airgap bundle"))
+				w.WriteHeader(http.StatusInternalServerError)
 				return
 			}
+		} else {
+			if err := airgap.UpdateAppFromAirgap(a, airgapBundlePath, false, false, false); err != nil {
+				logger.Error(errors.Wrap(err, "failed to update app from airgap bundle"))
+				// if NoRetry is set, we stll want to clean up immediately
+				cause := errors.Cause(err)
+				if err, ok := cause.(util.ActionableError); !ok || !err.NoRetry {
+					return
+				}
+			}
 		}
-
 		if err := cleanUp(identifier, totalChunks); err != nil {
 			logger.Error(errors.Wrap(err, "failed to clean up"))
 		}
@@ -551,4 +559,86 @@ func (h *Handler) UploadInitialAirgapApp(w http.ResponseWriter, r *http.Request)
 	}
 
 	w.WriteHeader(http.StatusOK)
+}
+
+func (h *Handler) UploadAirgapUpdate(w http.ResponseWriter, r *http.Request) {
+	appSlug := mux.Vars(r)["appSlug"]
+
+	app, err := store.GetStore().GetAppFromSlug(appSlug)
+	if err != nil {
+		logger.Error(errors.Wrapf(err, "failed to get app for slug %q", appSlug))
+		w.WriteHeader(http.StatusNotFound)
+		return
+	}
+
+	contentType := strings.Split(r.Header.Get("Content-Type"), ";")[0]
+	contentType = strings.TrimSpace(contentType)
+
+	if contentType != "multipart/form-data" {
+		logger.Error(errors.Errorf("unsupported content type: %s", r.Header.Get("Content-Type")))
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	if !app.IsAirgap {
+		logger.Error(errors.New("not an airgap app"))
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte("Cannot update an online install using an airgap update"))
+		return
+	}
+
+	formReader, err := r.MultipartReader()
+	if err != nil {
+		logger.Error(errors.Wrap(err, "failed to get multipart reader"))
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	foundAirgapUpdate := false
+	for {
+		part, err := formReader.NextPart()
+		if err != nil {
+			if err == io.EOF {
+				break
+			}
+			logger.Error(errors.Wrap(err, "failed to get next part"))
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+
+		if part.FormName() != "application.airgap" {
+			continue
+		}
+
+		foundAirgapUpdate = true
+
+		tmpFile, err := os.CreateTemp("", "kots-airgap")
+		if err != nil {
+			logger.Error(errors.Wrap(err, "failed to create temp file"))
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+		defer os.RemoveAll(tmpFile.Name())
+
+		_, err = io.Copy(tmpFile, part)
+		if err != nil {
+			logger.Error(errors.Wrap(err, "failed to copy part data"))
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+
+		if err := update.RegisterAirgapUpdate(app.Slug, tmpFile.Name()); err != nil {
+			logger.Error(errors.Wrap(err, "failed to registry airgap update"))
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+	}
+
+	if !foundAirgapUpdate {
+		logger.Error(errors.New("no airgap update found in form data"))
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	JSON(w, http.StatusOK, struct{}{})
 }

@@ -104,7 +104,7 @@ func CreateAppFromAirgap(opts CreateAirgapAppOpts) (finalError error) {
 	archiveDir := opts.AirgapRootDir
 	if opts.AirgapBundle != "" {
 		// on the api side, headless intalls don't have the airgap file
-		dir, err := extractAppMetaFromAirgapBundle(opts.AirgapBundle)
+		dir, err := ExtractAppMetaFromAirgapBundle(opts.AirgapBundle)
 		if err != nil {
 			return errors.Wrap(err, "failed to extract archive")
 		}
@@ -380,7 +380,7 @@ func extractAppRelease(workspace string, airgapDir string) (string, error) {
 	return destDir, nil
 }
 
-func extractAppMetaFromAirgapBundle(airgapBundle string) (string, error) {
+func ExtractAppMetaFromAirgapBundle(airgapBundle string) (string, error) {
 	destDir, err := ioutil.TempDir("", "kotsadm-airgap-meta-")
 	if err != nil {
 		return "", errors.Wrap(err, "failed to create temp dir")

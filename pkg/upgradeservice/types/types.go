@@ -21,6 +21,7 @@ type UpgradeServiceParams struct {
 	UpdateVersionLabel string `yaml:"updateVersionLabel"`
 	UpdateCursor       string `yaml:"updateCursor"`
 	UpdateChannelID    string `yaml:"updateChannelID"`
+	UpdateAirgapBundle string `yaml:"updateAirgapBundle"`
 
 	CurrentKOTSVersion string `yaml:"currentKotsVersion"`
 	UpdateKOTSVersion  string `yaml:"updateKotsVersion"`
