@@ -329,7 +329,7 @@ func GetMissingRequiredVersions(app *apptypes.App, airgap *kotsv1beta1.Airgap) (
 func getMissingRequiredVersions(airgap *kotsv1beta1.Airgap, license *kotsv1beta1.License, installedVersions []*downstreamtypes.DownstreamVersion, channelChanged bool) ([]string, error) {
 	missingVersions := make([]string, 0)
 	// If no versions are installed, we can consider this an initial install.
-	// If the current installed version is from a different channel, we can consider this an initial install.
+	// If the channel changed, we can consider this an initial install.
 	if len(installedVersions) == 0 || channelChanged {
 		return missingVersions, nil
 	}
