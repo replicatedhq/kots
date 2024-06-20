@@ -212,6 +212,8 @@ func RegisterSessionAuthRoutes(r *mux.Router, kotsStore store.Store, handler KOT
 		HandlerFunc(middleware.EnforceAccess(policy.AppDownstreamWrite, handler.GetAutomaticUpdatesConfig))
 	r.Name("RemoveApp").Path("/api/v1/app/{appSlug}/remove").Methods("POST").
 		HandlerFunc(middleware.EnforceAccess(policy.AppUpdate, handler.RemoveApp))
+	r.Name("UploadAirgapBundle").Path("/api/v1/app/{appSlug}/airgap-upload").Methods("POST").
+		HandlerFunc(middleware.EnforceAccess(policy.AppDownstreamWrite, handler.UploadAirgapBundle))
 
 	// App snapshot routes
 	r.Name("CreateApplicationBackup").Path("/api/v1/app/{appSlug}/snapshot/backup").Methods("POST").

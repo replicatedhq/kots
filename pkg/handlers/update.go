@@ -6,12 +6,14 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"mime/multipart"
 	"net/http"
 	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
 
+	"github.com/google/uuid"
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/airgap"
@@ -419,4 +421,94 @@ func (h *Handler) GetAdminConsoleUpdateStatus(w http.ResponseWriter, r *http.Req
 	getAdminConsoleUpdateStatusResponse.Status = string(status)
 	getAdminConsoleUpdateStatusResponse.Message = message
 	JSON(w, http.StatusOK, getAdminConsoleUpdateStatusResponse)
+}
+
+func (h *Handler) UploadAirgapBundle(w http.ResponseWriter, r *http.Request) {
+	appSlug := mux.Vars(r)["appSlug"]
+
+	app, err := store.GetStore().GetAppFromSlug(appSlug)
+	if err != nil {
+		logger.Error(errors.Wrapf(err, "failed to get app for slug %q", appSlug))
+		w.WriteHeader(http.StatusNotFound)
+		return
+	}
+
+	contentType := strings.Split(r.Header.Get("Content-Type"), ";")[0]
+	contentType = strings.TrimSpace(contentType)
+
+	if contentType != "multipart/form-data" {
+		logger.Error(errors.Errorf("unsupported content type: %s", r.Header.Get("Content-Type")))
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	if !app.IsAirgap {
+		logger.Error(errors.New("not an airgap app"))
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte("Cannot update an online install using an airgap bundle"))
+		return
+	}
+
+	formReader, err := r.MultipartReader()
+	if err != nil {
+		logger.Error(errors.Wrap(err, "failed to get multipart reader"))
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	foundAirgapBundle := false
+	for {
+		part, err := formReader.NextPart()
+		if err != nil {
+			if err == io.EOF {
+				break
+			}
+			logger.Error(errors.Wrap(err, "failed to get next part"))
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+
+		if part.FormName() != "application.airgap" {
+			continue
+		}
+
+		foundAirgapBundle = true
+
+		destDir := filepath.Join(os.TempDir(), "available-versions", uuid.New().String())
+		if err := os.MkdirAll(destDir, 0755); err != nil {
+			logger.Error(errors.Wrap(err, "failed to create dest dir"))
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+
+		if err := copyFormFileToDir(part, destDir); err != nil {
+			logger.Error(errors.Wrap(err, "failed to copy form file to dir"))
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+	}
+
+	if !foundAirgapBundle {
+		logger.Error(errors.New("no airgap bundle found in form data"))
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	JSON(w, http.StatusOK, struct{}{})
+}
+
+func copyFormFileToDir(part *multipart.Part, destDir string) error {
+	fileName := filepath.Join(destDir, part.FormName())
+	file, err := os.Create(fileName)
+	if err != nil {
+		return errors.Wrap(err, "failed to create file")
+	}
+	defer file.Close()
+
+	_, err = io.Copy(file, part)
+	if err != nil {
+		return errors.Wrap(err, "failed to copy part data")
+	}
+
+	return nil
 }

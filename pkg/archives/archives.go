@@ -179,3 +179,39 @@ func IsTGZ(b []byte) bool {
 	_, err = tarReader.Next()
 	return err == nil
 }
+
+func CreateFilteredAirgapBundle(airgapBundle string, filesToInclude []string) (io.Reader, error) {
+	buf := bytes.NewBuffer(nil)
+	gw := gzip.NewWriter(buf)
+	tw := tar.NewWriter(gw)
+
+	for _, path := range filesToInclude {
+		contents, err := GetFileFromAirgap(path, airgapBundle)
+		if err != nil {
+			return nil, errors.Wrapf(err, "failed to get %s from airgap bundle", path)
+		}
+
+		header := &tar.Header{
+			Name: path,
+			Mode: 0644,
+			Size: int64(len(contents)),
+		}
+		if err := tw.WriteHeader(header); err != nil {
+			return nil, errors.Wrapf(err, "failed to write tar header for %s", path)
+		}
+		_, err = tw.Write(contents)
+		if err != nil {
+			return nil, errors.Wrapf(err, "failed to write %s to tar", path)
+		}
+	}
+
+	if err := tw.Close(); err != nil {
+		return nil, errors.Wrap(err, "failed to close tar writer")
+	}
+
+	if err := gw.Close(); err != nil {
+		return nil, errors.Wrap(err, "failed to close gzip writer")
+	}
+
+	return buf, nil
+}

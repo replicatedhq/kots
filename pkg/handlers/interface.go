@@ -103,6 +103,7 @@ type KOTSHandler interface {
 	SetAutomaticUpdatesConfig(w http.ResponseWriter, r *http.Request)
 	GetAutomaticUpdatesConfig(w http.ResponseWriter, r *http.Request)
 	RemoveApp(w http.ResponseWriter, r *http.Request)
+	UploadAirgapBundle(w http.ResponseWriter, r *http.Request)
 
 	// App snapshot routes
 	CreateApplicationBackup(w http.ResponseWriter, r *http.Request)
