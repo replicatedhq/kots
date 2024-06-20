@@ -36,6 +36,10 @@ func Test_getArtifactsFromInstallation(t *testing.T) {
 							ImagesAmd64: "onprem.registry.com/my-app/embedded-cluster/images-amd64.tar:v1",
 							BinaryAmd64: "onprem.registry.com/my-app/embedded-cluster/embedded-cluster-amd64:v1",
 							Metadata:    "onprem.registry.com/my-app/embedded-cluster/version-metadata.json:v1",
+							AdditionalArtifacts: map[string]string{
+								"kots":     "onprem.registry.com/my-app/embedded-cluster/kots.tar.gz:v1",
+								"operator": "onprem.registry.com/my-app/embedded-cluster/operator.tar.gz:v1",
+							},
 						},
 					},
 				},
@@ -46,6 +50,10 @@ func Test_getArtifactsFromInstallation(t *testing.T) {
 				HelmCharts:              "onprem.registry.com/my-app/embedded-cluster/charts.tar.gz:v1",
 				EmbeddedClusterBinary:   "onprem.registry.com/my-app/embedded-cluster/embedded-cluster-amd64:v1",
 				EmbeddedClusterMetadata: "onprem.registry.com/my-app/embedded-cluster/version-metadata.json:v1",
+				AdditionalArtifacts: map[string]string{
+					"kots":     "onprem.registry.com/my-app/embedded-cluster/kots.tar.gz:v1",
+					"operator": "onprem.registry.com/my-app/embedded-cluster/operator.tar.gz:v1",
+				},
 			},
 		},
 	}
