@@ -60,18 +60,18 @@ func TestCreateFilteredAirgapBundle(t *testing.T) {
 			bundleFiles: map[string]string{
 				"airgap.yaml":                     "airgap-metadata",
 				"app.tar.gz":                      "application-archive",
-				"embedded-cluster/kotsadm.tar.gz": "kotsadm-binary",
+				"embedded-cluster/artifacts/kots": "kots-binary",
 				"images":                          "image-data",
 			},
 			filesToInclude: []string{
 				"airgap.yaml",
 				"app.tar.gz",
-				"embedded-cluster/kotsadm.tar.gz",
+				"embedded-cluster/artifacts/kots",
 			},
 			wantBundleFiles: map[string]string{
 				"airgap.yaml":                     "airgap-metadata",
 				"app.tar.gz":                      "application-archive",
-				"embedded-cluster/kotsadm.tar.gz": "kotsadm-binary",
+				"embedded-cluster/artifacts/kots": "kots-binary",
 			},
 		},
 	}

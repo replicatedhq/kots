@@ -50,7 +50,7 @@ func AirgapUploadCmd() *cobra.Command {
 			filesToInclude := []string{
 				"airgap.yaml",
 				"app.tar.gz",
-				// "kotsadm.tar.gz", // TODO: figure out the actual path for this kots binary
+				"embedded-cluster/artifacts/kots",
 			}
 
 			filteredAirgapBundle, err := archives.CreateFilteredAirgapBundle(airgapBundle, filesToInclude)
