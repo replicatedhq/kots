@@ -11,6 +11,9 @@ spec:
     imagesAmd64: ttl.sh/replicated/images-amd64:v1
     charts: ttl.sh/replicated/charts.tar.gz:v1
     metadata: ttl.sh/replicated/metadata.json:v1
+    additionalArtifacts:
+      kots: ttl.sh/replicated/kots:v1
+      operator: ttl.sh/replicated/operator:v1
   knownImages:
   - image: alpine
     isPrivate: true

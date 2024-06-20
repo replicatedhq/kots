@@ -896,6 +896,13 @@ func shouldPushArtifact(artifactPath string, artifactsToPush *kotsv1beta1.Embedd
 	case artifactsToPush.BinaryAmd64, artifactsToPush.Charts, artifactsToPush.ImagesAmd64, artifactsToPush.Metadata:
 		return true
 	default:
+		// check if this is in the list of additional artifacts
+		for _, additionalArtifact := range artifactsToPush.AdditionalArtifacts {
+			if artifactPath == additionalArtifact && additionalArtifact != "" {
+				return true
+			}
+		}
+
 		return false
 	}
 }
