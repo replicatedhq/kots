@@ -9,14 +9,11 @@ import (
 
 // Config is the config format for the main application.
 type Config struct {
-	Issuer    string    `json:"issuer"`
-	Storage   Storage   `json:"storage"`
-	Web       Web       `json:"web"`
-	Telemetry Telemetry `json:"telemetry"`
-	OAuth2    OAuth2    `json:"oauth2"`
-	GRPC      GRPC      `json:"grpc"`
-	Expiry    Expiry    `json:"expiry"`
-	Logger    logger    `json:"logger"`
+	Issuer  string  `json:"issuer"`
+	Storage Storage `json:"storage"`
+	Web     Web     `json:"web"`
+	OAuth2  OAuth2  `json:"oauth2"`
+	Expiry  Expiry  `json:"expiry"`
 
 	Frontend WebConfig `json:"frontend"`
 
@@ -31,11 +28,6 @@ type Config struct {
 	// If enabled, the server will maintain a list of passwords which can be used
 	// to identify a user.
 	EnablePasswordDB bool `json:"enablePasswordDB"`
-
-	// StaticPasswords cause the server use this list of passwords rather than
-	// querying the storage. Cannot be specified without enabling a passwords
-	// database.
-	StaticPasswords []StoragePassword `json:"staticPasswords"`
 }
 
 // Validate the configuration
@@ -46,14 +38,9 @@ func (c Config) Validate() error {
 		errMsg string
 	}{
 		{c.Issuer == "", "no issuer specified in config file"},
-		{!c.EnablePasswordDB && len(c.StaticPasswords) != 0, "cannot specify static passwords without enabling password db"},
 		{c.Web.HTTP == "" && c.Web.HTTPS == "", "must supply a HTTP/HTTPS  address to listen on"},
 		{c.Web.HTTPS != "" && c.Web.TLSCert == "", "no cert specified for HTTPS"},
 		{c.Web.HTTPS != "" && c.Web.TLSKey == "", "no private key specified for HTTPS"},
-		{c.GRPC.TLSCert != "" && c.GRPC.Addr == "", "no address specified for gRPC"},
-		{c.GRPC.TLSKey != "" && c.GRPC.Addr == "", "no address specified for gRPC"},
-		{(c.GRPC.TLSCert == "") != (c.GRPC.TLSKey == ""), "must specific both a gRPC TLS cert and key"},
-		{c.GRPC.TLSCert == "" && c.GRPC.TLSClientCA != "", "cannot specify gRPC TLS client CA without a gRPC TLS cert"},
 	}
 
 	var checkErrors []string
@@ -88,21 +75,6 @@ type Web struct {
 	TLSCert        string   `json:"tlsCert"`
 	TLSKey         string   `json:"tlsKey"`
 	AllowedOrigins []string `json:"allowedOrigins"`
-}
-
-// Telemetry is the config format for telemetry including the HTTP server config.
-type Telemetry struct {
-	HTTP string `json:"http"`
-}
-
-// GRPC is the config for the gRPC API.
-type GRPC struct {
-	// The port to listen on.
-	Addr        string `json:"addr"`
-	TLSCert     string `json:"tlsCert"`
-	TLSKey      string `json:"tlsKey"`
-	TLSClientCA string `json:"tlsClientCA"`
-	Reflection  bool   `json:"reflection"`
 }
 
 // Storage holds app's storage configuration.
@@ -167,13 +139,4 @@ type Expiry struct {
 
 	// DeviceRequests defines the duration of time for which the DeviceRequests will be valid.
 	DeviceRequests string `json:"deviceRequests"`
-}
-
-// logger holds configuration required to customize logging for dex.
-type logger struct {
-	// Level sets logging level severity.
-	Level string `json:"level"`
-
-	// Format specifies the format to be used for logging.
-	Format string `json:"format"`
 }
