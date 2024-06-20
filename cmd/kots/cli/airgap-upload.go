@@ -140,22 +140,11 @@ func uploadAirgapBundle(airgapBundle io.Reader, uploadEndpoint string, namespace
 	}
 	defer resp.Body.Close()
 
-	// b, err := io.ReadAll(resp.Body)
-	// if err != nil {
-	// 	return errors.Wrap(err, "failed to read response body")
-	// }
-
 	if resp.StatusCode == 404 {
 		return errors.New("App not found")
 	} else if resp.StatusCode != 200 {
 		return errors.Errorf("Unexpected status code: %d", resp.StatusCode)
 	}
-
-	// // TODO: read the response body
-	// ur := UpgradeResponse{}
-	// if err := json.Unmarshal(b, &ur); err != nil {
-	// 	return errors.Wrap(err, "failed to unmarshal response")
-	// }
 
 	return nil
 }
