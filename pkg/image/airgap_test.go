@@ -20,6 +20,48 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+func TestPathToRegistryECImage(t *testing.T) {
+	for _, tt := range []struct {
+		name      string
+		image     string
+		namespace string
+		expected  string
+		err       string
+	}{
+		{
+			name:      "ecr",
+			image:     "123456789012.dkr.ecr.us-west-2.amazonaws.com/myimage:latest",
+			namespace: "myapp",
+			expected:  "myapp/embedded-cluster/myimage:latest",
+		},
+		{
+			name:      "no registry",
+			image:     "myimage:latest",
+			namespace: "myapp",
+			expected:  "myapp/embedded-cluster/myimage:latest",
+		},
+		{
+			name:     "no namespace",
+			image:    "myimage:latest",
+			expected: "embedded-cluster/myimage:latest",
+		},
+		{
+			name: "empty image name",
+			err:  "empty image name",
+		},
+	} {
+		t.Run(tt.name, func(t *testing.T) {
+			result, err := PathToRegistryECImage(tt.image, tt.namespace)
+			if tt.err == "" {
+				require.Equal(t, tt.expected, result)
+				require.NoError(t, err)
+				return
+			}
+			require.Contains(t, err.Error(), tt.err)
+		})
+	}
+}
+
 func TestPushEmbeddedClusterArtifacts(t *testing.T) {
 	testAppSlug := "test-app"
 	testChannelID := "test-tag"

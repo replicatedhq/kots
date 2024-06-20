@@ -17,6 +17,7 @@ import (
 	"time"
 
 	"github.com/containers/image/v5/transports/alltransports"
+	"github.com/distribution/reference"
 	"github.com/mholt/archiver/v3"
 	imagespecsv1 "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/pkg/errors"
@@ -161,6 +162,9 @@ func TagAndPushImagesFromBundle(airgapBundle string, options imagetypes.PushImag
 		if err := PushImagesFromTempRegistry(extractedBundle, airgap.Spec.SavedImages, options); err != nil {
 			return errors.Wrap(err, "failed to push images from docker registry bundle")
 		}
+		if err := PushECImagesFromTempRegistry(extractedBundle, airgap, options); err != nil {
+			return errors.Wrap(err, "failed to push embedded cluster images from docker registry bundle")
+		}
 	case dockertypes.FormatDockerArchive, "":
 		if err := PushImagesFromDockerArchiveBundle(airgapBundle, options); err != nil {
 			return errors.Wrap(err, "failed to push images from docker archive bundle")
@@ -182,6 +186,112 @@ func TagAndPushImagesFromBundle(airgapBundle string, options imagetypes.PushImag
 	err = PushEmbeddedClusterArtifacts(airgapBundle, airgap.Spec.EmbeddedClusterArtifacts, pushEmbeddedArtifactsOpts)
 	if err != nil {
 		return errors.Wrap(err, "failed to push embedded cluster artifacts")
+	}
+
+	return nil
+}
+
+func PathToRegistryECImage(srcImage, registryNamespace string) (string, error) {
+	imageParts := strings.Split(srcImage, "/")
+	imageName := imageParts[len(imageParts)-1]
+	if imageName == "" {
+		return "", errors.New("empty image name")
+	}
+	return filepath.Join(registryNamespace, "embedded-cluster", imageName), nil
+}
+
+func PushECImagesFromTempRegistry(airgapRootDir string, airgap *kotsv1beta1.Airgap, options imagetypes.PushImagesOptions) error {
+	artifacts := airgap.Spec.EmbeddedClusterArtifacts
+	if artifacts == nil || artifacts.Registry.Dir == "" || len(artifacts.Registry.SavedImages) == 0 {
+		return nil
+	}
+
+	imagesDir := filepath.Join(airgapRootDir, artifacts.Registry.Dir)
+	tempRegistry := &dockerregistry.TempRegistry{}
+	if err := tempRegistry.Start(imagesDir); err != nil {
+		return errors.Wrap(err, "failed to start temp registry")
+	}
+	defer tempRegistry.Stop()
+
+	imageInfos := make(map[string]*imagetypes.ImageInfo)
+	for _, image := range artifacts.Registry.SavedImages {
+		layerInfo := make(map[string]*imagetypes.LayerInfo)
+		if options.LogForUI {
+			layers, err := tempRegistry.GetImageLayers(image)
+			if err != nil {
+				return errors.Wrapf(err, "failed to get image layers for %s", image)
+			}
+			layerInfo, err = layerInfoFromLayers(layers)
+			if err != nil {
+				return errors.Wrap(err, "failed to get layer info")
+			}
+		}
+		imageInfos[image] = &imagetypes.ImageInfo{
+			Format: dockertypes.FormatDockerRegistry,
+			Layers: layerInfo,
+			Status: "queued",
+		}
+	}
+
+	reportWriter := options.ProgressWriter
+	if options.LogForUI {
+		wc := reportWriterWithProgress(imageInfos, options.ProgressWriter)
+		reportWriter = wc.(io.Writer)
+		defer wc.Write([]byte("+status.flush:\n"))
+		defer wc.Close()
+	}
+
+	totalImages := len(imageInfos)
+	var imageCounter int
+	for imageID, imageInfo := range imageInfos {
+		srcRef, err := tempRegistry.SrcRef(imageID)
+		if err != nil {
+			return errors.Wrapf(err, "failed to parse source image %s", imageID)
+		}
+
+		parsed, err := reference.ParseDockerRef(imageID)
+		if err != nil {
+			return errors.Wrap(err, "failed to normalize source image")
+		}
+		srcImage := parsed.String()
+
+		imagePath, err := PathToRegistryECImage(srcImage, options.Registry.Namespace)
+		if err != nil {
+			return errors.Wrap(err, "failed to get registry image path")
+		}
+
+		destStr := fmt.Sprintf("docker://%s/%s", options.Registry.Endpoint, imagePath)
+		destRef, err := alltransports.ParseImageName(destStr)
+		if err != nil {
+			return errors.Wrapf(err, "failed to parse dest image %s", destStr)
+		}
+
+		pushImageOpts := imagetypes.PushImageOptions{
+			ImageID:      imageID,
+			ImageInfo:    imageInfo,
+			Log:          options.Log,
+			LogForUI:     options.LogForUI,
+			ReportWriter: reportWriter,
+			CopyImageOptions: imagetypes.CopyImageOptions{
+				SrcRef:  srcRef,
+				DestRef: destRef,
+				DestAuth: imagetypes.RegistryAuth{
+					Username: options.Registry.Username,
+					Password: options.Registry.Password,
+				},
+				CopyAll:           true,
+				SrcDisableV1Ping:  true,
+				SrcSkipTLSVerify:  true,
+				DestDisableV1Ping: true,
+				DestSkipTLSVerify: true,
+				ReportWriter:      reportWriter,
+			},
+		}
+		imageCounter++
+		fmt.Printf("Pushing embedded cluster images (%d/%d)\n", imageCounter, totalImages)
+		if err := pushImage(pushImageOpts); err != nil {
+			return errors.Wrapf(err, "failed to push image %s", imageID)
+		}
 	}
 
 	return nil
