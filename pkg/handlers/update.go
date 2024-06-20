@@ -217,11 +217,6 @@ type AvailableUpdatesResponse struct {
 }
 
 func (h *Handler) GetAvailableUpdates(w http.ResponseWriter, r *http.Request) {
-	if kotsadm.IsAirgap() {
-		w.WriteHeader(http.StatusForbidden)
-		return
-	}
-
 	availableUpdatesResponse := AvailableUpdatesResponse{
 		Success: false,
 	}
@@ -238,6 +233,19 @@ func (h *Handler) GetAvailableUpdates(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		logger.Error(errors.Wrap(err, "failed to get app from slug"))
 		JSON(w, http.StatusInternalServerError, availableUpdatesResponse)
+		return
+	}
+
+	if kotsadm.IsAirgap() {
+		updates, err := updatechecker.GetAvailableAirgapUpdates(app)
+		if err != nil {
+			logger.Error(errors.Wrap(err, "failed to get available airgap updates"))
+			JSON(w, http.StatusInternalServerError, availableUpdatesResponse)
+			return
+		}
+		availableUpdatesResponse.Success = true
+		availableUpdatesResponse.Updates = updates
+		JSON(w, http.StatusOK, availableUpdatesResponse)
 		return
 	}
 
@@ -474,7 +482,7 @@ func (h *Handler) UploadAirgapBundle(w http.ResponseWriter, r *http.Request) {
 
 		foundAirgapBundle = true
 
-		destDir := filepath.Join(os.TempDir(), "available-versions", uuid.New().String())
+		destDir := filepath.Join(updatechecker.AvailableUpdatesPath, uuid.New().String())
 		if err := os.MkdirAll(destDir, 0755); err != nil {
 			logger.Error(errors.Wrap(err, "failed to create dest dir"))
 			w.WriteHeader(http.StatusInternalServerError)

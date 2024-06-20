@@ -3,17 +3,21 @@ package updatechecker
 import (
 	"encoding/json"
 	"fmt"
+	"os"
+	"path/filepath"
 	"strings"
 	"sync"
 	"time"
 
 	"github.com/blang/semver"
 	"github.com/pkg/errors"
+	"github.com/replicatedhq/kots/pkg/airgap"
 	downstreamtypes "github.com/replicatedhq/kots/pkg/api/downstream/types"
 	"github.com/replicatedhq/kots/pkg/app"
 	apptypes "github.com/replicatedhq/kots/pkg/app/types"
 	license "github.com/replicatedhq/kots/pkg/kotsadmlicense"
 	upstream "github.com/replicatedhq/kots/pkg/kotsadmupstream"
+	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/preflight"
 	preflighttypes "github.com/replicatedhq/kots/pkg/preflight/types"
@@ -38,6 +42,15 @@ import (
 var jobs = make(map[string]*cron.Cron)
 var mtx sync.Mutex
 var store = storepkg.GetStore()
+
+var AvailableUpdatesPath = filepath.Join(os.TempDir(), "available-updates")
+
+func init() {
+	// ensure the available updates directory exists
+	if err := os.MkdirAll(AvailableUpdatesPath, 0744); err != nil {
+		panic(errors.Wrap(err, "failed to create available updates directory"))
+	}
+}
 
 // Start will start the update checker
 // the frequency of those update checks are app specific and can be modified by the user
@@ -752,19 +765,23 @@ func GetAvailableUpdates(kotsStore storepkg.Store, app *apptypes.App, license *k
 
 func isUpdateDeployable(updateCursor string, updates []upstreamtypes.Update) (bool, string) {
 	// iterate over updates in reverse since they are sorted in descending order
-	requiredUpdates := []upstreamtypes.Update{}
+	requiredUpdates := []string{}
 	for i := len(updates) - 1; i >= 0; i-- {
 		if updates[i].Cursor == updateCursor {
 			break
 		}
 		if updates[i].IsRequired {
-			requiredUpdates = append(requiredUpdates, updates[i])
+			requiredUpdates = append(requiredUpdates, updates[i].VersionLabel)
 		}
 	}
+	return canDeployVersion(requiredUpdates)
+}
+
+func canDeployVersion(requiredUpdates []string) (bool, string) {
 	if len(requiredUpdates) > 0 {
 		versionLabels := []string{}
-		for _, v := range requiredUpdates {
-			versionLabels = append([]string{v.VersionLabel}, versionLabels...)
+		for _, versionLabel := range requiredUpdates {
+			versionLabels = append([]string{versionLabel}, versionLabels...)
 		}
 		versionLabelsStr := strings.Join(versionLabels, ", ")
 		if len(requiredUpdates) == 1 {
@@ -773,4 +790,48 @@ func isUpdateDeployable(updateCursor string, updates []upstreamtypes.Update) (bo
 		return false, fmt.Sprintf("This version cannot be deployed because versions %s are required and must be deployed first.", versionLabelsStr)
 	}
 	return true, ""
+}
+
+func GetAvailableAirgapUpdates(app *apptypes.App) ([]types.AvailableUpdate, error) {
+	updates := []types.AvailableUpdate{}
+	if err := filepath.Walk(AvailableUpdatesPath, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+		if info.IsDir() {
+			return nil
+		}
+
+		airgapMetadata, err := kotsutil.FindAirgapMetaInBundle(path)
+		if err != nil {
+			return errors.Wrap(err, "failed to find airgap metadata")
+		}
+
+		if airgapMetadata.Spec.AppSlug != app.Slug {
+			return nil
+		}
+
+		missingPrereqs, err := airgap.GetMissingRequiredVersions(app, airgapMetadata)
+		if err != nil {
+			return errors.Wrap(err, "failed to get missing required versions")
+		}
+
+		deployable, cause := canDeployVersion(missingPrereqs)
+		update := types.AvailableUpdate{
+			VersionLabel:       airgapMetadata.Spec.VersionLabel,
+			UpdateCursor:       airgapMetadata.Spec.UpdateCursor,
+			ChannelID:          airgapMetadata.Spec.ChannelID,
+			IsRequired:         airgapMetadata.Spec.IsRequired,
+			ReleaseNotes:       airgapMetadata.Spec.ReleaseNotes,
+			IsDeployable:       deployable,
+			NonDeployableCause: cause,
+		}
+		updates = append(updates, update)
+
+		return nil
+	}); err != nil {
+		return nil, errors.Wrap(err, "failed to walk airgap root dir")
+	}
+
+	return updates, nil
 }
