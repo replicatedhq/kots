@@ -1165,6 +1165,7 @@ func KotsadmStatefulSet(deployOptions types.DeployOptions, size resource.Quantit
 						Labels: types.GetKotsadmLabels(),
 					},
 					Spec: corev1.PersistentVolumeClaimSpec{
+						StorageClassName: k8sutil.GetStorageClassName(),
 						AccessModes: []corev1.PersistentVolumeAccessMode{
 							corev1.ReadWriteOnce,
 						},
