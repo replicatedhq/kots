@@ -7,6 +7,7 @@ export const UpgradeServiceProvider = ({ children }: any) => {
 
   return (
     <UpgradeServiceContext.Provider
+      // @ts-ignore
       value={{
         config,
         setConfig,

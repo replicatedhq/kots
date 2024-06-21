@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
 import Modal from "react-modal";
+// TODO: add type checking support for react-remarkable or add a global ignore
+// @ts-ignore
 import Markdown from "react-remarkable";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 
@@ -13,17 +15,18 @@ import {
   useGetPrelightResults,
   useIgnorePermissionErrors,
 } from "@features/PreflightChecks/api";
-import { KotsParams, PreflightResult } from "@types";
+import { KotsParams } from "@types";
 
 import "../../scss/components/PreflightCheckPage.scss";
 
-interface PreflightResultResponse extends PreflightResult {
-  showWarn: boolean;
+interface PreflightResultResponse {
+  learnMoreUri: string;
+  message: string;
+  title: string;
+  showCannotFail: boolean;
   showFail: boolean;
   showPass: boolean;
-  showCannotFail: boolean;
-  title: string;
-  message: string;
+  showWarn: boolean;
 }
 
 const ConfirmAndDeploy = ({

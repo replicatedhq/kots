@@ -324,6 +324,7 @@ export const AppConfig = ({
             });
           }
         } else {
+          // @ts-ignore
           setConfig(configGroups);
 
           navigate(`/upgrade-service/app/${slug}/preflight`, {
