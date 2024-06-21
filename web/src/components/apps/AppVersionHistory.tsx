@@ -1428,8 +1428,16 @@ class AppVersionHistory extends Component<Props, State> {
 
           return;
         }
-        const text = await res.text();
-        console.log("failed to init upgrade service", text);
+        const text = await res.json();
+        if (!res.success) {
+          console.log("failed to init upgrade service", text);
+          this.setState({
+            isStartingUpgradeService: {
+              isLoading: false,
+              error: text.error,
+            },
+          });
+        }
       })
       .catch((err) => {
         console.log(err);
@@ -1463,6 +1471,9 @@ class AppVersionHistory extends Component<Props, State> {
                   ? "Deploying..."
                   : "Deploy"}
               </button>
+              {this.state.isStartingUpgradeService?.error && (
+                <p>{this.state.isStartingUpgradeService.error}</p>
+              )}
             </div>
           ))}
         </div>
@@ -2321,6 +2332,7 @@ class AppVersionHistory extends Component<Props, State> {
             width="100%"
             height="100%"
             allowFullScreen={true}
+            id="upgrade-service-iframe"
           />
         </Modal>
       </div>

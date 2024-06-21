@@ -51,6 +51,7 @@ const ConfirmAndDeploy = ({
   const { mutate: deployKotsDownstream } = useDeployAppVersion({
     slug,
     sequence,
+    isUpgradeService: true,
   });
   // TODO: figure out what this is for
   const { mutate: ignorePermissionErrors, error: ignorePermissionError } =
@@ -300,6 +301,7 @@ const ConfirmAndDeploy = ({
         <SkipPreflightsModal
           hideSkipModal={() => setShowConfirmIgnorePreflightsModal(false)}
           onIgnorePreflightsAndDeployClick={() => {
+            // TODO: MAKE SURE THE LOGIC FOR DEPLOYING THIS IS WORKING CORRECTLY
             deployKotsDownstream({
               continueWithFailedPreflights: false,
               isSkipPreflights: true,
