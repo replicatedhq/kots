@@ -12,7 +12,6 @@ import { useLocation, useNavigate, useParams } from "react-router-dom";
 
 import "@src/scss/components/watches/WatchConfig.scss";
 import { useUpgradeServiceContext } from "./UpgradeServiceContext";
-import { useMutation } from "@tanstack/react-query";
 
 // This was typed from the implementation of the component so it might be wrong
 type ConfigGroup = {
@@ -76,7 +75,7 @@ export const AppConfig = ({
   const navigate = useNavigate();
   const params = useParams();
   const [lastLocation, setLastLocation] = useState("");
-  const { config, setConfig } = useUpgradeServiceContext();
+  const { config, setConfig, setExistingConfig } = useUpgradeServiceContext();
 
   useEffect(() => {
     setLastLocation(location.hash);
@@ -102,6 +101,7 @@ export const AppConfig = ({
     window.addEventListener("resize", determineSidebarHeight);
     getConfig();
     setCurrentStep(0);
+
     return window.removeEventListener("resize", determineSidebarHeight);
   }, []);
 
@@ -134,31 +134,6 @@ export const AppConfig = ({
       }
     }
   }, [state.configGroups]);
-
-  // componentDidUpdate(lastProps: Props, lastState: State) {
-  //   const { location } = this.props;
-  //   // if (app && !app.isConfigurable) {
-  //   // app not configurable - redirect
-  //   // TODO NOW: what to do here?
-  //   // }
-  //   if (
-  //     this.state.configGroups &&
-  //     this.state.configGroups !== lastState.configGroups
-  //   ) {
-  //     this.determineSidebarHeight();
-  //   }
-  //   // need to dig into this more
-  //   if (location.hash !== lastProps.location.hash && location.hash) {
-  //     // navigate to error if there is one
-  //     if (this.state.showConfigError) {
-  //       const hash = location.hash.slice(1);
-  //       const element = document.getElementById(hash);
-  //       if (element) {
-  //         element.scrollIntoView();
-  //       }
-  //     }
-  //   }
-  // }
   const sidebarWrapperRef = useRef(null);
   const determineSidebarHeight = debounce(() => {
     // TODO: use a ref for this instead of setting HTMLElement.style
@@ -272,12 +247,16 @@ export const AppConfig = ({
             changed: false,
             configLoading: false,
           });
+          console.log("set configgroup", data.configGroups);
+
+          setExistingConfig(data.configGroups);
           if (location.hash.length > 0) {
             navigateToCurrentHash();
           } else {
             setState({
               activeGroups: [data.configGroups[0].name],
               configLoading: false,
+              // i removed the jsx that renders err modal
               gettingConfigErrMsg: "",
             });
           }
@@ -295,18 +274,10 @@ export const AppConfig = ({
     }
   };
 
-  const updateUrlWithErrorId = (requiredItems: RequiredItems) => {
-    const { slug } = params;
-    navigate(
-      `/app/${slug}/config${window.location.search}#${requiredItems[0]}-group`
-    );
-  };
-
   const markRequiredItems = (requiredItems: RequiredItems) => {
     const configGroups = state.configGroups;
     requiredItems.forEach((requiredItem) => {
       configGroups.forEach((configGroup: ConfigGroup) => {
-        console.log(configGroup, "groups");
         const item = configGroup.items.find((i) => i.name === requiredItem);
         if (item) {
           item.error = "This item is required";
@@ -314,37 +285,74 @@ export const AppConfig = ({
       });
     });
     setState({ configGroups, showConfigError: true });
-    updateUrlWithErrorId(requiredItems);
   };
 
-  const { mutate: valdiateConfig } = useMutation({
-    mutationFn: async (payload) => {
-      const { slug } = params;
-      const path = `${process.env.API_ENDPOINT}/upgrade-service/app/${slug}/config${window.location.search}`;
-      await fetch(path, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        credentials: "include",
-        body: JSON.stringify(payload),
-      });
-    },
-    onSuccess: () => {
-      setConfig(configGroups);
-      const { slug } = params;
-      navigate(`/upgrade-service/app/${slug}/preflight`, {
-        replace: true,
-      });
-    },
-    onError: () => {
-      // TODO: handle error
-      // show error message
-    },
-  });
-
   const handleNext = async () => {
-    valdiateConfig({ configGroup: state.configGroups });
+    const { slug } = params;
+
+    const url = `${process.env.API_ENDPOINT}/upgrade-service/app/${slug}/config${window.location.search}`;
+    fetch(url, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      credentials: "include",
+      body: JSON.stringify({
+        configGroups: state.configGroups,
+      }),
+    })
+      .then((res) => res.json())
+      .then(async (result) => {
+        if (!result.success) {
+          if (result.requiredItems?.length) {
+            markRequiredItems(result.requiredItems);
+          }
+          if (result.error) {
+            setState({
+              showConfigError: Boolean(result.error),
+              configErrorMessage: result.error,
+            });
+          }
+
+          const validationErrors: ConfigGroupItemValidationErrors[] =
+            result.validationErrors;
+          const [newGroups, hasValidationError] =
+            mergeConfigGroupsAndValidationErrors(
+              state.configGroups,
+              validationErrors
+            );
+          setState({
+            configGroups: newGroups,
+            showValidationError: hasValidationError,
+          });
+          if (result.error) {
+            setState({
+              showConfigError: Boolean(result.error),
+              configErrorMessage: result.error,
+              showValidationError: true,
+            });
+          }
+        } else {
+          setConfig(configGroups);
+
+          navigate(`/upgrade-service/app/${slug}/preflight`, {
+            replace: true,
+          });
+          setState({
+            savingConfig: false,
+            changed: false,
+          });
+        }
+      })
+      .catch((err) => {
+        setState({
+          savingConfig: false,
+          showConfigError: Boolean(err),
+          configErrorMessage: err
+            ? err.message
+            : "Something went wrong, please try again.",
+        });
+      });
   };
 
   getItemInConfigGroups = (
@@ -766,15 +774,6 @@ export const AppConfig = ({
           </div>{" "}
         </div>
       </div>
-      {gettingConfigErrMsg && (
-        <ErrorModal
-          errorModal={displayErrorModal}
-          toggleErrorModal={toggleErrorModal}
-          err={errorTitle}
-          errMsg={gettingConfigErrMsg}
-          tryAgain={getConfig}
-        />
-      )}
     </div>
   );
 };

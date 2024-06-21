@@ -20,9 +20,13 @@ import {
 
 import { useDeployAppVersion } from "@features/App/api";
 import Icon from "@components/Icon";
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { KotsParams } from "@types";
 
-const PreflightCheck = ({ setCurrentStep }) => {
+const PreflightCheck = ({
+  setCurrentStep,
+}: {
+  setCurrentStep: (step: number) => void;
+}) => {
   const navigate = useNavigate();
   const [
     showContinueWithFailedPreflightsModal,
@@ -33,51 +37,17 @@ const PreflightCheck = ({ setCurrentStep }) => {
     setShowConfirmIgnorePreflightsModal,
   ] = useState(false);
 
-  const { sequence = "0", slug } = useParams();
+  const { sequence = "0", slug } = useParams<keyof KotsParams>() as KotsParams;
   const { mutate: deployKotsDownstream } = useDeployAppVersion({
     slug,
     sequence,
   });
   const { mutate: ignorePermissionErrors, error: ignorePermissionError } =
     useIgnorePermissionErrors({ sequence, slug });
-  const { data: preflightCheck, error: getPreflightResultsError } = useQuery({
-    queryFn: async () => {
-      const path = `${process.env.API_ENDPOINT}/upgrade-service/app/${slug}/preflight/result`;
-      await fetch(path, {
-        headers: {
-          "Content-Type": "application/json",
-        },
-        credentials: "include",
-      });
-    },
-    onSuccess: (data) => {
-      console.log("preflight results", data);
-    },
-    onError: () => {
-      // TODO: handle error
-      // show error message
-    },
-  });
-  const { mutate: rerunPreflights, error: rerunPreflightsError } = useMutation({
-    mutationFn: async () => {
-      const path = `${process.env.API_ENDPOINT}/upgrade-service/app/${slug}/preflight/run`;
-      await fetch(path, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        credentials: "include",
-        // body: JSON.stringify(payload),
-      });
-    },
-    onSuccess: (data) => {
-      console.log(data, "ran preflights ");
-    },
-    onError: () => {
-      // TODO: handle error
-      // show error message
-    },
-  });
+  const { data: preflightCheck, error: getPreflightResultsError } =
+    useGetPrelightResults({ slug, sequence, isUpgradeService: true });
+  const { mutate: rerunPreflights, error: rerunPreflightsError } =
+    useRerunPreflights({ slug, sequence, isUpgradeService: true });
 
   if (!preflightCheck?.showPreflightCheckPending) {
     if (showConfirmIgnorePreflightsModal) {
@@ -85,13 +55,11 @@ const PreflightCheck = ({ setCurrentStep }) => {
     }
   }
 
-  const location = useLocation();
-
   const { refetch: refetchApps } = useApps();
+  const location = useLocation();
 
   useEffect(() => {
     setCurrentStep(1);
-    rerunPreflights();
   }, []);
 
   return (
@@ -169,7 +137,7 @@ const PreflightCheck = ({ setCurrentStep }) => {
               <PreflightResultErrors
                 errors={preflightCheck.errors}
                 ignorePermissionErrors={ignorePermissionErrors}
-                // logo={props.logo}
+                logo={""}
                 preflightResultData={preflightCheck.preflightResults}
                 showRbacError={preflightCheck.showRbacError}
               />
@@ -229,12 +197,14 @@ const PreflightCheck = ({ setCurrentStep }) => {
           >
             Back: Config
           </button>
-          <button
-            className="btn primary blue"
-            onClick={() => navigate(`/upgrade-service/app/${slug}/deploy`)}
-          >
-            Next: Confirm and deploy
-          </button>
+          {!preflightCheck?.showPreflightCheckPending && (
+            <button
+              className="btn primary blue"
+              onClick={() => navigate(`/upgrade-service/app/${slug}/deploy`)}
+            >
+              Next: Confirm and deploy
+            </button>
+          )}
         </div>
       </div>
 

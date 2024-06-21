@@ -20,6 +20,7 @@ import {
 import { useDeployAppVersion } from "@features/App/api";
 import Icon from "@components/Icon";
 import Markdown from "react-remarkable";
+import { useUpgradeServiceContext } from "./UpgradeServiceContext";
 
 const ConfirmAndDeploy = ({ setCurrentStep }) => {
   useEffect(() => {
@@ -149,6 +150,7 @@ const ConfirmAndDeploy = ({ setCurrentStep }) => {
   const location = useLocation();
 
   const { refetch: refetchApps } = useApps();
+  const { numberOfConfigChanges } = useUpgradeServiceContext();
 
   return (
     <div className="flex-column flex1 container">
@@ -219,7 +221,7 @@ const ConfirmAndDeploy = ({ setCurrentStep }) => {
                 size={16}
               />
               <div className="u-textColor--primary u-fontWeight--bold u-fontSize--large tw-ml-2">
-                1 value changed. No errors detected.
+                {numberOfConfigChanges} value changed. No errors detected.
               </div>
             </div>
           </div>

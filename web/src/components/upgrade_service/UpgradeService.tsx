@@ -8,9 +8,8 @@ import AppConfig from "@components/upgrade_service/AppConfig";
 // types
 import { ToastProvider } from "@src/context/ToastContext";
 import StepIndicator from "./StepIndicator";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
-import { useLocation } from "react-router-dom";
 import PreflightChecks from "./PreflightChecks";
 import ConfirmAndDeploy from "./ConfirmAndDeploy";
 import { KotsPageTitle } from "@components/Head";
@@ -22,10 +21,7 @@ const UpgradeService = () => {
   const Crashz = () => {
     throw new Error("Crashz!");
   };
-  const [currentStep, setCurrentStep] = useState(0); // Initial step
-  console.log(currentStep, "currentstep");
-  const location = useLocation();
-  const params = useParams();
+  const [currentStep, setCurrentStep] = useState(0);
 
   return (
     <QueryClientProvider client={queryClient}>

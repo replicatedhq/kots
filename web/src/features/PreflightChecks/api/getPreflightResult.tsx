@@ -6,12 +6,16 @@ async function getPreflightResult({
   apiEndpoint = process.env.API_ENDPOINT,
   slug,
   sequence,
+  isUpgradeService = false,
 }: {
   apiEndpoint?: string;
   slug: string;
   sequence?: string;
+  isUpgradeService?: boolean;
 }): Promise<PreflightResponse> {
-  const getUrl = sequence
+  const getUrl = isUpgradeService
+    ? `${process.env.API_ENDPOINT}/upgrade-service/app/${slug}/preflight/result`
+    : sequence
     ? `${apiEndpoint}/app/${slug}/sequence/${sequence}/preflight/result`
     : `${apiEndpoint}/app/${slug}/preflight/result`;
   const jsonResponse = await fetch(getUrl, {
@@ -169,9 +173,11 @@ function makeRefetchInterval(preflightCheck: PreflightCheck): number | false {
 function useGetPrelightResults({
   slug,
   sequence,
+  isUpgradeService,
 }: {
   slug: string;
   sequence?: string;
+  isUpgradeService?: boolean;
 }) {
   // this is for the progress bar
   const [refetchCount, setRefetchCount] = useState(0);
@@ -180,7 +186,7 @@ function useGetPrelightResults({
     queryFn: () => {
       setRefetchCount(refetchCount + 1);
 
-      return getPreflightResult({ slug, sequence });
+      return getPreflightResult({ slug, sequence, isUpgradeService });
     },
     queryKey: ["preflight-results", sequence, slug],
     onError: (err: Error) => {
@@ -188,18 +194,18 @@ function useGetPrelightResults({
 
       setRefetchCount(0);
     },
-    // refetchInterval: (preflightCheck: PreflightCheck | undefined) => {
-    //   if (!preflightCheck) return false;
+    refetchInterval: (preflightCheck: PreflightCheck | undefined) => {
+      if (!preflightCheck) return false;
+      if (!preflightCheck?.pollForUpdates) return false;
 
-    //   const refetchInterval = makeRefetchInterval(preflightCheck);
+      const refetchInterval = makeRefetchInterval(preflightCheck);
 
-    //   if (!refetchInterval) setRefetchCount(0);
+      if (!refetchInterval) setRefetchCount(0);
 
-    //   return refetchInterval;
-    // },
+      return refetchInterval;
+    },
     select: (response: PreflightResponse) =>
       flattenPreflightResponse({ response, refetchCount }),
-    staleTime: 500,
   });
 }
 
