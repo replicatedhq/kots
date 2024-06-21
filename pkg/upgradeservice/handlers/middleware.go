@@ -66,3 +66,17 @@ func LoggingMiddleware(next http.Handler) http.Handler {
 		)
 	})
 }
+
+func AppSlugMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		params := GetContextParams(r)
+		appSlug := mux.Vars(r)["appSlug"]
+
+		if params.AppSlug != appSlug {
+			JSON(w, http.StatusForbidden, "app slug mismatch")
+			return
+		}
+
+		next.ServeHTTP(w, r)
+	})
+}

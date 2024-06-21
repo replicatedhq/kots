@@ -177,6 +177,10 @@ func EmbeddedClusterVersion() string {
 	return os.Getenv("EMBEDDED_CLUSTER_VERSION")
 }
 
+func IsUpgradeService() bool {
+	return os.Getenv("IS_UPGRADE_SERVICE") == "true"
+}
+
 func HTTPProxy() string {
 	return os.Getenv("HTTP_PROXY")
 }

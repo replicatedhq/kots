@@ -18,7 +18,15 @@ import (
 	"github.com/replicatedhq/kots/pkg/util"
 )
 
-func bootstrap(params types.UpgradeServiceParams) error {
+func bootstrap(params types.UpgradeServiceParams) (finalError error) {
+	finishedChan := make(chan error)
+	defer close(finishedChan)
+
+	tasks.StartUpdateTaskMonitor("update-download", finishedChan)
+	defer func() {
+		finishedChan <- finalError
+	}()
+
 	// TODO NOW: airgap mode
 
 	if err := pullArchiveFromOnline(params); err != nil {
@@ -34,12 +42,12 @@ func pullArchiveFromOnline(params types.UpgradeServiceParams) (finalError error)
 		return errors.Wrap(err, "failed to load license from bytes")
 	}
 
-	beforeKotsKinds, err := kotsutil.LoadKotsKinds(params.BaseArchive)
+	beforeKotsKinds, err := kotsutil.LoadKotsKinds(params.AppArchive)
 	if err != nil {
 		return errors.Wrap(err, "failed to load current kotskinds")
 	}
 
-	if err := pull.CleanBaseArchive(params.BaseArchive); err != nil {
+	if err := pull.CleanBaseArchive(params.AppArchive); err != nil {
 		return errors.Wrap(err, "failed to clean base archive")
 	}
 
@@ -51,7 +59,7 @@ func pullArchiveFromOnline(params types.UpgradeServiceParams) (finalError error)
 		IsReadOnly: params.RegistryIsReadOnly,
 	}
 
-	identityConfigFile := filepath.Join(params.BaseArchive, "upstream", "userdata", "identityconfig.yaml")
+	identityConfigFile := filepath.Join(params.AppArchive, "upstream", "userdata", "identityconfig.yaml")
 	if _, err := os.Stat(identityConfigFile); os.IsNotExist(err) {
 		file, err := identity.InitAppIdentityConfig(params.AppSlug)
 		if err != nil {
@@ -80,11 +88,11 @@ func pullArchiveFromOnline(params types.UpgradeServiceParams) (finalError error)
 	pullOptions := pull.PullOptions{
 		LicenseObj:          license,
 		Namespace:           util.AppNamespace(),
-		ConfigFile:          filepath.Join(params.BaseArchive, "upstream", "userdata", "config.yaml"),
+		ConfigFile:          filepath.Join(params.AppArchive, "upstream", "userdata", "config.yaml"),
 		IdentityConfigFile:  identityConfigFile,
-		InstallationFile:    filepath.Join(params.BaseArchive, "upstream", "userdata", "installation.yaml"),
+		InstallationFile:    filepath.Join(params.AppArchive, "upstream", "userdata", "installation.yaml"),
 		UpdateCursor:        params.UpdateCursor,
-		RootDir:             params.BaseArchive,
+		RootDir:             params.AppArchive,
 		Downstreams:         []string{"this-cluster"},
 		ExcludeKotsKinds:    true,
 		ExcludeAdminConsole: true,

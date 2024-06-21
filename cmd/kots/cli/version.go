@@ -1,12 +1,11 @@
 package cli
 
 import (
+	"encoding/json"
 	"fmt"
-	"log"
-	"net/http"
 
-	"github.com/gorilla/mux"
-	"github.com/replicatedhq/kots/pkg/handlers"
+	"github.com/pkg/errors"
+	"github.com/replicatedhq/kots/pkg/buildversion"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -26,19 +25,37 @@ func VersionCmd() *cobra.Command {
 			viper.BindPFlags(cmd.Flags())
 		},
 		RunE: func(cmd *cobra.Command, args []string) error {
-			r := mux.NewRouter()
+			v := viper.GetViper()
 
-			spa := handlers.SPAHandler{}
-			r.PathPrefix("/").Handler(spa)
+			output := v.GetString("output")
 
-			srv := &http.Server{
-				Handler: r,
-				Addr:    ":30888",
+			isLatest, latestVer, err := buildversion.IsLatestRelease()
+			versionOutput := VersionOutput{
+				Version: buildversion.Version(),
+			}
+			if err == nil && !isLatest {
+				versionOutput.LatestVersion = latestVer
+				versionOutput.InstallLatest = "curl https://kots.io/install | bash"
 			}
 
-			fmt.Printf("Starting KOTS SPA handler on port %d...\n", 30888)
+			if output != "json" && output != "" {
+				return errors.Errorf("output format %s not supported (allowed formats are: json)", output)
+			} else if output == "json" {
+				// marshal JSON
+				outputJSON, err := json.Marshal(versionOutput)
+				if err != nil {
+					return errors.Wrap(err, "error marshaling JSON")
+				}
+				fmt.Println(string(outputJSON))
+			} else {
+				// print basic version info
+				fmt.Printf("Replicated KOTS %s\n", buildversion.Version())
 
-			log.Fatal(srv.ListenAndServe())
+				// check if this is the latest release, and display possible upgrade instructions
+				if versionOutput.LatestVersion != "" {
+					fmt.Printf("\nVersion %s is available for kots. To install updates, run\n  $ %s\n", versionOutput.LatestVersion, versionOutput.InstallLatest)
+				}
+			}
 
 			return nil
 		},
