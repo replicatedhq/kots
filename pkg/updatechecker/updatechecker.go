@@ -43,11 +43,11 @@ var jobs = make(map[string]*cron.Cron)
 var mtx sync.Mutex
 var store = storepkg.GetStore()
 
-var AvailableUpdatesPath = filepath.Join(os.TempDir(), "available-updates")
+var AvailableUpdatesDir = filepath.Join(os.TempDir(), "available-updates")
 
 func init() {
 	// ensure the available updates directory exists
-	if err := os.MkdirAll(AvailableUpdatesPath, 0744); err != nil {
+	if err := os.MkdirAll(AvailableUpdatesDir, 0744); err != nil {
 		panic(errors.Wrap(err, "failed to create available updates directory"))
 	}
 }
@@ -792,9 +792,9 @@ func canDeployVersion(requiredUpdates []string) (bool, string) {
 	return true, ""
 }
 
-func GetAvailableAirgapUpdates(app *apptypes.App) ([]types.AvailableUpdate, error) {
+func GetAvailableAirgapUpdates(app *apptypes.App, license *kotsv1beta1.License) ([]types.AvailableUpdate, error) {
 	updates := []types.AvailableUpdate{}
-	if err := filepath.Walk(AvailableUpdatesPath, func(path string, info os.FileInfo, err error) error {
+	if err := filepath.Walk(AvailableUpdatesDir, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err
 		}
@@ -807,7 +807,7 @@ func GetAvailableAirgapUpdates(app *apptypes.App) ([]types.AvailableUpdate, erro
 			return errors.Wrap(err, "failed to find airgap metadata")
 		}
 
-		if airgapMetadata.Spec.AppSlug != app.Slug {
+		if airgapMetadata.Spec.AppSlug != license.Spec.AppSlug && airgapMetadata.Spec.ChannelID != license.Spec.ChannelID {
 			return nil
 		}
 

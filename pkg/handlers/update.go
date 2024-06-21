@@ -6,20 +6,19 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
-	"mime/multipart"
 	"net/http"
 	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
 
-	"github.com/google/uuid"
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/airgap"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/kotsadm"
 	license "github.com/replicatedhq/kots/pkg/kotsadmlicense"
+	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/kurl"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/reporting"
@@ -236,8 +235,15 @@ func (h *Handler) GetAvailableUpdates(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	latestLicense, err := store.GetLatestLicenseForApp(app.ID)
+	if err != nil {
+		logger.Error(errors.Wrap(err, "failed to get latest license for app"))
+		JSON(w, http.StatusInternalServerError, availableUpdatesResponse)
+		return
+	}
+
 	if kotsadm.IsAirgap() {
-		updates, err := updatechecker.GetAvailableAirgapUpdates(app)
+		updates, err := updatechecker.GetAvailableAirgapUpdates(app, latestLicense)
 		if err != nil {
 			logger.Error(errors.Wrap(err, "failed to get available airgap updates"))
 			JSON(w, http.StatusInternalServerError, availableUpdatesResponse)
@@ -249,7 +255,7 @@ func (h *Handler) GetAvailableUpdates(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	latestLicense, _, err := license.Sync(app, "", false)
+	latestLicense, _, err = license.Sync(app, "", false)
 	if err != nil {
 		logger.Error(errors.Wrap(err, "failed to sync license"))
 		JSON(w, http.StatusInternalServerError, availableUpdatesResponse)
@@ -482,15 +488,37 @@ func (h *Handler) UploadAirgapBundle(w http.ResponseWriter, r *http.Request) {
 
 		foundAirgapBundle = true
 
-		destDir := filepath.Join(updatechecker.AvailableUpdatesPath, uuid.New().String())
+		tmpFile, err := os.CreateTemp("", "kots-airgap")
+		if err != nil {
+			logger.Error(errors.Wrap(err, "failed to create temp file"))
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+		defer os.RemoveAll(tmpFile.Name())
+
+		_, err = io.Copy(tmpFile, part)
+		if err != nil {
+			logger.Error(errors.Wrap(err, "failed to copy part data"))
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+
+		airgapMetadata, err := kotsutil.FindAirgapMetaInBundle(tmpFile.Name())
+		if err != nil {
+			logger.Error(errors.Wrap(err, "failed to find airgap metadata in bundle"))
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+
+		destDir := filepath.Join(updatechecker.AvailableUpdatesDir, airgapMetadata.Spec.ChannelID, airgapMetadata.Spec.UpdateCursor)
 		if err := os.MkdirAll(destDir, 0755); err != nil {
 			logger.Error(errors.Wrap(err, "failed to create dest dir"))
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
 
-		if err := copyFormFileToDir(part, destDir); err != nil {
-			logger.Error(errors.Wrap(err, "failed to copy form file to dir"))
+		if err := os.Rename(tmpFile.Name(), filepath.Join(destDir, part.FileName())); err != nil {
+			logger.Error(errors.Wrap(err, "failed to move airgap bundle to dest dir"))
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
@@ -503,20 +531,4 @@ func (h *Handler) UploadAirgapBundle(w http.ResponseWriter, r *http.Request) {
 	}
 
 	JSON(w, http.StatusOK, struct{}{})
-}
-
-func copyFormFileToDir(part *multipart.Part, destDir string) error {
-	fileName := filepath.Join(destDir, part.FormName())
-	file, err := os.Create(fileName)
-	if err != nil {
-		return errors.Wrap(err, "failed to create file")
-	}
-	defer file.Close()
-
-	_, err = io.Copy(file, part)
-	if err != nil {
-		return errors.Wrap(err, "failed to copy part data")
-	}
-
-	return nil
 }

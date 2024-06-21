@@ -2,7 +2,6 @@ package archives
 
 import (
 	"encoding/base64"
-	"io"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -99,7 +98,7 @@ func TestCreateFilteredAirgapBundle(t *testing.T) {
 				return
 			}
 
-			b, err = io.ReadAll(got)
+			b, err = os.ReadFile(got)
 			if err != nil {
 				t.Errorf("failed to read filtered airgap bundle: %v", err)
 			}

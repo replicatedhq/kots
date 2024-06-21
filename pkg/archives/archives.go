@@ -180,38 +180,65 @@ func IsTGZ(b []byte) bool {
 	return err == nil
 }
 
-func CreateFilteredAirgapBundle(airgapBundle string, filesToInclude []string) (io.Reader, error) {
-	buf := bytes.NewBuffer(nil)
-	gw := gzip.NewWriter(buf)
+func CreateFilteredAirgapBundle(airgapBundle string, filesToInclude []string) (string, error) {
+	f, err := os.CreateTemp("", "kots-airgap")
+	if err != nil {
+		return "", errors.Wrap(err, "failed to create temp file")
+	}
+	defer f.Close()
+
+	gw := gzip.NewWriter(f)
+	defer gw.Close()
+
 	tw := tar.NewWriter(gw)
 
-	for _, path := range filesToInclude {
-		contents, err := GetFileFromAirgap(path, airgapBundle)
+	fileFilter := make(map[string]bool)
+	for _, file := range filesToInclude {
+		fileFilter[file] = true
+	}
+
+	fileReader, err := os.Open(airgapBundle)
+	if err != nil {
+		return "", errors.Wrap(err, "failed to open airgap bundle")
+	}
+	defer fileReader.Close()
+
+	gzipReader, err := gzip.NewReader(fileReader)
+	if err != nil {
+		return "", errors.Wrap(err, "failed to get new gzip reader")
+	}
+	defer gzipReader.Close()
+
+	tarReader := tar.NewReader(gzipReader)
+	for {
+		header, err := tarReader.Next()
+		if err == io.EOF {
+			break
+		}
 		if err != nil {
-			return nil, errors.Wrapf(err, "failed to get %s from airgap bundle", path)
+			return "", errors.Wrap(err, "failed to get read archive")
 		}
 
-		header := &tar.Header{
-			Name: path,
-			Mode: 0644,
-			Size: int64(len(contents)),
+		if _, ok := fileFilter[header.Name]; !ok {
+			continue
 		}
+
 		if err := tw.WriteHeader(header); err != nil {
-			return nil, errors.Wrapf(err, "failed to write tar header for %s", path)
+			return "", errors.Wrapf(err, "failed to write tar header for %s", header.Name)
 		}
-		_, err = tw.Write(contents)
+		_, err = io.Copy(tw, tarReader)
 		if err != nil {
-			return nil, errors.Wrapf(err, "failed to write %s to tar", path)
+			return "", errors.Wrapf(err, "failed to write %s to tar", header.Name)
 		}
 	}
 
 	if err := tw.Close(); err != nil {
-		return nil, errors.Wrap(err, "failed to close tar writer")
+		return "", errors.Wrap(err, "failed to close tar writer")
 	}
 
 	if err := gw.Close(); err != nil {
-		return nil, errors.Wrap(err, "failed to close gzip writer")
+		return "", errors.Wrap(err, "failed to close gzip writer")
 	}
 
-	return buf, nil
+	return f.Name(), nil
 }

@@ -50,13 +50,17 @@ func AirgapUploadCmd() *cobra.Command {
 			filesToInclude := []string{
 				"airgap.yaml",
 				"app.tar.gz",
-				"embedded-cluster/artifacts/kots",
+			}
+
+			if util.IsEmbeddedCluster() {
+				filesToInclude = append(filesToInclude, "embedded-cluster/artifacts/kots")
 			}
 
 			filteredAirgapBundle, err := archives.CreateFilteredAirgapBundle(airgapBundle, filesToInclude)
 			if err != nil {
 				return errors.Wrap(err, "failed to create filtered airgap bundle")
 			}
+			defer os.RemoveAll(filteredAirgapBundle)
 
 			namespace, err := getNamespaceOrDefault(v.GetString("namespace"))
 			if err != nil {
@@ -99,7 +103,7 @@ func AirgapUploadCmd() *cobra.Command {
 	return cmd
 }
 
-func uploadAirgapBundle(airgapBundle io.Reader, uploadEndpoint string, namespace string) error {
+func uploadAirgapBundle(airgapBundle string, uploadEndpoint string, namespace string) error {
 	buffer := bytes.NewBuffer(nil)
 	writer := multipart.NewWriter(buffer)
 
@@ -108,7 +112,13 @@ func uploadAirgapBundle(airgapBundle io.Reader, uploadEndpoint string, namespace
 		return errors.Wrap(err, "failed to create form file")
 	}
 
-	if _, err := io.Copy(part, airgapBundle); err != nil {
+	f, err := os.Open(airgapBundle)
+	if err != nil {
+		return errors.Wrap(err, "failed to open airgap bundle")
+	}
+	defer f.Close()
+
+	if _, err := io.Copy(part, f); err != nil {
 		return errors.Wrap(err, "failed to copy airgap bundle to form file")
 	}
 
