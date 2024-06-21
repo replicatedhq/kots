@@ -53,7 +53,7 @@ func AirgapUploadCmd() *cobra.Command {
 			}
 
 			if util.IsEmbeddedCluster() {
-				filesToInclude = append(filesToInclude, "embedded-cluster/artifacts/kots")
+				filesToInclude = append(filesToInclude, "embedded-cluster/artifacts/kots.tar.gz")
 			}
 
 			filteredAirgapBundle, err := archives.CreateFilteredAirgapBundle(airgapBundle, filesToInclude)
