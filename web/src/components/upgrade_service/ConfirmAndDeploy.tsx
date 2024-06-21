@@ -1,28 +1,36 @@
-import { KotsPageTitle } from "@components/Head";
 import { useEffect, useState } from "react";
-import { useParams, useLocation, useNavigate } from "react-router-dom";
 import Modal from "react-modal";
+import Markdown from "react-remarkable";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
 
-import PreflightRenderer from "@components/PreflightRenderer";
-import PreflightResultErrors from "@components/PreflightResultErrors";
+import { KotsPageTitle } from "@components/Head";
+import Icon from "@components/Icon";
 import SkipPreflightsModal from "@components/shared/modals/SkipPreflightsModal";
-
 import PreflightsProgress from "@components/troubleshoot/PreflightsProgress";
-import "../../scss/components/PreflightCheckPage.scss";
-
 import { useApps } from "@features/App";
-
+import { useDeployAppVersion } from "@features/App/api";
 import {
   useGetPrelightResults,
   useIgnorePermissionErrors,
 } from "@features/PreflightChecks/api";
+import { KotsParams, PreflightResult } from "@types";
 
-import { useDeployAppVersion } from "@features/App/api";
-import Icon from "@components/Icon";
-import Markdown from "react-remarkable";
-import { useUpgradeServiceContext } from "./UpgradeServiceContext";
+import "../../scss/components/PreflightCheckPage.scss";
 
-const ConfirmAndDeploy = ({ setCurrentStep }) => {
+interface PreflightResultResponse extends PreflightResult {
+  showWarn: boolean;
+  showFail: boolean;
+  showPass: boolean;
+  showCannotFail: boolean;
+  title: string;
+  message: string;
+}
+
+const ConfirmAndDeploy = ({
+  setCurrentStep,
+}: {
+  setCurrentStep: (step: number) => void;
+}) => {
   useEffect(() => {
     setCurrentStep(2);
   }, []);
@@ -36,11 +44,12 @@ const ConfirmAndDeploy = ({ setCurrentStep }) => {
     setShowConfirmIgnorePreflightsModal,
   ] = useState(false);
 
-  const { sequence = "0", slug } = useParams();
+  const { sequence = "0", slug } = useParams<keyof KotsParams>() as KotsParams;
   const { mutate: deployKotsDownstream } = useDeployAppVersion({
     slug,
     sequence,
   });
+  // TODO: figure out what this is for
   const { mutate: ignorePermissionErrors, error: ignorePermissionError } =
     useIgnorePermissionErrors({ sequence, slug });
   const { data: preflightCheck, error: getPreflightResultsError } =
@@ -52,21 +61,29 @@ const ConfirmAndDeploy = ({ setCurrentStep }) => {
     }
   }
 
-  const PreflightResult = ({ results }) => {
-    console.log(results, "res");
-    function hasAllPassed(data) {
+  const PreflightResult = ({
+    results,
+  }: {
+    results: PreflightResultResponse[];
+  }) => {
+    console.log(results, "results,");
+    function hasAllPassed(data: PreflightResultResponse[]) {
       return data.every((item) => item.showPass);
     }
 
-    function hasWarning(data) {
+    function hasWarning(data: PreflightResultResponse[]) {
       return data.some((item) => item.showWarn);
     }
-    function hasFailed(data) {
+    function hasFailed(data: PreflightResultResponse[]) {
       return data.some((item) => item.showFail);
     }
 
-    const warnings = results.filter((result) => result.showWarn);
-    const errors = results.filter((result) => result.showFail);
+    const warnings = results.filter(
+      (result: PreflightResultResponse) => result.showWarn
+    );
+    const errors = results.filter(
+      (result: PreflightResultResponse) => result.showFail
+    );
 
     // go through and find out if there are warnings
     if (hasAllPassed(results)) {
@@ -97,7 +114,10 @@ const ConfirmAndDeploy = ({ setCurrentStep }) => {
           </div>
           {errors.map((error, i) => {
             return (
-              <div className="flex justifyContent--space-between preflight-check-row tw-my-2 tw-py-2">
+              <div
+                className="flex justifyContent--space-between preflight-check-row tw-my-2 tw-py-2"
+                key={i}
+              >
                 <div className="flex1">
                   <p className="u-textColor--primary u-fontSize--large u-fontWeight--bold">
                     {error.title}
@@ -127,7 +147,10 @@ const ConfirmAndDeploy = ({ setCurrentStep }) => {
           </div>
           {warnings.map((warning, i) => {
             return (
-              <div className="flex justifyContent--space-between preflight-check-row tw-my-2 tw-py-2">
+              <div
+                className="flex justifyContent--space-between preflight-check-row tw-my-2 tw-py-2"
+                key={i}
+              >
                 <div className="flex1">
                   <p className="u-textColor--primary u-fontSize--large u-fontWeight--bold">
                     {warning.title}
@@ -142,15 +165,12 @@ const ConfirmAndDeploy = ({ setCurrentStep }) => {
         </div>
       );
     }
-    // go thorugh and find out if there are errors
 
-    // if there aren't, then show the success message
     return <div></div>;
   };
   const location = useLocation();
 
   const { refetch: refetchApps } = useApps();
-  const { numberOfConfigChanges } = useUpgradeServiceContext();
 
   return (
     <div className="flex-column flex1 container">
@@ -213,7 +233,7 @@ const ConfirmAndDeploy = ({ setCurrentStep }) => {
                 Config
               </p>
             </div>
-            {/* TODO: WILL NEED TO UPDATE THIS BASED ON THE RESPONSE FROM API */}
+
             <div className="flex justifyContent--space-between preflight-check-row tw-my-2 tw-py-2">
               <Icon
                 className="success-color"
@@ -221,7 +241,7 @@ const ConfirmAndDeploy = ({ setCurrentStep }) => {
                 size={16}
               />
               <div className="u-textColor--primary u-fontWeight--bold u-fontSize--large tw-ml-2">
-                {numberOfConfigChanges} value changed. No errors detected.
+                No errors detected.
               </div>
             </div>
           </div>

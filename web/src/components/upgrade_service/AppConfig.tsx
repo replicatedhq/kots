@@ -7,11 +7,16 @@ import classNames from "classnames";
 import debounce from "lodash/debounce";
 import find from "lodash/find";
 import map from "lodash/map";
-import { useEffect, useReducer, useRef, useState } from "react";
+import { useEffect, useReducer, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 
-import "@src/scss/components/watches/WatchConfig.scss";
+import { AppConfigRenderer } from "@src/components/AppConfigRenderer";
+import Icon from "@src/components/Icon";
+import Loader from "@src/components/shared/Loader";
+import { withRouter } from "@src/utilities/react-router-utilities";
 import { useUpgradeServiceContext } from "./UpgradeServiceContext";
+
+import "@src/scss/components/watches/WatchConfig.scss";
 
 // This was typed from the implementation of the component so it might be wrong
 type ConfigGroup = {
@@ -75,7 +80,7 @@ export const AppConfig = ({
   const navigate = useNavigate();
   const params = useParams();
   const [lastLocation, setLastLocation] = useState("");
-  const { config, setConfig, setExistingConfig } = useUpgradeServiceContext();
+  const { config, setConfig } = useUpgradeServiceContext();
 
   useEffect(() => {
     setLastLocation(location.hash);
@@ -98,11 +103,8 @@ export const AppConfig = ({
   );
 
   useEffect(() => {
-    window.addEventListener("resize", determineSidebarHeight);
     getConfig();
     setCurrentStep(0);
-
-    return window.removeEventListener("resize", determineSidebarHeight);
   }, []);
 
   componentWillUnmount() {
@@ -134,15 +136,6 @@ export const AppConfig = ({
       }
     }
   }, [state.configGroups]);
-  const sidebarWrapperRef = useRef(null);
-  const determineSidebarHeight = debounce(() => {
-    // TODO: use a ref for this instead of setting HTMLElement.style
-    const windowHeight = window.innerHeight;
-    const sidebarEl = sidebarWrapperRef.current;
-    // if (sidebarEl) {
-    //   sidebarEl.style.maxHeight = `${windowHeight - 225}px`;
-    // }
-  }, 250);
 
   const navigateToCurrentHash = () => {
     const hash = location.hash.slice(1);
@@ -247,9 +240,7 @@ export const AppConfig = ({
             changed: false,
             configLoading: false,
           });
-          console.log("set configgroup", data.configGroups);
 
-          setExistingConfig(data.configGroups);
           if (location.hash.length > 0) {
             navigateToCurrentHash();
           } else {
