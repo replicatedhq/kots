@@ -71,13 +71,6 @@ func (h *Handler) CurrentAppConfig(w http.ResponseWriter, r *http.Request) {
 	}
 
 	params := GetContextParams(r)
-	appSlug := mux.Vars(r)["appSlug"]
-
-	if params.AppSlug != appSlug {
-		currentAppConfigResponse.Error = "app slug does not match"
-		JSON(w, http.StatusForbidden, currentAppConfigResponse)
-		return
-	}
 
 	appLicense, err := kotsutil.LoadLicenseFromBytes([]byte(params.AppLicense))
 	if err != nil {
@@ -87,7 +80,7 @@ func (h *Handler) CurrentAppConfig(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	kotsKinds, err := kotsutil.LoadKotsKinds(params.BaseArchive) // TODO NOW: rename BaseArchive
+	kotsKinds, err := kotsutil.LoadKotsKinds(params.AppArchive)
 	if err != nil {
 		currentAppConfigResponse.Error = "failed to load kots kinds from path"
 		logger.Error(errors.Wrap(err, currentAppConfigResponse.Error))
@@ -96,7 +89,7 @@ func (h *Handler) CurrentAppConfig(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// get the non-rendered config from the upstream directory because we have to re-render it with the new values
-	nonRenderedConfig, err := kotsutil.FindConfigInPath(filepath.Join(params.BaseArchive, "upstream"))
+	nonRenderedConfig, err := kotsutil.FindConfigInPath(filepath.Join(params.AppArchive, "upstream"))
 	if err != nil {
 		currentAppConfigResponse.Error = "failed to find non-rendered config"
 		logger.Error(errors.Wrap(err, currentAppConfigResponse.Error))
@@ -104,7 +97,7 @@ func (h *Handler) CurrentAppConfig(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	localRegistry := registrytypes.RegistrySettings{
+	registrySettings := registrytypes.RegistrySettings{
 		Hostname:   params.RegistryEndpoint,
 		Username:   params.RegistryUsername,
 		Password:   params.RegistryPassword,
@@ -129,7 +122,7 @@ func (h *Handler) CurrentAppConfig(w http.ResponseWriter, r *http.Request) {
 
 	versionInfo := template.VersionInfoFromInstallationSpec(params.NextSequence, params.AppIsAirgap, kotsKinds.Installation.Spec)
 	appInfo := template.ApplicationInfo{Slug: params.AppSlug}
-	renderedConfig, err := kotsconfig.TemplateConfigObjects(nonRenderedConfig, configValues, appLicense, &kotsKinds.KotsApplication, localRegistry, &versionInfo, &appInfo, kotsKinds.IdentityConfig, util.PodNamespace, false)
+	renderedConfig, err := kotsconfig.TemplateConfigObjects(nonRenderedConfig, configValues, appLicense, &kotsKinds.KotsApplication, registrySettings, &versionInfo, &appInfo, kotsKinds.IdentityConfig, util.PodNamespace, false)
 	if err != nil {
 		logger.Error(err)
 		currentAppConfigResponse.Error = "failed to render templates"
@@ -152,13 +145,6 @@ func (h *Handler) LiveAppConfig(w http.ResponseWriter, r *http.Request) {
 	}
 
 	params := GetContextParams(r)
-	appSlug := mux.Vars(r)["appSlug"]
-
-	if params.AppSlug != appSlug {
-		liveAppConfigResponse.Error = "app slug does not match"
-		JSON(w, http.StatusForbidden, liveAppConfigResponse)
-		return
-	}
 
 	appLicense, err := kotsutil.LoadLicenseFromBytes([]byte(params.AppLicense))
 	if err != nil {
@@ -176,7 +162,7 @@ func (h *Handler) LiveAppConfig(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	kotsKinds, err := kotsutil.LoadKotsKinds(params.BaseArchive)
+	kotsKinds, err := kotsutil.LoadKotsKinds(params.AppArchive)
 	if err != nil {
 		liveAppConfigResponse.Error = "failed to load kots kinds from path"
 		logger.Error(errors.Wrap(err, liveAppConfigResponse.Error))
@@ -185,7 +171,7 @@ func (h *Handler) LiveAppConfig(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// get the non-rendered config from the upstream directory because we have to re-render it with the new values
-	nonRenderedConfig, err := kotsutil.FindConfigInPath(filepath.Join(params.BaseArchive, "upstream"))
+	nonRenderedConfig, err := kotsutil.FindConfigInPath(filepath.Join(params.AppArchive, "upstream"))
 	if err != nil {
 		liveAppConfigResponse.Error = "failed to find non-rendered config"
 		logger.Error(errors.Wrap(err, liveAppConfigResponse.Error))
@@ -193,7 +179,7 @@ func (h *Handler) LiveAppConfig(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	localRegistry := registrytypes.RegistrySettings{
+	registrySettings := registrytypes.RegistrySettings{
 		Hostname:   params.RegistryEndpoint,
 		Username:   params.RegistryUsername,
 		Password:   params.RegistryPassword,
@@ -206,7 +192,7 @@ func (h *Handler) LiveAppConfig(w http.ResponseWriter, r *http.Request) {
 	versionInfo := template.VersionInfoFromInstallationSpec(params.NextSequence, params.AppIsAirgap, kotsKinds.Installation.Spec)
 	appInfo := template.ApplicationInfo{Slug: params.AppSlug}
 
-	renderedConfig, err := kotsconfig.TemplateConfigObjects(nonRenderedConfig, configValues, appLicense, &kotsKinds.KotsApplication, localRegistry, &versionInfo, &appInfo, kotsKinds.IdentityConfig, util.PodNamespace, false)
+	renderedConfig, err := kotsconfig.TemplateConfigObjects(nonRenderedConfig, configValues, appLicense, &kotsKinds.KotsApplication, registrySettings, &versionInfo, &appInfo, kotsKinds.IdentityConfig, util.PodNamespace, false)
 	if err != nil {
 		liveAppConfigResponse.Error = "failed to render templates"
 		logger.Error(errors.Wrap(err, liveAppConfigResponse.Error))
@@ -288,13 +274,6 @@ func (h *Handler) SaveAppConfig(w http.ResponseWriter, r *http.Request) {
 	}
 
 	params := GetContextParams(r)
-	appSlug := mux.Vars(r)["appSlug"]
-
-	if params.AppSlug != appSlug {
-		saveAppConfigResponse.Error = "app slug does not match"
-		JSON(w, http.StatusForbidden, saveAppConfigResponse)
-		return
-	}
 
 	saveAppConfigRequest := SaveAppConfigRequest{}
 	if err := json.NewDecoder(r.Body).Decode(&saveAppConfigRequest); err != nil {
@@ -329,7 +308,7 @@ func (h *Handler) SaveAppConfig(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	localRegistry := registrytypes.RegistrySettings{
+	registrySettings := registrytypes.RegistrySettings{
 		Hostname:   params.RegistryEndpoint,
 		Username:   params.RegistryUsername,
 		Password:   params.RegistryPassword,
@@ -344,7 +323,7 @@ func (h *Handler) SaveAppConfig(w http.ResponseWriter, r *http.Request) {
 		IsGitOps: params.AppIsGitOps,
 	}
 
-	kotsKinds, err := kotsutil.LoadKotsKinds(params.BaseArchive)
+	kotsKinds, err := kotsutil.LoadKotsKinds(params.AppArchive)
 	if err != nil {
 		saveAppConfigResponse.Error = "failed to load kots kinds from path"
 		logger.Error(errors.Wrap(err, saveAppConfigResponse.Error))
@@ -371,7 +350,7 @@ func (h *Handler) SaveAppConfig(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := os.WriteFile(filepath.Join(params.BaseArchive, "upstream", "userdata", "config.yaml"), []byte(configValuesSpec), 0644); err != nil {
+	if err := os.WriteFile(filepath.Join(params.AppArchive, "upstream", "userdata", "config.yaml"), []byte(configValuesSpec), 0644); err != nil {
 		saveAppConfigResponse.Error = "failed to write config values"
 		logger.Error(errors.Wrap(err, saveAppConfigResponse.Error))
 		JSON(w, http.StatusInternalServerError, saveAppConfigResponse)
@@ -379,10 +358,10 @@ func (h *Handler) SaveAppConfig(w http.ResponseWriter, r *http.Request) {
 	}
 
 	err = render.RenderDir(rendertypes.RenderDirOptions{
-		ArchiveDir:       params.BaseArchive,
+		ArchiveDir:       params.AppArchive,
 		App:              app,
 		Downstreams:      []downstreamtypes.Downstream{{Name: "this-cluster"}},
-		RegistrySettings: localRegistry,
+		RegistrySettings: registrySettings,
 		Sequence:         params.NextSequence,
 		ReportingInfo:    params.ReportingInfo,
 	})
@@ -417,13 +396,6 @@ func (h *Handler) DownloadFileFromConfig(w http.ResponseWriter, r *http.Request)
 	}
 
 	params := GetContextParams(r)
-	appSlug := mux.Vars(r)["appSlug"]
-
-	if params.AppSlug != appSlug {
-		downloadFileFromConfigResponse.Error = "app slug does not match"
-		JSON(w, http.StatusForbidden, downloadFileFromConfigResponse)
-		return
-	}
 
 	filename := mux.Vars(r)["filename"]
 	if filename == "" {
@@ -433,7 +405,7 @@ func (h *Handler) DownloadFileFromConfig(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	kotsKinds, err := kotsutil.LoadKotsKinds(params.BaseArchive)
+	kotsKinds, err := kotsutil.LoadKotsKinds(params.AppArchive)
 	if err != nil {
 		downloadFileFromConfigResponse.Error = "failed to load kots kinds from path"
 		logger.Error(errors.Wrap(err, downloadFileFromConfigResponse.Error))

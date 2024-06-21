@@ -7,6 +7,8 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
 	appstatetypes "github.com/replicatedhq/kots/pkg/appstate/types"
+	"github.com/replicatedhq/kots/pkg/embeddedcluster"
+	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/store"
 	"github.com/replicatedhq/kots/pkg/version"
@@ -37,7 +39,14 @@ func (h *Handler) GetAppDashboard(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	ecState, err := store.GetStore().GetEmbeddedClusterState()
+	kbClient, err := k8sutil.GetKubeClient(r.Context())
+	if err != nil {
+		logger.Error(err)
+		w.WriteHeader(500)
+		return
+	}
+
+	ecInstallation, err := embeddedcluster.GetCurrentInstallation(r.Context(), kbClient)
 	if err != nil {
 		logger.Error(err)
 		w.WriteHeader(500)
@@ -74,7 +83,7 @@ func (h *Handler) GetAppDashboard(w http.ResponseWriter, r *http.Request) {
 		AppStatus:            appStatus,
 		Metrics:              metrics,
 		PrometheusAddress:    prometheusAddress,
-		EmbeddedClusterState: ecState,
+		EmbeddedClusterState: ecInstallation.Status.State,
 	}
 
 	JSON(w, 200, getAppDashboardResponse)

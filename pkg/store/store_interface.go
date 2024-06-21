@@ -11,7 +11,6 @@ import (
 	versiontypes "github.com/replicatedhq/kots/pkg/api/version/types"
 	apptypes "github.com/replicatedhq/kots/pkg/app/types"
 	appstatetypes "github.com/replicatedhq/kots/pkg/appstate/types"
-	gitopstypes "github.com/replicatedhq/kots/pkg/gitops/types"
 	snapshottypes "github.com/replicatedhq/kots/pkg/kotsadmsnapshot/types"
 	installationtypes "github.com/replicatedhq/kots/pkg/online/types"
 	preflighttypes "github.com/replicatedhq/kots/pkg/preflight/types"
@@ -179,13 +178,12 @@ type VersionStore interface {
 	IsRollbackSupportedForVersion(appID string, sequence int64) (bool, error)
 	IsSnapshotsSupportedForVersion(a *apptypes.App, sequence int64, renderer rendertypes.Renderer) (bool, error)
 	GetTargetKotsVersionForVersion(appID string, sequence int64) (string, error)
-	CreateAppVersionArchive(appID string, sequence int64, archivePath string) error
 	GetAppVersionArchive(appID string, sequence int64, dstPath string) error
 	GetAppVersionBaseSequence(appID string, versionLabel string) (int64, error)
 	GetAppVersionBaseArchive(appID string, versionLabel string) (string, int64, error)
 	CreatePendingDownloadAppVersion(appID string, update upstreamtypes.Update, kotsApplication *kotsv1beta1.Application, license *kotsv1beta1.License) (int64, error)
-	UpdateAppVersion(appID string, sequence int64, baseSequence *int64, filesInDir string, source string, skipPreflights bool, gitops gitopstypes.DownstreamGitOps, renderer rendertypes.Renderer) error
-	CreateAppVersion(appID string, baseSequence *int64, filesInDir string, source string, skipPreflights bool, gitops gitopstypes.DownstreamGitOps, renderer rendertypes.Renderer) (int64, error)
+	UpdateAppVersion(appID string, sequence int64, baseSequence *int64, filesInDir string, source string, skipPreflights bool, renderer rendertypes.Renderer) error
+	CreateAppVersion(appID string, baseSequence *int64, filesInDir string, source string, skipPreflights bool, renderer rendertypes.Renderer) (int64, error)
 	GetAppVersion(appID string, sequence int64) (*versiontypes.AppVersion, error)
 	GetLatestAppSequence(appID string, downloadedOnly bool) (int64, error)
 	UpdateNextAppVersionDiffSummary(appID string, baseSequence int64) error
@@ -201,7 +199,7 @@ type LicenseStore interface {
 	GetAllAppLicenses() ([]*kotsv1beta1.License, error)
 
 	// originalLicenseData is the data received from the replicated API that was never marshalled locally so all fields are intact
-	UpdateAppLicense(appID string, sequence int64, archiveDir string, newLicense *kotsv1beta1.License, originalLicenseData string, channelChanged bool, failOnVersionCreate bool, gitops gitopstypes.DownstreamGitOps, renderer rendertypes.Renderer, reportingInfo *reportingtypes.ReportingInfo) (int64, error)
+	UpdateAppLicense(appID string, sequence int64, archiveDir string, newLicense *kotsv1beta1.License, originalLicenseData string, channelChanged bool, failOnVersionCreate bool, renderer rendertypes.Renderer, reportingInfo *reportingtypes.ReportingInfo) (int64, error)
 	UpdateAppLicenseSyncNow(appID string) error
 }
 
@@ -233,8 +231,6 @@ type KotsadmParamsStore interface {
 type EmbeddedStore interface {
 	GetEmbeddedClusterAuthToken() (string, error)
 	SetEmbeddedClusterAuthToken(token string) error
-	SetEmbeddedClusterState(state string) error
-	GetEmbeddedClusterState() (string, error)
 }
 
 type BrandingStore interface {

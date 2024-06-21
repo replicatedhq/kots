@@ -41,14 +41,14 @@ func init() {
 }
 
 func Run(params upgradeservicetypes.UpgradeServiceParams) error {
-	kotsKinds, err := kotsutil.LoadKotsKinds(params.BaseArchive)
+	kotsKinds, err := kotsutil.LoadKotsKinds(params.AppArchive)
 	if err != nil {
 		return errors.Wrap(err, "failed to load rendered kots kinds")
 	}
 
-	tsKinds, err := kotsutil.LoadTSKindsFromPath(filepath.Join(params.BaseArchive, "rendered"))
+	tsKinds, err := kotsutil.LoadTSKindsFromPath(filepath.Join(params.AppArchive, "rendered"))
 	if err != nil {
-		return errors.Wrap(err, fmt.Sprintf("failed to load troubleshoot kinds from path: %s", filepath.Join(params.BaseArchive, "rendered")))
+		return errors.Wrap(err, fmt.Sprintf("failed to load troubleshoot kinds from path: %s", filepath.Join(params.AppArchive, "rendered")))
 	}
 
 	registrySettings := registrytypes.RegistrySettings{

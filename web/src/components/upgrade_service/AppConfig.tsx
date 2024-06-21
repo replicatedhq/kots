@@ -61,7 +61,6 @@ type RequiredItems = string[];
 
 type State = {
   activeGroups: string[];
-  changed: boolean;
   configErrorMessage: string;
   configGroups: ConfigGroup[];
   configLoading: boolean;
@@ -86,7 +85,6 @@ class AppConfig extends Component<Props, State> {
 
     this.state = {
       activeGroups: [],
-      changed: false,
       showConfigError: false,
       configErrorMessage: "",
       configGroups: [],
@@ -193,7 +191,6 @@ class AppConfig extends Component<Props, State> {
         }
         this.setState({
           configGroups: data.configGroups,
-          changed: false,
           configLoading: false,
         });
         if (this.props.location.hash.length > 0) {
@@ -242,27 +239,6 @@ class AppConfig extends Component<Props, State> {
 
   handleNext = async () => {
     // TODO NOW: validate config from api before moving on
-  };
-
-  isConfigChanged = (newGroups: ConfigGroup[]) => {
-    const { initialConfigGroups } = this.state;
-    for (let g = 0; g < newGroups.length; g++) {
-      const group = newGroups[g];
-      if (!group.items) {
-        continue;
-      }
-      for (let i = 0; i < group.items.length; i++) {
-        const newItem = group.items[i];
-        const oldItem = this.getItemInConfigGroups(
-          initialConfigGroups,
-          newItem.name
-        );
-        if (!oldItem || oldItem.value !== newItem.value) {
-          return true;
-        }
-      }
-    }
-    return false;
   };
 
   getItemInConfigGroups = (
@@ -398,8 +374,7 @@ class AppConfig extends Component<Props, State> {
             }
           });
         });
-        const changed = this.isConfigChanged(newGroups);
-        this.setState({ configGroups: newGroups, changed });
+        this.setState({ configGroups: newGroups });
       })
       .catch((error) => {
         if (error?.name !== "AbortError") {
@@ -459,7 +434,6 @@ class AppConfig extends Component<Props, State> {
 
   render() {
     const {
-      changed,
       showConfigError,
       configErrorMessage,
       configGroups,
@@ -627,7 +601,7 @@ class AppConfig extends Component<Props, State> {
                     )}
                     <button
                       className="btn primary blue"
-                      disabled={showValidationError || !changed}
+                      disabled={showValidationError}
                       onClick={this.handleNext}
                     >
                       Next

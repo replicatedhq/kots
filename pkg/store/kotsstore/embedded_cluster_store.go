@@ -3,7 +3,6 @@ package kotsstore
 import (
 	"encoding/json"
 	"fmt"
-	"time"
 
 	"github.com/rqlite/gorqlite"
 
@@ -68,41 +67,4 @@ func (s *KOTSStore) GetEmbeddedClusterInstallCommandRoles(token string) ([]strin
 	}
 
 	return rolesArr, nil
-}
-
-func (s *KOTSStore) SetEmbeddedClusterState(state string) error {
-	db := persistence.MustGetDBSession()
-	query := `
-insert into embedded_cluster_status (updated_at, status)
-values (?, ?)
-on conflict (updated_at) do update set
-	  status = EXCLUDED.status`
-	wr, err := db.WriteOneParameterized(gorqlite.ParameterizedStatement{
-		Query:     query,
-		Arguments: []interface{}{time.Now().Unix(), state},
-	})
-	if err != nil {
-		return fmt.Errorf("failed to write: %w: %v", err, wr.Err)
-	}
-	return nil
-}
-
-func (s *KOTSStore) GetEmbeddedClusterState() (string, error) {
-	db := persistence.MustGetDBSession()
-	query := `select status from embedded_cluster_status ORDER BY updated_at DESC LIMIT 1`
-	rows, err := db.QueryOneParameterized(gorqlite.ParameterizedStatement{
-		Query:     query,
-		Arguments: []interface{}{},
-	})
-	if err != nil {
-		return "", fmt.Errorf("failed to query: %w: %v", err, rows.Err)
-	}
-	if !rows.Next() {
-		return "", nil
-	}
-	var state gorqlite.NullString
-	if err := rows.Scan(&state); err != nil {
-		return "", fmt.Errorf("failed to scan: %w", err)
-	}
-	return state.String, nil
 }

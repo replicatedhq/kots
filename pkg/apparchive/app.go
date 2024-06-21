@@ -9,8 +9,10 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/mholt/archiver/v3"
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/base"
+	"github.com/replicatedhq/kots/pkg/filestore"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/util"
@@ -266,4 +268,70 @@ func filterChartsInBasePath(basePath string) func(path string) (bool, error) {
 
 		return false, nil
 	}
+}
+
+// CreateAppVersionArchive takes an unarchived app, makes an archive and then
+// writes it to the filestore at the given output path
+func CreateAppVersionArchive(archivePath string, outputPath string) error {
+	paths := []string{
+		filepath.Join(archivePath, "upstream"),
+	}
+
+	basePath := filepath.Join(archivePath, "base")
+	if _, err := os.Stat(basePath); err == nil {
+		paths = append(paths, basePath)
+	}
+
+	overlaysPath := filepath.Join(archivePath, "overlays")
+	if _, err := os.Stat(overlaysPath); err == nil {
+		paths = append(paths, overlaysPath)
+	}
+
+	renderedPath := filepath.Join(archivePath, "rendered")
+	if _, err := os.Stat(renderedPath); err == nil {
+		paths = append(paths, renderedPath)
+	}
+
+	kotsKindsPath := filepath.Join(archivePath, "kotsKinds")
+	if _, err := os.Stat(kotsKindsPath); err == nil {
+		paths = append(paths, kotsKindsPath)
+	}
+
+	helmPath := filepath.Join(archivePath, "helm")
+	if _, err := os.Stat(helmPath); err == nil {
+		paths = append(paths, helmPath)
+	}
+
+	skippedFilesPath := filepath.Join(archivePath, "skippedFiles")
+	if _, err := os.Stat(skippedFilesPath); err == nil {
+		paths = append(paths, skippedFilesPath)
+	}
+
+	tmpDir, err := os.MkdirTemp("", "kotsadm")
+	if err != nil {
+		return errors.Wrap(err, "failed to create temp file")
+	}
+	defer os.RemoveAll(tmpDir)
+	fileToWrite := filepath.Join(tmpDir, "archive.tar.gz")
+
+	tarGz := archiver.TarGz{
+		Tar: &archiver.Tar{
+			ImplicitTopLevelFolder: false,
+		},
+	}
+	if err := tarGz.Archive(paths, fileToWrite); err != nil {
+		return errors.Wrap(err, "failed to create archive")
+	}
+
+	f, err := os.Open(fileToWrite)
+	if err != nil {
+		return errors.Wrap(err, "failed to open archive file")
+	}
+	defer f.Close()
+
+	if err := filestore.GetStore().WriteArchive(outputPath, f); err != nil {
+		return errors.Wrap(err, "failed to write archive")
+	}
+
+	return nil
 }

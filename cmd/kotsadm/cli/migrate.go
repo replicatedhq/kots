@@ -5,7 +5,6 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/filestore"
-	"github.com/replicatedhq/kots/pkg/persistence"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -54,9 +53,6 @@ func MigrateS3ToRqliteCmd() *cobra.Command {
 				return errors.New("S3_SECRET_ACCESS_KEY is not set")
 			}
 
-			// Initialize the rqlite DB
-			persistence.InitDB(os.Getenv("RQLITE_URI"))
-
 			// Migrate from S3 to rqlite
 			if err := filestore.MigrateFromS3ToRqlite(cmd.Context()); err != nil {
 				return err
@@ -89,9 +85,6 @@ func MigratePVCToRqliteCmd() *cobra.Command {
 			if _, err := os.Stat(filestore.ArchivesDir); err != nil {
 				return errors.Wrap(err, "failed to stat archives dir")
 			}
-
-			// Initialize the rqlite DB
-			persistence.InitDB(os.Getenv("RQLITE_URI"))
 
 			// Migrate from PVC to rqlite
 			if err := filestore.MigrateFromPVCToRqlite(cmd.Context()); err != nil {

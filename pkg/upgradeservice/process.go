@@ -3,6 +3,7 @@ package upgradeservice
 import (
 	_ "embed"
 	"fmt"
+	"io"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
@@ -13,10 +14,10 @@ import (
 	"time"
 
 	"github.com/gorilla/mux"
-	"github.com/phayes/freeport"
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/logger"
+	"github.com/replicatedhq/kots/pkg/replicatedapp"
 	"github.com/replicatedhq/kots/pkg/upgradeservice/types"
 	"gopkg.in/yaml.v3"
 )
@@ -86,29 +87,15 @@ func start(params types.UpgradeServiceParams) (*UpgradeService, error) {
 		currSvc.stop()
 	}
 
-	fp, err := freeport.GetFreePort()
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to get free port")
-	}
-	params.Port = fmt.Sprintf("%d", fp)
-
 	paramsYAML, err := yaml.Marshal(params)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to marshal params")
 	}
 
-	// TODO NOW: use local /kots bin if:
-	// - version is the same as the one running
-	// - OR it's a dev env
-
-	// TODO NOW: uncomment this
-	// kotsBin, err := kotsutil.DownloadKOTSBinary(request.KOTSVersion)
-	// if err != nil {
-	// 	return nil, errors.Wrapf(err, "failed to download kots binary version %s", kotsVersion)
-	// }
-
-	// TODO NOW: use target binary
-	kotsBin := kotsutil.GetKOTSBinPath()
+	kotsBin, err := getKOTSBin(params)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get kots binary")
+	}
 
 	cmd := exec.Command(kotsBin, "upgrade-service", "start", "-")
 	cmd.Stdin = strings.NewReader(string(paramsYAML))
@@ -129,6 +116,17 @@ func start(params types.UpgradeServiceParams) (*UpgradeService, error) {
 	upgradeServiceMap[params.AppSlug] = newSvc
 
 	return newSvc, nil
+}
+
+func getKOTSBin(params types.UpgradeServiceParams) (string, error) {
+	if params.UpdateKOTSVersion == params.CurrentKOTSVersion {
+		return kotsutil.GetKOTSBinPath(), nil
+	}
+	license, err := kotsutil.LoadLicenseFromBytes([]byte(params.AppLicense))
+	if err != nil {
+		return "", errors.Wrap(err, "failed to parse app license")
+	}
+	return replicatedapp.DownloadKOTSBinary(license, params.UpdateVersionLabel)
 }
 
 func (s *UpgradeService) stop() {
@@ -166,8 +164,8 @@ func (s *UpgradeService) waitForReady(appSlug string) error {
 			continue
 		}
 		if response.StatusCode != http.StatusOK {
-			lasterr = errors.Errorf("unexpected status code %d", response.StatusCode)
-			continue
+			body, _ := io.ReadAll(response.Body)
+			return errors.Errorf("unexpected status code %d: %s", response.StatusCode, string(body))
 		}
 		return nil
 	}

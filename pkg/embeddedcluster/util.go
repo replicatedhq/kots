@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"sort"
 	"time"
@@ -12,7 +13,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	kotsv1beta1 "github.com/replicatedhq/kotskinds/apis/kots/v1beta1"
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/api/errors"
+	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	k8stypes "k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes"
@@ -35,6 +36,13 @@ func IsHA(clientset kubernetes.Interface) (bool, error) {
 func RequiresUpgrade(ctx context.Context, kbClient kbclient.Client, newcfg embeddedclusterv1beta1.ConfigSpec) (bool, error) {
 	curcfg, err := ClusterConfig(ctx, kbClient)
 	if err != nil {
+		// if there is no installation object we can't start an upgrade. this is a valid
+		// scenario specially during cluster bootstrap. as we do not need to upgrade the
+		// cluster just after its installation we can return nil here.
+		// (the cluster in the first kots version will match the cluster installed during bootstrap)
+		if errors.Is(err, ErrNoInstallations) {
+			return false, nil
+		}
 		return false, fmt.Errorf("failed to get current cluster config: %w", err)
 	}
 	serializedCur, err := json.Marshal(curcfg)
@@ -71,6 +79,33 @@ func ListInstallations(ctx context.Context, kbClient kbclient.Client) ([]embedde
 	return installationList.Items, nil
 }
 
+func WaitForInstallation(ctx context.Context, kbClient kbclient.Client, name string) error {
+	for {
+		select {
+		case <-ctx.Done():
+			return fmt.Errorf("context cancelled")
+		default:
+			var ins embeddedclusterv1beta1.Installation
+			if err := kbClient.Get(ctx, k8stypes.NamespacedName{Name: name, Namespace: "embedded-cluster"}, &ins); err != nil {
+				return fmt.Errorf("failed to get %s installation: %w", name, err)
+			}
+			if ins.Status.State == embeddedclusterv1beta1.InstallationStateInstalled {
+				return nil
+			}
+			if ins.Status.State == embeddedclusterv1beta1.InstallationStateObsolete {
+				return fmt.Errorf("installation is obsolete")
+			}
+			if ins.Status.State == embeddedclusterv1beta1.InstallationStateFailed {
+				return fmt.Errorf("installation failed: %s", ins.Status.Reason)
+			}
+			if ins.Status.State == embeddedclusterv1beta1.InstallationStateHelmChartUpdateFailure {
+				return fmt.Errorf("helm chart installation failed: %s", ins.Status.Reason)
+			}
+			time.Sleep(5 * time.Second)
+		}
+	}
+}
+
 // ClusterConfig will extract the current cluster configuration from the latest installation
 // object found in the cluster.
 func ClusterConfig(ctx context.Context, kbClient kbclient.Client) (*embeddedclusterv1beta1.ConfigSpec, error) {
@@ -84,15 +119,15 @@ func ClusterConfig(ctx context.Context, kbClient kbclient.Client) (*embeddedclus
 func GetSeaweedFSS3ServiceIP(ctx context.Context, kbClient kbclient.Client) (string, error) {
 	nsn := k8stypes.NamespacedName{Name: seaweedfsS3SVCName, Namespace: seaweedfsNamespace}
 	var svc corev1.Service
-	if err := kbClient.Get(ctx, nsn, &svc); err != nil && !errors.IsNotFound(err) {
+	if err := kbClient.Get(ctx, nsn, &svc); err != nil && !k8serrors.IsNotFound(err) {
 		return "", fmt.Errorf("failed to get seaweedfs s3 service: %w", err)
-	} else if errors.IsNotFound(err) {
+	} else if k8serrors.IsNotFound(err) {
 		return "", nil
 	}
 	return svc.Spec.ClusterIP, nil
 }
 
-func getArtifactsFromInstallation(installation kotsv1beta1.Installation, appSlug string) *embeddedclusterv1beta1.ArtifactsLocation {
+func getArtifactsFromInstallation(installation kotsv1beta1.Installation) *embeddedclusterv1beta1.ArtifactsLocation {
 	if installation.Spec.EmbeddedClusterArtifacts == nil {
 		return nil
 	}
@@ -107,18 +142,19 @@ func getArtifactsFromInstallation(installation kotsv1beta1.Installation, appSlug
 }
 
 // startClusterUpgrade will create a new installation with the provided config.
-func startClusterUpgrade(ctx context.Context, newcfg embeddedclusterv1beta1.ConfigSpec, artifacts *embeddedclusterv1beta1.ArtifactsLocation, license kotsv1beta1.License) error {
+func startClusterUpgrade(ctx context.Context, newcfg embeddedclusterv1beta1.ConfigSpec, artifacts *embeddedclusterv1beta1.ArtifactsLocation, license kotsv1beta1.License) (string, error) {
 	kbClient, err := k8sutil.GetKubeClient(ctx)
 	if err != nil {
-		return fmt.Errorf("failed to get kubeclient: %w", err)
+		return "", fmt.Errorf("failed to get kubeclient: %w", err)
 	}
 	current, err := GetCurrentInstallation(ctx, kbClient)
 	if err != nil {
-		return fmt.Errorf("failed to get current installation: %w", err)
+		return "", fmt.Errorf("failed to get current installation: %w", err)
 	}
+	newinsName := time.Now().Format("20060102150405")
 	newins := embeddedclusterv1beta1.Installation{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: time.Now().Format("20060102150405"),
+			Name: newinsName,
 			Labels: map[string]string{
 				"replicated.com/disaster-recovery": "ec-install",
 			},
@@ -136,7 +172,7 @@ func startClusterUpgrade(ctx context.Context, newcfg embeddedclusterv1beta1.Conf
 		},
 	}
 	if err := kbClient.Create(ctx, &newins); err != nil {
-		return fmt.Errorf("failed to create installation: %w", err)
+		return "", fmt.Errorf("failed to create installation: %w", err)
 	}
-	return nil
+	return newinsName, nil
 }
