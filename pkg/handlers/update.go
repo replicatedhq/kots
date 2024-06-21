@@ -510,14 +510,8 @@ func (h *Handler) UploadAirgapBundle(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		destDir := filepath.Join(updatechecker.AvailableUpdatesDir, airgapMetadata.Spec.ChannelID, airgapMetadata.Spec.UpdateCursor)
-		if err := os.MkdirAll(destDir, 0755); err != nil {
-			logger.Error(errors.Wrap(err, "failed to create dest dir"))
-			w.WriteHeader(http.StatusInternalServerError)
-			return
-		}
-
-		if err := os.Rename(tmpFile.Name(), filepath.Join(destDir, part.FileName())); err != nil {
+		destPath := filepath.Join(updatechecker.AvailableUpdatesDir, fmt.Sprintf("%s-%s.airgap", airgapMetadata.Spec.ChannelID, airgapMetadata.Spec.UpdateCursor))
+		if err := os.Rename(tmpFile.Name(), destPath); err != nil {
 			logger.Error(errors.Wrap(err, "failed to move airgap bundle to dest dir"))
 			w.WriteHeader(http.StatusInternalServerError)
 			return
