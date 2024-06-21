@@ -776,22 +776,22 @@ func isUpdateDeployable(updateCursor string, updates []upstreamtypes.Update) (bo
 			requiredUpdates = append(requiredUpdates, updates[i].VersionLabel)
 		}
 	}
-	return canDeployVersion(requiredUpdates)
-}
-
-func canDeployVersion(requiredUpdates []string) (bool, string) {
 	if len(requiredUpdates) > 0 {
-		versionLabels := []string{}
-		for _, versionLabel := range requiredUpdates {
-			versionLabels = append([]string{versionLabel}, versionLabels...)
-		}
-		versionLabelsStr := strings.Join(versionLabels, ", ")
-		if len(requiredUpdates) == 1 {
-			return false, fmt.Sprintf("This version cannot be deployed because version %s is required and must be deployed first.", versionLabelsStr)
-		}
-		return false, fmt.Sprintf("This version cannot be deployed because versions %s are required and must be deployed first.", versionLabelsStr)
+		return false, getNonDeployableCause(requiredUpdates)
 	}
 	return true, ""
+}
+
+func getNonDeployableCause(requiredUpdates []string) string {
+	versionLabels := []string{}
+	for _, versionLabel := range requiredUpdates {
+		versionLabels = append([]string{versionLabel}, versionLabels...)
+	}
+	versionLabelsStr := strings.Join(versionLabels, ", ")
+	if len(requiredUpdates) == 1 {
+		return fmt.Sprintf("This version cannot be deployed because version %s is required and must be deployed first.", versionLabelsStr)
+	}
+	return fmt.Sprintf("This version cannot be deployed because versions %s are required and must be deployed first.", versionLabelsStr)
 }
 
 func GetAvailableAirgapUpdates(app *apptypes.App, license *kotsv1beta1.License) ([]types.AvailableUpdate, error) {
@@ -818,7 +818,12 @@ func GetAvailableAirgapUpdates(app *apptypes.App, license *kotsv1beta1.License) 
 			return errors.Wrap(err, "failed to get missing required versions")
 		}
 
-		deployable, cause := canDeployVersion(missingPrereqs)
+		deployable := true
+		cause := ""
+		if len(missingPrereqs) > 0 {
+			deployable = false
+			cause = getNonDeployableCause(missingPrereqs)
+		}
 		update := types.AvailableUpdate{
 			VersionLabel:       airgapMetadata.Spec.VersionLabel,
 			UpdateCursor:       airgapMetadata.Spec.UpdateCursor,
