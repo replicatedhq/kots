@@ -783,6 +783,10 @@ func isUpdateDeployable(updateCursor string, updates []upstreamtypes.Update) (bo
 }
 
 func getNonDeployableCause(requiredUpdates []string) string {
+	if len(requiredUpdates) == 0 {
+		return ""
+	}
+
 	versionLabels := []string{}
 	for _, versionLabel := range requiredUpdates {
 		versionLabels = append([]string{versionLabel}, versionLabels...)
@@ -818,20 +822,14 @@ func GetAvailableAirgapUpdates(app *apptypes.App, license *kotsv1beta1.License) 
 			return errors.Wrap(err, "failed to get missing required versions")
 		}
 
-		deployable := true
-		cause := ""
-		if len(missingPrereqs) > 0 {
-			deployable = false
-			cause = getNonDeployableCause(missingPrereqs)
-		}
 		update := types.AvailableUpdate{
 			VersionLabel:       airgapMetadata.Spec.VersionLabel,
 			UpdateCursor:       airgapMetadata.Spec.UpdateCursor,
 			ChannelID:          airgapMetadata.Spec.ChannelID,
 			IsRequired:         airgapMetadata.Spec.IsRequired,
 			ReleaseNotes:       airgapMetadata.Spec.ReleaseNotes,
-			IsDeployable:       deployable,
-			NonDeployableCause: cause,
+			IsDeployable:       len(missingPrereqs) == 0,
+			NonDeployableCause: getNonDeployableCause(missingPrereqs),
 		}
 		updates = append(updates, update)
 
