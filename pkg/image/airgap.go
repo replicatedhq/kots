@@ -241,7 +241,6 @@ func PushECImagesFromTempRegistry(airgapRootDir string, airgap *kotsv1beta1.Airg
 		defer wc.Close()
 	}
 
-	totalImages := len(imageInfos)
 	var imageCounter int
 	for imageID, imageInfo := range imageInfos {
 		srcRef, err := tempRegistry.SrcRef(imageID)
@@ -288,7 +287,10 @@ func PushECImagesFromTempRegistry(airgapRootDir string, airgap *kotsv1beta1.Airg
 			},
 		}
 		imageCounter++
-		fmt.Printf("Pushing embedded cluster images (%d/%d)\n", imageCounter, totalImages)
+		fmt.Printf(
+			"Pushing embedded cluster artifacts (%d/%d)\n",
+			imageCounter, airgap.Spec.EmbeddedClusterArtifacts.Total(),
+		)
 		if err := pushImage(pushImageOpts); err != nil {
 			return errors.Wrapf(err, "failed to push image %s", imageID)
 		}
@@ -854,6 +856,11 @@ func PushEmbeddedClusterArtifacts(airgapBundle string, artifactsToPush *kotsv1be
 		artifacts = append(artifacts, dstFilePath)
 	}
 
+	var alreadyPushedArtifacts int
+	if artifactsToPush != nil {
+		alreadyPushedArtifacts = len(artifactsToPush.Registry.SavedImages)
+	}
+
 	for i, dstFilePath := range artifacts {
 		ociArtifactPath := imageutil.NewEmbeddedClusterOCIArtifactPath(dstFilePath, imageutil.EmbeddedClusterArtifactOCIPathOptions{
 			RegistryHost:      opts.Registry.Endpoint,
@@ -878,7 +885,8 @@ func PushEmbeddedClusterArtifacts(airgapBundle string, artifactsToPush *kotsv1be
 			HTTPClient:   opts.HTTPClient,
 		}
 
-		fmt.Printf("Pushing embedded cluster artifacts (%d/%d)\n", i+1, len(artifacts))
+		currentArtifact := i + 1 + alreadyPushedArtifacts
+		fmt.Printf("Pushing embedded cluster artifacts (%d/%d)\n", currentArtifact, artifactsToPush.Total())
 		if err := pushOCIArtifact(pushOCIArtifactOpts); err != nil {
 			return errors.Wrapf(err, "failed to push oci artifact %s", ociArtifactPath.Name)
 		}
