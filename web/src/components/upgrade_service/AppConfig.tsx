@@ -238,25 +238,7 @@ class AppConfig extends Component<Props, State> {
   };
 
   handleNext = async () => {
-    const { slug } = this.props.params;
-    const url = `${process.env.API_ENDPOINT}/upgrade-service/app/${slug}/deploy`;
-    fetch(url, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        isSkipPreflights: false,
-        continueWithFailedPreflights: false,
-      }),
-      credentials: "include",
-    })
-      .then(async (response) => {
-        console.log(await response.text())
-      })
-      .catch(function (error) {
-        console.log(error); // TODO handle error
-      });
+    // TODO NOW: validate config from api before moving on
   };
 
   getItemInConfigGroups = (

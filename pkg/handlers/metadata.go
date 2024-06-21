@@ -76,7 +76,7 @@ func GetMetadataHandler(getK8sInfoFn MetadataK8sFn, kotsStore store.Store) http.
 			if kuberneteserrors.IsNotFound(err) {
 				metadataResponse.AdminConsoleMetadata.IsAirgap = kotsadmMetadata.IsAirgap
 				metadataResponse.AdminConsoleMetadata.IsKurl = kotsadmMetadata.IsKurl
-				metadataResponse.AdminConsoleMetadata.IsEmbeddedCluster = true
+				metadataResponse.AdminConsoleMetadata.IsEmbeddedCluster = kotsadmMetadata.IsEmbeddedCluster
 
 				logger.Info(fmt.Sprintf("config map %q not found", metadataConfigMapName))
 				JSON(w, http.StatusOK, &metadataResponse)
@@ -117,7 +117,7 @@ func GetMetadataHandler(getK8sInfoFn MetadataK8sFn, kotsStore store.Store) http.
 		metadataResponse.AdminConsoleMetadata = AdminConsoleMetadata{
 			IsAirgap:          kotsadmMetadata.IsAirgap,
 			IsKurl:            kotsadmMetadata.IsKurl,
-			IsEmbeddedCluster: true,
+			IsEmbeddedCluster: kotsadmMetadata.IsEmbeddedCluster,
 		}
 
 		if kotsadmMetadata.IsEmbeddedCluster {
