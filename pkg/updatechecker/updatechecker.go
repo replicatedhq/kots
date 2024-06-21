@@ -43,13 +43,15 @@ var jobs = make(map[string]*cron.Cron)
 var mtx sync.Mutex
 var store = storepkg.GetStore()
 
-var AvailableUpdatesDir = filepath.Join(os.TempDir(), "available-updates")
+var AvailableUpdatesDir string
 
 func init() {
-	// ensure the available updates directory exists
-	if err := os.MkdirAll(AvailableUpdatesDir, 0744); err != nil {
+	// create a temporary directory to store available updates
+	tempDir, err := os.MkdirTemp("", "kotsadm-available-updates")
+	if err != nil {
 		panic(errors.Wrap(err, "failed to create available updates directory"))
 	}
+	AvailableUpdatesDir = tempDir
 }
 
 // Start will start the update checker
