@@ -7,7 +7,7 @@ import classNames from "classnames";
 import debounce from "lodash/debounce";
 import find from "lodash/find";
 import map from "lodash/map";
-import { useEffect, useReducer, useState } from "react";
+import { useEffect, useReducer } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 
 import { AppConfigRenderer } from "@src/components/AppConfigRenderer";
@@ -79,15 +79,11 @@ export const AppConfig = ({
   const location = useLocation();
   const navigate = useNavigate();
   const params = useParams();
-  const [lastLocation, setLastLocation] = useState("");
+
   const { config, setConfig } = useUpgradeServiceContext();
 
-  useEffect(() => {
-    setLastLocation(location.hash);
-  }, [location.hash]);
-
   const [state, setState] = useReducer(
-    (state: any, newState: any) => ({ ...state, ...newState }),
+    (state, newState) => ({ ...state, ...newState }),
     {
       activeGroups: [],
       showConfigError: false,
@@ -99,8 +95,12 @@ export const AppConfig = ({
       gettingConfigErrMsg: "",
       showValidationError: false,
       initialConfigGroups: [],
+      lastLocation: "",
     }
   );
+  useEffect(() => {
+    setState({ lastLocation: location.hash });
+  }, [location.hash]);
 
   useEffect(() => {
     getConfig();
@@ -125,7 +125,7 @@ export const AppConfig = ({
       // determineSidebarHeight();
     }
     // need to dig into this more
-    if (location.hash !== lastLocation && location.hash) {
+    if (location.hash !== state.lastLocation && location.hash) {
       // navigate to error if there is one
       if (state.showConfigError) {
         const hash = location.hash.slice(1);
