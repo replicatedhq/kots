@@ -190,7 +190,6 @@ function useGetPrelightResults({
     },
     refetchInterval: (preflightCheck: PreflightCheck | undefined) => {
       if (!preflightCheck) return false;
-      if (!preflightCheck?.pollForUpdates) return false;
 
       const refetchInterval = makeRefetchInterval(preflightCheck);
 
@@ -200,6 +199,7 @@ function useGetPrelightResults({
     },
     select: (response: PreflightResponse) =>
       flattenPreflightResponse({ response, refetchCount }),
+    staleTime: 500,
   });
 }
 
