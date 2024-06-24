@@ -857,12 +857,12 @@ class AppConfig extends Component<Props, State> {
               >
                 <div className="ConfigInnerWrapper">
                   <AppConfigRenderer
-                    groups={configGroups}
+                    appSlug={app.slug}
+                    configSequence={params.sequence}
                     getData={this.handleConfigChange}
+                    groups={configGroups}
                     handleDownloadFile={this.handleDownloadFile}
                     readonly={this.isConfigReadOnly(app)}
-                    configSequence={params.sequence}
-                    appSlug={app.slug}
                   />
                 </div>
                 <div className="flex alignItems--flexStart">
