@@ -27,9 +27,9 @@ type ConfigGroup = {
 
 interface AppConfigRendererProps {
   appSlug: string;
-  configSequence: any;
+  configSequence: string;
   getData: (group: ConfigGroup[]) => void;
-  groups: any[];
+  groups: ConfigGroup[];
   handleChange?: () => void;
   handleDownloadFile: (filename: string) => void;
   readonly?: boolean;
