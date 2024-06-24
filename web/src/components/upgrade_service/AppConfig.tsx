@@ -1,8 +1,3 @@
-import { AppConfigRenderer } from "@src/components/AppConfigRenderer";
-import Icon from "@src/components/Icon";
-import ErrorModal from "@src/components/modals/ErrorModal";
-import Loader from "@src/components/shared/Loader";
-import { withRouter } from "@src/utilities/react-router-utilities";
 import classNames from "classnames";
 import debounce from "lodash/debounce";
 import find from "lodash/find";
@@ -55,19 +50,6 @@ type ConfigGroupItem = {
 
 type RequiredItems = string[];
 
-type State = {
-  activeGroups: string[];
-  configErrorMessage: string;
-  configGroups: ConfigGroup[];
-  configLoading: boolean;
-  displayErrorModal: boolean;
-  errorTitle: string;
-  gettingConfigErrMsg: string;
-  initialConfigGroups: ConfigGroup[];
-  showConfigError: boolean;
-  showValidationError: boolean;
-};
-
 const validationErrorMessage =
   "Error detected. Please use config nav to the left to locate and fix issues.";
 
@@ -103,27 +85,6 @@ export const AppConfig = ({
   }, [location.hash]);
 
   useEffect(() => {
-    getConfig();
-    setCurrentStep(0);
-  }, []);
-
-  componentWillUnmount() {
-    window.removeEventListener("resize", this.determineSidebarHeight);
-  }
-
-  componentDidMount() {
-    window.addEventListener("resize", this.determineSidebarHeight);
-    this.getConfig();
-  }
-
-  componentDidUpdate(lastProps: Props, lastState: State) {
-    const { location } = this.props;
-    if (
-      state.configGroups &&
-      state.configGroups !== state.initialConfigGroups
-    ) {
-      // determineSidebarHeight();
-    }
     // need to dig into this more
     if (location.hash !== state.lastLocation && location.hash) {
       // navigate to error if there is one
@@ -159,55 +120,11 @@ export const AppConfig = ({
   const getConfig = async () => {
     const { slug } = params;
 
-    this.setState({
-      configLoading: true,
-      gettingConfigErrMsg: "",
-      showConfigError: false,
-      configErrorMessage: "",
-    });
+    if (config) {
+      setState({
+        configGroups: config,
 
-    fetch(
-      `${process.env.API_ENDPOINT}/upgrade-service/app/${slug}/config${window.location.search}`,
-      {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        credentials: "include",
-      }
-    )
-      .then(async (response) => {
-        if (!response.ok) {
-          const res = await response.json();
-          throw new Error(res.error);
-        }
-        const data = await response.json();
-        if (!data.configGroups?.length) {
-          throw new Error("No config data found");
-        }
-        this.setState({
-          configGroups: data.configGroups,
-          configLoading: false,
-        });
-        if (this.props.location.hash.length > 0) {
-          this.navigateToCurrentHash();
-        } else {
-          this.setState({
-            activeGroups: [data.configGroups[0].name],
-            configLoading: false,
-            gettingConfigErrMsg: "",
-          });
-        }
-      })
-      .catch((err) => {
-        this.setState({
-          configLoading: false,
-          errorTitle: `Failed to get config data`,
-          displayErrorModal: true,
-          gettingConfigErrMsg: err
-            ? err.message
-            : "Something went wrong, please try again.",
-        });
+        configLoading: false,
       });
     } else {
       setState({
@@ -237,7 +154,6 @@ export const AppConfig = ({
           }
           setState({
             configGroups: data.configGroups,
-            changed: false,
             configLoading: false,
           });
 
@@ -372,14 +288,12 @@ export const AppConfig = ({
           }
         } else {
           // @ts-ignore
-          setConfig(configGroups);
-
+          setConfig(state.configGroups);
           navigate(`/upgrade-service/app/${slug}/preflight`, {
             replace: true,
           });
           setState({
             savingConfig: false,
-            changed: false,
           });
         }
       })
@@ -394,7 +308,7 @@ export const AppConfig = ({
       });
   };
 
-  getItemInConfigGroups = (
+  const getItemInConfigGroups = (
     configGroups: ConfigGroup[],
     itemName: string
   ): ConfigGroupItem | undefined => {
@@ -482,7 +396,8 @@ export const AppConfig = ({
             }
           });
         });
-        this.setState({ configGroups: newGroups });
+
+        setState({ configGroups: newGroups });
       })
       .catch((error) => {
         if (error?.name !== "AbortError") {
@@ -495,38 +410,8 @@ export const AppConfig = ({
       });
   }, 250);
 
-  handleDownloadFile = async (fileName: string) => {
-    const { slug } = this.props.params;
-    const url = `${process.env.API_ENDPOINT}/upgrade-service/app/${slug}/config/${fileName}/download${window.location.search}`;
-    fetch(url, {
-      method: "GET",
-      headers: {
-        "Content-Type": "application/octet-stream",
-      },
-      credentials: "include",
-    })
-      .then((response) => {
-        if (!response.ok) {
-          throw Error(response.statusText); // TODO: handle error
-        }
-        return response.blob();
-      })
-      .then((blob) => {
-        const downloadURL = window.URL.createObjectURL(new Blob([blob]));
-        const link = document.createElement("a");
-        link.href = downloadURL;
-        link.setAttribute("download", fileName);
-        document.body.appendChild(link);
-        link.click();
-        link.parentNode?.removeChild(link);
-      })
-      .catch(function (error) {
-        console.log(error); // TODO handle error
-      });
-  };
-
-  toggleActiveGroups = (name: string) => {
-    let groupsArr = this.state.activeGroups;
+  const toggleActiveGroups = (name: string) => {
+    let groupsArr = state.activeGroups;
     if (groupsArr.includes(name)) {
       let updatedGroupsArr = groupsArr.filter((n: string) => n !== name);
       setState({ activeGroups: updatedGroupsArr });
@@ -536,74 +421,13 @@ export const AppConfig = ({
     }
   };
 
-  const toggleErrorModal = () => {
-    setState({ displayErrorModal: !state.displayErrorModal });
-  };
-
-  render() {
-    const {
-      showConfigError,
-      configErrorMessage,
-      configGroups,
-      configLoading,
-      displayErrorModal,
-      errorTitle,
-      gettingConfigErrMsg,
-      showValidationError,
-    } = this.state;
-
-    const { params } = this.props;
-
-    if (configLoading) {
-      return (
-        <div className="flex-column flex1 alignItems--center justifyContent--center">
-          <Loader size="60" />
-        </div>
-      );
-    }
-
-    const sections = document.querySelectorAll(".observe-elements");
-
-    const callback = (entries: IntersectionObserverEntry[]) => {
-      entries.forEach(({ isIntersecting, target }) => {
-        // find the group nav link that matches the current section in view
-        const groupNav = document.querySelector(
-          `#config-group-nav-${target.id}`
-        );
-        // find the active link in the group nav
-        const activeLink = document.querySelector(".active-item");
-        const hash = this.props.location.hash.slice(1);
-        const activeLinkByHash = document.querySelector(`a[href='#${hash}']`);
-        if (isIntersecting) {
-          groupNav?.classList.add("is-active");
-          // if your group is active, item will be active
-          if (activeLinkByHash && groupNav?.contains(activeLinkByHash)) {
-            activeLinkByHash.classList.add("active-item");
-          }
-        } else {
-          // if the section is not in view, remove the highlight from the active link
-          if (groupNav?.contains(activeLink) && activeLink) {
-            activeLink.classList.remove("active-item");
-          }
-          // remove the highlight from the group nav link
-          groupNav?.classList.remove("is-active");
-        }
-      });
-    };
-
-    const options = {
-      root: document,
-      // rootMargin is the amount of space around the root element that the intersection observer will look for intersections
-      rootMargin: "20% 0% -75% 0%",
-      // threshold: the proportion of the element that must be within the root bounds for it to be considered intersecting
-      threshold: 0.15,
-    };
-
-    const observer = new IntersectionObserver(callback, options);
-
-    sections.forEach((section) => {
-      observer.observe(section);
-    });
+  const {
+    showConfigError,
+    configErrorMessage,
+    configGroups,
+    configLoading,
+    showValidationError,
+  } = state;
 
   if (configLoading) {
     return (
@@ -721,48 +545,45 @@ export const AppConfig = ({
                                     ? "active-item"
                                     : ""
                                 }`}
-                                href={`#${item.name}-group`}
-                                key={`${j}-${item.name}-${item.title}`}
-                              >
-                                {item.title}
-                              </a>
-                            );
-                          })}
-                      </div>
-                    ) : null}
-                  </div>
-                );
-              })}
-            </div>
-            <div className="ConfigArea--wrapper">
-              <div
-                className={classNames(
-                  "ConfigOuterWrapper card-bg u-padding--15"
-                )}
-              >
-                <div className="ConfigInnerWrapper">
-                  <AppConfigRenderer
-                    groups={configGroups}
-                    getData={this.handleConfigChange}
-                    handleDownloadFile={this.handleDownloadFile}
-                    appSlug={params.slug}
-                  />
+                              href={`#${item.name}-group`}
+                              key={`${j}-${item.name}-${item.title}`}
+                            >
+                              {item.title}
+                            </a>
+                          );
+                        })}
+                    </div>
+                  ) : null}
                 </div>
-                <div className="flex alignItems--flexStart">
-                  <div className="ConfigError--wrapper flex-column alignItems--flexStart">
-                    {(showConfigError || this.state.showValidationError) && (
-                      <span className="u-textColor--error tw-mb-2 tw-text-xs">
-                        {configErrorMessage || validationErrorMessage}
-                      </span>
-                    )}
-                    <button
-                      className="btn primary blue"
-                      disabled={showValidationError}
-                      onClick={this.handleNext}
-                    >
-                      Next
-                    </button>
-                  </div>
+              );
+            })}
+          </div>
+          <div className="ConfigArea--wrapper">
+            <div
+              className={classNames("ConfigOuterWrapper card-bg u-padding--15")}
+            >
+              <div className="ConfigInnerWrapper">
+                <AppConfigRenderer
+                  groups={configGroups}
+                  getData={handleConfigChange}
+                  configSequence={params.sequence}
+                  appSlug={params.slug}
+                />
+              </div>
+              <div className="flex alignItems--flexStart">
+                <div className="ConfigError--wrapper flex-column alignItems--flexStart">
+                  {(showConfigError || state.showValidationError) && (
+                    <span className="u-textColor--error tw-mb-2 tw-text-xs">
+                      {configErrorMessage || validationErrorMessage}
+                    </span>
+                  )}
+                  <button
+                    className="btn primary blue"
+                    disabled={showValidationError}
+                    onClick={handleNext}
+                  >
+                    Next
+                  </button>
                 </div>
               </div>
             </div>

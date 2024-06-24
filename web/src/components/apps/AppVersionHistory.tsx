@@ -1655,11 +1655,10 @@ class AppVersionHistory extends Component<Props, State> {
 
     let sequenceLabel = "Sequence";
 
-    // TODO: figure what this is for
-    // let pendingVersion;
-    // if (this.state.updatesAvailable) {
-    //   pendingVersion = versionHistory[0];
-    // }
+    let pendingVersion;
+    if (this.state.updatesAvailable) {
+      pendingVersion = versionHistory[0];
+    }
 
     const renderVersionLabel = () => {
       let shorten = "";
@@ -1976,17 +1975,18 @@ class AppVersionHistory extends Component<Props, State> {
                               </div>
                             </div>
                           )}
-                          {/* {this.state.availableUpdates &&
+                          {this.state.availableUpdates &&
                             this.props.outletContext.isEmbeddedCluster &&
+                            this.renderAvailableECUpdatesRow(
+                              this.state.availableUpdates
+                            )}
+
+                          {/* DEV MODE ONLY */}
+                          {/* {this.state.availableUpdates &&
                             this.renderAvailableECUpdatesRow(
                               this.state.availableUpdates
                             )} */}
 
-                          {this.state.availableUpdates &&
-                            this.renderAvailableECUpdatesRow(
-                              this.state.availableUpdates
-                            )}
-                          {/* 
                           {!this.props.outletContext.isEmbeddedCluster &&
                             (pendingVersion ? (
                               this.renderAppVersionHistoryRow(pendingVersion)
@@ -1996,7 +1996,7 @@ class AppVersionHistory extends Component<Props, State> {
                                   Application up to date.
                                 </p>
                               </div>
-                            ))} */}
+                            ))}
                           {(this.state.numOfSkippedVersions > 0 ||
                             this.state.numOfRemainingVersions > 0) && (
                             <p className="u-fontSize--small u-fontWeight--medium u-lineHeight--more u-textColor--info u-marginTop--10">

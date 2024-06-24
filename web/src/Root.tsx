@@ -325,46 +325,6 @@ const Root = () => {
 
   const onRootMounted = () => {
     fetchKotsAppMetadata();
-
-    if (window.location.pathname !== "/upgrader") {
-      fetch(`${process.env.API_ENDPOINT}/init-upgrader`, {
-        headers: {
-          "Content-Type": "application/json",
-          Accept: "application/json",
-        },
-        credentials: "include",
-        method: "POST",
-      })
-        .then(async (res) => {
-          if (res.ok) {
-            setState({
-              shouldShowUpgraderModal: true,
-            });
-            return;
-          }
-          const text = await res.text();
-          console.log("failed to init upgrader", text);
-        })
-        .catch((err) => {
-          console.log(err);
-        });
-      if (Utilities.isLoggedIn()) {
-        ping();
-        getAppsList().then((appsList) => {
-          if (appsList?.length > 0 && window.location.pathname === "/apps") {
-            const { slug } = appsList[0];
-            history.replace(`/app/${slug}`);
-          }
-        });
-        return;
-      }
-      const text = await res.text();
-      console.log("failed to init upgrader", text);
-    })
-    .catch((err) => {
-      console.log(err);
-    });
-
     if (Utilities.isLoggedIn()) {
       ping();
       getAppsList().then((appsList) => {
