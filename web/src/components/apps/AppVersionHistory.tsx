@@ -1898,7 +1898,7 @@ class AppVersionHistory extends Component<Props, State> {
                       {!gitopsIsConnected && (
                         <div className="TableDiff--Wrapper card-bg u-marginBottom--30">
                           {/* DEV MODE: make this false */}
-                          {false && (
+                          {!this.props.outletContext.isEmbeddedCluster && (
                             <div className="flex justifyContent--spaceBetween alignItems--center u-marginBottom--15">
                               <p className="u-fontSize--normal u-fontWeight--medium u-textColor--info">
                                 {this.state.updatesAvailable
@@ -1981,19 +1981,19 @@ class AppVersionHistory extends Component<Props, State> {
                               </div>
                             </div>
                           )}
-                          {/* {this.state.availableUpdates &&
-                            this.props.outletContext.isEmbeddedCluster &&
-                            this.renderAvailableECUpdatesRow(
-                              this.state.availableUpdates
-                            )} */}
-
-                          {/* FOR DEV ONLY */}
                           {this.state.availableUpdates &&
+                            this.props.outletContext.isEmbeddedCluster &&
                             this.renderAvailableECUpdatesRow(
                               this.state.availableUpdates
                             )}
 
-                          {/* {!this.props.outletContext.isEmbeddedCluster &&
+                          {/* FOR DEV ONLY */}
+                          {/* {this.state.availableUpdates &&
+                            this.renderAvailableECUpdatesRow(
+                              this.state.availableUpdates
+                            )} */}
+
+                          {!this.props.outletContext.isEmbeddedCluster &&
                             (pendingVersion ? (
                               this.renderAppVersionHistoryRow(pendingVersion)
                             ) : (
@@ -2002,7 +2002,7 @@ class AppVersionHistory extends Component<Props, State> {
                                   Application up to date.
                                 </p>
                               </div>
-                            ))} */}
+                            ))}
                           {(this.state.numOfSkippedVersions > 0 ||
                             this.state.numOfRemainingVersions > 0) && (
                             <p className="u-fontSize--small u-fontWeight--medium u-lineHeight--more u-textColor--info u-marginTop--10">
