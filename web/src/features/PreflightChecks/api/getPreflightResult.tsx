@@ -6,16 +6,12 @@ async function getPreflightResult({
   apiEndpoint = process.env.API_ENDPOINT,
   slug,
   sequence,
-  isUpgradeService = false,
 }: {
   apiEndpoint?: string;
   slug: string;
   sequence?: string;
-  isUpgradeService?: boolean;
 }): Promise<PreflightResponse> {
-  const getUrl = isUpgradeService
-    ? `${process.env.API_ENDPOINT}/upgrade-service/app/${slug}/preflight/result`
-    : sequence
+  const getUrl = sequence
     ? `${apiEndpoint}/app/${slug}/sequence/${sequence}/preflight/result`
     : `${apiEndpoint}/app/${slug}/preflight/result`;
   const jsonResponse = await fetch(getUrl, {
@@ -173,11 +169,9 @@ function makeRefetchInterval(preflightCheck: PreflightCheck): number | false {
 function useGetPrelightResults({
   slug,
   sequence,
-  isUpgradeService,
 }: {
   slug: string;
   sequence?: string;
-  isUpgradeService?: boolean;
 }) {
   // this is for the progress bar
   const [refetchCount, setRefetchCount] = useState(0);
@@ -186,7 +180,7 @@ function useGetPrelightResults({
     queryFn: () => {
       setRefetchCount(refetchCount + 1);
 
-      return getPreflightResult({ slug, sequence, isUpgradeService });
+      return getPreflightResult({ slug, sequence });
     },
     queryKey: ["preflight-results", sequence, slug],
     onError: (err: Error) => {

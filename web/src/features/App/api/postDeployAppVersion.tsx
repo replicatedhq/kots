@@ -5,7 +5,6 @@ async function postDeployAppVersion({
   apiEndpoint = process.env.API_ENDPOINT,
   slug,
   sequence,
-  isUpgradeService = false,
   body,
 }: {
   apiEndpoint?: string;
@@ -14,18 +13,18 @@ async function postDeployAppVersion({
   sequence: string;
   isUpgradeService?: boolean;
 }) {
-  const url = isUpgradeService
-    ? `${process.env.API_ENDPOINT}/upgrade-service/app/${slug}/deploy`
-    : `${apiEndpoint}/app/${slug}/sequence/${sequence}/deploy`;
-  const response = await fetch(url, {
-    headers: {
-      "Content-Type": "application/json",
-      Accept: "application/json",
-    },
-    credentials: "include",
-    method: "POST",
-    body,
-  });
+  const response = await fetch(
+    `${apiEndpoint}/app/${slug}/sequence/${sequence}/deploy`,
+    {
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      },
+      credentials: "include",
+      method: "POST",
+      body,
+    }
+  );
 
   if (!response.ok) {
     throw new Error(
@@ -50,11 +49,9 @@ function makeBody({
 function useDeployAppVersion({
   slug,
   sequence,
-  isUpgradeService,
 }: {
   slug: string;
   sequence: string;
-  isUpgradeService?: boolean;
 }) {
   const navigate = useNavigate();
 
@@ -69,7 +66,7 @@ function useDeployAppVersion({
       postDeployAppVersion({
         slug,
         sequence,
-        isUpgradeService,
+
         body: makeBody({ continueWithFailedPreflights, isSkipPreflights }),
       }),
     onError: (err: Error) => {
@@ -80,7 +77,6 @@ function useDeployAppVersion({
       );
     },
     onSuccess: () => {
-      // TODO: figure out how to close the modal
       navigate(`/app/${slug}`);
     },
   });

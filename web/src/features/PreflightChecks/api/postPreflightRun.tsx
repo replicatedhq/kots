@@ -4,24 +4,22 @@ async function postPreflightRun({
   apiEndpoint = process.env.API_ENDPOINT,
   slug,
   sequence,
-  isUpgradeService = false,
 }: {
   apiEndpoint?: string;
   slug: string;
   sequence: string;
-  isUpgradeService?: boolean;
 }) {
-  const url = isUpgradeService
-    ? `${process.env.API_ENDPOINT}/upgrade-service/app/${slug}/preflight/run`
-    : `${apiEndpoint}/app/${slug}/sequence/${sequence}/preflight/run`;
-  const response = await fetch(url, {
-    headers: {
-      "Content-Type": "application/json",
-      Accept: "application/json",
-    },
-    credentials: "include",
-    method: "POST",
-  });
+  const response = await fetch(
+    `${apiEndpoint}/app/${slug}/sequence/${sequence}/preflight/run`,
+    {
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      },
+      credentials: "include",
+      method: "POST",
+    }
+  );
 
   if (!response.ok) {
     throw new Error(
@@ -33,7 +31,6 @@ async function postPreflightRun({
 function useRerunPreflights({
   slug,
   sequence,
-  isUpgradeService,
 }: {
   slug: string;
   sequence: string;
@@ -42,7 +39,7 @@ function useRerunPreflights({
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: () => postPreflightRun({ slug, sequence, isUpgradeService }),
+    mutationFn: () => postPreflightRun({ slug, sequence }),
     onError: (err: Error) => {
       console.log(err);
       throw new Error(err.message || "Error running preflight checks");
