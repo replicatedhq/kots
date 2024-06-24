@@ -13,7 +13,7 @@ import { useApps } from "@features/App";
 import { useDeployAppVersion } from "@features/App/api";
 import {
   useGetPrelightResults,
-  useIgnorePermissionErrors,
+  // useIgnorePermissionErrors,
 } from "@features/PreflightChecks/api";
 import { KotsParams } from "@types";
 
@@ -54,8 +54,8 @@ const ConfirmAndDeploy = ({
     isUpgradeService: true,
   });
   // TODO: figure out what this is for
-  const { mutate: ignorePermissionErrors, error: ignorePermissionError } =
-    useIgnorePermissionErrors({ sequence, slug });
+  // const { mutate: ignorePermissionErrors, error: ignorePermissionError } =
+  //   useIgnorePermissionErrors({ sequence, slug });
   const { data: preflightCheck, error: getPreflightResultsError } =
     useGetPrelightResults({ sequence, slug });
 
@@ -205,7 +205,8 @@ const ConfirmAndDeploy = ({
               </div>
             </div>
           )}
-          {ignorePermissionError?.message && (
+          {/* TODO: Fix later */}
+          {/* {ignorePermissionError?.message && (
             <div className="ErrorWrapper flex-auto flex alignItems--center u-marginBottom--20">
               <div className="icon redWarningIcon u-marginRight--10" />
               <div>
@@ -213,7 +214,7 @@ const ConfirmAndDeploy = ({
                 <p className="error">{ignorePermissionError.message}</p>
               </div>
             </div>
-          )}
+          )} */}
 
           <p className="u-fontSize--jumbo2 u-textColor--primary u-fontWeight--bold">
             Confirm and Deploy

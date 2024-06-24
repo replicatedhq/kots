@@ -83,7 +83,7 @@ export const AppConfig = ({
   const { config, setConfig } = useUpgradeServiceContext();
 
   const [state, setState] = useReducer(
-    (state, newState) => ({ ...state, ...newState }),
+    (currentState, newState) => ({ ...currentState, ...newState }),
     {
       activeGroups: [],
       showConfigError: false,
@@ -264,6 +264,10 @@ export const AppConfig = ({
         });
     }
   };
+  useEffect(() => {
+    getConfig();
+    setCurrentStep(0);
+  }, []);
 
   const markRequiredItems = (requiredItems: RequiredItems) => {
     const configGroups = state.configGroups;
@@ -276,6 +280,49 @@ export const AppConfig = ({
       });
     });
     setState({ configGroups, showConfigError: true });
+  };
+  // this runs on config update and when save is clicked but before the request is submitted
+  // on update it uses the errors from the liveconfig endpoint
+  // on save it's mostly used to find required field errors
+  const mergeConfigGroupsAndValidationErrors = (
+    groups: ConfigGroup[],
+    validationErrors: ConfigGroupItemValidationErrors[]
+  ): [ConfigGroup[], boolean] => {
+    let hasValidationError = false;
+
+    const newGroups = groups?.map((group: ConfigGroup) => {
+      const newGroup = { ...group };
+      const configGroupValidationErrors = validationErrors?.find(
+        (validationError) => validationError.name === group.name
+      );
+
+      // required errors are handled separately
+      if (group?.items?.find((item) => item.error)) {
+        newGroup.hasError = true;
+      }
+
+      if (configGroupValidationErrors) {
+        newGroup.items = newGroup?.items?.map((item: ConfigGroupItem) => {
+          const itemValidationError =
+            configGroupValidationErrors?.item_errors?.find(
+              (validationError) => validationError.name === item.name
+            );
+
+          if (itemValidationError) {
+            item.validationError =
+              itemValidationError?.validation_errors?.[0]?.message;
+            newGroup.hasError = true;
+            // if there is an error, then block form submission with state.hasValidationError
+            if (!hasValidationError) {
+              hasValidationError = true;
+            }
+          }
+          return item;
+        });
+      }
+      return newGroup;
+    });
+    return [newGroups, hasValidationError];
   };
 
   const handleNext = async () => {
@@ -360,50 +407,6 @@ export const AppConfig = ({
       });
     });
     return foundItem;
-  };
-
-  // this runs on config update and when save is clicked but before the request is submitted
-  // on update it uses the errors from the liveconfig endpoint
-  // on save it's mostly used to find required field errors
-  const mergeConfigGroupsAndValidationErrors = (
-    groups: ConfigGroup[],
-    validationErrors: ConfigGroupItemValidationErrors[]
-  ): [ConfigGroup[], boolean] => {
-    let hasValidationError = false;
-
-    const newGroups = groups?.map((group: ConfigGroup) => {
-      const newGroup = { ...group };
-      const configGroupValidationErrors = validationErrors?.find(
-        (validationError) => validationError.name === group.name
-      );
-
-      // required errors are handled separately
-      if (group?.items?.find((item) => item.error)) {
-        newGroup.hasError = true;
-      }
-
-      if (configGroupValidationErrors) {
-        newGroup.items = newGroup?.items?.map((item: ConfigGroupItem) => {
-          const itemValidationError =
-            configGroupValidationErrors?.item_errors?.find(
-              (validationError) => validationError.name === item.name
-            );
-
-          if (itemValidationError) {
-            item.validationError =
-              itemValidationError?.validation_errors?.[0]?.message;
-            newGroup.hasError = true;
-            // if there is an error, then block form submission with state.hasValidationError
-            if (!hasValidationError) {
-              hasValidationError = true;
-            }
-          }
-          return item;
-        });
-      }
-      return newGroup;
-    });
-    return [newGroups, hasValidationError];
   };
 
   let fetchController: AbortController | null = null;

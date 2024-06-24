@@ -1395,7 +1395,6 @@ class AppVersionHistory extends Component<Props, State> {
   };
 
   startUpgraderService = (version: Version) => {
-    //  needs to be for the specific version not all of them
     this.setState({
       isStartingUpgradeService: {
         version: version.versionLabel,
@@ -1656,10 +1655,11 @@ class AppVersionHistory extends Component<Props, State> {
 
     let sequenceLabel = "Sequence";
 
-    let pendingVersion;
-    if (this.state.updatesAvailable) {
-      pendingVersion = versionHistory[0];
-    }
+    // TODO: figure what this is for
+    // let pendingVersion;
+    // if (this.state.updatesAvailable) {
+    //   pendingVersion = versionHistory[0];
+    // }
 
     const renderVersionLabel = () => {
       let shorten = "";

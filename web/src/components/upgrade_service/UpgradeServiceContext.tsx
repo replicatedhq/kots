@@ -2,7 +2,7 @@ import { createContext, useContext, useState } from "react";
 
 export const UpgradeServiceContext = createContext(null);
 
-export const UpgradeServiceProvider = ({ children }: any) => {
+export const UpgradeServiceProvider = ({ children }) => {
   const [config, setConfig] = useState(null);
 
   return (
