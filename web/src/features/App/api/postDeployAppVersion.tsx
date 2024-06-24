@@ -11,7 +11,6 @@ async function postDeployAppVersion({
   body: string;
   slug: string;
   sequence: string;
-  isUpgradeService?: boolean;
 }) {
   const response = await fetch(
     `${apiEndpoint}/app/${slug}/sequence/${sequence}/deploy`,
@@ -66,7 +65,6 @@ function useDeployAppVersion({
       postDeployAppVersion({
         slug,
         sequence,
-
         body: makeBody({ continueWithFailedPreflights, isSkipPreflights }),
       }),
     onError: (err: Error) => {

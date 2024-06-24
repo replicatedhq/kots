@@ -34,7 +34,6 @@ function useRerunPreflights({
 }: {
   slug: string;
   sequence: string;
-  isUpgradeService?: boolean;
 }) {
   const queryClient = useQueryClient();
 
