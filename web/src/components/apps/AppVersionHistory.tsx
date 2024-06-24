@@ -149,6 +149,11 @@ type State = {
   viewLogsErrMsg: string;
   yamlErrorDetails: string[];
   shouldShowUpgradeServiceModal: boolean;
+  upgradeService: {
+    version?: string;
+    isLoading?: boolean;
+    error?: string;
+  } | null;
 };
 
 class AppVersionHistory extends Component<Props, State> {
@@ -216,6 +221,7 @@ class AppVersionHistory extends Component<Props, State> {
       viewLogsErrMsg: "",
       yamlErrorDetails: [],
       shouldShowUpgradeServiceModal: false,
+      upgradeService: {},
     };
   }
 
@@ -1395,6 +1401,12 @@ class AppVersionHistory extends Component<Props, State> {
   };
 
   startUpgraderService = (version: Version) => {
+    this.setState({
+      upgradeService: {
+        version: version.versionLabel,
+        isLoading: true,
+      },
+    });
     const appSlug = this.props.params.slug;
     fetch(`${process.env.API_ENDPOINT}/app/${appSlug}/start-upgrade-service`, {
       headers: {
@@ -1413,11 +1425,24 @@ class AppVersionHistory extends Component<Props, State> {
         if (res.ok) {
           this.setState({
             shouldShowUpgradeServiceModal: true,
+            upgradeService: {
+              version: version.versionLabel,
+              isLoading: false,
+            },
           });
+
           return;
         }
-        const text = await res.text();
-        console.log("failed to init upgrade service", text);
+        const text = await res.json();
+        if (!res.ok) {
+          console.log("failed to init upgrade service", text);
+          this.setState({
+            upgradeService: {
+              isLoading: false,
+              error: text.error,
+            },
+          });
+        }
       })
       .catch((err) => {
         console.log(err);
@@ -1445,8 +1470,14 @@ class AppVersionHistory extends Component<Props, State> {
                 className={"btn tw-ml-2 primary blue"}
                 onClick={() => this.startUpgraderService(version)}
               >
-                Deploy
+                {this.state.upgradeService?.version === version.versionLabel &&
+                this.state.upgradeService.isLoading
+                  ? "Deploying..."
+                  : "Deploy"}
               </button>
+              {this.state.upgradeService?.error && (
+                <p>{this.state.upgradeService.error}</p>
+              )}
             </div>
           ))}
         </div>
@@ -1866,6 +1897,7 @@ class AppVersionHistory extends Component<Props, State> {
                       )}
                       {!gitopsIsConnected && (
                         <div className="TableDiff--Wrapper card-bg u-marginBottom--30">
+                          {/* DEV MODE: make this false */}
                           {!this.props.outletContext.isEmbeddedCluster && (
                             <div className="flex justifyContent--spaceBetween alignItems--center u-marginBottom--15">
                               <p className="u-fontSize--normal u-fontWeight--medium u-textColor--info">
@@ -1954,6 +1986,13 @@ class AppVersionHistory extends Component<Props, State> {
                             this.renderAvailableECUpdatesRow(
                               this.state.availableUpdates
                             )}
+
+                          {/* FOR DEV ONLY */}
+                          {/* {this.state.availableUpdates &&
+                            this.renderAvailableECUpdatesRow(
+                              this.state.availableUpdates
+                            )} */}
+
                           {!this.props.outletContext.isEmbeddedCluster &&
                             (pendingVersion ? (
                               this.renderAppVersionHistoryRow(pendingVersion)
@@ -2299,6 +2338,7 @@ class AppVersionHistory extends Component<Props, State> {
             width="100%"
             height="100%"
             allowFullScreen={true}
+            id="upgrade-service-iframe"
           />
         </Modal>
       </div>

@@ -7,7 +7,13 @@ import AppConfig from "@components/upgrade_service/AppConfig";
 
 // types
 import { ToastProvider } from "@src/context/ToastContext";
+import StepIndicator from "./StepIndicator";
+import { useState } from "react";
 
+import PreflightChecks from "./PreflightChecks";
+import ConfirmAndDeploy from "./ConfirmAndDeploy";
+import { KotsPageTitle } from "@components/Head";
+import { UpgradeServiceProvider } from "./UpgradeServiceContext";
 // react-query client
 const queryClient = new QueryClient();
 
@@ -15,6 +21,7 @@ const UpgradeService = () => {
   const Crashz = () => {
     throw new Error("Crashz!");
   };
+  const [currentStep, setCurrentStep] = useState(0);
 
   return (
     <QueryClientProvider client={queryClient}>
@@ -26,18 +33,37 @@ const UpgradeService = () => {
         <meta httpEquiv="Pragma" content="no-cache" />
         <meta httpEquiv="Expires" content="0" />
       </Helmet>
-      <ToastProvider>
-        <div className="flex1 flex-column u-overflow--auto tw-relative">
-          <Routes>
-            <Route path="/crashz" element={<Crashz />} />{" "}
-            <Route path="/app/:slug/*">
-              <Route index element={<Navigate to="config" />} />
-              <Route path="config" element={<AppConfig />} />
-            </Route>
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </div>
-      </ToastProvider>
+      <UpgradeServiceProvider>
+        <ToastProvider>
+          <div className="flex1 flex-column u-overflow--auto tw-relative">
+            <KotsPageTitle pageName={`Deploy`} showAppSlug />{" "}
+            <StepIndicator
+              items={["Config", "Preflight", "Confirm"]}
+              value={currentStep}
+              className="tw-my-8"
+            />
+            <Routes>
+              <Route path="/crashz" element={<Crashz />} />{" "}
+              <Route path="/app/:slug/*">
+                <Route index element={<Navigate to="config" />} />
+                <Route
+                  path="config"
+                  element={<AppConfig setCurrentStep={setCurrentStep} />}
+                />
+                <Route
+                  path="preflight"
+                  element={<PreflightChecks setCurrentStep={setCurrentStep} />}
+                />
+                <Route
+                  path="deploy"
+                  element={<ConfirmAndDeploy setCurrentStep={setCurrentStep} />}
+                />
+              </Route>
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </div>
+        </ToastProvider>
+      </UpgradeServiceProvider>
     </QueryClientProvider>
   );
 };
