@@ -1,4 +1,4 @@
-import { Route, Routes, Navigate, useParams } from "react-router-dom";
+import { Route, Routes, Navigate } from "react-router-dom";
 import { Helmet } from "react-helmet";
 import NotFound from "@components/static/NotFound";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
