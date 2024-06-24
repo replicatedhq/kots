@@ -149,7 +149,7 @@ type State = {
   viewLogsErrMsg: string;
   yamlErrorDetails: string[];
   shouldShowUpgradeServiceModal: boolean;
-  isStartingUpgradeService: {
+  upgradeService: {
     version?: string;
     isLoading?: boolean;
     error?: string;
@@ -221,7 +221,7 @@ class AppVersionHistory extends Component<Props, State> {
       viewLogsErrMsg: "",
       yamlErrorDetails: [],
       shouldShowUpgradeServiceModal: false,
-      isStartingUpgradeService: {},
+      upgradeService: {},
     };
   }
 
@@ -1402,7 +1402,7 @@ class AppVersionHistory extends Component<Props, State> {
 
   startUpgraderService = (version: Version) => {
     this.setState({
-      isStartingUpgradeService: {
+      upgradeService: {
         version: version.versionLabel,
         isLoading: true,
       },
@@ -1425,7 +1425,7 @@ class AppVersionHistory extends Component<Props, State> {
         if (res.ok) {
           this.setState({
             shouldShowUpgradeServiceModal: true,
-            isStartingUpgradeService: {
+            upgradeService: {
               version: version.versionLabel,
               isLoading: false,
             },
@@ -1437,7 +1437,7 @@ class AppVersionHistory extends Component<Props, State> {
         if (!res.ok) {
           console.log("failed to init upgrade service", text);
           this.setState({
-            isStartingUpgradeService: {
+            upgradeService: {
               isLoading: false,
               error: text.error,
             },
@@ -1470,14 +1470,13 @@ class AppVersionHistory extends Component<Props, State> {
                 className={"btn tw-ml-2 primary blue"}
                 onClick={() => this.startUpgraderService(version)}
               >
-                {this.state.isStartingUpgradeService?.version ===
-                  version.versionLabel &&
-                this.state.isStartingUpgradeService.isLoading
+                {this.state.upgradeService?.version === version.versionLabel &&
+                this.state.upgradeService.isLoading
                   ? "Deploying..."
                   : "Deploy"}
               </button>
-              {this.state.isStartingUpgradeService?.error && (
-                <p>{this.state.isStartingUpgradeService.error}</p>
+              {this.state.upgradeService?.error && (
+                <p>{this.state.upgradeService.error}</p>
               )}
             </div>
           ))}
@@ -1899,7 +1898,7 @@ class AppVersionHistory extends Component<Props, State> {
                       {!gitopsIsConnected && (
                         <div className="TableDiff--Wrapper card-bg u-marginBottom--30">
                           {/* DEV MODE: make this false */}
-                          {!this.props.outletContext.isEmbeddedCluster && (
+                          {false && (
                             <div className="flex justifyContent--spaceBetween alignItems--center u-marginBottom--15">
                               <p className="u-fontSize--normal u-fontWeight--medium u-textColor--info">
                                 {this.state.updatesAvailable
@@ -1982,11 +1981,11 @@ class AppVersionHistory extends Component<Props, State> {
                               </div>
                             </div>
                           )}
-                          {this.state.availableUpdates &&
+                          {/* {this.state.availableUpdates &&
                             this.props.outletContext.isEmbeddedCluster &&
                             this.renderAvailableECUpdatesRow(
                               this.state.availableUpdates
-                            )}
+                            )} */}
 
                           {/* FOR DEV ONLY */}
                           {this.state.availableUpdates &&
@@ -1994,7 +1993,7 @@ class AppVersionHistory extends Component<Props, State> {
                               this.state.availableUpdates
                             )}
 
-                          {!this.props.outletContext.isEmbeddedCluster &&
+                          {/* {!this.props.outletContext.isEmbeddedCluster &&
                             (pendingVersion ? (
                               this.renderAppVersionHistoryRow(pendingVersion)
                             ) : (
@@ -2003,7 +2002,7 @@ class AppVersionHistory extends Component<Props, State> {
                                   Application up to date.
                                 </p>
                               </div>
-                            ))}
+                            ))} */}
                           {(this.state.numOfSkippedVersions > 0 ||
                             this.state.numOfRemainingVersions > 0) && (
                             <p className="u-fontSize--small u-fontWeight--medium u-lineHeight--more u-textColor--info u-marginTop--10">

@@ -18,7 +18,7 @@ import {
   useRerunPreflights,
 } from "@features/PreflightChecks/api";
 
-import { useDeployAppVersion } from "@features/App/api";
+import { useDeployAppVersion } from "./hooks/index";
 import Icon from "@components/Icon";
 import { KotsParams } from "@types";
 

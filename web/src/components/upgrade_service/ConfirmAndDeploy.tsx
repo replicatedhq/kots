@@ -10,7 +10,7 @@ import Icon from "@components/Icon";
 import SkipPreflightsModal from "@components/shared/modals/SkipPreflightsModal";
 import PreflightsProgress from "@components/troubleshoot/PreflightsProgress";
 import { useApps } from "@features/App";
-import { useDeployAppVersion } from "@features/App/api";
+import { useDeployAppVersion } from "./hooks/index";
 import {
   useGetPrelightResults,
   // useIgnorePermissionErrors,
@@ -51,7 +51,6 @@ const ConfirmAndDeploy = ({
   const { mutate: deployKotsDownstream } = useDeployAppVersion({
     slug,
     sequence,
-    isUpgradeService: true,
   });
   // TODO: figure out what this is for
   // const { mutate: ignorePermissionErrors, error: ignorePermissionError } =
