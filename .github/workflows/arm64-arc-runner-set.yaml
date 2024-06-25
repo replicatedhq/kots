@@ -49,6 +49,7 @@ jobs:
           helm install arc \
             --namespace arc-systems \
             --create-namespace \
+            --version 0.9.2 \
             oci://ghcr.io/actions/actions-runner-controller-charts/gha-runner-scale-set-controller
 
           kubectl create namespace arc-runners
@@ -60,6 +61,7 @@ jobs:
             --namespace arc-runners \
             --set githubConfigUrl="https://github.com/replicatedhq/kots" \
             --set githubConfigSecret="github-config-secret" \
+            --version 0.9.2 \
             oci://ghcr.io/actions/actions-runner-controller-charts/gha-runner-scale-set
 
           # bubblewrap (which is a sandbox tool used by melange) requires privileged docker containers.
