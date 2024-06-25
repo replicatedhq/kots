@@ -98,10 +98,22 @@ func DestImage(destRegistry registrytypes.RegistryOptions, srcImage string) (str
 	imageParts := strings.Split(srcImage, "/")
 	lastPart := imageParts[len(imageParts)-1]
 
-	if destRegistry.Namespace == "" {
-		return fmt.Sprintf("%s/%s", destRegistry.Endpoint, lastPart), nil
+	return filepath.Join(destRegistry.Endpoint, destRegistry.Namespace, lastPart), nil
+}
+
+// DestECImage returns the location to push an embedded cluster image to on the dest registry
+func DestECImage(destRegistry registrytypes.RegistryOptions, srcImage string) (string, error) {
+	// parsing as a docker reference strips the tag if both a tag and a digest are used
+	parsed, err := reference.ParseDockerRef(srcImage)
+	if err != nil {
+		return "", errors.Wrap(err, "failed to normalize source image")
 	}
-	return fmt.Sprintf("%s/%s/%s", destRegistry.Endpoint, destRegistry.Namespace, lastPart), nil
+	srcImage = parsed.String()
+
+	imageParts := strings.Split(srcImage, "/")
+	lastPart := imageParts[len(imageParts)-1]
+
+	return filepath.Join(destRegistry.Endpoint, destRegistry.Namespace, "embedded-cluster", lastPart), nil
 }
 
 // DestImageFromKustomizeImage returns the location to push the image to from a kustomize image type

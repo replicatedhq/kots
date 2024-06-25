@@ -6,12 +6,10 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
-	"strings"
 
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
 	embeddedclusterv1beta1 "github.com/replicatedhq/embedded-cluster-kinds/apis/v1beta1"
-	"github.com/replicatedhq/kots/pkg/airgap"
 	downstreamtypes "github.com/replicatedhq/kots/pkg/api/downstream/types"
 	"github.com/replicatedhq/kots/pkg/api/handlers/types"
 	apptypes "github.com/replicatedhq/kots/pkg/app/types"
@@ -27,6 +25,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/store"
 	storetypes "github.com/replicatedhq/kots/pkg/store/types"
 	"github.com/replicatedhq/kots/pkg/tasks"
+	"github.com/replicatedhq/kots/pkg/update"
 	"github.com/replicatedhq/kots/pkg/util"
 	"github.com/replicatedhq/kots/pkg/version"
 	kotsv1beta1 "github.com/replicatedhq/kotskinds/apis/kots/v1beta1"
@@ -592,16 +591,16 @@ func (h *Handler) CanInstallAppVersion(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		missingPrereqs, err := airgap.GetMissingRequiredVersions(a, decoded.(*kotsv1beta1.Airgap))
+		deployable, nonDeployableCause, err := update.IsAirgapUpdateDeployable(a, decoded.(*kotsv1beta1.Airgap))
 		if err != nil {
-			response.Error = "failed to get release prerequisites"
+			response.Error = "failed to check if airgap update is deployable"
 			logger.Error(errors.Wrap(err, response.Error))
 			JSON(w, http.StatusInternalServerError, response)
 			return
 		}
 
-		if len(missingPrereqs) > 0 {
-			response.Error = fmt.Sprintf("This airgap bundle cannot be uploaded because versions %s are required and must be uploaded first.", strings.Join(missingPrereqs, ", "))
+		if !deployable {
+			response.Error = nonDeployableCause
 			JSON(w, http.StatusOK, response)
 			return
 		}

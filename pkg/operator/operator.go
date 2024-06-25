@@ -998,6 +998,8 @@ func (o *Operator) reconcilePendingDeployment(cm *corev1.ConfigMap) error {
 		return errors.Wrap(err, "failed to create app version")
 	}
 
+	// TODO NOW: reset channel_changed (make it part of create app version func?)
+
 	if err := store.GetStore().MarkAsCurrentDownstreamVersion(appID, sequence); err != nil {
 		return errors.Wrap(err, "failed to mark as current downstream version")
 	}

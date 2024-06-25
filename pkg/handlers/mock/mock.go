@@ -1522,6 +1522,18 @@ func (mr *MockKOTSHandlerMockRecorder) UploadAirgapBundleChunk(w, r interface{})
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UploadAirgapBundleChunk", reflect.TypeOf((*MockKOTSHandler)(nil).UploadAirgapBundleChunk), w, r)
 }
 
+// UploadAirgapUpdate mocks base method.
+func (m *MockKOTSHandler) UploadAirgapUpdate(w http.ResponseWriter, r *http.Request) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "UploadAirgapUpdate", w, r)
+}
+
+// UploadAirgapUpdate indicates an expected call of UploadAirgapUpdate.
+func (mr *MockKOTSHandlerMockRecorder) UploadAirgapUpdate(w, r interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UploadAirgapUpdate", reflect.TypeOf((*MockKOTSHandler)(nil).UploadAirgapUpdate), w, r)
+}
+
 // UploadNewLicense mocks base method.
 func (m *MockKOTSHandler) UploadNewLicense(w http.ResponseWriter, r *http.Request) {
 	m.ctrl.T.Helper()

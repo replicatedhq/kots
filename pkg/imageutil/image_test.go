@@ -476,7 +476,79 @@ func Test_DestImage(t *testing.T) {
 			req.NoError(err)
 
 			if got != tt.want {
-				t.Errorf("DestImageName() = %v, want %v", got, tt.want)
+				t.Errorf("DestImage() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func Test_DestECImage(t *testing.T) {
+	registryOps := registrytypes.RegistryOptions{
+		Endpoint:  "localhost:5000",
+		Namespace: "somebigbank",
+	}
+
+	type args struct {
+		registry registrytypes.RegistryOptions
+		srcImage string
+	}
+	tests := []struct {
+		name string
+		args args
+		want string
+	}{
+		{
+			name: "ECR style image",
+			args: args{
+				registry: registryOps,
+				srcImage: "411111111111.dkr.ecr.us-west-1.amazonaws.com/myrepo:v0.0.1",
+			},
+			want: fmt.Sprintf("%s/%s/embedded-cluster/myrepo:v0.0.1", registryOps.Endpoint, registryOps.Namespace),
+		},
+		{
+			name: "Quay image with tag",
+			args: args{
+				registry: registryOps,
+				srcImage: "quay.io/someorg/debian:0.1",
+			},
+			want: fmt.Sprintf("%s/%s/embedded-cluster/debian:0.1", registryOps.Endpoint, registryOps.Namespace),
+		},
+		{
+			name: "Quay image with digest",
+			args: args{
+				registry: registryOps,
+				srcImage: "quay.io/someorg/debian@sha256:17c5f462c92fc39303e6363c65e074559f8d6a1354150027ed5053557e3298c5",
+			},
+			want: fmt.Sprintf("%s/%s/embedded-cluster/debian@sha256:17c5f462c92fc39303e6363c65e074559f8d6a1354150027ed5053557e3298c5", registryOps.Endpoint, registryOps.Namespace),
+		},
+		{
+			name: "Image with tag and digest",
+			args: args{
+				registry: registryOps,
+				srcImage: "quay.io/someorg/debian:0.1@sha256:17c5f462c92fc39303e6363c65e074559f8d6a1354150027ed5053557e3298c5",
+			},
+			want: fmt.Sprintf("%s/%s/embedded-cluster/debian@sha256:17c5f462c92fc39303e6363c65e074559f8d6a1354150027ed5053557e3298c5", registryOps.Endpoint, registryOps.Namespace),
+		},
+		{
+			name: "No Namespace",
+			args: args{
+				registry: registrytypes.RegistryOptions{
+					Endpoint: "localhost:5000",
+				},
+				srcImage: "quay.io/someorg/debian:0.1",
+			},
+			want: fmt.Sprintf("%s/embedded-cluster/debian:0.1", registryOps.Endpoint),
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			req := require.New(t)
+
+			got, err := DestECImage(tt.args.registry, tt.args.srcImage)
+			req.NoError(err)
+
+			if got != tt.want {
+				t.Errorf("DestECImage() = %v, want %v", got, tt.want)
 			}
 		})
 	}

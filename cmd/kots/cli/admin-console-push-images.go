@@ -115,12 +115,15 @@ func genAndCheckPushOptions(endpoint string, namespace string, log *logger.CLILo
 		log.FinishSpinner()
 	}
 
+	registryEndpoint, registryNamespace := splitEndpointAndNamespace(endpoint)
+
 	options := imagetypes.PushImagesOptions{
 		KotsadmTag: v.GetString("kotsadm-tag"),
 		Registry: registrytypes.RegistryOptions{
-			Endpoint: endpoint,
-			Username: username,
-			Password: password,
+			Endpoint:  registryEndpoint,
+			Namespace: registryNamespace,
+			Username:  username,
+			Password:  password,
 		},
 		ProgressWriter: os.Stdout,
 	}
