@@ -8,7 +8,7 @@ import (
 	"path/filepath"
 
 	"github.com/pkg/errors"
-	"github.com/replicatedhq/kots/pkg/airgap"
+	"github.com/replicatedhq/kots/pkg/archives"
 	identity "github.com/replicatedhq/kots/pkg/kotsadmidentity"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/logger"
@@ -28,12 +28,11 @@ func bootstrap(params types.UpgradeServiceParams) (finalError error) {
 		finishedChan <- finalError
 	}()
 
-	// TODO NOW: airgap mode
-
 	if params.AppIsAirgap {
 		if err := pullArchiveFromAirgap(params); err != nil {
 			return errors.Wrap(err, "failed to pull archive from airgap")
 		}
+		// TODO NOW: check canInstall?
 	} else {
 		if err := pullArchiveFromOnline(params); err != nil {
 			return errors.Wrap(err, "failed to pull archive from online")
@@ -44,7 +43,7 @@ func bootstrap(params types.UpgradeServiceParams) (finalError error) {
 }
 
 func pullArchiveFromAirgap(params types.UpgradeServiceParams) (finalError error) {
-	airgapRoot, err := airgap.ExtractAppMetaFromAirgapBundle(params.UpdateAirgapBundle)
+	airgapRoot, err := archives.ExtractAppMetaFromAirgapBundle(params.UpdateAirgapBundle)
 	if err != nil {
 		return errors.Wrap(err, "failed to extract archive")
 	}

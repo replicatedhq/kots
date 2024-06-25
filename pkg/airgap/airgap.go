@@ -1,9 +1,7 @@
 package airgap
 
 import (
-	"archive/tar"
 	"bufio"
-	"compress/gzip"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -104,7 +102,7 @@ func CreateAppFromAirgap(opts CreateAirgapAppOpts) (finalError error) {
 	archiveDir := opts.AirgapRootDir
 	if opts.AirgapBundle != "" {
 		// on the api side, headless intalls don't have the airgap file
-		dir, err := ExtractAppMetaFromAirgapBundle(opts.AirgapBundle)
+		dir, err := archives.ExtractAppMetaFromAirgapBundle(opts.AirgapBundle)
 		if err != nil {
 			return errors.Wrap(err, "failed to extract archive")
 		}
@@ -375,68 +373,6 @@ func extractAppRelease(workspace string, airgapDir string) (string, error) {
 
 	if numExtracted == 0 {
 		return "", errors.New("no release found in airgap archive")
-	}
-
-	return destDir, nil
-}
-
-func ExtractAppMetaFromAirgapBundle(airgapBundle string) (string, error) {
-	destDir, err := ioutil.TempDir("", "kotsadm-airgap-meta-")
-	if err != nil {
-		return "", errors.Wrap(err, "failed to create temp dir")
-	}
-
-	fileReader, err := os.Open(airgapBundle)
-	if err != nil {
-		return "", errors.Wrap(err, "failed to open file")
-	}
-	defer fileReader.Close()
-
-	gzipReader, err := gzip.NewReader(fileReader)
-	if err != nil {
-		return "", errors.Wrap(err, "failed to get new gzip reader")
-	}
-	defer gzipReader.Close()
-
-	tarReader := tar.NewReader(gzipReader)
-	for {
-		header, err := tarReader.Next()
-		if err == io.EOF {
-			break
-		}
-		if err != nil {
-			return "", errors.Wrap(err, "failed to get read archive")
-		}
-
-		// First items in airgap archive are metadata files.
-		// As soon as we see the first directory, we are hitting images.
-		if header.Name == "." {
-			continue
-		}
-		if header.Typeflag != tar.TypeReg {
-			break
-		}
-
-		err = func() error {
-			fileName := filepath.Join(destDir, header.Name)
-
-			fileWriter, err := os.Create(fileName)
-			if err != nil {
-				return errors.Wrapf(err, "failed to create file %q", header.Name)
-			}
-
-			defer fileWriter.Close()
-
-			_, err = io.Copy(fileWriter, tarReader)
-			if err != nil {
-				return errors.Wrapf(err, "failed to write file %q", header.Name)
-			}
-
-			return nil
-		}()
-		if err != nil {
-			return "", err
-		}
 	}
 
 	return destDir, nil

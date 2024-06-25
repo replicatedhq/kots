@@ -5,9 +5,31 @@ import (
 	"compress/gzip"
 	"io"
 	"os"
+	"path/filepath"
 
 	"github.com/pkg/errors"
 )
+
+func ExtractAppMetaFromAirgapBundle(airgapBundle string) (string, error) {
+	destDir, err := os.MkdirTemp("", "kotsadm-app-meta-")
+	if err != nil {
+		return "", errors.Wrap(err, "failed to create temp dir")
+	}
+	metaFiles := []string{
+		"airgap.yaml",
+		"app.tar.gz",
+	}
+	for _, fileName := range metaFiles {
+		content, err := GetFileContentFromTGZArchive(fileName, airgapBundle)
+		if err != nil {
+			return "", errors.Wrapf(err, "failed to get %s from bundle", fileName)
+		}
+		if err := os.WriteFile(filepath.Join(destDir, fileName), []byte(content), 0644); err != nil {
+			return "", errors.Wrapf(err, "failed to write %s", fileName)
+		}
+	}
+	return destDir, nil
+}
 
 func FilterAirgapBundle(airgapBundle string, filesToKeep []string) (string, error) {
 	f, err := os.CreateTemp("", "kots-airgap")

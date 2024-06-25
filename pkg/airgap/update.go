@@ -66,7 +66,7 @@ func UpdateAppFromAirgap(a *apptypes.App, airgapBundlePath string, deploy bool, 
 		return errors.Wrap(err, "failed to set task status")
 	}
 
-	airgapRoot, err := ExtractAppMetaFromAirgapBundle(airgapBundlePath)
+	airgapRoot, err := archives.ExtractAppMetaFromAirgapBundle(airgapBundlePath)
 	if err != nil {
 		return errors.Wrap(err, "failed to extract archive")
 	}
