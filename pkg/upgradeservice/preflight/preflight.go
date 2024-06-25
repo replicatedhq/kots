@@ -30,17 +30,15 @@ type PreflightData struct {
 	Result   *types.PreflightResult `json:"result"`
 }
 
-var PreflightDataFilepath string
+var PreflightDataFile string
 
-func init() {
-	if !util.IsUpgradeService() {
-		return
-	}
+func Init() error {
 	tmpDir, err := os.MkdirTemp("", "preflights")
 	if err != nil {
-		panic(errors.Wrap(err, "failed to create preflights data dir"))
+		return errors.Wrap(err, "failed to create temp dir")
 	}
-	PreflightDataFilepath = filepath.Join(tmpDir, "preflights.json")
+	PreflightDataFile = filepath.Join(tmpDir, "preflights.json")
+	return nil
 }
 
 func Run(params upgradeservicetypes.UpgradeServiceParams) error {
@@ -212,13 +210,13 @@ func setPreflightProgress(progress map[string]interface{}) error {
 
 func GetPreflightData() (*PreflightData, error) {
 	var preflightData *PreflightData
-	if _, err := os.Stat(PreflightDataFilepath); err != nil {
+	if _, err := os.Stat(PreflightDataFile); err != nil {
 		if !os.IsNotExist(err) {
 			return nil, errors.Wrap(err, "failed to stat existing preflight data")
 		}
 		preflightData = &PreflightData{}
 	} else {
-		existingBytes, err := os.ReadFile(PreflightDataFilepath)
+		existingBytes, err := os.ReadFile(PreflightDataFile)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to read existing preflight data")
 		}
@@ -234,14 +232,14 @@ func setPreflightData(preflightData *PreflightData) error {
 	if err != nil {
 		return errors.Wrap(err, "failed to marshal preflight data")
 	}
-	if err := os.WriteFile(PreflightDataFilepath, b, 0644); err != nil {
+	if err := os.WriteFile(PreflightDataFile, b, 0644); err != nil {
 		return errors.Wrap(err, "failed to write preflight data")
 	}
 	return nil
 }
 
 func ResetPreflightData() error {
-	if err := os.RemoveAll(PreflightDataFilepath); err != nil {
+	if err := os.RemoveAll(PreflightDataFile); err != nil {
 		return errors.Wrap(err, "failed to remove preflight data")
 	}
 	return nil
