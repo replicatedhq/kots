@@ -58,20 +58,9 @@ func UpdateAppFromECBundle(appSlug string, airgapBundlePath string) (finalError 
 		return errors.Wrap(err, "failed to chmod kots binary")
 	}
 
-	cmd := exec.Command(kotsBin,
-		"airgap-update",
-		appSlug,
-		"--namespace",
-		util.PodNamespace,
-		"--airgap-bundle",
-		airgapBundlePath,
-		"--updates-dir",
-		update.GetAvailableUpdatesDir(),
-		"--from-api",
-	)
+	cmd := exec.Command(kotsBin, "airgap-update", appSlug, "-n", util.PodNamespace, "--airgap-bundle", airgapBundlePath, "--from-api")
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
-
 	if err := cmd.Run(); err != nil {
 		return errors.Wrap(err, "failed to run airgap update")
 	}

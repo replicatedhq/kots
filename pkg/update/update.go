@@ -28,10 +28,6 @@ func InitAvailableUpdatesDir() error {
 	return nil
 }
 
-func GetAvailableUpdatesDir() string {
-	return availableUpdatesDir
-}
-
 func GetAvailableUpdates(kotsStore storepkg.Store, app *apptypes.App, license *kotsv1beta1.License) ([]types.AvailableUpdate, error) {
 	updateCursor, err := kotsStore.GetCurrentUpdateCursor(app.ID, license.Spec.ChannelID)
 	if err != nil {
@@ -117,15 +113,11 @@ func GetAvailableAirgapUpdates(app *apptypes.App, license *kotsv1beta1.License) 
 }
 
 func RegisterAirgapUpdate(appSlug string, airgapUpdate string) error {
-	return RegisterAirgapUpdateInDir(appSlug, airgapUpdate, availableUpdatesDir)
-}
-
-func RegisterAirgapUpdateInDir(appSlug string, airgapUpdate string, dir string) error {
 	airgap, err := kotsutil.FindAirgapMetaInBundle(airgapUpdate)
 	if err != nil {
 		return errors.Wrap(err, "failed to find airgap metadata in bundle")
 	}
-	destPath := filepath.Join(dir, appSlug, fmt.Sprintf("%s-%s.airgap", airgap.Spec.ChannelID, airgap.Spec.UpdateCursor))
+	destPath := filepath.Join(availableUpdatesDir, appSlug, fmt.Sprintf("%s-%s.airgap", airgap.Spec.ChannelID, airgap.Spec.UpdateCursor))
 	if err := os.MkdirAll(filepath.Dir(destPath), 0744); err != nil {
 		return errors.Wrap(err, "failed to create update dir")
 	}

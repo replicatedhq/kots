@@ -19,7 +19,6 @@ import (
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/tasks"
-	"github.com/replicatedhq/kots/pkg/update"
 	"github.com/replicatedhq/kots/pkg/upload"
 	"github.com/replicatedhq/kots/pkg/util"
 	"github.com/spf13/cobra"
@@ -103,34 +102,32 @@ func AirgapUpdateCmd() *cobra.Command {
 			}
 			defer os.RemoveAll(airgapUpdate)
 
-			// we don't need to upload if we're already running in the api.
-			// we can just register the airgap update directly.
+			var localPort int
 			if v.GetBool("from-api") {
-				if err := update.RegisterAirgapUpdateInDir(appSlug, airgapUpdate, v.GetString("updates-dir")); err != nil {
-					return errors.Wrap(err, "failed to register airgap update")
+				localPort = 3000
+			} else {
+				stopCh := make(chan struct{})
+				defer close(stopCh)
+
+				lp, errChan, err := upload.StartPortForward(namespace, stopCh, log)
+				if err != nil {
+					return err
 				}
-				return nil
-			}
+				localPort = lp
 
-			stopCh := make(chan struct{})
-			defer close(stopCh)
-
-			localPort, errChan, err := upload.StartPortForward(namespace, stopCh, log)
-			if err != nil {
-				return err
-			}
-			uploadEndpoint := fmt.Sprintf("http://localhost:%d/api/v1/app/%s/airgap/update", localPort, url.PathEscape(appSlug))
-
-			go func() {
-				select {
-				case err := <-errChan:
-					if err != nil {
-						log.Error(err)
-						os.Exit(1)
+				go func() {
+					select {
+					case err := <-errChan:
+						if err != nil {
+							log.Error(err)
+							os.Exit(1)
+						}
+					case <-stopCh:
 					}
-				case <-stopCh:
-				}
-			}()
+				}()
+			}
+
+			uploadEndpoint := fmt.Sprintf("http://localhost:%d/api/v1/app/%s/airgap/update", localPort, url.PathEscape(appSlug))
 
 			log.ActionWithSpinner("Uploading airgap update")
 			if err := uploadAirgapUpdate(airgapUpdate, uploadEndpoint, namespace); err != nil {
@@ -145,7 +142,6 @@ func AirgapUpdateCmd() *cobra.Command {
 
 	cmd.Flags().StringP("namespace", "n", "", "the namespace in which kots/kotsadm is installed")
 	cmd.Flags().String("airgap-bundle", "", "path to the application airgap bundle to upload")
-	cmd.Flags().String("updates-dir", "", "path to the directory where updates are stored (only used when --from-api is set)")
 	cmd.Flags().Bool("from-api", false, "whether the airgap update command was triggered by the API")
 
 	registryFlags(cmd.Flags())
