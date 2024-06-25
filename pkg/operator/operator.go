@@ -946,15 +946,14 @@ func (o *Operator) reconcilePendingDeployment(cm *corev1.ConfigMap) error {
 
 	logger.Infof("reconciling pending deployment (%s) for app (%s)", cm.Data["version-label"], cm.Data["app-slug"])
 
-	ecInstallationName := cm.Data["ec-installation-name"]
-	if ecInstallationName != "" {
-		logger.Infof("waiting for embedded cluster installation (%s) to complete", ecInstallationName)
+	if util.IsEmbeddedCluster() {
+		logger.Infof("waiting for embedded cluster installation to complete")
 
 		kbClient, err := k8sutil.GetKubeClient(context.Background())
 		if err != nil {
 			return errors.Wrap(err, "failed to get kube client")
 		}
-		if err := embeddedcluster.WaitForInstallation(context.Background(), kbClient, ecInstallationName); err != nil {
+		if err := embeddedcluster.WaitForInstallation(context.Background(), kbClient); err != nil {
 			return errors.Wrap(err, "failed to wait for embedded cluster installation")
 		}
 	}

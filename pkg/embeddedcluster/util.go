@@ -79,15 +79,15 @@ func ListInstallations(ctx context.Context, kbClient kbclient.Client) ([]embedde
 	return installationList.Items, nil
 }
 
-func WaitForInstallation(ctx context.Context, kbClient kbclient.Client, name string) error {
+func WaitForInstallation(ctx context.Context, kbClient kbclient.Client) error {
 	for {
 		select {
 		case <-ctx.Done():
 			return fmt.Errorf("context cancelled")
 		default:
-			var ins embeddedclusterv1beta1.Installation
-			if err := kbClient.Get(ctx, k8stypes.NamespacedName{Name: name, Namespace: "embedded-cluster"}, &ins); err != nil {
-				return fmt.Errorf("failed to get %s installation: %w", name, err)
+			ins, err := GetCurrentInstallation(ctx, kbClient)
+			if err != nil {
+				return fmt.Errorf("failed to get current installation: %w", err)
 			}
 			if ins.Status.State == embeddedclusterv1beta1.InstallationStateInstalled {
 				return nil
@@ -142,14 +142,14 @@ func getArtifactsFromInstallation(installation kotsv1beta1.Installation) *embedd
 }
 
 // startClusterUpgrade will create a new installation with the provided config.
-func startClusterUpgrade(ctx context.Context, newcfg embeddedclusterv1beta1.ConfigSpec, artifacts *embeddedclusterv1beta1.ArtifactsLocation, license kotsv1beta1.License) (string, error) {
+func startClusterUpgrade(ctx context.Context, newcfg embeddedclusterv1beta1.ConfigSpec, artifacts *embeddedclusterv1beta1.ArtifactsLocation, license kotsv1beta1.License) error {
 	kbClient, err := k8sutil.GetKubeClient(ctx)
 	if err != nil {
-		return "", fmt.Errorf("failed to get kubeclient: %w", err)
+		return fmt.Errorf("failed to get kubeclient: %w", err)
 	}
 	current, err := GetCurrentInstallation(ctx, kbClient)
 	if err != nil {
-		return "", fmt.Errorf("failed to get current installation: %w", err)
+		return fmt.Errorf("failed to get current installation: %w", err)
 	}
 	newinsName := time.Now().Format("20060102150405")
 	newins := embeddedclusterv1beta1.Installation{
@@ -172,7 +172,7 @@ func startClusterUpgrade(ctx context.Context, newcfg embeddedclusterv1beta1.Conf
 		},
 	}
 	if err := kbClient.Create(ctx, &newins); err != nil {
-		return "", fmt.Errorf("failed to create installation: %w", err)
+		return fmt.Errorf("failed to create installation: %w", err)
 	}
-	return newinsName, nil
+	return nil
 }
