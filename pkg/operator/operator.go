@@ -40,6 +40,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/supportbundle"
 	supportbundletypes "github.com/replicatedhq/kots/pkg/supportbundle/types"
 	"github.com/replicatedhq/kots/pkg/template"
+	"github.com/replicatedhq/kots/pkg/update"
 	"github.com/replicatedhq/kots/pkg/util"
 	"github.com/replicatedhq/kotskinds/multitype"
 	velerov1 "github.com/vmware-tanzu/velero/pkg/apis/velero/v1"
@@ -966,7 +967,7 @@ func (o *Operator) reconcilePendingDeployment(cm *corev1.ConfigMap) error {
 		return errors.Wrap(err, "failed to parse base sequence")
 	}
 
-	skipPreflights, err := strconv.ParseBool(cm.Data["is-skip-preflights"])
+	skipPreflights, err := strconv.ParseBool(cm.Data["skip-preflights"])
 	if err != nil {
 		return errors.Wrap(err, "failed to parse is skip preflights")
 	}
@@ -998,7 +999,15 @@ func (o *Operator) reconcilePendingDeployment(cm *corev1.ConfigMap) error {
 		return errors.Wrap(err, "failed to create app version")
 	}
 
-	// TODO NOW: reset channel_changed (make it part of create app version func?)
+	if cm.Data["is-airgap"] == "true" {
+		if err := update.RemoveAirgapUpdate(cm.Data["app-slug"], cm.Data["channel-id"], cm.Data["update-cursor"]); err != nil {
+			return errors.Wrap(err, "failed to remove airgap update")
+		}
+	}
+
+	if err := store.GetStore().SetAppChannelChanged(appID, false); err != nil {
+		return errors.Wrap(err, "failed to reset channel changed flag")
+	}
 
 	if err := store.GetStore().MarkAsCurrentDownstreamVersion(appID, sequence); err != nil {
 		return errors.Wrap(err, "failed to mark as current downstream version")

@@ -127,6 +127,14 @@ func RegisterAirgapUpdate(appSlug string, airgapUpdate string) error {
 	return nil
 }
 
+func RemoveAirgapUpdate(appSlug string, channelID string, updateCursor string) error {
+	updatePath := getAirgapUpdatePath(appSlug, channelID, updateCursor)
+	if err := os.Remove(updatePath); err != nil && !os.IsNotExist(err) {
+		return errors.Wrap(err, "failed to remove")
+	}
+	return nil
+}
+
 func GetAirgapUpdate(appSlug string, channelID string, updateCursor string) (string, error) {
 	updatePath := getAirgapUpdatePath(appSlug, channelID, updateCursor)
 	if _, err := os.Stat(updatePath); err != nil {
