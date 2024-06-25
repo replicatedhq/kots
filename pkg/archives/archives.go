@@ -28,7 +28,7 @@ func ExtractTGZArchiveFromFile(tgzFile string, destDir string) error {
 	return nil
 }
 
-func DirExistsInAirgap(dirToCheck string, archive string) (bool, error) {
+func DirExistsInTGZArchive(dirToCheck string, archive string) (bool, error) {
 	fileReader, err := os.Open(archive)
 	if err != nil {
 		return false, errors.Wrap(err, "failed to open file")
@@ -64,8 +64,8 @@ func DirExistsInAirgap(dirToCheck string, archive string) (bool, error) {
 	return false, nil
 }
 
-func GetFileContentFromAirgap(fileToGet string, archive string) ([]byte, error) {
-	file, err := GetFileFromAirgap(fileToGet, archive)
+func GetFileContentFromTGZArchive(fileToGet string, archive string) ([]byte, error) {
+	file, err := GetFileFromTGZArchive(fileToGet, archive)
 	if err != nil {
 		return nil, err
 	}
@@ -78,7 +78,7 @@ func GetFileContentFromAirgap(fileToGet string, archive string) ([]byte, error) 
 	return content, nil
 }
 
-func GetFileFromAirgap(fileToGet string, archive string) (string, error) {
+func GetFileFromTGZArchive(fileToGet string, archive string) (string, error) {
 	archiveReader, err := os.Open(archive)
 	if err != nil {
 		return "", errors.Wrap(err, "failed to open file")
@@ -190,68 +190,4 @@ func IsTGZ(b []byte) bool {
 	// try to read the first file header from the tar archive
 	_, err = tarReader.Next()
 	return err == nil
-}
-
-func FilterAirgapBundle(airgapBundle string, filesToKeep []string) (string, error) {
-	f, err := os.CreateTemp("", "kots-airgap")
-	if err != nil {
-		return "", errors.Wrap(err, "failed to create temp file")
-	}
-	defer f.Close()
-
-	gw := gzip.NewWriter(f)
-	defer gw.Close()
-
-	tw := tar.NewWriter(gw)
-	defer tw.Close()
-
-	fileFilter := make(map[string]bool)
-	for _, file := range filesToKeep {
-		fileFilter[file] = true
-	}
-
-	fileReader, err := os.Open(airgapBundle)
-	if err != nil {
-		return "", errors.Wrap(err, "failed to open airgap bundle")
-	}
-	defer fileReader.Close()
-
-	gzipReader, err := gzip.NewReader(fileReader)
-	if err != nil {
-		return "", errors.Wrap(err, "failed to get new gzip reader")
-	}
-	defer gzipReader.Close()
-
-	tarReader := tar.NewReader(gzipReader)
-	for {
-		header, err := tarReader.Next()
-		if err == io.EOF {
-			break
-		}
-		if err != nil {
-			return "", errors.Wrap(err, "failed to get read archive")
-		}
-
-		if _, ok := fileFilter[header.Name]; !ok {
-			continue
-		}
-
-		if err := tw.WriteHeader(header); err != nil {
-			return "", errors.Wrapf(err, "failed to write tar header for %s", header.Name)
-		}
-		_, err = io.Copy(tw, tarReader)
-		if err != nil {
-			return "", errors.Wrapf(err, "failed to write %s to tar", header.Name)
-		}
-	}
-
-	if err := tw.Close(); err != nil {
-		return "", errors.Wrap(err, "failed to close tar writer")
-	}
-
-	if err := gw.Close(); err != nil {
-		return "", errors.Wrap(err, "failed to close gzip writer")
-	}
-
-	return f.Name(), nil
 }

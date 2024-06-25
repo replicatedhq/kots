@@ -25,6 +25,7 @@ type UpgradeServiceParams struct {
 
 	CurrentKOTSVersion string `yaml:"currentKotsVersion"`
 	UpdateKOTSVersion  string `yaml:"updateKotsVersion"`
+	UpdateKOTSBin      string `yaml:"updateKotsBin"`
 
 	RegistryEndpoint   string `yaml:"registryEndpoint"`
 	RegistryUsername   string `yaml:"registryUsername"`

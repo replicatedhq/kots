@@ -6,8 +6,10 @@ import (
 	"compress/gzip"
 	"context"
 	"encoding/base64"
+	"encoding/json"
 	"fmt"
 	"os"
+	"os/exec"
 	"path"
 	"path/filepath"
 	"strconv"
@@ -40,7 +42,6 @@ import (
 	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/runtime/serializer/json"
 	serializer "k8s.io/apimachinery/pkg/runtime/serializer/json"
 	"k8s.io/client-go/kubernetes/scheme"
 	applicationv1beta1 "sigs.k8s.io/application/api/v1beta1"
@@ -1368,7 +1369,7 @@ func FindAirgapMetaInDir(root string) (*kotsv1beta1.Airgap, error) {
 }
 
 func FindAirgapMetaInBundle(airgapBundle string) (*kotsv1beta1.Airgap, error) {
-	content, err := archives.GetFileContentFromAirgap("airgap.yaml", airgapBundle)
+	content, err := archives.GetFileContentFromTGZArchive("airgap.yaml", airgapBundle)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to extract airgap.yaml file")
 	}
@@ -1510,7 +1511,7 @@ func MustMarshalInstallation(installation *kotsv1beta1.Installation) []byte {
 }
 
 func MarshalRuntimeObject(obj runtime.Object) ([]byte, error) {
-	s := json.NewYAMLSerializer(json.DefaultMetaFactory, scheme.Scheme, scheme.Scheme)
+	s := serializer.NewYAMLSerializer(serializer.DefaultMetaFactory, scheme.Scheme, scheme.Scheme)
 
 	var b bytes.Buffer
 	if err := s.Encode(obj, &b); err != nil {
@@ -1528,4 +1529,18 @@ func SaveInstallation(installation *kotsv1beta1.Installation, upstreamDir string
 		return errors.Wrap(err, "failed to write installation")
 	}
 	return nil
+}
+
+func GetKotsVersionFromBinary(kotsBin string) (string, error) {
+	output, err := exec.Command(kotsBin, "version", "-ojson").Output()
+	if err != nil {
+		return "", errors.Wrap(err, "failed to get kots version")
+	}
+	var v struct {
+		Version string `json:"version"`
+	}
+	if err := json.Unmarshal(output, &v); err != nil {
+		return "", errors.Wrap(err, "failed to unmarshal kots version")
+	}
+	return v.Version, nil
 }

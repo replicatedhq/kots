@@ -499,7 +499,7 @@ func PushImagesFromDockerArchivePath(airgapRootDir string, options imagetypes.Pu
 }
 
 func PushImagesFromDockerArchiveBundle(airgapBundle string, options imagetypes.PushImagesOptions) error {
-	if exists, err := archives.DirExistsInAirgap("images", airgapBundle); err != nil {
+	if exists, err := archives.DirExistsInTGZArchive("images", airgapBundle); err != nil {
 		return errors.Wrap(err, "failed to check if images dir exists in airgap bundle")
 	} else if !exists {
 		// images were already pushed from the CLI

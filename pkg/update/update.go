@@ -117,7 +117,7 @@ func RegisterAirgapUpdate(appSlug string, airgapUpdate string) error {
 	if err != nil {
 		return errors.Wrap(err, "failed to find airgap metadata in bundle")
 	}
-	destPath := filepath.Join(availableUpdatesDir, appSlug, fmt.Sprintf("%s-%s.airgap", airgap.Spec.ChannelID, airgap.Spec.UpdateCursor))
+	destPath := getAirgapUpdatePath(appSlug, airgap.Spec.ChannelID, airgap.Spec.UpdateCursor)
 	if err := os.MkdirAll(filepath.Dir(destPath), 0744); err != nil {
 		return errors.Wrap(err, "failed to create update dir")
 	}
@@ -125,4 +125,16 @@ func RegisterAirgapUpdate(appSlug string, airgapUpdate string) error {
 		return errors.Wrap(err, "failed to move airgap update to dest dir")
 	}
 	return nil
+}
+
+func GetAirgapUpdate(appSlug string, channelID string, updateCursor string) (string, error) {
+	updatePath := getAirgapUpdatePath(appSlug, channelID, updateCursor)
+	if _, err := os.Stat(updatePath); err != nil {
+		return "", errors.Wrap(err, "failed to stat")
+	}
+	return updatePath, nil
+}
+
+func getAirgapUpdatePath(appSlug string, channelID string, updateCursor string) string {
+	return filepath.Join(availableUpdatesDir, appSlug, fmt.Sprintf("%s-%s.airgap", channelID, updateCursor))
 }

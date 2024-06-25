@@ -37,26 +37,11 @@ func UpdateAppFromECBundle(appSlug string, airgapBundlePath string) (finalError 
 		finishedChan <- finalError
 	}()
 
-	kotsTGZ, err := archives.GetFileFromAirgap("embedded-cluster/artifacts/kots.tar.gz", airgapBundlePath)
+	kotsBin, err := archives.GetKOTSBinFromAirgapBundle(airgapBundlePath)
 	if err != nil {
 		return errors.Wrap(err, "failed to get kots binary from airgap bundle")
 	}
-	defer os.Remove(kotsTGZ)
-
-	kotsDir, err := os.MkdirTemp("", "kots")
-	if err != nil {
-		return errors.Wrap(err, "failed to create temp kots dir")
-	}
-	defer os.RemoveAll(kotsDir)
-
-	if err := util.ExtractTGZArchive(kotsTGZ, kotsDir); err != nil {
-		return errors.Wrap(err, "failed to extract kots tarball")
-	}
-
-	kotsBin := filepath.Join(kotsDir, "kots")
-	if err := os.Chmod(kotsBin, 0755); err != nil {
-		return errors.Wrap(err, "failed to chmod kots binary")
-	}
+	defer os.Remove(kotsBin)
 
 	cmd := exec.Command(kotsBin, "airgap-update", appSlug, "-n", util.PodNamespace, "--airgap-bundle", airgapBundlePath, "--from-api")
 	cmd.Stdout = os.Stdout

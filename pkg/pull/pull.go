@@ -774,7 +774,7 @@ func ParseIdentityConfigFromFile(filename string) (*kotsv1beta1.IdentityConfig, 
 }
 
 func GetAppMetadataFromAirgap(airgapArchive string) (*replicatedapp.ApplicationMetadata, error) {
-	appArchive, err := archives.GetFileContentFromAirgap("app.tar.gz", airgapArchive)
+	appArchive, err := archives.GetFileContentFromTGZArchive("app.tar.gz", airgapArchive)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to extract app archive")
 	}

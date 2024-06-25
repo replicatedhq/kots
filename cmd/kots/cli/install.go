@@ -648,7 +648,7 @@ func uploadAirgapArchive(deployOptions kotsadmtypes.DeployOptions, authSlug stri
 		return false, errors.Wrap(err, "failed to create form from file")
 	}
 
-	contents, err := archives.GetFileContentFromAirgap(filename, deployOptions.AirgapBundle)
+	contents, err := archives.GetFileContentFromTGZArchive(filename, deployOptions.AirgapBundle)
 	if err != nil {
 		return false, errors.Wrap(err, "failed to get file from airgap")
 	}

@@ -9,6 +9,7 @@ import (
 	"github.com/phayes/freeport"
 	"github.com/pkg/errors"
 	apptypes "github.com/replicatedhq/kots/pkg/app/types"
+	"github.com/replicatedhq/kots/pkg/archives"
 	"github.com/replicatedhq/kots/pkg/buildversion"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/logger"
@@ -93,6 +94,29 @@ func canStartUpgradeService(a *apptypes.App, r StartUpgradeServiceRequest) (bool
 	if err != nil {
 		return false, "", errors.Wrap(err, "failed to parse app license")
 	}
+
+	if a.IsAirgap {
+		updateBundle, err := update.GetAirgapUpdate(a.Slug, r.ChannelID, r.UpdateCursor)
+		if err != nil {
+			return false, "", errors.Wrap(err, "failed to get airgap update")
+		}
+		airgap, err := kotsutil.FindAirgapMetaInBundle(updateBundle)
+		if err != nil {
+			return false, "", errors.Wrap(err, "failed to find airgap metadata")
+		}
+		if currLicense.Spec.ChannelID != airgap.Spec.ChannelID || r.ChannelID != airgap.Spec.ChannelID {
+			return false, "channel mismatch", nil
+		}
+		isDeployable, nonDeployableCause, err := update.IsAirgapUpdateDeployable(a, airgap)
+		if err != nil {
+			return false, "", errors.Wrap(err, "failed to check if airgap update is deployable")
+		}
+		if !isDeployable {
+			return false, nonDeployableCause, nil
+		}
+		return true, "", nil
+	}
+
 	ll, err := replicatedapp.GetLatestLicense(currLicense)
 	if err != nil {
 		return false, "", errors.Wrap(err, "failed to get latest license")
@@ -100,12 +124,10 @@ func canStartUpgradeService(a *apptypes.App, r StartUpgradeServiceRequest) (bool
 	if currLicense.Spec.ChannelID != ll.License.Spec.ChannelID || r.ChannelID != ll.License.Spec.ChannelID {
 		return false, "license channel has changed, please sync the license", nil
 	}
-
 	updates, err := update.GetAvailableUpdates(store.GetStore(), a, currLicense)
 	if err != nil {
 		return false, "", errors.Wrap(err, "failed to get available updates")
 	}
-
 	isDeployable, nonDeployableCause := false, "update not found"
 	for _, u := range updates {
 		if u.UpdateCursor == r.UpdateCursor {
@@ -116,7 +138,6 @@ func canStartUpgradeService(a *apptypes.App, r StartUpgradeServiceRequest) (bool
 	if !isDeployable {
 		return false, nonDeployableCause, nil
 	}
-
 	return true, "", nil
 }
 
@@ -141,9 +162,42 @@ func getUpgradeServiceParams(a *apptypes.App, r StartUpgradeServiceRequest) (*up
 		return nil, errors.Wrap(err, "failed to parse app license")
 	}
 
-	updateKOTSVersion, err := replicatedapp.GetKOTSVersionForRelease(license, r.VersionLabel)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to get kots version for release")
+	var updateKOTSVersion string
+	var updateKOTSBin string
+	var updateAirgapBundle string
+
+	if a.IsAirgap {
+		au, err := update.GetAirgapUpdate(a.Slug, r.ChannelID, r.UpdateCursor)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to get airgap update")
+		}
+		updateAirgapBundle = au
+		kb, err := archives.GetKOTSBinFromAirgapBundle(au)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to get kots binary from airgap bundle")
+		}
+		updateKOTSBin = kb
+		kv, err := kotsutil.GetKotsVersionFromBinary(kb)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to get kots version from binary")
+		}
+		updateKOTSVersion = kv
+	} else {
+		kv, err := replicatedapp.GetKOTSVersionForRelease(license, r.VersionLabel)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to get kots version for release")
+		}
+		updateKOTSVersion = kv
+
+		if kv == buildversion.Version() {
+			updateKOTSBin = kotsutil.GetKOTSBinPath()
+		} else {
+			kb, err := replicatedapp.DownloadKOTSBinary(license, r.VersionLabel)
+			if err != nil {
+				return nil, errors.Wrap(err, "failed to download kots binary")
+			}
+			updateKOTSBin = kb
+		}
 	}
 
 	port, err := freeport.GetFreePort()
@@ -168,9 +222,11 @@ func getUpgradeServiceParams(a *apptypes.App, r StartUpgradeServiceRequest) (*up
 		UpdateVersionLabel: r.VersionLabel,
 		UpdateCursor:       r.UpdateCursor,
 		UpdateChannelID:    r.ChannelID,
+		UpdateAirgapBundle: updateAirgapBundle,
 
 		CurrentKOTSVersion: buildversion.Version(),
 		UpdateKOTSVersion:  updateKOTSVersion,
+		UpdateKOTSBin:      updateKOTSBin,
 
 		RegistryEndpoint:   registrySettings.Hostname,
 		RegistryUsername:   registrySettings.Username,
