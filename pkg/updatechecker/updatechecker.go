@@ -3,7 +3,6 @@ package updatechecker
 import (
 	"encoding/json"
 	"fmt"
-	"strings"
 	"sync"
 	"time"
 
@@ -24,11 +23,9 @@ import (
 	storetypes "github.com/replicatedhq/kots/pkg/store/types"
 	"github.com/replicatedhq/kots/pkg/tasks"
 	"github.com/replicatedhq/kots/pkg/updatechecker/types"
-	upstreampkg "github.com/replicatedhq/kots/pkg/upstream"
 	upstreamtypes "github.com/replicatedhq/kots/pkg/upstream/types"
 	"github.com/replicatedhq/kots/pkg/util"
 	"github.com/replicatedhq/kots/pkg/version"
-	kotsv1beta1 "github.com/replicatedhq/kotskinds/apis/kots/v1beta1"
 	cron "github.com/robfig/cron/v3"
 	"go.uber.org/zap"
 	"k8s.io/apimachinery/pkg/util/wait"
@@ -708,69 +705,4 @@ func removeOldUpdates(updates []upstreamtypes.Update, appVersions *downstreamtyp
 	}
 
 	return fileteredUpdates
-}
-
-func GetAvailableUpdates(kotsStore storepkg.Store, app *apptypes.App, license *kotsv1beta1.License) ([]types.AvailableUpdate, error) {
-	updateCursor, err := kotsStore.GetCurrentUpdateCursor(app.ID, license.Spec.ChannelID)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to get current update cursor")
-	}
-
-	upstreamURI := fmt.Sprintf("replicated://%s", license.Spec.AppSlug)
-	fetchOptions := &upstreamtypes.FetchOptions{
-		License:            license,
-		LastUpdateCheckAt:  app.LastUpdateCheckAt,
-		CurrentCursor:      updateCursor,
-		CurrentChannelID:   license.Spec.ChannelID,
-		CurrentChannelName: license.Spec.ChannelName,
-		ChannelChanged:     app.ChannelChanged,
-		SortOrder:          "desc", // get the latest updates first
-		ReportingInfo:      reporting.GetReportingInfo(app.ID),
-	}
-	updates, err := upstreampkg.GetUpdatesUpstream(upstreamURI, fetchOptions)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to get updates")
-	}
-
-	availableUpdates := []types.AvailableUpdate{}
-	for _, u := range updates.Updates {
-		deployable, cause := isUpdateDeployable(u.Cursor, updates.Updates)
-		availableUpdates = append(availableUpdates, types.AvailableUpdate{
-			VersionLabel:       u.VersionLabel,
-			UpdateCursor:       u.Cursor,
-			ChannelID:          u.ChannelID,
-			IsRequired:         u.IsRequired,
-			UpstreamReleasedAt: u.ReleasedAt,
-			ReleaseNotes:       u.ReleaseNotes,
-			IsDeployable:       deployable,
-			NonDeployableCause: cause,
-		})
-	}
-
-	return availableUpdates, nil
-}
-
-func isUpdateDeployable(updateCursor string, updates []upstreamtypes.Update) (bool, string) {
-	// iterate over updates in reverse since they are sorted in descending order
-	requiredUpdates := []upstreamtypes.Update{}
-	for i := len(updates) - 1; i >= 0; i-- {
-		if updates[i].Cursor == updateCursor {
-			break
-		}
-		if updates[i].IsRequired {
-			requiredUpdates = append(requiredUpdates, updates[i])
-		}
-	}
-	if len(requiredUpdates) > 0 {
-		versionLabels := []string{}
-		for _, v := range requiredUpdates {
-			versionLabels = append([]string{v.VersionLabel}, versionLabels...)
-		}
-		versionLabelsStr := strings.Join(versionLabels, ", ")
-		if len(requiredUpdates) == 1 {
-			return false, fmt.Sprintf("This version cannot be deployed because version %s is required and must be deployed first.", versionLabelsStr)
-		}
-		return false, fmt.Sprintf("This version cannot be deployed because versions %s are required and must be deployed first.", versionLabelsStr)
-	}
-	return true, ""
 }

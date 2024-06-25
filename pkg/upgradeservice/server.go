@@ -1,12 +1,16 @@
 package upgradeservice
 
 import (
+	"context"
 	"fmt"
+	"log"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
 	"os"
+	"os/signal"
 	"path/filepath"
+	"time"
 
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
@@ -24,6 +28,10 @@ func Serve(params types.UpgradeServiceParams) error {
 
 	if err := bootstrap(params); err != nil {
 		return errors.Wrap(err, "failed to bootstrap")
+	}
+
+	if err := upgradepreflight.Init(); err != nil {
+		return errors.Wrap(err, "failed to init preflight")
 	}
 
 	r := mux.NewRouter()
@@ -61,8 +69,23 @@ func Serve(params types.UpgradeServiceParams) error {
 		Handler: r,
 		Addr:    fmt.Sprintf(":%s", params.Port),
 	}
-	if err := srv.ListenAndServe(); err != nil {
-		return errors.Wrap(err, "failed to listen and serve")
+
+	go func() {
+		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			log.Fatalf("listen: %s\n", err)
+		}
+	}()
+
+	// wait for interrupt signal to gracefully shut down the server and cleanup
+	c := make(chan os.Signal, 1)
+	signal.Notify(c, os.Interrupt)
+	<-c
+
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	if err := srv.Shutdown(ctx); err != nil {
+		return errors.Wrap(err, "failed to shutdown server")
 	}
 
 	return nil
@@ -70,5 +93,6 @@ func Serve(params types.UpgradeServiceParams) error {
 
 func cleanup(params types.UpgradeServiceParams) {
 	os.RemoveAll(params.AppArchive)
-	os.RemoveAll(filepath.Dir(upgradepreflight.PreflightDataFilepath))
+	os.RemoveAll(params.UpdateKOTSBin)
+	os.RemoveAll(filepath.Dir(upgradepreflight.PreflightDataFile))
 }

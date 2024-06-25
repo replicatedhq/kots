@@ -27,6 +27,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/snapshotscheduler"
 	"github.com/replicatedhq/kots/pkg/store"
 	"github.com/replicatedhq/kots/pkg/supportbundle"
+	"github.com/replicatedhq/kots/pkg/update"
 	"github.com/replicatedhq/kots/pkg/updatechecker"
 	"github.com/replicatedhq/kots/pkg/upgradeservice"
 	"github.com/replicatedhq/kots/pkg/util"
@@ -107,6 +108,10 @@ func Start(params *APIServerParams) {
 	}
 
 	if err := k8sutil.InitHelmCapabilities(); err != nil {
+		panic(err)
+	}
+
+	if err := update.InitAvailableUpdatesDir(); err != nil {
 		panic(err)
 	}
 

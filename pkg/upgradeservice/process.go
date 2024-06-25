@@ -15,9 +15,7 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
-	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/logger"
-	"github.com/replicatedhq/kots/pkg/replicatedapp"
 	"github.com/replicatedhq/kots/pkg/upgradeservice/types"
 	"gopkg.in/yaml.v3"
 )
@@ -92,12 +90,7 @@ func start(params types.UpgradeServiceParams) (*UpgradeService, error) {
 		return nil, errors.Wrap(err, "failed to marshal params")
 	}
 
-	kotsBin, err := getKOTSBin(params)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to get kots binary")
-	}
-
-	cmd := exec.Command(kotsBin, "upgrade-service", "start", "-")
+	cmd := exec.Command(params.UpdateKOTSBin, "upgrade-service", "start", "-")
 	cmd.Stdin = strings.NewReader(string(paramsYAML))
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
@@ -116,17 +109,6 @@ func start(params types.UpgradeServiceParams) (*UpgradeService, error) {
 	upgradeServiceMap[params.AppSlug] = newSvc
 
 	return newSvc, nil
-}
-
-func getKOTSBin(params types.UpgradeServiceParams) (string, error) {
-	if params.UpdateKOTSVersion == params.CurrentKOTSVersion {
-		return kotsutil.GetKOTSBinPath(), nil
-	}
-	license, err := kotsutil.LoadLicenseFromBytes([]byte(params.AppLicense))
-	if err != nil {
-		return "", errors.Wrap(err, "failed to parse app license")
-	}
-	return replicatedapp.DownloadKOTSBinary(license, params.UpdateVersionLabel)
 }
 
 func (s *UpgradeService) stop() {

@@ -18,11 +18,14 @@ import (
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/kotsadm"
 	license "github.com/replicatedhq/kots/pkg/kotsadmlicense"
+	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/kurl"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/reporting"
 	"github.com/replicatedhq/kots/pkg/store"
 	"github.com/replicatedhq/kots/pkg/tasks"
+	"github.com/replicatedhq/kots/pkg/update"
+	updatetypes "github.com/replicatedhq/kots/pkg/update/types"
 	"github.com/replicatedhq/kots/pkg/updatechecker"
 	updatecheckertypes "github.com/replicatedhq/kots/pkg/updatechecker/types"
 	"github.com/replicatedhq/kots/pkg/util"
@@ -210,16 +213,11 @@ func (h *Handler) AppUpdateCheck(w http.ResponseWriter, r *http.Request) {
 }
 
 type AvailableUpdatesResponse struct {
-	Success bool                                 `json:"success"`
-	Updates []updatecheckertypes.AvailableUpdate `json:"updates,omitempty"`
+	Success bool                          `json:"success"`
+	Updates []updatetypes.AvailableUpdate `json:"updates,omitempty"`
 }
 
 func (h *Handler) GetAvailableUpdates(w http.ResponseWriter, r *http.Request) {
-	if kotsadm.IsAirgap() {
-		w.WriteHeader(http.StatusForbidden)
-		return
-	}
-
 	availableUpdatesResponse := AvailableUpdatesResponse{
 		Success: false,
 	}
@@ -239,6 +237,25 @@ func (h *Handler) GetAvailableUpdates(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if kotsadm.IsAirgap() {
+		license, err := kotsutil.LoadLicenseFromBytes([]byte(app.License))
+		if err != nil {
+			logger.Error(errors.Wrap(err, "failed to parse app license"))
+			JSON(w, http.StatusInternalServerError, availableUpdatesResponse)
+			return
+		}
+		updates, err := update.GetAvailableAirgapUpdates(app, license)
+		if err != nil {
+			logger.Error(errors.Wrap(err, "failed to get available airgap updates"))
+			JSON(w, http.StatusInternalServerError, availableUpdatesResponse)
+			return
+		}
+		availableUpdatesResponse.Success = true
+		availableUpdatesResponse.Updates = updates
+		JSON(w, http.StatusOK, availableUpdatesResponse)
+		return
+	}
+
 	latestLicense, _, err := license.Sync(app, "", false)
 	if err != nil {
 		logger.Error(errors.Wrap(err, "failed to sync license"))
@@ -246,7 +263,7 @@ func (h *Handler) GetAvailableUpdates(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	updates, err := updatechecker.GetAvailableUpdates(store, app, latestLicense)
+	updates, err := update.GetAvailableUpdates(store, app, latestLicense)
 	if err != nil {
 		logger.Error(errors.Wrap(err, "failed to get available app updates"))
 		JSON(w, http.StatusInternalServerError, availableUpdatesResponse)

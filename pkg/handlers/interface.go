@@ -61,6 +61,7 @@ type KOTSHandler interface {
 	GetAirgapInstallStatus(w http.ResponseWriter, r *http.Request)
 	ResetAirgapInstallStatus(w http.ResponseWriter, r *http.Request)
 	GetAirgapUploadConfig(w http.ResponseWriter, r *http.Request)
+	UploadAirgapUpdate(w http.ResponseWriter, r *http.Request)
 
 	// Implemented handlers
 	IgnorePreflightRBACErrors(w http.ResponseWriter, r *http.Request)
