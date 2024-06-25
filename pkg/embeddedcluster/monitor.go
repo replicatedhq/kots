@@ -19,34 +19,33 @@ var stateMut = sync.Mutex{}
 // - The app embedded cluster configuration differs from the current embedded cluster config.
 // - The current cluster config (as part of the Installation object) already exists in the cluster.
 // Returns the name of the installation object if an upgrade was started.
-func MaybeStartClusterUpgrade(ctx context.Context, kotsKinds *kotsutil.KotsKinds) (string, error) {
+func MaybeStartClusterUpgrade(ctx context.Context, kotsKinds *kotsutil.KotsKinds) error {
 	if kotsKinds == nil || kotsKinds.EmbeddedClusterConfig == nil {
-		return "", nil
+		return nil
 	}
 
 	if !util.IsEmbeddedCluster() {
-		return "", nil
+		return nil
 	}
 
 	kbClient, err := k8sutil.GetKubeClient(ctx)
 	if err != nil {
-		return "", fmt.Errorf("failed to get kubeclient: %w", err)
+		return fmt.Errorf("failed to get kubeclient: %w", err)
 	}
 
 	spec := kotsKinds.EmbeddedClusterConfig.Spec
 	if upgrade, err := RequiresUpgrade(ctx, kbClient, spec); err != nil {
-		return "", fmt.Errorf("failed to check if upgrade is required: %w", err)
+		return fmt.Errorf("failed to check if upgrade is required: %w", err)
 	} else if !upgrade {
-		return "", nil
+		return nil
 	}
 
 	artifacts := getArtifactsFromInstallation(kotsKinds.Installation)
 
-	insName, err := startClusterUpgrade(ctx, spec, artifacts, *kotsKinds.License)
-	if err != nil {
-		return "", fmt.Errorf("failed to start cluster upgrade: %w", err)
+	if err := startClusterUpgrade(ctx, spec, artifacts, *kotsKinds.License); err != nil {
+		return fmt.Errorf("failed to start cluster upgrade: %w", err)
 	}
 	logger.Info("started cluster upgrade")
 
-	return insName, nil
+	return nil
 }

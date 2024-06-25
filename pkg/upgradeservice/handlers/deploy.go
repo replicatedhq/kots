@@ -78,15 +78,14 @@ func (h *Handler) DeployApp(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	ecInstallationName, err := embeddedcluster.MaybeStartClusterUpgrade(r.Context(), kotsKinds)
-	if err != nil {
+	if err := embeddedcluster.MaybeStartClusterUpgrade(r.Context(), kotsKinds); err != nil {
 		response.Error = "failed to start cluster upgrade"
 		logger.Error(errors.Wrap(err, response.Error))
 		JSON(w, http.StatusInternalServerError, response)
 		return
 	}
 
-	if err := createPendingDeploymentCM(r.Context(), request, params, tgzArchiveKey, kotsKinds, ecInstallationName); err != nil {
+	if err := createPendingDeploymentCM(r.Context(), request, params, tgzArchiveKey); err != nil {
 		response.Error = "failed to create app version configmap"
 		logger.Error(errors.Wrap(err, response.Error))
 		JSON(w, http.StatusInternalServerError, response)
@@ -127,16 +126,8 @@ func canDeployApp(params types.UpgradeServiceParams, kotsKinds *kotsutil.KotsKin
 	return true, "", nil
 }
 
-// createPendingDeploymentCM creates a configmap with the app version info which
-// gets detected by the operator of the new kots version to deploy the app
-func createPendingDeploymentCM(
-	ctx context.Context,
-	request DeployAppRequest,
-	params types.UpgradeServiceParams,
-	tgzArchiveKey string,
-	kotsKinds *kotsutil.KotsKinds,
-	ecInstallationName string,
-) error {
+// createPendingDeploymentCM creates a configmap with the app version info which gets detected by the operator of the new kots version to deploy the app.
+func createPendingDeploymentCM(ctx context.Context, request DeployAppRequest, params types.UpgradeServiceParams, tgzArchiveKey string) error {
 	clientset, err := k8sutil.GetClientset()
 	if err != nil {
 		return errors.Wrap(err, "failed to get clientset")
@@ -173,7 +164,6 @@ func createPendingDeploymentCM(
 			"skip-preflights":                 fmt.Sprintf("%t", request.IsSkipPreflights),
 			"continue-with-failed-preflights": fmt.Sprintf("%t", request.ContinueWithFailedPreflights),
 			"kots-version":                    params.UpdateKOTSVersion,
-			"ec-installation-name":            ecInstallationName,
 		},
 	}
 
