@@ -173,6 +173,12 @@ func runClusterUpgrade(
 	return nil
 }
 
+const (
+	// TODO(upgrade): perhaps do not hardcode these
+	upgradeBinary         = "operator"
+	upgradeBinaryOCIAsset = "operator.tar.gz"
+)
+
 func downloadUpgradeBinary(ctx context.Context, license kotsv1beta1.License, versionLabel string) (string, error) {
 	tmpdir, err := os.MkdirTemp("", "embedded-cluster-artifact-*")
 	if err != nil {
@@ -209,17 +215,12 @@ func downloadUpgradeBinary(ctx context.Context, license kotsv1beta1.License, ver
 		return "", fmt.Errorf("copy response body: %w", err)
 	}
 
-	tarGz := archiver.TarGz{
-		Tar: &archiver.Tar{
-			ImplicitTopLevelFolder: false,
-		},
-	}
-	err = tarGz.Unarchive(archiveFilepath, filepath.Join(tmpdir, "operator"))
+	err = unarchive(archiveFilepath, tmpdir)
 	if err != nil {
 		return "", fmt.Errorf("unarchive: %w", err)
 	}
 
-	return f.Name(), nil
+	return filepath.Join(tmpdir, upgradeBinary), nil
 }
 
 func newDownloadUpgradeBinaryRequest(ctx context.Context, license kotsv1beta1.License, versionLabel string) (*http.Request, error) {
@@ -229,15 +230,10 @@ func newDownloadUpgradeBinaryRequest(ctx context.Context, license kotsv1beta1.Li
 		return nil, fmt.Errorf("new request: %w", err)
 	}
 	req.SetBasicAuth(license.Spec.LicenseID, license.Spec.LicenseID)
-	req.WithContext(ctx)
+	req = req.WithContext(ctx)
 
 	return req, nil
 }
-
-const (
-	// TODO(upgrade): perhaps do not hardcode this
-	upgradeBinaryOperatorBinary = "operator"
-)
 
 func pullUpgradeBinaryFromRegistry(
 	ctx context.Context, k8sClient kubernetes.Interface,
@@ -256,7 +252,12 @@ func pullUpgradeBinaryFromRegistry(
 		return "", fmt.Errorf("pull from registry: %w", err)
 	}
 
-	return filepath.Join(tmpdir, upgradeBinaryOperatorBinary), nil
+	err = unarchive(filepath.Join(tmpdir, upgradeBinaryOCIAsset), tmpdir)
+	if err != nil {
+		return "", fmt.Errorf("unarchive: %w", err)
+	}
+
+	return filepath.Join(tmpdir, upgradeBinary), nil
 }
 
 const (
@@ -347,6 +348,21 @@ func pullFromRegistry(
 	err = pullArtifact(ctx, srcRepo, dstDir, opts)
 	if err != nil {
 		return fmt.Errorf("pull oci artifact: %w", err)
+	}
+
+	return nil
+}
+
+func unarchive(archiveFilepath string, dstDir string) error {
+	tarGz := archiver.TarGz{
+		Tar: &archiver.Tar{
+			ImplicitTopLevelFolder: false,
+		},
+	}
+
+	err := tarGz.Unarchive(archiveFilepath, dstDir)
+	if err != nil {
+		return err
 	}
 
 	return nil
