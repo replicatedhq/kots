@@ -77,6 +77,9 @@ func GetAvailableAirgapUpdates(app *apptypes.App, license *kotsv1beta1.License) 
 		if info.IsDir() {
 			return nil
 		}
+		if filepath.Ext(path) != ".airgap" {
+			return nil
+		}
 
 		airgap, err := kotsutil.FindAirgapMetaInBundle(path)
 		if err != nil {

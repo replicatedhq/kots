@@ -70,7 +70,7 @@ func (h *Handler) DeployApp(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	tgzArchiveKey := fmt.Sprintf("pending-versions/%s/%s-%s.tar.gz", params.AppSlug, params.UpdateChannelID, params.UpdateCursor)
+	tgzArchiveKey := fmt.Sprintf("pending-deployments/%s/%s-%s.tar.gz", params.AppSlug, params.UpdateChannelID, params.UpdateCursor)
 	if err := apparchive.CreateAppVersionArchive(params.AppArchive, tgzArchiveKey); err != nil {
 		response.Error = "failed to create app version archive"
 		logger.Error(errors.Wrap(err, response.Error))

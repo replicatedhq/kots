@@ -1003,6 +1003,10 @@ func (o *Operator) reconcilePendingDeployment(cm *corev1.ConfigMap) error {
 		}
 	}
 
+	if err := filestore.GetStore().DeleteArchive(cm.Data["app-version-archive"]); err != nil {
+		return errors.Wrap(err, "failed to delete pending deployment archive")
+	}
+
 	if pr := cm.Data["preflight-result"]; pr != "" {
 		if err := store.GetStore().SetPreflightResults(appID, sequence, []byte(pr)); err != nil {
 			return errors.Wrap(err, "failed to set preflight results")
