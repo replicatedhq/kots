@@ -261,6 +261,7 @@ func InstallCmd() *cobra.Command {
 				Airgap:                 isAirgap,
 				ProgressWriter:         os.Stdout,
 				Timeout:                time.Minute * 2,
+				StorageClassName:       v.GetString("storage-class"),
 				HTTPProxyEnvValue:      v.GetString("http-proxy"),
 				HTTPSProxyEnvValue:     v.GetString("https-proxy"),
 				NoProxyEnvValue:        v.GetString("no-proxy"),
@@ -504,6 +505,7 @@ func InstallCmd() *cobra.Command {
 	cmd.Flags().Int("port", 8800, "local port to listen on when port forwarding is enabled")
 	cmd.Flags().String("wait-duration", "2m", "timeout to be used while waiting for individual components to be ready. must be in Go duration format (eg: 10s, 2m)")
 	cmd.Flags().String("preflights-wait-duration", "15m", "timeout to be used while waiting for preflights to complete. must be in Go duration format (eg: 10s, 2m)")
+	cmd.Flags().String("storage-class", "", "sets the storage class to use for the KOTS Admin Console components (if unset, the default storage class will be used)")
 	cmd.Flags().String("http-proxy", "", "sets HTTP_PROXY environment variable in all KOTS Admin Console components")
 	cmd.Flags().String("https-proxy", "", "sets HTTPS_PROXY environment variable in all KOTS Admin Console components")
 	cmd.Flags().String("no-proxy", "", "sets NO_PROXY environment variable in all KOTS Admin Console components")
@@ -517,8 +519,6 @@ func InstallCmd() *cobra.Command {
 	cmd.Flags().Bool("skip-compatibility-check", false, "set to true to skip compatibility checks between the current kots version and the app")
 	cmd.Flags().String("app-version-label", "", "the application version label to install. if not specified, the latest version will be installed")
 	cmd.Flags().Bool("exclude-admin-console", false, "set to true to exclude the admin console and only install the application")
-
-	cmd.Flags().String("repo", "", "repo uri to use when installing a helm chart")
 
 	registryFlags(cmd.Flags())
 

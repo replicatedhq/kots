@@ -45,6 +45,11 @@ func RqliteStatefulset(deployOptions types.DeployOptions, size resource.Quantity
 		memoryRequest, memoryLimit = "512Mi", "1Gi"
 	}
 
+	var storageClassName *string
+	if deployOptions.StorageClassName != "" {
+		storageClassName = &deployOptions.StorageClassName
+	}
+
 	statefulset := &appsv1.StatefulSet{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "apps/v1",
@@ -70,6 +75,7 @@ func RqliteStatefulset(deployOptions types.DeployOptions, size resource.Quantity
 						Labels: types.GetKotsadmLabels(),
 					},
 					Spec: corev1.PersistentVolumeClaimSpec{
+						StorageClassName: storageClassName,
 						AccessModes: []corev1.PersistentVolumeAccessMode{
 							corev1.ReadWriteOnce,
 						},
