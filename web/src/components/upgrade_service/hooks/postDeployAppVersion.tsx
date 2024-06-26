@@ -1,5 +1,4 @@
 import { useMutation } from "@tanstack/react-query";
-import { useNavigate } from "react-router-dom";
 
 async function postDeployAppVersion({
   slug,
@@ -25,7 +24,7 @@ async function postDeployAppVersion({
 
   if (!response.ok) {
     throw new Error(
-      `Encountered an error while trying to deploy downstream version: ${response.status}`
+      `Encountered an error while trying to deploy app version: ${response.status}`
     );
   }
 }
@@ -46,12 +45,12 @@ function makeBody({
 function useDeployAppVersion({
   slug,
   sequence,
+  closeModal,
 }: {
   slug: string;
   sequence: string;
+  closeModal: () => void;
 }) {
-  const navigate = useNavigate();
-
   return useMutation({
     mutationFn: ({
       continueWithFailedPreflights = false,
@@ -74,8 +73,7 @@ function useDeployAppVersion({
       );
     },
     onSuccess: () => {
-      // TODO: figure out how to close the modal
-      navigate(`/app/${slug}`);
+      closeModal();
     },
   });
 }
