@@ -7656,9 +7656,7 @@ async function getClusterVersions() {
             latest_minor_versions: true,
         },
         eks: {
-            // latest_version: true,
-            // TODO: re-enable latest_version once we have compatibility with 1.30
-            versions: new Set(["1.29"]),
+            latest_version: true,
             instance_type: "m7g.large" // arm64
         },
         openshift: {
