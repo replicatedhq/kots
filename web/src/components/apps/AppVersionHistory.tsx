@@ -157,7 +157,6 @@ type State = {
 };
 
 class AppVersionHistory extends Component<Props, State> {
-  iframeRef: React.RefObject<HTMLIFrameElement>;
   constructor(props: Props) {
     super(props);
     this.state = {
@@ -224,7 +223,7 @@ class AppVersionHistory extends Component<Props, State> {
       shouldShowUpgradeServiceModal: false,
       upgradeService: {},
     };
-    this.iframeRef = createRef();
+    this.iframeRef = createRef<HTMLIFrameElement>();
   }
 
   // moving this out of the state because new repeater instances were getting created
@@ -275,8 +274,6 @@ class AppVersionHistory extends Component<Props, State> {
 
   componentDidUpdate = async (lastProps: Props) => {
     if (this.state.shouldShowUpgradeServiceModal && this.iframeRef.current) {
-      console.log("hi its opened ", this.iframeRef.current);
-
       window.addEventListener("message", this.handleIframeMessage);
     }
 
