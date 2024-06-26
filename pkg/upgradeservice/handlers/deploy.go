@@ -133,6 +133,16 @@ func createPendingDeploymentCM(ctx context.Context, request DeployAppRequest, pa
 		return errors.Wrap(err, "failed to get clientset")
 	}
 
+	preflightData, err := upgradepreflight.GetPreflightData()
+	if err != nil {
+		return errors.Wrap(err, "failed to get preflight data")
+	}
+
+	preflightResult := ""
+	if preflightData.Result != nil {
+		preflightResult = preflightData.Result.Result
+	}
+
 	source := "Upstream Update"
 	if params.AppIsAirgap {
 		source = "Airgap Update"
@@ -163,6 +173,7 @@ func createPendingDeploymentCM(ctx context.Context, request DeployAppRequest, pa
 			"update-cursor":                   params.UpdateCursor,
 			"skip-preflights":                 fmt.Sprintf("%t", request.IsSkipPreflights),
 			"continue-with-failed-preflights": fmt.Sprintf("%t", request.ContinueWithFailedPreflights),
+			"preflight-result":                preflightResult,
 			"kots-version":                    params.UpdateKOTSVersion,
 		},
 	}

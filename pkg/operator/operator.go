@@ -933,7 +933,6 @@ func (o *Operator) watchPendingDeployments() {
 }
 
 func (o *Operator) reconcilePendingDeployment(cm *corev1.ConfigMap) error {
-	// TODO NOW: record status somewhere instead of just logs?
 	// CAUTION: changes to the kots version field can break backwards compatibility
 	kotsVersion := cm.Data["kots-version"]
 	if kotsVersion == "" {
@@ -1001,6 +1000,12 @@ func (o *Operator) reconcilePendingDeployment(cm *corev1.ConfigMap) error {
 	if cm.Data["is-airgap"] == "true" {
 		if err := update.RemoveAirgapUpdate(cm.Data["app-slug"], cm.Data["channel-id"], cm.Data["update-cursor"]); err != nil {
 			return errors.Wrap(err, "failed to remove airgap update")
+		}
+	}
+
+	if pr := cm.Data["preflight-result"]; pr != "" {
+		if err := store.GetStore().SetPreflightResults(appID, sequence, []byte(pr)); err != nil {
+			return errors.Wrap(err, "failed to set preflight results")
 		}
 	}
 

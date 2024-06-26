@@ -16,7 +16,6 @@ import (
 	registrytypes "github.com/replicatedhq/kots/pkg/registry/types"
 	"github.com/replicatedhq/kots/pkg/render"
 	rendertypes "github.com/replicatedhq/kots/pkg/render/types"
-	upgradereporting "github.com/replicatedhq/kots/pkg/upgradeservice/reporting"
 	upgradeservicetypes "github.com/replicatedhq/kots/pkg/upgradeservice/types"
 	"github.com/replicatedhq/kots/pkg/util"
 	troubleshootanalyze "github.com/replicatedhq/troubleshoot/pkg/analyze"
@@ -146,12 +145,6 @@ func Run(params upgradeservicetypes.UpgradeServiceParams) error {
 			logger.Error(errors.Wrap(err, "failed to run preflight checks"))
 			return
 		}
-
-		go func() {
-			if err := upgradereporting.SubmitAppInfo(params); err != nil {
-				logger.Debugf("failed to submit app info: %v", err)
-			}
-		}()
 	}()
 
 	return nil
