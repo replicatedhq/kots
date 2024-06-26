@@ -102,6 +102,7 @@ func getArtifactsFromInstallation(installation kotsv1beta1.Installation, appSlug
 		Images:                  installation.Spec.EmbeddedClusterArtifacts.ImagesAmd64,
 		HelmCharts:              installation.Spec.EmbeddedClusterArtifacts.Charts,
 		EmbeddedClusterMetadata: installation.Spec.EmbeddedClusterArtifacts.Metadata,
+		AdditionalArtifacts:     installation.Spec.EmbeddedClusterArtifacts.AdditionalArtifacts,
 	}
 }
 

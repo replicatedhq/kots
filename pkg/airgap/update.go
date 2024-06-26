@@ -207,6 +207,11 @@ func UpdateAppFromPath(a *apptypes.App, airgapRoot string, airgapBundlePath stri
 		return errors.Wrap(err, "failed to create new version")
 	}
 
+	// a version has been created, reset the "channel_changed" flag
+	if err := store.GetStore().SetAppChannelChanged(a.ID, false); err != nil {
+		logger.Error(errors.Wrapf(err, "failed to reset channel changed flag"))
+	}
+
 	hasStrictPreflights, err := store.GetStore().HasStrictPreflights(a.ID, newSequence)
 	if err != nil {
 		return errors.Wrap(err, "failed to check if app preflight has strict analyzers")
@@ -318,12 +323,14 @@ func GetMissingRequiredVersions(app *apptypes.App, airgap *kotsv1beta1.Airgap) (
 		return nil, errors.Wrap(err, "failed to load license")
 	}
 
-	return getMissingRequiredVersions(airgap, license, appVersions.AllVersions)
+	return getMissingRequiredVersions(airgap, license, appVersions.AllVersions, app.ChannelChanged)
 }
 
-func getMissingRequiredVersions(airgap *kotsv1beta1.Airgap, license *kotsv1beta1.License, installedVersions []*downstreamtypes.DownstreamVersion) ([]string, error) {
+func getMissingRequiredVersions(airgap *kotsv1beta1.Airgap, license *kotsv1beta1.License, installedVersions []*downstreamtypes.DownstreamVersion, channelChanged bool) ([]string, error) {
 	missingVersions := make([]string, 0)
-	if len(installedVersions) == 0 {
+	// If no versions are installed, we can consider this an initial install.
+	// If the channel changed, we can consider this an initial install.
+	if len(installedVersions) == 0 || channelChanged {
 		return missingVersions, nil
 	}
 

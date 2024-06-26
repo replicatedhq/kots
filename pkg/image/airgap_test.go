@@ -20,6 +20,48 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+func TestPathToRegistryECImage(t *testing.T) {
+	for _, tt := range []struct {
+		name      string
+		image     string
+		namespace string
+		expected  string
+		err       string
+	}{
+		{
+			name:      "ecr",
+			image:     "123456789012.dkr.ecr.us-west-2.amazonaws.com/myimage:latest",
+			namespace: "myapp",
+			expected:  "myapp/embedded-cluster/myimage:latest",
+		},
+		{
+			name:      "no registry",
+			image:     "myimage:latest",
+			namespace: "myapp",
+			expected:  "myapp/embedded-cluster/myimage:latest",
+		},
+		{
+			name:     "no namespace",
+			image:    "myimage:latest",
+			expected: "embedded-cluster/myimage:latest",
+		},
+		{
+			name: "empty image name",
+			err:  "empty image name",
+		},
+	} {
+		t.Run(tt.name, func(t *testing.T) {
+			result, err := PathToRegistryECImage(tt.image, tt.namespace)
+			if tt.err == "" {
+				require.Equal(t, tt.expected, result)
+				require.NoError(t, err)
+				return
+			}
+			require.Contains(t, err.Error(), tt.err)
+		})
+	}
+}
+
 func TestPushEmbeddedClusterArtifacts(t *testing.T) {
 	testAppSlug := "test-app"
 	testChannelID := "test-tag"
@@ -56,18 +98,26 @@ func TestPushEmbeddedClusterArtifacts(t *testing.T) {
 				"embedded-cluster/images-amd64.tar":      []byte("this-is-the-images-bundle"),
 				"embedded-cluster/version-metadata.json": []byte("this-is-the-metadata"),
 				"embedded-cluster/some-file-TBD":         []byte("this-is-an-arbitrary-file"),
+				"embedded-cluster/artifacts/kots":        []byte("this-is-the-kots-bin"),
+				"embedded-cluster/artifacts/operator":    []byte("this-is-the-operator-bin"),
 			},
 			artifactsToPush: &kotsv1beta1.EmbeddedClusterArtifacts{
 				BinaryAmd64: "embedded-cluster/test-app",
 				ImagesAmd64: "embedded-cluster/images-amd64.tar",
 				Charts:      "embedded-cluster/charts.tar.gz",
 				Metadata:    "embedded-cluster/version-metadata.json",
+				AdditionalArtifacts: map[string]string{
+					"kots":     "embedded-cluster/artifacts/kots",
+					"operator": "embedded-cluster/artifacts/operator",
+				},
 			},
 			wantRegistryArtifacts: map[string]string{
 				fmt.Sprintf("%s/embedded-cluster/test-app", testAppSlug):              fmt.Sprintf("%s-%s-%s", testChannelID, testUpdateCursor, testVersionLabel),
 				fmt.Sprintf("%s/embedded-cluster/charts.tar.gz", testAppSlug):         fmt.Sprintf("%s-%s-%s", testChannelID, testUpdateCursor, testVersionLabel),
 				fmt.Sprintf("%s/embedded-cluster/images-amd64.tar", testAppSlug):      fmt.Sprintf("%s-%s-%s", testChannelID, testUpdateCursor, testVersionLabel),
 				fmt.Sprintf("%s/embedded-cluster/version-metadata.json", testAppSlug): fmt.Sprintf("%s-%s-%s", testChannelID, testUpdateCursor, testVersionLabel),
+				fmt.Sprintf("%s/embedded-cluster/kots", testAppSlug):                  fmt.Sprintf("%s-%s-%s", testChannelID, testUpdateCursor, testVersionLabel),
+				fmt.Sprintf("%s/embedded-cluster/operator", testAppSlug):              fmt.Sprintf("%s-%s-%s", testChannelID, testUpdateCursor, testVersionLabel),
 			},
 			wantErr: false,
 		},
@@ -82,12 +132,18 @@ func TestPushEmbeddedClusterArtifacts(t *testing.T) {
 				"embedded-cluster/images-amd64.tar":      []byte("this-is-the-images-bundle"),
 				"embedded-cluster/version-metadata.json": []byte("this-is-the-metadata"),
 				"embedded-cluster/some-file-TBD":         []byte("this-is-an-arbitrary-file"),
+				"embedded-cluster/artifacts/kots":        []byte("this-is-the-kots-bin"),
+				"embedded-cluster/artifacts/operator":    []byte("this-is-the-operator-bin"),
 			},
 			artifactsToPush: &kotsv1beta1.EmbeddedClusterArtifacts{
 				BinaryAmd64: "embedded-cluster/test-app",
 				ImagesAmd64: "embedded-cluster/images-amd64.tar",
 				Charts:      "embedded-cluster/charts.tar.gz",
 				Metadata:    "embedded-cluster/version-metadata.json",
+				AdditionalArtifacts: map[string]string{
+					"kots":     "embedded-cluster/artifacts/kots",
+					"operator": "embedded-cluster/artifacts/operator",
+				},
 			},
 			useTLS: true,
 			wantRegistryArtifacts: map[string]string{
@@ -95,6 +151,8 @@ func TestPushEmbeddedClusterArtifacts(t *testing.T) {
 				fmt.Sprintf("%s/embedded-cluster/charts.tar.gz", testAppSlug):         fmt.Sprintf("%s-%s-%s", testChannelID, testUpdateCursor, testVersionLabel),
 				fmt.Sprintf("%s/embedded-cluster/images-amd64.tar", testAppSlug):      fmt.Sprintf("%s-%s-%s", testChannelID, testUpdateCursor, testVersionLabel),
 				fmt.Sprintf("%s/embedded-cluster/version-metadata.json", testAppSlug): fmt.Sprintf("%s-%s-%s", testChannelID, testUpdateCursor, testVersionLabel),
+				fmt.Sprintf("%s/embedded-cluster/kots", testAppSlug):                  fmt.Sprintf("%s-%s-%s", testChannelID, testUpdateCursor, testVersionLabel),
+				fmt.Sprintf("%s/embedded-cluster/operator", testAppSlug):              fmt.Sprintf("%s-%s-%s", testChannelID, testUpdateCursor, testVersionLabel),
 			},
 			wantErr: false,
 		},
