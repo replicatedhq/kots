@@ -32,7 +32,6 @@ func bootstrap(params types.UpgradeServiceParams) (finalError error) {
 		if err := pullArchiveFromAirgap(params); err != nil {
 			return errors.Wrap(err, "failed to pull archive from airgap")
 		}
-		// TODO NOW: check canInstall?
 	} else {
 		if err := pullArchiveFromOnline(params); err != nil {
 			return errors.Wrap(err, "failed to pull archive from online")
