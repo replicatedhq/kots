@@ -323,10 +323,13 @@ func pullFromRegistry(
 	srcRepo string, dstDir string,
 ) error {
 	store := credentials.NewMemoryStore()
-	store.Put(ctx, registrySettings.Hostname, auth.Credential{
+	err := store.Put(ctx, registrySettings.Hostname, auth.Credential{
 		Username: registrySettings.Username,
 		Password: registrySettings.Password,
 	})
+	if err != nil {
+		return fmt.Errorf("put credential: %w", err)
+	}
 
 	transp, ok := http.DefaultTransport.(*http.Transport)
 	if !ok {
@@ -341,7 +344,7 @@ func pullFromRegistry(
 		Credential: store.Get,
 	}
 
-	err := pullArtifact(ctx, srcRepo, dstDir, opts)
+	err = pullArtifact(ctx, srcRepo, dstDir, opts)
 	if err != nil {
 		return fmt.Errorf("pull oci artifact: %w", err)
 	}
