@@ -17,7 +17,6 @@ import (
 	apptypes "github.com/replicatedhq/kots/pkg/app/types"
 	"github.com/replicatedhq/kots/pkg/config"
 	kotsconfig "github.com/replicatedhq/kots/pkg/config"
-	"github.com/replicatedhq/kots/pkg/crypto"
 	kotsadmconfig "github.com/replicatedhq/kots/pkg/kotsadmconfig"
 	configtypes "github.com/replicatedhq/kots/pkg/kotsadmconfig/types"
 	configvalidation "github.com/replicatedhq/kots/pkg/kotsadmconfig/validation"
@@ -800,54 +799,6 @@ func updateAppConfig(updateApp *apptypes.App, sequence int64, configGroups []kot
 
 	updateAppConfigResponse.Success = true
 	return updateAppConfigResponse, nil
-}
-
-func updateAppConfigValues(values map[string]kotsv1beta1.ConfigValue, configGroups []kotsv1beta1.ConfigGroup) map[string]kotsv1beta1.ConfigValue {
-	for _, group := range configGroups {
-		for _, item := range group.Items {
-			if item.Type == "file" {
-				v := values[item.Name]
-				v.Filename = item.Filename
-				values[item.Name] = v
-			}
-			if item.Value.Type == multitype.Bool {
-				updatedValue := item.Value.BoolVal
-				v := values[item.Name]
-				v.Value = strconv.FormatBool(updatedValue)
-				values[item.Name] = v
-			} else if item.Value.Type == multitype.String {
-				updatedValue := item.Value.String()
-				if item.Type == "password" {
-					// encrypt using the key
-					// if the decryption succeeds, don't encrypt again
-					_, err := util.DecryptConfigValue(updatedValue)
-					if err != nil {
-						updatedValue = base64.StdEncoding.EncodeToString(crypto.Encrypt([]byte(updatedValue)))
-					}
-				}
-
-				v := values[item.Name]
-				v.Value = updatedValue
-				values[item.Name] = v
-			}
-			for _, repeatableValues := range item.ValuesByGroup {
-				// clear out all variadic values for this group first
-				for name, value := range values {
-					if value.RepeatableItem == item.Name {
-						delete(values, name)
-					}
-				}
-				// add variadic groups back in declaratively
-				for itemName, valueItem := range repeatableValues {
-					v := values[itemName]
-					v.Value = fmt.Sprintf("%v", valueItem)
-					v.RepeatableItem = item.Name
-					values[itemName] = v
-				}
-			}
-		}
-	}
-	return values
 }
 
 type SetAppConfigValuesRequest struct {

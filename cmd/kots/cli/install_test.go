@@ -14,7 +14,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/handlers"
 	kotsadmtypes "github.com/replicatedhq/kots/pkg/kotsadm/types"
 	preflighttypes "github.com/replicatedhq/kots/pkg/preflight/types"
-	"github.com/replicatedhq/kots/pkg/store/kotsstore"
+	"github.com/replicatedhq/kots/pkg/tasks"
 	kotsv1beta1 "github.com/replicatedhq/kotskinds/apis/kots/v1beta1"
 	"github.com/replicatedhq/troubleshoot/pkg/preflight"
 )
@@ -588,7 +588,7 @@ func createPreflightResponse(isFail bool, isWarn bool, hasPassingStrict bool, pe
 }
 
 func createTaskStatus(status string, message string) ([]byte, error) {
-	return json.Marshal(kotsstore.TaskStatus{
+	return json.Marshal(tasks.TaskStatus{
 		Message: message,
 		Status:  status,
 	})
