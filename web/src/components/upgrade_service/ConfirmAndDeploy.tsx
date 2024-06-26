@@ -10,11 +10,7 @@ import Icon from "@components/Icon";
 import SkipPreflightsModal from "@components/shared/modals/SkipPreflightsModal";
 import PreflightsProgress from "@components/troubleshoot/PreflightsProgress";
 import { useApps } from "@features/App";
-import { useDeployAppVersion } from "./hooks/index";
-import {
-  useGetPrelightResults,
-  // useIgnorePermissionErrors,
-} from "@features/PreflightChecks/api";
+import { useDeployAppVersion, useGetPrelightResults } from "./hooks/index";
 import { KotsParams } from "@types";
 
 import "../../scss/components/PreflightCheckPage.scss";
@@ -47,10 +43,15 @@ const ConfirmAndDeploy = ({
     setShowConfirmIgnorePreflightsModal,
   ] = useState(false);
 
+  const closeModal = async () => {
+    window.parent.postMessage({ message: "closeUpgradeModal" });
+  };
+
   const { sequence = "0", slug } = useParams<keyof KotsParams>() as KotsParams;
   const { mutate: deployKotsDownstream } = useDeployAppVersion({
     slug,
     sequence,
+    closeModal,
   });
   // TODO: figure out what this is for
   // const { mutate: ignorePermissionErrors, error: ignorePermissionError } =
@@ -69,7 +70,6 @@ const ConfirmAndDeploy = ({
   }: {
     results: PreflightResultResponse[];
   }) => {
-    console.log(results, "results,");
     function hasAllPassed(data: PreflightResultResponse[]) {
       return data.every((item) => item.showPass);
     }
@@ -337,7 +337,10 @@ const ConfirmAndDeploy = ({
               className="btn blue primary u-marginLeft--10"
               onClick={() => {
                 setShowContinueWithFailedPreflightsModal(false);
-                deployKotsDownstream({ continueWithFailedPreflights: true });
+                deployKotsDownstream({
+                  continueWithFailedPreflights: true,
+                });
+
                 refetchApps();
               }}
             >

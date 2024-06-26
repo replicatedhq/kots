@@ -4,7 +4,6 @@ import { useParams, useLocation, useNavigate } from "react-router-dom";
 import Modal from "react-modal";
 
 import PreflightRenderer from "@components/PreflightRenderer";
-import PreflightResultErrors from "@components/PreflightResultErrors";
 import SkipPreflightsModal from "@components/shared/modals/SkipPreflightsModal";
 
 import PreflightsProgress from "@components/troubleshoot/PreflightsProgress";
@@ -14,11 +13,10 @@ import { useApps } from "@features/App";
 
 import {
   useGetPrelightResults,
-  useIgnorePermissionErrors,
   useRerunPreflights,
-} from "@features/PreflightChecks/api";
+  useDeployAppVersion,
+} from "./hooks/index";
 
-import { useDeployAppVersion } from "./hooks/index";
 import Icon from "@components/Icon";
 import { KotsParams } from "@types";
 
@@ -37,17 +35,21 @@ const PreflightCheck = ({
     setShowConfirmIgnorePreflightsModal,
   ] = useState(false);
 
+  const closeModal = async () => {
+    window.parent.postMessage({ message: "closeUpgradeModal" });
+  };
+
   const { sequence = "0", slug } = useParams<keyof KotsParams>() as KotsParams;
   const { mutate: deployKotsDownstream } = useDeployAppVersion({
     slug,
     sequence,
+    closeModal,
   });
-  const { mutate: ignorePermissionErrors, error: ignorePermissionError } =
-    useIgnorePermissionErrors({ sequence, slug });
+
   const { data: preflightCheck, error: getPreflightResultsError } =
-    useGetPrelightResults({ slug, sequence, isUpgradeService: true });
+    useGetPrelightResults({ slug, sequence });
   const { mutate: rerunPreflights, error: rerunPreflightsError } =
-    useRerunPreflights({ slug, sequence, isUpgradeService: true });
+    useRerunPreflights({ slug, sequence });
 
   if (!preflightCheck?.showPreflightCheckPending) {
     if (showConfirmIgnorePreflightsModal) {
@@ -91,15 +93,7 @@ const PreflightCheck = ({
               </div>
             </div>
           )}
-          {ignorePermissionError?.message && (
-            <div className="ErrorWrapper flex-auto flex alignItems--center u-marginBottom--20">
-              <div className="icon redWarningIcon u-marginRight--10" />
-              <div>
-                <p className="title">Encountered an error</p>
-                <p className="error">{ignorePermissionError.message}</p>
-              </div>
-            </div>
-          )}
+
           {rerunPreflightsError?.message && (
             <div className="ErrorWrapper flex-auto flex alignItems--center u-marginBottom--20">
               <div className="icon redWarningIcon u-marginRight--10" />
@@ -132,11 +126,11 @@ const PreflightCheck = ({
             </div>
           )}
 
-          {preflightCheck?.showPreflightResultErrors && (
+          {/* {preflightCheck?.showPreflightResultErrors && (
             <>
               <PreflightResultErrors
                 errors={preflightCheck.errors}
-                ignorePermissionErrors={ignorePermissionErrors}
+                ignorePermissionErrors={""}
                 logo={""}
                 preflightResultData={preflightCheck.preflightResults}
                 showRbacError={preflightCheck.showRbacError}
@@ -153,7 +147,8 @@ const PreflightCheck = ({
                 </button>
               </div>
             </>
-          )}
+          )} */}
+
           {preflightCheck?.showPreflightResults && (
             <div className="tw-mt-6">
               <div className="flex flex1 tw-justify-between tw-items-end">
