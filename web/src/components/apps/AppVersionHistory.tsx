@@ -1,4 +1,4 @@
-import { ChangeEvent, Component, Fragment } from "react";
+import { ChangeEvent, Component, Fragment, createRef } from "react";
 import { Link } from "react-router-dom";
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
@@ -157,6 +157,7 @@ type State = {
 };
 
 class AppVersionHistory extends Component<Props, State> {
+  iframeRef: React.RefObject<HTMLIFrameElement>;
   constructor(props: Props) {
     super(props);
     this.state = {
@@ -223,6 +224,7 @@ class AppVersionHistory extends Component<Props, State> {
       shouldShowUpgradeServiceModal: false,
       upgradeService: {},
     };
+    this.iframeRef = createRef();
   }
 
   // moving this out of the state because new repeater instances were getting created
@@ -230,6 +232,11 @@ class AppVersionHistory extends Component<Props, State> {
   versionDownloadStatusJobs: { [key: number]: Repeater } = {};
 
   _mounted: boolean | undefined;
+
+  handleIframeMessage = () => {
+    this.setState({ shouldShowUpgradeServiceModal: false });
+    this.props.navigate(`/app/${this.props.params.slug}`);
+  };
 
   componentDidMount() {
     this.getPreflightState(
@@ -267,6 +274,12 @@ class AppVersionHistory extends Component<Props, State> {
   }
 
   componentDidUpdate = async (lastProps: Props) => {
+    if (this.state.shouldShowUpgradeServiceModal && this.iframeRef.current) {
+      console.log("hi its opened ", this.iframeRef.current);
+
+      window.addEventListener("message", this.handleIframeMessage);
+    }
+
     if (
       lastProps.params.slug !== this.props.params.slug ||
       lastProps.outletContext.app.id !== this.props.outletContext.app.id
@@ -294,6 +307,7 @@ class AppVersionHistory extends Component<Props, State> {
       this.versionDownloadStatusJobs[j].stop();
     }
     this._mounted = false;
+    window.removeEventListener("message", this.handleIframeMessage);
   }
 
   fetchAvailableUpdates = async () => {
@@ -2339,6 +2353,7 @@ class AppVersionHistory extends Component<Props, State> {
             height="100%"
             allowFullScreen={true}
             id="upgrade-service-iframe"
+            ref={this.iframeRef}
           />
         </Modal>
       </div>
