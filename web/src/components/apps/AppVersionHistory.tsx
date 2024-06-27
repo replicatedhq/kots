@@ -1477,15 +1477,24 @@ class AppVersionHistory extends Component<Props, State> {
                 key={index}
                 className="tw-h-10 tw-bg-white tw-p-4 tw-flex tw-justify-between tw-items-center tw-rounded"
               >
-                <div className="flex alignItems--center">
-                  <p className="u-fontSize--header2 u-fontWeight--bold u-lineHeight--medium card-item-title ">
-                    {update.versionLabel}
-                  </p>
-                  {update.isRequired && (
-                    <span className="status-tag required u-marginLeft--10">
+                <div className="flex-column">
+                  <div className="flex alignItems--center">
+                    <p className="u-fontSize--header2 u-fontWeight--bold u-lineHeight--medium card-item-title ">
+                      {update.versionLabel}
+                    </p>
+                    {update.isRequired && (
+                      <span className="status-tag required u-marginLeft--10">
+                        {" "}
+                        Required{" "}
+                      </span>
+                    )}
+                  </div>
+                  {update.upstreamReleasedAt && (
+                    <p className="u-fontSize--small u-fontWeight--medium u-textColor--bodyCopy u-marginTop--5">
                       {" "}
-                      Required{" "}
-                    </span>
+                      Released{" "}
+                      <span className="u-fontWeight--bold">{Utilities.dateFormat(update.upstreamReleasedAt, "MM/DD/YY @ hh:mm a z")}</span>
+                    </p>
                   )}
                 </div>
                 <div className="flex alignItems--center">
