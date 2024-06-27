@@ -232,9 +232,11 @@ class AppVersionHistory extends Component<Props, State> {
 
   _mounted: boolean | undefined;
 
-  handleIframeMessage = () => {
-    this.setState({ shouldShowUpgradeServiceModal: false });
-    this.props.navigate(`/app/${this.props.params.slug}`);
+  handleIframeMessage = (event) => {
+    if (event.data.message === "closeUpgradeModal") {
+      this.setState({ shouldShowUpgradeServiceModal: false });
+      this.props.navigate(`/app/${this.props.params.slug}`);
+    }
   };
 
   componentDidMount() {
@@ -1451,6 +1453,7 @@ class AppVersionHistory extends Component<Props, State> {
             upgradeService: {
               isLoading: false,
               error: text.error,
+              version: version.versionLabel,
             },
           });
         }
@@ -1470,25 +1473,32 @@ class AppVersionHistory extends Component<Props, State> {
         </p>
         <div className="tw-flex tw-flex-col tw-gap-2">
           {versions.map((version, index) => (
-            <div
-              key={index}
-              className="tw-h-10 tw-bg-white tw-p-4 tw-flex tw-justify-between tw-items-center tw-rounded"
-            >
-              <p className="u-fontSize--header2 u-fontWeight--bold u-lineHeight--medium card-item-title ">
-                {version.versionLabel}
-              </p>
-              <button
-                className={"btn tw-ml-2 primary blue"}
-                onClick={() => this.startUpgraderService(version)}
+            <div>
+              <div
+                key={index}
+                className="tw-h-10 tw-bg-white tw-p-4 tw-flex tw-justify-between tw-items-center tw-rounded"
               >
-                {this.state.upgradeService?.version === version.versionLabel &&
-                this.state.upgradeService.isLoading
-                  ? "Deploying..."
-                  : "Deploy"}
-              </button>
-              {this.state.upgradeService?.error && (
-                <p>{this.state.upgradeService.error}</p>
-              )}
+                <p className="u-fontSize--header2 u-fontWeight--bold u-lineHeight--medium card-item-title ">
+                  {version.versionLabel}
+                </p>
+                <button
+                  className={"btn tw-ml-2 primary blue"}
+                  onClick={() => this.startUpgraderService(version)}
+                >
+                  {this.state.upgradeService?.version ===
+                    version.versionLabel && this.state.upgradeService.isLoading
+                    ? "Deploying..."
+                    : "Deploy"}
+                </button>
+              </div>
+              {this.state.upgradeService?.error &&
+                this.state.upgradeService?.version === version.versionLabel && (
+                  <div className="tw-my-4">
+                    <span className="u-fontSize--small u-textColor--error u-fontWeight--bold">
+                      {this.state.upgradeService.error}
+                    </span>
+                  </div>
+                )}
             </div>
           ))}
         </div>
@@ -1517,7 +1527,6 @@ class AppVersionHistory extends Component<Props, State> {
     if (version.preflightResultCreatedAt) {
       newPreflightResults = secondsAgo(version.preflightResultCreatedAt) < 12;
     }
-
     return (
       <Fragment key={index}>
         <AppVersionHistoryRow
@@ -1879,8 +1888,10 @@ class AppVersionHistory extends Component<Props, State> {
                   }`}
                 >
                   {(versionHistory.length === 0 && gitopsIsConnected) ||
-                  versionHistory?.length > 0 ? (
-                    <>
+                  versionHistory?.length > 0 ||
+                  (this.state.availableUpdates &&
+                    this.state.availableUpdates?.length > 0) ? (
+                    <div>
                       {gitopsIsConnected && (
                         <div
                           style={{ maxWidth: "1030px" }}
@@ -1906,140 +1917,140 @@ class AppVersionHistory extends Component<Props, State> {
                           />
                         </div>
                       )}
-                      {!gitopsIsConnected && (
-                        <div className="TableDiff--Wrapper card-bg u-marginBottom--30">
-                          {/* DEV MODE: make this false */}
-                          {!this.props.outletContext.isEmbeddedCluster && (
-                            <div className="flex justifyContent--spaceBetween alignItems--center u-marginBottom--15">
-                              <p className="u-fontSize--normal u-fontWeight--medium u-textColor--info">
-                                {this.state.updatesAvailable
-                                  ? "New version available"
-                                  : ""}
-                              </p>
-                              <div className="flex alignItems--center">
+
+                      {!gitopsIsConnected &&
+                        (this.state.updatesAvailable ||
+                          (this.state.availableUpdates &&
+                            this.state.availableUpdates?.length > 0)) && (
+                          <div className="TableDiff--Wrapper card-bg u-marginBottom--30">
+                            {!this.props.outletContext.isEmbeddedCluster && (
+                              <div className="flex justifyContent--spaceBetween alignItems--center u-marginBottom--15">
+                                <p className="u-fontSize--normal u-fontWeight--medium u-textColor--info">
+                                  {this.state.updatesAvailable
+                                    ? "New version available"
+                                    : ""}
+                                </p>
                                 <div className="flex alignItems--center">
-                                  {app?.isAirgap && airgapUploader ? (
-                                    <MountAware
-                                      onMount={(el: Element) =>
-                                        airgapUploader?.assignElement(el)
-                                      }
-                                    >
-                                      <div className="flex alignItems--center">
-                                        <span className="icon clickable dashboard-card-upload-version-icon u-marginRight--5" />
-                                        <span className="link u-fontSize--small u-lineHeight--default">
-                                          Upload new version
-                                        </span>
-                                      </div>
-                                    </MountAware>
-                                  ) : (
-                                    <div className="flex alignItems--center">
-                                      {checkingForUpdates &&
-                                      !this.props.outletContext
-                                        .isBundleUploading ? (
-                                        <div className="flex alignItems--center u-marginRight--20">
-                                          <Loader
-                                            className="u-marginRight--5"
-                                            size="15"
-                                          />
-                                          <span className="u-textColor--bodyCopy u-fontWeight--medium u-fontSize--small u-lineHeight--default">
-                                            {checkingUpdateMessage === ""
-                                              ? "Checking for updates"
-                                              : checkingUpdateTextShort}
-                                          </span>
-                                        </div>
-                                      ) : (
-                                        <div className="flex alignItems--center u-marginRight--20">
-                                          <span
-                                            className="flex-auto flex alignItems--center link u-fontSize--small"
-                                            onClick={this.onCheckForUpdates}
-                                          >
-                                            <Icon
-                                              icon="check-update"
-                                              size={16}
-                                              className="clickable u-marginRight--5"
-                                              color={""}
-                                              style={{}}
-                                              disableFill={false}
-                                              removeInlineStyle={false}
-                                            />
-                                            Check for update
-                                          </span>
-                                        </div>
-                                      )}
-                                      <span
-                                        className="flex-auto flex alignItems--center link u-fontSize--small"
-                                        onClick={
-                                          this.toggleAutomaticUpdatesModal
+                                  <div className="flex alignItems--center">
+                                    {app?.isAirgap && airgapUploader ? (
+                                      <MountAware
+                                        onMount={(el: Element) =>
+                                          airgapUploader?.assignElement(el)
                                         }
                                       >
-                                        <Icon
-                                          icon="schedule-sync"
-                                          size={16}
-                                          className="clickable u-marginRight--5"
-                                          color={""}
-                                          style={{}}
-                                          disableFill={false}
-                                          removeInlineStyle={false}
-                                        />
-                                        Configure automatic updates
-                                      </span>
-                                    </div>
-                                  )}
+                                        <div className="flex alignItems--center">
+                                          <span className="icon clickable dashboard-card-upload-version-icon u-marginRight--5" />
+                                          <span className="link u-fontSize--small u-lineHeight--default">
+                                            Upload new version
+                                          </span>
+                                        </div>
+                                      </MountAware>
+                                    ) : (
+                                      <div className="flex alignItems--center">
+                                        {checkingForUpdates &&
+                                        !this.props.outletContext
+                                          .isBundleUploading ? (
+                                          <div className="flex alignItems--center u-marginRight--20">
+                                            <Loader
+                                              className="u-marginRight--5"
+                                              size="15"
+                                            />
+                                            <span className="u-textColor--bodyCopy u-fontWeight--medium u-fontSize--small u-lineHeight--default">
+                                              {checkingUpdateMessage === ""
+                                                ? "Checking for updates"
+                                                : checkingUpdateTextShort}
+                                            </span>
+                                          </div>
+                                        ) : (
+                                          <div className="flex alignItems--center u-marginRight--20">
+                                            <span
+                                              className="flex-auto flex alignItems--center link u-fontSize--small"
+                                              onClick={this.onCheckForUpdates}
+                                            >
+                                              <Icon
+                                                icon="check-update"
+                                                size={16}
+                                                className="clickable u-marginRight--5"
+                                                color={""}
+                                                style={{}}
+                                                disableFill={false}
+                                                removeInlineStyle={false}
+                                              />
+                                              Check for update
+                                            </span>
+                                          </div>
+                                        )}
+                                        <span
+                                          className="flex-auto flex alignItems--center link u-fontSize--small"
+                                          onClick={
+                                            this.toggleAutomaticUpdatesModal
+                                          }
+                                        >
+                                          <Icon
+                                            icon="schedule-sync"
+                                            size={16}
+                                            className="clickable u-marginRight--5"
+                                            color={""}
+                                            style={{}}
+                                            disableFill={false}
+                                            removeInlineStyle={false}
+                                          />
+                                          Configure automatic updates
+                                        </span>
+                                      </div>
+                                    )}
+                                  </div>
+                                  {versionHistory.length > 1 &&
+                                  !gitopsIsConnected
+                                    ? this.renderDiffBtn()
+                                    : null}
                                 </div>
-                                {versionHistory.length > 1 && !gitopsIsConnected
-                                  ? this.renderDiffBtn()
-                                  : null}
                               </div>
-                            </div>
-                          )}
-                          {this.state.availableUpdates &&
-                            this.props.outletContext.isEmbeddedCluster &&
-                            this.renderAvailableECUpdatesRow(
-                              this.state.availableUpdates
                             )}
-
-                          {/* FOR DEV ONLY */}
-                          {/* {this.state.availableUpdates &&
-                            this.renderAvailableECUpdatesRow(
-                              this.state.availableUpdates
-                            )} */}
-
-                          {!this.props.outletContext.isEmbeddedCluster &&
-                            (pendingVersion ? (
-                              this.renderAppVersionHistoryRow(pendingVersion)
-                            ) : (
-                              <div className="card-item flex-column flex1 u-marginTop--20 u-marginBottom--10 alignItems--center justifyContent--center">
-                                <p className="u-fontSize--normal u-fontWeight--medium u-textColor--bodyCopy u-padding--10">
-                                  Application up to date.
-                                </p>
-                              </div>
-                            ))}
-                          {(this.state.numOfSkippedVersions > 0 ||
-                            this.state.numOfRemainingVersions > 0) && (
-                            <p className="u-fontSize--small u-fontWeight--medium u-lineHeight--more u-textColor--info u-marginTop--10">
-                              {this.state.numOfSkippedVersions > 0
-                                ? `${this.state.numOfSkippedVersions} version${
-                                    this.state.numOfSkippedVersions > 1
-                                      ? "s"
-                                      : ""
-                                  } will be skipped in upgrading to ${
-                                    versionHistory[0].versionLabel
-                                  }. `
-                                : ""}
-                              {this.state.numOfRemainingVersions > 0
-                                ? "Additional versions are available after you deploy this required version."
-                                : ""}
-                            </p>
-                          )}
-                        </div>
-                      )}
+                            {this.state.availableUpdates &&
+                              this.state.availableUpdates.length > 0 &&
+                              this.props.outletContext.isEmbeddedCluster &&
+                              this.renderAvailableECUpdatesRow(
+                                this.state.availableUpdates
+                              )}
+                            {!this.props.outletContext.isEmbeddedCluster &&
+                              (pendingVersion ? (
+                                this.renderAppVersionHistoryRow(pendingVersion)
+                              ) : (
+                                <div className="card-item flex-column flex1 u-marginTop--20 u-marginBottom--10 alignItems--center justifyContent--center">
+                                  <p className="u-fontSize--normal u-fontWeight--medium u-textColor--bodyCopy u-padding--10">
+                                    Application up to date.
+                                  </p>
+                                </div>
+                              ))}
+                            {(this.state.numOfSkippedVersions > 0 ||
+                              this.state.numOfRemainingVersions > 0) && (
+                              <p className="u-fontSize--small u-fontWeight--medium u-lineHeight--more u-textColor--info u-marginTop--10">
+                                {this.state.numOfSkippedVersions > 0
+                                  ? `${
+                                      this.state.numOfSkippedVersions
+                                    } version${
+                                      this.state.numOfSkippedVersions > 1
+                                        ? "s"
+                                        : ""
+                                    } will be skipped in upgrading to ${
+                                      versionHistory[0].versionLabel
+                                    }. `
+                                  : ""}
+                                {this.state.numOfRemainingVersions > 0
+                                  ? "Additional versions are available after you deploy this required version."
+                                  : ""}
+                              </p>
+                            )}
+                          </div>
+                        )}
                       {versionHistory?.length > 0 && (
                         <>
                           {this.renderUpdateProgress()}
                           {this.renderAllVersions()}
                         </>
                       )}
-                    </>
+                    </div>
                   ) : (
                     <div className="flex-column flex1 alignItems--center justifyContent--center">
                       <p className="u-fontSize--large u-fontWeight--bold u-textColor--primary">
