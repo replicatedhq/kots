@@ -72,6 +72,11 @@ func MinioStatefulset(deployOptions types.DeployOptions, size resource.Quantity)
 		},
 	}
 
+	var storageClassName *string
+	if deployOptions.StorageClassName != "" {
+		storageClassName = &deployOptions.StorageClassName
+	}
+
 	initContainers := []corev1.Container{}
 	if deployOptions.MigrateToMinioXl {
 		initContainers = append(initContainers, migrateToMinioXlInitContainers(deployOptions, resourceRequirements)...)
@@ -103,6 +108,7 @@ func MinioStatefulset(deployOptions types.DeployOptions, size resource.Quantity)
 						Labels: types.GetKotsadmLabels(),
 					},
 					Spec: corev1.PersistentVolumeClaimSpec{
+						StorageClassName: storageClassName,
 						AccessModes: []corev1.PersistentVolumeAccessMode{
 							corev1.ReadWriteOnce,
 						},
