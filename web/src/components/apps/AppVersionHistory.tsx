@@ -35,7 +35,7 @@ import { KotsPageTitle } from "@components/Head";
 import "@src/scss/components/apps/AppVersionHistory.scss";
 import { DashboardGitOpsCard } from "@features/Dashboard";
 import Icon from "../Icon";
-import { App, Version, VersionDownloadStatus } from "@types";
+import { App, AvailableUpdate, Version, VersionDownloadStatus } from "@types";
 import { RouterProps, withRouter } from "@src/utilities/react-router-utilities";
 import PreflightIcon from "@features/App/PreflightIcon";
 
@@ -85,7 +85,7 @@ type Props = {
 type State = {
   airgapUploader: AirgapUploader | null;
   airgapUploadError: string;
-  availableUpdates: Version[] | null;
+  availableUpdates: AvailableUpdate[] | null;
   appUpdateChecker: Repeater;
   checkedReleasesToDiff: Version[];
   checkingForUpdateError: boolean;
@@ -150,7 +150,7 @@ type State = {
   yamlErrorDetails: string[];
   shouldShowUpgradeServiceModal: boolean;
   upgradeService: {
-    version?: string;
+    versionLabel?: string;
     isLoading?: boolean;
     error?: string;
   } | null;
@@ -1413,10 +1413,10 @@ class AppVersionHistory extends Component<Props, State> {
     }
   };
 
-  startUpgraderService = (version: Version) => {
+  startUpgraderService = (update: AvailableUpdate) => {
     this.setState({
       upgradeService: {
-        version: version.versionLabel,
+        versionLabel: update.versionLabel,
         isLoading: true,
       },
     });
@@ -1427,9 +1427,9 @@ class AppVersionHistory extends Component<Props, State> {
         Accept: "application/json",
       },
       body: JSON.stringify({
-        versionLabel: version.versionLabel,
-        updateCursor: version.updateCursor,
-        channelId: version.channelId,
+        versionLabel: update.versionLabel,
+        updateCursor: update.updateCursor,
+        channelId: update.channelId,
       }),
       credentials: "include",
       method: "POST",
@@ -1439,11 +1439,10 @@ class AppVersionHistory extends Component<Props, State> {
           this.setState({
             shouldShowUpgradeServiceModal: true,
             upgradeService: {
-              version: version.versionLabel,
+              versionLabel: update.versionLabel,
               isLoading: false,
             },
           });
-
           return;
         }
         const text = await res.json();
@@ -1453,7 +1452,7 @@ class AppVersionHistory extends Component<Props, State> {
             upgradeService: {
               isLoading: false,
               error: text.error,
-              version: version.versionLabel,
+              versionLabel: update.versionLabel,
             },
           });
         }
@@ -1465,34 +1464,65 @@ class AppVersionHistory extends Component<Props, State> {
     this._mounted = true;
   };
 
-  renderAvailableECUpdatesRow = (versions: Version[]) => {
+  renderAvailableUpdates = (updates: AvailableUpdate[]) => {
     return (
       <div className="tw-max-h-[275px] tw-overflow-auto">
         <p className="u-fontSize--normal u-fontWeight--medium tw-color-gray-800 tw-mb-2">
           Available Updates
         </p>
         <div className="tw-flex tw-flex-col tw-gap-2">
-          {versions.map((version, index) => (
+          {updates.map((update, index) => (
             <div>
               <div
                 key={index}
                 className="tw-h-10 tw-bg-white tw-p-4 tw-flex tw-justify-between tw-items-center tw-rounded"
               >
-                <p className="u-fontSize--header2 u-fontWeight--bold u-lineHeight--medium card-item-title ">
-                  {version.versionLabel}
-                </p>
-                <button
-                  className={"btn tw-ml-2 primary blue"}
-                  onClick={() => this.startUpgraderService(version)}
-                >
-                  {this.state.upgradeService?.version ===
-                    version.versionLabel && this.state.upgradeService.isLoading
-                    ? "Deploying..."
-                    : "Deploy"}
-                </button>
+                <div className="flex alignItems--center">
+                  <p className="u-fontSize--header2 u-fontWeight--bold u-lineHeight--medium card-item-title ">
+                    {update.versionLabel}
+                  </p>
+                  {update.isRequired && (
+                    <span className="status-tag required u-marginLeft--10">
+                      {" "}
+                      Required{" "}
+                    </span>
+                  )}
+                </div>
+                <div className="flex alignItems--center">
+                  {update?.releaseNotes && (
+                    <>
+                      <Icon
+                        icon="release-notes"
+                        size={24}
+                        onClick={() => this.showReleaseNotes(update?.releaseNotes)}
+                        data-tip="View release notes"
+                        className="u-marginRight--5 clickable"
+                      />
+                      <ReactTooltip effect="solid" className="replicated-tooltip" />
+                    </>
+                  )}
+                  <button
+                    className={"btn tw-ml-2 primary blue"}
+                    onClick={() => this.startUpgraderService(update)}
+                    disabled={!update.isDeployable}
+                  >
+                    <span
+                      key={update.nonDeployableCause}
+                      data-tip-disable={update.isDeployable}
+                      data-tip={update.nonDeployableCause}
+                      data-for="disable-deployment-tooltip"
+                    >
+                      {this.state.upgradeService?.versionLabel ===
+                        update.versionLabel && this.state.upgradeService.isLoading
+                        ? "Preparing..."
+                        : "Deploy"}
+                    </span>
+                  </button>
+                  <ReactTooltip effect="solid" id="disable-deployment-tooltip" />
+                </div>
               </div>
               {this.state.upgradeService?.error &&
-                this.state.upgradeService?.version === version.versionLabel && (
+                this.state.upgradeService?.versionLabel === update.versionLabel && (
                   <div className="tw-my-4">
                     <span className="u-fontSize--small u-textColor--error u-fontWeight--bold">
                       {this.state.upgradeService.error}
@@ -2010,7 +2040,7 @@ class AppVersionHistory extends Component<Props, State> {
                             {this.state.availableUpdates &&
                               this.state.availableUpdates.length > 0 &&
                               this.props.outletContext.isEmbeddedCluster &&
-                              this.renderAvailableECUpdatesRow(
+                              this.renderAvailableUpdates(
                                 this.state.availableUpdates
                               )}
                             {!this.props.outletContext.isEmbeddedCluster &&

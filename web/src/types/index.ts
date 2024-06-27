@@ -211,6 +211,17 @@ export type SupportBundleProgress = {
   message: string;
 };
 
+export type AvailableUpdate = {
+  versionLabel: string;
+  updateCursor: string;
+  channelId: string;
+  isRequired: boolean;
+  upstreamReleasedAt: string;
+  releaseNotes: string;
+  isDeployable: boolean;
+  nonDeployableCause: string;
+};
+
 export type Version = {
   channelId: string;
   commitUrl: string;
