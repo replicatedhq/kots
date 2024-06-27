@@ -244,6 +244,10 @@ export const AppConfig = ({
   const handleNext = async () => {
     const { slug } = params;
 
+    setState({
+      savingConfig: true,
+    });
+
     const url = `${process.env.API_ENDPOINT}/upgrade-service/app/${slug}/config${window.location.search}`;
     fetch(url, {
       method: "PUT",
@@ -284,6 +288,7 @@ export const AppConfig = ({
               showConfigError: Boolean(result.error),
               configErrorMessage: result.error,
               showValidationError: true,
+              savingConfig: false,
             });
           }
         } else {
@@ -610,10 +615,10 @@ export const AppConfig = ({
                   )}
                   <button
                     className="btn primary blue"
-                    disabled={showValidationError}
+                    disabled={showValidationError || state.savingConfig}
                     onClick={handleNext}
                   >
-                    Next
+                    {state.savingConfig ? "Saving..." : "Next"}
                   </button>
                 </div>
               </div>
