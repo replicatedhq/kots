@@ -315,7 +315,7 @@ func pullEmbeddedClusterMetadataFromRegistry(
 		return "", fmt.Errorf("pull from registry: %w", err)
 	}
 
-	return filepath.Join(tmpdir, "version-metadata.yaml"), nil
+	return filepath.Join(tmpdir, "version-metadata.json"), nil
 }
 
 func pullFromRegistry(
