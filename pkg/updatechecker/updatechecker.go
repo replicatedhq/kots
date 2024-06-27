@@ -61,13 +61,14 @@ func Start() error {
 // if enabled, and cron job was NOT found: add a new cron job to check app updates
 // if enabled, and a cron job was found, update the existing cron job with the latest cron spec
 // if disabled: stop the current running cron job (if exists)
-// no-op for airgap applications
+// no-op for airgap and embedded cluster applications
 func Configure(a *apptypes.App, updateCheckerSpec string) error {
 	appId := a.GetID()
 	appSlug := a.GetSlug()
 	isAirgap := a.GetIsAirgap()
+	isEC := util.IsEmbeddedCluster()
 
-	if isAirgap {
+	if isAirgap || isEC {
 		return nil
 	}
 
