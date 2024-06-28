@@ -32,8 +32,8 @@ func UpdateAppFromECBundle(appSlug string, airgapBundlePath string) (finalError 
 	finishedChan := make(chan error)
 	defer close(finishedChan)
 
-	// TODO NOW: pass task id to kots bin
-	tasks.StartTaskMonitor("update-download", finishedChan)
+	taskID := "update-download"
+	tasks.StartTaskMonitor(taskID, finishedChan)
 	defer func() {
 		finishedChan <- finalError
 	}()
@@ -44,7 +44,7 @@ func UpdateAppFromECBundle(appSlug string, airgapBundlePath string) (finalError 
 	}
 	defer os.Remove(kotsBin)
 
-	cmd := exec.Command(kotsBin, "airgap-update", appSlug, "-n", util.PodNamespace, "--airgap-bundle", airgapBundlePath, "--from-api")
+	cmd := exec.Command(kotsBin, "airgap-update", appSlug, "-n", util.PodNamespace, "--airgap-bundle", airgapBundlePath, "--from-api", "--task-id", taskID)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	if err := cmd.Run(); err != nil {

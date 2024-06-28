@@ -142,7 +142,11 @@ func AirgapUpdateCmd() *cobra.Command {
 
 	cmd.Flags().StringP("namespace", "n", "", "the namespace in which kots/kotsadm is installed")
 	cmd.Flags().String("airgap-bundle", "", "path to the application airgap bundle to upload")
+
 	cmd.Flags().Bool("from-api", false, "whether the airgap update command was triggered by the API")
+	cmd.Flags().String("task-id", "", "the task ID to use for tracking progress")
+	cmd.Flags().MarkHidden("from-api")
+	cmd.Flags().MarkHidden("task-id")
 
 	registryFlags(cmd.Flags())
 
@@ -155,7 +159,7 @@ func getProgressWriter(v *viper.Viper, log *logger.CLILogger) io.Writer {
 		go func() {
 			scanner := bufio.NewScanner(pipeReader)
 			for scanner.Scan() {
-				if err := tasks.SetTaskStatus("update-download", scanner.Text(), "running"); err != nil {
+				if err := tasks.SetTaskStatus(v.GetString("task-id"), scanner.Text(), "running"); err != nil {
 					log.Error(err)
 				}
 			}
