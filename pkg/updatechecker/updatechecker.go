@@ -183,7 +183,7 @@ func CheckForUpdates(opts types.CheckForUpdatesOpts) (ucr *types.UpdateCheckResp
 		}
 	}()
 
-	tasks.StartUpdateTaskMonitor("update-download", finishedChan)
+	tasks.StartTaskMonitor("update-download", finishedChan)
 
 	ucr, finalError = checkForKotsAppUpdates(opts, finishedChan)
 	if finalError != nil {

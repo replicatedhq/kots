@@ -321,9 +321,11 @@ func RegisterSessionAuthRoutes(r *mux.Router, kotsStore store.Store, handler KOT
 	r.Name("ChangePassword").Path("/api/v1/password/change").Methods("PUT").
 		HandlerFunc(middleware.EnforceAccess(policy.PasswordChange, handler.ChangePassword))
 
-	// Start upgrade service
+	// Upgrade service
 	r.Name("StartUpgradeService").Path("/api/v1/app/{appSlug}/start-upgrade-service").Methods("POST").
 		HandlerFunc(middleware.EnforceAccess(policy.AppUpdate, handler.StartUpgradeService))
+	r.Name("GetUpgradeServiceStatus").Path("/api/v1/app/{appSlug}/task/upgrade-service").Methods("GET").
+		HandlerFunc(middleware.EnforceAccess(policy.AppUpdate, handler.GetUpgradeServiceStatus))
 
 	// Proxy upgrade service requests to the upgrade service
 	// CAUTION: modifying this route WILL break backwards compatibility

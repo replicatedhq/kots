@@ -20,14 +20,6 @@ import (
 )
 
 func bootstrap(params types.UpgradeServiceParams) (finalError error) {
-	finishedChan := make(chan error)
-	defer close(finishedChan)
-
-	tasks.StartUpdateTaskMonitor("update-download", finishedChan)
-	defer func() {
-		finishedChan <- finalError
-	}()
-
 	if params.AppIsAirgap {
 		if err := pullArchiveFromAirgap(params); err != nil {
 			return errors.Wrap(err, "failed to pull archive from airgap")
@@ -37,7 +29,6 @@ func bootstrap(params types.UpgradeServiceParams) (finalError error) {
 			return errors.Wrap(err, "failed to pull archive from online")
 		}
 	}
-
 	return nil
 }
 
@@ -106,7 +97,7 @@ func pullArchive(params types.UpgradeServiceParams, pullOptions pull.PullOptions
 	go func() {
 		scanner := bufio.NewScanner(pipeReader)
 		for scanner.Scan() {
-			if err := tasks.SetTaskStatus("update-download", scanner.Text(), "running"); err != nil {
+			if err := tasks.SetTaskStatus(params.TaskID, scanner.Text(), "starting"); err != nil {
 				logger.Error(err)
 			}
 		}

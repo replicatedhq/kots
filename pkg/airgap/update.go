@@ -32,7 +32,8 @@ func UpdateAppFromECBundle(appSlug string, airgapBundlePath string) (finalError 
 	finishedChan := make(chan error)
 	defer close(finishedChan)
 
-	tasks.StartUpdateTaskMonitor("update-download", finishedChan)
+	// TODO NOW: pass task id to kots bin
+	tasks.StartTaskMonitor("update-download", finishedChan)
 	defer func() {
 		finishedChan <- finalError
 	}()
@@ -57,7 +58,7 @@ func UpdateAppFromAirgap(a *apptypes.App, airgapBundlePath string, deploy bool, 
 	finishedChan := make(chan error)
 	defer close(finishedChan)
 
-	tasks.StartUpdateTaskMonitor("update-download", finishedChan)
+	tasks.StartTaskMonitor("update-download", finishedChan)
 	defer func() {
 		finishedChan <- finalError
 	}()

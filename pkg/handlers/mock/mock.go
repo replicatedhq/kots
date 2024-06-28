@@ -1066,6 +1066,18 @@ func (mr *MockKOTSHandlerMockRecorder) GetUpdateDownloadStatus(w, r interface{})
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUpdateDownloadStatus", reflect.TypeOf((*MockKOTSHandler)(nil).GetUpdateDownloadStatus), w, r)
 }
 
+// GetUpgradeServiceStatus mocks base method.
+func (m *MockKOTSHandler) GetUpgradeServiceStatus(w http.ResponseWriter, r *http.Request) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "GetUpgradeServiceStatus", w, r)
+}
+
+// GetUpgradeServiceStatus indicates an expected call of GetUpgradeServiceStatus.
+func (mr *MockKOTSHandlerMockRecorder) GetUpgradeServiceStatus(w, r interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUpgradeServiceStatus", reflect.TypeOf((*MockKOTSHandler)(nil).GetUpgradeServiceStatus), w, r)
+}
+
 // GetVeleroStatus mocks base method.
 func (m *MockKOTSHandler) GetVeleroStatus(w http.ResponseWriter, r *http.Request) {
 	m.ctrl.T.Helper()

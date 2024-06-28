@@ -43,13 +43,13 @@ type CachedTaskStatus struct {
 	taskStatus     TaskStatus
 }
 
-func StartUpdateTaskMonitor(taskID string, finishedChan <-chan error) {
+func StartTaskMonitor(taskID string, finishedChan <-chan error) {
 	go func() {
 		var finalError error
 		defer func() {
 			if finalError == nil {
 				if err := ClearTaskStatus(taskID); err != nil {
-					logger.Error(errors.Wrap(err, "failed to clear update-download task status"))
+					logger.Error(errors.Wrapf(err, "failed to clear %s task status", taskID))
 				}
 			} else {
 				errMsg := finalError.Error()
@@ -57,7 +57,7 @@ func StartUpdateTaskMonitor(taskID string, finishedChan <-chan error) {
 					errMsg = cause.Error()
 				}
 				if err := SetTaskStatus(taskID, errMsg, "failed"); err != nil {
-					logger.Error(errors.Wrap(err, "failed to set error on update-download task status"))
+					logger.Error(errors.Wrapf(err, "failed to set error on %s task status", taskID))
 				}
 			}
 		}()

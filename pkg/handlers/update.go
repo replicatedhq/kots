@@ -187,7 +187,7 @@ func (h *Handler) AppUpdateCheck(w http.ResponseWriter, r *http.Request) {
 		finishedChan := make(chan error)
 		defer close(finishedChan)
 
-		tasks.StartUpdateTaskMonitor("update-download", finishedChan)
+		tasks.StartTaskMonitor("update-download", finishedChan)
 
 		err = airgap.UpdateAppFromPath(app, rootDir, "", deploy, skipPreflights, skipCompatibilityCheck)
 		if err != nil {

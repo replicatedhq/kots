@@ -16,6 +16,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/replicatedapp"
 	"github.com/replicatedhq/kots/pkg/reporting"
 	"github.com/replicatedhq/kots/pkg/store"
+	"github.com/replicatedhq/kots/pkg/tasks"
 	"github.com/replicatedhq/kots/pkg/update"
 	"github.com/replicatedhq/kots/pkg/upgradeservice"
 	upgradeservicetypes "github.com/replicatedhq/kots/pkg/upgradeservice/types"
@@ -30,6 +31,11 @@ type StartUpgradeServiceRequest struct {
 type StartUpgradeServiceResponse struct {
 	Success bool   `json:"success"`
 	Error   string `json:"error,omitempty"`
+}
+
+type GetUpgradeServiceStatusResponse struct {
+	CurrentMessage string `json:"currentMessage"`
+	Status         string `json:"status"`
 }
 
 func (h *Handler) StartUpgradeService(w http.ResponseWriter, r *http.Request) {
@@ -69,15 +75,7 @@ func (h *Handler) StartUpgradeService(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	params, err := getUpgradeServiceParams(foundApp, request)
-	if err != nil {
-		response.Error = err.Error()
-		logger.Error(errors.Wrap(err, response.Error))
-		JSON(w, http.StatusInternalServerError, response)
-		return
-	}
-
-	if err := upgradeservice.Start(*params); err != nil {
+	if err := startUpgradeService(foundApp, request); err != nil {
 		response.Error = "failed to start upgrade service"
 		logger.Error(errors.Wrap(err, response.Error))
 		JSON(w, http.StatusInternalServerError, response)
@@ -87,6 +85,23 @@ func (h *Handler) StartUpgradeService(w http.ResponseWriter, r *http.Request) {
 	response.Success = true
 
 	JSON(w, http.StatusOK, response)
+}
+
+func (h *Handler) GetUpgradeServiceStatus(w http.ResponseWriter, r *http.Request) {
+	appSlug := mux.Vars(r)["appSlug"]
+	taskID := getUpgradeServiceTaskID(appSlug)
+
+	status, message, err := tasks.GetTaskStatus(taskID)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		logger.Error(err)
+		return
+	}
+
+	JSON(w, http.StatusOK, GetUpgradeServiceStatusResponse{
+		CurrentMessage: message,
+		Status:         status,
+	})
 }
 
 func canStartUpgradeService(a *apptypes.App, r StartUpgradeServiceRequest) (bool, string, error) {
@@ -141,7 +156,40 @@ func canStartUpgradeService(a *apptypes.App, r StartUpgradeServiceRequest) (bool
 	return true, "", nil
 }
 
-func getUpgradeServiceParams(a *apptypes.App, r StartUpgradeServiceRequest) (*upgradeservicetypes.UpgradeServiceParams, error) {
+func startUpgradeService(a *apptypes.App, r StartUpgradeServiceRequest) error {
+	// TODO NOW: move "starting" to types
+	taskID := getUpgradeServiceTaskID(a.Slug)
+	if err := tasks.SetTaskStatus(taskID, "Preparing...", "starting"); err != nil {
+		return errors.Wrap(err, "failed to set task status")
+	}
+
+	go func() (finalError error) {
+		finishedChan := make(chan error)
+		defer close(finishedChan)
+
+		tasks.StartTaskMonitor(taskID, finishedChan)
+		defer func() {
+			finishedChan <- finalError
+		}()
+
+		params, err := getUpgradeServiceParams(a, r, taskID)
+		if err != nil {
+			return err
+		}
+		if err := upgradeservice.Start(*params); err != nil {
+			return errors.Wrap(err, "failed to start upgrade service")
+		}
+		return nil
+	}()
+
+	return nil
+}
+
+func getUpgradeServiceTaskID(appSlug string) string {
+	return fmt.Sprintf("upgrade-service-%s", appSlug)
+}
+
+func getUpgradeServiceParams(a *apptypes.App, r StartUpgradeServiceRequest, taskID string) (*upgradeservicetypes.UpgradeServiceParams, error) {
 	registrySettings, err := store.GetStore().GetRegistryDetailsForApp(a.ID)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get registry details for app")
@@ -206,7 +254,8 @@ func getUpgradeServiceParams(a *apptypes.App, r StartUpgradeServiceRequest) (*up
 	}
 
 	return &upgradeservicetypes.UpgradeServiceParams{
-		Port: fmt.Sprintf("%d", port),
+		Port:   fmt.Sprintf("%d", port),
+		TaskID: taskID,
 
 		AppID:       a.ID,
 		AppSlug:     a.Slug,
