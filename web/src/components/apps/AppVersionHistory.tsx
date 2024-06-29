@@ -140,6 +140,7 @@ type State = {
   uploadProgress: Number;
   uploadResuming: boolean;
   uploadSize: Number;
+  upgradeServiceChecker: Repeater;
   versionDownloadStatuses: {
     [x: number]: VersionDownloadStatus;
   };
@@ -214,6 +215,7 @@ class AppVersionHistory extends Component<Props, State> {
       uploadProgress: 0,
       uploadResuming: false,
       uploadSize: 0,
+      upgradeServiceChecker: new Repeater(),
       versionDownloadStatuses: {},
       versionHistory: [],
       versionHistoryJob: new Repeater(),
@@ -975,6 +977,54 @@ class AppVersionHistory extends Component<Props, State> {
       });
   };
 
+  onCheckForUpgradeStatus = async () => {
+    const { app } = this.props.outletContext;
+
+    return new Promise<void>((resolve, reject) => {
+      fetch(
+        `${process.env.API_ENDPOINT}/app/${app?.slug}/task/upgrade-service`,
+        {
+          headers: {
+            "Content-Type": "application/json",
+          },
+          credentials: "include",
+          method: "GET",
+        }
+      )
+        .then(async (res) => {
+          const response = await res.json();
+
+          if (response.status !== "starting") {
+            this.state.upgradeServiceChecker.stop();
+
+            this.setState({
+              // checkingForUpdates: false,
+              // checkingUpdateMessage: response.currentMessage,
+              // checkingForUpdateError: response.status === "failed",
+              isStartingUpgradeService: false,
+              upgradeServiceStatus: response.currentMessage,
+              upgradeServiceError: response.status === "failed",
+            });
+
+            // if (this.props.outletContext.updateCallback) {
+            //   this.props.outletContext.updateCallback();
+            // }
+            // this.fetchKotsDownstreamHistory();
+          } else {
+            this.setState({
+              isStartingUpgradeService: true,
+              upgradeServiceStatus: response.currentMessage,
+            });
+          }
+          resolve();
+        })
+        .catch((err) => {
+          console.log("failed to get upgrade service status", err);
+          reject();
+        });
+    });
+  };
+
   getAppUpdateStatus = () => {
     const { app } = this.props.outletContext;
 
@@ -1415,11 +1465,13 @@ class AppVersionHistory extends Component<Props, State> {
 
   startUpgraderService = (update: AvailableUpdate) => {
     this.setState({
+      shouldShowUpgradeServiceModal: true,
       upgradeService: {
         versionLabel: update.versionLabel,
         isLoading: true,
       },
     });
+    this.onCheckForUpgradeStatus();
     const appSlug = this.props.params.slug;
     fetch(`${process.env.API_ENDPOINT}/app/${appSlug}/start-upgrade-service`, {
       headers: {
@@ -1437,7 +1489,7 @@ class AppVersionHistory extends Component<Props, State> {
       .then(async (res) => {
         if (res.ok) {
           this.setState({
-            shouldShowUpgradeServiceModal: true,
+            //  shouldShowUpgradeServiceModal: true,
             upgradeService: {
               versionLabel: update.versionLabel,
               isLoading: false,
@@ -1493,7 +1545,12 @@ class AppVersionHistory extends Component<Props, State> {
                     <p className="u-fontSize--small u-fontWeight--medium u-textColor--bodyCopy u-marginTop--5">
                       {" "}
                       Released{" "}
-                      <span className="u-fontWeight--bold">{Utilities.dateFormat(update.upstreamReleasedAt, "MM/DD/YY @ hh:mm a z")}</span>
+                      <span className="u-fontWeight--bold">
+                        {Utilities.dateFormat(
+                          update.upstreamReleasedAt,
+                          "MM/DD/YY @ hh:mm a z"
+                        )}
+                      </span>
                     </p>
                   )}
                 </div>
@@ -1503,11 +1560,16 @@ class AppVersionHistory extends Component<Props, State> {
                       <Icon
                         icon="release-notes"
                         size={24}
-                        onClick={() => this.showReleaseNotes(update?.releaseNotes)}
+                        onClick={() =>
+                          this.showReleaseNotes(update?.releaseNotes)
+                        }
                         data-tip="View release notes"
                         className="u-marginRight--5 clickable"
                       />
-                      <ReactTooltip effect="solid" className="replicated-tooltip" />
+                      <ReactTooltip
+                        effect="solid"
+                        className="replicated-tooltip"
+                      />
                     </>
                   )}
                   <button
@@ -1522,16 +1584,21 @@ class AppVersionHistory extends Component<Props, State> {
                       data-for="disable-deployment-tooltip"
                     >
                       {this.state.upgradeService?.versionLabel ===
-                        update.versionLabel && this.state.upgradeService.isLoading
+                        update.versionLabel &&
+                      this.state.upgradeService.isLoading
                         ? "Preparing..."
                         : "Deploy"}
                     </span>
                   </button>
-                  <ReactTooltip effect="solid" id="disable-deployment-tooltip" />
+                  <ReactTooltip
+                    effect="solid"
+                    id="disable-deployment-tooltip"
+                  />
                 </div>
               </div>
               {this.state.upgradeService?.error &&
-                this.state.upgradeService?.versionLabel === update.versionLabel && (
+                this.state.upgradeService?.versionLabel ===
+                  update.versionLabel && (
                   <div className="tw-my-4">
                     <span className="u-fontSize--small u-textColor--error u-fontWeight--bold">
                       {this.state.upgradeService.error}
@@ -2393,15 +2460,23 @@ class AppVersionHistory extends Component<Props, State> {
           ariaHideApp={false}
           className="Modal UpgradeServiceModal"
         >
-          <iframe
-            src={`/upgrade-service/app/${app?.slug}`}
-            title="KOTS Upgrade Service"
-            width="100%"
-            height="100%"
-            allowFullScreen={true}
-            id="upgrade-service-iframe"
-            ref={this.iframeRef}
-          />
+          {this.state.upgradeService?.isLoading &&
+          this.state.isStartingUpgradeService ? (
+            <div>
+              {this.state.upgradeServiceStatus}
+              <Loader size="60" />
+            </div>
+          ) : (
+            <iframe
+              src={`/upgrade-service/app/${app?.slug}`}
+              title="KOTS Upgrade Service"
+              width="100%"
+              height="100%"
+              allowFullScreen={true}
+              id="upgrade-service-iframe"
+              ref={this.iframeRef}
+            />
+          )}
         </Modal>
       </div>
     );
