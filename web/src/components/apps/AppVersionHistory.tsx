@@ -997,19 +997,16 @@ class AppVersionHistory extends Component<Props, State> {
           if (response.status !== "starting") {
             this.state.upgradeServiceChecker.stop();
 
-            this.setState({
-              // checkingForUpdates: false,
-              // checkingUpdateMessage: response.currentMessage,
-              // checkingForUpdateError: response.status === "failed",
-              isStartingUpgradeService: false,
-              upgradeServiceStatus: response.currentMessage,
-              upgradeServiceError: response.status === "failed",
-            });
-
-            // if (this.props.outletContext.updateCallback) {
-            //   this.props.outletContext.updateCallback();
-            // }
-            // this.fetchKotsDownstreamHistory();
+            if (response.status === "failed") {
+              this.setState({
+                isStartingUpgradeService: false,
+                shouldShowUpgradeServiceModal: false,
+                upgradeService: {
+                  isLoading: false,
+                  error: response.currentMessage,
+                },
+              });
+            }
           } else {
             this.setState({
               isStartingUpgradeService: true,
@@ -1464,6 +1461,7 @@ class AppVersionHistory extends Component<Props, State> {
   };
 
   startUpgraderService = (update: AvailableUpdate) => {
+    this.state.upgradeServiceChecker.start(this.onCheckForUpgradeStatus, 1000);
     this.setState({
       shouldShowUpgradeServiceModal: true,
       upgradeService: {
@@ -1471,7 +1469,6 @@ class AppVersionHistory extends Component<Props, State> {
         isLoading: true,
       },
     });
-    this.onCheckForUpgradeStatus();
     const appSlug = this.props.params.slug;
     fetch(`${process.env.API_ENDPOINT}/app/${appSlug}/start-upgrade-service`, {
       headers: {
@@ -1489,7 +1486,6 @@ class AppVersionHistory extends Component<Props, State> {
       .then(async (res) => {
         if (res.ok) {
           this.setState({
-            //  shouldShowUpgradeServiceModal: true,
             upgradeService: {
               versionLabel: update.versionLabel,
               isLoading: false,
@@ -1501,6 +1497,7 @@ class AppVersionHistory extends Component<Props, State> {
         if (!res.ok) {
           console.log("failed to init upgrade service", text);
           this.setState({
+            shouldShowUpgradeServiceModal: false,
             upgradeService: {
               isLoading: false,
               error: text.error,
@@ -1583,11 +1580,7 @@ class AppVersionHistory extends Component<Props, State> {
                       data-tip={update.nonDeployableCause}
                       data-for="disable-deployment-tooltip"
                     >
-                      {this.state.upgradeService?.versionLabel ===
-                        update.versionLabel &&
-                      this.state.upgradeService.isLoading
-                        ? "Preparing..."
-                        : "Deploy"}
+                      Deploy
                     </span>
                   </button>
                   <ReactTooltip
@@ -2463,7 +2456,7 @@ class AppVersionHistory extends Component<Props, State> {
           {this.state.upgradeService?.isLoading &&
           this.state.isStartingUpgradeService ? (
             <div>
-              {this.state.upgradeServiceStatus}
+              Upgrade Service is {this.state.upgradeServiceStatus}
               <Loader size="60" />
             </div>
           ) : (

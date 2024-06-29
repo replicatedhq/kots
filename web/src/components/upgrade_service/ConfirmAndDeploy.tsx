@@ -53,9 +53,7 @@ const ConfirmAndDeploy = ({
     sequence,
     closeModal,
   });
-  // TODO: figure out what this is for
-  // const { mutate: ignorePermissionErrors, error: ignorePermissionError } =
-  //   useIgnorePermissionErrors({ sequence, slug });
+
   const { data: preflightCheck, error: getPreflightResultsError } =
     useGetPrelightResults({ sequence, slug });
 
@@ -204,16 +202,6 @@ const ConfirmAndDeploy = ({
               </div>
             </div>
           )}
-          {/* TODO: Fix later */}
-          {/* {ignorePermissionError?.message && (
-            <div className="ErrorWrapper flex-auto flex alignItems--center u-marginBottom--20">
-              <div className="icon redWarningIcon u-marginRight--10" />
-              <div>
-                <p className="title">Encountered an error</p>
-                <p className="error">{ignorePermissionError.message}</p>
-              </div>
-            </div>
-          )} */}
 
           <p className="u-fontSize--jumbo2 u-textColor--primary u-fontWeight--bold">
             Confirm and Deploy
