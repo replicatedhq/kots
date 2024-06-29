@@ -36,7 +36,7 @@ func DownloadUpdate(appID string, update types.Update, skipPreflights bool, skip
 		go func() {
 			for {
 				select {
-				case <-time.After(time.Second):
+				case <-time.After(time.Second * 2):
 					if err := tasks.UpdateTaskStatusTimestamp(taskID); err != nil {
 						logger.Error(errors.Wrapf(err, "failed to update %s task status timestamp", taskID))
 					}

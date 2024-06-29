@@ -4,10 +4,10 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"strings"
-	"sync"
+	"os"
 	"time"
 
+	"github.com/gofrs/flock"
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	kotsadmtypes "github.com/replicatedhq/kots/pkg/kotsadm/types"
@@ -20,27 +20,15 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-const (
-	TaskStatusConfigMapName = `kotsadm-tasks`
-	ConfgConfigMapName      = `kotsadm-confg`
+const tasksConfigMapName = "kotsadm-tasks"
 
-	taskCacheTTL = 1 * time.Minute
-)
-
-var (
-	taskStatusLock   = sync.Mutex{}
-	cachedTaskStatus = map[string]*CachedTaskStatus{}
-)
+// use a file lock instead of a mutex as tasks are shared with the upgrade service which runs in a separate process
+var tasksLock = flock.New(os.TempDir() + "/kotsadm-tasks.lock")
 
 type TaskStatus struct {
 	Message   string    `json:"message"`
 	Status    string    `json:"status"`
 	UpdatedAt time.Time `json:"updatedAt"`
-}
-
-type CachedTaskStatus struct {
-	expirationTime time.Time
-	taskStatus     TaskStatus
 }
 
 func StartTaskMonitor(taskID string, finishedChan <-chan error) {
@@ -64,7 +52,7 @@ func StartTaskMonitor(taskID string, finishedChan <-chan error) {
 
 		for {
 			select {
-			case <-time.After(time.Second):
+			case <-time.After(time.Second * 2):
 				if err := UpdateTaskStatusTimestamp(taskID); err != nil {
 					logger.Error(err)
 				}
@@ -77,24 +65,11 @@ func StartTaskMonitor(taskID string, finishedChan <-chan error) {
 }
 
 func SetTaskStatus(id string, message string, status string) error {
-	taskStatusLock.Lock()
-	defer taskStatusLock.Unlock()
-
-	cached := cachedTaskStatus[id]
-	if cached == nil {
-		cached = &CachedTaskStatus{}
-		cachedTaskStatus[id] = cached
-	}
-	cached.taskStatus.Message = message
-	cached.taskStatus.Status = status
-	cached.taskStatus.UpdatedAt = time.Now()
-	cached.expirationTime = time.Now().Add(taskCacheTTL)
+	tasksLock.Lock()
+	defer tasksLock.Unlock()
 
 	configmap, err := getConfigmap()
 	if err != nil {
-		if canIgnoreEtcdError(err) {
-			return nil
-		}
 		return errors.Wrap(err, "failed to get task status configmap")
 	}
 
@@ -102,7 +77,11 @@ func SetTaskStatus(id string, message string, status string) error {
 		configmap.Data = map[string]string{}
 	}
 
-	b, err := json.Marshal(cached.taskStatus)
+	b, err := json.Marshal(TaskStatus{
+		Message:   message,
+		Status:    status,
+		UpdatedAt: time.Now(),
+	})
 	if err != nil {
 		return errors.Wrap(err, "failed to marshal task status")
 	}
@@ -110,9 +89,6 @@ func SetTaskStatus(id string, message string, status string) error {
 	configmap.Data[id] = string(b)
 
 	if err := updateConfigmap(configmap); err != nil {
-		if canIgnoreEtcdError(err) {
-			return nil
-		}
 		return errors.Wrap(err, "failed to update task status configmap")
 	}
 
@@ -120,20 +96,11 @@ func SetTaskStatus(id string, message string, status string) error {
 }
 
 func UpdateTaskStatusTimestamp(id string) error {
-	taskStatusLock.Lock()
-	defer taskStatusLock.Unlock()
-
-	cached := cachedTaskStatus[id]
-	if cached != nil {
-		cached.taskStatus.UpdatedAt = time.Now()
-		cached.expirationTime = time.Now().Add(taskCacheTTL)
-	}
+	tasksLock.Lock()
+	defer tasksLock.Unlock()
 
 	configmap, err := getConfigmap()
 	if err != nil {
-		if canIgnoreEtcdError(err) && cached != nil {
-			return nil
-		}
 		return errors.Wrap(err, "failed to get task status configmap")
 	}
 
@@ -143,14 +110,13 @@ func UpdateTaskStatusTimestamp(id string) error {
 
 	data, ok := configmap.Data[id]
 	if !ok {
-		return nil // copied from s3pgstore
+		return nil
 	}
 
 	ts := TaskStatus{}
 	if err := json.Unmarshal([]byte(data), &ts); err != nil {
 		return errors.Wrap(err, "failed to unmarshal task status")
 	}
-
 	ts.UpdatedAt = time.Now()
 
 	b, err := json.Marshal(ts)
@@ -161,9 +127,6 @@ func UpdateTaskStatusTimestamp(id string) error {
 	configmap.Data[id] = string(b)
 
 	if err := updateConfigmap(configmap); err != nil {
-		if canIgnoreEtcdError(err) && cached != nil {
-			return nil
-		}
 		return errors.Wrap(err, "failed to update task status configmap")
 	}
 
@@ -171,10 +134,8 @@ func UpdateTaskStatusTimestamp(id string) error {
 }
 
 func ClearTaskStatus(id string) error {
-	taskStatusLock.Lock()
-	defer taskStatusLock.Unlock()
-
-	defer delete(cachedTaskStatus, id)
+	tasksLock.Lock()
+	defer tasksLock.Unlock()
 
 	configmap, err := getConfigmap()
 	if err != nil {
@@ -187,7 +148,7 @@ func ClearTaskStatus(id string) error {
 
 	_, ok := configmap.Data[id]
 	if !ok {
-		return nil // copied from s3pgstore
+		return nil
 	}
 
 	delete(configmap.Data, id)
@@ -200,26 +161,11 @@ func ClearTaskStatus(id string) error {
 }
 
 func GetTaskStatus(id string) (string, string, error) {
-	taskStatusLock.Lock()
-	defer taskStatusLock.Unlock()
-
-	cached := cachedTaskStatus[id]
-	if cached != nil && time.Now().Before(cached.expirationTime) {
-		return cached.taskStatus.Status, cached.taskStatus.Message, nil
-	}
-
-	if cached == nil {
-		cached = &CachedTaskStatus{
-			expirationTime: time.Now().Add(taskCacheTTL),
-		}
-		cachedTaskStatus[id] = cached
-	}
+	tasksLock.Lock()
+	defer tasksLock.Unlock()
 
 	configmap, err := getConfigmap()
 	if err != nil {
-		if canIgnoreEtcdError(err) && cached != nil {
-			return cached.taskStatus.Status, cached.taskStatus.Message, nil
-		}
 		return "", "", errors.Wrap(err, "failed to get task status configmap")
 	}
 
@@ -241,8 +187,6 @@ func GetTaskStatus(id string) (string, string, error) {
 		return "", "", nil
 	}
 
-	cached.taskStatus = ts
-
 	return ts.Status, ts.Message, nil
 }
 
@@ -252,7 +196,7 @@ func getConfigmap() (*corev1.ConfigMap, error) {
 		return nil, errors.Wrap(err, "failed to get clientset")
 	}
 
-	existingConfigmap, err := clientset.CoreV1().ConfigMaps(util.PodNamespace).Get(context.TODO(), TaskStatusConfigMapName, metav1.GetOptions{})
+	existingConfigmap, err := clientset.CoreV1().ConfigMaps(util.PodNamespace).Get(context.TODO(), tasksConfigMapName, metav1.GetOptions{})
 	if err != nil && !kuberneteserrors.IsNotFound(err) {
 		return nil, errors.Wrap(err, "failed to get configmap")
 	} else if kuberneteserrors.IsNotFound(err) {
@@ -262,7 +206,7 @@ func getConfigmap() (*corev1.ConfigMap, error) {
 				Kind:       "ConfigMap",
 			},
 			ObjectMeta: metav1.ObjectMeta{
-				Name:      TaskStatusConfigMapName,
+				Name:      tasksConfigMapName,
 				Namespace: util.PodNamespace,
 				Labels:    kotsadmtypes.GetKotsadmLabels(),
 			},
@@ -292,26 +236,6 @@ func updateConfigmap(configmap *corev1.ConfigMap) error {
 	}
 
 	return nil
-}
-
-func canIgnoreEtcdError(err error) bool {
-	if err == nil {
-		return true
-	}
-
-	if strings.Contains(err.Error(), "connection refused") {
-		return true
-	}
-
-	if strings.Contains(err.Error(), "request timed out") {
-		return true
-	}
-
-	if strings.Contains(err.Error(), "EOF") {
-		return true
-	}
-
-	return false
 }
 
 func MigrateTasksFromRqlite() error {

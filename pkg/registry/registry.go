@@ -36,7 +36,7 @@ func RewriteImages(appID string, sequence int64, hostname string, username strin
 	go func() {
 		for {
 			select {
-			case <-time.After(time.Second):
+			case <-time.After(time.Second * 2):
 				if err := tasks.UpdateTaskStatusTimestamp("image-rewrite"); err != nil {
 					logger.Error(err)
 				}

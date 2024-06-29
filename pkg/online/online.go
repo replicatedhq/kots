@@ -50,7 +50,7 @@ func CreateAppFromOnline(opts CreateOnlineAppOpts) (_ *kotsutil.KotsKinds, final
 	go func() {
 		for {
 			select {
-			case <-time.After(time.Second):
+			case <-time.After(time.Second * 2):
 				if err := tasks.UpdateTaskStatusTimestamp("online-install"); err != nil {
 					logger.Error(err)
 				}

@@ -357,7 +357,7 @@ func startDeleteImagesTaskMonitor(finishedChan <-chan error) {
 
 		for {
 			select {
-			case <-time.After(time.Second):
+			case <-time.After(time.Second * 2):
 				if err := tasks.UpdateTaskStatusTimestamp(deleteImagesTaskID); err != nil {
 					logger.Error(err)
 				}
