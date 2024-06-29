@@ -106,12 +106,12 @@ func runClusterUpgrade(
 	var bin string
 
 	if in.Spec.AirGap {
-		image := in.Spec.Artifacts.AdditionalArtifacts["operator"]
-		if image == "" {
-			return fmt.Errorf("missing operator image in airgap artifacts")
+		artifact := in.Spec.Artifacts.AdditionalArtifacts["operator"]
+		if artifact == "" {
+			return fmt.Errorf("missing operator binary in airgap artifacts")
 		}
 
-		b, err := pullUpgradeBinaryFromRegistry(ctx, k8sClient, registrySettings, image)
+		b, err := pullUpgradeBinaryFromRegistry(ctx, k8sClient, registrySettings, artifact)
 		if err != nil {
 			return fmt.Errorf("pull upgrade binary from registry: %w", err)
 		}
