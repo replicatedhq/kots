@@ -32,7 +32,7 @@ import (
 )
 
 const (
-	clusterUpgradeTimeout = 5 * time.Minute
+	clusterUpgradeTimeout = 15 * time.Minute
 )
 
 // startClusterUpgrade will create a new installation with the provided config.
