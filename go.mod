@@ -11,10 +11,10 @@ require (
 	github.com/Masterminds/semver/v3 v3.2.1
 	github.com/Masterminds/sprig/v3 v3.2.3
 	github.com/ahmetalpbalkan/go-cursor v0.0.0-20131010032410-8136607ea412
-	github.com/aws/aws-sdk-go v1.54.6
+	github.com/aws/aws-sdk-go v1.54.11
 	github.com/bitnami-labs/sealed-secrets v0.24.5
 	github.com/blang/semver v3.5.1+incompatible
-	github.com/containers/image/v5 v5.31.0
+	github.com/containers/image/v5 v5.31.1
 	github.com/coreos/go-oidc v2.2.1+incompatible
 	github.com/distribution/distribution/v3 v3.0.0-alpha.1
 	github.com/distribution/reference v0.6.0

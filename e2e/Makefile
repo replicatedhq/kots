@@ -23,6 +23,7 @@ test: KOTSADM_IMAGE_TAG ?= alpha
 test: TESTIM_BRANCH ?= master
 test: AIRGAP ?= 0
 test: IS_OPENSHIFT ?= 0
+test: IS_EKS ?= 0
 test: SKIP_TEARDOWN ?= 0
 ifneq ($(EXISTING_KUBECONFIG),)
 test: EXISTING_KUBECONFIG_VOLUME_MOUNT := "-v=$(EXISTING_KUBECONFIG):$(EXISTING_KUBECONFIG)"
@@ -48,6 +49,7 @@ test:
 			--kotsadm-image-tag=$(KOTSADM_IMAGE_TAG) \
 			--airgap=$(AIRGAP) \
 			--is-openshift=$(IS_OPENSHIFT) \
+			--is-eks=$(IS_EKS) \
 			--kots-helm-chart-url=$(KOTS_HELM_CHART_URL) \
 			--kots-helm-chart-version=$(KOTS_HELM_CHART_VERSION) \
 			--kots-dockerhub-username=$(KOTS_DOCKERHUB_USERNAME) \

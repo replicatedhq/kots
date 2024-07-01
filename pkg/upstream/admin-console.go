@@ -25,6 +25,7 @@ type UpstreamSettings struct {
 	JWT                    string
 	RqlitePassword         string
 	APIEncryptionKey       string
+	StorageClassName       string
 	HTTPProxyEnvValue      string
 	HTTPSProxyEnvValue     string
 	NoProxyEnvValue        string
@@ -50,6 +51,7 @@ func GenerateAdminConsoleFiles(renderDir string, options types.WriteOptions) ([]
 			Namespace:              options.Namespace,
 			SharedPassword:         options.SharedPassword,
 			AutoCreateClusterToken: uuid.New().String(),
+			StorageClassName:       options.StorageClassName,
 			HTTPProxyEnvValue:      options.HTTPProxyEnvValue,
 			HTTPSProxyEnvValue:     options.HTTPSProxyEnvValue,
 			NoProxyEnvValue:        options.NoProxyEnvValue,
@@ -73,6 +75,7 @@ func GenerateAdminConsoleFiles(renderDir string, options types.WriteOptions) ([]
 	settings := &UpstreamSettings{
 		Namespace:              options.Namespace,
 		AutoCreateClusterToken: uuid.New().String(),
+		StorageClassName:       options.StorageClassName,
 		IsOpenShift:            options.IsOpenShift,
 		IsGKEAutopilot:         options.IsGKEAutopilot,
 		IncludeMinio:           options.IncludeMinio,
@@ -175,6 +178,7 @@ func generateNewAdminConsoleFiles(settings *UpstreamSettings) ([]types.UpstreamF
 		RqlitePassword:         settings.RqlitePassword,
 		APIEncryptionKey:       settings.APIEncryptionKey,
 		AutoCreateClusterToken: settings.AutoCreateClusterToken,
+		StorageClassName:       settings.StorageClassName,
 		HTTPProxyEnvValue:      settings.HTTPProxyEnvValue,
 		HTTPSProxyEnvValue:     settings.HTTPSProxyEnvValue,
 		NoProxyEnvValue:        settings.NoProxyEnvValue,

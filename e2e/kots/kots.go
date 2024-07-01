@@ -27,9 +27,10 @@ type Installer struct {
 	airgap            bool
 	dockerhubUsername string
 	dockerhubPassword string
+	isEKS             bool
 }
 
-func NewInstaller(imageRegistry, imageNamespace, imageTag string, airgap bool, dockerhubUsername string, dockerhubPassword string) *Installer {
+func NewInstaller(imageRegistry, imageNamespace, imageTag string, airgap bool, dockerhubUsername string, dockerhubPassword string, isEKS bool) *Installer {
 	return &Installer{
 		imageRegistry:     imageRegistry,
 		imageNamespace:    imageNamespace,
@@ -37,6 +38,7 @@ func NewInstaller(imageRegistry, imageNamespace, imageTag string, airgap bool, d
 		airgap:            airgap,
 		dockerhubUsername: dockerhubUsername,
 		dockerhubPassword: dockerhubPassword,
+		isEKS:             isEKS,
 	}
 }
 
@@ -99,6 +101,9 @@ func (i *Installer) install(kubeconfig string, test inventory.Test) (*gexec.Sess
 		fmt.Sprintf("--wait-duration=%s", InstallWaitDuration),
 		fmt.Sprintf("--use-minimal-rbac=%t", test.UseMinimalRBAC),
 		fmt.Sprintf("--skip-compatibility-check=%t", test.SkipCompatibilityCheck),
+	}
+	if i.isEKS {
+		args = append(args, "--storage-class=gp2")
 	}
 
 	return util.RunCommand(exec.Command("kots", args...))

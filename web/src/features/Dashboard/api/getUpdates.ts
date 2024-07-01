@@ -34,7 +34,6 @@ export const getCheckForUpdates = async (
   // on the dashboard page it triggers getAppLicense here
   if (res.ok) {
     const response = await res.json();
-    console.log(response, "res");
     return response;
   } else {
     const text = await res.text();

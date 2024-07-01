@@ -37,6 +37,7 @@ type DeployOptions struct {
 	CurrentMinioImage      string
 	Timeout                time.Duration
 	PreflightsTimeout      time.Duration
+	StorageClassName       string
 	HTTPProxyEnvValue      string
 	HTTPSProxyEnvValue     string
 	NoProxyEnvValue        string
