@@ -836,6 +836,11 @@ func KotsadmStatefulSet(deployOptions types.DeployOptions, size resource.Quantit
 		})
 	}
 
+	var storageClassName *string
+	if deployOptions.StorageClassName != "" {
+		storageClassName = &deployOptions.StorageClassName
+	}
+
 	statefulset := &appsv1.StatefulSet{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "apps/v1",
@@ -1165,6 +1170,7 @@ func KotsadmStatefulSet(deployOptions types.DeployOptions, size resource.Quantit
 						Labels: types.GetKotsadmLabels(),
 					},
 					Spec: corev1.PersistentVolumeClaimSpec{
+						StorageClassName: storageClassName,
 						AccessModes: []corev1.PersistentVolumeAccessMode{
 							corev1.ReadWriteOnce,
 						},
