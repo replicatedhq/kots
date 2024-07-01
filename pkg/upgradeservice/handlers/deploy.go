@@ -15,6 +15,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/logger"
 	registrytypes "github.com/replicatedhq/kots/pkg/registry/types"
+	"github.com/replicatedhq/kots/pkg/tasks"
 	upgradepreflight "github.com/replicatedhq/kots/pkg/upgradeservice/preflight"
 	"github.com/replicatedhq/kots/pkg/upgradeservice/types"
 	"github.com/replicatedhq/kots/pkg/util"
@@ -70,23 +71,8 @@ func (h *Handler) DeployApp(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	tgzArchiveKey := fmt.Sprintf("pending-deployments/%s/%s-%s.tar.gz", params.AppSlug, params.UpdateChannelID, params.UpdateCursor)
-	if err := apparchive.CreateAppVersionArchive(params.AppArchive, tgzArchiveKey); err != nil {
-		response.Error = "failed to create app version archive"
-		logger.Error(errors.Wrap(err, response.Error))
-		JSON(w, http.StatusInternalServerError, response)
-		return
-	}
-
-	if err := embeddedcluster.MaybeStartClusterUpgrade(r.Context(), kotsKinds); err != nil {
-		response.Error = "failed to start cluster upgrade"
-		logger.Error(errors.Wrap(err, response.Error))
-		JSON(w, http.StatusInternalServerError, response)
-		return
-	}
-
-	if err := createPendingDeploymentCM(r.Context(), request, params, tgzArchiveKey); err != nil {
-		response.Error = "failed to create app version configmap"
+	if err := deployApp(r.Context(), request, params, kotsKinds); err != nil {
+		response.Error = "failed to deploy app"
 		logger.Error(errors.Wrap(err, response.Error))
 		JSON(w, http.StatusInternalServerError, response)
 		return
@@ -126,8 +112,47 @@ func canDeployApp(params types.UpgradeServiceParams, kotsKinds *kotsutil.KotsKin
 	return true, "", nil
 }
 
-// createPendingDeploymentCM creates a configmap with the app version info which gets detected by the operator of the new kots version to deploy the app.
-func createPendingDeploymentCM(ctx context.Context, request DeployAppRequest, params types.UpgradeServiceParams, tgzArchiveKey string) error {
+func deployApp(ctx context.Context, request DeployAppRequest, params types.UpgradeServiceParams, kotsKinds *kotsutil.KotsKinds) error {
+	// TODO NOW: move "deploying" to types
+	if err := tasks.SetTaskStatus(params.TaskID, "Preparing...", "deploying"); err != nil {
+		return errors.Wrap(err, "failed to set task status")
+	}
+
+	go func() (finalError error) {
+		finishedChan := make(chan error)
+		defer close(finishedChan)
+
+		tasks.StartTaskMonitor(params.TaskID, finishedChan)
+		defer func() {
+			finishedChan <- finalError
+		}()
+
+		tgzArchiveKey := fmt.Sprintf(
+			"pending-deployments/%s/%s-%s.tar.gz",
+			params.AppSlug,
+			params.UpdateChannelID,
+			params.UpdateCursor,
+		)
+		if err := apparchive.CreateAppVersionArchive(params.AppArchive, tgzArchiveKey); err != nil {
+			return errors.Wrap(err, "failed to create app version archive")
+		}
+
+		if err := embeddedcluster.MaybeStartClusterUpgrade(ctx, kotsKinds); err != nil {
+			return errors.Wrap(err, "failed to start cluster upgrade")
+		}
+
+		if err := createPendingDeployment(ctx, request, params, tgzArchiveKey); err != nil {
+			return errors.Wrap(err, "failed to create pending deployment configmap")
+		}
+
+		return nil
+	}()
+
+	return nil
+}
+
+// createPendingDeployment creates a configmap with the app version info which gets detected by the operator of the new kots version to deploy the app.
+func createPendingDeployment(ctx context.Context, request DeployAppRequest, params types.UpgradeServiceParams, tgzArchiveKey string) error {
 	clientset, err := k8sutil.GetClientset()
 	if err != nil {
 		return errors.Wrap(err, "failed to get clientset")
@@ -143,6 +168,7 @@ func createPendingDeploymentCM(ctx context.Context, request DeployAppRequest, pa
 		preflightResult = preflightData.Result.Result
 	}
 
+	// TODO NOW: send source as param
 	source := "Upstream Update"
 	if params.AppIsAirgap {
 		source = "Airgap Update"

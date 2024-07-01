@@ -82,13 +82,10 @@ type ResponseGitOps struct {
 type ResponseCluster struct {
 	ID   string `json:"id"`
 	Slug string `json:"slug"`
-	// RequiresUpgrade represents whether the embedded cluster config for the current app
-	// version is different from the currently deployed embedded cluster config
-	RequiresUpgrade bool `json:"requiresUpgrade"`
+	// IsUpgrading represents whether the embedded cluster is currently being upgraded
+	IsUpgrading bool `json:"isUpgrading"`
 	// State represents the current state of the most recently deployed embedded cluster config
 	State string `json:"state,omitempty"`
-	// NumInstallations represents the number of installation objects in the cluster
-	NumInstallations int `json:"numInstallations"`
 }
 
 type GetPendingAppResponse struct {

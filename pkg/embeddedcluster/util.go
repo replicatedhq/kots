@@ -89,21 +89,34 @@ func WaitForInstallation(ctx context.Context, kbClient kbclient.Client) error {
 			if err != nil {
 				return fmt.Errorf("failed to get current installation: %w", err)
 			}
-			if ins.Status.State == embeddedclusterv1beta1.InstallationStateInstalled {
+			switch ins.Status.State {
+			case embeddedclusterv1beta1.InstallationStateInstalled:
 				return nil
-			}
-			if ins.Status.State == embeddedclusterv1beta1.InstallationStateObsolete {
+			case embeddedclusterv1beta1.InstallationStateObsolete:
 				return fmt.Errorf("installation is obsolete")
-			}
-			if ins.Status.State == embeddedclusterv1beta1.InstallationStateFailed {
+			case embeddedclusterv1beta1.InstallationStateFailed:
 				return fmt.Errorf("installation failed: %s", ins.Status.Reason)
-			}
-			if ins.Status.State == embeddedclusterv1beta1.InstallationStateHelmChartUpdateFailure {
+			case embeddedclusterv1beta1.InstallationStateHelmChartUpdateFailure:
 				return fmt.Errorf("helm chart installation failed: %s", ins.Status.Reason)
 			}
 			time.Sleep(5 * time.Second)
 		}
 	}
+}
+
+func IsUpgrading(ctx context.Context, kbClient kbclient.Client) (bool, error) {
+	ins, err := GetCurrentInstallation(ctx, kbClient)
+	if err != nil {
+		return false, fmt.Errorf("failed to get current installation: %w", err)
+	}
+	switch ins.Status.State {
+	case embeddedclusterv1beta1.InstallationStateInstalled,
+		embeddedclusterv1beta1.InstallationStateObsolete,
+		embeddedclusterv1beta1.InstallationStateFailed,
+		embeddedclusterv1beta1.InstallationStateHelmChartUpdateFailure:
+		return false, nil
+	}
+	return true, nil
 }
 
 // ClusterConfig will extract the current cluster configuration from the latest installation

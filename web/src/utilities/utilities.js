@@ -659,47 +659,8 @@ export const Utilities = {
     }
   },
 
-  isClusterUpgrading(cluster) {
-    if (!cluster) {
-      return false;
-    }
-    const normalizedState = this.clusterState(cluster.state);
-    if (
-      normalizedState === "Upgrading" ||
-      normalizedState === "Upgrading addons" ||
-      normalizedState === "Creating addons"
-    ) {
-      return true;
-    }
-
-    if (cluster.numInstallations > 1 && !cluster.state) {
-      // if there multiple installations and no state, assume it's upgrading
-      // as it's possible the downtime begins before a state is reported
-      return true;
-    }
-
-    return false;
-  },
-
-  isPendingClusterUpgrade(app) {
-    if (!app) {
-      return false;
-    }
-
-    const triedToDeploy =
-      app.downstream?.currentVersion?.status === "deploying" ||
-      app.downstream?.currentVersion?.status === "deployed" ||
-      app.downstream?.currentVersion?.status === "failed";
-    if (!triedToDeploy) {
-      return false;
-    }
-
-    // return true if the user has tried to deploy the current version
-    // and the cluster will upgrade or is already upgrading
-    return (
-      app.downstream?.cluster?.requiresUpgrade ||
-      Utilities.isClusterUpgrading(app.downstream?.cluster)
-    );
+  isClusterUpgrading(app) {
+    return app?.downstream?.cluster?.isUpgrading;
   },
 
   shouldShowClusterUpgradeModal(apps) {
@@ -709,7 +670,7 @@ export const Utilities = {
 
     // embedded cluster can only have one app
     const app = apps[0];
-    return this.isPendingClusterUpgrade(app);
+    return this.isClusterUpgrading(app);
   },
 
   // Converts string to titlecase i.e. 'hello' -> 'Hello'
