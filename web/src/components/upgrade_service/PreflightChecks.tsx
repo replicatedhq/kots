@@ -195,6 +195,7 @@ const PreflightCheck = ({
           {!preflightCheck?.showPreflightCheckPending && (
             <button
               className="btn primary blue"
+              disabled={preflightCheck?.showDeploymentBlocked}
               onClick={() => navigate(`/upgrade-service/app/${slug}/deploy`)}
             >
               Next: Confirm and deploy

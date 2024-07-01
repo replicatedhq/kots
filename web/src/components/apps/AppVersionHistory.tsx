@@ -102,6 +102,8 @@ type State = {
   errorMsg: string;
   errorTitle: string;
   firstSequence: Number | string;
+  isFetchingAvailableUpdates: boolean;
+  isStartingUpgradeService: boolean;
   isSkipPreflights: boolean;
   kotsUpdateChecker: Repeater;
   kotsUpdateError: Object | undefined;
@@ -141,6 +143,7 @@ type State = {
   uploadResuming: boolean;
   uploadSize: Number;
   upgradeServiceChecker: Repeater;
+  upgradeServiceStatus: string;
   versionDownloadStatuses: {
     [x: number]: VersionDownloadStatus;
   };
@@ -158,6 +161,7 @@ type State = {
 };
 
 class AppVersionHistory extends Component<Props, State> {
+  iframeRef: any;
   constructor(props: Props) {
     super(props);
     this.state = {
@@ -180,6 +184,8 @@ class AppVersionHistory extends Component<Props, State> {
       errorMsg: "",
       errorTitle: "",
       firstSequence: 0,
+      isFetchingAvailableUpdates: false,
+      isStartingUpgradeService: false,
       isSkipPreflights: false,
       kotsUpdateChecker: new Repeater(),
       kotsUpdateError: undefined,
@@ -216,6 +222,7 @@ class AppVersionHistory extends Component<Props, State> {
       uploadResuming: false,
       uploadSize: 0,
       upgradeServiceChecker: new Repeater(),
+      upgradeServiceStatus: "",
       versionDownloadStatuses: {},
       versionHistory: [],
       versionHistoryJob: new Repeater(),
@@ -313,6 +320,7 @@ class AppVersionHistory extends Component<Props, State> {
 
   fetchAvailableUpdates = async () => {
     const appSlug = this.props.params.slug;
+    this.setState({ isFetchingAvailableUpdates: true });
     const res = await fetch(
       `${process.env.API_ENDPOINT}/app/${appSlug}/updates`,
       {
@@ -324,11 +332,15 @@ class AppVersionHistory extends Component<Props, State> {
       }
     );
     if (!res.ok) {
+      this.setState({ isFetchingAvailableUpdates: false });
       return;
     }
     const response = await res.json();
 
-    this.setState({ availableUpdates: response.updates });
+    this.setState({
+      isFetchingAvailableUpdates: false,
+      availableUpdates: response.updates,
+    });
     return response;
   };
 
@@ -980,6 +992,7 @@ class AppVersionHistory extends Component<Props, State> {
   onCheckForUpgradeStatus = async () => {
     const { app } = this.props.outletContext;
 
+    this.setState({ isStartingUpgradeService: true });
     return new Promise<void>((resolve, reject) => {
       fetch(
         `${process.env.API_ENDPOINT}/app/${app?.slug}/task/upgrade-service`,
@@ -993,13 +1006,16 @@ class AppVersionHistory extends Component<Props, State> {
       )
         .then(async (res) => {
           const response = await res.json();
-
+          // this.state.upgradeServiceChecker.stop();
           if (response.status !== "starting") {
+            // TODO: set isStartingUpgradeService state
             this.state.upgradeServiceChecker.stop();
-
+            this.setState({
+              isStartingUpgradeService: false,
+            });
             if (response.status === "failed") {
               this.setState({
-                isStartingUpgradeService: false,
+                // isStartingUpgradeService: false,
                 shouldShowUpgradeServiceModal: false,
                 upgradeService: {
                   isLoading: false,
@@ -1461,7 +1477,6 @@ class AppVersionHistory extends Component<Props, State> {
   };
 
   startUpgraderService = (update: AvailableUpdate) => {
-    this.state.upgradeServiceChecker.start(this.onCheckForUpgradeStatus, 1000);
     this.setState({
       shouldShowUpgradeServiceModal: true,
       upgradeService: {
@@ -1484,6 +1499,10 @@ class AppVersionHistory extends Component<Props, State> {
       method: "POST",
     })
       .then(async (res) => {
+        this.state.upgradeServiceChecker.start(
+          this.onCheckForUpgradeStatus,
+          1000
+        );
         if (res.ok) {
           this.setState({
             upgradeService: {
@@ -1515,11 +1534,11 @@ class AppVersionHistory extends Component<Props, State> {
 
   renderAvailableUpdates = (updates: AvailableUpdate[]) => {
     return (
-      <div className="tw-max-h-[275px] tw-overflow-auto">
-        <p className="u-fontSize--normal u-fontWeight--medium tw-color-gray-800 tw-mb-2">
+      <>
+        <p className="u-fontSize--normal u-fontWeight--medium card-title tw-pb-4">
           Available Updates
         </p>
-        <div className="tw-flex tw-flex-col tw-gap-2">
+        <div className="tw-flex tw-flex-col tw-gap-2 tw-max-h-[275px] tw-overflow-auto">
           {updates.map((update, index) => (
             <div>
               <div
@@ -1601,7 +1620,7 @@ class AppVersionHistory extends Component<Props, State> {
             </div>
           ))}
         </div>
-      </div>
+      </>
     );
   };
 
@@ -2017,111 +2036,101 @@ class AppVersionHistory extends Component<Props, State> {
                         </div>
                       )}
 
+                      {/* not gitops, updates are available, not embedded cluster  */}
+
                       {!gitopsIsConnected &&
-                        (this.state.updatesAvailable ||
-                          (this.state.availableUpdates &&
-                            this.state.availableUpdates?.length > 0)) && (
+                        !this.props.outletContext.isEmbeddedCluster && (
                           <div className="TableDiff--Wrapper card-bg u-marginBottom--30">
-                            {!this.props.outletContext.isEmbeddedCluster && (
-                              <div className="flex justifyContent--spaceBetween alignItems--center u-marginBottom--15">
-                                <p className="u-fontSize--normal u-fontWeight--medium u-textColor--info">
-                                  {this.state.updatesAvailable
-                                    ? "New version available"
-                                    : ""}
-                                </p>
+                            <div className="flex justifyContent--spaceBetween alignItems--center u-marginBottom--15">
+                              <p className="u-fontSize--normal u-fontWeight--medium u-textColor--info">
+                                {this.state.updatesAvailable
+                                  ? "New version available"
+                                  : ""}
+                              </p>
+                              <div className="flex alignItems--center">
                                 <div className="flex alignItems--center">
-                                  <div className="flex alignItems--center">
-                                    {app?.isAirgap && airgapUploader ? (
-                                      <MountAware
-                                        onMount={(el: Element) =>
-                                          airgapUploader?.assignElement(el)
-                                        }
-                                      >
-                                        <div className="flex alignItems--center">
-                                          <span className="icon clickable dashboard-card-upload-version-icon u-marginRight--5" />
-                                          <span className="link u-fontSize--small u-lineHeight--default">
-                                            Upload new version
-                                          </span>
-                                        </div>
-                                      </MountAware>
-                                    ) : (
+                                  {app?.isAirgap && airgapUploader ? (
+                                    <MountAware
+                                      onMount={(el: Element) =>
+                                        airgapUploader?.assignElement(el)
+                                      }
+                                    >
                                       <div className="flex alignItems--center">
-                                        {checkingForUpdates &&
-                                        !this.props.outletContext
-                                          .isBundleUploading ? (
-                                          <div className="flex alignItems--center u-marginRight--20">
-                                            <Loader
-                                              className="u-marginRight--5"
-                                              size="15"
-                                            />
-                                            <span className="u-textColor--bodyCopy u-fontWeight--medium u-fontSize--small u-lineHeight--default">
-                                              {checkingUpdateMessage === ""
-                                                ? "Checking for updates"
-                                                : checkingUpdateTextShort}
-                                            </span>
-                                          </div>
-                                        ) : (
-                                          <div className="flex alignItems--center u-marginRight--20">
-                                            <span
-                                              className="flex-auto flex alignItems--center link u-fontSize--small"
-                                              onClick={this.onCheckForUpdates}
-                                            >
-                                              <Icon
-                                                icon="check-update"
-                                                size={16}
-                                                className="clickable u-marginRight--5"
-                                                color={""}
-                                                style={{}}
-                                                disableFill={false}
-                                                removeInlineStyle={false}
-                                              />
-                                              Check for update
-                                            </span>
-                                          </div>
-                                        )}
-                                        <span
-                                          className="flex-auto flex alignItems--center link u-fontSize--small"
-                                          onClick={
-                                            this.toggleAutomaticUpdatesModal
-                                          }
-                                        >
-                                          <Icon
-                                            icon="schedule-sync"
-                                            size={16}
-                                            className="clickable u-marginRight--5"
-                                            color={""}
-                                            style={{}}
-                                            disableFill={false}
-                                            removeInlineStyle={false}
-                                          />
-                                          Configure automatic updates
+                                        <span className="icon clickable dashboard-card-upload-version-icon u-marginRight--5" />
+                                        <span className="link u-fontSize--small u-lineHeight--default">
+                                          Upload new version
                                         </span>
                                       </div>
-                                    )}
-                                  </div>
-                                  {versionHistory.length > 1 &&
-                                  !gitopsIsConnected
-                                    ? this.renderDiffBtn()
-                                    : null}
+                                    </MountAware>
+                                  ) : (
+                                    <div className="flex alignItems--center">
+                                      {checkingForUpdates &&
+                                      !this.props.outletContext
+                                        .isBundleUploading ? (
+                                        <div className="flex alignItems--center u-marginRight--20">
+                                          <Loader
+                                            className="u-marginRight--5"
+                                            size="15"
+                                          />
+                                          <span className="u-textColor--bodyCopy u-fontWeight--medium u-fontSize--small u-lineHeight--default">
+                                            {checkingUpdateMessage === ""
+                                              ? "Checking for updates"
+                                              : checkingUpdateTextShort}
+                                          </span>
+                                        </div>
+                                      ) : (
+                                        <div className="flex alignItems--center u-marginRight--20">
+                                          <span
+                                            className="flex-auto flex alignItems--center link u-fontSize--small"
+                                            onClick={this.onCheckForUpdates}
+                                          >
+                                            <Icon
+                                              icon="check-update"
+                                              size={16}
+                                              className="clickable u-marginRight--5"
+                                              color={""}
+                                              style={{}}
+                                              disableFill={false}
+                                              removeInlineStyle={false}
+                                            />
+                                            Check for update
+                                          </span>
+                                        </div>
+                                      )}
+                                      <span
+                                        className="flex-auto flex alignItems--center link u-fontSize--small"
+                                        onClick={
+                                          this.toggleAutomaticUpdatesModal
+                                        }
+                                      >
+                                        <Icon
+                                          icon="schedule-sync"
+                                          size={16}
+                                          className="clickable u-marginRight--5"
+                                          color={""}
+                                          style={{}}
+                                          disableFill={false}
+                                          removeInlineStyle={false}
+                                        />
+                                        Configure automatic updates
+                                      </span>
+                                    </div>
+                                  )}
                                 </div>
+                                {versionHistory.length > 1 && !gitopsIsConnected
+                                  ? this.renderDiffBtn()
+                                  : null}
+                              </div>
+                            </div>
+                            {pendingVersion ? (
+                              this.renderAppVersionHistoryRow(pendingVersion)
+                            ) : (
+                              <div className="card-item flex-column flex1 u-marginTop--20 u-marginBottom--10 alignItems--center justifyContent--center">
+                                <p className="u-fontSize--normal u-fontWeight--medium u-textColor--bodyCopy u-padding--10">
+                                  Application up to date.
+                                </p>
                               </div>
                             )}
-                            {this.state.availableUpdates &&
-                              this.state.availableUpdates.length > 0 &&
-                              this.props.outletContext.isEmbeddedCluster &&
-                              this.renderAvailableUpdates(
-                                this.state.availableUpdates
-                              )}
-                            {!this.props.outletContext.isEmbeddedCluster &&
-                              (pendingVersion ? (
-                                this.renderAppVersionHistoryRow(pendingVersion)
-                              ) : (
-                                <div className="card-item flex-column flex1 u-marginTop--20 u-marginBottom--10 alignItems--center justifyContent--center">
-                                  <p className="u-fontSize--normal u-fontWeight--medium u-textColor--bodyCopy u-padding--10">
-                                    Application up to date.
-                                  </p>
-                                </div>
-                              ))}
                             {(this.state.numOfSkippedVersions > 0 ||
                               this.state.numOfRemainingVersions > 0) && (
                               <p className="u-fontSize--small u-fontWeight--medium u-lineHeight--more u-textColor--info u-marginTop--10">
@@ -2142,6 +2151,30 @@ class AppVersionHistory extends Component<Props, State> {
                               </p>
                             )}
                           </div>
+                        )}
+
+                      {/* not gitops, is embedded */}
+                      {!gitopsIsConnected &&
+                        this.props.outletContext.isEmbeddedCluster && (
+                          <>
+                            {this.state.isFetchingAvailableUpdates ? (
+                              <div className="TableDiff--Wrapper card-bg u-marginBottom--30">
+                                <div className="flex-column flex1 alignItems--center justifyContent--center">
+                                  <Loader size="60" />
+                                </div>
+                              </div>
+                            ) : (
+                              this.state.availableUpdates &&
+                              this.state.availableUpdates.length > 0 &&
+                              this.props.outletContext.isEmbeddedCluster && (
+                                <div className="TableDiff--Wrapper card-bg u-marginBottom--30">
+                                  {this.renderAvailableUpdates(
+                                    this.state.availableUpdates
+                                  )}
+                                </div>
+                              )
+                            )}
+                          </>
                         )}
                       {versionHistory?.length > 0 && (
                         <>
@@ -2452,24 +2485,44 @@ class AppVersionHistory extends Component<Props, State> {
           contentLabel="KOTS Upgrade Service Modal"
           ariaHideApp={false}
           className="Modal UpgradeServiceModal"
+          shouldCloseOnOverlayClick={false}
         >
-          {this.state.upgradeService?.isLoading &&
-          this.state.isStartingUpgradeService ? (
-            <div>
-              Upgrade Service is {this.state.upgradeServiceStatus}
-              <Loader size="60" />
-            </div>
-          ) : (
-            <iframe
-              src={`/upgrade-service/app/${app?.slug}`}
-              title="KOTS Upgrade Service"
-              width="100%"
-              height="100%"
-              allowFullScreen={true}
-              id="upgrade-service-iframe"
-              ref={this.iframeRef}
-            />
-          )}
+          <div className="tw-h-full tw-flex">
+            <button
+              style={{
+                border: "none",
+                background: "none",
+                cursor: "pointer",
+              }}
+              className="tw-pt-4 tw-top-0 tw-right-6 tw-absolute tw-overflow-auto"
+            >
+              <Icon
+                icon="close"
+                onClick={() =>
+                  this.setState({ shouldShowUpgradeServiceModal: false })
+                }
+                size={15}
+              />
+            </button>
+            {this.state.isStartingUpgradeService ? (
+              <div className="flex-column flex1 alignItems--center justifyContent--center tw-mt-4 tw-gap-4">
+                <span className="u-fontWeight--bold">
+                  {this.state.upgradeServiceStatus}
+                </span>
+                <Loader size="60" />
+              </div>
+            ) : (
+              <iframe
+                src={`/upgrade-service/app/${app?.slug}`}
+                title="KOTS Upgrade Service"
+                width="100%"
+                height="100%"
+                allowFullScreen={true}
+                id="upgrade-service-iframe"
+                ref={this.iframeRef}
+              />
+            )}
+          </div>
         </Modal>
       </div>
     );

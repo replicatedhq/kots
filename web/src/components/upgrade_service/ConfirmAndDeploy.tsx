@@ -89,7 +89,7 @@ const ConfirmAndDeploy = ({
     // go through and find out if there are warnings
     if (hasAllPassed(results)) {
       return (
-        <div className="flex justifyContent--space-between preflight-check-row tw-my-2 tw-py-2">
+        <div className="flex justifyContent--space-between preflight-check-row tw-my-2 tw-py-4">
           <Icon
             className="success-color"
             icon="check-circle-filled"
@@ -103,7 +103,7 @@ const ConfirmAndDeploy = ({
     } else if (hasFailed(results)) {
       return (
         <div>
-          <div className="tw-flex tw-my-2 tw-py-2">
+          <div className="tw-flex tw-my-2 tw-py-4">
             <Icon
               className="error-color"
               icon="warning-circle-filled"
@@ -116,7 +116,7 @@ const ConfirmAndDeploy = ({
           {errors.map((error, i) => {
             return (
               <div
-                className="flex justifyContent--space-between preflight-check-row tw-my-2 tw-py-2"
+                className="flex justifyContent--space-between preflight-check-row tw-my-2 tw-py-4"
                 key={i}
               >
                 <div className="flex1">
@@ -140,7 +140,7 @@ const ConfirmAndDeploy = ({
     } else if (hasWarning(results)) {
       return (
         <div>
-          <div className="tw-flex tw-my-2 tw-py-2">
+          <div className="tw-flex tw-my-2 tw-py-4">
             <Icon className="warning-color" icon="warning" size={16} />
             <div className="u-textColor--warning u-fontWeight--bold u-fontSize--large tw-ml-2">
               Preflight checks passed with warnings
@@ -149,7 +149,7 @@ const ConfirmAndDeploy = ({
           {warnings.map((warning, i) => {
             return (
               <div
-                className="flex justifyContent--space-between preflight-check-row tw-my-2 tw-py-2"
+                className="flex justifyContent--space-between preflight-check-row tw-my-2 tw-py-4"
                 key={i}
               >
                 <div className="flex1">
@@ -226,7 +226,7 @@ const ConfirmAndDeploy = ({
               </p>
             </div>
 
-            <div className="flex justifyContent--space-between preflight-check-row tw-my-2 tw-py-2">
+            <div className="flex justifyContent--space-between preflight-check-row tw-my-2 tw-py-4">
               <Icon
                 className="success-color"
                 icon="check-circle-filled"
