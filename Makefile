@@ -119,19 +119,26 @@ web:
 	source .image.env && ${MAKE} -C web build-kotsadm
 
 .PHONY: build-ttl.sh
+build-ttl.sh: export GOOS ?= linux
+build-ttl.sh: export GOARCH ?= amd64
 build-ttl.sh: web kots build
-	docker build -f deploy/Dockerfile -t ttl.sh/${CURRENT_USER}/kotsadm:24h .
+	docker build --platform $(GOOS)/$(GOARCH) -f deploy/Dockerfile -t ttl.sh/${CURRENT_USER}/kotsadm:24h .
 	docker push ttl.sh/${CURRENT_USER}/kotsadm:24h
 
 .PHONY: all-ttl.sh
+all-ttl.sh: export GOOS ?= linux
+all-ttl.sh: export GOARCH ?= amd64
 all-ttl.sh: build-ttl.sh
-	source .image.env && IMAGE=ttl.sh/${CURRENT_USER}/kotsadm-migrations:24h make -C migrations build_schema
+	source .image.env && \
+		IMAGE=ttl.sh/${CURRENT_USER}/kotsadm-migrations:24h \
+		DOCKER_BUILD_ARGS="--platform $(GOOS)/$(GOARCH)" \
+		make -C migrations build_schema
 
-	docker pull kotsadm/minio:${MINIO_TAG}
+	docker pull --platform $(GOOS)/$(GOARCH)" kotsadm/minio:${MINIO_TAG}
 	docker tag kotsadm/minio:${MINIO_TAG} ttl.sh/${CURRENT_USER}/minio:${MINIO_TAG}
 	docker push ttl.sh/${CURRENT_USER}/minio:${MINIO_TAG}
 
-	docker pull kotsadm/rqlite:${RQLITE_TAG}
+	docker pull --platform $(GOOS)/$(GOARCH)" kotsadm/rqlite:${RQLITE_TAG}
 	docker tag kotsadm/rqlite:${RQLITE_TAG} ttl.sh/${CURRENT_USER}/rqlite:${RQLITE_TAG}
 	docker push ttl.sh/${CURRENT_USER}/rqlite:${RQLITE_TAG}
 

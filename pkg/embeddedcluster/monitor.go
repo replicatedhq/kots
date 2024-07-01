@@ -8,6 +8,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/logger"
+	registrytypes "github.com/replicatedhq/kots/pkg/registry/types"
 	"github.com/replicatedhq/kots/pkg/util"
 )
 
@@ -19,7 +20,7 @@ var stateMut = sync.Mutex{}
 // - The app embedded cluster configuration differs from the current embedded cluster config.
 // - The current cluster config (as part of the Installation object) already exists in the cluster.
 // Returns the name of the installation object if an upgrade was started.
-func MaybeStartClusterUpgrade(ctx context.Context, kotsKinds *kotsutil.KotsKinds) error {
+func MaybeStartClusterUpgrade(ctx context.Context, kotsKinds *kotsutil.KotsKinds, registrySettings registrytypes.RegistrySettings) error {
 	if kotsKinds == nil || kotsKinds.EmbeddedClusterConfig == nil {
 		return nil
 	}
@@ -42,7 +43,7 @@ func MaybeStartClusterUpgrade(ctx context.Context, kotsKinds *kotsutil.KotsKinds
 
 	artifacts := getArtifactsFromInstallation(kotsKinds.Installation)
 
-	if err := startClusterUpgrade(ctx, spec, artifacts, *kotsKinds.License); err != nil {
+	if err := startClusterUpgrade(ctx, spec, artifacts, registrySettings, *kotsKinds.License, kotsKinds.Installation.Spec.VersionLabel); err != nil {
 		return fmt.Errorf("failed to start cluster upgrade: %w", err)
 	}
 	logger.Info("started cluster upgrade")

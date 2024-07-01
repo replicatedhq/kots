@@ -56,7 +56,15 @@ func (h *Handler) DeployApp(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	canDeploy, reason, err := canDeployApp(params, kotsKinds)
+	registrySettings := registrytypes.RegistrySettings{
+		Hostname:   params.RegistryEndpoint,
+		Username:   params.RegistryUsername,
+		Password:   params.RegistryPassword,
+		Namespace:  params.RegistryNamespace,
+		IsReadOnly: params.RegistryIsReadOnly,
+	}
+
+	canDeploy, reason, err := canDeployApp(params, kotsKinds, registrySettings)
 	if err != nil {
 		response.Error = "failed to check if app can be deployed"
 		logger.Error(errors.Wrap(err, response.Error))
@@ -78,7 +86,7 @@ func (h *Handler) DeployApp(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := embeddedcluster.MaybeStartClusterUpgrade(r.Context(), kotsKinds); err != nil {
+	if err := embeddedcluster.MaybeStartClusterUpgrade(r.Context(), kotsKinds, registrySettings); err != nil {
 		response.Error = "failed to start cluster upgrade"
 		logger.Error(errors.Wrap(err, response.Error))
 		JSON(w, http.StatusInternalServerError, response)
@@ -98,15 +106,7 @@ func (h *Handler) DeployApp(w http.ResponseWriter, r *http.Request) {
 	JSON(w, http.StatusOK, response)
 }
 
-func canDeployApp(params types.UpgradeServiceParams, kotsKinds *kotsutil.KotsKinds) (bool, string, error) {
-	registrySettings := registrytypes.RegistrySettings{
-		Hostname:   params.RegistryEndpoint,
-		Username:   params.RegistryUsername,
-		Password:   params.RegistryPassword,
-		Namespace:  params.RegistryNamespace,
-		IsReadOnly: params.RegistryIsReadOnly,
-	}
-
+func canDeployApp(params types.UpgradeServiceParams, kotsKinds *kotsutil.KotsKinds, registrySettings registrytypes.RegistrySettings) (bool, string, error) {
 	needsConfig, err := kotsadmconfig.NeedsConfiguration(params.AppSlug, params.NextSequence, params.AppIsAirgap, kotsKinds, registrySettings)
 	if err != nil {
 		return false, "", errors.Wrap(err, "failed to check if version needs configuration")

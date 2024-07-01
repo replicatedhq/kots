@@ -10,11 +10,9 @@ import (
 	"time"
 
 	embeddedclusterv1beta1 "github.com/replicatedhq/embedded-cluster-kinds/apis/v1beta1"
-	"github.com/replicatedhq/kots/pkg/k8sutil"
 	kotsv1beta1 "github.com/replicatedhq/kotskinds/apis/kots/v1beta1"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	k8stypes "k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes"
 	kbclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -139,40 +137,4 @@ func getArtifactsFromInstallation(installation kotsv1beta1.Installation) *embedd
 		EmbeddedClusterMetadata: installation.Spec.EmbeddedClusterArtifacts.Metadata,
 		AdditionalArtifacts:     installation.Spec.EmbeddedClusterArtifacts.AdditionalArtifacts,
 	}
-}
-
-// startClusterUpgrade will create a new installation with the provided config.
-func startClusterUpgrade(ctx context.Context, newcfg embeddedclusterv1beta1.ConfigSpec, artifacts *embeddedclusterv1beta1.ArtifactsLocation, license kotsv1beta1.License) error {
-	kbClient, err := k8sutil.GetKubeClient(ctx)
-	if err != nil {
-		return fmt.Errorf("failed to get kubeclient: %w", err)
-	}
-	current, err := GetCurrentInstallation(ctx, kbClient)
-	if err != nil {
-		return fmt.Errorf("failed to get current installation: %w", err)
-	}
-	newinsName := time.Now().Format("20060102150405")
-	newins := embeddedclusterv1beta1.Installation{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: newinsName,
-			Labels: map[string]string{
-				"replicated.com/disaster-recovery": "ec-install",
-			},
-		},
-		Spec: embeddedclusterv1beta1.InstallationSpec{
-			ClusterID:                 current.Spec.ClusterID,
-			MetricsBaseURL:            current.Spec.MetricsBaseURL,
-			HighAvailability:          current.Spec.HighAvailability,
-			AirGap:                    current.Spec.AirGap,
-			Artifacts:                 artifacts,
-			Config:                    &newcfg,
-			EndUserK0sConfigOverrides: current.Spec.EndUserK0sConfigOverrides,
-			BinaryName:                current.Spec.BinaryName,
-			LicenseInfo:               &embeddedclusterv1beta1.LicenseInfo{IsDisasterRecoverySupported: license.Spec.IsDisasterRecoverySupported},
-		},
-	}
-	if err := kbClient.Create(ctx, &newins); err != nil {
-		return fmt.Errorf("failed to create installation: %w", err)
-	}
-	return nil
 }
