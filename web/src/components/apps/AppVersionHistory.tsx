@@ -1006,16 +1006,13 @@ class AppVersionHistory extends Component<Props, State> {
       )
         .then(async (res) => {
           const response = await res.json();
-          // this.state.upgradeServiceChecker.stop();
           if (response.status !== "starting") {
-            // TODO: set isStartingUpgradeService state
             this.state.upgradeServiceChecker.stop();
             this.setState({
               isStartingUpgradeService: false,
             });
             if (response.status === "failed") {
               this.setState({
-                // isStartingUpgradeService: false,
                 shouldShowUpgradeServiceModal: false,
                 upgradeService: {
                   isLoading: false,
