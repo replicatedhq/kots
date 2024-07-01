@@ -12,7 +12,7 @@ require (
 	github.com/Masterminds/sprig/v3 v3.2.3
 	github.com/ahmetalpbalkan/go-cursor v0.0.0-20131010032410-8136607ea412
 	github.com/aws/aws-sdk-go v1.54.11
-	github.com/bitnami-labs/sealed-secrets v0.24.5
+	github.com/bitnami-labs/sealed-secrets v0.27.0
 	github.com/blang/semver v3.5.1+incompatible
 	github.com/containers/image/v5 v5.31.1
 	github.com/coreos/go-oidc v2.2.1+incompatible
@@ -39,7 +39,7 @@ require (
 	github.com/mholt/archiver/v3 v3.5.1
 	github.com/mikesmitty/edkey v0.0.0-20170222072505-3356ea4e686a
 	github.com/mitchellh/hashstructure v1.1.0
-	github.com/onsi/ginkgo/v2 v2.17.3
+	github.com/onsi/ginkgo/v2 v2.19.0
 	github.com/onsi/gomega v1.33.1
 	github.com/open-policy-agent/opa v0.65.0
 	github.com/opencontainers/image-spec v1.1.0
@@ -84,7 +84,7 @@ require (
 	k8s.io/helm v2.17.0+incompatible
 	k8s.io/kubelet v0.30.2
 	k8s.io/metrics v0.30.2
-	k8s.io/utils v0.0.0-20230726121419-3b25d923346b
+	k8s.io/utils v0.0.0-20240502163921-fe8a2dddb1d0
 	oras.land/oras-go/v2 v2.5.0
 	sigs.k8s.io/application v0.8.3
 	sigs.k8s.io/controller-runtime v0.18.4
@@ -142,7 +142,7 @@ require (
 	github.com/blang/semver/v4 v4.0.0 // indirect
 	github.com/bshuster-repo/logrus-logstash-hook v1.0.0 // indirect
 	github.com/cenkalti/backoff/v4 v4.2.1 // indirect
-	github.com/cespare/xxhash/v2 v2.2.0 // indirect
+	github.com/cespare/xxhash/v2 v2.3.0 // indirect
 	github.com/chai2010/gettext-go v1.0.2 // indirect
 	github.com/chzyer/readline v1.5.1 // indirect
 	github.com/cloudflare/circl v1.3.7 // indirect
@@ -168,7 +168,7 @@ require (
 	github.com/docker/go-metrics v0.0.1 // indirect
 	github.com/docker/libtrust v0.0.0-20160708172513-aabc10ec26b7 // indirect
 	github.com/dsnet/compress v0.0.2-0.20210315054119-f66993602bf5 // indirect
-	github.com/emicklei/go-restful/v3 v3.11.0 // indirect
+	github.com/emicklei/go-restful/v3 v3.12.0 // indirect
 	github.com/emirpasic/gods v1.18.1 // indirect
 	github.com/evanphx/json-patch v5.9.0+incompatible // indirect
 	github.com/evanphx/json-patch/v5 v5.9.0 // indirect
@@ -273,7 +273,7 @@ require (
 	github.com/mitchellh/go-wordwrap v1.0.1 // indirect
 	github.com/mitchellh/mapstructure v1.5.0 // indirect
 	github.com/mitchellh/reflectwalk v1.0.2 // indirect
-	github.com/mkmik/multierror v0.3.0 // indirect
+	github.com/mkmik/multierror v0.4.0 // indirect
 	github.com/moby/locker v1.0.1 // indirect
 	github.com/moby/spdystream v0.2.0 // indirect
 	github.com/moby/sys/mountinfo v0.7.1 // indirect
@@ -301,8 +301,8 @@ require (
 	github.com/proglottis/gpgme v0.1.3 // indirect
 	github.com/prometheus/client_golang v1.19.1 // indirect
 	github.com/prometheus/client_model v0.6.1 // indirect
-	github.com/prometheus/common v0.51.1 // indirect
-	github.com/prometheus/procfs v0.12.0 // indirect
+	github.com/prometheus/common v0.53.0 // indirect
+	github.com/prometheus/procfs v0.15.0 // indirect
 	github.com/rcrowley/go-metrics v0.0.0-20201227073835-cf1acfcdf475 // indirect
 	github.com/redis/go-redis/extra/rediscmd/v9 v9.0.5 // indirect
 	github.com/redis/go-redis/extra/redisotel/v9 v9.0.5 // indirect
@@ -376,7 +376,7 @@ require (
 	google.golang.org/genproto/googleapis/api v0.0.0-20240318140521-94a12d6c2237 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20240415180920-8c6c420018be // indirect
 	google.golang.org/grpc v1.64.0 // indirect
-	google.golang.org/protobuf v1.33.0 // indirect
+	google.golang.org/protobuf v1.34.1 // indirect
 	gopkg.in/evanphx/json-patch.v5 v5.6.0 // indirect
 	gopkg.in/go-jose/go-jose.v2 v2.6.3 // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
@@ -385,8 +385,8 @@ require (
 	k8s.io/apiextensions-apiserver v0.30.1 // indirect
 	k8s.io/apiserver v0.30.2 // indirect
 	k8s.io/component-base v0.30.2 // indirect
-	k8s.io/klog/v2 v2.120.1 // indirect
-	k8s.io/kube-openapi v0.0.0-20240228011516-70dd3763d340 // indirect
+	k8s.io/klog/v2 v2.130.0 // indirect
+	k8s.io/kube-openapi v0.0.0-20240521193020-835d969ad83a // indirect
 	k8s.io/kubectl v0.30.0 // indirect
 	oras.land/oras-go v1.2.5 // indirect
 	periph.io/x/host/v3 v3.8.2 // indirect
