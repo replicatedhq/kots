@@ -2,13 +2,11 @@ import { ChangeEvent, Component, Fragment, createRef } from "react";
 import { Link } from "react-router-dom";
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
-import Modal from "react-modal";
 import find from "lodash/find";
 import isEmpty from "lodash/isEmpty";
 import get from "lodash/get";
 import MountAware from "../shared/MountAware";
 import Loader from "../shared/Loader";
-import MarkdownRenderer from "@src/components/shared/MarkdownRenderer";
 import VersionDiff from "@src/features/VersionDiff/VersionDiff";
 import ShowDetailsModal from "@src/components/modals/ShowDetailsModal";
 import ShowLogsModal from "@src/components/modals/ShowLogsModal";
@@ -38,6 +36,12 @@ import Icon from "../Icon";
 import { App, AvailableUpdate, Version, VersionDownloadStatus } from "@types";
 import { RouterProps, withRouter } from "@src/utilities/react-router-utilities";
 import PreflightIcon from "@features/App/PreflightIcon";
+import ReleaseNotesModal from "@components/modals/ReleaseNotesModal";
+import DiffErrorModal from "@components/modals/DiffErrorModal";
+import ConfirmDeploymentModal from "@components/modals/ConfirmDeploymentModal";
+import DisplayKotsUpdateModal from "@components/modals/DisplayKotsUpdateModal";
+import NoChangesModal from "@components/modals/NoChangesModal";
+import UpgradeServiceModal from "@components/modals/UpgradeServiceModal";
 
 dayjs.extend(relativeTime);
 
@@ -280,7 +284,9 @@ class AppVersionHistory extends Component<Props, State> {
       }
     }
 
-    this.fetchAvailableUpdates();
+    if (this.props.outletContext.isEmbeddedCluster) {
+      this.fetchAvailableUpdates();
+    }
   }
 
   componentDidUpdate = async (lastProps: Props) => {
@@ -911,6 +917,14 @@ class AppVersionHistory extends Component<Props, State> {
     }
   };
 
+  hideConfirmDeploymentModal = () => {
+    this.setState({
+      displayConfirmDeploymentModal: false,
+      confirmType: "",
+      versionToDeploy: null,
+    });
+  };
+
   onSelectReleasesToDiff = () => {
     this.setState({
       selectedDiffReleases: true,
@@ -989,7 +1003,7 @@ class AppVersionHistory extends Component<Props, State> {
       });
   };
 
-  onCheckForUpgradeStatus = async () => {
+  onCheckForUpgradeServiceStatus = async () => {
     const { app } = this.props.outletContext;
 
     this.setState({ isStartingUpgradeService: true });
@@ -1478,6 +1492,7 @@ class AppVersionHistory extends Component<Props, State> {
       upgradeService: {
         versionLabel: update.versionLabel,
         isLoading: true,
+        error: "",
       },
     });
     const appSlug = this.props.params.slug;
@@ -1497,7 +1512,7 @@ class AppVersionHistory extends Component<Props, State> {
       .then(async (res) => {
         if (res.ok) {
           this.state.upgradeServiceChecker.start(
-            this.onCheckForUpgradeStatus,
+            this.onCheckForUpgradeServiceStatus,
             1000
           );
           this.setState({
@@ -1536,11 +1551,8 @@ class AppVersionHistory extends Component<Props, State> {
         </p>
         <div className="tw-flex tw-flex-col tw-gap-2 tw-max-h-[275px] tw-overflow-auto">
           {updates.map((update, index) => (
-            <div>
-              <div
-                key={index}
-                className="tw-h-10 tw-bg-white tw-p-4 tw-flex tw-justify-between tw-items-center tw-rounded"
-              >
+            <div key={index}>
+              <div className="tw-h-10 tw-bg-white tw-p-4 tw-flex tw-justify-between tw-items-center tw-rounded">
                 <div className="flex-column">
                   <div className="flex alignItems--center">
                     <p className="u-fontSize--header2 u-fontWeight--bold u-lineHeight--medium card-item-title ">
@@ -2032,8 +2044,6 @@ class AppVersionHistory extends Component<Props, State> {
                         </div>
                       )}
 
-                      {/* not gitops, updates are available, not embedded cluster  */}
-
                       {!gitopsIsConnected &&
                         !this.props.outletContext.isEmbeddedCluster && (
                           <div className="TableDiff--Wrapper card-bg u-marginBottom--30">
@@ -2149,29 +2159,27 @@ class AppVersionHistory extends Component<Props, State> {
                           </div>
                         )}
 
-                      {/* not gitops, is embedded */}
-                      {!gitopsIsConnected &&
-                        this.props.outletContext.isEmbeddedCluster && (
-                          <>
-                            {this.state.isFetchingAvailableUpdates ? (
-                              <div className="TableDiff--Wrapper card-bg u-marginBottom--30">
-                                <div className="flex-column flex1 alignItems--center justifyContent--center">
-                                  <Loader size="60" />
-                                </div>
+                      {this.props.outletContext.isEmbeddedCluster && (
+                        <>
+                          {this.state.isFetchingAvailableUpdates ? (
+                            <div className="TableDiff--Wrapper card-bg u-marginBottom--30">
+                              <div className="flex-column flex1 alignItems--center justifyContent--center">
+                                <Loader size="60" />
                               </div>
-                            ) : (
-                              this.state.availableUpdates &&
-                              this.state.availableUpdates.length > 0 &&
-                              this.props.outletContext.isEmbeddedCluster && (
-                                <div className="TableDiff--Wrapper card-bg u-marginBottom--30">
-                                  {this.renderAvailableUpdates(
-                                    this.state.availableUpdates
-                                  )}
-                                </div>
-                              )
-                            )}
-                          </>
-                        )}
+                            </div>
+                          ) : (
+                            this.state.availableUpdates &&
+                            this.state.availableUpdates.length > 0 &&
+                            this.props.outletContext.isEmbeddedCluster && (
+                              <div className="TableDiff--Wrapper card-bg u-marginBottom--30">
+                                {this.renderAvailableUpdates(
+                                  this.state.availableUpdates
+                                )}
+                              </div>
+                            )
+                          )}
+                        </>
+                      )}
                       {versionHistory?.length > 0 && (
                         <>
                           {this.renderUpdateProgress()}
@@ -2206,214 +2214,81 @@ class AppVersionHistory extends Component<Props, State> {
           </div>
         </div>
 
-        {showLogsModal && (
-          <ShowLogsModal
-            showLogsModal={showLogsModal}
-            hideLogsModal={this.hideLogsModal}
-            viewLogsErrMsg={this.state.viewLogsErrMsg}
-            logs={logs}
-            selectedTab={selectedTab}
-            logsLoading={logsLoading}
-            renderLogsTabs={this.renderLogsTabs()}
-          />
-        )}
+        {/* MODALS */}
+        <ShowLogsModal
+          showLogsModal={showLogsModal}
+          hideLogsModal={this.hideLogsModal}
+          viewLogsErrMsg={this.state.viewLogsErrMsg}
+          logs={logs}
+          selectedTab={selectedTab}
+          logsLoading={logsLoading}
+          renderLogsTabs={this.renderLogsTabs()}
+        />
 
-        {showDeployWarningModal && (
-          <DeployWarningModal
-            showDeployWarningModal={showDeployWarningModal}
-            hideDeployWarningModal={this.hideDeployWarningModal}
-            onForceDeployClick={this.onForceDeployClick}
-            showAutoDeployWarning={
-              isPastVersion &&
-              this.props.outletContext.app?.autoDeploy !== "disabled"
-            }
-            confirmType={this.state.confirmType}
-          />
-        )}
+        <DeployWarningModal
+          showDeployWarningModal={showDeployWarningModal}
+          hideDeployWarningModal={this.hideDeployWarningModal}
+          onForceDeployClick={this.onForceDeployClick}
+          showAutoDeployWarning={
+            isPastVersion &&
+            this.props.outletContext.app?.autoDeploy !== "disabled"
+          }
+          confirmType={this.state.confirmType}
+        />
 
-        {showSkipModal && (
-          <SkipPreflightsModal
-            showSkipModal={showSkipModal}
-            hideSkipModal={this.hideSkipModal}
-            onForceDeployClick={this.onForceDeployClick}
-          />
-        )}
+        <SkipPreflightsModal
+          showSkipModal={showSkipModal}
+          hideSkipModal={this.hideSkipModal}
+          onForceDeployClick={this.onForceDeployClick}
+        />
 
-        <Modal
-          isOpen={!!releaseNotes}
-          onRequestClose={this.hideReleaseNotes}
-          contentLabel="Release Notes"
-          ariaHideApp={false}
-          className="Modal MediumSize"
-        >
-          <div className="flex-column">
-            <MarkdownRenderer className="is-kotsadm" id="markdown-wrapper">
-              {releaseNotes || ""}
-            </MarkdownRenderer>
-          </div>
-          <div className="flex u-marginTop--10 u-marginLeft--10 u-marginBottom--10">
-            <button className="btn primary" onClick={this.hideReleaseNotes}>
-              Close
-            </button>
-          </div>
-        </Modal>
+        <ReleaseNotesModal
+          releaseNotes={releaseNotes}
+          hideReleaseNotes={this.hideReleaseNotes}
+        />
 
-        <Modal
-          isOpen={this.state.showDiffErrModal}
-          onRequestClose={() => this.toggleDiffErrModal()}
-          contentLabel="Unable to Get Diff"
-          ariaHideApp={false}
-          className="Modal MediumSize"
-        >
-          <div className="Modal-body">
-            <p className="u-fontSize--largest u-fontWeight--bold u-textColor--primary u-lineHeight--normal u-marginBottom--10">
-              Unable to generate a file diff for release
-            </p>
-            {this.state.releaseWithErr && (
-              <>
-                <p className="u-fontSize--normal u-textColor--bodyCopy u-lineHeight--normal u-marginBottom--20">
-                  The release with the{" "}
-                  <span className="u-fontWeight--bold">
-                    Upstream {this.state.releaseWithErr.title}, Sequence{" "}
-                    {this.state.releaseWithErr.sequence}
-                  </span>{" "}
-                  was unable to generate a files diff because the following
-                  error:
-                </p>
-                <div className="error-block-wrapper u-marginBottom--30 flex flex1">
-                  <span className="u-textColor--error">
-                    {this.state.releaseWithErr.diffSummaryError}
-                  </span>
-                </div>
-              </>
-            )}
-            <div className="flex u-marginBottom--10">
-              <button
-                className="btn primary"
-                onClick={() => this.toggleDiffErrModal()}
-              >
-                Ok, got it!
-              </button>
-            </div>
-          </div>
-        </Modal>
+        <DiffErrorModal
+          showDiffErrModal={this.state.showDiffErrModal}
+          toggleDiffErrModal={() => this.toggleDiffErrModal()}
+          releaseWithErr={this.state.releaseWithErr}
+        />
 
-        {this.state.displayConfirmDeploymentModal && (
-          <Modal
-            isOpen={true}
-            onRequestClose={() =>
-              this.setState({
-                displayConfirmDeploymentModal: false,
-                confirmType: "",
-                versionToDeploy: null,
-              })
-            }
-            contentLabel="Confirm deployment"
-            ariaHideApp={false}
-            className="Modal DefaultSize"
-          >
-            <div className="Modal-body">
-              <p className="u-fontSize--largest u-fontWeight--bold u-textColor--primary u-lineHeight--normal u-marginBottom--10">
-                {this.state.confirmType === "rollback"
-                  ? "Rollback to"
-                  : this.state.confirmType === "redeploy"
-                  ? "Redeploy"
-                  : "Deploy"}{" "}
-                {this.state.versionToDeploy?.versionLabel} (Sequence{" "}
-                {this.state.versionToDeploy?.sequence})?
-              </p>
-              {isPastVersion &&
-              this.props.outletContext.app?.autoDeploy !== "disabled" ? (
-                <div className="info-box">
-                  <span className="u-fontSize--small u-textColor--info u-lineHeight--normal u-fontWeight--medium">
-                    You have automatic deploys enabled.{" "}
-                    {this.state.confirmType === "rollback"
-                      ? "Rolling back to"
-                      : this.state.confirmType === "redeploy"
-                      ? "Redeploying"
-                      : "Deploying"}{" "}
-                    this version will disable automatic deploys. You can turn it
-                    back on after this version finishes deployment.
-                  </span>
-                </div>
-              ) : null}
-              <div className="flex u-paddingTop--10">
-                <button
-                  className="btn secondary blue"
-                  onClick={() =>
-                    this.setState({
-                      displayConfirmDeploymentModal: false,
-                      confirmType: "",
-                      versionToDeploy: null,
-                    })
-                  }
-                >
-                  Cancel
-                </button>
-                <button
-                  className="u-marginLeft--10 btn primary"
-                  onClick={
-                    this.state.confirmType === "redeploy"
-                      ? this.finalizeRedeployment
-                      : () => this.finalizeDeployment(false)
-                  }
-                >
-                  Yes,{" "}
-                  {this.state.confirmType === "rollback"
-                    ? "rollback"
-                    : this.state.confirmType === "redeploy"
-                    ? "redeploy"
-                    : "deploy"}
-                </button>
-              </div>
-            </div>
-          </Modal>
-        )}
+        <ConfirmDeploymentModal
+          displayConfirmDeploymentModal={
+            this.state.displayConfirmDeploymentModal
+          }
+          hideConfirmDeploymentModal={this.hideConfirmDeploymentModal}
+          confirmType={this.state.confirmType}
+          versionToDeploy={this.state.versionToDeploy}
+          outletContext={this.props.outletContext}
+          finalizeDeployment={this.finalizeDeployment}
+          isPastVersion={isPastVersion}
+          finalizeRedeployment={this.finalizeRedeployment}
+        />
 
-        {this.state.displayKotsUpdateModal && (
-          <Modal
-            isOpen={true}
-            onRequestClose={() =>
-              this.setState({ displayKotsUpdateModal: false })
-            }
-            contentLabel="Upgrade is in progress"
-            ariaHideApp={false}
-            className="Modal DefaultSize"
-          >
-            <div className="Modal-body u-textAlign--center">
-              <div className="flex-column justifyContent--center alignItems--center">
-                <p className="u-fontSize--large u-textColor--primary u-lineHeight--bold u-marginBottom--10">
-                  Upgrading...
-                </p>
-                <Loader className="flex alignItems--center" size="32" />
-                {renderKotsUpgradeStatus ? (
-                  <p className="u-fontSize--normal u-textColor--primary u-lineHeight--normal u-marginBottom--10">
-                    {this.state.kotsUpdateStatus}
-                  </p>
-                ) : null}
-                {this.state.kotsUpdateMessage ? (
-                  <p className="u-fontSize--normal u-textColor--primary u-lineHeight--normal u-marginBottom--10">
-                    {shortKotsUpdateMessage}
-                  </p>
-                ) : null}
-              </div>
-            </div>
-          </Modal>
-        )}
+        <DisplayKotsUpdateModal
+          displayKotsUpdateModal={this.state.displayKotsUpdateModal}
+          onRequestClose={() =>
+            this.setState({ displayKotsUpdateModal: false })
+          }
+          renderKotsUpgradeStatus={renderKotsUpgradeStatus}
+          kotsUpdateStatus={this.state.kotsUpdateStatus}
+          shortKotsUpdateMessage={shortKotsUpdateMessage}
+          kotsUpdateMessage={this.state.kotsUpdateMessage}
+        />
 
-        {this.state.displayShowDetailsModal && (
-          <ShowDetailsModal
-            displayShowDetailsModal={this.state.displayShowDetailsModal}
-            toggleShowDetailsModal={this.toggleShowDetailsModal}
-            yamlErrorDetails={this.state.yamlErrorDetails}
-            deployView={this.state.deployView}
-            forceDeploy={this.onForceDeployClick}
-            showDeployWarningModal={this.state.showDeployWarningModal}
-            showSkipModal={this.state.showSkipModal}
-            slug={this.props.params.slug}
-            sequence={this.state.selectedSequence}
-          />
-        )}
+        <ShowDetailsModal
+          displayShowDetailsModal={this.state.displayShowDetailsModal}
+          toggleShowDetailsModal={this.toggleShowDetailsModal}
+          yamlErrorDetails={this.state.yamlErrorDetails}
+          deployView={this.state.deployView}
+          forceDeploy={this.onForceDeployClick}
+          showDeployWarningModal={this.state.showDeployWarningModal}
+          showSkipModal={this.state.showSkipModal}
+          slug={this.props.params.slug}
+          sequence={this.state.selectedSequence}
+        />
+
         {errorMsg && (
           <ErrorModal
             errorModal={displayErrorModal}
@@ -2423,41 +2298,13 @@ class AppVersionHistory extends Component<Props, State> {
             appSlug={this.props.params?.slug}
           />
         )}
-        {this.state.showNoChangesModal && (
-          <Modal
-            isOpen={true}
-            onRequestClose={() => this.toggleNoChangesModal()}
-            contentLabel="No Changes"
-            ariaHideApp={false}
-            className="Modal DefaultSize"
-          >
-            <div className="Modal-body">
-              <p className="u-fontSize--largest u-fontWeight--bold u-textColor--primary u-lineHeight--normal u-marginBottom--10">
-                No changes to show
-              </p>
-              <p className="u-fontSize--normal u-textColor--bodyCopy u-lineHeight--normal u-marginBottom--20">
-                The{" "}
-                {this.state.releaseWithNoChanges && (
-                  <span className="u-fontWeight--bold">
-                    Upstream {this.state.releaseWithNoChanges.versionLabel},
-                    Sequence {this.state.releaseWithNoChanges.sequence}{" "}
-                  </span>
-                )}
-                release was unable to generate a diff because the changes made
-                do not affect any manifests that will be deployed. Only changes
-                affecting the application manifest will be included in a diff.
-              </p>
-              <div className="flex u-paddingTop--10">
-                <button
-                  className="btn primary"
-                  onClick={() => this.toggleNoChangesModal()}
-                >
-                  Ok, got it!
-                </button>
-              </div>
-            </div>
-          </Modal>
-        )}
+
+        <NoChangesModal
+          showNoChangesModal={this.state.showNoChangesModal}
+          toggleNoChangesModal={this.toggleNoChangesModal}
+          releaseWithNoChanges={this.state.releaseWithNoChanges}
+        />
+
         {this.state.showAutomaticUpdatesModal && (
           <AutomaticUpdatesModal
             appSlug={app?.slug}
@@ -2473,53 +2320,19 @@ class AppVersionHistory extends Component<Props, State> {
             updateCheckerSpec={app?.updateCheckerSpec}
           />
         )}
-        <Modal
-          isOpen={this.state.shouldShowUpgradeServiceModal}
-          onRequestClose={() => {
-            this.setState({ shouldShowUpgradeServiceModal: false });
-          }}
-          contentLabel="KOTS Upgrade Service Modal"
-          ariaHideApp={false}
-          className="Modal UpgradeServiceModal"
-          shouldCloseOnOverlayClick={false}
-        >
-          <div className="tw-h-full tw-flex">
-            <button
-              style={{
-                border: "none",
-                background: "none",
-                cursor: "pointer",
-              }}
-              className="tw-pt-4 tw-top-0 tw-right-6 tw-absolute tw-overflow-auto"
-            >
-              <Icon
-                icon="close"
-                onClick={() =>
-                  this.setState({ shouldShowUpgradeServiceModal: false })
-                }
-                size={15}
-              />
-            </button>
-            {this.state.isStartingUpgradeService ? (
-              <div className="flex-column flex1 alignItems--center justifyContent--center tw-mt-4 tw-gap-4">
-                <span className="u-fontWeight--bold">
-                  {this.state.upgradeServiceStatus}
-                </span>
-                <Loader size="60" />
-              </div>
-            ) : (
-              <iframe
-                src={`/upgrade-service/app/${app?.slug}`}
-                title="KOTS Upgrade Service"
-                width="100%"
-                height="100%"
-                allowFullScreen={true}
-                id="upgrade-service-iframe"
-                ref={this.iframeRef}
-              />
-            )}
-          </div>
-        </Modal>
+
+        <UpgradeServiceModal
+          shouldShowUpgradeServiceModal={
+            this.state.shouldShowUpgradeServiceModal
+          }
+          isStartingUpgradeService={this.state.isStartingUpgradeService}
+          upgradeServiceStatus={this.state.upgradeServiceStatus}
+          appSlug={app?.slug}
+          onRequestClose={() =>
+            this.setState({ shouldShowUpgradeServiceModal: false })
+          }
+          iframeRef={this.iframeRef}
+        />
       </div>
     );
   }
