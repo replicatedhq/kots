@@ -65,6 +65,7 @@ type WriteOptions struct {
 	IncludeMinio         bool
 	MigrateToMinioXl     bool
 	CurrentMinioImage    string
+	StorageClassName     string
 	HTTPProxyEnvValue    string
 	HTTPSProxyEnvValue   string
 	NoProxyEnvValue      string

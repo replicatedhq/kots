@@ -610,7 +610,6 @@ const Dashboard = () => {
       checkingForUpdates: true,
       checkingForUpdateError: false,
     });
-    console.log("chiecking");
     checkForUpdates();
   };
 

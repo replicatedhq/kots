@@ -74,6 +74,7 @@ func PullCmd() *cobra.Command {
 					Username:  v.GetString("registry-username"),
 					Password:  v.GetString("registry-password"),
 				},
+				StorageClassName:       v.GetString("storage-class"),
 				HTTPProxyEnvValue:      v.GetString("http-proxy"),
 				HTTPSProxyEnvValue:     v.GetString("https-proxy"),
 				NoProxyEnvValue:        v.GetString("no-proxy"),
@@ -127,6 +128,7 @@ func PullCmd() *cobra.Command {
 	cmd.Flags().Bool("exclude-kots-kinds", true, "set to true to exclude rendering kots custom objects to the base directory")
 	cmd.Flags().Bool("exclude-admin-console", false, "set to true to exclude the admin console (replicated apps only)")
 	cmd.Flags().String("shared-password", "", "shared password to use when deploying the admin console")
+	cmd.Flags().String("storage-class", "", "sets the storage class to use for the KOTS Admin Console components (if unset, the default storage class will be used)")
 	cmd.Flags().String("http-proxy", "", "sets HTTP_PROXY environment variable in all KOTS Admin Console components")
 	cmd.Flags().String("https-proxy", "", "sets HTTPS_PROXY environment variable in all KOTS Admin Console components")
 	cmd.Flags().String("no-proxy", "", "sets NO_PROXY environment variable in all KOTS Admin Console components")

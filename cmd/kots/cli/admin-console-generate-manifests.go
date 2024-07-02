@@ -61,6 +61,7 @@ func AdminGenerateManifestsCmd() *cobra.Command {
 			options := upstreamtypes.WriteOptions{
 				Namespace:            namespace,
 				SharedPassword:       v.GetString("shared-password"),
+				StorageClassName:     v.GetString("storage-class"),
 				HTTPProxyEnvValue:    v.GetString("http-proxy"),
 				HTTPSProxyEnvValue:   v.GetString("https-proxy"),
 				NoProxyEnvValue:      v.GetString("no-proxy"),
@@ -98,6 +99,7 @@ func AdminGenerateManifestsCmd() *cobra.Command {
 	}
 
 	cmd.Flags().String("rootdir", ".", "root directory that will be used to write the yaml to")
+	cmd.Flags().String("storage-class", "", "sets the storage class to use for the KOTS Admin Console components (if unset, the default storage class will be used)")
 	cmd.Flags().String("http-proxy", "", "sets HTTP_PROXY environment variable in all KOTS Admin Console components")
 	cmd.Flags().String("https-proxy", "", "sets HTTPS_PROXY environment variable in all KOTS Admin Console components")
 	cmd.Flags().String("no-proxy", "", "sets NO_PROXY environment variable in all KOTS Admin Console components")
