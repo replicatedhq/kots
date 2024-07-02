@@ -13,7 +13,7 @@ const UpgradeServiceModal = ({
   return (
     <Modal
       isOpen={shouldShowUpgradeServiceModal}
-      onRequestClose={onRequestClose}
+      onRequestClose={() => onRequestClose()}
       contentLabel="KOTS Upgrade Service Modal"
       ariaHideApp={false}
       className="Modal UpgradeServiceModal"
@@ -28,7 +28,7 @@ const UpgradeServiceModal = ({
           }}
           className="tw-pt-4 tw-top-0 tw-right-6 tw-absolute tw-overflow-auto"
         >
-          <Icon icon="close" onClick={onRequestClose} size={15} />
+          <Icon icon="close" onClick={() => onRequestClose()} size={15} />
         </button>
         {isStartingUpgradeService ? (
           <div className="flex-column flex1 alignItems--center justifyContent--center tw-mt-4 tw-gap-4">
