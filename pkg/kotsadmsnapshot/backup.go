@@ -393,6 +393,10 @@ func CreateInstanceBackup(ctx context.Context, cluster *downstreamtypes.Downstre
 		backupAnnotations["kots.io/embedded-cluster-id"] = util.EmbeddedClusterID()
 		backupAnnotations["kots.io/embedded-cluster-version"] = util.EmbeddedClusterVersion()
 		backupAnnotations["kots.io/embedded-cluster-is-ha"] = strconv.FormatBool(installation.Spec.HighAvailability)
+		if installation.Spec.Network != nil {
+			backupAnnotations["kots.io/embedded-cluster-pod-cidr"] = installation.Spec.Network.PodCIDR
+			backupAnnotations["kots.io/embedded-cluster-service-cidr"] = installation.Spec.Network.ServiceCIDR
+		}
 	}
 
 	includeClusterResources := true
