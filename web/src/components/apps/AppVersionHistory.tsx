@@ -54,6 +54,7 @@ type ReleaseWithError = {
 
 type Props = {
   outletContext: {
+    isEmbeddedCluster: boolean;
     adminConsoleMetadata: {
       isAirgap: boolean;
       isKurl: boolean;
@@ -1835,9 +1836,7 @@ class AppVersionHistory extends Component<Props, State> {
                                       </div>
                                     )}
                                     {console.log("props", JSON.stringify(this.props))}
-                                    {!this.props.outletContext
-                                      .adminConsoleMetadata
-                                      ?.isEmbeddedCluster && (
+                                    {!this.props.outletContext.isEmbeddedCluster && (
                                       <span
                                         className="flex-auto flex alignItems--center link u-fontSize--small"
                                         onClick={
