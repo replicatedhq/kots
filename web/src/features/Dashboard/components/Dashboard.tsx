@@ -46,6 +46,10 @@ const COMMON_ERRORS = {
   "no such host": "No such host",
 };
 
+type Props = {
+  adminConsoleMetadata?: Metadata;
+};
+
 type OutletContext = {
   app: App;
   cluster: {
@@ -103,11 +107,9 @@ type State = {
   slowLoader: boolean;
   lastUpdated: number;
   lastUpdatedDate: Date;
-  adminConsoleMetadata?: Metadata;
-  isEmbeddedCluster: boolean;
 };
 
-const Dashboard = () => {
+const Dashboard = (props: Props) => {
   const [state, setState] = useReducer(
     (currentState: State, newState: Partial<State>) => ({
       ...currentState,
@@ -150,7 +152,6 @@ const Dashboard = () => {
       slowLoader: false,
       lastUpdated: 0,
       lastUpdatedDate: new Date(),
-      isEmbeddedCluster: false,
     }
   );
 
@@ -699,7 +700,7 @@ const Dashboard = () => {
                     viewAirgapUploadError={() => toggleViewAirgapUploadError()}
                     showAutomaticUpdatesModal={showAutomaticUpdatesModal}
                     noUpdatesAvalable={state.noUpdatesAvalable}
-                    adminConsoleMetadata={state.adminConsoleMetadata}
+                    adminConsoleMetadata={props.adminConsoleMetadata}
                   />
                 </div>
 
