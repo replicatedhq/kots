@@ -374,7 +374,7 @@ const Dashboard = () => {
   };
 
   const goToTroubleshootPage = () => {
-    navigate(`${params.url}/troubleshoot`);
+    navigate(`/app/${params.slug}/troubleshoot`);
   };
 
   const getAppResourcesByState = () => {
