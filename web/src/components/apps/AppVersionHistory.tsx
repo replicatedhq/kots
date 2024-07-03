@@ -1835,7 +1835,6 @@ class AppVersionHistory extends Component<Props, State> {
                                         </span>
                                       </div>
                                     )}
-                                    {console.log("props", JSON.stringify(this.props))}
                                     {!this.props.outletContext.isEmbeddedCluster && (
                                       <span
                                         className="flex-auto flex alignItems--center link u-fontSize--small"
