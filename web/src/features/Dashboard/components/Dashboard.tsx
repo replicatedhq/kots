@@ -1,5 +1,5 @@
-import {useEffect, useReducer, useRef} from "react";
-import {KotsPageTitle} from "@components/Head";
+import { useEffect, useReducer, useRef } from "react";
+import { KotsPageTitle } from "@components/Head";
 import get from "lodash/get";
 import sortBy from "lodash/sortBy";
 import Loader from "@src/components/shared/Loader";
@@ -10,17 +10,17 @@ import DashboardSnapshotsCard from "./DashboardSnapshotsCard";
 import DashboardGraphsCard from "./DashboardGraphsCard";
 import AutomaticUpdatesModal from "@src/components/modals/AutomaticUpdatesModal";
 import Modal from "react-modal";
-import {Repeater} from "@src/utilities/repeater";
-import {Utilities} from "@src/utilities/utilities";
-import {AirgapUploader} from "@src/utilities/airgapUploader";
-import {useSelectedAppClusterDashboardWithIntercept} from "../api/useSelectedAppClusterDashboard";
-import {useNavigate, useOutletContext, useParams} from "react-router-dom";
-import {useLicenseWithIntercept} from "@features/App";
-import {useNextAppVersionWithIntercept} from "../api/useNextAppVersion";
+import { Repeater } from "@src/utilities/repeater";
+import { Utilities } from "@src/utilities/utilities";
+import { AirgapUploader } from "@src/utilities/airgapUploader";
+import { useSelectedAppClusterDashboardWithIntercept } from "../api/useSelectedAppClusterDashboard";
+import { useNavigate, useOutletContext, useParams } from "react-router-dom";
+import { useLicenseWithIntercept } from "@features/App";
+import { useNextAppVersionWithIntercept } from "../api/useNextAppVersion";
 
 import "@src/scss/components/watches/Dashboard.scss";
 import "@src/../node_modules/react-vis/dist/style";
-import {Paragraph} from "@src/styles/common";
+import { Paragraph } from "@src/styles/common";
 // Types
 import {
   App,
@@ -32,10 +32,13 @@ import {
   ResourceStates,
   Version,
 } from "@types";
-import {UpdateStatusResponse, useUpdateDownloadStatus,} from "../api/getUpdateDownloadStatus";
-import {useAppDownstream} from "../api/getAppDownstream";
-import {useAirgapConfig} from "../api/getAirgapConfig";
-import {Updates, useCheckForUpdates} from "../api/getUpdates";
+import {
+  UpdateStatusResponse,
+  useUpdateDownloadStatus,
+} from "../api/getUpdateDownloadStatus";
+import { useAppDownstream } from "../api/getAppDownstream";
+import { useAirgapConfig } from "../api/getAirgapConfig";
+import { Updates, useCheckForUpdates } from "../api/getUpdates";
 
 const COMMON_ERRORS = {
   "HTTP 401": "Registry credentials are invalid",

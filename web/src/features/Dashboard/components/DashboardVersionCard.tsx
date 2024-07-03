@@ -1,5 +1,5 @@
-import {useEffect, useReducer} from "react";
-import {Link, useNavigate, useParams} from "react-router-dom";
+import { useEffect, useReducer } from "react";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import ReactTooltip from "react-tooltip";
 import DashboardGitOpsCard from "./DashboardGitOpsCard";
 import MarkdownRenderer from "@src/components/shared/MarkdownRenderer";
@@ -13,16 +13,28 @@ import ShowLogsModal from "@src/components/modals/ShowLogsModal";
 import DeployWarningModal from "@src/components/shared/modals/DeployWarningModal";
 import SkipPreflightsModal from "@src/components/shared/modals/SkipPreflightsModal";
 import classNames from "classnames";
-import {getPreflightResultState, getReadableGitOpsProviderName, secondsAgo, Utilities} from "@src/utilities/utilities";
-import {useNextAppVersionWithIntercept} from "../api/useNextAppVersion";
-import {useSelectedApp} from "@features/App";
-import {Repeater} from "@src/utilities/repeater";
+import {
+  getPreflightResultState,
+  getReadableGitOpsProviderName,
+  secondsAgo,
+  Utilities,
+} from "@src/utilities/utilities";
+import { useNextAppVersionWithIntercept } from "../api/useNextAppVersion";
+import { useSelectedApp } from "@features/App";
+import { Repeater } from "@src/utilities/repeater";
 
 import "@src/scss/components/watches/DashboardCard.scss";
 import Icon from "@src/components/Icon";
 
-import {Downstream, KotsParams, Metadata, Version, VersionDownloadStatus, VersionStatus,} from "@types";
-import {AirgapUploader} from "@src/utilities/airgapUploader";
+import {
+  Downstream,
+  KotsParams,
+  Metadata,
+  Version,
+  VersionDownloadStatus,
+  VersionStatus,
+} from "@types";
+import { AirgapUploader } from "@src/utilities/airgapUploader";
 import EditConfigIcon from "@components/shared/EditConfigIcon";
 
 type Props = {
@@ -1492,37 +1504,40 @@ const DashboardVersionCard = (props: Props) => {
                   </span>
                 </div>
               )}
-              {console.log("props.adminConsoleMetadata", JSON.stringify(props.adminConsoleMetadata))}
-              { !props.adminConsoleMetadata?.isEmbeddedCluster && (
-                  <div className="flex alignItems--center u-marginRight--20 link">
-                    <Icon
-                        icon="schedule-sync"
-                        size={18}
-                        className=" clickable u-marginRight--5"
-                    />
-                    <span
-                        className="u-fontSize--small u-lineHeight--default"
-                        onClick={props.showAutomaticUpdatesModal}
-                    >
-                  Configure automatic updates
-                </span>
-                  </div>
+              {console.log(
+                "props.adminConsoleMetadata",
+                JSON.stringify(props.adminConsoleMetadata)
+              )}
+              {!props.adminConsoleMetadata?.isEmbeddedCluster && (
+                <div className="flex alignItems--center u-marginRight--20 link">
+                  <Icon
+                    icon="schedule-sync"
+                    size={18}
+                    className=" clickable u-marginRight--5"
+                  />
+                  <span
+                    className="u-fontSize--small u-lineHeight--default"
+                    onClick={props.showAutomaticUpdatesModal}
+                  >
+                    Configure automatic updates
+                  </span>
+                </div>
               )}
             </div>
           )}
         </div>
       </div>
       {currentVersion?.deployedAt ? (
-          <div className="VersionCard-content--wrapper card-item">
-            {renderCurrentVersion()}
-          </div>
+        <div className="VersionCard-content--wrapper card-item">
+          {renderCurrentVersion()}
+        </div>
       ) : (
-          <div className="no-deployed-version u-textAlign--center">
-            <p className="u-fontWeight--medium u-fontSize--normal u-textColor--bodyCopy">
-              {" "}
-              No version has been deployed{" "}
-            </p>
-          </div>
+        <div className="no-deployed-version u-textAlign--center">
+          <p className="u-fontWeight--medium u-fontSize--normal u-textColor--bodyCopy">
+            {" "}
+            No version has been deployed{" "}
+          </p>
+        </div>
       )}
       {renderBottomSection()}
       <div className="u-marginTop--10">
