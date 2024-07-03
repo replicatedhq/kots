@@ -117,7 +117,7 @@ func GetMetadataHandler(getK8sInfoFn MetadataK8sFn, kotsStore store.Store) http.
 		metadataResponse.AdminConsoleMetadata = AdminConsoleMetadata{
 			IsAirgap:          kotsadmMetadata.IsAirgap,
 			IsKurl:            kotsadmMetadata.IsKurl,
-			IsEmbeddedCluster: false,
+			IsEmbeddedCluster: true,
 		}
 
 		if kotsadmMetadata.IsEmbeddedCluster {
