@@ -1834,7 +1834,7 @@ class AppVersionHistory extends Component<Props, State> {
                                         </span>
                                       </div>
                                     )}
-                                    {console.log("adminConsoleMetadata", this.props.outletContext.adminConsoleMetadata)}
+                                    {console.log("props", JSON.stringify(this.props))}
                                     {!this.props.outletContext
                                       .adminConsoleMetadata
                                       ?.isEmbeddedCluster && (

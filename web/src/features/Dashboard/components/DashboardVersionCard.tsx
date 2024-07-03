@@ -1492,7 +1492,7 @@ const DashboardVersionCard = (props: Props) => {
                   </span>
                 </div>
               )}
-              {console.log("adminConsoleMetadata", props.adminConsoleMetadata)}
+              {console.log("props", JSON.stringify(this.props))}
               { !props.adminConsoleMetadata?.isEmbeddedCluster && (
                   <div className="flex alignItems--center u-marginRight--20 link">
                     <Icon
