@@ -109,6 +109,7 @@ type State = {
   versionToDeploy: Version | null;
   viewLogsErrMsg: string;
   yamlErrorDetails: string[];
+  isEmbeddedCluster: boolean;
 };
 
 const DashboardVersionCard = (props: Props) => {
@@ -155,6 +156,7 @@ const DashboardVersionCard = (props: Props) => {
       versionToDeploy: null,
       viewLogsErrMsg: "",
       yamlErrorDetails: [],
+      isEmbeddedCluster: false,
     }
   );
   const navigate = useNavigate();
@@ -1508,7 +1510,7 @@ const DashboardVersionCard = (props: Props) => {
                 "props.adminConsoleMetadata",
                 JSON.stringify(props.adminConsoleMetadata)
               )}
-              {!props.adminConsoleMetadata?.isEmbeddedCluster && (
+              {!state.isEmbeddedCluster && (
                 <div className="flex alignItems--center u-marginRight--20 link">
                   <Icon
                     icon="schedule-sync"

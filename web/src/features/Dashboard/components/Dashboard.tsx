@@ -104,6 +104,7 @@ type State = {
   lastUpdated: number;
   lastUpdatedDate: Date;
   adminConsoleMetadata?: Metadata;
+  isEmbeddedCluster: boolean;
 };
 
 const Dashboard = () => {
@@ -149,6 +150,7 @@ const Dashboard = () => {
       slowLoader: false,
       lastUpdated: 0,
       lastUpdatedDate: new Date(),
+      isEmbeddedCluster: false,
     }
   );
 

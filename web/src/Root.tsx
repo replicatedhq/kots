@@ -724,14 +724,7 @@ const Root = () => {
                   />
                 }
               >
-                <Route
-                  path=":slug"
-                  element={
-                    <Dashboard
-                      adminConsoleMetadata={state.adminConsoleMetadata}
-                    />
-                  }
-                />
+                <Route path=":slug" element={<Dashboard />} />
                 <Route
                   path=":slug/tree/:sequence?"
                   element={<DownstreamTree />}
