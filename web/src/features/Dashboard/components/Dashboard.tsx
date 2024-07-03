@@ -155,8 +155,6 @@ const Dashboard = (props: Props) => {
     }
   );
 
-  console.log("dashboard props", JSON.stringify(props));
-
   const navigate = useNavigate();
 
   const {
