@@ -102,7 +102,10 @@ const AvailableUpdatesComponent = ({
                       data-tip={update.nonDeployableCause}
                       data-for="disable-deployment-tooltip"
                     >
-                      Deploy
+                      {upgradeService?.versionLabel === update.versionLabel &&
+                      upgradeService.isLoading
+                        ? "Preparing..."
+                        : "Deploy"}
                     </span>
                   </button>
                   <ReactTooltip

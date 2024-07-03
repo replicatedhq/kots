@@ -2083,16 +2083,14 @@ class AppVersionHistory extends Component<Props, State> {
                               </div>
                             </div>
                           ) : (
-                            this.props.outletContext.isEmbeddedCluster && (
-                              <AvailableUpdatesComponent
-                                updates={this.state.availableUpdates}
-                                showReleaseNotes={this.showReleaseNotes}
-                                upgradeService={this.state.upgradeService}
-                                startUpgraderService={this.startUpgraderService}
-                                isAirgap={app?.isAirgap}
-                                airgapUploader={airgapUploader}
-                              />
-                            )
+                            <AvailableUpdatesComponent
+                              updates={this.state.availableUpdates}
+                              showReleaseNotes={this.showReleaseNotes}
+                              upgradeService={this.state.upgradeService}
+                              startUpgraderService={this.startUpgraderService}
+                              isAirgap={app?.isAirgap}
+                              airgapUploader={airgapUploader}
+                            />
                           )}
                         </>
                       )}
