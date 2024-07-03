@@ -183,7 +183,7 @@ func GetTaskStatus(id string) (string, string, error) {
 		return "", "", errors.Wrap(err, "error unmarshalling task status")
 	}
 
-	if ts.UpdatedAt.Before(time.Now().Add(-10 * time.Second)) {
+	if ts.UpdatedAt.Before(time.Now().Add(-1 * time.Minute)) {
 		return "", "", nil
 	}
 

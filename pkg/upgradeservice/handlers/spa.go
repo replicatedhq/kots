@@ -26,7 +26,7 @@ type SPAHandler struct {
 // file located at the index path on the SPA handler will be served. This
 // is suitable behavior for serving an SPA (single page application).
 func (h SPAHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	// because the docs say to not modify request, and we might need to, so lets clone
+	// because the docs say to not modify request, and we need to, so lets clone
 	rr := r.Clone(r.Context())
 	rr.URL.Path = strings.TrimPrefix(rr.URL.Path, upgradeServicePrefix(rr))
 
