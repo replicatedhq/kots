@@ -45,7 +45,7 @@ const AvailableUpdatesComponent = ({
           </div>
         )}
       </div>
-      {updates && updates.length === 0 ? (
+      {updates && updates.length > 0 ? (
         <div className="tw-flex tw-flex-col tw-gap-2 tw-max-h-[275px] tw-overflow-auto">
           {updates.map((update, index) => (
             <div key={index}>

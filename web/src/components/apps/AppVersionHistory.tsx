@@ -1381,7 +1381,9 @@ class AppVersionHistory extends Component<Props, State> {
     }
 
     return (
-      <div className="u-marginTop--20 u-marginBottom--20">{updateText}</div>
+      <div className="TableDiff--Wrapper card-bg u-marginBottom--30">
+        {updateText}
+      </div>
     );
   };
 
