@@ -47,7 +47,7 @@ const COMMON_ERRORS = {
 };
 
 type Props = {
-  adminConsoleMetadata?: Metadata;
+  adminConsoleMetadata: Metadata | null;
 };
 
 type OutletContext = {
@@ -154,6 +154,8 @@ const Dashboard = (props: Props) => {
       lastUpdatedDate: new Date(),
     }
   );
+
+  console.log("dashboard props", JSON.stringify(props));
 
   const navigate = useNavigate();
 

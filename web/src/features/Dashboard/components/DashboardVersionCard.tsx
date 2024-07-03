@@ -38,7 +38,7 @@ import { AirgapUploader } from "@src/utilities/airgapUploader";
 import EditConfigIcon from "@components/shared/EditConfigIcon";
 
 type Props = {
-  adminConsoleMetadata?: Metadata;
+  adminConsoleMetadata: Metadata | null;
   airgapUploader: AirgapUploader | null;
   airgapUploadError: string | null;
   checkingForUpdates: boolean;
