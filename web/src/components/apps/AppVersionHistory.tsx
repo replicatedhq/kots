@@ -1970,7 +1970,7 @@ class AppVersionHistory extends Component<Props, State> {
                               </p>
                               <div className="flex alignItems--center">
                                 <div className="flex alignItems--center">
-                                  {app?.isAirgap && AirgapUploader ? (
+                                  {app?.isAirgap && airgapUploader ? (
                                     <MountAware
                                       onMount={(el: Element) =>
                                         airgapUploader?.assignElement(el)
