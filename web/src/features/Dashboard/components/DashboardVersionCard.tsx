@@ -1492,7 +1492,7 @@ const DashboardVersionCard = (props: Props) => {
                   </span>
                 </div>
               )}
-              { false && (
+              { !props.adminConsoleMetadata?.isEmbeddedCluster && (
                   <div className="flex alignItems--center u-marginRight--20 link">
                     <Icon
                         icon="schedule-sync"
