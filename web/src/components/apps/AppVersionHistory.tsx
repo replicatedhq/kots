@@ -1968,7 +1968,7 @@ class AppVersionHistory extends Component<Props, State> {
                               </p>
                               <div className="flex alignItems--center">
                                 <div className="flex alignItems--center">
-                                  {true ? (
+                                  {app?.isAirgap && AirgapUploader ? (
                                     <MountAware
                                       onMount={(el: Element) =>
                                         airgapUploader?.assignElement(el)
@@ -2081,19 +2081,15 @@ class AppVersionHistory extends Component<Props, State> {
                               </div>
                             </div>
                           ) : (
-                            this.state.availableUpdates &&
-                            this.state.availableUpdates.length > 0 &&
                             this.props.outletContext.isEmbeddedCluster && (
-                              <div className="TableDiff--Wrapper card-bg u-marginBottom--30">
-                                <AvailableUpdatesComponent
-                                  updates={this.state.availableUpdates}
-                                  showReleaseNotes={this.showReleaseNotes}
-                                  upgradeService={this.state.upgradeService}
-                                  startUpgraderService={
-                                    this.startUpgraderService
-                                  }
-                                />
-                              </div>
+                              <AvailableUpdatesComponent
+                                updates={this.state.availableUpdates}
+                                showReleaseNotes={this.showReleaseNotes}
+                                upgradeService={this.state.upgradeService}
+                                startUpgraderService={this.startUpgraderService}
+                                isAirgap={app?.isAirgap}
+                                airgapUploader={airgapUploader}
+                              />
                             )
                           )}
                         </>
