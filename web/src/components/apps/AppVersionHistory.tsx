@@ -1834,21 +1834,27 @@ class AppVersionHistory extends Component<Props, State> {
                                         </span>
                                       </div>
                                     )}
-                                    <span
-                                      className="flex-auto flex alignItems--center link u-fontSize--small"
-                                      onClick={this.toggleAutomaticUpdatesModal}
-                                    >
-                                      <Icon
-                                        icon="schedule-sync"
-                                        size={16}
-                                        className="clickable u-marginRight--5"
-                                        color={""}
-                                        style={{}}
-                                        disableFill={false}
-                                        removeInlineStyle={false}
-                                      />
-                                      Configure automatic updates
-                                    </span>
+                                    {this.props.outletContext
+                                      .adminConsoleMetadata
+                                      ?.isEmbeddedCluster ? null : (
+                                      <span
+                                        className="flex-auto flex alignItems--center link u-fontSize--small"
+                                        onClick={
+                                          this.toggleAutomaticUpdatesModal
+                                        }
+                                      >
+                                        <Icon
+                                          icon="schedule-sync"
+                                          size={16}
+                                          className="clickable u-marginRight--5"
+                                          color={""}
+                                          style={{}}
+                                          disableFill={false}
+                                          removeInlineStyle={false}
+                                        />
+                                        Configure automatic updates
+                                      </span>
+                                    )}
                                   </div>
                                 )}
                               </div>
