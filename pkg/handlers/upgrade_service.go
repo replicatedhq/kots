@@ -9,6 +9,7 @@ import (
 	"github.com/phayes/freeport"
 	"github.com/pkg/errors"
 	apptypes "github.com/replicatedhq/kots/pkg/app/types"
+	"github.com/replicatedhq/kots/pkg/archives"
 	"github.com/replicatedhq/kots/pkg/buildversion"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/logger"
@@ -204,47 +205,47 @@ func getUpgradeServiceParams(a *apptypes.App, r StartUpgradeServiceRequest, task
 		return nil, errors.Wrap(err, "failed to get next app sequence")
 	}
 
-	// license, err := kotsutil.LoadLicenseFromBytes([]byte(a.License))
-	// if err != nil {
-	// 	return nil, errors.Wrap(err, "failed to parse app license")
-	// }
+	license, err := kotsutil.LoadLicenseFromBytes([]byte(a.License))
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to parse app license")
+	}
 
-	// var updateKOTSVersion string
-	// var updateKOTSBin string
+	var updateKOTSVersion string
+	var updateKOTSBin string
 	var updateAirgapBundle string
 
 	if a.IsAirgap {
-		// au, err := update.GetAirgapUpdate(a.Slug, r.ChannelID, r.UpdateCursor)
-		// if err != nil {
-		// 	return nil, errors.Wrap(err, "failed to get airgap update")
-		// }
-		// updateAirgapBundle = au
-		// kb, err := archives.GetKOTSBinFromAirgapBundle(au)
-		// if err != nil {
-		// 	return nil, errors.Wrap(err, "failed to get kots binary from airgap bundle")
-		// }
-		// updateKOTSBin = kb
-		// kv, err := kotsutil.GetKotsVersionFromBinary(kb)
-		// if err != nil {
-		// 	return nil, errors.Wrap(err, "failed to get kots version from binary")
-		// }
-		// updateKOTSVersion = kv
+		au, err := update.GetAirgapUpdate(a.Slug, r.ChannelID, r.UpdateCursor)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to get airgap update")
+		}
+		updateAirgapBundle = au
+		kb, err := archives.GetKOTSBinFromAirgapBundle(au)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to get kots binary from airgap bundle")
+		}
+		updateKOTSBin = kb
+		kv, err := kotsutil.GetKotsVersionFromBinary(kb)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to get kots version from binary")
+		}
+		updateKOTSVersion = kv
 	} else {
-		// kv, err := replicatedapp.GetKOTSVersionForRelease(license, r.VersionLabel)
-		// if err != nil {
-		// 	return nil, errors.Wrap(err, "failed to get kots version for release")
-		// }
-		// updateKOTSVersion = kv
+		kv, err := replicatedapp.GetKOTSVersionForRelease(license, r.VersionLabel)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to get kots version for release")
+		}
+		updateKOTSVersion = kv
 
-		// if kv == buildversion.Version() {
-		// 	updateKOTSBin = kotsutil.GetKOTSBinPath()
-		// } else {
-		// 	kb, err := replicatedapp.DownloadKOTSBinary(license, r.VersionLabel)
-		// 	if err != nil {
-		// 		return nil, errors.Wrap(err, "failed to download kots binary")
-		// 	}
-		// 	updateKOTSBin = kb
-		// }
+		if kv == buildversion.Version() {
+			updateKOTSBin = kotsutil.GetKOTSBinPath()
+		} else {
+			kb, err := replicatedapp.DownloadKOTSBinary(license, r.VersionLabel)
+			if err != nil {
+				return nil, errors.Wrap(err, "failed to download kots binary")
+			}
+			updateKOTSBin = kb
+		}
 	}
 
 	port, err := freeport.GetFreePort()
@@ -273,8 +274,8 @@ func getUpgradeServiceParams(a *apptypes.App, r StartUpgradeServiceRequest, task
 		UpdateAirgapBundle: updateAirgapBundle,
 
 		CurrentKOTSVersion: buildversion.Version(),
-		UpdateKOTSVersion:  buildversion.Version(),
-		UpdateKOTSBin:      kotsutil.GetKOTSBinPath(),
+		UpdateKOTSVersion:  updateKOTSVersion,
+		UpdateKOTSBin:      updateKOTSBin,
 
 		RegistryEndpoint:   registrySettings.Hostname,
 		RegistryUsername:   registrySettings.Username,
