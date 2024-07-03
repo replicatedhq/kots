@@ -1475,7 +1475,6 @@ class AppVersionHistory extends Component<Props, State> {
 
   startUpgraderService = (update: AvailableUpdate) => {
     this.setState({
-      shouldShowUpgradeServiceModal: true,
       upgradeService: {
         versionLabel: update.versionLabel,
         isLoading: true,
@@ -1496,12 +1495,13 @@ class AppVersionHistory extends Component<Props, State> {
       method: "POST",
     })
       .then(async (res) => {
-        this.state.upgradeServiceChecker.start(
-          this.onCheckForUpgradeStatus,
-          1000
-        );
         if (res.ok) {
+          this.state.upgradeServiceChecker.start(
+            this.onCheckForUpgradeStatus,
+            1000
+          );
           this.setState({
+            shouldShowUpgradeServiceModal: true,
             upgradeService: {
               versionLabel: update.versionLabel,
               isLoading: false,
@@ -1513,7 +1513,6 @@ class AppVersionHistory extends Component<Props, State> {
         if (!res.ok) {
           console.log("failed to init upgrade service", text);
           this.setState({
-            shouldShowUpgradeServiceModal: false,
             upgradeService: {
               isLoading: false,
               error: text.error,

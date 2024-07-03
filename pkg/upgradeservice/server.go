@@ -38,10 +38,7 @@ func Serve(params types.UpgradeServiceParams) error {
 	r.Use(handlers.ParamsMiddleware(params))
 
 	handler := &handlers.Handler{}
-	handlers.RegisterRoutes(r, handler)
-
-	// Prevent API requests that don't match anything in this router from returning UI content
-	r.PathPrefix("/api").Handler(handlers.StatusNotFoundHandler{})
+	handlers.RegisterAPIRoutes(r, handler)
 
 	/**********************************************************************
 	* Static routes
@@ -49,7 +46,7 @@ func Serve(params types.UpgradeServiceParams) error {
 
 	if os.Getenv("DISABLE_SPA_SERVING") != "1" { // we don't serve this in the dev env
 		spa := handlers.SPAHandler{}
-		r.PathPrefix("/").Handler(spa)
+		r.PathPrefix("/upgrade-service/app/{appSlug}").Handler(spa)
 	} else if os.Getenv("ENABLE_WEB_PROXY") == "1" { // for dev env
 		u, err := url.Parse("http://kotsadm-web:8080")
 		if err != nil {
@@ -62,7 +59,7 @@ func Serve(params types.UpgradeServiceParams) error {
 				upstream.ServeHTTP(w, r)
 			}
 		}(upstream)
-		r.PathPrefix("/").HandlerFunc(webProxy)
+		r.PathPrefix("/upgrade-service/app/{appSlug}").HandlerFunc(webProxy)
 	}
 
 	srv := &http.Server{

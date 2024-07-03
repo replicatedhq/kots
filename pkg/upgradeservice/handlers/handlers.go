@@ -23,7 +23,7 @@ func init() {
 	veleroscheme.AddToScheme(scheme.Scheme)
 }
 
-func RegisterRoutes(r *mux.Router, handler UpgradeServiceHandler) {
+func RegisterAPIRoutes(r *mux.Router, handler UpgradeServiceHandler) {
 	// CAUTION: modifying this prefix WILL break backwards compatibility
 	subRouter := r.PathPrefix("/api/v1/upgrade-service/app/{appSlug}").Subrouter()
 	subRouter.Use(LoggingMiddleware, AppSlugMiddleware)
