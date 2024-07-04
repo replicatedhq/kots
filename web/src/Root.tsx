@@ -264,8 +264,6 @@ const Root = () => {
           return;
         }
 
-        console.log("received data", JSON.stringify(data));
-
         setState({
           appLogo: data.iconUri,
           appBranding: data.branding,
