@@ -47,83 +47,85 @@ const AvailableUpdatesComponent = ({
       </div>
       {updates && updates.length > 0 ? (
         <div className="tw-flex tw-flex-col tw-gap-2 tw-max-h-[275px] tw-overflow-auto">
-          {updates.map((update, index) => (
-            <div key={index}>
-              <div className="tw-h-10 tw-bg-white tw-p-4 tw-flex tw-justify-between tw-items-center tw-rounded">
-                <div className="flex-column">
-                  <div className="flex alignItems--center">
-                    <p className="u-fontSize--header2 u-fontWeight--bold u-lineHeight--medium card-item-title ">
-                      {update.versionLabel}
-                    </p>
-                    {update.isRequired && (
-                      <span className="status-tag required u-marginLeft--10">
+          {updates.map((update, index) => {
+            const isCurrentVersionLoading =
+              upgradeService?.versionLabel === update.versionLabel &&
+              upgradeService.isLoading;
+            return (
+              <div key={index}>
+                <div className="tw-h-10 tw-bg-white tw-p-4 tw-flex tw-justify-between tw-items-center tw-rounded">
+                  <div className="flex-column">
+                    <div className="flex alignItems--center">
+                      <p className="u-fontSize--header2 u-fontWeight--bold u-lineHeight--medium card-item-title ">
+                        {update.versionLabel}
+                      </p>
+                      {update.isRequired && (
+                        <span className="status-tag required u-marginLeft--10">
+                          {" "}
+                          Required{" "}
+                        </span>
+                      )}
+                    </div>
+                    {update.upstreamReleasedAt && (
+                      <p className="u-fontSize--small u-fontWeight--medium u-textColor--bodyCopy u-marginTop--5">
                         {" "}
-                        Required{" "}
-                      </span>
+                        Released{" "}
+                        <span className="u-fontWeight--bold">
+                          {Utilities.dateFormat(
+                            update.upstreamReleasedAt,
+                            "MM/DD/YY @ hh:mm a z"
+                          )}
+                        </span>
+                      </p>
                     )}
                   </div>
-                  {update.upstreamReleasedAt && (
-                    <p className="u-fontSize--small u-fontWeight--medium u-textColor--bodyCopy u-marginTop--5">
-                      {" "}
-                      Released{" "}
-                      <span className="u-fontWeight--bold">
-                        {Utilities.dateFormat(
-                          update.upstreamReleasedAt,
-                          "MM/DD/YY @ hh:mm a z"
-                        )}
-                      </span>
-                    </p>
-                  )}
-                </div>
-                <div className="flex alignItems--center">
-                  {update?.releaseNotes && (
-                    <>
-                      <Icon
-                        icon="release-notes"
-                        size={24}
-                        onClick={() => showReleaseNotes(update?.releaseNotes)}
-                        data-tip="View release notes"
-                        className="u-marginRight--5 clickable"
-                      />
-                      <ReactTooltip
-                        effect="solid"
-                        className="replicated-tooltip"
-                      />
-                    </>
-                  )}
-                  <button
-                    className={"btn tw-ml-2 primary blue"}
-                    onClick={() => startUpgraderService(update)}
-                    disabled={!update.isDeployable}
-                  >
-                    <span
-                      key={update.nonDeployableCause}
-                      data-tip-disable={update.isDeployable}
-                      data-tip={update.nonDeployableCause}
-                      data-for="disable-deployment-tooltip"
+                  <div className="flex alignItems--center">
+                    {update?.releaseNotes && (
+                      <>
+                        <Icon
+                          icon="release-notes"
+                          size={24}
+                          onClick={() => showReleaseNotes(update?.releaseNotes)}
+                          data-tip="View release notes"
+                          className="u-marginRight--5 clickable"
+                        />
+                        <ReactTooltip
+                          effect="solid"
+                          className="replicated-tooltip"
+                        />
+                      </>
+                    )}
+                    <button
+                      className={"btn tw-ml-2 primary blue"}
+                      onClick={() => startUpgraderService(update)}
+                      disabled={!update.isDeployable || isCurrentVersionLoading}
                     >
-                      {upgradeService?.versionLabel === update.versionLabel &&
-                      upgradeService.isLoading
-                        ? "Preparing..."
-                        : "Deploy"}
-                    </span>
-                  </button>
-                  <ReactTooltip
-                    effect="solid"
-                    id="disable-deployment-tooltip"
-                  />
-                </div>
-              </div>
-              {upgradeService?.error &&
-                upgradeService?.versionLabel === update.versionLabel && (
-                  <div className="tw-my-4">
-                    <span className="u-fontSize--small u-textColor--error u-fontWeight--bold">
-                      {upgradeService.error}
-                    </span>
+                      <span
+                        key={update.nonDeployableCause}
+                        data-tip-disable={update.isDeployable}
+                        data-tip={update.nonDeployableCause}
+                        data-for="disable-deployment-tooltip"
+                      >
+                        {isCurrentVersionLoading ? "Preparing..." : "Deploy"}
+                      </span>
+                    </button>
+                    <ReactTooltip
+                      effect="solid"
+                      id="disable-deployment-tooltip"
+                    />
                   </div>
-                )}
-            </div>
-          ))}
+                </div>
+                {upgradeService?.error &&
+                  upgradeService?.versionLabel === update.versionLabel && (
+                    <div className="tw-my-4">
+                      <span className="u-fontSize--small u-textColor--error u-fontWeight--bold">
+                        {upgradeService.error}
+                      </span>
+                    </div>
+                  )}
+              </div>
+            );
+          })}
         </div>
       ) : (
         <div className="card-item flex-column flex1 u-marginTop--20 u-marginBottom--10 alignItems--center justifyContent--center">

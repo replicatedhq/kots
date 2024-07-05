@@ -67,18 +67,7 @@ const PreflightCheck = ({
   return (
     <div className="flex-column flex1 container">
       <KotsPageTitle pageName="Preflight Checks" showAppSlug />
-      <div className="PreflightChecks--wrapper flex-column u-paddingTop--30 flex1 flex u-overflow--auto">
-        {location.pathname.includes("version-history") && (
-          <div className="u-fontWeight--bold link" onClick={() => navigate(-1)}>
-            <Icon
-              icon="prev-arrow"
-              size={12}
-              className="clickable u-marginRight--10"
-              style={{ verticalAlign: "0" }}
-            />
-            Back
-          </div>
-        )}
+      <div className="PreflightChecks--wrapper flex-column u-paddingTop--30 flex1 flex tw-max-h-[60%]">
         <div
           className={`u-maxWidth--full u-marginTop--20 flex-column u-position--relative card-bg ${
             preflightCheck?.showPreflightCheckPending ? "flex1" : ""

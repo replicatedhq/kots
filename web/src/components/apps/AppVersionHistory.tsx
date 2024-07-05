@@ -1030,6 +1030,7 @@ class AppVersionHistory extends Component<Props, State> {
             this.state.upgradeServiceChecker.stop();
             this.setState({
               isStartingUpgradeService: false,
+              isIframeLoading: true,
             });
             if (response.status === "failed") {
               this.setState({
@@ -2083,7 +2084,7 @@ class AppVersionHistory extends Component<Props, State> {
                           {this.state.isFetchingAvailableUpdates ? (
                             <div className="TableDiff--Wrapper card-bg u-marginBottom--30">
                               <div className="flex-column flex1 alignItems--center justifyContent--center">
-                                <Loader size="60" />
+                                <Loader size="30" />
                               </div>
                             </div>
                           ) : (
@@ -2249,6 +2250,8 @@ class AppVersionHistory extends Component<Props, State> {
           onRequestClose={() =>
             this.setState({ shouldShowUpgradeServiceModal: false })
           }
+          onLoad={() => this.setState({ isIframeLoading: false })}
+          isIframeLoading={this.state.isIframeLoading}
           iframeRef={this.iframeRef}
         />
       </div>
