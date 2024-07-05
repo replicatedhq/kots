@@ -182,8 +182,14 @@ type UpdateCheckRelease struct {
 // if "DeployLatest" is set to true, the latest version will be deployed.
 // otherwise, if "DeployVersionLabel" is set to true, then the version with the corresponding version label will be deployed (if found).
 // otherwise, if "IsAutomatic" is set to true (which means it's an automatic update check), then the version that matches the auto deploy configuration (if enabled) will be deployed.
+// Automatic update checks will not run on embedded clusters.
 // returns the number of available updates.
 func CheckForUpdates(opts CheckForUpdatesOpts) (ucr *UpdateCheckResponse, finalError error) {
+	if opts.IsAutomatic && util.IsEmbeddedCluster() {
+		logger.Debugf("skipping automatic update check for app %s because it's running in an embedded cluster", opts.AppID)
+		return
+	}
+
 	currentStatus, _, err := store.GetTaskStatus("update-download")
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get task status")
