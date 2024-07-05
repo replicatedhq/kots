@@ -163,6 +163,11 @@ func InstallCmd() *cobra.Command {
 
 			upstream := pull.RewriteUpstream(args[0])
 
+			preferredChannelSlug := ""
+			if len(args) > 1 {
+				preferredChannelSlug = args[1]
+			}
+
 			namespace := v.GetString("namespace")
 
 			if namespace == "" {
@@ -252,6 +257,7 @@ func InstallCmd() *cobra.Command {
 
 			deployOptions := kotsadmtypes.DeployOptions{
 				Namespace:              namespace,
+				PreferredChannelSlug:   preferredChannelSlug,
 				Context:                v.GetString("context"),
 				SharedPassword:         sharedPassword,
 				ApplicationMetadata:    applicationMetadata.Manifest,

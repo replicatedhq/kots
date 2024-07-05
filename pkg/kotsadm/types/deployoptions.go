@@ -10,6 +10,7 @@ import (
 
 type DeployOptions struct {
 	Namespace              string
+	PreferredChannelSlug   string
 	Context                string
 	SharedPassword         string
 	SharedPasswordBcrypt   string

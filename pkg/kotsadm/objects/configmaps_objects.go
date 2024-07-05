@@ -12,6 +12,7 @@ import (
 
 func KotsadmConfigMap(deployOptions types.DeployOptions) *corev1.ConfigMap {
 	data := map[string]string{
+		"preferred-channel-slug":    fmt.Sprintf("%v", deployOptions.PreferredChannelSlug),
 		"kots-install-id":           fmt.Sprintf("%v", deployOptions.InstallID),
 		"initial-app-images-pushed": fmt.Sprintf("%v", deployOptions.AppImagesPushed),
 		"skip-preflights":           fmt.Sprintf("%v", deployOptions.SkipPreflights),
