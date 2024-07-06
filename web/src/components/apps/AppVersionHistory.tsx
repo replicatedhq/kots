@@ -252,7 +252,7 @@ class AppVersionHistory extends Component<Props, State> {
       if (this.props.outletContext.updateCallback) {
         this.props.outletContext.updateCallback();
       }
-      this.fetchAvailableUpdates();
+      this.fetchAvailableUpdates(false);
       this.fetchKotsDownstreamHistory();
     }
   };
@@ -330,9 +330,9 @@ class AppVersionHistory extends Component<Props, State> {
     window.removeEventListener("message", this.handleIframeMessage);
   }
 
-  fetchAvailableUpdates = async () => {
+  fetchAvailableUpdates = async (showSpinner = true) => {
     const appSlug = this.props.params.slug;
-    this.setState({ isFetchingAvailableUpdates: true });
+    this.setState({ isFetchingAvailableUpdates: showSpinner });
     const res = await fetch(
       `${process.env.API_ENDPOINT}/app/${appSlug}/updates`,
       {
