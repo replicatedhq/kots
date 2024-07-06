@@ -200,12 +200,12 @@ func createDeployment(opts createDeploymentOptions) error {
 		},
 	}
 
-	err = clientset.CoreV1().ConfigMaps(util.PodNamespace).Delete(context.TODO(), cm.Name, metav1.DeleteOptions{})
+	err = clientset.CoreV1().ConfigMaps(util.PodNamespace).Delete(opts.ctx, cm.Name, metav1.DeleteOptions{})
 	if err != nil && !kuberneteserrors.IsNotFound(err) {
 		return errors.Wrap(err, "failed to delete configmap")
 	}
 
-	_, err = clientset.CoreV1().ConfigMaps(util.PodNamespace).Create(context.TODO(), cm, metav1.CreateOptions{})
+	_, err = clientset.CoreV1().ConfigMaps(util.PodNamespace).Create(opts.ctx, cm, metav1.CreateOptions{})
 	if err != nil {
 		return errors.Wrap(err, "failed to create configmap")
 	}
