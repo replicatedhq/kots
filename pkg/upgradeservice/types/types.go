@@ -5,8 +5,7 @@ import (
 )
 
 type UpgradeServiceParams struct {
-	Port   string `yaml:"port"`
-	TaskID string `yaml:"taskID"`
+	Port string `yaml:"port"`
 
 	AppID       string `yaml:"appId"`
 	AppSlug     string `yaml:"appSlug"`
@@ -16,8 +15,9 @@ type UpgradeServiceParams struct {
 	AppLicense  string `yaml:"appLicense"`
 	AppArchive  string `yaml:"appArchive"`
 
-	BaseSequence int64 `yaml:"baseSequence"`
-	NextSequence int64 `yaml:"nextSequence"`
+	Source       string `yaml:"source"`
+	BaseSequence int64  `yaml:"baseSequence"`
+	NextSequence int64  `yaml:"nextSequence"`
 
 	UpdateVersionLabel string `yaml:"updateVersionLabel"`
 	UpdateCursor       string `yaml:"updateCursor"`

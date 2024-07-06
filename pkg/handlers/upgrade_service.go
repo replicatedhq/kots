@@ -19,6 +19,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/tasks"
 	"github.com/replicatedhq/kots/pkg/update"
 	"github.com/replicatedhq/kots/pkg/upgradeservice"
+	upgradeservicetask "github.com/replicatedhq/kots/pkg/upgradeservice/task"
 	upgradeservicetypes "github.com/replicatedhq/kots/pkg/upgradeservice/types"
 )
 
@@ -89,9 +90,8 @@ func (h *Handler) StartUpgradeService(w http.ResponseWriter, r *http.Request) {
 
 func (h *Handler) GetUpgradeServiceStatus(w http.ResponseWriter, r *http.Request) {
 	appSlug := mux.Vars(r)["appSlug"]
-	taskID := getUpgradeServiceTaskID(appSlug)
 
-	status, message, err := tasks.GetTaskStatus(taskID)
+	status, message, err := upgradeservicetask.GetStatus(appSlug)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		logger.Error(err)
@@ -157,22 +157,23 @@ func canStartUpgradeService(a *apptypes.App, r StartUpgradeServiceRequest) (bool
 }
 
 func startUpgradeService(a *apptypes.App, r StartUpgradeServiceRequest) error {
-	// TODO NOW: move "starting" to types
-	taskID := getUpgradeServiceTaskID(a.Slug)
-	if err := tasks.SetTaskStatus(taskID, "Preparing...", "starting"); err != nil {
-		return errors.Wrap(err, "failed to set task status")
+	if err := upgradeservicetask.SetStatusStarting(a.Slug, "Preparing..."); err != nil {
+		return errors.Wrap(err, "failed to set upgrade service task status")
 	}
 
 	go func() (finalError error) {
 		finishedChan := make(chan error)
 		defer close(finishedChan)
 
-		tasks.StartTaskMonitor(taskID, finishedChan)
+		tasks.StartTaskMonitor(upgradeservicetask.GetID(a.Slug), finishedChan)
 		defer func() {
+			if finalError != nil {
+				logger.Error(finalError)
+			}
 			finishedChan <- finalError
 		}()
 
-		params, err := getUpgradeServiceParams(a, r, taskID)
+		params, err := getUpgradeServiceParams(a, r)
 		if err != nil {
 			return err
 		}
@@ -185,11 +186,7 @@ func startUpgradeService(a *apptypes.App, r StartUpgradeServiceRequest) error {
 	return nil
 }
 
-func getUpgradeServiceTaskID(appSlug string) string {
-	return fmt.Sprintf("upgrade-service-%s", appSlug)
-}
-
-func getUpgradeServiceParams(a *apptypes.App, r StartUpgradeServiceRequest, taskID string) (*upgradeservicetypes.UpgradeServiceParams, error) {
+func getUpgradeServiceParams(a *apptypes.App, r StartUpgradeServiceRequest) (*upgradeservicetypes.UpgradeServiceParams, error) {
 	registrySettings, err := store.GetStore().GetRegistryDetailsForApp(a.ID)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get registry details for app")
@@ -203,6 +200,11 @@ func getUpgradeServiceParams(a *apptypes.App, r StartUpgradeServiceRequest, task
 	nextSequence, err := store.GetStore().GetNextAppSequence(a.ID)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get next app sequence")
+	}
+
+	source := "Upstream Update"
+	if a.IsAirgap {
+		source = "Airgap Update"
 	}
 
 	license, err := kotsutil.LoadLicenseFromBytes([]byte(a.License))
@@ -254,8 +256,7 @@ func getUpgradeServiceParams(a *apptypes.App, r StartUpgradeServiceRequest, task
 	}
 
 	return &upgradeservicetypes.UpgradeServiceParams{
-		Port:   fmt.Sprintf("%d", port),
-		TaskID: taskID,
+		Port: fmt.Sprintf("%d", port),
 
 		AppID:       a.ID,
 		AppSlug:     a.Slug,
@@ -265,6 +266,7 @@ func getUpgradeServiceParams(a *apptypes.App, r StartUpgradeServiceRequest, task
 		AppLicense:  a.License,
 		AppArchive:  baseArchive,
 
+		Source:       source,
 		BaseSequence: baseSequence,
 		NextSequence: nextSequence,
 

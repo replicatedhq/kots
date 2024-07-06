@@ -541,11 +541,6 @@ func (s *KOTSStore) upsertAppVersionStatements(appID string, sequence int64, bas
 		previousArchiveDir = previousDir
 	}
 
-	registrySettings, err := s.GetRegistryDetailsForApp(appID)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to get app registry info")
-	}
-
 	downstreams, err := s.ListDownstreamsForApp(appID)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to list downstreams")
@@ -556,28 +551,9 @@ func (s *KOTSStore) upsertAppVersionStatements(appID string, sequence int64, bas
 	for _, d := range downstreams {
 		// there's a small chance this is not optimal, but no current code path
 		// will support multiple downstreams, so this is cleaner here for now
-		hasStrictPreflights, err := troubleshootpreflight.HasStrictAnalyzers(renderedPreflight)
+		downstreamStatus, err := s.determineDownstreamVersionStatus(a, sequence, baseSequence, kotsKinds, skipPreflights)
 		if err != nil {
-			return nil, errors.Wrap(err, "failed to check strict preflights from spec")
-		}
-		downstreamStatus := types.VersionPending
-		if baseSequence == nil && util.IsEmbeddedCluster() {
-			// embedded clusters always require cluster management on initial install
-			downstreamStatus = types.VersionPendingClusterManagement
-		} else if baseSequence == nil && kotsKinds.IsConfigurable() { // initial version should always require configuration (if exists) even if all required items are already set and have values (except for automated installs, which can override this later)
-			downstreamStatus = types.VersionPendingConfig
-		} else if kotsKinds.HasPreflights() && (!skipPreflights || hasStrictPreflights) {
-			downstreamStatus = types.VersionPendingPreflight
-		}
-		if baseSequence != nil { // only check if the version needs configuration for later versions (not the initial one) since the config is always required for the initial version (except for automated installs, which can override that later)
-			// check if version needs additional configuration
-			t, err := kotsadmconfig.NeedsConfiguration(a.Slug, sequence, a.IsAirgap, kotsKinds, registrySettings)
-			if err != nil {
-				return nil, errors.Wrap(err, "failed to check if version needs configuration")
-			}
-			if t {
-				downstreamStatus = types.VersionPendingConfig
-			}
+			return nil, errors.Wrap(err, "failed to determine downstream version status")
 		}
 
 		diffSummary, diffSummaryError := "", ""
@@ -754,6 +730,43 @@ func (s *KOTSStore) upsertAppVersionRecordStatements(appID string, sequence int6
 	})
 
 	return statements, nil
+}
+
+func (s *KOTSStore) determineDownstreamVersionStatus(a *apptypes.App, sequence int64, baseSequence *int64, kotsKinds *kotsutil.KotsKinds, skipPreflights bool) (types.DownstreamVersionStatus, error) {
+	if util.IsEmbeddedCluster() && baseSequence == nil {
+		// embedded clusters always require cluster management on initial install
+		return types.VersionPendingClusterManagement, nil
+	}
+
+	if kotsKinds.IsConfigurable() && baseSequence == nil {
+		// initial version should always require configuration (if exists) even if all required items are already set and have values (except for automated installs, which can override this later)
+		return types.VersionPendingConfig, nil
+	}
+
+	// only check if the version needs configuration for later versions (not the initial one) since the config is always required for the initial version (except for automated installs, which can override that later)
+	if baseSequence != nil {
+		registrySettings, err := s.GetRegistryDetailsForApp(a.ID)
+		if err != nil {
+			return types.VersionUnknown, errors.Wrap(err, "failed to get app registry info")
+		}
+		needsConfig, err := kotsadmconfig.NeedsConfiguration(a.Slug, sequence, a.IsAirgap, kotsKinds, registrySettings)
+		if err != nil {
+			return types.VersionUnknown, errors.Wrap(err, "failed to check if version needs configuration")
+		}
+		if needsConfig {
+			return types.VersionPendingConfig, nil
+		}
+	}
+
+	hasStrictPreflights, err := troubleshootpreflight.HasStrictAnalyzers(kotsKinds.Preflight)
+	if err != nil {
+		return types.VersionUnknown, errors.Wrap(err, "failed to check strict preflights from spec")
+	}
+	if kotsKinds.HasPreflights() && (!skipPreflights || hasStrictPreflights) {
+		return types.VersionPendingPreflight, nil
+	}
+
+	return types.VersionPending, nil
 }
 
 func (s *KOTSStore) upsertAppDownstreamVersionStatements(appID string, clusterID string, sequence int64, versionLabel string, status types.DownstreamVersionStatus, source string, diffSummary string, diffSummaryError string, commitURL string, gitDeployable bool, preflightsSkipped bool) ([]gorqlite.ParameterizedStatement, error) {

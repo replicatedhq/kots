@@ -1,26 +1,14 @@
 package handlers
 
 import (
-	"context"
 	"encoding/json"
-	"fmt"
 	"net/http"
 
 	"github.com/pkg/errors"
-	"github.com/replicatedhq/kots/pkg/apparchive"
-	"github.com/replicatedhq/kots/pkg/embeddedcluster"
-	"github.com/replicatedhq/kots/pkg/k8sutil"
-	kotsadmtypes "github.com/replicatedhq/kots/pkg/kotsadm/types"
-	kotsadmconfig "github.com/replicatedhq/kots/pkg/kotsadmconfig"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/logger"
 	registrytypes "github.com/replicatedhq/kots/pkg/registry/types"
-	upgradepreflight "github.com/replicatedhq/kots/pkg/upgradeservice/preflight"
-	"github.com/replicatedhq/kots/pkg/upgradeservice/types"
-	"github.com/replicatedhq/kots/pkg/util"
-	corev1 "k8s.io/api/core/v1"
-	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"github.com/replicatedhq/kots/pkg/upgradeservice/deploy"
 )
 
 type DeployAppRequest struct {
@@ -64,7 +52,11 @@ func (h *Handler) DeployApp(w http.ResponseWriter, r *http.Request) {
 		IsReadOnly: params.RegistryIsReadOnly,
 	}
 
-	canDeploy, reason, err := canDeployApp(params, kotsKinds, registrySettings)
+	canDeploy, reason, err := deploy.CanDeployApp(deploy.CanDeployAppOptions{
+		Params:           params,
+		KotsKinds:        kotsKinds,
+		RegistrySettings: registrySettings,
+	})
 	if err != nil {
 		response.Error = "failed to check if app can be deployed"
 		logger.Error(errors.Wrap(err, response.Error))
@@ -78,122 +70,20 @@ func (h *Handler) DeployApp(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	tgzArchiveKey := fmt.Sprintf("pending-deployments/%s/%s-%s.tar.gz", params.AppSlug, params.UpdateChannelID, params.UpdateCursor)
-	if err := apparchive.CreateAppVersionArchive(params.AppArchive, tgzArchiveKey); err != nil {
-		response.Error = "failed to create app version archive"
+	if err := deploy.DeployApp(deploy.DeployAppOptions{
+		Ctx:                          r.Context(),
+		IsSkipPreflights:             request.IsSkipPreflights,
+		ContinueWithFailedPreflights: request.ContinueWithFailedPreflights,
+		Params:                       params,
+		KotsKinds:                    kotsKinds,
+		RegistrySettings:             registrySettings,
+	}); err != nil {
+		response.Error = "failed to deploy app"
 		logger.Error(errors.Wrap(err, response.Error))
 		JSON(w, http.StatusInternalServerError, response)
 		return
 	}
-
-	if err := embeddedcluster.MaybeStartClusterUpgrade(r.Context(), kotsKinds, registrySettings); err != nil {
-		response.Error = "failed to start cluster upgrade"
-		logger.Error(errors.Wrap(err, response.Error))
-		JSON(w, http.StatusInternalServerError, response)
-		return
-	}
-
-	if err := createPendingDeploymentCM(r.Context(), request, params, tgzArchiveKey); err != nil {
-		response.Error = "failed to create app version configmap"
-		logger.Error(errors.Wrap(err, response.Error))
-		JSON(w, http.StatusInternalServerError, response)
-		return
-	}
-
-	// TODO NOW: preflight reporting?
 
 	response.Success = true
 	JSON(w, http.StatusOK, response)
-}
-
-func canDeployApp(params types.UpgradeServiceParams, kotsKinds *kotsutil.KotsKinds, registrySettings registrytypes.RegistrySettings) (bool, string, error) {
-	needsConfig, err := kotsadmconfig.NeedsConfiguration(params.AppSlug, params.NextSequence, params.AppIsAirgap, kotsKinds, registrySettings)
-	if err != nil {
-		return false, "", errors.Wrap(err, "failed to check if version needs configuration")
-	}
-	if needsConfig {
-		return false, "cannot deploy because version needs configuration", nil
-	}
-
-	pd, err := upgradepreflight.GetPreflightData()
-	if err != nil {
-		return false, "", errors.Wrap(err, "failed to get preflight data")
-	}
-	if pd.Result != nil && pd.Result.HasFailingStrictPreflights {
-		return false, "cannot deploy because a strict preflight check has failed", nil
-	}
-
-	return true, "", nil
-}
-
-// createPendingDeploymentCM creates a configmap with the app version info which gets detected by the operator of the new kots version to deploy the app.
-func createPendingDeploymentCM(ctx context.Context, request DeployAppRequest, params types.UpgradeServiceParams, tgzArchiveKey string) error {
-	clientset, err := k8sutil.GetClientset()
-	if err != nil {
-		return errors.Wrap(err, "failed to get clientset")
-	}
-
-	preflightData, err := upgradepreflight.GetPreflightData()
-	if err != nil {
-		return errors.Wrap(err, "failed to get preflight data")
-	}
-
-	preflightResult := ""
-	if preflightData.Result != nil {
-		preflightResult = preflightData.Result.Result
-	}
-
-	source := "Upstream Update"
-	if params.AppIsAirgap {
-		source = "Airgap Update"
-	}
-
-	cm := &corev1.ConfigMap{
-		TypeMeta: metav1.TypeMeta{
-			APIVersion: "v1",
-			Kind:       "ConfigMap",
-		},
-		ObjectMeta: metav1.ObjectMeta{
-			Name: fmt.Sprintf("kotsadm-%s-pending-deployment", params.AppSlug),
-			Labels: map[string]string{
-				// exclude from backup so this app version is not deployed on restore
-				kotsadmtypes.ExcludeKey:      kotsadmtypes.ExcludeValue,
-				"kots.io/pending-deployment": "true",
-			},
-		},
-		Data: map[string]string{
-			"app-id":                          params.AppID,
-			"app-slug":                        params.AppSlug,
-			"app-version-archive":             tgzArchiveKey,
-			"base-sequence":                   fmt.Sprintf("%d", params.BaseSequence),
-			"version-label":                   params.UpdateVersionLabel,
-			"source":                          source,
-			"is-airgap":                       fmt.Sprintf("%t", params.AppIsAirgap),
-			"channel-id":                      params.UpdateChannelID,
-			"update-cursor":                   params.UpdateCursor,
-			"skip-preflights":                 fmt.Sprintf("%t", request.IsSkipPreflights),
-			"continue-with-failed-preflights": fmt.Sprintf("%t", request.ContinueWithFailedPreflights),
-			"preflight-result":                preflightResult,
-			"kots-version":                    params.UpdateKOTSVersion,
-		},
-	}
-
-	_, err = clientset.CoreV1().ConfigMaps(util.PodNamespace).Get(ctx, cm.Name, metav1.GetOptions{})
-	if err != nil {
-		if !kuberneteserrors.IsNotFound(err) {
-			return errors.Wrap(err, "failed to get existing configmap")
-		}
-		_, err = clientset.CoreV1().ConfigMaps(util.PodNamespace).Create(context.TODO(), cm, metav1.CreateOptions{})
-		if err != nil {
-			return errors.Wrap(err, "failed to create configmap")
-		}
-		return nil
-	}
-
-	_, err = clientset.CoreV1().ConfigMaps(util.PodNamespace).Update(context.TODO(), cm, metav1.UpdateOptions{})
-	if err != nil {
-		return errors.Wrap(err, "failed to update configmap")
-	}
-
-	return nil
 }

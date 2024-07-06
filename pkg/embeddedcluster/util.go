@@ -77,6 +77,7 @@ func ListInstallations(ctx context.Context, kbClient kbclient.Client) ([]embedde
 	return installationList.Items, nil
 }
 
+// WaitForInstallation will block until the current installation object reaches a terminal state.
 func WaitForInstallation(ctx context.Context, kbClient kbclient.Client) error {
 	for {
 		select {
@@ -87,17 +88,12 @@ func WaitForInstallation(ctx context.Context, kbClient kbclient.Client) error {
 			if err != nil {
 				return fmt.Errorf("failed to get current installation: %w", err)
 			}
-			if ins.Status.State == embeddedclusterv1beta1.InstallationStateInstalled {
+			switch ins.Status.State {
+			case embeddedclusterv1beta1.InstallationStateInstalled,
+				embeddedclusterv1beta1.InstallationStateObsolete,
+				embeddedclusterv1beta1.InstallationStateFailed,
+				embeddedclusterv1beta1.InstallationStateHelmChartUpdateFailure:
 				return nil
-			}
-			if ins.Status.State == embeddedclusterv1beta1.InstallationStateObsolete {
-				return fmt.Errorf("installation is obsolete")
-			}
-			if ins.Status.State == embeddedclusterv1beta1.InstallationStateFailed {
-				return fmt.Errorf("installation failed: %s", ins.Status.Reason)
-			}
-			if ins.Status.State == embeddedclusterv1beta1.InstallationStateHelmChartUpdateFailure {
-				return fmt.Errorf("helm chart installation failed: %s", ins.Status.Reason)
 			}
 			time.Sleep(5 * time.Second)
 		}

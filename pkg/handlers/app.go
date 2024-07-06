@@ -9,7 +9,6 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
-	embeddedclusterv1beta1 "github.com/replicatedhq/embedded-cluster-kinds/apis/v1beta1"
 	downstreamtypes "github.com/replicatedhq/kots/pkg/api/downstream/types"
 	"github.com/replicatedhq/kots/pkg/api/handlers/types"
 	apptypes "github.com/replicatedhq/kots/pkg/app/types"
@@ -26,6 +25,7 @@ import (
 	storetypes "github.com/replicatedhq/kots/pkg/store/types"
 	"github.com/replicatedhq/kots/pkg/tasks"
 	"github.com/replicatedhq/kots/pkg/update"
+	upgradeservicedeploy "github.com/replicatedhq/kots/pkg/upgradeservice/deploy"
 	"github.com/replicatedhq/kots/pkg/util"
 	"github.com/replicatedhq/kots/pkg/version"
 	kotsv1beta1 "github.com/replicatedhq/kotskinds/apis/kots/v1beta1"
@@ -115,7 +115,7 @@ func (h *Handler) ListApps(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 
-		responseApp, err := responseAppFromApp(a)
+		responseApp, err := responseAppFromApp(r.Context(), a)
 		if err != nil {
 			logger.Error(err)
 			w.WriteHeader(http.StatusInternalServerError)
@@ -161,7 +161,7 @@ func (h *Handler) GetApp(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
-	responseApp, err := responseAppFromApp(a)
+	responseApp, err := responseAppFromApp(r.Context(), a)
 	if err != nil {
 		logger.Error(err)
 		w.WriteHeader(http.StatusInternalServerError)
@@ -171,7 +171,7 @@ func (h *Handler) GetApp(w http.ResponseWriter, r *http.Request) {
 	JSON(w, http.StatusOK, responseApp)
 }
 
-func responseAppFromApp(a *apptypes.App) (*types.ResponseApp, error) {
+func responseAppFromApp(ctx context.Context, a *apptypes.App) (*types.ResponseApp, error) {
 	license, err := store.GetStore().GetLatestLicenseForApp(a.ID)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get license")
@@ -280,38 +280,22 @@ func responseAppFromApp(a *apptypes.App) (*types.ResponseApp, error) {
 	}
 
 	if util.IsEmbeddedCluster() {
-		var embeddedClusterConfig *embeddedclusterv1beta1.Config
-		if appVersions.CurrentVersion != nil {
-			embeddedClusterConfig, err = store.GetStore().GetEmbeddedClusterConfigForVersion(a.ID, appVersions.CurrentVersion.Sequence)
-			if err != nil {
-				return nil, errors.Wrap(err, "failed to get embedded cluster config")
-			}
+		isUpgrading, err := upgradeservicedeploy.IsClusterUpgrading(ctx, a.Slug)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to check if cluster is upgrading")
 		}
+		cluster.IsUpgrading = isUpgrading
 
-		if embeddedClusterConfig != nil {
-			kbClient, err := k8sutil.GetKubeClient(context.TODO())
-			if err != nil {
-				return nil, fmt.Errorf("failed to get kubeclient: %w", err)
-			}
-
-			cluster.RequiresUpgrade, err = embeddedcluster.RequiresUpgrade(context.TODO(), kbClient, embeddedClusterConfig.Spec)
-			if err != nil {
-				return nil, errors.Wrap(err, "failed to check if cluster requires upgrade")
-			}
-
-			embeddedClusterInstallations, err := embeddedcluster.ListInstallations(context.TODO(), kbClient)
-			if err != nil {
-				return nil, errors.Wrap(err, "failed to list installations")
-			}
-			cluster.NumInstallations = len(embeddedClusterInstallations)
-
-			currentInstallation, err := embeddedcluster.GetCurrentInstallation(context.TODO(), kbClient)
-			if err != nil {
-				return nil, errors.Wrap(err, "failed to get latest installation")
-			}
-			if currentInstallation != nil {
-				cluster.State = string(currentInstallation.Status.State)
-			}
+		kbClient, err := k8sutil.GetKubeClient(ctx)
+		if err != nil {
+			return nil, fmt.Errorf("failed to get kubeclient: %w", err)
+		}
+		currentInstallation, err := embeddedcluster.GetCurrentInstallation(ctx, kbClient)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to get latest installation")
+		}
+		if currentInstallation != nil {
+			cluster.State = string(currentInstallation.Status.State)
 		}
 	}
 

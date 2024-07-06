@@ -89,7 +89,8 @@ type State = {
   appSlugFromMetadata: string | null;
   adminConsoleMetadata: Metadata | null;
   connectionTerminated: boolean;
-  shouldShowClusterUpgradeModal: boolean;
+  showClusterUpgradeModal: boolean;
+  clusterState: string;
   errLoggingOut: string;
   featureFlags: object;
   fetchingMetadata: boolean;
@@ -98,7 +99,6 @@ type State = {
   snapshotInProgressApps: string[];
   isEmbeddedClusterWaitingForNodes: boolean;
   themeState: ThemeState;
-  shouldShowUpgradeServiceModal: boolean;
 };
 
 let interval: ReturnType<typeof setInterval> | undefined;
@@ -117,7 +117,8 @@ const Root = () => {
       appNameSpace: null,
       adminConsoleMetadata: null,
       connectionTerminated: false,
-      shouldShowClusterUpgradeModal: false,
+      showClusterUpgradeModal: false,
+      clusterState: "",
       errLoggingOut: "",
       featureFlags: {},
       fetchingMetadata: false,
@@ -131,7 +132,6 @@ const Root = () => {
         navbarLogo: null,
       },
       app: null,
-      shouldShowUpgradeServiceModal: false,
     }
   );
 
@@ -237,6 +237,8 @@ const Root = () => {
       const apps = response.apps;
       setState({
         appsList: apps,
+        showClusterUpgradeModal: Utilities.shouldShowClusterUpgradeModal(apps),
+        clusterState: Utilities.getClusterState(apps),
       });
       return apps;
     } catch (err) {
@@ -687,14 +689,9 @@ const Root = () => {
                     isEmbeddedCluster={Boolean(
                       state.adminConsoleMetadata?.isEmbeddedCluster
                     )}
-                    setShouldShowClusterUpgradeModal={(
-                      shouldShowClusterUpgradeModal: boolean
-                    ) => {
-                      setState({
-                        shouldShowClusterUpgradeModal:
-                          shouldShowClusterUpgradeModal,
-                      });
-                    }}
+                    showClusterUpgradeModal={
+                      state.showClusterUpgradeModal
+                    }
                   />
                 }
               />
@@ -712,13 +709,9 @@ const Root = () => {
                     isEmbeddedCluster={Boolean(
                       state.adminConsoleMetadata?.isEmbeddedCluster
                     )}
-                    setShouldShowClusterUpgradeModal={(
-                      showUpgradeModal: boolean
-                    ) => {
-                      setState({
-                        shouldShowClusterUpgradeModal: showUpgradeModal,
-                      });
-                    }}
+                    showClusterUpgradeModal={
+                      state.showClusterUpgradeModal
+                    }
                   />
                 }
               >
@@ -871,14 +864,14 @@ const Root = () => {
         </ToastProvider>
       </ThemeContext.Provider>
       <Modal
-        isOpen={state.connectionTerminated}
+        isOpen={state.connectionTerminated || state.showClusterUpgradeModal}
         onRequestClose={undefined}
         shouldReturnFocusAfterClose={false}
         contentLabel="Connection terminated modal"
         ariaHideApp={false}
         className="ConnectionTerminated--wrapper Modal DefaultSize"
       >
-        {!state.shouldShowClusterUpgradeModal && (
+        {!state.showClusterUpgradeModal ? (
           <ConnectionTerminated
             connectionTerminated={state.connectionTerminated}
             appLogo={state.appLogo}
@@ -886,25 +879,16 @@ const Root = () => {
               setState({ connectionTerminated: status })
             }
           />
-        )}
-        {state.shouldShowClusterUpgradeModal && (
+        ) : (
           <EmbeddedClusterUpgrading
+            refetchAppsList={getAppsList}
+            clusterState={state.clusterState}
+            connectionTerminated={state.connectionTerminated}
             setTerminatedState={(status: boolean) =>
               setState({ connectionTerminated: status })
             }
           />
         )}
-      </Modal>
-      <Modal
-        isOpen={state.shouldShowUpgradeServiceModal}
-        onRequestClose={() => {
-          setState({ shouldShowUpgradeServiceModal: false });
-        }}
-        contentLabel="KOTS Upgrade Service Modal"
-        ariaHideApp={false}
-        className="Modal LargeSize"
-      >
-        <iframe src="/upgrade-service" title="KOTS Upgrade Service" />
       </Modal>
     </QueryClientProvider>
   );

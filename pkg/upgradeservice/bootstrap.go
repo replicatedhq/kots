@@ -14,7 +14,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/pull"
 	registrytypes "github.com/replicatedhq/kots/pkg/registry/types"
-	"github.com/replicatedhq/kots/pkg/tasks"
+	"github.com/replicatedhq/kots/pkg/upgradeservice/task"
 	"github.com/replicatedhq/kots/pkg/upgradeservice/types"
 	"github.com/replicatedhq/kots/pkg/util"
 )
@@ -97,7 +97,7 @@ func pullArchive(params types.UpgradeServiceParams, pullOptions pull.PullOptions
 	go func() {
 		scanner := bufio.NewScanner(pipeReader)
 		for scanner.Scan() {
-			if err := tasks.SetTaskStatus(params.TaskID, scanner.Text(), "starting"); err != nil {
+			if err := task.SetStatusStarting(params.AppSlug, scanner.Text()); err != nil {
 				logger.Error(err)
 			}
 		}
