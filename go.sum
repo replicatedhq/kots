@@ -1311,8 +1311,8 @@ github.com/redis/go-redis/v9 v9.0.5/go.mod h1:WqMKv5vnQbRuZstUwxQI195wHy+t4PuXDO
 github.com/redis/go-redis/v9 v9.5.1 h1:H1X4D3yHPaYrkL5X06Wh6xNVM/pX0Ft4RV0vMGvLBh8=
 github.com/redis/go-redis/v9 v9.5.1/go.mod h1:hdY0cQFCN4fnSYT6TkisLufl/4W5UIXyv0b/CLO2V2M=
 github.com/remyoudompheng/bigfft v0.0.0-20170806203942-52369c62f446/go.mod h1:uYEyJGbgTkfkS4+E/PavXkNJcbFIpEtjt2B0KDQ5+9M=
-github.com/replicatedhq/embedded-cluster-kinds v1.3.11 h1:mYQcqd97xWTLTQnfp0mdufVoj9py3ldOUj/chk4gb+4=
-github.com/replicatedhq/embedded-cluster-kinds v1.3.11/go.mod h1:AwopUvvGcaWO4mn9DkbPj5RnLuOy756CNLrcaAlmjMo=
+github.com/replicatedhq/embedded-cluster-kinds v1.4.4 h1:Nn3MdxadXByeIDER9GulOJKvYhAIogDnWzHM5mWeozk=
+github.com/replicatedhq/embedded-cluster-kinds v1.4.4/go.mod h1:AwopUvvGcaWO4mn9DkbPj5RnLuOy756CNLrcaAlmjMo=
 github.com/replicatedhq/kotskinds v0.0.0-20240621084729-1eb1e3eac6f2 h1:xL4u2RHhMaGDgz7Lol5MhVYLnWahV3sCJZbfebpPao0=
 github.com/replicatedhq/kotskinds v0.0.0-20240621084729-1eb1e3eac6f2/go.mod h1:QjhIUu3+OmHZ09u09j3FCoTt8F3BYtQglS+OLmftu9I=
 github.com/replicatedhq/kurlkinds v1.5.0 h1:zZ0PKNeh4kXvSzVGkn62DKTo314GxhXg1TSB3azURMc=
