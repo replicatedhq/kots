@@ -71,6 +71,7 @@ func (h SPAHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// otherwise, use http.FileServer to serve the static dir
+	// TODO: set public path to go through the upgrade service
 	http.FileServer(http.FS(fsys)).ServeHTTP(w, rr)
 }
 

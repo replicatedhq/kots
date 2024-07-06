@@ -101,7 +101,7 @@ func (o *Operator) Start() error {
 
 	go o.resumeInformers()
 	go o.resumeDeployments()
-	o.watchPendingDeployments()
+	o.watchDeployments()
 	startLoop(o.restoreLoop, 2)
 
 	return nil
@@ -901,14 +901,17 @@ func (o *Operator) renderKotsApplicationSpec(app *apptypes.App, sequence int64, 
 	return renderedKotsAppSpec, nil
 }
 
-func (o *Operator) watchPendingDeployments() {
+func (o *Operator) watchDeployments() {
 	factory := informers.NewSharedInformerFactoryWithOptions(
 		o.k8sClientset,
 		0,
 		informers.WithNamespace(util.PodNamespace),
 		informers.WithTweakListOptions(func(options *metav1.ListOptions) {
 			options.LabelSelector = labels.SelectorFromSet(
-				labels.Set{"kots.io/pending-deployment": "true"},
+				labels.Set{
+					"kots.io/deployment": "true",
+					"kots.io/processed":  "false",
+				},
 			).String()
 		}),
 	)
@@ -917,14 +920,8 @@ func (o *Operator) watchPendingDeployments() {
 	cmInformer.AddEventHandler(cache.ResourceEventHandlerFuncs{
 		AddFunc: func(obj interface{}) {
 			cm := obj.(*corev1.ConfigMap)
-			if err := o.reconcilePendingDeployment(cm); err != nil {
-				logger.Error(errors.Wrapf(err, "failed to reconcile pending deployment in (%s) configmap", cm.Name))
-			}
-		},
-		UpdateFunc: func(oldObj, newObj interface{}) {
-			cm := newObj.(*corev1.ConfigMap)
-			if err := o.reconcilePendingDeployment(cm); err != nil {
-				logger.Error(errors.Wrapf(err, "failed to reconcile pending deployment in (%s) configmap", cm.Name))
+			if err := o.reconcileDeployment(cm); err != nil {
+				logger.Error(errors.Wrapf(err, "failed to reconcile deployment in (%s) configmap", cm.Name))
 			}
 		},
 	})
@@ -932,30 +929,38 @@ func (o *Operator) watchPendingDeployments() {
 	go cmInformer.Run(context.Background().Done())
 }
 
-func (o *Operator) reconcilePendingDeployment(cm *corev1.ConfigMap) error {
+func (o *Operator) reconcileDeployment(cm *corev1.ConfigMap) error {
 	// CAUTION: changes to the kots version field can break backwards compatibility
 	kotsVersion := cm.Data["kots-version"]
 	if kotsVersion == "" {
-		return errors.New("kots version not found in pending deployment configmap")
+		return errors.New("kots version not found in deployment configmap")
 	}
 	if kotsVersion != buildversion.Version() {
-		logger.Infof("pending deployment has kots version (%s) which does not match current kots version (%s). will not reconcile...", kotsVersion, buildversion.Version())
+		logger.Infof("deployment has kots version (%s) which does not match current kots version (%s). will not reconcile...", kotsVersion, buildversion.Version())
 		return nil
 	}
 
-	logger.Infof("reconciling pending deployment (%s) for app (%s)", cm.Data["version-label"], cm.Data["app-slug"])
+	logger.Infof("reconciling deployment (%s) for app (%s)", cm.Data["version-label"], cm.Data["app-slug"])
 
-	if util.IsEmbeddedCluster() {
-		logger.Infof("waiting for embedded cluster installation to complete")
-
+	if cm.Data["requires-cluster-upgrade"] == "true" {
 		kbClient, err := k8sutil.GetKubeClient(context.Background())
 		if err != nil {
 			return errors.Wrap(err, "failed to get kube client")
 		}
+		logger.Infof("waiting for cluster upgrade to finish")
 		if err := embeddedcluster.WaitForInstallation(context.Background(), kbClient); err != nil {
 			return errors.Wrap(err, "failed to wait for embedded cluster installation")
 		}
 	}
+
+	// ensure deployment gets processed once
+	defer func() {
+		cm.Labels["kots.io/processed"] = "true"
+		_, err := o.k8sClientset.CoreV1().ConfigMaps(cm.Namespace).Update(context.Background(), cm, metav1.UpdateOptions{})
+		if err != nil {
+			logger.Error(errors.Wrap(err, "failed to update configmap"))
+		}
+	}()
 
 	appID := cm.Data["app-id"]
 	source := cm.Data["source"]
@@ -986,13 +991,7 @@ func (o *Operator) reconcilePendingDeployment(cm *corev1.ConfigMap) error {
 		return errors.Wrap(err, "failed to extract app archive")
 	}
 
-	// delete configmap to indicate that it's been processed
-	err = o.k8sClientset.CoreV1().ConfigMaps(util.PodNamespace).Delete(context.Background(), cm.Name, metav1.DeleteOptions{})
-	if err != nil && !kuberneteserrors.IsNotFound(err) {
-		return errors.Wrap(err, "failed to delete configmap")
-	}
-
-	sequence, err := store.GetStore().CreateAppVersion(appID, &baseSequence, archiveDir, source, skipPreflights, render.Renderer{})
+	sequence, err := o.store.CreateAppVersion(appID, &baseSequence, archiveDir, source, skipPreflights, render.Renderer{})
 	if err != nil {
 		return errors.Wrap(err, "failed to create app version")
 	}
@@ -1004,26 +1003,24 @@ func (o *Operator) reconcilePendingDeployment(cm *corev1.ConfigMap) error {
 	}
 
 	if err := filestore.GetStore().DeleteArchive(cm.Data["app-version-archive"]); err != nil {
-		return errors.Wrap(err, "failed to delete pending deployment archive")
+		return errors.Wrap(err, "failed to delete deployment archive")
 	}
 
 	if pr := cm.Data["preflight-result"]; pr != "" {
-		if err := store.GetStore().SetPreflightResults(appID, sequence, []byte(pr)); err != nil {
+		if err := o.store.SetPreflightResults(appID, sequence, []byte(pr)); err != nil {
 			return errors.Wrap(err, "failed to set preflight results")
 		}
 	}
 
-	if err := store.GetStore().SetAppChannelChanged(appID, false); err != nil {
+	if err := o.store.SetAppChannelChanged(appID, false); err != nil {
 		return errors.Wrap(err, "failed to reset channel changed flag")
 	}
 
-	if err := store.GetStore().MarkAsCurrentDownstreamVersion(appID, sequence); err != nil {
+	if err := o.store.MarkAsCurrentDownstreamVersion(appID, sequence); err != nil {
 		return errors.Wrap(err, "failed to mark as current downstream version")
 	}
 
-	if _, err := o.DeployApp(appID, sequence); err != nil {
-		return errors.Wrap(err, "failed to deploy app")
-	}
+	go o.DeployApp(appID, sequence)
 
 	return nil
 }

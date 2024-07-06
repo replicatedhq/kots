@@ -44,7 +44,7 @@ const ConfirmAndDeploy = ({
   ] = useState(false);
 
   const closeModal = async () => {
-    window.parent.postMessage({ message: "closeUpgradeModal" });
+    window.parent.postMessage({ message: "closeUpgradeServiceModal" });
   };
 
   const { sequence = "0", slug } = useParams<keyof KotsParams>() as KotsParams;

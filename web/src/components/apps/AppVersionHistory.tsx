@@ -247,9 +247,13 @@ class AppVersionHistory extends Component<Props, State> {
   _mounted: boolean | undefined;
 
   handleIframeMessage = (event) => {
-    if (event.data.message === "closeUpgradeModal") {
+    if (event.data.message === "closeUpgradeServiceModal") {
       this.setState({ shouldShowUpgradeServiceModal: false });
-      this.props.navigate(`/app/${this.props.params.slug}`);
+      if (this.props.outletContext.updateCallback) {
+        this.props.outletContext.updateCallback();
+      }
+      this.fetchAvailableUpdates();
+      this.fetchKotsDownstreamHistory();
     }
   };
 
@@ -317,6 +321,7 @@ class AppVersionHistory extends Component<Props, State> {
 
   componentWillUnmount() {
     this.state.appUpdateChecker.stop();
+    this.state.upgradeServiceChecker.stop();
     this.state.versionHistoryJob.stop();
     for (const j in this.versionDownloadStatusJobs) {
       this.versionDownloadStatusJobs[j].stop();
@@ -1514,22 +1519,8 @@ class AppVersionHistory extends Component<Props, State> {
       method: "POST",
     })
       .then(async (res) => {
-        if (res.ok) {
-          this.state.upgradeServiceChecker.start(
-            this.onCheckForUpgradeServiceStatus,
-            1000
-          );
-          this.setState({
-            shouldShowUpgradeServiceModal: true,
-            upgradeService: {
-              versionLabel: update.versionLabel,
-              isLoading: false,
-            },
-          });
-          return;
-        }
-        const text = await res.json();
         if (!res.ok) {
+          const text = await res.json();
           console.log("failed to init upgrade service", text);
           this.setState({
             upgradeService: {
@@ -1538,7 +1529,20 @@ class AppVersionHistory extends Component<Props, State> {
               versionLabel: update.versionLabel,
             },
           });
+          return;
         }
+        this.state.upgradeServiceChecker.start(
+          this.onCheckForUpgradeServiceStatus,
+          1000
+        );
+        this.setState({
+          shouldShowUpgradeServiceModal: true,
+          upgradeService: {
+            versionLabel: update.versionLabel,
+            isLoading: false,
+          },
+        });
+        return;
       })
       .catch((err) => {
         console.log(err);
