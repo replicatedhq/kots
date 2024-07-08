@@ -28,6 +28,7 @@ func RegisterAPIRoutes(r *mux.Router, handler UpgradeServiceHandler) {
 	subRouter := r.PathPrefix("/api/v1/upgrade-service/app/{appSlug}").Subrouter()
 	subRouter.Use(LoggingMiddleware, AppSlugMiddleware)
 
+	subRouter.Path("").Methods("GET").HandlerFunc(handler.GetApp)
 	subRouter.Path("/ping").Methods("GET").HandlerFunc(handler.Ping)
 
 	subRouter.Path("/config").Methods("GET").HandlerFunc(handler.CurrentAppConfig)
