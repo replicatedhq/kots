@@ -1531,8 +1531,8 @@ func SaveInstallation(installation *kotsv1beta1.Installation, upstreamDir string
 	return nil
 }
 
-func GetKotsVersionFromBinary(kotsBin string) (string, error) {
-	output, err := exec.Command(kotsBin, "version", "-ojson").Output()
+func GetKOTSVersionFromBinary(kotsBin string) (string, error) {
+	output, err := exec.Command(kotsBin, "version", "--skip-checks", "-ojson").Output()
 	if err != nil {
 		return "", errors.Wrap(err, "failed to get kots version")
 	}

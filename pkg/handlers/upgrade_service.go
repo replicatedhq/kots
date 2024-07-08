@@ -227,7 +227,7 @@ func getUpgradeServiceParams(a *apptypes.App, r StartUpgradeServiceRequest) (*up
 			return nil, errors.Wrap(err, "failed to get kots binary from airgap bundle")
 		}
 		updateKOTSBin = kb
-		kv, err := kotsutil.GetKotsVersionFromBinary(kb)
+		kv, err := kotsutil.GetKOTSVersionFromBinary(kb)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to get kots version from binary")
 		}
