@@ -280,7 +280,7 @@ const ConfirmAndDeploy = ({
                   })
             }
           >
-            {isLoading ? "Deploying" : "Deploy"}
+            {isLoading ? "Deploying..." : "Deploy"}
           </button>
         </div>
       </div>

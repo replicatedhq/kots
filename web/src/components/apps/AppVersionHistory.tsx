@@ -107,6 +107,7 @@ type State = {
   errorMsg: string;
   errorTitle: string;
   firstSequence: Number | string;
+  isIframeLoading: boolean;
   isFetchingAvailableUpdates: boolean;
   isStartingUpgradeService: boolean;
   isSkipPreflights: boolean;
@@ -189,6 +190,7 @@ class AppVersionHistory extends Component<Props, State> {
       errorMsg: "",
       errorTitle: "",
       firstSequence: 0,
+      isIframeLoading: false,
       isFetchingAvailableUpdates: false,
       isStartingUpgradeService: false,
       isSkipPreflights: false,

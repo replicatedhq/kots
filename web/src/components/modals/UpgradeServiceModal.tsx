@@ -21,7 +21,7 @@ const UpgradeServiceModal = ({
       className="Modal UpgradeServiceModal"
       shouldCloseOnOverlayClick={false}
     >
-      <div className="tw-h-full tw-flex">
+      <div className="tw-h-full tw-flex tw-relative">
         <button
           style={{
             border: "none",
@@ -40,7 +40,7 @@ const UpgradeServiceModal = ({
         ) : (
           <>
             {isIframeLoading && (
-              <div className="tw-w-full flex-column flex1 alignItems--center justifyContent--center tw-gap-4">
+              <div className="tw-absolute tw-top-[45%] tw-w-full flex-column flex1 alignItems--center justifyContent--center tw-gap-4">
                 <span className="u-fontWeight--bold">Loading...</span>
                 <Loader size="60" />
               </div>
@@ -55,6 +55,7 @@ const UpgradeServiceModal = ({
               id="upgrade-service-iframe"
               ref={iframeRef}
               onLoad={onLoad}
+              style={{ visibility: isIframeLoading ? "hidden" : "visible" }}
             />
           </>
         )}
