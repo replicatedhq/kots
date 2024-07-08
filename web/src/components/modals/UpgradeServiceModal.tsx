@@ -9,6 +9,8 @@ const UpgradeServiceModal = ({
   upgradeServiceStatus,
   appSlug,
   iframeRef,
+  onLoad,
+  isIframeLoading,
 }) => {
   return (
     <Modal
@@ -19,7 +21,7 @@ const UpgradeServiceModal = ({
       className="Modal UpgradeServiceModal"
       shouldCloseOnOverlayClick={false}
     >
-      <div className="tw-h-full tw-flex">
+      <div className="tw-h-full tw-flex tw-relative">
         <button
           style={{
             border: "none",
@@ -36,15 +38,26 @@ const UpgradeServiceModal = ({
             <Loader size="60" />
           </div>
         ) : (
-          <iframe
-            src={`/upgrade-service/app/${appSlug}`}
-            title="KOTS Upgrade Service"
-            width="100%"
-            height="100%"
-            allowFullScreen={true}
-            id="upgrade-service-iframe"
-            ref={iframeRef}
-          />
+          <>
+            {isIframeLoading && (
+              <div className="tw-absolute tw-top-[46%] tw-w-full flex-column flex1 alignItems--center justifyContent--center tw-gap-4">
+                <span className="u-fontWeight--bold">Almost done...</span>
+                <Loader size="60" />
+              </div>
+            )}
+
+            <iframe
+              src={`/upgrade-service/app/${appSlug}`}
+              title="KOTS Upgrade Service"
+              width="100%"
+              height="100%"
+              allowFullScreen={true}
+              id="upgrade-service-iframe"
+              ref={iframeRef}
+              onLoad={onLoad}
+              style={{ visibility: isIframeLoading ? "hidden" : "visible" }}
+            />
+          </>
         )}
       </div>
     </Modal>

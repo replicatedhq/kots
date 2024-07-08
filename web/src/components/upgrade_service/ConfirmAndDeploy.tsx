@@ -48,7 +48,7 @@ const ConfirmAndDeploy = ({
   };
 
   const { sequence = "0", slug } = useParams<keyof KotsParams>() as KotsParams;
-  const { mutate: deployKotsDownstream } = useDeployAppVersion({
+  const { mutate: deployKotsDownstream, isLoading } = useDeployAppVersion({
     slug,
     sequence,
     closeModal,
@@ -271,7 +271,7 @@ const ConfirmAndDeploy = ({
           </button>
           <button
             className="btn primary blue"
-            disabled={preflightCheck?.showDeploymentBlocked}
+            disabled={preflightCheck?.showDeploymentBlocked || isLoading}
             onClick={() =>
               preflightCheck?.shouldShowConfirmContinueWithFailedPreflights
                 ? setShowContinueWithFailedPreflightsModal(true)
@@ -280,7 +280,7 @@ const ConfirmAndDeploy = ({
                   })
             }
           >
-            Deploy
+            {isLoading ? "Deploying..." : "Deploy"}
           </button>
         </div>
       </div>
