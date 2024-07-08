@@ -11,24 +11,24 @@ import (
 	"github.com/replicatedhq/kots/pkg/upgradeservice/deploy"
 )
 
-type DeployAppRequest struct {
+type DeployRequest struct {
 	IsSkipPreflights             bool `json:"isSkipPreflights"`
 	ContinueWithFailedPreflights bool `json:"continueWithFailedPreflights"`
 }
 
-type DeployAppResponse struct {
+type DeployResponse struct {
 	Success bool   `json:"success"`
 	Error   string `json:"error,omitempty"`
 }
 
-func (h *Handler) DeployApp(w http.ResponseWriter, r *http.Request) {
-	response := DeployAppResponse{
+func (h *Handler) Deploy(w http.ResponseWriter, r *http.Request) {
+	response := DeployResponse{
 		Success: false,
 	}
 
 	params := GetContextParams(r)
 
-	request := DeployAppRequest{}
+	request := DeployRequest{}
 	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
 		response.Error = "failed to decode request body"
 		logger.Error(errors.Wrap(err, response.Error))
@@ -52,7 +52,7 @@ func (h *Handler) DeployApp(w http.ResponseWriter, r *http.Request) {
 		IsReadOnly: params.RegistryIsReadOnly,
 	}
 
-	canDeploy, reason, err := deploy.CanDeployApp(deploy.CanDeployAppOptions{
+	canDeploy, reason, err := deploy.CanDeploy(deploy.CanDeployOptions{
 		Params:           params,
 		KotsKinds:        kotsKinds,
 		RegistrySettings: registrySettings,
@@ -70,7 +70,7 @@ func (h *Handler) DeployApp(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := deploy.DeployApp(deploy.DeployAppOptions{
+	if err := deploy.Deploy(deploy.DeployOptions{
 		Ctx:                          r.Context(),
 		IsSkipPreflights:             request.IsSkipPreflights,
 		ContinueWithFailedPreflights: request.ContinueWithFailedPreflights,

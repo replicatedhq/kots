@@ -28,18 +28,18 @@ func RegisterAPIRoutes(r *mux.Router, handler UpgradeServiceHandler) {
 	subRouter := r.PathPrefix("/api/v1/upgrade-service/app/{appSlug}").Subrouter()
 	subRouter.Use(LoggingMiddleware, AppSlugMiddleware)
 
-	subRouter.Path("").Methods("GET").HandlerFunc(handler.GetApp)
+	subRouter.Path("").Methods("GET").HandlerFunc(handler.Info)
 	subRouter.Path("/ping").Methods("GET").HandlerFunc(handler.Ping)
 
-	subRouter.Path("/config").Methods("GET").HandlerFunc(handler.CurrentAppConfig)
-	subRouter.Path("/liveconfig").Methods("POST").HandlerFunc(handler.LiveAppConfig)
-	subRouter.Path("/config").Methods("PUT").HandlerFunc(handler.SaveAppConfig)
+	subRouter.Path("/config").Methods("GET").HandlerFunc(handler.CurrentConfig)
+	subRouter.Path("/liveconfig").Methods("POST").HandlerFunc(handler.LiveConfig)
+	subRouter.Path("/config").Methods("PUT").HandlerFunc(handler.SaveConfig)
 	subRouter.Path("/config/{filename}/download").Methods("GET").HandlerFunc(handler.DownloadFileFromConfig)
 
 	subRouter.Path("/preflight/run").Methods("POST").HandlerFunc(handler.StartPreflightChecks)
 	subRouter.Path("/preflight/result").Methods("GET").HandlerFunc(handler.GetPreflightResult)
 
-	subRouter.Path("/deploy").Methods("POST").HandlerFunc(handler.DeployApp)
+	subRouter.Path("/deploy").Methods("POST").HandlerFunc(handler.Deploy)
 }
 
 func JSON(w http.ResponseWriter, code int, payload interface{}) {

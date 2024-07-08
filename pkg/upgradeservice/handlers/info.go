@@ -8,7 +8,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/logger"
 )
 
-type GetAppResponse struct {
+type InfoResponse struct {
 	Success        bool   `json:"success"`
 	Error          string `json:"error,omitempty"`
 	KOTSVersion    string `json:"kotsVersion"`
@@ -16,8 +16,8 @@ type GetAppResponse struct {
 	IsConfigurable bool   `json:"isConfigurable"`
 }
 
-func (h *Handler) GetApp(w http.ResponseWriter, r *http.Request) {
-	response := GetAppResponse{
+func (h *Handler) Info(w http.ResponseWriter, r *http.Request) {
+	response := InfoResponse{
 		Success: false,
 	}
 

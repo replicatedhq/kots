@@ -3,16 +3,16 @@ package handlers
 import "net/http"
 
 type UpgradeServiceHandler interface {
-	GetApp(w http.ResponseWriter, r *http.Request)
+	Info(w http.ResponseWriter, r *http.Request)
 	Ping(w http.ResponseWriter, r *http.Request)
 
-	CurrentAppConfig(w http.ResponseWriter, r *http.Request)
-	LiveAppConfig(w http.ResponseWriter, r *http.Request)
-	SaveAppConfig(w http.ResponseWriter, r *http.Request)
+	CurrentConfig(w http.ResponseWriter, r *http.Request)
+	LiveConfig(w http.ResponseWriter, r *http.Request)
+	SaveConfig(w http.ResponseWriter, r *http.Request)
 	DownloadFileFromConfig(w http.ResponseWriter, r *http.Request)
 
 	StartPreflightChecks(w http.ResponseWriter, r *http.Request)
 	GetPreflightResult(w http.ResponseWriter, r *http.Request)
 
-	DeployApp(w http.ResponseWriter, r *http.Request)
+	Deploy(w http.ResponseWriter, r *http.Request)
 }

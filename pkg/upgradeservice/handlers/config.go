@@ -31,29 +31,29 @@ import (
 	"github.com/replicatedhq/kotskinds/multitype"
 )
 
-type CurrentAppConfigResponse struct {
+type CurrentConfigResponse struct {
 	Success          bool                                     `json:"success"`
 	Error            string                                   `json:"error,omitempty"`
 	ConfigGroups     []kotsv1beta1.ConfigGroup                `json:"configGroups"`
 	ValidationErrors []configtypes.ConfigGroupValidationError `json:"validationErrors,omitempty"`
 }
 
-type LiveAppConfigRequest struct {
+type LiveConfigRequest struct {
 	ConfigGroups []kotsv1beta1.ConfigGroup `json:"configGroups"`
 }
 
-type LiveAppConfigResponse struct {
+type LiveConfigResponse struct {
 	Success          bool                                     `json:"success"`
 	Error            string                                   `json:"error,omitempty"`
 	ConfigGroups     []kotsv1beta1.ConfigGroup                `json:"configGroups"`
 	ValidationErrors []configtypes.ConfigGroupValidationError `json:"validationErrors,omitempty"`
 }
 
-type SaveAppConfigRequest struct {
+type SaveConfigRequest struct {
 	ConfigGroups []kotsv1beta1.ConfigGroup `json:"configGroups"`
 }
 
-type SaveAppConfigResponse struct {
+type SaveConfigResponse struct {
 	Success          bool                                     `json:"success"`
 	Error            string                                   `json:"error,omitempty"`
 	RequiredItems    []string                                 `json:"requiredItems,omitempty"`
@@ -65,8 +65,8 @@ type DownloadFileFromConfigResponse struct {
 	Error   string `json:"error,omitempty"`
 }
 
-func (h *Handler) CurrentAppConfig(w http.ResponseWriter, r *http.Request) {
-	currentAppConfigResponse := CurrentAppConfigResponse{
+func (h *Handler) CurrentConfig(w http.ResponseWriter, r *http.Request) {
+	response := CurrentConfigResponse{
 		Success: false,
 	}
 
@@ -74,26 +74,26 @@ func (h *Handler) CurrentAppConfig(w http.ResponseWriter, r *http.Request) {
 
 	appLicense, err := kotsutil.LoadLicenseFromBytes([]byte(params.AppLicense))
 	if err != nil {
-		currentAppConfigResponse.Error = "failed to load license from bytes"
-		logger.Error(errors.Wrap(err, currentAppConfigResponse.Error))
-		JSON(w, http.StatusInternalServerError, currentAppConfigResponse)
+		response.Error = "failed to load license from bytes"
+		logger.Error(errors.Wrap(err, response.Error))
+		JSON(w, http.StatusInternalServerError, response)
 		return
 	}
 
 	kotsKinds, err := kotsutil.LoadKotsKinds(params.AppArchive)
 	if err != nil {
-		currentAppConfigResponse.Error = "failed to load kots kinds from path"
-		logger.Error(errors.Wrap(err, currentAppConfigResponse.Error))
-		JSON(w, http.StatusInternalServerError, currentAppConfigResponse)
+		response.Error = "failed to load kots kinds from path"
+		logger.Error(errors.Wrap(err, response.Error))
+		JSON(w, http.StatusInternalServerError, response)
 		return
 	}
 
 	// get the non-rendered config from the upstream directory because we have to re-render it with the new values
 	nonRenderedConfig, err := kotsutil.FindConfigInPath(filepath.Join(params.AppArchive, "upstream"))
 	if err != nil {
-		currentAppConfigResponse.Error = "failed to find non-rendered config"
-		logger.Error(errors.Wrap(err, currentAppConfigResponse.Error))
-		JSON(w, http.StatusInternalServerError, currentAppConfigResponse)
+		response.Error = "failed to find non-rendered config"
+		logger.Error(errors.Wrap(err, response.Error))
+		JSON(w, http.StatusInternalServerError, response)
 		return
 	}
 
@@ -125,22 +125,22 @@ func (h *Handler) CurrentAppConfig(w http.ResponseWriter, r *http.Request) {
 	renderedConfig, err := kotsconfig.TemplateConfigObjects(nonRenderedConfig, configValues, appLicense, &kotsKinds.KotsApplication, registrySettings, &versionInfo, &appInfo, kotsKinds.IdentityConfig, util.PodNamespace, false)
 	if err != nil {
 		logger.Error(err)
-		currentAppConfigResponse.Error = "failed to render templates"
-		JSON(w, http.StatusInternalServerError, currentAppConfigResponse)
+		response.Error = "failed to render templates"
+		JSON(w, http.StatusInternalServerError, response)
 		return
 	}
 
-	currentAppConfigResponse.ConfigGroups = []kotsv1beta1.ConfigGroup{}
+	response.ConfigGroups = []kotsv1beta1.ConfigGroup{}
 	if renderedConfig != nil {
-		currentAppConfigResponse.ConfigGroups = renderedConfig.Spec.Groups
+		response.ConfigGroups = renderedConfig.Spec.Groups
 	}
 
-	currentAppConfigResponse.Success = true
-	JSON(w, http.StatusOK, currentAppConfigResponse)
+	response.Success = true
+	JSON(w, http.StatusOK, response)
 }
 
-func (h *Handler) LiveAppConfig(w http.ResponseWriter, r *http.Request) {
-	liveAppConfigResponse := LiveAppConfigResponse{
+func (h *Handler) LiveConfig(w http.ResponseWriter, r *http.Request) {
+	response := LiveConfigResponse{
 		Success: false,
 	}
 
@@ -148,34 +148,34 @@ func (h *Handler) LiveAppConfig(w http.ResponseWriter, r *http.Request) {
 
 	appLicense, err := kotsutil.LoadLicenseFromBytes([]byte(params.AppLicense))
 	if err != nil {
-		liveAppConfigResponse.Error = "failed to load license from bytes"
-		logger.Error(errors.Wrap(err, liveAppConfigResponse.Error))
-		JSON(w, http.StatusInternalServerError, liveAppConfigResponse)
+		response.Error = "failed to load license from bytes"
+		logger.Error(errors.Wrap(err, response.Error))
+		JSON(w, http.StatusInternalServerError, response)
 		return
 	}
 
-	liveAppConfigRequest := LiveAppConfigRequest{}
-	if err := json.NewDecoder(r.Body).Decode(&liveAppConfigRequest); err != nil {
+	request := LiveConfigRequest{}
+	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
 		logger.Error(err)
-		liveAppConfigResponse.Error = "failed to decode request body"
-		JSON(w, http.StatusBadRequest, liveAppConfigResponse)
+		response.Error = "failed to decode request body"
+		JSON(w, http.StatusBadRequest, response)
 		return
 	}
 
 	kotsKinds, err := kotsutil.LoadKotsKinds(params.AppArchive)
 	if err != nil {
-		liveAppConfigResponse.Error = "failed to load kots kinds from path"
-		logger.Error(errors.Wrap(err, liveAppConfigResponse.Error))
-		JSON(w, http.StatusInternalServerError, liveAppConfigResponse)
+		response.Error = "failed to load kots kinds from path"
+		logger.Error(errors.Wrap(err, response.Error))
+		JSON(w, http.StatusInternalServerError, response)
 		return
 	}
 
 	// get the non-rendered config from the upstream directory because we have to re-render it with the new values
 	nonRenderedConfig, err := kotsutil.FindConfigInPath(filepath.Join(params.AppArchive, "upstream"))
 	if err != nil {
-		liveAppConfigResponse.Error = "failed to find non-rendered config"
-		logger.Error(errors.Wrap(err, liveAppConfigResponse.Error))
-		JSON(w, http.StatusInternalServerError, liveAppConfigResponse)
+		response.Error = "failed to find non-rendered config"
+		logger.Error(errors.Wrap(err, response.Error))
+		JSON(w, http.StatusInternalServerError, response)
 		return
 	}
 
@@ -188,37 +188,37 @@ func (h *Handler) LiveAppConfig(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// sequence +1 because the sequence will be incremented on save (and we want the preview to be accurate)
-	configValues := configValuesFromConfigGroups(liveAppConfigRequest.ConfigGroups)
+	configValues := configValuesFromConfigGroups(request.ConfigGroups)
 	versionInfo := template.VersionInfoFromInstallationSpec(params.NextSequence, params.AppIsAirgap, kotsKinds.Installation.Spec)
 	appInfo := template.ApplicationInfo{Slug: params.AppSlug}
 
 	renderedConfig, err := kotsconfig.TemplateConfigObjects(nonRenderedConfig, configValues, appLicense, &kotsKinds.KotsApplication, registrySettings, &versionInfo, &appInfo, kotsKinds.IdentityConfig, util.PodNamespace, false)
 	if err != nil {
-		liveAppConfigResponse.Error = "failed to render templates"
-		logger.Error(errors.Wrap(err, liveAppConfigResponse.Error))
-		JSON(w, http.StatusInternalServerError, liveAppConfigResponse)
+		response.Error = "failed to render templates"
+		logger.Error(errors.Wrap(err, response.Error))
+		JSON(w, http.StatusInternalServerError, response)
 		return
 	}
 
-	liveAppConfigResponse.ConfigGroups = []kotsv1beta1.ConfigGroup{}
+	response.ConfigGroups = []kotsv1beta1.ConfigGroup{}
 	if renderedConfig != nil {
 		validationErrors, err := configvalidation.ValidateConfigSpec(renderedConfig.Spec)
 		if err != nil {
-			liveAppConfigResponse.Error = "failed to validate config spec"
-			logger.Error(errors.Wrap(err, liveAppConfigResponse.Error))
-			JSON(w, http.StatusInternalServerError, liveAppConfigResponse)
+			response.Error = "failed to validate config spec"
+			logger.Error(errors.Wrap(err, response.Error))
+			JSON(w, http.StatusInternalServerError, response)
 			return
 		}
 
-		liveAppConfigResponse.ConfigGroups = renderedConfig.Spec.Groups
+		response.ConfigGroups = renderedConfig.Spec.Groups
 		if len(validationErrors) > 0 {
-			liveAppConfigResponse.ValidationErrors = validationErrors
+			response.ValidationErrors = validationErrors
 			logger.Warnf("Validation errors found for config spec: %v", validationErrors)
 		}
 	}
 
-	liveAppConfigResponse.Success = true
-	JSON(w, http.StatusOK, liveAppConfigResponse)
+	response.Success = true
+	JSON(w, http.StatusOK, response)
 }
 
 func configValuesFromConfigGroups(configGroups []kotsv1beta1.ConfigGroup) map[string]template.ItemValue {
@@ -268,43 +268,43 @@ func configValuesFromConfigGroups(configGroups []kotsv1beta1.ConfigGroup) map[st
 	return configValues
 }
 
-func (h *Handler) SaveAppConfig(w http.ResponseWriter, r *http.Request) {
-	saveAppConfigResponse := SaveAppConfigResponse{
+func (h *Handler) SaveConfig(w http.ResponseWriter, r *http.Request) {
+	response := SaveConfigResponse{
 		Success: false,
 	}
 
 	params := GetContextParams(r)
 
-	saveAppConfigRequest := SaveAppConfigRequest{}
-	if err := json.NewDecoder(r.Body).Decode(&saveAppConfigRequest); err != nil {
+	request := SaveConfigRequest{}
+	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
 		logger.Error(err)
-		saveAppConfigResponse.Error = "failed to decode request body"
-		JSON(w, http.StatusBadRequest, saveAppConfigResponse)
+		response.Error = "failed to decode request body"
+		JSON(w, http.StatusBadRequest, response)
 		return
 	}
 
-	validationErrors, err := configvalidation.ValidateConfigSpec(kotsv1beta1.ConfigSpec{Groups: saveAppConfigRequest.ConfigGroups})
+	validationErrors, err := configvalidation.ValidateConfigSpec(kotsv1beta1.ConfigSpec{Groups: request.ConfigGroups})
 	if err != nil {
-		saveAppConfigResponse.Error = "failed to validate config spec."
-		logger.Error(errors.Wrap(err, saveAppConfigResponse.Error))
-		JSON(w, http.StatusInternalServerError, saveAppConfigResponse)
+		response.Error = "failed to validate config spec."
+		logger.Error(errors.Wrap(err, response.Error))
+		JSON(w, http.StatusInternalServerError, response)
 		return
 	}
 
 	if len(validationErrors) > 0 {
-		saveAppConfigResponse.Error = "invalid config values"
-		saveAppConfigResponse.ValidationErrors = validationErrors
-		logger.Errorf("%v, validation errors: %+v", saveAppConfigResponse.Error, validationErrors)
-		JSON(w, http.StatusBadRequest, saveAppConfigResponse)
+		response.Error = "invalid config values"
+		response.ValidationErrors = validationErrors
+		logger.Errorf("%v, validation errors: %+v", response.Error, validationErrors)
+		JSON(w, http.StatusBadRequest, response)
 		return
 	}
 
-	requiredItems, requiredItemsTitles := kotsadmconfig.GetMissingRequiredConfig(saveAppConfigRequest.ConfigGroups)
+	requiredItems, requiredItemsTitles := kotsadmconfig.GetMissingRequiredConfig(request.ConfigGroups)
 	if len(requiredItems) > 0 {
-		saveAppConfigResponse.RequiredItems = requiredItems
-		saveAppConfigResponse.Error = fmt.Sprintf("The following fields are required: %s", strings.Join(requiredItemsTitles, ", "))
-		logger.Errorf("%v, required items: %+v", saveAppConfigResponse.Error, requiredItems)
-		JSON(w, http.StatusBadRequest, saveAppConfigResponse)
+		response.RequiredItems = requiredItems
+		response.Error = fmt.Sprintf("The following fields are required: %s", strings.Join(requiredItemsTitles, ", "))
+		logger.Errorf("%v, required items: %+v", response.Error, requiredItems)
+		JSON(w, http.StatusBadRequest, response)
 		return
 	}
 
@@ -325,35 +325,35 @@ func (h *Handler) SaveAppConfig(w http.ResponseWriter, r *http.Request) {
 
 	kotsKinds, err := kotsutil.LoadKotsKinds(params.AppArchive)
 	if err != nil {
-		saveAppConfigResponse.Error = "failed to load kots kinds from path"
-		logger.Error(errors.Wrap(err, saveAppConfigResponse.Error))
-		JSON(w, http.StatusInternalServerError, saveAppConfigResponse)
+		response.Error = "failed to load kots kinds from path"
+		logger.Error(errors.Wrap(err, response.Error))
+		JSON(w, http.StatusInternalServerError, response)
 		return
 	}
 
 	if kotsKinds.ConfigValues == nil {
 		err = errors.New("config values not found")
-		saveAppConfigResponse.Error = err.Error()
+		response.Error = err.Error()
 		logger.Error(err)
-		JSON(w, http.StatusInternalServerError, saveAppConfigResponse)
+		JSON(w, http.StatusInternalServerError, response)
 		return
 	}
 
 	values := kotsKinds.ConfigValues.Spec.Values
-	kotsKinds.ConfigValues.Spec.Values = kotsadmconfig.UpdateAppConfigValues(values, saveAppConfigRequest.ConfigGroups)
+	kotsKinds.ConfigValues.Spec.Values = kotsadmconfig.UpdateAppConfigValues(values, request.ConfigGroups)
 
 	configValuesSpec, err := kotsKinds.Marshal("kots.io", "v1beta1", "ConfigValues")
 	if err != nil {
-		saveAppConfigResponse.Error = "failed to marshal config values"
-		logger.Error(errors.Wrap(err, saveAppConfigResponse.Error))
-		JSON(w, http.StatusInternalServerError, saveAppConfigResponse)
+		response.Error = "failed to marshal config values"
+		logger.Error(errors.Wrap(err, response.Error))
+		JSON(w, http.StatusInternalServerError, response)
 		return
 	}
 
 	if err := os.WriteFile(filepath.Join(params.AppArchive, "upstream", "userdata", "config.yaml"), []byte(configValuesSpec), 0644); err != nil {
-		saveAppConfigResponse.Error = "failed to write config values"
-		logger.Error(errors.Wrap(err, saveAppConfigResponse.Error))
-		JSON(w, http.StatusInternalServerError, saveAppConfigResponse)
+		response.Error = "failed to write config values"
+		logger.Error(errors.Wrap(err, response.Error))
+		JSON(w, http.StatusInternalServerError, response)
 		return
 	}
 
@@ -368,26 +368,26 @@ func (h *Handler) SaveAppConfig(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		cause := errors.Cause(err)
 		if _, ok := cause.(util.ActionableError); ok {
-			saveAppConfigResponse.Error = err.Error()
-			JSON(w, http.StatusInternalServerError, saveAppConfigResponse)
+			response.Error = err.Error()
+			JSON(w, http.StatusInternalServerError, response)
 			return
 		} else {
-			saveAppConfigResponse.Error = "failed to render templates"
-			logger.Error(errors.Wrap(err, saveAppConfigResponse.Error))
-			JSON(w, http.StatusInternalServerError, saveAppConfigResponse)
+			response.Error = "failed to render templates"
+			logger.Error(errors.Wrap(err, response.Error))
+			JSON(w, http.StatusInternalServerError, response)
 			return
 		}
 	}
 
 	if err := upgradepreflight.Run(params); err != nil {
-		saveAppConfigResponse.Error = "failed to run preflights"
-		logger.Error(errors.Wrap(err, saveAppConfigResponse.Error))
-		JSON(w, http.StatusInternalServerError, saveAppConfigResponse)
+		response.Error = "failed to run preflights"
+		logger.Error(errors.Wrap(err, response.Error))
+		JSON(w, http.StatusInternalServerError, response)
 		return
 	}
 
-	saveAppConfigResponse.Success = true
-	JSON(w, http.StatusOK, saveAppConfigResponse)
+	response.Success = true
+	JSON(w, http.StatusOK, response)
 }
 
 func (h *Handler) DownloadFileFromConfig(w http.ResponseWriter, r *http.Request) {

@@ -24,13 +24,13 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-type CanDeployAppOptions struct {
+type CanDeployOptions struct {
 	Params           types.UpgradeServiceParams
 	KotsKinds        *kotsutil.KotsKinds
 	RegistrySettings registrytypes.RegistrySettings
 }
 
-func CanDeployApp(opts CanDeployAppOptions) (bool, string, error) {
+func CanDeploy(opts CanDeployOptions) (bool, string, error) {
 	needsConfig, err := kotsadmconfig.NeedsConfiguration(
 		opts.Params.AppSlug,
 		opts.Params.NextSequence,
@@ -56,7 +56,7 @@ func CanDeployApp(opts CanDeployAppOptions) (bool, string, error) {
 	return true, "", nil
 }
 
-type DeployAppOptions struct {
+type DeployOptions struct {
 	Ctx                          context.Context
 	IsSkipPreflights             bool
 	ContinueWithFailedPreflights bool
@@ -65,7 +65,7 @@ type DeployAppOptions struct {
 	RegistrySettings             registrytypes.RegistrySettings
 }
 
-func DeployApp(opts DeployAppOptions) error {
+func Deploy(opts DeployOptions) error {
 	tgzArchiveKey := fmt.Sprintf(
 		"deployments/%s/%s-%s.tar.gz",
 		opts.Params.AppSlug,
