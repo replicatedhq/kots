@@ -84,7 +84,7 @@ jobs:
     needs: [get-workspace-name, get-workspace-expiration]
     runs-on: ubuntu-20.04
     container:
-      image: hashicorp/terraform:1.0.11
+      image: hashicorp/terraform:1.9
     env:
       WORKSPACE: ${{ needs.get-workspace-name.outputs.name }}
     steps:
@@ -147,7 +147,7 @@ jobs:
     needs: [get-workspace-name, get-workspace-expiration, jumpbox]
     runs-on: ubuntu-20.04
     container:
-      image: hashicorp/terraform:1.0.11
+      image: hashicorp/terraform:1.9
     env:
       WORKSPACE: ${{ needs.get-workspace-name.outputs.name }}
     strategy:
@@ -269,6 +269,7 @@ jobs:
       - name: Wait for instance to be ready
         working-directory: automation/cluster
         run: |
+          set -e
           apk update && apk add aws-cli jq
           terraform output -raw control_plane_instance_id
           until [ -n "$(aws ec2 describe-instance-status --instance-ids "$(terraform output -raw control_plane_instance_id)" --filter Name=instance-status.reachability,Values=passed | jq -r '.InstanceStatuses[].InstanceStatus.Details[].Status')" ]
