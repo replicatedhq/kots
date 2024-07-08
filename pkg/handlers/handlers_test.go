@@ -398,6 +398,17 @@ var HandlerPolicyTests = map[string][]HandlerPolicyTest{
 			ExpectStatus: http.StatusOK,
 		},
 	},
+	"GetAvailableUpdates": {
+		{
+			Vars:         map[string]string{"appSlug": "my-app"},
+			Roles:        []rbactypes.Role{rbac.ClusterAdminRole},
+			SessionRoles: []string{rbac.ClusterAdminRoleID},
+			Calls: func(storeRecorder *mock_store.MockStoreMockRecorder, handlerRecorder *mock_handlers.MockKOTSHandlerMockRecorder) {
+				handlerRecorder.GetAvailableUpdates(gomock.Any(), gomock.Any())
+			},
+			ExpectStatus: http.StatusOK,
+		},
+	},
 
 	// Airgap
 	"AirgapBundleProgress": {
@@ -495,6 +506,17 @@ var HandlerPolicyTests = map[string][]HandlerPolicyTest{
 			SessionRoles: []string{rbac.ClusterAdminRoleID},
 			Calls: func(storeRecorder *mock_store.MockStoreMockRecorder, handlerRecorder *mock_handlers.MockKOTSHandlerMockRecorder) {
 				handlerRecorder.GetAirgapUploadConfig(gomock.Any(), gomock.Any())
+			},
+			ExpectStatus: http.StatusOK,
+		},
+	},
+	"UploadAirgapUpdate": {
+		{
+			Vars:         map[string]string{"appSlug": "my-app"},
+			Roles:        []rbactypes.Role{rbac.ClusterAdminRole},
+			SessionRoles: []string{rbac.ClusterAdminRoleID},
+			Calls: func(storeRecorder *mock_store.MockStoreMockRecorder, handlerRecorder *mock_handlers.MockKOTSHandlerMockRecorder) {
+				handlerRecorder.UploadAirgapUpdate(gomock.Any(), gomock.Any())
 			},
 			ExpectStatus: http.StatusOK,
 		},
@@ -1393,6 +1415,31 @@ var HandlerPolicyTests = map[string][]HandlerPolicyTest{
 			ExpectStatus: http.StatusOK,
 		},
 	},
+
+	// Upgrade Service
+	"StartUpgradeService": {
+		{
+			Vars:         map[string]string{"appSlug": "my-app"},
+			Roles:        []rbactypes.Role{rbac.ClusterAdminRole},
+			SessionRoles: []string{rbac.ClusterAdminRoleID},
+			Calls: func(storeRecorder *mock_store.MockStoreMockRecorder, handlerRecorder *mock_handlers.MockKOTSHandlerMockRecorder) {
+				handlerRecorder.StartUpgradeService(gomock.Any(), gomock.Any())
+			},
+			ExpectStatus: http.StatusOK,
+		},
+	},
+	"GetUpgradeServiceStatus": {
+		{
+			Vars:         map[string]string{"appSlug": "my-app"},
+			Roles:        []rbactypes.Role{rbac.ClusterAdminRole},
+			SessionRoles: []string{rbac.ClusterAdminRoleID},
+			Calls: func(storeRecorder *mock_store.MockStoreMockRecorder, handlerRecorder *mock_handlers.MockKOTSHandlerMockRecorder) {
+				handlerRecorder.GetUpgradeServiceStatus(gomock.Any(), gomock.Any())
+			},
+			ExpectStatus: http.StatusOK,
+		},
+	},
+	"UpgradeServiceProxy": {}, // Not implemented
 }
 
 type HandlerPolicyTest struct {
