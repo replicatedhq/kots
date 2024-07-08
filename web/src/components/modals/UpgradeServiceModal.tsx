@@ -40,8 +40,8 @@ const UpgradeServiceModal = ({
         ) : (
           <>
             {isIframeLoading && (
-              <div className="tw-absolute tw-top-[45%] tw-w-full flex-column flex1 alignItems--center justifyContent--center tw-gap-4">
-                <span className="u-fontWeight--bold">Loading...</span>
+              <div className="tw-absolute tw-top-[46%] tw-w-full flex-column flex1 alignItems--center justifyContent--center tw-gap-4">
+                <span className="u-fontWeight--bold">Almost done...</span>
                 <Loader size="60" />
               </div>
             )}
