@@ -233,21 +233,27 @@ func getUpgradeServiceParams(a *apptypes.App, r StartUpgradeServiceRequest) (*up
 		}
 		updateKOTSVersion = kv
 	} else {
-		kv, err := replicatedapp.GetKOTSVersionForRelease(license, r.VersionLabel)
+		// kv, err := replicatedapp.GetKOTSVersionForRelease(license, r.VersionLabel)
+		// if err != nil {
+		// 	return nil, errors.Wrap(err, "failed to get kots version for release")
+		// }
+		// updateKOTSVersion = kv
+
+		// if buildversion.IsSameVersion(kv) {
+		// 	updateKOTSBin = kotsutil.GetKOTSBinPath()
+		// } else {
+		kb, err := replicatedapp.DownloadKOTSBinary(license, r.VersionLabel)
 		if err != nil {
-			return nil, errors.Wrap(err, "failed to get kots version for release")
+			return nil, errors.Wrap(err, "failed to download kots binary")
+		}
+		updateKOTSBin = kb
+
+		kv, err := kotsutil.GetKOTSVersionFromBinary(kb)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to get kots version from binary")
 		}
 		updateKOTSVersion = kv
-
-		if buildversion.IsSameVersion(kv) {
-			updateKOTSBin = kotsutil.GetKOTSBinPath()
-		} else {
-			kb, err := replicatedapp.DownloadKOTSBinary(license, r.VersionLabel)
-			if err != nil {
-				return nil, errors.Wrap(err, "failed to download kots binary")
-			}
-			updateKOTSBin = kb
-		}
+		// }
 	}
 
 	port, err := freeport.GetFreePort()
