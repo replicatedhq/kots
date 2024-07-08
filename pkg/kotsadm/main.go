@@ -1170,17 +1170,3 @@ func GetRegistryConfigFromCluster(namespace string, clientset kubernetes.Interfa
 	registryConfig.Password = creds.Password
 	return registryConfig, nil
 }
-
-func GetPreferredChannelSlug(namespace string, clientset kubernetes.Interface) (string, error) {
-	configMap, err := clientset.CoreV1().ConfigMaps(namespace).Get(context.TODO(), types.KotsadmConfigMap, metav1.GetOptions{})
-	if err != nil {
-		return "", errors.Wrap(err, "failed to get existing kotsadm config map")
-	}
-
-	slug, ok := configMap.Data["preferred-channel-slug"]
-	if !ok {
-		return "", nil
-	}
-
-	return slug, nil
-}
