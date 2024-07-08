@@ -44,11 +44,13 @@ type LicenseData struct {
 	License      *kotsv1beta1.License
 }
 
-func GetPreferredChannelSlug(namespace string) (string, error) {
+func GetPreferredChannelSlug() (string, error) {
 	clientset, err := k8sutil.GetClientset()
 	if err != nil {
 		return "", errors.Wrap(err, "failed to get clientset")
 	}
+
+	namespace := util.AppNamespace()
 
 	configMap, err := clientset.CoreV1().ConfigMaps(namespace).Get(context.TODO(), types.KotsadmConfigMap, metav1.GetOptions{})
 	if err != nil {
@@ -64,7 +66,15 @@ func GetPreferredChannelSlug(namespace string) (string, error) {
 }
 
 func GetLatestLicense(license *kotsv1beta1.License) (*LicenseData, error) {
+	channelSlug, err := GetPreferredChannelSlug()
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get preferred channel slug")
+	}
+
 	url := fmt.Sprintf("%s/license/%s", license.Spec.Endpoint, license.Spec.AppSlug)
+	if channelSlug != "" {
+		url = fmt.Sprintf("%s/%s", url, channelSlug)
+	}
 
 	licenseData, err := getLicenseFromAPI(url, license.Spec.LicenseID)
 	if err != nil {
