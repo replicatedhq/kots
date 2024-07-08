@@ -239,7 +239,7 @@ func getUpgradeServiceParams(a *apptypes.App, r StartUpgradeServiceRequest) (*up
 		}
 		updateKOTSVersion = kv
 
-		if kv == buildversion.Version() {
+		if buildversion.IsSameVersion(kv) {
 			updateKOTSBin = kotsutil.GetKOTSBinPath()
 		} else {
 			kb, err := replicatedapp.DownloadKOTSBinary(license, r.VersionLabel)

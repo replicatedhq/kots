@@ -935,7 +935,7 @@ func (o *Operator) reconcileDeployment(cm *corev1.ConfigMap) error {
 	if kotsVersion == "" {
 		return errors.New("kots version not found in deployment configmap")
 	}
-	if kotsVersion != buildversion.Version() {
+	if buildversion.IsSameVersion(kotsVersion) {
 		logger.Infof("deployment has kots version (%s) which does not match current kots version (%s). will not reconcile...", kotsVersion, buildversion.Version())
 		return nil
 	}
