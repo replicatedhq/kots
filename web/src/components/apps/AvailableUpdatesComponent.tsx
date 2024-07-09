@@ -52,7 +52,7 @@ const AvailableUpdatesComponent = ({
               upgradeService?.versionLabel === update.versionLabel &&
               upgradeService.isLoading;
             return (
-              <div key={index}>
+              <div key={index} className="available-update-row">
                 <div className="tw-h-10 tw-bg-white tw-p-4 tw-flex tw-justify-between tw-items-center tw-rounded">
                   <div className="flex-column">
                     <div className="flex alignItems--center">
