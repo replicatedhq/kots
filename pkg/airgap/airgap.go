@@ -14,7 +14,6 @@ import (
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/airgap/types"
 	"github.com/replicatedhq/kots/pkg/archives"
-	kotsadmtypes "github.com/replicatedhq/kots/pkg/kotsadm/types"
 	kotsadmconfig "github.com/replicatedhq/kots/pkg/kotsadmconfig"
 	identity "github.com/replicatedhq/kots/pkg/kotsadmidentity"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
@@ -198,7 +197,7 @@ func CreateAppFromAirgap(opts CreateAirgapAppOpts) (finalError error) {
 		}
 	}
 
-	instParams, err := kotsutil.GetInstallationParams(kotsadmtypes.KotsadmConfigMap)
+	instParams, err := kotsutil.GetInstallationParams()
 	if err != nil {
 		return errors.Wrap(err, "failed to get existing kotsadm config map")
 	}
@@ -340,7 +339,7 @@ func CreateAppFromAirgap(opts CreateAirgapAppOpts) (finalError error) {
 		}
 	}
 
-	err = kotsutil.RemoveAppVersionLabelFromInstallationParams(kotsadmtypes.KotsadmConfigMap)
+	err = kotsutil.RemoveAppVersionLabelFromInstallationParams()
 	if err != nil {
 		logger.Error(errors.Wrapf(err, "failed to delete app version label from config"))
 	}

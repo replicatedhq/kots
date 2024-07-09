@@ -163,9 +163,9 @@ func InstallCmd() *cobra.Command {
 
 			upstream := pull.RewriteUpstream(args[0])
 
-			preferredChannelSlug := ""
-			if len(args) > 1 {
-				preferredChannelSlug = args[1]
+			preferredChannelSlug, err := extractPreferredChannelSlug(upstream)
+			if err != nil {
+				return errors.Wrap(err, "failed to extract preferred channel slug")
 			}
 
 			namespace := v.GetString("namespace")

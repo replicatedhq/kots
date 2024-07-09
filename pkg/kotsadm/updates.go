@@ -12,7 +12,6 @@ import (
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/buildversion"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
-	kotsadmtypes "github.com/replicatedhq/kots/pkg/kotsadm/types"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/rand"
@@ -104,7 +103,7 @@ func UpdateToVersion(newVersion string) error {
 		return errors.Wrap(err, "failed to get kots options from cluster")
 	}
 
-	installationParams, err := kotsutil.GetInstallationParams(kotsadmtypes.KotsadmConfigMap)
+	installationParams, err := kotsutil.GetInstallationParams()
 	if err != nil {
 		return errors.Wrap(err, "failed to get installation params")
 	}

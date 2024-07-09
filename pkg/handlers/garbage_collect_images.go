@@ -6,7 +6,6 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
-	kotsadmtypes "github.com/replicatedhq/kots/pkg/kotsadm/types"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/kurl"
 	"github.com/replicatedhq/kots/pkg/logger"
@@ -33,7 +32,7 @@ func (h *Handler) GarbageCollectImages(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	installParams, err := kotsutil.GetInstallationParams(kotsadmtypes.KotsadmConfigMap)
+	installParams, err := kotsutil.GetInstallationParams()
 	if err != nil {
 		response.Error = "failed to get app registry info"
 		logger.Error(errors.Wrap(err, response.Error))

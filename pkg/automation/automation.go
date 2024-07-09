@@ -17,7 +17,6 @@ import (
 	airgaptypes "github.com/replicatedhq/kots/pkg/airgap/types"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/kotsadm"
-	kotsadmtypes "github.com/replicatedhq/kots/pkg/kotsadm/types"
 	kotsadmlicense "github.com/replicatedhq/kots/pkg/kotsadmlicense"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
 	kotslicense "github.com/replicatedhq/kots/pkg/license"
@@ -83,7 +82,7 @@ func AutomateInstall(opts AutomateInstallOptions) error {
 	}
 
 	cleanup := func(licenseSecret *corev1.Secret) {
-		err = kotsutil.RemoveAppVersionLabelFromInstallationParams(kotsadmtypes.KotsadmConfigMap)
+		err = kotsutil.RemoveAppVersionLabelFromInstallationParams()
 		if err != nil {
 			logger.Error(errors.Wrapf(err, "failed to delete app version label from config"))
 		}
@@ -235,7 +234,7 @@ func installLicenseSecret(clientset *kubernetes.Clientset, licenseSecret corev1.
 		}
 	}
 
-	instParams, err := kotsutil.GetInstallationParams(kotsadmtypes.KotsadmConfigMap)
+	instParams, err := kotsutil.GetInstallationParams()
 	if err != nil {
 		return errors.Wrap(err, "failed to get existing kotsadm config map")
 	}

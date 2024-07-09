@@ -23,6 +23,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/crypto"
 	registrytypes "github.com/replicatedhq/kots/pkg/docker/registry/types"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
+	kotsadmtypes "github.com/replicatedhq/kots/pkg/kotsadm/types"
 	"github.com/replicatedhq/kots/pkg/kurl"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/util"
@@ -1139,9 +1140,10 @@ type InstallationParams struct {
 	WaitDuration           time.Duration
 	WithMinio              bool
 	AppVersionLabel        string
+	PreferredChannelSlug   string
 }
 
-func GetInstallationParams(configMapName string) (InstallationParams, error) {
+func GetInstallationParams() (InstallationParams, error) {
 	autoConfig := InstallationParams{}
 
 	clientset, err := k8sutil.GetClientset()
@@ -1154,7 +1156,7 @@ func GetInstallationParams(configMapName string) (InstallationParams, error) {
 		return autoConfig, errors.Wrap(err, "failed to check if cluster is kurl")
 	}
 
-	kotsadmConfigMap, err := clientset.CoreV1().ConfigMaps(util.PodNamespace).Get(context.TODO(), configMapName, metav1.GetOptions{})
+	kotsadmConfigMap, err := clientset.CoreV1().ConfigMaps(util.PodNamespace).Get(context.TODO(), kotsadmtypes.KotsadmConfigMap, metav1.GetOptions{})
 	if err != nil {
 		if kuberneteserrors.IsNotFound(err) {
 			return autoConfig, nil
@@ -1174,6 +1176,7 @@ func GetInstallationParams(configMapName string) (InstallationParams, error) {
 	autoConfig.WaitDuration, _ = time.ParseDuration(kotsadmConfigMap.Data["wait-duration"])
 	autoConfig.WithMinio, _ = strconv.ParseBool(kotsadmConfigMap.Data["with-minio"])
 	autoConfig.AppVersionLabel = kotsadmConfigMap.Data["app-version-label"]
+	autoConfig.PreferredChannelSlug = kotsadmConfigMap.Data["preferred-channel-slug"]
 
 	if enableImageDeletion, ok := kotsadmConfigMap.Data["enable-image-deletion"]; ok {
 		autoConfig.EnableImageDeletion, _ = strconv.ParseBool(enableImageDeletion)
@@ -1310,13 +1313,13 @@ func IsKotsAutoUpgradeSupported(app *kotsv1beta1.Application) bool {
 	return false
 }
 
-func RemoveAppVersionLabelFromInstallationParams(configMapName string) error {
+func RemoveAppVersionLabelFromInstallationParams() error {
 	clientset, err := k8sutil.GetClientset()
 	if err != nil {
 		return errors.Wrap(err, "failed to get k8s clientset")
 	}
 
-	kotsadmConfigMap, err := clientset.CoreV1().ConfigMaps(util.PodNamespace).Get(context.TODO(), configMapName, metav1.GetOptions{})
+	kotsadmConfigMap, err := clientset.CoreV1().ConfigMaps(util.PodNamespace).Get(context.TODO(), kotsadmtypes.KotsadmConfigMap, metav1.GetOptions{})
 	if err != nil {
 		if kuberneteserrors.IsNotFound(err) {
 			return nil

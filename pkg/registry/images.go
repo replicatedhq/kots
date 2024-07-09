@@ -71,7 +71,7 @@ func shouldGarbageCollectImages(isKurl bool, embeddedRegistryHost string, instal
 }
 
 func DeleteUnusedImages(appID string, ignoreRollback bool) error {
-	installParams, err := kotsutil.GetInstallationParams(kotsadmtypes.KotsadmConfigMap)
+	installParams, err := kotsutil.GetInstallationParams()
 	if err != nil {
 		return errors.Wrap(err, "failed to get app registry info")
 	}

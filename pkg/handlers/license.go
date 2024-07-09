@@ -14,7 +14,6 @@ import (
 	apptypes "github.com/replicatedhq/kots/pkg/app/types"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/kotsadm"
-	kotsadmtypes "github.com/replicatedhq/kots/pkg/kotsadm/types"
 	license "github.com/replicatedhq/kots/pkg/kotsadmlicense"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
 	kotslicense "github.com/replicatedhq/kots/pkg/license"
@@ -322,7 +321,7 @@ func (h *Handler) UploadNewLicense(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	installationParams, err := kotsutil.GetInstallationParams(kotsadmtypes.KotsadmConfigMap)
+	installationParams, err := kotsutil.GetInstallationParams()
 	if err != nil {
 		logger.Error(err)
 		uploadLicenseResponse.Error = err.Error()
@@ -361,7 +360,7 @@ func (h *Handler) UploadNewLicense(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		err = kotsutil.RemoveAppVersionLabelFromInstallationParams(kotsadmtypes.KotsadmConfigMap)
+		err = kotsutil.RemoveAppVersionLabelFromInstallationParams()
 		if err != nil {
 			logger.Error(err)
 			uploadLicenseResponse.Error = err.Error()
@@ -417,7 +416,7 @@ func (h *Handler) ResumeInstallOnline(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	installationParams, err := kotsutil.GetInstallationParams(kotsadmtypes.KotsadmConfigMap)
+	installationParams, err := kotsutil.GetInstallationParams()
 	if err != nil {
 		logger.Error(err)
 		resumeInstallOnlineResponse.Error = err.Error()
@@ -464,7 +463,7 @@ func (h *Handler) ResumeInstallOnline(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = kotsutil.RemoveAppVersionLabelFromInstallationParams(kotsadmtypes.KotsadmConfigMap)
+	err = kotsutil.RemoveAppVersionLabelFromInstallationParams()
 	if err != nil {
 		logger.Error(err)
 		resumeInstallOnlineResponse.Error = err.Error()

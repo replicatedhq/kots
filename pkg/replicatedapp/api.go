@@ -14,6 +14,7 @@ import (
 	apptypes "github.com/replicatedhq/kots/pkg/app/types"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/kotsadm/types"
+	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/persistence"
 	"github.com/replicatedhq/kots/pkg/reporting"
@@ -66,14 +67,14 @@ func GetPreferredChannelSlug() (string, error) {
 }
 
 func GetLatestLicense(license *kotsv1beta1.License) (*LicenseData, error) {
-	channelSlug, err := GetPreferredChannelSlug()
+	installParams, err := kotsutil.GetInstallationParams()
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to get preferred channel slug")
+		return nil, errors.Wrap(err, "failed to get installation params")
 	}
 
 	url := fmt.Sprintf("%s/license/%s", license.Spec.Endpoint, license.Spec.AppSlug)
-	if channelSlug != "" {
-		url = fmt.Sprintf("%s/%s", url, channelSlug)
+	if installParams.PreferredChannelSlug != "" {
+		url = fmt.Sprintf("%s/%s", url, installParams.PreferredChannelSlug)
 	}
 
 	licenseData, err := getLicenseFromAPI(url, license.Spec.LicenseID)

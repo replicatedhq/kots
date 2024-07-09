@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/pkg/errors"
+	"github.com/replicatedhq/kots/pkg/replicatedapp"
 	"github.com/replicatedhq/kots/pkg/util"
 )
 
@@ -39,4 +40,21 @@ func getHostFromEndpoint(endpoint string) (string, error) {
 	}
 
 	return parsed.Host, nil
+}
+
+func extractPreferredChannelSlug(upstreamURI string) (string, error) {
+	u, err := url.ParseRequestURI(upstreamURI)
+	if err != nil {
+		return "", errors.Wrap(err, "failed to parse uri")
+	}
+
+	replicatedUpstream, err := replicatedapp.ParseReplicatedURL(u)
+	if err != nil {
+		return "", errors.Wrap(err, "failed to parse replicated url")
+	}
+
+	if replicatedUpstream.Channel != nil {
+		return *replicatedUpstream.Channel, nil
+	}
+	return "", nil
 }
