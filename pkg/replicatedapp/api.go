@@ -2,7 +2,6 @@ package replicatedapp
 
 import (
 	"bytes"
-	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -12,8 +11,6 @@ import (
 
 	"github.com/pkg/errors"
 	apptypes "github.com/replicatedhq/kots/pkg/app/types"
-	"github.com/replicatedhq/kots/pkg/k8sutil"
-	"github.com/replicatedhq/kots/pkg/kotsadm/types"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/persistence"
@@ -22,7 +19,6 @@ import (
 	"github.com/replicatedhq/kots/pkg/util"
 	kotsv1beta1 "github.com/replicatedhq/kotskinds/apis/kots/v1beta1"
 	"github.com/replicatedhq/kotskinds/client/kotsclientset/scheme"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 type ApplicationMetadata struct {
@@ -43,27 +39,6 @@ spec:
 type LicenseData struct {
 	LicenseBytes []byte
 	License      *kotsv1beta1.License
-}
-
-func GetPreferredChannelSlug() (string, error) {
-	clientset, err := k8sutil.GetClientset()
-	if err != nil {
-		return "", errors.Wrap(err, "failed to get clientset")
-	}
-
-	namespace := util.AppNamespace()
-
-	configMap, err := clientset.CoreV1().ConfigMaps(namespace).Get(context.TODO(), types.KotsadmConfigMap, metav1.GetOptions{})
-	if err != nil {
-		return "", errors.Wrap(err, "failed to get existing kotsadm config map")
-	}
-
-	slug, ok := configMap.Data["preferred-channel-slug"]
-	if !ok {
-		return "", nil
-	}
-
-	return slug, nil
 }
 
 func GetLatestLicense(license *kotsv1beta1.License) (*LicenseData, error) {
