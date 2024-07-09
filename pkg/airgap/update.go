@@ -38,7 +38,7 @@ func UpdateAppFromECBundle(appSlug string, airgapBundlePath string) (finalError 
 		finishedChan <- finalError
 	}()
 
-	kotsBin, err := archives.GetKOTSBinFromAirgapBundle(airgapBundlePath)
+	kotsBin, err := kotsutil.GetKOTSBinFromAirgapBundle(airgapBundlePath)
 	if err != nil {
 		return errors.Wrap(err, "failed to get kots binary from airgap bundle")
 	}

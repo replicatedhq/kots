@@ -15,39 +15,6 @@ describe("Utilities", () => {
     });
   });
 
-  describe("shouldShowClusterUpgradeModal", () => {
-    it("should return false if apps is null or empty", () => {
-      expect(Utilities.shouldShowClusterUpgradeModal(null)).toBe(false);
-      expect(Utilities.shouldShowClusterUpgradeModal([])).toBe(false);
-    });
-
-    it("should return false if the cluster is not upgrading", () => {
-      const apps = [
-        {
-          downstream: {
-            cluster: {
-              isUpgrading: false,
-            },
-          },
-        },
-      ];
-      expect(Utilities.shouldShowClusterUpgradeModal(apps)).toBe(false);
-    });
-
-    it("should return true if the cluster is upgrading", () => {
-      const apps = [
-        {
-          downstream: {
-            cluster: {
-              isUpgrading: true,
-            },
-          },
-        },
-      ];
-      expect(Utilities.shouldShowClusterUpgradeModal(apps)).toBe(true);
-    });
-  });
-
   describe("isInitialAppInstall", () => {
     it("should return true if app is null", () => {
       expect(Utilities.isInitialAppInstall(null)).toBe(true);

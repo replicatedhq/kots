@@ -82,8 +82,6 @@ type ResponseGitOps struct {
 type ResponseCluster struct {
 	ID   string `json:"id"`
 	Slug string `json:"slug"`
-	// IsUpgrading represents whether the embedded cluster is currently being upgraded
-	IsUpgrading bool `json:"isUpgrading"`
 	// State represents the current state of the most recently deployed embedded cluster config
 	State string `json:"state,omitempty"`
 }

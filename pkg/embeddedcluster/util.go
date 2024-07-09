@@ -7,7 +7,6 @@ import (
 	"errors"
 	"fmt"
 	"sort"
-	"time"
 
 	embeddedclusterv1beta1 "github.com/replicatedhq/embedded-cluster-kinds/apis/v1beta1"
 	kotsv1beta1 "github.com/replicatedhq/kotskinds/apis/kots/v1beta1"
@@ -77,27 +76,18 @@ func ListInstallations(ctx context.Context, kbClient kbclient.Client) ([]embedde
 	return installationList.Items, nil
 }
 
-// WaitForInstallation will block until the current installation object reaches a terminal state.
-func WaitForInstallation(ctx context.Context, kbClient kbclient.Client) error {
-	for {
-		select {
-		case <-ctx.Done():
-			return fmt.Errorf("context cancelled")
-		default:
-			ins, err := GetCurrentInstallation(ctx, kbClient)
-			if err != nil {
-				return fmt.Errorf("failed to get current installation: %w", err)
-			}
-			switch ins.Status.State {
-			case embeddedclusterv1beta1.InstallationStateInstalled,
-				embeddedclusterv1beta1.InstallationStateObsolete,
-				embeddedclusterv1beta1.InstallationStateFailed,
-				embeddedclusterv1beta1.InstallationStateHelmChartUpdateFailure:
-				return nil
-			}
-			time.Sleep(5 * time.Second)
-		}
+func InstallationSucceeded(ctx context.Context, ins *embeddedclusterv1beta1.Installation) bool {
+	return ins.Status.State == embeddedclusterv1beta1.InstallationStateInstalled
+}
+
+func InstallationFailed(ctx context.Context, ins *embeddedclusterv1beta1.Installation) bool {
+	switch ins.Status.State {
+	case embeddedclusterv1beta1.InstallationStateFailed,
+		embeddedclusterv1beta1.InstallationStateHelmChartUpdateFailure,
+		embeddedclusterv1beta1.InstallationStateObsolete:
+		return true
 	}
+	return false
 }
 
 // ClusterConfig will extract the current cluster configuration from the latest installation

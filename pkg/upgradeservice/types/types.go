@@ -22,11 +22,11 @@ type UpgradeServiceParams struct {
 	UpdateVersionLabel string `yaml:"updateVersionLabel"`
 	UpdateCursor       string `yaml:"updateCursor"`
 	UpdateChannelID    string `yaml:"updateChannelID"`
+	UpdateECVersion    string `yaml:"updateECVersion"`
+	UpdateKOTSBin      string `yaml:"updateKotsBin"`
 	UpdateAirgapBundle string `yaml:"updateAirgapBundle"`
 
-	CurrentKOTSVersion string `yaml:"currentKotsVersion"`
-	UpdateKOTSVersion  string `yaml:"updateKotsVersion"`
-	UpdateKOTSBin      string `yaml:"updateKotsBin"`
+	CurrentECVersion string `yaml:"currentECVersion"`
 
 	RegistryEndpoint   string `yaml:"registryEndpoint"`
 	RegistryUsername   string `yaml:"registryUsername"`

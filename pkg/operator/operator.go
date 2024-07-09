@@ -18,7 +18,6 @@ import (
 	"github.com/replicatedhq/kots/pkg/apparchive"
 	appstatetypes "github.com/replicatedhq/kots/pkg/appstate/types"
 	"github.com/replicatedhq/kots/pkg/binaries"
-	"github.com/replicatedhq/kots/pkg/buildversion"
 	"github.com/replicatedhq/kots/pkg/embeddedcluster"
 	"github.com/replicatedhq/kots/pkg/filestore"
 	identitydeploy "github.com/replicatedhq/kots/pkg/identity/deploy"
@@ -41,6 +40,7 @@ import (
 	supportbundletypes "github.com/replicatedhq/kots/pkg/supportbundle/types"
 	"github.com/replicatedhq/kots/pkg/template"
 	"github.com/replicatedhq/kots/pkg/update"
+	upgradeservicetask "github.com/replicatedhq/kots/pkg/upgradeservice/task"
 	"github.com/replicatedhq/kots/pkg/util"
 	"github.com/replicatedhq/kotskinds/multitype"
 	velerov1 "github.com/vmware-tanzu/velero/pkg/apis/velero/v1"
@@ -929,32 +929,42 @@ func (o *Operator) watchDeployments() {
 	go cmInformer.Run(context.Background().Done())
 }
 
-func (o *Operator) reconcileDeployment(cm *corev1.ConfigMap) error {
-	// CAUTION: changes to the kots version field can break backwards compatibility
-	kotsVersion := cm.Data["kots-version"]
-	if kotsVersion == "" {
-		return errors.New("kots version not found in deployment configmap")
+func (o *Operator) reconcileDeployment(cm *corev1.ConfigMap) (finalError error) {
+	if cm.Data["requires-cluster-upgrade"] == "true" {
+		// wait for cluster upgrade even if the embedded cluster version doesn't match yet
+		// in order to continuously report progress to the user
+		if err := o.waitForClusterUpgrade(cm.Data["app-slug"]); err != nil {
+			return errors.Wrap(err, "failed to wait for cluster upgrade")
+		}
 	}
-	if !buildversion.IsSameVersion(kotsVersion) {
-		logger.Infof("deployment has kots version (%s) which does not match current kots version (%s). will not reconcile...", kotsVersion, buildversion.Version())
+
+	// CAUTION: changes to the embedded cluster version field can break backwards compatibility
+	ecVersion := cm.Data["embedded-cluster-version"]
+	if ecVersion == "" {
+		return errors.New("embedded cluster version not found in deployment")
+	}
+	if ecVersion != util.EmbeddedClusterVersion() {
+		logger.Infof("deployment has embedded cluster version (%s) which does not match current embedded cluster version (%s). will not process...", ecVersion, util.EmbeddedClusterVersion())
 		return nil
 	}
 
-	logger.Infof("reconciling deployment (%s) for app (%s)", cm.Data["version-label"], cm.Data["app-slug"])
+	logger.Infof("processing deployment (%s) for app (%s)", cm.Data["version-label"], cm.Data["app-slug"])
 
-	if cm.Data["requires-cluster-upgrade"] == "true" {
-		kbClient, err := k8sutil.GetKubeClient(context.Background())
-		if err != nil {
-			return errors.Wrap(err, "failed to get kube client")
-		}
-		logger.Infof("waiting for cluster upgrade to finish")
-		if err := embeddedcluster.WaitForInstallation(context.Background(), kbClient); err != nil {
-			return errors.Wrap(err, "failed to wait for embedded cluster installation")
-		}
+	if err := upgradeservicetask.SetStatusUpgradingApp(cm.Data["app-slug"], ""); err != nil {
+		return errors.Wrap(err, "failed to set task status to upgrading app")
 	}
 
-	// ensure deployment gets processed once
 	defer func() {
+		if finalError == nil {
+			if err := upgradeservicetask.ClearStatus(cm.Data["app-slug"]); err != nil {
+				logger.Error(errors.Wrap(err, "failed to clear task status"))
+			}
+		} else {
+			if err := upgradeservicetask.SetStatusUpgradeFailed(cm.Data["app-slug"], finalError.Error()); err != nil {
+				logger.Error(errors.Wrap(err, "failed to set task status to failed"))
+			}
+		}
+		// ensure deployment gets processed once
 		cm.Labels["kots.io/processed"] = "true"
 		_, err := o.k8sClientset.CoreV1().ConfigMaps(cm.Namespace).Update(context.Background(), cm, metav1.UpdateOptions{})
 		if err != nil {
@@ -1023,4 +1033,31 @@ func (o *Operator) reconcileDeployment(cm *corev1.ConfigMap) error {
 	go o.DeployApp(appID, sequence)
 
 	return nil
+}
+
+func (o *Operator) waitForClusterUpgrade(appSlug string) error {
+	kbClient, err := k8sutil.GetKubeClient(context.Background())
+	if err != nil {
+		return errors.Wrap(err, "failed to get kube client")
+	}
+	logger.Infof("waiting for cluster upgrade to finish")
+	for {
+		ins, err := embeddedcluster.GetCurrentInstallation(context.Background(), kbClient)
+		if err != nil {
+			return errors.Wrap(err, "failed to wait for embedded cluster installation")
+		}
+		if embeddedcluster.InstallationSucceeded(context.Background(), ins) {
+			return nil
+		}
+		if embeddedcluster.InstallationFailed(context.Background(), ins) {
+			if err := upgradeservicetask.SetStatusUpgradeFailed(appSlug, ins.Status.Reason); err != nil {
+				return errors.Wrap(err, "failed to set task status to failed")
+			}
+			return nil // we try to deploy the app even if the cluster upgrade failed
+		}
+		if err := upgradeservicetask.SetStatusUpgradingCluster(appSlug, ins.Status.State); err != nil {
+			return errors.Wrap(err, "failed to set task status to upgrading cluster")
+		}
+		time.Sleep(5 * time.Second)
+	}
 }

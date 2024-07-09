@@ -11,7 +11,6 @@ import (
 type InfoResponse struct {
 	Success        bool   `json:"success"`
 	Error          string `json:"error,omitempty"`
-	KOTSVersion    string `json:"kotsVersion"`
 	HasPreflight   bool   `json:"hasPreflight"`
 	IsConfigurable bool   `json:"isConfigurable"`
 }
@@ -32,7 +31,6 @@ func (h *Handler) Info(w http.ResponseWriter, r *http.Request) {
 	}
 
 	response.Success = true
-	response.KOTSVersion = params.UpdateKOTSVersion
 	response.HasPreflight = kotsKinds.HasPreflights()
 	response.IsConfigurable = kotsKinds.IsConfigurable()
 

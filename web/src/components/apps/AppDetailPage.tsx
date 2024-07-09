@@ -32,7 +32,8 @@ type Props = {
   refetchAppMetadata: () => void;
   snapshotInProgressApps: string[];
   isEmbeddedCluster: boolean;
-  showClusterUpgradeModal: boolean;
+  refetchUpgradeStatus: (appSlug: string) => Promise<any>;
+  showUpgradeStatusModal: boolean;
 };
 
 type State = {
@@ -134,8 +135,8 @@ function AppDetailPage(props: Props) {
             ? appsError.message
             : "Unexpected error when fetching apps";
         let displayErrorModal = true;
-        if (props.showClusterUpgradeModal) {
-          // don't show apps error modal if cluster is upgrading
+        if (props.showUpgradeStatusModal) {
+          // don't show apps error modal if an upgrade is in progress
           gettingAppErrMsg = "";
           displayErrorModal = false;
         }
@@ -410,6 +411,8 @@ function AppDetailPage(props: Props) {
     toggleErrorModal: toggleErrorModal,
     toggleIsBundleUploading: toggleIsBundleUploading,
     updateCallback: refetchData,
+    refetchUpgradeStatus: props.refetchUpgradeStatus,
+    showUpgradeStatusModal: props.showUpgradeStatusModal,
   };
 
   const lastItem = Utilities.getSubnavItemForRoute(

@@ -1939,13 +1939,6 @@ jobs:
             exit $EXIT_CODE
           fi
 
-          # validate that preflight checks ran
-          JSON_PATH="jsonpath={.data['automated-install-slug-$APP_SLUG']}"
-          if [ "$(kubectl get cm kotsadm-tasks -n "$APP_SLUG" -o "$JSON_PATH" | grep -c pending_preflight)" != "1" ]; then
-              echo "Preflight checks did not run"
-              exit 1
-          fi
-
           COUNTER=1
           while [ "$(./bin/kots get apps --namespace "$APP_SLUG" | awk 'NR>1{print $2}')" != "ready" ]; do
             ((COUNTER += 1))

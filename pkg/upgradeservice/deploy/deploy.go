@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
+	embeddedclusterv1beta1 "github.com/replicatedhq/embedded-cluster-kinds/apis/v1beta1"
 	"github.com/replicatedhq/kots/pkg/apparchive"
 	"github.com/replicatedhq/kots/pkg/embeddedcluster"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
@@ -66,6 +67,8 @@ type DeployOptions struct {
 }
 
 func Deploy(opts DeployOptions) error {
+	// put the app version archive in the object store so the operator
+	// of the new kots version can retrieve it to deploy the app
 	tgzArchiveKey := fmt.Sprintf(
 		"deployments/%s/%s-%s.tar.gz",
 		opts.Params.AppSlug,
@@ -104,22 +107,27 @@ func Deploy(opts DeployOptions) error {
 		return nil
 	}
 
-	// TODO NOW: no error is shown if pod restarts during cluster upgrade
-	if err := task.SetStatusUpgradingCluster(opts.Params.AppSlug, "Upgrading cluster..."); err != nil {
+	// a cluster upgrade is required. that's a long running process, and there's a high chance
+	// kots will be upgraded and restart during the process. so we run the upgrade in a goroutine
+	// and report the status back to the ui for the user to see the progress.
+	// the kots operator takes care of reporting the progress after the deployment gets created
+
+	if err := task.SetStatusUpgradingCluster(opts.Params.AppSlug, embeddedclusterv1beta1.InstallationStateEnqueued); err != nil {
 		return errors.Wrap(err, "failed to set task status")
 	}
 
 	go func() (finalError error) {
-		finishedChan := make(chan error)
-		defer close(finishedChan)
-
-		tasks.StartTaskMonitor(task.GetID(opts.Params.AppSlug), finishedChan)
 		defer func() {
 			if finalError != nil {
-				logger.Error(finalError)
+				if err := task.SetStatusUpgradeFailed(opts.Params.AppSlug, finalError.Error()); err != nil {
+					logger.Error(errors.Wrap(err, "failed to set task status to upgrade failed"))
+				}
 			}
-			finishedChan <- finalError
 		}()
+
+		finishedCh := make(chan struct{})
+		defer close(finishedCh)
+		tasks.StartTicker(task.GetID(opts.Params.AppSlug), finishedCh)
 
 		if err := embeddedcluster.StartClusterUpgrade(context.Background(), opts.KotsKinds, opts.RegistrySettings); err != nil {
 			return errors.Wrap(err, "failed to start cluster upgrade")
@@ -195,7 +203,7 @@ func createDeployment(opts createDeploymentOptions) error {
 			"skip-preflights":                 fmt.Sprintf("%t", opts.isSkipPreflights),
 			"continue-with-failed-preflights": fmt.Sprintf("%t", opts.continueWithFailedPreflights),
 			"preflight-result":                preflightResult,
-			"kots-version":                    opts.params.UpdateKOTSVersion,
+			"embedded-cluster-version":        opts.params.UpdateECVersion,
 			"requires-cluster-upgrade":        fmt.Sprintf("%t", opts.requiresClusterUpgrade),
 		},
 	}
@@ -213,54 +221,28 @@ func createDeployment(opts createDeploymentOptions) error {
 	return nil
 }
 
+// waitForDeployment waits for the deployment to be processed by the kots operator.
+// this is only used when a cluster upgrade is not required.
 func waitForDeployment(ctx context.Context, appSlug string) error {
 	clientset, err := k8sutil.GetClientset()
 	if err != nil {
 		return errors.Wrap(err, "failed to get clientset")
 	}
+	start := time.Now()
 	for {
-		s, err := clientset.CoreV1().ConfigMaps(util.PodNamespace).Get(ctx, getDeploymentName(appSlug), metav1.GetOptions{})
+		cm, err := clientset.CoreV1().ConfigMaps(util.PodNamespace).Get(ctx, getDeploymentName(appSlug), metav1.GetOptions{})
 		if err != nil {
 			return errors.Wrap(err, "failed to get configmap")
 		}
-		if s.Labels["kots.io/processed"] == "true" {
+		if cm.Labels != nil && cm.Labels["kots.io/processed"] == "true" {
 			return nil
 		}
-		time.Sleep(1 * time.Second)
+		if time.Sleep(1 * time.Second); time.Since(start) > 15*time.Second {
+			return errors.New("timed out waiting for deployment to be processed")
+		}
 	}
 }
 
 func getDeploymentName(appSlug string) string {
 	return fmt.Sprintf("kotsadm-%s-deployment", appSlug)
-}
-
-// IsClusterUpgrading returns true if:
-// - the upgrade service task status is upgrading cluster OR
-// - the deployment requires a cluster upgrade and has not been processed yet
-func IsClusterUpgrading(ctx context.Context, appSlug string) (bool, error) {
-	isUpgrading, err := task.IsStatusUpgradingCluster(appSlug)
-	if err != nil {
-		return false, errors.Wrap(err, "failed to get task status")
-	}
-	if isUpgrading {
-		return true, nil
-	}
-	clientset, err := k8sutil.GetClientset()
-	if err != nil {
-		return false, errors.Wrap(err, "failed to get clientset")
-	}
-	cm, err := clientset.CoreV1().ConfigMaps(util.PodNamespace).Get(ctx, getDeploymentName(appSlug), metav1.GetOptions{})
-	if err != nil {
-		if kuberneteserrors.IsNotFound(err) {
-			return false, nil
-		}
-		return false, errors.Wrap(err, "failed to get configmap")
-	}
-	if cm.Labels["kots.io/processed"] == "true" {
-		return false, nil
-	}
-	if cm.Data["requires-cluster-upgrade"] == "true" {
-		return true, nil
-	}
-	return false, nil
 }

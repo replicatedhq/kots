@@ -84,6 +84,8 @@ type Props = {
     toggleErrorModal: () => void;
     toggleIsBundleUploading: (isUploading: boolean) => void;
     updateCallback: () => void;
+    refetchUpgradeStatus: (appSlug: string) => Promise<any>;
+    showUpgradeStatusModal: boolean;
   };
 } & RouterProps;
 
@@ -251,8 +253,9 @@ class AppVersionHistory extends Component<Props, State> {
   handleIframeMessage = (event) => {
     if (event.data.message === "closeUpgradeServiceModal") {
       this.setState({ shouldShowUpgradeServiceModal: false });
-      if (this.props.outletContext.updateCallback) {
-        this.props.outletContext.updateCallback();
+      if (this.props.outletContext.refetchUpgradeStatus) {
+        const { app } = this.props.outletContext;
+        this.props.outletContext.refetchUpgradeStatus(app.slug);
       }
       this.fetchAvailableUpdates(false);
       this.fetchKotsDownstreamHistory();
@@ -300,12 +303,17 @@ class AppVersionHistory extends Component<Props, State> {
     if (this.state.shouldShowUpgradeServiceModal && this.iframeRef.current) {
       window.addEventListener("message", this.handleIframeMessage);
     }
-
     if (
       lastProps.params.slug !== this.props.params.slug ||
       lastProps.outletContext.app.id !== this.props.outletContext.app.id
     ) {
       this.fetchKotsDownstreamHistory();
+    }
+    if (
+      lastProps.outletContext.isEmbeddedCluster !== this.props.outletContext.isEmbeddedCluster &&
+      this.props.outletContext.isEmbeddedCluster
+    ) {
+      this.fetchAvailableUpdates();
     }
     if (
       this.props.outletContext.app.downstream.pendingVersions.length > 0 &&
@@ -1499,7 +1507,7 @@ class AppVersionHistory extends Component<Props, State> {
     }
   };
 
-  startUpgraderService = (update: AvailableUpdate) => {
+  startUpgradeService = (update: AvailableUpdate) => {
     this.setState({
       upgradeService: {
         versionLabel: update.versionLabel,
@@ -1670,6 +1678,7 @@ class AppVersionHistory extends Component<Props, State> {
       redeployVersionErrMsg,
       resetRedeployErrorMessage,
       resetMakingCurrentReleaseErrorMessage,
+      showUpgradeStatusModal,
     } = this.props.outletContext;
 
     const {
@@ -2094,7 +2103,7 @@ class AppVersionHistory extends Component<Props, State> {
                               updates={this.state.availableUpdates}
                               showReleaseNotes={this.showReleaseNotes}
                               upgradeService={this.state.upgradeService}
-                              startUpgraderService={this.startUpgraderService}
+                              startUpgradeService={this.startUpgradeService}
                               isAirgap={app?.isAirgap}
                               airgapUploader={airgapUploader}
                             />
@@ -2210,7 +2219,7 @@ class AppVersionHistory extends Component<Props, State> {
           sequence={this.state.selectedSequence}
         />
 
-        {errorMsg && (
+        {errorMsg && !showUpgradeStatusModal && (
           <ErrorModal
             errorModal={displayErrorModal}
             toggleErrorModal={this.toggleErrorModal}

@@ -5,7 +5,6 @@ import (
 	"io/ioutil"
 	"net/http"
 	"runtime"
-	"strings"
 	"time"
 
 	semver "github.com/Masterminds/semver/v3"
@@ -83,10 +82,6 @@ func getGoInfo() GoInfo {
 
 func GetUserAgent() string {
 	return fmt.Sprintf("KOTS/%s", Version())
-}
-
-func IsSameVersion(version string) bool {
-	return strings.TrimPrefix(Version(), "v") == strings.TrimPrefix(version, "v")
 }
 
 // IsLatestRelease queries github for the latest release in the project repo. If that release has a semver greater

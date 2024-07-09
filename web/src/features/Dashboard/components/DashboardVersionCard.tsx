@@ -68,6 +68,7 @@ type Props = {
   uploadResuming: boolean;
   uploadSize: number;
   viewAirgapUploadError: () => void;
+  showUpgradeStatusModal: boolean;
 };
 
 type State = {
@@ -202,8 +203,8 @@ const DashboardVersionCard = (props: Props) => {
   }, [location.search]);
 
   useEffect(() => {
-    if (Utilities.isClusterUpgrading(selectedApp)) {
-      // if the cluster is upgrading, we don't want to show an error
+    if (props.showUpgradeStatusModal) {
+      // if an upgrade is in progress, we don't want to show an error
       return;
     }
 

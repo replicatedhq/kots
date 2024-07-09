@@ -29,22 +29,18 @@ func VersionCmd() *cobra.Command {
 
 			output := v.GetString("output")
 
+			isLatest, latestVer, err := buildversion.IsLatestRelease()
 			versionOutput := VersionOutput{
 				Version: buildversion.Version(),
 			}
-			if !v.GetBool("skip-checks") {
-				isLatest, latestVer, err := buildversion.IsLatestRelease()
-				if err == nil && !isLatest {
-					versionOutput.LatestVersion = latestVer
-					versionOutput.InstallLatest = "curl https://kots.io/install | bash"
-				}
+			if err == nil && !isLatest {
+				versionOutput.LatestVersion = latestVer
+				versionOutput.InstallLatest = "curl https://kots.io/install | bash"
 			}
 
 			if output != "json" && output != "" {
 				return errors.Errorf("output format %s not supported (allowed formats are: json)", output)
-			}
-
-			if output == "json" {
+			} else if output == "json" {
 				// marshal JSON
 				outputJSON, err := json.Marshal(versionOutput)
 				if err != nil {
@@ -66,8 +62,6 @@ func VersionCmd() *cobra.Command {
 	}
 
 	cmd.Flags().StringP("output", "o", "", "output format (currently supported: json)")
-	cmd.Flags().Bool("skip-checks", false, "skip any checks and just print the version")
-	cmd.Flags().MarkHidden("skip-checks")
 
 	return cmd
 }

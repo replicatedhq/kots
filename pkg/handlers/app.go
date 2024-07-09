@@ -25,7 +25,6 @@ import (
 	storetypes "github.com/replicatedhq/kots/pkg/store/types"
 	"github.com/replicatedhq/kots/pkg/tasks"
 	"github.com/replicatedhq/kots/pkg/update"
-	upgradeservicedeploy "github.com/replicatedhq/kots/pkg/upgradeservice/deploy"
 	"github.com/replicatedhq/kots/pkg/util"
 	"github.com/replicatedhq/kots/pkg/version"
 	kotsv1beta1 "github.com/replicatedhq/kotskinds/apis/kots/v1beta1"
@@ -278,14 +277,7 @@ func responseAppFromApp(ctx context.Context, a *apptypes.App) (*types.ResponseAp
 		ID:   d.ClusterID,
 		Slug: d.ClusterSlug,
 	}
-
 	if util.IsEmbeddedCluster() {
-		isUpgrading, err := upgradeservicedeploy.IsClusterUpgrading(ctx, a.Slug)
-		if err != nil {
-			return nil, errors.Wrap(err, "failed to check if cluster is upgrading")
-		}
-		cluster.IsUpgrading = isUpgrading
-
 		kbClient, err := k8sutil.GetKubeClient(ctx)
 		if err != nil {
 			return nil, fmt.Errorf("failed to get kubeclient: %w", err)

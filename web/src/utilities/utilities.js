@@ -669,20 +669,6 @@ export const Utilities = {
     return app?.downstream?.cluster?.state;
   },
 
-  isClusterUpgrading(app) {
-    return app?.downstream?.cluster?.isUpgrading;
-  },
-
-  shouldShowClusterUpgradeModal(apps) {
-    if (!apps || apps.length === 0) {
-      return false;
-    }
-
-    // embedded cluster can only have one app
-    const app = apps[0];
-    return this.isClusterUpgrading(app);
-  },
-
   // Converts string to titlecase i.e. 'hello' -> 'Hello'
   // @returns {String}
   toTitleCase(word) {
