@@ -159,6 +159,7 @@ type State = {
   viewLogsErrMsg: string;
   yamlErrorDetails: string[];
   shouldShowUpgradeServiceModal: boolean;
+  upgradeKotsVersion: string;
   upgradeService: {
     versionLabel?: string;
     isLoading?: boolean;
@@ -237,6 +238,7 @@ class AppVersionHistory extends Component<Props, State> {
       viewLogsErrMsg: "",
       yamlErrorDetails: [],
       shouldShowUpgradeServiceModal: false,
+      upgradeKotsVersion: null,
       upgradeService: {},
     };
     this.iframeRef = createRef<HTMLIFrameElement>();
@@ -291,6 +293,10 @@ class AppVersionHistory extends Component<Props, State> {
       }
     }
 
+    console.log(
+      this.props.outletContext.isEmbeddedCluster,
+      "isembedded cluster"
+    );
     if (this.props.outletContext.isEmbeddedCluster) {
       this.fetchAvailableUpdates();
     }
@@ -331,6 +337,32 @@ class AppVersionHistory extends Component<Props, State> {
     this._mounted = false;
     window.removeEventListener("message", this.handleIframeMessage);
   }
+
+  fetchUpgradeKotsVersion = async () => {
+    const appSlug = this.props.params.slug;
+
+    try {
+      const res = await fetch(
+        `${process.env.API_ENDPOINT}/upgrade-service/app/${appSlug}`,
+        {
+          headers: {
+            Accept: "application/json",
+          },
+          credentials: "include",
+          method: "GET",
+        }
+      );
+
+      if (res.ok) {
+        let data = await res.json();
+        this.setState({
+          upgradeKotsVersion: data.kotsVersion,
+        });
+      }
+    } catch (err) {
+      console.log(err, "error fetching upgrade kots version");
+    }
+  };
 
   fetchAvailableUpdates = async (showSpinner = true) => {
     const appSlug = this.props.params.slug;
@@ -1545,6 +1577,7 @@ class AppVersionHistory extends Component<Props, State> {
             isLoading: false,
           },
         });
+        this.fetchUpgradeKotsVersion();
         return;
       })
       .catch((err) => {
@@ -2255,6 +2288,7 @@ class AppVersionHistory extends Component<Props, State> {
           onLoad={() => this.setState({ isIframeLoading: false })}
           isIframeLoading={this.state.isIframeLoading}
           iframeRef={this.iframeRef}
+          upgradeKotsVersion={this.state.upgradeKotsVersion}
         />
       </div>
     );
