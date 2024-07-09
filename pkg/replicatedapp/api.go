@@ -42,13 +42,12 @@ type LicenseData struct {
 }
 
 func GetLatestLicense(license *kotsv1beta1.License) (*LicenseData, error) {
+	url := fmt.Sprintf("%s/license/%s", license.Spec.Endpoint, license.Spec.AppSlug)
+
 	installParams, err := kotsutil.GetInstallationParams()
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to get installation params")
-	}
-
-	url := fmt.Sprintf("%s/license/%s", license.Spec.Endpoint, license.Spec.AppSlug)
-	if installParams.PreferredChannelSlug != "" {
+		logger.Warnf("failed to get preferred channel slug from installation params: %v", err)
+	} else if installParams.PreferredChannelSlug != "" {
 		url = fmt.Sprintf("%s/%s", url, installParams.PreferredChannelSlug)
 	}
 
