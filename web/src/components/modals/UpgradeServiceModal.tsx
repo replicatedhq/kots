@@ -1,5 +1,6 @@
 import Icon from "@components/Icon";
 import Loader from "@components/shared/Loader";
+import { getBuildVersion } from "@src/utilities/utilities";
 import Modal from "react-modal";
 
 const UpgradeServiceModal = ({
@@ -11,7 +12,6 @@ const UpgradeServiceModal = ({
   iframeRef,
   onLoad,
   isIframeLoading,
-  upgradeKotsVersion,
 }) => {
   return (
     <Modal
@@ -60,8 +60,11 @@ const UpgradeServiceModal = ({
             />
           </>
         )}
-        <div className="tw-flex tw-justify-start tw-m-4 tw-color-gray-400 tw-text-xs">
-          Served by KOTS {upgradeKotsVersion}
+        <div
+          className="tw-flex tw-justify-start tw-m-4 tw-color-gray-400 tw-text-xs tw-invisible"
+          id="kotsUpgradeVersion"
+        >
+          {getBuildVersion()}
         </div>
       </div>
     </Modal>
