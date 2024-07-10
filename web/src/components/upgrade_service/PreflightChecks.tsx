@@ -1,7 +1,6 @@
 import { KotsPageTitle } from "@components/Head";
 import { useEffect, useState } from "react";
-import { useParams, useLocation, useNavigate } from "react-router-dom";
-import Modal from "react-modal";
+import { useParams, useNavigate } from "react-router-dom";
 
 import PreflightRenderer from "@components/PreflightRenderer";
 import SkipPreflightsModal from "@components/shared/modals/SkipPreflightsModal";
@@ -9,16 +8,10 @@ import SkipPreflightsModal from "@components/shared/modals/SkipPreflightsModal";
 import PreflightsProgress from "@components/troubleshoot/PreflightsProgress";
 import "../../scss/components/PreflightCheckPage.scss";
 
-import { useApps } from "@features/App";
+import { useGetPrelightResults, useRerunPreflights } from "./hooks/index";
 
-import {
-  useGetPrelightResults,
-  useRerunPreflights,
-  useDeployAppVersion,
-} from "./hooks/index";
-
-import Icon from "@components/Icon";
 import { KotsParams } from "@types";
+import { useUpgradeServiceContext } from "./UpgradeServiceContext";
 
 const PreflightCheck = ({
   setCurrentStep,
@@ -26,25 +19,16 @@ const PreflightCheck = ({
   setCurrentStep: (step: number) => void;
 }) => {
   const navigate = useNavigate();
-  const [
-    showContinueWithFailedPreflightsModal,
-    setShowContinueWithFailedPreflightsModal,
-  ] = useState(false);
+
   const [
     showConfirmIgnorePreflightsModal,
     setShowConfirmIgnorePreflightsModal,
   ] = useState(false);
 
-  const closeModal = async () => {
-    window.parent.postMessage({ message: "closeUpgradeServiceModal" });
-  };
+  const { setIsSkipPreflights, setContinueWithFailedPreflights } =
+    useUpgradeServiceContext();
 
   const { sequence = "0", slug } = useParams<keyof KotsParams>() as KotsParams;
-  const { mutate: deployKotsDownstream } = useDeployAppVersion({
-    slug,
-    sequence,
-    closeModal,
-  });
 
   const { data: preflightCheck, error: getPreflightResultsError } =
     useGetPrelightResults({ slug, sequence });
@@ -57,12 +41,15 @@ const PreflightCheck = ({
     }
   }
 
-  const { refetch: refetchApps } = useApps();
-  const location = useLocation();
-
   useEffect(() => {
     setCurrentStep(1);
   }, []);
+
+  const handleIgnorePreflights = () => {
+    setContinueWithFailedPreflights(false);
+    setIsSkipPreflights(true);
+    navigate(`/upgrade-service/app/${slug}/deploy`);
+  };
 
   return (
     <div className="flex-column flex1 container">
@@ -114,29 +101,6 @@ const PreflightCheck = ({
               />
             </div>
           )}
-
-          {/* {preflightCheck?.showPreflightResultErrors && (
-            <>
-              <PreflightResultErrors
-                errors={preflightCheck.errors}
-                ignorePermissionErrors={""}
-                logo={""}
-                preflightResultData={preflightCheck.preflightResults}
-                showRbacError={preflightCheck.showRbacError}
-              />
-              <div className="flex justifyContent--flexEnd tw-gap-6">
-                <button
-                  className="btn primary blue"
-                  onClick={() => ignorePermissionErrors()}
-                >
-                  {!location.pathname.includes("version-history")
-                    ? "Proceed"
-                    : "Re-run"}{" "}
-                  with limited Preflights
-                </button>
-              </div>
-            </>
-          )} */}
 
           {preflightCheck?.showPreflightResults && (
             <div className="tw-mt-6">
@@ -197,50 +161,12 @@ const PreflightCheck = ({
         <SkipPreflightsModal
           hideSkipModal={() => setShowConfirmIgnorePreflightsModal(false)}
           onIgnorePreflightsAndDeployClick={() => {
-            deployKotsDownstream({
-              continueWithFailedPreflights: false,
-              isSkipPreflights: true,
-            });
+            handleIgnorePreflights();
           }}
           showSkipModal={showConfirmIgnorePreflightsModal}
+          isEmbeddedCluster={true}
         />
       )}
-
-      <Modal
-        isOpen={showContinueWithFailedPreflightsModal}
-        onRequestClose={() => setShowContinueWithFailedPreflightsModal(false)}
-        shouldReturnFocusAfterClose={false}
-        contentLabel="Preflight shows some issues"
-        ariaHideApp={false}
-        className="Modal"
-      >
-        <div className="Modal-body tw-w-[300px]">
-          <p className="u-fontSize--normal u-textColor--bodyCopy u-lineHeight--normal u-marginBottom--20 tw-text-center">
-            Some preflight checks did not pass. <br /> Are you sure you want to
-            deploy?
-          </p>
-          <div className="u-marginTop--10 flex tw-justify-center">
-            <button
-              type="button"
-              className="btn secondary"
-              onClick={() => setShowContinueWithFailedPreflightsModal(false)}
-            >
-              Close
-            </button>
-            <button
-              type="button"
-              className="btn blue primary u-marginLeft--10"
-              onClick={() => {
-                setShowContinueWithFailedPreflightsModal(false);
-                deployKotsDownstream({ continueWithFailedPreflights: true });
-                refetchApps();
-              }}
-            >
-              Deploy anyway
-            </button>
-          </div>
-        </div>
-      </Modal>
     </div>
   );
 };

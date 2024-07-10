@@ -14,6 +14,7 @@ import { useDeployAppVersion, useGetPrelightResults } from "./hooks/index";
 import { KotsParams } from "@types";
 
 import "../../scss/components/PreflightCheckPage.scss";
+import { useUpgradeServiceContext } from "./UpgradeServiceContext";
 
 interface PreflightResultResponse {
   learnMoreUri: string;
@@ -43,6 +44,9 @@ const ConfirmAndDeploy = ({
     setShowConfirmIgnorePreflightsModal,
   ] = useState(false);
 
+  const { isSkipPreflights, continueWithFailedPreflights } =
+    useUpgradeServiceContext();
+
   const closeModal = async () => {
     window.parent.postMessage({ message: "closeUpgradeServiceModal" });
   };
@@ -57,6 +61,7 @@ const ConfirmAndDeploy = ({
   const { data: preflightCheck, error: getPreflightResultsError } =
     useGetPrelightResults({ sequence, slug });
 
+  // probably isn't necessary to have this here
   if (!preflightCheck?.showPreflightCheckPending) {
     if (showConfirmIgnorePreflightsModal) {
       setShowConfirmIgnorePreflightsModal(false);
@@ -276,7 +281,8 @@ const ConfirmAndDeploy = ({
               preflightCheck?.shouldShowConfirmContinueWithFailedPreflights
                 ? setShowContinueWithFailedPreflightsModal(true)
                 : deployKotsDownstream({
-                    continueWithFailedPreflights: true,
+                    continueWithFailedPreflights,
+                    isSkipPreflights,
                   })
             }
           >
@@ -289,7 +295,6 @@ const ConfirmAndDeploy = ({
         <SkipPreflightsModal
           hideSkipModal={() => setShowConfirmIgnorePreflightsModal(false)}
           onIgnorePreflightsAndDeployClick={() => {
-            // TODO: MAKE SURE THE LOGIC FOR DEPLOYING THIS IS WORKING CORRECTLY
             deployKotsDownstream({
               continueWithFailedPreflights: false,
               isSkipPreflights: true,
@@ -326,7 +331,8 @@ const ConfirmAndDeploy = ({
               onClick={() => {
                 setShowContinueWithFailedPreflightsModal(false);
                 deployKotsDownstream({
-                  continueWithFailedPreflights: true,
+                  continueWithFailedPreflights,
+                  isSkipPreflights,
                 });
 
                 refetchApps();
