@@ -62,7 +62,7 @@ const UpgradeServiceModal = ({
         )}
         <div
           className="tw-flex tw-justify-start tw-m-4 tw-color-gray-400 tw-text-xs tw-invisible"
-          id="kotsUpgradeVersion"
+          id="kots-upgrade-version"
         >
           {getBuildVersion()}
         </div>
