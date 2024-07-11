@@ -25,6 +25,7 @@ yarn-error.log*
 package-lock.json
 
 dist/*
+!dist/README.md
 /history
 
 #editors
