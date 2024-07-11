@@ -62,13 +62,14 @@ func Start() error {
 // if enabled, and cron job was NOT found: add a new cron job to check app updates
 // if enabled, and a cron job was found, update the existing cron job with the latest cron spec
 // if disabled: stop the current running cron job (if exists)
-// no-op for airgap applications
+// no-op for airgap and embedded cluster applications
 func Configure(a *apptypes.App, updateCheckerSpec string) error {
 	appId := a.GetID()
 	appSlug := a.GetSlug()
 	isAirgap := a.GetIsAirgap()
+	isEC := util.IsEmbeddedCluster()
 
-	if isAirgap {
+	if isAirgap || isEC {
 		return nil
 	}
 
@@ -159,8 +160,14 @@ func Stop(appID string) {
 // if "DeployLatest" is set to true, the latest version will be deployed.
 // otherwise, if "DeployVersionLabel" is set to true, then the version with the corresponding version label will be deployed (if found).
 // otherwise, if "IsAutomatic" is set to true (which means it's an automatic update check), then the version that matches the auto deploy configuration (if enabled) will be deployed.
+// Automatic update checks will not run on embedded clusters.
 // returns the number of available updates.
 func CheckForUpdates(opts types.CheckForUpdatesOpts) (ucr *types.UpdateCheckResponse, finalError error) {
+	if opts.IsAutomatic && util.IsEmbeddedCluster() {
+		logger.Debugf("skipping automatic update check for app %s because it's running in an embedded cluster", opts.AppID)
+		return
+	}
+
 	currentStatus, _, err := tasks.GetTaskStatus("update-download")
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get task status")

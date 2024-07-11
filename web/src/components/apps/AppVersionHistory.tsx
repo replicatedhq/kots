@@ -59,6 +59,7 @@ type ReleaseWithError = {
 
 type Props = {
   outletContext: {
+    isEmbeddedCluster: boolean;
     adminConsoleMetadata: {
       isAirgap: boolean;
       isKurl: boolean;

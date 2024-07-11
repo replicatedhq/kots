@@ -21,20 +21,14 @@ import { useNextAppVersionWithIntercept } from "../api/useNextAppVersion";
 import "@src/scss/components/watches/Dashboard.scss";
 import "@src/../node_modules/react-vis/dist/style";
 import { Paragraph } from "@src/styles/common";
-
-const COMMON_ERRORS = {
-  "HTTP 401": "Registry credentials are invalid",
-  "invalid username/password": "Registry credentials are invalid",
-  "no such host": "No such host",
-};
-
 // Types
 import {
   App,
   AppLicense,
-  Downstream,
-  DashboardResponse,
   DashboardActionLink,
+  DashboardResponse,
+  Downstream,
+  Metadata,
   ResourceStates,
   Version,
 } from "@types";
@@ -45,6 +39,16 @@ import {
 import { useAppDownstream } from "../api/getAppDownstream";
 import { useAirgapConfig } from "../api/getAirgapConfig";
 import { Updates, useCheckForUpdates } from "../api/getUpdates";
+
+const COMMON_ERRORS = {
+  "HTTP 401": "Registry credentials are invalid",
+  "invalid username/password": "Registry credentials are invalid",
+  "no such host": "No such host",
+};
+
+type Props = {
+  adminConsoleMetadata: Metadata | null;
+};
 
 type OutletContext = {
   app: App;
@@ -106,7 +110,7 @@ type State = {
   lastUpdatedDate: Date;
 };
 
-const Dashboard = () => {
+const Dashboard = (props: Props) => {
   const [state, setState] = useReducer(
     (currentState: State, newState: Partial<State>) => ({
       ...currentState,
@@ -376,7 +380,7 @@ const Dashboard = () => {
   };
 
   const goToTroubleshootPage = () => {
-    navigate(`${params.url}/troubleshoot`);
+    navigate(`/app/${params.slug}/troubleshoot`);
   };
 
   const getAppResourcesByState = () => {
@@ -612,7 +616,6 @@ const Dashboard = () => {
       checkingForUpdates: true,
       checkingForUpdateError: false,
     });
-    console.log("chiecking");
     checkForUpdates();
   };
 
@@ -700,6 +703,7 @@ const Dashboard = () => {
                     showAutomaticUpdatesModal={showAutomaticUpdatesModal}
                     noUpdatesAvalable={state.noUpdatesAvalable}
                     showUpgradeStatusModal={showUpgradeStatusModal}
+                    adminConsoleMetadata={props.adminConsoleMetadata}
                   />
                 </div>
 

@@ -69,6 +69,7 @@ type PullOptions struct {
 	AppSequence             int64
 	AppVersionLabel         string
 	IsGitOps                bool
+	StorageClassName        string
 	HTTPProxyEnvValue       string
 	HTTPSProxyEnvValue      string
 	NoProxyEnvValue         string
@@ -291,6 +292,7 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 		IncludeAdminConsole: includeAdminConsole,
 		SharedPassword:      pullOptions.SharedPassword,
 		EncryptConfig:       encryptConfig,
+		StorageClassName:    pullOptions.StorageClassName,
 		HTTPProxyEnvValue:   pullOptions.HTTPProxyEnvValue,
 		HTTPSProxyEnvValue:  pullOptions.HTTPSProxyEnvValue,
 		NoProxyEnvValue:     pullOptions.NoProxyEnvValue,

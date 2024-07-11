@@ -13,15 +13,14 @@ import ShowLogsModal from "@src/components/modals/ShowLogsModal";
 import DeployWarningModal from "@src/components/shared/modals/DeployWarningModal";
 import SkipPreflightsModal from "@src/components/shared/modals/SkipPreflightsModal";
 import classNames from "classnames";
-import { getReadableGitOpsProviderName } from "@src/utilities/utilities";
+import {
+  getPreflightResultState,
+  getReadableGitOpsProviderName,
+  secondsAgo,
+  Utilities,
+} from "@src/utilities/utilities";
 import { useNextAppVersionWithIntercept } from "../api/useNextAppVersion";
 import { useSelectedApp } from "@features/App";
-
-import {
-  Utilities,
-  getPreflightResultState,
-  secondsAgo,
-} from "@src/utilities/utilities";
 import { Repeater } from "@src/utilities/repeater";
 
 import "@src/scss/components/watches/DashboardCard.scss";
@@ -39,7 +38,7 @@ import { AirgapUploader } from "@src/utilities/airgapUploader";
 import EditConfigIcon from "@components/shared/EditConfigIcon";
 
 type Props = {
-  adminConsoleMetadata?: Metadata;
+  adminConsoleMetadata: Metadata | null;
   airgapUploader: AirgapUploader | null;
   airgapUploadError: string | null;
   checkingForUpdates: boolean;
@@ -1488,19 +1487,21 @@ const DashboardVersionCard = (props: Props) => {
                   </span>
                 </div>
               )}
-              <div className="flex alignItems--center u-marginRight--20 link">
-                <Icon
-                  icon="schedule-sync"
-                  size={18}
-                  className=" clickable u-marginRight--5"
-                />
-                <span
-                  className="u-fontSize--small u-lineHeight--default"
-                  onClick={props.showAutomaticUpdatesModal}
-                >
-                  Configure automatic updates
-                </span>
-              </div>
+              {!props.adminConsoleMetadata?.isEmbeddedCluster && (
+                <div className="flex alignItems--center u-marginRight--20 link">
+                  <Icon
+                    icon="schedule-sync"
+                    size={18}
+                    className=" clickable u-marginRight--5"
+                  />
+                  <span
+                    className="u-fontSize--small u-lineHeight--default"
+                    onClick={props.showAutomaticUpdatesModal}
+                  >
+                    Configure automatic updates
+                  </span>
+                </div>
+              )}
             </div>
           )}
         </div>

@@ -1316,7 +1316,8 @@ jobs:
             --shared-password password \
             --kotsadm-registry ttl.sh \
             --kotsadm-namespace automated-${{ github.run_id }} \
-            --kotsadm-tag 24h
+            --kotsadm-tag 24h \
+            --storage-class=${{ matrix.cluster.distribution == 'eks' && 'gp2' || '' }}
 
           EXIT_CODE=$?
           if [ $EXIT_CODE -ne 0 ]; then

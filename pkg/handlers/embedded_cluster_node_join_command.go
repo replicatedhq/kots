@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"net/http"
 
+	ecv1beta1 "github.com/replicatedhq/embedded-cluster-kinds/apis/v1beta1"
+
 	"github.com/replicatedhq/kots/pkg/embeddedcluster"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
@@ -17,23 +19,18 @@ type GenerateEmbeddedClusterNodeJoinCommandResponse struct {
 	Command []string `json:"command"`
 }
 
-type Proxy struct {
-	HTTPProxy  string `json:"httpProxy"`
-	HTTPSProxy string `json:"httpsProxy"`
-	NoProxy    string `json:"noProxy"`
-}
-
 type GetEmbeddedClusterNodeJoinCommandResponse struct {
-	ClusterID                 string `json:"clusterID"`
-	K0sJoinCommand            string `json:"k0sJoinCommand"`
-	K0sToken                  string `json:"k0sToken"`
-	K0sUnsupportedOverrides   string `json:"k0sUnsupportedOverrides"`
-	EndUserK0sConfigOverrides string `json:"endUserK0sConfigOverrides"`
-	MetricsBaseURL            string `json:"metricsBaseURL"`
-	EmbeddedClusterVersion    string `json:"embeddedClusterVersion"`
-	AirgapRegistryAddress     string `json:"airgapRegistryAddress"`
-	IsAirgap                  bool   `json:"isAirgap"`
-	Proxy                     *Proxy `json:"proxy,omitempty"`
+	ClusterID                 string                 `json:"clusterID"`
+	K0sJoinCommand            string                 `json:"k0sJoinCommand"`
+	K0sToken                  string                 `json:"k0sToken"`
+	K0sUnsupportedOverrides   string                 `json:"k0sUnsupportedOverrides"`
+	EndUserK0sConfigOverrides string                 `json:"endUserK0sConfigOverrides"`
+	MetricsBaseURL            string                 `json:"metricsBaseURL"`
+	EmbeddedClusterVersion    string                 `json:"embeddedClusterVersion"`
+	AirgapRegistryAddress     string                 `json:"airgapRegistryAddress"`
+	IsAirgap                  bool                   `json:"isAirgap"`
+	Proxy                     *ecv1beta1.ProxySpec   `json:"proxy,omitempty"`
+	Network                   *ecv1beta1.NetworkSpec `json:"network,omitempty"`
 }
 
 type GenerateEmbeddedClusterNodeJoinCommandRequest struct {
@@ -182,9 +179,9 @@ func (h *Handler) GetEmbeddedClusterNodeJoinCommand(w http.ResponseWriter, r *ht
 	httpProxy := util.HTTPProxy()
 	httpsProxy := util.HTTPSProxy()
 	noProxy := util.NoProxy()
-	var proxy *Proxy
+	var proxy *ecv1beta1.ProxySpec
 	if httpProxy != "" || httpsProxy != "" || noProxy != "" {
-		proxy = &Proxy{
+		proxy = &ecv1beta1.ProxySpec{
 			HTTPProxy:  httpProxy,
 			HTTPSProxy: httpsProxy,
 			NoProxy:    noProxy,
@@ -202,5 +199,6 @@ func (h *Handler) GetEmbeddedClusterNodeJoinCommand(w http.ResponseWriter, r *ht
 		AirgapRegistryAddress:     airgapRegistryAddress,
 		IsAirgap:                  install.Spec.AirGap,
 		Proxy:                     proxy,
+		Network:                   install.Spec.Network,
 	})
 }
