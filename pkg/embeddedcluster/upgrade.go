@@ -74,6 +74,7 @@ func startClusterUpgrade(
 			MetricsBaseURL:            current.Spec.MetricsBaseURL,
 			HighAvailability:          current.Spec.HighAvailability,
 			AirGap:                    current.Spec.AirGap,
+			Network:                   current.Spec.Network,
 			Artifacts:                 artifacts,
 			Config:                    &newcfg,
 			EndUserK0sConfigOverrides: current.Spec.EndUserK0sConfigOverrides,
