@@ -9,5 +9,5 @@ const (
 	Rqlite     = "kotsadm/rqlite:8.26.6-r1"
 	Dex        = "kotsadm/dex:2.40.0-r3"
 	Schemahero = "schemahero/schemahero:0.17.9"
-	Lvp        = "replicated/local-volume-provider:v0.6.6"
+	Lvp        = "replicated/local-volume-provider:v0.6.7"
 )
