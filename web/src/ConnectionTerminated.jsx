@@ -40,9 +40,12 @@ export default class ConnectionTerminated extends Component {
       10000
     )
       .then(async (res) => {
-        if (res.status === 401) {
-          Utilities.logoutUser();
-          return;
+        if (!res.ok) {
+          if (res.status === 401) {
+            Utilities.logoutUser();
+            return;
+          }
+          throw new Error(`Unexpected status code: ${res.status}`);
         }
         this.props.setTerminatedState(false);
       })

@@ -9,7 +9,7 @@ const AvailableUpdatesComponent = ({
   updates,
   showReleaseNotes,
   upgradeService,
-  startUpgraderService,
+  startUpgradeService,
   airgapUploader,
   isAirgap,
 }: {
@@ -20,7 +20,7 @@ const AvailableUpdatesComponent = ({
     isLoading?: boolean;
     error?: string;
   } | null;
-  startUpgraderService: (version: AvailableUpdate) => void;
+  startUpgradeService: (version: AvailableUpdate) => void;
   airgapUploader: AirgapUploader | null;
   isAirgap: boolean;
 }) => {
@@ -97,7 +97,7 @@ const AvailableUpdatesComponent = ({
                     )}
                     <button
                       className={"btn tw-ml-2 primary blue"}
-                      onClick={() => startUpgraderService(update)}
+                      onClick={() => startUpgradeService(update)}
                       disabled={!update.isDeployable || isCurrentVersionLoading}
                     >
                       <span

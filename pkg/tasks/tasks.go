@@ -1,29 +1,15 @@
 package tasks
 
 import (
-	"context"
-	"encoding/json"
 	"fmt"
-	"os"
 	"time"
 
-	"github.com/gofrs/flock"
 	"github.com/pkg/errors"
-	"github.com/replicatedhq/kots/pkg/k8sutil"
-	kotsadmtypes "github.com/replicatedhq/kots/pkg/kotsadm/types"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/persistence"
 	"github.com/replicatedhq/kots/pkg/util"
 	"github.com/rqlite/gorqlite"
-	corev1 "k8s.io/api/core/v1"
-	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
-
-const tasksConfigMapName = "kotsadm-tasks"
-
-// use a file lock instead of a mutex as tasks are shared with the upgrade service which runs in a separate process
-var tasksLock = flock.New(os.TempDir() + "/kotsadm-tasks.lock")
 
 type TaskStatus struct {
 	Message   string    `json:"message"`
@@ -64,231 +50,94 @@ func StartTaskMonitor(taskID string, finishedChan <-chan error) {
 	}()
 }
 
+func StartTicker(taskID string, finishedChan <-chan struct{}) {
+	go func() {
+		for {
+			select {
+			case <-time.After(time.Second * 2):
+				if err := UpdateTaskStatusTimestamp(taskID); err != nil {
+					logger.Error(err)
+				}
+			case <-finishedChan:
+				return
+			}
+		}
+	}()
+}
+
 func SetTaskStatus(id string, message string, status string) error {
-	tasksLock.Lock()
-	defer tasksLock.Unlock()
+	db := persistence.MustGetDBSession()
 
-	configmap, err := getConfigmap()
-	if err != nil {
-		return errors.Wrap(err, "failed to get task status configmap")
-	}
-
-	if configmap.Data == nil {
-		configmap.Data = map[string]string{}
-	}
-
-	b, err := json.Marshal(TaskStatus{
-		Message:   message,
-		Status:    status,
-		UpdatedAt: time.Now(),
+	query := `
+INSERT INTO api_task_status (id, updated_at, current_message, status)
+VALUES (?, ?, ?, ?)
+ON CONFLICT(id) DO UPDATE SET
+	updated_at = EXCLUDED.updated_at,
+	current_message = EXCLUDED.current_message,
+	status = EXCLUDED.status
+`
+	wr, err := db.WriteOneParameterized(gorqlite.ParameterizedStatement{
+		Query:     query,
+		Arguments: []interface{}{id, time.Now().Unix(), message, status},
 	})
 	if err != nil {
-		return errors.Wrap(err, "failed to marshal task status")
-	}
-
-	configmap.Data[id] = string(b)
-
-	if err := updateConfigmap(configmap); err != nil {
-		return errors.Wrap(err, "failed to update task status configmap")
+		return fmt.Errorf("failed to write: %v: %v", err, wr.Err)
 	}
 
 	return nil
 }
 
 func UpdateTaskStatusTimestamp(id string) error {
-	tasksLock.Lock()
-	defer tasksLock.Unlock()
+	db := persistence.MustGetDBSession()
 
-	configmap, err := getConfigmap()
+	query := `UPDATE api_task_status SET updated_at = ? WHERE id = ?`
+	wr, err := db.WriteOneParameterized(gorqlite.ParameterizedStatement{
+		Query:     query,
+		Arguments: []interface{}{time.Now().Unix(), id},
+	})
 	if err != nil {
-		return errors.Wrap(err, "failed to get task status configmap")
-	}
-
-	if configmap.Data == nil {
-		configmap.Data = map[string]string{}
-	}
-
-	data, ok := configmap.Data[id]
-	if !ok {
-		return nil
-	}
-
-	ts := TaskStatus{}
-	if err := json.Unmarshal([]byte(data), &ts); err != nil {
-		return errors.Wrap(err, "failed to unmarshal task status")
-	}
-	ts.UpdatedAt = time.Now()
-
-	b, err := json.Marshal(ts)
-	if err != nil {
-		return errors.Wrap(err, "failed to marshal task status")
-	}
-
-	configmap.Data[id] = string(b)
-
-	if err := updateConfigmap(configmap); err != nil {
-		return errors.Wrap(err, "failed to update task status configmap")
+		return fmt.Errorf("failed to write: %v: %v", err, wr.Err)
 	}
 
 	return nil
 }
 
 func ClearTaskStatus(id string) error {
-	tasksLock.Lock()
-	defer tasksLock.Unlock()
+	db := persistence.MustGetDBSession()
 
-	configmap, err := getConfigmap()
+	query := `DELETE FROM api_task_status WHERE id = ?`
+	wr, err := db.WriteOneParameterized(gorqlite.ParameterizedStatement{
+		Query:     query,
+		Arguments: []interface{}{id},
+	})
 	if err != nil {
-		return errors.Wrap(err, "failed to get task status configmap")
-	}
-
-	if configmap.Data == nil {
-		configmap.Data = map[string]string{}
-	}
-
-	_, ok := configmap.Data[id]
-	if !ok {
-		return nil
-	}
-
-	delete(configmap.Data, id)
-
-	if err := updateConfigmap(configmap); err != nil {
-		return errors.Wrap(err, "failed to update task status configmap")
+		return fmt.Errorf("failed to write: %v: %v", err, wr.Err)
 	}
 
 	return nil
 }
 
 func GetTaskStatus(id string) (string, string, error) {
-	tasksLock.Lock()
-	defer tasksLock.Unlock()
-
-	configmap, err := getConfigmap()
-	if err != nil {
-		return "", "", errors.Wrap(err, "failed to get task status configmap")
-	}
-
-	if configmap.Data == nil {
-		return "", "", nil
-	}
-
-	marshalled, ok := configmap.Data[id]
-	if !ok {
-		return "", "", nil
-	}
-
-	ts := TaskStatus{}
-	if err := json.Unmarshal([]byte(marshalled), &ts); err != nil {
-		return "", "", errors.Wrap(err, "error unmarshalling task status")
-	}
-
-	if ts.UpdatedAt.Before(time.Now().Add(-1 * time.Minute)) {
-		return "", "", nil
-	}
-
-	return ts.Status, ts.Message, nil
-}
-
-func getConfigmap() (*corev1.ConfigMap, error) {
-	clientset, err := k8sutil.GetClientset()
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to get clientset")
-	}
-
-	existingConfigmap, err := clientset.CoreV1().ConfigMaps(util.PodNamespace).Get(context.TODO(), tasksConfigMapName, metav1.GetOptions{})
-	if err != nil && !kuberneteserrors.IsNotFound(err) {
-		return nil, errors.Wrap(err, "failed to get configmap")
-	} else if kuberneteserrors.IsNotFound(err) {
-		configmap := corev1.ConfigMap{
-			TypeMeta: metav1.TypeMeta{
-				APIVersion: "v1",
-				Kind:       "ConfigMap",
-			},
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      tasksConfigMapName,
-				Namespace: util.PodNamespace,
-				Labels:    kotsadmtypes.GetKotsadmLabels(),
-			},
-			Data: map[string]string{},
-		}
-
-		createdConfigmap, err := clientset.CoreV1().ConfigMaps(util.PodNamespace).Create(context.TODO(), &configmap, metav1.CreateOptions{})
-		if err != nil {
-			return nil, errors.Wrap(err, "failed to create configmap")
-		}
-
-		return createdConfigmap, nil
-	}
-
-	return existingConfigmap, nil
-}
-
-func updateConfigmap(configmap *corev1.ConfigMap) error {
-	clientset, err := k8sutil.GetClientset()
-	if err != nil {
-		return errors.Wrap(err, "failed to get clientset")
-	}
-
-	_, err = clientset.CoreV1().ConfigMaps(util.PodNamespace).Update(context.Background(), configmap, metav1.UpdateOptions{})
-	if err != nil {
-		return errors.Wrap(err, "failed to update config map")
-	}
-
-	return nil
-}
-
-func MigrateTasksFromRqlite() error {
 	db := persistence.MustGetDBSession()
 
-	query := `select updated_at, current_message, status from api_task_status`
-	rows, err := db.QueryOne(query)
+	// only return the status if it was updated in the last minute
+	query := `SELECT status, current_message from api_task_status WHERE id = ? AND strftime('%s', 'now') - updated_at < 60`
+	rows, err := db.QueryOneParameterized(gorqlite.ParameterizedStatement{
+		Query:     query,
+		Arguments: []interface{}{id},
+	})
 	if err != nil {
-		return fmt.Errorf("failed to select tasks for migration: %v: %v", err, rows.Err)
+		return "", "", fmt.Errorf("failed to query app: %v: %v", err, rows.Err)
+	}
+	if !rows.Next() {
+		return "", "", nil
 	}
 
-	taskCm, err := getConfigmap()
-	if err != nil {
-		return errors.Wrap(err, "failed to get task status configmap")
+	var status gorqlite.NullString
+	var message gorqlite.NullString
+	if err := rows.Scan(&status, &message); err != nil {
+		return "", "", errors.Wrap(err, "failed to scan")
 	}
 
-	if taskCm.Data == nil {
-		taskCm.Data = map[string]string{}
-	}
-
-	for rows.Next() {
-		var id string
-		var status gorqlite.NullString
-		var message gorqlite.NullString
-
-		ts := TaskStatus{}
-		if err := rows.Scan(&id, &ts.UpdatedAt, &message, &status); err != nil {
-			return errors.Wrap(err, "failed to scan task status")
-		}
-
-		if status.Valid {
-			ts.Status = status.String
-		}
-		if message.Valid {
-			ts.Message = message.String
-		}
-
-		b, err := json.Marshal(ts)
-		if err != nil {
-			return errors.Wrap(err, "failed to marshal task status")
-		}
-
-		taskCm.Data[id] = string(b)
-	}
-
-	if err := updateConfigmap(taskCm); err != nil {
-		return errors.Wrap(err, "failed to update task status configmap")
-	}
-
-	query = `delete from api_task_status`
-	if wr, err := db.WriteOne(query); err != nil {
-		return fmt.Errorf("failed to delete tasks from db: %v: %v", err, wr.Err)
-	}
-
-	return nil
+	return status.String, message.String, nil
 }

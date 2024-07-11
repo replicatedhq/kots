@@ -8,15 +8,14 @@ import (
 	"io"
 	"net/http"
 	"os"
-	"strings"
 
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/util"
 	kotsv1beta1 "github.com/replicatedhq/kotskinds/apis/kots/v1beta1"
 )
 
-func GetKOTSVersionForRelease(license *kotsv1beta1.License, versionLabel string) (string, error) {
-	url := fmt.Sprintf("%s/clusterconfig/version/AdminConsole?versionLabel=%s", license.Spec.Endpoint, versionLabel)
+func GetECVersionForRelease(license *kotsv1beta1.License, versionLabel string) (string, error) {
+	url := fmt.Sprintf("%s/clusterconfig/version/Installer?versionLabel=%s", license.Spec.Endpoint, versionLabel)
 	req, err := util.NewRequest("GET", url, nil)
 	if err != nil {
 		return "", errors.Wrap(err, "failed to call newrequest")
@@ -46,9 +45,7 @@ func GetKOTSVersionForRelease(license *kotsv1beta1.License, versionLabel string)
 		return "", errors.Wrap(err, "failed to unmarshal response")
 	}
 
-	// strip off the build number
-	version := strings.Split(response.Version, "-build")[0]
-	return version, nil
+	return response.Version, nil
 }
 
 func DownloadKOTSBinary(license *kotsv1beta1.License, versionLabel string) (string, error) {

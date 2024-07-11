@@ -11,6 +11,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/store"
+	"github.com/replicatedhq/kots/pkg/util"
 	"github.com/replicatedhq/kots/pkg/version"
 )
 
@@ -33,20 +34,6 @@ func (h *Handler) GetAppDashboard(w http.ResponseWriter, r *http.Request) {
 	}
 
 	appStatus, err := store.GetStore().GetAppStatus(a.ID)
-	if err != nil {
-		logger.Error(err)
-		w.WriteHeader(500)
-		return
-	}
-
-	kbClient, err := k8sutil.GetKubeClient(r.Context())
-	if err != nil {
-		logger.Error(err)
-		w.WriteHeader(500)
-		return
-	}
-
-	ecInstallation, err := embeddedcluster.GetCurrentInstallation(r.Context(), kbClient)
 	if err != nil {
 		logger.Error(err)
 		w.WriteHeader(500)
@@ -79,11 +66,28 @@ func (h *Handler) GetAppDashboard(w http.ResponseWriter, r *http.Request) {
 		metrics = version.GetMetricCharts(graphs, prometheusAddress)
 	}
 
+	embeddedClusterState := ""
+	if util.IsEmbeddedCluster() {
+		kbClient, err := k8sutil.GetKubeClient(r.Context())
+		if err != nil {
+			logger.Error(err)
+			w.WriteHeader(500)
+			return
+		}
+		ecInstallation, err := embeddedcluster.GetCurrentInstallation(r.Context(), kbClient)
+		if err != nil {
+			logger.Error(err)
+			w.WriteHeader(500)
+			return
+		}
+		embeddedClusterState = ecInstallation.Status.State
+	}
+
 	getAppDashboardResponse := GetAppDashboardResponse{
 		AppStatus:            appStatus,
 		Metrics:              metrics,
 		PrometheusAddress:    prometheusAddress,
-		EmbeddedClusterState: ecInstallation.Status.State,
+		EmbeddedClusterState: embeddedClusterState,
 	}
 
 	JSON(w, 200, getAppDashboardResponse)

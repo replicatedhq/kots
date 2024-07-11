@@ -17,6 +17,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/image"
 	imagetypes "github.com/replicatedhq/kots/pkg/image/types"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
+	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/tasks"
 	"github.com/replicatedhq/kots/pkg/upload"
@@ -88,14 +89,10 @@ func AirgapUpdateCmd() *cobra.Command {
 				return errors.Wrap(err, "failed to stat airgap bundle")
 			}
 
-			updateFiles := []string{
-				"airgap.yaml",
-				"app.tar.gz",
+			updateFiles, err := getAirgapUpdateFiles(airgapBundle)
+			if err != nil {
+				return errors.Wrap(err, "failed to get airgap update files")
 			}
-			if util.IsEmbeddedCluster() {
-				updateFiles = append(updateFiles, "embedded-cluster/artifacts/kots.tar.gz")
-			}
-
 			airgapUpdate, err := archives.FilterAirgapBundle(airgapBundle, updateFiles)
 			if err != nil {
 				return errors.Wrap(err, "failed to create filtered airgap bundle")
@@ -168,6 +165,34 @@ func getProgressWriter(v *viper.Viper, log *logger.CLILogger) io.Writer {
 		return pipeWriter
 	}
 	return os.Stdout
+}
+
+func getAirgapUpdateFiles(airgapBundle string) ([]string, error) {
+	airgap, err := kotsutil.FindAirgapMetaInBundle(airgapBundle)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to find airgap meta in bundle")
+	}
+
+	if airgap.Spec.EmbeddedClusterArtifacts == nil {
+		return nil, errors.New("embedded cluster artifacts not found in airgap bundle")
+	}
+
+	if airgap.Spec.EmbeddedClusterArtifacts.Metadata == "" {
+		return nil, errors.New("embedded cluster metadata not found in airgap bundle")
+	}
+
+	if airgap.Spec.EmbeddedClusterArtifacts.AdditionalArtifacts == nil {
+		return nil, errors.New("embedded cluster additional artifacts not found in airgap bundle")
+	}
+
+	files := []string{
+		"airgap.yaml",
+		"app.tar.gz",
+		airgap.Spec.EmbeddedClusterArtifacts.Metadata,
+		airgap.Spec.EmbeddedClusterArtifacts.AdditionalArtifacts["kots"],
+	}
+
+	return files, nil
 }
 
 func uploadAirgapUpdate(airgapBundle string, uploadEndpoint string, namespace string) error {

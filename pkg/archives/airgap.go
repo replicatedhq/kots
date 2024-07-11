@@ -94,20 +94,3 @@ func FilterAirgapBundle(airgapBundle string, filesToKeep []string) (string, erro
 
 	return f.Name(), nil
 }
-
-func GetKOTSBinFromAirgapBundle(airgapBundle string) (string, error) {
-	kotsTGZ, err := GetFileFromTGZArchive("embedded-cluster/artifacts/kots.tar.gz", airgapBundle)
-	if err != nil {
-		return "", errors.Wrap(err, "failed to get kots tarball from airgap bundle")
-	}
-	defer os.Remove(kotsTGZ)
-
-	kotsBin, err := GetFileFromTGZArchive("kots", kotsTGZ)
-	if err != nil {
-		return "", errors.Wrap(err, "failed to get kots binary from kots tarball")
-	}
-	if err := os.Chmod(kotsBin, 0755); err != nil {
-		return "", errors.Wrap(err, "failed to chmod kots binary")
-	}
-	return kotsBin, nil
-}

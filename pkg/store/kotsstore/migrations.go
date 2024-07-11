@@ -9,7 +9,6 @@ import (
 	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/persistence"
-	"github.com/replicatedhq/kots/pkg/tasks"
 	"github.com/rqlite/gorqlite"
 )
 
@@ -48,9 +47,6 @@ func (s *KOTSStore) RunMigrations() {
 	}
 	if err := s.migrateSupportBundlesFromRqlite(); err != nil {
 		logger.Error(errors.Wrap(err, "failed to migrate support bundles"))
-	}
-	if err := tasks.MigrateTasksFromRqlite(); err != nil {
-		logger.Error(errors.Wrap(err, "failed to migrate tasks"))
 	}
 }
 

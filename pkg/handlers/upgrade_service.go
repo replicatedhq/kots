@@ -9,8 +9,6 @@ import (
 	"github.com/phayes/freeport"
 	"github.com/pkg/errors"
 	apptypes "github.com/replicatedhq/kots/pkg/app/types"
-	"github.com/replicatedhq/kots/pkg/archives"
-	"github.com/replicatedhq/kots/pkg/buildversion"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/replicatedapp"
@@ -21,6 +19,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/upgradeservice"
 	upgradeservicetask "github.com/replicatedhq/kots/pkg/upgradeservice/task"
 	upgradeservicetypes "github.com/replicatedhq/kots/pkg/upgradeservice/types"
+	"github.com/replicatedhq/kots/pkg/util"
 )
 
 type StartUpgradeServiceRequest struct {
@@ -212,7 +211,7 @@ func getUpgradeServiceParams(a *apptypes.App, r StartUpgradeServiceRequest) (*up
 		return nil, errors.Wrap(err, "failed to parse app license")
 	}
 
-	var updateKOTSVersion string
+	var updateECVersion string
 	var updateKOTSBin string
 	var updateAirgapBundle string
 
@@ -222,32 +221,27 @@ func getUpgradeServiceParams(a *apptypes.App, r StartUpgradeServiceRequest) (*up
 			return nil, errors.Wrap(err, "failed to get airgap update")
 		}
 		updateAirgapBundle = au
-		kb, err := archives.GetKOTSBinFromAirgapBundle(au)
+		kb, err := kotsutil.GetKOTSBinFromAirgapBundle(au)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to get kots binary from airgap bundle")
 		}
 		updateKOTSBin = kb
-		kv, err := kotsutil.GetKOTSVersionFromBinary(kb)
+		ecv, err := kotsutil.GetECVersionFromAirgapBundle(au)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to get kots version from binary")
 		}
-		updateKOTSVersion = kv
+		updateECVersion = ecv
 	} else {
-		kv, err := replicatedapp.GetKOTSVersionForRelease(license, r.VersionLabel)
+		kb, err := replicatedapp.DownloadKOTSBinary(license, r.VersionLabel)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to download kots binary")
+		}
+		updateKOTSBin = kb
+		ecv, err := replicatedapp.GetECVersionForRelease(license, r.VersionLabel)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to get kots version for release")
 		}
-		updateKOTSVersion = kv
-
-		if buildversion.IsSameVersion(kv) {
-			updateKOTSBin = kotsutil.GetKOTSBinPath()
-		} else {
-			kb, err := replicatedapp.DownloadKOTSBinary(license, r.VersionLabel)
-			if err != nil {
-				return nil, errors.Wrap(err, "failed to download kots binary")
-			}
-			updateKOTSBin = kb
-		}
+		updateECVersion = ecv
 	}
 
 	port, err := freeport.GetFreePort()
@@ -273,11 +267,11 @@ func getUpgradeServiceParams(a *apptypes.App, r StartUpgradeServiceRequest) (*up
 		UpdateVersionLabel: r.VersionLabel,
 		UpdateCursor:       r.UpdateCursor,
 		UpdateChannelID:    r.ChannelID,
+		UpdateECVersion:    updateECVersion,
+		UpdateKOTSBin:      updateKOTSBin,
 		UpdateAirgapBundle: updateAirgapBundle,
 
-		CurrentKOTSVersion: buildversion.Version(),
-		UpdateKOTSVersion:  updateKOTSVersion,
-		UpdateKOTSBin:      updateKOTSBin,
+		CurrentECVersion: util.EmbeddedClusterVersion(),
 
 		RegistryEndpoint:   registrySettings.Hostname,
 		RegistryUsername:   registrySettings.Username,

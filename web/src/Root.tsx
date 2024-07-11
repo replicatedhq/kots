@@ -54,7 +54,7 @@ import SnapshotRestore from "@components/snapshots/SnapshotRestore";
 import AppSnapshots from "@components/snapshots/AppSnapshots";
 import AppSnapshotRestore from "@components/snapshots/AppSnapshotRestore";
 import EmbeddedClusterViewNode from "@components/apps/EmbeddedClusterViewNode";
-import EmbeddedClusterUpgrading from "@components/clusters/EmbeddedClusterUpgrading";
+import UpgradeStatusModal from "@components/modals/UpgradeStatusModal";
 
 // react-query client
 const queryClient = new QueryClient();
@@ -89,7 +89,10 @@ type State = {
   appSlugFromMetadata: string | null;
   adminConsoleMetadata: Metadata | null;
   connectionTerminated: boolean;
-  showClusterUpgradeModal: boolean;
+  showUpgradeStatusModal: boolean;
+  upgradeStatus?: string;
+  upgradeMessage?: string;
+  upgradeAppSlug?: string;
   clusterState: string;
   errLoggingOut: string;
   featureFlags: object;
@@ -117,7 +120,10 @@ const Root = () => {
       appNameSpace: null,
       adminConsoleMetadata: null,
       connectionTerminated: false,
-      showClusterUpgradeModal: false,
+      showUpgradeStatusModal: false,
+      upgradeStatus: "",
+      upgradeMessage: "",
+      upgradeAppSlug: "",
       clusterState: "",
       errLoggingOut: "",
       featureFlags: {},
@@ -237,10 +243,46 @@ const Root = () => {
       const apps = response.apps;
       setState({
         appsList: apps,
-        showClusterUpgradeModal: Utilities.shouldShowClusterUpgradeModal(apps),
-        clusterState: Utilities.getClusterState(apps),
       });
       return apps;
+    } catch (err) {
+      throw err;
+    }
+  };
+
+  const fetchUpgradeStatus = async (appSlug) => {
+    try {
+      const res = await fetch(`${process.env.API_ENDPOINT}/app/${appSlug}/task/upgrade-service`, {
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include",
+        method: "GET",
+      });
+      if (!res.ok) {
+        if (res.status === 401) {
+          Utilities.logoutUser();
+          return;
+        }
+        console.log("failed to get upgrade service status, unexpected status code", res.status);
+        return;
+      }
+      const response = await res.json();
+      const status = response.status;
+      if (status === "upgrading-cluster" || status === "upgrading-app" || status === "upgrade-failed") {
+        setState({
+          showUpgradeStatusModal: true,
+          upgradeStatus: status,
+          upgradeMessage: response.currentMessage,
+          upgradeAppSlug: appSlug,
+        });
+        return;
+      }
+      if (state.showUpgradeStatusModal) {
+        // upgrade finished, reload the page
+        window.location.reload();
+        return;
+      }
     } catch (err) {
       throw err;
     }
@@ -300,12 +342,15 @@ const Root = () => {
       },
       10000
     )
-      .then(async (result) => {
-        if (result.status === 401) {
-          Utilities.logoutUser();
-          return;
+      .then(async (res) => {
+        if (!res.ok) {
+          if (res.status === 401) {
+            Utilities.logoutUser();
+            return;
+          }
+          throw new Error(`Unexpected status code: ${res.status}`);
         }
-        const body = await result.json();
+        const body = await res.json();
         setState({
           connectionTerminated: false,
           snapshotInProgressApps: body.snapshotInProgressApps,
@@ -325,13 +370,17 @@ const Root = () => {
       });
   };
 
-  const onRootMounted = () => {
+  const onRootMounted = async () => {
     fetchKotsAppMetadata();
     if (Utilities.isLoggedIn()) {
       ping();
       getAppsList().then((appsList) => {
-        if (appsList?.length > 0 && window.location.pathname === "/apps") {
-          const { slug } = appsList[0];
+        if (!appsList?.length) {
+          return;
+        }
+        const { slug } = appsList[0];
+        fetchUpgradeStatus(slug);
+        if (window.location.pathname === "/apps") {
           history.replace(`/app/${slug}`);
         }
       });
@@ -684,13 +733,14 @@ const Root = () => {
                     appNameSpace={state.appNameSpace}
                     appName={state.selectedAppName}
                     refetchAppsList={getAppsList}
+                    refetchUpgradeStatus={fetchUpgradeStatus}
                     snapshotInProgressApps={state.snapshotInProgressApps}
                     ping={ping}
                     isEmbeddedCluster={Boolean(
                       state.adminConsoleMetadata?.isEmbeddedCluster
                     )}
-                    showClusterUpgradeModal={
-                      state.showClusterUpgradeModal
+                    showUpgradeStatusModal={
+                      state.showUpgradeStatusModal
                     }
                   />
                 }
@@ -704,13 +754,14 @@ const Root = () => {
                     appNameSpace={state.appNameSpace}
                     appName={state.selectedAppName}
                     refetchAppsList={getAppsList}
+                    refetchUpgradeStatus={fetchUpgradeStatus}
                     snapshotInProgressApps={state.snapshotInProgressApps}
                     ping={ping}
                     isEmbeddedCluster={Boolean(
                       state.adminConsoleMetadata?.isEmbeddedCluster
                     )}
-                    showClusterUpgradeModal={
-                      state.showClusterUpgradeModal
+                    showUpgradeStatusModal={
+                      state.showUpgradeStatusModal
                     }
                   />
                 }
@@ -863,15 +914,42 @@ const Root = () => {
           </div>
         </ToastProvider>
       </ThemeContext.Provider>
-      <Modal
-        isOpen={state.connectionTerminated || state.showClusterUpgradeModal}
-        onRequestClose={undefined}
-        shouldReturnFocusAfterClose={false}
-        contentLabel="Connection terminated modal"
-        ariaHideApp={false}
-        className="ConnectionTerminated--wrapper Modal DefaultSize"
-      >
-        {!state.showClusterUpgradeModal ? (
+
+      {state.showUpgradeStatusModal ? (
+        <Modal
+          isOpen={state.showUpgradeStatusModal}
+          onRequestClose={() => {
+            // cannot close the modal while upgrading
+            if (state.upgradeStatus === "upgrade-failed") {
+              setState({ showUpgradeStatusModal: false });
+            }
+          }}
+          shouldReturnFocusAfterClose={false}
+          contentLabel="Upgrade status modal"
+          ariaHideApp={false}
+          className="Modal DefaultSize"
+        >
+          <UpgradeStatusModal
+            status={state.upgradeStatus}
+            message={state.upgradeMessage}
+            appSlug={state.upgradeAppSlug}
+            refetchStatus={fetchUpgradeStatus}
+            closeModal={() => setState({ showUpgradeStatusModal: false })}
+            connectionTerminated={state.connectionTerminated}
+            setTerminatedState={(status: boolean) =>
+              setState({ connectionTerminated: status })
+            }
+          />
+        </Modal>
+      ) : (
+        <Modal
+          isOpen={state.connectionTerminated}
+          onRequestClose={undefined}
+          shouldReturnFocusAfterClose={false}
+          contentLabel="Connection terminated modal"
+          ariaHideApp={false}
+          className="Modal DefaultSize"
+        >
           <ConnectionTerminated
             connectionTerminated={state.connectionTerminated}
             appLogo={state.appLogo}
@@ -879,17 +957,8 @@ const Root = () => {
               setState({ connectionTerminated: status })
             }
           />
-        ) : (
-          <EmbeddedClusterUpgrading
-            refetchAppsList={getAppsList}
-            clusterState={state.clusterState}
-            connectionTerminated={state.connectionTerminated}
-            setTerminatedState={(status: boolean) =>
-              setState({ connectionTerminated: status })
-            }
-          />
-        )}
-      </Modal>
+        </Modal>
+      )}
     </QueryClientProvider>
   );
 };

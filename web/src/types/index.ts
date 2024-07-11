@@ -79,7 +79,6 @@ type Cluster = {
   id: number;
   slug: string;
   state?: string;
-  isUpgrading?: boolean;
 };
 
 export type Credentials = {
