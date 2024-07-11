@@ -1,7 +1,6 @@
 package upgradeservice
 
 import (
-	_ "embed"
 	"fmt"
 	"io"
 	"net/http"
