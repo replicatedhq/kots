@@ -1,5 +1,6 @@
 import Icon from "@components/Icon";
 import Loader from "@components/shared/Loader";
+import { getBuildVersion } from "@src/utilities/utilities";
 import Modal from "react-modal";
 
 const UpgradeServiceModal = ({
@@ -21,7 +22,7 @@ const UpgradeServiceModal = ({
       className="Modal UpgradeServiceModal"
       shouldCloseOnOverlayClick={false}
     >
-      <div className="tw-h-full tw-flex tw-relative">
+      <div className="tw-h-full tw-flex tw-flex-col tw-relative tw-overflow-hidden">
         <button
           style={{
             border: "none",
@@ -40,7 +41,7 @@ const UpgradeServiceModal = ({
         ) : (
           <>
             {isIframeLoading && (
-              <div className="tw-absolute tw-top-[46%] tw-w-full flex-column flex1 alignItems--center justifyContent--center tw-gap-4">
+              <div className="tw-absolute tw-top-[45%] tw-w-full flex-column flex1 alignItems--center justifyContent--center tw-mt-4 tw-gap-4">
                 <span className="u-fontWeight--bold">Almost done...</span>
                 <Loader size="60" />
               </div>
@@ -59,6 +60,12 @@ const UpgradeServiceModal = ({
             />
           </>
         )}
+        <div
+          className="tw-flex tw-justify-start tw-m-4 tw-color-gray-400 tw-text-xs tw-invisible"
+          id="kots-upgrade-version"
+        >
+          {getBuildVersion()}
+        </div>
       </div>
     </Modal>
   );

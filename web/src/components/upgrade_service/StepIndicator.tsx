@@ -14,7 +14,7 @@ const StepIndicator = ({ items, value, className }: StepIndicatorProps) => {
           <div
             key={index}
             className={`${className} ${
-              isLast ? "tw-ml-8 tw-w-12" : "tw-w-[180px]"
+              isLast ? "tw-ml-4 tw-w-36" : "tw-w-[180px]"
             }`}
           >
             <div className="tw-flex tw-flex-col tw-items-center tw-relative tw-mr-16 tw-text-sm">

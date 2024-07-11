@@ -6,6 +6,7 @@ interface Props {
   onIgnorePreflightsAndDeployClick?: () => void;
   // TODO: remove this parameter
   onForceDeployClick?: (continueWithFailedPreflights: boolean) => void;
+  isEmbeddedCluster?: boolean;
 }
 
 export default function SkipPreflightsModal(props: Props) {
@@ -14,6 +15,7 @@ export default function SkipPreflightsModal(props: Props) {
     hideSkipModal,
     onIgnorePreflightsAndDeployClick,
     onForceDeployClick,
+    isEmbeddedCluster,
   } = props;
 
   return (
@@ -47,17 +49,17 @@ export default function SkipPreflightsModal(props: Props) {
             </button>
             {onForceDeployClick ? (
               <span
-                className="u-fontSize--normal u-fontWeight--medium u-textDecoration--underline u-textColor--bodyCopy u-marginTop--15 u-cursor--pointer"
+                className="tw-text-center u-fontSize--normal u-fontWeight--medium u-textDecoration--underline u-textColor--bodyCopy u-marginTop--15 u-cursor--pointer"
                 onClick={() => onForceDeployClick(false)}
               >
-                Ignore Preflights and deploy
+                Ignore Preflights {!isEmbeddedCluster && "and deploy"}
               </span>
             ) : (
               <span
-                className="u-fontSize--normal u-fontWeight--medium u-textDecoration--underline u-textColor--bodyCopy u-marginTop--15 u-cursor--pointer"
+                className="tw-text-center u-fontSize--normal u-fontWeight--medium u-textDecoration--underline u-textColor--bodyCopy u-marginTop--15 u-cursor--pointer"
                 onClick={onIgnorePreflightsAndDeployClick}
               >
-                Ignore Preflights and deploy
+                Ignore Preflights {!isEmbeddedCluster && "and deploy"}
               </span>
             )}
           </div>
