@@ -59,7 +59,6 @@ type ReleaseWithError = {
 
 type Props = {
   outletContext: {
-    isEmbeddedCluster: boolean;
     adminConsoleMetadata: {
       isAirgap: boolean;
       isKurl: boolean;
@@ -298,6 +297,8 @@ class AppVersionHistory extends Component<Props, State> {
     if (this.props.outletContext.isEmbeddedCluster) {
       this.fetchAvailableUpdates();
     }
+
+    this._mounted = true;
   }
 
   componentDidUpdate = async (lastProps: Props) => {
@@ -1559,8 +1560,6 @@ class AppVersionHistory extends Component<Props, State> {
       .catch((err) => {
         console.log(err);
       });
-
-    this._mounted = true;
   };
 
   renderAppVersionHistoryRow = (version: Version, index?: number) => {
