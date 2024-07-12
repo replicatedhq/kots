@@ -172,7 +172,7 @@ func startUpgradeService(a *apptypes.App, r StartUpgradeServiceRequest) error {
 			finishedChan <- finalError
 		}()
 
-		params, err := getUpgradeServiceParams(a, r)
+		params, err := GetUpgradeServiceParams(store.GetStore(), a, r)
 		if err != nil {
 			return err
 		}
@@ -185,18 +185,18 @@ func startUpgradeService(a *apptypes.App, r StartUpgradeServiceRequest) error {
 	return nil
 }
 
-func getUpgradeServiceParams(a *apptypes.App, r StartUpgradeServiceRequest) (*upgradeservicetypes.UpgradeServiceParams, error) {
-	registrySettings, err := store.GetStore().GetRegistryDetailsForApp(a.ID)
+func GetUpgradeServiceParams(s store.Store, a *apptypes.App, r StartUpgradeServiceRequest) (*upgradeservicetypes.UpgradeServiceParams, error) {
+	registrySettings, err := s.GetRegistryDetailsForApp(a.ID)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get registry details for app")
 	}
 
-	baseArchive, baseSequence, err := store.GetStore().GetAppVersionBaseArchive(a.ID, r.VersionLabel)
+	baseArchive, baseSequence, err := s.GetAppVersionBaseArchive(a.ID, r.VersionLabel)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get app version base archive")
 	}
 
-	nextSequence, err := store.GetStore().GetNextAppSequence(a.ID)
+	nextSequence, err := s.GetNextAppSequence(a.ID)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get next app sequence")
 	}
