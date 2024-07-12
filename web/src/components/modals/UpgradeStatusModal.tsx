@@ -95,12 +95,14 @@ const UpgradeStatusModal = (props: Props) => {
       </h2>
       {props.connectionTerminated ? (
         <p className="u-fontSize--normal u-fontWeight--medium u-textColor--bodyCopy u-lineHeight--more u-marginTop--10 u-marginBottom--10 u-userSelect--none">
-          The API cannot be reached because the cluster is updating. Stay on this
-          page to automatically reconnect when the update is complete.
+          The API cannot be reached because the cluster is updating. Stay on
+          this page to automatically reconnect when the update is complete.
         </p>
       ) : (
         <p className="u-fontSize--normal u-fontWeight--medium u-textColor--bodyCopy u-lineHeight--more u-marginTop--10 u-marginBottom--10 u-userSelect--none">
-          The page will automatically refresh when the update is complete.<br/><br/>
+          The page will automatically refresh when the update is complete.
+          <br />
+          <br />
           Status: {status}
         </p>
       )}

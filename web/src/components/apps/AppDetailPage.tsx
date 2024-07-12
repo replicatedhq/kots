@@ -366,7 +366,10 @@ function AppDetailPage(props: Props) {
 
   // poll version status if it's awaiting results
   const downstream = selectedApp?.downstream;
-  if (downstream?.currentVersion && isAwaitingResults([downstream.currentVersion])) {
+  if (
+    downstream?.currentVersion &&
+    isAwaitingResults([downstream.currentVersion])
+  ) {
     if (appsRefetchInterval === false) {
       setAppsRefetchInterval(2000);
     }

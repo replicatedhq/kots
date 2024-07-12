@@ -312,7 +312,8 @@ class AppVersionHistory extends Component<Props, State> {
       this.fetchKotsDownstreamHistory();
     }
     if (
-      lastProps.outletContext.isEmbeddedCluster !== this.props.outletContext.isEmbeddedCluster &&
+      lastProps.outletContext.isEmbeddedCluster !==
+        this.props.outletContext.isEmbeddedCluster &&
       this.props.outletContext.isEmbeddedCluster
     ) {
       this.fetchAvailableUpdates();

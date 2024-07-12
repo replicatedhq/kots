@@ -252,24 +252,34 @@ const Root = () => {
 
   const fetchUpgradeStatus = async (appSlug) => {
     try {
-      const res = await fetch(`${process.env.API_ENDPOINT}/app/${appSlug}/task/upgrade-service`, {
-        headers: {
-          "Content-Type": "application/json",
-        },
-        credentials: "include",
-        method: "GET",
-      });
+      const res = await fetch(
+        `${process.env.API_ENDPOINT}/app/${appSlug}/task/upgrade-service`,
+        {
+          headers: {
+            "Content-Type": "application/json",
+          },
+          credentials: "include",
+          method: "GET",
+        }
+      );
       if (!res.ok) {
         if (res.status === 401) {
           Utilities.logoutUser();
           return;
         }
-        console.log("failed to get upgrade service status, unexpected status code", res.status);
+        console.log(
+          "failed to get upgrade service status, unexpected status code",
+          res.status
+        );
         return;
       }
       const response = await res.json();
       const status = response.status;
-      if (status === "upgrading-cluster" || status === "upgrading-app" || status === "upgrade-failed") {
+      if (
+        status === "upgrading-cluster" ||
+        status === "upgrading-app" ||
+        status === "upgrade-failed"
+      ) {
         setState({
           showUpgradeStatusModal: true,
           upgradeStatus: status,
@@ -739,9 +749,7 @@ const Root = () => {
                     isEmbeddedCluster={Boolean(
                       state.adminConsoleMetadata?.isEmbeddedCluster
                     )}
-                    showUpgradeStatusModal={
-                      state.showUpgradeStatusModal
-                    }
+                    showUpgradeStatusModal={state.showUpgradeStatusModal}
                   />
                 }
               />
@@ -760,9 +768,7 @@ const Root = () => {
                     isEmbeddedCluster={Boolean(
                       state.adminConsoleMetadata?.isEmbeddedCluster
                     )}
-                    showUpgradeStatusModal={
-                      state.showUpgradeStatusModal
-                    }
+                    showUpgradeStatusModal={state.showUpgradeStatusModal}
                   />
                 }
               >

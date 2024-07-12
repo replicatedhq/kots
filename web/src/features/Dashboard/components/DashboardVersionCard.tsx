@@ -1447,7 +1447,9 @@ const DashboardVersionCard = (props: Props) => {
           <div className="flex alignItems--center">
             {selectedApp?.isAirgap && airgapUploader ? (
               <MountAware
-                onMount={(el: Element) => props.airgapUploader?.assignElement(el)}
+                onMount={(el: Element) =>
+                  props.airgapUploader?.assignElement(el)
+                }
               >
                 <div className="flex alignItems--center">
                   <span className="icon clickable dashboard-card-upload-version-icon u-marginRight--5" />
