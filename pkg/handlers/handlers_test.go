@@ -2,8 +2,10 @@ package handlers_test
 
 import (
 	"fmt"
+	"log"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"testing"
 	"time"
 
@@ -23,6 +25,18 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
+
+func TestMain(m *testing.M) {
+	behavior := os.Getenv("MOCK_BEHAVIOR")
+	switch behavior {
+	case "":
+		os.Exit(m.Run())
+	case "upgrade-service-cmd":
+		mockUpgradeServiceCmd()
+	default:
+		log.Fatalf("unknown behavior %q", behavior)
+	}
+}
 
 var HandlerPolicyTests = map[string][]HandlerPolicyTest{
 	// Installation

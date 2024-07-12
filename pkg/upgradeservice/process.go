@@ -41,6 +41,18 @@ func Start(params types.UpgradeServiceParams) (finalError error) {
 	return nil
 }
 
+// Stop stops the upgrade service for an app.
+func Stop(appSlug string) {
+	upgradeServiceMtx.Lock()
+	defer upgradeServiceMtx.Unlock()
+
+	svc, _ := upgradeServiceMap[appSlug]
+	if svc != nil {
+		svc.stop()
+	}
+	delete(upgradeServiceMap, appSlug)
+}
+
 // Proxy proxies the request to the app's upgrade service.
 func Proxy(w http.ResponseWriter, r *http.Request) {
 	appSlug := mux.Vars(r)["appSlug"]

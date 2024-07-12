@@ -1,4 +1,4 @@
-package handlers
+package handlers_test
 
 import (
 	"archive/tar"
@@ -6,33 +6,43 @@ import (
 	"compress/gzip"
 	"encoding/json"
 	"fmt"
+	"io"
+	"log"
 	"net/http"
 	"net/http/httptest"
 	"os"
 	"path/filepath"
+	"slices"
 	"testing"
 
 	"github.com/golang/mock/gomock"
+	"github.com/gorilla/mux"
 	apptypes "github.com/replicatedhq/kots/pkg/app/types"
+	"github.com/replicatedhq/kots/pkg/handlers"
 	registrytypes "github.com/replicatedhq/kots/pkg/registry/types"
 	"github.com/replicatedhq/kots/pkg/reporting"
 	mock_store "github.com/replicatedhq/kots/pkg/store/mock"
 	"github.com/replicatedhq/kots/pkg/update"
+	"github.com/replicatedhq/kots/pkg/upgradeservice"
 	upgradeservicetypes "github.com/replicatedhq/kots/pkg/upgradeservice/types"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"gopkg.in/yaml.v2"
 )
 
-func Test_getUpgradeServiceParams(t *testing.T) {
+func TestStartUpgradeService(t *testing.T) {
 	// mock replicated app
 	mockServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case "/clusterconfig/version/Installer":
 			w.WriteHeader(http.StatusOK)
 			json.NewEncoder(w).Encode(map[string]string{"version": "online-update-ec-version"})
+
 		case "/clusterconfig/artifact/kots":
+			kotsTGZ := mockKOTSBinary(t)
 			w.WriteHeader(http.StatusOK)
-			w.Write(mockKOTSBinary(t))
+			w.Write(kotsTGZ)
+
 		default:
 			w.WriteHeader(http.StatusNotFound)
 		}
@@ -47,11 +57,9 @@ func Test_getUpgradeServiceParams(t *testing.T) {
 	defer ctrl.Finish()
 	mockStore := mock_store.NewMockStore(ctrl)
 
-	os.Setenv("USE_MOCK_REPORTING", "1")
-	defer os.Unsetenv("USE_MOCK_REPORTING")
-
-	os.Setenv("EMBEDDED_CLUSTER_VERSION", "current-ec-version")
-	defer os.Unsetenv("EMBEDDED_CLUSTER_VERSION")
+	t.Setenv("USE_MOCK_REPORTING", "1")
+	t.Setenv("EMBEDDED_CLUSTER_VERSION", "current-ec-version")
+	t.Setenv("MOCK_BEHAVIOR", "upgrade-service-cmd")
 
 	testLicense := fmt.Sprintf(`apiVersion: kots.io/v1beta1
 kind: License
@@ -98,19 +106,19 @@ spec:
 
 	type args struct {
 		app     *apptypes.App
-		request StartUpgradeServiceRequest
+		request handlers.StartUpgradeServiceRequest
 	}
 	tests := []struct {
 		name                  string
 		args                  args
 		mockStoreExpectations func()
-		want                  *upgradeservicetypes.UpgradeServiceParams
+		wantParams            *upgradeservicetypes.UpgradeServiceParams
 	}{
 		{
 			name: "online",
 			args: args{
 				app: onlineApp,
-				request: StartUpgradeServiceRequest{
+				request: handlers.StartUpgradeServiceRequest{
 					VersionLabel: "1.0.0",
 					UpdateCursor: "1",
 					ChannelID:    "channel-id",
@@ -121,7 +129,7 @@ spec:
 				mockStore.EXPECT().GetAppVersionBaseArchive(onlineApp.ID, "1.0.0").Return("base-archive", int64(1), nil)
 				mockStore.EXPECT().GetNextAppSequence(onlineApp.ID).Return(int64(2), nil)
 			},
-			want: &upgradeservicetypes.UpgradeServiceParams{
+			wantParams: &upgradeservicetypes.UpgradeServiceParams{
 				Port: "", // port is random, we just check it's not empty
 
 				AppID:       onlineApp.ID,
@@ -140,7 +148,7 @@ spec:
 				UpdateCursor:       "1",
 				UpdateChannelID:    "channel-id",
 				UpdateECVersion:    "online-update-ec-version",
-				UpdateKOTSBin:      "", // tmp file name is random, we check that the content matches
+				UpdateKOTSBin:      "", // tmp file name is random, we just check it's not empty
 				UpdateAirgapBundle: "",
 
 				CurrentECVersion: "current-ec-version",
@@ -158,7 +166,7 @@ spec:
 			name: "airgap",
 			args: args{
 				app: airgapApp,
-				request: StartUpgradeServiceRequest{
+				request: handlers.StartUpgradeServiceRequest{
 					VersionLabel: "1.0.0",
 					UpdateCursor: "1",
 					ChannelID:    "channel-id",
@@ -175,7 +183,7 @@ spec:
 				mockStore.EXPECT().GetAppVersionBaseArchive(airgapApp.ID, "1.0.0").Return("base-archive", int64(1), nil)
 				mockStore.EXPECT().GetNextAppSequence(airgapApp.ID).Return(int64(2), nil)
 			},
-			want: &upgradeservicetypes.UpgradeServiceParams{
+			wantParams: &upgradeservicetypes.UpgradeServiceParams{
 				Port: "", // port is random, we just check it's not empty
 
 				AppID:       airgapApp.ID,
@@ -194,7 +202,7 @@ spec:
 				UpdateCursor:       "1",
 				UpdateChannelID:    "channel-id",
 				UpdateECVersion:    "airgap-update-ec-version",
-				UpdateKOTSBin:      "", // tmp file name is random, we check that the content matches
+				UpdateKOTSBin:      "", // tmp file name is random, we just check it's not empty
 				UpdateAirgapBundle: updateAirgapBundle,
 
 				CurrentECVersion: "current-ec-version",
@@ -213,19 +221,50 @@ spec:
 		t.Run(tt.name, func(t *testing.T) {
 			tt.mockStoreExpectations()
 
-			got, err := getUpgradeServiceParams(mockStore, tt.args.app, tt.args.request)
+			gotParams, err := handlers.GetUpgradeServiceParams(mockStore, tt.args.app, tt.args.request)
 			require.NoError(t, err)
 
-			assert.NotEqual(t, "", got.Port)
-			assert.NotEqual(t, "", got.UpdateKOTSBin)
+			assert.NotEqual(t, "", gotParams.Port)
+			assert.NotEqual(t, "", gotParams.UpdateKOTSBin)
 
-			gotKOTSBinContent, err := os.ReadFile(got.UpdateKOTSBin)
+			tt.wantParams.Port = gotParams.Port
+			tt.wantParams.UpdateKOTSBin = gotParams.UpdateKOTSBin
+			assert.Equal(t, tt.wantParams, gotParams)
+
+			err = upgradeservice.Start(*gotParams)
 			require.NoError(t, err)
-			assert.Equal(t, string(gotKOTSBinContent), "update kots binary content")
 
-			tt.want.Port = got.Port
-			tt.want.UpdateKOTSBin = got.UpdateKOTSBin
-			assert.Equal(t, got, tt.want)
+			// test proxying to the ping endpoint
+			w := httptest.NewRecorder()
+			r := httptest.NewRequest("GET", fmt.Sprintf("http://kotsadm:3000/api/v1/upgrade-service/app/%s/ping", gotParams.AppSlug), nil)
+			r = mux.SetURLVars(r, map[string]string{"appSlug": gotParams.AppSlug})
+			upgradeservice.Proxy(w, r)
+			assert.Equal(t, http.StatusOK, w.Code)
+
+			// test GET proxying to an endpoint that is unknown to the current kots version
+			w = httptest.NewRecorder()
+			r = httptest.NewRequest("GET", fmt.Sprintf("http://kotsadm:3000/api/v1/upgrade-service/app/%s/unknown", gotParams.AppSlug), nil)
+			r = mux.SetURLVars(r, map[string]string{"appSlug": gotParams.AppSlug})
+			upgradeservice.Proxy(w, r)
+			assert.Equal(t, http.StatusOK, w.Code)
+			assert.Equal(t, "unknown GET body", w.Body.String())
+
+			// test POST proxying to an endpoint that is unknown to the current kots version
+			w = httptest.NewRecorder()
+			r = httptest.NewRequest("POST", fmt.Sprintf("http://kotsadm:3000/api/v1/upgrade-service/app/%s/unknown", gotParams.AppSlug), nil)
+			r = mux.SetURLVars(r, map[string]string{"appSlug": gotParams.AppSlug})
+			upgradeservice.Proxy(w, r)
+			assert.Equal(t, http.StatusOK, w.Code)
+			assert.Equal(t, "unknown POST body", w.Body.String())
+
+			// test proxying to a non-existing endpoint
+			w = httptest.NewRecorder()
+			r = httptest.NewRequest("GET", fmt.Sprintf("http://kotsadm:3000/api/v1/upgrade-service/app/%s/non-existing", gotParams.AppSlug), nil)
+			r = mux.SetURLVars(r, map[string]string{"appSlug": gotParams.AppSlug})
+			upgradeservice.Proxy(w, r)
+			assert.Equal(t, http.StatusNotFound, w.Code)
+
+			upgradeservice.Stop(gotParams.AppSlug)
 		})
 	}
 }
@@ -252,7 +291,7 @@ spec:
       kots: embedded-cluster/artifacts/kots.tar.gz
     metadata: embedded-cluster/version-metadata.json`
 
-	kotsBin := mockKOTSBinary(t)
+	kotsTGZ := mockKOTSBinary(t)
 
 	metadataJSON := `{
   "Versions": {
@@ -260,26 +299,35 @@ spec:
   }
 }`
 
-	tw.WriteHeader(&tar.Header{
+	err = tw.WriteHeader(&tar.Header{
 		Name: "airgap.yaml",
 		Mode: 0644,
 		Size: int64(len(airgapYAML)),
 	})
-	tw.Write([]byte(airgapYAML))
+	require.NoError(t, err)
 
-	tw.WriteHeader(&tar.Header{
+	_, err = tw.Write([]byte(airgapYAML))
+	require.NoError(t, err)
+
+	err = tw.WriteHeader(&tar.Header{
 		Name: "embedded-cluster/artifacts/kots.tar.gz",
 		Mode: 0755,
-		Size: int64(len(kotsBin)),
+		Size: int64(len(kotsTGZ)),
 	})
-	tw.Write(kotsBin)
+	require.NoError(t, err)
 
-	tw.WriteHeader(&tar.Header{
+	_, err = tw.Write(kotsTGZ)
+	require.NoError(t, err)
+
+	err = tw.WriteHeader(&tar.Header{
 		Name: "embedded-cluster/version-metadata.json",
 		Mode: 0644,
 		Size: int64(len(metadataJSON)),
 	})
-	tw.Write([]byte(metadataJSON))
+	require.NoError(t, err)
+
+	_, err = tw.Write([]byte(metadataJSON))
+	require.NoError(t, err)
 
 	tw.Close()
 	gw.Close()
@@ -296,17 +344,72 @@ spec:
 	return airgapUpdate
 }
 
+// use the test executable to mock the kots binary
+// reference: https://abhinavg.net/2022/05/15/hijack-testmain
 func mockKOTSBinary(t *testing.T) []byte {
-	var buf bytes.Buffer
-	gw := gzip.NewWriter(&buf)
+	testExe, err := os.Executable()
+	require.NoError(t, err)
+
+	kotsBin, err := os.ReadFile(testExe)
+	require.NoError(t, err)
+
+	buf := bytes.NewBuffer(nil)
+	gw := gzip.NewWriter(buf)
 	tw := tar.NewWriter(gw)
-	tw.WriteHeader(&tar.Header{
+
+	err = tw.WriteHeader(&tar.Header{
 		Name: "kots",
 		Mode: 0755,
-		Size: int64(len([]byte("update kots binary content"))),
+		Size: int64(len(kotsBin)),
 	})
-	tw.Write([]byte("update kots binary content"))
+	require.NoError(t, err)
+
+	_, err = tw.Write(kotsBin)
+	require.NoError(t, err)
+
 	tw.Close()
 	gw.Close()
+
 	return buf.Bytes()
+}
+
+func mockUpgradeServiceCmd() {
+	wantArgs := []string{"upgrade-service", "start", "-"}
+	if gotArgs := os.Args[1:]; !slices.Equal(wantArgs, gotArgs) {
+		log.Fatalf(`expected arguments %q, got %q`, wantArgs, gotArgs)
+	}
+
+	data, err := io.ReadAll(os.Stdin)
+	if err != nil {
+		log.Fatalf("Failed to read stdin: %v", err)
+	}
+
+	var params struct {
+		Port    string `yaml:"port"`
+		AppSlug string `yaml:"appSlug"`
+	}
+	if err := yaml.Unmarshal(data, &params); err != nil {
+		log.Fatalf("Failed to unmarshal params YAML: %v", err)
+	}
+
+	handler := func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == fmt.Sprintf("/api/v1/upgrade-service/app/%s/ping", params.AppSlug) {
+			w.WriteHeader(http.StatusOK)
+			w.Write([]byte("OK"))
+			return
+		}
+		if r.URL.Path == fmt.Sprintf("/api/v1/upgrade-service/app/%s/unknown", params.AppSlug) {
+			w.WriteHeader(http.StatusOK)
+			w.Write([]byte(fmt.Sprintf("unknown %s body", r.Method)))
+			return
+		}
+		w.WriteHeader(http.StatusNotFound)
+	}
+
+	http.HandleFunc("/", handler)
+	fmt.Println("starting mock upgrade service on port", params.Port)
+
+	if err := http.ListenAndServe(":"+params.Port, nil); err != nil && err != http.ErrServerClosed {
+		log.Fatalf("Server failed: %v", err)
+	}
 }
