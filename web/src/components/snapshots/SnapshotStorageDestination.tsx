@@ -103,8 +103,8 @@ type AWSStoreProvider = {
   other?: undefined;
   path?: string;
   bucket?: string;
-  internal?: boolean;
-  fileSystem?: string;
+  internal?: undefined;
+  fileSystem?: undefined;
 };
 
 type GCPStoreProvider = {
@@ -118,8 +118,8 @@ type GCPStoreProvider = {
   azure?: undefined;
   other?: undefined;
   path?: undefined;
-  internal?: boolean;
-  fileSystem?: string;
+  internal?: undefined;
+  fileSystem?: undefined;
 };
 
 type AzureStoreProvider = {
@@ -137,8 +137,8 @@ type AzureStoreProvider = {
   gcp?: undefined;
   other?: undefined;
   path?: undefined;
-  internal?: boolean;
-  fileSystem?: string;
+  internal?: undefined;
+  fileSystem?: undefined;
 };
 
 type OtherStoreProvider = {
@@ -154,8 +154,8 @@ type OtherStoreProvider = {
   gcp?: undefined;
   azure?: undefined;
   path?: undefined;
-  internal?: boolean;
-  fileSystem?: string;
+  internal?: undefined;
+  fileSystem?: undefined;
 };
 
 type StoreMetadata = {
@@ -164,8 +164,8 @@ type StoreMetadata = {
   azure?: undefined;
   other?: undefined;
   bucket?: string;
-  internal?: boolean;
-  fileSystem?: string;
+  internal?: undefined;
+  fileSystem?: undefined;
   path?: string;
 };
 
