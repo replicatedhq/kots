@@ -508,13 +508,13 @@ const UploadLicenseFile = (props: Props) => {
                             <p className="u-fontSize--small u-textColor--bodyCopy u-lineHeight--normal u-marginBottom--10">
                               Select the application that you want to install.
                             </p>
-                            {/* TODO: there's probably a bug here*/}
-                            {/*@ts-ignore*/}
                             <Select
                               className="replicated-select-container"
                               classNamePrefix="replicated-select"
                               options={state.availableAppOptions}
                               getOptionLabel={(option) =>
+                                // We want to display element instead of string
+                                //  @ts-ignore
                                 getLabel(option.label)
                               }
                               getOptionValue={(option) => option.value}
