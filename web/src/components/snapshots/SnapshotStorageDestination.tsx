@@ -164,8 +164,8 @@ type StoreMetadata = {
   azure?: undefined;
   other?: undefined;
   bucket?: string;
-  internal?: undefined;
-  fileSystem?: undefined;
+  internal?: boolean;
+  fileSystem?: string;
   path?: string;
 };
 
