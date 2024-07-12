@@ -32,7 +32,7 @@ type Props = {
   refetchAppMetadata: () => void;
   snapshotInProgressApps: string[];
   isEmbeddedCluster: boolean;
-  refetchUpgradeStatus: (appSlug: string) => Promise<any>;
+  refetchUpgradeStatus: (appSlug: string) => Promise<void>;
   showUpgradeStatusModal: boolean;
 };
 

@@ -7,7 +7,7 @@ interface Props {
   status: string;
   message: string;
   appSlug: string;
-  refetchStatus: (appSlug: string) => Promise<any>;
+  refetchStatus: (appSlug: string) => Promise<void>;
   closeModal: () => void;
   connectionTerminated: boolean;
   setTerminatedState: (terminated: boolean) => void;

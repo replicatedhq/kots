@@ -84,7 +84,7 @@ type Props = {
     toggleErrorModal: () => void;
     toggleIsBundleUploading: (isUploading: boolean) => void;
     updateCallback: () => void;
-    refetchUpgradeStatus: (appSlug: string) => Promise<any>;
+    refetchUpgradeStatus: (appSlug: string) => Promise<void>;
     showUpgradeStatusModal: boolean;
   };
 } & RouterProps;
@@ -169,7 +169,8 @@ type State = {
 };
 
 class AppVersionHistory extends Component<Props, State> {
-  iframeRef: any;
+  iframeRef: React.RefObject<HTMLIFrameElement>;
+
   constructor(props: Props) {
     super(props);
     this.state = {
