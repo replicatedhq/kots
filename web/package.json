@@ -147,7 +147,7 @@
     "handlebars": "^4.7.8",
     "js-yaml": "3.14.0",
     "lodash": "4.17.21",
-    "markdown-it": "^12.3.2",
+    "markdown-it": "^14.1.0",
     "material-react-table": "^1.15.1",
     "monaco-editor": "^0.50.0",
     "monaco-editor-webpack-plugin": "^7.1.0",
