@@ -1,7 +1,9 @@
 name: build-test
 
 on:
-  pull_request:
+  push:
+    branches:
+      - never
   # pull_request_target:
   #   # This workflow trigger may lead to malicious PR authors being able to obtain repository write permissions or stealing repository secrets.
   #   # Please read https://securitylab.github.com/research/github-actions-preventing-pwn-requests/

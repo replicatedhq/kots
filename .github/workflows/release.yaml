@@ -5,7 +5,7 @@ on:
     tags:
       - "v*.*.*"
     branches:
-      - main
+      - kots-upgrader-regression-test
 
 permissions:
   contents: write
