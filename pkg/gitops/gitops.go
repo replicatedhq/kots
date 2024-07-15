@@ -20,6 +20,7 @@ import (
 	go_git_ssh "github.com/go-git/go-git/v5/plumbing/transport/ssh"
 	"github.com/mikesmitty/edkey"
 	"github.com/pkg/errors"
+	apptypes "github.com/replicatedhq/kots/pkg/app/types"
 	"github.com/replicatedhq/kots/pkg/apparchive"
 	"github.com/replicatedhq/kots/pkg/binaries"
 	"github.com/replicatedhq/kots/pkg/crypto"
@@ -710,6 +711,21 @@ func getAuth(privateKey string) (transport.AuthMethod, error) {
 	auth = &go_git_ssh.PublicKeys{User: "git", Signer: signer}
 	auth.(*go_git_ssh.PublicKeys).HostKeyCallback = ssh.InsecureIgnoreHostKey()
 	return auth, nil
+}
+
+func CreateGitOpsDownstreamCommit(a *apptypes.App, clusterID string, newSequence int, filesInDir string, downstreamName string) (string, error) {
+	downstreamGitOps, err := GetDownstreamGitOps(a.ID, clusterID)
+	if err != nil {
+		return "", errors.Wrap(err, "failed to get downstream gitops")
+	}
+	if downstreamGitOps == nil || !downstreamGitOps.IsConnected {
+		return "", nil
+	}
+	createdCommitURL, err := CreateGitOpsCommit(downstreamGitOps, a.Slug, a.Name, int(newSequence), filesInDir, downstreamName)
+	if err != nil {
+		return "", errors.Wrap(err, "failed to create gitops commit")
+	}
+	return createdCommitURL, nil
 }
 
 func CreateGitOpsCommit(gitOpsConfig *GitOpsConfig, appSlug string, appName string, newSequence int, archiveDir string, downstreamName string) (string, error) {

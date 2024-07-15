@@ -28,7 +28,7 @@ func ExtractTGZArchiveFromFile(tgzFile string, destDir string) error {
 	return nil
 }
 
-func DirExistsInAirgap(dirToCheck string, archive string) (bool, error) {
+func DirExistsInTGZArchive(dirToCheck string, archive string) (bool, error) {
 	fileReader, err := os.Open(archive)
 	if err != nil {
 		return false, errors.Wrap(err, "failed to open file")
@@ -64,28 +64,41 @@ func DirExistsInAirgap(dirToCheck string, archive string) (bool, error) {
 	return false, nil
 }
 
-func GetFileFromAirgap(fileToGet string, archive string) ([]byte, error) {
-	fileReader, err := os.Open(archive)
+func GetFileContentFromTGZArchive(fileToGet string, archive string) ([]byte, error) {
+	file, err := GetFileFromTGZArchive(fileToGet, archive)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to open file")
+		return nil, err
 	}
-	defer fileReader.Close()
+	defer os.Remove(file)
 
-	gzipReader, err := gzip.NewReader(fileReader)
+	content, err := os.ReadFile(file)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to get new gzip reader")
+		return nil, errors.Wrap(err, "failed to read file")
+	}
+	return content, nil
+}
+
+func GetFileFromTGZArchive(fileToGet string, archive string) (string, error) {
+	archiveReader, err := os.Open(archive)
+	if err != nil {
+		return "", errors.Wrap(err, "failed to open file")
+	}
+	defer archiveReader.Close()
+
+	gzipReader, err := gzip.NewReader(archiveReader)
+	if err != nil {
+		return "", errors.Wrap(err, "failed to get new gzip reader")
 	}
 	defer gzipReader.Close()
 
 	tarReader := tar.NewReader(gzipReader)
-	var fileData []byte
 	for {
 		header, err := tarReader.Next()
 		if err == io.EOF {
 			break
 		}
 		if err != nil {
-			return nil, errors.Wrap(err, "failed to get read archive")
+			return "", errors.Wrap(err, "failed to get read archive")
 		}
 
 		if header.Typeflag != tar.TypeReg {
@@ -95,21 +108,20 @@ func GetFileFromAirgap(fileToGet string, archive string) ([]byte, error) {
 			continue
 		}
 
-		buf := new(bytes.Buffer)
-		_, err = buf.ReadFrom(tarReader)
+		tmpFile, err := os.CreateTemp("", filepath.Base(fileToGet))
 		if err != nil {
-			return nil, errors.Wrap(err, "failed to read file from tar archive")
+			return "", errors.Wrap(err, "failed to create temporary file")
 		}
+		defer tmpFile.Close()
 
-		fileData = buf.Bytes()
-		break
+		_, err = io.Copy(tmpFile, tarReader)
+		if err != nil {
+			return "", errors.Wrap(err, "failed to write tar archive to temporary file")
+		}
+		return tmpFile.Name(), nil
 	}
 
-	if fileData == nil {
-		return nil, errors.New("file not found in archive")
-	}
-
-	return fileData, nil
+	return "", errors.New("file not found in archive")
 }
 
 func ExtractTGZArchiveFromReader(tgzReader io.Reader, destDir string) error {

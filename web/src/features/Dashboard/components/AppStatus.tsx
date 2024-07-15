@@ -142,7 +142,7 @@ export default class AppStatus extends Component<Props, State> {
                       : "u-textColor--error"
                   }`}
                 >
-                  {Utilities.clusterState(embeddedClusterState)}
+                  {Utilities.humanReadableClusterState(embeddedClusterState)}
                 </span>
               </>
             )}

@@ -7,7 +7,6 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/api/version/types"
-	"github.com/replicatedhq/kots/pkg/gitops"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/operator"
@@ -25,30 +24,6 @@ import (
 	"k8s.io/client-go/kubernetes/scheme"
 	applicationv1beta1 "sigs.k8s.io/application/api/v1beta1"
 )
-
-type DownstreamGitOps struct {
-}
-
-func (d *DownstreamGitOps) CreateGitOpsDownstreamCommit(appID string, clusterID string, newSequence int, filesInDir string, downstreamName string) (string, error) {
-	downstreamGitOps, err := gitops.GetDownstreamGitOps(appID, clusterID)
-	if err != nil {
-		return "", errors.Wrap(err, "failed to get downstream gitops")
-	}
-	if downstreamGitOps == nil || !downstreamGitOps.IsConnected {
-		return "", nil
-	}
-
-	a, err := store.GetStore().GetApp(appID)
-	if err != nil {
-		return "", errors.Wrap(err, "failed to get app")
-	}
-	createdCommitURL, err := gitops.CreateGitOpsCommit(downstreamGitOps, a.Slug, a.Name, int(newSequence), filesInDir, downstreamName)
-	if err != nil {
-		return "", errors.Wrap(err, "failed to create gitops commit")
-	}
-
-	return createdCommitURL, nil
-}
 
 // DeployVersion deploys the version for the given sequence
 func DeployVersion(appID string, sequence int64) error {

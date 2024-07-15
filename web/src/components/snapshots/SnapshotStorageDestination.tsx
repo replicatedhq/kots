@@ -103,6 +103,8 @@ type AWSStoreProvider = {
   other?: undefined;
   path?: string;
   bucket?: string;
+  internal?: undefined;
+  fileSystem?: undefined;
 };
 
 type GCPStoreProvider = {
@@ -116,6 +118,8 @@ type GCPStoreProvider = {
   azure?: undefined;
   other?: undefined;
   path?: undefined;
+  internal?: undefined;
+  fileSystem?: undefined;
 };
 
 type AzureStoreProvider = {
@@ -133,6 +137,8 @@ type AzureStoreProvider = {
   gcp?: undefined;
   other?: undefined;
   path?: undefined;
+  internal?: undefined;
+  fileSystem?: undefined;
 };
 
 type OtherStoreProvider = {
@@ -148,6 +154,8 @@ type OtherStoreProvider = {
   gcp?: undefined;
   azure?: undefined;
   path?: undefined;
+  internal?: undefined;
+  fileSystem?: undefined;
 };
 
 type StoreMetadata = {
@@ -1763,8 +1771,6 @@ class SnapshotStorageDestination extends Component<Props, State> {
                     )}
                   <div className="flex1">
                     {availableDestinations.length > 1 ? (
-                      // TODO: upgrade react-select and use the current typing
-                      // @ts-ignore
                       <Select
                         className="replicated-select-container"
                         classNamePrefix="replicated-select"
@@ -1772,6 +1778,9 @@ class SnapshotStorageDestination extends Component<Props, State> {
                         options={availableDestinations}
                         isSearchable={false}
                         getOptionLabel={(destination) =>
+                          // TODO: upgrade react-select and use the current typing
+                          // We want to display element instead of string
+                          // @ts-ignore
                           this.getDestinationLabel(
                             destination,
                             destination.label

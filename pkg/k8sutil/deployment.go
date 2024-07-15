@@ -30,7 +30,7 @@ func WaitForDeploymentReady(ctx context.Context, clientset kubernetes.Interface,
 
 		time.Sleep(time.Second)
 
-		if time.Now().Sub(start) > timeout {
+		if time.Since(start) > timeout {
 			return &types.ErrorTimeout{Message: "timeout waiting for deployment to become ready"}
 		}
 	}

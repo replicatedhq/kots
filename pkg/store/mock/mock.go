@@ -13,10 +13,10 @@ import (
 	v1beta1 "github.com/replicatedhq/embedded-cluster-kinds/apis/v1beta1"
 	types "github.com/replicatedhq/kots/pkg/airgap/types"
 	types0 "github.com/replicatedhq/kots/pkg/api/downstream/types"
-	types1 "github.com/replicatedhq/kots/pkg/api/version/types"
-	types2 "github.com/replicatedhq/kots/pkg/app/types"
-	types3 "github.com/replicatedhq/kots/pkg/appstate/types"
-	types4 "github.com/replicatedhq/kots/pkg/gitops/types"
+	types1 "github.com/replicatedhq/kots/pkg/api/reporting/types"
+	types2 "github.com/replicatedhq/kots/pkg/api/version/types"
+	types3 "github.com/replicatedhq/kots/pkg/app/types"
+	types4 "github.com/replicatedhq/kots/pkg/appstate/types"
 	types5 "github.com/replicatedhq/kots/pkg/kotsadmsnapshot/types"
 	types6 "github.com/replicatedhq/kots/pkg/online/types"
 	types7 "github.com/replicatedhq/kots/pkg/preflight/types"
@@ -96,25 +96,11 @@ func (mr *MockStoreMockRecorder) AddDownstreamVersionsDetails(appID, clusterID, 
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddDownstreamVersionsDetails", reflect.TypeOf((*MockStore)(nil).AddDownstreamVersionsDetails), appID, clusterID, versions, checkIfDeployable)
 }
 
-// ClearTaskStatus mocks base method.
-func (m *MockStore) ClearTaskStatus(taskID string) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ClearTaskStatus", taskID)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// ClearTaskStatus indicates an expected call of ClearTaskStatus.
-func (mr *MockStoreMockRecorder) ClearTaskStatus(taskID interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ClearTaskStatus", reflect.TypeOf((*MockStore)(nil).ClearTaskStatus), taskID)
-}
-
 // CreateApp mocks base method.
-func (m *MockStore) CreateApp(name, upstreamURI, licenseData string, isAirgapEnabled, skipImagePush, registryIsReadOnly bool) (*types2.App, error) {
+func (m *MockStore) CreateApp(name, upstreamURI, licenseData string, isAirgapEnabled, skipImagePush, registryIsReadOnly bool) (*types3.App, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "CreateApp", name, upstreamURI, licenseData, isAirgapEnabled, skipImagePush, registryIsReadOnly)
-	ret0, _ := ret[0].(*types2.App)
+	ret0, _ := ret[0].(*types3.App)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -126,32 +112,18 @@ func (mr *MockStoreMockRecorder) CreateApp(name, upstreamURI, licenseData, isAir
 }
 
 // CreateAppVersion mocks base method.
-func (m *MockStore) CreateAppVersion(appID string, baseSequence *int64, filesInDir, source string, skipPreflights bool, gitops types4.DownstreamGitOps, renderer types9.Renderer) (int64, error) {
+func (m *MockStore) CreateAppVersion(appID string, baseSequence *int64, filesInDir, source string, skipPreflights bool, renderer types9.Renderer) (int64, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "CreateAppVersion", appID, baseSequence, filesInDir, source, skipPreflights, gitops, renderer)
+	ret := m.ctrl.Call(m, "CreateAppVersion", appID, baseSequence, filesInDir, source, skipPreflights, renderer)
 	ret0, _ := ret[0].(int64)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // CreateAppVersion indicates an expected call of CreateAppVersion.
-func (mr *MockStoreMockRecorder) CreateAppVersion(appID, baseSequence, filesInDir, source, skipPreflights, gitops, renderer interface{}) *gomock.Call {
+func (mr *MockStoreMockRecorder) CreateAppVersion(appID, baseSequence, filesInDir, source, skipPreflights, renderer interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateAppVersion", reflect.TypeOf((*MockStore)(nil).CreateAppVersion), appID, baseSequence, filesInDir, source, skipPreflights, gitops, renderer)
-}
-
-// CreateAppVersionArchive mocks base method.
-func (m *MockStore) CreateAppVersionArchive(appID string, sequence int64, archivePath string) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "CreateAppVersionArchive", appID, sequence, archivePath)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// CreateAppVersionArchive indicates an expected call of CreateAppVersionArchive.
-func (mr *MockStoreMockRecorder) CreateAppVersionArchive(appID, sequence, archivePath interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateAppVersionArchive", reflect.TypeOf((*MockStore)(nil).CreateAppVersionArchive), appID, sequence, archivePath)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateAppVersion", reflect.TypeOf((*MockStore)(nil).CreateAppVersion), appID, baseSequence, filesInDir, source, skipPreflights, renderer)
 }
 
 // CreateInProgressSupportBundle mocks base method.
@@ -429,10 +401,10 @@ func (mr *MockStoreMockRecorder) GetAllAppLicenses() *gomock.Call {
 }
 
 // GetApp mocks base method.
-func (m *MockStore) GetApp(appID string) (*types2.App, error) {
+func (m *MockStore) GetApp(appID string) (*types3.App, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetApp", appID)
-	ret0, _ := ret[0].(*types2.App)
+	ret0, _ := ret[0].(*types3.App)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -444,10 +416,10 @@ func (mr *MockStoreMockRecorder) GetApp(appID interface{}) *gomock.Call {
 }
 
 // GetAppFromSlug mocks base method.
-func (m *MockStore) GetAppFromSlug(slug string) (*types2.App, error) {
+func (m *MockStore) GetAppFromSlug(slug string) (*types3.App, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetAppFromSlug", slug)
-	ret0, _ := ret[0].(*types2.App)
+	ret0, _ := ret[0].(*types3.App)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -489,10 +461,10 @@ func (mr *MockStoreMockRecorder) GetAppIDsFromRegistry(hostname interface{}) *go
 }
 
 // GetAppStatus mocks base method.
-func (m *MockStore) GetAppStatus(appID string) (*types3.AppStatus, error) {
+func (m *MockStore) GetAppStatus(appID string) (*types4.AppStatus, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetAppStatus", appID)
-	ret0, _ := ret[0].(*types3.AppStatus)
+	ret0, _ := ret[0].(*types4.AppStatus)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -504,10 +476,10 @@ func (mr *MockStoreMockRecorder) GetAppStatus(appID interface{}) *gomock.Call {
 }
 
 // GetAppVersion mocks base method.
-func (m *MockStore) GetAppVersion(appID string, sequence int64) (*types1.AppVersion, error) {
+func (m *MockStore) GetAppVersion(appID string, sequence int64) (*types2.AppVersion, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetAppVersion", appID, sequence)
-	ret0, _ := ret[0].(*types1.AppVersion)
+	ret0, _ := ret[0].(*types2.AppVersion)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -786,21 +758,6 @@ func (m *MockStore) GetEmbeddedClusterInstallCommandRoles(token string) ([]strin
 func (mr *MockStoreMockRecorder) GetEmbeddedClusterInstallCommandRoles(token interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetEmbeddedClusterInstallCommandRoles", reflect.TypeOf((*MockStore)(nil).GetEmbeddedClusterInstallCommandRoles), token)
-}
-
-// GetEmbeddedClusterState mocks base method.
-func (m *MockStore) GetEmbeddedClusterState() (string, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetEmbeddedClusterState")
-	ret0, _ := ret[0].(string)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// GetEmbeddedClusterState indicates an expected call of GetEmbeddedClusterState.
-func (mr *MockStoreMockRecorder) GetEmbeddedClusterState() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetEmbeddedClusterState", reflect.TypeOf((*MockStore)(nil).GetEmbeddedClusterState))
 }
 
 // GetIgnoreRBACErrors mocks base method.
@@ -1195,22 +1152,6 @@ func (mr *MockStoreMockRecorder) GetTargetKotsVersionForVersion(appID, sequence 
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTargetKotsVersionForVersion", reflect.TypeOf((*MockStore)(nil).GetTargetKotsVersionForVersion), appID, sequence)
 }
 
-// GetTaskStatus mocks base method.
-func (m *MockStore) GetTaskStatus(taskID string) (string, string, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetTaskStatus", taskID)
-	ret0, _ := ret[0].(string)
-	ret1, _ := ret[1].(string)
-	ret2, _ := ret[2].(error)
-	return ret0, ret1, ret2
-}
-
-// GetTaskStatus indicates an expected call of GetTaskStatus.
-func (mr *MockStoreMockRecorder) GetTaskStatus(taskID interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTaskStatus", reflect.TypeOf((*MockStore)(nil).GetTaskStatus), taskID)
-}
-
 // HasStrictPreflights mocks base method.
 func (m *MockStore) HasStrictPreflights(appID string, sequence int64) (bool, error) {
 	m.ctrl.T.Helper()
@@ -1346,7 +1287,7 @@ func (mr *MockStoreMockRecorder) IsRollbackSupportedForVersion(appID, sequence i
 }
 
 // IsSnapshotsSupportedForVersion mocks base method.
-func (m *MockStore) IsSnapshotsSupportedForVersion(a *types2.App, sequence int64, renderer types9.Renderer) (bool, error) {
+func (m *MockStore) IsSnapshotsSupportedForVersion(a *types3.App, sequence int64, renderer types9.Renderer) (bool, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "IsSnapshotsSupportedForVersion", a, sequence, renderer)
 	ret0, _ := ret[0].(bool)
@@ -1361,10 +1302,10 @@ func (mr *MockStoreMockRecorder) IsSnapshotsSupportedForVersion(a, sequence, ren
 }
 
 // ListAppsForDownstream mocks base method.
-func (m *MockStore) ListAppsForDownstream(clusterID string) ([]*types2.App, error) {
+func (m *MockStore) ListAppsForDownstream(clusterID string) ([]*types3.App, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ListAppsForDownstream", clusterID)
-	ret0, _ := ret[0].([]*types2.App)
+	ret0, _ := ret[0].([]*types3.App)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -1406,10 +1347,10 @@ func (mr *MockStoreMockRecorder) ListDownstreamsForApp(appID interface{}) *gomoc
 }
 
 // ListFailedApps mocks base method.
-func (m *MockStore) ListFailedApps() ([]*types2.App, error) {
+func (m *MockStore) ListFailedApps() ([]*types3.App, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ListFailedApps")
-	ret0, _ := ret[0].([]*types2.App)
+	ret0, _ := ret[0].([]*types3.App)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -1436,10 +1377,10 @@ func (mr *MockStoreMockRecorder) ListInstalledAppSlugs() *gomock.Call {
 }
 
 // ListInstalledApps mocks base method.
-func (m *MockStore) ListInstalledApps() ([]*types2.App, error) {
+func (m *MockStore) ListInstalledApps() ([]*types3.App, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ListInstalledApps")
-	ret0, _ := ret[0].([]*types2.App)
+	ret0, _ := ret[0].([]*types3.App)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -1606,7 +1547,7 @@ func (mr *MockStoreMockRecorder) SetAppIsAirgap(appID, isAirgap interface{}) *go
 }
 
 // SetAppStatus mocks base method.
-func (m *MockStore) SetAppStatus(appID string, resourceStates types3.ResourceStates, updatedAt time.Time, sequence int64) error {
+func (m *MockStore) SetAppStatus(appID string, resourceStates types4.ResourceStates, updatedAt time.Time, sequence int64) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "SetAppStatus", appID, resourceStates, updatedAt, sequence)
 	ret0, _ := ret[0].(error)
@@ -1620,7 +1561,7 @@ func (mr *MockStoreMockRecorder) SetAppStatus(appID, resourceStates, updatedAt, 
 }
 
 // SetAutoDeploy mocks base method.
-func (m *MockStore) SetAutoDeploy(appID string, autoDeploy types2.AutoDeploy) error {
+func (m *MockStore) SetAutoDeploy(appID string, autoDeploy types3.AutoDeploy) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "SetAutoDeploy", appID, autoDeploy)
 	ret0, _ := ret[0].(error)
@@ -1674,20 +1615,6 @@ func (m *MockStore) SetEmbeddedClusterInstallCommandRoles(roles []string) (strin
 func (mr *MockStoreMockRecorder) SetEmbeddedClusterInstallCommandRoles(roles interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetEmbeddedClusterInstallCommandRoles", reflect.TypeOf((*MockStore)(nil).SetEmbeddedClusterInstallCommandRoles), roles)
-}
-
-// SetEmbeddedClusterState mocks base method.
-func (m *MockStore) SetEmbeddedClusterState(state string) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "SetEmbeddedClusterState", state)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// SetEmbeddedClusterState indicates an expected call of SetEmbeddedClusterState.
-func (mr *MockStoreMockRecorder) SetEmbeddedClusterState(state interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetEmbeddedClusterState", reflect.TypeOf((*MockStore)(nil).SetEmbeddedClusterState), state)
 }
 
 // SetIgnorePreflightPermissionErrors mocks base method.
@@ -1844,20 +1771,6 @@ func (mr *MockStoreMockRecorder) SetSupportBundleAnalysis(bundleID, insights int
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetSupportBundleAnalysis", reflect.TypeOf((*MockStore)(nil).SetSupportBundleAnalysis), bundleID, insights)
 }
 
-// SetTaskStatus mocks base method.
-func (m *MockStore) SetTaskStatus(taskID, message, status string) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "SetTaskStatus", taskID, message, status)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// SetTaskStatus indicates an expected call of SetTaskStatus.
-func (mr *MockStoreMockRecorder) SetTaskStatus(taskID, message, status interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetTaskStatus", reflect.TypeOf((*MockStore)(nil).SetTaskStatus), taskID, message, status)
-}
-
 // SetUpdateCheckerSpec mocks base method.
 func (m *MockStore) SetUpdateCheckerSpec(appID, updateCheckerSpec string) error {
 	m.ctrl.T.Helper()
@@ -1873,18 +1786,18 @@ func (mr *MockStoreMockRecorder) SetUpdateCheckerSpec(appID, updateCheckerSpec i
 }
 
 // UpdateAppLicense mocks base method.
-func (m *MockStore) UpdateAppLicense(appID string, sequence int64, archiveDir string, newLicense *v1beta10.License, originalLicenseData string, channelChanged, failOnVersionCreate bool, gitops types4.DownstreamGitOps, renderer types9.Renderer) (int64, error) {
+func (m *MockStore) UpdateAppLicense(appID string, sequence int64, archiveDir string, newLicense *v1beta10.License, originalLicenseData string, channelChanged, failOnVersionCreate bool, renderer types9.Renderer, reportingInfo *types1.ReportingInfo) (int64, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "UpdateAppLicense", appID, sequence, archiveDir, newLicense, originalLicenseData, channelChanged, failOnVersionCreate, gitops, renderer)
+	ret := m.ctrl.Call(m, "UpdateAppLicense", appID, sequence, archiveDir, newLicense, originalLicenseData, channelChanged, failOnVersionCreate, renderer, reportingInfo)
 	ret0, _ := ret[0].(int64)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // UpdateAppLicense indicates an expected call of UpdateAppLicense.
-func (mr *MockStoreMockRecorder) UpdateAppLicense(appID, sequence, archiveDir, newLicense, originalLicenseData, channelChanged, failOnVersionCreate, gitops, renderer interface{}) *gomock.Call {
+func (mr *MockStoreMockRecorder) UpdateAppLicense(appID, sequence, archiveDir, newLicense, originalLicenseData, channelChanged, failOnVersionCreate, renderer, reportingInfo interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateAppLicense", reflect.TypeOf((*MockStore)(nil).UpdateAppLicense), appID, sequence, archiveDir, newLicense, originalLicenseData, channelChanged, failOnVersionCreate, gitops, renderer)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateAppLicense", reflect.TypeOf((*MockStore)(nil).UpdateAppLicense), appID, sequence, archiveDir, newLicense, originalLicenseData, channelChanged, failOnVersionCreate, renderer, reportingInfo)
 }
 
 // UpdateAppLicenseSyncNow mocks base method.
@@ -1902,31 +1815,17 @@ func (mr *MockStoreMockRecorder) UpdateAppLicenseSyncNow(appID interface{}) *gom
 }
 
 // UpdateAppVersion mocks base method.
-func (m *MockStore) UpdateAppVersion(appID string, sequence int64, baseSequence *int64, filesInDir, source string, skipPreflights bool, gitops types4.DownstreamGitOps, renderer types9.Renderer) error {
+func (m *MockStore) UpdateAppVersion(appID string, sequence int64, baseSequence *int64, filesInDir, source string, skipPreflights bool, renderer types9.Renderer) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "UpdateAppVersion", appID, sequence, baseSequence, filesInDir, source, skipPreflights, gitops, renderer)
+	ret := m.ctrl.Call(m, "UpdateAppVersion", appID, sequence, baseSequence, filesInDir, source, skipPreflights, renderer)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // UpdateAppVersion indicates an expected call of UpdateAppVersion.
-func (mr *MockStoreMockRecorder) UpdateAppVersion(appID, sequence, baseSequence, filesInDir, source, skipPreflights, gitops, renderer interface{}) *gomock.Call {
+func (mr *MockStoreMockRecorder) UpdateAppVersion(appID, sequence, baseSequence, filesInDir, source, skipPreflights, renderer interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateAppVersion", reflect.TypeOf((*MockStore)(nil).UpdateAppVersion), appID, sequence, baseSequence, filesInDir, source, skipPreflights, gitops, renderer)
-}
-
-// UpdateAppVersionInstallationSpec mocks base method.
-func (m *MockStore) UpdateAppVersionInstallationSpec(appID string, sequence int64, spec v1beta10.Installation) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "UpdateAppVersionInstallationSpec", appID, sequence, spec)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// UpdateAppVersionInstallationSpec indicates an expected call of UpdateAppVersionInstallationSpec.
-func (mr *MockStoreMockRecorder) UpdateAppVersionInstallationSpec(appID, sequence, spec interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateAppVersionInstallationSpec", reflect.TypeOf((*MockStore)(nil).UpdateAppVersionInstallationSpec), appID, sequence, spec)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateAppVersion", reflect.TypeOf((*MockStore)(nil).UpdateAppVersion), appID, sequence, baseSequence, filesInDir, source, skipPreflights, renderer)
 }
 
 // UpdateDownstreamDeployStatus mocks base method.
@@ -2025,20 +1924,6 @@ func (m *MockStore) UpdateSupportBundle(bundle *types12.SupportBundle) error {
 func (mr *MockStoreMockRecorder) UpdateSupportBundle(bundle interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateSupportBundle", reflect.TypeOf((*MockStore)(nil).UpdateSupportBundle), bundle)
-}
-
-// UpdateTaskStatusTimestamp mocks base method.
-func (m *MockStore) UpdateTaskStatusTimestamp(taskID string) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "UpdateTaskStatusTimestamp", taskID)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// UpdateTaskStatusTimestamp indicates an expected call of UpdateTaskStatusTimestamp.
-func (mr *MockStoreMockRecorder) UpdateTaskStatusTimestamp(taskID interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateTaskStatusTimestamp", reflect.TypeOf((*MockStore)(nil).UpdateTaskStatusTimestamp), taskID)
 }
 
 // UploadSupportBundle mocks base method.
@@ -2610,87 +2495,6 @@ func (mr *MockAirgapStoreMockRecorder) SetAppIsAirgap(appID, isAirgap interface{
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetAppIsAirgap", reflect.TypeOf((*MockAirgapStore)(nil).SetAppIsAirgap), appID, isAirgap)
 }
 
-// MockTaskStore is a mock of TaskStore interface.
-type MockTaskStore struct {
-	ctrl     *gomock.Controller
-	recorder *MockTaskStoreMockRecorder
-}
-
-// MockTaskStoreMockRecorder is the mock recorder for MockTaskStore.
-type MockTaskStoreMockRecorder struct {
-	mock *MockTaskStore
-}
-
-// NewMockTaskStore creates a new mock instance.
-func NewMockTaskStore(ctrl *gomock.Controller) *MockTaskStore {
-	mock := &MockTaskStore{ctrl: ctrl}
-	mock.recorder = &MockTaskStoreMockRecorder{mock}
-	return mock
-}
-
-// EXPECT returns an object that allows the caller to indicate expected use.
-func (m *MockTaskStore) EXPECT() *MockTaskStoreMockRecorder {
-	return m.recorder
-}
-
-// ClearTaskStatus mocks base method.
-func (m *MockTaskStore) ClearTaskStatus(taskID string) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ClearTaskStatus", taskID)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// ClearTaskStatus indicates an expected call of ClearTaskStatus.
-func (mr *MockTaskStoreMockRecorder) ClearTaskStatus(taskID interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ClearTaskStatus", reflect.TypeOf((*MockTaskStore)(nil).ClearTaskStatus), taskID)
-}
-
-// GetTaskStatus mocks base method.
-func (m *MockTaskStore) GetTaskStatus(taskID string) (string, string, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetTaskStatus", taskID)
-	ret0, _ := ret[0].(string)
-	ret1, _ := ret[1].(string)
-	ret2, _ := ret[2].(error)
-	return ret0, ret1, ret2
-}
-
-// GetTaskStatus indicates an expected call of GetTaskStatus.
-func (mr *MockTaskStoreMockRecorder) GetTaskStatus(taskID interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTaskStatus", reflect.TypeOf((*MockTaskStore)(nil).GetTaskStatus), taskID)
-}
-
-// SetTaskStatus mocks base method.
-func (m *MockTaskStore) SetTaskStatus(taskID, message, status string) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "SetTaskStatus", taskID, message, status)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// SetTaskStatus indicates an expected call of SetTaskStatus.
-func (mr *MockTaskStoreMockRecorder) SetTaskStatus(taskID, message, status interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetTaskStatus", reflect.TypeOf((*MockTaskStore)(nil).SetTaskStatus), taskID, message, status)
-}
-
-// UpdateTaskStatusTimestamp mocks base method.
-func (m *MockTaskStore) UpdateTaskStatusTimestamp(taskID string) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "UpdateTaskStatusTimestamp", taskID)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// UpdateTaskStatusTimestamp indicates an expected call of UpdateTaskStatusTimestamp.
-func (mr *MockTaskStoreMockRecorder) UpdateTaskStatusTimestamp(taskID interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateTaskStatusTimestamp", reflect.TypeOf((*MockTaskStore)(nil).UpdateTaskStatusTimestamp), taskID)
-}
-
 // MockSessionStore is a mock of SessionStore interface.
 type MockSessionStore struct {
 	ctrl     *gomock.Controller
@@ -2810,10 +2614,10 @@ func (m *MockAppStatusStore) EXPECT() *MockAppStatusStoreMockRecorder {
 }
 
 // GetAppStatus mocks base method.
-func (m *MockAppStatusStore) GetAppStatus(appID string) (*types3.AppStatus, error) {
+func (m *MockAppStatusStore) GetAppStatus(appID string) (*types4.AppStatus, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetAppStatus", appID)
-	ret0, _ := ret[0].(*types3.AppStatus)
+	ret0, _ := ret[0].(*types4.AppStatus)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -2825,7 +2629,7 @@ func (mr *MockAppStatusStoreMockRecorder) GetAppStatus(appID interface{}) *gomoc
 }
 
 // SetAppStatus mocks base method.
-func (m *MockAppStatusStore) SetAppStatus(appID string, resourceStates types3.ResourceStates, updatedAt time.Time, sequence int64) error {
+func (m *MockAppStatusStore) SetAppStatus(appID string, resourceStates types4.ResourceStates, updatedAt time.Time, sequence int64) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "SetAppStatus", appID, resourceStates, updatedAt, sequence)
 	ret0, _ := ret[0].(error)
@@ -2876,10 +2680,10 @@ func (mr *MockAppStoreMockRecorder) AddAppToAllDownstreams(appID interface{}) *g
 }
 
 // CreateApp mocks base method.
-func (m *MockAppStore) CreateApp(name, upstreamURI, licenseData string, isAirgapEnabled, skipImagePush, registryIsReadOnly bool) (*types2.App, error) {
+func (m *MockAppStore) CreateApp(name, upstreamURI, licenseData string, isAirgapEnabled, skipImagePush, registryIsReadOnly bool) (*types3.App, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "CreateApp", name, upstreamURI, licenseData, isAirgapEnabled, skipImagePush, registryIsReadOnly)
-	ret0, _ := ret[0].(*types2.App)
+	ret0, _ := ret[0].(*types3.App)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -2891,10 +2695,10 @@ func (mr *MockAppStoreMockRecorder) CreateApp(name, upstreamURI, licenseData, is
 }
 
 // GetApp mocks base method.
-func (m *MockAppStore) GetApp(appID string) (*types2.App, error) {
+func (m *MockAppStore) GetApp(appID string) (*types3.App, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetApp", appID)
-	ret0, _ := ret[0].(*types2.App)
+	ret0, _ := ret[0].(*types3.App)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -2906,10 +2710,10 @@ func (mr *MockAppStoreMockRecorder) GetApp(appID interface{}) *gomock.Call {
 }
 
 // GetAppFromSlug mocks base method.
-func (m *MockAppStore) GetAppFromSlug(slug string) (*types2.App, error) {
+func (m *MockAppStore) GetAppFromSlug(slug string) (*types3.App, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetAppFromSlug", slug)
-	ret0, _ := ret[0].(*types2.App)
+	ret0, _ := ret[0].(*types3.App)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -2966,10 +2770,10 @@ func (mr *MockAppStoreMockRecorder) IsGitOpsEnabledForApp(appID interface{}) *go
 }
 
 // ListAppsForDownstream mocks base method.
-func (m *MockAppStore) ListAppsForDownstream(clusterID string) ([]*types2.App, error) {
+func (m *MockAppStore) ListAppsForDownstream(clusterID string) ([]*types3.App, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ListAppsForDownstream", clusterID)
-	ret0, _ := ret[0].([]*types2.App)
+	ret0, _ := ret[0].([]*types3.App)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -2996,10 +2800,10 @@ func (mr *MockAppStoreMockRecorder) ListDownstreamsForApp(appID interface{}) *go
 }
 
 // ListFailedApps mocks base method.
-func (m *MockAppStore) ListFailedApps() ([]*types2.App, error) {
+func (m *MockAppStore) ListFailedApps() ([]*types3.App, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ListFailedApps")
-	ret0, _ := ret[0].([]*types2.App)
+	ret0, _ := ret[0].([]*types3.App)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -3026,10 +2830,10 @@ func (mr *MockAppStoreMockRecorder) ListInstalledAppSlugs() *gomock.Call {
 }
 
 // ListInstalledApps mocks base method.
-func (m *MockAppStore) ListInstalledApps() ([]*types2.App, error) {
+func (m *MockAppStore) ListInstalledApps() ([]*types3.App, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ListInstalledApps")
-	ret0, _ := ret[0].([]*types2.App)
+	ret0, _ := ret[0].([]*types3.App)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -3083,7 +2887,7 @@ func (mr *MockAppStoreMockRecorder) SetAppInstallState(appID, state interface{})
 }
 
 // SetAutoDeploy mocks base method.
-func (m *MockAppStore) SetAutoDeploy(appID string, autoDeploy types2.AutoDeploy) error {
+func (m *MockAppStore) SetAutoDeploy(appID string, autoDeploy types3.AutoDeploy) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "SetAutoDeploy", appID, autoDeploy)
 	ret0, _ := ret[0].(error)
@@ -3649,32 +3453,18 @@ func (m *MockVersionStore) EXPECT() *MockVersionStoreMockRecorder {
 }
 
 // CreateAppVersion mocks base method.
-func (m *MockVersionStore) CreateAppVersion(appID string, baseSequence *int64, filesInDir, source string, skipPreflights bool, gitops types4.DownstreamGitOps, renderer types9.Renderer) (int64, error) {
+func (m *MockVersionStore) CreateAppVersion(appID string, baseSequence *int64, filesInDir, source string, skipPreflights bool, renderer types9.Renderer) (int64, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "CreateAppVersion", appID, baseSequence, filesInDir, source, skipPreflights, gitops, renderer)
+	ret := m.ctrl.Call(m, "CreateAppVersion", appID, baseSequence, filesInDir, source, skipPreflights, renderer)
 	ret0, _ := ret[0].(int64)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // CreateAppVersion indicates an expected call of CreateAppVersion.
-func (mr *MockVersionStoreMockRecorder) CreateAppVersion(appID, baseSequence, filesInDir, source, skipPreflights, gitops, renderer interface{}) *gomock.Call {
+func (mr *MockVersionStoreMockRecorder) CreateAppVersion(appID, baseSequence, filesInDir, source, skipPreflights, renderer interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateAppVersion", reflect.TypeOf((*MockVersionStore)(nil).CreateAppVersion), appID, baseSequence, filesInDir, source, skipPreflights, gitops, renderer)
-}
-
-// CreateAppVersionArchive mocks base method.
-func (m *MockVersionStore) CreateAppVersionArchive(appID string, sequence int64, archivePath string) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "CreateAppVersionArchive", appID, sequence, archivePath)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// CreateAppVersionArchive indicates an expected call of CreateAppVersionArchive.
-func (mr *MockVersionStoreMockRecorder) CreateAppVersionArchive(appID, sequence, archivePath interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateAppVersionArchive", reflect.TypeOf((*MockVersionStore)(nil).CreateAppVersionArchive), appID, sequence, archivePath)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateAppVersion", reflect.TypeOf((*MockVersionStore)(nil).CreateAppVersion), appID, baseSequence, filesInDir, source, skipPreflights, renderer)
 }
 
 // CreatePendingDownloadAppVersion mocks base method.
@@ -3693,10 +3483,10 @@ func (mr *MockVersionStoreMockRecorder) CreatePendingDownloadAppVersion(appID, u
 }
 
 // GetAppVersion mocks base method.
-func (m *MockVersionStore) GetAppVersion(appID string, sequence int64) (*types1.AppVersion, error) {
+func (m *MockVersionStore) GetAppVersion(appID string, sequence int64) (*types2.AppVersion, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetAppVersion", appID, sequence)
-	ret0, _ := ret[0].(*types1.AppVersion)
+	ret0, _ := ret[0].(*types2.AppVersion)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -3873,7 +3663,7 @@ func (mr *MockVersionStoreMockRecorder) IsRollbackSupportedForVersion(appID, seq
 }
 
 // IsSnapshotsSupportedForVersion mocks base method.
-func (m *MockVersionStore) IsSnapshotsSupportedForVersion(a *types2.App, sequence int64, renderer types9.Renderer) (bool, error) {
+func (m *MockVersionStore) IsSnapshotsSupportedForVersion(a *types3.App, sequence int64, renderer types9.Renderer) (bool, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "IsSnapshotsSupportedForVersion", a, sequence, renderer)
 	ret0, _ := ret[0].(bool)
@@ -3888,31 +3678,17 @@ func (mr *MockVersionStoreMockRecorder) IsSnapshotsSupportedForVersion(a, sequen
 }
 
 // UpdateAppVersion mocks base method.
-func (m *MockVersionStore) UpdateAppVersion(appID string, sequence int64, baseSequence *int64, filesInDir, source string, skipPreflights bool, gitops types4.DownstreamGitOps, renderer types9.Renderer) error {
+func (m *MockVersionStore) UpdateAppVersion(appID string, sequence int64, baseSequence *int64, filesInDir, source string, skipPreflights bool, renderer types9.Renderer) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "UpdateAppVersion", appID, sequence, baseSequence, filesInDir, source, skipPreflights, gitops, renderer)
+	ret := m.ctrl.Call(m, "UpdateAppVersion", appID, sequence, baseSequence, filesInDir, source, skipPreflights, renderer)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // UpdateAppVersion indicates an expected call of UpdateAppVersion.
-func (mr *MockVersionStoreMockRecorder) UpdateAppVersion(appID, sequence, baseSequence, filesInDir, source, skipPreflights, gitops, renderer interface{}) *gomock.Call {
+func (mr *MockVersionStoreMockRecorder) UpdateAppVersion(appID, sequence, baseSequence, filesInDir, source, skipPreflights, renderer interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateAppVersion", reflect.TypeOf((*MockVersionStore)(nil).UpdateAppVersion), appID, sequence, baseSequence, filesInDir, source, skipPreflights, gitops, renderer)
-}
-
-// UpdateAppVersionInstallationSpec mocks base method.
-func (m *MockVersionStore) UpdateAppVersionInstallationSpec(appID string, sequence int64, spec v1beta10.Installation) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "UpdateAppVersionInstallationSpec", appID, sequence, spec)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// UpdateAppVersionInstallationSpec indicates an expected call of UpdateAppVersionInstallationSpec.
-func (mr *MockVersionStoreMockRecorder) UpdateAppVersionInstallationSpec(appID, sequence, spec interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateAppVersionInstallationSpec", reflect.TypeOf((*MockVersionStore)(nil).UpdateAppVersionInstallationSpec), appID, sequence, spec)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateAppVersion", reflect.TypeOf((*MockVersionStore)(nil).UpdateAppVersion), appID, sequence, baseSequence, filesInDir, source, skipPreflights, renderer)
 }
 
 // UpdateNextAppVersionDiffSummary mocks base method.
@@ -3998,18 +3774,18 @@ func (mr *MockLicenseStoreMockRecorder) GetLicenseForAppVersion(appID, sequence 
 }
 
 // UpdateAppLicense mocks base method.
-func (m *MockLicenseStore) UpdateAppLicense(appID string, sequence int64, archiveDir string, newLicense *v1beta10.License, originalLicenseData string, channelChanged, failOnVersionCreate bool, gitops types4.DownstreamGitOps, renderer types9.Renderer) (int64, error) {
+func (m *MockLicenseStore) UpdateAppLicense(appID string, sequence int64, archiveDir string, newLicense *v1beta10.License, originalLicenseData string, channelChanged, failOnVersionCreate bool, renderer types9.Renderer, reportingInfo *types1.ReportingInfo) (int64, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "UpdateAppLicense", appID, sequence, archiveDir, newLicense, originalLicenseData, channelChanged, failOnVersionCreate, gitops, renderer)
+	ret := m.ctrl.Call(m, "UpdateAppLicense", appID, sequence, archiveDir, newLicense, originalLicenseData, channelChanged, failOnVersionCreate, renderer, reportingInfo)
 	ret0, _ := ret[0].(int64)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // UpdateAppLicense indicates an expected call of UpdateAppLicense.
-func (mr *MockLicenseStoreMockRecorder) UpdateAppLicense(appID, sequence, archiveDir, newLicense, originalLicenseData, channelChanged, failOnVersionCreate, gitops, renderer interface{}) *gomock.Call {
+func (mr *MockLicenseStoreMockRecorder) UpdateAppLicense(appID, sequence, archiveDir, newLicense, originalLicenseData, channelChanged, failOnVersionCreate, renderer, reportingInfo interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateAppLicense", reflect.TypeOf((*MockLicenseStore)(nil).UpdateAppLicense), appID, sequence, archiveDir, newLicense, originalLicenseData, channelChanged, failOnVersionCreate, gitops, renderer)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateAppLicense", reflect.TypeOf((*MockLicenseStore)(nil).UpdateAppLicense), appID, sequence, archiveDir, newLicense, originalLicenseData, channelChanged, failOnVersionCreate, renderer, reportingInfo)
 }
 
 // UpdateAppLicenseSyncNow mocks base method.
@@ -4346,21 +4122,6 @@ func (mr *MockEmbeddedStoreMockRecorder) GetEmbeddedClusterAuthToken() *gomock.C
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetEmbeddedClusterAuthToken", reflect.TypeOf((*MockEmbeddedStore)(nil).GetEmbeddedClusterAuthToken))
 }
 
-// GetEmbeddedClusterState mocks base method.
-func (m *MockEmbeddedStore) GetEmbeddedClusterState() (string, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetEmbeddedClusterState")
-	ret0, _ := ret[0].(string)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// GetEmbeddedClusterState indicates an expected call of GetEmbeddedClusterState.
-func (mr *MockEmbeddedStoreMockRecorder) GetEmbeddedClusterState() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetEmbeddedClusterState", reflect.TypeOf((*MockEmbeddedStore)(nil).GetEmbeddedClusterState))
-}
-
 // SetEmbeddedClusterAuthToken mocks base method.
 func (m *MockEmbeddedStore) SetEmbeddedClusterAuthToken(token string) error {
 	m.ctrl.T.Helper()
@@ -4373,20 +4134,6 @@ func (m *MockEmbeddedStore) SetEmbeddedClusterAuthToken(token string) error {
 func (mr *MockEmbeddedStoreMockRecorder) SetEmbeddedClusterAuthToken(token interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetEmbeddedClusterAuthToken", reflect.TypeOf((*MockEmbeddedStore)(nil).SetEmbeddedClusterAuthToken), token)
-}
-
-// SetEmbeddedClusterState mocks base method.
-func (m *MockEmbeddedStore) SetEmbeddedClusterState(state string) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "SetEmbeddedClusterState", state)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// SetEmbeddedClusterState indicates an expected call of SetEmbeddedClusterState.
-func (mr *MockEmbeddedStoreMockRecorder) SetEmbeddedClusterState(state interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetEmbeddedClusterState", reflect.TypeOf((*MockEmbeddedStore)(nil).SetEmbeddedClusterState), state)
 }
 
 // MockBrandingStore is a mock of BrandingStore interface.

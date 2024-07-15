@@ -20,6 +20,12 @@ export default class ConfigGroups extends Component {
     }
   };
 
+  handleDownloadFile = (filename) => {
+    if (this.props.handleDownloadFile) {
+      this.props.handleDownloadFile(filename);
+    }
+  };
+
   render() {
     const { fieldsList, fields, readonly } = this.props;
     return (
@@ -38,6 +44,9 @@ export default class ConfigGroups extends Component {
               item={fields[fieldName]}
               handleChange={(itemName, value, data) =>
                 this.handleGroupChange(fieldName, itemName, value, data)
+              }
+              handleDownloadFile={(filename) =>
+                this.handleDownloadFile(filename)
               }
               readonly={readonly}
               configSequence={this.props.configSequence}

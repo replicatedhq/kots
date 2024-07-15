@@ -670,6 +670,18 @@ func (mr *MockKOTSHandlerMockRecorder) GetAutomaticUpdatesConfig(w, r interface{
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAutomaticUpdatesConfig", reflect.TypeOf((*MockKOTSHandler)(nil).GetAutomaticUpdatesConfig), w, r)
 }
 
+// GetAvailableUpdates mocks base method.
+func (m *MockKOTSHandler) GetAvailableUpdates(w http.ResponseWriter, r *http.Request) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "GetAvailableUpdates", w, r)
+}
+
+// GetAvailableUpdates indicates an expected call of GetAvailableUpdates.
+func (mr *MockKOTSHandlerMockRecorder) GetAvailableUpdates(w, r interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAvailableUpdates", reflect.TypeOf((*MockKOTSHandler)(nil).GetAvailableUpdates), w, r)
+}
+
 // GetBackup mocks base method.
 func (m *MockKOTSHandler) GetBackup(w http.ResponseWriter, r *http.Request) {
 	m.ctrl.T.Helper()
@@ -1054,6 +1066,18 @@ func (mr *MockKOTSHandlerMockRecorder) GetUpdateDownloadStatus(w, r interface{})
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUpdateDownloadStatus", reflect.TypeOf((*MockKOTSHandler)(nil).GetUpdateDownloadStatus), w, r)
 }
 
+// GetUpgradeServiceStatus mocks base method.
+func (m *MockKOTSHandler) GetUpgradeServiceStatus(w http.ResponseWriter, r *http.Request) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "GetUpgradeServiceStatus", w, r)
+}
+
+// GetUpgradeServiceStatus indicates an expected call of GetUpgradeServiceStatus.
+func (mr *MockKOTSHandlerMockRecorder) GetUpgradeServiceStatus(w, r interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUpgradeServiceStatus", reflect.TypeOf((*MockKOTSHandler)(nil).GetUpgradeServiceStatus), w, r)
+}
+
 // GetVeleroStatus mocks base method.
 func (m *MockKOTSHandler) GetVeleroStatus(w http.ResponseWriter, r *http.Request) {
 	m.ctrl.T.Helper()
@@ -1390,6 +1414,18 @@ func (mr *MockKOTSHandlerMockRecorder) StartPreflightChecks(w, r interface{}) *g
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "StartPreflightChecks", reflect.TypeOf((*MockKOTSHandler)(nil).StartPreflightChecks), w, r)
 }
 
+// StartUpgradeService mocks base method.
+func (m *MockKOTSHandler) StartUpgradeService(w http.ResponseWriter, r *http.Request) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "StartUpgradeService", w, r)
+}
+
+// StartUpgradeService indicates an expected call of StartUpgradeService.
+func (mr *MockKOTSHandlerMockRecorder) StartUpgradeService(w, r interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "StartUpgradeService", reflect.TypeOf((*MockKOTSHandler)(nil).StartUpgradeService), w, r)
+}
+
 // SyncLicense mocks base method.
 func (m *MockKOTSHandler) SyncLicense(w http.ResponseWriter, r *http.Request) {
 	m.ctrl.T.Helper()
@@ -1496,6 +1532,18 @@ func (m *MockKOTSHandler) UploadAirgapBundleChunk(w http.ResponseWriter, r *http
 func (mr *MockKOTSHandlerMockRecorder) UploadAirgapBundleChunk(w, r interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UploadAirgapBundleChunk", reflect.TypeOf((*MockKOTSHandler)(nil).UploadAirgapBundleChunk), w, r)
+}
+
+// UploadAirgapUpdate mocks base method.
+func (m *MockKOTSHandler) UploadAirgapUpdate(w http.ResponseWriter, r *http.Request) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "UploadAirgapUpdate", w, r)
+}
+
+// UploadAirgapUpdate indicates an expected call of UploadAirgapUpdate.
+func (mr *MockKOTSHandlerMockRecorder) UploadAirgapUpdate(w, r interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UploadAirgapUpdate", reflect.TypeOf((*MockKOTSHandler)(nil).UploadAirgapUpdate), w, r)
 }
 
 // UploadNewLicense mocks base method.

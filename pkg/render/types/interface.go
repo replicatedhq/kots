@@ -2,6 +2,7 @@ package types
 
 import (
 	downstreamtypes "github.com/replicatedhq/kots/pkg/api/downstream/types"
+	reportingtypes "github.com/replicatedhq/kots/pkg/api/reporting/types"
 	apptypes "github.com/replicatedhq/kots/pkg/app/types"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
 	registrytypes "github.com/replicatedhq/kots/pkg/registry/types"
@@ -23,6 +24,7 @@ type RenderDirOptions struct {
 	Downstreams      []downstreamtypes.Downstream
 	RegistrySettings registrytypes.RegistrySettings
 	Sequence         int64
+	ReportingInfo    *reportingtypes.ReportingInfo
 }
 
 type Renderer interface {

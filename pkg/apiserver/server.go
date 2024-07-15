@@ -13,7 +13,6 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/replicatedhq/kots/pkg/automation"
 	"github.com/replicatedhq/kots/pkg/binaries"
-	"github.com/replicatedhq/kots/pkg/embeddedcluster"
 	"github.com/replicatedhq/kots/pkg/handlers"
 	identitymigrate "github.com/replicatedhq/kots/pkg/identity/migrate"
 	"github.com/replicatedhq/kots/pkg/informers"
@@ -28,23 +27,21 @@ import (
 	"github.com/replicatedhq/kots/pkg/snapshotscheduler"
 	"github.com/replicatedhq/kots/pkg/store"
 	"github.com/replicatedhq/kots/pkg/supportbundle"
+	"github.com/replicatedhq/kots/pkg/update"
 	"github.com/replicatedhq/kots/pkg/updatechecker"
+	"github.com/replicatedhq/kots/pkg/upgradeservice"
 	"github.com/replicatedhq/kots/pkg/util"
 	"golang.org/x/crypto/bcrypt"
 )
 
 type APIServerParams struct {
 	Version                string
-	RqliteURI              string
 	AutocreateClusterToken string
 	SharedPassword         string
 }
 
 func Start(params *APIServerParams) {
 	log.Printf("kotsadm version %s\n", params.Version)
-
-	// set some persistence variables
-	persistence.InitDB(params.RqliteURI)
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	if err := store.GetStore().WaitForReady(ctx); err != nil {
@@ -100,10 +97,6 @@ func Start(params *APIServerParams) {
 	}
 	defer op.Shutdown()
 
-	if err := embeddedcluster.InitClusterState(context.TODO(), k8sClientset, kotsStore); err != nil {
-		log.Println("Failed to initialize cluster state:", err)
-	}
-
 	if params.SharedPassword != "" {
 		// TODO: this won't override the password in the database
 		// it's only possible to set this in the kots run workflow
@@ -115,6 +108,10 @@ func Start(params *APIServerParams) {
 	}
 
 	if err := k8sutil.InitHelmCapabilities(); err != nil {
+		panic(err)
+	}
+
+	if err := update.InitAvailableUpdatesDir(); err != nil {
 		panic(err)
 	}
 
@@ -194,8 +191,11 @@ func Start(params *APIServerParams) {
 	* Static routes
 	**********************************************************************/
 
-	// to avoid confusion, we don't serve this in the dev env...
-	if os.Getenv("DISABLE_SPA_SERVING") != "1" {
+	// Serve the upgrade UI from the upgrade service
+	// CAUTION: modifying this route WILL break backwards compatibility
+	r.PathPrefix("/upgrade-service/app/{appSlug}").Methods("GET").HandlerFunc(upgradeservice.Proxy)
+
+	if os.Getenv("DISABLE_SPA_SERVING") != "1" { // we don't serve this in the dev env
 		spa := handlers.SPAHandler{}
 		r.PathPrefix("/").Handler(spa)
 	} else if os.Getenv("ENABLE_WEB_PROXY") == "1" { // for dev env

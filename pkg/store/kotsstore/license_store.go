@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
-	gitopstypes "github.com/replicatedhq/kots/pkg/gitops/types"
+	reportingtypes "github.com/replicatedhq/kots/pkg/api/reporting/types"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/persistence"
 	rendertypes "github.com/replicatedhq/kots/pkg/render/types"
@@ -106,7 +106,7 @@ func (s *KOTSStore) GetAllAppLicenses() ([]*kotsv1beta1.License, error) {
 	return licenses, nil
 }
 
-func (s *KOTSStore) UpdateAppLicense(appID string, baseSequence int64, archiveDir string, newLicense *kotsv1beta1.License, originalLicenseData string, channelChanged bool, failOnVersionCreate bool, gitops gitopstypes.DownstreamGitOps, renderer rendertypes.Renderer) (int64, error) {
+func (s *KOTSStore) UpdateAppLicense(appID string, baseSequence int64, archiveDir string, newLicense *kotsv1beta1.License, originalLicenseData string, channelChanged bool, failOnVersionCreate bool, renderer rendertypes.Renderer, reportingInfo *reportingtypes.ReportingInfo) (int64, error) {
 	db := persistence.MustGetDBSession()
 
 	statements := []gorqlite.ParameterizedStatement{}
@@ -127,7 +127,7 @@ func (s *KOTSStore) UpdateAppLicense(appID string, baseSequence int64, archiveDi
 		Arguments: []interface{}{originalLicenseData, time.Now().Unix(), channelChanged, appID},
 	})
 
-	appVersionStatements, newSeq, err := s.createNewVersionForLicenseChangeStatements(appID, baseSequence, archiveDir, gitops, renderer)
+	appVersionStatements, newSeq, err := s.createNewVersionForLicenseChangeStatements(appID, baseSequence, archiveDir, renderer, reportingInfo)
 	if err != nil {
 		// ignore error here to prevent a failure to render the current version
 		// preventing the end-user from updating the application
@@ -164,7 +164,7 @@ func (s *KOTSStore) UpdateAppLicenseSyncNow(appID string) error {
 	return nil
 }
 
-func (s *KOTSStore) createNewVersionForLicenseChangeStatements(appID string, baseSequence int64, archiveDir string, gitops gitopstypes.DownstreamGitOps, renderer rendertypes.Renderer) ([]gorqlite.ParameterizedStatement, int64, error) {
+func (s *KOTSStore) createNewVersionForLicenseChangeStatements(appID string, baseSequence int64, archiveDir string, renderer rendertypes.Renderer, reportingInfo *reportingtypes.ReportingInfo) ([]gorqlite.ParameterizedStatement, int64, error) {
 	registrySettings, err := s.GetRegistryDetailsForApp(appID)
 	if err != nil {
 		return nil, int64(0), errors.Wrap(err, "failed to get registry settings for app")
@@ -191,11 +191,12 @@ func (s *KOTSStore) createNewVersionForLicenseChangeStatements(appID string, bas
 		Downstreams:      downstreams,
 		RegistrySettings: registrySettings,
 		Sequence:         nextAppSequence,
+		ReportingInfo:    reportingInfo,
 	}); err != nil {
 		return nil, int64(0), errors.Wrap(err, "failed to render new version")
 	}
 
-	appVersionStatements, newSequence, err := s.createAppVersionStatements(appID, &baseSequence, archiveDir, "License Change", false, gitops, renderer)
+	appVersionStatements, newSequence, err := s.createAppVersionStatements(appID, &baseSequence, archiveDir, "License Change", false, renderer)
 	if err != nil {
 		return nil, int64(0), errors.Wrap(err, "failed to construct app version statements")
 	}

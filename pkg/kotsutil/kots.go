@@ -6,6 +6,7 @@ import (
 	"compress/gzip"
 	"context"
 	"encoding/base64"
+	"encoding/json"
 	"fmt"
 	"os"
 	"path"
@@ -40,7 +41,6 @@ import (
 	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/runtime/serializer/json"
 	serializer "k8s.io/apimachinery/pkg/runtime/serializer/json"
 	"k8s.io/client-go/kubernetes/scheme"
 	applicationv1beta1 "sigs.k8s.io/application/api/v1beta1"
@@ -1368,7 +1368,7 @@ func FindAirgapMetaInDir(root string) (*kotsv1beta1.Airgap, error) {
 }
 
 func FindAirgapMetaInBundle(airgapBundle string) (*kotsv1beta1.Airgap, error) {
-	content, err := archives.GetFileFromAirgap("airgap.yaml", airgapBundle)
+	content, err := archives.GetFileContentFromTGZArchive("airgap.yaml", airgapBundle)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to extract airgap.yaml file")
 	}
@@ -1510,7 +1510,7 @@ func MustMarshalInstallation(installation *kotsv1beta1.Installation) []byte {
 }
 
 func MarshalRuntimeObject(obj runtime.Object) ([]byte, error) {
-	s := json.NewYAMLSerializer(json.DefaultMetaFactory, scheme.Scheme, scheme.Scheme)
+	s := serializer.NewYAMLSerializer(serializer.DefaultMetaFactory, scheme.Scheme, scheme.Scheme)
 
 	var b bytes.Buffer
 	if err := s.Encode(obj, &b); err != nil {
@@ -1528,4 +1528,73 @@ func SaveInstallation(installation *kotsv1beta1.Installation, upstreamDir string
 		return errors.Wrap(err, "failed to write installation")
 	}
 	return nil
+}
+
+func GetKOTSBinFromAirgapBundle(airgapBundle string) (string, error) {
+	airgap, err := FindAirgapMetaInBundle(airgapBundle)
+	if err != nil {
+		return "", errors.Wrap(err, "failed to find airgap meta in bundle")
+	}
+	if airgap.Spec.EmbeddedClusterArtifacts == nil {
+		return "", errors.New("airgap bundle does not contain embedded cluster artifacts")
+	}
+	if airgap.Spec.EmbeddedClusterArtifacts.AdditionalArtifacts == nil {
+		return "", errors.New("airgap bundle does not contain additional embedded cluster artifacts")
+	}
+
+	location, ok := airgap.Spec.EmbeddedClusterArtifacts.AdditionalArtifacts["kots"]
+	if !ok {
+		return "", errors.New("airgap bundle does not contain kots binary")
+	}
+
+	kotsTGZ, err := archives.GetFileFromTGZArchive(location, airgapBundle)
+	if err != nil {
+		return "", errors.Wrap(err, "failed to get kots tarball from airgap bundle")
+	}
+	defer os.Remove(kotsTGZ)
+
+	kotsBin, err := archives.GetFileFromTGZArchive("kots", kotsTGZ)
+	if err != nil {
+		return "", errors.Wrap(err, "failed to get kots binary from kots tarball")
+	}
+	if err := os.Chmod(kotsBin, 0755); err != nil {
+		return "", errors.Wrap(err, "failed to chmod kots binary")
+	}
+	return kotsBin, nil
+}
+
+func GetECVersionFromAirgapBundle(airgapBundle string) (string, error) {
+	airgap, err := FindAirgapMetaInBundle(airgapBundle)
+	if err != nil {
+		return "", errors.Wrap(err, "failed to find airgap meta in bundle")
+	}
+	if airgap.Spec.EmbeddedClusterArtifacts == nil {
+		return "", errors.New("airgap bundle does not contain embedded cluster artifacts")
+	}
+	if airgap.Spec.EmbeddedClusterArtifacts.Metadata == "" {
+		return "", errors.New("airgap bundle does not contain metadata")
+	}
+
+	metadataContent, err := archives.GetFileContentFromTGZArchive(airgap.Spec.EmbeddedClusterArtifacts.Metadata, airgapBundle)
+	if err != nil {
+		return "", errors.Wrap(err, "failed to get embedded cluster metadata from airgap bundle")
+	}
+
+	// use minimal/generic struct to avoid schema mismatches
+	type ecMetadata struct {
+		Versions map[string]string
+	}
+	var meta ecMetadata
+	if err := json.Unmarshal(metadataContent, &meta); err != nil {
+		return "", errors.Wrap(err, "failed to unmarshal embedded cluster metadata")
+	}
+	if meta.Versions == nil {
+		return "", errors.New("versions not found in embedded cluster metadata")
+	}
+
+	ecVersion, ok := meta.Versions["Installer"]
+	if !ok {
+		return "", errors.New("installer version not found in embedded cluster metadata")
+	}
+	return ecVersion, nil
 }

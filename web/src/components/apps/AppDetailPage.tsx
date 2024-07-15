@@ -32,9 +32,8 @@ type Props = {
   refetchAppMetadata: () => void;
   snapshotInProgressApps: string[];
   isEmbeddedCluster: boolean;
-  setShouldShowClusterUpgradeModal: (
-    shouldShowClusterUpgradeModal: boolean
-  ) => void;
+  refetchUpgradeStatus: (appSlug: string) => Promise<void>;
+  showUpgradeStatusModal: boolean;
 };
 
 type State = {
@@ -114,9 +113,6 @@ function AppDetailPage(props: Props) {
         loadingApp: true,
       });
     } else {
-      const shouldShowUpgradeModal =
-        Utilities.shouldShowClusterUpgradeModal(appsList);
-      props.setShouldShowClusterUpgradeModal(shouldShowUpgradeModal);
       if (!appsIsError) {
         if (appsList?.length === 0 || !params.slug) {
           redirectToFirstAppOrInstall();
@@ -139,8 +135,8 @@ function AppDetailPage(props: Props) {
             ? appsError.message
             : "Unexpected error when fetching apps";
         let displayErrorModal = true;
-        if (shouldShowUpgradeModal) {
-          // don't show apps error modal if cluster is upgrading
+        if (props.showUpgradeStatusModal) {
+          // don't show apps error modal if an upgrade is in progress
           gettingAppErrMsg = "";
           displayErrorModal = false;
         }
@@ -364,20 +360,15 @@ function AppDetailPage(props: Props) {
     </div>
   );
 
-  if (
-    appIsFetching &&
-    !selectedApp &&
-    !Utilities.shouldShowClusterUpgradeModal(appsList)
-  ) {
+  if (appIsFetching && !selectedApp) {
     return centeredLoader;
   }
 
-  // poll version status if it's awaiting results or if the cluster is upgrading
+  // poll version status if it's awaiting results
   const downstream = selectedApp?.downstream;
   if (
-    (downstream?.currentVersion &&
-      isAwaitingResults([downstream.currentVersion])) ||
-    Utilities.shouldShowClusterUpgradeModal(appsList)
+    downstream?.currentVersion &&
+    isAwaitingResults([downstream.currentVersion])
   ) {
     if (appsRefetchInterval === false) {
       setAppsRefetchInterval(2000);
@@ -423,6 +414,8 @@ function AppDetailPage(props: Props) {
     toggleErrorModal: toggleErrorModal,
     toggleIsBundleUploading: toggleIsBundleUploading,
     updateCallback: refetchData,
+    refetchUpgradeStatus: props.refetchUpgradeStatus,
+    showUpgradeStatusModal: props.showUpgradeStatusModal,
   };
 
   const lastItem = Utilities.getSubnavItemForRoute(

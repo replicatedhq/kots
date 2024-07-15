@@ -79,7 +79,6 @@ type Cluster = {
   id: number;
   slug: string;
   state?: string;
-  requiresUpgrade?: boolean;
 };
 
 export type Credentials = {
@@ -209,6 +208,17 @@ export type SupportBundleProgress = {
   collectorCount: number;
   collectorsCompleted: number;
   message: string;
+};
+
+export type AvailableUpdate = {
+  versionLabel: string;
+  updateCursor: string;
+  channelId: string;
+  isRequired: boolean;
+  upstreamReleasedAt: string;
+  releaseNotes: string;
+  isDeployable: boolean;
+  nonDeployableCause: string;
 };
 
 export type Version = {

@@ -1,14 +1,12 @@
-import { ChangeEvent, Component, Fragment } from "react";
+import { ChangeEvent, Component, Fragment, createRef } from "react";
 import { Link } from "react-router-dom";
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
-import Modal from "react-modal";
 import find from "lodash/find";
 import isEmpty from "lodash/isEmpty";
 import get from "lodash/get";
 import MountAware from "../shared/MountAware";
 import Loader from "../shared/Loader";
-import MarkdownRenderer from "@src/components/shared/MarkdownRenderer";
 import VersionDiff from "@src/features/VersionDiff/VersionDiff";
 import ShowDetailsModal from "@src/components/modals/ShowDetailsModal";
 import ShowLogsModal from "@src/components/modals/ShowLogsModal";
@@ -35,9 +33,16 @@ import { KotsPageTitle } from "@components/Head";
 import "@src/scss/components/apps/AppVersionHistory.scss";
 import { DashboardGitOpsCard } from "@features/Dashboard";
 import Icon from "../Icon";
-import { App, Version, VersionDownloadStatus } from "@types";
+import { App, AvailableUpdate, Version, VersionDownloadStatus } from "@types";
 import { RouterProps, withRouter } from "@src/utilities/react-router-utilities";
 import PreflightIcon from "@features/App/PreflightIcon";
+import ReleaseNotesModal from "@components/modals/ReleaseNotesModal";
+import DiffErrorModal from "@components/modals/DiffErrorModal";
+import ConfirmDeploymentModal from "@components/modals/ConfirmDeploymentModal";
+import DisplayKotsUpdateModal from "@components/modals/DisplayKotsUpdateModal";
+import NoChangesModal from "@components/modals/NoChangesModal";
+import UpgradeServiceModal from "@components/modals/UpgradeServiceModal";
+import AvailableUpdatesComponent from "./AvailableUpdatesComponent";
 
 dayjs.extend(relativeTime);
 
@@ -54,7 +59,6 @@ type ReleaseWithError = {
 
 type Props = {
   outletContext: {
-    isEmbeddedCluster: boolean;
     adminConsoleMetadata: {
       isAirgap: boolean;
       isKurl: boolean;
@@ -63,6 +67,7 @@ type Props = {
     app: App;
     displayErrorModal: boolean;
     isBundleUploading: boolean;
+    isEmbeddedCluster: boolean;
     makeCurrentVersion: (
       slug: string,
       version: Version | null,
@@ -79,12 +84,15 @@ type Props = {
     toggleErrorModal: () => void;
     toggleIsBundleUploading: (isUploading: boolean) => void;
     updateCallback: () => void;
+    refetchUpgradeStatus: (appSlug: string) => Promise<void>;
+    showUpgradeStatusModal: boolean;
   };
 } & RouterProps;
 
 type State = {
   airgapUploader: AirgapUploader | null;
   airgapUploadError: string;
+  availableUpdates: AvailableUpdate[] | null;
   appUpdateChecker: Repeater;
   checkedReleasesToDiff: Version[];
   checkingForUpdateError: boolean;
@@ -101,6 +109,9 @@ type State = {
   errorMsg: string;
   errorTitle: string;
   firstSequence: Number | string;
+  isIframeLoading: boolean;
+  isFetchingAvailableUpdates: boolean;
+  isStartingUpgradeService: boolean;
   isSkipPreflights: boolean;
   kotsUpdateChecker: Repeater;
   kotsUpdateError: Object | undefined;
@@ -139,6 +150,8 @@ type State = {
   uploadProgress: Number;
   uploadResuming: boolean;
   uploadSize: Number;
+  upgradeServiceChecker: Repeater;
+  upgradeServiceStatus: string;
   versionDownloadStatuses: {
     [x: number]: VersionDownloadStatus;
   };
@@ -147,14 +160,23 @@ type State = {
   versionToDeploy: Version | null;
   viewLogsErrMsg: string;
   yamlErrorDetails: string[];
+  shouldShowUpgradeServiceModal: boolean;
+  upgradeService: {
+    versionLabel?: string;
+    isLoading?: boolean;
+    error?: string;
+  } | null;
 };
 
 class AppVersionHistory extends Component<Props, State> {
+  iframeRef: React.RefObject<HTMLIFrameElement>;
+
   constructor(props: Props) {
     super(props);
     this.state = {
       airgapUploader: null,
       airgapUploadError: "",
+      availableUpdates: null,
       appUpdateChecker: new Repeater(),
       checkedReleasesToDiff: [],
       checkingForUpdateError: false,
@@ -171,6 +193,9 @@ class AppVersionHistory extends Component<Props, State> {
       errorMsg: "",
       errorTitle: "",
       firstSequence: 0,
+      isIframeLoading: false,
+      isFetchingAvailableUpdates: false,
+      isStartingUpgradeService: false,
       isSkipPreflights: false,
       kotsUpdateChecker: new Repeater(),
       kotsUpdateError: undefined,
@@ -206,13 +231,18 @@ class AppVersionHistory extends Component<Props, State> {
       uploadProgress: 0,
       uploadResuming: false,
       uploadSize: 0,
+      upgradeServiceChecker: new Repeater(),
+      upgradeServiceStatus: "",
       versionDownloadStatuses: {},
       versionHistory: [],
       versionHistoryJob: new Repeater(),
       versionToDeploy: null,
       viewLogsErrMsg: "",
       yamlErrorDetails: [],
+      shouldShowUpgradeServiceModal: false,
+      upgradeService: {},
     };
+    this.iframeRef = createRef<HTMLIFrameElement>();
   }
 
   // moving this out of the state because new repeater instances were getting created
@@ -220,6 +250,18 @@ class AppVersionHistory extends Component<Props, State> {
   versionDownloadStatusJobs: { [key: number]: Repeater } = {};
 
   _mounted: boolean | undefined;
+
+  handleIframeMessage = (event) => {
+    if (event.data.message === "closeUpgradeServiceModal") {
+      this.setState({ shouldShowUpgradeServiceModal: false });
+      if (this.props.outletContext.refetchUpgradeStatus) {
+        const { app } = this.props.outletContext;
+        this.props.outletContext.refetchUpgradeStatus(app.slug);
+      }
+      this.fetchAvailableUpdates(false);
+      this.fetchKotsDownstreamHistory();
+    }
+  };
 
   componentDidMount() {
     this.getPreflightState(
@@ -253,15 +295,29 @@ class AppVersionHistory extends Component<Props, State> {
       }
     }
 
+    if (this.props.outletContext.isEmbeddedCluster) {
+      this.fetchAvailableUpdates();
+    }
+
     this._mounted = true;
   }
 
   componentDidUpdate = async (lastProps: Props) => {
+    if (this.state.shouldShowUpgradeServiceModal && this.iframeRef.current) {
+      window.addEventListener("message", this.handleIframeMessage);
+    }
     if (
       lastProps.params.slug !== this.props.params.slug ||
       lastProps.outletContext.app.id !== this.props.outletContext.app.id
     ) {
       this.fetchKotsDownstreamHistory();
+    }
+    if (
+      lastProps.outletContext.isEmbeddedCluster !==
+        this.props.outletContext.isEmbeddedCluster &&
+      this.props.outletContext.isEmbeddedCluster
+    ) {
+      this.fetchAvailableUpdates();
     }
     if (
       this.props.outletContext.app.downstream.pendingVersions.length > 0 &&
@@ -279,12 +335,40 @@ class AppVersionHistory extends Component<Props, State> {
 
   componentWillUnmount() {
     this.state.appUpdateChecker.stop();
+    this.state.upgradeServiceChecker.stop();
     this.state.versionHistoryJob.stop();
     for (const j in this.versionDownloadStatusJobs) {
       this.versionDownloadStatusJobs[j].stop();
     }
     this._mounted = false;
+    window.removeEventListener("message", this.handleIframeMessage);
   }
+
+  fetchAvailableUpdates = async (showSpinner = true) => {
+    const appSlug = this.props.params.slug;
+    this.setState({ isFetchingAvailableUpdates: showSpinner });
+    const res = await fetch(
+      `${process.env.API_ENDPOINT}/app/${appSlug}/updates`,
+      {
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include",
+        method: "GET",
+      }
+    );
+    if (!res.ok) {
+      this.setState({ isFetchingAvailableUpdates: false });
+      return;
+    }
+    const response = await res.json();
+
+    this.setState({
+      isFetchingAvailableUpdates: false,
+      availableUpdates: response.updates,
+    });
+    return response;
+  };
 
   fetchKotsDownstreamHistory = async () => {
     const appSlug = this.props.params.slug;
@@ -853,6 +937,14 @@ class AppVersionHistory extends Component<Props, State> {
     }
   };
 
+  hideConfirmDeploymentModal = () => {
+    this.setState({
+      displayConfirmDeploymentModal: false,
+      confirmType: "",
+      versionToDeploy: null,
+    });
+  };
+
   onSelectReleasesToDiff = () => {
     this.setState({
       selectedDiffReleases: true,
@@ -929,6 +1021,54 @@ class AppVersionHistory extends Component<Props, State> {
           checkingUpdateMessage: String(err),
         });
       });
+  };
+
+  onCheckForUpgradeServiceStatus = async () => {
+    const { app } = this.props.outletContext;
+
+    this.setState({ isStartingUpgradeService: true });
+    return new Promise<void>((resolve, reject) => {
+      fetch(
+        `${process.env.API_ENDPOINT}/app/${app?.slug}/task/upgrade-service`,
+        {
+          headers: {
+            "Content-Type": "application/json",
+          },
+          credentials: "include",
+          method: "GET",
+        }
+      )
+        .then(async (res) => {
+          const response = await res.json();
+          if (response.status !== "starting") {
+            this.state.upgradeServiceChecker.stop();
+            this.setState({
+              isStartingUpgradeService: false,
+              isIframeLoading: true,
+            });
+            if (response.status === "failed") {
+              this.setState({
+                shouldShowUpgradeServiceModal: false,
+                upgradeService: {
+                  ...this.state.upgradeService,
+                  isLoading: false,
+                  error: response.currentMessage,
+                },
+              });
+            }
+          } else {
+            this.setState({
+              isStartingUpgradeService: true,
+              upgradeServiceStatus: response.currentMessage,
+            });
+          }
+          resolve();
+        })
+        .catch((err) => {
+          console.log("failed to get upgrade service status", err);
+          reject();
+        });
+    });
   };
 
   getAppUpdateStatus = () => {
@@ -1261,7 +1401,9 @@ class AppVersionHistory extends Component<Props, State> {
     }
 
     return (
-      <div className="u-marginTop--20 u-marginBottom--20">{updateText}</div>
+      <div className="TableDiff--Wrapper card-bg u-marginBottom--30">
+        {updateText}
+      </div>
     );
   };
 
@@ -1369,6 +1511,59 @@ class AppVersionHistory extends Component<Props, State> {
     }
   };
 
+  startUpgradeService = (update: AvailableUpdate) => {
+    this.setState({
+      upgradeService: {
+        versionLabel: update.versionLabel,
+        isLoading: true,
+        error: "",
+      },
+    });
+    const appSlug = this.props.params.slug;
+    fetch(`${process.env.API_ENDPOINT}/app/${appSlug}/start-upgrade-service`, {
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      },
+      body: JSON.stringify({
+        versionLabel: update.versionLabel,
+        updateCursor: update.updateCursor,
+        channelId: update.channelId,
+      }),
+      credentials: "include",
+      method: "POST",
+    })
+      .then(async (res) => {
+        if (!res.ok) {
+          const text = await res.json();
+          console.log("failed to init upgrade service", text);
+          this.setState({
+            upgradeService: {
+              isLoading: false,
+              error: text.error,
+              versionLabel: update.versionLabel,
+            },
+          });
+          return;
+        }
+        this.state.upgradeServiceChecker.start(
+          this.onCheckForUpgradeServiceStatus,
+          1000
+        );
+        this.setState({
+          shouldShowUpgradeServiceModal: true,
+          upgradeService: {
+            versionLabel: update.versionLabel,
+            isLoading: false,
+          },
+        });
+        return;
+      })
+      .catch((err) => {
+        console.log(err);
+      });
+  };
+
   renderAppVersionHistoryRow = (version: Version, index?: number) => {
     if (
       !version ||
@@ -1390,12 +1585,12 @@ class AppVersionHistory extends Component<Props, State> {
     if (version.preflightResultCreatedAt) {
       newPreflightResults = secondsAgo(version.preflightResultCreatedAt) < 12;
     }
-
     return (
       <Fragment key={index}>
         <AppVersionHistoryRow
           navigate={this.props.navigate}
           adminConsoleMetadata={this.props.outletContext.adminConsoleMetadata}
+          isEmbeddedCluster={this.props.outletContext.isEmbeddedCluster}
           deployVersion={this.deployVersion}
           downloadVersion={this.downloadVersion}
           gitopsEnabled={gitopsIsConnected}
@@ -1485,6 +1680,7 @@ class AppVersionHistory extends Component<Props, State> {
       redeployVersionErrMsg,
       resetRedeployErrorMessage,
       resetMakingCurrentReleaseErrorMessage,
+      showUpgradeStatusModal,
     } = this.props.outletContext;
 
     const {
@@ -1751,9 +1947,11 @@ class AppVersionHistory extends Component<Props, State> {
                   }`}
                 >
                   {(versionHistory.length === 0 && gitopsIsConnected) ||
-                  versionHistory?.length > 0 ? (
-                    <>
-                      {gitopsIsConnected ? (
+                  versionHistory?.length > 0 ||
+                  (this.state.availableUpdates &&
+                    this.state.availableUpdates?.length > 0) ? (
+                    <div>
+                      {gitopsIsConnected && (
                         <div
                           style={{ maxWidth: "1030px" }}
                           className="u-width--full u-marginBottom--30"
@@ -1777,66 +1975,67 @@ class AppVersionHistory extends Component<Props, State> {
                             }
                           />
                         </div>
-                      ) : (
-                        <div className="TableDiff--Wrapper card-bg u-marginBottom--30">
-                          <div className="flex justifyContent--spaceBetween alignItems--center u-marginBottom--15">
-                            <p className="u-fontSize--normal u-fontWeight--medium u-textColor--info">
-                              {this.state.updatesAvailable
-                                ? "New version available"
-                                : ""}
-                            </p>
-                            <div className="flex alignItems--center">
+                      )}
+
+                      {!gitopsIsConnected &&
+                        !this.props.outletContext.isEmbeddedCluster && (
+                          <div className="TableDiff--Wrapper card-bg u-marginBottom--30">
+                            <div className="flex justifyContent--spaceBetween alignItems--center u-marginBottom--15">
+                              <p className="u-fontSize--normal u-fontWeight--medium u-textColor--info">
+                                {this.state.updatesAvailable
+                                  ? "New version available"
+                                  : ""}
+                              </p>
                               <div className="flex alignItems--center">
-                                {app?.isAirgap && airgapUploader ? (
-                                  <MountAware
-                                    onMount={(el: Element) =>
-                                      airgapUploader?.assignElement(el)
-                                    }
-                                  >
+                                <div className="flex alignItems--center">
+                                  {app?.isAirgap && airgapUploader ? (
+                                    <MountAware
+                                      onMount={(el: Element) =>
+                                        airgapUploader?.assignElement(el)
+                                      }
+                                    >
+                                      <div className="flex alignItems--center">
+                                        <span className="icon clickable dashboard-card-upload-version-icon u-marginRight--5" />
+                                        <span className="link u-fontSize--small u-lineHeight--default">
+                                          Upload new version
+                                        </span>
+                                      </div>
+                                    </MountAware>
+                                  ) : (
                                     <div className="flex alignItems--center">
-                                      <span className="icon clickable dashboard-card-upload-version-icon u-marginRight--5" />
-                                      <span className="link u-fontSize--small u-lineHeight--default">
-                                        Upload new version
-                                      </span>
-                                    </div>
-                                  </MountAware>
-                                ) : (
-                                  <div className="flex alignItems--center">
-                                    {checkingForUpdates &&
-                                    !this.props.outletContext
-                                      .isBundleUploading ? (
-                                      <div className="flex alignItems--center u-marginRight--20">
-                                        <Loader
-                                          className="u-marginRight--5"
-                                          size="15"
-                                        />
-                                        <span className="u-textColor--bodyCopy u-fontWeight--medium u-fontSize--small u-lineHeight--default">
-                                          {checkingUpdateMessage === ""
-                                            ? "Checking for updates"
-                                            : checkingUpdateTextShort}
-                                        </span>
-                                      </div>
-                                    ) : (
-                                      <div className="flex alignItems--center u-marginRight--20">
-                                        <span
-                                          className="flex-auto flex alignItems--center link u-fontSize--small"
-                                          onClick={this.onCheckForUpdates}
-                                        >
-                                          <Icon
-                                            icon="check-update"
-                                            size={16}
-                                            className="clickable u-marginRight--5"
-                                            color={""}
-                                            style={{}}
-                                            disableFill={false}
-                                            removeInlineStyle={false}
+                                      {checkingForUpdates &&
+                                      !this.props.outletContext
+                                        .isBundleUploading ? (
+                                        <div className="flex alignItems--center u-marginRight--20">
+                                          <Loader
+                                            className="u-marginRight--5"
+                                            size="15"
                                           />
-                                          Check for update
-                                        </span>
-                                      </div>
-                                    )}
-                                    {!this.props.outletContext
-                                      .isEmbeddedCluster && (
+                                          <span className="u-textColor--bodyCopy u-fontWeight--medium u-fontSize--small u-lineHeight--default">
+                                            {checkingUpdateMessage === ""
+                                              ? "Checking for updates"
+                                              : checkingUpdateTextShort}
+                                          </span>
+                                        </div>
+                                      ) : (
+                                        <div className="flex alignItems--center u-marginRight--20">
+                                          <span
+                                            className="flex-auto flex alignItems--center link u-fontSize--small"
+                                            onClick={this.onCheckForUpdates}
+                                          >
+                                            <Icon
+                                              icon="check-update"
+                                              size={16}
+                                              className="clickable u-marginRight--5"
+                                              color={""}
+                                              style={{}}
+                                              disableFill={false}
+                                              removeInlineStyle={false}
+                                            />
+                                            Check for update
+                                          </span>
+                                        </div>
+                                      )}
                                       <span
                                         className="flex-auto flex alignItems--center link u-fontSize--small"
                                         onClick={
@@ -1854,50 +2053,72 @@ class AppVersionHistory extends Component<Props, State> {
                                         />
                                         Configure automatic updates
                                       </span>
-                                    )}
-                                  </div>
-                                )}
+                                    </div>
+                                  )}
+                                </div>
+                                {versionHistory.length > 1 && !gitopsIsConnected
+                                  ? this.renderDiffBtn()
+                                  : null}
                               </div>
-                              {versionHistory.length > 1 && !gitopsIsConnected
-                                ? this.renderDiffBtn()
-                                : null}
                             </div>
-                          </div>
-                          {pendingVersion ? (
-                            this.renderAppVersionHistoryRow(pendingVersion)
-                          ) : (
-                            <div className="card-item flex-column flex1 u-marginTop--20 u-marginBottom--10 alignItems--center justifyContent--center">
-                              <p className="u-fontSize--normal u-fontWeight--medium u-textColor--bodyCopy u-padding--10">
-                                Application up to date.
+                            {pendingVersion ? (
+                              this.renderAppVersionHistoryRow(pendingVersion)
+                            ) : (
+                              <div className="card-item flex-column flex1 u-marginTop--20 u-marginBottom--10 alignItems--center justifyContent--center">
+                                <p className="u-fontSize--normal u-fontWeight--medium u-textColor--bodyCopy u-padding--10">
+                                  Application up to date.
+                                </p>
+                              </div>
+                            )}
+                            {(this.state.numOfSkippedVersions > 0 ||
+                              this.state.numOfRemainingVersions > 0) && (
+                              <p className="u-fontSize--small u-fontWeight--medium u-lineHeight--more u-textColor--info u-marginTop--10">
+                                {this.state.numOfSkippedVersions > 0
+                                  ? `${
+                                      this.state.numOfSkippedVersions
+                                    } version${
+                                      this.state.numOfSkippedVersions > 1
+                                        ? "s"
+                                        : ""
+                                    } will be skipped in upgrading to ${
+                                      versionHistory[0].versionLabel
+                                    }. `
+                                  : ""}
+                                {this.state.numOfRemainingVersions > 0
+                                  ? "Additional versions are available after you deploy this required version."
+                                  : ""}
                               </p>
+                            )}
+                          </div>
+                        )}
+
+                      {this.props.outletContext.isEmbeddedCluster && (
+                        <>
+                          {this.state.isFetchingAvailableUpdates ? (
+                            <div className="TableDiff--Wrapper card-bg u-marginBottom--30">
+                              <div className="flex-column flex1 alignItems--center justifyContent--center">
+                                <Loader size="30" />
+                              </div>
                             </div>
+                          ) : (
+                            <AvailableUpdatesComponent
+                              updates={this.state.availableUpdates}
+                              showReleaseNotes={this.showReleaseNotes}
+                              upgradeService={this.state.upgradeService}
+                              startUpgradeService={this.startUpgradeService}
+                              isAirgap={app?.isAirgap}
+                              airgapUploader={airgapUploader}
+                            />
                           )}
-                          {(this.state.numOfSkippedVersions > 0 ||
-                            this.state.numOfRemainingVersions > 0) && (
-                            <p className="u-fontSize--small u-fontWeight--medium u-lineHeight--more u-textColor--info u-marginTop--10">
-                              {this.state.numOfSkippedVersions > 0
-                                ? `${this.state.numOfSkippedVersions} version${
-                                    this.state.numOfSkippedVersions > 1
-                                      ? "s"
-                                      : ""
-                                  } will be skipped in upgrading to ${
-                                    versionHistory[0].versionLabel
-                                  }. `
-                                : ""}
-                              {this.state.numOfRemainingVersions > 0
-                                ? "Additional versions are available after you deploy this required version."
-                                : ""}
-                            </p>
-                          )}
-                        </div>
+                        </>
                       )}
-                      {versionHistory?.length > 0 ? (
+                      {versionHistory?.length > 0 && (
                         <>
                           {this.renderUpdateProgress()}
                           {this.renderAllVersions()}
                         </>
-                      ) : null}
-                    </>
+                      )}
+                    </div>
                   ) : (
                     <div className="flex-column flex1 alignItems--center justifyContent--center">
                       <p className="u-fontSize--large u-fontWeight--bold u-textColor--primary">
@@ -1925,215 +2146,82 @@ class AppVersionHistory extends Component<Props, State> {
           </div>
         </div>
 
-        {showLogsModal && (
-          <ShowLogsModal
-            showLogsModal={showLogsModal}
-            hideLogsModal={this.hideLogsModal}
-            viewLogsErrMsg={this.state.viewLogsErrMsg}
-            logs={logs}
-            selectedTab={selectedTab}
-            logsLoading={logsLoading}
-            renderLogsTabs={this.renderLogsTabs()}
-          />
-        )}
+        {/* MODALS */}
+        <ShowLogsModal
+          showLogsModal={showLogsModal}
+          hideLogsModal={this.hideLogsModal}
+          viewLogsErrMsg={this.state.viewLogsErrMsg}
+          logs={logs}
+          selectedTab={selectedTab}
+          logsLoading={logsLoading}
+          renderLogsTabs={this.renderLogsTabs()}
+        />
 
-        {showDeployWarningModal && (
-          <DeployWarningModal
-            showDeployWarningModal={showDeployWarningModal}
-            hideDeployWarningModal={this.hideDeployWarningModal}
-            onForceDeployClick={this.onForceDeployClick}
-            showAutoDeployWarning={
-              isPastVersion &&
-              this.props.outletContext.app?.autoDeploy !== "disabled"
-            }
-            confirmType={this.state.confirmType}
-          />
-        )}
+        <DeployWarningModal
+          showDeployWarningModal={showDeployWarningModal}
+          hideDeployWarningModal={this.hideDeployWarningModal}
+          onForceDeployClick={this.onForceDeployClick}
+          showAutoDeployWarning={
+            isPastVersion &&
+            this.props.outletContext.app?.autoDeploy !== "disabled"
+          }
+          confirmType={this.state.confirmType}
+        />
 
-        {showSkipModal && (
-          <SkipPreflightsModal
-            showSkipModal={showSkipModal}
-            hideSkipModal={this.hideSkipModal}
-            onForceDeployClick={this.onForceDeployClick}
-          />
-        )}
+        <SkipPreflightsModal
+          showSkipModal={showSkipModal}
+          hideSkipModal={this.hideSkipModal}
+          onForceDeployClick={this.onForceDeployClick}
+        />
 
-        <Modal
-          isOpen={!!releaseNotes}
-          onRequestClose={this.hideReleaseNotes}
-          contentLabel="Release Notes"
-          ariaHideApp={false}
-          className="Modal MediumSize"
-        >
-          <div className="flex-column">
-            <MarkdownRenderer className="is-kotsadm" id="markdown-wrapper">
-              {releaseNotes || ""}
-            </MarkdownRenderer>
-          </div>
-          <div className="flex u-marginTop--10 u-marginLeft--10 u-marginBottom--10">
-            <button className="btn primary" onClick={this.hideReleaseNotes}>
-              Close
-            </button>
-          </div>
-        </Modal>
+        <ReleaseNotesModal
+          releaseNotes={releaseNotes}
+          hideReleaseNotes={this.hideReleaseNotes}
+        />
 
-        <Modal
-          isOpen={this.state.showDiffErrModal}
-          onRequestClose={() => this.toggleDiffErrModal()}
-          contentLabel="Unable to Get Diff"
-          ariaHideApp={false}
-          className="Modal MediumSize"
-        >
-          <div className="Modal-body">
-            <p className="u-fontSize--largest u-fontWeight--bold u-textColor--primary u-lineHeight--normal u-marginBottom--10">
-              Unable to generate a file diff for release
-            </p>
-            {this.state.releaseWithErr && (
-              <>
-                <p className="u-fontSize--normal u-textColor--bodyCopy u-lineHeight--normal u-marginBottom--20">
-                  The release with the{" "}
-                  <span className="u-fontWeight--bold">
-                    Upstream {this.state.releaseWithErr.title}, Sequence{" "}
-                    {this.state.releaseWithErr.sequence}
-                  </span>{" "}
-                  was unable to generate a files diff because the following
-                  error:
-                </p>
-                <div className="error-block-wrapper u-marginBottom--30 flex flex1">
-                  <span className="u-textColor--error">
-                    {this.state.releaseWithErr.diffSummaryError}
-                  </span>
-                </div>
-              </>
-            )}
-            <div className="flex u-marginBottom--10">
-              <button
-                className="btn primary"
-                onClick={() => this.toggleDiffErrModal()}
-              >
-                Ok, got it!
-              </button>
-            </div>
-          </div>
-        </Modal>
+        <DiffErrorModal
+          showDiffErrModal={this.state.showDiffErrModal}
+          toggleDiffErrModal={() => this.toggleDiffErrModal()}
+          releaseWithErr={this.state.releaseWithErr}
+        />
 
-        {this.state.displayConfirmDeploymentModal && (
-          <Modal
-            isOpen={true}
-            onRequestClose={() =>
-              this.setState({
-                displayConfirmDeploymentModal: false,
-                confirmType: "",
-                versionToDeploy: null,
-              })
-            }
-            contentLabel="Confirm deployment"
-            ariaHideApp={false}
-            className="Modal DefaultSize"
-          >
-            <div className="Modal-body">
-              <p className="u-fontSize--largest u-fontWeight--bold u-textColor--primary u-lineHeight--normal u-marginBottom--10">
-                {this.state.confirmType === "rollback"
-                  ? "Rollback to"
-                  : this.state.confirmType === "redeploy"
-                  ? "Redeploy"
-                  : "Deploy"}{" "}
-                {this.state.versionToDeploy?.versionLabel} (Sequence{" "}
-                {this.state.versionToDeploy?.sequence})?
-              </p>
-              {isPastVersion &&
-              this.props.outletContext.app?.autoDeploy !== "disabled" ? (
-                <div className="info-box">
-                  <span className="u-fontSize--small u-textColor--info u-lineHeight--normal u-fontWeight--medium">
-                    You have automatic deploys enabled.{" "}
-                    {this.state.confirmType === "rollback"
-                      ? "Rolling back to"
-                      : this.state.confirmType === "redeploy"
-                      ? "Redeploying"
-                      : "Deploying"}{" "}
-                    this version will disable automatic deploys. You can turn it
-                    back on after this version finishes deployment.
-                  </span>
-                </div>
-              ) : null}
-              <div className="flex u-paddingTop--10">
-                <button
-                  className="btn secondary blue"
-                  onClick={() =>
-                    this.setState({
-                      displayConfirmDeploymentModal: false,
-                      confirmType: "",
-                      versionToDeploy: null,
-                    })
-                  }
-                >
-                  Cancel
-                </button>
-                <button
-                  className="u-marginLeft--10 btn primary"
-                  onClick={
-                    this.state.confirmType === "redeploy"
-                      ? this.finalizeRedeployment
-                      : () => this.finalizeDeployment(false)
-                  }
-                >
-                  Yes,{" "}
-                  {this.state.confirmType === "rollback"
-                    ? "rollback"
-                    : this.state.confirmType === "redeploy"
-                    ? "redeploy"
-                    : "deploy"}
-                </button>
-              </div>
-            </div>
-          </Modal>
-        )}
+        <ConfirmDeploymentModal
+          displayConfirmDeploymentModal={
+            this.state.displayConfirmDeploymentModal
+          }
+          hideConfirmDeploymentModal={this.hideConfirmDeploymentModal}
+          confirmType={this.state.confirmType}
+          versionToDeploy={this.state.versionToDeploy}
+          outletContext={this.props.outletContext}
+          finalizeDeployment={this.finalizeDeployment}
+          isPastVersion={isPastVersion}
+          finalizeRedeployment={this.finalizeRedeployment}
+        />
 
-        {this.state.displayKotsUpdateModal && (
-          <Modal
-            isOpen={true}
-            onRequestClose={() =>
-              this.setState({ displayKotsUpdateModal: false })
-            }
-            contentLabel="Upgrade is in progress"
-            ariaHideApp={false}
-            className="Modal DefaultSize"
-          >
-            <div className="Modal-body u-textAlign--center">
-              <div className="flex-column justifyContent--center alignItems--center">
-                <p className="u-fontSize--large u-textColor--primary u-lineHeight--bold u-marginBottom--10">
-                  Upgrading...
-                </p>
-                <Loader className="flex alignItems--center" size="32" />
-                {renderKotsUpgradeStatus ? (
-                  <p className="u-fontSize--normal u-textColor--primary u-lineHeight--normal u-marginBottom--10">
-                    {this.state.kotsUpdateStatus}
-                  </p>
-                ) : null}
-                {this.state.kotsUpdateMessage ? (
-                  <p className="u-fontSize--normal u-textColor--primary u-lineHeight--normal u-marginBottom--10">
-                    {shortKotsUpdateMessage}
-                  </p>
-                ) : null}
-              </div>
-            </div>
-          </Modal>
-        )}
+        <DisplayKotsUpdateModal
+          displayKotsUpdateModal={this.state.displayKotsUpdateModal}
+          onRequestClose={() =>
+            this.setState({ displayKotsUpdateModal: false })
+          }
+          renderKotsUpgradeStatus={renderKotsUpgradeStatus}
+          kotsUpdateStatus={this.state.kotsUpdateStatus}
+          shortKotsUpdateMessage={shortKotsUpdateMessage}
+          kotsUpdateMessage={this.state.kotsUpdateMessage}
+        />
 
-        {this.state.displayShowDetailsModal && (
-          <ShowDetailsModal
-            displayShowDetailsModal={this.state.displayShowDetailsModal}
-            toggleShowDetailsModal={this.toggleShowDetailsModal}
-            yamlErrorDetails={this.state.yamlErrorDetails}
-            deployView={this.state.deployView}
-            forceDeploy={this.onForceDeployClick}
-            showDeployWarningModal={this.state.showDeployWarningModal}
-            showSkipModal={this.state.showSkipModal}
-            slug={this.props.params.slug}
-            sequence={this.state.selectedSequence}
-          />
-        )}
-        {errorMsg && (
+        <ShowDetailsModal
+          displayShowDetailsModal={this.state.displayShowDetailsModal}
+          toggleShowDetailsModal={this.toggleShowDetailsModal}
+          yamlErrorDetails={this.state.yamlErrorDetails}
+          deployView={this.state.deployView}
+          forceDeploy={this.onForceDeployClick}
+          showDeployWarningModal={this.state.showDeployWarningModal}
+          showSkipModal={this.state.showSkipModal}
+          slug={this.props.params.slug}
+          sequence={this.state.selectedSequence}
+        />
+
+        {errorMsg && !showUpgradeStatusModal && (
           <ErrorModal
             errorModal={displayErrorModal}
             toggleErrorModal={this.toggleErrorModal}
@@ -2142,41 +2230,13 @@ class AppVersionHistory extends Component<Props, State> {
             appSlug={this.props.params?.slug}
           />
         )}
-        {this.state.showNoChangesModal && (
-          <Modal
-            isOpen={true}
-            onRequestClose={() => this.toggleNoChangesModal()}
-            contentLabel="No Changes"
-            ariaHideApp={false}
-            className="Modal DefaultSize"
-          >
-            <div className="Modal-body">
-              <p className="u-fontSize--largest u-fontWeight--bold u-textColor--primary u-lineHeight--normal u-marginBottom--10">
-                No changes to show
-              </p>
-              <p className="u-fontSize--normal u-textColor--bodyCopy u-lineHeight--normal u-marginBottom--20">
-                The{" "}
-                {this.state.releaseWithNoChanges && (
-                  <span className="u-fontWeight--bold">
-                    Upstream {this.state.releaseWithNoChanges.versionLabel},
-                    Sequence {this.state.releaseWithNoChanges.sequence}{" "}
-                  </span>
-                )}
-                release was unable to generate a diff because the changes made
-                do not affect any manifests that will be deployed. Only changes
-                affecting the application manifest will be included in a diff.
-              </p>
-              <div className="flex u-paddingTop--10">
-                <button
-                  className="btn primary"
-                  onClick={() => this.toggleNoChangesModal()}
-                >
-                  Ok, got it!
-                </button>
-              </div>
-            </div>
-          </Modal>
-        )}
+
+        <NoChangesModal
+          showNoChangesModal={this.state.showNoChangesModal}
+          toggleNoChangesModal={this.toggleNoChangesModal}
+          releaseWithNoChanges={this.state.releaseWithNoChanges}
+        />
+
         {this.state.showAutomaticUpdatesModal && (
           <AutomaticUpdatesModal
             appSlug={app?.slug}
@@ -2192,6 +2252,21 @@ class AppVersionHistory extends Component<Props, State> {
             updateCheckerSpec={app?.updateCheckerSpec}
           />
         )}
+
+        <UpgradeServiceModal
+          shouldShowUpgradeServiceModal={
+            this.state.shouldShowUpgradeServiceModal
+          }
+          isStartingUpgradeService={this.state.isStartingUpgradeService}
+          upgradeServiceStatus={this.state.upgradeServiceStatus}
+          appSlug={app?.slug}
+          onRequestClose={() =>
+            this.setState({ shouldShowUpgradeServiceModal: false })
+          }
+          onLoad={() => this.setState({ isIframeLoading: false })}
+          isIframeLoading={this.state.isIframeLoading}
+          iframeRef={this.iframeRef}
+        />
       </div>
     );
   }

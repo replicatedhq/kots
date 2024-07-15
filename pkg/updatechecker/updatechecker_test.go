@@ -13,13 +13,14 @@ import (
 	preflighttypes "github.com/replicatedhq/kots/pkg/preflight/types"
 	mock_store "github.com/replicatedhq/kots/pkg/store/mock"
 	storetypes "github.com/replicatedhq/kots/pkg/store/types"
+	"github.com/replicatedhq/kots/pkg/updatechecker/types"
 	upstreamtypes "github.com/replicatedhq/kots/pkg/upstream/types"
 	"github.com/stretchr/testify/require"
 )
 
 func TestAutoDeployDoesNotExecuteIfDisabled(t *testing.T) {
 	var autoDeployType = apptypes.AutoDeployDisabled
-	var opts = CheckForUpdatesOpts{}
+	var opts = types.CheckForUpdatesOpts{}
 
 	err := autoDeploy(opts, "cluster-id", autoDeployType)
 	if err != nil {
@@ -28,7 +29,7 @@ func TestAutoDeployDoesNotExecuteIfDisabled(t *testing.T) {
 }
 
 func TestAutoDeployDoesNotExecuteIfNotSet(t *testing.T) {
-	var opts = CheckForUpdatesOpts{}
+	var opts = types.CheckForUpdatesOpts{}
 	var clusterID = "some-cluster-id"
 
 	err := autoDeploy(opts, clusterID, "")
@@ -41,7 +42,7 @@ func TestAutoDeployFailedToGetAppVersionsErrors(t *testing.T) {
 	var autoDeployType = apptypes.AutoDeploySemverPatch
 	var appID = "some-app"
 	var clusterID = "some-cluster-id"
-	var opts = CheckForUpdatesOpts{AppID: appID}
+	var opts = types.CheckForUpdatesOpts{AppID: appID}
 	var downstreamVersions = &downstreamtypes.DownstreamVersions{}
 
 	ctrl := gomock.NewController(t)
@@ -64,7 +65,7 @@ func TestAutoDeployAppVersionsIsEmptyErrors(t *testing.T) {
 	var autoDeployType = apptypes.AutoDeploySemverPatch
 	var appID = "some-app"
 	var clusterID = "some-cluster-id"
-	var opts = CheckForUpdatesOpts{AppID: appID}
+	var opts = types.CheckForUpdatesOpts{AppID: appID}
 	var downstreamVersions = &downstreamtypes.DownstreamVersions{
 		AllVersions: []*downstreamtypes.DownstreamVersion{},
 	}
@@ -86,7 +87,7 @@ func TestAutoDeployCurrentVersionIsNilDoesNothing(t *testing.T) {
 	var autoDeployType = apptypes.AutoDeploySemverPatch
 	var appID = "some-app"
 	var clusterID = "some-cluster-id"
-	var opts = CheckForUpdatesOpts{AppID: appID}
+	var opts = types.CheckForUpdatesOpts{AppID: appID}
 	var downstreamVersions = &downstreamtypes.DownstreamVersions{
 		CurrentVersion: nil,
 		AllVersions: []*downstreamtypes.DownstreamVersion{
@@ -111,7 +112,7 @@ func TestAutoDeployCurrentVersionSemverIsNilDoesNothing(t *testing.T) {
 	var autoDeployType = apptypes.AutoDeploySemverPatch
 	var appID = "some-app"
 	var clusterID = "some-cluster-id"
-	var opts = CheckForUpdatesOpts{AppID: appID}
+	var opts = types.CheckForUpdatesOpts{AppID: appID}
 	var downstreamVersions = &downstreamtypes.DownstreamVersions{
 		CurrentVersion: &downstreamtypes.DownstreamVersion{
 			Semver: nil,
@@ -140,7 +141,7 @@ func TestAutoDeploySequenceQuitsIfCurrentVersionSequenceIsGreaterThanOrEqualToMo
 	var clusterID = "some-cluster-id"
 	var currentSequence = int64(1)
 	var upgradeSequence = int64(1)
-	var opts = CheckForUpdatesOpts{AppID: appID}
+	var opts = types.CheckForUpdatesOpts{AppID: appID}
 	var downstreamVersions = &downstreamtypes.DownstreamVersions{
 		CurrentVersion: &downstreamtypes.DownstreamVersion{
 			Semver:   &semver.Version{},
@@ -170,7 +171,7 @@ func TestAutoDeploySequenceDeploysSequenceUpgradeIfCurrentVersionLessThanMostRec
 	var autoDeployType = apptypes.AutoDeploySequence
 	var appID = "some-app"
 	var clusterID = "some-cluster-id"
-	var opts = CheckForUpdatesOpts{AppID: appID}
+	var opts = types.CheckForUpdatesOpts{AppID: appID}
 	var currentCursor = cursor.MustParse("1")
 	var upgradeCursor = cursor.MustParse("2")
 	var downstreamVersions = &downstreamtypes.DownstreamVersions{
@@ -204,7 +205,7 @@ func TestAutoDeploySequenceDoesNotDeployIfCurrentVersionIsSameUpstream(t *testin
 	var autoDeployType = apptypes.AutoDeploySequence
 	var appID = "some-app"
 	var clusterID = "some-cluster-id"
-	var opts = CheckForUpdatesOpts{AppID: appID}
+	var opts = types.CheckForUpdatesOpts{AppID: appID}
 	var currentCursor = cursor.MustParse("2")
 	var upgradeCursor = cursor.MustParse("2")
 	var downstreamVersions = &downstreamtypes.DownstreamVersions{
@@ -237,7 +238,7 @@ func TestAutoDeploySemverRequiredAllVersionsIndexIsNil(t *testing.T) {
 	var autoDeployType = apptypes.AutoDeploySemverPatch
 	var appID = "some-app"
 	var clusterID = "some-cluster-id"
-	var opts = CheckForUpdatesOpts{AppID: appID}
+	var opts = types.CheckForUpdatesOpts{AppID: appID}
 	var downstreamVersions = &downstreamtypes.DownstreamVersions{
 		CurrentVersion: &downstreamtypes.DownstreamVersion{
 			Semver: &semver.Version{},
@@ -263,7 +264,7 @@ func TestAutoDeploySemverRequiredAllVersionsHasNilSemver(t *testing.T) {
 	var autoDeployType = apptypes.AutoDeploySemverPatch
 	var appID = "some-app"
 	var clusterID = "some-cluster-id"
-	var opts = CheckForUpdatesOpts{AppID: appID}
+	var opts = types.CheckForUpdatesOpts{AppID: appID}
 	var downstreamVersions = &downstreamtypes.DownstreamVersions{
 		CurrentVersion: &downstreamtypes.DownstreamVersion{
 			Semver: &semver.Version{},
@@ -296,7 +297,7 @@ func TestAutoDeploySemverRequiredNoNewVersionToDeploy(t *testing.T) {
 	var major = uint64(1)
 	var minor = uint64(2)
 	var patch = uint64(1)
-	var opts = CheckForUpdatesOpts{AppID: appID}
+	var opts = types.CheckForUpdatesOpts{AppID: appID}
 	var downstreamVersions = &downstreamtypes.DownstreamVersions{
 		CurrentVersion: &downstreamtypes.DownstreamVersion{
 			Semver: &semver.Version{
@@ -336,7 +337,7 @@ func TestAutoDeploySemverRequiredPatchUpdateMajorsDontMatch(t *testing.T) {
 	var clusterID = "some-cluster-id"
 	var currentMajor = uint64(1)
 	var updateMajor = uint64(2)
-	var opts = CheckForUpdatesOpts{AppID: appID}
+	var opts = types.CheckForUpdatesOpts{AppID: appID}
 	var downstreamVersions = &downstreamtypes.DownstreamVersions{
 		CurrentVersion: &downstreamtypes.DownstreamVersion{
 			Semver: &semver.Version{
@@ -373,7 +374,7 @@ func TestAutoDeploySemverRequiredPatchUpdateMajorsMatchMinorsDontMatch(t *testin
 	var major = uint64(1)
 	var currentMinor = uint64(2)
 	var updateMinor = uint64(2)
-	var opts = CheckForUpdatesOpts{AppID: appID}
+	var opts = types.CheckForUpdatesOpts{AppID: appID}
 	var downstreamVersions = &downstreamtypes.DownstreamVersions{
 		CurrentVersion: &downstreamtypes.DownstreamVersion{
 			Semver: &semver.Version{
@@ -414,7 +415,7 @@ func TestAutoDeploySemverRequiredPatchUpdateMajorsMatchMinorsMatchWillUpgrade(t 
 	var minor = uint64(2)
 	var currentPatch = uint64(1)
 	var upgradePatch = uint64(2)
-	var opts = CheckForUpdatesOpts{AppID: appID}
+	var opts = types.CheckForUpdatesOpts{AppID: appID}
 	var downstreamVersions = &downstreamtypes.DownstreamVersions{
 		CurrentVersion: &downstreamtypes.DownstreamVersion{
 			Semver: &semver.Version{
@@ -456,7 +457,7 @@ func TestAutoDeploySemverRequiredMinorUpdateMajorsDontMatch(t *testing.T) {
 	var sequence = int64(0)
 	var currentMajor = uint64(1)
 	var upgradeMajor = uint64(2)
-	var opts = CheckForUpdatesOpts{AppID: appID}
+	var opts = types.CheckForUpdatesOpts{AppID: appID}
 	var downstreamVersions = &downstreamtypes.DownstreamVersions{
 		CurrentVersion: &downstreamtypes.DownstreamVersion{
 			Semver: &semver.Version{
@@ -495,7 +496,7 @@ func TestAutoDeploySemverRequiredMinorUpdateMajorsMatchWillUpgrade(t *testing.T)
 	var major = uint64(1)
 	var currentMinor = uint64(1)
 	var upgradeMinor = uint64(2)
-	var opts = CheckForUpdatesOpts{AppID: appID}
+	var opts = types.CheckForUpdatesOpts{AppID: appID}
 	var downstreamVersions = &downstreamtypes.DownstreamVersions{
 		CurrentVersion: &downstreamtypes.DownstreamVersion{
 			Semver: &semver.Version{
@@ -535,7 +536,7 @@ func TestAutoDeploySemverRequiredMajorUpdateWillUpgrade(t *testing.T) {
 	var sequence = int64(0)
 	var currentMajor = uint64(1)
 	var upgradeMajor = uint64(2)
-	var opts = CheckForUpdatesOpts{AppID: appID}
+	var opts = types.CheckForUpdatesOpts{AppID: appID}
 	var downstreamVersions = &downstreamtypes.DownstreamVersions{
 		CurrentVersion: &downstreamtypes.DownstreamVersion{
 			Semver: &semver.Version{

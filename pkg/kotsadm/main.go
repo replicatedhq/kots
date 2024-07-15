@@ -216,7 +216,7 @@ func Deploy(deployOptions types.DeployOptions, log *logger.CLILogger) error {
 	}
 
 	if deployOptions.AppImagesPushed {
-		airgapMetadata, err := archives.GetFileFromAirgap("airgap.yaml", deployOptions.AirgapBundle)
+		airgapMetadata, err := archives.GetFileContentFromTGZArchive("airgap.yaml", deployOptions.AirgapBundle)
 		if err != nil {
 			return errors.Wrap(err, "failed to get airgap.yaml from bundle")
 		}

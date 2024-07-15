@@ -48,9 +48,6 @@ func (s *KOTSStore) RunMigrations() {
 	if err := s.migrateSupportBundlesFromRqlite(); err != nil {
 		logger.Error(errors.Wrap(err, "failed to migrate support bundles"))
 	}
-	if err := s.migrateTasksFromRqlite(); err != nil {
-		logger.Error(errors.Wrap(err, "failed to migrate tasks"))
-	}
 }
 
 func (s *KOTSStore) migrateKotsAppSpec() error {

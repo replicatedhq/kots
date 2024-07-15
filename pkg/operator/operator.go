@@ -19,8 +19,10 @@ import (
 	appstatetypes "github.com/replicatedhq/kots/pkg/appstate/types"
 	"github.com/replicatedhq/kots/pkg/binaries"
 	"github.com/replicatedhq/kots/pkg/embeddedcluster"
+	"github.com/replicatedhq/kots/pkg/filestore"
 	identitydeploy "github.com/replicatedhq/kots/pkg/identity/deploy"
 	identitytypes "github.com/replicatedhq/kots/pkg/identity/types"
+	"github.com/replicatedhq/kots/pkg/k8sutil"
 	kotsadmobjects "github.com/replicatedhq/kots/pkg/kotsadm/objects"
 	snapshot "github.com/replicatedhq/kots/pkg/kotsadmsnapshot"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
@@ -37,15 +39,20 @@ import (
 	"github.com/replicatedhq/kots/pkg/supportbundle"
 	supportbundletypes "github.com/replicatedhq/kots/pkg/supportbundle/types"
 	"github.com/replicatedhq/kots/pkg/template"
+	"github.com/replicatedhq/kots/pkg/update"
+	upgradeservicetask "github.com/replicatedhq/kots/pkg/upgradeservice/task"
 	"github.com/replicatedhq/kots/pkg/util"
 	"github.com/replicatedhq/kotskinds/multitype"
 	velerov1 "github.com/vmware-tanzu/velero/pkg/apis/velero/v1"
 	corev1 "k8s.io/api/core/v1"
 	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/labels"
 	serializer "k8s.io/apimachinery/pkg/runtime/serializer/json"
+	"k8s.io/client-go/informers"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/scheme"
+	"k8s.io/client-go/tools/cache"
 )
 
 var (
@@ -94,6 +101,7 @@ func (o *Operator) Start() error {
 
 	go o.resumeInformers()
 	go o.resumeDeployments()
+	o.watchDeployments()
 	startLoop(o.restoreLoop, 2)
 
 	return nil
@@ -408,15 +416,6 @@ func (o *Operator) DeployApp(appID string, sequence int64) (deployed bool, deplo
 	deployed, err = o.client.DeployApp(deployArgs)
 	if err != nil {
 		return false, errors.Wrap(err, "failed to deploy app")
-	}
-
-	if deployed {
-		go func() {
-			err = embeddedcluster.MaybeStartClusterUpgrade(context.TODO(), o.store, kotsKinds, app.ID)
-			if err != nil {
-				logger.Error(errors.Wrap(err, "failed to start cluster upgrade"))
-			}
-		}()
 	}
 
 	return deployed, nil
@@ -900,4 +899,165 @@ func (o *Operator) renderKotsApplicationSpec(app *apptypes.App, sequence int64, 
 	}
 
 	return renderedKotsAppSpec, nil
+}
+
+func (o *Operator) watchDeployments() {
+	factory := informers.NewSharedInformerFactoryWithOptions(
+		o.k8sClientset,
+		0,
+		informers.WithNamespace(util.PodNamespace),
+		informers.WithTweakListOptions(func(options *metav1.ListOptions) {
+			options.LabelSelector = labels.SelectorFromSet(
+				labels.Set{
+					"kots.io/deployment": "true",
+					"kots.io/processed":  "false",
+				},
+			).String()
+		}),
+	)
+
+	cmInformer := factory.Core().V1().ConfigMaps().Informer()
+	cmInformer.AddEventHandler(cache.ResourceEventHandlerFuncs{
+		AddFunc: func(obj interface{}) {
+			cm := obj.(*corev1.ConfigMap)
+			if err := o.reconcileDeployment(cm); err != nil {
+				logger.Error(errors.Wrapf(err, "failed to reconcile deployment in (%s) configmap", cm.Name))
+			}
+		},
+	})
+
+	go cmInformer.Run(context.Background().Done())
+}
+
+func (o *Operator) reconcileDeployment(cm *corev1.ConfigMap) (finalError error) {
+	if cm.Data["requires-cluster-upgrade"] == "true" {
+		// wait for cluster upgrade even if the embedded cluster version doesn't match yet
+		// in order to continuously report progress to the user
+		if err := o.waitForClusterUpgrade(cm.Data["app-slug"]); err != nil {
+			return errors.Wrap(err, "failed to wait for cluster upgrade")
+		}
+	}
+
+	// CAUTION: changes to the embedded cluster version field can break backwards compatibility
+	ecVersion := cm.Data["embedded-cluster-version"]
+	if ecVersion == "" {
+		return errors.New("embedded cluster version not found in deployment")
+	}
+	if ecVersion != util.EmbeddedClusterVersion() {
+		logger.Infof("deployment has embedded cluster version (%s) which does not match current embedded cluster version (%s). will not process...", ecVersion, util.EmbeddedClusterVersion())
+		return nil
+	}
+
+	logger.Infof("processing deployment (%s) for app (%s)", cm.Data["version-label"], cm.Data["app-slug"])
+
+	if err := upgradeservicetask.SetStatusUpgradingApp(cm.Data["app-slug"], ""); err != nil {
+		return errors.Wrap(err, "failed to set task status to upgrading app")
+	}
+
+	defer func() {
+		if finalError == nil {
+			if err := upgradeservicetask.ClearStatus(cm.Data["app-slug"]); err != nil {
+				logger.Error(errors.Wrap(err, "failed to clear task status"))
+			}
+		} else {
+			if err := upgradeservicetask.SetStatusUpgradeFailed(cm.Data["app-slug"], finalError.Error()); err != nil {
+				logger.Error(errors.Wrap(err, "failed to set task status to failed"))
+			}
+		}
+		// ensure deployment gets processed once
+		cm.Labels["kots.io/processed"] = "true"
+		_, err := o.k8sClientset.CoreV1().ConfigMaps(cm.Namespace).Update(context.Background(), cm, metav1.UpdateOptions{})
+		if err != nil {
+			logger.Error(errors.Wrap(err, "failed to update configmap"))
+		}
+	}()
+
+	appID := cm.Data["app-id"]
+	source := cm.Data["source"]
+
+	baseSequence, err := strconv.ParseInt(cm.Data["base-sequence"], 10, 64)
+	if err != nil {
+		return errors.Wrap(err, "failed to parse base sequence")
+	}
+
+	skipPreflights, err := strconv.ParseBool(cm.Data["skip-preflights"])
+	if err != nil {
+		return errors.Wrap(err, "failed to parse is skip preflights")
+	}
+
+	tgzArchive, err := filestore.GetStore().ReadArchive(cm.Data["app-version-archive"])
+	if err != nil {
+		return errors.Wrap(err, "failed to read archive")
+	}
+	defer os.RemoveAll(tgzArchive)
+
+	archiveDir, err := os.MkdirTemp("", "kotsadm")
+	if err != nil {
+		return errors.Wrap(err, "failed to create temp dir")
+	}
+	defer os.RemoveAll(archiveDir)
+
+	if err := util.ExtractTGZArchive(tgzArchive, archiveDir); err != nil {
+		return errors.Wrap(err, "failed to extract app archive")
+	}
+
+	sequence, err := o.store.CreateAppVersion(appID, &baseSequence, archiveDir, source, skipPreflights, render.Renderer{})
+	if err != nil {
+		return errors.Wrap(err, "failed to create app version")
+	}
+
+	if cm.Data["is-airgap"] == "true" {
+		if err := update.RemoveAirgapUpdate(cm.Data["app-slug"], cm.Data["channel-id"], cm.Data["update-cursor"]); err != nil {
+			return errors.Wrap(err, "failed to remove airgap update")
+		}
+	}
+
+	if err := filestore.GetStore().DeleteArchive(cm.Data["app-version-archive"]); err != nil {
+		return errors.Wrap(err, "failed to delete deployment archive")
+	}
+
+	if pr := cm.Data["preflight-result"]; pr != "" {
+		if err := o.store.SetPreflightResults(appID, sequence, []byte(pr)); err != nil {
+			return errors.Wrap(err, "failed to set preflight results")
+		}
+	}
+
+	if err := o.store.SetAppChannelChanged(appID, false); err != nil {
+		return errors.Wrap(err, "failed to reset channel changed flag")
+	}
+
+	if err := o.store.MarkAsCurrentDownstreamVersion(appID, sequence); err != nil {
+		return errors.Wrap(err, "failed to mark as current downstream version")
+	}
+
+	go o.DeployApp(appID, sequence)
+
+	return nil
+}
+
+func (o *Operator) waitForClusterUpgrade(appSlug string) error {
+	kbClient, err := k8sutil.GetKubeClient(context.Background())
+	if err != nil {
+		return errors.Wrap(err, "failed to get kube client")
+	}
+	logger.Infof("waiting for cluster upgrade to finish")
+	for {
+		ins, err := embeddedcluster.GetCurrentInstallation(context.Background(), kbClient)
+		if err != nil {
+			return errors.Wrap(err, "failed to wait for embedded cluster installation")
+		}
+		if embeddedcluster.InstallationSucceeded(context.Background(), ins) {
+			return nil
+		}
+		if embeddedcluster.InstallationFailed(context.Background(), ins) {
+			if err := upgradeservicetask.SetStatusUpgradeFailed(appSlug, ins.Status.Reason); err != nil {
+				return errors.Wrap(err, "failed to set task status to failed")
+			}
+			return nil // we try to deploy the app even if the cluster upgrade failed
+		}
+		if err := upgradeservicetask.SetStatusUpgradingCluster(appSlug, ins.Status.State); err != nil {
+			return errors.Wrap(err, "failed to set task status to upgrading cluster")
+		}
+		time.Sleep(5 * time.Second)
+	}
 }

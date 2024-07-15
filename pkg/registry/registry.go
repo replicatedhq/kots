@@ -19,6 +19,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/reporting"
 	"github.com/replicatedhq/kots/pkg/rewrite"
 	"github.com/replicatedhq/kots/pkg/store"
+	"github.com/replicatedhq/kots/pkg/tasks"
 	"github.com/replicatedhq/kots/pkg/util"
 )
 
@@ -26,7 +27,7 @@ import (
 // and create a new version of the application
 // the caller is responsible for deleting the appDir returned
 func RewriteImages(appID string, sequence int64, hostname string, username string, password string, namespace string, isReadOnly bool) (appDir string, finalError error) {
-	if err := store.GetStore().SetTaskStatus("image-rewrite", "Updating registry settings", "running"); err != nil {
+	if err := tasks.SetTaskStatus("image-rewrite", "Updating registry settings", "running"); err != nil {
 		return "", errors.Wrap(err, "failed to set task status")
 	}
 
@@ -35,8 +36,8 @@ func RewriteImages(appID string, sequence int64, hostname string, username strin
 	go func() {
 		for {
 			select {
-			case <-time.After(time.Second):
-				if err := store.GetStore().UpdateTaskStatusTimestamp("image-rewrite"); err != nil {
+			case <-time.After(time.Second * 2):
+				if err := tasks.UpdateTaskStatusTimestamp("image-rewrite"); err != nil {
 					logger.Error(err)
 				}
 			case <-finishedCh:
@@ -47,13 +48,13 @@ func RewriteImages(appID string, sequence int64, hostname string, username strin
 
 	defer func() {
 		if finalError == nil {
-			if err := store.GetStore().ClearTaskStatus("image-rewrite"); err != nil {
+			if err := tasks.ClearTaskStatus("image-rewrite"); err != nil {
 				logger.Error(errors.Wrap(err, "failed to clear image rewrite task status"))
 			}
 		} else {
 			// do not show the stack trace to the user
 			causeErr := errors.Cause(finalError)
-			if err := store.GetStore().SetTaskStatus("image-rewrite", causeErr.Error(), "failed"); err != nil {
+			if err := tasks.SetTaskStatus("image-rewrite", causeErr.Error(), "failed"); err != nil {
 				logger.Error(errors.Wrap(err, "failed to set image rewrite task status as failed"))
 			}
 		}
@@ -97,7 +98,7 @@ func RewriteImages(appID string, sequence int64, hostname string, username strin
 	go func() {
 		scanner := bufio.NewScanner(pipeReader)
 		for scanner.Scan() {
-			if err := store.GetStore().SetTaskStatus("image-rewrite", scanner.Text(), "running"); err != nil {
+			if err := tasks.SetTaskStatus("image-rewrite", scanner.Text(), "running"); err != nil {
 				logger.Error(err)
 			}
 		}

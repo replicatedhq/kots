@@ -35,6 +35,12 @@ const ConfigGroup = (props) => {
     }
   };
 
+  const handleDownloadFile = (itemName) => {
+    if (props.handleDownloadFile) {
+      props.handleDownloadFile(itemName);
+    }
+  };
+
   const renderConfigItems = (items, readonly) => {
     if (!items) {
       return null;
@@ -132,6 +138,7 @@ const ConfigGroup = (props) => {
                 required={item.required}
                 handleChange={handleItemChange}
                 handleRemoveItem={handleRemoveItem}
+                handleDownloadFile={handleDownloadFile}
                 hidden={item.hidden}
                 when={item.when}
                 configSequence={props.configSequence}
