@@ -31,10 +31,6 @@ import (
 	k8syaml "sigs.k8s.io/yaml"
 )
 
-const (
-	clusterUpgradeTimeout = 15 * time.Minute
-)
-
 // startClusterUpgrade will create a new installation with the provided config.
 func startClusterUpgrade(
 	ctx context.Context, newcfg embeddedclusterv1beta1.ConfigSpec,
@@ -137,9 +133,6 @@ func runClusterUpgrade(
 	}
 
 	log.Println("Running upgrade command...")
-
-	ctx, cancel := context.WithTimeout(ctx, clusterUpgradeTimeout)
-	defer cancel()
 
 	args := []string{"upgrade"}
 	if in.Spec.AirGap {
