@@ -67,9 +67,8 @@ func Configure(a *apptypes.App, updateCheckerSpec string) error {
 	appId := a.GetID()
 	appSlug := a.GetSlug()
 	isAirgap := a.GetIsAirgap()
-	isEC := util.IsEmbeddedCluster()
 
-	if isAirgap || isEC {
+	if isAirgap {
 		return nil
 	}
 
@@ -112,6 +111,14 @@ func Configure(a *apptypes.App, updateCheckerSpec string) error {
 	jobAppSlug := appSlug
 
 	_, err := job.AddFunc(cronSpec, func() {
+		// don't check for updates if it's an embedded cluster, only send reporting info
+		if util.IsEmbeddedCluster() {
+			if err := reporting.GetReporter().SubmitAppInfo(jobAppID); err != nil {
+				logger.Debugf("failed to submit app info for app %s", jobAppSlug)
+			}
+			return
+		}
+
 		logger.Debug("checking updates for app", zap.String("slug", jobAppSlug))
 
 		opts := types.CheckForUpdatesOpts{
