@@ -28,16 +28,9 @@ var (
 	ErrNotFound = errors.New("not found")
 )
 
-type cachedTaskStatus struct {
-	expirationTime time.Time
-	taskStatus     TaskStatus
-}
-
 type KOTSStore struct {
 	sessionSecret     *corev1.Secret
 	sessionExpiration time.Time
-
-	cachedTaskStatus map[string]*cachedTaskStatus
 }
 
 func init() {
@@ -164,9 +157,7 @@ func canIgnoreEtcdError(err error) bool {
 }
 
 func StoreFromEnv() *KOTSStore {
-	return &KOTSStore{
-		cachedTaskStatus: make(map[string]*cachedTaskStatus),
-	}
+	return &KOTSStore{}
 }
 
 func (s *KOTSStore) getConfigmap(name string) (*corev1.ConfigMap, error) {

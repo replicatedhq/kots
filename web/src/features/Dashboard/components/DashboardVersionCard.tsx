@@ -67,6 +67,7 @@ type Props = {
   uploadResuming: boolean;
   uploadSize: number;
   viewAirgapUploadError: () => void;
+  showUpgradeStatusModal: boolean;
 };
 
 type State = {
@@ -201,8 +202,8 @@ const DashboardVersionCard = (props: Props) => {
   }, [location.search]);
 
   useEffect(() => {
-    if (Utilities.isPendingClusterUpgrade(selectedApp)) {
-      // if the cluster is upgrading, we don't want to show an error
+    if (props.showUpgradeStatusModal) {
+      // if an upgrade is in progress, we don't want to show an error
       return;
     }
 
@@ -331,23 +332,6 @@ const DashboardVersionCard = (props: Props) => {
   };
 
   const getCurrentVersionStatus = (version: Version | null) => {
-    if (
-      Utilities.isPendingClusterUpgrade(selectedApp) &&
-      version?.status === "deployed"
-    ) {
-      return (
-        <span className="flex alignItems--center u-fontSize--small u-lineHeight--normal u-textColor--bodyCopy u-fontWeight--medium">
-          <Loader
-            className="flex alignItems--center u-marginRight--5"
-            size="16"
-          />
-          {selectedApp?.appState !== "ready"
-            ? "Waiting for app to be ready"
-            : "Updating cluster"}
-        </span>
-      );
-    }
-
     if (version?.status === "deployed" || version?.status === "pending") {
       return (
         <span className="status-tag success flex-auto">
@@ -679,8 +663,7 @@ const DashboardVersionCard = (props: Props) => {
                 <ReactTooltip effect="solid" className="replicated-tooltip" />
               </div>
             ) : null}
-            {currentVersion?.status === "deploying" ||
-            Utilities.isPendingClusterUpgrade(selectedApp) ? null : (
+            {currentVersion?.status === "deploying" ? null : (
               <div className="flex-column justifyContent--center u-marginLeft--10">
                 <button
                   className="secondary blue btn"
@@ -1460,51 +1443,53 @@ const DashboardVersionCard = (props: Props) => {
     <div className="flex-column flex1 dashboard-card card-bg">
       <div className="flex flex1 justifyContent--spaceBetween alignItems--center u-marginBottom--10">
         <p className="card-title">Version</p>
-        <div className="flex alignItems--center">
-          {selectedApp?.isAirgap && airgapUploader ? (
-            <MountAware
-              onMount={(el: Element) => props.airgapUploader?.assignElement(el)}
-            >
+        {!props.adminConsoleMetadata?.isEmbeddedCluster && (
+          <div className="flex alignItems--center">
+            {selectedApp?.isAirgap && airgapUploader ? (
+              <MountAware
+                onMount={(el: Element) =>
+                  props.airgapUploader?.assignElement(el)
+                }
+              >
+                <div className="flex alignItems--center">
+                  <span className="icon clickable dashboard-card-upload-version-icon u-marginRight--5" />
+                  <span className="link u-fontSize--small u-lineHeight--default">
+                    Upload new version
+                  </span>
+                </div>
+              </MountAware>
+            ) : (
               <div className="flex alignItems--center">
-                <span className="icon clickable dashboard-card-upload-version-icon u-marginRight--5" />
-                <span className="link u-fontSize--small u-lineHeight--default">
-                  Upload new version
-                </span>
-              </div>
-            </MountAware>
-          ) : (
-            <div className="flex alignItems--center">
-              {checkingForUpdates && !isBundleUploading ? (
-                <div className="flex alignItems--center u-marginRight--20">
-                  <Loader className="u-marginRight--5" size="15" />
-                  <span className="u-textColor--bodyCopy u-fontWeight--medium u-fontSize--small u-lineHeight--default">
-                    {checkingUpdateText === ""
-                      ? "Checking for updates"
-                      : checkingUpdateTextShort}
-                  </span>
-                </div>
-              ) : props.noUpdatesAvalable ? (
-                <div className="flex alignItems--center u-marginRight--20">
-                  <span className="u-textColor--info u-fontWeight--medium u-fontSize--small u-lineHeight--default">
-                    Already up to date
-                  </span>
-                </div>
-              ) : (
-                <div className="flex alignItems--center u-marginRight--20 link">
-                  <Icon
-                    icon="check-update"
-                    size={18}
-                    className="clickable u-marginRight--5"
-                  />
-                  <span
-                    className="u-fontSize--small"
-                    onClick={props.onCheckForUpdates}
-                  >
-                    Check for update
-                  </span>
-                </div>
-              )}
-              {!props.adminConsoleMetadata?.isEmbeddedCluster && (
+                {checkingForUpdates && !isBundleUploading ? (
+                  <div className="flex alignItems--center u-marginRight--20">
+                    <Loader className="u-marginRight--5" size="15" />
+                    <span className="u-textColor--bodyCopy u-fontWeight--medium u-fontSize--small u-lineHeight--default">
+                      {checkingUpdateText === ""
+                        ? "Checking for updates"
+                        : checkingUpdateTextShort}
+                    </span>
+                  </div>
+                ) : props.noUpdatesAvalable ? (
+                  <div className="flex alignItems--center u-marginRight--20">
+                    <span className="u-textColor--info u-fontWeight--medium u-fontSize--small u-lineHeight--default">
+                      Already up to date
+                    </span>
+                  </div>
+                ) : (
+                  <div className="flex alignItems--center u-marginRight--20 link">
+                    <Icon
+                      icon="check-update"
+                      size={18}
+                      className="clickable u-marginRight--5"
+                    />
+                    <span
+                      className="u-fontSize--small"
+                      onClick={props.onCheckForUpdates}
+                    >
+                      Check for update
+                    </span>
+                  </div>
+                )}
                 <div className="flex alignItems--center u-marginRight--20 link">
                   <Icon
                     icon="schedule-sync"
@@ -1518,10 +1503,10 @@ const DashboardVersionCard = (props: Props) => {
                     Configure automatic updates
                   </span>
                 </div>
-              )}
-            </div>
-          )}
-        </div>
+              </div>
+            )}
+          </div>
+        )}
       </div>
       {currentVersion?.deployedAt ? (
         <div className="VersionCard-content--wrapper card-item">

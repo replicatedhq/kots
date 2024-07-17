@@ -15,6 +15,8 @@ up:
 	skaffold dev -f skaffold.yaml
 
 .PHONY: build-ttl.sh
+build-ttl.sh: export GOOS ?= linux
+build-ttl.sh: export GOARCH ?= amd64
 build-ttl.sh: build
-	docker build --pull -f deploy/Dockerfile -t ttl.sh/${CURRENT_USER}/kurl-proxy:24h .
+	docker build --platform $(GOOS)/$(GOARCH) --pull -f deploy/Dockerfile -t ttl.sh/${CURRENT_USER}/kurl-proxy:24h .
 	docker push ttl.sh/${CURRENT_USER}/kurl-proxy:24h

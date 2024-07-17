@@ -9,6 +9,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/policy"
 	"github.com/replicatedhq/kots/pkg/store"
+	"github.com/replicatedhq/kots/pkg/upgradeservice"
 	kotsscheme "github.com/replicatedhq/kotskinds/client/kotsclientset/scheme"
 	troubleshootscheme "github.com/replicatedhq/troubleshoot/pkg/client/troubleshootclientset/scheme"
 	yaml "github.com/replicatedhq/yaml/v3"
@@ -109,6 +110,8 @@ func RegisterSessionAuthRoutes(r *mux.Router, kotsStore store.Store, handler KOT
 		HandlerFunc(middleware.EnforceAccess(policy.AppRead, handler.GetLatestDeployableVersion))
 	r.Name("GetUpdateDownloadStatus").Path("/api/v1/app/{appSlug}/task/updatedownload").Methods("GET").
 		HandlerFunc(middleware.EnforceAccess(policy.AppRead, handler.GetUpdateDownloadStatus)) // NOTE: appSlug is unused
+	r.Name("GetAvailableUpdates").Path("/api/v1/app/{appSlug}/updates").Methods("GET").
+		HandlerFunc(middleware.EnforceAccess(policy.AppDownstreamRead, handler.GetAvailableUpdates))
 
 	// Airgap
 	r.Name("AirgapBundleProgress").Path("/api/v1/app/{appSlug}/airgap/bundleprogress/{identifier}/{totalChunks}").Methods("GET").
@@ -129,6 +132,8 @@ func RegisterSessionAuthRoutes(r *mux.Router, kotsStore store.Store, handler KOT
 		HandlerFunc(middleware.EnforceAccess(policy.AppDownstreamWrite, handler.ResetAirgapInstallStatus))
 	r.Name("GetAirgapUploadConfig").Path("/api/v1/app/{appSlug}/airgap/config").Methods("GET").
 		HandlerFunc(middleware.EnforceAccess(policy.AppDownstreamWrite, handler.GetAirgapUploadConfig))
+	r.Name("UploadAirgapUpdate").Path("/api/v1/app/{appSlug}/airgap/update").Methods("PUT").
+		HandlerFunc(middleware.EnforceAccess(policy.AppDownstreamWrite, handler.UploadAirgapUpdate))
 
 	// Implemented handlers
 	r.Name("IgnorePreflightRBACErrors").Path("/api/v1/app/{appSlug}/sequence/{sequence}/preflight/ignore-rbac").Methods("POST").
@@ -315,6 +320,17 @@ func RegisterSessionAuthRoutes(r *mux.Router, kotsStore store.Store, handler KOT
 	// Password change
 	r.Name("ChangePassword").Path("/api/v1/password/change").Methods("PUT").
 		HandlerFunc(middleware.EnforceAccess(policy.PasswordChange, handler.ChangePassword))
+
+	// Upgrade service
+	r.Name("StartUpgradeService").Path("/api/v1/app/{appSlug}/start-upgrade-service").Methods("POST").
+		HandlerFunc(middleware.EnforceAccess(policy.AppUpdate, handler.StartUpgradeService))
+	r.Name("GetUpgradeServiceStatus").Path("/api/v1/app/{appSlug}/task/upgrade-service").Methods("GET").
+		HandlerFunc(middleware.EnforceAccess(policy.AppUpdate, handler.GetUpgradeServiceStatus))
+
+	// Proxy upgrade service requests to the upgrade service
+	// CAUTION: modifying this route WILL break backwards compatibility
+	r.Name("UpgradeServiceProxy").PathPrefix("/api/v1/upgrade-service/app/{appSlug}").Methods("GET", "POST", "PUT").
+		HandlerFunc(middleware.EnforceAccess(policy.AppUpdate, upgradeservice.Proxy))
 }
 
 func JSON(w http.ResponseWriter, code int, payload interface{}) {

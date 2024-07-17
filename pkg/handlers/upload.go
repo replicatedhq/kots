@@ -16,6 +16,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/preflight"
 	"github.com/replicatedhq/kots/pkg/render"
 	rendertypes "github.com/replicatedhq/kots/pkg/render/types"
+	"github.com/replicatedhq/kots/pkg/reporting"
 	"github.com/replicatedhq/kots/pkg/store"
 	storetypes "github.com/replicatedhq/kots/pkg/store/types"
 	"github.com/replicatedhq/kots/pkg/util"
@@ -165,6 +166,7 @@ func (h *Handler) UploadExistingApp(w http.ResponseWriter, r *http.Request) {
 		Downstreams:      downstreams,
 		RegistrySettings: registrySettings,
 		Sequence:         nextAppSequence,
+		ReportingInfo:    reporting.GetReportingInfo(a.ID),
 	})
 	if err != nil {
 		cause := errors.Cause(err)
@@ -188,7 +190,7 @@ func (h *Handler) UploadExistingApp(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	newSequence, err := store.GetStore().CreateAppVersion(a.ID, &baseSequence, archiveDir, "KOTS Upload", uploadExistingAppRequest.SkipPreflights, &version.DownstreamGitOps{}, render.Renderer{})
+	newSequence, err := store.GetStore().CreateAppVersion(a.ID, &baseSequence, archiveDir, "KOTS Upload", uploadExistingAppRequest.SkipPreflights, render.Renderer{})
 	if err != nil {
 		uploadResponse.Error = util.StrPointer("failed to create app version")
 		logger.Error(errors.Wrap(err, *uploadResponse.Error))

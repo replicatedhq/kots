@@ -18,6 +18,7 @@ import PreflightIcon from "@features/App/PreflightIcon";
 
 interface Props {
   adminConsoleMetadata: Metadata;
+  isEmbeddedCluster: boolean;
   deployVersion: (version: Version) => void;
   downloadVersion: (version: Version) => void;
   gitopsEnabled: boolean;
@@ -152,12 +153,6 @@ function AppVersionHistoryRow(props: Props) {
   };
 
   const isActionButtonDisabled = (version: Version) => {
-    if (
-      Utilities.isPendingClusterUpgrade(selectedApp) &&
-      version.status === "deployed"
-    ) {
-      return true;
-    }
     if (version.status === "deploying") {
       return true;
     }
@@ -233,6 +228,15 @@ function AppVersionHistoryRow(props: Props) {
     const showDeployLogs =
       (isPastVersion || isCurrentVersion || isPendingDeployedVersion) &&
       version?.status !== "pending";
+
+    // in embedded cluster, past versions cannot be edited
+    const isConfigReadOnly = props.isEmbeddedCluster && isPastVersion;
+    let configTooltip;
+    if (isConfigReadOnly) {
+      configTooltip = "View config";
+    } else {
+      configTooltip = "Edit config";
+    }
 
     const preflightState = getPreflightState(version);
 
@@ -351,8 +355,11 @@ function AppVersionHistoryRow(props: Props) {
         </div>
         {version.hasConfig && (
           <div className="flex alignItems--center">
-            <Link to={configScreenURL} data-tip="Edit config">
-              <Icon icon="edit-config" size={22} />
+            <Link to={configScreenURL} data-tip={configTooltip}>
+              <Icon
+                icon={isConfigReadOnly ? "view-config" : "edit-config"}
+                size={22}
+              />
             </Link>
             <ReactTooltip effect="solid" className="replicated-tooltip" />
           </div>
@@ -424,23 +431,6 @@ function AppVersionHistoryRow(props: Props) {
     });
 
     if (!isPastVersion && !isPendingDeployedVersion) {
-      if (
-        Utilities.isPendingClusterUpgrade(selectedApp) &&
-        version.status === "deployed"
-      ) {
-        return (
-          <span className="flex alignItems--center u-fontSize--small u-lineHeight--normal u-textColor--bodyCopy u-fontWeight--medium">
-            <Loader
-              className="flex alignItems--center u-marginRight--5"
-              size="16"
-            />
-            {selectedApp?.appState !== "ready"
-              ? "Waiting for app to be ready"
-              : "Updating cluster"}
-          </span>
-        );
-      }
-
       if (version.status === "deployed") {
         return (
           <div>

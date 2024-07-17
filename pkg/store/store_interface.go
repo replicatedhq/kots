@@ -7,10 +7,10 @@ import (
 	embeddedclusterv1beta1 "github.com/replicatedhq/embedded-cluster-kinds/apis/v1beta1"
 	airgaptypes "github.com/replicatedhq/kots/pkg/airgap/types"
 	downstreamtypes "github.com/replicatedhq/kots/pkg/api/downstream/types"
+	reportingtypes "github.com/replicatedhq/kots/pkg/api/reporting/types"
 	versiontypes "github.com/replicatedhq/kots/pkg/api/version/types"
 	apptypes "github.com/replicatedhq/kots/pkg/app/types"
 	appstatetypes "github.com/replicatedhq/kots/pkg/appstate/types"
-	gitopstypes "github.com/replicatedhq/kots/pkg/gitops/types"
 	snapshottypes "github.com/replicatedhq/kots/pkg/kotsadmsnapshot/types"
 	installationtypes "github.com/replicatedhq/kots/pkg/online/types"
 	preflighttypes "github.com/replicatedhq/kots/pkg/preflight/types"
@@ -32,7 +32,6 @@ type Store interface {
 	PreflightStore
 	PrometheusStore
 	AirgapStore
-	TaskStore
 	SessionStore
 	AppStatusStore
 	AppStore
@@ -97,13 +96,6 @@ type AirgapStore interface {
 	GetAirgapInstallStatus(appID string) (*airgaptypes.InstallStatus, error)
 	ResetAirgapInstallInProgress(appID string) error
 	SetAppIsAirgap(appID string, isAirgap bool) error
-}
-
-type TaskStore interface {
-	SetTaskStatus(taskID string, message string, status string) error
-	UpdateTaskStatusTimestamp(taskID string) error
-	ClearTaskStatus(taskID string) error
-	GetTaskStatus(taskID string) (status string, message string, err error)
 }
 
 type SessionStore interface {
@@ -186,17 +178,15 @@ type VersionStore interface {
 	IsRollbackSupportedForVersion(appID string, sequence int64) (bool, error)
 	IsSnapshotsSupportedForVersion(a *apptypes.App, sequence int64, renderer rendertypes.Renderer) (bool, error)
 	GetTargetKotsVersionForVersion(appID string, sequence int64) (string, error)
-	CreateAppVersionArchive(appID string, sequence int64, archivePath string) error
 	GetAppVersionArchive(appID string, sequence int64, dstPath string) error
 	GetAppVersionBaseSequence(appID string, versionLabel string) (int64, error)
 	GetAppVersionBaseArchive(appID string, versionLabel string) (string, int64, error)
 	CreatePendingDownloadAppVersion(appID string, update upstreamtypes.Update, kotsApplication *kotsv1beta1.Application, license *kotsv1beta1.License) (int64, error)
-	UpdateAppVersion(appID string, sequence int64, baseSequence *int64, filesInDir string, source string, skipPreflights bool, gitops gitopstypes.DownstreamGitOps, renderer rendertypes.Renderer) error
-	CreateAppVersion(appID string, baseSequence *int64, filesInDir string, source string, skipPreflights bool, gitops gitopstypes.DownstreamGitOps, renderer rendertypes.Renderer) (int64, error)
+	UpdateAppVersion(appID string, sequence int64, baseSequence *int64, filesInDir string, source string, skipPreflights bool, renderer rendertypes.Renderer) error
+	CreateAppVersion(appID string, baseSequence *int64, filesInDir string, source string, skipPreflights bool, renderer rendertypes.Renderer) (int64, error)
 	GetAppVersion(appID string, sequence int64) (*versiontypes.AppVersion, error)
 	GetLatestAppSequence(appID string, downloadedOnly bool) (int64, error)
 	UpdateNextAppVersionDiffSummary(appID string, baseSequence int64) error
-	UpdateAppVersionInstallationSpec(appID string, sequence int64, spec kotsv1beta1.Installation) error
 	GetNextAppSequence(appID string) (int64, error)
 	GetCurrentUpdateCursor(appID string, channelID string) (string, error)
 	HasStrictPreflights(appID string, sequence int64) (bool, error)
@@ -209,7 +199,7 @@ type LicenseStore interface {
 	GetAllAppLicenses() ([]*kotsv1beta1.License, error)
 
 	// originalLicenseData is the data received from the replicated API that was never marshalled locally so all fields are intact
-	UpdateAppLicense(appID string, sequence int64, archiveDir string, newLicense *kotsv1beta1.License, originalLicenseData string, channelChanged bool, failOnVersionCreate bool, gitops gitopstypes.DownstreamGitOps, renderer rendertypes.Renderer) (int64, error)
+	UpdateAppLicense(appID string, sequence int64, archiveDir string, newLicense *kotsv1beta1.License, originalLicenseData string, channelChanged bool, failOnVersionCreate bool, renderer rendertypes.Renderer, reportingInfo *reportingtypes.ReportingInfo) (int64, error)
 	UpdateAppLicenseSyncNow(appID string) error
 }
 
@@ -241,8 +231,6 @@ type KotsadmParamsStore interface {
 type EmbeddedStore interface {
 	GetEmbeddedClusterAuthToken() (string, error)
 	SetEmbeddedClusterAuthToken(token string) error
-	SetEmbeddedClusterState(state string) error
-	GetEmbeddedClusterState() (string, error)
 }
 
 type BrandingStore interface {

@@ -87,7 +87,7 @@ func getLicenseFromAPI(url string, licenseID string) (*LicenseData, error) {
 
 	req.SetBasicAuth(licenseID, licenseID)
 
-	if persistence.IsInitialized() {
+	if persistence.IsInitialized() && !util.IsUpgradeService() {
 		appId, err := getAppIdFromLicenseId(store.GetStore(), licenseID)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to get license by id")

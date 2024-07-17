@@ -24,6 +24,7 @@ func GetReportingInfoHeaders(reportingInfo *types.ReportingInfo) map[string]stri
 		return headers
 	}
 
+	headers["User-Agent"] = reportingInfo.UserAgent
 	headers["X-Replicated-K8sVersion"] = reportingInfo.K8sVersion
 	headers["X-Replicated-IsKurl"] = strconv.FormatBool(reportingInfo.IsKurl)
 	headers["X-Replicated-AppStatus"] = reportingInfo.AppStatus

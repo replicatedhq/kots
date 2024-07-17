@@ -28,6 +28,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/registry/types"
 	kotss3 "github.com/replicatedhq/kots/pkg/s3"
 	"github.com/replicatedhq/kots/pkg/store"
+	"github.com/replicatedhq/kots/pkg/tasks"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -198,7 +199,7 @@ func deleteUnusedImages(ctx context.Context, registry types.RegistrySettings, us
 		return nil
 	}
 
-	currentStatus, _, err := store.GetStore().GetTaskStatus(deleteImagesTaskID)
+	currentStatus, _, err := tasks.GetTaskStatus(deleteImagesTaskID)
 	if err != nil {
 		return errors.Wrap(err, "failed to get task status")
 	}
@@ -208,7 +209,7 @@ func deleteUnusedImages(ctx context.Context, registry types.RegistrySettings, us
 		return nil
 	}
 
-	if err := store.GetStore().SetTaskStatus(deleteImagesTaskID, "Searching registry...", "running"); err != nil {
+	if err := tasks.SetTaskStatus(deleteImagesTaskID, "Searching registry...", "running"); err != nil {
 		return errors.Wrap(err, "failed to set task status")
 	}
 
@@ -344,11 +345,11 @@ func startDeleteImagesTaskMonitor(finishedChan <-chan error) {
 		var finalError error
 		defer func() {
 			if finalError == nil {
-				if err := store.GetStore().ClearTaskStatus(deleteImagesTaskID); err != nil {
+				if err := tasks.ClearTaskStatus(deleteImagesTaskID); err != nil {
 					logger.Error(errors.Wrapf(err, "failed to clear %q task status", deleteImagesTaskID))
 				}
 			} else {
-				if err := store.GetStore().SetTaskStatus(deleteImagesTaskID, finalError.Error(), "failed"); err != nil {
+				if err := tasks.SetTaskStatus(deleteImagesTaskID, finalError.Error(), "failed"); err != nil {
 					logger.Error(errors.Wrapf(err, "failed to set error on %q task status", deleteImagesTaskID))
 				}
 			}
@@ -356,8 +357,8 @@ func startDeleteImagesTaskMonitor(finishedChan <-chan error) {
 
 		for {
 			select {
-			case <-time.After(time.Second):
-				if err := store.GetStore().UpdateTaskStatusTimestamp(deleteImagesTaskID); err != nil {
+			case <-time.After(time.Second * 2):
+				if err := tasks.UpdateTaskStatusTimestamp(deleteImagesTaskID); err != nil {
 					logger.Error(err)
 				}
 			case err := <-finishedChan:

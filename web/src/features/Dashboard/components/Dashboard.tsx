@@ -73,6 +73,7 @@ type OutletContext = {
   refreshAppData: () => void;
   toggleIsBundleUploading: (isUploading: boolean) => void;
   updateCallback: () => void | null;
+  showUpgradeStatusModal: boolean;
 };
 
 // TODO:  update these strings so that they are not nullable (maybe just set default to "")
@@ -168,6 +169,7 @@ const Dashboard = (props: Props) => {
     refreshAppData,
     toggleIsBundleUploading,
     updateCallback,
+    showUpgradeStatusModal,
   }: OutletContext = useOutletContext();
   const params = useParams();
   const airgapUploader = useRef<AirgapUploader | null>(null);
@@ -230,8 +232,8 @@ const Dashboard = (props: Props) => {
   };
 
   const onUpdateDownloadStatusError = (data: Error) => {
-    if (Utilities.isPendingClusterUpgrade(app)) {
-      // if the cluster is upgrading, we don't want to show an error
+    if (showUpgradeStatusModal) {
+      // if an upgrade is in progress, we don't want to show an error
       return;
     }
 
@@ -593,8 +595,8 @@ const Dashboard = (props: Props) => {
   };
 
   const onError = (err: Error) => {
-    if (Utilities.isPendingClusterUpgrade(app)) {
-      // if the cluster is upgrading, we don't want to show an error
+    if (showUpgradeStatusModal) {
+      // if an upgrade is in progress, we don't want to show an error
       return;
     }
 
@@ -700,6 +702,7 @@ const Dashboard = (props: Props) => {
                     viewAirgapUploadError={() => toggleViewAirgapUploadError()}
                     showAutomaticUpdatesModal={showAutomaticUpdatesModal}
                     noUpdatesAvalable={state.noUpdatesAvalable}
+                    showUpgradeStatusModal={showUpgradeStatusModal}
                     adminConsoleMetadata={props.adminConsoleMetadata}
                   />
                 </div>

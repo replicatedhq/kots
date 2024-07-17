@@ -1,9 +1,7 @@
 package airgap
 
 import (
-	"archive/tar"
 	"bufio"
-	"compress/gzip"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -27,6 +25,7 @@ import (
 	storetypes "github.com/replicatedhq/kots/pkg/store/types"
 	"github.com/replicatedhq/kots/pkg/supportbundle"
 	supportbundletypes "github.com/replicatedhq/kots/pkg/supportbundle/types"
+	"github.com/replicatedhq/kots/pkg/tasks"
 	"github.com/replicatedhq/kots/pkg/util"
 	"github.com/replicatedhq/kots/pkg/version"
 	kotsv1beta1 "github.com/replicatedhq/kotskinds/apis/kots/v1beta1"
@@ -53,7 +52,7 @@ type CreateAirgapAppOpts struct {
 // will also have a version
 func CreateAppFromAirgap(opts CreateAirgapAppOpts) (finalError error) {
 	taskID := fmt.Sprintf("airgap-install-slug-%s", opts.PendingApp.Slug)
-	if err := store.GetStore().SetTaskStatus(taskID, "Processing package...", "running"); err != nil {
+	if err := tasks.SetTaskStatus(taskID, "Processing package...", "running"); err != nil {
 		return errors.Wrap(err, "failed to set task status")
 	}
 
@@ -62,8 +61,8 @@ func CreateAppFromAirgap(opts CreateAirgapAppOpts) (finalError error) {
 	go func() {
 		for {
 			select {
-			case <-time.After(time.Second):
-				if err := store.GetStore().UpdateTaskStatusTimestamp(taskID); err != nil {
+			case <-time.After(time.Second * 2):
+				if err := tasks.UpdateTaskStatusTimestamp(taskID); err != nil {
 					logger.Error(errors.Wrapf(err, "failed to update task %s", taskID))
 				}
 			case <-finishedCh:
@@ -74,14 +73,14 @@ func CreateAppFromAirgap(opts CreateAirgapAppOpts) (finalError error) {
 
 	defer func() {
 		if finalError == nil {
-			if err := store.GetStore().ClearTaskStatus(taskID); err != nil {
+			if err := tasks.ClearTaskStatus(taskID); err != nil {
 				logger.Error(errors.Wrap(err, "failed to clear install task status"))
 			}
 			if err := store.GetStore().SetAppInstallState(opts.PendingApp.ID, "installed"); err != nil {
 				logger.Error(errors.Wrap(err, "failed to set app status to installed"))
 			}
 		} else {
-			if err := store.GetStore().SetTaskStatus(taskID, finalError.Error(), "failed"); err != nil {
+			if err := tasks.SetTaskStatus(taskID, finalError.Error(), "failed"); err != nil {
 				logger.Error(errors.Wrap(err, "failed to set error on install task status"))
 			}
 			if err := store.GetStore().SetAppInstallState(opts.PendingApp.ID, "airgap_upload_error"); err != nil {
@@ -95,14 +94,14 @@ func CreateAppFromAirgap(opts CreateAirgapAppOpts) (finalError error) {
 	}
 
 	// Extract it
-	if err := store.GetStore().SetTaskStatus(taskID, "Extracting files...", "running"); err != nil {
+	if err := tasks.SetTaskStatus(taskID, "Extracting files...", "running"); err != nil {
 		return errors.Wrap(err, "failed to set task status")
 	}
 
 	archiveDir := opts.AirgapRootDir
 	if opts.AirgapBundle != "" {
 		// on the api side, headless intalls don't have the airgap file
-		dir, err := extractAppMetaFromAirgapBundle(opts.AirgapBundle)
+		dir, err := archives.ExtractAppMetaFromAirgapBundle(opts.AirgapBundle)
 		if err != nil {
 			return errors.Wrap(err, "failed to extract archive")
 		}
@@ -129,7 +128,7 @@ func CreateAppFromAirgap(opts CreateAirgapAppOpts) (finalError error) {
 	}
 	defer os.RemoveAll(tmpRoot)
 
-	if err := store.GetStore().SetTaskStatus(taskID, "Reading license data...", "running"); err != nil {
+	if err := tasks.SetTaskStatus(taskID, "Reading license data...", "running"); err != nil {
 		return errors.Wrap(err, "failed to set task status")
 	}
 
@@ -153,7 +152,7 @@ func CreateAppFromAirgap(opts CreateAirgapAppOpts) (finalError error) {
 	go func() {
 		scanner := bufio.NewScanner(pipeReader)
 		for scanner.Scan() {
-			if err := store.GetStore().SetTaskStatus(taskID, scanner.Text(), "running"); err != nil {
+			if err := tasks.SetTaskStatus(taskID, scanner.Text(), "running"); err != nil {
 				logger.Error(errors.Wrapf(err, "failed to set status for task %s", taskID))
 			}
 		}
@@ -256,7 +255,7 @@ func CreateAppFromAirgap(opts CreateAirgapAppOpts) (finalError error) {
 		return errors.Wrap(err, "failed to set app is airgap the second time")
 	}
 
-	newSequence, err := store.GetStore().CreateAppVersion(a.ID, nil, tmpRoot, "Airgap Install", opts.SkipPreflights, &version.DownstreamGitOps{}, render.Renderer{})
+	newSequence, err := store.GetStore().CreateAppVersion(a.ID, nil, tmpRoot, "Airgap Install", opts.SkipPreflights, render.Renderer{})
 	if err != nil {
 		return errors.Wrap(err, "failed to create new version")
 	}
@@ -373,68 +372,6 @@ func extractAppRelease(workspace string, airgapDir string) (string, error) {
 
 	if numExtracted == 0 {
 		return "", errors.New("no release found in airgap archive")
-	}
-
-	return destDir, nil
-}
-
-func extractAppMetaFromAirgapBundle(airgapBundle string) (string, error) {
-	destDir, err := ioutil.TempDir("", "kotsadm-airgap-meta-")
-	if err != nil {
-		return "", errors.Wrap(err, "failed to create temp dir")
-	}
-
-	fileReader, err := os.Open(airgapBundle)
-	if err != nil {
-		return "", errors.Wrap(err, "failed to open file")
-	}
-	defer fileReader.Close()
-
-	gzipReader, err := gzip.NewReader(fileReader)
-	if err != nil {
-		return "", errors.Wrap(err, "failed to get new gzip reader")
-	}
-	defer gzipReader.Close()
-
-	tarReader := tar.NewReader(gzipReader)
-	for {
-		header, err := tarReader.Next()
-		if err == io.EOF {
-			break
-		}
-		if err != nil {
-			return "", errors.Wrap(err, "failed to get read archive")
-		}
-
-		// First items in airgap archive are metadata files.
-		// As soon as we see the first directory, we are hitting images.
-		if header.Name == "." {
-			continue
-		}
-		if header.Typeflag != tar.TypeReg {
-			break
-		}
-
-		err = func() error {
-			fileName := filepath.Join(destDir, header.Name)
-
-			fileWriter, err := os.Create(fileName)
-			if err != nil {
-				return errors.Wrapf(err, "failed to create file %q", header.Name)
-			}
-
-			defer fileWriter.Close()
-
-			_, err = io.Copy(fileWriter, tarReader)
-			if err != nil {
-				return errors.Wrapf(err, "failed to write file %q", header.Name)
-			}
-
-			return nil
-		}()
-		if err != nil {
-			return "", err
-		}
 	}
 
 	return destDir, nil

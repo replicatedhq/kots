@@ -1,9 +1,9 @@
 include Makefile.build.mk
 CURRENT_USER := $(if $(GITHUB_USER),$(GITHUB_USER),$(shell id -u -n))
-MINIO_TAG ?= 0.20240629.012047-r1
-RQLITE_TAG ?= 8.26.6-r0
-DEX_TAG ?= 2.40.0-r2
-LVP_TAG ?= v0.6.6
+MINIO_TAG ?= 0.20240715.190230-r0
+RQLITE_TAG ?= 8.26.7-r0
+DEX_TAG ?= 2.40.0-r3
+LVP_TAG ?= v0.6.7
 
 define sendMetrics
 @if [ -z "${PROJECT_NAME}" ]; then \
@@ -51,6 +51,8 @@ kots: capture-start-time kots-real report-metric
 
 .PHONY: kots-real
 kots-real:
+	mkdir -p web/dist
+	touch web/dist/README.md
 	go build ${LDFLAGS} -o bin/kots $(BUILDFLAGS) github.com/replicatedhq/kots/cmd/kots
 
 .PHONY: fmt
@@ -80,7 +82,7 @@ build: capture-start-time build-real report-metric
 .PHONY: build-real
 build-real:
 	mkdir -p web/dist
-	touch web/dist/THIS_IS_OKTETO  # we need this for go:embed, but it's not actually used in dev
+	touch web/dist/README.md
 	go build ${LDFLAGS} ${GCFLAGS} -v -o bin/kotsadm $(BUILDFLAGS) ./cmd/kotsadm
 
 .PHONY: tidy
@@ -112,21 +114,31 @@ debug-build:
 debug: debug-build
 	LOG_LEVEL=$(LOG_LEVEL) dlv --listen=:2345 --headless=true --api-version=2 exec ./bin/kotsadm-debug api
 
-.PHONY: build-ttl.sh
-build-ttl.sh: kots build
+.PHONY: web
+web:
 	source .image.env && ${MAKE} -C web build-kotsadm
-	docker build -f deploy/Dockerfile -t ttl.sh/${CURRENT_USER}/kotsadm:24h .
+
+.PHONY: build-ttl.sh
+build-ttl.sh: export GOOS ?= linux
+build-ttl.sh: export GOARCH ?= amd64
+build-ttl.sh: web kots build
+	docker build --platform $(GOOS)/$(GOARCH) -f deploy/Dockerfile -t ttl.sh/${CURRENT_USER}/kotsadm:24h .
 	docker push ttl.sh/${CURRENT_USER}/kotsadm:24h
 
 .PHONY: all-ttl.sh
+all-ttl.sh: export GOOS ?= linux
+all-ttl.sh: export GOARCH ?= amd64
 all-ttl.sh: build-ttl.sh
-	source .image.env && IMAGE=ttl.sh/${CURRENT_USER}/kotsadm-migrations:24h make -C migrations build_schema
+	source .image.env && \
+		IMAGE=ttl.sh/${CURRENT_USER}/kotsadm-migrations:24h \
+		DOCKER_BUILD_ARGS="--platform $(GOOS)/$(GOARCH)" \
+		make -C migrations build_schema
 
-	docker pull kotsadm/minio:${MINIO_TAG}
+	docker pull --platform $(GOOS)/$(GOARCH)" kotsadm/minio:${MINIO_TAG}
 	docker tag kotsadm/minio:${MINIO_TAG} ttl.sh/${CURRENT_USER}/minio:${MINIO_TAG}
 	docker push ttl.sh/${CURRENT_USER}/minio:${MINIO_TAG}
 
-	docker pull kotsadm/rqlite:${RQLITE_TAG}
+	docker pull --platform $(GOOS)/$(GOARCH)" kotsadm/rqlite:${RQLITE_TAG}
 	docker tag kotsadm/rqlite:${RQLITE_TAG} ttl.sh/${CURRENT_USER}/rqlite:${RQLITE_TAG}
 	docker push ttl.sh/${CURRENT_USER}/rqlite:${RQLITE_TAG}
 

@@ -74,6 +74,11 @@
       }
     }
 
+    &.UpgradeServiceModal {
+      width: 90%;
+      height: 90%;
+    }
+
     &.ConfigureUpdatesModal {
       overflow: visible;
     }

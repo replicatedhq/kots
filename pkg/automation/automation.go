@@ -26,6 +26,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/replicatedapp"
 	"github.com/replicatedhq/kots/pkg/store"
 	storetypes "github.com/replicatedhq/kots/pkg/store/types"
+	"github.com/replicatedhq/kots/pkg/tasks"
 	"github.com/replicatedhq/kots/pkg/util"
 	kotsv1beta1 "github.com/replicatedhq/kotskinds/apis/kots/v1beta1"
 	"go.uber.org/zap"
@@ -146,7 +147,7 @@ func installLicenseSecret(clientset *kubernetes.Clientset, licenseSecret corev1.
 		return errors.Wrap(err, "failed to marshal task message")
 	}
 	taskID := fmt.Sprintf("automated-install-slug-%s", appSlug)
-	if err := store.GetStore().SetTaskStatus(taskID, string(taskMessage), AutomatedInstallRunning); err != nil {
+	if err := tasks.SetTaskStatus(taskID, string(taskMessage), AutomatedInstallRunning); err != nil {
 		logger.Error(errors.Wrap(err, "failed to set task status"))
 	}
 
@@ -155,8 +156,8 @@ func installLicenseSecret(clientset *kubernetes.Clientset, licenseSecret corev1.
 	go func() {
 		for {
 			select {
-			case <-time.After(time.Second):
-				if err := store.GetStore().UpdateTaskStatusTimestamp(taskID); err != nil {
+			case <-time.After(time.Second * 2):
+				if err := tasks.UpdateTaskStatusTimestamp(taskID); err != nil {
 					logger.Error(errors.Wrapf(err, "failed to update task %s", taskID))
 				}
 			case <-finishedCh:
@@ -182,7 +183,7 @@ func installLicenseSecret(clientset *kubernetes.Clientset, licenseSecret corev1.
 			if err != nil {
 				logger.Error(errors.Wrap(err, "failed to marshal task message"))
 			}
-			if err := store.GetStore().SetTaskStatus(taskID, string(taskMessage), AutomatedInstallSuccess); err != nil {
+			if err := tasks.SetTaskStatus(taskID, string(taskMessage), AutomatedInstallSuccess); err != nil {
 				logger.Error(errors.Wrap(err, "failed to set error on install task status"))
 			}
 		} else {
@@ -190,7 +191,7 @@ func installLicenseSecret(clientset *kubernetes.Clientset, licenseSecret corev1.
 			if err != nil {
 				logger.Error(errors.Wrap(err, "failed to marshal task message"))
 			}
-			if err := store.GetStore().SetTaskStatus(taskID, string(taskMessage), AutomatedInstallFailed); err != nil {
+			if err := tasks.SetTaskStatus(taskID, string(taskMessage), AutomatedInstallFailed); err != nil {
 				logger.Error(errors.Wrap(err, "failed to set error on install task status"))
 			}
 		}
@@ -225,7 +226,7 @@ func installLicenseSecret(clientset *kubernetes.Clientset, licenseSecret corev1.
 		return errors.Wrapf(err, "failed to check if license already exists for app %s", appSlug)
 	}
 	if existingLicense != nil {
-		resolved, err := kotslicense.ResolveExistingLicense(verifiedLicense)
+		resolved, err := kotsadmlicense.ResolveExistingLicense(verifiedLicense)
 		if err != nil {
 			logger.Error(errors.Wrap(err, "failed to resolve existing license conflict"))
 		}

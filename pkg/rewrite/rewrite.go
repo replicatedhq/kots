@@ -21,7 +21,6 @@ import (
 	"github.com/replicatedhq/kots/pkg/midstream"
 	registrytypes "github.com/replicatedhq/kots/pkg/registry/types"
 	"github.com/replicatedhq/kots/pkg/rendered"
-	"github.com/replicatedhq/kots/pkg/store"
 	"github.com/replicatedhq/kots/pkg/upstream"
 	upstreamtypes "github.com/replicatedhq/kots/pkg/upstream/types"
 	kotsv1beta1 "github.com/replicatedhq/kotskinds/apis/kots/v1beta1"
@@ -309,10 +308,6 @@ func Rewrite(rewriteOptions RewriteOptions) error {
 
 	if err := writeDownstreams(rewriteOptions, u.GetOverlaysDir(writeUpstreamOptions), m, helmMidstreams, log); err != nil {
 		return errors.Wrap(err, "failed to write downstreams")
-	}
-
-	if err := store.GetStore().UpdateAppVersionInstallationSpec(rewriteOptions.AppID, rewriteOptions.AppSequence, renderedKotsKinds.Installation); err != nil {
-		return errors.Wrap(err, "failed to update installation spec")
 	}
 
 	if err := rendered.WriteRenderedApp(&rendered.WriteOptions{

@@ -2,6 +2,7 @@ package store
 
 import (
 	"github.com/replicatedhq/kots/pkg/store/kotsstore"
+	"github.com/replicatedhq/kots/pkg/util"
 )
 
 var (
@@ -12,11 +13,13 @@ var (
 var _ Store = (*kotsstore.KOTSStore)(nil)
 
 func GetStore() Store {
+	if util.IsUpgradeService() {
+		panic("store cannot not be used in the upgrade service")
+	}
 	if !hasStore {
 		globalStore = storeFromEnv()
 		hasStore = true
 	}
-
 	return globalStore
 }
 

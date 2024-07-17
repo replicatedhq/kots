@@ -22,7 +22,7 @@ import (
 	registrytypes "github.com/replicatedhq/kots/pkg/registry/types"
 	"github.com/replicatedhq/kots/pkg/render"
 	"github.com/replicatedhq/kots/pkg/store"
-	"github.com/replicatedhq/kots/pkg/version"
+	"github.com/replicatedhq/kots/pkg/tasks"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/kubernetes/scheme"
 )
@@ -132,7 +132,7 @@ func (h *Handler) UpdateAppRegistry(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	currentStatus, _, err := store.GetStore().GetTaskStatus("image-rewrite")
+	currentStatus, _, err := tasks.GetTaskStatus("image-rewrite")
 	if err != nil {
 		logger.Error(errors.Wrap(err, "failed to get image-rewrite taks status"))
 		updateAppRegistryResponse.Error = err.Error()
@@ -148,7 +148,7 @@ func (h *Handler) UpdateAppRegistry(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := store.GetStore().ClearTaskStatus("image-rewrite"); err != nil {
+	if err := tasks.ClearTaskStatus("image-rewrite"); err != nil {
 		logger.Error(errors.Wrap(err, "failed to clear image-rewrite taks status"))
 		updateAppRegistryResponse.Error = err.Error()
 		JSON(w, http.StatusInternalServerError, updateAppRegistryResponse)
@@ -225,7 +225,7 @@ func (h *Handler) UpdateAppRegistry(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// set task status before starting the goroutine so that the UI can show the status
-	if err := store.GetStore().SetTaskStatus("image-rewrite", "Updating registry settings", "running"); err != nil {
+	if err := tasks.SetTaskStatus("image-rewrite", "Updating registry settings", "running"); err != nil {
 		logger.Error(errors.Wrap(err, "failed to set task status"))
 		updateAppRegistryResponse.Error = err.Error()
 		JSON(w, http.StatusInternalServerError, updateAppRegistryResponse)
@@ -257,7 +257,7 @@ func (h *Handler) UpdateAppRegistry(w http.ResponseWriter, r *http.Request) {
 		}
 		defer os.RemoveAll(appDir)
 
-		newSequence, err := store.GetStore().CreateAppVersion(foundApp.ID, &latestSequence, appDir, "Registry Change", false, &version.DownstreamGitOps{}, render.Renderer{})
+		newSequence, err := store.GetStore().CreateAppVersion(foundApp.ID, &latestSequence, appDir, "Registry Change", false, render.Renderer{})
 		if err != nil {
 			logger.Error(errors.Wrap(err, "failed to create app version"))
 			return

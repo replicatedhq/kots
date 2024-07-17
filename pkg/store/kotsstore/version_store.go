@@ -1,7 +1,6 @@
 package kotsstore
 
 import (
-	"bytes"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
@@ -22,7 +21,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/binaries"
 	"github.com/replicatedhq/kots/pkg/cursor"
 	"github.com/replicatedhq/kots/pkg/filestore"
-	gitopstypes "github.com/replicatedhq/kots/pkg/gitops/types"
+	"github.com/replicatedhq/kots/pkg/gitops"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	kotsadmconfig "github.com/replicatedhq/kots/pkg/kotsadmconfig"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
@@ -38,7 +37,6 @@ import (
 	"github.com/rqlite/gorqlite"
 	velerov1 "github.com/vmware-tanzu/velero/pkg/apis/velero/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	serializer "k8s.io/apimachinery/pkg/runtime/serializer/json"
 	"k8s.io/client-go/kubernetes/scheme"
 	"sigs.k8s.io/application/api/v1beta1"
 )
@@ -244,74 +242,6 @@ func (s *KOTSStore) GetEmbeddedClusterConfigForVersion(appID string, sequence in
 	return embeddedClusterConfig, nil
 }
 
-// CreateAppVersion takes an unarchived app, makes an archive and then uploads it
-// to s3 with the appID and sequence specified
-func (s *KOTSStore) CreateAppVersionArchive(appID string, sequence int64, archivePath string) error {
-	paths := []string{
-		filepath.Join(archivePath, "upstream"),
-	}
-
-	basePath := filepath.Join(archivePath, "base")
-	if _, err := os.Stat(basePath); err == nil {
-		paths = append(paths, basePath)
-	}
-
-	overlaysPath := filepath.Join(archivePath, "overlays")
-	if _, err := os.Stat(overlaysPath); err == nil {
-		paths = append(paths, overlaysPath)
-	}
-
-	renderedPath := filepath.Join(archivePath, "rendered")
-	if _, err := os.Stat(renderedPath); err == nil {
-		paths = append(paths, renderedPath)
-	}
-
-	kotsKindsPath := filepath.Join(archivePath, "kotsKinds")
-	if _, err := os.Stat(kotsKindsPath); err == nil {
-		paths = append(paths, kotsKindsPath)
-	}
-
-	helmPath := filepath.Join(archivePath, "helm")
-	if _, err := os.Stat(helmPath); err == nil {
-		paths = append(paths, helmPath)
-	}
-
-	skippedFilesPath := filepath.Join(archivePath, "skippedFiles")
-	if _, err := os.Stat(skippedFilesPath); err == nil {
-		paths = append(paths, skippedFilesPath)
-	}
-
-	tmpDir, err := ioutil.TempDir("", "kotsadm")
-	if err != nil {
-		return errors.Wrap(err, "failed to create temp file")
-	}
-	defer os.RemoveAll(tmpDir)
-	fileToUpload := filepath.Join(tmpDir, "archive.tar.gz")
-
-	tarGz := archiver.TarGz{
-		Tar: &archiver.Tar{
-			ImplicitTopLevelFolder: false,
-		},
-	}
-	if err := tarGz.Archive(paths, fileToUpload); err != nil {
-		return errors.Wrap(err, "failed to create archive")
-	}
-
-	f, err := os.Open(fileToUpload)
-	if err != nil {
-		return errors.Wrap(err, "failed to open archive file")
-	}
-	defer f.Close()
-
-	outputPath := fmt.Sprintf("%s/%d.tar.gz", appID, sequence)
-	err = filestore.GetStore().WriteArchive(outputPath, f)
-	if err != nil {
-		return errors.Wrap(err, "failed to write archive")
-	}
-
-	return nil
-}
-
 // GetAppVersionArchive will fetch the archive and extract it into the given dstPath directory name
 func (s *KOTSStore) GetAppVersionArchive(appID string, sequence int64, dstPath string) error {
 	// too noisy
@@ -481,7 +411,7 @@ func (s *KOTSStore) CreatePendingDownloadAppVersion(appID string, update upstrea
 	return newSequence, nil
 }
 
-func (s *KOTSStore) UpdateAppVersion(appID string, sequence int64, baseSequence *int64, filesInDir string, source string, skipPreflights bool, gitops gitopstypes.DownstreamGitOps, renderer rendertypes.Renderer) error {
+func (s *KOTSStore) UpdateAppVersion(appID string, sequence int64, baseSequence *int64, filesInDir string, source string, skipPreflights bool, renderer rendertypes.Renderer) error {
 	// make sure version exists first
 	if v, err := s.GetAppVersion(appID, sequence); err != nil {
 		return errors.Wrap(err, "failed to get app version")
@@ -491,7 +421,7 @@ func (s *KOTSStore) UpdateAppVersion(appID string, sequence int64, baseSequence 
 
 	db := persistence.MustGetDBSession()
 
-	appVersionStatements, err := s.upsertAppVersionStatements(appID, sequence, baseSequence, filesInDir, source, skipPreflights, gitops, renderer)
+	appVersionStatements, err := s.upsertAppVersionStatements(appID, sequence, baseSequence, filesInDir, source, skipPreflights, renderer)
 	if err != nil {
 		return errors.Wrap(err, "failed to construct app version statements")
 	}
@@ -507,10 +437,10 @@ func (s *KOTSStore) UpdateAppVersion(appID string, sequence int64, baseSequence 
 	return nil
 }
 
-func (s *KOTSStore) CreateAppVersion(appID string, baseSequence *int64, filesInDir string, source string, skipPreflights bool, gitops gitopstypes.DownstreamGitOps, renderer rendertypes.Renderer) (int64, error) {
+func (s *KOTSStore) CreateAppVersion(appID string, baseSequence *int64, filesInDir string, source string, skipPreflights bool, renderer rendertypes.Renderer) (int64, error) {
 	db := persistence.MustGetDBSession()
 
-	appVersionStatements, newSequence, err := s.createAppVersionStatements(appID, baseSequence, filesInDir, source, skipPreflights, gitops, renderer)
+	appVersionStatements, newSequence, err := s.createAppVersionStatements(appID, baseSequence, filesInDir, source, skipPreflights, renderer)
 	if err != nil {
 		return 0, errors.Wrap(err, "failed to construct app version statements")
 	}
@@ -526,13 +456,13 @@ func (s *KOTSStore) CreateAppVersion(appID string, baseSequence *int64, filesInD
 	return newSequence, nil
 }
 
-func (s *KOTSStore) createAppVersionStatements(appID string, baseSequence *int64, filesInDir string, source string, skipPreflights bool, gitops gitopstypes.DownstreamGitOps, renderer rendertypes.Renderer) ([]gorqlite.ParameterizedStatement, int64, error) {
+func (s *KOTSStore) createAppVersionStatements(appID string, baseSequence *int64, filesInDir string, source string, skipPreflights bool, renderer rendertypes.Renderer) ([]gorqlite.ParameterizedStatement, int64, error) {
 	newSequence, err := s.GetNextAppSequence(appID)
 	if err != nil {
 		return nil, 0, errors.Wrap(err, "failed to get next sequence number")
 	}
 
-	appVersionStatements, err := s.upsertAppVersionStatements(appID, newSequence, baseSequence, filesInDir, source, skipPreflights, gitops, renderer)
+	appVersionStatements, err := s.upsertAppVersionStatements(appID, newSequence, baseSequence, filesInDir, source, skipPreflights, renderer)
 	if err != nil {
 		return nil, 0, errors.Wrap(err, "failed to construct app version statements")
 	}
@@ -540,7 +470,7 @@ func (s *KOTSStore) createAppVersionStatements(appID string, baseSequence *int64
 	return appVersionStatements, newSequence, nil
 }
 
-func (s *KOTSStore) upsertAppVersionStatements(appID string, sequence int64, baseSequence *int64, filesInDir string, source string, skipPreflights bool, gitops gitopstypes.DownstreamGitOps, renderer rendertypes.Renderer) ([]gorqlite.ParameterizedStatement, error) {
+func (s *KOTSStore) upsertAppVersionStatements(appID string, sequence int64, baseSequence *int64, filesInDir string, source string, skipPreflights bool, renderer rendertypes.Renderer) ([]gorqlite.ParameterizedStatement, error) {
 	statements := []gorqlite.ParameterizedStatement{}
 
 	kotsKinds, err := kotsutil.LoadKotsKinds(filesInDir)
@@ -590,7 +520,7 @@ func (s *KOTSStore) upsertAppVersionStatements(appID string, sequence int64, bas
 	if err := secrets.ReplaceSecretsInPath(filesInDir, clientset); err != nil {
 		return nil, errors.Wrap(err, "failed to replace secrets")
 	}
-	if err := s.CreateAppVersionArchive(appID, sequence, filesInDir); err != nil {
+	if err := apparchive.CreateAppVersionArchive(filesInDir, fmt.Sprintf("%s/%d.tar.gz", appID, sequence)); err != nil {
 		return nil, errors.Wrap(err, "failed to create app version archive")
 	}
 
@@ -611,11 +541,6 @@ func (s *KOTSStore) upsertAppVersionStatements(appID string, sequence int64, bas
 		previousArchiveDir = previousDir
 	}
 
-	registrySettings, err := s.GetRegistryDetailsForApp(appID)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to get app registry info")
-	}
-
 	downstreams, err := s.ListDownstreamsForApp(appID)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to list downstreams")
@@ -626,28 +551,9 @@ func (s *KOTSStore) upsertAppVersionStatements(appID string, sequence int64, bas
 	for _, d := range downstreams {
 		// there's a small chance this is not optimal, but no current code path
 		// will support multiple downstreams, so this is cleaner here for now
-		hasStrictPreflights, err := troubleshootpreflight.HasStrictAnalyzers(renderedPreflight)
+		downstreamStatus, err := s.determineDownstreamVersionStatus(a, sequence, baseSequence, kotsKinds, skipPreflights)
 		if err != nil {
-			return nil, errors.Wrap(err, "failed to check strict preflights from spec")
-		}
-		downstreamStatus := types.VersionPending
-		if baseSequence == nil && util.IsEmbeddedCluster() {
-			// embedded clusters always require cluster management on initial install
-			downstreamStatus = types.VersionPendingClusterManagement
-		} else if baseSequence == nil && kotsKinds.IsConfigurable() { // initial version should always require configuration (if exists) even if all required items are already set and have values (except for automated installs, which can override this later)
-			downstreamStatus = types.VersionPendingConfig
-		} else if kotsKinds.HasPreflights() && (!skipPreflights || hasStrictPreflights) {
-			downstreamStatus = types.VersionPendingPreflight
-		}
-		if baseSequence != nil { // only check if the version needs configuration for later versions (not the initial one) since the config is always required for the initial version (except for automated installs, which can override that later)
-			// check if version needs additional configuration
-			t, err := kotsadmconfig.NeedsConfiguration(a.Slug, sequence, a.IsAirgap, kotsKinds, registrySettings)
-			if err != nil {
-				return nil, errors.Wrap(err, "failed to check if version needs configuration")
-			}
-			if t {
-				downstreamStatus = types.VersionPendingConfig
-			}
+			return nil, errors.Wrap(err, "failed to determine downstream version status")
 		}
 
 		diffSummary, diffSummaryError := "", ""
@@ -665,7 +571,7 @@ func (s *KOTSStore) upsertAppVersionStatements(appID string, sequence int64, bas
 			}
 		}
 
-		commitURL, err := gitops.CreateGitOpsDownstreamCommit(appID, d.ClusterID, int(sequence), filesInDir, d.Name)
+		commitURL, err := gitops.CreateGitOpsDownstreamCommit(a, d.ClusterID, int(sequence), filesInDir, d.Name)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to create gitops commit")
 		}
@@ -826,6 +732,43 @@ func (s *KOTSStore) upsertAppVersionRecordStatements(appID string, sequence int6
 	return statements, nil
 }
 
+func (s *KOTSStore) determineDownstreamVersionStatus(a *apptypes.App, sequence int64, baseSequence *int64, kotsKinds *kotsutil.KotsKinds, skipPreflights bool) (types.DownstreamVersionStatus, error) {
+	if util.IsEmbeddedCluster() && baseSequence == nil {
+		// embedded clusters always require cluster management on initial install
+		return types.VersionPendingClusterManagement, nil
+	}
+
+	if kotsKinds.IsConfigurable() && baseSequence == nil {
+		// initial version should always require configuration (if exists) even if all required items are already set and have values (except for automated installs, which can override this later)
+		return types.VersionPendingConfig, nil
+	}
+
+	// only check if the version needs configuration for later versions (not the initial one) since the config is always required for the initial version (except for automated installs, which can override that later)
+	if baseSequence != nil {
+		registrySettings, err := s.GetRegistryDetailsForApp(a.ID)
+		if err != nil {
+			return types.VersionUnknown, errors.Wrap(err, "failed to get app registry info")
+		}
+		needsConfig, err := kotsadmconfig.NeedsConfiguration(a.Slug, sequence, a.IsAirgap, kotsKinds, registrySettings)
+		if err != nil {
+			return types.VersionUnknown, errors.Wrap(err, "failed to check if version needs configuration")
+		}
+		if needsConfig {
+			return types.VersionPendingConfig, nil
+		}
+	}
+
+	hasStrictPreflights, err := troubleshootpreflight.HasStrictAnalyzers(kotsKinds.Preflight)
+	if err != nil {
+		return types.VersionUnknown, errors.Wrap(err, "failed to check strict preflights from spec")
+	}
+	if kotsKinds.HasPreflights() && (!skipPreflights || hasStrictPreflights) {
+		return types.VersionPendingPreflight, nil
+	}
+
+	return types.VersionPending, nil
+}
+
 func (s *KOTSStore) upsertAppDownstreamVersionStatements(appID string, clusterID string, sequence int64, versionLabel string, status types.DownstreamVersionStatus, source string, diffSummary string, diffSummaryError string, commitURL string, gitDeployable bool, preflightsSkipped bool) ([]gorqlite.ParameterizedStatement, error) {
 	statements := []gorqlite.ParameterizedStatement{}
 
@@ -974,24 +917,6 @@ func (s *KOTSStore) UpdateNextAppVersionDiffSummary(appID string, baseSequence i
 		return fmt.Errorf("failed to write: %v: %v", err, wr.Err)
 	}
 
-	return nil
-}
-
-func (s *KOTSStore) UpdateAppVersionInstallationSpec(appID string, sequence int64, installation kotsv1beta1.Installation) error {
-	ser := serializer.NewYAMLSerializer(serializer.DefaultMetaFactory, scheme.Scheme, scheme.Scheme)
-	var b bytes.Buffer
-	if err := ser.Encode(&installation, &b); err != nil {
-		return errors.Wrap(err, "failed to encode installation")
-	}
-
-	db := persistence.MustGetDBSession()
-	wr, err := db.WriteOneParameterized(gorqlite.ParameterizedStatement{
-		Query:     `UPDATE app_version SET kots_installation_spec = ? WHERE app_id = ? AND sequence = ?`,
-		Arguments: []interface{}{b.String(), appID, sequence},
-	})
-	if err != nil {
-		return fmt.Errorf("failed to write: %v: %v", err, wr.Err)
-	}
 	return nil
 }
 

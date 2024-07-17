@@ -13,6 +13,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/reporting"
 	"github.com/replicatedhq/kots/pkg/store"
+	"github.com/replicatedhq/kots/pkg/tasks"
 )
 
 type UpdateAppGitOpsRequest struct {
@@ -103,7 +104,7 @@ func (h *Handler) DisableAppGitOps(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) InitGitOpsConnection(w http.ResponseWriter, r *http.Request) {
-	currentStatus, _, err := store.GetStore().GetTaskStatus("gitops-init")
+	currentStatus, _, err := tasks.GetTaskStatus("gitops-init")
 	if err != nil {
 		logger.Error(err)
 		w.WriteHeader(http.StatusInternalServerError)
@@ -187,7 +188,7 @@ func (h *Handler) InitGitOpsConnection(w http.ResponseWriter, r *http.Request) {
 	}
 
 	go func() {
-		if err := store.GetStore().SetTaskStatus("gitops-init", "Creating commits ...", "running"); err != nil {
+		if err := tasks.SetTaskStatus("gitops-init", "Creating commits ...", "running"); err != nil {
 			logger.Error(errors.Wrap(err, "failed to set task status running"))
 			return
 		}
@@ -195,11 +196,11 @@ func (h *Handler) InitGitOpsConnection(w http.ResponseWriter, r *http.Request) {
 		var finalError error
 		defer func() {
 			if finalError == nil {
-				if err := store.GetStore().ClearTaskStatus("gitops-init"); err != nil {
+				if err := tasks.ClearTaskStatus("gitops-init"); err != nil {
 					logger.Error(errors.Wrap(err, "failed to clear task status"))
 				}
 			} else {
-				if err := store.GetStore().SetTaskStatus("gitops-init", finalError.Error(), "failed"); err != nil {
+				if err := tasks.SetTaskStatus("gitops-init", finalError.Error(), "failed"); err != nil {
 					logger.Error(errors.Wrap(err, "failed to set task status error"))
 				}
 			}

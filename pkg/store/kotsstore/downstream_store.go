@@ -14,6 +14,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/persistence"
 	"github.com/replicatedhq/kots/pkg/store/types"
+	"github.com/replicatedhq/kots/pkg/tasks"
 	kotsv1beta1 "github.com/replicatedhq/kotskinds/apis/kots/v1beta1"
 	"github.com/rqlite/gorqlite"
 )
@@ -613,7 +614,7 @@ func (s *KOTSStore) AddDownstreamVersionsDetails(appID string, clusterID string,
 
 		if version.Status == types.VersionPendingDownload {
 			downloadTaskID := fmt.Sprintf("update-download.%d", version.Sequence)
-			downloadStatus, downloadStatusMessage, err := s.GetTaskStatus(downloadTaskID)
+			downloadStatus, downloadStatusMessage, err := tasks.GetTaskStatus(downloadTaskID)
 			if err != nil {
 				// don't fail on this
 				logger.Error(errors.Wrap(err, fmt.Sprintf("failed to get %s task status", downloadTaskID)))

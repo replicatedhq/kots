@@ -42,6 +42,17 @@ func getHostFromEndpoint(endpoint string) (string, error) {
 	return parsed.Host, nil
 }
 
+func splitEndpointAndNamespace(endpoint string) (string, string) {
+	registryEndpoint := endpoint
+	registryNamespace := ""
+	parts := strings.Split(endpoint, "/")
+	if len(parts) > 1 {
+		registryEndpoint = parts[0]
+		registryNamespace = strings.Join(parts[1:], "/")
+	}
+	return registryEndpoint, registryNamespace
+}
+
 func extractPreferredChannelSlug(upstreamURI string) (string, error) {
 	u, err := url.ParseRequestURI(upstreamURI)
 	if err != nil {
