@@ -162,6 +162,28 @@ func InstallCmd() *cobra.Command {
 			}()
 
 			upstream := pull.RewriteUpstream(args[0])
+			preferredChannelSlug, err := extractPreferredChannelSlug(upstream)
+			if err != nil {
+				return errors.Wrap(err, "failed to extract preferred channel slug")
+			}
+
+			// use the preferred channel slug to find the matching channel id in the license
+			requestedChannelID := ""
+			if license != nil {
+				if license.Spec.Channels == nil { // this is a license format without multiple channels
+					requestedChannelID = license.Spec.ChannelID
+				} else if len(license.Spec.Channels) > 0 {
+					for _, channel := range license.Spec.Channels {
+						if channel.Slug == preferredChannelSlug {
+							requestedChannelID = channel.ID
+							break
+						}
+					}
+					return errors.New("requested channel not found in license")
+				} else {
+					return errors.New("no channel id found in license")
+				}
+			}
 
 			namespace := v.GetString("namespace")
 
@@ -278,6 +300,7 @@ func InstallCmd() *cobra.Command {
 				IncludeMinio:           v.GetBool("with-minio"),
 				IncludeMinioSnapshots:  v.GetBool("with-minio"),
 				StrictSecurityContext:  v.GetBool("strict-security-context"),
+				RequestedChannelID:     requestedChannelID,
 
 				RegistryConfig: *registryConfig,
 

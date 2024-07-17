@@ -1139,6 +1139,7 @@ type InstallationParams struct {
 	WaitDuration           time.Duration
 	WithMinio              bool
 	AppVersionLabel        string
+	RequestedChannelID     string
 }
 
 func GetInstallationParams(configMapName string) (InstallationParams, error) {
@@ -1174,6 +1175,7 @@ func GetInstallationParams(configMapName string) (InstallationParams, error) {
 	autoConfig.WaitDuration, _ = time.ParseDuration(kotsadmConfigMap.Data["wait-duration"])
 	autoConfig.WithMinio, _ = strconv.ParseBool(kotsadmConfigMap.Data["with-minio"])
 	autoConfig.AppVersionLabel = kotsadmConfigMap.Data["app-version-label"]
+	autoConfig.RequestedChannelID = kotsadmConfigMap.Data["requested-channel-id"]
 
 	if enableImageDeletion, ok := kotsadmConfigMap.Data["enable-image-deletion"]; ok {
 		autoConfig.EnableImageDeletion, _ = strconv.ParseBool(enableImageDeletion)

@@ -146,7 +146,7 @@ func (s *KOTSStore) GetAppIDFromSlug(slug string) (string, error) {
 
 func (s *KOTSStore) GetApp(id string) (*apptypes.App, error) {
 	db := persistence.MustGetDBSession()
-	query := `select id, name, license, upstream_uri, icon_uri, created_at, updated_at, slug, current_sequence, last_update_check_at, last_license_sync, is_airgap, snapshot_ttl_new, snapshot_schedule, restore_in_progress_name, restore_undeploy_status, update_checker_spec, semver_auto_deploy, install_state, channel_changed from app where id = ?`
+	query := `select id, name, license, upstream_uri, icon_uri, created_at, updated_at, slug, current_sequence, last_update_check_at, last_license_sync, is_airgap, snapshot_ttl_new, snapshot_schedule, restore_in_progress_name, restore_undeploy_status, update_checker_spec, semver_auto_deploy, install_state, channel_changed, channel_id from app where id = ?`
 	rows, err := db.QueryOneParameterized(gorqlite.ParameterizedStatement{
 		Query:     query,
 		Arguments: []interface{}{id},
@@ -173,8 +173,9 @@ func (s *KOTSStore) GetApp(id string) (*apptypes.App, error) {
 	var restoreUndeployStatus gorqlite.NullString
 	var updateCheckerSpec gorqlite.NullString
 	var autoDeploy gorqlite.NullString
+	var channelID gorqlite.NullString
 
-	if err := rows.Scan(&app.ID, &app.Name, &licenseStr, &upstreamURI, &iconURI, &app.CreatedAt, &updatedAt, &app.Slug, &currentSequence, &lastUpdateCheckAt, &lastLicenseSync, &app.IsAirgap, &snapshotTTLNew, &snapshotSchedule, &restoreInProgressName, &restoreUndeployStatus, &updateCheckerSpec, &autoDeploy, &app.InstallState, &app.ChannelChanged); err != nil {
+	if err := rows.Scan(&app.ID, &app.Name, &licenseStr, &upstreamURI, &iconURI, &app.CreatedAt, &updatedAt, &app.Slug, &currentSequence, &lastUpdateCheckAt, &lastLicenseSync, &app.IsAirgap, &snapshotTTLNew, &snapshotSchedule, &restoreInProgressName, &restoreUndeployStatus, &updateCheckerSpec, &autoDeploy, &app.InstallState, &app.ChannelChanged, &channelID); err != nil {
 		return nil, errors.Wrap(err, "failed to scan app")
 	}
 
@@ -187,6 +188,7 @@ func (s *KOTSStore) GetApp(id string) (*apptypes.App, error) {
 	app.RestoreUndeployStatus = apptypes.UndeployStatus(restoreUndeployStatus.String)
 	app.UpdateCheckerSpec = updateCheckerSpec.String
 	app.AutoDeploy = apptypes.AutoDeploy(autoDeploy.String)
+	app.ChannelID = channelID.String
 
 	if lastLicenseSync.Valid {
 		app.LastLicenseSync = lastLicenseSync.Time.Format(time.RFC3339)
@@ -279,10 +281,12 @@ func (s *KOTSStore) GetAppFromSlug(slug string) (*apptypes.App, error) {
 	return s.GetApp(id)
 }
 
-func (s *KOTSStore) CreateApp(name string, upstreamURI string, licenseData string, isAirgapEnabled bool, skipImagePush bool, registryIsReadOnly bool) (*apptypes.App, error) {
+func (s *KOTSStore) CreateApp(name string, channelID string, upstreamURI string, licenseData string, isAirgapEnabled bool, skipImagePush bool, registryIsReadOnly bool) (*apptypes.App, error) {
 	logger.Debug("creating app",
 		zap.String("name", name),
-		zap.String("upstreamURI", upstreamURI))
+		zap.String("upstreamURI", upstreamURI),
+		zap.String("channelID", channelID),
+	)
 
 	db := persistence.MustGetDBSession()
 
@@ -337,10 +341,10 @@ func (s *KOTSStore) CreateApp(name string, upstreamURI string, licenseData strin
 
 	id := ksuid.New().String()
 
-	query := `insert into app (id, name, icon_uri, created_at, slug, upstream_uri, license, is_all_users, install_state, registry_is_readonly) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+	query := `insert into app (id, name, icon_uri, created_at, slug, upstream_uri, license, is_all_users, install_state, registry_is_readonly, channel_id) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
 	wr, err := db.WriteOneParameterized(gorqlite.ParameterizedStatement{
 		Query:     query,
-		Arguments: []interface{}{id, name, "", time.Now().Unix(), slugProposal, upstreamURI, licenseData, true, installState, registryIsReadOnly},
+		Arguments: []interface{}{id, name, "", time.Now().Unix(), slugProposal, upstreamURI, licenseData, true, installState, registryIsReadOnly, channelID},
 	})
 	if err != nil {
 		return nil, fmt.Errorf("failed to insert app: %v: %v", err, wr.Err)
@@ -590,6 +594,21 @@ func (s *KOTSStore) SetAppChannelChanged(appID string, channelChanged bool) erro
 	})
 	if err != nil {
 		return fmt.Errorf("failed to update app channel changed flag: %v: %v", err, wr.Err)
+	}
+
+	return nil
+}
+
+func (s *KOTSStore) SetAppChannelID(appID string, channelID string) error {
+	db := persistence.MustGetDBSession()
+
+	query := `update app set channel_id = ? where id = ?`
+	wr, err := db.WriteOneParameterized(gorqlite.ParameterizedStatement{
+		Query:     query,
+		Arguments: []interface{}{channelID, appID},
+	})
+	if err != nil {
+		return fmt.Errorf("failed to update app channel id: %v: %v", err, wr.Err)
 	}
 
 	return nil

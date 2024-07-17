@@ -244,7 +244,7 @@ func installLicenseSecret(clientset *kubernetes.Clientset, licenseSecret corev1.
 	desiredAppName := strings.Replace(appSlug, "-", " ", 0)
 	upstreamURI := fmt.Sprintf("replicated://%s", appSlug)
 
-	a, err := store.GetStore().CreateApp(desiredAppName, upstreamURI, string(license), verifiedLicense.Spec.IsAirgapSupported, instParams.SkipImagePush, instParams.RegistryIsReadOnly)
+	a, err := store.GetStore().CreateApp(desiredAppName, instParams.RequestedChannelID, upstreamURI, string(license), verifiedLicense.Spec.IsAirgapSupported, instParams.SkipImagePush, instParams.RegistryIsReadOnly)
 	if err != nil {
 		return errors.Wrap(err, "failed to create app record")
 	}

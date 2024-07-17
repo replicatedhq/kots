@@ -97,18 +97,18 @@ func (mr *MockStoreMockRecorder) AddDownstreamVersionsDetails(appID, clusterID, 
 }
 
 // CreateApp mocks base method.
-func (m *MockStore) CreateApp(name, upstreamURI, licenseData string, isAirgapEnabled, skipImagePush, registryIsReadOnly bool) (*types3.App, error) {
+func (m *MockStore) CreateApp(name, channelID, upstreamURI, licenseData string, isAirgapEnabled, skipImagePush, registryIsReadOnly bool) (*types3.App, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "CreateApp", name, upstreamURI, licenseData, isAirgapEnabled, skipImagePush, registryIsReadOnly)
+	ret := m.ctrl.Call(m, "CreateApp", name, channelID, upstreamURI, licenseData, isAirgapEnabled, skipImagePush, registryIsReadOnly)
 	ret0, _ := ret[0].(*types3.App)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // CreateApp indicates an expected call of CreateApp.
-func (mr *MockStoreMockRecorder) CreateApp(name, upstreamURI, licenseData, isAirgapEnabled, skipImagePush, registryIsReadOnly interface{}) *gomock.Call {
+func (mr *MockStoreMockRecorder) CreateApp(name, channelID, upstreamURI, licenseData, isAirgapEnabled, skipImagePush, registryIsReadOnly interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateApp", reflect.TypeOf((*MockStore)(nil).CreateApp), name, upstreamURI, licenseData, isAirgapEnabled, skipImagePush, registryIsReadOnly)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateApp", reflect.TypeOf((*MockStore)(nil).CreateApp), name, channelID, upstreamURI, licenseData, isAirgapEnabled, skipImagePush, registryIsReadOnly)
 }
 
 // CreateAppVersion mocks base method.
@@ -1518,6 +1518,20 @@ func (mr *MockStoreMockRecorder) SetAppChannelChanged(appID, channelChanged inte
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetAppChannelChanged", reflect.TypeOf((*MockStore)(nil).SetAppChannelChanged), appID, channelChanged)
 }
 
+// SetAppChannelID mocks base method.
+func (m *MockStore) SetAppChannelID(appID, channelID string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SetAppChannelID", appID, channelID)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// SetAppChannelID indicates an expected call of SetAppChannelID.
+func (mr *MockStoreMockRecorder) SetAppChannelID(appID, channelID interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetAppChannelID", reflect.TypeOf((*MockStore)(nil).SetAppChannelID), appID, channelID)
+}
+
 // SetAppInstallState mocks base method.
 func (m *MockStore) SetAppInstallState(appID, state string) error {
 	m.ctrl.T.Helper()
@@ -2680,18 +2694,18 @@ func (mr *MockAppStoreMockRecorder) AddAppToAllDownstreams(appID interface{}) *g
 }
 
 // CreateApp mocks base method.
-func (m *MockAppStore) CreateApp(name, upstreamURI, licenseData string, isAirgapEnabled, skipImagePush, registryIsReadOnly bool) (*types3.App, error) {
+func (m *MockAppStore) CreateApp(name, channelID, upstreamURI, licenseData string, isAirgapEnabled, skipImagePush, registryIsReadOnly bool) (*types3.App, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "CreateApp", name, upstreamURI, licenseData, isAirgapEnabled, skipImagePush, registryIsReadOnly)
+	ret := m.ctrl.Call(m, "CreateApp", name, channelID, upstreamURI, licenseData, isAirgapEnabled, skipImagePush, registryIsReadOnly)
 	ret0, _ := ret[0].(*types3.App)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // CreateApp indicates an expected call of CreateApp.
-func (mr *MockAppStoreMockRecorder) CreateApp(name, upstreamURI, licenseData, isAirgapEnabled, skipImagePush, registryIsReadOnly interface{}) *gomock.Call {
+func (mr *MockAppStoreMockRecorder) CreateApp(name, channelID, upstreamURI, licenseData, isAirgapEnabled, skipImagePush, registryIsReadOnly interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateApp", reflect.TypeOf((*MockAppStore)(nil).CreateApp), name, upstreamURI, licenseData, isAirgapEnabled, skipImagePush, registryIsReadOnly)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateApp", reflect.TypeOf((*MockAppStore)(nil).CreateApp), name, channelID, upstreamURI, licenseData, isAirgapEnabled, skipImagePush, registryIsReadOnly)
 }
 
 // GetApp mocks base method.
@@ -2870,6 +2884,20 @@ func (m *MockAppStore) SetAppChannelChanged(appID string, channelChanged bool) e
 func (mr *MockAppStoreMockRecorder) SetAppChannelChanged(appID, channelChanged interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetAppChannelChanged", reflect.TypeOf((*MockAppStore)(nil).SetAppChannelChanged), appID, channelChanged)
+}
+
+// SetAppChannelID mocks base method.
+func (m *MockAppStore) SetAppChannelID(appID, channelID string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SetAppChannelID", appID, channelID)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// SetAppChannelID indicates an expected call of SetAppChannelID.
+func (mr *MockAppStoreMockRecorder) SetAppChannelID(appID, channelID interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetAppChannelID", reflect.TypeOf((*MockAppStore)(nil).SetAppChannelID), appID, channelID)
 }
 
 // SetAppInstallState mocks base method.
