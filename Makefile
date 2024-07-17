@@ -134,11 +134,11 @@ all-ttl.sh: build-ttl.sh
 		DOCKER_BUILD_ARGS="--platform $(GOOS)/$(GOARCH)" \
 		make -C migrations build_schema
 
-	docker pull --platform $(GOOS)/$(GOARCH)" kotsadm/minio:${MINIO_TAG}
+	docker pull --platform $(GOOS)/$(GOARCH) kotsadm/minio:${MINIO_TAG}
 	docker tag kotsadm/minio:${MINIO_TAG} ttl.sh/${CURRENT_USER}/minio:${MINIO_TAG}
 	docker push ttl.sh/${CURRENT_USER}/minio:${MINIO_TAG}
 
-	docker pull --platform $(GOOS)/$(GOARCH)" kotsadm/rqlite:${RQLITE_TAG}
+	docker pull --platform $(GOOS)/$(GOARCH) kotsadm/rqlite:${RQLITE_TAG}
 	docker tag kotsadm/rqlite:${RQLITE_TAG} ttl.sh/${CURRENT_USER}/rqlite:${RQLITE_TAG}
 	docker push ttl.sh/${CURRENT_USER}/rqlite:${RQLITE_TAG}
 
