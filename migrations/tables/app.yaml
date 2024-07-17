@@ -85,3 +85,5 @@ spec:
         default: 0
         constraints:
           notNull: true
+      - name: channel_id
+        type: text
