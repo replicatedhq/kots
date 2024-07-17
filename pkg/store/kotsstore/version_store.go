@@ -650,10 +650,6 @@ func (s *KOTSStore) upsertAppVersionRecordStatements(appID string, sequence int6
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to marshal config spec")
 	}
-	configValuesSpec, err := kotsKinds.Marshal("kots.io", "v1beta1", "ConfigValues")
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to marshal configvalues spec")
-	}
 
 	embeddedClusterConfig, err := kotsKinds.Marshal("embeddedcluster.replicated.com", "v1beta1", "Config")
 	if err != nil {
@@ -667,7 +663,7 @@ func (s *KOTSStore) upsertAppVersionRecordStatements(appID string, sequence int6
 	}
 
 	query := `insert into app_version (app_id, sequence, created_at, version_label, is_required, release_notes, update_cursor, channel_id, channel_name, upstream_released_at, encryption_key,
-		supportbundle_spec, analyzer_spec, preflight_spec, app_spec, kots_app_spec, kots_installation_spec, kots_license, config_spec, config_values, backup_spec, identity_spec, branding_archive, embeddedcluster_config)
+		supportbundle_spec, analyzer_spec, preflight_spec, app_spec, kots_app_spec, kots_installation_spec, kots_license, config_spec, backup_spec, identity_spec, branding_archive, embeddedcluster_config)
 		values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 		ON CONFLICT(app_id, sequence) DO UPDATE SET
 		created_at = EXCLUDED.created_at,
@@ -687,7 +683,6 @@ func (s *KOTSStore) upsertAppVersionRecordStatements(appID string, sequence int6
 		kots_installation_spec = EXCLUDED.kots_installation_spec,
 		kots_license = EXCLUDED.kots_license,
 		config_spec = EXCLUDED.config_spec,
-		config_values = EXCLUDED.config_values,
 		backup_spec = EXCLUDED.backup_spec,
 		identity_spec = EXCLUDED.identity_spec,
 		branding_archive = EXCLUDED.branding_archive,
@@ -715,7 +710,6 @@ func (s *KOTSStore) upsertAppVersionRecordStatements(appID string, sequence int6
 			kotsInstallationSpec,
 			licenseSpec,
 			configSpec,
-			configValuesSpec,
 			backupSpec,
 			identitySpec,
 			base64.StdEncoding.EncodeToString(brandingArchive),

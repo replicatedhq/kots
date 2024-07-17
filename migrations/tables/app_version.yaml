@@ -57,8 +57,6 @@ spec:
         type: text
       - name: config_spec
         type: text
-      - name: config_values
-        type: text
       - name: applied_at
         type: integer
       - name: status

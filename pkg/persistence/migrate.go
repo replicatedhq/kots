@@ -730,7 +730,6 @@ SELECT
 	kots_installation_spec,
 	kots_license,
 	config_spec,
-	config_values,
 	applied_at,
 	status,
 	encryption_key,
@@ -762,7 +761,6 @@ FROM app_version`
 		var kotsInstallationSpec sql.NullString
 		var kotsLicense sql.NullString
 		var configSpec sql.NullString
-		var configValues sql.NullString
 		var appliedAt NullStringTime
 		var status sql.NullString
 		var encryptionKey sql.NullString
@@ -789,7 +787,6 @@ FROM app_version`
 			&kotsInstallationSpec,
 			&kotsLicense,
 			&configSpec,
-			&configValues,
 			&appliedAt,
 			&status,
 			&encryptionKey,
@@ -875,10 +872,6 @@ FROM app_version`
 		if configSpec.Valid {
 			columns = append(columns, "config_spec")
 			args = append(args, configSpec.String)
-		}
-		if configValues.Valid {
-			columns = append(columns, "config_values")
-			args = append(args, configValues.String)
 		}
 		if appliedAt.Valid {
 			columns = append(columns, "applied_at")
