@@ -334,7 +334,6 @@ func (h *Handler) UploadNewLicense(w http.ResponseWriter, r *http.Request) {
 	desiredAppName := strings.Replace(verifiedLicense.Spec.AppSlug, "-", " ", 0)
 	upstreamURI := fmt.Sprintf("replicated://%s", verifiedLicense.Spec.AppSlug)
 
-	// TODO: FLORIAN - Validate requested channel ID here and back fill as needed!
 	a, err := store.GetStore().CreateApp(desiredAppName, installationParams.RequestedChannelID, upstreamURI, licenseString, verifiedLicense.Spec.IsAirgapSupported, installationParams.SkipImagePush, installationParams.RegistryIsReadOnly)
 	if err != nil {
 		logger.Error(err)

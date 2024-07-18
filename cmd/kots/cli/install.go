@@ -174,12 +174,14 @@ func InstallCmd() *cobra.Command {
 					requestedChannelID = license.Spec.ChannelID
 				} else if len(license.Spec.Channels) > 0 {
 					for _, channel := range license.Spec.Channels {
-						if channel.Slug == preferredChannelSlug {
-							requestedChannelID = channel.ID
+						if channel.ChannelSlug == preferredChannelSlug {
+							requestedChannelID = channel.ChannelID
 							break
 						}
 					}
-					return errors.New("requested channel not found in license")
+					if requestedChannelID == "" {
+						return errors.New("requested channel not found in license")
+					}
 				} else {
 					return errors.New("no channel id found in license")
 				}
