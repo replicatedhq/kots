@@ -75,3 +75,8 @@ cosign verify-blob --key sbom/key.pub --signature sbom/kots-sbom.tgz.sig sbom/ko
     ```
 1. Visit the Admin Console URL. For VS Code:
    ![Image 2024-02-23 at 2 55 11 PM](https://github.com/replicatedhq/kots/assets/39952863/aa86019f-0111-4d04-a142-3dfc539858a2)
+
+1. If you'll be working on the webapp or plan on using `make all-ttl.sh` for local testing, be sure to setup yarn:
+    ```bash
+   cd web && yarn
+    ```
