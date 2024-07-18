@@ -1139,7 +1139,7 @@ type InstallationParams struct {
 	WaitDuration           time.Duration
 	WithMinio              bool
 	AppVersionLabel        string
-	RequestedChannelID     string
+	RequestedChannelSlug   string
 }
 
 func GetInstallationParams(configMapName string) (InstallationParams, error) {
@@ -1175,7 +1175,7 @@ func GetInstallationParams(configMapName string) (InstallationParams, error) {
 	autoConfig.WaitDuration, _ = time.ParseDuration(kotsadmConfigMap.Data["wait-duration"])
 	autoConfig.WithMinio, _ = strconv.ParseBool(kotsadmConfigMap.Data["with-minio"])
 	autoConfig.AppVersionLabel = kotsadmConfigMap.Data["app-version-label"]
-	autoConfig.RequestedChannelID = kotsadmConfigMap.Data["requested-channel-id"]
+	autoConfig.RequestedChannelSlug = kotsadmConfigMap.Data["requested-channel-slug"]
 
 	if enableImageDeletion, ok := kotsadmConfigMap.Data["enable-image-deletion"]; ok {
 		autoConfig.EnableImageDeletion, _ = strconv.ParseBool(enableImageDeletion)
@@ -1599,4 +1599,40 @@ func GetECVersionFromAirgapBundle(airgapBundle string) (string, error) {
 		return "", errors.New("installer version not found in embedded cluster metadata")
 	}
 	return ecVersion, nil
+}
+
+func FindRequestedChannelID(requestedSlug string, license *kotsv1beta1.License) (string, error) {
+	matchedChannelID := ""
+	if requestedSlug != "" {
+		// if we do not have a Channels array or its empty, default to using the top level fields for backwards compatibility
+		if len(license.Spec.Channels) == 0 {
+			logger.Debug("not a multi-channel license, using top level license channel id")
+			matchedChannelID = license.Spec.ChannelID
+		} else {
+			for _, channel := range license.Spec.Channels {
+				if channel.ChannelSlug == requestedSlug {
+					matchedChannelID = channel.ChannelID
+					break
+				}
+			}
+			if matchedChannelID == "" {
+				return "", errors.New("requested install channel slug not found in license channels")
+			}
+		}
+	} else { // this is an install from before the channel slug was added to the configmap
+		logger.Debug("requested channel slug not found in configmap, using top level channel id from license")
+		matchedChannelID = license.Spec.ChannelID
+	}
+	return matchedChannelID, nil
+}
+
+func FindChannel(license *kotsv1beta1.License, channelID string) *kotsv1beta1.Channel {
+	if len(license.Spec.Channels) > 0 {
+		for _, channel := range license.Spec.Channels {
+			if channel.ChannelID == channelID {
+				return &channel
+			}
+		}
+	}
+	return nil
 }

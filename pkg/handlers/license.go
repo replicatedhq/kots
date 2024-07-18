@@ -334,7 +334,16 @@ func (h *Handler) UploadNewLicense(w http.ResponseWriter, r *http.Request) {
 	desiredAppName := strings.Replace(verifiedLicense.Spec.AppSlug, "-", " ", 0)
 	upstreamURI := fmt.Sprintf("replicated://%s", verifiedLicense.Spec.AppSlug)
 
-	a, err := store.GetStore().CreateApp(desiredAppName, installationParams.RequestedChannelID, upstreamURI, licenseString, verifiedLicense.Spec.IsAirgapSupported, installationParams.SkipImagePush, installationParams.RegistryIsReadOnly)
+	// verify that requested channel slug exists in the license
+	matchedChannelID, err := kotsutil.FindRequestedChannelID(installationParams.RequestedChannelSlug, verifiedLicense)
+	if err != nil {
+		logger.Error(err)
+		uploadLicenseResponse.Error = "Requested install channel not found in license"
+		JSON(w, http.StatusBadRequest, uploadLicenseResponse)
+		return
+	}
+
+	a, err := store.GetStore().CreateApp(desiredAppName, matchedChannelID, upstreamURI, licenseString, verifiedLicense.Spec.IsAirgapSupported, installationParams.SkipImagePush, installationParams.RegistryIsReadOnly)
 	if err != nil {
 		logger.Error(err)
 		uploadLicenseResponse.Error = err.Error()

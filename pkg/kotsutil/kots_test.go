@@ -1057,3 +1057,102 @@ status: {}
 		})
 	}
 }
+
+func TestFindRequestedChannelID(t *testing.T) {
+	tests := []struct {
+		name              string
+		license           *kotsv1beta1.License
+		requestedSlug     string
+		expectedChannelID string
+		expectError       bool
+	}{
+		{
+			name: "Found slug",
+			license: &kotsv1beta1.License{
+				Spec: kotsv1beta1.LicenseSpec{
+					Channels: []kotsv1beta1.Channel{
+						{
+							ChannelID:   "channel-id-1",
+							ChannelSlug: "slug-1",
+							IsDefault:   true,
+						},
+						{
+							ChannelID:   "channel-id-2",
+							ChannelSlug: "slug-2",
+							IsDefault:   false,
+						},
+					},
+				},
+			},
+			requestedSlug:     "slug-2",
+			expectedChannelID: "channel-id-2",
+			expectError:       false,
+		},
+		{
+			name: "Empty requested slug",
+			license: &kotsv1beta1.License{
+				Spec: kotsv1beta1.LicenseSpec{
+					ChannelID: "top-level-channel-id",
+					Channels: []kotsv1beta1.Channel{
+						{
+							ChannelID:   "channel-id-1",
+							ChannelSlug: "channel-slug-1",
+						},
+						{
+							ChannelID:   "channel-id-2",
+							ChannelSlug: "channel-slug-2",
+						},
+					},
+				},
+			},
+			requestedSlug:     "",
+			expectedChannelID: "top-level-channel-id",
+			expectError:       false,
+		},
+		{
+			name: "Legacy license with no / empty channels",
+			license: &kotsv1beta1.License{
+				Spec: kotsv1beta1.LicenseSpec{
+					ChannelID: "test-channel-id",
+				},
+			},
+			requestedSlug:     "test-slug",
+			expectedChannelID: "test-channel-id",
+			expectError:       false,
+		},
+		{
+			name: "No matching slug should error",
+			license: &kotsv1beta1.License{
+				Spec: kotsv1beta1.LicenseSpec{
+					ChannelID: "top-level-channel-id",
+					Channels: []kotsv1beta1.Channel{
+						{
+							ChannelID:   "channel-id-1",
+							ChannelSlug: "channel-slug-1",
+						},
+						{
+							ChannelID:   "channel-id-2",
+							ChannelSlug: "channel-slug-2",
+						},
+					},
+				},
+			},
+			requestedSlug:     "non-existent-slug",
+			expectedChannelID: "",
+			expectError:       true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			channelID, err := kotsutil.FindRequestedChannelID(tt.requestedSlug, tt.license)
+
+			if tt.expectError {
+				require.Error(t, err)
+			} else {
+				require.NoError(t, err)
+				require.Equal(t, tt.expectedChannelID, channelID)
+			}
+		})
+	}
+}

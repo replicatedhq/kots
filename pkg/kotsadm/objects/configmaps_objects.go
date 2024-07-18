@@ -25,7 +25,7 @@ func KotsadmConfigMap(deployOptions types.DeployOptions) *corev1.ConfigMap {
 		"wait-duration":             fmt.Sprintf("%v", deployOptions.Timeout),
 		"with-minio":                fmt.Sprintf("%v", deployOptions.IncludeMinio),
 		"app-version-label":         deployOptions.AppVersionLabel,
-		"requested-channel-id":      deployOptions.RequestedChannelID,
+		"requested-channel-slug":    deployOptions.RequestedChannelSlug,
 	}
 
 	if kotsadmversion.KotsadmPullSecret(deployOptions.Namespace, deployOptions.RegistryConfig) != nil {

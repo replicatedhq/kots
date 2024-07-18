@@ -150,6 +150,44 @@ func TestGetAvailableUpdates(t *testing.T) {
 			want:    []types.AvailableUpdate{},
 			wantErr: true,
 		},
+		{
+			name: "uses installed channel id when multi-channel present",
+			args: args{
+				kotsStore: mockStore,
+				app: &apptypes.App{
+					ID:        "app-id",
+					ChannelID: "channel-id2", // explicitly using the non-default channel
+				},
+				license: &kotsv1beta1.License{
+					Spec: kotsv1beta1.LicenseSpec{
+						ChannelID:   "channel-id",
+						ChannelName: "channel-name",
+						AppSlug:     "app-slug",
+						LicenseID:   "license-id",
+						Channels: []kotsv1beta1.Channel{
+							{
+								ChannelID:   "channel-id",
+								ChannelName: "channel-name",
+								IsDefault:   true,
+							},
+							{
+								ChannelID:   "channel-id2",
+								ChannelName: "channel-name2",
+								IsDefault:   false,
+							},
+						},
+					},
+				},
+			},
+			channelReleases: []upstream.ChannelRelease{},
+			setup: func(t *testing.T, args args, licenseEndpoint string) {
+				t.Setenv("USE_MOCK_REPORTING", "1")
+				args.license.Spec.Endpoint = licenseEndpoint
+				mockStore.EXPECT().GetCurrentUpdateCursor(args.app.ID, args.license.Spec.Channels[1].ChannelID).Return("1", nil)
+			},
+			want:    []types.AvailableUpdate{},
+			wantErr: false,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
