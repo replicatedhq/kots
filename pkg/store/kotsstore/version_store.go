@@ -657,7 +657,7 @@ func (s *KOTSStore) upsertAppVersionRecordStatements(appID string, sequence int6
 
 	embeddedClusterConfig, err := kotsKinds.Marshal("embeddedcluster.replicated.com", "v1beta1", "Config")
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to marshal configvalues spec")
+		return nil, errors.Wrap(err, "failed to marshal embedded cluster config")
 	}
 
 	var releasedAt *int64
