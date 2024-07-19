@@ -11,6 +11,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/store"
 	"github.com/replicatedhq/kots/pkg/updatechecker"
+	kotsv1beta1 "github.com/replicatedhq/kotskinds/apis/kots/v1beta1"
 	cron "github.com/robfig/cron/v3"
 )
 
@@ -56,8 +57,26 @@ func (h *Handler) SetAutomaticUpdatesConfig(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
+	var licenseChan *kotsv1beta1.Channel
+	if foundApp.ChannelID == "" {
+		// TODO: Backfill app.ChannelID in the database, this is an install from before multi-channel was introduced
+		if licenseChan, err = kotsutil.FindChannelInLicense(license.Spec.ChannelID, license); err != nil {
+			updateCheckerSpecResponse.Error = "failed to find channel in license"
+			logger.Error(errors.Wrap(err, updateCheckerSpecResponse.Error))
+			JSON(w, http.StatusInternalServerError, updateCheckerSpecResponse)
+			return
+		}
+	} else {
+		if licenseChan, err = kotsutil.FindChannelInLicense(foundApp.ChannelID, license); err != nil {
+			updateCheckerSpecResponse.Error = "failed to find channel in license"
+			logger.Error(errors.Wrap(err, updateCheckerSpecResponse.Error))
+			JSON(w, http.StatusInternalServerError, updateCheckerSpecResponse)
+			return
+		}
+	}
+
 	// Check if the deploy update configuration is valid based on app channel
-	if license.Spec.IsSemverRequired {
+	if licenseChan.IsSemverRequired {
 		if configureAutomaticUpdatesRequest.AutoDeploy == apptypes.AutoDeploySequence {
 			updateCheckerSpecResponse.Error = "automatic updates based on sequence type are not supported for semantic versioning apps"
 			JSON(w, http.StatusUnprocessableEntity, updateCheckerSpecResponse)

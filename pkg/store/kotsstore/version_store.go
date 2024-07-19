@@ -292,9 +292,22 @@ func (s *KOTSStore) GetAppVersionBaseSequence(appID string, versionLabel string)
 		return -1, errors.Wrap(err, "failed to get app license")
 	}
 
+	foundChannelID, err := s.GetAppChannelID(appID)
+	var licenseChan *kotsv1beta1.Channel
+	if foundChannelID == "" {
+		// TODO: Backfill app.ChannelID in the database, this is an install from before multi-channel was introduced
+		if licenseChan, err = kotsutil.FindChannelInLicense(license.Spec.ChannelID, license); err != nil {
+			return -1, errors.Wrap(err, "failed to find channel in license")
+		}
+	} else {
+		if licenseChan, err = kotsutil.FindChannelInLicense(foundChannelID, license); err != nil {
+			return -1, errors.Wrap(err, "failed to find channel in license")
+		}
+	}
+
 	// add to the top of the list and sort
 	appVersions.AllVersions = append([]*downstreamtypes.DownstreamVersion{mockVersion}, appVersions.AllVersions...)
-	downstreamtypes.SortDownstreamVersions(appVersions.AllVersions, license.Spec.IsSemverRequired)
+	downstreamtypes.SortDownstreamVersions(appVersions.AllVersions, licenseChan.IsSemverRequired)
 
 	var baseVersion *downstreamtypes.DownstreamVersion
 	for i, v := range appVersions.AllVersions {

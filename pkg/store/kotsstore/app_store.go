@@ -599,6 +599,28 @@ func (s *KOTSStore) SetAppChannelChanged(appID string, channelChanged bool) erro
 	return nil
 }
 
+func (s *KOTSStore) GetAppChannelID(appID string) (string, error) {
+	db := persistence.MustGetDBSession()
+	query := `select channel_id from app where id = ?`
+	rows, err := db.QueryOneParameterized(gorqlite.ParameterizedStatement{
+		Query:     query,
+		Arguments: []interface{}{appID},
+	})
+	if err != nil {
+		return "", fmt.Errorf("failed to query: %v: %v", err, rows.Err)
+	}
+	if !rows.Next() {
+		return "", ErrNotFound
+	}
+
+	var channelID gorqlite.NullString
+	if err := rows.Scan(&channelID); err != nil {
+		return "", errors.Wrap(err, "failed to scan channel id")
+	}
+
+	return channelID.String, nil
+}
+
 func (s *KOTSStore) SetAppChannelID(appID string, channelID string) error {
 	db := persistence.MustGetDBSession()
 

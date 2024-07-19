@@ -409,7 +409,21 @@ func (s *KOTSStore) GetDownstreamVersions(appID string, clusterID string, downlo
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get app license")
 	}
-	downstreamtypes.SortDownstreamVersions(result.AllVersions, license.Spec.IsSemverRequired)
+
+	foundChannelID, err := s.GetAppChannelID(appID)
+	var licenseChan *kotsv1beta1.Channel
+	if foundChannelID == "" {
+		// TODO: Backfill app.ChannelID in the database, this is an install from before multi-channel was introduced
+		if licenseChan, err = kotsutil.FindChannelInLicense(license.Spec.ChannelID, license); err != nil {
+			return nil, errors.Wrap(err, "failed to find channel in license")
+		}
+	} else {
+		if licenseChan, err = kotsutil.FindChannelInLicense(foundChannelID, license); err != nil {
+			return nil, errors.Wrap(err, "failed to find channel in license")
+		}
+	}
+
+	downstreamtypes.SortDownstreamVersions(result.AllVersions, licenseChan.IsSemverRequired)
 
 	// retrieve additional details about the latest downloaded version,
 	// since it's used for detecting things like if a certain feature is enabled or not.
@@ -422,7 +436,7 @@ func (s *KOTSStore) GetDownstreamVersions(appID string, clusterID string, downlo
 		if err := s.AddDownstreamVersionDetails(appID, clusterID, v, false); err != nil {
 			return nil, errors.Wrap(err, "failed to add details to latest downloaded version")
 		}
-		v.IsDeployable, v.NonDeployableCause = isAppVersionDeployable(v, result, license.Spec.IsSemverRequired)
+		v.IsDeployable, v.NonDeployableCause = isAppVersionDeployable(v, result, licenseChan.IsSemverRequired)
 		break
 	}
 
@@ -673,8 +687,21 @@ func (s *KOTSStore) AddDownstreamVersionsDetails(appID string, clusterID string,
 		if err != nil {
 			return errors.Wrap(err, "failed to get app license")
 		}
+		foundChannelID, err := s.GetAppChannelID(appID)
+		var licenseChan *kotsv1beta1.Channel
+		if foundChannelID == "" {
+			// TODO: Backfill app.ChannelID in the database, this is an install from before multi-channel was introduced
+			if licenseChan, err = kotsutil.FindChannelInLicense(license.Spec.ChannelID, license); err != nil {
+				errors.Wrap(err, "failed to find channel in license")
+			}
+		} else {
+			if licenseChan, err = kotsutil.FindChannelInLicense(foundChannelID, license); err != nil {
+				errors.Wrap(err, "failed to find channel in license")
+			}
+		}
+
 		for _, v := range versions {
-			v.IsDeployable, v.NonDeployableCause = isAppVersionDeployable(v, allVersions, license.Spec.IsSemverRequired)
+			v.IsDeployable, v.NonDeployableCause = isAppVersionDeployable(v, allVersions, licenseChan.IsSemverRequired)
 		}
 	}
 
