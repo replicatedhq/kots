@@ -167,21 +167,10 @@ func InstallCmd() *cobra.Command {
 				return errors.Wrap(err, "failed to extract preferred channel slug")
 			}
 
-			// if we are passed a multi channel license , verify that the requested channel is in the license
-			// so that we can the warn the user immediately if it is not
-			if license != nil {
-				if license.Spec.Channels != nil && len(license.Spec.Channels) > 0 {
-					foundChannelID := false
-					for _, channel := range license.Spec.Channels {
-						if channel.ChannelSlug == preferredChannelSlug {
-							foundChannelID = true
-							break
-						}
-					}
-					if !foundChannelID {
-						return errors.New("requested channel not found in license")
-					}
-				}
+			// If we are passed a multi-channel license, verify that the requested channel is in the license
+			// so that we can warn the user immediately if it is not.
+			if license != nil && !slugInLicenseChannels(preferredChannelSlug, license) {
+				return errors.New("requested channel not found in license")
 			}
 
 			namespace := v.GetString("namespace")
@@ -1097,4 +1086,13 @@ func checkPreflightResults(response *handlers.GetPreflightResultResponse, skipPr
 	}
 
 	return true, nil
+}
+
+func slugInLicenseChannels(slug string, license *kotsv1beta1.License) bool {
+	for _, channel := range license.Spec.Channels {
+		if channel.ChannelSlug == slug {
+			return true
+		}
+	}
+	return false
 }

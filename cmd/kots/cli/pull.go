@@ -11,7 +11,6 @@ import (
 	"github.com/replicatedhq/kots/pkg/pull"
 	registrytypes "github.com/replicatedhq/kots/pkg/registry/types"
 	kotsv1beta1 "github.com/replicatedhq/kotskinds/apis/kots/v1beta1"
-	"github.com/replicatedhq/kotskinds/client/kotsclientset/scheme"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -43,10 +42,12 @@ func PullCmd() *cobra.Command {
 				}
 			}
 
-			appSlug, err := getAppSlugForPull(args[0], v.GetString("license-file"))
+			license, err := getLicense(v)
 			if err != nil {
-				return errors.Wrap(err, "failed to determine app slug")
+				return errors.Wrap(err, "failed to get license")
 			}
+
+			appSlug := getAppSlugForPull(args[0], license)
 
 			namespace, err := getNamespaceOrDefault(v.GetString("namespace"))
 			if err != nil {
@@ -98,6 +99,17 @@ func PullCmd() *cobra.Command {
 			}
 
 			upstream := pull.RewriteUpstream(args[0])
+			preferredChannelSlug, err := extractPreferredChannelSlug(upstream)
+			if err != nil {
+				return errors.Wrap(err, "failed to extract preferred channel slug")
+			}
+
+			// If we are passed a multi-channel license, verify that the requested channel is in the license
+			// so that we can warn the user immediately if it is not.
+			if license != nil && !slugInLicenseChannels(preferredChannelSlug, license) {
+				return errors.New("requested channel not found in license")
+			}
+
 			renderDir, err := pull.Pull(upstream, pullOptions)
 			if err != nil {
 				return errors.Wrap(err, "failed to pull")
@@ -146,28 +158,10 @@ func PullCmd() *cobra.Command {
 	return cmd
 }
 
-func getAppSlugForPull(uri string, licenseFile string) (string, error) {
+func getAppSlugForPull(uri string, license *kotsv1beta1.License) string {
 	appSlug := strings.Split(uri, "/")[0]
-	if licenseFile == "" {
-		return appSlug, nil
+	if license == nil {
+		return appSlug
 	}
-
-	licenseData, err := os.ReadFile(licenseFile)
-	if err != nil {
-		return "", errors.Wrap(err, "failed to read license file")
-	}
-
-	decode := scheme.Codecs.UniversalDeserializer().Decode
-	decoded, gvk, err := decode(licenseData, nil, nil)
-	if err != nil {
-		return "", errors.Wrap(err, "unable to decode license file")
-	}
-
-	if gvk.Group != "kots.io" || gvk.Version != "v1beta1" || gvk.Kind != "License" {
-		return "", errors.New("not an application license")
-	}
-
-	license := decoded.(*kotsv1beta1.License)
-
-	return license.Spec.AppSlug, nil
+	return license.Spec.AppSlug
 }
