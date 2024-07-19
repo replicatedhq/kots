@@ -32,8 +32,11 @@ func GetAvailableUpdates(kotsStore storepkg.Store, app *apptypes.App, license *k
 	var err error
 	var licenseChan *kotsv1beta1.Channel
 	if app.ChannelID == "" {
-		// TODO: Backfill app.ChannelID in the database, this is an install from before multi-channel was introduced
-		if licenseChan, err = kotsutil.FindChannelInLicense(license.Spec.ChannelID, license); err != nil {
+		backfillID := kotsutil.GetBackfillChannelIDFromLicense(license)
+		if err := kotsStore.SetAppChannelID(app.ID, backfillID); err != nil {
+			return nil, errors.Wrap(err, "failed to backfill channel id")
+		}
+		if licenseChan, err = kotsutil.FindChannelInLicense(backfillID, license); err != nil {
 			return nil, errors.Wrap(err, "failed to find channel in license")
 		}
 	} else {

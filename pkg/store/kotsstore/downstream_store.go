@@ -413,14 +413,13 @@ func (s *KOTSStore) GetDownstreamVersions(appID string, clusterID string, downlo
 	foundChannelID, err := s.GetAppChannelID(appID)
 	var licenseChan *kotsv1beta1.Channel
 	if foundChannelID == "" {
-		// TODO: Backfill app.ChannelID in the database, this is an install from before multi-channel was introduced
-		if licenseChan, err = kotsutil.FindChannelInLicense(license.Spec.ChannelID, license); err != nil {
-			return nil, errors.Wrap(err, "failed to find channel in license")
+		foundChannelID = kotsutil.GetBackfillChannelIDFromLicense(license)
+		if err := s.SetAppChannelID(appID, foundChannelID); err != nil {
+			return nil, errors.Wrap(err, "failed to backfill app channel id from license")
 		}
-	} else {
-		if licenseChan, err = kotsutil.FindChannelInLicense(foundChannelID, license); err != nil {
-			return nil, errors.Wrap(err, "failed to find channel in license")
-		}
+	}
+	if licenseChan, err = kotsutil.FindChannelInLicense(foundChannelID, license); err != nil {
+		return nil, errors.Wrap(err, "failed to find channel in license")
 	}
 
 	downstreamtypes.SortDownstreamVersions(result.AllVersions, licenseChan.IsSemverRequired)
@@ -690,9 +689,9 @@ func (s *KOTSStore) AddDownstreamVersionsDetails(appID string, clusterID string,
 		foundChannelID, err := s.GetAppChannelID(appID)
 		var licenseChan *kotsv1beta1.Channel
 		if foundChannelID == "" {
-			// TODO: Backfill app.ChannelID in the database, this is an install from before multi-channel was introduced
-			if licenseChan, err = kotsutil.FindChannelInLicense(license.Spec.ChannelID, license); err != nil {
-				errors.Wrap(err, "failed to find channel in license")
+			foundChannelID = kotsutil.GetBackfillChannelIDFromLicense(license)
+			if err := s.SetAppChannelID(appID, foundChannelID); err != nil {
+				return errors.Wrap(err, "failed to backfill app channel id from license")
 			}
 		} else {
 			if licenseChan, err = kotsutil.FindChannelInLicense(foundChannelID, license); err != nil {

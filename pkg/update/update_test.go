@@ -43,7 +43,8 @@ func TestGetAvailableUpdates(t *testing.T) {
 			args: args{
 				kotsStore: mockStore,
 				app: &apptypes.App{
-					ID: "app-id",
+					ID:        "app-id",
+					ChannelID: "", // using legacy non-multi chan license
 				},
 				license: &kotsv1beta1.License{
 					Spec: kotsv1beta1.LicenseSpec{
@@ -58,6 +59,7 @@ func TestGetAvailableUpdates(t *testing.T) {
 			setup: func(t *testing.T, args args, licenseEndpoint string) {
 				t.Setenv("USE_MOCK_REPORTING", "1")
 				args.license.Spec.Endpoint = licenseEndpoint
+				mockStore.EXPECT().SetAppChannelID(args.app.ID, args.license.Spec.ChannelID).Return(nil) // expect a backfill
 				mockStore.EXPECT().GetCurrentUpdateCursor(args.app.ID, args.license.Spec.ChannelID).Return("1", nil)
 			},
 			want:    []types.AvailableUpdate{},
@@ -68,7 +70,8 @@ func TestGetAvailableUpdates(t *testing.T) {
 			args: args{
 				kotsStore: mockStore,
 				app: &apptypes.App{
-					ID: "app-id",
+					ID:        "app-id",
+					ChannelID: "", // using legacy non-multi chan license
 				},
 				license: &kotsv1beta1.License{
 					Spec: kotsv1beta1.LicenseSpec{
@@ -100,6 +103,7 @@ func TestGetAvailableUpdates(t *testing.T) {
 			setup: func(t *testing.T, args args, licenseEndpoint string) {
 				t.Setenv("USE_MOCK_REPORTING", "1")
 				args.license.Spec.Endpoint = licenseEndpoint
+				mockStore.EXPECT().SetAppChannelID(args.app.ID, args.license.Spec.ChannelID).Return(nil) // expect a backfill
 				mockStore.EXPECT().GetCurrentUpdateCursor(args.app.ID, args.license.Spec.ChannelID).Return("1", nil)
 			},
 			want: []types.AvailableUpdate{
@@ -145,6 +149,7 @@ func TestGetAvailableUpdates(t *testing.T) {
 			setup: func(t *testing.T, args args, licenseEndpoint string) {
 				t.Setenv("USE_MOCK_REPORTING", "1")
 				args.license.Spec.Endpoint = licenseEndpoint
+				mockStore.EXPECT().SetAppChannelID(args.app.ID, args.license.Spec.ChannelID).Return(nil) // expect a backfill
 				mockStore.EXPECT().GetCurrentUpdateCursor(args.app.ID, args.license.Spec.ChannelID).Return("1", nil)
 			},
 			want:    []types.AvailableUpdate{},
