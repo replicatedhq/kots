@@ -244,7 +244,7 @@ func installLicenseSecret(clientset *kubernetes.Clientset, licenseSecret corev1.
 	desiredAppName := strings.Replace(appSlug, "-", " ", 0)
 	upstreamURI := fmt.Sprintf("replicated://%s", appSlug)
 
-	matchedChannelID, err := kotsutil.FindRequestedChannelID(instParams.RequestedChannelSlug, verifiedLicense)
+	matchedChannelID, err := kotsutil.FindChannelIDInLicense(instParams.RequestedChannelSlug, verifiedLicense)
 	if err != nil {
 		return errors.Wrap(err, "failed to find requested channel in license")
 	}

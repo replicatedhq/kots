@@ -13,6 +13,7 @@ import (
 	apptypes "github.com/replicatedhq/kots/pkg/app/types"
 	license "github.com/replicatedhq/kots/pkg/kotsadmlicense"
 	upstream "github.com/replicatedhq/kots/pkg/kotsadmupstream"
+	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/preflight"
 	preflighttypes "github.com/replicatedhq/kots/pkg/preflight/types"
@@ -26,6 +27,7 @@ import (
 	upstreamtypes "github.com/replicatedhq/kots/pkg/upstream/types"
 	"github.com/replicatedhq/kots/pkg/util"
 	"github.com/replicatedhq/kots/pkg/version"
+	kotsv1beta1 "github.com/replicatedhq/kotskinds/apis/kots/v1beta1"
 	cron "github.com/robfig/cron/v3"
 	"go.uber.org/zap"
 	"k8s.io/apimachinery/pkg/util/wait"
@@ -226,7 +228,19 @@ func checkForKotsAppUpdates(opts types.CheckForUpdatesOpts, finishedChan chan<- 
 		return nil, errors.Wrap(err, "failed to get app")
 	}
 
-	updateCursor, err := store.GetCurrentUpdateCursor(a.ID, latestLicense.Spec.ChannelID)
+	var licenseChan *kotsv1beta1.Channel
+	if a.ChannelID == "" {
+		// TODO: Backfill app.ChannelID in the database, this is an install from before multi-channel was introduced
+		if licenseChan, err = kotsutil.FindChannelInLicense(latestLicense.Spec.ChannelID, latestLicense); err != nil {
+			return nil, errors.Wrap(err, "failed to find channel in license")
+		}
+	} else {
+		if licenseChan, err = kotsutil.FindChannelInLicense(a.ChannelID, latestLicense); err != nil {
+			return nil, errors.Wrap(err, "failed to find channel in license")
+		}
+	}
+
+	updateCursor, err := store.GetCurrentUpdateCursor(a.ID, licenseChan.ChannelID)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get current update cursor")
 	}
@@ -235,8 +249,8 @@ func checkForKotsAppUpdates(opts types.CheckForUpdatesOpts, finishedChan chan<- 
 		License:            latestLicense,
 		LastUpdateCheckAt:  a.LastUpdateCheckAt,
 		CurrentCursor:      updateCursor,
-		CurrentChannelID:   latestLicense.Spec.ChannelID,
-		CurrentChannelName: latestLicense.Spec.ChannelName,
+		CurrentChannelID:   licenseChan.ChannelID,
+		CurrentChannelName: licenseChan.ChannelName,
 		ChannelChanged:     a.ChannelChanged,
 		Silent:             false,
 		ReportingInfo:      reporting.GetReportingInfo(a.ID),
@@ -266,7 +280,7 @@ func checkForKotsAppUpdates(opts types.CheckForUpdatesOpts, finishedChan chan<- 
 		return nil, errors.Errorf("no app versions found for app %s in downstream %s", opts.AppID, d.ClusterID)
 	}
 
-	filteredUpdates := removeOldUpdates(updates.Updates, appVersions, latestLicense.Spec.IsSemverRequired)
+	filteredUpdates := removeOldUpdates(updates.Updates, appVersions, licenseChan.IsSemverRequired)
 
 	var availableReleases []types.UpdateCheckRelease
 	availableSequence := appVersions.AllVersions[0].Sequence + 1

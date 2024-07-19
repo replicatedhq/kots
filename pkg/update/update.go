@@ -29,25 +29,20 @@ func InitAvailableUpdatesDir() error {
 }
 
 func GetAvailableUpdates(kotsStore storepkg.Store, app *apptypes.App, license *kotsv1beta1.License) ([]types.AvailableUpdate, error) {
-
-	var currentChannelID string
-	var currentChannelName string
+	var err error
+	var licenseChan *kotsv1beta1.Channel
 	if app.ChannelID == "" {
-		// if we have no channel id , this is an install from before multi-channel was introduced
-		// so we'll preserve existing behavior and just use the top level channel id
-		currentChannelID = license.Spec.ChannelID
+		// TODO: Backfill app.ChannelID in the database, this is an install from before multi-channel was introduced
+		if licenseChan, err = kotsutil.FindChannelInLicense(license.Spec.ChannelID, license); err != nil {
+			return nil, errors.Wrap(err, "failed to find channel in license")
+		}
 	} else {
-		currentChannelID = app.ChannelID
+		if licenseChan, err = kotsutil.FindChannelInLicense(app.ChannelID, license); err != nil {
+			return nil, errors.Wrap(err, "failed to find channel in license")
+		}
 	}
 
-	foundChannel := kotsutil.FindChannel(license, currentChannelID)
-	if foundChannel != nil {
-		currentChannelName = foundChannel.ChannelName
-	} else {
-		currentChannelName = license.Spec.ChannelName
-	}
-
-	updateCursor, err := kotsStore.GetCurrentUpdateCursor(app.ID, currentChannelID)
+	updateCursor, err := kotsStore.GetCurrentUpdateCursor(app.ID, licenseChan.ChannelID)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get current update cursor")
 	}
@@ -57,8 +52,8 @@ func GetAvailableUpdates(kotsStore storepkg.Store, app *apptypes.App, license *k
 		License:            license,
 		LastUpdateCheckAt:  app.LastUpdateCheckAt,
 		CurrentCursor:      updateCursor,
-		CurrentChannelID:   currentChannelID,
-		CurrentChannelName: currentChannelName,
+		CurrentChannelID:   licenseChan.ChannelID,
+		CurrentChannelName: licenseChan.ChannelName,
 		ChannelChanged:     app.ChannelChanged,
 		SortOrder:          "desc", // get the latest updates first
 		ReportingInfo:      reporting.GetReportingInfo(app.ID),

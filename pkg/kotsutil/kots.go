@@ -1601,7 +1601,7 @@ func GetECVersionFromAirgapBundle(airgapBundle string) (string, error) {
 	return ecVersion, nil
 }
 
-func FindRequestedChannelID(requestedSlug string, license *kotsv1beta1.License) (string, error) {
+func FindChannelIDInLicense(requestedSlug string, license *kotsv1beta1.License) (string, error) {
 	matchedChannelID := ""
 	if requestedSlug != "" {
 		// if we do not have a Channels array or its empty, default to using the top level fields for backwards compatibility
@@ -1626,13 +1626,25 @@ func FindRequestedChannelID(requestedSlug string, license *kotsv1beta1.License) 
 	return matchedChannelID, nil
 }
 
-func FindChannel(license *kotsv1beta1.License, channelID string) *kotsv1beta1.Channel {
-	if len(license.Spec.Channels) > 0 {
-		for _, channel := range license.Spec.Channels {
-			if channel.ChannelID == channelID {
-				return &channel
-			}
+func FindChannelInLicense(channelID string, license *kotsv1beta1.License) (*kotsv1beta1.Channel, error) {
+	if channelID == "" || len(license.Spec.Channels) == 0 {
+		if license.Spec.ChannelID != channelID {
+			return nil, errors.New("channel not found in license")
+		}
+		// this is an install from before multi channel support, so emulate it using the top level info
+		return &kotsv1beta1.Channel{
+			ChannelID:        license.Spec.ChannelID,
+			ChannelName:      license.Spec.ChannelName,
+			IsDefault:        true,
+			IsSemverRequired: license.Spec.IsSemverRequired,
+		}, nil
+	}
+
+	for _, channel := range license.Spec.Channels {
+		if channel.ChannelID == channelID {
+			return &channel, nil
 		}
 	}
-	return nil
+
+	return nil, errors.New("channel not found in license")
 }

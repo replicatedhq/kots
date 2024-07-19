@@ -335,7 +335,7 @@ func (h *Handler) UploadNewLicense(w http.ResponseWriter, r *http.Request) {
 	upstreamURI := fmt.Sprintf("replicated://%s", verifiedLicense.Spec.AppSlug)
 
 	// verify that requested channel slug exists in the license
-	matchedChannelID, err := kotsutil.FindRequestedChannelID(installationParams.RequestedChannelSlug, verifiedLicense)
+	matchedChannelID, err := kotsutil.FindChannelIDInLicense(installationParams.RequestedChannelSlug, verifiedLicense)
 	if err != nil {
 		logger.Error(err)
 		uploadLicenseResponse.Error = "Requested install channel not found in license"
