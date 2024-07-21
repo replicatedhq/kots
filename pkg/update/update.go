@@ -104,8 +104,8 @@ func GetAvailableAirgapUpdates(app *apptypes.App, license *kotsv1beta1.License) 
 		if airgap.Spec.AppSlug != license.Spec.AppSlug {
 			return nil
 		}
-		if airgap.Spec.ChannelID != license.Spec.ChannelID {
-			return nil
+		if _, err = kotsutil.FindChannelInLicense(airgap.Spec.ChannelID, license); err != nil {
+			return nil // skip airgap updates that are not for the current channel, preserving previous behavior
 		}
 
 		deployable, nonDeployableCause, err := IsAirgapUpdateDeployable(app, airgap)

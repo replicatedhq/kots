@@ -118,7 +118,10 @@ func canStartUpgradeService(a *apptypes.App, r StartUpgradeServiceRequest) (bool
 		if err != nil {
 			return false, "", errors.Wrap(err, "failed to find airgap metadata")
 		}
-		if currLicense.Spec.ChannelID != airgap.Spec.ChannelID || r.ChannelID != airgap.Spec.ChannelID {
+		if _, err := kotsutil.FindChannelInLicense(airgap.Spec.ChannelID, currLicense); err != nil {
+			return false, "channel mismatch, channel not in license", nil
+		}
+		if r.ChannelID != airgap.Spec.ChannelID {
 			return false, "channel mismatch", nil
 		}
 		isDeployable, nonDeployableCause, err := update.IsAirgapUpdateDeployable(a, airgap)

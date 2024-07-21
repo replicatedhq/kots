@@ -236,7 +236,7 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 			logger.Infof("Expecting to install version %s but airgap bundle version is %s.", fetchOptions.AppVersionLabel, airgap.Spec.VersionLabel)
 		}
 
-		if fetchOptions.License.Spec.ChannelID != airgap.Spec.ChannelID {
+		if _, err = kotsutil.FindChannelInLicense(airgap.Spec.ChannelID, fetchOptions.License); err != nil {
 			return "", util.ActionableError{
 				NoRetry: true, // if this is airgap upload, make sure to free up tmp space
 				Message: fmt.Sprintf("License (%s) and airgap bundle (%s) channels do not match.", fetchOptions.License.Spec.ChannelName, airgap.Spec.ChannelName),
