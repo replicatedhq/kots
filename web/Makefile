@@ -39,6 +39,7 @@ build-local:
 
 .PHONY: build-kotsadm
 build-kotsadm:
+	rm -rf dist
 	KOTSADM_BUILD_VERSION=$(GIT_TAG) \
 	node \
 		--max_old_space_size=6144 \
