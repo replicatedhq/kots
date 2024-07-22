@@ -8,12 +8,14 @@ import (
 	"github.com/pkg/errors"
 	apptypes "github.com/replicatedhq/kots/pkg/app/types"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
+	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/reporting"
 	storepkg "github.com/replicatedhq/kots/pkg/store"
 	"github.com/replicatedhq/kots/pkg/update/types"
 	upstreampkg "github.com/replicatedhq/kots/pkg/upstream"
 	upstreamtypes "github.com/replicatedhq/kots/pkg/upstream/types"
 	kotsv1beta1 "github.com/replicatedhq/kotskinds/apis/kots/v1beta1"
+	"go.uber.org/zap"
 )
 
 // a ephemeral directory to store available updates
@@ -37,7 +39,7 @@ func GetAvailableUpdates(kotsStore storepkg.Store, app *apptypes.App, license *k
 			return nil, errors.Wrap(err, "failed to backfill channel id")
 		}
 		if licenseChan, err = kotsutil.FindChannelInLicense(backfillID, license); err != nil {
-			return nil, errors.Wrap(err, "failed to find channel in license")
+			return nil, errors.Wrap(err, "failed to find backfilled channel in license")
 		}
 	} else {
 		if licenseChan, err = kotsutil.FindChannelInLicense(app.ChannelID, license); err != nil {
@@ -105,6 +107,10 @@ func GetAvailableAirgapUpdates(app *apptypes.App, license *kotsv1beta1.License) 
 			return nil
 		}
 		if _, err = kotsutil.FindChannelInLicense(airgap.Spec.ChannelID, license); err != nil {
+			logger.Info("skipping airgap update check for channel not found in current license",
+				zap.String("airgap_channelName", airgap.Spec.ChannelName),
+				zap.String("airgap_channelID", airgap.Spec.ChannelID),
+			)
 			return nil // skip airgap updates that are not for the current channel, preserving previous behavior
 		}
 
