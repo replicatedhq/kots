@@ -169,8 +169,20 @@ func InstallCmd() *cobra.Command {
 
 			// If we are passed a multi-channel license, verify that the requested channel is in the license
 			// so that we can warn the user immediately if it is not.
-			if license != nil && !slugInLicenseChannels(preferredChannelSlug, license) {
-				return errors.New("requested channel not found in license")
+			if license != nil {
+				if isAirgap && !slugInLicenseChannels(preferredChannelSlug, license) {
+					return errors.New("requested channel not found in supplied license")
+				}
+				log.ActionWithSpinner("Checking for license update")
+				updatedLicense, err := replicatedapp.GetLatestLicense(license)
+				if err != nil {
+					log.FinishSpinnerWithError()
+					return errors.Wrap(err, "failed to get latest license")
+				}
+				log.FinishSpinner()
+				if !slugInLicenseChannels(preferredChannelSlug, updatedLicense.License) {
+					return errors.New("requested channel not found in latest license")
+				}
 			}
 
 			namespace := v.GetString("namespace")
