@@ -167,8 +167,7 @@ func InstallCmd() *cobra.Command {
 				return errors.Wrap(err, "failed to extract preferred channel slug")
 			}
 
-			// If we are passed a multi-channel license, verify that the requested channel is in the license
-			// so that we can warn the user immediately if it is not.
+			// fetch the latest version of the license to verify channel access if online install
 			if license != nil {
 				if isAirgap && !slugInLicenseChannels(preferredChannelSlug, license) {
 					return errors.New("requested channel not found in supplied license")
@@ -183,6 +182,7 @@ func InstallCmd() *cobra.Command {
 				if !slugInLicenseChannels(preferredChannelSlug, updatedLicense.License) {
 					return errors.New("requested channel not found in latest license")
 				}
+				license = updatedLicense.License
 			}
 
 			namespace := v.GetString("namespace")
