@@ -64,9 +64,14 @@ func getRequiredAirgapUpdates(airgap *kotsv1beta1.Airgap, license *kotsv1beta1.L
 		for _, appVersion := range installedVersions {
 			requiredSemver, requiredSemverErr := semver.ParseTolerant(requiredRelease.VersionLabel)
 
+			licenseChan, err := kotsutil.FindChannelInLicense(appVersion.ChannelID, license)
+			if err != nil {
+				return nil, errors.Wrap(err, "failed to find channel in license")
+			}
+
 			// semvers can be compared across channels
 			// if a semmver is missing, fallback to comparing the cursor but only if channel is the same
-			if license.Spec.IsSemverRequired && appVersion.Semver != nil && requiredSemverErr == nil {
+			if licenseChan.IsSemverRequired && appVersion.Semver != nil && requiredSemverErr == nil {
 				if (*appVersion.Semver).GTE(requiredSemver) {
 					laterReleaseInstalled = true
 					break

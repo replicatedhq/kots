@@ -1629,7 +1629,7 @@ func FindChannelIDInLicense(requestedSlug string, license *kotsv1beta1.License) 
 func FindChannelInLicense(channelID string, license *kotsv1beta1.License) (*kotsv1beta1.Channel, error) {
 	if channelID == "" || len(license.Spec.Channels) == 0 {
 		if license.Spec.ChannelID != channelID {
-			return nil, errors.New("channel not found non-multi channel license")
+			return nil, errors.New("channel not found in non-multi channel license")
 		}
 		// this is an install from before multi channel support, so emulate it using the top level info
 		return &kotsv1beta1.Channel{

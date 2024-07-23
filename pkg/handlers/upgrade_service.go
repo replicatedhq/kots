@@ -75,6 +75,16 @@ func (h *Handler) StartUpgradeService(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if foundApp.IsAirgap && foundApp.ChannelID != request.ChannelID {
+		// The update is deployable, so we should update the apps stored channelID similar to install
+		// time when channelID is set via the requested-channel-id in the configmap.
+		if err := store.GetStore().SetAppChannelID(foundApp.ID, request.ChannelID); err != nil {
+			response.Error = "failed update requested channel ID"
+			logger.Error(errors.Wrap(err, response.Error))
+			JSON(w, http.StatusInternalServerError, response)
+		}
+	}
+
 	if err := startUpgradeService(foundApp, request); err != nil {
 		response.Error = "failed to start upgrade service"
 		logger.Error(errors.Wrap(err, response.Error))
