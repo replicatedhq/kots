@@ -338,7 +338,7 @@ func (h *Handler) UploadNewLicense(w http.ResponseWriter, r *http.Request) {
 	matchedChannelID, err := kotsutil.FindChannelIDInLicense(installationParams.RequestedChannelSlug, verifiedLicense)
 	if err != nil {
 		logger.Error(err)
-		uploadLicenseResponse.Error = "Requested install channel not found in license"
+		uploadLicenseResponse.Error = "Your current license does not grant access to the channel you requested. Please generate a support bundle and contact support for assistance."
 		JSON(w, http.StatusBadRequest, uploadLicenseResponse)
 		return
 	}
