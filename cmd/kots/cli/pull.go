@@ -106,7 +106,7 @@ func PullCmd() *cobra.Command {
 
 			// If we are passed a multi-channel license, verify that the requested channel is in the license
 			// so that we can warn the user immediately if it is not.
-			if license != nil && !slugInLicenseChannels(preferredChannelSlug, license) {
+			if haveMultiChannelLicense(license) && !slugInLicenseChannels(preferredChannelSlug, license) {
 				return errors.New("requested channel not found in license")
 			}
 

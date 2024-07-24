@@ -169,7 +169,7 @@ func InstallCmd() *cobra.Command {
 
 			// fetch the latest version of the license to verify channel access if online install
 			if license != nil {
-				if isAirgap && !slugInLicenseChannels(preferredChannelSlug, license) {
+				if isAirgap && haveMultiChannelLicense(license) && !slugInLicenseChannels(preferredChannelSlug, license) {
 					return errors.New("requested channel not found in supplied license")
 				}
 				log.ActionWithSpinner("Checking for license update")
@@ -179,7 +179,7 @@ func InstallCmd() *cobra.Command {
 					return errors.Wrap(err, "failed to get latest license")
 				}
 				log.FinishSpinner()
-				if !slugInLicenseChannels(preferredChannelSlug, updatedLicense.License) {
+				if haveMultiChannelLicense(updatedLicense.License) && !slugInLicenseChannels(preferredChannelSlug, updatedLicense.License) {
 					return errors.New("requested channel not found in latest license")
 				}
 				license = updatedLicense.License
@@ -1107,4 +1107,11 @@ func slugInLicenseChannels(slug string, license *kotsv1beta1.License) bool {
 		}
 	}
 	return false
+}
+
+func haveMultiChannelLicense(license *kotsv1beta1.License) bool {
+	if license == nil {
+		return false
+	}
+	return len(license.Spec.Channels) > 0
 }
