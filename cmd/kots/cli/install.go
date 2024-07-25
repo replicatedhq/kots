@@ -1109,7 +1109,7 @@ func slugInLicenseChannels(slug string, license *kotsv1beta1.License) bool {
 	return false
 }
 
-func haveMultiChannelLicense(license *kotsv1beta1.License) bool {
+func isMultiChannelLicense(license *kotsv1beta1.License) bool {
 	if license == nil {
 		return false
 	}
