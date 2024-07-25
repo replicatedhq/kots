@@ -3,7 +3,7 @@ kind: Service
 metadata:
   name: kotsadm
   labels:
-    kots.io/kotsadm: 'true'
+    kots.io/kotsadm: "true"
     kots.io/backup: velero
     app: kotsadm
   annotations:
@@ -11,9 +11,13 @@ metadata:
 spec:
   type: NodePort
   ports:
-  - name: http
-    port: 3000
-    targetPort: http
-    nodePort: 30000
+    - name: http
+      port: 3000
+      targetPort: http
+      nodePort: 30000
+    - name: dlv
+      port: 30001
+      targetPort: dlv
+      nodePort: 30001
   selector:
     app: kotsadm
