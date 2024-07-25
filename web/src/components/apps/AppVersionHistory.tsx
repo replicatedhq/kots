@@ -529,6 +529,9 @@ class AppVersionHistory extends Component<Props, State> {
       uploadResuming: false,
     });
     this.props.outletContext.toggleIsBundleUploading(false);
+    if (this.props.outletContext.isEmbeddedCluster) {
+      this.fetchAvailableUpdates();
+    }
   };
 
   toggleErrorModal = () => {
