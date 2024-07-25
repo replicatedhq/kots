@@ -33,6 +33,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/kurl"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/metrics"
+	"github.com/replicatedhq/kots/pkg/multichannel"
 	preflighttypes "github.com/replicatedhq/kots/pkg/preflight/types"
 	"github.com/replicatedhq/kots/pkg/print"
 	"github.com/replicatedhq/kots/pkg/pull"
@@ -166,23 +167,9 @@ func InstallCmd() *cobra.Command {
 			if err != nil {
 				return errors.Wrap(err, "failed to extract preferred channel slug")
 			}
-
-			// fetch the latest version of the license to verify channel access if online install
-			if license != nil {
-				if isAirgap && haveMultiChannelLicense(license) && !slugInLicenseChannels(preferredChannelSlug, license) {
-					return errors.New("requested channel not found in supplied license")
-				}
-				log.ActionWithSpinner("Checking for license update")
-				updatedLicense, err := replicatedapp.GetLatestLicense(license)
-				if err != nil {
-					log.FinishSpinnerWithError()
-					return errors.Wrap(err, "failed to get latest license")
-				}
-				log.FinishSpinner()
-				if haveMultiChannelLicense(updatedLicense.License) && !slugInLicenseChannels(preferredChannelSlug, updatedLicense.License) {
-					return errors.New("requested channel not found in latest license")
-				}
-				license = updatedLicense.License
+			license, err = multichannel.VerifyAndUpdateLicense(log, license, preferredChannelSlug, isAirgap)
+			if err != nil {
+				return errors.Wrap(err, "failed to verify and update license")
 			}
 
 			namespace := v.GetString("namespace")
@@ -1098,20 +1085,4 @@ func checkPreflightResults(response *handlers.GetPreflightResultResponse, skipPr
 	}
 
 	return true, nil
-}
-
-func slugInLicenseChannels(slug string, license *kotsv1beta1.License) bool {
-	for _, channel := range license.Spec.Channels {
-		if channel.ChannelSlug == slug {
-			return true
-		}
-	}
-	return false
-}
-
-func isMultiChannelLicense(license *kotsv1beta1.License) bool {
-	if license == nil {
-		return false
-	}
-	return len(license.Spec.Channels) > 0
 }

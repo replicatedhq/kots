@@ -622,6 +622,8 @@ func (s *KOTSStore) GetAppChannelID(appID string) (string, error) {
 }
 
 func (s *KOTSStore) SetAppChannelID(appID string, channelID string) error {
+	logger.Debug("setting app channel id",
+		zap.String("appID", appID), zap.String("channelID", channelID))
 	db := persistence.MustGetDBSession()
 
 	query := `update app set channel_id = ? where id = ?`
