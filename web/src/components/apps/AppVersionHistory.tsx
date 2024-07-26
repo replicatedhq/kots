@@ -529,9 +529,6 @@ class AppVersionHistory extends Component<Props, State> {
       uploadResuming: false,
     });
     this.props.outletContext.toggleIsBundleUploading(false);
-    if (this.props.outletContext.isEmbeddedCluster) {
-      this.fetchAvailableUpdates();
-    }
   };
 
   toggleErrorModal = () => {
@@ -1107,6 +1104,9 @@ class AppVersionHistory extends Component<Props, State> {
               this.props.outletContext.updateCallback();
             }
             this.fetchKotsDownstreamHistory();
+            if (this.props.outletContext.isEmbeddedCluster) {
+              this.fetchAvailableUpdates();
+            }
           } else {
             this.setState({
               checkingForUpdates: true,
