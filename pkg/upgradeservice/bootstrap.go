@@ -9,17 +9,25 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/archives"
+	"github.com/replicatedhq/kots/pkg/k8sutil"
 	identity "github.com/replicatedhq/kots/pkg/kotsadmidentity"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/pull"
 	registrytypes "github.com/replicatedhq/kots/pkg/registry/types"
+	upgradepreflight "github.com/replicatedhq/kots/pkg/upgradeservice/preflight"
 	"github.com/replicatedhq/kots/pkg/upgradeservice/task"
 	"github.com/replicatedhq/kots/pkg/upgradeservice/types"
 	"github.com/replicatedhq/kots/pkg/util"
 )
 
 func bootstrap(params types.UpgradeServiceParams) (finalError error) {
+	if err := k8sutil.InitHelmCapabilities(); err != nil {
+		return errors.Wrap(err, "failed to init helm capabilities")
+	}
+	if err := upgradepreflight.Init(); err != nil {
+		return errors.Wrap(err, "failed to init preflight")
+	}
 	if params.AppIsAirgap {
 		if err := pullArchiveFromAirgap(params); err != nil {
 			return errors.Wrap(err, "failed to pull archive from airgap")
