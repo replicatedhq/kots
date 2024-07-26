@@ -37,16 +37,22 @@ ACgAAA==`,
 		airgapVersionLabel  string
 		currentVersionLabel string
 		expectedLabel       string
+		expectedChannelID   string
+		expectedChannelName string
 	}{
 		{
 			airgapVersionLabel:  "10.9.8",
 			currentVersionLabel: "1.2.0",
 			expectedLabel:       "10.9.8",
+			expectedChannelID:   "channel-2",
+			expectedChannelName: "ChannelTwo",
 		},
 		{
 			airgapVersionLabel:  "",
 			currentVersionLabel: "1.2.0",
 			expectedLabel:       "1.2.0",
+			expectedChannelID:   "channel-2",
+			expectedChannelName: "ChannelTwo",
 		},
 	}
 
@@ -59,6 +65,19 @@ ACgAAA==`,
 				Spec: kotsv1beta1.LicenseSpec{
 					Endpoint: "http://localhost",
 					AppSlug:  "app-slug",
+					Channels: []kotsv1beta1.Channel{
+						{
+							ChannelID:   "channel-1",
+							ChannelName: "ChannelOne",
+							ChannelSlug: "channel-one",
+							IsDefault:   true,
+						},
+						{
+							ChannelID:   "channel-2",
+							ChannelName: "ChannelTwo",
+							ChannelSlug: "channel-two",
+						},
+					},
 				},
 			},
 			Airgap: &kotsv1beta1.Airgap{
@@ -72,9 +91,12 @@ ACgAAA==`,
 					},
 				},
 			},
+			AppChannelID: "channel-2",
 		}
 		u, err := FetchUpstream("replicated://app-slug", fetchOptions)
 		req.NoError(err)
 		assert.Equal(t, test.expectedLabel, u.VersionLabel)
+		assert.Equal(t, test.expectedChannelID, u.ChannelID)
+		assert.Equal(t, test.expectedChannelName, u.ChannelName)
 	}
 }

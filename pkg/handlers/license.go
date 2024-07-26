@@ -358,11 +358,13 @@ func (h *Handler) UploadNewLicense(w http.ResponseWriter, r *http.Request) {
 				ID:           a.ID,
 				Slug:         a.Slug,
 				Name:         a.Name,
+				ChannelID:    a.ChannelID,
 				LicenseData:  uploadLicenseRequest.LicenseData,
 				VersionLabel: installationParams.AppVersionLabel,
 			},
 			UpstreamURI: upstreamURI,
 		}
+
 		kotsKinds, err := online.CreateAppFromOnline(createAppOpts)
 		if err != nil {
 			logger.Error(err)
@@ -440,6 +442,7 @@ func (h *Handler) ResumeInstallOnline(w http.ResponseWriter, r *http.Request) {
 		Slug:         a.Slug,
 		Name:         a.Name,
 		VersionLabel: installationParams.AppVersionLabel,
+		ChannelID:    a.ChannelID,
 	}
 
 	// the license data is left in the table
@@ -466,6 +469,7 @@ func (h *Handler) ResumeInstallOnline(w http.ResponseWriter, r *http.Request) {
 		PendingApp:  &pendingApp,
 		UpstreamURI: fmt.Sprintf("replicated://%s", kotsLicense.Spec.AppSlug),
 	}
+
 	kotsKinds, err := online.CreateAppFromOnline(createAppOpts)
 	if err != nil {
 		logger.Error(err)
@@ -676,10 +680,15 @@ func licenseResponseFromLicense(license *kotsv1beta1.License, app *apptypes.App)
 		return entitlements[i].Title < entitlements[j].Title
 	})
 
+	channel, err := kotsutil.FindChannelInLicense(app.ChannelID, license)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to find channel in license")
+	}
+
 	response := LicenseResponse{
 		ID:                             license.Spec.LicenseID,
 		Assignee:                       license.Spec.CustomerName,
-		ChannelName:                    license.Spec.ChannelName,
+		ChannelName:                    channel.ChannelName,
 		LicenseSequence:                license.Spec.LicenseSequence,
 		LicenseType:                    license.Spec.LicenseType,
 		Entitlements:                   entitlements,
@@ -688,7 +697,7 @@ func licenseResponseFromLicense(license *kotsv1beta1.License, app *apptypes.App)
 		IsGitOpsSupported:              license.Spec.IsGitOpsSupported,
 		IsIdentityServiceSupported:     license.Spec.IsIdentityServiceSupported,
 		IsGeoaxisSupported:             license.Spec.IsGeoaxisSupported,
-		IsSemverRequired:               license.Spec.IsSemverRequired,
+		IsSemverRequired:               channel.IsSemverRequired,
 		IsSnapshotSupported:            license.Spec.IsSnapshotSupported,
 		IsDisasterRecoverySupported:    license.Spec.IsDisasterRecoverySupported,
 		LastSyncedAt:                   app.LastLicenseSync,

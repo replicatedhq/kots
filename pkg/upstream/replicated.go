@@ -131,6 +131,7 @@ func downloadReplicated(
 	registry registrytypes.RegistrySettings,
 	reportingInfo *reportingtypes.ReportingInfo,
 	skipCompatibilityCheck bool,
+	appChannelID string,
 ) (*types.Upstream, error) {
 	var release *Release
 
@@ -204,8 +205,12 @@ func downloadReplicated(
 	// get channel name from license, if one was provided
 	channelID, channelName := "", ""
 	if license != nil {
-		channelID = license.Spec.ChannelID
-		channelName = license.Spec.ChannelName
+		channel, err := kotsutil.FindChannelInLicense(appChannelID, license)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to find channel in license")
+		}
+		channelID = channel.ChannelID
+		channelName = channel.ChannelName
 	}
 
 	if existingIdentityConfig == nil {

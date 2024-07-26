@@ -115,6 +115,7 @@ type FetchOptions struct {
 	LocalRegistry                   registrytypes.RegistrySettings
 	ReportingInfo                   *reportingtypes.ReportingInfo
 	SkipCompatibilityCheck          bool
+	AppChannelID                    string
 }
 
 func (u *Upstream) GetUpstreamDir(options WriteOptions) string {

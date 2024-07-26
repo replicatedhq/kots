@@ -68,6 +68,7 @@ type PullOptions struct {
 	AppSlug                 string
 	AppSequence             int64
 	AppVersionLabel         string
+	AppChannelID            string
 	IsGitOps                bool
 	StorageClassName        string
 	HTTPProxyEnvValue       string
@@ -131,6 +132,7 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 		AppSlug:                pullOptions.AppSlug,
 		AppSequence:            pullOptions.AppSequence,
 		AppVersionLabel:        pullOptions.AppVersionLabel,
+		AppChannelID:           pullOptions.AppChannelID,
 		LocalRegistry:          pullOptions.RewriteImageOptions,
 		ReportingInfo:          pullOptions.ReportingInfo,
 		SkipCompatibilityCheck: pullOptions.SkipCompatibilityCheck,

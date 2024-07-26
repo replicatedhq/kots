@@ -6,6 +6,7 @@ type PendingApp struct {
 	Name         string
 	LicenseData  string
 	VersionLabel string
+	ChannelID    string
 }
 
 type InstallStatus struct {

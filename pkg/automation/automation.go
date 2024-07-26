@@ -321,6 +321,7 @@ func installLicenseSecret(clientset *kubernetes.Clientset, licenseSecret corev1.
 				Name:         a.Name,
 				LicenseData:  string(license),
 				VersionLabel: instParams.AppVersionLabel,
+				ChannelID:    a.ChannelID,
 			},
 			UpstreamURI:            upstreamURI,
 			IsAutomated:            true,

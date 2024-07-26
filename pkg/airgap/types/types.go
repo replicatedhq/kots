@@ -5,6 +5,7 @@ type PendingApp struct {
 	Slug        string
 	Name        string
 	LicenseData string
+	ChannelID   string
 }
 
 type InstallStatus struct {

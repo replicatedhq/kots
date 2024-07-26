@@ -155,6 +155,7 @@ func CreateAppFromOnline(opts CreateOnlineAppOpts) (_ *kotsutil.KotsKinds, final
 		AppSlug:                opts.PendingApp.Slug,
 		AppSequence:            0,
 		AppVersionLabel:        opts.PendingApp.VersionLabel,
+		AppChannelID:           opts.PendingApp.ChannelID,
 		ReportingInfo:          reporting.GetReportingInfo(opts.PendingApp.ID),
 		SkipCompatibilityCheck: opts.SkipCompatibilityCheck,
 	}

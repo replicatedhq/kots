@@ -56,5 +56,4 @@ func VerifyAndUpdateLicense(log *logger.CLILogger, license *kotsv1beta1.License,
 		return updatedLicense.License, nil
 	}
 	return nil, errors.New("requested channel not found in latest license")
-
 }

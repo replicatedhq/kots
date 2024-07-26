@@ -125,7 +125,6 @@ func RenderDir(opts types.RenderDirOptions) error {
 	if os.Getenv("KOTSADM_TARGET_NAMESPACE") != "" {
 		appNamespace = os.Getenv("KOTSADM_TARGET_NAMESPACE")
 	}
-
 	reOptions := rewrite.RewriteOptions{
 		RootDir:          opts.ArchiveDir,
 		UpstreamURI:      fmt.Sprintf("replicated://%s", license.Spec.AppSlug),
@@ -142,6 +141,7 @@ func RenderDir(opts types.RenderDirOptions) error {
 		IsAirgap:         opts.App.IsAirgap,
 		AppID:            opts.App.ID,
 		AppSlug:          opts.App.Slug,
+		AppChannelID:     opts.App.ChannelID,
 		IsGitOps:         opts.App.IsGitOps,
 		AppSequence:      opts.Sequence,
 		ReportingInfo:    opts.ReportingInfo,

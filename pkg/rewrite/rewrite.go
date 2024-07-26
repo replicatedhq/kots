@@ -46,6 +46,7 @@ type RewriteOptions struct {
 	RegistrySettings   registrytypes.RegistrySettings
 	AppID              string
 	AppSlug            string
+	AppChannelID       string
 	IsGitOps           bool
 	AppSequence        int64
 	ReportingInfo      *reportingtypes.ReportingInfo
@@ -81,6 +82,7 @@ func Rewrite(rewriteOptions RewriteOptions) error {
 		License:                         rewriteOptions.License,
 		AppSequence:                     rewriteOptions.AppSequence,
 		AppSlug:                         rewriteOptions.AppSlug,
+		AppChannelID:                    rewriteOptions.AppChannelID,
 		LocalRegistry:                   rewriteOptions.RegistrySettings,
 		ReportingInfo:                   rewriteOptions.ReportingInfo,
 		SkipCompatibilityCheck:          true, // we're rewriting an existing version, no need to check for compatibility

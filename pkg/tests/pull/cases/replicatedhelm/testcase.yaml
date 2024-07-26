@@ -9,3 +9,4 @@ PullOptions:
   RewriteImages: false
   Downstreams:
     - this-cluster
+  AppChannelID: 1vusIYZLAVxMG6q760OJmRKj5i5

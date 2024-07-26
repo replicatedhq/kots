@@ -7,6 +7,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
+	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/multichannel"
 	"github.com/replicatedhq/kots/pkg/pull"
@@ -113,6 +114,10 @@ func PullCmd() *cobra.Command {
 			license, err = multichannel.VerifyAndUpdateLicense(log, license, preferredChannelSlug, false)
 			if err != nil {
 				return errors.Wrap(err, "failed to verify and update license")
+			}
+			pullOptions.AppChannelID, err = kotsutil.FindChannelIDInLicense(preferredChannelSlug, license)
+			if err != nil { // should never happen since we just verified the channel
+				return errors.Wrap(err, "failed to find channel ID in license")
 			}
 
 			renderDir, err := pull.Pull(upstream, pullOptions)
