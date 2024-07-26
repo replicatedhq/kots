@@ -4,6 +4,8 @@ import (
 	"context"
 	"testing"
 
+	embeddedclusterv1beta1 "github.com/replicatedhq/embedded-cluster-kinds/apis/v1beta1"
+	"github.com/replicatedhq/kots/pkg/embeddedcluster"
 	kotsadmtypes "github.com/replicatedhq/kots/pkg/kotsadm/types"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -17,6 +19,8 @@ import (
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/fake"
 	coretest "k8s.io/client-go/testing"
+	kbclient "sigs.k8s.io/controller-runtime/pkg/client"
+	fakekbclient "sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
 func TestPrepareIncludedNamespaces(t *testing.T) {
@@ -24,7 +28,6 @@ func TestPrepareIncludedNamespaces(t *testing.T) {
 		name       string
 		namespaces []string
 		want       []string
-		isEC       bool
 	}{
 		{
 			name:       "empty",
@@ -76,23 +79,11 @@ func TestPrepareIncludedNamespaces(t *testing.T) {
 			namespaces: []string{"*", "", "test"},
 			want:       []string{"*"},
 		},
-		{
-			name:       "wildcard with embedded cluster",
-			namespaces: []string{"*", "test"},
-			want:       []string{"*"},
-			isEC:       true,
-		},
-		{
-			name:       "embedded-cluster install",
-			namespaces: []string{"test", "abcapp"},
-			want:       []string{"test", "abcapp", "embedded-cluster", "kube-system", "openebs", "registry", "seaweedfs"},
-			isEC:       true,
-		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := prepareIncludedNamespaces(tt.namespaces, tt.isEC)
+			got := prepareIncludedNamespaces(tt.namespaces)
 			if !assert.ElementsMatch(t, tt.want, got) {
 				t.Errorf("prepareIncludedNamespaces() = %v, want %v", got, tt.want)
 			}
@@ -687,6 +678,189 @@ func Test_instanceBackupLabelSelectors(t *testing.T) {
 			req := require.New(t)
 			got := instanceBackupLabelSelectors(tt.isEmbeddedCluster)
 			req.ElementsMatch(tt.want, got)
+		})
+	}
+}
+
+func Test_ecBackupAnnotations(t *testing.T) {
+	scheme := runtime.NewScheme()
+	corev1.AddToScheme(scheme)
+	embeddedclusterv1beta1.AddToScheme(scheme)
+
+	tests := []struct {
+		name     string
+		kbClient kbclient.Client
+		in       *embeddedclusterv1beta1.Installation
+		env      map[string]string
+		want     map[string]string
+	}{
+		{
+			name:     "basic",
+			kbClient: fakekbclient.NewClientBuilder().WithScheme(scheme).Build(),
+			in:       &embeddedclusterv1beta1.Installation{},
+			env: map[string]string{
+				"EMBEDDED_CLUSTER_ID":      "embedded-cluster-id",
+				"EMBEDDED_CLUSTER_VERSION": "embedded-cluster-version",
+			},
+			want: map[string]string{
+				"kots.io/embedded-cluster":         "true",
+				"kots.io/embedded-cluster-id":      "embedded-cluster-id",
+				"kots.io/embedded-cluster-version": "embedded-cluster-version",
+				"kots.io/embedded-cluster-is-ha":   "false",
+			},
+		},
+		{
+			name:     "online ha",
+			kbClient: fakekbclient.NewClientBuilder().WithScheme(scheme).Build(),
+			in: &embeddedclusterv1beta1.Installation{
+				Spec: embeddedclusterv1beta1.InstallationSpec{
+					HighAvailability: true,
+				},
+			},
+			env: map[string]string{
+				"EMBEDDED_CLUSTER_ID":      "embedded-cluster-id",
+				"EMBEDDED_CLUSTER_VERSION": "embedded-cluster-version",
+			},
+			want: map[string]string{
+				"kots.io/embedded-cluster":         "true",
+				"kots.io/embedded-cluster-id":      "embedded-cluster-id",
+				"kots.io/embedded-cluster-version": "embedded-cluster-version",
+				"kots.io/embedded-cluster-is-ha":   "true",
+			},
+		},
+		{
+			name: "airgap ha",
+			kbClient: fakekbclient.NewClientBuilder().WithScheme(scheme).WithObjects(
+				&corev1.Service{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      embeddedcluster.SeaweedfsS3SVCName,
+						Namespace: embeddedcluster.SeaweedfsNamespace,
+					},
+					Spec: corev1.ServiceSpec{
+						ClusterIP: "10.96.0.10",
+					},
+				},
+			).Build(),
+			in: &embeddedclusterv1beta1.Installation{
+				Spec: embeddedclusterv1beta1.InstallationSpec{
+					HighAvailability: true,
+					AirGap:           true,
+				},
+			},
+			env: map[string]string{
+				"EMBEDDED_CLUSTER_ID":      "embedded-cluster-id",
+				"EMBEDDED_CLUSTER_VERSION": "embedded-cluster-version",
+			},
+			want: map[string]string{
+				"kots.io/embedded-cluster":                 "true",
+				"kots.io/embedded-cluster-id":              "embedded-cluster-id",
+				"kots.io/embedded-cluster-version":         "embedded-cluster-version",
+				"kots.io/embedded-cluster-is-ha":           "true",
+				"kots.io/embedded-cluster-seaweedfs-s3-ip": "10.96.0.10",
+			},
+		},
+		{
+			name:     "with pod and service cidrs",
+			kbClient: fakekbclient.NewClientBuilder().WithScheme(scheme).Build(),
+			in: &embeddedclusterv1beta1.Installation{
+				Spec: embeddedclusterv1beta1.InstallationSpec{
+					Network: &embeddedclusterv1beta1.NetworkSpec{
+						PodCIDR:     "10.128.0.0/20",
+						ServiceCIDR: "10.129.0.0/20",
+					},
+				},
+			},
+			env: map[string]string{
+				"EMBEDDED_CLUSTER_ID":      "embedded-cluster-id",
+				"EMBEDDED_CLUSTER_VERSION": "embedded-cluster-version",
+			},
+			want: map[string]string{
+				"kots.io/embedded-cluster":              "true",
+				"kots.io/embedded-cluster-id":           "embedded-cluster-id",
+				"kots.io/embedded-cluster-version":      "embedded-cluster-version",
+				"kots.io/embedded-cluster-is-ha":        "false",
+				"kots.io/embedded-cluster-pod-cidr":     "10.128.0.0/20",
+				"kots.io/embedded-cluster-service-cidr": "10.129.0.0/20",
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			req := require.New(t)
+			for k, v := range tt.env {
+				t.Setenv(k, v)
+			}
+			got, err := ecBackupAnnotations(context.TODO(), tt.kbClient, tt.in)
+			req.NoError(err)
+			req.Equal(tt.want, got)
+		})
+	}
+}
+
+func Test_ecIncludedNamespaces(t *testing.T) {
+	tests := []struct {
+		name string
+		in   *embeddedclusterv1beta1.Installation
+		want []string
+	}{
+		{
+			name: "online",
+			in:   &embeddedclusterv1beta1.Installation{},
+			want: []string{
+				"embedded-cluster",
+				"kube-system",
+				"openebs",
+			},
+		},
+		{
+			name: "online ha",
+			in: &embeddedclusterv1beta1.Installation{
+				Spec: embeddedclusterv1beta1.InstallationSpec{
+					HighAvailability: true,
+				},
+			},
+			want: []string{
+				"embedded-cluster",
+				"kube-system",
+				"openebs",
+			},
+		},
+		{
+			name: "airgap",
+			in: &embeddedclusterv1beta1.Installation{
+				Spec: embeddedclusterv1beta1.InstallationSpec{
+					AirGap: true,
+				},
+			},
+			want: []string{
+				"embedded-cluster",
+				"kube-system",
+				"openebs",
+				"registry",
+			},
+		},
+		{
+			name: "airgap ha",
+			in: &embeddedclusterv1beta1.Installation{
+				Spec: embeddedclusterv1beta1.InstallationSpec{
+					HighAvailability: true,
+					AirGap:           true,
+				},
+			},
+			want: []string{
+				"embedded-cluster",
+				"kube-system",
+				"openebs",
+				"registry",
+				"seaweedfs",
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			req := require.New(t)
+			got := ecIncludedNamespaces(tt.in)
+			req.Equal(tt.want, got)
 		})
 	}
 }
