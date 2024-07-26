@@ -15,7 +15,6 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/buildversion"
-	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/upgradeservice/handlers"
 	upgradepreflight "github.com/replicatedhq/kots/pkg/upgradeservice/preflight"
 	"github.com/replicatedhq/kots/pkg/upgradeservice/types"
@@ -29,14 +28,6 @@ func Serve(params types.UpgradeServiceParams) error {
 
 	if err := bootstrap(params); err != nil {
 		return errors.Wrap(err, "failed to bootstrap")
-	}
-
-	if err := upgradepreflight.Init(); err != nil {
-		return errors.Wrap(err, "failed to init preflight")
-	}
-
-	if err := k8sutil.InitHelmCapabilities(); err != nil {
-		return errors.Wrap(err, "failed to init helm capabilities")
 	}
 
 	r := mux.NewRouter()
