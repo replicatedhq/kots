@@ -139,7 +139,7 @@
     "clipboard": "2.0.11",
     "cronstrue": "^2.50.0",
     "dayjs": "1.11.12",
-    "diff": "^4.0.2",
+    "diff": "^5.2.0",
     "downloadjs": "^1.4.7",
     "file-loader": "^6.2.0",
     "file-saver": "^2.0.2",
