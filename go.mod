@@ -39,8 +39,8 @@ require (
 	github.com/mholt/archiver/v3 v3.5.1
 	github.com/mikesmitty/edkey v0.0.0-20170222072505-3356ea4e686a
 	github.com/mitchellh/hashstructure v1.1.0
-	github.com/onsi/ginkgo/v2 v2.19.0
-	github.com/onsi/gomega v1.33.1
+	github.com/onsi/ginkgo/v2 v2.19.1
+	github.com/onsi/gomega v1.34.0
 	github.com/open-policy-agent/opa v0.65.0
 	github.com/opencontainers/image-spec v1.1.0
 	github.com/ory/dockertest/v3 v3.10.0
@@ -48,7 +48,7 @@ require (
 	github.com/phayes/freeport v0.0.0-20220201140144-74d24b5ae9f5
 	github.com/pkg/errors v0.9.1
 	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2
-	github.com/replicatedhq/embedded-cluster-kinds v1.4.6
+	github.com/replicatedhq/embedded-cluster-kinds v1.4.7
 	github.com/replicatedhq/kotskinds v0.0.0-20240621084729-1eb1e3eac6f2
 	github.com/replicatedhq/kurlkinds v1.5.0
 	github.com/replicatedhq/troubleshoot v0.95.1
