@@ -40,7 +40,7 @@ func VerifyAndUpdateLicense(log *logger.CLILogger, license *kotsv1beta1.License,
 		return nil, nil
 	}
 	if isAirgap {
-		if isMultiChannelLicense(license) && !isSlugInLicenseChannels(preferredChannelSlug, license) {
+		if !canInstallFromChannel(preferredChannelSlug, license) {
 			return nil, errors.New("requested channel not found in supplied license")
 		}
 		return license, nil
