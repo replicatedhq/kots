@@ -292,17 +292,9 @@ func (s *KOTSStore) GetAppVersionBaseSequence(appID string, versionLabel string)
 		return -1, errors.Wrap(err, "failed to get app license")
 	}
 
-	foundChannelID, err := s.GetAppChannelID(appID)
-	var licenseChan *kotsv1beta1.Channel
-	if foundChannelID == "" {
-		backfillID := kotsutil.GetBackfillChannelIDFromLicense(license)
-		if err := s.SetAppChannelID(appID, backfillID); err != nil {
-			return -1, errors.Wrap(err, "failed to backfill app channel id from license")
-		}
-		foundChannelID = backfillID
-	}
-	if licenseChan, err = kotsutil.FindChannelInLicense(foundChannelID, license); err != nil {
-		return -1, errors.Wrap(err, "failed to find channel in license")
+	licenseChan, err := s.GetOrBackfillLicenseChannel(appID, license)
+	if err != nil {
+		return -1, errors.Wrap(err, "failed to get or backfill channel")
 	}
 
 	// add to the top of the list and sort

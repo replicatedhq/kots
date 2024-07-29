@@ -59,21 +59,21 @@ func (h *Handler) SetAutomaticUpdatesConfig(w http.ResponseWriter, r *http.Reque
 
 	var licenseChan *kotsv1beta1.Channel
 	if foundApp.ChannelID == "" {
-		backfillID := kotsutil.GetBackfillChannelIDFromLicense(license)
-		if err := store.GetStore().SetAppChannelID(foundApp.ID, backfillID); err != nil {
+		licenseChan, err = store.GetStore().BackfillChannelIDFromLicense(foundApp.ID, license)
+		if err != nil {
 			updateCheckerSpecResponse.Error = "failed to backfill app channel id from license"
 			logger.Error(errors.Wrap(err, updateCheckerSpecResponse.Error))
 			JSON(w, http.StatusInternalServerError, updateCheckerSpecResponse)
 			return
 		}
-		foundApp.ChannelID = backfillID
-	}
-
-	if licenseChan, err = kotsutil.FindChannelInLicense(foundApp.ChannelID, license); err != nil {
-		updateCheckerSpecResponse.Error = "failed to find channel in license"
-		logger.Error(errors.Wrap(err, updateCheckerSpecResponse.Error))
-		JSON(w, http.StatusInternalServerError, updateCheckerSpecResponse)
-		return
+		foundApp.ChannelID = licenseChan.ChannelID
+	} else {
+		if licenseChan, err = kotsutil.FindChannelInLicense(foundApp.ChannelID, license); err != nil {
+			updateCheckerSpecResponse.Error = "failed to find channel in license"
+			logger.Error(errors.Wrap(err, updateCheckerSpecResponse.Error))
+			JSON(w, http.StatusInternalServerError, updateCheckerSpecResponse)
+			return
+		}
 	}
 
 	// Check if the deploy update configuration is valid based on app channel

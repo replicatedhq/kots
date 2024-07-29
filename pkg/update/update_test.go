@@ -59,7 +59,15 @@ func TestGetAvailableUpdates(t *testing.T) {
 			setup: func(t *testing.T, args args, licenseEndpoint string) {
 				t.Setenv("USE_MOCK_REPORTING", "1")
 				args.license.Spec.Endpoint = licenseEndpoint
-				mockStore.EXPECT().SetAppChannelID(args.app.ID, args.license.Spec.ChannelID).Return(nil) // expect a backfill
+				mockStore.EXPECT().BackfillChannelIDFromLicense(args.app.ID, args.license).Return(
+					&kotsv1beta1.Channel{
+						ChannelID:   "channel-id",
+						ChannelName: "channel-name",
+						ChannelSlug: "channel-name",
+						IsDefault:   true,
+					},
+					nil,
+				) // expect a backfill
 				mockStore.EXPECT().GetCurrentUpdateCursor(args.app.ID, args.license.Spec.ChannelID).Return("1", nil)
 			},
 			want:    []types.AvailableUpdate{},
@@ -103,7 +111,15 @@ func TestGetAvailableUpdates(t *testing.T) {
 			setup: func(t *testing.T, args args, licenseEndpoint string) {
 				t.Setenv("USE_MOCK_REPORTING", "1")
 				args.license.Spec.Endpoint = licenseEndpoint
-				mockStore.EXPECT().SetAppChannelID(args.app.ID, args.license.Spec.ChannelID).Return(nil) // expect a backfill
+				mockStore.EXPECT().BackfillChannelIDFromLicense(args.app.ID, args.license).Return(
+					&kotsv1beta1.Channel{
+						ChannelID:   "channel-id",
+						ChannelName: "channel-name",
+						ChannelSlug: "channel-name",
+						IsDefault:   true,
+					},
+					nil,
+				) // expect a backfill
 				mockStore.EXPECT().GetCurrentUpdateCursor(args.app.ID, args.license.Spec.ChannelID).Return("1", nil)
 			},
 			want: []types.AvailableUpdate{
@@ -149,7 +165,15 @@ func TestGetAvailableUpdates(t *testing.T) {
 			setup: func(t *testing.T, args args, licenseEndpoint string) {
 				t.Setenv("USE_MOCK_REPORTING", "1")
 				args.license.Spec.Endpoint = licenseEndpoint
-				mockStore.EXPECT().SetAppChannelID(args.app.ID, args.license.Spec.ChannelID).Return(nil) // expect a backfill
+				mockStore.EXPECT().BackfillChannelIDFromLicense(args.app.ID, args.license).Return(
+					&kotsv1beta1.Channel{
+						ChannelID:   "channel-id",
+						ChannelName: "channel-name",
+						ChannelSlug: "channel-name",
+						IsDefault:   true,
+					},
+					nil,
+				) // expect a backfill
 				mockStore.EXPECT().GetCurrentUpdateCursor(args.app.ID, args.license.Spec.ChannelID).Return("1", nil)
 			},
 			want:    []types.AvailableUpdate{},

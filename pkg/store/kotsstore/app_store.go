@@ -13,6 +13,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/persistence"
+	kotsv1beta1 "github.com/replicatedhq/kotskinds/apis/kots/v1beta1"
 	troubleshootanalyze "github.com/replicatedhq/troubleshoot/pkg/analyze"
 	"github.com/rqlite/gorqlite"
 	"github.com/segmentio/ksuid"
@@ -636,4 +637,29 @@ func (s *KOTSStore) SetAppChannelID(appID string, channelID string) error {
 	}
 
 	return nil
+}
+
+func (s *KOTSStore) BackfillChannelIDFromLicense(appID string, license *kotsv1beta1.License) (*kotsv1beta1.Channel, error) {
+	backfillID := kotsutil.GetBackfillChannelIDFromLicense(license)
+	if err := s.SetAppChannelID(appID, backfillID); err != nil {
+		return nil, errors.Wrap(err, "failed to backfill app channel id from license")
+	}
+	return kotsutil.FindChannelInLicense(backfillID, license)
+}
+
+func (s *KOTSStore) GetOrBackfillLicenseChannel(appID string, license *kotsv1beta1.License) (*kotsv1beta1.Channel, error) {
+	foundChannelID, err := s.GetAppChannelID(appID)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get app channel id")
+	}
+
+	if foundChannelID == "" {
+		return s.BackfillChannelIDFromLicense(appID, license)
+	}
+
+	licenseChan, err := kotsutil.FindChannelInLicense(foundChannelID, license)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to find channel in license")
+	}
+	return licenseChan, nil
 }
