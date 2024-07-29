@@ -129,7 +129,8 @@ const UploadLicenseFile = (props: Props) => {
   }, []);
 
   useEffect(() => {
-    if (props.appsListLength > 0 && props.isEmbeddedCluster) {
+    const { appSlugFromMetadata, appsListLength, isEmbeddedCluster } = props;
+    if (appsListLength > 0 && isEmbeddedCluster) {
       navigate(`/app/${appSlugFromMetadata}`, { replace: true });
     }
   }, [props.appsListLength]);
