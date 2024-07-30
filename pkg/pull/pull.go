@@ -241,7 +241,7 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 		if _, err = kotsutil.FindChannelInLicense(airgap.Spec.ChannelID, fetchOptions.License); err != nil {
 			return "", util.ActionableError{
 				NoRetry: true, // if this is airgap upload, make sure to free up tmp space
-				Message: fmt.Sprintf("License (%s) and airgap bundle (%s) channels do not match.", fetchOptions.License.Spec.ChannelName, airgap.Spec.ChannelName),
+				Message: fmt.Sprintf("Requested channel (%s) not found in license.", airgap.Spec.ChannelName),
 			}
 		}
 

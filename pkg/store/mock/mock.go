@@ -96,21 +96,6 @@ func (mr *MockStoreMockRecorder) AddDownstreamVersionsDetails(appID, clusterID, 
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddDownstreamVersionsDetails", reflect.TypeOf((*MockStore)(nil).AddDownstreamVersionsDetails), appID, clusterID, versions, checkIfDeployable)
 }
 
-// BackfillChannelIDFromLicense mocks base method.
-func (m *MockStore) BackfillChannelIDFromLicense(appID string, license *v1beta10.License) (*v1beta10.Channel, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "BackfillChannelIDFromLicense", appID, license)
-	ret0, _ := ret[0].(*v1beta10.Channel)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// BackfillChannelIDFromLicense indicates an expected call of BackfillChannelIDFromLicense.
-func (mr *MockStoreMockRecorder) BackfillChannelIDFromLicense(appID, license interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "BackfillChannelIDFromLicense", reflect.TypeOf((*MockStore)(nil).BackfillChannelIDFromLicense), appID, license)
-}
-
 // CreateApp mocks base method.
 func (m *MockStore) CreateApp(name, channelID, upstreamURI, licenseData string, isAirgapEnabled, skipImagePush, registryIsReadOnly bool) (*types3.App, error) {
 	m.ctrl.T.Helper()
@@ -910,6 +895,21 @@ func (m *MockStore) GetNextAppSequence(appID string) (int64, error) {
 func (mr *MockStoreMockRecorder) GetNextAppSequence(appID interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetNextAppSequence", reflect.TypeOf((*MockStore)(nil).GetNextAppSequence), appID)
+}
+
+// GetOrBackfillLicenseChannel mocks base method.
+func (m *MockStore) GetOrBackfillLicenseChannel(appID string, license *v1beta10.License) (*v1beta10.Channel, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetOrBackfillLicenseChannel", appID, license)
+	ret0, _ := ret[0].(*v1beta10.Channel)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetOrBackfillLicenseChannel indicates an expected call of GetOrBackfillLicenseChannel.
+func (mr *MockStoreMockRecorder) GetOrBackfillLicenseChannel(appID, license interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetOrBackfillLicenseChannel", reflect.TypeOf((*MockStore)(nil).GetOrBackfillLicenseChannel), appID, license)
 }
 
 // GetParentSequenceForSequence mocks base method.
@@ -2708,21 +2708,6 @@ func (mr *MockAppStoreMockRecorder) AddAppToAllDownstreams(appID interface{}) *g
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddAppToAllDownstreams", reflect.TypeOf((*MockAppStore)(nil).AddAppToAllDownstreams), appID)
 }
 
-// BackfillChannelIDFromLicense mocks base method.
-func (m *MockAppStore) BackfillChannelIDFromLicense(appID string, license *v1beta10.License) (*v1beta10.Channel, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "BackfillChannelIDFromLicense", appID, license)
-	ret0, _ := ret[0].(*v1beta10.Channel)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// BackfillChannelIDFromLicense indicates an expected call of BackfillChannelIDFromLicense.
-func (mr *MockAppStoreMockRecorder) BackfillChannelIDFromLicense(appID, license interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "BackfillChannelIDFromLicense", reflect.TypeOf((*MockAppStore)(nil).BackfillChannelIDFromLicense), appID, license)
-}
-
 // CreateApp mocks base method.
 func (m *MockAppStore) CreateApp(name, channelID, upstreamURI, licenseData string, isAirgapEnabled, skipImagePush, registryIsReadOnly bool) (*types3.App, error) {
 	m.ctrl.T.Helper()
@@ -2796,6 +2781,21 @@ func (m *MockAppStore) GetDownstream(clusterID string) (*types0.Downstream, erro
 func (mr *MockAppStoreMockRecorder) GetDownstream(clusterID interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetDownstream", reflect.TypeOf((*MockAppStore)(nil).GetDownstream), clusterID)
+}
+
+// GetOrBackfillLicenseChannel mocks base method.
+func (m *MockAppStore) GetOrBackfillLicenseChannel(appID string, license *v1beta10.License) (*v1beta10.Channel, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetOrBackfillLicenseChannel", appID, license)
+	ret0, _ := ret[0].(*v1beta10.Channel)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetOrBackfillLicenseChannel indicates an expected call of GetOrBackfillLicenseChannel.
+func (mr *MockAppStoreMockRecorder) GetOrBackfillLicenseChannel(appID, license interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetOrBackfillLicenseChannel", reflect.TypeOf((*MockAppStore)(nil).GetOrBackfillLicenseChannel), appID, license)
 }
 
 // IsGitOpsEnabledForApp mocks base method.

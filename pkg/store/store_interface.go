@@ -132,7 +132,7 @@ type AppStore interface {
 	RemoveApp(appID string) error
 	SetAppChannelChanged(appID string, channelChanged bool) error
 	SetAppSelectedChannelID(appID string, channelID string) error
-	BackfillChannelIDFromLicense(appID string, license *kotsv1beta1.License) (*kotsv1beta1.Channel, error)
+	GetOrBackfillLicenseChannel(appID string, license *kotsv1beta1.License) (*kotsv1beta1.Channel, error)
 }
 
 type DownstreamStore interface {
