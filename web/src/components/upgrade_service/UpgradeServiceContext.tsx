@@ -1,4 +1,3 @@
-import { isEqual } from "lodash";
 import { createContext, useContext, useState } from "react";
 
 export const UpgradeServiceContext = createContext(null);
