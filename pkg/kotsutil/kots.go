@@ -1652,7 +1652,7 @@ func FindChannelInLicense(channelID string, license *kotsv1beta1.License) (*kots
 	return nil, errors.New("channel not found in multi channel format license")
 }
 
-func GetBackfillChannelIDFromLicense(license *kotsv1beta1.License) string {
+func GetDefaultChannelIDFromLicense(license *kotsv1beta1.License) string {
 	for _, channel := range license.Spec.Channels {
 		if channel.IsDefault {
 			return channel.ChannelID
