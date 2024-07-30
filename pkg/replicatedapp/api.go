@@ -42,7 +42,6 @@ type LicenseData struct {
 
 func GetLatestLicense(license *kotsv1beta1.License) (*LicenseData, error) {
 	url := fmt.Sprintf("%s/license/%s", license.Spec.Endpoint, license.Spec.AppSlug)
-
 	licenseData, err := getLicenseFromAPI(url, license.Spec.LicenseID)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get license from api")

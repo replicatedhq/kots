@@ -41,7 +41,7 @@ func IsAirgapUpdateDeployable(app *apptypes.App, airgap *kotsv1beta1.Airgap) (bo
 	if err != nil {
 		return false, "", errors.Wrap(err, "failed to load license")
 	}
-	requiredUpdates, err := getRequiredAirgapUpdates(airgap, license, appVersions.AllVersions, app.ChannelChanged)
+	requiredUpdates, err := getRequiredAirgapUpdates(airgap, license, appVersions.AllVersions, app.ChannelChanged, app.SelectedChannelID)
 	if err != nil {
 		return false, "", errors.Wrap(err, "failed to get missing required versions")
 	}
@@ -51,7 +51,7 @@ func IsAirgapUpdateDeployable(app *apptypes.App, airgap *kotsv1beta1.Airgap) (bo
 	return true, "", nil
 }
 
-func getRequiredAirgapUpdates(airgap *kotsv1beta1.Airgap, license *kotsv1beta1.License, installedVersions []*downstreamtypes.DownstreamVersion, channelChanged bool) ([]string, error) {
+func getRequiredAirgapUpdates(airgap *kotsv1beta1.Airgap, license *kotsv1beta1.License, installedVersions []*downstreamtypes.DownstreamVersion, channelChanged bool, selectedChannelID string) ([]string, error) {
 	requiredUpdates := make([]string, 0)
 	// If no versions are installed, we can consider this an initial install.
 	// If the channel changed, we can consider this an initial install.
@@ -64,7 +64,7 @@ func getRequiredAirgapUpdates(airgap *kotsv1beta1.Airgap, license *kotsv1beta1.L
 		for _, appVersion := range installedVersions {
 			requiredSemver, requiredSemverErr := semver.ParseTolerant(requiredRelease.VersionLabel)
 
-			licenseChan, err := kotsutil.FindChannelInLicense(appVersion.ChannelID, license)
+			licenseChan, err := kotsutil.FindChannelInLicense(selectedChannelID, license)
 			if err != nil {
 				return nil, errors.Wrap(err, "failed to find channel in license")
 			}
