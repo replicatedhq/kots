@@ -53,7 +53,6 @@ const PreflightCheck = ({
       !isEqual(prevConfig, config) &&
       preflightCheck?.preflightResults.length > 0
     ) {
-      console.log("re runs");
       rerunPreflights();
     }
   }, []);
