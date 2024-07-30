@@ -1,4 +1,4 @@
-package multichannel
+package license
 
 import (
 	"github.com/pkg/errors"

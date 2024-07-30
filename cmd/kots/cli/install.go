@@ -31,9 +31,9 @@ import (
 	kotsadmtypes "github.com/replicatedhq/kots/pkg/kotsadm/types"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/kurl"
+	kotslicense "github.com/replicatedhq/kots/pkg/license"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/metrics"
-	"github.com/replicatedhq/kots/pkg/multichannel"
 	preflighttypes "github.com/replicatedhq/kots/pkg/preflight/types"
 	"github.com/replicatedhq/kots/pkg/print"
 	"github.com/replicatedhq/kots/pkg/pull"
@@ -167,7 +167,7 @@ func InstallCmd() *cobra.Command {
 			if err != nil {
 				return errors.Wrap(err, "failed to extract preferred channel slug")
 			}
-			license, err = multichannel.VerifyAndUpdateLicense(log, license, preferredChannelSlug, isAirgap)
+			license, err = kotslicense.VerifyAndUpdateLicense(log, license, preferredChannelSlug, isAirgap)
 			if err != nil {
 				return errors.Wrap(err, "failed to verify and update license")
 			}

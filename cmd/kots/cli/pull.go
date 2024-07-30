@@ -8,8 +8,8 @@ import (
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
+	kotslicense "github.com/replicatedhq/kots/pkg/license"
 	"github.com/replicatedhq/kots/pkg/logger"
-	"github.com/replicatedhq/kots/pkg/multichannel"
 	"github.com/replicatedhq/kots/pkg/pull"
 	registrytypes "github.com/replicatedhq/kots/pkg/registry/types"
 	kotsv1beta1 "github.com/replicatedhq/kotskinds/apis/kots/v1beta1"
@@ -111,7 +111,7 @@ func PullCmd() *cobra.Command {
 
 			// If we are passed a multi-channel license, verify that the requested channel is in the license
 			// so that we can warn the user immediately if it is not.
-			license, err = multichannel.VerifyAndUpdateLicense(log, license, preferredChannelSlug, false)
+			license, err = kotslicense.VerifyAndUpdateLicense(log, license, preferredChannelSlug, false)
 			if err != nil {
 				return errors.Wrap(err, "failed to verify and update license")
 			}
