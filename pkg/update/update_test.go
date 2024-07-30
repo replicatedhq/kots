@@ -43,8 +43,8 @@ func TestGetAvailableUpdates(t *testing.T) {
 			args: args{
 				kotsStore: mockStore,
 				app: &apptypes.App{
-					ID:        "app-id",
-					ChannelID: "", // using legacy non-multi chan license
+					ID:                "app-id",
+					SelectedChannelID: "", // using legacy non-multi chan license
 				},
 				license: &kotsv1beta1.License{
 					Spec: kotsv1beta1.LicenseSpec{
@@ -78,8 +78,8 @@ func TestGetAvailableUpdates(t *testing.T) {
 			args: args{
 				kotsStore: mockStore,
 				app: &apptypes.App{
-					ID:        "app-id",
-					ChannelID: "", // using legacy non-multi chan license
+					ID:                "app-id",
+					SelectedChannelID: "", // using legacy non-multi chan license
 				},
 				license: &kotsv1beta1.License{
 					Spec: kotsv1beta1.LicenseSpec{
@@ -184,8 +184,8 @@ func TestGetAvailableUpdates(t *testing.T) {
 			args: args{
 				kotsStore: mockStore,
 				app: &apptypes.App{
-					ID:        "app-id",
-					ChannelID: "channel-id2", // explicitly using the non-default channel
+					ID:                "app-id",
+					SelectedChannelID: "channel-id2", // explicitly using the non-default channel
 				},
 				license: &kotsv1beta1.License{
 					Spec: kotsv1beta1.LicenseSpec{

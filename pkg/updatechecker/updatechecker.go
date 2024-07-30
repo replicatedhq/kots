@@ -229,14 +229,14 @@ func checkForKotsAppUpdates(opts types.CheckForUpdatesOpts, finishedChan chan<- 
 	}
 
 	var licenseChan *kotsv1beta1.Channel
-	if a.ChannelID == "" {
+	if a.SelectedChannelID == "" {
 		licenseChan, err = store.BackfillChannelIDFromLicense(a.ID, latestLicense)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to backfill channel id from license")
 		}
-		a.ChannelID = licenseChan.ChannelID
+		a.SelectedChannelID = licenseChan.ChannelID
 	} else {
-		if licenseChan, err = kotsutil.FindChannelInLicense(a.ChannelID, latestLicense); err != nil {
+		if licenseChan, err = kotsutil.FindChannelInLicense(a.SelectedChannelID, latestLicense); err != nil {
 			return nil, errors.Wrap(err, "failed to find channel in license")
 		}
 	}

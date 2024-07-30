@@ -58,7 +58,7 @@ func (h *Handler) SetAutomaticUpdatesConfig(w http.ResponseWriter, r *http.Reque
 	}
 
 	var licenseChan *kotsv1beta1.Channel
-	if foundApp.ChannelID == "" {
+	if foundApp.SelectedChannelID == "" {
 		licenseChan, err = store.GetStore().BackfillChannelIDFromLicense(foundApp.ID, license)
 		if err != nil {
 			updateCheckerSpecResponse.Error = "failed to backfill app channel id from license"
@@ -66,9 +66,9 @@ func (h *Handler) SetAutomaticUpdatesConfig(w http.ResponseWriter, r *http.Reque
 			JSON(w, http.StatusInternalServerError, updateCheckerSpecResponse)
 			return
 		}
-		foundApp.ChannelID = licenseChan.ChannelID
+		foundApp.SelectedChannelID = licenseChan.ChannelID
 	} else {
-		if licenseChan, err = kotsutil.FindChannelInLicense(foundApp.ChannelID, license); err != nil {
+		if licenseChan, err = kotsutil.FindChannelInLicense(foundApp.SelectedChannelID, license); err != nil {
 			updateCheckerSpecResponse.Error = "failed to find channel in license"
 			logger.Error(errors.Wrap(err, updateCheckerSpecResponse.Error))
 			JSON(w, http.StatusInternalServerError, updateCheckerSpecResponse)

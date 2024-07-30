@@ -174,9 +174,9 @@ func (s *KOTSStore) GetApp(id string) (*apptypes.App, error) {
 	var restoreUndeployStatus gorqlite.NullString
 	var updateCheckerSpec gorqlite.NullString
 	var autoDeploy gorqlite.NullString
-	var channelID gorqlite.NullString
+	var selectedChannelId gorqlite.NullString
 
-	if err := rows.Scan(&app.ID, &app.Name, &licenseStr, &upstreamURI, &iconURI, &app.CreatedAt, &updatedAt, &app.Slug, &currentSequence, &lastUpdateCheckAt, &lastLicenseSync, &app.IsAirgap, &snapshotTTLNew, &snapshotSchedule, &restoreInProgressName, &restoreUndeployStatus, &updateCheckerSpec, &autoDeploy, &app.InstallState, &app.ChannelChanged, &channelID); err != nil {
+	if err := rows.Scan(&app.ID, &app.Name, &licenseStr, &upstreamURI, &iconURI, &app.CreatedAt, &updatedAt, &app.Slug, &currentSequence, &lastUpdateCheckAt, &lastLicenseSync, &app.IsAirgap, &snapshotTTLNew, &snapshotSchedule, &restoreInProgressName, &restoreUndeployStatus, &updateCheckerSpec, &autoDeploy, &app.InstallState, &app.ChannelChanged, &selectedChannelId); err != nil {
 		return nil, errors.Wrap(err, "failed to scan app")
 	}
 
@@ -189,7 +189,7 @@ func (s *KOTSStore) GetApp(id string) (*apptypes.App, error) {
 	app.RestoreUndeployStatus = apptypes.UndeployStatus(restoreUndeployStatus.String)
 	app.UpdateCheckerSpec = updateCheckerSpec.String
 	app.AutoDeploy = apptypes.AutoDeploy(autoDeploy.String)
-	app.ChannelID = channelID.String
+	app.SelectedChannelID = selectedChannelId.String
 
 	if lastLicenseSync.Valid {
 		app.LastLicenseSync = lastLicenseSync.Time.Format(time.RFC3339)
@@ -600,9 +600,9 @@ func (s *KOTSStore) SetAppChannelChanged(appID string, channelChanged bool) erro
 	return nil
 }
 
-func (s *KOTSStore) GetAppChannelID(appID string) (string, error) {
+func (s *KOTSStore) GetAppSelectedChannelID(appID string) (string, error) {
 	db := persistence.MustGetDBSession()
-	query := `select channel_id from app where id = ?`
+	query := `select selected_channel_id from app where id = ?`
 	rows, err := db.QueryOneParameterized(gorqlite.ParameterizedStatement{
 		Query:     query,
 		Arguments: []interface{}{appID},
@@ -622,12 +622,12 @@ func (s *KOTSStore) GetAppChannelID(appID string) (string, error) {
 	return channelID.String, nil
 }
 
-func (s *KOTSStore) SetAppChannelID(appID string, channelID string) error {
+func (s *KOTSStore) SetAppSelectedChannelID(appID string, channelID string) error {
 	logger.Debug("setting app channel id",
 		zap.String("appID", appID), zap.String("channelID", channelID))
 	db := persistence.MustGetDBSession()
 
-	query := `update app set channel_id = ? where id = ?`
+	query := `update app set selected_channel_id = ? where id = ?`
 	wr, err := db.WriteOneParameterized(gorqlite.ParameterizedStatement{
 		Query:     query,
 		Arguments: []interface{}{channelID, appID},
@@ -641,14 +641,14 @@ func (s *KOTSStore) SetAppChannelID(appID string, channelID string) error {
 
 func (s *KOTSStore) BackfillChannelIDFromLicense(appID string, license *kotsv1beta1.License) (*kotsv1beta1.Channel, error) {
 	backfillID := kotsutil.GetBackfillChannelIDFromLicense(license)
-	if err := s.SetAppChannelID(appID, backfillID); err != nil {
+	if err := s.SetAppSelectedChannelID(appID, backfillID); err != nil {
 		return nil, errors.Wrap(err, "failed to backfill app channel id from license")
 	}
 	return kotsutil.FindChannelInLicense(backfillID, license)
 }
 
 func (s *KOTSStore) GetOrBackfillLicenseChannel(appID string, license *kotsv1beta1.License) (*kotsv1beta1.Channel, error) {
-	foundChannelID, err := s.GetAppChannelID(appID)
+	foundChannelID, err := s.GetAppSelectedChannelID(appID)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get app channel id")
 	}

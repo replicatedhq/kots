@@ -358,7 +358,7 @@ func (h *Handler) UploadNewLicense(w http.ResponseWriter, r *http.Request) {
 				ID:           a.ID,
 				Slug:         a.Slug,
 				Name:         a.Name,
-				ChannelID:    a.ChannelID,
+				ChannelID:    a.SelectedChannelID,
 				LicenseData:  uploadLicenseRequest.LicenseData,
 				VersionLabel: installationParams.AppVersionLabel,
 			},
@@ -442,7 +442,7 @@ func (h *Handler) ResumeInstallOnline(w http.ResponseWriter, r *http.Request) {
 		Slug:         a.Slug,
 		Name:         a.Name,
 		VersionLabel: installationParams.AppVersionLabel,
-		ChannelID:    a.ChannelID,
+		ChannelID:    a.SelectedChannelID,
 	}
 
 	// the license data is left in the table
@@ -680,7 +680,7 @@ func licenseResponseFromLicense(license *kotsv1beta1.License, app *apptypes.App)
 		return entitlements[i].Title < entitlements[j].Title
 	})
 
-	channel, err := kotsutil.FindChannelInLicense(app.ChannelID, license)
+	channel, err := kotsutil.FindChannelInLicense(app.SelectedChannelID, license)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to find channel in license")
 	}

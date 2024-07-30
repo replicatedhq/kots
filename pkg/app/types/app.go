@@ -30,7 +30,7 @@ type App struct {
 	InstallState          string         `json:"installState"`
 	LastLicenseSync       string         `json:"lastLicenseSync"`
 	ChannelChanged        bool           `json:"channelChanged"`
-	ChannelID             string         `json:"channel_id"`
+	SelectedChannelID     string         `json:"selected_channel_id"`
 }
 
 func (a *App) GetID() string {
@@ -45,8 +45,8 @@ func (a *App) GetCurrentSequence() int64 {
 	return a.CurrentSequence
 }
 
-func (a *App) GetChannelID() string {
-	return a.ChannelID
+func (a *App) GetSelectedChannelID() string {
+	return a.SelectedChannelID
 }
 
 func (a *App) GetIsAirgap() bool {

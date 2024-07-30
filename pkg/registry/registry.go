@@ -147,7 +147,7 @@ func RewriteImages(appID string, sequence int64, hostname string, username strin
 		},
 		AppID:         a.ID,
 		AppSlug:       a.Slug,
-		AppChannelID:  a.ChannelID,
+		AppChannelID:  a.SelectedChannelID,
 		IsGitOps:      a.IsGitOps,
 		AppSequence:   nextAppSequence,
 		ReportingInfo: reporting.GetReportingInfo(a.ID),

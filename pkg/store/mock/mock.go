@@ -1533,20 +1533,6 @@ func (mr *MockStoreMockRecorder) SetAppChannelChanged(appID, channelChanged inte
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetAppChannelChanged", reflect.TypeOf((*MockStore)(nil).SetAppChannelChanged), appID, channelChanged)
 }
 
-// SetAppChannelID mocks base method.
-func (m *MockStore) SetAppChannelID(appID, channelID string) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "SetAppChannelID", appID, channelID)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// SetAppChannelID indicates an expected call of SetAppChannelID.
-func (mr *MockStoreMockRecorder) SetAppChannelID(appID, channelID interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetAppChannelID", reflect.TypeOf((*MockStore)(nil).SetAppChannelID), appID, channelID)
-}
-
 // SetAppInstallState mocks base method.
 func (m *MockStore) SetAppInstallState(appID, state string) error {
 	m.ctrl.T.Helper()
@@ -1573,6 +1559,20 @@ func (m *MockStore) SetAppIsAirgap(appID string, isAirgap bool) error {
 func (mr *MockStoreMockRecorder) SetAppIsAirgap(appID, isAirgap interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetAppIsAirgap", reflect.TypeOf((*MockStore)(nil).SetAppIsAirgap), appID, isAirgap)
+}
+
+// SetAppSelectedChannelID mocks base method.
+func (m *MockStore) SetAppSelectedChannelID(appID, channelID string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SetAppSelectedChannelID", appID, channelID)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// SetAppSelectedChannelID indicates an expected call of SetAppSelectedChannelID.
+func (mr *MockStoreMockRecorder) SetAppSelectedChannelID(appID, channelID interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetAppSelectedChannelID", reflect.TypeOf((*MockStore)(nil).SetAppSelectedChannelID), appID, channelID)
 }
 
 // SetAppStatus mocks base method.
@@ -2916,20 +2916,6 @@ func (mr *MockAppStoreMockRecorder) SetAppChannelChanged(appID, channelChanged i
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetAppChannelChanged", reflect.TypeOf((*MockAppStore)(nil).SetAppChannelChanged), appID, channelChanged)
 }
 
-// SetAppChannelID mocks base method.
-func (m *MockAppStore) SetAppChannelID(appID, channelID string) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "SetAppChannelID", appID, channelID)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// SetAppChannelID indicates an expected call of SetAppChannelID.
-func (mr *MockAppStoreMockRecorder) SetAppChannelID(appID, channelID interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetAppChannelID", reflect.TypeOf((*MockAppStore)(nil).SetAppChannelID), appID, channelID)
-}
-
 // SetAppInstallState mocks base method.
 func (m *MockAppStore) SetAppInstallState(appID, state string) error {
 	m.ctrl.T.Helper()
@@ -2942,6 +2928,20 @@ func (m *MockAppStore) SetAppInstallState(appID, state string) error {
 func (mr *MockAppStoreMockRecorder) SetAppInstallState(appID, state interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetAppInstallState", reflect.TypeOf((*MockAppStore)(nil).SetAppInstallState), appID, state)
+}
+
+// SetAppSelectedChannelID mocks base method.
+func (m *MockAppStore) SetAppSelectedChannelID(appID, channelID string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SetAppSelectedChannelID", appID, channelID)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// SetAppSelectedChannelID indicates an expected call of SetAppSelectedChannelID.
+func (mr *MockAppStoreMockRecorder) SetAppSelectedChannelID(appID, channelID interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetAppSelectedChannelID", reflect.TypeOf((*MockAppStore)(nil).SetAppSelectedChannelID), appID, channelID)
 }
 
 // SetAutoDeploy mocks base method.

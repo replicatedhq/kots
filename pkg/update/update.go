@@ -33,14 +33,14 @@ func InitAvailableUpdatesDir() error {
 func GetAvailableUpdates(kotsStore storepkg.Store, app *apptypes.App, license *kotsv1beta1.License) ([]types.AvailableUpdate, error) {
 	var err error
 	var licenseChan *kotsv1beta1.Channel
-	if app.ChannelID == "" {
+	if app.SelectedChannelID == "" {
 		licenseChan, err = kotsStore.BackfillChannelIDFromLicense(app.ID, license)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to backfill channel id from license")
 		}
-		app.ChannelID = licenseChan.ChannelID
+		app.SelectedChannelID = licenseChan.ChannelID
 	} else {
-		if licenseChan, err = kotsutil.FindChannelInLicense(app.ChannelID, license); err != nil {
+		if licenseChan, err = kotsutil.FindChannelInLicense(app.SelectedChannelID, license); err != nil {
 			return nil, errors.Wrap(err, "failed to find channel in license")
 		}
 	}

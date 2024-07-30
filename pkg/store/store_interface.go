@@ -131,7 +131,7 @@ type AppStore interface {
 	SetSnapshotSchedule(appID string, snapshotSchedule string) error
 	RemoveApp(appID string) error
 	SetAppChannelChanged(appID string, channelChanged bool) error
-	SetAppChannelID(appID string, channelID string) error
+	SetAppSelectedChannelID(appID string, channelID string) error
 	BackfillChannelIDFromLicense(appID string, license *kotsv1beta1.License) (*kotsv1beta1.Channel, error)
 }
 

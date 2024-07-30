@@ -141,7 +141,7 @@ func RenderDir(opts types.RenderDirOptions) error {
 		IsAirgap:         opts.App.IsAirgap,
 		AppID:            opts.App.ID,
 		AppSlug:          opts.App.Slug,
-		AppChannelID:     opts.App.ChannelID,
+		AppChannelID:     opts.App.SelectedChannelID,
 		IsGitOps:         opts.App.IsGitOps,
 		AppSequence:      opts.Sequence,
 		ReportingInfo:    opts.ReportingInfo,
