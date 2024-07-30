@@ -31,6 +31,7 @@ func TestGetK8sMinorVersion(t *testing.T) {
 		{"expect minor version 22", args{mockClientsetK8sVersion("1", "22")}, 22, false},
 		{"expect minor version 21", args{mockClientsetK8sVersion("1", "21")}, 21, false},
 		{"expect minor version conversion error", args{mockClientsetK8sVersion("1", "a")}, -1, true},
+		{"expect minor version 30", args{mockClientsetK8sVersion("1", "30+")}, 30, false},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
