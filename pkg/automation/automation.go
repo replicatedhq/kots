@@ -203,8 +203,21 @@ func installLicenseSecret(clientset *kubernetes.Clientset, licenseSecret corev1.
 		return errors.Wrap(err, "failed to verify license signature")
 	}
 
+	instParams, err := kotsutil.GetInstallationParams(kotsadmtypes.KotsadmConfigMap)
+	if err != nil {
+		return errors.Wrap(err, "failed to get existing kotsadm config map")
+	}
+
+	desiredAppName := strings.Replace(appSlug, "-", " ", 0)
+	upstreamURI := fmt.Sprintf("replicated://%s", appSlug)
+
+	matchedChannelID, err := kotsutil.FindChannelIDInLicense(instParams.RequestedChannelSlug, verifiedLicense)
+	if err != nil {
+		return errors.Wrap(err, "failed to find requested channel in license")
+	}
+
 	if !kotsadm.IsAirgap() {
-		licenseData, err := replicatedapp.GetLatestLicense(verifiedLicense)
+		licenseData, err := replicatedapp.GetLatestLicense(verifiedLicense, matchedChannelID)
 		if err != nil {
 			return errors.Wrap(err, "failed to get latest license")
 		}
@@ -234,19 +247,6 @@ func installLicenseSecret(clientset *kubernetes.Clientset, licenseSecret corev1.
 		if !resolved {
 			return fmt.Errorf("license already exists for app %s", appSlug)
 		}
-	}
-
-	instParams, err := kotsutil.GetInstallationParams(kotsadmtypes.KotsadmConfigMap)
-	if err != nil {
-		return errors.Wrap(err, "failed to get existing kotsadm config map")
-	}
-
-	desiredAppName := strings.Replace(appSlug, "-", " ", 0)
-	upstreamURI := fmt.Sprintf("replicated://%s", appSlug)
-
-	matchedChannelID, err := kotsutil.FindChannelIDInLicense(instParams.RequestedChannelSlug, verifiedLicense)
-	if err != nil {
-		return errors.Wrap(err, "failed to find requested channel in license")
 	}
 
 	a, err := store.GetStore().CreateApp(desiredAppName, matchedChannelID, upstreamURI, string(license), verifiedLicense.Spec.IsAirgapSupported, instParams.SkipImagePush, instParams.RegistryIsReadOnly)

@@ -134,7 +134,7 @@ func canStartUpgradeService(a *apptypes.App, r StartUpgradeServiceRequest) (bool
 		return true, "", nil
 	}
 
-	ll, err := replicatedapp.GetLatestLicense(currLicense)
+	ll, err := replicatedapp.GetLatestLicense(currLicense, a.SelectedChannelID)
 	if err != nil {
 		return false, "", errors.Wrap(err, "failed to get latest license")
 	}

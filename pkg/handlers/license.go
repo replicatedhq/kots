@@ -272,10 +272,30 @@ func (h *Handler) UploadNewLicense(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	installationParams, err := kotsutil.GetInstallationParams(kotsadmtypes.KotsadmConfigMap)
+	if err != nil {
+		logger.Error(err)
+		uploadLicenseResponse.Error = err.Error()
+		JSON(w, http.StatusInternalServerError, uploadLicenseResponse)
+		return
+	}
+
+	desiredAppName := strings.Replace(verifiedLicense.Spec.AppSlug, "-", " ", 0)
+	upstreamURI := fmt.Sprintf("replicated://%s", verifiedLicense.Spec.AppSlug)
+
+	// verify that requested channel slug exists in the license
+	matchedChannelID, err := kotsutil.FindChannelIDInLicense(installationParams.RequestedChannelSlug, verifiedLicense)
+	if err != nil {
+		logger.Error(err)
+		uploadLicenseResponse.Error = "Your current license does not grant access to the channel you requested. Please generate a support bundle and contact support for assistance."
+		JSON(w, http.StatusBadRequest, uploadLicenseResponse)
+		return
+	}
+
 	if !kotsadm.IsAirgap() {
 		// sync license
 		logger.Info("syncing license with server to retrieve latest version")
-		licenseData, err := replicatedapp.GetLatestLicense(verifiedLicense)
+		licenseData, err := replicatedapp.GetLatestLicense(verifiedLicense, matchedChannelID)
 		if err != nil {
 			logger.Error(errors.Wrap(err, "failed to get latest license"))
 			uploadLicenseResponse.Error = err.Error()
@@ -321,26 +341,6 @@ func (h *Handler) UploadNewLicense(w http.ResponseWriter, r *http.Request) {
 			JSON(w, http.StatusBadRequest, uploadLicenseResponse)
 			return
 		}
-	}
-
-	installationParams, err := kotsutil.GetInstallationParams(kotsadmtypes.KotsadmConfigMap)
-	if err != nil {
-		logger.Error(err)
-		uploadLicenseResponse.Error = err.Error()
-		JSON(w, http.StatusInternalServerError, uploadLicenseResponse)
-		return
-	}
-
-	desiredAppName := strings.Replace(verifiedLicense.Spec.AppSlug, "-", " ", 0)
-	upstreamURI := fmt.Sprintf("replicated://%s", verifiedLicense.Spec.AppSlug)
-
-	// verify that requested channel slug exists in the license
-	matchedChannelID, err := kotsutil.FindChannelIDInLicense(installationParams.RequestedChannelSlug, verifiedLicense)
-	if err != nil {
-		logger.Error(err)
-		uploadLicenseResponse.Error = "Your current license does not grant access to the channel you requested. Please generate a support bundle and contact support for assistance."
-		JSON(w, http.StatusBadRequest, uploadLicenseResponse)
-		return
 	}
 
 	a, err := store.GetStore().CreateApp(desiredAppName, matchedChannelID, upstreamURI, licenseString, verifiedLicense.Spec.IsAirgapSupported, installationParams.SkipImagePush, installationParams.RegistryIsReadOnly)

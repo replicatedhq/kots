@@ -41,7 +41,7 @@ func ParseReplicatedURL(u *url.URL) (*ReplicatedUpstream, error) {
 	return &replicatedUpstream, nil
 }
 
-func (r *ReplicatedUpstream) GetRequest(method string, license *kotsv1beta1.License, cursor ReplicatedCursor) (*http.Request, error) {
+func (r *ReplicatedUpstream) GetRequest(method string, license *kotsv1beta1.License, cursor ReplicatedCursor, selectedChannelID string) (*http.Request, error) {
 	u, err := url.Parse(license.Spec.Endpoint)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to parse endpoint from license")
@@ -64,6 +64,7 @@ func (r *ReplicatedUpstream) GetRequest(method string, license *kotsv1beta1.Lice
 	}
 	urlValues.Add("licenseSequence", fmt.Sprintf("%d", license.Spec.LicenseSequence))
 	urlValues.Add("isSemverSupported", "true")
+	urlValues.Add("selectedChannelId", selectedChannelID)
 
 	url := fmt.Sprintf("%s://%s?%s", u.Scheme, urlPath, urlValues.Encode())
 

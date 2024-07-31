@@ -46,7 +46,8 @@ func VerifyAndUpdateLicense(log *logger.CLILogger, license *kotsv1beta1.License,
 		return license, nil
 	}
 	log.ActionWithSpinner("Checking for license update")
-	updatedLicense, err := replicatedapp.GetLatestLicense(license)
+	// we fetch the latest license to ensure that the license is up to date, before proceeding
+	updatedLicense, err := replicatedapp.GetLatestLicense(license, "")
 	if err != nil {
 		log.FinishSpinnerWithError()
 		return nil, errors.Wrap(err, "failed to get latest license")

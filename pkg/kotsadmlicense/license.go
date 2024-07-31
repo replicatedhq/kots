@@ -46,7 +46,7 @@ func Sync(a *apptypes.App, licenseString string, failOnVersionCreate bool) (*kot
 		updatedLicense = verifiedLicense
 	} else {
 		// get from the api
-		licenseData, err := replicatedapp.GetLatestLicense(currentLicense)
+		licenseData, err := replicatedapp.GetLatestLicense(currentLicense, a.SelectedChannelID)
 		if err != nil {
 			return nil, false, errors.Wrap(err, "failed to get latest license")
 		}
@@ -120,7 +120,7 @@ func Change(a *apptypes.App, newLicenseString string) (*kotsv1beta1.License, err
 	}
 
 	if !a.IsAirgap {
-		licenseData, err := replicatedapp.GetLatestLicense(newLicense)
+		licenseData, err := replicatedapp.GetLatestLicense(newLicense, a.SelectedChannelID)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to get latest license")
 		}
