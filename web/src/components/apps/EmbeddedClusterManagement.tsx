@@ -379,7 +379,10 @@ const EmbeddedClusterManagement = ({
       const firstVersion = downstream.pendingVersions.find(
         (version: Version) => version?.sequence === 0
       );
-      if (firstVersion?.status === "pending_preflight") {
+      if (
+        firstVersion?.status === "pending_preflight" ||
+        firstVersion?.status === "pending"
+      ) {
         navigate(`/${app.slug}/preflight`);
         return true;
       }
