@@ -1022,10 +1022,6 @@ func (o *Operator) reconcileDeployment(cm *corev1.ConfigMap) (finalError error) 
 		}
 	}
 
-	if err := store.GetStore().SetAppSelectedChannelID(appID, cm.Data["channel-id"]); err != nil {
-		return errors.Wrap(err, "failed to set app channel id")
-	}
-
 	if err := o.store.SetAppChannelChanged(appID, false); err != nil {
 		return errors.Wrap(err, "failed to reset channel changed flag")
 	}
