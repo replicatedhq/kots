@@ -121,11 +121,23 @@ func (s *KOTSStore) UpdateAppLicense(appID string, baseSequence int64, archiveDi
 		return int64(0), errors.Wrap(err, "failed to write new license")
 	}
 
-	//  app has the original license data received from the server
-	statements = append(statements, gorqlite.ParameterizedStatement{
-		Query:     `update app set license = ?, last_license_sync = ?, channel_changed = ? where id = ?`,
-		Arguments: []interface{}{originalLicenseData, time.Now().Unix(), channelChanged, appID},
-	})
+	// If the license channels array has more than one entry, then the license is a true multi-channel license,
+	// and we should skip updating selected_channel_id in the app table. If there's only a single entry,
+	// we should update the selected_channel_id in the app table to ensure it stays consistent across channel
+	// changes. This is a temporary solution until channel changes on true multi-channel licenses are supported.
+	if len(newLicense.Spec.Channels) > 1 {
+		//  app has the original license data received from the server
+		statements = append(statements, gorqlite.ParameterizedStatement{
+			Query:     `update app set license = ?, last_license_sync = ?, channel_changed = ? where id = ?`,
+			Arguments: []interface{}{encodedLicense, time.Now().Unix(), channelChanged, appID},
+		})
+	} else {
+		//  app has the original license data received from the server
+		statements = append(statements, gorqlite.ParameterizedStatement{
+			Query:     `update app set license = ?, last_license_sync = ?, channel_changed = ?, selected_channel_id = ? where id = ?`,
+			Arguments: []interface{}{originalLicenseData, time.Now().Unix(), channelChanged, appID, newLicense.Spec.ChannelID},
+		})
+	}
 
 	appVersionStatements, newSeq, err := s.createNewVersionForLicenseChangeStatements(appID, baseSequence, archiveDir, renderer, reportingInfo)
 	if err != nil {
