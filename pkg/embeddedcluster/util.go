@@ -18,8 +18,8 @@ import (
 )
 
 const (
-	seaweedfsNamespace = "seaweedfs"
-	seaweedfsS3SVCName = "ec-seaweedfs-s3"
+	SeaweedfsNamespace = "seaweedfs"
+	SeaweedfsS3SVCName = "ec-seaweedfs-s3"
 )
 
 // ErrNoInstallations is returned when no installation object is found in the cluster.
@@ -101,7 +101,7 @@ func ClusterConfig(ctx context.Context, kbClient kbclient.Client) (*embeddedclus
 }
 
 func GetSeaweedFSS3ServiceIP(ctx context.Context, kbClient kbclient.Client) (string, error) {
-	nsn := k8stypes.NamespacedName{Name: seaweedfsS3SVCName, Namespace: seaweedfsNamespace}
+	nsn := k8stypes.NamespacedName{Name: SeaweedfsS3SVCName, Namespace: SeaweedfsNamespace}
 	var svc corev1.Service
 	if err := kbClient.Get(ctx, nsn, &svc); err != nil && !k8serrors.IsNotFound(err) {
 		return "", fmt.Errorf("failed to get seaweedfs s3 service: %w", err)

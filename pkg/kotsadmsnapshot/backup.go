@@ -12,6 +12,7 @@ import (
 
 	units "github.com/docker/go-units"
 	"github.com/pkg/errors"
+	embeddedclusterv1beta1 "github.com/replicatedhq/embedded-cluster-kinds/apis/v1beta1"
 	downstreamtypes "github.com/replicatedhq/kots/pkg/api/downstream/types"
 	apptypes "github.com/replicatedhq/kots/pkg/app/types"
 	"github.com/replicatedhq/kots/pkg/embeddedcluster"
@@ -35,6 +36,7 @@ import (
 	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/client-go/kubernetes"
+	kbclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 func CreateApplicationBackup(ctx context.Context, a *apptypes.App, isScheduled bool) (*velerov1.Backup, error) {
@@ -128,7 +130,7 @@ func CreateApplicationBackup(ctx context.Context, a *apptypes.App, isScheduled b
 	includedNamespaces = append(includedNamespaces, veleroBackup.Spec.IncludedNamespaces...)
 	includedNamespaces = append(includedNamespaces, kotsKinds.KotsApplication.Spec.AdditionalNamespaces...)
 
-	veleroBackup.Spec.IncludedNamespaces = prepareIncludedNamespaces(includedNamespaces, util.IsEmbeddedCluster())
+	veleroBackup.Spec.IncludedNamespaces = prepareIncludedNamespaces(includedNamespaces)
 
 	snapshotTrigger := "manual"
 	if isScheduled {
@@ -382,21 +384,14 @@ func CreateInstanceBackup(ctx context.Context, cluster *downstreamtypes.Downstre
 		if err != nil {
 			return nil, fmt.Errorf("failed to get current installation: %w", err)
 		}
-		seaweedFSS3ServiceIP, err := embeddedcluster.GetSeaweedFSS3ServiceIP(ctx, kbClient)
+		ecAnnotations, err := ecBackupAnnotations(ctx, kbClient, installation)
 		if err != nil {
-			return nil, fmt.Errorf("failed to get seaweedfs s3 service ip: %w", err)
+			return nil, fmt.Errorf("failed to get embedded cluster backup annotations: %w", err)
 		}
-		if seaweedFSS3ServiceIP != "" {
-			backupAnnotations["kots.io/embedded-cluster-seaweedfs-s3-ip"] = seaweedFSS3ServiceIP
+		for k, v := range ecAnnotations {
+			backupAnnotations[k] = v
 		}
-		backupAnnotations["kots.io/embedded-cluster"] = "true"
-		backupAnnotations["kots.io/embedded-cluster-id"] = util.EmbeddedClusterID()
-		backupAnnotations["kots.io/embedded-cluster-version"] = util.EmbeddedClusterVersion()
-		backupAnnotations["kots.io/embedded-cluster-is-ha"] = strconv.FormatBool(installation.Spec.HighAvailability)
-		if installation.Spec.Network != nil {
-			backupAnnotations["kots.io/embedded-cluster-pod-cidr"] = installation.Spec.Network.PodCIDR
-			backupAnnotations["kots.io/embedded-cluster-service-cidr"] = installation.Spec.Network.ServiceCIDR
-		}
+		includedNamespaces = append(includedNamespaces, ecIncludedNamespaces(installation)...)
 	}
 
 	includeClusterResources := true
@@ -409,7 +404,7 @@ func CreateInstanceBackup(ctx context.Context, cluster *downstreamtypes.Downstre
 		},
 		Spec: velerov1.BackupSpec{
 			StorageLocation:         "default",
-			IncludedNamespaces:      prepareIncludedNamespaces(includedNamespaces, util.IsEmbeddedCluster()),
+			IncludedNamespaces:      prepareIncludedNamespaces(includedNamespaces),
 			ExcludedNamespaces:      excludedNamespaces,
 			IncludeClusterResources: &includeClusterResources,
 			OrLabelSelectors:        instanceBackupLabelSelectors(util.IsEmbeddedCluster()),
@@ -985,11 +980,47 @@ func mergeLabelSelector(kots metav1.LabelSelector, app metav1.LabelSelector) met
 	return kots
 }
 
+// ecBackupAnnotations returns the annotations that should be added to an embedded cluster backup
+func ecBackupAnnotations(ctx context.Context, kbClient kbclient.Client, in *embeddedclusterv1beta1.Installation) (map[string]string, error) {
+	annotations := map[string]string{}
+
+	seaweedFSS3ServiceIP, err := embeddedcluster.GetSeaweedFSS3ServiceIP(ctx, kbClient)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get seaweedfs s3 service ip: %w", err)
+	}
+	if seaweedFSS3ServiceIP != "" {
+		annotations["kots.io/embedded-cluster-seaweedfs-s3-ip"] = seaweedFSS3ServiceIP
+	}
+
+	annotations["kots.io/embedded-cluster"] = "true"
+	annotations["kots.io/embedded-cluster-id"] = util.EmbeddedClusterID()
+	annotations["kots.io/embedded-cluster-version"] = util.EmbeddedClusterVersion()
+	annotations["kots.io/embedded-cluster-is-ha"] = strconv.FormatBool(in.Spec.HighAvailability)
+
+	if in.Spec.Network != nil {
+		annotations["kots.io/embedded-cluster-pod-cidr"] = in.Spec.Network.PodCIDR
+		annotations["kots.io/embedded-cluster-service-cidr"] = in.Spec.Network.ServiceCIDR
+	}
+
+	return annotations, nil
+}
+
+// ecIncludedNamespaces returns the namespaces that should be included in an embedded cluster backup
+func ecIncludedNamespaces(in *embeddedclusterv1beta1.Installation) []string {
+	includedNamespaces := []string{"embedded-cluster", "kube-system", "openebs"}
+	if in.Spec.AirGap {
+		includedNamespaces = append(includedNamespaces, "registry")
+		if in.Spec.HighAvailability {
+			includedNamespaces = append(includedNamespaces, "seaweedfs")
+		}
+	}
+	return includedNamespaces
+}
+
 // Prepares the list of unique namespaces that will be included in a backup. Empty namespaces are excluded.
 // If a wildcard is specified, any specific namespaces will not be included since the backup will include all namespaces.
 // Velero does not allow for both a wildcard and specific namespaces and will consider the backup invalid if both are present.
-// If this is an embedded-cluster installation, the "embedded-cluster", "openebs" and "kube-system" namespaces will be included.
-func prepareIncludedNamespaces(namespaces []string, isEC bool) []string {
+func prepareIncludedNamespaces(namespaces []string) []string {
 	uniqueNamespaces := make(map[string]bool)
 	for _, n := range namespaces {
 		if n == "" {
@@ -998,14 +1029,6 @@ func prepareIncludedNamespaces(namespaces []string, isEC bool) []string {
 			return []string{n}
 		}
 		uniqueNamespaces[n] = true
-	}
-
-	if isEC {
-		uniqueNamespaces["embedded-cluster"] = true
-		uniqueNamespaces["kube-system"] = true
-		uniqueNamespaces["openebs"] = true
-		uniqueNamespaces["registry"] = true
-		uniqueNamespaces["seaweedfs"] = true
 	}
 
 	includedNamespaces := make([]string, len(uniqueNamespaces))

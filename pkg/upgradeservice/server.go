@@ -30,10 +30,6 @@ func Serve(params types.UpgradeServiceParams) error {
 		return errors.Wrap(err, "failed to bootstrap")
 	}
 
-	if err := upgradepreflight.Init(); err != nil {
-		return errors.Wrap(err, "failed to init preflight")
-	}
-
 	r := mux.NewRouter()
 	r.Use(handlers.ParamsMiddleware(params))
 

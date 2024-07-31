@@ -1104,6 +1104,9 @@ class AppVersionHistory extends Component<Props, State> {
               this.props.outletContext.updateCallback();
             }
             this.fetchKotsDownstreamHistory();
+            if (this.props.outletContext.isEmbeddedCluster) {
+              this.fetchAvailableUpdates();
+            }
           } else {
             this.setState({
               checkingForUpdates: true,
