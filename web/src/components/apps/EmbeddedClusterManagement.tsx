@@ -14,6 +14,7 @@ import CodeSnippet from "../shared/CodeSnippet";
 
 import "@src/scss/components/apps/EmbeddedClusterManagement.scss";
 import { isEqual } from "lodash";
+import { Version } from "@types";
 
 const testData = {
   nodes: undefined,
@@ -369,7 +370,27 @@ const EmbeddedClusterManagement = ({
   }, [nodesData?.nodes?.toString(), hasNodesChanged]);
   // #endregion
 
+  const redirectIfContinueHasBeenCalled = () => {
+    const appNeedsConfiguration = app?.downstream?.pendingVersions?.length > 0;
+
+    if (appNeedsConfiguration) {
+      const downstream = app.downstream;
+      const firstVersion = downstream.pendingVersions.find(
+        (version: Version) => version?.sequence === 0
+      );
+      if (firstVersion?.status === "pending_preflight") {
+        navigate(`/${app.slug}/preflight`);
+        return;
+      }
+      if (firstVersion?.status === "pending_config") {
+        navigate(`/${app.slug}/config`);
+        return;
+      }
+    }
+  };
+
   const onContinueClick = async () => {
+    redirectIfContinueHasBeenCalled();
     const res = await fetch(
       `${process.env.API_ENDPOINT}/embedded-cluster/management`,
       {
