@@ -372,23 +372,26 @@ const EmbeddedClusterManagement = ({
 
   // temporary redirect logic - when user has clicked continue during initial install and went back to the cluster management page
   useEffect(() => {
-    const appNeedsConfiguration = app?.downstream?.pendingVersions?.length > 0;
+    if (fromLicenseFlow) {
+      const appNeedsConfiguration =
+        app?.downstream?.pendingVersions?.length > 0;
 
-    if (appNeedsConfiguration) {
-      const downstream = app.downstream;
-      const firstVersion = downstream.pendingVersions.find(
-        (version: Version) => version?.sequence === 0
-      );
-      if (
-        firstVersion?.status === "pending_preflight" ||
-        firstVersion?.status === "pending"
-      ) {
-        navigate(`/${app.slug}/preflight`);
-        return;
-      }
-      if (firstVersion?.status === "pending_config") {
-        navigate(`/${app.slug}/config`);
-        return;
+      if (appNeedsConfiguration) {
+        const downstream = app.downstream;
+        const firstVersion = downstream.pendingVersions.find(
+          (version: Version) => version?.sequence === 0
+        );
+        if (
+          firstVersion?.status === "pending_preflight" ||
+          firstVersion?.status === "pending"
+        ) {
+          navigate(`/${app.slug}/preflight`);
+          return;
+        }
+        if (firstVersion?.status === "pending_config") {
+          navigate(`/${app.slug}/config`);
+          return;
+        }
       }
     }
   }, []);
