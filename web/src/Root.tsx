@@ -55,6 +55,7 @@ import AppSnapshots from "@components/snapshots/AppSnapshots";
 import AppSnapshotRestore from "@components/snapshots/AppSnapshotRestore";
 import EmbeddedClusterViewNode from "@components/apps/EmbeddedClusterViewNode";
 import UpgradeStatusModal from "@components/modals/UpgradeStatusModal";
+import AppLoading from "@components/apps/AppLoading";
 
 // react-query client
 const queryClient = new QueryClient();
@@ -557,29 +558,24 @@ const Root = () => {
                   />
                 }
               />
-              {!state.adminConsoleMetadata?.isEmbeddedCluster && (
-                <Route
-                  path="/upload-license"
-                  element={
-                    <UploadLicenseFile
-                      logo={state.appLogo}
-                      appsListLength={state.appsList?.length}
-                      appName={state.selectedAppName || ""}
-                      appSlugFromMetadata={state.appSlugFromMetadata || ""}
-                      fetchingMetadata={state.fetchingMetadata}
-                      onUploadSuccess={getAppsList}
-                      isEmbeddedCluster={Boolean(
-                        state.adminConsoleMetadata?.isEmbeddedCluster
-                      )}
-                    />
-                  }
-                />
-              )}
+              <Route
+                path="/upload-license"
+                element={
+                  <UploadLicenseFile
+                    logo={state.appLogo}
+                    appsListLength={state.appsList?.length}
+                    appName={state.selectedAppName || ""}
+                    appSlugFromMetadata={state.appSlugFromMetadata || ""}
+                    fetchingMetadata={state.fetchingMetadata}
+                    onUploadSuccess={getAppsList}
+                    isEmbeddedCluster={Boolean(
+                      state.adminConsoleMetadata?.isEmbeddedCluster
+                    )}
+                  />
+                }
+              />
               {state.adminConsoleMetadata?.isEmbeddedCluster && (
-                <Route
-                  path="/cluster/loading"
-                  element={<div>loading...</div>}
-                />
+                <Route path="/cluster/loading" element={<AppLoading />} />
               )}
               <Route path="/install-with-helm" element={<InstallWithHelm />} />
               <Route
