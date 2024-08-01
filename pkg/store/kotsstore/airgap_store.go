@@ -28,7 +28,7 @@ func (s *KOTSStore) GetPendingAirgapUploadApp() (*airgaptypes.PendingApp, error)
 		return nil, errors.Wrap(err, "failed to scan pending app id")
 	}
 
-	query = `select id, slug, name, license, channel_id from app where id = ?`
+	query = `select id, slug, name, license, selected_channel_id from app where id = ?`
 	rows, err = db.QueryOneParameterized(gorqlite.ParameterizedStatement{
 		Query:     query,
 		Arguments: []interface{}{id},
@@ -41,7 +41,7 @@ func (s *KOTSStore) GetPendingAirgapUploadApp() (*airgaptypes.PendingApp, error)
 	}
 
 	pendingApp := airgaptypes.PendingApp{}
-	if err := rows.Scan(&pendingApp.ID, &pendingApp.Slug, &pendingApp.Name, &pendingApp.LicenseData, &pendingApp.ChannelID); err != nil {
+	if err := rows.Scan(&pendingApp.ID, &pendingApp.Slug, &pendingApp.Name, &pendingApp.LicenseData, &pendingApp.SelectedChannelID); err != nil {
 		return nil, errors.Wrap(err, "failed to scan pending app")
 	}
 

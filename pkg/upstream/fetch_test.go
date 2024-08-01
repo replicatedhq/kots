@@ -91,7 +91,7 @@ ACgAAA==`,
 					},
 				},
 			},
-			AppChannelID: "channel-2",
+			AppSelectedChannelID: "channel-2",
 		}
 		u, err := FetchUpstream("replicated://app-slug", fetchOptions)
 		req.NoError(err)

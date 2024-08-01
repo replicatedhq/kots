@@ -115,7 +115,7 @@ func PullCmd() *cobra.Command {
 			if err != nil {
 				return errors.Wrap(err, "failed to verify and update license")
 			}
-			pullOptions.AppChannelID, err = kotsutil.FindChannelIDInLicense(preferredChannelSlug, license)
+			pullOptions.AppSelectedChannelID, err = kotsutil.FindChannelIDInLicense(preferredChannelSlug, license)
 			if err != nil { // should never happen since we just verified the channel
 				return errors.Wrap(err, "failed to find channel ID in license")
 			}

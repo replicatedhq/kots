@@ -316,12 +316,12 @@ func installLicenseSecret(clientset *kubernetes.Clientset, licenseSecret corev1.
 	} else if annotations["kots.io/airgap"] != "true" {
 		createAppOpts := online.CreateOnlineAppOpts{
 			PendingApp: &onlinetypes.PendingApp{
-				ID:           a.ID,
-				Slug:         a.Slug,
-				Name:         a.Name,
-				LicenseData:  string(license),
-				VersionLabel: instParams.AppVersionLabel,
-				ChannelID:    a.SelectedChannelID,
+				ID:                a.ID,
+				Slug:              a.Slug,
+				Name:              a.Name,
+				LicenseData:       string(license),
+				VersionLabel:      instParams.AppVersionLabel,
+				SelectedChannelID: a.SelectedChannelID,
 			},
 			UpstreamURI:            upstreamURI,
 			IsAutomated:            true,

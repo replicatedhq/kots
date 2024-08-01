@@ -29,30 +29,30 @@ import (
 )
 
 type RewriteOptions struct {
-	RootDir            string
-	UpstreamURI        string
-	UpstreamPath       string
-	Downstreams        []string
-	K8sNamespace       string
-	Silent             bool
-	CreateAppDir       bool
-	ExcludeKotsKinds   bool
-	Installation       *kotsv1beta1.Installation
-	License            *kotsv1beta1.License
-	ConfigValues       *kotsv1beta1.ConfigValues
-	ReportWriter       io.Writer
-	CopyImages         bool // can be false even if registry is not read-only
-	IsAirgap           bool
-	RegistrySettings   registrytypes.RegistrySettings
-	AppID              string
-	AppSlug            string
-	AppChannelID       string
-	IsGitOps           bool
-	AppSequence        int64
-	ReportingInfo      *reportingtypes.ReportingInfo
-	HTTPProxyEnvValue  string
-	HTTPSProxyEnvValue string
-	NoProxyEnvValue    string
+	RootDir              string
+	UpstreamURI          string
+	UpstreamPath         string
+	Downstreams          []string
+	K8sNamespace         string
+	Silent               bool
+	CreateAppDir         bool
+	ExcludeKotsKinds     bool
+	Installation         *kotsv1beta1.Installation
+	License              *kotsv1beta1.License
+	ConfigValues         *kotsv1beta1.ConfigValues
+	ReportWriter         io.Writer
+	CopyImages           bool // can be false even if registry is not read-only
+	IsAirgap             bool
+	RegistrySettings     registrytypes.RegistrySettings
+	AppID                string
+	AppSlug              string
+	AppSelectedChannelID string
+	IsGitOps             bool
+	AppSequence          int64
+	ReportingInfo        *reportingtypes.ReportingInfo
+	HTTPProxyEnvValue    string
+	HTTPSProxyEnvValue   string
+	NoProxyEnvValue      string
 }
 
 func Rewrite(rewriteOptions RewriteOptions) error {
@@ -82,7 +82,7 @@ func Rewrite(rewriteOptions RewriteOptions) error {
 		License:                         rewriteOptions.License,
 		AppSequence:                     rewriteOptions.AppSequence,
 		AppSlug:                         rewriteOptions.AppSlug,
-		AppChannelID:                    rewriteOptions.AppChannelID,
+		AppSelectedChannelID:            rewriteOptions.AppSelectedChannelID,
 		LocalRegistry:                   rewriteOptions.RegistrySettings,
 		ReportingInfo:                   rewriteOptions.ReportingInfo,
 		SkipCompatibilityCheck:          true, // we're rewriting an existing version, no need to check for compatibility

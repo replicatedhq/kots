@@ -229,7 +229,7 @@ func CreateAppFromAirgap(opts CreateAirgapAppOpts) (finalError error) {
 		AppSlug:                opts.PendingApp.Slug,
 		AppSequence:            0,
 		AppVersionLabel:        instParams.AppVersionLabel,
-		AppChannelID:           opts.PendingApp.ChannelID,
+		AppSelectedChannelID:   opts.PendingApp.SelectedChannelID,
 		SkipCompatibilityCheck: opts.SkipCompatibilityCheck,
 	}
 

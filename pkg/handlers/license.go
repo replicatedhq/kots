@@ -355,12 +355,12 @@ func (h *Handler) UploadNewLicense(w http.ResponseWriter, r *http.Request) {
 		// complete the install online
 		createAppOpts := online.CreateOnlineAppOpts{
 			PendingApp: &installationtypes.PendingApp{
-				ID:           a.ID,
-				Slug:         a.Slug,
-				Name:         a.Name,
-				ChannelID:    a.SelectedChannelID,
-				LicenseData:  uploadLicenseRequest.LicenseData,
-				VersionLabel: installationParams.AppVersionLabel,
+				ID:                a.ID,
+				Slug:              a.Slug,
+				Name:              a.Name,
+				SelectedChannelID: a.SelectedChannelID,
+				LicenseData:       uploadLicenseRequest.LicenseData,
+				VersionLabel:      installationParams.AppVersionLabel,
 			},
 			UpstreamURI: upstreamURI,
 		}
@@ -438,11 +438,11 @@ func (h *Handler) ResumeInstallOnline(w http.ResponseWriter, r *http.Request) {
 	}
 
 	pendingApp := installationtypes.PendingApp{
-		ID:           a.ID,
-		Slug:         a.Slug,
-		Name:         a.Name,
-		VersionLabel: installationParams.AppVersionLabel,
-		ChannelID:    a.SelectedChannelID,
+		ID:                a.ID,
+		Slug:              a.Slug,
+		Name:              a.Name,
+		VersionLabel:      installationParams.AppVersionLabel,
+		SelectedChannelID: a.SelectedChannelID,
 	}
 
 	// the license data is left in the table

@@ -4,7 +4,7 @@ RenderDirOptions:
   App:
     ID: app-id
     Slug: my-app
-    ChannelID: 1vusIYZLAVxMG6q760OJmRKj5i5
+    SelectedChannelID: 1vusIYZLAVxMG6q760OJmRKj5i5
   Downstreams:
     - Name: this-cluster
   Sequence: 1

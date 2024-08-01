@@ -147,7 +147,7 @@ func (s *KOTSStore) GetAppIDFromSlug(slug string) (string, error) {
 
 func (s *KOTSStore) GetApp(id string) (*apptypes.App, error) {
 	db := persistence.MustGetDBSession()
-	query := `select id, name, license, upstream_uri, icon_uri, created_at, updated_at, slug, current_sequence, last_update_check_at, last_license_sync, is_airgap, snapshot_ttl_new, snapshot_schedule, restore_in_progress_name, restore_undeploy_status, update_checker_spec, semver_auto_deploy, install_state, channel_changed, channel_id from app where id = ?`
+	query := `select id, name, license, upstream_uri, icon_uri, created_at, updated_at, slug, current_sequence, last_update_check_at, last_license_sync, is_airgap, snapshot_ttl_new, snapshot_schedule, restore_in_progress_name, restore_undeploy_status, update_checker_spec, semver_auto_deploy, install_state, channel_changed, selected_channel_id from app where id = ?`
 	rows, err := db.QueryOneParameterized(gorqlite.ParameterizedStatement{
 		Query:     query,
 		Arguments: []interface{}{id},
@@ -282,11 +282,11 @@ func (s *KOTSStore) GetAppFromSlug(slug string) (*apptypes.App, error) {
 	return s.GetApp(id)
 }
 
-func (s *KOTSStore) CreateApp(name string, channelID string, upstreamURI string, licenseData string, isAirgapEnabled bool, skipImagePush bool, registryIsReadOnly bool) (*apptypes.App, error) {
+func (s *KOTSStore) CreateApp(name string, selectedChannelID string, upstreamURI string, licenseData string, isAirgapEnabled bool, skipImagePush bool, registryIsReadOnly bool) (*apptypes.App, error) {
 	logger.Debug("creating app",
 		zap.String("name", name),
 		zap.String("upstreamURI", upstreamURI),
-		zap.String("channelID", channelID),
+		zap.String("selectedChannelID", selectedChannelID),
 	)
 
 	db := persistence.MustGetDBSession()
@@ -342,10 +342,10 @@ func (s *KOTSStore) CreateApp(name string, channelID string, upstreamURI string,
 
 	id := ksuid.New().String()
 
-	query := `insert into app (id, name, icon_uri, created_at, slug, upstream_uri, license, is_all_users, install_state, registry_is_readonly, channel_id) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+	query := `insert into app (id, name, icon_uri, created_at, slug, upstream_uri, license, is_all_users, install_state, registry_is_readonly, selected_channel_id) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
 	wr, err := db.WriteOneParameterized(gorqlite.ParameterizedStatement{
 		Query:     query,
-		Arguments: []interface{}{id, name, "", time.Now().Unix(), slugProposal, upstreamURI, licenseData, true, installState, registryIsReadOnly, channelID},
+		Arguments: []interface{}{id, name, "", time.Now().Unix(), slugProposal, upstreamURI, licenseData, true, installState, registryIsReadOnly, selectedChannelID},
 	})
 	if err != nil {
 		return nil, fmt.Errorf("failed to insert app: %v: %v", err, wr.Err)
