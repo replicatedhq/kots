@@ -371,7 +371,7 @@ const EmbeddedClusterManagement = ({
   // #endregion
 
   // temporary redirect logic - when user has clicked continue during initial install and went back to the cluster management page
-  const redirectIfContinueHasBeenCalled = () => {
+  useEffect(() => {
     const appNeedsConfiguration = app?.downstream?.pendingVersions?.length > 0;
 
     if (appNeedsConfiguration) {
@@ -384,59 +384,56 @@ const EmbeddedClusterManagement = ({
         firstVersion?.status === "pending"
       ) {
         navigate(`/${app.slug}/preflight`);
-        return true;
+        return;
       }
       if (firstVersion?.status === "pending_config") {
         navigate(`/${app.slug}/config`);
-        return true;
+        return;
       }
     }
-    return false;
-  };
+  }, []);
 
   const onContinueClick = async () => {
-    if (!redirectIfContinueHasBeenCalled()) {
-      const res = await fetch(
-        `${process.env.API_ENDPOINT}/embedded-cluster/management`,
-        {
-          headers: {
-            Accept: "application/json",
-          },
-          credentials: "include",
-          method: "POST",
-        }
+    const res = await fetch(
+      `${process.env.API_ENDPOINT}/embedded-cluster/management`,
+      {
+        headers: {
+          Accept: "application/json",
+        },
+        credentials: "include",
+        method: "POST",
+      }
+    );
+    if (!res.ok) {
+      if (res.status === 401) {
+        Utilities.logoutUser();
+      }
+      console.log(
+        "failed to confirm cluster management, unexpected status code",
+        res.status
       );
-      if (!res.ok) {
-        if (res.status === 401) {
-          Utilities.logoutUser();
-        }
-        console.log(
-          "failed to confirm cluster management, unexpected status code",
-          res.status
+      try {
+        const error = await res.json();
+        throw new Error(
+          error?.error?.message || error?.error || error?.message
         );
-        try {
-          const error = await res.json();
-          throw new Error(
-            error?.error?.message || error?.error || error?.message
-          );
-        } catch (err) {
-          throw new Error(
-            "Unable to confirm cluster management, please try again later."
-          );
-        }
+      } catch (err) {
+        throw new Error(
+          "Unable to confirm cluster management, please try again later."
+        );
       }
+    }
 
-      await refetchApps();
+    await refetchApps();
 
-      const data = await res.json();
+    const data = await res.json();
 
-      if (data.versionStatus === "pending_config") {
-        navigate(`/${app?.slug}/config`);
-      } else if (data.versionStatus === "pending_preflight") {
-        navigate(`/${app?.slug}/preflight`);
-      } else {
-        navigate(`/app/${app?.slug}`);
-      }
+    if (data.versionStatus === "pending_config") {
+      navigate(`/${app?.slug}/config`);
+    } else if (data.versionStatus === "pending_preflight") {
+      navigate(`/${app?.slug}/preflight`);
+    } else {
+      navigate(`/app/${app?.slug}`);
     }
   };
 
