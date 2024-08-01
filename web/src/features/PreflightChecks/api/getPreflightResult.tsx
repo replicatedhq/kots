@@ -189,7 +189,8 @@ function useGetPrelightResults({
       setRefetchCount(0);
     },
     refetchInterval: (preflightCheck: PreflightCheck | undefined) => {
-      if (!preflightCheck) return false;
+      if (!preflightCheck) return null;
+      if (preflightCheck?.preflightResults.length > 0) return null;
 
       const refetchInterval = makeRefetchInterval(preflightCheck);
 
