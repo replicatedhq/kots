@@ -557,22 +557,30 @@ const Root = () => {
                   />
                 }
               />
-              <Route
-                path="/upload-license"
-                element={
-                  <UploadLicenseFile
-                    logo={state.appLogo}
-                    appsListLength={state.appsList?.length}
-                    appName={state.selectedAppName || ""}
-                    appSlugFromMetadata={state.appSlugFromMetadata || ""}
-                    fetchingMetadata={state.fetchingMetadata}
-                    onUploadSuccess={getAppsList}
-                    isEmbeddedCluster={Boolean(
-                      state.adminConsoleMetadata?.isEmbeddedCluster
-                    )}
-                  />
-                }
-              />
+              {!state.adminConsoleMetadata?.isEmbeddedCluster && (
+                <Route
+                  path="/upload-license"
+                  element={
+                    <UploadLicenseFile
+                      logo={state.appLogo}
+                      appsListLength={state.appsList?.length}
+                      appName={state.selectedAppName || ""}
+                      appSlugFromMetadata={state.appSlugFromMetadata || ""}
+                      fetchingMetadata={state.fetchingMetadata}
+                      onUploadSuccess={getAppsList}
+                      isEmbeddedCluster={Boolean(
+                        state.adminConsoleMetadata?.isEmbeddedCluster
+                      )}
+                    />
+                  }
+                />
+              )}
+              {state.adminConsoleMetadata?.isEmbeddedCluster && (
+                <Route
+                  path="/cluster/loading"
+                  element={<div>loading...</div>}
+                />
+              )}
               <Route path="/install-with-helm" element={<InstallWithHelm />} />
               <Route
                 path="/restore"
