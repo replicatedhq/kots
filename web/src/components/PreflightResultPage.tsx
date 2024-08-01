@@ -136,7 +136,9 @@ function PreflightResultPage(props: Props) {
                   preflightCheck?.pendingPreflightCheckName || ""
                 }
                 percentage={
-                  preflightCheck?.pendingPreflightChecksPercentage || 0
+                  Math.round(
+                    preflightCheck?.pendingPreflightChecksPercentage
+                  ) || 0
                 }
               />
             </div>
