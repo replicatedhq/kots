@@ -121,6 +121,14 @@ func RenderDir(opts types.RenderDirOptions) error {
 		downstreamNames = append(downstreamNames, d.Name)
 	}
 
+	// typically we want the selected channel id on the App obj
+	// but in the case of a license sync, like when called from UpdateAppLicense
+	// the app object is not updated yet - but the license being passed in is the latest
+	selectedChannelID := opts.AppSelectedChannelID
+	if selectedChannelID == "" {
+		selectedChannelID = opts.App.SelectedChannelID
+	}
+
 	appNamespace := util.PodNamespace
 	if os.Getenv("KOTSADM_TARGET_NAMESPACE") != "" {
 		appNamespace = os.Getenv("KOTSADM_TARGET_NAMESPACE")
@@ -141,7 +149,7 @@ func RenderDir(opts types.RenderDirOptions) error {
 		IsAirgap:             opts.App.IsAirgap,
 		AppID:                opts.App.ID,
 		AppSlug:              opts.App.Slug,
-		AppSelectedChannelID: opts.App.SelectedChannelID,
+		AppSelectedChannelID: selectedChannelID,
 		IsGitOps:             opts.App.IsGitOps,
 		AppSequence:          opts.Sequence,
 		ReportingInfo:        opts.ReportingInfo,

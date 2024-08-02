@@ -121,6 +121,11 @@ func (s *KOTSStore) UpdateAppLicense(appID string, baseSequence int64, archiveDi
 		return int64(0), errors.Wrap(err, "failed to write new license")
 	}
 
+	selectedChannelId, err := s.GetAppSelectedChannelID(appID)
+	if err != nil {
+		return int64(0), errors.Wrap(err, "failed to get existing app selected channel id")
+	}
+
 	// If the license channels array has more than one entry, then the license is a true multi-channel license,
 	// and we should skip updating selected_channel_id in the app table. If there's only a single entry,
 	// we should update the selected_channel_id in the app table to ensure it stays consistent across channel
@@ -138,9 +143,10 @@ func (s *KOTSStore) UpdateAppLicense(appID string, baseSequence int64, archiveDi
 			Query:     `update app set license = ?, last_license_sync = ?, channel_changed = ?, selected_channel_id = ? where id = ?`,
 			Arguments: []interface{}{originalLicenseData, time.Now().Unix(), channelChanged, newLicense.Spec.ChannelID, appID},
 		})
+		selectedChannelId = newLicense.Spec.ChannelID
 	}
 
-	appVersionStatements, newSeq, err := s.createNewVersionForLicenseChangeStatements(appID, baseSequence, archiveDir, renderer, reportingInfo)
+	appVersionStatements, newSeq, err := s.createNewVersionForLicenseChangeStatements(appID, baseSequence, archiveDir, renderer, reportingInfo, selectedChannelId)
 	if err != nil {
 		// ignore error here to prevent a failure to render the current version
 		// preventing the end-user from updating the application
@@ -177,7 +183,7 @@ func (s *KOTSStore) UpdateAppLicenseSyncNow(appID string) error {
 	return nil
 }
 
-func (s *KOTSStore) createNewVersionForLicenseChangeStatements(appID string, baseSequence int64, archiveDir string, renderer rendertypes.Renderer, reportingInfo *reportingtypes.ReportingInfo) ([]gorqlite.ParameterizedStatement, int64, error) {
+func (s *KOTSStore) createNewVersionForLicenseChangeStatements(appID string, baseSequence int64, archiveDir string, renderer rendertypes.Renderer, reportingInfo *reportingtypes.ReportingInfo, selectedChannelID string) ([]gorqlite.ParameterizedStatement, int64, error) {
 	registrySettings, err := s.GetRegistryDetailsForApp(appID)
 	if err != nil {
 		return nil, int64(0), errors.Wrap(err, "failed to get registry settings for app")
@@ -199,12 +205,13 @@ func (s *KOTSStore) createNewVersionForLicenseChangeStatements(appID string, bas
 	}
 
 	if err := renderer.RenderDir(rendertypes.RenderDirOptions{
-		ArchiveDir:       archiveDir,
-		App:              app,
-		Downstreams:      downstreams,
-		RegistrySettings: registrySettings,
-		Sequence:         nextAppSequence,
-		ReportingInfo:    reportingInfo,
+		ArchiveDir:           archiveDir,
+		App:                  app,
+		Downstreams:          downstreams,
+		RegistrySettings:     registrySettings,
+		Sequence:             nextAppSequence,
+		ReportingInfo:        reportingInfo,
+		AppSelectedChannelID: selectedChannelID,
 	}); err != nil {
 		return nil, int64(0), errors.Wrap(err, "failed to render new version")
 	}
