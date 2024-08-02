@@ -178,19 +178,19 @@ func verifyLicenseData(outerLicense *kotsv1beta1.License, innerLicense *kotsv1be
 			return fmt.Errorf("entitlement %q not found in the inner license", k)
 		}
 		if outerEntitlement.Value.Value() != innerEntitlement.Value.Value() {
-			return fmt.Errorf("entitlement %q value has changed to %q (license) from %q (witin signature)", k, outerEntitlement.Value.Value(), innerEntitlement.Value.Value())
+			return fmt.Errorf("entitlement %q value has changed to %q (license) from %q (within signature)", k, outerEntitlement.Value.Value(), innerEntitlement.Value.Value())
 		}
 		if outerEntitlement.Title != innerEntitlement.Title {
-			return fmt.Errorf("entitlement %q title has changed to %q (license) from %q (witin signature)", k, outerEntitlement.Title, innerEntitlement.Title)
+			return fmt.Errorf("entitlement %q title has changed to %q (license) from %q (within signature)", k, outerEntitlement.Title, innerEntitlement.Title)
 		}
 		if outerEntitlement.Description != innerEntitlement.Description {
-			return fmt.Errorf("entitlement %q description has changed to %q (license) from %q (witin signature)", k, outerEntitlement.Description, innerEntitlement.Description)
+			return fmt.Errorf("entitlement %q description has changed to %q (license) from %q (within signature)", k, outerEntitlement.Description, innerEntitlement.Description)
 		}
 		if outerEntitlement.IsHidden != innerEntitlement.IsHidden {
-			return fmt.Errorf("entitlement %q hidden has changed to %t (license) from %t (witin signature)", k, outerEntitlement.IsHidden, innerEntitlement.IsHidden)
+			return fmt.Errorf("entitlement %q hidden has changed to %t (license) from %t (within signature)", k, outerEntitlement.IsHidden, innerEntitlement.IsHidden)
 		}
 		if outerEntitlement.ValueType != innerEntitlement.ValueType {
-			return fmt.Errorf("entitlement %q value type has changed to %q (license) from %q (witin signature)", k, outerEntitlement.ValueType, innerEntitlement.ValueType)
+			return fmt.Errorf("entitlement %q value type has changed to %q (license) from %q (within signature)", k, outerEntitlement.ValueType, innerEntitlement.ValueType)
 		}
 	}
 
