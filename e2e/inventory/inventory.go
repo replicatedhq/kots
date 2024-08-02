@@ -93,6 +93,15 @@ func NewVersionHistoryPagination() Test {
 	}
 }
 
+func NewChangeChannel() Test {
+	return Test{
+		Name:        "Change Channel",
+		TestimSuite: "change-channel",
+		Namespace:   "change-channel",
+		UpstreamURI: "change-channel/automated",
+	}
+}
+
 func NewChangeLicense() Test {
 	return Test{
 		Name:        "Change License",
