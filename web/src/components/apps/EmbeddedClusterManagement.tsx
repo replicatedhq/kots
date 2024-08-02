@@ -14,7 +14,6 @@ import CodeSnippet from "../shared/CodeSnippet";
 
 import "@src/scss/components/apps/EmbeddedClusterManagement.scss";
 import { isEqual } from "lodash";
-import { Version } from "@types";
 
 const testData = {
   nodes: undefined,
