@@ -99,8 +99,10 @@ function AppDetailPage(props: Props) {
     // navigate to first app if available
     if (appsList && appsList?.length > 0) {
       navigate(`/app/${appsList[0].slug}`, { replace: true });
-    } else if (Utilities.isLoggedIn()) {
+    } else if (Utilities.isLoggedIn() && !props.isEmbeddedCluster) {
       navigate("/upload-license", { replace: true });
+    } else if (Utilities.isLoggedIn && props.isEmbeddedCluster) {
+      navigate("/cluster/loading", { replace: true });
     } else {
       navigate("/secure-console", { replace: true });
     }

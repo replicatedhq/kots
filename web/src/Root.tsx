@@ -574,7 +574,14 @@ const Root = () => {
                   />
                 }
               />
-              <Route path="/cluster/loading" element={<AppLoading />} />
+              <Route
+                path="/cluster/loading"
+                element={
+                  <AppLoading
+                    appSlugFromMetadata={state.appSlugFromMetadata || ""}
+                  />
+                }
+              />
               <Route path="/install-with-helm" element={<InstallWithHelm />} />
               <Route
                 path="/restore"

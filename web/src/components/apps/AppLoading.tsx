@@ -4,7 +4,7 @@ import { Version } from "@types";
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 
-const AppLoading = () => {
+const AppLoading = ({ appSlugFromMetadata }) => {
   const navigate = useNavigate();
 
   const { data: appsData } = useApps({ refetchInterval: 100000 });
@@ -12,6 +12,9 @@ const AppLoading = () => {
   const { apps: appsList } = appsData || {};
 
   useEffect(() => {
+    if (appsList.length > 0) {
+      navigate(`/app/${appSlugFromMetadata}`, { replace: true });
+    }
     const appNeedsConfiguration = appsList?.find((app) => {
       return app?.downstream?.pendingVersions?.length > 0;
     });
