@@ -134,7 +134,7 @@ const UploadLicenseFile = (props: Props) => {
       navigate(`/app/${appSlugFromMetadata}`, { replace: true });
     }
     if (appsListLength === 0 && isEmbeddedCluster) {
-      navigate(`/cluster/loading`, { replace: true });
+      navigate(`/cluster/loading`);
     }
   }, [props.appsListLength]);
 

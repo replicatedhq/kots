@@ -574,9 +574,7 @@ const Root = () => {
                   />
                 }
               />
-              {state.adminConsoleMetadata?.isEmbeddedCluster && (
-                <Route path="/cluster/loading" element={<AppLoading />} />
-              )}
+              <Route path="/cluster/loading" element={<AppLoading />} />
               <Route path="/install-with-helm" element={<InstallWithHelm />} />
               <Route
                 path="/restore"
