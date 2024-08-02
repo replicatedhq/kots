@@ -4153,6 +4153,7 @@ jobs:
       - validate-existing-online-install-minimal
       - validate-version-history-pagination
       - validate-change-license
+      - validate-change-channel
       - validate-min-kots-version
       - validate-target-kots-version
       - validate-range-kots-version
