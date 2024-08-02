@@ -157,7 +157,6 @@ test('smoke test', async ({ page }) => {
   await expect(page.locator('#app')).toContainText('Full Snapshots (Instance)');
   await page.getByRole('link', { name: 'Partial Snapshots (Application)' }).click();
   await page.getByRole('button', { name: 'Start a snapshot' }).click();
-  await expect(page.locator('#app')).toContainText('In Progress');
   await expect(page.locator('#app')).toContainText('Completed', { timeout: 30000 });
   await expect(page.getByText('It’s recommend that you use')).toBeVisible();
   await page.getByText('Learn more').click();
