@@ -53,12 +53,6 @@ func (h *Handler) ConfirmEmbeddedClusterManagement(w http.ResponseWriter, r *htt
 	}
 	pendingVersion := downstreamVersions.PendingVersions[0]
 
-	if pendingVersion.Status != storetypes.VersionPendingClusterManagement {
-		logger.Error(fmt.Errorf("pending version is not in pending_cluster_management status"))
-		w.WriteHeader(http.StatusBadRequest)
-		return
-	}
-
 	archiveDir, err := os.MkdirTemp("", "kotsadm")
 	if err != nil {
 		logger.Error(fmt.Errorf("failed to create temp dir: %w", err))
