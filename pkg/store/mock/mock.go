@@ -897,21 +897,6 @@ func (mr *MockStoreMockRecorder) GetNextAppSequence(appID interface{}) *gomock.C
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetNextAppSequence", reflect.TypeOf((*MockStore)(nil).GetNextAppSequence), appID)
 }
 
-// GetOrBackfillLicenseChannel mocks base method.
-func (m *MockStore) GetOrBackfillLicenseChannel(appID string, license *v1beta10.License) (*v1beta10.Channel, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetOrBackfillLicenseChannel", appID, license)
-	ret0, _ := ret[0].(*v1beta10.Channel)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// GetOrBackfillLicenseChannel indicates an expected call of GetOrBackfillLicenseChannel.
-func (mr *MockStoreMockRecorder) GetOrBackfillLicenseChannel(appID, license interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetOrBackfillLicenseChannel", reflect.TypeOf((*MockStore)(nil).GetOrBackfillLicenseChannel), appID, license)
-}
-
 // GetParentSequenceForSequence mocks base method.
 func (m *MockStore) GetParentSequenceForSequence(appID, clusterID string, sequence int64) (int64, error) {
 	m.ctrl.T.Helper()
@@ -2781,21 +2766,6 @@ func (m *MockAppStore) GetDownstream(clusterID string) (*types0.Downstream, erro
 func (mr *MockAppStoreMockRecorder) GetDownstream(clusterID interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetDownstream", reflect.TypeOf((*MockAppStore)(nil).GetDownstream), clusterID)
-}
-
-// GetOrBackfillLicenseChannel mocks base method.
-func (m *MockAppStore) GetOrBackfillLicenseChannel(appID string, license *v1beta10.License) (*v1beta10.Channel, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetOrBackfillLicenseChannel", appID, license)
-	ret0, _ := ret[0].(*v1beta10.Channel)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// GetOrBackfillLicenseChannel indicates an expected call of GetOrBackfillLicenseChannel.
-func (mr *MockAppStoreMockRecorder) GetOrBackfillLicenseChannel(appID, license interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetOrBackfillLicenseChannel", reflect.TypeOf((*MockAppStore)(nil).GetOrBackfillLicenseChannel), appID, license)
 }
 
 // IsGitOpsEnabledForApp mocks base method.

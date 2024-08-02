@@ -18,6 +18,7 @@ import (
 	"github.com/rqlite/gorqlite"
 	"github.com/segmentio/ksuid"
 	"go.uber.org/zap"
+	"k8s.io/client-go/kubernetes/scheme"
 )
 
 func (s *KOTSStore) AddAppToAllDownstreams(appID string) error {
@@ -269,6 +270,20 @@ func (s *KOTSStore) GetApp(id string) (*apptypes.App, error) {
 		return nil, errors.Wrap(err, "failed to check if gitops is enabled")
 	}
 	app.IsGitOps = isGitOps
+
+	if app.SelectedChannelID == "" {
+		decode := scheme.Codecs.UniversalDeserializer().Decode
+		obj, _, err := decode([]byte(licenseStr.String), nil, nil)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to decode license yaml")
+		}
+		license := obj.(*kotsv1beta1.License)
+		licenseChan, err := s.backfillChannelIDFromLicense(app.ID, license)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to backfill channel id")
+		}
+		app.SelectedChannelID = licenseChan.ChannelID
+	}
 
 	return &app, nil
 }
@@ -645,21 +660,4 @@ func (s *KOTSStore) backfillChannelIDFromLicense(appID string, license *kotsv1be
 		return nil, errors.Wrap(err, "failed to backfill app channel id from license")
 	}
 	return kotsutil.FindChannelInLicense(backfillID, license)
-}
-
-func (s *KOTSStore) GetOrBackfillLicenseChannel(appID string, license *kotsv1beta1.License) (*kotsv1beta1.Channel, error) {
-	foundChannelID, err := s.GetAppSelectedChannelID(appID)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to get app channel id")
-	}
-
-	if foundChannelID == "" {
-		return s.backfillChannelIDFromLicense(appID, license)
-	}
-
-	licenseChan, err := kotsutil.FindChannelInLicense(foundChannelID, license)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to find channel in license")
-	}
-	return licenseChan, nil
 }

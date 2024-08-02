@@ -207,7 +207,12 @@ func downloadReplicated(
 	if license != nil {
 		channel, err := kotsutil.FindChannelInLicense(appSelectedChannelID, license)
 		if err != nil {
-			return nil, errors.Wrap(err, "failed to find channel in license")
+			// its likely the app channel has changed, if the license  only has a single channel , we should use that
+			if len(license.Spec.Channels) == 1 {
+				channel = &license.Spec.Channels[0]
+			} else {
+				return nil, errors.Wrap(err, "failed to find channel in license")
+			}
 		}
 		channelID = channel.ChannelID
 		channelName = channel.ChannelName

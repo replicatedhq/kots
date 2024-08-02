@@ -126,16 +126,17 @@ func (s *KOTSStore) UpdateAppLicense(appID string, baseSequence int64, archiveDi
 	// we should update the selected_channel_id in the app table to ensure it stays consistent across channel
 	// changes. This is a temporary solution until channel changes on true multi-channel licenses are supported.
 	if len(newLicense.Spec.Channels) > 1 {
+		logger.Debug("Skipping selected_channel_id update for multi-channel license")
 		//  app has the original license data received from the server
 		statements = append(statements, gorqlite.ParameterizedStatement{
 			Query:     `update app set license = ?, last_license_sync = ?, channel_changed = ? where id = ?`,
-			Arguments: []interface{}{encodedLicense, time.Now().Unix(), channelChanged, appID},
+			Arguments: []interface{}{originalLicenseData, time.Now().Unix(), channelChanged, appID},
 		})
 	} else {
 		//  app has the original license data received from the server
 		statements = append(statements, gorqlite.ParameterizedStatement{
 			Query:     `update app set license = ?, last_license_sync = ?, channel_changed = ?, selected_channel_id = ? where id = ?`,
-			Arguments: []interface{}{originalLicenseData, time.Now().Unix(), channelChanged, appID, newLicense.Spec.ChannelID},
+			Arguments: []interface{}{originalLicenseData, time.Now().Unix(), channelChanged, newLicense.Spec.ChannelID, appID},
 		})
 	}
 

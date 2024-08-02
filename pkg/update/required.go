@@ -66,7 +66,7 @@ func getRequiredAirgapUpdates(airgap *kotsv1beta1.Airgap, license *kotsv1beta1.L
 
 			licenseChan, err := kotsutil.FindChannelInLicense(selectedChannelID, license)
 			if err != nil {
-				return nil, errors.Wrap(err, "failed to find channel in license")
+				return nil, errors.Wrap(err, "failed to find channel in license during")
 			}
 
 			// semvers can be compared across channels

@@ -680,15 +680,10 @@ func licenseResponseFromLicense(license *kotsv1beta1.License, app *apptypes.App)
 		return entitlements[i].Title < entitlements[j].Title
 	})
 
-	channel, err := kotsutil.FindChannelInLicense(app.SelectedChannelID, license)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to find channel in license")
-	}
-
 	response := LicenseResponse{
 		ID:                             license.Spec.LicenseID,
 		Assignee:                       license.Spec.CustomerName,
-		ChannelName:                    channel.ChannelName,
+		ChannelName:                    license.Spec.ChannelName,
 		LicenseSequence:                license.Spec.LicenseSequence,
 		LicenseType:                    license.Spec.LicenseType,
 		Entitlements:                   entitlements,
@@ -697,7 +692,7 @@ func licenseResponseFromLicense(license *kotsv1beta1.License, app *apptypes.App)
 		IsGitOpsSupported:              license.Spec.IsGitOpsSupported,
 		IsIdentityServiceSupported:     license.Spec.IsIdentityServiceSupported,
 		IsGeoaxisSupported:             license.Spec.IsGeoaxisSupported,
-		IsSemverRequired:               channel.IsSemverRequired,
+		IsSemverRequired:               license.Spec.IsSemverRequired,
 		IsSnapshotSupported:            license.Spec.IsSnapshotSupported,
 		IsDisasterRecoverySupported:    license.Spec.IsDisasterRecoverySupported,
 		LastSyncedAt:                   app.LastLicenseSync,

@@ -292,14 +292,9 @@ func (s *KOTSStore) GetAppVersionBaseSequence(appID string, versionLabel string)
 		return -1, errors.Wrap(err, "failed to get app license")
 	}
 
-	licenseChan, err := s.GetOrBackfillLicenseChannel(appID, license)
-	if err != nil {
-		return -1, errors.Wrap(err, "failed to get or backfill channel")
-	}
-
 	// add to the top of the list and sort
 	appVersions.AllVersions = append([]*downstreamtypes.DownstreamVersion{mockVersion}, appVersions.AllVersions...)
-	downstreamtypes.SortDownstreamVersions(appVersions.AllVersions, licenseChan.IsSemverRequired)
+	downstreamtypes.SortDownstreamVersions(appVersions.AllVersions, license.Spec.IsSemverRequired)
 
 	var baseVersion *downstreamtypes.DownstreamVersion
 	for i, v := range appVersions.AllVersions {

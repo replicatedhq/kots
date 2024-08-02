@@ -34,11 +34,10 @@ func GetAvailableUpdates(kotsStore storepkg.Store, app *apptypes.App, license *k
 	var err error
 	var licenseChan *kotsv1beta1.Channel
 
-	licenseChan, err = kotsStore.GetOrBackfillLicenseChannel(app.ID, license)
+	licenseChan, err = kotsutil.FindChannelInLicense(app.SelectedChannelID, license)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to backfill channel id from license")
+		return nil, errors.Wrap(err, "failed to find channel in license")
 	}
-	app.SelectedChannelID = licenseChan.ChannelID
 
 	updateCursor, err := kotsStore.GetCurrentUpdateCursor(app.ID, licenseChan.ChannelID)
 	if err != nil {

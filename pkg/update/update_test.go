@@ -9,7 +9,6 @@ import (
 
 	"github.com/golang/mock/gomock"
 	apptypes "github.com/replicatedhq/kots/pkg/app/types"
-	"github.com/replicatedhq/kots/pkg/kotsutil"
 	storepkg "github.com/replicatedhq/kots/pkg/store"
 	mock_store "github.com/replicatedhq/kots/pkg/store/mock"
 	"github.com/replicatedhq/kots/pkg/update/types"
@@ -45,7 +44,7 @@ func TestGetAvailableUpdates(t *testing.T) {
 				kotsStore: mockStore,
 				app: &apptypes.App{
 					ID:                "app-id",
-					SelectedChannelID: "", // using legacy non-multi chan license
+					SelectedChannelID: "channel-id",
 				},
 				license: &kotsv1beta1.License{
 					Spec: kotsv1beta1.LicenseSpec{
@@ -60,11 +59,6 @@ func TestGetAvailableUpdates(t *testing.T) {
 			setup: func(t *testing.T, args args, licenseEndpoint string) {
 				t.Setenv("USE_MOCK_REPORTING", "1")
 				args.license.Spec.Endpoint = licenseEndpoint
-				licenseChan, _ := kotsutil.FindChannelInLicense("channel-id", args.license)
-				mockStore.EXPECT().GetOrBackfillLicenseChannel(args.app.ID, args.license).Return(
-					licenseChan,
-					nil,
-				) // expect a backfill
 				mockStore.EXPECT().GetCurrentUpdateCursor(args.app.ID, args.license.Spec.ChannelID).Return("1", nil)
 			},
 			want:    []types.AvailableUpdate{},
@@ -76,7 +70,7 @@ func TestGetAvailableUpdates(t *testing.T) {
 				kotsStore: mockStore,
 				app: &apptypes.App{
 					ID:                "app-id",
-					SelectedChannelID: "", // using legacy non-multi chan license
+					SelectedChannelID: "channel-id",
 				},
 				license: &kotsv1beta1.License{
 					Spec: kotsv1beta1.LicenseSpec{
@@ -108,11 +102,6 @@ func TestGetAvailableUpdates(t *testing.T) {
 			setup: func(t *testing.T, args args, licenseEndpoint string) {
 				t.Setenv("USE_MOCK_REPORTING", "1")
 				args.license.Spec.Endpoint = licenseEndpoint
-				licenseChan, _ := kotsutil.FindChannelInLicense("channel-id", args.license)
-				mockStore.EXPECT().GetOrBackfillLicenseChannel(args.app.ID, args.license).Return(
-					licenseChan,
-					nil,
-				) // expect a backfill
 				mockStore.EXPECT().GetCurrentUpdateCursor(args.app.ID, args.license.Spec.ChannelID).Return("1", nil)
 			},
 			want: []types.AvailableUpdate{
@@ -143,7 +132,8 @@ func TestGetAvailableUpdates(t *testing.T) {
 			args: args{
 				kotsStore: mockStore,
 				app: &apptypes.App{
-					ID: "app-id",
+					ID:                "app-id",
+					SelectedChannelID: "channel-id",
 				},
 				license: &kotsv1beta1.License{
 					Spec: kotsv1beta1.LicenseSpec{
@@ -158,11 +148,6 @@ func TestGetAvailableUpdates(t *testing.T) {
 			setup: func(t *testing.T, args args, licenseEndpoint string) {
 				t.Setenv("USE_MOCK_REPORTING", "1")
 				args.license.Spec.Endpoint = licenseEndpoint
-				licenseChan, _ := kotsutil.FindChannelInLicense("channel-id", args.license)
-				mockStore.EXPECT().GetOrBackfillLicenseChannel(args.app.ID, args.license).Return(
-					licenseChan,
-					nil,
-				) // expect a backfill
 				mockStore.EXPECT().GetCurrentUpdateCursor(args.app.ID, args.license.Spec.ChannelID).Return("1", nil)
 			},
 			want:    []types.AvailableUpdate{},
@@ -201,11 +186,6 @@ func TestGetAvailableUpdates(t *testing.T) {
 			setup: func(t *testing.T, args args, licenseEndpoint string) {
 				t.Setenv("USE_MOCK_REPORTING", "1")
 				args.license.Spec.Endpoint = licenseEndpoint
-				licenseChan, _ := kotsutil.FindChannelInLicense("channel-id2", args.license)
-				mockStore.EXPECT().GetOrBackfillLicenseChannel(args.app.ID, args.license).Return(
-					licenseChan,
-					nil,
-				)
 				mockStore.EXPECT().GetCurrentUpdateCursor(args.app.ID, args.license.Spec.Channels[1].ChannelID).Return("1", nil)
 			},
 			want:    []types.AvailableUpdate{},

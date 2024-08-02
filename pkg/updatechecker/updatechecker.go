@@ -13,6 +13,7 @@ import (
 	apptypes "github.com/replicatedhq/kots/pkg/app/types"
 	license "github.com/replicatedhq/kots/pkg/kotsadmlicense"
 	upstream "github.com/replicatedhq/kots/pkg/kotsadmupstream"
+	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/preflight"
 	preflighttypes "github.com/replicatedhq/kots/pkg/preflight/types"
@@ -228,11 +229,10 @@ func checkForKotsAppUpdates(opts types.CheckForUpdatesOpts, finishedChan chan<- 
 	}
 
 	var licenseChan *kotsv1beta1.Channel
-	licenseChan, err = store.GetOrBackfillLicenseChannel(a.ID, latestLicense)
+	licenseChan, err = kotsutil.FindChannelInLicense(a.SelectedChannelID, latestLicense)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to backfill channel id from license")
+		return nil, errors.Wrap(err, "failed to find channel in license after sync")
 	}
-	a.SelectedChannelID = licenseChan.ChannelID
 
 	updateCursor, err := store.GetCurrentUpdateCursor(a.ID, licenseChan.ChannelID)
 	if err != nil {

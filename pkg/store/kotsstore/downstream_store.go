@@ -410,12 +410,7 @@ func (s *KOTSStore) GetDownstreamVersions(appID string, clusterID string, downlo
 		return nil, errors.Wrap(err, "failed to get app license")
 	}
 
-	licenseChan, err := s.GetOrBackfillLicenseChannel(appID, license)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to get or backfill channel")
-	}
-
-	downstreamtypes.SortDownstreamVersions(result.AllVersions, licenseChan.IsSemverRequired)
+	downstreamtypes.SortDownstreamVersions(result.AllVersions, license.Spec.IsSemverRequired)
 
 	// retrieve additional details about the latest downloaded version,
 	// since it's used for detecting things like if a certain feature is enabled or not.
@@ -428,7 +423,7 @@ func (s *KOTSStore) GetDownstreamVersions(appID string, clusterID string, downlo
 		if err := s.AddDownstreamVersionDetails(appID, clusterID, v, false); err != nil {
 			return nil, errors.Wrap(err, "failed to add details to latest downloaded version")
 		}
-		v.IsDeployable, v.NonDeployableCause = isAppVersionDeployable(v, result, licenseChan.IsSemverRequired)
+		v.IsDeployable, v.NonDeployableCause = isAppVersionDeployable(v, result, license.Spec.IsSemverRequired)
 		break
 	}
 
@@ -680,13 +675,8 @@ func (s *KOTSStore) AddDownstreamVersionsDetails(appID string, clusterID string,
 			return errors.Wrap(err, "failed to get app license")
 		}
 
-		licenseChan, err := s.GetOrBackfillLicenseChannel(appID, license)
-		if err != nil {
-			return errors.Wrap(err, "failed to get or backfill channel")
-		}
-
 		for _, v := range versions {
-			v.IsDeployable, v.NonDeployableCause = isAppVersionDeployable(v, allVersions, licenseChan.IsSemverRequired)
+			v.IsDeployable, v.NonDeployableCause = isAppVersionDeployable(v, allVersions, license.Spec.IsSemverRequired)
 		}
 	}
 
