@@ -31,6 +31,7 @@ endif
 test:
 	docker run --rm -i --net host \
 		-e TESTIM_ACCESS_TOKEN \
+		-e REPLICATED_API_TOKEN \
 		-v $(BIN_DIR)/e2e.test:/usr/local/bin/e2e.test \
 		-v $(KOTS_BIN_DIR)/kots:/usr/local/bin/kots \
 		-v $(KOTS_BIN_DIR)/kots:/usr/local/bin/kubectl-kots \

@@ -4153,7 +4153,6 @@ jobs:
       - validate-existing-online-install-minimal
       - validate-version-history-pagination
       - validate-change-license
-      - validate-change-channel
       - validate-min-kots-version
       - validate-target-kots-version
       - validate-range-kots-version
@@ -4167,6 +4166,7 @@ jobs:
       - validate-backup-and-restore
       - validate-no-required-config
       - validate-config
+      - validate-change-channel
       # non-testim tests
       - validate-minimal-rbac
       - validate-minimal-rbac-override
