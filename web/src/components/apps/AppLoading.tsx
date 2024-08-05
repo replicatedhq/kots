@@ -1,8 +1,8 @@
 import { useApps } from "@features/App";
-
-import { Version } from "@types";
+import { Version } from '@types'
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { Utilities } from "@src/utilities/utilities";
 
 const AppLoading = ({ appSlugFromMetadata }) => {
   const navigate = useNavigate();
@@ -12,22 +12,39 @@ const AppLoading = ({ appSlugFromMetadata }) => {
   const { apps: appsList } = appsData || {};
 
   useEffect(() => {
+
     const appNeedsConfiguration = appsList?.find((app) => {
       return app?.downstream?.pendingVersions?.length > 0;
     });
-    if (appNeedsConfiguration) {
+
+    if (appsList?.length === 0) {
+      return;
+    }
+    if (Utilities.isInitialAppInstall(appNeedsConfiguration) && appNeedsConfiguration) {
+
       const downstream = appNeedsConfiguration.downstream;
       const firstVersion = downstream.pendingVersions.find(
         (version: Version) => version?.sequence === 0
       );
-
-      if (firstVersion) {
+      if (
+        firstVersion?.status === "pending_cluster_management"
+      ) {
         navigate(`/${appNeedsConfiguration.slug}/cluster/manage`);
         return;
       }
+      if (firstVersion?.status === "pending_config") {
+        navigate(`/${appNeedsConfiguration.slug}/config`);
+        return;
+      }
+      if (firstVersion?.status === "pending_preflight" || firstVersion?.status === "pending") {
+        navigate(`/${appNeedsConfiguration.slug}/preflight`);
+        return;
+      }
+
     } else {
       navigate(`/app/${appSlugFromMetadata}`);
     }
+
   }, [appsData]);
   return (
     <div className="flex justifyContent--center alignItems--center tw-h-full">
@@ -37,3 +54,4 @@ const AppLoading = ({ appSlugFromMetadata }) => {
 };
 
 export default AppLoading;
+
