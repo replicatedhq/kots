@@ -8,8 +8,8 @@ const ALTERNATE_CHANNEL_ID = '2k6j61j49IPyDyQlbmRZJsxy3TP';
 
 test('change channel', async ({ page }) => {
     test.slow();
-    await login(page);
     await changeChannel(AUTOMATED_CHANNEL_ID);
+    await login(page);
     await uploadLicense(page, expect);
     await page.getByRole('button', { name: 'Deploy' }).click();
     await expect(page.locator('#app')).toContainText('Automated');
