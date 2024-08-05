@@ -7,14 +7,11 @@ import { useNavigate } from "react-router-dom";
 const AppLoading = ({ appSlugFromMetadata }) => {
   const navigate = useNavigate();
 
-  const { data: appsData } = useApps({ refetchInterval: 100000 });
+  const { data: appsData } = useApps({ refetchInterval: 3000 });
 
-  const { apps: appsList } = appsData || {};
-
+  const { apps: appsList } = appsData || {}
+  
   useEffect(() => {
-    if (appsList.length > 0) {
-      navigate(`/app/${appSlugFromMetadata}`, { replace: true });
-    }
     const appNeedsConfiguration = appsList?.find((app) => {
       return app?.downstream?.pendingVersions?.length > 0;
     });
@@ -23,16 +20,16 @@ const AppLoading = ({ appSlugFromMetadata }) => {
       const firstVersion = downstream.pendingVersions.find(
         (version: Version) => version?.sequence === 0
       );
-      if (firstVersion?.status === "pending_cluster_management") {
-        navigate(`/${appNeedsConfiguration.slug}/cluster/manage`);
+
+      if (firstVersion) {
+       navigate(`/${appNeedsConfiguration.slug}/cluster/manage`);
         return;
       }
-      if (firstVersion?.status === "pending_config") {
-        navigate(`/${appNeedsConfiguration.slug}/config`);
-        return;
-      }
+   
+    } else  {
+      navigate(`/app/${appSlugFromMetadata}`);
     }
-  }, [appsList]);
+  }, [appsData]);
   return (
     <div className="flex justifyContent--center alignItems--center tw-h-full">
       <p>Waiting for license to install...</p>
