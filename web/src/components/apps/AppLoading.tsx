@@ -9,8 +9,8 @@ const AppLoading = ({ appSlugFromMetadata }) => {
 
   const { data: appsData } = useApps({ refetchInterval: 3000 });
 
-  const { apps: appsList } = appsData || {}
-  
+  const { apps: appsList } = appsData || {};
+
   useEffect(() => {
     const appNeedsConfiguration = appsList?.find((app) => {
       return app?.downstream?.pendingVersions?.length > 0;
@@ -22,11 +22,10 @@ const AppLoading = ({ appSlugFromMetadata }) => {
       );
 
       if (firstVersion) {
-       navigate(`/${appNeedsConfiguration.slug}/cluster/manage`);
+        navigate(`/${appNeedsConfiguration.slug}/cluster/manage`);
         return;
       }
-   
-    } else  {
+    } else {
       navigate(`/app/${appSlugFromMetadata}`);
     }
   }, [appsData]);
