@@ -17,9 +17,11 @@ const AppLoading = ({ appSlugFromMetadata }) => {
       return app?.downstream?.pendingVersions?.length > 0;
     });
 
+    // if no apps are present, return
     if (appsList?.length === 0) {
       return;
     }
+    // if app needs configuration, redirect to the first app depending on the status
     if (Utilities.isInitialAppInstall(appNeedsConfiguration) && appNeedsConfiguration) {
 
       const downstream = appNeedsConfiguration.downstream;
@@ -42,6 +44,7 @@ const AppLoading = ({ appSlugFromMetadata }) => {
       }
 
     } else {
+      // a version has already been deployed
       navigate(`/app/${appSlugFromMetadata}`);
     }
 
