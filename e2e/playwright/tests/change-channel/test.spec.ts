@@ -14,19 +14,27 @@ test('change channel', async ({ page }) => {
     await page.getByRole('button', { name: 'Deploy' }).click();
     await expect(page.locator('#app')).toContainText('Automated');
     await changeChannel(ALTERNATE_CHANNEL_ID);
+
     await page.getByText('Sync license').click();
+
     await expect(page.getByLabel('Next step')).toContainText('License synced', { timeout: 10000 });
     await page.getByRole('button', { name: 'Ok, got it!' }).click();
+
     await expect(page.locator('#app')).toContainText('Alternate');
-    await expect(page.locator('#app')).toContainText('v1.0.1', { timeout: 10000 });
+    await expect(page.locator('#app')).toContainText('1.0.3', { timeout: 10000 });
+    await expect(page.locator('#app')).toContainText('Upstream Update', { timeout: 10000 });
+
+    await page.waitForTimeout(5000);
+
     await page.getByRole('button', { name: 'Deploy', exact: true }).click();
     await page.getByRole('button', { name: 'Yes, Deploy' }).click();
-    await expect(page.getByText('v1.0.0')).not.toBeVisible();
-    await expect(page.getByText('v1.0.1')).toBeVisible();
+
     await expect(page.locator('#app')).toContainText('Currently deployed version', { timeout: 15000 });
+    await expect(page.getByText('v1.0.0')).not.toBeVisible();
+    await expect(page.getByText('1.0.3')).toBeVisible();
 });
 
-async function changeChannel(channelId) {
+async function changeChannel(channelId: string) {
     await fetch(`https://api.replicated.com/vendor/v3/customer/${CUSTOMER_ID}`, {
         method: 'PUT',
         headers: {
