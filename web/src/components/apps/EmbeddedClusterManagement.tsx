@@ -512,7 +512,7 @@ const EmbeddedClusterManagement = ({
         </p>
         <div className="tw-flex tw-gap-6 tw-items-center">
           {Utilities.sessionRolesHasOneOf([rbacRoles.CLUSTER_ADMIN]) &&
-            !Utilities.isInitialAppInstall && (
+            !Utilities.isInitialAppInstall(app) && (
               <button
                 className="btn primary tw-ml-auto tw-w-fit tw-h-fit"
                 onClick={onAddNodeClick}
@@ -521,13 +521,13 @@ const EmbeddedClusterManagement = ({
               </button>
             )}
         </div>
-        {Utilities.isInitialAppInstall && (
-          <div className="tw-mt-4 tw-flex tw-gap-6">
+        {Utilities.isInitialAppInstall(app) && (
+          <div className="tw-mt-4 tw-flex tw-flex-col tw-gap-6">
             <AddNodeInstructions />
             <AddNodeCommands />
           </div>
         )}
-        {!Utilities.isInitialAppInstall && (
+        {!Utilities.isInitialAppInstall(app) && (
           <div className="tw-mt-4 tw-flex tw-gap-6">
             <p>
               View the nodes in your cluster, generate commands to add nodes to
