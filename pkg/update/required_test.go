@@ -229,7 +229,7 @@ func Test_getRequiredAirgapUpdates(t *testing.T) {
 							ChannelID:        "stable-channel",
 							ChannelName:      "Stable Channel",
 							ChannelSlug:      "stable-channel",
-							IsDefault:        true,
+							IsDefault:        false,
 							IsSemverRequired: true,
 						},
 						{

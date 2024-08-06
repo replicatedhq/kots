@@ -73,7 +73,6 @@ func TestKotsRenderDir(t *testing.T) {
 			Name:             spec.Name,
 			RenderDirOptions: spec.RenderDirOptions,
 		}
-		test.RenderDirOptions.App.SelectedChannelID = "1vusIYZLAVxMG6q760OJmRKj5i5"
 		tests = append(tests, test)
 	}
 	require.NoError(t, err)

@@ -31,10 +31,7 @@ func InitAvailableUpdatesDir() error {
 }
 
 func GetAvailableUpdates(kotsStore storepkg.Store, app *apptypes.App, license *kotsv1beta1.License) ([]types.AvailableUpdate, error) {
-	var err error
-	var licenseChan *kotsv1beta1.Channel
-
-	licenseChan, err = kotsutil.FindChannelInLicense(app.SelectedChannelID, license)
+	licenseChan, err := kotsutil.FindChannelInLicense(app.SelectedChannelID, license)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to find channel in license")
 	}

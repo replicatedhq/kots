@@ -27,7 +27,6 @@ import (
 	upstreamtypes "github.com/replicatedhq/kots/pkg/upstream/types"
 	"github.com/replicatedhq/kots/pkg/util"
 	"github.com/replicatedhq/kots/pkg/version"
-	kotsv1beta1 "github.com/replicatedhq/kotskinds/apis/kots/v1beta1"
 	cron "github.com/robfig/cron/v3"
 	"go.uber.org/zap"
 	"k8s.io/apimachinery/pkg/util/wait"
@@ -228,8 +227,7 @@ func checkForKotsAppUpdates(opts types.CheckForUpdatesOpts, finishedChan chan<- 
 		return nil, errors.Wrap(err, "failed to get app")
 	}
 
-	var licenseChan *kotsv1beta1.Channel
-	licenseChan, err = kotsutil.FindChannelInLicense(a.SelectedChannelID, latestLicense)
+	licenseChan, err := kotsutil.FindChannelInLicense(a.SelectedChannelID, latestLicense)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to find channel in license after sync")
 	}
