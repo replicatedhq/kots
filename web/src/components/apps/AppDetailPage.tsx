@@ -349,7 +349,7 @@ function AppDetailPage(props: Props) {
         firstVersion?.status === "pending_preflight" ||
         firstVersion?.status === "pending"
       ) {
-        navigate(`/${appNeedsConfiguration.slug}/prrflight`);
+        navigate(`/${appNeedsConfiguration.slug}/preflight`);
         return;
       }
     }
