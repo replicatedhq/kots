@@ -251,13 +251,14 @@ const EmbeddedClusterManagement = ({
 
   const handleSelectNodeType = (e: ChangeEvent<HTMLInputElement>) => {
     let nodeType = e.currentTarget.value;
-    let types = selectedNodeTypes;
-
-    if (selectedNodeTypes.includes(nodeType)) {
-      setSelectedNodeTypes(types.filter((type) => type !== nodeType));
-    } else {
-      setSelectedNodeTypes([...types, nodeType]);
-    }
+    console.log("handle select node type");
+    setSelectedNodeTypes((prevSelectedNodeTypes) => {
+      if (prevSelectedNodeTypes.includes(nodeType)) {
+        return prevSelectedNodeTypes.filter((type) => type !== nodeType);
+      } else {
+        return [...prevSelectedNodeTypes, nodeType];
+      }
+    });
   };
   // #endregion
 
@@ -414,12 +415,12 @@ const EmbeddedClusterManagement = ({
 
   const AddNodeInstructions = () => {
     return (
-      <div>
+      <div className="tw-mb-4 tw-text-base tw-text-gray-600">
         <p>
           Optionally add nodes to the cluster. Click Continue to proceed with a
           single node.
         </p>
-        <p className="tw-text-base tw-text-gray-600">
+        <p>
           {rolesData?.roles &&
             rolesData.roles.length > 1 &&
             "Select one or more roles to assign to the new node. "}
@@ -432,7 +433,7 @@ const EmbeddedClusterManagement = ({
 
   const AddNodeCommands = () => {
     return (
-      <div>
+      <div className="tw-flex">
         {rolesLoading && (
           <p className="tw-text-base tw-w-full tw-text-center tw-py-4 tw-text-gray-500 tw-font-semibold">
             Loading roles...
@@ -444,7 +445,7 @@ const EmbeddedClusterManagement = ({
           </p>
         )}
         {rolesData?.roles && rolesData.roles.length > 1 && (
-          <div className="tw-grid tw-gap-2 tw-grid-cols-4 tw-auto-rows-auto">
+          <div className="tw-grid tw-gap-2 tw-grid-cols-4">
             {rolesData.roles.map((nodeType) => (
               <div
                 key={nodeType}
