@@ -13,9 +13,13 @@ import CodeSnippet from "../shared/CodeSnippet";
 import "@src/scss/components/apps/EmbeddedClusterManagement.scss";
 import { isEqual } from "lodash";
 import AddANodeModal from "@components/modals/AddANodeModal";
+import Icon from "@components/Icon";
 
 const testData = {
   nodes: undefined,
+};
+const rolesData = {
+  roles: ["management", "app"],
 };
 
 type State = {
@@ -136,7 +140,7 @@ const EmbeddedClusterManagement = ({
   };
 
   const {
-    data: rolesData,
+    //  data: rolesData
     isInitialLoading: rolesLoading,
     error: rolesError,
   } = useQuery<RolesResponse, Error, RolesResponse>({
@@ -249,9 +253,9 @@ const EmbeddedClusterManagement = ({
     return false;
   };
 
-  const handleSelectNodeType = (e: ChangeEvent<HTMLInputElement>) => {
-    let nodeType = e.currentTarget.value;
-    console.log("handle select node type");
+  const handleSelectNodeType = (nodeType) => {
+    // let nodeType = e.currentTarget.value;
+    // console.log("handle select node type");
     setSelectedNodeTypes((prevSelectedNodeTypes) => {
       if (prevSelectedNodeTypes.includes(nodeType)) {
         return prevSelectedNodeTypes.filter((type) => type !== nodeType);
@@ -415,7 +419,7 @@ const EmbeddedClusterManagement = ({
 
   const AddNodeInstructions = () => {
     return (
-      <div className="tw-mb-4 tw-text-base tw-text-gray-600">
+      <div className="tw-mb-4 tw-text-base">
         <p>
           Optionally add nodes to the cluster. Click Continue to proceed with a
           single node.
@@ -433,7 +437,7 @@ const EmbeddedClusterManagement = ({
 
   const AddNodeCommands = () => {
     return (
-      <div className="tw-flex">
+      <>
         {rolesLoading && (
           <p className="tw-text-base tw-w-full tw-text-center tw-py-4 tw-text-gray-500 tw-font-semibold">
             Loading roles...
@@ -444,32 +448,61 @@ const EmbeddedClusterManagement = ({
             {rolesError?.message || "Unable to fetch roles"}
           </p>
         )}
+        {/* <div className="tw-flex tw-items-center">
+          <p>Roles: </p>
+          {selectedNodeTypes?.map((item, index) => (
+            <div
+              key={index}
+              className="tw-inline-block tw-w-auto tw-bg-gray-200 tw-py-1 tw-px-2 tw-rounded tw-mr-1 tw-mb-2"
+            >
+              <div className="tw-flex">
+                <span className="tw-text-gray-600">{item}</span>
+              </div>
+            </div>
+          ))}
+        </div> */}
+
         {rolesData?.roles && rolesData.roles.length > 1 && (
-          <div className="tw-grid tw-gap-2 tw-grid-cols-4">
+          <div className="tw-flex tw-gap-2 tw-items-center">
+            <p className="tw-text-gray-600 tw-font-semibold">Roles: </p>
             {rolesData.roles.map((nodeType) => (
               <div
                 key={nodeType}
-                className={classNames("BoxedCheckbox", {
-                  "is-active": selectedNodeTypes.includes(nodeType),
-                  "is-disabled": determineDisabledState(),
-                })}
+                className={classNames(
+                  "tw-border-[1px] tw-border-solid tw-border-[#326DE6] tw-rounded tw-px-2 tw-py-2 tw-flex tw-items-center  tw-cursor-pointer tw-text-[#326DE6] tw-bg-white  tw-hover:tw-bg-[#f8fafe]",
+                  {
+                    // "tw-text-white tw-bg-[#326DE6]":
+                    //   selectedNodeTypes.includes(nodeType),
+                    "is-disabled": determineDisabledState(),
+                  }
+                )}
+                onClick={() => {
+                  handleSelectNodeType(nodeType);
+                }} // Handle click on the outer di
               >
-                <input
-                  id={`${nodeType}NodeType`}
-                  className="u-cursor--pointer hidden-input"
-                  type="checkbox"
-                  name={`${nodeType}NodeType`}
-                  value={nodeType}
-                  disabled={determineDisabledState()}
-                  checked={selectedNodeTypes.includes(nodeType)}
-                  onChange={handleSelectNodeType}
-                />
                 <label
                   htmlFor={`${nodeType}NodeType`}
-                  className="tw-block u-cursor--pointer u-userSelect--none u-textColor--primary u-fontSize--normal u-fontWeight--medium tw-text-center"
+                  className=" u-userSelect--none tw-text-gray-600 u-fontSize--normal u-fontWeight--medium tw-text-center tw-flex tw-items-center"
                 >
-                  {nodeType}
+                  {selectedNodeTypes.includes(nodeType) && (
+                    <Icon
+                      icon="check-circle-filled"
+                      size={12}
+                      className="success-color tw-mr-2"
+                    />
+                  )}
+                  <input
+                    id={`${nodeType}NodeType`}
+                    className="u-cursor--pointer tw-mr-2 hidden-input"
+                    type="checkbox"
+                    name={`${nodeType}NodeType`}
+                    value={nodeType}
+                    disabled={determineDisabledState()}
+                    checked={selectedNodeTypes.includes(nodeType)}
+                    // onChange={handleSelectNodeType}
+                  />{" "}
                 </label>
+                {nodeType}
               </div>
             ))}
           </div>
@@ -500,7 +533,7 @@ const EmbeddedClusterManagement = ({
             </>
           )}
         </div>
-      </div>
+      </>
     );
   };
 
@@ -512,6 +545,15 @@ const EmbeddedClusterManagement = ({
           Nodes
         </p>
         <div className="tw-flex tw-gap-6 tw-items-center">
+          {" "}
+          {!Utilities.isInitialAppInstall(app) && (
+            <div className="tw-mt-4 tw-flex tw-gap-6">
+              <p>
+                View the nodes in your cluster, generate commands to add nodes
+                to the cluster, and view workloads running on each node.
+              </p>
+            </div>
+          )}
           {Utilities.sessionRolesHasOneOf([rbacRoles.CLUSTER_ADMIN]) &&
             !Utilities.isInitialAppInstall(app) && (
               <button
@@ -522,20 +564,13 @@ const EmbeddedClusterManagement = ({
               </button>
             )}
         </div>
-        {Utilities.isInitialAppInstall(app) && (
-          <div className="tw-mt-4 tw-flex tw-flex-col tw-gap-6">
-            <AddNodeInstructions />
-            <AddNodeCommands />
-          </div>
-        )}
-        {!Utilities.isInitialAppInstall(app) && (
-          <div className="tw-mt-4 tw-flex tw-gap-6">
-            <p>
-              View the nodes in your cluster, generate commands to add nodes to
-              the cluster, and view workloads running on each node.
-            </p>
-          </div>
-        )}
+        {/* {Utilities.isInitialAppInstall(app) && ( */}
+        <div className="tw-mt-4 tw-flex tw-flex-col tw-gap-6">
+          <AddNodeInstructions />
+          <AddNodeCommands />
+        </div>
+        {/* )} */}
+
         <div className="flex1 u-overflow--auto card-item">
           {nodesLoading && (
             <p className="tw-text-base tw-w-full tw-text-center tw-py-4 tw-text-gray-500 tw-font-semibold">
