@@ -345,6 +345,13 @@ function AppDetailPage(props: Props) {
         navigate(`/${appNeedsConfiguration.slug}/config`);
         return;
       }
+      if (
+        firstVersion?.status === "pending_preflight" ||
+        firstVersion?.status === "pending"
+      ) {
+        navigate(`/${appNeedsConfiguration.slug}/prrflight`);
+        return;
+      }
     }
   }, [selectedApp]);
 
