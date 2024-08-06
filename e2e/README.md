@@ -32,45 +32,7 @@ code --install-extension ms-playwright.playwright
 
 To add a new test that you've already added in the kots-tests-app repo - do the following:
 
-- Update `.github/workflows/build-test.yaml` to include the new test:
-
-```
-validate-change-channel:
-    runs-on: ubuntu-20.04
-    needs: [ enable-tests, can-run-ci, build-kots, build-kotsadm, build-e2e, build-kurl-proxy, build-migrations, push-minio, push-rqlite ]
-    strategy:
-      fail-fast: false
-      matrix:
-        cluster: [
-          {distribution: kind, version: v1.28.0}
-        ]
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-      - name: download e2e deps
-        uses: actions/download-artifact@v4
-        with:
-          name: e2e
-          path: e2e/bin/
-      - run: docker load -i e2e/bin/e2e-deps.tar
-      - run: chmod +x e2e/bin/*
-      - name: download kots binary
-        uses: actions/download-artifact@v4
-        with:
-          name: kots
-          path: bin/
-      - run: chmod +x bin/*
-      - uses: ./.github/actions/kots-e2e
-        with:
-          test-focus: 'Change Channel'
-          kots-namespace: 'change-channel'
-          k8s-distribution: ${{ matrix.cluster.distribution }}
-          k8s-version: ${{ matrix.cluster.version }}
-          kots-dockerhub-username: '${{ secrets.E2E_DOCKERHUB_USERNAME }}'
-          kots-dockerhub-password: '${{ secrets.E2E_DOCKERHUB_PASSWORD }}'
-          // add any other parameters needed for the test
-```
-
+- Update `.github/workflows/build-test.yaml` to include the new test. You can copy an existing pw entry like `validate-change-channel` and update the test-focus, kots-namespace, and any other parameters needed for the test.
 - Add the test to `e2e/inventory.go` , making sure the naming matches your kots-test-app and conforms to the naming convention of the other tests in the file:
 
 ```go
