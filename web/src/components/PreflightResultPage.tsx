@@ -75,7 +75,7 @@ function PreflightResultPage(props: Props) {
   return (
     <div className="flex-column flex1 container">
       <KotsPageTitle pageName="Preflight Checks" showAppSlug />
-      <div className="PreflightChecks--wrapper flex-column u-paddingTop--30 flex1 flex u-overflow--auto">
+      <div className="PreflightChecks--wrapper flex-column u-paddingTop--30 flex1 flex tw-max-h-[60%]">
         {location.pathname.includes("version-history") && (
           <div className="u-fontWeight--bold link" onClick={() => navigate(-1)}>
             <Icon
@@ -136,7 +136,9 @@ function PreflightResultPage(props: Props) {
                   preflightCheck?.pendingPreflightCheckName || ""
                 }
                 percentage={
-                  preflightCheck?.pendingPreflightChecksPercentage || 0
+                  Math.round(
+                    preflightCheck?.pendingPreflightChecksPercentage
+                  ) || 0
                 }
               />
             </div>
