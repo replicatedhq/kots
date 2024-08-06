@@ -30,7 +30,7 @@ code --install-extension ms-playwright.playwright
 
 ### Adding a new test
 
-To add a new test that you've already added in the kots-tests-app repo - do the following:
+To add a new test that you've already added in the [kots-tests-app repo](https://github.com/replicatedhq/kots-test-apps) - do the following:
 
 - Update `.github/workflows/build-test.yaml` to include the new test. You can copy an existing pw entry like `validate-change-channel` and update the test-focus, kots-namespace, and any other parameters needed for the test.
 - Add the test to `e2e/inventory.go` , making sure the naming matches your kots-test-app and conforms to the naming convention of the other tests in the file:
