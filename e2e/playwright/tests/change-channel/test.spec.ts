@@ -24,8 +24,6 @@ test('change channel', async ({ page }) => {
     await expect(page.locator('#app')).toContainText('1.0.3', { timeout: 10000 });
     await expect(page.locator('#app')).toContainText('Upstream Update', { timeout: 10000 });
 
-    await page.waitForTimeout(5000);
-
     await page.getByRole('button', { name: 'Deploy', exact: true }).click();
     await page.getByRole('button', { name: 'Yes, Deploy' }).click();
 
