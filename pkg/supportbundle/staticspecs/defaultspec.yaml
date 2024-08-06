@@ -3,6 +3,7 @@ kind: SupportBundle
 metadata:
   name: default-supportbundle
 spec:
+  uri: "https://raw.githubusercontent.com/replicatedhq/kots/main/pkg/supportbundle/staticspecs/defaultspec.yaml"
   collectors:
     - clusterInfo: {}
     - clusterResources: {}
