@@ -101,7 +101,7 @@ function AppDetailPage(props: Props) {
       navigate(`/app/${appsList[0].slug}`, { replace: true });
     } else if (Utilities.isLoggedIn() && !props.isEmbeddedCluster) {
       navigate("/upload-license", { replace: true });
-    } else if (Utilities.isLoggedIn && props.isEmbeddedCluster) {
+    } else if (Utilities.isLoggedIn() && props.isEmbeddedCluster) {
       navigate("/cluster/loading", { replace: true });
     } else {
       navigate("/secure-console", { replace: true });
