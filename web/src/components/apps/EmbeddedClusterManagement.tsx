@@ -18,9 +18,9 @@ import Icon from "@components/Icon";
 const testData = {
   nodes: undefined,
 };
-const rolesData = {
-  roles: ["management", "app"],
-};
+// const rolesData = {
+//   roles: ["management", "app"],
+// };
 
 type State = {
   displayAddNode: boolean;
@@ -140,7 +140,7 @@ const EmbeddedClusterManagement = ({
   };
 
   const {
-    //  data: rolesData
+    data: rolesData,
     isInitialLoading: rolesLoading,
     error: rolesError,
   } = useQuery<RolesResponse, Error, RolesResponse>({
@@ -244,8 +244,8 @@ const EmbeddedClusterManagement = ({
     if (nodeTypes.length === 1) {
       // if there's only one node type, select it by default
       setSelectedNodeTypes(nodeTypes);
-    } else {
-      setSelectedNodeTypes([]);
+    } else if (nodeTypes.length > 1) {
+      setSelectedNodeTypes([nodeTypes[0]]);
     }
   }, [rolesData]);
 
@@ -421,8 +421,9 @@ const EmbeddedClusterManagement = ({
     return (
       <div className="tw-mb-4 tw-text-base">
         <p>
-          Optionally add nodes to the cluster. Click Continue to proceed with a
-          single node.
+          Optionally add nodes to the cluster. Click{" "}
+          <span className="tw-font-semibold">Continue</span>
+          to proceed with a single node.
         </p>
         <p>
           {rolesData?.roles &&
@@ -448,19 +449,6 @@ const EmbeddedClusterManagement = ({
             {rolesError?.message || "Unable to fetch roles"}
           </p>
         )}
-        {/* <div className="tw-flex tw-items-center">
-          <p>Roles: </p>
-          {selectedNodeTypes?.map((item, index) => (
-            <div
-              key={index}
-              className="tw-inline-block tw-w-auto tw-bg-gray-200 tw-py-1 tw-px-2 tw-rounded tw-mr-1 tw-mb-2"
-            >
-              <div className="tw-flex">
-                <span className="tw-text-gray-600">{item}</span>
-              </div>
-            </div>
-          ))}
-        </div> */}
 
         {rolesData?.roles && rolesData.roles.length > 1 && (
           <div className="tw-flex tw-gap-2 tw-items-center">
@@ -469,11 +457,13 @@ const EmbeddedClusterManagement = ({
               <div
                 key={nodeType}
                 className={classNames(
-                  "tw-border-[1px] tw-border-solid tw-border-[#326DE6] tw-rounded tw-px-2 tw-py-2 tw-flex tw-items-center  tw-cursor-pointer tw-text-[#326DE6] tw-bg-white  tw-hover:tw-bg-[#f8fafe]",
+                  "tw-border-[1px] tw-border-solid tw-border-[#326DE6] tw-rounded tw-px-2 tw-py-2 tw-flex tw-items-center  tw-cursor-pointer",
                   {
-                    // "tw-text-white tw-bg-[#326DE6]":
-                    //   selectedNodeTypes.includes(nodeType),
+                    "tw-text-white tw-bg-[#326DE6]":
+                      selectedNodeTypes.includes(nodeType),
                     "is-disabled": determineDisabledState(),
+                    "tw-text-[#326DE6] tw-bg-white  tw-hover:tw-bg-[#f8fafe]":
+                      !selectedNodeTypes.includes(nodeType),
                   }
                 )}
                 onClick={() => {
@@ -485,11 +475,7 @@ const EmbeddedClusterManagement = ({
                   className=" u-userSelect--none tw-text-gray-600 u-fontSize--normal u-fontWeight--medium tw-text-center tw-flex tw-items-center"
                 >
                   {selectedNodeTypes.includes(nodeType) && (
-                    <Icon
-                      icon="check-circle-filled"
-                      size={12}
-                      className="success-color tw-mr-2"
-                    />
+                    <Icon icon="check" size={12} className="tw-mr-2" />
                   )}
                   <input
                     id={`${nodeType}NodeType`}
@@ -544,10 +530,10 @@ const EmbeddedClusterManagement = ({
         <p className="flex-auto u-fontSize--larger u-fontWeight--bold u-textColor--primary">
           Nodes
         </p>
-        <div className="tw-flex tw-gap-6 tw-items-center">
+        <div className="tw-flex tw-gap-4 tw-items-center">
           {" "}
           {!Utilities.isInitialAppInstall(app) && (
-            <div className="tw-mt-4 tw-flex tw-gap-6">
+            <div className="tw-flex tw-gap-6">
               <p>
                 View the nodes in your cluster, generate commands to add nodes
                 to the cluster, and view workloads running on each node.
