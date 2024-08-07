@@ -422,15 +422,13 @@ const EmbeddedClusterManagement = ({
       <div className="tw-mb-4 tw-text-base">
         <p>
           Optionally add nodes to the cluster. Click{" "}
-          <span className="tw-font-semibold">Continue</span>
+          <span className="tw-font-semibold">Continue </span>
           to proceed with a single node.
         </p>
         <p>
           {rolesData?.roles &&
             rolesData.roles.length > 1 &&
-            "Select one or more roles to assign to the new node. "}
-          Copy the join command and run it on the machine you'd like to join to
-          the cluster.
+            "Select one or more roles to assign to the new node. Copy the join command and run it on the machine you'd like to join to the cluster. "}
         </p>
       </div>
     );
@@ -493,7 +491,7 @@ const EmbeddedClusterManagement = ({
             ))}
           </div>
         )}
-        <div>
+        <div className="tw-max-w-[700px]">
           {selectedNodeTypes.length > 0 && generateAddNodeCommandLoading && (
             <p className="tw-text-base tw-w-full tw-text-center tw-py-4 tw-text-gray-500 tw-font-semibold">
               Generating command...
@@ -530,7 +528,7 @@ const EmbeddedClusterManagement = ({
         <p className="flex-auto u-fontSize--larger u-fontWeight--bold u-textColor--primary">
           Nodes
         </p>
-        <div className="tw-flex tw-gap-4 tw-items-center">
+        <div className="tw-flex tw-gap-6 tw-items-center">
           {" "}
           {!Utilities.isInitialAppInstall(app) && (
             <div className="tw-flex tw-gap-6">
@@ -550,12 +548,12 @@ const EmbeddedClusterManagement = ({
               </button>
             )}
         </div>
-        {/* {Utilities.isInitialAppInstall(app) && ( */}
-        <div className="tw-mt-4 tw-flex tw-flex-col tw-gap-6">
-          <AddNodeInstructions />
-          <AddNodeCommands />
-        </div>
-        {/* )} */}
+        {Utilities.isInitialAppInstall(app) && (
+          <div className="tw-mt-4 tw-flex tw-flex-col tw-gap-6">
+            <AddNodeInstructions />
+            <AddNodeCommands />
+          </div>
+        )}
 
         <div className="flex1 u-overflow--auto card-item">
           {nodesLoading && (
