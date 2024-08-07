@@ -123,10 +123,10 @@ function PreflightResultPage(props: Props) {
             Preflight checks
           </p>
           <p className="u-fontWeight--medium u-lineHeight--more u-marginTop--5 u-marginBottom--15">
-            Preflight checks validate that your cluster meets the minimum
+            Preflight checks validate that your environment meets the minimum
             requirements. Required checks must pass in order to deploy the
-            application. Optional checks are recommended to ensure that the
-            application will work as intended.
+            application. Optional checks are recommended to ensure {slug} will
+            work as intended.
           </p>
 
           {preflightCheck?.showPreflightCheckPending && (

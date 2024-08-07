@@ -249,7 +249,7 @@ export class NavBar extends PureComponent<Props, State> {
                         onClick={this.handleGoToClusterManagement}
                         className="flex flex1 u-cursor--pointer text u-fontSize--normal u-fontWeight--medium flex-column justifyContent--center"
                       >
-                        Cluster Management
+                        Nodes
                       </span>
                     </div>
                   )}

@@ -91,7 +91,7 @@ const UpgradeStatusModal = (props: Props) => {
         <Loader size="60" />
       </div>
       <h2 className="u-fontSize--largest u-textColor--primary u-fontWeight--bold u-lineHeight--normal u-userSelect--none">
-        Cluster update in progress
+        Node update in progress
       </h2>
       {props.connectionTerminated ? (
         <p className="u-fontSize--normal u-fontWeight--medium u-textColor--bodyCopy u-lineHeight--more u-marginTop--10 u-marginBottom--10 u-userSelect--none">

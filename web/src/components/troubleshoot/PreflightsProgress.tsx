@@ -1,5 +1,7 @@
+import { useParams } from "react-router-dom";
 import Loader from "../shared/Loader";
 import "@src/scss/components/AirgapUploadProgress.scss";
+import { KotsParams } from "@types";
 
 function moveBar(percentage: number) {
   const elem = document.getElementById("preflightStatusBar");
@@ -31,7 +33,7 @@ export default function PreflightProgress(props: {
   percentage: number;
 }) {
   const { pendingPreflightCheckName, percentage } = props;
-
+  const { slug } = useParams<keyof KotsParams>() as KotsParams;
   let progressBar;
 
   if (percentage > 0) {
@@ -74,7 +76,7 @@ export default function PreflightProgress(props: {
       <div className="flex1 flex-column u-textColor--primary">
         <div className="flex1 flex-column alignItems--center justifyContent--center">
           <h1 className="u-fontSize--larger u-fontWeight--bold u-marginBottom--10">
-            Collecting information about your cluster
+            Collecting information about {slug}
           </h1>
           <div className="flex alignItems--center u-marginTop--20">
             <span className="u-fontWeight--bold u-fontSize--normal u-textColor--secondary u-marginRight--10">
