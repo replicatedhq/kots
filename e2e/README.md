@@ -2,11 +2,73 @@
 
 E2E tests are run in build-test workflow on pull_request event.
 
-e2e_test.go uses Ginkgo to build a test suite from inventory.go and runs each test using testim/client.go.
+e2e_test.go uses Ginkgo to build a test suite from inventory.go and runs each test using testim/client.go or playwright/playwright.go
 
-Tests are parallelized using Gingko's test focus. Each workflow definition in .github/workflows/build-test.yaml must define a `test-focus` parameter that matches the `Test Name` property defined in inventory.go. Each e2e test workflow skips all tests but what is defined in `test-focus`.
+Tests are parallelized using Gingko's test focus. Each workflow definition in .github/workflows/build-test.yaml must define a `test-focus` parameter that matches the `Test Name` property defined in inventory.go. Each e2e test workflow skips all tests but what is defined in `test-focus`. Please colocate new playwright tests under the playwright comment with the other pw tests.
 
-## Development environment
+New tests should be written with playwright.
+
+## Playwright
+
+Playwright is the preferred testing framework for new tests moving forward. See playwright's [documentation](https://playwright.dev/docs/intro) for more information.
+
+### Development environment
+
+To install dependencies run:
+
+```bash
+cd e2e/playwright
+npm ci 
+npx playwright install --with-deps
+```
+
+Install the playwright extension in vscode if you've not already done so:
+
+```bash
+code --install-extension ms-playwright.playwright
+```
+
+### Adding a new test
+
+To add a new test that you've already added in the [kots-tests-app repo](https://github.com/replicatedhq/kots-test-apps) - do the following:
+
+- Update `.github/workflows/build-test.yaml` to include the new test. You can copy an existing pw entry like `validate-change-channel` and update the test-focus, kots-namespace, and any other parameters needed for the test.
+- Add the test to `e2e/inventory.go` , making sure the naming matches your kots-test-app and conforms to the naming convention of the other tests in the file:
+
+```go
+func NewChangeChannel() Test {
+	return Test{
+		ID:          "change-channel",
+		Name:        "Change Channel",
+		Namespace:   "change-channel",
+		AppSlug:     "change-channel",
+		UpstreamURI: "change-channel/automated",
+	}
+}
+```
+
+- Add a new inventory test entry to `e2e/e2e_test.go` to ensure it actually runs:
+
+```go
+Entry(nil, inventory.NewChangeChannel()),
+```
+
+- Create a new test directory in `e2e/playwright/tests` matching your test ID, with the corresponding test file:
+
+```
+$ tree e2e/playwright/tests/change-channel
+e2e/playwright/tests/change-channel 
+├── license.yaml  // a test specific license if needed
+└── test.spec.ts  // the actual test file
+```
+
+- See `e2e/playwright/tests/shared` for test utility functions that can be used in your test for things like logging in or uploading a license.
+
+## testim
+
+Testim is our legacy testing framework. It is being phased out in favor of playwright.
+
+### Development environment
 
 To install dependencies run:
 
@@ -79,7 +141,7 @@ $ kubectl -n smoke-test port-forward svc/kotsadm 3000 --address=0.0.0.0
 Forwarding from 0.0.0.0:3000 -> 3000
 ```
 
-### Requirements
+#### Requirements
 
 *Currently, the admin console helm chart will not install on an M1 Macbook because of it's [node affinity](https://github.com/replicatedhq/kots-helm/blob/main/templates/kotsadm-deployment.yaml#L32-L35) rules*
 

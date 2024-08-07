@@ -12,6 +12,7 @@ import { useGetPrelightResults, useRerunPreflights } from "./hooks/index";
 
 import { KotsParams } from "@types";
 import { useUpgradeServiceContext } from "./UpgradeServiceContext";
+import { isEqual } from "lodash";
 
 const PreflightCheck = ({
   setCurrentStep,
@@ -25,8 +26,12 @@ const PreflightCheck = ({
     setShowConfirmIgnorePreflightsModal,
   ] = useState(false);
 
-  const { setIsSkipPreflights, setContinueWithFailedPreflights } =
-    useUpgradeServiceContext();
+  const {
+    setIsSkipPreflights,
+    setContinueWithFailedPreflights,
+    prevConfig,
+    config,
+  } = useUpgradeServiceContext();
 
   const { sequence = "0", slug } = useParams<keyof KotsParams>() as KotsParams;
 
@@ -43,6 +48,13 @@ const PreflightCheck = ({
 
   useEffect(() => {
     setCurrentStep(1);
+
+    if (
+      !isEqual(prevConfig, config) &&
+      preflightCheck?.preflightResults.length > 0
+    ) {
+      rerunPreflights();
+    }
   }, []);
 
   const handleIgnorePreflights = () => {
@@ -96,7 +108,9 @@ const PreflightCheck = ({
                   preflightCheck?.pendingPreflightCheckName || ""
                 }
                 percentage={
-                  preflightCheck?.pendingPreflightChecksPercentage || 0
+                  Math.round(
+                    preflightCheck?.pendingPreflightChecksPercentage
+                  ) || 0
                 }
               />
             </div>
