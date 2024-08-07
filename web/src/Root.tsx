@@ -55,6 +55,7 @@ import AppSnapshots from "@components/snapshots/AppSnapshots";
 import AppSnapshotRestore from "@components/snapshots/AppSnapshotRestore";
 import EmbeddedClusterViewNode from "@components/apps/EmbeddedClusterViewNode";
 import UpgradeStatusModal from "@components/modals/UpgradeStatusModal";
+import AppLoading from "@components/apps/AppLoading";
 
 // react-query client
 const queryClient = new QueryClient();
@@ -573,6 +574,7 @@ const Root = () => {
                   />
                 }
               />
+              <Route path="/cluster/loading" element={<AppLoading />} />
               <Route path="/install-with-helm" element={<InstallWithHelm />} />
               <Route
                 path="/restore"

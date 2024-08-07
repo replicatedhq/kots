@@ -133,7 +133,10 @@ const UploadLicenseFile = (props: Props) => {
     if (appsListLength > 0 && isEmbeddedCluster) {
       navigate(`/app/${appSlugFromMetadata}`, { replace: true });
     }
-  }, [props.appsListLength]);
+    if (appsListLength === 0 && isEmbeddedCluster) {
+      navigate(`/cluster/loading`, { replace: true });
+    }
+  }, [props.appsListLength, props.isEmbeddedCluster]);
 
   const exchangeRliFileForLicense = async (content: string) => {
     return new Promise((resolve, reject) => {
