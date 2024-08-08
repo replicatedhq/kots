@@ -3,27 +3,33 @@ import { ConfigWrapper } from "./ConfigComponents";
 import ConfigItemTitle from "./ConfigItemTitle";
 import Icon from "@components/Icon";
 import Markdown from "react-remarkable";
+import { isEmpty } from "lodash";
 
 const ConfigDropdown = (props) => {
-  const [selectedValue, setSelectedValue] = useState("");
+  const [selectedValue, setSelectedValue] = useState(
+    props.value || props.default || ""
+  );
 
-  let options = [];
+  let options = [{ value: "", label: "Select an option" }];
+
   props.items.map((item) => {
+    if (isEmpty(item)) {
+      return null;
+    }
     options.push({ value: item.name, label: item.title });
   });
 
-  const handleChange = (e) => {
-    setSelectedValue(e.target.value);
-    props.handleOnChange(props.group, e.target.value);
+  const handleChange = (val) => {
+    setSelectedValue(val);
+    props.handleOnChange(props.name, val);
   };
 
   return (
     <ConfigWrapper
       id={`${props.name}-group`}
-      className={`field-type-select-one`}
+      className={`field-type-dropdown`}
       marginTop={props.hidden || props.affix ? "0" : "15px"}
       hidden={props.hidden}
-      //order={setOrder(props.index, props.affix)}
     >
       {props.title !== "" ? (
         <ConfigItemTitle
@@ -49,18 +55,18 @@ const ConfigDropdown = (props) => {
       <select
         className="Input tw-mt-4"
         value={selectedValue}
-        onChange={handleChange}
+        onChange={(e) => handleChange(e.target.value)}
       >
         {options.map((option) => (
           <option key={option.value} value={option.value}>
             {option.label}
           </option>
         ))}
-      </select>{" "}
+      </select>
       {props.repeatable && (
         <div
           className="u-marginTop--10"
-          onClick={() => props.handleAddItem(name)}
+          onClick={() => props.handleAddItem(props.name)}
         >
           <span className="add-btn u-fontSize--small u-fontWeight--bold link">
             <Icon icon="plus" size={14} className="clickable" />

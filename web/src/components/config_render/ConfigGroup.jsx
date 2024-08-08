@@ -166,6 +166,19 @@ const ConfigGroup = (props) => {
           );
         case "select_one":
           return (
+            <ConfigSelectOne
+              key={`${i}-${item.name}`}
+              handleOnChange={handleItemChange}
+              hidden={item.hidden}
+              groupName={props.item.name}
+              when={item.when}
+              {...item}
+              readonly={isReadOnly}
+              index={i + 1}
+            />
+          );
+        case "dropdown":
+          return (
             <ConfigDropdown
               key={`${i}-${item.name}`}
               handleOnChange={handleItemChange}
