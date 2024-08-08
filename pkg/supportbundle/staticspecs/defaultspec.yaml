@@ -159,7 +159,7 @@ spec:
             nameRegex: "kotsadm-rqlite.*"
         outcomes:
           - fail:
-              when: "pvcUsedPercentage >= 80%"
+              when: "pvcUsedPercentage >= 80"
               message: "kotsadm-rqlite PVC using more than 80% of storage"
           - pass:
               message: "kotsadm-rqlite PVC is using less than 80% of storage"
@@ -170,7 +170,7 @@ spec:
             nameRegex: "kotsadm-minio.*"
         outcomes:
           - fail:
-              when: "pvcUsedPercentage >= 80%"
+              when: "pvcUsedPercentage >= 80"
               message: "kotsadm-minio PVC using more than 80% of storage"
           - pass:
               message: "kotsadm-minio PVC is using less than 80% of storage"
