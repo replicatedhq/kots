@@ -10,6 +10,8 @@ const (
 	PasswordItemType  = "password"
 	TextAreaItemType  = "textarea"
 	SelectOneItemType = "select_one"
+	RadioItemType     = "radio"
+	DropdownItemType  = "dropdown"
 )
 
 type ConfigGroupValidationError struct {
