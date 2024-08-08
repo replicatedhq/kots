@@ -57,6 +57,7 @@ export default class ConfigSelectOne extends Component {
             required={this.props.required}
             name={this.props.name}
             error={this.props.error}
+            deprecated={this.props.deprecated}
           />
         ) : null}
         {this.props.help_text !== "" ? (

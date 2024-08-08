@@ -11,6 +11,7 @@ export default class ConfigItemTitle extends Component {
       hidden,
       when,
       error = "",
+      deprecated,
     } = this.props;
 
     var isHidden =
@@ -42,10 +43,13 @@ export default class ConfigItemTitle extends Component {
           style={title?.length > 101 ? { marginTop: -12 } : {}}
         >
           {required ? (
-            <span className="field-label required">Required</span>
+            <span className="field-label required tw-mr-2">Required</span>
           ) : recommended ? (
             <span className="field-label recommended">Recommended</span>
           ) : null}
+          {deprecated && (
+            <span className="field-label deprecated">Deprecated</span>
+          )}
           <span
             className={classNames("u-marginLeft--5 config-errblock", {
               visible: !!error,
