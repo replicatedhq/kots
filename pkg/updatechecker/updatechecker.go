@@ -13,6 +13,7 @@ import (
 	apptypes "github.com/replicatedhq/kots/pkg/app/types"
 	license "github.com/replicatedhq/kots/pkg/kotsadmlicense"
 	upstream "github.com/replicatedhq/kots/pkg/kotsadmupstream"
+	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/preflight"
 	preflighttypes "github.com/replicatedhq/kots/pkg/preflight/types"
@@ -226,7 +227,12 @@ func checkForKotsAppUpdates(opts types.CheckForUpdatesOpts, finishedChan chan<- 
 		return nil, errors.Wrap(err, "failed to get app")
 	}
 
-	updateCursor, err := store.GetCurrentUpdateCursor(a.ID, latestLicense.Spec.ChannelID)
+	licenseChan, err := kotsutil.FindChannelInLicense(a.SelectedChannelID, latestLicense)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to find channel in license after sync")
+	}
+
+	updateCursor, err := store.GetCurrentUpdateCursor(a.ID, licenseChan.ChannelID)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get current update cursor")
 	}
@@ -235,8 +241,8 @@ func checkForKotsAppUpdates(opts types.CheckForUpdatesOpts, finishedChan chan<- 
 		License:            latestLicense,
 		LastUpdateCheckAt:  a.LastUpdateCheckAt,
 		CurrentCursor:      updateCursor,
-		CurrentChannelID:   latestLicense.Spec.ChannelID,
-		CurrentChannelName: latestLicense.Spec.ChannelName,
+		CurrentChannelID:   licenseChan.ChannelID,
+		CurrentChannelName: licenseChan.ChannelName,
 		ChannelChanged:     a.ChannelChanged,
 		Silent:             false,
 		ReportingInfo:      reporting.GetReportingInfo(a.ID),
@@ -266,7 +272,7 @@ func checkForKotsAppUpdates(opts types.CheckForUpdatesOpts, finishedChan chan<- 
 		return nil, errors.Errorf("no app versions found for app %s in downstream %s", opts.AppID, d.ClusterID)
 	}
 
-	filteredUpdates := removeOldUpdates(updates.Updates, appVersions, latestLicense.Spec.IsSemverRequired)
+	filteredUpdates := removeOldUpdates(updates.Updates, appVersions, licenseChan.IsSemverRequired)
 
 	var availableReleases []types.UpdateCheckRelease
 	availableSequence := appVersions.AllVersions[0].Sequence + 1

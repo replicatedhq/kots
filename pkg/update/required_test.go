@@ -12,6 +12,29 @@ import (
 
 func Test_getRequiredAirgapUpdates(t *testing.T) {
 	channelID := "channel-id"
+	channelName := "channel-name"
+
+	testLicense := &kotsv1beta1.License{
+		Spec: kotsv1beta1.LicenseSpec{
+			ChannelID:   "default-channel-id",
+			ChannelName: "Default Channel",
+			Channels: []kotsv1beta1.Channel{
+				{
+					ChannelID:        "default-channel-id",
+					ChannelName:      "Default Channel",
+					IsDefault:        true,
+					IsSemverRequired: true,
+				},
+				{
+					ChannelID:        channelID,
+					ChannelName:      channelName,
+					IsDefault:        false,
+					IsSemverRequired: true,
+				},
+			},
+		},
+	}
+
 	tests := []struct {
 		name              string
 		airgap            *kotsv1beta1.Airgap
@@ -20,6 +43,7 @@ func Test_getRequiredAirgapUpdates(t *testing.T) {
 		channelChanged    bool
 		wantSemver        []string
 		wantNoSemver      []string
+		selectedChannelID string
 	}{
 		{
 			name: "nothing is installed yet",
@@ -40,6 +64,7 @@ func Test_getRequiredAirgapUpdates(t *testing.T) {
 			installedVersions: []*downstreamtypes.DownstreamVersion{},
 			wantNoSemver:      []string{},
 			wantSemver:        []string{},
+			selectedChannelID: channelID,
 		},
 		{
 			name: "latest satisfies all prerequsites",
@@ -62,9 +87,7 @@ func Test_getRequiredAirgapUpdates(t *testing.T) {
 					},
 				},
 			},
-			license: &kotsv1beta1.License{
-				Spec: kotsv1beta1.LicenseSpec{},
-			},
+			license: testLicense,
 			installedVersions: []*downstreamtypes.DownstreamVersion{
 				{
 					ChannelID:    channelID,
@@ -72,8 +95,9 @@ func Test_getRequiredAirgapUpdates(t *testing.T) {
 					UpdateCursor: "124",
 				},
 			},
-			wantNoSemver: []string{},
-			wantSemver:   []string{},
+			wantNoSemver:      []string{},
+			wantSemver:        []string{},
+			selectedChannelID: channelID,
 		},
 		{
 			name: "need some prerequsites",
@@ -96,9 +120,7 @@ func Test_getRequiredAirgapUpdates(t *testing.T) {
 					},
 				},
 			},
-			license: &kotsv1beta1.License{
-				Spec: kotsv1beta1.LicenseSpec{},
-			},
+			license: testLicense,
 			installedVersions: []*downstreamtypes.DownstreamVersion{
 				{
 					ChannelID:    channelID,
@@ -106,8 +128,9 @@ func Test_getRequiredAirgapUpdates(t *testing.T) {
 					UpdateCursor: "117",
 				},
 			},
-			wantNoSemver: []string{"0.1.120", "0.1.123"},
-			wantSemver:   []string{"0.1.120", "0.1.123"},
+			wantNoSemver:      []string{"0.1.120", "0.1.123"},
+			wantSemver:        []string{"0.1.120", "0.1.123"},
+			selectedChannelID: channelID,
 		},
 		{
 			name: "need all prerequsites",
@@ -130,9 +153,7 @@ func Test_getRequiredAirgapUpdates(t *testing.T) {
 					},
 				},
 			},
-			license: &kotsv1beta1.License{
-				Spec: kotsv1beta1.LicenseSpec{},
-			},
+			license: testLicense,
 			installedVersions: []*downstreamtypes.DownstreamVersion{
 				{
 					ChannelID:    channelID,
@@ -140,8 +161,9 @@ func Test_getRequiredAirgapUpdates(t *testing.T) {
 					UpdateCursor: "113",
 				},
 			},
-			wantNoSemver: []string{"0.1.115", "0.1.120", "0.1.123"},
-			wantSemver:   []string{"0.1.115", "0.1.120", "0.1.123"},
+			wantNoSemver:      []string{"0.1.115", "0.1.120", "0.1.123"},
+			wantSemver:        []string{"0.1.115", "0.1.120", "0.1.123"},
+			selectedChannelID: channelID,
 		},
 		{
 			name: "check across multiple channels",
@@ -164,8 +186,68 @@ func Test_getRequiredAirgapUpdates(t *testing.T) {
 					},
 				},
 			},
+			license:        testLicense,
+			channelChanged: true,
+			installedVersions: []*downstreamtypes.DownstreamVersion{
+				{
+					ChannelID:    "different-channel",
+					VersionLabel: "0.1.117",
+					UpdateCursor: "117",
+				},
+			},
+			wantNoSemver:      []string{},
+			wantSemver:        []string{},
+			selectedChannelID: channelID,
+		},
+		{
+			name: "check across multiple channels with multi chan license",
+			airgap: &kotsv1beta1.Airgap{
+				Spec: kotsv1beta1.AirgapSpec{
+					ChannelID: channelID,
+					RequiredReleases: []kotsv1beta1.AirgapReleaseMeta{
+						{
+							VersionLabel: "0.1.123",
+							UpdateCursor: "123",
+						},
+						{
+							VersionLabel: "0.1.120",
+							UpdateCursor: "120",
+						},
+						{
+							VersionLabel: "0.1.115",
+							UpdateCursor: "115",
+						},
+					},
+				},
+			},
 			license: &kotsv1beta1.License{
-				Spec: kotsv1beta1.LicenseSpec{},
+				Spec: kotsv1beta1.LicenseSpec{
+					ChannelID:   "stable-channel", // intentionally fully avoiding the default channel
+					ChannelName: "Stable Channel",
+					Channels: []kotsv1beta1.Channel{
+						{
+							ChannelID:        "stable-channel",
+							ChannelName:      "Stable Channel",
+							ChannelSlug:      "stable-channel",
+							IsDefault:        false,
+							IsSemverRequired: true,
+						},
+						{
+							ChannelID:        "different-channel",
+							ChannelName:      "Different Channel",
+							ChannelSlug:      "different-channel",
+							IsDefault:        true,
+							IsSemverRequired: false,
+						},
+						{
+							ChannelID:        channelID,
+							ChannelName:      channelName,
+							ChannelSlug:      channelID,
+							IsDefault:        false,
+							IsSemverRequired: true,
+						},
+					},
+				},
 			},
 			channelChanged: true,
 			installedVersions: []*downstreamtypes.DownstreamVersion{
@@ -175,14 +257,14 @@ func Test_getRequiredAirgapUpdates(t *testing.T) {
 					UpdateCursor: "117",
 				},
 			},
-			wantNoSemver: []string{},
-			wantSemver:   []string{},
+			wantNoSemver:      []string{},
+			wantSemver:        []string{},
+			selectedChannelID: channelID,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			req := require.New(t)
-
 			for _, v := range tt.installedVersions {
 				s := semver.MustParse(v.VersionLabel)
 				v.Semver = &s
@@ -193,13 +275,13 @@ func Test_getRequiredAirgapUpdates(t *testing.T) {
 
 			// cursor based
 			tt.license.Spec.IsSemverRequired = false
-			got, err := getRequiredAirgapUpdates(tt.airgap, tt.license, tt.installedVersions, tt.channelChanged)
+			got, err := getRequiredAirgapUpdates(tt.airgap, tt.license, tt.installedVersions, tt.channelChanged, tt.selectedChannelID)
 			req.NoError(err)
 			req.Equal(tt.wantNoSemver, got)
 
 			// semver based
 			tt.license.Spec.IsSemverRequired = true
-			got, err = getRequiredAirgapUpdates(tt.airgap, tt.license, tt.installedVersions, tt.channelChanged)
+			got, err = getRequiredAirgapUpdates(tt.airgap, tt.license, tt.installedVersions, tt.channelChanged, tt.selectedChannelID)
 			req.NoError(err)
 			req.Equal(tt.wantSemver, got)
 		})

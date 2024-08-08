@@ -272,10 +272,30 @@ func (h *Handler) UploadNewLicense(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	installationParams, err := kotsutil.GetInstallationParams(kotsadmtypes.KotsadmConfigMap)
+	if err != nil {
+		logger.Error(err)
+		uploadLicenseResponse.Error = err.Error()
+		JSON(w, http.StatusInternalServerError, uploadLicenseResponse)
+		return
+	}
+
+	desiredAppName := strings.Replace(verifiedLicense.Spec.AppSlug, "-", " ", 0)
+	upstreamURI := fmt.Sprintf("replicated://%s", verifiedLicense.Spec.AppSlug)
+
+	// verify that requested channel slug exists in the license
+	matchedChannelID, err := kotsutil.FindChannelIDInLicense(installationParams.RequestedChannelSlug, verifiedLicense)
+	if err != nil {
+		logger.Error(err)
+		uploadLicenseResponse.Error = "Your current license does not grant access to the channel you requested. Please generate a support bundle and contact support for assistance."
+		JSON(w, http.StatusBadRequest, uploadLicenseResponse)
+		return
+	}
+
 	if !kotsadm.IsAirgap() {
 		// sync license
 		logger.Info("syncing license with server to retrieve latest version")
-		licenseData, err := replicatedapp.GetLatestLicense(verifiedLicense)
+		licenseData, err := replicatedapp.GetLatestLicense(verifiedLicense, matchedChannelID)
 		if err != nil {
 			logger.Error(errors.Wrap(err, "failed to get latest license"))
 			uploadLicenseResponse.Error = err.Error()
@@ -323,18 +343,7 @@ func (h *Handler) UploadNewLicense(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	installationParams, err := kotsutil.GetInstallationParams(kotsadmtypes.KotsadmConfigMap)
-	if err != nil {
-		logger.Error(err)
-		uploadLicenseResponse.Error = err.Error()
-		JSON(w, http.StatusInternalServerError, uploadLicenseResponse)
-		return
-	}
-
-	desiredAppName := strings.Replace(verifiedLicense.Spec.AppSlug, "-", " ", 0)
-	upstreamURI := fmt.Sprintf("replicated://%s", verifiedLicense.Spec.AppSlug)
-
-	a, err := store.GetStore().CreateApp(desiredAppName, upstreamURI, licenseString, verifiedLicense.Spec.IsAirgapSupported, installationParams.SkipImagePush, installationParams.RegistryIsReadOnly)
+	a, err := store.GetStore().CreateApp(desiredAppName, matchedChannelID, upstreamURI, licenseString, verifiedLicense.Spec.IsAirgapSupported, installationParams.SkipImagePush, installationParams.RegistryIsReadOnly)
 	if err != nil {
 		logger.Error(err)
 		uploadLicenseResponse.Error = err.Error()
@@ -346,14 +355,16 @@ func (h *Handler) UploadNewLicense(w http.ResponseWriter, r *http.Request) {
 		// complete the install online
 		createAppOpts := online.CreateOnlineAppOpts{
 			PendingApp: &installationtypes.PendingApp{
-				ID:           a.ID,
-				Slug:         a.Slug,
-				Name:         a.Name,
-				LicenseData:  uploadLicenseRequest.LicenseData,
-				VersionLabel: installationParams.AppVersionLabel,
+				ID:                a.ID,
+				Slug:              a.Slug,
+				Name:              a.Name,
+				SelectedChannelID: a.SelectedChannelID,
+				LicenseData:       uploadLicenseRequest.LicenseData,
+				VersionLabel:      installationParams.AppVersionLabel,
 			},
 			UpstreamURI: upstreamURI,
 		}
+
 		kotsKinds, err := online.CreateAppFromOnline(createAppOpts)
 		if err != nil {
 			logger.Error(err)
@@ -427,10 +438,11 @@ func (h *Handler) ResumeInstallOnline(w http.ResponseWriter, r *http.Request) {
 	}
 
 	pendingApp := installationtypes.PendingApp{
-		ID:           a.ID,
-		Slug:         a.Slug,
-		Name:         a.Name,
-		VersionLabel: installationParams.AppVersionLabel,
+		ID:                a.ID,
+		Slug:              a.Slug,
+		Name:              a.Name,
+		VersionLabel:      installationParams.AppVersionLabel,
+		SelectedChannelID: a.SelectedChannelID,
 	}
 
 	// the license data is left in the table
@@ -457,6 +469,7 @@ func (h *Handler) ResumeInstallOnline(w http.ResponseWriter, r *http.Request) {
 		PendingApp:  &pendingApp,
 		UpstreamURI: fmt.Sprintf("replicated://%s", kotsLicense.Spec.AppSlug),
 	}
+
 	kotsKinds, err := online.CreateAppFromOnline(createAppOpts)
 	if err != nil {
 		logger.Error(err)

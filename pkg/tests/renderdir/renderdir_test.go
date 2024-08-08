@@ -73,7 +73,6 @@ func TestKotsRenderDir(t *testing.T) {
 			Name:             spec.Name,
 			RenderDirOptions: spec.RenderDirOptions,
 		}
-
 		tests = append(tests, test)
 	}
 	require.NoError(t, err)

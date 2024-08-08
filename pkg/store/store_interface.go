@@ -120,7 +120,7 @@ type AppStore interface {
 	GetAppIDFromSlug(slug string) (appID string, err error)
 	GetApp(appID string) (*apptypes.App, error)
 	GetAppFromSlug(slug string) (*apptypes.App, error)
-	CreateApp(name string, upstreamURI string, licenseData string, isAirgapEnabled bool, skipImagePush bool, registryIsReadOnly bool) (*apptypes.App, error)
+	CreateApp(name string, channelID string, upstreamURI string, licenseData string, isAirgapEnabled bool, skipImagePush bool, registryIsReadOnly bool) (*apptypes.App, error)
 	ListDownstreamsForApp(appID string) ([]downstreamtypes.Downstream, error)
 	ListAppsForDownstream(clusterID string) ([]*apptypes.App, error)
 	GetDownstream(clusterID string) (*downstreamtypes.Downstream, error)
@@ -131,6 +131,7 @@ type AppStore interface {
 	SetSnapshotSchedule(appID string, snapshotSchedule string) error
 	RemoveApp(appID string) error
 	SetAppChannelChanged(appID string, channelChanged bool) error
+	SetAppSelectedChannelID(appID string, channelID string) error
 }
 
 type DownstreamStore interface {

@@ -31,6 +31,7 @@ import (
 	kotsadmtypes "github.com/replicatedhq/kots/pkg/kotsadm/types"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/kurl"
+	kotslicense "github.com/replicatedhq/kots/pkg/license"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/metrics"
 	preflighttypes "github.com/replicatedhq/kots/pkg/preflight/types"
@@ -162,6 +163,14 @@ func InstallCmd() *cobra.Command {
 			}()
 
 			upstream := pull.RewriteUpstream(args[0])
+			preferredChannelSlug, err := extractPreferredChannelSlug(upstream)
+			if err != nil {
+				return errors.Wrap(err, "failed to extract preferred channel slug")
+			}
+			license, err = kotslicense.VerifyAndUpdateLicense(log, license, preferredChannelSlug, isAirgap)
+			if err != nil {
+				return errors.Wrap(err, "failed to verify and update license")
+			}
 
 			namespace := v.GetString("namespace")
 
@@ -278,6 +287,7 @@ func InstallCmd() *cobra.Command {
 				IncludeMinio:           v.GetBool("with-minio"),
 				IncludeMinioSnapshots:  v.GetBool("with-minio"),
 				StrictSecurityContext:  v.GetBool("strict-security-context"),
+				RequestedChannelSlug:   preferredChannelSlug,
 
 				RegistryConfig: *registryConfig,
 

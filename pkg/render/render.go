@@ -121,31 +121,39 @@ func RenderDir(opts types.RenderDirOptions) error {
 		downstreamNames = append(downstreamNames, d.Name)
 	}
 
+	// typically we want the selected channel id on the App obj
+	// but in the case of a license sync, like when called from UpdateAppLicense
+	// the app object is not updated yet - but the license being passed in is the latest
+	selectedChannelID := opts.AppSelectedChannelID
+	if selectedChannelID == "" {
+		selectedChannelID = opts.App.SelectedChannelID
+	}
+
 	appNamespace := util.PodNamespace
 	if os.Getenv("KOTSADM_TARGET_NAMESPACE") != "" {
 		appNamespace = os.Getenv("KOTSADM_TARGET_NAMESPACE")
 	}
-
 	reOptions := rewrite.RewriteOptions{
-		RootDir:          opts.ArchiveDir,
-		UpstreamURI:      fmt.Sprintf("replicated://%s", license.Spec.AppSlug),
-		UpstreamPath:     filepath.Join(opts.ArchiveDir, "upstream"),
-		Installation:     installation,
-		Downstreams:      downstreamNames,
-		Silent:           true,
-		CreateAppDir:     false,
-		ExcludeKotsKinds: true,
-		License:          license,
-		ConfigValues:     configValues,
-		K8sNamespace:     appNamespace,
-		CopyImages:       false,
-		IsAirgap:         opts.App.IsAirgap,
-		AppID:            opts.App.ID,
-		AppSlug:          opts.App.Slug,
-		IsGitOps:         opts.App.IsGitOps,
-		AppSequence:      opts.Sequence,
-		ReportingInfo:    opts.ReportingInfo,
-		RegistrySettings: opts.RegistrySettings,
+		RootDir:              opts.ArchiveDir,
+		UpstreamURI:          fmt.Sprintf("replicated://%s", license.Spec.AppSlug),
+		UpstreamPath:         filepath.Join(opts.ArchiveDir, "upstream"),
+		Installation:         installation,
+		Downstreams:          downstreamNames,
+		Silent:               true,
+		CreateAppDir:         false,
+		ExcludeKotsKinds:     true,
+		License:              license,
+		ConfigValues:         configValues,
+		K8sNamespace:         appNamespace,
+		CopyImages:           false,
+		IsAirgap:             opts.App.IsAirgap,
+		AppID:                opts.App.ID,
+		AppSlug:              opts.App.Slug,
+		AppSelectedChannelID: selectedChannelID,
+		IsGitOps:             opts.App.IsGitOps,
+		AppSequence:          opts.Sequence,
+		ReportingInfo:        opts.ReportingInfo,
+		RegistrySettings:     opts.RegistrySettings,
 
 		// TODO: pass in as arguments if this is ever called from CLI
 		HTTPProxyEnvValue:  os.Getenv("HTTP_PROXY"),

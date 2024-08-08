@@ -1057,3 +1057,201 @@ status: {}
 		})
 	}
 }
+
+func TestFindChannelIDInLicense(t *testing.T) {
+	tests := []struct {
+		name              string
+		license           *kotsv1beta1.License
+		requestedSlug     string
+		expectedChannelID string
+		expectError       bool
+	}{
+		{
+			name: "Found slug",
+			license: &kotsv1beta1.License{
+				Spec: kotsv1beta1.LicenseSpec{
+					Channels: []kotsv1beta1.Channel{
+						{
+							ChannelID:   "channel-id-1",
+							ChannelSlug: "slug-1",
+							IsDefault:   true,
+						},
+						{
+							ChannelID:   "channel-id-2",
+							ChannelSlug: "slug-2",
+							IsDefault:   false,
+						},
+					},
+				},
+			},
+			requestedSlug:     "slug-2",
+			expectedChannelID: "channel-id-2",
+			expectError:       false,
+		},
+		{
+			name: "Empty requested slug",
+			license: &kotsv1beta1.License{
+				Spec: kotsv1beta1.LicenseSpec{
+					ChannelID: "top-level-channel-id",
+					Channels: []kotsv1beta1.Channel{
+						{
+							ChannelID:   "channel-id-1",
+							ChannelSlug: "channel-slug-1",
+						},
+						{
+							ChannelID:   "channel-id-2",
+							ChannelSlug: "channel-slug-2",
+						},
+					},
+				},
+			},
+			requestedSlug:     "",
+			expectedChannelID: "top-level-channel-id",
+			expectError:       false,
+		},
+		{
+			name: "Legacy license with no / empty channels",
+			license: &kotsv1beta1.License{
+				Spec: kotsv1beta1.LicenseSpec{
+					ChannelID: "test-channel-id",
+				},
+			},
+			requestedSlug:     "test-slug",
+			expectedChannelID: "test-channel-id",
+			expectError:       false,
+		},
+		{
+			name: "No matching slug should error",
+			license: &kotsv1beta1.License{
+				Spec: kotsv1beta1.LicenseSpec{
+					ChannelID: "top-level-channel-id",
+					Channels: []kotsv1beta1.Channel{
+						{
+							ChannelID:   "channel-id-1",
+							ChannelSlug: "channel-slug-1",
+						},
+						{
+							ChannelID:   "channel-id-2",
+							ChannelSlug: "channel-slug-2",
+						},
+					},
+				},
+			},
+			requestedSlug:     "non-existent-slug",
+			expectedChannelID: "",
+			expectError:       true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			channelID, err := kotsutil.FindChannelIDInLicense(tt.requestedSlug, tt.license)
+
+			if tt.expectError {
+				require.Error(t, err)
+			} else {
+				require.NoError(t, err)
+				require.Equal(t, tt.expectedChannelID, channelID)
+			}
+		})
+	}
+}
+
+func TestFindChannelInLicense(t *testing.T) {
+	tests := []struct {
+		name            string
+		license         *kotsv1beta1.License
+		requestedID     string
+		expectedChannel *kotsv1beta1.Channel
+		expectError     bool
+	}{
+		{
+			name: "Find multi channel license",
+			license: &kotsv1beta1.License{
+				Spec: kotsv1beta1.LicenseSpec{
+					Channels: []kotsv1beta1.Channel{
+						{
+							ChannelID:        "channel-id-1",
+							ChannelName:      "name-1",
+							IsDefault:        true,
+							IsSemverRequired: true,
+						},
+						{
+							ChannelID:        "channel-id-2",
+							ChannelName:      "name-2",
+							IsDefault:        false,
+							IsSemverRequired: false,
+						},
+					},
+				},
+			},
+			requestedID: "channel-id-2",
+			expectedChannel: &kotsv1beta1.Channel{
+				ChannelID:        "channel-id-2",
+				ChannelName:      "name-2",
+				IsDefault:        false,
+				IsSemverRequired: false,
+			},
+			expectError: false,
+		},
+		{
+			name: "Legacy license with no / empty channels",
+			license: &kotsv1beta1.License{
+				Spec: kotsv1beta1.LicenseSpec{
+					ChannelID:        "test-channel-id",
+					ChannelName:      "test-channel-name",
+					IsSemverRequired: true,
+				},
+			},
+			requestedID: "test-channel-id",
+			expectedChannel: &kotsv1beta1.Channel{
+				ChannelID:        "test-channel-id",
+				ChannelName:      "test-channel-name",
+				IsSemverRequired: true,
+				IsDefault:        true,
+			},
+			expectError: false,
+		},
+		{
+			name: "No matching ID should error",
+			license: &kotsv1beta1.License{
+				Spec: kotsv1beta1.LicenseSpec{
+					ChannelID:        "channel-id-1",
+					ChannelName:      "name-1",
+					IsSemverRequired: true,
+					Channels: []kotsv1beta1.Channel{
+						{
+							ChannelID:        "channel-id-1",
+							ChannelName:      "name-1",
+							IsDefault:        true,
+							IsSemverRequired: true,
+						},
+						{
+							ChannelID:        "channel-id-2",
+							ChannelName:      "name-2",
+							IsDefault:        false,
+							IsSemverRequired: false,
+						},
+					},
+				},
+			},
+			requestedID:     "non-existent-id",
+			expectedChannel: nil,
+			expectError:     true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			channel, err := kotsutil.FindChannelInLicense(tt.requestedID, tt.license)
+
+			if tt.expectError {
+				require.Error(t, err)
+			} else {
+				require.NoError(t, err)
+				require.NotNil(t, channel)
+				require.Equal(t, tt.expectedChannel, channel)
+			}
+		})
+	}
+}

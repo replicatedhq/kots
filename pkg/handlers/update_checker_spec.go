@@ -56,8 +56,16 @@ func (h *Handler) SetAutomaticUpdatesConfig(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
+	licenseChan, err := kotsutil.FindChannelInLicense(foundApp.SelectedChannelID, license)
+	if err != nil {
+		updateCheckerSpecResponse.Error = "failed to find app channel id from license"
+		logger.Error(errors.Wrap(err, updateCheckerSpecResponse.Error))
+		JSON(w, http.StatusInternalServerError, updateCheckerSpecResponse)
+		return
+	}
+
 	// Check if the deploy update configuration is valid based on app channel
-	if license.Spec.IsSemverRequired {
+	if licenseChan.IsSemverRequired {
 		if configureAutomaticUpdatesRequest.AutoDeploy == apptypes.AutoDeploySequence {
 			updateCheckerSpecResponse.Error = "automatic updates based on sequence type are not supported for semantic versioning apps"
 			JSON(w, http.StatusUnprocessableEntity, updateCheckerSpecResponse)

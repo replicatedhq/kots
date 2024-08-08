@@ -40,8 +40,14 @@ type LicenseData struct {
 	License      *kotsv1beta1.License
 }
 
-func GetLatestLicense(license *kotsv1beta1.License) (*LicenseData, error) {
+// GetLatestLicense will return the latest license from the replicated api, if selectedChannelID is provided
+// it will be passed along to the api.
+func GetLatestLicense(license *kotsv1beta1.License, selectedChannelID string) (*LicenseData, error) {
 	url := fmt.Sprintf("%s/license/%s", license.Spec.Endpoint, license.Spec.AppSlug)
+
+	if selectedChannelID != "" {
+		url = fmt.Sprintf("%s?selectedChannelId=%s", url, selectedChannelID)
+	}
 
 	licenseData, err := getLicenseFromAPI(url, license.Spec.LicenseID)
 	if err != nil {

@@ -56,6 +56,7 @@ type DeployOptions struct {
 	IsMinimalRBAC          bool
 	AdditionalNamespaces   []string
 	IsGKEAutopilot         bool
+	RequestedChannelSlug   string
 
 	IdentityConfig kotsv1beta1.IdentityConfig
 	IngressConfig  kotsv1beta1.IngressConfig
