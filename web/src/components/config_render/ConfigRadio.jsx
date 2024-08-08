@@ -22,7 +22,7 @@ export default class ConfigRadio extends Component {
     return (
       <div
         id={`${this.props.name}-group`}
-        className="flex alignItems--center u-marginRight--20 u-marginTop--15"
+        className="flex alignItems--center u-marginRight--20"
       >
         <input
           type="radio"

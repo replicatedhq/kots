@@ -47,9 +47,7 @@ export default class ConfigItemTitle extends Component {
           ) : recommended ? (
             <span className="field-label recommended">Recommended</span>
           ) : null}
-          {deprecated && (
-            <span className="field-label deprecated">Deprecated</span>
-          )}
+
           <span
             className={classNames("u-marginLeft--5 config-errblock", {
               visible: !!error,

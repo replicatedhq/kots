@@ -57,7 +57,6 @@ export default class ConfigSelectOne extends Component {
             required={this.props.required}
             name={this.props.name}
             error={this.props.error}
-            deprecated={this.props.deprecated}
           />
         ) : null}
         {this.props.help_text !== "" ? (
@@ -72,8 +71,19 @@ export default class ConfigSelectOne extends Component {
             </Markdown>
           </div>
         ) : null}
-        <div className="field-input-wrapper u-marginTop--5 flex flexWrap--wrap">
-          {options}
+        <div className="u-marginTop--15">
+          <div
+            className={`field-input-wrapper flex flexWrap--wrap ${
+              this.props.deprecated && "tw-mb-2"
+            }`}
+          >
+            {options}
+          </div>
+          {this.props.deprecated && (
+            <span className="field-label deprecated">
+              select_one item type is deprecated
+            </span>
+          )}
         </div>
         {this.props.repeatable && (
           <div
