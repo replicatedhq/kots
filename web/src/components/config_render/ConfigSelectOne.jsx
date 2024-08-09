@@ -73,9 +73,7 @@ export default class ConfigSelectOne extends Component {
         ) : null}
         <div className="u-marginTop--15">
           <div
-            className={`field-input-wrapper flex flexWrap--wrap ${
-              this.props.deprecated && "tw-mb-2"
-            }`}
+            className={"field-input-wrapper flex flexWrap--wrap"}
           >
             {options}
           </div>
