@@ -71,12 +71,8 @@ export default class ConfigSelectOne extends Component {
             </Markdown>
           </div>
         ) : null}
-        <div className="u-marginTop--15">
-          <div
-            className={"field-input-wrapper flex flexWrap--wrap"}
-          >
-            {options}
-          </div>
+        <div className={"field-input-wrapper flex flexWrap--wrap"}>
+          {options}
         </div>
         {this.props.repeatable && (
           <div
