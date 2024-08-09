@@ -7,6 +7,7 @@ package staticspecs
 import (
 	_ "embed"
 
+	apptypes "github.com/replicatedhq/kots/pkg/app/types"
 	troubleshootv1beta2 "github.com/replicatedhq/troubleshoot/pkg/apis/troubleshoot/v1beta2"
 	"github.com/replicatedhq/troubleshoot/pkg/supportbundle"
 )
@@ -27,14 +28,14 @@ func GetVendorSpec() (*troubleshootv1beta2.SupportBundle, error) {
 	return supportbundle.ParseSupportBundleFromDoc(vendorspec)
 }
 
-func GetClusterSpecificSpec() (*troubleshootv1beta2.SupportBundle, error) {
-	return supportbundle.ParseSupportBundleFromDoc(clusterspec)
+func GetClusterSpecificSpec(app *apptypes.App) (*troubleshootv1beta2.SupportBundle, error) {
+	return supportbundle.ParseSupportBundle(clusterspec, !app.IsAirgap)
 }
 
-func GetDefaultSpec() (*troubleshootv1beta2.SupportBundle, error) {
-	return supportbundle.ParseSupportBundleFromDoc(defaultspec)
+func GetDefaultSpec(app *apptypes.App) (*troubleshootv1beta2.SupportBundle, error) {
+	return supportbundle.ParseSupportBundle(defaultspec, !app.IsAirgap)
 }
 
-func GetKurlSpec() (*troubleshootv1beta2.SupportBundle, error) {
-	return supportbundle.ParseSupportBundleFromDoc(kurlspec)
+func GetKurlSpec(app *apptypes.App) (*troubleshootv1beta2.SupportBundle, error) {
+	return supportbundle.ParseSupportBundle(kurlspec, !app.IsAirgap)
 }

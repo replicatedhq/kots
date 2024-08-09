@@ -377,6 +377,9 @@ func createVendorSpec(b *troubleshootv1beta2.SupportBundle) (*troubleshootv1beta
 		return nil, err
 	}
 
+	if b.Spec.Uri != "" {
+		supportBundle.Spec.Uri = b.Spec.Uri
+	}
 	if b.Spec.Collectors != nil {
 		supportBundle.Spec.Collectors = b.DeepCopy().Spec.Collectors
 	}
@@ -388,7 +391,7 @@ func createVendorSpec(b *troubleshootv1beta2.SupportBundle) (*troubleshootv1beta
 
 // createClusterSpecificSupportBundle creates a support bundle spec with only cluster specific collectors, analyzers and upload result URI.
 func createClusterSpecificSpec(app *apptypes.App, b *troubleshootv1beta2.SupportBundle, clientset kubernetes.Interface) (*troubleshootv1beta2.SupportBundle, error) {
-	supportBundle, err := staticspecs.GetClusterSpecificSpec()
+	supportBundle, err := staticspecs.GetClusterSpecificSpec(app)
 	if err != nil {
 		logger.Errorf("Failed to load cluster specific support bundle spec: %v", err)
 		return nil, err
@@ -400,7 +403,7 @@ func createClusterSpecificSpec(app *apptypes.App, b *troubleshootv1beta2.Support
 
 // createDefaultSpec creates a default support bundle spec that includes the default collectors and analyzers and add kurl specific collectors and analyzers if the cluster is a kurl cluster
 func createDefaultSpec(app *apptypes.App, b *troubleshootv1beta2.SupportBundle, opts types.TroubleshootOptions, namespacesToCollect []string, namespacesToAnalyze []string, clientset *kubernetes.Clientset) (*troubleshootv1beta2.SupportBundle, error) {
-	supportBundle, err := staticspecs.GetDefaultSpec()
+	supportBundle, err := staticspecs.GetDefaultSpec(app)
 	if err != nil {
 		logger.Errorf("Failed to load default support bundle spec: %v", err)
 		return nil, err
@@ -427,7 +430,7 @@ func createDefaultSpec(app *apptypes.App, b *troubleshootv1beta2.SupportBundle, 
 	}
 
 	if isKurl {
-		kurlSupportBunlde, err := staticspecs.GetKurlSpec()
+		kurlSupportBunlde, err := staticspecs.GetKurlSpec(app)
 		if err != nil {
 			logger.Errorf("Failed to load kurl support bundle spec: %v", err)
 			return nil, err
