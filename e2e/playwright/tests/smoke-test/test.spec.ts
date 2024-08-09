@@ -61,6 +61,10 @@ test('smoke test', async ({ page }) => {
   await page.getByRole('link', { name: 'Config', exact: true }).click();
   await expect(page.locator('h3')).toContainText('My Example Config');
   await expect(page.locator('#version_sequence-group')).toContainText('This version is 1');
+  await expect(page.getByRole("combobox")).toBeVisible();
+  await page.getByRole("combobox").selectOption("option_1");
+  await expect(page.getByRole("combobox")).toHaveValue("option_1");
+  await expect(page.getByLabel("radio_1")).toHaveValue("radio_1");
   await expect(page.getByRole('button', { name: 'Save config' })).toBeVisible();
   await page.getByRole('link', { name: 'Troubleshoot' }).click();
   await expect(page.getByRole('button', { name: 'Analyze App Name' })).toBeVisible();
