@@ -19,8 +19,6 @@ const testData = {
   nodes: undefined,
 };
 // const rolesData = {
-//   roles: ["management", "app"],
-// };
 
 type State = {
   displayAddNode: boolean;
