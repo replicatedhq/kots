@@ -205,6 +205,8 @@ func isReadOnly(item kotsv1beta1.ConfigItem) bool {
 		"select":      {},
 		"select_many": {},
 		"select_one":  {},
+		"radio":       {},
+		"dropdown":    {},
 		"text":        {},
 		"textarea":    {},
 	}
