@@ -64,7 +64,9 @@ test('smoke test', async ({ page }) => {
   await expect(page.getByRole("combobox")).toHaveValue("option_1");
   await page.getByRole("combobox").selectOption("option_2");
   await expect(page.getByRole("combobox")).toHaveValue("option_2");
-  await expect(page.getByLabel("radio_1")).toHaveValue("radio_1");
+  await expect(page.getByLabel("radio_1")).toBeChecked();
+  await page.getByLabel("radio_2").click();
+  await expect(page.getByLabel("radio_2")).toBeChecked();
   await expect(page.getByRole('button', { name: 'Save config' })).toBeVisible();
   await page.getByRole('link', { name: 'Troubleshoot' }).click();
   await expect(page.getByRole('button', { name: 'Analyze App Name' })).toBeVisible();
