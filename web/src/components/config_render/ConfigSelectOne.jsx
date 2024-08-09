@@ -79,11 +79,6 @@ export default class ConfigSelectOne extends Component {
           >
             {options}
           </div>
-          {this.props.deprecated && (
-            <span className="field-label deprecated">
-              select_one item type is deprecated
-            </span>
-          )}
         </div>
         {this.props.repeatable && (
           <div

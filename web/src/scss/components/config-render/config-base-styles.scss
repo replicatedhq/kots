@@ -151,10 +151,6 @@
       background-color: var(--success-color-light);
       color: var(--success-color);
     }
-    &.deprecated {
-      background-color: var(--error-color-light);
-      color: var(--error-color);
-    }
   }
 
   input[type="file"] {

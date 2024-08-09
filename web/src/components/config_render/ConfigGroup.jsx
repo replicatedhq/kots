@@ -175,7 +175,6 @@ const ConfigGroup = (props) => {
               {...item}
               readonly={isReadOnly}
               index={i + 1}
-              deprecated={true}
             />
           );
         case "dropdown":
