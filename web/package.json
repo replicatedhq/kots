@@ -170,7 +170,7 @@
     "react-router": "^5.1",
     "react-router-dom": "^6.26.0",
     "react-select": "^2.4.3",
-    "react-tooltip": "4.2.6",
+    "react-tooltip": "5.28.0",
     "react-vis": "^1.12.1",
     "resumablejs": "^1.1.0",
     "semver": "^7.6.3",
