@@ -481,8 +481,8 @@ github.com/docker/distribution v0.0.0-20171011171712-7484e51bf6af/go.mod h1:J2gT
 github.com/docker/distribution v2.8.3+incompatible h1:AtKxIZ36LoNK51+Z6RpzLpddBirtxJnzDrHLEKxTAYk=
 github.com/docker/distribution v2.8.3+incompatible/go.mod h1:J2gT2udsDAN96Uj4KfcMRqY0/ypR+oyYUYmja8H+y+w=
 github.com/docker/docker v0.7.3-0.20190327010347-be7ac8be2ae0/go.mod h1:eEKB0N0r5NX/I1kEveEz05bcu8tLC/8azJZsviup8Sk=
-github.com/docker/docker v26.1.4+incompatible h1:vuTpXDuoga+Z38m1OZHzl7NKisKWaWlhjQk7IDPSLsU=
-github.com/docker/docker v26.1.4+incompatible/go.mod h1:eEKB0N0r5NX/I1kEveEz05bcu8tLC/8azJZsviup8Sk=
+github.com/docker/docker v26.1.5+incompatible h1:NEAxTwEjxV6VbBMBoGG3zPqbiJosIApZjxlbrG9q3/g=
+github.com/docker/docker v26.1.5+incompatible/go.mod h1:eEKB0N0r5NX/I1kEveEz05bcu8tLC/8azJZsviup8Sk=
 github.com/docker/docker-credential-helpers v0.8.1 h1:j/eKUktUltBtMzKqmfLB0PAgqYyMHOp5vfsD1807oKo=
 github.com/docker/docker-credential-helpers v0.8.1/go.mod h1:P3ci7E3lwkZg6XiHdRKft1KckHiO9a2rNtyFbZ/ry9M=
 github.com/docker/go-connections v0.5.0 h1:USnMq7hx7gwdVZq1L49hLXaFtUdTADjXGp+uj1Br63c=
@@ -1315,10 +1315,6 @@ github.com/redis/go-redis/v9 v9.5.1/go.mod h1:hdY0cQFCN4fnSYT6TkisLufl/4W5UIXyv0
 github.com/remyoudompheng/bigfft v0.0.0-20170806203942-52369c62f446/go.mod h1:uYEyJGbgTkfkS4+E/PavXkNJcbFIpEtjt2B0KDQ5+9M=
 github.com/replicatedhq/embedded-cluster-kinds v1.4.7 h1:CR55z8Q2ek90BwwwOEz+P3qFIgc84G7wp/FNs+ctfsw=
 github.com/replicatedhq/embedded-cluster-kinds v1.4.7/go.mod h1:AwopUvvGcaWO4mn9DkbPj5RnLuOy756CNLrcaAlmjMo=
-github.com/replicatedhq/kotskinds v0.0.0-20240621084729-1eb1e3eac6f2 h1:xL4u2RHhMaGDgz7Lol5MhVYLnWahV3sCJZbfebpPao0=
-github.com/replicatedhq/kotskinds v0.0.0-20240621084729-1eb1e3eac6f2/go.mod h1:QjhIUu3+OmHZ09u09j3FCoTt8F3BYtQglS+OLmftu9I=
-github.com/replicatedhq/kotskinds v0.0.0-20240717145110-8eb39e8b3a41 h1:xvvRq5EZ7wBlsrDZIAUpJ318cEMzTpt8zVAO2atFQlM=
-github.com/replicatedhq/kotskinds v0.0.0-20240717145110-8eb39e8b3a41/go.mod h1:QjhIUu3+OmHZ09u09j3FCoTt8F3BYtQglS+OLmftu9I=
 github.com/replicatedhq/kotskinds v0.0.0-20240718194123-1018dd404e95 h1:JhwPz4Bgbz5iYl3UV2EB+HnF9oW/eCRi+hASAz+J6XI=
 github.com/replicatedhq/kotskinds v0.0.0-20240718194123-1018dd404e95/go.mod h1:QjhIUu3+OmHZ09u09j3FCoTt8F3BYtQglS+OLmftu9I=
 github.com/replicatedhq/kurlkinds v1.5.0 h1:zZ0PKNeh4kXvSzVGkn62DKTo314GxhXg1TSB3azURMc=
