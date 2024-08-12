@@ -27,6 +27,10 @@ func isMultiChannelLicense(license *kotsv1beta1.License) bool {
 }
 
 func canInstallFromChannel(slug string, license *kotsv1beta1.License) bool {
+	if license.Spec.LicenseType == "dev" || license.Spec.LicenseType == "test" {
+		return true
+	}
+
 	if !isMultiChannelLicense(license) {
 		return true
 	}
