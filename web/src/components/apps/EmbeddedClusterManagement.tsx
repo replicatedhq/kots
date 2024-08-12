@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import classNames from "classnames";
 import MaterialReactTable, { MRT_ColumnDef } from "material-react-table";
-import { ChangeEvent, useEffect, useMemo, useReducer, useState } from "react";
+import { useEffect, useMemo, useReducer, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 
 import { KotsPageTitle } from "@components/Head";

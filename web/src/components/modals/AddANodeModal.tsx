@@ -1,8 +1,5 @@
-import classNames from "classnames";
 import Modal from "react-modal";
-
 import Icon from "../Icon";
-import CodeSnippet from "../shared/CodeSnippet";
 
 const AddANodeModal = ({
   displayAddNode,
