@@ -33,9 +33,12 @@ func canInstallFromChannel(slug string, license *kotsv1beta1.License) bool {
 	return isSlugInLicenseChannels(slug, license)
 }
 
+// getDefaultChannelSlug returns the channel slug of the default channel in the license.
+// If passed a pre multi-channel license, it will return an empty string as pre multi-channel
+// licenses did not store a channel slug.
 func getDefaultChannelSlug(license *kotsv1beta1.License) (string, error) {
 	if !isMultiChannelLicense(license) {
-		return "", nil // no multi-channels, so no default
+		return "", nil
 	}
 
 	if len(license.Spec.Channels) == 1 {
@@ -52,8 +55,8 @@ func getDefaultChannelSlug(license *kotsv1beta1.License) (string, error) {
 	return "", errors.New("no default channel slug found in license")
 }
 
-// VerifyAndUpdateLicense will update (if not airgapped), verify that the request channel slug is present if one is supplied, and return the possibly updated license
-// as well as as default channel slug (if none was supplied).
+// VerifyAndUpdateLicense will update (if not airgapped) the license, verify that the requested channel slug is present if one is supplied, and return the latest
+// instance of the license and the associated channel slug (using the default if it was used).
 func VerifyAndUpdateLicense(log *logger.CLILogger, license *kotsv1beta1.License, preferredChannelSlug string, isAirgap bool) (string, *kotsv1beta1.License, error) {
 	if license == nil {
 		return preferredChannelSlug, nil, nil

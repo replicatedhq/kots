@@ -1106,12 +1106,12 @@ func TestFindChannelIDInLicense(t *testing.T) {
 					Channels: []kotsv1beta1.Channel{
 						{
 							ChannelID:   "channel-id-1",
-							ChannelSlug: "slug-1",
+							ChannelSlug: "channel-slug-1",
 							IsDefault:   true,
 						},
 						{
 							ChannelID:   "channel-id-2",
-							ChannelSlug: "slug-2",
+							ChannelSlug: "channel-slug-2",
 							IsDefault:   false,
 						},
 					},
