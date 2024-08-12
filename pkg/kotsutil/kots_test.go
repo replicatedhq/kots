@@ -1089,26 +1089,39 @@ func TestFindChannelIDInLicense(t *testing.T) {
 			expectError:       false,
 		},
 		{
-			name: "Empty requested slug",
+			name: "Empty requested slug - pre multi-channel license",
 			license: &kotsv1beta1.License{
 				Spec: kotsv1beta1.LicenseSpec{
 					ChannelID: "top-level-channel-id",
-					Channels: []kotsv1beta1.Channel{
-						{
-							ChannelID:   "channel-id-1",
-							ChannelSlug: "channel-slug-1",
-						},
-						{
-							ChannelID:   "channel-id-2",
-							ChannelSlug: "channel-slug-2",
-						},
-					},
 				},
 			},
 			requestedSlug:     "",
 			expectedChannelID: "top-level-channel-id",
 			expectError:       false,
 		},
+		{
+			name: "Empty requested slug - multi-channel license",
+			license: &kotsv1beta1.License{
+				Spec: kotsv1beta1.LicenseSpec{
+					Channels: []kotsv1beta1.Channel{
+						{
+							ChannelID:   "channel-id-1",
+							ChannelSlug: "slug-1",
+							IsDefault:   true,
+						},
+						{
+							ChannelID:   "channel-id-2",
+							ChannelSlug: "slug-2",
+							IsDefault:   false,
+						},
+					},
+				},
+			},
+			requestedSlug:     "",
+			expectedChannelID: "channel-id-1",
+			expectError:       false,
+		},
+
 		{
 			name: "Legacy license with no / empty channels",
 			license: &kotsv1beta1.License{
