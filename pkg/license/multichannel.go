@@ -33,28 +33,65 @@ func canInstallFromChannel(slug string, license *kotsv1beta1.License) bool {
 	return isSlugInLicenseChannels(slug, license)
 }
 
-// VerifyAndUpdateLicense will update (if not airgapped), verify that the request channel slug is present, and return the possibly updated license.
-// Note that this is a noop if the license passed in is nil.
-func VerifyAndUpdateLicense(log *logger.CLILogger, license *kotsv1beta1.License, preferredChannelSlug string, isAirgap bool) (*kotsv1beta1.License, error) {
-	if license == nil {
-		return nil, nil
+func getDefaultChannelSlug(license *kotsv1beta1.License) (string, error) {
+	if !isMultiChannelLicense(license) {
+		return "", nil // no multi-channels, so no default
 	}
-	if isAirgap {
-		if !canInstallFromChannel(preferredChannelSlug, license) {
-			return nil, errors.New("requested channel not found in supplied license")
+
+	if len(license.Spec.Channels) == 1 {
+		return license.Spec.Channels[0].ChannelSlug, nil
+	}
+
+	for _, channel := range license.Spec.Channels {
+		if channel.IsDefault {
+			return channel.ChannelSlug, nil
 		}
-		return license, nil
 	}
+
+	//should never happen as there should always be a default channel in a multi-channel license - even if it is the only channel
+	return "", errors.New("no default channel slug found in license")
+}
+
+// VerifyAndUpdateLicense will update (if not airgapped), verify that the request channel slug is present if one is supplied, and return the possibly updated license
+// as well as as default channel slug (if none was supplied).
+func VerifyAndUpdateLicense(log *logger.CLILogger, license *kotsv1beta1.License, preferredChannelSlug string, isAirgap bool) (string, *kotsv1beta1.License, error) {
+	if license == nil {
+		return preferredChannelSlug, nil, nil
+	}
+
+	if isAirgap {
+		if isMultiChannelLicense(license) && preferredChannelSlug == "" { // we'll be installing the default channel
+			defaultChannelSlug, err := getDefaultChannelSlug(license)
+			if err != nil {
+				return "", nil, errors.Wrap(err, "failed to find default channel slug and no explicit channel slug was provided")
+			}
+			return defaultChannelSlug, license, nil
+		}
+
+		if canInstallFromChannel(preferredChannelSlug, license) {
+			return preferredChannelSlug, license, nil
+		}
+		return preferredChannelSlug, nil, errors.New("requested channel not found in license")
+	}
+
 	log.ActionWithSpinner("Checking for license update")
 	// we fetch the latest license to ensure that the license is up to date, before proceeding
 	updatedLicense, err := replicatedapp.GetLatestLicense(license, "")
 	if err != nil {
 		log.FinishSpinnerWithError()
-		return nil, errors.Wrap(err, "failed to get latest license")
 	}
 	log.FinishSpinner()
-	if canInstallFromChannel(preferredChannelSlug, updatedLicense.License) {
-		return updatedLicense.License, nil
+
+	if preferredChannelSlug == "" { // we'll be installing the default channel
+		defaultChannelSlug, err := getDefaultChannelSlug(updatedLicense.License)
+		if err != nil {
+			return "", nil, errors.Wrap(err, "failed to find default channel slug and no explicit channel slug was provided")
+		}
+		return defaultChannelSlug, updatedLicense.License, nil
 	}
-	return nil, errors.New("requested channel not found in latest license")
+
+	if canInstallFromChannel(preferredChannelSlug, updatedLicense.License) {
+		return preferredChannelSlug, updatedLicense.License, nil
+	}
+	return preferredChannelSlug, nil, errors.New("requested channel not found in latest license")
 }

@@ -1602,6 +1602,10 @@ func GetECVersionFromAirgapBundle(airgapBundle string) (string, error) {
 }
 
 func FindChannelIDInLicense(requestedSlug string, license *kotsv1beta1.License) (string, error) {
+	if requestedSlug == "" { // an install started with a legacy license would not have had a channel slug
+		return GetDefaultChannelIDFromLicense(license), nil
+	}
+
 	matchedChannelID := ""
 	if requestedSlug != "" {
 		// if we do not have a Channels array or its empty, default to using the top level fields for backwards compatibility

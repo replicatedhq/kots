@@ -167,7 +167,8 @@ func InstallCmd() *cobra.Command {
 			if err != nil {
 				return errors.Wrap(err, "failed to extract preferred channel slug")
 			}
-			license, err = kotslicense.VerifyAndUpdateLicense(log, license, preferredChannelSlug, isAirgap)
+
+			requestedChannelSlug, license, err := kotslicense.VerifyAndUpdateLicense(log, license, preferredChannelSlug, isAirgap)
 			if err != nil {
 				return errors.Wrap(err, "failed to verify and update license")
 			}
@@ -287,7 +288,7 @@ func InstallCmd() *cobra.Command {
 				IncludeMinio:           v.GetBool("with-minio"),
 				IncludeMinioSnapshots:  v.GetBool("with-minio"),
 				StrictSecurityContext:  v.GetBool("strict-security-context"),
-				RequestedChannelSlug:   preferredChannelSlug,
+				RequestedChannelSlug:   requestedChannelSlug,
 
 				RegistryConfig: *registryConfig,
 

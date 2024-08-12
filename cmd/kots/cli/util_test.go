@@ -111,7 +111,7 @@ func Test_extractPreferredChannelSlug(t *testing.T) {
 			args{
 				upstreamURI: "replicated://app-slug",
 			},
-			"stable", // default channel
+			"",
 			false,
 		},
 		{

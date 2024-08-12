@@ -111,11 +111,11 @@ func PullCmd() *cobra.Command {
 
 			// If we are passed a multi-channel license, verify that the requested channel is in the license
 			// so that we can warn the user immediately if it is not.
-			license, err = kotslicense.VerifyAndUpdateLicense(log, license, preferredChannelSlug, false)
+			requestedChannelSlug, license, err := kotslicense.VerifyAndUpdateLicense(log, license, preferredChannelSlug, false)
 			if err != nil {
 				return errors.Wrap(err, "failed to verify and update license")
 			}
-			pullOptions.AppSelectedChannelID, err = kotsutil.FindChannelIDInLicense(preferredChannelSlug, license)
+			pullOptions.AppSelectedChannelID, err = kotsutil.FindChannelIDInLicense(requestedChannelSlug, license)
 			if err != nil { // should never happen since we just verified the channel
 				return errors.Wrap(err, "failed to find channel ID in license")
 			}

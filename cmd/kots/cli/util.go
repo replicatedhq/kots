@@ -67,5 +67,5 @@ func extractPreferredChannelSlug(upstreamURI string) (string, error) {
 	if replicatedUpstream.Channel != nil {
 		return *replicatedUpstream.Channel, nil
 	}
-	return "stable", nil
+	return "", nil
 }
