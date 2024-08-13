@@ -3,7 +3,7 @@ kind: SupportBundle
 metadata:
   name: kurl-supportbundle
 spec:
-  uri: "https://raw.githubusercontent.com/replicatedhq/kots/main/pkg/supportbundle/staticspecs/kurlspec.yaml"
+  uri: "https://raw.githubusercontent.com/replicatedhq/kots/diamonwiggins/sc-109411/update-default-specs/pkg/supportbundle/staticspecs/kurlspec.yaml"
   collectors:
     - http:
         collectorName: replicated.app-health-check
