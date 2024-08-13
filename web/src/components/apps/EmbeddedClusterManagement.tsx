@@ -18,7 +18,6 @@ import Icon from "@components/Icon";
 const testData = {
   nodes: undefined,
 };
-// const rolesData = {
 
 type State = {
   displayAddNode: boolean;
