@@ -251,8 +251,6 @@ const EmbeddedClusterManagement = ({
   };
 
   const handleSelectNodeType = (nodeType) => {
-    // let nodeType = e.currentTarget.value;
-    // console.log("handle select node type");
     setSelectedNodeTypes((prevSelectedNodeTypes) => {
       if (prevSelectedNodeTypes.includes(nodeType)) {
         return prevSelectedNodeTypes.filter((type) => type !== nodeType);
@@ -465,7 +463,7 @@ const EmbeddedClusterManagement = ({
                 )}
                 onClick={() => {
                   handleSelectNodeType(nodeType);
-                }} // Handle click on the outer di
+                }}
               >
                 <label
                   htmlFor={`${nodeType}NodeType`}
@@ -482,8 +480,7 @@ const EmbeddedClusterManagement = ({
                     value={nodeType}
                     disabled={determineDisabledState()}
                     checked={selectedNodeTypes.includes(nodeType)}
-                    // onChange={handleSelectNodeType}
-                  />{" "}
+                  />
                 </label>
                 {nodeType}
               </div>
