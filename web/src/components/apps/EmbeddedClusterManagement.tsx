@@ -417,7 +417,7 @@ const EmbeddedClusterManagement = ({
 
   const AddNodeInstructions = () => {
     return (
-      <div className="tw-mb-4 tw-text-base">
+      <div className="tw-mb-2 tw-text-base">
         <p>
           Optionally add nodes to the cluster. Click{" "}
           <span className="tw-font-semibold">Continue </span>
@@ -426,7 +426,9 @@ const EmbeddedClusterManagement = ({
         <p>
           {rolesData?.roles &&
             rolesData.roles.length > 1 &&
-            "Select one or more roles to assign to the new node. Copy the join command and run it on the machine you'd like to join to the cluster. "}
+            "Select one or more roles to assign to the new node."}{" "}
+          Copy the join command and run it on the machine you'd like to join to
+          the cluster.
         </p>
       </div>
     );
@@ -447,7 +449,7 @@ const EmbeddedClusterManagement = ({
         )}
 
         {rolesData?.roles && rolesData.roles.length > 1 && (
-          <div className="tw-flex tw-gap-2 tw-items-center">
+          <div className="tw-flex tw-gap-2 tw-items-center tw-mt-2">
             <p className="tw-text-gray-600 tw-font-semibold">Roles: </p>
             {rolesData.roles.map((nodeType) => (
               <div
@@ -547,7 +549,7 @@ const EmbeddedClusterManagement = ({
             )}
         </div>
         {Utilities.isInitialAppInstall(app) && (
-          <div className="tw-mt-4 tw-flex tw-flex-col tw-gap-6">
+          <div className="tw-mt-4 tw-flex tw-flex-col">
             <AddNodeInstructions />
             <AddNodeCommands />
           </div>
