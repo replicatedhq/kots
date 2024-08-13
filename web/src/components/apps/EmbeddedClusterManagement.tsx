@@ -31,8 +31,10 @@ type State = {
 
 const EmbeddedClusterManagement = ({
   fromLicenseFlow = false,
+  isEmbeddedClusterNodeWaiting = false,
 }: {
   fromLicenseFlow?: boolean;
+  isEmbeddedClusterNodeWaiting?: boolean;
 }) => {
   const [state, setState] = useReducer(
     (prevState: State, newState: Partial<State>) => ({
@@ -415,11 +417,13 @@ const EmbeddedClusterManagement = ({
   const AddNodeInstructions = () => {
     return (
       <div className="tw-mb-2 tw-text-base">
-        <p>
-          Optionally add nodes to the cluster. Click{" "}
-          <span className="tw-font-semibold">Continue </span>
-          to proceed with a single node.
-        </p>
+        {Utilities.isInitialAppInstall(app) && (
+          <p>
+            Optionally add nodes to the cluster. Click{" "}
+            <span className="tw-font-semibold">Continue </span>
+            to proceed with a single node.
+          </p>
+        )}
         <p>
           {rolesData?.roles &&
             rolesData.roles.length > 1 &&
@@ -526,16 +530,18 @@ const EmbeddedClusterManagement = ({
         </p>
         <div className="tw-flex tw-gap-6 tw-items-center">
           {" "}
-          {!Utilities.isInitialAppInstall(app) && (
-            <div className="tw-flex tw-gap-6">
-              <p>
-                View the nodes in your cluster, generate commands to add nodes
-                to the cluster, and view workloads running on each node.
-              </p>
-            </div>
-          )}
+          {!Utilities.isInitialAppInstall(app) &&
+            !isEmbeddedClusterNodeWaiting && (
+              <div className="tw-flex tw-gap-6">
+                <p>
+                  View the nodes in your cluster, generate commands to add nodes
+                  to the cluster, and view workloads running on each node.
+                </p>
+              </div>
+            )}
           {Utilities.sessionRolesHasOneOf([rbacRoles.CLUSTER_ADMIN]) &&
-            !Utilities.isInitialAppInstall(app) && (
+            !Utilities.isInitialAppInstall(app) &&
+            !isEmbeddedClusterNodeWaiting && (
               <button
                 className="btn primary tw-ml-auto tw-w-fit tw-h-fit"
                 onClick={onAddNodeClick}
@@ -544,7 +550,7 @@ const EmbeddedClusterManagement = ({
               </button>
             )}
         </div>
-        {Utilities.isInitialAppInstall(app) && (
+        {Utilities.isInitialAppInstall(app) && !isEmbeddedClusterNodeWaiting && (
           <div className="tw-mt-4 tw-flex tw-flex-col">
             <AddNodeInstructions />
             <AddNodeCommands />
