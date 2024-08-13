@@ -277,6 +277,7 @@ spec:
               message: EKCO is installed and running
     - textAnalyze:
         checkName: Check installed EKCO version for critical fixes
+        ignoreIfNoFiles: true
         fileName: cluster-resources/deployments/kurl.json
         regexGroups: '"image": "replicated/ekco:v(?P<Major>\d+)\.(?P<Minor>\d+)\.(?P<Patch>\d+)"'
         outcomes:
