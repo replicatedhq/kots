@@ -2111,6 +2111,7 @@ class AppVersionHistory extends Component<Props, State> {
                               startUpgradeService={this.startUpgradeService}
                               isAirgap={app?.isAirgap}
                               airgapUploader={airgapUploader}
+                              fetchAvailableUpdates={this.fetchAvailableUpdates}
                             />
                           )}
                         </>

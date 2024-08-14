@@ -12,6 +12,7 @@ const AvailableUpdatesComponent = ({
   startUpgradeService,
   airgapUploader,
   isAirgap,
+  fetchAvailableUpdates,
 }: {
   updates: AvailableUpdate[];
   showReleaseNotes: (releaseNotes: string) => void;
@@ -23,11 +24,12 @@ const AvailableUpdatesComponent = ({
   startUpgradeService: (version: AvailableUpdate) => void;
   airgapUploader: AirgapUploader | null;
   isAirgap: boolean;
+  fetchAvailableUpdates: () => void;
 }) => {
   return (
     <div className="TableDiff--Wrapper card-bg u-marginBottom--30">
       <div className="flex justifyContent--spaceBetween alignItems--center u-marginBottom--15">
-        <p className="u-fontSize--normal u-fontWeight--medium card-title tw-pb-4">
+        <p className="u-fontSize--normal u-fontWeight--medium card-title">
           Available Updates
         </p>
         {isAirgap && airgapUploader && (
@@ -44,6 +46,23 @@ const AvailableUpdatesComponent = ({
             </MountAware>
           </div>
         )}
+        <div className="flex alignItems--center u-marginRight--20">
+          <span
+            className="flex-auto flex alignItems--center link u-fontSize--small"
+            onClick={fetchAvailableUpdates}
+          >
+            <Icon
+              icon="check-update"
+              size={16}
+              className="clickable u-marginRight--5"
+              color={""}
+              style={{}}
+              disableFill={false}
+              removeInlineStyle={false}
+            />
+            Check for update
+          </span>
+        </div>
       </div>
       {updates && updates.length > 0 ? (
         <div className="tw-flex tw-flex-col tw-gap-2 tw-max-h-[275px] tw-overflow-auto">
