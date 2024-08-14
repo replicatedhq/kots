@@ -55,11 +55,6 @@ spec:
         selector:
           - app=kotsadm
     - logs:
-        collectorName: kurl-proxy-kotsadm
-        name: kots/admin_console
-        selector:
-          - app=kurl-proxy-kotsadm
-    - logs:
         collectorName: kotsadm-dex
         name: kots/admin_console
         selector:
@@ -79,12 +74,6 @@ spec:
         name: kotsadm-replicated-registry # NOTE: this will not live under the kots/ directory like other collectors
         includeValue: false
         key: .dockerconfigjson
-    - logs:
-        collectorName: kube-flannel
-        selector:
-          - app=flannel
-        namespace: kube-flannel
-        name: kots/kurl/flannel
     - exec:
         args:
           - "http://goldpinger.kurl.svc.cluster.local:80/check_all"
@@ -97,7 +86,6 @@ spec:
           - app=kotsadm
         timeout: 10s
     - nodeMetrics: {}
-
   analyzers:
     - clusterVersion:
         outcomes:
@@ -122,18 +110,6 @@ spec:
     - deploymentStatus: {}
     - jobStatus: {}
     - replicasetStatus: {}
-    - textAnalyze:
-        checkName: Inter-pod Networking
-        exclude: ""
-        ignoreIfNoFiles: true
-        fileName: kots/goldpinger/*/kotsadm-*/goldpinger-statistics-stdout.txt
-        outcomes:
-          - fail:
-              when: "OK = false"
-              message: Some nodes have pod communication issues
-          - pass:
-              message: Goldpinger can communicate properly
-        regexGroups: '"OK": ?(?P<OK>\w+)'
     - nodeResources:
         checkName: Node status check
         outcomes:
@@ -145,10 +121,6 @@ spec:
               message: "Not all nodes are online."
           - pass:
               message: "All nodes are online."
-    - clusterPodStatuses:
-        checkName: contour pods unhealthy
-        namespaces:
-          - projectcontour
         outcomes:
           - fail:
               when: "!= Healthy" # Catch all unhealthy pods. A pod is considered healthy if it has a status of Completed, or Running and all of its containers are ready.
