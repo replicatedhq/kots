@@ -29,7 +29,7 @@ const AvailableUpdatesComponent = ({
   return (
     <div className="TableDiff--Wrapper card-bg u-marginBottom--30">
       <div className="flex justifyContent--spaceBetween alignItems--center u-marginBottom--15">
-        <p className="u-fontSize--normal u-fontWeight--medium card-title tw-pb-4">
+        <p className="u-fontSize--normal u-fontWeight--medium card-title">
           Available Updates
         </p>
         {isAirgap && airgapUploader && (
