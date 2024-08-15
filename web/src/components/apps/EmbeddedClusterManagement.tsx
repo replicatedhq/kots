@@ -520,7 +520,6 @@ const EmbeddedClusterManagement = ({
       </>
     );
   };
-
   return (
     <div className="EmbeddedClusterManagement--wrapper container u-overflow--auto u-paddingTop--50 tw-font-sans">
       <KotsPageTitle pageName="Cluster Management" />
@@ -530,32 +529,34 @@ const EmbeddedClusterManagement = ({
         </p>
         <div className="tw-flex tw-gap-6 tw-items-center">
           {" "}
-          {!Utilities.isInitialAppInstall(app) &&
-            !isEmbeddedClusterNodeWaiting && (
-              <div className="tw-flex tw-gap-6">
-                <p>
-                  View the nodes in your cluster, generate commands to add nodes
-                  to the cluster, and view workloads running on each node.
-                </p>
-              </div>
-            )}
-          {Utilities.sessionRolesHasOneOf([rbacRoles.CLUSTER_ADMIN]) &&
-            !Utilities.isInitialAppInstall(app) &&
-            !isEmbeddedClusterNodeWaiting && (
-              <button
-                className="btn primary tw-ml-auto tw-w-fit tw-h-fit"
-                onClick={onAddNodeClick}
-              >
-                Add node
-              </button>
-            )}
+          {!Utilities.isInitialAppInstall(app) ||
+            (!isEmbeddedClusterNodeWaiting && (
+              <>
+                <div className="tw-flex tw-gap-6">
+                  <p>
+                    View the nodes in your cluster, generate commands to add
+                    nodes to the cluster, and view workloads running on each
+                    node.
+                  </p>
+                </div>
+                {Utilities.sessionRolesHasOneOf([rbacRoles.CLUSTER_ADMIN]) && (
+                  <button
+                    className="btn primary tw-ml-auto tw-w-fit tw-h-fit"
+                    onClick={onAddNodeClick}
+                  >
+                    Add node
+                  </button>
+                )}
+              </>
+            ))}
         </div>
-        {Utilities.isInitialAppInstall(app) && !isEmbeddedClusterNodeWaiting && (
-          <div className="tw-mt-4 tw-flex tw-flex-col">
-            <AddNodeInstructions />
-            <AddNodeCommands />
-          </div>
-        )}
+        {Utilities.isInitialAppInstall(app) ||
+          (isEmbeddedClusterNodeWaiting && (
+            <div className="tw-mt-4 tw-flex tw-flex-col">
+              <AddNodeInstructions />
+              <AddNodeCommands />
+            </div>
+          ))}
 
         <div className="flex1 u-overflow--auto card-item">
           {nodesLoading && (
