@@ -27,6 +27,7 @@ import "@src/scss/components/watches/DashboardCard.scss";
 import Icon from "@src/components/Icon";
 
 import {
+  AvailableUpdate,
   Downstream,
   KotsParams,
   Metadata,
@@ -36,11 +37,13 @@ import {
 } from "@types";
 import { AirgapUploader } from "@src/utilities/airgapUploader";
 import EditConfigIcon from "@components/shared/EditConfigIcon";
+import AvailableUpdatesComponent from "@components/apps/AvailableUpdatesComponent";
 
 type Props = {
   adminConsoleMetadata: Metadata | null;
   airgapUploader: AirgapUploader | null;
   airgapUploadError: string | null;
+
   checkingForUpdates: boolean;
   checkingForUpdateError: boolean;
   checkingUpdateText: string;
@@ -71,6 +74,7 @@ type Props = {
 };
 
 type State = {
+  availableUpdates: AvailableUpdate[];
   confirmType: string;
   deployView: boolean;
   displayConfirmDeploymentModal: boolean;
@@ -78,6 +82,7 @@ type State = {
   displayShowDetailsModal: boolean;
   firstSequence: string;
   secondSequence: string;
+  isFetchingAvailableUpdates: boolean;
   isRedeploy: boolean;
   isSkipPreflights: boolean;
   kotsUpdateChecker: Repeater;
@@ -110,6 +115,11 @@ type State = {
   versionToDeploy: Version | null;
   viewLogsErrMsg: string;
   yamlErrorDetails: string[];
+  upgradeService: {
+    versionLabel?: string;
+    isLoading?: boolean;
+    error?: string;
+  } | null;
 };
 
 const DashboardVersionCard = (props: Props) => {
@@ -119,12 +129,14 @@ const DashboardVersionCard = (props: Props) => {
       ...newState,
     }),
     {
+      availableUpdates: [],
       confirmType: "",
       deployView: false,
       displayConfirmDeploymentModal: false,
       displayKotsUpdateModal: false,
       displayShowDetailsModal: false,
       firstSequence: "",
+      isFetchingAvailableUpdates: false,
       isSkipPreflights: false,
       isRedeploy: false,
       kotsUpdateChecker: new Repeater(),
@@ -156,6 +168,7 @@ const DashboardVersionCard = (props: Props) => {
       versionToDeploy: null,
       viewLogsErrMsg: "",
       yamlErrorDetails: [],
+      upgradeService: {},
     }
   );
   const navigate = useNavigate();
@@ -177,6 +190,9 @@ const DashboardVersionCard = (props: Props) => {
   useEffect(() => {
     if (props.links && props.links.length > 0) {
       setState({ selectedAction: props.links[0] });
+    }
+    if (props.adminConsoleMetadata?.isEmbeddedCluster) {
+      fetchAvailableUpdates();
     }
   }, []);
 
@@ -1397,6 +1413,33 @@ const DashboardVersionCard = (props: Props) => {
     );
   };
 
+  const fetchAvailableUpdates = async (showSpinner = true) => {
+    const appSlug = params.slug;
+    setState({ isFetchingAvailableUpdates: showSpinner });
+    const res = await fetch(
+      `${process.env.API_ENDPOINT}/app/${appSlug}/updates`,
+      {
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include",
+        method: "GET",
+      }
+    );
+    if (!res.ok) {
+      setState({ isFetchingAvailableUpdates: false });
+      return;
+    }
+    const response = await res.json();
+
+    setState({
+      isFetchingAvailableUpdates: false,
+      // only show the most recent available update
+      availableUpdates: response.updates && [response.updates[0]],
+    });
+    return response;
+  };
+
   const {
     currentVersion,
     checkingForUpdates,
@@ -1520,7 +1563,30 @@ const DashboardVersionCard = (props: Props) => {
           </p>
         </div>
       )}
+      {props.adminConsoleMetadata?.isEmbeddedCluster &&
+        state.availableUpdates?.length > 0 && (
+          <>
+            {state.isFetchingAvailableUpdates ? (
+              <div className="TableDiff--Wrapper card-bg u-marginBottom--30">
+                <div className="flex-column flex1 alignItems--center justifyContent--center">
+                  <Loader size="30" />
+                </div>
+              </div>
+            ) : (
+              <AvailableUpdatesComponent
+                updates={state.availableUpdates}
+                showReleaseNotes={showReleaseNotes}
+                upgradeService={state.upgradeService}
+                fetchAvailableUpdates={fetchAvailableUpdates}
+                dashboardView={true}
+                appSlug={params.slug}
+              />
+            )}
+          </>
+        )}
+
       {renderBottomSection()}
+
       <div className="u-marginTop--10">
         <Link
           to={`/app/${selectedApp?.slug}/version-history`}
