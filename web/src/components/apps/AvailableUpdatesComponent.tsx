@@ -1,10 +1,10 @@
+import ReactTooltip from "react-tooltip";
+
 import Icon from "@components/Icon";
 import MountAware from "@components/shared/MountAware";
 import { AirgapUploader } from "@src/utilities/airgapUploader";
 import { Utilities } from "@src/utilities/utilities";
 import { AvailableUpdate } from "@types";
-import { useNavigate } from "react-router-dom";
-import ReactTooltip from "react-tooltip";
 
 const AvailableUpdatesComponent = ({
   updates,
@@ -14,8 +14,6 @@ const AvailableUpdatesComponent = ({
   airgapUploader,
   isAirgap,
   fetchAvailableUpdates,
-  dashboardView = false,
-  appSlug,
 }: {
   updates: AvailableUpdate[];
   showReleaseNotes: (releaseNotes: string) => void;
@@ -24,22 +22,13 @@ const AvailableUpdatesComponent = ({
     isLoading?: boolean;
     error?: string;
   } | null;
-  startUpgradeService?: (version: AvailableUpdate) => void;
-  airgapUploader?: AirgapUploader | null;
-  isAirgap?: boolean;
+  startUpgradeService: (version: AvailableUpdate) => void;
+  airgapUploader: AirgapUploader | null;
+  isAirgap: boolean;
   fetchAvailableUpdates: () => void;
-  dashboardView?: boolean;
-  appSlug?: string;
 }) => {
-  const navigate = useNavigate();
   return (
-    <div
-      className={`${
-        !dashboardView
-          ? "TableDiff--Wrapper card-bg u-marginBottom--30"
-          : "tw-mt-4"
-      }`}
-    >
+    <div className="TableDiff--Wrapper card-bg u-marginBottom--30">
       <div className="flex justifyContent--spaceBetween alignItems--center u-marginBottom--15">
         <p className="u-fontSize--normal u-fontWeight--medium card-title">
           Available Updates
@@ -58,11 +47,7 @@ const AvailableUpdatesComponent = ({
             </MountAware>
           </div>
         )}
-        <div
-          className={`flex alignItems--center ${
-            !dashboardView && "u-marginRight--20"
-          }`}
-        >
+        <div className="flex alignItems--center u-marginRight--20">
           <span
             className="flex-auto flex alignItems--center link u-fontSize--small"
             onClick={fetchAvailableUpdates}
@@ -130,48 +115,26 @@ const AvailableUpdatesComponent = ({
                         />
                       </>
                     )}
-                    {!dashboardView && (
-                      <button
-                        className={"btn tw-ml-2 primary blue"}
-                        onClick={() => startUpgradeService(update)}
-                        disabled={
-                          !update.isDeployable || isCurrentVersionLoading
-                        }
+
+                    <button
+                      className={"btn tw-ml-2 primary blue"}
+                      onClick={() => startUpgradeService(update)}
+                      disabled={!update.isDeployable || isCurrentVersionLoading}
+                    >
+                      <span
+                        key={update.nonDeployableCause}
+                        data-tip-disable={update.isDeployable}
+                        data-tip={update.nonDeployableCause}
+                        data-for="disable-deployment-tooltip"
                       >
-                        <span
-                          key={update.nonDeployableCause}
-                          data-tip-disable={update.isDeployable}
-                          data-tip={update.nonDeployableCause}
-                          data-for="disable-deployment-tooltip"
-                        >
-                          {isCurrentVersionLoading ? "Preparing..." : "Deploy"}
-                        </span>
-                      </button>
-                    )}
+                        {isCurrentVersionLoading ? "Preparing..." : "Deploy"}
+                      </span>
+                    </button>
+
                     <ReactTooltip
                       effect="solid"
                       id="disable-deployment-tooltip"
                     />
-                    {dashboardView && (
-                      <button
-                        className={"btn tw-ml-2 primary blue"}
-                        onClick={() =>
-                          navigate(`/app/${appSlug}/version-history`)
-                        }
-                        disabled={
-                          !update.isDeployable || isCurrentVersionLoading
-                        }
-                      >
-                        <span
-                          key={update.nonDeployableCause}
-                          data-tip-disable={update.isDeployable}
-                          data-tip={update.nonDeployableCause}
-                          data-for="disable-deployment-tooltip"
-                        >
-                          Go to Version history
-                        </span>
-                      </button>
-                    )}
                   </div>
                 </div>
                 {upgradeService?.error &&

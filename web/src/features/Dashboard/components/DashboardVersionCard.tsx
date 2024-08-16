@@ -1,31 +1,29 @@
+import classNames from "classnames";
 import { useEffect, useReducer } from "react";
+import Modal from "react-modal";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import ReactTooltip from "react-tooltip";
-import DashboardGitOpsCard from "./DashboardGitOpsCard";
-import MarkdownRenderer from "@src/components/shared/MarkdownRenderer";
+
+import EditConfigIcon from "@components/shared/EditConfigIcon";
+import { useSelectedApp } from "@features/App";
 import VersionDiff from "@features/VersionDiff/VersionDiff";
-import Modal from "react-modal";
 import AirgapUploadProgress from "@src/components/AirgapUploadProgress";
-import Loader from "@src/components/shared/Loader";
-import MountAware from "@src/components/shared/MountAware";
+import Icon from "@src/components/Icon";
 import ShowDetailsModal from "@src/components/modals/ShowDetailsModal";
 import ShowLogsModal from "@src/components/modals/ShowLogsModal";
+import Loader from "@src/components/shared/Loader";
+import MarkdownRenderer from "@src/components/shared/MarkdownRenderer";
 import DeployWarningModal from "@src/components/shared/modals/DeployWarningModal";
 import SkipPreflightsModal from "@src/components/shared/modals/SkipPreflightsModal";
-import classNames from "classnames";
+import MountAware from "@src/components/shared/MountAware";
+import { AirgapUploader } from "@src/utilities/airgapUploader";
+import { Repeater } from "@src/utilities/repeater";
 import {
   getPreflightResultState,
   getReadableGitOpsProviderName,
   secondsAgo,
   Utilities,
 } from "@src/utilities/utilities";
-import { useNextAppVersionWithIntercept } from "../api/useNextAppVersion";
-import { useSelectedApp } from "@features/App";
-import { Repeater } from "@src/utilities/repeater";
-
-import "@src/scss/components/watches/DashboardCard.scss";
-import Icon from "@src/components/Icon";
-
 import {
   AvailableUpdate,
   Downstream,
@@ -35,9 +33,11 @@ import {
   VersionDownloadStatus,
   VersionStatus,
 } from "@types";
-import { AirgapUploader } from "@src/utilities/airgapUploader";
-import EditConfigIcon from "@components/shared/EditConfigIcon";
-import AvailableUpdatesComponent from "@components/apps/AvailableUpdatesComponent";
+import { useNextAppVersionWithIntercept } from "../api/useNextAppVersion";
+import AvailableUpdateCard from "./AvailableUpdateCard";
+import DashboardGitOpsCard from "./DashboardGitOpsCard";
+
+import "@src/scss/components/watches/DashboardCard.scss";
 
 type Props = {
   adminConsoleMetadata: Metadata | null;
@@ -1413,9 +1413,9 @@ const DashboardVersionCard = (props: Props) => {
     );
   };
 
-  const fetchAvailableUpdates = async (showSpinner = true) => {
+  const fetchAvailableUpdates = async () => {
     const appSlug = params.slug;
-    setState({ isFetchingAvailableUpdates: showSpinner });
+    setState({ isFetchingAvailableUpdates: true });
     const res = await fetch(
       `${process.env.API_ENDPOINT}/app/${appSlug}/updates`,
       {
@@ -1435,7 +1435,7 @@ const DashboardVersionCard = (props: Props) => {
     setState({
       isFetchingAvailableUpdates: false,
       // only show the most recent available update
-      availableUpdates: response.updates && [response.updates[0]],
+      availableUpdates: response.updates,
     });
     return response;
   };
@@ -1550,6 +1550,35 @@ const DashboardVersionCard = (props: Props) => {
             )}
           </div>
         )}
+        {props.adminConsoleMetadata?.isEmbeddedCluster && (
+          <div className="flex alignItems--center">
+            {!state.isFetchingAvailableUpdates && (
+              <span
+                className="flex-auto flex alignItems--center link u-fontSize--small"
+                onClick={() => fetchAvailableUpdates()}
+              >
+                <Icon
+                  icon="check-update"
+                  size={16}
+                  className="clickable u-marginRight--5"
+                  color={""}
+                  style={{}}
+                  disableFill={false}
+                  removeInlineStyle={false}
+                />
+                Check for update
+              </span>
+            )}
+            {state.isFetchingAvailableUpdates && (
+              <div className="flex alignItems--center">
+                <Loader className="u-marginRight--5" size="15" />
+                <span className="u-textColor--bodyCopy u-fontWeight--medium u-fontSize--small u-lineHeight--default">
+                  Checking for updates
+                </span>
+              </div>
+            )}
+          </div>
+        )}
       </div>
       {currentVersion?.deployedAt ? (
         <div className="VersionCard-content--wrapper card-item">
@@ -1567,18 +1596,14 @@ const DashboardVersionCard = (props: Props) => {
         state.availableUpdates?.length > 0 && (
           <>
             {state.isFetchingAvailableUpdates ? (
-              <div className="TableDiff--Wrapper card-bg u-marginBottom--30">
-                <div className="flex-column flex1 alignItems--center justifyContent--center">
-                  <Loader size="30" />
-                </div>
+              <div className="flex-column flex1 alignItems--center justifyContent--center">
+                <Loader size="30" />
               </div>
             ) : (
-              <AvailableUpdatesComponent
+              <AvailableUpdateCard
                 updates={state.availableUpdates}
                 showReleaseNotes={showReleaseNotes}
                 upgradeService={state.upgradeService}
-                fetchAvailableUpdates={fetchAvailableUpdates}
-                dashboardView={true}
                 appSlug={params.slug}
               />
             )}
