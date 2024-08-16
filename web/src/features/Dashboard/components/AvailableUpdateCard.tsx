@@ -27,14 +27,14 @@ const AvailableUpdateCard = ({
     upgradeService.isLoading;
   return (
     <div className="tw-mt-4">
-      <div className="flex justifyContent--spaceBetween alignItems--center u-marginBottom--15">
+      <div className="flex alignItems--center u-marginBottom--15">
         <p className="u-fontSize--normal u-fontWeight--medium card-title">
           Latest Available Update
         </p>
         <p className="u-fontSize--normal">
           {updates && updates.length > 0 && (
-            <span className="u-fontSize--small u-fontWeight--medium u-textColor--bodyCopy">
-              {updates.length} available
+            <span className="u-fontSize--small u-fontWeight--medium u-textColor--bodyCopy tw-ml-2">
+              ({updates.length} available)
             </span>
           )}
         </p>
