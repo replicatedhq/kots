@@ -43,7 +43,6 @@ type Props = {
   adminConsoleMetadata: Metadata | null;
   airgapUploader: AirgapUploader | null;
   airgapUploadError: string | null;
-
   checkingForUpdates: boolean;
   checkingForUpdateError: boolean;
   checkingUpdateText: string;
@@ -180,6 +179,32 @@ const DashboardVersionCard = (props: Props) => {
     refetch: refetchNextAppVersionWithIntercept,
   } = useNextAppVersionWithIntercept();
   const { latestDeployableVersion } = newAppVersionWithInterceptData || {};
+
+  const fetchAvailableUpdates = async () => {
+    const appSlug = params.slug;
+    setState({ isFetchingAvailableUpdates: true });
+    const res = await fetch(
+      `${process.env.API_ENDPOINT}/app/${appSlug}/updates`,
+      {
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include",
+        method: "GET",
+      }
+    );
+    if (!res.ok) {
+      setState({ isFetchingAvailableUpdates: false });
+      return;
+    }
+    const response = await res.json();
+
+    setState({
+      isFetchingAvailableUpdates: false,
+      availableUpdates: response.updates,
+    });
+    return response;
+  };
 
   // moving this out of the state because new repeater instances were getting created
   // and it doesn't really affect the UI
@@ -1413,33 +1438,6 @@ const DashboardVersionCard = (props: Props) => {
     );
   };
 
-  const fetchAvailableUpdates = async () => {
-    const appSlug = params.slug;
-    setState({ isFetchingAvailableUpdates: true });
-    const res = await fetch(
-      `${process.env.API_ENDPOINT}/app/${appSlug}/updates`,
-      {
-        headers: {
-          "Content-Type": "application/json",
-        },
-        credentials: "include",
-        method: "GET",
-      }
-    );
-    if (!res.ok) {
-      setState({ isFetchingAvailableUpdates: false });
-      return;
-    }
-    const response = await res.json();
-
-    setState({
-      isFetchingAvailableUpdates: false,
-      // only show the most recent available update
-      availableUpdates: response.updates,
-    });
-    return response;
-  };
-
   const {
     currentVersion,
     checkingForUpdates,
@@ -1594,24 +1592,14 @@ const DashboardVersionCard = (props: Props) => {
       )}
       {props.adminConsoleMetadata?.isEmbeddedCluster &&
         state.availableUpdates?.length > 0 && (
-          <>
-            {state.isFetchingAvailableUpdates ? (
-              <div className="flex-column flex1 alignItems--center justifyContent--center">
-                <Loader size="30" />
-              </div>
-            ) : (
-              <AvailableUpdateCard
-                updates={state.availableUpdates}
-                showReleaseNotes={showReleaseNotes}
-                upgradeService={state.upgradeService}
-                appSlug={params.slug}
-              />
-            )}
-          </>
+          <AvailableUpdateCard
+            updates={state.availableUpdates}
+            showReleaseNotes={showReleaseNotes}
+            upgradeService={state.upgradeService}
+            appSlug={params.slug}
+          />
         )}
-
       {renderBottomSection()}
-
       <div className="u-marginTop--10">
         <Link
           to={`/app/${selectedApp?.slug}/version-history`}

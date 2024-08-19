@@ -1,10 +1,9 @@
-import ReactTooltip from "react-tooltip";
-
 import Icon from "@components/Icon";
 import MountAware from "@components/shared/MountAware";
 import { AirgapUploader } from "@src/utilities/airgapUploader";
 import { Utilities } from "@src/utilities/utilities";
 import { AvailableUpdate } from "@types";
+import ReactTooltip from "react-tooltip";
 
 const AvailableUpdatesComponent = ({
   updates,
@@ -115,7 +114,6 @@ const AvailableUpdatesComponent = ({
                         />
                       </>
                     )}
-
                     <button
                       className={"btn tw-ml-2 primary blue"}
                       onClick={() => startUpgradeService(update)}
@@ -130,7 +128,6 @@ const AvailableUpdatesComponent = ({
                         {isCurrentVersionLoading ? "Preparing..." : "Deploy"}
                       </span>
                     </button>
-
                     <ReactTooltip
                       effect="solid"
                       id="disable-deployment-tooltip"
