@@ -1616,7 +1616,15 @@ func FindChannelIDInLicense(requestedSlug string, license *kotsv1beta1.License) 
 				}
 			}
 			if matchedChannelID == "" {
-				return "", errors.New("requested install channel slug not found in license channels")
+				if license.Spec.LicenseType == "dev" || license.Spec.LicenseType == "test" {
+					// dev and test licenses are allowed to install from any channel, even if not present
+					// in the license. replicated-app's default behavior is to use the top level channel id
+					// when the SelectedChannelID is not set - so we're mirroring that behavior here.
+					matchedChannelID = license.Spec.ChannelID
+				} else {
+					logger.Errorf("requested channel slug '%s' not found in license channels. license type is: %s", requestedSlug, license.Spec.LicenseType)
+					return "", errors.New("requested install channel slug not found in license channels")
+				}
 			}
 		}
 	} else { // this is an install from before the channel slug was added to the configmap

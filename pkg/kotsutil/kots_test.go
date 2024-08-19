@@ -1121,7 +1121,7 @@ func TestFindChannelIDInLicense(t *testing.T) {
 			expectError:       false,
 		},
 		{
-			name: "No matching slug should error",
+			name: "No matching slug for regular license should error",
 			license: &kotsv1beta1.License{
 				Spec: kotsv1beta1.LicenseSpec{
 					ChannelID: "top-level-channel-id",
@@ -1140,6 +1140,44 @@ func TestFindChannelIDInLicense(t *testing.T) {
 			requestedSlug:     "non-existent-slug",
 			expectedChannelID: "",
 			expectError:       true,
+		},
+		{
+			name: "No matching slug for dev license should use top-level channel ID",
+			license: &kotsv1beta1.License{
+				Spec: kotsv1beta1.LicenseSpec{
+					LicenseType: "dev",
+					ChannelID:   "channel-id-1",
+					Channels: []kotsv1beta1.Channel{
+						{
+							ChannelID:   "channel-id-1",
+							ChannelSlug: "channel-slug-1",
+							IsDefault:   true,
+						},
+					},
+				},
+			},
+			requestedSlug:     "other-slug",
+			expectedChannelID: "channel-id-1",
+			expectError:       false,
+		},
+		{
+			name: "No matching slug for test license should use top-level channel ID",
+			license: &kotsv1beta1.License{
+				Spec: kotsv1beta1.LicenseSpec{
+					LicenseType: "test",
+					ChannelID:   "channel-id-1",
+					Channels: []kotsv1beta1.Channel{
+						{
+							ChannelID:   "channel-id-1",
+							ChannelSlug: "channel-slug-1",
+							IsDefault:   true,
+						},
+					},
+				},
+			},
+			requestedSlug:     "other-slug",
+			expectedChannelID: "channel-id-1",
+			expectError:       false,
 		},
 	}
 
