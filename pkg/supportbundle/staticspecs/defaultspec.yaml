@@ -121,10 +121,6 @@ spec:
               message: "Not all nodes are online."
           - pass:
               message: "All nodes are online."
-        outcomes:
-          - fail:
-              when: "!= Healthy" # Catch all unhealthy pods. A pod is considered healthy if it has a status of Completed, or Running and all of its containers are ready.
-              message: A Contour pod, {{ .Name }}, is unhealthy with a status of {{ .Status.Reason }}. Restarting the pod may fix the issue.
     - nodeMetrics:
         checkName: kotsadm rqlite PVC usage
         filters:
@@ -132,7 +128,7 @@ spec:
             nameRegex: "kotsadm-rqlite.*"
         outcomes:
           - fail:
-              when: "pvcUsedPercentage >= 80%"
+              when: "pvcUsedPercentage >= 80"
               message: "kotsadm-rqlite PVC using more than 80% of storage"
           - pass:
               message: "kotsadm-rqlite PVC is using less than 80% of storage"
@@ -143,7 +139,7 @@ spec:
             nameRegex: "kotsadm-minio.*"
         outcomes:
           - fail:
-              when: "pvcUsedPercentage >= 80%"
+              when: "pvcUsedPercentage >= 80"
               message: "kotsadm-minio PVC using more than 80% of storage"
           - pass:
               message: "kotsadm-minio PVC is using less than 80% of storage"
