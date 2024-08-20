@@ -476,7 +476,7 @@ export const AppConfig = ({
 
   if (configLoading) {
     return (
-      <div className="flex-column flex1 alignItems--center justifyContent--center">
+      <div className="flex-column flex1 alignItems--center justifyContent--center tw--mt-20">
         <Loader size="60" />
       </div>
     );
