@@ -83,3 +83,45 @@ func Test_getRequest(t *testing.T) {
 		assert.Equal(t, test.expectedURL, request.URL.String())
 	}
 }
+
+func Test_makeLicenseURL(t *testing.T) {
+	tests := []struct {
+		description       string
+		license           *kotsv1beta1.License
+		selectedChannelID string
+		expectedURL       string
+	}{
+		{
+			description: "with channel",
+			license: &kotsv1beta1.License{
+				Spec: kotsv1beta1.LicenseSpec{
+					Endpoint:        "https://replicated-app",
+					AppSlug:         "slug1",
+					LicenseSequence: 42,
+				},
+			},
+			selectedChannelID: "channel1",
+			expectedURL:       "https://replicated-app/license/slug1?licenseSequence=42&selectedChannelId=channel1",
+		},
+		{
+			description: "without channel",
+			license: &kotsv1beta1.License{
+				Spec: kotsv1beta1.LicenseSpec{
+					Endpoint:        "https://replicated-app",
+					AppSlug:         "slug2",
+					LicenseSequence: 42,
+				},
+			},
+			selectedChannelID: "",
+			expectedURL:       "https://replicated-app/license/slug2?licenseSequence=42",
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.description, func(t *testing.T) {
+			url, err := makeLicenseURL(test.license, test.selectedChannelID)
+			require.NoError(t, err)
+			assert.Equal(t, test.expectedURL, url)
+		})
+	}
+}
