@@ -1,6 +1,9 @@
 package license
 
 import (
+	"fmt"
+	"strings"
+
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/replicatedapp"
@@ -40,11 +43,20 @@ func VerifyAndUpdateLicense(log *logger.CLILogger, license *kotsv1beta1.License,
 		return nil, nil
 	}
 	if isAirgap {
+		log.ActionWithSpinner("Verifying channel slug %q allowed by license", preferredChannelSlug)
 		if !canInstallFromChannel(preferredChannelSlug, license) {
-			return nil, errors.New("requested channel not found in supplied license")
+			log.FinishSpinnerWithError()
+			return license, errors.New(fmt.Sprintf("channel slug %q is not allowed by license", preferredChannelSlug))
 		}
+		log.FinishSpinner()
+		validChannels := []string{}
+		for _, channel := range license.Spec.Channels {
+			validChannels = append(validChannels, fmt.Sprintf("%s/%s", license.Spec.AppSlug, channel.ChannelSlug))
+		}
+		log.ChildActionWithoutSpinner(fmt.Sprintf("To install from an allowed channel, use one of the following: %s", strings.Join(validChannels, ", ")))
 		return license, nil
 	}
+
 	log.ActionWithSpinner("Checking for license update")
 	// we fetch the latest license to ensure that the license is up to date, before proceeding
 	updatedLicense, err := replicatedapp.GetLatestLicense(license, "")
@@ -53,8 +65,17 @@ func VerifyAndUpdateLicense(log *logger.CLILogger, license *kotsv1beta1.License,
 		return nil, errors.Wrap(err, "failed to get latest license")
 	}
 	log.FinishSpinner()
+
+	log.ActionWithSpinner("Verifying channel slug %q allowed by license", preferredChannelSlug)
 	if canInstallFromChannel(preferredChannelSlug, updatedLicense.License) {
+		log.FinishSpinner()
 		return updatedLicense.License, nil
 	}
-	return nil, errors.New("requested channel not found in latest license")
+	log.FinishSpinnerWithError()
+	validChannels := []string{}
+	for _, channel := range license.Spec.Channels {
+		validChannels = append(validChannels, fmt.Sprintf("%s/%s", license.Spec.AppSlug, channel.ChannelSlug))
+	}
+	log.ChildActionWithoutSpinner(fmt.Sprintf("To install from an allowed channel, use one of the following: %s", strings.Join(validChannels, ", ")))
+	return updatedLicense.License, errors.New(fmt.Sprintf("channel slug %q is not allowed by latest license", preferredChannelSlug))
 }

@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"fmt"
 	"os"
 	"path"
 	"strings"
@@ -101,13 +102,19 @@ func PullCmd() *cobra.Command {
 			}
 
 			upstream := pull.RewriteUpstream(args[0])
+
+			log := logger.NewCLILogger(cmd.OutOrStdout())
+			log.Initialize()
+
 			preferredChannelSlug, err := extractPreferredChannelSlug(upstream)
 			if err != nil {
 				return errors.Wrap(err, "failed to extract preferred channel slug")
 			}
 
-			log := logger.NewCLILogger(cmd.OutOrStdout())
-			log.Initialize()
+			if preferredChannelSlug == "" {
+				preferredChannelSlug = "stable"
+				log.ActionWithoutSpinner(fmt.Sprintf("No channel specified in upstream URI, falling back to channel %q.", preferredChannelSlug))
+			}
 
 			// If we are passed a multi-channel license, verify that the requested channel is in the license
 			// so that we can warn the user immediately if it is not.
