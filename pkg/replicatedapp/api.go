@@ -43,18 +43,32 @@ type LicenseData struct {
 // GetLatestLicense will return the latest license from the replicated api, if selectedChannelID is provided
 // it will be passed along to the api.
 func GetLatestLicense(license *kotsv1beta1.License, selectedChannelID string) (*LicenseData, error) {
-	url := fmt.Sprintf("%s/license/%s", license.Spec.Endpoint, license.Spec.AppSlug)
-
-	if selectedChannelID != "" {
-		url = fmt.Sprintf("%s?selectedChannelId=%s", url, selectedChannelID)
+	fullURL, err := makeLicenseURL(license, selectedChannelID)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to make license url")
 	}
 
-	licenseData, err := getLicenseFromAPI(url, license.Spec.LicenseID)
+	licenseData, err := getLicenseFromAPI(fullURL, license.Spec.LicenseID)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get license from api")
 	}
 
 	return licenseData, nil
+}
+
+func makeLicenseURL(license *kotsv1beta1.License, selectedChannelID string) (string, error) {
+	u, err := url.Parse(fmt.Sprintf("%s/license/%s", license.Spec.Endpoint, license.Spec.AppSlug))
+	if err != nil {
+		return "", errors.Wrap(err, "failed to parse url")
+	}
+
+	params := url.Values{}
+	params.Add("licenseSequence", fmt.Sprintf("%d", license.Spec.LicenseSequence))
+	if selectedChannelID != "" {
+		params.Add("selectedChannelId", selectedChannelID)
+	}
+	u.RawQuery = params.Encode()
+	return u.String(), nil
 }
 
 func getAppIdFromLicenseId(s store.Store, licenseID string) (string, error) {
