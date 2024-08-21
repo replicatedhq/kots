@@ -53,7 +53,7 @@ func VerifyAndUpdateLicense(log *logger.CLILogger, license *kotsv1beta1.License,
 		for _, channel := range license.Spec.Channels {
 			validChannels = append(validChannels, fmt.Sprintf("%s/%s", license.Spec.AppSlug, channel.ChannelSlug))
 		}
-		log.ChildActionWithoutSpinner(fmt.Sprintf("To install from an allowed channel, use one of the following: %s", strings.Join(validChannels, ", ")))
+		log.ChildActionWithoutSpinner(fmt.Sprintf("To install/pull an allowed channel, use one of the following: %s", strings.Join(validChannels, ", ")))
 		return license, nil
 	}
 
@@ -76,6 +76,6 @@ func VerifyAndUpdateLicense(log *logger.CLILogger, license *kotsv1beta1.License,
 	for _, channel := range license.Spec.Channels {
 		validChannels = append(validChannels, fmt.Sprintf("%s/%s", license.Spec.AppSlug, channel.ChannelSlug))
 	}
-	log.ChildActionWithoutSpinner(fmt.Sprintf("To install from an allowed channel, use one of the following: %s", strings.Join(validChannels, ", ")))
+	log.ChildActionWithoutSpinner(fmt.Sprintf("To install/pull an allowed channel, use one of the following: %s", strings.Join(validChannels, ", ")))
 	return updatedLicense.License, errors.New(fmt.Sprintf("channel slug %q is not allowed by latest license", preferredChannelSlug))
 }
