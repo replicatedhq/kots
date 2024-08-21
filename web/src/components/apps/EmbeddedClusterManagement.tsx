@@ -452,7 +452,7 @@ const EmbeddedClusterManagement = ({
               <div
                 key={nodeType}
                 className={classNames(
-                  "tw-border-[1px] tw-border-solid tw-border-[#326DE6] tw-rounded tw-px-2 tw-py-2 tw-flex tw-items-center  tw-cursor-pointer",
+                  "nodeType-selector tw-border-[1px] tw-border-solid tw-border-[#326DE6] tw-rounded tw-px-2 tw-py-2 tw-flex tw-items-center  tw-cursor-pointer",
                   {
                     "tw-text-white tw-bg-[#326DE6]":
                       selectedNodeTypes.includes(nodeType),
