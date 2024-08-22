@@ -163,13 +163,9 @@ func InstallCmd() *cobra.Command {
 			}()
 
 			upstream := pull.RewriteUpstream(args[0])
-			preferredChannelSlug, err := extractPreferredChannelSlug(upstream)
+			preferredChannelSlug, err := extractPreferredChannelSlug(log, upstream)
 			if err != nil {
 				return errors.Wrap(err, "failed to extract preferred channel slug")
-			}
-			if preferredChannelSlug == "" {
-				preferredChannelSlug = "stable"
-				log.ActionWithoutSpinner(fmt.Sprintf("No channel specified in upstream URI, falling back to channel %q.", preferredChannelSlug))
 			}
 
 			license, err = kotslicense.VerifyAndUpdateLicense(log, license, preferredChannelSlug, isAirgap)

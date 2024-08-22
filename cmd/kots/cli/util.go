@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/pkg/errors"
+	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/replicatedapp"
 	"github.com/replicatedhq/kots/pkg/util"
 )
@@ -53,7 +54,7 @@ func splitEndpointAndNamespace(endpoint string) (string, string) {
 	return registryEndpoint, registryNamespace
 }
 
-func extractPreferredChannelSlug(upstreamURI string) (string, error) {
+func extractPreferredChannelSlug(log *logger.CLILogger, upstreamURI string) (string, error) {
 	u, err := url.ParseRequestURI(upstreamURI)
 	if err != nil {
 		return "", errors.Wrap(err, "failed to parse uri")
@@ -67,5 +68,9 @@ func extractPreferredChannelSlug(upstreamURI string) (string, error) {
 	if replicatedUpstream.Channel != nil {
 		return *replicatedUpstream.Channel, nil
 	}
-	return "", nil
+
+	if log != nil {
+		log.ActionWithoutSpinner("No channel specified in upstream URI, falling back to channel slug 'stable.")
+	}
+	return "stable", nil
 }
