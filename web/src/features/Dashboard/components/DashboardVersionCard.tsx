@@ -114,11 +114,6 @@ type State = {
   versionToDeploy: Version | null;
   viewLogsErrMsg: string;
   yamlErrorDetails: string[];
-  upgradeService: {
-    versionLabel?: string;
-    isLoading?: boolean;
-    error?: string;
-  } | null;
 };
 
 const DashboardVersionCard = (props: Props) => {
@@ -167,7 +162,6 @@ const DashboardVersionCard = (props: Props) => {
       versionToDeploy: null,
       viewLogsErrMsg: "",
       yamlErrorDetails: [],
-      upgradeService: {},
     }
   );
   const navigate = useNavigate();
@@ -1595,7 +1589,6 @@ const DashboardVersionCard = (props: Props) => {
           <AvailableUpdateCard
             updates={state.availableUpdates}
             showReleaseNotes={showReleaseNotes}
-            upgradeService={state.upgradeService}
             appSlug={params.slug}
           />
         )}
