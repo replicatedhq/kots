@@ -31,10 +31,10 @@ type State = {
 
 const EmbeddedClusterManagement = ({
   fromLicenseFlow = false,
-  isEmbeddedClusterNodeWaiting = false,
+  isEmbeddedClusterWaitingForNodes = false,
 }: {
   fromLicenseFlow?: boolean;
-  isEmbeddedClusterNodeWaiting?: boolean;
+  isEmbeddedClusterWaitingForNodes?: boolean;
 }) => {
   const [state, setState] = useReducer(
     (prevState: State, newState: Partial<State>) => ({
@@ -530,7 +530,7 @@ const EmbeddedClusterManagement = ({
         <div className="tw-flex tw-gap-6 tw-items-center">
           {" "}
           {!Utilities.isInitialAppInstall(app) ||
-            (!isEmbeddedClusterNodeWaiting && (
+            (!isEmbeddedClusterWaitingForNodes && (
               <>
                 <div className="tw-flex tw-gap-6">
                   <p>
@@ -551,7 +551,7 @@ const EmbeddedClusterManagement = ({
             ))}
         </div>
         {Utilities.isInitialAppInstall(app) ||
-          (isEmbeddedClusterNodeWaiting && (
+          (isEmbeddedClusterWaitingForNodes && (
             <div className="tw-mt-4 tw-flex tw-flex-col">
               <AddNodeInstructions />
               <AddNodeCommands />

@@ -19,7 +19,7 @@ type Props = {
   isIdentityServiceSupported: boolean;
   isKurlEnabled: boolean;
   isEmbeddedClusterEnabled: boolean;
-  isEmbeddedClusterNodeWaiting: boolean;
+  isEmbeddedClusterWaitingForNodes: boolean;
   isSnapshotsSupported: boolean;
   logo: string | null;
   onLogoutError: (message: string) => void;
@@ -145,7 +145,7 @@ export class NavBar extends PureComponent<Props, State> {
       fetchingMetadata,
       isKurlEnabled,
       isEmbeddedClusterEnabled,
-      isEmbeddedClusterNodeWaiting,
+      isEmbeddedClusterWaitingForNodes,
       isGitOpsSupported,
       isIdentityServiceSupported,
       appsList,
@@ -209,7 +209,7 @@ export class NavBar extends PureComponent<Props, State> {
           {Utilities.isLoggedIn() &&
             appsList?.length > 0 &&
             !isInitialEmbeddedInstall &&
-            !isEmbeddedClusterNodeWaiting && (
+            !isEmbeddedClusterWaitingForNodes && (
               <div className="flex flex-auto left-items">
                 <div
                   className={classNames("NavItem u-position--relative flex", {
@@ -289,7 +289,7 @@ export class NavBar extends PureComponent<Props, State> {
               </div>
             )}
         </div>
-        {Utilities.isLoggedIn() && !isEmbeddedClusterNodeWaiting && (
+        {Utilities.isLoggedIn() && !isEmbeddedClusterWaitingForNodes && (
           <>
             <NavBarDropdown
               handleLogOut={this.handleLogOut}

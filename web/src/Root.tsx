@@ -501,7 +501,7 @@ const Root = () => {
             isEmbeddedClusterEnabled={Boolean(
               state.adminConsoleMetadata?.isEmbeddedCluster
             )}
-            isEmbeddedClusterNodeWaiting={
+            isEmbeddedClusterWaitingForNodes={
               state.isEmbeddedClusterWaitingForNodes
             }
             isGitOpsSupported={isGitOpsSupported()}
@@ -640,7 +640,7 @@ const Root = () => {
                       <KurlClusterManagement />
                     ) : (
                       <EmbeddedClusterManagement
-                        isEmbeddedClusterNodeWaiting={
+                        isEmbeddedClusterWaitingForNodes={
                           state.isEmbeddedClusterWaitingForNodes
                         }
                       />
