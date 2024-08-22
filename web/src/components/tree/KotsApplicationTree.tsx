@@ -25,6 +25,7 @@ type Props = {
     appName: string;
     appNameSpace: string;
   };
+  isEmbeddedCluster: boolean;
 };
 
 type State = {
@@ -114,16 +115,18 @@ class KotsApplicationTree extends Component<Props, State> {
     return (
       <div className="flex-column flex1 ApplicationTree--wrapper u-paddingBottom--30">
         <KotsPageTitle pageName="View Files" showAppSlug />
-        <div className="edit-files-banner u-fontSize--small u-fontWeight--medium">
-          Need to edit these files?{" "}
-          <span
-            onClick={this.toggleInstructionsModal}
-            className="u-fontWeight--bold u-cursor--pointer u-textDecoration--underlineOnHover"
-          >
-            Click here
-          </span>{" "}
-          to learn how
-        </div>
+        {!this.props.isEmbeddedCluster && (
+          <div className="edit-files-banner u-fontSize--small u-fontWeight--medium">
+            Need to edit these files?{" "}
+            <span
+              onClick={this.toggleInstructionsModal}
+              className="u-fontWeight--bold u-cursor--pointer u-textDecoration--underlineOnHover"
+            >
+              Click here
+            </span>{" "}
+            to learn how
+          </div>
+        )}
         <div className="flex flex1 u-marginLeft--30 u-marginRight--30 u-marginTop--10">
           <div className="flex1 dirtree-wrapper flex-column u-overflow-hidden">
             <div className="u-overflow--auto dirtree">

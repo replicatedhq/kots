@@ -784,7 +784,13 @@ const Root = () => {
                 />
                 <Route
                   path=":slug/tree/:sequence?"
-                  element={<DownstreamTree />}
+                  element={
+                    <DownstreamTree
+                      isEmbeddedCluster={Boolean(
+                        state.adminConsoleMetadata?.isEmbeddedCluster
+                      )}
+                    />
+                  }
                 />
 
                 <Route
