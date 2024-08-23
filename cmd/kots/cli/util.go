@@ -70,7 +70,7 @@ func extractPreferredChannelSlug(log *logger.CLILogger, upstreamURI string) (str
 	}
 
 	if log != nil {
-		log.ActionWithoutSpinner("No channel specified in upstream URI, falling back to channel slug 'stable.")
+		log.ActionWithoutSpinner("No channel specified in upstream URI, falling back to channel slug 'stable'.")
 	}
 	return "stable", nil
 }
