@@ -43,7 +43,7 @@ func VerifyAndUpdateLicense(log *logger.CLILogger, license *kotsv1beta1.License,
 		return nil, nil
 	}
 	if isAirgap {
-		log.ActionWithSpinner("Verifying channel slug %q allowed by license", preferredChannelSlug)
+		log.ActionWithSpinner("Verifying if channel slug %q is allowed by the license", preferredChannelSlug)
 		if !canInstallFromChannel(preferredChannelSlug, license) {
 			log.FinishSpinnerWithError()
 			return license, errors.New(fmt.Sprintf("channel slug %q is not allowed by license", preferredChannelSlug))
@@ -53,7 +53,7 @@ func VerifyAndUpdateLicense(log *logger.CLILogger, license *kotsv1beta1.License,
 		for _, channel := range license.Spec.Channels {
 			validChannels = append(validChannels, fmt.Sprintf("%s/%s", license.Spec.AppSlug, channel.ChannelSlug))
 		}
-		log.ChildActionWithoutSpinner(fmt.Sprintf("To install/pull an allowed channel, use one of the following: %s", strings.Join(validChannels, ", ")))
+		log.ChildActionWithoutSpinner(fmt.Sprintf("To install an allowed channel, use one of the following: %s", strings.Join(validChannels, ", ")))
 		return license, nil
 	}
 
@@ -66,7 +66,7 @@ func VerifyAndUpdateLicense(log *logger.CLILogger, license *kotsv1beta1.License,
 	}
 	log.FinishSpinner()
 
-	log.ActionWithSpinner("Verifying channel slug %q allowed by license", preferredChannelSlug)
+	log.ActionWithSpinner("Verifying if channel slug %q is allowed by the license", preferredChannelSlug)
 	if canInstallFromChannel(preferredChannelSlug, updatedLicense.License) {
 		log.FinishSpinner()
 		return updatedLicense.License, nil
@@ -76,6 +76,6 @@ func VerifyAndUpdateLicense(log *logger.CLILogger, license *kotsv1beta1.License,
 	for _, channel := range license.Spec.Channels {
 		validChannels = append(validChannels, fmt.Sprintf("%s/%s", license.Spec.AppSlug, channel.ChannelSlug))
 	}
-	log.ChildActionWithoutSpinner(fmt.Sprintf("To install/pull an allowed channel, use one of the following: %s", strings.Join(validChannels, ", ")))
+	log.ChildActionWithoutSpinner(fmt.Sprintf("To install an allowed channel, use one of the following: %s", strings.Join(validChannels, ", ")))
 	return updatedLicense.License, errors.New(fmt.Sprintf("channel slug %q is not allowed by latest license", preferredChannelSlug))
 }
