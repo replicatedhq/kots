@@ -550,13 +550,13 @@ const EmbeddedClusterManagement = ({
               </>
             ))}
         </div>
-        {Utilities.isInitialAppInstall(app) ||
-          (isEmbeddedClusterWaitingForNodes && (
-            <div className="tw-mt-4 tw-flex tw-flex-col">
-              <AddNodeInstructions />
-              <AddNodeCommands />
-            </div>
-          ))}
+        {(Utilities.isInitialAppInstall(app) ||
+          isEmbeddedClusterWaitingForNodes) && (
+          <div className="tw-mt-4 tw-flex tw-flex-col">
+            <AddNodeInstructions />
+            <AddNodeCommands />
+          </div>
+        )}
 
         <div className="flex1 u-overflow--auto card-item">
           {nodesLoading && (
