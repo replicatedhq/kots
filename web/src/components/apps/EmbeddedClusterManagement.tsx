@@ -538,7 +538,7 @@ const EmbeddedClusterManagement = ({
                   to the cluster, and view workloads running on each node.
                 </p>
               </div>
-              {Utilities.sessionRolesHasOneOf([rbacRoles.CLUSTER_ADMIN]) && (
+              {Utilities.sessionRolesHasOneOf([rbacRoles.CLUSTER_ADMIN]) && !Utilities.isInitialAppInstall(app) && (
                 <button
                   className="btn primary tw-ml-auto tw-w-fit tw-h-fit"
                   onClick={onAddNodeClick}
