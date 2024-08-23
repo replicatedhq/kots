@@ -529,26 +529,25 @@ const EmbeddedClusterManagement = ({
         </p>
         <div className="tw-flex tw-gap-6 tw-items-center">
           {" "}
-          {!Utilities.isInitialAppInstall(app) ||
-            (!isEmbeddedClusterWaitingForNodes && (
-              <>
-                <div className="tw-flex tw-gap-6">
-                  <p>
-                    View the nodes in your cluster, generate commands to add
-                    nodes to the cluster, and view workloads running on each
-                    node.
-                  </p>
-                </div>
-                {Utilities.sessionRolesHasOneOf([rbacRoles.CLUSTER_ADMIN]) && (
-                  <button
-                    className="btn primary tw-ml-auto tw-w-fit tw-h-fit"
-                    onClick={onAddNodeClick}
-                  >
-                    Add node
-                  </button>
-                )}
-              </>
-            ))}
+          {(!Utilities.isInitialAppInstall(app) ||
+            !isEmbeddedClusterWaitingForNodes) && (
+            <>
+              <div className="tw-flex tw-gap-6">
+                <p>
+                  View the nodes in your cluster, generate commands to add nodes
+                  to the cluster, and view workloads running on each node.
+                </p>
+              </div>
+              {Utilities.sessionRolesHasOneOf([rbacRoles.CLUSTER_ADMIN]) && (
+                <button
+                  className="btn primary tw-ml-auto tw-w-fit tw-h-fit"
+                  onClick={onAddNodeClick}
+                >
+                  Add node
+                </button>
+              )}
+            </>
+          )}
         </div>
         {(Utilities.isInitialAppInstall(app) ||
           isEmbeddedClusterWaitingForNodes) && (
