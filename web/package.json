@@ -84,7 +84,7 @@
     "eslint-config-standard": "15.0.1",
     "eslint-import-resolver-alias": "^1.1.2",
     "eslint-plugin-import": "2.29.1",
-    "eslint-plugin-jest": "^26.5.3",
+    "eslint-plugin-jest": "^28.8.0",
     "eslint-plugin-jsx-a11y": "^6.9.0",
     "eslint-plugin-node": "11.1.0",
     "eslint-plugin-prettier": "^4.2.1",
