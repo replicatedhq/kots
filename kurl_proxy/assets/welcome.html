@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="description" content="Welcome" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Welcome to {{.AppTitle}} Admin Console</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="/tls/assets/tls-custom.css" />
+    {{if .AppIcon }}
+    <link rel="icon" type="image/png" href="{{ .AppIcon }}" />
+    {{end}}
+  </head>
+  <script>
+    var rawLink = window.location.href
+      .substring(window.location.protocol.length)
+      .replace(/\/$/, "");
+    var httpsLink = "http:" + rawLink;
+    var opensslLink = rawLink.substring(2).replace("/", "");
+    var insecureLink = httpsLink + "/insecure";
+  </script>
+  <body>
+    <div class="min-h-full w-full flex flex-col flex-1">
+      <div class="flex flex-col items-center justify-center flex-1">
+        <div>
+          <div class="flex flex-col mb-8 items-center">
+            {{if .AppIcon }}<span
+              class="appIcon flex flex-auto"
+              style="background-image: url('{{ .AppIcon }}')"
+            ></span
+            >{{end}}
+          </div>
+
+          <p class="text-2xl font-bold pb-4">
+            Welcome to the {{ .AppTitle }} Admin Console
+          </p>
+
+          <p class="mb-8">
+            You will be guided through the setup and installation of
+            <span class="font-medium"> {{.AppTitle}} </span>
+          </p>
+          <p class="text-base font-bold mb-2">Let's get you started!</p>
+          <hr />
+          <div class="flex flex-col gap-4">
+            <div
+              class="mt-4 p-4 flex gap-2 border border-gray-300 border-solid rounded-lg shadow-md"
+            >
+              <img src="/assets/images/check.svg" alt="check" />
+              <p class="text-sm font-medium">Secure the admin console</p>
+            </div>
+            <div
+              class="p-4 flex gap-2 border border-gray-300 border-solid rounded-lg shadow-md"
+            >
+              <img src="/assets/images/check.svg" alt="check" />
+              <p class="text-sm font-medium">
+                Configure the cluster (optional)
+              </p>
+            </div>
+            <div
+              class="p-4 flex gap-2 border border-gray-300 border-solid rounded-lg shadow-md"
+            >
+              <img src="/assets/images/check.svg" alt="check" />
+              <p class="text-sm font-medium">Configure {{.AppTitle}}</p>
+            </div>
+            <div
+              class="p-4 flex gap-2 border border-gray-300 border-solid rounded-lg shadow-md"
+            >
+              <img src="/assets/images/check.svg" alt="check" />
+              <p class="text-sm font-medium">Validate the environment</p>
+            </div>
+            <div
+              class="p-4 flex gap-2 border border-gray-300 border-solid rounded-lg shadow-md"
+            >
+              <img src="/assets/images/check.svg" alt="check" />
+              <p class="text-sm font-medium">Install {{.AppTitle}}</p>
+            </div>
+          </div>
+
+          <div class="mt-8 flex justify-center">
+            <button
+              type="submit"
+              class="btn primary"
+              onclick="location.href=insecureLink;"
+            >
+              Start
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>
