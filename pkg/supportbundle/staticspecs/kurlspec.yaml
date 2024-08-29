@@ -113,6 +113,7 @@ spec:
           - name=weave-net
         timeout: 10s
     - runPod:
+        collectorName: "rqlite-status"
         name: rqlite-status
         namespace: default
         podSpec:
@@ -122,6 +123,7 @@ spec:
               command: ["wget"]
               args: ["-q", "-T", "5", "http://kotsadm-rqlite:4001/status?pretty", "-O-"]
     - runPod:
+        collectorName: "rqlite-nodes"
         name: rqlite-nodes
         namespace: default
         podSpec:
