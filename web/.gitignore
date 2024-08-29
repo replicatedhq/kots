@@ -30,7 +30,6 @@ dist/*
 
 #editors
 .vscode/
-env/skaffold_*
 
 logs/
 

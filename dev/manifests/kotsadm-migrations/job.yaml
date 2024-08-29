@@ -1,0 +1,50 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: kotsadm-migrations
+spec:
+  template:
+    spec:
+      volumes:
+        - name: migrations
+          emptyDir:
+            medium: Memory      
+      initContainers:
+      - env:
+        - name: SCHEMAHERO_DRIVER
+          value: rqlite
+        - name: SCHEMAHERO_SPEC_FILE
+          value: /tables
+        - name: SCHEMAHERO_URI
+          valueFrom:
+            secretKeyRef:
+              key: uri
+              name: kotsadm-rqlite
+        - name: SCHEMAHERO_OUT
+          value: /migrations/plan.yaml              
+        image: kotsadm-migrations-dev
+        name: migrations-plan
+        imagePullPolicy: Never
+        args: ["plan"]
+        volumeMounts:
+          - name: migrations
+            mountPath: /migrations        
+      containers:
+      - env:
+        - name: SCHEMAHERO_DRIVER
+          value: rqlite
+        - name: SCHEMAHERO_DDL
+          value: /migrations/plan.yaml
+        - name: SCHEMAHERO_URI
+          valueFrom:
+            secretKeyRef:
+              key: uri
+              name: kotsadm-rqlite
+        image: kotsadm-migrations-dev
+        name: kotsadm-migrations
+        imagePullPolicy: Never
+        args: ["apply"]
+        volumeMounts:
+          - name: migrations
+            mountPath: /migrations
+      restartPolicy: OnFailure

@@ -45,3 +45,10 @@ packages/*
 
 # precommit
 .pre-commit-config.yaml
+
+# tmp files
+*.tmp
+
+# dev cache
+dev/.gocache
+dev/.gomodcache
