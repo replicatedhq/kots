@@ -13,5 +13,5 @@ spec:
     spec:
       containers:
         - name: kotsadm-web
-          image: kotsadm-web
-          imagePullPolicy: IfNotPresent
+          image: localhost:32000/kotsadm-web
+          imagePullPolicy: Always

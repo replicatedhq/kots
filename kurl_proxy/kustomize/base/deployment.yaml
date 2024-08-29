@@ -15,7 +15,8 @@ spec:
     spec:
       containers:
       - name: proxy
-        image: kurl-proxy
+        image: localhost:32000/kurl-proxy
+        imagePullPolicy: Always
         env:
         - name: NODE_PORT
           value: "30880"

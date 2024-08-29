@@ -21,7 +21,6 @@ func (d *Downstream) WriteDownstream(options WriteOptions) error {
 	}
 
 	renderDir := options.DownstreamDir
-
 	fileRenderPath := path.Join(renderDir, "kustomization.yaml")
 
 	_, err = os.Stat(fileRenderPath)

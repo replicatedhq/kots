@@ -71,7 +71,7 @@ spec:
     spec:
       containers:
       - name: rqlite
-        image: kotsadm/rqlite:7.21.4
+        image: kotsadm/rqlite:8.28.1-r0
         imagePullPolicy: IfNotPresent
         args:
         - -disco-mode=dns

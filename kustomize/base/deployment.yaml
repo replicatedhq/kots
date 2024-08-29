@@ -14,8 +14,8 @@ spec:
       restartPolicy: Always
       containers:
         - name: kotsadm
-          image: kotsadm-api
-          imagePullPolicy: IfNotPresent
+          image: localhost:32000/kotsadm-api
+          imagePullPolicy: Always
           resources:
             limits:
               cpu: 1
@@ -33,6 +33,3 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.namespace
-      securityContext:
-        runAsUser: 1001
-        fsGroup: 1001

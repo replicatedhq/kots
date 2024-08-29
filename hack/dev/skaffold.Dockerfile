@@ -1,4 +1,6 @@
-FROM kotsadm:cache AS builder
+FROM golang:1.22 as deps
+
+RUN go install github.com/go-delve/delve/cmd/dlv@v1.22.1
 
 ENV PROJECTPATH=/go/src/github.com/replicatedhq/kots
 WORKDIR $PROJECTPATH
@@ -13,20 +15,10 @@ ARG DEBUG_KOTSADM=0
 
 RUN make build kots
 
-FROM debian:bookworm
-
-RUN apt-get update && apt-get install -y --no-install-recommends curl gnupg2 \
-  && apt-get update && apt-get install -y --no-install-recommends git \
-  && rm -rf /var/lib/apt/lists/*
-
 ENV GO111MODULE=on
 ENV PATH="/usr/local/bin:$PATH"
 
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    curl ca-certificates git gnupg2 s3cmd \
-  && for i in 1 2 3 4 5 6 7 8; do mkdir -p "/usr/share/man/man$i"; done \
-  && rm -rf /var/lib/apt/lists/* \
-  && rm -rf /usr/share/man/man*
+# RUN apt-get update && apt-get install -y --no-install-recommends s3cmd
 
 # Install Kubectl 1.29
 ENV KUBECTL_1_29_VERSION=v1.29.0
@@ -35,7 +27,7 @@ ENV KUBECTL_1_29_SHA256SUM=0e03ab096163f61ab610b33f37f55709d3af8e16e4dcc1eb68288
 RUN curl -fsSLO "${KUBECTL_1_29_URL}" \
   && echo "${KUBECTL_1_29_SHA256SUM} kubectl" | sha256sum -c - \
   && chmod +x kubectl \
-  && mv kubectl /usr/local/bin//kubectl
+  && mv kubectl /usr/local/bin/kubectl
 
 # Install kustomize 5
 ENV KUSTOMIZE5_VERSION=5.1.1
@@ -59,9 +51,9 @@ RUN cd /tmp && curl -fsSL -o helm.tar.gz "${HELM3_URL}" \
   && mv linux-amd64/helm /usr/local/bin/helm \
   && rm -rf helm.tar.gz linux-amd64
 
-COPY --from=builder /go/bin/dlv .
-COPY --from=builder /go/src/github.com/replicatedhq/kots/bin/kotsadm /kotsadm
-COPY --from=builder /go/src/github.com/replicatedhq/kots/bin/kots /kots
+# COPY /go/bin/dlv .
+COPY ./bin/kotsadm /kotsadm
+COPY ./bin/kots /kots
 
 EXPOSE 40000
 

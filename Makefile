@@ -37,6 +37,10 @@ test:
 e2e:
 	${MAKE} -C e2e
 
+.PHONY: cluster
+cluster:
+	./cluster.sh
+
 .PHONY: integration-cli
 integration-cli:
 	go build ${LDFLAGS} -o bin/kots-integration ./integration
@@ -104,6 +108,22 @@ okteto-dev:
 	@go mod download -x
 	@make build
 	@printf "\n\n To build and run api, run: \n\n   # make build run\n\n"
+
+.PHONY: dev
+dev:
+	docker build -t localhost:32000/kotsadm-web -f ./web/skaffold.Dockerfile ./web
+	docker push localhost:32000/kotsadm-web
+	docker build -t localhost:32000/kotsadm-migrations -f ./migrations/skaffold.Dockerfile ./migrations
+	docker push localhost:32000/kotsadm-migrations
+	docker build -t localhost:32000/kurl-proxy -f ./kurl_proxy/skaffold.Dockerfile ./kurl_proxy
+	docker push localhost:32000/kurl-proxy
+	docker build -t localhost:32000/kotsadm-api -f ./hack/dev/skaffold.Dockerfile .
+	docker push localhost:32000/kotsadm-api
+	kubectl apply -k ./kustomize/overlays/dev
+
+.PHONY: destroy
+destroy:
+	kubectl delete -k ./kustomize/overlays/dev
 
 # Debugging
 .PHONY: debug-build

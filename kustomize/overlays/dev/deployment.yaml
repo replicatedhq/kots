@@ -19,6 +19,8 @@ spec:
       serviceAccountName: kotsadm
       containers:
         - name: kotsadm
+          command: ["/bin/bash"]
+          args: ["-c", "while true; do sleep 30; done;"]
           resources:
             limits:
               cpu: 1
@@ -31,6 +33,10 @@ spec:
               name: backup
             - name: kubelet-client-cert
               mountPath: /etc/kubernetes/pki/kubelet
+            - name: dev
+              mountPath: /replicatedhq/kots
+            - name: gocache
+              mountPath: /go
           env:
             - name: KOTSADM_LOG_LEVEL
               value: "debug"
@@ -86,6 +92,14 @@ spec:
           secret:
             secretName: kubelet-client-cert
             optional: true
+        - name: dev
+          hostPath:
+            path: /replicatedhq/kots
+            type: Directory
+        - name: gocache
+          hostPath:
+            path: /go
+            type: Directory
       hostAliases:
         - ip: 172.17.0.1
           hostnames:
