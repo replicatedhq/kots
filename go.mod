@@ -14,7 +14,7 @@ require (
 	github.com/aws/aws-sdk-go v1.55.5
 	github.com/bitnami-labs/sealed-secrets v0.27.1
 	github.com/blang/semver v3.5.1+incompatible
-	github.com/containers/image/v5 v5.32.1
+	github.com/containers/image/v5 v5.32.2
 	github.com/coreos/go-oidc v2.2.1+incompatible
 	github.com/distribution/distribution/v3 v3.0.0-beta.1
 	github.com/distribution/reference v0.6.0
