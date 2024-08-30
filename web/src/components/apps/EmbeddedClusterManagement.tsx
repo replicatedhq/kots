@@ -31,8 +31,10 @@ type State = {
 
 const EmbeddedClusterManagement = ({
   fromLicenseFlow = false,
+  isEmbeddedClusterWaitingForNodes = false,
 }: {
   fromLicenseFlow?: boolean;
+  isEmbeddedClusterWaitingForNodes?: boolean;
 }) => {
   const [state, setState] = useReducer(
     (prevState: State, newState: Partial<State>) => ({
@@ -415,11 +417,13 @@ const EmbeddedClusterManagement = ({
   const AddNodeInstructions = () => {
     return (
       <div className="tw-mb-2 tw-text-base">
-        <p>
-          Optionally add nodes to the cluster. Click{" "}
-          <span className="tw-font-semibold">Continue </span>
-          to proceed with a single node.
-        </p>
+        {Utilities.isInitialAppInstall(app) && (
+          <p>
+            Optionally add nodes to the cluster. Click{" "}
+            <span className="tw-font-semibold">Continue </span>
+            to proceed with a single node.
+          </p>
+        )}
         <p>
           {rolesData?.roles &&
             rolesData.roles.length > 1 &&
@@ -452,7 +456,7 @@ const EmbeddedClusterManagement = ({
               <div
                 key={nodeType}
                 className={classNames(
-                  "tw-border-[1px] tw-border-solid tw-border-[#326DE6] tw-rounded tw-px-2 tw-py-2 tw-flex tw-items-center  tw-cursor-pointer",
+                  "nodeType-selector tw-border-[1px] tw-border-solid tw-border-[#326DE6] tw-rounded tw-px-2 tw-py-2 tw-flex tw-items-center  tw-cursor-pointer",
                   {
                     "tw-text-white tw-bg-[#326DE6]":
                       selectedNodeTypes.includes(nodeType),
@@ -517,6 +521,9 @@ const EmbeddedClusterManagement = ({
     );
   };
 
+  const isInitialInstallOrRestore =
+    Utilities.isInitialAppInstall(app) || isEmbeddedClusterWaitingForNodes;
+
   return (
     <div className="EmbeddedClusterManagement--wrapper container u-overflow--auto u-paddingTop--50 tw-font-sans">
       <KotsPageTitle pageName="Cluster Management" />
@@ -525,26 +532,26 @@ const EmbeddedClusterManagement = ({
           Nodes
         </p>
         <div className="tw-flex tw-gap-6 tw-items-center">
-          {" "}
-          {!Utilities.isInitialAppInstall(app) && (
-            <div className="tw-flex tw-gap-6">
-              <p>
-                View the nodes in your cluster, generate commands to add nodes
-                to the cluster, and view workloads running on each node.
-              </p>
-            </div>
+          {!isInitialInstallOrRestore && (
+            <>
+              <div className="tw-flex tw-gap-6">
+                <p>
+                  View the nodes in your cluster, generate commands to add nodes
+                  to the cluster, and view workloads running on each node.
+                </p>
+              </div>
+              {Utilities.sessionRolesHasOneOf([rbacRoles.CLUSTER_ADMIN]) && (
+                <button
+                  className="btn primary tw-ml-auto tw-w-fit tw-h-fit"
+                  onClick={onAddNodeClick}
+                >
+                  Add node
+                </button>
+              )}
+            </>
           )}
-          {Utilities.sessionRolesHasOneOf([rbacRoles.CLUSTER_ADMIN]) &&
-            !Utilities.isInitialAppInstall(app) && (
-              <button
-                className="btn primary tw-ml-auto tw-w-fit tw-h-fit"
-                onClick={onAddNodeClick}
-              >
-                Add node
-              </button>
-            )}
         </div>
-        {Utilities.isInitialAppInstall(app) && (
+        {isInitialInstallOrRestore && (
           <div className="tw-mt-4 tw-flex tw-flex-col">
             <AddNodeInstructions />
             <AddNodeCommands />
