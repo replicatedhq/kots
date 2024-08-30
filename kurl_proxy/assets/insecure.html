@@ -1,95 +1,144 @@
 <!DOCTYPE html>
 <html lang="en">
   <head>
-    <meta charset="utf-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="description" content="Replicated App Manager">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="description" content="Replicated App Manager" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>TLS Warning | Admin Console</title>
     <link rel="stylesheet" href="/assets/tls-custom.css" />
     {{if .AppIcon }}
-      <link rel="icon" type="image/png" href="{{ .AppIcon }}" />
+    <link rel="icon" type="image/png" href="{{ .AppIcon }}" />
     {{end}}
     <script>
       //defaults to chrome example
-      var firefoxText = "On the next screen, click \"I Understand the Risks\", then click \"Add Exception\". Finally, click \"Confirm Security Exception\" to proceed to the Admin Console.";
-      var ieText = "On the next screen, click \"Continue to this website\" to proceed to the Admin Console.";
-      var safariText = "On the next screen, click \"Continue\" when prompted to proceed to the Admin Console.";
-      var chromeText = "On the next screen, click \"Advanced\", then click \"Proceed\" to continue to the Admin Console.";
+      var firefoxText =
+        'On the next screen, click "I Understand the Risks", then click "Add Exception". Finally, click "Confirm Security Exception" to proceed to the Admin Console.';
+      var ieText =
+        'On the next screen, click "Continue to this website" to proceed to the Admin Console.';
+      var safariText =
+        'On the next screen, click "Continue" when prompted to proceed to the Admin Console.';
+      var chromeText =
+        'On the next screen, click "Advanced", then click "Proceed" to continue to the Admin Console.';
 
       var browserPlainText = "Chrome";
       var browserBodyText = chromeText;
-      if (typeof InstallTrigger !== 'undefined'){
+      if (typeof InstallTrigger !== "undefined") {
         browserPlainText = "Firefox";
         browserBodyText = chromeText;
-      } else if (Object.prototype.toString.call(window.HTMLElement).indexOf('Constructor') > 0) {
+      } else if (
+        Object.prototype.toString
+          .call(window.HTMLElement)
+          .indexOf("Constructor") > 0
+      ) {
         browserPlainText = "Safari";
         browserBodyText = safariText;
-      } else if (/*@cc_on!@*/false || !!document.documentMode || !!window.StyleMedia) {
+      } else if (
+        /*@cc_on!@*/ false ||
+        !!document.documentMode ||
+        !!window.StyleMedia
+      ) {
         //grouping Edge + IE 6 - 11 in this one
         browserPlainText = "Internet Explorer";
         browserBodyText = ieText;
       }
 
-      var rawLink = window.location.href.substring(window.location.protocol.length).replace(/\/$/,'');
+      var rawLink = window.location.href
+        .substring(window.location.protocol.length)
+        .replace(/\/$/, "");
       var httpsLink = "https:" + rawLink;
-      var opensslLink = rawLink.substring(2).replace("/", "");
-      var tlsManagementLink = httpsLink + "/tls";
+      var opensslLink = rawLink.substring(2).replace("/insecure", "");
+      console.log(opensslLink, "hello");
+      var tlsManagementLink = "/tls";
+      console.log(tlsManagementLink, "link");
     </script>
   </head>
   <body>
-
-      <div class="flex-column flex1">
-        <div class="tlsContent--wrapper">
-          <div>
-            <p class="tls-header">Bypass browser TLS warning</p>
-            <p class="tls-header-sub">We use a self-signed SSL/TLS Certificate to secure the communication between your local machine and the Admin Console during setup. You'll see a warning about this in your browser, but you can be confident that this is secure.</p>
-          </div>
-          <div class="flex1 flex">
-            <div class="flex-column flex1 left-block">
-              <div>
-                <p class="tls-section-header"><script>document.write(browserPlainText)</script></p>
-                <p class="tls-section-sub"><script>document.write(browserBodyText)</script></p>
-              </div>
-              <div class="CodeSnippet">
-                <div class="CodeSnippet-content">
-                  <p>Verifying the certificate's authenticity</p>
-                  <pre>
+    <div class="flex-column flex1">
+      <div class="tlsContent--wrapper">
+        <div>
+          <p class="tls-header">Bypass browser TLS warning</p>
+          <p class="tls-header-sub">
+            We use a self-signed SSL/TLS Certificate to secure the communication
+            between your local machine and the Admin Console during setup.
+            You'll see a warning about this in your browser, but you can be
+            confident that this is secure.
+          </p>
+        </div>
+        <div class="flex1 flex">
+          <div class="flex-column flex1 left-block">
+            <div>
+              <p class="tls-section-header">
+                <script>
+                  document.write(browserPlainText);
+                </script>
+              </p>
+              <p class="tls-section-sub">
+                <script>
+                  document.write(browserBodyText);
+                </script>
+              </p>
+            </div>
+            <div class="CodeSnippet">
+              <div class="CodeSnippet-content">
+                <p>Verifying the certificate's authenticity</p>
+                <pre>
                     <code id="verify-snippet">
                     </code>
                   </pre>
-                </div>
               </div>
-              <div class="CodeSnippet">
-                <div class="CodeSnippet-content">
-                  <p>SHA Fingerprint</p>
-                  <pre>
+            </div>
+            <div class="CodeSnippet">
+              <div class="CodeSnippet-content">
+                <p>SHA Fingerprint</p>
+                <pre>
                     <code>{{ .fingerprintSHA1 }}</code>
                   </pre>
-                </div>
-              </div>
-              <div class="button-wrapper flex alignItems--center">
-                <button type="submit" class="btn primary" onclick="location.href=tlsManagementLink;">Continue to Setup</button>
-                <div class="flex-column justifyContent--center">
-                  <p class="text-muted">
-                    <script>document.write(
-                      'or visit <a class="replicated-link" href="' + tlsManagementLink + '">' + tlsManagementLink + '</a> to proceed'
-                    )</script>
-                  </p>
-                </div>
               </div>
             </div>
-            <div class="flex-column flex1 right-block alignItems--center justifyContent--center">
-              <script>document.write(
-                '<img class="insecure-image" src="/assets/images/' + browserPlainText.toLowerCase().replace(" ", "") + '-insecure.png" />'
-              )</script>
+            <div class="button-wrapper flex alignItems--center">
+              <button
+                type="submit"
+                class="btn primary"
+                onclick="location.href=tlsManagementLink;"
+              >
+                Continue to Setup
+              </button>
+              <div class="flex-column justifyContent--center">
+                <p class="text-muted">
+                  <script>
+                    document.write(
+                      'or visit <a class="replicated-link" href="' +
+                        tlsManagementLink +
+                        '">' +
+                        opensslLink +
+                        tlsManagementLink +
+                        "</a> to proceed",
+                    );
+                  </script>
+                </p>
+              </div>
             </div>
+          </div>
+          <div
+            class="flex-column flex1 right-block alignItems--center justifyContent--center"
+          >
+            <script>
+              document.write(
+                '<img class="insecure-image" src="/assets/images/' +
+                  browserPlainText.toLowerCase().replace(" ", "") +
+                  '-insecure.png" />',
+              );
+            </script>
           </div>
         </div>
       </div>
+    </div>
   </body>
   <script>
-    document.getElementById('verify-snippet').innerHTML =
-      '$ echo | openssl s_client -servername local -connect ' + opensslLink + ' 2>/dev/null | openssl x509 -noout -fingerprint';
+    document.getElementById("verify-snippet").innerHTML =
+      "$ echo | openssl s_client -servername local -connect " +
+      opensslLink +
+      " 2>/dev/null | openssl x509 -noout -fingerprint";
   </script>
 </html>
