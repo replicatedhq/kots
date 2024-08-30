@@ -11,9 +11,10 @@ import (
 )
 
 var (
-	// These lists are inspired by Helm: https://github.com/helm/helm/blob/v3.11.3/pkg/releaseutil/kind_sorter.go
+	// These lists are inspired by Helm: https://github.com/helm/helm/blob/v3.15.4/pkg/releaseutil/kind_sorter.go
 	// Unknown kinds are created last.
 	KindCreationOrder = []string{
+		"PriorityClass",
 		"Namespace",
 		"NetworkPolicy",
 		"ResourceQuota",
@@ -87,6 +88,7 @@ var (
 		"ResourceQuota",
 		"NetworkPolicy",
 		"Namespace",
+		"PriorityClass",
 	}
 )
 
