@@ -143,3 +143,22 @@ spec:
               message: "kotsadm-minio PVC using more than 80% of storage"
           - pass:
               message: "kotsadm-minio PVC is using less than 80% of storage"
+    - event:
+        checkName: event-oom-check
+        namespace: default
+        reason: "OOMKilling"
+        kind: Node
+        outcomes:
+          - fail:
+              when: "true"
+              message: Event {{ .Reason }} by object {{ .InvolvedObject.Name }} kind {{ .InvolvedObject.Kind }} has message {{ .Message }}
+          - pass:
+              when: "false"
+              message: No OOMKilling event detected
+    - storageClass:
+        checkName: Check for default storage class
+        outcomes:
+          - fail:
+              message: No default storage class found
+          - pass:
+              message: Default storage class found

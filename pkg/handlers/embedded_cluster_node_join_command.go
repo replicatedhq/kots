@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"net/http"
 
-	ecv1beta1 "github.com/replicatedhq/embedded-cluster-kinds/apis/v1beta1"
+	ecv1beta1 "github.com/replicatedhq/embedded-cluster/kinds/apis/v1beta1"
 
 	"github.com/replicatedhq/kots/pkg/embeddedcluster"
 	"github.com/replicatedhq/kots/pkg/k8sutil"

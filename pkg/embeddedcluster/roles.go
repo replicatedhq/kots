@@ -7,7 +7,7 @@ import (
 	"sort"
 	"strings"
 
-	embeddedclusterv1beta1 "github.com/replicatedhq/embedded-cluster-kinds/apis/v1beta1"
+	embeddedclusterv1beta1 "github.com/replicatedhq/embedded-cluster/kinds/apis/v1beta1"
 	kbclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 

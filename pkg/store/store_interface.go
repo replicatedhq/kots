@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	embeddedclusterv1beta1 "github.com/replicatedhq/embedded-cluster-kinds/apis/v1beta1"
+	embeddedclusterv1beta1 "github.com/replicatedhq/embedded-cluster/kinds/apis/v1beta1"
 	airgaptypes "github.com/replicatedhq/kots/pkg/airgap/types"
 	downstreamtypes "github.com/replicatedhq/kots/pkg/api/downstream/types"
 	reportingtypes "github.com/replicatedhq/kots/pkg/api/reporting/types"
