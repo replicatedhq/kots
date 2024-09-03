@@ -111,18 +111,30 @@ okteto-dev:
 
 .PHONY: dev
 dev:
-	docker build -t localhost:32000/kotsadm-web -f ./web/skaffold.Dockerfile ./web
-	docker push localhost:32000/kotsadm-web
-	docker build -t localhost:32000/kotsadm-migrations -f ./migrations/skaffold.Dockerfile ./migrations
-	docker push localhost:32000/kotsadm-migrations
-	docker build -t localhost:32000/kurl-proxy -f ./kurl_proxy/skaffold.Dockerfile ./kurl_proxy
-	docker push localhost:32000/kurl-proxy
-	docker build -t localhost:32000/kotsadm-api -f ./hack/dev/skaffold.Dockerfile .
-	docker push localhost:32000/kotsadm-api
+	docker build -t kotsadm-api-dev -f ./hack/dev/skaffold.Dockerfile .
+	docker build -t kotsadm-web-dev -f ./web/skaffold.Dockerfile ./web
+	docker build -t kotsadm-migrations-dev -f ./migrations/skaffold.Dockerfile ./migrations
+	docker build -t kurl-proxy-dev -f ./kurl_proxy/skaffold.Dockerfile ./kurl_proxy
 	kubectl apply -k ./kustomize/overlays/dev
 
-.PHONY: destroy
-destroy:
+## The /host_mnt directory on Docker Desktop for macOS is a virtualized path that represents
+## the mounted directories from the macOS host filesystem into the Docker Desktop VM.
+## This is required for using HostPath volumes in Kubernetes.
+.PHONY: %-up
+%-up:
+	@sed "s|__PROJECT_DIR__|/host_mnt$(shell pwd)|g" ./dev/patches/$*-up.yaml > ./dev/patches/$*-up.yaml.tmp
+	@kubectl patch deployment $* --patch-file ./dev/patches/$*-up.yaml.tmp
+	@rm ./dev/patches/$*-up.yaml.tmp
+	@kubectl rollout status deployment/$*
+	@kubectl exec -it deploy/$* -- bash
+
+.PHONY: %-down
+%-down:
+	@kubectl patch deployment $* --type=json --patch-file ./dev/patches/$*-down.yaml
+	@kubectl rollout status deployment/$*
+
+.PHONY: reset
+reset:
 	kubectl delete -k ./kustomize/overlays/dev
 
 # Debugging

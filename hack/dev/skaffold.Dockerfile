@@ -1,19 +1,6 @@
-FROM golang:1.22 as deps
+FROM golang:1.22
 
 RUN go install github.com/go-delve/delve/cmd/dlv@v1.22.1
-
-ENV PROJECTPATH=/go/src/github.com/replicatedhq/kots
-WORKDIR $PROJECTPATH
-COPY Makefile ./
-COPY Makefile.build.mk ./
-COPY go.mod go.sum ./
-COPY cmd ./cmd
-COPY pkg ./pkg
-COPY web/webcontent.go ./web/webcontent.go
-
-ARG DEBUG_KOTSADM=0
-
-RUN make build kots
 
 ENV GO111MODULE=on
 ENV PATH="/usr/local/bin:$PATH"
@@ -51,9 +38,22 @@ RUN cd /tmp && curl -fsSL -o helm.tar.gz "${HELM3_URL}" \
   && mv linux-amd64/helm /usr/local/bin/helm \
   && rm -rf helm.tar.gz linux-amd64
 
+ENV PROJECTPATH=/go/src/github.com/replicatedhq/kots
+WORKDIR $PROJECTPATH
+COPY Makefile ./
+COPY Makefile.build.mk ./
+COPY go.mod go.sum ./
+COPY cmd ./cmd
+COPY pkg ./pkg
+COPY web/webcontent.go ./web/webcontent.go
+
+ARG DEBUG_KOTSADM=0
+
+RUN make build kots
+
 # COPY /go/bin/dlv .
-COPY ./bin/kotsadm /kotsadm
-COPY ./bin/kots /kots
+RUN mv ./bin/kotsadm /kotsadm
+RUN mv ./bin/kots /kots
 
 EXPOSE 40000
 

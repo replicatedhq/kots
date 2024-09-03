@@ -1,0 +1,11 @@
+- op: remove
+  path: /spec/template/spec/volumes/0
+
+- op: remove
+  path: /spec/template/spec/containers/0/volumeMounts/0
+
+- op: remove
+  path: /spec/template/spec/containers/0/command
+
+- op: remove
+  path: /spec/template/spec/containers/0/args

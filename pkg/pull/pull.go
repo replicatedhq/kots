@@ -459,6 +459,7 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 	writeBaseOptions := base.WriteOptions{
 		BaseDir:          u.GetBaseDir(writeUpstreamOptions),
 		SkippedDir:       u.GetSkippedDir(writeUpstreamOptions),
+		Overwrite:        true,
 		ExcludeKotsKinds: pullOptions.ExcludeKotsKinds,
 		IsHelmBase:       false,
 	}
@@ -474,6 +475,7 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 		writeBaseOptions := base.WriteOptions{
 			BaseDir:          u.GetBaseDir(writeUpstreamOptions),
 			SkippedDir:       u.GetSkippedDir(writeUpstreamOptions),
+			Overwrite:        true,
 			ExcludeKotsKinds: pullOptions.ExcludeKotsKinds,
 			IsHelmBase:       true,
 		}

@@ -70,7 +70,7 @@ export function getApplicationType(watch) {
  * @param {String} - Returns the commit SHA of the current build
  */
 export function getBuildVersion() {
-  return "v1.50.0";
+  return process.env.KOTSADM_BUILD_VERSION;
 }
 
 /**

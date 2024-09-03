@@ -19,8 +19,6 @@ spec:
       serviceAccountName: kotsadm
       containers:
         - name: kotsadm
-          command: ["/bin/bash"]
-          args: ["-c", "while true; do sleep 30; done;"]
           resources:
             limits:
               cpu: 1
@@ -33,11 +31,22 @@ spec:
               name: backup
             - name: kubelet-client-cert
               mountPath: /etc/kubernetes/pki/kubelet
-            - name: dev
-              mountPath: /replicatedhq/kots
-            - name: gocache
-              mountPath: /go
           env:
+            - name: RQLITE_URI
+              valueFrom:
+                secretKeyRef:
+                  name: kotsadm-rqlite # This secret is created in the migrations directory
+                  key: uri
+            - name: S3_BUCKET_NAME
+              value: "shipbucket"
+            - name: S3_ENDPOINT
+              value: http://kotsadm-minio:4569/
+            - name: S3_ACCESS_KEY_ID
+              value: not-a-key
+            - name: S3_SECRET_ACCESS_KEY
+              value: not-a-secret
+            - name: S3_BUCKET_ENDPOINT
+              value: "true"
             - name: KOTSADM_LOG_LEVEL
               value: "debug"
             - name: DISABLE_SPA_SERVING
@@ -92,14 +101,6 @@ spec:
           secret:
             secretName: kubelet-client-cert
             optional: true
-        - name: dev
-          hostPath:
-            path: /replicatedhq/kots
-            type: Directory
-        - name: gocache
-          hostPath:
-            path: /go
-            type: Directory
       hostAliases:
         - ip: 172.17.0.1
           hostnames:

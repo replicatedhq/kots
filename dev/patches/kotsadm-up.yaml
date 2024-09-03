@@ -1,0 +1,15 @@
+spec:
+  template:
+    spec:
+      volumes:
+      - name: dev
+        hostPath:
+          path: __PROJECT_DIR__
+          type: Directory
+      containers:
+      - name: kotsadm
+        command: ["/bin/bash"]
+        args: ["-c", "while true; do sleep 30; done;"]
+        volumeMounts:
+        - name: dev
+          mountPath: /go/src/github.com/replicatedhq/kots # workdir in the container

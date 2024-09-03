@@ -180,6 +180,7 @@ func Rewrite(rewriteOptions RewriteOptions) error {
 	writeBaseOptions := base.WriteOptions{
 		BaseDir:          u.GetBaseDir(writeUpstreamOptions),
 		SkippedDir:       u.GetSkippedDir(writeUpstreamOptions),
+		Overwrite:        true,
 		ExcludeKotsKinds: rewriteOptions.ExcludeKotsKinds,
 		IsHelmBase:       false,
 	}
@@ -194,6 +195,7 @@ func Rewrite(rewriteOptions RewriteOptions) error {
 		writeBaseOptions := base.WriteOptions{
 			BaseDir:          u.GetBaseDir(writeUpstreamOptions),
 			SkippedDir:       u.GetSkippedDir(writeUpstreamOptions),
+			Overwrite:        true,
 			ExcludeKotsKinds: rewriteOptions.ExcludeKotsKinds,
 			IsHelmBase:       true,
 		}
@@ -378,19 +380,6 @@ func writeDownstreams(options RewriteOptions, overlaysDir string, m *midstream.M
 		}
 		if err := d.WriteDownstream(writeDownstreamOptions); err != nil {
 			return errors.Wrapf(err, "failed to write downstream %s", downstreamName)
-		}
-
-		// downstream directory doesn't get cleaned up because it can contain user-created content
-		// but if there are no helm charts in the new version (or they're all excluded), make sure to remove the charts directory
-		// since it doesn't apply any more, and will cause kustomize errors.
-		if len(helmMidstreams) == 0 {
-			chartsDir := filepath.Join(overlaysDir, "downstreams", downstreamName, "charts")
-			_, err := os.Stat(chartsDir)
-			if err == nil {
-				if err := os.RemoveAll(chartsDir); err != nil {
-					return errors.Wrap(err, "failed to remove previous charts directory")
-				}
-			}
 		}
 
 		for _, mid := range helmMidstreams {

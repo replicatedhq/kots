@@ -22,9 +22,9 @@ spec:
               name: kotsadm-rqlite
         - name: SCHEMAHERO_OUT
           value: /migrations/plan.yaml              
-        image: localhost:32000/kotsadm-migrations
+        image: kotsadm-migrations-dev
         name: migrations-plan
-        imagePullPolicy: Always
+        imagePullPolicy: IfNotPresent
         args: ["plan"]
         volumeMounts:
           - name: migrations
@@ -40,9 +40,9 @@ spec:
             secretKeyRef:
               key: uri
               name: kotsadm-rqlite
-        image: localhost:32000/kotsadm-migrations
+        image: kotsadm-migrations-dev
         name: kotsadm-migrations
-        imagePullPolicy: Always
+        imagePullPolicy: IfNotPresent
         args: ["apply"]
         volumeMounts:
           - name: migrations

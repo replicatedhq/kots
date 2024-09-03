@@ -14,8 +14,8 @@ spec:
       restartPolicy: Always
       containers:
         - name: kotsadm
-          image: localhost:32000/kotsadm-api
-          imagePullPolicy: Always
+          image: kotsadm-api-dev
+          imagePullPolicy: IfNotPresent
           resources:
             limits:
               cpu: 1

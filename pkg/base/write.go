@@ -19,6 +19,7 @@ import (
 type WriteOptions struct {
 	BaseDir          string
 	SkippedDir       string
+	Overwrite        bool
 	ExcludeKotsKinds bool
 	IsHelmBase       bool
 }
@@ -28,8 +29,12 @@ func (b *Base) WriteBase(options WriteOptions) error {
 
 	_, err := os.Stat(renderDir)
 	if err == nil {
-		if err := os.RemoveAll(renderDir); err != nil {
-			return errors.Wrap(err, "failed to remove previous content in base")
+		if options.Overwrite {
+			if err := os.RemoveAll(renderDir); err != nil {
+				return errors.Wrap(err, "failed to remove previous content in base")
+			}
+		} else {
+			return fmt.Errorf("directory %s already exists", renderDir)
 		}
 	}
 
@@ -192,8 +197,12 @@ func (b *Base) writeSkippedFiles(options WriteOptions) error {
 
 	_, err := os.Stat(renderDir)
 	if err == nil {
-		if err := os.RemoveAll(renderDir); err != nil {
-			return errors.Wrap(err, "failed to remove previous content in skipped files")
+		if options.Overwrite {
+			if err := os.RemoveAll(renderDir); err != nil {
+				return errors.Wrap(err, "failed to remove previous content in skipped files")
+			}
+		} else {
+			return fmt.Errorf("directory %s already exists", renderDir)
 		}
 	}
 

@@ -42,3 +42,6 @@ packages/*
 
 # precommit
 .pre-commit-config.yaml
+
+# tmp files
+*.tmp

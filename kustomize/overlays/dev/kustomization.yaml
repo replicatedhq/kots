@@ -4,6 +4,7 @@ resources:
 - ./namespace.yaml
 - ../../base
 - ../rbac
+- ../kotsstore
 - ../../../web/kustomize/overlays/dev
 - ../../../kurl_proxy/kustomize/overlays/dev
 labels:
