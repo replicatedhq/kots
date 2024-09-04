@@ -19,8 +19,9 @@ function deployment() {
 }
 
 function restart() {
-  if kubectl get deployment $(deployment $1) &>/dev/null; then
-    echo "Restarting $1..."
+  if [ "$1" == "kotsadm-migrations" ]; then
+    kubectl delete job $1 --ignore-not-found
+  elif kubectl get deployment $(deployment $1) &>/dev/null; then
     kubectl rollout restart deployment/$(deployment $1)
   fi
 }
