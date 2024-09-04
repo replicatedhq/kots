@@ -8,8 +8,13 @@ spec:
           type: Directory
       containers:
       - name: kotsadm
+        image: kotsadm-api-dev
         command: ["/bin/bash"]
         args: ["-c", "while true; do sleep 30; done;"]
         volumeMounts:
         - name: dev
           mountPath: /go/src/github.com/replicatedhq/kots # workdir in the container
+        readinessProbe: ~
+        securityContext:
+          runAsUser: 0
+          runAsGroup: 0

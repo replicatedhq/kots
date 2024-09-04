@@ -5,6 +5,7 @@ RUN go install github.com/go-delve/delve/cmd/dlv@v1.22.1
 ENV GO111MODULE=on
 ENV PATH="/usr/local/bin:$PATH"
 
+# TODO NOW: install s3cmd
 # RUN apt-get update && apt-get install -y --no-install-recommends s3cmd
 
 # Install Kubectl 1.29
@@ -49,11 +50,11 @@ COPY web/webcontent.go ./web/webcontent.go
 
 ARG DEBUG_KOTSADM=0
 
-RUN make build kots
+# RUN make build kots
 
 # COPY /go/bin/dlv .
-RUN mv ./bin/kotsadm /kotsadm
-RUN mv ./bin/kots /kots
+# RUN mv ./bin/kotsadm /kotsadm
+# RUN mv ./bin/kots /kots
 
 EXPOSE 40000
 
