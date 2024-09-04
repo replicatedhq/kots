@@ -97,25 +97,9 @@ tidy:
 run:
 	./bin/kotsadm api
 
-.PHONY: okteto-dev
-okteto-dev:
-    ## We download all go modules, instead of putting them in the container. This will
-    ## use the PVC that everyone has, and will build a cache.
-    ##
-    ## We also run `make build` here because the initial compilation is slow and
-    ## this enabled `okteto up` to do all of the long-running stuff and give the user
-    ## a pretty good env right after
-	@go mod download -x
-	@make build
-	@printf "\n\n To build and run api, run: \n\n   # make build run\n\n"
-
 .PHONY: dev
 dev:
-	docker build -t kotsadm-api-dev -f ./hack/dev/skaffold.Dockerfile .
-	docker build -t kotsadm-web-dev -f ./web/skaffold.Dockerfile ./web
-	docker build -t kotsadm-migrations-dev -f ./migrations/skaffold.Dockerfile ./migrations
-	docker build -t kurl-proxy-dev -f ./kurl_proxy/skaffold.Dockerfile ./kurl_proxy
-	kubectl apply -k ./kustomize/overlays/dev
+	@dev/scripts/dev.sh
 
 .PHONY: %-up
 %-up:

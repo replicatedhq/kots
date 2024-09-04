@@ -17,7 +17,7 @@ if [ -f "./dev/patches/$component-down.yaml.tmp" ]; then
 fi
 
 # Get component metadata
-deployment=$(cat ./dev/metadata.json | jq -r ".$component.deploymentName")
+deployment=$(jq -r ".\"$component\".deployment" ./dev/metadata.json)
 
 echo "Patching deployment..."
 

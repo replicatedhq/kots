@@ -50,11 +50,11 @@ COPY web/webcontent.go ./web/webcontent.go
 
 ARG DEBUG_KOTSADM=0
 
-# RUN make build kots
+RUN make build kots
 
 # COPY /go/bin/dlv .
-# RUN mv ./bin/kotsadm /kotsadm
-# RUN mv ./bin/kots /kots
+RUN mv ./bin/kotsadm /kotsadm
+RUN mv ./bin/kots /kots
 
 EXPOSE 40000
 

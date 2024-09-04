@@ -17,16 +17,16 @@ if [ -f "./dev/patches/$component-down-ec.yaml.tmp" ]; then
 fi
 
 # Get component metadata
-image=$(cat ./dev/metadata.json | jq -r ".$component.image")
-dockerFile=$(cat ./dev/metadata.json | jq -r ".$component.dockerFile")
-dockerContext=$(cat ./dev/metadata.json | jq -r ".$component.dockerContext")
-deployment=$(cat ./dev/metadata.json | jq -r ".$component.deploymentName")
+image=$(jq -r ".\"$component\".image" ./dev/metadata.json)
+dockerfile=$(jq -r ".\"$component\".dockerfile" ./dev/metadata.json)
+dockercontext=$(jq -r ".\"$component\".dockercontext" ./dev/metadata.json)
+deployment=$(jq -r ".\"$component\".deployment" ./dev/metadata.json)
 
 # Build the image
 if docker images | grep -q "$image"; then
   echo "$image image already exists, skipping build..."
 else
-  docker build -t "$image" -f "$dockerFile" "$dockerContext"
+  docker build -t "$image" -f "$dockerfile" "$dockercontext"
 fi
 
 # Load the image into the embedded cluster
