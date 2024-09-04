@@ -48,8 +48,6 @@ COPY cmd ./cmd
 COPY pkg ./pkg
 COPY web/webcontent.go ./web/webcontent.go
 
-ARG DEBUG_KOTSADM=0
-
 RUN make build kots
 
 # COPY /go/bin/dlv .
@@ -61,7 +59,6 @@ EXPOSE 40000
 # Should be entrypoint
 
 ARG DEBUG_KOTSADM=0
-
 ENV DEBUG_KOTSADM=${DEBUG_KOTSADM}
 
 ADD hack/dev/entrypoint.sh .
