@@ -111,6 +111,9 @@ func Rewrite(rewriteOptions RewriteOptions) error {
 		IsAirgap:             rewriteOptions.IsAirgap,
 		KotsadmID:            k8sutil.GetKotsadmID(clientset),
 		AppID:                rewriteOptions.AppID,
+		HTTPProxyEnvValue:    rewriteOptions.HTTPProxyEnvValue,
+		HTTPSProxyEnvValue:   rewriteOptions.HTTPSProxyEnvValue,
+		NoProxyEnvValue:      rewriteOptions.NoProxyEnvValue,
 	}
 	if err = upstream.WriteUpstream(u, writeUpstreamOptions); err != nil {
 		log.FinishSpinnerWithError()
