@@ -16,6 +16,3 @@ spec:
           mountPath: /go/src/github.com/replicatedhq/kots # workdir in the container
         readinessProbe: ~
         resources: ~
-        securityContext:
-          runAsUser: 0
-          runAsGroup: 0

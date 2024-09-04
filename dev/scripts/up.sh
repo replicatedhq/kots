@@ -36,5 +36,11 @@ rm ./dev/patches/$component-up.yaml.tmp
 # Wait for rollout to complete
 kubectl rollout status deployment/$deployment
 
-# Exec into the updated deployment
-kubectl exec -it deployment/$deployment -- bash
+if [ "$component" == "kotsadm-web" ]; then
+  # Tail the logs of the new pod
+  newpod=$(kubectl get pods --no-headers --sort-by=.metadata.creationTimestamp | awk 'END {print $1}')
+  kubectl logs -f $newpod --tail=100
+else
+  # Exec into the updated deployment
+  kubectl exec -it deployment/$deployment -- bash
+fi

@@ -14,9 +14,27 @@ function dockercontext() {
   jq -r ".\"$1\".dockercontext" ./dev/metadata.json
 }
 
-docker build -t $(image kotsadm) -f $(dockerfile kotsadm) $(dockercontext kotsadm)
-docker build -t $(image kotsadm-web) -f $(dockerfile kotsadm-web) $(dockercontext kotsadm-web)
-docker build -t $(image kotsadm-migrations) -f $(dockerfile kotsadm-migrations) $(dockercontext kotsadm-migrations)
-docker build -t $(image kurl-proxy) -f $(dockerfile kurl-proxy) $(dockercontext kurl-proxy)
+function deployment() {
+  jq -r ".\"$1\".deployment" ./dev/metadata.json
+}
+
+function restart() {
+  if kubectl get deployment $(deployment $1) &>/dev/null; then
+    echo "Restarting $1..."
+    kubectl rollout restart deployment/$(deployment $1)
+  fi
+}
+
+function build() {
+  echo "Building $1..."
+  docker build -t $(image $1) -f $(dockerfile $1) $(dockercontext $1)
+  restart $1
+  echo ""
+}
+
+build kotsadm
+build kotsadm-web
+build kotsadm-migrations
+build kurl-proxy
 
 kubectl apply -k ./kustomize/overlays/dev

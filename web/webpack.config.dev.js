@@ -37,6 +37,9 @@ module.exports = {
     compress: true,
     hot: true,
     host: "0.0.0.0",
+    static: {
+      directory: path.join(__dirname, 'src'),
+    },
     allowedHosts: ["all"],
     client: {
       webSocketURL: "auto://0.0.0.0/ws",

@@ -22,6 +22,3 @@ spec:
           mountPath: /assets
         readinessProbe: ~
         resources: ~
-        securityContext:
-          runAsUser: 0
-          runAsGroup: 0
