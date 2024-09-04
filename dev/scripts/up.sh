@@ -30,7 +30,7 @@ kubectl get deployment $deployment -oyaml > ./dev/patches/$component-down.yaml.t
 # This is required for using HostPath volumes in Kubernetes.
 
 sed "s|__PROJECT_DIR__|/host_mnt$(pwd)|g" ./dev/patches/$component-up.yaml > ./dev/patches/$component-up.yaml.tmp
-kubectl patch deployment $component --patch-file ./dev/patches/$component-up.yaml.tmp
+kubectl patch deployment $deployment --patch-file ./dev/patches/$component-up.yaml.tmp
 rm ./dev/patches/$component-up.yaml.tmp
 
 # Wait for rollout to complete
