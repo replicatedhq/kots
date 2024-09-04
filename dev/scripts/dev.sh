@@ -2,6 +2,12 @@
 
 set -e
 
+# Ensure kubectl context is docker-desktop
+if [ $(kubectl config current-context) != "docker-desktop" ]; then
+    echo "Error: kubectl context is not set to docker-desktop"
+    exit 1
+fi
+
 function image() {
   jq -r ".\"$1\".image" ./dev/metadata.json
 }
