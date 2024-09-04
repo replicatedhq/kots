@@ -10,9 +10,9 @@ test:
 build:
 	go build ${LDFLAGS} -o bin/kurl_proxy cmd/main.go
 
-.PHONY: up
-up:
-	skaffold dev -f skaffold.yaml
+.PHONY: run
+run:
+	./bin/kurl_proxy
 
 .PHONY: build-ttl.sh
 build-ttl.sh: export GOOS ?= linux
